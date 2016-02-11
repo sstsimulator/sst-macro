@@ -78,12 +78,18 @@ if debugger:
     sys.exit(0)
 
 #fork off a child process to run the test
-exepid = os.fork()
+try: exepid = os.fork()
+except OSError: 
+  print bcolors.FAIL, "TEST FORK FAILED"
+  sys.exit(111)
 if exepid == 0:
     runexe(exe, args, outputFile)
     sys.exit()
 
-waiterpid = os.fork()
+try: waiterpid = os.fork()
+except OSError: 
+  print bcolors.FAIL, "TEST FORK FAILED"
+  sys.exit(111)
 if waiterpid == 0:
     signal.signal(signal.SIGTERM, handleTerminate)
     time.sleep(timeout)

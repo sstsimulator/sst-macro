@@ -8,9 +8,6 @@
 #include <sprockit/output.h>
 #include <sprockit/sim_parameters.h>
 
-DeclareDebugSlot(sumi);
-RegisterDebugSlot(sumi);
-
 using namespace sprockit::dbg;
 
 namespace sstmac {
@@ -258,10 +255,6 @@ sumi_queue::put_message(const transport_message::ptr& msg)
 {
   pending_messages_.push_back(msg);
 
-  //unblock the first pending thread
-  debug_printf(sprockit::dbg::sumi,
-    "Putting new message in queue - %d pending keys",
-    blocked_keys_.size());
   if (!blocked_keys_.empty()) {
     sstmac::sw::key* next_key = blocked_keys_.front();
     blocked_keys_.pop_front();

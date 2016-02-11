@@ -11,10 +11,12 @@
 #include <sstmac/hardware/topology/topology.h>
 #include <sst/sumi_api.h>
 
-using namespace sstmac;
-using namespace sstmac::hw;
-using namespace sstmac::sw;
 using namespace sumi;
+using sstmac::timestamp;
+using sstmac::hw::traffic_pattern;
+using sstmac::node_id;
+using sstmac::sstmac_env;
+using sstmac::hw::topology;
 
 void sleep(double seconds)
 {

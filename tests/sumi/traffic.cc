@@ -10,21 +10,18 @@
 #include <sst/sumi_api.h>
 #include <sumi/transport.h>
 
-using namespace sstmac;
-using namespace sstmac::hw;
-using namespace sstmac::sw;
 using namespace sumi;
 
 static long done = 0;
 
 void run_test(
-  traffic_pattern::type_t ty,
+  sstmac::hw::traffic_pattern::type_t ty,
   long num_bytes
 )
 {
-  std::vector<node_id> node_partners;
+  std::vector<sstmac::node_id> node_partners;
   sstmac::sumi::sumi_api* simp = safe_cast(sstmac::sumi::sumi_api, sumi_api());
-  topology::global()->send_partners(
+  sstmac::hw::topology::global()->send_partners(
     ty,
     simp->my_addr(),
     node_partners);
@@ -36,7 +33,7 @@ void run_test(
 
   node_partners.clear();
   std::vector<int> recv_partners(num_partners, 0);
-  topology::global()->recv_partners(
+  sstmac::hw::topology::global()->recv_partners(
     ty,
     simp->my_addr(),
     node_partners);
@@ -73,16 +70,16 @@ main(int argc, char** argv)
 {
   comm_init();
 
-  std::string pattern = sstmac_env::params->get_param("traffic_pattern");
-  traffic_pattern::type_t ty;
+  std::string pattern = sstmac::sstmac_env::params->get_param("traffic_pattern");
+  sstmac::hw::traffic_pattern::type_t ty;
   if (pattern == "NN" || pattern == "nearest_neighbor") {
-    ty = traffic_pattern::nearest_neighbor;
+    ty = sstmac::hw::traffic_pattern::nearest_neighbor;
   }
   else if (pattern == "BC" || pattern == "bit_complement") {
-    ty = traffic_pattern::bit_complement;
+    ty = sstmac::hw::traffic_pattern::bit_complement;
   }
   else if (pattern == "TOR" || pattern == "tornado") {
-    ty = traffic_pattern::tornado;
+    ty = sstmac::hw::traffic_pattern::tornado;
   }
   else {
     spkt_throw_printf(sprockit::input_error,
@@ -91,7 +88,7 @@ main(int argc, char** argv)
   }
 
   long num_bytes_per_msg =
-    sstmac_env::params->get_byte_length_param("message_length");
+    sstmac::sstmac_env::params->get_byte_length_param("message_length");
 
   run_test(ty, num_bytes_per_msg);
 
