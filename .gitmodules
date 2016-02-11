@@ -1,9 +1,9 @@
 [submodule "dumpi"]
 	path = dumpi
-	url = git@github.com:jjwilke/dumpi.git
+	url = https://github.com/jjwilke/dumpi.git
 [submodule "sprockit"]
 	path = sprockit
-	url = git@github.com:jjwilke/sprockit.git
+	url = https://github.com/jjwilke/sprockit.git
 [submodule "sumi"]
 	path = sumi
-	url = git@github.com:jjwilke/sumi.git
+	url = https://github.com/jjwilke/sumi.git
