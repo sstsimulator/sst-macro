@@ -1,0 +1,36 @@
+## -*- Mode: Makefile; -*-
+## vim: set ft=automake :
+##
+## (C) 2011 by Argonne National Laboratory.
+##     See COPYRIGHT in top-level directory.
+##
+
+## This is an automake makefile fragment that should be included by:
+##
+##   include $(top_srcdir)/Makefile.mtest
+##
+## It provides a "testing" rule that uses runtests, cleanup for summary.xml, and
+## adds appropriate includes and linker flags for using the MTest framework.
+## The goal is to reduce the amount of boilerplate that needs to exist in each
+## Makefile.am
+
+# AM_CPPFLAGS are used for C++ code as well
+AM_CPPFLAGS = -I$(top_builddir)/tests/mpi/include -I$(top_srcdir)/tests/mpi/include -I$(top_builddir) -I$(top_srcdir)
+LDADD = $(top_builddir)/tests/mpi/util/libsstmac_tests_mpi_util.la \
+    $(top_builddir)/sstmac/main/libsstmac_main.la                                    \
+    $(top_builddir)/sstmac/common/libsstmac_common.la                                \
+    $(top_builddir)/sstmac/software/libsstmac_sw.la                                  \
+    $(top_builddir)/sstmac/hardware/libsstmac_hw.la                                  \
+    $(top_builddir)/dumpi/dumpi/libundumpi/libundumpi.la				\
+    $(top_builddir)/sstmac/backends/native/libsstmac_native.la                       \
+    $(top_builddir)/sstmac/keywords/libsstmac_keywords.la			     \
+	$(top_builddir)/sstmac/main/libsstmac_dummy_skeleton.la              
+
+## FIXME "DEPADD" is a simplemake concept, which we can handle on a per-target
+## prog_DEPENDENCIES variable, but it would be better to figure out the right
+## way to do this
+##DEPADD = @MPILIBLOC@ $(top_builddir)/util/mtest.o
+
+$(top_builddir)/tests/mpi/util/mtest.$(OBJEXT): $(top_srcdir)/tests/mpi/util/mtest.c
+	(cd $(top_builddir)/tests/mpi/util && $(MAKE) mtest.$(OBJEXT))
+

@@ -1,0 +1,9 @@
+#! /usr/bin/env bash
+
+./runtraffic -p amm_model=amm3 -p network_bandwidth=2.5GB/s >& amm3.out
+./runtraffic -p amm_model=amm4 -p network_bandwidth=2.5GB/s >& amm4.out
+
+./average amm3.out
+./average amm4.out
+
+

@@ -1,0 +1,36 @@
+.PHONY: tutorials
+if !INTEGRATED_SST_CORE
+#------------------------------------------------------------------------------------------#
+#  Tutorial tests (installcheck)                                                        {{{#
+#------------------------------------------------------------------------------------------#
+
+TUTORIALTESTS = \
+  test_tutorial_sendrecv_c \
+  test_tutorial_sendrecv_cxx \
+  test_tutorial_sendrecv_cxx2 \
+  test_tutorial_1d_integrator_c
+if FC_ENABLE
+  TUTORIALTESTS += \
+    test_tutorial_sendrecv_f90 \
+    test_tutorial_1d_integrator_f90
+endif
+
+# Eventually experimental tutorials will be moved to top level tutorials
+tutorials:
+	rm -fr tutorials
+	cp -fpR $(top_srcdir)/tutorials .
+	chmod -R u+w tutorials # required for make distcheck (makes files r/o)
+
+$(TUTORIALTESTS:test_tutorial_%=tutorials/%/runsstmac): tutorials
+	cd `dirname $@`; PATH=$(bindir):$$PATH $(MAKE)
+
+TUTORIALS_ENV = DYLD_LIBRARY_PATH=$(libdir):$(DYLD_LIBRARY_PATH) \
+  LD_LIBRARY_PATH=$(libdir):$(LD_LIBRARY_PATH)
+
+test_tutorial_%.$(CHKSUF): tutorials/%/runsstmac
+	cd `dirname $<`; $(TUTORIALS_ENV) ./`basename $<` \
+          --no-wall-time > ../../$@
+
+#------------------------------------------------------------------------------------------#
+endif
+

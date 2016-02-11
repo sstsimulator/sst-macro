@@ -1,0 +1,39 @@
+\documentclass{article}
+
+
+\usepackage[paperwidth=3.7in, paperheight=3.75in]{geometry}
+\setlength{\textheight}{4.3in}
+\setlength{\textwidth}{4.3in}
+\setlength{\hoffset}{-1.15in}
+\setlength{\voffset}{-0.9in}
+
+\setlength{\oddsidemargin}{0pt}
+\setlength{\evensidemargin}{0pt}
+\setlength{\marginparwidth}{0pt}
+\setlength{\marginparsep}{0pt}
+\setlength{\topmargin}{0pt}
+\setlength{\headheight}{0pt}
+\setlength{\headsep}{0pt}
+\setlength{\footskip}{0pt}
+
+
+
+\newcommand{\tikzLibFolder}{/Users/jjwilke/Programs/sstmacro/docs/manual/figures/tikz}
+
+\input{\tikzLibFolder/tikzlib.tex}
+\usetikzlibrary{backgrounds}
+
+\begin{document}
+\pagenumbering{gobble}
+\begin{tikzpicture} %[framed]
+\useasboundingbox (-1.8in,-1.6in) rectangle (1.8in,2.1in);
+\torus{4}{4}{2cm}{0.7cm}{0cm,0cm}
+\draw [very thick,color=red,->] (mesh11BxRC) -- (mesh12TxRC);
+\draw [very thick,color=red,->] (mesh12TCxR) -- (mesh22TCxL);
+\draw [very thick,color=red,->] (mesh22BxRC) -- (mesh23TxRC);
+\draw [very thick,color=red,->] (mesh23TCxR) -- (mesh33TCxL);
+\myRectangleFromPoints{fill=red}{mesh11BxL}{mesh11TxR}
+\myRectangleFromPoints{fill=red}{mesh33BxL}{mesh33TxR}
+\end{tikzpicture}
+\end{document}
+

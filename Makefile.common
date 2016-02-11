@@ -1,0 +1,11 @@
+AM_CPPFLAGS = -I$(top_builddir) -I$(top_srcdir) -I$(top_srcdir)/sprockit -I$(top_builddir)/sprockit
+
+if USE_CUSTOM_NEW
+AM_CPPFLAGS += -DUSE_CUSTOM_NEW -include sprockit/spkt_new.h
+endif
+
+if EXTERNAL_BOOST
+  AM_CPPFLAGS += $(BOOST_CPPFLAGS)
+else
+  AM_CPPFLAGS += -I$(top_srcdir)/sprockit/boost
+endif

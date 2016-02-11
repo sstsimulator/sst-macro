@@ -1,0 +1,12 @@
+Model 0
+[7,7]((0.0,0.0,0.0,0.0,0.0,0.0,-1.0,),(-1.0,0.0,0.0,0.0,0.0,0.0,0.0,),(0.0,1.0,0.0,0.0,0.0,0.0,0.0,),(0.0,0.0,1.0,0.0,0.0,0.0,0.0,),(0.0,0.0,0.0,1.0,0.0,0.0,0.0,),(0.0,0.0,0.0,0.0,1.0,0.0,0.0,),(0.0,0.0,0.0,0.0,0.0,1.0,0.0,),)
+[2](17860543673.6,-84722.0902288,)
+1 0 -2
+1 0 -1
+force_compute_MPIrank
+force_compute_my_nall
+force_compute_atom.nlocal
+force_compute_cutforcesq
+force_compute_MPIsize
+force_compute_neighbor.halfneigh
+force_compute_neighbor.ghost_newton

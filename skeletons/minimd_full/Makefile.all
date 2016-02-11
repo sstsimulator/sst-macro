@@ -1,0 +1,92 @@
+# Makefile for mpicxx compiler
+
+SHELL = /bin/sh
+#.IGNORE:
+
+# System-specific settings
+
+CXX =		mpicxx
+CCFLAGS =	-O3 -DMPICH_IGNORE_CXX_SEEK -DPRECISION=2
+LINK =		mpicxx 
+LINKFLAGS =	-O3
+#USRLIB = 	-lrt
+USRLIB = 	
+SYSLIB =	-lpthread
+SIZE =		size
+
+ifeq ($(SSTMAC),y)
+CXX :=   sst++
+LINK = $(CXX)
+CC := sstcc
+CXXFLAGS := $
+CCFLAGS += $(SKELETON_DEFINES)
+LIBDIR :=  
+PREFIX :=   
+LINKFLAGS += -Wl,-rpath,$(PREFIX)/lib
+SSTGEN = 
+
+ifeq ($(LOOP),y)
+CCFLAGS += -D_USE_LOOP_MODEL
+endif
+endif
+
+# set profiling option. default is off. Settable from command line as
+# make clean; make LWPERF=some_value
+LWPERF =EIGER
+LWPERF =FAKEEIGER
+LWPERF =CSV
+LWPERF =
+
+# set eiger root directory
+EIGERINCLUDE = /usr/local/include/eiger
+EIGERLIBDIR = /usr/local/lib
+LWPDIR = $(HOME)/eiger/lwperf/src
+# compute perf files and rules
+ifneq ($(LWPERF),)
+LWTOOLINC = -I$(LWPDIR) -I.
+LWTOOLINC += -DLWP_DBNAME='"minimd"' -I$(EIGERINCLUDE)
+LWPGEN = InitFuncs.h LocationElements.h InitSwitchElements.h cperf._log.h cperf._save.h cperf._stop.h
+LWPSRC = perf.cpp 
+ifeq ($(LWPERF),CSV)
+LWPSRC += csvbackend.cpp 
+LWTOOLINC += -D_USE_CSV 
+endif
+ifeq ($(LWPERF),EIGER)
+LWPSRC += eigerbackend.cpp 
+EIGERLIB = -L$(EIGERLIBDIR) -leigerInterface 
+# add eiger build flags
+LWTOOLINC += -D_USE_EIGER 
+endif
+ifeq ($(LWPERF),FAKEEIGER)
+LWPSRC += eigerbackend.cpp 
+EIGERLIB = -L$(EIGERLIBDIR) -lmpifakeeigerInterface 
+LWTOOLINC += -D_USE_FAKEEIGER 
+endif
+ifeq ($(LWPERF),MODEL)
+LWTOOLINC += -D_USE_EIGER_MODEL
+endif
+LWPOBJ = $(LWPSRC:.cpp=.o)
+endif
+CCFLAGS += $(LWTOOLINC)
+USRLIB += $(EIGERLIB)
+SRC += $(LWPSRC)
+OBJ += $(LWPSRC:.cpp=.o)
+VPATH += $(LWPDIR)
+
+$(LWPGEN): $(SRC)
+	$(LWPDIR)/updateLoggersCXX.sh $(SRC)
+
+# Link rule
+
+$(EXE):	$(OBJ) $(LWPOBJ)
+	$(LINK) $(LWPOBJ) $(OBJ) $(USRLIB) $(SYSLIB) -o $(EXE) $(LINKFLAGS)
+	$(SIZE) $(EXE)
+
+# Compilation rules
+
+.cpp.o: 
+	$(CXX) $(CCFLAGS) -c $<
+
+# Individual dependencies
+
+$(OBJ): $(INC) $(LWPGEN)

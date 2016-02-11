@@ -1,0 +1,137 @@
+% !TEX root = developer.tex
+
+\chapter{How \sstmacro Launches}
+\label{chapter:launching}
+
+It is useful for an intuitive understanding of the code to walk through the steps starting from \inlinecode{main} and proceeding to the discrete event simulation actually launching. The code follows these basic steps:
+
+\begin{enumerate}
+\item Configuration of the simulation via environment variables, command line parameters, and the input file
+\item Building and configuration of simulator components
+\item Running of the actual simulation
+\end{enumerate}
+
+We can walk through each of these steps in more detail.
+
+\section{Configuration of Simulation}
+The configuration proceeds through the following basic steps:
+\begin{enumerate}
+\item Basic initialization of the \inlinecode{parallel_runtime} object from environment variables and command line parameters
+\item Processing and parallel broadcast of the input file parameters
+\item Creation of the simulation \inlinecode{manager} object
+\item Detailed configuration of the \inlinecode{manager} and \inlinecode{parallel_runtime} object
+
+The first step in most programs is to initialize the parallel communication environment via calls to MPI\_Init or similar.
+Only rank 0 should read in the input file to minimize filesystem traffic in a parallel job.
+Rank 0 then broadcasts the parameters to all other ranks.
+We are thus left with the problem of wanting to tune initialization of the parallel environment via the input file,
+but the input file is not yet available.
+Thus, we have an initial bootstrap step where the all parameters affecting initialization of the parallel runtime must be given
+either via command line parameters or environment variables.
+These automatically get distributed to all processes via the job launcher.
+Most critically the environment variable \inlineshell{SSTMC_PARALLEL} takes on values of \inlineshell{serial} or \inlineshell{mpi}.
+
+As stated above, only rank 0 ever touches the filesystem.
+A utility is provided within the Sprockit library for automatically distributing files via the \inlinecode{parallel_build_params} function within \inlinecode{sim_parameters}.
+Once broadcast, all ranks now have all they need to configure, setup, and run.
+Some additional processing is done here to map parameters.
+If parameters are missing, \sstmacro may fill in sensible defaults at this stage.
+For deprecated parameters, \sstmacro also does some remapping to ensure backwards compatibility.
+
+After creation of the \inlinecode{manager} object, 
+since all of the parameters even from the input file are now available,
+a more detailed configuration of the \inlinecode{manager} and \inlinecode{parallel_runtime} can be done.
+
+\section{Building and configuration of simulator components}
+Inside the function \inlinecode{mgr->init_factory_params},
+the simulation manager now proceeds to build all the necessary components.
+There are three basic classes of components to build.
+
+\begin{itemize}
+\item The event manager that drives the discrete event simulation
+\item The interconnect object that directs the creation of all the hardware components
+\item The generation of application objects that will drive the software events
+\end{itemize}
+
+\subsection{Event Manager}
+The \inlinecode{event_manager} object is a polymorphic type that depends on 1) what sort of parallelism is being used and 2) what sort of data structure is being used.
+Some allowed values include \inlineshell{event_map} or \inlineshell{event_calendar} via the \inlineshell{event_manager} variable in the input file.
+For parallel simulation, only the \inlineshell{event_map} data structure is currently supported.
+For MPI parallel simulations, the \inlineshell{event_manager} parameter should be set to \inlineshell{clock_cycle_parallel}.
+For multithreaded simulations (single process or coupled with MPI), this should be set to \inlineshell{multithread}.
+In most cases, \sstmacro chooses a sensible default based on the configuration and installation.
+
+As of right now, the event manager is also responsible for partitioning the simulation.
+This may be refactored in future versions.
+This creates something of a circular dependency between the \inlinecode{event_manager} and the \inlinecode{interconnect} objects.
+When scheduling events and sending events remotely,
+it is highly convenient to have the partition information accessible by the event manager.
+For now, the event manager reads the topology information from the input file.
+It then determines the total number of hardware components and does the partitioning.
+This partitioning object is passed on to the interconnect.
+
+\subsection{Interconnect}
+The interconnect is the workhorse for building all hardware components.
+After receiving the partition information from the \inlinecode{event_manager},
+the interconnect creates all the nodes, switches, and NICs the current MPI rank is responsible for.
+In parallel runs, each MPI rank only gets assigned a unique, disjoint subset of the components.
+The interconnect then also creates all the connections between components that are linked based on the topology input (see Section \ref{sec:connectables}).
+For components that are not owned by the current MPI rank, the interconnect inserts a dummy handler that informs the \inlinecode{event_manager}
+that the message needs to be re-routed to another MPI rank.
+
+\subsection{Applications}
+All events generated in the simulation ultimately originate from application objects.
+All hardware events start from real application code.
+To generate application objects,
+the manager first calls \inlinecode{build_apps}, which loops through and finds all the applications to be launched.
+It then builds a template object, which will be used to launch all the individual instances of the application.
+
+Every application gets assigned a \inlinecode{software_id}, which is a struct containing a \inlinecode{task_id} and \inlinecode{app_id}.
+The task ID identifies the process number (essentially MPI rank). 
+The application ID identifies which currently running application instance is being used.
+This is really only relevant in cases like in situ analysis where two distinct applications are running.
+In most cases, only a single application is being used, in which case the application ID is always zero.
+The simulation manager depends on an \inlinecode{app_manager} object that keeps track of the mapping between software IDs and the actual physical nodes that are running the apps.
+
+To actually launch the app, we have the following code:
+
+\begin{CppCode}
+void
+manager::launch_app(int appnum, timestamp start, sw::app_manager* appman)
+{
+  appman->allocate_and_index_jobs();
+  launch_info* linfo = appman->launch_info();
+  sstmac::sw::app_id aid(appnum);
+  for (int i=0; i < appman->nproc(); ++i) {
+    node_id dst_nid = appman->node_assignment(i);
+    sstmac_runtime::register_node(aid, task_id(i), dst_nid);
+
+    hw::node* dst_node = interconnect_->node_at(dst_nid);
+    if (!dst_node) {
+      // mpiparallel, this node belongs to someone else
+      continue;
+    }
+
+    sw::launch_message::ptr lmsg = new launch_message(linfo, sw::launch_message::ARRIVE, task_id(i));
+    int dstthread = dst_node->thread_id();
+    event_manager_->ev_man_for_thread(dstthread)->schedule(start, new handler_event(lmsg, dst_node));
+  }
+\end{CppCode}
+Here the application manager first allocates the correct number of nodes and indexes (assigns task numbers to nodes).
+This is detailed in the user's manual.
+The application manager has a launch info object that contains all the information needed to launch a new instance of the application on each node.
+The application manager then loops through all processes it is supposed to launch,
+queries for the correct node assignment,
+and fetches the physical node that will launch the application.
+If a null node is returned, that indicates the physical node is owned by another MPI rank and should be skipped.
+Finally a launch message containing the launch info is scheduled to arrive at the node.
+When the node receives the launch message, it will actually create the application object and pass it off to the \inlinecode{operating_system} object to allocate stack resources and start it running.
+
+\section{Running}
+Now that all hardware components have been created and all application objects have been assigned to physical nodes,
+the \inlinecode{event_manager} created above is started.
+It begins looping through all events in the queue ordered by timestamp and runs them.
+As stated above, all events originate from application code.
+Thus, the first events to run are always the application launch events generated from the launch messages sent to the nodes.
+
+\end{enumerate}

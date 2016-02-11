@@ -1,0 +1,58 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{sstmacro}
+
+% Packages used by this style file
+\RequirePackage{listings}
+
+
+\newenvironment{subItemize}{
+\begin{itemize}
+}{
+\end{itemize}
+}
+
+\lstnewenvironment{CppCode}{%
+ %
+ \scriptsize%
+ \lstset{language=C++,% 
+   backgroundcolor=\color{white},%
+   basicstyle=\ttfamily,%
+   showstringspaces=false,%
+   frame=single,% 
+   numbers=left,% 
+   tabsize=2,% 
+   commentstyle=\color{dkgreen},%
+   keywordstyle=\color{red}}%
+}{%
+ \normalsize%
+}
+
+\definecolor{light-gray}{gray}{0.85}
+
+\lstnewenvironment{ShellCmd}{%
+ %
+ \scriptsize%
+ \lstset{language=sh,%
+ backgroundcolor=\color{light-gray},% 
+ showstringspaces=false,%
+ frame=none,% 
+ numbers=none,% 
+ tabsize=2}%
+}{%
+ \normalsize%
+}
+
+\lstnewenvironment{ViFile}{%
+    %
+ \scriptsize%
+ \lstset{language=sh,%
+ backgroundcolor=\color{white},% 
+ commentstyle=\color{dkgreen},%
+ keywordstyle=\color{red},%
+ frame=single,% 
+ numbers=left,% 
+ tabsize=2}%
+}{%
+ \normalsize%
+}
+

@@ -1,0 +1,66 @@
+#! /usr/bin/env python
+
+intensities = [1.0, 2.0, 4.0]
+mixing = [1,4,8]
+scatter = [1,4]
+
+from traffic import getVals, absError, run
+
+
+
+l="amm3"
+r="amm4"
+
+def scenario(**kwargs):
+  return kwargs
+
+scenarios = [
+  scenario(intensity=4.0, mixing=2, scatter=4, routing="minimal")
+]
+
+idx = 0
+for sc in scenarios:
+    i,m,s,rtr,scale = entry
+    
+    l = ""
+    r = ""
+    if idx < 2:
+      l = "amm1"
+      r = "amm3"
+    else:
+      l = "amm3"
+      r = "amm4"
+
+    text = """
+intensity=%f
+mixing=%d
+scatter=%d
+niterations=3
+    """ % (sc["intensity"], sc["mixing"], sc["scatter"])
+    open("input.ini","w").write(text)
+
+    print "Scenario %d: %s vs %s" % (idx, l, r)
+    print "input.ini"
+    print text.strip()
+    print 
+    print "parameters.ini"
+    print "router=%s" % rtr
+    print
+    print
+    idx += 1
+    continue
+
+    run(l, router=rtr, scale_network_bandwidth=scale)
+    run(r, router=rtr)
+    lvals = getVals(l)
+    rvals = getVals(r)
+    err = absError(lvals, rvals)
+    ltput = avgTput(lvals)
+    rtput = avgTput(rvals)
+    lscatter = scatter(lvals)
+    rscatter = scatter(rvals)
+    pe = err / ltput
+    print "%8s:%s:%s I=%4.2f M=%d S=%2d: %12.8f %12.8f %12.8f--%12.8f %12.8f--%12.8f" % (rtr.upper(), l, r, i, m, s, err, pe, ltput, rtput, lscatter, rscatter)
+
+
+

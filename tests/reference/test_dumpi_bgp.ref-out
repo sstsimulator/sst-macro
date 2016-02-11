@@ -1,0 +1,118 @@
+nrank: 7
+dumpi_indexer: rank 0 is on hostname R00-M1-N01-J01.challenger at nid=0
+dumpi_indexer: rank 1 is on hostname R00-M1-N01-J01.challenger at nid=0
+dumpi_indexer: rank 2 is on hostname R00-M1-N01-J01.challenger at nid=0
+dumpi_indexer: rank 3 is on hostname R00-M1-N01-J01.challenger at nid=0
+dumpi_indexer: rank 4 is on hostname R00-M1-N01-J01.challenger at nid=1
+dumpi_indexer: rank 5 is on hostname R00-M1-N01-J01.challenger at nid=1
+dumpi_indexer: rank 6 is on hostname R00-M1-N01-J01.challenger at nid=1
+Allocated and indexed 7 nodes
+Rank 0 -> nid0 [ 0 0 0 0 ]
+Rank 1 -> nid0 [ 0 0 0 0 ]
+Rank 2 -> nid0 [ 0 0 0 0 ]
+Rank 3 -> nid0 [ 0 0 0 0 ]
+Rank 4 -> nid1 [ 0 0 0 1 ]
+Rank 5 -> nid1 [ 0 0 0 1 ]
+Rank 6 -> nid1 [ 0 0 0 1 ]
+DUMPI trace   1 percent complete
+DUMPI trace   2 percent complete
+DUMPI trace   3 percent complete
+DUMPI trace   4 percent complete
+DUMPI trace   5 percent complete
+DUMPI trace   6 percent complete
+DUMPI trace   7 percent complete
+DUMPI trace   8 percent complete
+DUMPI trace   9 percent complete
+DUMPI trace  10 percent complete
+DUMPI trace  11 percent complete
+DUMPI trace  12 percent complete
+DUMPI trace  13 percent complete
+DUMPI trace  14 percent complete
+DUMPI trace  15 percent complete
+DUMPI trace  16 percent complete
+DUMPI trace  17 percent complete
+DUMPI trace  18 percent complete
+DUMPI trace  19 percent complete
+DUMPI trace  20 percent complete
+DUMPI trace  21 percent complete
+DUMPI trace  22 percent complete
+DUMPI trace  23 percent complete
+DUMPI trace  24 percent complete
+DUMPI trace  25 percent complete
+DUMPI trace  26 percent complete
+DUMPI trace  27 percent complete
+DUMPI trace  28 percent complete
+DUMPI trace  29 percent complete
+DUMPI trace  30 percent complete
+DUMPI trace  31 percent complete
+DUMPI trace  32 percent complete
+DUMPI trace  33 percent complete
+DUMPI trace  34 percent complete
+DUMPI trace  35 percent complete
+DUMPI trace  36 percent complete
+DUMPI trace  37 percent complete
+DUMPI trace  38 percent complete
+DUMPI trace  39 percent complete
+DUMPI trace  40 percent complete
+DUMPI trace  41 percent complete
+DUMPI trace  42 percent complete
+DUMPI trace  43 percent complete
+DUMPI trace  44 percent complete
+DUMPI trace  45 percent complete
+DUMPI trace  46 percent complete
+DUMPI trace  47 percent complete
+DUMPI trace  48 percent complete
+DUMPI trace  49 percent complete
+DUMPI trace  50 percent complete
+DUMPI trace  51 percent complete
+DUMPI trace  52 percent complete
+DUMPI trace  53 percent complete
+DUMPI trace  54 percent complete
+DUMPI trace  55 percent complete
+DUMPI trace  56 percent complete
+DUMPI trace  57 percent complete
+DUMPI trace  58 percent complete
+DUMPI trace  59 percent complete
+DUMPI trace  60 percent complete
+DUMPI trace  61 percent complete
+DUMPI trace  62 percent complete
+DUMPI trace  63 percent complete
+DUMPI trace  64 percent complete
+DUMPI trace  65 percent complete
+DUMPI trace  66 percent complete
+DUMPI trace  67 percent complete
+DUMPI trace  68 percent complete
+DUMPI trace  69 percent complete
+DUMPI trace  70 percent complete
+DUMPI trace  71 percent complete
+DUMPI trace  72 percent complete
+DUMPI trace  73 percent complete
+DUMPI trace  74 percent complete
+DUMPI trace  75 percent complete
+DUMPI trace  76 percent complete
+DUMPI trace  77 percent complete
+DUMPI trace  78 percent complete
+DUMPI trace  79 percent complete
+DUMPI trace  80 percent complete
+DUMPI trace  81 percent complete
+DUMPI trace  82 percent complete
+DUMPI trace  83 percent complete
+DUMPI trace  84 percent complete
+DUMPI trace  85 percent complete
+DUMPI trace  86 percent complete
+DUMPI trace  87 percent complete
+DUMPI trace  88 percent complete
+DUMPI trace  89 percent complete
+DUMPI trace  90 percent complete
+DUMPI trace  91 percent complete
+DUMPI trace  92 percent complete
+DUMPI trace  93 percent complete
+DUMPI trace  94 percent complete
+DUMPI trace  95 percent complete
+DUMPI trace  96 percent complete
+DUMPI trace  97 percent complete
+DUMPI trace  98 percent complete
+DUMPI trace  99 percent complete
+DUMPI trace 100 percent complete
+Parsedumpi finalized on rank 0.  Trace run successful!
+Estimated total runtime of           0.00870288 seconds

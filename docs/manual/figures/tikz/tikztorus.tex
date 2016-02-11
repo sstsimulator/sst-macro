@@ -1,0 +1,30 @@
+
+\newcommand{\torus}[5]{
+	\mesh{#1}{#2}{#3}{#4}{#5}
+	
+     \foreach \y in {1,...,\meshNumY}
+    {
+     \path (mesh1\y TxL) + (-0.5\meshLength,0) coordinate (wrap\y AnchorLeft);
+     \path (mesh1\y TxL) + (0.5\meshXSize, 0.5\meshBoxHeight) coordinate (wrap\y AnchorMiddle);
+     \path (mesh\meshNumY\y TxR) + (0.5 \meshLength,0) coordinate (wrap\y AnchorRight);
+     \path (mesh1\y CxL) + (0,0) coordinate (wrap\y AnchorStart);
+     \path (mesh\meshNumY\y CxR) + (0,0) coordinate (wrap\y AnchorEnd);
+
+	\draw[] plot [smooth,tension=1.0] coordinates{
+		(wrap\y AnchorStart) (wrap\y AnchorLeft) (wrap\y AnchorMiddle) (wrap\y AnchorRight) (wrap\y AnchorEnd)
+	};
+    }
+
+     \foreach \x in {1,...,\meshNumX}
+    {
+     \path (mesh\x 1TxL) + (0,0.5\meshLength) coordinate (wrap\x AnchorTop);
+     \path (mesh\x 1TxL) + (-0.5\meshBoxWidth, -0.5\meshXSize) coordinate (wrap\x AnchorMiddle);
+     \path (mesh\x\meshNumX BxL) + (0, -0.5 \meshLength) coordinate (wrap\x AnchorBottom);
+     \path (mesh\x\meshNumX BxC) + (0,0) coordinate (wrap\x AnchorEnd);
+     \path (mesh\x 1TxC) + (0,0) coordinate (wrap\x AnchorStart);
+
+	\draw[] plot [smooth,tension=1.0] coordinates{
+		(wrap\x AnchorStart) (wrap\x AnchorTop) (wrap\x AnchorMiddle) (wrap\x AnchorBottom) (wrap\x AnchorEnd)
+	};
+    }	
+}

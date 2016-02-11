@@ -1,0 +1,41 @@
+#
+#   This file is part of SST/macroscale: 
+#                The macroscale architecture simulator from the SST suite.
+#   Copyright (c) 2009 Sandia Corporation.
+#   This software is distributed under the BSD License.
+#   Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+#   the U.S. Government retains certain rights in this software.
+#   For more information, see the LICENSE file in the top 
+#   SST/macroscale directory.
+#
+
+include $(top_srcdir)/Makefile.common
+
+library_includedir=$(includedir)/sstmac/replacements
+
+nobase_library_include_HEADERS = \
+  mpi.h 
+
+if USE_REPLACEMENT_HEADERS
+nobase_library_include_HEADERS += \
+  fstream \
+  iostream \
+  istream \
+  list \
+  map \
+  memory \
+  pthread.h \
+  queue \
+  sstream \
+  stack \
+  string \
+  vector \
+  signal.h \
+  sstmac_pthread_clear.h \
+  sstmac_pthread_return.h \
+  linux/mmtimer.h \
+  sys/types.h \
+  sys/time.h \
+  sys/signal.h
+endif
+

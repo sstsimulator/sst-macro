@@ -1,0 +1,113 @@
+\documentclass{article}
+
+\newcommand{\tikzLibFolder}{/Users/jjwilke/Programs/sstmacro/docs/manual/figures/tikz}
+
+\input{\tikzLibFolder/tikzlib.tex}
+
+\usepackage[paperwidth=3.7in, paperheight=3.75in]{geometry}
+\setlength{\textheight}{4.3in}
+\setlength{\textwidth}{4.3in}
+\setlength{\hoffset}{-1.15in}
+\setlength{\voffset}{-0.9in}
+
+\setlength{\oddsidemargin}{0pt}
+\setlength{\evensidemargin}{0pt}
+\setlength{\marginparwidth}{0pt}
+\setlength{\marginparsep}{0pt}
+\setlength{\topmargin}{0pt}
+\setlength{\headheight}{0pt}
+\setlength{\headsep}{0pt}
+\setlength{\footskip}{0pt}
+\usetikzlibrary{backgrounds}
+
+\newcommand{\textsize}{\scriptsize}
+\newcommand{\sizeZero}{1.5cm}
+\newcommand{\sepZero}{2.0cm}
+\newcommand{\sizeOne}{1cm}
+\newcommand{\sepOne}{2.0cm}
+\newcommand{\sizeTwo}{0.8cm}
+\newcommand{\sepTwo}{1.4cm}
+\newcommand{\sizeThree}{0.6cm}
+\newcommand{\sepThree}{1.0cm}
+
+\begin{document}
+\begin{tikzpicture}
+\useasboundingbox (-1.8in,-1.6in) rectangle (1.8in,2.1in);
+\boxGrid{1}{1}{\sepZero}{\sizeZero}{\sizeZero}{0cm,2cm}{}{levelZero}
+\boxGrid{2}{1}{\sepOne}{\sizeOne}{\sizeOne}{0cm, 0.5cm}{}{levelOne}
+\boxGrid{4}{1}{\sepTwo}{\sizeTwo}{\sizeTwo}{0cm,-1cm}{}{levelTwo}
+\boxGrid{8}{1}{\sepThree}{\sizeThree}{\sizeThree}{0cm,-2.5cm}{}{levelThree}
+\boxGrid{16}{1}{0.57cm}{0.4cm}{0.25cm}{0cm,-3cm}{}{nodes}
+
+\myRectangle{fill=red!50}{levelZeromesh11BxL}{\sizeZero,\sizeZero}
+\myRectangle{fill=blue!50}{levelOnemesh11BxL}{\sizeOne,\sizeOne}
+\myRectangle{fill=brown}{levelOnemesh21BxL}{\sizeOne,\sizeOne}
+\myRectangle{fill=cyan}{levelTwomesh11BxL}{\sizeTwo,\sizeTwo}
+\myRectangle{fill=red}{levelTwomesh21BxL}{\sizeTwo,\sizeTwo}
+\myRectangle{fill=green}{levelTwomesh31BxL}{\sizeTwo,\sizeTwo}
+\myRectangle{fill=orange}{levelTwomesh41BxL}{\sizeTwo,\sizeTwo}
+\myRectangle{fill=white}{levelThreemesh11BxL}{\sizeThree,\sizeThree}
+\myRectangle{fill=gray}{levelThreemesh21BxL}{\sizeThree,\sizeThree}
+\myRectangle{fill=white}{levelThreemesh31BxL}{\sizeThree,\sizeThree}
+\myRectangle{fill=gray}{levelThreemesh41BxL}{\sizeThree,\sizeThree}
+\myRectangle{fill=white}{levelThreemesh51BxL}{\sizeThree,\sizeThree}
+\myRectangle{fill=gray}{levelThreemesh61BxL}{\sizeThree,\sizeThree}
+\myRectangle{fill=white}{levelThreemesh71BxL}{\sizeThree,\sizeThree}
+\myRectangle{fill=gray}{levelThreemesh81BxL}{\sizeThree,\sizeThree}
+
+\node at (0cm,-3.2cm) { Compute Nodes };
+\myRectangle{fill=yellow}{nodesmesh11BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh21BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh31BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh41BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh51BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh61BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh71BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh81BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh91BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh101BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh111BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh121BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh131BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh141BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh151BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh161BxL}{0.4cm,0.25cm}
+
+\draw [thick] (levelThreemesh11TxC) -- (levelTwomesh11BxC);
+\draw [thick] (levelThreemesh21TxC) -- (levelTwomesh11BxC);
+\draw [thick] (levelThreemesh31TxC) -- (levelTwomesh21BxC);
+\draw [thick] (levelThreemesh41TxC) -- (levelTwomesh21BxC);
+\draw [thick] (levelThreemesh51TxC) -- (levelTwomesh31BxC);
+\draw [thick] (levelThreemesh61TxC) -- (levelTwomesh31BxC);
+\draw [thick] (levelThreemesh71TxC) -- (levelTwomesh41BxC);
+\draw [thick] (levelThreemesh81TxC) -- (levelTwomesh41BxC);
+
+\draw [thick] (levelTwomesh11TxC) -- (levelOnemesh11BxC);
+\draw [thick] (levelTwomesh21TxC) -- (levelOnemesh11BxC);
+\draw [thick] (levelTwomesh31TxC) -- (levelOnemesh21BxC);
+\draw [thick] (levelTwomesh41TxC) -- (levelOnemesh21BxC);
+
+\draw [thick] (levelOnemesh11TxC) -- (levelZeromesh11BxC);
+\draw [thick] (levelOnemesh21TxC) -- (levelZeromesh11BxC);
+
+\draw [thick] (nodesmesh11TxC) -- (levelThreemesh11BxC);
+\draw [thick] (nodesmesh21TxC) -- (levelThreemesh11BxC);
+\draw [thick] (nodesmesh31TxC) -- (levelThreemesh21BxC);
+\draw [thick] (nodesmesh41TxC) -- (levelThreemesh21BxC);
+\draw [thick] (nodesmesh51TxC) -- (levelThreemesh31BxC);
+\draw [thick] (nodesmesh61TxC) -- (levelThreemesh31BxC);
+\draw [thick] (nodesmesh71TxC) -- (levelThreemesh41BxC);
+\draw [thick] (nodesmesh81TxC) -- (levelThreemesh41BxC);
+\draw [thick] (nodesmesh91TxC) -- (levelThreemesh51BxC);
+\draw [thick] (nodesmesh101TxC) -- (levelThreemesh51BxC);
+\draw [thick] (nodesmesh111TxC) -- (levelThreemesh61BxC);
+\draw [thick] (nodesmesh121TxC) -- (levelThreemesh61BxC);
+\draw [thick] (nodesmesh131TxC) -- (levelThreemesh71BxC);
+\draw [thick] (nodesmesh141TxC) -- (levelThreemesh71BxC);
+\draw [thick] (nodesmesh151TxC) -- (levelThreemesh81BxC);
+\draw [thick] (nodesmesh161TxC) -- (levelThreemesh81BxC);
+
+
+\end{tikzpicture}
+\end{document}
+

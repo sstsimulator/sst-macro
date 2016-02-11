@@ -1,0 +1,210 @@
+Testing torus...
+Testing fat tree...
+Testing crossbar...
+Testing butterfly...
+Testing fbfly...
+Testing dragonfly...
+WARNING: requested 4 group connections, but max allowable is 3 for 4 groups - resetting value
+SUCCESS: torus cast topology top_hdtorus.cc:22
+SUCCESS: node id top_hdtorus.cc:30
+SUCCESS: coord transform top_hdtorus.cc:31
+SUCCESS: num tornado partners top_hdtorus.cc:36
+SUCCESS: tornado partner top_hdtorus.cc:38
+SUCCESS: num NN partners top_hdtorus.cc:42
+SUCCESS: NN partner top_hdtorus.cc:44
+SUCCESS: NN partner top_hdtorus.cc:46
+SUCCESS: NN partner top_hdtorus.cc:48
+SUCCESS: NN partner top_hdtorus.cc:50
+SUCCESS: NN partner top_hdtorus.cc:52
+SUCCESS: NN partner top_hdtorus.cc:54
+SUCCESS: num tornado partners top_hdtorus.cc:58
+SUCCESS: tornado partner top_hdtorus.cc:60
+SUCCESS: torus cast topology top_hdtorus.cc:75
+SUCCESS: torus switch id top_hdtorus.cc:85
+SUCCESS: torus coords top_hdtorus.cc:86
+SUCCESS: torus switch id top_hdtorus.cc:85
+SUCCESS: torus coords top_hdtorus.cc:86
+SUCCESS: torus switch id top_hdtorus.cc:85
+SUCCESS: torus coords top_hdtorus.cc:86
+SUCCESS: torus switch id top_hdtorus.cc:85
+SUCCESS: torus coords top_hdtorus.cc:86
+SUCCESS: torus node coords top_hdtorus.cc:94
+SUCCESS: torus node id mapping top_hdtorus.cc:95
+SUCCESS: torus switch coords top_hdtorus.cc:102
+SUCCESS: torus switch id mapping top_hdtorus.cc:103
+SUCCESS: torus switch coords mapping top_hdtorus.cc:110
+SUCCESS: torus switch id top_hdtorus.cc:111
+SUCCESS: torus node coords mapping top_hdtorus.cc:118
+SUCCESS: torus node id top_hdtorus.cc:119
+SUCCESS: torus dir top_hdtorus.cc:133
+SUCCESS: torus dir top_hdtorus.cc:139
+SUCCESS: torus dir top_hdtorus.cc:145
+SUCCESS: torus dir top_hdtorus.cc:151
+SUCCESS: torus dir top_hdtorus.cc:157
+SUCCESS: torus dir top_hdtorus.cc:166
+SUCCESS: torus dir top_hdtorus.cc:172
+SUCCESS: torus dir top_hdtorus.cc:178
+SUCCESS: torus dir top_hdtorus.cc:184
+SUCCESS: torus dir top_hdtorus.cc:190
+SUCCESS: torus cast topology top_hdtorus.cc:213
+SUCCESS: src sw coords top_hdtorus.cc:224
+SUCCESS: valiant middle switch top_hdtorus.cc:241
+SUCCESS: valiant first switch top_hdtorus.cc:243
+SUCCESS: torus outport to dim top_hdtorus.cc:245
+SUCCESS: torus outport to dir top_hdtorus.cc:246
+SUCCESS: next valiant step dim top_hdtorus.cc:281
+SUCCESS: next valiant step dir top_hdtorus.cc:282
+SUCCESS: final dst coords top_hdtorus.cc:302
+SUCCESS: next valiant step dim top_hdtorus.cc:317
+SUCCESS: next valiant step dir top_hdtorus.cc:318
+SUCCESS: fat tree cast topology top_fattree.cc:74
+SUCCESS: ftree switch id top_fattree.cc:87
+SUCCESS: ftree coords top_fattree.cc:88
+SUCCESS: ftree switch id top_fattree.cc:87
+SUCCESS: ftree coords top_fattree.cc:88
+SUCCESS: ftree switch id top_fattree.cc:87
+SUCCESS: ftree coords top_fattree.cc:88
+SUCCESS: ftree switch id top_fattree.cc:87
+SUCCESS: ftree coords top_fattree.cc:88
+SUCCESS: ftree switch id top_fattree.cc:87
+SUCCESS: ftree coords top_fattree.cc:88
+SUCCESS: ftree switch id top_fattree.cc:87
+SUCCESS: ftree coords top_fattree.cc:88
+SUCCESS: fat tree coord check top_fattree.cc:111
+SUCCESS: fat tree coord check top_fattree.cc:117
+SUCCESS: fat tree coord check top_fattree.cc:123
+SUCCESS: fat tree coord check top_fattree.cc:129
+SUCCESS: fat tree coord check top_fattree.cc:135
+SUCCESS: route fat tree top_fattree.cc:148
+SUCCESS: fat tree dim/dir top_fattree.cc:150
+SUCCESS: route fat tree top_fattree.cc:156
+SUCCESS: fat tree dim/dir top_fattree.cc:158
+SUCCESS: route fat tree top_fattree.cc:163
+SUCCESS: route fat tree top_fattree.cc:177
+SUCCESS: fat tree dim/dir top_fattree.cc:179
+SUCCESS: fat tree dim/dir top_fattree.cc:186
+SUCCESS: route fat tree top_fattree.cc:191
+SUCCESS: route fat tree top_fattree.cc:196
+SUCCESS: fat tree dim/dir top_fattree.cc:198
+SUCCESS: route fat tree from top top_fattree.cc:211
+SUCCESS: fat tree dim/dir at top top_fattree.cc:213
+SUCCESS: route fat tree top_fattree.cc:217
+SUCCESS: fat tree dim/dir at top top_fattree.cc:219
+SUCCESS: route fat tree top_fattree.cc:223
+SUCCESS: fat tree dim/dir at top top_fattree.cc:225
+SUCCESS: fat tree cast topology top_fattree.cc:18
+SUCCESS: ftree switch id top_fattree.cc:40
+SUCCESS: ftree coords top_fattree.cc:41
+SUCCESS: ftree switch id top_fattree.cc:40
+SUCCESS: ftree coords top_fattree.cc:41
+SUCCESS: ftree switch id top_fattree.cc:40
+SUCCESS: ftree coords top_fattree.cc:41
+SUCCESS: ftree switch id top_fattree.cc:40
+SUCCESS: ftree coords top_fattree.cc:41
+SUCCESS: fat tree coord check top_fattree.cc:48
+SUCCESS: fat tree coord check top_fattree.cc:53
+SUCCESS: fat tree coord check top_fattree.cc:58
+SUCCESS: crossbar cast topology top_crossbar.cc:15
+SUCCESS: xbar switch id top_crossbar.cc:28
+SUCCESS: xbar coords top_crossbar.cc:29
+SUCCESS: xbar switch id top_crossbar.cc:28
+SUCCESS: xbar coords top_crossbar.cc:29
+SUCCESS: xbar switch id top_crossbar.cc:28
+SUCCESS: xbar coords top_crossbar.cc:29
+SUCCESS: xbar switch id top_crossbar.cc:28
+SUCCESS: xbar coords top_crossbar.cc:29
+SUCCESS: route crossbar top_crossbar.cc:39
+SUCCESS: crossbar dim/dir top_crossbar.cc:41
+SUCCESS: route crossbar top_crossbar.cc:44
+SUCCESS: route crossbar top_crossbar.cc:47
+SUCCESS: crossbar dim/dir top_crossbar.cc:49
+SUCCESS: butterfly cast topology top_butterfly.cc:18
+SUCCESS: bfly switch id top_butterfly.cc:31
+SUCCESS: bfly coords top_butterfly.cc:32
+SUCCESS: bfly switch id top_butterfly.cc:31
+SUCCESS: bfly coords top_butterfly.cc:32
+SUCCESS: bfly switch id top_butterfly.cc:31
+SUCCESS: bfly coords top_butterfly.cc:32
+SUCCESS: bfly switch id top_butterfly.cc:31
+SUCCESS: bfly coords top_butterfly.cc:32
+SUCCESS: route butterfly dim top_butterfly.cc:40
+SUCCESS: route butterfly dir top_butterfly.cc:41
+SUCCESS: butterfly dim/dir top_butterfly.cc:43
+SUCCESS: route butterfly dim top_butterfly.cc:46
+SUCCESS: route butterfly dir top_butterfly.cc:47
+SUCCESS: butterfly dim/dir top_butterfly.cc:49
+SUCCESS: route butterfly dim top_butterfly.cc:52
+SUCCESS: route butterfly dir top_butterfly.cc:53
+SUCCESS: butterfly dim/dir top_butterfly.cc:55
+SUCCESS: fbfly cast topology top_fbfly.cc:17
+SUCCESS: fbfly switch id top_fbfly.cc:30
+SUCCESS: fbfly coords top_fbfly.cc:31
+SUCCESS: fbfly switch id top_fbfly.cc:30
+SUCCESS: fbfly coords top_fbfly.cc:31
+SUCCESS: fbfly switch id top_fbfly.cc:30
+SUCCESS: fbfly coords top_fbfly.cc:31
+SUCCESS: fbfly switch id top_fbfly.cc:30
+SUCCESS: fbfly coords top_fbfly.cc:31
+SUCCESS: fbfly switch coords top_fbfly.cc:38
+SUCCESS: fbfly switch coords top_fbfly.cc:43
+SUCCESS: fbfly switch coords top_fbfly.cc:48
+SUCCESS: fbfly switch coords top_fbfly.cc:53
+SUCCESS: route fbfly dim top_fbfly.cc:60
+SUCCESS: route fbfly dir top_fbfly.cc:61
+SUCCESS: fbfly dim/dir top_fbfly.cc:63
+SUCCESS: route fbfly dim top_fbfly.cc:70
+SUCCESS: route fbfly dir top_fbfly.cc:71
+SUCCESS: fbfly dim/dir top_fbfly.cc:73
+SUCCESS: dragonfly cast topology top_dragonfly.cc:22
+SUCCESS: coord transform top_dragonfly.cc:33
+SUCCESS: num tornado partners top_dragonfly.cc:38
+SUCCESS: tornado partner top_dragonfly.cc:40
+SUCCESS: num BC partners top_dragonfly.cc:44
+SUCCESS: BC partner top_dragonfly.cc:46
+SUCCESS: num NN partners top_dragonfly.cc:51
+SUCCESS: NN partner top_dragonfly.cc:55
+SUCCESS: NN partner top_dragonfly.cc:59
+SUCCESS: NN partner top_dragonfly.cc:63
+SUCCESS: NN partner top_dragonfly.cc:67
+SUCCESS: NN partner top_dragonfly.cc:71
+SUCCESS: NN partner top_dragonfly.cc:75
+SUCCESS: NN partner top_dragonfly.cc:79
+SUCCESS: dragonfly cast topology top_dragonfly.cc:96
+SUCCESS: dfly switch id top_dragonfly.cc:109
+SUCCESS: dfly coords top_dragonfly.cc:110
+SUCCESS: dfly switch id top_dragonfly.cc:109
+SUCCESS: dfly coords top_dragonfly.cc:110
+SUCCESS: dfly switch id top_dragonfly.cc:109
+SUCCESS: dfly coords top_dragonfly.cc:110
+SUCCESS: dfly switch id top_dragonfly.cc:109
+SUCCESS: dfly coords top_dragonfly.cc:110
+SUCCESS: route dragonfly dim top_dragonfly.cc:120
+SUCCESS: route dragonfly dir top_dragonfly.cc:121
+SUCCESS: dragonfly dim/dir top_dragonfly.cc:123
+SUCCESS: route dragonfly dim top_dragonfly.cc:132
+SUCCESS: route dragonfly dir top_dragonfly.cc:133
+SUCCESS: dragonfly dim/dir top_dragonfly.cc:135
+SUCCESS: route dragonfly dim top_dragonfly.cc:144
+SUCCESS: route dragonfly dir top_dragonfly.cc:145
+SUCCESS: dragonfly dim/dir top_dragonfly.cc:147
+SUCCESS: dragonfly cast topology top_dragonfly.cc:167
+SUCCESS: dfly switch id top_dragonfly.cc:180
+SUCCESS: dfly coords top_dragonfly.cc:181
+SUCCESS: dfly switch id top_dragonfly.cc:180
+SUCCESS: dfly coords top_dragonfly.cc:181
+SUCCESS: dfly switch id top_dragonfly.cc:180
+SUCCESS: dfly coords top_dragonfly.cc:181
+SUCCESS: dfly switch id top_dragonfly.cc:180
+SUCCESS: dfly coords top_dragonfly.cc:181
+SUCCESS: route dragonfly dim top_dragonfly.cc:190
+SUCCESS: route dragonfly dir top_dragonfly.cc:191
+SUCCESS: dragonfly dim/dir top_dragonfly.cc:193
+SUCCESS: route dragonfly dim top_dragonfly.cc:201
+SUCCESS: route dragonfly dir top_dragonfly.cc:202
+SUCCESS: dragonfly dim/dir top_dragonfly.cc:204
+SUCCESS: route dragonfly dim top_dragonfly.cc:211
+SUCCESS: route dragonfly dir top_dragonfly.cc:212
+SUCCESS: dragonfly dim/dir top_dragonfly.cc:214
+SUCCESS: route dragonfly dim top_dragonfly.cc:221
+SUCCESS: route dragonfly dir top_dragonfly.cc:222
+SUCCESS: dragonfly dim/dir top_dragonfly.cc:224

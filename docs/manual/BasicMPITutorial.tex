@@ -1,0 +1,65 @@
+%% !TEX root = manual.tex
+
+\section{Basic MPI Program}
+\label{sec:tutorial:basicmpi}
+Let us go back to the simple send/recv skeleton and actually look at the code.  
+This code should be compiled with SST compiler wrappers installed in the \inlineshell{bin} folder.
+
+\begin{CppCode}
+#include <stdlib.h>
+#include <stdio.h>
+#include <mpi.h>
+
+int main(int argc, char **argv) 
+{
+    int message_size = 128;
+    int me, nproc;
+    int tag = 0;
+    int dst = 1;
+    int src = 0;
+    MPI_Status stat;
+
+    MPI_Init(&argc,&argv);
+    MPI_Comm world = MPI_COMM_WORLD;
+    MPI_Comm_rank(world,&me);
+    MPI_Comm_size(world,&nproc);
+\end{CppCode}
+The starting point is creating a main routine for the application.
+The simulator itself already provides a \inlinecode{main} routine.
+The SST compiler automatically changes the function name to \inlinecode{user_skeleton_main},
+which provides an entry point for the application to actually begin.
+When \sstmacro launches, it will invoke this routine and pass in any command line arguments specified via the \inlinefile{launch_app1_argv} parameter.  Upon entering the main routine, 
+the code is now indistinguishable from regular MPI C code.  
+In the parameter file to be used with the simulation, you must set
+
+\begin{ViFile}
+launch_app1 = user_app_c
+\end{ViFile}
+or, if compiling as C++
+
+\begin{ViFile}
+launch_app1 = user_app_cxx
+\end{ViFile}
+
+At the very top of the file, the \inlineshell{mpi.h} header is actually mapped by the SST compiler to an \sstmacro header file.
+This header provides the MPI API and configures MPI function calls to link to \sstmacro instead of the real MPI library.  
+The code now proceeds:
+
+\begin{CppCode}
+    if (nproc != 2) {
+        fprintf(stderr, "sendrecv only runs with two processors\n");
+        abort();
+    }
+    if (me == 0) {
+        MPI_Send(NULL, message_size, MPI_INT, dst, tag, world);
+        printf("rank %i sending a message\n", me);
+    }
+    else {
+        MPI_Recv(NULL, message_size, MPI_INT, src, tag, world, &stat);
+        printf("rank %i receiving a message\n", me);
+    }
+    MPI_Finalize();
+    return 0;
+}
+\end{CppCode}
+Here the code just checks the MPI rank and sends (rank 0) or receives (rank 1) a message.

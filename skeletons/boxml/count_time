@@ -1,0 +1,17 @@
+#! /usr/bin/env python
+
+import re
+import sys
+
+text = open(sys.argv[1]).read()
+
+regexp = "time=(.*?) "
+matches = re.compile(regexp).findall(text)
+total = 0
+for m in matches:
+    if not '"' in m:
+        continue
+    t = float(m[1:-1])
+    total += t
+print total
+

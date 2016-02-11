@@ -1,0 +1,38 @@
+Using auto-generated geometry [1 1 1] for nproc=1
+Core 0 matches from set 15 intersecting cpumask 1 for thread 1
+No available cores from set 14 intersect cpumask 1 for thread 2
+No available cores from set 14 intersect cpumask 1 for thread 3
+No available cores from set 14 intersect cpumask 1 for thread 4
+Core 1 matches from set 14 intersecting cpumask 2 for thread 5
+No available cores from set 12 intersect cpumask 2 for thread 6
+No available cores from set 12 intersect cpumask 2 for thread 7
+Core 2 matches from set 12 intersecting cpumask 4 for thread 8
+No available cores from set 8 intersect cpumask 4 for thread 9
+Core 3 matches from set 8 intersecting cpumask 8 for thread 10
+Releasing core 0 for thread 1
+Core 0 matches from set 1 intersecting cpumask 1 for thread 2
+Finishing compute at T=  1.0000 on thread 0
+Releasing core 1 for thread 5
+Core 1 matches from set 2 intersecting cpumask 2 for thread 6
+Finishing compute at T=  1.0000 on thread 4
+Releasing core 2 for thread 8
+Core 2 matches from set 4 intersecting cpumask 4 for thread 9
+Finishing compute at T=  1.0000 on thread 7
+Releasing core 3 for thread 10
+Finishing compute at T=  1.0000 on thread 9
+Releasing core 0 for thread 2
+Core 0 matches from set 9 intersecting cpumask 1 for thread 3
+Finishing compute at T=  2.0000 on thread 1
+Releasing core 1 for thread 6
+Core 1 matches from set 10 intersecting cpumask 2 for thread 7
+Finishing compute at T=  2.0000 on thread 5
+Releasing core 2 for thread 9
+Finishing compute at T=  2.0000 on thread 8
+Releasing core 0 for thread 3
+Core 0 matches from set 13 intersecting cpumask 1 for thread 4
+Finishing compute at T=  3.0000 on thread 2
+Releasing core 1 for thread 7
+Finishing compute at T=  3.0000 on thread 6
+Releasing core 0 for thread 4
+Finishing compute at T=  4.0000 on thread 3
+Estimated total runtime of           4.00000000 seconds

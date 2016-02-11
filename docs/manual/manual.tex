@@ -1,0 +1,78 @@
+%%% LaTeX Template
+%%% This template is made for project reports
+%%%	You may adjust it to your own needs/purposes
+%%%
+%%% Copyright: http://www.howtotex.com/
+%%% Date: March 2011
+
+%%% Preamble
+\documentclass[10pt]{report}	% Article class of KOMA-script with 11pt font and a4 format
+
+\usepackage{color}
+\usepackage{framed}
+\usepackage{textcomp}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage[page]{appendix}
+\usepackage{graphicx}
+\usepackage{verbatim}
+\usepackage{amsmath}
+\usepackage{xspace}
+\usepackage[tt]{titlepic}
+
+\usepackage{sstmacro}
+
+\usepackage[textwidth=6.5in]{geometry}
+
+\definecolor{shadecolor}{rgb}{1,0.8,0.3}
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{purple}{rgb}{1,0,1}
+
+\newcommand{\todo}[1] {\textcolor{red}{-[#1]-}}
+
+
+\newcommand{\mytilde}{{\raise.17ex\hbox{$\scriptstyle\sim$}}}
+
+\newcommand{\sstmacro}{{SST/\raise.35ex\hbox{macro}}\xspace}
+\newcommand{\eg}{\textit{e.g.}}
+
+\newcommand{\class}[1]{\textcolor{blue}{#1}}
+
+\newcommand{\func}[1]{\textcolor{purple}{#1}}
+
+\newcommand{\folder}[1]{\textcolor{dkgreen}{#1}}
+
+\newcommand{\aside}[1]{\begin{framed} #1 \end{framed}}
+
+\newcommand{\guikey}[1]{\emph{#1}}
+
+\newcommand{\inlinefile}[1]{{\lstset{basicstyle=\ttfamily,keywordstyle={}}\lstinline$#1$}}
+
+\newcommand{\inlinecode}[1]{{\lstset{basicstyle=\ttfamily,keywordstyle={},showstringspaces=false}\lstinline$#1$}}
+\newcommand{\inlineshell}[1]{{\lstset{basicstyle=\ttfamily,keywordstyle={},showstringspaces=false}\lstinline$#1$}}
+
+\title{SST/macro 4.0: User's Manual}
+\titlepic{\includegraphics[width=0.3\textwidth]{figures/sstlogo.png}}
+\author{Sandia National Labs \\ Livermore, CA}
+
+
+\setlength{\parindent}{0cm} % Default is 15pt.
+\setlength{\parskip}{2mm plus1mm minus1mm}
+
+\begin{document}
+\maketitle 
+
+
+\tableofcontents
+
+\input{Introduction}
+\input{Building}
+\input{Tutorials}
+\input{Topology.tex}
+\input{Skeletonization}
+%\input{UQ}
+%\input{Appendix}
+
+
+%%% End document
+\end{document}

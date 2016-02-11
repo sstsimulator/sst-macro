@@ -1,0 +1,13 @@
+mpiprotocol[softwareid(appid(1), taskid(0),threadid(0))]: mpi initializing... 
+mpiprotocol[softwareid(appid(1), taskid(1),threadid(0))]: mpi initializing... 
+mpiprotocol[1]: mpi initialized
+mpiprotocol[0]: mpi initialized
+mpiprotocol[0]: finished first test
+mpiprotocol[1]: finished first test
+mpiprotocol[0]: finished second test
+mpiprotocol[1]: finished second test
+mpiprotocol[1]: finished third test
+mpiprotocol[0]: finished third test
+mpiprotocol[0]: finalized
+mpiprotocol[1]: finalized
+Estimated total runtime of           0.00570705 seconds

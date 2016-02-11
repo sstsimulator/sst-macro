@@ -1,0 +1,184 @@
+
+#------------------------------------------------------------------------------------------#
+#  API tests (MPI and globals)                                                          {{{#
+#------------------------------------------------------------------------------------------#
+
+MPITESTEXEC=$(top_builddir)/tests/api/mpi/testexec
+GLOBALSTESTEXEC=$(top_builddir)/tests/api/globals/testexec
+
+GLOBALS_TEST_DEPS=$(GLOBALSTESTEXEC)
+MPI_TEST_DEPS=$(MPITESTEXEC)
+
+if INTEGRATED_SST_CORE
+GLOBALS_TEST_DEPS += ../sstmac/install/libmacro.la
+MPI_TEST_DEPS += ../sstmac/install/libmacro.la
+endif
+
+# These are the ones that currently pass
+APITESTS = \
+  testsuite_mpi_2 \
+  testsuite_mpi_17 \
+  testsuite_mpi_18 \
+  testsuite_mpi_19 \
+  testsuite_mpi_20 \
+  testsuite_mpi_23 \
+  testsuite_mpi_25 \
+  testsuite_mpi_26 \
+  testsuite_mpi_27 \
+  testsuite_mpi_29 \
+  testsuite_mpi_30 \
+  testsuite_mpi_31 \
+  testsuite_mpi_37 \
+  testsuite_mpi_38 \
+  testsuite_mpi_40 \
+  testsuite_mpi_42 \
+  testsuite_mpi_43 \
+  testsuite_mpi_44 \
+  testsuite_mpi_45 \
+  testsuite_mpi_46 \
+  testsuite_mpi_47 \
+  testsuite_mpi_48 \
+  testsuite_mpi_49 \
+  testsuite_mpi_50 \
+  testsuite_mpi_69 \
+  testsuite_mpi_71 \
+  testsuite_mpi_73 \
+  testsuite_mpi_74 \
+  testsuite_mpi_75 \
+  testsuite_mpi_76 \
+  testsuite_mpi_77 \
+  testsuite_mpi_78 \
+  testsuite_mpi_79 \
+  testsuite_mpi_80 \
+  testsuite_mpi_82 \
+  testsuite_mpi_88 \
+  testsuite_mpi_89 \
+  testsuite_mpi_90 \
+  testsuite_mpi_91 \
+  testsuite_mpi_97 \
+  testsuite_mpi_98 \
+  testsuite_mpi_99 \
+  testsuite_mpi_100 \
+  testsuite_mpi_101 \
+  testsuite_mpi_103 \
+  testsuite_mpi_104 \
+  testsuite_mpi_105 \
+  testsuite_mpi_106 \
+  testsuite_mpi_107 \
+  testsuite_mpi_108 \
+  testsuite_mpi_109 \
+  testsuite_mpi_110 \
+  testsuite_mpi_112 \
+  testsuite_mpi_115 \
+  testsuite_mpi_124 \
+  testsuite_mpi_125 \
+  testsuite_mpi_126 \
+  testsuite_mpi_127 \
+  testsuite_mpi_128 \
+  testsuite_mpi_130 \
+  testsuite_mpi_131 \
+  testsuite_mpi_132 \
+  testsuite_mpi_133 \
+  testsuite_mpi_134 \
+  testsuite_mpi_135 \
+  testsuite_mpi_136 \
+  testsuite_mpi_137 \
+  testsuite_mpi_139 \
+  testsuite_mpi_140 \
+  testsuite_mpi_142 \
+  testsuite_mpi_143 \
+  testsuite_mpi_145 \
+  testsuite_mpi_147 \
+  testsuite_mpi_149 \
+  testsuite_mpi_150 \
+  testsuite_mpi_152 \
+  testsuite_mpi_153 \
+  testsuite_mpi_154 \
+  testsuite_mpi_155 \
+  testsuite_mpi_156 \
+  testsuite_mpi_157 \
+  testsuite_mpi_158 \
+  testsuite_mpi_159 \
+  testsuite_mpi_162 \
+  testsuite_mpi_164 \
+  testsuite_mpi_167 \
+  testsuite_mpi_168 \
+  testsuite_mpi_169 \
+  testsuite_mpi_172 \
+  testsuite_mpi_173 \
+  testsuite_mpi_174 \
+  testsuite_mpi_175 \
+  testsuite_mpi_176 \
+  testsuite_mpi_186 \
+  testsuite_mpi_187 \
+  testsuite_mpi_190 \
+  testsuite_mpi_203 \
+  testsuite_mpi_207 \
+  testsuite_mpi_209 \
+  testsuite_mpi_210 \
+  testsuite_mpi_211 \
+  testsuite_mpi_212 \
+  testsuite_mpi_214 \
+  testsuite_mpi_216 \
+  testsuite_mpi_218 \
+  testsuite_mpi_222 \
+  testsuite_mpi_231 \
+  testsuite_mpi_232 \
+  testsuite_mpi_234 \
+  testsuite_mpi_236 \
+  testsuite_mpi_238 \
+  testsuite_mpi_239 \
+  testsuite_mpi_245 \
+  testsuite_mpi_251 \
+  testsuite_mpi_257 \
+  testsuite_globals_0 \
+  testsuite_globals_1 \
+  testsuite_globals_2 \
+  testsuite_globals_3 \
+  testsuite_globals_4
+
+APITESTS_DISABLED = \
+  testsuite_mpi_229 \
+  testsuite_mpi_233 \
+  testsuite_mpi_217 \
+  testsuite_mpi_230 \
+  testsuite_mpi_111 \
+  testsuite_mpi_188 \
+  testsuite_mpi_189 \
+  testsuite_mpi_141 \
+  testsuite_mpi_28 \
+  testsuite_mpi_240 \
+  testsuite_mpi_96 \
+  testsuite_mpi_235 \
+  testsuite_mpi_221 \
+  testsuite_mpi_228 \
+  testsuite_mpi_241 \
+  testsuite_mpi_242 \
+  testsuite_mpi_54 \
+  testsuite_mpi_53 \
+  testsuite_mpi_41 \
+  testsuite_mpi_81 \
+  testsuite_mpi_83
+
+
+
+# These pass, but take too long (some very very long)
+SUPERCHECK_APITESTS = \
+  testsuite_mpi_35 \
+  testsuite_mpi_36 \
+  testsuite_mpi_113 \
+  testsuite_mpi_114
+
+
+testsuite_mpi_%.$(CHKSUF): $(MPI_TEST_DEPS)
+	$(PYRUNTEST) 20 testsuitempitemp$*.out $(MPI_LAUNCHER) $(top_builddir)/tests/api/mpi/testexec -f $(srcdir)/api/parameters.ini \
+          -p testsuite_testmode=$* $(THREAD_ARGS)
+	-grep 'Errors' testsuitempitemp$*.out > $@
+
+
+testsuite_globals_%.$(CHKSUF): $(GLOBALS_TEST_DEPS)
+	$(PYRUNTEST) 20 testsuiteglobalstemp$*.out $(top_builddir)/tests/api/globals/testexec -f $(srcdir)/api/parameters.ini \
+          -p testsuite_testmode=$* 
+	-grep 'Passed' testsuiteglobalstemp$*.out > $@
+
+#------------------------------------------------------------------------------------------#

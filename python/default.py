@@ -1,0 +1,2 @@
+import sstmacro
+sstmacro.setupDeprecated()

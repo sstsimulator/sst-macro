@@ -1,0 +1,63 @@
+
+\newcommand{\myRectangleFromPoints}[3]{
+	% #1 arguments to rectangle
+	% #2 bottom left corner
+	% #3 top right corner
+	\draw [#1] (#2) rectangle (#3);
+}
+
+\newcommand{\myRectangle}[3]{
+	% #1 arguments to rectangle
+	% #2 bottom left corner
+	% #3 ordered pair, size of box
+	\path(#2) coordinate (bottomCorner);
+	\path (bottomCorner)+(#3) coordinate (topCorner);
+	\draw [#1] (bottomCorner) rectangle (topCorner);
+}
+
+\newcommand{\defineBox}[5]{
+	\myRectangle{#5}{#2}{#3,#4}
+	\outlineBox{#1}{#2}{#3}{#4}
+}
+
+\newcommand{\outlineBox}[4]{
+	% #1 = box name
+	% #2 = bottom left coordinates
+	% #3 = width
+	% #4 = height
+	\setlength{\tmpWidth}{#3}
+	\setlength{\tmpHeight}{#4}
+	
+	%define the four corners
+	\path (#2) coordinate (#1BxL);
+	\path (#1BxL) + (0,\tmpHeight) coordinate (#1TxL);
+	\path (#1BxL) + (\tmpWidth,0) coordinate (#1BxR);
+	\path (#1BxR) + (0, \tmpHeight) coordinate (#1TxR);
+	
+	%define the four midpoints
+	\path (#1BxL) + (0, 0.5\tmpHeight) coordinate (#1CxL);
+	\path (#1BxR) + (0, 0.5\tmpHeight) coordinate (#1CxR);
+	\path (#1TxL) + (0.5\tmpWidth,0) coordinate (#1TxC);
+	\path (#1BxL) + (0.5\tmpWidth,0) coordinate (#1BxC);
+
+	%define the eight intermediate midpoints
+	\path (#1BxL) + (0, 0.25\tmpHeight) coordinate (#1BCxL);
+	\path (#1BxR) + (0, 0.25\tmpHeight) coordinate (#1BCxR);
+	\path (#1TxL) + (0, -0.25\tmpHeight) coordinate (#1TCxL);
+	\path (#1TxR) + (0, -0.25\tmpHeight) coordinate (#1TCxR);	
+	\path (#1BxL) + (0.25 \tmpWidth, 0) coordinate (#1BxLC);
+	\path (#1TxL) + (0.25 \tmpWidth, 0) coordinate (#1TxLC);
+	\path (#1BxR) + (-0.25 \tmpWidth, 0) coordinate (#1BxRC);
+	\path (#1TxR) + (-0.25 \tmpWidth, 0) coordinate (#1TxRC);
+
+	%define the center
+	\path (#1BxL) + (0.5\tmpWidth, 0.5\tmpHeight) coordinate (#1Center);
+	
+	%define the four interior corner points
+	
+	%define the four interior axis points
+	\path (#1Center) + (0, 0.25\tmpHeight) coordinate (#1TCxC);
+	\path (#1Center) + (0, -0.25\tmpHeight) coordinate (#1BCxC);
+	\path (#1Center) + (0.25\tmpHeight, 0) coordinate (#1CxRC);
+	\path (#1Center) + (-0.25\tmpHeight, 0) coordinate (#1CxLC);
+}

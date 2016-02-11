@@ -1,0 +1,209 @@
+% !TEX root = developer.tex
+
+\chapter{Statistics Collection}
+\label{chapter:stats}
+
+Statistics collection for tracking things like congestion or number of bytes sent is difficult to standardize.
+Stats collection must be specifically configured to different components (e.g. NIC, CPU, memory) and types of statistic (histogram, spyplot, timeline).
+The stats framework is therefore intended to be highly customizable based on the individual analysis being performed without too many constraints.
+There are a few universal features all stats objects must comply with.  
+First, any object that collects stats must inherit from \inlinecode{stat_collector} contained in the header \inlinecode{sstmac/common/stats/stat_collector.h}.
+This defines a virtual interface that every stats object must comply with.
+Second, stats objects should not operate on any global or static data unless absolutely necessary for space constraints.
+This means if you have 100K nodes, e.g., each node should maintains its own histogram of message sizes.
+While some storage could be saved by aggregating results into a single object,
+in many cases the storage overhead is minimal.
+This is particularly important for thread safety that stats collection be done on independent, non-interfering objects.
+At the very end, the \inlinecode{stat_collector} interface defines hooks for aggregating results if you want, e.g., a global histogram for all nodes.
+
+\section{Setting Up Objects}
+We use the example here of a the network interface histogram declared in \inlinecode{nic.h}.
+
+\begin{CppCode}
+class nic 
+{
+  ...
+  stat_histogram* hist_msg_size_;
+  ...
+  nic() : hist_msg_size_(0)
+  ...
+\end{CppCode}
+
+Here the stats object is initialized to zero.
+The \inlinecode{stat_collector} object is a factory type.
+Thus individual stat collectors can be associated with string identifiers.
+For histogram, we declare in \inlinecode{stat_histogram.cc}
+
+\begin{CppCode}
+SpktRegister("histogram", stat_collector, stat_histogram);
+\end{CppCode}
+
+Inside the \inlinecode{init_factory_params} function for \inlinecode{nic}, we check if the histogram stats should be activated
+
+
+\begin{CppCode}
+if (params->has_namespace("message_sizes")){
+  params->enter_namespace("message_sizes");
+  stat_collector* hist = stat_collector_factory::get_optional_param("type", "histogram", params);
+  hist_msg_size_ = test_cast(stat_histogram, hist);
+  params->exit_namespace("message_sizes");
+}
+\end{CppCode}
+
+It is possible that you create your own customized histogram object.
+However, here we default to the histogram provided by \sstmacro.
+The histogram constructor initializes a few parameters internally.
+
+\begin{CppCode}
+bin_size_ = params->get_quantity("bin_size");
+is_log_ = params->get_optional_bool_param("logarithmic", false);
+fileroot_ = params->get_param("fileroot");
+\end{CppCode}
+
+defining how large histogram bins are, whether the scale is logarithmic, and finally defining a file root for dumping results later.
+
+This only defines a template histogram object, though.
+Recall from earlier sections, almost everything in \sstmacro builds a template object and then clones copies of it to fill out the machine.
+
+\begin{CppCode}
+void
+nic::clone_into(nic* nic) const
+{
+  if (hist_msg_size_){
+    nic->hist_msg_size_ = hist_msg_size_->clone_me(parent_->id());
+  }
+\end{CppCode}
+If we have built a histogram object, create a copy of it but assign it a unique ID.
+This unique ID is important for the runtime to distinguish a stat collector object for node 0 from that for node 1, node 2, etc.
+
+When the simulation begins, every component gets assigned an \inlinecode{event_manager}.
+At this time, an object must register all statistics with the runtime
+
+\begin{CppCode}
+void
+nic::set_event_manager(event_manager* m)
+{
+  if (hist_msg_size_) m->register_stat(hist_msg_size_);
+\end{CppCode}
+
+At this point, the stats object is completely configured.
+The stats object copy has been assigned a unique ID and registered with the SST runtime.
+Each individual NIC can now start (thread-safely) collecting stats.
+Internally in the event manager, all objects with the same file root are grouped together.
+Thus the \inlineshell{fileroot} parameter is critical for defining unique groups of stats object.
+This is important during simulation post-processing when the event manager wants to aggregate results from each individual node.
+
+\section{Dumping Data}
+The first set of virtual functions that every stats object must provide are
+
+\begin{CppCode}
+virtual void
+simulation_finished(timestamp end) = 0;
+
+virtual void
+dump_local_data() = 0;
+
+virtual void
+dump_global_data() = 0;
+\end{CppCode}
+
+\inlinecode{simulation_finished} tells the stats object what the final time of the simulation is and allows any final post-processing to be done.
+This is particularly useful in time-dependent analyses.  In other cases like message size histograms, it is a no-op.
+After the stats object has been notified of the simulation finishing, at some point the event manager will instruct it that it is safe to dump its data.
+The next method, \inlinecode{dump_local_data}, dumps the data specific to a given node.
+A unique filename based on the ID provided above in the \inlinecode{clone_me} function is created to hold the output.
+The last method, \inlinecode{dump_global_data}, dumps aggregate data for all nodes.
+Here a unique filename based on the file root parameter is generated.
+For the default histogram, a data file and gnuplot script are created.
+
+\section{Reduction and Aggregation}
+Before the \inlinecode{dump_global_data} function can be called, an aggregation of results must be performed.
+Each stats object is therefore required to provide the functions
+
+\begin{CppCode} 
+virtual void
+reduce(stat_collector* coll) = 0;
+
+virtual void
+global_reduce(parallel_runtime* rt) = 0;
+\end{CppCode}
+The first function does a local reduce.
+The object calling the \inlinecode{reduce} function aggregates data into itself from input parameter \inlinecode{coll}
+The event manager automatically loops all objects registered to the same file root and reduces them into a global aggregator.
+Once the aggregation is complete across all local copies,
+a parallel global aggregation must be performed across MPI ranks.
+This can be the most complicated part.
+For histograms, this is quite easy.
+A histogram is just a vector of integers.
+The \sstmacro parallel runtime object provides a set of reduce functions for automatically summing a vector.
+For more complicated cases, packing/unpacking of data might need to be performed or more complicated parallel operations.
+Once the global reduce is done, the event manager is now safe to call \inlinecode{dump_global_data}.
+When developing new stats we recommend running medium-sized jobs as a single thread, multi-threaded, and in MPI parallel to confirm the answer is the same.
+
+For the histogram, the reduce functions are quite simple
+
+\begin{CppCode}
+void
+stat_histogram::reduce(stat_collector *coll)
+{
+  stat_histogram* other = safe_cast(stat_histogram, coll);
+
+  /** make sure we have enough bins to hold results */
+  int max_num = std::max(counts_.size(), other->counts_.size());
+  if (max_num > counts_.size()){
+    counts_.resize(max_num);
+  }
+
+  /** loop all bins to aggregate results */
+  int num_bins = other->counts_.size();
+  for (int i=0; i < num_bins; ++i){
+    counts_[i] += other->counts_[i];
+  }
+}
+\end{CppCode}
+
+and for the global reduce
+\begin{CppCode}
+void
+stat_histogram::global_reduce(parallel_runtime* rt)
+{
+  int root = 0;
+  /** Align everyone to have the same number of bins */
+  int my_num_bins = counts_.size();
+  int num_bins = rt->global_max(my_num_bins);
+  counts_.resize(num_bins);
+  
+  /** Now global sum the data vector */
+  rt->global_sum(&counts_[0], num_bins, root);
+}
+\end{CppCode}
+
+\section{Storage Contraints}
+In some cases, storage constraints prevent each node from having its own copy of the data.
+This is particularly important for the fixed-time quanta charts which generate several MB of data even in the reduced, aggregated form.
+In this case it is acceptable to operate on global or static data.
+However, as much as possible, you should maintain the \emph{illusion} of each component having an individual copy.
+For example, a NIC should not declare
+
+\begin{CppCode}
+class nic {
+ ...
+ static ftq_calendar* ftq_;
+\end{CppCode}
+but instead
+\begin{CppCode}
+class nic {
+ ...
+ ftq_calendar* ftq_;
+\end{CppCode}
+
+Inside the \inlinecode{ftq_calendar} object you can then declare
+\begin{CppCode}
+class ftq_calendar {
+ ...
+ static thread_lock lock_;
+ static std::vector<ftq_epoch> results_;
+\end{CppCode}
+which creates a static, aggregated set of results.
+The \inlinecode{ftq_calendar} must ensure thread-safety itself via a thread-lock.
+

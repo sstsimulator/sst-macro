@@ -1,0 +1,21 @@
+#! /usr/bin/env python
+
+import re
+
+ignore = """
+event_scheduler
+"""
+ignore = map(lambda x: x.strip(), ignore.strip().split())
+
+text = open("bt.out").read()
+matches = re.compile("Breakpoint\s+\d+(.*?)\n\n", re.DOTALL).findall(text)
+for match in matches:
+    skip = False
+    for ig in ignore:
+        if ig in match:
+            skip = True
+            break
+
+    if not skip:
+        print match
+

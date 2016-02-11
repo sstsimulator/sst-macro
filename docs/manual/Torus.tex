@@ -1,0 +1,53 @@
+% !TEX root = manual.tex
+\section{Torus}
+\label{subsec:tutorial:hypercube}
+
+The torus is the simplest topology and fairly easy to understand.
+We have already discussed basic indexing and allocation as well as routing.
+More complicated allocation schemes with greater fine-grained control can be used such as the
+coordinate allocation scheme (see hypercube below for examples) and the node ID allocation scheme (see fat tree below for examples).
+More complicated Valiant and UGAL routing schemes are shown below for hypercube and dragonfly,
+but apply equally well to torus.
+
+For torus we illustrate here the Cartesian allocation for generating regular Cartesian subsets.
+For this, the input file would look like 
+
+\begin{ViFile}
+topology_name = torus
+topology_geometry = 4 4 4
+launch_app1_cmd = aprun -n 8
+launch_indexing = block
+launch_allocation = cartesian
+launch_cart_sizes = 2 2 2
+launch_cart_offsets = 0 0 0
+\end{ViFile}
+
+This allocates a 3D torus of size 4x4x4.
+Suppose we want to allocate all 8 MPI ranks in a single octant?
+We can place them all in a 2x2x2 3D sub-torus by specifying the size of the sublock 
+(\inlineshell{launch_cart_sizes}) and which octant (\inlineshell{launch_cart_offsets}).
+This applies equally well to higher dimensional analogs.
+This is particularly useful for allocation on Blue Gene machines
+which always maintain contiguous allocations on a subset of nodes.
+
+This allocation is slightly more complicated if we have multiple nodes per switch.
+Even though we have a 3D torus, 
+we treat the geometry as a 4D coordinate space with the 4th dimension referring to nodes connected to the same switch, 
+i.e. if two nodes have the 4D coordinates [1 2 3 0] and [1 2 3 1] they are both connected to the same switch.
+Consider the example below:
+
+\begin{ViFile}
+topology_name = torus
+topology_geometry = 4 4 4
+network_nodes_per_switch = 2
+launch_app1_cmd = aprun -n 8
+launch_indexing = block
+launch_allocation = cartesian
+launch_cart_sizes = 2 2 1 2
+launch_cart_offsets = 0 0 0 0
+\end{ViFile}
+
+We allocate a set of switches across an XY plane (2 in X, 2 in Y, 1 in Z for a single plane).
+The last entry in \inlineshell{launch_cart_sizes} indicates that both nodes on each switch should be used.
+
+

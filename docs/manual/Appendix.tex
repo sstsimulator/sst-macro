@@ -1,0 +1,198 @@
+% !TEX root = manual.tex
+
+\begin{appendices}
+
+%\chapter{Debug Flags}
+%\label{sec:appendix1}
+%
+%\section{Debug output}
+%
+%The following are descriptions of flags you can use to turn on debug information about what's happening in the simulator.  Some are more verbose than others.  Multiple levels of output can be defined, and turned on with ([level]) after the flag, such as -d ``$<$debug$>$ mpi(2)".   In general, a higher level is more output, and the default level is 1.
+%
+%To begin with, specifying -d ``$<$debug$>$ all"  will print everything.  This is sometimes useful, e.g.  if you want to know the last thing that happened before the simulation failed.    
+%
+%Even more, specifying just -d ``all" will enable all debug, tracing, and statistics.  This is never recommended, as you are not likely to have all the parameters for this set correctly, and it really has no useful purpose.
+%
+%For turning on individual output, the following flags are generally more useful:
+%
+%\subsection{Software}
+%
+%\begin{itemize}
+%\item \textit{os} - prints out everything the operating system is doing, including swapping threads and such (warning: verbose)
+%\item \textit{sstmac\_mpi} - print out calls to the MPI C interface
+%\item \textit{library} - prints out anything a library does (lots of things are libraries, so probably very verbose)
+%\item \textit{mpi} - prints out everything mpi does behind the scenes (warning: verbose).  Includes the following, which can be turned on individually:
+%\begin{itemize}
+%\item \textit{mpicollective} - prints out just what the collectives are doing
+%\item \textit{mpicommfactory} - prints the activity from creating mpi communicators
+%\item \textit{mpiqueue} - basic operations in mpi transactions, like src/tag matching
+%\item \textit{mpiprotocol} - what's going on with the protocols mpi uses (RDMA exchange, etc)
+%\item \textit{mpiapi} - the underlying functions that implement mpi behind the C interface, may give more information than sstmac\_mpi
+%\item \textit{mpirequest} - prints some info when a transaction (which has an associated mpi request) completes
+%\item \textit{mpiserver} - some low level interactions with the node model / OS for basic sending of messages and finding the right mpiqueue
+%\end{itemize}
+%\item \textit{shmem} - prints out everything that OpenSHMEM does. Includes the following, which can be turned on individually:
+%\begin{itemize}
+%\item \textit{api} - calls to the SHMEM api
+%\item \textit{server} - low level operations in the SHMEM implementation
+%\item \textit{symmetric} - prints info about operations on symmetric data 
+%\item \textit{heap} - prints info about heap operations (usually on symmetric data structures)
+%\item \textit{transfer} - prints out what transfers are doing (remote operations are all "transfers" in our implementation).
+%\end{itemize}
+%\item \textit{upc} - prints out everything that UPC does. Includes the following, which can be turned on individually:
+%\begin{itemize}
+%\item \textit{api} - calls to the UPC api (including implicit ones that may appear after preprocessing)
+%\item \textit{server} - low level operations in the UPC implementation
+%\item \textit{shared} - prints info about operations on shared objects
+%\item \textit{shared\_ptr} - prints info about operations on shared pointer objects
+%\item \textit{shared\_heap} - prints info about shared heap operations (usually on shared or shared pointers)
+%\item \textit{transfer} - prints out what transfers are doing (remote operations are all "transfers" in our implementation).
+%\end{itemize}
+%\item \textit{socket} - prints what the socket API/library is doing
+%\item \textit{lib\_compute\_loops} - prints stuff about compute loops library usage
+%\item \textit{parsedumpicallbacks} - prints information for each MPI call when parsing a DUMPI trace
+%\item \textit{payload} - prints the payload modeling
+%\end{itemize}
+%
+%\subsection{Hardware}
+%
+%\begin{itemize}
+%\item \textit{network} - prints out everything the network does (warning: verbose).  Includes the following, which can be turned on individually:
+%\begin{itemize}
+%\item \textit{interconnect} - setup of the interconnect
+%\item \textit{networkswitch} - if using a discrete switch-based model, prints out everything the switches do
+%\item \textit{topology} - prints out the connections between switches
+%\item \textit{routing} - prints routing decisions
+%\item \textit{trainswitch} - if using the train network model, prints out what the train switch is doing
+%\end{itemize}
+%\item \textit{nic} - prints out network interface activity
+%\item \textit{fastflower} - if using the fastflower model, prints out all modeling activity
+%\item \textit{train} - if using the train model, prints out train modeling activity
+%\item \textit{processor} - prints processor/instruction modeling
+%\item \textit{node} - prints everything that goes through the node (which is pretty much all events on a node)
+%\item \textit{memory} - prints memory modeling
+%\end{itemize}
+%
+%\subsection{Backend}
+%
+%\begin{itemize}
+%\item \textit{sstmac} - setting up the simulation
+%\item \textit{eventmanager} - prints out the processing and scheduling of every event (warning: the most verbose of all)
+%\item \textit{eventupdates} - periodically prints out the event processing rate
+%\item \textit{parallel} - if running PDES, prints information about partitioning, and synchronization activity
+%\end{itemize}
+%
+%\subsection{Application}
+%
+%\begin{itemize}
+%\item \textit{app} - prints out anything you put in your application, which must have inherited from sstmac::sw::app, and used SSTMAC\_DEBUG
+%\item \textit{launch} - prints out everything about which application processes are launching on which nodes, and how they're numbered.  Includes the following:
+%\begin{itemize}
+%\item \textit{allocation} - prints out the nodes allocated to apps
+%\item \textit{indexing} - prints out which task ids (e.g. mpi ranks) go on which allocated nodes
+%\end{itemize}
+%\item \textit{mpicheck} - if running an MPI application, prints a banner when rank 0 has passed the barrier in MPI\_Finalize().  This is usually recommended instead of using final simulation time as it is a more consistent simulation time, especially if running PDES.
+%\end{itemize}
+%
+%\section{Tracing}
+%
+%The following flags can be used like -d ``$<$trace$>$ \textit{flag}"
+%
+%\begin{itemize}
+%\item \textit{dumpi} - produces a DUMPI trace from the simulation 
+%\item \textit{hpx} - if using HPX, produces a trace of how threads get mapped to cores
+%\item \textit{events} - a generic trace of events that cause thread blocking/unblocking.  
+%\end{itemize}
+
+
+%\section{Statistics}
+%In general, different collected statistics produce different files at the end of the simulation. 
+
+%\begin{itemize}
+%\item \textit{events} - a backend histogram of the time into the future that messages are scheduled
+%\item \textit{spyplot} - generate spyplots of different levels of communication (MPI, allocation, and machine).
+%\item \textit{spyplot\_png} - just generate the png images for the spyplots
+%\item \textit{spyplot\_csv} - only generate the csv version of spyplots
+%\item \textit{ftq} - collect finite-time quanta stats.  See Section \ref{sec:tutorials:ftq}.
+%\item \textit{callgraph} - collect graphviz callgraphs. See Section \ref{sec:tutorials:callgraph}.
+%\item \textit{hpx} - if using HPX, some statistics on HPX message passing
+%\item \textit{hpx\_threads} - if using HPX, some statistics about thread creation, etc.
+%\item \textit{processor} -  stats on processor usage
+%\item \textit{congestion} - stats about which links are congested and how much
+%\item \textit{latency} - nic-to-nic latency
+%\item \textit{histograms} - message size histograms at nic level
+%\item \textit{mem\_bytes} - memory traffic
+%\end{itemize}
+
+\chapter{Compatibility}
+\label{sec:compatibility}
+
+\section{Integration Testing}
+\label{sec:integration}
+
+Continuous integration tests are performed for each code check in to the SST/macro and DUMPI mainline development repositories.
+The latest results of these tests can be viewed at http://sstmacro.ca.sandia.gov:8085.
+Current build server configurations and the extent of functionality tests are as follows.
+
+\subsection{Mac OS X Test System (sstmacro)}
+Mac OS X 10.8.2/Mountain Lion
+\begin{itemize}
+\item gcc 4.2.1
+\item openmpi 1.6.3
+\item gmp 5.0.5
+\item boost 1.48
+\end{itemize}
+
+\subsection{Mac OS X Test System (sstmac5)}
+Mac OS X 10.8.2/Mountain Lion
+\begin{itemize}
+\item gcc 4.2.1
+\item clang 3.3
+\item gmp 5.0.5
+\item boost 1.48
+\end{itemize}
+
+\subsection{Ubuntu Test System (empedocles)}
+Ubuntu 11.04/natty
+\begin{itemize}
+\item gcc 4.5.2
+\end{itemize}
+
+\subsection{SST/macro Functionality Tests}
+\begin{itemize}
+\item OS X build
+\item OS X distribution
+\item OS X documentation
+\item OS X external boost 1.48
+\item OS X clang 
+\item OS X gmp
+\item Ubuntu distribution
+\item Ubuntu custom new
+\end{itemize}
+
+\subsection{Dumpi Functionality Tests}
+\begin{itemize}
+\item OS X build
+\item OS X distribution
+\item OS X documentation
+\item OS X open mpi
+\end{itemize}
+
+\section{Other Known Working Systems}
+\label{sec:otherworking}
+
+\subsection{Red Hat Production System (warpcore)}
+Red Hat Enterprise Linux Workstation release 6.2 (Santiago)
+\begin{itemize}
+\item gcc 4.4.6
+\end{itemize}
+
+\subsection{Typical Development System}
+Mac OS X 10.8.4/Mountain Lion
+\begin{itemize}
+\item gcc 4.7.2
+\end{itemize}
+
+
+
+\end{appendices}

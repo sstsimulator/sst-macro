@@ -1,0 +1,216 @@
+%% !TEX root = manual.tex
+
+\chapter{Introduction}
+\label{sec:intro}
+
+\section{Overview}
+\label{sec:intro:overview}
+
+The \sstmacro software package provides a simulator for large-scale parallel computer architectures. 
+It permits the coarse-grained study of distributed-memory applications. 
+The simulator is driven from either a trace file or skeleton application. 
+The simulator architecture is modular, allowing it to easily be extended with additional network models, 
+trace file formats, software services, and processor models.
+
+Simulation can be broadly categorized as either off-line or on-line.
+Off-line simulators typically first run a full parallel application on a real machine,
+recording certain communication and computation events to a simulation trace.
+This event trace can then be replayed post-mortem in the simulator.
+Most common are MPI traces which record all MPI events, and
+\sstmacro provides the DUMPI utility (\ref{sec:tutorial:dumpi}) for collecting and replaying MPI traces. 
+Trace extrapolation can extend the usefulness of off-line simulation by estimating large or untraceable system scales without   
+having to collect a trace, it is typically only limited to strictly weak scaling.  
+
+We turn to on-line simulation when the hardware or applications parameters need to change.
+On-line simulators instead run real application code, allowing native C/C++/Fortran to be compiled directly into the simulator.
+\sstmacro intercepts certain function calls, estimating how much time passes rather than actually executing the function.
+In MPI programs, for example, calls to MPI\_Send are linked to the simulator instead of passing to the real MPI library.
+If desired, \sstmacro can actually be a full MPI \emph{emulator}, delivering messages between ranks and replicating the behavior of a full MPI implementation.
+
+Although \sstmacro supports both on-line and off-line modes, on-line simulation is encouraged because
+event traces are much less flexible, containing a fixed sequence of events.
+Application inputs and number of nodes cannot be changed. 
+Without a flexible control flow, it also cannot simulate dynamic behavior like load balancing or faults.
+On-line simulation can explore a much broader problem space since they evolve directly in the simulator.
+
+For large, system-level experiments with thousands of network endpoints, high-accuracy cycle-accurate simulation is not possible,
+or at least not convenient.
+Simulation requires coarse-grained approximations to be practical.
+\sstmacro is therefore designed for specific cost/accuracy tradeoffs.
+It should still capture complex cause/effect behavior in applications and hardware, but be efficient enough to simulate at the system-level. 
+For speeding up simulator execution, we encourage \textit{skeletonization}, discussed further in Chapter \ref{sec:skeletonization}. 
+A high-quality skeleton is an application model that reproduces certain characteristics with only limited computation.  
+We also encourage uncertainty quantification (UQ) for validating simulator results,
+to be detailed in a pending SAND report.  
+Skeletonization and UQ are the two main elements in the ``canonical'' \sstmacro workflow (Figure \ref{fig:workflow}).
+
+\begin{figure}[t]
+  \centering
+    \includegraphics[width=0.99\columnwidth]{figures/workflow.pdf}
+      \caption{SST/macro workflow. }
+      \label{fig:workflow}
+\end{figure}
+
+\section{Currently Supported}
+\label{sec:intro:supported}
+
+\subsection{Programming APIs}
+\label{subsec:intro:apis}
+
+The following sections describe the state of the software API's (found in \folder{sstmac}) that are available in \sstmacro for use by applications, as of this release. The level of testing indicates 
+the integration of compliance/functionality tests into our make check test suite.  
+
+\subsubsection{Final and Tested}
+\label{subsubsec:intro:tested}
+
+\begin{itemize}
+\item{MPI:} Because of its popularity, MPI is one of our main priorities in providing programming model support.  
+We currently test against the MPICH test suite. All tests compile, so you should never see compilation errors.  
+However, since many of the functions are not typically used in the community, we only test commonly-used functions.   
+See Section \ref{subsec:issues:mpi} for functions that are not supported.  
+Functions that are not implemented will throw a \class{unimplemented\_error}, reporting the function name. 
+\item{OpenSHMEM:} Most of the standard OpenSHMEM tests pass. The ones that don't are because they haven't been ported to C++, or test the single unsupported feature (collect). 
+\end{itemize}
+
+\subsubsection{Some testing complete}
+\label{subsubsec:intro:sometesting}
+
+\begin{itemize}
+\item{Sockets:} The Socket API is mostly implemented. Most basic client/server functionality is available.  However, only the default socket options are allowed. In most cases, \inlinecode{setsockopt} is just a no-op.
+\item{Pthreads:}  Only the \func{pthread\_create()}, \func{pthread\_join()}, and \func{pthread\_self()} along with mutex and condition variables are implemented.  A basic  pthread test validates the core spawn/run/join behavior.
+\end{itemize}
+
+\subsubsection{In development}
+\label{subsubsec:intro:inutero}
+\begin{itemize}
+\item{GASNet:}  An SST conduit is in development for supporting codes that use the GASNet transport layer.
+\end{itemize}
+
+\subsection{Analysis Tools and Statistics}
+\label{subsec:intro:toolsandstats}
+The following analysis tools are currently available in \sstmacro.
+Some are thoroughly tested. Others have undergone some testing, but are still considered Beta.  Others have been implemented, but are relatively untested.
+\subsubsection{Fully tested}
+\label{subsubsec:intro:fulltestedtools}
+\begin{itemize}
+\item Call graph: Generates callgrind.out file that can be visualized in either KCacheGrind or QCacheGrind. More details are given in \ref{sec:tutorials:callgraph}.
+\item Spyplot: Generates .csv data files tabulating the number of messages and number of bytes sent between MPI ranks. \sstmacro can also directly generate a PNG file. Otherwise, the .csv files can be visualized in the plotting program Scilab. More details are given in \ref{sec:tutorials:spyplot}.
+\item Fixed-time quanta (FTQ): Generates a .csv data tabulating the amount of time spent doing computation/communication as the application progresses along with a Gnuplot script for visualization as a histogram. More details are given in \ref{sec:tutorials:ftq}
+\end{itemize}
+
+\section{Known Issues and Limitations}
+\label{sec:intro:issues}
+
+\subsection{Global Variables}
+\label{subsec:issues:globals}
+
+The use of global variables in \sstmacro inherently creates a false-sharing scenario 
+because of the use of user-space threads to model parallel processes.   
+While we do have a mechanism for supporting them (see \ref{sec:skel:basic} for more information), 
+the file using them must be compiled with C++.   
+This is somewhat unfortunate, because many C programs will use global variables as a convenient means of accessing program data.   
+In almost every case, though, a C program can simply be compiled as C++ by changing the extension to .cc or .cpp.
+
+\subsection{MPI}
+\label{subsec:issues:mpi}
+
+Everything from MPI 2 is implemented with a few exceptions noted below.  
+The following are \textit{not} implemented (categorized by MPI concepts):
+
+\subsubsection{Communicators}
+\label{subsubsec:issues:mpi:comm}
+
+\begin{itemize}
+\item Anything using or having to do with Inter-communicators (\func{MPI\_Intercomm\_create()})
+\item Topology communicators
+\end{itemize}
+
+\subsubsection{Datatypes and Addressing}
+\label{subsubsec:issues:mpi:types}
+
+\begin{itemize}
+\item Complicated use of MPI\_LB and MPI\_UB to define a struct, and collections of structs (MPI test 138). 
+\item Changing the name of built-in datatypes with \func{MPI\_Type\_set\_name()} (MPI test 171).
+\item \func{MPI\_Create\_darray()}, \func{MPI\_Create\_subarray()}, and \func{MPI\_Create\_resized()}
+\item \func{MPI\_Pack\_external() }, which is only useful for sending messages across MPI implementations apparently.
+\item \func{MPI\_Type\_match\_size() }  - extended fortran support
+\item Use of MPI\_BOTTOM (relative addressing).  Use normal buffers. 
+\item Using Fortran types (\eg MPI\_COMLEX) from C.
+\end{itemize}
+
+
+\subsubsection{Info and Attributes}
+\label{subsubsec:issues:mpi:info}
+
+No \func{MPI\_Info\_*}, \func{MPI\_*\_keyval}, or \func{MPI\_Attr\_*} functions are supported.
+
+\subsubsection{Point-to-Point}
+\label{subsubsec:issues:mpi:ptpt}
+
+\begin{itemize}
+\item \func{MPI\_Grequest\_*} functions (generalized requests).
+\item Use of testing non-blocking functions in a loop, such as:
+
+
+\begin{CppCode}
+while(!flag)
+{
+  MPI_Iprobe( 0, 0, MPI_COMM_WORLD, &flag, &status );
+}
+\end{CppCode}
+
+For some configurations, simulation time never advances in the MPI\_Iprobe call. 
+This causes an infinite loop that never returns to the discrete event manager. 
+Even if configured so that time progresses, the code will work but will take a very long time to run.
+	
+\end{itemize}
+
+
+\subsubsection{Collectives}
+\label{subsubsec:issues:mpi:collectives}
+
+\begin{itemize}
+\item There seems to be a problem with using MPI\_FLOAT and MPI\_PROD in \func{MPI\_Allreduce()} (MPI test 22)
+\item There seems to be a problem with using non-commutative user-defined operators in \func{MPI\_Reduce()} and \func{MPI\_Allreduce()}.
+\item \func{MPI\_Alltoallw()} is not implemented
+\item \func{MPI\_Exscan()} is not implemented
+\item \func{MPI\_Reduce\_Scatter\_block()} is not implemented.
+\item \func{MPIX\_*} functions are not implemented  (like non-blocking collectives).
+\item Calling MPI functions from user-defined reduce operations (MPI test 39; including \func{MPI\_Comm\_rank}).
+\end{itemize}
+
+\subsubsection{Miscellaneous}
+\label{subsubsec:issues:mpi:misc}
+
+\begin{itemize}
+\item \func{MPI\_Is\_thread\_main()} is not implemented.
+\end{itemize}
+
+\subsection{OpenSHMEM}
+\label{subsec:issues:shmem}
+
+Only the collect and fcollect functions of the API are not implemented (they will be in future releases).
+
+Also, like handling of global variables discussed in Sections \ref{subsec:issues:globals} and \ref{sec:skel:globals}, SHMEM globals need to use a different type.  
+For primitives and primitive arrays, refer to \inlinecode{<sstmac/openshmem/shmem/globals.h>} for replacing types, e.g. the following code
+
+\begin{ViFile}
+int my_global_var = 4;
+double an_array[6];
+\end{ViFile}
+
+needs to become
+
+\begin{ViFile}
+shmem_int my_global_var(4);
+shmem_arr<double, 6> an_array;
+\end{ViFile}
+
+
+\subsection{Fortran}
+\label{subsec:issues:fortran}
+
+\sstmacro previously provided some experimental support for Fortran90 applications. 
+This has been discontinued for the foreseeable future.
+For profiling existing apps written with Fortran, DUMPI traces can still be generated. 
+

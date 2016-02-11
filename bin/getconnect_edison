@@ -1,0 +1,237 @@
+#! /usr/bin/env python
+
+from __future__ import print_function
+import re
+
+text = open("interconnect.txt").read()
+
+aries_re = r"""
+    c(\d+)[-](\d+) #cabinet X,Y pos on floor
+    c(\d+) #
+    s(\d+) #slot
+    a\d+ #always zero, ignore
+    l(\d)(\d) #tile port x/y
+    [(](\d+)[:](\d+)[:](\d+)[)] #x,y,g coordinates
+    """
+
+inter = r"\s+([a-z]+)\s+[-][>]\s+"
+
+retext = aries_re + inter + aries_re
+
+regexp = re.compile(retext,re.VERBOSE)
+
+
+class Router:
+    nx = 16
+    ny = 6
+    def __init__(self,x,y,g):   
+        self.x = x
+        self.y = y
+        self.g = g
+        self.inputs = [None]*48
+        self.inputs_xy = [None]*48
+        self.outputs = [None]*48
+        self.outputs_xy = [None]*48
+        self.outputs_port = [None]*48
+        self.outputs_port_xy = [None]*48
+        self.printed = False
+
+    def __str__(self):
+        return "%2d %d %2d" % (self.x, self.y, self.g)
+
+    def get_x_outputs(self):
+        out = []
+        for entry in self.outputs:
+            if entry and self.g == entry.g and self.y == entry.y:
+                out.append(entry)
+        return out
+
+    def get_y_outputs(self):
+        out = []
+        for entry in self.outputs:
+            if entry and self.g == entry.g and self.x == entry.x:
+                out.append(entry)
+        return out
+
+    def get_grp_outputs(self):
+        out = []
+        for entry in self.outputs:
+            if entry and self.g == entry.g:
+                out.append(entry)
+        return out
+
+    def get_g_outputs(self):
+        out = []
+        for entry in self.outputs:
+            if entry and not self.g == entry.g:
+                out.append(entry)
+        return out
+
+    def get_g_connections(self,g):
+        out = []
+        for entry in self.outputs:
+            if entry and entry.g == g:
+                out.append(entry)
+        return out
+        
+
+    def has_g_connection(self,g):
+        for entry in self.outputs:
+            if entry and entry.g == g:
+                return True
+
+    def _nid(cls,x,y,g):
+        offset = g * cls.nx * cls.ny
+        offset += y * cls.nx
+        return offset + x
+    nid = classmethod(_nid)
+
+class RouterSet:
+    def __init__(self):
+        self.routers = [None]*1600
+    
+    def __getitem__(self,idx):
+        return self.routers[idx]
+    
+    def __setitem__(self,idx,item):
+        self.routers[idx] = item
+
+    def get(self,x,y,g):
+        nid = Router.nid(x,y,g)
+        return self.routers[nid]
+
+class Group:
+    def __init__(self, routers, g):
+        self.g = g
+        self.routers = []
+        for rtr in routers:
+            if rtr and rtr.g == g:
+                self.routers.append(rtr)
+
+    def get_g_connections(self,g):
+        out = []
+        for rtr in self.routers:
+            if rtr.has_g_connection(g):
+                out.append(rtr)
+        return out
+            
+
+routers = RouterSet()
+
+def extract(match):
+    #0-3 are cabinet stuff 
+    srcport = int("%s%s" % (match[4],match[5]) )
+    srcport_xy = (match[5],match[4])
+    srcg, srcy, srcx = map(int, match[6:9])
+    #9 = color
+    #10-13 are cabinet stuff 
+    dstport = int("%s%s" % (match[14],match[15]) )
+    dstport_xy = (match[15],match[14])
+    dstg, dsty, dstx = map(int, match[16:19])
+
+    nid_src = Router.nid(srcx, srcy, srcg)
+    rsrc = routers[nid_src]
+    if rsrc == None:
+        rsrc = Router(srcx, srcy, srcg)
+        routers[nid_src] = rsrc
+    nid_dst = Router.nid(dstx, dsty, dstg)
+    rdst = routers[nid_dst]
+    if rdst == None:
+        rdst = Router(dstx, dsty, dstg)
+        routers[nid_dst] = rdst
+
+    rsrc.outputs[srcport] = rdst
+    rsrc.outputs_xy[srcport] = srcport_xy
+    rsrc.outputs_port[srcport] = dstport
+    rsrc.outputs_port_xy[srcport] = dstport_xy
+    rdst.inputs[dstport] = rsrc
+    rdst.inputs_xy[dstport] = dstport_xy
+    
+matches = regexp.findall(text)
+for m in matches:
+    extract(m)
+
+# Print all outputs for a given router
+def print_router(x,y,z):
+    rtr = routers.get(x,y,z)
+    outputs = rtr.get_g_outputs()
+    for out in outputs:
+        if not out.printed:
+            #print "%s -> %s" % (rtr, out)
+            print( rtr, "->", out)
+            out.printed = True
+    for out in outputs:
+        out.printed = False
+
+# Print all connections from one group to another
+def print_grp_conns(srcg,dstg):
+    grp = Group(routers, srcg)
+    rtrs = grp.get_g_connections(dstg)
+    for rtr in rtrs:
+        conns = rtr.get_g_connections(dstg)
+        if not conns:
+            print ("NOTHING TO", dstg)
+        for c in conns:
+            if not c.printed:
+                print (rtr, "->", c)
+                c.printed = True
+        for c in conns:
+            c.printed = False
+
+# Print all outputs for a given router by port number
+#def print_ports(x,y,z):
+#    rtr = routers.get(x,y,z)
+#    for p in range(48):
+#        out = rtr.outputs[p]
+#        if out:
+#            out_port = rtr.outputs_port[p]
+#            print "%s : %2d -> %s : %2d" % (rtr, p, out, out_port)
+             
+
+# Print all outputs for a given router by port number
+def print_ports_xy(x,y,z,handle):
+    rtr = routers.get(x,y,z)
+    for p in range(48):
+        out = rtr.outputs[p]
+        if out:
+            out_xy = rtr.outputs_xy[p]
+            out_port = rtr.outputs_port[p]
+            out_port_xy = rtr.outputs_port_xy[p]
+            if rtr.g == out.g:
+              #print ("%s %s : %s %s -> %s %s : %s %s" % (rtr.x, rtr.y, out_xy[0], out_xy[1], out.x, out.y, out_port_xy[0], out_port_xy[1]),handle)
+              print (rtr.x, rtr.y, ":", out_xy[0], out_xy[1], "->", out.x, out.y, ":", out_port_xy[0], out_port_xy[1], file=handle)
+
+# Print all intergroup outputs for a given router by port number
+def print_ig_ports_xy(x,y,z,handle):
+    rtr = routers.get(x,y,z)
+    for p in range(48):
+        out = rtr.outputs[p]
+        if out:
+            out_xy = rtr.outputs_xy[p]
+            out_port = rtr.outputs_port[p]
+            out_port_xy = rtr.outputs_port_xy[p]
+            if rtr.g != out.g:
+              if rtr.g > 12:
+                rtr_g = rtr.g - 1
+              else: 
+                rtr_g = rtr.g
+              if out.g > 12:
+                out_g = out.g - 1
+              else:
+                out_g = out.g
+              #print ("%s %s %s : %s %s -> %s %s %s : %s %s" % (rtr.x, rtr.y, rtr_g, out_xy[0], out_xy[1], out.x, out.y, out_g, out_port_xy[0], out_port_xy[1]),handle)
+              print( rtr.x, rtr.y, rtr_g, ":", out_xy[0], out_xy[1], "->", out.x, out.y, out_g, ":", out_port_xy[0], out_port_xy[1], file=handle)
+
+f_intra = open('intergroup.txt', 'w')
+for g in range(16):
+  for x in range(16):
+    for y in range(6):
+      if g != 12:
+        print_ig_ports_xy(x,y,g,f_intra)
+
+
+f_inter = open('intragroup.txt', 'w')
+for x in range(16):
+  for y in range(6):
+    print_ports_xy(x,y,0,f_inter)
+

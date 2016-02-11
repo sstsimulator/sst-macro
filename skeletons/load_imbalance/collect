@@ -1,0 +1,4 @@
+#! /usr/bin/env bash
+
+./runsst -d compute_intensity,timestamp
+

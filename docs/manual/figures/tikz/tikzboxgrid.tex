@@ -1,0 +1,68 @@
+
+\newlength{\meshLength}
+\newlength{\meshBoxWidth}
+\newlength{\meshBoxHeight}
+\newlength{\meshXSize}
+\newlength{\meshYSize}
+\newcommand{\boxGrid}[8]{
+%#1 number in x dim
+%#2 number in y dim
+%#3 grid size
+%#4 box width
+%#5 box height
+%#6 middle of mesh
+%#7 box attributes
+%#8 box name
+\pgfmathtruncatemacro{\meshNumX}{#1}
+\pgfmathtruncatemacro{\meshNumY}{#2}
+\setlength{\meshBoxWidth}{#4}
+\setlength{\meshBoxHeight}{#5}
+\setlength{\meshLength}{#3}
+\pgfmathsetmacro{\numXGapsMesh}{#1 - 1}
+\pgfmathsetmacro{\numYGapsMesh}{#2 - 1}
+\setlength{\meshXSize}{\numXGapsMesh \meshLength}
+\setlength{\meshYSize}{\numYGapsMesh \meshLength}
+\addtolength{\meshXSize}{\meshBoxWidth}
+\addtolength{\meshYSize}{\meshBoxHeight}
+\path (#6) coordinate (meshMidPoint);
+\path (meshMidPoint) + (0,0.5\meshYSize) coordinate (meshTmp);
+\path (meshTmp) + (-0.5\meshXSize,0) coordinate (meshTopLeft);	
+\foreach \x in {1,...,#1}
+  \foreach \y  in {1,...,#2}
+ {	
+  	\pgfmathtruncatemacro\xmm{\x - 1}
+  	\pgfmathtruncatemacro\xpp{\x + 1}
+ 	\pgfmathtruncatemacro\ymm{\y - 1}
+ 	\pgfmathtruncatemacro\ypp{\y + 1}
+	\path (meshTopLeft) + (\xmm \meshLength, -\ymm \meshLength) coordinate (meshPoint);
+ 	\defineBox{#8\x\y}{meshPoint}{#4}{#5}{#7}
+ }
+}
+
+\newcommand{\textGrid}[5]{
+%#1 number in x dim
+%#2 number in y dim
+%#3 grid size
+%#4 middle of mesh
+%#5 text
+\pgfmathtruncatemacro{\meshNumX}{#1}
+\pgfmathtruncatemacro{\meshNumY}{#2}
+\setlength{\meshLength}{#3}
+\pgfmathsetmacro{\numXGapsMesh}{#1 - 1}
+\pgfmathsetmacro{\numYGapsMesh}{#2 - 1}
+\setlength{\meshXSize}{\numXGapsMesh \meshLength}
+\setlength{\meshYSize}{\numYGapsMesh \meshLength}
+\path (#4) coordinate (meshMidPoint);
+\path (meshMidPoint) + (0,0.5\meshYSize) coordinate (meshTmp);
+\path (meshTmp) + (-0.5\meshXSize,0) coordinate (meshTopLeft);	
+\foreach \x in {1,...,#1}
+  \foreach \y  in {1,...,#2}
+ {	
+  	\pgfmathtruncatemacro\xmm{\x - 1}
+  	\pgfmathtruncatemacro\xpp{\x + 1}
+ 	\pgfmathtruncatemacro\ymm{\y - 1}
+ 	\pgfmathtruncatemacro\ypp{\y + 1}
+	\path (meshTopLeft) + (\xmm \meshLength, -\ymm \meshLength) coordinate (meshPoint);
+	\node at (meshPoint) { {#5} };
+ }
+}

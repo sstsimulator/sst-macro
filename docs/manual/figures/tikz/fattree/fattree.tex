@@ -1,0 +1,254 @@
+\documentclass{article}
+
+\newcommand{\tikzLibFolder}{/Users/jjwilke/Programs/sstmacro/docs/manual/figures/tikz}
+
+\input{\tikzLibFolder/tikzlib.tex}
+
+\usepackage[paperwidth=3.7in, paperheight=3.75in]{geometry}
+\setlength{\textheight}{4.3in}
+\setlength{\textwidth}{4.3in}
+\setlength{\hoffset}{-1.15in}
+\setlength{\voffset}{-0.9in}
+
+\setlength{\oddsidemargin}{0pt}
+\setlength{\evensidemargin}{0pt}
+\setlength{\marginparwidth}{0pt}
+\setlength{\marginparsep}{0pt}
+\setlength{\topmargin}{0pt}
+\setlength{\headheight}{0pt}
+\setlength{\headsep}{0pt}
+\setlength{\footskip}{0pt}
+\usetikzlibrary{backgrounds}
+
+\newcommand{\textsize}{\scriptsize}
+\newcommand{\boxsize}{0.85cm}
+
+\begin{document}
+\begin{tikzpicture}
+\useasboundingbox (-1.8in,-1.6in) rectangle (1.8in,2.1in);
+\boxGrid{8}{3}{1.15cm}{\boxsize}{\boxsize}{0cm,0cm}{}{main}
+\boxGrid{4}{1}{0.95cm}{\boxsize}{\boxsize}{0cm,3cm}{}{top}
+\boxGrid{16}{1}{0.57cm}{0.4cm}{0.25cm}{0cm,-1.7cm}{}{nodes}
+
+\node at (0cm,-1.8cm) { Compute Nodes };
+
+\myRectangle{fill=cyan!50}{mainmesh12BxL}{\boxsize,\boxsize}
+\myRectangle{fill=cyan!50}{mainmesh22BxL}{\boxsize,\boxsize}
+\myRectangle{fill=red}{mainmesh32BxL}{\boxsize,\boxsize}
+\myRectangle{fill=red}{mainmesh42BxL}{\boxsize,\boxsize}
+\myRectangle{fill=green}{mainmesh52BxL}{\boxsize,\boxsize}
+\myRectangle{fill=green}{mainmesh62BxL}{\boxsize,\boxsize}
+\myRectangle{fill=orange}{mainmesh72BxL}{\boxsize,\boxsize}
+\myRectangle{fill=orange}{mainmesh82BxL}{\boxsize,\boxsize}
+
+\myRectangle{fill=blue!50}{mainmesh11BxL}{\boxsize,\boxsize}
+\myRectangle{fill=blue!50}{mainmesh21BxL}{\boxsize,\boxsize}
+\myRectangle{fill=blue!50}{mainmesh31BxL}{\boxsize,\boxsize}
+\myRectangle{fill=blue!50}{mainmesh41BxL}{\boxsize,\boxsize}
+
+\myRectangle{fill=brown}{mainmesh51BxL}{\boxsize,\boxsize}
+\myRectangle{fill=brown}{mainmesh61BxL}{\boxsize,\boxsize}
+\myRectangle{fill=brown}{mainmesh71BxL}{\boxsize,\boxsize}
+\myRectangle{fill=brown}{mainmesh81BxL}{\boxsize,\boxsize}
+
+\myRectangle{fill=gray!60}{mainmesh23BxL}{\boxsize,\boxsize}
+\myRectangle{fill=gray!60}{mainmesh43BxL}{\boxsize,\boxsize}
+\myRectangle{fill=gray!60}{mainmesh63BxL}{\boxsize,\boxsize}
+\myRectangle{fill=gray!60}{mainmesh83BxL}{\boxsize,\boxsize}
+
+\myRectangle{fill=red!50}{topmesh11BxL}{\boxsize,\boxsize}
+\myRectangle{fill=red!50}{topmesh21BxL}{\boxsize,\boxsize}
+\myRectangle{fill=red!50}{topmesh31BxL}{\boxsize,\boxsize}
+\myRectangle{fill=red!50}{topmesh41BxL}{\boxsize,\boxsize}
+
+\myRectangle{fill=yellow}{nodesmesh11BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh21BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh31BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh41BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh51BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh61BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh71BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh81BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh91BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh101BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh111BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh121BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh131BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh141BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh151BxL}{0.4cm,0.25cm}
+\myRectangle{fill=yellow}{nodesmesh161BxL}{0.4cm,0.25cm}
+
+
+%\node at (mainmesh13Center) { \textsize Node};
+%\node at (mainmesh23Center) { \textsize Node};
+%\node at (mainmesh33Center) { \textsize Node};
+%\node at (mainmesh43Center) { \textsize Node};
+%\node at (mainmesh53Center) { \textsize Node};
+%\node at (mainmesh63Center) { \textsize Node};
+%\node at (mainmesh73Center) { \textsize Node};
+%\node at (mainmesh83Center) { \textsize Node};
+
+\draw [thick] (nodesmesh11TxC) -- (mainmesh13BxC);
+\draw [thick] (nodesmesh21TxC) -- (mainmesh13BxC);
+\draw [thick] (nodesmesh31TxC) -- (mainmesh23BxC);
+\draw [thick] (nodesmesh41TxC) -- (mainmesh23BxC);
+\draw [thick] (nodesmesh51TxC) -- (mainmesh33BxC);
+\draw [thick] (nodesmesh61TxC) -- (mainmesh33BxC);
+\draw [thick] (nodesmesh71TxC) -- (mainmesh43BxC);
+\draw [thick] (nodesmesh81TxC) -- (mainmesh43BxC);
+\draw [thick] (nodesmesh91TxC) -- (mainmesh53BxC);
+\draw [thick] (nodesmesh101TxC) -- (mainmesh53BxC);
+\draw [thick] (nodesmesh111TxC) -- (mainmesh63BxC);
+\draw [thick] (nodesmesh121TxC) -- (mainmesh63BxC);
+\draw [thick] (nodesmesh131TxC) -- (mainmesh73BxC);
+\draw [thick] (nodesmesh141TxC) -- (mainmesh73BxC);
+\draw [thick] (nodesmesh151TxC) -- (mainmesh83BxC);
+\draw [thick] (nodesmesh161TxC) -- (mainmesh83BxC);
+
+
+\draw [thick] (mainmesh13TxC) -- (mainmesh12BxC);
+\draw [thick] (mainmesh13TxC) -- (mainmesh22BxC);
+\draw [thick] (mainmesh23TxC) -- (mainmesh12BxC);
+\draw [thick] (mainmesh23TxC) -- (mainmesh22BxC);
+\draw [thick] (mainmesh33TxC) -- (mainmesh32BxC);
+\draw [thick] (mainmesh33TxC) -- (mainmesh42BxC);
+\draw [thick] (mainmesh43TxC) -- (mainmesh32BxC);
+\draw [thick] (mainmesh43TxC) -- (mainmesh42BxC);
+
+\draw [thick] (mainmesh53TxC) -- (mainmesh52BxC);
+\draw [thick] (mainmesh53TxC) -- (mainmesh62BxC);
+\draw [thick] (mainmesh63TxC) -- (mainmesh52BxC);
+\draw [thick] (mainmesh63TxC) -- (mainmesh62BxC);
+\draw [thick] (mainmesh73TxC) -- (mainmesh72BxC);
+\draw [thick] (mainmesh73TxC) -- (mainmesh82BxC);
+\draw [thick] (mainmesh83TxC) -- (mainmesh72BxC);
+\draw [thick] (mainmesh83TxC) -- (mainmesh82BxC);
+
+\draw [thick] (mainmesh12TxC) -- (mainmesh11BxC);
+\draw [thick] (mainmesh12TxC) -- (mainmesh31BxC);
+\draw [thick] (mainmesh22TxC) -- (mainmesh21BxC);
+\draw [thick] (mainmesh22TxC) -- (mainmesh41BxC);
+\draw [thick] (mainmesh32TxC) -- (mainmesh11BxC);
+\draw [thick] (mainmesh32TxC) -- (mainmesh31BxC);
+\draw [thick] (mainmesh42TxC) -- (mainmesh21BxC);
+\draw [thick] (mainmesh42TxC) -- (mainmesh41BxC);
+
+\draw [thick] (mainmesh52TxC) -- (mainmesh51BxC);
+\draw [thick] (mainmesh52TxC) -- (mainmesh71BxC);
+\draw [thick] (mainmesh62TxC) -- (mainmesh61BxC);
+\draw [thick] (mainmesh62TxC) -- (mainmesh81BxC);
+\draw [thick] (mainmesh72TxC) -- (mainmesh51BxC);
+\draw [thick] (mainmesh72TxC) -- (mainmesh71BxC);
+\draw [thick] (mainmesh82TxC) -- (mainmesh61BxC);
+\draw [thick] (mainmesh82TxC) -- (mainmesh81BxC);
+
+\draw [thick] (mainmesh11TxC) -- (topmesh11BxC);
+\draw [thick] (mainmesh11TxC) -- (topmesh31BxC);
+\draw [thick] (mainmesh21TxC) -- (topmesh11BxC);
+\draw [thick] (mainmesh21TxC) -- (topmesh31BxC);
+
+\draw [thick] (mainmesh31TxC) -- (topmesh21BxC);
+\draw [thick] (mainmesh31TxC) -- (topmesh41BxC);
+\draw [thick] (mainmesh41TxC) -- (topmesh21BxC);
+\draw [thick] (mainmesh41TxC) -- (topmesh41BxC);
+
+\draw [thick] (mainmesh51TxC) -- (topmesh11BxC);
+\draw [thick] (mainmesh61TxC) -- (topmesh31BxC);
+\draw [thick] (mainmesh51TxC) -- (topmesh11BxC);
+\draw [thick] (mainmesh61TxC) -- (topmesh31BxC);
+
+\draw [thick] (mainmesh71TxC) -- (topmesh21BxC);
+\draw [thick] (mainmesh71TxC) -- (topmesh41BxC);
+\draw [thick] (mainmesh81TxC) -- (topmesh21BxC);
+\draw [thick] (mainmesh81TxC) -- (topmesh41BxC);
+
+\node at (mainmesh13Center) { \textsize \shortstack{Switch\\0} };
+\node at (mainmesh23Center) { \textsize \shortstack{Switch\\1} };
+\node at (mainmesh33Center) { \textsize \shortstack{Switch\\2} };
+\node at (mainmesh43Center) { \textsize \shortstack{Switch\\3} };
+\node at (mainmesh53Center) { \textsize \shortstack{Switch\\4} };
+\node at (mainmesh63Center) { \textsize \shortstack{Switch\\5} };
+\node at (mainmesh73Center) { \textsize \shortstack{Switch\\6} };
+\node at (mainmesh83Center) { \textsize \shortstack{Switch\\7} };
+
+\node at (mainmesh12Center) { \textsize \shortstack{Switch\\8} };
+\node at (mainmesh22Center) { \textsize \shortstack{Switch\\9} };
+\node at (mainmesh32Center) { \textsize \shortstack{Switch\\10} };
+\node at (mainmesh42Center) { \textsize \shortstack{Switch\\11} };
+\node at (mainmesh52Center) { \textsize \shortstack{Switch\\12} };
+\node at (mainmesh62Center) { \textsize \shortstack{Switch\\13} };
+\node at (mainmesh72Center) { \textsize \shortstack{Switch\\14} };
+\node at (mainmesh82Center) { \textsize \shortstack{Switch\\15} };
+
+\node at (mainmesh11Center) { \textsize \shortstack{Switch\\16} };
+\node at (mainmesh21Center) { \textsize \shortstack{Switch\\17} };
+\node at (mainmesh31Center) { \textsize \shortstack{Switch\\18} };
+\node at (mainmesh41Center) { \textsize \shortstack{Switch\\19} };
+\node at (mainmesh51Center) { \textsize \shortstack{Switch\\20} };
+\node at (mainmesh61Center) { \textsize \shortstack{Switch\\21} };
+\node at (mainmesh71Center) { \textsize \shortstack{Switch\\22} };
+\node at (mainmesh81Center) { \textsize \shortstack{Switch\\23} };
+
+\node at (topmesh11Center) { \textsize \shortstack{Switch\\24} };
+\node at (topmesh21Center) { \textsize \shortstack{Switch\\25} };
+\node at (topmesh31Center) { \textsize \shortstack{Switch\\26} };
+\node at (topmesh41Center) { \textsize \shortstack{Switch\\27} };
+
+
+\node at (nodesmesh11Center) { \tiny 0};
+\node at (nodesmesh21Center) { \tiny 1};
+\node at (nodesmesh31Center) { \tiny 2};
+\node at (nodesmesh41Center) { \tiny 3};
+\node at (nodesmesh51Center) { \tiny 4};
+\node at (nodesmesh61Center) { \tiny 5};
+\node at (nodesmesh71Center) { \tiny 6};
+\node at (nodesmesh81Center) { \tiny 7};
+\node at (nodesmesh91Center) { \tiny 8};
+\node at (nodesmesh101Center) { \tiny 9};
+\node at (nodesmesh111Center) { \tiny 10};
+\node at (nodesmesh121Center) { \tiny 11};
+\node at (nodesmesh131Center) { \tiny 12};
+\node at (nodesmesh141Center) { \tiny 13};
+\node at (nodesmesh151Center) { \tiny 14};
+\node at (nodesmesh161Center) { \tiny 15};
+
+
+%\node at (topmesh11Center) { \textsize 0,0 };
+%\node at (topmesh21Center) { \textsize 0,1 };
+%
+%\node at (mainmesh11Center) { \textsize 1,0,0 };
+%\node at (mainmesh21Center) { \textsize 1,0,1 };
+%\node at (mainmesh31Center) { \textsize 1,0,2 };
+%\node at (mainmesh41Center) { \textsize 1,0,3 };
+%
+%\node at (mainmesh12Center) { \textsize 2,0,0,0 };
+%\node at (mainmesh22Center) { \textsize 2,0,0,1 };
+%\node at (mainmesh32Center) { \textsize 2,0,1,0 };
+%\node at (mainmesh42Center) { \textsize 2,0,1,1 };
+%
+%\node at (mainmesh13Center) { \textsize \shortstack{3,0,0\\0,0} };
+%\node at (mainmesh23Center) { \textsize \shortstack{3,0,0\\1,0} };
+%\node at (mainmesh33Center) { \textsize \shortstack{3,0,1\\0,0} };
+%\node at (mainmesh43Center) { \textsize \shortstack{3,0,1\\1,0} };
+%
+%\node at (topmesh31Center) { \textsize 0,2 };
+%\node at (topmesh41Center) { \textsize 0,3 };
+%
+%\node at (mainmesh51Center) { \textsize 1,1,0 };
+%\node at (mainmesh61Center) { \textsize 1,1,1 };
+%\node at (mainmesh71Center) { \textsize 1,1,2 };
+%\node at (mainmesh81Center) { \textsize 1,1,3 };
+%
+%\node at (mainmesh52Center) { \textsize 2,1,0,0 };
+%\node at (mainmesh62Center) { \textsize 2,1,0,1 };
+%\node at (mainmesh72Center) { \textsize 2,1,1,0 };
+%\node at (mainmesh82Center) { \textsize 2,1,1,1 };
+%
+%\node at (mainmesh53Center) { \textsize \shortstack{3,1,0\\0,0} };
+%\node at (mainmesh63Center) { \textsize \shortstack{3,1,0\\1,0} };
+%\node at (mainmesh73Center) { \textsize \shortstack{3,1,1\\0,0} };
+%\node at (mainmesh83Center) { \textsize \shortstack{3,1,1\\1,0} };
+
+\end{tikzpicture}
+\end{document}
+

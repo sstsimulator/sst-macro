@@ -1,0 +1,95 @@
+
+\documentclass{beamer}
+
+\newcommand{\tikzLibFolder}{/Users/jjwilke/Programs/sstmacro/docs/manual/figures/tikz}
+
+\input{\tikzLibFolder/tikzlib.tex}
+
+\begin{document}
+\setlength{\pdfpagewidth}{11.2cm}
+\setlength{\pdfpageheight}{5cm}
+\setlength{\oddsidemargin}{0.1cm}
+\setlength{\hoffset}{-1.05in}
+
+\scriptsize
+\tikzstyle{int}=[minimum size=2em, text width=3.2cm,font=\tiny]
+
+
+\begin{tikzpicture}
+
+\newcommand{\ftq}[3]{
+	% #1 time start
+	% #2 thread number
+	% #3 color 
+	\pgfmathsetlengthmacro{\ftqstarty}{#1*-0.85cm}
+	\pgfmathsetlengthmacro{\ftqstartx}{#2*3.3cm}
+	\defineBox{tmp}{\ftqstartx,\ftqstarty}{3.3cm}{0.85cm}{fill=#3}
+}
+
+\newcommand{\event}[5]{
+	% #1 the event time
+	% #2 thread number
+	% #3 the event number in that time
+	% #4 absolute event number
+	% #5 event text
+	\pgfmathsetlengthmacro{\ftqstarty}{(#1*-0.85 - #3*0.2 + 0.72)*1cm}
+	\pgfmathsetlengthmacro{\ftqstartx}{((#2*3.3 + 1.63)*1cm}
+	\node [int] at (\ftqstartx,\ftqstarty) { #4)#5 };
+
+}
+
+\newcommand{\colorzero}{red!40}
+\newcommand{\colorone}{blue!30}
+\newcommand{\colortwo}{green!40}
+
+\ftq{0}{0}{\colorzero}
+\ftq{0}{1}{\colorone}
+\ftq{0}{2}{\colortwo}
+
+\ftq{1}{0}{\colorzero}
+\ftq{1}{1}{\colorone}
+\ftq{1}{2}{white}
+
+\ftq{2}{0}{\colorzero}
+\ftq{2}{1}{white}
+\ftq{2}{2}{\colortwo}
+
+\ftq{3}{0}{\colorzero}
+\ftq{3}{1}{white}
+\ftq{3}{2}{\colortwo}
+
+\ftq{4}{0}{\colorzero}
+\ftq{4}{1}{\colorone}
+\ftq{4}{2}{white}
+
+\event{0}{0}{0}{0}{Launch proc 0}
+\event{0}{1}{1}{1}{Block until send complete}
+\event{0}{0}{2}{2}{Launch proc 1}
+\event{0}{2}{3}{3}{Post recv to NIC; block}
+
+\event{1}{0}{0}{4}{Send done; unblock proc 0}
+\event{1}{1}{1}{5}{Wait for ack; block}
+\event{1}{0}{2}{6}{Deliver msg to NIC 1 ($1 \mu s$)}
+
+\event{2}{0}{0}{7}{Recv at NIC 1; unblock proc 1}
+\event{2}{2}{1}{8}{Send ack for recv ($1 \mu s$); block}
+
+\event{3}{0}{0}{9}{Deliver ack to NIC 0 ($1 \mu s$)}
+\event{3}{0}{1}{10}{Send done; unblock proc 1}
+\event{3}{2}{2}{11}{Continue execution...}
+
+\event{4}{0}{0}{12}{Recv at NIC 0; unblock proc 0}
+\event{4}{1}{1}{13}{Continue execution...}
+
+\node at (1.6cm,1.0cm) { Sim Thread };
+\node at (4.9cm,1.0cm) { Process 0 };
+\node at (8.2cm,1.0cm) { Process 1 };
+
+\node at (-0.6cm,0.5cm) {$t=0 \mu s$};
+\node at (-0.6cm,-0.35cm) {$t=1 \mu s$};
+\node at (-0.6cm,-1.20cm) {$t=2 \mu s$};
+\node at (-0.6cm,-2.05cm) {$t=3 \mu s$};
+\node at (-0.6cm,-2.90cm) {$t=4 \mu s$};
+
+\end{tikzpicture}
+\end{document}

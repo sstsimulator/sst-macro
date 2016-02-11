@@ -1,0 +1,26 @@
+<events>
+<comm id="E1" dep="" sat="E0" type="COPY_ADVANCE" from="B1" to="B0" size="2560" />
+<comm id="E2" dep="" sat="E0" type="COPY_ADVANCE" from="B2" to="B0" size="2560" />
+<comm id="E3" dep="" sat="E0" type="COPY_ADVANCE" from="B3" to="B0" size="800" />
+<comm id="E5" dep="" sat="E4" type="COPY_ADVANCE" from="B0" to="B1" size="2560" />
+<comm id="E6" dep="" sat="E4" type="COPY_ADVANCE" from="B2" to="B1" size="800" />
+<comm id="E7" dep="" sat="E4" type="COPY_ADVANCE" from="B3" to="B1" size="3840" />
+<comm id="E9" dep="" sat="E8" type="COPY_ADVANCE" from="B0" to="B2" size="2560" />
+<comm id="E10" dep="" sat="E8" type="COPY_ADVANCE" from="B1" to="B2" size="800" />
+<comm id="E11" dep="" sat="E8" type="COPY_ADVANCE" from="B3" to="B2" size="2560" />
+<comm id="E13" dep="" sat="E12" type="COPY_ADVANCE" from="B0" to="B3" size="800" />
+<comm id="E14" dep="" sat="E12" type="COPY_ADVANCE" from="B1" to="B3" size="3840" />
+<comm id="E15" dep="" sat="E12" type="COPY_ADVANCE" from="B2" to="B3" size="2560" />
+<comp id="E0" dep="E1,E2,E3" sat="E16" type="ADVANCE" at="B0" size="8192" time="0.00602" />
+<comp id="E4" dep="E5,E6,E7" sat="E17" type="ADVANCE" at="B1" size="12288" time="0.00853" />
+<comp id="E8" dep="E9,E10,E11" sat="E18" type="ADVANCE" at="B2" size="8192" time="0.00602" />
+<comp id="E12" dep="E13,E14,E15" sat="E19" type="ADVANCE" at="B3" size="12288" time="0.00853" />
+<comp id="E16" dep="E0" sat="E20,E21,E22,E23,E24" type="ADVANCE_END" at="B0" size="8192" time="0" />
+<comp id="E17" dep="E4" sat="E25,E26,E27,E28,E29,E30,E31,E32,E33,E34,E35,E36,E37" type="ADVANCE_END" at="B1" size="12288" time="0" />
+<comp id="E18" dep="E8" sat="E38,E39,E40,E41,E42" type="ADVANCE_END" at="B2" size="8192" time="0" />
+<comp id="E19" dep="E12" sat="E43,E44,E45,E46,E47,E48,E49,E50,E51,E52,E53,E54,E55" type="ADVANCE_END" at="B3" size="12288" time="0" />
+<comp id="E24" dep="E16,E56,E57,E58,E59" sat="" type="FINISH" at="B0" size="8192" time="0" />
+<comp id="E37" dep="E17,E60,E61,E62,E63,E64,E65,E66,E67,E68,E69,E70,E71" sat="" type="FINISH" at="B1" size="12288" time="0" />
+<comp id="E42" dep="E18,E72,E73,E74,E75" sat="" type="FINISH" at="B2" size="8192" time="0" />
+<comp id="E55" dep="E19,E76,E77,E78,E79,E80,E81,E82,E83,E84,E85" sat="" type="FINISH" at="B3" size="12288" time="0" />
+</events>

@@ -1,0 +1,14 @@
+Yes, I reach here!
+Yes, I reach here!
+Spawned threads
+Mutex locked
+Mutex unlocked
+Mutex locked
+Mutex unlocked
+Condition locked
+Condition locked
+First signal
+Done waiting
+Second signal
+Done waiting
+Estimated total runtime of           3.00100000 seconds

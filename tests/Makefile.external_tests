@@ -1,0 +1,20 @@
+
+#------------------------------------------------------------------------------------------#
+#  External tests                                                                       {{{#
+#------------------------------------------------------------------------------------------#
+
+EXTERNALCASES= \
+  cpuset
+
+EXTERNALTESTS = $(EXTERNALCASES:%=external_test_%)
+
+external_test_%.$(CHKSUF): $(top_builddir)/tests/external/test_%
+	$(PYRUNTEST) 5 $@ external/test_$* \
+    -a -n 1 \
+		--no-wall-time \
+		-p node_cores=4 \
+		-p node.os.compute_scheduler=cpuset \
+		-d compute_scheduler 
+
+#------------------------------------------------------------------------------------------#
+

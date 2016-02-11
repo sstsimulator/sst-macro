@@ -1,0 +1,35 @@
+# Makefile for mpicxx compiler
+
+SHELL = /bin/sh
+#.IGNORE:
+
+# System-specific settings
+
+MPIPATH=/opt/intel/impi/4.1.0.012/intel64
+
+#compile with lower precision for floating point functions
+#INTEL_LOW_PREC=-fimf-precision=low -fimf-domain-exclusion=15
+
+CC =		$(MPIPATH)/bin/mpiicpc
+CCFLAGS =	-O3 -mavx -DMPICH_IGNORE_CXX_SEEK -I$(MPIPATH)/include -fopenmp -DPREC_TIMER -restrict -vec_report1 -DVECTORLENGTH=8 -DOpenMP31 $(INTEL_LOW_PREC) -DPRECISION=2
+LINK =		$(MPIPATH)/bin/mpiicpc   
+LINKFLAGS =	-O3 -mavx -fopenmp 
+USRLIB =	-lrt
+SYSLIB =	-lpthread
+SIZE =		size
+
+# Link rule
+
+$(EXE):	$(OBJ)
+	$(LINK) $(LINKFLAGS) $(OBJ) $(USRLIB) $(SYSLIB) -o $(EXE)
+	$(SIZE) $(EXE)
+	
+
+# Compilation rules
+
+.cpp.o:
+	$(CC) $(CCFLAGS) -c $<
+
+# Individual dependencies
+
+$(OBJ): $(INC)

@@ -1,0 +1,33 @@
+
+\newcommand{\meshName}{}
+\newcommand{\namedMesh}[6]{
+%#1 number in x dim
+%#2 number in y dim
+%#3 grid size
+%#4 box size
+%#5 middle of mesh
+  \boxGrid{#1}{#2}{#3}{#4}{#4}{#5}{}{#6}
+
+ \renewcommand{\meshName}{#6}
+ \pgfmathsetmacro\xmax{#1 - 1}  
+ \pgfmathsetmacro\ymax{#2 - 1}   	
+
+   \foreach \x  in {1,...,\xmax}
+     \foreach \y  in {1,...,#2}  	
+     {
+	\pgfmathtruncatemacro{\xpp}{\x + 1} 
+	\draw (\meshName\x\y CxR) -- (\meshName\xpp\y CxL);     
+     }
+
+   \foreach \x  in {1,...,#1}
+     \foreach \y  in {1,...,\ymax}
+     {	
+	\pgfmathtruncatemacro{\ypp}{\y + 1} 
+	\draw (\meshName\x\y BxC) -- (\meshName\x\ypp TxC);     
+     }
+}
+
+\newcommand{\mesh}[5]{
+  \namedMesh{#1}{#2}{#3}{#4}{#5}{mesh}
+}
+

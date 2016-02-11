@@ -1,0 +1,67 @@
+/*
+ *  This file is part of SST/macroscale:
+ *               The macroscale architecture simulator from the SST suite.
+ *  Copyright (c) 2009 Sandia Corporation.
+ *  This software is distributed under the BSD License.
+ *  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+ *  the U.S. Government retains certain rights in this software.
+ *  For more information, see the LICENSE file in the top
+ *  SST/macroscale directory.
+ */
+
+#ifndef SSTMAC_SOFTWARE_LIBRARIES_COMPUTE_LIB_COMPUTE_INST_H_INCLUDED
+#define SSTMAC_SOFTWARE_LIBRARIES_COMPUTE_LIB_COMPUTE_INST_H_INCLUDED
+
+#include <sstmac/software/libraries/compute/lib_compute.h>
+#include <sstmac/software/libraries/compute/compute_message.h>
+#include <sstmac/software/process/software_id.h>
+#include <sstmac/common/sstmac_config.h>
+#include <stdint.h>
+//these are the default instruction labels
+
+DeclareDebugSlot(lib_compute_inst);
+
+namespace sstmac {
+namespace sw {
+
+class lib_compute_inst :
+  public lib_compute
+{
+ public:
+  lib_compute_inst(software_id id);
+
+  lib_compute_inst(const std::string& id);
+
+  virtual
+  ~lib_compute_inst() { }
+
+  void
+  compute_inst(const compute_message::ptr&msg);
+
+  void
+  compute_detailed(uint64_t flops,
+    uint64_t nintops,
+    uint64_t bytes);
+
+  void
+  compute_loop(uint64_t nloops,
+    uint32_t flops_per_loop,
+    uint32_t intops_per_loop,
+    uint32_t bytes_per_loop);
+
+  virtual bool
+  supported() const;
+
+  virtual void
+  consume_params(sprockit::sim_parameters* params);
+
+ protected:
+  double loop_overhead_;
+
+};
+
+}
+} //end of namespace sstmac
+
+#endif
+

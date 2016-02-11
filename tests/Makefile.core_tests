@@ -1,0 +1,29 @@
+#------------------------------------------------------------------------------------------#
+#  Core tests                                                                           {{{#
+#------------------------------------------------------------------------------------------#
+
+
+CORETESTS+= \
+  test_core_apps_location_trace \
+  test_core_apps_ping_all_torus_simple \
+  test_core_apps_ping_all_simple_fattree \
+  test_core_apps_ping_all_dragonfly_simple \
+  test_core_apps_stop_time \
+  test_dharma_failure \
+  test_dharma_collective \
+  test_core_apps_new_collectives 
+
+#  test_core_apps_ping_all_tiled_dfly \
+#  test_core_apps_ping_all_butterfly 
+
+if HAVE_EVENT_CALENDAR
+CORETESTS +=  test_core_apps_mpi_event_calendar 
+endif
+
+test_dharma_%.$(CHKSUF): dharma/sst_%
+	$(PYRUNTEST) 5 $@ dharma/sst_$* -f $(srcdir)/dharma/ini/test_sst_$*.ini --no-wall-time 
+
+test_core_apps_ping_all_tiled_dfly.$(CHKSUF): $(SSTMACEXEC)
+	$(PYRUNTEST) 15 $@ $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_all_tiled_dfly.ini --no-wall-time 
+
+#------------------------------------------------------------------------------------------#

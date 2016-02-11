@@ -1,0 +1,26 @@
+set terminal postscript enhanced
+set border 3 front linetype -1 linewidth 1.000
+set boxwidth 0.75 absolute
+set style fill solid 1.00 border lt -1
+set grid nopolar
+set grid noxtics nomxtics ytics nomytics noztics nomztics nox2tics nomx2tics noy2tics nomy2tics nocbtics nomcbtics
+set grid layerdefault   linetype 0 linewidth 1.000,  linetype 0 linewidth 1.000
+set key outside right top vertical Left reverse noenhanced autotitles columnhead nobox
+set key invert samplen 4 spacing 1.5 width 0 height 0 font "Arial,28" 
+set size 0.95,0.95
+set style histogram rowstacked title  offset character 0, 0, 0
+set style data histograms
+set style fill solid noborder
+set xtics border in scale 0,0 nomirror rotate by -45  offset character 0, 0, 0 autojustify
+set xtics norangelimit font ",8"
+set xtics ()
+set xtics font "Arial,24" 
+set noytics
+set notitle 
+set ylabel "% of total" font "Arial,28" 
+set xlabel "Time(ms)" font "Arial,28" offset 0,-1
+set yrange [0.00000 : 100.000] noreverse nowriteback
+set boxwidth 1
+set xrange[0.0:928.0]
+plot 'ftq_app1.dat' using (100.*$2/$6) title column(2) lc 2 lw -1 lt -1, \
+   for [i=3:5] '' using (100.*column(i)/column(6)) title column(i) lc i lw -1 lt -1

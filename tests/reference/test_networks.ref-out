@@ -1,0 +1,9 @@
+running test 0
+timestamp(1.000000000000 sec): sent from nodeid(id: 0) to nodeid(id: 5)
+timestamp(1.000001100000 sec): recv from nodeid(id: 0) to nodeid(id: 5)
+timestamp(3.000000000000 sec): sent from nodeid(id: 1) to nodeid(id: 2)
+timestamp(3.000000000000 sec): sent from nodeid(id: 1) to nodeid(id: 4)
+timestamp(3.000001001000 sec): recv from nodeid(id: 1) to nodeid(id: 4)
+timestamp(3.000002000000 sec): recv from nodeid(id: 1) to nodeid(id: 2)
+done with test 0
+testing complete

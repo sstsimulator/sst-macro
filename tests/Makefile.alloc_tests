@@ -1,0 +1,15 @@
+if !INTEGRATED_SST_CORE
+#------------------------------------------------------------------------------------------#
+#  Allocation tests                                                                     {{{#
+#------------------------------------------------------------------------------------------#
+
+ALLOCTESTS = \
+  test_allocation_cart \
+  test_allocation_coordinate \
+  test_allocation_node_id
+
+test_allocation_%.$(CHKSUF): $(SSTMACEXEC)
+	$(PYRUNTEST) 5 $@ $(SSTMACEXEC) -f $(srcdir)/test_configs/test_allocation_$*.ini --no-wall-time -d allocation 
+
+#------------------------------------------------------------------------------------------#
+endif

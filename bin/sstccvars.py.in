@@ -1,0 +1,51 @@
+sstmac_default_ldflags = [
+'@LDFLAGS@',
+'-L@libdir@',
+]
+
+sstmac_extra_ldflags = [
+'@BOOST_LDFLAGS@',
+'@LIBS@',
+]
+
+sstmac_cppflags = [
+"@BOOST_CPPFLAGS@",
+"@CPPFLAGS@",
+"-I${includedir}/sstmac",
+"-I${includedir}",
+"-I${includedir}/sstmac/software/libraries",
+"-I${includedir}/sstmac/tools"
+]
+
+prefix="@prefix@"
+exec_prefix="@exec_prefix@"
+includedir="@includedir@"
+cxxflags="@CXXFLAGS@"
+cflags="@CFLAGS@"
+cc="@CC@"
+cxx="@CXX@"
+
+
+# Configure the PYTHONPATH
+def setPythonPath():
+  relpath = inspect.getfile(inspect.currentframe()) # script filename (usually with path)
+  abspath = os.path.abspath(relpath)
+  my_folder = os.path.dirname(abspath)
+
+  my_sstmac_include_dir = None
+
+  my_src_folder = os.path.join(my_folder, "pysst")
+  if (os.path.isdir(my_src_folder)):
+      my_sstmac_include_dir = os.path.join(*os.path.split(my_folder)[:-1])
+      sys.path.append(my_folder)
+
+  my_inc_folder = os.path.join(*os.path.split(my_folder)[:-1])
+  my_inc_folder = os.path.join(my_inc_folder, "include", "sstmac")
+  if (os.path.isdir(my_inc_folder)):
+      sys.path.append(my_inc_folder)
+      if not my_sstmac_include_dir:
+          my_sstmac_include_dir = os.path.join(my_inc_folder, "include")
+
+
+
+

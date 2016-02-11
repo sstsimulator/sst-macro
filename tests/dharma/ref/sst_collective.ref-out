@@ -1,0 +1,38 @@
+scheduling failure at timestamp(50 secs) on node 1
+Allreduce got collective done message
+Allreduce got collective done message
+Allreduce got collective done message
+Allreduce got collective done message
+Allreduce got collective done message
+Testing allreduce with payload
+test[0] = 5
+test[1] = 5
+test[2] = 4
+test[3] = 4
+test[4] = 3
+test[5] = 3
+test[6] = 2
+test[7] = 2
+test[8] = 1
+test[9] = 1
+Testing tiny allreduce
+test[0] = 5
+test[1] = 4
+test[2] = 3
+test[3] = 2
+Testing allgather payload with 1 elements
+Testing allgather payload with 4 elements
+t=4.00032: finished barrier on rank 0
+t=4.00032: finished barrier on rank 3
+t=4.00032: finished barrier on rank 1
+t=4.00032: finished barrier on rank 4
+t=4.00032: finished barrier on rank 2
+t=104.001: passed failed allreduce on rank 0
+t=104.002: passed failed allreduce on rank 4
+t=104.002: passed failed allreduce on rank 2
+t=104.002: passed failed allreduce on rank 3
+t=104.005: passed failed allgather on rank 2
+t=104.005: passed failed allgather on rank 3
+t=104.005: passed failed allgather on rank 4
+t=104.005: passed failed allgather on rank 0
+Estimated total runtime of         104.00615633 seconds

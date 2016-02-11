@@ -1,0 +1,243 @@
+%% !TEX root = manual.tex
+
+\section{Using DUMPI}
+\label{sec:tutorial:dumpi}
+
+\subsection{Building DUMPI}
+\label{subset:dump:build}
+As noted in the introduction, \sstmacro is primarily intended to be an on-line simulator. Real application code runs, but \sstmacro  intercepts calls to communication (MPI) and computation functions to simulate time passing.  However, \sstmacro can also run off-line, replaying application traces collected from real production runs.  This trace collection and trace replay library is called DUMPI.
+
+Although DUMPI is automatically included as a subproject in the \sstmacro download, trace collection can be easier if DUMPI is built independently from \sstmacro.  The code can be downloaded from \url{https://bitbucket.org/sst-ca/dumpi}. If downloaded through Mercurial, one must initialize the build system and create the configure script.
+
+\begin{ShellCmd}
+dumpi$ ./bootstraps.h
+\end{ShellCmd}
+
+DUMPI must be built with an MPI compiler.
+
+\begin{ShellCmd}
+dumpi/build$ ../configure CC=mpicc CXX=mpicxx \ 
+	              --enable-libdumpi --prefix=$DUMPI_PATH
+\end{ShellCmd}
+The \inlineshell{--enable-libdumpi} flag is needed to configure the trace collection library.
+After compiling and installing, a \inlineshell{libdumpi.\$prefix} will be added to \inlineshell{\$DUMPI_PATH/lib}.
+
+Collecting application traces requires only a trivial modification to the standard MPI build.
+Using the same compiler, simply add the DUMPI library path and library name to your project's \inlineshell{LDFLAGS}.
+
+\begin{ShellCmd}
+your_project/build$ ../configure CC=mpicc CXX=mpicxx \
+                                  LDFLAGS=``-L$DUMPI_PATH/lib -ldumpi"
+\end{ShellCmd}
+
+\subsubsection{Trace Collection}
+\label{subsec:dumpi:tracecollection}
+DUMPI works by overriding \emph{weak symbols} in the MPI library.
+In all MPI libraries, functions such as \inlinecode{MPI_Send} are only weak symbol wrappers to the actual function \inlinecode{PMPI_Send}.
+DUMPI overrides the weak symbols by implementing functions with the symbol \inlinecode{MPI_Send}. 
+If a linker encounters a weak symbol and regular symbol with the same name, it ignores the weak symbol.
+DUMPI functions look like
+
+\begin{CppCode}
+int MPI_Send(...)
+{
+	/** Start profiling work */
+	...
+	int rc = PMPI_Send(...);
+	/** Finish profiling work */
+	...
+	return rc;
+}
+\end{CppCode}
+collecting profile information and then directly calling the PMPI functions.
+
+We examine DUMPI using a very basic example program.
+
+\begin{CppCode}
+#include <mpi.h>
+int main(int argc, char** argv)
+{
+    MPI_Init(&argc, &argv);
+    MPI_Finalize();
+    return 0;
+}
+\end{CppCode}
+After compiling the program named \inlineshell{test} with DUMPI, we run MPI in the standard way.
+
+\begin{ShellCmd}
+example$ mpiexec -n 2 ./test
+\end{ShellCmd}
+After running, there are now three new files in the directory.
+
+\begin{ShellCmd}
+example$ ls dumpi*
+dumpi-2013.09.26.10.55.53-0000.bin	
+dumpi-2013.09.26.10.55.53-0001.bin	
+dumpi-2013.09.26.10.55.53.meta
+\end{ShellCmd}
+DUMPI automatically assigns a unique name to the files from a timestamp.
+The first two files are the DUMPI binary files storing separate traces for MPI rank 0 and rank 1.
+The contents of the binary files can be displayed in human-readable form by running the \inlineshell{dumpi2ascii}
+program, which should have been installed in \inlineshell{\$DUMPI_PATH/bin}.
+
+\begin{ShellCmd}
+example$ dumpi2ascii dumpi-2013.09.26.10.55.53-0000.bin
+\end{ShellCmd}
+This produces the output
+
+\begin{ViFile}
+MPI_Init entering at walltime 8153.0493, cputime 0.0044 seconds in thread 0.
+MPI_Init returning at walltime 8153.0493, cputime 0.0044 seconds in thread 0.
+MPI_Finalize entering at walltime 8153.0493, cputime 0.0045 seconds in thread 0.
+MPI_Finalize returning at walltime 8153.0498, cputime 0.0049 seconds in thread 0.
+\end{ViFile}
+
+The third file is just a small metadata file DUMPI used to configure trace replay.
+\begin{ViFile}
+hostname=deepthought.magrathea.gov
+numprocs=2
+username=slartibartfast
+startime=1380218153
+fileprefix=dumpi-2013.09.26.10.55.53
+version=1
+subversion=1
+subsubversion=0
+\end{ViFile}
+
+\subsubsection{Trace Replay}
+\label{subsec:dumpi:tracereplay}
+It is often useful to validate the correctness of a trace.  Sometimes there can be problems with trace collection. 
+There are also a few nooks and crannies of the MPI standard left unimplemented.
+To validate the trace, you can run in a special debug mode that runs the simulation with a very coarse-grained model
+to ensure as quickly as possible that all functions execute correctly.
+This can be done straightforwardly by running the executable with the dumpi flag: \inlineshell{sstmac --dumpi}.
+
+To replay a trace in the simulator, a small modification is required to the example input file in \ref{sec:parameters}.
+We have two choices for the trace replay.  First, we can attempt to \emph{exactly} replay the trace as it ran on the host machine.
+Second, we could replay the trace on a new machine or different layout.
+
+For exact replay, the key issue is specifying the machine topology.
+For some architectures, topology information can be directly encoded into the trace.
+This is generally true on Blue Gene, but not Cray.
+When topology information is recorded, trace replay is much easier.
+The parameter file then becomes, e.g.
+
+\begin{ViFile}
+launch_app1_type = dumpi
+launch_indexing = dumpi
+launch_allocation = dumpi
+launch_app1 = parsedumpi
+launch_dumpi_metaname = testbgp.meta
+\end{ViFile}
+We have a new parameter \inlinefile{launch_app1_type} set to \inlinefile{dumpi}.
+This was implicit before, taking the default value of \inlinefile{skeleton}.
+We also set indexing and allocation parameters to read from the DUMPI trace.
+The application name in \inlinefile{launch_app1} is a special app that parses the DUMPI trace.
+Finally, we direct \sstmacro to the DUMPI metafile produced when the trace was collected.
+To extract the topology information, locate the \inlineshell{.bin} file corresponding to MPI rank 0.
+To print topology info, run
+
+\begin{ShellCmd}
+traces$ dumpi2ascii -H testbgp-0000.bin 
+\end{ShellCmd}
+which produces the output
+
+\begin{ViFile}
+version=1.1.0
+starttime=Fri Nov 22 13:53:58 2013
+hostname=R00-M1-N01-J01.challenger
+username=<none>
+meshdim=3
+meshsize=[4, 2, 2]
+meshcrd=[0, 0, 0]
+\end{ViFile}
+Here we see that the topology is 3D with extent 4,2,2 in the X,Y,Z directions.
+At present, the user must still specify the topology in the parameter file.
+Even though \sstmacro can read the topology \emph{dimensions} from the trace file,
+it cannot read the topology \emph{type}.  It could be a torus, dragonfly, or fat tree.
+The parameter file therefore needs
+
+\begin{ViFile}
+topology_name = hdtorus
+topology_geometry = 4 2 2
+\end{ViFile}
+Beyond the topology, the user must also specify the machine model with bandwidth and latency parameters.
+Again, this is information that cannot be automatically encoded in the trace.
+It must be determined via small benchmarks like ping-pong.
+An example file can be found in the test suite in \inlineshell{tests/test_configs/testdumpibgp.ini}.
+
+If no topology info could be recorded in the trace, more work is needed.
+The only information recorded in the trace is the hostname of each MPI rank.
+The parameters are almost the same, but with allocation now set to \inlinefile{hostname}.
+Since no topology info is contained in the trace, 
+a hostname map must be put into a text file that maps a hostname to the topology coordinates.
+The new parameter file, for a fictional machine called deep thought
+
+\begin{ViFile}
+# Launch parameters
+launch_app1_type = dumpi
+launch_indexing = dumpi
+launch_allocation = hostname
+launch_app1 = parsedumpi
+launch_dumpi_metaname = dumpi-2013.09.26.10.55.53.meta
+launch_dumpi_mapname = deepthought.map
+# Machine parameters
+topology_name = torus
+topology_geometry = 2 2
+\end{ViFile}
+
+
+In this case, we assume a 2D torus with four nodes.
+Again, DUMPI records the hostname of each MPI rank during trace collection.
+In order to replay the trace, the mapping of hostname to coordinates must be given in a node map file,
+specified by the parameter \inlinefile{launch_dumpi_mapname}.
+The node map file has the format
+
+\begin{ViFile}
+4 2
+nid0 0 0
+nid1 0 1
+nid2 1 0
+nid3 1 1
+\end{ViFile}
+where the first line gives the number of nodes and number of coordinates, respectively.
+Each hostname and its topology coordinates must then be specified.
+More details on building hostname maps are given below.
+
+We can also use the trace to experiment with new topologies to see performance changes.
+Suppose we want to test a crossbar topology.
+
+\begin{ViFile}
+# Launch parameters
+launch_indexing = block
+launch_allocation = first_available
+launch_app1 = parsedumpi
+launch_app1_size = 2
+launch_dumpi_metaname = dumpi-2013.09.26.10.55.53.meta
+# Machine parameters
+topology_name = crossbar
+topology_geometry = 4
+\end{ViFile}
+We no longer use the DUMPI allocation and indexing. 
+We also no longer require a hostname map.
+The trace is only used to generate MPI events and no topology or hostname data is used.
+The MPI ranks are mapped to physical nodes entirely independent of the trace.
+
+\subsubsection{Building the Hostname Map}
+\label{subsec:dumpi:hostnamemap} 
+Not all HPC machines support topology queries.  
+The current scheme is only valid for Cray machines, which support topology queries via \inlineshell{xtdb2proc}.
+NOTE: As of 01/15/2014, this command seems to be broken at NERSC.
+\sstmacro comes with a script in the bin folder, \inlineshell{xt2nodemap.pl}, that parses the Cray file
+into the DUMPI format.  We first run
+
+\begin{ShellCmd}
+cray$ xtdb2proc -f - > db.txt
+\end{ShellCmd}
+to generate a Cray-formatted file \inlineshell{db.txt}.
+Next we run the conversion script
+
+\begin{ShellCmd}
+cray$ xt2nodemap.pl -t hdtorus < db.txt > nodemap.txt
+\end{ShellCmd}
+generating the hostname map.

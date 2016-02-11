@@ -1,0 +1,14 @@
+/** \mainpage SST/macro: The Structural Simulation Toolkit Macroscale Components
+
+The SST/macro software package provides a simulator for large-scale parallel computer architectures. 
+It permits the coarse-grained study of distributed-memory applications. 
+The simulator is driven from either a trace file or a skeleton application. 
+The simulator architecture is modular, allowing it to easily be extended with additional network models, 
+trace file formats, programming models, and more detailed processor models. 
+
+<ul>
+  <li> \ref introduction
+</ul>
+
+*/
+

@@ -1,0 +1,184 @@
+
+miniFE finite-element mini-application
+
+--------------------------------------
+Contents of this README file:
+1. miniFE overview
+2. miniFE versions
+3. building miniFE
+4. running miniFE
+5. notes about the code
+--------------------------------------
+
+--------------------------------------
+1. miniFE overview
+
+miniFE is a Finite Element mini-application which implements a
+couple of kernels representative of implicit finite-element applications.
+It assembles a sparse linear-system from the steady-state conduction
+equation on a brick-shaped problem domain of linear 8-node hex elements.
+It then solves the linear-system using a simple un-preconditioned
+conjugate-gradient algorithm.
+
+Thus the kernels that it contains are:
+- computation of element-operators (diffusion matrix, source vector)
+- assembly (scattering element-operators into sparse matrix and vector)
+- sparse matrix-vector product (during CG solve)
+- vector operations (level-1 blas: axpy, dot, norm)
+
+Finally, miniFE compares the computed solution against an analytic solution
+for steady-state temperature in a cube.
+
+
+--------------------------------------
+2. miniFE versions:
+- miniFE_ref:
+     reference version: self-contained, includes serial and MPI-parallel
+     parallelism is optional, it can be built without MPI usage.
+     no explicit mesh data-base, generates virtual mesh data as needed.
+
+- miniFE_nodeAPI:
+     self-contained version that includes MPI-parallel and Node-API parallelism
+     parallelism is optional, it can be built without MPI usage.
+     no explicit mesh data-base, generates virtual mesh data as needed.
+
+- stk:
+     depends on stk-mesh out of Trilinos, uses stk-mesh to store mesh data.
+
+-------------------
+3. Building miniFE:
+
+ The default case is: cd into the 'miniFE_ref' directory and type 'make'.
+ That will build the MPI-parallel miniFE code assuming you have the
+ mpi-compiler-wrappers mpicxx and mpicc in your path.
+
+ If successful, that will create an executable called miniFE.x.
+
+Special builds can be done for things like:
+- gnu compilers (g++, gcc), no MPI
+  type 'make -f makefile.gnu.serial'
+
+- enable Intel TBB support.
+  In the miniFE_nodeAPI version:
+  Edit makefile.tbb to set the path to your installation of Intel TBB, then
+  type 'make -f makefile.tbb'
+
+- enable NVidia/CUDA support.
+  In the miniFE_nodeAPI version:
+  Edit makefile.cuda to set the path to your installation of NVidia/CUDA, then
+  type 'make -f makefile.cuda'
+
+- enable TPI (ThreadPool) support.
+  In the miniFE_nodeAPI version:
+  Edit makefile.tpi to set the path to your installation of ThreadPool, then
+  type 'make -f makefile.tpi'
+
+- enable the use of the Sierra Toolkit mesh database stk::mesh, along with
+  TPI threading.
+  In the miniFE_stkmesh version:
+  (At this time TPI threading is only used in the kernels
+  used by the CG solve, not in any stk::mesh operations.)
+  type 'make -f makefile.stk.tpi'
+
+If the default makefile isn't correct for your system, copy and edit and
+use a 'make -f' command similar to the above cases.
+
+Note 1:
+  'make' calls the script 'generate_info_header' to generate miniFE_info.hpp
+  with platform and build information. If that script fails for some reason and 
+  doesn't produce a valid miniFE_info.hpp header, you can still build miniFE by 
+  typing
+  'make MINIFE_INFO=0'.
+ 
+Note 2:
+  miniFE contains support for using the 'long long' integer type. If your
+  compiler doesn't support that type, add this macro to the CPPFLAGS in
+  the makefile: -DMINIFE_NO_LONG_LONG
+
+-------------------
+4. Running miniFE:
+
+ miniFE can be run like this:
+   % <mpi-run-command> miniFE.x nx=30 ny=30 nz=30 
+ where <mpi-run-command> varies from system to system but usually looks
+ something like 'mpirun -np 4 ' or similar.
+
+ Arguments can be specified in a number of ways. The following are all valid:
+   -nx 20 -ny 30 -nz 40
+   nx 20 ny 30 nz 40
+   nx:20 ny:30 nz:40
+   nx=20 ny=30 nz=40
+   nx = 20 ny = 30 nz = 40
+   nx20 ny30 nz40
+ 
+ Arguments can appear in any order.
+
+ Arguments can also be supplied in an input file, like this:
+   miniFE.x input_file=<filename>
+ where <filename> is a text file containing the parameters.
+
+ A YAML output file created by miniFE is also a valid input file.
+
+Arguments to miniFE:
+ - nx, ny, nz
+   The global sizes nx, ny, nz of the 'box' domain from which a finite-element
+   problem is assembled and solved.
+   If only nx is specified, then ny and nz will default to be the same as nx.
+
+ - mv_overlap_comm_comp
+   Valid values are 0 or 1. Defaults to 0 (off).
+   If 1 (on), then matrix-vector products are performed with overlapping 
+   communication and computation.
+   In other words, a matrix-vector product is performed like this:
+   1. post receives, do sends
+   2. compute local portion of matrix-vector product
+   3. complete receives
+   4. compute external portion of matrix-vector product.
+
+ - load_imbalance
+   Specify that miniFE should artificially UN-balance the decomposition by
+   this 'load_imbalance' percentage. The problem domain is initially
+   decomposed using an RCB method which attempts to balance the subdomains.
+   The load_imbalance parameter is used to specify a minimum amount of imbalance.
+   miniFE will adjust the decomposition from RCB in an attempt to add an imbalance
+   greater than or equal to the percentage specified.
+
+ - numthreads
+   Only if threading support (TPI or TBB, see "Building miniFE" above) has
+   been compiled in. Specifies number of threads per processor.
+
+ - elem_group_size
+   When using threading with TBB, the FE assembly pipeline operates on elements
+   in groups. This argument specifies the number of elements in a group.
+   Defaults to 1.
+
+ - use_locking
+   When using the TBB pipelined FE assembly, use_locking determines what kind
+   of filters are used for assembling into the linear-system.
+   use_locking==1 uses the parallel filter with locking to prevent thread conflicts.
+   use_locking==0 (default) uses a filter which doesn't need locking.
+
+ - name
+   An extra string that will be part of the filename for the output YAML file.
+   No checking is performed, but you should probably not use slash '/' or other
+   characters that might cause problems in filenames.
+
+ - verify_solution
+   Defaults to 0 which means don't verify the solution. if 'verify_solution=1' is
+   passed, then the computed solution will be compared against an analytic solution.
+
+-------------------
+5. The code:
+ The main program is located in main.cpp. It calls miniFE::driver to do most
+ of the assembly/solve work. If desired, change main.cpp to adjust the
+ template-parameters given to miniFE::driver, to switch from double to float,
+ or from int to long long, etc.
+
+ If the code fails to compile after changing these template parameters, it may
+ be because a new traits type specialization needs to be added to
+ TypeTraits.hpp.
+
+
+ General comments describing what the code is doing are located in main.cpp and
+ driver.hpp.
+

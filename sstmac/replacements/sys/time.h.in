@@ -1,0 +1,3 @@
+#include "@SYS_TIME_FULL_PATH@"
+#include <sstmac/software/process/time.h>
+

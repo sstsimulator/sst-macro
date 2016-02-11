@@ -1,0 +1,339 @@
+\documentclass{article} % say 
+\usepackage{tikz} 
+\usepackage{ifthen}
+
+\newdimen\XCoord
+\newdimen\YCoord
+
+\newcommand*{\ExtractXY}[1]{\path (#1); \pgfgetlastxy{\XCoord}{\YCoord}; \path($(\Xcoord,\Ycoord)$) coordinate (TmpPt);}
+
+
+\newcommand{\var}[2]{%
+    \newlength{#1}
+    \setlength{#1}{#2}
+}
+
+
+\newcommand{\addvar}[3]{%
+    \var{#1}{#2}
+    \addtolength{#1}{#3}
+}
+
+\newcommand{\tikzshape}[2]{
+  \newcommand{#1}{#2}
+}
+
+\usetikzlibrary{calc}
+
+\newcommand{\faceleft}{0}
+\newcommand{\faceright}{1}
+
+\newlength{\xcoord}
+\newlength{\tmpwidth}
+\newlength{\tmpheight}
+\newlength{\tmpspace}
+\newlength{\tmplength}
+\newlength{\arrowcornersize}
+\newlength{\arrowstemsize}
+\newlength{\arrowwidth}
+\newlength{\arrowlength}
+\newlength{\arrowtiplength}
+
+\newlength{\meshLength}
+\newlength{\meshBoxSize}
+\newlength{\meshXSize}
+\newlength{\meshYSize}
+
+\newlength{\ArrowCornerSize}
+\newlength{\ArrowStemSize}
+\newlength{\ArrowWidth}
+\newlength{\ArrowLength}
+\newlength{\ArrowTipLength}
+
+
+\definecolor{darkgreen}{rgb}{0,0.7,0}
+\definecolor{navyblue}{rgb}{0,0.0,0.7}
+
+\newcommand{\myrectangle}[3]{
+	\path(#2) coordinate (bottomcorner);
+	\path (bottomcorner)+(#3) coordinate (topcorner);
+	\draw [#1] (bottomcorner) rectangle (topcorner);
+}
+
+
+\newdimen\Xone
+\newdimen\Yone
+\newdimen\Xtwo
+\newdimen\Ytwo
+
+\newcommand{\biarrownorotate}[4]{
+	\path(#1) coordinate (LeftArrowTip);
+	\setlength{\ArrowWidth}{#2}
+	\setlength{\ArrowLength}{#3}
+	
+	\path(#1) + (\ArrowLength,0) coordinate (RightArrowTip);
+	
+	\setlength{\ArrowStemSize}{0.5\ArrowWidth}
+	\setlength{\ArrowCornerSize}{0.25\ArrowWidth}
+	\setlength{\ArrowTipLength}{0.6 \ArrowWidth}	
+
+	\path (RightArrowTip) + (-\ArrowTipLength, 0.5 \ArrowWidth) coordinate (RightTipTop);
+	\path (RightArrowTip) + (-\ArrowTipLength, -0.5 \ArrowWidth) coordinate (RightTipBottom);
+	
+	\path (RightTipTop) + (0, -\ArrowCornerSize) coordinate (RightStemTop);
+	\path (RightStemTop) + (0, -\ArrowStemSize) coordinate (RightStemBottom);
+
+	\path (LeftArrowTip) + (\ArrowTipLength, 0.5 \ArrowWidth) coordinate (LeftTipTop);
+	\path (LeftArrowTip) + (\ArrowTipLength, -0.5 \ArrowWidth) coordinate (LeftTipBottom);
+	
+	\path (LeftTipTop) + (0, -\ArrowCornerSize) coordinate (LeftStemTop);
+	\path (LeftStemTop) + (0, -\ArrowStemSize) coordinate (LeftStemBottom);
+
+	\draw[#4]    (RightStemBottom) -- (RightTipBottom) -- (RightArrowTip) -- (RightTipTop) -- (RightStemTop)
+			  -- (LeftStemTop) -- (LeftTipTop) -- (LeftArrowTip) -- (LeftTipBottom) -- (LeftStemBottom) -- (RightStemBottom);
+}
+
+\newcommand{\biarrow}[4]{
+	\path(#1) coordinate (LeftArrowTip);
+	\path(#2) coordinate (RightArrowTip);
+
+
+	\pgfextractx\Xone{\pgfpointanchor{LeftArrowTip}{center}}
+	\pgfextracty\Yone{\pgfpointanchor{LeftArrowTip}{center}}
+	\pgfextractx\Xtwo{\pgfpointanchor{RightArrowTip}{center}}
+	\pgfextracty\Ytwo{\pgfpointanchor{RightArrowTip}{center}}
+	
+
+	
+	\pgfmathsetmacro{\DeltaX}{\Xtwo - \Xone}	
+	\pgfmathsetmacro{\DeltaY}{\Ytwo - \Yone}
+	\ifthenelse{\equal{\DeltaX}{0} or \equal{\DeltaX}{0.0}}{
+		\pgfmathsetmacro{\RotateTheta}{90}
+	}{
+		\pgfmathsetmacro{\TmpTangent}{ \DeltaY / \DeltaX}
+		\pgfmathsetmacro{\RotateTheta}{ atan(\TmpTangent) }
+	}
+	\pgfmathsetmacro{\TmpArrowLength}{ sqrt(\DeltaX * \DeltaX + \DeltaY * \DeltaY) }
+	
+	\begin{scope}[shift={(#1)},rotate=\RotateTheta]	
+		\biarrownorotate{#1}{#3}{\TmpArrowLength pt}{#4}
+	\end{scope}
+}
+
+\newcommand{\uniarrownorotate}[4]{
+	\path(#1) coordinate (ArrowTip);
+	\setlength{\ArrowWidth}{#2}
+	\setlength{\ArrowLength}{#3}
+	\setlength{\ArrowStemSize}{0.5\ArrowWidth}
+	\setlength{\ArrowCornerSize}{0.25\ArrowWidth}
+	\setlength{\ArrowTipLength}{0.6 \ArrowWidth}
+	
+	\path (ArrowTip) + (\ArrowTipLength, 0.5 \ArrowWidth) coordinate (TipTop);
+	\path (ArrowTip) + (\ArrowTipLength, -0.5 \ArrowWidth) coordinate (TipBottom);
+	
+	\path (TipTop) + (0, -\ArrowCornerSize) coordinate (StemBeginTop);
+	\path (StemBeginTop) + (0, -\ArrowStemSize) coordinate (StemBeginBottom);
+	
+	\path (StemBeginTop) + (\ArrowLength,0) coordinate (StemEndTop);
+	\path (StemBeginBottom) + (\ArrowLength,0) coordinate (StemEndBottom);
+	
+	\draw [#4] (ArrowTip) -- (TipTop) -- (StemBeginTop) -- (StemEndTop) -- (StemEndBottom) -- (StemBeginBottom) -- (TipBottom) -- (ArrowTip); 	
+}
+
+\newcommand{\uniarrow}[5]{
+	\ifthenelse{\equal{#5}{}}{ %no rotation
+		\uniarrownorotate{#1}{#2}{#3}{#4}
+	}{
+		\begin{scope}[shift={(#1)},rotate=#5]
+		\uniarrownorotate{#1}{#2}{#3}{#4}
+		\end{scope}
+	}
+}
+
+
+\newcommand{\outlinebox}[4]{
+	% #1 = box name
+	% #2 = bottom left coordinates
+	% #3 = width
+	% #4 = height
+	\setlength{\tmpwidth}{#3}
+	\setlength{\tmpheight}{#4}
+	\path (#2) coordinate (#1bl);
+	\path (#1bl) + (0,\tmpheight) coordinate (#1tl);
+	\path (#1bl) + (\tmpwidth,0) coordinate (#1br);
+	\path (#1bl) + (0, 0.5\tmpheight) coordinate (#1cl);
+	\path (#1br) + (0, 0.5\tmpheight) coordinate (#1cr);
+	\path (#1br) + (0, \tmpheight) coordinate (#1tr);
+	\path (#1cl) + (0.5\tmpwidth, 0) coordinate (#1c);
+	\path (#1tl) + (0.5\tmpwidth,0) coordinate (#1tc);
+	\path (#1bl) + (0.5\tmpwidth,0) coordinate (#1bc);
+	
+	\path(#1bc) + (0, 0.25 \tmpwidth) coordinate (#1ibc);
+	\path(#1tc) + (0, -0.25 \tmpwidth) coordinate (#1itc);
+	\path(#1itc) + (-0.25 \tmpwidth,0) coordinate (#1itl);
+	\path(#1itc) + (0.25 \tmpwidth,0) coordinate (#1itr);
+}
+
+\newcommand{\definebox}[5]{
+	\myrectangle{#5}{#2}{#3,#4}
+	\outlinebox{#1}{#2}{#3}{#4}
+}
+%
+\newcommand{\boxgrid}[5]{
+%#1 number in x dim
+%#2 number in y dim
+%#3 grid size
+%#4 box size
+%#5 middle of mesh
+\pgfmathtruncatemacro{\meshNumX}{#1}
+\pgfmathtruncatemacro{\meshNumY}{#2}
+\setlength{\meshBoxSize}{#4}
+\setlength{\meshLength}{#3}
+\pgfmathsetmacro{\numXGapsMesh}{#1 - 1}
+\pgfmathsetmacro{\numYGapsMesh}{#2 - 1}
+\setlength{\meshXSize}{\numXGapsMesh \meshLength}
+\setlength{\meshYSize}{\numYGapsMesh \meshLength}
+\addtolength{\meshXSize}{\meshBoxSize}
+\addtolength{\meshYSize}{\meshBoxSize}
+\path (#5) coordinate (meshMidPoint);
+\path (meshMidPoint) + (0,0.5\meshYSize) coordinate (meshTmp);
+\path (meshTmp) + (-0.5\meshXSize,0) coordinate (meshTopLeft);	
+\foreach \x [evaluate = \x as \xpp using (\x - 1)]  in {1,...,#1}
+  \foreach \y  in {1,...,#2}
+ {	
+% %[evaluate = \y as \ypp using (\y - 1)] 
+ 	\pgfmathsetmacro\ypp{\y - 1}
+	\path (meshTopLeft) + (\xpp \meshLength, -\ypp \meshLength) coordinate (meshpoint);
+ 	\definebox{mesh\x\y}{meshpoint}{#4}{#4}
+ }
+}
+\newcommand{\mesh}[5]{
+  \boxgrid{#1}{#2}{#3}{#4}{#5}
+
+ \pgfmathsetmacro\xmax{#1 - 1}  
+ \pgfmathsetmacro\ymax{#2 - 1}   	
+
+   \foreach \x  in {1,...,\xmax}
+     \foreach \y  in {1,...,#2}  	
+     {
+	\pgfmathtruncatemacro{\xpp}{\x + 1} 
+	\draw (mesh\x\y cr) -- (mesh\xpp\y cl);     
+     }
+
+   \foreach \x  in {1,...,#1}
+     \foreach \y  in {1,...,\ymax}  	
+     {	
+	\pgfmathtruncatemacro{\ypp}{\y + 1} 
+	\draw (mesh\x\y bc) -- (mesh\x\ypp tc);     
+     }
+}
+
+\newcommand{\torus}[5]{
+	\mesh{#1}{#2}{#3}{#4}{#5}
+	
+     \foreach \y in {1,...,\meshNumY}
+    {
+     \path (mesh1\y tl) + (-0.5\meshLength,0) coordinate (wrap\y AnchorLeft);
+     \path (mesh1\y tl) + (0.5\meshXSize, 0.5\meshBoxSize) coordinate (wrap\y AnchorMiddle);
+     \path (mesh\meshNumY\y tr) + (0.5 \meshLength,0) coordinate (wrap\y AnchorRight);
+     \path (mesh1\y cl) + (0,0) coordinate (wrap\y AnchorStart);
+     \path (mesh\meshNumY\y cr) + (0,0) coordinate (wrap\y AnchorEnd);
+
+	\draw[] plot [smooth,tension=1.0] coordinates{
+		(wrap\y AnchorStart) (wrap\y AnchorLeft) (wrap\y AnchorMiddle) (wrap\y AnchorRight) (wrap\y AnchorEnd)
+	};
+    }
+
+     \foreach \x in {1,...,\meshNumX}
+    {
+     \path (mesh\x 1tl) + (0,0.5\meshLength) coordinate (wrap\x AnchorTop);
+     \path (mesh\x 1tl) + (-0.5\meshBoxSize, -0.5\meshXSize) coordinate (wrap\x AnchorMiddle);
+     \path (mesh\x\meshNumX bl) + (0, -0.5 \meshLength) coordinate (wrap\x AnchorBottom);
+     \path (mesh\x\meshNumX bc) + (0,0) coordinate (wrap\x AnchorEnd);
+     \path (mesh\x 1tc) + (0,0) coordinate (wrap\x AnchorStart);
+
+	\draw[] plot [smooth,tension=1.0] coordinates{
+		(wrap\x AnchorStart) (wrap\x AnchorTop) (wrap\x AnchorMiddle) (wrap\x AnchorBottom) (wrap\x AnchorEnd)
+	};
+    }	
+}
+
+\newcommand{\connectHyperX}[3]{
+	\coordinate (connectMidPointTmp) at ($(#1)!0.5!(#2)$);
+	\path (connectMidPointTmp) + (0,#3) coordinate (connectMidPoint); 
+	\draw[] plot [smooth,tension=1.2] coordinates{
+		(#1) (connectMidPoint) (#2)
+	};
+}
+
+\newcommand{\connectHyperY}[3]{
+	\coordinate (connectMidPointTmp) at ($(#1)!0.5!(#2)$);
+	\path (connectMidPointTmp) + (-#3,0) coordinate (connectMidPoint); 
+	\draw[] plot [smooth,tension=1.2] coordinates{
+		(#1) (connectMidPoint) (#2)
+	};
+}
+
+\newcommand{\setToMin}[3]{
+	\ifthenelse{#2 > #3}{\pgfmathtruncatemacro{#1}{#3}}{\pgfmathtruncatemacro{#1}{#2}}
+}
+
+\newlength{\hyperLinkIncrement}
+\newlength{\hyperLinkArc}
+\newcommand{\hypercube}[5]{
+	\mesh{#1}{#2}{#3}{#4}{#5}
+
+    \setlength{\hyperLinkIncrement}{0.2\meshBoxSize}	
+    \foreach \y in {1,...,\meshNumY}  
+      \foreach \xa in {1,...,\meshNumX}
+      {
+        \pgfmathtruncatemacro{\xPlusTwo}{\xa+2}
+        \setToMin{\xStart}{\meshNumX}{\xPlusTwo}
+    	\foreach \xb in {\xStart,...,\meshNumX}
+	{	
+		\ifthenelse{\equal{\xa}{\xb}}{
+		        %do nothing, equal
+		}{
+		\pgfmathsetmacro{\deltaHyperX}{\xb - \xa}
+		\setlength{\hyperLinkArc}{0.2\meshBoxSize}
+		\addtolength{\hyperLinkArc}{\deltaHyperX \hyperLinkIncrement}
+		\connectHyperX{mesh\xa\y tc}{mesh\xb\y tc}{\hyperLinkArc}
+		}
+	}
+    }
+    
+    \foreach \x in {1,...,\meshNumX}  
+      \foreach \ya in {1,...,\meshNumY}
+      {
+        \pgfmathtruncatemacro{\yPlusTwo}{\ya+2}
+        \setToMin{\yStart}{\meshNumY}{\yPlusTwo}
+    	\foreach \yb in {\yStart,...,\meshNumY}
+	{	
+		\ifthenelse{\equal{\ya}{\yb}}{
+		        %do nothing, equal
+		}{
+		\pgfmathsetmacro{\deltaHyperY}{\yb - \ya}
+		\setlength{\hyperLinkArc}{0.2\meshBoxSize}
+		\addtolength{\hyperLinkArc}{\deltaHyperY \hyperLinkIncrement}
+		\connectHyperY{mesh\x\ya cl}{mesh\x\yb cl}{\hyperLinkArc}
+		}
+	}
+     }
+}
+
+\begin{document}
+\begin{tikzpicture}
+\usetikzlibrary{calc}
+\torus{4}{4}{2cm}{0.7cm}{0cm,0cm}
+\end{tikzpicture}
+
+
+\clearpage
+\begin{tikzpicture}
+\usetikzlibrary{calc}
+\hypercube{4}{4}{2cm}{0.7cm}{0cm,0cm}
+\end{tikzpicture}
+
+
+
+\end{document}

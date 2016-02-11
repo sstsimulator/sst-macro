@@ -1,0 +1,19 @@
+#! /usr/bin/env python
+
+def getVals(fileName):
+  import re
+  text = open(fileName).read()
+  regexp = re.compile("throughput=\s+(\d+[.]\d+)")
+  matches = regexp.findall(text)
+  return map(float, matches)
+
+vals3 = getVals("amm3.out")
+vals4 = getVals("amm4.out")
+
+length = len(vals3)
+for i in range(length):
+  v3 = vals3[i]
+  v4 = vals4[i]
+  pe = (v3 - v4) * 100 / v4
+  print "%12.8f %12.8f %5.2f%%" % (v3, v4, pe)
+

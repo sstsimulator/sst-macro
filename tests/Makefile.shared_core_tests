@@ -1,0 +1,32 @@
+#------------------------------------------------------------------------------------------#
+#  Core tests                                                                           {{{#
+#------------------------------------------------------------------------------------------#
+
+CORE_TEST_DEPS = $(SSTMACEXEC)
+if INTEGRATED_SST_CORE
+CORE_TEST_DEPS += ../sstmac/install/libmacro.la
+endif
+
+CORETESTS+= \
+  test_core_apps_mpi_immediate_send_pflow \
+  test_core_apps_ping_all_torus_pflow_minad \
+  test_core_apps_ping_all_torus_pflow \
+  test_core_apps_ping_all_torus_pflow_new \
+  test_core_apps_ping_all_dragonfly_pflow_ugal \
+  test_core_apps_ping_all_torus_pflow_ugal \
+  test_core_apps_ping_all_torus_valiant \
+  test_core_apps_ping_all_hypercube \
+  test_core_apps_ping_all_dragonfly \
+  test_core_apps_ping_all_dragonfly_valiant  \
+  test_core_apps_mpi_fattree \
+  test_core_apps_ping_all_fattree2 \
+  test_core_apps_ping_all_fattree4 \
+  test_core_apps_ping_all_crossbar \
+  test_core_apps_ping_all_fbfly 
+
+#  test_core_apps_ping_all_crossbar_valiant 
+
+test_core_apps_%.$(CHKSUF): $(CORE_TEST_DEPS)
+	$(PYRUNTEST) 10 $@ $(MPI_LAUNCHER) $(SSTMACEXEC) -f $(srcdir)/test_configs/test_$*.ini --no-wall-time $(THREAD_ARGS)
+	
+

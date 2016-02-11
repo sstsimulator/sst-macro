@@ -1,0 +1,1931 @@
+<events>
+<comp id="e0" dep="" at="0" time="0" note="init:literal lev=0 box=0" />
+<comp id="e3" dep="" at="1" time="0" note="init:literal lev=0 box=1" />
+<comp id="e6" dep="" at="2" time="0" note="init:literal lev=0 box=2" />
+<comp id="e9" dep="" at="3" time="0" note="init:literal lev=0 box=3" />
+<comm id="e1" dep="e3" from="1" to="0" size="32768" />
+<comm id="e4" dep="e6" from="2" to="0" size="32768" />
+<comm id="e7" dep="e9" from="3" to="0" size="4096" />
+<comp id="e12" dep="e0,e1,e4,e7" at="0" time="0" note="step:advance:halo time=0 lev=0 box=0" />
+<comm id="e10" dep="e0" from="0" to="1" size="32768" />
+<comm id="e13" dep="e6" from="2" to="1" size="4096" />
+<comm id="e16" dep="e9" from="3" to="1" size="32768" />
+<comp id="e15" dep="e3,e10,e13,e16" at="1" time="0" note="step:advance:halo time=0 lev=0 box=1" />
+<comm id="e19" dep="e0" from="0" to="2" size="32768" />
+<comm id="e22" dep="e3" from="1" to="2" size="4096" />
+<comm id="e25" dep="e9" from="3" to="2" size="32768" />
+<comp id="e18" dep="e6,e19,e22,e25" at="2" time="0" note="step:advance:halo time=0 lev=0 box=2" />
+<comm id="e28" dep="e0" from="0" to="3" size="4096" />
+<comm id="e31" dep="e3" from="1" to="3" size="32768" />
+<comm id="e34" dep="e6" from="2" to="3" size="32768" />
+<comp id="e21" dep="e9,e28,e31,e34" at="3" time="0" note="step:advance:halo time=0 lev=0 box=3" />
+<comp id="e24" dep="e12" at="0" time="0" note="step:advance:stencil time=1 lev=0 box=0" />
+<comp id="e27" dep="e15" at="1" time="0" note="step:advance:stencil time=1 lev=0 box=1" />
+<comp id="e30" dep="e18" at="2" time="0" note="step:advance:stencil time=1 lev=0 box=2" />
+<comp id="e33" dep="e21" at="3" time="0" note="step:advance:stencil time=1 lev=0 box=3" />
+<comp id="e36" dep="e24" at="0" time="0" note="compute_rhs:op lev=0 box=0" />
+<comp id="e39" dep="e27" at="1" time="0" note="compute_rhs:op lev=0 box=1" />
+<comp id="e42" dep="e30" at="2" time="0" note="compute_rhs:op lev=0 box=2" />
+<comp id="e45" dep="e33" at="3" time="0" note="compute_rhs:op lev=0 box=3" />
+<coll id="e2" dep="e36,e39,e42,e45" type="ALLREDUCE" team="0,1,2,3" size="8" />
+<comp id="e48" dep="e2" at="0" time="0" note="zero:literal lev=0 box=0" />
+<comp id="e51" dep="e2" at="1" time="0" note="zero:literal lev=0 box=1" />
+<comp id="e54" dep="e2" at="2" time="0" note="zero:literal lev=0 box=2" />
+<comp id="e57" dep="e2" at="3" time="0" note="zero:literal lev=0 box=3" />
+<comm id="e37" dep="e51" from="1" to="0" size="8192" />
+<comm id="e40" dep="e54" from="2" to="0" size="8192" />
+<comm id="e43" dep="e57" from="3" to="0" size="256" />
+<comp id="e60" dep="e48,e37,e40,e43" at="0" time="0" note="residual:halo lev=0 box=0" />
+<comm id="e46" dep="e48" from="0" to="1" size="8192" />
+<comm id="e49" dep="e54" from="2" to="1" size="256" />
+<comm id="e52" dep="e57" from="3" to="1" size="8192" />
+<comp id="e63" dep="e51,e46,e49,e52" at="1" time="0" note="residual:halo lev=0 box=1" />
+<comm id="e55" dep="e48" from="0" to="2" size="8192" />
+<comm id="e58" dep="e51" from="1" to="2" size="256" />
+<comm id="e61" dep="e57" from="3" to="2" size="8192" />
+<comp id="e66" dep="e54,e55,e58,e61" at="2" time="0" note="residual:halo lev=0 box=2" />
+<comm id="e64" dep="e48" from="0" to="3" size="256" />
+<comm id="e67" dep="e51" from="1" to="3" size="8192" />
+<comm id="e70" dep="e54" from="2" to="3" size="8192" />
+<comp id="e69" dep="e57,e64,e67,e70" at="3" time="0" note="residual:halo lev=0 box=3" />
+<comp id="e72" dep="e60" at="0" time="1.43051e-06" note="residual:stencil lev=0 box=0" />
+<comp id="e75" dep="e63" at="1" time="1.43051e-06" note="residual:stencil lev=0 box=1" />
+<comp id="e78" dep="e66" at="2" time="1.43051e-06" note="residual:stencil lev=0 box=2" />
+<comp id="e81" dep="e69" at="3" time="1.43051e-06" note="residual:stencil lev=0 box=3" />
+<comp id="e84" dep="e36,e72" at="0" time="9.53674e-07" note="residual:op lev=0 box=0" />
+<comp id="e87" dep="e39,e75" at="1" time="9.53674e-07" note="residual:op lev=0 box=1" />
+<comp id="e90" dep="e42,e78" at="2" time="9.53674e-07" note="residual:op lev=0 box=2" />
+<comp id="e93" dep="e45,e81" at="3" time="9.53674e-07" note="residual:op lev=0 box=3" />
+<comp id="e96" dep="" at="0" time="0" note="zero:literal lev=0 box=0" />
+<comp id="e99" dep="" at="1" time="0" note="zero:literal lev=0 box=1" />
+<comp id="e102" dep="" at="2" time="0" note="zero:literal lev=0 box=2" />
+<comp id="e105" dep="" at="3" time="0" note="zero:literal lev=0 box=3" />
+<comm id="e73" dep="e99" from="1" to="0" size="8192" />
+<comm id="e76" dep="e102" from="2" to="0" size="8192" />
+<comm id="e79" dep="e105" from="3" to="0" size="256" />
+<comp id="e108" dep="e96,e73,e76,e79" at="0" time="0" note="relax:halo lev=0 box=0" />
+<comm id="e82" dep="e96" from="0" to="1" size="8192" />
+<comm id="e85" dep="e102" from="2" to="1" size="256" />
+<comm id="e88" dep="e105" from="3" to="1" size="8192" />
+<comp id="e111" dep="e99,e82,e85,e88" at="1" time="0" note="relax:halo lev=0 box=1" />
+<comm id="e91" dep="e96" from="0" to="2" size="8192" />
+<comm id="e94" dep="e99" from="1" to="2" size="256" />
+<comm id="e97" dep="e105" from="3" to="2" size="8192" />
+<comp id="e114" dep="e102,e91,e94,e97" at="2" time="0" note="relax:halo lev=0 box=2" />
+<comm id="e100" dep="e96" from="0" to="3" size="256" />
+<comm id="e103" dep="e99" from="1" to="3" size="8192" />
+<comm id="e106" dep="e102" from="2" to="3" size="8192" />
+<comp id="e117" dep="e105,e100,e103,e106" at="3" time="0" note="relax:halo lev=0 box=3" />
+<comp id="e120" dep="e108" at="0" time="1.43051e-06" note="relax:stencil lev=0 box=0" />
+<comp id="e123" dep="e111" at="1" time="1.43051e-06" note="relax:stencil lev=0 box=1" />
+<comp id="e126" dep="e114" at="2" time="1.43051e-06" note="relax:stencil lev=0 box=2" />
+<comp id="e129" dep="e117" at="3" time="1.43051e-06" note="relax:stencil lev=0 box=3" />
+<comp id="e132" dep="e84,e120" at="0" time="9.53674e-07" note="relax:op lev=0 box=0" />
+<comp id="e135" dep="e87,e123" at="1" time="9.53674e-07" note="relax:op lev=0 box=1" />
+<comp id="e138" dep="e90,e126" at="2" time="9.53674e-07" note="relax:op lev=0 box=2" />
+<comp id="e141" dep="e93,e129" at="3" time="9.53674e-07" note="relax:op lev=0 box=3" />
+<comm id="e109" dep="e135" from="1" to="0" size="8192" />
+<comm id="e112" dep="e138" from="2" to="0" size="8192" />
+<comm id="e115" dep="e141" from="3" to="0" size="256" />
+<comp id="e144" dep="e132,e109,e112,e115" at="0" time="0" note="relax:halo lev=0 box=0" />
+<comm id="e118" dep="e132" from="0" to="1" size="8192" />
+<comm id="e121" dep="e138" from="2" to="1" size="256" />
+<comm id="e124" dep="e141" from="3" to="1" size="8192" />
+<comp id="e147" dep="e135,e118,e121,e124" at="1" time="0" note="relax:halo lev=0 box=1" />
+<comm id="e127" dep="e132" from="0" to="2" size="8192" />
+<comm id="e130" dep="e135" from="1" to="2" size="256" />
+<comm id="e133" dep="e141" from="3" to="2" size="8192" />
+<comp id="e150" dep="e138,e127,e130,e133" at="2" time="0" note="relax:halo lev=0 box=2" />
+<comm id="e136" dep="e132" from="0" to="3" size="256" />
+<comm id="e139" dep="e135" from="1" to="3" size="8192" />
+<comm id="e142" dep="e138" from="2" to="3" size="8192" />
+<comp id="e153" dep="e141,e136,e139,e142" at="3" time="0" note="relax:halo lev=0 box=3" />
+<comp id="e156" dep="e144" at="0" time="1.43051e-06" note="relax:stencil lev=0 box=0" />
+<comp id="e159" dep="e147" at="1" time="1.43051e-06" note="relax:stencil lev=0 box=1" />
+<comp id="e162" dep="e150" at="2" time="1.43051e-06" note="relax:stencil lev=0 box=2" />
+<comp id="e165" dep="e153" at="3" time="1.43051e-06" note="relax:stencil lev=0 box=3" />
+<comp id="e168" dep="e84,e156" at="0" time="9.53674e-07" note="relax:op lev=0 box=0" />
+<comp id="e171" dep="e87,e159" at="1" time="9.53674e-07" note="relax:op lev=0 box=1" />
+<comp id="e174" dep="e90,e162" at="2" time="9.53674e-07" note="relax:op lev=0 box=2" />
+<comp id="e177" dep="e93,e165" at="3" time="9.53674e-07" note="relax:op lev=0 box=3" />
+<comm id="e145" dep="e171" from="1" to="0" size="8192" />
+<comm id="e148" dep="e174" from="2" to="0" size="8192" />
+<comm id="e151" dep="e177" from="3" to="0" size="256" />
+<comp id="e180" dep="e168,e145,e148,e151" at="0" time="0" note="relax:halo lev=0 box=0" />
+<comm id="e154" dep="e168" from="0" to="1" size="8192" />
+<comm id="e157" dep="e174" from="2" to="1" size="256" />
+<comm id="e160" dep="e177" from="3" to="1" size="8192" />
+<comp id="e183" dep="e171,e154,e157,e160" at="1" time="0" note="relax:halo lev=0 box=1" />
+<comm id="e163" dep="e168" from="0" to="2" size="8192" />
+<comm id="e166" dep="e171" from="1" to="2" size="256" />
+<comm id="e169" dep="e177" from="3" to="2" size="8192" />
+<comp id="e186" dep="e174,e163,e166,e169" at="2" time="0" note="relax:halo lev=0 box=2" />
+<comm id="e172" dep="e168" from="0" to="3" size="256" />
+<comm id="e175" dep="e171" from="1" to="3" size="8192" />
+<comm id="e178" dep="e174" from="2" to="3" size="8192" />
+<comp id="e189" dep="e177,e172,e175,e178" at="3" time="0" note="relax:halo lev=0 box=3" />
+<comp id="e192" dep="e180" at="0" time="1.43051e-06" note="relax:stencil lev=0 box=0" />
+<comp id="e195" dep="e183" at="1" time="1.43051e-06" note="relax:stencil lev=0 box=1" />
+<comp id="e198" dep="e186" at="2" time="1.43051e-06" note="relax:stencil lev=0 box=2" />
+<comp id="e201" dep="e189" at="3" time="1.43051e-06" note="relax:stencil lev=0 box=3" />
+<comp id="e204" dep="e84,e192" at="0" time="9.53674e-07" note="relax:op lev=0 box=0" />
+<comp id="e207" dep="e87,e195" at="1" time="9.53674e-07" note="relax:op lev=0 box=1" />
+<comp id="e210" dep="e90,e198" at="2" time="9.53674e-07" note="relax:op lev=0 box=2" />
+<comp id="e213" dep="e93,e201" at="3" time="9.53674e-07" note="relax:op lev=0 box=3" />
+<comm id="e181" dep="e207" from="1" to="0" size="8192" />
+<comm id="e184" dep="e210" from="2" to="0" size="8192" />
+<comm id="e187" dep="e213" from="3" to="0" size="256" />
+<comp id="e216" dep="e204,e181,e184,e187" at="0" time="0" note="relax:halo lev=0 box=0" />
+<comm id="e190" dep="e204" from="0" to="1" size="8192" />
+<comm id="e193" dep="e210" from="2" to="1" size="256" />
+<comm id="e196" dep="e213" from="3" to="1" size="8192" />
+<comp id="e219" dep="e207,e190,e193,e196" at="1" time="0" note="relax:halo lev=0 box=1" />
+<comm id="e199" dep="e204" from="0" to="2" size="8192" />
+<comm id="e202" dep="e207" from="1" to="2" size="256" />
+<comm id="e205" dep="e213" from="3" to="2" size="8192" />
+<comp id="e222" dep="e210,e199,e202,e205" at="2" time="0" note="relax:halo lev=0 box=2" />
+<comm id="e208" dep="e204" from="0" to="3" size="256" />
+<comm id="e211" dep="e207" from="1" to="3" size="8192" />
+<comm id="e214" dep="e210" from="2" to="3" size="8192" />
+<comp id="e225" dep="e213,e208,e211,e214" at="3" time="0" note="relax:halo lev=0 box=3" />
+<comp id="e228" dep="e216" at="0" time="1.43051e-06" note="relax:stencil lev=0 box=0" />
+<comp id="e231" dep="e219" at="1" time="1.43051e-06" note="relax:stencil lev=0 box=1" />
+<comp id="e234" dep="e222" at="2" time="1.43051e-06" note="relax:stencil lev=0 box=2" />
+<comp id="e237" dep="e225" at="3" time="1.43051e-06" note="relax:stencil lev=0 box=3" />
+<comp id="e240" dep="e84,e228" at="0" time="9.53674e-07" note="relax:op lev=0 box=0" />
+<comp id="e243" dep="e87,e231" at="1" time="9.53674e-07" note="relax:op lev=0 box=1" />
+<comp id="e246" dep="e90,e234" at="2" time="9.53674e-07" note="relax:op lev=0 box=2" />
+<comp id="e249" dep="e93,e237" at="3" time="9.53674e-07" note="relax:op lev=0 box=3" />
+<comm id="e217" dep="e243" from="1" to="0" size="8192" />
+<comm id="e220" dep="e246" from="2" to="0" size="8192" />
+<comm id="e223" dep="e249" from="3" to="0" size="256" />
+<comp id="e252" dep="e240,e217,e220,e223" at="0" time="0" note="residual:halo lev=0 box=0" />
+<comm id="e226" dep="e240" from="0" to="1" size="8192" />
+<comm id="e229" dep="e246" from="2" to="1" size="256" />
+<comm id="e232" dep="e249" from="3" to="1" size="8192" />
+<comp id="e255" dep="e243,e226,e229,e232" at="1" time="0" note="residual:halo lev=0 box=1" />
+<comm id="e235" dep="e240" from="0" to="2" size="8192" />
+<comm id="e238" dep="e243" from="1" to="2" size="256" />
+<comm id="e241" dep="e249" from="3" to="2" size="8192" />
+<comp id="e258" dep="e246,e235,e238,e241" at="2" time="0" note="residual:halo lev=0 box=2" />
+<comm id="e244" dep="e240" from="0" to="3" size="256" />
+<comm id="e247" dep="e243" from="1" to="3" size="8192" />
+<comm id="e250" dep="e246" from="2" to="3" size="8192" />
+<comp id="e261" dep="e249,e244,e247,e250" at="3" time="0" note="residual:halo lev=0 box=3" />
+<comp id="e264" dep="e252" at="0" time="1.43051e-06" note="residual:stencil lev=0 box=0" />
+<comp id="e267" dep="e255" at="1" time="1.43051e-06" note="residual:stencil lev=0 box=1" />
+<comp id="e270" dep="e258" at="2" time="1.43051e-06" note="residual:stencil lev=0 box=2" />
+<comp id="e273" dep="e261" at="3" time="1.43051e-06" note="residual:stencil lev=0 box=3" />
+<comp id="e276" dep="e84,e264" at="0" time="9.53674e-07" note="residual:op lev=0 box=0" />
+<comp id="e279" dep="e87,e267" at="1" time="9.53674e-07" note="residual:op lev=0 box=1" />
+<comp id="e282" dep="e90,e270" at="2" time="9.53674e-07" note="residual:op lev=0 box=2" />
+<comp id="e285" dep="e93,e273" at="3" time="9.53674e-07" note="residual:op lev=0 box=3" />
+<comp id="e288" dep="" at="0" time="0" note="coarsen:literal lev=-1 box=0" />
+<comp id="e291" dep="" at="1" time="0" note="coarsen:literal lev=-1 box=1" />
+<comp id="e294" dep="" at="2" time="0" note="coarsen:literal lev=-1 box=2" />
+<comp id="e297" dep="" at="3" time="0" note="coarsen:literal lev=-1 box=3" />
+<comp id="e300" dep="e288,e276" at="0" time="2.98023e-07" note="coarsen:restrict lev=-1 box=0" />
+<comp id="e303" dep="e291,e279" at="1" time="2.98023e-07" note="coarsen:restrict lev=-1 box=1" />
+<comp id="e306" dep="e294,e282" at="2" time="2.98023e-07" note="coarsen:restrict lev=-1 box=2" />
+<comp id="e309" dep="e297,e285" at="3" time="2.98023e-07" note="coarsen:restrict lev=-1 box=3" />
+<comp id="e312" dep="" at="0" time="0" note="zero:literal lev=-1 box=0" />
+<comp id="e315" dep="" at="1" time="0" note="zero:literal lev=-1 box=1" />
+<comp id="e318" dep="" at="2" time="0" note="zero:literal lev=-1 box=2" />
+<comp id="e321" dep="" at="3" time="0" note="zero:literal lev=-1 box=3" />
+<comm id="e253" dep="e315" from="1" to="0" size="2048" />
+<comm id="e256" dep="e318" from="2" to="0" size="2048" />
+<comm id="e259" dep="e321" from="3" to="0" size="128" />
+<comp id="e324" dep="e312,e253,e256,e259" at="0" time="0" note="relax:halo lev=-1 box=0" />
+<comm id="e262" dep="e312" from="0" to="1" size="2048" />
+<comm id="e265" dep="e318" from="2" to="1" size="128" />
+<comm id="e268" dep="e321" from="3" to="1" size="2048" />
+<comp id="e327" dep="e315,e262,e265,e268" at="1" time="0" note="relax:halo lev=-1 box=1" />
+<comm id="e271" dep="e312" from="0" to="2" size="2048" />
+<comm id="e274" dep="e315" from="1" to="2" size="128" />
+<comm id="e277" dep="e321" from="3" to="2" size="2048" />
+<comp id="e330" dep="e318,e271,e274,e277" at="2" time="0" note="relax:halo lev=-1 box=2" />
+<comm id="e280" dep="e312" from="0" to="3" size="128" />
+<comm id="e283" dep="e315" from="1" to="3" size="2048" />
+<comm id="e286" dep="e318" from="2" to="3" size="2048" />
+<comp id="e333" dep="e321,e280,e283,e286" at="3" time="0" note="relax:halo lev=-1 box=3" />
+<comp id="e336" dep="e324" at="0" time="1.78814e-07" note="relax:stencil lev=-1 box=0" />
+<comp id="e339" dep="e327" at="1" time="1.78814e-07" note="relax:stencil lev=-1 box=1" />
+<comp id="e342" dep="e330" at="2" time="1.78814e-07" note="relax:stencil lev=-1 box=2" />
+<comp id="e345" dep="e333" at="3" time="1.78814e-07" note="relax:stencil lev=-1 box=3" />
+<comp id="e348" dep="e300,e336" at="0" time="1.19209e-07" note="relax:op lev=-1 box=0" />
+<comp id="e351" dep="e303,e339" at="1" time="1.19209e-07" note="relax:op lev=-1 box=1" />
+<comp id="e354" dep="e306,e342" at="2" time="1.19209e-07" note="relax:op lev=-1 box=2" />
+<comp id="e357" dep="e309,e345" at="3" time="1.19209e-07" note="relax:op lev=-1 box=3" />
+<comm id="e289" dep="e351" from="1" to="0" size="2048" />
+<comm id="e292" dep="e354" from="2" to="0" size="2048" />
+<comm id="e295" dep="e357" from="3" to="0" size="128" />
+<comp id="e360" dep="e348,e289,e292,e295" at="0" time="0" note="relax:halo lev=-1 box=0" />
+<comm id="e298" dep="e348" from="0" to="1" size="2048" />
+<comm id="e301" dep="e354" from="2" to="1" size="128" />
+<comm id="e304" dep="e357" from="3" to="1" size="2048" />
+<comp id="e363" dep="e351,e298,e301,e304" at="1" time="0" note="relax:halo lev=-1 box=1" />
+<comm id="e307" dep="e348" from="0" to="2" size="2048" />
+<comm id="e310" dep="e351" from="1" to="2" size="128" />
+<comm id="e313" dep="e357" from="3" to="2" size="2048" />
+<comp id="e366" dep="e354,e307,e310,e313" at="2" time="0" note="relax:halo lev=-1 box=2" />
+<comm id="e316" dep="e348" from="0" to="3" size="128" />
+<comm id="e319" dep="e351" from="1" to="3" size="2048" />
+<comm id="e322" dep="e354" from="2" to="3" size="2048" />
+<comp id="e369" dep="e357,e316,e319,e322" at="3" time="0" note="relax:halo lev=-1 box=3" />
+<comp id="e372" dep="e360" at="0" time="1.78814e-07" note="relax:stencil lev=-1 box=0" />
+<comp id="e375" dep="e363" at="1" time="1.78814e-07" note="relax:stencil lev=-1 box=1" />
+<comp id="e378" dep="e366" at="2" time="1.78814e-07" note="relax:stencil lev=-1 box=2" />
+<comp id="e381" dep="e369" at="3" time="1.78814e-07" note="relax:stencil lev=-1 box=3" />
+<comp id="e384" dep="e300,e372" at="0" time="1.19209e-07" note="relax:op lev=-1 box=0" />
+<comp id="e387" dep="e303,e375" at="1" time="1.19209e-07" note="relax:op lev=-1 box=1" />
+<comp id="e390" dep="e306,e378" at="2" time="1.19209e-07" note="relax:op lev=-1 box=2" />
+<comp id="e393" dep="e309,e381" at="3" time="1.19209e-07" note="relax:op lev=-1 box=3" />
+<comm id="e325" dep="e387" from="1" to="0" size="2048" />
+<comm id="e328" dep="e390" from="2" to="0" size="2048" />
+<comm id="e331" dep="e393" from="3" to="0" size="128" />
+<comp id="e396" dep="e384,e325,e328,e331" at="0" time="0" note="relax:halo lev=-1 box=0" />
+<comm id="e334" dep="e384" from="0" to="1" size="2048" />
+<comm id="e337" dep="e390" from="2" to="1" size="128" />
+<comm id="e340" dep="e393" from="3" to="1" size="2048" />
+<comp id="e399" dep="e387,e334,e337,e340" at="1" time="0" note="relax:halo lev=-1 box=1" />
+<comm id="e343" dep="e384" from="0" to="2" size="2048" />
+<comm id="e346" dep="e387" from="1" to="2" size="128" />
+<comm id="e349" dep="e393" from="3" to="2" size="2048" />
+<comp id="e402" dep="e390,e343,e346,e349" at="2" time="0" note="relax:halo lev=-1 box=2" />
+<comm id="e352" dep="e384" from="0" to="3" size="128" />
+<comm id="e355" dep="e387" from="1" to="3" size="2048" />
+<comm id="e358" dep="e390" from="2" to="3" size="2048" />
+<comp id="e405" dep="e393,e352,e355,e358" at="3" time="0" note="relax:halo lev=-1 box=3" />
+<comp id="e408" dep="e396" at="0" time="1.78814e-07" note="relax:stencil lev=-1 box=0" />
+<comp id="e411" dep="e399" at="1" time="1.78814e-07" note="relax:stencil lev=-1 box=1" />
+<comp id="e414" dep="e402" at="2" time="1.78814e-07" note="relax:stencil lev=-1 box=2" />
+<comp id="e417" dep="e405" at="3" time="1.78814e-07" note="relax:stencil lev=-1 box=3" />
+<comp id="e420" dep="e300,e408" at="0" time="1.19209e-07" note="relax:op lev=-1 box=0" />
+<comp id="e423" dep="e303,e411" at="1" time="1.19209e-07" note="relax:op lev=-1 box=1" />
+<comp id="e426" dep="e306,e414" at="2" time="1.19209e-07" note="relax:op lev=-1 box=2" />
+<comp id="e429" dep="e309,e417" at="3" time="1.19209e-07" note="relax:op lev=-1 box=3" />
+<comm id="e361" dep="e423" from="1" to="0" size="2048" />
+<comm id="e364" dep="e426" from="2" to="0" size="2048" />
+<comm id="e367" dep="e429" from="3" to="0" size="128" />
+<comp id="e432" dep="e420,e361,e364,e367" at="0" time="0" note="relax:halo lev=-1 box=0" />
+<comm id="e370" dep="e420" from="0" to="1" size="2048" />
+<comm id="e373" dep="e426" from="2" to="1" size="128" />
+<comm id="e376" dep="e429" from="3" to="1" size="2048" />
+<comp id="e435" dep="e423,e370,e373,e376" at="1" time="0" note="relax:halo lev=-1 box=1" />
+<comm id="e379" dep="e420" from="0" to="2" size="2048" />
+<comm id="e382" dep="e423" from="1" to="2" size="128" />
+<comm id="e385" dep="e429" from="3" to="2" size="2048" />
+<comp id="e438" dep="e426,e379,e382,e385" at="2" time="0" note="relax:halo lev=-1 box=2" />
+<comm id="e388" dep="e420" from="0" to="3" size="128" />
+<comm id="e391" dep="e423" from="1" to="3" size="2048" />
+<comm id="e394" dep="e426" from="2" to="3" size="2048" />
+<comp id="e441" dep="e429,e388,e391,e394" at="3" time="0" note="relax:halo lev=-1 box=3" />
+<comp id="e444" dep="e432" at="0" time="1.78814e-07" note="relax:stencil lev=-1 box=0" />
+<comp id="e447" dep="e435" at="1" time="1.78814e-07" note="relax:stencil lev=-1 box=1" />
+<comp id="e450" dep="e438" at="2" time="1.78814e-07" note="relax:stencil lev=-1 box=2" />
+<comp id="e453" dep="e441" at="3" time="1.78814e-07" note="relax:stencil lev=-1 box=3" />
+<comp id="e456" dep="e300,e444" at="0" time="1.19209e-07" note="relax:op lev=-1 box=0" />
+<comp id="e459" dep="e303,e447" at="1" time="1.19209e-07" note="relax:op lev=-1 box=1" />
+<comp id="e462" dep="e306,e450" at="2" time="1.19209e-07" note="relax:op lev=-1 box=2" />
+<comp id="e465" dep="e309,e453" at="3" time="1.19209e-07" note="relax:op lev=-1 box=3" />
+<comm id="e397" dep="e459" from="1" to="0" size="2048" />
+<comm id="e400" dep="e462" from="2" to="0" size="2048" />
+<comm id="e403" dep="e465" from="3" to="0" size="128" />
+<comp id="e468" dep="e456,e397,e400,e403" at="0" time="0" note="residual:halo lev=-1 box=0" />
+<comm id="e406" dep="e456" from="0" to="1" size="2048" />
+<comm id="e409" dep="e462" from="2" to="1" size="128" />
+<comm id="e412" dep="e465" from="3" to="1" size="2048" />
+<comp id="e471" dep="e459,e406,e409,e412" at="1" time="0" note="residual:halo lev=-1 box=1" />
+<comm id="e415" dep="e456" from="0" to="2" size="2048" />
+<comm id="e418" dep="e459" from="1" to="2" size="128" />
+<comm id="e421" dep="e465" from="3" to="2" size="2048" />
+<comp id="e474" dep="e462,e415,e418,e421" at="2" time="0" note="residual:halo lev=-1 box=2" />
+<comm id="e424" dep="e456" from="0" to="3" size="128" />
+<comm id="e427" dep="e459" from="1" to="3" size="2048" />
+<comm id="e430" dep="e462" from="2" to="3" size="2048" />
+<comp id="e477" dep="e465,e424,e427,e430" at="3" time="0" note="residual:halo lev=-1 box=3" />
+<comp id="e480" dep="e468" at="0" time="1.78814e-07" note="residual:stencil lev=-1 box=0" />
+<comp id="e483" dep="e471" at="1" time="1.78814e-07" note="residual:stencil lev=-1 box=1" />
+<comp id="e486" dep="e474" at="2" time="1.78814e-07" note="residual:stencil lev=-1 box=2" />
+<comp id="e489" dep="e477" at="3" time="1.78814e-07" note="residual:stencil lev=-1 box=3" />
+<comp id="e492" dep="e300,e480" at="0" time="1.19209e-07" note="residual:op lev=-1 box=0" />
+<comp id="e495" dep="e303,e483" at="1" time="1.19209e-07" note="residual:op lev=-1 box=1" />
+<comp id="e498" dep="e306,e486" at="2" time="1.19209e-07" note="residual:op lev=-1 box=2" />
+<comp id="e501" dep="e309,e489" at="3" time="1.19209e-07" note="residual:op lev=-1 box=3" />
+<comp id="e504" dep="" at="0" time="0" note="coarsen:literal lev=-2 box=0" />
+<comp id="e507" dep="" at="1" time="0" note="coarsen:literal lev=-2 box=1" />
+<comp id="e510" dep="" at="2" time="0" note="coarsen:literal lev=-2 box=2" />
+<comp id="e513" dep="" at="3" time="0" note="coarsen:literal lev=-2 box=3" />
+<comp id="e516" dep="e504,e492" at="0" time="3.72529e-08" note="coarsen:restrict lev=-2 box=0" />
+<comp id="e519" dep="e507,e495" at="1" time="3.72529e-08" note="coarsen:restrict lev=-2 box=1" />
+<comp id="e522" dep="e510,e498" at="2" time="3.72529e-08" note="coarsen:restrict lev=-2 box=2" />
+<comp id="e525" dep="e513,e501" at="3" time="3.72529e-08" note="coarsen:restrict lev=-2 box=3" />
+<comp id="e528" dep="" at="0" time="0" note="zero:literal lev=-2 box=0" />
+<comp id="e531" dep="" at="1" time="0" note="zero:literal lev=-2 box=1" />
+<comp id="e534" dep="" at="2" time="0" note="zero:literal lev=-2 box=2" />
+<comp id="e537" dep="" at="3" time="0" note="zero:literal lev=-2 box=3" />
+<comm id="e433" dep="e531" from="1" to="0" size="512" />
+<comm id="e436" dep="e534" from="2" to="0" size="512" />
+<comm id="e439" dep="e537" from="3" to="0" size="64" />
+<comp id="e540" dep="e528,e433,e436,e439" at="0" time="0" note="relax:halo lev=-2 box=0" />
+<comm id="e442" dep="e528" from="0" to="1" size="512" />
+<comm id="e445" dep="e534" from="2" to="1" size="64" />
+<comm id="e448" dep="e537" from="3" to="1" size="512" />
+<comp id="e543" dep="e531,e442,e445,e448" at="1" time="0" note="relax:halo lev=-2 box=1" />
+<comm id="e451" dep="e528" from="0" to="2" size="512" />
+<comm id="e454" dep="e531" from="1" to="2" size="64" />
+<comm id="e457" dep="e537" from="3" to="2" size="512" />
+<comp id="e546" dep="e534,e451,e454,e457" at="2" time="0" note="relax:halo lev=-2 box=2" />
+<comm id="e460" dep="e528" from="0" to="3" size="64" />
+<comm id="e463" dep="e531" from="1" to="3" size="512" />
+<comm id="e466" dep="e534" from="2" to="3" size="512" />
+<comp id="e549" dep="e537,e460,e463,e466" at="3" time="0" note="relax:halo lev=-2 box=3" />
+<comp id="e552" dep="e540" at="0" time="2.23517e-08" note="relax:stencil lev=-2 box=0" />
+<comp id="e555" dep="e543" at="1" time="2.23517e-08" note="relax:stencil lev=-2 box=1" />
+<comp id="e558" dep="e546" at="2" time="2.23517e-08" note="relax:stencil lev=-2 box=2" />
+<comp id="e561" dep="e549" at="3" time="2.23517e-08" note="relax:stencil lev=-2 box=3" />
+<comp id="e564" dep="e516,e552" at="0" time="1.49012e-08" note="relax:op lev=-2 box=0" />
+<comp id="e567" dep="e519,e555" at="1" time="1.49012e-08" note="relax:op lev=-2 box=1" />
+<comp id="e570" dep="e522,e558" at="2" time="1.49012e-08" note="relax:op lev=-2 box=2" />
+<comp id="e573" dep="e525,e561" at="3" time="1.49012e-08" note="relax:op lev=-2 box=3" />
+<comm id="e469" dep="e567" from="1" to="0" size="512" />
+<comm id="e472" dep="e570" from="2" to="0" size="512" />
+<comm id="e475" dep="e573" from="3" to="0" size="64" />
+<comp id="e576" dep="e564,e469,e472,e475" at="0" time="0" note="relax:halo lev=-2 box=0" />
+<comm id="e478" dep="e564" from="0" to="1" size="512" />
+<comm id="e481" dep="e570" from="2" to="1" size="64" />
+<comm id="e484" dep="e573" from="3" to="1" size="512" />
+<comp id="e579" dep="e567,e478,e481,e484" at="1" time="0" note="relax:halo lev=-2 box=1" />
+<comm id="e487" dep="e564" from="0" to="2" size="512" />
+<comm id="e490" dep="e567" from="1" to="2" size="64" />
+<comm id="e493" dep="e573" from="3" to="2" size="512" />
+<comp id="e582" dep="e570,e487,e490,e493" at="2" time="0" note="relax:halo lev=-2 box=2" />
+<comm id="e496" dep="e564" from="0" to="3" size="64" />
+<comm id="e499" dep="e567" from="1" to="3" size="512" />
+<comm id="e502" dep="e570" from="2" to="3" size="512" />
+<comp id="e585" dep="e573,e496,e499,e502" at="3" time="0" note="relax:halo lev=-2 box=3" />
+<comp id="e588" dep="e576" at="0" time="2.23517e-08" note="relax:stencil lev=-2 box=0" />
+<comp id="e591" dep="e579" at="1" time="2.23517e-08" note="relax:stencil lev=-2 box=1" />
+<comp id="e594" dep="e582" at="2" time="2.23517e-08" note="relax:stencil lev=-2 box=2" />
+<comp id="e597" dep="e585" at="3" time="2.23517e-08" note="relax:stencil lev=-2 box=3" />
+<comp id="e600" dep="e516,e588" at="0" time="1.49012e-08" note="relax:op lev=-2 box=0" />
+<comp id="e603" dep="e519,e591" at="1" time="1.49012e-08" note="relax:op lev=-2 box=1" />
+<comp id="e606" dep="e522,e594" at="2" time="1.49012e-08" note="relax:op lev=-2 box=2" />
+<comp id="e609" dep="e525,e597" at="3" time="1.49012e-08" note="relax:op lev=-2 box=3" />
+<comm id="e505" dep="e603" from="1" to="0" size="512" />
+<comm id="e508" dep="e606" from="2" to="0" size="512" />
+<comm id="e511" dep="e609" from="3" to="0" size="64" />
+<comp id="e612" dep="e600,e505,e508,e511" at="0" time="0" note="relax:halo lev=-2 box=0" />
+<comm id="e514" dep="e600" from="0" to="1" size="512" />
+<comm id="e517" dep="e606" from="2" to="1" size="64" />
+<comm id="e520" dep="e609" from="3" to="1" size="512" />
+<comp id="e615" dep="e603,e514,e517,e520" at="1" time="0" note="relax:halo lev=-2 box=1" />
+<comm id="e523" dep="e600" from="0" to="2" size="512" />
+<comm id="e526" dep="e603" from="1" to="2" size="64" />
+<comm id="e529" dep="e609" from="3" to="2" size="512" />
+<comp id="e618" dep="e606,e523,e526,e529" at="2" time="0" note="relax:halo lev=-2 box=2" />
+<comm id="e532" dep="e600" from="0" to="3" size="64" />
+<comm id="e535" dep="e603" from="1" to="3" size="512" />
+<comm id="e538" dep="e606" from="2" to="3" size="512" />
+<comp id="e621" dep="e609,e532,e535,e538" at="3" time="0" note="relax:halo lev=-2 box=3" />
+<comp id="e624" dep="e612" at="0" time="2.23517e-08" note="relax:stencil lev=-2 box=0" />
+<comp id="e627" dep="e615" at="1" time="2.23517e-08" note="relax:stencil lev=-2 box=1" />
+<comp id="e630" dep="e618" at="2" time="2.23517e-08" note="relax:stencil lev=-2 box=2" />
+<comp id="e633" dep="e621" at="3" time="2.23517e-08" note="relax:stencil lev=-2 box=3" />
+<comp id="e636" dep="e516,e624" at="0" time="1.49012e-08" note="relax:op lev=-2 box=0" />
+<comp id="e639" dep="e519,e627" at="1" time="1.49012e-08" note="relax:op lev=-2 box=1" />
+<comp id="e642" dep="e522,e630" at="2" time="1.49012e-08" note="relax:op lev=-2 box=2" />
+<comp id="e645" dep="e525,e633" at="3" time="1.49012e-08" note="relax:op lev=-2 box=3" />
+<comm id="e541" dep="e639" from="1" to="0" size="512" />
+<comm id="e544" dep="e642" from="2" to="0" size="512" />
+<comm id="e547" dep="e645" from="3" to="0" size="64" />
+<comp id="e648" dep="e636,e541,e544,e547" at="0" time="0" note="relax:halo lev=-2 box=0" />
+<comm id="e550" dep="e636" from="0" to="1" size="512" />
+<comm id="e553" dep="e642" from="2" to="1" size="64" />
+<comm id="e556" dep="e645" from="3" to="1" size="512" />
+<comp id="e651" dep="e639,e550,e553,e556" at="1" time="0" note="relax:halo lev=-2 box=1" />
+<comm id="e559" dep="e636" from="0" to="2" size="512" />
+<comm id="e562" dep="e639" from="1" to="2" size="64" />
+<comm id="e565" dep="e645" from="3" to="2" size="512" />
+<comp id="e654" dep="e642,e559,e562,e565" at="2" time="0" note="relax:halo lev=-2 box=2" />
+<comm id="e568" dep="e636" from="0" to="3" size="64" />
+<comm id="e571" dep="e639" from="1" to="3" size="512" />
+<comm id="e574" dep="e642" from="2" to="3" size="512" />
+<comp id="e657" dep="e645,e568,e571,e574" at="3" time="0" note="relax:halo lev=-2 box=3" />
+<comp id="e660" dep="e648" at="0" time="2.23517e-08" note="relax:stencil lev=-2 box=0" />
+<comp id="e663" dep="e651" at="1" time="2.23517e-08" note="relax:stencil lev=-2 box=1" />
+<comp id="e666" dep="e654" at="2" time="2.23517e-08" note="relax:stencil lev=-2 box=2" />
+<comp id="e669" dep="e657" at="3" time="2.23517e-08" note="relax:stencil lev=-2 box=3" />
+<comp id="e672" dep="e516,e660" at="0" time="1.49012e-08" note="relax:op lev=-2 box=0" />
+<comp id="e675" dep="e519,e663" at="1" time="1.49012e-08" note="relax:op lev=-2 box=1" />
+<comp id="e678" dep="e522,e666" at="2" time="1.49012e-08" note="relax:op lev=-2 box=2" />
+<comp id="e681" dep="e525,e669" at="3" time="1.49012e-08" note="relax:op lev=-2 box=3" />
+<comm id="e577" dep="e675" from="1" to="0" size="512" />
+<comm id="e580" dep="e678" from="2" to="0" size="512" />
+<comm id="e583" dep="e681" from="3" to="0" size="64" />
+<comp id="e684" dep="e672,e577,e580,e583" at="0" time="0" note="residual:halo lev=-2 box=0" />
+<comm id="e586" dep="e672" from="0" to="1" size="512" />
+<comm id="e589" dep="e678" from="2" to="1" size="64" />
+<comm id="e592" dep="e681" from="3" to="1" size="512" />
+<comp id="e687" dep="e675,e586,e589,e592" at="1" time="0" note="residual:halo lev=-2 box=1" />
+<comm id="e595" dep="e672" from="0" to="2" size="512" />
+<comm id="e598" dep="e675" from="1" to="2" size="64" />
+<comm id="e601" dep="e681" from="3" to="2" size="512" />
+<comp id="e690" dep="e678,e595,e598,e601" at="2" time="0" note="residual:halo lev=-2 box=2" />
+<comm id="e604" dep="e672" from="0" to="3" size="64" />
+<comm id="e607" dep="e675" from="1" to="3" size="512" />
+<comm id="e610" dep="e678" from="2" to="3" size="512" />
+<comp id="e693" dep="e681,e604,e607,e610" at="3" time="0" note="residual:halo lev=-2 box=3" />
+<comp id="e696" dep="e684" at="0" time="2.23517e-08" note="residual:stencil lev=-2 box=0" />
+<comp id="e699" dep="e687" at="1" time="2.23517e-08" note="residual:stencil lev=-2 box=1" />
+<comp id="e702" dep="e690" at="2" time="2.23517e-08" note="residual:stencil lev=-2 box=2" />
+<comp id="e705" dep="e693" at="3" time="2.23517e-08" note="residual:stencil lev=-2 box=3" />
+<comp id="e708" dep="e516,e696" at="0" time="1.49012e-08" note="residual:op lev=-2 box=0" />
+<comp id="e711" dep="e519,e699" at="1" time="1.49012e-08" note="residual:op lev=-2 box=1" />
+<comp id="e714" dep="e522,e702" at="2" time="1.49012e-08" note="residual:op lev=-2 box=2" />
+<comp id="e717" dep="e525,e705" at="3" time="1.49012e-08" note="residual:op lev=-2 box=3" />
+<comp id="e720" dep="" at="0" time="0" note="coarsen:literal lev=-3 box=0" />
+<comp id="e723" dep="" at="1" time="0" note="coarsen:literal lev=-3 box=1" />
+<comp id="e726" dep="" at="2" time="0" note="coarsen:literal lev=-3 box=2" />
+<comp id="e729" dep="" at="3" time="0" note="coarsen:literal lev=-3 box=3" />
+<comp id="e732" dep="e720,e708" at="0" time="4.65661e-09" note="coarsen:restrict lev=-3 box=0" />
+<comp id="e735" dep="e723,e711" at="1" time="4.65661e-09" note="coarsen:restrict lev=-3 box=1" />
+<comp id="e738" dep="e726,e714" at="2" time="4.65661e-09" note="coarsen:restrict lev=-3 box=2" />
+<comp id="e741" dep="e729,e717" at="3" time="4.65661e-09" note="coarsen:restrict lev=-3 box=3" />
+<coll id="e5" dep="e732,e735,e738,e741" type="ALLREDUCE" team="0,1,2,3" size="8" />
+<comp id="e744" dep="e5" at="0" time="0" note="zero:literal lev=-3 box=0" />
+<comp id="e747" dep="e5" at="1" time="0" note="zero:literal lev=-3 box=1" />
+<comp id="e750" dep="e5" at="2" time="0" note="zero:literal lev=-3 box=2" />
+<comp id="e753" dep="e5" at="3" time="0" note="zero:literal lev=-3 box=3" />
+<comm id="e613" dep="e747" from="1" to="0" size="128" />
+<comm id="e616" dep="e750" from="2" to="0" size="128" />
+<comm id="e619" dep="e753" from="3" to="0" size="32" />
+<comp id="e756" dep="e744,e613,e616,e619" at="0" time="0" note="relax:halo lev=-3 box=0" />
+<comm id="e622" dep="e744" from="0" to="1" size="128" />
+<comm id="e625" dep="e750" from="2" to="1" size="32" />
+<comm id="e628" dep="e753" from="3" to="1" size="128" />
+<comp id="e759" dep="e747,e622,e625,e628" at="1" time="0" note="relax:halo lev=-3 box=1" />
+<comm id="e631" dep="e744" from="0" to="2" size="128" />
+<comm id="e634" dep="e747" from="1" to="2" size="32" />
+<comm id="e637" dep="e753" from="3" to="2" size="128" />
+<comp id="e762" dep="e750,e631,e634,e637" at="2" time="0" note="relax:halo lev=-3 box=2" />
+<comm id="e640" dep="e744" from="0" to="3" size="32" />
+<comm id="e643" dep="e747" from="1" to="3" size="128" />
+<comm id="e646" dep="e750" from="2" to="3" size="128" />
+<comp id="e765" dep="e753,e640,e643,e646" at="3" time="0" note="relax:halo lev=-3 box=3" />
+<comp id="e768" dep="e756" at="0" time="2.79397e-09" note="relax:stencil lev=-3 box=0" />
+<comp id="e771" dep="e759" at="1" time="2.79397e-09" note="relax:stencil lev=-3 box=1" />
+<comp id="e774" dep="e762" at="2" time="2.79397e-09" note="relax:stencil lev=-3 box=2" />
+<comp id="e777" dep="e765" at="3" time="2.79397e-09" note="relax:stencil lev=-3 box=3" />
+<comp id="e780" dep="e732,e768" at="0" time="1.86265e-09" note="relax:op lev=-3 box=0" />
+<comp id="e783" dep="e735,e771" at="1" time="1.86265e-09" note="relax:op lev=-3 box=1" />
+<comp id="e786" dep="e738,e774" at="2" time="1.86265e-09" note="relax:op lev=-3 box=2" />
+<comp id="e789" dep="e741,e777" at="3" time="1.86265e-09" note="relax:op lev=-3 box=3" />
+<comm id="e649" dep="e783" from="1" to="0" size="128" />
+<comm id="e652" dep="e786" from="2" to="0" size="128" />
+<comm id="e655" dep="e789" from="3" to="0" size="32" />
+<comp id="e792" dep="e780,e649,e652,e655" at="0" time="0" note="relax:halo lev=-3 box=0" />
+<comm id="e658" dep="e780" from="0" to="1" size="128" />
+<comm id="e661" dep="e786" from="2" to="1" size="32" />
+<comm id="e664" dep="e789" from="3" to="1" size="128" />
+<comp id="e795" dep="e783,e658,e661,e664" at="1" time="0" note="relax:halo lev=-3 box=1" />
+<comm id="e667" dep="e780" from="0" to="2" size="128" />
+<comm id="e670" dep="e783" from="1" to="2" size="32" />
+<comm id="e673" dep="e789" from="3" to="2" size="128" />
+<comp id="e798" dep="e786,e667,e670,e673" at="2" time="0" note="relax:halo lev=-3 box=2" />
+<comm id="e676" dep="e780" from="0" to="3" size="32" />
+<comm id="e679" dep="e783" from="1" to="3" size="128" />
+<comm id="e682" dep="e786" from="2" to="3" size="128" />
+<comp id="e801" dep="e789,e676,e679,e682" at="3" time="0" note="relax:halo lev=-3 box=3" />
+<comp id="e804" dep="e792" at="0" time="2.79397e-09" note="relax:stencil lev=-3 box=0" />
+<comp id="e807" dep="e795" at="1" time="2.79397e-09" note="relax:stencil lev=-3 box=1" />
+<comp id="e810" dep="e798" at="2" time="2.79397e-09" note="relax:stencil lev=-3 box=2" />
+<comp id="e813" dep="e801" at="3" time="2.79397e-09" note="relax:stencil lev=-3 box=3" />
+<comp id="e816" dep="e732,e804" at="0" time="1.86265e-09" note="relax:op lev=-3 box=0" />
+<comp id="e819" dep="e735,e807" at="1" time="1.86265e-09" note="relax:op lev=-3 box=1" />
+<comp id="e822" dep="e738,e810" at="2" time="1.86265e-09" note="relax:op lev=-3 box=2" />
+<comp id="e825" dep="e741,e813" at="3" time="1.86265e-09" note="relax:op lev=-3 box=3" />
+<comm id="e685" dep="e819" from="1" to="0" size="128" />
+<comm id="e688" dep="e822" from="2" to="0" size="128" />
+<comm id="e691" dep="e825" from="3" to="0" size="32" />
+<comp id="e828" dep="e816,e685,e688,e691" at="0" time="0" note="residual:halo lev=-3 box=0" />
+<comm id="e694" dep="e816" from="0" to="1" size="128" />
+<comm id="e697" dep="e822" from="2" to="1" size="32" />
+<comm id="e700" dep="e825" from="3" to="1" size="128" />
+<comp id="e831" dep="e819,e694,e697,e700" at="1" time="0" note="residual:halo lev=-3 box=1" />
+<comm id="e703" dep="e816" from="0" to="2" size="128" />
+<comm id="e706" dep="e819" from="1" to="2" size="32" />
+<comm id="e709" dep="e825" from="3" to="2" size="128" />
+<comp id="e834" dep="e822,e703,e706,e709" at="2" time="0" note="residual:halo lev=-3 box=2" />
+<comm id="e712" dep="e816" from="0" to="3" size="32" />
+<comm id="e715" dep="e819" from="1" to="3" size="128" />
+<comm id="e718" dep="e822" from="2" to="3" size="128" />
+<comp id="e837" dep="e825,e712,e715,e718" at="3" time="0" note="residual:halo lev=-3 box=3" />
+<comp id="e840" dep="e828" at="0" time="2.79397e-09" note="residual:stencil lev=-3 box=0" />
+<comp id="e843" dep="e831" at="1" time="2.79397e-09" note="residual:stencil lev=-3 box=1" />
+<comp id="e846" dep="e834" at="2" time="2.79397e-09" note="residual:stencil lev=-3 box=2" />
+<comp id="e849" dep="e837" at="3" time="2.79397e-09" note="residual:stencil lev=-3 box=3" />
+<comp id="e852" dep="e732,e840" at="0" time="1.86265e-09" note="residual:op lev=-3 box=0" />
+<comp id="e855" dep="e735,e843" at="1" time="1.86265e-09" note="residual:op lev=-3 box=1" />
+<comp id="e858" dep="e738,e846" at="2" time="1.86265e-09" note="residual:op lev=-3 box=2" />
+<comp id="e861" dep="e741,e849" at="3" time="1.86265e-09" note="residual:op lev=-3 box=3" />
+<coll id="e8" dep="e852,e855,e858,e861" type="ALLREDUCE" team="0,1,2,3" size="8" />
+<comm id="e721" dep="e819" from="1" to="0" size="128" />
+<comm id="e724" dep="e822" from="2" to="0" size="128" />
+<comm id="e727" dep="e825" from="3" to="0" size="32" />
+<comp id="e864" dep="e816,e721,e724,e727,e8" at="0" time="0" note="relax:halo lev=-3 box=0" />
+<comm id="e730" dep="e816" from="0" to="1" size="128" />
+<comm id="e733" dep="e822" from="2" to="1" size="32" />
+<comm id="e736" dep="e825" from="3" to="1" size="128" />
+<comp id="e867" dep="e819,e730,e733,e736,e8" at="1" time="0" note="relax:halo lev=-3 box=1" />
+<comm id="e739" dep="e816" from="0" to="2" size="128" />
+<comm id="e742" dep="e819" from="1" to="2" size="32" />
+<comm id="e745" dep="e825" from="3" to="2" size="128" />
+<comp id="e870" dep="e822,e739,e742,e745,e8" at="2" time="0" note="relax:halo lev=-3 box=2" />
+<comm id="e748" dep="e816" from="0" to="3" size="32" />
+<comm id="e751" dep="e819" from="1" to="3" size="128" />
+<comm id="e754" dep="e822" from="2" to="3" size="128" />
+<comp id="e873" dep="e825,e748,e751,e754,e8" at="3" time="0" note="relax:halo lev=-3 box=3" />
+<comp id="e876" dep="e864" at="0" time="2.79397e-09" note="relax:stencil lev=-3 box=0" />
+<comp id="e879" dep="e867" at="1" time="2.79397e-09" note="relax:stencil lev=-3 box=1" />
+<comp id="e882" dep="e870" at="2" time="2.79397e-09" note="relax:stencil lev=-3 box=2" />
+<comp id="e885" dep="e873" at="3" time="2.79397e-09" note="relax:stencil lev=-3 box=3" />
+<comp id="e888" dep="e732,e876" at="0" time="1.86265e-09" note="relax:op lev=-3 box=0" />
+<comp id="e891" dep="e735,e879" at="1" time="1.86265e-09" note="relax:op lev=-3 box=1" />
+<comp id="e894" dep="e738,e882" at="2" time="1.86265e-09" note="relax:op lev=-3 box=2" />
+<comp id="e897" dep="e741,e885" at="3" time="1.86265e-09" note="relax:op lev=-3 box=3" />
+<comm id="e757" dep="e891" from="1" to="0" size="128" />
+<comm id="e760" dep="e894" from="2" to="0" size="128" />
+<comm id="e763" dep="e897" from="3" to="0" size="32" />
+<comp id="e900" dep="e888,e757,e760,e763" at="0" time="0" note="relax:halo lev=-3 box=0" />
+<comm id="e766" dep="e888" from="0" to="1" size="128" />
+<comm id="e769" dep="e894" from="2" to="1" size="32" />
+<comm id="e772" dep="e897" from="3" to="1" size="128" />
+<comp id="e903" dep="e891,e766,e769,e772" at="1" time="0" note="relax:halo lev=-3 box=1" />
+<comm id="e775" dep="e888" from="0" to="2" size="128" />
+<comm id="e778" dep="e891" from="1" to="2" size="32" />
+<comm id="e781" dep="e897" from="3" to="2" size="128" />
+<comp id="e906" dep="e894,e775,e778,e781" at="2" time="0" note="relax:halo lev=-3 box=2" />
+<comm id="e784" dep="e888" from="0" to="3" size="32" />
+<comm id="e787" dep="e891" from="1" to="3" size="128" />
+<comm id="e790" dep="e894" from="2" to="3" size="128" />
+<comp id="e909" dep="e897,e784,e787,e790" at="3" time="0" note="relax:halo lev=-3 box=3" />
+<comp id="e912" dep="e900" at="0" time="2.79397e-09" note="relax:stencil lev=-3 box=0" />
+<comp id="e915" dep="e903" at="1" time="2.79397e-09" note="relax:stencil lev=-3 box=1" />
+<comp id="e918" dep="e906" at="2" time="2.79397e-09" note="relax:stencil lev=-3 box=2" />
+<comp id="e921" dep="e909" at="3" time="2.79397e-09" note="relax:stencil lev=-3 box=3" />
+<comp id="e924" dep="e732,e912" at="0" time="1.86265e-09" note="relax:op lev=-3 box=0" />
+<comp id="e927" dep="e735,e915" at="1" time="1.86265e-09" note="relax:op lev=-3 box=1" />
+<comp id="e930" dep="e738,e918" at="2" time="1.86265e-09" note="relax:op lev=-3 box=2" />
+<comp id="e933" dep="e741,e921" at="3" time="1.86265e-09" note="relax:op lev=-3 box=3" />
+<comm id="e793" dep="e927" from="1" to="0" size="128" />
+<comm id="e796" dep="e930" from="2" to="0" size="128" />
+<comm id="e799" dep="e933" from="3" to="0" size="32" />
+<comp id="e936" dep="e924,e793,e796,e799" at="0" time="0" note="residual:halo lev=-3 box=0" />
+<comm id="e802" dep="e924" from="0" to="1" size="128" />
+<comm id="e805" dep="e930" from="2" to="1" size="32" />
+<comm id="e808" dep="e933" from="3" to="1" size="128" />
+<comp id="e939" dep="e927,e802,e805,e808" at="1" time="0" note="residual:halo lev=-3 box=1" />
+<comm id="e811" dep="e924" from="0" to="2" size="128" />
+<comm id="e814" dep="e927" from="1" to="2" size="32" />
+<comm id="e817" dep="e933" from="3" to="2" size="128" />
+<comp id="e942" dep="e930,e811,e814,e817" at="2" time="0" note="residual:halo lev=-3 box=2" />
+<comm id="e820" dep="e924" from="0" to="3" size="32" />
+<comm id="e823" dep="e927" from="1" to="3" size="128" />
+<comm id="e826" dep="e930" from="2" to="3" size="128" />
+<comp id="e945" dep="e933,e820,e823,e826" at="3" time="0" note="residual:halo lev=-3 box=3" />
+<comp id="e948" dep="e936" at="0" time="2.79397e-09" note="residual:stencil lev=-3 box=0" />
+<comp id="e951" dep="e939" at="1" time="2.79397e-09" note="residual:stencil lev=-3 box=1" />
+<comp id="e954" dep="e942" at="2" time="2.79397e-09" note="residual:stencil lev=-3 box=2" />
+<comp id="e957" dep="e945" at="3" time="2.79397e-09" note="residual:stencil lev=-3 box=3" />
+<comp id="e960" dep="e732,e948" at="0" time="1.86265e-09" note="residual:op lev=-3 box=0" />
+<comp id="e963" dep="e735,e951" at="1" time="1.86265e-09" note="residual:op lev=-3 box=1" />
+<comp id="e966" dep="e738,e954" at="2" time="1.86265e-09" note="residual:op lev=-3 box=2" />
+<comp id="e969" dep="e741,e957" at="3" time="1.86265e-09" note="residual:op lev=-3 box=3" />
+<coll id="e11" dep="e960,e963,e966,e969" type="ALLREDUCE" team="0,1,2,3" size="8" />
+<comm id="e829" dep="e927" from="1" to="0" size="128" />
+<comm id="e832" dep="e930" from="2" to="0" size="128" />
+<comm id="e835" dep="e933" from="3" to="0" size="32" />
+<comp id="e972" dep="e924,e829,e832,e835,e11" at="0" time="8.192e-09" note="prolong_update:prolong lev=-2 box=0" />
+<comm id="e838" dep="e924" from="0" to="1" size="128" />
+<comm id="e841" dep="e930" from="2" to="1" size="32" />
+<comm id="e844" dep="e933" from="3" to="1" size="128" />
+<comp id="e975" dep="e838,e927,e841,e844,e11" at="1" time="8.192e-09" note="prolong_update:prolong lev=-2 box=1" />
+<comm id="e847" dep="e924" from="0" to="2" size="128" />
+<comm id="e850" dep="e927" from="1" to="2" size="32" />
+<comm id="e853" dep="e933" from="3" to="2" size="128" />
+<comp id="e978" dep="e847,e850,e930,e853,e11" at="2" time="8.192e-09" note="prolong_update:prolong lev=-2 box=2" />
+<comm id="e856" dep="e924" from="0" to="3" size="32" />
+<comm id="e859" dep="e927" from="1" to="3" size="128" />
+<comm id="e862" dep="e930" from="2" to="3" size="128" />
+<comp id="e981" dep="e856,e859,e862,e933,e11" at="3" time="8.192e-09" note="prolong_update:prolong lev=-2 box=3" />
+<comp id="e984" dep="e672,e972" at="0" time="1.49012e-08" note="prolong_update:update lev=-2 box=0" />
+<comp id="e987" dep="e675,e975" at="1" time="1.49012e-08" note="prolong_update:update lev=-2 box=1" />
+<comp id="e990" dep="e678,e978" at="2" time="1.49012e-08" note="prolong_update:update lev=-2 box=2" />
+<comp id="e993" dep="e681,e981" at="3" time="1.49012e-08" note="prolong_update:update lev=-2 box=3" />
+<comm id="e865" dep="e987" from="1" to="0" size="512" />
+<comm id="e868" dep="e990" from="2" to="0" size="512" />
+<comm id="e871" dep="e993" from="3" to="0" size="64" />
+<comp id="e996" dep="e984,e865,e868,e871" at="0" time="0" note="relax:halo lev=-2 box=0" />
+<comm id="e874" dep="e984" from="0" to="1" size="512" />
+<comm id="e877" dep="e990" from="2" to="1" size="64" />
+<comm id="e880" dep="e993" from="3" to="1" size="512" />
+<comp id="e999" dep="e987,e874,e877,e880" at="1" time="0" note="relax:halo lev=-2 box=1" />
+<comm id="e883" dep="e984" from="0" to="2" size="512" />
+<comm id="e886" dep="e987" from="1" to="2" size="64" />
+<comm id="e889" dep="e993" from="3" to="2" size="512" />
+<comp id="e1002" dep="e990,e883,e886,e889" at="2" time="0" note="relax:halo lev=-2 box=2" />
+<comm id="e892" dep="e984" from="0" to="3" size="64" />
+<comm id="e895" dep="e987" from="1" to="3" size="512" />
+<comm id="e898" dep="e990" from="2" to="3" size="512" />
+<comp id="e1005" dep="e993,e892,e895,e898" at="3" time="0" note="relax:halo lev=-2 box=3" />
+<comp id="e1008" dep="e996" at="0" time="2.23517e-08" note="relax:stencil lev=-2 box=0" />
+<comp id="e1011" dep="e999" at="1" time="2.23517e-08" note="relax:stencil lev=-2 box=1" />
+<comp id="e1014" dep="e1002" at="2" time="2.23517e-08" note="relax:stencil lev=-2 box=2" />
+<comp id="e1017" dep="e1005" at="3" time="2.23517e-08" note="relax:stencil lev=-2 box=3" />
+<comp id="e1020" dep="e516,e1008" at="0" time="1.49012e-08" note="relax:op lev=-2 box=0" />
+<comp id="e1023" dep="e519,e1011" at="1" time="1.49012e-08" note="relax:op lev=-2 box=1" />
+<comp id="e1026" dep="e522,e1014" at="2" time="1.49012e-08" note="relax:op lev=-2 box=2" />
+<comp id="e1029" dep="e525,e1017" at="3" time="1.49012e-08" note="relax:op lev=-2 box=3" />
+<comm id="e901" dep="e1023" from="1" to="0" size="512" />
+<comm id="e904" dep="e1026" from="2" to="0" size="512" />
+<comm id="e907" dep="e1029" from="3" to="0" size="64" />
+<comp id="e1032" dep="e1020,e901,e904,e907" at="0" time="0" note="relax:halo lev=-2 box=0" />
+<comm id="e910" dep="e1020" from="0" to="1" size="512" />
+<comm id="e913" dep="e1026" from="2" to="1" size="64" />
+<comm id="e916" dep="e1029" from="3" to="1" size="512" />
+<comp id="e1035" dep="e1023,e910,e913,e916" at="1" time="0" note="relax:halo lev=-2 box=1" />
+<comm id="e919" dep="e1020" from="0" to="2" size="512" />
+<comm id="e922" dep="e1023" from="1" to="2" size="64" />
+<comm id="e925" dep="e1029" from="3" to="2" size="512" />
+<comp id="e1038" dep="e1026,e919,e922,e925" at="2" time="0" note="relax:halo lev=-2 box=2" />
+<comm id="e928" dep="e1020" from="0" to="3" size="64" />
+<comm id="e931" dep="e1023" from="1" to="3" size="512" />
+<comm id="e934" dep="e1026" from="2" to="3" size="512" />
+<comp id="e1041" dep="e1029,e928,e931,e934" at="3" time="0" note="relax:halo lev=-2 box=3" />
+<comp id="e1044" dep="e1032" at="0" time="2.23517e-08" note="relax:stencil lev=-2 box=0" />
+<comp id="e1047" dep="e1035" at="1" time="2.23517e-08" note="relax:stencil lev=-2 box=1" />
+<comp id="e1050" dep="e1038" at="2" time="2.23517e-08" note="relax:stencil lev=-2 box=2" />
+<comp id="e1053" dep="e1041" at="3" time="2.23517e-08" note="relax:stencil lev=-2 box=3" />
+<comp id="e1056" dep="e516,e1044" at="0" time="1.49012e-08" note="relax:op lev=-2 box=0" />
+<comp id="e1059" dep="e519,e1047" at="1" time="1.49012e-08" note="relax:op lev=-2 box=1" />
+<comp id="e1062" dep="e522,e1050" at="2" time="1.49012e-08" note="relax:op lev=-2 box=2" />
+<comp id="e1065" dep="e525,e1053" at="3" time="1.49012e-08" note="relax:op lev=-2 box=3" />
+<comm id="e937" dep="e1059" from="1" to="0" size="512" />
+<comm id="e940" dep="e1062" from="2" to="0" size="512" />
+<comm id="e943" dep="e1065" from="3" to="0" size="64" />
+<comp id="e1068" dep="e1056,e937,e940,e943" at="0" time="0" note="relax:halo lev=-2 box=0" />
+<comm id="e946" dep="e1056" from="0" to="1" size="512" />
+<comm id="e949" dep="e1062" from="2" to="1" size="64" />
+<comm id="e952" dep="e1065" from="3" to="1" size="512" />
+<comp id="e1071" dep="e1059,e946,e949,e952" at="1" time="0" note="relax:halo lev=-2 box=1" />
+<comm id="e955" dep="e1056" from="0" to="2" size="512" />
+<comm id="e958" dep="e1059" from="1" to="2" size="64" />
+<comm id="e961" dep="e1065" from="3" to="2" size="512" />
+<comp id="e1074" dep="e1062,e955,e958,e961" at="2" time="0" note="relax:halo lev=-2 box=2" />
+<comm id="e964" dep="e1056" from="0" to="3" size="64" />
+<comm id="e967" dep="e1059" from="1" to="3" size="512" />
+<comm id="e970" dep="e1062" from="2" to="3" size="512" />
+<comp id="e1077" dep="e1065,e964,e967,e970" at="3" time="0" note="relax:halo lev=-2 box=3" />
+<comp id="e1080" dep="e1068" at="0" time="2.23517e-08" note="relax:stencil lev=-2 box=0" />
+<comp id="e1083" dep="e1071" at="1" time="2.23517e-08" note="relax:stencil lev=-2 box=1" />
+<comp id="e1086" dep="e1074" at="2" time="2.23517e-08" note="relax:stencil lev=-2 box=2" />
+<comp id="e1089" dep="e1077" at="3" time="2.23517e-08" note="relax:stencil lev=-2 box=3" />
+<comp id="e1092" dep="e516,e1080" at="0" time="1.49012e-08" note="relax:op lev=-2 box=0" />
+<comp id="e1095" dep="e519,e1083" at="1" time="1.49012e-08" note="relax:op lev=-2 box=1" />
+<comp id="e1098" dep="e522,e1086" at="2" time="1.49012e-08" note="relax:op lev=-2 box=2" />
+<comp id="e1101" dep="e525,e1089" at="3" time="1.49012e-08" note="relax:op lev=-2 box=3" />
+<comm id="e973" dep="e1095" from="1" to="0" size="512" />
+<comm id="e976" dep="e1098" from="2" to="0" size="512" />
+<comm id="e979" dep="e1101" from="3" to="0" size="64" />
+<comp id="e1104" dep="e1092,e973,e976,e979" at="0" time="0" note="relax:halo lev=-2 box=0" />
+<comm id="e982" dep="e1092" from="0" to="1" size="512" />
+<comm id="e985" dep="e1098" from="2" to="1" size="64" />
+<comm id="e988" dep="e1101" from="3" to="1" size="512" />
+<comp id="e1107" dep="e1095,e982,e985,e988" at="1" time="0" note="relax:halo lev=-2 box=1" />
+<comm id="e991" dep="e1092" from="0" to="2" size="512" />
+<comm id="e994" dep="e1095" from="1" to="2" size="64" />
+<comm id="e997" dep="e1101" from="3" to="2" size="512" />
+<comp id="e1110" dep="e1098,e991,e994,e997" at="2" time="0" note="relax:halo lev=-2 box=2" />
+<comm id="e1000" dep="e1092" from="0" to="3" size="64" />
+<comm id="e1003" dep="e1095" from="1" to="3" size="512" />
+<comm id="e1006" dep="e1098" from="2" to="3" size="512" />
+<comp id="e1113" dep="e1101,e1000,e1003,e1006" at="3" time="0" note="relax:halo lev=-2 box=3" />
+<comp id="e1116" dep="e1104" at="0" time="2.23517e-08" note="relax:stencil lev=-2 box=0" />
+<comp id="e1119" dep="e1107" at="1" time="2.23517e-08" note="relax:stencil lev=-2 box=1" />
+<comp id="e1122" dep="e1110" at="2" time="2.23517e-08" note="relax:stencil lev=-2 box=2" />
+<comp id="e1125" dep="e1113" at="3" time="2.23517e-08" note="relax:stencil lev=-2 box=3" />
+<comp id="e1128" dep="e516,e1116" at="0" time="1.49012e-08" note="relax:op lev=-2 box=0" />
+<comp id="e1131" dep="e519,e1119" at="1" time="1.49012e-08" note="relax:op lev=-2 box=1" />
+<comp id="e1134" dep="e522,e1122" at="2" time="1.49012e-08" note="relax:op lev=-2 box=2" />
+<comp id="e1137" dep="e525,e1125" at="3" time="1.49012e-08" note="relax:op lev=-2 box=3" />
+<comm id="e1009" dep="e1131" from="1" to="0" size="512" />
+<comm id="e1012" dep="e1134" from="2" to="0" size="512" />
+<comm id="e1015" dep="e1137" from="3" to="0" size="64" />
+<comp id="e1140" dep="e1128,e1009,e1012,e1015" at="0" time="6.5536e-08" note="prolong_update:prolong lev=-1 box=0" />
+<comm id="e1018" dep="e1128" from="0" to="1" size="512" />
+<comm id="e1021" dep="e1134" from="2" to="1" size="64" />
+<comm id="e1024" dep="e1137" from="3" to="1" size="512" />
+<comp id="e1143" dep="e1018,e1131,e1021,e1024" at="1" time="6.5536e-08" note="prolong_update:prolong lev=-1 box=1" />
+<comm id="e1027" dep="e1128" from="0" to="2" size="512" />
+<comm id="e1030" dep="e1131" from="1" to="2" size="64" />
+<comm id="e1033" dep="e1137" from="3" to="2" size="512" />
+<comp id="e1146" dep="e1027,e1030,e1134,e1033" at="2" time="6.5536e-08" note="prolong_update:prolong lev=-1 box=2" />
+<comm id="e1036" dep="e1128" from="0" to="3" size="64" />
+<comm id="e1039" dep="e1131" from="1" to="3" size="512" />
+<comm id="e1042" dep="e1134" from="2" to="3" size="512" />
+<comp id="e1149" dep="e1036,e1039,e1042,e1137" at="3" time="6.5536e-08" note="prolong_update:prolong lev=-1 box=3" />
+<comp id="e1152" dep="e456,e1140" at="0" time="1.19209e-07" note="prolong_update:update lev=-1 box=0" />
+<comp id="e1155" dep="e459,e1143" at="1" time="1.19209e-07" note="prolong_update:update lev=-1 box=1" />
+<comp id="e1158" dep="e462,e1146" at="2" time="1.19209e-07" note="prolong_update:update lev=-1 box=2" />
+<comp id="e1161" dep="e465,e1149" at="3" time="1.19209e-07" note="prolong_update:update lev=-1 box=3" />
+<comm id="e1045" dep="e1155" from="1" to="0" size="2048" />
+<comm id="e1048" dep="e1158" from="2" to="0" size="2048" />
+<comm id="e1051" dep="e1161" from="3" to="0" size="128" />
+<comp id="e1164" dep="e1152,e1045,e1048,e1051" at="0" time="0" note="relax:halo lev=-1 box=0" />
+<comm id="e1054" dep="e1152" from="0" to="1" size="2048" />
+<comm id="e1057" dep="e1158" from="2" to="1" size="128" />
+<comm id="e1060" dep="e1161" from="3" to="1" size="2048" />
+<comp id="e1167" dep="e1155,e1054,e1057,e1060" at="1" time="0" note="relax:halo lev=-1 box=1" />
+<comm id="e1063" dep="e1152" from="0" to="2" size="2048" />
+<comm id="e1066" dep="e1155" from="1" to="2" size="128" />
+<comm id="e1069" dep="e1161" from="3" to="2" size="2048" />
+<comp id="e1170" dep="e1158,e1063,e1066,e1069" at="2" time="0" note="relax:halo lev=-1 box=2" />
+<comm id="e1072" dep="e1152" from="0" to="3" size="128" />
+<comm id="e1075" dep="e1155" from="1" to="3" size="2048" />
+<comm id="e1078" dep="e1158" from="2" to="3" size="2048" />
+<comp id="e1173" dep="e1161,e1072,e1075,e1078" at="3" time="0" note="relax:halo lev=-1 box=3" />
+<comp id="e1176" dep="e1164" at="0" time="1.78814e-07" note="relax:stencil lev=-1 box=0" />
+<comp id="e1179" dep="e1167" at="1" time="1.78814e-07" note="relax:stencil lev=-1 box=1" />
+<comp id="e1182" dep="e1170" at="2" time="1.78814e-07" note="relax:stencil lev=-1 box=2" />
+<comp id="e1185" dep="e1173" at="3" time="1.78814e-07" note="relax:stencil lev=-1 box=3" />
+<comp id="e1188" dep="e300,e1176" at="0" time="1.19209e-07" note="relax:op lev=-1 box=0" />
+<comp id="e1191" dep="e303,e1179" at="1" time="1.19209e-07" note="relax:op lev=-1 box=1" />
+<comp id="e1194" dep="e306,e1182" at="2" time="1.19209e-07" note="relax:op lev=-1 box=2" />
+<comp id="e1197" dep="e309,e1185" at="3" time="1.19209e-07" note="relax:op lev=-1 box=3" />
+<comm id="e1081" dep="e1191" from="1" to="0" size="2048" />
+<comm id="e1084" dep="e1194" from="2" to="0" size="2048" />
+<comm id="e1087" dep="e1197" from="3" to="0" size="128" />
+<comp id="e1200" dep="e1188,e1081,e1084,e1087" at="0" time="0" note="relax:halo lev=-1 box=0" />
+<comm id="e1090" dep="e1188" from="0" to="1" size="2048" />
+<comm id="e1093" dep="e1194" from="2" to="1" size="128" />
+<comm id="e1096" dep="e1197" from="3" to="1" size="2048" />
+<comp id="e1203" dep="e1191,e1090,e1093,e1096" at="1" time="0" note="relax:halo lev=-1 box=1" />
+<comm id="e1099" dep="e1188" from="0" to="2" size="2048" />
+<comm id="e1102" dep="e1191" from="1" to="2" size="128" />
+<comm id="e1105" dep="e1197" from="3" to="2" size="2048" />
+<comp id="e1206" dep="e1194,e1099,e1102,e1105" at="2" time="0" note="relax:halo lev=-1 box=2" />
+<comm id="e1108" dep="e1188" from="0" to="3" size="128" />
+<comm id="e1111" dep="e1191" from="1" to="3" size="2048" />
+<comm id="e1114" dep="e1194" from="2" to="3" size="2048" />
+<comp id="e1209" dep="e1197,e1108,e1111,e1114" at="3" time="0" note="relax:halo lev=-1 box=3" />
+<comp id="e1212" dep="e1200" at="0" time="1.78814e-07" note="relax:stencil lev=-1 box=0" />
+<comp id="e1215" dep="e1203" at="1" time="1.78814e-07" note="relax:stencil lev=-1 box=1" />
+<comp id="e1218" dep="e1206" at="2" time="1.78814e-07" note="relax:stencil lev=-1 box=2" />
+<comp id="e1221" dep="e1209" at="3" time="1.78814e-07" note="relax:stencil lev=-1 box=3" />
+<comp id="e1224" dep="e300,e1212" at="0" time="1.19209e-07" note="relax:op lev=-1 box=0" />
+<comp id="e1227" dep="e303,e1215" at="1" time="1.19209e-07" note="relax:op lev=-1 box=1" />
+<comp id="e1230" dep="e306,e1218" at="2" time="1.19209e-07" note="relax:op lev=-1 box=2" />
+<comp id="e1233" dep="e309,e1221" at="3" time="1.19209e-07" note="relax:op lev=-1 box=3" />
+<comm id="e1117" dep="e1227" from="1" to="0" size="2048" />
+<comm id="e1120" dep="e1230" from="2" to="0" size="2048" />
+<comm id="e1123" dep="e1233" from="3" to="0" size="128" />
+<comp id="e1236" dep="e1224,e1117,e1120,e1123" at="0" time="0" note="relax:halo lev=-1 box=0" />
+<comm id="e1126" dep="e1224" from="0" to="1" size="2048" />
+<comm id="e1129" dep="e1230" from="2" to="1" size="128" />
+<comm id="e1132" dep="e1233" from="3" to="1" size="2048" />
+<comp id="e1239" dep="e1227,e1126,e1129,e1132" at="1" time="0" note="relax:halo lev=-1 box=1" />
+<comm id="e1135" dep="e1224" from="0" to="2" size="2048" />
+<comm id="e1138" dep="e1227" from="1" to="2" size="128" />
+<comm id="e1141" dep="e1233" from="3" to="2" size="2048" />
+<comp id="e1242" dep="e1230,e1135,e1138,e1141" at="2" time="0" note="relax:halo lev=-1 box=2" />
+<comm id="e1144" dep="e1224" from="0" to="3" size="128" />
+<comm id="e1147" dep="e1227" from="1" to="3" size="2048" />
+<comm id="e1150" dep="e1230" from="2" to="3" size="2048" />
+<comp id="e1245" dep="e1233,e1144,e1147,e1150" at="3" time="0" note="relax:halo lev=-1 box=3" />
+<comp id="e1248" dep="e1236" at="0" time="1.78814e-07" note="relax:stencil lev=-1 box=0" />
+<comp id="e1251" dep="e1239" at="1" time="1.78814e-07" note="relax:stencil lev=-1 box=1" />
+<comp id="e1254" dep="e1242" at="2" time="1.78814e-07" note="relax:stencil lev=-1 box=2" />
+<comp id="e1257" dep="e1245" at="3" time="1.78814e-07" note="relax:stencil lev=-1 box=3" />
+<comp id="e1260" dep="e300,e1248" at="0" time="1.19209e-07" note="relax:op lev=-1 box=0" />
+<comp id="e1263" dep="e303,e1251" at="1" time="1.19209e-07" note="relax:op lev=-1 box=1" />
+<comp id="e1266" dep="e306,e1254" at="2" time="1.19209e-07" note="relax:op lev=-1 box=2" />
+<comp id="e1269" dep="e309,e1257" at="3" time="1.19209e-07" note="relax:op lev=-1 box=3" />
+<comm id="e1153" dep="e1263" from="1" to="0" size="2048" />
+<comm id="e1156" dep="e1266" from="2" to="0" size="2048" />
+<comm id="e1159" dep="e1269" from="3" to="0" size="128" />
+<comp id="e1272" dep="e1260,e1153,e1156,e1159" at="0" time="0" note="relax:halo lev=-1 box=0" />
+<comm id="e1162" dep="e1260" from="0" to="1" size="2048" />
+<comm id="e1165" dep="e1266" from="2" to="1" size="128" />
+<comm id="e1168" dep="e1269" from="3" to="1" size="2048" />
+<comp id="e1275" dep="e1263,e1162,e1165,e1168" at="1" time="0" note="relax:halo lev=-1 box=1" />
+<comm id="e1171" dep="e1260" from="0" to="2" size="2048" />
+<comm id="e1174" dep="e1263" from="1" to="2" size="128" />
+<comm id="e1177" dep="e1269" from="3" to="2" size="2048" />
+<comp id="e1278" dep="e1266,e1171,e1174,e1177" at="2" time="0" note="relax:halo lev=-1 box=2" />
+<comm id="e1180" dep="e1260" from="0" to="3" size="128" />
+<comm id="e1183" dep="e1263" from="1" to="3" size="2048" />
+<comm id="e1186" dep="e1266" from="2" to="3" size="2048" />
+<comp id="e1281" dep="e1269,e1180,e1183,e1186" at="3" time="0" note="relax:halo lev=-1 box=3" />
+<comp id="e1284" dep="e1272" at="0" time="1.78814e-07" note="relax:stencil lev=-1 box=0" />
+<comp id="e1287" dep="e1275" at="1" time="1.78814e-07" note="relax:stencil lev=-1 box=1" />
+<comp id="e1290" dep="e1278" at="2" time="1.78814e-07" note="relax:stencil lev=-1 box=2" />
+<comp id="e1293" dep="e1281" at="3" time="1.78814e-07" note="relax:stencil lev=-1 box=3" />
+<comp id="e1296" dep="e300,e1284" at="0" time="1.19209e-07" note="relax:op lev=-1 box=0" />
+<comp id="e1299" dep="e303,e1287" at="1" time="1.19209e-07" note="relax:op lev=-1 box=1" />
+<comp id="e1302" dep="e306,e1290" at="2" time="1.19209e-07" note="relax:op lev=-1 box=2" />
+<comp id="e1305" dep="e309,e1293" at="3" time="1.19209e-07" note="relax:op lev=-1 box=3" />
+<comm id="e1189" dep="e1299" from="1" to="0" size="2048" />
+<comm id="e1192" dep="e1302" from="2" to="0" size="2048" />
+<comm id="e1195" dep="e1305" from="3" to="0" size="128" />
+<comp id="e1308" dep="e1296,e1189,e1192,e1195" at="0" time="5.24288e-07" note="prolong_update:prolong lev=0 box=0" />
+<comm id="e1198" dep="e1296" from="0" to="1" size="2048" />
+<comm id="e1201" dep="e1302" from="2" to="1" size="128" />
+<comm id="e1204" dep="e1305" from="3" to="1" size="2048" />
+<comp id="e1311" dep="e1198,e1299,e1201,e1204" at="1" time="5.24288e-07" note="prolong_update:prolong lev=0 box=1" />
+<comm id="e1207" dep="e1296" from="0" to="2" size="2048" />
+<comm id="e1210" dep="e1299" from="1" to="2" size="128" />
+<comm id="e1213" dep="e1305" from="3" to="2" size="2048" />
+<comp id="e1314" dep="e1207,e1210,e1302,e1213" at="2" time="5.24288e-07" note="prolong_update:prolong lev=0 box=2" />
+<comm id="e1216" dep="e1296" from="0" to="3" size="128" />
+<comm id="e1219" dep="e1299" from="1" to="3" size="2048" />
+<comm id="e1222" dep="e1302" from="2" to="3" size="2048" />
+<comp id="e1317" dep="e1216,e1219,e1222,e1305" at="3" time="5.24288e-07" note="prolong_update:prolong lev=0 box=3" />
+<comp id="e1320" dep="e240,e1308" at="0" time="9.53674e-07" note="prolong_update:update lev=0 box=0" />
+<comp id="e1323" dep="e243,e1311" at="1" time="9.53674e-07" note="prolong_update:update lev=0 box=1" />
+<comp id="e1326" dep="e246,e1314" at="2" time="9.53674e-07" note="prolong_update:update lev=0 box=2" />
+<comp id="e1329" dep="e249,e1317" at="3" time="9.53674e-07" note="prolong_update:update lev=0 box=3" />
+<comm id="e1225" dep="e1323" from="1" to="0" size="8192" />
+<comm id="e1228" dep="e1326" from="2" to="0" size="8192" />
+<comm id="e1231" dep="e1329" from="3" to="0" size="256" />
+<comp id="e1332" dep="e1320,e1225,e1228,e1231" at="0" time="0" note="relax:halo lev=0 box=0" />
+<comm id="e1234" dep="e1320" from="0" to="1" size="8192" />
+<comm id="e1237" dep="e1326" from="2" to="1" size="256" />
+<comm id="e1240" dep="e1329" from="3" to="1" size="8192" />
+<comp id="e1335" dep="e1323,e1234,e1237,e1240" at="1" time="0" note="relax:halo lev=0 box=1" />
+<comm id="e1243" dep="e1320" from="0" to="2" size="8192" />
+<comm id="e1246" dep="e1323" from="1" to="2" size="256" />
+<comm id="e1249" dep="e1329" from="3" to="2" size="8192" />
+<comp id="e1338" dep="e1326,e1243,e1246,e1249" at="2" time="0" note="relax:halo lev=0 box=2" />
+<comm id="e1252" dep="e1320" from="0" to="3" size="256" />
+<comm id="e1255" dep="e1323" from="1" to="3" size="8192" />
+<comm id="e1258" dep="e1326" from="2" to="3" size="8192" />
+<comp id="e1341" dep="e1329,e1252,e1255,e1258" at="3" time="0" note="relax:halo lev=0 box=3" />
+<comp id="e1344" dep="e1332" at="0" time="1.43051e-06" note="relax:stencil lev=0 box=0" />
+<comp id="e1347" dep="e1335" at="1" time="1.43051e-06" note="relax:stencil lev=0 box=1" />
+<comp id="e1350" dep="e1338" at="2" time="1.43051e-06" note="relax:stencil lev=0 box=2" />
+<comp id="e1353" dep="e1341" at="3" time="1.43051e-06" note="relax:stencil lev=0 box=3" />
+<comp id="e1356" dep="e84,e1344" at="0" time="9.53674e-07" note="relax:op lev=0 box=0" />
+<comp id="e1359" dep="e87,e1347" at="1" time="9.53674e-07" note="relax:op lev=0 box=1" />
+<comp id="e1362" dep="e90,e1350" at="2" time="9.53674e-07" note="relax:op lev=0 box=2" />
+<comp id="e1365" dep="e93,e1353" at="3" time="9.53674e-07" note="relax:op lev=0 box=3" />
+<comm id="e1261" dep="e1359" from="1" to="0" size="8192" />
+<comm id="e1264" dep="e1362" from="2" to="0" size="8192" />
+<comm id="e1267" dep="e1365" from="3" to="0" size="256" />
+<comp id="e1368" dep="e1356,e1261,e1264,e1267" at="0" time="0" note="relax:halo lev=0 box=0" />
+<comm id="e1270" dep="e1356" from="0" to="1" size="8192" />
+<comm id="e1273" dep="e1362" from="2" to="1" size="256" />
+<comm id="e1276" dep="e1365" from="3" to="1" size="8192" />
+<comp id="e1371" dep="e1359,e1270,e1273,e1276" at="1" time="0" note="relax:halo lev=0 box=1" />
+<comm id="e1279" dep="e1356" from="0" to="2" size="8192" />
+<comm id="e1282" dep="e1359" from="1" to="2" size="256" />
+<comm id="e1285" dep="e1365" from="3" to="2" size="8192" />
+<comp id="e1374" dep="e1362,e1279,e1282,e1285" at="2" time="0" note="relax:halo lev=0 box=2" />
+<comm id="e1288" dep="e1356" from="0" to="3" size="256" />
+<comm id="e1291" dep="e1359" from="1" to="3" size="8192" />
+<comm id="e1294" dep="e1362" from="2" to="3" size="8192" />
+<comp id="e1377" dep="e1365,e1288,e1291,e1294" at="3" time="0" note="relax:halo lev=0 box=3" />
+<comp id="e1380" dep="e1368" at="0" time="1.43051e-06" note="relax:stencil lev=0 box=0" />
+<comp id="e1383" dep="e1371" at="1" time="1.43051e-06" note="relax:stencil lev=0 box=1" />
+<comp id="e1386" dep="e1374" at="2" time="1.43051e-06" note="relax:stencil lev=0 box=2" />
+<comp id="e1389" dep="e1377" at="3" time="1.43051e-06" note="relax:stencil lev=0 box=3" />
+<comp id="e1392" dep="e84,e1380" at="0" time="9.53674e-07" note="relax:op lev=0 box=0" />
+<comp id="e1395" dep="e87,e1383" at="1" time="9.53674e-07" note="relax:op lev=0 box=1" />
+<comp id="e1398" dep="e90,e1386" at="2" time="9.53674e-07" note="relax:op lev=0 box=2" />
+<comp id="e1401" dep="e93,e1389" at="3" time="9.53674e-07" note="relax:op lev=0 box=3" />
+<comm id="e1297" dep="e1395" from="1" to="0" size="8192" />
+<comm id="e1300" dep="e1398" from="2" to="0" size="8192" />
+<comm id="e1303" dep="e1401" from="3" to="0" size="256" />
+<comp id="e1404" dep="e1392,e1297,e1300,e1303" at="0" time="0" note="relax:halo lev=0 box=0" />
+<comm id="e1306" dep="e1392" from="0" to="1" size="8192" />
+<comm id="e1309" dep="e1398" from="2" to="1" size="256" />
+<comm id="e1312" dep="e1401" from="3" to="1" size="8192" />
+<comp id="e1407" dep="e1395,e1306,e1309,e1312" at="1" time="0" note="relax:halo lev=0 box=1" />
+<comm id="e1315" dep="e1392" from="0" to="2" size="8192" />
+<comm id="e1318" dep="e1395" from="1" to="2" size="256" />
+<comm id="e1321" dep="e1401" from="3" to="2" size="8192" />
+<comp id="e1410" dep="e1398,e1315,e1318,e1321" at="2" time="0" note="relax:halo lev=0 box=2" />
+<comm id="e1324" dep="e1392" from="0" to="3" size="256" />
+<comm id="e1327" dep="e1395" from="1" to="3" size="8192" />
+<comm id="e1330" dep="e1398" from="2" to="3" size="8192" />
+<comp id="e1413" dep="e1401,e1324,e1327,e1330" at="3" time="0" note="relax:halo lev=0 box=3" />
+<comp id="e1416" dep="e1404" at="0" time="1.43051e-06" note="relax:stencil lev=0 box=0" />
+<comp id="e1419" dep="e1407" at="1" time="1.43051e-06" note="relax:stencil lev=0 box=1" />
+<comp id="e1422" dep="e1410" at="2" time="1.43051e-06" note="relax:stencil lev=0 box=2" />
+<comp id="e1425" dep="e1413" at="3" time="1.43051e-06" note="relax:stencil lev=0 box=3" />
+<comp id="e1428" dep="e84,e1416" at="0" time="9.53674e-07" note="relax:op lev=0 box=0" />
+<comp id="e1431" dep="e87,e1419" at="1" time="9.53674e-07" note="relax:op lev=0 box=1" />
+<comp id="e1434" dep="e90,e1422" at="2" time="9.53674e-07" note="relax:op lev=0 box=2" />
+<comp id="e1437" dep="e93,e1425" at="3" time="9.53674e-07" note="relax:op lev=0 box=3" />
+<comm id="e1333" dep="e1431" from="1" to="0" size="8192" />
+<comm id="e1336" dep="e1434" from="2" to="0" size="8192" />
+<comm id="e1339" dep="e1437" from="3" to="0" size="256" />
+<comp id="e1440" dep="e1428,e1333,e1336,e1339" at="0" time="0" note="relax:halo lev=0 box=0" />
+<comm id="e1342" dep="e1428" from="0" to="1" size="8192" />
+<comm id="e1345" dep="e1434" from="2" to="1" size="256" />
+<comm id="e1348" dep="e1437" from="3" to="1" size="8192" />
+<comp id="e1443" dep="e1431,e1342,e1345,e1348" at="1" time="0" note="relax:halo lev=0 box=1" />
+<comm id="e1351" dep="e1428" from="0" to="2" size="8192" />
+<comm id="e1354" dep="e1431" from="1" to="2" size="256" />
+<comm id="e1357" dep="e1437" from="3" to="2" size="8192" />
+<comp id="e1446" dep="e1434,e1351,e1354,e1357" at="2" time="0" note="relax:halo lev=0 box=2" />
+<comm id="e1360" dep="e1428" from="0" to="3" size="256" />
+<comm id="e1363" dep="e1431" from="1" to="3" size="8192" />
+<comm id="e1366" dep="e1434" from="2" to="3" size="8192" />
+<comp id="e1449" dep="e1437,e1360,e1363,e1366" at="3" time="0" note="relax:halo lev=0 box=3" />
+<comp id="e1452" dep="e1440" at="0" time="1.43051e-06" note="relax:stencil lev=0 box=0" />
+<comp id="e1455" dep="e1443" at="1" time="1.43051e-06" note="relax:stencil lev=0 box=1" />
+<comp id="e1458" dep="e1446" at="2" time="1.43051e-06" note="relax:stencil lev=0 box=2" />
+<comp id="e1461" dep="e1449" at="3" time="1.43051e-06" note="relax:stencil lev=0 box=3" />
+<comp id="e1464" dep="e84,e1452" at="0" time="9.53674e-07" note="relax:op lev=0 box=0" />
+<comp id="e1467" dep="e87,e1455" at="1" time="9.53674e-07" note="relax:op lev=0 box=1" />
+<comp id="e1470" dep="e90,e1458" at="2" time="9.53674e-07" note="relax:op lev=0 box=2" />
+<comp id="e1473" dep="e93,e1461" at="3" time="9.53674e-07" note="relax:op lev=0 box=3" />
+<comp id="e1476" dep="e48,e1464" at="0" time="9.53674e-07" note="mg_v:update lev=0 box=0" />
+<comp id="e1479" dep="e51,e1467" at="1" time="9.53674e-07" note="mg_v:update lev=0 box=1" />
+<comp id="e1482" dep="e54,e1470" at="2" time="9.53674e-07" note="mg_v:update lev=0 box=2" />
+<comp id="e1485" dep="e57,e1473" at="3" time="9.53674e-07" note="mg_v:update lev=0 box=3" />
+<comm id="e1369" dep="e1479" from="1" to="0" size="8192" />
+<comm id="e1372" dep="e1482" from="2" to="0" size="8192" />
+<comm id="e1375" dep="e1485" from="3" to="0" size="256" />
+<comp id="e1488" dep="e1476,e1369,e1372,e1375" at="0" time="0" note="residual:halo lev=0 box=0" />
+<comm id="e1378" dep="e1476" from="0" to="1" size="8192" />
+<comm id="e1381" dep="e1482" from="2" to="1" size="256" />
+<comm id="e1384" dep="e1485" from="3" to="1" size="8192" />
+<comp id="e1491" dep="e1479,e1378,e1381,e1384" at="1" time="0" note="residual:halo lev=0 box=1" />
+<comm id="e1387" dep="e1476" from="0" to="2" size="8192" />
+<comm id="e1390" dep="e1479" from="1" to="2" size="256" />
+<comm id="e1393" dep="e1485" from="3" to="2" size="8192" />
+<comp id="e1494" dep="e1482,e1387,e1390,e1393" at="2" time="0" note="residual:halo lev=0 box=2" />
+<comm id="e1396" dep="e1476" from="0" to="3" size="256" />
+<comm id="e1399" dep="e1479" from="1" to="3" size="8192" />
+<comm id="e1402" dep="e1482" from="2" to="3" size="8192" />
+<comp id="e1497" dep="e1485,e1396,e1399,e1402" at="3" time="0" note="residual:halo lev=0 box=3" />
+<comp id="e1500" dep="e1488" at="0" time="1.43051e-06" note="residual:stencil lev=0 box=0" />
+<comp id="e1503" dep="e1491" at="1" time="1.43051e-06" note="residual:stencil lev=0 box=1" />
+<comp id="e1506" dep="e1494" at="2" time="1.43051e-06" note="residual:stencil lev=0 box=2" />
+<comp id="e1509" dep="e1497" at="3" time="1.43051e-06" note="residual:stencil lev=0 box=3" />
+<comp id="e1512" dep="e36,e1500" at="0" time="9.53674e-07" note="residual:op lev=0 box=0" />
+<comp id="e1515" dep="e39,e1503" at="1" time="9.53674e-07" note="residual:op lev=0 box=1" />
+<comp id="e1518" dep="e42,e1506" at="2" time="9.53674e-07" note="residual:op lev=0 box=2" />
+<comp id="e1521" dep="e45,e1509" at="3" time="9.53674e-07" note="residual:op lev=0 box=3" />
+<coll id="e14" dep="e1512,e1515,e1518,e1521" type="ALLREDUCE" team="0,1,2,3" size="8" />
+<comm id="e1405" dep="e1479" from="1" to="0" size="8192" />
+<comm id="e1408" dep="e1482" from="2" to="0" size="8192" />
+<comm id="e1411" dep="e1485" from="3" to="0" size="256" />
+<comp id="e1524" dep="e1476,e1405,e1408,e1411,e14" at="0" time="0" note="residual:halo lev=0 box=0" />
+<comm id="e1414" dep="e1476" from="0" to="1" size="8192" />
+<comm id="e1417" dep="e1482" from="2" to="1" size="256" />
+<comm id="e1420" dep="e1485" from="3" to="1" size="8192" />
+<comp id="e1527" dep="e1479,e1414,e1417,e1420,e14" at="1" time="0" note="residual:halo lev=0 box=1" />
+<comm id="e1423" dep="e1476" from="0" to="2" size="8192" />
+<comm id="e1426" dep="e1479" from="1" to="2" size="256" />
+<comm id="e1429" dep="e1485" from="3" to="2" size="8192" />
+<comp id="e1530" dep="e1482,e1423,e1426,e1429,e14" at="2" time="0" note="residual:halo lev=0 box=2" />
+<comm id="e1432" dep="e1476" from="0" to="3" size="256" />
+<comm id="e1435" dep="e1479" from="1" to="3" size="8192" />
+<comm id="e1438" dep="e1482" from="2" to="3" size="8192" />
+<comp id="e1533" dep="e1485,e1432,e1435,e1438,e14" at="3" time="0" note="residual:halo lev=0 box=3" />
+<comp id="e1536" dep="e1524" at="0" time="1.43051e-06" note="residual:stencil lev=0 box=0" />
+<comp id="e1539" dep="e1527" at="1" time="1.43051e-06" note="residual:stencil lev=0 box=1" />
+<comp id="e1542" dep="e1530" at="2" time="1.43051e-06" note="residual:stencil lev=0 box=2" />
+<comp id="e1545" dep="e1533" at="3" time="1.43051e-06" note="residual:stencil lev=0 box=3" />
+<comp id="e1548" dep="e36,e1536" at="0" time="9.53674e-07" note="residual:op lev=0 box=0" />
+<comp id="e1551" dep="e39,e1539" at="1" time="9.53674e-07" note="residual:op lev=0 box=1" />
+<comp id="e1554" dep="e42,e1542" at="2" time="9.53674e-07" note="residual:op lev=0 box=2" />
+<comp id="e1557" dep="e45,e1545" at="3" time="9.53674e-07" note="residual:op lev=0 box=3" />
+<comp id="e1560" dep="" at="0" time="0" note="zero:literal lev=0 box=0" />
+<comp id="e1563" dep="" at="1" time="0" note="zero:literal lev=0 box=1" />
+<comp id="e1566" dep="" at="2" time="0" note="zero:literal lev=0 box=2" />
+<comp id="e1569" dep="" at="3" time="0" note="zero:literal lev=0 box=3" />
+<comm id="e1441" dep="e1563" from="1" to="0" size="8192" />
+<comm id="e1444" dep="e1566" from="2" to="0" size="8192" />
+<comm id="e1447" dep="e1569" from="3" to="0" size="256" />
+<comp id="e1572" dep="e1560,e1441,e1444,e1447" at="0" time="0" note="relax:halo lev=0 box=0" />
+<comm id="e1450" dep="e1560" from="0" to="1" size="8192" />
+<comm id="e1453" dep="e1566" from="2" to="1" size="256" />
+<comm id="e1456" dep="e1569" from="3" to="1" size="8192" />
+<comp id="e1575" dep="e1563,e1450,e1453,e1456" at="1" time="0" note="relax:halo lev=0 box=1" />
+<comm id="e1459" dep="e1560" from="0" to="2" size="8192" />
+<comm id="e1462" dep="e1563" from="1" to="2" size="256" />
+<comm id="e1465" dep="e1569" from="3" to="2" size="8192" />
+<comp id="e1578" dep="e1566,e1459,e1462,e1465" at="2" time="0" note="relax:halo lev=0 box=2" />
+<comm id="e1468" dep="e1560" from="0" to="3" size="256" />
+<comm id="e1471" dep="e1563" from="1" to="3" size="8192" />
+<comm id="e1474" dep="e1566" from="2" to="3" size="8192" />
+<comp id="e1581" dep="e1569,e1468,e1471,e1474" at="3" time="0" note="relax:halo lev=0 box=3" />
+<comp id="e1584" dep="e1572" at="0" time="1.43051e-06" note="relax:stencil lev=0 box=0" />
+<comp id="e1587" dep="e1575" at="1" time="1.43051e-06" note="relax:stencil lev=0 box=1" />
+<comp id="e1590" dep="e1578" at="2" time="1.43051e-06" note="relax:stencil lev=0 box=2" />
+<comp id="e1593" dep="e1581" at="3" time="1.43051e-06" note="relax:stencil lev=0 box=3" />
+<comp id="e1596" dep="e1548,e1584" at="0" time="9.53674e-07" note="relax:op lev=0 box=0" />
+<comp id="e1599" dep="e1551,e1587" at="1" time="9.53674e-07" note="relax:op lev=0 box=1" />
+<comp id="e1602" dep="e1554,e1590" at="2" time="9.53674e-07" note="relax:op lev=0 box=2" />
+<comp id="e1605" dep="e1557,e1593" at="3" time="9.53674e-07" note="relax:op lev=0 box=3" />
+<comm id="e1477" dep="e1599" from="1" to="0" size="8192" />
+<comm id="e1480" dep="e1602" from="2" to="0" size="8192" />
+<comm id="e1483" dep="e1605" from="3" to="0" size="256" />
+<comp id="e1608" dep="e1596,e1477,e1480,e1483" at="0" time="0" note="relax:halo lev=0 box=0" />
+<comm id="e1486" dep="e1596" from="0" to="1" size="8192" />
+<comm id="e1489" dep="e1602" from="2" to="1" size="256" />
+<comm id="e1492" dep="e1605" from="3" to="1" size="8192" />
+<comp id="e1611" dep="e1599,e1486,e1489,e1492" at="1" time="0" note="relax:halo lev=0 box=1" />
+<comm id="e1495" dep="e1596" from="0" to="2" size="8192" />
+<comm id="e1498" dep="e1599" from="1" to="2" size="256" />
+<comm id="e1501" dep="e1605" from="3" to="2" size="8192" />
+<comp id="e1614" dep="e1602,e1495,e1498,e1501" at="2" time="0" note="relax:halo lev=0 box=2" />
+<comm id="e1504" dep="e1596" from="0" to="3" size="256" />
+<comm id="e1507" dep="e1599" from="1" to="3" size="8192" />
+<comm id="e1510" dep="e1602" from="2" to="3" size="8192" />
+<comp id="e1617" dep="e1605,e1504,e1507,e1510" at="3" time="0" note="relax:halo lev=0 box=3" />
+<comp id="e1620" dep="e1608" at="0" time="1.43051e-06" note="relax:stencil lev=0 box=0" />
+<comp id="e1623" dep="e1611" at="1" time="1.43051e-06" note="relax:stencil lev=0 box=1" />
+<comp id="e1626" dep="e1614" at="2" time="1.43051e-06" note="relax:stencil lev=0 box=2" />
+<comp id="e1629" dep="e1617" at="3" time="1.43051e-06" note="relax:stencil lev=0 box=3" />
+<comp id="e1632" dep="e1548,e1620" at="0" time="9.53674e-07" note="relax:op lev=0 box=0" />
+<comp id="e1635" dep="e1551,e1623" at="1" time="9.53674e-07" note="relax:op lev=0 box=1" />
+<comp id="e1638" dep="e1554,e1626" at="2" time="9.53674e-07" note="relax:op lev=0 box=2" />
+<comp id="e1641" dep="e1557,e1629" at="3" time="9.53674e-07" note="relax:op lev=0 box=3" />
+<comm id="e1513" dep="e1635" from="1" to="0" size="8192" />
+<comm id="e1516" dep="e1638" from="2" to="0" size="8192" />
+<comm id="e1519" dep="e1641" from="3" to="0" size="256" />
+<comp id="e1644" dep="e1632,e1513,e1516,e1519" at="0" time="0" note="relax:halo lev=0 box=0" />
+<comm id="e1522" dep="e1632" from="0" to="1" size="8192" />
+<comm id="e1525" dep="e1638" from="2" to="1" size="256" />
+<comm id="e1528" dep="e1641" from="3" to="1" size="8192" />
+<comp id="e1647" dep="e1635,e1522,e1525,e1528" at="1" time="0" note="relax:halo lev=0 box=1" />
+<comm id="e1531" dep="e1632" from="0" to="2" size="8192" />
+<comm id="e1534" dep="e1635" from="1" to="2" size="256" />
+<comm id="e1537" dep="e1641" from="3" to="2" size="8192" />
+<comp id="e1650" dep="e1638,e1531,e1534,e1537" at="2" time="0" note="relax:halo lev=0 box=2" />
+<comm id="e1540" dep="e1632" from="0" to="3" size="256" />
+<comm id="e1543" dep="e1635" from="1" to="3" size="8192" />
+<comm id="e1546" dep="e1638" from="2" to="3" size="8192" />
+<comp id="e1653" dep="e1641,e1540,e1543,e1546" at="3" time="0" note="relax:halo lev=0 box=3" />
+<comp id="e1656" dep="e1644" at="0" time="1.43051e-06" note="relax:stencil lev=0 box=0" />
+<comp id="e1659" dep="e1647" at="1" time="1.43051e-06" note="relax:stencil lev=0 box=1" />
+<comp id="e1662" dep="e1650" at="2" time="1.43051e-06" note="relax:stencil lev=0 box=2" />
+<comp id="e1665" dep="e1653" at="3" time="1.43051e-06" note="relax:stencil lev=0 box=3" />
+<comp id="e1668" dep="e1548,e1656" at="0" time="9.53674e-07" note="relax:op lev=0 box=0" />
+<comp id="e1671" dep="e1551,e1659" at="1" time="9.53674e-07" note="relax:op lev=0 box=1" />
+<comp id="e1674" dep="e1554,e1662" at="2" time="9.53674e-07" note="relax:op lev=0 box=2" />
+<comp id="e1677" dep="e1557,e1665" at="3" time="9.53674e-07" note="relax:op lev=0 box=3" />
+<comm id="e1549" dep="e1671" from="1" to="0" size="8192" />
+<comm id="e1552" dep="e1674" from="2" to="0" size="8192" />
+<comm id="e1555" dep="e1677" from="3" to="0" size="256" />
+<comp id="e1680" dep="e1668,e1549,e1552,e1555" at="0" time="0" note="relax:halo lev=0 box=0" />
+<comm id="e1558" dep="e1668" from="0" to="1" size="8192" />
+<comm id="e1561" dep="e1674" from="2" to="1" size="256" />
+<comm id="e1564" dep="e1677" from="3" to="1" size="8192" />
+<comp id="e1683" dep="e1671,e1558,e1561,e1564" at="1" time="0" note="relax:halo lev=0 box=1" />
+<comm id="e1567" dep="e1668" from="0" to="2" size="8192" />
+<comm id="e1570" dep="e1671" from="1" to="2" size="256" />
+<comm id="e1573" dep="e1677" from="3" to="2" size="8192" />
+<comp id="e1686" dep="e1674,e1567,e1570,e1573" at="2" time="0" note="relax:halo lev=0 box=2" />
+<comm id="e1576" dep="e1668" from="0" to="3" size="256" />
+<comm id="e1579" dep="e1671" from="1" to="3" size="8192" />
+<comm id="e1582" dep="e1674" from="2" to="3" size="8192" />
+<comp id="e1689" dep="e1677,e1576,e1579,e1582" at="3" time="0" note="relax:halo lev=0 box=3" />
+<comp id="e1692" dep="e1680" at="0" time="1.43051e-06" note="relax:stencil lev=0 box=0" />
+<comp id="e1695" dep="e1683" at="1" time="1.43051e-06" note="relax:stencil lev=0 box=1" />
+<comp id="e1698" dep="e1686" at="2" time="1.43051e-06" note="relax:stencil lev=0 box=2" />
+<comp id="e1701" dep="e1689" at="3" time="1.43051e-06" note="relax:stencil lev=0 box=3" />
+<comp id="e1704" dep="e1548,e1692" at="0" time="9.53674e-07" note="relax:op lev=0 box=0" />
+<comp id="e1707" dep="e1551,e1695" at="1" time="9.53674e-07" note="relax:op lev=0 box=1" />
+<comp id="e1710" dep="e1554,e1698" at="2" time="9.53674e-07" note="relax:op lev=0 box=2" />
+<comp id="e1713" dep="e1557,e1701" at="3" time="9.53674e-07" note="relax:op lev=0 box=3" />
+<comm id="e1585" dep="e1707" from="1" to="0" size="8192" />
+<comm id="e1588" dep="e1710" from="2" to="0" size="8192" />
+<comm id="e1591" dep="e1713" from="3" to="0" size="256" />
+<comp id="e1716" dep="e1704,e1585,e1588,e1591" at="0" time="0" note="residual:halo lev=0 box=0" />
+<comm id="e1594" dep="e1704" from="0" to="1" size="8192" />
+<comm id="e1597" dep="e1710" from="2" to="1" size="256" />
+<comm id="e1600" dep="e1713" from="3" to="1" size="8192" />
+<comp id="e1719" dep="e1707,e1594,e1597,e1600" at="1" time="0" note="residual:halo lev=0 box=1" />
+<comm id="e1603" dep="e1704" from="0" to="2" size="8192" />
+<comm id="e1606" dep="e1707" from="1" to="2" size="256" />
+<comm id="e1609" dep="e1713" from="3" to="2" size="8192" />
+<comp id="e1722" dep="e1710,e1603,e1606,e1609" at="2" time="0" note="residual:halo lev=0 box=2" />
+<comm id="e1612" dep="e1704" from="0" to="3" size="256" />
+<comm id="e1615" dep="e1707" from="1" to="3" size="8192" />
+<comm id="e1618" dep="e1710" from="2" to="3" size="8192" />
+<comp id="e1725" dep="e1713,e1612,e1615,e1618" at="3" time="0" note="residual:halo lev=0 box=3" />
+<comp id="e1728" dep="e1716" at="0" time="1.43051e-06" note="residual:stencil lev=0 box=0" />
+<comp id="e1731" dep="e1719" at="1" time="1.43051e-06" note="residual:stencil lev=0 box=1" />
+<comp id="e1734" dep="e1722" at="2" time="1.43051e-06" note="residual:stencil lev=0 box=2" />
+<comp id="e1737" dep="e1725" at="3" time="1.43051e-06" note="residual:stencil lev=0 box=3" />
+<comp id="e1740" dep="e1548,e1728" at="0" time="9.53674e-07" note="residual:op lev=0 box=0" />
+<comp id="e1743" dep="e1551,e1731" at="1" time="9.53674e-07" note="residual:op lev=0 box=1" />
+<comp id="e1746" dep="e1554,e1734" at="2" time="9.53674e-07" note="residual:op lev=0 box=2" />
+<comp id="e1749" dep="e1557,e1737" at="3" time="9.53674e-07" note="residual:op lev=0 box=3" />
+<comp id="e1752" dep="" at="0" time="0" note="coarsen:literal lev=-1 box=0" />
+<comp id="e1755" dep="" at="1" time="0" note="coarsen:literal lev=-1 box=1" />
+<comp id="e1758" dep="" at="2" time="0" note="coarsen:literal lev=-1 box=2" />
+<comp id="e1761" dep="" at="3" time="0" note="coarsen:literal lev=-1 box=3" />
+<comp id="e1764" dep="e1752,e1740" at="0" time="2.98023e-07" note="coarsen:restrict lev=-1 box=0" />
+<comp id="e1767" dep="e1755,e1743" at="1" time="2.98023e-07" note="coarsen:restrict lev=-1 box=1" />
+<comp id="e1770" dep="e1758,e1746" at="2" time="2.98023e-07" note="coarsen:restrict lev=-1 box=2" />
+<comp id="e1773" dep="e1761,e1749" at="3" time="2.98023e-07" note="coarsen:restrict lev=-1 box=3" />
+<comp id="e1776" dep="" at="0" time="0" note="zero:literal lev=-1 box=0" />
+<comp id="e1779" dep="" at="1" time="0" note="zero:literal lev=-1 box=1" />
+<comp id="e1782" dep="" at="2" time="0" note="zero:literal lev=-1 box=2" />
+<comp id="e1785" dep="" at="3" time="0" note="zero:literal lev=-1 box=3" />
+<comm id="e1621" dep="e1779" from="1" to="0" size="2048" />
+<comm id="e1624" dep="e1782" from="2" to="0" size="2048" />
+<comm id="e1627" dep="e1785" from="3" to="0" size="128" />
+<comp id="e1788" dep="e1776,e1621,e1624,e1627" at="0" time="0" note="relax:halo lev=-1 box=0" />
+<comm id="e1630" dep="e1776" from="0" to="1" size="2048" />
+<comm id="e1633" dep="e1782" from="2" to="1" size="128" />
+<comm id="e1636" dep="e1785" from="3" to="1" size="2048" />
+<comp id="e1791" dep="e1779,e1630,e1633,e1636" at="1" time="0" note="relax:halo lev=-1 box=1" />
+<comm id="e1639" dep="e1776" from="0" to="2" size="2048" />
+<comm id="e1642" dep="e1779" from="1" to="2" size="128" />
+<comm id="e1645" dep="e1785" from="3" to="2" size="2048" />
+<comp id="e1794" dep="e1782,e1639,e1642,e1645" at="2" time="0" note="relax:halo lev=-1 box=2" />
+<comm id="e1648" dep="e1776" from="0" to="3" size="128" />
+<comm id="e1651" dep="e1779" from="1" to="3" size="2048" />
+<comm id="e1654" dep="e1782" from="2" to="3" size="2048" />
+<comp id="e1797" dep="e1785,e1648,e1651,e1654" at="3" time="0" note="relax:halo lev=-1 box=3" />
+<comp id="e1800" dep="e1788" at="0" time="1.78814e-07" note="relax:stencil lev=-1 box=0" />
+<comp id="e1803" dep="e1791" at="1" time="1.78814e-07" note="relax:stencil lev=-1 box=1" />
+<comp id="e1806" dep="e1794" at="2" time="1.78814e-07" note="relax:stencil lev=-1 box=2" />
+<comp id="e1809" dep="e1797" at="3" time="1.78814e-07" note="relax:stencil lev=-1 box=3" />
+<comp id="e1812" dep="e1764,e1800" at="0" time="1.19209e-07" note="relax:op lev=-1 box=0" />
+<comp id="e1815" dep="e1767,e1803" at="1" time="1.19209e-07" note="relax:op lev=-1 box=1" />
+<comp id="e1818" dep="e1770,e1806" at="2" time="1.19209e-07" note="relax:op lev=-1 box=2" />
+<comp id="e1821" dep="e1773,e1809" at="3" time="1.19209e-07" note="relax:op lev=-1 box=3" />
+<comm id="e1657" dep="e1815" from="1" to="0" size="2048" />
+<comm id="e1660" dep="e1818" from="2" to="0" size="2048" />
+<comm id="e1663" dep="e1821" from="3" to="0" size="128" />
+<comp id="e1824" dep="e1812,e1657,e1660,e1663" at="0" time="0" note="relax:halo lev=-1 box=0" />
+<comm id="e1666" dep="e1812" from="0" to="1" size="2048" />
+<comm id="e1669" dep="e1818" from="2" to="1" size="128" />
+<comm id="e1672" dep="e1821" from="3" to="1" size="2048" />
+<comp id="e1827" dep="e1815,e1666,e1669,e1672" at="1" time="0" note="relax:halo lev=-1 box=1" />
+<comm id="e1675" dep="e1812" from="0" to="2" size="2048" />
+<comm id="e1678" dep="e1815" from="1" to="2" size="128" />
+<comm id="e1681" dep="e1821" from="3" to="2" size="2048" />
+<comp id="e1830" dep="e1818,e1675,e1678,e1681" at="2" time="0" note="relax:halo lev=-1 box=2" />
+<comm id="e1684" dep="e1812" from="0" to="3" size="128" />
+<comm id="e1687" dep="e1815" from="1" to="3" size="2048" />
+<comm id="e1690" dep="e1818" from="2" to="3" size="2048" />
+<comp id="e1833" dep="e1821,e1684,e1687,e1690" at="3" time="0" note="relax:halo lev=-1 box=3" />
+<comp id="e1836" dep="e1824" at="0" time="1.78814e-07" note="relax:stencil lev=-1 box=0" />
+<comp id="e1839" dep="e1827" at="1" time="1.78814e-07" note="relax:stencil lev=-1 box=1" />
+<comp id="e1842" dep="e1830" at="2" time="1.78814e-07" note="relax:stencil lev=-1 box=2" />
+<comp id="e1845" dep="e1833" at="3" time="1.78814e-07" note="relax:stencil lev=-1 box=3" />
+<comp id="e1848" dep="e1764,e1836" at="0" time="1.19209e-07" note="relax:op lev=-1 box=0" />
+<comp id="e1851" dep="e1767,e1839" at="1" time="1.19209e-07" note="relax:op lev=-1 box=1" />
+<comp id="e1854" dep="e1770,e1842" at="2" time="1.19209e-07" note="relax:op lev=-1 box=2" />
+<comp id="e1857" dep="e1773,e1845" at="3" time="1.19209e-07" note="relax:op lev=-1 box=3" />
+<comm id="e1693" dep="e1851" from="1" to="0" size="2048" />
+<comm id="e1696" dep="e1854" from="2" to="0" size="2048" />
+<comm id="e1699" dep="e1857" from="3" to="0" size="128" />
+<comp id="e1860" dep="e1848,e1693,e1696,e1699" at="0" time="0" note="relax:halo lev=-1 box=0" />
+<comm id="e1702" dep="e1848" from="0" to="1" size="2048" />
+<comm id="e1705" dep="e1854" from="2" to="1" size="128" />
+<comm id="e1708" dep="e1857" from="3" to="1" size="2048" />
+<comp id="e1863" dep="e1851,e1702,e1705,e1708" at="1" time="0" note="relax:halo lev=-1 box=1" />
+<comm id="e1711" dep="e1848" from="0" to="2" size="2048" />
+<comm id="e1714" dep="e1851" from="1" to="2" size="128" />
+<comm id="e1717" dep="e1857" from="3" to="2" size="2048" />
+<comp id="e1866" dep="e1854,e1711,e1714,e1717" at="2" time="0" note="relax:halo lev=-1 box=2" />
+<comm id="e1720" dep="e1848" from="0" to="3" size="128" />
+<comm id="e1723" dep="e1851" from="1" to="3" size="2048" />
+<comm id="e1726" dep="e1854" from="2" to="3" size="2048" />
+<comp id="e1869" dep="e1857,e1720,e1723,e1726" at="3" time="0" note="relax:halo lev=-1 box=3" />
+<comp id="e1872" dep="e1860" at="0" time="1.78814e-07" note="relax:stencil lev=-1 box=0" />
+<comp id="e1875" dep="e1863" at="1" time="1.78814e-07" note="relax:stencil lev=-1 box=1" />
+<comp id="e1878" dep="e1866" at="2" time="1.78814e-07" note="relax:stencil lev=-1 box=2" />
+<comp id="e1881" dep="e1869" at="3" time="1.78814e-07" note="relax:stencil lev=-1 box=3" />
+<comp id="e1884" dep="e1764,e1872" at="0" time="1.19209e-07" note="relax:op lev=-1 box=0" />
+<comp id="e1887" dep="e1767,e1875" at="1" time="1.19209e-07" note="relax:op lev=-1 box=1" />
+<comp id="e1890" dep="e1770,e1878" at="2" time="1.19209e-07" note="relax:op lev=-1 box=2" />
+<comp id="e1893" dep="e1773,e1881" at="3" time="1.19209e-07" note="relax:op lev=-1 box=3" />
+<comm id="e1729" dep="e1887" from="1" to="0" size="2048" />
+<comm id="e1732" dep="e1890" from="2" to="0" size="2048" />
+<comm id="e1735" dep="e1893" from="3" to="0" size="128" />
+<comp id="e1896" dep="e1884,e1729,e1732,e1735" at="0" time="0" note="relax:halo lev=-1 box=0" />
+<comm id="e1738" dep="e1884" from="0" to="1" size="2048" />
+<comm id="e1741" dep="e1890" from="2" to="1" size="128" />
+<comm id="e1744" dep="e1893" from="3" to="1" size="2048" />
+<comp id="e1899" dep="e1887,e1738,e1741,e1744" at="1" time="0" note="relax:halo lev=-1 box=1" />
+<comm id="e1747" dep="e1884" from="0" to="2" size="2048" />
+<comm id="e1750" dep="e1887" from="1" to="2" size="128" />
+<comm id="e1753" dep="e1893" from="3" to="2" size="2048" />
+<comp id="e1902" dep="e1890,e1747,e1750,e1753" at="2" time="0" note="relax:halo lev=-1 box=2" />
+<comm id="e1756" dep="e1884" from="0" to="3" size="128" />
+<comm id="e1759" dep="e1887" from="1" to="3" size="2048" />
+<comm id="e1762" dep="e1890" from="2" to="3" size="2048" />
+<comp id="e1905" dep="e1893,e1756,e1759,e1762" at="3" time="0" note="relax:halo lev=-1 box=3" />
+<comp id="e1908" dep="e1896" at="0" time="1.78814e-07" note="relax:stencil lev=-1 box=0" />
+<comp id="e1911" dep="e1899" at="1" time="1.78814e-07" note="relax:stencil lev=-1 box=1" />
+<comp id="e1914" dep="e1902" at="2" time="1.78814e-07" note="relax:stencil lev=-1 box=2" />
+<comp id="e1917" dep="e1905" at="3" time="1.78814e-07" note="relax:stencil lev=-1 box=3" />
+<comp id="e1920" dep="e1764,e1908" at="0" time="1.19209e-07" note="relax:op lev=-1 box=0" />
+<comp id="e1923" dep="e1767,e1911" at="1" time="1.19209e-07" note="relax:op lev=-1 box=1" />
+<comp id="e1926" dep="e1770,e1914" at="2" time="1.19209e-07" note="relax:op lev=-1 box=2" />
+<comp id="e1929" dep="e1773,e1917" at="3" time="1.19209e-07" note="relax:op lev=-1 box=3" />
+<comm id="e1765" dep="e1923" from="1" to="0" size="2048" />
+<comm id="e1768" dep="e1926" from="2" to="0" size="2048" />
+<comm id="e1771" dep="e1929" from="3" to="0" size="128" />
+<comp id="e1932" dep="e1920,e1765,e1768,e1771" at="0" time="0" note="residual:halo lev=-1 box=0" />
+<comm id="e1774" dep="e1920" from="0" to="1" size="2048" />
+<comm id="e1777" dep="e1926" from="2" to="1" size="128" />
+<comm id="e1780" dep="e1929" from="3" to="1" size="2048" />
+<comp id="e1935" dep="e1923,e1774,e1777,e1780" at="1" time="0" note="residual:halo lev=-1 box=1" />
+<comm id="e1783" dep="e1920" from="0" to="2" size="2048" />
+<comm id="e1786" dep="e1923" from="1" to="2" size="128" />
+<comm id="e1789" dep="e1929" from="3" to="2" size="2048" />
+<comp id="e1938" dep="e1926,e1783,e1786,e1789" at="2" time="0" note="residual:halo lev=-1 box=2" />
+<comm id="e1792" dep="e1920" from="0" to="3" size="128" />
+<comm id="e1795" dep="e1923" from="1" to="3" size="2048" />
+<comm id="e1798" dep="e1926" from="2" to="3" size="2048" />
+<comp id="e1941" dep="e1929,e1792,e1795,e1798" at="3" time="0" note="residual:halo lev=-1 box=3" />
+<comp id="e1944" dep="e1932" at="0" time="1.78814e-07" note="residual:stencil lev=-1 box=0" />
+<comp id="e1947" dep="e1935" at="1" time="1.78814e-07" note="residual:stencil lev=-1 box=1" />
+<comp id="e1950" dep="e1938" at="2" time="1.78814e-07" note="residual:stencil lev=-1 box=2" />
+<comp id="e1953" dep="e1941" at="3" time="1.78814e-07" note="residual:stencil lev=-1 box=3" />
+<comp id="e1956" dep="e1764,e1944" at="0" time="1.19209e-07" note="residual:op lev=-1 box=0" />
+<comp id="e1959" dep="e1767,e1947" at="1" time="1.19209e-07" note="residual:op lev=-1 box=1" />
+<comp id="e1962" dep="e1770,e1950" at="2" time="1.19209e-07" note="residual:op lev=-1 box=2" />
+<comp id="e1965" dep="e1773,e1953" at="3" time="1.19209e-07" note="residual:op lev=-1 box=3" />
+<comp id="e1968" dep="" at="0" time="0" note="coarsen:literal lev=-2 box=0" />
+<comp id="e1971" dep="" at="1" time="0" note="coarsen:literal lev=-2 box=1" />
+<comp id="e1974" dep="" at="2" time="0" note="coarsen:literal lev=-2 box=2" />
+<comp id="e1977" dep="" at="3" time="0" note="coarsen:literal lev=-2 box=3" />
+<comp id="e1980" dep="e1968,e1956" at="0" time="3.72529e-08" note="coarsen:restrict lev=-2 box=0" />
+<comp id="e1983" dep="e1971,e1959" at="1" time="3.72529e-08" note="coarsen:restrict lev=-2 box=1" />
+<comp id="e1986" dep="e1974,e1962" at="2" time="3.72529e-08" note="coarsen:restrict lev=-2 box=2" />
+<comp id="e1989" dep="e1977,e1965" at="3" time="3.72529e-08" note="coarsen:restrict lev=-2 box=3" />
+<comp id="e1992" dep="" at="0" time="0" note="zero:literal lev=-2 box=0" />
+<comp id="e1995" dep="" at="1" time="0" note="zero:literal lev=-2 box=1" />
+<comp id="e1998" dep="" at="2" time="0" note="zero:literal lev=-2 box=2" />
+<comp id="e2001" dep="" at="3" time="0" note="zero:literal lev=-2 box=3" />
+<comm id="e1801" dep="e1995" from="1" to="0" size="512" />
+<comm id="e1804" dep="e1998" from="2" to="0" size="512" />
+<comm id="e1807" dep="e2001" from="3" to="0" size="64" />
+<comp id="e2004" dep="e1992,e1801,e1804,e1807" at="0" time="0" note="relax:halo lev=-2 box=0" />
+<comm id="e1810" dep="e1992" from="0" to="1" size="512" />
+<comm id="e1813" dep="e1998" from="2" to="1" size="64" />
+<comm id="e1816" dep="e2001" from="3" to="1" size="512" />
+<comp id="e2007" dep="e1995,e1810,e1813,e1816" at="1" time="0" note="relax:halo lev=-2 box=1" />
+<comm id="e1819" dep="e1992" from="0" to="2" size="512" />
+<comm id="e1822" dep="e1995" from="1" to="2" size="64" />
+<comm id="e1825" dep="e2001" from="3" to="2" size="512" />
+<comp id="e2010" dep="e1998,e1819,e1822,e1825" at="2" time="0" note="relax:halo lev=-2 box=2" />
+<comm id="e1828" dep="e1992" from="0" to="3" size="64" />
+<comm id="e1831" dep="e1995" from="1" to="3" size="512" />
+<comm id="e1834" dep="e1998" from="2" to="3" size="512" />
+<comp id="e2013" dep="e2001,e1828,e1831,e1834" at="3" time="0" note="relax:halo lev=-2 box=3" />
+<comp id="e2016" dep="e2004" at="0" time="2.23517e-08" note="relax:stencil lev=-2 box=0" />
+<comp id="e2019" dep="e2007" at="1" time="2.23517e-08" note="relax:stencil lev=-2 box=1" />
+<comp id="e2022" dep="e2010" at="2" time="2.23517e-08" note="relax:stencil lev=-2 box=2" />
+<comp id="e2025" dep="e2013" at="3" time="2.23517e-08" note="relax:stencil lev=-2 box=3" />
+<comp id="e2028" dep="e1980,e2016" at="0" time="1.49012e-08" note="relax:op lev=-2 box=0" />
+<comp id="e2031" dep="e1983,e2019" at="1" time="1.49012e-08" note="relax:op lev=-2 box=1" />
+<comp id="e2034" dep="e1986,e2022" at="2" time="1.49012e-08" note="relax:op lev=-2 box=2" />
+<comp id="e2037" dep="e1989,e2025" at="3" time="1.49012e-08" note="relax:op lev=-2 box=3" />
+<comm id="e1837" dep="e2031" from="1" to="0" size="512" />
+<comm id="e1840" dep="e2034" from="2" to="0" size="512" />
+<comm id="e1843" dep="e2037" from="3" to="0" size="64" />
+<comp id="e2040" dep="e2028,e1837,e1840,e1843" at="0" time="0" note="relax:halo lev=-2 box=0" />
+<comm id="e1846" dep="e2028" from="0" to="1" size="512" />
+<comm id="e1849" dep="e2034" from="2" to="1" size="64" />
+<comm id="e1852" dep="e2037" from="3" to="1" size="512" />
+<comp id="e2043" dep="e2031,e1846,e1849,e1852" at="1" time="0" note="relax:halo lev=-2 box=1" />
+<comm id="e1855" dep="e2028" from="0" to="2" size="512" />
+<comm id="e1858" dep="e2031" from="1" to="2" size="64" />
+<comm id="e1861" dep="e2037" from="3" to="2" size="512" />
+<comp id="e2046" dep="e2034,e1855,e1858,e1861" at="2" time="0" note="relax:halo lev=-2 box=2" />
+<comm id="e1864" dep="e2028" from="0" to="3" size="64" />
+<comm id="e1867" dep="e2031" from="1" to="3" size="512" />
+<comm id="e1870" dep="e2034" from="2" to="3" size="512" />
+<comp id="e2049" dep="e2037,e1864,e1867,e1870" at="3" time="0" note="relax:halo lev=-2 box=3" />
+<comp id="e2052" dep="e2040" at="0" time="2.23517e-08" note="relax:stencil lev=-2 box=0" />
+<comp id="e2055" dep="e2043" at="1" time="2.23517e-08" note="relax:stencil lev=-2 box=1" />
+<comp id="e2058" dep="e2046" at="2" time="2.23517e-08" note="relax:stencil lev=-2 box=2" />
+<comp id="e2061" dep="e2049" at="3" time="2.23517e-08" note="relax:stencil lev=-2 box=3" />
+<comp id="e2064" dep="e1980,e2052" at="0" time="1.49012e-08" note="relax:op lev=-2 box=0" />
+<comp id="e2067" dep="e1983,e2055" at="1" time="1.49012e-08" note="relax:op lev=-2 box=1" />
+<comp id="e2070" dep="e1986,e2058" at="2" time="1.49012e-08" note="relax:op lev=-2 box=2" />
+<comp id="e2073" dep="e1989,e2061" at="3" time="1.49012e-08" note="relax:op lev=-2 box=3" />
+<comm id="e1873" dep="e2067" from="1" to="0" size="512" />
+<comm id="e1876" dep="e2070" from="2" to="0" size="512" />
+<comm id="e1879" dep="e2073" from="3" to="0" size="64" />
+<comp id="e2076" dep="e2064,e1873,e1876,e1879" at="0" time="0" note="relax:halo lev=-2 box=0" />
+<comm id="e1882" dep="e2064" from="0" to="1" size="512" />
+<comm id="e1885" dep="e2070" from="2" to="1" size="64" />
+<comm id="e1888" dep="e2073" from="3" to="1" size="512" />
+<comp id="e2079" dep="e2067,e1882,e1885,e1888" at="1" time="0" note="relax:halo lev=-2 box=1" />
+<comm id="e1891" dep="e2064" from="0" to="2" size="512" />
+<comm id="e1894" dep="e2067" from="1" to="2" size="64" />
+<comm id="e1897" dep="e2073" from="3" to="2" size="512" />
+<comp id="e2082" dep="e2070,e1891,e1894,e1897" at="2" time="0" note="relax:halo lev=-2 box=2" />
+<comm id="e1900" dep="e2064" from="0" to="3" size="64" />
+<comm id="e1903" dep="e2067" from="1" to="3" size="512" />
+<comm id="e1906" dep="e2070" from="2" to="3" size="512" />
+<comp id="e2085" dep="e2073,e1900,e1903,e1906" at="3" time="0" note="relax:halo lev=-2 box=3" />
+<comp id="e2088" dep="e2076" at="0" time="2.23517e-08" note="relax:stencil lev=-2 box=0" />
+<comp id="e2091" dep="e2079" at="1" time="2.23517e-08" note="relax:stencil lev=-2 box=1" />
+<comp id="e2094" dep="e2082" at="2" time="2.23517e-08" note="relax:stencil lev=-2 box=2" />
+<comp id="e2097" dep="e2085" at="3" time="2.23517e-08" note="relax:stencil lev=-2 box=3" />
+<comp id="e2100" dep="e1980,e2088" at="0" time="1.49012e-08" note="relax:op lev=-2 box=0" />
+<comp id="e2103" dep="e1983,e2091" at="1" time="1.49012e-08" note="relax:op lev=-2 box=1" />
+<comp id="e2106" dep="e1986,e2094" at="2" time="1.49012e-08" note="relax:op lev=-2 box=2" />
+<comp id="e2109" dep="e1989,e2097" at="3" time="1.49012e-08" note="relax:op lev=-2 box=3" />
+<comm id="e1909" dep="e2103" from="1" to="0" size="512" />
+<comm id="e1912" dep="e2106" from="2" to="0" size="512" />
+<comm id="e1915" dep="e2109" from="3" to="0" size="64" />
+<comp id="e2112" dep="e2100,e1909,e1912,e1915" at="0" time="0" note="relax:halo lev=-2 box=0" />
+<comm id="e1918" dep="e2100" from="0" to="1" size="512" />
+<comm id="e1921" dep="e2106" from="2" to="1" size="64" />
+<comm id="e1924" dep="e2109" from="3" to="1" size="512" />
+<comp id="e2115" dep="e2103,e1918,e1921,e1924" at="1" time="0" note="relax:halo lev=-2 box=1" />
+<comm id="e1927" dep="e2100" from="0" to="2" size="512" />
+<comm id="e1930" dep="e2103" from="1" to="2" size="64" />
+<comm id="e1933" dep="e2109" from="3" to="2" size="512" />
+<comp id="e2118" dep="e2106,e1927,e1930,e1933" at="2" time="0" note="relax:halo lev=-2 box=2" />
+<comm id="e1936" dep="e2100" from="0" to="3" size="64" />
+<comm id="e1939" dep="e2103" from="1" to="3" size="512" />
+<comm id="e1942" dep="e2106" from="2" to="3" size="512" />
+<comp id="e2121" dep="e2109,e1936,e1939,e1942" at="3" time="0" note="relax:halo lev=-2 box=3" />
+<comp id="e2124" dep="e2112" at="0" time="2.23517e-08" note="relax:stencil lev=-2 box=0" />
+<comp id="e2127" dep="e2115" at="1" time="2.23517e-08" note="relax:stencil lev=-2 box=1" />
+<comp id="e2130" dep="e2118" at="2" time="2.23517e-08" note="relax:stencil lev=-2 box=2" />
+<comp id="e2133" dep="e2121" at="3" time="2.23517e-08" note="relax:stencil lev=-2 box=3" />
+<comp id="e2136" dep="e1980,e2124" at="0" time="1.49012e-08" note="relax:op lev=-2 box=0" />
+<comp id="e2139" dep="e1983,e2127" at="1" time="1.49012e-08" note="relax:op lev=-2 box=1" />
+<comp id="e2142" dep="e1986,e2130" at="2" time="1.49012e-08" note="relax:op lev=-2 box=2" />
+<comp id="e2145" dep="e1989,e2133" at="3" time="1.49012e-08" note="relax:op lev=-2 box=3" />
+<comm id="e1945" dep="e2139" from="1" to="0" size="512" />
+<comm id="e1948" dep="e2142" from="2" to="0" size="512" />
+<comm id="e1951" dep="e2145" from="3" to="0" size="64" />
+<comp id="e2148" dep="e2136,e1945,e1948,e1951" at="0" time="0" note="residual:halo lev=-2 box=0" />
+<comm id="e1954" dep="e2136" from="0" to="1" size="512" />
+<comm id="e1957" dep="e2142" from="2" to="1" size="64" />
+<comm id="e1960" dep="e2145" from="3" to="1" size="512" />
+<comp id="e2151" dep="e2139,e1954,e1957,e1960" at="1" time="0" note="residual:halo lev=-2 box=1" />
+<comm id="e1963" dep="e2136" from="0" to="2" size="512" />
+<comm id="e1966" dep="e2139" from="1" to="2" size="64" />
+<comm id="e1969" dep="e2145" from="3" to="2" size="512" />
+<comp id="e2154" dep="e2142,e1963,e1966,e1969" at="2" time="0" note="residual:halo lev=-2 box=2" />
+<comm id="e1972" dep="e2136" from="0" to="3" size="64" />
+<comm id="e1975" dep="e2139" from="1" to="3" size="512" />
+<comm id="e1978" dep="e2142" from="2" to="3" size="512" />
+<comp id="e2157" dep="e2145,e1972,e1975,e1978" at="3" time="0" note="residual:halo lev=-2 box=3" />
+<comp id="e2160" dep="e2148" at="0" time="2.23517e-08" note="residual:stencil lev=-2 box=0" />
+<comp id="e2163" dep="e2151" at="1" time="2.23517e-08" note="residual:stencil lev=-2 box=1" />
+<comp id="e2166" dep="e2154" at="2" time="2.23517e-08" note="residual:stencil lev=-2 box=2" />
+<comp id="e2169" dep="e2157" at="3" time="2.23517e-08" note="residual:stencil lev=-2 box=3" />
+<comp id="e2172" dep="e1980,e2160" at="0" time="1.49012e-08" note="residual:op lev=-2 box=0" />
+<comp id="e2175" dep="e1983,e2163" at="1" time="1.49012e-08" note="residual:op lev=-2 box=1" />
+<comp id="e2178" dep="e1986,e2166" at="2" time="1.49012e-08" note="residual:op lev=-2 box=2" />
+<comp id="e2181" dep="e1989,e2169" at="3" time="1.49012e-08" note="residual:op lev=-2 box=3" />
+<comp id="e2184" dep="" at="0" time="0" note="coarsen:literal lev=-3 box=0" />
+<comp id="e2187" dep="" at="1" time="0" note="coarsen:literal lev=-3 box=1" />
+<comp id="e2190" dep="" at="2" time="0" note="coarsen:literal lev=-3 box=2" />
+<comp id="e2193" dep="" at="3" time="0" note="coarsen:literal lev=-3 box=3" />
+<comp id="e2196" dep="e2184,e2172" at="0" time="4.65661e-09" note="coarsen:restrict lev=-3 box=0" />
+<comp id="e2199" dep="e2187,e2175" at="1" time="4.65661e-09" note="coarsen:restrict lev=-3 box=1" />
+<comp id="e2202" dep="e2190,e2178" at="2" time="4.65661e-09" note="coarsen:restrict lev=-3 box=2" />
+<comp id="e2205" dep="e2193,e2181" at="3" time="4.65661e-09" note="coarsen:restrict lev=-3 box=3" />
+<coll id="e17" dep="e2196,e2199,e2202,e2205" type="ALLREDUCE" team="0,1,2,3" size="8" />
+<comp id="e2208" dep="e17" at="0" time="0" note="zero:literal lev=-3 box=0" />
+<comp id="e2211" dep="e17" at="1" time="0" note="zero:literal lev=-3 box=1" />
+<comp id="e2214" dep="e17" at="2" time="0" note="zero:literal lev=-3 box=2" />
+<comp id="e2217" dep="e17" at="3" time="0" note="zero:literal lev=-3 box=3" />
+<comm id="e1981" dep="e2211" from="1" to="0" size="128" />
+<comm id="e1984" dep="e2214" from="2" to="0" size="128" />
+<comm id="e1987" dep="e2217" from="3" to="0" size="32" />
+<comp id="e2220" dep="e2208,e1981,e1984,e1987" at="0" time="0" note="relax:halo lev=-3 box=0" />
+<comm id="e1990" dep="e2208" from="0" to="1" size="128" />
+<comm id="e1993" dep="e2214" from="2" to="1" size="32" />
+<comm id="e1996" dep="e2217" from="3" to="1" size="128" />
+<comp id="e2223" dep="e2211,e1990,e1993,e1996" at="1" time="0" note="relax:halo lev=-3 box=1" />
+<comm id="e1999" dep="e2208" from="0" to="2" size="128" />
+<comm id="e2002" dep="e2211" from="1" to="2" size="32" />
+<comm id="e2005" dep="e2217" from="3" to="2" size="128" />
+<comp id="e2226" dep="e2214,e1999,e2002,e2005" at="2" time="0" note="relax:halo lev=-3 box=2" />
+<comm id="e2008" dep="e2208" from="0" to="3" size="32" />
+<comm id="e2011" dep="e2211" from="1" to="3" size="128" />
+<comm id="e2014" dep="e2214" from="2" to="3" size="128" />
+<comp id="e2229" dep="e2217,e2008,e2011,e2014" at="3" time="0" note="relax:halo lev=-3 box=3" />
+<comp id="e2232" dep="e2220" at="0" time="2.79397e-09" note="relax:stencil lev=-3 box=0" />
+<comp id="e2235" dep="e2223" at="1" time="2.79397e-09" note="relax:stencil lev=-3 box=1" />
+<comp id="e2238" dep="e2226" at="2" time="2.79397e-09" note="relax:stencil lev=-3 box=2" />
+<comp id="e2241" dep="e2229" at="3" time="2.79397e-09" note="relax:stencil lev=-3 box=3" />
+<comp id="e2244" dep="e2196,e2232" at="0" time="1.86265e-09" note="relax:op lev=-3 box=0" />
+<comp id="e2247" dep="e2199,e2235" at="1" time="1.86265e-09" note="relax:op lev=-3 box=1" />
+<comp id="e2250" dep="e2202,e2238" at="2" time="1.86265e-09" note="relax:op lev=-3 box=2" />
+<comp id="e2253" dep="e2205,e2241" at="3" time="1.86265e-09" note="relax:op lev=-3 box=3" />
+<comm id="e2017" dep="e2247" from="1" to="0" size="128" />
+<comm id="e2020" dep="e2250" from="2" to="0" size="128" />
+<comm id="e2023" dep="e2253" from="3" to="0" size="32" />
+<comp id="e2256" dep="e2244,e2017,e2020,e2023" at="0" time="0" note="relax:halo lev=-3 box=0" />
+<comm id="e2026" dep="e2244" from="0" to="1" size="128" />
+<comm id="e2029" dep="e2250" from="2" to="1" size="32" />
+<comm id="e2032" dep="e2253" from="3" to="1" size="128" />
+<comp id="e2259" dep="e2247,e2026,e2029,e2032" at="1" time="0" note="relax:halo lev=-3 box=1" />
+<comm id="e2035" dep="e2244" from="0" to="2" size="128" />
+<comm id="e2038" dep="e2247" from="1" to="2" size="32" />
+<comm id="e2041" dep="e2253" from="3" to="2" size="128" />
+<comp id="e2262" dep="e2250,e2035,e2038,e2041" at="2" time="0" note="relax:halo lev=-3 box=2" />
+<comm id="e2044" dep="e2244" from="0" to="3" size="32" />
+<comm id="e2047" dep="e2247" from="1" to="3" size="128" />
+<comm id="e2050" dep="e2250" from="2" to="3" size="128" />
+<comp id="e2265" dep="e2253,e2044,e2047,e2050" at="3" time="0" note="relax:halo lev=-3 box=3" />
+<comp id="e2268" dep="e2256" at="0" time="2.79397e-09" note="relax:stencil lev=-3 box=0" />
+<comp id="e2271" dep="e2259" at="1" time="2.79397e-09" note="relax:stencil lev=-3 box=1" />
+<comp id="e2274" dep="e2262" at="2" time="2.79397e-09" note="relax:stencil lev=-3 box=2" />
+<comp id="e2277" dep="e2265" at="3" time="2.79397e-09" note="relax:stencil lev=-3 box=3" />
+<comp id="e2280" dep="e2196,e2268" at="0" time="1.86265e-09" note="relax:op lev=-3 box=0" />
+<comp id="e2283" dep="e2199,e2271" at="1" time="1.86265e-09" note="relax:op lev=-3 box=1" />
+<comp id="e2286" dep="e2202,e2274" at="2" time="1.86265e-09" note="relax:op lev=-3 box=2" />
+<comp id="e2289" dep="e2205,e2277" at="3" time="1.86265e-09" note="relax:op lev=-3 box=3" />
+<comm id="e2053" dep="e2283" from="1" to="0" size="128" />
+<comm id="e2056" dep="e2286" from="2" to="0" size="128" />
+<comm id="e2059" dep="e2289" from="3" to="0" size="32" />
+<comp id="e2292" dep="e2280,e2053,e2056,e2059" at="0" time="0" note="residual:halo lev=-3 box=0" />
+<comm id="e2062" dep="e2280" from="0" to="1" size="128" />
+<comm id="e2065" dep="e2286" from="2" to="1" size="32" />
+<comm id="e2068" dep="e2289" from="3" to="1" size="128" />
+<comp id="e2295" dep="e2283,e2062,e2065,e2068" at="1" time="0" note="residual:halo lev=-3 box=1" />
+<comm id="e2071" dep="e2280" from="0" to="2" size="128" />
+<comm id="e2074" dep="e2283" from="1" to="2" size="32" />
+<comm id="e2077" dep="e2289" from="3" to="2" size="128" />
+<comp id="e2298" dep="e2286,e2071,e2074,e2077" at="2" time="0" note="residual:halo lev=-3 box=2" />
+<comm id="e2080" dep="e2280" from="0" to="3" size="32" />
+<comm id="e2083" dep="e2283" from="1" to="3" size="128" />
+<comm id="e2086" dep="e2286" from="2" to="3" size="128" />
+<comp id="e2301" dep="e2289,e2080,e2083,e2086" at="3" time="0" note="residual:halo lev=-3 box=3" />
+<comp id="e2304" dep="e2292" at="0" time="2.79397e-09" note="residual:stencil lev=-3 box=0" />
+<comp id="e2307" dep="e2295" at="1" time="2.79397e-09" note="residual:stencil lev=-3 box=1" />
+<comp id="e2310" dep="e2298" at="2" time="2.79397e-09" note="residual:stencil lev=-3 box=2" />
+<comp id="e2313" dep="e2301" at="3" time="2.79397e-09" note="residual:stencil lev=-3 box=3" />
+<comp id="e2316" dep="e2196,e2304" at="0" time="1.86265e-09" note="residual:op lev=-3 box=0" />
+<comp id="e2319" dep="e2199,e2307" at="1" time="1.86265e-09" note="residual:op lev=-3 box=1" />
+<comp id="e2322" dep="e2202,e2310" at="2" time="1.86265e-09" note="residual:op lev=-3 box=2" />
+<comp id="e2325" dep="e2205,e2313" at="3" time="1.86265e-09" note="residual:op lev=-3 box=3" />
+<coll id="e20" dep="e2316,e2319,e2322,e2325" type="ALLREDUCE" team="0,1,2,3" size="8" />
+<comm id="e2089" dep="e2283" from="1" to="0" size="128" />
+<comm id="e2092" dep="e2286" from="2" to="0" size="128" />
+<comm id="e2095" dep="e2289" from="3" to="0" size="32" />
+<comp id="e2328" dep="e2280,e2089,e2092,e2095,e20" at="0" time="0" note="relax:halo lev=-3 box=0" />
+<comm id="e2098" dep="e2280" from="0" to="1" size="128" />
+<comm id="e2101" dep="e2286" from="2" to="1" size="32" />
+<comm id="e2104" dep="e2289" from="3" to="1" size="128" />
+<comp id="e2331" dep="e2283,e2098,e2101,e2104,e20" at="1" time="0" note="relax:halo lev=-3 box=1" />
+<comm id="e2107" dep="e2280" from="0" to="2" size="128" />
+<comm id="e2110" dep="e2283" from="1" to="2" size="32" />
+<comm id="e2113" dep="e2289" from="3" to="2" size="128" />
+<comp id="e2334" dep="e2286,e2107,e2110,e2113,e20" at="2" time="0" note="relax:halo lev=-3 box=2" />
+<comm id="e2116" dep="e2280" from="0" to="3" size="32" />
+<comm id="e2119" dep="e2283" from="1" to="3" size="128" />
+<comm id="e2122" dep="e2286" from="2" to="3" size="128" />
+<comp id="e2337" dep="e2289,e2116,e2119,e2122,e20" at="3" time="0" note="relax:halo lev=-3 box=3" />
+<comp id="e2340" dep="e2328" at="0" time="2.79397e-09" note="relax:stencil lev=-3 box=0" />
+<comp id="e2343" dep="e2331" at="1" time="2.79397e-09" note="relax:stencil lev=-3 box=1" />
+<comp id="e2346" dep="e2334" at="2" time="2.79397e-09" note="relax:stencil lev=-3 box=2" />
+<comp id="e2349" dep="e2337" at="3" time="2.79397e-09" note="relax:stencil lev=-3 box=3" />
+<comp id="e2352" dep="e2196,e2340" at="0" time="1.86265e-09" note="relax:op lev=-3 box=0" />
+<comp id="e2355" dep="e2199,e2343" at="1" time="1.86265e-09" note="relax:op lev=-3 box=1" />
+<comp id="e2358" dep="e2202,e2346" at="2" time="1.86265e-09" note="relax:op lev=-3 box=2" />
+<comp id="e2361" dep="e2205,e2349" at="3" time="1.86265e-09" note="relax:op lev=-3 box=3" />
+<comm id="e2125" dep="e2355" from="1" to="0" size="128" />
+<comm id="e2128" dep="e2358" from="2" to="0" size="128" />
+<comm id="e2131" dep="e2361" from="3" to="0" size="32" />
+<comp id="e2364" dep="e2352,e2125,e2128,e2131" at="0" time="0" note="relax:halo lev=-3 box=0" />
+<comm id="e2134" dep="e2352" from="0" to="1" size="128" />
+<comm id="e2137" dep="e2358" from="2" to="1" size="32" />
+<comm id="e2140" dep="e2361" from="3" to="1" size="128" />
+<comp id="e2367" dep="e2355,e2134,e2137,e2140" at="1" time="0" note="relax:halo lev=-3 box=1" />
+<comm id="e2143" dep="e2352" from="0" to="2" size="128" />
+<comm id="e2146" dep="e2355" from="1" to="2" size="32" />
+<comm id="e2149" dep="e2361" from="3" to="2" size="128" />
+<comp id="e2370" dep="e2358,e2143,e2146,e2149" at="2" time="0" note="relax:halo lev=-3 box=2" />
+<comm id="e2152" dep="e2352" from="0" to="3" size="32" />
+<comm id="e2155" dep="e2355" from="1" to="3" size="128" />
+<comm id="e2158" dep="e2358" from="2" to="3" size="128" />
+<comp id="e2373" dep="e2361,e2152,e2155,e2158" at="3" time="0" note="relax:halo lev=-3 box=3" />
+<comp id="e2376" dep="e2364" at="0" time="2.79397e-09" note="relax:stencil lev=-3 box=0" />
+<comp id="e2379" dep="e2367" at="1" time="2.79397e-09" note="relax:stencil lev=-3 box=1" />
+<comp id="e2382" dep="e2370" at="2" time="2.79397e-09" note="relax:stencil lev=-3 box=2" />
+<comp id="e2385" dep="e2373" at="3" time="2.79397e-09" note="relax:stencil lev=-3 box=3" />
+<comp id="e2388" dep="e2196,e2376" at="0" time="1.86265e-09" note="relax:op lev=-3 box=0" />
+<comp id="e2391" dep="e2199,e2379" at="1" time="1.86265e-09" note="relax:op lev=-3 box=1" />
+<comp id="e2394" dep="e2202,e2382" at="2" time="1.86265e-09" note="relax:op lev=-3 box=2" />
+<comp id="e2397" dep="e2205,e2385" at="3" time="1.86265e-09" note="relax:op lev=-3 box=3" />
+<comm id="e2161" dep="e2391" from="1" to="0" size="128" />
+<comm id="e2164" dep="e2394" from="2" to="0" size="128" />
+<comm id="e2167" dep="e2397" from="3" to="0" size="32" />
+<comp id="e2400" dep="e2388,e2161,e2164,e2167" at="0" time="0" note="residual:halo lev=-3 box=0" />
+<comm id="e2170" dep="e2388" from="0" to="1" size="128" />
+<comm id="e2173" dep="e2394" from="2" to="1" size="32" />
+<comm id="e2176" dep="e2397" from="3" to="1" size="128" />
+<comp id="e2403" dep="e2391,e2170,e2173,e2176" at="1" time="0" note="residual:halo lev=-3 box=1" />
+<comm id="e2179" dep="e2388" from="0" to="2" size="128" />
+<comm id="e2182" dep="e2391" from="1" to="2" size="32" />
+<comm id="e2185" dep="e2397" from="3" to="2" size="128" />
+<comp id="e2406" dep="e2394,e2179,e2182,e2185" at="2" time="0" note="residual:halo lev=-3 box=2" />
+<comm id="e2188" dep="e2388" from="0" to="3" size="32" />
+<comm id="e2191" dep="e2391" from="1" to="3" size="128" />
+<comm id="e2194" dep="e2394" from="2" to="3" size="128" />
+<comp id="e2409" dep="e2397,e2188,e2191,e2194" at="3" time="0" note="residual:halo lev=-3 box=3" />
+<comp id="e2412" dep="e2400" at="0" time="2.79397e-09" note="residual:stencil lev=-3 box=0" />
+<comp id="e2415" dep="e2403" at="1" time="2.79397e-09" note="residual:stencil lev=-3 box=1" />
+<comp id="e2418" dep="e2406" at="2" time="2.79397e-09" note="residual:stencil lev=-3 box=2" />
+<comp id="e2421" dep="e2409" at="3" time="2.79397e-09" note="residual:stencil lev=-3 box=3" />
+<comp id="e2424" dep="e2196,e2412" at="0" time="1.86265e-09" note="residual:op lev=-3 box=0" />
+<comp id="e2427" dep="e2199,e2415" at="1" time="1.86265e-09" note="residual:op lev=-3 box=1" />
+<comp id="e2430" dep="e2202,e2418" at="2" time="1.86265e-09" note="residual:op lev=-3 box=2" />
+<comp id="e2433" dep="e2205,e2421" at="3" time="1.86265e-09" note="residual:op lev=-3 box=3" />
+<coll id="e23" dep="e2424,e2427,e2430,e2433" type="ALLREDUCE" team="0,1,2,3" size="8" />
+<comm id="e2197" dep="e2391" from="1" to="0" size="128" />
+<comm id="e2200" dep="e2394" from="2" to="0" size="128" />
+<comm id="e2203" dep="e2397" from="3" to="0" size="32" />
+<comp id="e2436" dep="e2388,e2197,e2200,e2203,e23" at="0" time="8.192e-09" note="prolong_update:prolong lev=-2 box=0" />
+<comm id="e2206" dep="e2388" from="0" to="1" size="128" />
+<comm id="e2209" dep="e2394" from="2" to="1" size="32" />
+<comm id="e2212" dep="e2397" from="3" to="1" size="128" />
+<comp id="e2439" dep="e2206,e2391,e2209,e2212,e23" at="1" time="8.192e-09" note="prolong_update:prolong lev=-2 box=1" />
+<comm id="e2215" dep="e2388" from="0" to="2" size="128" />
+<comm id="e2218" dep="e2391" from="1" to="2" size="32" />
+<comm id="e2221" dep="e2397" from="3" to="2" size="128" />
+<comp id="e2442" dep="e2215,e2218,e2394,e2221,e23" at="2" time="8.192e-09" note="prolong_update:prolong lev=-2 box=2" />
+<comm id="e2224" dep="e2388" from="0" to="3" size="32" />
+<comm id="e2227" dep="e2391" from="1" to="3" size="128" />
+<comm id="e2230" dep="e2394" from="2" to="3" size="128" />
+<comp id="e2445" dep="e2224,e2227,e2230,e2397,e23" at="3" time="8.192e-09" note="prolong_update:prolong lev=-2 box=3" />
+<comp id="e2448" dep="e2136,e2436" at="0" time="1.49012e-08" note="prolong_update:update lev=-2 box=0" />
+<comp id="e2451" dep="e2139,e2439" at="1" time="1.49012e-08" note="prolong_update:update lev=-2 box=1" />
+<comp id="e2454" dep="e2142,e2442" at="2" time="1.49012e-08" note="prolong_update:update lev=-2 box=2" />
+<comp id="e2457" dep="e2145,e2445" at="3" time="1.49012e-08" note="prolong_update:update lev=-2 box=3" />
+<comm id="e2233" dep="e2451" from="1" to="0" size="512" />
+<comm id="e2236" dep="e2454" from="2" to="0" size="512" />
+<comm id="e2239" dep="e2457" from="3" to="0" size="64" />
+<comp id="e2460" dep="e2448,e2233,e2236,e2239" at="0" time="0" note="relax:halo lev=-2 box=0" />
+<comm id="e2242" dep="e2448" from="0" to="1" size="512" />
+<comm id="e2245" dep="e2454" from="2" to="1" size="64" />
+<comm id="e2248" dep="e2457" from="3" to="1" size="512" />
+<comp id="e2463" dep="e2451,e2242,e2245,e2248" at="1" time="0" note="relax:halo lev=-2 box=1" />
+<comm id="e2251" dep="e2448" from="0" to="2" size="512" />
+<comm id="e2254" dep="e2451" from="1" to="2" size="64" />
+<comm id="e2257" dep="e2457" from="3" to="2" size="512" />
+<comp id="e2466" dep="e2454,e2251,e2254,e2257" at="2" time="0" note="relax:halo lev=-2 box=2" />
+<comm id="e2260" dep="e2448" from="0" to="3" size="64" />
+<comm id="e2263" dep="e2451" from="1" to="3" size="512" />
+<comm id="e2266" dep="e2454" from="2" to="3" size="512" />
+<comp id="e2469" dep="e2457,e2260,e2263,e2266" at="3" time="0" note="relax:halo lev=-2 box=3" />
+<comp id="e2472" dep="e2460" at="0" time="2.23517e-08" note="relax:stencil lev=-2 box=0" />
+<comp id="e2475" dep="e2463" at="1" time="2.23517e-08" note="relax:stencil lev=-2 box=1" />
+<comp id="e2478" dep="e2466" at="2" time="2.23517e-08" note="relax:stencil lev=-2 box=2" />
+<comp id="e2481" dep="e2469" at="3" time="2.23517e-08" note="relax:stencil lev=-2 box=3" />
+<comp id="e2484" dep="e1980,e2472" at="0" time="1.49012e-08" note="relax:op lev=-2 box=0" />
+<comp id="e2487" dep="e1983,e2475" at="1" time="1.49012e-08" note="relax:op lev=-2 box=1" />
+<comp id="e2490" dep="e1986,e2478" at="2" time="1.49012e-08" note="relax:op lev=-2 box=2" />
+<comp id="e2493" dep="e1989,e2481" at="3" time="1.49012e-08" note="relax:op lev=-2 box=3" />
+<comm id="e2269" dep="e2487" from="1" to="0" size="512" />
+<comm id="e2272" dep="e2490" from="2" to="0" size="512" />
+<comm id="e2275" dep="e2493" from="3" to="0" size="64" />
+<comp id="e2496" dep="e2484,e2269,e2272,e2275" at="0" time="0" note="relax:halo lev=-2 box=0" />
+<comm id="e2278" dep="e2484" from="0" to="1" size="512" />
+<comm id="e2281" dep="e2490" from="2" to="1" size="64" />
+<comm id="e2284" dep="e2493" from="3" to="1" size="512" />
+<comp id="e2499" dep="e2487,e2278,e2281,e2284" at="1" time="0" note="relax:halo lev=-2 box=1" />
+<comm id="e2287" dep="e2484" from="0" to="2" size="512" />
+<comm id="e2290" dep="e2487" from="1" to="2" size="64" />
+<comm id="e2293" dep="e2493" from="3" to="2" size="512" />
+<comp id="e2502" dep="e2490,e2287,e2290,e2293" at="2" time="0" note="relax:halo lev=-2 box=2" />
+<comm id="e2296" dep="e2484" from="0" to="3" size="64" />
+<comm id="e2299" dep="e2487" from="1" to="3" size="512" />
+<comm id="e2302" dep="e2490" from="2" to="3" size="512" />
+<comp id="e2505" dep="e2493,e2296,e2299,e2302" at="3" time="0" note="relax:halo lev=-2 box=3" />
+<comp id="e2508" dep="e2496" at="0" time="2.23517e-08" note="relax:stencil lev=-2 box=0" />
+<comp id="e2511" dep="e2499" at="1" time="2.23517e-08" note="relax:stencil lev=-2 box=1" />
+<comp id="e2514" dep="e2502" at="2" time="2.23517e-08" note="relax:stencil lev=-2 box=2" />
+<comp id="e2517" dep="e2505" at="3" time="2.23517e-08" note="relax:stencil lev=-2 box=3" />
+<comp id="e2520" dep="e1980,e2508" at="0" time="1.49012e-08" note="relax:op lev=-2 box=0" />
+<comp id="e2523" dep="e1983,e2511" at="1" time="1.49012e-08" note="relax:op lev=-2 box=1" />
+<comp id="e2526" dep="e1986,e2514" at="2" time="1.49012e-08" note="relax:op lev=-2 box=2" />
+<comp id="e2529" dep="e1989,e2517" at="3" time="1.49012e-08" note="relax:op lev=-2 box=3" />
+<comm id="e2305" dep="e2523" from="1" to="0" size="512" />
+<comm id="e2308" dep="e2526" from="2" to="0" size="512" />
+<comm id="e2311" dep="e2529" from="3" to="0" size="64" />
+<comp id="e2532" dep="e2520,e2305,e2308,e2311" at="0" time="0" note="relax:halo lev=-2 box=0" />
+<comm id="e2314" dep="e2520" from="0" to="1" size="512" />
+<comm id="e2317" dep="e2526" from="2" to="1" size="64" />
+<comm id="e2320" dep="e2529" from="3" to="1" size="512" />
+<comp id="e2535" dep="e2523,e2314,e2317,e2320" at="1" time="0" note="relax:halo lev=-2 box=1" />
+<comm id="e2323" dep="e2520" from="0" to="2" size="512" />
+<comm id="e2326" dep="e2523" from="1" to="2" size="64" />
+<comm id="e2329" dep="e2529" from="3" to="2" size="512" />
+<comp id="e2538" dep="e2526,e2323,e2326,e2329" at="2" time="0" note="relax:halo lev=-2 box=2" />
+<comm id="e2332" dep="e2520" from="0" to="3" size="64" />
+<comm id="e2335" dep="e2523" from="1" to="3" size="512" />
+<comm id="e2338" dep="e2526" from="2" to="3" size="512" />
+<comp id="e2541" dep="e2529,e2332,e2335,e2338" at="3" time="0" note="relax:halo lev=-2 box=3" />
+<comp id="e2544" dep="e2532" at="0" time="2.23517e-08" note="relax:stencil lev=-2 box=0" />
+<comp id="e2547" dep="e2535" at="1" time="2.23517e-08" note="relax:stencil lev=-2 box=1" />
+<comp id="e2550" dep="e2538" at="2" time="2.23517e-08" note="relax:stencil lev=-2 box=2" />
+<comp id="e2553" dep="e2541" at="3" time="2.23517e-08" note="relax:stencil lev=-2 box=3" />
+<comp id="e2556" dep="e1980,e2544" at="0" time="1.49012e-08" note="relax:op lev=-2 box=0" />
+<comp id="e2559" dep="e1983,e2547" at="1" time="1.49012e-08" note="relax:op lev=-2 box=1" />
+<comp id="e2562" dep="e1986,e2550" at="2" time="1.49012e-08" note="relax:op lev=-2 box=2" />
+<comp id="e2565" dep="e1989,e2553" at="3" time="1.49012e-08" note="relax:op lev=-2 box=3" />
+<comm id="e2341" dep="e2559" from="1" to="0" size="512" />
+<comm id="e2344" dep="e2562" from="2" to="0" size="512" />
+<comm id="e2347" dep="e2565" from="3" to="0" size="64" />
+<comp id="e2568" dep="e2556,e2341,e2344,e2347" at="0" time="0" note="relax:halo lev=-2 box=0" />
+<comm id="e2350" dep="e2556" from="0" to="1" size="512" />
+<comm id="e2353" dep="e2562" from="2" to="1" size="64" />
+<comm id="e2356" dep="e2565" from="3" to="1" size="512" />
+<comp id="e2571" dep="e2559,e2350,e2353,e2356" at="1" time="0" note="relax:halo lev=-2 box=1" />
+<comm id="e2359" dep="e2556" from="0" to="2" size="512" />
+<comm id="e2362" dep="e2559" from="1" to="2" size="64" />
+<comm id="e2365" dep="e2565" from="3" to="2" size="512" />
+<comp id="e2574" dep="e2562,e2359,e2362,e2365" at="2" time="0" note="relax:halo lev=-2 box=2" />
+<comm id="e2368" dep="e2556" from="0" to="3" size="64" />
+<comm id="e2371" dep="e2559" from="1" to="3" size="512" />
+<comm id="e2374" dep="e2562" from="2" to="3" size="512" />
+<comp id="e2577" dep="e2565,e2368,e2371,e2374" at="3" time="0" note="relax:halo lev=-2 box=3" />
+<comp id="e2580" dep="e2568" at="0" time="2.23517e-08" note="relax:stencil lev=-2 box=0" />
+<comp id="e2583" dep="e2571" at="1" time="2.23517e-08" note="relax:stencil lev=-2 box=1" />
+<comp id="e2586" dep="e2574" at="2" time="2.23517e-08" note="relax:stencil lev=-2 box=2" />
+<comp id="e2589" dep="e2577" at="3" time="2.23517e-08" note="relax:stencil lev=-2 box=3" />
+<comp id="e2592" dep="e1980,e2580" at="0" time="1.49012e-08" note="relax:op lev=-2 box=0" />
+<comp id="e2595" dep="e1983,e2583" at="1" time="1.49012e-08" note="relax:op lev=-2 box=1" />
+<comp id="e2598" dep="e1986,e2586" at="2" time="1.49012e-08" note="relax:op lev=-2 box=2" />
+<comp id="e2601" dep="e1989,e2589" at="3" time="1.49012e-08" note="relax:op lev=-2 box=3" />
+<comm id="e2377" dep="e2595" from="1" to="0" size="512" />
+<comm id="e2380" dep="e2598" from="2" to="0" size="512" />
+<comm id="e2383" dep="e2601" from="3" to="0" size="64" />
+<comp id="e2604" dep="e2592,e2377,e2380,e2383" at="0" time="6.5536e-08" note="prolong_update:prolong lev=-1 box=0" />
+<comm id="e2386" dep="e2592" from="0" to="1" size="512" />
+<comm id="e2389" dep="e2598" from="2" to="1" size="64" />
+<comm id="e2392" dep="e2601" from="3" to="1" size="512" />
+<comp id="e2607" dep="e2386,e2595,e2389,e2392" at="1" time="6.5536e-08" note="prolong_update:prolong lev=-1 box=1" />
+<comm id="e2395" dep="e2592" from="0" to="2" size="512" />
+<comm id="e2398" dep="e2595" from="1" to="2" size="64" />
+<comm id="e2401" dep="e2601" from="3" to="2" size="512" />
+<comp id="e2610" dep="e2395,e2398,e2598,e2401" at="2" time="6.5536e-08" note="prolong_update:prolong lev=-1 box=2" />
+<comm id="e2404" dep="e2592" from="0" to="3" size="64" />
+<comm id="e2407" dep="e2595" from="1" to="3" size="512" />
+<comm id="e2410" dep="e2598" from="2" to="3" size="512" />
+<comp id="e2613" dep="e2404,e2407,e2410,e2601" at="3" time="6.5536e-08" note="prolong_update:prolong lev=-1 box=3" />
+<comp id="e2616" dep="e1920,e2604" at="0" time="1.19209e-07" note="prolong_update:update lev=-1 box=0" />
+<comp id="e2619" dep="e1923,e2607" at="1" time="1.19209e-07" note="prolong_update:update lev=-1 box=1" />
+<comp id="e2622" dep="e1926,e2610" at="2" time="1.19209e-07" note="prolong_update:update lev=-1 box=2" />
+<comp id="e2625" dep="e1929,e2613" at="3" time="1.19209e-07" note="prolong_update:update lev=-1 box=3" />
+<comm id="e2413" dep="e2619" from="1" to="0" size="2048" />
+<comm id="e2416" dep="e2622" from="2" to="0" size="2048" />
+<comm id="e2419" dep="e2625" from="3" to="0" size="128" />
+<comp id="e2628" dep="e2616,e2413,e2416,e2419" at="0" time="0" note="relax:halo lev=-1 box=0" />
+<comm id="e2422" dep="e2616" from="0" to="1" size="2048" />
+<comm id="e2425" dep="e2622" from="2" to="1" size="128" />
+<comm id="e2428" dep="e2625" from="3" to="1" size="2048" />
+<comp id="e2631" dep="e2619,e2422,e2425,e2428" at="1" time="0" note="relax:halo lev=-1 box=1" />
+<comm id="e2431" dep="e2616" from="0" to="2" size="2048" />
+<comm id="e2434" dep="e2619" from="1" to="2" size="128" />
+<comm id="e2437" dep="e2625" from="3" to="2" size="2048" />
+<comp id="e2634" dep="e2622,e2431,e2434,e2437" at="2" time="0" note="relax:halo lev=-1 box=2" />
+<comm id="e2440" dep="e2616" from="0" to="3" size="128" />
+<comm id="e2443" dep="e2619" from="1" to="3" size="2048" />
+<comm id="e2446" dep="e2622" from="2" to="3" size="2048" />
+<comp id="e2637" dep="e2625,e2440,e2443,e2446" at="3" time="0" note="relax:halo lev=-1 box=3" />
+<comp id="e2640" dep="e2628" at="0" time="1.78814e-07" note="relax:stencil lev=-1 box=0" />
+<comp id="e2643" dep="e2631" at="1" time="1.78814e-07" note="relax:stencil lev=-1 box=1" />
+<comp id="e2646" dep="e2634" at="2" time="1.78814e-07" note="relax:stencil lev=-1 box=2" />
+<comp id="e2649" dep="e2637" at="3" time="1.78814e-07" note="relax:stencil lev=-1 box=3" />
+<comp id="e2652" dep="e1764,e2640" at="0" time="1.19209e-07" note="relax:op lev=-1 box=0" />
+<comp id="e2655" dep="e1767,e2643" at="1" time="1.19209e-07" note="relax:op lev=-1 box=1" />
+<comp id="e2658" dep="e1770,e2646" at="2" time="1.19209e-07" note="relax:op lev=-1 box=2" />
+<comp id="e2661" dep="e1773,e2649" at="3" time="1.19209e-07" note="relax:op lev=-1 box=3" />
+<comm id="e2449" dep="e2655" from="1" to="0" size="2048" />
+<comm id="e2452" dep="e2658" from="2" to="0" size="2048" />
+<comm id="e2455" dep="e2661" from="3" to="0" size="128" />
+<comp id="e2664" dep="e2652,e2449,e2452,e2455" at="0" time="0" note="relax:halo lev=-1 box=0" />
+<comm id="e2458" dep="e2652" from="0" to="1" size="2048" />
+<comm id="e2461" dep="e2658" from="2" to="1" size="128" />
+<comm id="e2464" dep="e2661" from="3" to="1" size="2048" />
+<comp id="e2667" dep="e2655,e2458,e2461,e2464" at="1" time="0" note="relax:halo lev=-1 box=1" />
+<comm id="e2467" dep="e2652" from="0" to="2" size="2048" />
+<comm id="e2470" dep="e2655" from="1" to="2" size="128" />
+<comm id="e2473" dep="e2661" from="3" to="2" size="2048" />
+<comp id="e2670" dep="e2658,e2467,e2470,e2473" at="2" time="0" note="relax:halo lev=-1 box=2" />
+<comm id="e2476" dep="e2652" from="0" to="3" size="128" />
+<comm id="e2479" dep="e2655" from="1" to="3" size="2048" />
+<comm id="e2482" dep="e2658" from="2" to="3" size="2048" />
+<comp id="e2673" dep="e2661,e2476,e2479,e2482" at="3" time="0" note="relax:halo lev=-1 box=3" />
+<comp id="e2676" dep="e2664" at="0" time="1.78814e-07" note="relax:stencil lev=-1 box=0" />
+<comp id="e2679" dep="e2667" at="1" time="1.78814e-07" note="relax:stencil lev=-1 box=1" />
+<comp id="e2682" dep="e2670" at="2" time="1.78814e-07" note="relax:stencil lev=-1 box=2" />
+<comp id="e2685" dep="e2673" at="3" time="1.78814e-07" note="relax:stencil lev=-1 box=3" />
+<comp id="e2688" dep="e1764,e2676" at="0" time="1.19209e-07" note="relax:op lev=-1 box=0" />
+<comp id="e2691" dep="e1767,e2679" at="1" time="1.19209e-07" note="relax:op lev=-1 box=1" />
+<comp id="e2694" dep="e1770,e2682" at="2" time="1.19209e-07" note="relax:op lev=-1 box=2" />
+<comp id="e2697" dep="e1773,e2685" at="3" time="1.19209e-07" note="relax:op lev=-1 box=3" />
+<comm id="e2485" dep="e2691" from="1" to="0" size="2048" />
+<comm id="e2488" dep="e2694" from="2" to="0" size="2048" />
+<comm id="e2491" dep="e2697" from="3" to="0" size="128" />
+<comp id="e2700" dep="e2688,e2485,e2488,e2491" at="0" time="0" note="relax:halo lev=-1 box=0" />
+<comm id="e2494" dep="e2688" from="0" to="1" size="2048" />
+<comm id="e2497" dep="e2694" from="2" to="1" size="128" />
+<comm id="e2500" dep="e2697" from="3" to="1" size="2048" />
+<comp id="e2703" dep="e2691,e2494,e2497,e2500" at="1" time="0" note="relax:halo lev=-1 box=1" />
+<comm id="e2503" dep="e2688" from="0" to="2" size="2048" />
+<comm id="e2506" dep="e2691" from="1" to="2" size="128" />
+<comm id="e2509" dep="e2697" from="3" to="2" size="2048" />
+<comp id="e2706" dep="e2694,e2503,e2506,e2509" at="2" time="0" note="relax:halo lev=-1 box=2" />
+<comm id="e2512" dep="e2688" from="0" to="3" size="128" />
+<comm id="e2515" dep="e2691" from="1" to="3" size="2048" />
+<comm id="e2518" dep="e2694" from="2" to="3" size="2048" />
+<comp id="e2709" dep="e2697,e2512,e2515,e2518" at="3" time="0" note="relax:halo lev=-1 box=3" />
+<comp id="e2712" dep="e2700" at="0" time="1.78814e-07" note="relax:stencil lev=-1 box=0" />
+<comp id="e2715" dep="e2703" at="1" time="1.78814e-07" note="relax:stencil lev=-1 box=1" />
+<comp id="e2718" dep="e2706" at="2" time="1.78814e-07" note="relax:stencil lev=-1 box=2" />
+<comp id="e2721" dep="e2709" at="3" time="1.78814e-07" note="relax:stencil lev=-1 box=3" />
+<comp id="e2724" dep="e1764,e2712" at="0" time="1.19209e-07" note="relax:op lev=-1 box=0" />
+<comp id="e2727" dep="e1767,e2715" at="1" time="1.19209e-07" note="relax:op lev=-1 box=1" />
+<comp id="e2730" dep="e1770,e2718" at="2" time="1.19209e-07" note="relax:op lev=-1 box=2" />
+<comp id="e2733" dep="e1773,e2721" at="3" time="1.19209e-07" note="relax:op lev=-1 box=3" />
+<comm id="e2521" dep="e2727" from="1" to="0" size="2048" />
+<comm id="e2524" dep="e2730" from="2" to="0" size="2048" />
+<comm id="e2527" dep="e2733" from="3" to="0" size="128" />
+<comp id="e2736" dep="e2724,e2521,e2524,e2527" at="0" time="0" note="relax:halo lev=-1 box=0" />
+<comm id="e2530" dep="e2724" from="0" to="1" size="2048" />
+<comm id="e2533" dep="e2730" from="2" to="1" size="128" />
+<comm id="e2536" dep="e2733" from="3" to="1" size="2048" />
+<comp id="e2739" dep="e2727,e2530,e2533,e2536" at="1" time="0" note="relax:halo lev=-1 box=1" />
+<comm id="e2539" dep="e2724" from="0" to="2" size="2048" />
+<comm id="e2542" dep="e2727" from="1" to="2" size="128" />
+<comm id="e2545" dep="e2733" from="3" to="2" size="2048" />
+<comp id="e2742" dep="e2730,e2539,e2542,e2545" at="2" time="0" note="relax:halo lev=-1 box=2" />
+<comm id="e2548" dep="e2724" from="0" to="3" size="128" />
+<comm id="e2551" dep="e2727" from="1" to="3" size="2048" />
+<comm id="e2554" dep="e2730" from="2" to="3" size="2048" />
+<comp id="e2745" dep="e2733,e2548,e2551,e2554" at="3" time="0" note="relax:halo lev=-1 box=3" />
+<comp id="e2748" dep="e2736" at="0" time="1.78814e-07" note="relax:stencil lev=-1 box=0" />
+<comp id="e2751" dep="e2739" at="1" time="1.78814e-07" note="relax:stencil lev=-1 box=1" />
+<comp id="e2754" dep="e2742" at="2" time="1.78814e-07" note="relax:stencil lev=-1 box=2" />
+<comp id="e2757" dep="e2745" at="3" time="1.78814e-07" note="relax:stencil lev=-1 box=3" />
+<comp id="e2760" dep="e1764,e2748" at="0" time="1.19209e-07" note="relax:op lev=-1 box=0" />
+<comp id="e2763" dep="e1767,e2751" at="1" time="1.19209e-07" note="relax:op lev=-1 box=1" />
+<comp id="e2766" dep="e1770,e2754" at="2" time="1.19209e-07" note="relax:op lev=-1 box=2" />
+<comp id="e2769" dep="e1773,e2757" at="3" time="1.19209e-07" note="relax:op lev=-1 box=3" />
+<comm id="e2557" dep="e2763" from="1" to="0" size="2048" />
+<comm id="e2560" dep="e2766" from="2" to="0" size="2048" />
+<comm id="e2563" dep="e2769" from="3" to="0" size="128" />
+<comp id="e2772" dep="e2760,e2557,e2560,e2563" at="0" time="5.24288e-07" note="prolong_update:prolong lev=0 box=0" />
+<comm id="e2566" dep="e2760" from="0" to="1" size="2048" />
+<comm id="e2569" dep="e2766" from="2" to="1" size="128" />
+<comm id="e2572" dep="e2769" from="3" to="1" size="2048" />
+<comp id="e2775" dep="e2566,e2763,e2569,e2572" at="1" time="5.24288e-07" note="prolong_update:prolong lev=0 box=1" />
+<comm id="e2575" dep="e2760" from="0" to="2" size="2048" />
+<comm id="e2578" dep="e2763" from="1" to="2" size="128" />
+<comm id="e2581" dep="e2769" from="3" to="2" size="2048" />
+<comp id="e2778" dep="e2575,e2578,e2766,e2581" at="2" time="5.24288e-07" note="prolong_update:prolong lev=0 box=2" />
+<comm id="e2584" dep="e2760" from="0" to="3" size="128" />
+<comm id="e2587" dep="e2763" from="1" to="3" size="2048" />
+<comm id="e2590" dep="e2766" from="2" to="3" size="2048" />
+<comp id="e2781" dep="e2584,e2587,e2590,e2769" at="3" time="5.24288e-07" note="prolong_update:prolong lev=0 box=3" />
+<comp id="e2784" dep="e1704,e2772" at="0" time="9.53674e-07" note="prolong_update:update lev=0 box=0" />
+<comp id="e2787" dep="e1707,e2775" at="1" time="9.53674e-07" note="prolong_update:update lev=0 box=1" />
+<comp id="e2790" dep="e1710,e2778" at="2" time="9.53674e-07" note="prolong_update:update lev=0 box=2" />
+<comp id="e2793" dep="e1713,e2781" at="3" time="9.53674e-07" note="prolong_update:update lev=0 box=3" />
+<comm id="e2593" dep="e2787" from="1" to="0" size="8192" />
+<comm id="e2596" dep="e2790" from="2" to="0" size="8192" />
+<comm id="e2599" dep="e2793" from="3" to="0" size="256" />
+<comp id="e2796" dep="e2784,e2593,e2596,e2599" at="0" time="0" note="relax:halo lev=0 box=0" />
+<comm id="e2602" dep="e2784" from="0" to="1" size="8192" />
+<comm id="e2605" dep="e2790" from="2" to="1" size="256" />
+<comm id="e2608" dep="e2793" from="3" to="1" size="8192" />
+<comp id="e2799" dep="e2787,e2602,e2605,e2608" at="1" time="0" note="relax:halo lev=0 box=1" />
+<comm id="e2611" dep="e2784" from="0" to="2" size="8192" />
+<comm id="e2614" dep="e2787" from="1" to="2" size="256" />
+<comm id="e2617" dep="e2793" from="3" to="2" size="8192" />
+<comp id="e2802" dep="e2790,e2611,e2614,e2617" at="2" time="0" note="relax:halo lev=0 box=2" />
+<comm id="e2620" dep="e2784" from="0" to="3" size="256" />
+<comm id="e2623" dep="e2787" from="1" to="3" size="8192" />
+<comm id="e2626" dep="e2790" from="2" to="3" size="8192" />
+<comp id="e2805" dep="e2793,e2620,e2623,e2626" at="3" time="0" note="relax:halo lev=0 box=3" />
+<comp id="e2808" dep="e2796" at="0" time="1.43051e-06" note="relax:stencil lev=0 box=0" />
+<comp id="e2811" dep="e2799" at="1" time="1.43051e-06" note="relax:stencil lev=0 box=1" />
+<comp id="e2814" dep="e2802" at="2" time="1.43051e-06" note="relax:stencil lev=0 box=2" />
+<comp id="e2817" dep="e2805" at="3" time="1.43051e-06" note="relax:stencil lev=0 box=3" />
+<comp id="e2820" dep="e1548,e2808" at="0" time="9.53674e-07" note="relax:op lev=0 box=0" />
+<comp id="e2823" dep="e1551,e2811" at="1" time="9.53674e-07" note="relax:op lev=0 box=1" />
+<comp id="e2826" dep="e1554,e2814" at="2" time="9.53674e-07" note="relax:op lev=0 box=2" />
+<comp id="e2829" dep="e1557,e2817" at="3" time="9.53674e-07" note="relax:op lev=0 box=3" />
+<comm id="e2629" dep="e2823" from="1" to="0" size="8192" />
+<comm id="e2632" dep="e2826" from="2" to="0" size="8192" />
+<comm id="e2635" dep="e2829" from="3" to="0" size="256" />
+<comp id="e2832" dep="e2820,e2629,e2632,e2635" at="0" time="0" note="relax:halo lev=0 box=0" />
+<comm id="e2638" dep="e2820" from="0" to="1" size="8192" />
+<comm id="e2641" dep="e2826" from="2" to="1" size="256" />
+<comm id="e2644" dep="e2829" from="3" to="1" size="8192" />
+<comp id="e2835" dep="e2823,e2638,e2641,e2644" at="1" time="0" note="relax:halo lev=0 box=1" />
+<comm id="e2647" dep="e2820" from="0" to="2" size="8192" />
+<comm id="e2650" dep="e2823" from="1" to="2" size="256" />
+<comm id="e2653" dep="e2829" from="3" to="2" size="8192" />
+<comp id="e2838" dep="e2826,e2647,e2650,e2653" at="2" time="0" note="relax:halo lev=0 box=2" />
+<comm id="e2656" dep="e2820" from="0" to="3" size="256" />
+<comm id="e2659" dep="e2823" from="1" to="3" size="8192" />
+<comm id="e2662" dep="e2826" from="2" to="3" size="8192" />
+<comp id="e2841" dep="e2829,e2656,e2659,e2662" at="3" time="0" note="relax:halo lev=0 box=3" />
+<comp id="e2844" dep="e2832" at="0" time="1.43051e-06" note="relax:stencil lev=0 box=0" />
+<comp id="e2847" dep="e2835" at="1" time="1.43051e-06" note="relax:stencil lev=0 box=1" />
+<comp id="e2850" dep="e2838" at="2" time="1.43051e-06" note="relax:stencil lev=0 box=2" />
+<comp id="e2853" dep="e2841" at="3" time="1.43051e-06" note="relax:stencil lev=0 box=3" />
+<comp id="e2856" dep="e1548,e2844" at="0" time="9.53674e-07" note="relax:op lev=0 box=0" />
+<comp id="e2859" dep="e1551,e2847" at="1" time="9.53674e-07" note="relax:op lev=0 box=1" />
+<comp id="e2862" dep="e1554,e2850" at="2" time="9.53674e-07" note="relax:op lev=0 box=2" />
+<comp id="e2865" dep="e1557,e2853" at="3" time="9.53674e-07" note="relax:op lev=0 box=3" />
+<comm id="e2665" dep="e2859" from="1" to="0" size="8192" />
+<comm id="e2668" dep="e2862" from="2" to="0" size="8192" />
+<comm id="e2671" dep="e2865" from="3" to="0" size="256" />
+<comp id="e2868" dep="e2856,e2665,e2668,e2671" at="0" time="0" note="relax:halo lev=0 box=0" />
+<comm id="e2674" dep="e2856" from="0" to="1" size="8192" />
+<comm id="e2677" dep="e2862" from="2" to="1" size="256" />
+<comm id="e2680" dep="e2865" from="3" to="1" size="8192" />
+<comp id="e2871" dep="e2859,e2674,e2677,e2680" at="1" time="0" note="relax:halo lev=0 box=1" />
+<comm id="e2683" dep="e2856" from="0" to="2" size="8192" />
+<comm id="e2686" dep="e2859" from="1" to="2" size="256" />
+<comm id="e2689" dep="e2865" from="3" to="2" size="8192" />
+<comp id="e2874" dep="e2862,e2683,e2686,e2689" at="2" time="0" note="relax:halo lev=0 box=2" />
+<comm id="e2692" dep="e2856" from="0" to="3" size="256" />
+<comm id="e2695" dep="e2859" from="1" to="3" size="8192" />
+<comm id="e2698" dep="e2862" from="2" to="3" size="8192" />
+<comp id="e2877" dep="e2865,e2692,e2695,e2698" at="3" time="0" note="relax:halo lev=0 box=3" />
+<comp id="e2880" dep="e2868" at="0" time="1.43051e-06" note="relax:stencil lev=0 box=0" />
+<comp id="e2883" dep="e2871" at="1" time="1.43051e-06" note="relax:stencil lev=0 box=1" />
+<comp id="e2886" dep="e2874" at="2" time="1.43051e-06" note="relax:stencil lev=0 box=2" />
+<comp id="e2889" dep="e2877" at="3" time="1.43051e-06" note="relax:stencil lev=0 box=3" />
+<comp id="e2892" dep="e1548,e2880" at="0" time="9.53674e-07" note="relax:op lev=0 box=0" />
+<comp id="e2895" dep="e1551,e2883" at="1" time="9.53674e-07" note="relax:op lev=0 box=1" />
+<comp id="e2898" dep="e1554,e2886" at="2" time="9.53674e-07" note="relax:op lev=0 box=2" />
+<comp id="e2901" dep="e1557,e2889" at="3" time="9.53674e-07" note="relax:op lev=0 box=3" />
+<comm id="e2701" dep="e2895" from="1" to="0" size="8192" />
+<comm id="e2704" dep="e2898" from="2" to="0" size="8192" />
+<comm id="e2707" dep="e2901" from="3" to="0" size="256" />
+<comp id="e2904" dep="e2892,e2701,e2704,e2707" at="0" time="0" note="relax:halo lev=0 box=0" />
+<comm id="e2710" dep="e2892" from="0" to="1" size="8192" />
+<comm id="e2713" dep="e2898" from="2" to="1" size="256" />
+<comm id="e2716" dep="e2901" from="3" to="1" size="8192" />
+<comp id="e2907" dep="e2895,e2710,e2713,e2716" at="1" time="0" note="relax:halo lev=0 box=1" />
+<comm id="e2719" dep="e2892" from="0" to="2" size="8192" />
+<comm id="e2722" dep="e2895" from="1" to="2" size="256" />
+<comm id="e2725" dep="e2901" from="3" to="2" size="8192" />
+<comp id="e2910" dep="e2898,e2719,e2722,e2725" at="2" time="0" note="relax:halo lev=0 box=2" />
+<comm id="e2728" dep="e2892" from="0" to="3" size="256" />
+<comm id="e2731" dep="e2895" from="1" to="3" size="8192" />
+<comm id="e2734" dep="e2898" from="2" to="3" size="8192" />
+<comp id="e2913" dep="e2901,e2728,e2731,e2734" at="3" time="0" note="relax:halo lev=0 box=3" />
+<comp id="e2916" dep="e2904" at="0" time="1.43051e-06" note="relax:stencil lev=0 box=0" />
+<comp id="e2919" dep="e2907" at="1" time="1.43051e-06" note="relax:stencil lev=0 box=1" />
+<comp id="e2922" dep="e2910" at="2" time="1.43051e-06" note="relax:stencil lev=0 box=2" />
+<comp id="e2925" dep="e2913" at="3" time="1.43051e-06" note="relax:stencil lev=0 box=3" />
+<comp id="e2928" dep="e1548,e2916" at="0" time="9.53674e-07" note="relax:op lev=0 box=0" />
+<comp id="e2931" dep="e1551,e2919" at="1" time="9.53674e-07" note="relax:op lev=0 box=1" />
+<comp id="e2934" dep="e1554,e2922" at="2" time="9.53674e-07" note="relax:op lev=0 box=2" />
+<comp id="e2937" dep="e1557,e2925" at="3" time="9.53674e-07" note="relax:op lev=0 box=3" />
+<comp id="e2940" dep="e1476,e2928" at="0" time="9.53674e-07" note="mg_v:update lev=0 box=0" />
+<comp id="e2943" dep="e1479,e2931" at="1" time="9.53674e-07" note="mg_v:update lev=0 box=1" />
+<comp id="e2946" dep="e1482,e2934" at="2" time="9.53674e-07" note="mg_v:update lev=0 box=2" />
+<comp id="e2949" dep="e1485,e2937" at="3" time="9.53674e-07" note="mg_v:update lev=0 box=3" />
+<comm id="e2737" dep="e2943" from="1" to="0" size="8192" />
+<comm id="e2740" dep="e2946" from="2" to="0" size="8192" />
+<comm id="e2743" dep="e2949" from="3" to="0" size="256" />
+<comp id="e2952" dep="e2940,e2737,e2740,e2743" at="0" time="0" note="residual:halo lev=0 box=0" />
+<comm id="e2746" dep="e2940" from="0" to="1" size="8192" />
+<comm id="e2749" dep="e2946" from="2" to="1" size="256" />
+<comm id="e2752" dep="e2949" from="3" to="1" size="8192" />
+<comp id="e2955" dep="e2943,e2746,e2749,e2752" at="1" time="0" note="residual:halo lev=0 box=1" />
+<comm id="e2755" dep="e2940" from="0" to="2" size="8192" />
+<comm id="e2758" dep="e2943" from="1" to="2" size="256" />
+<comm id="e2761" dep="e2949" from="3" to="2" size="8192" />
+<comp id="e2958" dep="e2946,e2755,e2758,e2761" at="2" time="0" note="residual:halo lev=0 box=2" />
+<comm id="e2764" dep="e2940" from="0" to="3" size="256" />
+<comm id="e2767" dep="e2943" from="1" to="3" size="8192" />
+<comm id="e2770" dep="e2946" from="2" to="3" size="8192" />
+<comp id="e2961" dep="e2949,e2764,e2767,e2770" at="3" time="0" note="residual:halo lev=0 box=3" />
+<comp id="e2964" dep="e2952" at="0" time="1.43051e-06" note="residual:stencil lev=0 box=0" />
+<comp id="e2967" dep="e2955" at="1" time="1.43051e-06" note="residual:stencil lev=0 box=1" />
+<comp id="e2970" dep="e2958" at="2" time="1.43051e-06" note="residual:stencil lev=0 box=2" />
+<comp id="e2973" dep="e2961" at="3" time="1.43051e-06" note="residual:stencil lev=0 box=3" />
+<comp id="e2976" dep="e36,e2964" at="0" time="9.53674e-07" note="residual:op lev=0 box=0" />
+<comp id="e2979" dep="e39,e2967" at="1" time="9.53674e-07" note="residual:op lev=0 box=1" />
+<comp id="e2982" dep="e42,e2970" at="2" time="9.53674e-07" note="residual:op lev=0 box=2" />
+<comp id="e2985" dep="e45,e2973" at="3" time="9.53674e-07" note="residual:op lev=0 box=3" />
+<coll id="e26" dep="e2976,e2979,e2982,e2985" type="ALLREDUCE" team="0,1,2,3" size="8" />
+</events>

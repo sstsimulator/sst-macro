@@ -1,0 +1,14 @@
+#ifndef SSTMAC_INSIDE_STL
+#define SSTMAC_INSIDE_STL
+
+#include <sstmac/replacements/sstmac_pthread_clear.h>
+
+#include "@STL_HEADER_MEMORY_FULL_PATH@"
+#undef SSTMAC_INSIDE_STL
+
+#include <sstmac/replacements/sstmac_pthread_return.h>
+
+#else
+#include "@STL_HEADER_MEMORY_FULL_PATH@"
+#endif
+

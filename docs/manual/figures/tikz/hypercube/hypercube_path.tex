@@ -1,0 +1,37 @@
+\documentclass{article}
+
+\newcommand{\tikzLibFolder}{/Users/jjwilke/Programs/sstmacro/docs/manual/figures/tikz}
+
+\input{\tikzLibFolder/tikzlib.tex}
+
+\newcommand{\boxsize}{1cm}
+\newcommand{\textsize}{\Large}
+
+\begin{document}
+
+\begin{tikzpicture}
+\usetikzlibrary{calc}
+\boxGrid{4}{4}{2cm}{\boxsize}{\boxsize}{0cm,0cm}{}{}
+
+\connectHyperY{mesh14CxL}{mesh12CxL}{0.5cm}{very thick,->,red!50}
+\connectHyperX{mesh12TxC}{mesh32TxC}{0.5cm}{very thick,->,red!50}
+
+\connectHyperX{mesh14BxC}{mesh34BxC}{-0.5cm}{very thick,->,blue}
+\connectHyperY{mesh34CxR}{mesh32CxR}{-0.5cm}{very thick,->,blue}
+
+\myRectangle{fill=blue!30}{mesh14BxL}{\boxsize,\boxsize}
+\myRectangle{fill=green!30}{mesh12BxL}{\boxsize,\boxsize}
+\myRectangle{fill=red!30}{mesh32BxL}{\boxsize,\boxsize}
+\myRectangle{fill=green!30}{mesh34BxL}{\boxsize,\boxsize}
+
+
+\node at (mesh32Center) { \textsize 2,1 };
+\node at (mesh12Center) { \textsize 0,1 };
+\node at (mesh14Center) { \textsize 0,3 };
+\node at (mesh34Center) { \textsize 2,3 };
+
+
+\end{tikzpicture}
+
+\end{document}
+

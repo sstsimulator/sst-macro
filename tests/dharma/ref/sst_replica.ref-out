@@ -1,0 +1,21 @@
+WARNING: using null_memory_model object: this does not support detailed compute modeling
+ and is primarily used for debugging purposes or for experiments focused on network traffic
+Starting allreduce collective for domain rank 0, physical rank 0
+Starting allreduce collective for domain rank 2, physical rank 0
+Waiting on allreduce collective for domain rank 0, physical rank 0
+Starting allreduce collective for domain rank 1, physical rank 1
+Starting allreduce collective for domain rank 3, physical rank 1
+Starting allreduce collective for domain rank 5, physical rank 1
+Waiting on allreduce collective for domain rank 1, physical rank 1
+Starting allreduce collective for domain rank 4, physical rank 2
+Waiting on allreduce collective for domain rank 4, physical rank 2
+Waiting on allreduce collective for domain rank 3, physical rank 1
+test[0] = 0
+test[1] = 1
+test[2] = 0
+test[3] = 1
+test[4] = 2
+test[5] = 1
+Waiting on allreduce collective for domain rank 2, physical rank 0
+Waiting on allreduce collective for domain rank 5, physical rank 1
+Estimated total runtime of           0.00000740 seconds

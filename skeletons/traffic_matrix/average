@@ -1,0 +1,15 @@
+#! /usr/bin/env python
+
+import sys
+text = open(sys.argv[1]).read()
+
+import re
+matches = re.compile("throughput=\s+(\d+[.]\d+)").findall(text)
+
+sum = 0
+for m in matches:
+    sum += float(m)
+
+avg = sum / len(matches)
+print avg
+

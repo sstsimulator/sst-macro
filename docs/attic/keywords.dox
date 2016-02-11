@@ -1,0 +1,2344 @@
+/** \page keywords Keyword Listing for SST/macro
+
+Registered class types
+<ul>
+  <li> \ref registered_sstmac_hw_divider
+  <li> \ref registered_sstmac_hw_interconnect
+  <li> \ref registered_sstmac_hw_memorymodel
+  <li> \ref registered_sstmac_hw_networkinterface
+  <li> \ref registered_sstmac_hw_networkswitch
+  <li> \ref registered_sstmac_hw_node
+  <li> \ref registered_sstmac_hw_output_bw_arbitrator
+  <li> \ref registered_sstmac_hw_router
+  <li> \ref registered_sstmac_hw_topology
+  <li> \ref registered_sstmac_sw_allocationstrategy
+  <li> \ref registered_sstmac_sw_api
+  <li> \ref registered_sstmac_sw_app
+  <li> \ref registered_sstmac_sw_indexstrategy
+  <li> \ref registered_sstmac_sw_launcher
+  <li> \ref registered_sstmac_sw_mpi_implementation
+  <li> \ref registered_sstmac_sw_mpiqueue
+</ul>
+
+Keyword scopes
+<ul>
+  <li> \ref scope_exshmem_example_shared_memory
+  <li> \ref scope_global
+  <li> \ref scope_gtc_config_parameters
+  <li> \ref scope_gtc_gtc_main
+  <li> \ref scope_hpx_agas_single
+  <li> \ref scope_hpx_fibonacci_hpx_fibonacci
+  <li> \ref scope_hpx_hpx_app
+  <li> \ref scope_hpx_hpx_random_balancer
+  <li> \ref scope_hpx_hpx_runnable
+  <li> \ref scope_hpx_hpx_thread_manager
+  <li> \ref scope_hpx_rma_hpx_random_mem_access
+  <li> \ref scope_hpx_gtc_config_parameters
+  <li> \ref scope_hpx_hpccg_hpccg
+  <li> \ref scope_hpx_hpccg_hpccg_matrix
+  <li> \ref scope_luleshmodel_luleshapp
+  <li> \ref scope_lusweep_lumain
+  <li> \ref scope_matrix_simplemxm
+  <li> \ref scope_mini_actormatmul
+  <li> \ref scope_mini_lib_compute_minimd
+  <li> \ref scope_mini_minimd
+  <li> \ref scope_mini_mpi3d
+  <li> \ref scope_mini_systolicmxm
+  <li> \ref scope_sendrecv_sendrecv_skeleton
+  <li> \ref scope_sstmac_hw_butterfly
+  <li> \ref scope_sstmac_hw_circuitnic
+  <li> \ref scope_sstmac_hw_circuitswitch
+  <li> \ref scope_sstmac_hw_clos
+  <li> \ref scope_sstmac_hw_crossbar
+  <li> \ref scope_sstmac_hw_cycle_accurateswitch
+  <li> \ref scope_sstmac_hw_cycle_accurateswitch_packetinjector
+  <li> \ref scope_sstmac_hw_degradednode
+  <li> \ref scope_sstmac_hw_detailednode
+  <li> \ref scope_sstmac_hw_disk_controller
+  <li> \ref scope_sstmac_hw_dragonfly
+  <li> \ref scope_sstmac_hw_dragonflyrouter
+  <li> \ref scope_sstmac_hw_dragonflyrouter_ugal
+  <li> \ref scope_sstmac_hw_eigernode
+  <li> \ref scope_sstmac_hw_failure_config
+  <li> \ref scope_sstmac_hw_fastflower_ejector
+  <li> \ref scope_sstmac_hw_fastflower_injector
+  <li> \ref scope_sstmac_hw_fastflower_memory
+  <li> \ref scope_sstmac_hw_fastflower_switch
+  <li> \ref scope_sstmac_hw_fattree
+  <li> \ref scope_sstmac_hw_fattreerouter
+  <li> \ref scope_sstmac_hw_flattenedbutterfly
+  <li> \ref scope_sstmac_hw_hdtorus
+  <li> \ref scope_sstmac_hw_hdtorusrouter
+  <li> \ref scope_sstmac_hw_interconnect
+  <li> \ref scope_sstmac_hw_multinetwork
+  <li> \ref scope_sstmac_hw_multinic
+  <li> \ref scope_sstmac_hw_node
+  <li> \ref scope_sstmac_hw_numa_memorymodel
+  <li> \ref scope_sstmac_hw_packetswitch
+  <li> \ref scope_sstmac_hw_packetswitch_packetinjector
+  <li> \ref scope_sstmac_hw_simple_memorymodel
+  <li> \ref scope_sstmac_hw_simplenode
+  <li> \ref scope_sstmac_hw_size_divider
+  <li> \ref scope_sstmac_hw_switchinterconnect
+  <li> \ref scope_sstmac_hw_top_from_file
+  <li> \ref scope_sstmac_hw_topology
+  <li> \ref scope_sstmac_hw_train_memorymodel
+  <li> \ref scope_sstmac_hw_train_nic
+  <li> \ref scope_sstmac_hw_traininterconnect
+  <li> \ref scope_sstmac_hw_trainswitch
+  <li> \ref scope_sstmac_native_manager
+  <li> \ref scope_sstmac_native_manager_degraded
+  <li> \ref scope_sstmac_sw_api
+  <li> \ref scope_sstmac_sw_app_helloworld
+  <li> \ref scope_sstmac_sw_basic_mpi_implementation
+  <li> \ref scope_sstmac_sw_cartallocation
+  <li> \ref scope_sstmac_sw_dumpiindexer
+  <li> \ref scope_sstmac_sw_first_availableallocation
+  <li> \ref scope_sstmac_sw_hostname_allocation
+  <li> \ref scope_sstmac_sw_hostname_indexer
+  <li> \ref scope_sstmac_sw_launcher
+  <li> \ref scope_sstmac_sw_launcher_factory
+  <li> \ref scope_sstmac_sw_lib_compute_loops
+  <li> \ref scope_sstmac_sw_lib_compute_memmove
+  <li> \ref scope_sstmac_sw_mpi_testall
+  <li> \ref scope_sstmac_sw_mpiapi
+  <li> \ref scope_sstmac_sw_mpicongestion
+  <li> \ref scope_sstmac_sw_mpipairwise
+  <li> \ref scope_sstmac_sw_mpipingpong
+  <li> \ref scope_sstmac_sw_operatingsystem
+  <li> \ref scope_sstmac_sw_parsedumpi
+  <li> \ref scope_sstmac_sw_rackallocator
+  <li> \ref scope_sstmac_sw_randomallocation
+  <li> \ref scope_sstmac_sw_randomindexing
+  <li> \ref scope_sstmac_sw_rdmampi
+  <li> \ref scope_sstmac_sw_reallaunch
+  <li> \ref scope_sstmac_sw_sstmac_mpi_testall
+  <li> \ref scope_sstmac_sw_test_file_system
+  <li> \ref scope_sstmac_sw_test_mpi_barrier
+  <li> \ref scope_sstmac_sw_test_nppfs
+  <li> \ref scope_sstmac_sw_test_onesided
+  <li> \ref scope_sstmac_sw_test_os
+  <li> \ref scope_sstmac_sw_user_thread_mpiqueue
+  <li> \ref scope_sstmac_vis_vis_display
+  <li> \ref scope_sstmac_vis_vtk_engine
+  <li> \ref scope_sweep3d_sweep3dmain
+  <li> \ref scope_validation_mem_bw_test
+  <li> \ref scope_validation_mpi_bw_test
+   <li> \ref complete_index
+</ul>
+\section registered_sstmac_hw_divider Allowed values for sstmac::hw::divider
+<ul>
+  <li> <b>"size_divider"</b>: 
+</ul>
+
+\section registered_sstmac_hw_interconnect Allowed values for sstmac::hw::interconnect
+<ul>
+  <li> <b>"multi"</b>: 
+  <li> <b>"switch"</b>: Models the network interconnect as a topology of connected switches
+  <li> <b>"train"</b>: Models an interconnect that sends messages as a packet train
+</ul>
+
+\section registered_sstmac_hw_memorymodel Allowed values for sstmac::hw::memorymodel
+<ul>
+  <li> <b>"fastflower"</b>: Implements a fastflower memory model that models memory congestion as a flow
+  <li> <b>"numa"</b>: Implements a memory model compatible with a NUMA architecture.
+  <li> <b>"simple"</b>: Implements a simple memory model that is just a single link
+  <li> <b>"train"</b>: Implements a train memory model that models memory congestion as a packet-flow link
+</ul>
+
+\section registered_sstmac_hw_networkinterface Allowed values for sstmac::hw::networkinterface
+<ul>
+  <li> <b>"fastflower"</b>: implements a nic that models messages as a flow
+  <li> <b>"circuitnic"</b>: 
+  <li> <b>"multinic"</b>: 
+  <li> <b>"simplenic"</b>: simplest possible nic which only does basic read/write operations, more or less corresponding to ethernet + sockets
+  <li> <b>"train"</b>: implements a nic that models messages as a packet train
+</ul>
+
+\section registered_sstmac_hw_networkswitch Allowed values for sstmac::hw::networkswitch
+<ul>
+  <li> <b>"fastflower"</b>: 
+  <li> <b>"circuit"</b>: 
+  <li> <b>"cycle_accurate"</b>: 
+  <li> <b>"packet"</b>: 
+  <li> <b>"train"</b>: 
+</ul>
+
+\section registered_sstmac_hw_node Allowed values for sstmac::hw::node
+<ul>
+  <li> <b>"degraded"</b>: 
+  <li> <b>"detailed"</b>: 
+  <li> <b>"simple"</b>: simple node which implements basic OS/compute scheduling functionality
+  <li> <b>"eiger"</b>: eigernode contains an eiger processor capable of handling compute calls to eiger models
+</ul>
+
+\section registered_sstmac_hw_output_bw_arbitrator Allowed values for sstmac::hw::output_bw_arbitrator
+<ul>
+  <li> <b>"infinite_buffer"</b>: assumes an infinite input buffer that packets are arbitrated from
+  <li> <b>"double_buffer"</b>: assumes an infinite input AND output buffer that packets are arbitrated from
+  <li> <b>"fair"</b>: assigns a fair bw based solely on the number of packets waiting on the link
+  <li> <b>"throttle"</b>: assumes no congestion, but sets a maximum obtainable bandwidth
+  <li> <b>"packet"</b>: simulates a packet model within the packet-flow-train framework
+  <li> <b>"optimistic_packet"</b>: simulates a packet model with more optimistic forwarding within the packet-flow-train framework
+</ul>
+
+\section registered_sstmac_hw_router Allowed values for sstmac::hw::router
+<ul>
+  <li> <b>"butterfly"</b>: 
+  <li> <b>"clos"</b>: 
+  <li> <b>"crossbar"</b>: 
+  <li> <b>"dragonfly"</b>: 
+  <li> <b>"dragonfly_congestion"</b>: 
+  <li> <b>"dragonfly_nonminimal"</b>: 
+  <li> <b>"dragonfly_ugal"</b>: 
+  <li> <b>"fattree"</b>: 
+  <li> <b>"fattree_congestion"</b>: 
+  <li> <b>"fbfly"</b>: 
+  <li> <b>"torus"</b>: 
+  <li> <b>"top_from_file_djikstra"</b>: 
+</ul>
+
+\section registered_sstmac_hw_topology Allowed values for sstmac::hw::topology
+<ul>
+  <li> <b>"butterfly"</b>: 
+  <li> <b>"clos"</b>: 
+  <li> <b>"crossbar"</b>: 
+  <li> <b>"dragonfly"</b>: 
+  <li> <b>"fattree"</b>: 
+  <li> <b>"fbfly"</b>: 
+  <li> <b>"torus"</b>: hdtorus implements a high-dimension torus with an arbitrary number of dimensions
+  <li> <b>"top_from_file"</b>: top_from_file implements an arbitrary topology read from file
+</ul>
+
+\section registered_sstmac_sw_allocationstrategy Allowed values for sstmac::sw::allocationstrategy
+<ul>
+  <li> <b>"first_available"</b>: 
+  <li> <b>"random"</b>: 
+  <li> <b>"cart"</b>: 
+  <li> <b>"hostname"</b>: Given a file containing one hostname per line, maps task id i to line i+1 in the file [zero-based task ids, one-based file lines]
+</ul>
+
+\section registered_sstmac_sw_api Allowed values for sstmac::sw::api
+<ul>
+  <li> <b>"mpi"</b>: Create bindings for MPI runtime
+  <li> <b>"shmem"</b>: Create bindings for SHMEM runtime
+</ul>
+
+\section registered_sstmac_sw_app Allowed values for sstmac::sw::app
+<ul>
+  <li> <b>"actormatmul"</b>: application that runs an actor model matrix multiplication
+  <li> <b>"gtc"</b>: gyroknetic toroidal code
+  <li> <b>"lusweep"</b>: 
+  <li> <b>"lulesh"</b>: 
+  <li> <b>"minimd"</b>: miniapp for molecular dynamics
+  <li> <b>"mpi3d"</b>: 
+  <li> <b>"OSU_bandwidth"</b>: OSU bandwidth test for measuring inter/intra node bandwidth
+  <li> <b>"OSU_latency"</b>: OSU latency test for measuring inter/intra node latency
+  <li> <b>"hpx_fibonacci"</b>: 
+  <li> <b>"hpx_gtc"</b>: parallax version of gyrokinetic toroidal simulation
+  <li> <b>"hpx_hpccg"</b>: parallax version of HPCCG
+  <li> <b>"hpx_rma"</b>: 
+  <li> <b>"example_shared_memory"</b>: 
+  <li> <b>"simplemxm"</b>: 
+  <li> <b>"sweep3d"</b>: 
+  <li> <b>"systolicmxm"</b>: 
+  <li> <b>"mem_bw_test"</b>: 
+  <li> <b>"mpi_bw_test"</b>: 
+  <li> <b>"sendrecv"</b>: 
+  <li> <b>"C"</b>: 
+  <li> <b>"c++"</b>: default application for linking to external C++ skeleton apps
+  <li> <b>"f90"</b>: 
+  <li> <b>"hello"</b>: 
+  <li> <b>"global_test"</b>: 
+  <li> <b>"mpi_test_all"</b>: 
+  <li> <b>"MPI_congestion"</b>: 
+  <li> <b>"MPI_pairwise"</b>: 
+  <li> <b>"MPI_pingpong"</b>: 
+  <li> <b>"mpiprotocol"</b>: 
+  <li> <b>"SSTMAC_mpi_test_all"</b>: 
+  <li> <b>"test_compute"</b>: 
+  <li> <b>"test_compute_f"</b>: 
+  <li> <b>"test_file_system"</b>: 
+  <li> <b>"test_mpi_barrier"</b>: 
+  <li> <b>"test_nppfs"</b>: 
+  <li> <b>"test_onesided"</b>: 
+  <li> <b>"sstmac_test_os"</b>: test case for certain os features such as spawing threads
+  <li> <b>"sstmac_test_packet_train"</b>: test packet train interface
+  <li> <b>"parsedumpi"</b>: application for parsing and simulating dumpi traces
+  <li> <b>"test_compute_eiger"</b>: this test kernel constructs a set of dummy parameters and makes a single call to an eiger model
+</ul>
+
+\section registered_sstmac_sw_indexstrategy Allowed values for sstmac::sw::indexstrategy
+<ul>
+  <li> <b>"block"</b>: indexes nodes how?
+  <li> <b>"dumpi"</b>: indexes nodes based on hostname map file and hostname list in dumpi trace
+  <li> <b>"hostname"</b>: assigns tasks to nodes based on hostname map of topology and hostname list in file
+  <li> <b>"random"</b>: randomly assigns tasks to nodes
+  <li> <b>"round"</b>: indexes nodes how?
+</ul>
+
+\section registered_sstmac_sw_launcher Allowed values for sstmac::sw::launcher
+<ul>
+  <li> <b>"instant"</b>: 
+  <li> <b>"real"</b>: 
+</ul>
+
+\section registered_sstmac_sw_mpi_implementation Allowed values for sstmac::sw::mpi_implementation
+<ul>
+  <li> <b>"basic"</b>: A basic MPI [sockets] that has only two protocols: eager and rendezvous
+  <li> <b>"rdma"</b>: An MPI that uses RDMA pathways and has zero-copy semantics for both intra- and inter-node
+  <li> <b>"simple"</b>: The simplest possible MPI that does everything as a buffered, eager send
+</ul>
+
+\section registered_sstmac_sw_mpiqueue Allowed values for sstmac::sw::mpiqueue
+<ul>
+  <li> <b>"service"</b>: Run MPI as a separate service thread distinct from the application [distinct address space]
+  <li> <b>"user"</b>: Run MPI as a library within the application [same user address space]
+</ul>
+
+\section scope_exshmem_example_shared_memory exshmem::example_shared_memory
+
+<ul>
+  <li> \anchor subsect_sharedmemory_workers <b>          sharedmemory_workers</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_sharedmemory_workers <b>          sharedmemory_workers</b>: <i>        integer</i> [no default]
+</ul>
+
+\section scope_global global
+
+<ul>
+  <li> \anchor subsect_event_manager <b>                 event_manager</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_eventlist_nticks_window <b>       eventlist_nticks_window</b>: <i>           long</i> [default = one_million]
+  <li> \anchor subsect_eventlist_nwindows <b>            eventlist_nwindows</b>: <i>           long</i> [default = one_million]
+  <li> \anchor subsect_hpccg_data_file <b>               hpccg_data_file</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_hpccg_data_file <b>               hpccg_data_file</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_hpccg_data_file <b>               hpccg_data_file</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_hpccg_data_file <b>               hpccg_data_file</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_hpccg_nx <b>                      hpccg_nx</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_hpccg_nx <b>                      hpccg_nx</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_hpccg_nx <b>                      hpccg_nx</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_hpccg_nx <b>                      hpccg_nx</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_hpccg_ny <b>                      hpccg_ny</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_hpccg_ny <b>                      hpccg_ny</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_hpccg_ny <b>                      hpccg_ny</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_hpccg_ny <b>                      hpccg_ny</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_hpccg_nz <b>                      hpccg_nz</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_hpccg_nz <b>                      hpccg_nz</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_hpccg_nz <b>                      hpccg_nz</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_hpccg_nz <b>                      hpccg_nz</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_logger_params <b>                 logger_params</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_logger_params <b>                 logger_params</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_manager <b>                       manager</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_manager <b>                       manager</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_multisim_nproc <b>                multisim_nproc</b>: <i>        integer</i> [default = 1]
+  <li> \anchor subsect_network_bandwidth_link <b>        network_bandwidth_link</b>: <i>      bandwidth</i> [no default]
+  <li> \anchor subsect_osu_large_message_size <b>        osu_large_message_size</b>: <i>        integer</i> [default = large_message_size]
+  <li> \anchor subsect_osu_large_message_size <b>        osu_large_message_size</b>: <i>        integer</i> [default = large_message_size]
+  <li> \anchor subsect_osu_large_message_size <b>        osu_large_message_size</b>: <i>        integer</i> [default = large_message_size]
+  <li> \anchor subsect_osu_large_message_size <b>        osu_large_message_size</b>: <i>        integer</i> [default = large_message_size]
+  <li> \anchor subsect_osu_loop <b>                      osu_loop</b>: <i>        integer</i> [default = loop]
+  <li> \anchor subsect_osu_loop <b>                      osu_loop</b>: <i>        integer</i> [default = loop]
+  <li> \anchor subsect_osu_loop <b>                      osu_loop</b>: <i>        integer</i> [default = loop]
+  <li> \anchor subsect_osu_loop <b>                      osu_loop</b>: <i>        integer</i> [default = loop]
+  <li> \anchor subsect_osu_loop_large <b>                osu_loop_large</b>: <i>        integer</i> [default = loop_large]
+  <li> \anchor subsect_osu_loop_large <b>                osu_loop_large</b>: <i>        integer</i> [default = loop_large]
+  <li> \anchor subsect_osu_loop_large <b>                osu_loop_large</b>: <i>        integer</i> [default = loop_large]
+  <li> \anchor subsect_osu_loop_large <b>                osu_loop_large</b>: <i>        integer</i> [default = loop_large]
+  <li> \anchor subsect_osu_max_msg_size <b>              osu_max_msg_size</b>: <i>        integer</i> [default = max_msg_size]
+  <li> \anchor subsect_osu_max_msg_size <b>              osu_max_msg_size</b>: <i>        integer</i> [default = max_msg_size]
+  <li> \anchor subsect_osu_max_msg_size <b>              osu_max_msg_size</b>: <i>        integer</i> [default = max_msg_size]
+  <li> \anchor subsect_osu_max_msg_size <b>              osu_max_msg_size</b>: <i>        integer</i> [default = max_msg_size]
+  <li> \anchor subsect_osu_skip <b>                      osu_skip</b>: <i>        integer</i> [default = skip]
+  <li> \anchor subsect_osu_skip <b>                      osu_skip</b>: <i>        integer</i> [default = skip]
+  <li> \anchor subsect_osu_skip <b>                      osu_skip</b>: <i>        integer</i> [default = skip]
+  <li> \anchor subsect_osu_skip <b>                      osu_skip</b>: <i>        integer</i> [default = skip]
+  <li> \anchor subsect_osu_skip_large <b>                osu_skip_large</b>: <i>        integer</i> [default = skip_large]
+  <li> \anchor subsect_osu_skip_large <b>                osu_skip_large</b>: <i>        integer</i> [default = skip_large]
+  <li> \anchor subsect_osu_skip_large <b>                osu_skip_large</b>: <i>        integer</i> [default = skip_large]
+  <li> \anchor subsect_osu_skip_large <b>                osu_skip_large</b>: <i>        integer</i> [default = skip_large]
+  <li> \anchor subsect_osu_window_size <b>               osu_window_size</b>: <i>        integer</i> [default = window_size]
+  <li> \anchor subsect_osu_window_size <b>               osu_window_size</b>: <i>        integer</i> [default = window_size]
+  <li> \anchor subsect_osu_window_size_large <b>         osu_window_size_large</b>: <i>        integer</i> [default = window_size_large]
+  <li> \anchor subsect_osu_window_size_large <b>         osu_window_size_large</b>: <i>        integer</i> [default = window_size_large]
+  <li> \anchor subsect_sendrecv_message_size <b>         sendrecv_message_size</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_sendrecv_message_size <b>         sendrecv_message_size</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_sstmac_byte_alignment <b>         sstmac_byte_alignment</b>: <i>           long</i> [default = 16]
+  <li> \anchor subsect_sstmac_cxx_heap_size_mb <b>       sstmac_cxx_heap_size_mb</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_sstmac_cxx_page_size_mb <b>       sstmac_cxx_page_size_mb</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_stat_time_interval <b>            stat_time_interval</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_stat_time_interval <b>            stat_time_interval</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_timestamp_resolution <b>          timestamp_resolution</b>: <i>           long</i> [default = 1]
+  <li> \anchor subsect_timestamp_resolution <b>          timestamp_resolution</b>: <i>           long</i> [default = 1]
+  <li> \anchor subsect_vis_engine <b>                    vis_engine</b>: <i>         string</i> [no default]
+</ul>
+
+\section scope_gtc_config_parameters gtc::config_parameters
+
+<ul>
+  <li> \anchor subsect_gtc_main_a <b>                    gtc_main_a</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_a <b>                    gtc_main_a</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_a <b>                    gtc_main_a</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_a <b>                    gtc_main_a</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_a0 <b>                   gtc_main_a0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_a0 <b>                   gtc_main_a0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_a0 <b>                   gtc_main_a0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_a0 <b>                   gtc_main_a0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_a1 <b>                   gtc_main_a1</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_a1 <b>                   gtc_main_a1</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_a1 <b>                   gtc_main_a1</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_a1 <b>                   gtc_main_a1</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_aelectron <b>            gtc_main_aelectron</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_aelectron <b>            gtc_main_aelectron</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_aelectron <b>            gtc_main_aelectron</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_aelectron <b>            gtc_main_aelectron</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_aion <b>                 gtc_main_aion</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_aion <b>                 gtc_main_aion</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_aion <b>                 gtc_main_aion</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_aion <b>                 gtc_main_aion</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_b0 <b>                   gtc_main_b0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_b0 <b>                   gtc_main_b0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_b0 <b>                   gtc_main_b0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_b0 <b>                   gtc_main_b0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_edensity0 <b>            gtc_main_edensity0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_edensity0 <b>            gtc_main_edensity0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_edensity0 <b>            gtc_main_edensity0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_edensity0 <b>            gtc_main_edensity0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_fixed_Tprofile <b>       gtc_main_fixed_Tprofile</b>: <i>        boolean</i> [default = true]
+  <li> \anchor subsect_gtc_main_fixed_Tprofile <b>       gtc_main_fixed_Tprofile</b>: <i>        boolean</i> [default = true]
+  <li> \anchor subsect_gtc_main_fixed_Tprofile <b>       gtc_main_fixed_Tprofile</b>: <i>        boolean</i> [default = true]
+  <li> \anchor subsect_gtc_main_fixed_Tprofile <b>       gtc_main_fixed_Tprofile</b>: <i>        boolean</i> [default = true]
+  <li> \anchor subsect_gtc_main_flow0 <b>                gtc_main_flow0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_flow0 <b>                gtc_main_flow0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_flow0 <b>                gtc_main_flow0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_flow0 <b>                gtc_main_flow0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_flow1 <b>                gtc_main_flow1</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_flow1 <b>                gtc_main_flow1</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_flow1 <b>                gtc_main_flow1</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_flow1 <b>                gtc_main_flow1</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_flow2 <b>                gtc_main_flow2</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_flow2 <b>                gtc_main_flow2</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_flow2 <b>                gtc_main_flow2</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_flow2 <b>                gtc_main_flow2</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_iload <b>                gtc_main_iload</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_iload <b>                gtc_main_iload</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_iload <b>                gtc_main_iload</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_iload <b>                gtc_main_iload</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_irun <b>                 gtc_main_irun</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_irun <b>                 gtc_main_irun</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_irun <b>                 gtc_main_irun</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_irun <b>                 gtc_main_irun</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_kappan <b>               gtc_main_kappan</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_kappan <b>               gtc_main_kappan</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_kappan <b>               gtc_main_kappan</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_kappan <b>               gtc_main_kappan</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_kappate <b>              gtc_main_kappate</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_kappate <b>              gtc_main_kappate</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_kappate <b>              gtc_main_kappate</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_kappate <b>              gtc_main_kappate</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_kappati <b>              gtc_main_kappati</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_kappati <b>              gtc_main_kappati</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_kappati <b>              gtc_main_kappati</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_kappati <b>              gtc_main_kappati</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_mecell <b>               gtc_main_mecell</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mecell <b>               gtc_main_mecell</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mecell <b>               gtc_main_mecell</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mecell <b>               gtc_main_mecell</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_micell <b>               gtc_main_micell</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_micell <b>               gtc_main_micell</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_micell <b>               gtc_main_micell</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_micell <b>               gtc_main_micell</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mmode <b>                gtc_main_mmode</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_gtc_main_mmode <b>                gtc_main_mmode</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_gtc_main_mmode <b>                gtc_main_mmode</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_gtc_main_mmode <b>                gtc_main_mmode</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_gtc_main_mode00 <b>               gtc_main_mode00</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mode00 <b>               gtc_main_mode00</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mode00 <b>               gtc_main_mode00</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mode00 <b>               gtc_main_mode00</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mpsi <b>                 gtc_main_mpsi</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mpsi <b>                 gtc_main_mpsi</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mpsi <b>                 gtc_main_mpsi</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mpsi <b>                 gtc_main_mpsi</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_msnap <b>                gtc_main_msnap</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_msnap <b>                gtc_main_msnap</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_msnap <b>                gtc_main_msnap</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_msnap <b>                gtc_main_msnap</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mstep <b>                gtc_main_mstep</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mstep <b>                gtc_main_mstep</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mstep <b>                gtc_main_mstep</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mstep <b>                gtc_main_mstep</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mthetamax <b>            gtc_main_mthetamax</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mthetamax <b>            gtc_main_mthetamax</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mthetamax <b>            gtc_main_mthetamax</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mthetamax <b>            gtc_main_mthetamax</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mzetamax <b>             gtc_main_mzetamax</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mzetamax <b>             gtc_main_mzetamax</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mzetamax <b>             gtc_main_mzetamax</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mzetamax <b>             gtc_main_mzetamax</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_nbound <b>               gtc_main_nbound</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_nbound <b>               gtc_main_nbound</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_nbound <b>               gtc_main_nbound</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_nbound <b>               gtc_main_nbound</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_ncycle <b>               gtc_main_ncycle</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_ncycle <b>               gtc_main_ncycle</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_ncycle <b>               gtc_main_ncycle</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_ncycle <b>               gtc_main_ncycle</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_ndiag <b>                gtc_main_ndiag</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_ndiag <b>                gtc_main_ndiag</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_ndiag <b>                gtc_main_ndiag</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_ndiag <b>                gtc_main_ndiag</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_nhybrid <b>              gtc_main_nhybrid</b>: <i>        integer</i> [default = 0]
+  <li> \anchor subsect_gtc_main_nhybrid <b>              gtc_main_nhybrid</b>: <i>        integer</i> [default = 0]
+  <li> \anchor subsect_gtc_main_nhybrid <b>              gtc_main_nhybrid</b>: <i>        integer</i> [default = 0]
+  <li> \anchor subsect_gtc_main_nhybrid <b>              gtc_main_nhybrid</b>: <i>        integer</i> [default = 0]
+  <li> \anchor subsect_gtc_main_nmode <b>                gtc_main_nmode</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_gtc_main_nmode <b>                gtc_main_nmode</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_gtc_main_nmode <b>                gtc_main_nmode</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_gtc_main_nmode <b>                gtc_main_nmode</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_gtc_main_nonlinear <b>            gtc_main_nonlinear</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_nonlinear <b>            gtc_main_nonlinear</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_nonlinear <b>            gtc_main_nonlinear</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_nonlinear <b>            gtc_main_nonlinear</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_npartdom <b>             gtc_main_npartdom</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_npartdom <b>             gtc_main_npartdom</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_npartdom <b>             gtc_main_npartdom</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_npartdom <b>             gtc_main_npartdom</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_nptrack <b>              gtc_main_nptrack</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_nptrack <b>              gtc_main_nptrack</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_nptrack <b>              gtc_main_nptrack</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_nptrack <b>              gtc_main_nptrack</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_paranl <b>               gtc_main_paranl</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_paranl <b>               gtc_main_paranl</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_paranl <b>               gtc_main_paranl</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_paranl <b>               gtc_main_paranl</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_q0 <b>                   gtc_main_q0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_q0 <b>                   gtc_main_q0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_q0 <b>                   gtc_main_q0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_q0 <b>                   gtc_main_q0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_q1 <b>                   gtc_main_q1</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_q1 <b>                   gtc_main_q1</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_q1 <b>                   gtc_main_q1</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_q1 <b>                   gtc_main_q1</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_q2 <b>                   gtc_main_q2</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_q2 <b>                   gtc_main_q2</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_q2 <b>                   gtc_main_q2</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_q2 <b>                   gtc_main_q2</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_qelectron <b>            gtc_main_qelectron</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_qelectron <b>            gtc_main_qelectron</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_qelectron <b>            gtc_main_qelectron</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_qelectron <b>            gtc_main_qelectron</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_qion <b>                 gtc_main_qion</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_qion <b>                 gtc_main_qion</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_qion <b>                 gtc_main_qion</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_qion <b>                 gtc_main_qion</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_r0 <b>                   gtc_main_r0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_r0 <b>                   gtc_main_r0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_r0 <b>                   gtc_main_r0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_r0 <b>                   gtc_main_r0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_rc <b>                   gtc_main_rc</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_rc <b>                   gtc_main_rc</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_rc <b>                   gtc_main_rc</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_rc <b>                   gtc_main_rc</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_rng_control <b>          gtc_main_rng_control</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_gtc_main_rng_control <b>          gtc_main_rng_control</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_gtc_main_rng_control <b>          gtc_main_rng_control</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_gtc_main_rng_control <b>          gtc_main_rng_control</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_gtc_main_rw <b>                   gtc_main_rw</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_rw <b>                   gtc_main_rw</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_rw <b>                   gtc_main_rw</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_rw <b>                   gtc_main_rw</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_tauii <b>                gtc_main_tauii</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_tauii <b>                gtc_main_tauii</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_tauii <b>                gtc_main_tauii</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_tauii <b>                gtc_main_tauii</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_temperature <b>          gtc_main_temperature</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_temperature <b>          gtc_main_temperature</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_temperature <b>          gtc_main_temperature</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_temperature <b>          gtc_main_temperature</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_tite <b>                 gtc_main_tite</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_tite <b>                 gtc_main_tite</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_tite <b>                 gtc_main_tite</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_tite <b>                 gtc_main_tite</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_track_particles <b>      gtc_main_track_particles</b>: <i>        boolean</i> [no default]
+  <li> \anchor subsect_gtc_main_track_particles <b>      gtc_main_track_particles</b>: <i>        boolean</i> [no default]
+  <li> \anchor subsect_gtc_main_track_particles <b>      gtc_main_track_particles</b>: <i>        boolean</i> [no default]
+  <li> \anchor subsect_gtc_main_track_particles <b>      gtc_main_track_particles</b>: <i>        boolean</i> [no default]
+  <li> \anchor subsect_gtc_main_tstep <b>                gtc_main_tstep</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_tstep <b>                gtc_main_tstep</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_tstep <b>                gtc_main_tstep</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_tstep <b>                gtc_main_tstep</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_umax <b>                 gtc_main_umax</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_umax <b>                 gtc_main_umax</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_umax <b>                 gtc_main_umax</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_umax <b>                 gtc_main_umax</b>: <i>         double</i> [no default]
+</ul>
+
+\section scope_gtc_gtc_main gtc::gtc_main
+
+<ul>
+  <li> \anchor subsect_gtc_checkpoint <b>                gtc_checkpoint</b>: <i>        boolean</i> [default = false]
+  <li> \anchor subsect_gtc_checkpoint <b>                gtc_checkpoint</b>: <i>        boolean</i> [default = false]
+  <li> \anchor subsect_gtc_checkpoint <b>                gtc_checkpoint</b>: <i>        boolean</i> [default = false]
+  <li> \anchor subsect_gtc_checkpoint <b>                gtc_checkpoint</b>: <i>        boolean</i> [default = false]
+  <li> \anchor subsect_gtc_main_nthreads <b>             gtc_main_nthreads</b>: <i>        integer</i> [default = 1]
+  <li> \anchor subsect_gtc_main_nthreads <b>             gtc_main_nthreads</b>: <i>        integer</i> [default = 1]
+  <li> \anchor subsect_gtc_main_nthreads <b>             gtc_main_nthreads</b>: <i>        integer</i> [default = 1]
+  <li> \anchor subsect_gtc_main_nthreads <b>             gtc_main_nthreads</b>: <i>        integer</i> [default = 1]
+</ul>
+
+\section scope_hpx_agas_single hpx::agas_single
+
+<ul>
+  <li> \anchor subsect_hpx_agas_server_node <b>          hpx_agas_server_node</b>: <i>           long</i> [default = 0]
+</ul>
+
+\section scope_hpx_fibonacci_hpx_fibonacci hpx::fibonacci::hpx_fibonacci
+Inherits from: \ref scope_hpx_hpx_app
+
+<ul>
+  <li> \anchor subsect_hpx_fibonacci_n_value <b>         hpx_fibonacci_n_value</b>: <i>           long</i> [default = 10]
+  <li> \anchor subsect_hpx_fibonacci_n_value <b>         hpx_fibonacci_n_value</b>: <i>           long</i> [default = 10]
+</ul>
+
+\section scope_hpx_hpx_app hpx::hpx_app
+Inherits from: \ref scope_hpx_hpx_runnable
+
+<ul>
+  <li> \anchor subsect_hpx_agas <b>                      hpx_agas</b>: <i>         string</i> [no default]
+</ul>
+
+\section scope_hpx_hpx_random_balancer hpx::hpx_random_balancer
+
+<ul>
+  <li> \anchor subsect_hpx_lb_threshold <b>              hpx_lb_threshold</b>: <i>         double</i> [no default]
+</ul>
+
+\section scope_hpx_hpx_runnable hpx::hpx_runnable
+
+<ul>
+  <li> \anchor subsect_hpx_thread_creation <b>           hpx_thread_creation</b>: <i>         double</i> [default = 1e-6]
+  <li> \anchor subsect_hpx_thread_swap_fast <b>          hpx_thread_swap_fast</b>: <i>         double</i> [default = 5e-9]
+  <li> \anchor subsect_hpx_thread_swap_from_mem <b>      hpx_thread_swap_from_mem</b>: <i>         double</i> [default = 1e-7]
+</ul>
+
+\section scope_hpx_hpx_thread_manager hpx::hpx_thread_manager
+
+<ul>
+  <li> \anchor subsect_hpx_lb_time <b>                   hpx_lb_time</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_hpx_load_balancer <b>             hpx_load_balancer</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_hpx_swaps_per_core <b>            hpx_swaps_per_core</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_node_cores <b>                    node_cores</b>: <i>        integer</i> [no default]
+</ul>
+
+\section scope_hpx_rma_hpx_random_mem_access hpx::rma::hpx_random_mem_access
+Inherits from: \ref scope_hpx_hpx_app
+
+<ul>
+  <li> \anchor subsect_hpx_rma_array_size <b>            hpx_rma_array_size</b>: <i>        integer</i> [default = 4]
+  <li> \anchor subsect_hpx_rma_array_size <b>            hpx_rma_array_size</b>: <i>        integer</i> [default = 4]
+  <li> \anchor subsect_hpx_rma_iterations <b>            hpx_rma_iterations</b>: <i>        integer</i> [default = 3]
+  <li> \anchor subsect_hpx_rma_iterations <b>            hpx_rma_iterations</b>: <i>        integer</i> [default = 3]
+  <li> \anchor subsect_hpx_rma_seed <b>                  hpx_rma_seed</b>: <i>        integer</i> [default = 0]
+  <li> \anchor subsect_hpx_rma_seed <b>                  hpx_rma_seed</b>: <i>        integer</i> [default = 0]
+</ul>
+
+\section scope_hpx_gtc_config_parameters hpx_gtc::config_parameters
+
+<ul>
+  <li> \anchor subsect_gtc_main_a <b>                    gtc_main_a</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_a <b>                    gtc_main_a</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_a0 <b>                   gtc_main_a0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_a0 <b>                   gtc_main_a0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_a1 <b>                   gtc_main_a1</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_a1 <b>                   gtc_main_a1</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_aelectron <b>            gtc_main_aelectron</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_aelectron <b>            gtc_main_aelectron</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_aion <b>                 gtc_main_aion</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_aion <b>                 gtc_main_aion</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_b0 <b>                   gtc_main_b0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_b0 <b>                   gtc_main_b0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_edensity0 <b>            gtc_main_edensity0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_edensity0 <b>            gtc_main_edensity0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_fixed_Tprofile <b>       gtc_main_fixed_Tprofile</b>: <i>        boolean</i> [default = true]
+  <li> \anchor subsect_gtc_main_fixed_Tprofile <b>       gtc_main_fixed_Tprofile</b>: <i>        boolean</i> [default = true]
+  <li> \anchor subsect_gtc_main_flow0 <b>                gtc_main_flow0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_flow0 <b>                gtc_main_flow0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_flow1 <b>                gtc_main_flow1</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_flow1 <b>                gtc_main_flow1</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_flow2 <b>                gtc_main_flow2</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_flow2 <b>                gtc_main_flow2</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_iload <b>                gtc_main_iload</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_iload <b>                gtc_main_iload</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_irun <b>                 gtc_main_irun</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_irun <b>                 gtc_main_irun</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_kappan <b>               gtc_main_kappan</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_kappan <b>               gtc_main_kappan</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_kappate <b>              gtc_main_kappate</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_kappate <b>              gtc_main_kappate</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_kappati <b>              gtc_main_kappati</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_kappati <b>              gtc_main_kappati</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_mecell <b>               gtc_main_mecell</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mecell <b>               gtc_main_mecell</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_micell <b>               gtc_main_micell</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_micell <b>               gtc_main_micell</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mmode <b>                gtc_main_mmode</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_gtc_main_mmode <b>                gtc_main_mmode</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_gtc_main_mode00 <b>               gtc_main_mode00</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mode00 <b>               gtc_main_mode00</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mpsi <b>                 gtc_main_mpsi</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mpsi <b>                 gtc_main_mpsi</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_msnap <b>                gtc_main_msnap</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_msnap <b>                gtc_main_msnap</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mstep <b>                gtc_main_mstep</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mstep <b>                gtc_main_mstep</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mthetamax <b>            gtc_main_mthetamax</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mthetamax <b>            gtc_main_mthetamax</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mzetamax <b>             gtc_main_mzetamax</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_mzetamax <b>             gtc_main_mzetamax</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_nbound <b>               gtc_main_nbound</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_nbound <b>               gtc_main_nbound</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_ncycle <b>               gtc_main_ncycle</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_ncycle <b>               gtc_main_ncycle</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_ndiag <b>                gtc_main_ndiag</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_ndiag <b>                gtc_main_ndiag</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_nhybrid <b>              gtc_main_nhybrid</b>: <i>        integer</i> [default = 0]
+  <li> \anchor subsect_gtc_main_nhybrid <b>              gtc_main_nhybrid</b>: <i>        integer</i> [default = 0]
+  <li> \anchor subsect_gtc_main_nmode <b>                gtc_main_nmode</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_gtc_main_nmode <b>                gtc_main_nmode</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_gtc_main_nonlinear <b>            gtc_main_nonlinear</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_nonlinear <b>            gtc_main_nonlinear</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_npartdom <b>             gtc_main_npartdom</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_npartdom <b>             gtc_main_npartdom</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_nptrack <b>              gtc_main_nptrack</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_nptrack <b>              gtc_main_nptrack</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_gtc_main_paranl <b>               gtc_main_paranl</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_paranl <b>               gtc_main_paranl</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_q0 <b>                   gtc_main_q0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_q0 <b>                   gtc_main_q0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_q1 <b>                   gtc_main_q1</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_q1 <b>                   gtc_main_q1</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_q2 <b>                   gtc_main_q2</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_q2 <b>                   gtc_main_q2</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_qelectron <b>            gtc_main_qelectron</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_qelectron <b>            gtc_main_qelectron</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_qion <b>                 gtc_main_qion</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_qion <b>                 gtc_main_qion</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_r0 <b>                   gtc_main_r0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_r0 <b>                   gtc_main_r0</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_rc <b>                   gtc_main_rc</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_rc <b>                   gtc_main_rc</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_rng_control <b>          gtc_main_rng_control</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_gtc_main_rng_control <b>          gtc_main_rng_control</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_gtc_main_rw <b>                   gtc_main_rw</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_rw <b>                   gtc_main_rw</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_tauii <b>                gtc_main_tauii</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_tauii <b>                gtc_main_tauii</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_temperature <b>          gtc_main_temperature</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_temperature <b>          gtc_main_temperature</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_tite <b>                 gtc_main_tite</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_tite <b>                 gtc_main_tite</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_track_particles <b>      gtc_main_track_particles</b>: <i>        boolean</i> [no default]
+  <li> \anchor subsect_gtc_main_track_particles <b>      gtc_main_track_particles</b>: <i>        boolean</i> [no default]
+  <li> \anchor subsect_gtc_main_tstep <b>                gtc_main_tstep</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_tstep <b>                gtc_main_tstep</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_umax <b>                 gtc_main_umax</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_main_umax <b>                 gtc_main_umax</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_gtc_ntoroidal <b>                 gtc_ntoroidal</b>: <i>        integer</i> [default = numberpe_ / npartdom_]
+  <li> \anchor subsect_gtc_ntoroidal <b>                 gtc_ntoroidal</b>: <i>        integer</i> [default = numberpe_ / npartdom_]
+</ul>
+
+\section scope_hpx_hpccg_hpccg hpx_hpccg::hpccg
+Inherits from: \ref scope_hpx_hpx_app
+
+<ul>
+  <li> \anchor subsect_hpccg_domains <b>                 hpccg_domains</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_hpccg_domains <b>                 hpccg_domains</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_hpccg_nx <b>                      hpccg_nx</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_hpccg_nx <b>                      hpccg_nx</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_hpccg_ny <b>                      hpccg_ny</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_hpccg_ny <b>                      hpccg_ny</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_hpccg_nz <b>                      hpccg_nz</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_hpccg_nz <b>                      hpccg_nz</b>: <i>        integer</i> [no default]
+</ul>
+
+\section scope_hpx_hpccg_hpccg_matrix hpx_hpccg::hpccg::matrix
+
+<ul>
+  <li> \anchor subsect_hpccg_data_file <b>               hpccg_data_file</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_hpccg_data_file <b>               hpccg_data_file</b>: <i>         string</i> [no default]
+</ul>
+
+\section scope_luleshmodel_luleshapp luleshmodel::luleshapp
+
+<ul>
+  <li> \anchor subsect_SPTL_APPLY_MATERIAL_PROP_ELEM <b> SPTL_APPLY_MATERIAL_PROP_ELEM</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_APPLY_MATERIAL_PROP_ELEM <b> SPTL_APPLY_MATERIAL_PROP_ELEM</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_ACCEL_NODES <b>         SPTL_CALC_ACCEL_NODES</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_ACCEL_NODES <b>         SPTL_CALC_ACCEL_NODES</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_COURANT_ELEM <b>        SPTL_CALC_COURANT_ELEM</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_COURANT_ELEM <b>        SPTL_CALC_COURANT_ELEM</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_ENERGY_FOR_ELEMS <b>    SPTL_CALC_ENERGY_FOR_ELEMS</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_ENERGY_FOR_ELEMS <b>    SPTL_CALC_ENERGY_FOR_ELEMS</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_FB_HOURGLASS_ELEM <b>   SPTL_CALC_FB_HOURGLASS_ELEM</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_FB_HOURGLASS_ELEM <b>   SPTL_CALC_FB_HOURGLASS_ELEM</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_HOURGLASS_ELEMS <b>     SPTL_CALC_HOURGLASS_ELEMS</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_HOURGLASS_ELEMS <b>     SPTL_CALC_HOURGLASS_ELEMS</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_HYDRO_CONSTRAINT_ELEM <b>SPTL_CALC_HYDRO_CONSTRAINT_ELEM</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_HYDRO_CONSTRAINT_ELEM <b>SPTL_CALC_HYDRO_CONSTRAINT_ELEM</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_KINEMATICS_ELEM <b>     SPTL_CALC_KINEMATICS_ELEM</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_KINEMATICS_ELEM <b>     SPTL_CALC_KINEMATICS_ELEM</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_LAGRANGE_ELEMENTS <b>   SPTL_CALC_LAGRANGE_ELEMENTS</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_LAGRANGE_ELEMENTS <b>   SPTL_CALC_LAGRANGE_ELEMENTS</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_MONOTONIC_Q_GRADIENT_ELEM <b>SPTL_CALC_MONOTONIC_Q_GRADIENT_ELEM</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_MONOTONIC_Q_GRADIENT_ELEM <b>SPTL_CALC_MONOTONIC_Q_GRADIENT_ELEM</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_MONOTONIC_Q_REGION_ELEM <b>SPTL_CALC_MONOTONIC_Q_REGION_ELEM</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_MONOTONIC_Q_REGION_ELEM <b>SPTL_CALC_MONOTONIC_Q_REGION_ELEM</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_POSITION_NODES <b>      SPTL_CALC_POSITION_NODES</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_POSITION_NODES <b>      SPTL_CALC_POSITION_NODES</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_PRESSURE_ELEM <b>       SPTL_CALC_PRESSURE_ELEM</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_PRESSURE_ELEM <b>       SPTL_CALC_PRESSURE_ELEM</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_SOUND_SPEED_ELEM <b>    SPTL_CALC_SOUND_SPEED_ELEM</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_SOUND_SPEED_ELEM <b>    SPTL_CALC_SOUND_SPEED_ELEM</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_VEL_NODES <b>           SPTL_CALC_VEL_NODES</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_CALC_VEL_NODES <b>           SPTL_CALC_VEL_NODES</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_EVAL_EOS_COMPRESS <b>        SPTL_EVAL_EOS_COMPRESS</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_EVAL_EOS_COMPRESS <b>        SPTL_EVAL_EOS_COMPRESS</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_INTEGRATE_STRESS_ELEMS <b>   SPTL_INTEGRATE_STRESS_ELEMS</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_INTEGRATE_STRESS_ELEMS <b>   SPTL_INTEGRATE_STRESS_ELEMS</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_UPDATE_VOL_ELEM <b>          SPTL_UPDATE_VOL_ELEM</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_SPTL_UPDATE_VOL_ELEM <b>          SPTL_UPDATE_VOL_ELEM</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_lulesh_iter <b>                   lulesh_iter</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_lulesh_iter <b>                   lulesh_iter</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_lulesh_nx <b>                     lulesh_nx</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_lulesh_nx <b>                     lulesh_nx</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_lulesh_ny <b>                     lulesh_ny</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_lulesh_ny <b>                     lulesh_ny</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_lulesh_nz <b>                     lulesh_nz</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_lulesh_nz <b>                     lulesh_nz</b>: <i>        integer</i> [no default]
+</ul>
+
+\section scope_lusweep_lumain lusweep::lumain
+
+<ul>
+  <li> \anchor subsect_lusweep_blts <b>                  lusweep_blts</b>: <i>         double</i> [default = 1e-6]
+  <li> \anchor subsect_lusweep_blts <b>                  lusweep_blts</b>: <i>         double</i> [default = 1e-6]
+  <li> \anchor subsect_lusweep_buts <b>                  lusweep_buts</b>: <i>         double</i> [default = 1e-6]
+  <li> \anchor subsect_lusweep_buts <b>                  lusweep_buts</b>: <i>         double</i> [default = 1e-6]
+  <li> \anchor subsect_lusweep_inorm <b>                 lusweep_inorm</b>: <i>        integer</i> [default = 250]
+  <li> \anchor subsect_lusweep_inorm <b>                 lusweep_inorm</b>: <i>        integer</i> [default = 250]
+  <li> \anchor subsect_lusweep_itr <b>                   lusweep_itr</b>: <i>        integer</i> [default = 250]
+  <li> \anchor subsect_lusweep_itr <b>                   lusweep_itr</b>: <i>        integer</i> [default = 250]
+  <li> \anchor subsect_lusweep_jacld <b>                 lusweep_jacld</b>: <i>         double</i> [default = 1e-6]
+  <li> \anchor subsect_lusweep_jacld <b>                 lusweep_jacld</b>: <i>         double</i> [default = 1e-6]
+  <li> \anchor subsect_lusweep_jacu <b>                  lusweep_jacu</b>: <i>         double</i> [default = 1e-6]
+  <li> \anchor subsect_lusweep_jacu <b>                  lusweep_jacu</b>: <i>         double</i> [default = 1e-6]
+  <li> \anchor subsect_lusweep_nx <b>                    lusweep_nx</b>: <i>        integer</i> [default = 64]
+  <li> \anchor subsect_lusweep_nx <b>                    lusweep_nx</b>: <i>        integer</i> [default = 64]
+  <li> \anchor subsect_lusweep_ny <b>                    lusweep_ny</b>: <i>        integer</i> [default = 64]
+  <li> \anchor subsect_lusweep_ny <b>                    lusweep_ny</b>: <i>        integer</i> [default = 64]
+  <li> \anchor subsect_lusweep_nz <b>                    lusweep_nz</b>: <i>        integer</i> [default = 64]
+  <li> \anchor subsect_lusweep_nz <b>                    lusweep_nz</b>: <i>        integer</i> [default = 64]
+  <li> \anchor subsect_lusweep_rhs1 <b>                  lusweep_rhs1</b>: <i>         double</i> [default = 1e-6]
+  <li> \anchor subsect_lusweep_rhs1 <b>                  lusweep_rhs1</b>: <i>         double</i> [default = 1e-6]
+  <li> \anchor subsect_lusweep_rhs2 <b>                  lusweep_rhs2</b>: <i>         double</i> [default = 1e-6]
+  <li> \anchor subsect_lusweep_rhs2 <b>                  lusweep_rhs2</b>: <i>         double</i> [default = 1e-6]
+  <li> \anchor subsect_lusweep_rhs3 <b>                  lusweep_rhs3</b>: <i>         double</i> [default = 1e-6]
+  <li> \anchor subsect_lusweep_rhs3 <b>                  lusweep_rhs3</b>: <i>         double</i> [default = 1e-6]
+  <li> \anchor subsect_lusweep_rhs4 <b>                  lusweep_rhs4</b>: <i>         double</i> [default = 1e-6]
+  <li> \anchor subsect_lusweep_rhs4 <b>                  lusweep_rhs4</b>: <i>         double</i> [default = 1e-6]
+</ul>
+
+\section scope_matrix_simplemxm matrix::simplemxm
+
+<ul>
+  <li> \anchor subsect_simplemxm_matrix_order <b>        simplemxm_matrix_order</b>: <i>           long</i> [default = 100]
+  <li> \anchor subsect_simplemxm_matrix_order <b>        simplemxm_matrix_order</b>: <i>           long</i> [default = 100]
+</ul>
+
+\section scope_mini_actormatmul mini::actormatmul
+
+<ul>
+  <li> \anchor subsect_actormatmul_computors <b>         actormatmul_computors</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_actormatmul_computors <b>         actormatmul_computors</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_actormatmul_granularity <b>       actormatmul_granularity</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_actormatmul_granularity <b>       actormatmul_granularity</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_actormatmul_matrix <b>            actormatmul_matrix</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_actormatmul_matrix <b>            actormatmul_matrix</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_actormatmul_prefetch <b>          actormatmul_prefetch</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_actormatmul_prefetch <b>          actormatmul_prefetch</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_actormatmul_threads <b>           actormatmul_threads</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_actormatmul_threads <b>           actormatmul_threads</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_actormatmul_time_per_FMA <b>      actormatmul_time_per_FMA</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_actormatmul_time_per_FMA <b>      actormatmul_time_per_FMA</b>: <i>      timestamp</i> [no default]
+</ul>
+
+\section scope_mini_lib_compute_minimd mini::lib_compute_minimd
+
+<ul>
+  <li> \anchor subsect_lib_compute_loops_enable <b>      lib_compute_loops_enable</b>: <i>        boolean</i> [no default]
+  <li> \anchor subsect_lib_compute_loops_enable <b>      lib_compute_loops_enable</b>: <i>        boolean</i> [no default]
+  <li> \anchor subsect_lib_compute_loops_enable <b>      lib_compute_loops_enable</b>: <i>        boolean</i> [no default]
+  <li> \anchor subsect_lib_compute_loops_enable <b>      lib_compute_loops_enable</b>: <i>        boolean</i> [no default]
+</ul>
+
+\section scope_mini_minimd mini::minimd
+
+<ul>
+  <li> \anchor subsect_minimd_Fclear_nl <b>              minimd_Fclear_nl</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_Fclear_nl <b>              minimd_Fclear_nl</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_Fscatter_coef <b>          minimd_Fscatter_coef</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_Fscatter_coef <b>          minimd_Fscatter_coef</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_Fscatter_offset <b>        minimd_Fscatter_offset</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_Fscatter_offset <b>        minimd_Fscatter_offset</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_Iapply_nl <b>              minimd_Iapply_nl</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_Iapply_nl <b>              minimd_Iapply_nl</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_Imove_nl <b>               minimd_Imove_nl</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_Imove_nl <b>               minimd_Imove_nl</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_Nbinatoms_nl <b>           minimd_Nbinatoms_nl</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_Nbinatoms_nl <b>           minimd_Nbinatoms_nl</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_Nbuild_nl1 <b>             minimd_Nbuild_nl1</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_Nbuild_nl1 <b>             minimd_Nbuild_nl1</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_Nbuild_nl2 <b>             minimd_Nbuild_nl2</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_Nbuild_nl2 <b>             minimd_Nbuild_nl2</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_Nbuild_nl3 <b>             minimd_Nbuild_nl3</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_Nbuild_nl3 <b>             minimd_Nbuild_nl3</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_Tenergy_coef <b>           minimd_Tenergy_coef</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_Tenergy_coef <b>           minimd_Tenergy_coef</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_Tenergy_offset <b>         minimd_Tenergy_offset</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_Tenergy_offset <b>         minimd_Tenergy_offset</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_Tpressure_nl <b>           minimd_Tpressure_nl</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_Tpressure_nl <b>           minimd_Tpressure_nl</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_Ttemperature_nl <b>        minimd_Ttemperature_nl</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_Ttemperature_nl <b>        minimd_Ttemperature_nl</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_atom_frac_scat <b>         minimd_atom_frac_scat</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_atom_frac_scat <b>         minimd_atom_frac_scat</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_atom_nghostavg <b>         minimd_atom_nghostavg</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_atom_nghostavg <b>         minimd_atom_nghostavg</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_atom_ratio_neighbors <b>   minimd_atom_ratio_neighbors</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_atom_ratio_neighbors <b>   minimd_atom_ratio_neighbors</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_bins_x <b>                 minimd_bins_x</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_bins_x <b>                 minimd_bins_x</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_bins_x <b>                 minimd_bins_x</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_bins_x <b>                 minimd_bins_x</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_bins_y <b>                 minimd_bins_y</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_bins_y <b>                 minimd_bins_y</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_bins_y <b>                 minimd_bins_y</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_bins_y <b>                 minimd_bins_y</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_bins_z <b>                 minimd_bins_z</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_bins_z <b>                 minimd_bins_z</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_bins_z <b>                 minimd_bins_z</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_bins_z <b>                 minimd_bins_z</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_cutoff_inner <b>           minimd_cutoff_inner</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_cutoff_inner <b>           minimd_cutoff_inner</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_cutoff_inner <b>           minimd_cutoff_inner</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_cutoff_inner <b>           minimd_cutoff_inner</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_cutoff_outer <b>           minimd_cutoff_outer</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_cutoff_outer <b>           minimd_cutoff_outer</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_cutoff_outer <b>           minimd_cutoff_outer</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_cutoff_outer <b>           minimd_cutoff_outer</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_density <b>                minimd_density</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_density <b>                minimd_density</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_density <b>                minimd_density</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_density <b>                minimd_density</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_neighbor_avgallocs <b>     minimd_neighbor_avgallocs</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_neighbor_avgallocs <b>     minimd_neighbor_avgallocs</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_neighbor_avgtripsj1 <b>    minimd_neighbor_avgtripsj1</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_neighbor_avgtripsj1 <b>    minimd_neighbor_avgtripsj1</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_neighbor_avgtripsj2 <b>    minimd_neighbor_avgtripsj2</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_neighbor_avgtripsj2 <b>    minimd_neighbor_avgtripsj2</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_neighbor_avgtripsj3 <b>    minimd_neighbor_avgtripsj3</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_neighbor_avgtripsj3 <b>    minimd_neighbor_avgtripsj3</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_neighbor_mbins <b>         minimd_neighbor_mbins</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_neighbor_mbins <b>         minimd_neighbor_mbins</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_neighbor_nstencil <b>      minimd_neighbor_nstencil</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_neighbor_nstencil <b>      minimd_neighbor_nstencil</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_ntimes <b>                 minimd_ntimes</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_ntimes <b>                 minimd_ntimes</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_ntimes <b>                 minimd_ntimes</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_ntimes <b>                 minimd_ntimes</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_nx <b>                     minimd_nx</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_nx <b>                     minimd_nx</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_nx <b>                     minimd_nx</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_nx <b>                     minimd_nx</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_ny <b>                     minimd_ny</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_ny <b>                     minimd_ny</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_ny <b>                     minimd_ny</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_ny <b>                     minimd_ny</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_nz <b>                     minimd_nz</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_nz <b>                     minimd_nz</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_nz <b>                     minimd_nz</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_nz <b>                     minimd_nz</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_reneighbor <b>             minimd_reneighbor</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_reneighbor <b>             minimd_reneighbor</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_reneighbor <b>             minimd_reneighbor</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_reneighbor <b>             minimd_reneighbor</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_temp <b>                   minimd_temp</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_temp <b>                   minimd_temp</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_temp <b>                   minimd_temp</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_temp <b>                   minimd_temp</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_thermo <b>                 minimd_thermo</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_thermo <b>                 minimd_thermo</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_thermo <b>                 minimd_thermo</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_thermo <b>                 minimd_thermo</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_minimd_timestep <b>               minimd_timestep</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_timestep <b>               minimd_timestep</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_timestep <b>               minimd_timestep</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_minimd_timestep <b>               minimd_timestep</b>: <i>         double</i> [no default]
+</ul>
+
+\section scope_mini_mpi3d mini::mpi3d
+
+<ul>
+  <li> \anchor subsect_mpi3d_nx <b>                      mpi3d_nx</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_mpi3d_nx <b>                      mpi3d_nx</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_mpi3d_ny <b>                      mpi3d_ny</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_mpi3d_ny <b>                      mpi3d_ny</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_mpi3d_nz <b>                      mpi3d_nz</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_mpi3d_nz <b>                      mpi3d_nz</b>: <i>        integer</i> [no default]
+</ul>
+
+\section scope_mini_systolicmxm mini::systolicmxm
+
+<ul>
+  <li> \anchor subsect_systolicmxm_blockcolsize <b>      systolicmxm_blockcolsize</b>: <i>           long</i> [default = def_blocksize]
+  <li> \anchor subsect_systolicmxm_blockcolsize <b>      systolicmxm_blockcolsize</b>: <i>           long</i> [default = def_blocksize]
+  <li> \anchor subsect_systolicmxm_blocklnksize <b>      systolicmxm_blocklnksize</b>: <i>           long</i> [default = def_blocksize]
+  <li> \anchor subsect_systolicmxm_blocklnksize <b>      systolicmxm_blocklnksize</b>: <i>           long</i> [default = def_blocksize]
+  <li> \anchor subsect_systolicmxm_blockrowsize <b>      systolicmxm_blockrowsize</b>: <i>           long</i> [default = def_blocksize]
+  <li> \anchor subsect_systolicmxm_blockrowsize <b>      systolicmxm_blockrowsize</b>: <i>           long</i> [default = def_blocksize]
+  <li> \anchor subsect_systolicmxm_blocksize <b>         systolicmxm_blocksize</b>: <i>           long</i> [default = 100]
+  <li> \anchor subsect_systolicmxm_blocksize <b>         systolicmxm_blocksize</b>: <i>           long</i> [default = 100]
+  <li> \anchor subsect_systolicmxm_nblocks <b>           systolicmxm_nblocks</b>: <i>           long</i> [default = 4]
+  <li> \anchor subsect_systolicmxm_nblocks <b>           systolicmxm_nblocks</b>: <i>           long</i> [default = 4]
+  <li> \anchor subsect_systolicmxm_ncolblocks <b>        systolicmxm_ncolblocks</b>: <i>           long</i> [default = def_nblocks]
+  <li> \anchor subsect_systolicmxm_ncolblocks <b>        systolicmxm_ncolblocks</b>: <i>           long</i> [default = def_nblocks]
+  <li> \anchor subsect_systolicmxm_ncolcorespernode <b>  systolicmxm_ncolcorespernode</b>: <i>           long</i> [default = def_nxycorespernode]
+  <li> \anchor subsect_systolicmxm_ncolcorespernode <b>  systolicmxm_ncolcorespernode</b>: <i>           long</i> [default = def_nxycorespernode]
+  <li> \anchor subsect_systolicmxm_ncolnodes <b>         systolicmxm_ncolnodes</b>: <i>           long</i> [default = def_nxynodes]
+  <li> \anchor subsect_systolicmxm_ncolnodes <b>         systolicmxm_ncolnodes</b>: <i>           long</i> [default = def_nxynodes]
+  <li> \anchor subsect_systolicmxm_ncorespernode <b>     systolicmxm_ncorespernode</b>: <i>           long</i> [default = 1]
+  <li> \anchor subsect_systolicmxm_ncorespernode <b>     systolicmxm_ncorespernode</b>: <i>           long</i> [default = 1]
+  <li> \anchor subsect_systolicmxm_nlnkblocks <b>        systolicmxm_nlnkblocks</b>: <i>           long</i> [default = def_nblocks]
+  <li> \anchor subsect_systolicmxm_nlnkblocks <b>        systolicmxm_nlnkblocks</b>: <i>           long</i> [default = def_nblocks]
+  <li> \anchor subsect_systolicmxm_nnodes <b>            systolicmxm_nnodes</b>: <i>           long</i> [default = 16]
+  <li> \anchor subsect_systolicmxm_nnodes <b>            systolicmxm_nnodes</b>: <i>           long</i> [default = 16]
+  <li> \anchor subsect_systolicmxm_nrowblocks <b>        systolicmxm_nrowblocks</b>: <i>           long</i> [default = def_nblocks]
+  <li> \anchor subsect_systolicmxm_nrowblocks <b>        systolicmxm_nrowblocks</b>: <i>           long</i> [default = def_nblocks]
+  <li> \anchor subsect_systolicmxm_nrowcorespernode <b>  systolicmxm_nrowcorespernode</b>: <i>           long</i> [default = def_nxycorespernode]
+  <li> \anchor subsect_systolicmxm_nrowcorespernode <b>  systolicmxm_nrowcorespernode</b>: <i>           long</i> [default = def_nxycorespernode]
+  <li> \anchor subsect_systolicmxm_nrownodes <b>         systolicmxm_nrownodes</b>: <i>           long</i> [default = def_nxynodes]
+  <li> \anchor subsect_systolicmxm_nrownodes <b>         systolicmxm_nrownodes</b>: <i>           long</i> [default = def_nxynodes]
+  <li> \anchor subsect_systolicmxm_systolicsetup <b>     systolicmxm_systolicsetup</b>: <i>        boolean</i> [default = false]
+  <li> \anchor subsect_systolicmxm_systolicsetup <b>     systolicmxm_systolicsetup</b>: <i>        boolean</i> [default = false]
+  <li> \anchor subsect_systolicmxm_threads <b>           systolicmxm_threads</b>: <i>           long</i> [default = 1]
+  <li> \anchor subsect_systolicmxm_threads <b>           systolicmxm_threads</b>: <i>           long</i> [default = 1]
+</ul>
+
+\section scope_sendrecv_sendrecv_skeleton sendrecv::sendrecv_skeleton
+
+<ul>
+  <li> \anchor subsect_sendrecv_message_size <b>         sendrecv_message_size</b>: <i>        integer</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_butterfly sstmac::hw::butterfly
+Inherits from: \ref scope_sstmac_hw_topology
+
+<ul>
+  <li> \anchor subsect_topology_geometry <b>             topology_geometry</b>: <i>         vector</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_circuitnic sstmac::hw::circuitnic
+
+<ul>
+  <li> \anchor subsect_circuitnic_bandwidth <b>          circuitnic_bandwidth</b>: <i>      bandwidth</i> [no default]
+  <li> \anchor subsect_circuitnic_propdelay <b>          circuitnic_propdelay</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_circuitnic_setup_timeout <b>      circuitnic_setup_timeout</b>: <i>      timestamp</i> [default = timestamp( 0]
+</ul>
+
+\section scope_sstmac_hw_circuitswitch sstmac::hw::circuitswitch
+Inherits from: \ref scope_sstmac_hw_cycle_accurateswitch
+
+<ul>
+  <li> \anchor subsect_circuitswitch_blocked_protocol <b>circuitswitch_blocked_protocol</b>: <i>        boolean</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_clos sstmac::hw::clos
+Inherits from: \ref scope_sstmac_hw_topology
+
+<ul>
+  <li> \anchor subsect_topology_geometry <b>             topology_geometry</b>: <i>         vector</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_crossbar sstmac::hw::crossbar
+Inherits from: \ref scope_sstmac_hw_topology
+
+<ul>
+  <li> \anchor subsect_topology_geometry <b>             topology_geometry</b>: <i>         string</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_cycle_accurateswitch sstmac::hw::cycle_accurateswitch
+
+<ul>
+  <li> \anchor subsect_cycle_accurateswitch_MTU <b>       cycle_accurateswitch_MTU</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_cycle_accurateswitch_bandwidth_n2r <b>cycle_accurateswitch_bandwidth_n2r</b>: <i>      bandwidth</i> [no default]
+  <li> \anchor subsect_cycle_accurateswitch_bandwidth_xbar <b>cycle_accurateswitch_bandwidth_xbar</b>: <i>      bandwidth</i> [no default]
+  <li> \anchor subsect_cycle_accurateswitch_freq <b>      cycle_accurateswitch_freq</b>: <i>      frequency</i> [no default]
+  <li> \anchor subsect_cycle_accurateswitch_input_buffer <b>cycle_accurateswitch_input_buffer</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_cycle_accurateswitch_latency_arbitration <b>cycle_accurateswitch_latency_arbitration</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_cycle_accurateswitch_latency_link <b>cycle_accurateswitch_latency_link</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_cycle_accurateswitch_latency_xbar <b>cycle_accurateswitch_latency_xbar</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_cycle_accurateswitch_orion <b>     cycle_accurateswitch_orion</b>: <i>        boolean</i> [default = false]
+  <li> \anchor subsect_cycle_accurateswitch_output_buffer <b>cycle_accurateswitch_output_buffer</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_cycle_accurateswitch_packet_timeout <b>cycle_accurateswitch_packet_timeout</b>: <i>      timestamp</i> [default = timestamp( 10e-6]
+  <li> \anchor subsect_cycle_accurateswitch_vc <b>        cycle_accurateswitch_vc</b>: <i>        integer</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_cycle_accurateswitch_packetinjector sstmac::hw::cycle_accurateswitch::packetinjector
+
+<ul>
+  <li> \anchor subsect_cycle_accurateswitch_MTU <b>       cycle_accurateswitch_MTU</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_cycle_accurateswitch_bandwidth_n2r <b>cycle_accurateswitch_bandwidth_n2r</b>: <i>      bandwidth</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_degradednode sstmac::hw::degradednode
+Inherits from: \ref scope_sstmac_hw_simplenode
+
+<ul>
+  <li> \anchor subsect_disk_type <b>                     disk_type</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_node_degraded_factor <b>          node_degraded_factor</b>: <i>         double</i> [default = 1.0]
+  <li> \anchor subsect_node_mem_bandwidth <b>            node_mem_bandwidth</b>: <i>      bandwidth</i> [no default]
+  <li> \anchor subsect_node_mem_latency <b>              node_mem_latency</b>: <i>      timestamp</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_detailednode sstmac::hw::detailednode
+Inherits from: \ref scope_sstmac_hw_simplenode
+
+<ul>
+  <li> \anchor subsect_disk_type <b>                     disk_type</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_node_cores <b>                    node_cores</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_node_frequency <b>                node_frequency</b>: <i>      frequency</i> [no default]
+  <li> \anchor subsect_node_mem_bandwidth <b>            node_mem_bandwidth</b>: <i>      bandwidth</i> [no default]
+  <li> \anchor subsect_node_mem_latency <b>              node_mem_latency</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_node_nppfs_diskfile <b>           node_nppfs_diskfile</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_node_nppfs_server <b>             node_nppfs_server</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_node_num_procs <b>                node_num_procs</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_node_preemption <b>               node_preemption</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_proc_link_bandwidth <b>           proc_link_bandwidth</b>: <i>      bandwidth</i> [no default]
+  <li> \anchor subsect_proc_link_latency <b>             proc_link_latency</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_proc_num_mc <b>                   proc_num_mc</b>: <i>        integer</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_disk_controller sstmac::hw::disk_controller
+
+<ul>
+  <li> \anchor subsect_disk_num_per_cntrl <b>            disk_num_per_cntrl</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_disk_profile <b>                  disk_profile</b>: <i>         string</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_dragonfly sstmac::hw::dragonfly
+Inherits from: \ref scope_sstmac_hw_topology
+
+<ul>
+  <li> \anchor subsect_network_bandwidth_link <b>        network_bandwidth_link</b>: <i>      bandwidth</i> [no default]
+  <li> \anchor subsect_network_train_link_freq <b>       network_train_link_freq</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_network_train_optical_freq <b>    network_train_optical_freq</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_optical_link_bandwidth <b>        optical_link_bandwidth</b>: <i>      bandwidth</i> [no default]
+  <li> \anchor subsect_optical_link_weight <b>           optical_link_weight</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_topology_geometry <b>             topology_geometry</b>: <i>         vector</i> [no default]
+  <li> \anchor subsect_topology_group_connections <b>    topology_group_connections</b>: <i>        integer</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_dragonflyrouter sstmac::hw::dragonflyrouter
+
+<ul>
+  <li> \anchor subsect_dragon_global_routing <b>         dragon_global_routing</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_router_seed <b>                   router_seed</b>: <i>           long</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_dragonflyrouter_ugal sstmac::hw::dragonflyrouter_ugal
+Inherits from: \ref scope_sstmac_hw_dragonflyrouter
+
+<ul>
+  <li> \anchor subsect_network_train_link_latency <b>    network_train_link_latency</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_network_train_switch_freq <b>     network_train_switch_freq</b>: <i>      frequency</i> [no default]
+  <li> \anchor subsect_network_train_switch_latency_cycles <b>network_train_switch_latency_cycles</b>: <i>        integer</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_eigernode sstmac::hw::eigernode
+Inherits from: \ref scope_sstmac_hw_simplenode
+
+<ul>
+  <li> \anchor subsect_node_memop_frequency <b>          node_memop_frequency</b>: <i>      frequency</i> [default = freq_]
+</ul>
+
+\section scope_sstmac_hw_failure_config sstmac::hw::failure_config
+
+<ul>
+  <li> \anchor subsect_failure_model <b>                 failure_model</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_failure_nodes_per_ps <b>          failure_nodes_per_ps</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_failure_ps_prop <b>               failure_ps_prop</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_failure_trace_file <b>            failure_trace_file</b>: <i>         string</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_fastflower_ejector sstmac::hw::fastflower_ejector
+
+<ul>
+  <li> \anchor subsect_network_ejector_capacity_bw <b>   network_ejector_capacity_bw</b>: <i>      bandwidth</i> [no default]
+  <li> \anchor subsect_network_ejector_latency <b>       network_ejector_latency</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_network_ejector_unit_bw <b>       network_ejector_unit_bw</b>: <i>      bandwidth</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_fastflower_injector sstmac::hw::fastflower_injector
+
+<ul>
+  <li> \anchor subsect_network_injector_capacity_bw <b>  network_injector_capacity_bw</b>: <i>      bandwidth</i> [no default]
+  <li> \anchor subsect_network_injector_latency <b>      network_injector_latency</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_network_injector_unit_bw <b>      network_injector_unit_bw</b>: <i>      bandwidth</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_fastflower_memory sstmac::hw::fastflower_memory
+
+<ul>
+  <li> \anchor subsect_memory_capacity_bw <b>            memory_capacity_bw</b>: <i>      bandwidth</i> [no default]
+  <li> \anchor subsect_memory_latency <b>                memory_latency</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_memory_unit_bw <b>                memory_unit_bw</b>: <i>      bandwidth</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_fastflower_switch sstmac::hw::fastflower_switch
+
+<ul>
+  <li> \anchor subsect_network_link_latency <b>          network_link_latency</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_network_switch_capacity_bw <b>    network_switch_capacity_bw</b>: <i>      bandwidth</i> [no default]
+  <li> \anchor subsect_network_switch_latency <b>        network_switch_latency</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_network_switch_unit_bw <b>        network_switch_unit_bw</b>: <i>      bandwidth</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_fattree sstmac::hw::fattree
+Inherits from: \ref scope_sstmac_hw_topology
+
+<ul>
+  <li> \anchor subsect_topology_geometry <b>             topology_geometry</b>: <i>         vector</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_fattreerouter sstmac::hw::fattreerouter
+
+<ul>
+  <li> \anchor subsect_router_seed <b>                   router_seed</b>: <i>           long</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_flattenedbutterfly sstmac::hw::flattenedbutterfly
+Inherits from: \ref scope_sstmac_hw_topology
+
+<ul>
+  <li> \anchor subsect_topology_geometry <b>             topology_geometry</b>: <i>         vector</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_hdtorus sstmac::hw::hdtorus
+Inherits from: \ref scope_sstmac_hw_topology
+
+<ul>
+  <li> \anchor subsect_topology_geometry <b>             topology_geometry</b>: <i>         vector</i> [no default]  The number of network switches in each X,Y,Z dimension of the torus. An arbitrary number of dimensions can be used. The total number of switches is: N_Switches=N_X*N_Y*...*N_Z. The total number of compute nodes is: N_Comp_Nodes=N_Switches*N_Nodes_Per_switch
+</ul>
+
+\section scope_sstmac_hw_hdtorusrouter sstmac::hw::hdtorusrouter
+
+<ul>
+  <li> \anchor subsect_torus_routing_model <b>           torus_routing_model</b>: <i>         string</i> [no default]
+	<ul>
+		<li> <tt>turn:</tt>
+		Follows +X,+Y,+Z,-X,-Y,-Z route order
+		<li> <tt>xyz:</tt>
+		Follows +X,-X,+Y,-Y,+Z,-Z route order
+		<li> <tt>seastar:</tt>
+		Follows +X,-X,+Y,+Z,-Y,-Z route order
+	</ul>
+</ul>
+
+\section scope_sstmac_hw_interconnect sstmac::hw::interconnect
+
+<ul>
+  <li> \anchor subsect_failure_model <b>                 failure_model</b>: <i>         string</i> [no default]  Specify the failure model [if any] for the nodes
+	<ul>
+		<li> <tt>none:</tt>
+		No failures occur
+	</ul>
+  <li> \anchor subsect_nic_name <b>                      nic_name</b>: <i>\ref registered_sstmac_hw_networkinterface</i> [no default]  Specify the type of network interface controller. This determines how injection is modeled and also what level of hardware support for things like RDMA is available
+	<ul>
+		<li> <tt>fastflower:</tt>
+		implements a nic that models messages as a flow
+		<li> <tt>circuitnic:</tt>
+		
+		<li> <tt>multinic:</tt>
+		
+		<li> <tt>simplenic:</tt>
+		simplest possible nic which only does basic read/write operations, more or less corresponding to ethernet + sockets
+		<li> <tt>train:</tt>
+		implements a nic that models messages as a packet train
+	</ul>
+  <li> \anchor subsect_node_name <b>                     node_name</b>: <i>\ref registered_sstmac_hw_node</i> [no default]  Specify the model used for the compute node. This determines the processor model used in estimating compute time
+	<ul>
+		<li> <tt>degraded:</tt>
+		
+		<li> <tt>detailed:</tt>
+		
+		<li> <tt>simple:</tt>
+		simple node which implements basic OS/compute scheduling functionality
+		<li> <tt>eiger:</tt>
+		eigernode contains an eiger processor capable of handling compute calls to eiger models
+	</ul>
+</ul>
+
+\section scope_sstmac_hw_multinetwork sstmac::hw::multinetwork
+Inherits from: \ref scope_sstmac_hw_interconnect
+
+<ul>
+  <li> \anchor subsect_name <b>                          name</b>: <i>\ref registered_sstmac_hw_interconnect</i> [no default]
+	<ul>
+		<li> <tt>multi:</tt>
+		
+		<li> <tt>switch:</tt>
+		Models the network interconnect as a topology of connected switches
+		<li> <tt>train:</tt>
+		Models an interconnect that sends messages as a packet train
+	</ul>
+  <li> \anchor subsect_topology_name <b>                 topology_name</b>: <i>\ref registered_sstmac_hw_topology</i> [no default]
+	<ul>
+		<li> <tt>butterfly:</tt>
+		
+		<li> <tt>clos:</tt>
+		
+		<li> <tt>crossbar:</tt>
+		
+		<li> <tt>dragonfly:</tt>
+		
+		<li> <tt>fattree:</tt>
+		
+		<li> <tt>fbfly:</tt>
+		
+		<li> <tt>torus:</tt>
+		hdtorus implements a high-dimension torus with an arbitrary number of dimensions
+		<li> <tt>top_from_file:</tt>
+		top_from_file implements an arbitrary topology read from file
+	</ul>
+</ul>
+
+\section scope_sstmac_hw_multinic sstmac::hw::multinic
+
+<ul>
+  <li> \anchor subsect_multi_divider <b>                 multi_divider</b>: <i>\ref registered_sstmac_hw_divider</i> [no default]
+	<ul>
+		<li> <tt>size_divider:</tt>
+		
+	</ul>
+</ul>
+
+\section scope_sstmac_hw_node sstmac::hw::node
+
+<ul>
+  <li> \anchor subsect_launch_name <b>                   launch_name</b>: <i>\ref registered_sstmac_sw_launcher</i> [no default]
+	<ul>
+		<li> <tt>instant:</tt>
+		
+		<li> <tt>real:</tt>
+		
+	</ul>
+  <li> \anchor subsect_node_cores <b>                    node_cores</b>: <i>        integer</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_numa_memorymodel sstmac::hw::numa_memorymodel
+
+<ul>
+  <li> \anchor subsect_nic_mem_link_bandwidth <b>        nic_mem_link_bandwidth</b>: <i>      bandwidth</i> [no default]
+  <li> \anchor subsect_nic_mem_link_latency <b>          nic_mem_link_latency</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_node_mem_bandwidth <b>            node_mem_bandwidth</b>: <i>      bandwidth</i> [no default]
+  <li> \anchor subsect_node_mem_latency <b>              node_mem_latency</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_numa_bus_bandwidth <b>            numa_bus_bandwidth</b>: <i>      bandwidth</i> [no default]
+  <li> \anchor subsect_numa_max_num_pages <b>            numa_max_num_pages</b>: <i>        integer</i> [default = flow::default_max_nsegments]
+  <li> \anchor subsect_numa_page_size <b>                numa_page_size</b>: <i>           long</i> [default = flow::default_min_bytes_per_segment]
+</ul>
+
+\section scope_sstmac_hw_packetswitch sstmac::hw::packetswitch
+
+<ul>
+  <li> \anchor subsect_packetswitch_bandwidth_n2r <b>    packetswitch_bandwidth_n2r</b>: <i>      bandwidth</i> [no default]
+  <li> \anchor subsect_packetswitch_latency_r2r <b>      packetswitch_latency_r2r</b>: <i>      timestamp</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_packetswitch_packetinjector sstmac::hw::packetswitch::packetinjector
+
+<ul>
+  <li> \anchor subsect_packetswitch_MTU <b>              packetswitch_MTU</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_packetswitch_bandwidth_n2r <b>    packetswitch_bandwidth_n2r</b>: <i>      bandwidth</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_simple_memorymodel sstmac::hw::simple_memorymodel
+
+<ul>
+  <li> \anchor subsect_node_mem_bandwidth <b>            node_mem_bandwidth</b>: <i>      bandwidth</i> [no default]
+  <li> \anchor subsect_node_mem_latency <b>              node_mem_latency</b>: <i>      timestamp</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_simplenode sstmac::hw::simplenode
+Inherits from: \ref scope_sstmac_hw_node
+
+<ul>
+  <li> \anchor subsect_node_frequency <b>                node_frequency</b>: <i>      frequency</i> [no default]
+  <li> \anchor subsect_node_memop_frequency <b>          node_memop_frequency</b>: <i>      frequency</i> [default = freq_]
+  <li> \anchor subsect_node_memory_model <b>             node_memory_model</b>: <i>\ref registered_sstmac_hw_memorymodel</i> [default = simple]
+	<ul>
+		<li> <tt>fastflower:</tt>
+		Implements a fastflower memory model that models memory congestion as a flow
+		<li> <tt>numa:</tt>
+		Implements a memory model compatible with a NUMA architecture.
+		<li> <tt>simple:</tt>
+		Implements a simple memory model that is just a single link
+		<li> <tt>train:</tt>
+		Implements a train memory model that models memory congestion as a packet-flow link
+	</ul>
+  <li> \anchor subsect_node_sockets <b>                  node_sockets</b>: <i>        integer</i> [default = 1]
+</ul>
+
+\section scope_sstmac_hw_size_divider sstmac::hw::size_divider
+
+<ul>
+  <li> \anchor subsect_multi_sizedivider_threshold <b>   multi_sizedivider_threshold</b>: <i>           long</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_switchinterconnect sstmac::hw::switchinterconnect
+Inherits from: \ref scope_sstmac_hw_interconnect,\ref scope_sstmac_vis_vis_display
+
+<ul>
+  <li> \anchor subsect_network_nodes_per_switch <b>      network_nodes_per_switch</b>: <i>        integer</i> [no default]  The number of compute nodes connected to each network switch. For example, the Cray Gemini network has two nodes per switch
+  <li> \anchor subsect_network_switch_type <b>            network_switch_type</b>: <i>\ref registered_sstmac_hw_networkswitch</i> [no default]
+	<ul>
+		<li> <tt>fastflower:</tt>
+		
+		<li> <tt>circuit:</tt>
+		
+		<li> <tt>cycle_accurate:</tt>
+		
+		<li> <tt>packet:</tt>
+		
+		<li> <tt>train:</tt>
+		
+	</ul>
+  <li> \anchor subsect_topology_name <b>                 topology_name</b>: <i>\ref registered_sstmac_hw_topology</i> [no default]
+	<ul>
+		<li> <tt>butterfly:</tt>
+		
+		<li> <tt>clos:</tt>
+		
+		<li> <tt>crossbar:</tt>
+		
+		<li> <tt>dragonfly:</tt>
+		
+		<li> <tt>fattree:</tt>
+		
+		<li> <tt>fbfly:</tt>
+		
+		<li> <tt>torus:</tt>
+		hdtorus implements a high-dimension torus with an arbitrary number of dimensions
+		<li> <tt>top_from_file:</tt>
+		top_from_file implements an arbitrary topology read from file
+	</ul>
+</ul>
+
+\section scope_sstmac_hw_top_from_file sstmac::hw::top_from_file
+Inherits from: \ref scope_sstmac_hw_topology
+
+<ul>
+  <li> \anchor subsect_top_from_file_name <b>            top_from_file_name</b>: <i>         string</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_topology sstmac::hw::topology
+
+<ul>
+  <li> \anchor subsect_topology_output_graph <b>         topology_output_graph</b>: <i>        boolean</i> [default = false]
+  <li> \anchor subsect_topology_redundant <b>            topology_redundant</b>: <i>         vector</i> [no default]  The number of redundant physical links that make up each link[edge] in the topology. These vector dimensions should exactly match those in topology_geometry. The total available bandwidth in each topology link is: BW=Redundant*Link_BW
+</ul>
+
+\section scope_sstmac_hw_train_memorymodel sstmac::hw::train_memorymodel
+
+<ul>
+  <li> \anchor subsect_memory_train_arbitrator <b>       memory_train_arbitrator</b>: <i>\ref registered_sstmac_hw_output_bw_arbitrator</i> [default = infinite_buffer]  The arbitration algorithm for modeling the congestion in a network component. Each algorithm uses different approximations of varying accuracy/efficiency.
+	<ul>
+		<li> <tt>infinite_buffer:</tt>
+		assumes an infinite input buffer that packets are arbitrated from
+		<li> <tt>double_buffer:</tt>
+		assumes an infinite input AND output buffer that packets are arbitrated from
+		<li> <tt>fair:</tt>
+		assigns a fair bw based solely on the number of packets waiting on the link
+		<li> <tt>throttle:</tt>
+		assumes no congestion, but sets a maximum obtainable bandwidth
+		<li> <tt>packet:</tt>
+		simulates a packet model within the packet-flow-train framework
+		<li> <tt>optimistic_packet:</tt>
+		simulates a packet model with more optimistic forwarding within the packet-flow-train framework
+	</ul>
+  <li> \anchor subsect_memory_train_bytes_per_cycle <b>  memory_train_bytes_per_cycle</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_memory_train_enable_multipath <b> memory_train_enable_multipath</b>: <i>        boolean</i> [default = false]  Whether to allow packets to traverse multiple paths to their network endpoint. This also means an MPI message might experience congestion from running into itself.
+  <li> \anchor subsect_memory_train_freq <b>             memory_train_freq</b>: <i>      frequency</i> [no default]
+  <li> \anchor subsect_memory_train_ignore_congestion <b>memory_train_ignore_congestion</b>: <i>        boolean</i> [default = false]  Whether to model congestion. Setting ignore to true speeds up the simulation and assumes an idealized network where packets do not compete for bandwidth.
+  <li> \anchor subsect_memory_train_latency_cycles <b>   memory_train_latency_cycles</b>: <i>           long</i> [no default]
+</ul>
+
+\section scope_sstmac_hw_train_nic sstmac::hw::train_nic
+
+<ul>
+  <li> \anchor subsect_injection_train_payload_fraction <b>injection_train_payload_fraction</b>: <i>         double</i> [no default]  The fraction of each packet that actually carries payload. The observable MPI bandwidth is given by MPI_BW=Link_BW*Payload_Fraction
+  <li> \anchor subsect_injection_train_payload_fraction <b>injection_train_payload_fraction</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_network_train_ejection_enable_multipath <b>network_train_ejection_enable_multipath</b>: <i>        boolean</i> [default = inj_multipath]  Whether to allow packets to traverse multiple paths to their network endpoint. This also means an MPI message might experience congestion from running into itself.
+  <li> \anchor subsect_network_train_ejection_ignore_congestion <b>network_train_ejection_ignore_congestion</b>: <i>        boolean</i> [default = inj_congestion]  Whether to model congestion. Setting ignore to true speeds up the simulation and assumes an idealized network where packets do not compete for bandwidth.
+  <li> \anchor subsect_network_train_injection_enable_multipath <b>network_train_injection_enable_multipath</b>: <i>        boolean</i> [default = false]  Whether to allow packets to traverse multiple paths to their network endpoint. This also means an MPI message might experience congestion from running into itself.
+  <li> \anchor subsect_network_train_injection_ignore_congestion <b>network_train_injection_ignore_congestion</b>: <i>        boolean</i> [default = false]  Whether to model congestion. Setting ignore to true speeds up the simulation and assumes an idealized network where packets do not compete for bandwidth.
+  <li> \anchor subsect_network_train_rdma_arbitrator <b> network_train_rdma_arbitrator</b>: <i>\ref registered_sstmac_hw_output_bw_arbitrator</i> [default = infinite_buffer]  The arbitration algorithm for modeling the congestion in a network component. Each algorithm uses different approximations of varying accuracy/efficiency.
+	<ul>
+		<li> <tt>infinite_buffer:</tt>
+		assumes an infinite input buffer that packets are arbitrated from
+		<li> <tt>double_buffer:</tt>
+		assumes an infinite input AND output buffer that packets are arbitrated from
+		<li> <tt>fair:</tt>
+		assigns a fair bw based solely on the number of packets waiting on the link
+		<li> <tt>throttle:</tt>
+		assumes no congestion, but sets a maximum obtainable bandwidth
+		<li> <tt>packet:</tt>
+		simulates a packet model within the packet-flow-train framework
+		<li> <tt>optimistic_packet:</tt>
+		simulates a packet model with more optimistic forwarding within the packet-flow-train framework
+	</ul>
+  <li> \anchor subsect_network_train_rdma_injection_bw <b>network_train_rdma_injection_bw</b>: <i>      bandwidth</i> [no default]  The bandwidth available to RDMA get/put operations
+  <li> \anchor subsect_network_train_rdma_injection_latency <b>network_train_rdma_injection_latency</b>: <i>      timestamp</i> [no default]  The injection latency of the RDMA pathway on the NIC. This is usually a higher latency operation than SMSG or UDP pathway
+  <li> \anchor subsect_network_train_udp_arbitrator <b>  network_train_udp_arbitrator</b>: <i>\ref registered_sstmac_hw_output_bw_arbitrator</i> [default = infinite_buffer]  The arbitration algorithm for modeling the congestion in a network component. Each algorithm uses different approximations of varying accuracy/efficiency.
+	<ul>
+		<li> <tt>infinite_buffer:</tt>
+		assumes an infinite input buffer that packets are arbitrated from
+		<li> <tt>double_buffer:</tt>
+		assumes an infinite input AND output buffer that packets are arbitrated from
+		<li> <tt>fair:</tt>
+		assigns a fair bw based solely on the number of packets waiting on the link
+		<li> <tt>throttle:</tt>
+		assumes no congestion, but sets a maximum obtainable bandwidth
+		<li> <tt>packet:</tt>
+		simulates a packet model within the packet-flow-train framework
+		<li> <tt>optimistic_packet:</tt>
+		simulates a packet model with more optimistic forwarding within the packet-flow-train framework
+	</ul>
+  <li> \anchor subsect_network_train_udp_injection_bw <b>network_train_udp_injection_bw</b>: <i>      bandwidth</i> [no default]  The bandwidth available to simple datagram posts and short message mailboxes. This pathway is designed for low-latency on many, small messages
+  <li> \anchor subsect_network_train_udp_injection_latency <b>network_train_udp_injection_latency</b>: <i>      timestamp</i> [no default]  The injection latency for datagram posts and short message mailboxes. This pathway is designed for low-latency on many, small messages
+</ul>
+
+\section scope_sstmac_hw_traininterconnect sstmac::hw::traininterconnect
+Inherits from: \ref scope_sstmac_hw_switchinterconnect
+
+<ul>
+  <li> \anchor subsect_topology_name <b>                 topology_name</b>: <i>\ref registered_sstmac_hw_topology</i> [no default]  Specify the basic topology type used for the network interconnect
+	<ul>
+		<li> <tt>butterfly:</tt>
+		
+		<li> <tt>clos:</tt>
+		
+		<li> <tt>crossbar:</tt>
+		
+		<li> <tt>dragonfly:</tt>
+		
+		<li> <tt>fattree:</tt>
+		
+		<li> <tt>fbfly:</tt>
+		
+		<li> <tt>torus:</tt>
+		hdtorus implements a high-dimension torus with an arbitrary number of dimensions
+		<li> <tt>top_from_file:</tt>
+		top_from_file implements an arbitrary topology read from file
+	</ul>
+</ul>
+
+\section scope_sstmac_hw_trainswitch sstmac::hw::trainswitch
+
+<ul>
+  <li> \anchor subsect_network_train_link_arbitrator <b> network_train_link_arbitrator</b>: <i>\ref registered_sstmac_hw_output_bw_arbitrator</i> [default = infinite_buffer]  The arbitration algorithm for modeling the congestion in a network component. Each algorithm uses different approximations of varying accuracy/efficiency.
+	<ul>
+		<li> <tt>infinite_buffer:</tt>
+		assumes an infinite input buffer that packets are arbitrated from
+		<li> <tt>double_buffer:</tt>
+		assumes an infinite input AND output buffer that packets are arbitrated from
+		<li> <tt>fair:</tt>
+		assigns a fair bw based solely on the number of packets waiting on the link
+		<li> <tt>throttle:</tt>
+		assumes no congestion, but sets a maximum obtainable bandwidth
+		<li> <tt>packet:</tt>
+		simulates a packet model within the packet-flow-train framework
+		<li> <tt>optimistic_packet:</tt>
+		simulates a packet model with more optimistic forwarding within the packet-flow-train framework
+	</ul>
+  <li> \anchor subsect_network_train_link_bytes_per_cycle <b>network_train_link_bytes_per_cycle</b>: <i>         double</i> [no default]  The total number of bytes moved in each cycle. The bandwidth is given by Num_Bytes*Freq
+  <li> \anchor subsect_network_train_link_enable_multipath <b>network_train_link_enable_multipath</b>: <i>        boolean</i> [default = false]  Whether to allow packets to traverse multiple paths to their network endpoint. This also means an MPI message might experience congestion from running into itself.
+  <li> \anchor subsect_network_train_link_freq <b>       network_train_link_freq</b>: <i>      frequency</i> [no default]  Set the frequency of the network component. The bandwidth is given by Bytes_Per_Cycle*Freq
+  <li> \anchor subsect_network_train_link_ignore_congestion <b>network_train_link_ignore_congestion</b>: <i>        boolean</i> [default = false]  Whether to model congestion. Setting ignore to true speeds up the simulation and assumes an idealized network where packets do not compete for bandwidth.
+  <li> \anchor subsect_network_train_link_latency <b>    network_train_link_latency</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_network_train_switch_bytes_per_cycle <b>network_train_switch_bytes_per_cycle</b>: <i>         double</i> [no default]  The total number of bytes moved in each cycle. The bandwidth is given by Num_Bytes*Freq
+  <li> \anchor subsect_network_train_switch_enable_multipath <b>network_train_switch_enable_multipath</b>: <i>        boolean</i> [default = false]  Whether to allow packets to traverse multiple paths to their network endpoint. This also means an MPI message might experience congestion from running into itself.
+  <li> \anchor subsect_network_train_switch_freq <b>     network_train_switch_freq</b>: <i>      frequency</i> [no default]  Set the frequency of the network component. The bandwidth is given by Bytes_Per_Cycle*Freq
+  <li> \anchor subsect_network_train_switch_ignore_congestion <b>network_train_switch_ignore_congestion</b>: <i>        boolean</i> [default = false]  Whether to model congestion. Setting ignore to true speeds up the simulation and assumes an idealized network where packets do not compete for bandwidth.
+  <li> \anchor subsect_network_train_switch_latency_cycles <b>network_train_switch_latency_cycles</b>: <i>           long</i> [no default]  On a quiet network, the number of cycles a packet needs to traverse the component. The latency is given by Num_Cycles/Freq
+  <li> \anchor subsect_train_max_num_messages <b>        train_max_num_messages</b>: <i>        integer</i> [default = 10]  The maximum number of packet trains a message can be split into. For example, if 1MB is sent and max trains is 100, each packet train will contain 10KB. If max trains is raised to 1000, then each train can be made smaller to 1KB.
+  <li> \anchor subsect_train_min_num_bytes <b>           train_min_num_bytes</b>: <i>        integer</i> [default = 256]  The minimum number of bytes a single packet train can contain. Raising this value increases the coarseness and lowers the accuracy.
+  <li> \anchor subsect_train_negligible_size <b>         train_negligible_size</b>: <i>        integer</i> [default = 512]  The size below which a train is considered negligible and does not do congestion modeling. This increases efficiency, but lowers accuracy.
+</ul>
+
+\section scope_sstmac_native_manager sstmac::native::manager
+
+<ul>
+  <li> \anchor subsect_network_name <b>                  network_name</b>: <i>\ref registered_sstmac_hw_interconnect</i> [no default]  Specify the general type of network congestion model that will be used for the interconnect
+	<ul>
+		<li> <tt>multi:</tt>
+		
+		<li> <tt>switch:</tt>
+		Models the network interconnect as a topology of connected switches
+		<li> <tt>train:</tt>
+		Models an interconnect that sends messages as a packet train
+	</ul>
+</ul>
+
+\section scope_sstmac_native_manager_degraded sstmac::native::manager_degraded
+Inherits from: \ref scope_sstmac_native_manager
+
+<ul>
+  <li> \anchor subsect_manager_degraded_nodes <b>        manager_degraded_nodes</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_nic_name <b>                      nic_name</b>: <i>\ref registered_sstmac_hw_networkinterface</i> [no default]
+	<ul>
+		<li> <tt>fastflower:</tt>
+		implements a nic that models messages as a flow
+		<li> <tt>circuitnic:</tt>
+		
+		<li> <tt>multinic:</tt>
+		
+		<li> <tt>simplenic:</tt>
+		simplest possible nic which only does basic read/write operations, more or less corresponding to ethernet + sockets
+		<li> <tt>train:</tt>
+		implements a nic that models messages as a packet train
+	</ul>
+  <li> \anchor subsect_node_degraded_factor <b>          node_degraded_factor</b>: <i>         double</i> [no default]
+  <li> \anchor subsect_node_name <b>                     node_name</b>: <i>\ref registered_sstmac_hw_node</i> [no default]
+	<ul>
+		<li> <tt>degraded:</tt>
+		
+		<li> <tt>detailed:</tt>
+		
+		<li> <tt>simple:</tt>
+		simple node which implements basic OS/compute scheduling functionality
+		<li> <tt>eiger:</tt>
+		eigernode contains an eiger processor capable of handling compute calls to eiger models
+	</ul>
+  <li> \anchor subsect_node_num <b>                      node_num</b>: <i>           long</i> [no default]
+</ul>
+
+\section scope_sstmac_sw_api sstmac::sw::api
+
+<ul>
+  <li> \anchor subsect_host_compute_modeling <b>         host_compute_modeling</b>: <i>        boolean</i> [default = false]
+</ul>
+
+\section scope_sstmac_sw_app_helloworld sstmac::sw::app_helloworld
+
+<ul>
+  <li> \anchor subsect_helloworld_what <b>               helloworld_what</b>: <i>         string</i> [no default]
+</ul>
+
+\section scope_sstmac_sw_basic_mpi_implementation sstmac::sw::basic_mpi_implementation
+
+<ul>
+  <li> \anchor subsect_mpi_handshake_size <b>            mpi_handshake_size</b>: <i>        integer</i> [default = 65536]  The cutoff in bytes at which we switch from an eager to rendezvous protocol
+</ul>
+
+\section scope_sstmac_sw_cartallocation sstmac::sw::cartallocation
+
+<ul>
+  <li> \anchor subsect_cart_launch_offsets <b>           cart_launch_offsets</b>: <i>         vector</i> [no default]
+  <li> \anchor subsect_cart_launch_sizes <b>             cart_launch_sizes</b>: <i>         vector</i> [no default]
+</ul>
+
+\section scope_sstmac_sw_dumpiindexer sstmac::sw::dumpiindexer
+
+<ul>
+  <li> \anchor subsect_launch_dumpi_metaname <b>         launch_dumpi_metaname</b>: <i>         string</i> [no default]
+</ul>
+
+\section scope_sstmac_sw_first_availableallocation sstmac::sw::first_availableallocation
+
+<ul>
+  <li> \anchor subsect_node_num <b>                      node_num</b>: <i>           long</i> [no default]
+</ul>
+
+\section scope_sstmac_sw_hostname_allocation sstmac::sw::hostname_allocation
+
+<ul>
+  <li> \anchor subsect_launch_dumpi_mapname <b>          launch_dumpi_mapname</b>: <i>         string</i> [no default]
+</ul>
+
+\section scope_sstmac_sw_hostname_indexer sstmac::sw::hostname_indexer
+
+<ul>
+  <li> \anchor subsect_launch_hostname_list <b>          launch_hostname_list</b>: <i>         string</i> [no default]
+</ul>
+
+\section scope_sstmac_sw_launcher sstmac::sw::launcher
+
+<ul>
+  <li> \anchor subsect_launch_allocation <b>             launch_allocation</b>: <i>\ref registered_sstmac_sw_allocationstrategy</i> [no default]
+	<ul>
+		<li> <tt>first_available:</tt>
+		
+		<li> <tt>random:</tt>
+		
+		<li> <tt>cart:</tt>
+		
+		<li> <tt>hostname:</tt>
+		Given a file containing one hostname per line, maps task id i to line i+1 in the file [zero-based task ids, one-based file lines]
+	</ul>
+  <li> \anchor subsect_launch_indexing <b>               launch_indexing</b>: <i>\ref registered_sstmac_sw_indexstrategy</i> [no default]
+	<ul>
+		<li> <tt>block:</tt>
+		indexes nodes how?
+		<li> <tt>dumpi:</tt>
+		indexes nodes based on hostname map file and hostname list in dumpi trace
+		<li> <tt>hostname:</tt>
+		assigns tasks to nodes based on hostname map of topology and hostname list in file
+		<li> <tt>random:</tt>
+		randomly assigns tasks to nodes
+		<li> <tt>round:</tt>
+		indexes nodes how?
+	</ul>
+</ul>
+
+\section scope_sstmac_sw_launcher_factory sstmac::sw::launcher_factory
+
+<ul>
+  <li> \anchor subsect_launch_extra_nodes <b>            launch_extra_nodes</b>: <i>           long</i> [default = 0]
+  <li> \anchor subsect_node_cores <b>                    node_cores</b>: <i>        integer</i> [default = 1]
+</ul>
+
+\section scope_sstmac_sw_lib_compute_loops sstmac::sw::lib_compute_loops
+Inherits from: \ref scope_sstmac_sw_lib_compute_memmove
+
+<ul>
+  <li> \anchor subsect_lib_compute_loops_enable <b>      lib_compute_loops_enable</b>: <i>        boolean</i> [default = true]
+  <li> \anchor subsect_lib_compute_loops_flop_ratio <b>  lib_compute_loops_flop_ratio</b>: <i>         double</i> [default = 0.8]
+  <li> \anchor subsect_lib_compute_loops_mem_ratio <b>   lib_compute_loops_mem_ratio</b>: <i>         double</i> [default = 0.8]
+</ul>
+
+\section scope_sstmac_sw_lib_compute_memmove sstmac::sw::lib_compute_memmove
+
+<ul>
+  <li> \anchor subsect_node_pipeline_speedup <b>          node_pipeline_speedup</b>: <i>         double</i> [default = 1.0]
+  <li> \anchor subsect_lib_compute_prefetch_loops <b>    lib_compute_prefetch_loops</b>: <i>        boolean</i> [default = false]
+  <li> \anchor subsect_lib_compute_unroll_loops <b>      lib_compute_unroll_loops</b>: <i>         double</i> [default = 1.0]
+</ul>
+
+\section scope_sstmac_sw_mpi_testall sstmac::sw::mpi_testall
+
+<ul>
+  <li> \anchor subsect_testmpi_stop_at_errors <b>        testmpi_stop_at_errors</b>: <i>        integer</i> [no default]
+</ul>
+
+\section scope_sstmac_sw_mpiapi sstmac::sw::mpiapi
+Inherits from: \ref scope_sstmac_sw_api
+
+<ul>
+  <li> \anchor subsect_MPI_buffer_ignore <b>             MPI_buffer_ignore</b>: <i>        boolean</i> [no default]
+  <li> \anchor subsect_mpi_allreduce <b>                 mpi_allreduce</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_mpi_delay <b>                     mpi_delay</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_mpi_implementation <b>            mpi_implementation</b>: <i>\ref registered_sstmac_sw_mpi_implementation</i> [default = basic]
+	<ul>
+		<li> <tt>basic:</tt>
+		A basic MPI [sockets] that has only two protocols: eager and rendezvous
+		<li> <tt>rdma:</tt>
+		An MPI that uses RDMA pathways and has zero-copy semantics for both intra- and inter-node
+		<li> <tt>simple:</tt>
+		The simplest possible MPI that does everything as a buffered, eager send
+	</ul>
+  <li> \anchor subsect_mpiqueue_thread_type <b>          mpiqueue_thread_type</b>: <i>\ref registered_sstmac_sw_mpiqueue</i> [default = service]
+	<ul>
+		<li> <tt>service:</tt>
+		Run MPI as a separate service thread distinct from the application [distinct address space]
+		<li> <tt>user:</tt>
+		Run MPI as a library within the application [same user address space]
+	</ul>
+</ul>
+
+\section scope_sstmac_sw_mpicongestion sstmac::sw::mpicongestion
+
+<ul>
+  <li> \anchor subsect_mpicongestion_count <b>           mpicongestion_count</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_mpicongestion_iterations <b>      mpicongestion_iterations</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_mpicongestion_window <b>          mpicongestion_window</b>: <i>        integer</i> [no default]
+</ul>
+
+\section scope_sstmac_sw_mpipairwise sstmac::sw::mpipairwise
+
+<ul>
+  <li> \anchor subsect_mpipairwise_count <b>             mpipairwise_count</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_mpipairwise_file <b>              mpipairwise_file</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_mpipairwise_iterations <b>        mpipairwise_iterations</b>: <i>        integer</i> [no default]
+</ul>
+
+\section scope_sstmac_sw_mpipingpong sstmac::sw::mpipingpong
+
+<ul>
+  <li> \anchor subsect_mpipingpong_count <b>             mpipingpong_count</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_mpipingpong_iterations <b>        mpipingpong_iterations</b>: <i>        integer</i> [no default]
+</ul>
+
+\section scope_sstmac_sw_operatingsystem sstmac::sw::operatingsystem
+
+<ul>
+  <li> \anchor subsect_ftq_epoch <b>                     ftq_epoch</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_ftq_min_time <b>                  ftq_min_time</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_ftq_num_epochs <b>                ftq_num_epochs</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_ftq_vis_show <b>                  ftq_vis_show</b>: <i>        boolean</i> [default = false]
+  <li> \anchor subsect_ftq_vis_show_summary_chart <b>    ftq_vis_show_summary_chart</b>: <i>        boolean</i> [default = false]
+  <li> \anchor subsect_ftq_vis_show_thread_chart <b>     ftq_vis_show_thread_chart</b>: <i>        boolean</i> [default = false]
+  <li> \anchor subsect_ftq_vis_show_thread_chart_separate <b>ftq_vis_show_thread_chart_separate</b>: <i>        boolean</i> [default = true]
+  <li> \anchor subsect_ftq_vis_show_thread_chart_type <b>ftq_vis_show_thread_chart_type</b>: <i>         string</i> [no default]
+  <li> \anchor subsect_stack_chunk_size <b>              stack_chunk_size</b>: <i>        integer</i> [default = 1 21]
+  <li> \anchor subsect_stack_protect <b>                 stack_protect</b>: <i>        boolean</i> [default = false]
+  <li> \anchor subsect_stack_size <b>                    stack_size</b>: <i>        integer</i> [default = 1 17]
+  <li> \anchor subsect_startup_libs <b>                  startup_libs</b>: <i>         vector</i> [no default]
+</ul>
+
+\section scope_sstmac_sw_parsedumpi sstmac::sw::parsedumpi
+
+<ul>
+  <li> \anchor subsect_parsedumpi_timescale <b>          parsedumpi_timescale</b>: <i>         double</i> [no default]
+</ul>
+
+\section scope_sstmac_sw_rackallocator sstmac::sw::rackallocator
+
+<ul>
+  <li> \anchor subsect_node_cores <b>                    node_cores</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_node_num <b>                      node_num</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_node_procs <b>                    node_procs</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_rack_nodes <b>                    rack_nodes</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_rack_num <b>                      rack_num</b>: <i>           long</i> [no default]
+</ul>
+
+\section scope_sstmac_sw_randomallocation sstmac::sw::randomallocation
+
+<ul>
+  <li> \anchor subsect_node_num <b>                      node_num</b>: <i>           long</i> [no default]
+</ul>
+
+\section scope_sstmac_sw_randomindexing sstmac::sw::randomindexing
+
+<ul>
+  <li> \anchor subsect_random_indexer_seed <b>           random_indexer_seed</b>: <i>           long</i> [no default]
+</ul>
+
+\section scope_sstmac_sw_rdmampi sstmac::sw::rdmampi
+
+<ul>
+  <li> \anchor subsect_max_eager_msg_size <b>            max_eager_msg_size</b>: <i>        integer</i> [default = 8192]
+  <li> \anchor subsect_max_vshort_msg_size <b>           max_vshort_msg_size</b>: <i>        integer</i> [default = 1024]
+  <li> \anchor subsect_smp_single_copy_size <b>          smp_single_copy_size</b>: <i>        integer</i> [default = 8192]
+</ul>
+
+\section scope_sstmac_sw_reallaunch sstmac::sw::reallaunch
+Inherits from: \ref scope_sstmac_sw_launcher
+
+<ul>
+  <li> \anchor subsect_launcher_nodeid <b>               launcher_nodeid</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_vis_file_interval <b>             vis_file_interval</b>: <i>      timestamp</i> [no default]
+</ul>
+
+\section scope_sstmac_sw_sstmac_mpi_testall sstmac::sw::sstmac_mpi_testall
+
+<ul>
+  <li> \anchor subsect_testMPI_stop_at_errors <b>        testMPI_stop_at_errors</b>: <i>        integer</i> [no default]
+</ul>
+
+\section scope_sstmac_sw_test_file_system sstmac::sw::test_file_system
+
+<ul>
+  <li> \anchor subsect_testfilesystem_access_size <b>    testfilesystem_access_size</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_testfilesystem_seek_length <b>    testfilesystem_seek_length</b>: <i>        integer</i> [no default]
+</ul>
+
+\section scope_sstmac_sw_test_mpi_barrier sstmac::sw::test_mpi_barrier
+
+<ul>
+  <li> \anchor subsect_test_mpi_barrier_iterations <b>   test_mpi_barrier_iterations</b>: <i>        integer</i> [default = 10]
+</ul>
+
+\section scope_sstmac_sw_test_nppfs sstmac::sw::test_nppfs
+
+<ul>
+  <li> \anchor subsect_testfilesystem_access_size <b>    testfilesystem_access_size</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_testfilesystem_seek_length <b>    testfilesystem_seek_length</b>: <i>        integer</i> [no default]
+</ul>
+
+\section scope_sstmac_sw_test_onesided sstmac::sw::test_onesided
+
+<ul>
+  <li> \anchor subsect_test_onesided_iterations <b>      test_onesided_iterations</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_test_onesided_mode <b>            test_onesided_mode</b>: <i>        integer</i> [no default]
+  <li> \anchor subsect_test_onesided_size <b>            test_onesided_size</b>: <i>        integer</i> [no default]
+</ul>
+
+\section scope_sstmac_sw_test_os sstmac::sw::test_os
+
+<ul>
+  <li> \anchor subsect_test_os_nthread <b>               test_os_nthread</b>: <i>        integer</i> [no default]
+</ul>
+
+\section scope_sstmac_sw_user_thread_mpiqueue sstmac::sw::user_thread_mpiqueue
+
+<ul>
+  <li> \anchor subsect_mpiqueue_poll_delay <b>           mpiqueue_poll_delay</b>: <i>      timestamp</i> [default = timestamp( 0]
+  <li> \anchor subsect_mpiqueue_post_header_delay <b>    mpiqueue_post_header_delay</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_mpiqueue_post_rdma_delay <b>      mpiqueue_post_rdma_delay</b>: <i>      timestamp</i> [no default]
+</ul>
+
+\section scope_sstmac_vis_vis_display sstmac::vis::vis_display
+
+<ul>
+  <li> \anchor subsect_vis_file_interval <b>             vis_file_interval</b>: <i>      timestamp</i> [default = timestamp( 0]  Only used in fancy VTK visualizations. Ignore for now
+</ul>
+
+\section scope_sstmac_vis_vtk_engine sstmac::vis::vtk_engine
+
+<ul>
+  <li> \anchor subsect_vis_start <b>                     vis_start</b>: <i>      timestamp</i> [default = timestamp( 0.000]
+  <li> \anchor subsect_vis_update <b>                    vis_update</b>: <i>      timestamp</i> [default = timestamp( 0.001]
+</ul>
+
+\section scope_sweep3d_sweep3dmain sweep3d::sweep3dmain
+
+<ul>
+  <li> \anchor subsect_sweep3d_itr <b>                   sweep3d_itr</b>: <i>        integer</i> [default = 100]
+  <li> \anchor subsect_sweep3d_itr <b>                   sweep3d_itr</b>: <i>        integer</i> [default = 100]
+  <li> \anchor subsect_sweep3d_mk <b>                    sweep3d_mk</b>: <i>        integer</i> [default = 1]
+  <li> \anchor subsect_sweep3d_mk <b>                    sweep3d_mk</b>: <i>        integer</i> [default = 1]
+  <li> \anchor subsect_sweep3d_nx <b>                    sweep3d_nx</b>: <i>        integer</i> [default = 240]
+  <li> \anchor subsect_sweep3d_nx <b>                    sweep3d_nx</b>: <i>        integer</i> [default = 240]
+  <li> \anchor subsect_sweep3d_ny <b>                    sweep3d_ny</b>: <i>        integer</i> [default = 240]
+  <li> \anchor subsect_sweep3d_ny <b>                    sweep3d_ny</b>: <i>        integer</i> [default = 240]
+  <li> \anchor subsect_sweep3d_nz <b>                    sweep3d_nz</b>: <i>        integer</i> [default = 240]
+  <li> \anchor subsect_sweep3d_nz <b>                    sweep3d_nz</b>: <i>        integer</i> [default = 240]
+  <li> \anchor subsect_sweep3d_omega <b>                 sweep3d_omega</b>: <i>        integer</i> [default = 10]
+  <li> \anchor subsect_sweep3d_omega <b>                 sweep3d_omega</b>: <i>        integer</i> [default = 10]
+  <li> \anchor subsect_sweep3d_wg <b>                    sweep3d_wg</b>: <i>         double</i> [default = 1e-6]
+  <li> \anchor subsect_sweep3d_wg <b>                    sweep3d_wg</b>: <i>         double</i> [default = 1e-6]
+</ul>
+
+\section scope_validation_mem_bw_test validation::mem_bw_test
+
+<ul>
+  <li> \anchor subsect_mem_bw_test_iterations <b>        mem_bw_test_iterations</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_mem_bw_test_iterations <b>        mem_bw_test_iterations</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_mem_bw_test_remote <b>            mem_bw_test_remote</b>: <i>        boolean</i> [default = false]
+  <li> \anchor subsect_mem_bw_test_remote <b>            mem_bw_test_remote</b>: <i>        boolean</i> [default = false]
+  <li> \anchor subsect_mem_bw_test_size <b>              mem_bw_test_size</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_mem_bw_test_size <b>              mem_bw_test_size</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_mem_bw_test_sleep <b>             mem_bw_test_sleep</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_mem_bw_test_sleep <b>             mem_bw_test_sleep</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_node_num_procs <b>                node_num_procs</b>: <i>        integer</i> [default = -1]
+  <li> \anchor subsect_node_num_procs <b>                node_num_procs</b>: <i>        integer</i> [default = -1]
+</ul>
+
+\section scope_validation_mpi_bw_test validation::mpi_bw_test
+
+<ul>
+  <li> \anchor subsect_mpi_bw_test_iterations <b>        mpi_bw_test_iterations</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_mpi_bw_test_iterations <b>        mpi_bw_test_iterations</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_mpi_bw_test_remote <b>            mpi_bw_test_remote</b>: <i>        boolean</i> [default = false]
+  <li> \anchor subsect_mpi_bw_test_remote <b>            mpi_bw_test_remote</b>: <i>        boolean</i> [default = false]
+  <li> \anchor subsect_mpi_bw_test_size <b>              mpi_bw_test_size</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_mpi_bw_test_size <b>              mpi_bw_test_size</b>: <i>           long</i> [no default]
+  <li> \anchor subsect_mpi_bw_test_sleep <b>             mpi_bw_test_sleep</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_mpi_bw_test_sleep <b>             mpi_bw_test_sleep</b>: <i>      timestamp</i> [no default]
+  <li> \anchor subsect_node_num_procs <b>                node_num_procs</b>: <i>        integer</i> [default = -1]
+  <li> \anchor subsect_node_num_procs <b>                node_num_procs</b>: <i>        integer</i> [default = -1]
+</ul>
+
+\section complete_index Complete index
+<ul>
+  <li> \ref subsect_MPI_buffer_ignore "MPI_buffer_ignore: Read by scope sstmac::sw::mpiapi"
+  <li> \ref subsect_SPTL_APPLY_MATERIAL_PROP_ELEM "SPTL_APPLY_MATERIAL_PROP_ELEM: Read by scopes luleshmodel::luleshapp, luleshmodel::luleshapp"
+  <li> \ref subsect_SPTL_CALC_ACCEL_NODES "SPTL_CALC_ACCEL_NODES: Read by scopes luleshmodel::luleshapp, luleshmodel::luleshapp"
+  <li> \ref subsect_SPTL_CALC_COURANT_ELEM "SPTL_CALC_COURANT_ELEM: Read by scopes luleshmodel::luleshapp, luleshmodel::luleshapp"
+  <li> \ref subsect_SPTL_CALC_ENERGY_FOR_ELEMS "SPTL_CALC_ENERGY_FOR_ELEMS: Read by scopes luleshmodel::luleshapp, luleshmodel::luleshapp"
+  <li> \ref subsect_SPTL_CALC_FB_HOURGLASS_ELEM "SPTL_CALC_FB_HOURGLASS_ELEM: Read by scopes luleshmodel::luleshapp, luleshmodel::luleshapp"
+  <li> \ref subsect_SPTL_CALC_HOURGLASS_ELEMS "SPTL_CALC_HOURGLASS_ELEMS: Read by scopes luleshmodel::luleshapp, luleshmodel::luleshapp"
+  <li> \ref subsect_SPTL_CALC_HYDRO_CONSTRAINT_ELEM "SPTL_CALC_HYDRO_CONSTRAINT_ELEM: Read by scopes luleshmodel::luleshapp, luleshmodel::luleshapp"
+  <li> \ref subsect_SPTL_CALC_KINEMATICS_ELEM "SPTL_CALC_KINEMATICS_ELEM: Read by scopes luleshmodel::luleshapp, luleshmodel::luleshapp"
+  <li> \ref subsect_SPTL_CALC_LAGRANGE_ELEMENTS "SPTL_CALC_LAGRANGE_ELEMENTS: Read by scopes luleshmodel::luleshapp, luleshmodel::luleshapp"
+  <li> \ref subsect_SPTL_CALC_MONOTONIC_Q_GRADIENT_ELEM "SPTL_CALC_MONOTONIC_Q_GRADIENT_ELEM: Read by scopes luleshmodel::luleshapp, luleshmodel::luleshapp"
+  <li> \ref subsect_SPTL_CALC_MONOTONIC_Q_REGION_ELEM "SPTL_CALC_MONOTONIC_Q_REGION_ELEM: Read by scopes luleshmodel::luleshapp, luleshmodel::luleshapp"
+  <li> \ref subsect_SPTL_CALC_POSITION_NODES "SPTL_CALC_POSITION_NODES: Read by scopes luleshmodel::luleshapp, luleshmodel::luleshapp"
+  <li> \ref subsect_SPTL_CALC_PRESSURE_ELEM "SPTL_CALC_PRESSURE_ELEM: Read by scopes luleshmodel::luleshapp, luleshmodel::luleshapp"
+  <li> \ref subsect_SPTL_CALC_SOUND_SPEED_ELEM "SPTL_CALC_SOUND_SPEED_ELEM: Read by scopes luleshmodel::luleshapp, luleshmodel::luleshapp"
+  <li> \ref subsect_SPTL_CALC_VEL_NODES "SPTL_CALC_VEL_NODES: Read by scopes luleshmodel::luleshapp, luleshmodel::luleshapp"
+  <li> \ref subsect_SPTL_EVAL_EOS_COMPRESS "SPTL_EVAL_EOS_COMPRESS: Read by scopes luleshmodel::luleshapp, luleshmodel::luleshapp"
+  <li> \ref subsect_SPTL_INTEGRATE_STRESS_ELEMS "SPTL_INTEGRATE_STRESS_ELEMS: Read by scopes luleshmodel::luleshapp, luleshmodel::luleshapp"
+  <li> \ref subsect_SPTL_UPDATE_VOL_ELEM "SPTL_UPDATE_VOL_ELEM: Read by scopes luleshmodel::luleshapp, luleshmodel::luleshapp"
+  <li> \ref subsect_actormatmul_computors "actormatmul_computors: Read by scopes mini::actormatmul, mini::actormatmul"
+  <li> \ref subsect_actormatmul_granularity "actormatmul_granularity: Read by scopes mini::actormatmul, mini::actormatmul"
+  <li> \ref subsect_actormatmul_matrix "actormatmul_matrix: Read by scopes mini::actormatmul, mini::actormatmul"
+  <li> \ref subsect_actormatmul_prefetch "actormatmul_prefetch: Read by scopes mini::actormatmul, mini::actormatmul"
+  <li> \ref subsect_actormatmul_threads "actormatmul_threads: Read by scopes mini::actormatmul, mini::actormatmul"
+  <li> \ref subsect_actormatmul_time_per_FMA "actormatmul_time_per_FMA: Read by scopes mini::actormatmul, mini::actormatmul"
+  <li> \ref subsect_cart_launch_offsets "cart_launch_offsets: Read by scope sstmac::sw::cartallocation"
+  <li> \ref subsect_cart_launch_sizes "cart_launch_sizes: Read by scope sstmac::sw::cartallocation"
+  <li> \ref subsect_circuitnic_bandwidth "circuitnic_bandwidth: Read by scope sstmac::hw::circuitnic"
+  <li> \ref subsect_circuitnic_propdelay "circuitnic_propdelay: Read by scope sstmac::hw::circuitnic"
+  <li> \ref subsect_circuitnic_setup_timeout "circuitnic_setup_timeout: Read by scope sstmac::hw::circuitnic"
+  <li> \ref subsect_circuitswitch_blocked_protocol "circuitswitch_blocked_protocol: Read by scope sstmac::hw::circuitswitch"
+  <li> \ref subsect_cycle_accurateswitch_MTU "cycle_accurateswitch_MTU: Read by scopes sstmac::hw::cycle_accurateswitch, sstmac::hw::cycle_accurateswitch::packetinjector"
+  <li> \ref subsect_cycle_accurateswitch_bandwidth_n2r "cycle_accurateswitch_bandwidth_n2r: Read by scopes sstmac::hw::cycle_accurateswitch, sstmac::hw::cycle_accurateswitch::packetinjector"
+  <li> \ref subsect_cycle_accurateswitch_bandwidth_xbar "cycle_accurateswitch_bandwidth_xbar: Read by scope sstmac::hw::cycle_accurateswitch"
+  <li> \ref subsect_cycle_accurateswitch_freq "cycle_accurateswitch_freq: Read by scope sstmac::hw::cycle_accurateswitch"
+  <li> \ref subsect_cycle_accurateswitch_input_buffer "cycle_accurateswitch_input_buffer: Read by scope sstmac::hw::cycle_accurateswitch"
+  <li> \ref subsect_cycle_accurateswitch_latency_arbitration "cycle_accurateswitch_latency_arbitration: Read by scope sstmac::hw::cycle_accurateswitch"
+  <li> \ref subsect_cycle_accurateswitch_latency_link "cycle_accurateswitch_latency_link: Read by scope sstmac::hw::cycle_accurateswitch"
+  <li> \ref subsect_cycle_accurateswitch_latency_xbar "cycle_accurateswitch_latency_xbar: Read by scope sstmac::hw::cycle_accurateswitch"
+  <li> \ref subsect_cycle_accurateswitch_orion "cycle_accurateswitch_orion: Read by scope sstmac::hw::cycle_accurateswitch"
+  <li> \ref subsect_cycle_accurateswitch_output_buffer "cycle_accurateswitch_output_buffer: Read by scope sstmac::hw::cycle_accurateswitch"
+  <li> \ref subsect_cycle_accurateswitch_packet_timeout "cycle_accurateswitch_packet_timeout: Read by scope sstmac::hw::cycle_accurateswitch"
+  <li> \ref subsect_cycle_accurateswitch_vc "cycle_accurateswitch_vc: Read by scope sstmac::hw::cycle_accurateswitch"
+  <li> \ref subsect_disk_num_per_cntrl "disk_num_per_cntrl: Read by scope sstmac::hw::disk_controller"
+  <li> \ref subsect_disk_profile "disk_profile: Read by scope sstmac::hw::disk_controller"
+  <li> \ref subsect_disk_type "disk_type: Read by scopes sstmac::hw::degradednode, sstmac::hw::detailednode"
+  <li> \ref subsect_dragon_global_routing "dragon_global_routing: Read by scope sstmac::hw::dragonflyrouter"
+  <li> \ref subsect_event_manager "event_manager: Read by scope global"
+  <li> \ref subsect_eventlist_nticks_window "eventlist_nticks_window: Read by scope global"
+  <li> \ref subsect_eventlist_nwindows "eventlist_nwindows: Read by scope global"
+  <li> \ref subsect_failure_model "failure_model: Read by scopes sstmac::hw::failure_config, sstmac::hw::interconnect"
+  <li> \ref subsect_failure_nodes_per_ps "failure_nodes_per_ps: Read by scope sstmac::hw::failure_config"
+  <li> \ref subsect_failure_ps_prop "failure_ps_prop: Read by scope sstmac::hw::failure_config"
+  <li> \ref subsect_failure_trace_file "failure_trace_file: Read by scope sstmac::hw::failure_config"
+  <li> \ref subsect_ftq_epoch "ftq_epoch: Read by scope sstmac::sw::operatingsystem"
+  <li> \ref subsect_ftq_min_time "ftq_min_time: Read by scope sstmac::sw::operatingsystem"
+  <li> \ref subsect_ftq_num_epochs "ftq_num_epochs: Read by scope sstmac::sw::operatingsystem"
+  <li> \ref subsect_ftq_vis_show "ftq_vis_show: Read by scope sstmac::sw::operatingsystem"
+  <li> \ref subsect_ftq_vis_show_summary_chart "ftq_vis_show_summary_chart: Read by scope sstmac::sw::operatingsystem"
+  <li> \ref subsect_ftq_vis_show_thread_chart "ftq_vis_show_thread_chart: Read by scope sstmac::sw::operatingsystem"
+  <li> \ref subsect_ftq_vis_show_thread_chart_separate "ftq_vis_show_thread_chart_separate: Read by scope sstmac::sw::operatingsystem"
+  <li> \ref subsect_ftq_vis_show_thread_chart_type "ftq_vis_show_thread_chart_type: Read by scope sstmac::sw::operatingsystem"
+  <li> \ref subsect_gtc_checkpoint "gtc_checkpoint: Read by scopes gtc::gtc_main, gtc::gtc_main, gtc::gtc_main, gtc::gtc_main"
+  <li> \ref subsect_gtc_main_a "gtc_main_a: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_a0 "gtc_main_a0: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_a1 "gtc_main_a1: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_aelectron "gtc_main_aelectron: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_aion "gtc_main_aion: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_b0 "gtc_main_b0: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_edensity0 "gtc_main_edensity0: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_fixed_Tprofile "gtc_main_fixed_Tprofile: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_flow0 "gtc_main_flow0: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_flow1 "gtc_main_flow1: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_flow2 "gtc_main_flow2: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_iload "gtc_main_iload: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_irun "gtc_main_irun: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_kappan "gtc_main_kappan: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_kappate "gtc_main_kappate: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_kappati "gtc_main_kappati: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_mecell "gtc_main_mecell: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_micell "gtc_main_micell: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_mmode "gtc_main_mmode: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_mode00 "gtc_main_mode00: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_mpsi "gtc_main_mpsi: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_msnap "gtc_main_msnap: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_mstep "gtc_main_mstep: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_mthetamax "gtc_main_mthetamax: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_mzetamax "gtc_main_mzetamax: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_nbound "gtc_main_nbound: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_ncycle "gtc_main_ncycle: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_ndiag "gtc_main_ndiag: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_nhybrid "gtc_main_nhybrid: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_nmode "gtc_main_nmode: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_nonlinear "gtc_main_nonlinear: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_npartdom "gtc_main_npartdom: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_nptrack "gtc_main_nptrack: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_nthreads "gtc_main_nthreads: Read by scopes gtc::gtc_main, gtc::gtc_main, gtc::gtc_main, gtc::gtc_main"
+  <li> \ref subsect_gtc_main_paranl "gtc_main_paranl: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_q0 "gtc_main_q0: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_q1 "gtc_main_q1: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_q2 "gtc_main_q2: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_qelectron "gtc_main_qelectron: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_qion "gtc_main_qion: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_r0 "gtc_main_r0: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_rc "gtc_main_rc: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_rng_control "gtc_main_rng_control: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_rw "gtc_main_rw: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_tauii "gtc_main_tauii: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_temperature "gtc_main_temperature: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_tite "gtc_main_tite: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_track_particles "gtc_main_track_particles: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_tstep "gtc_main_tstep: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_main_umax "gtc_main_umax: Read by scopes gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, gtc::config_parameters, hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_gtc_ntoroidal "gtc_ntoroidal: Read by scopes hpx_gtc::config_parameters, hpx_gtc::config_parameters"
+  <li> \ref subsect_helloworld_what "helloworld_what: Read by scope sstmac::sw::app_helloworld"
+  <li> \ref subsect_host_compute_modeling "host_compute_modeling: Read by scope sstmac::sw::api"
+  <li> \ref subsect_hpccg_data_file "hpccg_data_file: Read by scopes global, global, global, global, hpx_hpccg::hpccg::matrix, hpx_hpccg::hpccg::matrix"
+  <li> \ref subsect_hpccg_domains "hpccg_domains: Read by scopes hpx_hpccg::hpccg, hpx_hpccg::hpccg"
+  <li> \ref subsect_hpccg_nx "hpccg_nx: Read by scopes global, global, global, global, hpx_hpccg::hpccg, hpx_hpccg::hpccg"
+  <li> \ref subsect_hpccg_ny "hpccg_ny: Read by scopes global, global, global, global, hpx_hpccg::hpccg, hpx_hpccg::hpccg"
+  <li> \ref subsect_hpccg_nz "hpccg_nz: Read by scopes global, global, global, global, hpx_hpccg::hpccg, hpx_hpccg::hpccg"
+  <li> \ref subsect_hpx_agas "hpx_agas: Read by scope hpx::hpx_app"
+  <li> \ref subsect_hpx_agas_server_node "hpx_agas_server_node: Read by scope hpx::agas_single"
+  <li> \ref subsect_hpx_fibonacci_n_value "hpx_fibonacci_n_value: Read by scopes hpx::fibonacci::hpx_fibonacci, hpx::fibonacci::hpx_fibonacci"
+  <li> \ref subsect_hpx_lb_threshold "hpx_lb_threshold: Read by scope hpx::hpx_random_balancer"
+  <li> \ref subsect_hpx_lb_time "hpx_lb_time: Read by scope hpx::hpx_thread_manager"
+  <li> \ref subsect_hpx_load_balancer "hpx_load_balancer: Read by scope hpx::hpx_thread_manager"
+  <li> \ref subsect_hpx_rma_array_size "hpx_rma_array_size: Read by scopes hpx::rma::hpx_random_mem_access, hpx::rma::hpx_random_mem_access"
+  <li> \ref subsect_hpx_rma_iterations "hpx_rma_iterations: Read by scopes hpx::rma::hpx_random_mem_access, hpx::rma::hpx_random_mem_access"
+  <li> \ref subsect_hpx_rma_seed "hpx_rma_seed: Read by scopes hpx::rma::hpx_random_mem_access, hpx::rma::hpx_random_mem_access"
+  <li> \ref subsect_hpx_swaps_per_core "hpx_swaps_per_core: Read by scope hpx::hpx_thread_manager"
+  <li> \ref subsect_hpx_thread_creation "hpx_thread_creation: Read by scope hpx::hpx_runnable"
+  <li> \ref subsect_hpx_thread_swap_fast "hpx_thread_swap_fast: Read by scope hpx::hpx_runnable"
+  <li> \ref subsect_hpx_thread_swap_from_mem "hpx_thread_swap_from_mem: Read by scope hpx::hpx_runnable"
+  <li> \ref subsect_injection_train_payload_fraction "injection_train_payload_fraction: Read by scopes sstmac::hw::train_nic, sstmac::hw::train_nic"
+  <li> \ref subsect_launch_allocation "launch_allocation: Read by scope sstmac::sw::launcher"
+  <li> \ref subsect_launch_dumpi_mapname "launch_dumpi_mapname: Read by scope sstmac::sw::hostname_allocation"
+  <li> \ref subsect_launch_dumpi_metaname "launch_dumpi_metaname: Read by scope sstmac::sw::dumpiindexer"
+  <li> \ref subsect_launch_extra_nodes "launch_extra_nodes: Read by scope sstmac::sw::launcher_factory"
+  <li> \ref subsect_launch_hostname_list "launch_hostname_list: Read by scope sstmac::sw::hostname_indexer"
+  <li> \ref subsect_launch_indexing "launch_indexing: Read by scope sstmac::sw::launcher"
+  <li> \ref subsect_launch_name "launch_name: Read by scope sstmac::hw::node"
+  <li> \ref subsect_launcher_nodeid "launcher_nodeid: Read by scope sstmac::sw::reallaunch"
+  <li> \ref subsect_lib_compute_loops_enable "lib_compute_loops_enable: Read by scopes mini::lib_compute_minimd, mini::lib_compute_minimd, mini::lib_compute_minimd, mini::lib_compute_minimd, sstmac::sw::lib_compute_loops"
+  <li> \ref subsect_lib_compute_loops_flop_ratio "lib_compute_loops_flop_ratio: Read by scope sstmac::sw::lib_compute_loops"
+  <li> \ref subsect_lib_compute_loops_mem_ratio "lib_compute_loops_mem_ratio: Read by scope sstmac::sw::lib_compute_loops"
+  <li> \ref subsect_node_pipeline_speedup "node_pipeline_speedup: Read by scope sstmac::sw::lib_compute_memmove"
+  <li> \ref subsect_lib_compute_prefetch_loops "lib_compute_prefetch_loops: Read by scope sstmac::sw::lib_compute_memmove"
+  <li> \ref subsect_lib_compute_unroll_loops "lib_compute_unroll_loops: Read by scope sstmac::sw::lib_compute_memmove"
+  <li> \ref subsect_logger_params "logger_params: Read by scopes global, global"
+  <li> \ref subsect_lulesh_iter "lulesh_iter: Read by scopes luleshmodel::luleshapp, luleshmodel::luleshapp"
+  <li> \ref subsect_lulesh_nx "lulesh_nx: Read by scopes luleshmodel::luleshapp, luleshmodel::luleshapp"
+  <li> \ref subsect_lulesh_ny "lulesh_ny: Read by scopes luleshmodel::luleshapp, luleshmodel::luleshapp"
+  <li> \ref subsect_lulesh_nz "lulesh_nz: Read by scopes luleshmodel::luleshapp, luleshmodel::luleshapp"
+  <li> \ref subsect_lusweep_blts "lusweep_blts: Read by scopes lusweep::lumain, lusweep::lumain"
+  <li> \ref subsect_lusweep_buts "lusweep_buts: Read by scopes lusweep::lumain, lusweep::lumain"
+  <li> \ref subsect_lusweep_inorm "lusweep_inorm: Read by scopes lusweep::lumain, lusweep::lumain"
+  <li> \ref subsect_lusweep_itr "lusweep_itr: Read by scopes lusweep::lumain, lusweep::lumain"
+  <li> \ref subsect_lusweep_jacld "lusweep_jacld: Read by scopes lusweep::lumain, lusweep::lumain"
+  <li> \ref subsect_lusweep_jacu "lusweep_jacu: Read by scopes lusweep::lumain, lusweep::lumain"
+  <li> \ref subsect_lusweep_nx "lusweep_nx: Read by scopes lusweep::lumain, lusweep::lumain"
+  <li> \ref subsect_lusweep_ny "lusweep_ny: Read by scopes lusweep::lumain, lusweep::lumain"
+  <li> \ref subsect_lusweep_nz "lusweep_nz: Read by scopes lusweep::lumain, lusweep::lumain"
+  <li> \ref subsect_lusweep_rhs1 "lusweep_rhs1: Read by scopes lusweep::lumain, lusweep::lumain"
+  <li> \ref subsect_lusweep_rhs2 "lusweep_rhs2: Read by scopes lusweep::lumain, lusweep::lumain"
+  <li> \ref subsect_lusweep_rhs3 "lusweep_rhs3: Read by scopes lusweep::lumain, lusweep::lumain"
+  <li> \ref subsect_lusweep_rhs4 "lusweep_rhs4: Read by scopes lusweep::lumain, lusweep::lumain"
+  <li> \ref subsect_manager "manager: Read by scopes global, global"
+  <li> \ref subsect_manager_degraded_nodes "manager_degraded_nodes: Read by scope sstmac::native::manager_degraded"
+  <li> \ref subsect_max_eager_msg_size "max_eager_msg_size: Read by scope sstmac::sw::rdmampi"
+  <li> \ref subsect_max_vshort_msg_size "max_vshort_msg_size: Read by scope sstmac::sw::rdmampi"
+  <li> \ref subsect_mem_bw_test_iterations "mem_bw_test_iterations: Read by scopes validation::mem_bw_test, validation::mem_bw_test"
+  <li> \ref subsect_mem_bw_test_remote "mem_bw_test_remote: Read by scopes validation::mem_bw_test, validation::mem_bw_test"
+  <li> \ref subsect_mem_bw_test_size "mem_bw_test_size: Read by scopes validation::mem_bw_test, validation::mem_bw_test"
+  <li> \ref subsect_mem_bw_test_sleep "mem_bw_test_sleep: Read by scopes validation::mem_bw_test, validation::mem_bw_test"
+  <li> \ref subsect_memory_capacity_bw "memory_capacity_bw: Read by scope sstmac::hw::fastflower_memory"
+  <li> \ref subsect_memory_latency "memory_latency: Read by scope sstmac::hw::fastflower_memory"
+  <li> \ref subsect_memory_train_arbitrator "memory_train_arbitrator: Read by scope sstmac::hw::train_memorymodel"
+  <li> \ref subsect_memory_train_bytes_per_cycle "memory_train_bytes_per_cycle: Read by scope sstmac::hw::train_memorymodel"
+  <li> \ref subsect_memory_train_enable_multipath "memory_train_enable_multipath: Read by scope sstmac::hw::train_memorymodel"
+  <li> \ref subsect_memory_train_freq "memory_train_freq: Read by scope sstmac::hw::train_memorymodel"
+  <li> \ref subsect_memory_train_ignore_congestion "memory_train_ignore_congestion: Read by scope sstmac::hw::train_memorymodel"
+  <li> \ref subsect_memory_train_latency_cycles "memory_train_latency_cycles: Read by scope sstmac::hw::train_memorymodel"
+  <li> \ref subsect_memory_unit_bw "memory_unit_bw: Read by scope sstmac::hw::fastflower_memory"
+  <li> \ref subsect_minimd_Fclear_nl "minimd_Fclear_nl: Read by scopes mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_Fscatter_coef "minimd_Fscatter_coef: Read by scopes mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_Fscatter_offset "minimd_Fscatter_offset: Read by scopes mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_Iapply_nl "minimd_Iapply_nl: Read by scopes mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_Imove_nl "minimd_Imove_nl: Read by scopes mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_Nbinatoms_nl "minimd_Nbinatoms_nl: Read by scopes mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_Nbuild_nl1 "minimd_Nbuild_nl1: Read by scopes mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_Nbuild_nl2 "minimd_Nbuild_nl2: Read by scopes mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_Nbuild_nl3 "minimd_Nbuild_nl3: Read by scopes mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_Tenergy_coef "minimd_Tenergy_coef: Read by scopes mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_Tenergy_offset "minimd_Tenergy_offset: Read by scopes mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_Tpressure_nl "minimd_Tpressure_nl: Read by scopes mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_Ttemperature_nl "minimd_Ttemperature_nl: Read by scopes mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_atom_frac_scat "minimd_atom_frac_scat: Read by scopes mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_atom_nghostavg "minimd_atom_nghostavg: Read by scopes mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_atom_ratio_neighbors "minimd_atom_ratio_neighbors: Read by scopes mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_bins_x "minimd_bins_x: Read by scopes mini::minimd, mini::minimd, mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_bins_y "minimd_bins_y: Read by scopes mini::minimd, mini::minimd, mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_bins_z "minimd_bins_z: Read by scopes mini::minimd, mini::minimd, mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_cutoff_inner "minimd_cutoff_inner: Read by scopes mini::minimd, mini::minimd, mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_cutoff_outer "minimd_cutoff_outer: Read by scopes mini::minimd, mini::minimd, mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_density "minimd_density: Read by scopes mini::minimd, mini::minimd, mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_neighbor_avgallocs "minimd_neighbor_avgallocs: Read by scopes mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_neighbor_avgtripsj1 "minimd_neighbor_avgtripsj1: Read by scopes mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_neighbor_avgtripsj2 "minimd_neighbor_avgtripsj2: Read by scopes mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_neighbor_avgtripsj3 "minimd_neighbor_avgtripsj3: Read by scopes mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_neighbor_mbins "minimd_neighbor_mbins: Read by scopes mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_neighbor_nstencil "minimd_neighbor_nstencil: Read by scopes mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_ntimes "minimd_ntimes: Read by scopes mini::minimd, mini::minimd, mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_nx "minimd_nx: Read by scopes mini::minimd, mini::minimd, mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_ny "minimd_ny: Read by scopes mini::minimd, mini::minimd, mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_nz "minimd_nz: Read by scopes mini::minimd, mini::minimd, mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_reneighbor "minimd_reneighbor: Read by scopes mini::minimd, mini::minimd, mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_temp "minimd_temp: Read by scopes mini::minimd, mini::minimd, mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_thermo "minimd_thermo: Read by scopes mini::minimd, mini::minimd, mini::minimd, mini::minimd"
+  <li> \ref subsect_minimd_timestep "minimd_timestep: Read by scopes mini::minimd, mini::minimd, mini::minimd, mini::minimd"
+  <li> \ref subsect_mpi3d_nx "mpi3d_nx: Read by scopes mini::mpi3d, mini::mpi3d"
+  <li> \ref subsect_mpi3d_ny "mpi3d_ny: Read by scopes mini::mpi3d, mini::mpi3d"
+  <li> \ref subsect_mpi3d_nz "mpi3d_nz: Read by scopes mini::mpi3d, mini::mpi3d"
+  <li> \ref subsect_mpi_allreduce "mpi_allreduce: Read by scope sstmac::sw::mpiapi"
+  <li> \ref subsect_mpi_bw_test_iterations "mpi_bw_test_iterations: Read by scopes validation::mpi_bw_test, validation::mpi_bw_test"
+  <li> \ref subsect_mpi_bw_test_remote "mpi_bw_test_remote: Read by scopes validation::mpi_bw_test, validation::mpi_bw_test"
+  <li> \ref subsect_mpi_bw_test_size "mpi_bw_test_size: Read by scopes validation::mpi_bw_test, validation::mpi_bw_test"
+  <li> \ref subsect_mpi_bw_test_sleep "mpi_bw_test_sleep: Read by scopes validation::mpi_bw_test, validation::mpi_bw_test"
+  <li> \ref subsect_mpi_delay "mpi_delay: Read by scope sstmac::sw::mpiapi"
+  <li> \ref subsect_mpi_handshake_size "mpi_handshake_size: Read by scope sstmac::sw::basic_mpi_implementation"
+  <li> \ref subsect_mpi_implementation "mpi_implementation: Read by scope sstmac::sw::mpiapi"
+  <li> \ref subsect_mpicongestion_count "mpicongestion_count: Read by scope sstmac::sw::mpicongestion"
+  <li> \ref subsect_mpicongestion_iterations "mpicongestion_iterations: Read by scope sstmac::sw::mpicongestion"
+  <li> \ref subsect_mpicongestion_window "mpicongestion_window: Read by scope sstmac::sw::mpicongestion"
+  <li> \ref subsect_mpipairwise_count "mpipairwise_count: Read by scope sstmac::sw::mpipairwise"
+  <li> \ref subsect_mpipairwise_file "mpipairwise_file: Read by scope sstmac::sw::mpipairwise"
+  <li> \ref subsect_mpipairwise_iterations "mpipairwise_iterations: Read by scope sstmac::sw::mpipairwise"
+  <li> \ref subsect_mpipingpong_count "mpipingpong_count: Read by scope sstmac::sw::mpipingpong"
+  <li> \ref subsect_mpipingpong_iterations "mpipingpong_iterations: Read by scope sstmac::sw::mpipingpong"
+  <li> \ref subsect_mpiqueue_poll_delay "mpiqueue_poll_delay: Read by scope sstmac::sw::user_thread_mpiqueue"
+  <li> \ref subsect_mpiqueue_post_header_delay "mpiqueue_post_header_delay: Read by scope sstmac::sw::user_thread_mpiqueue"
+  <li> \ref subsect_mpiqueue_post_rdma_delay "mpiqueue_post_rdma_delay: Read by scope sstmac::sw::user_thread_mpiqueue"
+  <li> \ref subsect_mpiqueue_thread_type "mpiqueue_thread_type: Read by scope sstmac::sw::mpiapi"
+  <li> \ref subsect_multi_divider "multi_divider: Read by scope sstmac::hw::multinic"
+  <li> \ref subsect_multi_sizedivider_threshold "multi_sizedivider_threshold: Read by scope sstmac::hw::size_divider"
+  <li> \ref subsect_multisim_nproc "multisim_nproc: Read by scope global"
+  <li> \ref subsect_name "name: Read by scope sstmac::hw::multinetwork"
+  <li> \ref subsect_network_bandwidth_link "network_bandwidth_link: Read by scopes global, sstmac::hw::dragonfly"
+  <li> \ref subsect_network_ejector_capacity_bw "network_ejector_capacity_bw: Read by scope sstmac::hw::fastflower_ejector"
+  <li> \ref subsect_network_ejector_latency "network_ejector_latency: Read by scope sstmac::hw::fastflower_ejector"
+  <li> \ref subsect_network_ejector_unit_bw "network_ejector_unit_bw: Read by scope sstmac::hw::fastflower_ejector"
+  <li> \ref subsect_network_injector_capacity_bw "network_injector_capacity_bw: Read by scope sstmac::hw::fastflower_injector"
+  <li> \ref subsect_network_injector_latency "network_injector_latency: Read by scope sstmac::hw::fastflower_injector"
+  <li> \ref subsect_network_injector_unit_bw "network_injector_unit_bw: Read by scope sstmac::hw::fastflower_injector"
+  <li> \ref subsect_network_link_latency "network_link_latency: Read by scope sstmac::hw::fastflower_switch"
+  <li> \ref subsect_network_name "network_name: Read by scope sstmac::native::manager"
+  <li> \ref subsect_network_nodes_per_switch "network_nodes_per_switch: Read by scope sstmac::hw::switchinterconnect"
+  <li> \ref subsect_network_switch_capacity_bw "network_switch_capacity_bw: Read by scope sstmac::hw::fastflower_switch"
+  <li> \ref subsect_network_switch_latency "network_switch_latency: Read by scope sstmac::hw::fastflower_switch"
+  <li> \ref subsect_network_switch_unit_bw "network_switch_unit_bw: Read by scope sstmac::hw::fastflower_switch"
+  <li> \ref subsect_network_switch_type "network_switch_type: Read by scope sstmac::hw::switchinterconnect"
+  <li> \ref subsect_network_train_ejection_enable_multipath "network_train_ejection_enable_multipath: Read by scope sstmac::hw::train_nic"
+  <li> \ref subsect_network_train_ejection_ignore_congestion "network_train_ejection_ignore_congestion: Read by scope sstmac::hw::train_nic"
+  <li> \ref subsect_network_train_injection_enable_multipath "network_train_injection_enable_multipath: Read by scope sstmac::hw::train_nic"
+  <li> \ref subsect_network_train_injection_ignore_congestion "network_train_injection_ignore_congestion: Read by scope sstmac::hw::train_nic"
+  <li> \ref subsect_network_train_link_arbitrator "network_train_link_arbitrator: Read by scope sstmac::hw::trainswitch"
+  <li> \ref subsect_network_train_link_bytes_per_cycle "network_train_link_bytes_per_cycle: Read by scope sstmac::hw::trainswitch"
+  <li> \ref subsect_network_train_link_enable_multipath "network_train_link_enable_multipath: Read by scope sstmac::hw::trainswitch"
+  <li> \ref subsect_network_train_link_freq "network_train_link_freq: Read by scopes sstmac::hw::dragonfly, sstmac::hw::trainswitch"
+  <li> \ref subsect_network_train_link_ignore_congestion "network_train_link_ignore_congestion: Read by scope sstmac::hw::trainswitch"
+  <li> \ref subsect_network_train_link_latency "network_train_link_latency: Read by scopes sstmac::hw::dragonflyrouter_ugal, sstmac::hw::trainswitch"
+  <li> \ref subsect_network_train_optical_freq "network_train_optical_freq: Read by scope sstmac::hw::dragonfly"
+  <li> \ref subsect_network_train_rdma_arbitrator "network_train_rdma_arbitrator: Read by scope sstmac::hw::train_nic"
+  <li> \ref subsect_network_train_rdma_injection_bw "network_train_rdma_injection_bw: Read by scope sstmac::hw::train_nic"
+  <li> \ref subsect_network_train_rdma_injection_latency "network_train_rdma_injection_latency: Read by scope sstmac::hw::train_nic"
+  <li> \ref subsect_network_train_switch_bytes_per_cycle "network_train_switch_bytes_per_cycle: Read by scope sstmac::hw::trainswitch"
+  <li> \ref subsect_network_train_switch_enable_multipath "network_train_switch_enable_multipath: Read by scope sstmac::hw::trainswitch"
+  <li> \ref subsect_network_train_switch_freq "network_train_switch_freq: Read by scopes sstmac::hw::dragonflyrouter_ugal, sstmac::hw::trainswitch"
+  <li> \ref subsect_network_train_switch_ignore_congestion "network_train_switch_ignore_congestion: Read by scope sstmac::hw::trainswitch"
+  <li> \ref subsect_network_train_switch_latency_cycles "network_train_switch_latency_cycles: Read by scopes sstmac::hw::dragonflyrouter_ugal, sstmac::hw::trainswitch"
+  <li> \ref subsect_network_train_udp_arbitrator "network_train_udp_arbitrator: Read by scope sstmac::hw::train_nic"
+  <li> \ref subsect_network_train_udp_injection_bw "network_train_udp_injection_bw: Read by scope sstmac::hw::train_nic"
+  <li> \ref subsect_network_train_udp_injection_latency "network_train_udp_injection_latency: Read by scope sstmac::hw::train_nic"
+  <li> \ref subsect_nic_mem_link_bandwidth "nic_mem_link_bandwidth: Read by scope sstmac::hw::numa_memorymodel"
+  <li> \ref subsect_nic_mem_link_latency "nic_mem_link_latency: Read by scope sstmac::hw::numa_memorymodel"
+  <li> \ref subsect_nic_name "nic_name: Read by scopes sstmac::hw::interconnect, sstmac::native::manager_degraded"
+  <li> \ref subsect_node_cores "node_cores: Read by scopes hpx::hpx_thread_manager, sstmac::hw::detailednode, sstmac::hw::node, sstmac::sw::launcher_factory, sstmac::sw::rackallocator"
+  <li> \ref subsect_node_degraded_factor "node_degraded_factor: Read by scopes sstmac::hw::degradednode, sstmac::native::manager_degraded"
+  <li> \ref subsect_node_frequency "node_frequency: Read by scopes sstmac::hw::detailednode, sstmac::hw::simplenode"
+  <li> \ref subsect_node_mem_bandwidth "node_mem_bandwidth: Read by scopes sstmac::hw::degradednode, sstmac::hw::detailednode, sstmac::hw::numa_memorymodel, sstmac::hw::simple_memorymodel"
+  <li> \ref subsect_node_mem_latency "node_mem_latency: Read by scopes sstmac::hw::degradednode, sstmac::hw::detailednode, sstmac::hw::numa_memorymodel, sstmac::hw::simple_memorymodel"
+  <li> \ref subsect_node_memop_frequency "node_memop_frequency: Read by scopes sstmac::hw::eigernode, sstmac::hw::simplenode"
+  <li> \ref subsect_node_memory_model "node_memory_model: Read by scope sstmac::hw::simplenode"
+  <li> \ref subsect_node_name "node_name: Read by scopes sstmac::hw::interconnect, sstmac::native::manager_degraded"
+  <li> \ref subsect_node_nppfs_diskfile "node_nppfs_diskfile: Read by scope sstmac::hw::detailednode"
+  <li> \ref subsect_node_nppfs_server "node_nppfs_server: Read by scope sstmac::hw::detailednode"
+  <li> \ref subsect_node_num "node_num: Read by scopes sstmac::native::manager_degraded, sstmac::sw::first_availableallocation, sstmac::sw::rackallocator, sstmac::sw::randomallocation"
+  <li> \ref subsect_node_num_procs "node_num_procs: Read by scopes sstmac::hw::detailednode, validation::mem_bw_test, validation::mem_bw_test, validation::mpi_bw_test, validation::mpi_bw_test"
+  <li> \ref subsect_node_preemption "node_preemption: Read by scope sstmac::hw::detailednode"
+  <li> \ref subsect_node_procs "node_procs: Read by scope sstmac::sw::rackallocator"
+  <li> \ref subsect_node_sockets "node_sockets: Read by scope sstmac::hw::simplenode"
+  <li> \ref subsect_numa_bus_bandwidth "numa_bus_bandwidth: Read by scope sstmac::hw::numa_memorymodel"
+  <li> \ref subsect_numa_max_num_pages "numa_max_num_pages: Read by scope sstmac::hw::numa_memorymodel"
+  <li> \ref subsect_numa_page_size "numa_page_size: Read by scope sstmac::hw::numa_memorymodel"
+  <li> \ref subsect_optical_link_bandwidth "optical_link_bandwidth: Read by scope sstmac::hw::dragonfly"
+  <li> \ref subsect_optical_link_weight "optical_link_weight: Read by scope sstmac::hw::dragonfly"
+  <li> \ref subsect_osu_large_message_size "osu_large_message_size: Read by scopes global, global, global, global"
+  <li> \ref subsect_osu_loop "osu_loop: Read by scopes global, global, global, global"
+  <li> \ref subsect_osu_loop_large "osu_loop_large: Read by scopes global, global, global, global"
+  <li> \ref subsect_osu_max_msg_size "osu_max_msg_size: Read by scopes global, global, global, global"
+  <li> \ref subsect_osu_skip "osu_skip: Read by scopes global, global, global, global"
+  <li> \ref subsect_osu_skip_large "osu_skip_large: Read by scopes global, global, global, global"
+  <li> \ref subsect_osu_window_size "osu_window_size: Read by scopes global, global"
+  <li> \ref subsect_osu_window_size_large "osu_window_size_large: Read by scopes global, global"
+  <li> \ref subsect_packetswitch_MTU "packetswitch_MTU: Read by scope sstmac::hw::packetswitch::packetinjector"
+  <li> \ref subsect_packetswitch_bandwidth_n2r "packetswitch_bandwidth_n2r: Read by scopes sstmac::hw::packetswitch, sstmac::hw::packetswitch::packetinjector"
+  <li> \ref subsect_packetswitch_latency_r2r "packetswitch_latency_r2r: Read by scope sstmac::hw::packetswitch"
+  <li> \ref subsect_parsedumpi_timescale "parsedumpi_timescale: Read by scope sstmac::sw::parsedumpi"
+  <li> \ref subsect_proc_link_bandwidth "proc_link_bandwidth: Read by scope sstmac::hw::detailednode"
+  <li> \ref subsect_proc_link_latency "proc_link_latency: Read by scope sstmac::hw::detailednode"
+  <li> \ref subsect_proc_num_mc "proc_num_mc: Read by scope sstmac::hw::detailednode"
+  <li> \ref subsect_rack_nodes "rack_nodes: Read by scope sstmac::sw::rackallocator"
+  <li> \ref subsect_rack_num "rack_num: Read by scope sstmac::sw::rackallocator"
+  <li> \ref subsect_random_indexer_seed "random_indexer_seed: Read by scope sstmac::sw::randomindexing"
+  <li> \ref subsect_router_seed "router_seed: Read by scopes sstmac::hw::dragonflyrouter, sstmac::hw::fattreerouter"
+  <li> \ref subsect_sendrecv_message_size "sendrecv_message_size: Read by scopes global, global, sendrecv::sendrecv_skeleton"
+  <li> \ref subsect_sharedmemory_workers "sharedmemory_workers: Read by scopes exshmem::example_shared_memory, exshmem::example_shared_memory"
+  <li> \ref subsect_simplemxm_matrix_order "simplemxm_matrix_order: Read by scopes matrix::simplemxm, matrix::simplemxm"
+  <li> \ref subsect_smp_single_copy_size "smp_single_copy_size: Read by scope sstmac::sw::rdmampi"
+  <li> \ref subsect_sstmac_byte_alignment "sstmac_byte_alignment: Read by scope global"
+  <li> \ref subsect_sstmac_cxx_heap_size_mb "sstmac_cxx_heap_size_mb: Read by scope global"
+  <li> \ref subsect_sstmac_cxx_page_size_mb "sstmac_cxx_page_size_mb: Read by scope global"
+  <li> \ref subsect_stack_chunk_size "stack_chunk_size: Read by scope sstmac::sw::operatingsystem"
+  <li> \ref subsect_stack_protect "stack_protect: Read by scope sstmac::sw::operatingsystem"
+  <li> \ref subsect_stack_size "stack_size: Read by scope sstmac::sw::operatingsystem"
+  <li> \ref subsect_startup_libs "startup_libs: Read by scope sstmac::sw::operatingsystem"
+  <li> \ref subsect_stat_time_interval "stat_time_interval: Read by scopes global, global"
+  <li> \ref subsect_sweep3d_itr "sweep3d_itr: Read by scopes sweep3d::sweep3dmain, sweep3d::sweep3dmain"
+  <li> \ref subsect_sweep3d_mk "sweep3d_mk: Read by scopes sweep3d::sweep3dmain, sweep3d::sweep3dmain"
+  <li> \ref subsect_sweep3d_nx "sweep3d_nx: Read by scopes sweep3d::sweep3dmain, sweep3d::sweep3dmain"
+  <li> \ref subsect_sweep3d_ny "sweep3d_ny: Read by scopes sweep3d::sweep3dmain, sweep3d::sweep3dmain"
+  <li> \ref subsect_sweep3d_nz "sweep3d_nz: Read by scopes sweep3d::sweep3dmain, sweep3d::sweep3dmain"
+  <li> \ref subsect_sweep3d_omega "sweep3d_omega: Read by scopes sweep3d::sweep3dmain, sweep3d::sweep3dmain"
+  <li> \ref subsect_sweep3d_wg "sweep3d_wg: Read by scopes sweep3d::sweep3dmain, sweep3d::sweep3dmain"
+  <li> \ref subsect_systolicmxm_blockcolsize "systolicmxm_blockcolsize: Read by scopes mini::systolicmxm, mini::systolicmxm"
+  <li> \ref subsect_systolicmxm_blocklnksize "systolicmxm_blocklnksize: Read by scopes mini::systolicmxm, mini::systolicmxm"
+  <li> \ref subsect_systolicmxm_blockrowsize "systolicmxm_blockrowsize: Read by scopes mini::systolicmxm, mini::systolicmxm"
+  <li> \ref subsect_systolicmxm_blocksize "systolicmxm_blocksize: Read by scopes mini::systolicmxm, mini::systolicmxm"
+  <li> \ref subsect_systolicmxm_nblocks "systolicmxm_nblocks: Read by scopes mini::systolicmxm, mini::systolicmxm"
+  <li> \ref subsect_systolicmxm_ncolblocks "systolicmxm_ncolblocks: Read by scopes mini::systolicmxm, mini::systolicmxm"
+  <li> \ref subsect_systolicmxm_ncolcorespernode "systolicmxm_ncolcorespernode: Read by scopes mini::systolicmxm, mini::systolicmxm"
+  <li> \ref subsect_systolicmxm_ncolnodes "systolicmxm_ncolnodes: Read by scopes mini::systolicmxm, mini::systolicmxm"
+  <li> \ref subsect_systolicmxm_ncorespernode "systolicmxm_ncorespernode: Read by scopes mini::systolicmxm, mini::systolicmxm"
+  <li> \ref subsect_systolicmxm_nlnkblocks "systolicmxm_nlnkblocks: Read by scopes mini::systolicmxm, mini::systolicmxm"
+  <li> \ref subsect_systolicmxm_nnodes "systolicmxm_nnodes: Read by scopes mini::systolicmxm, mini::systolicmxm"
+  <li> \ref subsect_systolicmxm_nrowblocks "systolicmxm_nrowblocks: Read by scopes mini::systolicmxm, mini::systolicmxm"
+  <li> \ref subsect_systolicmxm_nrowcorespernode "systolicmxm_nrowcorespernode: Read by scopes mini::systolicmxm, mini::systolicmxm"
+  <li> \ref subsect_systolicmxm_nrownodes "systolicmxm_nrownodes: Read by scopes mini::systolicmxm, mini::systolicmxm"
+  <li> \ref subsect_systolicmxm_systolicsetup "systolicmxm_systolicsetup: Read by scopes mini::systolicmxm, mini::systolicmxm"
+  <li> \ref subsect_systolicmxm_threads "systolicmxm_threads: Read by scopes mini::systolicmxm, mini::systolicmxm"
+  <li> \ref subsect_testMPI_stop_at_errors "testMPI_stop_at_errors: Read by scope sstmac::sw::sstmac_mpi_testall"
+  <li> \ref subsect_test_mpi_barrier_iterations "test_mpi_barrier_iterations: Read by scope sstmac::sw::test_mpi_barrier"
+  <li> \ref subsect_test_onesided_iterations "test_onesided_iterations: Read by scope sstmac::sw::test_onesided"
+  <li> \ref subsect_test_onesided_mode "test_onesided_mode: Read by scope sstmac::sw::test_onesided"
+  <li> \ref subsect_test_onesided_size "test_onesided_size: Read by scope sstmac::sw::test_onesided"
+  <li> \ref subsect_test_os_nthread "test_os_nthread: Read by scope sstmac::sw::test_os"
+  <li> \ref subsect_testfilesystem_access_size "testfilesystem_access_size: Read by scopes sstmac::sw::test_file_system, sstmac::sw::test_nppfs"
+  <li> \ref subsect_testfilesystem_seek_length "testfilesystem_seek_length: Read by scopes sstmac::sw::test_file_system, sstmac::sw::test_nppfs"
+  <li> \ref subsect_testmpi_stop_at_errors "testmpi_stop_at_errors: Read by scope sstmac::sw::mpi_testall"
+  <li> \ref subsect_timestamp_resolution "timestamp_resolution: Read by scopes global, global"
+  <li> \ref subsect_top_from_file_name "top_from_file_name: Read by scope sstmac::hw::top_from_file"
+  <li> \ref subsect_topology_geometry "topology_geometry: Read by scopes sstmac::hw::butterfly, sstmac::hw::clos, sstmac::hw::crossbar, sstmac::hw::dragonfly, sstmac::hw::fattree, sstmac::hw::flattenedbutterfly, sstmac::hw::hdtorus"
+  <li> \ref subsect_topology_group_connections "topology_group_connections: Read by scope sstmac::hw::dragonfly"
+  <li> \ref subsect_topology_name "topology_name: Read by scopes sstmac::hw::multinetwork, sstmac::hw::switchinterconnect, sstmac::hw::traininterconnect"
+  <li> \ref subsect_topology_output_graph "topology_output_graph: Read by scope sstmac::hw::topology"
+  <li> \ref subsect_topology_redundant "topology_redundant: Read by scope sstmac::hw::topology"
+  <li> \ref subsect_torus_routing_model "torus_routing_model: Read by scope sstmac::hw::hdtorusrouter"
+  <li> \ref subsect_train_max_num_messages "train_max_num_messages: Read by scope sstmac::hw::trainswitch"
+  <li> \ref subsect_train_min_num_bytes "train_min_num_bytes: Read by scope sstmac::hw::trainswitch"
+  <li> \ref subsect_train_negligible_size "train_negligible_size: Read by scope sstmac::hw::trainswitch"
+</ul>
+*/

@@ -1,0 +1,162 @@
+T=4.4433e-03 ms:Node 3, thread 3: starting compute time=1.7430e+00 ms
+T=4.4433e-03 ms:Node 0, thread 0: starting compute time=1.0348e+00 ms
+T=4.4433e-03 ms:Node 1, thread 1: starting compute time=1.7611e+00 ms
+T=4.4433e-03 ms:Node 2, thread 2: starting compute time=1.6540e+00 ms
+T=1.0393e+00 ms:Node 0, thread 0: finishing compute time=1.0348e+00 ms
+T=1.6585e+00 ms:Node 2, thread 2: finishing compute time=1.6540e+00 ms
+T=1.7475e+00 ms:Node 3, thread 3: finishing compute time=1.7430e+00 ms
+T=1.7475e+00 ms:Node 3, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=1.7475e+00 ms:Node 3, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=1.7656e+00 ms:Node 1, thread 1: finishing compute time=1.7611e+00 ms
+T=1.7656e+00 ms:Node 1, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=1.7656e+00 ms:Node 1, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=1.7656e+00 ms:Node 1, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=1.7656e+00 ms:Node 1, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=1.7656e+00 ms:Node 1, thread 1: starting compute time=1.7611e+00 ms
+T=1.7677e+00 ms:Node 2, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=1.7677e+00 ms:Node 2, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=1.7678e+00 ms:Node 2, thread 2: starting compute time=1.6540e+00 ms
+T=1.7679e+00 ms:Node 3, thread 3: starting compute time=1.7430e+00 ms
+T=1.7700e+00 ms:Node 0, thread 0: starting compute time=1.0348e+00 ms
+T=2.8048e+00 ms:Node 0, thread 0: finishing compute time=1.0348e+00 ms
+T=3.4218e+00 ms:Node 2, thread 2: finishing compute time=1.6540e+00 ms
+T=3.5109e+00 ms:Node 3, thread 3: finishing compute time=1.7430e+00 ms
+T=3.5109e+00 ms:Node 3, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=3.5109e+00 ms:Node 3, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=3.5267e+00 ms:Node 1, thread 1: finishing compute time=1.7611e+00 ms
+T=3.5267e+00 ms:Node 1, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=3.5267e+00 ms:Node 1, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=3.5268e+00 ms:Node 1, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=3.5268e+00 ms:Node 1, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=3.5268e+00 ms:Node 1, thread 1: starting compute time=1.7611e+00 ms
+T=3.5289e+00 ms:Node 2, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=3.5289e+00 ms:Node 2, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=3.5289e+00 ms:Node 2, thread 2: starting compute time=1.6540e+00 ms
+T=3.5290e+00 ms:Node 3, thread 3: starting compute time=1.7430e+00 ms
+T=3.5312e+00 ms:Node 0, thread 0: starting compute time=1.0348e+00 ms
+T=4.5660e+00 ms:Node 0, thread 0: finishing compute time=1.0348e+00 ms
+T=5.1829e+00 ms:Node 2, thread 2: finishing compute time=1.6540e+00 ms
+T=5.2720e+00 ms:Node 3, thread 3: finishing compute time=1.7430e+00 ms
+T=5.2720e+00 ms:Node 3, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=5.2720e+00 ms:Node 3, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=5.2879e+00 ms:Node 1, thread 1: finishing compute time=1.7611e+00 ms
+T=5.2879e+00 ms:Node 1, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=5.2879e+00 ms:Node 1, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=5.2879e+00 ms:Node 1, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=5.2879e+00 ms:Node 1, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=5.2880e+00 ms:Node 1, thread 1: starting compute time=1.7611e+00 ms
+T=5.2901e+00 ms:Node 2, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=5.2901e+00 ms:Node 2, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=5.2901e+00 ms:Node 2, thread 2: starting compute time=1.6540e+00 ms
+T=5.2902e+00 ms:Node 3, thread 3: starting compute time=1.7430e+00 ms
+T=5.2924e+00 ms:Node 0, thread 0: starting compute time=1.0348e+00 ms
+T=6.3272e+00 ms:Node 0, thread 0: finishing compute time=1.0348e+00 ms
+T=6.9441e+00 ms:Node 2, thread 2: finishing compute time=1.6540e+00 ms
+T=7.0332e+00 ms:Node 3, thread 3: finishing compute time=1.7430e+00 ms
+T=7.0332e+00 ms:Node 3, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=7.0332e+00 ms:Node 3, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=7.0491e+00 ms:Node 1, thread 1: finishing compute time=1.7611e+00 ms
+T=7.0491e+00 ms:Node 1, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=7.0491e+00 ms:Node 1, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=7.0491e+00 ms:Node 1, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=7.0491e+00 ms:Node 1, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=7.0491e+00 ms:Node 1, thread 1: starting compute time=1.7611e+00 ms
+T=7.0513e+00 ms:Node 2, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=7.0513e+00 ms:Node 2, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=7.0513e+00 ms:Node 2, thread 2: starting compute time=1.6540e+00 ms
+T=7.0514e+00 ms:Node 3, thread 3: starting compute time=1.7430e+00 ms
+T=7.0535e+00 ms:Node 0, thread 0: starting compute time=1.0348e+00 ms
+T=8.0884e+00 ms:Node 0, thread 0: finishing compute time=1.0348e+00 ms
+T=8.7053e+00 ms:Node 2, thread 2: finishing compute time=1.6540e+00 ms
+T=8.7944e+00 ms:Node 3, thread 3: finishing compute time=1.7430e+00 ms
+T=8.7944e+00 ms:Node 3, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=8.7944e+00 ms:Node 3, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=8.8103e+00 ms:Node 1, thread 1: finishing compute time=1.7611e+00 ms
+T=8.8103e+00 ms:Node 1, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=8.8103e+00 ms:Node 1, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=8.8103e+00 ms:Node 1, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=8.8103e+00 ms:Node 1, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=8.8103e+00 ms:Node 1, thread 1: starting compute time=1.7611e+00 ms
+T=8.8124e+00 ms:Node 2, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=8.8124e+00 ms:Node 2, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=8.8124e+00 ms:Node 2, thread 2: starting compute time=1.6540e+00 ms
+T=8.8125e+00 ms:Node 3, thread 3: starting compute time=1.7430e+00 ms
+T=8.8147e+00 ms:Node 0, thread 0: starting compute time=1.0348e+00 ms
+T=9.8495e+00 ms:Node 0, thread 0: finishing compute time=1.0348e+00 ms
+T=1.0466e+01 ms:Node 2, thread 2: finishing compute time=1.6540e+00 ms
+T=1.0556e+01 ms:Node 3, thread 3: finishing compute time=1.7430e+00 ms
+T=1.0556e+01 ms:Node 3, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=1.0556e+01 ms:Node 3, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=1.0571e+01 ms:Node 1, thread 1: finishing compute time=1.7611e+00 ms
+T=1.0571e+01 ms:Node 1, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=1.0571e+01 ms:Node 1, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=1.0571e+01 ms:Node 1, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=1.0571e+01 ms:Node 1, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=1.0571e+01 ms:Node 1, thread 1: starting compute time=1.7611e+00 ms
+T=1.0574e+01 ms:Node 2, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=1.0574e+01 ms:Node 2, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=1.0574e+01 ms:Node 2, thread 2: starting compute time=1.6540e+00 ms
+T=1.0574e+01 ms:Node 3, thread 3: starting compute time=1.7430e+00 ms
+T=1.0576e+01 ms:Node 0, thread 0: starting compute time=1.0348e+00 ms
+T=1.1611e+01 ms:Node 0, thread 0: finishing compute time=1.0348e+00 ms
+T=1.2228e+01 ms:Node 2, thread 2: finishing compute time=1.6540e+00 ms
+T=1.2317e+01 ms:Node 3, thread 3: finishing compute time=1.7430e+00 ms
+T=1.2317e+01 ms:Node 3, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=1.2317e+01 ms:Node 3, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=1.2333e+01 ms:Node 1, thread 1: finishing compute time=1.7611e+00 ms
+T=1.2333e+01 ms:Node 1, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=1.2333e+01 ms:Node 1, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=1.2333e+01 ms:Node 1, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=1.2333e+01 ms:Node 1, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=1.2333e+01 ms:Node 1, thread 1: starting compute time=1.7611e+00 ms
+T=1.2335e+01 ms:Node 2, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=1.2335e+01 ms:Node 2, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=1.2335e+01 ms:Node 2, thread 2: starting compute time=1.6540e+00 ms
+T=1.2335e+01 ms:Node 3, thread 3: starting compute time=1.7430e+00 ms
+T=1.2337e+01 ms:Node 0, thread 0: starting compute time=1.0348e+00 ms
+T=1.3372e+01 ms:Node 0, thread 0: finishing compute time=1.0348e+00 ms
+T=1.3989e+01 ms:Node 2, thread 2: finishing compute time=1.6540e+00 ms
+T=1.4078e+01 ms:Node 3, thread 3: finishing compute time=1.7430e+00 ms
+T=1.4078e+01 ms:Node 3, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=1.4078e+01 ms:Node 3, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=1.4094e+01 ms:Node 1, thread 1: finishing compute time=1.7611e+00 ms
+T=1.4094e+01 ms:Node 1, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=1.4094e+01 ms:Node 1, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=1.4094e+01 ms:Node 1, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=1.4094e+01 ms:Node 1, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=1.4094e+01 ms:Node 1, thread 1: starting compute time=1.7611e+00 ms
+T=1.4096e+01 ms:Node 2, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=1.4096e+01 ms:Node 2, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=1.4096e+01 ms:Node 2, thread 2: starting compute time=1.6540e+00 ms
+T=1.4096e+01 ms:Node 3, thread 3: starting compute time=1.7430e+00 ms
+T=1.4098e+01 ms:Node 0, thread 0: starting compute time=1.0348e+00 ms
+T=1.5133e+01 ms:Node 0, thread 0: finishing compute time=1.0348e+00 ms
+T=1.5750e+01 ms:Node 2, thread 2: finishing compute time=1.6540e+00 ms
+T=1.5839e+01 ms:Node 3, thread 3: finishing compute time=1.7430e+00 ms
+T=1.5839e+01 ms:Node 3, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=1.5839e+01 ms:Node 3, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=1.5855e+01 ms:Node 1, thread 1: finishing compute time=1.7611e+00 ms
+T=1.5855e+01 ms:Node 1, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=1.5855e+01 ms:Node 1, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=1.5855e+01 ms:Node 1, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=1.5855e+01 ms:Node 1, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=1.5855e+01 ms:Node 1, thread 1: starting compute time=1.7611e+00 ms
+T=1.5857e+01 ms:Node 2, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=1.5857e+01 ms:Node 2, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=1.5857e+01 ms:Node 2, thread 2: starting compute time=1.6540e+00 ms
+T=1.5857e+01 ms:Node 3, thread 3: starting compute time=1.7430e+00 ms
+T=1.5859e+01 ms:Node 0, thread 0: starting compute time=1.0348e+00 ms
+T=1.6894e+01 ms:Node 0, thread 0: finishing compute time=1.0348e+00 ms
+T=1.7511e+01 ms:Node 2, thread 2: finishing compute time=1.6540e+00 ms
+T=1.7600e+01 ms:Node 3, thread 3: finishing compute time=1.7430e+00 ms
+T=1.7600e+01 ms:Node 3, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=1.7600e+01 ms:Node 3, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=1.7616e+01 ms:Node 1, thread 1: finishing compute time=1.7611e+00 ms
+T=1.7616e+01 ms:Node 1, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=1.7616e+01 ms:Node 1, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=1.7616e+01 ms:Node 1, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=1.7616e+01 ms:Node 1, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+T=1.7618e+01 ms:Node 2, thread -1: starting compute nflops=0 nintops=9 nbytes=24
+T=1.7618e+01 ms:Node 2, thread -1: finishing compute nflops=0 nintops=9 nbytes=24
+Estimated total runtime of           0.01762499 seconds
+SST/macro ran for       0.0536 seconds

@@ -1,0 +1,57 @@
+\documentclass{article}
+\newcommand{\tikzLibFolder}{/Users/jjwilke/Programs/sstdocs/docs/manual/figures/tikz}
+
+\input{\tikzLibFolder/tikzlib.tex}
+
+\newcommand{\boxsize}{1cm}
+\newcommand{\textsize}{\Large}
+
+\begin{document}
+\begin{tikzpicture}
+
+\usetikzlibrary{calc}
+
+\namedHypercube{3}{3}{2cm}{\boxsize}{0cm,0cm}{middle}
+\namedHypercube{3}{3}{2cm}{\boxsize}{-5cm,-8cm}{left}
+\namedHypercube{3}{3}{2cm}{\boxsize}{5cm,-8cm}{right}
+
+\draw [line width=2mm] (left31TxC) -- (middle13BxC);
+\draw [line width=2mm] (right11TxC) -- (middle33BxC);
+\draw [line width=2mm] (left33CxR) -- (right13CxL);
+
+\draw (0,-2) node { \huge Group 1 };
+\draw (-5,-10) node { \huge Group 0 };
+\draw (5,-10) node { \huge Group 2 };
+
+\myRectangle{fill=blue}{left32BxL}{\boxsize,\boxsize}
+\myRectangle{fill=red}{right12BxL}{\boxsize,\boxsize}
+\myRectangle{fill=yellow}{middle23BxL}{\boxsize,\boxsize}
+\myRectangle{fill=green!70}{left31BxL}{\boxsize,\boxsize}
+\myRectangle{fill=green!70}{middle13BxL}{\boxsize,\boxsize}
+\myRectangle{fill=orange!70}{middle33BxL}{\boxsize,\boxsize}
+\myRectangle{fill=orange!70}{right11BxL}{\boxsize,\boxsize}
+
+\draw [very thick, red,->] (left32TxRC) -- (left31BxRC);
+\draw [very thick, red,->] (left31TxRC) -- (middle13BxRC);
+\draw [very thick, red,->] (middle13BCxR) -- (middle23BCxL);
+\draw [very thick, red,->] (middle23BCxR) -- (middle33BCxL);
+\draw [very thick, red,->] (middle33BxRC) -- (right11TxRC);
+\draw [very thick, red,->] (right11BxRC) -- (right12TxRC);
+
+
+%\myRectangle{fill=blue!30}{mesh21BxL}{\boxsize,\boxsize}
+%\myRectangle{fill=blue!30}{mesh23BxL}{\boxsize,\boxsize}
+%\myRectangle{fill=blue!30}{mesh24BxL}{\boxsize,\boxsize}
+%\myRectangle{fill=red!50}{mesh22BxL}{\boxsize,\boxsize}
+
+%\node at (mesh22Center) { \textsize 1,1 };
+%\node at (mesh21Center) { \textsize 1,0 };
+%\node at (mesh23Center) { \textsize 1,2 };
+%\node at (mesh24Center) { \textsize 1,3 };
+%\node at (mesh12Center) { \textsize 0,1 };
+%\node at (mesh32Center) { \textsize 2,1 };
+%\node at (mesh42Center) { \textsize 3,1 };
+
+\end{tikzpicture}
+\end{document}
+

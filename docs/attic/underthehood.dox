@@ -1,0 +1,107 @@
+/** \page underthehood A Peek Under the Hood of SST/Macro
+
+\section classes Important Classes
+
+Typical SST/macro simulations are composed of the following classes. Follow
+the links for documentation of constructors, public member functions,
+and concrete classes derived from parent classes.
+
+<ul>
+  <li> sstmac::sw::app (a specialization of sstmac::sw::thread)
+       is a parent class for objects that model applications.  Skeleton applications and
+       trace parsers derive from this class.
+  <li> sstmac::hw::topology is a parent class for objects that supply the
+       network topology for interconnect models.
+  <li> sstmac::hw::interconnect is a parent class for objects that model network
+       traffic.
+  <li> sstmac::hw::flower is a parent class for objects that allocate bandwidth
+       amongst traffic flows in the sstmac::sharedcircuit interconnect model.
+  <li> sstmac::native::node is a parent class for objects that model
+       physical nodes, such as compute nodes.
+  <li> sstmac::native::launcher is a parent class for objects that 
+       launch parallel computations.
+  <li> sstmac::native::manager is the object that performs
+       discrete event simulation
+       using the interconnect, nodes and application launcher provided to it.
+</ul> 
+
+\section events Introduction to SST/macro Events 
+This page provides of brief introduction of how SST/Macro runs beneath the API.  
+The entire simulation is driven simply by the function event_map::run in 
+src/sstmac/backends/native/event_map.cc.
+Events are continually popped off of a queue and executed
+\dontinclude sstmac/backends/native/event_map.cc
+\skip empty
+\until }
+Each event in the queue has to be scheduled with the event manager.
+\skip Set off
+\skip void
+\until )
+The event requires a timestamp for when the event will begin, an eventhandler that will perform the action, and an sst_message that carries information the eventhandler will use in its execution. Note the use of the eventhandler::ptr object.  As mentioned in the getting started introduction, the sprockit::refcount_ptr object is used to simplify memory management in C++.  The object type eventhandler::ptr is a reference-counted smart pointer. 
+
+As an initial example of the use of an event handler and scheduling, we can simulate a sleep call within the program. Every application implemeted inherits the sleep method.
+\dontinclude sstmac/software/process/app.cc
+\skip compute_inst
+\skip void
+\until )
+which, as expected, sleeps the application for the length of time given by the timestamp. Usually, events are
+mediated by preimplemented libraries to handle common operations like memory access, disk access, or sleeps.  More complicated operations like matrix multiplication or mpi calls also have libraries implemented to simplify the generation and scheduling of events.  In this case, the app has a pre-built sleep library.
+\skipline sleeplib_->sleep
+
+Suppose one of the nodes executes a sleep function. The flow of events from here is not complicated, but jumps around quite a bit through multiple functions. As mentioned above, each event requires a message containing state info about the event to execute. In this case, we construct a message that will tell the eventhandler how long to sleep.
+\dontinclude sstmac/software/libraries/compute/lib_sleep.cc
+\skip construct
+\until time
+Once we have constructed the message, we tell the operating system to execute the sleep.
+\skipline execute
+
+We now leave the sleep library and enter the operating system kernel. In our example, we are just going to use
+the simplenode model in sstmac/hardware/node/simplenode.cc.  The operating system executes the following function
+\dontinclude sstmac/hardware/node/simplenode.cc
+\skipline AMI_COMP_FUNC
+As seen above, the integer argument func specifies an AMP_COMP_SLEEP action. 
+\skip AMI_COMP_SLEEP
+\until data
+\skip schedule
+\until }
+From the data passed in, the node schedules an event a given length
+of time from now(). For example, the current simulation time might
+be 4s and the sleep 1s.  Thus the event will be scheduled at
+delay = 5s. Again, scheduling requires the timestamp, the data,
+and now we see an eventhandler msg_handler_. This is a generic
+msg_handler_ which UNBLOCKS the current process. The 
+distinction here is very important. We do NOT schedule the 
+BEGINNING of the sleep.  We schedule the END of the sleep function.  
+When the sleep event is popped off the queue and executed, 
+the event handler signals to the node that the sleep is over 
+and the node continues execution.
+
+So we've established how the END of the sleep function occurs.  How do
+we actually begin the sleep function? Once the operating system call has been made
+and the sleep scheduled, the only thing left do is call the library function wait.
+\dontinclude sstmac/software/libraries/compute/lib_sleep.cc
+\skipline execute_kernel
+\skipline wait
+The wait function leads to the simple function
+\dontinclude sstmac/software/process/block_waiter.h
+\skip construct(
+\skip void
+\until }
+This call will actually begin the sleep.  The operating system
+blocks thread execution. This yields control back to the event manager.
+The simulation is then free to continue work on other nodes.  If nothing
+else is scheduled, the event manager will simply skip ahead, process the
+sleep unblock handler, and continue the execution.
+
+Although this example may seem purely pedagogical (how often do we really need to
+incorporate sleep functions in parallel performance modeling?), all
+mathematical and other computationally intensive routines are basically
+modeled in the same way.  Even though a matrix multiplication is CPU-intensive,
+it can be essentially treated as a sleep. Ignoring power usage, to estimate total time, the simulator
+really only cares about the length of time between MPI calls. For example,
+a 1000 x 1000 matrix multiplication on a 1 gigaflop machine ties up the node
+for 1 s.  This just means we need to block the thread execution for 1s while
+the matrix multiplication is happening and then resume.
+
+*/
+

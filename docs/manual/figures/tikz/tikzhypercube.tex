@@ -1,0 +1,72 @@
+
+\newcommand{\connectHyperX}[3]{
+	\coordinate (connectMidPointTmp) at ($(#1)!0.5!(#2)$);
+	\path (connectMidPointTmp) + (0,#3) coordinate (connectMidPoint); 
+	\draw[] plot [smooth,tension=1.2] coordinates{
+		(#1) (connectMidPoint) (#2)
+	};
+}
+
+\newcommand{\connectHyperY}[3]{
+	\coordinate (connectMidPointTmp) at ($(#1)!0.5!(#2)$);
+	\path (connectMidPointTmp) + (-#3,0) coordinate (connectMidPoint); 
+	\draw[] plot [smooth,tension=1.2] coordinates{
+		(#1) (connectMidPoint) (#2)
+	};
+}
+
+\newlength{\hyperLinkIncrement}
+\newlength{\hyperLinkArc}
+\newcommand{\namedHypercube}[6]{
+	\namedMesh{#1}{#2}{#3}{#4}{#5}{#6}
+
+    \setlength{\hyperLinkIncrement}{0.2\meshBoxHeight}	
+    \foreach \y in {1,...,\meshNumY}  
+      \foreach \xa in {1,...,\meshNumX}
+      {
+        \pgfmathtruncatemacro{\xPlusTwo}{\xa+2}
+        \setToMin{\xStart}{\meshNumX}{\xPlusTwo}
+    	\foreach \xb in {\xStart,...,\meshNumX}
+	{	
+		\ifthenelse{\equal{\xa}{\xb}}{
+		        %do nothing, equal
+		}{
+		 \pgfmathtruncatemacro{\deltaHyperX}{\xb - \xa}
+         \ifthenelse{\equal{\deltaHyperX}{1}}{
+           %do nothing
+         }{
+          \setlength{\hyperLinkArc}{0.2\meshBoxHeight}
+          \addtolength{\hyperLinkArc}{\deltaHyperX \hyperLinkIncrement}
+          \connectHyperX{\meshName\xa\y TxC}{\meshName\xb\y TxC}{\hyperLinkArc}
+         }
+        }
+	}
+    }
+    
+    \foreach \x in {1,...,\meshNumX}  
+      \foreach \ya in {1,...,\meshNumY}
+      {
+        \pgfmathtruncatemacro{\yPlusTwo}{\ya+2}
+        \setToMin{\yStart}{\meshNumY}{\yPlusTwo}
+    	\foreach \yb in {\yStart,...,\meshNumY}
+	{	
+		\ifthenelse{\equal{\ya}{\yb}}{
+		        %do nothing, equal
+		}{
+		 \pgfmathtruncatemacro{\deltaHyperY}{\yb - \ya}
+         \ifthenelse{\equal{\deltaHyperY}{1}}{
+           %do nothing, +1
+         }{
+		  \setlength{\hyperLinkArc}{0.2\meshBoxWidth}
+		  \addtolength{\hyperLinkArc}{\deltaHyperY \hyperLinkIncrement}
+		  \connectHyperY{\meshName\x\ya CxL}{\meshName\x\yb CxL}{\hyperLinkArc}
+         }
+		}
+	}
+     }
+}
+
+\newcommand{\hypercube}[5]{
+  \namedHypercube{#1}{#2}{#3}{#4}{#5}{mesh}
+}
+

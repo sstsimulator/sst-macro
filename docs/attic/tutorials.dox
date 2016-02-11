@@ -1,0 +1,21 @@
+/** \page tutorials An Introduction to Using SST/macro
+
+These tutorials are designed for those who want to use SST/macro in developing parallel applications.
+
+The tutorials guide users through the basic input files,
+the DUMPI tracer, and the development of skeleton applications.
+The DUMPI tracer can be immediately used with existing MPI applications.
+Skeleton applications are coarse-grained program surrogates that 
+reproduce the essential communication/computation patterns of an application.  
+Before writing and debugging a complete parallel application, skeleton apps 
+can guide development by estimatng simulation time, power usage, network congestion, 
+memory usage, and just about anything else relevant to computing performance.
+
+<ul>
+    <li> \ref gettingstarted
+    <li> \ref dumpitracer
+    <li> \ref extending
+    <li> \ref keywords
+</ul>
+
+*/

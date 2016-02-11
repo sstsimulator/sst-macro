@@ -1,0 +1,86 @@
+
+\newlength{\ArrowCornerSize}
+\newlength{\ArrowStemSize}
+\newlength{\ArrowWidth}
+\newlength{\ArrowLength}
+\newlength{\ArrowTipLength}
+
+\newcommand{\biArrowNoRotate}[4]{
+	\path(#1) coordinate (LeftArrowTip);
+	\setlength{\ArrowWidth}{#2}
+	\setlength{\ArrowLength}{#3}
+	
+	\path(#1) + (\ArrowLength,0) coordinate (RightArrowTip);
+	
+	\setlength{\ArrowStemSize}{0.5\ArrowWidth}
+	\setlength{\ArrowCornerSize}{0.25\ArrowWidth}
+	\setlength{\ArrowTipLength}{0.6 \ArrowWidth}	
+
+	\path (RightArrowTip) + (-\ArrowTipLength, 0.5 \ArrowWidth) coordinate (RightTipTop);
+	\path (RightArrowTip) + (-\ArrowTipLength, -0.5 \ArrowWidth) coordinate (RightTipBottom);
+	
+	\path (RightTipTop) + (0, -\ArrowCornerSize) coordinate (RightStemTop);
+	\path (RightStemTop) + (0, -\ArrowStemSize) coordinate (RightStemBottom);
+
+	\path (LeftArrowTip) + (\ArrowTipLength, 0.5 \ArrowWidth) coordinate (LeftTipTop);
+	\path (LeftArrowTip) + (\ArrowTipLength, -0.5 \ArrowWidth) coordinate (LeftTipBottom);
+	
+	\path (LeftTipTop) + (0, -\ArrowCornerSize) coordinate (LeftStemTop);
+	\path (LeftStemTop) + (0, -\ArrowStemSize) coordinate (LeftStemBottom);
+
+	\draw[#4]    (RightStemBottom) -- (RightTipBottom) -- (RightArrowTip) -- (RightTipTop) -- (RightStemTop)
+			  -- (LeftStemTop) -- (LeftTipTop) -- (LeftArrowTip) -- (LeftTipBottom) -- (LeftStemBottom) -- (RightStemBottom);
+}
+
+\newcommand{\biArrow}[4]{
+	\path(#1) coordinate (LeftArrowTip);
+	\path(#2) coordinate (RightArrowTip);
+
+	\pgfextractx\Xone{\pgfpointanchor{LeftArrowTip}{center}}
+	\pgfextracty\Yone{\pgfpointanchor{LeftArrowTip}{center}}
+	\pgfextractx\Xtwo{\pgfpointanchor{RightArrowTip}{center}}
+	\pgfextracty\Ytwo{\pgfpointanchor{RightArrowTip}{center}}
+	
+	\pgfmathsetmacro{\DeltaX}{\Xtwo - \Xone}	
+	\pgfmathsetmacro{\DeltaY}{\Ytwo - \Yone}
+	\ifthenelse{\equal{\DeltaX}{0} or \equal{\DeltaX}{0.0}}{
+		\pgfmathsetmacro{\RotateTheta}{90}
+	}{
+		\pgfmathsetmacro{\TmpTangent}{ \DeltaY / \DeltaX}
+		\pgfmathsetmacro{\RotateTheta}{ atan(\TmpTangent) }
+	}
+	\pgfmathsetmacro{\TmpArrowLength}{ sqrt(\DeltaX * \DeltaX + \DeltaY * \DeltaY) }
+	
+	\begin{scope}[shift={(#1)},rotate=\RotateTheta]	
+		\biarrownorotate{#1}{#3}{\TmpArrowLength pt}{#4}
+	\end{scope}
+}
+
+\newcommand{\uniArrowNoRotate}[4]{
+	\path(#1) coordinate (ArrowTip);
+	\setlength{\ArrowWidth}{#2}
+	\setlength{\ArrowLength}{#3}
+	\setlength{\ArrowStemSize}{0.5\ArrowWidth}
+	\setlength{\ArrowCornerSize}{0.25\ArrowWidth}
+	\setlength{\ArrowTipLength}{0.6 \ArrowWidth}
+	
+	\path (ArrowTip) + (\ArrowTipLength, 0.5 \ArrowWidth) coordinate (TipTop);
+	\path (ArrowTip) + (\ArrowTipLength, -0.5 \ArrowWidth) coordinate (TipBottom);
+	
+	\path (TipTop) + (0, -\ArrowCornerSize) coordinate (StemBeginTop);
+	\path (StemBeginTop) + (0, -\ArrowStemSize) coordinate (StemBeginBottom);
+	
+	\path (StemBeginTop) + (\ArrowLength,0) coordinate (StemEndTop);
+	\path (StemBeginBottom) + (\ArrowLength,0) coordinate (StemEndBottom);
+	
+	\draw [#4] (ArrowTip) -- (TipTop) -- (StemBeginTop) -- (StemEndTop) -- (StemEndBottom) -- (StemBeginBottom) -- (TipBottom) -- (ArrowTip); 	
+}
+\newcommand{\uniArrow}[5]{
+	\ifthenelse{\equal{#5}{}}{ %no rotation
+		\uniArrowNoRotate{#1}{#2}{#3}{#4}
+	}{
+		\begin{scope}[shift={(#1)},rotate=#5]
+		\uniArrowNoRotate{#1}{#2}{#3}{#4}
+		\end{scope}
+	}
+}

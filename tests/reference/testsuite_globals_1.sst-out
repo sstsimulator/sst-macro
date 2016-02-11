@@ -1,0 +1,16 @@
++=: Passed
+*=: Passed
+/=: Passed
+-=: Passed
+++: Passed
+--: Passed
++: Passed
+-: Passed
+*: Passed
+/: Passed
+/ other: Passed
+<<: Passed
+>>: Passed
+%: Passed
+% other: Passed
+&, *: Passed

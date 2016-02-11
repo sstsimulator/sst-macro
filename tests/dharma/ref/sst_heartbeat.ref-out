@@ -1,0 +1,32 @@
+scheduling failure at timestamp(1e-06 secs) on node 1
+scheduling failure at timestamp(0.005 secs) on node 4
+scheduling failure at timestamp(0.006 secs) on node 7
+scheduling failure at timestamp(0.007 secs) on node 9
+scheduling failure at timestamp(0.0203 secs) on node 3
+scheduling failure at timestamp(0.0206 secs) on node 10
+t=1.0045e-03: Rank 0 got heartbeat 1000000001 with 1 failures
+t=1.0068e-03: Rank 2 got heartbeat 1000000001 with 1 failures
+t=1.0068e-03: Rank 3 got heartbeat 1000000001 with 1 failures
+t=1.0070e-03: Rank 4 got heartbeat 1000000001 with 1 failures
+t=1.0090e-03: Rank 5 got heartbeat 1000000001 with 1 failures
+t=1.0093e-03: Rank 6 got heartbeat 1000000001 with 1 failures
+t=1.0093e-03: Rank 7 got heartbeat 1000000001 with 1 failures
+t=1.0093e-03: Rank 8 got heartbeat 1000000001 with 1 failures
+t=1.0095e-03: Rank 10 got heartbeat 1000000001 with 1 failures
+t=1.0098e-03: Rank 9 got heartbeat 1000000001 with 1 failures
+t=1.0115e-03: Rank 11 got heartbeat 1000000001 with 1 failures
+t=1.3009e-02: Rank 0 got heartbeat 1000000002 with 3 failures
+t=1.3011e-02: Rank 2 got heartbeat 1000000002 with 3 failures
+t=1.3011e-02: Rank 3 got heartbeat 1000000002 with 3 failures
+t=1.3014e-02: Rank 5 got heartbeat 1000000002 with 3 failures
+t=1.3014e-02: Rank 8 got heartbeat 1000000002 with 3 failures
+t=1.3014e-02: Rank 6 got heartbeat 1000000002 with 3 failures
+t=1.3016e-02: Rank 10 got heartbeat 1000000002 with 3 failures
+t=1.3016e-02: Rank 11 got heartbeat 1000000002 with 3 failures
+t=2.5009e-02: Rank 0 got heartbeat 1000000003 with 2 failures
+t=2.5011e-02: Rank 2 got heartbeat 1000000003 with 2 failures
+t=2.5011e-02: Rank 8 got heartbeat 1000000003 with 2 failures
+t=2.5014e-02: Rank 5 got heartbeat 1000000003 with 2 failures
+t=2.5014e-02: Rank 6 got heartbeat 1000000003 with 2 failures
+t=2.5016e-02: Rank 11 got heartbeat 1000000003 with 2 failures
+Estimated total runtime of           0.03501602 seconds

@@ -1,0 +1,18 @@
+if !INTEGRATED_SST_CORE
+#------------------------------------------------------------------------------------------#
+#  Unit tests                                                                           {{{#
+#------------------------------------------------------------------------------------------#
+
+UNITTESTS = \
+  unit_test_unit_test \
+  unit_test_serializable \
+  unit_test_routing 
+
+#  unit_test_topology
+
+unit_test_%.$(CHKSUF): $(top_builddir)/tests/unit_tests/test_%
+	$(PYRUNTEST) 5 unit_test_$*.$(CHKSUF) $(top_builddir)/tests/unit_tests/test_$* 
+
+#------------------------------------------------------------------------------------------#
+endif
+

@@ -1,0 +1,8 @@
+reset
+set term png truecolor
+set output "histogram.png"
+set xlabel "Size"
+set ylabel "Count"
+set boxwidth 0.95 relative
+set style fill transparent solid 0.5 noborder
+plot "histogram.dat" u 1:2 w boxes notitle

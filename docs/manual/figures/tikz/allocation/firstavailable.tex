@@ -1,0 +1,34 @@
+\documentclass{article}
+
+\newcommand{\tikzLibFolder}{/Users/jjwilke/Programs/sstmacro/docs/manual/figures/tikz}
+
+\input{\tikzLibFolder/tikzlib.tex}
+
+\usepackage[paperwidth=2.5in, paperheight=2.3in]{geometry}
+\setlength{\textheight}{2.5in}
+\setlength{\textwidth}{2.3in}
+\setlength{\hoffset}{-1.15in}
+\setlength{\voffset}{-0.9in}
+
+\setlength{\oddsidemargin}{0pt}
+\setlength{\evensidemargin}{0pt}
+\setlength{\marginparwidth}{0pt}
+\setlength{\marginparsep}{0pt}
+\setlength{\topmargin}{0pt}
+\setlength{\headheight}{0pt}
+\setlength{\headsep}{0pt}
+\setlength{\footskip}{0pt}
+\usetikzlibrary{backgrounds}
+
+
+\begin{document}
+\begin{tikzpicture} %[framed]
+\useasboundingbox (-1.2in,-0.6in) rectangle (1.2in,1.6in);
+\boxGrid{3}{3}{2cm}{1.3cm}{1.3cm}{0cm,0cm}{}
+\myRectangleFromPoints{fill=red}{mesh11BxL}{mesh11TxR}
+\myRectangleFromPoints{fill=red}{mesh21BxL}{mesh21TxR}
+\myRectangleFromPoints{fill=red}{mesh31BxL}{mesh31TxR}
+\myRectangleFromPoints{fill=red}{mesh12BxL}{mesh12TxR}
+\end{tikzpicture}
+\end{document}
+

@@ -1,0 +1,7 @@
+Average time stats for application app1: 
+     compute:       0.20100000 s
+         mpi:       3.60323827 s
+       sleep:       0.20000000 s
+      buffer:       0.00000000 s
+     general:       0.00000450 s
+Estimated total runtime of           4.00424310 seconds

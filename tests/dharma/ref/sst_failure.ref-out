@@ -1,0 +1,58 @@
+WARNING: using null_memory_model object: this does not support detailed compute modeling
+ and is primarily used for debugging purposes or for experiments focused on network traffic
+scheduling failure at timestamp(2 secs) on node 1
+Rank 11 maps to dense rank 11
+Rank 10 passed allgather
+Rank 4 passed allgather
+Rank 0 passed allgather
+Rank 6 passed allgather
+Rank 2 passed allgather
+Rank 8 passed allgather
+Rank 11 passed allgather
+Rank 5 passed allgather
+Rank 1 passed allgather
+Rank 7 passed allgather
+Rank 9 passed allgather
+Rank 3 passed allgather
+Rank 1 going down!
+Failed = { 1 }
+Rank 11 maps to dense rank 10
+Rank 9 passed allgather
+Rank 11 passed allgather
+Rank 5 passed allgather
+Rank 4 passed allgather
+Rank 3 passed allgather
+Rank 10 passed allgather
+Rank 0 passed allgather
+Rank 7 passed allgather
+Rank 6 passed allgather
+Rank 2 passed allgather
+Rank 8 passed allgather
+Rank 4 going down!
+Failed = { 1 4 }
+Rank 11 maps to dense rank 9
+Rank 8 passed allgather
+Rank 7 passed allgather
+Rank 3 passed allgather
+Rank 9 passed allgather
+Rank 10 passed allgather
+Rank 11 passed allgather
+Rank 6 passed allgather
+Rank 2 passed allgather
+Rank 5 passed allgather
+Rank 0 passed allgather
+Rank 7 going down!
+Failed = { 1 4 7 }
+Rank 11 maps to dense rank 8
+Rank 3 passed allgather
+Rank 2 passed allgather
+Rank 8 passed allgather
+Rank 5 passed allgather
+Rank 9 passed allgather
+Rank 0 passed allgather
+Rank 11 passed allgather
+Rank 10 passed allgather
+Rank 6 passed allgather
+Rank 10 going down!
+Failed = { 1 4 7 10 }
+Estimated total runtime of           0.00672442 seconds

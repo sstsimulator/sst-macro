@@ -1,0 +1,344 @@
+events: Instructions
+
+fn=main
+0 0
+cfn=MPI_Init
+calls=10 0
+0 1323568
+cfn=MPI_Finalize
+calls=0 0
+0 3056197
+cfn=MPI_Comm_dup
+calls=0 0
+0 1991672
+cfn=MPI_Comm_create
+calls=0 0
+0 5908910
+cfn=MPI_Comm_split
+calls=0 0
+0 1822808
+cfn=MPI_Cart_create
+calls=0 0
+0 7432208
+cfn=MPI_Send
+calls=0 0
+0 2493919
+cfn=MPI_Recv
+calls=0 0
+0 1473514
+cfn=MPI_Start
+calls=0 0
+0 10000
+cfn=MPI_Wait
+calls=0 0
+0 920566
+cfn=MPI_Waitany
+calls=0 0
+0 139099
+cfn=MPI_Waitsome
+calls=0 0
+0 472048
+cfn=MPI_Probe
+calls=0 0
+0 326144
+cfn=MPI_Barrier
+calls=0 0
+0 127093322
+cfn=MPI_Bcast
+calls=0 0
+0 11756791
+cfn=MPI_Scatter
+calls=0 0
+0 16701331
+cfn=MPI_Scatterv
+calls=0 0
+0 11746677
+cfn=MPI_Gather
+calls=0 0
+0 8618930
+cfn=MPI_Allgather
+calls=0 0
+0 32768018
+cfn=MPI_Allgatherv
+calls=0 0
+0 33245650
+cfn=MPI_Alltoall
+calls=0 0
+0 25182586
+cfn=MPI_Reduce
+calls=0 0
+0 7834755
+cfn=MPI_Allreduce
+calls=0 0
+0 11414072
+cfn=MPI_Scan
+calls=0 0
+0 49975762
+cfn=Compute Time
+calls=0 0
+0 100020000
+cfn=Sleep
+calls=0 0
+0 20000
+
+fn=MPI Queue Poll
+0 333219921
+cfn=MPI Eager 0 Protocol: Send Socket Header
+calls=0 0
+0 400000
+cfn=MPI Eager 0 Protocol: Handle Socket Header
+calls=0 0
+0 20323729
+
+fn=MPI Queue Buffer Unexpected Message
+0 0
+cfn=memcpy
+calls=143 0
+0 11531229
+
+fn=MPI_buffered_recv
+0 0
+cfn=MPI_buffered_recv
+calls=0 0
+0 1093750
+cfn=MPI Eager 0 Protocol: Send Socket Header
+calls=0 0
+0 840000
+cfn=memcpy
+calls=123 0
+0 8926250
+
+fn=MPI Queue Post Header
+0 0
+cfn=Compute Time
+calls=942 0
+0 9420000
+
+fn=MPI Eager 0 Protocol: Send Socket Header
+0 0
+cfn=MPI Queue Post Header
+calls=942 0
+0 9420000
+
+fn=MPI Eager 0 Protocol: Handle Socket Header
+0 0
+cfn=MPI Queue Buffer Unexpected Message
+calls=143 0
+0 11531229
+cfn=MPI_buffered_recv
+calls=0 0
+0 3662500
+cfn=MPI Eager 0 Protocol: Send Socket Header
+calls=511 0
+0 5440000
+
+fn=MPI_Init
+0 0
+cfn=MPI_Barrier
+calls=10 0
+0 1323568
+
+fn=MPI_Finalize
+0 0
+cfn=MPI_Barrier
+calls=10 0
+0 3056197
+
+fn=MPI_Comm_dup
+0 0
+cfn=MPI_Allreduce
+calls=5 0
+0 1991672
+
+fn=MPI_Comm_create
+0 0
+cfn=MPI_Allreduce
+calls=10 0
+0 5908910
+
+fn=MPI_Comm_split
+0 0
+cfn=MPI_Allgather
+calls=5 0
+0 1822808
+
+fn=MPI_Cart_create
+0 0
+cfn=MPI_Allreduce
+calls=10 0
+0 7432208
+
+fn=MPI_Send
+0 0
+cfn=MPI Queue Poll
+calls=0 0
+0 2213919
+cfn=MPI Eager 0 Protocol: Send Socket Header
+calls=13 0
+0 130000
+cfn=MPI Eager 0 Protocol: Handle Socket Header
+calls=0 0
+0 150000
+
+fn=MPI_Recv
+0 0
+cfn=MPI Queue Poll
+calls=6 0
+0 1473514
+
+fn=MPI_Start
+0 0
+cfn=MPI Eager 0 Protocol: Send Socket Header
+calls=1 0
+0 10000
+
+fn=MPI_Wait
+0 0
+cfn=MPI Queue Poll
+calls=3 0
+0 920566
+
+fn=MPI_Waitany
+0 139099
+
+fn=MPI_Waitsome
+0 472048
+
+fn=MPI_Probe
+0 0
+cfn=MPI Queue Poll
+calls=1 0
+0 326144
+
+fn=MPI_Barrier
+0 0
+cfn=MPI Queue Poll
+calls=0 0
+0 128483087
+cfn=MPI_buffered_recv
+calls=0 0
+0 2040000
+cfn=MPI Eager 0 Protocol: Send Socket Header
+calls=80 0
+0 800000
+cfn=MPI Eager 0 Protocol: Handle Socket Header
+calls=0 0
+0 150000
+
+fn=MPI_Bcast
+0 0
+cfn=MPI Queue Poll
+calls=17 0
+0 11036791
+cfn=MPI_buffered_recv
+calls=10 0
+0 600000
+cfn=MPI Eager 0 Protocol: Send Socket Header
+calls=3 0
+0 120000
+
+fn=MPI_Scatter
+0 0
+cfn=MPI Queue Poll
+calls=9 0
+0 16661331
+cfn=MPI Eager 0 Protocol: Send Socket Header
+calls=1 0
+0 40000
+
+fn=MPI_Scatterv
+0 0
+cfn=MPI Queue Poll
+calls=9 0
+0 9991677
+cfn=MPI_buffered_recv
+calls=1 0
+0 1575000
+cfn=MPI Eager 0 Protocol: Send Socket Header
+calls=10 0
+0 180000
+
+fn=MPI_Gather
+0 0
+cfn=MPI Queue Poll
+calls=5 0
+0 8568930
+cfn=MPI Eager 0 Protocol: Send Socket Header
+calls=5 0
+0 50000
+
+fn=MPI_Allgather
+0 0
+cfn=MPI Queue Poll
+calls=0 0
+0 34260826
+cfn=MPI_buffered_recv
+calls=1 0
+0 180000
+cfn=MPI Eager 0 Protocol: Send Socket Header
+calls=14 0
+0 150000
+
+fn=MPI_Allgatherv
+0 0
+cfn=MPI Queue Poll
+calls=0 0
+0 33145650
+cfn=MPI Eager 0 Protocol: Send Socket Header
+calls=10 0
+0 100000
+
+fn=MPI_Alltoall
+0 0
+cfn=MPI Queue Poll
+calls=0 0
+0 24682586
+cfn=MPI Eager 0 Protocol: Send Socket Header
+calls=10 0
+0 500000
+
+fn=MPI_Reduce
+0 0
+cfn=MPI Queue Poll
+calls=0 0
+0 7734755
+cfn=MPI Eager 0 Protocol: Send Socket Header
+calls=10 0
+0 100000
+
+fn=MPI_Allreduce
+0 0
+cfn=MPI Queue Poll
+calls=0 0
+0 26146862
+cfn=MPI_buffered_recv
+calls=0 0
+0 150000
+cfn=MPI Eager 0 Protocol: Send Socket Header
+calls=35 0
+0 440000
+cfn=MPI Eager 0 Protocol: Handle Socket Header
+calls=0 0
+0 10000
+
+fn=MPI_Scan
+0 0
+cfn=MPI Queue Poll
+calls=1 0
+0 48297012
+cfn=MPI_buffered_recv
+calls=0 0
+0 1558750
+cfn=MPI Eager 0 Protocol: Send Socket Header
+calls=9 0
+0 120000
+
+fn=memcpy
+0 20457479
+
+fn=Compute Time
+0 109440000
+
+fn=Sleep
+0 20000
+

@@ -1,0 +1,210 @@
+/** \page dumpitracer Validation and Analysis Using DUMPI Traces
+
+This section provides an example using the DUMPI package to 
+obtain execution traces of an MPI program
+and using SST/macro to simulate the traces and validate the machine model. 
+Of course, every combination of program and machine is unique, so this
+serves more as a case study to demonstrate the basic approach which will
+likely require modification depending upon individual requirements. 
+AMG, a benchmark in the <a href="https://asc.llnl.gov/sequoia/benchmarks/">ASC
+Sequoia suite</a>, will be examined executing on the 
+<a href="http://www.nersc.gov/users/computational-systems/franklin/">
+Franklin</a> Cray XT4 machine at NERSC.
+For this exercise, we'll restrict ourselves to using one core per node.
+
+\section tracing Tracing with DUMPI
+
+The DUMPI package supports detailed MPI tracing (<tt>libdumpi</tt>)
+and reading its binary trace files (<tt>libundumpi</tt>).
+By default SST/macro will build a version of the DUMPI package
+which only includes libundumpi (that's all it needs to read and simulate 
+traces).  This way the simulator can avoid the complications that arise 
+configuring MPI aware compilers, and, of course, simulation can be performed
+on a different machine than the traces were created.  In order to trace
+code execution, it is recommended to perform a second stand-alone build
+of DUMPI on the machine to be simulated enabling <tt>libdumpi</tt> and using
+appropriate MPI aware compilers.
+To ensure consistency between DUMPI versions, it is recommended to copy the 
+DUMPI source from the <tt>dumpi</tt> directory within the SST/macro package 
+that will be used to perform simulations. 
+On Franklin, the default MPI compilers for C, C++ and Fortran are <tt>cc</tt>,
+<tt>CC</tt> and <tt>ftn</tt>, respectively, so the following
+commands will build a version of DUMPI appropriate for tracing
+located in <tt>${HOME}/install/dumpi</tt>.
+Further details on building and using DUMPI can be found in the <a href="http://sst.sandia.gov/using_dumpi.html">documentation</a>.
+
+<pre>
+CC=cc CXX=CC ./configure --prefix=${HOME}/install/dumpi --enable-libdumpi --enable-f77=ftn --enable-f90=ftn; make; make install
+</pre>
+
+In order to trace AMG using DUMPI, the <tt>libdumpi</tt> library must be linked
+into the AMG executable.  The <tt>Makefile.include</tt> file in the AMG source
+directory provides a macro for linker flags, to which <tt>libdumpi</tt> should
+be added as follows.
+
+<pre>
+INCLUDE_LFLAGS = -L${HOME}/install/dumpi/lib -ldumpi
+</pre>
+
+A subsequent <tt>make</tt> command will build a
+version of AMG which will create DUMPI traces during execution.
+The AMG benchmark distribution includes details for building and running
+the code in <tt>docs/amg2006.readme</tt>.  As an example, we'll perform a 32 node
+run with a 1x1x32 logical topology using a refinement of 6 in each dimension.
+On Franklin, this is accomplished by the following command.
+
+<pre>
+aprun -n 32 -N 1 ${HOME}/AMG2006/test/amg2006 -P 1 1 32 -r 6 6 6</pre>
+
+The result is a <tt>dumpi-*.bin</tt> file for each MPI task as well as a
+<tt>dumpi-*.meta</tt> file which includes metadata such as the number of tasks
+and the file prefix for the run.  These are the trace files and will need to
+be moved to the machine performing the simulation, if it differs from the target
+machine.  
+
+\subsection validation Validation
+ 
+In the previous section (\ref gettingstarted), we collected everything needed to simulate a 32 node AMG run.
+The sstmacro program runs skeleton apps designed to serve as
+a coarse grained model of a full parallel application.  The sstmacro
+executable contains a built-in skeleton app <tt>parsedumpi</tt>. This
+will parse the DUMPI trace output from an external application.  As shown previously,
+parameters can be configured in a file <tt>parameters.ini</tt>. 
+After configuring the network parameters, the following parameters
+should be included in the .ini file. 
+<ul>
+<li> launch_app1 = parsedumpi
+<li> launch_app1_size = 32
+<li> launch_name = instant
+<li> launch_allocation = dumpi
+<li> launch_indexing = dumpi
+<li> launch_dumpi_metaname = dumpitrace.meta
+</ul>
+The metaname will change depending on the actual name of your dumpi trace file.  Most dumpi traces
+will have the name <tt>dumpi-<i>timestamp</i>.meta</tt> where the timestamp depends simply on when
+the job was run.  Since we are simulating a 32-node run, we indicate a launch size of 32 for app1.
+
+We must then insert the network benchmark parameters from Franklin into the ini file. In the section \ref gettingstarted, we showed how Franklin can be modeled as a simple shared circuit network.  
+The router-to-router (r2r) and node-to-router (n2r) bandwidth must therefore be specfified. 
+<ul>
+<li> network_name = shared
+<li> network_latency = 5830ns
+<li> network_bandwidth_r2r = 3219mbytes/sec
+<li> network_bandwidth_n2r = 1722mbytes/sec
+<li> topology_geometry = 17,24,24
+<li> topology_name = hdtorus
+<li> nic_name = simple
+</ul>
+
+Finally, the parameters defining the node itself must be given. Again, the parameters for
+Franklin are given.
+<ul>
+<li> node_mem_bandwidth = 4886mbytes/sec
+<li> node_mem_latency = 390ns
+<li> node_name = simple
+<li> node_frequency = 2.3e9
+<li> node_cores = 4
+</ul>
+
+The following command will read the DUMPI traces and simulate the 32 node AMG run allowing us to validate our machine model. 
+
+<pre>
+sstmac -f parameters.ini
+</pre>
+
+The final output includes a simulated runtime of 3.23s. Additional details of the simulation can be output by using
+the --debug,-d command line arguments.  For more information, run sstmac --help.
+
+Using DUMPI's <tt>dumpi2ascii</tt> program, we can convert the trace for node 0
+to an ascii text file.  Examining this file, we see that the execution time
+between the exit of <tt>MPI_Init</tt> and the entrance of <tt>MPI_Finalize</tt>
+is 3.26s.  At least for AMG at this scale, the simulator appears to be 
+performing well.
+
+We can perform the same steps for different numbers of nodes and logical
+topologies to validate the model under varying conditions.  The following 
+table gives data for a few additional runs.
+
+<table>
+<tr>
+<th>Nodes</th>
+<th>Topology</th>
+<th>Real Time (s)</th>
+<th>Simulated Time (s)</th>
+</tr>
+<tr>
+<td>8</td>
+<td>1x1x8</td>
+<td>3.20</td>
+<td>3.16</td>
+</tr>
+<tr>
+<td>8</td>
+<td>2x2x2</td>
+<td>5.46</td>
+<td>5.33</td>
+</tr>
+<tr>
+<td>32</td>
+<td>1x1x32</td>
+<td>3.26</td>
+<td>3.23</td>
+</tr>
+<tr>
+<td>32</td>
+<td>4x4x2</td>
+<td>7.59</td>
+<td>7.25</td>
+</tr>
+</table> 
+
+A scatter plot of this data shows that the simulated times are within 
++/- 10% of ideal, and are systematically optimistic.
+
+\image html validate.jpg "Scatter plot of AMG validation data" 
+
+\subsection analysis Analysis
+
+Varying machine model parameters, We can develop insight into the performance
+of AMG.  As an example, the following table provides simulated runtimes
+for the 4x4x2 AMG traces with the network bandwidths varied.
+
+<table>
+<tr>
+<th>Router-Node BW</th>
+<th>Router-Router BW</th>
+<th>Simulated Time (s)</th>
+</tr>
+<tr>
+<td>100</td>
+<td>100</td>
+<td>9.28</td>
+</tr>
+<tr>
+<td>500</td>
+<td>500</td>
+<td>7.52</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>1000</td>
+<td>7.32</td>
+</tr>
+<tr>
+<td>5000</td>
+<td>5000</td>
+<td>7.21</td>
+</tr>
+</table>
+
+A plot of that data follows. 
+It's evident that at this scale, AMG is primarily compute bound on any 
+modern interconnect.  There's not much to be gained by increasing
+bandwidth above 1000 MB/s.
+
+\image html bandwidth.jpg "Varying network bandwidth for AMG 4x4x2"
+
+Similarly, the remaining machine parameters and network topology 
+can be varied.  
+
+*/
