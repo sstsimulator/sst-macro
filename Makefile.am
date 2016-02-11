@@ -19,8 +19,8 @@ EXTRA_DIST = LICENSE tutorials benchmarks bootstrap.sh \
 
 SUBDIRS = $(subdirs) 
 
-if WITH_DHARMA_MPI
-SUBDIRS += dharma-mpi
+if WITH_SUMI_MPI
+SUBDIRS += sumi-mpi
 endif
 
 SUBDIRS += sstmac bin python tests configurations 
@@ -85,9 +85,4 @@ clean-local:
 	rm -f _configs.sed
 	rm -rf $(XCODEBUILD_TMPDIR)
 
-if !BUILTIN_PTH
-dist-hook:
-	@echo "ERROR: make {dist|distcheck} requires that the builtin pth library be configured"
-	@exit 1
-endif
 

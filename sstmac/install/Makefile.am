@@ -19,7 +19,7 @@ endif
 libsstmac_la_SOURCES =
 nodist_EXTRA_libsstmac_la_SOURCES = dummy.cxx
 libsstmac_la_LIBADD = \
-  ../../dharma/dharma/libdharma.la \
+  ../../sumi/sumi/libsumi.la \
   ../backends/common/libsstmac_backends.la \
   ../backends/native/libsstmac_native.la \
   ../common/libsstmac_common.la \
@@ -36,7 +36,7 @@ libsstmac_la_LIBADD = \
 if WITH_DEFAULT_MPI
 libsstmac_la_LIBADD += ../libraries/mpi/libsstmac_mpi.la 
 else
-libsstmac_la_LIBADD += ../../dharma-mpi/libsstmac_mpi.la
+libsstmac_la_LIBADD += ../../sumi-mpi/libsstmac_mpi.la
 endif
 
 if USE_MPIPARALLEL

@@ -7,7 +7,7 @@
 using namespace std;
 using namespace sstmac;
 using namespace sstmac::sw;
-using namespace dharma;
+using namespace sumi;
 
 DeclareSerializable(lblxml::box);
 DeclareSerializable(lblxml::reduce);
@@ -168,25 +168,25 @@ namespace lblxml
 
     if (rank_ == 0) sstmac_runtime::enter_deadlock_region();
     comm_barrier(barrier_tag_); // can't go on before data is set up
-    comm_collective_block(dharma::collective::barrier, barrier_tag_);
+    comm_collective_block(sumi::collective::barrier, barrier_tag_);
     ++barrier_tag_;
 
     comm_barrier(barrier_tag_);
-    comm_collective_block(dharma::collective::barrier, barrier_tag_);
+    comm_collective_block(sumi::collective::barrier, barrier_tag_);
     ++barrier_tag_;
     if (rank_ == 0) {
       std::cout << g_events.size() << " total events\n";
       start = get_real_time();
     }
     comm_barrier(barrier_tag_);
-    comm_collective_block(dharma::collective::barrier, barrier_tag_);
+    comm_collective_block(sumi::collective::barrier, barrier_tag_);
     ++barrier_tag_;
 
     // the actual simulation happens here
     run_loop();
 
     comm_barrier(barrier_tag_);
-    comm_collective_block(dharma::collective::barrier, barrier_tag_);
+    comm_collective_block(sumi::collective::barrier, barrier_tag_);
     ++barrier_tag_;
 
     if (rank_ == 0) {
@@ -196,7 +196,7 @@ namespace lblxml
     }
 
     comm_barrier(barrier_tag_);
-    comm_collective_block(dharma::collective::barrier, barrier_tag_);
+    comm_collective_block(sumi::collective::barrier, barrier_tag_);
     ++barrier_tag_;
 
     sstmac_runtime::exit_deadlock_region();
@@ -221,9 +221,9 @@ namespace lblxml
 
     comm_init();
 
-    tport_ = dharma_api();
+    tport_ = sumi_api();
     sstmac_runtime::add_deadlock_check(
-      new_deadlock_check(tport_, &dharma::transport::deadlock_check));
+      new_deadlock_check(tport_, &sumi::transport::deadlock_check));
 
     rank_ = comm_rank();
     commsize_ = comm_nproc();

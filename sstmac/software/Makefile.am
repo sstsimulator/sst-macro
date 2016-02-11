@@ -15,9 +15,6 @@ noinst_LTLIBRARIES = libsstmac_sw.la
 libsstmac_sw_la_LDFLAGS = 
 
 libsstmac_sw_la_LIBADD = 
-if BUILTIN_PTH
-  libsstmac_sw_la_LIBADD += ../../pth/libpth-sstmac.la
-endif
 
 AM_CPPFLAGS += -I$(top_builddir)/pth -I$(top_srcdir)/pth -I$(top_srcdir)/dumpi -I$(top_builddir)/dumpi
 

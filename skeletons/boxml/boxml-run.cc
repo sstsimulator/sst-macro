@@ -1,7 +1,7 @@
 #include "boxml.h"
 #include <algorithm>
 #include <ctime>
-#include <sst/dharma_api.h>
+#include <sst/sumi_api.h>
 
 using namespace std;
 using namespace sstmac;
@@ -95,13 +95,13 @@ namespace lblxml
       reduce_t* comm = static_cast<reduce_t*>(ev);
       int my_domain_rank = comm->domain_rank(box_number);
       const int* boxes = comm->box_array();
-      dharma::domain* dom = new box_domain(my_domain_rank, comm->nboxes(), boxes, g_boxindex_to_rank.data());
+      sumi::domain* dom = new box_domain(my_domain_rank, comm->nboxes(), boxes, g_boxindex_to_rank.data());
 
       int count = comm->size();
       if (debug_ > 0)
         std::cerr << "boxml: rank " << rank_ << " starting allreduce " << ev->id() << " for box " << box_number << "\n";
-      dharma::comm_allreduce<double,dharma::Add>(NULL, NULL, count, index,
-                                 false, dharma::options::initial_context, dom);
+      sumi::comm_allreduce<double,sumi::Add>(NULL, NULL, count, index,
+                                 false, sumi::options::initial_context, dom);
     }
     return n_allreduce > 0;
   }
@@ -163,9 +163,9 @@ namespace lblxml
   void boxml::recv_boxes(int& n_events)
   {
       SSTMACBacktrace("recv boxes");
-      dharma::message::ptr dmess = dharma::comm_poll();
+      sumi::message::ptr dmess = sumi::comm_poll();
       switch (dmess->class_type()){
-        case dharma::message::pt2pt:
+        case sumi::message::pt2pt:
         {
           if (debug_ > 0)
             std::cerr << "boxml: rank " << rank_ << " receiving pt2pt message\n";
@@ -173,9 +173,9 @@ namespace lblxml
           simple_event_done(pmess->event_index());
           break;
         }
-        case dharma::message::collective_done:
+        case sumi::message::collective_done:
         {
-          dharma::collective_done_message::ptr cmess = ptr_safe_cast(dharma::collective_done_message, dmess);
+          sumi::collective_done_message::ptr cmess = ptr_safe_cast(sumi::collective_done_message, dmess);
           box_domain* dom = static_cast<box_domain*>(cmess->dom());
           int my_box_number = dom->my_box_number();
           if (debug_ > 0)
@@ -189,7 +189,7 @@ namespace lblxml
         {
           spkt_throw_printf(sprockit::value_error,
             "got invalid message type %s",
-            dharma::message::tostr(dmess->class_type()));
+            sumi::message::tostr(dmess->class_type()));
         }
       }
 

@@ -19,7 +19,7 @@ AM_CPPFLAGS += -I$(top_builddir)/dumpi -I$(top_srcdir)/dumpi \
   -I$(srcdir) -I$(top_builddir)/pth -I$(top_srcdir)/pth \
   -I$(top_builddir)/tests -I$(top_srcdir)/tests
 
-SUBDIRS = unit_tests dharma
+SUBDIRS = unit_tests sumi
 if WITH_DEFAULT_MPI
 SUBDIRS += api/mpi api/globals
 endif

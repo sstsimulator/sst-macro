@@ -15,32 +15,32 @@ static bool send_ack = false;
 static bool recv_ack = true;
 #endif
 
-#include <dharma/transport.h>
+#include <sumi/transport.h>
 
 DeclareDebugSlot(traffic_matrix)
 RegisterDebugSlot(traffic_matrix)
 
-class dharma_param_bcaster : public sprockit::param_bcaster
+class sumi_param_bcaster : public sprockit::param_bcaster
 {
  public:
-  dharma_param_bcaster(dharma::transport* tp) : tport_(tp), tag_(12345) {}
+  sumi_param_bcaster(sumi::transport* tp) : tport_(tp), tag_(12345) {}
 
   void bcast(void *buf, int size, int me, int root){
     tport_->bcast(buf, size, sizeof(char), tag_, false);
-    tport_->collective_block(dharma::collective::bcast, tag_);
+    tport_->collective_block(sumi::collective::bcast, tag_);
     ++tag_;
   }
 
  private:
   int tag_;
-  dharma::transport* tport_;
+  sumi::transport* tport_;
 };
 
 static const int window_bytes = 262144;
 
 
 class config_message :
-  public dharma::message,
+  public sumi::message,
   public sprockit::serializable_type<config_message>
 {
   ImplementSerializable(config_message)
@@ -48,10 +48,10 @@ class config_message :
   typedef sprockit::refcount_ptr<config_message> ptr;
 
  public:
-  config_message(const dharma::public_buffer& recv_buf) :
+  config_message(const sumi::public_buffer& recv_buf) :
     recv_buf_(recv_buf){}
 
-  dharma::public_buffer
+  sumi::public_buffer
   recv_buf() const {
     return recv_buf_;
   }
@@ -59,15 +59,15 @@ class config_message :
   virtual void
   serialize_order(sprockit::serializer &ser){
     ser & recv_buf_;
-    dharma::message::serialize_order(ser);
+    sumi::message::serialize_order(ser);
   }
 
  private:
-  dharma::public_buffer recv_buf_;
+  sumi::public_buffer recv_buf_;
 };
 
 class rdma_message :
-  public dharma::rdma_message,
+  public sumi::rdma_message,
   public sprockit::serializable_type<rdma_message>
 {
  ImplementSerializable(rdma_message)
@@ -76,7 +76,7 @@ class rdma_message :
 
  public:
   rdma_message(int iter, int num_bytes) :
-   dharma::rdma_message(num_bytes),
+   sumi::rdma_message(num_bytes),
    iter_(iter)
   {
   }
@@ -86,10 +86,10 @@ class rdma_message :
     ser & iter_;
     ser & start_;
     ser & finish_;
-    dharma::rdma_message::serialize_order(ser);
+    sumi::rdma_message::serialize_order(ser);
   }
 
-  dharma::parent_message*
+  sumi::parent_message*
   clone() const {
     rdma_message* cln = new rdma_message(iter_, num_bytes_);
     cln->set_start(start_);
@@ -121,7 +121,7 @@ std::vector<std::map<int, std::map<int, rdma_message::ptr> > > results;
 static int num_done = 0;
 
 void
-progress_loop(dharma::transport* tport, double timeout, std::list<rdma_message::ptr>& done)
+progress_loop(sumi::transport* tport, double timeout, std::list<rdma_message::ptr>& done)
 {
   double now = tport->wall_time();
   double stop = now + timeout;
@@ -137,7 +137,7 @@ progress_loop(dharma::transport* tport, double timeout, std::list<rdma_message::
       done.push_back(msg);
       debug_printf(sprockit::dbg::traffic_matrix,
         "Rank %d got incoming message at t=%10.6e of type %s",
-        tport->rank(), now, dharma::message::tostr(msg->payload_type()));
+        tport->rank(), now, sumi::message::tostr(msg->payload_type()));
     } else {
       debug_printf(sprockit::dbg::traffic_matrix,
         "Rank %d timed out in progress loop at t=%10.6e",
@@ -152,11 +152,11 @@ progress_loop(dharma::transport* tport, double timeout, std::list<rdma_message::
 
 void do_all_sends(
   int iteration,
-  dharma::transport* tport,
+  sumi::transport* tport,
   int chunk_size,
   const std::vector<int>& send_partners,
-  const std::vector<dharma::public_buffer>& send_chunks,
-  const std::vector<dharma::public_buffer>& recv_chunks,
+  const std::vector<sumi::public_buffer>& send_chunks,
+  const std::vector<sumi::public_buffer>& recv_chunks,
   double timeout,
   std::list<rdma_message::ptr>& done)
 {
@@ -182,7 +182,7 @@ void do_all_sends(
 }
 
 void
-quiesce(dharma::transport* tport,
+quiesce(sumi::transport* tport,
   int npartners, int niterations,
   std::list<rdma_message::ptr>& done)
 {
@@ -207,7 +207,7 @@ int main(int argc, char** argv)
   init_params["ping_timeout"] = "100ms";
   init_params["transport"] = mode;
   init_params["eager_cutoff"] = "512";
-  dharma::transport* tport = dharma::transport_factory::get_param("transport", &init_params);
+  sumi::transport* tport = sumi::transport_factory::get_param("transport", &init_params);
 
   tport->init();
 
@@ -215,7 +215,7 @@ int main(int argc, char** argv)
     "Rank %d entering initial param bcast",
     tport->rank());
 
-  dharma_param_bcaster bc(tport);
+  sumi_param_bcaster bc(tport);
   sprockit::sim_parameters* params = sprockit::sim_parameters::parallel_build_params(
     tport->rank(), tport->nproc(), "input.ini", &bc);
 
@@ -241,8 +241,8 @@ int main(int argc, char** argv)
 
   //allocate 256 replicas of the 256 KB chunk
   int npartners = mixing;
-  std::vector<dharma::public_buffer> recv_chunks(npartners);
-  std::vector<dharma::public_buffer> send_chunks(npartners);
+  std::vector<sumi::public_buffer> recv_chunks(npartners);
+  std::vector<sumi::public_buffer> send_chunks(npartners);
 
   debug_printf(sprockit::dbg::traffic_matrix,
     "Rank %d starting run with mixing=%d, niter=%d, scatter=%d",
@@ -273,8 +273,8 @@ int main(int argc, char** argv)
     rank_to_send_partner_index[send_partners[i]] = i;
   }
 
-  dharma::public_buffer send_buf = tport->allocate_public_buffer(window_bytes);
-  dharma::public_buffer recv_buf = tport->allocate_public_buffer(window_bytes);
+  sumi::public_buffer send_buf = tport->allocate_public_buffer(window_bytes);
+  sumi::public_buffer recv_buf = tport->allocate_public_buffer(window_bytes);
   int chunk_size = window_bytes / mixing;
   for (int i=0; i < npartners; ++i){
     send_chunks[i] = send_buf;
@@ -310,7 +310,7 @@ int main(int argc, char** argv)
 
   int tag = 42;
   tport->barrier(tag);
-  tport->collective_block(dharma::collective::barrier, tag);
+  tport->collective_block(sumi::collective::barrier, tag);
 
   std::list<rdma_message::ptr> done;
 

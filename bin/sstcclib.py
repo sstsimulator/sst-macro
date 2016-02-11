@@ -85,7 +85,7 @@ def run(typ, extralibs="", include_main=True, make_library=False, redefine_symbo
     extra_cppflags = []
     if redefine_symbols:
         extra_cppflags = [
-        "-I%s/include/dharma" % prefix,
+        "-I%s/include/sumi" % prefix,
         "-Dmain=USER_MAIN",
         "-DSSTMAC=1",
         "-include sstmac/libraries/blas/blas.h",

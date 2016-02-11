@@ -2,13 +2,13 @@ TARGET := runtraffic
 SRC := $(shell ls *.cc) 
 
 COMPUTE := -D_USE_LOOPS
-DHARMA=$(HOME)/Programs/install/dharma/sst
+SUMI=$(HOME)/Programs/install/sumi/sst
 
 CXX := sst++
 CC :=  sstcc
 CXXFLAGS := 
-CPPFLAGS := -I. $(COMPUTE) -I$(DHARMA)/include
-LIBS := -L$(DHARMA)/lib -ldharma_api -Wl,-rpath,$(DHARMA)/lib 
+CPPFLAGS := -I. $(COMPUTE) -I$(SUMI)/include
+LIBS := -L$(SUMI)/lib -lsumi_api -Wl,-rpath,$(SUMI)/lib 
 LDFLAGS := 
 
 OBJ := $(SRC:.cc=.o) 

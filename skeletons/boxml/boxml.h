@@ -2,8 +2,8 @@
 #define BOXML_H_INCLUDED
 
 #include <sstmacro.h>
-#include <sst/dharma_api.h>
-#include <dharma/transport.h>
+#include <sst/sumi_api.h>
+#include <sumi/transport.h>
 #include <sstmac/software/process/key.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/software/process/operating_system.h>
@@ -47,7 +47,7 @@ namespace lblxml
   typedef std::deque<int> da_list_t;
   typedef std::vector<da_list_t> rank_to_da_list_t;
 
-  class pt2pt_message : public dharma::rdma_message
+  class pt2pt_message : public sumi::rdma_message
   {
   private:
     int event_index_;
@@ -55,7 +55,7 @@ namespace lblxml
     typedef sprockit::refcount_ptr<pt2pt_message> ptr;
 
     pt2pt_message(int index, long num_bytes) : event_index_(index),
-      dharma::rdma_message(num_bytes)
+      sumi::rdma_message(num_bytes)
     { }
 
     ~pt2pt_message() { }
@@ -63,7 +63,7 @@ namespace lblxml
     int event_index() { return event_index_; }
   };
 
-  class box_domain : public dharma::domain
+  class box_domain : public sumi::domain
   {
   private:
     const int* boxes_;
@@ -182,7 +182,7 @@ namespace lblxml
     static bool have_output_bin_;
     static bool checked_bin_;
     bool xml_read_only_;
-    dharma::transport* tport_;
+    sumi::transport* tport_;
 
     void
     init();

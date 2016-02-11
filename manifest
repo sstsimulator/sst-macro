@@ -5,11 +5,11 @@ files = []
 import os
 import commands
 
-files.extend(commands.getoutput("hg manifest").splitlines())
+files.extend(commands.getoutput("git ls-files").splitlines())
 
-for folder in "dumpi", "dharma", "sprockit":
+for folder in "dumpi", "sumi", "sprockit":
   os.chdir(folder)
-  manifest = commands.getoutput("hg manifest").splitlines()
+  manifest = commands.getoutput("git ls-files").splitlines()
   for file in manifest:
     files.append(os.path.join(folder, file))
   os.chdir("..")

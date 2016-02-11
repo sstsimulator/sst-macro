@@ -40,7 +40,7 @@
 #include <sprockit/output.h>
 #include <sprockit/basic_string_tokenizer.h>
 #include <sprockit/sprockit/spkt_config.h>
-#include <dharma/dharma/dharma_config.h>
+#include <sumi/sumi/sumi_config.h>
 
 #if SSTMAC_REPO_BUILD
 #include <sstmac_repo.h>
@@ -50,8 +50,8 @@
 #include <sprockit/sprockit_repo.h>
 #endif
 
-#if DHARMA_REPO_BUILD
-#include <dharma/dharma_repo.h>
+#if SUMI_REPO_BUILD
+#include <sumi/sumi_repo.h>
 #endif
 
 namespace sstmac {
@@ -75,11 +75,11 @@ static void
 print_finish(std::ostream& os, double wall_time)
 {
 #if SSTMAC_REPO_BUILD
-  os << sprockit::printf("DHARMA   repo:   %s\n", dharma_REPO_HEADER);
+  os << sprockit::printf("SUMI   repo:   %s\n", sumi_REPO_HEADER);
   os << sprockit::printf("Sprockit repo:   %s\n", sprockit_REPO_HEADER);
   os << sprockit::printf("SSTMAC   repo:   %s\n", sstmac_REPO_HEADER);
 #else
-  os << sprockit::printf("DHARMA   %s\n", DHARMA_VERSION);
+  os << sprockit::printf("SUMI   %s\n", SUMI_VERSION);
   os << sprockit::printf("Sprockit %s\n", SPKT_VERSION);
   os << sprockit::printf("SSTMAC   %s\n", SSTMAC_VERSION);
 #endif

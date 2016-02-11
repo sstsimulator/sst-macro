@@ -23,7 +23,7 @@ AC_ARG_ENABLE(pth,
   [
     enable_pth="$enableval"
   ], [
-    enable_pth=builtin
+    enable_pth=no
   ]
 )
 
@@ -136,43 +136,12 @@ if test "$enable_pth" != "no" -a "$enable_pth" != builtin; then
   fi
   dnl First check for a custom pth.
   AC_CHECK_LIB(
-    [pth-sstmac],
-    [pth_uctx_switch_ignore_sigmask],
-    [ HAVE_PTH_CUSTOM=yes
-      LIBS="-lpth-sstmac $LIBS"
-    ],
-    [ dnl Couldn't find a custom pth -- find a regular one.
-      AC_CHECK_LIB(
-        [pth],
-        [pth_uctx_switch],
-        [LIBS="-lpth $LIBS"],
-        [AC_MSG_ERROR([GNU pth enabled but not found])]
-      )
-    ]
+    [pth],
+    [pth_uctx_switch],
+    [LIBS="-lpth $LIBS"],
+    [AC_MSG_ERROR([GNU pth enabled but not found])]
   )
   AC_DEFINE(HAVE_PTH)
-fi
-
-if test "$enable_pth" = builtin; then
-  AC_DEFINE(HAVE_PTH)
-  HAVE_PTH_CUSTOM="yes"
-  PTH_PATH=$abs_top_srcdir/pth
-  AC_DEFINE([HAVE_PTH_CUSTOM],[],[Defined if using custom (builtin) pth.])
-fi
-
-AC_ARG_ENABLE(pth-fast-context-switch,
-  [AS_HELP_STRING(
-    [--(dis|en)able-pth-fast-context-switch],
-    [Control whether or not fast context switching is used with builtin pth (if available). Default is yes.]
-    )],
-  [
-    enable_pth_fast_context_switch=$enableval
-  ], [
-    enable_pth_fast_context_switch=yes
-  ]
-)
-if test "$HAVE_PTH_CUSTOM" = yes && test "$enable_pth_fast_context_switch" = yes; then
-  AC_DEFINE([HAVE_PTH_UCTX_SWITCH_IGNORE_SIGMASK],[],[Defined if pth_uctx_switch_ignore_sigmask is available.])
 fi
 
 AC_ARG_WITH(default-threading,

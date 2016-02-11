@@ -197,15 +197,7 @@ AC_CONFIG_SUBDIRS([sprockit])
 AC_CONFIG_SUBDIRS([dumpi])
 
 ac_configure_args="$ac_configure_args --enable-sst --enable-sst-subrepo"
-AC_CONFIG_SUBDIRS([dharma])
-
-# Configure pth, if desired.
-if test "$enable_pth" = builtin; then
-  AC_CONFIG_SUBDIRS([pth])
-fi
-AM_CONDITIONAL([BUILTIN_PTH], [test "$enable_pth" = "builtin"])
-
-
+AC_CONFIG_SUBDIRS([sumi])
 
 #-------------------------------------------------
 # Custom new.  Make sure this is last otherwise 
@@ -251,12 +243,12 @@ AC_CONFIG_FILES([
  tests/external/Makefile
  tests/unit_tests/Makefile
  tests/unit_tests/util/Makefile
- tests/dharma/Makefile
+ tests/sumi/Makefile
  tests/api/mpi/Makefile
  tests/api/globals/Makefile
  docs/doxygen.cfg
  qt-gui/config.h
- dharma-mpi/Makefile
+ sumi-mpi/Makefile
 ])
 
 AC_CONFIG_FILES([bin/sstmacro-config], [chmod +x bin/sstmacro-config])
