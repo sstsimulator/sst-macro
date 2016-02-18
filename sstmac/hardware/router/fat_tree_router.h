@@ -13,15 +13,13 @@
 #define SSTMAC_HARDWARE_NETWORK_SWTICHES_ROUTING_FATTREEROUTER_H_INCLUDED
 
 #include <sstmac/hardware/router/structured_router.h>
-#include <sstmac/hardware/circuit/circuit_router.h>
 #include <sstmac/common/rng.h>
 
 namespace sstmac {
 namespace hw {
 
 class fat_tree_router :
-  public virtual structured_router,
-  public virtual circuit_router
+  public structured_router
 {
  public:
   virtual

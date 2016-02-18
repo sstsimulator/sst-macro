@@ -1,3 +1,4 @@
+EXTRA_DIST=ini ref
 
 if !INTEGRATED_SST_CORE
 check_PROGRAMS = \

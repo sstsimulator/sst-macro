@@ -15,7 +15,7 @@ AM_CPPFLAGS += -I$(top_srcdir)/tests/mpi/include -Wp,-w -I$(top_builddir)/dumpi 
   -I$(top_builddir)/tests/api/mpi -I$(top_srcdir)/tests/api/mpi \
   -I$(top_builddir)/tests/api/mpi/include -I$(top_srcdir)/tests/api/mpi/include -DHAVE_MPI_WIN_CREATE
 
-EXTRA_DIST = testmpi.h
+EXTRA_DIST = testmpi.h include
 
 
 if INTEGRATED_SST_CORE

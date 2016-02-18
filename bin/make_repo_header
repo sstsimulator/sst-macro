@@ -9,7 +9,7 @@ prefix = sys.argv[2]
 builddir = os.path.abspath(os.getcwd())
 
 os.chdir(srcdir)
-repo = commands.getoutput("hg identify")
+repo = commands.getoutput("git rev-parse HEAD")
 
 header = """#ifndef %s_REPO_HEADER
 #define %s_REPO_HEADER "%s"
