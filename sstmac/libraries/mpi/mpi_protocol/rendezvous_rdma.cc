@@ -14,7 +14,7 @@ void
 rendezvous_rdma::send_header(mpi_queue* queue,
                              const mpi_message::ptr& msg)
 {
-  SSTMACBacktrace("MPI Rendezvous Protocol: RDMA Send Header", queue->is_service_thread());
+  SSTMACBacktrace("MPI Rendezvous Protocol: RDMA Send Header");
   //msg->set_needs_ack(false);  //we don't care about the nic ack for this
   msg->content_type(mpi_message::header);
   queue->post_header(msg);
@@ -24,7 +24,7 @@ void
 rendezvous_rdma::incoming_header(mpi_queue* queue,
                                const mpi_message::ptr& msg)
 {
-  SSTMACBacktrace("MPI Rendezvous Protocol: RDMA Handle Header", queue->is_service_thread());
+  SSTMACBacktrace("MPI Rendezvous Protocol: RDMA Handle Header");
 
   mpi_queue_recv_request* req = queue->find_pending_request(msg);
   if (req) {
@@ -45,7 +45,7 @@ void
 rendezvous_rdma::incoming_payload(mpi_queue* queue,
                                 const mpi_message::ptr& msg)
 {
-  SSTMACBacktrace("MPI Rendezvous Protocol: RDMA Handle Payload", queue->is_service_thread());
+  SSTMACBacktrace("MPI Rendezvous Protocol: RDMA Handle Payload");
 
   mpi_queue::pending_req_map::iterator it = queue->recv_needs_payload_.find(
         msg->unique_mpi_id());
@@ -80,7 +80,7 @@ rendezvous_rdma::finish_recv_header(
   mpi_queue_recv_request* req
 )
 {
-  SSTMACBacktrace("MPI Rendezvous Protocol: RDMA Recv Header", queue->is_service_thread());
+  SSTMACBacktrace("MPI Rendezvous Protocol: RDMA Recv Header");
 
   msg->convert(mpi_message::HEADER_TO_RDMA_GET_REQ);
   msg->set_needs_ack(false);
@@ -95,7 +95,7 @@ rendezvous_rdma::finish_recv_payload(
   mpi_queue_recv_request* req
 )
 {
-  SSTMACBacktrace("MPI Rendezvous Protocol: RDMA Recv Payload", queue->is_service_thread());
+  SSTMACBacktrace("MPI Rendezvous Protocol: RDMA Recv Payload");
   queue->send_completion_ack(msg);
 }
 

@@ -4,7 +4,7 @@
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/software/process/graphviz.h>
 
-#if SSTMAC_HAVE_GRAPHIZ
+#if SSTMAC_HAVE_GRAPHVIZ
 #define SSTMACBacktrace GraphVizAppendBacktrace
 #else
 #define SSTMACBacktrace GraphVizDoNothing

@@ -2,7 +2,7 @@
 
 import os
 
-if os.path.isdir(".hg"):
+if os.path.isdir(".git"):
   print "yes"
 else:
   print "no"

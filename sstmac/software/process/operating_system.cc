@@ -68,6 +68,7 @@ int global_variables::context_size = 0;
 char* global_variables::global_initer = new char[1000000];
 static sprockit::need_delete_statics<operating_system> del_statics;
 size_t operating_system::stacksize_ = 0;
+graph_viz* operating_system::call_graph_ = 0;
 
 #if SSTMAC_USE_MULTITHREAD
 std::vector<operating_system::os_thread_context> operating_system::os_thread_contexts_;
@@ -81,7 +82,6 @@ operating_system::operating_system() :
   des_context_(0),
   event_trace_(0),
   ftq_trace_(0),
-  call_graph_(0),
   params_(0)
 {
   restarting_ = false;
@@ -221,7 +221,7 @@ operating_system::init_factory_params(sprockit::sim_parameters* params)
   compute_sched_ = compute_scheduler_factory::get_optional_param(
                      "compute_scheduler", "simple", params, this);  
   
-  if (params->has_namespace("call_graph")){
+  if (params->has_namespace("call_graph") && !call_graph_){
     sprockit::sim_parameters* the_params = params->get_namespace("call_graph");
     call_graph_ = test_cast(graph_viz, stat_collector_factory::get_optional_param("type", "graph_viz", the_params));
     if (!call_graph_){

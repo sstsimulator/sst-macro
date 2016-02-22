@@ -270,11 +270,7 @@ echo "Fortran compiler   $FC"
 
 echo "OS                 $os"
 
-if test "X$ATOS" = "X" && test "X$ADDR_TO_LINE" = "X"; then
-    echo "Graphviz Trace     No" 
-else
-    echo "Graphviz Trace     Yes" 
-fi
+echo "Graphviz Trace     $enable_graphviz" 
 
 dnl --- threading ---
 echo "Threading:"

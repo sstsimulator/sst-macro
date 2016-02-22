@@ -7,6 +7,8 @@
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
+#include <sstmac/backends/common/parallel_runtime.h>
+#include <sstmac/common/thread_lock.h>
 
 #if SSTMAC_HAVE_EXECINFO_H
 #include <execinfo.h>
@@ -26,27 +28,19 @@ static sprockit::need_delete_statics<graph_viz> del_statics;
 
 SpktRegister("graph_viz", stat_collector, graph_viz);
 
-graph_viz_increment_stack::graph_viz_increment_stack(const char *fxn, bool skip) :
-  skip_(skip)
+graph_viz_increment_stack::graph_viz_increment_stack(const char *fxn) 
 {
-  if (skip)
-    return;
-
-  //if (operating_system::current_os()->current_threadid() == thread::main_thread){
-  //  spkt_throw(sprockit::illformed_error, "executing backtrace from the main DES thread");
-  //}
-
   thread* thr = operating_system::current_thread();
   if (thr) {
     thr->append_backtrace(const_cast<char*>(fxn));
+  } else {
+   spkt_throw(sprockit::value_error,
+     "graphviz: operating system has no current thread");
   }
 }
 
 graph_viz_increment_stack::~graph_viz_increment_stack()
 {
-  if (skip_)
-    return;
-
   thread* thr = operating_system::current_thread();
   if (thr) {
     thr->pop_backtrace();
@@ -56,9 +50,12 @@ graph_viz_increment_stack::~graph_viz_increment_stack()
 void
 graph_viz::trace::add_call(void* fxn, int ncalls, long count)
 {
+  static thread_lock lock;
+  lock.lock();
   graphviz_call& call = calls_[fxn];
   call.first += ncalls;
   call.second += count;
+  lock.unlock();
 }
 
 void
@@ -70,7 +67,10 @@ graph_viz::trace::add_self(long count)
 void
 graph_viz::global_reduce(parallel_runtime *rt)
 {
-  spkt_throw(sprockit::unimplemented_error, "graph_viz::global_reduce");
+  if (rt->nproc() > 1){
+    spkt_throw(sprockit::unimplemented_error, 
+      "graph_viz::global_reduce: graphviz not available in parallel");
+  }
 }
 
 std::string
@@ -124,7 +124,7 @@ graph_viz::dump_global_data()
   myfile << "events: Instructions\n\n";
 
   std::map<void*,trace*>::const_iterator it, end = traces_.end();
-  for (traces_.begin(); it != end; ++it) {
+  for (it=traces_.begin(); it != end; ++it) {
     myfile << it->second->summary();
     myfile << "\n";
   }
@@ -182,13 +182,11 @@ graph_viz::delete_trace(void **tr)
 void
 graph_viz::reduce(stat_collector *coll)
 {
-  spkt_throw(sprockit::unimplemented_error, "graph_viz::reduce");
 }
 
 void
 graph_viz::clear()
 {
-  spkt_throw(sprockit::unimplemented_error, "graph_viz::clear");
 }
 
 void
@@ -209,6 +207,10 @@ graph_viz::count_trace(long count, thread* thr)
 
   int last_collect_nfxn = thr->last_backtrace_nfxn();
   int nfxn_total = thr->backtrace_nfxn();
+  if (nfxn_total == 0){
+    spkt_throw(sprockit::value_error,
+      "graphviz has no backtrace to collect - ensure that at least main exists with SSTMACBacktrace");
+  }
   int stack_end = nfxn_total - 1;
   int recollect_stop = std::min(stack_end,last_collect_nfxn);
   for (int i=0; i < recollect_stop; ++i) {
