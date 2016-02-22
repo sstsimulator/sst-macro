@@ -35,7 +35,7 @@ void
 eager1_rdma::send_header(mpi_queue* queue,
                          const mpi_message::ptr& msg)
 {
-  SSTMACBacktrace("MPI Eager 1 Protocol: Send RDMA Header", queue->is_service_thread());
+  SSTMACBacktrace("MPI Eager 1 Protocol: Send RDMA Header");
 
   msg->content_type(mpi_message::header);
   msg->hw::network_message::set_type(hw::network_message::payload);
@@ -65,7 +65,7 @@ void
 eager1_rdma::incoming_header(mpi_queue* queue,
                            const mpi_message::ptr& msg)
 {
-  SSTMACBacktrace("MPI Eager 1 Protocol: Handle RDMA Header", queue->is_service_thread());
+  SSTMACBacktrace("MPI Eager 1 Protocol: Handle RDMA Header");
 
   /** Don't involve any recv request yet.
       Receive doesn't need to be posted for this to go forward */
@@ -120,7 +120,7 @@ void
 eager1_rdma_singlecpy::incoming_payload(mpi_queue* queue,
                                       const mpi_message::ptr& msg)
 {
-  SSTMACBacktrace("MPI Eager 1 Protocol: Handle RDMA Paylod", queue->is_service_thread());
+  SSTMACBacktrace("MPI Eager 1 Protocol: Handle RDMA Paylod");
 
   if (msg->cat() == mpi_message::onesided) {
     queue->handle_put(msg);
@@ -144,7 +144,7 @@ void
 eager1_rdma_doublecpy::incoming_payload(mpi_queue* queue,
                                       const mpi_message::ptr& msg)
 {
-  SSTMACBacktrace("MPI Eager 1 Protocol: Handle RDMA Paylod", queue->is_service_thread());
+  SSTMACBacktrace("MPI Eager 1 Protocol: Handle RDMA Paylod");
   //the recv request is expecting a user message - update the message to match
   mpi_queue_recv_request* req = queue->find_pending_request(msg,
                                      true); //if not found, add to need_recv

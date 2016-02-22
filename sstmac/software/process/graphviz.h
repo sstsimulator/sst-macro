@@ -23,12 +23,9 @@ class graph_viz_increment_stack
    *        the DES thread, which is an error. This allows
    *        the backtrace to be turned off on the DES thread
    */
-  graph_viz_increment_stack(const char* fxn, bool skip = false);
+  graph_viz_increment_stack(const char* fxn);
 
   ~graph_viz_increment_stack();
-
- private:
-  bool skip_;
 
 };
 

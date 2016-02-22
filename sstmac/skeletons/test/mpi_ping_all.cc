@@ -6,6 +6,7 @@
 #include <sstmac/software/process/thread.h>
 #include <sstmac/common/logger.h>
 #include <sstmac/common/runtime.h>
+#include <sstmac/software/process/backtrace.h>
 
 using sstmac::sstmac_runtime;
 
@@ -16,6 +17,7 @@ sstmac_register_app(mpi_ping_all);
 int
 mpi_ping_all_main(int argc, char** argv)
 {
+  SSTMACBacktrace("main");
   MPI_Init(&argc, &argv);
 
   double t_start = MPI_Wtime();

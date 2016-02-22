@@ -84,7 +84,7 @@ lib_compute_inst::consume_params(sprockit::sim_parameters* params)
 void
 lib_compute_inst::compute_inst(const compute_message::ptr& cmsg)
 {
-  SSTMACBacktrace("Compute Instructions", cmsg->has_callback());
+  SSTMACBacktrace("Compute Instructions");
 
   os_->execute_kernel(ami::COMP_INSTR, cmsg);
 
