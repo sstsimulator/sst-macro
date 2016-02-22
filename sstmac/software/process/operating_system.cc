@@ -123,10 +123,10 @@ operating_system::init_threading()
 #else //not multithreaded
     #if defined(SSTMAC_HAVE_PTH)
     threading_string = "pth";
-    #elif defined(SSTMAC_HAVE_PTHREAD)
-    threading_string = "pthread";
     #elif defined(SSTMAC_HAVE_UCONTEXT)
     threading_string = "ucontext";
+    #elif defined(SSTMAC_HAVE_PTHREAD)
+    threading_string = "pthread";
     #endif
 #endif
   }
