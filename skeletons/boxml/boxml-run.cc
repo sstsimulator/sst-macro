@@ -30,8 +30,7 @@ namespace lblxml
         comm_t* sendptr = static_cast<comm_t*>(g_events[v_sends.front()]);
         comm_t& send = *sendptr;
         if (send.n_dep() == 0) { // abundance of caution
-          //int count = send.size();
-          int count = 0;
+          int count = send.size();
           int dest_box = send.to();
           int dest = g_boxindex_to_rank[ dest_box ];
           int index = send.index();
