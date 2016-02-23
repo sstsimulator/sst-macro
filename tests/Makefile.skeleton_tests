@@ -23,15 +23,6 @@ endif
 
 SKELETONTESTS = $(SKELETONCASES:%=test_skeleton_%)
 
-# these are run with different flags
-MPICASES = 
-if ENABLE_DEBUG
-MPICASES += lulesh
-endif
-
-SKELETONTESTS += \
-  $(MPICASES:%=test_mpi_apps_%) 
-
 SKELETON_DEFINES=
 if HAVE_ATOMIC_BUILTIN
   SKELETON_DEFINES += -DHAVE_ATOMIC_BUILTIN
@@ -45,10 +36,6 @@ skeletons:
 $(SKELETONCASES): skeletons
 	cd skeletons/$@; PATH=$(bindir):$$PATH \
           SKELETON_DEFINES=$(SKELETON_DEFINES) $(MAKE)
-
-$(MPICASES): skeletons
-	cd skeletons/$@; PATH=$(bindir):$$PATH $(MAKE)
-
 
 test_skeleton_%.$(CHKSUF): % 
 	$(top_srcdir)/bin/runtest 3 $@ ./skeletons/$*/run$* --help 

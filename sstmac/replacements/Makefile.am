@@ -12,12 +12,20 @@
 include $(top_srcdir)/Makefile.common
 
 library_includedir=$(includedir)/sstmac/replacements
+nobase_library_includedir=$(includedir)/sstmac/replacements
 
-nobase_library_include_HEADERS = \
+nobase_nodist_library_include_HEADERS = 
+nobase_library_include_HEADERS = 
+
+nobase_nodist_library_include_HEADERS += \
   mpi.h 
 
 if USE_REPLACEMENT_HEADERS
 nobase_library_include_HEADERS += \
+  linux/mmtimer.h \
+  sys/types.h 
+
+nobase_nodist_library_include_HEADERS += \
   fstream \
   iostream \
   istream \
@@ -33,8 +41,6 @@ nobase_library_include_HEADERS += \
   signal.h \
   sstmac_pthread_clear.h \
   sstmac_pthread_return.h \
-  linux/mmtimer.h \
-  sys/types.h \
   sys/time.h \
   sys/signal.h
 endif

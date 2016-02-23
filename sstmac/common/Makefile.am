@@ -58,7 +58,7 @@ if VTK_ENABLE
  AM_LIBS = $(VTK_LIBS)
 endif
 
-nodist_library_include_HEADERS = sstmac_config.h
+nodist_library_include_HEADERS = sstmac_config.h config.h
 
 library_includedir=$(includedir)/sstmac/common
 
@@ -81,7 +81,6 @@ nobase_library_include_HEADERS = \
   runtime.h \
   timestamp.h \
   timestamp_fwd.h \
-  config.h \
   sst_event.h \
   sst_event_fwd.h \
   thread_info.h \
