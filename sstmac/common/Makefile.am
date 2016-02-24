@@ -48,7 +48,8 @@ libsstmac_common_la_SOURCES = \
   stats/stat_spyplot.cc \
   stats/stat_histogram.cc \
   stats/event_trace.cc \
-  stats/location_trace.cc 
+  stats/location_trace.cc \
+  stats/stat_local_int.cc
 
 if VTK_ENABLE
  libsstmac_common_la_SOURCES += vis/vtk_engine.cc
@@ -110,7 +111,9 @@ nobase_library_include_HEADERS = \
   stats/stat_histogram.h \
   stats/stat_histogram_fwd.h \
   stats/event_trace.h \
-  stats/location_trace.h 
+  stats/location_trace.h \
+  stats/stat_local_int.h \
+  stats/stat_local_int_fwd.h 
 
 if VTK_ENABLE
  nobase_library_include_HEADERS += vis/vtk_engine.h
