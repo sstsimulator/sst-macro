@@ -14,6 +14,7 @@
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/stats/stat_spyplot.h>
 #include <sstmac/common/stats/stat_histogram.h>
+#include <sstmac/common/stats/stat_local_int.h>
 #include <sstmac/common/event_manager.h>
 #include <sprockit/statics.h>
 #include <sprockit/sim_parameters.h>
@@ -40,7 +41,8 @@ static sprockit::need_delete_statics<nic> del_statics;
 nic::nic() :
   spy_num_messages_(0),
   spy_bytes_(0),
-  hist_msg_size_(0)
+  hist_msg_size_(0),
+  local_bytes_sent_(0)
 {
 }
 
@@ -68,6 +70,12 @@ nic::init_factory_params(sprockit::sim_parameters *params)
 
     spy_num_messages_->add_suffix("num_messages");
     spy_bytes_->add_suffix("bytes");
+  }
+
+  if (params->has_namespace("local_bytes_sent")) {
+    sprockit::sim_parameters* traffic_params = params->get_namespace("local_bytes_sent");
+    local_bytes_sent_ = test_cast(stat_local_int, stat_collector_factory::get_optional_param("type", "local_int", traffic_params));
+    local_bytes_sent_->init(my_addr_);
   }
 
   if (params->has_namespace("message_sizes")){
@@ -250,6 +258,10 @@ nic::record_message(const network_message::ptr& netmsg)
   if (hist_msg_size_) {
     hist_msg_size_->collect(netmsg->byte_length());
   }
+
+  if (local_bytes_sent_) {
+    local_bytes_sent_->collect(netmsg->byte_length());
+  }
 }
 
 void
@@ -304,6 +316,7 @@ nic::set_event_parent(event_scheduler* m)
   if (spy_num_messages_) m->register_stat(spy_num_messages_);
   if (spy_bytes_) m->register_stat(spy_bytes_);
   if (hist_msg_size_) m->register_stat(hist_msg_size_);
+  if (local_bytes_sent_) m->register_stat(local_bytes_sent_);
 #endif
 
 }
