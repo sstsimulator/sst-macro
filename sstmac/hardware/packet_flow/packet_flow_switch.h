@@ -6,6 +6,7 @@
 #include <sstmac/hardware/packet_flow/packet_flow_crossbar.h>
 #include <sstmac/hardware/packet_flow/packet_flow_arbitrator.h>
 #include <sstmac/hardware/packet_flow/packet_flow_stats_fwd.h>
+#include <sstmac/common/stats/stat_global_int_fwd.h>
 
 namespace sstmac {
 namespace hw {
@@ -180,8 +181,8 @@ class packet_flow_switch :
 
  protected:
   stat_spyplot* congestion_spyplot_;
-
   stat_bytes_sent* bytes_sent_;
+  stat_global_int* byte_hops_;
 
   std::vector<packet_flow_sender*> out_buffers_;
 

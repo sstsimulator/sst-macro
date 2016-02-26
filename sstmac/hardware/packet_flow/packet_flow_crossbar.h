@@ -3,6 +3,7 @@
 
 #include <sstmac/hardware/packet_flow/packet_flow_sender.h>
 #include <sstmac/hardware/packet_flow/packet_flow_stats_fwd.h>
+#include <sstmac/common/stats/stat_global_int_fwd.h>
 #include <sstmac/hardware/router/router.h>
 #include <sprockit/keyword_registration.h>
 
@@ -240,6 +241,11 @@ class packet_flow_crossbar :
     bytes_sent_ = coll;
   }
 
+  void
+  set_byte_hops_collector(stat_global_int* coll){
+    byte_hops_ = coll;
+  }
+
   std::string
   packet_flow_name() const {
     if (name_) return name_;
@@ -248,6 +254,7 @@ class packet_flow_crossbar :
 
  private:
   stat_bytes_sent* bytes_sent_;
+  stat_global_int* byte_hops_;
   const char* name_;
 
 };

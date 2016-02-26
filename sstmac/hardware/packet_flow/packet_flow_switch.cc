@@ -16,6 +16,7 @@
 #include <sstmac/hardware/switch/dist_dummyswitch.h>
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/stats/stat_spyplot.h>
+#include <sstmac/common/stats/stat_global_int.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
@@ -109,6 +110,7 @@ packet_flow_switch::packet_flow_switch(
 ) : packet_flow_abstract_switch(id, params),
   congestion_spyplot_(0),
   bytes_sent_(0),
+  byte_hops_(0),
   xbar_(0)
 {
 }
@@ -116,7 +118,8 @@ packet_flow_switch::packet_flow_switch(
 packet_flow_switch::packet_flow_switch() :
  xbar_(0),
  congestion_spyplot_(0),
- bytes_sent_(0)
+ bytes_sent_(0),
+ byte_hops_(0)
 {
 }
 #endif
@@ -144,6 +147,11 @@ packet_flow_switch::init_factory_params(sprockit::sim_parameters *params)
         byte_params->get_param("type").c_str());
     }
     bytes_sent_->set_id(my_addr_);
+  }
+
+  if (params->has_namespace("byte_hops")) {
+    sprockit::sim_parameters* traffic_params = params->get_namespace("byte_hops");
+    byte_hops_ = test_cast(stat_global_int, stat_collector_factory::get_optional_param("type", "global_int", traffic_params));
   }
 }
 
@@ -319,6 +327,11 @@ packet_flow_switch::set_event_manager(event_manager* m)
   if (bytes_sent_){
     xbar_->set_bytes_sent_collector(bytes_sent_);
     m->register_stat(bytes_sent_);
+  }
+
+  if (byte_hops_) {
+    xbar_->set_byte_hops_collector(byte_hops_);
+    m->register_stat(byte_hops_);
   }
 #endif
   vec_set_ev_parent(out_buffers_, this);

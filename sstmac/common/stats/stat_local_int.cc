@@ -12,7 +12,6 @@ SpktRegister("local_int", stat_collector, stat_local_int);
 
 stat_local_int::stat_local_int() :
     size_(0),
-    id_(-1),
     value_(0)
 {
 }

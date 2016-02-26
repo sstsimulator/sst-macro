@@ -2,6 +2,7 @@
 #include <sstmac/hardware/packet_flow/packet_flow_stats.h>
 #include <sstmac/hardware/packet_flow/packet_flow_tiled_switch.h>
 #include <sstmac/hardware/topology/structured_topology.h>
+#include <sstmac/common/stats/stat_global_int.h>
 #include <sstmac/common/event_callback.h>
 #include <sstmac/common/runtime.h>
 #include <iomanip>
@@ -24,6 +25,7 @@ packet_flow_crossbar::packet_flow_crossbar(
   packet_flow_bandwidth_arbitrator* arb) :
   packet_flow_NtoM_queue(send_lat, credit_lat, bw, num_vc, buffer_size, arb),
   bytes_sent_(0),
+  byte_hops_(0),
   name_(0)
 {
 }
@@ -36,6 +38,7 @@ packet_flow_crossbar::packet_flow_crossbar(
   const char* name) :
   packet_flow_NtoM_queue(send_lat, credit_lat, num_vc, buffer_size),
   bytes_sent_(0),
+  byte_hops_(0),
   name_(name)
 {
 }
@@ -65,6 +68,9 @@ packet_flow_crossbar::do_handle_payload(const packet_flow_payload::ptr &msg)
 {
   if (bytes_sent_){
     bytes_sent_->record(msg->port(), msg->byte_length());
+  }
+  if (byte_hops_){
+    byte_hops_->collect(msg->byte_length());
   }
   packet_flow_NtoM_queue::handle_routed_payload(msg);
 }

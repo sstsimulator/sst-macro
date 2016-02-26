@@ -75,7 +75,7 @@ nic::init_factory_params(sprockit::sim_parameters *params)
   if (params->has_namespace("local_bytes_sent")) {
     sprockit::sim_parameters* traffic_params = params->get_namespace("local_bytes_sent");
     local_bytes_sent_ = test_cast(stat_local_int, stat_collector_factory::get_optional_param("type", "local_int", traffic_params));
-    local_bytes_sent_->init(my_addr_);
+    local_bytes_sent_->set_id(my_addr_);
   }
 
   if (params->has_namespace("message_sizes")){
