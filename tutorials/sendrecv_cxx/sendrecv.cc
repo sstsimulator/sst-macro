@@ -2,6 +2,9 @@
 #include <sprockit/mpi_parameters.h>
 #include <sprockit/errors.h>
 #include <sprockit/malloc.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords("sendrecv_message_size");
 
 using namespace sstmac;
 

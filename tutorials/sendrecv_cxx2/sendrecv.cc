@@ -1,4 +1,7 @@
 #include "sendrecv.h"
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords("sendrecv_message_size");
 
 namespace sendrecv
 {
