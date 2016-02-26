@@ -23,6 +23,7 @@
 #include <sstmac/common/stats/stat_spyplot_fwd.h>
 #include <sstmac/common/stats/stat_histogram_fwd.h>
 #include <sstmac/common/stats/stat_local_int_fwd.h>
+#include <sstmac/common/stats/stat_global_int_fwd.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 
 #include <sstmac/hardware/nic/network_endpoint.h>
@@ -169,6 +170,7 @@ class nic :
   stat_spyplot* spy_bytes_;
   stat_histogram* hist_msg_size_;
   stat_local_int* local_bytes_sent_;
+  stat_global_int* global_bytes_sent_;
 
  private:
   /**

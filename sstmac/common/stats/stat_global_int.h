@@ -42,12 +42,18 @@ class stat_global_int :
     stat_global_int* cln = new stat_global_int;
     clone_into(cln);
     cln->set_id(id);
+    cln->set_label(label_);
     return cln;
   }
 
   stat_collector*
   clone() const {
     return clone_me(-1);
+  }
+
+  void
+  set_label(std::string label) {
+    label_ = label;
   }
 
  protected:
@@ -59,6 +65,7 @@ class stat_global_int :
 
  protected:
   int value_;
+  std::string label_;
 };
 
 }

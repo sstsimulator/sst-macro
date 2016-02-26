@@ -152,6 +152,7 @@ packet_flow_switch::init_factory_params(sprockit::sim_parameters *params)
   if (params->has_namespace("byte_hops")) {
     sprockit::sim_parameters* traffic_params = params->get_namespace("byte_hops");
     byte_hops_ = test_cast(stat_global_int, stat_collector_factory::get_optional_param("type", "global_int", traffic_params));
+    byte_hops_->set_label("Byte Hops");
   }
 }
 

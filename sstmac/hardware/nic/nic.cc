@@ -15,6 +15,7 @@
 #include <sstmac/common/stats/stat_spyplot.h>
 #include <sstmac/common/stats/stat_histogram.h>
 #include <sstmac/common/stats/stat_local_int.h>
+#include <sstmac/common/stats/stat_global_int.h>
 #include <sstmac/common/event_manager.h>
 #include <sprockit/statics.h>
 #include <sprockit/sim_parameters.h>
@@ -42,7 +43,8 @@ nic::nic() :
   spy_num_messages_(0),
   spy_bytes_(0),
   hist_msg_size_(0),
-  local_bytes_sent_(0)
+  local_bytes_sent_(0),
+  global_bytes_sent_(0)
 {
 }
 
@@ -76,6 +78,12 @@ nic::init_factory_params(sprockit::sim_parameters *params)
     sprockit::sim_parameters* traffic_params = params->get_namespace("local_bytes_sent");
     local_bytes_sent_ = test_cast(stat_local_int, stat_collector_factory::get_optional_param("type", "local_int", traffic_params));
     local_bytes_sent_->set_id(my_addr_);
+  }
+
+  if (params->has_namespace("global_bytes_sent")) {
+    sprockit::sim_parameters* traffic_params = params->get_namespace("global_bytes_sent");
+    global_bytes_sent_ = test_cast(stat_global_int, stat_collector_factory::get_optional_param("type", "global_int", traffic_params));
+    global_bytes_sent_->set_label("NIC Total Bytes Sent");
   }
 
   if (params->has_namespace("message_sizes")){
@@ -262,6 +270,10 @@ nic::record_message(const network_message::ptr& netmsg)
   if (local_bytes_sent_) {
     local_bytes_sent_->collect(netmsg->byte_length());
   }
+
+  if (global_bytes_sent_) {
+    global_bytes_sent_->collect(netmsg->byte_length());
+  }
 }
 
 void
@@ -317,6 +329,7 @@ nic::set_event_parent(event_scheduler* m)
   if (spy_bytes_) m->register_stat(spy_bytes_);
   if (hist_msg_size_) m->register_stat(hist_msg_size_);
   if (local_bytes_sent_) m->register_stat(local_bytes_sent_);
+  if (global_bytes_sent_) m->register_stat(global_bytes_sent_);
 #endif
 
 }

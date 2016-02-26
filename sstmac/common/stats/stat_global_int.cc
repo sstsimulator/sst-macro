@@ -39,7 +39,7 @@ stat_global_int::dump(const std::string& froot)
   //data_str << "Value\n";
   //data_str << sprockit::printf("%i\n", value_);
   //data_str.close();
-  cout0 << sprockit::printf("Byte Hops: %i\n", value_);
+  cout0 << sprockit::printf("%s: %i\n", label_.c_str(), value_);
 }
 
 void
