@@ -22,7 +22,7 @@ lib_LTLIBRARIES = libsstmac_c_user_main.la libsstmac_main.la
 
 
 if REPO_BUILD
-../../sstmac_repo.h: $(abs_top_srcdir)/.hg/store/00changelog.d
+../../sstmac_repo.h: $(abs_top_srcdir)/.git/refs/heads/master
 	cd $(abs_top_srcdir) && $(abs_top_srcdir)/bin/make_repo_header $(abs_top_srcdir) sstmac
 
 sstmac.lo: ../../sstmac_repo.h

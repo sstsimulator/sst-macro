@@ -10,7 +10,7 @@ void
 rendezvous_rma::send_header(mpi_queue* queue,
                             const mpi_message::ptr& msg)
 {
-  SSTMACBacktrace("MPI Rendezvous Protocol: RMA Send Header", queue->is_service_thread());
+  SSTMACBacktrace("MPI Rendezvous Protocol: RMA Send Header");
   //msg->set_needs_ack(false);  //we don't care about the nic ack for this
   msg->content_type(mpi_message::header);
   queue->post_header(msg);
@@ -80,7 +80,7 @@ void
 rendezvous_rma::incoming_payload(mpi_queue* queue,
                                const mpi_message::ptr& msg)
 {
-  SSTMACBacktrace("MPI Rendezvous Protocol: RMA Handle Payload", queue->is_service_thread());
+  SSTMACBacktrace("MPI Rendezvous Protocol: RMA Handle Payload");
 
   mpi_queue::get_requests_t::iterator it =
     queue->gets_waiting_for_data_.find(msg->unique_mpi_id());

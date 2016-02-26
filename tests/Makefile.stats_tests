@@ -25,15 +25,16 @@ STATSTESTS = \
 #  bytes_on_port_dfly.dat
 
 if DO_GRAPHVIZ_TEST
-SINGLETESTS += test_stat_graphviz
+SINGLETESTS += test_stat_graphviz test.callgrind
 endif
 
 test_stat_graphviz.$(CHKSUF): $(SSTMACEXEC)
 	SSTMAC_THREADING=pthread $(SSTMACEXEC) \
-         -f $(srcdir)/test_configs/test_mpi_switch.ini \
+         -f $(srcdir)/test_configs/test_ping_all_torus_pflow.ini \
          --no-wall-time \
-         -p "call_graph=true" \
+         -p "call_graph=test" \
          -p mpi_test_print_all=false > $@
+	-mv -f test.callgrind.out test.callgrind.chk-out
 
 histogram:
 	$(PYRUNTEST) 5 test_stats_msg_size_histogram.$(CHKSUF) $(SSTMACEXEC) -f $(srcdir)/test_configs/test_stats_msg_size_histogram.ini --low-res-timer --no-wall-time 

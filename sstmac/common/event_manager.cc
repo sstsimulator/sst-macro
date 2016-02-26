@@ -233,8 +233,13 @@ event_manager::finish_stats()
     }
 
     if (!entry.main){
-      stat_collector* first = entry.collectors.front();
-      entry.main = first->clone();
+      if (entry.collectors.size() == 1){
+        entry.main = entry.collectors.front();
+        entry.collectors.clear();
+      } else {
+        stat_collector* first = entry.collectors.front();
+        entry.main = first->clone();
+      }
     }
 
     finish_stats(entry.main, name, now());

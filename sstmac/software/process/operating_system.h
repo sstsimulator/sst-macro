@@ -324,7 +324,7 @@ class operating_system :
 
   compute_scheduler* compute_sched_;
 
-  graph_viz* call_graph_;
+  static graph_viz* call_graph_;
 
   ftq_calendar* ftq_trace_;
 

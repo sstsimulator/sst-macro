@@ -23,6 +23,9 @@ libsstmac_pthread_la_SOURCES = \
   sstmac_pthread_runner.cc \
   sstmac_sched.cc 
 
+nodist_library_include_HEADERS = \
+  sstmac_sys_types.h
+
 nobase_library_include_HEADERS = \
   sstmac_cpu_set.h \
   sstmac_pthread_impl.h \
@@ -32,6 +35,5 @@ nobase_library_include_HEADERS = \
   sstmac_pthread_runner.h \
   sstmac_sched.h \
   sstmac_sched_macro.h \
-  sstmac_sched_clear_macros.h \
-  sstmac_sys_types.h
+  sstmac_sched_clear_macros.h 
 

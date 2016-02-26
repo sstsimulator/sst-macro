@@ -14,7 +14,7 @@ void
 eager0_rdma::send_header(mpi_queue* queue,
                          const mpi_message::ptr& msg)
 {
-  SSTMACBacktrace("MPI Eager 0 Protocol: Send Header", queue->is_service_thread());
+  SSTMACBacktrace("MPI Eager 0 Protocol: Send Header");
   msg->content_type(mpi_message::eager_payload);
   queue->post_header(msg);
 }
@@ -23,7 +23,7 @@ void
 eager0_rdma::incoming_payload(mpi_queue* queue,
                            const mpi_message::ptr& msg)
 {
-  SSTMACBacktrace("MPI Eager 0 Protocol: Handle Header", queue->is_service_thread());
+  SSTMACBacktrace("MPI Eager 0 Protocol: Handle Header");
   mpi_queue_recv_request* req = queue->find_pending_request(msg);
   if (req) {
     req->handle(msg);
