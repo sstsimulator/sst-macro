@@ -70,23 +70,22 @@ packet_flow_sender::send(
     packet_head_leaves = packet_tail_leaves = now_;
   }
 
-  double congestion_delay = 0;
+  timestamp congestion_delay = packet_head_leaves.sec() - now_.sec();
   if (acc_delay_){
     spkt_throw_printf(sprockit::unimplemented_error, "congestion delay stats temporarily broken");
-    msg->add_delay_us(congestion_delay*1e6);
+    //msg->add_delay_us(congestion_delay*1e6);
   }
   if (congestion_spyplot_){
-    spkt_throw_printf(sprockit::unimplemented_error, "congestion delay stats temporarily broken");
+    //spkt_throw_printf(sprockit::unimplemented_error, "congestion delay stats temporarily broken");
     if (congestion_delay < 0){
         spkt_throw_printf(sprockit::value_error,
             "packet_flow_sender::send: invalid negative congestion delay %8.4e",
             congestion_delay);
     }
-    long num_cycles_delay = congestion_delay / send_lat_.sec();
+    long delay_usec = long (congestion_delay.usec());
     int my_id = abs(event_location().location);
-    congestion_spyplot_->add(msg->fromaddr(), my_id, num_cycles_delay);
+    congestion_spyplot_->add(msg->fromaddr(), my_id, delay_usec);
   }
-
 
 #if SSTMAC_SANITY_CHECK
   if (msg->bw() <= 0 && msg->bw() != packet_flow_payload::uninitialized_bw) {
