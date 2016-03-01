@@ -362,7 +362,7 @@ void
 stat_spyplot_png::init_factory_params(sprockit::sim_parameters *params)
 {
   stat_spyplot::init_factory_params(params);
-  normalization_ = params->get_optional_long_param("normaliation", -1);
+  normalization_ = params->get_optional_long_param("normalization", -1);
   fill_ = params->get_optional_bool_param("fill", false);
 }
 
