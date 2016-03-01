@@ -3,6 +3,7 @@
 #include <sprockit/factories/factory.h>
 #include <sstmac/software/libraries/unblock_handler.h>
 #include <sstmac/common/sim_thread_lock.h>
+#include <sstmac/common/stats/stat_histogram.h>
 
 using namespace std;
 using namespace sstmac;
@@ -84,6 +85,22 @@ namespace lblxml
     }
 
     xml_read_only_ = params->get_optional_bool_param("boxml_xml_only", false);
+
+    eff_bw_ = false;
+    if (params->has_namespace("effective_bandwidths")){
+      sprockit::sim_parameters* size_params = params->get_namespace("effective_bandwidths");
+      hist_eff_bw_ = test_cast(stat_histogram, stat_collector_factory::get_optional_param("type", "histogram", size_params));
+
+      if (!hist_eff_bw_){
+        spkt_throw_printf(sprockit::value_error,
+          "Effective bandwidth tracker must be histogram, %s given",
+          size_params->get_param("type").c_str());
+      }
+      else {
+        eff_bw_ = true;
+        event_manager::global->register_stat(hist_eff_bw_);
+      }
+    }
   }
 
   // instantiate the globals (that we really do want to be global)
@@ -100,6 +117,8 @@ namespace lblxml
   rank_to_da_list_t g_rank_to_valid_allreduces;
 
   std::map<int, std::vector<bool> > g_reduce_to_box_running;
+
+  std::map<int,sstmac::timestamp> g_message_begin_;
 
   /** TODO: don't think these are still used
   comm_map_t g_comm_map;

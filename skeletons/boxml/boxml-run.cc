@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <ctime>
 #include <sst/sumi_api.h>
+#include <sstmac/common/stats/stat_histogram.h>
 
 using namespace std;
 using namespace sstmac;
@@ -38,6 +39,7 @@ namespace lblxml
             ++n_sent;
             if (debug_ > 0)
               std::cerr << "boxml: rank " << rank_ << " sending message " << index << " to rank " << dest <<  "\n";
+            g_message_begin_[index] = now();
             pt2pt_message::ptr mess = new pt2pt_message(index,count);
             comm_rdma_put(dest, mess);
           }
@@ -169,7 +171,16 @@ namespace lblxml
           if (debug_ > 0)
             std::cerr << "boxml: rank " << rank_ << " receiving pt2pt message\n";
           pt2pt_message::ptr pmess = ptr_safe_cast(pt2pt_message, dmess);
-          simple_event_done(pmess->event_index());
+          int index = pmess->event_index();
+          if (eff_bw_) {
+            comm_t* sendptr = static_cast<comm_t*>(g_events[index]);
+            comm_t& send = *sendptr;
+            int size = send.size();
+            double time = (now() - g_message_begin_[index]).sec();
+            double bw = double(size) / time;
+            hist_eff_bw_->collect(bw);
+          }
+          simple_event_done(index);
           break;
         }
         case sumi::message::collective_done:
