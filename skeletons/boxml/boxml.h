@@ -9,6 +9,7 @@
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/runtime.h>
 #include <sstmac/common/sim_thread_lock.h>
+#include <sstmac/common/stats/stat_histogram_fwd.h>
 #include <tinyxml2.h>
 #include <containers.h>
 
@@ -158,6 +159,8 @@ namespace lblxml
   //extern comm_maps_t g_coll_maps;
   //extern comp_maps_t g_comp_maps;
 
+  extern std::map<int,sstmac::timestamp> g_message_begin_;
+
   class boxml : virtual public sstmac::sw::mpi_app
   {
   public:
@@ -169,7 +172,7 @@ namespace lblxml
     double compute_scale_;
     std::string boxfile_, assignment_;
     std::vector< std::string> eventfiles_;
-    bool do_compute_, randomize_events_, detailed_progress_, round_robin_, minimize_locks_;
+    bool do_compute_, randomize_events_, detailed_progress_, round_robin_, eff_bw_, minimize_locks_;
     static bool have_data_;
     int barrier_tag_;
     box_map_t my_boxes_;
@@ -183,6 +186,7 @@ namespace lblxml
     static bool checked_bin_;
     bool xml_read_only_;
     sumi::transport* tport_;
+    sstmac::stat_histogram* hist_eff_bw_;
 
     void
     init();
