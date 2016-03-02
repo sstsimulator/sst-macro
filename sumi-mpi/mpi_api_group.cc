@@ -1,7 +1,7 @@
 #include <sumi-mpi/mpi_api.h>
 
-namespace sstmac {
 namespace sumi {
+
 
 int
 mpi_api::group_incl(int *ranks, int num_ranks, MPI_Group oldgrp, MPI_Group *newgrp)
@@ -12,7 +12,7 @@ mpi_api::group_incl(int *ranks, int num_ranks, MPI_Group oldgrp, MPI_Group *newg
                      "MPI_Group_incl: invalid group size %d", num_ranks);
   }
 
-  std::vector<sw::task_id> vec_ranks(num_ranks, task_id(0));
+  std::vector<task_id> vec_ranks(num_ranks, task_id(0));
   for (int i = 0; i < num_ranks; i++) {
     vec_ranks[i] = oldgrpPtr->at(ranks[i]);
   }
@@ -22,6 +22,4 @@ mpi_api::group_incl(int *ranks, int num_ranks, MPI_Group oldgrp, MPI_Group *newg
   return MPI_SUCCESS;
 }
 
-
-}
 }

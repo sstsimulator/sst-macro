@@ -1,7 +1,7 @@
 #include <sumi-mpi/mpi_api.h>
 
-namespace sstmac {
 namespace sumi {
+
 
 bool
 mpi_api::test(MPI_Request *request, MPI_Status *status)
@@ -80,5 +80,4 @@ mpi_api::testsome(int incount, MPI_Request array_of_requests[], int *outcount, i
 }
 
 
-}
 }

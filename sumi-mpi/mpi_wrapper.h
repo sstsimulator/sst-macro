@@ -8,9 +8,10 @@
 #include <sumi-mpi/mpi_api.h>
 
 #include <sstmac/software/process/operating_system.h>
-inline sstmac::sumi::mpi_api*
+#include <sstmac/software/process/thread.h>
+inline sumi::mpi_api*
 current_mpi() {
-  return sstmac::sw::operating_system::current_thread()->get_api<sstmac::sumi::mpi_api>();
+  return sstmac::sw::operating_system::current_thread()->get_api<sumi::mpi_api>();
 }
 #endif
 

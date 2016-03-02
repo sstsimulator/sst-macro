@@ -15,15 +15,14 @@
 #include <sstmac/software/process/task_id.h>
 #include <vector>
 
-namespace sstmac {
 namespace sumi {
 
-using sw::task_id;
+using sstmac::sw::task_id;
 
 class mpi_group  {
 
  public:
-  mpi_group(const std::vector<sw::task_id>& tl);
+  mpi_group(const std::vector<task_id>& tl);
 
   mpi_group(size_t size);
 
@@ -36,7 +35,7 @@ class mpi_group  {
     return "mpigroup";
   }
 
-  sw::task_id
+  task_id
   at(int rank);
 
   size_t
@@ -44,23 +43,22 @@ class mpi_group  {
     return size_;
   }
 
-  const std::vector<sw::task_id>&
+  const std::vector<task_id>&
   ids() const {
     return task_list_;
   }
 
   int
-  rank_of_task(sw::task_id t);
+  rank_of_task(task_id t);
 
  protected:
-  std::vector<sw::task_id> task_list_;
+  std::vector<task_id> task_list_;
 
   size_t size_; //used for comm_world
   bool is_comm_world_;  //we don't save all the peers to save space
 
 };
 
-}
 }
 
 #endif

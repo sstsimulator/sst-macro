@@ -2,8 +2,8 @@
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
 #include <sstmac/software/process/backtrace.h>
 
-namespace sstmac {
 namespace  sumi {
+
 
 int
 mpi_api::send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
@@ -65,5 +65,4 @@ mpi_api::irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 }
 
 
-}
 }

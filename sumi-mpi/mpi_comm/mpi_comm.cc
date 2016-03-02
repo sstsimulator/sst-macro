@@ -11,12 +11,11 @@
 
 #include <sumi-mpi/mpi_comm/mpi_comm.h>
 #include <sumi-mpi/mpi_comm/keyval.h>
-#include <sumi-mpi/mpi_comm/mpi_comm_data.h>
 #include <sprockit/debug.h>
 #include <sprockit/errors.h>
 
-namespace sstmac {
 namespace sumi {
+
 
 //
 // NULL communicator.
@@ -35,7 +34,7 @@ mpi_comm::mpi_comm() :
 mpi_comm::mpi_comm(
   MPI_Comm id, //const appid &aid,
   int rank, mpi_group* peers,
-  sw::app_manager* env, sw::app_id aid) :
+  app_manager* env, app_id aid) :
   env_(env), group_(peers), next_collective_tag_(10235),
   aid_(aid), id_(id), rank_(rank)
 {
@@ -153,7 +152,7 @@ mpi_comm::validate(const char* fxn) const
 }
 
 /// The task index of the caller.
-sw::task_id
+task_id
 mpi_comm::my_task() const
 {
   validate("my_task");
@@ -161,7 +160,7 @@ mpi_comm::my_task() const
 }
 
 /// The task index of the given peer.
-sw::task_id
+task_id
 mpi_comm::peer_task(int rank) const
 {
   validate("peer_task");
@@ -172,7 +171,7 @@ node_id
 mpi_comm::my_node() const
 {
   validate("my_node");
-  sw::task_id tid = my_task();
+  task_id tid = my_task();
   return env_->node_for_task(tid);
 }
 
@@ -182,7 +181,7 @@ node_id
 mpi_comm::node_at(int rank) const
 {
   validate("node_at");
-  sw::task_id tid = peer_task(rank);
+  task_id tid = peer_task(rank);
   return env_->node_for_task(tid);
 }
 
@@ -197,5 +196,4 @@ operator<<(std::ostream &os, mpi_comm* comm)
 }
 
 }
-} // end of namespace sstmac
 

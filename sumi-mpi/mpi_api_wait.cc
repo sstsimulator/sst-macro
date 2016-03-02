@@ -3,8 +3,8 @@
 #include <sstmac/software/process/backtrace.h>
 #include <cassert>
 
-namespace sstmac {
 namespace sumi {
+
 
 int
 mpi_api::wait(MPI_Request *request, MPI_Status *status)
@@ -145,5 +145,4 @@ mpi_api::waitsome(int incount, MPI_Request array_of_requests[], int *outcount, i
   return MPI_SUCCESS;
 }
 
-}
 }

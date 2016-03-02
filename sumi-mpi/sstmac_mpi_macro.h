@@ -1,4 +1,9 @@
 #ifdef __cplusplus
+#define MPI_Cart_create current_mpi()->cart_create
+#define MPI_Cart_get current_mpi()->cart_get
+#define MPI_Cart_rank current_mpi()->cart_rank
+#define MPI_Cart_shift current_mpi()->cart_shift
+#define MPI_Cart_coords current_mpi()->cart_coords
 #define MPI_Topo_test _SSTMAC_Topo_test
 #define MPI_NodeAddress current_mpi()->nodeaddress
 #define MPI_Taskid current_mpi()->taskid
@@ -354,11 +359,6 @@
 #define MPI_Bsend_init error not yet implemented
 #define MPI_Rsend_init error not yet implemented
 #define MPI_Ssend_init error not yet implemented
-#define MPI_Cart_create error not yet implemented
-#define MPI_Cart_get error not yet implemented
-#define MPI_Cart_rank error not yet implemented
-#define MPI_Cart_shift error not yet implemented
-#define MPI_Cart_coords error not yet implemented
 #define MPI_Address error not yet implemented
 #define MPI_Error_class error not yet implemented
 #define MPI_Error_string error not yet implemented

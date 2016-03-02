@@ -15,8 +15,8 @@
 #include <sumi-mpi/mpi_request_fwd.h>
 #include <sumi-mpi/mpi_message.h>
 
-namespace sstmac {
 namespace sumi {
+
 
 /**
  * Nested type to handle individual probe requests.
@@ -51,7 +51,6 @@ class mpi_queue_probe_request  {
 };
 
 }
-} // end of namespace sstmac.
 
 #endif
 

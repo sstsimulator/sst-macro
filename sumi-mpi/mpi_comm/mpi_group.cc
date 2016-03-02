@@ -11,8 +11,8 @@
 
 #include <sumi-mpi/mpi_comm/mpi_group.h>
 
-namespace sstmac {
 namespace sumi {
+
 
 mpi_group::mpi_group(const std::vector<task_id>& tl) :
   task_list_(tl),
@@ -27,18 +27,18 @@ mpi_group::mpi_group(size_t size) :
 {
 } // the comm_world constructor to save space
 
-sw::task_id
+task_id
 mpi_group::at(int rank)
 {
   if (is_comm_world_){
-    return sw::task_id(rank);
+    return task_id(rank);
   } else {
     return task_list_[rank];
   }
 }
 
 int
-mpi_group::rank_of_task(sw::task_id t)
+mpi_group::rank_of_task(task_id t)
 {
   if (is_comm_world_){
     return int(t.id_);
@@ -50,8 +50,6 @@ mpi_group::rank_of_task(sw::task_id t)
     }
   }
   return int(-1);
-}
-
 }
 
 }

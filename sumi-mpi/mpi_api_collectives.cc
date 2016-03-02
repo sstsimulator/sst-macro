@@ -2,10 +2,8 @@
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
 #include <sstmac/software/process/backtrace.h>
 
-using namespace sumi;
-
-namespace sstmac {
 namespace sumi {
+
 
 void
 mpi_api::validate_mpi_collective(const char* name, MPI_Datatype sendtype, MPI_Datatype recvtype)
@@ -345,6 +343,4 @@ mpi_api::scatter(int sendcount, MPI_Datatype sendtype, int recvcount, MPI_Dataty
   return scatter(sendcount, sendtype, recvcount, recvtype, root, comm);
 }
 
-
-}
 }

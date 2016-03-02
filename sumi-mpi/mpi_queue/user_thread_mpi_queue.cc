@@ -8,14 +8,13 @@
 #include <sstmac/common/sstmac_env.h>
 #include <sprockit/sim_parameters.h>
 
-namespace sstmac {
 namespace sumi {
+
 
 void
 user_thread_mpi_queue::init_factory_params(sprockit::sim_parameters *params)
 {
   mpi_queue::init_factory_params(params);
-  START_RECORD(params, "user_thread_mpi_queue");
   /** sstkeyword { gui=1us; docstring=Time it takes at software level to post RDMA transaction.; } */
   post_rdma_delay_ = params->get_optional_time_param("post_rdma_delay", 0);
   /** sstkeyword { gui=0.5us;
@@ -108,7 +107,7 @@ user_thread_mpi_queue::start_progress_loop(const std::vector<mpi_request*>& req)
 
   mpi_queue_debug("starting progress loop");
 
-  blocking_key_ = sw::key::construct(mpi_api::default_key_category);
+  blocking_key_ = key::construct(mpi_api::default_key_category);
   while (!at_least_one_complete(req)) {
     mpi_queue_debug("blocking on progress loop");
     is_polling_ = true;
@@ -227,7 +226,5 @@ user_thread_mpi_queue::post_rdma(const mpi_message::ptr& msg)
   api_->rdma_get(src_world_rank, msg);
 }
 
-
-}
 }
 

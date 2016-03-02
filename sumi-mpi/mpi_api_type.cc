@@ -2,8 +2,8 @@
 #include <sstmac/common/thread_lock.h>
 #include <climits>
 
-namespace sstmac {
 namespace sumi {
+
 
 struct fi {
   float a;
@@ -54,7 +54,7 @@ mpi_api::precommit_types()
   static const int builtin_sizes[] = {1, 2, 4, 6, 8, 12, 16, 20, 32, 48, 64};
   static const int num_builtins = sizeof(builtin_sizes) / sizeof(int);
 
-  static thread_lock lock;
+  static sstmac::thread_lock lock;
   lock.lock();
   if (!mpi_type::mpi_null->committed()){
     mpi_type::mpi_null->init_primitive("MPI_NULL", 0, 0, MPI_COMBINER_NAMED);
@@ -601,5 +601,4 @@ mpi_api::type_from_id(MPI_Datatype id)
   return it->second;
 }
 
-}
 }

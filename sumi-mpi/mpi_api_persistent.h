@@ -15,8 +15,8 @@
 #include <sumi-mpi/mpi_api.h>
 #include <sumi-mpi/mpi_request.h>
 
-namespace sstmac {
 namespace sumi {
+
 
 /**
  * Base for persistent operations.
@@ -99,7 +99,6 @@ class mpi_api::persistent_recv : public mpi_api::persistent
 };
 
 }
-} // end of namespace sstmac
 
 #endif
 

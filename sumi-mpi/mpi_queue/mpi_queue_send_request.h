@@ -16,8 +16,8 @@
 #include <sumi-mpi/mpi_queue/mpi_queue_fwd.h>
 #include <sumi-mpi/mpi_request_fwd.h>
 
-namespace sstmac {
 namespace sumi {
+
 
 /**
  * A nested type to handle individual send operations.
@@ -62,7 +62,6 @@ class mpi_queue_send_request  {
 };
 
 }
-} // end of namespace sstmac
 
 #endif
 

@@ -17,9 +17,8 @@
 #include <sstmac/software/process/software_id.h>
 #include <sstmac/software/process/task_id.h>
 
-
-namespace sstmac {
 namespace sumi {
+
 
 class mpi_comm_data  {
  public:
@@ -31,7 +30,6 @@ class mpi_comm_data  {
 };
 
 }
-} // end of namespace sstmac
 
 #endif
 

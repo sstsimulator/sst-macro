@@ -37,10 +37,10 @@ RegisterNamespaces("traffic_matrix");
 DeclareDebugSlot(mpi_all_sends);
 RegisterDebugSlot(mpi_all_sends);
 
-ImplementFactory(sstmac::sumi::mpi_queue);
+ImplementFactory(sumi::mpi_queue);
 
-namespace sstmac {
 namespace sumi {
+
 
 static sprockit::need_delete_statics<mpi_queue> del_statics;
 
@@ -83,20 +83,18 @@ mpi_queue::finalize_init()
 }
 
 void
-mpi_queue::init_os(sw::operating_system* os){
+mpi_queue::init_os(operating_system* os){
   os_ = os;
   std::string libname = sprockit::printf("mpi_queue-user-lib-mem-%d-%d",
                                   int(taskid_), int(appid_));
-  user_lib_mem_ = new sw::lib_compute_memmove(libname);
+  user_lib_mem_ = new sstmac::sw::lib_compute_memmove(libname);
   os_->register_lib(this, user_lib_mem_);
 
-  user_lib_time_ = sw::lib_compute_time::construct(
+  user_lib_time_ = sstmac::sw::lib_compute_time::construct(
                      sprockit::printf("mpi_queue-user-lib-time-%d-%d", int(taskid_), int(appid_)));
   os_->register_lib(this, user_lib_time_);
 
-  init_loc_id(os->event_location());
-
-  mpi_queue_debug("init on node %d", int(sw::operating_system::current_node_id()));
+  mpi_queue_debug("init on node %d", int(operating_system::current_node_id()));
 }
 
 void
@@ -104,8 +102,10 @@ mpi_queue::init_factory_params(sprockit::sim_parameters* params)
 {
   if (params->has_namespace("traffic_matrix")){
     sprockit::sim_parameters* tparams = params->get_namespace("traffic_matrix");
-    spy_bytes_ = test_cast(stat_spyplot, stat_collector_factory::get_optional_param("type", "spyplot_png", tparams));
-    spy_num_messages_ = test_cast(stat_spyplot, stat_collector_factory::get_optional_param("type", "spyplot_png", tparams));
+    spy_bytes_ = test_cast(sstmac::stat_spyplot,
+      sstmac::stat_collector_factory::get_optional_param("type", "spyplot_png", tparams));
+    spy_num_messages_ = test_cast(sstmac::stat_spyplot,
+      sstmac::stat_collector_factory::get_optional_param("type", "spyplot_png", tparams));
     if (!spy_bytes_){
       spkt_throw(sprockit::value_error,
         "MPI spyplot specified as %s, must be spyplot or spyplot_png",
@@ -146,7 +146,7 @@ mpi_queue::send_message(int count, MPI_Datatype type,
   mpi_type* typeobj = api_->type_from_id(type);
   long bytes = count * int64_t(typeobj->packed_size());
   mpi_protocol* prot = protocol(bytes);
-  sw::task_id dst_tid = comm->peer_task(dst_rank);
+  task_id dst_tid = comm->peer_task(dst_rank);
   mpi_message::ptr mess = new mpi_message(comm->rank(), dst_rank,
                           count, type, typeobj->packed_size(),
                           tag, comm->id(),
@@ -184,6 +184,14 @@ mpi_queue::send(mpi_request *key, int count, MPI_Datatype type,
 {
   mpi_message::ptr mess = send_message(count, type, dest, tag, comm);
   configure_send_request(mess, key);
+
+#if !SSTMAC_ALLOW_LARGE_PAYLOADS
+  if (buffer && mess->byte_length() > 64){
+    spkt_abort_printf("mpi queue sending large message with real payload:\n%s",
+      mess->to_string().c_str());
+  }
+#endif
+
   //either return the original buffer or create a new one for eager
   if (buffer){
     mess->protocol()->configure_send_buffer(mess, buffer);
@@ -267,17 +275,17 @@ mpi_queue::recv(mpi_request* key, int count,
         count, api_->type_str(type).c_str(), api_->src_str(source).c_str(),
         api_->tag_str(tag).c_str(), api_->comm_str(comm).c_str());
 
+#if !SSTMAC_ALLOW_LARGE_PAYLOADS
+  if (buffer && count > 16){
+    spkt_abort_printf("mpi queue recving large message with real payload");
+  }
+#endif
+
   mpi_queue_recv_request* req = new mpi_queue_recv_request(key, this,
                             count, type, source, tag, comm->id());
 
   req->buffer_ = buffer;
   do_recv(req);
-}
-
-event_loc_id
-mpi_queue::event_location() const
-{
-  return os_->event_location();
 }
 
 void
@@ -426,7 +434,7 @@ mpi_queue::incoming_new_message(const mpi_message::ptr& message)
 {
   mpi_queue_debug("incoming new message %s", message->to_string().c_str());
 
-  sw::task_id tid(message->sender())  ;
+  task_id tid(message->sender())  ;
 
   if (message->seqnum() == next_inbound_[tid]) {
     mpi_queue_debug("seqnum for task %d matched expected seqnum %d and advanced to next seqnum",
@@ -603,5 +611,4 @@ mpi_queue::id_string() const
 }
 
 }
-} // end of namespace sstmac
 

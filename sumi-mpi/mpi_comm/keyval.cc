@@ -12,8 +12,8 @@
 #include <sumi-mpi/mpi_comm/keyval.h>
 #include <sprockit/errors.h>
 
-namespace sstmac {
 namespace sumi {
+
 
 thread_safe_int keyval::keycount(0);
 
@@ -27,8 +27,6 @@ keyval::clone(int k) const {
                        "mpi_comm::keyval - copy function returned with flag %d", flag);
     }
     return ret;
-}
-
 }
 
 }

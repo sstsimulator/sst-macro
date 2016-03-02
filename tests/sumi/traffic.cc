@@ -20,7 +20,7 @@ void run_test(
 )
 {
   std::vector<sstmac::node_id> node_partners;
-  sstmac::sumi::sumi_api* simp = safe_cast(sstmac::sumi::sumi_api, sumi_api());
+  sstmac::sumi_api* simp = safe_cast(sstmac::sumi_api, sumi_api());
   sstmac::hw::topology::global()->send_partners(
     ty,
     simp->my_addr(),

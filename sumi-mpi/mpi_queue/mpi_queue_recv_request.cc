@@ -16,10 +16,7 @@
 #include <sprockit/debug.h>
 #include <sprockit/errors.h>
 
-namespace sstmac {
 namespace sumi {
-
-// Pointer types.
 
 
 //
@@ -112,11 +109,6 @@ mpi_queue_recv_request::is_cancelled() const {
   return key_ && key_->is_cancelled();
 }
 
-event_loc_id
-mpi_queue_recv_request::event_location() const {
-  return queue_->event_location();
-}
-
 bool
 mpi_queue_recv_request::matches(const mpi_message::ptr& msg)
 {
@@ -133,5 +125,4 @@ mpi_queue_recv_request::matches(const mpi_message::ptr& msg)
 }
 
 }
-} // end of namespace sstmac
 

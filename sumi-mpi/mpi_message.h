@@ -26,8 +26,8 @@
 #include <sumi-mpi/mpi_protocol/mpi_protocol_fwd.h>
 #include <sumi/message.h>
 
-namespace sstmac {
 namespace sumi {
+
 
 struct mpi_buffer {
 
@@ -248,7 +248,6 @@ class mpi_message :
 implement_opaque_int(mpi_message::id)
 
 }
-} // end of namespace sstmac.
 
 #endif
 

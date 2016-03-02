@@ -2,8 +2,8 @@
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
 #include <sstmac/software/process/backtrace.h>
 
-namespace sstmac {
 namespace sumi {
+
 
 int
 mpi_api::probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
@@ -45,5 +45,4 @@ mpi_api::iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *statu
 }
 
 
-}
 }

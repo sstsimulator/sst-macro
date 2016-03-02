@@ -1,8 +1,8 @@
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
 
-namespace sstmac {
 namespace sumi {
+
 
 mpi_protocol* mpi_protocol::eager0_protocol = new eager0;
 mpi_protocol* mpi_protocol::eager1_singlecpy_protocol = new eager1_singlecpy;
@@ -67,7 +67,5 @@ eager_protocol::configure_send_buffer(const mpi_message::ptr& msg, void *buffer)
   ::memcpy(eager_buf, buffer, length);
 }
 
-
-}
 }
 

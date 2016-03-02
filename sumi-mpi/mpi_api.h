@@ -38,13 +38,16 @@
 #include <sprockit/unordered.h>
 #include <sprockit/factories/factory.h>
 
-#include <sumi/sst/sumi_sumi_transport.h>
+#include <sumi/sst/sumi_transport.h>
 
-namespace sstmac {
 namespace sumi {
 
+using sstmac::sw::key;
+using sstmac::sw::software_id;
+using sstmac::sw::operating_system;
+
 class mpi_api :
-  public sumi::sumi_sumi_transport
+  public sumi_transport
 {
   /// Nested classes to take care of persistent communications.
  public:
@@ -54,9 +57,9 @@ class mpi_api :
   class persistent_recv;
 
  public:
-  static sw::key::category default_key_category;
-  static sw::key::category poll_key_category;
-  static sw::key::category memcpy_key_category;
+  static key::category default_key_category;
+  static key::category poll_key_category;
+  static key::category memcpy_key_category;
 
   /// Build a new mpiapi.
   mpi_api();
@@ -72,10 +75,10 @@ class mpi_api :
   ~mpi_api();
 
   void
-  init_param1(const sw::software_id& id);
+  init_param1(const software_id& id);
 
   void
-  init_os(sw::operating_system* os);
+  init_os(operating_system* os);
 
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
@@ -158,11 +161,32 @@ class mpi_api :
   comm_create(MPI_Comm input, MPI_Group group,
               MPI_Comm* output);
 
+  int
+  cart_create(MPI_Comm comm_old, int ndims, const int dims[],
+              const int periods[], int reorder, MPI_Comm *comm_cart);
+
+  int
+  cart_get(MPI_Comm comm, int maxdims, int dims[], int periods[],
+                   int coords[]);
+
+  int
+  cartdim_get(MPI_Comm comm, int *ndims);
+
+  int
+  cart_rank(MPI_Comm comm, const int coords[], int *rank);
+
+  int
+  cart_shift(MPI_Comm comm, int direction, int disp, int *rank_source,
+             int *rank_dest);
+
+  int
+  cart_coords(MPI_Comm comm, int rank, int maxdims, int coords[]);
+
   /// Destroy a communicator.  This is currently a noop, but should later
   /// mark the communicator invalid so erroneous program behavior can be
   /// detected.
   int
-  comm_free(MPI_Comm input);
+  comm_free(MPI_Comm* input);
 
   int
   group_incl(int* ranks,
@@ -545,7 +569,7 @@ class mpi_api :
   bool test(MPI_Request *request, MPI_Status *status);
 
  private:
-  sw::software_id id_;
+  software_id id_;
 
   /// The MPI server.
   mpi_queue* queue_;
@@ -603,7 +627,6 @@ sstmac_mpi();
   mpi_debug(worldcomm_->rank(), flags, __VA_ARGS__)
 
 }
-} // end of namespace sstmac
 
 #endif
 

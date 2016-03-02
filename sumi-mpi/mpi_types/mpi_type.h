@@ -21,16 +21,16 @@
 #include <iosfwd>
 #include <map>
 
-namespace sstmac {
 namespace sumi {
+
 
 class pairdata;
 class vecdata;
 struct inddata;
 
-}}
+}
 
-namespace sstmac {
+
 namespace sumi {
 
 using sumi::ReduceOp;
@@ -304,8 +304,6 @@ std::ostream&
 operator<<(std::ostream &os, mpi_type* type);
 
 }
-
-} // end of namespace sstmac
 
 #endif
 

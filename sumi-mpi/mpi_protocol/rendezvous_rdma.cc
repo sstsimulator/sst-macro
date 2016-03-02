@@ -3,8 +3,8 @@
 #include <sumi-mpi/mpi_queue/mpi_queue_recv_request.h>
 #include <sstmac/software/process/backtrace.h>
 
-namespace sstmac {
 namespace sumi {
+
 
 rendezvous_rdma::~rendezvous_rdma()
 {
@@ -84,7 +84,5 @@ rendezvous_rdma::finish_recv_payload(
   queue->send_completion_ack(msg);
 }
 
-
-}
 }
 

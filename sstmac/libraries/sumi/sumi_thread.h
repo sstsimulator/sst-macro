@@ -4,7 +4,6 @@
 #include <sstmac/software/process/app.h>
 
 namespace sstmac {
-namespace sumi {
 
 class sumi_thread :
   public sstmac::sw::thread
@@ -25,7 +24,6 @@ class sumi_thread :
   void compute(double sec);
 };
 
-}
 }
 
 #endif // SUMI_THREAD_H

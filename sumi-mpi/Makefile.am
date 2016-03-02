@@ -26,6 +26,7 @@ libsstmac_mpi_la_SOURCES = \
   mpi_comm/mpi_group.cc \
   mpi_comm/keyval.cc \
   mpi_comm/mpi_comm_factory.cc \
+  mpi_comm/mpi_comm_cart.cc \
   mpi_queue/mpi_queue_probe_request.cc \
   mpi_queue/mpi_queue_recv_request.cc \
   mpi_queue/mpi_queue_send_request.cc \
@@ -58,6 +59,7 @@ nobase_library_include_HEADERS = \
   mpi_comm/mpi_comm_fwd.h \
   mpi_comm/mpi_comm_data.h \
   mpi_comm/mpi_comm_factory.h \
+  mpi_comm/mpi_comm_cart.h \
   mpi_comm/mpi_group.h \
   mpi_queue/mpi_queue_probe_request_fwd.h \
   mpi_queue/mpi_queue_recv_request_fwd.h \

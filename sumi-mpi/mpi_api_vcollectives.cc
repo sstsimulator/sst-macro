@@ -4,8 +4,8 @@
 
 using namespace sumi;
 
-namespace sstmac {
 namespace sumi {
+
 
 int
 mpi_api::start_allgatherv(const void *sendbuf, void *recvbuf, int sendcount, const int *recvcounts, const int *displs, MPI_Datatype type, MPI_Comm comm)
@@ -133,5 +133,4 @@ mpi_api::scatterv(const int *sendcounts, MPI_Datatype sendtype, int recvcount, M
 }
 
 
-}
 }

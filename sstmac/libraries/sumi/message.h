@@ -10,11 +10,10 @@
 #include <sprockit/clonable.h>
 
 namespace sstmac {
-namespace sumi {
 
 class transport_message :
-  public sstmac::hw::network_message,
-  public sstmac::library_interface,
+  public ::sstmac::hw::network_message,
+  public ::sstmac::library_interface,
   public sprockit::serializable_type<transport_message>
 {
    ImplementSerializable(transport_message)
@@ -44,7 +43,7 @@ class transport_message :
 
   void
   set_dest(int dest) {
-    dest_task_ = sstmac::sw::task_id(dest);
+    dest_task_ = ::sstmac::sw::task_id(dest);
   }
 
   int
@@ -54,7 +53,7 @@ class transport_message :
 
   void
   set_src(int src) {
-    src_task_ = sstmac::sw::task_id(src);
+    src_task_ = ::sstmac::sw::task_id(src);
   }
 
   void
@@ -73,7 +72,7 @@ class transport_message :
   void
   complete_transfer(void* buf);
 
-  sstmac::hw::network_message::ptr
+  ::sstmac::hw::network_message::ptr
   clone_injection_ack() const;
 
  protected:
@@ -90,6 +89,6 @@ class transport_message :
 };
 
 
-}}
+}
 
 #endif // MESSAGE_H

@@ -17,8 +17,8 @@
 #include <sumi-mpi/mpi_message.h>
 #include <sstmac/common/event_location.h>
 
-namespace sstmac {
 namespace sumi {
+
 
 /**
  * A nested type to handle individual mpi receive requests.
@@ -81,7 +81,6 @@ class mpi_queue_recv_request  {
 };
 
 }
-} // end of namespace sstmac
 
 #endif
 

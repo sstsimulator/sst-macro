@@ -15,7 +15,6 @@
  */
 
 namespace sstmac {
-namespace sumi {
 
 class sumi_queue
 {
@@ -150,8 +149,6 @@ class sumi_server :
 
 };
 
-
-}
 }
 
 #endif // SSTMAC_SIMPMSG_API_H

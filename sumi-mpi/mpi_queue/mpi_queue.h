@@ -39,8 +39,15 @@
 
 #include <queue>
 
-namespace sstmac {
 namespace sumi {
+
+using sstmac::event_manager;
+using sstmac::event_handler;
+using sstmac::sw::operating_system;
+using sstmac::sw::software_id;
+using sstmac::timestamp;
+using sstmac::sw::task_id;
+using sstmac::sw::app_id;
 
 class mpi_queue
 {
@@ -102,13 +109,13 @@ class mpi_queue
   set_event_manager(event_manager* m);
 
   void
-  init_sid(const sw::software_id& id){
+  init_sid(const software_id& id){
     taskid_ = id.task_;
     appid_ = id.app_;
   }
 
   void
-  init_os(sw::operating_system* os);
+  init_os(operating_system* os);
 
   virtual void
   finalize_init();
@@ -126,12 +133,12 @@ class mpi_queue
     return api_;
   }
 
-  sw::lib_compute_memmove*
+  sstmac::sw::lib_compute_memmove*
   user_lib_mem() const {
     return user_lib_mem_;
   }
 
-  sw::lib_compute_time*
+  sstmac::sw::lib_compute_time*
   user_lib_time() const {
     return user_lib_time_;
   }
@@ -255,17 +262,17 @@ class mpi_queue
   configure_send_request(const mpi_message::ptr& mess, mpi_request* req);
 
  protected:
-  stat_spyplot* spy_num_messages_;
-  stat_spyplot* spy_bytes_;
+  sstmac::stat_spyplot* spy_num_messages_;
+  sstmac::stat_spyplot* spy_bytes_;
 
   /// The sequence number for our next outbound transmission.
-  spkt_unordered_map<sw::task_id, int> next_outbound_;
+  spkt_unordered_map<task_id, int> next_outbound_;
 
   /// The sequence number expected for our next inbound transmission.
-  spkt_unordered_map<sw::task_id, int> next_inbound_;
+  spkt_unordered_map<task_id, int> next_inbound_;
 
   /// Hold messages that arrived out of order.
-  spkt_unordered_map<sw::task_id, hold_list_t> held_;
+  spkt_unordered_map<task_id, hold_list_t> held_;
 
   /// The (locally unique) id that will be given to the next message.
   mpi_message::id next_id_;
@@ -289,18 +296,18 @@ class mpi_queue
   /// Probe requests watching for a given envelope.
   probelist_t probelist_;
 
-  sw::task_id taskid_;
+  task_id taskid_;
 
-  sw::app_id appid_;
+  app_id appid_;
 
   mpi_api* api_;
 
   /// A blocking memcpy library for buffered sends in which
   /// the memcpy happens in the application
-  sw::lib_compute_memmove* user_lib_mem_;
-  sw::lib_compute_time* user_lib_time_;
+  sstmac::sw::lib_compute_memmove* user_lib_mem_;
+  sstmac::sw::lib_compute_time* user_lib_time_;
 
-  sw::operating_system* os_;
+  sstmac::sw::operating_system* os_;
 
   int max_vshort_msg_size_;
   int max_eager_msg_size_;
@@ -309,7 +316,6 @@ class mpi_queue
 };
 
 }
-} // end of namespace sstmac
 
 #define mpi_queue_action_debug(rank, ...) \
   mpi_debug(rank, sprockit::dbg::mpi_queue, \

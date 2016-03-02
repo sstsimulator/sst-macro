@@ -23,14 +23,12 @@
 #include <stdlib.h>
 #include <sstream>
 
-DeclareSerializable(sstmac::sumi::mpi_message);
+DeclareSerializable(sumi::mpi_message);
 
 #define enumcase(x) case x: return #x
 
-namespace sstmac {
 namespace sumi {
 
-// Pointer types.
 
 //
 // Hello.
@@ -198,5 +196,4 @@ mpi_message::set_protocol(mpi_protocol* protocol)
 
 
 }
-} // end of namespace sstmac
 

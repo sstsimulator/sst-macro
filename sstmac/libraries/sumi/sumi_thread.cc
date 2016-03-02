@@ -3,7 +3,6 @@
 #include <sstmac/software/process/operating_system.h>
 
 namespace sstmac {
-namespace sumi {
 
 uint64_t sumi_thread::num_threads_ = 0;
 
@@ -28,5 +27,4 @@ sumi_thread::compute(double sec)
   compute_->compute(timestamp(sec));
 }
 
-}
 }

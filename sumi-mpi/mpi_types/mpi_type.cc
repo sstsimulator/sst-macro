@@ -19,8 +19,8 @@
 #include <sstream>
 
 
-namespace sstmac {
 namespace sumi {
+
 
 mpi_type::mpi_type() :
   id(-1),
@@ -615,5 +615,4 @@ mpi_type* mpi_type::mpi_character = new mpi_type;
 std::map<int, mpi_type> mpi_type::builtins;
 
 }
-} // end of namespace sstmac
 

@@ -11,7 +11,6 @@
 using namespace sprockit::dbg;
 
 namespace sstmac {
-namespace sumi {
 
 #define print_extra_stuff 0
 
@@ -263,5 +262,5 @@ sumi_queue::put_message(const transport_message::ptr& msg)
 }
 
 
-} }
+}
 

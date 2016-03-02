@@ -11,6 +11,7 @@
 
 #include <sumi-mpi/mpi_comm/mpi_comm_factory.h>
 #include <sumi-mpi/mpi_comm/mpi_comm.h>
+#include <sumi-mpi/mpi_comm/mpi_comm_cart.h>
 #include <sumi-mpi/mpi_api.h>
 #include <sumi-mpi/sstmac_mpi_integers.h>
 #include <sumi-mpi/mpi_types.h>
@@ -29,14 +30,13 @@
 #include <stdint.h>
 #include <iterator>
 
-namespace sstmac {
 namespace sumi {
 
 
 //
 // Build comm_world using information retrieved from the environment.
 //
-mpi_comm_factory::mpi_comm_factory(sw::app_id aid, mpi_api* parent) :
+mpi_comm_factory::mpi_comm_factory(app_id aid, mpi_api* parent) :
   parent_(parent),
   aid_(aid),
   mpirun_np_(0),
@@ -57,7 +57,7 @@ mpi_comm_factory::~mpi_comm_factory()
 // Initialize.
 //
 void
-mpi_comm_factory::init(sw::app_manager* env, int rank)
+mpi_comm_factory::init(app_manager* env, int rank)
 {
   next_id_ = 1;
 
@@ -69,8 +69,8 @@ mpi_comm_factory::init(sw::app_manager* env, int rank)
 
   worldcomm_ = new mpi_comm(MPI_COMM_WORLD, rank, g, env, aid_);
 
-  std::vector<sw::task_id> selfp;
-  selfp.push_back(sw::task_id(rank));
+  std::vector<task_id> selfp;
+  selfp.push_back(task_id(rank));
 
   mpi_group* g2 = new mpi_group(selfp);
   selfcomm_ = new mpi_comm(MPI_COMM_SELF, int(0), g2, env, aid_);
@@ -107,7 +107,7 @@ mpi_comm_factory::comm_create(mpi_comm* caller, mpi_group* group)
 
   MPI_Comm cid = outputID;
 
-  std::pair<sw::app_id, int> index = std::make_pair(aid_, cid);
+  std::pair<app_id, int> index = std::make_pair(aid_, cid);
 
   //now find my rank
   int newrank = group->rank_of_task(caller->my_task());
@@ -126,7 +126,7 @@ mpi_comm_factory::comm_create(mpi_comm* caller, mpi_group* group)
 typedef std::map<int, std::list<int> > key_to_ranks_map;
 #if !SSTMAC_DISTRIBUTED_MEMORY || SSTMAC_MMAP_COLLECTIVES
 
-static thread_lock split_lock;
+static sstmac::thread_lock split_lock;
 typedef std::map<int, key_to_ranks_map> color_to_key_map;
 //comm id, comm root task id, tag
 
@@ -227,7 +227,7 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
   //the next id I use needs to be greater than this
   next_id_ = cid + 1;
 
-  std::vector<sw::task_id> task_list(new_comm_size);
+  std::vector<task_id> task_list(new_comm_size);
 
   key_to_ranks_map::iterator it, end = key_map.end();
   //iterate map in sorted order
@@ -239,7 +239,7 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
     std::list<int>::iterator rit, rend = ranks.end();
     for (rit=ranks.begin(); rit != rend; ++rit, ++next_rank){
       int comm_rank = *rit;
-      sw::task_id tid = caller->peer_task(int(comm_rank));
+      task_id tid = caller->peer_task(int(comm_rank));
       task_list[next_rank] = tid;
       if (comm_rank == caller->rank()){
         my_new_rank = next_rank;
@@ -260,7 +260,30 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
   return new mpi_comm(cid, my_new_rank, new mpi_group(task_list), worldcomm_->env_, aid_);
 }
 
+mpi_comm*
+mpi_comm_factory::create_cart(mpi_comm* caller, int ndims,
+                              const int *dims, const int *periods, int reorder)
+{
+  int inputID = next_id_;
+  int outputID = 0;
+  parent_->allreduce(&inputID, &outputID, 1, MPI_INT, MPI_MAX, caller->id());
+
+  MPI_Comm cid = outputID;
+
+
+  //now find my rank
+  int newrank = caller->group_->rank_of_task(caller->my_task());
+  next_id_ = cid + 1;
+
+  if (newrank >= 0) {
+    return new mpi_comm_cart(cid, newrank, caller->group_,
+                     worldcomm_->env_, aid_, ndims, dims, periods, reorder);
+  }
+  else {
+    return mpi_comm::comm_null;
+  }
+}
+
 
 }
-} // end of namespace sstmac
 

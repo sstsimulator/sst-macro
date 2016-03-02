@@ -12,23 +12,26 @@
 #ifndef SSTMAC_SOFTWARE_LIBRARIES_MPI_MPI_COMM_MPICOMM_H_INCLUDED
 #define SSTMAC_SOFTWARE_LIBRARIES_MPI_MPI_COMM_MPICOMM_H_INCLUDED
 
+#include <sumi/domain.h>
+#include <sstmac/common/node_address.h>
 #include <sstmac/software/process/task_id.h>
 #include <sstmac/software/process/app_id.h>
 #include <sstmac/software/process/app_manager.h>
 #include <sumi-mpi/mpi_comm/keyval_fwd.h>
 #include <sumi-mpi/mpi_comm/mpi_group.h>
 #include <sumi-mpi/sstmac_mpi_integers.h>
-#include <sstmac/common/node_address.h>
-#include <sumi/domain.h>
-#include <iosfwd>
 
-namespace sstmac {
 namespace sumi {
+
+using sstmac::sw::app_id;
+using sstmac::sw::app_manager;
+using sstmac::node_id;
 
 /**
  * An MPI communicator handle.
  */
-class mpi_comm : public sumi::domain {
+class mpi_comm : public domain
+{
  public:
 
   enum topotypes {
@@ -45,8 +48,8 @@ class mpi_comm : public sumi::domain {
     MPI_Comm id,
     int rank,
     mpi_group* peers,
-    sw::app_manager* env,
-    sw::app_id aid);
+    app_manager* env,
+    app_id aid);
 
   /// Goodbye.
   virtual
@@ -108,7 +111,7 @@ class mpi_comm : public sumi::domain {
   void
   get_keyval(keyval* k, void* val, int* flag);
 
-  sw::app_id
+  app_id
   app() const {
     return aid_;
   }
@@ -133,11 +136,11 @@ class mpi_comm : public sumi::domain {
   next_collective_tag();
 
   /// The task index of the caller.
-  sw::task_id
+  task_id
   my_task() const;
 
   /// The task index of the given peer.
-  sw::task_id
+  task_id
   peer_task(int rank) const;
 
   node_id
@@ -170,7 +173,7 @@ class mpi_comm : public sumi::domain {
  protected:
   friend class mpi_comm_factory;
 
-  sw::app_manager* env_;
+  app_manager* env_;
 
   /// The tasks participating in this communicator.  This is only used for an mpicomm* which is NOT WORLD_COMM.
   mpi_group* group_;
@@ -179,7 +182,7 @@ class mpi_comm : public sumi::domain {
 
   spkt_unordered_map<int, keyval*> keyvals_;
 
-  sw::app_id aid_;
+  app_id aid_;
 
   topotypes topotype_;
 
@@ -193,7 +196,6 @@ std::ostream&
 operator<<(std::ostream &os, mpi_comm* comm);
 
 }
-} //end of namespace sstmac
 
 #endif
 

@@ -16,15 +16,15 @@
 #include <sumi-mpi/mpi_status.h>
 #include <sumi-mpi/mpi_message.h>
 
-
-namespace sstmac {
 namespace sumi {
+
+using sstmac::sw::key;
 
 class mpi_request  {
   // ------- constructor / boost stuff -------------//
 
  public:
-  mpi_request(const sw::key::category& cat);
+  mpi_request(const key::category& cat);
 
   virtual std::string
   to_string() const {
@@ -35,7 +35,7 @@ class mpi_request  {
   ~mpi_request();
 
   static mpi_request*
-  construct(const sw::key::category& cat);
+  construct(const key::category& cat);
   // --------------------------------------//
 
   void
@@ -57,7 +57,7 @@ class mpi_request  {
     return stat_;
   }
 
-  sw::key*
+  key*
   get_key() const {
     return key_;
   }
@@ -74,13 +74,12 @@ class mpi_request  {
 
  protected:
   MPI_Status stat_;
-  sw::key* key_;
+  key* key_;
   bool complete_;
   bool cancelled_;
 };
 
 }
-} //end of namespace sstmac
 
 #endif
 

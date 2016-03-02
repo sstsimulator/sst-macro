@@ -7,8 +7,9 @@
 #include <sumi-mpi/mpi_message.h>
 #include <sstmac/common/sst_event.h>
 
-namespace sstmac {
 namespace sumi {
+
+using sstmac::event;
 
 class mpi_protocol  {
 
@@ -301,7 +302,6 @@ class rendezvous_rdma : public rendezvous_protocol
 
 };
 
-}
 }
 
 #endif // MPIPROTOCOL_H

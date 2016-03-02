@@ -15,7 +15,6 @@
 #include <sstmac/software/process/key.h>
 #include <sprockit/errors.h>
 
-namespace sstmac {
 namespace sumi {
 
 
@@ -77,5 +76,4 @@ void mpi_api::persistent_recv::start()
 
 
 }
-} // end of namespace sstmac
 

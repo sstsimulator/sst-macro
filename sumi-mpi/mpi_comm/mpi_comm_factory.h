@@ -18,7 +18,6 @@
 #include <sstmac/software/process/task_id.h>
 #include <sstmac/software/process/app_id.h>
 
-namespace sstmac {
 namespace sumi {
 
 
@@ -38,13 +37,13 @@ class mpi_comm_factory  {
   }
 
   /// Build comm_world using information retrieved from the environment.
-  mpi_comm_factory(sw::app_id aid, mpi_api* parent);
+  mpi_comm_factory(app_id aid, mpi_api* parent);
 
   /// Goodbye.
   virtual ~mpi_comm_factory();
 
   /// Initialize the object.
-  void init(sw::app_manager* env, int rank);
+  void init(app_manager* env, int rank);
 
   void finalize();
 
@@ -82,11 +81,14 @@ class mpi_comm_factory  {
   /// MPI_Comm_split -- collective operation.
   mpi_comm* comm_split(mpi_comm* caller, int color, int key);
 
+  mpi_comm* create_cart(mpi_comm* caller, int ndims,
+                        const int *dims, const int *periods, int reorder);
+
  protected:
 
   mpi_api* parent_;
 
-  sw::app_id aid_;
+  app_id aid_;
 
   /// We can restrict our run to use fewer than the nodes allocated.
   int mpirun_np_;
@@ -99,7 +101,6 @@ class mpi_comm_factory  {
 };
 
 }
-} // end of namespace sstmac.
 
 #endif
 

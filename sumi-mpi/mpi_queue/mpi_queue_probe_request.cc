@@ -15,8 +15,8 @@
 #include <sstmac/common/event_handler.h>
 #include <sprockit/errors.h>
 
-namespace sstmac {
 namespace sumi {
+
 
 //
 // Hi there.
@@ -53,5 +53,4 @@ mpi_queue_probe_request::complete(const mpi_message::ptr& message)
 }
 
 }
-} // end of namespace sstmac.
 

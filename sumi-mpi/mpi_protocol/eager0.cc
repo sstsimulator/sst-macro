@@ -3,8 +3,8 @@
 #include <sumi-mpi/mpi_queue/mpi_queue_recv_request.h>
 #include <sstmac/software/process/backtrace.h>
 
-namespace sstmac {
 namespace sumi {
+
 
 void
 eager0::finish_recv_header(
@@ -59,6 +59,5 @@ eager0::incoming_payload(mpi_queue* queue,
   queue->notify_probes(msg);
 }
 
-}
 }
 

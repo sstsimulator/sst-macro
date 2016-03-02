@@ -14,8 +14,8 @@
 
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
 
-namespace sstmac {
 namespace sumi {
+
 
 class user_thread_mpi_queue :
   public mpi_queue
@@ -85,7 +85,7 @@ class user_thread_mpi_queue :
  protected:
   bool is_polling_;
 
-  sw::key* blocking_key_;
+  key* blocking_key_;
 
   mpi_message::ptr incoming_msg_;
 
@@ -97,12 +97,9 @@ class user_thread_mpi_queue :
 
   timestamp poll_delay_;
 
-
 };
 
-
 }
-} // end of namespace sstmac
 
 
 #endif

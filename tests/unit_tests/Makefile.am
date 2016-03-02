@@ -10,13 +10,16 @@
 #
 include $(top_srcdir)/Makefile.common
 
-AM_CPPFLAGS += -I$(top_srcdir)/tests -I$(top_builddir)/dumpi -I$(top_srcdir)/dumpi
+AM_CPPFLAGS += -I$(top_srcdir)/tests -I$(top_builddir)/dumpi -I$(top_srcdir)/dumpi 
+
+if WITH_SUMI_MPI
+AM_CPPFLAGS += -I$(top_srcdir)/sumi -I$(top_builddir)/sumi
+endif
 
 if !INTEGRATED_SST_CORE
 SUBDIRS = util
 
 check_PROGRAMS = \
- test_parsedumpi \
  test_packet_flow \
  test_serializable \
  test_unit_test \
@@ -34,9 +37,6 @@ test_routing_SOURCES = \
     routing/route_fattree.cc \
     routing/route_fbfly.cc \
     routing/route_hdtorus.cc
-
-test_parsedumpi_SOURCES = \
-    test_parsedumpi.cc 
 
 test_serializable_SOURCES = \
     test_serializable.cc 
@@ -66,19 +66,15 @@ if EXTERNAL_BOOST
   TEST_LDFLAGS += $(BOOST_LDFLAGS)
 endif
 
-#  $(top_builddir)/sstmac/common/libsstmac_common.la \
-#  $(top_builddir)/sstmac/main/libsstmac_main.la          \
-#  $(top_builddir)/sstmac/software/libsstmac_sw.la  \
-#  $(top_builddir)/sstmac/dumpi_util/libsstmac_dumpi.la  \
-#  $(top_builddir)/sstmac/hardware/libsstmac_hw.la \
-#  $(top_builddir)/sstmac/main/libsstmac_dummy_skeleton.la \
-#  $(top_builddir)/sstmac/backends/native/libsstmac_native.la \
-#  $(top_builddir)/dumpi/dumpi/libundumpi/libundumpi.la 
-
+if !WITH_SUMI_MPI
+check_PROGRAMS += test_parsedumpi
+test_parsedumpi_SOURCES = \
+    test_parsedumpi.cc 
 test_parsedumpi_LDADD = $(TEST_LDFLAGS) \
-    $(top_builddir)/sstmac/main/libsstmac_main.la \
-    $(top_builddir)/sstmac/libraries/mpi/libsstmac_mpi.la \
-    $(top_builddir)/sstmac/skeletons/libsstmac_skeletons.la 
+  $(top_builddir)/sstmac/main/libsstmac_main.la \
+  $(top_builddir)/sstmac/skeletons/libsstmac_skeletons.la  \
+  $(top_builddir)/sstmac/libraries/mpi/libsstmac_mpi.la 
+endif
 test_packet_flow_LDADD = $(TEST_LDFLAGS) 
 test_routing_LDADD = $(TEST_LDFLAGS)
 test_serializable_LDADD = $(TEST_LDFLAGS)

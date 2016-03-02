@@ -39,7 +39,7 @@ static rank_time_map start_times;
 
 
 class throughput_thread :
-  public sstmac::sumi::sumi_thread
+  public sstmac::sumi_thread
 {
  public:
   virtual void run();
@@ -87,7 +87,7 @@ void run_test(
 )
 {
   std::vector<node_id> node_partners;
-  sstmac::sumi::sumi_api* simp = safe_cast(sstmac::sumi::sumi_api, sumi_api());
+  sstmac::sumi_api* simp = safe_cast(sstmac::sumi_api, sumi_api());
   topology::global()->send_partners(
     ty,
     simp->my_addr(),

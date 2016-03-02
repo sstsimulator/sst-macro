@@ -16,8 +16,9 @@
 #include <sumi-mpi/sstmac_mpi_integers.h>
 #include <string>
 
-namespace sstmac {
 namespace sumi {
+
+using sstmac::thread_safe_int;
 
 class keyval  {
 
@@ -71,7 +72,6 @@ class keyval  {
 
 };
 
-}
 }
 
 #endif /* KEYVAL_H_ */

@@ -16,8 +16,8 @@
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
 #include <sstmac/common/messages/payload.h>
 
-namespace sstmac {
 namespace sumi {
+
 
 mpi_queue_send_request::mpi_queue_send_request(
     const mpi_message::ptr& mess,
@@ -82,5 +82,4 @@ mpi_queue_send_request::complete(const mpi_message::ptr& msg)
 }
 
 }
-} // end of namespace sstmac.
 

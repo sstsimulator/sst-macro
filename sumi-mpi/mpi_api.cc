@@ -48,7 +48,7 @@
 #include <sprockit/malloc.h>
 #include <sprockit/keyword_registration.h>
 
-ImplementAPI(sstmac::sumi, mpi_api, "mpi")
+ImplementAPI(sumi, mpi_api, "mpi")
 
 
 DeclareDebugSlot(mpi_check)
@@ -56,19 +56,17 @@ RegisterDebugSlot(mpi_check,
     "validation flag that performs various sanity checks to ensure MPI application"
     " runs and terminates cleanly");
 
-using namespace sumi;
-
 sprockit::StaticNamespaceRegister mpi_ns_reg("mpi");
 sprockit::StaticNamespaceRegister queue_ns_reg("queue");
 
-namespace sstmac {
 namespace sumi {
 
-SpktRegister("mpi", sw::api, mpi_api, "Create bindings for MPI runtime");
 
-sw::key::category mpi_api::default_key_category("MPI");
-sw::key::category mpi_api::poll_key_category("MPI Poll");
-sw::key::category mpi_api::memcpy_key_category("MPI Memcpy");
+SpktRegister("mpi", sstmac::sw::api, mpi_api, "Create bindings for MPI runtime");
+
+key::category mpi_api::default_key_category("MPI");
+key::category mpi_api::poll_key_category("MPI Poll");
+key::category mpi_api::memcpy_key_category("MPI Memcpy");
 
 
 static sprockit::need_delete_statics<mpi_api> del_statics;
@@ -76,7 +74,7 @@ static sprockit::need_delete_statics<mpi_api> del_statics;
 mpi_api*
 sstmac_mpi()
 {
-  sw::thread* t = sw::operating_system::current_thread();
+  sstmac::sw::thread* t = operating_system::current_thread();
   return t->get_api<mpi_api> ();
 }
 
@@ -98,7 +96,7 @@ mpi_api::mpi_api() :
 void
 mpi_api::init_factory_params(sprockit::sim_parameters* params)
 {
-  sumi_sumi_transport::init_factory_params(params);
+  sumi_transport::init_factory_params(params);
   sprockit::sim_parameters* queue_params = params->get_optional_namespace("queue");
   /**
     sstkeyword {
@@ -118,9 +116,9 @@ mpi_api::finalize_init()
 }
 
 void
-mpi_api::init_param1(const sw::software_id& id)
+mpi_api::init_param1(const software_id& id)
 {
-  sumi_sumi_transport::init_param1(id);
+  sumi_transport::init_param1(id);
   process_manager::init_param1(id);
   id_ = id;
   rank_ = int(int(id.task_));
@@ -128,7 +126,7 @@ mpi_api::init_param1(const sw::software_id& id)
 }
 
 void
-mpi_api::init_os(sw::operating_system* os)
+mpi_api::init_os(operating_system* os)
 {
   api::init_os(os);
   process_manager::init_os(os);
@@ -172,13 +170,13 @@ mpi_api::do_init(int* argc, char*** argv)
 {
   SSTMACBacktrace("MPI_Init");
 
-  sumi_sumi_transport::init();
+  sumi_transport::init();
 
   if (!os_) {
     spkt_throw(sprockit::null_error, "mpiapi::init: os has not been initialized yet");
   }
 
-  sw::app_manager* env = os_->env(id_.app_);
+  app_manager* env = os_->env(id_.app_);
   if (!env) {
     spkt_throw(sprockit::null_error, "mpi_api::init: no environment found");
   }
@@ -196,12 +194,8 @@ mpi_api::do_init(int* argc, char*** argv)
 
   queue_->init_os(os_);
 
-  sw::AMI* ami = os_->getAMI(sw::ami::COMPUTE);
-  sstmac::hw::node* mynode = dynamic_cast<sstmac::hw::node*> (ami);
-  if (!mynode) {
-    spkt_throw(sprockit::os_error, "MPI should only be run on AMIs inheriting from node");
-  }
-  queue_->set_event_manager(os_->event_mgr());
+  sstmac::hw::node* mynode = os_->node();
+  queue_->set_event_manager(mynode->event_mgr());
 
 
   comm_map_[MPI_COMM_WORLD] = worldcomm_;
@@ -498,8 +492,6 @@ mpi_api::check_key(int key)
   }
 }
 
-
 }
-} // end of namespace sstmac
 
 

@@ -4,8 +4,8 @@
 #include <sumi-mpi/mpi_queue/mpi_queue_recv_request.h>
 #include <sstmac/software/process/backtrace.h>
 
-namespace sstmac {
 namespace sumi {
+
 
 void
 eager1::send_header(mpi_queue* queue,
@@ -114,6 +114,5 @@ eager1_doublecpy::incoming_payload(mpi_queue* queue,
   }
 }
 
-}
 }
 

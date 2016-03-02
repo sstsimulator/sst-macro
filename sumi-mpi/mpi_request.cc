@@ -11,11 +11,11 @@
 
 #include <sumi-mpi/mpi_request.h>
 
-namespace sstmac {
 namespace sumi {
 
-mpi_request::mpi_request(const sw::key::category& cat) :
- key_(sw::key::construct(cat)),
+
+mpi_request::mpi_request(const key::category& cat) :
+ key_(key::construct(cat)),
  complete_(false),
  cancelled_(false)
 {
@@ -30,7 +30,7 @@ mpi_request::~mpi_request()
 // Build me a request.
 //
 mpi_request*
-mpi_request::construct(const sw::key::category& cat)
+mpi_request::construct(const key::category& cat)
 {
   return new mpi_request(cat);
 }
@@ -45,5 +45,4 @@ mpi_request::complete(const mpi_message::ptr& msg)
 }
 
 }
-} //end of namespace sstmac
 

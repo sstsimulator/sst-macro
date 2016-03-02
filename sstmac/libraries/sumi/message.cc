@@ -3,10 +3,9 @@
 #include <sprockit/util.h>
 #include <iostream>
 
-DeclareSerializable(sstmac::sumi::transport_message)
+DeclareSerializable(sstmac::transport_message)
 
 namespace sstmac {
-namespace sumi {
   
 transport_message::transport_message(const payload_ptr& msg, long byte_length)
   : library_interface("sumi"),
@@ -94,5 +93,4 @@ transport_message::reverse()
   network_message::reverse();
 }  
   
-}
 }
