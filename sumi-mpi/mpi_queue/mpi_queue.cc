@@ -115,6 +115,10 @@ mpi_queue::init_factory_params(sprockit::sim_parameters* params)
 
   max_vshort_msg_size_ = params->get_optional_byte_length_param("max_vshort_msg_size", 512);
   max_eager_msg_size_ = params->get_optional_byte_length_param("max_eager_msg_size", 8192);
+
+  post_rdma_delay_ = params->get_optional_time_param("post_rdma_delay", 0);
+  post_header_delay_ = params->get_optional_time_param("post_header_delay", 0);
+  poll_delay_ = params->get_optional_time_param("poll_delay", 0);
 }
 
 void
@@ -139,13 +143,14 @@ mpi_message::ptr
 mpi_queue::send_message(int count, MPI_Datatype type,
                 int dst_rank, int tag, mpi_comm* comm)
 {
-  mpi_queue_debug("starting send count=%d, type=%s, dest=%d, tag=%d, comm=%s, cat=%s",
-    count, api_->type_str(type).c_str(), int(dst_rank),
-    int(tag), api_->comm_str(comm).c_str());
 
   mpi_type* typeobj = api_->type_from_id(type);
   long bytes = count * int64_t(typeobj->packed_size());
   mpi_protocol* prot = protocol(bytes);
+  mpi_queue_debug("starting send count=%d, type=%s, dest=%d, tag=%d, comm=%s, prot=%s",
+    count, api_->type_str(type).c_str(), int(dst_rank),
+    int(tag), api_->comm_str(comm).c_str(),
+    prot->to_string().c_str());
   task_id dst_tid = comm->peer_task(dst_rank);
   mpi_message::ptr mess = new mpi_message(comm->rank(), dst_rank,
                           count, type, typeobj->packed_size(),
@@ -360,13 +365,11 @@ mpi_queue::send_completion_ack(const mpi_message::ptr& message)
   api_->send_header(dst, message);
 }
 
-//
-// CALLBACK used by mpiserver when this object has a message.
-//
 void
-mpi_queue::incoming_message(const mpi_message::ptr& message)
+mpi_queue::handle_incoming_message(const mpi_message::ptr& message)
 {
-  mpi_queue_debug("have incoming message %s", message->to_string().c_str());
+  mpi_queue_debug("have incoming %p message %s", 
+    message.get(), message->to_string().c_str());
 
   if (message->is_nic_ack()) {
     handle_nic_ack(message);

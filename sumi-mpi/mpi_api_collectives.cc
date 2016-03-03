@@ -73,13 +73,19 @@ mpi_api::start_allgather(const void *sendbuf, void *recvbuf, int count, MPI_Data
 int
 mpi_api::allgather(int sendcount, MPI_Datatype sendtype, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
 {
-  validate_mpi_collective("allgather", sendtype, recvtype);
   return allgather(NULL, sendcount, sendtype, NULL, recvcount, recvtype, comm);
 }
 
 int
 mpi_api::allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
 {
+  SSTMACBacktrace("MPI_Allgather");
+  validate_mpi_collective("allgather", sendtype, recvtype);
+  mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
+    "MPI_Allgather(%d,%s,%d,%s,%s)",
+    sendcount, type_str(sendtype).c_str(),
+    recvcount, type_str(recvtype).c_str(),
+    comm_str(comm).c_str());
   int tag = start_allgather(sendbuf, recvbuf, sendcount, sendtype, comm);
   collective_progress_loop(collective::allgather, tag);
   return MPI_SUCCESS;
@@ -99,7 +105,13 @@ mpi_api::start_alltoall(const void *sendbuf, void *recvbuf, int count, MPI_Datat
 int
 mpi_api::alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
 {
+  SSTMACBacktrace("MPI_Alltoall");
   validate_mpi_collective("alltoall", sendtype, recvtype);
+  mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
+    "MPI_Alltoall(%d,%s,%d,%s,%s)",
+    sendcount, type_str(sendtype).c_str(),
+    recvcount, type_str(recvtype).c_str(),
+    comm_str(comm).c_str());
   int tag = start_alltoall(sendbuf, recvbuf, sendcount, sendtype, comm);
   collective_progress_loop(collective::alltoall, tag);
   return MPI_SUCCESS;
@@ -124,6 +136,10 @@ mpi_api::start_allreduce(const void *src, void *dst, int count, MPI_Datatype typ
 int
 mpi_api::allreduce(const void *src, void *dst, int count, MPI_Datatype type, MPI_Op op, MPI_Comm comm)
 {
+  SSTMACBacktrace("MPI_Allreduce");
+  mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
+    "MPI_Allreduce(%d,%s,%s,%s)",
+    count, type_str(type).c_str(), op_str(op), comm_str(comm).c_str());
   int tag = start_allreduce(src, dst, count, type, op, comm);
   collective_progress_loop(collective::allreduce, tag);
   return MPI_SUCCESS;
@@ -150,6 +166,8 @@ mpi_api::barrier(MPI_Comm comm)
 {
   SSTMACBacktrace("MPI_Barrier");
   int tag = start_barrier(comm);
+  mpi_api_debug(sprockit::dbg::mpi, "MPI_Barrier(%s) on tag %d",
+    comm_str(comm).c_str(), int(tag));
   collective_progress_loop(collective::barrier, tag);
   return MPI_SUCCESS;
 }
@@ -241,6 +259,10 @@ mpi_api::start_reduce(const void *src, void *dst, int count, MPI_Datatype type, 
 int
 mpi_api::reduce(const void *src, void *dst, int count, MPI_Datatype type, MPI_Op op, int root, MPI_Comm comm)
 {
+  SSTMACBacktrace("MPI_Reduce");
+  mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
+    "MPI_Reduce(%d,%s,%s,%d,%s)", count, type_str(type).c_str(),
+    op_str(op), int(root), comm_str(comm).c_str());
   int tag = start_reduce(src, dst, count, type, op, root, comm);
   collective_progress_loop(collective::reduce, tag);
   return MPI_SUCCESS;
@@ -271,6 +293,10 @@ mpi_api::start_reduce_scatter(const void *src, void *dst, int *recvcnts, MPI_Dat
 int
 mpi_api::reduce_scatter(const void *src, void *dst, int *recvcnts, MPI_Datatype type, MPI_Op op, MPI_Comm comm)
 {
+  SSTMACBacktrace("MPI_Reducescatter");
+  mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
+    "MPI_Reduce_scatter(<...>,%s,%s,%s)",
+    type_str(type).c_str(), op_str(op), comm_str(comm).c_str());
   int tag = start_reduce_scatter(src, dst, recvcnts, type, op, comm);
   collective_progress_loop(collective::reduce_scatter, tag);
   return MPI_SUCCESS;
@@ -301,6 +327,10 @@ mpi_api::start_scan(const void *src, void *dst, int count, MPI_Datatype type, MP
 int
 mpi_api::scan(const void *src, void *dst, int count, MPI_Datatype type, MPI_Op op, MPI_Comm comm)
 {
+  SSTMACBacktrace("MPI_Scan");
+  mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
+    "MPI_Scan(%d,%s,%s,%s)",
+    count, type_str(type).c_str(), op_str(op), comm_str(comm).c_str());
   int tag = start_scan(src, dst, count, type, op, comm);
   collective_progress_loop(collective::scan, tag);
   return MPI_SUCCESS;

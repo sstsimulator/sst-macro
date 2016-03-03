@@ -18,7 +18,6 @@
 #include <sstmac/common/messages/sleep_message.h>
 
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
-#include <sumi-mpi/mpi_queue/user_thread_mpi_queue.h>
 
 #include <sumi-mpi/mpi_api.h>
 #include <sumi-mpi/mpi_api_persistent.h>
@@ -104,7 +103,7 @@ mpi_api::init_factory_params(sprockit::sim_parameters* params)
         blocks the application [user] thread.;
     }
   */
-  queue_ = new user_thread_mpi_queue;
+  queue_ = new mpi_queue;
   queue_->init_sid(id_);
   queue_->init_factory_params(queue_params);
   queue_->set_api(this);
@@ -247,6 +246,30 @@ double
 mpi_api::wtime()
 {
   return os_->now().sec();
+}
+
+const char*
+mpi_api::op_str(MPI_Op op)
+{
+#define op_case(x) case x: return #x;
+ switch(op)
+ {
+ op_case(MPI_MAX);
+ op_case(MPI_MIN);
+ op_case(MPI_SUM);
+ op_case(MPI_PROD);
+ op_case(MPI_LAND);
+ op_case(MPI_BAND);
+ op_case(MPI_LOR);
+ op_case(MPI_BOR);
+ op_case(MPI_LXOR);
+ op_case(MPI_BXOR);
+ op_case(MPI_MAXLOC);
+ op_case(MPI_MINLOC);
+ op_case(MPI_REPLACE);
+ default:
+  return "CUSTOM";
+ }
 }
 
 std::string

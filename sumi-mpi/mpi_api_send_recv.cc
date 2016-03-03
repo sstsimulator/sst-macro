@@ -8,8 +8,13 @@ namespace  sumi {
 int
 mpi_api::send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
 {
-  mpi_request* req = mpi_request::construct(default_key_category);
+  SSTMACBacktrace("MPI_Send");
   mpi_comm* commPtr = get_comm(comm);
+  mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_pt2pt,
+    "MPI_Send(%d,%s,%d:%d,%s,%s)",
+    count, type_str(datatype).c_str(), int(dest), int(commPtr->peer_task(dest)),
+    tag_str(tag).c_str(), comm_str(comm).c_str());
+  mpi_request* req = mpi_request::construct(default_key_category);
   queue_->send(req, count, datatype, dest, tag, commPtr, const_cast<void*>(buf));
   queue_->progress_loop(req);
   delete req;
@@ -19,8 +24,13 @@ mpi_api::send(const void *buf, int count, MPI_Datatype datatype, int dest, int t
 int
 mpi_api::isend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request)
 {
-  mpi_request* req = mpi_request::construct(default_key_category);
+  SSTMACBacktrace("MPI_Isend");
   mpi_comm* commPtr = get_comm(comm);
+  mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request | sprockit::dbg::mpi_pt2pt,
+    "MPI_Isend(%d,%s,%d:%d,%s,%s)",
+    count, type_str(datatype).c_str(), int(dest), int(commPtr->peer_task(dest)),
+    tag_str(tag).c_str(), comm_str(comm).c_str());
+  mpi_request* req = mpi_request::construct(default_key_category);
   queue_->send(req, count, datatype, dest, tag, commPtr, const_cast<void*>(buf));
   *request = add_request_ptr(req);
   return MPI_SUCCESS;

@@ -6,6 +6,9 @@ namespace sumi {
 bool
 mpi_api::test(MPI_Request *request, MPI_Status *status)
 {
+  SSTMACBacktrace("MPI_Test");
+  mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, "MPI_Test(...)");
+
   if (*request == MPI_REQUEST_NULL){
     return true;
   }

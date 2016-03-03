@@ -5,16 +5,19 @@
 
 namespace sumi {
 
-
 int
 mpi_api::wait(MPI_Request *request, MPI_Status *status)
 {
   SSTMACBacktrace("MPI_Wait");
-
-  MPI_Request req = *request;
-
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, "MPI_Wait(...)");
-  mpi_api_debug(sprockit::dbg::mpi_request, "MPI_Request=%p", req);
+  return do_wait(request, status);
+}
+
+
+int
+mpi_api::do_wait(MPI_Request *request, MPI_Status *status)
+{
+  MPI_Request req = *request;
 
   if (*request == MPI_REQUEST_NULL){
     return MPI_SUCCESS;
@@ -37,10 +40,13 @@ mpi_api::wait(MPI_Request *request, MPI_Status *status)
 int
 mpi_api::waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of_statuses[])
 {
+  SSTMACBacktrace("MPI_Waitall");
+  mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, 
+    "MPI_Waitall(%d,...)", count);
   bool ignore_status = array_of_statuses == MPI_STATUSES_IGNORE;
   for (int i=0; i < count; ++i){
     MPI_Status* status = ignore_status ? MPI_STATUS_IGNORE : &array_of_statuses[i];
-    wait(&array_of_requests[i], status);
+    do_wait(&array_of_requests[i], status);
   }
   return MPI_SUCCESS;
 }
@@ -48,6 +54,8 @@ mpi_api::waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of
 int
 mpi_api::waitany(int count, MPI_Request array_of_requests[], int *indx, MPI_Status *status)
 {
+  SSTMACBacktrace("MPI_Waitany");
+  mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, "MPI_Waitany(...)");
   *indx = MPI_UNDEFINED;
   std::vector<mpi_request*> reqPtrs(count);
   int numNonnull = 0;
@@ -97,6 +105,9 @@ mpi_api::waitany(int count, MPI_Request array_of_requests[], int *indx, MPI_Stat
 int
 mpi_api::waitsome(int incount, MPI_Request array_of_requests[], int *outcount, int array_of_indices[], MPI_Status array_of_statuses[])
 {
+  SSTMACBacktrace("MPI_Waitsome");
+  mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request,
+    "MPI_Waitsome(...)");
   int numComplete = 0;
   int numIncomplete = 0;
   std::vector<mpi_request*> reqPtrs(incount);

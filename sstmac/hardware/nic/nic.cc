@@ -141,6 +141,7 @@ nic::recv_message(const sst_message::ptr& msg)
   switch (netmsg->type()) {
     case network_message::rdma_get_request: {
       netmsg->nic_reverse(network_message::rdma_get_payload);
+      netmsg->put_on_wire();
       internode_send(netmsg);
       finish_recv_req(msg);
       break;
@@ -181,7 +182,6 @@ void
 nic::ack_send(const network_message::ptr& payload)
 {
   if (payload->needs_ack()){
-    payload->put_on_wire();
     network_message::ptr ack = payload->clone_injection_ack();
     nic_debug("acking payload %p:%s with ack %p",
       payload.get(), payload->to_string().c_str(), ack.get());

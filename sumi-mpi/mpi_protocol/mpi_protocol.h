@@ -19,7 +19,7 @@ class mpi_protocol  {
     EAGER0,
     EAGER1_SINGLECPY,
     EAGER1_DOUBLECPY,
-    RENDEZVOUS_RDMA,
+    RENDEZVOUS_GET,
   };
 
  public:
@@ -82,9 +82,6 @@ class mpi_protocol  {
 
 class eager_protocol : public mpi_protocol
 {
- public:
-  void
-  configure_send_buffer(const mpi_message::ptr& msg, void* buffer);
 };
 
 class eager0 : public eager_protocol
@@ -117,6 +114,9 @@ class eager0 : public eager_protocol
   send_needs_eager_ack() const {
     return true;
   }
+
+  void
+  configure_send_buffer(const mpi_message::ptr& msg, void* buffer);
 
   void
   finish_recv_header(mpi_queue* queue, const mpi_message::ptr& msg,
@@ -159,6 +159,9 @@ class eager1 : public eager_protocol
   send_needs_completion_ack() const {
     return false;
   }
+
+  void
+  configure_send_buffer(const mpi_message::ptr& msg, void* buffer);
 
   bool
   send_needs_nic_ack() const {
@@ -241,9 +244,18 @@ class rendezvous_protocol : public mpi_protocol
 
   virtual ~rendezvous_protocol(){}
 
+
+};
+
+class rendezvous_get : public rendezvous_protocol
+{
+ public:
+
+  virtual ~rendezvous_get();
+
   bool
   send_needs_nic_ack() const {
-    return false;
+    return true;
   }
 
   bool
@@ -251,22 +263,9 @@ class rendezvous_protocol : public mpi_protocol
     return false;
   }
 
-  void
-  configure_send_buffer(const mpi_message::ptr& msg, void* buffer){
-    msg->remote_buffer() = buffer;
-  }
-
-};
-
-class rendezvous_rdma : public rendezvous_protocol
-{
- public:
-
-  virtual ~rendezvous_rdma();
-
   bool
   send_needs_completion_ack() const {
-    return true;
+    return false;
   }
 
   void
@@ -285,8 +284,11 @@ class rendezvous_rdma : public rendezvous_protocol
 
   virtual PROTOCOL_ID
   get_prot_id() const {
-    return RENDEZVOUS_RDMA;
+    return RENDEZVOUS_GET;
   }
+
+  void
+  configure_send_buffer(const mpi_message::ptr& msg, void* buffer);
 
   void
   finish_recv_header(mpi_queue* queue, const mpi_message::ptr& msg,
