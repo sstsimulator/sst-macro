@@ -30,6 +30,7 @@
 #include <sstmac/software/process/software_id.h>
 #include <sstmac/software/process/key.h>
 #include <sstmac/software/process/pmi.h>
+#include <sstmac/software/process/backtrace.h>
 
 #include <sumi-mpi/mpi_queue/mpi_queue_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
@@ -464,6 +465,9 @@ class mpi_api :
   std::string
   type_str(MPI_Datatype mid);
 
+  const char*
+  op_str(MPI_Op op);
+
   mpi_comm*
   get_comm(MPI_Comm comm);
 
@@ -510,6 +514,9 @@ class mpi_api :
   get_keyval(int key);
 
  private:
+  int
+  do_wait(MPI_Request *request, MPI_Status *status);
+
   void
   validate_mpi_collective(const char* name, MPI_Datatype sendtype, MPI_Datatype recvtype);
 

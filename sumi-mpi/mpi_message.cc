@@ -48,7 +48,6 @@ mpi_message::mpi_message(int src, int dst, int count,
   ignore_seqnum_(false),
   protocol_(protocol->get_prot_id())
 {
-  recompute_bytes();
 }
 
 void

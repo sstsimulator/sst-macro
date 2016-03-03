@@ -69,7 +69,6 @@ nobase_library_include_HEADERS = \
   mpi_queue/mpi_queue_send_request.h \
   mpi_queue/mpi_queue.h \
   mpi_queue/mpi_queue_fwd.h \
-  mpi_queue/user_thread_mpi_queue.h \
   mpi_protocol/mpi_protocol.h \
   mpi_protocol/mpi_protocol_fwd.h \
   mpi_types/mpi_type.h \

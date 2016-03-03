@@ -41,7 +41,8 @@ eager0::send_header(mpi_queue* queue,
                          const mpi_message::ptr& msg)
 {
   SSTMACBacktrace("MPI Eager 0 Protocol: Send Header");
-  queue->post_header(msg);
+  msg->set_content_type(mpi_message::eager_payload);
+  queue->post_header(msg,true/*do need an ack*/);
 }
 
 void

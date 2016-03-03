@@ -59,21 +59,23 @@ class mpi_queue
   friend class eager1_singlecpy;
   friend class eager1_doublecpy;
   friend class rendezvous_protocol;
-  friend class rendezvous_rdma;
+  friend class rendezvous_get;
   friend class mpi_queue_send_request;
   friend class mpi_queue_recv_request;
 
  public:
-  virtual std::string
+  std::string
   to_string() const {
     return "mpi queue";
   }
 
-  virtual void
+  mpi_queue();
+
+  void
   init_factory_params(sprockit::sim_parameters* params);
 
   /// Goodbye.
-  virtual ~mpi_queue() throw ();
+  ~mpi_queue() throw ();
 
   static void
   delete_statics();
@@ -102,8 +104,9 @@ class mpi_queue
   iprobe(mpi_comm* comm, int source, int tag, MPI_Status* stat);
 
   /// CALLBACK used by mpiserver when this object has a message.
-  virtual void
-  incoming_message(const mpi_message::ptr& message) = 0;
+   void
+  incoming_message(const mpi_message::ptr& message);
+
 
   void
   set_event_manager(event_manager* m);
@@ -117,7 +120,7 @@ class mpi_queue
   void
   init_os(operating_system* os);
 
-  virtual void
+  void
   finalize_init();
 
   void
@@ -146,38 +149,40 @@ class mpi_queue
   void
   finalize_recv(const mpi_message::ptr& msg);
 
-  virtual timestamp
-  progress_loop(mpi_request* req) = 0;
+  timestamp
+  progress_loop(mpi_request* req);
 
-  virtual void
-  start_progress_loop(const std::vector<mpi_request*>& req) = 0;
+  void
+  start_progress_loop(const std::vector<mpi_request*>& req);
 
-  virtual void
+  void
   start_progress_loop(const std::vector<mpi_request*>& req,
-                      timestamp timeout) = 0;
+                      timestamp timeout);
 
-  virtual void
-  finish_progress_loop(const std::vector<mpi_request*>& req) = 0;
+  void
+  finish_progress_loop(const std::vector<mpi_request*>& req);
 
   void
   start_recv(mpi_queue_recv_request* req);
 
-  virtual void
-  buffered_send(const mpi_message::ptr& msg) = 0;
+  void
+  buffered_send(const mpi_message::ptr& msg);
 
-  virtual void
-  buffered_recv(const mpi_message::ptr& msg, mpi_queue_recv_request* req) = 0;
+  void
+  buffered_recv(const mpi_message::ptr& msg, mpi_queue_recv_request* req);
 
-  virtual void
-  buffer_unexpected(const mpi_message::ptr& msg) = 0;
+  void
+  buffer_unexpected(const mpi_message::ptr& msg);
 
-  virtual void
-  post_rdma(const mpi_message::ptr& msg) = 0;
+  void
+  post_rdma(const mpi_message::ptr& msg,
+    bool needs_send_ack,
+    bool needs_recv_ack);
 
-  virtual void
-  post_header(const mpi_message::ptr& msg) = 0;
+  void
+  post_header(const mpi_message::ptr& msg, bool needs_ack);
 
- protected:
+ private:
   struct sortbyseqnum {
     bool operator()(const mpi_message::ptr& a, const mpi_message::ptr&b) const;
   };
@@ -199,15 +204,16 @@ class mpi_queue
 
   typedef std::list<mpi_queue_probe_request*> probelist_t;
 
- protected:
-  /// Hi there.
-  mpi_queue();
 
-  virtual void
-  do_send(const mpi_message::ptr& mess) = 0;
+ private:
+  void 
+  handle_incoming_message(const mpi_message::ptr& message);
 
-  virtual void
-  do_recv(mpi_queue_recv_request* req) = 0;
+  void
+  do_send(const mpi_message::ptr& mess);
+
+  void
+  do_recv(mpi_queue_recv_request* req);
 
   void
   incoming_completion_ack(const mpi_message::ptr& message);
@@ -261,7 +267,12 @@ class mpi_queue
   void
   configure_send_request(const mpi_message::ptr& mess, mpi_request* req);
 
- protected:
+  void clear_pending();
+
+  bool
+  at_least_one_complete(const std::vector<mpi_request*>& req);
+
+ private:
   sstmac::stat_spyplot* spy_num_messages_;
   sstmac::stat_spyplot* spy_bytes_;
 
@@ -312,6 +323,11 @@ class mpi_queue
   int max_vshort_msg_size_;
   int max_eager_msg_size_;
 
+  timestamp post_rdma_delay_;
+
+  timestamp post_header_delay_;
+
+  timestamp poll_delay_;
 
 };
 

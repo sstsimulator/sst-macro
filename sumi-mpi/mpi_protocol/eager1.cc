@@ -11,7 +11,8 @@ void
 eager1::send_header(mpi_queue* queue,
                     const mpi_message::ptr& msg)
 {
-  SSTMACBacktrace("MPI Eager 1 Protocol: Send RDMA Header", queue->is_service_thread());
+  SSTMACBacktrace("MPI Eager 1 Protocol: Send RDMA Header");
+  msg->set_content_type(mpi_message::header);
   queue->buffered_send(msg);
 
   /** the send will have copied into a temp buffer so we can 'ack' the buffer for now */
@@ -38,7 +39,7 @@ void
 eager1::incoming_header(mpi_queue* queue,
                            const mpi_message::ptr& msg)
 {
-  SSTMACBacktrace("MPI Eager 1 Protocol: Handle RDMA Header", queue->is_service_thread());
+  SSTMACBacktrace("MPI Eager 1 Protocol: Handle RDMA Header");
 
   /** Don't involve any recv request yet.
       Receive doesn't need to be posted for this to go forward */
@@ -61,7 +62,9 @@ eager1::incoming_header(mpi_queue* queue,
   // make sure mpi still handles this since it won't match
   // the current sequence number
   msg->set_ignore_seqnum(true);
-  queue->post_rdma(msg);
+  msg->set_content_type(mpi_message::data);
+  // generate an ack ONLY on the recv end
+  queue->post_rdma(msg, false, true);
 }
 
 void
@@ -87,7 +90,7 @@ void
 eager1_singlecpy::incoming_payload(mpi_queue* queue,
                                       const mpi_message::ptr& msg)
 {
-  SSTMACBacktrace("MPI Eager 1 Protocol: Handle RDMA Paylod", queue->is_service_thread());
+  SSTMACBacktrace("MPI Eager 1 Protocol: Handle RDMA Payload");
   mpi_queue_recv_request* req = queue->find_waiting_request(msg);
   if (!req){
     spkt_throw(sprockit::illformed_error,
@@ -105,7 +108,7 @@ void
 eager1_doublecpy::incoming_payload(mpi_queue* queue,
                                    const mpi_message::ptr& msg)
 {
-  SSTMACBacktrace("MPI Eager 1 Protocol: Handle RDMA Paylod", queue->is_service_thread());
+  SSTMACBacktrace("MPI Eager 1 Protocol: Handle RDMA Payload");
   //the recv request is expecting a user message - update the message to match
   mpi_queue_recv_request* req = queue->find_pending_request(msg,
                                      true); //if not found, add to need_recv

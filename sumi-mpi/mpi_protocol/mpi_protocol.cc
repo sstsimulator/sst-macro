@@ -7,7 +7,7 @@ namespace sumi {
 mpi_protocol* mpi_protocol::eager0_protocol = new eager0;
 mpi_protocol* mpi_protocol::eager1_singlecpy_protocol = new eager1_singlecpy;
 mpi_protocol* mpi_protocol::eager1_doublecpy_protocol = new eager1_doublecpy;
-mpi_protocol* mpi_protocol::rendezvous_protocol = new rendezvous_rdma;
+mpi_protocol* mpi_protocol::rendezvous_protocol = new rendezvous_get;
 
 static sprockit::need_delete_statics<mpi_protocol> del_statics;
 
@@ -24,7 +24,7 @@ mpi_protocol::get_protocol_object(PROTOCOL_ID id) {
     return eager1_singlecpy_protocol;
   case EAGER1_DOUBLECPY:
     return eager1_doublecpy_protocol;
-  case RENDEZVOUS_RDMA:
+  case RENDEZVOUS_GET:
     return rendezvous_protocol;
   default:
     spkt_throw_printf(sprockit::value_error,
@@ -60,11 +60,27 @@ mpi_protocol::incoming_payload(mpi_queue* queue,
 }
 
 void
-eager_protocol::configure_send_buffer(const mpi_message::ptr& msg, void *buffer)
+eager0::configure_send_buffer(const mpi_message::ptr& msg, void *buffer)
 {
   long length = msg->payload_bytes();
   void* eager_buf = new char[length];
   ::memcpy(eager_buf, buffer, length);
+  msg->eager_buffer() = eager_buf;
+}
+
+void
+eager1::configure_send_buffer(const mpi_message::ptr& msg, void *buffer)
+{
+  long length = msg->payload_bytes();
+  void* eager_buf = new char[length];
+  ::memcpy(eager_buf, buffer, length);
+  msg->local_buffer() = eager_buf;
+}
+
+void
+rendezvous_get::configure_send_buffer(const mpi_message::ptr& msg, void *buffer)
+{
+  msg->local_buffer() = buffer;
 }
 
 }

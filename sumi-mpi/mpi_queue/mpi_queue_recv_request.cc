@@ -62,6 +62,12 @@ mpi_queue_recv_request::finish_message(void* buffer, const mpi_message::ptr& mes
 {
   mess->protocol()->finish_recv_payload(queue_, mess, this);
   if (buffer_){ //do some copying
+#if SSTMAC_SANITY_CHECK
+    if (!buffer){
+      spkt_throw_printf(sprockit::value_error,
+        "Send sent null buffer, but recv posted real buffer"); 
+    }
+#endif
     ::memcpy(buffer_, buffer, mess->payload_bytes());
   }
   queue_->finalize_recv(mess);
