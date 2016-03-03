@@ -16,7 +16,7 @@ packet_flow_buffer::packet_flow_buffer(
   bytes_delayed_(0),
   arb_(arb)
 {
-  arb->set_bw(out_bw);
+  arb->set_outgoing_bw(out_bw);
 }
 
 void

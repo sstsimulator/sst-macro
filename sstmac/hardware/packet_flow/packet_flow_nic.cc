@@ -74,8 +74,8 @@ packet_flow_nic::init_factory_params(sprockit::sim_parameters *params)
 
   buffer_size_ = params->get_optional_byte_length_param("eject_buffer_size", 1<<30);
   packet_flow_bandwidth_arbitrator* inj_templ
-    = packet_flow_bandwidth_arbitrator_factory::get_optional_param("arbitrator",
-        packet_flow_payload::default_arbitrator(), params);
+    = packet_flow_bandwidth_arbitrator_factory::get_optional_param(
+        "arbitrator", "cut_through", params);
 
   int one_vc = 1;
   //total hack for now, assume that the buffer itself has a low latency link to the switch
@@ -87,7 +87,7 @@ packet_flow_nic::init_factory_params(sprockit::sim_parameters *params)
 
   endpoint_ =
     packet_flow_endpoint_factory::get_optional_param("arbitrator",
-        packet_flow_payload::default_arbitrator(), params);
+        "cut_through", params);
 #if SSTMAC_INTEGRATED_SST_CORE
   injection_credits_ = params->get_byte_length_param("injection_credits");
 #endif

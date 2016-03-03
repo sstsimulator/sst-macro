@@ -63,9 +63,6 @@ interconnect::num_nodes() const
 void
 interconnect::init_factory_params(sprockit::sim_parameters *params)
 {
-  std::string defarb = params->get_optional_param("packet_flow_arbitrator", "simple");
-  packet_flow_payload::set_default_arbitrator(defarb);
-
   STATIC_INIT_TOPOLOGY(params)
 }
 

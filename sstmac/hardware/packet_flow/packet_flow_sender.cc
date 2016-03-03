@@ -31,7 +31,7 @@ void
 packet_flow_sender::send_credit(
   const packet_flow_input& src,
   const packet_flow_payload::ptr& payload,
-  timestamp packet_tail_leaves)
+  timestamp credit_leaves)
 {
   int src_vc = payload->vc(); //we have not updated to the new virtual channel
   packet_flow_credit::ptr credit = new packet_flow_credit(src.src_outport,
@@ -39,7 +39,7 @@ packet_flow_sender::send_credit(
   //there is a certain minimum latency on credits
   timestamp min_arrival = now() + credit_lat_;
   //assume for now the packet flow sender is smart enough to pipeline credits efficiently
-  timestamp credit_arrival = min_arrival > packet_tail_leaves ? min_arrival : packet_tail_leaves;
+  timestamp credit_arrival = min_arrival > credit_leaves ? min_arrival : credit_leaves;
   packet_flow_debug(
       "On %s:%p on inport %d, crediting %s:%p port:%d vc:%d {%s} at [%9.5e] after latency %9.5e with %p",
       to_string().c_str(), this, payload->inport(),
@@ -60,31 +60,36 @@ packet_flow_sender::send(
   const packet_flow_input& src,
   const packet_flow_output& dest)
 {
+  double incoming_bw = msg->bw();
   const timestamp& now_ = now();
   timestamp packet_head_leaves;
   timestamp packet_tail_leaves;
+  timestamp credit_leaves;
   if (arb) {
-    arb->arbitrate(now_, msg, packet_head_leaves, packet_tail_leaves);
-    packet_head_leaves.correct_round_off(now_);
+    arb->arbitrate(now_, msg,
+      packet_head_leaves, packet_tail_leaves, credit_leaves);
   } else {
-    packet_head_leaves = packet_tail_leaves = now_;
+    packet_head_leaves = packet_tail_leaves = credit_leaves = now_;
   }
 
-  timestamp congestion_delay = packet_head_leaves.sec() - now_.sec();
-  if (acc_delay_){
-    spkt_throw_printf(sprockit::unimplemented_error, "congestion delay stats temporarily broken");
-    //msg->add_delay_us(congestion_delay*1e6);
-  }
-  if (congestion_spyplot_){
-    //spkt_throw_printf(sprockit::unimplemented_error, "congestion delay stats temporarily broken");
-    if (congestion_delay < 0){
-        spkt_throw_printf(sprockit::value_error,
-            "packet_flow_sender::send: invalid negative congestion delay %8.4e",
-            congestion_delay);
+  if (acc_delay_ || congestion_spyplot_){
+    double delta_t = (packet_tail_leaves - now_).sec();
+    double min_delta_t = msg->byte_length() / incoming_bw;
+    double congestion_delay = delta_t - min_delta_t;
+#if SSTMAC_SANITY_CHECK
+    if (congestion_delay < -1e-9){
+      spkt_throw_printf(sprockit::value_error,
+        "got a negative congestion delay arbitrating packet");
     }
-    long delay_usec = long (congestion_delay.usec());
-    int my_id = abs(event_location().location);
-    congestion_spyplot_->add(msg->fromaddr(), my_id, delay_usec);
+#endif
+    double congestion_delay_us = std::max(0., congestion_delay) * 1e6;
+    if (acc_delay_){
+      msg->add_delay_us(congestion_delay_us);
+    }
+    if (congestion_spyplot_){
+      long my_id = event_location().location;
+      congestion_spyplot_->add(msg->fromaddr(), my_id, congestion_delay_us);
+    }
   }
 
 #if SSTMAC_SANITY_CHECK
@@ -97,7 +102,7 @@ packet_flow_sender::send(
 #endif
 
   if (src.handler) {
-    send_credit(src, msg, packet_tail_leaves);
+    send_credit(src, msg, credit_leaves);
   }
 
   if (acker_ && msg->is_tail()) {
@@ -120,28 +125,12 @@ packet_flow_sender::send(
     packet_head_leaves.sec(),
     packet_tail_leaves.sec());
 
-  // leaving me, on arrival at dest
-  // message will occupy a specific inport at dest
+  // leaving me, on arrival at dest message will occupy a specific inport at dest
   msg->set_inport(dest.dst_inport);
   //weird hack to update vc from routing
   if (update_vc_) msg->update_vc();
 
   timestamp arrival = packet_head_leaves + send_lat_;
-#if 0
-  bool print;
-  print = event_location().is_switch_id() && event_location().convert_to_switch_id() == 584;
-  print = uint64_t(msg->unique_id()) == 3216930504724L;
-  if (print){
-    double stop = packet_tail_leaves.sec();
-    double bw = msg->byte_length() / (stop - msg->arrival());
-    printf("%46s on %5d: %10.5f->%10.5f BW=%8.4e\n", 
-      msg->to_string().c_str(), 
-      int(event_location().convert_to_switch_id()),
-      msg->arrival()*1e3,
-      stop*1e3,
-      bw);
-  }
-#endif
   START_VALID_SCHEDULE(this)
   schedule(arrival, dest.handler, msg);
   STOP_VALID_SCHEDULE(this)

@@ -63,7 +63,7 @@ validate_bw(double test_bw)
 }
 
 packet_flow_bandwidth_arbitrator::packet_flow_bandwidth_arbitrator() :
-  bw_(-1)
+  out_bw_(-1), inv_out_bw_(-1)
 {
 }
 
@@ -90,25 +90,30 @@ packet_flow_bandwidth_arbitrator::init_noise_model(noise_model* noise)
 
 void
 packet_flow_simple_arbitrator::arbitrate(
-    timestamp now,
-    const packet_flow_payload::ptr& msg,
-    timestamp& packet_head_leaves,
-    timestamp& packet_tail_leaves)
+  timestamp now,
+  const packet_flow_payload::ptr& msg,
+  timestamp& packet_head_leaves,
+  timestamp& packet_tail_leaves,
+  timestamp& credit_leaves)
 {
   const timestamp& start_send = next_free_ < now ? now : next_free_;
-  timestamp ser_delay(msg->num_bytes() / bw_);
+  timestamp ser_delay(msg->num_bytes() * inv_out_bw_);
   next_free_ = start_send + ser_delay;
-  msg->set_bw(bw_);
+  msg->set_bw(out_bw_);
   //store and forward
   //head/tail are linked and go "at same time"
   packet_head_leaves = packet_tail_leaves = next_free_;
+  //we can send the credit a bit ahead of time
+  credit_leaves = packet_head_leaves
+    + credit_delay(msg->max_incoming_bw(), out_bw_, msg->num_bytes());
+  msg->set_max_incoming_bw(out_bw_);
 }
 
 int
 packet_flow_simple_arbitrator::bytes_sending(const timestamp& now) const
 {
   double send_delay = next_free_ > now ? (next_free_ - now).sec() : 0;
-  int bytes_sending = send_delay * bw_;
+  int bytes_sending = send_delay * out_bw_;
   return bytes_sending;
 }
 
@@ -118,13 +123,20 @@ packet_flow_null_arbitrator::packet_flow_null_arbitrator()
 
 void
 packet_flow_null_arbitrator::arbitrate(
-    timestamp now,
-    const packet_flow_payload::ptr& msg,
-    timestamp& packet_head_leaves,
-    timestamp& packet_tail_leaves)
+  timestamp now,
+  const packet_flow_payload::ptr& msg,
+  timestamp& packet_head_leaves,
+  timestamp& packet_tail_leaves,
+  timestamp& credit_leaves)
 {
-  msg->set_min_bw(bw_);
-  packet_head_leaves = packet_tail_leaves = now;
+  msg->set_max_bw(out_bw_);
+  timestamp ser_delay(msg->num_bytes() / msg->bw());
+  packet_head_leaves = now;
+  packet_tail_leaves = now + ser_delay;
+  //we can send the credit a bit ahead of the tail
+  credit_leaves = packet_head_leaves
+    + credit_delay(msg->max_incoming_bw(), out_bw_, msg->num_bytes());
+  msg->set_max_incoming_bw(out_bw_);
 }
 
 int
@@ -140,11 +152,11 @@ packet_flow_cut_through_arbitrator::packet_flow_cut_through_arbitrator()
 
 
 void
-packet_flow_cut_through_arbitrator::set_bw(double bw)
+packet_flow_cut_through_arbitrator::set_outgoing_bw(double out_bw)
 {
-  packet_flow_bandwidth_arbitrator::set_bw(bw);
+  packet_flow_bandwidth_arbitrator::set_outgoing_bw(out_bw);
   head_ = new bandwidth_epoch;
-  head_->bw_available = bw;
+  head_->bw_available = out_bw;
   head_->start = 0;
   //just set to super long
   head_->length = 1e30;
@@ -157,7 +169,7 @@ packet_flow_cut_through_arbitrator::bytes_sending(const timestamp &now) const
     head_->start; //just assume that at head_->start link is fully available
   double now_ = now.sec();
   double send_delay = next_free > now_ ? (next_free - now_) : 0;
-  int bytes_sending = send_delay * bw_;
+  int bytes_sending = send_delay * out_bw_;
   return bytes_sending;
 }
 
@@ -236,12 +248,28 @@ packet_flow_cut_through_arbitrator::clean_up(double now)
 
 void
 packet_flow_cut_through_arbitrator::arbitrate(
-    timestamp now,
-    const packet_flow_payload::ptr& payload,
-    timestamp& packet_head_leaves,
-    timestamp& packet_tail_leaves)
+  timestamp now,
+  const packet_flow_payload::ptr &payload,
+  timestamp &packet_head_leaves,
+  timestamp &packet_tail_leaves,
+  timestamp &credit_leaves)
 {
-  payload->init_bw(bw_);
+  do_arbitrate(now, payload, packet_head_leaves, packet_tail_leaves);
+  packet_head_leaves.correct_round_off(now);
+  //we can send the credit a bit ahead of the tail
+  credit_leaves = packet_head_leaves
+    + credit_delay(payload->max_incoming_bw(), out_bw_, payload->num_bytes());
+  payload->set_max_incoming_bw(out_bw_);
+}
+
+void
+packet_flow_cut_through_arbitrator::do_arbitrate(
+  timestamp now,
+  const packet_flow_payload::ptr& payload,
+  timestamp& packet_head_leaves,
+  timestamp& packet_tail_leaves)
+{
+  payload->init_bw(out_bw_);
 #if SSTMAC_SANITY_CHECK
   validate_bw(payload->bw());
 #endif

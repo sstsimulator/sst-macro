@@ -18,7 +18,6 @@ RegisterDebugSlot(packet_flow_config,
 namespace sstmac {
 namespace hw {
 
-std::string packet_flow_payload::default_arb_ = "simple";
 int packet_flow_payload::min_num_bytes_per_packet_ = 0;
 const double packet_flow_payload::uninitialized_bw = -1;
 
@@ -36,7 +35,8 @@ packet_flow_payload::packet_flow_payload(
   message_chunk(parent, num_bytes, offset),
   routable(parent->toaddr(), parent->fromaddr()),
   packet_flow_interface(payload),
-  bw_(uninitialized_bw)
+  bw_(uninitialized_bw),
+  max_in_bw_(1.0)
 {
   sst_message::msgtype_ = parent->type();
 }
@@ -45,13 +45,6 @@ void
 packet_flow_payload::init_statics(int min_bytes)
 {
   min_num_bytes_per_packet_ = min_bytes;
-}
-
-void
-packet_flow_payload::set_min_bw(double bw)
-{
-  init_bw(bw);
-  bw_ = std::min(bw_, bw);
 }
 
 std::string
@@ -73,6 +66,7 @@ packet_flow_payload::serialize_order(sprockit::serializer& ser)
   message_chunk::serialize_order(ser);
   ser & inport_;
   ser & bw_;
+  ser & max_in_bw_;
   ser & arrival_;
 }
 

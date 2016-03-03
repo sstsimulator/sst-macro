@@ -57,7 +57,8 @@ packet_flow_memory_sender::set_event_parent(event_scheduler *m)
 void
 packet_flow_memory_sender::finalize_init()
 {
-  arb_->set_bw(max_bw_);
+  //in and out ar the same
+  arb_->set_outgoing_bw(max_bw_);
   init_noise_model();
   endpoint_->set_exit(parent_node_);
   endpoint_->init_param1(parent_node_->addr());
@@ -164,7 +165,8 @@ packet_flow_memory_sender::do_handle_payload(const packet_flow_payload::ptr& msg
   msg->init_bw(max_single_bw_);
   timestamp packet_head_leaves;
   timestamp packet_tail_leaves;
-  arb_->arbitrate(now(), msg, packet_head_leaves, packet_tail_leaves);
+  timestamp credit_leaves;
+  arb_->arbitrate(now(), msg, packet_head_leaves, packet_tail_leaves, credit_leaves);
   timestamp finish = packet_head_leaves + latency_;
 
   send_to_endpoint(finish, msg);
@@ -173,6 +175,7 @@ packet_flow_memory_sender::do_handle_payload(const packet_flow_payload::ptr& msg
   if (!msg->is_tail()){
     int ignore_vc = -1;
     packet_flow_credit::ptr credit = new packet_flow_credit(msg->inport(), ignore_vc, msg->num_bytes());
+    //here we do not optimistically send credits = only when the packet leaves
     packet_flow_handler::send_self_message(packet_tail_leaves, credit);
   }
 }

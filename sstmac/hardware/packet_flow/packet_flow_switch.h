@@ -13,7 +13,6 @@ namespace hw {
 
 class packet_flow_params  {
  public:
-
   double link_bw;
 
   timestamp hop_lat;

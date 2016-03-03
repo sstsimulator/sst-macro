@@ -19,7 +19,7 @@ class packet_flow_NtoM_queue :
   packet_flow_NtoM_queue(
     timestamp send_lat,
     timestamp credit_lat,
-    double bw,
+    double out_bw,
     int num_vc,
     int buffer_size,
     packet_flow_bandwidth_arbitrator* arb);
@@ -202,7 +202,7 @@ class packet_flow_muxer :
   packet_flow_muxer(
     timestamp send_lat,
     timestamp credit_lat,
-    double bw,
+    double out_bw,
     int num_vc,
     int buffer_size,
     packet_flow_bandwidth_arbitrator* arb);
@@ -221,7 +221,7 @@ class packet_flow_crossbar :
   packet_flow_crossbar(
     timestamp send_lat,
     timestamp credit_lat,
-    double bw,
+    double out_bw,
     int num_vc,
     int buffer_size,
     packet_flow_bandwidth_arbitrator* arb);

@@ -194,7 +194,7 @@ test_dragonfly_v2(UnitTest& unit)
         if (paths.size() > 1)
             assertEqual(unit, "productive port 1", paths[1].outport, router->convert_to_port(1, 2));
         if (paths.size() > 2)
-            assertEqual(unit, "productive port 2", paths[2].outport, router->convert_to_port(0, 2));
+            assertEqual(unit, "productive port 2", paths[2].outport, router->convert_to_port(0, 0));
     }
 
     {

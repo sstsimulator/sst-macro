@@ -24,18 +24,27 @@ class packet_flow_bandwidth_arbitrator :
     timestamp now,
     const packet_flow_payload::ptr& payload,
     timestamp& packet_head_leaves,
-    timestamp& packet_tail_leaves) = 0;
+    timestamp& packet_tail_leaves,
+    timestamp& credit_leaves) = 0;
 
   virtual std::string
   to_string() const = 0;
 
   virtual void
-  set_bw(double bw) {
-    bw_ = bw;
+  set_outgoing_bw(double out_bw) {
+    out_bw_ = out_bw;
+    inv_out_bw_ = 1.0 / out_bw;
   }
 
-  double bw() const {
-    return bw_;
+  double outgoing_bw() const {
+    return out_bw_;
+  }
+
+  static inline timestamp
+  credit_delay(double max_in_bw, double out_bw, long bytes){
+    double credit_delta = 1.0/out_bw - 1.0/max_in_bw;
+    credit_delta = std::max(0., credit_delta);
+    return timestamp(bytes * credit_delta);
   }
 
   virtual void
@@ -60,7 +69,8 @@ class packet_flow_bandwidth_arbitrator :
   packet_flow_bandwidth_arbitrator();
 
  protected:
-  double bw_;
+  double out_bw_;
+  double inv_out_bw_;
   static const int min_trans_;
 
 };
@@ -72,15 +82,16 @@ class packet_flow_null_arbitrator :
   packet_flow_null_arbitrator();
 
   virtual void
-  arbitrate(timestamp now,
+  arbitrate(timestamp next_free,
     const packet_flow_payload::ptr& payload,
     timestamp& packet_head_leaves,
-    timestamp& packet_tail_leaves);
+    timestamp& packet_tail_leaves,
+    timestamp& credit_leaves);
 
   virtual packet_flow_bandwidth_arbitrator*
   clone() const {
     packet_flow_null_arbitrator* arb = new packet_flow_null_arbitrator;
-    arb->set_bw(bw_);
+    arb->set_outgoing_bw(out_bw_);
     return arb;
   }
 
@@ -105,12 +116,13 @@ class packet_flow_simple_arbitrator :
   arbitrate(timestamp now,
     const packet_flow_payload::ptr& payload,
     timestamp& packet_head_leaves,
-    timestamp& packet_tail_leaves);
+    timestamp& packet_tail_leaves,
+    timestamp& credit_leaves);
 
   virtual packet_flow_bandwidth_arbitrator*
   clone() const {
     packet_flow_simple_arbitrator* arb = new packet_flow_simple_arbitrator;
-    arb->set_bw(bw_);
+    arb->set_outgoing_bw(out_bw_);
     return arb;
   }
 
@@ -138,10 +150,11 @@ class packet_flow_cut_through_arbitrator :
   arbitrate(timestamp now,
     const packet_flow_payload::ptr& payload,
     timestamp& packet_head_leaves,
-    timestamp& packet_tail_leaves);
+    timestamp& packet_tail_leaves,
+    timestamp& credit_leaves);
 
   virtual void
-  set_bw(double bw);
+  set_outgoing_bw(double bw);
 
   int
   bytes_sending(const timestamp &now) const;
@@ -150,7 +163,7 @@ class packet_flow_cut_through_arbitrator :
   clone() const {
     packet_flow_bandwidth_arbitrator* new_arb =
       new packet_flow_cut_through_arbitrator;
-    new_arb->set_bw(bw_);
+    new_arb->set_outgoing_bw(out_bw_);
     return new_arb;
   }
 
@@ -166,12 +179,14 @@ class packet_flow_cut_through_arbitrator :
   void
   init_noise_model(noise_model* noise);
 
- protected:
-  //timestamp
-  //do_arbitrate(const timestamp &now,
-  //  const packet_flow_payload::ptr& payload);
-
+ private:
   void clean_up(double now);
+
+  void
+  do_arbitrate(timestamp now,
+    const packet_flow_payload::ptr& payload,
+    timestamp& packet_head_leaves,
+    timestamp& packet_tail_leaves);
 
   struct bandwidth_epoch {
     double bw_available;

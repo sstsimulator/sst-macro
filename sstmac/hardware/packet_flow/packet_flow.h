@@ -197,7 +197,10 @@ class packet_flow_payload :
   }
 
   void
-  set_min_bw(double bw);
+  set_max_bw(double bw){
+    init_bw(bw);
+    bw_ = std::min(bw_, bw);
+  }
 
   /**
    @return The bandwidth in number of bytes per second
@@ -213,6 +216,16 @@ class packet_flow_payload :
   void
   set_bw(double bw) {
     bw_ = bw;
+  }
+
+  double
+  max_incoming_bw() const {
+    return max_in_bw_;
+  }
+
+  void
+  set_max_incoming_bw(double bw) {
+    max_in_bw_ = bw;
   }
 
   double
@@ -239,22 +252,12 @@ class packet_flow_payload :
   void
   serialize_order(sprockit::serializer& ser);
 
-  static std::string
-  default_arbitrator() {
-    return default_arb_;
-  }
-
-  static void
-  set_default_arbitrator(const std::string& def) {
-    default_arb_ = def;
-  }
-
  protected:
-  static std::string default_arb_;
-
   int inport_;
 
   double bw_;
+
+  double max_in_bw_;
 
   double arrival_;
 

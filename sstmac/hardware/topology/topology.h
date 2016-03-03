@@ -490,13 +490,11 @@ class topology :
 
   bool outputgraph_;
 
-  static std::vector<RNG::rngint_t> seeds_;
+  RNG::rngint_t seed_;
 
-  static RNG::rngint_t seed_;
+  bool debug_seed_;
 
-  static bool debug_seed_;
-
-  static RNG::MWC* rng_;
+  RNG::MWC* rng_;
 
   std::string name_;
 

@@ -20,7 +20,8 @@
 #include <sstmac/software/process/task_id.h>
 
 
-namespace sumi {
+namespace sstmac {
+namespace sw {
 
 class mpi_comm_data  {
  public:

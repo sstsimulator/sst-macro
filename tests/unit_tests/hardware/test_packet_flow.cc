@@ -49,7 +49,7 @@ test_arbitrator(UnitTest& unit)
       = new packet_flow_cut_through_arbitrator;
   arb->init_factory_params(&params);
 
-  arb->set_bw(link_bw);
+  arb->set_outgoing_bw(link_bw);
 
 
   sst_message::ptr parent = new test_message(num_packets_in_parent * packet_size);
@@ -60,18 +60,18 @@ test_arbitrator(UnitTest& unit)
   packet_flow_payload::ptr test_msg2 = new packet_flow_payload(parent, 2*packet_size, 0);
   packet_flow_payload::ptr test_msg4 = new packet_flow_payload(parent, 4*packet_size, 0);
 
-  timestamp start_time, stop_time;
-  arb->arbitrate(timestamp(0), test_msg, start_time, stop_time);
+  timestamp start_time, stop_time, credit_time;
+  arb->arbitrate(timestamp(0), test_msg, start_time, stop_time, credit_time);
   assertEqual(unit, "start time", start_time, timestamp(0));
   assertEqual(unit, "bandwidth", test_msg->bw(), link_bw);
 
   //now send the same message
-  arb->arbitrate(timestamp(0), test_msg, start_time, stop_time);
+  arb->arbitrate(timestamp(0), test_msg, start_time, stop_time, credit_time);
   assertEqual(unit, "start time", start_time, timestamp(packet_size/link_bw));
   assertEqual(unit, "bandwidth", test_msg->bw(), link_bw);
 
   //send a message way in the future
-  arb->arbitrate(timestamp(1), test_msg, start_time, stop_time);
+  arb->arbitrate(timestamp(1), test_msg, start_time, stop_time, credit_time);
   assertEqual(unit, "start time", start_time, timestamp(1));
   assertEqual(unit, "bandwidth", test_msg->bw(), link_bw);
 
@@ -81,20 +81,20 @@ test_arbitrator(UnitTest& unit)
   arb = new packet_flow_cut_through_arbitrator;
   arb->init_factory_params(&params);
 
-  arb->set_bw(link_bw);
+  arb->set_outgoing_bw(link_bw);
   //only use half the bw
   test_msg->set_bw(0.5*link_bw);
   test_msg->set_arrival(0);
 
-  arb->arbitrate(timestamp(0), test_msg, start_time, stop_time);
+  arb->arbitrate(timestamp(0), test_msg, start_time, stop_time, credit_time);
   assertEqual(unit, "start time", start_time, timestamp(0));
   assertEqual(unit, "bandwidth", test_msg->bw(), 0.5*link_bw);
 
-  arb->arbitrate(timestamp(0), test_msg, start_time, stop_time);
+  arb->arbitrate(timestamp(0), test_msg, start_time, stop_time, credit_time);
   assertEqual(unit, "start time", start_time, timestamp(0));
   assertEqual(unit, "bandwidth", test_msg->bw(), 0.5*link_bw);
 
-  arb->arbitrate(timestamp(0), test_msg, start_time, stop_time);
+  arb->arbitrate(timestamp(0), test_msg, start_time, stop_time, credit_time);
   assertEqual(unit, "start time", start_time, timestamp(2.0*packet_size/link_bw));
   assertEqual(unit, "bandwidth", test_msg->bw(), link_bw);
 
@@ -102,19 +102,19 @@ test_arbitrator(UnitTest& unit)
   //start over
   arb = new packet_flow_cut_through_arbitrator;
   arb->init_factory_params(&params);
-  arb->set_bw(link_bw);
+  arb->set_outgoing_bw(link_bw);
 
   //only use half the bw
   test_msg->set_bw(0.5*link_bw);
   test_msg->set_arrival(0);
-  arb->arbitrate(timestamp(0), test_msg, start_time, stop_time);
+  arb->arbitrate(timestamp(0), test_msg, start_time, stop_time, credit_time);
   assertEqual(unit, "start time", start_time, timestamp(0));
   assertEqual(unit, "bandwidth", test_msg->bw(), 0.5*link_bw);
 
   //now use all the bw
   test_msg->set_bw(link_bw);
   test_msg->set_arrival(0);
-  arb->arbitrate(timestamp(0), test_msg, start_time, stop_time);
+  arb->arbitrate(timestamp(0), test_msg, start_time, stop_time, credit_time);
   assertEqual(unit, "start time", start_time, timestamp(0));
   assertEqual(unit, "bandwidth", test_msg->bw(), 0.5*link_bw);
 
@@ -122,12 +122,12 @@ test_arbitrator(UnitTest& unit)
   //start over
   arb = new packet_flow_cut_through_arbitrator;
   arb->init_factory_params(&params);
-  arb->set_bw(link_bw);
+  arb->set_outgoing_bw(link_bw);
 
   //only use half the bw
   test_msg->set_bw(0.5*link_bw);
   test_msg->set_arrival(0);
-  arb->arbitrate(timestamp(0), test_msg, start_time, stop_time);
+  arb->arbitrate(timestamp(0), test_msg, start_time, stop_time, credit_time);
   assertEqual(unit, "start time", start_time, timestamp(0));
   assertEqual(unit, "bandwidth", test_msg->bw(), 0.5*link_bw);
 
@@ -135,14 +135,14 @@ test_arbitrator(UnitTest& unit)
   test_msg->set_bw(link_bw);
   double delay = packet_size / link_bw;
   test_msg->set_arrival(delay); //come in half-way through message sending
-  arb->arbitrate(timestamp(delay), test_msg, start_time, stop_time);
+  arb->arbitrate(timestamp(delay), test_msg, start_time, stop_time, credit_time);
   assertEqual(unit, "start time", start_time, timestamp(1e-6));
   assertEqual(unit, "bandwidth", test_msg->bw(), (1./1.5)*link_bw);
 
   //start over
   arb = new packet_flow_cut_through_arbitrator;
   arb->init_factory_params(&params);
-  arb->set_bw(link_bw);
+  arb->set_outgoing_bw(link_bw);
 
   //send a bunch of slow messages to create many epochs
   test_msg->set_bw(0.25*link_bw);
@@ -151,19 +151,19 @@ test_arbitrator(UnitTest& unit)
   test_msg->set_arrival(0);
   test_msg2->set_arrival(0);
   test_msg4->set_arrival(0);
-  arb->arbitrate(timestamp(0), test_msg, start_time, stop_time);
+  arb->arbitrate(timestamp(0), test_msg, start_time, stop_time, credit_time);
   assertEqual(unit, "start time", start_time, timestamp(0));
   assertEqual(unit, "bandwidth", test_msg->bw(), 0.25*link_bw);
-  arb->arbitrate(timestamp(0), test_msg2, start_time, stop_time);
+  arb->arbitrate(timestamp(0), test_msg2, start_time, stop_time, credit_time);
   assertEqual(unit, "start time", start_time, timestamp(0));
   assertEqual(unit, "bandwidth", test_msg2->bw(), 0.25*link_bw);
-  arb->arbitrate(timestamp(0), test_msg4, start_time, stop_time);
+  arb->arbitrate(timestamp(0), test_msg4, start_time, stop_time, credit_time);
   assertEqual(unit, "start time", start_time, timestamp(0));
   assertEqual(unit, "bandwidth", test_msg4->bw(), 0.25*link_bw);
 
   //now send a long, fast message
   test_msg4->set_bw(link_bw);
-  arb->arbitrate(timestamp(0), test_msg4, start_time, stop_time);
+  arb->arbitrate(timestamp(0), test_msg4, start_time, stop_time, credit_time);
   assertEqual(unit, "start time", start_time, timestamp(0));
   double time_to_send = ((1./0.25) + (2./0.5) + (1./0.75)) * (packet_size / link_bw);
   double bw = 4. * packet_size / time_to_send;
@@ -172,15 +172,15 @@ test_arbitrator(UnitTest& unit)
   //start over
   arb = new packet_flow_cut_through_arbitrator;
   arb->init_factory_params(&params);
-  arb->set_bw(link_bw);
+  arb->set_outgoing_bw(link_bw);
   test_msg->set_bw(link_bw);
   test_msg->set_arrival(0);
-  arb->arbitrate(timestamp(0), test_msg, start_time, stop_time);
+  arb->arbitrate(timestamp(0), test_msg, start_time, stop_time, credit_time);
   assertEqual(unit, "start time", start_time, timestamp(0));
   assertEqual(unit, "bandwidth", test_msg->bw(), link_bw);
 
   test_msg->set_bw(0.8*link_bw);
-  arb->arbitrate(timestamp(0), test_msg, start_time, stop_time);
+  arb->arbitrate(timestamp(0), test_msg, start_time, stop_time, credit_time);
   assertEqual(unit, "start time", start_time, timestamp(packet_size/link_bw));
   //the message starts buffering - whole message can send at max speed because
   //of bytes ready in queue
@@ -189,16 +189,16 @@ test_arbitrator(UnitTest& unit)
   //start over
   arb = new packet_flow_cut_through_arbitrator;
   arb->init_factory_params(&params);
-  arb->set_bw(link_bw);
+  arb->set_outgoing_bw(link_bw);
   test_msg->set_bw(link_bw);
   test_msg->set_arrival(0);
-  arb->arbitrate(timestamp(0), test_msg, start_time, stop_time);
+  arb->arbitrate(timestamp(0), test_msg, start_time, stop_time, credit_time);
   assertEqual(unit, "start time", start_time, timestamp(0));
   assertEqual(unit, "bandwidth", test_msg->bw(), link_bw);
 
   test_msg->set_bw(0.25*link_bw);
   test_msg->set_arrival(0);
-  arb->arbitrate(timestamp(0), test_msg, start_time, stop_time);
+  arb->arbitrate(timestamp(0), test_msg, start_time, stop_time, credit_time);
   assertEqual(unit, "start time", start_time, timestamp(packet_size/link_bw));
   //the message starts buffering - but only a part of it can send at max speed
   //the rest sends at the limited bandwidth
@@ -209,7 +209,7 @@ test_arbitrator(UnitTest& unit)
   assertEqual(unit, "bandwidth", test_msg->bw(), bw);
 
   //send a zero length message
-  arb->arbitrate(timestamp(0), test_msg0, start_time, stop_time);
+  arb->arbitrate(timestamp(0), test_msg0, start_time, stop_time, credit_time);
 
 }
 

@@ -19,11 +19,11 @@ namespace hw {
 packet_flow_crossbar::packet_flow_crossbar(
   timestamp send_lat,
   timestamp credit_lat,
-  double bw,
+  double out_bw,
   int num_vc,
   int buffer_size,
   packet_flow_bandwidth_arbitrator* arb) :
-  packet_flow_NtoM_queue(send_lat, credit_lat, bw, num_vc, buffer_size, arb),
+  packet_flow_NtoM_queue(send_lat, credit_lat, out_bw, num_vc, buffer_size, arb),
   bytes_sent_(0),
   byte_hops_(0),
   name_(0)
@@ -55,11 +55,11 @@ packet_flow_demuxer::packet_flow_demuxer(
 packet_flow_muxer::packet_flow_muxer(
   timestamp send_lat,
   timestamp credit_lat,
-  double bw,
+  double out_bw,
   int num_vc,
   int buffer_size,
   packet_flow_bandwidth_arbitrator *arb) :
-  packet_flow_NtoM_queue(send_lat, credit_lat, bw, num_vc, buffer_size, arb)
+  packet_flow_NtoM_queue(send_lat, credit_lat, out_bw, num_vc, buffer_size, arb)
 {
 }
 
@@ -90,7 +90,7 @@ packet_flow_NtoM_queue::packet_flow_NtoM_queue(
 packet_flow_NtoM_queue::packet_flow_NtoM_queue(
   timestamp send_lat,
   timestamp credit_lat,
-  double bw,
+  double out_bw,
   int num_vc,
   int buffer_size,
   packet_flow_bandwidth_arbitrator* arb) :
@@ -99,7 +99,7 @@ packet_flow_NtoM_queue::packet_flow_NtoM_queue(
   buffer_size_(buffer_size),
   arb_tmpl_(arb)
 {
-  arb_tmpl_->set_bw(bw);
+  arb_tmpl_->set_outgoing_bw(out_bw);
 }
 
 void

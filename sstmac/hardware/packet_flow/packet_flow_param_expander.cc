@@ -45,8 +45,9 @@ packet_flow_param_expander::expand(sprockit::sim_parameters* params)
   params->add_param_override("packet_flow_mtu", net_packet_size);
   params->add_param_override("packet_flow_memory_mtu", mem_packet_size);
 
-  std::string arb = params->get_optional_param("arbitrator", "cut_through");
-  params->add_param_override("packet_flow_arbitrator", arb);
+  if (params->has_param("arbitrator")){
+    params->add_param_override("packet_flow_arbitrator", params->get_param("arbitrator"));
+  }
 
   tiled_switch_ = false; //default
 

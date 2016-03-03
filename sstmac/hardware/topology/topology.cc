@@ -18,10 +18,6 @@ namespace hw {
 
 topology* topology::static_topology_ = 0;
 topology* topology::main_top_ = 0;
-RNG::MWC* topology::rng_ = 0;
-std::vector<RNG::rngint_t> topology::seeds_;
-RNG::rngint_t topology::seed_ = 0;
-bool topology::debug_seed_;
 const int topology::eject = -1;
 
 topology::topology() :
@@ -91,19 +87,17 @@ topology::init_factory_params(sprockit::sim_parameters* params)
       extra = true;
     }
   */
-  if (seeds_.empty()){
-    seeds_.resize(2);
-    seeds_[0] = 42;
-    if (params->has_param("seed")) {
-      seed_ = params->get_long_param("seed");
-      seeds_[1] = seed_;
-      debug_seed_ = true;
-    } else {
-      seeds_[1] = time(NULL);
-      debug_seed_ = false;
-    }
-    rng_ = RNG::MWC::construct(seeds_);
+  std::vector<RNG::rngint_t> seeds(2);
+  seeds[0] = 42;
+  if (params->has_param("seed")) {
+    seed_ = params->get_long_param("seed");
+    seeds[1] = seed_;
+    debug_seed_ = true;
+  } else {
+    seeds[1] = time(NULL);
+    debug_seed_ = false;
   }
+  rng_ = RNG::MWC::construct(seeds);
 
   main_top_ = this;
 }
@@ -116,10 +110,11 @@ topology::random_number(uint32_t max, uint32_t attempt) const
   lock.lock();
 #endif
   if (debug_seed_){
-    uint32_t time = event_manager::global->now().msec();
-    seeds_[1] = seed_ * (time+31) << attempt + 5;
-    seeds_[0] = (time+5)*7 + seeds_[0]*attempt*42 + 3;
-    rng_->vec_reseed(seeds_);
+    std::vector<RNG::rngint_t> seeds(2);
+    uint32_t time = event_manager::global ? event_manager::global->now().msec() : 42;
+    seeds[1] = seed_ * (time+31) << attempt + 5;
+    seeds[0] = (time+5)*7 + seeds[0]*attempt*42 + 3;
+    rng_->vec_reseed(seeds);
   } 
   uint32_t result = rng_->value_in_range(max);
 #if SSTMAC_USE_MULTITHREAD

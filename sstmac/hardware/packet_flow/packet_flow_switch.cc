@@ -70,7 +70,7 @@ packet_flow_abstract_switch::init_factory_params(sprockit::sim_parameters *param
 
   params_->link_arbitrator_template
     = packet_flow_bandwidth_arbitrator_factory::get_optional_param(
-        "arbitrator", packet_flow_payload::default_arbitrator(), params);
+        "arbitrator", "cut_through", params);
 
   /**
    sstkeyword {
@@ -209,11 +209,11 @@ packet_flow_switch::resize_buffers()
 }
 
 packet_flow_sender*
-packet_flow_switch::output_buffer(int port, double bw, int red)
+packet_flow_switch::output_buffer(int port, double out_bw, int red)
 {
   if (!out_buffers_[port]){
     packet_flow_network_buffer* out_buffer
-      = new packet_flow_network_buffer(bw,
+      = new packet_flow_network_buffer(out_bw,
                   params_->hop_lat,
                   timestamp(0), //assume credit latency to xbar is free
                   params_->xbar_output_buffer_num_bytes * red,
