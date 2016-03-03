@@ -769,8 +769,8 @@ dragonfly::nearest_neighbor_partners(const coordinates &src_sw_coords,
   //now we have to figure out our group connections
   for (int g = 0; g < group_con_; g++) {
     int gid = xyg_dir_to_group(src_sw_coords[x_dimension],
-                              src_sw_coords[y_dimension],
-                              src_sw_coords[g_dimension], g);
+                               src_sw_coords[y_dimension],
+                               src_sw_coords[g_dimension], g);
     if (gid == src_sw_coords[g_dimension]) {
       continue;
     }
@@ -841,13 +841,6 @@ dragonfly::new_routing_stage(routing_info& rinfo)
 int
 dragonfly::xyg_dir_to_group(int myX, int myY, int myG, int dir) const
 {
-  //int gstride = std::max(1, g_ / group_con_);
-  //int my_group_id = myx + myy * x_;
-  //int goffset = my_group_id % g_;
-  //int dstg = myg + goffset;
-  //for (int g=0; g < group_con_; ++g, dstg += gstride){
-  //  dstg = dstg % g_;
-
   int gspace = std::max(1, g_ / group_con_);
   int myid = myX + myY * x_;
   int gset = myid % g_;
