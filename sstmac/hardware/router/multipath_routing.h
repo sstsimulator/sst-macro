@@ -19,6 +19,8 @@ class multipath_router :
     ParentRouter::route(msg, paths);
     int path_id = paths[0].geometric_id;
     int next_index = geom_paths_[path_id].next_index();
+    debug_printf(sprockit::dbg::router,
+      "multipath routing: using index %d", next_index);
     msg->interface<routable>()->rinfo().current_path() = paths[next_index];
   }
 

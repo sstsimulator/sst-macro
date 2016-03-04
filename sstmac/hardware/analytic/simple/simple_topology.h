@@ -101,6 +101,11 @@ class simple_topology :
     return num_switches_ - 1;
   }
 
+  void
+  configure_vc_routing(std::map<routing::algorithm_t, int> &m) const {
+    topology::configure_vc_routing(m);
+  }
+
   switch_id
   switch_number(const coordinates& coords) const;
 

@@ -258,8 +258,6 @@ class macro_interconnect : public interconnect
   typedef spkt_unordered_map<netlink_id, netlink*> netlink_map;
   netlink_map netlinks_;
 
-  netlink* netlink_tmpl_;
-
   typedef std::pair<timestamp, node_id> fail_event;
   std::list<fail_event> failures_to_schedule_;
 };

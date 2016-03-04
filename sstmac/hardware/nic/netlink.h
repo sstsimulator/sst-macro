@@ -29,13 +29,16 @@ class netlink :
     return tile_offset;
   }
 
+  void
+  init_param1(sprockit::factory_type*){}
+
  protected:
   int num_eject_;
   int num_inject_;
   netlink_id id_;
 
 };
-DeclareFactory(netlink);
+DeclareFactory1InitParam(netlink, sprockit::factory_type*/*interconnect*/)
 
 }
 }

@@ -23,9 +23,8 @@ CORETESTS+= \
   test_core_apps_ping_all_fattree2 \
   test_core_apps_ping_all_fattree4 \
   test_core_apps_ping_all_crossbar \
-  test_core_apps_ping_all_fbfly 
-
-#  test_core_apps_ping_all_crossbar_valiant 
+  test_core_apps_ping_all_fbfly \
+  test_core_apps_ping_all_crossbar_valiant 
 
 test_core_apps_%.$(CHKSUF): $(CORE_TEST_DEPS)
 	$(PYRUNTEST) 10 $@ $(MPI_LAUNCHER) $(SSTMACEXEC) -f $(srcdir)/test_configs/test_$*.ini --no-wall-time $(THREAD_ARGS)

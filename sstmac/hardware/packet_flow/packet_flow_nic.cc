@@ -232,30 +232,21 @@ packet_flow_netlink::connect(int src_outport, int dst_inport, connection_type_t 
 {
   init();
 
-  spkt_throw_printf(sprockit::unimplemented_error,
-    "netlink::connect");
-
-/**
-  event_handler* conn = 0;
-  network_endpoint* ep = test_cast(network_endpoint, mod);
-  if (ep){
-    //connecting to the node, injector or ejector
-    conn = ty == connectable::input ? ep->injector() : ep->ejector();
-  } else {
-    //connecting to switches in the network
-    conn = safe_cast(event_handler, mod);
-  }
-
+  event_handler* conn = safe_cast(event_handler, mod);
 
   switch(ty)
   {
   case connectable::input:
   {
+    ::printf("On %d, connecting input %d:%d to %s\n",
+      int(id_), src_outport, dst_inport, conn->to_string().c_str());
     block_->set_input(dst_inport, src_outport, conn);
     break;
   }
   case connectable::output:
   {
+    ::printf("On %d, connecting output %d:%d to %s\n",
+      int(id_), src_outport, dst_inport, conn->to_string().c_str());
     block_->set_output(src_outport, dst_inport, conn);
     packet_flow_component* comp = safe_cast(packet_flow_component, mod);
     debug_printf(sprockit::dbg::packet_flow_config | sprockit::dbg::packet_flow,
@@ -265,7 +256,7 @@ packet_flow_netlink::connect(int src_outport, int dst_inport, connection_type_t 
     break;
   }
   }
-*/
+
 }
 
 void
@@ -318,7 +309,7 @@ packet_flow_netlink::handle(const sst_message::ptr& msg)
         //goes to switch
         p.outport = netlink::switch_port(tile_rotater_);
         debug_printf(sprockit::dbg::packet_flow,
-         "netlink %d injecting msg %s to node %d to switch on redundant path %d of %d to port %d\n",
+         "netlink %d injecting msg %s to switch %d on redundant path %d of %d to port %d\n",
             int(id_), msg->to_string().c_str(), int(toaddr), tile_rotater_, num_inject_, p.outport);
         tile_rotater_ = (tile_rotater_ + 1) % num_inject_;
       }

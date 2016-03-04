@@ -203,8 +203,9 @@ structured_topology::minimal_route_to_switch(
 
 void
 structured_topology::build_interface_connectables(
+  int conc,
   end_point_connectable_map& connectables,
-  sprockit::factory<connectable>* nic_factory,
+  sprockit::factory2<connectable>* nic_factory,
   partition *part,
   int my_rank,
   sprockit::sim_parameters* params,
@@ -219,10 +220,15 @@ structured_topology::build_interface_connectables(
       std::vector<node_id> nodes = nodes_connected_to_switch(sid);
       for (int n=0; n < nodes.size(); ++n){
         node_id nid = nodes[n];
-        top_debug("Adding NIC %d connected to switch %d on rank %d",
-          int(nid), i, my_rank);
-        params->add_param_override("id", nid);
-        connectables[nid] = nic_factory->build<nic,sprockit::factory_type*>(params, interconnect);
+        int interf_id = nid / conc;
+        int interf_offset = nid % conc;
+        node_id my_id = node_id(interf_id);
+        if (interf_offset == 0){
+          top_debug("Adding NIC %d connected to switch %d on rank %d",
+            int(my_id), i, my_rank);
+          params->add_param_override("id", my_id);
+          connectables[my_id] = nic_factory->build(params, interconnect);
+        }
       }
     }
   }

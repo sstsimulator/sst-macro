@@ -15,7 +15,7 @@ minimal_router::route(const sst_message::ptr& msg)
   minimal_route_to_node(rt->toaddr(),
     rt->rinfo().current_path());
   int outport = rt->rinfo().port();
-  debug_printf(sprockit::dbg::routing,
+  debug_printf(sprockit::dbg::router,
     "Routing %p from %ld to %ld on port=%d",
      msg.get(),
      long(addr()),

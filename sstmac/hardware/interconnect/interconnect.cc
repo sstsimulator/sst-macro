@@ -107,8 +107,7 @@ sst_interconnect::kill_node(node_id nid, timestamp t)
 }
 #else
 macro_interconnect::macro_interconnect() :
- subset_(0),
- netlink_tmpl_(0)
+ subset_(0)
 {
 }
 
@@ -148,12 +147,6 @@ macro_interconnect::init_factory_params(sprockit::sim_parameters* params)
 
   sstmac_runtime::set_temp_topology(topology_);
 
-  netlink_tmpl_ = 0;
-  if (params->has_namespace("netlink")){
-    sprockit::sim_parameters* netlink_params = params->get_namespace("netlink");
-    netlink_tmpl_ = netlink_factory::get_param("model", netlink_params);
-  }
-
   if (!available_.empty() || !allocated_.empty()) {
     spkt_throw_printf(sprockit::illformed_error,
                      "interconnect::init_factory_params: available and allocated arrays are not empty");
@@ -162,17 +155,32 @@ macro_interconnect::init_factory_params(sprockit::sim_parameters* params)
 
   endpoint_map nodes;
   endpoint_map nics;
+  endpoint_map netlinks;
 
   sprockit::sim_parameters* node_params = params->get_namespace("node");
-  sprockit::factory<connectable>* node_builder = new sprockit::template_factory<connectable, node_factory>(node_params->get_param("model"));
+  sprockit::factory<connectable>* node_builder
+    = new sprockit::template_factory<connectable, node_factory>(node_params->get_param("model"));
   sprockit::sim_parameters* nic_params = params->get_namespace("nic");
-  sprockit::factory<connectable>* nic_builder = new sprockit::template_factory<connectable, nic_factory>(nic_params->get_param("model"));
+  sprockit::factory2<connectable>* nic_builder
+    = new sprockit::template_factory2<connectable, nic_factory>(nic_params->get_param("model"));
 
   topology_->build_endpoint_connectables(nodes, node_builder, partition_, rt_->me(), node_params);
-  topology_->build_interface_connectables(nics, nic_builder, partition_, rt_->me(), nic_params, this);
+
+  int nic_conc = 1;
+  topology_->build_interface_connectables(nic_conc, nics, nic_builder, partition_, rt_->me(), nic_params, this);
+
+  if (params->has_namespace("netlink")){
+    int netlink_conc = topology_->num_nodes_per_netlink();
+    sprockit::sim_parameters* netlink_params = params->get_namespace("netlink");
+    sprockit::factory2<connectable>* netlink_builder
+      = new sprockit::template_factory2<connectable, netlink_factory>(netlink_params->get_param("model"));
+    topology_->build_interface_connectables(netlink_conc, netlinks, netlink_builder,
+                  partition_, rt_->me(), netlink_params, this);
+  }
 
   copy_map(nodes, nodes_);
   copy_map(nics, nics_);
+  copy_map(netlinks, netlinks_);
 
   node_map::iterator it, end = nodes_.end();
   for (it=nodes_.begin(); it != end; ++it){
@@ -255,7 +263,7 @@ void
 macro_interconnect::set_node_event_manager(node* the_node, event_manager* m)
 {
   the_node->set_event_manager(m);
-  if (netlink_tmpl_){
+  if (!netlinks_.empty()){
     netlink_id netid(the_node->addr()/topology_->num_nodes_per_netlink());
     node* theNode = nodes_[netid];
     netlinks_[netid]->set_event_parent(theNode);
