@@ -9,19 +9,15 @@
 #   SST/macroscale directory.
 #
 
-# This order is necessary to satisfy dependencies
-SUBDIRS = \
-machines \
-blas \
-sumi \
-sockets \
-pthread \
-uq
+include $(top_srcdir)/Makefile.common
 
-if WITH_DEFAULT_MPI
-SUBDIRS += mpi
-endif
+noinst_LTLIBRARIES = libsstmac_uq.la
 
-library_includedir=$(includedir)/sstmac/libraries
-library_include_HEADERS =
+libsstmac_uq_la_SOURCES = \
+  uq.cc 
+
+library_includedir=$(includedir)/sstmac/libraries/uq
+
+nobase_library_include_HEADERS = \
+  uq.h
 

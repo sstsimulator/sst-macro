@@ -10,7 +10,7 @@ void
 test_fattree4(UnitTest& unit)
 {
     sprockit::sim_parameters params;
-    sstmac_env::params = &params;
+    sstmac::env::params = &params;
     params["geometry"] = "3 4";
     topology* top = topology_factory::get_value("fattree", &params);
     structured_topology* ftree = test_cast(structured_topology, top);
@@ -63,7 +63,7 @@ void
 test_fattree2(UnitTest& unit)
 {
     sprockit::sim_parameters params;
-    sstmac_env::params = &params;
+    sstmac::env::params = &params;
     params["geometry"] = "5 2";
     params["concentration"] = "2";
     topology* top = topology_factory::get_value("fattree", &params);

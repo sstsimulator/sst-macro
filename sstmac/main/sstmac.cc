@@ -186,8 +186,8 @@ run(opts& oo,
   bool params_only = false)
 {
   double start = sstmac_wall_time();
-  sstmac_env::params = params;
-  sstmac_env::rt = rt;
+  sstmac::env::params = params;
+  sstmac::env::rt = rt;
 
   if (oo.debug != "") {
     logger::set_user_param(oo.debug);
@@ -231,7 +231,7 @@ run(opts& oo,
 
     mgr->finish();
 
-    sstmac_env::params = 0;
+    sstmac::env::params = 0;
 
     delete mgr;
   } // try

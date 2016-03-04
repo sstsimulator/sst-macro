@@ -47,6 +47,7 @@ struct opts {
 struct sim_stats {
   double wallTime;
   double simulatedTime;
+  int numResults;
 };
 
 int

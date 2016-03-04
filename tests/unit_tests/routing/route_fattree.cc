@@ -9,7 +9,7 @@ void
 test_fattree4(UnitTest& unit)
 {
     sprockit::sim_parameters params;
-    sstmac_env::params = &params;
+    sstmac::env::params = &params;
     params["geometry"] = "3 4";
     params["radix"] = "4";
     params["num_levels"] = "3";
@@ -99,7 +99,7 @@ void
 test_fattree2(UnitTest& unit)
 {
     sprockit::sim_parameters params;
-    sstmac_env::params = &params;
+    sstmac::env::params = &params;
     params["geometry"] = "5 2";
     params["radix"] = "2";
     params["num_levels"] = "5";

@@ -73,7 +73,7 @@ try_top_info_main(int argc, char **argv)
   }
 
   sprockit::sim_parameters* params = new sprockit::sim_parameters(oo.configfile);
-  sstmac_env::params = params;
+  sstmac::env::params = params;
   if (oo.params) {
     // there were command-line overrides
     oo.params->combine_into(params);

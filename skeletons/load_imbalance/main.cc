@@ -24,15 +24,13 @@ load_imbalance_main(int argc, char **argv)
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
   int seed;
-  //seed = sstmac_env::params->get_optional_int_param("os_noise_seed", 145) ^ me + me;
-  //RNG::UniformInteger* noise_rng = RNG::SHR3::construct(seed);
 
-  int niter = sstmac_env::params->get_optional_int_param("num_iterations", 10);
-  double min_comp_time = sstmac_env::params->get_time_param("min_comp_time");
-  double max_comp_time = sstmac_env::params->get_time_param("max_comp_time");
+  int niter = env::params->get_optional_int_param("num_iterations", 10);
+  double min_comp_time = env::params->get_time_param("min_comp_time");
+  double max_comp_time = env::params->get_time_param("max_comp_time");
   double comp_time_range = max_comp_time - min_comp_time;
-  bool reshuffle_work = sstmac_env::params->get_optional_bool_param("reshuffle_work", true);
-  seed = (sstmac_env::params->get_optional_int_param("comp_time_seed", 911) << (me + 5)) << (me + 3) + me;
+  bool reshuffle_work = env::params->get_optional_bool_param("reshuffle_work", true);
+  seed = (env::params->get_optional_int_param("comp_time_seed", 911) << (me + 5)) << (me + 3) + me;
 
   //std::cout << seed << std::endl;
   RNG::UniformInteger* comp_rng = RNG::SHR3::construct(seed);

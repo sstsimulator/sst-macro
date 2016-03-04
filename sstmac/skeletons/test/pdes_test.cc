@@ -35,12 +35,12 @@ pdes_test_main(int argc, char** argv)
         nproc);
   }
 
-  timestamp sleep_time = sstmac::sstmac_env::params->get_optional_time_param("sleep_time", 10e-9);
-  int num_sleeps = sstmac_env::params->get_optional_int_param("num_sleeps", 10);
-  int niter = sstmac_env::params->get_optional_int_param("num_iter", 10);
+  timestamp sleep_time = sstmac::env::params->get_optional_time_param("sleep_time", 10e-9);
+  int num_sleeps = sstmac::env::params->get_optional_int_param("num_sleeps", 10);
+  int niter = sstmac::env::params->get_optional_int_param("num_iter", 10);
 
-  int message_count = sstmac_env::params->get_optional_int_param("message_count", 1000);
-  int num_messages = sstmac_env::params->get_optional_int_param("num_messages", 3);
+  int message_count = sstmac::env::params->get_optional_int_param("message_count", 1000);
+  int num_messages = sstmac::env::params->get_optional_int_param("num_messages", 3);
 
   MPI_Request* reqs = new MPI_Request[2*num_messages];
   MPI_Request* reqptr = reqs;

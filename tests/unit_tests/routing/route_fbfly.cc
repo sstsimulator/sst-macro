@@ -9,7 +9,7 @@ using namespace sstmac::hw;
 
 void test_fbfly(UnitTest& unit)
 {
-    sprockit::sim_parameters params;  sstmac_env::params = &params;
+    sprockit::sim_parameters params;  sstmac::env::params = &params;
     params["geometry"] = "4 3";
     topology* top = topology_factory::get_value("fbfly", &params);
     structured_topology* bfly = test_cast(structured_topology, top);

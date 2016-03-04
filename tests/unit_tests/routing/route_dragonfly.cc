@@ -10,7 +10,7 @@ void
 test_dragonfly_v1(UnitTest& unit)
 {
     sprockit::sim_parameters params;
-    sstmac_env::params = &params;
+    sstmac::env::params = &params;
     params["geometry"] = "4 4 4";
     params["concentration"] = "2";
     params["optical_link_weight"] = "2.0";
@@ -108,7 +108,7 @@ void
 test_dragonfly_v2(UnitTest& unit)
 {
     sprockit::sim_parameters params;
-    sstmac_env::params = &params;
+    sstmac::env::params = &params;
     params["geometry"] = "4 4 8";
     params["concentration"] = "2";
     params["optical_link_weight"] = "2.0";

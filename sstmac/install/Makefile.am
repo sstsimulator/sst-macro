@@ -25,6 +25,7 @@ libsstmac_la_LIBADD = \
   ../common/libsstmac_common.la \
   ../dumpi_util/libsstmac_dumpi.la \
   ../hardware/libsstmac_hw.la \
+  ../libraries/uq/libsstmac_uq.la \
   ../libraries/machines/libsstmac_machines.la \
   ../libraries/pthread/libsstmac_pthread.la \
   ../libraries/sockets/libsstmac_sockets.la \

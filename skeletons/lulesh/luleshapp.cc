@@ -46,11 +46,11 @@ namespace luleshmodel
     }
 
     // calculate data layout
-    int nx = sstmac::sstmac_env::params->get_int_param("lulesh_nx");
-    int ny = sstmac::sstmac_env::params->get_int_param("lulesh_ny");
-    int nz = sstmac::sstmac_env::params->get_int_param("lulesh_nz");
+    int nx = sstmac::env::params->get_int_param("lulesh_nx");
+    int ny = sstmac::env::params->get_int_param("lulesh_ny");
+    int nz = sstmac::env::params->get_int_param("lulesh_nz");
 
-    int iter_max = sstmac::sstmac_env::params->get_int_param("lulesh_iter");
+    int iter_max = sstmac::env::params->get_int_param("lulesh_iter");
 
     if (rank == 0)
     {

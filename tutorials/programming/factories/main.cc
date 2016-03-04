@@ -10,7 +10,7 @@ sstmac_register_app(rob_reiner);
 int
 rob_reiner_main(int argc, char **argv)
 {
-  actor* the_guy = actor_factory::get_param("actor_name", sstmac_env::params);
+  actor* the_guy = actor_factory::get_param("actor_name", sstmac::env::params);
   the_guy->act();
   return 0;
 }

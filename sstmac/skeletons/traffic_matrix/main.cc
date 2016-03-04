@@ -1,24 +1,25 @@
 #include <sprockit/sim_parameters.h>
 #include <sprockit/debug.h>
+#include <sstmac/common/sstmac_env.h>
+#include <sstmac/software/process/app.h>
+#include <sumi/sumi/transport.h>
+
+DeclareDebugSlot(traffic_matrix)
+RegisterDebugSlot(traffic_matrix)
 
 #define SST 1
 
 #ifdef GNI
-#define mode "gni"
+#define model "gni"
 static bool send_ack = true;
 static bool recv_ack = false;
 #endif
 
 #ifdef SST
-#define mode "sst"
+#define model "sst"
 static bool send_ack = false;
 static bool recv_ack = true;
 #endif
-
-#include <sumi/transport.h>
-
-DeclareDebugSlot(traffic_matrix)
-RegisterDebugSlot(traffic_matrix)
 
 class sumi_param_bcaster : public sprockit::param_bcaster
 {
@@ -129,7 +130,7 @@ progress_loop(sumi::transport* tport, double timeout, std::list<rdma_message::pt
     "Rank %d entering progress loop at t=%10.6e - stop=%10.6e, timeout=%10.6e",
     tport->rank(), now, stop, timeout);
   while (1){
-    rdma_message::ptr msg = DHARMA_POLL_TIME(tport,rdma_message,timeout);
+    rdma_message::ptr msg = SUMI_POLL_TIME(tport,rdma_message,timeout);
     now = tport->wall_time();
     if (msg){ //need if statement, if timed out then no messag
       timeout = stop - now; //timeout shrinks
@@ -191,7 +192,7 @@ quiesce(sumi::transport* tport,
     "Rank %d starting quiescence: need %d, have %d p=%d n=%d",
     tport->rank(), ntotal, done.size(), npartners, niterations);
   while (done.size() < ntotal){
-    rdma_message::ptr msg = DHARMA_POLL(tport, rdma_message);
+    rdma_message::ptr msg = SUMI_POLL(tport, rdma_message);
     double now = tport->wall_time();
     msg->set_finish(now);
     done.push_back(msg);
@@ -201,11 +202,13 @@ quiesce(sumi::transport* tport,
   }
 }
 
-int main(int argc, char** argv)
+sstmac_register_app(traffic_matrix);
+
+int traffic_matrix_main(int argc, char** argv)
 {
   sprockit::sim_parameters init_params;
   init_params["ping_timeout"] = "100ms";
-  init_params["transport"] = mode;
+  init_params["transport"] = model;
   init_params["eager_cutoff"] = "512";
   sumi::transport* tport = sumi::transport_factory::get_param("transport", &init_params);
 
@@ -215,9 +218,7 @@ int main(int argc, char** argv)
     "Rank %d entering initial param bcast",
     tport->rank());
 
-  sumi_param_bcaster bc(tport);
-  sprockit::sim_parameters* params = sprockit::sim_parameters::parallel_build_params(
-    tport->rank(), tport->nproc(), "input.ini", &bc);
+  sprockit::sim_parameters* params = sstmac::env::params;
 
   /** This configures the compute intensity as a function of baseline bandwidth
    *  Messages are sent in windows of size 100 us
@@ -299,7 +300,7 @@ int main(int argc, char** argv)
     "Rank %d waiting on %d config messages from recv partners",
     tport->rank(), npartners);
   while (configs_recved < npartners){
-    config_message::ptr msg = DHARMA_POLL(tport, config_message);
+    config_message::ptr msg = SUMI_POLL(tport, config_message);
     debug_printf(sprockit::dbg::traffic_matrix,
       "Rank %d received config message from %d",
         tport->rank(), msg->sender());
@@ -330,22 +331,27 @@ int main(int argc, char** argv)
   }
   ++num_done;
 
+  double* resultsArr = new double[nproc*num_iterations*npartners];
+  int result_idx = 0;
   if (num_done == nproc){
     for (int p=0; p < nproc; ++p){
       for (int i=0; i < num_iterations; ++i){
         std::map<int, rdma_message::ptr>& done = results[p][i];
         std::map<int, rdma_message::ptr>::iterator it, end = done.end();
-        for (it = done.begin(); it != end; ++it){
+        for (it = done.begin(); it != end; ++it, ++result_idx){
           rdma_message::ptr msg = it->second;
           double delta_t = msg->finish() - msg->start();
           double throughput_gbs = msg->byte_length() / delta_t / 1e9;
-          printf("Message iter=%3d source=%5d dest=%d throughput=%10.4fGB/s start=%8.4ems stop=%8.4ems\n",
-            msg->iter(), msg->sender(), msg->recver(), throughput_gbs,
-            msg->start()*1e3, msg->finish()*1e3);
+          resultsArr[result_idx] = throughput_gbs;
+          //printf("Message iter=%3d source=%5d dest=%d throughput=%10.4fGB/s start=%8.4ems stop=%8.4ems\n",
+          //  msg->iter(), msg->sender(), msg->recver(), throughput_gbs,
+          //  msg->start()*1e3, msg->finish()*1e3);
         }
       }
    }
  }
+
+
 
   tport->finalize();
   return 0;

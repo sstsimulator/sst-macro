@@ -15,7 +15,7 @@ using namespace sumi;
 using sstmac::timestamp;
 using sstmac::hw::traffic_pattern;
 using sstmac::node_id;
-using sstmac::sstmac_env;
+using sstmac::env;
 using sstmac::hw::topology;
 
 void sleep(double seconds)
@@ -135,7 +135,7 @@ main(int argc, char** argv)
 {
   comm_init();
 
-  std::string pattern = sstmac_env::params->get_param("traffic_pattern");
+  std::string pattern = sstmac::env::params->get_param("traffic_pattern");
   traffic_pattern::type_t ty;
   if (pattern == "NN" || pattern == "nearest_neighbor") {
     ty = traffic_pattern::nearest_neighbor;
@@ -154,25 +154,25 @@ main(int argc, char** argv)
 
   double offered_load_bw = 0;
 
-  if (sstmac_env::params->has_param("packet_flow_injection_bandwidth")) {
+  if (sstmac::env::params->has_param("packet_flow_injection_bandwidth")) {
     offered_load_bw =
-      sstmac_env::params->get_bandwidth_param("packet_flow_injection_bandwidth");
+      sstmac::env::params->get_bandwidth_param("packet_flow_injection_bandwidth");
   }
-  else if (sstmac_env::params->has_param("cycle_accurate_switch_bandwidth_n2r")) {
+  else if (sstmac::env::params->has_param("cycle_accurate_switch_bandwidth_n2r")) {
     offered_load_bw =
-      sstmac_env::params->get_bandwidth_param("cycle_accurate_switch_bandwidth_n2r");
+      sstmac::env::params->get_bandwidth_param("cycle_accurate_switch_bandwidth_n2r");
   }
-  else if (sstmac_env::params->has_param("network_injector_capacity_bw")) {
+  else if (sstmac::env::params->has_param("network_injector_capacity_bw")) {
     offered_load_bw =
-      sstmac_env::params->get_bandwidth_param("network_injector_capacity_bw");
+      sstmac::env::params->get_bandwidth_param("network_injector_capacity_bw");
   }
-  else if (sstmac_env::params->has_param("packet_switch_bandwidth_n2r")) {
+  else if (sstmac::env::params->has_param("packet_switch_bandwidth_n2r")) {
     offered_load_bw =
-      sstmac_env::params->get_bandwidth_param("packet_switch_bandwidth_n2r");
+      sstmac::env::params->get_bandwidth_param("packet_switch_bandwidth_n2r");
   }
-  else if (sstmac_env::params->has_param("network_train_injection_bw")) {
+  else if (sstmac::env::params->has_param("network_train_injection_bw")) {
     offered_load_bw =
-      sstmac_env::params->get_bandwidth_param("network_train_injection_bw");
+      sstmac::env::params->get_bandwidth_param("network_train_injection_bw");
   }
   else {
     spkt_throw_printf(sprockit::input_error,
@@ -180,7 +180,7 @@ main(int argc, char** argv)
   }
 
 
-  timestamp inject_time = sstmac_env::params->get_time_param("inject_time");
+  timestamp inject_time = sstmac::env::params->get_time_param("inject_time");
   long inject_length = offered_load_bw * inject_time.sec();
 
   run_test(ty, inject_length, offered_load_bw);

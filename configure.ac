@@ -222,9 +222,10 @@ AC_CONFIG_FILES([
  sstmac/libraries/sumi/Makefile
  sstmac/libraries/pthread/Makefile
  sstmac/libraries/sockets/Makefile
- sstmac/skeletons/Makefile
- sstmac/libraries/Makefile
  sstmac/libraries/machines/Makefile
+ sstmac/libraries/uq/Makefile
+ sstmac/libraries/Makefile
+ sstmac/skeletons/Makefile
  sstmac/software/Makefile
  sstmac/hardware/Makefile
  sstmac/sst_core/Makefile

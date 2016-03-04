@@ -27,7 +27,7 @@ namespace mini
 
   {
     id_ = id;
-    using_loops_ = sstmac::sstmac_env::params->get_bool_param(
+    using_loops_ = sstmac::env::params->get_bool_param(
         "lib_compute_loops_enable");
     if (!using_loops_)
       {

@@ -70,7 +70,7 @@ main(int argc, char** argv)
 {
   comm_init();
 
-  std::string pattern = sstmac::sstmac_env::params->get_param("traffic_pattern");
+  std::string pattern = sstmac::env::params->get_param("traffic_pattern");
   sstmac::hw::traffic_pattern::type_t ty;
   if (pattern == "NN" || pattern == "nearest_neighbor") {
     ty = sstmac::hw::traffic_pattern::nearest_neighbor;
@@ -88,7 +88,7 @@ main(int argc, char** argv)
   }
 
   long num_bytes_per_msg =
-    sstmac::sstmac_env::params->get_byte_length_param("message_length");
+    sstmac::env::params->get_byte_length_param("message_length");
 
   run_test(ty, num_bytes_per_msg);
 

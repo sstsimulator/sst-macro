@@ -60,6 +60,10 @@ class Simulation
   friend class SimulationQueue;
 
  public:
+  Simulation() : results_(0), num_results_(0)
+  {
+  }
+
   double wallTime() const {
     return wall_time_;
   }
@@ -131,6 +135,22 @@ class Simulation
     return pid_;
   }
 
+  void
+  setResults(double* results, int numResults){
+    results_ = results;
+    num_results_ = numResults;
+  }
+
+  double*
+  results() const {
+    return results_;
+  }
+
+  int
+  numResults() const {
+    return num_results_;
+  }
+
  private:
   template <class T>
   void
@@ -185,6 +205,8 @@ class Simulation
   int label_offset_;
   pid_t pid_;
   pipe_t pfd_;
+  double* results_;
+  int num_results_;
 
 };
 
@@ -213,12 +235,16 @@ class SimulationQueue
   void
   run(sprockit::sim_parameters* params, sim_stats& stats);
 
+  static void
+  publishResults(double* results, int nresults);
+
  private:
   std::list<Simulation*> pending_;
   parallel_runtime* rt_;
   sprockit::sim_parameters template_params_;
   opts template_opts_;
-
+  static double* results_;
+  static int num_results_;
 };
 
 }

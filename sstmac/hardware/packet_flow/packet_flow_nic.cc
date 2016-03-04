@@ -238,15 +238,11 @@ packet_flow_netlink::connect(int src_outport, int dst_inport, connection_type_t 
   {
   case connectable::input:
   {
-    ::printf("On %d, connecting input %d:%d to %s\n",
-      int(id_), src_outport, dst_inport, conn->to_string().c_str());
     block_->set_input(dst_inport, src_outport, conn);
     break;
   }
   case connectable::output:
   {
-    ::printf("On %d, connecting output %d:%d to %s\n",
-      int(id_), src_outport, dst_inport, conn->to_string().c_str());
     block_->set_output(src_outport, dst_inport, conn);
     packet_flow_component* comp = safe_cast(packet_flow_component, mod);
     debug_printf(sprockit::dbg::packet_flow_config | sprockit::dbg::packet_flow,

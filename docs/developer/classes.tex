@@ -262,7 +262,7 @@ which is invoked via the \inlinecode{rob_reiner_main} function.
 Inside the main function, we create an object of type \inlinecode{actor}.
 
 \begin{CppCode}
-actor* the_guy = actor_factory::get_param("actor_name", sstmac_env::params);
+actor* the_guy = actor_factory::get_param("actor_name", sstmac::env::params);
 the_guy->act();
 return 0;
 \end{CppCode}

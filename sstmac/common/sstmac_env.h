@@ -20,7 +20,7 @@ namespace sstmac {
 /**
  * This class holds some global information about the simulation
  */
-class sstmac_env
+class env
 {
  public:
   static sprockit::sim_parameters* params;

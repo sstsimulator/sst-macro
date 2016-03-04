@@ -15,6 +15,10 @@
 
 namespace sstmac {
 
+double* SimulationQueue::results_ = 0;
+int SimulationQueue::num_results_ = 0;
+
+
 void
 Simulation::setParameters(sprockit::sim_parameters *params)
 {
@@ -66,8 +70,11 @@ SimulationQueue::fork(sprockit::sim_parameters* params)
   if (pid == 0){
     sim_stats stats;
     run(params, stats);
+    stats.numResults = num_results_;
     close(pfd[READ]);
     write(pfd[WRITE], &stats, sizeof(sim_stats));
+    if (results_)
+      write(pfd[WRITE], results_, num_results_);
     close(pfd[WRITE]);
     exit(0);
     return 0;
@@ -97,6 +104,11 @@ SimulationQueue::waitForCompleted()
         if (bytes <= 0){
           spkt_throw(sprockit::value_error,
                "failed reading pipe from simulation");
+        }
+        if (stats.numResults){
+          double* results = new double[stats.numResults];
+          bytes = read(sim->readPipe(), results, stats.numResults*sizeof(double));
+          sim->setResults(results, stats.numResults);
         }
         close(sim->readPipe());
         sim->setSimulatedTime(stats.simulatedTime);

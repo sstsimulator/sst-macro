@@ -21,7 +21,7 @@ sstmac_register_app(print_location_trace)
 int
 print_location_trace_main(int argc, char **argv)
 {
-    std::string filename = sstmac_env::params->get_param("trace_file");
+    std::string filename = env::params->get_param("trace_file");
     location_trace* trace = new location_trace;
     trace->activate(filename);
     timestamp created;

@@ -8,7 +8,7 @@ using namespace sstmac; using namespace sstmac::hw;
 void test_crossbar(UnitTest& unit)
 {
     sprockit::sim_parameters params;
-    sstmac_env::params = &params;
+    sstmac::env::params = &params;
     params["geometry"] = "10";
     params["concentration"] = "3";
     topology* top = topology_factory::get_value("crossbar", &params);

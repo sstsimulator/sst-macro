@@ -9,7 +9,7 @@ using namespace sstmac::hw;
 void test_torus_traffic(UnitTest& unit)
 {
     sprockit::sim_parameters params;
-    sstmac_env::params = &params;
+    sstmac::env::params = &params;
 
     params["geometry"] = "5 5 5";
     params["redundant"] = "1 1 1";
