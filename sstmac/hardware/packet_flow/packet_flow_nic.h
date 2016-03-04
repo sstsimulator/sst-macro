@@ -82,6 +82,7 @@ class packet_flow_nic :
  protected:
   stat_histogram* congestion_hist_;
   stat_spyplot* congestion_spyplot_;
+  bool acc_delay_;
 
   packet_flow_endpoint* endpoint_;
   double inj_bw_;
@@ -148,7 +149,6 @@ class packet_flow_netlink :
   packet_flow_crossbar* block_;
   int tile_rotater_;
   bool inited_;
-
 };
 
 }

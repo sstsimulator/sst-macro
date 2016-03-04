@@ -187,6 +187,8 @@ class packet_flow_switch :
 
   packet_flow_crossbar* xbar_;
 
+  bool acc_delay_;
+
  private:
   void
   connect_output(

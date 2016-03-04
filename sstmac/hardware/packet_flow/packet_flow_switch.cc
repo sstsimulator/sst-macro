@@ -128,8 +128,11 @@ void
 packet_flow_switch::init_factory_params(sprockit::sim_parameters *params)
 {
   packet_flow_abstract_switch::init_factory_params(params);
-  if (params->has_namespace("congestion_stats")){
-    sprockit::sim_parameters* congestion_params = params->get_namespace("congestion_stats");
+
+  acc_delay_ = params->get_optional_bool_param("accumulate_congestion_delay",false);
+
+  if (params->has_namespace("congestion_matrix")){
+    sprockit::sim_parameters* congestion_params = params->get_namespace("congestion_matrix");
     congestion_spyplot_ = test_cast(stat_spyplot, stat_collector_factory::get_optional_param("type", "spyplot_png", congestion_params));
     if (!congestion_spyplot_){
       spkt_throw_printf(sprockit::value_error,
@@ -171,6 +174,7 @@ void
 packet_flow_switch::initialize()
 {
   crossbar();
+  xbar_->set_accumulate_delay(acc_delay_);
   int nbuffers = out_buffers_.size();
   int buffer_inport = 0;
   for (int i=0; i < nbuffers; ++i){
@@ -181,6 +185,7 @@ packet_flow_switch::initialize()
       xbar_->init_credits(outport, buf->num_initial_credits());
       buf->set_input(buffer_inport, outport, xbar_);
       buf->set_event_location(my_addr_);
+      buf->set_accumulate_delay(acc_delay_);
     }
   }
 }
