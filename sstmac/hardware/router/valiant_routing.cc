@@ -25,7 +25,7 @@ valiant_router::initial_step(
   topology* top = topol();
   switch_id middle_switch = top->random_intermediate_switch(addr(), ej_addr);
   rinfo.set_dest_switch(middle_switch);
-  debug_printf(sprockit::dbg::routing,
+  debug_printf(sprockit::dbg::router,
     "Router %s selected random intermediate switch %s for message %s",
       regtop_->label(my_addr_).c_str(),
       regtop_->label(msg->interface<routable>()->rinfo().dest_switch()).c_str(),
@@ -50,7 +50,7 @@ valiant_router::intermediate_step(
     // some state may need to be modified
     topology* top = topol();
     top->new_routing_stage(rinfo);
-    debug_printf(sprockit::dbg::routing,
+    debug_printf(sprockit::dbg::router,
       "Router %s is intermediate valiant destination for message %s",
         regtop_->label(my_addr_).c_str(),
         msg->to_string().c_str());
@@ -144,7 +144,7 @@ valiant_router::route(const sst_message::ptr& msg, routing_info::path_set& paths
       for (int i=0; i < paths.size(); ++i){
         configure_intermediate_path(paths[i]);
       }
-      debug_printf(sprockit::dbg::routing,
+      debug_printf(sprockit::dbg::router,
         "Router %s routing message to intermediate switch %s on vc %d->%d: %s",
           regtop_->label(my_addr_).c_str(),
           regtop_->label(rinfo.dest_switch()).c_str(),
@@ -157,7 +157,7 @@ valiant_router::route(const sst_message::ptr& msg, routing_info::path_set& paths
       for (int i=0; i < paths.size(); ++i){
         configure_final_path(paths[i]);
       }
-      debug_printf(sprockit::dbg::routing,
+      debug_printf(sprockit::dbg::router,
         "Router %s routing message to final node %s on vc %d->%d: %s",
           regtop_->label(my_addr_).c_str(),
           regtop_->label(msg->toaddr()).c_str(), 

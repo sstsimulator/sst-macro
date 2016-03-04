@@ -24,11 +24,11 @@ CONFIGTESTS = \
   test_configs_exa1_pflow \
   test_configs_exa1_simple \
   test_configs_exa2_pflow \
-  test_configs_exa2_simple
+  test_configs_exa2_simple \
+  test_configs_hopper_amm4 
 
 # gives error
 # test_configs_hopper_flow
-# test_configs_hopper_amm4 
 
 test_configs_exa%.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 5 $@ $(SSTMACEXEC) -f mpi_test_all.ini -i default.ini -i exa$*.ini -i exa_mini_top.ini \

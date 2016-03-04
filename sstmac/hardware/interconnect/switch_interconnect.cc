@@ -115,7 +115,7 @@ macro_switch_interconnect::init_factory_params(sprockit::sim_parameters* params)
 
   int the_only_port = 0;
 
-  if (netlink_tmpl_){
+  if (!netlinks_.empty()){
     //we connect to netlinks, not nics
     topology_->connect_end_points(switches_, netlinks_);
     int netlinks_per_node = topology_->num_nodes_per_netlink();

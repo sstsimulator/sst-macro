@@ -80,8 +80,9 @@ class structured_topology : public topology
 
   virtual void
   build_interface_connectables(
+    int conc,
     end_point_connectable_map& connectables,
-    sprockit::factory<connectable>* nic_factory,
+    sprockit::factory2<connectable>* nic_factory,
     partition *part,
     int my_rank,
     sprockit::sim_parameters* params,

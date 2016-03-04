@@ -90,6 +90,15 @@ abstract_butterfly::init_factory_params(sprockit::sim_parameters* params)
 }
 
 void
+abstract_butterfly::configure_vc_routing(std::map<routing::algorithm_t, int> &m) const
+{
+  m[routing::minimal] = 1;
+  m[routing::minimal_adaptive] = 1;
+  m[routing::valiant] = 2;
+  m[routing::ugal] = 3;
+}
+
+void
 butterfly::compute_switch_coords(switch_id uid, coordinates& coords) const
 {
   abstract_butterfly::compute_switch_coords(uid, coords);

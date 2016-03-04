@@ -73,6 +73,9 @@ class abstract_butterfly :
     const coordinates& dst,
     routing_info::path& path) const;
 
+  void
+  configure_vc_routing(std::map<routing::algorithm_t, int> &m) const;
+
  protected:
   void
   compute_switch_coords(switch_id uid, coordinates& coords) const;

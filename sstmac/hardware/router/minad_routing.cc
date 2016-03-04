@@ -20,7 +20,7 @@ minimal_adaptive_router::route(const sst_message::ptr& msg)
   //loop through the ports and find the least-congested
   int min_queue_length = netsw_->queue_length(paths[0].outport);
   routing_info::path& min_path = paths[0];
-  debug_printf(sprockit::dbg::routing,
+  debug_printf(sprockit::dbg::router,
     "Routing %p from %ld to %ld: path 0 port=%d queue=%d",
     msg.get(),
     long(netsw_->addr()),
@@ -30,7 +30,7 @@ minimal_adaptive_router::route(const sst_message::ptr& msg)
 
   for (int i=1; i < paths.size(); ++i) {
     int test_length = netsw_->queue_length(paths[i].outport);
-    debug_printf(sprockit::dbg::routing,
+    debug_printf(sprockit::dbg::router,
       "  path %d: port=%d queue=%d",
       i, paths[i].outport, test_length);
     if (test_length < min_queue_length) {
@@ -38,7 +38,7 @@ minimal_adaptive_router::route(const sst_message::ptr& msg)
       min_queue_length = test_length;
     }
   }
-  debug_printf(sprockit::dbg::routing,
+  debug_printf(sprockit::dbg::router,
     "  chose %d", min_path.outport);
   rt->rinfo().assign_path(min_path);
 }

@@ -1,0 +1,35 @@
+# http://www.gnu.org/software/automake
+
+Makefile.in
+
+# http://www.gnu.org/software/autoconf
+
+/autom4te.cache
+/autoscan.log
+/autoscan-*.log
+/aclocal.m4
+/compile
+/config.h.in
+/configure
+/configure.scan
+/depcomp
+/install-sh
+/missing
+/stamp-h1
+
+autom4te.cache
+acinclude/libtool.m4
+acinclude/ltoptions.m4
+acinclude/ltsugar.m4
+acinclude/ltversion.m4
+acinclude/lt~obsolete.m4
+aclocal.m4
+bin/config.guess
+bin/config.sub
+bin/depcomp
+bin/install-sh
+bin/ltmain.sh
+bin/missing
+bin/py-compile
+bin/ar-lib
+bin/compile

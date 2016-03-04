@@ -65,6 +65,9 @@ class crossbar : public structured_topology
   connect_objects(internal_connectable_map& switches);
 
   void
+  configure_vc_routing(std::map<routing::algorithm_t, int> &m) const;
+
+  void
   minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,

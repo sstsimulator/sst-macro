@@ -95,14 +95,14 @@ ugal_router::initial_step(
   int minimal_weight = min_queue_length * min_dst;
   int valiant_weight = valiant_queue_length * valiant_dst;
 
-  debug_printf(sprockit::dbg::routing,
+  debug_printf(sprockit::dbg::router,
     "UGAL routing: min=%d x %d to sw %ld, valiant=%d x %d to sw %ld",
      min_dst, min_queue_length, long(ej_addr),
      valiant_dst, valiant_queue_length, long(inter_addr));
 
   if (minimal_weight <= valiant_weight) {
     // Keep routing minimally.
-    debug_printf(sprockit::dbg::routing,
+    debug_printf(sprockit::dbg::router,
       "UGAL minimal routing to port %d",
       min_path.outport);
     min_path.vc = zero_stage_vc(min_path.vc);
@@ -111,7 +111,7 @@ ugal_router::initial_step(
   }
   else {
     // Switch to valiant routing.
-    debug_printf(sprockit::dbg::routing,
+    debug_printf(sprockit::dbg::router,
       "UGAL valiant routing to switch %ld, port %d",
       long(inter_addr), val_path.outport);
     rinfo.set_dest_switch(inter_addr);

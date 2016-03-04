@@ -143,7 +143,7 @@ class topology :
   endpoint_to_ejection_switch(node_id nodeaddr, int& switch_port) const = 0;
 
   virtual void
-  configure_vc_routing(std::map<routing::algorithm_t, int>& m) const;
+  configure_vc_routing(std::map<routing::algorithm_t, int>& m) const = 0;
 
   /**
      For a given node, determine the ejection switch
@@ -464,8 +464,9 @@ class topology :
 
   virtual void
   build_interface_connectables(
+    int conc,
     end_point_connectable_map& connectables,
-    sprockit::factory<connectable>* nic_factory,
+    sprockit::factory2<connectable>* nic_factory,
     partition *part,
     int my_rank,
     sprockit::sim_parameters* params,

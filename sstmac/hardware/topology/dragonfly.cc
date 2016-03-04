@@ -295,7 +295,7 @@ dragonfly::minimal_route_to_group(int myX, int myY, int myG,
   int dsty, dstx;
   find_path_to_group(myX, myY, myG, dstx, dsty, dstg);
 
-  debug_printf(sprockit::dbg::routing,
+  debug_printf(sprockit::dbg::router,
     "Minimal route to group from src (%d,%d,%d) goes through (%d,%d,%d)",
     myX, myY, myG, dstx, dsty, dstg);
     
@@ -332,7 +332,7 @@ dragonfly::minimal_route_to_coords(
   const coordinates &dest_coords,
   routing_info::path& path) const
 {
-  debug_printf(sprockit::dbg::routing,
+  debug_printf(sprockit::dbg::router,
     "Finding dragonfly minimal route from %s to %s",
     current_coords.to_string().c_str(),
     dest_coords.to_string().c_str());

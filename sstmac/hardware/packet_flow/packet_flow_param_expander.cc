@@ -236,6 +236,10 @@ packet_flow_param_expander::expand_amm4_network(sprockit::sim_parameters* params
     std::string router = params->get_param("router");
     std::string new_router = router + "_multipath";
     params->add_param_override("router", new_router);
+  } else {
+    spkt_throw_printf(sprockit::value_error,
+      "if using amm4, must specify router = X\n"
+      "valid options are minimal, ugal, valiant, min_ad)");
   }
 
 

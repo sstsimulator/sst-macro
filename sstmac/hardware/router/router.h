@@ -25,7 +25,6 @@
 
 
 DeclareDebugSlot(router)
-DeclareDebugSlot(routing)
 
 #define rter_debug(...) \
   debug_printf(sprockit::dbg::router, "Router on switch %d: %s", int(my_addr_), sprockit::printf(__VA_ARGS__).c_str())
