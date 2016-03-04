@@ -82,9 +82,10 @@ packet_flow_sender::send(
         "got a negative congestion delay arbitrating packet");
     }
 #endif
-    double congestion_delay_us = std::max(0., congestion_delay) * 1e6;
+    congestion_delay = std::max(0., congestion_delay);
+    double congestion_delay_us = congestion_delay * 1e6;
     if (acc_delay_){
-      msg->add_delay_us(congestion_delay_us);
+      msg->add_delay_us(congestion_delay);
     }
     if (congestion_spyplot_){
       long my_id = event_location().location;

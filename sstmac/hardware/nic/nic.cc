@@ -59,6 +59,7 @@ nic::init_factory_params(sprockit::sim_parameters *params)
   init_loc_id(event_loc_id(my_addr_));
 
   negligible_size_ = params->get_optional_int_param("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
+
   if (params->has_namespace("traffic_matrix")){
     sprockit::sim_parameters* traffic_params = params->get_namespace("traffic_matrix");
     spy_num_messages_ = test_cast(stat_spyplot, stat_collector_factory::get_optional_param("type", "spyplot_png", traffic_params));
@@ -86,8 +87,8 @@ nic::init_factory_params(sprockit::sim_parameters *params)
     global_bytes_sent_->set_label("NIC Total Bytes Sent");
   }
 
-  if (params->has_namespace("message_sizes")){
-    sprockit::sim_parameters* size_params = params->get_namespace("message_sizes");
+  if (params->has_namespace("message_size_histogram")){
+    sprockit::sim_parameters* size_params = params->get_namespace("message_size_histogram");
     hist_msg_size_ = test_cast(stat_histogram, stat_collector_factory::get_optional_param("type", "histogram", size_params));
 
     if (!hist_msg_size_){

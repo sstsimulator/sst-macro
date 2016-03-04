@@ -50,8 +50,11 @@ void
 packet_flow_nic::init_factory_params(sprockit::sim_parameters *params)
 {
   nic::init_factory_params(params);
-  if (params->has_namespace("congestion_delays")){
-    sprockit::sim_parameters* congestion_params = params->get_namespace("congestion_delays");
+
+  acc_delay_ = params->get_optional_bool_param("accumulate_congestion_delay",false);
+
+  if (params->has_namespace("congestion_delay_histogram")){
+    sprockit::sim_parameters* congestion_params = params->get_namespace("congestion_delay_histogram");
     congestion_hist_ = test_cast(stat_histogram, stat_collector_factory::get_optional_param("type", "histogram", congestion_params));
     if (!congestion_hist_){
       spkt_throw_printf(sprockit::value_error,
@@ -60,8 +63,8 @@ packet_flow_nic::init_factory_params(sprockit::sim_parameters *params)
     }
   }
 
-  if (params->has_namespace("congestion_matrix")){
-    sprockit::sim_parameters* congestion_params = params->get_namespace("congestion_matrix");
+  if (params->has_namespace("congestion_delay_matrix")){
+    sprockit::sim_parameters* congestion_params = params->get_namespace("congestion_delay_matrix");
     congestion_spyplot_ = test_cast(stat_spyplot, stat_collector_factory::get_optional_param("type", "spyplot_png", congestion_params));
     if (!congestion_spyplot_){
       spkt_throw_printf(sprockit::value_error,
@@ -119,6 +122,9 @@ packet_flow_nic::finalize_init()
 
   inj_buffer_->set_event_location(addr());
   ej_buffer_->set_event_location(addr());
+
+  inj_buffer_->set_accumulate_delay(acc_delay_);
+  ej_buffer_->set_accumulate_delay(acc_delay_);
 
   inj_buffer_->set_acker(parent_);
 

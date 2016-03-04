@@ -214,6 +214,9 @@ class dragonfly : public cartesian_topology
   virtual bool
   xy_connected_to_group(int myX, int myY, int myG, int dstg) const;
 
+  int
+  xyg_dir_to_group(int myX, int myY, int myG, int dir) const;
+
  protected:
   int x_;
   int y_;
