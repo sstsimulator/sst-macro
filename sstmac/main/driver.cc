@@ -13,11 +13,15 @@
 #define READ 0
 #define WRITE 1
 
+MakeDebugSlot(driver)
+
 namespace sstmac {
 
 double* SimulationQueue::results_ = 0;
 int SimulationQueue::num_results_ = 0;
 
+#define driver_debug(...) \
+  debug_printf(sprockit::dbg::driver, __VA_ARGS__)
 
 void
 Simulation::setParameters(sprockit::sim_parameters *params)
@@ -28,8 +32,42 @@ Simulation::setParameters(sprockit::sim_parameters *params)
 void
 Simulation::wait()
 {
+  if (complete_)
+    return;
+
   int status;
+  driver_debug("wait on pid=%d", pid_);
   pid_t result = waitpid(pid_, &status, 0);
+  finalize();
+}
+
+void
+Simulation::finalize()
+{
+  sim_stats stats;
+  int bytes = read(readPipe(), &stats, sizeof(sim_stats));
+  if (bytes <= 0){
+    spkt_throw(sprockit::value_error,
+         "failed reading pipe from simulation");
+  }
+  if (stats.numResults){
+    double* results = new double[stats.numResults];
+    bytes = read(readPipe(), results, stats.numResults*sizeof(double));
+    setResults(results, stats.numResults);
+    driver_debug("finalize nresults=%d", num_results_);
+  }
+  close(readPipe());
+  setSimulatedTime(stats.simulatedTime);
+  setWallTime(stats.wallTime);
+
+  complete_ = true;
+}
+
+void
+SimulationQueue::publishResults(double* results, int nresults)
+{
+  results_ = results;
+  num_results_ = nresults;
 }
 
 void
@@ -74,13 +112,14 @@ SimulationQueue::fork(sprockit::sim_parameters* params)
     close(pfd[READ]);
     write(pfd[WRITE], &stats, sizeof(sim_stats));
     if (results_)
-      write(pfd[WRITE], results_, num_results_);
+      write(pfd[WRITE], results_, num_results_*sizeof(double));
     close(pfd[WRITE]);
     exit(0);
     return 0;
   } else {
     close(pfd[WRITE]);
     Simulation* sim = new Simulation;
+    driver_debug("forked process %d", pid);
     sim->setPid(pid);
     sim->setParameters(&template_params_);
     sim->setPipe(pfd);
@@ -99,21 +138,8 @@ SimulationQueue::waitForCompleted()
       int status;
       pid_t result = waitpid(sim->pid(), &status, WNOHANG);
       if (result > 0){
-        sim_stats stats;
-        int bytes = read(sim->readPipe(), &stats, sizeof(sim_stats));
-        if (bytes <= 0){
-          spkt_throw(sprockit::value_error,
-               "failed reading pipe from simulation");
-        }
-        if (stats.numResults){
-          double* results = new double[stats.numResults];
-          bytes = read(sim->readPipe(), results, stats.numResults*sizeof(double));
-          sim->setResults(results, stats.numResults);
-        }
-        close(sim->readPipe());
-        sim->setSimulatedTime(stats.simulatedTime);
-        sim->setWallTime(stats.wallTime);
         pending_.erase(it);
+        sim->finalize();
         return sim;
       }
     }

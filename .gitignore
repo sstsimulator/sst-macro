@@ -33,3 +33,7 @@ bin/missing
 bin/py-compile
 bin/ar-lib
 bin/compile
+
+tests/reference/upd
+sstmac/common/config.h.in
+sstmac/common/config.h.in~

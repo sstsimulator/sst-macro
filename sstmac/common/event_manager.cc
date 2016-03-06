@@ -191,7 +191,6 @@ event_manager::register_stat(
   if (stat->registered())
     return;
 
-
   stats_entry& entry = stats_[stat->fileroot()];
   entry.collectors.push_back(stat);
   entry.reduce_all = reduce_all;

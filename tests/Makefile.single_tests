@@ -2,6 +2,7 @@
 if !INTEGRATED_SST_CORE
 # These are each run by a specific rule
 SINGLETESTS = \
+  test_uq \
   test_utilities \
   test_pthread \
   test_blas \
@@ -19,6 +20,9 @@ endif
 test_scan.$(CHKSUF): test_scan
 	$(PYRUNTEST) 20 test_scan.tmp.$(CHKSUF) ./test_scan --no-wall-time -f $(srcdir)/test_configs/test_scan.ini
 	-grep 'T=' test_scan.tmp.$(CHKSUF) > $@
+
+test_uq.$(CHKSUF): test_uq
+	$(PYRUNTEST) 6 $@ ./test_uq -f $(srcdir)/test_configs/test_uq.ini
 
 test_utilities.$(CHKSUF): test_utilities
 	$(PYRUNTEST) 6 $@ ./test_utilities 

@@ -46,6 +46,7 @@ EXTRA_DIST = \
   test_traces \
   test_blas.cc \
   test_utilities.cc \
+	test_uq.cc \
   test_pthread.cc \
   sstmac_testutil.h \
   api/parameters.ini

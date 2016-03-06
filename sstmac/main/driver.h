@@ -60,7 +60,10 @@ class Simulation
   friend class SimulationQueue;
 
  public:
-  Simulation() : results_(0), num_results_(0)
+  Simulation() : 
+    complete_(false),
+    results_(0), 
+    num_results_(0)
   {
   }
 
@@ -71,6 +74,8 @@ class Simulation
   double simulatedTime() const {
     return sim_time_;
   }
+
+  void finalize();
 
   void wait();
 
@@ -207,6 +212,7 @@ class Simulation
   pipe_t pfd_;
   double* results_;
   int num_results_;
+  bool complete_;
 
 };
 

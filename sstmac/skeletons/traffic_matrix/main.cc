@@ -1,11 +1,12 @@
 #include <sprockit/sim_parameters.h>
 #include <sprockit/debug.h>
 #include <sstmac/common/sstmac_env.h>
+#include <sstmac/main/driver.h>
 #include <sstmac/software/process/app.h>
 #include <sumi/sumi/transport.h>
 
-DeclareDebugSlot(traffic_matrix)
-RegisterDebugSlot(traffic_matrix)
+MakeDebugSlot(traffic_matrix)
+MakeDebugSlot(traffic_matrix_results)
 
 #define SST 1
 
@@ -132,8 +133,8 @@ progress_loop(sumi::transport* tport, double timeout, std::list<rdma_message::pt
   while (1){
     rdma_message::ptr msg = SUMI_POLL_TIME(tport,rdma_message,timeout);
     now = tport->wall_time();
-    if (msg){ //need if statement, if timed out then no messag
-      timeout = stop - now; //timeout shrinks
+    if (msg){ //need if statement, if timed out then no message
+      timeout = std::max(0., stop - now); //timeout shrinks
       msg->set_finish(now);
       done.push_back(msg);
       debug_printf(sprockit::dbg::traffic_matrix,
@@ -331,7 +332,8 @@ int traffic_matrix_main(int argc, char** argv)
   }
   ++num_done;
 
-  double* resultsArr = new double[nproc*num_iterations*npartners];
+  int nresults = nproc*num_iterations*npartners;
+  double* resultsArr = new double[nresults];
   int result_idx = 0;
   if (num_done == nproc){
     for (int p=0; p < nproc; ++p){
@@ -343,15 +345,15 @@ int traffic_matrix_main(int argc, char** argv)
           double delta_t = msg->finish() - msg->start();
           double throughput_gbs = msg->byte_length() / delta_t / 1e9;
           resultsArr[result_idx] = throughput_gbs;
-          //printf("Message iter=%3d source=%5d dest=%d throughput=%10.4fGB/s start=%8.4ems stop=%8.4ems\n",
-          //  msg->iter(), msg->sender(), msg->recver(), throughput_gbs,
-          //  msg->start()*1e3, msg->finish()*1e3);
+          debug_printf(sprockit::dbg::traffic_matrix_results,
+            "Message iter=%3d source=%5d dest=%d throughput=%10.4fGB/s start=%8.4ems stop=%8.4ems",
+            msg->iter(), msg->sender(), msg->recver(), throughput_gbs,
+            msg->start()*1e3, msg->finish()*1e3);
         }
       }
    }
  }
-
-
+ sstmac::SimulationQueue::publishResults(resultsArr, nresults);
 
   tport->finalize();
   return 0;

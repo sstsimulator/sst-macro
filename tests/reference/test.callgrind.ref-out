@@ -10,7 +10,7 @@ calls=80 0
 0 139100000
 cfn=MPI_Finalize
 calls=0 0
-0 1539723965
+0 1544948017
 cfn=MPI_Isend
 calls=0 0
 0 0
@@ -19,7 +19,7 @@ calls=0 0
 0 0
 cfn=MPI_Waitall
 calls=0 0
-0 7578175475
+0 7515031743
 
 fn=Compute Instructions
 0 0
@@ -27,14 +27,14 @@ fn=Compute Instructions
 fn=memcopy
 0 0
 cfn=Compute Instructions
-calls=888 0
+calls=890 0
 0 0
 
 fn=Sleep
 0 400000000000000
 
 fn=MPI Queue Poll
-0 9256999440
+0 9199079760
 cfn=MPI Eager 0 Protocol: Handle Socket Header
 calls=0 0
 0 0
@@ -45,13 +45,13 @@ calls=0 0
 fn=MPI Queue Buffer Unexpected Message
 0 0
 cfn=memcopy
-calls=304 0
+calls=305 0
 0 0
 
 fn=MPI_buffered_recv
 0 0
 cfn=memcopy
-calls=424 0
+calls=425 0
 0 0
 cfn=MPI_buffered_recv
 calls=0 0
@@ -66,10 +66,10 @@ calls=160 0
 fn=MPI Eager 0 Protocol: Handle Socket Header
 0 0
 cfn=MPI Queue Buffer Unexpected Message
-calls=264 0
+calls=265 0
 0 0
 cfn=MPI_buffered_recv
-calls=119 0
+calls=125 0
 0 0
 
 fn=MPI Eager 0 Protocol: Intranode Send Header
@@ -97,7 +97,7 @@ fn=MPI_Finalize
 0 0
 cfn=MPI_Barrier
 calls=80 0
-0 1539723965
+0 1544948017
 
 fn=MPI_Isend
 0 0
@@ -115,20 +115,20 @@ fn=MPI_Waitall
 0 0
 cfn=MPI Queue Poll
 calls=80 0
-0 7578175475
+0 7515031743
 
 fn=MPI_Barrier
 0 0
 cfn=MPI Queue Poll
 calls=40 0
-0 1678823965
+0 1684048017
 cfn=MPI Eager 0 Protocol: Handle Socket Header
-calls=27 0
+calls=26 0
 0 0
 cfn=MPI Eager 0 Protocol: Intranode Send Header
 calls=80 0
 0 0
 cfn=MPI Eager 0 Protocol: Intranode Handle Header
-calls=13 0
+calls=14 0
 0 0
 
