@@ -704,6 +704,7 @@ operating_system::complete_thread(bool succ)
     task_to_thread_.erase(a->sid().task_);
   }
 
+  os_debug("completing context for %ld", thr_todelete->thread_id());
   current_tinfo->complete_context(next_tinfo);
   // This thread is not permitted to start again.
   spkt_throw(sprockit::illformed_error,

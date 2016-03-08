@@ -39,3 +39,5 @@ sstmac/common/config.h.in
 sstmac/common/config.h.in~
 
 *.pyc
+
+sstmac_repo.h

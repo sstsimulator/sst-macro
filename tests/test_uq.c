@@ -35,7 +35,7 @@ int main(int argc, char** argv)
   }
 
   void* queue = sstmac_uq_init(argc, argv);
-  int max_nthread = 2;
+  int max_nthread = 1;
   sstmac_uq_run_units(queue,
     njobs, nparams, nresults, max_nthread,
     param_names, param_values, units,

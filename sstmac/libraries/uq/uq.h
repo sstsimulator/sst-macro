@@ -91,6 +91,28 @@ void sstmac_uq_run(void* queue,
   double* results[]);
 
 /**
+ Run a set of jobs with particular parameters
+ @param queue A pointer to a queue object created by sstmac_uq_init
+ @param njobs The number of jobs (simulations) to run
+ @param nparams The number of parameters to set for each job
+ @param nresults The number of results returned by each job
+ @param max_nthread The maximum number of threads or, i.e.
+                    the max number of jobs that can run simultaneously
+ @param param_names  An array of size nparams. The name of each parameter
+                     to configure for each job
+ @param param_values A 2D array of size njobs X nparams
+                     The value corresponding to each paramter for all jobs
+                     Indexed as p[jobID][paramID]
+ @param results      A 2D array of size njobs X nresults 
+                     Will hold the result values for each job
+                     Indexed as p[jobID][resultID]
+*/
+void sstmac_uq_run_units(void* queue,
+  int njobs, int nparams, int nresults, int max_nthread,
+  const char* param_names[], double* param_values[], const char* units[],
+  double* results[]);
+
+/**
  @param queue A pointer to a queue object created by sstmac_uq_init
               After finalize, the queue is no longer usable and all
               resources used by the queue are freed

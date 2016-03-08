@@ -11,7 +11,8 @@ SpktRegister("packet_flow", memory_model, packet_flow_memory_model);
 
 //int packet_flow_memory_model::mtu_;
 
-packet_flow_memory_sender::packet_flow_memory_sender(node* parent) :
+packet_flow_memory_system::packet_flow_memory_system(int mtu, node* parent) :
+  packet_flow_MTL(mtu),
   bw_noise_(0),
   interval_noise_(0),
   num_noisy_intervals_(0),
@@ -24,12 +25,8 @@ packet_flow_memory_sender::packet_flow_memory_sender(node* parent) :
   }
 }
 
-packet_flow_memory_model::packet_flow_memory_model()
-{
-}
-
 void
-packet_flow_memory_sender::init_params(sprockit::sim_parameters *params)
+packet_flow_memory_system::init_params(sprockit::sim_parameters *params)
 {
   max_single_bw_ = params->get_bandwidth_param("max_single_bandwidth");
   max_bw_ = params->get_bandwidth_param("total_bandwidth");
@@ -38,24 +35,17 @@ packet_flow_memory_sender::init_params(sprockit::sim_parameters *params)
         "arbitrator", "cut_through", params);
   endpoint_ = packet_flow_endpoint_factory::get_optional_param(
     "arbitrator", "cut_through", params);
-  /**
-   sstkeyword {
-   docstring=The minimum number of bytes a single packet train can contain.ENDL
-   Raising this value increases the coarseness and lowers the accuracy.;
-   };
-   */
-  mtu_ = params->get_optional_int_param("mtu", 1<<30); //Defaults to huge value
 }
 
 void
-packet_flow_memory_sender::set_event_parent(event_scheduler *m)
+packet_flow_memory_system::set_event_parent(event_scheduler *m)
 {
   endpoint_->set_event_parent(m);
   packet_flow_sender::set_event_parent(m);
 }
 
 void
-packet_flow_memory_sender::finalize_init()
+packet_flow_memory_system::finalize_init()
 {
   //in and out ar the same
   arb_->set_outgoing_bw(max_bw_);
@@ -66,17 +56,7 @@ packet_flow_memory_sender::finalize_init()
 }
 
 void
-packet_flow_memory_model::init_factory_params(sprockit::sim_parameters *params)
-{
-  memory_model::init_factory_params(params);
-  max_single_bw_ = params->get_bandwidth_param("max_single_bandwidth");
-  sender_ = new packet_flow_memory_sender(parent_node_);
-  sender_->init_params(params);
-  sender_->finalize_init();
-}
-
-void
-packet_flow_memory_sender::init_noise_model()
+packet_flow_memory_system::init_noise_model()
 {
   if (bw_noise_){
     arb_->partition(interval_noise_, num_noisy_intervals_);
@@ -84,10 +64,26 @@ packet_flow_memory_sender::init_noise_model()
   }
 }
 
+int
+packet_flow_memory_system::num_initial_credits() const
+{
+  spkt_throw_printf(sprockit::value_error,
+    "packet_flow_memory_model::num_initial_credits: should never be called");
+}
+
+void
+packet_flow_memory_model::init_factory_params(sprockit::sim_parameters *params)
+{
+  memory_model::init_factory_params(params);
+  int mtu = params->get_optional_int_param("mtu", 1<<30); //Defaults to huge value
+  max_single_bw_ = params->get_bandwidth_param("max_single_bandwidth");
+  mem_sys_ = new packet_flow_memory_system(mtu, parent_node_);
+  mem_sys_->init_params(params);
+  mem_sys_->finalize_init();
+}
+
 packet_flow_memory_model::~packet_flow_memory_model()
 {
-  //if (bw_noise_) delete bw_noise_;
-  //bw_noise_ = 0;
 }
 
 void
@@ -96,18 +92,11 @@ packet_flow_memory_model::finalize_init()
   memory_model::finalize_init();
 }
 
-int
-packet_flow_memory_sender::num_initial_credits() const
-{
-  spkt_throw_printf(sprockit::value_error,
-    "packet_flow_memory_model::num_initial_credits: should never be called");
-}
-
 void
 packet_flow_memory_model::set_event_parent(event_scheduler* m)
 {
   memory_model::set_event_parent(m);
-  sender_->set_event_parent(m);
+  mem_sys_->set_event_parent(m);
 }
 
 void
@@ -115,11 +104,11 @@ packet_flow_memory_model::access(const sst_message::ptr& msg)
 {
   sw::compute_message::ptr cmsg = ptr_safe_cast(sw::compute_message, msg);
   cmsg->set_access_id(parent_node_->allocate_unique_id());
-  sender_->start(msg);
+  mem_sys_->mtl_send(msg);
 }
 
 int
-packet_flow_memory_sender::allocate_channel()
+packet_flow_memory_system::allocate_channel()
 {
   if (channels_available_.empty()){
     int oldsize = pending_.size();
@@ -136,11 +125,13 @@ packet_flow_memory_sender::allocate_channel()
 }
 
 void
-packet_flow_memory_sender::start(const sst_message::ptr& msg)
+packet_flow_memory_system::mtl_send(const sst_message::ptr &msg)
 {
   sw::compute_message::ptr cmsg = ptr_safe_cast(sw::compute_message, msg);
-
   packet_flow_payload::ptr payload = next_chunk(0L, cmsg);
+  if (cmsg->max_bw() != 0){
+    payload->set_bw(cmsg->max_bw());
+  }
 
   if (!payload->is_tail()){
     int channel = allocate_channel();
@@ -156,10 +147,8 @@ packet_flow_memory_sender::start(const sst_message::ptr& msg)
 
   handle_payload(payload);
 }
-
-
 void
-packet_flow_memory_sender::do_handle_payload(const packet_flow_payload::ptr& msg)
+packet_flow_memory_system::do_handle_payload(const packet_flow_payload::ptr& msg)
 {
   //set the bandwidth to the max single bw
   msg->init_bw(max_single_bw_);
@@ -181,47 +170,29 @@ packet_flow_memory_sender::do_handle_payload(const packet_flow_payload::ptr& msg
 }
 
 void
-packet_flow_memory_sender::send_to_endpoint(timestamp finish, const packet_flow_payload::ptr& msg)
+packet_flow_memory_system::send_to_endpoint(timestamp finish, const packet_flow_payload::ptr& msg)
 {
   SCHEDULE(finish, endpoint_, msg);
 }
 
 void
-packet_flow_memory_sender::set_input(int my_inport, int dst_outport, event_handler* input)
+packet_flow_memory_system::set_input(int my_inport, int dst_outport, event_handler* input)
 {
 
 }
 
 void
-packet_flow_memory_sender::set_output(int my_outport, int dst_inport, event_handler* output)
+packet_flow_memory_system::set_output(int my_outport, int dst_inport, event_handler* output)
 {
 }
 
 void
-packet_flow_memory_sender::init_credits(int port, int num_credits)
+packet_flow_memory_system::init_credits(int port, int num_credits)
 {
-}
-
-packet_flow_payload::ptr
-packet_flow_memory_sender::next_chunk(long byte_offset, const sw::compute_message::ptr& parent)
-{
-  long bytes_left = parent->byte_length() - byte_offset;
-  long bytes_to_send = bytes_left > mtu_ ? mtu_ : bytes_left;
-
-  packet_flow_payload::ptr payload = new packet_flow_payload(
-                                         parent,
-                                         bytes_to_send, //only a single message
-                                         byte_offset);
-
-  if (parent->max_bw() != 0){
-    payload->set_bw(parent->max_bw());
-  }
-
-  return payload;
 }
 
 void
-packet_flow_memory_sender::handle_credit(const packet_flow_credit::ptr& msg)
+packet_flow_memory_system::handle_credit(const packet_flow_credit::ptr& msg)
 {
   int channel = msg->port();
   pending_msg& p = pending_[channel];
@@ -230,6 +201,10 @@ packet_flow_memory_sender::handle_credit(const packet_flow_credit::ptr& msg)
   //    msg->num_credits(), channel);
 
   packet_flow_payload::ptr payload = next_chunk(p.byte_offset, p.msg);
+  if (p.msg->max_bw() != 0){
+    payload->set_bw(p.msg->max_bw());
+  }
+
   payload->set_inport(channel);
   p.byte_offset += payload->num_bytes();
 

@@ -153,25 +153,6 @@ class packet_flow_payload :
   }
 
   /**
-   @return Whether the parent message is being sent as a single
-   packet_flow, i.e. the parent message is smaller
-   than the min_bytes per train.
-   */
-  bool
-  is_single_packet() const {
-    return num_bytes_total() <= min_num_bytes_per_packet_;
-  }
-
-  /**
-   @param num_bytes The number of bytes sent in a message
-   @return Whether num_bytes would be sent as a single packet train
-   */
-  static bool
-  is_single_packet(uint64_t num_bytes) {
-    return num_bytes <= min_num_bytes_per_packet_;
-  }
-
-  /**
    @return The number of bytes in this packet_flow, NOT
    the total number of bytes in the parent message.
    See #num_bytes_total

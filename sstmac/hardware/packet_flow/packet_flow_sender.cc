@@ -7,6 +7,20 @@
 namespace sstmac {
 namespace hw {
 
+packet_flow_payload::ptr
+packet_flow_MTL::next_chunk(long byte_offset, const sst_message::ptr &parent)
+{
+  long bytes_left = parent->byte_length() - byte_offset;
+  long bytes_to_send = bytes_left > mtu_ ? mtu_ : bytes_left;
+
+  packet_flow_payload::ptr payload = new packet_flow_payload(
+                                         parent,
+                                         bytes_to_send, //only a single message
+                                         byte_offset);
+
+  return payload;
+}
+
 packet_flow_sender::packet_flow_sender(
   const timestamp& send_lat,
   const timestamp& credit_lat)
@@ -48,9 +62,7 @@ packet_flow_sender::send_credit(
       payload->to_string().c_str(),
       credit_arrival.sec(), credit_lat_.sec(),
       credit.get());
-  START_VALID_SCHEDULE(this)
   schedule(credit_arrival, src.handler, credit);
-  STOP_VALID_SCHEDULE(this)
 }
 
 void

@@ -38,6 +38,9 @@ send_signal(threadcontext_t* context)
 void
 wait_signal(threadcontext_t* context)
 {
+  //pthread_cond_wait can just randomly drop out on certain OSes
+  //you have to actually implement this by looping on a variable
+  //so that if cond_wait erroneoulsy returns the bool bounces it back
   do {
     pthread_cond_wait(&context->ready, context->context_switch_lock);
   }
@@ -171,7 +174,8 @@ threading_pthread::complete_context(threading_interface *to)
   }
   threading_pthread* casted = (threading_pthread*)to;
   if(casted) {
-    pthread_cond_signal(&casted->context_.ready);
+    pthread_debug("completing context");
+    send_signal(&casted->context_);
   }
   else {
     spkt_throw_printf(sprockit::illformed_error,

@@ -10,11 +10,12 @@
 namespace sstmac {
 namespace hw {
 
-class packet_flow_memory_sender :
-  public packet_flow_sender
+class packet_flow_memory_system :
+  public packet_flow_sender,
+  public packet_flow_MTL
 {
  public:
-  packet_flow_memory_sender(node* parent_node);
+  packet_flow_memory_system(int mtu, node* parent_node);
 
   std::string
   packet_flow_name() const {
@@ -39,27 +40,23 @@ class packet_flow_memory_sender :
   void
   set_output(int my_outport, int dst_inport, event_handler* output);
 
-  virtual void
-  start(const sst_message::ptr& msg);
+  void start(const sst_message::ptr &msg){}
 
   virtual void
   init_params(sprockit::sim_parameters* params);
-
-  int
-  allocate_channel();
-
-  packet_flow_payload::ptr
-  next_chunk(long byte_offset, const sw::compute_message::ptr& parent);
 
   void finalize_init();
 
   void init_noise_model();
 
-  void
-  set_event_parent(event_scheduler *m);
+  void set_event_parent(event_scheduler *m);
+
+  void mtl_send(const sst_message::ptr& msg);
 
  private:
   void send_to_endpoint(timestamp t, const packet_flow_payload::ptr& msg);
+
+  int allocate_channel();
 
  private:
   double max_bw_;
@@ -76,9 +73,6 @@ class packet_flow_memory_sender :
     long byte_offset;
     sw::compute_message::ptr msg;
   };
-
-  int mtu_;
-
   std::vector<pending_msg> pending_;
   std::list<int> channels_available_;
 
@@ -92,8 +86,6 @@ class packet_flow_memory_model :
   public memory_model
 {
  public:
-  packet_flow_memory_model();
-
   virtual ~packet_flow_memory_model();
 
   void
@@ -126,7 +118,7 @@ class packet_flow_memory_model :
   //static int mtu_;
   double max_single_bw_;
 
-  packet_flow_memory_sender* sender_;
+  packet_flow_memory_system* mem_sys_;
 };
 
 }

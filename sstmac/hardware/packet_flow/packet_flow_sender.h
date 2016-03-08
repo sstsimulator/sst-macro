@@ -12,6 +12,21 @@
 namespace sstmac {
 namespace hw {
 
+class packet_flow_MTL
+{
+ public:
+  packet_flow_MTL(int mtu) : mtu_(mtu) {}
+
+  virtual void mtl_send(const sst_message::ptr& msg) = 0;
+
+  packet_flow_payload::ptr
+  next_chunk(long byte_offset, const sst_message::ptr& parent);
+
+ private:
+  int mtu_;
+
+};
+
 class packet_flow_sender :
   public packet_flow_handler
 {
