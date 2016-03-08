@@ -232,7 +232,6 @@ node::send_to_nic(const network_message::ptr& netmsg)
   } else {
     nic_->internode_send(netmsg);
   }
-  //SCHEDULE_NOW(nic_, netmsg);
 }
 
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -242,6 +241,8 @@ node::launch()
   std::list<sw::launch_message::ptr>::iterator it, end = launchers_.end();
   for (it=launchers_.begin(); it != end; ++it){
     sw::launch_message::ptr lmsg = *it;
+    node_debug("launching task %d on node %d",
+      int(lmsg->tid()), int(addr()));
     os_->handle_message(lmsg);
   }
 }

@@ -1,5 +1,9 @@
 
+
 AC_DEFUN([CHECK_THREADING], [
+
+at_least_one_threading=no
+
 # Find out if we want to use pthreads instead of a user-space threads.
 AH_TEMPLATE([HAVE_PTHREAD], [Define to allow use of pthreads])
 AC_ARG_ENABLE(pthread,
@@ -45,6 +49,9 @@ AC_ARG_ENABLE(ucontext,
   ]
 )
 
+if test "X$have_integrated_core" = "Xyes"; then
+AC_MSG_RESULT([pthread virtual thread interface not compatible with unified core])
+else
 if test "$enable_pthread" != no; then
   AC_MSG_CHECKING([whether pthreads is automatically usable])
   AC_LINK_IFELSE(
@@ -86,9 +93,10 @@ if test "$enable_pthread" != no; then
   fi
 
   if test "$enable_pthread" = yes; then
+    at_least_one_threading=yes
     AC_DEFINE(HAVE_PTHREAD)
   fi
-
+fi
 fi
 
 if test "$enable_ucontext" != no; then
@@ -109,6 +117,7 @@ if test "$enable_ucontext" != no; then
       enable_ucontext="yes"
       AC_DEFINE(HAVE_UCONTEXT)
       AM_CONDITIONAL(HAVE_UCONTEXT, true)
+      at_least_one_threading=yes
     ], [
       AC_MSG_RESULT([no])
       AM_CONDITIONAL(HAVE_UCONTEXT, false)
@@ -126,13 +135,11 @@ fi
 # If pth is enabled, but we're not using the builtin version, then
 # test whether or not it works.
 PTH_PATH=none
-if test "$enable_pth" != "no" -a "$enable_pth" != builtin; then
+if test "$enable_pth" != "no"; then
   if test "$enable_pth" != "yes"; then
     CXXFLAGS="$CXXFLAGS -I$enable_pth/include"
     LDFLAGS="$LDFLAGS -L$enable_pth/lib"
     PTH_PATH="$enable_pth"
-  else
-    PTH_PATH="default"
   fi
   dnl First check for a custom pth.
   AC_CHECK_LIB(
@@ -141,6 +148,7 @@ if test "$enable_pth" != "no" -a "$enable_pth" != builtin; then
     [LIBS="-lpth $LIBS"],
     [AC_MSG_ERROR([GNU pth enabled but not found])]
   )
+  at_least_one_threading=yes
   AC_DEFINE(HAVE_PTH)
 fi
 
@@ -165,6 +173,14 @@ elif test "$default_threading" = ucontext -a "$enable_ucontext" != no; then
   AC_DEFINE(USE_UCONTEXT)
 elif test "$default_threading" = pthread -a "$enable_pthread" != no; then
   AC_DEFINE(USE_PTHREAD)
+fi
+
+if test "X$at_least_one_threading" = "Xno"; then
+AC_MSG_ERROR([No valid virtual threading interfaces available - must have pth, ucontext, or pthread
+ucontext is not available on Mac OS X
+pthread is not compatible with integrated SST core
+pth must downloaded from https://www.gnu.org/software/pth
+])
 fi
 ])
 

@@ -91,6 +91,25 @@ static bool you_have_been_warned = false;
 bool operating_system::cxa_finalizing_ = false;
 operating_system::os_thread_context operating_system::cxa_finalize_context_;
 
+
+#if SSTMAC_HAVE_PTH
+#define pth_available "pth,"
+#else
+#define pth_available ""
+#endif
+
+#if SSTMAC_HAVE_PTHREAD
+#define pthread_available "pthread,"
+#else
+#define pthread_available ""
+#endif
+
+#if SSTMAC_HAVE_UCONTEXT
+#define ucontext_available "ucontext,"
+#else
+#define ucontext_available ""
+#endif
+
 void
 operating_system::init_threading()
 {
@@ -127,6 +146,11 @@ operating_system::init_threading()
     threading_string = "ucontext";
     #elif defined(SSTMAC_HAVE_PTHREAD)
     threading_string = "pthread";
+    #else
+    #error no valid thread interfaces available (pth, pthread, ucontext supported)
+    #error ucontext is not available on MAC
+    #error pthread is not compatible with integrated SST core
+    #error pth must be downloaded and installed from GNU site
     #endif
 #endif
   }
@@ -178,8 +202,8 @@ operating_system::init_threading()
   }
   else {
     spkt_throw_printf(sprockit::value_error,
-       "operating_system: invalid value %s for SSTMAC_THREADING environmental variable.\n"
-       "choose one of pth, pthread, ucontext.\n",
+       "operating_system: invalid value %s for SSTMAC_THREADING environmental variable\n"
+       "choose one of " pth_available pthread_available ucontext_available,
        threading_string.c_str());
   }
 
@@ -416,8 +440,6 @@ operating_system::current_os_thread_context()
 {
 #if SSTMAC_USE_MULTITHREAD
   int thr = thread_id();
-  //std::cout << sprockit::printf("OS on node %d is on thread %d\n",
-  //  int(my_addr()), thr);
   return os_thread_contexts_[thr];
 #else
   return os_thread_context_;
@@ -470,7 +492,7 @@ operating_system::switch_to_thread(thread_data_t tothread)
   /** back to main thread */
   current_thread_id_ = old_id;
   ctxt.current_thread = old_thread;
-  os_debug("size of threadstack %d, switching back to thread %d\n",
+  os_debug("size of threadstack %d, switching back to thread %d",
     threadstack_.size(), current_thread_id_);
 }
 
@@ -942,6 +964,8 @@ operating_system::add_task(const task_id& id)
 void
 operating_system::start_app(app* theapp)
 {
+  os_debug("starting app %d:%d on thread %d",
+    int(theapp->tid()), int(theapp->aid()), thread_id());
   //this should be called from the actual thread running it
   init_threading();
 #if SSTMAC_HAVE_GRAPHVIZ

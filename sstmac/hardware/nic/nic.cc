@@ -230,12 +230,7 @@ nic::handle(const sst_message::ptr& msg)
   } else {
     recv_message(msg);
   }
-  // don't use handle for sending anymore
-  //else if (msg->fromaddr() == msg->toaddr()){
-  //  intranode_send(ptr_safe_cast(network_message, msg));
-  //}
-  //else if (msg->fromaddr() == my_addr_){
-  //  internode_send(ptr_safe_cast(network_message, msg));
+
 }
 
 void

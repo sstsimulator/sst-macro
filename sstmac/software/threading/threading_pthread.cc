@@ -10,15 +10,41 @@
  */
 
 #include <sprockit/errors.h>
+#include <sprockit/debug.h>
 #include <sstmac/common/thread_info.h>
 #include <sstmac/common/thread_lock.h>
 #include <sstmac/software/threading/threading_pthread.h>
+
+MakeDebugSlot(pth);
+#define pthread_ctx_debug(ctx,...) \
+  debug_printf(sprockit::dbg::pth, "context=%p,thread=%p: %s", \
+    ctx, pthread_self(), sprockit::printf(__VA_ARGS__).c_str())
+#define pthread_debug(...) \
+   pthread_ctx_debug(&context_, __VA_ARGS__)
 
 namespace sstmac {
 namespace sw {
 #ifdef SSTMAC_HAVE_PTHREAD
 
 std::vector<pthread_mutex_t> threading_pthread::context_switch_mutexes;
+
+void
+send_signal(threadcontext_t* context)
+{
+  context->waiting = false;
+  pthread_cond_signal(&context->ready);
+}
+
+void
+wait_signal(threadcontext_t* context)
+{
+  do {
+    pthread_cond_wait(&context->ready, context->context_switch_lock);
+  }
+  while (context->waiting);
+  //go back to wait mode
+  context->waiting = true;
+}
 
 threading_pthread::threading_pthread(int thread_id, int nthread) :
   thread_id_(thread_id),
@@ -29,7 +55,9 @@ threading_pthread::threading_pthread(int thread_id, int nthread) :
   if (context_switch_mutexes.size() == 0){
     //not yet done
     context_switch_mutexes.resize(nthread);
+    pthread_debug("initializing pthread app stack for %d real threads", nthread);
     for (int i=0; i < nthread; ++i){
+      pthread_debug("init context switch mutex %d", i);
       pthread_mutex_init(&context_switch_mutexes[i], NULL);
     }
   }
@@ -45,6 +73,8 @@ pthreadfunc(void*args)
   void* thread_args = thread_info->args;
   void (*func)(void*) = thread_info->func;
 
+  pthread_ctx_debug(thread_info->context, "launched new pthread application stack");
+
   // The following code handles the initial context switch
   // starting this thread. After that, swap_context
   // performs all context switches.
@@ -52,12 +82,18 @@ pthreadfunc(void*args)
   // Grab the context lock.
   pthread_mutex_lock(thread_info->context->context_switch_lock);
 
+  pthread_ctx_debug(thread_info->context,
+    "locked new pthread application stack");
+
   // Put this thread to sleep, if it has not
   // already been started.
   if (!thread_info->context->started) {
-    pthread_cond_wait(&thread_info->context->ready,
-                      thread_info->context->context_switch_lock);
+    pthread_ctx_debug(thread_info->context,
+      "putting thread to sleep");
+    wait_signal(thread_info->context);
   }
+
+  pthread_ctx_debug(thread_info->context, "thread awoken - unlocking mutex");
 
   pthread_mutex_unlock(thread_info->context->context_switch_lock);
 
@@ -69,7 +105,8 @@ pthreadfunc(void*args)
   (*func)(thread_args);
 
   spkt_throw_printf(sprockit::illformed_error,
-                   "pthreadfunc arrived at end of function. complete_context should have terminated this with pthread_exit");
+    "pthreadfunc arrived at end of function\n"
+    "complete_context should have terminated this with pthread_exit");
 
   return NULL;
 }
@@ -82,6 +119,7 @@ threading_pthread::init_context_common(threadcontext_t &context)
   context_.context_switch_lock = &context_switch_mutexes[thread_id_];
   pthread_cond_init(&context.ready, NULL);
   context.started = false;
+  context.waiting = true;
 }
 
 /// Initialize the context to be that for the currently running thread.
@@ -116,6 +154,8 @@ threading_pthread::start_context(int physical_thread_id,
   init_context_common(context_);
 
   //thread_info::register_kernel_space_virtual_thread(physical_thread_id, &context_.thread, &thread_attr);
+  pthread_debug("starting pthread %p with stack %p of size %lu on physical thread %d",
+       &context_, &context_.thread, stack, stacksize, physical_thread_id);
 
   threadargs *targs = new threadargs(func, args, &context_);
   pthread_create(&context_.thread, &thread_attr, &pthreadfunc, (void*) targs);
@@ -136,7 +176,6 @@ threading_pthread::complete_context(threading_interface *to)
   else {
     spkt_throw_printf(sprockit::illformed_error,
                      "received non-pthread context on complete_context");
-    //pthread_cond_signal(NULL);
   }
   pthread_exit(0);
 }
@@ -161,9 +200,6 @@ threading_pthread::swap_context(threading_interface *to)
   // (lock) c2 signals c1 to start
   // c2 begins waiting on signals (unlock)
 
-  // Grab the context lock.
-  pthread_mutex_lock(context_.context_switch_lock);
-
 #if SSTMAC_SANITY_CHECK
   threading_pthread *casted = dynamic_cast<threading_pthread*>(to);
   if (!casted){
@@ -174,14 +210,21 @@ threading_pthread::swap_context(threading_interface *to)
   threading_pthread *casted = static_cast<threading_pthread*>(to);
 #endif
 
+  // Grab the context lock.
+  pthread_debug("locking context switch to start swap to thread");
+  pthread_mutex_lock(context_.context_switch_lock);
+
   casted->context_.started = true;
 
   // Wake up the to context.
-  pthread_cond_signal(&casted->context_.ready);
+  pthread_debug("cond signal to cause swap context");
+  send_signal(&casted->context_);
 
   // Put the from thread to sleep.
-  pthread_cond_wait(&context_.ready, context_.context_switch_lock);
+  pthread_debug("wait on cond in swap context");
+  wait_signal(&context_);
 
+  pthread_debug("resuming, unlocking context switch");
   pthread_mutex_unlock(context_.context_switch_lock);
 }
 

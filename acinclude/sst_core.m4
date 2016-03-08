@@ -22,7 +22,7 @@ AC_ARG_WITH([integrated-core],
       CPPFLAGS="$CPPFLAGS $PY_INCLUDES"
       AC_CHECK_HEADERS([Python.h], [], 
           [AC_MSG_ERROR([Could not locate Python installation needed by SST core])])
-      AC_CHECK_HEADERS([sst/sst_config.h], [],
+      AC_CHECK_HEADERS([sst/core/element.h], [],
           [AC_MSG_ERROR([Could not locate SST core header files at $SST])])
       have_integrated_core="yes"
     ], [

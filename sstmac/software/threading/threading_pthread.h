@@ -29,13 +29,13 @@ namespace sw {
 #ifdef SSTMAC_HAVE_PTHREAD
 
 
-class threadcontext_t
+struct threadcontext_t
 {
- public:
   pthread_t thread;
   pthread_cond_t ready;
   pthread_mutex_t* context_switch_lock;
   bool started;
+  bool waiting;
 };
 
 class threading_pthread : public threading_interface
@@ -77,7 +77,6 @@ class threading_pthread : public threading_interface
   };
 
   static std::vector<pthread_mutex_t> context_switch_mutexes;
-
 
   virtual
   threading_interface* copy() {
