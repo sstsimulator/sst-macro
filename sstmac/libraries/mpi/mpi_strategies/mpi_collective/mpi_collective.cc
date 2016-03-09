@@ -144,6 +144,7 @@ mpi_collective::complete(const payload::const_ptr& content)
 
   req_->complete(fake);
   completion_->handle(fake);
+  delete fake;
 }
 
 payload::const_ptr

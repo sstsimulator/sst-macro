@@ -580,6 +580,7 @@ mpi_queue::incoming_message(mpi_message* message)
 
   if (message->is_nic_ack()) {
     handle_nic_ack(message);
+    delete message;
     return;
   }
 

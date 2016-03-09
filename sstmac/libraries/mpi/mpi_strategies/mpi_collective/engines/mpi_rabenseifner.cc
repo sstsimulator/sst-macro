@@ -84,10 +84,10 @@ mpi_rabenseifner::do_sendrecv()
   }
 
   while (pending_recvs_complete_.begin() != pending_recvs_complete_.end()) {
-    std::list<mpi_message*>::iterator tmp = pending_recvs_complete_.begin();
-    mpi_message* msg = *tmp;
+    std::list<pending_recv_t>::iterator tmp = pending_recvs_complete_.begin();
+    pending_recv_t& entry = *tmp;
+    do_recv_complete(entry.first, entry.second);
     pending_recvs_complete_.erase(tmp);
-    do_recv_complete(msg);
   }
   complete_lock_ = false;
   --pending_sendrecvs_;
@@ -143,15 +143,13 @@ mpi_rabenseifner::do_send_complete(mpi_id id)
 }
 
 void
-mpi_rabenseifner::do_recv_complete(mpi_message* msg)
+mpi_rabenseifner::do_recv_complete(const payload::const_ptr& load, mpi_id source)
 {
   --pending_recvs_;
 
-  payload::const_ptr load = msg->content();
-
   if (load){
     if (reduce_this_recv_){
-      content_ = combine_content(content_, load, op_, comm_->rank_, msg->source());
+      content_ = combine_content(content_, load, op_, comm_->rank_, source);
       mpi_reduce_debug("combined to content %s on tag %d",
         content_->to_string().c_str(), int(tag_));
     } else if (pending_recvs_ == 0) {
@@ -163,8 +161,8 @@ mpi_rabenseifner::do_recv_complete(mpi_message* msg)
     }
   }
 
-  mpi_reduce_debug("recv complete from %d, count=%d on tag %d, pending=%d, content=%s, incoming=%s",
-    int(msg->source()), msg->count(), int(tag_), pending_recvs_,
+  mpi_reduce_debug("recv complete from %d, tag %d, pending=%d, content=%s, incoming=%s",
+    int(source), int(tag_), pending_recvs_,
     content_str(), load ? load->to_string().c_str() : "null");
 
   maybe_start_sendrecvs();
@@ -179,10 +177,10 @@ mpi_rabenseifner::recv_complete(mpi_message* msg)
   mpi_reduce_debug("start recv complete from %d, count=%d on tag %d: reduce? %d",
     int(msg->source()), msg->count(), int(tag_), reduce_this_recv_);
   if (complete_lock_) {
-    pending_recvs_complete_.push_back(msg);
+    pending_recvs_complete_.push_back(std::make_pair(msg->content(), msg->source()));
   }
   else {
-    do_recv_complete(msg);
+    do_recv_complete(msg->content(), msg->source());
   }
 }
 
