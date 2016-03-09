@@ -39,7 +39,7 @@ lib_sleep::sleep(timestamp time)
 {
   SSTMACBacktrace("Sleep");
   if (supported()) {
-    sst_message::ptr cmsg = new sleep_message(lib_name(), time);
+    sst_message* cmsg = new sleep_message(lib_name(), time);
     os_->execute_kernel(ami::COMP_SLEEP, cmsg);
   }
   else {

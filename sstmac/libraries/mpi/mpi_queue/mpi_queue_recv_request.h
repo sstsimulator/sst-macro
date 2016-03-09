@@ -42,7 +42,7 @@ class mpi_queue_recv_request  {
   virtual ~mpi_queue_recv_request();
 
   /// Do we match the given message?
-  bool matches(const mpi_message::ptr& msg);
+  bool matches(mpi_message* msg);
 
   bool open_source() const;
 
@@ -57,7 +57,7 @@ class mpi_queue_recv_request  {
   }
 
   void
-  handle(const mpi_message::ptr& mess);
+  handle(mpi_message* mess);
 
   bool
   is_cancelled() const;

@@ -7,7 +7,6 @@ namespace sstmac {
 namespace sw {
 
 class compute_message;
-typedef sprockit::refcount_ptr<compute_message> compute_message_ptr;
 
 } }
 

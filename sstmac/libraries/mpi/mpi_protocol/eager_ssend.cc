@@ -10,7 +10,7 @@ namespace sw {
 void
 eager_ssend::finish_recv_header(
   mpi_queue* queue,
-  const mpi_message::ptr& msg,
+  mpi_message* msg,
   mpi_queue_recv_request* req
 )
 {
@@ -21,7 +21,7 @@ eager_ssend::finish_recv_header(
 void
 eager_ssend::finish_recv_payload(
   mpi_queue* queue,
-  const mpi_message::ptr& msg,
+  mpi_message* msg,
   mpi_queue_recv_request* req
 )
 {
@@ -54,15 +54,14 @@ eager_ssend::send_needs_rendezvous_ack() const
 
 void
 eager_ssend::incoming_payload(mpi_queue* queue,
-                            const mpi_message::ptr& msg)
+                            mpi_message* msg)
 {
   mpi_queue_recv_request* req = queue->find_pending_request(msg);
   if (req) {
     req->handle(msg);
+    delete msg;
   }
   queue->notify_probes(msg);
-  //SSTMAC_DEBUG << "mpi_queue[" << queue->id_string()
-  //             << "]:: eager_ssend::handle_header done \n";
 }
 
 bool
@@ -73,7 +72,7 @@ eager_ssend::handshake_only() const
 
 void
 eager_ssend::send_header(mpi_queue* queue,
-                         const mpi_message::ptr& msg)
+                         mpi_message* msg)
 {
   msg->content_type(mpi_message::eager_payload);
   queue->post_header(msg);
@@ -83,7 +82,7 @@ eager_ssend::send_header(mpi_queue* queue,
 
 void
 eager_ssend::incoming_header(mpi_queue* queue,
-                           const mpi_message::ptr& msg)
+                           mpi_message* msg)
 {
   spkt_throw_printf(sprockit::illformed_error,
         "eage_ssend protocol handling header, but only payloads should arrive");

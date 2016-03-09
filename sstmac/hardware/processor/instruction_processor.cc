@@ -16,6 +16,7 @@
 #include <sstmac/hardware/memory/memory_model.h>
 #include <sstmac/common/event_callback.h>
 #include <sprockit/errors.h>
+#include <sprockit/util.h>
 #include <sprockit/keyword_registration.h>
 #include <sprockit/sim_parameters.h>
 #include <iostream>
@@ -45,7 +46,7 @@ instruction_processor::finalize_init()
 }
 
 void
-instruction_processor::init_factory_params(sprockit::sim_parameters *params)
+instruction_processor::init_factory_params(sprockit::sim_parameters* params)
 {
   simple_processor::init_factory_params(params);
   timestamp negligible_time = params->get_optional_time_param("negligible_compute_time", 100e-9);
@@ -62,7 +63,7 @@ instruction_processor::init_factory_params(sprockit::sim_parameters *params)
 }
 
 double
-instruction_processor::instruction_time(const sw::compute_message::ptr& cmsg)
+instruction_processor::instruction_time(sw::compute_message* cmsg)
 {
   double tsec = 0;
   long nop = 0;
@@ -86,9 +87,9 @@ instruction_processor::instruction_time(const sw::compute_message::ptr& cmsg)
 }
 
 void
-instruction_processor::compute(const sst_message::ptr& msg)
+instruction_processor::compute(sst_message* msg)
 {
-  sw::compute_message::ptr cmsg = ptr_safe_cast(sw::compute_message, msg);
+  sw::compute_message* cmsg = safe_cast(sw::compute_message, msg);
 
   debug_printf(sprockit::dbg::compute_intensity,
     "Node %d: starting compute %s",

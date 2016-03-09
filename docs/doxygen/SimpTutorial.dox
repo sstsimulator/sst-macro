@@ -85,7 +85,7 @@ The most important function call to implement is the <tt>clone</tt> method
 
 \code{.cpp}
 
-        sst_message::ptr
+        sst_message*
         clone(MESSAGE_TYPES ty) const
         {
             test_message::ptr cln = new test_message(value_, action_);

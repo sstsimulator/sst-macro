@@ -98,7 +98,7 @@ class interconnect :
     @param msg The message to send to the destination
   */
   virtual void
-  immediate_send(event_scheduler* src, const sst_message::ptr& msg, timestamp start) const = 0;
+  immediate_send(event_scheduler* src, sst_message* msg, timestamp start) const = 0;
 
   virtual void
   set_event_manager(event_manager* mgr){};
@@ -240,7 +240,7 @@ class macro_interconnect : public interconnect
   }
 
   virtual void
-  handle(const sst_message::ptr& msg);
+  handle(sst_message* msg);
 
  protected:
   macro_interconnect();

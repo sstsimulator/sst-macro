@@ -123,10 +123,10 @@ class operating_system :
   }
 
   virtual void
-  execute_kernel(ami::COMP_FUNC func, const sst_message::ptr& data);
+  execute_kernel(ami::COMP_FUNC func, sst_message* data);
 
   virtual void
-  execute_kernel(ami::COMM_FUNC func, const sst_message::ptr& data);
+  execute_kernel(ami::COMM_FUNC func, sst_message* data);
 
   virtual bool
   kernel_supported(ami::COMP_FUNC) const;
@@ -192,7 +192,7 @@ class operating_system :
   start_app(app* a);
 
   void
-  handle_message(const sst_message::ptr& msg);
+  handle_message(sst_message* msg);
 
   std::list<app*>
   app_ptrs(app_id aid);
@@ -304,7 +304,7 @@ class operating_system :
 
   std::stack<thread_data_t> threadstack_;
 
-  std::deque<sst_message::ptr> pending_messages_;
+  std::deque<sst_message*> pending_messages_;
 
   bool restarting_;
 

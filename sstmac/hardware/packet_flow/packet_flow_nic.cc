@@ -162,15 +162,15 @@ packet_flow_nic::connect(
 }
 
 void
-packet_flow_nic::recv_credit(const sst_message::ptr &msg)
+packet_flow_nic::recv_credit(sst_message* msg)
 {
-  inj_buffer_->handle_credit(ptr_safe_cast(packet_flow_credit, msg));
+  inj_buffer_->handle_credit(safe_cast(packet_flow_credit, msg));
 }
 
 void
-packet_flow_nic::recv_chunk(const sst_message::ptr& _chunk)
+packet_flow_nic::recv_chunk(sst_message* _chunk)
 {
-  message_chunk::ptr chunk = ptr_safe_cast(message_chunk, _chunk);
+  message_chunk* chunk = safe_cast(message_chunk, _chunk);
 
   ej_buffer_->return_credit(chunk);
 
@@ -208,7 +208,7 @@ packet_flow_nic::set_ejection_input(int ej_port, connectable* sw)
 }
 
 void
-packet_flow_nic::do_send(const network_message::ptr& payload)
+packet_flow_nic::do_send(network_message* payload)
 {
   nic_debug("packet flow: sending %s", payload->to_string().c_str());
   SCHEDULE_DELAY(inj_lat_, inj_handler_, payload);
@@ -269,12 +269,12 @@ packet_flow_netlink::set_event_parent(event_scheduler* m)
 }
 
 void
-packet_flow_netlink::handle(const sst_message::ptr& msg)
+packet_flow_netlink::handle(sst_message* msg)
 {
-  packet_flow_interface* fmsg = ptr_interface_cast(packet_flow_interface, msg);
+  packet_flow_interface* fmsg = interface_cast(packet_flow_interface, msg);
   switch (fmsg->type()) {
     case packet_flow_interface::credit: {
-      packet_flow_credit::ptr credit = ptr_static_cast(packet_flow_credit, msg);
+      packet_flow_credit* credit = static_cast<packet_flow_credit*>(msg);
       debug_printf(sprockit::dbg::packet_flow,
          "netlink %s:%p handling credit %s",
          topology::global()->label(event_location()).c_str(),
@@ -284,7 +284,7 @@ packet_flow_netlink::handle(const sst_message::ptr& msg)
       break;
     }
     case packet_flow_interface::payload: {
-      packet_flow_payload::ptr payload = ptr_static_cast(packet_flow_payload, msg);
+      packet_flow_payload* payload = static_cast<packet_flow_payload*>(msg);
       debug_printf(sprockit::dbg::packet_flow,
            "netlink %d:%p handling payload %s",
             //topology::global()->label(event_location()).c_str(),

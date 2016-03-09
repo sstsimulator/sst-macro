@@ -21,14 +21,12 @@ class transport_message :
    typedef sprockit::refcount_ptr<payload_t> payload_ptr;
 
  public:
-  typedef sprockit::refcount_ptr<transport_message> ptr;
-
   transport_message(const payload_ptr& msg, long byte_length);
 
   virtual void
   serialize_order(sprockit::serializer& ser);
 
-  serializable_ptr_type::ptr
+  payload_ptr
   payload() const {
     return payload_;
   }
@@ -72,12 +70,12 @@ class transport_message :
   void
   complete_transfer(void* buf);
 
-  ::sstmac::hw::network_message::ptr
+  ::sstmac::hw::network_message*
   clone_injection_ack() const;
 
  protected:
   void
-  clone_into(const ptr &cln) const;
+  clone_into(transport_message* cln) const;
 
   void
   reverse();

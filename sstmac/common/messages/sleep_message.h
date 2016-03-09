@@ -13,10 +13,6 @@ class sleep_message :
 {
 
  public:
-  typedef sprockit::refcount_ptr<sleep_message> ptr;
-  typedef sprockit::refcount_ptr<const sleep_message> const_ptr;
-
- public:
   sleep_message(const std::string& libname, const timestamp& t) :
     library_interface(libname),
     timed_interface(t) {

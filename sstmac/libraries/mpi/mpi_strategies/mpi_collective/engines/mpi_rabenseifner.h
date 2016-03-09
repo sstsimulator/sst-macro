@@ -74,16 +74,16 @@ class mpi_rabenseifner : public mpi_collective
 
   void do_send_complete(mpi_id id);
 
-  void do_recv_complete(const mpi_message::ptr& msg);
+  void do_recv_complete(mpi_message* msg);
 
  protected:
   /// Callback method to indicate that a send operation has completed.
   virtual void
-  send_complete(const mpi_message::ptr& msg);
+  send_complete(mpi_message* msg);
 
   /// Callback method to indicate that a receive operation has completed.
   virtual void
-  recv_complete(const mpi_message::ptr& msg);
+  recv_complete(mpi_message* msg);
 
  private:
   static const char*
@@ -140,7 +140,7 @@ class mpi_rabenseifner : public mpi_collective
 
   std::list<mpi_id> pending_sends_complete_;
 
-  std::list<mpi_message::ptr> pending_recvs_complete_;
+  std::list<mpi_message*> pending_recvs_complete_;
 
 
 };

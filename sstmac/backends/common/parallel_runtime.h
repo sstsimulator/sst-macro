@@ -119,7 +119,7 @@ class parallel_runtime :
     topology_id tid,
     event_loc_id src,
     uint32_t seqnum,
-    const sst_message::ptr& msg);
+    sst_message* msg);
 
   int
   me() const {

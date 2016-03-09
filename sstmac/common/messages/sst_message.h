@@ -31,15 +31,12 @@ namespace sstmac {
  * A class describing an event.
  */
 class sst_message :
-  public sprockit::serializable_ptr_type,
+  public sprockit::serializable,
   public sprockit::serializable_type<sst_message>
 {
   ImplementSerializableDefaultConstructor(sst_message)
 
  public:
-  typedef sprockit::refcount_ptr<sst_message> ptr;
-  typedef sprockit::refcount_ptr<const sst_message> const_ptr;
-
   declare_expandable_enum(message_type_t);
   declare_expandable_enum(field);
 
@@ -113,7 +110,7 @@ class sst_message :
     This happens often enough to make it a top-level virtual function.
     If the message has no parent, it is its own parent.
   */
-  virtual sst_message::ptr
+  virtual sst_message*
   parent() const;
 
   virtual uint64_t

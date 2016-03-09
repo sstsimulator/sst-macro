@@ -43,7 +43,7 @@ class simple_switch :
    @param msg Incoming message (should cast to packet_train)
    */
   virtual void
-  handle(const sst_message::ptr& msg);
+  handle(sst_message* msg);
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   virtual void
@@ -112,8 +112,8 @@ class simple_switch :
 
 
  private:
-  void send_to_nic(timestamp delay, node_id dst, const sst_message::ptr& msg);
-  void send_to_switch(timestamp delay, node_id dst, const sst_message::ptr& msg);
+  void send_to_nic(timestamp delay, node_id dst, sst_message* msg);
+  void send_to_switch(timestamp delay, node_id dst, sst_message* msg);
 
 };
 

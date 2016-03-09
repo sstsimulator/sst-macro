@@ -8,7 +8,7 @@ namespace sw {
 void
 eager0_protocol::finish_recv_header(
   mpi_queue* queue,
-  const mpi_message::ptr& msg,
+  mpi_message* msg,
   mpi_queue_recv_request* req
 )
 {
@@ -20,7 +20,7 @@ eager0_protocol::finish_recv_header(
 void
 eager0_protocol::finish_recv_payload(
   mpi_queue* queue,
-  const mpi_message::ptr& msg,
+  mpi_message* msg,
   mpi_queue_recv_request* req
 )
 {
@@ -52,7 +52,7 @@ eager0_protocol::send_needs_nic_ack() const
 
 void
 eager0_protocol::incoming_header(mpi_queue* queue,
-                                const mpi_message::ptr& msg)
+                                mpi_message* msg)
 {
   spkt_throw_printf(sprockit::illformed_error,
        "%s handling header, but only payloads should arrive",

@@ -42,7 +42,7 @@ circuit_switch::get_new_injector(sprockit::sim_parameters* params)
 
 void
 circuit_switch::circuitpacketinjector::send(long nbytes, long byte_offset,
-    const sst_message::ptr& msg)
+    sst_message* msg)
 {
   timestamp delay(0);
   int vc;
@@ -62,7 +62,7 @@ circuit_switch::circuitpacketinjector::send(long nbytes, long byte_offset,
   }
   int inport;
 
-  network_message::ptr netmsg = safe_cast(network_message, msg);
+  network_message* netmsg = safe_cast(network_message, msg);
 
   if (circpar_->nodebuffers_.find(netmsg->fromaddr()) ==
       circpar_->nodebuffers_.end()) {
@@ -123,7 +123,7 @@ circuit_switch::circuitpacketinjector::send(long nbytes, long byte_offset,
   }
 
   if (netmsg->get_needs_ack() && tail_packet) {
-    network_message::ptr sendack = netmsg->clone_ack();
+    network_message* sendack = netmsg->clone_ack();
     int inj_port = parent_->topol()->node_to_injector_port(msg->fromaddr());
     parent_->schedule(parent_->now() + delay,
                       sendhandle_[inj_port], sendack);

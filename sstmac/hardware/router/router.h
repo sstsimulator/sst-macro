@@ -72,7 +72,7 @@ class router :
   finalize_init();
 
   virtual void
-  route(const sst_message::ptr& msg) = 0;
+  route(sst_message* msg) = 0;
 
   int
   convert_to_port(int dim, int dir);

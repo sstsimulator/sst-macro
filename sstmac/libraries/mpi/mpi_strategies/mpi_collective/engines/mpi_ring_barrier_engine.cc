@@ -52,7 +52,7 @@ mpi_ring_barrier_engine::sendrecv(bool firsttime)
 // Callback method to indicate that a send operation has completed.
 //
 void
-mpi_ring_barrier_engine::send_complete(const mpi_message::ptr& msg)
+mpi_ring_barrier_engine::send_complete(mpi_message* msg)
 {
   mpi_barrier_debug("send complete to %d, count=%d", int(msg->dest()), msg->count());
 }
@@ -61,7 +61,7 @@ mpi_ring_barrier_engine::send_complete(const mpi_message::ptr& msg)
 // Callback method to indicate that a receive operation has completed.
 //
 void
-mpi_ring_barrier_engine::recv_complete(const mpi_message::ptr& msg)
+mpi_ring_barrier_engine::recv_complete(mpi_message* msg)
 {
   mpi_barrier_debug("recv complete from %d, count=%d", int(msg->source()), msg->count());
 

@@ -29,7 +29,7 @@ dist_dummy_switch::connect_injector(int src_outport, int dst_inport, event_handl
 }
 
 void
-dist_dummy_switch::handle(const sst_message::ptr& msg)
+dist_dummy_switch::handle(sst_message* msg)
 {
   spkt_throw(sprockit::illformed_error,
     "dist_dummy_switch::handle: should never actually handle a message");

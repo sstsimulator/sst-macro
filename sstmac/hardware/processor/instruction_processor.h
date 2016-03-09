@@ -41,7 +41,7 @@ class instruction_processor :
   finalize_init();
 
   virtual void
-  compute(const sst_message::ptr& msg);
+  compute(sst_message* msg);
 
  protected:
   void
@@ -51,7 +51,7 @@ class instruction_processor :
   set_flop_distribution(double stdev);
 
   double
-  instruction_time(const sw::compute_message::ptr& msg);
+  instruction_time(sw::compute_message* msg);
 
  protected:
   double tflop_;

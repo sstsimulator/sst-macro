@@ -57,26 +57,22 @@ processor::delete_statics()
 }
 
 void
-processor::handle(const sst_message::ptr &msg)
+processor::handle(sst_message*msg)
 {
   spkt_throw(sprockit::unimplemented_error,
     "processor::handle: should never handle anything"); 
 }
 
 void
-processor::os_delayed_notify(timestamp delay, const sw::compute_message::ptr& msg)
+processor::os_delayed_notify(timestamp delay, sw::compute_message* msg)
 {
-  START_VALID_SCHEDULE(node_)
   node_->schedule_delay(delay, node_, msg);
-  STOP_VALID_SCHEDULE(node_)
 }
 
 void
-processor::os_notify_now(const sw::compute_message::ptr& msg)
+processor::os_notify_now(sw::compute_message* msg)
 {
-  START_VALID_SCHEDULE(node_)
   node_->schedule_now(node_, msg);
-  STOP_VALID_SCHEDULE(node_)
 }
 
 }

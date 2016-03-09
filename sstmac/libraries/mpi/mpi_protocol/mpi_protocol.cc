@@ -67,7 +67,7 @@ mpi_protocol::delete_statics()
 
 void
 mpi_protocol::handle_nic_ack(mpi_queue* queue,
-                             const mpi_message::ptr& msg)
+                             mpi_message* msg)
 {
   if (msg->count() >= 0) {
     queue->complete_nic_ack(msg);
@@ -76,7 +76,7 @@ mpi_protocol::handle_nic_ack(mpi_queue* queue,
 
 void
 mpi_protocol::incoming_payload(mpi_queue* queue,
-  const mpi_message::ptr& msg)
+  mpi_message* msg)
 {
   spkt_throw_printf(sprockit::illformed_error,
     "%s should never handle payload",
@@ -84,7 +84,7 @@ mpi_protocol::incoming_payload(mpi_queue* queue,
 }
 
 void
-eager_protocol::configure_send_buffer(const mpi_message::ptr& msg, void *buffer)
+eager_protocol::configure_send_buffer(mpi_message* msg, void *buffer)
 {
   long length = msg->payload_bytes();
   void* eager_buf = new char[length];

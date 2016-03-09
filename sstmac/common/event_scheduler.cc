@@ -45,7 +45,7 @@ event_scheduler::event_scheduler() :
 #endif
 
 void
-event_scheduler::handle(const sst_message::ptr &msg)
+event_scheduler::handle(sst_message*msg)
 {
   spkt_throw_printf(sprockit::unimplemented_error,
     "event scheduler %s should never handle messages",
@@ -81,7 +81,7 @@ event_scheduler::init(unsigned int phase)
 }
 
 void
-event_scheduler::schedule_now(event_handler *handler, const sst_message::ptr &msg)
+event_scheduler::schedule_now(event_handler *handler, sst_message*msg)
 {
   //this better be a zero latency link
   schedule(SST::Time_t(0), handler, msg);
@@ -94,21 +94,21 @@ event_scheduler::schedule_now(event *ev)
 }
 
 void
-event_scheduler::send_self_message(timestamp arrival, const sst_message::ptr &msg)
+event_scheduler::send_self_message(timestamp arrival, sst_message*msg)
 {
   SST::Time_t delay = extra_delay(arrival);
   self_link_->send(delay, time_converter_, new SSTHandlerEvent(this, msg));
 }
 
 void
-event_scheduler::send_delayed_self_message(timestamp delay, const sst_message::ptr &msg)
+event_scheduler::send_delayed_self_message(timestamp delay, sst_message*msg)
 {
   SST::Time_t sst_delay = delay.ticks_int64();
   self_link_->send(sst_delay, time_converter_, new SSTHandlerEvent(this, msg));
 }
 
 void
-event_scheduler::send_now_self_message(const sst_message::ptr &msg)
+event_scheduler::send_now_self_message(sst_message*msg)
 {
   self_link_->send(new SSTHandlerEvent(this, msg));
 }
@@ -134,7 +134,7 @@ event_scheduler::send_now_self_event(event* ev)
 }
 
 void
-event_scheduler::schedule(SST::Time_t delay, event_handler* handler, const sst_message::ptr& msg)
+event_scheduler::schedule(SST::Time_t delay, event_handler* handler, sst_message* msg)
 {
   fflush(stdout);
   switch(handler->type()){
@@ -155,7 +155,7 @@ event_scheduler::schedule(SST::Time_t delay, event_handler* handler, const sst_m
 void
 event_scheduler::schedule(timestamp t,
                           event_handler* handler,
-                          const sst_message::ptr& msg)
+                          sst_message* msg)
 {
   schedule(extra_delay(t), handler, msg);
 }
@@ -164,7 +164,7 @@ void
 event_scheduler::schedule_delay(
   timestamp delay,
   event_handler* handler,
-  const sst_message::ptr& msg)
+  sst_message* msg)
 {
   schedule(SST::Time_t(delay.ticks_int64()), handler, msg);
 }
@@ -185,7 +185,7 @@ event_scheduler::set_event_manager(event_manager* mgr)
 }
 
 void
-event_scheduler::schedule_now(event_handler *handler, const sst_message::ptr &msg)
+event_scheduler::schedule_now(event_handler *handler, sst_message*msg)
 {
   LINK_SCHEDULE_CHECK
   event* ev = new handler_event(msg, handler, event_location());
@@ -193,19 +193,19 @@ event_scheduler::schedule_now(event_handler *handler, const sst_message::ptr &ms
 }
 
 void
-event_scheduler::send_self_message(timestamp arrival, const sst_message::ptr &msg)
+event_scheduler::send_self_message(timestamp arrival, sst_message*msg)
 {
   SCHEDULE(arrival, this, msg);
 }
 
 void
-event_scheduler::send_delayed_self_message(timestamp delay, const sst_message::ptr &msg)
+event_scheduler::send_delayed_self_message(timestamp delay, sst_message*msg)
 {
   SCHEDULE_DELAY(delay, this, msg);
 }
 
 void
-event_scheduler::send_now_self_message(const sst_message::ptr &msg)
+event_scheduler::send_now_self_message(sst_message*msg)
 {
   SCHEDULE_NOW(this, msg);
 }
@@ -232,7 +232,7 @@ void
 event_scheduler::schedule_delay(
   timestamp delay,
   event_handler* handler,
-  const sst_message::ptr& msg)
+  sst_message* msg)
 {
   LINK_SCHEDULE_CHECK
   schedule(now() + delay, handler, msg);
@@ -283,7 +283,7 @@ event_scheduler::register_stat(stat_collector *coll)
 void
 event_scheduler::schedule(timestamp t,
                           event_handler* handler,
-                          const sst_message::ptr& msg)
+                          sst_message* msg)
 {
   LINK_SCHEDULE_CHECK
 #if SSTMAC_SANITY_CHECK
@@ -335,7 +335,7 @@ event_scheduler::schedule(timestamp t,
 #endif
 
 void
-event_subscheduler::handle(const sst_message::ptr &msg)
+event_subscheduler::handle(sst_message*msg)
 {
   spkt_throw_printf(sprockit::unimplemented_error,
     "event scheduler %s should never handle messages",
@@ -345,7 +345,7 @@ event_subscheduler::handle(const sst_message::ptr &msg)
 void
 event_subscheduler::schedule(timestamp t,
                           event_handler* handler,
-                          const sst_message::ptr& msg)
+                          sst_message* msg)
 {
   parent_->schedule(t, handler, msg);
 }
@@ -363,25 +363,25 @@ event_subscheduler::schedule(timestamp t, event *ev)
 }
 
 void
-event_subscheduler::schedule_now(event_handler *handler, const sst_message::ptr &msg)
+event_subscheduler::schedule_now(event_handler *handler, sst_message*msg)
 {
   parent_->schedule_now(handler, msg);
 }
 
 void
-event_subscheduler::send_self_message(timestamp arrival, const sst_message::ptr &msg)
+event_subscheduler::send_self_message(timestamp arrival, sst_message*msg)
 {
   parent_->schedule(arrival, this, msg);
 }
 
 void
-event_subscheduler::send_delayed_self_message(timestamp delay, const sst_message::ptr &msg)
+event_subscheduler::send_delayed_self_message(timestamp delay, sst_message*msg)
 {
   parent_->schedule_delay(delay, this, msg);
 }
 
 void
-event_subscheduler::send_now_self_message(const sst_message::ptr &msg)
+event_subscheduler::send_now_self_message(sst_message*msg)
 {
   parent_->schedule_now(this, msg);
 }
@@ -408,7 +408,7 @@ void
 event_subscheduler::schedule_delay(
   timestamp delay,
   event_handler* handler,
-  const sst_message::ptr& msg)
+  sst_message* msg)
 {
   parent_->schedule_delay(delay, handler, msg);
 }

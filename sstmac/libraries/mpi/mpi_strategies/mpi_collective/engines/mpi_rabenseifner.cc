@@ -84,8 +84,8 @@ mpi_rabenseifner::do_sendrecv()
   }
 
   while (pending_recvs_complete_.begin() != pending_recvs_complete_.end()) {
-    std::list<mpi_message::ptr>::iterator tmp = pending_recvs_complete_.begin();
-    mpi_message::ptr msg = *tmp;
+    std::list<mpi_message*>::iterator tmp = pending_recvs_complete_.begin();
+    mpi_message* msg = *tmp;
     pending_recvs_complete_.erase(tmp);
     do_recv_complete(msg);
   }
@@ -111,7 +111,7 @@ mpi_rabenseifner::do_sendrecv()
 // Callback method to indicate that a send operation has completed.
 //
 void
-mpi_rabenseifner::send_complete(const mpi_message::ptr& msg)
+mpi_rabenseifner::send_complete(mpi_message* msg)
 {
   if (complete_lock_) {
     pending_sends_complete_.push_back(msg->source());
@@ -143,7 +143,7 @@ mpi_rabenseifner::do_send_complete(mpi_id id)
 }
 
 void
-mpi_rabenseifner::do_recv_complete(const mpi_message::ptr& msg)
+mpi_rabenseifner::do_recv_complete(mpi_message* msg)
 {
   --pending_recvs_;
 
@@ -174,7 +174,7 @@ mpi_rabenseifner::do_recv_complete(const mpi_message::ptr& msg)
 // Callback method to indicate that a receive operation has completed.
 //
 void
-mpi_rabenseifner::recv_complete(const mpi_message::ptr& msg)
+mpi_rabenseifner::recv_complete(mpi_message* msg)
 {
   mpi_reduce_debug("start recv complete from %d, count=%d on tag %d: reduce? %d",
     int(msg->source()), msg->count(), int(tag_), reduce_this_recv_);

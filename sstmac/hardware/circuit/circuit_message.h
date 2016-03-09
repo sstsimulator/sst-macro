@@ -29,9 +29,6 @@ class circuit_message :
 {
 
  public:
-  typedef sprockit::refcount_ptr<circuit_message> ptr;
-  typedef sprockit::refcount_ptr<const circuit_message> const_ptr;
-
   enum CIRCUIT_TYPE {
     SETUP, TEARDOWN, BLOCKED, TURNING, PATH_ACK, DATA
   };
@@ -44,7 +41,7 @@ class circuit_message :
   timestamp ttl_;
   timestamp arrive_;
 
-  circuit_message(const sst_message::ptr& orig,
+  circuit_message(sst_message* orig,
                   long num_bytes, long byte_offset, CIRCUIT_TYPE t) :
     message_chunk(orig, num_bytes, byte_offset),
     routable_message(orig->toaddr(), orig->fromaddr()),

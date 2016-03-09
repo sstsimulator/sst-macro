@@ -45,19 +45,19 @@ class circuit_nic : public nic
   finalize_init();
 
   virtual void
-  handle(const sst_message::ptr& msg);
+  handle(sst_message* msg);
 
   void
-  timeout(sst_message::ptr msg);
+  timeout(sst_message* msg);
 
   void
-  send_out_resetup(const sst_message::ptr& msg);
+  send_out_resetup(sst_message* msg);
 
   bool
-  msg_supported(const sst_message::ptr& msg) const;
+  msg_supported(sst_message* msg) const;
 
   void
-  newmsg(const sst_message::ptr&m) {
+  newmsg(sst_message*m) {
     busy_ = false;
     check_jobs();
   }
@@ -65,15 +65,15 @@ class circuit_nic : public nic
  protected:
   struct job {
     node_id recver;
-    sst_message::ptr payload;
+    sst_message* payload;
     timestamp arrived;
   };
 
   virtual void
-  do_send(const network_message::ptr& payload);
+  do_send(network_message* payload);
 
   void
-  recv_chunk(const sst_message::ptr& chunk);
+  recv_chunk(sst_message* chunk);
 
   void
   init_factory_params(sprockit::sim_parameters* params);
@@ -105,7 +105,7 @@ class circuit_nic : public nic
 
  private:
   void
-  send_to_network_link(const sst_message::ptr& msg,
+  send_to_network_link(sst_message* msg,
                        node_id recver, const timestamp &arrived);
 
  protected:

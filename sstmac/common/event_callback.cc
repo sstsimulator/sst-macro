@@ -8,7 +8,7 @@ event_callback::~event_callback()
 }
 
 void
-event_callback::handle(const sst_message::ptr& msg)
+event_callback::handle(sst_message* msg)
 {
   callback(msg);
 }

@@ -8,7 +8,7 @@ namespace sw {
 void
 rendezvous_protocol::finish_recv_header(
   mpi_queue* queue,
-  const mpi_message::ptr& msg,
+  mpi_message* msg,
   mpi_queue_recv_request* req
 )
 {

@@ -23,12 +23,12 @@ class packet_flow_endpoint :
   virtual ~packet_flow_endpoint() {}
 
   void
-  handle_credit(const packet_flow_credit::ptr& msg) {
+  handle_credit(packet_flow_credit* msg) {
     packet_flow_handler::handle_credit(msg);
   }
 
   virtual void
-  handle_payload(const packet_flow_payload::ptr& msg) = 0;
+  handle_payload(packet_flow_payload* msg) = 0;
 
   void
   set_exit(event_handler* handler) {
@@ -42,7 +42,7 @@ class packet_flow_endpoint :
   }
 
   void
-  payload_arrived(const packet_flow_payload::ptr& msg);
+  payload_arrived(packet_flow_payload* msg);
 
  protected:
   packet_flow_endpoint();
@@ -60,7 +60,7 @@ class packet_flow_simple_endpoint :
 {
  public:
   void
-  handle_payload(const packet_flow_payload::ptr& msg);
+  handle_payload(packet_flow_payload* msg);
 
   packet_flow_endpoint*
   clone() const {
@@ -73,7 +73,7 @@ class packet_flow_null_endpoint :
 {
  public:
   void
-  handle_payload(const packet_flow_payload::ptr& msg);
+  handle_payload(packet_flow_payload* msg);
 
   packet_flow_endpoint*
   clone() const {
@@ -86,7 +86,7 @@ class packet_flow_cut_through_endpoint :
 {
  public:
   void
-  handle_payload(const packet_flow_payload::ptr& msg);
+  handle_payload(packet_flow_payload* msg);
 
   packet_flow_endpoint*
   clone() const {

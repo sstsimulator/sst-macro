@@ -173,7 +173,7 @@ macro_switch_interconnect::init_factory_params(sprockit::sim_parameters* params)
 }
 
 void
-macro_switch_interconnect::immediate_send(event_scheduler* src, const sst_message::ptr& msg, timestamp start) const
+macro_switch_interconnect::immediate_send(event_scheduler* src, sst_message* msg, timestamp start) const
 {
   node* dst_node = node_at(msg->toaddr());
   int num_hops = topology_->num_hops_to_node(msg->fromaddr(), msg->toaddr());

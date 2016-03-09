@@ -65,7 +65,7 @@ circuit_nic::finalize_init()
 }
 
 void
-circuit_nic::do_send(const network_message::ptr& payload)
+circuit_nic::do_send(network_message* payload)
 {
   job j;
   j.payload = payload;
@@ -83,7 +83,7 @@ circuit_nic::check_jobs()
     circuit_nic_debug("starting job");
     spkt_throw(sprockit::unimplemented_error, "circuit_nic::check_jobs");
     //send_to_network_link();
-    //sst_message::ptr msg = new_message_callback(this,
+    //sst_message* msg = new_message_callback(this,
     //                       &circuit_nic::send_to_network_link, jobs_.front().payload,
     //                       jobs_.front().recver, jobs_.front().arrived);
     //parent_node()->os()->execute_kernel(sstmac::sw::ami::AMI_COMP_MEM, msg);
@@ -97,7 +97,7 @@ circuit_nic::check_jobs()
 //
 void
 circuit_nic::send_to_network_link(
-  const sst_message::ptr& payload,
+  sst_message* payload,
   node_id recver,
   const timestamp &arrived)
 {
@@ -148,13 +148,13 @@ circuit_nic::send_to_network_link(
 }
 
 void
-circuit_nic::handle(const sst_message::ptr& msg)
+circuit_nic::handle(sst_message* msg)
 {
   nic::handle(msg);
 }
 
 void
-circuit_nic::timeout(sst_message::ptr msg)
+circuit_nic::timeout(sst_message* msg)
 {
   circuit_message::ptr circ = ptr_safe_cast(circuit_message, msg);
   if (circ == current_) { // we're still working on this, redo it
@@ -200,7 +200,7 @@ circuit_nic::timeout(sst_message::ptr msg)
 }
 
 void
-circuit_nic::send_out_resetup(const sst_message::ptr& msg)
+circuit_nic::send_out_resetup(sst_message* msg)
 {
   if (current_) {
     injector_->handle(msg);
@@ -217,7 +217,7 @@ circuit_nic::injection_latency() const
 
 
 void
-circuit_nic::recv_chunk(const message_chunk::ptr& chunk)
+circuit_nic::recv_chunk(message_chunk* chunk)
 {
   circuit_message::ptr circ = ptr_safe_cast(circuit_message, chunk,
                                         "circuit_nic::do_recv: incoming message");
@@ -252,7 +252,7 @@ circuit_nic::recv_chunk(const message_chunk::ptr& chunk)
         circ->to_string().c_str(), circ->orig()->to_string().c_str());
 
     got_path_acks_++;
-    network_message::ptr parent_msg = ptr_safe_cast(network_message, circ->orig());
+    network_message* parent_msg = ptr_safe_cast(network_message, circ->orig());
     circuit_message::ptr circout = new circuit_message(parent_msg,
                                      parent_msg->byte_length(), 0, circuit_message::DATA);
 
@@ -284,12 +284,12 @@ circuit_nic::recv_chunk(const message_chunk::ptr& chunk)
 
     //schedule a message so we check the jobs again
     event_handler* ev = new_callback(this, &circuit_nic::newmsg,
-                                         sst_message::ptr());
-    schedule(at + timestamp(10e-9), ev, sst_message::ptr());
+                                         sst_message*());
+    schedule(at + timestamp(10e-9), ev, sst_message*());
 
     if (parent_msg->needs_ack()) {
       circuit_nic_debug("sending back hardware ack");
-      network_message::ptr sendack = parent_msg->clone_injection_ack();
+      network_message* sendack = parent_msg->clone_injection_ack();
       schedule(now(), parent_, sendack);
     }
 

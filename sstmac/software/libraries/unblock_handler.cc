@@ -5,7 +5,7 @@ namespace sstmac {
 namespace sw {
 
 void
-unblock_handler::handle(const sst_message::ptr& msg)
+unblock_handler::handle(sst_message* msg)
 {
   os_->unblock(key_);
 }

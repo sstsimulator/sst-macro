@@ -46,23 +46,23 @@ class service_thread_mpi_queue :
       mpi_request* req);
 
   virtual void
-  incoming_message(const mpi_message::ptr& message);
+  incoming_message(mpi_message* message);
 
   virtual void
-  buffered_send(const mpi_message::ptr& msg);
+  buffered_send(mpi_message* msg);
 
   virtual void
-  buffered_recv(const mpi_message::ptr& msg,
+  buffered_recv(mpi_message* msg,
                 mpi_queue_recv_request* req);
 
   virtual void
-  buffer_unexpected(const mpi_message::ptr& msg);
+  buffer_unexpected(mpi_message* msg);
 
   virtual void
-  post_rdma(const mpi_message::ptr& msg);
+  post_rdma(mpi_message* msg);
 
   virtual void
-  post_header(const mpi_message::ptr& msg);
+  post_header(mpi_message* msg);
 
   virtual bool
   is_service_thread() const {
@@ -75,7 +75,7 @@ class service_thread_mpi_queue :
   check_timeout(const timestamp& t, key* thekey);
 
   virtual void
-  do_send(const mpi_message::ptr& mess);
+  do_send(mpi_message* mess);
 
   virtual void
   do_recv(mpi_queue_recv_request* req);

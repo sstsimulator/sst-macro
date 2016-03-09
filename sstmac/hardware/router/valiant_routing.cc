@@ -13,7 +13,7 @@ SpktRegister("valiant", router, valiant_router,
 valiant_router::next_action_t
 valiant_router::initial_step(
   routing_info& rinfo,
-  const sst_message::ptr& msg)
+  sst_message* msg)
 {
   routing_info::path unused_path;
   int dir = 0;
@@ -43,7 +43,7 @@ valiant_router::finalize_init()
 valiant_router::next_action_t
 valiant_router::intermediate_step(
   routing_info& rinfo,
-  const sst_message::ptr& msg)
+  sst_message* msg)
 {
   if (rinfo.dest_switch() == addr()) {
     // Let topology know we're switching to a new routing stage,
@@ -63,7 +63,7 @@ valiant_router::intermediate_step(
 }
 
 valiant_router::next_action_t
-valiant_router::next_routing_stage(const sst_message::ptr& msg)
+valiant_router::next_routing_stage(sst_message* msg)
 {
   routing_info& rinfo = msg->interface<routable>()->rinfo();
   if (rinfo.current_path().metadata_bit(routing_info::final_stage)) {
@@ -92,7 +92,7 @@ valiant_router::configure_intermediate_path(routing_info::path& path)
 }
 
 void
-valiant_router::route_valiant(const sst_message::ptr& msg)
+valiant_router::route_valiant(sst_message* msg)
 {
   routing_info& rinfo = msg->interface<routable>()->rinfo();
   next_action_t ac = next_routing_stage(msg);
@@ -115,7 +115,7 @@ valiant_router::route_valiant(const sst_message::ptr& msg)
 }
 
 void
-valiant_router::route(const sst_message::ptr& msg)
+valiant_router::route(sst_message* msg)
 {
   routing_info& rinfo = msg->interface<routable>()->rinfo();
   rinfo.init_default_algo(routing::valiant);
@@ -134,7 +134,7 @@ valiant_router::route(const sst_message::ptr& msg)
 }
 
 void
-valiant_router::route(const sst_message::ptr& msg, routing_info::path_set& paths)
+valiant_router::route(sst_message* msg, routing_info::path_set& paths)
 {
   routing_info& rinfo = msg->interface<routable>()->rinfo();
   next_action_t ac = next_routing_stage(msg);

@@ -92,11 +92,11 @@ class mpi_collective  {
 
   /// Callback method to indicate that a send operation has completed.
   virtual void
-  send_complete(const mpi_message::ptr& msg) = 0;
+  send_complete(mpi_message* msg) = 0;
 
   /// Callback method to indicate that a receive operation has completed.
   virtual void
-  recv_complete(const mpi_message::ptr& msg) = 0;
+  recv_complete(mpi_message* msg) = 0;
 
   void
   start();

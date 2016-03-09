@@ -5,7 +5,7 @@
 namespace sstmac {
 
 message_chunk::message_chunk(
-  const sst_message::ptr& orig,
+  sst_message* orig,
   long num_bytes,
   long byte_offset) :
  num_bytes_(num_bytes),

@@ -335,7 +335,7 @@ operating_system::clone(node_id addr) const
 
 void
 operating_system::execute_kernel(ami::COMP_FUNC func,
-                                 const sst_message::ptr& data)
+                                 sst_message* data)
 {
   //first thing's first - make sure I have a core to execute on
   thread_data_t top = threadstack_.top();  
@@ -355,7 +355,7 @@ operating_system::execute_kernel(ami::COMP_FUNC func,
 
 void
 operating_system::execute_kernel(ami::COMM_FUNC func,
-                                 const sst_message::ptr& data)
+                                 sst_message* data)
 {
   node_->execute_kernel(func, data);
 }
@@ -980,14 +980,14 @@ operating_system::start_app(app* theapp)
   //check pending messages
   int psize = pending_messages_.size();
   for (int i = 0; i < psize; i++) {
-    sst_message::ptr msg = pending_messages_.front();
+    sst_message* msg = pending_messages_.front();
     pending_messages_.pop_front();
     handle_message(msg);
   }
 }
 
 void
-operating_system::handle_message(const sst_message::ptr& msg)
+operating_system::handle_message(sst_message* msg)
 {
   if (msg->has_key()){
     //I need to do some unblocking of a thread
@@ -996,7 +996,7 @@ operating_system::handle_message(const sst_message::ptr& msg)
   }
   
   //otherwise this is an incoming message to a library, probably from off node
-  library_interface* libmsg = ptr_test_cast(library_interface, msg);
+  library_interface* libmsg = test_cast(library_interface, msg);
   if (!libmsg) {
     spkt_throw_printf(sprockit::illformed_error,
       "operating_system::handle_message: got message %s of type %s instead of library message",

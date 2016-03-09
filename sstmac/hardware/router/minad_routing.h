@@ -17,7 +17,7 @@ class minimal_adaptive_router :
   }
 
   virtual void
-  route(const sst_message::ptr& msg);
+  route(sst_message* msg);
 
   virtual void
   finalize_init();

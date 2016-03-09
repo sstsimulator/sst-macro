@@ -64,11 +64,11 @@ simple_node::set_event_manager(event_manager* m)
 
 void
 simple_node::execute_kernel(ami::COMM_FUNC func,
-                            const sst_message::ptr& data)
+                            sst_message* data)
 {
   switch (func) {
     case sstmac::ami::COMM_SEND: {
-      network_message::ptr netmsg = ptr_safe_cast(network_message, data);
+      network_message* netmsg = safe_cast(network_message, data);
       netmsg->set_fromaddr(my_addr_);
       node_debug("sending to %d", int(netmsg->toaddr()));
       send_to_nic(netmsg);
@@ -83,7 +83,7 @@ simple_node::execute_kernel(ami::COMM_FUNC func,
 
 bool
 simple_node::try_comp_kernels(ami::COMP_FUNC func,
-                              const sst_message::ptr& data)
+                              sst_message* data)
 {
   bool handled = true;
 
@@ -100,7 +100,7 @@ simple_node::try_comp_kernels(ami::COMP_FUNC func,
     }
 
     case sstmac::ami::COMP_SLEEP: {
-      timestamp delay = ptr_interface_cast(timed_interface, data)->time();
+      timestamp delay = interface_cast(timed_interface, data)->time();
       send_delayed_self_message(delay, data);
       break;
     }
@@ -113,7 +113,7 @@ simple_node::try_comp_kernels(ami::COMP_FUNC func,
 
 void
 simple_node::execute_kernel(ami::COMP_FUNC func,
-                            const sst_message::ptr& data)
+                            sst_message* data)
 {
   bool hand = try_comp_kernels(func, data);
   if (!hand) {

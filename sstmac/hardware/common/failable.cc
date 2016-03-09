@@ -6,7 +6,7 @@ namespace sstmac {
   namespace hw {
 
 void
-failable::handle(const sst_message::ptr& msg)
+failable::handle(sst_message* msg)
 {
   if (failed_){
     handle_while_failed(msg);
@@ -21,7 +21,7 @@ failable::handle(const sst_message::ptr& msg)
 }
 
 void
-failable::fail(const sst_message::ptr& msg)
+failable::fail(sst_message* msg)
 {
   if (failed_)
     return;

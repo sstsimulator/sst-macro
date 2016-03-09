@@ -21,12 +21,12 @@ namespace sstmac {
 class SSTMessageEvent : public SST::Event {
 
   public:
-    SSTMessageEvent(const sst_message::ptr& msg) : msg_to_deliver_(msg)
+    SSTMessageEvent(sst_message* msg) : msg_to_deliver_(msg)
     {
 
     }
 
-    sst_message::ptr
+    sst_message*
     message() const {
       return msg_to_deliver_;
     }
@@ -39,7 +39,7 @@ class SSTMessageEvent : public SST::Event {
 
   private:
 
-    sst_message::ptr msg_to_deliver_;
+    sst_message* msg_to_deliver_;
 
 };
 

@@ -25,7 +25,7 @@ static sprockit::need_delete_statics<memory_model> need_del;
 
 memory_model::memory_model()
 {
-  sst_message::ptr msg;
+  sst_message* msg;
 }
 
 void

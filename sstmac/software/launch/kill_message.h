@@ -23,8 +23,6 @@ class kill_message : public launch_message
 {
 
  public:
-  typedef sprockit::refcount_ptr<kill_message> ptr;
-
   /**
    * Stringifier
    * @return String description

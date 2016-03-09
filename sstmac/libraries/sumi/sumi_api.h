@@ -29,14 +29,14 @@ class sumi_queue
 
   sumi_queue();
 
-  transport_message::ptr
+  transport_message*
   poll_until_message();
 
-  transport_message::ptr
+  transport_message*
   poll_until_message(timestamp timeout);
 
   void
-  put_message(const transport_message::ptr& message);
+  put_message(transport_message* message);
 
   bool
   blocked() const {
@@ -44,7 +44,7 @@ class sumi_queue
   }
 
  private:
-  std::list<transport_message::ptr> pending_messages_;
+  std::list<transport_message*> pending_messages_;
 
   std::list<sstmac::sw::key*> blocked_keys_;
 
@@ -84,10 +84,10 @@ class sumi_api :
   poll_until_notification(timestamp timeout);
 
   virtual transport_message::payload_ptr
-  handle(const transport_message::ptr& msg) = 0;
+  handle(transport_message* msg) = 0;
   
   void
-  incoming_message(const transport_message::ptr& msg);
+  incoming_message(transport_message* msg);
 
   void
   transport_send(
@@ -134,7 +134,7 @@ class sumi_server :
   sumi_server(int appid);
 
   void
-  incoming_message(const sstmac::sst_message::ptr& msg);
+  incoming_message(sstmac::sst_message* msg);
 
   void
   register_proc(int rank, sumi_api* proc);

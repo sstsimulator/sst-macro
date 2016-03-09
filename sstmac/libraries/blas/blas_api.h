@@ -19,13 +19,13 @@ class blas_kernel :
   virtual std::string
   to_string() const = 0;
 
-  virtual compute_message::ptr
+  virtual compute_message*
   op_3d(int m, int k, int n);
 
-  virtual compute_message::ptr
+  virtual compute_message*
   op_2d(int m, int n);
 
-  virtual compute_message::ptr
+  virtual compute_message*
   op_1d(int n);
 
 };

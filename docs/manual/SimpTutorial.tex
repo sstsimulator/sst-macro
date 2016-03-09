@@ -77,7 +77,7 @@ The next part of the code (omitted) implements various constructors.
 The most important function call to implement is the \inlinecode{clone} method
 
 \begin{CppCode}
-        sst_message::ptr
+        sst_message*
         clone(MESSAGE_TYPES ty) const
         {
             test_message::ptr cln = new test_message(value_, action_);

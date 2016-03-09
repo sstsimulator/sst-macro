@@ -44,7 +44,7 @@ class memory_model :
   virtual ~memory_model();
 
   virtual void
-  access(const sst_message::ptr& msg) = 0;
+  access(sst_message* msg) = 0;
 
   virtual std::string
   to_string() const {

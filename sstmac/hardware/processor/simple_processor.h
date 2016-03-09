@@ -34,7 +34,7 @@ class simple_processor :
   finalize_init();
 
   void
-  compute(const sst_message::ptr& msg);
+  compute(sst_message* msg);
 
   virtual std::string
   to_string() const {

@@ -88,7 +88,7 @@ class event_scheduler :
   }
 
   virtual void
-  handle(const sst_message::ptr& msg);
+  handle(sst_message* msg);
 
   void
   cancel_all_messages();
@@ -102,7 +102,7 @@ class event_scheduler :
   void
   schedule(timestamp t,
            event_handler* handler,
-           const sst_message::ptr& msg);
+           sst_message* msg);
 
   void
   schedule(timestamp t, event_handler* handler);
@@ -114,23 +114,23 @@ class event_scheduler :
   schedule_now(event* ev);
   
   void
-  schedule_now(event_handler* handler, const sst_message::ptr& msg);
+  schedule_now(event_handler* handler, sst_message* msg);
 
   void
   schedule_delay(timestamp delay,
                  event_handler* handler,
-                 const sst_message::ptr& msg);
+                 sst_message* msg);
   void
   schedule_delay(timestamp delay, event* ev);
 
   void
-  send_self_message(timestamp arrival, const sst_message::ptr& msg);
+  send_self_message(timestamp arrival, sst_message* msg);
 
   void
-  send_delayed_self_message(timestamp delay, const sst_message::ptr& msg);
+  send_delayed_self_message(timestamp delay, sst_message* msg);
 
   void
-  send_now_self_message(const sst_message::ptr& msg);
+  send_now_self_message(sst_message* msg);
 
   void
   send_self_event(timestamp arrival, event* ev);
@@ -177,7 +177,7 @@ class event_scheduler :
 
  private:
   void
-  schedule(SST::Time_t delay, event_handler* handler, const sst_message::ptr& msg);
+  schedule(SST::Time_t delay, event_handler* handler, sst_message* msg);
 
 #else
  public:
@@ -243,7 +243,7 @@ class event_subscheduler :
   }
 
   virtual void
-  handle(const sst_message::ptr& msg);
+  handle(sst_message* msg);
 
   /**
    * Add an event to the event queue, where msg will get delivered to handler at time t.
@@ -254,7 +254,7 @@ class event_subscheduler :
   void
   schedule(timestamp t,
            event_handler* handler,
-           const sst_message::ptr& msg);
+           sst_message* msg);
 
   void
   schedule(timestamp t, event_handler* handler);
@@ -266,23 +266,23 @@ class event_subscheduler :
   schedule_now(event* ev);
 
   void
-  schedule_now(event_handler* handler, const sst_message::ptr& msg);
+  schedule_now(event_handler* handler, sst_message* msg);
 
   void
   schedule_delay(timestamp delay,
                  event_handler* handler,
-                 const sst_message::ptr& msg);
+                 sst_message* msg);
   void
   schedule_delay(timestamp delay, event* ev);
 
   void
-  send_self_message(timestamp arrival, const sst_message::ptr& msg);
+  send_self_message(timestamp arrival, sst_message* msg);
 
   void
-  send_delayed_self_message(timestamp delay, const sst_message::ptr& msg);
+  send_delayed_self_message(timestamp delay, sst_message* msg);
 
   void
-  send_now_self_message(const sst_message::ptr& msg);
+  send_now_self_message(sst_message* msg);
 
   void
   send_self_event(timestamp arrival, event* ev);

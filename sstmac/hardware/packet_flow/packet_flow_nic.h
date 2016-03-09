@@ -71,13 +71,13 @@ class packet_flow_nic :
 
  protected:
   virtual void
-  recv_chunk(const sst_message::ptr& chunk);
+  recv_chunk(sst_message* chunk);
 
   virtual void
-  recv_credit(const sst_message::ptr& credit);
+  recv_credit(sst_message* credit);
 
   virtual void
-  do_send(const network_message::ptr& payload);
+  do_send(network_message* payload);
 
  protected:
   stat_histogram* congestion_hist_;
@@ -122,7 +122,7 @@ class packet_flow_netlink :
   set_event_parent(event_scheduler* m);
 
   void
-  handle(const sst_message::ptr &msg);
+  handle(sst_message*msg);
 
   event_handler*
   ejector() {

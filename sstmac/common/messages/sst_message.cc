@@ -33,7 +33,7 @@ sst_message::sst_message() :
 {
 }
 
-sst_message::ptr
+sst_message*
 sst_message::parent() const
 {
   return const_cast<sst_message*>(this);

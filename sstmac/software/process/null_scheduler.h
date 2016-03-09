@@ -19,17 +19,17 @@ class null_scheduler :
   clone(node_id nid, sw::operating_system* os) const;
 
   void
-  handle(const sst_message::ptr& msg) {}
+  handle(sst_message* msg) {}
 
  protected:
   bool
-  find_open_core(const sw::compute_message::ptr&msg, int &core_assignment);
+  find_open_core(const sw::compute_message*&msg, int &core_assignment);
 
   void
   start_next_suspended(int core);
 
   void
-  add_suspended(const sw::compute_message::ptr&msg, int core);
+  add_suspended(const sw::compute_message*&msg, int core);
 
 };
 

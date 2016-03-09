@@ -22,7 +22,7 @@ class packet_flow_bandwidth_arbitrator :
   virtual void
   arbitrate(
     timestamp now,
-    const packet_flow_payload::ptr& payload,
+    packet_flow_payload* payload,
     timestamp& packet_head_leaves,
     timestamp& packet_tail_leaves,
     timestamp& credit_leaves) = 0;
@@ -83,7 +83,7 @@ class packet_flow_null_arbitrator :
 
   virtual void
   arbitrate(timestamp next_free,
-    const packet_flow_payload::ptr& payload,
+    packet_flow_payload* payload,
     timestamp& packet_head_leaves,
     timestamp& packet_tail_leaves,
     timestamp& credit_leaves);
@@ -114,7 +114,7 @@ class packet_flow_simple_arbitrator :
 
   virtual void
   arbitrate(timestamp now,
-    const packet_flow_payload::ptr& payload,
+    packet_flow_payload* payload,
     timestamp& packet_head_leaves,
     timestamp& packet_tail_leaves,
     timestamp& credit_leaves);
@@ -148,7 +148,7 @@ class packet_flow_cut_through_arbitrator :
 
   virtual void
   arbitrate(timestamp now,
-    const packet_flow_payload::ptr& payload,
+    packet_flow_payload* payload,
     timestamp& packet_head_leaves,
     timestamp& packet_tail_leaves,
     timestamp& credit_leaves);
@@ -184,7 +184,7 @@ class packet_flow_cut_through_arbitrator :
 
   void
   do_arbitrate(timestamp now,
-    const packet_flow_payload::ptr& payload,
+    packet_flow_payload* payload,
     timestamp& packet_head_leaves,
     timestamp& packet_tail_leaves);
 

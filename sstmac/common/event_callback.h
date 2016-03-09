@@ -29,10 +29,10 @@ class event_callback : public event_handler
   virtual ~event_callback();
 
   virtual void
-  handle(const sst_message::ptr& msg);
+  handle(sst_message* msg);
 
   virtual void
-  callback(const sst_message::ptr& msg) = 0;
+  callback(sst_message* msg) = 0;
 
   virtual std::string
   to_string() const;
@@ -61,7 +61,7 @@ class event_callback_msg : public event_callback
   }
 
   void
-  callback(const sst_message::ptr& msg) {
+  callback(sst_message* msg) {
     (obj_->*fxn_)(msg);
   }
 
@@ -87,7 +87,7 @@ class eventcallback_msg_1_args : public event_callback
   }
 
   void
-  callback(const sst_message::ptr& msg) {
+  callback(sst_message* msg) {
     Cls& obj = *obj_;
     (obj_->*fxn_)(msg, arg1_);
   }
@@ -115,7 +115,7 @@ class event_callback_msg_2_args : public event_callback
   }
 
   void
-  callback(const sst_message::ptr& msg) {
+  callback(sst_message* msg) {
     Cls& obj = *obj_;
     (obj_->*fxn_)(msg, arg1_, arg2_);
   }
@@ -287,7 +287,7 @@ class event_callback_tmpl_0_args : public event_callback
   }
 
   void
-  callback(const sst_message::ptr& msg) {
+  callback(sst_message* msg) {
     Cls& obj = *obj_;
     (obj_->*fxn_)();
   }
@@ -311,7 +311,7 @@ class event_callback_tmpl_1_args : public event_callback
   }
 
   void
-  callback(const sst_message::ptr& msg) {
+  callback(sst_message* msg) {
     (obj_->*fxn_)(arg1_);
   }
 
@@ -336,7 +336,7 @@ class event_callback_tmpl_2_args : public event_callback
   }
 
   void
-  callback(const sst_message::ptr& msg) {
+  callback(sst_message* msg) {
     (obj_->*fxn_)(arg1_, arg2_);
   }
 
@@ -363,7 +363,7 @@ class event_callback_tmpl_3_args : public event_callback
   }
 
   void
-  callback(const sst_message::ptr& msg) {
+  callback(sst_message* msg) {
     (obj_->*fxn_)(arg1_, arg2_, arg3_);
   }
 

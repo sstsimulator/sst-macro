@@ -59,7 +59,7 @@ lib_compute_time::compute(timestamp time)
       spkt_throw(sprockit::value_error,
                 "lib_compute_time can't compute for less than zero time");
     }
-    compute_message::ptr cmsg = new compute_message;
+    compute_message* cmsg = new compute_message;
     cmsg->set_event_time(time);
     os_->execute_kernel(ami::COMP_TIME, cmsg);
 
@@ -71,6 +71,7 @@ lib_compute_time::compute(timestamp time)
       "Node %d: finishing compute %s",
       int(os_->my_addr()),
       cmsg->debug_string().c_str());
+    delete cmsg;
   }
   else {
     spkt_throw_printf(sprockit::value_error,

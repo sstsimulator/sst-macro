@@ -228,7 +228,7 @@ macro_interconnect::init_factory_params(sprockit::sim_parameters* params)
 }
 
 void
-macro_interconnect::handle(const sst_message::ptr& msg)
+macro_interconnect::handle(sst_message* msg)
 {
   spkt_throw(sprockit::value_error, "interconnect should never handle messages");
 }
@@ -238,7 +238,7 @@ macro_interconnect::set_event_manager_common(event_manager* m)
 {
   std::list<fail_event>::iterator it, end = failures_to_schedule_.end();
   for (it=failures_to_schedule_.begin(); it != end; ++it){
-    node_fail_message::ptr fail_msg = new node_fail_message;
+    node_fail_message* fail_msg = new node_fail_message;
     fail_event ev = *it;
 
     //I might not own this node

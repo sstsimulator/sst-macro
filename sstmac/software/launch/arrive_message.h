@@ -23,8 +23,6 @@ class arrive_message : public launch_message
 {
 
  public:
-  typedef sprockit::refcount_ptr<arrive_message> ptr;
-
   /**
    * Stringifier
    * @return String description

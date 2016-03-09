@@ -36,11 +36,11 @@ class mpi_queue_probe_request  {
 
   /// Test whether we match a given message.
   bool
-  matches(const mpi_message::ptr& message) const;
+  matches(mpi_message* message) const;
 
   /// Consider this request complete.
   void
-  complete(const mpi_message::ptr& message);
+  complete(mpi_message* message);
 
  protected:
   /// The parameters we will be matching on.

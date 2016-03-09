@@ -39,7 +39,7 @@ class mpi_request  {
   // --------------------------------------//
 
   void
-  complete(const mpi_message::ptr& msg);
+  complete(mpi_message* msg);
 
   bool
   is_complete() const {
@@ -49,7 +49,7 @@ class mpi_request  {
   void
   cancel() {
     cancelled_ = true;
-    complete(mpi_message::ptr());
+    complete(NULL);
   }
 
   const mpi_status&

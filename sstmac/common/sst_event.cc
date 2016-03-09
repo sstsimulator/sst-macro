@@ -33,7 +33,7 @@ handler_event::execute()
   handler_->handle(msg_to_deliver_);
 }
 
-handler_event::handler_event(const sst_message::ptr& msg,
+handler_event::handler_event(sst_message* msg,
                            event_handler* hand,
                            event_loc_id src_loc) :
   msg_to_deliver_(msg),
@@ -45,7 +45,7 @@ handler_event::handler_event(const sst_message::ptr& msg,
 void
 null_msg_event::execute()
 {
-  handler_->handle(sst_message::ptr());
+  handler_->handle(NULL);
 }
 
 

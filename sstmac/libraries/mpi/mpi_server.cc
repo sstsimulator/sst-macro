@@ -50,11 +50,11 @@ mpi_server::start()
 }
 
 void
-mpi_server::incoming_message(const sst_message::ptr& msg)
+mpi_server::incoming_message(sst_message* msg)
 {
   _debug_printf("handling message %s",
     msg->to_string().c_str());
-  mpi_message::ptr mpi = ptr_safe_cast(mpi_message, msg);
+  mpi_message* mpi = safe_cast(mpi_message, msg);
   handle_recv(mpi);
 }
 
@@ -120,25 +120,25 @@ mpi_server::has_task(const software_id &tid) const
 // Send data.
 //
 void
-mpi_server::send(const mpi_message::ptr& payload)
+mpi_server::send(mpi_message* payload)
 {
   handle_send(payload);
 }
 
 void
-mpi_server::buffered_send(const mpi_message::ptr& payload)
+mpi_server::buffered_send(mpi_message* payload)
 {
   spkt_throw(sprockit::unimplemented_error, "mpi_server::buffered_send");
 }
 
 void
-mpi_server::start_send(const sst_message::ptr& msg)
+mpi_server::start_send(sst_message* msg)
 {
-  handle_send(ptr_safe_cast(mpi_message, msg));
+  handle_send(safe_cast(mpi_message, msg));
 }
 
 void
-mpi_server::handle_intranode_send(const mpi_message::ptr& payload)
+mpi_server::handle_intranode_send(mpi_message* payload)
 {
   task_id recver = payload->dest_task();
   software_id sid(payload->app(), recver);
@@ -146,7 +146,7 @@ mpi_server::handle_intranode_send(const mpi_message::ptr& payload)
   if (it != queue_.end()) {
     //push a nic ack to the source also
     if (payload->needs_ack()) {
-      mpi_message::ptr nicack = ptr_safe_cast(mpi_message, payload->clone_injection_ack());
+      mpi_message* nicack = safe_cast(mpi_message, payload->clone_injection_ack());
 
       task_id sender = payload->source_task();
       software_id sid2(payload->app(), sender);
@@ -169,14 +169,14 @@ mpi_server::handle_intranode_send(const mpi_message::ptr& payload)
 }
 
 void
-mpi_server::handle(const sst_message::ptr &msg)
+mpi_server::handle(sst_message*msg)
 {
   //should only ever be used for delayed messages while queue initializes
-  handle_intranode_send(ptr_safe_cast(mpi_message, msg));
+  handle_intranode_send(safe_cast(mpi_message, msg));
 }
 
 void
-mpi_server::handle_internode_send(const mpi_message::ptr& payload)
+mpi_server::handle_internode_send(mpi_message* payload)
 {
   // Network transfer
   _debug_print("executing os kernel to send remote");
@@ -184,7 +184,7 @@ mpi_server::handle_internode_send(const mpi_message::ptr& payload)
 }
 
 void
-mpi_server::handle_send(const mpi_message::ptr& payload)
+mpi_server::handle_send(mpi_message* payload)
 {
   _debug_printf("sending message %s", payload->to_string().c_str());
   if (payload->intranode()) {
@@ -196,7 +196,7 @@ mpi_server::handle_send(const mpi_message::ptr& payload)
 }
 
 void
-mpi_server::buffered_recv(const mpi_message::ptr& msg,
+mpi_server::buffered_recv(mpi_message* msg,
                           mpi_queue_recv_request*req)
 {
   spkt_throw(sprockit::unimplemented_error,
@@ -206,7 +206,7 @@ mpi_server::buffered_recv(const mpi_message::ptr& msg,
 //
 // Complete a receive.
 void
-mpi_server::handle_recv(const mpi_message::ptr& mess)
+mpi_server::handle_recv(mpi_message* mess)
 {
   _debug_printf("handling recv %s", mess->to_string().c_str());
 
@@ -241,7 +241,7 @@ mpi_server::handle_recv(const mpi_message::ptr& mess)
       cerrn << "]\n";
       spkt_throw_printf(sprockit::illformed_error,
            "mpiserver::incoming_message: message %p for task not registered with this server on server %p, os %p",
-           mess.get(), this, os_);
+           mess, this, os_);
     }
   }
   else {
@@ -251,13 +251,13 @@ mpi_server::handle_recv(const mpi_message::ptr& mess)
 }
 
 void
-mpi_server::send_to_queue_ack(mpi_queue* queue, const mpi_message::ptr& ack)
+mpi_server::send_to_queue_ack(mpi_queue* queue, mpi_message* ack)
 {
   queue->handle_nic_ack(ack);
 }
 
 void
-mpi_server::send_to_queue_payload(mpi_queue* queue, const mpi_message::ptr& payload)
+mpi_server::send_to_queue_payload(mpi_queue* queue, mpi_message* payload)
 {
   event* ev = new_event(os_->event_location(), queue, &mpi_queue::incoming_message, payload);
   SCHEDULE_NOW(ev);

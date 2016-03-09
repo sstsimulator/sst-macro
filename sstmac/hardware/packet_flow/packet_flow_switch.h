@@ -145,7 +145,7 @@ class packet_flow_switch :
    @param msg Incoming message (should cast to packet_train)
    */
   void
-  handle(const sst_message::ptr& msg);
+  handle(sst_message* msg);
 
   void deadlock_check();
 

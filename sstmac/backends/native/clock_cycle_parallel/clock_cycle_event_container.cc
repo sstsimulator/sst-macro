@@ -49,11 +49,11 @@ clock_cycle_event_map::schedule_incoming(const std::vector<void*>& buffers)
   int num_bufs = buffers.size();
   int buf_size = rt_->ser_buf_size();
   for (int i=0; i < num_bufs; ++i){
-    switch_id dst;
+    event_loc_id dst;
     event_loc_id src;
     uint32_t seqnum;
     timestamp time;
-    sst_message::ptr msg;
+    sst_message* msg;
     void* buffer = buffers[i];
     ser.start_unpacking((char*)buffer, buf_size);
     ser & dst;
@@ -61,13 +61,17 @@ clock_cycle_event_map::schedule_incoming(const std::vector<void*>& buffers)
     ser & seqnum;
     ser & time;
     ser & msg;
-    event_debug("epoch %d: scheduling incoming event at %12.8e to switch %d",
-        epoch_, time.sec(), int(dst));
     event_handler* dst_handler;
-    if (msg->is_chunk()){
-      dst_handler = interconn_->switch_at(dst);
+    if (dst.is_switch_id()){
+      switch_id sid = dst.convert_to_switch_id();
+      event_debug("epoch %d: scheduling incoming event at %12.8e to switch %d",
+        epoch_, time.sec(), int(sid));
+      dst_handler = interconn_->switch_at(sid);
     } else {
-      sstmac::hw::node* dst_node = interconn_->node_at(msg->toaddr());
+      node_id nid = dst.convert_to_node_id();
+      event_debug("epoch %d: scheduling incoming event at %12.8e to node %d",
+        epoch_, time.sec(), int(nid));
+      sstmac::hw::node* dst_node = interconn_->node_at(nid);
 #if SSTMAC_SANITY_CHECK
       if (!dst_node){
         spkt_throw_printf(sprockit::value_error,
@@ -261,7 +265,7 @@ clock_cycle_event_map::ipc_schedule(timestamp t,
   event_loc_id dst,
   event_loc_id src,
   uint32_t seqnum,
-  const sst_message::ptr& msg)
+  sst_message* msg)
 {
   event_debug("epoch %d: scheduling outgoing event at t=%12.8e to location %d",
     epoch_, t.sec(), int(dst.convert_to_switch_id()));

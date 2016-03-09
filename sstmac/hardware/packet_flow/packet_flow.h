@@ -86,16 +86,13 @@ class packet_flow_payload :
   public sprockit::serializable_type<packet_flow_payload>
 {
  public:
-  typedef sprockit::refcount_ptr<packet_flow_payload> ptr;
-  typedef sprockit::refcount_ptr<const packet_flow_payload> const_ptr;
-
   static const double uninitialized_bw;
 
   ImplementSerializable(packet_flow_payload)
 
  public:
   packet_flow_payload(
-    const sst_message::ptr& parent,
+    sst_message* parent,
     int num_bytes,
     long offset);
 
@@ -253,8 +250,6 @@ class packet_flow_credit :
 {
 
  public:
-  typedef sprockit::refcount_ptr<packet_flow_credit> ptr;
-
   ImplementSerializable(packet_flow_credit)
 
  public:

@@ -43,7 +43,7 @@ class dist_dummy_switch : public network_switch
   }
 
   virtual void
-  handle(const sst_message::ptr& msg);
+  handle(sst_message* msg);
 
   virtual void
   connect(

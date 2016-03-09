@@ -45,7 +45,7 @@ mpi_direct_scatterv::mpi_direct_scatterv(mpi_request* thekey,
 // Callback method to indicate that a send operation has completed.
 //
 void
-mpi_direct_scatterv::send_complete(const mpi_message::ptr& msg)
+mpi_direct_scatterv::send_complete(mpi_message* msg)
 {
   mpi_scatterv_debug("send complete to %d, count=%d", int(msg->dest()), msg->count());
   --pending_sends_;
@@ -58,7 +58,7 @@ mpi_direct_scatterv::send_complete(const mpi_message::ptr& msg)
 // Callback method to indicate that a receive operation has completed.
 //
 void
-mpi_direct_scatterv::recv_complete(const mpi_message::ptr& msg)
+mpi_direct_scatterv::recv_complete(mpi_message* msg)
 {
   mpi_scatterv_debug("recv complete from %d, count=%d", int(msg->source()), msg->count());
   payload::const_ptr load = msg->content();

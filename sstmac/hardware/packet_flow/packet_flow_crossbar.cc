@@ -64,7 +64,7 @@ packet_flow_muxer::packet_flow_muxer(
 }
 
 void
-packet_flow_crossbar::do_handle_payload(const packet_flow_payload::ptr &msg)
+packet_flow_crossbar::do_handle_payload(packet_flow_payload* msg)
 {
   if (bytes_sent_){
     bytes_sent_->record(msg->port(), msg->byte_length());
@@ -107,7 +107,7 @@ packet_flow_NtoM_queue::deadlock_check()
 {
   for (int i=0; i < queues_.size(); ++i){
     payload_queue& queue = queues_[i];
-    packet_flow_payload::ptr msg = queue.front();
+    packet_flow_payload* msg = queue.front();
     if (msg){
       deadlocked_channels_[msg->port()].insert(msg->routable::vc());
       packet_flow_output& poutput = outputs_[local_port(msg->port())];
@@ -132,7 +132,7 @@ packet_flow_NtoM_queue::build_blocked_messages()
   //std::cerr << "\tbuild blocked messages on " << to_string() << std::endl;
   for (int i=0; i < queues_.size(); ++i){
     payload_queue& queue = queues_[i];
-    packet_flow_payload::ptr msg = queue.pop(1000000);
+    packet_flow_payload* msg = queue.pop(1000000);
     while (msg){
       blocked_messages_[msg->inport()][msg->vc()].push_back(msg);
       //std::cerr << "\t\t" << "into port=" << msg->inport() << " vc=" << msg->vc()
@@ -143,13 +143,13 @@ packet_flow_NtoM_queue::build_blocked_messages()
 }
 
 void
-packet_flow_NtoM_queue::deadlock_check(const sst_message::ptr& msg)
+packet_flow_NtoM_queue::deadlock_check(sst_message* msg)
 {
   if (blocked_messages_.empty()){
     build_blocked_messages();
   }
 
-  packet_flow_payload::ptr payload = ptr_safe_cast(packet_flow_payload, msg);
+  packet_flow_payload* payload = safe_cast(packet_flow_payload, msg);
   int outport = payload->port();
   int inport = payload->inport();
   int vc = update_vc_ ? payload->routable::vc() : payload->vc();
@@ -161,13 +161,13 @@ packet_flow_NtoM_queue::deadlock_check(const sst_message::ptr& msg)
 
   deadlocked_channels_[outport].insert(vc);
 
-  std::list<packet_flow_payload::ptr>& blocked = blocked_messages_[inport][vc];
+  std::list<packet_flow_payload*>& blocked = blocked_messages_[inport][vc];
   if (blocked.empty()){
     spkt_throw_printf(sprockit::value_error,
       "channel is NOT blocked on deadlock check on outport=%d inport=%d vc=%d",
       outport, inport, vc);
   } else {
-    packet_flow_payload::ptr next = blocked.front();
+    packet_flow_payload* next = blocked.front();
     packet_flow_output& poutput = outputs_[local_port(outport)];
     event_handler* output = output_handler(next);
     next->set_inport(poutput.dst_inport);
@@ -182,14 +182,14 @@ packet_flow_NtoM_queue::deadlock_check(const sst_message::ptr& msg)
 }
 
 std::string
-packet_flow_NtoM_queue::input_name(const packet_flow_payload::ptr& msg)
+packet_flow_NtoM_queue::input_name(packet_flow_payload* msg)
 {
   event_handler* handler = inputs_[msg->inport()].handler;
   return handler->to_string();
 }
 
 event_handler*
-packet_flow_NtoM_queue::output_handler(const packet_flow_payload::ptr& msg)
+packet_flow_NtoM_queue::output_handler(packet_flow_payload* msg)
 {
   int loc_port = local_port(msg->port());
   event_handler* handler = outputs_[loc_port].handler;
@@ -210,13 +210,13 @@ packet_flow_NtoM_queue::output_handler(const packet_flow_payload::ptr& msg)
 }
 
 std::string
-packet_flow_NtoM_queue::output_name(const packet_flow_payload::ptr& msg)
+packet_flow_NtoM_queue::output_name(packet_flow_payload* msg)
 {
   return output_handler(msg)->to_string();
 }
 
 void
-packet_flow_NtoM_queue::send_payload(const packet_flow_payload::ptr &msg)
+packet_flow_NtoM_queue::send_payload(packet_flow_payload* msg)
 {
   int loc_port = local_port(msg->port());
   packet_flow_bandwidth_arbitrator* arb = port_arbitrators_[loc_port];
@@ -232,7 +232,7 @@ packet_flow_NtoM_queue::send_payload(const packet_flow_payload::ptr &msg)
 }
 
 void
-packet_flow_NtoM_queue::handle_credit(const packet_flow_credit::ptr& msg)
+packet_flow_NtoM_queue::handle_credit(packet_flow_credit* msg)
 {
   int outport = msg->port();
   int vc = msg->vc();
@@ -249,15 +249,17 @@ packet_flow_NtoM_queue::handle_credit(const packet_flow_credit::ptr& msg)
 
   num_credits += msg->num_credits();
 
-  packet_flow_payload::ptr payload = queue(outport, vc).pop(num_credits);
+  packet_flow_payload* payload = queue(outport, vc).pop(num_credits);
   if (payload) {
     num_credits -= payload->num_bytes();
     send_payload(payload);
   }
+
+  delete msg;
 }
 
 void
-packet_flow_NtoM_queue::handle_routed_payload(const packet_flow_payload::ptr& msg)
+packet_flow_NtoM_queue::handle_routed_payload(packet_flow_payload* msg)
 {
   int dst_vc = update_vc_ ? msg->routable::vc() : msg->vc();
   int dst_port = msg->port();
@@ -404,7 +406,7 @@ packet_flow_NtoM_queue::set_output(int my_outport, int dst_inport,
 
 #if PRINT_FINISH_DETAILS
 void
-print_msg(const std::string& prefix, switch_id addr, const packet_flow_payload::ptr& msg)
+print_msg(const std::string& prefix, switch_id addr, packet_flow_payload* msg)
 {
   structured_topology* top = safe_cast(structured_topology, sstmac_runtime::current_topology());
   coordinates src_coords = top->get_node_coords(msg->fromaddr());
@@ -423,7 +425,7 @@ print_msg(const std::string& prefix, switch_id addr, const packet_flow_payload::
 #endif
 
 void
-packet_flow_NtoM_queue::start(const sst_message::ptr& msg)
+packet_flow_NtoM_queue::start(sst_message* msg)
 {
   spkt_throw(sprockit::illformed_error,
     "packet_flow_NtoM_queue:: should never start a flow");
@@ -442,7 +444,7 @@ packet_flow_NtoM_queue::start(const sst_message::ptr& msg)
         payload_queue& que = vec[i];
         payload_queue::iterator pit, pend = que.end();
         for (pit = que.begin(); pit != pend; ++pit){
-            packet_flow_payload::ptr msg = *pit;
+            packet_flow_payload* msg = *pit;
             print_msg("\t\t\tPending: ", router_->get_addr(), msg);
         }
     }

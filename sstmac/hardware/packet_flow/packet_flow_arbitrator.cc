@@ -91,7 +91,7 @@ packet_flow_bandwidth_arbitrator::init_noise_model(noise_model* noise)
 void
 packet_flow_simple_arbitrator::arbitrate(
   timestamp now,
-  const packet_flow_payload::ptr& msg,
+  packet_flow_payload* msg,
   timestamp& packet_head_leaves,
   timestamp& packet_tail_leaves,
   timestamp& credit_leaves)
@@ -124,7 +124,7 @@ packet_flow_null_arbitrator::packet_flow_null_arbitrator()
 void
 packet_flow_null_arbitrator::arbitrate(
   timestamp now,
-  const packet_flow_payload::ptr& msg,
+  packet_flow_payload* msg,
   timestamp& packet_head_leaves,
   timestamp& packet_tail_leaves,
   timestamp& credit_leaves)
@@ -249,7 +249,7 @@ packet_flow_cut_through_arbitrator::clean_up(double now)
 void
 packet_flow_cut_through_arbitrator::arbitrate(
   timestamp now,
-  const packet_flow_payload::ptr &payload,
+  packet_flow_payload* payload,
   timestamp &packet_head_leaves,
   timestamp &packet_tail_leaves,
   timestamp &credit_leaves)
@@ -265,7 +265,7 @@ packet_flow_cut_through_arbitrator::arbitrate(
 void
 packet_flow_cut_through_arbitrator::do_arbitrate(
   timestamp now,
-  const packet_flow_payload::ptr& payload,
+  packet_flow_payload* payload,
   timestamp& packet_head_leaves,
   timestamp& packet_tail_leaves)
 {

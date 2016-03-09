@@ -21,25 +21,26 @@ packet_flow_endpoint::packet_flow_endpoint()
 }
 
 void
-packet_flow_endpoint::payload_arrived(const packet_flow_payload::ptr& msg)
+packet_flow_endpoint::payload_arrived(packet_flow_payload* msg)
 {
-  sst_message::ptr parent_msg = completion_queue_.recv(msg);
+  sst_message* parent_msg = completion_queue_.recv(msg);
   debug_printf(sprockit::dbg::packet_flow, "payload arrived: %s->%s",
     msg->to_string().c_str(),
     (parent_msg ? parent_msg->to_string().c_str() : "not done"));
   if (parent_msg){
     exit_->handle(parent_msg);
   }
+  delete msg;
 }
 
 void
-packet_flow_simple_endpoint::handle_payload(const packet_flow_payload::ptr &msg)
+packet_flow_simple_endpoint::handle_payload(packet_flow_payload* msg)
 {
   payload_arrived(msg);
 }
 
 void
-packet_flow_null_endpoint::handle_payload(const packet_flow_payload::ptr& msg)
+packet_flow_null_endpoint::handle_payload(packet_flow_payload* msg)
 {
   timestamp delay(msg->num_bytes() / msg->bw());
   debug_printf(sprockit::dbg::packet_flow,
@@ -50,7 +51,7 @@ packet_flow_null_endpoint::handle_payload(const packet_flow_payload::ptr& msg)
 }
 
 void
-packet_flow_cut_through_endpoint::handle_payload(const packet_flow_payload::ptr& msg)
+packet_flow_cut_through_endpoint::handle_payload(packet_flow_payload* msg)
 {
   timestamp delay(msg->num_bytes() / msg->bw());
   debug_printf(sprockit::dbg::packet_flow,

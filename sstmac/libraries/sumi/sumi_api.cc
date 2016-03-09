@@ -88,7 +88,7 @@ sumi_api::transport_send(
   bool needs_ack,
   void* buffer)
 {
-  transport_message::ptr tmsg = new transport_message(msg, byte_length);
+  transport_message* tmsg = new transport_message(msg, byte_length);
   tmsg->sst_message::set_type(hw::network_message::NETWORK);
   tmsg->hw::network_message::set_type(ty);
   tmsg->set_lib_name(server_libname_);
@@ -111,7 +111,7 @@ sumi_api::poll_until_notification()
   }
 #endif
   while (1) {
-    transport_message::ptr msg = queue_->poll_until_message();
+    transport_message* msg = queue_->poll_until_message();
     transport_message::payload_ptr notification = handle(msg);
     if (notification){
       return notification;
@@ -123,7 +123,7 @@ transport_message::payload_ptr
 sumi_api::poll_until_notification(timestamp timeout)
 {
   while (1) {
-    transport_message::ptr msg = queue_->poll_until_message(timeout);
+    transport_message* msg = queue_->poll_until_message(timeout);
     if (msg){
       transport_message::payload_ptr notification = handle(msg);
       if (notification){
@@ -137,7 +137,7 @@ sumi_api::poll_until_notification(timestamp timeout)
 }
 
 void
-sumi_api::incoming_message(const transport_message::ptr &msg)
+sumi_api::incoming_message(transport_message* msg)
 {
   queue_->put_message(msg);
 }
@@ -149,9 +149,9 @@ sumi_server::sumi_server(int appid)
 }
 
 void
-sumi_server::incoming_message(const sst_message::ptr& msg)
+sumi_server::incoming_message(sst_message* msg)
 {
- transport_message::ptr smsg = ptr_safe_cast(transport_message, msg);
+ transport_message* smsg = safe_cast(transport_message, msg);
  try {
   get_proc(smsg->dest())->incoming_message(smsg);
  } catch (sprockit::value_error& e) {
@@ -201,7 +201,7 @@ sumi_queue::sumi_queue() :
 
 static sstmac::sw::key::category message_thread("Server");
 
-transport_message::ptr
+transport_message*
 sumi_queue::poll_until_message()
 {
   if (pending_messages_.empty()) {
@@ -212,12 +212,12 @@ sumi_queue::poll_until_message()
   }
 
   //we have been unblocked
-  transport_message::ptr msg = pending_messages_.front();
+  transport_message* msg = pending_messages_.front();
   pending_messages_.pop_front();
   return msg;
 }
 
-transport_message::ptr
+transport_message*
 sumi_queue::poll_until_message(timestamp timeout)
 {
   sstmac::sw::key* blocker = 0;
@@ -240,17 +240,17 @@ sumi_queue::poll_until_message(timestamp timeout)
           break;
         }
     }
-    return transport_message::ptr();
+    return NULL;
   } else {
     //we have been unblocked
-    transport_message::ptr msg = pending_messages_.front();
+    transport_message* msg = pending_messages_.front();
     pending_messages_.pop_front();
     return msg;
   }
 }
 
 void
-sumi_queue::put_message(const transport_message::ptr& msg)
+sumi_queue::put_message(transport_message* msg)
 {
   pending_messages_.push_back(msg);
 

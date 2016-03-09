@@ -23,8 +23,6 @@ class restart_message : public launch_message
 {
 
  public:
-  typedef sprockit::refcount_ptr<restart_message> ptr;
-
   virtual std::string
   to_string() const {
     return "restart_message";

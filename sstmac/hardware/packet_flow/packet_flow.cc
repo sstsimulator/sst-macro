@@ -29,7 +29,7 @@ packet_flow_interface::serialize_order(sprockit::serializer& ser)
 }
 
 packet_flow_payload::packet_flow_payload(
-  const sst_message::ptr& parent,
+  sst_message* parent,
   int num_bytes,
   long offset) :
   message_chunk(parent, num_bytes, offset),

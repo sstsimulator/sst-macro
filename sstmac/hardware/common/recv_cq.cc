@@ -20,8 +20,8 @@ recv_cq::print()
   }
 }
 
-sst_message::ptr
-recv_cq::recv(const message_chunk::ptr& packet)
+sst_message*
+recv_cq::recv(message_chunk* packet)
 {
   incoming_msg& incoming  = bytes_recved_[packet->unique_id()];
   incoming.bytes_arrived += packet->byte_length();
@@ -59,12 +59,12 @@ recv_cq::recv(const message_chunk::ptr& packet)
 #if DEBUG_CQ
     coutn << sprockit::printf("Ejecting id %lu\n", packet->unique_id());
 #endif
-    sst_message::ptr ret = incoming.msg;
+    sst_message* ret = incoming.msg;
     bytes_recved_.erase(packet->unique_id());
     return ret;
   }
   else {
-    return sst_message::ptr();
+    return NULL;
   }
 }
 

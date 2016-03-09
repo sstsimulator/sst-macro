@@ -29,10 +29,10 @@ class null_nic:
 
  protected:
   virtual void
-  recv_chunk(const sst_message::ptr& chunk);
+  recv_chunk(sst_message* chunk);
 
   virtual void
-  do_send(const network_message::ptr& payload);
+  do_send(network_message* payload);
 
   timestamp
   injection_latency() const;

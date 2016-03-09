@@ -36,9 +36,6 @@ class compute_message :
 {
 
  public:
-  typedef sprockit::refcount_ptr<compute_message> ptr;
-  typedef sprockit::refcount_ptr<const compute_message> const_ptr;
-
   static message_type_t COMPUTE;
 
   declare_expandable_enum(event_type_t);

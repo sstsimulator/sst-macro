@@ -21,8 +21,6 @@ namespace sw {
 class mpi_rma_message : public mpi_message
 {
  public:
-  typedef sprockit::refcount_ptr<mpi_rma_message> ptr;
-
   typedef enum {
     get, put, acc
   } rmatype_t;
@@ -59,7 +57,7 @@ class mpi_rma_message : public mpi_message
   ~mpi_rma_message() throw () {
   }
 
-  virtual mpi_message::ptr
+  virtual mpi_message*
   deep_clone() const;
 
   virtual std::string
