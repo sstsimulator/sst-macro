@@ -3,6 +3,7 @@
 #include <ctime>
 #include <sst/sumi_api.h>
 #include <sstmac/common/stats/stat_histogram.h>
+#include <sstmac/common/stats/stat_local_double.h>
 
 using namespace std;
 using namespace sstmac;
@@ -164,7 +165,14 @@ namespace lblxml
   void boxml::recv_boxes(int& n_events)
   {
       SSTMACBacktrace("recv boxes");
+      sstmac::timestamp start_poll = now();
       sumi::message::ptr dmess = sumi::comm_poll();
+      sstmac::timestamp end_poll = now();
+      double poll_time = (end_poll - start_poll).sec();
+      g_total_idle_time += poll_time;
+      if (idle_time_) {
+        idle_time_->collect(poll_time);
+      }
       switch (dmess->class_type()){
         case sumi::message::pt2pt:
         {
@@ -172,7 +180,7 @@ namespace lblxml
             std::cerr << "boxml: rank " << rank_ << " receiving pt2pt message\n";
           pt2pt_message::ptr pmess = ptr_safe_cast(pt2pt_message, dmess);
           int index = pmess->event_index();
-          if (eff_bw_) {
+          if (hist_eff_bw_) {
             comm_t* sendptr = static_cast<comm_t*>(g_events[index]);
             comm_t& send = *sendptr;
             int size = send.size();
@@ -234,6 +242,7 @@ namespace lblxml
     int n_events = total_events;
     int q_events = total_events/4;
     bool q1 = false, q2 = false, q3 = false;
+    if (n_events > 0) ++g_active_ranks;
     while (n_events > 0) {
     bool doloop = true;
     //while (doloop) {

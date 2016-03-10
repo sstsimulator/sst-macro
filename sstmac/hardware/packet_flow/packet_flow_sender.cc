@@ -98,7 +98,7 @@ packet_flow_sender::send(
     congestion_delay = std::max(0., congestion_delay);
     double congestion_delay_us = congestion_delay * 1e6;
     if (acc_delay_){
-      msg->add_delay_us(congestion_delay);
+      msg->add_delay_us(congestion_delay_us);
     }
     if (congestion_spyplot_){
       long my_id = event_location().location;
