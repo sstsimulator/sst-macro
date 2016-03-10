@@ -140,6 +140,8 @@ class packet_flow_NtoM_queue :
   int port_div_;
   int port_mod_;
 
+  double out_bw_;
+
   std::map<int, std::set<int> > deadlocked_channels_;
 
   std::map<int, std::map<int, std::list<packet_flow_payload*> > > blocked_messages_;

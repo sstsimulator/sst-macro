@@ -186,6 +186,11 @@ manager::build_apps(sprockit::sim_parameters* params)
 manager::~manager() throw ()
 {
   if (interconnect_) delete interconnect_;
+
+  std::map<int, app_manager*>::iterator it, end = app_managers_.end();
+  for (it=app_managers_.begin(); it != end; ++it){
+    delete it->second;
+  }
 }
 
 #if SSTMAC_INTEGRATED_SST_CORE

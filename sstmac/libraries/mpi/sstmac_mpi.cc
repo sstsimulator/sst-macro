@@ -561,12 +561,11 @@ extern "C" int MPI_Initialized(int *flag)
 
 extern "C" int MPI_Finalize()
 {
-  mpi_api* app = current_mpi();
-  mpi_comm* world = app->comm_world();
-  int rank = world->rank();
-  app->finalize();
+  mpi_api* mpi = current_mpi();
+  mpi->finalize();
 
-  //erase_comm*(world->rank().id, world->id().id);
+  mpi_group* empty = mpi->get_group(MPI_GROUP_EMPTY);
+  delete empty;
 
   //these all need to get cleared
   //otherwise cxa_finalize can freak out

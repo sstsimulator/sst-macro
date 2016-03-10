@@ -110,6 +110,8 @@ class mpi_comm_factory  {
   mpi_comm* worldcomm_;
   mpi_comm* selfcomm_;
   mpi_type* splittype_;
+  mpi_group* global_grp_;
+  mpi_group* self_grp_;
 };
 
 }
