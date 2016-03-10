@@ -35,6 +35,11 @@ namespace hw {
 
 int network_switch::packet_length_bytes_ = 0;
 
+network_switch::~network_switch()
+{
+  if (router_) delete router_;
+}
+
 #if !SSTMAC_INTEGRATED_SST_CORE
 network_switch::network_switch() :
   router_(0),
@@ -51,8 +56,6 @@ network_switch::network_switch(
   router_(0),
   top_(0)
 {
-
-  // TODO configure self link @integrated_core @critical
 }
 
 void
@@ -136,10 +139,6 @@ network_switch::init_factory_params(sprockit::sim_parameters* params)
 
 }
 
-network_switch::~network_switch()
-{
-  if (router_) delete router_;
-}
 
 void
 network_switch::set_topology(topology *top)

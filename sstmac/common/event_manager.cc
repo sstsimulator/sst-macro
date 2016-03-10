@@ -94,7 +94,7 @@ event_manager::ipc_schedule(timestamp t,
   event_loc_id dst,
   event_loc_id src,
   uint32_t seqnum,
-  const sst_message::ptr& msg)
+  sst_message* msg)
 {
   spkt_throw_printf(sprockit::unimplemented_error,
    "%s::ipc_schedule: not valid for chosen event manager",

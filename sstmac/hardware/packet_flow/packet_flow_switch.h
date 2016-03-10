@@ -112,6 +112,8 @@ class packet_flow_switch :
   );
 #endif
 
+  ~packet_flow_switch();
+
   virtual void
   initialize();
 
@@ -145,7 +147,7 @@ class packet_flow_switch :
    @param msg Incoming message (should cast to packet_train)
    */
   void
-  handle(const sst_message::ptr& msg);
+  handle(sst_message* msg);
 
   void deadlock_check();
 
@@ -167,9 +169,6 @@ class packet_flow_switch :
 
   virtual std::string
   to_string() const;
-
-  virtual
-  ~packet_flow_switch();
 
  protected:
   virtual void

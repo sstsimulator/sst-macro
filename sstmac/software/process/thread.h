@@ -313,10 +313,6 @@ class thread
   void
   set_tls_value(long thekey, void* ptr);
 
-  void* global_variables() const {
-    return global_variables_;
-  }
-
  protected:
   thread();
 
@@ -372,8 +368,6 @@ class thread
   pthread_map_t* pthread_map_;
 
   int last_bt_collect_nfxn_;
-
-  void* global_variables_;
 
   /// The stack given to this thread.
   void *stack_;

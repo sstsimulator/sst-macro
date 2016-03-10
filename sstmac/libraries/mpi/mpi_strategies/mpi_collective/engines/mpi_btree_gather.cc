@@ -162,7 +162,7 @@ mpi_btree_gather::mpi_btree_gather(mpi_request* thekey,
 // Callback method to indicate that a send operation has completed.
 //
 void
-mpi_btree_gather::send_complete(const mpi_message::ptr& msg)
+mpi_btree_gather::send_complete(mpi_message* msg)
 {
   mpi_gather_debug("send complete to %d, count=%d", int(msg->dest()), msg->count());
   --pending_sends_;
@@ -175,7 +175,7 @@ mpi_btree_gather::send_complete(const mpi_message::ptr& msg)
 // Callback method to indicate that a receive operation has completed.
 //
 void
-mpi_btree_gather::recv_complete(const mpi_message::ptr& msg)
+mpi_btree_gather::recv_complete(mpi_message* msg)
 {
   mpi_gather_debug("recv complete from %d, count=%d", int(msg->source()), msg->count());
 

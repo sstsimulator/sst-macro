@@ -51,9 +51,9 @@ class mpi_server :
 
   virtual void init_os(operating_system *os);
 
-  void buffered_send(const mpi_message::ptr& msg);
+  void buffered_send(mpi_message* msg);
 
-  void buffered_recv(const mpi_message::ptr& msg,
+  void buffered_recv(mpi_message* msg,
                      mpi_queue_recv_request* req);
 
   /// Define a task for this server.  Each task can only be defined once
@@ -70,31 +70,31 @@ class mpi_server :
   unregister(const software_id& sid, mpi_queue* queue);
 
   void
-  send(const mpi_message::ptr& payload);
+  send(mpi_message* payload);
 
   virtual void
-  incoming_message(const sst_message::ptr& msg);
+  incoming_message(sst_message* msg);
 
  protected:
   void print_queues();
 
   virtual void
-  handle(const sst_message::ptr &msg);
+  handle(sst_message*msg);
 
   virtual void
-  handle_recv(const mpi_message::ptr& msg);
+  handle_recv(mpi_message* msg);
 
   virtual void
-  handle_send(const mpi_message::ptr& msg);
+  handle_send(mpi_message* msg);
 
   void
-  start_send(const sst_message::ptr& msg);
+  start_send(sst_message* msg);
 
   virtual void
-  handle_internode_send(const mpi_message::ptr& msg);
+  handle_internode_send(mpi_message* msg);
 
   virtual void
-  handle_intranode_send(const mpi_message::ptr& msg);
+  handle_intranode_send(mpi_message* msg);
 
  protected:
   std::set<software_id> deleted_;
@@ -105,8 +105,8 @@ class mpi_server :
   queue_t queue_;
 
  private:
-  void send_to_queue_payload(mpi_queue* queue, const mpi_message::ptr& msg);
-  void send_to_queue_ack(mpi_queue* queue, const mpi_message::ptr& msg);
+  void send_to_queue_payload(mpi_queue* queue, mpi_message* msg);
+  void send_to_queue_ack(mpi_queue* queue, mpi_message* msg);
 
 };
 

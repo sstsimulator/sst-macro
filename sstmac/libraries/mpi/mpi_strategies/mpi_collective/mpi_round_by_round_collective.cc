@@ -38,7 +38,7 @@ mpi_round_by_round_collective::start()
 }
 
 void
-mpi_round_by_round_collective::send_complete(const mpi_message::ptr& msg)
+mpi_round_by_round_collective::send_complete(mpi_message* msg)
 {
   int dest = msg->source(); //this comes from an ack, which is reversed - kind of confusing
 #if SSTMAC_SANITY_CHECK
@@ -63,7 +63,7 @@ mpi_round_by_round_collective::send_complete(const mpi_message::ptr& msg)
 }
 
 void
-mpi_round_by_round_collective::recv_complete(const mpi_message::ptr& msg)
+mpi_round_by_round_collective::recv_complete(mpi_message* msg)
 {
   round& r = rounds_[current_recv_round_number_];
 #if SSTMAC_SANITY_CHECK

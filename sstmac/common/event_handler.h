@@ -57,7 +57,7 @@ class event_handler
   virtual ~event_handler() {}
 
   virtual void
-  handle(const sst_message::ptr& msg) = 0;
+  handle(sst_message* msg) = 0;
 
   event_loc_id
   event_location() const {
@@ -80,7 +80,7 @@ class event_handler
   }
 
   virtual void
-  deadlock_check(const sst_message::ptr& msg){}
+  deadlock_check(sst_message* msg){}
   
   virtual void
   deadlock_check(){}
@@ -107,12 +107,12 @@ class multi_event_handler :
   public event_handler
 {
  public:
-  typedef void (multi_event_handler::*handle_fxn)(const sst_message::ptr& msg);
+  typedef void (multi_event_handler::*handle_fxn)(sst_message* msg);
 
   class handle_functor {
    public:
     virtual void
-    handle(multi_event_handler* handler, const sst_message::ptr& msg) = 0;
+    handle(multi_event_handler* handler, sst_message* msg) = 0;
   };
 
   template <class T, class Fxn>
@@ -123,7 +123,7 @@ class multi_event_handler :
     handle_functor_impl(Fxn fxn) : fxn_(fxn) {}
 
     void
-    handle(multi_event_handler* handler, const sst_message::ptr& msg){
+    handle(multi_event_handler* handler, sst_message* msg){
       T* me = static_cast<T*>(handler);
       (me->*fxn_)(msg);
     }
@@ -143,7 +143,7 @@ class multi_event_handler :
   virtual ~multi_event_handler(){}
 
   virtual void
-  handle(const sst_message::ptr& msg);
+  handle(sst_message* msg);
 
  protected:
   void
@@ -168,7 +168,7 @@ class do_nothing_handler :
   }
 
   void
-  handle(const sst_message::ptr& msg) {}
+  handle(sst_message* msg) {}
 
 };
 

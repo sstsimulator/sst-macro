@@ -110,7 +110,7 @@ class nic :
     @param payload The network message to send
   */
   void
-  internode_send(const network_message::ptr& payload);
+  internode_send(network_message* payload);
 
   /**
     Perform the set of operations standard to all NICs
@@ -119,7 +119,7 @@ class nic :
    * @param payload
    */
   void
-  intranode_send(const network_message::ptr& payload);
+  intranode_send(network_message* payload);
 
   /**
    * @return The injection latency for moving a packet from the NIC to the
@@ -135,7 +135,7 @@ class nic :
    @param msg  The incoming event
   */
   void
-  handle(const sst_message::ptr& msg);
+  handle(sst_message* msg);
 
  protected:
   nic();
@@ -146,10 +146,10 @@ class nic :
     @param payload The network message to send
   */
   virtual void
-  do_send(const network_message::ptr& payload) = 0;
+  do_send(network_message* payload) = 0;
 
   void
-  send_to_node(const network_message::ptr& netmsg);
+  send_to_node(network_message* netmsg);
 
   bool
   negligible_size(int bytes) const {
@@ -179,7 +179,7 @@ class nic :
    send it up to the parent node.
    */
   void
-  ack_send(const network_message::ptr& payload);
+  ack_send(network_message* payload);
 
   /**
    #handle receives all messages incoming from the NIC.
@@ -188,7 +188,7 @@ class nic :
    @param msg
   */
   void
-  finish_recv_ack(const sst_message::ptr& msg);
+  finish_recv_ack(sst_message* msg);
 
   /**
    #handle receives all messages incoming from the NIC.
@@ -197,7 +197,7 @@ class nic :
    @param msg
   */
   void
-  finish_recv_req(const sst_message::ptr& msg);
+  finish_recv_req(sst_message* msg);
 
   /**
    The NIC can either receive an entire message (bypass the byte-transfer layer)
@@ -208,7 +208,7 @@ class nic :
    @throws sprockit::unimplemented_error
    */
   virtual void
-  recv_chunk(const sst_message::ptr& chunk);
+  recv_chunk(sst_message* chunk);
 
   /**
    #handle receives all messages incoming from the NIC.
@@ -218,7 +218,7 @@ class nic :
    @param msg
   */
   virtual void
-  recv_credit(const sst_message::ptr& msg);
+  recv_credit(sst_message* msg);
 
   /**
    The NIC can either receive an entire message (bypass the byte-transfer layer)
@@ -227,12 +227,12 @@ class nic :
    @param chunk
    */
   void
-  recv_message(const sst_message::ptr& msg);
+  recv_message(sst_message* msg);
 
   void
-  send_to_interconn(const network_message::ptr& netmsg);
+  send_to_interconn(network_message* netmsg);
 
-  void record_message(const network_message::ptr& msg);
+  void record_message(network_message* msg);
 
 };
 

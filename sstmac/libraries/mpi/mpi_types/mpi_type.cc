@@ -11,23 +11,23 @@
 
 #include <sprockit/serializer.h>
 #include <sprockit/errors.h>
-#include <sstmac/common/sstmac_config.h>
 #include <sprockit/statics.h>
+#include <sprockit/delete.h>
+#include <sstmac/common/sstmac_config.h>
 #include <sstmac/libraries/mpi/mpi_types/mpi_type.h>
 #include <sstmac/libraries/mpi/mpi_types.h>
 #include <iostream>
 #include <sstream>
 
 
-
 DeclareSerializable(sstmac::sw::pairdata);
-
 DeclareSerializable(sstmac::sw::vecdata);
-
 DeclareSerializable(sstmac::sw::inddata);
 
 namespace sstmac {
 namespace sw {
+
+static sprockit::need_delete_statics<mpi_type> del_statics;
 
 mpi_type::mpi_type() :
   id(-1),

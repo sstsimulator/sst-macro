@@ -21,7 +21,7 @@ template<class T>
   cycle(const T& msg, UnitTest &unit)
   {
     typedef typename T::element_type PTR;
-    sst_message::ptr new_msg = ser_cycle(msg, unit);
+    sst_message* new_msg = ser_cycle(msg, unit);
     return ptr_safe_cast(PTR, new_msg);
   }
 

@@ -126,7 +126,7 @@ class mpi_queue :
        void* buffer);
 
   void
-  start_send(const mpi_message::ptr& msg);
+  start_send(mpi_message* msg);
 
   void
   get(mpi_request* key, int count, mpi_type_id type,
@@ -157,7 +157,7 @@ class mpi_queue :
 
   /// CALLBACK used by mpiserver when this object has a message.
   virtual void
-  incoming_message(const mpi_message::ptr& message) = 0;
+  incoming_message(mpi_message* message) = 0;
 
   void
   set_event_parent(event_scheduler* m);
@@ -207,7 +207,7 @@ class mpi_queue :
   }
 
   void
-  finalize_recv(const mpi_message::ptr& msg);
+  finalize_recv(mpi_message* msg);
 
   virtual timestamp
   progress_loop(mpi_request* req) = 0;
@@ -229,22 +229,22 @@ class mpi_queue :
   start_recv(mpi_queue_recv_request* req);
 
   virtual void
-  buffered_send(const mpi_message::ptr& msg) = 0;
+  buffered_send(mpi_message* msg) = 0;
 
   virtual void
-  buffered_recv(const mpi_message::ptr& msg, mpi_queue_recv_request* req) = 0;
+  buffered_recv(mpi_message* msg, mpi_queue_recv_request* req) = 0;
 
   virtual void
-  buffer_unexpected(const mpi_message::ptr& msg) = 0;
+  buffer_unexpected(mpi_message* msg) = 0;
 
   virtual void
-  post_rdma(const mpi_message::ptr& msg) = 0;
+  post_rdma(mpi_message* msg) = 0;
 
   virtual void
-  post_header(const mpi_message::ptr& msg) = 0;
+  post_header(mpi_message* msg) = 0;
 
   void
-  handle_put(const mpi_message::ptr& message);
+  handle_put(mpi_message* message);
 
   void
   set_mpi_server(mpi_server* server);
@@ -254,19 +254,17 @@ class mpi_queue :
 
  protected:
   struct sortbyseqnum {
-    bool operator()(const mpi_message::ptr& a, const mpi_message::ptr&b) const;
+    bool operator()(mpi_message* a, mpi_message*b) const;
   };
 
-  typedef std::set<mpi_message::ptr, sortbyseqnum, std::allocator<mpi_message::ptr> >
+  typedef std::set<mpi_message*, sortbyseqnum, std::allocator<mpi_message*> >
   hold_list_t;
 
   typedef std::list<mpi_queue_recv_request*> pending_message_t;
 
-  typedef std::list<mpi_message::ptr> need_recv_t;
+  typedef std::list<mpi_message*> need_recv_t;
 
   typedef std::list<mpi_queue_send_request*> send_needs_ack_t;
-
-  typedef spkt_unordered_map<int, mpi_message::ptr> reorderlist_t;
 
   typedef std::map<mpi_message::id, mpi_queue_send_request*> ack_needed_t;
 
@@ -281,7 +279,7 @@ class mpi_queue :
   mpi_queue();
 
   virtual void
-  do_send(const mpi_message::ptr& mess) = 0;
+  do_send(mpi_message* mess) = 0;
 
   virtual void
   do_recv(mpi_queue_recv_request* req) = 0;
@@ -289,67 +287,67 @@ class mpi_queue :
   /// The incoming_message method forwards to here when the message is
   /// a response to a handshake request.
   void
-  incoming_rendezvous_ack(const mpi_message::ptr& message);
+  incoming_rendezvous_ack(mpi_message* message);
 
   void
-  incoming_completion_ack(const mpi_message::ptr& message);
+  incoming_completion_ack(mpi_message* message);
 
   /// The incoming_message method forwards to here when the message is
   /// a new message, whehter it's an eager send or a new handshake request.
   void
-  incoming_new_message(const mpi_message::ptr& message);
+  incoming_new_message(mpi_message* message);
 
   /// Called by the mpiserver when it figured out that the nic is sending
   /// back an ack that indicates that the message was sent
   void
-  handle_nic_ack(const mpi_message::ptr& message);
+  handle_nic_ack(mpi_message* message);
 
   /// Called by the mpiserver when it figured out that the nic is sending
   /// back an ack that indicates that the message was sent
   void
-  complete_nic_ack(const mpi_message::ptr& message);
+  complete_nic_ack(mpi_message* message);
 
   /// The incoming_new_message method calls here to complete an
   /// inbound message.  At this point, arrival ordering has been ensured.
   void
-  handle_new_message(const mpi_message::ptr& message);
+  handle_new_message(mpi_message* message);
 
   void
-  notify_probes(const mpi_message::ptr& message);
+  notify_probes(mpi_message* message);
 
   mpi_queue_recv_request*
-  find_request(pending_message_t& pending, const mpi_message::ptr& message);
+  find_request(pending_message_t& pending, mpi_message* message);
 
   mpi_queue_recv_request*
-  find_pending_request(const mpi_message::ptr& message,
+  find_pending_request(mpi_message* message,
                        bool set_need_recv = true);
 
   mpi_queue_recv_request*
-  find_waiting_request(const mpi_message::ptr& message);
+  find_waiting_request(mpi_message* message);
 
-  mpi_message::ptr
+  mpi_message*
   find_matching_recv(mpi_queue_recv_request* req);
 
   void
-  send_rendezvous_ack(const mpi_message::ptr& message);
+  send_rendezvous_ack(mpi_message* message);
 
   void
-  send_completion_ack(const mpi_message::ptr& message);
+  send_completion_ack(mpi_message* message);
 
   std::string
   id_string() const;
 
-  mpi_message::ptr
+  mpi_message*
   send_message(int count, mpi_type_id type,
     mpi_id dst_rank, mpi_tag tag, mpi_comm* comm,
     const sendinfo &sinfo, mpi_message::category message_type);
 
   void
-  configure_send_request(const mpi_message::ptr& mess, mpi_request* req, event_handler* completion);
+  configure_send_request(mpi_message* mess, mpi_request* req, event_handler* completion);
 
  private:
   void
-  send_debug_printf(const mpi_message::ptr& mess);
+  send_debug_printf(mpi_message* mess);
 
  protected:
   stat_spyplot* spy_num_messages_;
@@ -403,7 +401,7 @@ class mpi_queue :
 
   get_requests_t gets_waiting_for_data_;
 
-  spkt_unordered_map<long, std::queue<mpi_message::ptr> >
+  spkt_unordered_map<long, std::queue<mpi_message*> >
   headers_waiting_epoch_;
 
   /// A blocking memcpy library for buffered sends in which
@@ -421,7 +419,7 @@ class mpi_queue :
 
  private:
   void
-  log_completion(const mpi_message::ptr& m);
+  log_completion(mpi_message* m);
 
   struct message_log_data_t {
     timestamp start;
@@ -443,7 +441,7 @@ class mpi_queue :
 #else
  public:
   void
-  log_completion(const mpi_message::ptr& m){}
+  log_completion(mpi_message* m){}
 #endif
 
 };

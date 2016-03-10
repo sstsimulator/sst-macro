@@ -36,7 +36,7 @@ class lib_compute_inst :
   ~lib_compute_inst() { }
 
   void
-  compute_inst(const compute_message::ptr&msg);
+  compute_inst(compute_message* msg);
 
   void
   compute_detailed(uint64_t flops,

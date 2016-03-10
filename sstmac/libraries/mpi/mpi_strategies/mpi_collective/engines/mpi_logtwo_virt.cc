@@ -138,7 +138,7 @@ mpi_logtwo_virt_allreduce::run_next_round()
 }
 
 void
-mpi_logtwo_virt_allreduce::send_complete(const mpi_message::ptr& msg)
+mpi_logtwo_virt_allreduce::send_complete(mpi_message* msg)
 {
   --pending_sends_;
   if (round_ == num_rounds_ && pending_sends_ == 0) {
@@ -147,7 +147,7 @@ mpi_logtwo_virt_allreduce::send_complete(const mpi_message::ptr& msg)
 }
 
 void
-mpi_logtwo_virt_allreduce::recv_complete(const mpi_message::ptr& msg)
+mpi_logtwo_virt_allreduce::recv_complete(mpi_message* msg)
 {
   --pending_recvs_;
   if (reducing_round_) {

@@ -12,6 +12,7 @@
 #include <sstmac/software/launch/launcher.h>
 #include <sstmac/software/launch/launch_message.h>
 #include <sstmac/software/process/operating_system.h>
+#include <sprockit/util.h>
 #include <unistd.h>
 #include <getopt.h>
 
@@ -32,10 +33,11 @@ launcher::~launcher() throw()
 }
 
 void
-launcher::incoming_message(const sst_message::ptr& msg)
+launcher::incoming_message(sst_message* msg)
 {
-  launch_message::ptr lmsg = ptr_safe_cast(launch_message, msg);
+  launch_message* lmsg = safe_cast(launch_message, msg);
   if (lmsg->is_nic_ack()){
+    delete lmsg;
     return;
   }
 
@@ -54,6 +56,8 @@ launcher::incoming_message(const sst_message::ptr& msg)
   else if(lmsg->get_launch_type() == launch_message::COMPLETE) {
     //do nothing
   }
+
+  delete lmsg;
 }
 
 void

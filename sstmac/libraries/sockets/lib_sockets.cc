@@ -58,14 +58,14 @@ socket_message::reverse(type_t ty) const
   }
 }
 
-hw::network_message::ptr
+hw::network_message*
 socket_message::clone_injection_ack() const
 {
-  ptr cln = new socket_message;
+  socket_message* cln = new socket_message;
   cln->number_ = number_;
   cln->type_ = reverse(type_);
   network_message::clone_into(cln);
-  library_interface::clone_into(cln.get());
+  library_interface::clone_into(cln);
   cln->convert_to_ack();
   return cln;
 }
@@ -141,7 +141,7 @@ socket::to_string() const
 }
 
 void
-socket::add_pending(const socket_message::ptr& msg)
+socket::add_pending(socket_message* msg)
 {
   bytes_available += msg->byte_length();
   pending_recv_.push_back(msg);
@@ -172,11 +172,11 @@ long
 socket::recv(long max_bytes)
 {
   long bytes_recved = 0;
-  std::list<socket_message::ptr>::iterator it = pending_recv_.begin(),
+  std::list<socket_message*>::iterator it = pending_recv_.begin(),
                                            end = pending_recv_.end();
   while (it != end) {
-    std::list<socket_message::ptr>::iterator tmp = it++;
-    socket_message::ptr msg = *tmp;
+    std::list<socket_message*>::iterator tmp = it++;
+    socket_message* msg = *tmp;
     long next_bytes = bytes_recved + msg->byte_length();
     if (next_bytes > max_bytes) { //can't go over!
       return bytes_recved;
@@ -311,7 +311,7 @@ socketapi::send(int fd, long bytes, bool wait_on_ack)
   socket_message::type_t going_to = from_server ?
                                     socket_message::client : socket_message::server;
 
-  socket_message::ptr msg = new socket_message(
+  socket_message* msg = new socket_message(
                               sock->number(), bytes,
                               going_to,
                               server_libname_,
@@ -383,7 +383,7 @@ socketapi::allocate_socket(socket_domain_t domain, socket_type_t typ,
 }
 
 void
-socketapi::incoming_message(const socket_message::ptr& msg)
+socketapi::incoming_message(socket_message* msg)
 {
   int number = msg->number();
 
@@ -466,10 +466,10 @@ socketapi::accept(int fd, node_id addr, bool blocking)
                 fd, sock->number(), long(addr));
 
   {
-    std::list<socket_message::ptr>::iterator it = pending_recv_.begin(),
+    std::list<socket_message*>::iterator it = pending_recv_.begin(),
                                              end = pending_recv_.end();
     for ( ; it != end; ++it) {
-      socket_message::ptr msg = *it;
+      socket_message* msg = *it;
       if (msg->number() == sock->number() && addr == msg->fromaddr()) {
         sock->accept(msg->fromaddr());
         break;
@@ -488,10 +488,10 @@ socketapi::accept(int fd, node_id addr, bool blocking)
   }
 
   {
-    std::list<socket_message::ptr>::iterator it = pending_recv_.begin(),
+    std::list<socket_message*>::iterator it = pending_recv_.begin(),
                                              end = pending_recv_.end();
     for ( ; it != end; ++it) {
-      //socket_message::ptr msg = *it;
+      //socket_message* msg = *it;
     }
   }
 
@@ -565,9 +565,9 @@ socket_server::socket_server(const std::string& libname)
 }
 
 void
-socket_server::incoming_message(const sst_message::ptr& msg)
+socket_server::incoming_message(sst_message* msg)
 {
-  socket_message::ptr sockmsg = ptr_safe_cast(socket_message, msg);
+  socket_message* sockmsg = safe_cast(socket_message, msg);
   if (sockmsg->type() == socket_message::client) {
     get_client_socket(sockmsg->number())->incoming_message(sockmsg);
   }

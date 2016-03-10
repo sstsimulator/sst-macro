@@ -51,7 +51,7 @@ class mpi_message :
   public sumi::rdma_message,
   public sprockit::serializable_type<mpi_message>
 {
-  ImplementSerializableDefaultConstructor(mpi_message);
+  ImplementSerializableDefaultConstructor(mpi_message)
 
  public:
   typedef sprockit::refcount_ptr<mpi_message> ptr;

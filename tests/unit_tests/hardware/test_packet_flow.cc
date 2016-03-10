@@ -52,13 +52,13 @@ test_arbitrator(UnitTest& unit)
   arb->set_outgoing_bw(link_bw);
 
 
-  sst_message::ptr parent = new test_message(num_packets_in_parent * packet_size);
-  packet_flow_payload::ptr test_msg = new packet_flow_payload(parent, packet_size, 0);
+  sst_message* parent = new test_message(num_packets_in_parent * packet_size);
+  packet_flow_payload* test_msg = new packet_flow_payload(parent, packet_size, 0);
   test_msg->set_bw(link_bw);
 
-  packet_flow_payload::ptr test_msg0 = new packet_flow_payload(parent, 0*packet_size, 0);
-  packet_flow_payload::ptr test_msg2 = new packet_flow_payload(parent, 2*packet_size, 0);
-  packet_flow_payload::ptr test_msg4 = new packet_flow_payload(parent, 4*packet_size, 0);
+  packet_flow_payload* test_msg0 = new packet_flow_payload(parent, 0*packet_size, 0);
+  packet_flow_payload* test_msg2 = new packet_flow_payload(parent, 2*packet_size, 0);
+  packet_flow_payload* test_msg4 = new packet_flow_payload(parent, 4*packet_size, 0);
 
   timestamp start_time, stop_time, credit_time;
   arb->arbitrate(timestamp(0), test_msg, start_time, stop_time, credit_time);

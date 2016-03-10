@@ -124,6 +124,20 @@ packet_flow_switch::packet_flow_switch() :
 }
 #endif
 
+packet_flow_switch::~packet_flow_switch()
+{
+  if (xbar_) delete xbar_;
+  if (bytes_sent_) delete bytes_sent_;
+  if (byte_hops_) delete byte_hops_;
+  if (congestion_spyplot_) delete congestion_spyplot_;
+ 
+  int nbuffers = out_buffers_.size();
+  for (int i=0; i < nbuffers; ++i){
+    packet_flow_sender* buf = out_buffers_[i];
+    if (buf) delete buf;
+  }
+}
+
 void
 packet_flow_switch::init_factory_params(sprockit::sim_parameters *params)
 {
@@ -164,10 +178,6 @@ packet_flow_switch::set_topology(topology *top)
 {
   if (bytes_sent_) bytes_sent_->set_topology(top);
   network_switch::set_topology(top);
-}
-
-packet_flow_switch::~packet_flow_switch()
-{
 }
 
 void
@@ -352,20 +362,20 @@ packet_flow_switch::queue_length(int port) const
 }
 
 void
-packet_flow_switch::handle(const sst_message::ptr& msg)
+packet_flow_switch::handle(sst_message* msg)
 {
   //this should only happen in parallel mode...
   //this means we are getting a message that has crossed the parallel boundary
-  packet_flow_interface* fmsg = ptr_interface_cast(packet_flow_interface, msg);
+  packet_flow_interface* fmsg = interface_cast(packet_flow_interface, msg);
   switch (fmsg->type()) {
     case packet_flow_interface::credit: {
-      packet_flow_credit::ptr credit = ptr_static_cast(packet_flow_credit, msg);
+      packet_flow_credit* credit = static_cast<packet_flow_credit*>(msg);
       out_buffers_[credit->port()]->handle_credit(credit);
       break;
     }
     case packet_flow_interface::payload: {
-      packet_flow_payload::ptr payload = ptr_static_cast(packet_flow_payload, msg);
-      router_->route(payload.get());
+      packet_flow_payload* payload = static_cast<packet_flow_payload*>(msg);
+      router_->route(payload);
       xbar_->handle_payload(payload);
       break;
     }

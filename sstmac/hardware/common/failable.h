@@ -20,7 +20,7 @@ class failable :
   virtual ~failable(){}
 
   void
-  handle(const sst_message::ptr& msg);
+  handle(sst_message* msg);
 
   bool
   failed() const {
@@ -28,7 +28,7 @@ class failable :
   }
 
   void
-  fail(const sst_message::ptr& msg);
+  fail(sst_message* msg);
 
 #if SSTMAC_INTEGRATED_SST_CORE
  protected:
@@ -53,13 +53,13 @@ class failable :
 
  protected:
   virtual void
-  do_failure(const sst_message::ptr& msg){}
+  do_failure(sst_message* msg){}
 
   virtual void
-  handle_while_failed(const sst_message::ptr& msg) = 0;
+  handle_while_failed(sst_message* msg) = 0;
 
   virtual void
-  handle_while_running(const sst_message::ptr& msg) = 0;
+  handle_while_running(sst_message* msg) = 0;
 
  protected:
   bool failed_;

@@ -60,11 +60,11 @@ class mpi_direct_scatterv : public mpi_collective
  protected:
   /// Callback method to indicate that a send operation has completed.
   virtual void
-  send_complete(const mpi_message::ptr& msg);
+  send_complete(mpi_message* msg);
 
   /// Callback method to indicate that a receive operation has completed.
   virtual void
-  recv_complete(const mpi_message::ptr& msg);
+  recv_complete(mpi_message* msg);
 
  protected:
   /// The number of elements of type sendtype sent to each node.

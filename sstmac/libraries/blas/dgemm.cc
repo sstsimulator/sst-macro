@@ -17,7 +17,7 @@ class default_dgemm :
     return "default dgemm";
   }
 
-  compute_message::ptr
+  compute_message*
   op_3d(int m, int k, int n);
 
   virtual void
@@ -39,7 +39,7 @@ default_dgemm::init_factory_params(sprockit::sim_parameters* params)
   pipeline_ = params->get_optional_double_param("dgemm_pipeline_efficiency", 2);
 }
 
-compute_message::ptr
+compute_message*
 default_dgemm::op_3d(int mm, int nn, int kk)
 {
   int sizes[3];
@@ -76,7 +76,7 @@ default_dgemm::op_3d(int mm, int nn, int kk)
 
   long total_bytes = Csize + Asize*npartitions + Bsize*npartitions;
 
-  compute_message::ptr msg = new compute_message();
+  compute_message* msg = new compute_message;
   msg->set_event_value(compute_message::flop, nflops);
   msg->set_event_value(compute_message::intop, loop_ops);
   msg->set_event_value(compute_message::mem_sequential, total_bytes);

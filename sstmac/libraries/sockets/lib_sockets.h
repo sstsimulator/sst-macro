@@ -26,9 +26,6 @@ class socket_message :
   public library_interface
 {
  public:
-  typedef sprockit::refcount_ptr<socket_message> ptr;
-  typedef sprockit::refcount_ptr<const socket_message> const_ptr;
-
   typedef enum { client, server } type_t;
 
  public:
@@ -55,7 +52,7 @@ class socket_message :
   void
   offset(long nbytes);
 
-  hw::network_message::ptr
+  hw::network_message*
   clone_injection_ack() const;
 
   virtual void
@@ -63,7 +60,7 @@ class socket_message :
 
  protected:
   void
-  clone_into(const ptr& cln);
+  clone_into(socket_message* cln);
 
  private:
   int number_;
@@ -130,7 +127,7 @@ class socket  {
 
   int number() const;
 
-  void add_pending(const socket_message::ptr& msg);
+  void add_pending(socket_message* msg);
 
   static const char* tostr(state_t state);
 
@@ -149,7 +146,7 @@ class socket  {
 
   node_id remote_addr_;
 
-  std::list<socket_message::ptr> pending_recv_;
+  std::list<socket_message*> pending_recv_;
 
   key* key_;
 
@@ -165,7 +162,7 @@ class socketapi :
   public api
 {
  protected:
-  std::list<socket_message::ptr> pending_recv_;
+  std::list<socket_message*> pending_recv_;
 
   std::map<int,socket*> all_sockets_;
 
@@ -218,7 +215,7 @@ class socketapi :
   int allocate_socket(socket_domain_t domain, socket_type_t typ,
                       socket_protocol_t prot);
 
-  void incoming_message(const socket_message::ptr&msg);
+  void incoming_message(socket_message* msg);
 
   socket*
   get_socket(int fd) const;
@@ -235,7 +232,7 @@ class socket_server :
   public sstmac::sw::service
 {
  public:
-  void incoming_message(const sst_message::ptr& msg);
+  void incoming_message(sst_message* msg);
 
   void open_socket(int number, socketapi* proc);
   void close_socket(int number);

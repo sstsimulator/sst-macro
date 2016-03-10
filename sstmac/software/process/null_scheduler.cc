@@ -14,7 +14,7 @@ null_scheduler::start_next_suspended(int core)
 }
 
 void
-null_scheduler::add_suspended(const sw::compute_message::ptr&msg, int core)
+null_scheduler::add_suspended(const sw::compute_message*&msg, int core)
 {
   spkt_throw_printf(sprockit::illformed_error,
       "nullscheduler::add_suspended: null scheduler should never be invoked");
@@ -32,7 +32,7 @@ null_scheduler::clone(node_id nid, sw::operating_system*os) const
 }
 
 bool
-null_scheduler::find_open_core(const sw::compute_message::ptr&msg, int &core_assignment)
+null_scheduler::find_open_core(const sw::compute_message*&msg, int &core_assignment)
 {
   spkt_throw_printf(sprockit::illformed_error,
       "nullscheduler::find_open_core: null scheduler should never be invoked");

@@ -321,7 +321,7 @@ macro_manager::launch_app(int appnum, timestamp start, sw::app_manager* appman)
       continue;
     }
 
-    sw::launch_message::ptr lmsg = new launch_message(linfo, sw::launch_message::ARRIVE, task_id(i));
+    sw::launch_message* lmsg = new launch_message(linfo, sw::launch_message::ARRIVE, task_id(i));
 
     dst_node->launch(start, lmsg);
 

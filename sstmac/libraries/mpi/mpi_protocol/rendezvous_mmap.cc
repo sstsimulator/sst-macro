@@ -12,7 +12,7 @@ rendezvous_mmap::~rendezvous_mmap()
 
 void
 rendezvous_mmap::send_header(mpi_queue* queue,
-                             const mpi_message::ptr& msg)
+                             mpi_message* msg)
 {
   SSTMACBacktrace("MPI Rendezvous Protocol: Intranode Send Header");
   msg->content_type(mpi_message::header);
@@ -33,7 +33,7 @@ rendezvous_mmap::send_needs_rendezvous_ack() const
 
 void
 rendezvous_mmap::incoming_header(mpi_queue* queue,
-                               const mpi_message::ptr& msg)
+                               mpi_message* msg)
 {
   SSTMACBacktrace("MPI Rendezvous Protocol: Intranode Handler Header");
   mpi_queue_recv_request* req = queue->find_pending_request(msg);
@@ -48,7 +48,7 @@ rendezvous_mmap::incoming_header(mpi_queue* queue,
 void
 rendezvous_mmap::finish_recv_payload(
   mpi_queue* queue,
-  const mpi_message::ptr& msg,
+  mpi_message* msg,
   mpi_queue_recv_request* req
 )
 {
@@ -58,7 +58,7 @@ rendezvous_mmap::finish_recv_payload(
 
 void
 rendezvous_mmap::incoming_payload(mpi_queue* queue,
-                                const mpi_message::ptr& msg)
+                                mpi_message* msg)
 {
   SSTMACBacktrace("MPI Rendezvous Protocol: Intranode Handle Payload");
   mpi_queue::pending_req_map::iterator it = queue->recv_needs_payload_.find(

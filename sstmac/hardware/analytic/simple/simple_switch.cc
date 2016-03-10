@@ -138,7 +138,7 @@ simple_switch::lookahead() const
 }
 
 void
-simple_switch::handle(const sst_message::ptr& msg)
+simple_switch::handle(sst_message* msg)
 {
   node_id dst = msg->toaddr();
   node_id src = msg->fromaddr();
@@ -164,13 +164,13 @@ simple_switch::handle(const sst_message::ptr& msg)
 }
 
 void
-simple_switch::send_to_nic(timestamp delay, node_id dst, const sst_message::ptr& msg)
+simple_switch::send_to_nic(timestamp delay, node_id dst, sst_message* msg)
 {
   SCHEDULE_DELAY(delay, nics_[dst], msg);
 }
 
 void
-simple_switch::send_to_switch(timestamp delay, node_id dst, const sst_message::ptr& msg)
+simple_switch::send_to_switch(timestamp delay, node_id dst, sst_message* msg)
 {
   SCHEDULE_DELAY(delay, neighbors_[dst], msg);
 }

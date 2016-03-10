@@ -14,7 +14,7 @@ class minimal_router :
   virtual ~minimal_router() {}
 
   virtual void
-  route(const sst_message::ptr& msg);
+  route(sst_message* msg);
 
   std::string
   to_string() const {
@@ -26,7 +26,7 @@ class minimal_router :
 
  protected:
   virtual void
-  route(const sst_message::ptr& msg, routing_info::path_set& paths);
+  route(sst_message* msg, routing_info::path_set& paths);
 
 };
 

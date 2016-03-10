@@ -89,10 +89,24 @@ node::init(unsigned int phase)
 node::node() :
   os_(0),
   nic_(0),
-  mem_model_(0)
+  mem_model_(0),
+  proc_(0)
 {
 }
 #endif
+
+node::~node()
+{
+  if (os_){
+    os_->unregister_all_libs(this);
+    delete os_;
+  }
+  if (mem_model_) delete mem_model_;
+  if (proc_) delete proc_;
+  //JJW 03/09/2015 - node does not own NIC
+  //if (nic_) delete nic_;
+}
+
 
 void
 node::init_factory_params(sprockit::sim_parameters *params)
@@ -151,7 +165,7 @@ node::build_launchers(sprockit::sim_parameters* params)
   std::list<int>::const_iterator it, end = my_ranks.end();
   for (it=my_ranks.begin(); it != end; ++it){
     int rank = *it;
-    sw::launch_message::ptr lmsg = new launch_message(appman->launch_info(), sw::launch_message::ARRIVE, task_id(rank));
+    sw::launch_message* lmsg = new launch_message(appman->launch_info(), sw::launch_message::ARRIVE, task_id(rank));
     sstmac_runtime::register_node(sw::app_id(aid), task_id(rank), my_addr_);
     launchers_.push_back(lmsg);
   }
@@ -164,17 +178,6 @@ node::finalize_init()
   os_->set_addr(my_addr_);
   os_->set_ncores(ncores_, nsocket_);
   os_->register_lib(this, new launcher);
-}
-
-node::~node()
-{
-  if (os_){
-    os_->unregister_all_libs(this);
-    delete os_;
-  }
-  if (nic_) delete nic_;
-  if (mem_model_) delete mem_model_;
-  if (proc_) delete proc_;
 }
 
 std::string
@@ -196,13 +199,13 @@ node::set_event_manager(event_manager* m)
 }
 
 void
-node::handle_while_running(const sst_message::ptr& msg)
+node::handle_while_running(sst_message* msg)
 {
   os_->handle_message(msg);
 }
 
 void
-node::handle_while_failed(const sst_message::ptr& msg)
+node::handle_while_failed(sst_message* msg)
 {
   //just drop it - don't do anything for now
 }
@@ -210,12 +213,12 @@ node::handle_while_failed(const sst_message::ptr& msg)
 void
 node::fail_stop()
 {
-  sst_message::ptr msg = new node_fail_message;
+  sst_message* msg = new node_fail_message;
   fail(msg);
 }
 
 void
-node::do_failure(const sst_message::ptr& msg)
+node::do_failure(sst_message* msg)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   spkt_throw(sprockit::unimplemented_error, "node::do_failure");
@@ -223,7 +226,7 @@ node::do_failure(const sst_message::ptr& msg)
 }
 
 void
-node::send_to_nic(const network_message::ptr& netmsg)
+node::send_to_nic(network_message* netmsg)
 {
   netmsg->set_net_id(allocate_unique_id());
   netmsg->put_on_wire();
@@ -238,17 +241,18 @@ node::send_to_nic(const network_message::ptr& netmsg)
 void
 node::launch()
 {
-  std::list<sw::launch_message::ptr>::iterator it, end = launchers_.end();
+  std::list<sw::launch_message*>::iterator it, end = launchers_.end();
   for (it=launchers_.begin(); it != end; ++it){
-    sw::launch_message::ptr lmsg = *it;
+    sw::launch_message* lmsg = *it;
     node_debug("launching task %d on node %d",
       int(lmsg->tid()), int(addr()));
     os_->handle_message(lmsg);
+    delete lmsg;
   }
 }
 #else
 void
-node::launch(timestamp start, const launch_message::ptr& msg)
+node::launch(timestamp start, launch_message* msg)
 {
   schedule(start, new handler_event(msg, this, this->event_location()));
 }

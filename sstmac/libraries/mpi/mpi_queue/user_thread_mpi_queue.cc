@@ -45,9 +45,9 @@ void user_thread_mpi_queue::clear_pending()
 
   mpi_queue_debug("clear pending messages");
 
-  std::list<mpi_message::ptr>::iterator it;
+  std::list<mpi_message*>::iterator it;
   for (it=pending_msgs_.begin(); it != pending_msgs_.end(); ++it) {
-    mpi_message::ptr mess = *it;
+    mpi_message* mess = *it;
     mpi_queue_debug("handle pending message %s", mess->to_string().c_str());
     if (poll_delay_.ticks_int64()) {
       user_lib_time_->compute(poll_delay_);
@@ -153,7 +153,7 @@ user_thread_mpi_queue::finish_progress_loop(const std::vector<mpi_request*>&
 }
 
 void
-user_thread_mpi_queue::do_send(const mpi_message::ptr&mess)
+user_thread_mpi_queue::do_send(mpi_message*mess)
 {
 #if SSTMAC_SANITY_CHECK
   if (os_->current_threadid() == thread::main_thread) {
@@ -177,7 +177,7 @@ user_thread_mpi_queue::do_recv(mpi_queue_recv_request*req)
 }
 
 void
-user_thread_mpi_queue::buffer_unexpected(const mpi_message::ptr& msg)
+user_thread_mpi_queue::buffer_unexpected(mpi_message* msg)
 {
   SSTMACBacktrace("MPI Queue Buffer Unexpected Message");
   if (os_->current_threadid() == thread::main_thread) {
@@ -187,7 +187,7 @@ user_thread_mpi_queue::buffer_unexpected(const mpi_message::ptr& msg)
 }
 
 void
-user_thread_mpi_queue::incoming_message(const mpi_message::ptr& message)
+user_thread_mpi_queue::incoming_message(mpi_message* message)
 {
   if (os_->current_threadid() != -1) {
     spkt_throw_printf(sprockit::illformed_error,
@@ -214,7 +214,7 @@ user_thread_mpi_queue::incoming_message(const mpi_message::ptr& message)
 }
 
 void
-user_thread_mpi_queue::buffered_recv(const mpi_message::ptr& msg,
+user_thread_mpi_queue::buffered_recv(mpi_message* msg,
                                     mpi_queue_recv_request* req)
 {
   SSTMACBacktrace("MPI_buffered_recv");
@@ -223,7 +223,7 @@ user_thread_mpi_queue::buffered_recv(const mpi_message::ptr& msg,
 }
 
 void
-user_thread_mpi_queue::buffered_send(const mpi_message::ptr& msg)
+user_thread_mpi_queue::buffered_send(mpi_message* msg)
 {
   SSTMACBacktrace("MPI_buffered_send");
   // we may be sending a header or a payload
@@ -233,7 +233,7 @@ user_thread_mpi_queue::buffered_send(const mpi_message::ptr& msg)
 }
 
 void
-user_thread_mpi_queue::post_header(const mpi_message::ptr& msg)
+user_thread_mpi_queue::post_header(mpi_message* msg)
 {
   SSTMACBacktrace("MPI Queue Post Header");
   if (post_header_delay_.ticks_int64()) {
@@ -243,7 +243,7 @@ user_thread_mpi_queue::post_header(const mpi_message::ptr& msg)
 }
 
 void
-user_thread_mpi_queue::post_rdma(const mpi_message::ptr& msg)
+user_thread_mpi_queue::post_rdma(mpi_message* msg)
 {
   SSTMACBacktrace("MPI Queue Post RDMA Request");
   if (post_rdma_delay_.ticks_int64()) {

@@ -10,8 +10,6 @@ class fail_message :
  public sst_message
 {
  public:
-  typedef sprockit::refcount_ptr<fail_message> ptr;
-
   static sst_message::message_type_t FAILURE;
 
   std::string
@@ -27,9 +25,6 @@ class fail_message :
 class node_fail_message :
  public fail_message
 {
- public:
-  typedef sprockit::refcount_ptr<node_fail_message> ptr;
-
 };
 
   }

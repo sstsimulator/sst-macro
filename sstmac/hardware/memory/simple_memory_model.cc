@@ -12,6 +12,7 @@
 #include <sstmac/hardware/memory/simple_memory_model.h>
 #include <sstmac/software/libraries/compute/compute_message.h>
 #include <sprockit/sim_parameters.h>
+#include <sprockit/util.h>
 
 namespace sstmac {
 namespace hw {
@@ -25,7 +26,7 @@ simple_memory_model::~simple_memory_model()
 }
 
 void
-simple_memory_model::handle(const sst_message::ptr& msg)
+simple_memory_model::handle(sst_message* msg)
 {
   link_->access_done();
   done_->handle(msg);
@@ -49,12 +50,12 @@ simple_memory_model::finalize_init()
 }
 
 void
-simple_memory_model::access(const sst_message::ptr& msg)
+simple_memory_model::access(sst_message* msg)
 {
   mem_debug("simple model: doing access of %ld bytes",
     msg->byte_length());
 
-  sw::compute_message::ptr data = ptr_safe_cast(sw::compute_message, msg);
+  sw::compute_message* data = safe_cast(sw::compute_message, msg);
 
   timestamp delta_t = link_->new_access(now(), data->byte_length(), data->max_bw());
   send_delayed_self_message(delta_t, data);

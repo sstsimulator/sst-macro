@@ -1,6 +1,7 @@
 #include <sstmac/hardware/packet_flow/packet_flow_buffer.h>
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/common/runtime.h>
+#include <sprockit/util.h>
 
 #define PRINT_FINISH_DETAILS 0
 
@@ -17,6 +18,11 @@ packet_flow_buffer::packet_flow_buffer(
   arb_(arb)
 {
   arb->set_outgoing_bw(out_bw);
+}
+
+packet_flow_buffer::~packet_flow_buffer()
+{
+  if (arb_) delete arb_;
 }
 
 void
@@ -59,7 +65,7 @@ packet_flow_network_buffer::packet_flow_network_buffer(
 }
 
 void
-packet_flow_network_buffer::start(const sst_message::ptr& msg)
+packet_flow_network_buffer::start(sst_message* msg)
 {
   spkt_throw(sprockit::illformed_error,
     "packet_flow_network_buffer:: should never start a flow");
@@ -75,7 +81,7 @@ packet_flow_network_buffer::init_credits(int port, int num_credits)
 }
 
 void
-packet_flow_network_buffer::handle_credit(const packet_flow_credit::ptr& msg)
+packet_flow_network_buffer::handle_credit(packet_flow_credit* msg)
 {
   int vc = msg->vc();
 #if SSTMAC_SANITY_CHECK
@@ -100,7 +106,7 @@ packet_flow_network_buffer::handle_credit(const packet_flow_credit::ptr& msg)
      bytes_delayed_);
 
   /** while we have sendable payloads, do it */
-  packet_flow_payload::ptr payload = queues_[vc].pop(num_credits);
+  packet_flow_payload* payload = queues_[vc].pop(num_credits);
   while (payload) {
     num_credits -= payload->num_bytes();
     //this actually doesn't create any new delay
@@ -109,10 +115,12 @@ packet_flow_network_buffer::handle_credit(const packet_flow_credit::ptr& msg)
     send(arb_, payload, input_, output_);
     payload = queues_[vc].pop(num_credits);
   }
+
+  delete msg;
 }
 
 void
-packet_flow_network_buffer::do_handle_payload(const packet_flow_payload::ptr& msg)
+packet_flow_network_buffer::do_handle_payload(packet_flow_payload* msg)
 {
   int dst_vc = msg->vc();
 #if SSTMAC_SANITY_CHECK
@@ -165,7 +173,7 @@ packet_flow_network_buffer::deadlock_check()
 {
   for (int i=0; i < queues_.size(); ++i){
     payload_queue& queue = queues_[i];
-    packet_flow_payload::ptr msg = queue.front();
+    packet_flow_payload* msg = queue.front();
     if (msg){
       int vc = msg->routable::vc();
       deadlocked_channels_.insert(vc);
@@ -188,7 +196,7 @@ packet_flow_network_buffer::build_blocked_messages()
   //std::cerr << "\tbuild blocked messages on " << to_string() << std::endl;
   for (int i=0; i < queues_.size(); ++i){
     payload_queue& queue = queues_[i];
-    packet_flow_payload::ptr msg = queue.pop(1000000);
+    packet_flow_payload* msg = queue.pop(1000000);
     while (msg){
       blocked_messages_[msg->vc()].push_back(msg);
       //std::cerr << "\t\t" << "into port=" << msg->inport() << " vc=" << msg->vc()
@@ -199,13 +207,13 @@ packet_flow_network_buffer::build_blocked_messages()
 }
 
 void
-packet_flow_network_buffer::deadlock_check(const sst_message::ptr& msg)
+packet_flow_network_buffer::deadlock_check(sst_message* msg)
 {
   if (blocked_messages_.empty()){
     build_blocked_messages();
   }
 
-  packet_flow_payload::ptr payload = ptr_safe_cast(packet_flow_payload, msg);
+  packet_flow_payload* payload = safe_cast(packet_flow_payload, msg);
   int outport = payload->port();
   int inport = payload->inport();
   int vc = update_vc_ ? payload->routable::vc() : payload->vc();
@@ -216,13 +224,13 @@ packet_flow_network_buffer::deadlock_check(const sst_message::ptr& msg)
 
   deadlocked_channels_.insert(vc);
 
-  std::list<packet_flow_payload::ptr>& blocked = blocked_messages_[vc];
+  std::list<packet_flow_payload*>& blocked = blocked_messages_[vc];
   if (blocked.empty()){
     spkt_throw_printf(sprockit::value_error,
       "channel is NOT blocked on deadlock check on outport=%d inport=%d vc=%d",
       outport, inport, vc);
   } else {
-    packet_flow_payload::ptr next = blocked.front();
+    packet_flow_payload* next = blocked.front();
     next->set_inport(output_.dst_inport);
     std::cerr << to_string() << " going to "
       << output_.handler->to_string()
@@ -237,7 +245,7 @@ packet_flow_network_buffer::deadlock_check(const sst_message::ptr& msg)
 
 #if PRINT_FINISH_DETAILS
 extern void
-print_msg(const std::string& prefix, switch_id addr, const packet_flow_payload::ptr& msg);
+print_msg(const std::string& prefix, switch_id addr, packet_flow_payload* msg);
 #endif
 
 
@@ -262,7 +270,7 @@ print_msg(const std::string& prefix, switch_id addr, const packet_flow_payload::
         payload_queue& que = queues_[i];
         payload_queue::iterator pit, pend = que.end();
         for (pit = que.begin(); pit != pend; ++pit){
-            packet_flow_payload::ptr msg = *pit;
+            packet_flow_payload* msg = *pit;
             print_msg("\t\t\tPending: ", addr, msg);
         }
     }
@@ -319,13 +327,13 @@ packet_flow_eject_buffer::packet_flow_eject_buffer(
 }
 
 void
-packet_flow_eject_buffer::return_credit(const message_chunk::ptr &msg)
+packet_flow_eject_buffer::return_credit(message_chunk* msg)
 {
-  send_credit(input_, ptr_safe_cast(packet_flow_payload, msg), now());
+  send_credit(input_, safe_cast(packet_flow_payload, msg), now());
 }
 
 void
-packet_flow_eject_buffer::do_handle_payload(const packet_flow_payload::ptr& msg)
+packet_flow_eject_buffer::do_handle_payload(packet_flow_payload* msg)
 {
   debug_printf(sprockit::dbg::packet_flow,
     "On %s, handling {%s}",
@@ -337,14 +345,14 @@ packet_flow_eject_buffer::do_handle_payload(const packet_flow_payload::ptr& msg)
 }
 
 void
-packet_flow_eject_buffer::start(const sst_message::ptr& msg)
+packet_flow_eject_buffer::start(sst_message* msg)
 {
   spkt_throw(sprockit::illformed_error,
     "packet_flow_eject_buffer:: should never start a flow");
 }
 
 void
-packet_flow_eject_buffer::handle_credit(const packet_flow_credit::ptr& msg)
+packet_flow_eject_buffer::handle_credit(packet_flow_credit* msg)
 {
   spkt_throw_printf(sprockit::illformed_error,
                    "packet_flow_eject_buffer::handle_credit: should not handle credits");
@@ -376,7 +384,7 @@ packet_flow_injection_buffer::init_credits(int port, int num_credits)
 }
 
 void
-packet_flow_injection_buffer::handle_credit(const packet_flow_credit::ptr& msg)
+packet_flow_injection_buffer::handle_credit(packet_flow_credit* msg)
 {
   debug_printf(sprockit::dbg::packet_flow,
     "On %s with %d credits, handling {%s} -> byte delay now %d",
@@ -390,6 +398,8 @@ packet_flow_injection_buffer::handle_credit(const packet_flow_credit::ptr& msg)
   bytes_delayed_ -= msg->num_credits();
 
   send_what_you_can();
+
+  delete msg;
 }
 
 
@@ -405,7 +415,7 @@ packet_flow_injection_buffer::send_what_you_can()
     if (credits_ < num_bytes){
       return; //can't keep sending
     }
-    packet_flow_payload::ptr payload = new packet_flow_payload(next.msg, num_bytes, next.offset);
+    packet_flow_payload* payload = new packet_flow_payload(next.msg, num_bytes, next.offset);
     next.offset += num_bytes;
     next.bytes_left -= num_bytes;
     credits_ -= num_bytes;
@@ -418,14 +428,14 @@ packet_flow_injection_buffer::send_what_you_can()
 }
 
 void
-packet_flow_injection_buffer::do_handle_payload(const packet_flow_payload::ptr& msg)
+packet_flow_injection_buffer::do_handle_payload(packet_flow_payload* msg)
 {
   //we only get here if we cleared the credits
   send(arb_, msg, input_, output_);
 }
 
 void
-packet_flow_injection_buffer::start(const sst_message::ptr& msg)
+packet_flow_injection_buffer::start(sst_message* msg)
 {
   pending_send next;
   next.bytes_left = msg->byte_length();
@@ -443,7 +453,7 @@ packet_flow_injection_buffer::start(const sst_message::ptr& msg)
 
 #if PRINT_FINISH_DETAILS
 extern void
-print_msg(const std::string& prefix, switch_id addr, const packet_flow_payload::ptr& msg);
+print_msg(const std::string& prefix, switch_id addr, packet_flow_payload* msg);
 #endif
 
 #if PRINT_FINISH_DETAILS
@@ -467,7 +477,7 @@ print_msg(const std::string& prefix, switch_id addr, const packet_flow_payload::
         payload_queue& que = queues_[i];
         payload_queue::iterator pit, pend = que.end();
         for (pit = que.begin(); pit != pend; ++pit){
-            packet_flow_payload::ptr msg = *pit;
+            packet_flow_payload* msg = *pit;
             print_msg("\t\t\tPending: ", addr, msg);
         }
     }

@@ -26,7 +26,7 @@ ugal_router::finalize_init()
 }
 
 void
-ugal_router::route(const sst_message::ptr& msg)
+ugal_router::route(sst_message* msg)
 {
   routing_info& rinfo = msg->interface<routable>()->rinfo();
   rinfo.init_default_algo(routing::valiant);
@@ -49,7 +49,7 @@ ugal_router::route(const sst_message::ptr& msg)
 valiant_router::next_action_t
 ugal_router::initial_step(
   routing_info& rinfo,
-  const sst_message::ptr& msg)
+  sst_message* msg)
 {
   routing_info::path& path = rinfo.current_path();
   structured_topology* regtop = safe_cast(structured_topology, topol());

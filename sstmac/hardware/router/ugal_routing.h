@@ -19,7 +19,7 @@ class ugal_router :
     return "ugal";
   }
 
-  void route(const sst_message::ptr& msg);
+  void route(sst_message* msg);
 
   virtual void
   finalize_init();
@@ -27,7 +27,7 @@ class ugal_router :
  protected:
   next_action_t initial_step(
     routing_info& rinfo,
-    const sst_message::ptr& msg);
+    sst_message* msg);
 
   /**
     The topology object specifies a virtual based purely on geometry.

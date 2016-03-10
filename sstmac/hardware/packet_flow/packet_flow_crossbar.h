@@ -14,7 +14,7 @@ class packet_flow_NtoM_queue :
   public packet_flow_sender
 {
  public:
-  virtual ~packet_flow_NtoM_queue() {}
+  virtual ~packet_flow_NtoM_queue();
 
   packet_flow_NtoM_queue(
     timestamp send_lat,
@@ -36,7 +36,7 @@ class packet_flow_NtoM_queue :
   }
 
   virtual void
-  do_handle_payload(const packet_flow_payload::ptr &msg){
+  do_handle_payload(packet_flow_payload* msg){
     handle_routed_payload(msg);
   }
 
@@ -47,10 +47,10 @@ class packet_flow_NtoM_queue :
   set_output(int my_outport, int dst_inport, event_handler* output);
 
   virtual void
-  handle_credit(const packet_flow_credit::ptr& msg);
+  handle_credit(packet_flow_credit* msg);
 
   virtual void
-  start(const sst_message::ptr& msg);
+  start(sst_message* msg);
 
   void
   init_credits(int port, int num_credits);
@@ -100,7 +100,7 @@ class packet_flow_NtoM_queue :
   deadlock_check();
 
   void
-  deadlock_check(const sst_message::ptr& msg);
+  deadlock_check(sst_message* msg);
 
  protected:
   struct request {
@@ -113,7 +113,7 @@ class packet_flow_NtoM_queue :
   typedef spkt_unordered_map<int, buffer_request_list> xbar_request_map;
 
   void
-  handle_routed_payload(const packet_flow_payload::ptr& msg);
+  handle_routed_payload(packet_flow_payload* msg);
 
  protected:
   typedef spkt_unordered_map<int, packet_flow_input> input_map;
@@ -142,11 +142,11 @@ class packet_flow_NtoM_queue :
 
   std::map<int, std::set<int> > deadlocked_channels_;
 
-  std::map<int, std::map<int, std::list<packet_flow_payload::ptr> > > blocked_messages_;
+  std::map<int, std::map<int, std::list<packet_flow_payload*> > > blocked_messages_;
 
  protected:
   void
-  send_payload(const packet_flow_payload::ptr& msg);
+  send_payload(packet_flow_payload* msg);
 
   void
   build_blocked_messages();
@@ -163,13 +163,13 @@ class packet_flow_NtoM_queue :
   }
 
   std::string
-  input_name(const packet_flow_payload::ptr& msg);
+  input_name(packet_flow_payload* msg);
 
   std::string
-  output_name(const packet_flow_payload::ptr& msg);
+  output_name(packet_flow_payload* msg);
 
   event_handler*
-  output_handler(const packet_flow_payload::ptr& msg);
+  output_handler(packet_flow_payload* msg);
 
 };
 
@@ -234,7 +234,7 @@ class packet_flow_crossbar :
     const char* name = 0);
 
   virtual void
-  do_handle_payload(const packet_flow_payload::ptr& msg);
+  do_handle_payload(packet_flow_payload* msg);
 
   void
   set_bytes_sent_collector(stat_bytes_sent* coll){

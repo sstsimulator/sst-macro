@@ -32,7 +32,7 @@ transport_message::serialize_order(sprockit::serializer& ser)
 std::string
 transport_message::to_string() const
 {
-  sst_message::ptr msg = ptr_test_cast(sst_message, payload_);
+  sst_message* msg = ptr_test_cast(sst_message, payload_);
   return sprockit::printf("sumi transport message %lu carrying %s",
     unique_id(), (msg ? msg->to_string().c_str() : "null"));
 }
@@ -55,7 +55,7 @@ transport_message::complete_transfer(void *buf)
   }
 }
 
-sstmac::hw::network_message::ptr
+sstmac::hw::network_message*
 transport_message::clone_injection_ack() const
 {
 #if SSTMAC_SANITY_CHECK
@@ -64,7 +64,7 @@ transport_message::clone_injection_ack() const
         "message::clone_injection_ack: null network message type");
   }
 #endif
-  ptr cln = new transport_message;
+  transport_message* cln = new transport_message;
   clone_into(cln);
 #if SSTMAC_SANITY_CHECK
   if (cln->network_message::type() == network_message::null_netmsg_type){
@@ -77,12 +77,12 @@ transport_message::clone_injection_ack() const
 }
 
 void
-transport_message::clone_into(const ptr &cln) const
+transport_message::clone_into(transport_message* cln) const
 {
   //the payload is actually immutable now - so this is safe
   cln->payload_ = payload_->clone();
   network_message::clone_into(cln);
-  library_interface::clone_into(cln.get());
+  library_interface::clone_into(cln);
   cln->buffer_ = buffer_;
 }
 

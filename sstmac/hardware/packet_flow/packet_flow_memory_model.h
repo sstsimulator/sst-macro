@@ -23,10 +23,10 @@ class packet_flow_memory_system :
   }
 
   void
-  do_handle_payload(const packet_flow_payload::ptr& msg);
+  do_handle_payload(packet_flow_payload* msg);
 
   void
-  handle_credit(const packet_flow_credit::ptr& msg);
+  handle_credit(packet_flow_credit* msg);
 
   void
   init_credits(int port, int num_credits);
@@ -40,7 +40,7 @@ class packet_flow_memory_system :
   void
   set_output(int my_outport, int dst_inport, event_handler* output);
 
-  void start(const sst_message::ptr &msg){}
+  void start(sst_message*msg){}
 
   virtual void
   init_params(sprockit::sim_parameters* params);
@@ -51,10 +51,10 @@ class packet_flow_memory_system :
 
   void set_event_parent(event_scheduler *m);
 
-  void mtl_send(const sst_message::ptr& msg);
+  void mtl_send(sst_message* msg);
 
  private:
-  void send_to_endpoint(timestamp t, const packet_flow_payload::ptr& msg);
+  void send_to_endpoint(timestamp t, packet_flow_payload* msg);
 
   int allocate_channel();
 
@@ -71,7 +71,7 @@ class packet_flow_memory_system :
 
   struct pending_msg {
     long byte_offset;
-    sw::compute_message::ptr msg;
+    sw::compute_message* msg;
   };
   std::vector<pending_msg> pending_;
   std::list<int> channels_available_;
@@ -98,12 +98,12 @@ class packet_flow_memory_model :
   init_factory_params(sprockit::sim_parameters* params);
 
   void
-  schedule(timestamp t, event_handler *handler, const sst_message::ptr &msg){
+  schedule(timestamp t, event_handler *handler, sst_message*msg){
     memory_model::schedule(t, handler, msg);
   }
 
   virtual void
-  access(const sst_message::ptr& msg);
+  access(sst_message* msg);
 
   double
   max_single_bw() const {

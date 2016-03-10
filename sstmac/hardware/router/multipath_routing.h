@@ -14,7 +14,7 @@ class multipath_router :
 {
  public:
   virtual void
-  route(const sst_message::ptr& msg){
+  route(sst_message* msg){
     routing_info::path_set paths;
     ParentRouter::route(msg, paths);
     int path_id = paths[0].geometric_id;

@@ -43,8 +43,7 @@ class manager : public sprockit::factory_type {
   }
 
   /// Goodbye.
-  virtual
-  ~manager() throw ();
+  virtual ~manager() throw ();
 
   void
   init_factory_params(sprockit::sim_parameters* params);

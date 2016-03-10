@@ -61,7 +61,7 @@ mpi_direct_alltoall::check_complete()
 // Callback method to indicate that a send operation has completed.
 //
 void
-mpi_direct_alltoall::send_complete(const mpi_message::ptr& msg)
+mpi_direct_alltoall::send_complete(mpi_message* msg)
 {
   mpi_ata_debug("send complete to %d, count=%d - now have %d pending sends, %d pending recvs on tag=%d",
     int(msg->dest()), msg->count(), pending_sends_, pending_recvs_, int(tag_));
@@ -83,7 +83,7 @@ mpi_direct_alltoall::send_complete(const mpi_message::ptr& msg)
 // Callback method to indicate that a receive operation has completed.
 //
 void
-mpi_direct_alltoall::recv_complete(const mpi_message::ptr& msg)
+mpi_direct_alltoall::recv_complete(mpi_message* msg)
 {
   mpi_ata_debug("recv complete from %d, count=%d - now have %d pending sends, %d pending recvs on tag=%d",
     int(msg->source()), msg->count(), pending_sends_, pending_recvs_, int(tag_));

@@ -49,8 +49,8 @@ namespace sw {
 static sprockit::need_delete_statics<mpi_queue> del_statics;
 
 bool
-mpi_queue::sortbyseqnum::operator()(const mpi_message::ptr& a,
-                                    const mpi_message::ptr&b) const
+mpi_queue::sortbyseqnum::operator()(mpi_message* a,
+                                    mpi_message*b) const
 {
   return (a->seqnum() < b->seqnum());
 }
@@ -189,7 +189,7 @@ mpi_queue::get(mpi_request* key, int count, mpi_type_id type,
   mpi_message::content_type_t ctype = mpi_message::header;
   mpi_rma_message::rmatype_t rmat = mpi_rma_message::get;
 
-  mpi_rma_message::ptr mess = new mpi_rma_message(
+  mpi_rma_message* mess = new mpi_rma_message(
                                 server_->lib_name(), 
                                 mpi_impl_->envelope_size(),
                                 mintrans_, msg_count,
@@ -252,7 +252,7 @@ mpi_queue::put(mpi_request* key, int count, mpi_type_id type,
   mpi_message::content_type_t ctype = mpi_message::header;
   mpi_rma_message::rmatype_t rmat = op.type_;
 
-  mpi_rma_message::ptr mess = new mpi_rma_message(
+  mpi_rma_message* mess = new mpi_rma_message(
                                 server_->lib_name(), 
                                 mpi_impl_->envelope_size(),
                                 mintrans_, msg_count,
@@ -280,7 +280,7 @@ mpi_queue::put(mpi_request* key, int count, mpi_type_id type,
   mpi_queue_debug("finished init put");
 }
 
-mpi_message::ptr
+mpi_message*
 mpi_queue::send_message(int count, mpi_type_id type,
                 mpi_id dst_rank, mpi_tag tag, mpi_comm* comm,
                 const sendinfo &sinfo, mpi_message::category message_type)
@@ -306,7 +306,7 @@ mpi_queue::send_message(int count, mpi_type_id type,
   //even if it carries the payload, we still tag this as a header since it's the first
   //message sent
 
-  mpi_message::ptr mess = new mpi_message(server_->lib_name(),
+  mpi_message* mess = new mpi_message(server_->lib_name(),
                           mpi_impl_->envelope_size(), mintrans_, count,
                           type, typeobj->packed_size(),
                           src_rank, dst_rank, tag, comm->id(), next_outbound_[dst_tid]++,
@@ -324,7 +324,7 @@ mpi_queue::send_message(int count, mpi_type_id type,
 
 
 void
-mpi_queue::configure_send_request(const mpi_message::ptr& mess, mpi_request* key, event_handler* completion)
+mpi_queue::configure_send_request(mpi_message* mess, mpi_request* key, event_handler* completion)
 {
   mpi_queue_send_request* req = new mpi_queue_send_request(mess, key, this, completion);
 
@@ -346,7 +346,7 @@ mpi_queue::configure_send_request(const mpi_message::ptr& mess, mpi_request* key
 }
 
 void
-mpi_queue::send_debug_printf(const mpi_message::ptr& mess)
+mpi_queue::send_debug_printf(mpi_message* mess)
 {
   debug_printf(sprockit::dbg::mpi_all_sends,
     "%6d %16ld %6d %6d %12ld %12s",
@@ -366,7 +366,7 @@ mpi_queue::send(mpi_request* key, int count, mpi_type_id type,
                 const sendinfo &sinfo, mpi_message::category message_type,
                 event_handler* completion, const payload::const_ptr& content)
 {
-  mpi_message::ptr mess = send_message(count, type, dst_rank, tag, comm, sinfo, message_type);
+  mpi_message* mess = send_message(count, type, dst_rank, tag, comm, sinfo, message_type);
   mess->set_content(content);
   configure_send_request(mess, key, completion);
 
@@ -383,7 +383,7 @@ mpi_queue::send(mpi_request *key, int count, mpi_type_id type,
     mpi_id dest, mpi_tag tag, mpi_comm *comm, const sendinfo &sinfo,
     mpi_message::category message_type, event_handler *completion, void *buffer)
 {
-  mpi_message::ptr mess = send_message(count, type, dest, tag, comm, sinfo, message_type);
+  mpi_message* mess = send_message(count, type, dest, tag, comm, sinfo, message_type);
   configure_send_request(mess, key, completion);
   //either return the original buffer or create a new one for eager
   if (buffer){
@@ -400,7 +400,7 @@ mpi_queue::send(mpi_request *key, int count, mpi_type_id type,
 }
 
 void
-mpi_queue::handle_put(const mpi_message::ptr& message)
+mpi_queue::handle_put(mpi_message* message)
 {
 
 }
@@ -415,12 +415,14 @@ mpi_queue::protocol(long bytes, bool intranode, bool rsend,
 void
 mpi_queue::start_recv(mpi_queue_recv_request* req)
 {
-  mpi_message::ptr mess = find_matching_recv(req);
+  mpi_message* mess = find_matching_recv(req);
   if (mess) {
     //if rendezvous protocol, this will never be > 0
     //if eager protocol, race condition
     if (mess->is_payload()) {
       buffered_recv(mess, req);
+      //mess is ready to be deleted
+      delete mess;
     }
     else {
       req->handle(mess);
@@ -429,18 +431,18 @@ mpi_queue::start_recv(mpi_queue_recv_request* req)
 }
 
 void
-mpi_queue::start_send(const mpi_message::ptr& msg)
+mpi_queue::start_send(mpi_message* msg)
 {
   mpi_protocol* prot = msg->protocol();
   prot->send_header(this, msg);
 }
 
-mpi_message::ptr
+mpi_message*
 mpi_queue::find_matching_recv(mpi_queue_recv_request* req)
 {
   need_recv_t::iterator it, end = need_recv_.end();
   for (it = need_recv_.begin(); it != end; ++it) {
-    mpi_message::ptr mess = *it;
+    mpi_message* mess = *it;
     if (req->matches(mess)) {
       mpi_queue_debug("matched recv tag=%s,src=%s to send tag=%d,src=%d on comm=%s",
         api_->tag_str(req->tag_).c_str(), api_->src_str(req->source_).c_str(),
@@ -456,7 +458,7 @@ mpi_queue::find_matching_recv(mpi_queue_recv_request* req)
     api_->comm_str(req->comm_).c_str());
 
   pending_message_.push_back(req);
-  return mpi_message::ptr();
+  return NULL;
 }
 
 //
@@ -484,7 +486,7 @@ mpi_queue::recv(mpi_request* key, int count,
 }
 
 void
-mpi_queue::finalize_recv(const mpi_message::ptr& msg)
+mpi_queue::finalize_recv(mpi_message* msg)
 {
   //spy_congestion_->add(msg->source(), taskid_, msg->get_delay().msec());
 }
@@ -504,7 +506,7 @@ mpi_queue::probe(mpi_request* key, mpi_comm* comm,
   // Figure out whether we already have a matching message.
   need_recv_t::iterator it, end = need_recv_.end();
   for (it = need_recv_.begin(); it != end; ++it) {
-    mpi_message::ptr mess = *it;
+    mpi_message* mess = *it;
     if (mess->cat() == mpi_message::user && req->matches(mess)){
       // We're good to go.
       req->complete(mess);
@@ -532,7 +534,7 @@ mpi_queue::iprobe(mpi_comm* comm,
   mpi_queue_probe_request* req = new mpi_queue_probe_request(NULL, comm, source, tag, NULL);
   need_recv_t::iterator it, end = need_recv_.end();
   for (it = need_recv_.begin(); it != end; ++it) {
-    mpi_message::ptr mess = *it;
+    mpi_message* mess = *it;
     if (mess->cat() == mpi_message::user && req->matches(mess)) {
       // This is it
       delete req;
@@ -549,7 +551,7 @@ mpi_queue::iprobe(mpi_comm* comm,
 // Used when a receive operation sends an ack.
 //
 void
-mpi_queue::send_rendezvous_ack(const mpi_message::ptr& message)
+mpi_queue::send_rendezvous_ack(mpi_message* message)
 {
   mpi_queue_debug("send rendezvous ack for %s",
     message->to_string().c_str());
@@ -559,11 +561,11 @@ mpi_queue::send_rendezvous_ack(const mpi_message::ptr& message)
 }
 
 void
-mpi_queue::send_completion_ack(const mpi_message::ptr& message)
+mpi_queue::send_completion_ack(mpi_message* message)
 {
   mpi_queue_debug("send completion ack for %s", message->to_string().c_str());
 
-  mpi_message::ptr copy = message->clone();
+  mpi_message* copy = message->clone();
   copy->payload_to_completion_ack();
   server_->send(copy);
 }
@@ -572,12 +574,13 @@ mpi_queue::send_completion_ack(const mpi_message::ptr& message)
 // CALLBACK used by mpiserver when this object has a message.
 //
 void
-mpi_queue::incoming_message(const mpi_message::ptr& message)
+mpi_queue::incoming_message(mpi_message* message)
 {
   mpi_queue_debug("have incoming message %s", message->to_string().c_str());
 
   if (message->is_nic_ack()) {
     handle_nic_ack(message);
+    delete message;
     return;
   }
 
@@ -616,7 +619,7 @@ mpi_queue::incoming_message(const mpi_message::ptr& message)
 // Handle a response to an ack posted from this queue.
 //
 void
-mpi_queue::incoming_completion_ack(const mpi_message::ptr& message)
+mpi_queue::incoming_completion_ack(mpi_message* message)
 {
   const mpi_message::id &id = message->unique_mpi_id();
   mpi_queue_debug("queue has incoming send completion ack from %d for unique id %llu",
@@ -640,7 +643,7 @@ mpi_queue::incoming_completion_ack(const mpi_message::ptr& message)
 // Handle a response to an ack posted from this queue.
 //
 void
-mpi_queue::incoming_rendezvous_ack(const mpi_message::ptr& message)
+mpi_queue::incoming_rendezvous_ack(mpi_message* message)
 {
   const mpi_message::id &id = message->unique_mpi_id();
   mpi_queue_debug("has incoming rendezvous ack from %d for unique id %llu",
@@ -677,7 +680,7 @@ mpi_queue::incoming_rendezvous_ack(const mpi_message::ptr& message)
 // or a new handshake request
 //
 void
-mpi_queue::incoming_new_message(const mpi_message::ptr& message)
+mpi_queue::incoming_new_message(mpi_message* message)
 {
   mpi_queue_debug("incoming new message %s", message->to_string().c_str());
 
@@ -694,7 +697,7 @@ mpi_queue::incoming_new_message(const mpi_message::ptr& message)
     if (!held_[tid].empty()) {
       hold_list_t::iterator it = held_[tid].begin(), end = held_[tid].end();
       while (it != end) {
-        mpi_message::ptr mess = *it;
+        mpi_message* mess = *it;
         mpi_queue_debug("handling out-of-order message for task %d, seqnum %d",
             int(tid), mess->seqnum());
         if (mess->seqnum() <= next_inbound_[tid]) {
@@ -734,7 +737,7 @@ mpi_queue::incoming_new_message(const mpi_message::ptr& message)
 }
 
 void
-mpi_queue::notify_probes(const mpi_message::ptr& message)
+mpi_queue::notify_probes(mpi_message* message)
 {
   probelist_t::iterator tmp,
     pit = probelist_.begin(),
@@ -751,7 +754,7 @@ mpi_queue::notify_probes(const mpi_message::ptr& message)
 }
 
 void
-mpi_queue::handle_new_message(const mpi_message::ptr& message)
+mpi_queue::handle_new_message(mpi_message* message)
 {
   switch (message->content_type())
   {
@@ -773,7 +776,7 @@ mpi_queue::handle_new_message(const mpi_message::ptr& message)
 //
 mpi_queue_recv_request*
 mpi_queue::find_request(pending_message_t &pending,
-                        const mpi_message::ptr& message)
+                        mpi_message* message)
 {
   mpi_queue_recv_request* req;
   pending_message_t::iterator it, end, tmp;
@@ -793,7 +796,7 @@ mpi_queue::find_request(pending_message_t &pending,
 }
 
 mpi_queue_recv_request*
-mpi_queue::find_pending_request(const mpi_message::ptr& message,
+mpi_queue::find_pending_request(mpi_message* message,
                                 bool set_need_recv)
 {
   mpi_queue_recv_request* req = find_request(pending_message_, message);
@@ -811,7 +814,7 @@ mpi_queue::find_pending_request(const mpi_message::ptr& message,
 }
 
 mpi_queue_recv_request*
-mpi_queue::find_waiting_request(const mpi_message::ptr& message)
+mpi_queue::find_waiting_request(mpi_message* message)
 {
   mpi_queue_recv_request* req = find_request(waiting_message_, message);
   if (!req) {
@@ -824,7 +827,7 @@ mpi_queue::find_waiting_request(const mpi_message::ptr& message)
 }
 
 void
-mpi_queue::complete_nic_ack(const mpi_message::ptr& message)
+mpi_queue::complete_nic_ack(mpi_message* message)
 {
   mpi_queue_debug("handle nic ack for message %s", message->to_string().c_str());
 
@@ -845,7 +848,7 @@ mpi_queue::complete_nic_ack(const mpi_message::ptr& message)
 }
 
 void
-mpi_queue::handle_nic_ack(const mpi_message::ptr& message)
+mpi_queue::handle_nic_ack(mpi_message* message)
 {
   mpi_protocol* prot = message->protocol();
   prot->handle_nic_ack(this, message);
@@ -874,7 +877,7 @@ unpack_bits(Combined c, Left& l, Right& r){
 }
 
 void
-mpi_queue::log_completion(const mpi_message::ptr &m)
+mpi_queue::log_completion(mpi_message*m)
 {
   message_log_data_t data;
   data.start = m ->start_time();

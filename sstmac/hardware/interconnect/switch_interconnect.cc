@@ -99,6 +99,7 @@ macro_switch_interconnect::init_factory_params(sprockit::sim_parameters* params)
     = new sprockit::template_factory<connectable, network_switch_factory>(switch_params->get_param("model"));
   network_switch* dummy = new dist_dummy_switch(switch_id());
   topology_->build_internal_connectables(switches, switch_builder, partition_, rt_->me(), switch_params, dummy);
+  delete switch_builder;
   copy_map(switches, switches_);
   switch_map::iterator it, end = switches_.end();
   for (it=switches_.begin(); it != end; ++it){
@@ -173,7 +174,7 @@ macro_switch_interconnect::init_factory_params(sprockit::sim_parameters* params)
 }
 
 void
-macro_switch_interconnect::immediate_send(event_scheduler* src, const sst_message::ptr& msg, timestamp start) const
+macro_switch_interconnect::immediate_send(event_scheduler* src, sst_message* msg, timestamp start) const
 {
   node* dst_node = node_at(msg->toaddr());
   int num_hops = topology_->num_hops_to_node(msg->fromaddr(), msg->toaddr());

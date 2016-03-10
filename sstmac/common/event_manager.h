@@ -156,7 +156,7 @@ class event_manager :
     event_loc_id dst,
     event_loc_id src,
     uint32_t seqnum,
-    const sst_message_ptr& msg);
+    sst_message* msg);
 
   virtual void
   multithread_schedule(

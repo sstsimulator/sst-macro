@@ -46,12 +46,13 @@ lib_compute_inst::compute_detailed(
   uint64_t bytes)
 {
   /** Configure the compute request */
-  compute_message::ptr cmsg = new compute_message();
+  compute_message* cmsg = new compute_message;
   cmsg->set_event_value(compute_message::flop, flops);
   cmsg->set_event_value(compute_message::intop, nintops);
   cmsg->set_event_value(compute_message::mem_sequential, bytes);
 
   compute_inst(cmsg);
+  delete cmsg;
 }
 
 void
@@ -82,7 +83,7 @@ lib_compute_inst::consume_params(sprockit::sim_parameters* params)
 }
 
 void
-lib_compute_inst::compute_inst(const compute_message::ptr& cmsg)
+lib_compute_inst::compute_inst(compute_message* cmsg)
 {
   SSTMACBacktrace("Compute Instructions");
 

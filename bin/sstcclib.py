@@ -92,7 +92,6 @@ def run(typ, extralibs="", include_main=True, make_library=False, redefine_symbo
         "-include sstmac/util.h",
         "-include sstmac/compute.h",
         "-D__thread=dontallow",
-        "-include sstmac/software/process/localize_global.h",
       ]
 
     if asm_files:

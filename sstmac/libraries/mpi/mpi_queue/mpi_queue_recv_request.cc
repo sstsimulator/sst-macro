@@ -65,7 +65,7 @@ class delete_this {
 // We be done.
 //
 void
-mpi_queue_recv_request::handle(const mpi_message::ptr& mess)
+mpi_queue_recv_request::handle(mpi_message* mess)
 {
 #if SSTMAC_SANITY_CHECK
   if (mess->count() < 0) {
@@ -109,7 +109,7 @@ mpi_queue_recv_request::is_cancelled() const {
 }
 
 bool
-mpi_queue_recv_request::matches(const mpi_message::ptr& msg)
+mpi_queue_recv_request::matches(mpi_message* msg)
 {
   bool count_equals = true; //count_ == msg->count();
   bool cat_equals = cat_ == msg->cat();

@@ -131,18 +131,18 @@ mpi_message::content_type(content_type_t ty)
   recompute_bytes();
 }
 
-mpi_message::ptr
+mpi_message*
 mpi_message::clone() const
 {
-  ptr cln = new mpi_message;
+  mpi_message* cln = new mpi_message;
   clone_into(cln);
   return cln;
 }
 
-hw::network_message::ptr
+hw::network_message*
 mpi_message::clone_injection_ack() const
 {
-  ptr cln = clone();
+  mpi_message* cln = clone();
   cln->convert_to_ack();
   return cln;
 }
@@ -198,9 +198,9 @@ mpi_message::put_on_wire()
 
 
 void
-mpi_message::clone_into(const ptr &cln) const
+mpi_message::clone_into(mpi_message* cln) const
 {
-  library_interface::clone_into(cln.get());
+  library_interface::clone_into(cln);
   network_message::clone_into(cln);
   cln->envelope_ = envelope_;
   cln->mintrans_ = mintrans_;

@@ -13,10 +13,10 @@ class valiant_router : public minimal_router
   ~valiant_router() { }
 
   virtual void
-  route(const sst_message::ptr& msg);
+  route(sst_message* msg);
 
   virtual void
-  route(const sst_message::ptr& msg, routing_info::path_set& paths);
+  route(sst_message* msg, routing_info::path_set& paths);
 
   virtual std::string
   to_string() const {
@@ -70,17 +70,17 @@ class valiant_router : public minimal_router
 
   next_action_t
   intermediate_step(routing_info& rinfo,
-                    const sst_message::ptr& msg);
+                    sst_message* msg);
 
   /**
    Different for pure valiant and UGAL.
    */
   virtual next_action_t
   initial_step(routing_info& rinfo,
-               const sst_message::ptr& msg);
+               sst_message* msg);
 
   next_action_t
-  next_routing_stage(const sst_message::ptr& msg);
+  next_routing_stage(sst_message* msg);
 
   void
   configure_intermediate_path(routing_info::path& path);
@@ -89,7 +89,7 @@ class valiant_router : public minimal_router
   configure_final_path(routing_info::path& path);
 
  protected:
-  void route_valiant(const sst_message::ptr& msg);
+  void route_valiant(sst_message* msg);
 
 };
 

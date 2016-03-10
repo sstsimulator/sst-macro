@@ -72,11 +72,12 @@ lib_compute_loops::compute_loop_work(long long loop, double numlines)
   lib_compute_memmove::read(bytes);
   doing_memory_ = false;
 
-  compute_message::ptr inst = new compute_message;
+  compute_message* inst = new compute_message;
   long long flops = std::max((long long) 1,
                              (long long) (loop * flop_line_ratio_ * numlines));
   inst->set_event_value(compute_message::flop, flops);
   lib_compute_inst::compute_inst(inst);
+  delete inst;
 }
 
 
@@ -85,9 +86,10 @@ void
 lib_compute_loops::compute_fft()
 {
   if (do_loops_) {
-    compute_message::ptr inst = new compute_message;
+    compute_message* inst = new compute_message;
     inst->set_event_value(compute_message::flop, 500);
     lib_compute_inst::compute_inst(inst);
+    delete inst;
   }
 }
 

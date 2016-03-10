@@ -58,9 +58,9 @@ class processor :
   delete_statics();
 
   virtual void
-  compute(const sst_message::ptr& msg) = 0;
+  compute(sst_message* msg) = 0;
   
-  void handle(const sst_message::ptr &msg);
+  void handle(sst_message*msg);
 
  protected:
   processor();
@@ -73,8 +73,8 @@ class processor :
   node* node_;
   
  protected:
-  void os_delayed_notify(timestamp t, const sw::compute_message_ptr& msg);
-  void os_notify_now(const sw::compute_message_ptr& msg);
+  void os_delayed_notify(timestamp t, sw::compute_message* msg);
+  void os_notify_now(sw::compute_message* msg);
 
 };
 

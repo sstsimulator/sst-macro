@@ -106,7 +106,7 @@ mpi_bcast_engine::mpi_bcast_engine(topology_iterator* iter,
 // Callback method to indicate that a send operation has completed.
 //
 void
-mpi_bcast_engine::send_complete(const mpi_message::ptr& msg)
+mpi_bcast_engine::send_complete(mpi_message* msg)
 {
   mpi_bcast_debug("send complete to %d, count=%d", msg->count(), int(msg->dest()));
   --pending_sends_;
@@ -119,7 +119,7 @@ mpi_bcast_engine::send_complete(const mpi_message::ptr& msg)
 // Callback method to indicate that a receive operation has completed.
 //
 void
-mpi_bcast_engine::recv_complete(const mpi_message::ptr& msg)
+mpi_bcast_engine::recv_complete(mpi_message* msg)
 {
   mpi_bcast_debug("recv complete from %d, count=%d", msg->count(), int(msg->source()));
 

@@ -7,7 +7,6 @@ namespace sstmac {
 namespace hw {
 
 class network_message;
-typedef sprockit::refcount_ptr<network_message> network_message_ptr;
 
 } }
 

@@ -98,14 +98,14 @@ class handler_event :
  public:
   virtual ~handler_event() {}
 
-  handler_event(const sst_message::ptr& msg,
+  handler_event(sst_message* msg,
     event_handler* hand,
     event_loc_id src_loc);
 
   virtual std::string
   to_string() const;
 
-  sst_message::ptr
+  sst_message*
   get_message() const {
     return msg_to_deliver_;
   }
@@ -119,7 +119,7 @@ class handler_event :
   execute();
 
  protected:
-  sst_message::ptr msg_to_deliver_;
+  sst_message* msg_to_deliver_;
 
   event_handler* handler_;
 

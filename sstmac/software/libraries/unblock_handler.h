@@ -36,7 +36,7 @@ class unblock_handler : public event_handler
   }
 
   virtual void
-  handle(const sst_message::ptr& msg);
+  handle(sst_message* msg);
 
  protected:
   unblock_handler(operating_system* os, key* k) :

@@ -62,29 +62,34 @@ blas_api::init_factory_params(sprockit::sim_parameters* params)
 void
 blas_api::ddot(int n)
 {
-  compute_message::ptr msg = ddot_kernel_->op_1d(n);
+  compute_message* msg = ddot_kernel_->op_1d(n);
   lib_compute_->compute_inst(msg);
+  //msg is done
+  delete msg;
 }
 
 void
 blas_api::dgemm(int m, int n, int k)
 {
-  compute_message::ptr msg = dgemm_kernel_->op_3d(m, n, k);
+  compute_message* msg = dgemm_kernel_->op_3d(m, n, k);
   lib_compute_->compute_inst(msg);
+  delete msg;
 }
 
 void
 blas_api::dgemv(int m, int n)
 {
-  compute_message::ptr msg = dgemv_kernel_->op_2d(m,n);
+  compute_message* msg = dgemv_kernel_->op_2d(m,n);
   lib_compute_->compute_inst(msg);
+  delete msg;
 }
 
 void
 blas_api::daxpy(int n)
 {
-  compute_message::ptr msg = daxpy_kernel_->op_1d(n);
+  compute_message* msg = daxpy_kernel_->op_1d(n);
   lib_compute_->compute_inst(msg);
+  delete msg;
 }
 
 void
@@ -98,7 +103,7 @@ blas_api::init_param1(const software_id &sid)
   lib_compute_ = new lib_compute_inst(comp_lib_name);
 }
 
-compute_message::ptr
+compute_message*
 blas_kernel::op_3d(int m, int k, int n)
 {
   spkt_throw_printf(sprockit::unimplemented_error,
@@ -106,7 +111,7 @@ blas_kernel::op_3d(int m, int k, int n)
     to_string().c_str());
 }
 
-compute_message::ptr
+compute_message*
 blas_kernel::op_2d(int m, int n)
 {
   spkt_throw_printf(sprockit::unimplemented_error,
@@ -114,7 +119,7 @@ blas_kernel::op_2d(int m, int n)
     to_string().c_str());
 }
 
-compute_message::ptr
+compute_message*
 blas_kernel::op_1d(int n)
 {
   spkt_throw_printf(sprockit::unimplemented_error,

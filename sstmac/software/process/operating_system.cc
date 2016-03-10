@@ -35,8 +35,6 @@
 #include <sstmac/software/libraries/unblock_event.h>
 #include <sstmac/software/libraries/unblock_handler.h>
 
-#include <sstmac/software/process/localize_global.h>
-
 #if SSTMAC_HAVE_UCONTEXT
 #include <sstmac/software/threading/threading_ucontext.h>
 #endif
@@ -63,9 +61,6 @@ RegisterNamespaces("call_graph", "ftq");
 namespace sstmac {
 namespace sw {
 
-int global_variables::context_size = 0;
-/** TODO: a bit dangerous, assume for now we 1M or less global vars */
-char* global_variables::global_initer = new char[1000000];
 static sprockit::need_delete_statics<operating_system> del_statics;
 size_t operating_system::stacksize_ = 0;
 graph_viz* operating_system::call_graph_ = 0;
@@ -82,9 +77,19 @@ operating_system::operating_system() :
   des_context_(0),
   event_trace_(0),
   ftq_trace_(0),
-  params_(0)
+  params_(0),
+  compute_sched_(0)
 {
   restarting_ = false;
+}
+
+operating_system::~operating_system()
+{
+  if (des_context_) delete des_context_;
+  if (compute_sched_) delete compute_sched_;
+  /** JJW 01/28/2016 This should already be cleared out
+   *  It not, leave it. It's a leak */
+  //sprockit::delete_vals(libs_);
 }
 
 static bool you_have_been_warned = false;
@@ -294,15 +299,6 @@ operating_system::init_factory_params(sprockit::sim_parameters* params)
   }
 }
 
-operating_system::~operating_system()
-{
-  if (des_context_) {
-    delete des_context_;
-  }
-  /** JJW 01/28/2016 This should already be cleared out
-   *  It not, leave it. It's a leak */
-  //sprockit::delete_vals(libs_);
-}
 
 void
 operating_system::delete_statics()
@@ -321,6 +317,7 @@ operating_system::construct(sprockit::sim_parameters* params)
   return ret;
 }
 
+#if 0
 operating_system*
 operating_system::clone(node_id addr) const
 {
@@ -332,10 +329,11 @@ operating_system::clone(node_id addr) const
   cln->finalize_init();
   return cln;
 }
+#endif
 
 void
 operating_system::execute_kernel(ami::COMP_FUNC func,
-                                 const sst_message::ptr& data)
+                                 sst_message* data)
 {
   //first thing's first - make sure I have a core to execute on
   thread_data_t top = threadstack_.top();  
@@ -355,7 +353,7 @@ operating_system::execute_kernel(ami::COMP_FUNC func,
 
 void
 operating_system::execute_kernel(ami::COMM_FUNC func,
-                                 const sst_message::ptr& data)
+                                 sst_message* data)
 {
   node_->execute_kernel(func, data);
 }
@@ -980,14 +978,14 @@ operating_system::start_app(app* theapp)
   //check pending messages
   int psize = pending_messages_.size();
   for (int i = 0; i < psize; i++) {
-    sst_message::ptr msg = pending_messages_.front();
+    sst_message* msg = pending_messages_.front();
     pending_messages_.pop_front();
     handle_message(msg);
   }
 }
 
 void
-operating_system::handle_message(const sst_message::ptr& msg)
+operating_system::handle_message(sst_message* msg)
 {
   if (msg->has_key()){
     //I need to do some unblocking of a thread
@@ -996,7 +994,7 @@ operating_system::handle_message(const sst_message::ptr& msg)
   }
   
   //otherwise this is an incoming message to a library, probably from off node
-  library_interface* libmsg = ptr_test_cast(library_interface, msg);
+  library_interface* libmsg = test_cast(library_interface, msg);
   if (!libmsg) {
     spkt_throw_printf(sprockit::illformed_error,
       "operating_system::handle_message: got message %s of type %s instead of library message",

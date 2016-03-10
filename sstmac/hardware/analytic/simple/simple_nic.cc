@@ -25,7 +25,7 @@ simple_nic::init_factory_params(sprockit::sim_parameters *params)
 }
 
 void
-simple_nic::do_send(const network_message::ptr& msg)
+simple_nic::do_send(network_message* msg)
 {
   long num_bytes = msg->byte_length();
   timestamp now_ = now();
@@ -37,7 +37,7 @@ simple_nic::do_send(const network_message::ptr& msg)
   next_free_ = start_send + time_to_inject;
   if (msg->needs_ack()) {
     //do whatever you need to do so that this msg decouples all pointers
-    network_message::ptr acker = msg->clone_injection_ack();
+    network_message* acker = msg->clone_injection_ack();
     send_to_node(next_free_, acker);
   }
 }
@@ -60,13 +60,13 @@ simple_nic::finalize_init()
 }
 
 void
-simple_nic::send_to_injector(timestamp t, const network_message::ptr& msg)
+simple_nic::send_to_injector(timestamp t, network_message* msg)
 {
   interconn_->immediate_send(parent(), msg, t);
 }
 
 void
-simple_nic::send_to_node(timestamp t, const network_message::ptr& msg){
+simple_nic::send_to_node(timestamp t, network_message* msg){
   SCHEDULE(t, parent_, msg);
 }
 

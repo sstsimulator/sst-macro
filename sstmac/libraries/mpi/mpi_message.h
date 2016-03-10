@@ -57,8 +57,6 @@ class mpi_message :
   ImplementSerializableDefaultConstructor(mpi_message);
 
  public:
-  typedef sprockit::refcount_ptr<mpi_message> ptr;
-  typedef sprockit::refcount_ptr<const mpi_message> const_ptr;
   typedef_opaque_int(id, uint64_t);
 
   /// The category label used to differentiate user data (which can be
@@ -113,10 +111,10 @@ class mpi_message :
   /// Goodbye.
   virtual ~mpi_message() throw ();
 
-  network_message::ptr
+  network_message*
   clone_injection_ack() const;
 
-  virtual mpi_message::ptr
+  virtual mpi_message*
   clone() const;
 
   /**
@@ -299,7 +297,7 @@ class mpi_message :
 
  protected:
   void
-  clone_into(const ptr &cln) const;
+  clone_into(mpi_message* cln) const;
 
  protected:
   int64_t envelope_;

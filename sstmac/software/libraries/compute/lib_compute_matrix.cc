@@ -46,7 +46,7 @@ lib_compute_matrix::double_compute(long ndata_read,
                                    long working_set_size_write, long nadd, long nmult, long nmultadd,
                                    long nthread)
 {
-  compute_message::ptr inst = new compute_message;
+  compute_message* inst = new compute_message;
   doing_memory_ = true;
   lib_compute_memmove::read(working_set_size_read / nthread);
   lib_compute_memmove::write(working_set_size_write / nthread);
@@ -55,6 +55,7 @@ lib_compute_matrix::double_compute(long ndata_read,
   inst->set_event_value(compute_message::flop,
                         ceil(double(nadd + nmult + 2 * nmultadd) / nthread));
   lib_compute_inst::compute_inst(inst);
+  delete inst;
 }
 
 }

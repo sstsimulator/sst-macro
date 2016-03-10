@@ -14,7 +14,7 @@ class default_daxpy :
     return "default daxpy";
   }
 
-  compute_message::ptr
+  compute_message*
   op_1d(int n);
 
   virtual void
@@ -34,7 +34,7 @@ default_daxpy::init_factory_params(sprockit::sim_parameters* params)
   pipeline_ = params->get_optional_double_param("daxpy_pipeline_efficiency", 2);
 }
 
-compute_message::ptr
+compute_message*
 default_daxpy::op_1d(int n)
 {
   int nops = n;
@@ -43,7 +43,7 @@ default_daxpy::op_1d(int n)
   // y += alpha * x ... 2 vectors
   long total_bytes = 2*n*sizeof(double);
 
-  compute_message::ptr msg = new compute_message();
+  compute_message* msg = new compute_message;
   msg->set_event_value(compute_message::flop, nflops);
   msg->set_event_value(compute_message::intop, loop_ops);
   msg->set_event_value(compute_message::mem_sequential, total_bytes);

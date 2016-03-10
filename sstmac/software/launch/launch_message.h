@@ -27,8 +27,6 @@ class launch_message :
 {
 
  public:
-  typedef sprockit::refcount_ptr<launch_message> ptr;
-
   enum LAUNCHTYPE {
     ARRIVE, START, COMPLETE, KILL, RESTART
   };

@@ -11,9 +11,7 @@ class message_chunk :
 {
 
  public:
-  typedef sprockit::refcount_ptr<message_chunk> ptr;
-
-  sst_message::ptr
+  sst_message*
   orig() const {
     return orig_;
   }
@@ -22,11 +20,11 @@ class message_chunk :
   to_string() const = 0;
 
   void
-  set_orig(const sst_message::ptr& orig){
+  set_orig(sst_message* orig){
     orig_ = orig;
   }
 
-  sst_message::ptr
+  sst_message*
   parent() const {
     return orig_;
   }
@@ -66,12 +64,12 @@ class message_chunk :
   message_chunk() {}
 
   message_chunk(
-    const sst_message::ptr& orig,
+    sst_message* orig,
     long num_bytes,
     long byte_offset);
 
  protected:
-  sst_message::ptr orig_;
+  sst_message* orig_;
 
   long num_bytes_;
 

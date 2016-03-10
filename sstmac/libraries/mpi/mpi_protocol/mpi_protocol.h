@@ -32,23 +32,23 @@ class mpi_protocol  {
   to_string() const = 0;
 
   virtual void
-  send_header(mpi_queue* queue, const mpi_message::ptr& msg) = 0;
+  send_header(mpi_queue* queue, mpi_message* msg) = 0;
 
   virtual void
-  incoming_header(mpi_queue* queue, const mpi_message::ptr& msg) = 0;
+  incoming_header(mpi_queue* queue, mpi_message* msg) = 0;
 
   virtual void
-  incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg) = 0;
+  incoming_payload(mpi_queue* queue, mpi_message* msg) = 0;
 
   virtual void
-  finish_recv_header(mpi_queue* queue, const mpi_message::ptr& msg,
+  finish_recv_header(mpi_queue* queue, mpi_message* msg,
               mpi_queue_recv_request* req) = 0;
 
   virtual void
-  configure_send_buffer(const mpi_message::ptr& msg, void* buffer) = 0;
+  configure_send_buffer(mpi_message* msg, void* buffer) = 0;
 
   virtual void
-  finish_recv_payload(mpi_queue* queue, const mpi_message::ptr& msg,
+  finish_recv_payload(mpi_queue* queue, mpi_message* msg,
                mpi_queue_recv_request* req) = 0;
 
   virtual bool
@@ -70,7 +70,7 @@ class mpi_protocol  {
   get_prot_id() const = 0;
 
   virtual void
-  handle_nic_ack(mpi_queue* queue, const mpi_message::ptr& msg);
+  handle_nic_ack(mpi_queue* queue, mpi_message* msg);
 
   virtual ~mpi_protocol(){}
 
@@ -113,26 +113,26 @@ class eager_ssend : public mpi_protocol
   send_needs_eager_ack() const;
 
   void
-  send_header(mpi_queue* queue, const mpi_message::ptr& msg);
+  send_header(mpi_queue* queue, mpi_message* msg);
 
   void
-  incoming_header(mpi_queue* queue, const mpi_message::ptr& msg);
+  incoming_header(mpi_queue* queue, mpi_message* msg);
 
   void
-  finish_recv_header(mpi_queue* queue, const mpi_message::ptr& msg,
+  finish_recv_header(mpi_queue* queue, mpi_message* msg,
               mpi_queue_recv_request* req);
 
   void
-  finish_recv_payload(mpi_queue* queue, const mpi_message::ptr& msg,
+  finish_recv_payload(mpi_queue* queue, mpi_message* msg,
                mpi_queue_recv_request* req);
 
   void
-  configure_send_buffer(const mpi_message::ptr &msg, void *buffer){
+  configure_send_buffer(mpi_message*msg, void *buffer){
     msg->set_buffer(buffer, false); //not eager
   }
 
   void
-  incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg);
+  incoming_payload(mpi_queue* queue, mpi_message* msg);
 
   std::string
   to_string() const {
@@ -149,7 +149,7 @@ class eager_protocol : public mpi_protocol
 {
  public:
   void
-  configure_send_buffer(const mpi_message::ptr& msg, void* buffer);
+  configure_send_buffer(mpi_message* msg, void* buffer);
 };
 
 class eager0_protocol : public eager_protocol
@@ -174,13 +174,13 @@ class eager0_protocol : public eager_protocol
   send_needs_eager_ack() const;
 
   void
-  finish_recv_header(mpi_queue* queue, const mpi_message::ptr& msg,
+  finish_recv_header(mpi_queue* queue, mpi_message* msg,
               mpi_queue_recv_request* req);
   void
-  finish_recv_payload(mpi_queue* queue, const mpi_message::ptr& msg,
+  finish_recv_payload(mpi_queue* queue, mpi_message* msg,
                mpi_queue_recv_request* req);
   void
-  incoming_header(mpi_queue* queue, const mpi_message::ptr& msg);
+  incoming_header(mpi_queue* queue, mpi_message* msg);
 
 };
 
@@ -189,10 +189,10 @@ class eager0_mmap : public eager0_protocol
  public:
 
   void
-  send_header(mpi_queue* queue, const mpi_message::ptr& msg);
+  send_header(mpi_queue* queue, mpi_message* msg);
 
   void
-  incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg);
+  incoming_payload(mpi_queue* queue, mpi_message* msg);
 
   std::string
   to_string() const {
@@ -215,10 +215,10 @@ class eager0_socket : public eager0_protocol
   virtual ~eager0_socket();
 
   void
-  send_header(mpi_queue* queue, const mpi_message::ptr& msg);
+  send_header(mpi_queue* queue, mpi_message* msg);
 
   void
-  incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg);
+  incoming_payload(mpi_queue* queue, mpi_message* msg);
 
   std::string
   to_string() const {
@@ -238,10 +238,10 @@ class eager0_rdma : public eager0_protocol
   virtual ~eager0_rdma();
 
   void
-  send_header(mpi_queue* queue, const mpi_message::ptr& msg);
+  send_header(mpi_queue* queue, mpi_message* msg);
 
   void
-  incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg);
+  incoming_payload(mpi_queue* queue, mpi_message* msg);
 
   std::string
   to_string() const {
@@ -273,17 +273,17 @@ class eager1_rdma : public eager_protocol
   send_needs_eager_ack() const;
 
   void
-  send_header(mpi_queue* queue, const mpi_message::ptr& msg);
+  send_header(mpi_queue* queue, mpi_message* msg);
 
   void
-  incoming_header(mpi_queue* queue, const mpi_message::ptr& msg);
+  incoming_header(mpi_queue* queue, mpi_message* msg);
 
   void
-  finish_recv_header(mpi_queue* queue, const mpi_message::ptr& msg,
+  finish_recv_header(mpi_queue* queue, mpi_message* msg,
               mpi_queue_recv_request* req);
 
   void
-  finish_recv_payload(mpi_queue* queue, const mpi_message::ptr& msg,
+  finish_recv_payload(mpi_queue* queue, mpi_message* msg,
                mpi_queue_recv_request* req);
 
   std::string
@@ -298,7 +298,7 @@ class eager1_rdma_singlecpy : public eager1_rdma
  public:
 
   void
-  incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg);
+  incoming_payload(mpi_queue* queue, mpi_message* msg);
 
   virtual ~eager1_rdma_singlecpy();
 
@@ -320,7 +320,7 @@ class eager1_rdma_doublecpy : public eager1_rdma
   virtual ~eager1_rdma_doublecpy();
 
   void
-  incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg);
+  incoming_payload(mpi_queue* queue, mpi_message* msg);
 
   std::string
   to_string() const {
@@ -348,11 +348,11 @@ class rendezvous_protocol : public mpi_protocol
   send_needs_eager_ack() const;
 
   virtual void
-  finish_recv_header(mpi_queue* queue, const mpi_message::ptr& msg,
+  finish_recv_header(mpi_queue* queue, mpi_message* msg,
               mpi_queue_recv_request* req);
 
   void
-  configure_send_buffer(const mpi_message::ptr& msg, void* buffer){
+  configure_send_buffer(mpi_message* msg, void* buffer){
     msg->set_buffer(buffer, false); //not eager
   }
 
@@ -371,17 +371,17 @@ class rendezvous_socket : public rendezvous_protocol
   send_needs_rendezvous_ack() const;
 
   void
-  send_header(mpi_queue* queue, const mpi_message::ptr& msg);
+  send_header(mpi_queue* queue, mpi_message* msg);
 
   void
-  incoming_header(mpi_queue* queue, const mpi_message::ptr& msg);
+  incoming_header(mpi_queue* queue, mpi_message* msg);
 
   void
-  finish_recv_payload(mpi_queue* queue, const mpi_message::ptr& msg,
+  finish_recv_payload(mpi_queue* queue, mpi_message* msg,
                mpi_queue_recv_request* req);
 
   void
-  incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg);
+  incoming_payload(mpi_queue* queue, mpi_message* msg);
 
   std::string
   to_string() const {
@@ -407,13 +407,13 @@ class rendezvous_rdma : public rendezvous_protocol
   send_needs_rendezvous_ack() const;
 
   void
-  send_header(mpi_queue* queue, const mpi_message::ptr& msg);
+  send_header(mpi_queue* queue, mpi_message* msg);
 
   void
-  incoming_header(mpi_queue* queue, const mpi_message::ptr& msg);
+  incoming_header(mpi_queue* queue, mpi_message* msg);
 
   void
-  incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg);
+  incoming_payload(mpi_queue* queue, mpi_message* msg);
 
   std::string
   to_string() const {
@@ -426,11 +426,11 @@ class rendezvous_rdma : public rendezvous_protocol
   }
 
   void
-  finish_recv_header(mpi_queue* queue, const mpi_message::ptr& msg,
+  finish_recv_header(mpi_queue* queue, mpi_message* msg,
               mpi_queue_recv_request* req);
 
   void
-  finish_recv_payload(mpi_queue* queue, const mpi_message::ptr& msg,
+  finish_recv_payload(mpi_queue* queue, mpi_message* msg,
                mpi_queue_recv_request* req);
 
   void
@@ -450,13 +450,13 @@ class rendezvous_rma : public rendezvous_protocol
   send_needs_rendezvous_ack() const;
 
   void
-  send_header(mpi_queue* queue, const mpi_message::ptr& msg);
+  send_header(mpi_queue* queue, mpi_message* msg);
 
   void
-  incoming_header(mpi_queue* queue, const mpi_message::ptr& msg);
+  incoming_header(mpi_queue* queue, mpi_message* msg);
 
   void
-  incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg);
+  incoming_payload(mpi_queue* queue, mpi_message* msg);
 
   std::string
   to_string() const {
@@ -469,11 +469,11 @@ class rendezvous_rma : public rendezvous_protocol
   }
 
   void
-  finish_recv_header(mpi_queue* queue, const mpi_message::ptr& msg,
+  finish_recv_header(mpi_queue* queue, mpi_message* msg,
               mpi_queue_recv_request* req);
 
   void
-  finish_recv_payload(mpi_queue* queue, const mpi_message::ptr& msg,
+  finish_recv_payload(mpi_queue* queue, mpi_message* msg,
                mpi_queue_recv_request* req);
 
   void
@@ -495,13 +495,13 @@ class rendezvous_mmap : public rendezvous_protocol
   send_needs_rendezvous_ack() const;
 
   void
-  send_header(mpi_queue* queue, const mpi_message::ptr& msg);
+  send_header(mpi_queue* queue, mpi_message* msg);
 
   void
-  incoming_header(mpi_queue* queue, const mpi_message::ptr& msg);
+  incoming_header(mpi_queue* queue, mpi_message* msg);
 
   void
-  incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg);
+  incoming_payload(mpi_queue* queue, mpi_message* msg);
 
   std::string
   to_string() const {
@@ -515,7 +515,7 @@ class rendezvous_mmap : public rendezvous_protocol
 
   void
   finish_recv_payload(mpi_queue* queue,
-               const mpi_message::ptr& msg,
+               mpi_message* msg,
                mpi_queue_recv_request* req);
 
 };

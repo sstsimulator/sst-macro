@@ -9,21 +9,21 @@ SpktRegister("nullnic | null", nic, null_nic,
             "Implements a nic which immediately injects messages with no memory reads or latency");
 
 void
-null_nic::recv_chunk(const sst_message::ptr& chunk)
+null_nic::recv_chunk(sst_message* chunk)
 {
-  sst_message::ptr parent_msg = completion_queue_.recv(ptr_safe_cast(message_chunk, chunk));
+  sst_message* parent_msg = completion_queue_.recv(safe_cast(message_chunk, chunk));
   if (parent_msg){
     parent_->handle(parent_msg);
   }
 }
 
 void
-null_nic::do_send(const network_message::ptr& msg)
+null_nic::do_send(network_message* msg)
 {
   nic_debug("null model: sending message %s", msg->to_string().c_str());
   injector_->handle(msg);
   if (msg->needs_ack()) {
-    network_message::ptr acker = msg->clone_injection_ack();
+    network_message* acker = msg->clone_injection_ack();
     send_to_node(acker);
   }
 }

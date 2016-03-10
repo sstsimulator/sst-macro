@@ -21,10 +21,7 @@ namespace sw {
 
 class complete_message : public launch_message
 {
-
  public:
-  typedef sprockit::refcount_ptr<complete_message> ptr;
-
   virtual std::string
   to_string() const {
     return "complete_message";

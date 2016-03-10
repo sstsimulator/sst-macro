@@ -13,10 +13,10 @@ class mpi_round_by_round_collective :
  public:
 
   virtual void
-  send_complete(const mpi_message::ptr& msg);
+  send_complete(mpi_message* msg);
 
   virtual void
-  recv_complete(const mpi_message::ptr &msg);
+  recv_complete(mpi_message*msg);
 
   virtual const char*
   name() const = 0;

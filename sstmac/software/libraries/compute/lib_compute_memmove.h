@@ -67,10 +67,10 @@ class lib_compute_memmove :
   do_access(long bytes);
 
   void
-  compute(const sst_message::ptr& msg);
+  compute(sst_message* msg);
 
   void
-  finish(const sst_message::ptr& msg);
+  finish(sst_message* msg);
 
 
  protected:

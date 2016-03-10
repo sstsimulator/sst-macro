@@ -44,7 +44,8 @@ nic::nic() :
   spy_bytes_(0),
   hist_msg_size_(0),
   local_bytes_sent_(0),
-  global_bytes_sent_(0)
+  global_bytes_sent_(0),
+  interconn_(0)
 {
 }
 
@@ -100,7 +101,7 @@ nic::init_factory_params(sprockit::sim_parameters *params)
 }
 
 void
-nic::recv_chunk(const sst_message::ptr& chunk)
+nic::recv_chunk(sst_message* chunk)
 {
   spkt_throw_printf(sprockit::unimplemented_error,
             "nic::recv_chunk: not valid for %s receiving %s",
@@ -108,7 +109,7 @@ nic::recv_chunk(const sst_message::ptr& chunk)
 }
 
 void
-nic::recv_credit(const sst_message::ptr &msg)
+nic::recv_credit(sst_message*msg)
 {
   //do nothing
 }
@@ -119,19 +120,19 @@ nic::delete_statics()
 }
 
 void
-nic::finish_recv_ack(const sst_message::ptr& msg)
+nic::finish_recv_ack(sst_message* msg)
 {
 }
 
 void
-nic::finish_recv_req(const sst_message::ptr& msg)
+nic::finish_recv_req(sst_message* msg)
 {
 }
 
 void
-nic::recv_message(const sst_message::ptr& msg)
+nic::recv_message(sst_message* msg)
 {
-  network_message::ptr netmsg = ptr_safe_cast(network_message, msg);
+  network_message* netmsg = safe_cast(network_message, msg);
 
   nic_debug("handling message %s:%lu of type %s from node %d while running",
     netmsg->to_string().c_str(),
@@ -180,18 +181,18 @@ nic::recv_message(const sst_message::ptr& msg)
 }
 
 void
-nic::ack_send(const network_message::ptr& payload)
+nic::ack_send(network_message* payload)
 {
   if (payload->needs_ack()){
-    network_message::ptr ack = payload->clone_injection_ack();
+    network_message* ack = payload->clone_injection_ack();
     nic_debug("acking payload %p:%s with ack %p",
-      payload.get(), payload->to_string().c_str(), ack.get());
+      payload, payload->to_string().c_str(), ack);
     send_to_node(ack);
   }
 }
 
 void
-nic::intranode_send(const network_message::ptr& payload)
+nic::intranode_send(network_message* payload)
 {
   record_message(payload);
   switch(payload->type())
@@ -211,14 +212,14 @@ nic::intranode_send(const network_message::ptr& payload)
 }
 
 void
-nic::handle(const sst_message::ptr& msg)
+nic::handle(sst_message* msg)
 {
   if (parent_->failed()){
     return;
   }
 
   nic_debug("handling message %p:%s going %d->%d",
-    msg.get(),
+    msg,
     msg->to_string().c_str(),
     int(msg->fromaddr()),
     int(msg->toaddr()));
@@ -234,7 +235,7 @@ nic::handle(const sst_message::ptr& msg)
 }
 
 void
-nic::record_message(const network_message::ptr& netmsg)
+nic::record_message(network_message* netmsg)
 {
   nic_debug("sending message %lu of size %ld of type %s to node %d: "
       "netid=%lu for %s",
@@ -273,7 +274,7 @@ nic::record_message(const network_message::ptr& netmsg)
 }
 
 void
-nic::internode_send(const network_message::ptr& netmsg)
+nic::internode_send(network_message* netmsg)
 {
   record_message(netmsg);
   if (negligible_size(netmsg->byte_length())){
@@ -294,7 +295,7 @@ nic::finalize_init()
 }
 
 void
-nic::send_to_node(const network_message::ptr& payload)
+nic::send_to_node(network_message* payload)
 {
   SCHEDULE_NOW(parent_, payload);
 }
@@ -306,7 +307,7 @@ nic::init_param1(sprockit::factory_type *interconn)
 }
 
 void
-nic::send_to_interconn(const network_message::ptr &netmsg)
+nic::send_to_interconn(network_message*netmsg)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   spkt_throw(sprockit::unimplemented_error,

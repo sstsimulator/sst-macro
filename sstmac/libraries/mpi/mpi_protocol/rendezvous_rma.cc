@@ -8,7 +8,7 @@ namespace sw {
 
 void
 rendezvous_rma::send_header(mpi_queue* queue,
-                            const mpi_message::ptr& msg)
+                            mpi_message* msg)
 {
   SSTMACBacktrace("MPI Rendezvous Protocol: RMA Send Header");
   //msg->set_needs_ack(false);  //we don't care about the nic ack for this
@@ -18,11 +18,11 @@ rendezvous_rma::send_header(mpi_queue* queue,
 
 void
 rendezvous_rma::incoming_header(mpi_queue* queue,
-                              const mpi_message::ptr& msg)
+                              mpi_message* msg)
 {
   SSTMACBacktrace("MPI Rendezvous Protocol: RMA Handle Header");
 
-  mpi_rma_message::ptr rmsg = ptr_safe_cast(mpi_rma_message, msg);
+  mpi_rma_message* rmsg = safe_cast(mpi_rma_message, msg);
 
   if (queue->windows_.find(rmsg->winid()) == queue->windows_.end()) {
     spkt_throw_printf(sprockit::spkt_error,
@@ -78,7 +78,7 @@ rendezvous_rma::incoming_header(mpi_queue* queue,
 
 void
 rendezvous_rma::incoming_payload(mpi_queue* queue,
-                               const mpi_message::ptr& msg)
+                               mpi_message* msg)
 {
   SSTMACBacktrace("MPI Rendezvous Protocol: RMA Handle Payload");
 
@@ -110,7 +110,7 @@ rendezvous_rma::send_needs_rendezvous_ack() const
 
 void
 rendezvous_rma::finish_recv_header(mpi_queue* queue,
-                            const mpi_message::ptr& msg, mpi_queue_recv_request* req)
+                            mpi_message* msg, mpi_queue_recv_request* req)
 {
   spkt_throw_printf(sprockit::spkt_error,
        "rendezvous_rma::recv_header - calling this function doesn't make sense");
@@ -118,7 +118,7 @@ rendezvous_rma::finish_recv_header(mpi_queue* queue,
 
 void
 rendezvous_rma::finish_recv_payload(mpi_queue* queue,
-                             const mpi_message::ptr& msg, mpi_queue_recv_request* req)
+                             mpi_message* msg, mpi_queue_recv_request* req)
 {
   spkt_throw_printf(sprockit::spkt_error,
         "rendezvous_rma::recv_payload - calling this function doesn't make sense");

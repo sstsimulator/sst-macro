@@ -18,7 +18,7 @@ event_loc_id event_loc_id::null = event_loc_id(switch_id(std::numeric_limits<int
 event_loc_id event_loc_id::uninitialized = event_loc_id(switch_id(std::numeric_limits<int32_t>::max()-1));
 
 void
-multi_event_handler::handle(const sst_message::ptr& msg)
+multi_event_handler::handle(sst_message* msg)
 {
   std::map<sst_message::message_type_t, handle_functor*>::iterator
     it = fxns_.find(msg->type());

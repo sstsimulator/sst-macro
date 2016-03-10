@@ -45,11 +45,11 @@ class simple_node :
 
   virtual void
   execute_kernel(ami::COMP_FUNC func,
-                 const sst_message::ptr& data);
+                 sst_message* data);
 
   virtual void
   execute_kernel(ami::COMM_FUNC func,
-                 const sst_message::ptr& data);
+                 sst_message* data);
 
   // ------- AMI functions --------- //
   virtual bool
@@ -67,7 +67,7 @@ class simple_node :
 
  protected:
   virtual bool
-  try_comp_kernels(ami::COMP_FUNC func, const sst_message::ptr& data);
+  try_comp_kernels(ami::COMP_FUNC func, sst_message* data);
 
 };
 

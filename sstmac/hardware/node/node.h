@@ -144,7 +144,7 @@ class node :
   */
   virtual void
   execute_kernel(ami::COMP_FUNC func,
-                 const sst_message::ptr& data) = 0;
+                 sst_message* data) = 0;
   /**
    Make the node execute a particular communication function
    @param func  Enum identifying the type of communication
@@ -152,7 +152,7 @@ class node :
   */
   virtual void
   execute_kernel(ami::COMM_FUNC func,
-                 const sst_message::ptr& data) = 0;
+                 sst_message* data) = 0;
 
 
   /**
@@ -178,7 +178,7 @@ class node :
    @param msg  The incoming event
   */
   virtual void
-  handle_while_running(const sst_message::ptr& msg);
+  handle_while_running(sst_message* msg);
 
   /**
    Node device might have failed. If failed, the NIC might still process incoming messages
@@ -186,20 +186,20 @@ class node :
    @param msg  The incoming event
   */
   virtual void
-  handle_while_failed(const sst_message::ptr& msg);
+  handle_while_failed(sst_message* msg);
 
   /**
    Perform all actions necessary to process a node failure and propaage to subdevices
    @param msg Event containing all the information about the node failure
   */
   virtual void
-  do_failure(const sst_message::ptr& msg);
+  do_failure(sst_message* msg);
 
   /**
    Push a network message (operation at the MTL layer) onto the NIC
    @param netmsg
   */
-  void send_to_nic(const network_message_ptr& netmsg);
+  void send_to_nic(network_message* netmsg);
 
   void connect_nic();
 
@@ -226,12 +226,12 @@ class node :
   void build_launchers(sprockit::sim_parameters* params);
 
  private:
-  std::list<sw::launch_message_ptr> launchers_;
+  std::list<sw::launch_message*> launchers_;
   unique_msg_id next_outgoing_id_;
 
 #if !SSTMAC_INTEGRATED_SST_CORE
  public:
-  void launch(timestamp start, const sw::launch_message_ptr& msg);
+  void launch(timestamp start, sw::launch_message* msg);
 #else
   void launch();
 #endif

@@ -209,7 +209,7 @@ network_message::byte_length() const
 }
 
 void
-network_message::clone_into(const network_message::ptr& cln) const
+network_message::clone_into(network_message* cln) const
 {
   cln->needs_ack_ = needs_ack_;
   cln->route_algo_ = route_algo_;

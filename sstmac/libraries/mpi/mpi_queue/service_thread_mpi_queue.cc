@@ -95,12 +95,12 @@ service_thread_mpi_queue::check_timeout(const timestamp &t,
 }
 
 void
-service_thread_mpi_queue::buffer_unexpected(const mpi_message::ptr& msg)
+service_thread_mpi_queue::buffer_unexpected(mpi_message* msg)
 {
 }
 
 void
-service_thread_mpi_queue::incoming_message(const mpi_message::ptr& message)
+service_thread_mpi_queue::incoming_message(mpi_message* message)
 {
   mpi_queue::incoming_message(message);
 }
@@ -113,20 +113,20 @@ service_thread_mpi_queue::progress_done_handler(operating_system* os,
 }
 
 void
-service_thread_mpi_queue::post_header(const mpi_message::ptr& msg)
+service_thread_mpi_queue::post_header(mpi_message* msg)
 {
   //I have no way to model delay ... just send it
   server_->send(msg);
 }
 
 void
-service_thread_mpi_queue::post_rdma(const mpi_message::ptr& msg)
+service_thread_mpi_queue::post_rdma(mpi_message* msg)
 {
   server_->send(msg);
 }
 
 void
-service_thread_mpi_queue::do_send(const mpi_message::ptr&mess)
+service_thread_mpi_queue::do_send(mpi_message*mess)
 {
   event* ev = new_event(os_->event_location(), this, &mpi_queue::start_send, mess);
   server_->schedule_now(ev);
@@ -140,14 +140,14 @@ service_thread_mpi_queue::do_recv(mpi_queue_recv_request*req)
 }
 
 void
-service_thread_mpi_queue::buffered_recv(const mpi_message::ptr& msg,
+service_thread_mpi_queue::buffered_recv(mpi_message* msg,
                                        mpi_queue_recv_request*req)
 {
   server_->buffered_recv(msg, req);
 }
 
 void
-service_thread_mpi_queue::buffered_send(const mpi_message::ptr& msg)
+service_thread_mpi_queue::buffered_send(mpi_message* msg)
 {
   server_->buffered_send(msg);
 }

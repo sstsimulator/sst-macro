@@ -64,7 +64,7 @@ mpi_direct_gatherv::mpi_direct_gatherv(mpi_request* thekey,
 // Callback method to indicate that a send operation has completed.
 //
 void
-mpi_direct_gatherv::send_complete(const mpi_message::ptr& msg)
+mpi_direct_gatherv::send_complete(mpi_message* msg)
 {
 
   mpi_gatherv_debug("send complete to %d, count=%d", int(msg->dest()), msg->count());
@@ -84,7 +84,7 @@ mpi_direct_gatherv::send_complete(const mpi_message::ptr& msg)
 // Callback method to indicate that a receive operation has completed.
 //
 void
-mpi_direct_gatherv::recv_complete(const mpi_message::ptr& msg)
+mpi_direct_gatherv::recv_complete(mpi_message* msg)
 {
   mpi_gatherv_debug("recv complete from %d, count=%d", int(msg->source()), msg->count());
 

@@ -10,6 +10,7 @@
  */
 
 #include <sprockit/errors.h>
+#include <sprockit/util.h>
 #include <sstmac/hardware/processor/simple_processor.h>
 #include <sstmac/hardware/memory/memory_model.h>
 #include <sstmac/hardware/node/node.h>
@@ -30,9 +31,9 @@ simple_processor::finalize_init()
 }
 
 void
-simple_processor::compute(const sst_message::ptr& msg)
+simple_processor::compute(sst_message* msg)
 {
-  sw::compute_message::ptr cmsg = ptr_safe_cast(sw::compute_message, msg);
+  sw::compute_message* cmsg = safe_cast(sw::compute_message, msg);
   //can only do timed compute
   timestamp time(cmsg->event_value(sw::compute_message::time), timestamp::exact);
   os_delayed_notify(time, cmsg);

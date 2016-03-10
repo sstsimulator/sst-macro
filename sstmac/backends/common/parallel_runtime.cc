@@ -145,7 +145,7 @@ parallel_runtime::send_message(int thread_id,
   topology_id dst,
   event_loc_id src,
   uint32_t seqnum,
-  const sst_message::ptr& msg)
+  sst_message* msg)
 {
   sprockit::serializer ser;
   void* buffer = send_buffer_pools_[thread_id].pop();

@@ -99,7 +99,7 @@ mpi_halving_reduce_scatter(mpi_request* thekey,
 // Callback method to indicate that a send operation has completed.
 //
 void
-mpi_halving_reduce_scatter::send_complete(const mpi_message::ptr& msg)
+mpi_halving_reduce_scatter::send_complete(mpi_message* msg)
 {
   mpi_redscat_debug("send complete to %d, count=%d", int(msg->dest()), msg->count());
   --pending_sends_;
@@ -110,7 +110,7 @@ mpi_halving_reduce_scatter::send_complete(const mpi_message::ptr& msg)
 // Callback method to indicate that a receive operation has completed.
 //
 void
-mpi_halving_reduce_scatter::recv_complete(const mpi_message::ptr& msg)
+mpi_halving_reduce_scatter::recv_complete(mpi_message* msg)
 {
   mpi_redscat_debug("recv complete from %d, count=%d", int(msg->source()), msg->count());
 

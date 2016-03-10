@@ -36,7 +36,7 @@ mpi_request::construct(const key::category& cat)
 }
 
 void
-mpi_request::complete(const mpi_message::ptr& msg)
+mpi_request::complete(mpi_message* msg)
 {
   if (msg && !cancelled_) {
     msg->build_status(&stat_);
