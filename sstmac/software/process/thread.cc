@@ -26,7 +26,6 @@
 #include <memory.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <sstmac/software/process/localize_global.h>
 
 
 
@@ -47,14 +46,6 @@ thread::init_thread(int physical_thread_id, threading_interface* threadcopy, voi
   stack_ = stack;
   stacksize_ = stacksize;
   os_ = os;
-  int size = global_variables::context_size;
-  if (size >= 0){
-    global_variables_ = new char[size];
-    ::memcpy(global_variables_, global_variables::global_initer, size);
-  } else {
-    global_variables_ = 0;
-  }
-
 
   init_id();
 

@@ -124,6 +124,20 @@ packet_flow_switch::packet_flow_switch() :
 }
 #endif
 
+packet_flow_switch::~packet_flow_switch()
+{
+  if (xbar_) delete xbar_;
+  if (bytes_sent_) delete bytes_sent_;
+  if (byte_hops_) delete byte_hops_;
+  if (congestion_spyplot_) delete congestion_spyplot_;
+ 
+  int nbuffers = out_buffers_.size();
+  for (int i=0; i < nbuffers; ++i){
+    packet_flow_sender* buf = out_buffers_[i];
+    if (buf) delete buf;
+  }
+}
+
 void
 packet_flow_switch::init_factory_params(sprockit::sim_parameters *params)
 {
@@ -164,10 +178,6 @@ packet_flow_switch::set_topology(topology *top)
 {
   if (bytes_sent_) bytes_sent_->set_topology(top);
   network_switch::set_topology(top);
-}
-
-packet_flow_switch::~packet_flow_switch()
-{
 }
 
 void

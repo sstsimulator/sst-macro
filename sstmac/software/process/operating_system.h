@@ -84,9 +84,6 @@ class operating_system :
   virtual void
   finalize_init();
 
-  virtual operating_system*
-  clone(node_id addr) const;
-
   static void
   delete_statics();
 

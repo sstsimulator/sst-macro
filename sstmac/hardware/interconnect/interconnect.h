@@ -76,7 +76,7 @@ class interconnect :
     return "interconnect";
   }
 
-  virtual ~interconnect(){}
+  virtual ~interconnect();
 
   virtual int
   num_nodes() const;
@@ -246,12 +246,6 @@ class macro_interconnect : public interconnect
   macro_interconnect();
 
  protected:
-  /**
-    It may happen due to parallelism that we are only responsible
-    for a subset of all the nodes and switches. This might be null,
-    indicating the whole topology
-  */
-  index_subset* subset_;
   partition* partition_;
   parallel_runtime* rt_;
 

@@ -14,7 +14,7 @@ class packet_flow_NtoM_queue :
   public packet_flow_sender
 {
  public:
-  virtual ~packet_flow_NtoM_queue() {}
+  virtual ~packet_flow_NtoM_queue();
 
   packet_flow_NtoM_queue(
     timestamp send_lat,

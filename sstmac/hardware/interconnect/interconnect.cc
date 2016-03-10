@@ -54,6 +54,13 @@ interconnect::interconnect() :
 {
 }
 
+
+interconnect::~interconnect() 
+{
+  sprockit::delete_vals(nodes_);
+  sprockit::delete_vals(nics_);
+}
+
 int
 interconnect::num_nodes() const
 {
@@ -107,14 +114,14 @@ sst_interconnect::kill_node(node_id nid, timestamp t)
 }
 #else
 macro_interconnect::macro_interconnect() :
- subset_(0)
+  partition_(0)
 {
 }
 
 macro_interconnect::~macro_interconnect()
 {
   delete topology_;
-  sprockit::delete_vals(nodes_);
+  sprockit::delete_vals(netlinks_);
 }
 
 
@@ -160,14 +167,15 @@ macro_interconnect::init_factory_params(sprockit::sim_parameters* params)
   sprockit::sim_parameters* node_params = params->get_namespace("node");
   sprockit::factory<connectable>* node_builder
     = new sprockit::template_factory<connectable, node_factory>(node_params->get_param("model"));
+  topology_->build_endpoint_connectables(nodes, node_builder, partition_, rt_->me(), node_params);
+  delete node_builder;
+
+  int nic_conc = 1;
   sprockit::sim_parameters* nic_params = params->get_namespace("nic");
   sprockit::factory2<connectable>* nic_builder
     = new sprockit::template_factory2<connectable, nic_factory>(nic_params->get_param("model"));
-
-  topology_->build_endpoint_connectables(nodes, node_builder, partition_, rt_->me(), node_params);
-
-  int nic_conc = 1;
   topology_->build_interface_connectables(nic_conc, nics, nic_builder, partition_, rt_->me(), nic_params, this);
+  delete nic_builder;
 
   if (params->has_namespace("netlink")){
     int netlink_conc = topology_->num_nodes_per_netlink();
@@ -176,7 +184,9 @@ macro_interconnect::init_factory_params(sprockit::sim_parameters* params)
       = new sprockit::template_factory2<connectable, netlink_factory>(netlink_params->get_param("model"));
     topology_->build_interface_connectables(netlink_conc, netlinks, netlink_builder,
                   partition_, rt_->me(), netlink_params, this);
+    delete netlink_builder;
   }
+
 
   copy_map(nodes, nodes_);
   copy_map(nics, nics_);
@@ -190,19 +200,6 @@ macro_interconnect::init_factory_params(sprockit::sim_parameters* params)
     nd->set_nic(nc);
     nc->set_node(nd);
   }
-
-  /**
-   * JJW 02/08/2016 Don't bother with this anymore 
-  if (nics_.empty()){
-    spkt_throw(sprockit::value_error,
-      "interconnect did not build any NICs");
-  }
-
-  if (nodes_.empty()){
-    spkt_throw(sprockit::value_error,
-      "interconnect did not build any nodes");
-  }
-  */
 
   int numNodes = topology_->num_nodes();
   for (int i=0; i < numNodes; ++i){

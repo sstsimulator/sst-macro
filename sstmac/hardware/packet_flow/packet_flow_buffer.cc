@@ -20,6 +20,11 @@ packet_flow_buffer::packet_flow_buffer(
   arb->set_outgoing_bw(out_bw);
 }
 
+packet_flow_buffer::~packet_flow_buffer()
+{
+  if (arb_) delete arb_;
+}
+
 void
 packet_flow_finite_buffer::set_input(int this_inport, int src_outport,
                               event_handler* input)

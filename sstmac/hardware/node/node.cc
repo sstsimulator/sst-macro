@@ -89,10 +89,24 @@ node::init(unsigned int phase)
 node::node() :
   os_(0),
   nic_(0),
-  mem_model_(0)
+  mem_model_(0),
+  proc_(0)
 {
 }
 #endif
+
+node::~node()
+{
+  if (os_){
+    os_->unregister_all_libs(this);
+    delete os_;
+  }
+  if (mem_model_) delete mem_model_;
+  if (proc_) delete proc_;
+  //JJW 03/09/2015 - node does not own NIC
+  //if (nic_) delete nic_;
+}
+
 
 void
 node::init_factory_params(sprockit::sim_parameters *params)
@@ -164,17 +178,6 @@ node::finalize_init()
   os_->set_addr(my_addr_);
   os_->set_ncores(ncores_, nsocket_);
   os_->register_lib(this, new launcher);
-}
-
-node::~node()
-{
-  if (os_){
-    os_->unregister_all_libs(this);
-    delete os_;
-  }
-  if (nic_) delete nic_;
-  if (mem_model_) delete mem_model_;
-  if (proc_) delete proc_;
 }
 
 std::string

@@ -30,6 +30,8 @@ class packet_flow_bandwidth_arbitrator :
   virtual std::string
   to_string() const = 0;
 
+  virtual ~packet_flow_bandwidth_arbitrator(){}
+
   virtual void
   set_outgoing_bw(double out_bw) {
     out_bw_ = out_bw;
@@ -145,6 +147,8 @@ class packet_flow_cut_through_arbitrator :
 
  public:
   packet_flow_cut_through_arbitrator();
+
+  ~packet_flow_cut_through_arbitrator();
 
   virtual void
   arbitrate(timestamp now,

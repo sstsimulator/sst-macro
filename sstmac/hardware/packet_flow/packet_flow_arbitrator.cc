@@ -162,6 +162,16 @@ packet_flow_cut_through_arbitrator::set_outgoing_bw(double out_bw)
   head_->length = 1e30;
 }
 
+packet_flow_cut_through_arbitrator::~packet_flow_cut_through_arbitrator()
+{
+  bandwidth_epoch* next = head_;
+  while (next){
+    bandwidth_epoch* e = next;
+    next = next->next;
+    delete e;
+  }
+}
+
 int
 packet_flow_cut_through_arbitrator::bytes_sending(const timestamp &now) const
 {

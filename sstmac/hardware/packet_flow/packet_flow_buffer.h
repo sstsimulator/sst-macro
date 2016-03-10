@@ -14,6 +14,8 @@ class packet_flow_buffer :
 {
 
  public:
+  virtual ~packet_flow_buffer();
+
   virtual void
   set_output(int this_outport, int dst_inport,
     event_handler* output);
@@ -40,7 +42,7 @@ class packet_flow_buffer :
     const timestamp& credit_lat,
     packet_flow_bandwidth_arbitrator* arb);
 
-  packet_flow_buffer() : bytes_delayed_(0) {}
+  packet_flow_buffer() : bytes_delayed_(0), arb_(0) {}
 
   std::string
   buffer_string(const char* name) const;
@@ -59,6 +61,8 @@ class packet_flow_finite_buffer :
   public packet_flow_buffer
 {
  public:
+  virtual ~packet_flow_finite_buffer(){}
+
   virtual void
   set_input(int this_inport, int src_outport,
             event_handler* input);
@@ -104,6 +108,8 @@ class packet_flow_infinite_buffer :
   }
 
   packet_flow_infinite_buffer(){}
+
+  virtual ~packet_flow_infinite_buffer(){}
 
   void //no-op, I don't need to send credits to an input, I'm infinite
   set_input(int my_inport, int dst_outport, event_handler *input){}

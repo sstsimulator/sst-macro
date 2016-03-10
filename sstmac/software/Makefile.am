@@ -120,7 +120,6 @@ nobase_library_include_HEADERS = \
   process/thread.h \
   process/thread_fwd.h \
   process/thread_id.h \
-  process/localize_global.h \
   process/global.h \
   process/global_base.h \
   process/global_builtin.h \

@@ -101,6 +101,9 @@ packet_flow_nic::init_factory_params(sprockit::sim_parameters *params)
 //
 packet_flow_nic::~packet_flow_nic() throw ()
 {
+  if (inj_buffer_) delete inj_buffer_;
+  if (ej_buffer_) delete ej_buffer_;
+  if (endpoint_) delete endpoint_;
 }
 
 void
@@ -126,7 +129,7 @@ packet_flow_nic::finalize_init()
   inj_buffer_->set_accumulate_delay(acc_delay_);
   ej_buffer_->set_accumulate_delay(acc_delay_);
 
-  inj_buffer_->set_acker(parent_);
+  if (parent_) inj_buffer_->set_acker(parent_);
 
   nic::finalize_init();
 }

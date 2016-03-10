@@ -102,6 +102,15 @@ packet_flow_NtoM_queue::packet_flow_NtoM_queue(
   arb_tmpl_->set_outgoing_bw(out_bw);
 }
 
+packet_flow_NtoM_queue::~packet_flow_NtoM_queue()
+{
+  int narbs = port_arbitrators_.size();
+  for (int i=0; i < narbs; ++i){
+    packet_flow_bandwidth_arbitrator* arb = port_arbitrators_[i];
+    if (arb) delete arb;
+  }
+}
+
 void
 packet_flow_NtoM_queue::deadlock_check()
 {

@@ -112,6 +112,8 @@ class packet_flow_switch :
   );
 #endif
 
+  ~packet_flow_switch();
+
   virtual void
   initialize();
 
@@ -167,9 +169,6 @@ class packet_flow_switch :
 
   virtual std::string
   to_string() const;
-
-  virtual
-  ~packet_flow_switch();
 
  protected:
   virtual void
