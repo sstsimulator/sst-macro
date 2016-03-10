@@ -10,6 +10,7 @@
 #include <sstmac/common/runtime.h>
 #include <sstmac/common/sim_thread_lock.h>
 #include <sstmac/common/stats/stat_histogram_fwd.h>
+#include <sstmac/common/stats/stat_local_double_fwd.h>
 #include <tinyxml2.h>
 #include <containers.h>
 
@@ -149,6 +150,8 @@ namespace lblxml
   extern rank_to_da_list_t g_rank_to_valid_sends;
   extern rank_to_da_list_t g_rank_to_valid_comps;
   extern std::map<int, std::vector<bool> > g_reduce_to_box_running;
+  extern double g_total_idle_time;
+  extern int g_active_ranks;
   //extern rank_to_da_list_t g_rank_to_valid_allreduces;
 
   //extern comm_map_t g_comm_map;
@@ -172,7 +175,7 @@ namespace lblxml
     double compute_scale_;
     std::string boxfile_, assignment_;
     std::vector< std::string> eventfiles_;
-    bool do_compute_, randomize_events_, detailed_progress_, round_robin_, eff_bw_, minimize_locks_;
+    bool do_compute_, randomize_events_, detailed_progress_, round_robin_, minimize_locks_;
     static bool have_data_;
     int barrier_tag_;
     box_map_t my_boxes_;
@@ -187,6 +190,7 @@ namespace lblxml
     bool xml_read_only_;
     sumi::transport* tport_;
     sstmac::stat_histogram* hist_eff_bw_;
+    sstmac::stat_local_double* idle_time_;
 
     void
     init();
@@ -268,7 +272,7 @@ namespace lblxml
     virtual
     ~boxml() throw () {}
 
-    boxml() : barrier_tag_(-1) {}
+    boxml() : barrier_tag_(-1), hist_eff_bw_(0), idle_time_(0) {}
 
     app*
     clone_type() {

@@ -50,6 +50,7 @@ libsstmac_common_la_SOURCES = \
   stats/event_trace.cc \
   stats/location_trace.cc \
   stats/stat_local_int.cc \
+  stats/stat_local_double.cc \
   stats/stat_global_int.cc
 
 if VTK_ENABLE
@@ -115,6 +116,8 @@ nobase_library_include_HEADERS = \
   stats/location_trace.h \
   stats/stat_local_int.h \
   stats/stat_local_int_fwd.h \
+  stats/stat_local_double.h \
+  stats/stat_local_double_fwd.h \
   stats/stat_global_int.h \
   stats/stat_global_int_fwd.h
 
