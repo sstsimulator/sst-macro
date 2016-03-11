@@ -4,9 +4,9 @@ AC_DEFUN([CHECK_THREADING], [
 
 # Find out if we want pthreads as an option
 AH_TEMPLATE([HAVE_PTHREAD], [Define to make pthreads available for threading])
-AC_ARG_ENABLE(pthread,
+AC_ARG_WITH(pthread,
   [AS_HELP_STRING(
-    [--(dis|en)able-pthread],
+    [--with-pthread],
     [Control whether or not pthreads is available. Default is yes.]
     )],
   [
@@ -16,23 +16,10 @@ AC_ARG_ENABLE(pthread,
   ]
 )
 
-AH_TEMPLATE([HAVE_PTH], [Define to make pth available for threading])
-AC_ARG_ENABLE(pth,
-  [AS_HELP_STRING(
-    [--(dis|en)able-pth],
-    [Control whether or not pth is available. Default is yes.]
-    )],
-  [
-    enable_pth="$enableval"
-  ], [
-    enable_pth=yes
-  ]
-)
-
 AH_TEMPLATE([HAVE_UCONTEXT], [Define to make ucontext available for threading])
-AC_ARG_ENABLE(ucontext,
+AC_ARG_WITH(ucontext,
   [AS_HELP_STRING(
-    [--(dis|en)able-ucontext],
+    [--with-ucontext],
     [Control whether or not ucontext is available. Default is yes if not on Darwin.]
     )],
   [
@@ -43,6 +30,20 @@ AC_ARG_ENABLE(ucontext,
     else
       enable_ucontext=no
     fi
+  ]
+)
+
+AH_TEMPLATE([HAVE_PTH], [Define to make pth available for threading])
+AC_ARG_WITH(pth,
+  [AS_HELP_STRING(
+    [--with-pth@<:@=DIR@:>@],
+    [Control whether or not pth is available. Optionally specify installation location
+    DIR. Default is yes.]
+    )],
+  [
+    enable_pth=$withval
+  ], [
+    enable_pth=yes
   ]
 )
 
@@ -126,18 +127,32 @@ fi
 
 if test "$enable_pth" != "no"; then
   AC_MSG_CHECKING([whether GNU pth is present and usable])
+  SAVE_LDFLAGS=$LDFLAGS
+  SAVE_CPPFLAGS=$CPPFLAGS
+  PTH_LDFLAGS=
+  PTH_CPPFLAGS=
+  if test "$enable_pth" != "yes"; then
+    PTH_LDFLAGS=-L$enable_pth/lib
+    PTH_CPPFLAGS=-I$enable_pth/include
+    LDFLAGS="$LDFLAGS $PTH_LDFLAGS"
+    CPPFLAGS="$CPPFLAGS $PTH_CPPFLAGS"
+  fi
   AC_CHECK_LIB(
     [pth],
     [pth_uctx_switch],
     [
-      enable_pth="yes"
       AC_DEFINE(HAVE_PTH)
       LIBS="-lpth $LIBS"
+      AC_SUBST(PTH_CPPFLAGS)
+      AC_SUBST(PTH_LDFLAGS)
+      enable_pth="yes"
     ],
     [
       enable_pth="no"
     ]
   )
+  LDFLAGS=$SAVE_LDFLAGS
+  CPPFLAGS=$SAVE_CPPFLAGS
 fi
 
 AC_ARG_WITH(default-threading,
