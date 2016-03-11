@@ -10,8 +10,10 @@ AC_ARG_WITH(pthread,
     [Control whether or not pthreads is available. Default is yes.]
     )],
   [
+    user_with_pthread=yes
     enable_pthread=$enableval
   ], [
+    user_with_pthread=no
     enable_pthread=yes
   ]
 )
@@ -23,8 +25,10 @@ AC_ARG_WITH(ucontext,
     [Control whether or not ucontext is available. Default is yes if not on Darwin.]
     )],
   [
+    user_with_ucontext=yes
     enable_ucontext=$enableval
   ], [
+    user_with_ucontext=no
     if test "$darwin" = false; then
       enable_ucontext=yes
     else
@@ -41,8 +45,10 @@ AC_ARG_WITH(pth,
     DIR. Default is yes.]
     )],
   [
+    user_with_pth=yes
     enable_pth=$withval
   ], [
+    user_with_pth=no
     enable_pth=yes
   ]
 )
@@ -67,6 +73,9 @@ else
       ],[
         AC_MSG_RESULT([no])
         enable_pthread="no"
+        if test "$user_with_pthread" = yes; then
+          AC_MSG_ERROR([pthreads tests failed])
+        fi
       ])
 
     if test "$enable_pthread" = no; then
@@ -88,6 +97,9 @@ else
           AC_MSG_RESULT([no])
           enable_pthread="no"
           LIBS="$LIBSAVE"
+          if test "$user_with_pthread" = yes; then
+            AC_MSG_ERROR([pthreads tests failed])
+          fi
         ])
     fi
 
@@ -119,6 +131,9 @@ if test "$enable_ucontext" != no; then
       AC_MSG_RESULT([no])
       enable_ucontext="no"
       AM_CONDITIONAL(HAVE_UCONTEXT, false)
+      if test "$user_with_ucontext" = yes; then
+        AC_MSG_ERROR([ucontext tests failed])
+      fi
     ]
   )
 else
@@ -149,6 +164,9 @@ if test "$enable_pth" != "no"; then
     ],
     [
       enable_pth="no"
+      if test "$user_with_pth" = yes; then
+        AC_MSG_ERROR([pth tests failed])
+      fi
     ]
   )
   LDFLAGS=$SAVE_LDFLAGS

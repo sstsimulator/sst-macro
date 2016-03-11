@@ -58,7 +58,7 @@ CORE_LIBS += ../sstmac/backends/mpi/libsstmac_mpi_runtime.la
 endif
 
 if EXTERNAL_BOOST
-AM_LDFLAGS = $(BOOST_LDFLAGS)
+AM_LDFLAGS += $(BOOST_LDFLAGS)
 AM_LDFLAGS += $(BOOST_REGEX_LIB)
 endif
 

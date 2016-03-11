@@ -57,7 +57,7 @@ if VTK_ENABLE
  libsstmac_common_la_SOURCES += vis/vtk_engine.cc
 
  AM_CPPFLAGS += $(VTK_IFLAGS)
- AM_LDFLAGS = $(VTK_LDFLAGS)
+ AM_LDFLAGS += $(VTK_LDFLAGS)
  AM_LIBS = $(VTK_LIBS)
 endif
 
