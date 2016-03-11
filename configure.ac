@@ -276,7 +276,6 @@ echo "Graphviz Trace     $enable_graphviz"
 dnl --- threading ---
 echo "Threading:"
 echo "  GNU Pth          $enable_pth"
-echo "    fast switch    $enable_pth_fast_context_switch"
 echo "  pthread          $enable_pthread"
 echo "  ucontext         $enable_ucontext"
 echo "  TLS              $with_tls"
