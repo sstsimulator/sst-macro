@@ -2,8 +2,6 @@
 
 AC_DEFUN([CHECK_THREADING], [
 
-at_least_one_threading=no
-
 # Find out if we want pthreads as an option
 AH_TEMPLATE([HAVE_PTHREAD], [Define to make pthreads available for threading])
 AC_ARG_ENABLE(pthread,
@@ -32,7 +30,6 @@ AC_ARG_ENABLE(pth,
 )
 
 AH_TEMPLATE([HAVE_UCONTEXT], [Define to make ucontext available for threading])
-enable_ucontext=maybe
 AC_ARG_ENABLE(ucontext,
   [AS_HELP_STRING(
     [--(dis|en)able-ucontext],
@@ -94,7 +91,6 @@ else
     fi
 
     if test "$enable_pthread" = yes; then
-      at_least_one_threading=yes
       AC_DEFINE(HAVE_PTHREAD)
     fi
   fi
@@ -118,15 +114,10 @@ if test "$enable_ucontext" != no; then
       enable_ucontext="yes"
       AC_DEFINE(HAVE_UCONTEXT)
       AM_CONDITIONAL(HAVE_UCONTEXT, true)
-      at_least_one_threading=yes
     ], [
       AC_MSG_RESULT([no])
+      enable_ucontext="no"
       AM_CONDITIONAL(HAVE_UCONTEXT, false)
-      if test "$enable_ucontext" = maybe; then
-        enable_ucontext="no"
-      else
-        AC_MSG_ERROR([ucontext enabled but not usable])
-      fi
     ]
   )
 else
@@ -138,12 +129,15 @@ if test "$enable_pth" != "no"; then
   AC_CHECK_LIB(
     [pth],
     [pth_uctx_switch],
-    [LIBS="-lpth $LIBS"],
-    [AC_MSG_ERROR([GNU pth enabled but not usable])]
+    [
+      enable_pth="yes"
+      AC_DEFINE(HAVE_PTH)
+      LIBS="-lpth $LIBS"
+    ],
+    [
+      enable_pth="no"
+    ]
   )
-  AC_MSG_RESULT([yes])
-  at_least_one_threading=yes
-  AC_DEFINE(HAVE_PTH)
 fi
 
 AC_ARG_WITH(default-threading,
@@ -178,8 +172,19 @@ elif test "$default_threading" = pthread -a "$enable_pthread" != no; then
   AC_DEFINE(USE_PTHREAD)
 fi
 
+#make sure we have an acceptable threading capabilites
+#pthreads only counts if it has been explicitly given as the default
+at_least_one_threading=no
+if test "$default_threading" = pthread -a "$enable_pthread" != no; then
+  at_least_one_threading=yes
+elif test "$enable_ucontext" != no -o "$enable_pth" != no; then 
+  at_least_one_threading=yes
+fi
+
 if test "X$at_least_one_threading" = "Xno"; then
-AC_MSG_ERROR([No valid virtual threading interfaces available - must have pth, ucontext, or pthread
+AC_MSG_ERROR([Insufficient virtual threading interfaces available
+must have pth or ucontext for best performance
+use --with-default-threading=pthread to allow pthread only (good for debugging but low performance)
 ucontext is not available on Mac OS X
 pthread is not compatible with integrated SST core
 pth must be downloaded from https://www.gnu.org/software/pth
