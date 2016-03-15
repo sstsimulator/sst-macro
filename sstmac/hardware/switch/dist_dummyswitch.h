@@ -79,6 +79,11 @@ class dist_dummy_switch : public network_switch
   timestamp
   lookahead() const;
 
+  int
+  queue_length(int port) const {
+    return 0;
+  }
+
  protected:
   virtual void
   connect_ejector(int src_outport, int dst_inport, event_handler* nic);
