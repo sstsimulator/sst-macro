@@ -15,6 +15,8 @@ class packet_flow_params  {
  public:
   double link_bw;
 
+  ~packet_flow_params();
+
   timestamp hop_lat;
 
   int xbar_output_buffer_num_bytes;

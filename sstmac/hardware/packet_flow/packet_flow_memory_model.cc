@@ -11,6 +11,8 @@ namespace hw {
 SpktRegister("packet_flow", memory_model, packet_flow_memory_model);
 
 packet_flow_memory_system::packet_flow_memory_system(int mtu, node* parent) :
+  arb_(0),
+  endpoint_(0),
   packet_flow_MTL(mtu),
   bw_noise_(0),
   interval_noise_(0),
@@ -83,6 +85,13 @@ packet_flow_memory_model::init_factory_params(sprockit::sim_parameters *params)
 
 packet_flow_memory_model::~packet_flow_memory_model()
 {
+  if (mem_sys_) delete mem_sys_;
+}
+
+packet_flow_memory_system::~packet_flow_memory_system()
+{
+  if (endpoint_) delete endpoint_;
+  if (arb_) delete arb_;
 }
 
 void

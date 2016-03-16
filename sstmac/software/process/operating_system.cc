@@ -799,8 +799,7 @@ operating_system::unregister_lib(library* lib)
     libs_.erase(lib->lib_name());
     unregister_all_libs(lib);
     deleted_libs_.insert(lib->lib_name());
-    /* The unregister lib can be called from the DES thread    */
-    //delete lib;
+    delete lib;
   } else {
     --refcount;
   }

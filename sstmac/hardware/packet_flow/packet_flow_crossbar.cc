@@ -97,9 +97,9 @@ packet_flow_NtoM_queue::packet_flow_NtoM_queue(
   packet_flow_sender(send_lat, credit_lat),
   num_vc_(num_vc),
   buffer_size_(buffer_size),
-  arb_tmpl_(arb)
+  arb_tmpl_(arb),
+  out_bw_(out_bw)
 {
-  arb_tmpl_->set_outgoing_bw(out_bw);
 }
 
 packet_flow_NtoM_queue::~packet_flow_NtoM_queue()
@@ -109,6 +109,7 @@ packet_flow_NtoM_queue::~packet_flow_NtoM_queue()
     packet_flow_bandwidth_arbitrator* arb = port_arbitrators_[i];
     if (arb) delete arb;
   }
+  delete arb_tmpl_;
 }
 
 void
@@ -410,7 +411,7 @@ packet_flow_NtoM_queue::set_output(int my_outport, int dst_inport,
   outputs_[loc_port] = out;
   //credits_[loc_port] = std::vector<long>(num_vc_, 0L);
   //queues_[loc_port] = std::vector<payload_queue>(num_vc_);
-  port_arbitrators_[loc_port] = arb_tmpl_ ? arb_tmpl_->clone() : 0;
+  port_arbitrators_[loc_port] = arb_tmpl_ ? arb_tmpl_->clone(out_bw_) : 0;
 }
 
 #if PRINT_FINISH_DETAILS

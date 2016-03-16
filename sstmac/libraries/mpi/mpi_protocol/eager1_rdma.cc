@@ -53,7 +53,9 @@ eager1_rdma::send_header(mpi_queue* queue,
       /** we can complete the send request and allow
        the program to continue, but we have to wait
        for buffer resources to be completed by the rdma get */
-      sreq->wait_for_buffer();
+      //sreq->wait_for_buffer();
+      delete sreq;
+      queue->send_needs_eager_ack_.erase(it);
       return;
     }
   }

@@ -76,17 +76,20 @@ packet_flow_nic::init_factory_params(sprockit::sim_parameters *params)
   inj_lat_ = params->get_time_param("injection_latency");
 
   buffer_size_ = params->get_optional_byte_length_param("eject_buffer_size", 1<<30);
-  packet_flow_bandwidth_arbitrator* inj_templ
-    = packet_flow_bandwidth_arbitrator_factory::get_optional_param(
-        "arbitrator", "cut_through", params);
 
   int one_vc = 1;
   //total hack for now, assume that the buffer itself has a low latency link to the switch
   timestamp small_latency(10e-9);
-  inj_buffer_ = new packet_flow_injection_buffer(inj_bw_, small_latency, inj_templ->clone());
+  packet_flow_bandwidth_arbitrator* inj_arb = packet_flow_bandwidth_arbitrator_factory::get_optional_param(
+        "arbitrator", "cut_through", params);
+  inj_arb->set_outgoing_bw(inj_bw_);
+  inj_buffer_ = new packet_flow_injection_buffer(small_latency, inj_arb);
+
   //total hack for now, assume that the buffer has a delayed send, but ultra-fast credit latency
-  ej_buffer_ = new packet_flow_eject_buffer(inj_bw_, inj_lat_, small_latency,
-               buffer_size_, inj_templ->clone());
+  packet_flow_bandwidth_arbitrator* ej_arb = packet_flow_bandwidth_arbitrator_factory::get_optional_param(
+        "arbitrator", "cut_through", params);
+  ej_arb->set_outgoing_bw(inj_bw_);
+  ej_buffer_ = new packet_flow_eject_buffer(inj_lat_, small_latency, buffer_size_, ej_arb);
 
   endpoint_ =
     packet_flow_endpoint_factory::get_optional_param("arbitrator",
@@ -104,6 +107,7 @@ packet_flow_nic::~packet_flow_nic() throw ()
   if (inj_buffer_) delete inj_buffer_;
   if (ej_buffer_) delete ej_buffer_;
   if (endpoint_) delete endpoint_;
+  if (inj_handler_) delete inj_handler_;
 }
 
 void

@@ -36,8 +36,9 @@ mpi_collective::mpi_collective(mpi_request* the_key,
   queue_(queue),
   req_(the_key),
   status_(new mpi_status)
-
 {
+  sender_ = new sender(this);
+  recver_ = new recver(this);
 }
 
 //
@@ -52,10 +53,10 @@ mpi_collective::start_send(int count, mpi_type_id type,
 
   //I will never block on this - not needed
   mpi_request* req = 0;
-  event_handler* snd = new sender(this);
+  event_handler* sender_ = new sender(this);
   mpi_queue::sendinfo sinfo;
   queue_->send(req, count, type, dest, tag, comm_, sinfo,
-               mpi_message::collective, snd, content);
+               mpi_message::collective, sender_, content);
 }
 
 void
@@ -73,10 +74,10 @@ mpi_collective::start_send(int count, mpi_id dest, void *buffer)
 
   //I will never block on this - not needed
   mpi_request* req = 0;
-  event_handler* snd = new sender(this);
+  event_handler* sender_ = new sender(this);
   mpi_queue::sendinfo sinfo;
   queue_->send(req, count, send_type_, dest, tag_, comm_, sinfo,
-               mpi_message::collective, snd, buffer);
+               mpi_message::collective, sender_, buffer);
 }
 
 //
@@ -92,10 +93,10 @@ mpi_collective::start_recv(int count, mpi_type_id type,
 
   //I will never block on this - not needed
   mpi_request* req = 0;
-  event_handler* rcv = new recver(this);
 
+  event_handler* recver_ = new recver(this);
   queue_->recv(req, count, type, source, tag, comm_,
-               mpi_message::collective, rcv, buffer);
+               mpi_message::collective, recver_, buffer);
 }
 
 void
@@ -117,6 +118,8 @@ mpi_collective::~mpi_collective() throw ()
 {
   delete status_;
   delete completion_;
+  delete sender_;
+  delete recver_;
 }
 
 //

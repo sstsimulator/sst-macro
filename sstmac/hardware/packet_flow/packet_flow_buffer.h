@@ -36,8 +36,12 @@ class packet_flow_buffer :
   }
 
  protected:
+  /**
+   * @param send_lat
+   * @param credit_lat
+   * @param arb An arbitrator with outgoing bw already initialized
+   */
   packet_flow_buffer(
-    double out_bw,
     const timestamp& send_lat,
     const timestamp& credit_lat,
     packet_flow_bandwidth_arbitrator* arb);
@@ -81,13 +85,12 @@ class packet_flow_finite_buffer :
   long size_bytes_;
 
   packet_flow_finite_buffer(
-    double out_bw,
     const timestamp& send_lat,
     const timestamp& credit_lat,
     int max_num_bytes,
     packet_flow_bandwidth_arbitrator* arb) :
       size_bytes_(max_num_bytes),
-      packet_flow_buffer(out_bw, send_lat, credit_lat, arb)
+      packet_flow_buffer(send_lat, credit_lat, arb)
   {
   }
 
@@ -100,10 +103,9 @@ class packet_flow_infinite_buffer :
 {
  protected:
   packet_flow_infinite_buffer(
-    double out_bw,
     const timestamp& send_lat,
     packet_flow_bandwidth_arbitrator* arb):
-   packet_flow_buffer(out_bw, send_lat, timestamp(0), arb)
+   packet_flow_buffer(send_lat, timestamp(0), arb)
   {
   }
 
@@ -126,12 +128,13 @@ class packet_flow_network_buffer :
   packet_flow_network_buffer() {}
 
   packet_flow_network_buffer(
-    double out_bw,
     const timestamp& send_lat,
     const timestamp& credit_lat,
     int max_num_bytes,
     int num_vc,
     packet_flow_bandwidth_arbitrator* arb);
+
+  virtual ~packet_flow_network_buffer(){}
 
   int
   queue_length() const;
@@ -183,7 +186,6 @@ class packet_flow_eject_buffer :
 {
  public:
   packet_flow_eject_buffer(
-    double out_bw,
     const timestamp& send_lat,
     const timestamp& credit_lat,
     int max_num_bytes,
@@ -218,7 +220,6 @@ class packet_flow_injection_buffer :
 {
  public:
   packet_flow_injection_buffer(
-    double out_bw,
     const timestamp& out_lat,
     packet_flow_bandwidth_arbitrator* arb);
 

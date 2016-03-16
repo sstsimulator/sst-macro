@@ -132,6 +132,9 @@ class mpi_collective  {
   mpi_type_id send_type_;
 
   mpi_type_id recv_type_;
+
+  event_handler* recver_;
+  event_handler* sender_;
 };
 
 }
