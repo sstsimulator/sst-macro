@@ -45,7 +45,8 @@ nic::nic() :
   hist_msg_size_(0),
   local_bytes_sent_(0),
   global_bytes_sent_(0),
-  interconn_(0)
+  interconn_(0),
+  parent_(0)
 {
 }
 
