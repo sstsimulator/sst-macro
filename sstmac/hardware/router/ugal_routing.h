@@ -77,6 +77,7 @@ class ugal_router :
 
  protected:
   int val_threshold_;
+  int val_preference_factor_;
 
 
 };

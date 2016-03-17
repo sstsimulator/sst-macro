@@ -291,7 +291,7 @@ packet_flow_network_buffer::queue_length() const
      bytes_delayed_,
      bytes_sending,
      total_bytes_pending, queue_length);
-  return std::max(0L, queue_length);
+  return std::max(0L, total_bytes_pending);
 }
 
 std::string
@@ -484,7 +484,7 @@ print_msg(const std::string& prefix, switch_id addr, packet_flow_payload* msg);
 #endif
 
 int
-packet_flow_injection_buffer::get_queue_length() const
+packet_flow_injection_buffer::queue_length() const
 {
   long bytes_sending = arb_->bytes_sending(now());
   long total_bytes_pending = bytes_sending + bytes_delayed_;
@@ -495,7 +495,7 @@ packet_flow_injection_buffer::get_queue_length() const
      to_string().c_str(),
      bytes_delayed_,
      total_bytes_pending, queue_length);
-  return std::max(0L, queue_length);
+  return std::max(0L, total_bytes_pending);
 }
 
 

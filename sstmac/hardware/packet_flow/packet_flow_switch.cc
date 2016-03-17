@@ -366,7 +366,7 @@ int
 packet_flow_switch::queue_length(int port) const
 {
   packet_flow_buffer* buf = static_cast<packet_flow_buffer*>(out_buffers_[port]);
-  return buf->get_queue_length();
+  return buf->queue_length();
 }
 
 void

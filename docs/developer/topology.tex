@@ -514,7 +514,7 @@ We now query for all possible paths.
 Some network switches (not all) provide functionality to query congestion info.
 
 \begin{CppCode}
-int test_length = rter->get_switch()->get_queue_length(paths[i].outport);
+int test_length = rter->get_switch()->queue_length(paths[i].outport);
 \end{CppCode}
 from which the lowest congestion path can be chosen.
 

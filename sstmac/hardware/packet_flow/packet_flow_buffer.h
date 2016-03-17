@@ -21,7 +21,7 @@ class packet_flow_buffer :
     event_handler* output);
 
   virtual int
-  get_queue_length() const {
+  queue_length() const {
     return 0;
   }
 
@@ -227,7 +227,7 @@ class packet_flow_injection_buffer :
   start(sst_message* msg);
 
   int
-  get_queue_length() const;
+  queue_length() const;
 
   void
   init_credits(int port, int num_credits);

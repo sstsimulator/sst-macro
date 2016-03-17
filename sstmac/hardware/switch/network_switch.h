@@ -97,9 +97,7 @@ class network_switch :
   set_topology(topology* top);
 
   virtual int
-  queue_length(int port) const {
-    return 0;
-  }
+  queue_length(int port) const = 0;
 
   virtual void
   vis_update(const timestamp &per) {
