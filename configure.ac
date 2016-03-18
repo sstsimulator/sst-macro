@@ -132,8 +132,6 @@ PKG_PROG_PKG_CONFIG()
 
 CHECK_CPP11()
 
-CHECK_SST_CORE()
-
 CHECK_PYTHON()
 
 AM_CONDITIONAL(HAVE_REGEXP, false)
@@ -185,6 +183,8 @@ CHECK_VTK()
 CHECK_INTEGER_TYPES()
 
 CHECK_STL_REPLACEMENT_HEADERS()
+
+CHECK_SST_CORE()
 
 #-------------------------------------------------
 # Configure subdirs

@@ -2,8 +2,8 @@
 AC_DEFUN([CHECK_SST_CORE], [
 
 have_integrated_core="no"
-AC_ARG_WITH([integrated-core],
-    AS_HELP_STRING([--with-integrated-core],
+AC_ARG_WITH([sst-core],
+    AS_HELP_STRING([--with-sst-core],
         [Build shared library compatible with integrated SST core]
     ), [
       AC_CONFIG_FILES([skeletons/sst/env.sh skeletons/sst/config.py])
@@ -31,24 +31,9 @@ AC_ARG_WITH([integrated-core],
     ]
 )
 
-have_core_boost="no"
-AC_ARG_WITH([core-boost],
-  AS_HELP_STRING([--with-core-boost],
-      [Build shared library compatible with integrated SST core]
-  ), [
-    CPPFLAGS="$CPPFLAGS -I$withval/include"
-    have_core_boost="yes"
-    AC_CHECK_HEADERS([boost/version.hpp], [],
-        [AC_MSG_ERROR([Could not locate Boost header files for SST core at $withval])])
-  ], [
-    have_core_boost="no"
-  ]
-)
-
-
 if test "X$have_integrated_core" = "Xyes"; then
-  if test "X$have_core_boost" = "Xno"; then
-    AC_MSG_ERROR([Compiling for integrated core, but do not have Boost path. Please specify Boost used by SST core using --with-core-boost])
+  if test "X$HAVE_BOOST" != "Xyes"; then
+    AC_MSG_ERROR([Compiling for integrated core, but do not have Boost path.])
   fi
 fi
 
