@@ -52,6 +52,12 @@ vec_set_ev_parent(std::vector<T*>& themap, event_scheduler* m)
   }
 }
 
+packet_flow_params::~packet_flow_params()
+{
+  delete link_arbitrator_template;
+}
+
+
 void
 packet_flow_abstract_switch::init_factory_params(sprockit::sim_parameters *params)
 {
@@ -136,6 +142,8 @@ packet_flow_switch::~packet_flow_switch()
     packet_flow_sender* buf = out_buffers_[i];
     if (buf) delete buf;
   }
+
+  if (params_) delete params_;
 }
 
 void
@@ -210,7 +218,7 @@ packet_flow_switch::crossbar()
               params_->crossbar_bw,
               router_->max_num_vc(),
               params_->xbar_input_buffer_num_bytes,
-              params_->link_arbitrator_template->clone());
+              params_->link_arbitrator_template->clone(-1/*fake bw*/));
     xbar_->configure_basic_ports(topol()->max_num_ports());
     xbar_->set_event_location(my_addr_);
   }
@@ -228,12 +236,12 @@ packet_flow_switch::output_buffer(int port, double out_bw, int red)
 {
   if (!out_buffers_[port]){
     packet_flow_network_buffer* out_buffer
-      = new packet_flow_network_buffer(out_bw,
+      = new packet_flow_network_buffer(
                   params_->hop_lat,
                   timestamp(0), //assume credit latency to xbar is free
                   params_->xbar_output_buffer_num_bytes * red,
                   router_->max_num_vc(),
-                  params_->link_arbitrator_template->clone());
+                  params_->link_arbitrator_template->clone(out_bw));
     out_buffer->set_event_location(my_addr_);
     int buffer_outport = 0;
     out_buffer->init_credits(buffer_outport, params_->xbar_input_buffer_num_bytes);
@@ -358,7 +366,7 @@ int
 packet_flow_switch::queue_length(int port) const
 {
   packet_flow_buffer* buf = static_cast<packet_flow_buffer*>(out_buffers_[port]);
-  return buf->get_queue_length();
+  return buf->queue_length();
 }
 
 void

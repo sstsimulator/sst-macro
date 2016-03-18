@@ -34,6 +34,8 @@ ImplementFactory(sstmac::hw::packet_flow_bandwidth_arbitrator);
 namespace sstmac {
 namespace hw {
 
+int packet_flow_cut_through_arbitrator::bandwidth_epoch::counter = 0;
+
 SpktRegister("null", packet_flow_bandwidth_arbitrator,
             packet_flow_null_arbitrator,
             "Simple bandwidth arbitrator that models zero congestion on a link.");

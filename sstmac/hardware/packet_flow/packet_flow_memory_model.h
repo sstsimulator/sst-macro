@@ -16,6 +16,8 @@ class packet_flow_memory_system :
 {
  public:
   packet_flow_memory_system(int mtu, node* parent_node);
+  
+  ~packet_flow_memory_system();
 
   std::string
   packet_flow_name() const {

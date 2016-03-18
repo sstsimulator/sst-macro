@@ -9,7 +9,6 @@ namespace sstmac {
 namespace hw {
 
 packet_flow_buffer::packet_flow_buffer(
-  double out_bw,
   const timestamp& send_lat,
   const timestamp& credit_lat,
   packet_flow_bandwidth_arbitrator* arb)
@@ -17,7 +16,6 @@ packet_flow_buffer::packet_flow_buffer(
   bytes_delayed_(0),
   arb_(arb)
 {
-  arb->set_outgoing_bw(out_bw);
 }
 
 packet_flow_buffer::~packet_flow_buffer()
@@ -51,13 +49,12 @@ packet_flow_buffer::set_output(int this_outport, int dst_inport,
 }
 
 packet_flow_network_buffer::packet_flow_network_buffer(
-  double out_bw,
   const timestamp& send_lat,
   const timestamp& credit_lat,
   int max_num_bytes,
   int num_vc,
   packet_flow_bandwidth_arbitrator* arb)
-  : packet_flow_finite_buffer(out_bw, send_lat, credit_lat, max_num_bytes, arb),
+  : packet_flow_finite_buffer(send_lat, credit_lat, max_num_bytes, arb),
     num_vc_(num_vc),
     queues_(num_vc),
     credits_(num_vc, 0)
@@ -294,7 +291,7 @@ packet_flow_network_buffer::queue_length() const
      bytes_delayed_,
      bytes_sending,
      total_bytes_pending, queue_length);
-  return std::max(0L, queue_length);
+  return std::max(0L, total_bytes_pending);
 }
 
 std::string
@@ -317,12 +314,11 @@ packet_flow_infinite_buffer::num_initial_credits() const
 }
 
 packet_flow_eject_buffer::packet_flow_eject_buffer(
-  double out_bw,
   const timestamp& send_lat,
   const timestamp& credit_lat,
   int max_num_bytes,
   packet_flow_bandwidth_arbitrator* arb)
-  : packet_flow_finite_buffer(out_bw, send_lat, credit_lat, max_num_bytes, arb)
+  : packet_flow_finite_buffer(send_lat, credit_lat, max_num_bytes, arb)
 {
 }
 
@@ -366,10 +362,9 @@ packet_flow_eject_buffer::init_credits(int port, int num_credits)
 }
 
 packet_flow_injection_buffer::packet_flow_injection_buffer(
-  double out_bw,
   const timestamp& out_lat,
   packet_flow_bandwidth_arbitrator* arb)
-  : packet_flow_infinite_buffer(out_bw, out_lat, arb),
+  : packet_flow_infinite_buffer(out_lat, arb),
     credits_(0)
 {
 }
@@ -489,7 +484,7 @@ print_msg(const std::string& prefix, switch_id addr, packet_flow_payload* msg);
 #endif
 
 int
-packet_flow_injection_buffer::get_queue_length() const
+packet_flow_injection_buffer::queue_length() const
 {
   long bytes_sending = arb_->bytes_sending(now());
   long total_bytes_pending = bytes_sending + bytes_delayed_;
@@ -500,7 +495,7 @@ packet_flow_injection_buffer::get_queue_length() const
      to_string().c_str(),
      bytes_delayed_,
      total_bytes_pending, queue_length);
-  return std::max(0L, queue_length);
+  return std::max(0L, total_bytes_pending);
 }
 
 

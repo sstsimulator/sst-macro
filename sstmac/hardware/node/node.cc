@@ -247,7 +247,6 @@ node::launch()
     node_debug("launching task %d on node %d",
       int(lmsg->tid()), int(addr()));
     os_->handle_message(lmsg);
-    delete lmsg;
   }
 }
 #else

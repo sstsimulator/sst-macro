@@ -15,6 +15,7 @@ void
 ugal_router::init_factory_params(sprockit::sim_parameters *params)
 {
   val_threshold_ = params->get_optional_int_param("ugal_threshold", 0);
+  val_preference_factor_ = params->get_optional_int_param("valiant_preference_factor",1);
   valiant_router::init_factory_params(params);
 }
 
@@ -92,7 +93,7 @@ ugal_router::initial_step(
   regtop->minimal_route_to_coords(src, inter, val_path);
   int min_queue_length = netsw_->queue_length(min_path.outport);
   int valiant_queue_length = netsw_->queue_length(val_path.outport);
-  int minimal_weight = min_queue_length * min_dst;
+  int minimal_weight = min_queue_length * min_dst * val_preference_factor_;
   int valiant_weight = valiant_queue_length * valiant_dst;
 
   debug_printf(sprockit::dbg::router,

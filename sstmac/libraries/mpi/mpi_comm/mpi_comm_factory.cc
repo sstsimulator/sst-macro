@@ -44,9 +44,10 @@ mpi_comm_factory::mpi_comm_factory(app_id aid, mpi_api* parent) :
   aid_(aid),
   mpirun_np_(0),
   next_id_(1),
-  splittype_(0)
+  splittype_(0),
+  global_grp_(0),
+  self_grp_(0)
 {
-  //next_id_ = mpicommid(1);
 }
 
 //
@@ -54,8 +55,11 @@ mpi_comm_factory::mpi_comm_factory(app_id aid, mpi_api* parent) :
 //
 mpi_comm_factory::~mpi_comm_factory()
 {
-  delete worldcomm_;
-  delete selfcomm_;
+  if (worldcomm_) delete worldcomm_;
+  if (selfcomm_) delete selfcomm_;
+  if (splittype_) delete splittype_;
+  if (global_grp_) delete global_grp_;
+  if (self_grp_) delete self_grp_;
 }
 
 //
@@ -75,15 +79,15 @@ mpi_comm_factory::init(app_manager* env, mpi_id rank)
   std::pair<app_id, mpi_comm_id> index = std::make_pair(aid_, cid);
   //std::make_pair<app_id, mpi_comm_id>(aid_, cid);
 
-  mpi_group* g = new mpi_group(mpirun_np_);
+  global_grp_ = new mpi_group(mpirun_np_);
 
-  worldcomm_ = new mpi_comm(mpi_comm_id(MPI_COMM_WORLD), rank, g, env, aid_);
+  worldcomm_ = new mpi_comm(mpi_comm_id(MPI_COMM_WORLD), rank, global_grp_, env, aid_);
 
   std::vector<task_id> selfp;
   selfp.push_back(task_id(rank));
 
-  mpi_group* g2 = new mpi_group(selfp);
-  selfcomm_ = new mpi_comm(mpi_comm_id(MPI_COMM_SELF), mpi_id(0), g2, env, aid_);
+  self_grp_ = new mpi_group(selfp);
+  selfcomm_ = new mpi_comm(mpi_comm_id(MPI_COMM_SELF), mpi_id(0), self_grp_, env, aid_);
 
   splittype_ = new mpi_type;
   splittype_->init_vector("split_type", mpi_type::mpi_int, 3, 1, 1, true,
@@ -95,10 +99,16 @@ mpi_comm_factory::init(app_manager* env, mpi_id rank)
 void
 mpi_comm_factory::finalize()
 {
-  delete splittype_;
-  parent_ = 0;
+  if (worldcomm_) delete worldcomm_;
+  if (selfcomm_) delete selfcomm_;
+  if (splittype_) delete splittype_;
+  if (global_grp_) delete global_grp_;
+  if (self_grp_) delete self_grp_;
   worldcomm_ = 0;
   selfcomm_ = 0;
+  splittype_ = 0;
+  global_grp_ = 0;
+  self_grp_ = 0;
 }
 
 //

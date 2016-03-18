@@ -79,7 +79,7 @@ packet_flow_tiled_switch::init_components()
         params_->crossbar_bw,
         router_->max_num_vc(),
         params_->xbar_input_buffer_num_bytes,
-        params_->link_arbitrator_template->clone());
+        params_->link_arbitrator_template->clone(-1));
       //we can route to a destination port that differs from the local port
       int xbar_mapper = ncols_; //map port by dividing by ncols
       xbar->set_event_location(my_addr_);
@@ -92,7 +92,7 @@ packet_flow_tiled_switch::init_components()
         params_->link_bw,
         router_->max_num_vc(),
         params_->xbar_output_buffer_num_bytes,
-        params_->link_arbitrator_template->clone());
+        params_->link_arbitrator_template->clone(-1));
       int muxer_offset = tile;
       int muxer_max_port = tile;
       muxer->set_event_location(my_addr_);
