@@ -9,9 +9,9 @@ SpktRegister("nullnic | null", nic, null_nic,
             "Implements a nic which immediately injects messages with no memory reads or latency");
 
 void
-null_nic::recv_chunk(sst_message* chunk)
+null_nic::recv_packet(event* pkt)
 {
-  sst_message* parent_msg = completion_queue_.recv(safe_cast(message_chunk, chunk));
+  message* parent_msg = completion_queue_.recv(safe_cast(packet, pkt));
   if (parent_msg){
     parent_->handle(parent_msg);
   }

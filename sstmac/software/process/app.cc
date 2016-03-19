@@ -177,7 +177,7 @@ app::compute(timestamp time)
 }
 
 void
-app::compute_inst(compute_message* cmsg)
+app::compute_inst(compute_event* cmsg)
 {
   if (!compute_inst_) {
     compute_inst_ = new lib_compute_inst(id_);

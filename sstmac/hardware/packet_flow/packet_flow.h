@@ -80,9 +80,9 @@ class packet_flow_interface
  a larger message.
  */
 class packet_flow_payload :
-  public routable,
   public packet_flow_interface,
-  public message_chunk,
+  public routable,
+  public packet,
   public sprockit::serializable_type<packet_flow_payload>
 {
  public:
@@ -92,7 +92,7 @@ class packet_flow_payload :
 
  public:
   packet_flow_payload(
-    sst_message* parent,
+    message* parent,
     int num_bytes,
     long offset);
 
@@ -244,7 +244,7 @@ class packet_flow_payload :
 };
 
 class packet_flow_credit :
-  public sst_message,
+  public event,
   public packet_flow_interface,
   public sprockit::serializable_type<packet_flow_credit>
 {

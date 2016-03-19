@@ -6,25 +6,26 @@
 namespace sstmac {
   namespace hw {
 
-class fail_message :
- public sst_message
+class fail_event :
+ public event,
+ public sprockit::serializable_type<fail_event>
 {
+  ImplementSerializable(fail_event)
+
  public:
-  static sst_message::message_type_t FAILURE;
+  bool
+  is_failure() const {
+    return true;
+  }
+
+  virtual void
+  serialize_order(sprockit::serializer &ser){}
 
   std::string
   to_string() const {
     return "fail message";
   }
 
- protected:
-  fail_message();
-
-};
-
-class node_fail_message :
- public fail_message
-{
 };
 
   }

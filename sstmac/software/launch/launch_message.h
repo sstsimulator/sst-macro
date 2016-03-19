@@ -31,8 +31,6 @@ class launch_message :
     ARRIVE, START, COMPLETE, KILL, RESTART
   };
 
-  static message_type_t LAUNCH;
-
  public:
   launch_message(launch_info* i,
                  LAUNCHTYPE t,
@@ -43,7 +41,6 @@ class launch_message :
     info_(i),
     launchtype_(t),
     tid_(tid) {
-    sst_message::msgtype_ = LAUNCH;
     needs_ack_ = false;
   }
 

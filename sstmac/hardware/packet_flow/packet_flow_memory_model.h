@@ -2,7 +2,7 @@
 #define PACKET_FLOW_MEMORY_MODEL_H
 
 #include <sstmac/hardware/memory/memory_model.h>
-#include <sstmac/software/libraries/compute/compute_message.h>
+#include <sstmac/software/libraries/compute/compute_message_fwd.h>
 #include <sstmac/hardware/packet_flow/packet_flow_arbitrator.h>
 #include <sstmac/hardware/packet_flow/packet_flow_sender.h>
 #include <sstmac/hardware/packet_flow/packet_flow_endpoint.h>
@@ -10,12 +10,51 @@
 namespace sstmac {
 namespace hw {
 
+class memory_message : public message
+{
+  NotSerializable(memory_message)
+
+ public:
+  memory_message(long bytes, uint64_t id, double max_bw) :
+    bytes_(bytes), id_(id), max_bw_(max_bw)
+  {
+  }
+
+  long byte_length() const {
+    return bytes_;
+  }
+
+  uint64_t unique_id() const {
+    return id_;
+  }
+
+  node_id
+  toaddr() const {
+    return node_id();
+  }
+
+  node_id
+  fromaddr() const {
+    return node_id();
+  }
+
+  double max_bw() const {
+    return max_bw_;
+  }
+
+ private:
+  uint64_t id_;
+  long bytes_;
+  double max_bw_;
+};
+
+class packet_flow_memory_model;
 class packet_flow_memory_system :
   public packet_flow_sender,
   public packet_flow_MTL
 {
  public:
-  packet_flow_memory_system(int mtu, node* parent_node);
+  packet_flow_memory_system(int mtu, packet_flow_memory_model* parent);
   
   ~packet_flow_memory_system();
 
@@ -42,7 +81,7 @@ class packet_flow_memory_system :
   void
   set_output(int my_outport, int dst_inport, event_handler* output);
 
-  void start(sst_message*msg){}
+  void start_message(message* msg){}
 
   virtual void
   init_params(sprockit::sim_parameters* params);
@@ -53,7 +92,7 @@ class packet_flow_memory_system :
 
   void set_event_parent(event_scheduler *m);
 
-  void mtl_send(sst_message* msg);
+  void mtl_send(message* msg);
 
  private:
   void send_to_endpoint(timestamp t, packet_flow_payload* msg);
@@ -68,12 +107,12 @@ class packet_flow_memory_system :
   packet_flow_endpoint* endpoint_;
   noise_model* bw_noise_;
   noise_model* interval_noise_;
-  node* parent_node_;
+  packet_flow_memory_model* parent_;
   int num_noisy_intervals_;
 
   struct pending_msg {
     long byte_offset;
-    sw::compute_message* msg;
+    memory_message* msg;
   };
   std::vector<pending_msg> pending_;
   std::list<int> channels_available_;
@@ -100,12 +139,15 @@ class packet_flow_memory_model :
   init_factory_params(sprockit::sim_parameters* params);
 
   void
-  schedule(timestamp t, event_handler *handler, sst_message*msg){
+  schedule(timestamp t, event_handler *handler, message*msg){
     memory_model::schedule(t, handler, msg);
   }
 
+  void
+  handle(event *ev);
+
   virtual void
-  access(sst_message* msg);
+  access(long bytes, double max_bw);
 
   double
   max_single_bw() const {
@@ -116,10 +158,10 @@ class packet_flow_memory_model :
   void
   init_noise_model();
 
- protected:
+ private:
   //static int mtu_;
   double max_single_bw_;
-
+  std::map<message*, sw::key*> pending_requests_;
   packet_flow_memory_system* mem_sys_;
 };
 

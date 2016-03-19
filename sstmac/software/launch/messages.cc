@@ -4,8 +4,6 @@
 namespace sstmac {
 namespace sw {
 
-RegisterEnum(sst_message::message_type_t, launch_message::LAUNCH);
-
 }
 }
 

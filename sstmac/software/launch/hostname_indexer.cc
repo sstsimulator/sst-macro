@@ -50,7 +50,7 @@ hostname_indexer::allocate(
   std::istream& nodelist = *nodelistptr;
 
   std::stringstream sstr;
-  app_manager* env = sstmac_runtime::app_mgr(aid);
+  app_manager* env = runtime::app_mgr(aid);
   for (int i = 0; i < nrank; i++) {
     std::string hostname;
     nodelist >> hostname;

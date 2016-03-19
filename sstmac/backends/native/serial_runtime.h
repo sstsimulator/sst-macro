@@ -65,7 +65,7 @@ class serial_runtime :
    * @param size The size of the buffer being sent
    */
   void
-  send_message(timestamp t, topology_id tid, sst_message* msg);
+  send_message(timestamp t, topology_id tid, message* msg);
 
   virtual void
   wait_merge_array(int tag);

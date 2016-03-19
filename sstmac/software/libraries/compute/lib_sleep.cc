@@ -39,8 +39,7 @@ lib_sleep::sleep(timestamp time)
 {
   SSTMACBacktrace("Sleep");
   if (supported()) {
-    sst_message* cmsg = new sleep_message(lib_name(), time);
-    os_->execute_kernel(ami::COMP_SLEEP, cmsg);
+    os_->sleep(time);
   }
   else {
     spkt_throw(sprockit::value_error,
@@ -51,7 +50,7 @@ lib_sleep::sleep(timestamp time)
 bool
 lib_sleep::supported() const
 {
-  return os_->kernel_supported(ami::COMP_SLEEP);
+  return true;
 }
 
 }

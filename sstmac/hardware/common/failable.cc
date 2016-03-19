@@ -6,28 +6,28 @@ namespace sstmac {
   namespace hw {
 
 void
-failable::handle(sst_message* msg)
+failable::handle(event* ev)
 {
   if (failed_){
-    handle_while_failed(msg);
+    handle_while_failed(ev);
   }
-  else if (msg->type() == node_fail_message::FAILURE){
+  else if (ev->is_failure()){
     //I fail!
-    fail(msg);
+    fail(ev);
   }
   else {
-    handle_while_running(msg);
+    handle_while_running(ev);
   }
 }
 
 void
-failable::fail(sst_message* msg)
+failable::fail(event* ev)
 {
   if (failed_)
     return;
 
   failed_ = true;
-  do_failure(msg);
+  do_failure(ev);
   cancel_all_messages();
 }
 

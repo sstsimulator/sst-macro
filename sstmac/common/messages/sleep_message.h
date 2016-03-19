@@ -6,20 +6,16 @@
 
 namespace sstmac {
 
-class sleep_message :
-  public library_interface,
+class sleep_event :
   public timed_interface,
-  public sst_message
+  public event
 {
+  NotSerializable(sleep_event)
 
  public:
-  sleep_message(const std::string& libname, const timestamp& t) :
-    library_interface(libname),
+  sleep_event(timestamp t) :
     timed_interface(t) {
   }
-
-  virtual void
-  serialize_order(sprockit::serializer& ser);
 
   std::string
   to_string() const {

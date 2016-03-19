@@ -29,7 +29,7 @@ class null_nic:
 
  protected:
   virtual void
-  recv_chunk(sst_message* chunk);
+  recv_packet(event* chunk);
 
   virtual void
   do_send(network_message* payload);

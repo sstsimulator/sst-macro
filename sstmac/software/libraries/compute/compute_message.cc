@@ -17,28 +17,28 @@
 RegisterDebugSlot(compute_intensity,
     "print output related to compute intensity (flops,intops,bytes) of specific threads");
 
+DeclareSerializable(sstmac::sw::compute_event)
+
 namespace sstmac {
 namespace sw {
 
-ImplementEnum(compute_message::event_type_t);
+ImplementEnum(compute_event::event_type_t);
 
-RegisterEnum(sst_message::message_type_t, compute_message::COMPUTE);
-RegisterEnum(compute_message::event_type_t, compute_message::flop);
-RegisterEnum(compute_message::event_type_t, compute_message::intop);
-RegisterEnum(compute_message::event_type_t, compute_message::mem_random);
-RegisterEnum(compute_message::event_type_t, compute_message::mem_sequential);
-RegisterEnum(compute_message::event_type_t, compute_message::time);
+RegisterEnum(compute_event::event_type_t, compute_event::flop);
+RegisterEnum(compute_event::event_type_t, compute_event::intop);
+RegisterEnum(compute_event::event_type_t, compute_event::mem_random);
+RegisterEnum(compute_event::event_type_t, compute_event::mem_sequential);
+RegisterEnum(compute_event::event_type_t, compute_event::time);
 
 
-compute_message::compute_message() :
-  core_(sw::thread::no_core_affinity),
-  max_bw_(0)
+compute_event::compute_event() :
+  core_(sw::thread::no_core_affinity)
 {
   ::memset(event_data_, 0, MAX_EVENTS * sizeof(uli));
 }
 
 std::string
-compute_message::debug_string() const
+compute_event::debug_string() const
 {
   long ticks = event_value(time);
   if (ticks){
@@ -52,7 +52,7 @@ compute_message::debug_string() const
 }
 
 long
-compute_message::byte_length() const
+compute_event::byte_length() const
 {
   return event_data_[mem_sequential.value];
 }

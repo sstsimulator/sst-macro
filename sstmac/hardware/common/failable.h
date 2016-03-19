@@ -20,7 +20,7 @@ class failable :
   virtual ~failable(){}
 
   void
-  handle(sst_message* msg);
+  handle(event* ev);
 
   bool
   failed() const {
@@ -28,7 +28,7 @@ class failable :
   }
 
   void
-  fail(sst_message* msg);
+  fail(event* ev);
 
 #if SSTMAC_INTEGRATED_SST_CORE
  protected:
@@ -53,13 +53,13 @@ class failable :
 
  protected:
   virtual void
-  do_failure(sst_message* msg){}
+  do_failure(event* ev){}
 
   virtual void
-  handle_while_failed(sst_message* msg) = 0;
+  handle_while_failed(event* ev) = 0;
 
   virtual void
-  handle_while_running(sst_message* msg) = 0;
+  handle_while_running(event* ev) = 0;
 
  protected:
   bool failed_;

@@ -10,7 +10,7 @@ namespace sstmac {
 namespace hw {
 
 class network_message :
-  public sst_message,
+  public message,
   public sprockit::serializable_type<network_message>
 {
   ImplementSerializableDefaultConstructor(network_message)
@@ -37,8 +37,6 @@ class network_message :
     nvram_get_payload=11,
     failure_notification=12
   } type_t;
-
-  static message_type_t NETWORK;
 
  public:
   network_message(node_id toaddr,

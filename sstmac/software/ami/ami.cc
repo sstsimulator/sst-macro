@@ -38,10 +38,8 @@ tostr(COMP_FUNC func)
   switch(func) {
       enumcase(COMP_TIME);
       enumcase(COMP_INSTR);
-      enumcase(COMP_MEM);
       enumcase(COMP_DISKACCESS);
       enumcase(COMP_STOCH);
-      enumcase(COMP_SLEEP);
       enumcase(COMP_EIGER);
       enumcase(COMP_REGISTER_THREAD);
       enumcase(GPU_MEMCPY);

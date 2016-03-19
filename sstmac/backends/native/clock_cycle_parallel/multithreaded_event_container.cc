@@ -43,7 +43,7 @@ thread_event_schedule_map::init(int nthread)
   events_.resize(total_slots);
 }
 
-std::list<event*>&
+std::list<event_queue_entry*>&
 thread_event_schedule_map::pending_events(int srcthread, int dstthread)
 {
   int idx = array_index(srcthread, dstthread);
@@ -283,8 +283,8 @@ multithreaded_event_container::schedule_incoming(int thread_id, clock_cycle_even
 
   int nthread_ = nthread();
   for (int i=0; i < nthread_; ++i){
-    std::list<event*>& events = pending_events(i, thread_id);
-    std::list<event*>::iterator it, end = events.end();
+    std::list<event_queue_entry*>& events = pending_events(i, thread_id);
+    std::list<event_queue_entry*>::iterator it, end = events.end();
     debug_printf(sprockit::dbg::event_manager,
       "scheduling %d events on thread %d from thread %d on epoch %d",
       events.size(), thread_id_, i, epoch_);
@@ -310,10 +310,10 @@ multithreaded_event_container::multithread_schedule(
     int srcthread,
     int dstthread,
     uint32_t seqnum,
-    event* ev)
+    event_queue_entry* ev)
 {
   ev->set_seqnum(seqnum);
-  std::list<event*>& pending = pending_events(srcthread, dstthread);
+  std::list<event_queue_entry*>& pending = pending_events(srcthread, dstthread);
   pending.push_back(ev);
 }
 

@@ -54,7 +54,7 @@ multithreaded_subcontainer::multithread_schedule(
     int srcthread,
     int dstthread,
     uint32_t seqnum,
-    event* ev)
+    event_queue_entry* ev)
 {
   debug_printf(sprockit::dbg::multithread_event_manager,
     "scheduling events on thread %d from thread %d",

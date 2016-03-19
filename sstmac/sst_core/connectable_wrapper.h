@@ -48,7 +48,7 @@ class integrated_connectable_wrapper
     }
 
     void
-    handle(sst_message*msg){
+    handle(event* ev){
       spkt_throw(sprockit::unimplemented_error,
         "integrated_connectable_wrapper::handle: should never be called");
     }

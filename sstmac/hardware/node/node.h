@@ -127,6 +127,8 @@ class node :
   */
   void fail_stop();
 
+  void compute(timestamp t);
+
   /**
    Choose a unique (64-bit) integer ID for a message. This will never be reused
    except for integer overflow.
@@ -144,7 +146,7 @@ class node :
   */
   virtual void
   execute_kernel(ami::COMP_FUNC func,
-                 sst_message* data) = 0;
+                 event* data) = 0;
   /**
    Make the node execute a particular communication function
    @param func  Enum identifying the type of communication
@@ -152,7 +154,7 @@ class node :
   */
   virtual void
   execute_kernel(ami::COMM_FUNC func,
-                 sst_message* data) = 0;
+                 message* data) = 0;
 
 
   /**
@@ -175,10 +177,10 @@ class node :
   /**
    Node device might have failed. If failed, the NIC might still process incoming messages
    and generate failure notifications depending on the "degree" of failure.
-   @param msg  The incoming event
+   @param ev  The incoming event
   */
   virtual void
-  handle_while_running(sst_message* msg);
+  handle_while_running(event* ev);
 
   /**
    Node device might have failed. If failed, the NIC might still process incoming messages
@@ -186,14 +188,14 @@ class node :
    @param msg  The incoming event
   */
   virtual void
-  handle_while_failed(sst_message* msg);
+  handle_while_failed(event* ev);
 
   /**
    Perform all actions necessary to process a node failure and propaage to subdevices
    @param msg Event containing all the information about the node failure
   */
   virtual void
-  do_failure(sst_message* msg);
+  do_failure(event* ev);
 
   /**
    Push a network message (operation at the MTL layer) onto the NIC

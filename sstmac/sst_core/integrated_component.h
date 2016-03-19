@@ -81,7 +81,7 @@ class SSTEventEvent : public SSTSelfEventWrapper
 class SSTHandlerEvent : public SSTSelfEventWrapper
 {
  public:
-  SSTHandlerEvent(event_handler* handler, sst_message*msg) :
+  SSTHandlerEvent(event_handler* handler, message*msg) :
     msg_(msg),
     handler_(handler)
   {
@@ -93,7 +93,7 @@ class SSTHandlerEvent : public SSTSelfEventWrapper
   }
 
  private:
-  sst_message* msg_;
+  message* msg_;
   event_handler* handler_;
 };
 
@@ -108,7 +108,7 @@ class SSTIntegratedComponent
   }
 
   virtual void
-  handle(sst_message* msg) = 0;
+  handle(event* ev) = 0;
 
   virtual void
   init(unsigned int phase);

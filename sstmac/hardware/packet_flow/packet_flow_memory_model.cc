@@ -1,23 +1,26 @@
 #include <sstmac/hardware/packet_flow/packet_flow_memory_model.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/software/libraries/compute/compute_message.h>
+#include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/runtime.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
+
+DeclareSerializable(sstmac::hw::memory_message)
 
 namespace sstmac {
 namespace hw {
 
 SpktRegister("packet_flow", memory_model, packet_flow_memory_model);
 
-packet_flow_memory_system::packet_flow_memory_system(int mtu, node* parent) :
+packet_flow_memory_system::packet_flow_memory_system(int mtu, packet_flow_memory_model* parent) :
   arb_(0),
   endpoint_(0),
   packet_flow_MTL(mtu),
   bw_noise_(0),
   interval_noise_(0),
   num_noisy_intervals_(0),
-  parent_node_(parent)
+  parent_(parent)
 {
   int num_channels = 4;
   pending_.resize(num_channels);
@@ -51,9 +54,9 @@ packet_flow_memory_system::finalize_init()
   //in and out ar the same
   arb_->set_outgoing_bw(max_bw_);
   init_noise_model();
-  endpoint_->set_exit(parent_node_);
-  endpoint_->init_param1(parent_node_->addr());
-  init_loc_id(event_loc_id(parent_node_->addr()));
+  endpoint_->set_exit(parent_);
+  endpoint_->init_param1(parent_->addr());
+  init_loc_id(event_loc_id(parent_->addr()));
 }
 
 void
@@ -78,7 +81,7 @@ packet_flow_memory_model::init_factory_params(sprockit::sim_parameters *params)
   memory_model::init_factory_params(params);
   int mtu = params->get_optional_int_param("mtu", 1<<30); //Defaults to huge value
   max_single_bw_ = params->get_bandwidth_param("max_single_bandwidth");
-  mem_sys_ = new packet_flow_memory_system(mtu, parent_node_);
+  mem_sys_ = new packet_flow_memory_system(mtu, this);
   mem_sys_->init_params(params);
   mem_sys_->finalize_init();
 }
@@ -108,11 +111,23 @@ packet_flow_memory_model::set_event_parent(event_scheduler* m)
 }
 
 void
-packet_flow_memory_model::access(sst_message* msg)
+packet_flow_memory_model::access(long bytes, double max_bw)
 {
-  sw::compute_message* cmsg = safe_cast(sw::compute_message, msg);
-  cmsg->set_access_id(parent_node_->allocate_unique_id());
+  sw::key* k = sw::key::construct();
+  memory_message* msg = new memory_message(bytes, parent_node_->allocate_unique_id(), max_bw);
+  pending_requests_[msg] = k;
   mem_sys_->mtl_send(msg);
+  parent_node_->os()->block(k);
+}
+
+void
+packet_flow_memory_model::handle(event *ev)
+{
+  message* msg = safe_cast(message, ev);
+  sw::key* k = pending_requests_[msg];
+  pending_requests_.erase(msg);
+  parent_node_->os()->unblock(k);
+  delete k;
 }
 
 int
@@ -133,12 +148,12 @@ packet_flow_memory_system::allocate_channel()
 }
 
 void
-packet_flow_memory_system::mtl_send(sst_message*msg)
+packet_flow_memory_system::mtl_send(message* msg)
 {
-  sw::compute_message* cmsg = safe_cast(sw::compute_message, msg);
-  packet_flow_payload* payload = next_chunk(0L, cmsg);
-  if (cmsg->max_bw() != 0){
-    payload->set_bw(cmsg->max_bw());
+  memory_message* orig = safe_cast(memory_message, msg);
+  packet_flow_payload* payload = next_chunk(0L, orig);
+  if (orig->max_bw() != 0){
+    payload->set_bw(orig->max_bw());
   }
 
   if (!payload->is_tail()){
@@ -147,10 +162,10 @@ packet_flow_memory_system::mtl_send(sst_message*msg)
     //not quite done - need to wait for credits to send the rest of this
     pending_msg& p = pending_[channel];
     p.byte_offset = payload->num_bytes();
-    p.msg = cmsg;
+    p.msg = orig;
     debug_printf(sprockit::dbg::packet_flow,
       "memory starting payload %s for compute message of size %d on channel %d at byte offset %d\n",
-      payload->to_string().c_str(), cmsg->byte_length(), channel, p.byte_offset);
+      payload->to_string().c_str(), orig->byte_length(), channel, p.byte_offset);
   }
 
   handle_payload(payload);
@@ -173,14 +188,14 @@ packet_flow_memory_system::do_handle_payload(packet_flow_payload* msg)
     int ignore_vc = -1;
     packet_flow_credit* credit = new packet_flow_credit(msg->inport(), ignore_vc, msg->num_bytes());
     //here we do not optimistically send credits = only when the packet leaves
-    packet_flow_handler::send_self_message(packet_tail_leaves, credit);
+    packet_flow_handler::send_self_event(packet_tail_leaves, credit);
   }
 }
 
 void
-packet_flow_memory_system::send_to_endpoint(timestamp finish, packet_flow_payload* msg)
+packet_flow_memory_system::send_to_endpoint(timestamp finish, packet_flow_payload* packet)
 {
-  SCHEDULE(finish, endpoint_, msg);
+  SCHEDULE(finish, endpoint_, packet);
 }
 
 void

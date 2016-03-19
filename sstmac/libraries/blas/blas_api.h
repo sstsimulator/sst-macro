@@ -3,7 +3,7 @@
 
 #include <sstmac/software/api/api.h>
 #include <sstmac/software/libraries/compute/lib_compute_inst_fwd.h>
-#include <sstmac/software/libraries/compute/compute_message.h>
+#include <sstmac/software/libraries/compute/compute_message_fwd.h>
 #include <sstmac/software/process/software_id.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 
@@ -19,13 +19,13 @@ class blas_kernel :
   virtual std::string
   to_string() const = 0;
 
-  virtual compute_message*
+  virtual compute_event*
   op_3d(int m, int k, int n);
 
-  virtual compute_message*
+  virtual compute_event*
   op_2d(int m, int n);
 
-  virtual compute_message*
+  virtual compute_event*
   op_1d(int n);
 
 };

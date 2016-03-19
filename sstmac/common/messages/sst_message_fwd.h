@@ -5,7 +5,7 @@
 
 namespace sstmac {
 
-class sst_message;
+class message;
 
 }
 

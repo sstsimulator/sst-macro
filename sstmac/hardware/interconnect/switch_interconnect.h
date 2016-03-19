@@ -100,7 +100,7 @@ class macro_switch_interconnect :
   }
 
   virtual void
-  immediate_send(event_scheduler* src, sst_message* msg, timestamp start) const;
+  immediate_send(event_scheduler* src, message* msg, timestamp start) const;
 
   void
   write_graph_file(const std::string& graph_file);

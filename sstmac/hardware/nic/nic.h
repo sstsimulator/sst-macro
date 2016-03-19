@@ -135,7 +135,7 @@ class nic :
    @param msg  The incoming event
   */
   void
-  handle(sst_message* msg);
+  handle(event* ev);
 
  protected:
   nic();
@@ -188,7 +188,7 @@ class nic :
    @param msg
   */
   void
-  finish_recv_ack(sst_message* msg);
+  finish_recv_ack(message* msg);
 
   /**
    #handle receives all messages incoming from the NIC.
@@ -197,7 +197,7 @@ class nic :
    @param msg
   */
   void
-  finish_recv_req(sst_message* msg);
+  finish_recv_req(message* msg);
 
   /**
    The NIC can either receive an entire message (bypass the byte-transfer layer)
@@ -208,7 +208,7 @@ class nic :
    @throws sprockit::unimplemented_error
    */
   virtual void
-  recv_chunk(sst_message* chunk);
+  recv_packet(event* packet);
 
   /**
    #handle receives all messages incoming from the NIC.
@@ -218,7 +218,7 @@ class nic :
    @param msg
   */
   virtual void
-  recv_credit(sst_message* msg);
+  recv_credit(event* packet);
 
   /**
    The NIC can either receive an entire message (bypass the byte-transfer layer)
@@ -227,7 +227,7 @@ class nic :
    @param chunk
    */
   void
-  recv_message(sst_message* msg);
+  recv_message(message* msg);
 
   void
   send_to_interconn(network_message* netmsg);

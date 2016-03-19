@@ -16,24 +16,15 @@ null_memory_model::~null_memory_model()
 }
 
 void
-null_memory_model::handle(sst_message* msg)
-{
-  done_->handle(msg);
-}
-
-void
 null_memory_model::init_factory_params(sprockit::sim_parameters *params)
 {
   memory_model::init_factory_params(params);
 }
 
 void
-null_memory_model::access(sst_message* msg)
+null_memory_model::access(long bytes, double max_bw)
 {
-  mem_debug("null model: doing access of %ld bytes",
-    msg->byte_length());
-
-  send_now_self_message(msg);
+  mem_debug("null model: doing access of %ld bytes", bytes);
 }
 
 }

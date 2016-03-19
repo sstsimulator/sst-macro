@@ -139,12 +139,12 @@ thread::cleanup()
 }
 
 class delete_thread_event :
-  public event
+  public event_queue_entry
 {
  public:
   delete_thread_event(thread* thr) :
     thr_(thr),
-    event(thr->os()->event_location(), thr->os()->event_location())
+    event_queue_entry(thr->os()->event_location(), thr->os()->event_location())
   {
   }
 

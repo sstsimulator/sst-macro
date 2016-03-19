@@ -33,7 +33,7 @@ launcher::~launcher() throw()
 }
 
 void
-launcher::incoming_message(sst_message* msg)
+launcher::incoming_message(message* msg)
 {
   launch_message* lmsg = safe_cast(launch_message, msg);
   if (lmsg->is_nic_ack()){

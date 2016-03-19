@@ -61,7 +61,7 @@ app_manager::static_app_manager(int aid, sprockit::sim_parameters* params)
     app_manager* mgr = app_manager_factory::get_optional_param(
       param_name, "skeleton", app_params, app_id(aid), 0/*no parallel runtime*/);
     static_app_managers_[aid] = mgr;
-    sstmac_runtime::register_app_manager(app_id(aid), mgr);
+    runtime::register_app_manager(app_id(aid), mgr);
     mgr->allocate_and_index_jobs();
   }
   return static_app_managers_[aid];

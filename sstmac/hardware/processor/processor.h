@@ -31,7 +31,6 @@ namespace hw {
  * An interface for processor models
  */
 class processor :
-  public event_handler,
   public sprockit::factory_type
 {
 
@@ -57,10 +56,11 @@ class processor :
   static void
   delete_statics();
 
-  virtual void
-  compute(sst_message* msg) = 0;
+  void
+  compute(event* ev);
   
-  void handle(sst_message*msg);
+  virtual void
+  do_compute(sw::compute_event* cev) = 0;
 
  protected:
   processor();
@@ -71,10 +71,7 @@ class processor :
 
   memory_model* mem_;
   node* node_;
-  
- protected:
-  void os_delayed_notify(timestamp t, sw::compute_message* msg);
-  void os_notify_now(sw::compute_message* msg);
+
 
 };
 

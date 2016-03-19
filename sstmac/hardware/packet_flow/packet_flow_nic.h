@@ -71,10 +71,10 @@ class packet_flow_nic :
 
  protected:
   virtual void
-  recv_chunk(sst_message* chunk);
+  recv_packet(event* packet);
 
   virtual void
-  recv_credit(sst_message* credit);
+  recv_credit(event* credit);
 
   virtual void
   do_send(network_message* payload);
@@ -122,7 +122,7 @@ class packet_flow_netlink :
   set_event_parent(event_scheduler* m);
 
   void
-  handle(sst_message*msg);
+  handle(event* ev);
 
   event_handler*
   ejector() {

@@ -10,11 +10,7 @@
 #include <sumi/transport.h>
 #include <sumi/thread_safe_set.h>
 
-using namespace sstmac;
-using namespace sstmac::sw;
-using namespace sstmac::hw;
 using namespace sumi;
-
 
 void
 run_test(domain* dom, int todie, int nproc_live, int context, int tag)

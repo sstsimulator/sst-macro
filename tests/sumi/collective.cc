@@ -9,9 +9,6 @@
 #include <sstmac/common/runtime.h>
 #include <sumi/transport.h>
 
-using namespace sstmac;
-using namespace sstmac::sw;
-using namespace sstmac::hw;
 using namespace sumi;
 
 void
@@ -200,9 +197,9 @@ main(int argc, char **argv)
 {
   comm_init();
 
-  sstmac_runtime::enter_deadlock_region();
-  sstmac_runtime::add_deadlock_check(
-    new_deadlock_check(sumi_api(), &sumi::transport::deadlock_check));
+  sstmac::runtime::enter_deadlock_region();
+  sstmac::runtime::add_deadlock_check(
+    sstmac::new_deadlock_check(sumi_api(), &sumi::transport::deadlock_check));
 
   test_dynamic_tree_vote();
 
@@ -222,7 +219,7 @@ main(int argc, char **argv)
   //test_failed_collectives();
 
   comm_finalize();
-  sstmac_runtime::exit_deadlock_region();
+  sstmac::runtime::exit_deadlock_region();
   return 0;
 }
 

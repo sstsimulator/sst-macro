@@ -98,7 +98,7 @@ lib_compute_memmove::consume_params(sprockit::sim_parameters* params)
 bool
 lib_compute_memmove::supported() const
 {
-  return os_->kernel_supported(ami::COMP_MEM);
+  return os_->kernel_supported(ami::COMP_INSTR);
 }
 
 }

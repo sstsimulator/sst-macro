@@ -29,16 +29,15 @@ packet_flow_interface::serialize_order(sprockit::serializer& ser)
 }
 
 packet_flow_payload::packet_flow_payload(
-  sst_message* parent,
+  message* parent,
   int num_bytes,
   long offset) :
-  message_chunk(parent, num_bytes, offset),
+  packet(parent, num_bytes, offset),
   routable(parent->toaddr(), parent->fromaddr()),
   packet_flow_interface(payload),
   bw_(uninitialized_bw),
   max_in_bw_(1.0)
 {
-  sst_message::msgtype_ = parent->type();
 }
 
 void
@@ -50,13 +49,12 @@ packet_flow_payload::init_statics(int min_bytes)
 std::string
 packet_flow_payload::to_string() const
 {
-  return sprockit::printf("flow %16lu, %5lu:%5lu bw=%8.4e %d->%d %s",
+  return sprockit::printf("flow %16lu, %5lu:%5lu bw=%8.4e %d->%d %p",
                    uint64_t(unique_id()),
                    byte_offset_,
-                   byte_offset_ + num_bytes_,
+                   byte_offset_ + num_bytes_, bw_,
                    int(fromaddr()), int(toaddr()),
-                   bw_, "");
-                   //(orig() ? orig()->to_string().c_str() : "no parent"));
+                   bw_, orig());
 }
 
 void
@@ -64,7 +62,7 @@ packet_flow_payload::serialize_order(sprockit::serializer& ser)
 {
   packet_flow_interface::serialize_order(ser);
   routable::serialize_order(ser);
-  message_chunk::serialize_order(ser);
+  packet::serialize_order(ser);
   ser & inport_;
   ser & bw_;
   ser & max_in_bw_;
@@ -80,7 +78,7 @@ packet_flow_credit::to_string() const
 void
 packet_flow_credit::serialize_order(sprockit::serializer& ser)
 {
-  sst_message::serialize_order(ser);
+  event::serialize_order(ser);
   packet_flow_interface::serialize_order(ser);
   ser & num_credits_;
   ser & port_;

@@ -9,6 +9,8 @@
  *  SST/macroscale directory.
  */
 
+#include <sstmac/software/libraries/unblock_event.h>
+#include <sstmac/software/process/operating_system.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/memory/memory_model.h>
@@ -166,7 +168,7 @@ node::build_launchers(sprockit::sim_parameters* params)
   for (it=my_ranks.begin(); it != end; ++it){
     int rank = *it;
     sw::launch_message* lmsg = new launch_message(appman->launch_info(), sw::launch_message::ARRIVE, task_id(rank));
-    sstmac_runtime::register_node(sw::app_id(aid), task_id(rank), my_addr_);
+    runtime::register_node(sw::app_id(aid), task_id(rank), my_addr_);
     launchers_.push_back(lmsg);
   }
 }
@@ -199,13 +201,13 @@ node::set_event_manager(event_manager* m)
 }
 
 void
-node::handle_while_running(sst_message* msg)
+node::handle_while_running(event* ev)
 {
-  os_->handle_message(msg);
+  os_->handle_event(ev);
 }
 
 void
-node::handle_while_failed(sst_message* msg)
+node::handle_while_failed(event* ev)
 {
   //just drop it - don't do anything for now
 }
@@ -213,12 +215,22 @@ node::handle_while_failed(sst_message* msg)
 void
 node::fail_stop()
 {
-  sst_message* msg = new node_fail_message;
-  fail(msg);
+  event* ev = new fail_event;
+  fail(ev);
 }
 
 void
-node::do_failure(sst_message* msg)
+node::compute(timestamp t)
+{
+  sw::key* k = sw::key::construct();
+  sw::unblock_event* ev = new sw::unblock_event(os_, k);
+  schedule_delay(t, ev);
+  os_->block(k);
+  delete k;
+}
+
+void
+node::do_failure(event* ev)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   spkt_throw(sprockit::unimplemented_error, "node::do_failure");
@@ -254,7 +266,7 @@ node::launch()
 void
 node::launch(timestamp start, launch_message* msg)
 {
-  schedule(start, new handler_event(msg, this, this->event_location()));
+  schedule(start, new handler_event_queue_entry(msg, this, this->event_location()));
 }
 #endif
 

@@ -29,7 +29,7 @@ event_container::event_container() :
 void
 event_container::do_next_event()
 {
-  event* ev = pop_next_event();
+  event_queue_entry* ev = pop_next_event();
   set_now(ev->time());
   debug_printf(sprockit::dbg::all_events,
     "running event %s", ev->to_string().c_str());
@@ -133,7 +133,7 @@ event_container::run()
 
 
 void
-event_container::schedule(timestamp start_time, uint32_t seqnum, event* ev)
+event_container::schedule(timestamp start_time, uint32_t seqnum, event_queue_entry* ev)
 {
   if (start_time < now()) {
     spkt_throw_printf(sprockit::illformed_error,

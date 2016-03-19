@@ -10,6 +10,7 @@
  */
 
 #include <sstmac/hardware/memory/simple_memory_model.h>
+#include <sstmac/hardware/node/node.h>
 #include <sstmac/software/libraries/compute/compute_message.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
@@ -23,13 +24,6 @@ SpktRegister("simple",memory_model,simple_memory_model,
 simple_memory_model::~simple_memory_model()
 {
   link_ = 0;
-}
-
-void
-simple_memory_model::handle(sst_message* msg)
-{
-  link_->access_done();
-  done_->handle(msg);
 }
 
 void
@@ -50,15 +44,13 @@ simple_memory_model::finalize_init()
 }
 
 void
-simple_memory_model::access(sst_message* msg)
+simple_memory_model::access(long bytes, double max_bw)
 {
-  mem_debug("simple model: doing access of %ld bytes",
-    msg->byte_length());
+  mem_debug("simple model: doing access of %ld bytes", bytes);
 
-  sw::compute_message* data = safe_cast(sw::compute_message, msg);
-
-  timestamp delta_t = link_->new_access(now(), data->byte_length(), data->max_bw());
-  send_delayed_self_message(delta_t, data);
+  timestamp delta_t = link_->new_access(now(), bytes, max_bw);
+  parent_node_->compute(delta_t);
+  link_->access_done();
 }
 
 timestamp

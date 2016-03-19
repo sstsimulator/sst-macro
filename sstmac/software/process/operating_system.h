@@ -119,49 +119,49 @@ class operating_system :
     restarting_ = res;
   }
 
-  virtual void
-  execute_kernel(ami::COMP_FUNC func, sst_message* data);
+  void
+  execute_kernel(ami::COMP_FUNC func, event* data);
 
-  virtual void
-  execute_kernel(ami::COMM_FUNC func, sst_message* data);
+  void
+  execute_kernel(ami::COMM_FUNC func, message* data);
 
-  virtual bool
+  bool
   kernel_supported(ami::COMP_FUNC) const;
 
-  virtual bool
+  bool
   kernel_supported(ami::COMM_FUNC) const;
 
   static void
   stack_check();
   
-  virtual timestamp
+  timestamp
   block(key* req);
 
-  virtual timestamp
+  timestamp
   unblock(key* req);
 
-  virtual void
+  void
   start_thread(thread* t);
 
-  virtual void
+  void
   join_thread(thread* t);
 
-  virtual void
+  void
   complete_thread(bool succ);
 
-  virtual void
+  void
   register_lib(void* owner, library* lib);
 
-  virtual void
+  void
   unregister_all_libs(void* owner);
 
-  virtual library*
+  library*
   lib(const std::string& name) const;
 
-  virtual node_id
+  node_id
   task_addr(software_id sid) const;
 
-  virtual app_manager*
+  app_manager*
   env(app_id aid) const;
   
   void
@@ -170,8 +170,7 @@ class operating_system :
   void
   set_event_parent(event_scheduler* man);
 
-  virtual node_id
-  my_addr() const;
+  node_id my_addr() const;
 
   long
   task_threadid(const task_id& id) const;
@@ -189,7 +188,7 @@ class operating_system :
   start_app(app* a);
 
   void
-  handle_message(sst_message* msg);
+  handle_event(event* ev);
 
   std::list<app*>
   app_ptrs(app_id aid);
@@ -197,7 +196,7 @@ class operating_system :
   app*
   app_ptr(software_id sid);
 
-  virtual thread_data_t
+  thread_data_t
   current_context() const {
     return threadstack_.top();
   }
@@ -205,7 +204,7 @@ class operating_system :
   void
   print_libs(std::ostream& os = std::cout) const;
 
-  virtual long
+  long
   current_threadid() const;
 
   void
@@ -260,6 +259,9 @@ class operating_system :
     return params_;
   }
 
+  void
+  sleep(timestamp t);
+
   void kill_node();
 
  private:
@@ -301,7 +303,7 @@ class operating_system :
 
   std::stack<thread_data_t> threadstack_;
 
-  std::deque<sst_message*> pending_messages_;
+  std::deque<event*> pending_eventss_;
 
   bool restarting_;
 

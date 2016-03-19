@@ -26,20 +26,21 @@ class recv_cq
       @param packet The arriving packet
       @return The completed msg or a null msg indicating not yet complete
   */
-  sst_message*
-  recv(message_chunk* packet);
+  message*
+  recv(packet* pkt);
 
   void
   print();
 
  protected:
   struct incoming_msg {
-    sst_message* msg;
+    message* msg;
     long bytes_arrived;
     long bytes_total;
     incoming_msg() :
         bytes_arrived(0),
-        bytes_total(0)
+        bytes_total(0),
+        msg(0)
     {
     }
   };

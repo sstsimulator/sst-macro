@@ -1,6 +1,7 @@
 #include <sstmac/libraries/blas/blas_api.h>
 #include <sprockit/sim_parameters.h>
 #include <algorithm>
+#include <sstmac/software/libraries/compute/compute_message.h>
 
 namespace sstmac {
 namespace sw {
@@ -14,7 +15,7 @@ class default_ddot :
     return "default ddot";
   }
 
-  compute_message*
+  compute_event*
   op_1d(int n);
 
   virtual void
@@ -34,7 +35,7 @@ default_ddot::init_factory_params(sprockit::sim_parameters* params)
   pipeline_ = params->get_optional_double_param("ddot_pipeline_efficiency", 2);
 }
 
-compute_message*
+compute_event*
 default_ddot::op_1d(int n)
 {
   int nops = n;
@@ -43,10 +44,10 @@ default_ddot::op_1d(int n)
   //z = x * y ... 3 vectors
   long total_bytes = 3*n*sizeof(double);
 
-  compute_message* msg = new compute_message;
-  msg->set_event_value(compute_message::flop, nflops);
-  msg->set_event_value(compute_message::intop, loop_ops);
-  msg->set_event_value(compute_message::mem_sequential, total_bytes);
+  compute_event* msg = new compute_event;
+  msg->set_event_value(compute_event::flop, nflops);
+  msg->set_event_value(compute_event::intop, loop_ops);
+  msg->set_event_value(compute_event::mem_sequential, total_bytes);
   return msg;
 }
 

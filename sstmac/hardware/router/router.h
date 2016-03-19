@@ -13,6 +13,7 @@
 #define SSTMAC_HARDWARE_NETWORK_ROUTING_ROUTER_H_INCLUDED
 
 
+#include <sstmac/common/messages/message_chunk.h>
 #include <sstmac/common/node_address.h>
 #include <sstmac/common/event_manager_fwd.h>
 #include <sstmac/hardware/router/routable_message.h>
@@ -72,7 +73,7 @@ class router :
   finalize_init();
 
   virtual void
-  route(sst_message* msg) = 0;
+  route(packet* pkt) = 0;
 
   int
   convert_to_port(int dim, int dir);

@@ -89,7 +89,6 @@ sumi_api::transport_send(
   void* buffer)
 {
   transport_message* tmsg = new transport_message(msg, byte_length);
-  tmsg->sst_message::set_type(hw::network_message::NETWORK);
   tmsg->hw::network_message::set_type(ty);
   tmsg->set_lib_name(server_libname_);
   tmsg->toaddr_ = env_->node_for_task(sw::task_id(dst));
@@ -149,7 +148,7 @@ sumi_server::sumi_server(int appid)
 }
 
 void
-sumi_server::incoming_message(sst_message* msg)
+sumi_server::incoming_message(message* msg)
 {
  transport_message* smsg = safe_cast(transport_message, msg);
  try {

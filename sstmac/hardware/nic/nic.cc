@@ -101,15 +101,15 @@ nic::init_factory_params(sprockit::sim_parameters *params)
 }
 
 void
-nic::recv_chunk(sst_message* chunk)
+nic::recv_packet(event* pkt)
 {
   spkt_throw_printf(sprockit::unimplemented_error,
             "nic::recv_chunk: not valid for %s receiving %s",
-            to_string().c_str(), chunk->to_string().c_str());
+            to_string().c_str(), pkt->to_string().c_str());
 }
 
 void
-nic::recv_credit(sst_message*msg)
+nic::recv_credit(event* pkt)
 {
   //do nothing
 }
@@ -120,17 +120,17 @@ nic::delete_statics()
 }
 
 void
-nic::finish_recv_ack(sst_message* msg)
+nic::finish_recv_ack(message* msg)
 {
 }
 
 void
-nic::finish_recv_req(sst_message* msg)
+nic::finish_recv_req(message* msg)
 {
 }
 
 void
-nic::recv_message(sst_message* msg)
+nic::recv_message(message* msg)
 {
   network_message* netmsg = safe_cast(network_message, msg);
 
@@ -195,6 +195,8 @@ void
 nic::intranode_send(network_message* payload)
 {
   record_message(payload);
+  nic_debug("intranode send payload %p:%s",
+    payload, payload->to_string().c_str());
   switch(payload->type())
   {
   case network_message::nvram_get_request:
@@ -212,24 +214,21 @@ nic::intranode_send(network_message* payload)
 }
 
 void
-nic::handle(sst_message* msg)
+nic::handle(event* ev)
 {
   if (parent_->failed()){
     return;
   }
 
-  nic_debug("handling message %p:%s going %d->%d",
-    msg,
-    msg->to_string().c_str(),
-    int(msg->fromaddr()),
-    int(msg->toaddr()));
+  nic_debug("handling message %p:%s",
+    ev, ev->to_string().c_str());
 
-  if (msg->is_credit()){
-    recv_credit(msg);
-  } else if (msg->is_chunk()){
-    recv_chunk(msg);
+  if (ev->is_credit()){
+    recv_credit(ev);
+  } else if (ev->is_packet()){
+    recv_packet(ev);
   } else {
-    recv_message(msg);
+    recv_message(safe_cast(message, ev));
   }
 
 }
@@ -277,6 +276,8 @@ void
 nic::internode_send(network_message* netmsg)
 {
   record_message(netmsg);
+  nic_debug("internode send payload %p:%s",
+    netmsg, netmsg->to_string().c_str());
   if (negligible_size(netmsg->byte_length())){
     send_to_interconn(netmsg);
     ack_send(netmsg);

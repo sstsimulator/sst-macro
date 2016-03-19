@@ -169,15 +169,15 @@ packet_flow_nic::connect(
 }
 
 void
-packet_flow_nic::recv_credit(sst_message* msg)
+packet_flow_nic::recv_credit(event* credit)
 {
-  inj_buffer_->handle_credit(safe_cast(packet_flow_credit, msg));
+  inj_buffer_->handle_credit(safe_cast(packet_flow_credit, credit));
 }
 
 void
-packet_flow_nic::recv_chunk(sst_message* _chunk)
+packet_flow_nic::recv_packet(event* ev)
 {
-  message_chunk* chunk = safe_cast(message_chunk, _chunk);
+  packet* chunk = safe_cast(packet, ev);
 
   ej_buffer_->return_credit(chunk);
 
@@ -202,7 +202,7 @@ packet_flow_nic::set_injection_output(int inj_port, connectable* sw)
 #endif
   inj_buffer_->init_credits(0, injection_credits_);
   if (!inj_handler_)
-    inj_handler_ = msg_callback(event_location(), inj_buffer_, &packet_flow_buffer::start);
+    inj_handler_ = ev_callback(event_location(), inj_buffer_, &packet_flow_buffer::start);
 }
 
 void
@@ -276,12 +276,12 @@ packet_flow_netlink::set_event_parent(event_scheduler* m)
 }
 
 void
-packet_flow_netlink::handle(sst_message* msg)
+packet_flow_netlink::handle(event* ev)
 {
-  packet_flow_interface* fmsg = interface_cast(packet_flow_interface, msg);
+  packet_flow_interface* fmsg = interface_cast(packet_flow_interface, ev);
   switch (fmsg->type()) {
     case packet_flow_interface::credit: {
-      packet_flow_credit* credit = static_cast<packet_flow_credit*>(msg);
+      packet_flow_credit* credit = static_cast<packet_flow_credit*>(ev);
       debug_printf(sprockit::dbg::packet_flow,
          "netlink %s:%p handling credit %s",
          topology::global()->label(event_location()).c_str(),
@@ -291,12 +291,12 @@ packet_flow_netlink::handle(sst_message* msg)
       break;
     }
     case packet_flow_interface::payload: {
-      packet_flow_payload* payload = static_cast<packet_flow_payload*>(msg);
+      packet_flow_payload* payload = static_cast<packet_flow_payload*>(ev);
       debug_printf(sprockit::dbg::packet_flow,
            "netlink %d:%p handling payload %s",
             //topology::global()->label(event_location()).c_str(),
             int(id_), this, payload->to_string().c_str());
-      node_id toaddr = msg->toaddr();
+      node_id toaddr = payload->toaddr();
       netlink_id dst_netid(toaddr / num_eject_);
       routing_info::path& p = payload->rinfo().current_path();
       if (dst_netid == id_){
@@ -307,13 +307,14 @@ packet_flow_netlink::handle(sst_message* msg)
         p.geometric_id = 0;
         debug_printf(sprockit::dbg::packet_flow,
          "netlink %d ejecting %s to node %d at offset %d to port %d\n",
-            int(id_), msg->to_string().c_str(), int(toaddr), node_offset, p.outport);
+            int(id_), ev->to_string().c_str(), int(toaddr), node_offset, p.outport);
       } else {
         //goes to switch
         p.outport = netlink::switch_port(tile_rotater_);
+        p.vc = 0;
         debug_printf(sprockit::dbg::packet_flow,
          "netlink %d injecting msg %s to switch %d on redundant path %d of %d to port %d\n",
-            int(id_), msg->to_string().c_str(), int(toaddr), tile_rotater_, num_inject_, p.outport);
+            int(id_), ev->to_string().c_str(), int(toaddr), tile_rotater_, num_inject_, p.outport);
         tile_rotater_ = (tile_rotater_ + 1) % num_inject_;
       }
       block_->handle_payload(payload);

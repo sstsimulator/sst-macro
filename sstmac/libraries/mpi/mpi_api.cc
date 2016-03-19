@@ -20,7 +20,6 @@
 
 #include <sstmac/libraries/mpi/mpi_queue/mpi_queue.h>
 #include <sstmac/libraries/mpi/mpi_queue/user_thread_mpi_queue.h>
-#include <sstmac/libraries/mpi/mpi_queue/service_thread_mpi_queue.h>
 
 #include <sstmac/libraries/mpi/mpi_api.h>
 #include <sstmac/libraries/mpi/mpi_api_persistent.h>
@@ -1677,9 +1676,7 @@ mpi_api::do_waitall(std::vector<mpi_request*>& reqs)
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, "MPI_Waitall(...)");
 
   for (int i=0; i < reqs.size(); ++i){
-    mpi_api_debug(sprockit::dbg::mpi_request,
-        "MPI_Request[%d]=%p",
-        i, reqs[i]);
+
   }
 
   SSTMACBacktrace("MPI_Waitall");
@@ -1689,10 +1686,15 @@ mpi_api::do_waitall(std::vector<mpi_request*>& reqs)
   int numreqs = reqs.size();
   for (int i=0; i < numreqs; ++i) {
     mpi_request* req = reqs[i];
-    if (req == 0)
+    if (req == 0){
+      mpi_api_debug(sprockit::dbg::mpi_request,
+        "Null MPI_Request[%d]=%p", i, req);
       continue;
+    }
 
     if (!req->is_complete()) {
+      mpi_api_debug(sprockit::dbg::mpi_request,
+        "Blocking on MPI_Request[%d]=%p", i, req);
       queue_->progress_loop(req);
     }
   }
@@ -2123,7 +2125,7 @@ mpi_api::probe(mpi_id source, mpi_tag tag,
   }
 
   delete req;
-  delete done;
+  if (done) delete done;
 
   end_api_call();
   return os_->now();

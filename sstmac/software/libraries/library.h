@@ -56,7 +56,7 @@ class library  {
   consume_params(sprockit::sim_parameters* params);
 
   virtual void
-  incoming_message(sst_message* msg);
+  incoming_message(message* msg);
 
   operating_system*
   os() const {

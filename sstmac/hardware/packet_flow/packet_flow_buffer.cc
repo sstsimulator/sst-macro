@@ -62,7 +62,7 @@ packet_flow_network_buffer::packet_flow_network_buffer(
 }
 
 void
-packet_flow_network_buffer::start(sst_message* msg)
+packet_flow_network_buffer::start_message(message* msg)
 {
   spkt_throw(sprockit::illformed_error,
     "packet_flow_network_buffer:: should never start a flow");
@@ -204,7 +204,7 @@ packet_flow_network_buffer::build_blocked_messages()
 }
 
 void
-packet_flow_network_buffer::deadlock_check(sst_message* msg)
+packet_flow_network_buffer::deadlock_check(message* msg)
 {
   if (blocked_messages_.empty()){
     build_blocked_messages();
@@ -323,7 +323,7 @@ packet_flow_eject_buffer::packet_flow_eject_buffer(
 }
 
 void
-packet_flow_eject_buffer::return_credit(message_chunk* msg)
+packet_flow_eject_buffer::return_credit(packet* msg)
 {
   send_credit(input_, safe_cast(packet_flow_payload, msg), now());
 }
@@ -341,7 +341,7 @@ packet_flow_eject_buffer::do_handle_payload(packet_flow_payload* msg)
 }
 
 void
-packet_flow_eject_buffer::start(sst_message* msg)
+packet_flow_eject_buffer::start_message(message* msg)
 {
   spkt_throw(sprockit::illformed_error,
     "packet_flow_eject_buffer:: should never start a flow");
@@ -430,7 +430,7 @@ packet_flow_injection_buffer::do_handle_payload(packet_flow_payload* msg)
 }
 
 void
-packet_flow_injection_buffer::start(sst_message* msg)
+packet_flow_injection_buffer::start_message(message* msg)
 {
   pending_send next;
   next.bytes_left = msg->byte_length();

@@ -153,7 +153,7 @@ start_mpi(const dumpi_time *cpu, const dumpi_time *wall,
         spkt_throw(sprockit::illformed_error, "parsedumpi_callbacks::start_mpi:  "
                               "Number of active perfcounters changed "
                               "between calls.");
-      compute_message* evts = new compute_message;
+      compute_event* evts = new compute_event;
       for(int i = 0; i < perf->count; ++i) {
         int64_t evtval = perf->invalue[i] - perfctr_compute_start_[i];
         if(evtval < 0) {

@@ -6,7 +6,7 @@
 #include <sstmac/common/logger.h>
 #include <sstmac/common/runtime.h>
 
-using sstmac::sstmac_runtime;
+using sstmac::runtime;
 
 namespace pingall {
 

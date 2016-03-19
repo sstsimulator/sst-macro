@@ -255,20 +255,20 @@ packet_flow_tiled_switch::queue_length(int port) const
 }
 
 void
-packet_flow_tiled_switch::handle(sst_message* msg)
+packet_flow_tiled_switch::handle(event* ev)
 {
   //this should only happen in parallel mode...
   //this means we are getting a message that has crossed the parallel boundary
-  packet_flow_interface* fmsg = interface_cast(packet_flow_interface, msg);
+  packet_flow_interface* fmsg = interface_cast(packet_flow_interface, ev);
   switch (fmsg->type()) {
     case packet_flow_interface::credit: {
-      packet_flow_credit* credit = static_cast<packet_flow_credit*>(msg);
+      packet_flow_credit* credit = static_cast<packet_flow_credit*>(ev);
       packet_flow_muxer* recver = col_output_muxers_[credit->port()];
       recver->handle_credit(credit);
       break;
     }
     case packet_flow_interface::payload: {
-      packet_flow_payload* payload = static_cast<packet_flow_payload*>(msg);
+      packet_flow_payload* payload = static_cast<packet_flow_payload*>(ev);
       debug_printf(sprockit::dbg::packet_flow,
          "tiled switch %d: incoming payload %s",
           int(my_addr_), payload->to_string().c_str());

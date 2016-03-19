@@ -21,34 +21,6 @@
 namespace sstmac {
 namespace sw {
 
-class unblock_handler : public event_handler
-{
-
- public:
-  virtual std::string
-  to_string() const {
-    return "unblock handler";
-  }
-
-  static unblock_handler*
-  construct(operating_system* os, key* k) {
-    return new unblock_handler(os, k);
-  }
-
-  virtual void
-  handle(sst_message* msg);
-
- protected:
-  unblock_handler(operating_system* os, key* k) :
-    os_(os), key_(k) {
-  }
-
- protected:
-  operating_system* os_;
-  key* key_;
-
-};
-
 }
 } //end of namespace sstmac
 

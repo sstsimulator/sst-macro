@@ -88,7 +88,7 @@ class event_scheduler :
   }
 
   virtual void
-  handle(sst_message* msg);
+  handle(event* ev);
 
   void
   cancel_all_messages();
@@ -102,35 +102,23 @@ class event_scheduler :
   void
   schedule(timestamp t,
            event_handler* handler,
-           sst_message* msg);
+           event* ev);
 
   void
-  schedule(timestamp t, event_handler* handler);
+  schedule(timestamp t, event_queue_entry* ev);
 
   void
-  schedule(timestamp t, event* ev);
-
-  void
-  schedule_now(event* ev);
+  schedule_now(event_queue_entry* ev);
   
   void
-  schedule_now(event_handler* handler, sst_message* msg);
+  schedule_now(event_handler* handler, event* ev);
 
   void
   schedule_delay(timestamp delay,
                  event_handler* handler,
-                 sst_message* msg);
+                 event* ev);
   void
-  schedule_delay(timestamp delay, event* ev);
-
-  void
-  send_self_message(timestamp arrival, sst_message* msg);
-
-  void
-  send_delayed_self_message(timestamp delay, sst_message* msg);
-
-  void
-  send_now_self_message(sst_message* msg);
+  schedule_delay(timestamp delay, event_queue_entry* ev);
 
   void
   send_self_event(timestamp arrival, event* ev);
@@ -140,6 +128,15 @@ class event_scheduler :
 
   void
   send_now_self_event(event* ev);
+
+  void
+  send_self_event_queue(timestamp arrival, event_queue_entry* ev);
+
+  void
+  send_delayed_self_event_queue(timestamp delay, event_queue_entry* ev);
+
+  void
+  send_now_self_event_queue(event_queue_entry* ev);
 
   void
   register_stat(stat_collector* coll);
@@ -243,7 +240,7 @@ class event_subscheduler :
   }
 
   virtual void
-  handle(sst_message* msg);
+  handle(event* ev);
 
   /**
    * Add an event to the event queue, where msg will get delivered to handler at time t.
@@ -254,35 +251,23 @@ class event_subscheduler :
   void
   schedule(timestamp t,
            event_handler* handler,
-           sst_message* msg);
+           event* ev);
 
   void
-  schedule(timestamp t, event_handler* handler);
+  schedule(timestamp t, event_queue_entry* ev);
 
   void
-  schedule(timestamp t, event* ev);
+  schedule_now(event_queue_entry* ev);
 
   void
-  schedule_now(event* ev);
-
-  void
-  schedule_now(event_handler* handler, sst_message* msg);
+  schedule_now(event_handler* handler, event* ev);
 
   void
   schedule_delay(timestamp delay,
                  event_handler* handler,
-                 sst_message* msg);
+                 event* ev);
   void
-  schedule_delay(timestamp delay, event* ev);
-
-  void
-  send_self_message(timestamp arrival, sst_message* msg);
-
-  void
-  send_delayed_self_message(timestamp delay, sst_message* msg);
-
-  void
-  send_now_self_message(sst_message* msg);
+  schedule_delay(timestamp delay, event_queue_entry* ev);
 
   void
   send_self_event(timestamp arrival, event* ev);
@@ -292,6 +277,15 @@ class event_subscheduler :
 
   void
   send_now_self_event(event* ev);
+
+  void
+  send_self_event_queue(timestamp arrival, event_queue_entry* ev);
+
+  void
+  send_delayed_self_event_queue(timestamp delay, event_queue_entry* ev);
+
+  void
+  send_now_self_event_queue(event_queue_entry* ev);
 
   /**
    * Set the eventmanager for this scheduler.  Unfortunately,
