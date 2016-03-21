@@ -1956,7 +1956,7 @@ MPI_Group_translate_ranks(MPI_Group group1, int n, int *ranks1,
     }
     else {
 
-      for (uint j = 0; j < g2->size(); j++) {
+      for (int j = 0; j < g2->size(); j++) {
 
         if (g2->at(j) == g1->at(ranks1[i])) {
           ranks2[i] = j;

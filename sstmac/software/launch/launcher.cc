@@ -41,9 +41,9 @@ launcher::incoming_message(message* msg)
     return;
   }
 
-  launch_info* linfo = lmsg->get_info();
+  launch_info* linfo = lmsg->info();
 
-  if (lmsg->get_launch_type() == launch_message::ARRIVE) {
+  if (lmsg->launch_type() == launch_message::ARRIVE) {
     software_id sid(linfo->aid(), lmsg->tid());
     app* theapp = linfo->app_template()->clone(sid);
     theapp->consume_params(linfo->app_template()->params());
@@ -53,7 +53,7 @@ launcher::incoming_message(message* msg)
     os_->start_app(theapp);
 
   }
-  else if(lmsg->get_launch_type() == launch_message::COMPLETE) {
+  else if(lmsg->launch_type() == launch_message::COMPLETE) {
     //do nothing
   }
 

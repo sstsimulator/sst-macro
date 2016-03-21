@@ -14,8 +14,6 @@
 
 #define DEBUG_DETERMINISM 1
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/common/sst_event.h>
@@ -100,7 +98,7 @@ class event_container : public event_manager
 }
 } // end of namespace sstmac
 
-#endif // !SSTMAC_INTEGRATED_SST_CORE
+
 
 #endif
 

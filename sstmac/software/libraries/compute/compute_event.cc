@@ -11,7 +11,7 @@
 
 #include <sprockit/errors.h>
 #include <sstmac/software/process/thread.h>
-#include <sstmac/software/libraries/compute/compute_message.h>
+#include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/software/process/operating_system.h>
 
 RegisterDebugSlot(compute_intensity,

@@ -33,7 +33,6 @@
 #include <sstmac/software/process/app_manager.h>
 #include <sstmac/software/process/compute_scheduler.h>
 #include <sstmac/software/libraries/unblock_event.h>
-#include <sstmac/software/libraries/unblock_handler.h>
 
 #if SSTMAC_HAVE_UCONTEXT
 #include <sstmac/software/threading/threading_ucontext.h>

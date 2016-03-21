@@ -1,7 +1,6 @@
 #include "boxml.h"
 #include "lock_array.h"
 #include <sprockit/factories/factory.h>
-#include <sstmac/software/libraries/unblock_handler.h>
 #include <sstmac/common/sim_thread_lock.h>
 #include <sstmac/common/stats/stat_histogram.h>
 #include <sstmac/common/stats/stat_local_double.h>

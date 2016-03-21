@@ -12,8 +12,8 @@
 #include <sstmac/software/libraries/compute/lib_compute_time.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/backtrace.h>
-#include <sstmac/software/libraries/compute/compute_message.h>
-#include <sstmac/common/messages/sleep_message.h>
+#include <sstmac/software/libraries/compute/compute_event.h>
+#include <sstmac/common/messages/sleep_event.h>
 
 namespace sstmac {
 namespace sw {

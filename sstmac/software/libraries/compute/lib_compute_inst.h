@@ -13,7 +13,7 @@
 #define SSTMAC_SOFTWARE_LIBRARIES_COMPUTE_LIB_COMPUTE_INST_H_INCLUDED
 
 #include <sstmac/software/libraries/compute/lib_compute.h>
-#include <sstmac/software/libraries/compute/compute_message_fwd.h>
+#include <sstmac/software/libraries/compute/compute_event_fwd.h>
 #include <sstmac/software/process/software_id.h>
 #include <sstmac/common/sstmac_config.h>
 #include <stdint.h>

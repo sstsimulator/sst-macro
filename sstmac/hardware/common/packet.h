@@ -1,10 +1,12 @@
-#ifndef MESSAGE_CHUNK_H
-#define MESSAGE_CHUNK_H
+#ifndef sstmac_hardware_packet_h
+#define sstmac_hardware_packet_h
 
-#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/common/sst_event.h>
+#include <sstmac/common/messages/sst_message_fwd.h>
 #include <sprockit/metadata_bits.h>
 
 namespace sstmac {
+namespace hw {
 
 class packet :
   public event
@@ -83,6 +85,7 @@ class packet :
 
 
 }
+}
 
-#endif // MESSAGE_CHUNK_H
+#endif
 

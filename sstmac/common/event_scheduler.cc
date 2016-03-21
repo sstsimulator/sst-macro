@@ -14,10 +14,7 @@
 #include <sstmac/common/event_handler.h>
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/sst_event.h>
-#include <sstmac/common/messages/sst_message.h>
 #include <sstmac/common/sstmac_env.h>
-#include <sstmac/common/messages/library_message.h>
-#include <sstmac/common/messages/callback_message.h>
 #include <sstmac/hardware/node/node.h>
 #include <sprockit/sim_parameters.h>
 
@@ -81,72 +78,74 @@ event_scheduler::init(unsigned int phase)
 }
 
 void
-event_scheduler::schedule_now(event_handler *handler, sst_message*msg)
+event_scheduler::schedule_now(event_handler* handler, event* ev)
 {
   //this better be a zero latency link
-  schedule(SST::Time_t(0), handler, msg);
+  schedule(SST::Time_t(0), handler, ev);
 }
 
 void
-event_scheduler::schedule_now(event *ev)
+event_scheduler::schedule_now(event_queue_entry* ev)
 {
-  self_link_->send(new SSTEventEvent(ev));
+  self_link_->send(ev);
 }
 
 void
-event_scheduler::send_self_message(timestamp arrival, sst_message*msg)
-{
-  SST::Time_t delay = extra_delay(arrival);
-  self_link_->send(delay, time_converter_, new SSTHandlerEvent(this, msg));
-}
-
-void
-event_scheduler::send_delayed_self_message(timestamp delay, sst_message*msg)
-{
-  SST::Time_t sst_delay = delay.ticks_int64();
-  self_link_->send(sst_delay, time_converter_, new SSTHandlerEvent(this, msg));
-}
-
-void
-event_scheduler::send_now_self_message(sst_message*msg)
-{
-  self_link_->send(new SSTHandlerEvent(this, msg));
-}
-
-void
-event_scheduler::send_self_event(timestamp arrival, event *ev)
+event_scheduler::send_self_event(timestamp arrival, event* ev)
 {
   SST::Time_t delay = extra_delay(arrival);
-  self_link_->send(delay, time_converter_, new SSTEventEvent(ev));
+  self_link_->send(delay, time_converter_, ev);
 }
 
 void
 event_scheduler::send_delayed_self_event(timestamp delay, event* ev)
 {
   SST::Time_t sst_delay = delay.ticks_int64();
-  self_link_->send(sst_delay, time_converter_, new SSTEventEvent(ev));
+  self_link_->send(sst_delay, time_converter_, ev);
 }
 
 void
 event_scheduler::send_now_self_event(event* ev)
 {
-  self_link_->send(new SSTEventEvent(ev));
+  self_link_->send(ev);
 }
 
 void
-event_scheduler::schedule(SST::Time_t delay, event_handler* handler, sst_message* msg)
+event_scheduler::send_self_event_queue(timestamp arrival, event_queue_entry* ev)
+{
+  SST::Time_t delay = extra_delay(arrival);
+  self_link_->send(delay, time_converter_, ev);
+}
+
+void
+event_scheduler::send_delayed_self_event_queue(timestamp delay, event_queue_entry* ev)
+{
+  SST::Time_t sst_delay = delay.ticks_int64();
+  self_link_->send(sst_delay, time_converter_, ev);
+}
+
+void
+event_scheduler::send_now_self_event_queue(event_queue_entry* ev)
+{
+  self_link_->send(ev);
+}
+
+void
+event_scheduler::schedule(SST::Time_t delay, event_handler* handler, event* ev)
 {
   fflush(stdout);
   switch(handler->type()){
     case event_handler::self_handler:
     {
-      self_link_->send(delay, time_converter_, new SSTHandlerEvent(handler, msg));
+      printf("sending event %s to self\n", ev->to_string().c_str());
+      self_link_->send(delay, time_converter_, ev);
       break;
     }
     case event_handler::link_handler:
     {
+      printf("sending event %s to link\n", ev->to_string().c_str());
       integrated_connectable_wrapper* wrapper = static_cast<integrated_connectable_wrapper*>(handler);
-      wrapper->link()->send(delay, time_converter_, new SSTMessageEvent(msg));
+      wrapper->link()->send(delay, time_converter_, ev);
       break;
     }
   }
@@ -155,27 +154,20 @@ event_scheduler::schedule(SST::Time_t delay, event_handler* handler, sst_message
 void
 event_scheduler::schedule(timestamp t,
                           event_handler* handler,
-                          sst_message* msg)
+                          event* ev)
 {
-  schedule(extra_delay(t), handler, msg);
+  schedule(extra_delay(t), handler, ev);
 }
 
 void
 event_scheduler::schedule_delay(
   timestamp delay,
   event_handler* handler,
-  sst_message* msg)
+  event* ev)
 {
-  schedule(SST::Time_t(delay.ticks_int64()), handler, msg);
+  schedule(SST::Time_t(delay.ticks_int64()), handler, ev);
 }
 
-
-void
-event_subscheduler::handle_event(SST::Event* ev)
-{ 
-  SSTMessageEvent* mev = static_cast<SSTMessageEvent*>(ev);
-  handle(mev->message());
-}
 #else
 void
 event_scheduler::set_event_manager(event_manager* mgr)
@@ -194,31 +186,31 @@ event_scheduler::schedule_now(event_handler *handler, event* ev)
 void
 event_scheduler::send_self_event(timestamp arrival, event* ev)
 {
-  SCHEDULE(arrival, this, ev);
+  schedule(arrival, this, ev);
 }
 
 void
 event_scheduler::send_delayed_self_event(timestamp delay, event* ev)
 {
-  SCHEDULE_DELAY(delay, this, ev);
+  schedule_delay(delay, this, ev);
 }
 
 void
 event_scheduler::send_now_self_event(event* ev)
 {
-  SCHEDULE_NOW(this, ev);
+  schedule_now(this, ev);
 }
 
 void
 event_scheduler::send_self_event_queue(timestamp arrival, event_queue_entry *ev)
 {
-  SCHEDULE(arrival, ev);
+  schedule(arrival, ev);
 }
 
 void
 event_scheduler::send_delayed_self_event_queue(timestamp delay, event_queue_entry* ev)
 {
-  SCHEDULE_DELAY(delay, ev);
+  schedule_delay(delay, ev);
 }
 
 void

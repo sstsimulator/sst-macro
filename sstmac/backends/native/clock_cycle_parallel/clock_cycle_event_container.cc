@@ -265,16 +265,16 @@ clock_cycle_event_map::ipc_schedule(timestamp t,
   event_loc_id dst,
   event_loc_id src,
   uint32_t seqnum,
-  message* msg)
+  event* ev)
 {
   event_debug("epoch %d: scheduling outgoing event at t=%12.8e to location %d",
     epoch_, t.sec(), int(dst.convert_to_switch_id()));
 
-  rt_->send_message(thread_id_, t,
+  rt_->send_event(thread_id_, t,
     dst.convert_to_switch_id(),
     src,
     seqnum,
-    msg);
+    ev);
 }
 
 }

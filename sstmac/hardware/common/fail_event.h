@@ -1,7 +1,7 @@
 #ifndef FAIL_MESSAGE_H
 #define FAIL_MESSAGE_H
 
-#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/common/sst_event.h>
 
 namespace sstmac {
   namespace hw {

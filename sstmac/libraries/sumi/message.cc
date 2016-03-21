@@ -7,7 +7,7 @@ DeclareSerializable(sstmac::transport_message)
 
 namespace sstmac {
   
-transport_message::transport_message(const payload_ptr& msg, long byte_length)
+transport_message::transport_message(const sumi::payload_ptr& msg, long byte_length)
   : library_interface("sumi"),
     network_message(byte_length),
     payload_(msg),

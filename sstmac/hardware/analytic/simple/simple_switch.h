@@ -3,7 +3,7 @@
 
 #include <sstmac/common/event_handler.h>
 #include <sstmac/common/event_scheduler.h>
-#include <sstmac/hardware/nic/network_endpoint.h>
+#include <sstmac/common/messages/sst_message_fwd.h>
 #include <sstmac/hardware/nic/nic_fwd.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sprockit/unordered.h>

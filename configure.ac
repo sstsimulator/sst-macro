@@ -196,7 +196,7 @@ AC_CONFIG_SUBDIRS([sprockit])
 # Configure dumpi.
 AC_CONFIG_SUBDIRS([dumpi])
 
-ac_configure_args="$ac_configure_args --enable-sst --enable-sst-subrepo"
+ac_configure_args="$ac_configure_args --enable-sst --enable-sst-subrepo --with-extra-sst-flags='$SUMI_CPPFLAGS'"
 AC_CONFIG_SUBDIRS([sumi])
 
 #-------------------------------------------------

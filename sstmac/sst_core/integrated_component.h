@@ -53,49 +53,7 @@
 #include <sst/core/params.h>
 #include <sst/core/element.h>
 #include <sstmac/sst_core/message_event_wrapper.h>
-
-
 namespace sstmac {
-
-class SSTSelfEventWrapper : public SST::Event
-{
- public:
-  virtual void
-  run() = 0;
-};
-
-class SSTEventEvent : public SSTSelfEventWrapper
-{
- public:
-  SSTEventEvent(event* ev) : ev_(ev) {}
-
-  void
-  run() {
-    ev_->execute();
-  }
-
- private:
-  event* ev_;
-};
-
-class SSTHandlerEvent : public SSTSelfEventWrapper
-{
- public:
-  SSTHandlerEvent(event_handler* handler, message*msg) :
-    msg_(msg),
-    handler_(handler)
-  {
-  }
-
-  void
-  run() {
-    handler_->handle(msg_);
-  }
-
- private:
-  message* msg_;
-  event_handler* handler_;
-};
 
 // lightweight layer in between integrated components and SST core, useful for common helper functions, etc
 class SSTIntegratedComponent
@@ -103,8 +61,7 @@ class SSTIntegratedComponent
 {
  public:
   void handle_event(SST::Event* ev){
-    SSTMessageEvent* mev = static_cast<SSTMessageEvent*>(ev);
-    handle(mev->message());
+    handle(static_cast<sstmac::event*>(ev));
   }
 
   virtual void

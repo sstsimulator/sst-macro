@@ -187,7 +187,6 @@ macro_switch_interconnect::immediate_send(event_scheduler* src, message* msg, ti
     msg->to_string().c_str(),
     num_hops, hop_bw_, hop_latency_.sec(), injection_latency_.sec());
 
-  START_VALID_SCHEDULE(src)
   if (dst_node){ //local operation
     src->schedule(arrival, dst_node->get_nic(), msg);
   } else {
@@ -195,7 +194,6 @@ macro_switch_interconnect::immediate_send(event_scheduler* src, message* msg, ti
     switch_id sid = topology_->node_to_ejection_switch(msg->toaddr());
     src->schedule(arrival, switches_.at(sid), msg);
   }
-  STOP_VALID_SCHEDULE(src)
 }
 
 void

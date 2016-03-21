@@ -1,6 +1,6 @@
 #include <sstmac/hardware/packet_flow/packet_flow_memory_model.h>
 #include <sstmac/hardware/node/node.h>
-#include <sstmac/software/libraries/compute/compute_message.h>
+#include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/runtime.h>
 #include <sprockit/sim_parameters.h>
@@ -195,7 +195,7 @@ packet_flow_memory_system::do_handle_payload(packet_flow_payload* msg)
 void
 packet_flow_memory_system::send_to_endpoint(timestamp finish, packet_flow_payload* packet)
 {
-  SCHEDULE(finish, endpoint_, packet);
+  schedule(finish, endpoint_, packet);
 }
 
 void

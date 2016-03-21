@@ -2,7 +2,7 @@
 #define PACKET_FLOW_MEMORY_MODEL_H
 
 #include <sstmac/hardware/memory/memory_model.h>
-#include <sstmac/software/libraries/compute/compute_message_fwd.h>
+#include <sstmac/software/libraries/compute/compute_event_fwd.h>
 #include <sstmac/hardware/packet_flow/packet_flow_arbitrator.h>
 #include <sstmac/hardware/packet_flow/packet_flow_sender.h>
 #include <sstmac/hardware/packet_flow/packet_flow_endpoint.h>

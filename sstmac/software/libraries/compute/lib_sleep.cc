@@ -9,7 +9,7 @@
  *  SST/macroscale directory.
  */
 
-#include <sstmac/common/messages/sleep_message.h>
+#include <sstmac/common/messages/sleep_event.h>
 #include <sstmac/software/libraries/compute/lib_sleep.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/software/process/key.h>

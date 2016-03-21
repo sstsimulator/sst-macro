@@ -10,7 +10,7 @@
  */
 
 #include <math.h>
-#include <sstmac/software/libraries/compute/compute_message.h>
+#include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/software/libraries/compute/lib_compute_matrix.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/key.h>

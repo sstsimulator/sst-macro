@@ -10,7 +10,9 @@
  */
 
 #include <sstmac/hardware/topology/structured_topology.h>
+#include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/packet_flow/packet_flow_nic.h>
+#include <sstmac/hardware/node/node.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/event_callback.h>
@@ -218,7 +220,7 @@ void
 packet_flow_nic::do_send(network_message* payload)
 {
   nic_debug("packet flow: sending %s", payload->to_string().c_str());
-  SCHEDULE_DELAY(inj_lat_, inj_handler_, payload);
+  schedule_delay(inj_lat_, inj_handler_, payload);
 }
 
 void

@@ -11,7 +11,6 @@
 
 
 #include <sstmac/common/config.h>
-#if !SSTMAC_INTEGRATED_SST_CORE
 
 #include <sstmac/backends/native/event_heap.h>
 #include <sprockit/errors.h>
@@ -77,4 +76,3 @@ event_heap::cancel_all_messages(event_loc_id canceled_loc)
 }
 } // end of namespace sstmac
 
-#endif // !SSTMAC_INTEGRATED_SST_CORE

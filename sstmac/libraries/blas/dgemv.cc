@@ -1,7 +1,7 @@
 #include <sstmac/libraries/blas/blas_api.h>
 #include <sprockit/sim_parameters.h>
 #include <algorithm>
-#include <sstmac/software/libraries/compute/compute_message.h>
+#include <sstmac/software/libraries/compute/compute_event.h>
 
 namespace sstmac {
 namespace sw {

@@ -13,10 +13,10 @@
 #define SSTMAC_HARDWARE_NETWORK_ROUTING_ROUTER_H_INCLUDED
 
 
-#include <sstmac/common/messages/message_chunk.h>
 #include <sstmac/common/node_address.h>
 #include <sstmac/common/event_manager_fwd.h>
 #include <sstmac/hardware/router/routable_message.h>
+#include <sstmac/hardware/common/packet.h>
 
 #include <sprockit/debug.h>
 #include <sprockit/factories/factory.h>

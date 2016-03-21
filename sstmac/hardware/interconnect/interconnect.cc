@@ -10,9 +10,10 @@
  */
 
 #include <sstmac/hardware/interconnect/interconnect.h>
+#include <sstmac/hardware/node/node.h>
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/nic/netlink.h>
-#include <sstmac/hardware/common/messages/fail_message.h>
+#include <sstmac/hardware/common/fail_event.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/packet_flow/packet_flow.h>

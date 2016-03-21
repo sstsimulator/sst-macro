@@ -13,8 +13,6 @@
 #define SSTMAC_BACKENDS_NATIVE_EVENTMAP_H_INCLUDED
 
 #include <sstmac/common/sstmac_config.h>
-#if !SSTMAC_INTEGRATED_SST_CORE
-
 
 #include <sstmac/backends/native/event_container.h>
 #include <sstmac/common/sst_event.h>
@@ -79,8 +77,6 @@ class event_map :
 
 }
 } // end of namespace sstmac
-
-#endif // !SSTMAC_INTEGRATED_SST_CORE
 
 #endif
 

@@ -12,7 +12,7 @@
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/software/libraries/compute/lib_compute_inst.h>
-#include <sstmac/software/libraries/compute/compute_message.h>
+#include <sstmac/software/libraries/compute/compute_event.h>
 #include <sprockit/keyword_registration.h>
 #include <sprockit/sim_parameters.h>
 

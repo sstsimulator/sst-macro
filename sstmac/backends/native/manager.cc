@@ -10,13 +10,14 @@
  */
 
 #include <sstmac/hardware/interconnect/interconnect.h>
+#include <sstmac/hardware/node/node.h>
 
 #include <sstmac/common/sstmac_env.h>
-
 #include <sstmac/backends/common/sim_partition.h>
-#include <sstmac/backends/native/node_list.h>
-#include <sstmac/backends/native/manager.h>
+#if !SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/backends/native/event_map.h>
+#endif
+#include <sstmac/backends/native/manager.h>
 #include <sstmac/backends/native/clock_cycle_parallel/clock_cycle_event_container.h>
 #include <sstmac/backends/native/skeleton_app_manager.h>
 

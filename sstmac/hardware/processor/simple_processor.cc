@@ -14,7 +14,7 @@
 #include <sstmac/hardware/processor/simple_processor.h>
 #include <sstmac/hardware/memory/memory_model.h>
 #include <sstmac/hardware/node/node.h>
-#include <sstmac/software/libraries/compute/compute_message.h>
+#include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/software/process/operating_system.h>
 #include <iostream>
 

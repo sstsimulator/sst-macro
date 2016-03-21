@@ -1,7 +1,7 @@
 #ifndef FAILABLE_H
 #define FAILABLE_H
 
-#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/common/sst_event_fwd.h>
 #include <sstmac/hardware/common/connection.h>
 
 namespace sstmac {

@@ -13,20 +13,16 @@
 #define SSTMAC_BACKENDS_NATIVE_COMPONENTS_NIC_NETWORKINTERFACE_H_INCLUDED
 
 #include <sstmac/common/timestamp.h>
-#include <sstmac/common/event_scheduler.h>
-#include <sstmac/common/messages/message_chunk.h>
-
-#include <sstmac/hardware/node/node.h>
+#include <sstmac/hardware/node/node_fwd.h>
 #include <sstmac/hardware/common/connection.h>
-#include <sstmac/hardware/network/network_message.h>
-
+#include <sstmac/hardware/common/packet_fwd.h>
+#include <sstmac/hardware/network/network_message_fwd.h>
+#include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/common/stats/stat_spyplot_fwd.h>
 #include <sstmac/common/stats/stat_histogram_fwd.h>
 #include <sstmac/common/stats/stat_local_int_fwd.h>
 #include <sstmac/common/stats/stat_global_int_fwd.h>
-#include <sstmac/hardware/interconnect/interconnect_fwd.h>
-
-#include <sstmac/hardware/nic/network_endpoint.h>
+#include <sstmac/common/messages/sst_message_fwd.h>
 
 #include <sprockit/debug.h>
 #include <sprockit/factories/factory.h>
@@ -49,6 +45,10 @@ class nic :
   public sprockit::factory_type,
   public connectable_subcomponent
 {
+#if SSTMAC_INTEGRATED_SST_CORE
+ public:
+  void handle_event(SST::Event* ev);
+#endif
  public:
   virtual std::string
   to_string() const = 0;

@@ -11,7 +11,7 @@
 
 #include <sstmac/hardware/memory/simple_memory_model.h>
 #include <sstmac/hardware/node/node.h>
-#include <sstmac/software/libraries/compute/compute_message.h>
+#include <sstmac/software/libraries/compute/compute_event.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 

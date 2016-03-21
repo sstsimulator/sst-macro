@@ -2,7 +2,7 @@
 #include <sprockit/sim_parameters.h>
 #include <algorithm>
 #include <cmath>
-#include <sstmac/software/libraries/compute/compute_message.h>
+#include <sstmac/software/libraries/compute/compute_event.h>
 
 ImplementFactory(sstmac::sw::blas_kernel);
 

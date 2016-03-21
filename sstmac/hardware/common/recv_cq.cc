@@ -1,5 +1,6 @@
-#include <sstmac/common/messages/message_chunk.h>
+#include <sstmac/hardware/common/packet.h>
 #include <sstmac/hardware/common/recv_cq.h>
+#include <sstmac/common/messages/sst_message.h>
 #include <sprockit/output.h>
 
 namespace sstmac {

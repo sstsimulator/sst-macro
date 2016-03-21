@@ -3,11 +3,11 @@
 
 
 #include <sstmac/common/messages/message_buffer_cache.h>
-#include <sstmac/common/messages/sst_message.h>
 #include <sstmac/common/node_address.h>
 #include <sstmac/common/thread_lock.h>
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/event_location.h>
+#include <sstmac/common/sst_event_fwd.h>
 #include <sstmac/backends/common/sim_partition_fwd.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 
@@ -114,12 +114,12 @@ class parallel_runtime :
    * @param size The size of the buffer being sent
    */
   virtual void
-  send_message(int thread_id,
+  send_event(int thread_id,
     timestamp t,
     topology_id tid,
     event_loc_id src,
     uint32_t seqnum,
-    message* msg);
+    event* ev);
 
   int
   me() const {

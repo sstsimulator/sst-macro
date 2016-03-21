@@ -1,6 +1,6 @@
 
 #include <sstmac/common/sstmac_config.h>
-#if !SSTMAC_INTEGRATED_SST_CORE
+
 #include <sstmac/backends/native/event_container.h>
 #include <sprockit/sim_parameters.h>
 #include <ctime>
@@ -159,4 +159,3 @@ event_container::finish()
 }
 }
 
-#endif // !SSTMAC_INTEGRATED_SST_CORE

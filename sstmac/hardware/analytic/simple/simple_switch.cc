@@ -168,13 +168,13 @@ simple_switch::handle(event* ev)
 void
 simple_switch::send_to_nic(timestamp delay, node_id dst, message* msg)
 {
-  SCHEDULE_DELAY(delay, nics_[dst], msg);
+  schedule_delay(delay, nics_[dst], msg);
 }
 
 void
 simple_switch::send_to_switch(timestamp delay, node_id dst, message* msg)
 {
-  SCHEDULE_DELAY(delay, neighbors_[dst], msg);
+  schedule_delay(delay, neighbors_[dst], msg);
 }
 
 #if !SSTMAC_INTEGRATED_SST_CORE

@@ -19,8 +19,6 @@
 
 ImplementFactory(sstmac::event_manager)
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-
 RegisterDebugSlot(event_manager);
 
 namespace sstmac {
@@ -253,6 +251,4 @@ event_manager::finish_stats()
 }
 
 }
-
-#endif
 

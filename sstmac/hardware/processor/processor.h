@@ -13,12 +13,11 @@
 #define SSTMAC_HARDWARE_PROCESSOR_PROCESSOR_H_INCLUDED
 
 
-#include <sstmac/common/event_handler.h>
-#include <sstmac/common/messages/sst_message.h>
 #include <sstmac/common/timestamp.h>
+#include <sstmac/common/sst_event_fwd.h>
 #include <sstmac/hardware/memory/memory_model_fwd.h>
 #include <sstmac/hardware/node/node_fwd.h>
-#include <sstmac/software/libraries/compute/compute_message_fwd.h>
+#include <sstmac/software/libraries/compute/compute_event_fwd.h>
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
 

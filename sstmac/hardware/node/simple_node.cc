@@ -12,13 +12,12 @@
 #include <sstmac/hardware/node/simple_node.h>
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/memory/memory_model.h>
+#include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/processor/processor.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/launch/machine_descriptor.h>
 #include <sstmac/software/launch/launcher.h>
-
-#include <sstmac/common/messages/timed_message.h>
-
+#include <sstmac/common/messages/timed_event.h>
 
 #include <sprockit/errors.h>
 #include <sprockit/util.h>

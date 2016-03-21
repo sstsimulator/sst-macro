@@ -9,8 +9,8 @@
  *  SST/macroscale directory.
  */
 
-#ifndef SSTMAC_HARDWARE_PROCESSOR_COMPUTESCHEDULER_H_INCLUDED
-#define SSTMAC_HARDWARE_PROCESSOR_COMPUTESCHEDULER_H_INCLUDED
+#ifndef SSTMAC_HARDWARE_PROCESSOR_COMPUTEscheduleR_H_INCLUDED
+#define SSTMAC_HARDWARE_PROCESSOR_COMPUTEscheduleR_H_INCLUDED
 
 #include <sstmac/common/messages/sst_message.h>
 #include <sstmac/common/event_scheduler.h>

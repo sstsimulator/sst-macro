@@ -1,8 +1,10 @@
-#include <sstmac/common/messages/message_chunk.h>
-#include <sprockit/serializer.h>
+#include <sstmac/hardware/common/packet.h>
 #include <sstmac/hardware/common/unique_id.h>
+#include <sstmac/common/messages/sst_message.h>
+#include <sprockit/serializer.h>
 
 namespace sstmac {
+namespace hw {
 
 packet::packet(
   message* orig,
@@ -47,4 +49,4 @@ packet::serialize_order(sprockit::serializer& ser)
 }
 
 }
-
+}

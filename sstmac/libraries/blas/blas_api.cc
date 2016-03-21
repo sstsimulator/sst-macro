@@ -2,6 +2,7 @@
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/api.h>
 #include <sstmac/software/libraries/compute/lib_compute_inst.h>
+#include <sstmac/software/libraries/compute/compute_event.h>
 
 #define enumcase(x) case x: return #x;
 

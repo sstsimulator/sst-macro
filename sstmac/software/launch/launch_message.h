@@ -14,7 +14,7 @@
 
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/common/messages/library_message.h>
-#include <sstmac/common/messages/timed_message.h>
+#include <sstmac/common/messages/timed_event.h>
 #include <sstmac/software/launch/launch_info.h>
 
 namespace sstmac {
@@ -54,7 +54,7 @@ class launch_message :
   }
 
   launch_info*
-  get_info() {
+  info() {
     return info_;
   }
 
@@ -64,7 +64,7 @@ class launch_message :
   }
 
   LAUNCHTYPE
-  get_launch_type() const {
+  launch_type() const {
     return launchtype_;
   }
 

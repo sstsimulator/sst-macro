@@ -1,8 +1,7 @@
 #ifndef SLEEP_MESSAGE_H
 #define SLEEP_MESSAGE_H
 
-#include <sstmac/common/messages/timed_message.h>
-#include <sstmac/common/messages/library_message.h>
+#include <sstmac/common/messages/timed_event.h>
 
 namespace sstmac {
 

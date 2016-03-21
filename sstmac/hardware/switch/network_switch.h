@@ -22,7 +22,6 @@
 #include <sstmac/hardware/common/clonable.h>
 #include <sstmac/hardware/router/router_fwd.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
-#include <sstmac/hardware/nic/network_endpoint.h>
 #include <sprockit/sim_parameters_fwd.h>
 
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -143,12 +142,11 @@ class network_switch :
 
   virtual void
   set_event_manager(event_manager* m);
-
- protected:
 #if !SSTMAC_INTEGRATED_SST_CORE
+  protected:
   network_switch();
 #endif
-
+ protected:
   virtual void
   connect_injector(int src_outport, int dst_inport, event_handler* nic) = 0;
 

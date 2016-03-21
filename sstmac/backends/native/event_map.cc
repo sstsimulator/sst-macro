@@ -10,7 +10,6 @@
  */
 
 #include <sstmac/common/sstmac_config.h>
-#if !SSTMAC_INTEGRATED_SST_CORE
 
 #include <sstmac/backends/native/event_map.h>
 #include <sstmac/common/event_scheduler.h>
@@ -87,4 +86,3 @@ event_map::cancel_all_messages(event_loc_id canceled_loc)
 }
 } // end of namespace sstmac
 
-#endif // !SSTMAC_INTEGRATED_SST_CORE

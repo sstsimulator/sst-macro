@@ -11,6 +11,8 @@
 
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
+#include <sstmac/hardware/network/network_message.h>
+#include <sstmac/hardware/node/node.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/stats/stat_spyplot.h>
 #include <sstmac/common/stats/stat_histogram.h>
@@ -213,6 +215,14 @@ nic::intranode_send(network_message* payload)
   ack_send(payload);
 }
 
+#if SSTMAC_INTEGRATED_SST_CORE
+void
+nic::handle_event(SST::Event *ev)
+{
+  handle(static_cast<event*>(ev));
+}
+#endif
+
 void
 nic::handle(event* ev)
 {
@@ -298,7 +308,7 @@ nic::finalize_init()
 void
 nic::send_to_node(network_message* payload)
 {
-  SCHEDULE_NOW(parent_, payload);
+  schedule_now(parent_, payload);
 }
 
 void

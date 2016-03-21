@@ -55,12 +55,11 @@ class node :
 
   void init(unsigned int phase);
 #endif
-
-  virtual ~node();
-  
   virtual void
   set_event_manager(event_manager* man);
 
+
+  virtual ~node();
   /**
    Standard factory type initializer. Perform extra initialization work
    after all parameters have been read in.

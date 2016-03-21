@@ -1,5 +1,7 @@
 #include <sstmac/hardware/nic/null_nic.h>
-#include <sstmac/common/messages/message_chunk.h>
+#include <sstmac/hardware/common/packet.h>
+#include <sstmac/hardware/node/node.h>
+#include <sstmac/hardware/network/network_message.h>
 #include <sprockit/util.h>
 
 namespace sstmac {

@@ -2,7 +2,7 @@
 #define NIC_RECV_CQ_H
 
 #include <sprockit/unordered.h>
-#include <sstmac/common/messages/message_chunk.h>
+#include <sstmac/hardware/common/packet.h>
 
 namespace sstmac {
 namespace hw {

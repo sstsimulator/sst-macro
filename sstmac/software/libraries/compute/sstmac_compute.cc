@@ -12,7 +12,7 @@
 #include <iostream>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/libraries/compute/compute_message.h>
+#include <sstmac/software/libraries/compute/compute_event.h>
 
 using namespace sstmac;
 using namespace sstmac::sw;

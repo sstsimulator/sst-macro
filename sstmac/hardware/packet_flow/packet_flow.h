@@ -5,7 +5,7 @@
 #define PACKET_TRAIN_H
 
 #include <sstmac/hardware/router/routable_message.h>
-#include <sstmac/common/messages/message_chunk.h>
+#include <sstmac/hardware/common/packet.h>
 #include <sprockit/debug.h>
 
 DeclareDebugSlot(packet_flow)

@@ -16,12 +16,12 @@
 #include <sstmac/hardware/memory/memory_model.h>
 #include <sstmac/hardware/processor/processor.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
+#include <sstmac/hardware/common/fail_event.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/app_manager.h>
 #include <sstmac/software/launch/launcher.h>
 #include <sstmac/software/launch/launch_message.h>
 #include <sstmac/common/runtime.h>
-#include <sstmac/hardware/common/messages/fail_message.h>
 #include <sprockit/keyword_registration.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
@@ -258,8 +258,7 @@ node::launch()
     sw::launch_message* lmsg = *it;
     node_debug("launching task %d on node %d",
       int(lmsg->tid()), int(addr()));
-    os_->handle_message(lmsg);
-    delete lmsg;
+    os_->handle_event(lmsg);
   }
 }
 #else

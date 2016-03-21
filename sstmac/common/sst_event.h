@@ -18,10 +18,16 @@
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/event_scheduler_fwd.h>
 #include <sstmac/common/event_location.h>
+#if SSTMAC_INTEGRATED_SST_CORE
+#include <sst/core/event.h>
+#endif
 
 namespace sstmac {
 
 class event :
+#if SSTMAC_INTEGRATED_SST_CORE
+  public SST::Event,
+#endif
   public sprockit::serializable
 {
  public:
@@ -53,7 +59,11 @@ class event :
 
 };
 
-class event_queue_entry  {
+class event_queue_entry
+#if SSTMAC_INTEGRATED_SST_CORE
+  : public SST::Event
+#endif
+{
 
  public:
   virtual ~event_queue_entry() {}
@@ -65,7 +75,7 @@ class event_queue_entry  {
   to_string() const = 0;
 
 #if SSTMAC_INTEGRATED_SST_CORE
-  event(event_loc_id dst,
+  event_queue_entry(event_loc_id dst,
     event_loc_id src) 
   {
     //simply ignore parameters - not needed

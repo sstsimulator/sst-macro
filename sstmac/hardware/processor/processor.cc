@@ -9,7 +9,7 @@
  *  SST/macroscale directory.
  */
 
-#include <sstmac/software/libraries/compute/compute_message.h>
+#include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/hardware/processor/processor.h>
 #include <sstmac/hardware/memory/memory_model.h>
 #include <sstmac/hardware/node/node.h>

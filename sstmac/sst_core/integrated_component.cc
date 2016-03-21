@@ -48,9 +48,16 @@ SSTIntegratedComponent::init(unsigned int phase)
 void
 SSTIntegratedComponent::handle_self_link(SST::Event* ev)
 {
-  SSTSelfEventWrapper* wrapper = static_cast<SSTSelfEventWrapper*>(ev);
-  wrapper->run();
-  delete wrapper;
+  sstmac::event* macro_ev = dynamic_cast<sstmac::event*>(ev);
+  if (macro_ev){
+    handle(macro_ev);
+  } else {
+    //this is an event queue entry - run it
+    sstmac::event_queue_entry* entry
+       = dynamic_cast<sstmac::event_queue_entry*>(ev);
+    entry->execute();
+    delete entry;
+  }
 }
 
 SST::SimTime_t

@@ -15,7 +15,7 @@
 #include <cmath>
 
 #include <sstmac/common/runtime.h>
-#include <sstmac/common/messages/sleep_message.h>
+#include <sstmac/common/messages/sleep_event.h>
 
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
 
@@ -36,7 +36,6 @@
 #include <sumi-mpi/mpi_comm/mpi_comm_factory.h>
 #include <sumi-mpi/mpi_types.h>
 
-#include <sstmac/software/libraries/unblock_handler.h>
 #include <sstmac/software/launch/hostname_allocation.h>
 
 #include <sprockit/errors.h>
