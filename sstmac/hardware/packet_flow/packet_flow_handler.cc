@@ -9,15 +9,15 @@ packet_flow_handler::packet_flow_handler()
 }
 
 void
-packet_flow_handler::handle(sst_message* msg)
+packet_flow_handler::handle(event* ev)
 {
-  packet_flow_interface* fmsg = interface_cast(packet_flow_interface, msg);
+  packet_flow_interface* fmsg = interface_cast(packet_flow_interface, ev);
   switch (fmsg->type()) {
     case packet_flow_interface::credit:
-      handle_credit(static_cast<packet_flow_credit*>(msg));
+      handle_credit(static_cast<packet_flow_credit*>(ev));
       break;
     case packet_flow_interface::payload:
-      handle_payload(static_cast<packet_flow_payload*>(msg));
+      handle_payload(static_cast<packet_flow_payload*>(ev));
       break;
   }
 }

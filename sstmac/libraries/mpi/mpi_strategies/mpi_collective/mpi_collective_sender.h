@@ -48,8 +48,8 @@ class mpi_collective::sender : public event_handler
 
   /// Event handler callback.
   virtual void
-  handle(sst_message* msg) {
-    parent_->send_complete(safe_cast(mpi_message, msg));
+  handle(event* ev) {
+    parent_->send_complete(safe_cast(mpi_message, ev));
   }
 
  protected:

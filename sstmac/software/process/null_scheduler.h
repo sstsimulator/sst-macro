@@ -1,5 +1,5 @@
-#ifndef NULLSCHEDULER_H
-#define NULLSCHEDULER_H
+#ifndef NULLscheduleR_H
+#define NULLscheduleR_H
 
 #include <sstmac/hardware/processor/compute_scheduler.h>
 
@@ -37,5 +37,5 @@ class null_scheduler :
 }
 }
 
-#endif // NULLSCHEDULER_H
+#endif // NULLscheduleR_H
 

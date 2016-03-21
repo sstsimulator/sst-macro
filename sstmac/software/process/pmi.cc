@@ -42,7 +42,7 @@ process_manager::init_param1(const software_id &sid)
 {
   sid_ = sid;
 
-  node_id addr = sstmac_runtime::node_for_task(sid.app_, sid.task_);
+  node_id addr = runtime::node_for_task(sid.app_, sid.task_);
   static thread_lock lock;
   lock.lock();
   node_map_[sid.app_][sid.task_] = addr;

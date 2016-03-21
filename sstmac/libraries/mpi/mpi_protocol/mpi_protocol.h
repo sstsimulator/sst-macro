@@ -435,7 +435,7 @@ class rendezvous_rdma : public rendezvous_protocol
 
   void
   init_system_recv(long nbytes, mpi_queue* queue,
-                   event* ev);
+                   event_queue_entry* ev);
 
 };
 
@@ -478,7 +478,7 @@ class rendezvous_rma : public rendezvous_protocol
 
   void
   init_system_recv(long nbytes, mpi_queue* queue,
-                   event* ev);
+                   event_queue_entry* ev);
 
 };
 

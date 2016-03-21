@@ -6,7 +6,7 @@
 namespace sstmac {
 namespace sw {
 
-class compute_message;
+class compute_event;
 
 } }
 

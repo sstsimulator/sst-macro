@@ -13,7 +13,6 @@
 #include <sstmac/libraries/mpi/mpi_strategies/mpi_collective/engines/mpi_rabenseifner.h>
 #include <sstmac/libraries/mpi/mpi_strategies/mpi_collective/engines/mpi_logtwo_virt.h>
 #include <sstmac/libraries/mpi/mpi_queue/mpi_queue.h>
-#include <sstmac/software/libraries/unblock_handler.h>
 
 ImplementFactory(sstmac::sw::mpi_allreduce_strategy);
 

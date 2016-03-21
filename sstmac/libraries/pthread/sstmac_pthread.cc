@@ -279,7 +279,7 @@ SSTMAC_pthread_mutex_unlock(sstmac_pthread_mutex_t * mutex)
   return 0;
 }
 
-class unblock_event : public event
+class unblock_event : public event_queue_entry
 {
   public:
 
@@ -291,7 +291,7 @@ class unblock_event : public event
     unblock_event(mutex_t* mut, operating_system* os)
       : mutex_(mut),
       os_(os),
-      event(os->event_location(), os->event_location())
+      event_queue_entry(os->event_location(), os->event_location())
     {
     }
 
@@ -388,7 +388,7 @@ SSTMAC_pthread_cond_timedwait(sstmac_pthread_cond_t * cond,
   operating_system* myos = thr->os();
   (*pending)[*mutex] = mut;
   if (!mut->waiters.empty()){
-    myos->send_now_self_event(new unblock_event(mut, myos));
+    myos->send_now_self_event_queue(new unblock_event(mut, myos));
   }
   else {
     //unlock - nobody waiting on this

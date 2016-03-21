@@ -19,7 +19,7 @@ namespace native {
 class thread_event_schedule_map
 {
  public:
-  std::list<event*>&
+  std::list<event_queue_entry*>&
   pending_events(int srcthread, int dstthread);
 
   void
@@ -31,7 +31,7 @@ class thread_event_schedule_map
  protected:
   int nthread_;
 
-  std::vector<std::list<event*> > events_;
+  std::vector<std::list<event_queue_entry*> > events_;
 
 };
 
@@ -59,9 +59,9 @@ class multithreaded_event_container :
     int srcthread,
     int dstthread,
     uint32_t seqnum,
-    event* ev);
+    event_queue_entry* ev);
 
-  std::list<event*>&
+  std::list<event_queue_entry*>&
   pending_events(int srcthread, int dstthread) {
     return pending_event_map_.pending_events(srcthread, dstthread);
   }

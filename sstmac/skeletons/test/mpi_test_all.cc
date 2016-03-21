@@ -1166,7 +1166,7 @@ mpi_test_all::test_reducescatter()
 
   if (print_all_) std::cout << "testall[" << int(rank)
                << "]: reduce_scatter: recv counts: ";
-  for (uint i = 0; i < recvcounts.size(); i++) {
+  for (int i = 0; i < recvcounts.size(); i++) {
     if (print_all_) std::cout << recvcounts[i] << ", ";
   }
 

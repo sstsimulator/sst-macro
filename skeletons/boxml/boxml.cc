@@ -1,7 +1,6 @@
 #include "boxml.h"
 #include "lock_array.h"
 #include <sprockit/factories/factory.h>
-#include <sstmac/software/libraries/unblock_handler.h>
 #include <sstmac/common/sim_thread_lock.h>
 #include <sstmac/common/stats/stat_histogram.h>
 #include <sstmac/common/stats/stat_local_double.h>
@@ -196,7 +195,7 @@ namespace lblxml
       return;
     }
 
-    if (rank_ == 0) sstmac_runtime::enter_deadlock_region();
+    if (rank_ == 0) runtime::enter_deadlock_region();
     comm_barrier(barrier_tag_); // can't go on before data is set up
     comm_collective_block(sumi::collective::barrier, barrier_tag_);
     ++barrier_tag_;
@@ -229,7 +228,7 @@ namespace lblxml
     comm_collective_block(sumi::collective::barrier, barrier_tag_);
     ++barrier_tag_;
 
-    sstmac_runtime::exit_deadlock_region();
+    runtime::exit_deadlock_region();
     finalize();
     
     if (rank_==0) {
@@ -254,7 +253,7 @@ namespace lblxml
     comm_init();
 
     tport_ = sumi_api();
-    sstmac_runtime::add_deadlock_check(
+    runtime::add_deadlock_check(
       new_deadlock_check(tport_, &sumi::transport::deadlock_check));
 
     rank_ = comm_rank();

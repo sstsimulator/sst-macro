@@ -153,7 +153,7 @@ packet_flow_NtoM_queue::build_blocked_messages()
 }
 
 void
-packet_flow_NtoM_queue::deadlock_check(sst_message* msg)
+packet_flow_NtoM_queue::deadlock_check(message* msg)
 {
   if (blocked_messages_.empty()){
     build_blocked_messages();
@@ -435,7 +435,7 @@ print_msg(const std::string& prefix, switch_id addr, packet_flow_payload* msg)
 #endif
 
 void
-packet_flow_NtoM_queue::start(sst_message* msg)
+packet_flow_NtoM_queue::start_message(message* msg)
 {
   spkt_throw(sprockit::illformed_error,
     "packet_flow_NtoM_queue:: should never start a flow");

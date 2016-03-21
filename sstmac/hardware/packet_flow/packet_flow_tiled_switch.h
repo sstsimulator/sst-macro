@@ -49,7 +49,7 @@ class packet_flow_tiled_switch :
    @param msg Incoming message (should cast to packet_train)
    */
   void
-  handle(sst_message* msg);
+  handle(event* ev);
 
   /**
    Set the link to use when ejecting packets at their endpoint.  A packet_flow_switch

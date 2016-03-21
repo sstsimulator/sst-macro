@@ -37,7 +37,7 @@ new_deadlock_check(T* t, Fxn f){
   return new deadlock_check_impl<T,Fxn>(t,f);
 }
 
-class sstmac_runtime
+class runtime
 {
  protected:
   typedef spkt_unordered_map<sw::task_id, node_id> task_to_nodeid_map;

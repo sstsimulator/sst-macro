@@ -2,6 +2,7 @@
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/api.h>
 #include <sstmac/software/libraries/compute/lib_compute_inst.h>
+#include <sstmac/software/libraries/compute/compute_event.h>
 
 #define enumcase(x) case x: return #x;
 
@@ -62,7 +63,7 @@ blas_api::init_factory_params(sprockit::sim_parameters* params)
 void
 blas_api::ddot(int n)
 {
-  compute_message* msg = ddot_kernel_->op_1d(n);
+  compute_event* msg = ddot_kernel_->op_1d(n);
   lib_compute_->compute_inst(msg);
   //msg is done
   delete msg;
@@ -71,7 +72,7 @@ blas_api::ddot(int n)
 void
 blas_api::dgemm(int m, int n, int k)
 {
-  compute_message* msg = dgemm_kernel_->op_3d(m, n, k);
+  compute_event* msg = dgemm_kernel_->op_3d(m, n, k);
   lib_compute_->compute_inst(msg);
   delete msg;
 }
@@ -79,7 +80,7 @@ blas_api::dgemm(int m, int n, int k)
 void
 blas_api::dgemv(int m, int n)
 {
-  compute_message* msg = dgemv_kernel_->op_2d(m,n);
+  compute_event* msg = dgemv_kernel_->op_2d(m,n);
   lib_compute_->compute_inst(msg);
   delete msg;
 }
@@ -87,7 +88,7 @@ blas_api::dgemv(int m, int n)
 void
 blas_api::daxpy(int n)
 {
-  compute_message* msg = daxpy_kernel_->op_1d(n);
+  compute_event* msg = daxpy_kernel_->op_1d(n);
   lib_compute_->compute_inst(msg);
   delete msg;
 }
@@ -103,7 +104,7 @@ blas_api::init_param1(const software_id &sid)
   lib_compute_ = new lib_compute_inst(comp_lib_name);
 }
 
-compute_message*
+compute_event*
 blas_kernel::op_3d(int m, int k, int n)
 {
   spkt_throw_printf(sprockit::unimplemented_error,
@@ -111,7 +112,7 @@ blas_kernel::op_3d(int m, int k, int n)
     to_string().c_str());
 }
 
-compute_message*
+compute_event*
 blas_kernel::op_2d(int m, int n)
 {
   spkt_throw_printf(sprockit::unimplemented_error,
@@ -119,7 +120,7 @@ blas_kernel::op_2d(int m, int n)
     to_string().c_str());
 }
 
-compute_message*
+compute_event*
 blas_kernel::op_1d(int n)
 {
   spkt_throw_printf(sprockit::unimplemented_error,

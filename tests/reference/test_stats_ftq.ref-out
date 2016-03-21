@@ -1,9 +1,9 @@
-Runtime = 5000.0555ms
+Runtime = 5000.0556ms
 Average time stats for application app1:
 CPU_Sched Delay:       0.00000000 s
-Compute:     400.00000000 s
-General:       0.00000000 s
-MPI:       0.00892776 s
+Compute:       0.00000000 s
+General:     400.00000000 s
+MPI:       0.08900670 s
 MPI Memcpy:       0.00000000 s
 MPI Poll:       0.00000000 s
 Memory:       0.00000000 s

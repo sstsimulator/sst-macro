@@ -82,14 +82,15 @@ sumi_api::init_factory_params(sprockit::sim_parameters *params)
 void
 sumi_api::transport_send(
   long byte_length,
-  const transport_message::payload_ptr &msg,
-  hw::network_message::type_t ty,
+  const sumi::payload_ptr &msg,
+  int sendType,
   int dst,
   bool needs_ack,
   void* buffer)
 {
+
+  sstmac::hw::network_message::type_t ty = (sstmac::hw::network_message::type_t) sendType;
   transport_message* tmsg = new transport_message(msg, byte_length);
-  tmsg->sst_message::set_type(hw::network_message::NETWORK);
   tmsg->hw::network_message::set_type(ty);
   tmsg->set_lib_name(server_libname_);
   tmsg->toaddr_ = env_->node_for_task(sw::task_id(dst));
@@ -101,7 +102,7 @@ sumi_api::transport_send(
   sw::library::os_->execute_kernel(ami::COMM_SEND, tmsg);
 }
 
-transport_message::payload_ptr
+sumi::payload_ptr
 sumi_api::poll_until_notification()
 {
 #if SSTMAC_SANITY_CHECK
@@ -112,26 +113,26 @@ sumi_api::poll_until_notification()
 #endif
   while (1) {
     transport_message* msg = queue_->poll_until_message();
-    transport_message::payload_ptr notification = handle(msg);
+    sumi::payload_ptr notification = handle(msg);
     if (notification){
       return notification;
     }
   }
 }
 
-transport_message::payload_ptr
+sumi::payload_ptr
 sumi_api::poll_until_notification(timestamp timeout)
 {
   while (1) {
     transport_message* msg = queue_->poll_until_message(timeout);
     if (msg){
-      transport_message::payload_ptr notification = handle(msg);
+      sumi::payload_ptr notification = handle(msg);
       if (notification){
         return notification;
       }
     } else {
       //I timed out
-      return transport_message::payload_ptr();
+      return sumi::payload_ptr();
     }
   }
 }
@@ -149,7 +150,7 @@ sumi_server::sumi_server(int appid)
 }
 
 void
-sumi_server::incoming_message(sst_message* msg)
+sumi_server::incoming_message(message* msg)
 {
  transport_message* smsg = safe_cast(transport_message, msg);
  try {

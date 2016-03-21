@@ -1,0 +1,5 @@
+#ifndef EVENT_QUEUE_ENTRY_H
+#define EVENT_QUEUE_ENTRY_H
+
+#endif // EVENT_QUEUE_ENTRY_H
+

@@ -21,11 +21,6 @@ class structured_router
   virtual void
   finalize_init();
 
-  //int
-  //num_endpoints() const {
-  //  return nps_;
-  //}
-
   virtual void
   set_switch(network_switch* sw);
 

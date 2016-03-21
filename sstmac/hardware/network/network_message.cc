@@ -9,15 +9,12 @@ DeclareSerializable(sstmac::hw::network_message);
 namespace sstmac {
 namespace hw {
 
-RegisterEnum(sst_message::message_type_t, network_message::NETWORK);
-
 network_message::network_message()
   : needs_ack_(true),
     type_(null_netmsg_type),
     route_algo_(routing::deflt),
     bytes_(0)
 {
-  msgtype_ = NETWORK;
 }
 
 network_message::network_message(long payload_bytes) :
@@ -26,7 +23,6 @@ network_message::network_message(long payload_bytes) :
   type_(null_netmsg_type),
   route_algo_(routing::deflt)
 {
-  msgtype_ = NETWORK;
 }
 
 network_message::network_message(
@@ -42,7 +38,6 @@ network_message::network_message(
     bytes_(bytes),
     type_(null_netmsg_type)
 {
-  msgtype_ = NETWORK;
 }
 
 bool
@@ -157,7 +152,7 @@ network_message::serialize_order(sprockit::serializer& ser)
   ser & net_id_;
   ser & bytes_;
   ser & type_;
-  sst_message::serialize_order(ser);
+  message::serialize_order(ser);
 }
 
 bool

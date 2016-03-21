@@ -20,6 +20,7 @@
 #include <sprockit/expandable_enum.h>
 #include <sprockit/metadata_bits.h>
 
+#include <sstmac/common/sst_event.h>
 #include <sstmac/common/event_callback_fwd.h>
 #include <sstmac/common/event_handler_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
@@ -30,21 +31,15 @@ namespace sstmac {
 /**
  * A class describing an event.
  */
-class sst_message :
-  public sprockit::serializable,
-  public sprockit::serializable_type<sst_message>
+class message :
+  public event
 {
-  ImplementSerializableDefaultConstructor(sst_message)
 
  public:
-  declare_expandable_enum(message_type_t);
   declare_expandable_enum(field);
 
-  static message_type_t SST;
-  static message_type_t NONE;
-
  public:
-  virtual ~sst_message() {}
+  virtual ~message() {}
 
   virtual std::string
   to_string() const {
@@ -54,7 +49,7 @@ class sst_message :
   // --------------------------------------//
 
  public:
-  sst_message();
+  message();
 
   /**
    * Virtual function to return size. Child classes should impement this
@@ -62,7 +57,7 @@ class sst_message :
    * @return Zero size, meant to be implemented by children.
    */
   virtual long
-  byte_length() const;
+  byte_length() const = 0;
 
   /**
    * Serialize this message during parallel simulation.
@@ -71,65 +66,14 @@ class sst_message :
   virtual void
   serialize_order(sprockit::serializer& ser);
 
-  /**
-   * Message type getter
-   * @return message type (child class)
-   */
-  message_type_t
-  type() const {
-    return msgtype_;
-  }
-
-  void
-  set_type(message_type_t t) {
-    msgtype_ = t;
-  }
+  virtual node_id
+  toaddr() const = 0;
 
   virtual node_id
-  toaddr() const {
-    return node_id();
-  }
-
-  virtual node_id
-  fromaddr() const {
-    return node_id();
-  }
-
-  virtual bool
-  is_chunk() const {
-    return false;
-  }
-
-  virtual bool
-  is_credit() const {
-    return false;
-  }
-
-  /**
-    Many message types carry a "payload" - a reference to a parent message.
-    This happens often enough to make it a top-level virtual function.
-    If the message has no parent, it is its own parent.
-  */
-  virtual sst_message*
-  parent() const;
+  fromaddr() const = 0;
 
   virtual uint64_t
-  unique_id() const;
-  
-  bool
-  has_key() const {
-   return key_;
-  }
-  
-  sw::key*
-  key() const {
-    return key_;
-  }
-  
-  void
-  set_key(sw::key* k){
-    key_ = k;
-  }
+  unique_id() const = 0;
 
   template <class T>
   T&
@@ -138,23 +82,13 @@ class sst_message :
     return *reinterpret_cast<T*>(ptr);
   }
 
-  template <class T>
-  T*
-  interface(){
-    T* t = dynamic_cast<T*>(this);
-    return t;
-  }
-
  protected:
-  message_type_t msgtype_;
   sw::key* key_;
   std::map<field, uint64_t> fields_;
 
 };
 
-implement_enum_functions(sst_message::message_type_t)
-
-implement_enum_functions(sst_message::field)
+implement_enum_functions(message::field)
 
 
 

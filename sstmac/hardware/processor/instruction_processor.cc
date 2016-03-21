@@ -9,7 +9,7 @@
  *  SST/macroscale directory.
  */
 
-#include <sstmac/software/libraries/compute/compute_message.h>
+#include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/software/libraries/compute/lib_compute.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/hardware/processor/instruction_processor.h>
@@ -63,11 +63,11 @@ instruction_processor::init_factory_params(sprockit::sim_parameters* params)
 }
 
 double
-instruction_processor::instruction_time(sw::compute_message* cmsg)
+instruction_processor::instruction_time(sw::compute_event* cmsg)
 {
   double tsec = 0;
   long nop = 0;
-  nop = cmsg->event_value(sw::compute_message::flop);
+  nop = cmsg->event_value(sw::compute_event::flop);
   double tintop, tflop;
   if (noise_model_){
     tflop = tintop = 1.0/noise_model_->value();
@@ -76,7 +76,7 @@ instruction_processor::instruction_time(sw::compute_message* cmsg)
     tflop = tflop_;
   }
   tsec += nop*tflop/parallelism_;
-  nop = cmsg->event_value(sw::compute_message::intop);
+  nop = cmsg->event_value(sw::compute_event::intop);
   tsec += nop*tintop/parallelism_;
   if (tsec < 0){
     spkt_throw_printf(sprockit::value_error,
@@ -87,38 +87,33 @@ instruction_processor::instruction_time(sw::compute_message* cmsg)
 }
 
 void
-instruction_processor::compute(sst_message* msg)
+instruction_processor::do_compute(sw::compute_event* ev)
 {
-  sw::compute_message* cmsg = safe_cast(sw::compute_message, msg);
-
   debug_printf(sprockit::dbg::compute_intensity,
     "Node %d: starting compute %s",
     int(node_->addr()),
-    cmsg->debug_string().c_str());
+    ev->debug_string().c_str());
 
-  if (cmsg->timed_computed()){
-    //pretty boring, straight-up timed compute
-    os_delayed_notify(cmsg->event_time(), cmsg);
+  if (ev->timed_computed()){
+    node_->compute(ev->event_time());
   }
   else {
     // compute execution time in seconds
-    double instr_time = instruction_time(cmsg);    
+    double instr_time = instruction_time(ev);
     // now count the number of bytes
-    long bytes = cmsg->event_value(sw::compute_message::mem_sequential);
+    long bytes = ev->event_value(sw::compute_event::mem_sequential);
     // max_single_mem_bw is the bandwidth achievable if ZERO instructions are executed
     double best_possible_time = instr_time + bytes / max_single_mem_bw_;
     if (best_possible_time < negligible_time_sec_){
       //no delay, just continue on
-      os_notify_now(cmsg);
     }
     else if (bytes <= negligible_bytes_) {
-      os_delayed_notify(timestamp(instr_time), cmsg);
+      node_->compute(timestamp(instr_time));
     }
     else {
       //do the full memory modeling
       double best_possible_bw = bytes / best_possible_time;
-      cmsg->set_max_bw(best_possible_bw);
-      mem_->access(cmsg);
+      mem_->access(bytes, best_possible_bw);
     }
   }
 

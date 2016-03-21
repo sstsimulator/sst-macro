@@ -30,7 +30,6 @@ socket_message::socket_message(
     number_(number),
     type_(ty)
 {
-  sst_message::msgtype_ = network_message::NETWORK;
   network_message::type_ = network_message::payload;
 }
 
@@ -565,7 +564,7 @@ socket_server::socket_server(const std::string& libname)
 }
 
 void
-socket_server::incoming_message(sst_message* msg)
+socket_server::incoming_message(message* msg)
 {
   socket_message* sockmsg = safe_cast(socket_message, msg);
   if (sockmsg->type() == socket_message::client) {

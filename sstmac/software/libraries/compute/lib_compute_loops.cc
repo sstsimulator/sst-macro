@@ -9,6 +9,7 @@
  *  SST/macroscale directory.
  */
 
+#include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/software/libraries/compute/lib_compute_loops.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/key.h>
@@ -72,10 +73,10 @@ lib_compute_loops::compute_loop_work(long long loop, double numlines)
   lib_compute_memmove::read(bytes);
   doing_memory_ = false;
 
-  compute_message* inst = new compute_message;
+  compute_event* inst = new compute_event;
   long long flops = std::max((long long) 1,
                              (long long) (loop * flop_line_ratio_ * numlines));
-  inst->set_event_value(compute_message::flop, flops);
+  inst->set_event_value(compute_event::flop, flops);
   lib_compute_inst::compute_inst(inst);
   delete inst;
 }
@@ -86,8 +87,8 @@ void
 lib_compute_loops::compute_fft()
 {
   if (do_loops_) {
-    compute_message* inst = new compute_message;
-    inst->set_event_value(compute_message::flop, 500);
+    compute_event* inst = new compute_event;
+    inst->set_event_value(compute_event::flop, 500);
     lib_compute_inst::compute_inst(inst);
     delete inst;
   }

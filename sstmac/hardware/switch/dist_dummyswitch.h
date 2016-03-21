@@ -43,7 +43,7 @@ class dist_dummy_switch : public network_switch
   }
 
   virtual void
-  handle(sst_message* msg);
+  handle(event* ev);
 
   virtual void
   connect(

@@ -24,7 +24,7 @@ namespace sstmac {
 namespace hw {
 
 class circuit_message :
-  public message_chunk,
+  public packet,
   public routable_message
 {
 
@@ -41,9 +41,9 @@ class circuit_message :
   timestamp ttl_;
   timestamp arrive_;
 
-  circuit_message(sst_message* orig,
+  circuit_message(message* orig,
                   long num_bytes, long byte_offset, CIRCUIT_TYPE t) :
-    message_chunk(orig, num_bytes, byte_offset),
+    packet(orig, num_bytes, byte_offset),
     routable_message(orig->toaddr(), orig->fromaddr()),
     circtype_(t), backoff_(0) {
 

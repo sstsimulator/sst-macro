@@ -2,6 +2,7 @@
 #include <sprockit/sim_parameters.h>
 #include <algorithm>
 #include <cmath>
+#include <sstmac/software/libraries/compute/compute_event.h>
 
 ImplementFactory(sstmac::sw::blas_kernel);
 
@@ -17,7 +18,7 @@ class default_dgemm :
     return "default dgemm";
   }
 
-  compute_message*
+  compute_event*
   op_3d(int m, int k, int n);
 
   virtual void
@@ -39,7 +40,7 @@ default_dgemm::init_factory_params(sprockit::sim_parameters* params)
   pipeline_ = params->get_optional_double_param("dgemm_pipeline_efficiency", 2);
 }
 
-compute_message*
+compute_event*
 default_dgemm::op_3d(int mm, int nn, int kk)
 {
   int sizes[3];
@@ -76,10 +77,10 @@ default_dgemm::op_3d(int mm, int nn, int kk)
 
   long total_bytes = Csize + Asize*npartitions + Bsize*npartitions;
 
-  compute_message* msg = new compute_message;
-  msg->set_event_value(compute_message::flop, nflops);
-  msg->set_event_value(compute_message::intop, loop_ops);
-  msg->set_event_value(compute_message::mem_sequential, total_bytes);
+  compute_event* msg = new compute_event;
+  msg->set_event_value(compute_event::flop, nflops);
+  msg->set_event_value(compute_event::intop, loop_ops);
+  msg->set_event_value(compute_event::mem_sequential, total_bytes);
   return msg;
 }
 

@@ -9,7 +9,7 @@ namespace sstmac {
 namespace hw {
 
 packet_flow_payload*
-packet_flow_MTL::next_chunk(long byte_offset, sst_message*parent)
+packet_flow_MTL::next_chunk(long byte_offset, message* parent)
 {
   long bytes_left = parent->byte_length() - byte_offset;
   long bytes_to_send = bytes_left > mtu_ ? mtu_ : bytes_left;

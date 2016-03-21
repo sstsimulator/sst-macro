@@ -47,7 +47,7 @@ class mpi_collective::recver : public event_handler
 
   /// Event handler callback.
   virtual void
-  handle(sst_message* msg);
+  handle(event* ev);
 
  private:
   /// The parent collective operation.

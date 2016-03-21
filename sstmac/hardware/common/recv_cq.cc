@@ -1,5 +1,6 @@
-#include <sstmac/common/messages/message_chunk.h>
+#include <sstmac/hardware/common/packet.h>
 #include <sstmac/hardware/common/recv_cq.h>
+#include <sstmac/common/messages/sst_message.h>
 #include <sprockit/output.h>
 
 namespace sstmac {
@@ -20,26 +21,27 @@ recv_cq::print()
   }
 }
 
-sst_message*
-recv_cq::recv(message_chunk* packet)
+message*
+recv_cq::recv(packet* pkt)
 {
-  incoming_msg& incoming  = bytes_recved_[packet->unique_id()];
-  incoming.bytes_arrived += packet->byte_length();
+  incoming_msg& incoming  = bytes_recved_[pkt->unique_id()];
+  incoming.bytes_arrived += pkt->byte_length();
 
 #if SSTMAC_SANITY_CHECK
-  if (incoming.msg && packet->orig()){
-    spkt_throw(sprockit::illformed_error,
-        "recv_cq::recv: only one message chunk should carry the parent payload");
+  if (incoming.msg && pkt->orig()){
+    spkt_throw_printf(sprockit::illformed_error,
+        "recv_cq::recv: only one message chunk should carry the parent payload for %lu",
+        pkt->unique_id());
   }
 #endif
 
-  if (packet->orig()){
+  if (pkt->orig()){
 #if DEBUG_CQ
     coutn << sprockit::printf("Got parent message for id %lu\n", packet->unique_id());
 #endif
     //this guy is actually carrying the payload
-    incoming.msg = packet->orig();
-    incoming.bytes_total = packet->orig()->byte_length();
+    incoming.msg = pkt->orig();
+    incoming.bytes_total = pkt->orig()->byte_length();
   }
 
 #if DEBUG_CQ
@@ -59,8 +61,8 @@ recv_cq::recv(message_chunk* packet)
 #if DEBUG_CQ
     coutn << sprockit::printf("Ejecting id %lu\n", packet->unique_id());
 #endif
-    sst_message* ret = incoming.msg;
-    bytes_recved_.erase(packet->unique_id());
+    message* ret = incoming.msg;
+    bytes_recved_.erase(pkt->unique_id());
     return ret;
   }
   else {

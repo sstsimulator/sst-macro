@@ -12,7 +12,6 @@
 #include <sstmac/libraries/mpi/mpi_strategies/mpi_core_allgatherv.h>
 #include <sstmac/libraries/mpi/mpi_strategies/mpi_collective/engines/mpi_ring_allgatherv.h>
 #include <sstmac/libraries/mpi/mpi_queue/mpi_queue.h>
-#include <sstmac/software/libraries/unblock_handler.h>
 
 namespace sstmac {
 namespace sw {

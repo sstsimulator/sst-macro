@@ -100,7 +100,7 @@ class app :
   compute(timestamp time);
 
   void
-  compute_inst(compute_message* cmsg);
+  compute_inst(compute_event* cmsg);
 
   void
   compute_loop(long num_loops,

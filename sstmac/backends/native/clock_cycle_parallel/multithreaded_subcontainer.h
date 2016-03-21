@@ -21,7 +21,7 @@ class multithreaded_subcontainer :
     int srcthread,
     int dstthread,
     uint32_t seqnum,
-    event* ev);
+    event_queue_entry* ev);
 
   void
   receive_incoming_events();

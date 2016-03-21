@@ -82,7 +82,7 @@ mpi_pairwise::skeleton_main()
 
   for (int j = 0; j < iterations_; j++) {
 
-    for (uint i = 0; i < from_.size(); i++) {
+    for (int i = 0; i < from_.size(); i++) {
       compute(when_[i]);
       if (rank == from_[i]) {
         // do send

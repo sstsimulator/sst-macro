@@ -370,19 +370,19 @@ packet_flow_switch::queue_length(int port) const
 }
 
 void
-packet_flow_switch::handle(sst_message* msg)
+packet_flow_switch::handle(event* ev)
 {
   //this should only happen in parallel mode...
   //this means we are getting a message that has crossed the parallel boundary
-  packet_flow_interface* fmsg = interface_cast(packet_flow_interface, msg);
-  switch (fmsg->type()) {
+  packet_flow_interface* fpack = interface_cast(packet_flow_interface, ev);
+  switch (fpack->type()) {
     case packet_flow_interface::credit: {
-      packet_flow_credit* credit = static_cast<packet_flow_credit*>(msg);
+      packet_flow_credit* credit = static_cast<packet_flow_credit*>(fpack);
       out_buffers_[credit->port()]->handle_credit(credit);
       break;
     }
     case packet_flow_interface::payload: {
-      packet_flow_payload* payload = static_cast<packet_flow_payload*>(msg);
+      packet_flow_payload* payload = static_cast<packet_flow_payload*>(fpack);
       router_->route(payload);
       xbar_->handle_payload(payload);
       break;

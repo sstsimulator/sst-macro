@@ -43,8 +43,7 @@ class memory_model :
 
   virtual ~memory_model();
 
-  virtual void
-  access(sst_message* msg) = 0;
+  virtual void access(long bytes, double max_bw) = 0;
 
   virtual std::string
   to_string() const {
@@ -53,6 +52,8 @@ class memory_model :
 
   virtual double
   max_single_bw() const = 0;
+
+  node_id addr() const;
 
  protected:
   memory_model();

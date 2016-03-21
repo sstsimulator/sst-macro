@@ -13,14 +13,14 @@
 #include <time.h>
 #include <climits>
 #include <cmath>
+#include <cstdint>
 
 #include <sstmac/common/thread_lock.h>
 #include <sstmac/common/runtime.h>
-#include <sstmac/common/messages/sleep_message.h>
+#include <sstmac/common/messages/sleep_event.h>
 
 #include <sstmac/libraries/mpi/mpi_queue/mpi_queue.h>
 #include <sstmac/libraries/mpi/mpi_queue/user_thread_mpi_queue.h>
-#include <sstmac/libraries/mpi/mpi_queue/service_thread_mpi_queue.h>
 
 #include <sstmac/libraries/mpi/mpi_api.h>
 #include <sstmac/libraries/mpi/mpi_api_persistent.h>
@@ -47,7 +47,6 @@
 #include <sstmac/libraries/mpi/mpi_types.h>
 #include <sstmac/libraries/mpi/mpi_server.h>
 
-#include <sstmac/software/libraries/unblock_handler.h>
 #include <sstmac/software/launch/hostname_allocation.h>
 
 #include <sprockit/errors.h>
@@ -1677,9 +1676,7 @@ mpi_api::do_waitall(std::vector<mpi_request*>& reqs)
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, "MPI_Waitall(...)");
 
   for (int i=0; i < reqs.size(); ++i){
-    mpi_api_debug(sprockit::dbg::mpi_request,
-        "MPI_Request[%d]=%p",
-        i, reqs[i]);
+
   }
 
   SSTMACBacktrace("MPI_Waitall");
@@ -1689,10 +1686,15 @@ mpi_api::do_waitall(std::vector<mpi_request*>& reqs)
   int numreqs = reqs.size();
   for (int i=0; i < numreqs; ++i) {
     mpi_request* req = reqs[i];
-    if (req == 0)
+    if (req == 0){
+      mpi_api_debug(sprockit::dbg::mpi_request,
+        "Null MPI_Request[%d]=%p", i, req);
       continue;
+    }
 
     if (!req->is_complete()) {
+      mpi_api_debug(sprockit::dbg::mpi_request,
+        "Blocking on MPI_Request[%d]=%p", i, req);
       queue_->progress_loop(req);
     }
   }
@@ -1740,7 +1742,7 @@ mpi_api::do_waitany(
     return os_->now();
   }
 
-  for (uint i = 0; i < reqs.size(); i++) {
+  for (int i = 0; i < reqs.size(); i++) {
     mpi_request* req = reqs[i];
     if (req && req->is_complete()) {
       index = i;
@@ -1751,7 +1753,7 @@ mpi_api::do_waitany(
 
   queue_->start_progress_loop(reqs, timeout);
 
-  for (uint i = 0; i < reqs.size(); i++) {
+  for (int i = 0; i < reqs.size(); i++) {
     mpi_request* req = reqs[i];
     if (req && req->is_complete()) {
       //this is the one
@@ -1831,7 +1833,7 @@ mpi_api::do_waitsome(
     return os_->now();
   }
 
-  for (uint i = 0; i < reqs.size(); i++) {
+  for (int i = 0; i < reqs.size(); i++) {
     mpi_request* req = reqs[i];
     if (req != 0 && req->is_complete()) {
       indices.push_back(i);
@@ -1841,7 +1843,7 @@ mpi_api::do_waitsome(
   /** If no requests are done, we have to block until somebody finishes */
   if (indices.size() == 0) {
     queue_->start_progress_loop(reqs);
-    for (uint i = 0; i < reqs.size(); i++) {
+    for (int i = 0; i < reqs.size(); i++) {
       mpi_request* req = reqs[i];
       if (req != 0 && req->is_complete()) {
         indices.push_back(i);
@@ -2123,7 +2125,7 @@ mpi_api::probe(mpi_id source, mpi_tag tag,
   }
 
   delete req;
-  delete done;
+  if (done) delete done;
 
   end_api_call();
   return os_->now();

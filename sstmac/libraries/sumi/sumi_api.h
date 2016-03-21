@@ -1,12 +1,12 @@
 #ifndef SSTMAC_SIMPMSG_API_H
 #define SSTMAC_SIMPMSG_API_H
 
-#include <sstmac/libraries/sumi/message.h>
+#include <sstmac/libraries/sumi/message_fwd.h>
 #include <sstmac/software/process/pmi.h>
 #include <sstmac/software/process/app_manager.h>
 #include <sstmac/software/libraries/service.h>
 #include <sstmac/software/api/api.h>
-#include <sstmac/hardware/network/network_message.h>
+#include <sstmac/hardware/network/network_message_fwd.h>
 
 /**
  * SUMI = Simulator unified messagine interface
@@ -77,13 +77,13 @@ class sumi_api :
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
 
-  transport_message::payload_ptr
+  sumi::payload_ptr
   poll_until_notification();
 
-  transport_message::payload_ptr
+  sumi::payload_ptr
   poll_until_notification(timestamp timeout);
 
-  virtual transport_message::payload_ptr
+  virtual sumi::payload_ptr
   handle(transport_message* msg) = 0;
   
   void
@@ -92,8 +92,8 @@ class sumi_api :
   void
   transport_send(
     long byte_length,
-    const transport_message::payload_ptr& msg,
-    sstmac::hw::network_message::type_t ty,
+    const sumi::payload_ptr& msg,
+    int ty,
     int dst,
     bool needs_ack,
     void* buffer = 0);
@@ -134,7 +134,7 @@ class sumi_server :
   sumi_server(int appid);
 
   void
-  incoming_message(sstmac::sst_message* msg);
+  incoming_message(sstmac::message* msg);
 
   void
   register_proc(int rank, sumi_api* proc);

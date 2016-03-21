@@ -13,8 +13,6 @@
 #define SSTMAC_BACKENDS_NATIVE_EVENTMAP_H_INCLUDED
 
 #include <sstmac/common/sstmac_config.h>
-#if !SSTMAC_INTEGRATED_SST_CORE
-
 
 #include <sstmac/backends/native/event_container.h>
 #include <sstmac/common/sst_event.h>
@@ -51,15 +49,15 @@ class event_map :
  protected:
   friend class multithreaded_event_container;
 
-  event*
+  event_queue_entry*
   pop_next_event();
 
   void
-  add_event(event* ev);
+  add_event(event_queue_entry* ev);
 
  protected:
   struct event_compare {
-    bool operator()(event* lhs, event* rhs) {
+    bool operator()(event_queue_entry* lhs, event_queue_entry* rhs) {
       bool neq = lhs->time() != rhs->time();
       if (neq) return lhs->time() < rhs->time();
 
@@ -72,15 +70,13 @@ class event_map :
       return lhs->seqnum() < rhs->seqnum();
     }
   };
-  typedef std::set<event*, event_compare> queue_t;
+  typedef std::set<event_queue_entry*, event_compare> queue_t;
   queue_t queue_;
 
 };
 
 }
 } // end of namespace sstmac
-
-#endif // !SSTMAC_INTEGRATED_SST_CORE
 
 #endif
 

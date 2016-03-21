@@ -1,17 +1,20 @@
-#include <sstmac/common/messages/message_chunk.h>
-#include <sprockit/serializer.h>
+#include <sstmac/hardware/common/packet.h>
 #include <sstmac/hardware/common/unique_id.h>
+#include <sstmac/common/messages/sst_message.h>
+#include <sprockit/serializer.h>
 
 namespace sstmac {
+namespace hw {
 
-message_chunk::message_chunk(
-  sst_message* orig,
+packet::packet(
+  message* orig,
   long num_bytes,
   long byte_offset) :
  num_bytes_(num_bytes),
  byte_offset_(byte_offset),
  cumulative_delay_us_(0),
- unique_id_(orig->unique_id())
+ unique_id_(orig->unique_id()),
+ orig_(0)
 {
 #if SSTMAC_SANITY_CHECK
   hw::unique_msg_id null_msg_id;
@@ -23,9 +26,7 @@ message_chunk::message_chunk(
 
   bool is_tail = (byte_offset + num_bytes) == orig->byte_length();
   //only carry the payload if you're the tail packet
-  //orig_ = is_tail ? orig : 0;
-  orig_ = orig;
-  sst_message::msgtype_ = orig->type();
+  orig_ = is_tail ? orig : 0;
 
 #if SSTMAC_SANITY_CHECK
   if (orig->byte_length() < 256 && !orig_){
@@ -37,9 +38,9 @@ message_chunk::message_chunk(
 }
 
 void
-message_chunk::serialize_order(sprockit::serializer& ser)
+packet::serialize_order(sprockit::serializer& ser)
 {
-  sst_message::serialize_order(ser);
+  event::serialize_order(ser);
   ser & orig_;
   ser & num_bytes_;
   ser & byte_offset_;
@@ -47,13 +48,5 @@ message_chunk::serialize_order(sprockit::serializer& ser)
   ser & cumulative_delay_us_;
 }
 
-bool
-message_chunk::is_tail() const
-{
-  //explicit cast needed for newer, crappy boost versions
-  //return bool(orig_);
-  return (byte_offset_ + num_bytes_) == orig_->byte_length();
 }
-
 }
-

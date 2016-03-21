@@ -12,13 +12,12 @@
 #include <sstmac/hardware/node/simple_node.h>
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/memory/memory_model.h>
+#include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/processor/processor.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/launch/machine_descriptor.h>
 #include <sstmac/software/launch/launcher.h>
-
-#include <sstmac/common/messages/timed_message.h>
-
+#include <sstmac/common/messages/timed_event.h>
 
 #include <sprockit/errors.h>
 #include <sprockit/util.h>
@@ -64,7 +63,7 @@ simple_node::set_event_manager(event_manager* m)
 
 void
 simple_node::execute_kernel(ami::COMM_FUNC func,
-                            sst_message* data)
+                            message* data)
 {
   switch (func) {
     case sstmac::ami::COMM_SEND: {
@@ -83,7 +82,7 @@ simple_node::execute_kernel(ami::COMM_FUNC func,
 
 bool
 simple_node::try_comp_kernels(ami::COMP_FUNC func,
-                              sst_message* data)
+                              event* data)
 {
   bool handled = true;
 
@@ -91,17 +90,6 @@ simple_node::try_comp_kernels(ami::COMP_FUNC func,
     case sstmac::ami::COMP_INSTR:
     case sstmac::ami::COMP_TIME: {
       proc_->compute(data);
-      break;
-    }
-
-    case sstmac::ami::COMP_MEM: {
-      mem_model_->access(data);
-      break;
-    }
-
-    case sstmac::ami::COMP_SLEEP: {
-      timestamp delay = interface_cast(timed_interface, data)->time();
-      send_delayed_self_message(delay, data);
       break;
     }
     default:
@@ -113,7 +101,7 @@ simple_node::try_comp_kernels(ami::COMP_FUNC func,
 
 void
 simple_node::execute_kernel(ami::COMP_FUNC func,
-                            sst_message* data)
+                            event* data)
 {
   bool hand = try_comp_kernels(func, data);
   if (!hand) {
@@ -127,9 +115,7 @@ simple_node::kernel_supported(ami::COMP_FUNC func) const
 {
   switch (func) {
     case sstmac::ami::COMP_TIME:
-    case sstmac::ami::COMP_SLEEP:
     case sstmac::ami::COMP_INSTR:
-    case sstmac::ami::COMP_MEM:
       return true;
     default:
       return false;

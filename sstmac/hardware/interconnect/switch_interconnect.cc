@@ -90,7 +90,7 @@ macro_switch_interconnect::init_factory_params(sprockit::sim_parameters* params)
 {
   /** This builds the nodes */
   interconnect_base::init_factory_params(params);
-  sstmac_runtime::set_temp_topology(topology_);
+  runtime::set_temp_topology(topology_);
   vis_display::init_factory_params(params);
 
   internal_map switches;
@@ -170,11 +170,11 @@ macro_switch_interconnect::init_factory_params(sprockit::sim_parameters* params)
     cerrn << "WARNING: rank was assigned no switches" << std::endl;
   }
 
-  sstmac_runtime::clear_temp_topology();
+  runtime::clear_temp_topology();
 }
 
 void
-macro_switch_interconnect::immediate_send(event_scheduler* src, sst_message* msg, timestamp start) const
+macro_switch_interconnect::immediate_send(event_scheduler* src, message* msg, timestamp start) const
 {
   node* dst_node = node_at(msg->toaddr());
   int num_hops = topology_->num_hops_to_node(msg->fromaddr(), msg->toaddr());
@@ -187,7 +187,6 @@ macro_switch_interconnect::immediate_send(event_scheduler* src, sst_message* msg
     msg->to_string().c_str(),
     num_hops, hop_bw_, hop_latency_.sec(), injection_latency_.sec());
 
-  START_VALID_SCHEDULE(src)
   if (dst_node){ //local operation
     src->schedule(arrival, dst_node->get_nic(), msg);
   } else {
@@ -195,7 +194,6 @@ macro_switch_interconnect::immediate_send(event_scheduler* src, sst_message* msg
     switch_id sid = topology_->node_to_ejection_switch(msg->toaddr());
     src->schedule(arrival, switches_.at(sid), msg);
   }
-  STOP_VALID_SCHEDULE(src)
 }
 
 void
@@ -227,7 +225,7 @@ macro_switch_interconnect::thread_for_switch(switch_id sid) const
 void
 macro_switch_interconnect::set_event_manager(event_manager* m)
 {
-  sstmac_runtime::set_temp_topology(topology_);
+  runtime::set_temp_topology(topology_);
 
   int num_local_switches = partition_->local_num_switches();
   for (int i=0; i < num_local_switches; ++i){
@@ -241,7 +239,7 @@ macro_switch_interconnect::set_event_manager(event_manager* m)
   //an event manager
   interconnect_base::set_event_manager_common(m);
 
-  sstmac_runtime::clear_temp_topology();
+  runtime::clear_temp_topology();
 }
 
 

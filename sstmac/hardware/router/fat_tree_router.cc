@@ -51,10 +51,10 @@ fat_tree_router::init_factory_params(sprockit::sim_parameters *params)
 }
 
 void
-fat_tree_router::route(sst_message* msg)
+fat_tree_router::route(packet* pkt)
 {
-  minimal_route_to_node(msg->toaddr(),
-    msg->interface<routable>()->rinfo().current_path());
+  minimal_route_to_node(pkt->toaddr(),
+    pkt->interface<routable>()->rinfo().current_path());
 }
 
 void
@@ -199,7 +199,7 @@ fat_tree_router::choose_down_path()
 }
 
 int
-fat_tree_router::number_paths(sst_message* msg) const
+fat_tree_router::number_paths(message* msg) const
 {
   switch_id ej_addr = top_->endpoint_to_ejection_switch(msg->toaddr());
   long ej_id = ej_addr;

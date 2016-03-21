@@ -5,6 +5,7 @@
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/software/process/key_fwd.h>
 #include <sstmac/common/messages/library_message.h>
+#include <sstmac/libraries/sumi/message_fwd.h>
 #include <sprockit/serializer_fwd.h>
 #include <sprockit/ser_ptr_type.h>
 #include <sprockit/clonable.h>
@@ -17,16 +18,14 @@ class transport_message :
   public sprockit::serializable_type<transport_message>
 {
    ImplementSerializable(transport_message)
-   typedef sprockit::clonable<sprockit::serializable_ptr_type> payload_t;
-   typedef sprockit::refcount_ptr<payload_t> payload_ptr;
 
  public:
-  transport_message(const payload_ptr& msg, long byte_length);
+  transport_message(const sumi::payload_ptr& msg, long byte_length);
 
   virtual void
   serialize_order(sprockit::serializer& ser);
 
-  payload_ptr
+  sumi::payload_ptr
   payload() const {
     return payload_;
   }
@@ -81,7 +80,7 @@ class transport_message :
   reverse();
 
  private:
-  payload_ptr payload_;
+  sumi::payload_ptr payload_;
   void* buffer_;
 
 };

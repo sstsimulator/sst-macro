@@ -138,8 +138,10 @@ simple_switch::lookahead() const
 }
 
 void
-simple_switch::handle(sst_message* msg)
+simple_switch::handle(event* ev)
 {
+  //this should only handle messages
+  message* msg = safe_cast(message, ev);
   node_id dst = msg->toaddr();
   node_id src = msg->fromaddr();
   timestamp delay;
@@ -164,15 +166,15 @@ simple_switch::handle(sst_message* msg)
 }
 
 void
-simple_switch::send_to_nic(timestamp delay, node_id dst, sst_message* msg)
+simple_switch::send_to_nic(timestamp delay, node_id dst, message* msg)
 {
-  SCHEDULE_DELAY(delay, nics_[dst], msg);
+  schedule_delay(delay, nics_[dst], msg);
 }
 
 void
-simple_switch::send_to_switch(timestamp delay, node_id dst, sst_message* msg)
+simple_switch::send_to_switch(timestamp delay, node_id dst, message* msg)
 {
-  SCHEDULE_DELAY(delay, neighbors_[dst], msg);
+  schedule_delay(delay, neighbors_[dst], msg);
 }
 
 #if !SSTMAC_INTEGRATED_SST_CORE

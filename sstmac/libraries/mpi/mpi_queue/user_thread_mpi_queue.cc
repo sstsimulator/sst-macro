@@ -109,7 +109,7 @@ event_handler*
 user_thread_mpi_queue::progress_done_handler(operating_system* os,
     mpi_request* req)
 {
-  return new do_nothing_handler(os->event_location());
+  return 0;
 }
 
 void
