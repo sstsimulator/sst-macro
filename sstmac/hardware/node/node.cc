@@ -201,22 +201,24 @@ node::set_event_manager(event_manager* m)
 }
 
 void
-node::handle_while_running(event* ev)
+node::handle(event* ev)
 {
-  os_->handle_event(ev);
-}
-
-void
-node::handle_while_failed(event* ev)
-{
-  //just drop it - don't do anything for now
+  if (failed()){
+    //do nothing - I failed
+  }
+  else if (ev->is_failure()){
+    fail_stop();
+  } else {
+    os_->handle_event(ev);
+  }
 }
 
 void
 node::fail_stop()
 {
-  event* ev = new fail_event;
-  fail(ev);
+  fail();
+  nic_->fail();
+  cancel_all_messages();
 }
 
 void
@@ -227,14 +229,6 @@ node::compute(timestamp t)
   schedule_delay(t, ev);
   os_->block(k);
   delete k;
-}
-
-void
-node::do_failure(event* ev)
-{
-#if SSTMAC_INTEGRATED_SST_CORE
-  spkt_throw(sprockit::unimplemented_error, "node::do_failure");
-#endif
 }
 
 void

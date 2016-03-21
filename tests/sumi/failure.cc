@@ -6,6 +6,7 @@
 #include <sstmac/software/process/thread.h>
 #include <sumi/dense_rank_map.h>
 #include <sumi/thread_safe_set.h>
+#include <sumi/transport.h>
 #include <sst/sumi_api.h>
 
 using namespace sstmac;
@@ -82,7 +83,7 @@ run_test(int me, int todie, int nproc_live, int context, int tag)
 }
 
 int
-main(int argc, char **argv)
+try_main(int argc, char **argv)
 {
   comm_init();
 
@@ -108,5 +109,15 @@ main(int argc, char **argv)
   comm_finalize();
 
   return 0;
+}
+
+int
+main(int argc, char** argv)
+{
+  try {
+    return try_main(argc, argv);
+  } catch (sumi::terminate_exception& e){
+    return 1;
+  }
 }
 

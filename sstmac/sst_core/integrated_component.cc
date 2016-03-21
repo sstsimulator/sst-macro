@@ -48,16 +48,16 @@ SSTIntegratedComponent::init(unsigned int phase)
 void
 SSTIntegratedComponent::handle_self_link(SST::Event* ev)
 {
-  sstmac::event* macro_ev = dynamic_cast<sstmac::event*>(ev);
-  if (macro_ev){
-    handle(macro_ev);
-  } else {
-    //this is an event queue entry - run it
-    sstmac::event_queue_entry* entry
-       = dynamic_cast<sstmac::event_queue_entry*>(ev);
-    entry->execute();
-    delete entry;
-  }
+#if SSTMAC_SANITY_CHECK
+  sstmac::event_queue_entry* entry = dynamic_cast<sstmac::event_queue_entry*>(ev);
+  if (!entry){
+    spkt_throw_printf(sprockit::value_error,
+      "event on self link did not cast to an event entry");
+#else
+  sstmac::event_queue_entry* entry = static_cast<sstmac::event_queue_entry*>(ev);
+#endif
+  entry->execute();
+  delete entry;
 }
 
 SST::SimTime_t

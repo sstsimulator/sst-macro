@@ -14,6 +14,7 @@
 
 #include <sstmac/common/timestamp.h>
 #include <sstmac/hardware/node/node_fwd.h>
+#include <sstmac/hardware/common/failable.h>
 #include <sstmac/hardware/common/connection.h>
 #include <sstmac/hardware/common/packet_fwd.h>
 #include <sstmac/hardware/network/network_message_fwd.h>
@@ -43,6 +44,7 @@ namespace hw {
  */
 class nic :
   public sprockit::factory_type,
+  public failable,
   public connectable_subcomponent
 {
 #if SSTMAC_INTEGRATED_SST_CORE

@@ -137,13 +137,12 @@ event_scheduler::schedule(SST::Time_t delay, event_handler* handler, event* ev)
   switch(handler->type()){
     case event_handler::self_handler:
     {
-      printf("sending event %s to self\n", ev->to_string().c_str());
-      self_link_->send(delay, time_converter_, ev);
+      event_queue_entry* evq = new handler_event_queue_entry(ev, handler, event_location());
+      self_link_->send(delay, time_converter_, evq);
       break;
     }
     case event_handler::link_handler:
     {
-      printf("sending event %s to link\n", ev->to_string().c_str());
       integrated_connectable_wrapper* wrapper = static_cast<integrated_connectable_wrapper*>(handler);
       wrapper->link()->send(delay, time_converter_, ev);
       break;
@@ -166,6 +165,12 @@ event_scheduler::schedule_delay(
   event* ev)
 {
   schedule(SST::Time_t(delay.ticks_int64()), handler, ev);
+}
+
+void
+event_scheduler::schedule_delay(timestamp delay, event_queue_entry *ev)
+{
+  self_link_->send(SST::Time_t(delay.ticks_int64()), time_converter_, ev);
 }
 
 #else

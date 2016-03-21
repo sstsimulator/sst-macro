@@ -76,6 +76,7 @@ event_map::cancel_all_messages(event_loc_id canceled_loc)
   while (it != end){
     queue_t::iterator tmp = it++;
     event_queue_entry* ev = *tmp;
+
     if (ev->event_location() == canceled_loc){
       delete ev;
       queue_.erase(tmp);

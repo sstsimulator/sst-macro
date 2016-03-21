@@ -41,7 +41,8 @@ namespace hw {
 
 class node :
   public sprockit::factory_type,
-  public failable
+  public failable,
+  public connectable_component
 {
 
  public:
@@ -170,31 +171,11 @@ class node :
   virtual bool
   kernel_supported(ami::COMM_FUNC func) const = 0;
 
+  virtual void
+  handle(event* ev);
+
  protected:
   node();
-
-  /**
-   Node device might have failed. If failed, the NIC might still process incoming messages
-   and generate failure notifications depending on the "degree" of failure.
-   @param ev  The incoming event
-  */
-  virtual void
-  handle_while_running(event* ev);
-
-  /**
-   Node device might have failed. If failed, the NIC might still process incoming messages
-   and generate failure notifications depending on the "degree" of failure.
-   @param msg  The incoming event
-  */
-  virtual void
-  handle_while_failed(event* ev);
-
-  /**
-   Perform all actions necessary to process a node failure and propaage to subdevices
-   @param msg Event containing all the information about the node failure
-  */
-  virtual void
-  do_failure(event* ev);
 
   /**
    Push a network message (operation at the MTL layer) onto the NIC

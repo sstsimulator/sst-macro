@@ -4,6 +4,7 @@
 #include <sstmac/backends/native/event_container.h>
 #include <sprockit/sim_parameters.h>
 #include <ctime>
+#include <cmath>
 #include <fstream>
 
 DeclareDebugSlot(all_events)
@@ -144,6 +145,11 @@ event_container::schedule(timestamp start_time, uint32_t seqnum, event_queue_ent
   ev->set_time(start_time);
   ev->set_seqnum(seqnum);
 
+  double delta = fabs(start_time.sec() - 1.29380e-04);
+  if (delta < 1e-5){
+    fflush(stdout);
+    //abort();
+  }
 
   debug_printf(sprockit::dbg::all_events,
     "adding event to run at %10.5e: %s",
