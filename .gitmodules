@@ -4,3 +4,6 @@
 [submodule "sumi"]
 	path = sumi
 	url = https://github.com/jjwilke/sumi.git
+[submodule "sprockit"]
+	path = sprockit
+	url = git@github.com:jjwilke/sprockit.git
