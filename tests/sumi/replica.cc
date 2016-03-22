@@ -5,7 +5,7 @@
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
-#include <sst/sumi_api.h>
+#include <sstmac/libraries/sumi/sumi.h>
 
 using namespace sumi;
 

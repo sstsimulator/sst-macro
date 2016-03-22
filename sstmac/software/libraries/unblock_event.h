@@ -29,8 +29,7 @@ class unblock_event : public event_queue_entry
 
   std::string
   to_string() const {
-    return sprockit::printf("unblock event on node %d",
-      int(event_location().convert_to_node_id()));
+    return "unblock event";
   }
 
   virtual void execute();
@@ -49,8 +48,7 @@ class timeout_event : public event_queue_entry
 
   std::string
   to_string() const {
-    return sprockit::printf("timeout event on node %d",
-      int(event_location().convert_to_node_id()));
+    return "timeout event";
   }
 
   virtual void execute();

@@ -16,7 +16,7 @@ libsstmac_sw_la_LDFLAGS =
 
 libsstmac_sw_la_LIBADD = 
 
-AM_CPPFLAGS += -I$(top_builddir)/pth -I$(top_srcdir)/pth -I$(top_srcdir)/dumpi -I$(top_builddir)/dumpi
+AM_CPPFLAGS += -I$(top_srcdir)/dumpi -I$(top_builddir)/dumpi
 
 AM_FCFLAGS = -I$(top_builddir) -I$(top_srcdir) -m32 -m64
 
@@ -45,7 +45,6 @@ libsstmac_sw_la_SOURCES = \
   threading/stack_alloc_chunk.cc \
   threading/stack_alloc.cc \
   threading/threading_pthread.cc \
-  threading/threading_pth.cc \
   libraries/library.cc \
   libraries/compute/compute_api.cc \
   libraries/compute/compute_event.cc \
@@ -134,7 +133,6 @@ nobase_library_include_HEADERS = \
   threading/stack_alloc.h \
   threading/threading_interface.h \
   threading/threading_interface_fwd.h \
-  threading/threading_pth.h \
   threading/threading_pthread.h \
   libraries/compute/compute_api.h \
   libraries/compute/compute_event.h \
@@ -183,9 +181,15 @@ nobase_library_include_HEADERS = \
 if HAVE_UCONTEXT
   libsstmac_sw_la_SOURCES += \
      threading/threading_ucontext.cc 
-
   nobase_library_include_HEADERS += \
     threading/threading_ucontext.h 
+endif
+
+if HAVE_PTH
+  libsstmac_sw_la_SOURCES += \
+     threading/threading_pth.cc 
+  nobase_library_include_HEADERS += \
+    threading/threading_pth.h 
 endif
 
 if FC_ENABLE

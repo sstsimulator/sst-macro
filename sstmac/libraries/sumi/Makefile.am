@@ -11,23 +11,28 @@
 
 include $(top_srcdir)/Makefile.common
 
-noinst_LTLIBRARIES = libsstmac_sumi.la
+AM_CPPFLAGS += -I$(top_srcdir)/sumi -I$(top_builddir)/sumi
 
-AM_FCFLAGS = -I$(top_builddir) -I$(top_srcdir) -m32 -m64
+noinst_LTLIBRARIES = libsstmac_sumi.la
 
 libsstmac_sumi_la_LDFLAGS = 
 
+
 libsstmac_sumi_la_SOURCES = \
+  sumi.cc \
+  message.cc \
   sumi_api.cc \
   sumi_thread.cc \
-  message.cc 
+  sumi_transport.cc
 
 library_includedir=$(includedir)/sstmac/libraries/sumi
 
 nobase_library_include_HEADERS = \
+  sumi.h \
   message.h \
-  sumi_thread.h \
+  message_fwd.h \
   sumi_api.h \
-  sumi_api_fwd.h 
-
+  sumi_api_fwd.h \
+  sumi_thread.h \
+  sumi_transport.h
 

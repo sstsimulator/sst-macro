@@ -37,7 +37,7 @@ AC_ARG_WITH(ucontext,
   ]
 )
 
-AH_TEMPLATE([HAVE_PTH], [Define to make pth available for threading])
+AH_TEMPLATE([HAVE_GNU_PTH], [Define to make pth available for threading])
 AC_ARG_WITH(pth,
   [AS_HELP_STRING(
     [--with-pth@<:@=DIR@:>@],
@@ -156,13 +156,15 @@ if test "$enable_pth" != "no"; then
     [pth],
     [pth_uctx_switch],
     [
-      AC_DEFINE(HAVE_PTH)
+      AC_DEFINE(HAVE_GNU_PTH)
+      AM_CONDITIONAL(HAVE_PTH, true)
       LIBS="-lpth $LIBS"
       AC_SUBST(PTH_CPPFLAGS)
       AC_SUBST(PTH_LDFLAGS)
       enable_pth="yes"
     ],
     [
+      AM_CONDITIONAL(HAVE_PTH, false)
       enable_pth="no"
       if test "$user_with_pth" = yes; then
         AC_MSG_ERROR([pth tests failed])

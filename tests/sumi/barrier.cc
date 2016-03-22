@@ -5,10 +5,10 @@
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
-#include <sst/sumi_api.h>
+#include <sstmac/libraries/sumi/sumi.h>
+#include <sstmac/libraries/sumi/sumi_transport.h>
 #include <sstmac/common/runtime.h>
 #include <sumi/transport.h>
-#include <sumi/sst/sumi_transport.h>
 
 using namespace sumi;
 

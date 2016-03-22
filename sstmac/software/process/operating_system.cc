@@ -20,8 +20,12 @@
 #include <sstmac/common/runtime.h>
 #include <sstmac/common/event_manager.h>
 
+#if SSTMAC_HAVE_GNU_PTH
 #include <sstmac/software/threading/threading_pth.h>
+#endif
+#if SSTMAC_HAVE_PTHREAD
 #include <sstmac/software/threading/threading_pthread.h>
+#endif
 #include <sstmac/software/libraries/service.h>
 #include <sstmac/software/launch/complete_message.h>
 #include <sstmac/software/launch/launcher.h>
@@ -96,7 +100,7 @@ bool operating_system::cxa_finalizing_ = false;
 operating_system::os_thread_context operating_system::cxa_finalize_context_;
 
 
-#if SSTMAC_HAVE_PTH
+#if SSTMAC_HAVE_GNU_PTH
 #define pth_available "pth,"
 #else
 #define pth_available ""
@@ -144,7 +148,7 @@ operating_system::init_threading()
         "operating_system: there are no threading frameworks compatible with multithreaded SST - must have ucontext or pthread");
     #endif
 #else //not multithreaded
-    #if defined(SSTMAC_HAVE_PTH)
+    #if defined(SSTMAC_HAVE_GNU_PTH)
     threading_string = "pth";
     #elif defined(SSTMAC_HAVE_UCONTEXT)
     threading_string = "ucontext";
@@ -160,7 +164,7 @@ operating_system::init_threading()
   }
 
   if (threading_string == "pth") {
-#if defined(SSTMAC_HAVE_PTH)
+#if defined(SSTMAC_HAVE_GNU_PTH)
    #if SSTMAC_USE_MULTITHREAD
    spkt_throw(sprockit::value_error, 
     "operating_system: SSTMAC_THREADING=pth exists on system, but is not compatible with multithreading\n" 

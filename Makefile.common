@@ -7,9 +7,8 @@ endif
 
 if EXTERNAL_BOOST
   AM_CPPFLAGS += $(BOOST_CPPFLAGS)
-else
-  AM_CPPFLAGS += -I$(top_srcdir)/sprockit/boost
 endif
 
 AM_CPPFLAGS += $(PTH_CPPFLAGS)
 AM_LDFLAGS += $(PTH_LDFLAGS)
+

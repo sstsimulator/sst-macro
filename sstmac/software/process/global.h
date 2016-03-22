@@ -22,20 +22,6 @@
 #include <sstmac/software/process/global_ptr_array.h>
 #include <sstmac/software/process/global_struct.h>
 
-#if SSTMAC_HAVE_TLS && SSTMAC_USE_PTHREAD
-#define global_int __thread int
-#define global_int* __thread int*
-#define global_double __thread double;
-#define global_double* __thread double*;
-#define global_char __thread char;
-#define global_char* __thread char*;
-#define global_long __thread long;
-#define global_long* __thread long*;
-#define global_bool __thread bool;
-#define global_bool* __thread bool*;
-#define global_long_long __thread long long;
-#define global_long_long* __thread long long*;
-#else
 typedef sstmac::sw::sstmac_global_builtin<double*> global_double_ptr;
 typedef sstmac::sw::sstmac_global_builtin<double> global_double;
 typedef sstmac::sw::sstmac_global_builtin<char*> global_char_ptr;
@@ -73,8 +59,6 @@ delete_global(const sstmac::sw::sstmac_global_struct<T*> &x)
 {
   delete x.get_val();
 }
-
-#endif
 
 #endif
 

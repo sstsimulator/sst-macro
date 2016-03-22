@@ -21,7 +21,7 @@ EXTRA_DIST = testmpi.h include
 if INTEGRATED_SST_CORE
 lib_LTLIBRARIES = libsstmac_api_mpi_test.la
 libsstmac_api_mpi_test_la_SOURCES = testmpi.cc testmpi_eli.cc util/mtest.cc
-libsstmac_api_mpi_test_la_LDFLAGS = -module -shared 
+libsstmac_api_mpi_test_la_LDFLAGS = -module -shared $(PTH_LDFLAGS)
 else
 check_PROGRAMS = testexec
 testexec_SOURCES = exec.cc

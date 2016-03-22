@@ -46,7 +46,7 @@ using namespace sstmac::sw;
 node::node(
   SST::ComponentId_t id,
   SST::Params& params
-) : failable(id, params)
+) : connectable_component(id, params)
 {
 }
 
