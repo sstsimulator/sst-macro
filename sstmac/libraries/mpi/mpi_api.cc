@@ -13,7 +13,6 @@
 #include <time.h>
 #include <climits>
 #include <cmath>
-#include <cstdint>
 
 #include <sstmac/common/thread_lock.h>
 #include <sstmac/common/runtime.h>

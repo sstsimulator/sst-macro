@@ -34,6 +34,9 @@ class event :
   virtual std::string
   to_string() const = 0;
 
+  void
+  serialize_order(sprockit::serializer& ser){}
+
   /** convenience methods */
   virtual bool
   is_packet() const {
