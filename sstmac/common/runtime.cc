@@ -8,14 +8,14 @@
 
 namespace sstmac {
 
-bool sstmac_runtime::do_deadlock_check_ = false;
-std::list<deadlock_check*> sstmac_runtime::deadlock_checks_;
-sstmac_runtime::app_to_manager_map sstmac_runtime::app_managers_;
-hw::topology* sstmac_runtime::tmp_topology_ = 0;
-static sprockit::need_delete_statics<sstmac_runtime> del_statics;
+bool runtime::do_deadlock_check_ = false;
+std::list<deadlock_check*> runtime::deadlock_checks_;
+runtime::app_to_manager_map runtime::app_managers_;
+hw::topology* runtime::tmp_topology_ = 0;
+static sprockit::need_delete_statics<runtime> del_statics;
 
 void
-sstmac_runtime::register_app_manager(sw::app_id aid,
+runtime::register_app_manager(sw::app_id aid,
                                      sw::app_manager* appman)
 {
   sw::app_manager*& the_appman = app_managers_[aid];
@@ -28,7 +28,7 @@ sstmac_runtime::register_app_manager(sw::app_id aid,
 }
 
 void
-sstmac_runtime::check_deadlock()
+runtime::check_deadlock()
 {
   if (!do_deadlock_check_) return;
 
@@ -40,45 +40,45 @@ sstmac_runtime::check_deadlock()
 }
 
 void
-sstmac_runtime::delete_statics()
+runtime::delete_statics()
 {
   delete_vals(app_managers_);
   app_managers_.clear();
 }
 
 void
-sstmac_runtime::set_temp_topology(hw::topology*top)
+runtime::set_temp_topology(hw::topology*top)
 {
   tmp_topology_ = top;
 }
 
 void
-sstmac_runtime::clear_temp_topology()
+runtime::clear_temp_topology()
 {
   tmp_topology_ = 0;
 }
 
 void
-sstmac_runtime::register_node(sw::app_id aid, sw::task_id tid, node_id nid)
+runtime::register_node(sw::app_id aid, sw::task_id tid, node_id nid)
 {
   app_mgr(aid)->set_node_address(tid, nid);
 }
 
 node_id
-sstmac_runtime::node_for_task(sw::app_id aid, sw::task_id tid)
+runtime::node_for_task(sw::app_id aid, sw::task_id tid)
 {
   return app_mgr(aid)->node_for_task(tid);
 }
 
 hw::node*
-sstmac_runtime::current_node()
+runtime::current_node()
 {
   return current_app_manager()->node_at(
            sw::operating_system::current_node_id());
 }
 
 hw::topology*
-sstmac_runtime::current_topology()
+runtime::current_topology()
 {
   if (tmp_topology_)
     return tmp_topology_;
@@ -87,13 +87,13 @@ sstmac_runtime::current_topology()
 }
 
 sw::app_manager*
-sstmac_runtime::current_app_manager()
+runtime::current_app_manager()
 {
   return app_mgr(sw::operating_system::current_aid());
 }
 
 sw::    app_manager*
-sstmac_runtime::app_mgr(sw::app_id aid)
+runtime::app_mgr(sw::app_id aid)
 {
   app_to_manager_map::const_iterator it = app_managers_.find(aid);
   if (it == app_managers_.end()) {
@@ -105,7 +105,7 @@ sstmac_runtime::app_mgr(sw::app_id aid)
 }
 
 void
-sstmac_runtime::finish()
+runtime::finish()
 {
   app_managers_.clear();
 }

@@ -36,7 +36,7 @@ class service :
   }
 
   virtual void
-  incoming_message(sst_message* msg) = 0;
+  incoming_message(message* msg) = 0;
 
  protected:
   service();

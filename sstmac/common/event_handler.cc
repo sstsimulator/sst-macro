@@ -17,27 +17,5 @@ namespace sstmac {
 event_loc_id event_loc_id::null = event_loc_id(switch_id(std::numeric_limits<int32_t>::max()));
 event_loc_id event_loc_id::uninitialized = event_loc_id(switch_id(std::numeric_limits<int32_t>::max()-1));
 
-void
-multi_event_handler::handle(sst_message* msg)
-{
-  std::map<sst_message::message_type_t, handle_functor*>::iterator
-    it = fxns_.find(msg->type());
-  if (it == fxns_.end()){
-    spkt_throw_printf(sprockit::value_error,
-        "multi_event_handler::handle: %s cannot handle type %s for message %s",
-        to_string().c_str(),
-        msg->type().tostr(),
-        msg->to_string().c_str());
-  }
-  handle_functor* fxn = it->second;
-  fxn->handle(this, msg);
-}
-
-void
-multi_event_handler::handle_type(sst_message::message_type_t ty, handle_functor *handler)
-{
-  fxns_[ty] = handler;
-}
-
 } // end of namespace sstmac
 

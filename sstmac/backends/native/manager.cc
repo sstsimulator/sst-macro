@@ -10,13 +10,14 @@
  */
 
 #include <sstmac/hardware/interconnect/interconnect.h>
+#include <sstmac/hardware/node/node.h>
 
 #include <sstmac/common/sstmac_env.h>
-
 #include <sstmac/backends/common/sim_partition.h>
-#include <sstmac/backends/native/node_list.h>
-#include <sstmac/backends/native/manager.h>
+#if !SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/backends/native/event_map.h>
+#endif
+#include <sstmac/backends/native/manager.h>
 #include <sstmac/backends/native/clock_cycle_parallel/clock_cycle_event_container.h>
 #include <sstmac/backends/native/skeleton_app_manager.h>
 
@@ -166,7 +167,7 @@ manager::build_app(int appnum, const std::string& launch_prefix,
 
   app_managers_[appnum] = appman;
   app_starts_[appnum] = start;
-  sstmac_runtime::register_app_manager(aid, appman);
+  runtime::register_app_manager(aid, appman);
 }
 
 void
@@ -291,7 +292,7 @@ macro_manager::stop()
 
   event_manager::global = 0;
 
-  sstmac_runtime::finish();
+  runtime::finish();
 }
 
 macro_manager::macro_manager(parallel_runtime* rt) :
@@ -318,7 +319,7 @@ macro_manager::launch_app(int appnum, timestamp start, sw::app_manager* appman)
   sstmac::sw::app_id aid(appnum);
   for (int i=0; i < appman->nproc(); ++i) {
     node_id dst_nid = appman->node_assignment(i);
-    sstmac_runtime::register_node(aid, task_id(i), dst_nid);
+    runtime::register_node(aid, task_id(i), dst_nid);
 
     hw::node* dst_node = interconnect_->node_at(dst_nid);
     if (!dst_node) {

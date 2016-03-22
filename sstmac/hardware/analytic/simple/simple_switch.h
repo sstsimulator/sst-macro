@@ -3,7 +3,7 @@
 
 #include <sstmac/common/event_handler.h>
 #include <sstmac/common/event_scheduler.h>
-#include <sstmac/hardware/nic/network_endpoint.h>
+#include <sstmac/common/messages/sst_message_fwd.h>
 #include <sstmac/hardware/nic/nic_fwd.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sprockit/unordered.h>
@@ -43,7 +43,7 @@ class simple_switch :
    @param msg Incoming message (should cast to packet_train)
    */
   virtual void
-  handle(sst_message* msg);
+  handle(event* ev);
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   virtual void
@@ -112,8 +112,8 @@ class simple_switch :
 
 
  private:
-  void send_to_nic(timestamp delay, node_id dst, sst_message* msg);
-  void send_to_switch(timestamp delay, node_id dst, sst_message* msg);
+  void send_to_nic(timestamp delay, node_id dst, message* msg);
+  void send_to_switch(timestamp delay, node_id dst, message* msg);
 
 };
 

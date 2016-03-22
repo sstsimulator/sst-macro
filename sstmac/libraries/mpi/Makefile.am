@@ -35,7 +35,6 @@ libsstmac_mpi_la_SOURCES = \
   mpi_queue/mpi_queue_send_request.cc \
   mpi_queue/mpi_queue.cc \
   mpi_queue/user_thread_mpi_queue.cc \
-  mpi_queue/service_thread_mpi_queue.cc \
   mpi_implementation/mpi_implementation.cc \
   mpi_implementation/basic_mpi.cc \
   mpi_implementation/rdma_mpi.cc \
@@ -138,7 +137,6 @@ nobase_library_include_HEADERS = \
   mpi_queue/mpi_queue.h \
   mpi_queue/mpi_queue_fwd.h \
   mpi_queue/user_thread_mpi_queue.h \
-  mpi_queue/service_thread_mpi_queue.h \
   mpi_implementation/mpi_implementation.h \
   mpi_implementation/mpi_implementation_fwd.h \
   mpi_implementation/basic_mpi.h \

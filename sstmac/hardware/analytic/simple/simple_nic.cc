@@ -1,4 +1,7 @@
 #include <sstmac/hardware/analytic/simple/simple_nic.h>
+#include <sstmac/hardware/network/network_message.h>
+#include <sstmac/hardware/node/node.h>
+#include <sstmac/common/event_handler.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 
@@ -67,7 +70,7 @@ simple_nic::send_to_injector(timestamp t, network_message* msg)
 
 void
 simple_nic::send_to_node(timestamp t, network_message* msg){
-  SCHEDULE(t, parent_, msg);
+  schedule(t, parent_, msg);
 }
 
 }

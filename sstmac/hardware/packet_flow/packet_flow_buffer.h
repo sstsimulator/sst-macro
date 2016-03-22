@@ -143,7 +143,7 @@ class packet_flow_network_buffer :
   init_credits(int port, int num_credits);
 
   virtual void
-  start(sst_message* msg);
+  start_message(message* msg);
 
   void
   handle_credit(packet_flow_credit* msg);
@@ -164,7 +164,7 @@ class packet_flow_network_buffer :
 
   void deadlock_check();
 
-  void deadlock_check(sst_message*msg);
+  void deadlock_check(message*msg);
 
  protected:
   int num_vc_;
@@ -197,10 +197,10 @@ class packet_flow_eject_buffer :
   handle_credit(packet_flow_credit* msg);
 
   void
-  return_credit(message_chunk* msg);
+  return_credit(packet* msg);
 
   void
-  start(sst_message* msg);
+  start_message(message* msg);
 
   void
   do_handle_payload(packet_flow_payload* msg);
@@ -224,7 +224,7 @@ class packet_flow_injection_buffer :
     packet_flow_bandwidth_arbitrator* arb);
 
   virtual void
-  start(sst_message* msg);
+  start_message(message* msg);
 
   int
   queue_length() const;
@@ -245,7 +245,7 @@ class packet_flow_injection_buffer :
 
  protected:
   struct pending_send{
-    sst_message* msg;
+    message* msg;
     long bytes_left;
     long offset;
   };

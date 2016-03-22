@@ -1,7 +1,7 @@
 #!/bin/sh
 
-git submodule init
-git submodule update
+#git submodule init
+#git submodule update
 (glibtoolize || libtoolize) \
   && (cd sprockit && (glibtoolize || libtoolize) ) \
   && (cd dumpi && (glibtoolize || libtoolize) ) \

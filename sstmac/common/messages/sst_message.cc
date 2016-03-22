@@ -13,8 +13,6 @@
 #include <sstmac/common/event_callback.h>
 #include <sprockit/serializer.h>
 
-DeclareSerializable(sstmac::sst_message);
-
 #define sst_msg_invalid(fxn) \
     spkt_throw_printf(sprockit::illformed_error, \
         "sst_message:%s: not implemented for %s", \
@@ -22,41 +20,19 @@ DeclareSerializable(sstmac::sst_message);
 
 namespace sstmac {
 
-ImplementEnum(sst_message::message_type_t);
-ImplementEnum(sst_message::field);
-RegisterEnum(sst_message::message_type_t, sst_message::SST);
-RegisterEnum(sst_message::message_type_t, sst_message::NONE);
+ImplementEnum(message::field);
 
-sst_message::sst_message() :
-  msgtype_(NONE),
+message::message() :
   key_(0)
 {
 }
 
-sst_message*
-sst_message::parent() const
-{
-  return const_cast<sst_message*>(this);
-}
-
 void
-sst_message::serialize_order(sprockit::serializer& ser)
+message::serialize_order(sprockit::serializer& ser)
 {
-  ser & msgtype_.value;
   ser & fields_;
 }
 
-long
-sst_message::byte_length() const
-{
-  sst_msg_invalid(byte_length);
-}
-
-uint64_t
-sst_message::unique_id() const
-{
-  sst_msg_invalid(unique_id);
-}
 
 } // end of namespace sstmac
 

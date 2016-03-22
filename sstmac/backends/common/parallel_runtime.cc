@@ -140,12 +140,12 @@ parallel_runtime::~parallel_runtime()
 }
 
 void
-parallel_runtime::send_message(int thread_id,
+parallel_runtime::send_event(int thread_id,
   timestamp t,
   topology_id dst,
   event_loc_id src,
   uint32_t seqnum,
-  sst_message* msg)
+  event* ev)
 {
   sprockit::serializer ser;
   void* buffer = send_buffer_pools_[thread_id].pop();
@@ -154,7 +154,7 @@ parallel_runtime::send_message(int thread_id,
   ser & src;
   ser & seqnum;
   ser & t;
-  ser & msg;
+  ser & ev;
   if (ser.packer().size() > buf_size_){
     spkt_throw_printf(sprockit::value_error,
         "parallel_runtime::send_message:: buffer overrun %d > %d: set param serialization_buffer_size larger",

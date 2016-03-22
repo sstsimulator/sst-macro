@@ -20,6 +20,7 @@
 #include <sstmac/hardware/router/router_fwd.h>
 #include <sstmac/hardware/common/clonable.h>
 #include <sstmac/hardware/common/connection.h>
+#include <sstmac/backends/common/sim_partition_fwd.h>
 #include <sprockit/sim_parameters_fwd.h>
 #include <sprockit/debug.h>
 #include <sprockit/factories/factory.h>

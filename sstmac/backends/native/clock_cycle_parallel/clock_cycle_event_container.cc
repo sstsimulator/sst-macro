@@ -53,7 +53,7 @@ clock_cycle_event_map::schedule_incoming(const std::vector<void*>& buffers)
     event_loc_id src;
     uint32_t seqnum;
     timestamp time;
-    sst_message* msg;
+    message* msg;
     void* buffer = buffers[i];
     ser.start_unpacking((char*)buffer, buf_size);
     ser & dst;
@@ -81,7 +81,7 @@ clock_cycle_event_map::schedule_incoming(const std::vector<void*>& buffers)
 #endif
       dst_handler = dst_node->get_nic();
     }
-    schedule(time, seqnum, new handler_event(msg, dst_handler, src));
+    schedule(time, seqnum, new handler_event_queue_entry(msg, dst_handler, src));
   }
 
   rt_->free_recv_buffers(buffers);
@@ -189,7 +189,7 @@ clock_cycle_event_map::do_next_event()
     ++epoch_;
   }
 
-  event* ev = pop_next_event();
+  event_queue_entry* ev = pop_next_event();
 
 #if DEBUG_DETERMINISM
   std::ofstream*& f = outs[ev->event_location()];
@@ -265,16 +265,16 @@ clock_cycle_event_map::ipc_schedule(timestamp t,
   event_loc_id dst,
   event_loc_id src,
   uint32_t seqnum,
-  sst_message* msg)
+  event* ev)
 {
   event_debug("epoch %d: scheduling outgoing event at t=%12.8e to location %d",
     epoch_, t.sec(), int(dst.convert_to_switch_id()));
 
-  rt_->send_message(thread_id_, t,
+  rt_->send_event(thread_id_, t,
     dst.convert_to_switch_id(),
     src,
     seqnum,
-    msg);
+    ev);
 }
 
 }

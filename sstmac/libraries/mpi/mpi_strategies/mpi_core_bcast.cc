@@ -13,7 +13,6 @@
 #include <sstmac/libraries/mpi/mpi_strategies/mpi_iterator/bt_scatter_iterator.h>
 #include <sstmac/libraries/mpi/mpi_strategies/mpi_collective/engines/mpi_bcast_engine.h>
 #include <sstmac/libraries/mpi/mpi_queue/mpi_queue.h>
-#include <sstmac/software/libraries/unblock_handler.h>
 
 namespace sstmac {
 namespace sw {

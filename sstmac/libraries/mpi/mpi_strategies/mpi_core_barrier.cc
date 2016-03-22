@@ -17,7 +17,6 @@
 #include <sstmac/libraries/mpi/mpi_strategies/mpi_iterator/hfm_iterator.h>
 #include <sstmac/libraries/mpi/mpi_strategies/mpi_iterator/rd_iterator.h>
 #include <sstmac/libraries/mpi/mpi_strategies/mpi_iterator/bt_scatter_iterator.h>
-#include <sstmac/software/libraries/unblock_handler.h>
 #include <sstmac/common/event_handler.h>
 
 namespace sstmac {

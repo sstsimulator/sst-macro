@@ -16,7 +16,7 @@ libsstmac_sw_la_LDFLAGS =
 
 libsstmac_sw_la_LIBADD = 
 
-AM_CPPFLAGS += -I$(top_builddir)/pth -I$(top_srcdir)/pth -I$(top_srcdir)/dumpi -I$(top_builddir)/dumpi
+AM_CPPFLAGS += -I$(top_srcdir)/dumpi -I$(top_builddir)/dumpi
 
 AM_FCFLAGS = -I$(top_builddir) -I$(top_srcdir) -m32 -m64
 
@@ -45,10 +45,9 @@ libsstmac_sw_la_SOURCES = \
   threading/stack_alloc_chunk.cc \
   threading/stack_alloc.cc \
   threading/threading_pthread.cc \
-  threading/threading_pth.cc \
   libraries/library.cc \
   libraries/compute/compute_api.cc \
-  libraries/compute/compute_message.cc \
+  libraries/compute/compute_event.cc \
   libraries/compute/lib_compute.cc \
   libraries/compute/lib_compute_inst.cc \
   libraries/compute/lib_compute_matrix.cc \
@@ -57,7 +56,6 @@ libsstmac_sw_la_SOURCES = \
   libraries/compute/lib_sleep.cc \
   libraries/compute/lib_compute_loops.cc \
   libraries/compute/sstmac_compute.cc \
-  libraries/unblock_handler.cc \
   libraries/unblock_event.cc \
   libraries/service.cc \
   launch/allocation_strategy.cc \
@@ -77,8 +75,7 @@ libsstmac_sw_la_SOURCES = \
   launch/round_robin_indexing.cc \
   launch/node_id_indexing.cc \
   launch/launcher.cc \
-  launch/launch_info.cc \
-  launch/messages.cc
+  launch/launch_info.cc 
 
 
 if FC_ENABLE
@@ -136,11 +133,10 @@ nobase_library_include_HEADERS = \
   threading/stack_alloc.h \
   threading/threading_interface.h \
   threading/threading_interface_fwd.h \
-  threading/threading_pth.h \
   threading/threading_pthread.h \
   libraries/compute/compute_api.h \
-  libraries/compute/compute_message.h \
-  libraries/compute/compute_message_fwd.h \
+  libraries/compute/compute_event.h \
+  libraries/compute/compute_event_fwd.h \
   libraries/compute/lib_compute_inst.h \
   libraries/compute/lib_compute_inst_fwd.h \
   libraries/compute/lib_compute_memmove_fwd.h \
@@ -154,7 +150,6 @@ nobase_library_include_HEADERS = \
   libraries/compute/sstmac_compute.h \
   libraries/library.h \
   libraries/library_fwd.h \
-  libraries/unblock_handler.h \
   libraries/unblock_event.h \
   libraries/service.h \
   libraries/service_fwd.h \
@@ -179,21 +174,22 @@ nobase_library_include_HEADERS = \
   launch/launch_handler.h \
   launch/launch_info.h  \
   launch/launch_info_fwd.h  \
-  launch/arrive_message.h  \
-  launch/complete_message.h  \
-  launch/kill_message.h  \
   launch/launch_message.h  \
   launch/launch_message_fwd.h  \
-  launch/restart_message.h  \
-  launch/start_message.h  \
   launch/machine_descriptor.h 
 
 if HAVE_UCONTEXT
   libsstmac_sw_la_SOURCES += \
      threading/threading_ucontext.cc 
-
   nobase_library_include_HEADERS += \
     threading/threading_ucontext.h 
+endif
+
+if HAVE_PTH
+  libsstmac_sw_la_SOURCES += \
+     threading/threading_pth.cc 
+  nobase_library_include_HEADERS += \
+    threading/threading_pth.h 
 endif
 
 if FC_ENABLE

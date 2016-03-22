@@ -1,6 +1,7 @@
 #ifndef PACKETFLOW_CREDITOR_H
 #define PACKETFLOW_CREDITOR_H
 
+#include <sprockit/util.h>
 #include <sstmac/common/stats/stat_spyplot_fwd.h>
 #include <sstmac/hardware/packet_flow/packet_flow.h>
 #include <sstmac/hardware/packet_flow/packet_flow_handler.h>
@@ -17,10 +18,10 @@ class packet_flow_MTL
  public:
   packet_flow_MTL(int mtu) : mtu_(mtu) {}
 
-  virtual void mtl_send(sst_message* msg) = 0;
+  virtual void mtl_send(message* msg) = 0;
 
   packet_flow_payload*
-  next_chunk(long byte_offset, sst_message* parent);
+  next_chunk(long byte_offset, message* parent);
 
  private:
   int mtu_;
@@ -33,8 +34,13 @@ class packet_flow_sender :
  public:
   virtual ~packet_flow_sender() {}
 
+  void
+  start(event* ev){
+    start_message(safe_cast(message, ev));
+  }
+
   virtual void
-  start(sst_message* msg) = 0;
+  start_message(message* msg) = 0;
 
   void
   set_acker(event_handler* acker) {

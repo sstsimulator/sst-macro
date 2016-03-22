@@ -8,7 +8,7 @@
 #include <sstmac/common/runtime.h>
 #include <sstmac/software/process/backtrace.h>
 
-using sstmac::sstmac_runtime;
+using sstmac::runtime;
 
 namespace pingall {
 

@@ -14,8 +14,6 @@
 
 #define DEBUG_DETERMINISM 1
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/common/sst_event.h>
@@ -59,7 +57,7 @@ class event_container : public event_manager
   virtual void
   do_next_event();
 
-  virtual event*
+  virtual event_queue_entry*
   pop_next_event() = 0;
 
   virtual bool
@@ -67,7 +65,7 @@ class event_container : public event_manager
 
   /// Called by schedule. Child class must implement.
   virtual void
-  add_event(event* ev)=0;
+  add_event(event_queue_entry* ev)=0;
 
   virtual bool
   vote_to_terminate(){
@@ -88,7 +86,7 @@ class event_container : public event_manager
  protected:
   /// Set off the given eventhandler at the given time.
   void
-  schedule(timestamp start_time, uint32_t seqnum, event* ev);
+  schedule(timestamp start_time, uint32_t seqnum, event_queue_entry* ev);
 
   /// Called at end of run(). Calls finish() on finishers_ and calls
   /// finish_stats().
@@ -100,7 +98,7 @@ class event_container : public event_manager
 }
 } // end of namespace sstmac
 
-#endif // !SSTMAC_INTEGRATED_SST_CORE
+
 
 #endif
 

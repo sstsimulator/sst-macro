@@ -146,7 +146,7 @@ mpi_collective::complete(const payload::const_ptr& content)
   mpi_message* fake = new mpi_message(content, mpi_message::fake);
 
   req_->complete(fake);
-  completion_->handle(fake);
+  if (completion_) completion_->handle(fake);
   delete fake;
 }
 

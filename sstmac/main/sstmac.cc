@@ -227,7 +227,7 @@ run(opts& oo,
     fflush(stderr);
 
     mgr->interconn()->deadlock_check();
-    sstmac_runtime::check_deadlock();
+    runtime::check_deadlock();
 
     mgr->finish();
 

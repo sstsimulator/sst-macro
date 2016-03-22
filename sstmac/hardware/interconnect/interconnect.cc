@@ -10,9 +10,10 @@
  */
 
 #include <sstmac/hardware/interconnect/interconnect.h>
+#include <sstmac/hardware/node/node.h>
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/nic/netlink.h>
-#include <sstmac/hardware/common/messages/fail_message.h>
+#include <sstmac/hardware/common/fail_event.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/packet_flow/packet_flow.h>
@@ -152,7 +153,7 @@ macro_interconnect::init_factory_params(sprockit::sim_parameters* params)
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
   topology_ = topology_factory::get_param("name", top_params);
 
-  sstmac_runtime::set_temp_topology(topology_);
+  runtime::set_temp_topology(topology_);
 
   if (!available_.empty() || !allocated_.empty()) {
     spkt_throw_printf(sprockit::illformed_error,
@@ -207,7 +208,7 @@ macro_interconnect::init_factory_params(sprockit::sim_parameters* params)
     available_.insert(nid);
   }
 
-  sstmac_runtime::clear_temp_topology();
+  runtime::clear_temp_topology();
 
   int failure_num = 1;
   while(1){
@@ -219,13 +220,13 @@ macro_interconnect::init_factory_params(sprockit::sim_parameters* params)
     int node_to_fail = params->get_int_param(next_param_name);
     next_param_name = sprockit::printf("node_failure_%d_time", failure_num);
     timestamp fail_time = params->get_time_param(next_param_name);
-    failures_to_schedule_.push_back(fail_event(fail_time, node_id(node_to_fail)));
+    failures_to_schedule_.push_back(node_fail_event(fail_time, node_id(node_to_fail)));
     ++failure_num;
   }
 }
 
 void
-macro_interconnect::handle(sst_message* msg)
+macro_interconnect::handle(event* ev)
 {
   spkt_throw(sprockit::value_error, "interconnect should never handle messages");
 }
@@ -233,10 +234,10 @@ macro_interconnect::handle(sst_message* msg)
 void
 macro_interconnect::set_event_manager_common(event_manager* m)
 {
-  std::list<fail_event>::iterator it, end = failures_to_schedule_.end();
+  std::list<node_fail_event>::iterator it, end = failures_to_schedule_.end();
   for (it=failures_to_schedule_.begin(); it != end; ++it){
-    node_fail_message* fail_msg = new node_fail_message;
-    fail_event ev = *it;
+    fail_event* fail_msg = new fail_event;
+    node_fail_event ev = *it;
 
     //I might not own this node
     node_map::iterator it = nodes_.find(ev.second);
@@ -270,7 +271,7 @@ macro_interconnect::set_node_event_manager(node* the_node, event_manager* m)
 void
 macro_interconnect::set_event_manager(event_manager* m)
 {
-  sstmac_runtime::set_temp_topology(topology_);
+  runtime::set_temp_topology(topology_);
 
   node_map::iterator it, end = nodes_.end();
   for (it=nodes_.begin(); it != end; ++it) {
@@ -280,7 +281,7 @@ macro_interconnect::set_event_manager(event_manager* m)
 
   set_event_manager_common(m);
 
-  sstmac_runtime::clear_temp_topology();
+  runtime::clear_temp_topology();
 }
 #endif
 

@@ -1,5 +1,5 @@
-#ifndef sstmac_software_process_simple_COMPUTE_SCHEDULER_H
-#define sstmac_software_process_simple_COMPUTE_SCHEDULER_H
+#ifndef sstmac_software_process_simple_COMPUTE_scheduleR_H
+#define sstmac_software_process_simple_COMPUTE_scheduleR_H
 
 #include <sstmac/software/process/compute_scheduler.h>
 
@@ -31,4 +31,4 @@ class simple_compute_scheduler : public compute_scheduler
 }
 }
 
-#endif // BASIC_COMPUTE_SCHEDULER_H
+#endif // BASIC_COMPUTE_scheduleR_H

@@ -39,7 +39,7 @@ class launcher :
   virtual ~launcher() throw ();
 
   virtual void
-  incoming_message(sst_message* msg);
+  incoming_message(message* msg);
 
   virtual void
   start();

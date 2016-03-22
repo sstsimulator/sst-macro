@@ -50,7 +50,7 @@ mpi_server::start()
 }
 
 void
-mpi_server::incoming_message(sst_message* msg)
+mpi_server::incoming_message(message* msg)
 {
   _debug_printf("handling message %s",
     msg->to_string().c_str());
@@ -132,7 +132,7 @@ mpi_server::buffered_send(mpi_message* payload)
 }
 
 void
-mpi_server::start_send(sst_message* msg)
+mpi_server::start_send(message* msg)
 {
   handle_send(safe_cast(mpi_message, msg));
 }
@@ -161,18 +161,19 @@ mpi_server::handle_intranode_send(mpi_message* payload)
     send_to_queue_payload(queue, payload);
 
     // Transfer between processes on local node.
-    _debug_print("copy to local task");
+    _debug_printf("copy to local task %s", payload->to_string().c_str());
   }
   else {
-    send_delayed_self_message(1e-3, payload);
+    _debug_printf("rank does not exist yet - delay and try again for %s", payload->to_string().c_str());
+    send_delayed_self_event(1e-3, payload);
   }
 }
 
 void
-mpi_server::handle(sst_message*msg)
+mpi_server::handle(event* ev)
 {
   //should only ever be used for delayed messages while queue initializes
-  handle_intranode_send(safe_cast(mpi_message, msg));
+  handle_intranode_send(safe_cast(mpi_message, ev));
 }
 
 void
@@ -259,8 +260,8 @@ mpi_server::send_to_queue_ack(mpi_queue* queue, mpi_message* ack)
 void
 mpi_server::send_to_queue_payload(mpi_queue* queue, mpi_message* payload)
 {
-  event* ev = new_event(os_->event_location(), queue, &mpi_queue::incoming_message, payload);
-  SCHEDULE_NOW(ev);
+  event_queue_entry* ev = new_event(os_->event_location(), queue, &mpi_queue::incoming_message, payload);
+  schedule_now(ev);
 }
 
 }

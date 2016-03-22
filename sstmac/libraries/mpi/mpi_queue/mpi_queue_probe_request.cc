@@ -48,10 +48,8 @@ mpi_queue_probe_request::matches(mpi_message* message) const
 void
 mpi_queue_probe_request::complete(mpi_message* message)
 {
-  if(completion_ != 0) {
-    key_->complete(message);
-    completion_->handle(message);
-  }
+  if (key_) key_->complete(message);
+  if (completion_) completion_->handle(message);
 }
 
 }

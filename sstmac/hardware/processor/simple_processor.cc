@@ -14,7 +14,7 @@
 #include <sstmac/hardware/processor/simple_processor.h>
 #include <sstmac/hardware/memory/memory_model.h>
 #include <sstmac/hardware/node/node.h>
-#include <sstmac/software/libraries/compute/compute_message.h>
+#include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/software/process/operating_system.h>
 #include <iostream>
 
@@ -31,12 +31,11 @@ simple_processor::finalize_init()
 }
 
 void
-simple_processor::compute(sst_message* msg)
+simple_processor::do_compute(sw::compute_event* ev)
 {
-  sw::compute_message* cmsg = safe_cast(sw::compute_message, msg);
   //can only do timed compute
-  timestamp time(cmsg->event_value(sw::compute_message::time), timestamp::exact);
-  os_delayed_notify(time, cmsg);
+  timestamp time(ev->event_value(sw::compute_event::time), timestamp::exact);
+  node_->compute(time);
 }
 
 

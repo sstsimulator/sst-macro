@@ -50,7 +50,7 @@ class packet_flow_NtoM_queue :
   handle_credit(packet_flow_credit* msg);
 
   virtual void
-  start(sst_message* msg);
+  start_message(message* msg);
 
   void
   init_credits(int port, int num_credits);
@@ -100,7 +100,7 @@ class packet_flow_NtoM_queue :
   deadlock_check();
 
   void
-  deadlock_check(sst_message* msg);
+  deadlock_check(message* msg);
 
  protected:
   struct request {

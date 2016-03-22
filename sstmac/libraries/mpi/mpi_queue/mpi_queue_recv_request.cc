@@ -92,7 +92,7 @@ mpi_queue_recv_request::handle(mpi_message* mess)
       key_->complete(mess);
       key_->status().set_recv_type(type_);
     }
-    completion_->handle(mess);
+    if (completion_) completion_->handle(mess);
     delme = this;
     break;
   }

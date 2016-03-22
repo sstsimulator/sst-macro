@@ -98,7 +98,7 @@ class interconnect :
     @param msg The message to send to the destination
   */
   virtual void
-  immediate_send(event_scheduler* src, sst_message* msg, timestamp start) const = 0;
+  immediate_send(event_scheduler* src, message* msg, timestamp start) const = 0;
 
   virtual void
   set_event_manager(event_manager* mgr){};
@@ -240,7 +240,7 @@ class macro_interconnect : public interconnect
   }
 
   virtual void
-  handle(sst_message* msg);
+  handle(event* ev);
 
  protected:
   macro_interconnect();
@@ -252,8 +252,8 @@ class macro_interconnect : public interconnect
   typedef spkt_unordered_map<netlink_id, netlink*> netlink_map;
   netlink_map netlinks_;
 
-  typedef std::pair<timestamp, node_id> fail_event;
-  std::list<fail_event> failures_to_schedule_;
+  typedef std::pair<timestamp, node_id> node_fail_event;
+  std::list<node_fail_event> failures_to_schedule_;
 };
 typedef macro_interconnect interconnect_base;
 #endif

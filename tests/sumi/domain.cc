@@ -5,16 +5,12 @@
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
-#include <sst/sumi_api.h>
+#include <sstmac/libraries/sumi/sumi.h>
 #include <sumi/dense_rank_map.h>
 #include <sumi/transport.h>
 #include <sumi/thread_safe_set.h>
 
-using namespace sstmac;
-using namespace sstmac::sw;
-using namespace sstmac::hw;
 using namespace sumi;
-
 
 void
 run_test(domain* dom, int todie, int nproc_live, int context, int tag)

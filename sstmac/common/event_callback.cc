@@ -8,9 +8,9 @@ event_callback::~event_callback()
 }
 
 void
-event_callback::handle(sst_message* msg)
+event_callback::handle(event* ev)
 {
-  callback(msg);
+  callback(ev);
 }
 
 std::string

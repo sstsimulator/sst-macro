@@ -36,7 +36,7 @@ class fat_tree_router :
   choose_down_path();
 
   virtual int
-  number_paths(sst_message* msg) const;
+  number_paths(message* msg) const;
 
   virtual void
   path_is_good(node_id goingto, int fromport, int toport) {
@@ -58,7 +58,7 @@ class fat_tree_router :
   }
 
   void
-  route(sst_message* msg);
+  route(packet* pkt);
 
  protected:
   bool

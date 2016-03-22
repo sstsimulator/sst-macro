@@ -1,9 +1,10 @@
 
 #include <sstmac/common/sstmac_config.h>
-#if !SSTMAC_INTEGRATED_SST_CORE
+
 #include <sstmac/backends/native/event_container.h>
 #include <sprockit/sim_parameters.h>
 #include <ctime>
+#include <cmath>
 #include <fstream>
 
 DeclareDebugSlot(all_events)
@@ -29,7 +30,7 @@ event_container::event_container() :
 void
 event_container::do_next_event()
 {
-  event* ev = pop_next_event();
+  event_queue_entry* ev = pop_next_event();
   set_now(ev->time());
   debug_printf(sprockit::dbg::all_events,
     "running event %s", ev->to_string().c_str());
@@ -133,7 +134,7 @@ event_container::run()
 
 
 void
-event_container::schedule(timestamp start_time, uint32_t seqnum, event* ev)
+event_container::schedule(timestamp start_time, uint32_t seqnum, event_queue_entry* ev)
 {
   if (start_time < now()) {
     spkt_throw_printf(sprockit::illformed_error,
@@ -144,6 +145,11 @@ event_container::schedule(timestamp start_time, uint32_t seqnum, event* ev)
   ev->set_time(start_time);
   ev->set_seqnum(seqnum);
 
+  double delta = fabs(start_time.sec() - 1.29380e-04);
+  if (delta < 1e-5){
+    fflush(stdout);
+    //abort();
+  }
 
   debug_printf(sprockit::dbg::all_events,
     "adding event to run at %10.5e: %s",
@@ -159,4 +165,3 @@ event_container::finish()
 }
 }
 
-#endif // !SSTMAC_INTEGRATED_SST_CORE

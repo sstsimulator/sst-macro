@@ -20,8 +20,12 @@
 #include <sstmac/common/runtime.h>
 #include <sstmac/common/event_manager.h>
 
+#if SSTMAC_HAVE_GNU_PTH
 #include <sstmac/software/threading/threading_pth.h>
+#endif
+#if SSTMAC_HAVE_PTHREAD
 #include <sstmac/software/threading/threading_pthread.h>
+#endif
 #include <sstmac/software/libraries/service.h>
 #include <sstmac/software/launch/complete_message.h>
 #include <sstmac/software/launch/launcher.h>
@@ -33,7 +37,6 @@
 #include <sstmac/software/process/app_manager.h>
 #include <sstmac/software/process/compute_scheduler.h>
 #include <sstmac/software/libraries/unblock_event.h>
-#include <sstmac/software/libraries/unblock_handler.h>
 
 #if SSTMAC_HAVE_UCONTEXT
 #include <sstmac/software/threading/threading_ucontext.h>
@@ -97,7 +100,7 @@ bool operating_system::cxa_finalizing_ = false;
 operating_system::os_thread_context operating_system::cxa_finalize_context_;
 
 
-#if SSTMAC_HAVE_PTH
+#if SSTMAC_HAVE_GNU_PTH
 #define pth_available "pth,"
 #else
 #define pth_available ""
@@ -145,7 +148,7 @@ operating_system::init_threading()
         "operating_system: there are no threading frameworks compatible with multithreaded SST - must have ucontext or pthread");
     #endif
 #else //not multithreaded
-    #if defined(SSTMAC_HAVE_PTH)
+    #if defined(SSTMAC_HAVE_GNU_PTH)
     threading_string = "pth";
     #elif defined(SSTMAC_HAVE_UCONTEXT)
     threading_string = "ucontext";
@@ -161,7 +164,7 @@ operating_system::init_threading()
   }
 
   if (threading_string == "pth") {
-#if defined(SSTMAC_HAVE_PTH)
+#if defined(SSTMAC_HAVE_GNU_PTH)
    #if SSTMAC_USE_MULTITHREAD
    spkt_throw(sprockit::value_error, 
     "operating_system: SSTMAC_THREADING=pth exists on system, but is not compatible with multithreading\n" 
@@ -332,28 +335,28 @@ operating_system::clone(node_id addr) const
 #endif
 
 void
+operating_system::sleep(timestamp t)
+{
+  node_->compute(t);
+}
+
+void
 operating_system::execute_kernel(ami::COMP_FUNC func,
-                                 sst_message* data)
+                                 event* data)
 {
   //first thing's first - make sure I have a core to execute on
   thread_data_t top = threadstack_.top();  
   thread* thr = top.second;  
   //this will block if the thread has no core to run on
   compute_sched_->reserve_core(thr);
-  //set up the key used to block/advance time
-  key* k = key::construct(sw::lib_compute::key_category);
-  data->set_key(k);
   //initiate the hardware events
   node_->execute_kernel(func, data);
-  //block until the hardware events are done
-  block(k);
-  delete k;
   compute_sched_->release_core(thr);
 }
 
 void
 operating_system::execute_kernel(ami::COMM_FUNC func,
-                                 sst_message* data)
+                                 message* data)
 {
   node_->execute_kernel(func, data);
 }
@@ -404,7 +407,7 @@ operating_system::switch_to_context(int aid, int tid)
 app_manager*
 operating_system::current_env()
 {
-  return sstmac_runtime::app_mgr(current_aid());
+  return runtime::app_mgr(current_aid());
 }
 
 library*
@@ -429,7 +432,7 @@ node_id
 operating_system::current_node_id()
 {
   os_thread_context& ctxt = static_os_thread_context();
-  node_id addr = sstmac_runtime::node_for_task(ctxt.current_aid, ctxt.current_tid);
+  node_id addr = runtime::node_for_task(ctxt.current_aid, ctxt.current_tid);
   return addr;
 }
 
@@ -580,7 +583,7 @@ operating_system::block(key* req)
 void
 operating_system::schedule_timeout(timestamp delay, key* k)
 {
-  send_delayed_self_event(delay, new timeout_event(this, k));
+  send_delayed_self_event_queue(delay, new timeout_event(this, k));
 }
 
 void
@@ -759,7 +762,7 @@ operating_system::task_threadid(const task_id &id) const
 node_id
 operating_system::task_addr(software_id sid) const
 {
-  return sstmac_runtime::app_mgr(sid.app_)->node_for_task(sid.task_);
+  return runtime::app_mgr(sid.app_)->node_for_task(sid.task_);
 }
 
 void
@@ -839,7 +842,7 @@ operating_system::lib(const std::string& name) const
 app_manager*
 operating_system::env(app_id aid) const
 {
-  return sstmac_runtime::app_mgr(aid);
+  return runtime::app_mgr(aid);
 }
 
 thread*
@@ -975,30 +978,25 @@ operating_system::start_app(app* theapp)
   add_application(theapp);
   switch_to_thread(thread_data_t(theapp->context_, theapp));
   //check pending messages
-  int psize = pending_messages_.size();
+  int psize = pending_eventss_.size();
   for (int i = 0; i < psize; i++) {
-    sst_message* msg = pending_messages_.front();
-    pending_messages_.pop_front();
-    handle_message(msg);
+    event* ev = pending_eventss_.front();
+    pending_eventss_.pop_front();
+    handle_event(ev);
   }
 }
 
 void
-operating_system::handle_message(sst_message* msg)
-{
-  if (msg->has_key()){
-    //I need to do some unblocking of a thread
-    unblock(msg->key());
-    return;
-  }
-  
-  //otherwise this is an incoming message to a library, probably from off node
-  library_interface* libmsg = test_cast(library_interface, msg);
+operating_system::handle_event(event* ev)
+{  
+  //this better be an incoming message to a library, probably from off node
+  library_interface* libmsg = test_cast(library_interface, ev);
   if (!libmsg) {
     spkt_throw_printf(sprockit::illformed_error,
-      "operating_system::handle_message: got message %s of type %s instead of library message",
-      msg->to_string().c_str(), msg->type().tostr());
+      "operating_system::handle_message: got message %s instead of library message",
+      ev->to_string().c_str());
   }
+
   std::string libn = libmsg->lib_name();
   spkt_unordered_map<std::string, library*>::const_iterator
     it = libs_.find(libn);
@@ -1014,15 +1012,15 @@ operating_system::handle_message(sst_message* msg)
       spkt_throw_printf(sprockit::os_error,
                      "operating_system::handle_message: can't find library %s on os %d for msg %s",
                      libmsg->lib_name().c_str(), int(addr()),
-                     msg->to_string().c_str());
+                     ev->to_string().c_str());
     } else {
       //drop the message
     }
   }
   else {
     os_debug("delivering message to lib %s: %s",
-        libn.c_str(), msg->to_string().c_str());
-    it->second->incoming_message(msg);
+        libn.c_str(), ev->to_string().c_str());
+    it->second->incoming_message(safe_cast(message, ev));
   }
 }
 

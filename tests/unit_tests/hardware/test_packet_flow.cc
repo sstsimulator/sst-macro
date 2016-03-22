@@ -52,7 +52,7 @@ test_arbitrator(UnitTest& unit)
   arb->set_outgoing_bw(link_bw);
 
 
-  sst_message* parent = new test_message(num_packets_in_parent * packet_size);
+  message* parent = new test_message(num_packets_in_parent * packet_size);
   packet_flow_payload* test_msg = new packet_flow_payload(parent, packet_size, 0);
   test_msg->set_bw(link_bw);
 

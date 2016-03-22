@@ -139,12 +139,12 @@ thread::cleanup()
 }
 
 class delete_thread_event :
-  public event
+  public event_queue_entry
 {
  public:
   delete_thread_event(thread* thr) :
     thr_(thr),
-    event(thr->os()->event_location(), thr->os()->event_location())
+    event_queue_entry(thr->os()->event_location(), thr->os()->event_location())
   {
   }
 
@@ -185,9 +185,7 @@ thread::run_routine(void* threadptr)
       //However, because of weird thread swapping the DES thread
       //might still operate on the thread... we need to delay the delete
       //until the DES thread has completely finished processing its current event
-      START_VALID_SCHEDULE(self->os())
       self->os()->schedule_now(new delete_thread_event(self));
-      STOP_VALID_SCHEDULE(self->os())
       //this doesn't so much kill the thread as context switch it out
       //it is up to the above delete thread event to actually to deletion/cleanup
       //all of this is happening ON THE THREAD - it kills itself

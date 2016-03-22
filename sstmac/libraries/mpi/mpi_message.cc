@@ -62,7 +62,6 @@ mpi_message::mpi_message(const std::string& libn,
   if (mintrans_ < 0) {
     mintrans_ = 0;
   }
-  sst_message::msgtype_ = NETWORK;
   protocol_ = protocol->get_prot_id();
   //cannot call recompute bytes yet because
   //I have not been assigned a content type
@@ -99,7 +98,6 @@ mpi_message::mpi_message(content_type_t content_type) :
   protocol_(mpi_protocol::EAGER0_SOCKET), ignore_seqnum_(false),
   type_packed_size_(1)
 {
-  sst_message::msgtype_ = NETWORK;
   recompute_bytes();
 }
 
@@ -112,7 +110,6 @@ mpi_message::mpi_message(const payload::const_ptr& content,
   ignore_seqnum_(false),
   type_packed_size_(1)
 {
-  sst_message::msgtype_ = NETWORK;
   recompute_bytes();
 }
 
@@ -121,7 +118,6 @@ mpi_message::mpi_message() :
   commid_(-1), count_(0),
   type_packed_size_(1)
 {
-  sst_message::msgtype_ = NETWORK;
 }
 
 void
@@ -294,7 +290,6 @@ mpi_message::to_string() const
 {
   std::stringstream ss;
   ss << "mpimessage("
-     << "msgtype=" << msgtype_.tostr() << "-" << msgtype_.value
      << ", nettype=" << network_message::tostr(network_message::type())
      << ", env=" << envelope_
      << ", mintrans=" << mintrans_

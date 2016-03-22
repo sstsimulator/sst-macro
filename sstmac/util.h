@@ -1,7 +1,9 @@
 #ifndef sstmac_UTIL_H
 #define sstmac_UTIL_H
 
-#ifdef __cplusplus
+#ifndef __cplusplus
+#error All codes must be compiled as C++ to work - cannot use a C-compiler
+#else
 #define EXTERN_C extern "C"
 #include <sprockit/sim_parameters.h>
 #include <sstmac/common/sstmac_env.h>
@@ -11,13 +13,6 @@
 #include <sstmac/software/process/global.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/task_id.h>
-#else
-#define EXTERN_C
-#endif
-
-//#ifdef __cplusplus
-#if 1
-
 
 typedef int (*main_fxn)(int,char**);
 typedef int (*empty_main_fxn)();
@@ -26,10 +21,9 @@ typedef int (*empty_main_fxn)();
  ignore_this_integer_completely = 42; \
  typedef int (*this_file_main_fxn)(__VA_ARGS__); \
  int user_skeleton_main_init_fxn(this_file_main_fxn fxn); \
- EXTERN_C int user_skeleton_main(__VA_ARGS__); \
+ extern "C" int user_skeleton_main(__VA_ARGS__); \
  int dont_ignore_this = user_skeleton_main_init_fxn(user_skeleton_main); \
- EXTERN_C \
- int user_skeleton_main(__VA_ARGS__)
+ extern "C" int user_skeleton_main(__VA_ARGS__)
 
 using sstmac::timestamp;
 
@@ -65,17 +59,7 @@ static int init_fxn() \
   return 42; \
 } \
 int sstmac_c_linkage_integer = init_fxn();
-
-#else
-double sstmac_now();
-#define USER_MAIN ignore_this_integer_completely; \
-extern int sstmac_c_linkage_integer; \
-int dummy_fxn_for_linkage(){ \
-  return sstmac_c_linkage_integer; \
-} \
-int user_skeleton_main
-#endif //cplusplus
-
 #endif
 
+#endif
 

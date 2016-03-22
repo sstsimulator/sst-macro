@@ -19,13 +19,11 @@
 
 ImplementFactory(sstmac::event_manager)
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-
 RegisterDebugSlot(event_manager);
 
 namespace sstmac {
 
-class stop_event : public event
+class stop_event : public event_queue_entry
 {
  public:
   virtual ~stop_event() {}
@@ -42,7 +40,7 @@ class stop_event : public event
 
   stop_event(event_manager* man) :
     man_(man),
-    event(event_loc_id::null, event_loc_id::null)
+    event_queue_entry(event_loc_id::null, event_loc_id::null)
   {
   }
 
@@ -94,7 +92,7 @@ event_manager::ipc_schedule(timestamp t,
   event_loc_id dst,
   event_loc_id src,
   uint32_t seqnum,
-  sst_message* msg)
+  event* ev)
 {
   spkt_throw_printf(sprockit::unimplemented_error,
    "%s::ipc_schedule: not valid for chosen event manager",
@@ -104,7 +102,7 @@ event_manager::ipc_schedule(timestamp t,
 void
 event_manager::schedule_stop(timestamp until)
 {
-  event* stopper = new stop_event(this);
+  event_queue_entry* stopper = new stop_event(this);
   schedule(until, 0, stopper);
 }
 
@@ -113,7 +111,7 @@ event_manager::multithread_schedule(
     int srcthread,
     int dstthread,
     uint32_t seqnum,
-    event* ev)
+    event_queue_entry* ev)
 {
   spkt_throw_printf(sprockit::unimplemented_error,
     "%s::multithread_schedule: not valid for chosen event manager",
@@ -253,6 +251,4 @@ event_manager::finish_stats()
 }
 
 }
-
-#endif
 

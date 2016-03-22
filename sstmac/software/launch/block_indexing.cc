@@ -44,7 +44,7 @@ block_indexing::allocate(
   long i = 0;
 
   char hostname[64];
-  app_manager* appman = sstmac_runtime::app_mgr(aid);
+  app_manager* appman = runtime::app_mgr(aid);
   std::stringstream sstr;
   int num_physical_nodes = nproc / ppn;
   if (nproc % ppn){

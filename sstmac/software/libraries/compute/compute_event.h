@@ -31,12 +31,16 @@ namespace sw {
  * that maps std::string keys to integer values.
  * Keys are defined in the libraries that use them.
  */
-class compute_message :
-  public sst_message
+class compute_event :
+  public event,
+  public sprockit::serializable_type<compute_event>
 {
 
+  ImplementSerializableDefaultConstructor(compute_event)
+
  public:
-  static message_type_t COMPUTE;
+  virtual void
+  serialize_order(sprockit::serializer &ser){}
 
   declare_expandable_enum(event_type_t);
 
@@ -46,9 +50,9 @@ class compute_message :
   static event_type_t intop;
   static event_type_t time;
 
-  compute_message();
+  compute_event();
 
-  virtual ~compute_message() {}
+  virtual ~compute_event() {}
 
   std::string
   to_string() const {
@@ -102,16 +106,6 @@ class compute_message :
     return core_;
   }
 
-  void
-  set_max_bw(double bw) {
-    max_bw_ = bw;
-  }
-
-  double
-  max_bw() const {
-    return max_bw_;
-  }
-
   hw::memory_access_id
   access_id() const {
     return unique_id_;
@@ -136,13 +130,11 @@ class compute_message :
   #define MAX_EVENTS 8
   uint64_t event_data_[MAX_EVENTS];
 
-  double max_bw_;
-
   hw::memory_access_id unique_id_;
 
 };
 
-implement_enum_functions(compute_message::event_type_t);
+implement_enum_functions(compute_event::event_type_t);
 
 }
 }  // end of namespace sstmac

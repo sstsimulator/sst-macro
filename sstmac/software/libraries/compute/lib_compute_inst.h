@@ -13,7 +13,7 @@
 #define SSTMAC_SOFTWARE_LIBRARIES_COMPUTE_LIB_COMPUTE_INST_H_INCLUDED
 
 #include <sstmac/software/libraries/compute/lib_compute.h>
-#include <sstmac/software/libraries/compute/compute_message.h>
+#include <sstmac/software/libraries/compute/compute_event_fwd.h>
 #include <sstmac/software/process/software_id.h>
 #include <sstmac/common/sstmac_config.h>
 #include <stdint.h>
@@ -36,7 +36,7 @@ class lib_compute_inst :
   ~lib_compute_inst() { }
 
   void
-  compute_inst(compute_message* msg);
+  compute_inst(compute_event* msg);
 
   void
   compute_detailed(uint64_t flops,

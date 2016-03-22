@@ -91,10 +91,10 @@ class api :
   now() const;
 
   void
-  schedule(timestamp t, event* ev);
+  schedule(timestamp t, event_queue_entry* ev);
 
   void
-  schedule_delay(timestamp t, event* ev);
+  schedule_delay(timestamp t, event_queue_entry* ev);
 
   virtual void
   init_factory_params(sprockit::sim_parameters *params);

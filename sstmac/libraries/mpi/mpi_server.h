@@ -73,13 +73,13 @@ class mpi_server :
   send(mpi_message* payload);
 
   virtual void
-  incoming_message(sst_message* msg);
+  incoming_message(message* msg);
 
  protected:
   void print_queues();
 
   virtual void
-  handle(sst_message*msg);
+  handle(event* ev);
 
   virtual void
   handle_recv(mpi_message* msg);
@@ -88,7 +88,7 @@ class mpi_server :
   handle_send(mpi_message* msg);
 
   void
-  start_send(sst_message* msg);
+  start_send(message* msg);
 
   virtual void
   handle_internode_send(mpi_message* msg);

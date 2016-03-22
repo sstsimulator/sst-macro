@@ -13,7 +13,6 @@
 #define SSTMAC_SOFTWARE_LIBRARIES_COMPUTE_LIB_COMPUTE_MEMMOVE_H_INCLUDED
 
 #include <sstmac/software/libraries/compute/lib_compute_inst.h>
-#include <sstmac/common/event_callback.h>
 
 namespace sstmac {
 namespace sw {
@@ -67,10 +66,10 @@ class lib_compute_memmove :
   do_access(long bytes);
 
   void
-  compute(sst_message* msg);
+  compute(message* msg);
 
   void
-  finish(sst_message* msg);
+  finish(message* msg);
 
 
  protected:

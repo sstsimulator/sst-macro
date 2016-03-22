@@ -97,7 +97,7 @@ circuit_nic::check_jobs()
 //
 void
 circuit_nic::send_to_network_link(
-  sst_message* payload,
+  message* payload,
   node_id recver,
   const timestamp &arrived)
 {
@@ -148,13 +148,13 @@ circuit_nic::send_to_network_link(
 }
 
 void
-circuit_nic::handle(sst_message* msg)
+circuit_nic::handle(message* msg)
 {
   nic::handle(msg);
 }
 
 void
-circuit_nic::timeout(sst_message* msg)
+circuit_nic::timeout(message* msg)
 {
   circuit_message::ptr circ = ptr_safe_cast(circuit_message, msg);
   if (circ == current_) { // we're still working on this, redo it
@@ -200,7 +200,7 @@ circuit_nic::timeout(sst_message* msg)
 }
 
 void
-circuit_nic::send_out_resetup(sst_message* msg)
+circuit_nic::send_out_resetup(message* msg)
 {
   if (current_) {
     injector_->handle(msg);
@@ -217,7 +217,7 @@ circuit_nic::injection_latency() const
 
 
 void
-circuit_nic::recv_chunk(message_chunk* chunk)
+circuit_nic::recv_chunk(packet* chunk)
 {
   circuit_message::ptr circ = ptr_safe_cast(circuit_message, chunk,
                                         "circuit_nic::do_recv: incoming message");
@@ -284,8 +284,8 @@ circuit_nic::recv_chunk(message_chunk* chunk)
 
     //schedule a message so we check the jobs again
     event_handler* ev = new_callback(this, &circuit_nic::newmsg,
-                                         sst_message*());
-    schedule(at + timestamp(10e-9), ev, sst_message*());
+                                         message*());
+    schedule(at + timestamp(10e-9), ev, message*());
 
     if (parent_msg->needs_ack()) {
       circuit_nic_debug("sending back hardware ack");

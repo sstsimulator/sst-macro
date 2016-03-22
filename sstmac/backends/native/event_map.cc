@@ -10,7 +10,6 @@
  */
 
 #include <sstmac/common/sstmac_config.h>
-#if !SSTMAC_INTEGRATED_SST_CORE
 
 #include <sstmac/backends/native/event_map.h>
 #include <sstmac/common/event_scheduler.h>
@@ -30,17 +29,17 @@ event_map::~event_map() throw ()
 {
 }
 
-event*
+event_queue_entry*
 event_map::pop_next_event()
 {
   queue_t::iterator it = queue_.begin();
-  event* ev = *it;
+  event_queue_entry* ev = *it;
   queue_.erase(it);
   return ev;
 }
 
 void
-event_map::add_event(event* ev)
+event_map::add_event(event_queue_entry* ev)
 {
 #if SSTMAC_SANITY_CHECK
   if (ev->event_location() == event_loc_id::uninitialized){
@@ -76,7 +75,8 @@ event_map::cancel_all_messages(event_loc_id canceled_loc)
   queue_t::iterator it = queue_.begin(), end = queue_.end();
   while (it != end){
     queue_t::iterator tmp = it++;
-    event* ev = *tmp;
+    event_queue_entry* ev = *tmp;
+
     if (ev->event_location() == canceled_loc){
       delete ev;
       queue_.erase(tmp);
@@ -87,4 +87,3 @@ event_map::cancel_all_messages(event_loc_id canceled_loc)
 }
 } // end of namespace sstmac
 
-#endif // !SSTMAC_INTEGRATED_SST_CORE

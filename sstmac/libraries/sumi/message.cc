@@ -7,13 +7,12 @@ DeclareSerializable(sstmac::transport_message)
 
 namespace sstmac {
   
-transport_message::transport_message(const payload_ptr& msg, long byte_length)
+transport_message::transport_message(const sumi::payload_ptr& msg, long byte_length)
   : library_interface("sumi"),
     network_message(byte_length),
     payload_(msg),
     buffer_(0)
 {
-  sst_message::msgtype_ = NETWORK;
 }
 
 void
@@ -32,7 +31,7 @@ transport_message::serialize_order(sprockit::serializer& ser)
 std::string
 transport_message::to_string() const
 {
-  sst_message* msg = ptr_test_cast(sst_message, payload_);
+  message* msg = ptr_test_cast(message, payload_);
   return sprockit::printf("sumi transport message %lu carrying %s",
     unique_id(), (msg ? msg->to_string().c_str() : "null"));
 }

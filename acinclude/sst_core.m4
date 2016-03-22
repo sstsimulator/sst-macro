@@ -25,9 +25,11 @@ AC_ARG_WITH([sst-core],
       AC_CHECK_HEADERS([sst/core/element.h], [],
           [AC_MSG_ERROR([Could not locate SST core header files at $SST])])
       have_integrated_core="yes"
+      SUMI_CPPFLAGS="$SST_INCLUDES"
     ], [
       AC_DEFINE_UNQUOTED([INTEGRATED_SST_CORE], 0, [Do not run on integrated SST core])
       AM_CONDITIONAL([INTEGRATED_SST_CORE], false)
+      SUMI_CPPFLAGS=""
     ]
 )
 
@@ -38,3 +40,4 @@ if test "X$have_integrated_core" = "Xyes"; then
 fi
 
 ])
+

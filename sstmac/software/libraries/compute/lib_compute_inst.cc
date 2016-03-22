@@ -12,6 +12,7 @@
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/software/libraries/compute/lib_compute_inst.h>
+#include <sstmac/software/libraries/compute/compute_event.h>
 #include <sprockit/keyword_registration.h>
 #include <sprockit/sim_parameters.h>
 
@@ -46,10 +47,10 @@ lib_compute_inst::compute_detailed(
   uint64_t bytes)
 {
   /** Configure the compute request */
-  compute_message* cmsg = new compute_message;
-  cmsg->set_event_value(compute_message::flop, flops);
-  cmsg->set_event_value(compute_message::intop, nintops);
-  cmsg->set_event_value(compute_message::mem_sequential, bytes);
+  compute_event* cmsg = new compute_event;
+  cmsg->set_event_value(compute_event::flop, flops);
+  cmsg->set_event_value(compute_event::intop, nintops);
+  cmsg->set_event_value(compute_event::mem_sequential, bytes);
 
   compute_inst(cmsg);
   delete cmsg;
@@ -83,7 +84,7 @@ lib_compute_inst::consume_params(sprockit::sim_parameters* params)
 }
 
 void
-lib_compute_inst::compute_inst(compute_message* cmsg)
+lib_compute_inst::compute_inst(compute_event* cmsg)
 {
   SSTMACBacktrace("Compute Instructions");
 

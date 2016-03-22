@@ -56,7 +56,7 @@ class packet_flow_handler :
   virtual ~packet_flow_handler() {}
 
   virtual void
-  handle(sst_message* msg);
+  handle(event* ev);
 
   virtual void
   handle_credit(packet_flow_credit* msg) = 0;

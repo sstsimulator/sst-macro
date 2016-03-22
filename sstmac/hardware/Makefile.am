@@ -37,19 +37,20 @@ nobase_library_include_HEADERS = \
   nic/null_nic.h \
   nic/netlink.h \
   nic/netlink_fwd.h \
-  nic/network_endpoint.h \
   noise/noise.h \
   node/node.h \
   node/node_fwd.h \
   node/null_node.h \
   node/simple_node.h \
+  common/clonable.h \
+  common/connection.h \
   common/failable.h \
+  common/fail_event.h \
+  common/packet.h \
+  common/packet_fwd.h \
+  common/param_expander.h \
   common/recv_cq.h \
   common/unique_id.h \
-  common/connection.h \
-  common/clonable.h \
-  common/messages/fail_message.h \
-  common/param_expander.h \
   packet_flow/packet_flow.h \
   packet_flow/packet_flow_stats.h \
   packet_flow/packet_flow_stats_fwd.h \
@@ -115,10 +116,10 @@ libsstmac_hw_la_SOURCES =  \
   processor/processor.cc \
   processor/simple_processor.cc \
   processor/instruction_processor.cc \
+  common/failable.cc \
+  common/packet.cc \
   common/param_expander.cc \
   common/recv_cq.cc \
-  common/failable.cc \
-  common/messages/fail_message.cc \
   memory/memory_model.cc \
   memory/simple_memory_model.cc \
   memory/null_memory_model.cc \

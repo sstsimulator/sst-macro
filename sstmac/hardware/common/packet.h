@@ -1,43 +1,39 @@
-#ifndef MESSAGE_CHUNK_H
-#define MESSAGE_CHUNK_H
+#ifndef sstmac_hardware_packet_h
+#define sstmac_hardware_packet_h
 
-#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/common/sst_event.h>
+#include <sstmac/common/messages/sst_message_fwd.h>
 #include <sprockit/metadata_bits.h>
 
 namespace sstmac {
+namespace hw {
 
-class message_chunk :
-  public sst_message
+class packet :
+  public event
 {
 
  public:
-  sst_message*
+  message*
   orig() const {
     return orig_;
   }
 
   virtual std::string
-  to_string() const = 0;
-
-  void
-  set_orig(sst_message* orig){
-    orig_ = orig;
-  }
-
-  sst_message*
-  parent() const {
-    return orig_;
+  to_string() const {
+    return "packet";
   }
 
   bool
-  is_tail() const;
+  is_tail() const {
+    return orig_;
+  }
 
-  virtual long
+  long
   byte_length() const {
     return num_bytes_;
   }
 
-  virtual uint64_t
+  uint64_t
   unique_id() const {
     return unique_id_;
   }
@@ -56,20 +52,26 @@ class message_chunk :
   serialize_order(sprockit::serializer& ser);
 
   virtual bool
-  is_chunk() const {
+  is_packet() const {
     return true;
   }
 
- protected:
-  message_chunk() {}
+  virtual node_id
+  toaddr() const = 0;
 
-  message_chunk(
-    sst_message* orig,
+  virtual node_id
+  fromaddr() const = 0;
+
+ protected:
+  packet() : orig_(0) {}
+
+  packet(
+    message* orig,
     long num_bytes,
     long byte_offset);
 
  protected:
-  sst_message* orig_;
+  message* orig_;
 
   long num_bytes_;
 
@@ -83,6 +85,7 @@ class message_chunk :
 
 
 }
+}
 
-#endif // MESSAGE_CHUNK_H
+#endif
 

@@ -21,44 +21,43 @@ packet_flow_endpoint::packet_flow_endpoint()
 }
 
 void
-packet_flow_endpoint::payload_arrived(packet_flow_payload* msg)
+packet_flow_endpoint::payload_arrived(packet_flow_payload* pkt)
 {
-  sst_message* parent_msg = completion_queue_.recv(msg);
-  debug_printf(sprockit::dbg::packet_flow, "payload arrived: %s->%s",
-    msg->to_string().c_str(),
-    (parent_msg ? parent_msg->to_string().c_str() : "not done"));
+  debug_printf(sprockit::dbg::packet_flow, "payload arrived: %s",
+    pkt->to_string().c_str());
+  message* parent_msg = completion_queue_.recv(pkt);
   if (parent_msg){
     exit_->handle(parent_msg);
   }
-  delete msg;
+  delete pkt;
 }
 
 void
-packet_flow_simple_endpoint::handle_payload(packet_flow_payload* msg)
+packet_flow_simple_endpoint::handle_payload(packet_flow_payload* pkt)
 {
-  payload_arrived(msg);
+  payload_arrived(pkt);
 }
 
 void
-packet_flow_null_endpoint::handle_payload(packet_flow_payload* msg)
+packet_flow_null_endpoint::handle_payload(packet_flow_payload* pkt)
 {
-  timestamp delay(msg->num_bytes() / msg->bw());
+  timestamp delay(pkt->num_bytes() / pkt->bw());
   debug_printf(sprockit::dbg::packet_flow,
     "scheduling payload %s to finish at endpoint after delay t=%12.8e",
-    msg->to_string().c_str(), delay.sec());
-  send_delayed_self_event(delay,
-    new_event(event_location(), this, &packet_flow_endpoint::payload_arrived, msg));
+    pkt->to_string().c_str(), delay.sec());
+  send_delayed_self_event_queue(delay,
+    new_event(event_location(), this, &packet_flow_endpoint::payload_arrived, pkt));
 }
 
 void
-packet_flow_cut_through_endpoint::handle_payload(packet_flow_payload* msg)
+packet_flow_cut_through_endpoint::handle_payload(packet_flow_payload* pkt)
 {
-  timestamp delay(msg->num_bytes() / msg->bw());
+  timestamp delay(pkt->num_bytes() / pkt->bw());
   debug_printf(sprockit::dbg::packet_flow,
     "scheduling payload %s to finish at endpoint after delay t=%12.8e",
-    msg->to_string().c_str(), delay.sec());
-  send_delayed_self_event(delay,
-    new_event(event_location(), this, &packet_flow_endpoint::payload_arrived, msg));
+    pkt->to_string().c_str(), delay.sec());
+  send_delayed_self_event_queue(delay,
+    new_event(event_location(), this, &packet_flow_endpoint::payload_arrived, pkt));
 }
 
 }

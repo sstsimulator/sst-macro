@@ -232,7 +232,7 @@ class socket_server :
   public sstmac::sw::service
 {
  public:
-  void incoming_message(sst_message* msg);
+  void incoming_message(message* msg);
 
   void open_socket(int number, socketapi* proc);
   void close_socket(int number);
