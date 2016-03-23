@@ -114,31 +114,7 @@ nic::init_factory_params(sprockit::sim_parameters *params)
 }
 
 void
-nic::recv_packet(event* pkt)
-{
-  spkt_throw_printf(sprockit::unimplemented_error,
-            "nic::recv_chunk: not valid for %s receiving %s",
-            to_string().c_str(), pkt->to_string().c_str());
-}
-
-void
-nic::recv_credit(event* pkt)
-{
-  //do nothing
-}
-
-void
 nic::delete_statics()
-{
-}
-
-void
-nic::finish_recv_ack(message* msg)
-{
-}
-
-void
-nic::finish_recv_req(message* msg)
 {
 }
 
@@ -165,7 +141,6 @@ nic::recv_message(message* msg)
       netmsg->nic_reverse(network_message::rdma_get_payload);
       netmsg->put_on_wire();
       internode_send(netmsg);
-      finish_recv_req(msg);
       break;
     }
     case network_message::nvram_get_request: {
@@ -177,7 +152,6 @@ nic::recv_message(message* msg)
     case network_message::payload_sent_ack:
     case network_message::rdma_put_sent_ack: {
       parent_->handle(netmsg);
-      finish_recv_ack(msg);
       break;
     }
     case network_message::failure_notification: {

@@ -190,45 +190,6 @@ class nic :
   ack_send(network_message* payload);
 
   /**
-   #handle receives all messages incoming from the NIC.
-   Once the message is received, if it is identified as an injection ack,
-   performs operations specific to an injeciton ack
-   @param msg
-  */
-  void
-  finish_recv_ack(message* msg);
-
-  /**
-   #handle receives all messages incoming from the NIC.
-   Once the message is received, if it is identified as an RDMA request
-   performs operations specific to an RDMA request
-   @param msg
-  */
-  void
-  finish_recv_req(message* msg);
-
-  /**
-   The NIC can either receive an entire message (bypass the byte-transfer layer)
-   or it can receive packets.  If an incoming message is just a packet,
-   it gets routed here.  By default, throws. This must be overriden by a specific NIC
-   model implementing packets.
-   @param chunk
-   @throws sprockit::unimplemented_error
-   */
-  virtual void
-  recv_packet(event* packet);
-
-  /**
-   #handle receives all messages incoming from the NIC.
-   Once the message is received, if it is identified as a credit,
-   the message is passed here. By default, recv_credit does nothing.
-   The should be overwritten by models employing buffers/credits.
-   @param msg
-  */
-  virtual void
-  recv_credit(event* packet);
-
-  /**
    The NIC can either receive an entire message (bypass the byte-transfer layer)
    or it can receive packets.  If an incoming message is a full message (not a packet),
    it gets routed here. Unlike #recv_chunk, this has a default implementation and does not throw.

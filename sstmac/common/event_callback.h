@@ -252,6 +252,22 @@ class generic_event_2_args :
 
 };
 
+template<class Cls, typename Fxn, class Arg1>
+event_queue_entry*
+new_event(Cls* cls, Fxn fxn, const Arg1& arg1)
+{
+  event_queue_entry* callback = new generic_event_1_args<Cls, Fxn, Arg1> (cls->event_location(), cls, fxn, arg1);
+  return callback;
+}
+
+template<class Cls, typename Fxn, class Arg1, class Arg2>
+event_queue_entry*
+new_event(Cls* cls, Fxn fxn, const Arg1& arg1, const Arg2& arg2)
+{
+  event_queue_entry* callback = new generic_event_2_args<Cls, Fxn, Arg1, Arg2> (cls->event_location(), cls, fxn, arg1, arg2);
+  return callback;
+}
+
 template<class Cls, typename Fxn>
 event_queue_entry*
 new_event(event_loc_id local, Cls* cls, Fxn fxn)

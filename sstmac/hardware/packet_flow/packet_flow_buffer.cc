@@ -53,11 +53,13 @@ packet_flow_network_buffer::packet_flow_network_buffer(
   const timestamp& credit_lat,
   int max_num_bytes,
   int num_vc,
+  int packet_size,
   packet_flow_bandwidth_arbitrator* arb)
   : packet_flow_finite_buffer(send_lat, credit_lat, max_num_bytes, arb),
     num_vc_(num_vc),
     queues_(num_vc),
-    credits_(num_vc, 0)
+    credits_(num_vc, 0),
+    packet_size_(packet_size)
 {
 }
 
@@ -283,8 +285,7 @@ packet_flow_network_buffer::queue_length() const
 {
   long bytes_sending = arb_->bytes_sending(now());
   long total_bytes_pending = bytes_sending + bytes_delayed_;
-  long queue_length = total_bytes_pending /
-                      packet_flow_payload::min_num_bytes_per_packet();
+  long queue_length = total_bytes_pending / packet_size_;
   debug_printf(sprockit::dbg::packet_flow | sprockit::dbg::packet_flow_queue,
     "On %s, %d bytes delayed, %d bytes sending, %d total pending, %d packets in queue",
      to_string().c_str(),
@@ -363,9 +364,11 @@ packet_flow_eject_buffer::init_credits(int port, int num_credits)
 
 packet_flow_injection_buffer::packet_flow_injection_buffer(
   const timestamp& out_lat,
-  packet_flow_bandwidth_arbitrator* arb)
+  packet_flow_bandwidth_arbitrator* arb,
+  int packet_size)
   : packet_flow_infinite_buffer(out_lat, arb),
-    credits_(0)
+    credits_(0),
+    packet_size_(packet_size)
 {
 }
 
@@ -392,18 +395,18 @@ packet_flow_injection_buffer::handle_credit(packet_flow_credit* msg)
   //we've cleared out some of the delay
   bytes_delayed_ -= msg->num_credits();
 
-  send_what_you_can();
-
   delete msg;
-}
+  //send_what_you_can();
 
+  //delete msg;
+}
 
 void
 packet_flow_injection_buffer::send_what_you_can()
 {
   while (!pending_.empty()){
     pending_send& next = pending_.front();
-    long num_bytes = std::min(next.bytes_left, long(packet_flow_payload::min_num_bytes_per_packet()));
+    long num_bytes = std::min(next.bytes_left, long(packet_size_));
     debug_printf(sprockit::dbg::packet_flow,
        "On %s, trying to send bytes {flow %lu, %d:%d} with %d credits available",
         to_string().c_str(), next.msg->unique_id(), next.offset, next.offset + num_bytes, credits_);
@@ -425,6 +428,7 @@ packet_flow_injection_buffer::send_what_you_can()
 void
 packet_flow_injection_buffer::do_handle_payload(packet_flow_payload* msg)
 {
+  credits_ -= msg->byte_length();
   //we only get here if we cleared the credits
   send(arb_, msg, input_, output_);
 }
@@ -488,8 +492,7 @@ packet_flow_injection_buffer::queue_length() const
 {
   long bytes_sending = arb_->bytes_sending(now());
   long total_bytes_pending = bytes_sending + bytes_delayed_;
-  long queue_length = total_bytes_pending /
-                      packet_flow_payload::min_num_bytes_per_packet();
+  long queue_length = total_bytes_pending / packet_size_;
   debug_printf(sprockit::dbg::packet_flow,
     "On %s, %d bytes delayed, %d total pending, %d packets in queue\n",
      to_string().c_str(),

@@ -47,6 +47,7 @@ nobase_library_include_HEADERS = \
   common/failable.h \
   common/fail_event.h \
   common/packet.h \
+  common/packetizer.h \
   common/packet_fwd.h \
   common/param_expander.h \
   common/recv_cq.h \
@@ -61,6 +62,7 @@ nobase_library_include_HEADERS = \
   packet_flow/packet_flow_endpoint.h \
   packet_flow/packet_flow_handler.h \
   packet_flow/packet_flow_nic.h \
+  packet_flow/packet_flow_packetizer.h \
   packet_flow/packet_flow_sender.h \
   packet_flow/packet_flow_switch.h \
   packet_flow/packet_flow_tiled_switch.h \
@@ -119,6 +121,7 @@ libsstmac_hw_la_SOURCES =  \
   processor/instruction_processor.cc \
   common/failable.cc \
   common/packet.cc \
+  common/packetizer.cc \
   common/param_expander.cc \
   common/recv_cq.cc \
   memory/memory_model.cc \
@@ -138,6 +141,7 @@ libsstmac_hw_la_SOURCES =  \
   packet_flow/packet_flow_endpoint.cc \
   packet_flow/packet_flow_handler.cc \
   packet_flow/packet_flow_nic.cc \
+  packet_flow/packet_flow_packetizer.cc \
   packet_flow/packet_flow_param_expander.cc \
   packet_flow/packet_flow_sender.cc \
   packet_flow/packet_flow_switch.cc \

@@ -6,6 +6,7 @@
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/hardware/packet_flow/packet_flow_endpoint.h>
 #include <sstmac/hardware/packet_flow/packet_flow_switch.h>
+#include <sstmac/hardware/packet_flow/packet_flow_packetizer.h>
 #include <sstmac/common/stats/stat_histogram.h>
 
 namespace sstmac {
@@ -33,14 +34,6 @@ class packet_flow_nic :
 
   virtual ~packet_flow_nic() throw ();
 
-  virtual int
-  initial_credits() const {
-    return buffer_size_;
-  }
-
-  virtual void
-  set_node(node* parent);
-
   void handle(event *ev);
 
   virtual void
@@ -50,49 +43,26 @@ class packet_flow_nic :
     connection_type_t ty,
     connectable* mod);
 
-  /**
-   Set up the injection/ejection links to the switch the NIC is connected to
-   @param sw The switch that injects/ejects
-   */
-  void
-  set_injection_output(int port, connectable* output);
-
-  void
-  set_ejection_input(int port, connectable* input);
-
   virtual void
   set_event_parent(event_scheduler* m);
-
-  virtual void
-  finalize_init();
 
   timestamp
   injection_latency() const {
     return inj_lat_;
   }
 
+  int
+  initial_credits() const {
+    return injection_credits_;
+  }
+
  protected:
-  virtual void
-  recv_packet(event* packet);
-
-  virtual void
-  recv_credit(event* credit);
-
   virtual void
   do_send(network_message* payload);
 
  protected:
-  stat_histogram* congestion_hist_;
-  stat_spyplot* congestion_spyplot_;
-  bool acc_delay_;
-
-  packet_flow_endpoint* endpoint_;
-  double inj_bw_;
+  packetizer* packetizer_;
   timestamp inj_lat_;
-  int buffer_size_;
-  packet_flow_buffer* inj_buffer_;
-  packet_flow_eject_buffer* ej_buffer_;
-  event_handler* inj_handler_;
   int injection_credits_;
 
 };
