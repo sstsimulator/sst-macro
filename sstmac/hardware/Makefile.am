@@ -18,6 +18,7 @@ libsstmac_hw_la_LDFLAGS =
 library_includedir=$(includedir)/sstmac/hardware
 
 nobase_library_include_HEADERS = \
+  analytic/simple/null_nic.h \
   analytic/simple/simple_nic.h \
   analytic/simple/simple_interconnect.h \
   analytic/simple/simple_switch.h \
@@ -34,7 +35,6 @@ nobase_library_include_HEADERS = \
   memory/null_memory_model.h \
   nic/nic_fwd.h \
   nic/nic.h \
-  nic/null_nic.h \
   nic/netlink.h \
   nic/netlink_fwd.h \
   noise/noise.h \
@@ -108,6 +108,7 @@ nobase_library_include_HEADERS = \
   router/fat_tree_router.h 
 
 libsstmac_hw_la_SOURCES =  \
+  analytic/simple/null_nic.cc \
   analytic/simple/simple_nic.cc \
   analytic/simple/simple_interconnect.cc \
   analytic/simple/simple_switch.cc \
@@ -125,7 +126,6 @@ libsstmac_hw_la_SOURCES =  \
   memory/null_memory_model.cc \
   nic/netlink.cc \
   nic/nic.cc \
-  nic/null_nic.cc \
   noise/noise.cc \
   node/node.cc \
   node/null_node.cc \

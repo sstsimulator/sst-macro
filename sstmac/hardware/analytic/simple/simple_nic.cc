@@ -46,15 +46,19 @@ simple_nic::do_send(network_message* msg)
 }
 
 void
+simple_nic::handle(event *ev)
+{
+  spkt_throw_printf(sprockit::value_error,
+    "simple_nic::handle: should never be called - should be routed directly to MTL handler");
+}
+
+void
 simple_nic::connect(
     int src_outport,
     int dst_inport,
     connection_type_t ty,
     connectable* mod)
 {
-  if (ty == connectable::output){
-    injector_ = safe_cast(event_handler, mod);
-  }
 }
 
 void

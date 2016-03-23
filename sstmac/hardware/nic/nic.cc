@@ -19,6 +19,7 @@
 #include <sstmac/common/stats/stat_local_int.h>
 #include <sstmac/common/stats/stat_global_int.h>
 #include <sstmac/common/event_manager.h>
+#include <sstmac/common/event_callback.h>
 #include <sprockit/statics.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
@@ -48,7 +49,8 @@ nic::nic() :
   local_bytes_sent_(0),
   global_bytes_sent_(0),
   interconn_(0),
-  parent_(0)
+  parent_(0),
+  mtl_handler_(0)
 {
 }
 
@@ -57,10 +59,18 @@ nic::~nic()
 }
 
 void
+nic::mtl_handle(event *ev)
+{
+  recv_message(static_cast<message*>(ev));
+}
+
+void
 nic::init_factory_params(sprockit::sim_parameters *params)
 {
   my_addr_ = node_id(params->get_int_param("id"));
   init_loc_id(event_loc_id(my_addr_));
+
+  mtl_handler_ = ev_callback(this, &nic::mtl_handle);
 
   negligible_size_ = params->get_optional_int_param("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
 
@@ -135,6 +145,13 @@ nic::finish_recv_req(message* msg)
 void
 nic::recv_message(message* msg)
 {
+  if (parent_->failed()){
+    return;
+  }
+
+  nic_debug("receiving message %p:%s",
+    msg, msg->to_string().c_str());
+
   network_message* netmsg = safe_cast(network_message, msg);
 
   nic_debug("handling message %s:%lu of type %s from node %d while running",
@@ -225,26 +242,6 @@ nic::handle_event(SST::Event *ev)
 #endif
 
 void
-nic::handle(event* ev)
-{
-  if (parent_->failed()){
-    return;
-  }
-
-  nic_debug("handling message %p:%s",
-    ev, ev->to_string().c_str());
-
-  if (ev->is_credit()){
-    recv_credit(ev);
-  } else if (ev->is_packet()){
-    recv_packet(ev);
-  } else {
-    recv_message(safe_cast(message, ev));
-  }
-
-}
-
-void
 nic::record_message(network_message* netmsg)
 {
   nic_debug("sending message %lu of size %ld of type %s to node %d: "
@@ -300,10 +297,6 @@ nic::internode_send(network_message* netmsg)
 void
 nic::finalize_init()
 {
-  //this is just a template nic
-  if (my_addr_ == node_id()) {
-    return;
-  }
 }
 
 void

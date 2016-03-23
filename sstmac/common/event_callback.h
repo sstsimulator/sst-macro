@@ -25,16 +25,15 @@ class event_callback : public event_handler
  public:
 
  public:
-  virtual ~event_callback();
+  virtual ~event_callback(){}
 
   virtual void
-  handle(event* ev);
-
-  virtual void
-  callback(event* ev) = 0;
+  handle(event* ev) = 0;
 
   virtual std::string
-  to_string() const;
+  to_string() const {
+    return "event callback";
+  }
 
  protected:
   event_callback(event_loc_id id)
@@ -60,7 +59,7 @@ class event_callback_instance : public event_callback
   }
 
   void
-  callback(event* ev) {
+  handle(event* ev) {
     (obj_->*fxn_)(ev);
   }
 
@@ -86,7 +85,7 @@ class event_callback_1_args : public event_callback
   }
 
   void
-  callback(event* ev) {
+  handle(event* ev) {
     Cls& obj = *obj_;
     (obj_->*fxn_)(ev, arg1_);
   }
@@ -114,12 +113,20 @@ class event_callback_2_args : public event_callback
   }
 
   void
-  callback(event* ev) {
+  handle(event* ev) {
     Cls& obj = *obj_;
     (obj_->*fxn_)(ev, arg1_, arg2_);
   }
 
 };
+
+template<class Cls, typename Fxn>
+event_callback*
+ev_callback(Cls* cls, Fxn fxn)
+{
+  event_callback* callback = new event_callback_instance<Cls, Fxn> (cls->event_location(), cls, fxn);
+  return callback;
+}
 
 template<class Cls, typename Fxn>
 event_callback*

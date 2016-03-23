@@ -188,11 +188,9 @@ macro_switch_interconnect::immediate_send(event_scheduler* src, message* msg, ti
     num_hops, hop_bw_, hop_latency_.sec(), injection_latency_.sec());
 
   if (dst_node){ //local operation
-    src->schedule(arrival, dst_node->get_nic(), msg);
+    src->schedule(arrival, dst_node->get_nic()->mtl_handler(), msg);
   } else {
-    //not a local operation - I have to derive a destination switch
-    switch_id sid = topology_->node_to_ejection_switch(msg->toaddr());
-    src->schedule(arrival, switches_.at(sid), msg);
+    src->ipc_schedule(arrival, dst_node, msg);
   }
 }
 

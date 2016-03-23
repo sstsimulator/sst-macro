@@ -122,11 +122,7 @@ packet_flow_nic::set_node(node* parent)
 void
 packet_flow_nic::finalize_init()
 {
-  if (my_addr_ == node_id()) {
-    return; //just a template nic
-  }
-
-  endpoint_->set_exit(this);
+  endpoint_->set_exit(mtl_handler());
   endpoint_->init_param1(addr());
 
   inj_buffer_->set_event_location(addr());
@@ -167,6 +163,19 @@ packet_flow_nic::connect(
     default:
       nic::connect(src_outport, dst_inport, ty, mod);
       break;
+  }
+}
+
+void
+packet_flow_nic::handle(event *ev)
+{
+  if (parent_->failed())
+    return;
+
+  if (ev->is_credit()){
+    recv_credit(ev);
+  } else {
+    recv_packet(ev);
   }
 }
 

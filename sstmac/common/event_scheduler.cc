@@ -265,11 +265,14 @@ event_scheduler::register_stat(stat_collector *coll)
 }
 
 void
-event_scheduler::schedule(timestamp t,
-                          event_handler* handler,
-                          event* ev)
+event_scheduler::ipc_schedule(timestamp t, event_handler* handler, event* ev)
 {
-#if SSTMAC_SANITY_CHECK
+  eventman_->ipc_schedule(t, handler->event_location(), event_location(), seqnum_++, ev);
+}
+
+void
+event_scheduler::sanity_check(timestamp t)
+{
   if (eventman_ == 0) {
     spkt_throw_printf(sprockit::null_error,
                      "event_scheduler::schedule: null event manager");
@@ -280,40 +283,45 @@ event_scheduler::schedule(timestamp t,
       "time has gone backwards %8.4e seconds",
       delta_t);
   }
-  if (!handler) {
-    spkt_throw_printf(sprockit::null_error,
-       "event_scheduler::schedule: null handler passed in");
+}
+
+void
+event_scheduler::multithread_schedule(int src_thread, int dst_thread,
+  timestamp t, event_queue_entry* ev)
+{
+  debug_printf(sprockit::dbg::event_manager,
+      "On %s, scheduling event at t=%12.8e srcthread=%d dstthread=%d",
+      to_string().c_str(), t.sec(), src_thread, dst_thread);
+  if (dst_thread != event_handler::null_threadid
+     && dst_thread != src_thread){
+    ev->set_time(t);
+    eventman_->multithread_schedule(
+      src_thread, dst_thread,
+      seqnum_++, ev);
+  } else {
+    eventman_->schedule(t, seqnum_++, ev);
   }
+}
+
+void
+event_scheduler::schedule(timestamp t,
+                          event_handler* handler,
+                          event* ev)
+{
+#if SSTMAC_SANITY_CHECK
+  sanity_check(t);
 #endif
   if (handler->ipc_handler()){
-    eventman_->ipc_schedule(t, handler->event_location(), event_location(), seqnum_++, ev);
+    ipc_schedule(t, handler, ev);
   }
-#if SSTMAC_USE_MULTITHREAD
-  else {
-    event_queue_entry* qev = new handler_event(msg, handler, event_location());
-    int dstthread = handler->thread_id();
-    int srcthread = this->thread_id();
-    debug_printf(sprockit::dbg::event_manager,
-        "On %s, scheduling event at t=%12.8e srcthread=%d dstthread=%d",
-        to_string().c_str(), t.sec(), srcthread, dstthread);
-    if (dstthread != event_handler::null_threadid
-       && dstthread != srcthread){
-      ev->set_time(t);
-      eventman_->multithread_schedule(
-        this->thread_id(),
-        handler->thread_id(),
-        seqnum_++,
-        qev);
-    } else {
-      eventman_->schedule(t, seqnum_++, qev);
-    }
-  }
-#else
   else {
     event_queue_entry* qev = new handler_event_queue_entry(ev, handler, event_location());
+#if SSTMAC_USE_MULTITHREAD
+    multithread_schedule(thread_id(), handler->thread_id(), timestamp t, qev);
+#else
     eventman_->schedule(t, seqnum_++, qev);
-  }
 #endif
+  }
 }
 #endif
 

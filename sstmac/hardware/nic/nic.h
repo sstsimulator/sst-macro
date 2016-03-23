@@ -105,6 +105,17 @@ class nic :
   virtual void
   finalize_init();
 
+  virtual void
+  handle(event *ev) = 0;
+
+  void
+  mtl_handle(event* ev);
+
+  event_handler*
+  mtl_handler() const {
+    return mtl_handler_;
+  }
+
   /**
     Perform the set of operations standard to all NICs.
     This then passes control off to a model-specific #do_send
@@ -133,11 +144,6 @@ class nic :
   virtual void
   set_event_parent(event_scheduler* m);
 
-  /**
-   @param msg  The incoming event
-  */
-  void
-  handle(event* ev);
 
  protected:
   nic();
@@ -163,7 +169,6 @@ class nic :
 
   int negligible_size_;
 
-  event_handler* injector_;
   interconnect* interconn_;
   node* parent_;
 
@@ -173,6 +178,7 @@ class nic :
   stat_histogram* hist_msg_size_;
   stat_local_int* local_bytes_sent_;
   stat_global_int* global_bytes_sent_;
+  event_handler* mtl_handler_;
 
  private:
   /**

@@ -73,6 +73,17 @@ class event_scheduler :
   cancel_all_messages();
 
   /**
+   * @brief ipc_schedule Should only be called on stub handlers for which handler->ipc_handler() returns true
+   * @param t         The time the event will run at
+   * @param handler   The handler to receive the event. This should always be a stub for a real handler on a remote process.
+   * @param ev        The event to deliver
+   */
+  void
+  ipc_schedule(timestamp t,
+    event_handler* handler,
+    event* ev);
+
+  /**
    * Add an event to the event queue, where msg will get delivered to handler at time t.
    * @param t Time at which the event should happen
    * @param handler The handler for the event
@@ -188,6 +199,13 @@ class event_scheduler :
   event_scheduler();
 
   uint32_t seqnum_;
+
+ private:
+  void sanity_check(timestamp t);
+
+  void
+  multithread_schedule(int src_thread, int dst_thread,
+    timestamp t, event_queue_entry* ev);
 
  private:
   event_manager* eventman_;

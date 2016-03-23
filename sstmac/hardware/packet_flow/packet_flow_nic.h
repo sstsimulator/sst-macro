@@ -41,6 +41,8 @@ class packet_flow_nic :
   virtual void
   set_node(node* parent);
 
+  void handle(event *ev);
+
   virtual void
   connect(
     int src_outport,
