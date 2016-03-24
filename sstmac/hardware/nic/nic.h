@@ -164,6 +164,15 @@ class nic :
     return bytes <= negligible_size_;
   }
 
+  /**
+   The NIC can either receive an entire message (bypass the byte-transfer layer)
+   or it can receive packets.  If an incoming message is a full message (not a packet),
+   it gets routed here. Unlike #recv_chunk, this has a default implementation and does not throw.
+   @param chunk
+   */
+  void
+  recv_message(message* msg);
+
  protected:
   node_id my_addr_;
 
@@ -188,15 +197,6 @@ class nic :
    */
   void
   ack_send(network_message* payload);
-
-  /**
-   The NIC can either receive an entire message (bypass the byte-transfer layer)
-   or it can receive packets.  If an incoming message is a full message (not a packet),
-   it gets routed here. Unlike #recv_chunk, this has a default implementation and does not throw.
-   @param chunk
-   */
-  void
-  recv_message(message* msg);
 
   void
   send_to_interconn(network_message* netmsg);

@@ -64,13 +64,6 @@ packet_flow_network_buffer::packet_flow_network_buffer(
 }
 
 void
-packet_flow_network_buffer::start_message(message* msg)
-{
-  spkt_throw(sprockit::illformed_error,
-    "packet_flow_network_buffer:: should never start a flow");
-}
-
-void
 packet_flow_network_buffer::init_credits(int port, int num_credits)
 {
   long num_credits_per_vc = num_credits / num_vc_;
@@ -342,13 +335,6 @@ packet_flow_eject_buffer::do_handle_payload(packet_flow_payload* msg)
 }
 
 void
-packet_flow_eject_buffer::start_message(message* msg)
-{
-  spkt_throw(sprockit::illformed_error,
-    "packet_flow_eject_buffer:: should never start a flow");
-}
-
-void
 packet_flow_eject_buffer::handle_credit(packet_flow_credit* msg)
 {
   spkt_throw_printf(sprockit::illformed_error,
@@ -402,52 +388,11 @@ packet_flow_injection_buffer::handle_credit(packet_flow_credit* msg)
 }
 
 void
-packet_flow_injection_buffer::send_what_you_can()
-{
-  while (!pending_.empty()){
-    pending_send& next = pending_.front();
-    long num_bytes = std::min(next.bytes_left, long(packet_size_));
-    debug_printf(sprockit::dbg::packet_flow,
-       "On %s, trying to send bytes {flow %lu, %d:%d} with %d credits available",
-        to_string().c_str(), next.msg->unique_id(), next.offset, next.offset + num_bytes, credits_);
-    if (credits_ < num_bytes){
-      return; //can't keep sending
-    }
-    packet_flow_payload* payload = new packet_flow_payload(next.msg, num_bytes, next.offset);
-    next.offset += num_bytes;
-    next.bytes_left -= num_bytes;
-    credits_ -= num_bytes;
-
-    if (next.bytes_left == 0)
-      pending_.pop_front();
-
-    handle_payload(payload);
-  }
-}
-
-void
 packet_flow_injection_buffer::do_handle_payload(packet_flow_payload* msg)
 {
   credits_ -= msg->byte_length();
   //we only get here if we cleared the credits
   send(arb_, msg, input_, output_);
-}
-
-void
-packet_flow_injection_buffer::start_message(message* msg)
-{
-  pending_send next;
-  next.bytes_left = msg->byte_length();
-  if (next.bytes_left == 0){
-    spkt_throw_printf(sprockit::value_error,
-        "packet_flow_injection_buffer::start: starting message with zero length: %s",
-        msg->to_string().c_str());
-  }
-  next.offset = 0;
-  next.msg = msg;
-  pending_.push_back(next);
-
-  send_what_you_can();
 }
 
 #if PRINT_FINISH_DETAILS

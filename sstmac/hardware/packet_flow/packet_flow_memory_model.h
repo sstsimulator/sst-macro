@@ -5,10 +5,12 @@
 #include <sstmac/software/libraries/compute/compute_event_fwd.h>
 #include <sstmac/hardware/packet_flow/packet_flow_arbitrator.h>
 #include <sstmac/hardware/packet_flow/packet_flow_sender.h>
-#include <sstmac/hardware/packet_flow/packet_flow_endpoint.h>
+#include <sstmac/hardware/packet_flow/packet_flow_packetizer.h>
 
 namespace sstmac {
 namespace hw {
+
+
 
 class memory_message : public message
 {
@@ -48,15 +50,12 @@ class memory_message : public message
   double max_bw_;
 };
 
-class packet_flow_memory_model;
-class packet_flow_memory_system :
-  public packet_flow_sender,
-  public packet_flow_MTL
+class packet_flow_memory_packetizer : public packet_flow_packetizer
 {
  public:
-  packet_flow_memory_system(int mtu, packet_flow_memory_model* parent);
+  packet_flow_memory_packetizer();
   
-  ~packet_flow_memory_system();
+  ~packet_flow_memory_packetizer();
 
   std::string
   packet_flow_name() const {
@@ -64,58 +63,37 @@ class packet_flow_memory_system :
   }
 
   void
-  do_handle_payload(packet_flow_payload* msg);
+  recv_credit(packet_flow_credit* credit);
 
   void
-  handle_credit(packet_flow_credit* msg);
-
-  void
-  init_credits(int port, int num_credits);
-
-  int
-  num_initial_credits() const;
-
-  void
-  set_input(int my_inport, int dst_outport, event_handler* input);
-
-  void
-  set_output(int my_outport, int dst_inport, event_handler* output);
-
-  void start_message(message* msg){}
+  recv_packet(packet_flow_payload* pkt){}
 
   virtual void
-  init_params(sprockit::sim_parameters* params);
+  init_factory_params(sprockit::sim_parameters* params);
 
   void finalize_init();
 
-  void init_noise_model();
+  void inject(int vn, long bytes, long byte_offset, message *payload);
 
-  void set_event_parent(event_scheduler *m);
-
-  void mtl_send(message* msg);
+  bool spaceToSend(int vn, int num_bits) const {
+    return true;
+  }
 
  private:
-  void send_to_endpoint(timestamp t, packet_flow_payload* msg);
+  void
+  handle_payload(int vn, packet_flow_payload* msg);
 
-  int allocate_channel();
+  void
+  init_noise_model();
 
  private:
   double max_bw_;
   double max_single_bw_;
   timestamp latency_;
   packet_flow_bandwidth_arbitrator* arb_;
-  packet_flow_endpoint* endpoint_;
   noise_model* bw_noise_;
   noise_model* interval_noise_;
-  packet_flow_memory_model* parent_;
   int num_noisy_intervals_;
-
-  struct pending_msg {
-    long byte_offset;
-    memory_message* msg;
-  };
-  std::vector<pending_msg> pending_;
-  std::list<int> channels_available_;
 
 };
 
@@ -124,7 +102,8 @@ class packet_flow_memory_system :
   A memory model compatible with the train message framework
 */
 class packet_flow_memory_model :
-  public memory_model
+  public memory_model,
+  public packetizer_callback
 {
  public:
   virtual ~packet_flow_memory_model();
@@ -143,8 +122,7 @@ class packet_flow_memory_model :
     memory_model::schedule(t, handler, msg);
   }
 
-  void
-  handle(event *ev);
+  void notify(int vn, message* msg);
 
   virtual void
   access(long bytes, double max_bw);
@@ -154,15 +132,17 @@ class packet_flow_memory_model :
     return max_single_bw_;
   }
 
- protected:
-  void
-  init_noise_model();
+ private:
+  int allocate_channel();
 
  private:
   //static int mtu_;
   double max_single_bw_;
   std::map<message*, sw::key*> pending_requests_;
-  packet_flow_memory_system* mem_sys_;
+  packet_flow_memory_packetizer* mem_packetizer_;
+  std::list<int> channels_available_;
+  int nchannels_;
+
 };
 
 }

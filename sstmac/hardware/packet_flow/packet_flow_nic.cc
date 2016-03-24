@@ -50,11 +50,16 @@ packet_flow_nic::init_factory_params(sprockit::sim_parameters *params)
   inj_lat_ = params->get_time_param("injection_latency");
   std::string default_arb = params->get_optional_param("arbitrator", "cut_through");
   packetizer_ = packetizer_factory::get_optional_param("packetizer", default_arb, params);
-  packetizer_->setNotify(mtl_handler());
+  packetizer_->setNotify(this);
+
+  packet_flow_nic_packetizer* packer = test_cast(packet_flow_nic_packetizer, packetizer_);
+  if (packer) packer->set_acker(mtl_handler());
+
 #if SSTMAC_INTEGRATED_SST_CORE
   injection_credits_ = params->get_byte_length_param("injection_credits");
 #endif
 }
+
 
 //
 // Goodbye.

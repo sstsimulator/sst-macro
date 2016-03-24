@@ -31,7 +31,7 @@ RegisterNamespaces("congestion_delays", "congestion_matrix");
 namespace sstmac {
 namespace hw {
 
-SpktRegister("cut_through", packetizer, packet_flow_cut_through_packetizer);
+SpktRegister("cut_through | null", packetizer, packet_flow_cut_through_packetizer);
 SpktRegister("simple", packetizer, packet_flow_simple_packetizer);
 
 packet_flow_nic_packetizer::packet_flow_nic_packetizer() :
@@ -103,6 +103,12 @@ packet_flow_nic_packetizer::init_factory_params(sprockit::sim_parameters *params
   ej_buffer_ = new packet_flow_eject_buffer(inj_lat, small_latency, buffer_size_, ej_arb);
 }
 
+void
+packet_flow_nic_packetizer::set_acker(event_handler *handler)
+{
+  inj_buffer_->set_acker(handler);
+}
+
 //
 // Goodbye.
 //
@@ -110,13 +116,6 @@ packet_flow_nic_packetizer::~packet_flow_nic_packetizer() throw ()
 {
   if (inj_buffer_) delete inj_buffer_;
   if (ej_buffer_) delete ej_buffer_;
-}
-
-void
-packet_flow_nic_packetizer::setNotify(event_handler *handler)
-{
-  packetizer::setNotify(handler);
-  inj_buffer_->set_acker(handler);
 }
 
 void
@@ -198,16 +197,18 @@ void
 packet_flow_simple_packetizer::recv_packet(packet_flow_payload *pkt)
 {
   recv_packet_common(pkt);
-  packetArrived(pkt);
+  int vn = 0;
+  packetArrived(vn, pkt);
 }
 
 void
 packet_flow_cut_through_packetizer::recv_packet(packet_flow_payload *pkt)
 {
+  int vn = 0;
   recv_packet_common(pkt);
   timestamp delay(pkt->num_bytes() / pkt->bw());
   send_delayed_self_event_queue(delay,
-    new_event(this, &packetizer::packetArrived, pkt));
+    new_event(this, &packetizer::packetArrived, vn, pkt));
 }
 
 }

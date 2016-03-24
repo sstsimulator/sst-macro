@@ -59,7 +59,6 @@ nobase_library_include_HEADERS = \
   packet_flow/packet_flow_arbitrator.h \
   packet_flow/packet_flow_buffer.h \
   packet_flow/packet_flow_crossbar.h \
-  packet_flow/packet_flow_endpoint.h \
   packet_flow/packet_flow_handler.h \
   packet_flow/packet_flow_nic.h \
   packet_flow/packet_flow_packetizer.h \
@@ -138,7 +137,6 @@ libsstmac_hw_la_SOURCES =  \
   packet_flow/packet_flow_arbitrator.cc \
   packet_flow/packet_flow_buffer.cc \
   packet_flow/packet_flow_crossbar.cc \
-  packet_flow/packet_flow_endpoint.cc \
   packet_flow/packet_flow_handler.cc \
   packet_flow/packet_flow_nic.cc \
   packet_flow/packet_flow_packetizer.cc \

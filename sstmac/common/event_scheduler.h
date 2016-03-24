@@ -288,6 +288,7 @@ class event_subscheduler :
   set_event_parent(event_scheduler* m){
     parent_ = m;
     init_thread_id(parent_->thread_id());
+    init_loc_id(parent_->event_location());
   }
 
   event_scheduler*

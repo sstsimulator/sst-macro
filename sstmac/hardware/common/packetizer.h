@@ -10,6 +10,12 @@
 namespace sstmac {
 namespace hw {
 
+class packetizer_callback
+{
+ public:
+  virtual void notify(int vn, message* msg) = 0;
+};
+
 class packetizer :
   public sprockit::factory_type,
   public event_subscheduler
@@ -18,15 +24,13 @@ class packetizer :
  public:
   void start(int vn, message* payload);
 
-  void packetArrived(packet* pkt);
+  void packetArrived(int vn, packet* pkt);
 
   void sendWhatYouCan(int vn);
 
-  virtual void setNotify(event_handler* handler){
+  void setNotify(packetizer_callback* handler){
     notifier_ = handler;
   }
-
-  void notify(message* msg);
 
   int packetSize() const {
     return packet_size_;
@@ -53,7 +57,7 @@ class packetizer :
 
   int packet_size_;
 
-  event_handler* notifier_;
+  packetizer_callback* notifier_;
 
 };
 

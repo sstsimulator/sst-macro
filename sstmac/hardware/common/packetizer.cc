@@ -51,11 +51,11 @@ packetizer::sendWhatYouCan(int vn)
 }
 
 void
-packetizer::packetArrived(packet* pkt)
+packetizer::packetArrived(int vn, packet* pkt)
 {
   message* parent_msg = completion_queue_.recv(pkt);
   if (parent_msg){
-    notifier_->handle(parent_msg);
+    notifier_->notify(vn, parent_msg);
   }
   delete pkt;
 }

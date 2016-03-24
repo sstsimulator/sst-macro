@@ -145,9 +145,6 @@ class packet_flow_network_buffer :
   void
   init_credits(int port, int num_credits);
 
-  virtual void
-  start_message(message* msg);
-
   void
   handle_credit(packet_flow_credit* msg);
 
@@ -204,9 +201,6 @@ class packet_flow_eject_buffer :
   return_credit(packet* msg);
 
   void
-  start_message(message* msg);
-
-  void
   do_handle_payload(packet_flow_payload* msg);
 
   std::string
@@ -227,9 +221,6 @@ class packet_flow_injection_buffer :
     const timestamp& out_lat,
     packet_flow_bandwidth_arbitrator* arb,
     int packet_size);
-
-  virtual void
-  start_message(message* msg);
 
   int
   queue_length() const;
@@ -254,21 +245,11 @@ class packet_flow_injection_buffer :
   }
 
  protected:
-  struct pending_send{
-    message* msg;
-    long bytes_left;
-    long offset;
-  };
-
   int packet_size_;
 
-  std::list<pending_send> pending_;
   long credits_;
 
   packet_flow_injection_buffer() {}
-
-  void
-  send_what_you_can();
 
 };
 

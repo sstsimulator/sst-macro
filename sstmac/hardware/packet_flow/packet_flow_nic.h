@@ -4,7 +4,6 @@
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/nic/netlink.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
-#include <sstmac/hardware/packet_flow/packet_flow_endpoint.h>
 #include <sstmac/hardware/packet_flow/packet_flow_switch.h>
 #include <sstmac/hardware/packet_flow/packet_flow_packetizer.h>
 #include <sstmac/common/stats/stat_histogram.h>
@@ -18,7 +17,8 @@ namespace hw {
  */
 class packet_flow_nic :
   public nic,
-  public packet_flow_component
+  public packet_flow_component,
+  public packetizer_callback
 {
 
  public:
@@ -35,6 +35,10 @@ class packet_flow_nic :
   virtual ~packet_flow_nic() throw ();
 
   void handle(event *ev);
+
+  void notify(int vn, message* msg){
+    recv_message(msg);
+  }
 
   virtual void
   connect(

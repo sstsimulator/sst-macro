@@ -4,7 +4,6 @@
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/nic/netlink.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
-#include <sstmac/hardware/packet_flow/packet_flow_endpoint.h>
 #include <sstmac/hardware/packet_flow/packet_flow_switch.h>
 #include <sstmac/hardware/common/packetizer.h>
 #include <sstmac/common/stats/stat_histogram.h>
@@ -71,6 +70,9 @@ class packet_flow_nic_packetizer :
 
   virtual void
   finalize_init();
+
+  void
+  set_acker(event_handler* handler);
 
  protected:
   void
