@@ -29,6 +29,9 @@ class recv_cq
   message*
   recv(packet* pkt);
 
+  message*
+  recv(uint64_t unique_id, int bytes, message* payload);
+
   void
   print();
 

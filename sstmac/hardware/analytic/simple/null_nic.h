@@ -1,6 +1,8 @@
 #ifndef NULLNIC_H
 #define NULLNIC_H
 
+#include <sstmac/common/sstmac_config.h>
+#if !SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/hardware/analytic/simple/simple_nic.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 
@@ -26,6 +28,8 @@ class null_nic :
 
 }
 }
+
+#endif
 
 
 #endif // NULLNIC_H

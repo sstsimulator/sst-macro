@@ -6,6 +6,10 @@
 #include <sstmac/hardware/common/packet.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/hardware/common/recv_cq.h>
+#if SSTMAC_INTEGRATED_SST_CORE
+#include <sstmac/sst_core/integrated_component.h>
+#include <sst/core/interfaces/simpleNetwork.h>
+#endif
 
 namespace sstmac {
 namespace hw {
@@ -36,6 +40,12 @@ class packetizer :
     return packet_size_;
   }
 
+#if SSTMAC_INTEGRATED_SST_CORE
+ public:
+  virtual void
+  init_sst_params(SST::Params& params, SST::Component* parent){}
+#endif
+
   virtual void
   init_factory_params(sprockit::sim_parameters *params);
 
@@ -59,9 +69,42 @@ class packetizer :
 
   packetizer_callback* notifier_;
 
+ protected:
+  void bytesArrived(int vn, uint64_t unique_id, int bytes, message* parent);
+
 };
 
 DeclareFactory(packetizer)
+
+#if SSTMAC_INTEGRATED_SST_CORE
+class SimpleNetworkPacket : public SST::Event
+{
+ public:
+  SimpleNetworkPacket(uint64_t id) : unique_id(id) {}
+  uint64_t unique_id;
+};
+
+class SimpleNetworkPacketizer :
+  public packetizer
+{
+ public:
+  bool spaceToSend(int vn, int num_bits) const;
+
+  void inject(int vn, long bytes, long byte_offset, message *payload);
+
+  virtual void init_sst_params(SST::Params &params, SST::Component *parent);
+
+  bool recvNotify(int vn);
+
+  bool sendNotify(int vn);
+
+ private:
+  SST::Interfaces::SimpleNetwork* m_linkControl;
+  SST::Interfaces::SimpleNetwork::HandlerBase* m_recvNotifyFunctor;
+  SST::Interfaces::SimpleNetwork::HandlerBase* m_sendNotifyFunctor;
+
+};
+#endif
 
 }
 }

@@ -74,6 +74,11 @@ class connectable_subcomponent :
   public event_subscheduler,
   public connectable
 {
+#if SSTMAC_INTEGRATED_SST_CORE
+ public:
+  virtual void
+  init_sst_params(SST::Params& params, SST::Component* parent){}
+#endif
 };
 
 }

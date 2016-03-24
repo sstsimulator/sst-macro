@@ -110,6 +110,8 @@ packet_flow_switch::packet_flow_switch(
   byte_hops_(0),
   xbar_(0)
 {
+  init_factory_params(SSTIntegratedComponent::params_);
+  init_sst_params(params);
 }
 #else
 packet_flow_switch::packet_flow_switch() :

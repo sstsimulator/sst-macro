@@ -51,14 +51,91 @@ packetizer::sendWhatYouCan(int vn)
 }
 
 void
+packetizer::bytesArrived(int vn, uint64_t unique_id, int bytes, message *parent)
+{
+  message* done = completion_queue_.recv(unique_id, bytes, parent);
+  if (done){
+    notifier_->notify(vn, done);
+  }
+}
+
+void
 packetizer::packetArrived(int vn, packet* pkt)
 {
-  message* parent_msg = completion_queue_.recv(pkt);
-  if (parent_msg){
-    notifier_->notify(vn, parent_msg);
-  }
+  bytesArrived(vn, pkt->unique_id(), pkt->byte_length(), pkt->orig());
   delete pkt;
 }
+
+#if SSTMAC_INTEGRATED_SST_CORE
+void
+SimpleNetworkPacketizer::init_sst_params(SST::Params& params, SST::Component* parent)
+{
+  m_linkControl = (SST::Interfaces::SimpleNetwork*)parent->loadSubComponent(
+                  params.find_string("module"), parent, params);
+
+
+
+  SST::UnitAlgebra link_bw(params.find_string("injection_bandwidth"));
+  SST::UnitAlgebra injection_buffer_size(params.find_string("injection_credits"));
+  SST::UnitAlgebra big_buffer("1GB");
+  m_linkControl->initialize(params.find_string("rtrPortName","rtr"),
+                              link_bw, 1, injection_buffer_size, big_buffer);
+
+  m_recvNotifyFunctor =
+      new SST::Interfaces::SimpleNetwork::Handler<SimpleNetworkPacketizer>(this,&SimpleNetworkPacketizer::recvNotify );
+
+  m_sendNotifyFunctor =
+      new SST::Interfaces::SimpleNetwork::Handler<SimpleNetworkPacketizer>(this,&SimpleNetworkPacketizer::sendNotify );
+
+  m_linkControl->setNotifyOnReceive( m_recvNotifyFunctor );
+  m_linkControl->setNotifyOnSend( m_sendNotifyFunctor );
+}
+
+bool
+SimpleNetworkPacketizer::sendNotify(int vn)
+{
+  sendWhatYouCan(vn);
+  return true;
+}
+
+bool
+SimpleNetworkPacketizer::recvNotify(int vn)
+{
+  SST::Interfaces::SimpleNetwork::Request* req = m_linkControl->recv(vn);
+  message* m = 0;
+  uint64_t unique_id;
+  if (req->tail){
+    m = static_cast<message*>(req->takePayload());
+    unique_id = m->unique_id();
+  } else {
+    SimpleNetworkPacket* p = static_cast<SimpleNetworkPacket*>(req->takePayload());
+    unique_id = p->unique_id;
+    delete p;
+  }
+  bytesArrived(vn, unique_id, req->size_in_bits/8, m);
+  delete req;
+  return true;
+}
+
+void
+SimpleNetworkPacketizer::inject(int vn, long bytes, long byte_offset, message* payload)
+{
+  SST::Interfaces::SimpleNetwork::nid_t dst = payload->toaddr();
+  SST::Interfaces::SimpleNetwork::nid_t src = payload->toaddr();
+  bool head = bytes == 0;
+  bool tail = (bytes + byte_offset) == payload->byte_length();
+  SST::Event* ev_payload;
+  if (tail){
+    ev_payload = payload;
+  } else {
+    ev_payload = new SimpleNetworkPacket(payload->unique_id());
+  }
+  SST::Interfaces::SimpleNetwork::Request* req =
+        new SST::Interfaces::SimpleNetwork::Request(dst, src, bytes*8, head, tail, ev_payload);
+  m_linkControl->send(req, vn);
+}
+#endif
+
 
 }
 }

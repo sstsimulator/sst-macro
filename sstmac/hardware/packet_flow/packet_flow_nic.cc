@@ -60,6 +60,14 @@ packet_flow_nic::init_factory_params(sprockit::sim_parameters *params)
 #endif
 }
 
+#if SSTMAC_INTEGRATED_SST_CORE
+void
+packet_flow_nic::init_sst_params(SST::Params &params, SST::Component* parent)
+{
+  packetizer_->init_sst_params(params, parent);
+}
+
+#endif
 
 //
 // Goodbye.

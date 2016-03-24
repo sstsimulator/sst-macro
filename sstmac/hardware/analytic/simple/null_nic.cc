@@ -5,6 +5,8 @@
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 
+#if !SSTMAC_INTEGRATED_SST_CORE
+
 namespace sstmac {
 namespace hw {
 
@@ -23,3 +25,4 @@ null_nic::init_factory_params(sprockit::sim_parameters* params)
 }
 }
 
+#endif

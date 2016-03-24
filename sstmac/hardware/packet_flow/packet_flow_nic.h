@@ -29,6 +29,11 @@ class packet_flow_nic :
     return sprockit::printf("packet flow nic(%d)", int(addr()));
   }
 
+#if SSTMAC_INTEGRATED_SST_CORE
+  virtual void
+  init_sst_params(SST::Params &params, SST::Component* parent);
+#endif
+
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
 
