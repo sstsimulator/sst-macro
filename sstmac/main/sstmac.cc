@@ -75,12 +75,8 @@ static void
 print_finish(std::ostream& os, double wall_time)
 {
 #if SSTMAC_REPO_BUILD
-  os << sprockit::printf("SUMI   repo:   %s\n", sumi_REPO_HEADER);
-  os << sprockit::printf("Sprockit repo:   %s\n", sprockit_REPO_HEADER);
   os << sprockit::printf("SSTMAC   repo:   %s\n", sstmac_REPO_HEADER);
 #else
-  os << sprockit::printf("SUMI   %s\n", SUMI_VERSION);
-  os << sprockit::printf("Sprockit %s\n", SPKT_VERSION);
   os << sprockit::printf("SSTMAC   %s\n", SSTMAC_VERSION);
 #endif
   os << sprockit::printf("SST/macro ran for %12.4f seconds\n", wall_time);

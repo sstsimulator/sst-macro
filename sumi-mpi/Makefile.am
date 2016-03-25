@@ -15,7 +15,7 @@ noinst_LTLIBRARIES = libsstmac_mpi.la
 
 library_includedir=$(includedir)/sumi-mpi
 
-AM_CPPFLAGS += -I$(top_builddir)/dumpi -I$(top_srcdir)/dumpi -I$(top_srcdir)/sumi -I$(top_builddir)/sumi 
+AM_CPPFLAGS += -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi -I$(top_srcdir)/sumi -I$(top_builddir)/sumi
 
 AM_FCFLAGS = -I$(top_builddir) -I$(top_srcdir) -m32 -m64
 

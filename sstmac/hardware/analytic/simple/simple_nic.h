@@ -40,6 +40,8 @@ class simple_nic :
   virtual void
   finalize_init();
 
+  void handle(event *ev);
+
   virtual void
   connect(
     int src_outport,

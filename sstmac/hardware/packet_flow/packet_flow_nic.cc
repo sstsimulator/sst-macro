@@ -38,13 +38,8 @@ SpktRegister("packet_flow", netlink, packet_flow_netlink,
 const int packet_flow_netlink::really_big_buffer = 1<<30;
 
 packet_flow_nic::packet_flow_nic() :
- endpoint_(0),
- inj_buffer_(0),
- ej_buffer_(0),
- congestion_spyplot_(0),
- congestion_hist_(0),
- inj_handler_(0),
- injection_credits_(0)
+  packetizer_(0),
+  injection_credits_(0)
 {
 }
 
@@ -52,92 +47,34 @@ void
 packet_flow_nic::init_factory_params(sprockit::sim_parameters *params)
 {
   nic::init_factory_params(params);
-
-  acc_delay_ = params->get_optional_bool_param("accumulate_congestion_delay",false);
-
-  if (params->has_namespace("congestion_delay_histogram")){
-    sprockit::sim_parameters* congestion_params = params->get_namespace("congestion_delay_histogram");
-    congestion_hist_ = test_cast(stat_histogram, stat_collector_factory::get_optional_param("type", "histogram", congestion_params));
-    if (!congestion_hist_){
-      spkt_throw_printf(sprockit::value_error,
-        "congestion delay stats must be histogram, %s given",
-        congestion_params->get_param("type").c_str());
-    }
-  }
-
-  if (params->has_namespace("congestion_delay_matrix")){
-    sprockit::sim_parameters* congestion_params = params->get_namespace("congestion_delay_matrix");
-    congestion_spyplot_ = test_cast(stat_spyplot, stat_collector_factory::get_optional_param("type", "spyplot_png", congestion_params));
-    if (!congestion_spyplot_){
-      spkt_throw_printf(sprockit::value_error,
-        "congestion matrix stats must be spyplot or spyplot_png, %s given",
-        congestion_params->get_param("type").c_str());
-    }
-  }
-  inj_bw_ = params->get_bandwidth_param("injection_bandwidth");
   inj_lat_ = params->get_time_param("injection_latency");
+  std::string default_arb = params->get_optional_param("arbitrator", "cut_through");
+  packetizer_ = packetizer_factory::get_optional_param("packetizer", default_arb, params);
+  packetizer_->setNotify(this);
 
-  buffer_size_ = params->get_optional_byte_length_param("eject_buffer_size", 1<<30);
+  packet_flow_nic_packetizer* packer = test_cast(packet_flow_nic_packetizer, packetizer_);
+  if (packer) packer->set_acker(mtl_handler());
 
-  int one_vc = 1;
-  //total hack for now, assume that the buffer itself has a low latency link to the switch
-  timestamp small_latency(10e-9);
-  packet_flow_bandwidth_arbitrator* inj_arb = packet_flow_bandwidth_arbitrator_factory::get_optional_param(
-        "arbitrator", "cut_through", params);
-  inj_arb->set_outgoing_bw(inj_bw_);
-  inj_buffer_ = new packet_flow_injection_buffer(small_latency, inj_arb);
-
-  //total hack for now, assume that the buffer has a delayed send, but ultra-fast credit latency
-  packet_flow_bandwidth_arbitrator* ej_arb = packet_flow_bandwidth_arbitrator_factory::get_optional_param(
-        "arbitrator", "cut_through", params);
-  ej_arb->set_outgoing_bw(inj_bw_);
-  ej_buffer_ = new packet_flow_eject_buffer(inj_lat_, small_latency, buffer_size_, ej_arb);
-
-  endpoint_ =
-    packet_flow_endpoint_factory::get_optional_param("arbitrator",
-        "cut_through", params);
 #if SSTMAC_INTEGRATED_SST_CORE
   injection_credits_ = params->get_byte_length_param("injection_credits");
 #endif
 }
+
+#if SSTMAC_INTEGRATED_SST_CORE
+void
+packet_flow_nic::init_sst_params(SST::Params &params, SST::Component* parent)
+{
+  packetizer_->init_sst_params(params, parent);
+}
+
+#endif
 
 //
 // Goodbye.
 //
 packet_flow_nic::~packet_flow_nic() throw ()
 {
-  if (inj_buffer_) delete inj_buffer_;
-  if (ej_buffer_) delete ej_buffer_;
-  if (endpoint_) delete endpoint_;
-  if (inj_handler_) delete inj_handler_;
-}
-
-void
-packet_flow_nic::set_node(node* parent)
-{
-  nic::set_node(parent);
-  if (inj_buffer_) inj_buffer_->set_acker(parent);
-}
-
-void
-packet_flow_nic::finalize_init()
-{
-  if (my_addr_ == node_id()) {
-    return; //just a template nic
-  }
-
-  endpoint_->set_exit(this);
-  endpoint_->init_param1(addr());
-
-  inj_buffer_->set_event_location(addr());
-  ej_buffer_->set_event_location(addr());
-
-  inj_buffer_->set_accumulate_delay(acc_delay_);
-  ej_buffer_->set_accumulate_delay(acc_delay_);
-
-  if (parent_) inj_buffer_->set_acker(parent_);
-
-  nic::finalize_init();
+  if (packetizer_) delete packetizer_;
 }
 
 void
@@ -147,13 +84,18 @@ packet_flow_nic::connect(
   connection_type_t ty,
   connectable* mod)
 {
+  packet_flow_nic_packetizer* packer = safe_cast(packet_flow_nic_packetizer, packetizer_);
   switch(ty) {
     case connectable::output: {
       if (src_outport != 0){
         spkt_throw(sprockit::illformed_error,
             "packet_flow_nic::connect: injection outport not zero");
       }
-      set_injection_output(dst_inport, mod);
+    #if !SSTMAC_INTEGRATED_SST_CORE
+      packet_flow_component* comp = safe_cast(packet_flow_component, mod);
+      injection_credits_ = comp->initial_credits();
+    #endif
+      packer->set_output(dst_inport, mod, injection_credits_);
       break;
     }
     case connectable::input: {
@@ -161,7 +103,7 @@ packet_flow_nic::connect(
         spkt_throw(sprockit::illformed_error,
             "packet_flow_nic::connect: ejection outport not zero");
       }
-      set_ejection_input(src_outport, mod);
+      packer->set_input(src_outport, mod);
       break;
     }
     default:
@@ -171,69 +113,24 @@ packet_flow_nic::connect(
 }
 
 void
-packet_flow_nic::recv_credit(event* credit)
+packet_flow_nic::handle(event *ev)
 {
-  inj_buffer_->handle_credit(safe_cast(packet_flow_credit, credit));
-}
-
-void
-packet_flow_nic::recv_packet(event* ev)
-{
-  packet* chunk = safe_cast(packet, ev);
-
-  ej_buffer_->return_credit(chunk);
-
-  if (congestion_hist_){
-    congestion_hist_->collect(chunk->delay_us()*1e-6); //convert to seconds
-  }
-  if (congestion_spyplot_){
-    long delay_ns = chunk->delay_us() * 1e3; //go to ns
-    congestion_spyplot_->add(chunk->fromaddr(), chunk->toaddr(), delay_ns);
-  }
-  endpoint_->handle(chunk);
-}
-
-void
-packet_flow_nic::set_injection_output(int inj_port, connectable* sw)
-{
-  event_handler* handler = safe_cast(event_handler, sw);
-  inj_buffer_->set_output(0, inj_port, handler);
-#if !SSTMAC_INTEGRATED_SST_CORE
-  packet_flow_component* comp = safe_cast(packet_flow_component, sw);
-  injection_credits_ = comp->initial_credits();
-#endif
-  inj_buffer_->init_credits(0, injection_credits_);
-  if (!inj_handler_)
-    inj_handler_ = ev_callback(event_location(), inj_buffer_, &packet_flow_buffer::start);
-}
-
-void
-packet_flow_nic::set_ejection_input(int ej_port, connectable* sw)
-{
-  event_handler* handler = safe_cast(event_handler, sw);
-  int only_port = 0;
-  ej_buffer_->set_output(only_port, only_port, this);
-  ej_buffer_->set_input(only_port, ej_port, handler);
+  packetizer_->handle(ev);
 }
 
 void
 packet_flow_nic::do_send(network_message* payload)
 {
   nic_debug("packet flow: sending %s", payload->to_string().c_str());
-  schedule_delay(inj_lat_, inj_handler_, payload);
+  int vn = 0; //we only ever use one virtual network
+  schedule_delay(inj_lat_, new_event(packetizer_, &packetizer::start, vn, payload));
 }
 
 void
 packet_flow_nic::set_event_parent(event_scheduler* m)
 {
   nic::set_event_parent(m);
-  inj_buffer_->set_event_parent(m);
-  ej_buffer_->set_event_parent(m);
-  endpoint_->set_event_parent(m);
-#if !SSTMAC_INTEGRATED_SST_CORE
-  if (congestion_hist_) m->register_stat(congestion_hist_);
-  if (congestion_spyplot_) m->register_stat(congestion_spyplot_);
-#endif
+  packetizer_->set_event_parent(m);
 }
 
 void

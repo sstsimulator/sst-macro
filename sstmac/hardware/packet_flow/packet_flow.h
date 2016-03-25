@@ -140,16 +140,6 @@ class packet_flow_payload :
   }
 
   /**
-   @return The minimum number of bytes needed in a train. An 8K
-   messages with min_bytes=4K will be split into two
-   messages of size 4K.
-   */
-  static int
-  min_num_bytes_per_packet() {
-    return min_num_bytes_per_packet_;
-  }
-
-  /**
    @return The number of bytes in this packet_flow, NOT
    the total number of bytes in the parent message.
    See #num_bytes_total
@@ -224,9 +214,6 @@ class packet_flow_payload :
   std::string
   to_string() const;
 
-  static void
-  init_statics(int min_bytes);
-
   void
   serialize_order(sprockit::serializer& ser);
 
@@ -238,8 +225,6 @@ class packet_flow_payload :
   double max_in_bw_;
 
   double arrival_;
-
-  static int min_num_bytes_per_packet_;
 
 };
 

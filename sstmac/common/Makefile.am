@@ -21,7 +21,6 @@ libsstmac_common_la_SOURCES = \
   cartgrid.cc \
   event_handler.cc \
   event_scheduler.cc \
-  event_callback.cc \
   logger.cc \
   mersenne_twister.cc \
   rng.cc \

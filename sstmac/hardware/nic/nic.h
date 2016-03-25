@@ -105,6 +105,17 @@ class nic :
   virtual void
   finalize_init();
 
+  virtual void
+  handle(event *ev) = 0;
+
+  void
+  mtl_handle(event* ev);
+
+  event_handler*
+  mtl_handler() const {
+    return mtl_handler_;
+  }
+
   /**
     Perform the set of operations standard to all NICs.
     This then passes control off to a model-specific #do_send
@@ -133,11 +144,6 @@ class nic :
   virtual void
   set_event_parent(event_scheduler* m);
 
-  /**
-   @param msg  The incoming event
-  */
-  void
-  handle(event* ev);
 
  protected:
   nic();
@@ -158,12 +164,20 @@ class nic :
     return bytes <= negligible_size_;
   }
 
+  /**
+   The NIC can either receive an entire message (bypass the byte-transfer layer)
+   or it can receive packets.  If an incoming message is a full message (not a packet),
+   it gets routed here. Unlike #recv_chunk, this has a default implementation and does not throw.
+   @param chunk
+   */
+  void
+  recv_message(message* msg);
+
  protected:
   node_id my_addr_;
 
   int negligible_size_;
 
-  event_handler* injector_;
   interconnect* interconn_;
   node* parent_;
 
@@ -173,6 +187,7 @@ class nic :
   stat_histogram* hist_msg_size_;
   stat_local_int* local_bytes_sent_;
   stat_global_int* global_bytes_sent_;
+  event_handler* mtl_handler_;
 
  private:
   /**
@@ -182,54 +197,6 @@ class nic :
    */
   void
   ack_send(network_message* payload);
-
-  /**
-   #handle receives all messages incoming from the NIC.
-   Once the message is received, if it is identified as an injection ack,
-   performs operations specific to an injeciton ack
-   @param msg
-  */
-  void
-  finish_recv_ack(message* msg);
-
-  /**
-   #handle receives all messages incoming from the NIC.
-   Once the message is received, if it is identified as an RDMA request
-   performs operations specific to an RDMA request
-   @param msg
-  */
-  void
-  finish_recv_req(message* msg);
-
-  /**
-   The NIC can either receive an entire message (bypass the byte-transfer layer)
-   or it can receive packets.  If an incoming message is just a packet,
-   it gets routed here.  By default, throws. This must be overriden by a specific NIC
-   model implementing packets.
-   @param chunk
-   @throws sprockit::unimplemented_error
-   */
-  virtual void
-  recv_packet(event* packet);
-
-  /**
-   #handle receives all messages incoming from the NIC.
-   Once the message is received, if it is identified as a credit,
-   the message is passed here. By default, recv_credit does nothing.
-   The should be overwritten by models employing buffers/credits.
-   @param msg
-  */
-  virtual void
-  recv_credit(event* packet);
-
-  /**
-   The NIC can either receive an entire message (bypass the byte-transfer layer)
-   or it can receive packets.  If an incoming message is a full message (not a packet),
-   it gets routed here. Unlike #recv_chunk, this has a default implementation and does not throw.
-   @param chunk
-   */
-  void
-  recv_message(message* msg);
 
   void
   send_to_interconn(network_message* netmsg);

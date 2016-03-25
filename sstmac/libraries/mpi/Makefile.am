@@ -15,7 +15,7 @@ noinst_LTLIBRARIES = libsstmac_mpi.la
 
 library_includedir=$(includedir)/sstmac/libraries/mpi
 
-AM_CPPFLAGS += -I$(top_builddir)/dumpi -I$(top_srcdir)/dumpi
+AM_CPPFLAGS += -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi
 
 AM_FCFLAGS = -I$(top_builddir) -I$(top_srcdir) -m32 -m64
 

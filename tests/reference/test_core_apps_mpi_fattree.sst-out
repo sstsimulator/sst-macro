@@ -8,8 +8,8 @@ testall[9] -- Testing payload broadcast
 testall[1]---- This should come FIRST --
 testall[8]-- Testing payload send/recv
 testall[3]-- Testing payload send/recv
-testall[6]-- Testing payload send/recv
 testall[7]-- Testing payload send/recv
+testall[6]-- Testing payload send/recv
 testall[3] -- Testing payload broadcast
 testall[7] -- Testing payload broadcast
 testall[2]-- Testing payload send/recv
@@ -45,10 +45,10 @@ testall[9] -- Testing vector payload broadcast
 testall[9] -- Testing buffer pointer payload broadcast
 testall[9] -- Testing reduce
 testall[3] -- Testing barrier
-testall[6] -- Testing vector payload broadcast
 testall[5] -- Testing vector payload broadcast
 testall[5] -- Testing buffer pointer payload broadcast
 testall[5] -- Testing reduce
+testall[6] -- Testing vector payload broadcast
 testall[6] -- Testing buffer pointer payload broadcast
 testall[6] -- Testing reduce
 testall[7] -- Testing vector payload broadcast
@@ -144,10 +144,10 @@ testall[8] -- Through scan
 testall[8] -- Testing comm create
 testall[3] -- Through scan
 testall[3] -- Testing comm create
-testall[5] -- Through scan
-testall[5] -- Testing comm create
 testall[6] -- Through scan
 testall[6] -- Testing comm create
+testall[5] -- Through scan
+testall[5] -- Testing comm create
 testall[9] -- Through scan
 testall[9] -- Testing comm create
 testall[7] -- Through scan
@@ -295,6 +295,6 @@ testall[5] -- Persistent: OK, I started them
 testall[5] -- Persistent: I'm through
 testall[1] -- Persistent: I'm through
 - Finished testing! 2 ERRORS - test not successful
-Total runtime 4002.6071ms
+Total runtime 4002.6060ms
 *** Event queue empty, exiting simulation... ***
 Simulation is complete, simulated time: 18.4467 Ms

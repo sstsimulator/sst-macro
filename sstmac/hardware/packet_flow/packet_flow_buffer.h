@@ -35,6 +35,8 @@ class packet_flow_buffer :
     return input_.handler->event_location();
   }
 
+
+
  protected:
   /**
    * @param send_lat
@@ -132,6 +134,7 @@ class packet_flow_network_buffer :
     const timestamp& credit_lat,
     int max_num_bytes,
     int num_vc,
+    int packet_size,
     packet_flow_bandwidth_arbitrator* arb);
 
   virtual ~packet_flow_network_buffer(){}
@@ -141,9 +144,6 @@ class packet_flow_network_buffer :
 
   void
   init_credits(int port, int num_credits);
-
-  virtual void
-  start_message(message* msg);
 
   void
   handle_credit(packet_flow_credit* msg);
@@ -179,6 +179,7 @@ class packet_flow_network_buffer :
   std::map<int, std::list<packet_flow_payload*> > blocked_messages_;
   bool queue_depth_reporting_;
   int queue_depth_delta_;
+  int packet_size_;
 };
 
 class packet_flow_eject_buffer :
@@ -200,9 +201,6 @@ class packet_flow_eject_buffer :
   return_credit(packet* msg);
 
   void
-  start_message(message* msg);
-
-  void
   do_handle_payload(packet_flow_payload* msg);
 
   std::string
@@ -221,16 +219,19 @@ class packet_flow_injection_buffer :
  public:
   packet_flow_injection_buffer(
     const timestamp& out_lat,
-    packet_flow_bandwidth_arbitrator* arb);
-
-  virtual void
-  start_message(message* msg);
+    packet_flow_bandwidth_arbitrator* arb,
+    int packet_size);
 
   int
   queue_length() const;
 
   void
   init_credits(int port, int num_credits);
+
+  bool
+  space_to_send(int bytes) const {
+    return credits_ >= bytes;
+  }
 
   void
   handle_credit(packet_flow_credit* msg);
@@ -244,19 +245,11 @@ class packet_flow_injection_buffer :
   }
 
  protected:
-  struct pending_send{
-    message* msg;
-    long bytes_left;
-    long offset;
-  };
+  int packet_size_;
 
-  std::list<pending_send> pending_;
   long credits_;
 
   packet_flow_injection_buffer() {}
-
-  void
-  send_what_you_can();
 
 };
 

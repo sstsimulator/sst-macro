@@ -25,8 +25,8 @@
 #include <iostream>
 
 namespace sstmac {
-
 namespace hw {
+
 #if !SSTMAC_INTEGRATED_SST_CORE
 SpktRegister("simple | simplenode", node, simple_node,
             "Simple node which implements basic OS/compute scheduling functionality");
@@ -53,7 +53,21 @@ simple_node::finalize_init()
   node::finalize_init();
 }
 
-#if !SSTMAC_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
+simple_node::simple_node(
+  SST::ComponentId_t id,
+  SST::Params& params) : node(id, params)
+{
+  init_factory_params(params_);
+  init_sst_params(params);
+}
+
+void
+simple_node::init_sst_params(SST::Params &params)
+{
+  nic_->init_sst_params(params, this);
+}
+#else
 void
 simple_node::set_event_manager(event_manager* m)
 {

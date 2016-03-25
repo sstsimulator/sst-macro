@@ -21,7 +21,7 @@ LDADD = $(top_builddir)/tests/mpi/util/libsstmac_tests_mpi_util.la \
     $(top_builddir)/sstmac/common/libsstmac_common.la                                \
     $(top_builddir)/sstmac/software/libsstmac_sw.la                                  \
     $(top_builddir)/sstmac/hardware/libsstmac_hw.la                                  \
-    $(top_builddir)/dumpi/dumpi/libundumpi/libundumpi.la				\
+    $(top_builddir)/sst-dumpi/dumpi/libundumpi/libundumpi.la				\
     $(top_builddir)/sstmac/backends/native/libsstmac_native.la                       \
     $(top_builddir)/sstmac/keywords/libsstmac_keywords.la			     \
 	$(top_builddir)/sstmac/main/libsstmac_dummy_skeleton.la              

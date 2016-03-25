@@ -22,32 +22,22 @@ recv_cq::print()
 }
 
 message*
-recv_cq::recv(packet* pkt)
+recv_cq::recv(uint64_t unique_id, int bytes, message* orig)
 {
-  incoming_msg& incoming  = bytes_recved_[pkt->unique_id()];
-  incoming.bytes_arrived += pkt->byte_length();
-
+  incoming_msg& incoming  = bytes_recved_[unique_id];
 #if SSTMAC_SANITY_CHECK
-  if (incoming.msg && pkt->orig()){
+  if (incoming.msg && orig){
     spkt_throw_printf(sprockit::illformed_error,
         "recv_cq::recv: only one message chunk should carry the parent payload for %lu",
-        pkt->unique_id());
+        unique_id);
   }
 #endif
-
-  if (pkt->orig()){
-#if DEBUG_CQ
-    coutn << sprockit::printf("Got parent message for id %lu\n", packet->unique_id());
-#endif
+  if (orig){
     //this guy is actually carrying the payload
-    incoming.msg = pkt->orig();
-    incoming.bytes_total = pkt->orig()->byte_length();
+    incoming.msg = orig;
+    incoming.bytes_total = orig->byte_length();
   }
-
-#if DEBUG_CQ
-    coutn << sprockit::printf("Now have %ld bytes for message %lu\n",
-            incoming.bytes_arrived, packet->unique_id());
-#endif
+  incoming.bytes_arrived += bytes;
 
 #if SSTMAC_SANITY_CHECK
   if (incoming.msg && (incoming.bytes_arrived > incoming.bytes_total)){
@@ -58,16 +48,19 @@ recv_cq::recv(packet* pkt)
   }
 #endif
   if (incoming.bytes_arrived == incoming.bytes_total){
-#if DEBUG_CQ
-    coutn << sprockit::printf("Ejecting id %lu\n", packet->unique_id());
-#endif
     message* ret = incoming.msg;
-    bytes_recved_.erase(pkt->unique_id());
+    bytes_recved_.erase(unique_id);
     return ret;
   }
   else {
     return NULL;
   }
+}
+
+message*
+recv_cq::recv(packet* pkt)
+{
+  return recv(pkt->unique_id(), pkt->byte_length(), pkt->orig());
 }
 
 }

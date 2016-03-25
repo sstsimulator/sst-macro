@@ -83,6 +83,9 @@ class SSTIntegratedComponent
   virtual void
   init_factory_params(sprockit::sim_parameters* params) = 0;
 
+  virtual void
+  init_sst_params(SST::Params& params);
+
   SST::SimTime_t
   extra_delay(timestamp t) const;
 

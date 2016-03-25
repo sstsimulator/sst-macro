@@ -18,7 +18,6 @@ RegisterDebugSlot(packet_flow_config,
 namespace sstmac {
 namespace hw {
 
-int packet_flow_payload::min_num_bytes_per_packet_ = 0;
 const double packet_flow_payload::uninitialized_bw = -1;
 
 void
@@ -38,12 +37,6 @@ packet_flow_payload::packet_flow_payload(
   bw_(uninitialized_bw),
   max_in_bw_(1.0)
 {
-}
-
-void
-packet_flow_payload::init_statics(int min_bytes)
-{
-  min_num_bytes_per_packet_ = min_bytes;
 }
 
 std::string

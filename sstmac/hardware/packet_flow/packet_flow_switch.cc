@@ -78,14 +78,7 @@ packet_flow_abstract_switch::init_factory_params(sprockit::sim_parameters *param
     = packet_flow_bandwidth_arbitrator_factory::get_optional_param(
         "arbitrator", "cut_through", params);
 
-  /**
-   sstkeyword {
-   docstring=The minimum number of bytes a single packet train can contain.ENDL
-   Raising this value increases the coarseness and lowers the accuracy.;
-   };
-   */
-  int min_bytes =
-    params->get_optional_int_param("mtu", 4096);
+
 
   /**
     sstkeyword {
@@ -105,8 +98,6 @@ packet_flow_abstract_switch::init_factory_params(sprockit::sim_parameters *param
   */
   params_->queue_depth_delta =
       params->get_optional_int_param("sanity_check_queue_depth_delta", 100);
-
-  packet_flow_payload::init_statics(min_bytes);
 }
 
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -119,6 +110,8 @@ packet_flow_switch::packet_flow_switch(
   byte_hops_(0),
   xbar_(0)
 {
+  init_factory_params(SSTIntegratedComponent::params_);
+  init_sst_params(params);
 }
 #else
 packet_flow_switch::packet_flow_switch() :
@@ -152,6 +145,8 @@ packet_flow_switch::init_factory_params(sprockit::sim_parameters *params)
   packet_flow_abstract_switch::init_factory_params(params);
 
   acc_delay_ = params->get_optional_bool_param("accumulate_congestion_delay",false);
+
+  packet_size_ = params->get_optional_byte_length_param("packet_size", 4096);
 
   if (params->has_namespace("congestion_matrix")){
     sprockit::sim_parameters* congestion_params = params->get_namespace("congestion_matrix");
@@ -241,6 +236,7 @@ packet_flow_switch::output_buffer(int port, double out_bw, int red)
                   timestamp(0), //assume credit latency to xbar is free
                   params_->xbar_output_buffer_num_bytes * red,
                   router_->max_num_vc(),
+                  packet_size_,
                   params_->link_arbitrator_template->clone(out_bw));
     out_buffer->set_event_location(my_addr_);
     int buffer_outport = 0;
