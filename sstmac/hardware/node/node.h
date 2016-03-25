@@ -192,8 +192,6 @@ class node :
 
   node_id my_addr_;
 
-  sprockit::sim_parameters* params_;
-
   memory_model* mem_model_;
 
   processor* proc_;

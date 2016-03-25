@@ -8,20 +8,6 @@
 namespace sstmac {
 namespace hw {
 
-packet_flow_payload*
-packet_flow_MTL::next_chunk(long byte_offset, message* parent)
-{
-  long bytes_left = parent->byte_length() - byte_offset;
-  long bytes_to_send = bytes_left > mtu_ ? mtu_ : bytes_left;
-
-  packet_flow_payload* payload = new packet_flow_payload(
-                                         parent,
-                                         bytes_to_send, //only a single message
-                                         byte_offset);
-
-  return payload;
-}
-
 packet_flow_sender::packet_flow_sender(
   const timestamp& send_lat,
   const timestamp& credit_lat)

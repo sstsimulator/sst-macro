@@ -25,16 +25,15 @@ class event_callback : public event_handler
  public:
 
  public:
-  virtual ~event_callback();
+  virtual ~event_callback(){}
 
   virtual void
-  handle(event* ev);
-
-  virtual void
-  callback(event* ev) = 0;
+  handle(event* ev) = 0;
 
   virtual std::string
-  to_string() const;
+  to_string() const {
+    return "event callback";
+  }
 
  protected:
   event_callback(event_loc_id id)
@@ -60,7 +59,7 @@ class event_callback_instance : public event_callback
   }
 
   void
-  callback(event* ev) {
+  handle(event* ev) {
     (obj_->*fxn_)(ev);
   }
 
@@ -86,7 +85,7 @@ class event_callback_1_args : public event_callback
   }
 
   void
-  callback(event* ev) {
+  handle(event* ev) {
     Cls& obj = *obj_;
     (obj_->*fxn_)(ev, arg1_);
   }
@@ -114,12 +113,20 @@ class event_callback_2_args : public event_callback
   }
 
   void
-  callback(event* ev) {
+  handle(event* ev) {
     Cls& obj = *obj_;
     (obj_->*fxn_)(ev, arg1_, arg2_);
   }
 
 };
+
+template<class Cls, typename Fxn>
+event_callback*
+ev_callback(Cls* cls, Fxn fxn)
+{
+  event_callback* callback = new event_callback_instance<Cls, Fxn> (cls->event_location(), cls, fxn);
+  return callback;
+}
 
 template<class Cls, typename Fxn>
 event_callback*
@@ -244,6 +251,22 @@ class generic_event_2_args :
   }
 
 };
+
+template<class Cls, typename Fxn, class Arg1>
+event_queue_entry*
+new_event(Cls* cls, Fxn fxn, const Arg1& arg1)
+{
+  event_queue_entry* callback = new generic_event_1_args<Cls, Fxn, Arg1> (cls->event_location(), cls, fxn, arg1);
+  return callback;
+}
+
+template<class Cls, typename Fxn, class Arg1, class Arg2>
+event_queue_entry*
+new_event(Cls* cls, Fxn fxn, const Arg1& arg1, const Arg2& arg2)
+{
+  event_queue_entry* callback = new generic_event_2_args<Cls, Fxn, Arg1, Arg2> (cls->event_location(), cls, fxn, arg1, arg2);
+  return callback;
+}
 
 template<class Cls, typename Fxn>
 event_queue_entry*

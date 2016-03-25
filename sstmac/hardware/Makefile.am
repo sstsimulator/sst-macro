@@ -18,6 +18,7 @@ libsstmac_hw_la_LDFLAGS =
 library_includedir=$(includedir)/sstmac/hardware
 
 nobase_library_include_HEADERS = \
+  analytic/simple/null_nic.h \
   analytic/simple/simple_nic.h \
   analytic/simple/simple_interconnect.h \
   analytic/simple/simple_switch.h \
@@ -34,7 +35,6 @@ nobase_library_include_HEADERS = \
   memory/null_memory_model.h \
   nic/nic_fwd.h \
   nic/nic.h \
-  nic/null_nic.h \
   nic/netlink.h \
   nic/netlink_fwd.h \
   noise/noise.h \
@@ -47,6 +47,7 @@ nobase_library_include_HEADERS = \
   common/failable.h \
   common/fail_event.h \
   common/packet.h \
+  common/packetizer.h \
   common/packet_fwd.h \
   common/param_expander.h \
   common/recv_cq.h \
@@ -58,9 +59,9 @@ nobase_library_include_HEADERS = \
   packet_flow/packet_flow_arbitrator.h \
   packet_flow/packet_flow_buffer.h \
   packet_flow/packet_flow_crossbar.h \
-  packet_flow/packet_flow_endpoint.h \
   packet_flow/packet_flow_handler.h \
   packet_flow/packet_flow_nic.h \
+  packet_flow/packet_flow_packetizer.h \
   packet_flow/packet_flow_sender.h \
   packet_flow/packet_flow_switch.h \
   packet_flow/packet_flow_tiled_switch.h \
@@ -108,6 +109,7 @@ nobase_library_include_HEADERS = \
   router/fat_tree_router.h 
 
 libsstmac_hw_la_SOURCES =  \
+  analytic/simple/null_nic.cc \
   analytic/simple/simple_nic.cc \
   analytic/simple/simple_interconnect.cc \
   analytic/simple/simple_switch.cc \
@@ -118,6 +120,7 @@ libsstmac_hw_la_SOURCES =  \
   processor/instruction_processor.cc \
   common/failable.cc \
   common/packet.cc \
+  common/packetizer.cc \
   common/param_expander.cc \
   common/recv_cq.cc \
   memory/memory_model.cc \
@@ -125,7 +128,6 @@ libsstmac_hw_la_SOURCES =  \
   memory/null_memory_model.cc \
   nic/netlink.cc \
   nic/nic.cc \
-  nic/null_nic.cc \
   noise/noise.cc \
   node/node.cc \
   node/null_node.cc \
@@ -135,9 +137,9 @@ libsstmac_hw_la_SOURCES =  \
   packet_flow/packet_flow_arbitrator.cc \
   packet_flow/packet_flow_buffer.cc \
   packet_flow/packet_flow_crossbar.cc \
-  packet_flow/packet_flow_endpoint.cc \
   packet_flow/packet_flow_handler.cc \
   packet_flow/packet_flow_nic.cc \
+  packet_flow/packet_flow_packetizer.cc \
   packet_flow/packet_flow_param_expander.cc \
   packet_flow/packet_flow_sender.cc \
   packet_flow/packet_flow_switch.cc \

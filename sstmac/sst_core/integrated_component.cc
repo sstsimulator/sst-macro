@@ -31,6 +31,11 @@ SSTIntegratedComponent::SSTIntegratedComponent(
 }
 
 void
+SSTIntegratedComponent::init_sst_params(SST::Params &params)
+{
+}
+
+void
 SSTIntegratedComponent::configure_self_link()
 {
   self_link_ = configureSelfLink("self", time_converter_, 
@@ -40,9 +45,6 @@ SSTIntegratedComponent::configure_self_link()
 void
 SSTIntegratedComponent::init(unsigned int phase)
 {
-  if (phase == 0){
-    init_factory_params(params_);
-  }
 }
 
 void

@@ -190,6 +190,8 @@ class packet_flow_switch :
 
   bool acc_delay_;
 
+  int packet_size_;
+
  private:
   void
   connect_output(

@@ -320,20 +320,6 @@ operating_system::construct(sprockit::sim_parameters* params)
   return ret;
 }
 
-#if 0
-operating_system*
-operating_system::clone(node_id addr) const
-{
-  operating_system* cln = new operating_system;
-  cln->startup_libs_ = startup_libs_;
-  cln->params_ = params_;
-  cln->compute_sched_ = compute_sched_->clone(cln);
-  if (ftq_trace_) cln->ftq_trace_ = ftq_trace_->clone_me(addr);
-  cln->finalize_init();
-  return cln;
-}
-#endif
-
 void
 operating_system::sleep(timestamp t)
 {

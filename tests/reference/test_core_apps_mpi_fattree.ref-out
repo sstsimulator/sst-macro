@@ -44,12 +44,12 @@ testall[3] -- Testing reduce
 testall[9] -- Testing vector payload broadcast
 testall[9] -- Testing buffer pointer payload broadcast
 testall[9] -- Testing reduce
-testall[6] -- Testing vector payload broadcast
-testall[6] -- Testing buffer pointer payload broadcast
-testall[6] -- Testing reduce
 testall[5] -- Testing vector payload broadcast
 testall[5] -- Testing buffer pointer payload broadcast
 testall[5] -- Testing reduce
+testall[6] -- Testing vector payload broadcast
+testall[6] -- Testing buffer pointer payload broadcast
+testall[6] -- Testing reduce
 testall[3] -- Testing barrier
 testall[7] -- Testing vector payload broadcast
 testall[7] -- Testing buffer pointer payload broadcast
@@ -244,13 +244,13 @@ testall[1] -- Testing alltoall
 testall[3] -- Testing alltoall
 testall[4] -- Testing probe
 testall[6] -- Testing probe
+testall[5] -- Testing probe
 testall[2] -- Testing probe
 testall[7] -- Testing probe
-testall[5] -- Testing probe
 testall[1] -- Testing probe
 testall[3] -- Testing probe
-testall[0] -- Testing probe
 testall[8] -- Testing probe
+testall[0] -- Testing probe
 testall[9] -- Testing probe
 ERROR at rank 0: test returned NOT completed, and it should not have
 ERROR at rank 0: iprobe returned NOT completed, and it should not have
@@ -295,5 +295,5 @@ testall[5] -- Persistent: OK, I started them
 testall[5] -- Persistent: I'm through
 testall[1] -- Persistent: I'm through
 - Finished testing! 2 ERRORS - test not successful
-Total runtime 4002.3732ms
-Estimated total runtime of           4.00238366 seconds
+Total runtime 4002.3720ms
+Estimated total runtime of           4.00238243 seconds

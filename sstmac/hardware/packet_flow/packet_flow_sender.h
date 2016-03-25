@@ -13,34 +13,11 @@
 namespace sstmac {
 namespace hw {
 
-class packet_flow_MTL
-{
- public:
-  packet_flow_MTL(int mtu) : mtu_(mtu) {}
-
-  virtual void mtl_send(message* msg) = 0;
-
-  packet_flow_payload*
-  next_chunk(long byte_offset, message* parent);
-
- private:
-  int mtu_;
-
-};
-
 class packet_flow_sender :
   public packet_flow_handler
 {
  public:
   virtual ~packet_flow_sender() {}
-
-  void
-  start(event* ev){
-    start_message(safe_cast(message, ev));
-  }
-
-  virtual void
-  start_message(message* msg) = 0;
 
   void
   set_acker(event_handler* acker) {
