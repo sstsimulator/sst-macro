@@ -2,6 +2,8 @@
 #ifndef SSTMAC_MICRO_INTEGRATED_SST_CORE_H_
 #define SSTMAC_MICRO_INTEGRATED_SST_CORE_H_
 
+#include <sst_config.h>
+
 #include <sst/core/element.h>
 #include <sst/core/params.h>
 
