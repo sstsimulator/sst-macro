@@ -1,0 +1,11 @@
+#! /usr/bin/env python
+
+import os
+
+if os.path.isdir(".git"):
+  print "yes"
+elif os.path.isfile(".git"):
+  print "yes" #submodule
+else:
+  print "no"
+

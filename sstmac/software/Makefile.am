@@ -16,10 +16,6 @@ libsstmac_sw_la_LDFLAGS =
 
 libsstmac_sw_la_LIBADD = 
 
-AM_CPPFLAGS += -I$(top_srcdir)/dumpi -I$(top_builddir)/dumpi
-
-AM_FCFLAGS = -I$(top_builddir) -I$(top_srcdir) -m32 -m64
-
 libsstmac_sw_la_SOURCES = \
   ami/ami.cc \
   api/api.cc \

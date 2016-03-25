@@ -10,7 +10,7 @@
 #
 include $(top_srcdir)/Makefile.common
 
-AM_CPPFLAGS += -I$(top_srcdir)/tests -I$(top_builddir)/dumpi -I$(top_srcdir)/dumpi 
+AM_CPPFLAGS += -I$(top_srcdir)/tests -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi
 
 if WITH_SUMI_MPI
 AM_CPPFLAGS += -I$(top_srcdir)/sumi -I$(top_builddir)/sumi

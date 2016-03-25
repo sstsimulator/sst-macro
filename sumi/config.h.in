@@ -1,0 +1,8 @@
+#include <sprockit/spkt_config.h>
+#if SPKT_HAVE_CPP11
+#include <cstdint>
+#endif
+
+#include @rdma_header_file_include@
+#define DEFAULT_TRANSPORT "@default_transport@"
+#define SUMI_USE_SPINLOCK @sumi_use_spinlock@

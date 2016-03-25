@@ -8,8 +8,8 @@ testall[9] -- Testing payload broadcast
 testall[1]---- This should come FIRST --
 testall[8]-- Testing payload send/recv
 testall[3]-- Testing payload send/recv
-testall[6]-- Testing payload send/recv
 testall[7]-- Testing payload send/recv
+testall[6]-- Testing payload send/recv
 testall[3] -- Testing payload broadcast
 testall[7] -- Testing payload broadcast
 testall[2]-- Testing payload send/recv

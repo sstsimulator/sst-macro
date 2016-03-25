@@ -14,7 +14,7 @@ include $(top_srcdir)/Makefile.common
 noinst_LTLIBRARIES = libsstmac_native.la
 
 AM_CPPFLAGS += -I$(top_srcdir)/sstmac/backends -I$(top_builddir)/sstmac/backends
-AM_CPPFLAGS += -I$(top_builddir)/dumpi -I$(top_srcdir)/dumpi
+AM_CPPFLAGS += -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi
 
 library_includedir=$(includedir)/sstmac/backends/native
 nobase_library_include_HEADERS = \

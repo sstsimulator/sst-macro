@@ -48,7 +48,7 @@ endif
 .PHONY: doc superclean gui
 doc:
 	cd docs && doxygen doxygen.cfg
-	cd dumpi && make doc
+	cd sst-dumpi && make doc
 
 if HAVE_QT
 gui:
@@ -74,7 +74,7 @@ superclean: clean distclean-am
 	rm -rf configure  autom4te.cache bin aclocal.m4 src/sstmacconfig.h.in config.log config.status
 	rm -f acinclude/ltsugar.m4 acinclude/libtool.m4 acinclude/ltversion.m4 acinclude/lt~obsolete.m4 acinclude/ltoptions.m4
 	rm -f src/sstmacconfig.h src/stamp-h1
-	cd dumpi; $(MAKE) superclean
+	cd sst-dumpi; $(MAKE) superclean
 	find . -name Makefile.in -type f |xargs rm -f
 	find . -name .deps -type d |xargs rm -rf
 	find . -name Makefile -type f |xargs rm -f
