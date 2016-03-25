@@ -11,6 +11,8 @@
 
 include $(top_srcdir)/Makefile.common
 
+AM_CPPFLAGS += -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi
+
 noinst_LTLIBRARIES = libsstmac_sw.la
 libsstmac_sw_la_LDFLAGS = 
 
