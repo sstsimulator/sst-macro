@@ -31,8 +31,8 @@ if test "X$have_integrated_core" = "Xyes"; then
     AC_DEFINE_UNQUOTED([INTEGRATED_SST_CORE], 1, [Run on integrated SST core])
     AC_SUBST([sst_prefix], "$SST")
     AM_CONDITIONAL([INTEGRATED_SST_CORE], true)
-    SST_INCLUDES="-I$SST/include -I$SST/include/sst"
-    SST_CPPFLAGS="-DSSTMAC_INTEGRATED_SST_CORE=1 $SST_INCLUDES"
+    SST_INCLUDES="-I$SST/include -I$SST/include/sst -I$SST/include/sst/core"
+    SST_CPPFLAGS="-DSSTMAC_INTEGRATED_SST_CORE=1 $SST_INCLUDES -D__STDC_FORMAT_MACROS"
     SAVE_CPPFLAGS="$CPPFLAGS"
     PY_INCLUDES="`python-config --includes`"
     SST_CPPFLAGS="$SST_CPPFLAGS $PY_INCLUDES"
