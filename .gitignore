@@ -22,6 +22,8 @@ sumi/configure
 
 sprockit/sprockit/sprockitconfig-generated.h.in
 sumi/sumi/sumiconfig-generated.h.in
+sprockit/sprockit/sprockitconfig-generated.h.in~
+sumi/sumi/sumiconfig-generated.h.in~
 
 autom4te.cache
 acinclude/libtool.m4

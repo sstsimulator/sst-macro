@@ -62,7 +62,7 @@ endif
 #
 
 if REPO_BUILD
-sstmac_repo.h: .git/refs/heads/master
+sstmac_repo.h: .git/refs/heads/@git_branch@
 	cd $(abs_top_srcdir) && $(abs_top_srcdir)/bin/make_repo_header $(abs_top_srcdir) sstmac
 endif
 
