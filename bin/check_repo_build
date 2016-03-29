@@ -4,7 +4,7 @@ import os
 import commands
 
 if os.path.isdir(".git"):
-  print commands.getoutput("git branch").strip().strip("*").strip()
+  print commands.getoutput("git rev-parse --abbrev-ref HEAD").strip()
 else:
   print ""
 
