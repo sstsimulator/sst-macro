@@ -2206,6 +2206,8 @@ mpi_api::barrier(mpi_comm* comm)
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Barrier(%s) on tag %d",
     comm_str(comm).c_str(), int(barriertag));
 
+  if (comm->size() == 1) return now();
+
   mpi_request* req = mpi_request::construct(default_key_category);
 
   mpi_collective* coll = strategy_->barrier()->execute(req, queue_, barriertag, comm, os_);
