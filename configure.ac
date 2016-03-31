@@ -127,9 +127,6 @@ if test "X$os" = "Xubuntu"; then
 LDFLAGS="$LDFLAGS -Wl,--no-as-needed"
 fi
 
-
-PKG_PROG_PKG_CONFIG()
-
 CHECK_CPP11()
 
 CHECK_PYTHON()
