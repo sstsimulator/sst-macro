@@ -3,8 +3,11 @@
 #include <sstmac/common/messages/sst_message.h>
 #include <sprockit/serializer.h>
 
+
 namespace sstmac {
 namespace hw {
+
+ImplementEnum(packet::field);
 
 packet::packet(
   message* orig,

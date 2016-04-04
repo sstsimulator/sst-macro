@@ -35,8 +35,6 @@ class message :
   public event
 {
 
- public:
-  declare_expandable_enum(field);
 
  public:
   virtual ~message() {}
@@ -75,20 +73,11 @@ class message :
   virtual uint64_t
   unique_id() const = 0;
 
-  template <class T>
-  T&
-  get_field(field name){
-    uint64_t* ptr = &fields_[name];
-    return *reinterpret_cast<T*>(ptr);
-  }
-
  protected:
   sw::key* key_;
-  std::map<field, uint64_t> fields_;
 
 };
 
-implement_enum_functions(message::field)
 
 
 

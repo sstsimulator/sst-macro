@@ -20,7 +20,6 @@
 
 namespace sstmac {
 
-ImplementEnum(message::field);
 
 message::message() :
   key_(0)
@@ -30,7 +29,6 @@ message::message() :
 void
 message::serialize_order(sprockit::serializer& ser)
 {
-  ser & fields_;
 }
 
 

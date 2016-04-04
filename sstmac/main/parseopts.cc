@@ -34,6 +34,9 @@ operator<<(std::ostream &os, const opts &oo)
 int
 parse_opts(int argc, char **argv, opts &oo)
 {
+  int no_congestion = 0;
+  int pisces_debug = 0;
+  int macrels_debug = 0;
   int dompitest = 0;
   int printnodes = 0;
   int no_wall_time = 0;
@@ -41,6 +44,7 @@ parse_opts(int argc, char **argv, opts &oo)
   int debugflags = 0;
   int dodumpi = 0;
   int lowrestimer = 0;
+  int run_ping_all = 0;
   option gopt[] = {
     { "help", no_argument, NULL, 'h' },
     { "include", required_argument, NULL, 'i' },
@@ -54,6 +58,10 @@ parse_opts(int argc, char **argv, opts &oo)
     { "debug-flags", no_argument, &debugflags, 1},
     { "mpitest", no_argument, &dompitest, 1 },
     { "print-nodes", no_argument, &printnodes, 1 },
+    { "pisces", no_argument, &pisces_debug, 1 },
+    { "macrels", no_argument, &macrels_debug, 1 },
+    { "ping-all", no_argument, &run_ping_all, 1 },
+    { "no-congestion", no_argument, &no_congestion, 1 },
     { "low-res-timer", no_argument, &lowrestimer, 1 },
     { "print-params", no_argument, &print_params, 1 },
     { "no-wall-time", no_argument, &no_wall_time, 1 },
@@ -121,9 +129,25 @@ parse_opts(int argc, char **argv, opts &oo)
     oo.print_params = true;
   }
 
+  if (no_congestion) {
+    oo.params->add_param("switch.arbitrator", "null");
+  }
+
   if (dodumpi) {
     oo.configfile = "debug.ini";
     oo.params->add_param("launch_app1", "parsedumpi");
+  }
+
+  if (pisces_debug) {
+    oo.configfile = "pisces.ini";
+  }
+
+  if (macrels_debug) {
+    oo.configfile = "macrels.ini";
+  }
+
+  if (run_ping_all){
+    oo.params->add_param("launch_app1", "mpi_ping_all");
   }
 
   if (debugflags){

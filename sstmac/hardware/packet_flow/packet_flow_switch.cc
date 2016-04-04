@@ -79,7 +79,6 @@ packet_flow_abstract_switch::init_factory_params(sprockit::sim_parameters *param
         "arbitrator", "cut_through", params);
 
 
-
   /**
     sstkeyword {
       docstring=Enables output queue depth reporting.ENDL

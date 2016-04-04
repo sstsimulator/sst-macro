@@ -10,6 +10,12 @@ SpktRegister("packet_flow", sprockit::param_expander, packet_flow_param_expander
 void
 packet_flow_param_expander::expand(sprockit::sim_parameters* params)
 {
+  std::string amm_type = params->get_param("amm_model");
+  if (amm_type == "amm4"){
+    tiled_switch_ = true;
+  } else {
+    tiled_switch_ = false;
+  } 
   //this is a switch network
   params->add_param("network_name", "switch");
   params->add_param("nic_name", "packet_flow");
@@ -36,7 +42,6 @@ packet_flow_param_expander::expand(sprockit::sim_parameters* params)
 
   buffer_depth_ = params->get_optional_int_param("network_buffer_depth", 8);
 
-  std::string amm_type = params->get_param("amm_model");
   //by default, quite coarse-grained
   int packet_size = params->get_optional_int_param("accuracy_parameter", 4096);
   int net_packet_size = params->get_optional_int_param("network_accuracy_parameter", packet_size);
@@ -49,7 +54,6 @@ packet_flow_param_expander::expand(sprockit::sim_parameters* params)
     params->add_param_override("packet_flow_arbitrator", params->get_param("arbitrator"));
   }
 
-  tiled_switch_ = false; //default
 
   if (amm_type == "amm1"){
     expand_amm1(params, net_packet_size, mem_packet_size);

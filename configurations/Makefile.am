@@ -16,6 +16,8 @@ library_include_HEADERS = \
     runtest.ini \
     cxx.ini \
     debug.ini \
+    pisces.ini \
+    macrels.ini \
     commodore64.ini \
     franklin.ini \
     hopper_pflow.ini \

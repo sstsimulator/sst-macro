@@ -7,8 +7,8 @@ namespace hw {
 double
 param_expander::nic_bandwidth_multiplier(sprockit::sim_parameters *params) const
 {
-  return 1.0; //revert so that injection bandwidth does not multiply
-  //return params->get_optional_int_param("injection_redundant", 1);
+  double ret = params->get_optional_int_param("injection_redundant", 1);
+  return ret;
 }
 
 double
