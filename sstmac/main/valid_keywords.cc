@@ -140,6 +140,7 @@ namespace sstmac {
   "network_train_injection_latency",  
   "network_train_injection_bw",  
   "packet_length",  
+  "packet_size",
   "network_concentration",
   "topology_geometry",   
   "topology_geometry",  
@@ -425,6 +426,11 @@ namespace sstmac {
   "netlink_radix",
   "intragroup_connection_file",
   "intergroup_connection_file",
+  "intensity",
+  "mixing",
+  "niterations",
+  "scatter",
+  "accumulate_congestion_delay",
   };
   static int main_sstmac_num_valid_keywords = sizeof(main_sstmac_valid_keywords) / sizeof(const char*);
 sprockit::StaticKeywordRegister _main_static_keyword_init_(main_sstmac_num_valid_keywords, main_sstmac_valid_keywords);

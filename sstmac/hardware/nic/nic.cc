@@ -28,7 +28,8 @@
 ImplementFactory(sstmac::hw::nic);
 RegisterDebugSlot(nic);
 
-RegisterNamespaces("nic", "message_sizes", "traffic_matrix");
+RegisterNamespaces("nic", "message_sizes", "traffic_matrix",
+                   "message_size_histogram");
 
 
 #if SSTMAC_INTEGRATED_SST_CORE
