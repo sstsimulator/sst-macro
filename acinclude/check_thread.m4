@@ -52,10 +52,14 @@ AC_DEFINE(HAVE_PTHREAD_AFFINITY_NP, 1,
 AC_ARG_ENABLE([cpu-affinity],
   [AS_HELP_STRING([--enable-cpu-affinity],
     [enable strict cpu affinity for multithreading])],
-  [with_cpu_affinity=$enableval],
+  [with_cpu_affinity=yes],
   [with_cpu_affinity=no])
 if test "X$with_cpu_affinity" = "Xyes"; then
-  AC_DEFINE_UNQUOTED([USE_CPU_AFFINITY], 1, "Whether to enable strict CPU affinity")
+  if test "X$darwin" = "Xno"; then
+    AC_DEFINE_UNQUOTED([USE_CPU_AFFINITY], 1, "Whether to enable strict CPU affinity")
+  else
+    AC_MSG_ERROR([--enable-cpu-affinity not available on darwin])
+  fi
 else
   AC_DEFINE_UNQUOTED([USE_CPU_AFFINITY], 0, "Whether to enable strict CPU affinity")
 fi
