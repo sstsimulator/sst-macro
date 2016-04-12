@@ -22,7 +22,6 @@
 #include <sstmac/backends/native/skeleton_app_manager.h>
 
 #include <sstmac/common/runtime.h>
-#include <sstmac/common/vis/vis.h>
 #include <sstmac/common/logger.h>
 
 #include <sstmac/dumpi_util/dumpi_meta.h>
@@ -235,8 +234,6 @@ macro_manager::init_factory_params(sprockit::sim_parameters* params)
 
   logger::timer_ = event_manager_;
 
-  has_vis_engine_ = params->has_param("vis_engine");
-
   //this should definitely be called last
   manager::init_factory_params(params);
 }
@@ -245,15 +242,6 @@ void
 macro_manager::start()
 {
   launch_apps();
-
-  // Setup the simulation before starting
-  if (has_vis_engine_) {
-    vis::vis_display* visd = test_cast(vis::vis_display, interconnect_);
-    if (visd) {
-      visd->vis_start(true);
-      std::cout << "--- Starting visualizer.\n";
-    }
-  }
 }
 
 //
@@ -282,14 +270,6 @@ macro_manager::run(timestamp until)
 void
 macro_manager::stop()
 {
-  if (has_vis_engine_){
-    vis::vis_display* visd = test_cast(vis::vis_display, interconnect_);
-    if (visd){
-      std::cout << "--- Closing vsisualizer.\n";
-      visd->vis_complete();
-    }
-  }
-
   event_manager::global = 0;
 
   runtime::finish();

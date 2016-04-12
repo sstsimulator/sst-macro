@@ -7,54 +7,6 @@
 #include <stdint.h>
 #include <vector>
 
-#ifdef SSTMAC_HAVE_VTK
-#include <vtkRenderWindow.h>
-#include <vtkCamera.h>
-#include <vtkActor.h>
-#include <vtkRenderer.h>
-#include <vtkMapper.h>
-#include <vtkPolyDataAlgorithm.h>
-#include <vtkTextActor.h>
-
-#include <vtkCubeSource.h>
-#include <vtkCylinderSource.h>
-#include <vtkPlaneSource.h>
-#include <vtkLineSource.h>
-
-#include <vtkPolyDataMapper.h>
-#include <vtkProperty.h>
-#include <vtkPolyDataWriter.h>
-#include <vtkXMLPolyDataWriter.h>
-#include <vtkAppendPolyData.h>
-
-#include <vtkMatrixToLinearTransform.h>
-#include <vtkTransform.h>
-#include <vtkCellData.h>
-#include <vtkPointData.h>
-#include <vtkSmartPointer.h>
-
-#include <vtkChartXY.h>
-#include <vtkPlotBar.h>
-#include <vtkPlotPoints.h>
-#include <vtkPlotStacked.h>
-#include <vtkTable.h>
-#include <vtkIntArray.h>
-#include <vtkFloatArray.h>
-#include <vtkLongArray.h>
-#include <vtkContextView.h>
-#include <vtkContextScene.h>
-#include <vtkRenderWindowInteractor.h>
-//#include <vtkRegressionTestImage.h>
-#include <vtkNew.h>
-#include <vtkColorSeries.h>
-#include <vtkChartLegend.h>
-#include <vtkLegendBoxActor.h>
-#include <vtkAxis.h>
-
-#define VTK_CREATE(type, name) \
-  vtkSmartPointer<type> name = vtkSmartPointer<type>::New()
-#endif
-
 #include <sprockit/unordered.h>
 
 #include <string>

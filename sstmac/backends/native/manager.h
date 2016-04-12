@@ -122,8 +122,6 @@ class macro_manager : public manager
   /// The event manager.
   event_manager* event_manager_;
 
-  bool has_vis_engine_;
-
   /// Monitor whether the simulator is currently running.
   bool running_;
 

@@ -53,11 +53,6 @@ class flattened_butterfly :
     return nfly_ - 1;
   }
 
-  virtual void
-  display_nodes(vis_switch_map &switches,
-                vis::vis_engine* eng,
-                std::list<vis::vis_obj*> &objs);
-
   void
   minimal_route_to_coords(
     const coordinates &src_coords,

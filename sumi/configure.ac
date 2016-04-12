@@ -72,9 +72,13 @@ else
   AM_CONDITIONAL(ENABLE_SST_SUBREPO, true)
 fi
 
-CHECK_REPO_BUILD([sumi])
+CHECK_PARENT_FLAGS()
 
+if test "X$with_parent_cxxflags" = "Xno"; then
 CHECK_CPP11()
+else
+CXXFLAGS="$with_parent_cxxflags $CXXFLAGS"
+fi
 
 CHECK_MPI()
 
@@ -97,11 +101,11 @@ echo "---------------------------------------------------------------"
 echo "Install prefix     $prefix"
 echo "C compiler         $CC"
 echo "C++ compiler       $CXX"
+echo "Preset CXXFLAGS    $with_parent_cxxflags"
 echo "CFLAGS             $CFLAGS"
 echo "CXXFLAGS           $CXXFLAGS"
 echo "CPPFLAGS           $CPPFLAGS"
 echo "LDFLAGS            $LDFLAGS"
 echo "SST Subrepo        $enable_sst_subrepo"
-echo "SST Conduit        $enable_sst"
 echo "MPI Conduit        $enable_mpi"
 echo "GNI Conduit        $enable_gni"

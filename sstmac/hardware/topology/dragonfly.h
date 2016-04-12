@@ -145,24 +145,6 @@ class dragonfly : public cartesian_topology
     const coordinates& src_coords,
     const coordinates& dest_coords) const;
 
-  double rad_d() const;
-
-  void
-  get_switch_XYZ(
-    int dflyx, int dflyy, int dflyg,
-    double &x, double &y, double &z);
-
-  vis::vis_obj*
-  create_global_vis_link(
-    vis::vis_engine* eng,
-    int x, int y,
-    int fromg, int tog);
-
-  virtual void
-  display_nodes(const vis_switch_map &switches,
-                vis::vis_engine* eng,
-                std::list<vis::vis_obj*> &objs);
-
   void
   nearest_neighbor_partners(
     const coordinates& src_sw_coords, int port,

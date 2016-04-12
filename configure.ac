@@ -101,13 +101,7 @@ AM_CONDITIONAL([DARWIN],[test "$darwin" = true])
 nat_des=yes # native DES
 sst_des=no  # SST/core DES
 
-# The withvals are (sometimes) interpreted as a path. If yes if given,
-# the set the withval variables to the empty string.
-if test "$nat_withval" = yes; then nat_withval=''; fi
-if test "$sst_withval" = yes; then sst_withval=''; fi
 
-AM_CONDITIONAL([USE_NATIVE], [test "$nat_des" = yes])
-AM_CONDITIONAL([USE_SST], [test "$sst_des" = yes])
 
 # Check compilers and environment
 dnl AC_PROG_RANLIB
@@ -127,14 +121,21 @@ if test "X$os" = "Xubuntu"; then
 LDFLAGS="$LDFLAGS -Wl,--no-as-needed"
 fi
 
+CHECK_SST_CORE()
+
+if test "X$have_integrated_core" = "Xyes"; then
+ac_configure_args="$ac_configure_args --with-cxxflags='$CXXFLAGS'"
+else
 CHECK_CPP11()
+CHECK_BOOST()
+fi
 
 CHECK_PYTHON()
 
 AM_CONDITIONAL(HAVE_REGEXP, false)
 
 # Check thread local storage
-CHECK_TLS()
+#CHECK_TLS()
 
 # Check what's available and what's requested for
 # thread context switching of applications
@@ -169,19 +170,12 @@ CHECK_THREAD_PARALLEL()
 
 CHECK_FORTRAN()
 
-CHECK_BOOST()
-
 CHECK_BACKTRACE_VIZ()
-
-CHECK_QT()
-
-CHECK_VTK()
 
 CHECK_INTEGER_TYPES()
 
 CHECK_STL_REPLACEMENT_HEADERS()
 
-CHECK_SST_CORE()
 
 #-------------------------------------------------
 # Configure subdirs
@@ -245,7 +239,6 @@ AC_CONFIG_FILES([
  tests/api/mpi/Makefile
  tests/api/globals/Makefile
  docs/doxygen.cfg
- qt-gui/config.h
  sumi-mpi/Makefile
 ])
 
@@ -261,10 +254,6 @@ echo "---------------------------------------------------------------"
 echo "Install prefix     $prefix"
 echo "C compiler         $CC"
 echo "C++ compiler       $CXX"
-if test "X$with_fortran" = "Xno"; then
-  FC="no"
-fi
-echo "Fortran compiler   $FC"
 
 echo "OS                 $os"
 
@@ -275,14 +264,10 @@ echo "Threading:"
 echo "  GNU Pth          $enable_pth"
 echo "  pthread          $enable_pthread"
 echo "  ucontext         $enable_ucontext"
-echo "  TLS              $with_tls"
 
 dnl echo "SST/macro Native   $native_des"
 dnl echo "Python             $PYTHON"
 echo "MPI parallel PDES  $with_mpiparallel"
-echo "Qt GUI support     $with_qt"
-dnl echo "Metis support      $with_metis"
-echo "VTK                $vtk_path"
 echo "CFLAGS             $CFLAGS"
 echo "CXXFLAGS           $CXXFLAGS"
 echo "CPPFLAGS           $CPPFLAGS"

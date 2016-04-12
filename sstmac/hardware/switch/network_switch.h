@@ -16,7 +16,6 @@
 
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
-#include <sstmac/common/vis/vis.h>
 
 #include <sstmac/hardware/common/connection.h>
 #include <sstmac/hardware/common/clonable.h>
@@ -37,8 +36,7 @@ namespace hw {
 
 class network_switch :
   public connectable_component,
-  public sprockit::factory_type,
-  public vis::vis_comp
+  public sprockit::factory_type
 {
  public:
   std::string
@@ -97,10 +95,6 @@ class network_switch :
 
   virtual int
   queue_length(int port) const = 0;
-
-  virtual void
-  vis_update(const timestamp &per) {
-  }
 
   /**
     @param addr The destination node addr to eject to

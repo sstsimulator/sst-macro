@@ -82,11 +82,25 @@ else
     AC_DEFINE_UNQUOTED([SANITY_CHECK], 0, [Whether safe mode should be run with sanity checks])
 fi
 
+CHECK_PARENT_FLAGS()
+
+if test "X$with_parent_cxxflags" = "Xno"; then
 CHECK_CPP11()
+else
+CXXFLAGS="$with_parent_cxxflags $CXXFLAGS"
+AC_MSG_CHECKING([C++11 headers])
+AC_CHECK_HEADERS([unordered_map],
+  AC_MSG_RESULT([yes])
+  AM_CONDITIONAL([HAVE_CPP11], true)
+  AC_DEFINE_UNQUOTED([HAVE_CPP11], 1)
+  ,
+  AC_MSG_RESULT([no])
+  AC_DEFINE_UNQUOTED([HAVE_CPP11], 0)
+  AM_CONDITIONAL([HAVE_CPP11], false)
+)
+fi
+
 CHECK_REGEX()
-
-CHECK_REPO_BUILD([sprockit])
-
 
 AH_TEMPLATE([ATOMIC_REFCOUNT], ["Whether refcounts need to be atomic operations - only x86 compatible"])
 AC_ARG_ENABLE(atomic-refcount,
@@ -129,30 +143,6 @@ else
 fi
 
 
-#sanity check the configuration
-if test "X$enable_cpp11" = "Xno" && test "X$with_external_boost" = "Xno" ; then 
-failed="no"
-
-if test "X$enable_regexp" = "Xyes"; then
-failed="yes"
-fi
-
-if test "X$enable_ordered_map" = "Xno"; then
-failed="yes"
-fi
-
-
-if test "X$failed" = "Xyes"; then
-AC_MSG_ERROR([If running with neither C++11 or external Boost, 
-make sure both --disable-regex and --disable-unordered-containers are given.
-Simulations will not do input file error checking (regex) and will 
-not use unordered map optimizations, but they will still
-run correctly to completion.])
-fi
-
-fi
-
-
 AC_CONFIG_FILES([
  Makefile
  test/Makefile
@@ -165,11 +155,8 @@ echo "---------------------------------------------------------------"
 echo "Install prefix     $prefix"
 echo "C compiler         $CC"
 echo "C++ compiler       $CXX"
-echo "  enable C++11     $enable_cpp11"
-if test "X$with_fortran" = "Xno"; then
-  FC="no"
-fi
-echo "Fortran compiler   $FC"
+echo "Enable C++11       $enable_cpp11"
+echo "Preset CXXFLAGS    $with_parent_cxxflags"
 
 if test "X$with_external_boost" = "Xno"; then
 echo "Boost              None"

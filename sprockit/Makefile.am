@@ -19,8 +19,4 @@ AM_LDFLAGS = $(BOOST_LDFLAGS)
 AM_LDFLAGS += $(BOOST_REGEX_LIB)
 endif
 
-if REPO_BUILD
-sprockit_repo.h: .git/refs/master
-	cd $(abs_top_srcdir) && $(abs_top_srcdir)/bin/make_repo_header $(abs_top_srcdir) sstmac
-endif
 

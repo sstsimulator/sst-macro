@@ -111,11 +111,6 @@ libsstmac_mpi_la_SOURCES = \
   sstmac_mpi.cc \
   type_operator.cc
 
-if FC_ENABLE
-  libsstmac_mpi_la_SOURCES += \
-    sstmac_mpi_f.cc
-endif
-
 
 nobase_library_include_HEADERS = \
   mpi_comm/keyval.h \
@@ -221,10 +216,5 @@ nobase_library_include_HEADERS = \
   sstmac_mpi_macro.h \
   type_operator.h
   
-
-if FC_ENABLE
-  nobase_library_include_HEADERS += \
-    sstmac_mpi_f.h
-endif
 
 

@@ -49,13 +49,6 @@ doc:
 	cd docs && doxygen doxygen.cfg
 	cd sst-dumpi && make doc
 
-if HAVE_QT
-gui:
-	cd qt-gui && $(QMAKE) $(abs_top_srcdir)/qt-gui/sstgui.pro
-	cd qt-gui && make
-	cp -r qt-gui/SSTMacro.app $(bindir)
-endif
-
 #doc-install: doc
 #	$(INSTALL) -d docs/sst-macroscale @docdir@
 #	cd dumpi && make doc-install

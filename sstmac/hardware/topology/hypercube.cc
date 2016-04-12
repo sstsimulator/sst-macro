@@ -137,14 +137,6 @@ hypercube::connect_objects(internal_connectable_map& objects)
 }
 
 void
-hypercube::display_nodes(const vis_switch_map &switches,
-                         vis::vis_engine* eng,
-                         std::list<vis::vis_obj*>& objs)
-{
-  spkt_throw_printf(sprockit::unimplemented_error, "hypercube::display_nodes");
-}
-
-void
 hypercube::productive_path(
   int dim,
   const coordinates &src,

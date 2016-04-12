@@ -41,8 +41,7 @@ sst_switch_interconnect::init_factory_params(sprockit::sim_parameters *params)
 }
 #else
 
-macro_switch_interconnect::macro_switch_interconnect() :
-  vis_display("interconnect")
+macro_switch_interconnect::macro_switch_interconnect() 
 {
 }
 
@@ -91,7 +90,6 @@ macro_switch_interconnect::init_factory_params(sprockit::sim_parameters* params)
   /** This builds the nodes */
   interconnect_base::init_factory_params(params);
   runtime::set_temp_topology(topology_);
-  vis_display::init_factory_params(params);
 
   internal_map switches;
   sprockit::sim_parameters* switch_params = params->get_namespace("switch");
@@ -241,22 +239,6 @@ macro_switch_interconnect::set_event_manager(event_manager* m)
 }
 
 
-vis::vis_topology::vis_switch_map
-macro_switch_interconnect::vis_nodes()
-{
-  vis::vis_topology::vis_switch_map vismap;
-  switch_map::iterator it, end = switches_.end();
-  for (it = switches_.begin(); it != end; it++) {
-    vismap[it->first] = it->second;
-  }
-  return vismap;
-}
-
-vis::vis_topology*
-macro_switch_interconnect::vis_topol()
-{
-  return topology_;
-}
 #endif
 
 }
