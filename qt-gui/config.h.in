@@ -1,3 +1,0 @@
-#define GUI_CONFIGURATION_FILE "@gui_config_file@"
-#define GUI_SRC_INCLUDE_PATH "@gui_src_include_path@"
-#define GUI_INSTALL_INCLUDE_PATH "@gui_install_include_path@"
