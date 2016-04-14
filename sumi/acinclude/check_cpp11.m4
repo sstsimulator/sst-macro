@@ -2,8 +2,6 @@
 
 AC_DEFUN([CHECK_CPP11], [
 
-AH_TEMPLATE([HAVE_CPP11],
-            [Define to use C++11 language features])
 AC_ARG_ENABLE(cpp11,
   [AS_HELP_STRING(
     [--(dis|en)able-cpp11],
@@ -55,16 +53,6 @@ enable_cpp11=no
 fi
 fi
 
-if test "X$enable_cpp11" = "Xyes"; then
-    AC_DEFINE_UNQUOTED([HAVE_CPP11], 1,
-     [Whether to use C++11 language features])
-    AM_CONDITIONAL([HAVE_CPP11], true)
-else
-    AC_DEFINE_UNQUOTED([HAVE_CPP11], 0,
-     [Whether to use C++11 language features])
-    AM_CONDITIONAL([HAVE_CPP11], false)
-    enable_cpp11=no
-fi
 
 ])
 

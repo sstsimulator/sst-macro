@@ -9,11 +9,6 @@ TUTORIALTESTS = \
   test_tutorial_sendrecv_cxx \
   test_tutorial_sendrecv_cxx2 \
   test_tutorial_1d_integrator_c
-if FC_ENABLE
-  TUTORIALTESTS += \
-    test_tutorial_sendrecv_f90 \
-    test_tutorial_1d_integrator_f90
-endif
 
 # Eventually experimental tutorials will be moved to top level tutorials
 tutorials:

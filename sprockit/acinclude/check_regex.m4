@@ -10,7 +10,7 @@ AC_ARG_ENABLE(regex,
   [
     enable_regexp=$enableval
   ], [
-    enable_regexp=yes
+    enable_regexp=no
   ]
 )
 if test "X$enable_regexp" = "Xyes"; then
@@ -25,7 +25,7 @@ else
     AC_DEFINE_UNQUOTED([DISABLE_REGEXP], 1, [Do not compile support for regex])
 fi
 
-if test "X$enable_cpp11" = "Xyes" && test "X$enable_regexp" = "Xyes"; then
+if test "X$enable_regexp" = "Xyes"; then
 HEADER="#include <iostream> 
         #include <regex>"
 BODY="

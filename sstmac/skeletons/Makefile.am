@@ -66,14 +66,6 @@ nobase_library_include_HEADERS += \
   test/test_onesided.h \
   test/test_mpi_barrier.h 
 
-if FC_ENABLE
-  libsstmac_skeletons_la_SOURCES += \
-    test/test_compute_f90.f90 \
-    test/test_compute_f.cc
-
-  nobase_library_include_HEADERS += \
-    test/test_compute_f.h
-endif
 
 endif
 

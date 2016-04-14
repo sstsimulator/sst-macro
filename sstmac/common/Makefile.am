@@ -30,7 +30,6 @@ libsstmac_common_la_SOURCES = \
   lodepng.cc \
   sstmac_env.cc \
   thread_info.cc \
-  vis/vis.cc \
   thread_lock.cc \
   messages/message_buffer_cache.cc \
   messages/payload.cc \
@@ -49,14 +48,6 @@ libsstmac_common_la_SOURCES = \
   stats/stat_local_int.cc \
   stats/stat_local_double.cc \
   stats/stat_global_int.cc
-
-if VTK_ENABLE
- libsstmac_common_la_SOURCES += vis/vtk_engine.cc
-
- AM_CPPFLAGS += $(VTK_IFLAGS)
- AM_LDFLAGS += $(VTK_LDFLAGS)
- AM_LIBS = $(VTK_LIBS)
-endif
 
 nodist_library_include_HEADERS = sstmac_config.h config.h
 
@@ -83,7 +74,6 @@ nobase_library_include_HEADERS = \
   sst_event.h \
   sst_event_fwd.h \
   thread_info.h \
-  vis/vis.h \
   lodepng.h \
   sstmac_env.h \
   thread_safe_int.h \
@@ -114,10 +104,6 @@ nobase_library_include_HEADERS = \
   stats/stat_local_double_fwd.h \
   stats/stat_global_int.h \
   stats/stat_global_int_fwd.h
-
-if VTK_ENABLE
- nobase_library_include_HEADERS += vis/vtk_engine.h
-endif
 
 if !INTEGRATED_SST_CORE
 nobase_library_include_HEADERS += \

@@ -38,7 +38,6 @@ libsstmac_sw_la_SOURCES = \
   process/time.cc \
   process/user_app_cxx.cc \
   process/user_app_c.cc \
-  process/user_app_f90.cc \
   threading/context_util.cc \
   threading/stack_alloc_chunk.cc \
   threading/stack_alloc.cc \
@@ -75,11 +74,6 @@ libsstmac_sw_la_SOURCES = \
   launch/launcher.cc \
   launch/launch_info.cc 
 
-
-if FC_ENABLE
-  libsstmac_sw_la_SOURCES += \
-   libraries/compute/sstmac_compute_f.cc
-endif
 
 library_includedir=$(includedir)/sstmac/software
 
@@ -125,7 +119,6 @@ nobase_library_include_HEADERS = \
   process/process_context.h \
   process/user_app_cxx.h \
   process/user_app_c.h \
-  process/user_app_f90.h \
   threading/context_util.h \
   threading/stack_alloc_chunk.h \
   threading/stack_alloc.h \
@@ -190,14 +183,5 @@ if HAVE_PTH
     threading/threading_pth.h 
 endif
 
-if FC_ENABLE
-  nobase_library_include_HEADERS += \
-    libraries/compute/sstmac_compute_f.h
-endif
 
-if VTK_ENABLE
- AM_CPPFLAGS += $(VTK_IFLAGS)
- AM_LDFLAGS += $(VTK_LDFLAGS)
- AM_LIBS = $(VTK_LIBS)
-endif
 

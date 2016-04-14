@@ -60,11 +60,6 @@ class hypercube :
     const coordinates& src_coords,
     const coordinates& dest_coords) const;
 
-  virtual void
-  display_nodes(const vis_switch_map &switches,
-                vis::vis_engine* eng,
-                std::list<vis::vis_obj*> &objs);
-
  protected:
   int radix_;
   int ndim_;

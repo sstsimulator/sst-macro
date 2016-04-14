@@ -115,11 +115,6 @@ class hdtorus :
   void
   configure_geometric_paths(std::vector<int> &redundancies);
 
-  virtual void
-  display_nodes(const vis_switch_map &switches,
-                vis::vis_engine* eng,
-                std::list<vis::vis_obj*> &objs);
-
   virtual int
   ndimensions() const {
     return dimensions_.size();

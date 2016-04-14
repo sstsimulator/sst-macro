@@ -4,6 +4,7 @@
 #include <sstmac/common/sst_event.h>
 #include <sstmac/common/messages/sst_message_fwd.h>
 #include <sprockit/metadata_bits.h>
+#include <sprockit/expandable_enum.h>
 
 namespace sstmac {
 namespace hw {
@@ -11,6 +12,8 @@ namespace hw {
 class packet :
   public event
 {
+ public:
+  declare_expandable_enum(field);
 
  public:
   message*
@@ -81,7 +84,19 @@ class packet :
 
   double cumulative_delay_us_;
 
+  template <class T>
+  T&
+  get_field(field name){
+    uint64_t* ptr = &fields_[name];
+    return *reinterpret_cast<T*>(ptr);
+  }
+
+ private:
+  std::map<field, uint64_t> fields_;
+
 };
+
+implement_enum_functions(packet::field)
 
 
 }

@@ -65,13 +65,6 @@ test_dumpi_bgp.$(CHKSUF): $(SSTMACEXEC) traces
 test_parsedumpi.$(CHKSUF): $(SSTMACEXEC) traces
 	$(PYRUNTEST) 3 $@ $(SSTMACEXEC) -f $(srcdir)/test_configs/test_parsedumpi.ini --no-wall-time 
 
-#------------------------------------------------------------------------------------------#
-#  Fortran tests (only if FC_ENABLE)                                                    {{{#
-#------------------------------------------------------------------------------------------#
-
-if FC_ENABLE
-SINGLETESTS += test_compute_f
-endif
 
 # TODO should this be PYRUNTEST?
 

@@ -156,12 +156,14 @@ packet_flow_cut_through_arbitrator::packet_flow_cut_through_arbitrator()
 void
 packet_flow_cut_through_arbitrator::set_outgoing_bw(double out_bw)
 {
+  pflow_arb_debug_printf_l0("initializing cut through arbitrator with bw=%8.4e", out_bw);
   packet_flow_bandwidth_arbitrator::set_outgoing_bw(out_bw);
   head_ = new bandwidth_epoch;
   head_->bw_available = out_bw;
   head_->start = 0;
   //just set to super long
   head_->length = 1e30;
+
 }
 
 packet_flow_cut_through_arbitrator::~packet_flow_cut_through_arbitrator()
