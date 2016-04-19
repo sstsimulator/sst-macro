@@ -44,7 +44,6 @@ nobase_library_include_HEADERS = \
   debug.h \
   delete.h \
   errors.h \
-  expandable_enum.h \
   fileio.h \
   driver_util.h \
   ser_ptr_type.h \

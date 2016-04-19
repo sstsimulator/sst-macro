@@ -25,8 +25,6 @@ namespace hw {
 
 SpktRegister("tiled_dragonfly | tiled_dfly", topology, tiled_dragonfly);
 
-static RegisterEnum(routing_info::metadata_slot, crossed_global_link);
-
 void
 tiled_dragonfly::init_factory_params(sprockit::sim_parameters* params)
 {
@@ -134,7 +132,8 @@ tiled_dragonfly::minimal_routes_to_coords(
   int dst_id = switch_number(dest_coords);
 
   //if we crossed a global link in the past, set to 1
-  current_path.vc = current_path.metadata_bit(crossed_global_link) ? 1 : 0;
+  current_path.vc = current_path.metadata_bit(
+        routing_info::crossed_timeline) ? 1 : 0;
 
   xy_list_t* ports;
   coordinates dst(dest_coords);
@@ -212,8 +211,8 @@ tiled_dragonfly::minimal_routes_to_coords(
 
     // copy over virtual channel and related metadata
     paths[i].vc = current_path.vc;
-    if (current_path.metadata_bit(crossed_global_link))
-      paths[i].set_metadata_bit(crossed_global_link);
+    if (current_path.metadata_bit(routing_info::crossed_timeline))
+      paths[i].set_metadata_bit(routing_info::crossed_timeline);
 
     top_debug("minimal_routes_to_coords: outport: %d, geometric id: %d, vc: %d",
               paths[i].outport, paths[i].geometric_id, paths[i].vc);

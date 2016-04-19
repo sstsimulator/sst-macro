@@ -15,7 +15,6 @@
 #include <sprockit/unordered.h>
 #include <sstmac/common/node_address.h>
 #include <sprockit/metadata_bits.h>
-#include <sprockit/expandable_enum.h>
 #include <sstmac/hardware/router/routing_enum.h>
 
 #include <vector>
@@ -26,13 +25,11 @@ namespace hw {
 class routing_info
 {
  public:
-  declare_expandable_enum(metadata_slot);
-
-  /** Whether or not we are routing to the intermediate valiant switch */
-  static metadata_slot valiant_stage;
-  /** Whether or not we are routing to the final destination switch */
-  static metadata_slot final_stage;
-  static metadata_slot crossed_timeline;
+  typedef enum {
+    valiant_stage,
+    final_stage,
+    crossed_timeline
+  } metadata_slot;
 
   static const int uninitialized = -123;
 
@@ -55,17 +52,17 @@ class routing_info
 
     bool
     metadata_bit(metadata_slot slot) const {
-      return metadata.bit(slot.value);
+      return metadata.bit(slot);
     }
 
     void
     set_metadata_bit(metadata_slot slot) {
-      metadata.set_bit(slot.value);
+      metadata.set_bit(slot);
     }
 
     void
     unset_metadata_bit(metadata_slot slot) {
-      metadata.unset_bit(slot.value);
+      metadata.unset_bit(slot);
     }
 
     void
@@ -166,8 +163,6 @@ class routing_info
   routing::algorithm_t algo_;
 
 };
-
-implement_enum_functions(routing_info::metadata_slot);
 
 
 }

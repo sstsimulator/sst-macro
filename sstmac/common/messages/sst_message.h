@@ -16,7 +16,6 @@
 #include <sstmac/common/serializable.h>
 #include <sstmac/common/node_address.h>
 
-#include <sprockit/expandable_enum.h>
 #include <sprockit/metadata_bits.h>
 
 #include <sstmac/common/sst_event.h>

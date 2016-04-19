@@ -22,15 +22,6 @@ DeclareSerializable(sstmac::sw::compute_event)
 namespace sstmac {
 namespace sw {
 
-ImplementEnum(compute_event::event_type_t);
-
-RegisterEnum(compute_event::event_type_t, compute_event::flop);
-RegisterEnum(compute_event::event_type_t, compute_event::intop);
-RegisterEnum(compute_event::event_type_t, compute_event::mem_random);
-RegisterEnum(compute_event::event_type_t, compute_event::mem_sequential);
-RegisterEnum(compute_event::event_type_t, compute_event::time);
-
-
 compute_event::compute_event() :
   core_(sw::thread::no_core_affinity)
 {
@@ -46,7 +37,8 @@ compute_event::debug_string() const
     return sprockit::printf("time=%8.4e ms", t.msec());
   } else {
     return sprockit::printf("nflops=%ld nintops=%ld nbytes=%ld",
-        event_value(flop), event_value(intop),
+        event_value(flop),
+        event_value(intop),
         event_value(mem_sequential));
   }
 }
@@ -54,7 +46,7 @@ compute_event::debug_string() const
 long
 compute_event::byte_length() const
 {
-  return event_data_[mem_sequential.value];
+  return event_data_[mem_sequential];
 }
 
 } // end namespace sw
