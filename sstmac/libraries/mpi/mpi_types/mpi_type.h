@@ -14,7 +14,6 @@
 
 #include <sstmac/libraries/mpi/type_operator.h>
 #include <sprockit/spkt_config.h>
-#include <sprockit/serializable.h>
 #include <sprockit/opaque_typedef.h>
 
 #include <iosfwd>
@@ -96,9 +95,6 @@ class mpi_type
   delete_statics();
 
  public:
-  void
-  serialize_order(sprockit::serializer& ser);
-
   operator mpi_type_id() const {
     return id;
   }
@@ -280,11 +276,8 @@ class mpi_type
 
 };
 
-class pairdata :
-  public sprockit::serializable,
-  public sprockit::serializable_type<pairdata>
+class pairdata
 {
-  ImplementSerializable(pairdata)
 
  public:
   virtual
@@ -299,17 +292,10 @@ class pairdata :
   mpi_type* base1_;
   mpi_type* base2_;
 
-  void
-  serialize_order(sprockit::serializer& ser);
-
 };
 
-class vecdata :
-  public sprockit::serializable,
-  public sprockit::serializable_type<vecdata>
+class vecdata
 {
-  ImplementSerializable(vecdata)
-
  public:
   virtual
   ~vecdata() {
@@ -325,9 +311,6 @@ class vecdata :
   int blocklen_;
   int stride_; //always in bytes!!!!
 
-  void
-  serialize_order(sprockit::serializer& ser);
-
 };
 
 struct ind_block {
@@ -336,12 +319,7 @@ struct ind_block {
   int num;
 };
 
-struct inddata :
-    public sprockit::serializable,
-    public sprockit::serializable_type<inddata> {
-
-  ImplementSerializable(inddata)
-
+struct inddata {
  public:
   virtual
   ~inddata() {
@@ -357,9 +335,6 @@ struct inddata :
   int ub_;
   int lb_;
   spkt_unordered_map<int, ind_block> blocks;
-
-  void
-  serialize_order(sprockit::serializer& ser);
 
 };
 

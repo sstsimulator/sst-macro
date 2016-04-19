@@ -75,7 +75,7 @@ message::remote_buffer()
     to_string().c_str());
 }
 
-parent_message*
+message*
 message::clone() const
 {
   message* cln = new message;

@@ -1,19 +1,16 @@
 #ifndef sumi_api_MESSAGE_H
 #define sumi_api_MESSAGE_H
 
-#include <sprockit/serializable.h>
-#include <sprockit/serializer_fwd.h>
-#include <sprockit/clonable.h>
-#include <sprockit/ser_ptr_type.h>
+#include <sstmac/common/serializable.h>
 #include <sprockit/util.h>
+#include <sprockit/ptr_type.h>
 #include <sumi/rdma_interface.h>
 
 namespace sumi {
 
-typedef sprockit::clonable<sprockit::serializable_ptr_type> parent_message;
-
 class message :
-  public parent_message,
+  public sprockit::ptr_type,
+  public sprockit::serializable,
   public sprockit::serializable_type<message>
 {
  ImplementSerializableDefaultConstructor(message)
@@ -105,7 +102,7 @@ class message :
     payload_type_ = ty;
   }
 
-  virtual parent_message*
+  virtual message*
   clone() const;
 
   message*
@@ -113,8 +110,7 @@ class message :
 
   message*
   clone_msg() const {
-    message* cln = safe_cast(message, clone());
-    return cln;
+    return clone();
   }
 
   class_t
@@ -259,7 +255,7 @@ class rdma_message :
   {
   }
 
-  virtual parent_message*
+  virtual message*
   clone() const {
     rdma_message* ptr = new rdma_message;
     clone_into(ptr);

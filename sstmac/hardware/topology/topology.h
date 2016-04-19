@@ -17,7 +17,6 @@
 #include <sstmac/hardware/topology/traffic/traffic.h>
 #include <sstmac/hardware/router/routing_info.h>
 #include <sstmac/hardware/router/router_fwd.h>
-#include <sstmac/hardware/common/clonable.h>
 #include <sstmac/hardware/common/connection.h>
 #include <sstmac/backends/common/sim_partition_fwd.h>
 #include <sprockit/sim_parameters_fwd.h>

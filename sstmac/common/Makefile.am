@@ -79,6 +79,7 @@ nobase_library_include_HEADERS = \
   thread_safe_int.h \
   thread_lock.h \
   sim_thread_lock.h \
+  serializable.h \
   messages/payload.h \
   messages/library_message.h \
   messages/message_buffer_cache.h \

@@ -13,8 +13,7 @@
 #define SSTMAC_COMMON_MESSAGES_SST_MESSAGE_H_INCLUDED
 
 
-#include <sprockit/ser_ptr_type.h>
-#include <sprockit/serializable.h>
+#include <sstmac/common/serializable.h>
 #include <sstmac/common/node_address.h>
 
 #include <sprockit/expandable_enum.h>

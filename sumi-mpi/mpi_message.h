@@ -85,7 +85,7 @@ class mpi_message :
   /// Goodbye.
   virtual ~mpi_message() throw ();
 
-  virtual sumi::parent_message*
+  virtual sumi::message*
   clone() const;
 
   /**

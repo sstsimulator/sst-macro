@@ -1,5 +1,4 @@
 #include <sstmac/common/messages/library_message.h>
-#include <sprockit/serializer.h>
 
 namespace sstmac {
 

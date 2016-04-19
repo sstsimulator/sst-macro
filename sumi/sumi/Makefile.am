@@ -53,6 +53,7 @@ library_include_HEADERS = \
  dynamic_tree_vote.h \
  lockable.h \
  message.h \
+ message_fwd.h \
  monitor.h \
  options.h \
  partner_timeout.h \

@@ -107,7 +107,7 @@ class collective_done_message :
     return vote_;
   }
 
-  parent_message*
+  message*
   clone() const;
 
   int domain_rank() const {
@@ -297,7 +297,7 @@ class collective_eager_message :
     return buffer_;
   }
 
-  parent_message*
+  message*
   clone() const {
     collective_eager_message* cln = new collective_eager_message;
     clone_into(cln);
@@ -335,7 +335,7 @@ class collective_rdma_message :
   {
   }
 
-  parent_message*
+  message*
   clone() const {
     collective_rdma_message* cln = new collective_rdma_message;
     clone_into(cln);

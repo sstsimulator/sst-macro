@@ -1,5 +1,6 @@
 #include <sstmac/libraries/sumi/message.h>
-#include <sprockit/serializer.h>
+#include <sumi/message.h>
+#include <sstmac/common/serializable.h>
 #include <sprockit/util.h>
 #include <iostream>
 
@@ -7,7 +8,7 @@ DeclareSerializable(sstmac::transport_message)
 
 namespace sstmac {
   
-transport_message::transport_message(const sumi::payload_ptr& msg, long byte_length)
+transport_message::transport_message(const sumi::message_ptr& msg, long byte_length)
   : library_interface("sumi"),
     network_message(byte_length),
     payload_(msg),

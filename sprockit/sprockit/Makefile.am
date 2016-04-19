@@ -47,7 +47,6 @@ nobase_library_include_HEADERS = \
   expandable_enum.h \
   fileio.h \
   driver_util.h \
-  clonable.h \
   ser_ptr_type.h \
   metadata_bits.h \
   opaque_typedef.h \

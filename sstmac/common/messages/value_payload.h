@@ -13,7 +13,6 @@
 #define SSTMAC_COMMON_MESSAGES_VALUEPAYLOAD_H_INCLUDED
 
 #include <sstmac/common/messages/payload.h>
-#include <sprockit/serialize.h>
 #include <sstream>
 
 namespace sstmac {

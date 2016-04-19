@@ -91,7 +91,7 @@ class rdma_message :
     sumi::rdma_message::serialize_order(ser);
   }
 
-  sumi::parent_message*
+  sumi::message*
   clone() const {
     rdma_message* cln = new rdma_message(iter_, num_bytes_);
     cln->set_start(start_);

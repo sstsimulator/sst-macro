@@ -72,7 +72,7 @@ mpi_message::recompute_bytes()
   }
 }
 
-sumi::parent_message*
+sumi::message*
 mpi_message::clone() const
 {
   mpi_message* cln = new mpi_message;

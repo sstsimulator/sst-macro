@@ -12,7 +12,7 @@
 #ifndef SSTMAC_BACKENDS_NATIVE_SSTEVENT_H_INCLUDED
 #define SSTMAC_BACKENDS_NATIVE_SSTEVENT_H_INCLUDED
 
-#include <sprockit/serializable.h>
+#include <sstmac/common/serializable.h>
 #include <sstmac/common/event_handler.h>
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/sstmac_config.h>

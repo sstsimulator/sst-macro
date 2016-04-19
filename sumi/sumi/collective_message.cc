@@ -85,7 +85,7 @@ collective_work_message::clone_into(collective_work_message* cln) const
   cln->dense_recver_ = dense_recver_;
 }
 
-parent_message*
+message*
 collective_done_message::clone() const
 {
   spkt_throw(sprockit::unimplemented_error,

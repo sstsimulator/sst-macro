@@ -7,10 +7,6 @@
 namespace sstmac {
 
 class transport_message;
-namespace sumi {
-typedef sprockit::clonable<sprockit::serializable_ptr_type> payload_t;
-typedef sprockit::refcount_ptr<payload_t> payload_ptr;
-}
 
 }
 
