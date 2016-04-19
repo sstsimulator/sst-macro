@@ -5,13 +5,6 @@ namespace sstmac {
 namespace hw {
 
 double
-param_expander::nic_bandwidth_multiplier(sprockit::sim_parameters *params) const
-{
-  double ret = params->get_optional_int_param("injection_redundant", 1);
-  return ret;
-}
-
-double
 param_expander::network_bandwidth_multiplier(sprockit::sim_parameters *params) const
 {
   if (params->has_param("topology_redundant")){

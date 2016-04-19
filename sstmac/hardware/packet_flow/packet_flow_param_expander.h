@@ -66,14 +66,6 @@ class packet_flow_param_expander :
       }
     }
 
-    double nic_bandwidth_multiplier(sprockit::sim_parameters *params) const {
-      if (tiled_switch_){
-        return 1.0;
-      } else {
-        return param_expander::nic_bandwidth_multiplier(params);
-      }
-    }
-
     int buffer_depth_;
 
     bool tiled_switch_;
