@@ -45,11 +45,6 @@ namespace sprockit {
     throw_exc(); \
     return 0; \
   } \
-  virtual std::string \
-  serialization_name() const { \
-    throw_exc(); \
-    return ""; \
-  } \
   virtual const char* \
   cls_name() const { \
     throw_exc(); \
@@ -68,15 +63,11 @@ namespace sprockit {
   } \
   virtual uint32_t \
   cls_id() const { \
-    return ::sprockit::serializable_type< obj >::cls_id(); \
+    return ::sprockit::serializable_builder_impl< obj >::static_cls_id(); \
   } \
   static obj* \
   construct_deserialize_stub() { \
     return new obj; \
-  } \
-  virtual std::string \
-  serialization_name() const { \
-    return #obj; \
   } \
   virtual obj* \
   you_forgot_to_add_ImplementSerializable_to_this_class() { \
@@ -85,7 +76,6 @@ namespace sprockit {
 
 #define ImplementSerializable(obj) \
  public: \
-  obj(){} \
  ImplementSerializableDefaultConstructor(obj)
 
 
@@ -100,6 +90,9 @@ class serializable_builder
   virtual const char*
   name() const = 0;
 
+  virtual uint32_t
+  cls_id() const = 0;
+
   virtual bool
   sanity(serializable* ser) = 0;
 };
@@ -109,6 +102,7 @@ class serializable_builder_impl : public serializable_builder
 {
  protected:
   static const char* name_;
+  static const uint32_t cls_id_;
 
  public:
   serializable*
@@ -118,6 +112,21 @@ class serializable_builder_impl : public serializable_builder
 
   const char*
   name() const {
+    return name_;
+  }
+
+  uint32_t
+  cls_id() const {
+    return cls_id_;
+  }
+
+  static uint32_t
+  static_cls_id() {
+    return cls_id_;
+  }
+
+  static const char*
+  static_cls_name() {
     return name_;
   }
 
@@ -142,7 +151,7 @@ class serializable_factory
       @return The cls id for the given builder
   */
   static uint32_t
-  add_builder(serializable_builder* builder);
+  add_builder(serializable_builder* builder, const char* name);
 
   static bool
   sanity(serializable* ser, uint32_t cls_id) {
@@ -154,17 +163,17 @@ class serializable_factory
 
 };
 
+template<class T> const char* serializable_builder_impl<T>::name_ = typeid(T).name();
+template<class T> const uint32_t serializable_builder_impl<T>::cls_id_
+  = serializable_factory::add_builder(new serializable_builder_impl<T>,
+                                      typeid(T).name());
+
 }
 
 #include <sprockit/serialize_serializable.h>
 
-#define SerializableName(obj) #obj
+#define DeclareSerializable(...)
 
-#define DeclareSerializable(...) \
-namespace sprockit { \
-template<> const char* serializable_builder_impl<__VA_ARGS__ >::name_ = SerializableName((__VA_ARGS__)); \
-template<> uint32_t serializable_type<__VA_ARGS__ >::cls_id_ = serializable_factory::add_builder(new serializable_builder_impl<__VA_ARGS__ >); \
-}
 
 #endif
 

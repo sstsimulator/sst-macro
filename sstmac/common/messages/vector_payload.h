@@ -26,7 +26,7 @@ namespace sstmac {
 template<typename Type, typename VectorType = std::vector<Type> >
 class vector1_payload :
   public payload,
-  public sprockit::serializable_type<vector1_payload<Type, VectorType> >
+  public serializable_type<vector1_payload<Type, VectorType> >
 {
   ImplementSerializable(vector1_payload)
 
@@ -40,6 +40,8 @@ class vector1_payload :
   const_ptr;
 
  public:
+  vector1_payload(){} //needed for serialization
+
   virtual ~vector1_payload() {
     free(underneath_);
   }
@@ -66,11 +68,6 @@ class vector1_payload :
   /// Clone this object.
   payload::const_ptr
   clone() const {
-    return new vector1_payload<Type, VectorType> (underneath_, dims_[0], true, 1);
-  }
-
-  virtual sprockit::serializable*
-  serialization_clone() const {
     return new vector1_payload<Type, VectorType> (underneath_, dims_[0], true, 1);
   }
 
@@ -311,7 +308,7 @@ class vector1_payload :
   }
 
   virtual void
-  serialize_order(sprockit::serializer& ser) {
+  serialize_order(serializer& ser) {
     spkt_throw_printf(sprockit::unimplemented_error, "vector1_payload::serialize");
   }
 

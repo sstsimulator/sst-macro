@@ -3,7 +3,7 @@
 namespace sstmac {
 
 void
-library_interface::serialize_order(sprockit::serializer& ser)
+library_interface::serialize_order(serializer& ser)
 {
   ser & lib_name_;
 }

@@ -11,7 +11,7 @@ namespace hw {
 
 class network_message :
   public message,
-  public sprockit::serializable_type<network_message>
+  public serializable_type<network_message>
 {
   ImplementSerializableDefaultConstructor(network_message)
 
@@ -118,7 +118,7 @@ class network_message :
   }
 
   virtual void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(serializer& ser);
 
   void
   convert_to_ack();

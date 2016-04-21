@@ -31,7 +31,7 @@ namespace sw {
 int
 mpi_btree_scatter::relrank(mpi_id therank) const
 {
-  return ((therank.id_ - root_.id_ + comm_->size().id_) % comm_->size().id_);
+  return ((therank - root_ + comm_->size()) % comm_->size());
 }
 
 //
@@ -40,7 +40,7 @@ mpi_btree_scatter::relrank(mpi_id therank) const
 mpi_id
 mpi_btree_scatter::absrank(int therank) const
 {
-  return mpi_id((therank + root_.id_) % comm_->size().id_);
+  return mpi_id((therank + root_) % comm_->size());
 }
 
 //

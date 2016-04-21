@@ -12,11 +12,11 @@
 #ifndef SSTMAC_HARDWARE_NETWORK_ROUTING_ROUTING_INFO_H_INCLUDED
 #define SSTMAC_HARDWARE_NETWORK_ROUTING_ROUTING_INFO_H_INCLUDED
 
-#include <sprockit/unordered.h>
-#include <sstmac/common/node_address.h>
 #include <sprockit/metadata_bits.h>
+#include <sprockit/unordered.h>
+#include <sprockit/errors.h>
 #include <sstmac/hardware/router/routing_enum.h>
-
+#include <sstmac/common/node_address.h>
 #include <vector>
 
 namespace sstmac {

@@ -63,7 +63,7 @@ mpi_comm::dup_keyvals(mpi_comm* m)
 std::string
 mpi_comm::to_string() const
 {
-  return "mpicomm(" + rank().to_string() + ")";
+  return sprockit::printf("mpicomm(%d)", rank());
 }
 
 /// The size of the communicator.

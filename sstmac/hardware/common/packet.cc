@@ -38,7 +38,7 @@ packet::packet(
 }
 
 void
-packet::serialize_order(sprockit::serializer& ser)
+packet::serialize_order(serializer& ser)
 {
   event::serialize_order(ser);
   ser & orig_;

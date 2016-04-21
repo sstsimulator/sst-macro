@@ -26,7 +26,7 @@ message::message() :
 }
 
 void
-message::serialize_order(sprockit::serializer& ser)
+message::serialize_order(serializer& ser)
 {
 }
 

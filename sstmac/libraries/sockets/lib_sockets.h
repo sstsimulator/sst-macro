@@ -56,7 +56,7 @@ class socket_message :
   clone_injection_ack() const;
 
   virtual void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(serializer& ser);
 
  protected:
   void

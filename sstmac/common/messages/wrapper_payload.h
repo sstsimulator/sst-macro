@@ -25,7 +25,7 @@ namespace sstmac {
  */
 class wrapper_payload :
   public payload,
-  public sprockit::serializable_type<wrapper_payload>
+  public serializable_type<wrapper_payload>
 {
   ImplementSerializable(wrapper_payload)
 
@@ -41,6 +41,8 @@ class wrapper_payload :
  public:
   typedef sprockit::refcount_ptr<wrapper_payload> ptr;
   typedef sprockit::refcount_ptr<const wrapper_payload> const_ptr;
+
+  wrapper_payload(){} //for serialization
 
   virtual
   ~wrapper_payload() {
@@ -179,7 +181,7 @@ class wrapper_payload :
   }
 
   virtual void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(serializer& ser);
 
   /**
    * Strinfier

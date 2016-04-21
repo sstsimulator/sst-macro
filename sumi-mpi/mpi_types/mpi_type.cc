@@ -9,7 +9,6 @@
  *  SST/macroscale directory.
  */
 
-#include <sprockit/serializer.h>
 #include <sprockit/errors.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sprockit/statics.h>

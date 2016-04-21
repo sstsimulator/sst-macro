@@ -86,7 +86,7 @@ class circuit_message :
   }
 
   void
-  serialize_order(sprockit::serializer& ser){
+  serialize_order(serializer& ser){
     spkt_throw(sprockit::unimplemented_error,
      "circuit_message::serialize_order");
   }

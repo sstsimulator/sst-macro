@@ -49,7 +49,7 @@ namespace osu {
     myid = world->rank();
     numprocs = world->size();
 
-    if(numprocs.id_ != 2) {
+    if(numprocs != 2) {
       if(myid == zeroid) {
         fprintf(stderr, "osulat: requires exactly two processes\n");
       }

@@ -1,5 +1,4 @@
 #include <mpi/mpi_transport.h>
-#include <sprockit/serializer.h>
 #include <sprockit/sim_parameters.h>
 #include <sys/time.h>
 

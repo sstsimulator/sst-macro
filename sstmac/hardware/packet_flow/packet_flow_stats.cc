@@ -1,7 +1,6 @@
 #include <sstmac/hardware/packet_flow/packet_flow_stats.h>
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/backends/common/parallel_runtime.h>
-#include <sprockit/serializer.h>
 #include <sprockit/util.h>
 
 namespace sstmac {
@@ -64,7 +63,7 @@ stat_bytes_sent::global_reduce_non_root(parallel_runtime* rt, int root, char* bu
 void
 stat_bytes_sent::collect_buffer_at_root(char* buffer, int buffer_size)
 {
-  sprockit::serializer ser;
+  serializer ser;
   ser.start_unpacking(buffer, buffer_size);
 
   std::vector<aggregation::entry> entries;
@@ -101,7 +100,7 @@ stat_bytes_sent::global_reduce_root(parallel_runtime* rt, global_gather_stats_t*
 }
 
 void
-stat_bytes_sent::aggregation::entry::serialize_order(sprockit::serializer& ser)
+stat_bytes_sent::aggregation::entry::serialize_order(serializer& ser)
 {
   ser & pmap;
   ser & sid;
@@ -113,7 +112,7 @@ stat_bytes_sent::global_reduce(parallel_runtime *rt)
   //determine how big of an array we we will need to receive from each person
   int root = 0;
 
-  sprockit::serializer ser;
+  serializer ser;
   ser.start_sizing();
   //this is basically a sanity check
   ser & local_aggregation_->entries_;

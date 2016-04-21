@@ -12,7 +12,6 @@
 #include <sstmac/common/messages/vector_payload.h>
 
 
-
 DeclareSerializable(sstmac::vector1_payload<int>);
 DeclareSerializable(sstmac::vector1_payload<long>);
 DeclareSerializable(sstmac::vector1_payload<bool>);
@@ -22,7 +21,8 @@ DeclareSerializable(sstmac::vector1_payload<double>);
 DeclareSerializable(sstmac::vector1_payload<char>);
 
 #define DeclarePointerVec(ty) \
-    DeclareSerializable(sstmac::vector1_payload<ty,ty*>)
+    typedef sstmac::vector1_payload<ty,ty*> vector_payload_##ty; \
+    DeclareSerializable(vector_payload_##ty)
 
 DeclarePointerVec(int);
 DeclarePointerVec(char);

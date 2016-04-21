@@ -14,7 +14,7 @@
 
 #include <sstmac/libraries/mpi/type_operator.h>
 #include <sprockit/spkt_config.h>
-#include <sprockit/opaque_typedef.h>
+#include <sprockit/unordered.h>
 
 #include <iosfwd>
 #include <map>
@@ -26,26 +26,9 @@ class pairdata;
 class vecdata;
 struct inddata;
 
-typedef_opaque_int(mpi_type_id,int);
-implement_opaque_int(mpi_type_id);
+typedef int mpi_type_id;
 
 }}
-
-#if SPKT_HAVE_CPP11
-namespace std {
-template <>
-struct hash<sstmac::sw::mpi_type_id>
-  : public std::hash<sprockit::opaque_type<int>>
-{ };
-}
-#else
-namespace sstmac { namespace sw {
-inline std::size_t
-hash_value(mpi_type_id id){
-  return id.id_;
-}
-}}
-#endif
 
 namespace sstmac {
 namespace sw {

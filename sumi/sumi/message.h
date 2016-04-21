@@ -1,17 +1,17 @@
 #ifndef sumi_api_MESSAGE_H
 #define sumi_api_MESSAGE_H
 
-#include <sstmac/common/serializable.h>
 #include <sprockit/util.h>
 #include <sprockit/ptr_type.h>
 #include <sumi/rdma_interface.h>
+#include <sumi/serialization.h>
 
 namespace sumi {
 
 class message :
   public sprockit::ptr_type,
-  public sprockit::serializable,
-  public sprockit::serializable_type<message>
+  public sumi::serializable,
+  public sumi::serializable_type<message>
 {
  ImplementSerializableDefaultConstructor(message)
 
@@ -95,7 +95,7 @@ class message :
   is_nic_ack() const;
 
   virtual void
-  serialize_order(sprockit::serializer &ser);
+  serialize_order(sumi::serializer &ser);
 
   void
   set_payload_type(payload_type_t ty) {
@@ -216,11 +216,13 @@ class message :
 
 class payload_message :
   public message,
-  public sprockit::serializable_type<payload_message>
+  public sumi::serializable_type<payload_message>
 {
-  ImplementSerializable(payload_message);
+  ImplementSerializable(payload_message)
 
  public:
+  payload_message(){} //for serialization
+
   payload_message(void* buffer, int num_bytes)
   {
     class_ = pt2pt;
@@ -228,7 +230,7 @@ class payload_message :
   }
 
   void
-  serialize_order(sprockit::serializer &ser);
+  serialize_order(sumi::serializer &ser);
 
  private:
   void* buffer_;
@@ -236,7 +238,7 @@ class payload_message :
 
 class rdma_message :
   public message,
-  public sprockit::serializable_type<rdma_message>
+  public sumi::serializable_type<rdma_message>
 {
   ImplementSerializableDefaultConstructor(rdma_message)
   ImplementRdmaAPI
@@ -263,7 +265,7 @@ class rdma_message :
   }
 
   virtual void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(sumi::serializer& ser);
 
  protected:
   void

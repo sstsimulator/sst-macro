@@ -2,9 +2,9 @@
 #define PACKET_FLOW_STATS_H
 
 #include <sstmac/common/stats/stat_collector.h>
+#include <sstmac/common/serializable.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/hardware/topology/structured_topology_fwd.h>
-#include <sprockit/serialize.h>
 #include <vector>
 
 namespace sstmac {
@@ -13,7 +13,8 @@ namespace hw {
 class stat_bytes_sent :
   public stat_collector
 {
-  template <class T> friend class sprockit::serialize;
+  template <class T> friend class sstmac::serialize;
+
  public:
   stat_bytes_sent() : top_(0), local_aggregation_(0) {}
 
@@ -92,7 +93,7 @@ class stat_bytes_sent :
       int sid;
 
       void
-      serialize_order(sprockit::serializer& ser);
+      serialize_order(serializer& ser);
     };
 
    private:
@@ -150,16 +151,15 @@ class stat_bytes_sent :
 }
 }
 
-namespace sprockit {
-
+SER_NAMESPACE_OPEN
 template <>
 class serialize<sstmac::hw::stat_bytes_sent::aggregation::entry> {
  public:
-  void operator()(sstmac::hw::stat_bytes_sent::aggregation::entry& e, serializer& ser){
+  void operator()(sstmac::hw::stat_bytes_sent::aggregation::entry& e, sstmac::serializer& ser){
     e.serialize_order(ser);
   }
 };
+SER_NAMESPACE_CLOSE
 
-}
 
 #endif // PACKET_FLOW_STATS_H

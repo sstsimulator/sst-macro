@@ -60,7 +60,7 @@ class message :
    * @param ser The serializer to use
    */
   virtual void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(serializer& ser);
 
   virtual node_id
   toaddr() const = 0;

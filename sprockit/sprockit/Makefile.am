@@ -25,10 +25,7 @@ libsprockit_la_SOURCES = \
   output.cc \
   fileio.cc \
   factories/factory.cc \
-  serialize_serializable.cc \
-  serializer.cc \
   spkt_string.cc \
-  serializable.cc \
   units.cc \
   driver_util.cc \
   param_expander.cc \
@@ -36,6 +33,7 @@ libsprockit_la_SOURCES = \
   keyword_registration.cc
 
 library_includedir=$(includedir)/sprockit
+
 
 nodist_library_include_HEADERS = spkt_config.h 
 
@@ -46,9 +44,7 @@ nobase_library_include_HEADERS = \
   errors.h \
   fileio.h \
   driver_util.h \
-  ser_ptr_type.h \
   metadata_bits.h \
-  opaque_typedef.h \
   output.h \
   ptr_type.h \
   mpi_parameters.h \
@@ -65,6 +61,28 @@ nobase_library_include_HEADERS = \
   util.h \
   units.h \
   factories/factory.h \
+  param_expander.h \
+  unordered.h \
+  test/assert.h \
+  test/test.h \
+  test/equality.h \
+  test/fxn.h \
+  test/container.h \
+  test/output.h \
+  keyword_registration.h
+
+if HAVE_REGEXP
+libsprockit_la_SOURCES += regexp.cc
+nobase_library_include_HEADERS += regexp.h
+endif
+
+if !INTEGRATED_SST_CORE
+libsprockit_la_SOURCES += \
+  serialize_serializable.cc \
+  serializer.cc \
+  serializable.cc 
+
+nobase_library_include_HEADERS += \
   serializer.h \
   serializer_fwd.h \
   serializable.h \
@@ -81,19 +99,5 @@ nobase_library_include_HEADERS = \
   serialize_sizer.h \
   serialize_string.h \
   serialize_unpacker.h \
-  serialize_vector.h \
-  param_expander.h \
-  unordered.h \
-  test/assert.h \
-  test/test.h \
-  test/equality.h \
-  test/fxn.h \
-  test/container.h \
-  test/output.h \
-  keyword_registration.h
-
-if HAVE_REGEXP
-libsprockit_la_SOURCES += regexp.cc
-nobase_library_include_HEADERS += regexp.h
+  serialize_vector.h 
 endif
-

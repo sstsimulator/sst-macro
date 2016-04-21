@@ -164,7 +164,7 @@ class collective_work_message :
   tostr(action_t action);
 
   virtual void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(sumi::serializer& ser);
 
   action_t
   action() const {
@@ -273,11 +273,14 @@ class collective_work_message :
 
 class collective_eager_message :
   public collective_work_message,
-  public sprockit::serializable_type<collective_eager_message>
+  public sumi::serializable_type<collective_eager_message>
 {
   ImplementSerializable(collective_eager_message)
+
  public:
   typedef sprockit::refcount_ptr<collective_eager_message> ptr;
+
+  collective_eager_message(){} //for serialization
 
   collective_eager_message(
     collective::type_t type,
@@ -311,7 +314,7 @@ class collective_eager_message :
   }
 
   virtual void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(sumi::serializer& ser);
 
  protected:
   void* buffer_;
@@ -319,19 +322,22 @@ class collective_eager_message :
 
 class collective_rdma_message :
   public collective_work_message,
-  public sprockit::serializable_type<collective_rdma_message>
+  public sumi::serializable_type<collective_rdma_message>
 {
   ImplementSerializable(collective_rdma_message)
   ImplementRdmaAPI
+
  public:
+  collective_rdma_message(){} //for serialization
+
   collective_rdma_message(
-    collective::type_t type,
-    action_t action,
-    int nelems,
-    int type_size,
-    int tag, int round,
-    int src, int dst) :
-    collective_work_message(type,action,nelems,type_size,tag,round,src,dst)
+  collective::type_t type,
+  action_t action,
+  int nelems,
+  int type_size,
+  int tag, int round,
+  int src, int dst) :
+  collective_work_message(type,action,nelems,type_size,tag,round,src,dst)
   {
   }
 
@@ -350,7 +356,7 @@ class collective_rdma_message :
   }
 
   virtual void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(sumi::serializer& ser);
 
 };
 

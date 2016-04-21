@@ -1,5 +1,4 @@
 #include <sstmac/hardware/packet_flow/packet_flow.h>
-#include <sprockit/serializer.h>
 
 DeclareSerializable(sstmac::hw::packet_flow_payload);
 DeclareSerializable(sstmac::hw::packet_flow_credit);
@@ -21,7 +20,7 @@ namespace hw {
 const double packet_flow_payload::uninitialized_bw = -1;
 
 void
-packet_flow_interface::serialize_order(sprockit::serializer& ser)
+packet_flow_interface::serialize_order(serializer& ser)
 {
   ser & type_;
   ser & vc_;
@@ -51,7 +50,7 @@ packet_flow_payload::to_string() const
 }
 
 void
-packet_flow_payload::serialize_order(sprockit::serializer& ser)
+packet_flow_payload::serialize_order(serializer& ser)
 {
   packet_flow_interface::serialize_order(ser);
   routable::serialize_order(ser);
@@ -69,7 +68,7 @@ packet_flow_credit::to_string() const
 }
 
 void
-packet_flow_credit::serialize_order(sprockit::serializer& ser)
+packet_flow_credit::serialize_order(serializer& ser)
 {
   event::serialize_order(ser);
   packet_flow_interface::serialize_order(ser);

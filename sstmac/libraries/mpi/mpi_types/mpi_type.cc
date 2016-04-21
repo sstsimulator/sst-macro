@@ -9,7 +9,6 @@
  *  SST/macroscale directory.
  */
 
-#include <sprockit/serializer.h>
 #include <sprockit/errors.h>
 #include <sprockit/statics.h>
 #include <sprockit/delete.h>
@@ -18,6 +17,7 @@
 #include <sstmac/libraries/mpi/mpi_types.h>
 #include <iostream>
 #include <sstream>
+#include <cstring>
 
 
 namespace sstmac {

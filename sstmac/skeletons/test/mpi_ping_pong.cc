@@ -52,7 +52,7 @@ mpi_ping_pong::skeleton_main()
 
   mpi_tag tag(0);
   bool participant = true;
-  if ((size.id_ % 2) && (int(rank)+ 1 >= size.id_)) {
+  if ((size % 2) && (int(rank)+ 1 >= size)) {
     // This is the odd-node-out -- communicating with no-one.
     participant = false;
   }
@@ -62,7 +62,7 @@ mpi_ping_pong::skeleton_main()
     mpi_status stat;
     for (int half_cycle = 0; half_cycle < 2 * iterations_; ++half_cycle) {
       ping_pong_debug("rank = %d starting half_cycle %d", int(rank), half_cycle);
-      if ((half_cycle + rank.id_) & 1) {
+      if ((half_cycle + rank) & 1) {
         // even values of half-cycle plus rank.
         timestamp t(1e-8);
         ping_pong_debug("rank = %d about to compute", int(rank), half_cycle);

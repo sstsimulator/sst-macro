@@ -35,7 +35,7 @@ class timed_interface
   }
 
   void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(serializer& ser);
 
  protected:
   void

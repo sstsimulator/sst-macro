@@ -7,8 +7,8 @@
 #include <sstmac/software/process/app_manager_fwd.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/hardware/node/node_fwd.h>
-
 #include <sprockit/unordered.h>
+#include <list>
 
 namespace sstmac {
 

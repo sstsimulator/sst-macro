@@ -69,13 +69,13 @@ class mpi_rank_map
   /// Test whether the given node is inactive in the reduce.
   bool
   donor(mpi_id therank) const {
-    return ((therank < mpi_id(2 * extra_)) && (therank.id_ % 2 != 0));
+    return ((therank < mpi_id(2 * extra_)) && (therank % 2 != 0));
   }
 
   /// Test whether the given node is serving for another node.
   bool
   acceptor(mpi_id therank) const {
-    return ((therank < mpi_id(2 * extra_)) && (therank.id_ % 2 == 0));
+    return ((therank < mpi_id(2 * extra_)) && (therank % 2 == 0));
   }
 
   /// What real node rank do we communicate with during a shrink?
@@ -108,10 +108,10 @@ class mpi_rank_map
     }
     mpi_id retval;
     if(relative < extra_) {
-      retval.id_ = relative * 2;
+      retval = relative * 2;
     }
     else {
-      retval.id_ = relative + extra_;
+      retval = relative + extra_;
     }
 
     if(retval >= comm_->size()) {
@@ -132,10 +132,10 @@ class mpi_rank_map
     int retval = -1;
     if(! donor(rank)) {
       if(int(rank)< 2 * extra_) {
-        retval = rank.id_ / 2;
+        retval = rank / 2;
       }
       else {
-        retval = rank.id_ - extra_;
+        retval = rank - extra_;
       }
     }
     return retval;

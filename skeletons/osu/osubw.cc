@@ -56,7 +56,7 @@ namespace osu {
     //align_size = getpagesize();
     //assert(align_size <= MAX_ALIGNMENT);
 
-    if(numprocs.id_ != 2) {
+    if(numprocs != 2) {
       if(myid == zeroid) {
         fprintf(stderr, "osubw: requires exactly two processes\n");
       }

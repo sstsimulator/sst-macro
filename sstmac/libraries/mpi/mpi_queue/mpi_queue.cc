@@ -629,8 +629,8 @@ mpi_queue::incoming_completion_ack(mpi_message* message)
     send_needs_completion_ack_.find(message->unique_mpi_id());
   if (it == send_needs_completion_ack_.end()) {
     spkt_throw_printf(sprockit::illformed_error,
-                     "mpi_queue[%s]::incoming_message: completion ack with no match on %s",
-                     taskid_.to_string().c_str(), message->to_string().c_str());
+                     "mpi_queue[%d]::incoming_message: completion ack with no match on %s",
+                     taskid_, message->to_string().c_str());
   }
 
   mpi_queue_send_request* req = it->second;
@@ -653,8 +653,8 @@ mpi_queue::incoming_rendezvous_ack(mpi_message* message)
     send_needs_rendezvous_ack_.find(message->unique_mpi_id());
   if (it == send_needs_rendezvous_ack_.end()) {
     spkt_throw_printf(sprockit::illformed_error,
-                     "mpi_queue[%s]::incoming_message: rendezvous ack with no match on %s",
-                     taskid_.to_string().c_str(), message->to_string().c_str());
+                     "mpi_queue[%d]::incoming_message: rendezvous ack with no match on %s",
+                     taskid_, message->to_string().c_str());
   }
 
   mpi_queue_send_request* req = it->second;
@@ -857,7 +857,7 @@ mpi_queue::handle_nic_ack(mpi_message* message)
 std::string
 mpi_queue::id_string() const
 {
-  return taskid_.to_string();
+  return sprockit::printf("%d", taskid_);
 }
 
 #if SSTMAC_ENABLE_MPI_TIMELINE

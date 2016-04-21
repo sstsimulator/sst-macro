@@ -32,14 +32,14 @@ namespace sw {
  */
 class compute_event :
   public event,
-  public sprockit::serializable_type<compute_event>
+  public serializable_type<compute_event>
 {
 
   ImplementSerializableDefaultConstructor(compute_event)
 
  public:
   virtual void
-  serialize_order(sprockit::serializer &ser){}
+  serialize_order(serializer &ser){}
 
   typedef enum {
     mem_random = 0,

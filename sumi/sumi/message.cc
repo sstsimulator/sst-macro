@@ -1,5 +1,4 @@
 #include <sumi/message.h>
-#include <sprockit/serializer.h>
 
 DeclareSerializable(sumi::message)
 DeclareSerializable(sumi::rdma_message)
@@ -141,7 +140,7 @@ message::clone_into(message* cln) const
 }
 
 void
-message::serialize_order(sprockit::serializer &ser)
+message::serialize_order(sumi::serializer &ser)
 {
   ser & sender_;
   ser & recver_;
@@ -154,9 +153,9 @@ message::serialize_order(sprockit::serializer &ser)
 }
 
 void
-payload_message::serialize_order(sprockit::serializer &ser)
+payload_message::serialize_order(sumi::serializer &ser)
 {
-  ser & sprockit::buffer(buffer_, num_bytes_);
+  ser & sumi::buffer(buffer_, num_bytes_);
   message::serialize_order(ser);
 }
 
@@ -169,7 +168,7 @@ rdma_message::clone_into(rdma_message *cln) const
 }
 
 void
-rdma_message::serialize_order(sprockit::serializer &ser)
+rdma_message::serialize_order(sumi::serializer &ser)
 {
   message::serialize_order(ser);
   ser & local_buffer_;

@@ -13,8 +13,6 @@
 #include <sstmac/libraries/mpi/mpi_status.h>
 #include <sstmac/libraries/mpi/mpi_protocol/mpi_protocol.h>
 #include <sstmac/software/process/operating_system.h>
-
-#include <sprockit/serializer.h>
 #include <sstmac/common/messages/payload.h>
 #include <sstmac/common/sstmac_env.h>
 #include <sprockit/debug.h>
@@ -144,7 +142,7 @@ mpi_message::clone_injection_ack() const
 }
 
 void
-mpi_message::serialize_order(sprockit::serializer& ser)
+mpi_message::serialize_order(serializer& ser)
 {
   //sst_message::serialize_order(ser);
   network_message::serialize_order(ser);
@@ -155,28 +153,26 @@ mpi_message::serialize_order(sprockit::serializer& ser)
   ser & (envelope_);
   ser & (mintrans_);
   ser & (count_);
-  ser & (source_.id_);
-  ser & (dest_.id_);
-  ser & (tag_.id_);
-  ser & (commid_.id_);
+  ser & (source_);
+  ser & (dest_);
+  ser & (tag_);
+  ser & (commid_);
   ser & (seqnum_);
-  ser & (msgid_.id_);
+  ser & (msgid_);
   ser & (cat_);
   ser & (content_type_);
   ser & (ssend_);
-  ser & (aid_.id_);
+  ser & (aid_);
   ser & (ignore_seqnum_);
   ser & (bytes_);
   ser & (protocol_);
   ser & (content_);
 
-  ser & buffer_.eager;
-  if (!buffer_.eager && network_message::type() == network_message::rdma_get_request){
-    ser & buffer_.data; //only the pointer
-  } else {
+  ser & buffer_;
+  if (buffer_.eager && network_message::type() != network_message::rdma_get_request){
     //the whole array
     int size = buffer_.data ? type_packed_size_ * count_ : 0;
-    ser & sprockit::array(buffer_.data, size);
+    ser & sstmac::array(buffer_.data, size);
   }
 }
 
@@ -294,13 +290,13 @@ mpi_message::to_string() const
      << ", env=" << envelope_
      << ", mintrans=" << mintrans_
      << ", count=" << count_
-     << ", type=" << type_.to_string()
-     << ", src=" << source_.to_string()
-     << ", dst=" << dest_.to_string()
-     << ", toaddr=" << toaddr_.to_string()
-     << ", fromaddr=" << fromaddr_.to_string()
-     << ", tag=" << tag_.to_string()
-     << ", commid" << commid_.to_string();
+     << ", type=" << type_
+     << ", src=" << source_
+     << ", dst=" << dest_
+     << ", toaddr=" << toaddr_
+     << ", fromaddr=" << fromaddr_
+     << ", tag=" << tag_
+     << ", commid" << commid_;
 
   if (ignore_seqnum_) {
     ss << ", seq=(ignored)" << seqnum_;
@@ -312,8 +308,8 @@ mpi_message::to_string() const
   ss << ", ssend=" << ssend_
      << ", category=" << str(cat_)
      << ", content=" << str(content_type_)
-     << ", srctsk=" << src_task_.to_string()
-     << ", dsttsk=" << dest_task_.to_string()
+     << ", srctsk=" << src_task_
+     << ", dsttsk=" << dest_task_
      << ", protocol=" << protocol()->to_string()
      << ", load=" << ((content_ == 0) ? "null" : content_->to_string()) << ")";
   return ss.str();

@@ -12,51 +12,20 @@
 #ifndef SSTMAC_COMMON_NODEADDRESS_H_INCLUDED
 #define SSTMAC_COMMON_NODEADDRESS_H_INCLUDED
 
-#include <sprockit/opaque_typedef.h>
+#include <cstdint>
 
 namespace sstmac {
 
-typedef_opaque_int(endpoint_id, int);
+typedef uint32_t endpoint_id;
 typedef endpoint_id node_id;
 
-typedef_opaque_int(topology_id, int);
+typedef int32_t topology_id;
 typedef topology_id switch_id;
 
-
 typedef endpoint_id netlink_id;
-//typedef_opaque_int(netlink_id, int);
 
-implement_opaque_int(endpoint_id)
-implement_opaque_int(topology_id)
 
 } // end namespace sstmac
-
-#if SPKT_HAVE_CPP11
-namespace std {
-template <>
-struct hash<sstmac::endpoint_id>
-  : public std::hash<sprockit::opaque_type<int>>
-{ };
-template <>
-struct hash<sstmac::topology_id>
-  : public std::hash<sprockit::opaque_type<int>>
-{ };
-}
-#endif
-
-namespace sstmac {
-
-inline std::size_t
-hash_value(const endpoint_id& id){
-  return id.id_;
-}
-
-inline std::size_t
-hash_value(const topology_id& id){
-  return id.id_;
-}
-
-}
 
 #endif
 

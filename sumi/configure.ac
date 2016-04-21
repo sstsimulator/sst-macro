@@ -66,18 +66,16 @@ AC_ARG_ENABLE(sst-subrepo,
   [ enable_sst_subrepo=$enableval ], 
   [ enable_sst_subrepo=no ])
 
+have_integrated_core="no"
 if test "X$enable_sst_subrepo" = "Xyes"; then
   AM_CONDITIONAL(ENABLE_SST_SUBREPO, true)
+  CHECK_SST_CORE()
 else
-  AM_CONDITIONAL(ENABLE_SST_SUBREPO, true)
+  AM_CONDITIONAL(ENABLE_SST_SUBREPO, false)
 fi
 
-CHECK_PARENT_FLAGS()
-
-if test "X$with_parent_cxxflags" = "Xno"; then
+if test "X$have_integrated_core" = "Xno"; then
 CHECK_CPP11()
-else
-CXXFLAGS="$with_parent_cxxflags $CXXFLAGS"
 fi
 
 CHECK_MPI()

@@ -1,5 +1,5 @@
 
-AM_CPPFLAGS = -I$(top_builddir) -I$(top_srcdir) 
+include $(top_srcdir)/Makefile.common
 
 bin_PROGRAMS = \
   pairwise \

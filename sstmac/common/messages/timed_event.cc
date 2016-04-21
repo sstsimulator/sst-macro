@@ -4,7 +4,7 @@
 namespace sstmac {
 
 void
-timed_interface::serialize_order(sprockit::serializer& ser)
+timed_interface::serialize_order(serializer& ser)
 {
   ser & time_;
 }

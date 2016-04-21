@@ -49,8 +49,6 @@
 namespace sstmac {
 namespace sw {
 
-struct app_id;
-
 class mpi_queue :
   public sprockit::factory_type
 {

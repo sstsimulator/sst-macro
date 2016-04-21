@@ -7,22 +7,23 @@
 #include <sstmac/common/messages/library_message.h>
 #include <sstmac/libraries/sumi/message_fwd.h>
 #include <sumi/message_fwd.h>
-#include <sprockit/serializer_fwd.h>
 
 namespace sstmac {
 
 class transport_message :
   public ::sstmac::hw::network_message,
   public ::sstmac::library_interface,
-  public sprockit::serializable_type<transport_message>
+  public serializable_type<transport_message>
 {
    ImplementSerializable(transport_message)
 
  public:
+  transport_message(){} //needed for serialization
+
   transport_message(const sumi::message_ptr& msg, long byte_length);
 
   virtual void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(serializer& ser);
 
   sumi::message_ptr
   payload() const {

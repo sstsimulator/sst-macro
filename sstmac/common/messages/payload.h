@@ -24,7 +24,7 @@ namespace sstmac {
  */
 class payload :
   public sprockit::printable_ptr_type,
-  public sprockit::serializable
+  public serializable
 {
  protected:
   /**

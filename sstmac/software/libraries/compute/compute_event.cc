@@ -50,5 +50,5 @@ compute_event::byte_length() const
 }
 
 } // end namespace sw
-} // end of namespace sstmac
+  } // end of namespace sstmac
 

@@ -49,7 +49,7 @@ class packet :
   }
 
   virtual void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(serializer& ser);
 
   virtual bool
   is_packet() const {

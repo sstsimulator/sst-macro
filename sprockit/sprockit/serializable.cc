@@ -22,13 +22,13 @@ static need_delete_statics<serializable_factory> del_statics;
 serializable_factory::builder_map* serializable_factory::builders_ = 0;
 
 uint32_t
-serializable_factory::add_builder(serializable_builder* builder)
+serializable_factory::add_builder(serializable_builder* builder, const char* name)
 {
   if (builders_ == 0) {
     builders_ = new builder_map;
   }
 
-  const char* key = builder->name();
+  const char* key = name;
   int len = ::strlen(key);
   uint32_t hash = 0;
   for(int i = 0; i < len; ++i)

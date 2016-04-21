@@ -8,7 +8,7 @@ namespace sstmac {
 
 class fail_event :
  public event,
- public sprockit::serializable_type<fail_event>
+ public serializable_type<fail_event>
 {
   ImplementSerializable(fail_event)
 
@@ -19,7 +19,7 @@ class fail_event :
   }
 
   virtual void
-  serialize_order(sprockit::serializer &ser){}
+  serialize_order(serializer &ser){}
 
   std::string
   to_string() const {

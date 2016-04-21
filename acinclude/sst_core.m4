@@ -39,10 +39,9 @@ if test "X$have_integrated_core" = "Xyes"; then
     CPPFLAGS="$CPPFLAGS $SST_CPPFLAGS"
 
     # We have to use CXXFLAGS from sst-config script
+    SAVE_CXXFLAGS="$CXXFLAGS"
     SST_CXXFLAGS="`$SST/bin/sst-config --CXXFLAGS`"
-    # The only cxxflags we want to keep are debug flags
-    # In which case, put cxxflags on either side here
-    CXXFLAGS="$CXXFLAGS $SST_CXXFLAGS $CXXFLAGS"
+    CXXFLAGS="$CXXFLAGS $SST_CXXFLAGS"
 
     AC_CHECK_HEADERS([Python.h], [],
         [AC_MSG_ERROR([Could not locate Python installation needed by SST core])])
@@ -52,6 +51,8 @@ if test "X$have_integrated_core" = "Xyes"; then
     SUMI_CPPFLAGS="$SST_INCLUDES"
     AC_SUBST(SST_CPPFLAGS)
     CPPFLAGS="$SAVE_CPPFLAGS"
+    AC_SUBST(SST_CXXFLAGS)
+    CXXFLAGS="$SAVE_CXXFLAGS"
 
 
     # Already failed if user tried to specify --with-boost.  We insist on using whatever sst-core

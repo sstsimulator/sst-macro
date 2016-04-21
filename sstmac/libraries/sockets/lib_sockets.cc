@@ -34,7 +34,7 @@ socket_message::socket_message(
 }
 
 void
-socket_message::serialize_order(sprockit::serializer& ser)
+socket_message::serialize_order(serializer& ser)
 {
  spkt_throw(sprockit::unimplemented_error,
     "socket_message::serialize_order");

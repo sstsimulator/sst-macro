@@ -74,7 +74,7 @@ class launch_message :
   }
 
   virtual void
-  serialize_order(sprockit::serializer& ser){
+  serialize_order(serializer& ser){
     spkt_throw(sprockit::unimplemented_error,
         "launch_message::serializer_order");
   }

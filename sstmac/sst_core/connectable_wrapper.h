@@ -2,6 +2,7 @@
 #define CONNECTABLE_WRAPPER_H
 
 #include <sstmac/hardware/common/connection.h>
+#include <sprockit/unordered.h>
 #include <sst/core/link.h>
 #include <Python.h>
 
