@@ -158,7 +158,7 @@ if test "$enable_pth" != "no"; then
     [
       AC_DEFINE(HAVE_GNU_PTH)
       AM_CONDITIONAL(HAVE_PTH, true)
-      LIBS="-lpth $LIBS"
+      PTH_LDFLAGS="$PTH_LDFLAGS -lpth"
       AC_SUBST(PTH_CPPFLAGS)
       AC_SUBST(PTH_LDFLAGS)
       enable_pth="yes"

@@ -1,35 +1,36 @@
 
 
 AC_DEFUN([CHECK_MPI_PARALLEL], [
-AC_ARG_ENABLE([mpiparallel],
-  [AS_HELP_STRING([--enable-mpiparallel],
-    [enable MPI-parallel PDES simulation])],
-  [with_mpiparallel=$enableval],
-  [with_mpiparallel=no])
-AM_CONDITIONAL([USE_MPIPARALLEL], [test "X$with_mpiparallel" = "Xyes"])
-AM_CONDITIONAL([USE_MPISWEEP], [test "X$with_mpiparallel" = "Xyes"])
-if test "X$with_mpiparallel" = "Xyes"; then
-  AC_CHECK_FUNCS([MPI_Init],[],[AC_MSG_ERROR([Problem with MPI. Are you using an MPI compiler?])])
+
+
+AC_CHECK_HEADERS([mpi.h],
+  have_mpi_header=yes,
+  have_mpi_header=no
+)
+if test "X$have_mpi_header" = "Xyes"; then
+  AC_CHECK_FUNCS([MPI_Init],
+    AC_MSG_RESULT([yes])
+    found_mpi=yes,
+    found_mpi=no)
+fi
+
+AC_MSG_CHECKING([Checking for MPI])
+if test "X$found_mpi" = "Xyes"; then
+  AC_MSG_RESULT([yes])
   AC_DEFINE_UNQUOTED([DISTRIBUTED_MEMORY], 1, "Shared-memory optimizations off")
   AC_DEFINE_UNQUOTED([DEFAULT_ENV_STRING], "mpi", "Default to mpi environment")
   AC_DEFINE_UNQUOTED([DEFAULT_RUNTIME_STRING], "mpi", "Default to mpi runtime")
   AC_DEFINE_UNQUOTED([DEFAULT_PARTITION_STRING], "block", "Default to basic block partition")
   AC_DEFINE_UNQUOTED([DEFAULT_EVENT_MANAGER_STRING], "clock_cycle_parallel", "Default clock cycle parallelism")
+  AM_CONDITIONAL([USE_MPIPARALLEL], true)
 else
+  AC_MSG_RESULT([no])
   AC_DEFINE_UNQUOTED([DEFAULT_ENV_STRING], "serial", "Default to mpi environment")
   AC_DEFINE_UNQUOTED([DEFAULT_RUNTIME_STRING], "serial", "Default to mpi runtime")
   AC_DEFINE_UNQUOTED([DEFAULT_PARTITION_STRING], "serial", "Default to basic block partition")
   AC_DEFINE_UNQUOTED([DEFAULT_EVENT_MANAGER_STRING], "map", "Default clock cycle parallelism")
+  AM_CONDITIONAL([USE_MPIPARALLEL], false)
 fi
 
-AC_ARG_WITH([mpi-launcher],
-  [AS_HELP_STRING([--with-mpi-launcher],
-    [inform system of MPI launcher for testing purposes])],
-  [mpilauncher=$withval],
-  [mpilauncher=no])
-if test "X$mpilauncher" = "Xno"; then
- AC_SUBST([launcher_test_args],[""])
-else
- AC_SUBST([launcher_test_args],["$mpilauncher -n 2"])
-fi
 ])
+

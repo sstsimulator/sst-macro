@@ -185,7 +185,7 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
   key_to_ranks_map key_map;
 #if SSTMAC_DISTRIBUTED_MEMORY && !SSTMAC_MMAP_COLLECTIVES
   int mydata[3];
-  mydata[0] = next_id_.id_;
+  mydata[0] = next_id_;
   mydata[1] = my_color;
   mydata[2] = my_key;
 
