@@ -34,12 +34,10 @@ libsstmac_common_la_SOURCES = \
   messages/message_buffer_cache.cc \
   messages/payload.cc \
   messages/library_message.cc \
-  messages/sleep_event.cc \
   messages/timed_event.cc \
   messages/sst_message.cc \
   messages/value_payload.cc \
   messages/wrapper_payload.cc \
-  messages/vector_payload.cc \
   stats/stat_collector.cc \
   stats/stat_spyplot.cc \
   stats/stat_histogram.cc \

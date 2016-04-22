@@ -88,7 +88,8 @@ hypercube::minimal_distance(
 void
 hypercube::connect_objects(internal_connectable_map& objects)
 {
-  double link_weight = 1.0;
+  connectable::config cfg;
+  cfg.link_weight = 1.0;
   top_debug("hypercube: connecting %d switches",
     int(objects.size()));
 
@@ -103,7 +104,7 @@ hypercube::connect_objects(internal_connectable_map& objects)
       switch_id my_id = switch_number(coords);
       int dimsize = dimensions_[dim];
       int my_idx = coords[dim];
-      int red = red_[dim];
+      cfg.red = red_[dim];
       int inport = convert_to_port(dim, my_idx);
       for (int dir=0; dir < dimsize; ++dir) {
         if (dir != my_idx) {
@@ -117,18 +118,17 @@ hypercube::connect_objects(internal_connectable_map& objects)
 
           int outport = convert_to_port(dim, dir);
 
-          objects[me]->connect_weighted(
+          objects[me]->connect(
             outport,
             inport,
             connectable::output,
-            neighbor_sw,
-            link_weight, red);
+            neighbor_sw, &cfg);
 
           neighbor_sw->connect(
             outport,
             inport,
             connectable::input,
-            objects[me]);
+            objects[me], &cfg);
 
         }
       }

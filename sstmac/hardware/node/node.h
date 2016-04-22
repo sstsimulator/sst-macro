@@ -84,6 +84,11 @@ class node :
     nic_ = n;
   }
 
+  void
+  connect(int src_outport, int dst_inport,
+    connection_type_t ty, connectable *mod,
+    config *cfg);
+
   /**
    @return  The object encapsulating the memory model
   */

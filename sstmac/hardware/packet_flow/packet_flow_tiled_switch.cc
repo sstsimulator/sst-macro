@@ -160,12 +160,17 @@ packet_flow_tiled_switch::initialize()
 }
 
 void
+packet_flow_tiled_switch::connect_output(int src_outport, int dst_inport, connectable *mod, config *cfg)
+{
+  connect_output(src_outport, dst_inport, safe_cast(event_handler, mod), cfg);
+}
+
+void
 packet_flow_tiled_switch::connect_output(
   int src_outport,
   int dst_inport,
   event_handler *mod,
-  double weight,
-  int red)
+  config* cfg)
 {
   packet_flow_sender* muxer = col_output_muxers_[src_outport];
   muxer->set_output(src_outport, dst_inport, mod);
@@ -173,36 +178,38 @@ packet_flow_tiled_switch::connect_output(
 }
 
 void
+packet_flow_tiled_switch::connect_input(int src_outport, int dst_inport, connectable *mod, config *cfg)
+{
+  connect_input(src_outport, dst_inport, safe_cast(event_handler, mod), cfg);
+}
+
+void
 packet_flow_tiled_switch::connect_input(
   int src_outport,
   int dst_inport,
   event_handler *mod,
-  double weight,
-  int red)
+  config* cfg)
 {
   packet_flow_sender* demuxer = row_input_demuxers_[dst_inport];
   demuxer->set_input(dst_inport, src_outport, mod);
 }
 
 void
-packet_flow_tiled_switch::connect_weighted(
+packet_flow_tiled_switch::connect(
   int src_outport,
   int dst_inport,
   connection_type_t ty,
   connectable* mod,
-  double weight, int red)
+  config* cfg)
 {
   init_components();
   event_handler* ev = safe_cast(event_handler, mod);
   switch(ty) {
     case output:
-      connect_output(src_outport, dst_inport, ev, weight, red);
+      connect_output(src_outport, dst_inport, ev, cfg);
       break;
     case input:
-      connect_input(src_outport, dst_inport, ev, weight, red);
-      break;
-    default:
-      network_switch::connect_weighted(src_outport, dst_inport, ty, mod, weight, red);
+      connect_input(src_outport, dst_inport, ev, cfg);
       break;
   }
 }

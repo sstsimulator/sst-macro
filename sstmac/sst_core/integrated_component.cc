@@ -100,10 +100,9 @@ connection_details::parse_type_id(const std::string& str, endpoint_t& ep, int& i
 
 }
 
-connection_details
-parse_port_name(const std::string& port_name)
+void
+parse_port_name(const std::string& port_name, connection_details* rv)
 {
-  connection_details rv;
   // Replace _ with space except within ( ) so we can use an instream to read the tokens
   std::string split = "";
   int in_parens = 0;
@@ -129,18 +128,19 @@ parse_port_name(const std::string& port_name)
   isstr >> read; assert(read == "port");
   isstr >> inout; assert(inout == "input" || inout == "output");
 
-  rv.type = inout == "input" ? hw::connectable::input : hw::connectable::output;
+  rv->type = inout == "input" ? hw::connectable::input : hw::connectable::output;
   isstr >> read;  // one of the names
-  rv.parse_src(read);
-  isstr >> rv.src_port;
+  rv->parse_src(read);
+  isstr >> rv->src_port;
   isstr >> read; assert(read == "to");
   isstr >> read; // the other name
-  rv.parse_dst(read);
-  isstr >> rv.dst_port;
-  isstr >> rv.weight;
-  isstr >> rv.redundancy;
-
-  return rv;
+  rv->parse_dst(read);
+  isstr >> rv->cfg.dst_port;
+  isstr >> rv->cfg.link_weight;
+  isstr >> rv->cfg.src_buffer_weight;
+  isstr >> rv->cfg.dst_buffer_weight;
+  isstr >> rv->cfg.xbar_weight;
+  isstr >> rv->cfg.redundancy;
 }
 
 }

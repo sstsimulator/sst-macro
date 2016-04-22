@@ -12,8 +12,6 @@
 #include <sstmac/common/messages/wrapper_payload.h>
 #include <sstream>
 
-DeclareSerializable(sstmac::wrapper_payload);
-
 namespace sstmac {
 
 void

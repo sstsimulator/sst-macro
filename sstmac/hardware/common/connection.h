@@ -20,6 +20,23 @@ class connectable
 
   static const int any_port = -1;
 
+  struct config {
+    double src_buffer_weight;
+    double dst_buffer_weight;
+    double xbar_weight;
+    double link_weight;
+    int red;
+
+    config() :
+      src_buffer_weight(-1),
+      dst_buffer_weight(-1),
+      xbar_weight(-1),
+      link_weight(-1),
+      red(-1)
+    {
+    }
+  };
+
   typedef enum {
     output,
     input
@@ -39,21 +56,8 @@ class connectable
     int src_outport,
     int dst_inport,
     connection_type_t ty,
-    connectable* mod) {
-    connect_weighted(src_outport, dst_inport, ty, mod, 1.0, 1);
-  }
-
-  virtual void
-  connect_weighted(
-    int src_outport,
-    int dst_inport,
-    connection_type_t ty,
     connectable* mod,
-    double weight, int red) {
-    spkt_throw_printf(sprockit::unimplemented_error,
-                     "connectable %s does not implement connect for %s",
-                     to_string().c_str(), str(ty));
-  }
+    config* cfg) = 0;
 
 };
 
