@@ -101,6 +101,10 @@ parallel_runtime::init_factory_params(sprockit::sim_parameters* params)
 void
 parallel_runtime::init_partition_params(sprockit::sim_parameters *params)
 {
+#if SSTMAC_INTEGRATED_SST_CORE
+  spkt_throw(sprockit::unimplemented_error,
+    "parallel_runtime::init_partition_params: should not be used with integrated core");
+#else
   std::string netname = params->get_param("interconnect");
   if (netname == "simple"){
     sprockit::sim_parameters* subspace = params->get_namespace("topology");
@@ -114,6 +118,7 @@ parallel_runtime::init_partition_params(sprockit::sim_parameters *params)
     }
   }
   part_ = partition_factory::get_optional_param("partition", SSTMAC_DEFAULT_PARTITION_STRING, params, this);
+#endif
 }
 
 void

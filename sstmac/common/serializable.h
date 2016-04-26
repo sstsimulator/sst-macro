@@ -9,8 +9,6 @@
 #include <sst/core/serialization/serialize_serializable.h>
 #include <sst/core/serialization/serializer.h>
 
-#define DeclareSerializable(...)
-
 namespace sstmac {
 using SST::Core::Serialization::serializable;
 using SST::Core::Serialization::serializable_type;

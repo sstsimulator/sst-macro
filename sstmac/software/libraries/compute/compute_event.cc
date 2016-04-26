@@ -17,8 +17,6 @@
 RegisterDebugSlot(compute_intensity,
     "print output related to compute intensity (flops,intops,bytes) of specific threads");
 
-DeclareSerializable(sstmac::sw::compute_event)
-
 namespace sstmac {
 namespace sw {
 

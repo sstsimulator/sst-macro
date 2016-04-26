@@ -117,7 +117,6 @@ libsstmac_hw_la_SOURCES =  \
   processor/processor.cc \
   processor/simple_processor.cc \
   processor/instruction_processor.cc \
-  common/failable.cc \
   common/packet.cc \
   common/packetizer.cc \
   common/param_expander.cc \

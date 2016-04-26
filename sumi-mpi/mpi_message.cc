@@ -22,8 +22,6 @@
 #include <stdlib.h>
 #include <sstream>
 
-DeclareSerializable(sumi::mpi_message);
-
 #define enumcase(x) case x: return #x
 
 namespace sumi {

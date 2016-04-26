@@ -11,8 +11,6 @@
 
 using namespace sprockit::dbg;
 
-DeclareSerializable(sumi::dynamic_tree_vote_message);
-
 namespace sumi {
 
 #define enumcase(x) case x: return #x

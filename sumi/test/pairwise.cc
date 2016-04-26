@@ -59,9 +59,6 @@ class eager_message :
 
 };
 
-DeclareSerializable(sync_message);
-DeclareSerializable(eager_message);
-
 void*
 msg_thread_run(void* args);
 

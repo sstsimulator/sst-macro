@@ -28,6 +28,10 @@ nobase_library_include_HEADERS += \
 nobase_nodist_library_include_HEADERS += \
   fstream \
   iostream \
+  ios \
+  ostream \
+  istream \
+  istream \
   istream \
   list \
   map \

@@ -21,8 +21,6 @@
 #include <stdlib.h>
 #include <sstream>
 
-DeclareSerializable(sstmac::sw::mpi_message);
-
 namespace sstmac {
 namespace sw {
 

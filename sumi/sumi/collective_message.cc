@@ -1,9 +1,6 @@
 #include <sumi/collective_message.h>
 #include <sumi/serialization.h>
 
-DeclareSerializable(sumi::collective_rdma_message);
-DeclareSerializable(sumi::collective_eager_message);
-
 namespace sumi {
 
 #define enumcase(x) case x: return #x;

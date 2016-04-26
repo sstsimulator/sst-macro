@@ -7,12 +7,12 @@ import commands
 
 files.extend(commands.getoutput("git ls-files").splitlines())
 
-for folder in "dumpi", "sumi", "sprockit":
+for folder in "sst-dumpi",:
   os.chdir(folder)
   manifest = commands.getoutput("git ls-files").splitlines()
   for file in manifest:
     files.append(os.path.join(folder, file))
   os.chdir("..")
 
-open("sstmacro.files", "w").write("\n".join(files))
+open("macro.files", "w").write("\n".join(files))
 

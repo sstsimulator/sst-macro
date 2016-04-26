@@ -13,8 +13,6 @@
 #include <sstmac/libraries/mpi/mpi_api.h>
 #include <sprockit/util.h>
 
-DeclareSerializable(sstmac::sw::mpi_payload);
-
 namespace sstmac {
 namespace sw {
 

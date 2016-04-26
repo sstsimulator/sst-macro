@@ -1,9 +1,5 @@
 #include <sumi/message.h>
 
-DeclareSerializable(sumi::message)
-DeclareSerializable(sumi::rdma_message)
-DeclareSerializable(sumi::payload_message)
-
 namespace sumi {
 
 const int message::ack_size = 16;

@@ -4,8 +4,6 @@
 #include <sprockit/util.h>
 #include <iostream>
 
-DeclareSerializable(sstmac::transport_message)
-
 namespace sstmac {
   
 transport_message::transport_message(const sumi::message_ptr& msg, long byte_length)

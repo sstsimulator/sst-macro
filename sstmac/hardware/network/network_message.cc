@@ -1,8 +1,6 @@
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/software/process/operating_system.h>
 
-DeclareSerializable(sstmac::hw::network_message);
-
 #define enumcase(x) case x: return #x;
 
 namespace sstmac {

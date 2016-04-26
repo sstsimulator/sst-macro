@@ -1,9 +1,5 @@
 #include <sstmac/hardware/packet_flow/packet_flow.h>
 
-DeclareSerializable(sstmac::hw::packet_flow_payload);
-DeclareSerializable(sstmac::hw::packet_flow_credit);
-
-
 RegisterDebugSlot(packet_flow,
     "print all the details of the packet_flow model including crossbar arbitration"
     ", buffer occupancies, and queue depths. This can be a LOT of information. User beware")

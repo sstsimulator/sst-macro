@@ -7,7 +7,7 @@
 #include <sst/core/serialization/serializable.h>
 #include <sst/core/serialization/serialize_serializable.h>
 #include <sst/core/serialization/serializer.h>
-#define DeclareSerializable(...)
+
 namespace sumi {
 using SST::Core::Serialization::serializable;
 using SST::Core::Serialization::serializable_type;

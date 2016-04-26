@@ -120,10 +120,6 @@ class rdma_message :
   double finish_;
 };
 
-DeclareSerializable(rdma_message)
-DeclareSerializable(config_message)
-
-
 std::vector<std::map<int, std::map<int, rdma_message::ptr> > > results;
 static int num_done = 0;
 
