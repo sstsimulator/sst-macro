@@ -1,7 +1,6 @@
 #include <sumi/dynamic_tree_vote.h>
 #include <sumi/transport.h>
 #include <sumi/domain.h>
-#include <sprockit/serializer.h>
 #include <sprockit/stl_string.h>
 
 /*
@@ -11,8 +10,6 @@
 */
 
 using namespace sprockit::dbg;
-
-DeclareSerializable(sumi::dynamic_tree_vote_message);
 
 namespace sumi {
 
@@ -51,7 +48,7 @@ dynamic_tree_vote_message::recv_buffer() const
 }
 
 void
-dynamic_tree_vote_message::serialize_order(sprockit::serializer &ser)
+dynamic_tree_vote_message::serialize_order(sumi::serializer &ser)
 {
   ser & vote_;
   ser & type_;

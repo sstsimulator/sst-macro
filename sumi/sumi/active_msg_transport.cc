@@ -1,6 +1,5 @@
 #include <sumi/active_msg_transport.h>
 #include <sys/time.h>
-#include <sprockit/serializer.h>
 
 namespace sumi {
 
@@ -48,7 +47,7 @@ active_msg_transport::allocate_message_buffer(const message::ptr &msg, int& size
   lock();
   char* ser_buffer = allocate_smsg_buffer(); fflush(stdout);
   unlock();
-  sprockit::serializer ser;
+  sumi::serializer ser;
   ser.start_packing(ser_buffer, smsg_buffer_size_);
   ser & msg;
   size = ser.packer().size();
@@ -58,7 +57,7 @@ active_msg_transport::allocate_message_buffer(const message::ptr &msg, int& size
 message::ptr
 active_msg_transport::deserialize(char* ser_buffer)
 {
-  sprockit::serializer ser;
+  sumi::serializer ser;
   ser.start_unpacking(ser_buffer, smsg_buffer_size_);
   message::ptr msg;
   ser & msg;

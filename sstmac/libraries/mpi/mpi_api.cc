@@ -248,7 +248,8 @@ validranks(const std::vector<mpi_id> &rank, mpi_comm* comm)
   const int ub = comm->size();
   std::vector<mpi_id>::const_iterator it, end = rank.end();
   for (it = rank.begin(); it != end; ++it) {
-    if (it->id_ < 0 || it->id_ >= ub) {
+    int rank = *it;
+    if (rank < 0 || rank >= ub) {
       spkt_throw(sprockit::value_error, "invalid rank found");
     }
   }

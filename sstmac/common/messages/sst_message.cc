@@ -11,7 +11,6 @@
 
 #include <sstmac/common/messages/sst_message.h>
 #include <sstmac/common/event_callback.h>
-#include <sprockit/serializer.h>
 
 #define sst_msg_invalid(fxn) \
     spkt_throw_printf(sprockit::illformed_error, \
@@ -27,7 +26,7 @@ message::message() :
 }
 
 void
-message::serialize_order(sprockit::serializer& ser)
+message::serialize_order(serializer& ser)
 {
 }
 

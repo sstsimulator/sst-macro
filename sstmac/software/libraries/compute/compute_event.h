@@ -16,7 +16,6 @@
 #include <sstmac/common/timestamp.h>
 #include <sstmac/hardware/memory/memory_id.h>
 #include <sprockit/debug.h>
-#include <sprockit/expandable_enum.h>
 #include <sprockit/typedefs.h>
 #include <stdint.h>
 
@@ -33,22 +32,22 @@ namespace sw {
  */
 class compute_event :
   public event,
-  public sprockit::serializable_type<compute_event>
+  public serializable_type<compute_event>
 {
 
   ImplementSerializableDefaultConstructor(compute_event)
 
  public:
   virtual void
-  serialize_order(sprockit::serializer &ser){}
+  serialize_order(serializer &ser){}
 
-  declare_expandable_enum(event_type_t);
-
-  static event_type_t mem_random;
-  static event_type_t mem_sequential;
-  static event_type_t flop;
-  static event_type_t intop;
-  static event_type_t time;
+  typedef enum {
+    mem_random = 0,
+    mem_sequential = 1,
+    flop = 2,
+    intop = 3,
+    time = 4
+  } event_type_t;
 
   compute_event();
 
@@ -65,7 +64,7 @@ class compute_event :
    */
   void
   set_event_value(event_type_t ty, uint64_t val){
-    event_data_[ty.value] = val;
+    event_data_[ty] = val;
   }
 
   /**
@@ -75,12 +74,12 @@ class compute_event :
     */
   uint64_t
   event_value(event_type_t ty) const {
-    return event_data_[ty.value];
+    return event_data_[ty];
   }
 
   void
   set_event_time(const timestamp& t) {
-    event_data_[time.value] = t.ticks_int64();
+    event_data_[time] = t.ticks_int64();
   }
 
   std::string
@@ -88,12 +87,12 @@ class compute_event :
 
   timestamp
   event_time() const {
-    return timestamp(event_data_[time.value], timestamp::exact);
+    return timestamp(event_data_[time], timestamp::exact);
   }
   
   bool
   timed_computed() const {
-    return event_data_[time.value];
+    return event_data_[time];
   }
 
   void
@@ -133,8 +132,6 @@ class compute_event :
   hw::memory_access_id unique_id_;
 
 };
-
-implement_enum_functions(compute_event::event_type_t);
 
 }
 }  // end of namespace sstmac

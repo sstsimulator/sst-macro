@@ -1,9 +1,6 @@
 #ifndef PACKETFLOW_H
 #define PACKETFLOW_H
 
-#ifndef PACKET_TRAIN_H
-#define PACKET_TRAIN_H
-
 #include <sstmac/hardware/router/routable_message.h>
 #include <sstmac/hardware/common/packet.h>
 #include <sprockit/debug.h>
@@ -46,7 +43,7 @@ class packet_flow_interface
   }
 
   void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(serializer& ser);
 
   static const long infinity = -1;
 
@@ -83,7 +80,7 @@ class packet_flow_payload :
   public packet_flow_interface,
   public routable,
   public packet,
-  public sprockit::serializable_type<packet_flow_payload>
+  public serializable_type<packet_flow_payload>
 {
  public:
   static const double uninitialized_bw;
@@ -95,6 +92,8 @@ class packet_flow_payload :
     message* parent,
     int num_bytes,
     long offset);
+
+  packet_flow_payload(){} //for serialization
 
   virtual ~packet_flow_payload() {}
 
@@ -215,7 +214,7 @@ class packet_flow_payload :
   to_string() const;
 
   void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(serializer& ser);
 
  protected:
   int inport_;
@@ -231,13 +230,15 @@ class packet_flow_payload :
 class packet_flow_credit :
   public event,
   public packet_flow_interface,
-  public sprockit::serializable_type<packet_flow_credit>
+  public serializable_type<packet_flow_credit>
 {
 
  public:
   ImplementSerializable(packet_flow_credit)
 
  public:
+  packet_flow_credit(){} //for serialization
+
   packet_flow_credit(
     int port,
     int vc,
@@ -276,7 +277,7 @@ class packet_flow_credit :
   to_string() const;
 
   void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(serializer& ser);
 
  protected:
   int num_credits_;
@@ -287,8 +288,6 @@ class packet_flow_credit :
 
 }
 }
-
-#endif // PACKET_TRAIN_H
 
 
 #endif // PACKETFLOW_H

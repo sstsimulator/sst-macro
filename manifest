@@ -14,5 +14,5 @@ for folder in "sst-dumpi",:
     files.append(os.path.join(folder, file))
   os.chdir("..")
 
-open("sstmacro.files", "w").write("\n".join(files))
+open("macro.files", "w").write("\n".join(files))
 

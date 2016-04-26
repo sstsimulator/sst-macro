@@ -12,12 +12,10 @@
 #include <sstmac/common/messages/wrapper_payload.h>
 #include <sstream>
 
-DeclareSerializable(sstmac::wrapper_payload);
-
 namespace sstmac {
 
 void
-wrapper_payload::serialize_order(sprockit::serializer& ser)
+wrapper_payload::serialize_order(serializer& ser)
 {
   spkt_throw_printf(sprockit::unimplemented_error, "wrapperpayload::serialize");
 }

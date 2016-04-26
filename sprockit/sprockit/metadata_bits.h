@@ -7,8 +7,6 @@ namespace sprockit {
 
 template <class integer>
 class metadata_bits {
-  
-  template <class T> friend class serialize;
 
 public:
   bool
@@ -51,17 +49,10 @@ public:
   {
   }
 
- protected:
+ public:
   integer metadata_;
 };
 
-template <typename T>
-class serialize<metadata_bits<T> > {
- public:
-  void operator()(metadata_bits<T> &t, serializer& ser){
-    ser & t.metadata_;
-  }
-};
 
 }
 

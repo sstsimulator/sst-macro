@@ -68,7 +68,7 @@ mpi_comm_factory::~mpi_comm_factory()
 void
 mpi_comm_factory::init(app_manager* env, mpi_id rank)
 {
-  next_id_.id_ = 1;
+  next_id_ = 1;
 
   mpirun_np_ = env->nproc();
 
@@ -131,7 +131,7 @@ mpi_comm_factory::comm_create(mpi_comm* caller, mpi_group* group)
 {
   //first reduce so we know everyone is on board, which is the necessary barrier
   //payload::const_ptr load = valuepayload<int>::construct(next_id_.id_);
-  payload::const_ptr load = new mpi_payload(&next_id_.id_,
+  payload::const_ptr load = new mpi_payload(&next_id_,
                             mpi_type::mpi_int, 1, false);
   payload::const_ptr result;
   parent_->allreduce(1, mpi_type::mpi_int->id,
@@ -149,9 +149,9 @@ mpi_comm_factory::comm_create(mpi_comm* caller, mpi_group* group)
   //now find my rank
   mpi_id newrank = group->rank_of_task(caller->my_task());
 
-  next_id_.id_ = cid.id_ + 1;
+  next_id_ = cid + 1;
 
-  if (newrank.id_ >= 0) {
+  if (newrank >= 0) {
     return new mpi_comm(cid, newrank, group, worldcomm_->env_, aid_);
   }
   else {
@@ -185,7 +185,7 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
   key_to_ranks_map key_map;
 #if SSTMAC_DISTRIBUTED_MEMORY && !SSTMAC_MMAP_COLLECTIVES
   int mydata[3];
-  mydata[0] = next_id_.id_;
+  mydata[0] = next_id_;
   mydata[1] = my_color;
   mydata[2] = my_key;
 
@@ -245,7 +245,7 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
   split_lock.unlock();
 
   int* my_data = entry.buf + 3*caller->rank();
-  my_data[0] = next_id_.id_;
+  my_data[0] = next_id_;
   my_data[1] = my_color;
   my_data[2] = my_key;
   std::vector<payload::const_ptr> dummy;
@@ -290,7 +290,7 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
 
 
   //the next id I use needs to be greater than this
-  next_id_.id_ = cid + 1;
+  next_id_ = cid + 1;
 
   std::vector<task_id> task_list(new_comm_size);
 
@@ -331,7 +331,7 @@ mpi_comm_factory::create_cart(mpi_comm*caller, int ndims,
                               int *dims, int *periods, int reorder)
 {
   //first reduce so we know everyone is on board, which is the necessary barrier
-  payload::const_ptr load = new mpi_payload(&next_id_.id_,
+  payload::const_ptr load = new mpi_payload(&next_id_,
                             mpi_type::mpi_int, 1, false);
   payload::const_ptr result;
   parent_->allreduce(1, mpi_type::mpi_int->id, mpi_op::max, caller, load, result);
@@ -350,9 +350,9 @@ mpi_comm_factory::create_cart(mpi_comm*caller, int ndims,
   mpi_id newrank = caller->group_->rank_of_task(caller->my_task());
 
 
-  next_id_.id_ = cid.id_ + 1;
+  next_id_ = cid + 1;
 
-  if (newrank.id_ >= 0) {
+  if (newrank >= 0) {
     return new mpi_comm_cart(cid, newrank, caller->group_,
                      worldcomm_->env_, aid_, ndims, dims, periods, reorder);
   }

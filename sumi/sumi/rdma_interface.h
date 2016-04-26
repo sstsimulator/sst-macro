@@ -2,7 +2,6 @@
 #define RDMA_interface_H
 
 #include <sumi/config.h>
-#include <sprockit/serializer_fwd.h>
 
 #define ImplementRdmaAPI \
 public: \

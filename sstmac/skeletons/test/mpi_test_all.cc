@@ -151,14 +151,14 @@ mpi_test_all::test_sendrecv()
 
   mpi_tag tag(1145);
   bool participant = true;
-  if ((size.id_ % 2) && (int(rank)+ 1 >= int(size))) {
+  if ((size % 2) && (int(rank)+ 1 >= int(size))) {
     // This is the odd-node-out -- communicating with no-one.
     participant = false;
   }
   if (participant) {
     mpi_id buddy(int(rank)^ 1); // 0<=>1, 2<=>3, etc.
 
-    if ((rank.id_) & 1) {
+    if ((rank) & 1) {
       // even values of half-cycle plus rank.
 
       value_payload<int>::const_ptr senddata =
@@ -184,7 +184,7 @@ mpi_test_all::test_sendrecv()
         }
       }
       else {
-        if (recvdata->typed_data() != (buddy.id_ * 1000)) {
+        if (recvdata->typed_data() != (buddy * 1000)) {
           errors_++;
           if (print_all_) std::cout << "ERROR at rank " << int(rank)
                        << ": SEND-RECV: received value "
@@ -248,7 +248,7 @@ mpi_test_all::test_reduce()
 
   payload::const_ptr result;
 
-  payload::const_ptr load = value_payload<int>::construct((1 << rank.id_));
+  payload::const_ptr load = value_payload<int>::construct((1 << rank));
   mpi()->reduce(count, mpi_type::mpi_double->id, mpi_op::sum, mpi_id(0), world,
                 load, result);
 

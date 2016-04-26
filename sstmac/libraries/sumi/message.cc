@@ -1,13 +1,12 @@
 #include <sstmac/libraries/sumi/message.h>
-#include <sprockit/serializer.h>
+#include <sstmac/common/serializable.h>
+#include <sumi/message.h>
 #include <sprockit/util.h>
 #include <iostream>
 
-DeclareSerializable(sstmac::transport_message)
-
 namespace sstmac {
   
-transport_message::transport_message(const sumi::payload_ptr& msg, long byte_length)
+transport_message::transport_message(const sumi::message_ptr& msg, long byte_length)
   : library_interface("sumi"),
     network_message(byte_length),
     payload_(msg),
@@ -16,7 +15,7 @@ transport_message::transport_message(const sumi::payload_ptr& msg, long byte_len
 }
 
 void
-transport_message::serialize_order(sprockit::serializer& ser)
+transport_message::serialize_order(serializer& ser)
 {
   network_message::serialize_order(ser);
   library_interface::serialize_order(ser);
@@ -24,7 +23,7 @@ transport_message::serialize_order(sprockit::serializer& ser)
   if (network_message::is_metadata()){
     ser & buffer_; //just dump the void*, rdma request or similar
   } else { //I am a data thing, need to send the actual payload
-    ser & sprockit::buffer(buffer_, bytes_);
+    ser & sstmac::buffer(buffer_, bytes_);
   }
 }
 

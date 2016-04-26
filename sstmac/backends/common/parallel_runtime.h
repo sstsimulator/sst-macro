@@ -10,9 +10,7 @@
 #include <sstmac/common/sst_event_fwd.h>
 #include <sstmac/backends/common/sim_partition_fwd.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
-
 #include <sprockit/factories/factory.h>
-#include <sprockit/serializer_fwd.h>
 #include <sprockit/sim_parameters.h>
 
 DeclareDebugSlot(parallel);

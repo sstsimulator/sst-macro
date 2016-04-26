@@ -13,11 +13,9 @@
 #define SSTMAC_COMMON_MESSAGES_SST_MESSAGE_H_INCLUDED
 
 
-#include <sprockit/ser_ptr_type.h>
-#include <sprockit/serializable.h>
+#include <sstmac/common/serializable.h>
 #include <sstmac/common/node_address.h>
 
-#include <sprockit/expandable_enum.h>
 #include <sprockit/metadata_bits.h>
 
 #include <sstmac/common/sst_event.h>
@@ -62,7 +60,7 @@ class message :
    * @param ser The serializer to use
    */
   virtual void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(serializer& ser);
 
   virtual node_id
   toaddr() const = 0;

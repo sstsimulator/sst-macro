@@ -18,7 +18,6 @@
 #include <sprockit/debug.h>
 
 #include <sstmac/hardware/common/connection.h>
-#include <sstmac/hardware/common/clonable.h>
 #include <sstmac/hardware/router/router_fwd.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sprockit/sim_parameters_fwd.h>

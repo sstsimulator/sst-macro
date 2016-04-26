@@ -3,11 +3,8 @@
 #include <sstmac/common/messages/sst_message.h>
 #include <sprockit/serializer.h>
 
-
 namespace sstmac {
 namespace hw {
-
-ImplementEnum(packet::field);
 
 packet::packet(
   message* orig,
@@ -41,7 +38,7 @@ packet::packet(
 }
 
 void
-packet::serialize_order(sprockit::serializer& ser)
+packet::serialize_order(serializer& ser)
 {
   event::serialize_order(ser);
   ser & orig_;

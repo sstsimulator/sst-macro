@@ -7,6 +7,7 @@
 #include <sprockit/util.h>
 #include <sprockit/output.h>
 #include <sprockit/sim_parameters.h>
+#include <sumi/message.h>
 
 using namespace sprockit::dbg;
 
@@ -82,7 +83,7 @@ sumi_api::init_factory_params(sprockit::sim_parameters *params)
 void
 sumi_api::transport_send(
   long byte_length,
-  const sumi::payload_ptr &msg,
+  const sumi::message_ptr &msg,
   int sendType,
   int dst,
   bool needs_ack,
@@ -102,7 +103,7 @@ sumi_api::transport_send(
   sw::library::os_->execute_kernel(ami::COMM_SEND, tmsg);
 }
 
-sumi::payload_ptr
+sumi::message_ptr
 sumi_api::poll_until_notification()
 {
 #if SSTMAC_SANITY_CHECK
@@ -113,26 +114,26 @@ sumi_api::poll_until_notification()
 #endif
   while (1) {
     transport_message* msg = queue_->poll_until_message();
-    sumi::payload_ptr notification = handle(msg);
+    sumi::message_ptr notification = handle(msg);
     if (notification){
       return notification;
     }
   }
 }
 
-sumi::payload_ptr
+sumi::message_ptr
 sumi_api::poll_until_notification(timestamp timeout)
 {
   while (1) {
     transport_message* msg = queue_->poll_until_message(timeout);
     if (msg){
-      sumi::payload_ptr notification = handle(msg);
+      sumi::message_ptr notification = handle(msg);
       if (notification){
         return notification;
       }
     } else {
       //I timed out
-      return sumi::payload_ptr();
+      return sumi::message_ptr();
     }
   }
 }

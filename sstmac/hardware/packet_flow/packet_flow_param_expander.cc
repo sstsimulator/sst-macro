@@ -27,9 +27,8 @@ packet_flow_param_expander::expand(sprockit::sim_parameters* params)
 
   //scale up the injection bandwidth by the redundancy
   double inj_bw = params->get_bandwidth_param("injection_bandwidth");
-  double new_inj_bw = nic_bandwidth_multiplier(params) * inj_bw;
   double kiviat_scale = params->get_optional_double_param("scale_injection_bandwidth", 1.0);
-  std::string bw_str = sprockit::printf("%25.10fB/s", new_inj_bw*kiviat_scale);
+  std::string bw_str = sprockit::printf("%25.10fB/s", inj_bw*kiviat_scale);
   params->add_param_override("injection_bandwidth", bw_str);
 
   if (params->has_param("scale_injection_latency")){

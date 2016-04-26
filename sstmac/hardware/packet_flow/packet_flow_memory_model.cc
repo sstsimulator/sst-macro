@@ -7,8 +7,6 @@
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 
-DeclareSerializable(sstmac::hw::memory_message)
-
 MakeDebugSlot(packet_flow_memory)
 
 #define debug(...) debug_printf(sprockit::dbg::packet_flow_memory, __VA_ARGS__)

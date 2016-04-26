@@ -20,11 +20,6 @@ simple_param_expander::expand(sprockit::sim_parameters* params)
     params->add_param_override("nic_negligible_size", "512");
   }
 
-  double inj_bw = params->get_bandwidth_param("injection_bandwidth");
-  double new_inj_bw = nic_bandwidth_multiplier(params) * inj_bw;
-  std::string bw_str = sprockit::printf("%25.10fB/s", new_inj_bw);
-  params->add_param_override("injection_bandwidth", bw_str);
-
   std::string amm_type = params->get_param("amm_model");
   if (amm_type == "amm1"){
     expand_amm1(params);

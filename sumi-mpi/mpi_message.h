@@ -49,7 +49,7 @@ struct mpi_buffer {
  */
 class mpi_message :
   public sumi::rdma_message,
-  public sprockit::serializable_type<mpi_message>
+  public serializable_type<mpi_message>
 {
   ImplementSerializableDefaultConstructor(mpi_message)
 
@@ -85,7 +85,7 @@ class mpi_message :
   /// Goodbye.
   virtual ~mpi_message() throw ();
 
-  virtual sumi::parent_message*
+  virtual sumi::message*
   clone() const;
 
   /**
@@ -93,7 +93,7 @@ class mpi_message :
    * @param ser The serializer to use
    */
   virtual void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(serializer& ser);
 
   long
   payload_bytes() const {

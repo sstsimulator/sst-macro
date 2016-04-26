@@ -7,13 +7,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <sst/core/event.h>
-
 #include <sstmac/common/event_handler.h>
 #include <sstmac/common/sst_event.h>
-
 #include <sprockit/util.h>
-
-#include <sprockit/serializer.h>
 
 namespace sstmac {
 

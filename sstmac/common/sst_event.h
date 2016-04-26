@@ -12,7 +12,7 @@
 #ifndef SSTMAC_BACKENDS_NATIVE_SSTEVENT_H_INCLUDED
 #define SSTMAC_BACKENDS_NATIVE_SSTEVENT_H_INCLUDED
 
-#include <sprockit/serializable.h>
+#include <sstmac/common/serializable.h>
 #include <sstmac/common/event_handler.h>
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/sstmac_config.h>
@@ -20,22 +20,24 @@
 #include <sstmac/common/event_location.h>
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sst/core/event.h>
+#include <sst/core/output.h>
 #endif
 
 namespace sstmac {
 
 class event :
 #if SSTMAC_INTEGRATED_SST_CORE
-  public SST::Event,
-#endif
+  public SST::Event
+#else
   public sprockit::serializable
+#endif
 {
  public:
   virtual std::string
   to_string() const = 0;
 
   void
-  serialize_order(sprockit::serializer& ser){}
+  serialize_order(serializer& ser){}
 
   /** convenience methods */
   virtual bool
@@ -67,7 +69,7 @@ class event_queue_entry
   : public SST::Event
 #endif
 {
-
+  NotSerializable(event_queue_entry)
  public:
   virtual ~event_queue_entry() {}
 

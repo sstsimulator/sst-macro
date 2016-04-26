@@ -42,7 +42,6 @@ nobase_library_include_HEADERS = \
   node/node_fwd.h \
   node/null_node.h \
   node/simple_node.h \
-  common/clonable.h \
   common/connection.h \
   common/failable.h \
   common/fail_event.h \
@@ -118,7 +117,6 @@ libsstmac_hw_la_SOURCES =  \
   processor/processor.cc \
   processor/simple_processor.cc \
   processor/instruction_processor.cc \
-  common/failable.cc \
   common/packet.cc \
   common/packetizer.cc \
   common/param_expander.cc \

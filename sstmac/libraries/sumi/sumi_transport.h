@@ -5,7 +5,7 @@
 #include <sstmac/libraries/sumi/message_fwd.h>
 #include <sumi/monitor.h>
 #include <sumi/timeout.h>
-#include <sumi/message.h>
+#include <sumi/message_fwd.h>
 #include <sumi/collective.h>
 #include <sumi/transport.h>
 #include <sumi/comm_functions.h>
@@ -33,7 +33,7 @@ class sumi_transport :
 
   virtual ~sumi_transport(){}
 
-  virtual sstmac::sumi::payload_ptr
+  virtual sumi::message_ptr
   handle(sstmac::transport_message* msg);
 
   /**

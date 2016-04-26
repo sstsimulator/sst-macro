@@ -1,8 +1,5 @@
 #include <sumi/collective_message.h>
-#include <sprockit/serializer.h>
-
-DeclareSerializable(sumi::collective_rdma_message);
-DeclareSerializable(sumi::collective_eager_message);
+#include <sumi/serialization.h>
 
 namespace sumi {
 
@@ -29,7 +26,7 @@ collective_work_message::tostr(action_t action)
 }
 
 void
-collective_work_message::serialize_order(sprockit::serializer &ser)
+collective_work_message::serialize_order(sumi::serializer &ser)
 {
   message::serialize_order(ser);
   ser & action_;
@@ -43,14 +40,14 @@ collective_work_message::serialize_order(sprockit::serializer &ser)
 }
 
 void
-collective_eager_message::serialize_order(sprockit::serializer &ser)
+collective_eager_message::serialize_order(sumi::serializer &ser)
 {
   collective_work_message::serialize_order(ser);
-  ser & sprockit::buffer(buffer_, num_bytes_);
+  ser & sumi::buffer(buffer_, num_bytes_);
 }
 
 void
-collective_rdma_message::serialize_order(sprockit::serializer &ser)
+collective_rdma_message::serialize_order(sumi::serializer &ser)
 {
   collective_work_message::serialize_order(ser);
   ser & local_buffer_;
@@ -85,7 +82,7 @@ collective_work_message::clone_into(collective_work_message* cln) const
   cln->dense_recver_ = dense_recver_;
 }
 
-parent_message*
+message*
 collective_done_message::clone() const
 {
   spkt_throw(sprockit::unimplemented_error,

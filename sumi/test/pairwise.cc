@@ -1,7 +1,6 @@
 #include <pthread.h>
 #include <sumi/transport.h>
 #include <sprockit/sim_parameters.h>
-#include <sprockit/serializer.h>
 
 using namespace sumi;
 
@@ -59,9 +58,6 @@ class eager_message :
   }
 
 };
-
-DeclareSerializable(sync_message);
-DeclareSerializable(eager_message);
 
 void*
 msg_thread_run(void* args);

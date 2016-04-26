@@ -12,17 +12,13 @@
 #ifndef SSTMAC_SOFTWARE_API_MPI_TYPE_OPERATOR_H_INCLUDED
 #define SSTMAC_SOFTWARE_API_MPI_TYPE_OPERATOR_H_INCLUDED
 
-#include <sprockit/serializable.h>
 #include <sprockit/errors.h>
 
 namespace sstmac {
 namespace sw {
 
-class mpi_type_operator :
-  public sprockit::serializable
+class mpi_type_operator
 {
-
- public:
 
  public:
   virtual
@@ -87,11 +83,8 @@ class mpi_type_operator :
 };
 
 class mpi_null_op :
-  public mpi_type_operator,
-  public sprockit::serializable_type<mpi_null_op>
+  public mpi_type_operator
 {
-  ImplementSerializable(mpi_null_op)
-
  public:
   virtual
   ~mpi_null_op() {
@@ -159,26 +152,13 @@ class mpi_null_op :
   do_replace(const void* buf1, const void* buf2, void* result, int count) {
   }
 
-  virtual void
-  serialize_order(sprockit::serializer& ser) {
-
-  }
-
 };
 
 template<typename T>
 class mpi_prim_op :
-  public mpi_type_operator,
-  public sprockit::serializable_type<mpi_prim_op<T> >
+  public mpi_type_operator
 {
-  ImplementSerializable( mpi_prim_op<T> )
-
  public:
-  virtual void
-  serialize_order(sprockit::serializer& ser) {
-
-  }
-
   virtual
   ~mpi_prim_op() {
   }
@@ -303,13 +283,9 @@ class mpi_prim_op :
 
 template<typename T>
 class mpi_prim_bit_op :
-  public mpi_prim_op<T>,
-  public sprockit::serializable_type<mpi_prim_bit_op<T> >
+  public mpi_prim_op<T>
 {
   typedef mpi_prim_op<T> parent;
-  typedef typename parent::cxn_flag_t cxn_flag_t;
-  using parent::ConstructorFlag;
-  ImplementSerializable( mpi_prim_bit_op )
 
  public:
   virtual
@@ -347,20 +323,12 @@ class mpi_prim_bit_op :
     }
   }
 
-  virtual void
-  serialize_order(sprockit::serializer& ser) {
-
-  }
-
 };
 
 template<typename T, typename S>
 class mpi_pair_op :
-  public mpi_type_operator,
-  public sprockit::serializable_type<mpi_pair_op<T, S> >
+  public mpi_type_operator
 {
-  ImplementSerializable( mpi_pair_op )
-
  public:
   virtual
   ~mpi_pair_op() {
@@ -568,11 +536,6 @@ class mpi_pair_op :
   do_bxor(const void* buf1, const void* buf2, void* result, int count) {
     spkt_throw_printf(sprockit::spkt_error,
                      "mpi type operator:bxor :bitwise not compatible with pair type");
-  }
-
-  virtual void
-  serialize_order(sprockit::serializer& ser) {
-
   }
 
 };

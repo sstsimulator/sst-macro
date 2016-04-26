@@ -6,26 +6,26 @@
 #include <sstmac/software/process/key_fwd.h>
 #include <sstmac/common/messages/library_message.h>
 #include <sstmac/libraries/sumi/message_fwd.h>
-#include <sprockit/serializer_fwd.h>
-#include <sprockit/ser_ptr_type.h>
-#include <sprockit/clonable.h>
+#include <sumi/message_fwd.h>
 
 namespace sstmac {
 
 class transport_message :
   public ::sstmac::hw::network_message,
   public ::sstmac::library_interface,
-  public sprockit::serializable_type<transport_message>
+  public serializable_type<transport_message>
 {
    ImplementSerializable(transport_message)
 
  public:
-  transport_message(const sumi::payload_ptr& msg, long byte_length);
+  transport_message(){} //needed for serialization
+
+  transport_message(const sumi::message_ptr& msg, long byte_length);
 
   virtual void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(serializer& ser);
 
-  sumi::payload_ptr
+  sumi::message_ptr
   payload() const {
     return payload_;
   }
@@ -80,7 +80,7 @@ class transport_message :
   reverse();
 
  private:
-  sumi::payload_ptr payload_;
+  sumi::message_ptr payload_;
   void* buffer_;
 
 };

@@ -128,6 +128,7 @@ ac_configure_args="$ac_configure_args --with-cxxflags='$CXXFLAGS'"
 else
 CHECK_CPP11()
 CHECK_BOOST()
+CHECK_MPI_PARALLEL()
 fi
 
 CHECK_PYTHON()
@@ -162,7 +163,6 @@ CHECK_REPO_BUILD([sstmac])
 
 CHECK_MPI_IMPLEMENTATION()
 
-CHECK_MPI_PARALLEL()
 
 CHECK_MPI_TIMELINE_STATS()
 
@@ -181,13 +181,14 @@ CHECK_STL_REPLACEMENT_HEADERS()
 # Configure subdirs
 #-------------------------------------------------
 
+ac_configure_args="$ac_configure_args --enable-sst --enable-sst-subrepo"
+
 # Configure sprockit
 AC_CONFIG_SUBDIRS([sprockit])
 
 # Configure dumpi.
 AC_CONFIG_SUBDIRS([sst-dumpi])
 
-ac_configure_args="$ac_configure_args --enable-sst --enable-sst-subrepo --with-extra-sst-flags='$SUMI_CPPFLAGS'"
 AC_CONFIG_SUBDIRS([sumi])
 
 #-------------------------------------------------

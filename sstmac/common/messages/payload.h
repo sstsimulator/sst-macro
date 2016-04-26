@@ -13,8 +13,8 @@
 #define SSTMAC_COMMON_MESSAGES_PAYLOAD_H_INCLUDED
 
 #include <sstmac/software/api/api_fwd.h>
+#include <sstmac/common/serializable.h>
 #include <sprockit/ptr_type.h>
-#include <sprockit/serializable.h>
 #include <typeinfo>
 
 namespace sstmac {
@@ -24,7 +24,7 @@ namespace sstmac {
  */
 class payload :
   public sprockit::printable_ptr_type,
-  public sprockit::serializable
+  public serializable
 {
  protected:
   /**

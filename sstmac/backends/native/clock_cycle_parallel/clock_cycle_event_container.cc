@@ -8,7 +8,6 @@
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/interconnect/switch_interconnect.h>
 #include <sprockit/util.h>
-#include <sprockit/serializer.h>
 #include <limits>
 
 #define event_debug(...) \

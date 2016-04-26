@@ -63,7 +63,7 @@ mpi_comm::dup_keyvals(mpi_comm* m)
 std::string
 mpi_comm::to_string() const
 {
-  return "mpicomm(" + rank().to_string() + ")";
+  return sprockit::printf("mpicomm(%d)", rank());
 }
 
 /// The size of the communicator.
@@ -132,10 +132,10 @@ mpi_comm::validate(const char* fxn) const
                      "mpicomm::%s: group_ is null for some reason",
                      fxn);
   }
-  if (rank_.id_ < 0|| rank_.id_ >= env_->nproc()) {
+  if (rank_ < 0|| rank_ >= env_->nproc()) {
     spkt_throw_printf(sprockit::illformed_error,
                      "mpicomm::%s: invalid rank %d",
-                     fxn, rank_.id_);
+                     fxn, rank_);
   }
   if (!env_) {
     spkt_throw_printf(sprockit::null_error,

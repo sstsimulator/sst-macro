@@ -7,6 +7,7 @@
 #include <sstmac/software/libraries/service.h>
 #include <sstmac/software/api/api.h>
 #include <sstmac/hardware/network/network_message_fwd.h>
+#include <sumi/message_fwd.h>
 
 /**
  * SUMI = Simulator unified messagine interface
@@ -77,13 +78,13 @@ class sumi_api :
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
 
-  sumi::payload_ptr
+  sumi::message_ptr
   poll_until_notification();
 
-  sumi::payload_ptr
+  sumi::message_ptr
   poll_until_notification(timestamp timeout);
 
-  virtual sumi::payload_ptr
+  virtual sumi::message_ptr
   handle(transport_message* msg) = 0;
   
   void
@@ -92,7 +93,7 @@ class sumi_api :
   void
   transport_send(
     long byte_length,
-    const sumi::payload_ptr& msg,
+    const sumi::message_ptr& msg,
     int ty,
     int dst,
     bool needs_ack,

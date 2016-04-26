@@ -37,9 +37,7 @@ libsstmac_common_la_SOURCES = \
   messages/sleep_event.cc \
   messages/timed_event.cc \
   messages/sst_message.cc \
-  messages/value_payload.cc \
   messages/wrapper_payload.cc \
-  messages/vector_payload.cc \
   stats/stat_collector.cc \
   stats/stat_spyplot.cc \
   stats/stat_histogram.cc \
@@ -79,6 +77,7 @@ nobase_library_include_HEADERS = \
   thread_safe_int.h \
   thread_lock.h \
   sim_thread_lock.h \
+  serializable.h \
   messages/payload.h \
   messages/library_message.h \
   messages/message_buffer_cache.h \

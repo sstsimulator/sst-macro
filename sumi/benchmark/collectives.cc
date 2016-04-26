@@ -3,7 +3,6 @@
 #include <sumi/transport.h>
 #include <sumi/domain.h>
 #include <sprockit/sim_parameters.h>
-#include <sprockit/serializer.h>
 #include <sprockit/util.h>
 #include <sprockit/stl_string.h>
 #include <unistd.h>

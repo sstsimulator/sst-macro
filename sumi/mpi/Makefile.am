@@ -9,7 +9,7 @@
 #   SST/macroscale directory.
 #
 
-AM_CPPFLAGS = -I$(top_builddir) -I$(top_srcdir) 
+include $(top_srcdir)/Makefile.common
 
 noinst_LTLIBRARIES = libsumi_mpi.la
 libsumi_mpi_la_LDFLAGS = 

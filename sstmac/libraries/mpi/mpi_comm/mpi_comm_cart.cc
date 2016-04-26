@@ -53,7 +53,7 @@ mpi_comm_cart::shift(int dir, int dis)
                      dir, dims_.size());
   }
   int coords[dims_.size()];
-  set_coords(rank_.id_, coords);
+  set_coords(rank_, coords);
   coords[dir] += dis;
 
   if (coords[dir] >= dims_[dir]) {

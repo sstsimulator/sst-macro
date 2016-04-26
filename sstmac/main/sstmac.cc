@@ -85,6 +85,10 @@ print_finish(std::ostream& os, double wall_time)
 parallel_runtime*
 init()
 {
+#if SSTMAC_INTEGRATED_SST_CORE
+  spkt_throw(sprockit::unimplemented_error,
+    "parallel_runtime* init: should not be called in integrated core");
+#else
   //create a set of parameters from env variables
   //this is best way to piggy-back on process manager to configure things
   //in a parallel environment
@@ -109,6 +113,7 @@ init()
   parallel_runtime* rt = parallel_runtime_factory::get_param("runtime", &cmdline_params);
 
   return rt;
+#endif
 }
 
 void

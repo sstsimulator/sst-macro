@@ -120,7 +120,7 @@ void mpi_ring_allgatherv::start()
   mpi_allgatherv_debug("starting");
   mpi_collective::start();
   // Catch situations where comm_->size() is 1.
-  if(comm_->size().id_ <= 1) {
+  if(comm_->size() <= 1) {
     mpi_collective::complete(content_);
   }
   else {

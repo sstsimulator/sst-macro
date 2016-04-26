@@ -13,6 +13,7 @@
 #define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_TILED_DRAGONFLY_H_INCLUDED
 
 #include <sstmac/hardware/topology/dragonfly.h>
+#include <set>
 
 namespace sstmac {
 namespace hw {

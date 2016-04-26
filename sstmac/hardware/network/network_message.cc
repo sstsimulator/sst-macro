@@ -1,8 +1,5 @@
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sprockit/serializer.h>
-
-DeclareSerializable(sstmac::hw::network_message);
 
 #define enumcase(x) case x: return #x;
 
@@ -141,7 +138,7 @@ network_message::dest_thread(sw::operating_system*os) const
 }
 
 void
-network_message::serialize_order(sprockit::serializer& ser)
+network_message::serialize_order(serializer& ser)
 {
   ser & needs_ack_;
   ser & route_algo_;

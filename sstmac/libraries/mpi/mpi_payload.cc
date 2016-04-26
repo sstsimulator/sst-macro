@@ -11,10 +11,7 @@
 
 #include <sstmac/libraries/mpi/mpi_payload.h>
 #include <sstmac/libraries/mpi/mpi_api.h>
-#include <sprockit/serializer.h>
 #include <sprockit/util.h>
-
-DeclareSerializable(sstmac::sw::mpi_payload);
 
 namespace sstmac {
 namespace sw {
@@ -168,9 +165,9 @@ mpi_payload::mpi_payload() :
 }
 
 void
-mpi_payload::serialize_order(sprockit::serializer& ser)
+mpi_payload::serialize_order(serializer& ser)
 {
-  if (ser.mode() != sprockit::serializer::UNPACK && !real_) {
+  if (ser.mode() != serializer::UNPACK && !real_) {
     spkt_throw_printf(sprockit::spkt_error,
          "mpi_payload::serialize_order: payload not real - don't know how to serialize this");
   }
@@ -180,11 +177,8 @@ mpi_payload::serialize_order(sprockit::serializer& ser)
   ser & (wrapped_);
   ser & (given_);
   ser & real_;
-  ser & sprockit::buffer(buf_, bufsize_);
+  ser & buffer(buf_, bufsize_);
 }
-
-
-
 
 std::string
 mpi_payload::to_string() const

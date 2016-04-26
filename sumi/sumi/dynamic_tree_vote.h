@@ -12,11 +12,13 @@ namespace sumi {
 
 class dynamic_tree_vote_message :
  public collective_work_message,
- public sprockit::serializable_type<dynamic_tree_vote_message>
+ public sumi::serializable_type<dynamic_tree_vote_message>
 {
  ImplementSerializable(dynamic_tree_vote_message)
 
  public:
+  dynamic_tree_vote_message(){} //for serialization
+
   typedef sprockit::refcount_ptr<dynamic_tree_vote_message> ptr;
 
   typedef enum {
@@ -42,7 +44,7 @@ class dynamic_tree_vote_message :
   tostr(type_t);
 
   virtual void
-  serialize_order(sprockit::serializer &ser);
+  serialize_order(sumi::serializer &ser);
 
   dynamic_tree_vote_message(int vote, type_t ty, int tag, int virtual_src, int virtual_dst) :
     //0 = buffer

@@ -20,7 +20,7 @@ namespace sw {
 
 class mpi_collective_payload :
   public payload,
-  public sprockit::serializable_type<mpi_collective_payload>
+  public serializable_type<mpi_collective_payload>
 {
   ImplementSerializable(mpi_collective_payload)
 
@@ -33,6 +33,8 @@ class mpi_collective_payload :
   to_string() const {
     return "mpi collective payload";
   }
+
+  mpi_collective_payload(){} //needed for serialization
 
   mpi_collective_payload(const std::vector<payload::const_ptr>& l) :
     contents_(l) {
@@ -49,11 +51,6 @@ class mpi_collective_payload :
 
   void
   recover(api* mpi);
-
-  virtual sprockit::serializable*
-  serialization_clone() const {
-    return new mpi_collective_payload(contents_);
-  }
 
   virtual
   ~mpi_collective_payload() throw () {
@@ -157,7 +154,7 @@ class mpi_collective_payload :
   }
 
   virtual void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(serializer& ser);
 
  protected:
   std::vector<payload::const_ptr> contents_;

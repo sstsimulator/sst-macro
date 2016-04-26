@@ -79,6 +79,8 @@ DeclareFactory(packetizer)
 #if SSTMAC_INTEGRATED_SST_CORE
 class SimpleNetworkPacket : public SST::Event
 {
+  NotSerializable(SimpleNetworkPacket)
+
  public:
   SimpleNetworkPacket(uint64_t id) : unique_id(id) {}
   uint64_t unique_id;

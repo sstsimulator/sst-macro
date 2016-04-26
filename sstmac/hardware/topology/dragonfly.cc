@@ -24,8 +24,6 @@ SpktRegister("dragonfly | dfly", topology, dragonfly);
 
 static const double PI = 3.141592653589793238462;
 
-static RegisterEnum(routing_info::metadata_slot, crossed_global_link);
-
 void
 dragonfly::init_factory_params(sprockit::sim_parameters* params)
 {
@@ -68,7 +66,7 @@ dragonfly::productive_path(
   routing_info::path& path) const
 {
   //if we crossed a global link in the past, set to 1
-  path.vc = path.metadata_bit(crossed_global_link) ? 1 : 0;
+  path.vc = path.metadata_bit(routing_info::crossed_timeline) ? 1 : 0;
   int nextDim, nextDir;
   if (dim == g_dimension){
     int myX = src[x_dimension];
@@ -77,7 +75,7 @@ dragonfly::productive_path(
     int dstg = dst[g_dimension];
     minimal_route_to_group(myX, myY, myG, nextDim, nextDir, dstg);
     if  (nextDim == g_dimension){
-        path.set_metadata_bit(crossed_global_link);
+        path.set_metadata_bit(routing_info::crossed_timeline);
     }
   }
   else {
@@ -648,7 +646,7 @@ dragonfly::bit_complement_partners(
 void
 dragonfly::new_routing_stage(routing_info& rinfo)
 {
-  rinfo.current_path().unset_metadata_bit(crossed_global_link);
+  rinfo.current_path().unset_metadata_bit(routing_info::crossed_timeline);
 }
 
 int

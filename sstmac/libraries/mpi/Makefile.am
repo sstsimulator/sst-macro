@@ -108,8 +108,7 @@ libsstmac_mpi_la_SOURCES = \
   mpi_payload.cc \
   rma/mpi_rma_message.cc \
   rma/mpi_queue_get_request.cc \
-  sstmac_mpi.cc \
-  type_operator.cc
+  sstmac_mpi.cc 
 
 
 nobase_library_include_HEADERS = \

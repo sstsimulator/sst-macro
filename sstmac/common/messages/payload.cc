@@ -10,7 +10,6 @@
  */
 
 #include <sstmac/common/messages/payload.h>
-#include <sprockit/serializer.h>
 
 namespace sstmac {
 

@@ -9,14 +9,10 @@
 #   SST/macroscale directory.
 #
 
-AM_CPPFLAGS = -I$(top_builddir) -I$(top_srcdir) 
+include $(top_srcdir)/Makefile.common
 
 if ENABLE_SST_SUBREPO
 noinst_LTLIBRARIES = libsumi.la
-AM_CPPFLAGS += -I$(top_builddir)/.. -I$(top_srcdir)/..
-AM_CPPFLAGS += -I$(top_srcdir)/../sprockit -I$(top_builddir)/../sprockit
-AM_CPPFLAGS += -I$(top_srcdir)/../sstmac/install -DSSTMAC=1
-AM_CPPFLAGS += -I$(top_builddir)/../sstmac/replacements -I$(top_srcdir)/../sstmac/replacements 
 else
 lib_LTLIBRARIES = libsumi.la
 libsumi_la_LDFLAGS = -version-info @SUMI_LIBVERSION@
@@ -24,20 +20,12 @@ endif
 
 libsumi_la_LIBADD = 
 
-if ENABLE_MPI
-libsumi_la_LIBADD += ../mpi/libsumi_mpi.la
-endif
-
-if ENABLE_GNI
-libsumi_la_LIBADD += ../gni/libsumi_gni.la
-endif
 
 library_includedir=$(includedir)/sumi/sumi
 
 nodist_library_include_HEADERS = config.h sumi_config.h
 
 library_include_HEADERS = \
- active_msg_transport.h \
  allgather.h \
  allreduce.h \
  bcast.h \
@@ -53,6 +41,7 @@ library_include_HEADERS = \
  dynamic_tree_vote.h \
  lockable.h \
  message.h \
+ message_fwd.h \
  monitor.h \
  options.h \
  partner_timeout.h \
@@ -60,6 +49,7 @@ library_include_HEADERS = \
  rdma.h \
  rdma_interface.h \
  rdma_mdata.h \
+ serialization.h \
  thread.h \
  thread_lock.h \
  thread_safe_int.h \
@@ -72,7 +62,6 @@ library_include_HEADERS = \
  transport_fwd.h 
 
 libsumi_la_SOURCES = \
- active_msg_transport.cc \
  allgather.cc \
  allreduce.cc \
  bcast.cc \
@@ -91,3 +80,18 @@ libsumi_la_SOURCES = \
  transport.cc
 
 
+if ENABLE_MPI
+libsumi_la_LIBADD += ../mpi/libsumi_mpi.la
+libsumi_la_SOURCES += \
+ active_msg_transport.cc 
+library_include_HEADERS += \
+ active_msg_transport.h 
+endif
+
+if ENABLE_GNI
+libsumi_la_LIBADD += ../gni/libsumi_gni.la
+libsumi_la_SOURCES += \
+ active_msg_transport.cc 
+library_include_HEADERS += \
+ active_msg_transport.h 
+endif

@@ -29,6 +29,10 @@ if test "X$enable_repl_headers" = "Xyes"; then
     AC_SUBST([STL_HEADER_FSTREAM_FULL_PATH], "`$srcdir/bin/get_include_path $CXX fstream $CPPFLAGS $CXXFLAGS`")
     AC_SUBST([STL_HEADER_ISTREAM_FULL_PATH], "`$srcdir/bin/get_include_path $CXX istream $CPPFLAGS $CXXFLAGS`")
     AC_SUBST([STL_HEADER_IOSTREAM_FULL_PATH], "`$srcdir/bin/get_include_path $CXX iostream $CPPFLAGS $CXXFLAGS`")
+    AC_SUBST([STL_HEADER_OSTREAM_FULL_PATH], "`$srcdir/bin/get_include_path $CXX ostream $CPPFLAGS $CXXFLAGS`")
+    AC_SUBST([STL_HEADER_IOS_FULL_PATH], "`$srcdir/bin/get_include_path $CXX ios $CPPFLAGS $CXXFLAGS`")
+    AC_SUBST([STL_HEADER_THREAD_FULL_PATH], "`$srcdir/bin/get_include_path $CXX thread $CPPFLAGS $CXXFLAGS`")
+    AC_SUBST([STL_HEADER_MUTEX_FULL_PATH], "`$srcdir/bin/get_include_path $CXX mutex $CPPFLAGS $CXXFLAGS`")
     AC_SUBST([STL_HEADER_LIST_FULL_PATH], "`$srcdir/bin/get_include_path $CXX list $CPPFLAGS $CXXFLAGS`")
     AC_SUBST([STL_HEADER_MAP_FULL_PATH], "`$srcdir/bin/get_include_path $CXX map $CPPFLAGS $CXXFLAGS`")
     AC_SUBST([STL_HEADER_MEMORY_FULL_PATH], "`$srcdir/bin/get_include_path $CXX memory $CPPFLAGS $CXXFLAGS`")
@@ -47,6 +51,8 @@ if test "X$enable_repl_headers" = "Xyes"; then
       sstmac/replacements/fstream
       sstmac/replacements/istream
       sstmac/replacements/iostream
+      sstmac/replacements/ostream
+      sstmac/replacements/ios
       sstmac/replacements/list
       sstmac/replacements/map
       sstmac/replacements/memory

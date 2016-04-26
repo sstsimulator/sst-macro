@@ -2,7 +2,6 @@
 #include <pthread.h>
 #include <sumi/transport.h>
 #include <sprockit/sim_parameters.h>
-#include <sprockit/serializer.h>
 #include <sprockit/util.h>
 
 #define DEBUG 0

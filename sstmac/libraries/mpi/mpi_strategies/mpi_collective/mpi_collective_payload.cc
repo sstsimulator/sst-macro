@@ -11,16 +11,13 @@
 
 #include <sstmac/libraries/mpi/mpi_strategies/mpi_collective/mpi_collective_payload.h>
 #include <sstmac/libraries/mpi/mpi_api.h>
-#include <sprockit/serializer.h>
 #include <sprockit/util.h>
-
-DeclareSerializable(sstmac::sw::mpi_collective_payload);
 
 namespace sstmac {
 namespace sw {
 
 void
-mpi_collective_payload::serialize_order(sprockit::serializer& ser)
+mpi_collective_payload::serialize_order(serializer& ser)
 {
   ser & (contents_);
 }

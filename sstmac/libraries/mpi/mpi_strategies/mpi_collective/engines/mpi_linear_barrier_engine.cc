@@ -32,15 +32,15 @@ mpi_linear_barrier_engine::sendrecv(bool firsttime)
 
   if (comm_->rank() == root_) {
     // Fire off all sends and receives.
-    for (long it = 0; it < comm_->size().id_; ++it) {
+    for (long it = 0; it < comm_->size(); ++it) {
       if (firsttime) {
-        if (it != root_.id_) {
+        if (it != root_) {
           ++pending_recvs_;
           this->start_recv(1, mpi_type::mpi_byte->id, tag_, mpi_id(it));
         }
       }
       else {
-        if (it != root_.id_) {
+        if (it != root_) {
           ++pending_sends_;
           this->start_send(1, mpi_type::mpi_byte->id, tag_, mpi_id(it),
                            payload::null());
