@@ -31,8 +31,6 @@ nobase_nodist_library_include_HEADERS += \
   ios \
   ostream \
   istream \
-  istream \
-  istream \
   list \
   map \
   memory \
