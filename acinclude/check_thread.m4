@@ -55,7 +55,7 @@ AC_ARG_ENABLE([cpu-affinity],
   [with_cpu_affinity=yes],
   [with_cpu_affinity=no])
 if test "X$with_cpu_affinity" = "Xyes"; then
-  if test "X$darwin" = "Xno"; then
+  if test "X$darwin" = "Xfalse"; then
     AC_DEFINE_UNQUOTED([USE_CPU_AFFINITY], 1, "Whether to enable strict CPU affinity")
   else
     AC_MSG_ERROR([--enable-cpu-affinity not available on darwin])
