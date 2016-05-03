@@ -1,7 +1,7 @@
 mpiprotocol[software_id(1, 0,0)]: mpi initializing...
 mpiprotocol[software_id(1, 1,0)]: mpi initializing...
-mpiprotocol[1]: mpi initialized
 mpiprotocol[0]: mpi initialized
+mpiprotocol[1]: mpi initialized
 mpiprotocol[0]: finished first test
 mpiprotocol[0]: finished second test
 mpiprotocol[1]: finished first test

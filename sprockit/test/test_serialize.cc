@@ -199,7 +199,6 @@ class A : public Base,
  public:
   std::string name() const { return "A"; }
 };
-DeclareSerializable(A)
 
 class B : public Base,
  public serializable_type<B>
@@ -208,7 +207,6 @@ class B : public Base,
  public:
   std::string name() const { return "B"; }
 };
-DeclareSerializable(B)
 
 void
 test_serializable(UnitTest& unit)

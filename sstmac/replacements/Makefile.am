@@ -34,6 +34,8 @@ nobase_nodist_library_include_HEADERS += \
   list \
   map \
   memory \
+  mutex \
+  thread \
   pthread.h \
   queue \
   sstream \
