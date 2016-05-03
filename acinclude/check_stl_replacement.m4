@@ -56,6 +56,8 @@ if test "X$enable_repl_headers" = "Xyes"; then
       sstmac/replacements/list
       sstmac/replacements/map
       sstmac/replacements/memory
+      sstmac/replacements/mutex
+      sstmac/replacements/thread
       sstmac/replacements/pthread.h
       sstmac/replacements/queue
       sstmac/replacements/sstream
