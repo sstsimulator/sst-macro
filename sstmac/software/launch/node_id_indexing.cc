@@ -34,8 +34,12 @@ SpktRegister("node_id", index_strategy, node_id_indexing,
 void
 node_id_indexing::init_factory_params(sprockit::sim_parameters* params)
 {
-  node_id_indexing::init_factory_params(params);
-  listfile_ = params->get_param("launch_node_id_file");
+  index_strategy::init_factory_params(params);
+  if (params->has_param("launch_node_id_file")){
+    listfile_ = params->get_param("launch_node_id_file" );
+  } else {
+    listfile_ = params->get_param("launch_node_id_indexing_file");
+  }
 }
 
 void
@@ -46,8 +50,11 @@ node_id_indexing::allocate(
   std::vector<node_id> &result,
   int nproc)
 {
-  std::vector<hw::coordinates> node_list;
   node_id_allocation::read_coordinate_file(listfile_, result, topology_);
+  if (result.size() != nproc){
+    spkt_throw_printf(sprockit::unimplemented_error,
+      "need %d nodes - only indexed %d", nproc, nodes.size());
+  }
 }
 
 }

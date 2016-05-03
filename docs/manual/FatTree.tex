@@ -1,3 +1,4 @@
+%% !TEX root = manual.tex
 
 \section{Fat Tree}
 \label{sec:tutorial:fattree}
@@ -108,6 +109,38 @@ For the file
 12
 \end{ViFile}
 Four MPI ranks would be placed in spatially distant parts of the machine.
+
+If indexing differs from allocation (usually because there are multiple MPI ranks per node), both an allocation and an indexing file are needed.
+Suppose we have:
+
+\begin{ViFile}
+launch_app1_cmd = aprun -n 4 -N 2
+\end{ViFile}
+We then need:
+
+\begin{ViFile}
+launch_allocation = node_id
+launch_indexing = node_id
+launch_node_id_allocation_file = alloc.txt
+launch_node_id_indexing_file = index.txt
+\end{ViFile}
+where the contents of \inlineshell{alloc.txt} are, e.g.
+
+\begin{ViFile}
+2
+0
+1
+\end{ViFile}
+choosing nodes 0 and 1 in the allocation and then \inlineshell{index.txt} would be, e.g.
+
+\begin{ViFile}
+4
+0
+1
+0
+1
+\end{ViFile}
+which round-robin assigns rank 0 to node, rank 1 to node 1, rank 2 to node 0, and so on.
 
 \subsection{Routing}
 Fat tree routing is actually straightforward, but can employ path diversity.
