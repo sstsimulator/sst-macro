@@ -28,6 +28,7 @@ libsstmac_skeletons_la_SOURCES = \
   test/test_compute.cc \
   test/test_os.cc \
   test/test_compute_c.c \
+  test/mpi_ping_all.cc \
   test/global_test.cc 
 
 nobase_library_include_HEADERS = \
@@ -50,7 +51,6 @@ libsstmac_skeletons_la_SOURCES += \
   test/mpi_print_nodes.cc \
   test/mpi_test_all.cc \
   test/mpi_pairwise.cc \
-  test/mpi_ping_all.cc \
   test/mpi_ping_pong.cc \
   test/mpi_topology.cc 
 

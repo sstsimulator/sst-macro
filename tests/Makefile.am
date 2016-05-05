@@ -66,6 +66,7 @@ endif
 CORETESTS=
 
 include Makefile.shared_core_tests
+if WITH_DEFAULT_MPI
 include Makefile.api_tests
 if !INTEGRATED_SST_CORE
 include Makefile.check_programs
@@ -77,6 +78,7 @@ include Makefile.alloc_tests
 include Makefile.external_tests
 include Makefile.skeleton_tests
 include Makefile.core_tests
+endif
 endif
 
 

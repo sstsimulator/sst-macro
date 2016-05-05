@@ -30,11 +30,6 @@ class mpi_group  {
   ~mpi_group() {
   }
 
-  virtual std::string
-  to_string() const {
-    return "mpigroup";
-  }
-
   task_id
   at(int rank);
 
