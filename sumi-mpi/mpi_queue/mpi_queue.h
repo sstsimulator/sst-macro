@@ -64,11 +64,6 @@ class mpi_queue
   friend class mpi_queue_recv_request;
 
  public:
-  std::string
-  to_string() const {
-    return "mpi queue";
-  }
-
   mpi_queue();
 
   void

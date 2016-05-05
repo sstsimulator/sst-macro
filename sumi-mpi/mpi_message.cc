@@ -88,7 +88,7 @@ mpi_message::serialize_order(serializer& ser)
   ser & (tag_);
   ser & (commid_);
   ser & (seqnum_);
-  ser & (msgid_.id_);
+  ser & (msgid_);
   ser & (content_type_);
   ser & (ignore_seqnum_);
   ser & (protocol_);

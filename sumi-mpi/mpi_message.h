@@ -56,7 +56,7 @@ class mpi_message :
  public:
   typedef sprockit::refcount_ptr<mpi_message> ptr;
   typedef sprockit::refcount_ptr<const mpi_message> const_ptr;
-  typedef_opaque_int(id, uint64_t);
+  typedef uint64_t id;
 
   typedef enum {
     null_content, data, header, eager_payload, completion_ack, fake
@@ -244,8 +244,6 @@ class mpi_message :
   bool ignore_seqnum_;
 
 };
-
-implement_opaque_int(mpi_message::id)
 
 }
 

@@ -74,13 +74,13 @@ eager1::configure_send_buffer(const mpi_message::ptr& msg, void *buffer)
   long length = msg->payload_bytes();
   void* eager_buf = new char[length];
   ::memcpy(eager_buf, buffer, length);
-  msg->local_buffer() = eager_buf;
+  msg->local_buffer().ptr = eager_buf;
 }
 
 void
 rendezvous_get::configure_send_buffer(const mpi_message::ptr& msg, void *buffer)
 {
-  msg->local_buffer() = buffer;
+  msg->local_buffer().ptr = buffer;
 }
 
 }
