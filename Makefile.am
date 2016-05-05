@@ -12,7 +12,7 @@
 include $(top_srcdir)/Makefile.common
 
 # Files that should be distributed but are not built.
-EXTRA_DIST = LICENSE tutorials benchmarks bootstrap.sh \
+EXTRA_DIST = LICENSE benchmarks bootstrap.sh \
   docs \
   qt-gui \
   skeletons

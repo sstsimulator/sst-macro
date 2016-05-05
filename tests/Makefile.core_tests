@@ -4,7 +4,6 @@
 
 
 CORETESTS+= \
-  test_core_apps_location_trace \
   test_core_apps_ping_all_torus_simple \
   test_core_apps_ping_all_simple_fattree \
   test_core_apps_ping_all_dragonfly_simple \
@@ -21,9 +20,13 @@ CORETESTS +=  test_core_apps_mpi_event_calendar
 endif
 
 test_sumi_%.$(CHKSUF): sumi/sst_%
-	$(PYRUNTEST) 5 $@ sumi/sst_$* -f $(srcdir)/sumi/ini/test_sst_$*.ini --no-wall-time 
+	$(PYRUNTEST) 5 $(top_srcdir) $@ True sumi/sst_$* -f $(srcdir)/sumi/ini/test_sst_$*.ini --no-wall-time 
 
 test_core_apps_ping_all_tiled_dfly.$(CHKSUF): $(SSTMACEXEC)
-	$(PYRUNTEST) 15 $@ $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_all_tiled_dfly.ini --no-wall-time 
+	$(PYRUNTEST) 15 $(top_srcdir) $@ True $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_all_tiled_dfly.ini --no-wall-time 
+
+test_core_apps_%.$(CHKSUF): $(CORE_TEST_DEPS)
+	$(PYRUNTEST) 10 $(top_srcdir) $@ True \
+    $(MPI_LAUNCHER) $(SSTMACEXEC) -f $(srcdir)/test_configs/test_$*.ini --no-wall-time $(THREAD_ARGS)
 
 #------------------------------------------------------------------------------------------#

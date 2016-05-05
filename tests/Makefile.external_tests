@@ -9,7 +9,8 @@ EXTERNALCASES= \
 EXTERNALTESTS = $(EXTERNALCASES:%=external_test_%)
 
 external_test_%.$(CHKSUF): $(top_builddir)/tests/external/test_%
-	$(PYRUNTEST) 5 $@ external/test_$* \
+	$(PYRUNTEST) 5 $(top_srcdir) $@ True \
+    external/test_$* \
     -a -n 1 \
 		--no-wall-time \
 		-p node_cores=4 \

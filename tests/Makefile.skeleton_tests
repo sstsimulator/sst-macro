@@ -37,15 +37,16 @@ $(SKELETONCASES): skeletons
           SKELETON_DEFINES=$(SKELETON_DEFINES) $(MAKE)
 
 test_skeleton_%.$(CHKSUF): % 
-	$(top_srcdir)/bin/runtest 3 $@ ./skeletons/$*/run$* --help 
+	$(top_srcdir)/bin/runtest 3 $(top_srcdir) $@ notime \
+    ./skeletons/$*/run$* --help 
 
 test_apps_%.$(CHKSUF): %
-	$(top_srcdir)/bin/runtest 3 $@ ./skeletons/$*/runsst -f $(srcdir)/test_configs/test_$*_app.ini \
-          --no-wall-time 
+	$(top_srcdir)/bin/runtest 3 $(top_srcdir) $@ True \
+    ./skeletons/$*/runsst -f $(srcdir)/test_configs/test_$*_app.ini --no-wall-time 
 
 test_mpi_apps_%.$(CHKSUF): %
-	$(top_srcdir)/bin/runtest 3 $@ ./skeletons/$*/runsst -f $(srcdir)/test_configs/test_$*_mpi.ini \
-          --no-wall-time 
+	$(top_srcdir)/bin/runtest 3 $(top_srcdir) $@ True \
+    ./skeletons/$*/runsst -f $(srcdir)/test_configs/test_$*_mpi.ini --no-wall-time 
 
 #------------------------------------------------------------------------------------------#
 endif
