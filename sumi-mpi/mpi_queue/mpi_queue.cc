@@ -418,8 +418,8 @@ mpi_queue::incoming_completion_ack(const mpi_message::ptr& message)
     send_needs_completion_ack_.find(message->unique_int());
   if (it == send_needs_completion_ack_.end()) {
     spkt_throw_printf(sprockit::illformed_error,
-                     "mpi_queue[%s]::incoming_message: completion ack with no match on %s",
-                     taskid_.to_string().c_str(), message->to_string().c_str());
+                     "mpi_queue[%d]::incoming_message: completion ack with no match on %s",
+                     taskid_, message->to_string().c_str());
   }
 
   mpi_queue_send_request* req = it->second;
@@ -605,12 +605,6 @@ mpi_queue::handle_nic_ack(const mpi_message::ptr& message)
 {
   mpi_protocol* prot = message->protocol();
   prot->handle_nic_ack(this, message);
-}
-
-std::string
-mpi_queue::id_string() const
-{
-  return taskid_.to_string();
 }
 
 }
