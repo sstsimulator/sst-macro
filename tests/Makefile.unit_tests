@@ -11,7 +11,8 @@ UNITTESTS = \
 #  unit_test_topology
 
 unit_test_%.$(CHKSUF): $(top_builddir)/tests/unit_tests/test_%
-	$(PYRUNTEST) 5 unit_test_$*.$(CHKSUF) $(top_builddir)/tests/unit_tests/test_$* 
+	$(PYRUNTEST) 5 $(top_srcdir) unit_test_$*.$(CHKSUF) True \
+    $(top_builddir)/tests/unit_tests/test_$* 
 
 #------------------------------------------------------------------------------------------#
 endif

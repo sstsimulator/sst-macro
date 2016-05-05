@@ -30,15 +30,16 @@ endif
 # runtest arguments are:
 #   <timeout, in seconds> <output file> <executable> <arguments passed to executable...>
 PYRUNTEST = $(top_srcdir)/bin/runtest
+PYVALIDATE = $(top_srcdir)/bin/checktest
+NOOP = $(top_srcdir)/bin/noop
 DIFF=diff -u
 if INTEGRATED_SST_CORE
-OUTSUF=sst-out
 SSTMACEXEC = $(top_builddir)/bin/sstmac-check
 else
-OUTSUF=ref-out
 SSTMACEXEC = $(top_builddir)/bin/sstmac
 endif
 CHKSUF=chk-out
+OUTSUF=ref-out
 
 EXTRA_DIST = \
   reference \
@@ -107,34 +108,11 @@ else
 CHECK_TESTS += $(APITESTS)
 endif
 
-DIFF_CHECK_TEST_REPORT = $(SSTMACRO_TEST_REPORT_PREFIX)diff-cpp.test_report.xml
+check-local: $(CHECK_TESTS:%=%.$(CHKSUF))
+	$(PYVALIDATE) $+
 
-$(DIFF_CHECK_TEST_REPORT): $(CHECK_TESTS:%=%.$(CHKSUF)) $(CHECK_TESTS:%=reference/%.$(OUTSUF))
-	-$(PERL) $(top_srcdir)/bin/difftoxml.pl \
-		--xmlout $@ \
-		--suitename "diff-cpp" \
-		--outfiledir $(srcdir)/reference \
-    --outsuffix $(OUTSUF) \
-    --chksuffix $(CHKSUF) \
-		--verbose $(CHECK_TESTS)
-
-DIFF_INSTALLCHECK_TEST_REPORT = \
-  $(SSTMACRO_TEST_REPORT_PREFIX)diff-installcheck.test_report.xml
-
-$(DIFF_INSTALLCHECK_TEST_REPORT): $(INSTALLCHECK_TESTS:%=%.$(CHKSUF)) $(INSTALLCHECK_TESTS:%=reference/%.$(OUTSUF))
-	-$(PERL) $(top_srcdir)/bin/difftoxml.pl \
-		--xmlout $@ \
-		--suitename "diff-skeletons" \
-		--outfiledir $(srcdir)/reference \
-	        --outsuffix $(OUTSUF) \
-	        --chksuffix $(CHKSUF) \
-		--verbose $(INSTALLCHECK_TESTS)
-
-check-local: $(DIFF_CHECK_TEST_REPORT) 
-	$(PERL) $(top_srcdir)/bin/counttestresults.pl $^
-
-installcheck-local: $(DIFF_INSTALLCHECK_TEST_REPORT)
-	$(PERL) $(top_srcdir)/bin/counttestresults.pl $^
+installcheck-local: $(INSTALLCHECK_TESTS:%=%.$(CHKSUF))
+	$(PYVALIDATE) $+
 
 #------------------------------------------------------------------------------------------#
 
@@ -144,7 +122,6 @@ installcheck-local: $(DIFF_INSTALLCHECK_TEST_REPORT)
 
 clean-local: clean-skeletons clean-tutorials
 	rm -f *.$(CHKSUF)
-	rm -f *.test_report.xml
 	rm -f net.dot
 	rm -f callgrind.out
 	rm -f tracer_nodemap.txt

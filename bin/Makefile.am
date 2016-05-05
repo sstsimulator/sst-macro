@@ -11,7 +11,6 @@
 
 include $(top_srcdir)/Makefile.common
 
-dist_noinst_SCRIPTS = difftoxml.pl counttestresults.pl
 dist_bin_SCRIPTS = aprun \
 fix_style \
 readsymbols \
@@ -34,7 +33,7 @@ endif
 
 bin_SCRIPTS = sstmacro-config sstccvars.py
 
-EXTRA_DIST = sstmacro-config.in sstcclib.py sstccvars.py.in runtest
+EXTRA_DIST = sstmacro-config.in sstcclib.py sstccvars.py.in runtest checktest noop
 
 AM_CPPFLAGS += -I$(top_builddir)/pth -I$(top_srcdir)/pth -I$(top_builddir)/bin \
   -I$(top_srcdir)/bin -I$(top_builddir)/dumpi -I$(top_srcdir)/dumpi
