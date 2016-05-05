@@ -51,7 +51,7 @@ FINAL_TIME = 2
 TEXT_LINE = 3
 
 time_point_regexp = re.compile("T\s*=\s*(\d+[.]\d+)")
-final_time_regexp = re.compile("runtime of\s+(\d+[.]\d+)")
+final_time_regexp = re.compile("[Rr]untime.*?(\d+[.]\d+)(.*)")
 
 def parseLine(line):
   if "WARNING:" in line or "Maximum bad" in line:
@@ -61,10 +61,16 @@ def parseLine(line):
   if match:
     return TIME_POINT, float(match.groups()[0])
 
-  if "Estimated" in line:
+  if "untime" in line:
     match = final_time_regexp.search(line)
+    time, units = match.groups()
+    units = units.strip().lower()
+    time = float(time)
+    if units == "ms":
+      time /= 1e3
+
     if match:
-      return FINAL_TIME, float(match.groups()[0])
+      return FINAL_TIME, time
 
   return TEXT_LINE, line
 
@@ -72,7 +78,7 @@ class SimOutput:
   def __init__(self):
     self.lines = {}
     self.times = []
-    self.finalTime = 1000
+    self.finalTime = -1
 
 def parseFile(fname):
   lines = open(fname).read().splitlines()
@@ -97,6 +103,10 @@ def parseFile(fname):
   return sim
 
 def checkTime(refTime, chkTime):
+  if refTime < 0:
+    return "REF did not contain a total runtime"
+  if chkTime < 0:
+    return "CHK did not contain a total runtime"
   delta = abs(refTime - chkTime)
   percent = delta / refTime
   if delta > TIME_DELTA_TOO_BIG and percent > TIME_PERCENT_TOO_BIG:
@@ -107,8 +117,11 @@ def checkOutput(srcdir, tmpfile, condition):
   splitter = condition.split("=")
   condType = "all"
   condition = splitter[-1]
+  print splitter
   if len(splitter) == 2:
     condType = splitter[0]
+  elif splitter[0] == "notime":
+    condType = "notime"
   elif len(splitter) > 2:
     sys.exit("invalid check condition %s for %s" % (condition, tmpfile))
 
@@ -132,13 +145,14 @@ def checkOutput(srcdir, tmpfile, condition):
     if errorMsg:
       return errorMsg
 
-  timeChecker = eval("lambda t: %s" % condition)
-  if not timeChecker(chkSim.finalTime):
-    return "t=%f failed time check %s" % (chkSim.finalTime, condition)
-
-  errorMsg = checkTime(refSim.finalTime, chkSim.finalTime)
-  if errorMsg:
-    return errorMsg
+  print condType
+  if not condType == "notime":
+    timeChecker = eval("lambda t: %s" % condition)
+    if not timeChecker(chkSim.finalTime):
+      return "t=%f failed time check %s" % (chkSim.finalTime, condition)
+    errorMsg = checkTime(refSim.finalTime, chkSim.finalTime)
+    if errorMsg:
+      return errorMsg
 
   for line in refSim.lines:
     if not chkSim.lines.has_key(line):

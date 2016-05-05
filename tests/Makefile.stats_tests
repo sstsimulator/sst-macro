@@ -44,17 +44,17 @@ test.callgrind.$(CHKSUF): $(SSTMACEXEC) test_stat_graphviz.$(CHKSUF)
 	-mv -f test.callgrind.out test.callgrind.chk-out
 
 %.dat.$(CHKSUF): %
-	$(PYRUNTEST) 5 $(top_srcdir) $@ True $(NOOP) $@
+	$(PYRUNTEST) 5 $(top_srcdir) $@ notime $(NOOP) $@
 %.p.$(CHKSUF): %
-	$(PYRUNTEST) 5 $(top_srcdir) $@ True $(NOOP) $@
+	$(PYRUNTEST) 5 $(top_srcdir) $@ notime $(NOOP) $@
 %.bytes.png.$(CHKSUF): %
-	$(PYRUNTEST) 5 $(top_srcdir) $@ True $(NOOP) $@
+	$(PYRUNTEST) 5 $(top_srcdir) $@ notime $(NOOP) $@
 %.bytes.csv.$(CHKSUF): %
-	$(PYRUNTEST) 5 $(top_srcdir) $@ True $(NOOP) $@
+	$(PYRUNTEST) 5 $(top_srcdir) $@ notime $(NOOP) $@
 %.num_messages.png.$(CHKSUF): %
-	$(PYRUNTEST) 5 $(top_srcdir) $@ True $(NOOP) $@
+	$(PYRUNTEST) 5 $(top_srcdir) $@ notime $(NOOP) $@
 %.num_messages.csv.$(CHKSUF): %
-	$(PYRUNTEST) 5 $(top_srcdir) $@ True $(NOOP) $@
+	$(PYRUNTEST) 5 $(top_srcdir) $@ notime $(NOOP) $@
   
 test_stats_bytes_sent_%.$(CHKSUF): bytes_sent_%
 	true

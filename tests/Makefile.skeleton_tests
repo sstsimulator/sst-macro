@@ -37,7 +37,7 @@ $(SKELETONCASES): skeletons
           SKELETON_DEFINES=$(SKELETON_DEFINES) $(MAKE)
 
 test_skeleton_%.$(CHKSUF): % 
-	$(top_srcdir)/bin/runtest 3 $(top_srcdir) $@ True \
+	$(top_srcdir)/bin/runtest 3 $(top_srcdir) $@ notime \
     ./skeletons/$*/run$* --help 
 
 test_apps_%.$(CHKSUF): %

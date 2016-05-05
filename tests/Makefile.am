@@ -76,7 +76,6 @@ include Makefile.unit_tests
 include Makefile.alloc_tests
 include Makefile.external_tests
 include Makefile.skeleton_tests
-include Makefile.tutorial_tests
 include Makefile.core_tests
 endif
 
@@ -120,8 +119,9 @@ installcheck-local: $(INSTALLCHECK_TESTS:%=%.$(CHKSUF))
 #  Clean                                                                                {{{#
 #------------------------------------------------------------------------------------------#
 
-clean-local: clean-skeletons clean-tutorials
+clean-local: clean-skeletons 
 	rm -f *.$(CHKSUF)
+	rm -f *.tmp-out
 	rm -f net.dot
 	rm -f callgrind.out
 	rm -f tracer_nodemap.txt
@@ -137,7 +137,5 @@ clean-local: clean-skeletons clean-tutorials
 clean-skeletons:
 	rm -rf skeletons
 
-clean-tutorials:
-	rm -rf tutorials
 
 #------------------------------------------------------------------------------------------#
