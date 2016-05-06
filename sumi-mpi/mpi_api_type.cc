@@ -401,7 +401,7 @@ mpi_api::type_commit(MPI_Datatype type)
 void
 mpi_api::allocate_type_id(mpi_type* type)
 {
-  spkt_unordered_map<MPI_Datatype, mpi_type*>::iterator it, end = known_types_.end();
+  type_map::iterator it, end = known_types_.end();
   while ((it = known_types_.find(next_type_id_)) != end){
     ++next_type_id_;
   }
@@ -412,15 +412,13 @@ mpi_api::allocate_type_id(mpi_type* type)
 void
 mpi_api::precommit_type(mpi_type* type, MPI_Datatype id)
 {
-  MPI_Datatype tid(id);
-  if (known_types_.find(tid) != known_types_.end()){
+  if (known_types_.find(id) != known_types_.end()){
     spkt_throw_printf(sprockit::value_error,
-      "mpi_api::precommit_type: %d already exists",
-      id);
+      "mpi_api::precommit_type: %d already exists", id);
   }
-  type->id = tid;
-  known_types_[tid] = type;
-  known_types_[tid]->set_committed(true);
+  type->id = id;
+  known_types_[id] = type;
+  known_types_[id]->set_committed(true);
 }
 
 //
@@ -445,7 +443,7 @@ mpi_api::type_contiguous(int count, MPI_Datatype old_type,
 /// Creates a vector (strided) datatype
 int
 mpi_api::type_vector(int count, int blocklength, int stride,
-                     MPI_Datatype old_type, MPI_Datatype &new_type, bool stride_in_elem)
+                     MPI_Datatype old_type, MPI_Datatype* new_type, bool stride_in_elem)
 {
   int comb = (stride_in_elem) ? MPI_COMBINER_VECTOR : MPI_COMBINER_HVECTOR;
   std::stringstream ss;
@@ -457,7 +455,7 @@ mpi_api::type_vector(int count, int blocklength, int stride,
                         stride_in_elem, comb);
 
   allocate_type_id(new_type_obj);
-  new_type = new_type_obj->id;
+  *new_type = new_type_obj->id;
   return MPI_SUCCESS;
 }
 
@@ -467,7 +465,7 @@ mpi_api::type_vector(int count, int blocklength, int stride,
 int
 mpi_api::type_struct(const int count, const int* blocklens,
                      const int* indices, const MPI_Datatype* old_types,
-                     MPI_Datatype &newtype)
+                     MPI_Datatype* newtype)
 {
   mpi_type* new_type_obj = new mpi_type;
   if (count > 0) {
@@ -552,7 +550,7 @@ mpi_api::type_struct(const int count, const int* blocklens,
     new_type_obj->init_indexed("struct", idata, 0, 0, 1, 0, MPI_COMBINER_STRUCT);
   }
   allocate_type_id(new_type_obj);
-  newtype = new_type_obj->id;
+  *newtype = new_type_obj->id;
   return MPI_SUCCESS;
 }
 

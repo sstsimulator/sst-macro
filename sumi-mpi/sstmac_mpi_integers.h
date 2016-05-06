@@ -2,11 +2,12 @@
 #define SSTMAC_MPI_INTEGERS_H
 
 #include <sumi-mpi/mpi_types.h>
+#include <cstdint>
 
-typedef long MPI_Request;
+typedef uint32_t MPI_Request;
 typedef long MPI_Op;
 
-typedef long MPI_Datatype;
+typedef uint16_t MPI_Datatype;
 typedef long MPI_Comm;
 #define MPI_COMM_WORLD ((MPI_Comm)0x44000000)
 #define MPI_COMM_SELF  ((MPI_Comm)0x44000001)

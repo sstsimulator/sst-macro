@@ -117,7 +117,6 @@ def checkOutput(srcdir, tmpfile, condition):
   splitter = condition.split("=")
   condType = "all"
   condition = splitter[-1]
-  print splitter
   if len(splitter) == 2:
     condType = splitter[0]
   elif splitter[0] == "notime":
@@ -145,7 +144,6 @@ def checkOutput(srcdir, tmpfile, condition):
     if errorMsg:
       return errorMsg
 
-  print condType
   if not condType == "notime":
     timeChecker = eval("lambda t: %s" % condition)
     if not timeChecker(chkSim.finalTime):
@@ -161,34 +159,6 @@ def checkOutput(srcdir, tmpfile, condition):
   #all good
   return None
 
-
-  condType
-  #condition = eval("lambda t: %s" % sys.argv[4])
-  return 0
-
-"""
-  ref_lines = open(ref_file).read().splitlines()
-  ref_lines.sort()
-
-  tmp_chk_lines = open(chk_file).read().splitlines()
-  chk_lines = []
-  for line in tmp_chk_lines:
-    line = line.strip()
-    if "WARNING:" in line:
-      pass
-    elif "Maximum bad" in line:
-      pass
-    elif line:
-      chk_lines.append(line)
-
-  if len(chk_lines == 0): #only a single error message
-    print bcolors.FAIL, chk_lines[0], bcolors.ENDC
-    fail = True
-  elif not len(ref_lines) == len(chk_lines):
-    print bcolors.FAIL, "ref/chk file differ", bcolors.ENDC
-    fail = True
-  else:
-"""
 
 def handleTerminate(sig, frame):
     sys.exit(0)

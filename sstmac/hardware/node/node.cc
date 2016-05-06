@@ -209,6 +209,7 @@ node::handle(event* ev)
   else if (ev->is_failure()){
     fail_stop();
   } else {
+    node_debug("forwarding event %s to OS", ev->to_string().c_str());
     os_->handle_event(ev);
   }
 }

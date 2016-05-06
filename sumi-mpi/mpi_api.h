@@ -423,7 +423,7 @@ class mpi_api :
   int
   type_vector(int count, int blocklength, int stride,
               MPI_Datatype old_type,
-              MPI_Datatype& new_type,
+              MPI_Datatype* new_type,
               bool stride_in_elem);
 
   /// Creates a struct datatype
@@ -431,7 +431,7 @@ class mpi_api :
   type_struct(const int count, const int* blocklens,
               const int* indices,
               const MPI_Datatype* old_types,
-              MPI_Datatype& newtype);
+              MPI_Datatype* newtype);
 
   /// A datatype object has to be committed before use in communication.
   int
@@ -607,7 +607,7 @@ class mpi_api :
   // --- MPI Derived Datatype
   // --- Presently, payloads won't work with derived datatypes
   //----------------------------------------------------------------
-  typedef spkt_unordered_map<MPI_Datatype, mpi_type*> type_map;
+  typedef std::map<MPI_Datatype, mpi_type*> type_map;
   type_map known_types_;
 
   typedef spkt_unordered_map<MPI_Comm, mpi_comm*> comm_ptr_map;
