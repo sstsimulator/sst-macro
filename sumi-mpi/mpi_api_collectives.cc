@@ -180,12 +180,8 @@ mpi_api::start_bcast(void *buffer, int count, MPI_Datatype type, int root, MPI_C
   int tag = commPtr->next_collective_tag();
 
   sumi::domain* dom = comm == MPI_COMM_WORLD ? global_dom() : commPtr;
-  if (root != 0){
-    //shift everyone in the domain
-    dom = new sumi::shifted_domain(dom, root);
-  }
 
-  transport::bcast(buffer, count, typeSize, tag,
+  transport::bcast(root, buffer, count, typeSize, tag,
     false, options::initial_context, dom);
 
   return tag;
@@ -215,8 +211,12 @@ mpi_api::start_gather(const void *sendbuf, void *recvbuf, int count, MPI_Datatyp
   int typeSize = type_size(type);
   mpi_comm* commPtr = get_comm(comm);
   int tag = commPtr->next_collective_tag();
-  spkt_throw(sprockit::unimplemented_error,
-    "sumi::gather");
+
+  sumi::domain* dom = comm == MPI_COMM_WORLD ? global_dom() : commPtr;
+
+  transport::gather(root, recvbuf, const_cast<void*>(sendbuf), count, typeSize, tag,
+    false, options::initial_context, dom);
+
   return tag;
 }
 
@@ -248,11 +248,12 @@ mpi_api::start_reduce(const void *src, void *dst, int count, MPI_Datatype type, 
   int typeSize = typePtr->packed_size();
   mpi_comm* commPtr = get_comm(comm);
   int tag = commPtr->next_collective_tag();
-  //transport::reduce(src, dst, count, typeSize, tag, fxn, root,
-  //  false, options::initial_context,
-  //  (comm == MPI_COMM_WORLD ? 0, commPtr));
-  spkt_throw(sprockit::unimplemented_error,
-    "sumi::reduce");
+
+  sumi::domain* dom = comm == MPI_COMM_WORLD ? global_dom() : commPtr;
+
+  transport::reduce(root, dst, const_cast<void*>(src), count, typeSize, tag, fxn,
+    false, options::initial_context, dom);
+
   return tag;
 }
 
@@ -362,7 +363,7 @@ mpi_api::scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void
     recvcount, type_str(recvtype).c_str(),
     int(root), comm_str(comm).c_str());
   validate_mpi_collective("scatter", sendtype, recvtype);
-  int tag =start_scatter(sendbuf, recvbuf, sendcount, sendtype, root, comm);
+  int tag = start_scatter(sendbuf, recvbuf, sendcount, sendtype, root, comm);
   collective_progress_loop(collective::scatter, tag);
   return MPI_SUCCESS;
 }

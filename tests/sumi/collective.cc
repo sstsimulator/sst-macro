@@ -12,6 +12,74 @@
 using namespace sumi;
 
 void
+test_bcast(int root)
+{
+  int nelems = 10;
+  int tag = 103;
+  int rank = comm_rank();
+  int nproc = comm_nproc();
+  comm_bcast(root, NULL, nelems, sizeof(int), tag);
+
+  message::ptr msg = comm_poll();
+  if (msg->class_type() != message::collective_done){
+    spkt_throw_printf(sprockit::value_error,
+      "allreduce test: expected collective message, but got %s",
+      message::tostr(msg->class_type()));
+  }
+
+  if (rank == root){
+    //printf("Testing tiny allreduce\n");
+    //for (int i=0; i < nelems; ++i){
+    //  printf("test[%d] = %d\n", i, dst_buffer[i]);
+    //}
+  }
+}
+
+void
+test_gather(int root)
+{
+  int nelems = 2;
+  int rank = comm_rank();
+  int nproc = comm_nproc();
+
+  int* src_buffer = new int[nelems];
+  for (int i=0; i < nelems; ++i){
+    src_buffer[i] = rank;
+  }
+
+  int* dst_buffer = 0;
+  if (rank == root) dst_buffer = new int[nproc*nelems];
+  int tag = 143 + root;
+
+  comm_gather(root, dst_buffer, src_buffer, nelems, sizeof(int), tag);
+
+  message::ptr msg = comm_poll();
+  if (msg->class_type() != message::collective_done){
+    spkt_throw_printf(sprockit::value_error,
+      "allreduce test: expected collective message, but got %s",
+      message::tostr(msg->class_type()));
+  }
+
+  if (rank == root){
+    printf("Testing gather on root=%d\n", root);
+
+    int* bufptr = dst_buffer;
+    int idx = 0;
+    for (int p=0; p < nproc; ++p){
+      for (int i=0; i < nelems; ++i, ++bufptr, ++idx){
+        int test_elem = *bufptr;
+        if (test_elem != p){
+          std::cout << sprockit::printf("FAILED: allgather rank %d, section %d\n", rank, p);
+        }
+        std::cout << sprockit::printf("T[%d] = %d\n", idx, test_elem);
+      }
+    }
+  }
+
+}
+
+
+void
 test_tiny_allreduce()
 {
   //now do a collective with payloads
@@ -73,6 +141,44 @@ test_allreduce_payload()
       printf("test[%d] = %d\n", i, dst_buffer[i]);
     }
   }
+}
+
+void
+test_reduce(int root)
+{
+  //now do a collective with payloads
+  int rank = comm_rank();
+  int nproc = comm_nproc();
+  int nelems = 2*nproc;
+  int numfill = 2*rank + 1;
+
+  int* src_buffer = new int[nelems];
+  ::memset(src_buffer, 0, nelems * sizeof(int));
+  for (int i=0; i <= numfill; ++i){
+    src_buffer[i] = 1;
+  }
+  int* dst_buffer = 0;
+  if (rank == root) dst_buffer = new int[nelems];
+
+  int tag = 213 + root;
+
+  comm_reduce<int,Add>(root, dst_buffer, src_buffer, nelems, tag);
+
+  message::ptr msg = comm_poll(); //wait on reduce
+
+  if (msg->class_type() != message::collective_done){
+    spkt_throw_printf(sprockit::value_error,
+      "allreduce test: expected collective message, but got %s",
+      message::tostr(msg->class_type()));
+  }
+
+  if (rank == root){
+    printf("Testing reduce root=%d with payload\n", root);
+    for (int i=0; i < nelems; ++i){
+      printf("test[%d] = %d\n", i, dst_buffer[i]);
+    }
+  }
+
 }
 
 void
@@ -214,6 +320,18 @@ main(int argc, char **argv)
   test_allgather_payload(4);
 
   test_barrier();
+
+  test_bcast(0);
+
+  test_bcast(3);
+
+  test_gather(0);
+
+  test_gather(3);
+
+  test_reduce(0);
+
+  test_reduce(3);
 
   sstmac_sleep(100);
   //test_failed_collectives();

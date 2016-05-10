@@ -2,9 +2,11 @@
 #include <sumi/transport.h>
 #include <sumi/dynamic_tree_vote.h>
 #include <sumi/allreduce.h>
+#include <sumi/reduce.h>
 #include <sumi/allgather.h>
 #include <sumi/domain.h>
 #include <sumi/bcast.h>
+#include <sumi/gather.h>
 #include <sprockit/stl_string.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
@@ -437,6 +439,8 @@ transport::init_factory_params(sprockit::sim_parameters* params)
   allgathers_[0] = new bruck_collective;
   allreduces_[0] = new wilke_halving_allreduce;
   bcasts_[0] = new binary_tree_bcast_collective;
+  gathers_[0] = new btree_gather;
+  reduces_[0] = new wilke_halving_reduce;
 }
 
 void
@@ -684,6 +688,7 @@ transport::build_collective(collective::type_t ty,
   int tag,
   bool fault_aware,
   int context, domain* dom,
+  int root,
   reduce_fxn fxn)
 {
   CHECK_IF_I_AM_DEAD(return 0);
@@ -700,6 +705,7 @@ transport::build_collective(collective::type_t ty,
   }
 
   dag_collective* coll = pick_collective(ty, type_size*nelems, algorithms);
+  coll->init_root(root);
   coll->init_reduce(fxn); //probably does nothing
   coll->init(ty, this, dom, dst, src, nelems, type_size, tag, fault_aware, context);
   return coll;
@@ -708,18 +714,38 @@ transport::build_collective(collective::type_t ty,
 void
 transport::allreduce(void* dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn, bool fault_aware, int context, domain* dom)
 {
+  int no_root = -1;
   dag_collective* coll = build_collective(collective::allreduce, allreduces_,
-    dst, src, nelems, type_size, tag, fault_aware, context, dom, fxn);
+    dst, src, nelems, type_size, tag, fault_aware, context, dom, no_root, fxn);
   if (coll){
     start_collective(coll);
   }
 }
 
 void
-transport::bcast(void *buf, int nelems, int type_size, int tag, bool fault_aware, int context, domain* dom)
+transport::reduce(int root, void* dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn, bool fault_aware, int context, domain* dom)
+{
+  dag_collective* coll = build_collective(collective::reduce, reduces_,
+    dst, src, nelems, type_size, tag, fault_aware, context, dom, root, fxn);
+  if (coll){
+    start_collective(coll);
+  }
+}
+
+void
+transport::bcast(int root, void *buf, int nelems, int type_size, int tag, bool fault_aware, int context, domain* dom)
 {
   dag_collective* coll = build_collective(collective::bcast, bcasts_,
-    buf, buf, nelems, type_size, tag, fault_aware, context, dom);
+    buf, buf, nelems, type_size, tag, fault_aware, context, dom, root);
+  if (coll)
+    start_collective(coll);
+}
+
+void
+transport::gather(int root, void *dst, void *src, int nelems, int type_size, int tag, bool fault_aware, int context, domain* dom)
+{
+  dag_collective* coll = build_collective(collective::gather, gathers_,
+    dst, src, nelems, type_size, tag, fault_aware, context, dom, root);
   if (coll)
     start_collective(coll);
 }

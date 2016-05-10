@@ -15,26 +15,29 @@ binary_tree_bcast_actor::buffer_action(void *dst_buffer, void *msg_buffer, actio
 void
 binary_tree_bcast_actor::init_root(int me, int roundNproc, int nproc)
 {
-  int stride = roundNproc / 2;
-  while (stride > 0){
-    int partner = me + stride;
+  int partner = roundNproc / 2;
+  while (partner > 0){
     if (partner < nproc){ //might not be power of 2
+      partner = (partner + root_) % nproc; //everything offset by root
       action* send = new send_action(0, partner);
       send->nelems = nelems_;
       send->offset = 0;
       add_initial_action(send);
     }
-    stride /= 2;
+    partner /= 2;
   }
 }
 
 void
-binary_tree_bcast_actor::init_internal(int me, int windowSize, int windowStop, action* recv)
+binary_tree_bcast_actor::init_internal(int offsetMe, int windowSize, int windowStop, action* recv)
 {
+
   int stride = windowSize;
+  int nproc = dom_->nproc();
   while (stride > 0){
-    int partner = me + stride;
+    int partner = offsetMe + stride;
     if (partner < windowStop){ //might not be power of 2
+      partner = (partner + root_) % nproc; //everything offset by root
       action* send = new send_action(0, partner);
       send->nelems = nelems_;
       send->offset = 0;
@@ -45,21 +48,21 @@ binary_tree_bcast_actor::init_internal(int me, int windowSize, int windowStop, a
 }
 
 void
-binary_tree_bcast_actor::init_child(int me, int roundNproc, int nproc)
+binary_tree_bcast_actor::init_child(int offsetMe, int roundNproc, int nproc)
 {
   int windowStart = 0;
   int windowSplit = roundNproc / 2;
   int windowSize = windowSplit;
   //figure out who I receive from
-  while (windowSize > 0 && me != windowSplit){
-    if (me > windowSplit){
+  while (windowSize > 0 && offsetMe != windowSplit){
+    if (offsetMe > windowSplit){
       windowStart = windowSplit;
     }
     windowSize /= 2;
     windowSplit = windowStart + windowSize;
   }
 
-  int parent = windowStart;
+  int parent = (windowStart + root_) % nproc; //everything offset by root
   action* recv = new recv_action(0, parent);
   recv->nelems = nelems_;
   recv->offset = 0;
@@ -70,8 +73,8 @@ binary_tree_bcast_actor::init_child(int me, int roundNproc, int nproc)
     "Rank %s is in window %d->%d:%d in initing bcast",
     rank_str().c_str(), windowStart, windowSplit, windowSplit + windowSize);
 
-  if (me % 2 == 0){
-    init_internal(me, windowSize, windowStop, recv);
+  if (offsetMe % 2 == 0){
+    init_internal(offsetMe, windowSize, windowStop, recv);
   } else {
     //pass, leaf node
   }
@@ -88,7 +91,6 @@ binary_tree_bcast_actor::finalize_buffers()
 void
 binary_tree_bcast_actor::init_dag()
 {
-  int root = 0;
   int roundNproc = 1;
   int nproc = dom_->nproc();
   int me = dom_->my_domain_rank();
@@ -96,10 +98,11 @@ binary_tree_bcast_actor::init_dag()
     roundNproc *= 2;
   }
 
-  if (me == root){
+  if (me == root_){
     init_root(me, roundNproc, nproc);
   } else {
-    init_child(me, roundNproc, nproc);
+    int offsetMe = (me - root_ + nproc) % nproc;
+    init_child(offsetMe, roundNproc, nproc);
   }
 }
 

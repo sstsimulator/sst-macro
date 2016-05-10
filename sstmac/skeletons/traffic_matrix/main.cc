@@ -28,7 +28,7 @@ class sumi_param_bcaster : public sprockit::param_bcaster
   sumi_param_bcaster(sumi::transport* tp) : tport_(tp), tag_(12345) {}
 
   void bcast(void *buf, int size, int me, int root){
-    tport_->bcast(buf, size, sizeof(char), tag_, false);
+    tport_->bcast(root, buf, size, sizeof(char), tag_, false);
     tport_->collective_block(sumi::collective::bcast, tag_);
     ++tag_;
   }

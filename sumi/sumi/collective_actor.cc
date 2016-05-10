@@ -465,26 +465,30 @@ void
 dag_collective_actor::add_initial_action(action* ac)
 {
   debug_printf(sumi_collective | sumi_collective_init,
-   "Rank %s, collective %s adding initial action %s round=%d,partner=%d,offset=%d",
+   "Rank %s, collective %s adding initial action %s round=%d,partner=%d,offset=%d,nelems=%d",
    rank_str().c_str(), collective::tostr(type_),
    action::tostr(ac->type),
-   ac->round, ac->partner, ac->offset);
+   ac->round, ac->partner, ac->offset, ac->nelems);
   initial_actions_.push_back(ac);
 }
 
 void
 dag_collective_actor::add_dependency(action* precursor, action *ac)
 {
-  debug_printf(sumi_collective | sumi_collective_init,
-   "Rank %s, collective %s adding dependency action %s round=%d,partner=%d,offset=%d"
-   " to action %s for round=%d,partner=%d,offset=%d",
-   rank_str().c_str(), collective::tostr(type_),
-   action::tostr(precursor->type),
-   precursor->round, precursor->partner, precursor->offset,
-   action::tostr(ac->type),
-   ac->round, ac->partner, ac->offset);
-  pending_comms_.insert(std::make_pair(precursor->id, ac));
-  ac->join_counter++;
+  if (precursor){
+    debug_printf(sumi_collective | sumi_collective_init,
+     "Rank %s, collective %s adding dependency action %s round=%d,partner=%d,offset=%d"
+     " to action %s for round=%d,partner=%d,offset=%d,nelems=%d",
+     rank_str().c_str(), collective::tostr(type_),
+     action::tostr(precursor->type),
+     precursor->round, precursor->partner, precursor->offset,
+     action::tostr(ac->type),
+     ac->round, ac->partner, ac->offset, ac->nelems);
+    pending_comms_.insert(std::make_pair(precursor->id, ac));
+    ac->join_counter++;
+  } else {
+    add_initial_action(ac);
+  }
 }
 
 dag_collective_actor::~dag_collective_actor()
@@ -784,7 +788,7 @@ dag_collective_actor::data_recved(action *ac, const collective_work_message::ptr
         ac->round, 0, nelems_, recv_buffer_);
     } else {
       int nelems = nelems_;
-      if (type_ == collective::allgather){
+      if (type_ == collective::allgather || type_ == collective::gather){
         nelems *= my_api_->nproc();
       }
 
@@ -833,8 +837,8 @@ dag_collective_actor::data_recved(
   action* ac = active_recvs_[id];
   if (ac == 0){
     spkt_throw_printf(sprockit::value_error,
-      "received data for unknown receive %u from %d on round %d",
-      id, msg->dense_sender(), msg->round());
+      "on %d, received data for unknown receive %u from %d on round %d",
+      dense_me_, id, msg->dense_sender(), msg->round());
   }
   data_recved(ac, msg, recvd_buffer);
 }

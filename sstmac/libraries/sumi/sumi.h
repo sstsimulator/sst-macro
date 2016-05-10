@@ -55,8 +55,14 @@ comm_allgather(void* dst, void* src, int nelems,
    int type_size, int tag, bool fault_aware = false,
    int context = options::initial_context, domain* dom = 0);
 
+
 void
-comm_bcast(void* buffer, int nelems,
+comm_gather(int root, void* dst, void* src, int nelems,
+   int type_size, int tag, bool fault_aware = false,
+   int context = options::initial_context, domain* dom = 0);
+
+void
+comm_bcast(int root, void* buffer, int nelems,
    int type_size, int tag, bool fault_aware = false,
    int context = options::initial_context, domain* dom = 0);
 
@@ -81,6 +87,18 @@ void
 comm_allreduce(void* dst, void* src, int nelems, int tag, bool fault_aware = false, int context = options::initial_context, domain* dom = 0){
   typedef ReduceOp<Op, data_t> op_class_type;
   comm_allreduce(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
+}
+
+void
+comm_reduce(int root, void* dst, void* src, int nelems, int type_size, int tag,
+  reduce_fxn fxn, bool fault_aware=false, int context = options::initial_context,
+  domain* dom = 0);
+
+template <typename data_t, template <typename> class Op>
+void
+comm_reduce(int root, void* dst, void* src, int nelems, int tag, bool fault_aware = false, int context = options::initial_context, domain* dom = 0){
+  typedef ReduceOp<Op, data_t> op_class_type;
+  comm_reduce(root, dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
 }
 
 void

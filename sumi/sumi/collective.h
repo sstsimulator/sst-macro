@@ -154,6 +154,9 @@ class dag_collective :
   virtual void
   init_reduce(reduce_fxn fxn){}
 
+  virtual void
+  init_root(int root){}
+
   void deadlock_check();
 
   virtual ~dag_collective();

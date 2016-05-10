@@ -288,6 +288,7 @@ class dag_collective_actor :
   virtual void init_buffers(void* dst, void* src) = 0;
   virtual void finalize_buffers() = 0;
   virtual void init_dag() = 0;
+  virtual void init_tree(){}
 
  protected:
   void

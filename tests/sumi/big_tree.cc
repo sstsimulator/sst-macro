@@ -183,7 +183,8 @@ test_bcast_payload()
     ::memset(buffer, 0, sizeof(int)*nelems);
   }
 
-  comm_bcast(buffer, nelems, sizeof(int), tag);
+  int root = 0;
+  comm_bcast(root, buffer, nelems, sizeof(int), tag);
   comm_collective_block(collective::bcast, tag);
 
 
@@ -210,7 +211,8 @@ test_bcast()
   int nelems = 10000;
   void* null = 0;
 
-  comm_bcast(null, nelems, sizeof(int), tag);
+  int root = 0;
+  comm_bcast(root, null, nelems, sizeof(int), tag);
   comm_collective_block(collective::bcast, tag);
 
   std::cout << "t=" << sstmac_now() << ": passed bcast on rank "

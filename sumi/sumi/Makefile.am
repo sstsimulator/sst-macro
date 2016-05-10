@@ -28,7 +28,9 @@ nodist_library_include_HEADERS = config.h sumi_config.h
 library_include_HEADERS = \
  allgather.h \
  allreduce.h \
+ gather.h \
  bcast.h \
+ reduce.h \
  collective.h \
  collective_actor.h \
  collective_actor_fwd.h \
@@ -65,6 +67,8 @@ libsumi_la_SOURCES = \
  allgather.cc \
  allreduce.cc \
  bcast.cc \
+ gather.cc \
+ reduce.cc \
  collective.cc \
  collective_actor.cc \
  collective_message.cc \
