@@ -55,9 +55,18 @@ comm_allgather(void* dst, void* src, int nelems,
    int type_size, int tag, bool fault_aware = false,
    int context = options::initial_context, domain* dom = 0);
 
+void
+comm_allgatherv(void* dst, void* src, int* recv_counts,
+   int type_size, int tag, bool fault_aware = false,
+   int context = options::initial_context, domain* dom = 0);
 
 void
 comm_gather(int root, void* dst, void* src, int nelems,
+   int type_size, int tag, bool fault_aware = false,
+   int context = options::initial_context, domain* dom = 0);
+
+void
+comm_scatter(int root, void* dst, void* src, int nelems,
    int type_size, int tag, bool fault_aware = false,
    int context = options::initial_context, domain* dom = 0);
 

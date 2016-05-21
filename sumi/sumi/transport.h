@@ -353,7 +353,13 @@ class transport :
   allgather(void* dst, void* src, int nelems, int type_size, int tag, bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
 
   virtual void
+  allgatherv(void* dst, void* src, int* recv_counts, int type_size, int tag, bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+
+  virtual void
   gather(int root, void* dst, void* src, int nelems, int type_size, int tag, bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+
+  virtual void
+  scatter(int root, void* dst, void* src, int nelems, int type_size, int tag, bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
 
   /**
    * Essentially just executes a zero-byte allgather.
@@ -634,13 +640,12 @@ class transport :
   dag_collective*
   build_collective(collective::type_t ty,
     std::map<int,dag_collective*>& algorithms,
+    domain* dom,
     void* dst, void *src,
     int nelems, int type_size,
     int tag,
     bool fault_aware,
-    int context, domain* dom,
-    int root = -1,
-    reduce_fxn fxn = &Null::op);
+    int context);
   
  private:
   int heartbeat_tag_;
@@ -739,10 +744,12 @@ class transport :
  private:
   /** Each integer indicates the minimum size required to use a particular collective */
   std::map<int, dag_collective*> allgathers_;
+  std::map<int, dag_collective*> allgathervs_;
   std::map<int, dag_collective*> gathers_;
   std::map<int, dag_collective*> allreduces_;
   std::map<int, dag_collective*> bcasts_;
   std::map<int, dag_collective*> reduces_;
+  std::map<int, dag_collective*> scatters_;
 
 };
 

@@ -422,7 +422,7 @@ dag_collective_actor::send_rdma_put_header(action* ac)
       ac->round,
       dense_me_,
       ac->partner);
-  msg->remote_buffer() = recv_buffer(ac->round, ac->offset);
+  msg->remote_buffer() = recv_buffer(ac);
 
   debug_printf(sumi_collective | sumi_collective_sendrecv | sumi_failure,
    "Rank %s, collective %s(%p) sending put header %p to %s on round=%d tag=%d "
@@ -787,27 +787,21 @@ dag_collective_actor::data_recved(action *ac, const collective_work_message::ptr
       do_debug_print("ignoring", rank_str().c_str(), msg->dense_sender(),
         ac->round, 0, nelems_, recv_buffer_);
     } else {
-      int nelems = nelems_;
-      if (type_ == collective::allgather || type_ == collective::gather){
-        nelems *= my_api_->nproc();
-      }
+      int nelems = std::max(nelems_, msg->nelems());
 
-      bool need_recv_action = out_of_place_round(ac->round) || msg->payload_type() == message::eager_payload;
+      bool need_recv_action = ac->recv_type_ == action::out_of_place || msg->payload_type() == message::eager_payload;
+      void* buffer_to_use = ac->recv_type_ != action::in_place_result ? recv_buffer_ : result_buffer_;
+      void* dst_buffer = message_buffer(buffer_to_use, ac->offset);
 
       do_debug_print("currently",
        rank_str().c_str(), ac->partner,
-       ac->round, 0, nelems, result_buffer_);
+       ac->round, ac->offset, nelems, dst_buffer);
 
-      do_debug_print(need_recv_action ? "receiving" : "already recved",
+      do_debug_print("receiving",
         rank_str().c_str(), ac->partner,
         ac->round,
         ac->offset, ac->nelems,
         recvd_buffer);
-
-      void* dst_buffer = message_buffer(result_buffer_, ac->offset);
-
-      do_debug_print("going into", rank_str().c_str(), ac->partner,
-        ac->round, ac->offset, ac->nelems, dst_buffer);
 
       if (need_recv_action){
         buffer_action(dst_buffer, recvd_buffer, ac);
@@ -815,7 +809,7 @@ dag_collective_actor::data_recved(action *ac, const collective_work_message::ptr
 
       do_debug_print("now", rank_str().c_str(),
         ac->partner, ac->round,
-        0, nelems, result_buffer_);
+        0, ac->offset + nelems, buffer_to_use);
     }
   }
 
@@ -844,10 +838,14 @@ dag_collective_actor::data_recved(
 }
 
 public_buffer
-dag_collective_actor::recv_buffer(int round, int offset)
+dag_collective_actor::recv_buffer(action* ac)
 {
-  public_buffer recv_buf = out_of_place_round(round) ? recv_buffer_ : result_buffer_;
-  recv_buf.offset_ptr(offset*type_size_);
+  public_buffer recv_buf = ac->recv_type_ != action::in_place_result ? recv_buffer_ : result_buffer_;
+  recv_buf.offset_ptr(ac->offset*type_size_);
+  if (result_buffer_.ptr && recv_buf.ptr == 0){
+    spkt_throw(sprockit::value_error,
+      "working with real payload, but somehow getting a null buffer");
+  }
   return recv_buf;
 }
 
@@ -856,6 +854,10 @@ dag_collective_actor::send_buffer(int offset)
 {
   public_buffer send_buf = send_buffer_;
   send_buf.offset_ptr(offset*type_size_);
+  if (result_buffer_.ptr && send_buf.ptr == 0){
+    spkt_throw(sprockit::value_error,
+      "working with real payload, but somehow sending a null buffer");
+  }
   return send_buf;
 }
 
@@ -910,7 +912,7 @@ dag_collective_actor::next_round_ready_to_get(
     collective_rdma_message::ptr get_req = ptr_safe_cast(collective_rdma_message, header);
     get_req->set_action(collective_work_message::get_data);
 
-    get_req->local_buffer() = recv_buffer(ac->round, ac->offset);
+    get_req->local_buffer() = recv_buffer(ac);
 
     debug_printf(sumi_collective | sumi_collective_sendrecv,
         "Rank %s, collective %s(%p) starting get %d elems at offset %d from %d(%d) for round=%d tag=%d msg %p",
@@ -919,9 +921,15 @@ dag_collective_actor::next_round_ready_to_get(
         header->dense_sender(), header->sender(),
         header->round(), tag_, get_req.get());
 
-    do_debug_print("rdma get",
+    do_debug_print("rdma get into",
        rank_str().c_str(), ac->partner,
-       ac->round, ac->offset, ac->nelems, get_req->local_buffer());
+       ac->round, ac->offset, ac->nelems,
+       get_req->local_buffer());
+
+    do_debug_print("rdma get from",
+       rank_str().c_str(), ac->partner,
+       ac->round, ac->offset, ac->nelems,
+       get_req->remote_buffer());
 
 
     rdma_get(header->dense_sender(), get_req);
@@ -1053,6 +1061,8 @@ dag_collective_actor::put_done_notification()
   debug_printf(sumi_collective,
     "Rank %s putting done notification on tag=%d ",
     rank_str().c_str(), tag_);
+
+  finalize_buffers();
 
   my_api_->notify_collective_done(done_msg());
   timeout_ = 0;

@@ -1,16 +1,16 @@
-#ifndef scatter_H
-#define scatter_H
+#ifndef sstmac_sw_api_simpsg_ALLGATHERV_H
+#define sstmac_sw_api_simpsg_ALLGATHERV_H
 
 #include <sumi/collective.h>
 #include <sumi/collective_actor.h>
 #include <sumi/collective_message.h>
 #include <sumi/comm_functions.h>
 
-DeclareDebugSlot(sumi_scatter)
+DeclareDebugSlot(sumi_allgatherv)
 
 namespace sumi {
 
-class btree_scatter_actor :
+class bruckv_actor :
   public dag_collective_actor
 {
 
@@ -20,61 +20,55 @@ class btree_scatter_actor :
     return "bruck actor";
   }
 
-  btree_scatter_actor(int root) : root_(root) {}
+  bruckv_actor(int* recv_counts);
 
  protected:
+  void finalize();
+
   void finalize_buffers();
   void init_buffers(void *dst, void *src);
   void init_dag();
-  void init_tree();
 
   void buffer_action(void *dst_buffer, void *msg_buffer, action* ac);
 
-  void dense_partner_ping_failed(int dense_rank){
-    dag_collective_actor::dense_partner_ping_failed(dense_rank);
-  }
+  int nelems_to_recv(int partner, int partner_gap);
 
  private:
-  int root_;
-  int midpoint_;
-  int log2nproc_;
+  int* recv_counts_;
+  int total_nelems_;
+  int my_offset_;
 
 };
 
-class btree_scatter :
+class bruckv_collective :
   public dag_collective
 {
 
  public:
-  btree_scatter(int root) : root_(root){}
-
-  btree_scatter() : root_(-1){}
-
   std::string
   to_string() const {
-    return "allgather";
+    return "allgatherv";
   }
 
   dag_collective_actor*
   new_actor() const {
-    return new btree_scatter_actor(root_);
+    return new bruckv_actor(recv_counts_);
   }
 
   dag_collective*
   clone() const {
-    return new btree_scatter(root_);
+    return new bruckv_collective;
   }
 
-  void init_root(int root){
-    root_ = root;
+  void init_recv_counts(int* counts){
+    recv_counts_ = counts;
   }
 
  private:
-  int root_;
+  int* recv_counts_;
 
 };
 
 }
 
-#endif // GATHER_H
-
+#endif // ALLGATHER_H

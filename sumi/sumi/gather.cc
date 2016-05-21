@@ -45,6 +45,9 @@ btree_gather_actor::init_buffers(void *dst, void *src)
 void
 btree_gather_actor::finalize_buffers()
 {
+  if (!result_buffer_.ptr)
+    return;
+
   int nproc = dom_->nproc();
   int me = dom_->my_domain_rank();
   if (me == root_){

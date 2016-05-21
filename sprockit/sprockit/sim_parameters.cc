@@ -976,7 +976,12 @@ sim_parameters::top_parent() const
 bool
 sim_parameters::has_param(const std::string& key) const
 {
-  return params_.find(key) != params_.end();
+  bool has_here = params_.find(key) != params_.end();
+  if (!has_here && parent_){
+    return parent_->has_param(key);
+  } else {
+    return has_here;
+  }
 }
 
 void

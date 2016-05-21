@@ -520,7 +520,7 @@ class mpi_api :
   void
   validate_mpi_collective(const char* name, MPI_Datatype sendtype, MPI_Datatype recvtype);
 
-  void collective_progress_loop(sumi::collective::type_t ty, int tag, bool tmp_domain = false);
+  void collective_progress_loop(sumi::collective::type_t ty, int tag);
 
   void
   free_requests(int nreqs,

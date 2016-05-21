@@ -15,6 +15,11 @@ mpi_api::start_allgatherv(const void *sendbuf, void *recvbuf, int sendcount, con
   int tag = commPtr->next_collective_tag();
   spkt_throw(sprockit::unimplemented_error,
     "sumi::allgatherv");
+
+  transport::allgatherv(recvbuf, const_cast<void*>(sendbuf), const_cast<int*>(recvcounts), typeSize, tag,
+    false, options::initial_context,
+    (comm == MPI_COMM_WORLD ? 0 : commPtr)); //comm world is a "null" domain
+
   return tag;
 
 }

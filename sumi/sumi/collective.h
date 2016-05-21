@@ -110,6 +110,8 @@ class collective
   void
   init(type_t type, transport* api, domain* dom, int tag, int context);
 
+  virtual void init_actors(){}
+
  protected:
   collective(type_t type, transport* api, domain* dom, int tag, int context);
 
@@ -148,6 +150,8 @@ class dag_collective :
     int tag,
     bool fault_aware, int context);
 
+  void init_actors();
+
   virtual dag_collective*
   clone() const = 0;
 
@@ -156,6 +160,10 @@ class dag_collective :
 
   virtual void
   init_root(int root){}
+
+  virtual void init_recv_counts(int* nelems){}
+
+  virtual void init_send_counts(int* nelems){}
 
   void deadlock_check();
 

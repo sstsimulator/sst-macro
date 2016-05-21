@@ -15,16 +15,16 @@ binary_tree_bcast_actor::buffer_action(void *dst_buffer, void *msg_buffer, actio
 void
 binary_tree_bcast_actor::init_root(int me, int roundNproc, int nproc)
 {
-  int partner = roundNproc / 2;
-  while (partner > 0){
-    if (partner < nproc){ //might not be power of 2
-      partner = (partner + root_) % nproc; //everything offset by root
+  int partnerGap = roundNproc / 2;
+  while (partnerGap > 0){
+    if (partnerGap < nproc){ //might not be power of 2
+      int partner = (root_ + partnerGap) % nproc; //everything offset by root
       action* send = new send_action(0, partner);
       send->nelems = nelems_;
       send->offset = 0;
       add_initial_action(send);
     }
-    partner /= 2;
+    partnerGap /= 2;
   }
 }
 
