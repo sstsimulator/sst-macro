@@ -13,13 +13,21 @@
   if (tag_ == 221) std::cout << sprockit::spkt_printf(__VA_ARGS__) << std::endl
 */
 
-DeclareDebugSlot(sumi_collective_buffer)
 RegisterDebugSlot(sumi_collective_buffer)
 
 namespace sumi
 {
 
 using namespace sprockit::dbg;
+
+std::string
+action::to_string() const
+{
+  return sprockit::printf("action %s r=%d,p=%d,o=%d,n=%d,t=%s",
+     action::tostr(type),
+     round, partner, offset, nelems,
+     action::tostr(recv_type_));
+}
 
 static void
 debug_print(const char* info, const std::string& rank_str, int partner, int round, int offset, int nelems, const void* buffer)
@@ -465,10 +473,8 @@ void
 dag_collective_actor::add_initial_action(action* ac)
 {
   debug_printf(sumi_collective | sumi_collective_init,
-   "Rank %s, collective %s adding initial action %s round=%d,partner=%d,offset=%d,nelems=%d",
-   rank_str().c_str(), collective::tostr(type_),
-   action::tostr(ac->type),
-   ac->round, ac->partner, ac->offset, ac->nelems);
+   "Rank %s, collective %s adding initial %s",
+   rank_str().c_str(), collective::tostr(type_), ac->to_string().c_str());
   initial_actions_.push_back(ac);
 }
 
@@ -477,13 +483,10 @@ dag_collective_actor::add_dependency(action* precursor, action *ac)
 {
   if (precursor){
     debug_printf(sumi_collective | sumi_collective_init,
-     "Rank %s, collective %s adding dependency action %s round=%d,partner=%d,offset=%d"
-     " to action %s for round=%d,partner=%d,offset=%d,nelems=%d",
+     "Rank %s, collective %s adding dependency %s to %s",
      rank_str().c_str(), collective::tostr(type_),
      action::tostr(precursor->type),
-     precursor->round, precursor->partner, precursor->offset,
-     action::tostr(ac->type),
-     ac->round, ac->partner, ac->offset, ac->nelems);
+     precursor->to_string().c_str(), ac->to_string().c_str());
     pending_comms_.insert(std::make_pair(precursor->id, ac));
     ac->join_counter++;
   } else {
@@ -787,15 +790,19 @@ dag_collective_actor::data_recved(action *ac, const collective_work_message::ptr
       do_debug_print("ignoring", rank_str().c_str(), msg->dense_sender(),
         ac->round, 0, nelems_, recv_buffer_);
     } else {
-      int nelems = std::max(nelems_, msg->nelems());
-
       bool need_recv_action = ac->recv_type_ == action::out_of_place || msg->payload_type() == message::eager_payload;
-      void* buffer_to_use = ac->recv_type_ != action::in_place_result ? recv_buffer_ : result_buffer_;
+      void* buffer_to_use = ac->recv_type_ == action::temp ? recv_buffer_ : result_buffer_;
       void* dst_buffer = message_buffer(buffer_to_use, ac->offset);
+
+      //if (ac->recv_type_ == action::temp){
+      //  printf("Rank %s receiving into temp receive buffer %p : %d\n", rank_str().c_str(), buffer_to_use);
+      //} else {
+      //  printf("Rank %s receiving into result buffer %p : %d\n", rank_str().c_str(), buffer_to_use);
+      //}
 
       do_debug_print("currently",
        rank_str().c_str(), ac->partner,
-       ac->round, ac->offset, nelems, dst_buffer);
+       ac->round, ac->offset, ac->nelems, dst_buffer);
 
       do_debug_print("receiving",
         rank_str().c_str(), ac->partner,
@@ -809,7 +816,7 @@ dag_collective_actor::data_recved(action *ac, const collective_work_message::ptr
 
       do_debug_print("now", rank_str().c_str(),
         ac->partner, ac->round,
-        0, ac->offset + nelems, buffer_to_use);
+        0, ac->offset + ac->nelems, buffer_to_use);
     }
   }
 
@@ -1107,6 +1114,33 @@ dag_collective_actor::recv(const collective_work_message::ptr& msg)
       spkt_throw_printf(sprockit::value_error,
         "virtual_dag_collective_actor::recv: invalid message type %s",
         message::tostr(ty));
+  }
+}
+
+void
+dag_collective_actor::compute_tree(int &log2nproc, int &midpoint, int &nproc) const
+{
+  nproc = 1;
+  log2nproc = 0;
+  while (nproc < dense_nproc_)
+  {
+    ++log2nproc;
+    nproc *= 2;
+  }
+  midpoint = nproc / 2;
+}
+
+void
+bruck_actor::compute_tree(int &log2nproc, int &midpoint, int &num_rounds, int &nprocs_extra_round) const
+{
+  int virtual_nproc;
+  dag_collective_actor::compute_tree(log2nproc, midpoint, virtual_nproc);
+  nprocs_extra_round = 0;
+  num_rounds = log2nproc;
+  if (dense_nproc_ != virtual_nproc){
+    --num_rounds;
+    //we will have to do an extra exchange in the last round
+    nprocs_extra_round = dense_nproc_ - midpoint;
   }
 }
 

@@ -438,8 +438,8 @@ transport::init_factory_params(sprockit::sim_parameters* params)
 
   lazy_watch_ = params->get_optional_bool_param("lazy_watch", true);
 
-  allgathervs_[0] = new bruckv_collective;
-  allgathers_[0] = new bruck_collective;
+  allgathervs_[0] = new bruck_allgatherv_collective;
+  allgathers_[0] = new bruck_allgather_collective;
   allreduces_[0] = new wilke_halving_allreduce;
   bcasts_[0] = new binary_tree_bcast_collective;
   gathers_[0] = new btree_gather;

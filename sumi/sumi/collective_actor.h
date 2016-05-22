@@ -10,6 +10,8 @@
 #include <sumi/thread_safe_set.h>
 #include <sumi/config.h>
 
+DeclareDebugSlot(sumi_collective_buffer)
+
 namespace sumi {
 
 struct action
@@ -23,13 +25,27 @@ struct action
   int offset;
   int nelems;
   uint32_t id;
-  bool recv_type_;
+  recv_type_t recv_type_;
 
   static const char*
   tostr(type_t ty){
     if (ty == send) return "send";
     else return "recv";
   }
+
+  static const char*
+  tostr(recv_type_t ty){
+    if (ty == in_place_result){
+      return "in_place";
+    } else if (ty == out_of_place){
+      return "out_of_place";
+    } else {
+      return "temp";
+    }
+  }
+
+  std::string
+  to_string() const;
 
   static const uint32_t max_round = 22;
 
@@ -361,6 +377,9 @@ class dag_collective_actor :
 
   void dense_partner_ping_failed(int dense_rank);
 
+  void
+  compute_tree(int& log2nproc, int& midpoint, int& nproc) const;
+
  private:
   typedef std::map<uint32_t, action*> active_map;
   typedef std::multimap<uint32_t, action*> pending_map;
@@ -419,6 +438,15 @@ class dag_collective_actor :
   public_buffer result_buffer_;
 
   collective::type_t type_;
+
+};
+
+class bruck_actor : public dag_collective_actor
+{
+ protected:
+  void
+  compute_tree(int& log2nproc, int& midpoint,
+               int& num_rounds, int& nprocs_extra_round) const;
 
 };
 

@@ -13,17 +13,12 @@
 
 using namespace sprockit::dbg;
 
-RegisterDebugSlot(sumi_allreduce, "print all debug output associated with allreduce collectives in the sumi framework");
+RegisterDebugSlot(sumi_allreduce, "print all debug output associated with allreduce collectives in the sumi framework")
 
 namespace sumi
 {
 
 SpktRegister("wilke", dag_collective, wilke_halving_allreduce);
-
-wilke_halving_allreduce::wilke_halving_allreduce(reduce_fxn fxn) :
- fxn_(fxn)
-{
-}
 
 void
 wilke_allreduce_actor::finalize_buffers()
@@ -55,13 +50,8 @@ wilke_allreduce_actor::init_buffers(void* dst, void* src)
 void
 wilke_allreduce_actor::init_dag()
 {
-  int virtual_nproc = 1;
-  int log2nproc = 0;
-  while (virtual_nproc < dense_nproc_)
-  {
-    ++log2nproc;
-    virtual_nproc *= 2;
-  }
+  int virtual_nproc, log2nproc, midpoint;
+  compute_tree(log2nproc, midpoint, virtual_nproc);
   virtual_rank_map rank_map(dense_nproc_, virtual_nproc);
   std::vector<int> my_roles = rank_map.real_to_virtual(dense_me_);
   std::set<int> lookup_map;
@@ -198,11 +188,6 @@ wilke_allreduce_actor::init_dag()
 
   num_reducing_rounds_ = num_doubling_rounds;
   num_total_rounds_ = num_doubling_rounds * 2;
-}
-
-wilke_allreduce_actor::wilke_allreduce_actor(reduce_fxn fxn) :
-   fxn_(fxn)
-{
 }
 
 bool

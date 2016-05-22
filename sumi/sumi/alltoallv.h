@@ -10,8 +10,8 @@ DeclareDebugSlot(sumi_allgather)
 
 namespace sumi {
 
-class bruck_allgather_actor :
-  public bruck_actor
+class bruck_actor :
+  public dag_collective_actor
 {
 
  public:
@@ -29,10 +29,14 @@ class bruck_allgather_actor :
 
   void buffer_action(void *dst_buffer, void *msg_buffer, action* ac);
 
+  void dense_partner_ping_failed(int dense_rank){
+    dag_collective_actor::dense_partner_ping_failed(dense_rank);
+  }
+
 
 };
 
-class bruck_allgather_collective :
+class bruck_collective :
   public dag_collective
 {
 
@@ -44,12 +48,12 @@ class bruck_allgather_collective :
 
   dag_collective_actor*
   new_actor() const {
-    return new bruck_allgather_actor;
+    return new bruck_actor;
   }
 
   dag_collective*
   clone() const {
-    return new bruck_allgather_collective;
+    return new bruck_collective;
   }
 
 };
