@@ -49,12 +49,12 @@ class Variable
     return 0;
   }
 
-  static int nops;
+  static size_t nops;
 
 };
 
 
-template <class T> int Variable<T>::nops = 0;
+template <class T> size_t Variable<T>::nops = 0;
 
 #define COMPARE(op) \
   template <class T, class U> \

@@ -16,7 +16,7 @@ int main(int argc, char** argv)
   for (int i=0; i < n; ++i){
     c += a[idx] * b[idx];
   }
-  printf("nops=%d\n", Double::nops);
+  printf("nops=%llu\n", Double::nops);
   printf("c=%f\n", c);
   MPI_Finalize();
   return 0;
