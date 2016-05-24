@@ -8,8 +8,8 @@ LULESH_EXEC = lulesh2.0
 MPI_INC = /opt/local/include/openmpi
 MPI_LIB = /opt/local/lib
 
-SERCXX = g++ -DUSE_MPI=0
-MPICXX = mpig++ -DUSE_MPI=1
+SERCXX = sst++ -DUSE_MPI=0
+MPICXX = sst++ -DUSE_MPI=1
 CXX = $(MPICXX)
 
 SOURCES2.0 = \
