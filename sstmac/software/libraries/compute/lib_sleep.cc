@@ -9,7 +9,7 @@
  *  SST/macroscale directory.
  */
 
-#include <sstmac/common/messages/sleep_message.h>
+#include <sstmac/common/messages/sleep_event.h>
 #include <sstmac/software/libraries/compute/lib_sleep.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/software/process/key.h>
@@ -39,8 +39,7 @@ lib_sleep::sleep(timestamp time)
 {
   SSTMACBacktrace("Sleep");
   if (supported()) {
-    sst_message::ptr cmsg = new sleep_message(lib_name(), time);
-    os_->execute_kernel(ami::COMP_SLEEP, cmsg);
+    os_->sleep(time);
   }
   else {
     spkt_throw(sprockit::value_error,
@@ -51,7 +50,7 @@ lib_sleep::sleep(timestamp time)
 bool
 lib_sleep::supported() const
 {
-  return os_->kernel_supported(ami::COMP_SLEEP);
+  return true;
 }
 
 }

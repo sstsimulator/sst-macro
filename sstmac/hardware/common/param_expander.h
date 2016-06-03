@@ -16,9 +16,6 @@ class param_expander : public sprockit::param_expander
   virtual double
   switch_bandwidth_multiplier(sprockit::sim_parameters* params) const;
 
-  virtual double
-  nic_bandwidth_multiplier(sprockit::sim_parameters* params) const;
-
   virtual int
   switch_buffer_multiplier(sprockit::sim_parameters* params) const;
 

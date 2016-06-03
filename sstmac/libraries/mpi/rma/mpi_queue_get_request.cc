@@ -28,7 +28,7 @@ mpi_queue_get_request::mpi_queue_get_request(mpi_request* key,
 // We be done.
 //
 void
-mpi_queue_get_request::handle(const mpi_message::ptr& mess)
+mpi_queue_get_request::handle(mpi_message* mess)
 {
   key_->complete(mess);
   completion_->handle(mess);

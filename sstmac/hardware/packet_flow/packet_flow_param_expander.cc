@@ -10,6 +10,12 @@ SpktRegister("packet_flow", sprockit::param_expander, packet_flow_param_expander
 void
 packet_flow_param_expander::expand(sprockit::sim_parameters* params)
 {
+  std::string amm_type = params->get_param("amm_model");
+  if (amm_type == "amm4"){
+    tiled_switch_ = true;
+  } else {
+    tiled_switch_ = false;
+  } 
   //this is a switch network
   params->add_param("network_name", "switch");
   params->add_param("nic_name", "packet_flow");
@@ -21,9 +27,8 @@ packet_flow_param_expander::expand(sprockit::sim_parameters* params)
 
   //scale up the injection bandwidth by the redundancy
   double inj_bw = params->get_bandwidth_param("injection_bandwidth");
-  double new_inj_bw = nic_bandwidth_multiplier(params) * inj_bw;
   double kiviat_scale = params->get_optional_double_param("scale_injection_bandwidth", 1.0);
-  std::string bw_str = sprockit::printf("%25.10fB/s", new_inj_bw*kiviat_scale);
+  std::string bw_str = sprockit::printf("%25.10fB/s", inj_bw*kiviat_scale);
   params->add_param_override("injection_bandwidth", bw_str);
 
   if (params->has_param("scale_injection_latency")){
@@ -36,7 +41,6 @@ packet_flow_param_expander::expand(sprockit::sim_parameters* params)
 
   buffer_depth_ = params->get_optional_int_param("network_buffer_depth", 8);
 
-  std::string amm_type = params->get_param("amm_model");
   //by default, quite coarse-grained
   int packet_size = params->get_optional_int_param("accuracy_parameter", 4096);
   int net_packet_size = params->get_optional_int_param("network_accuracy_parameter", packet_size);
@@ -49,7 +53,6 @@ packet_flow_param_expander::expand(sprockit::sim_parameters* params)
     params->add_param_override("packet_flow_arbitrator", params->get_param("arbitrator"));
   }
 
-  tiled_switch_ = false; //default
 
   if (amm_type == "amm1"){
     expand_amm1(params, net_packet_size, mem_packet_size);

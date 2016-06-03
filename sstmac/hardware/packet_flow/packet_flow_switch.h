@@ -15,6 +15,8 @@ class packet_flow_params  {
  public:
   double link_bw;
 
+  ~packet_flow_params();
+
   timestamp hop_lat;
 
   int xbar_output_buffer_num_bytes;
@@ -112,6 +114,8 @@ class packet_flow_switch :
   );
 #endif
 
+  ~packet_flow_switch();
+
   virtual void
   initialize();
 
@@ -145,7 +149,7 @@ class packet_flow_switch :
    @param msg Incoming message (should cast to packet_train)
    */
   void
-  handle(const sst_message::ptr& msg);
+  handle(event* ev);
 
   void deadlock_check();
 
@@ -168,9 +172,6 @@ class packet_flow_switch :
   virtual std::string
   to_string() const;
 
-  virtual
-  ~packet_flow_switch();
-
  protected:
   virtual void
   connect_injector(int src_outport, int dst_inport, event_handler* nic);
@@ -188,6 +189,8 @@ class packet_flow_switch :
   packet_flow_crossbar* xbar_;
 
   bool acc_delay_;
+
+  int packet_size_;
 
  private:
   void

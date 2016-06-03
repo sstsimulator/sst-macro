@@ -29,7 +29,7 @@ namespace sw {
  */
 class mpi_payload :
   public payload,
-  public sprockit::serializable_type<mpi_payload>
+  public serializable_type<mpi_payload>
 {
   ImplementSerializableDefaultConstructor(mpi_payload)
 
@@ -65,13 +65,6 @@ class mpi_payload :
   void*
   data() const {
     return buf_;
-  }
-
-  virtual sprockit::serializable*
-  serialization_clone() const {
-    void* newbuf = malloc(bufsize_);
-    memcpy(newbuf, buf_, bufsize_);
-    return new mpi_payload(newbuf, type_, cnt_);
   }
 
   void
@@ -359,7 +352,7 @@ class mpi_payload :
   }
 
   virtual void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(serializer& ser);
 
   /**
    * Strinfier

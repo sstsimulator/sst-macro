@@ -29,7 +29,7 @@ print_location_trace_main(int argc, char **argv)
     timestamp scheduled;
     event_loc_id runner;
 
-    topology* the_top = sstmac_runtime::current_topology();
+    topology* the_top = runtime::current_topology();
     structured_topology* top = safe_cast(structured_topology, the_top);
 
     switch_id src, dst;

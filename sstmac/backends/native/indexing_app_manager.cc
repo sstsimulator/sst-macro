@@ -20,6 +20,7 @@ indexing_app_manager::~indexing_app_manager()
 {
   delete allocator_;
   delete indexer_;
+  delete linfo_;
 }
 
 void

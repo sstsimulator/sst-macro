@@ -13,13 +13,11 @@
 #define SSTMAC_SOFTWARE_LIBRARIES_MPI_MPI_COMM_MPICOMMID_H_INCLUDED
 
 #include <iosfwd>
-#include <sprockit/opaque_typedef.h>
 
 namespace sstmac {
 namespace sw {
 
-typedef_opaque_int(mpi_comm_id, int);
-implement_opaque_int(mpi_comm_id)
+typedef int mpi_comm_id;
 
 namespace mpi {
 extern const mpi_comm_id null_comm;

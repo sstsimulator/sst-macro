@@ -134,7 +134,6 @@ namespace sstmac {
   "node_memory_model",
   "node_model",
   "nic_name",
-  "vis_update",  
   "network_switch_type",  
   "network_train_injection_arbitrator",  
   "network_train_injection_latency",  

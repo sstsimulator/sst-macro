@@ -7,11 +7,8 @@
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
 #include <sumi/transport.h>
-#include <sst/sumi_api.h>
+#include <sstmac/libraries/sumi/sumi.h>
 
-using namespace sstmac;
-using namespace sstmac::sw;
-using namespace sstmac::hw;
 using namespace sumi;
 
 void
@@ -35,11 +32,11 @@ main(int argc, char **argv)
   comm_init();
 
   sumi::transport* tport = sumi_api();
-  sstmac_runtime::add_deadlock_check(
-    new_deadlock_check(tport, &sumi::transport::deadlock_check));
+  sstmac::runtime::add_deadlock_check(
+    sstmac::new_deadlock_check(tport, &sumi::transport::deadlock_check));
 
   int me = comm_rank();
-  if (me == 0) sstmac_runtime::enter_deadlock_region();
+  if (me == 0) sstmac::runtime::enter_deadlock_region();
 
   if (me != 5){
     start_barrier();
@@ -50,7 +47,7 @@ main(int argc, char **argv)
 
   comm_finalize();
 
-  if (me == 0) sstmac_runtime::exit_deadlock_region();
+  if (me == 0) sstmac::runtime::exit_deadlock_region();
 
   return 0;
 }

@@ -78,13 +78,13 @@ api::now() const
 }
 
 void
-api::schedule(timestamp t, event* ev)
+api::schedule(timestamp t, event_queue_entry* ev)
 {
   os()->schedule(t, ev);
 }
 
 void
-api::schedule_delay(timestamp t, event* ev)
+api::schedule_delay(timestamp t, event_queue_entry* ev)
 {
   os()->schedule_delay(t, ev);
 }

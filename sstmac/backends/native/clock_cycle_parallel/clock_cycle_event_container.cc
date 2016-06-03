@@ -8,7 +8,6 @@
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/interconnect/switch_interconnect.h>
 #include <sprockit/util.h>
-#include <sprockit/serializer.h>
 #include <limits>
 
 #define event_debug(...) \
@@ -49,11 +48,11 @@ clock_cycle_event_map::schedule_incoming(const std::vector<void*>& buffers)
   int num_bufs = buffers.size();
   int buf_size = rt_->ser_buf_size();
   for (int i=0; i < num_bufs; ++i){
-    switch_id dst;
+    event_loc_id dst;
     event_loc_id src;
     uint32_t seqnum;
     timestamp time;
-    sst_message::ptr msg;
+    message* msg;
     void* buffer = buffers[i];
     ser.start_unpacking((char*)buffer, buf_size);
     ser & dst;
@@ -61,13 +60,17 @@ clock_cycle_event_map::schedule_incoming(const std::vector<void*>& buffers)
     ser & seqnum;
     ser & time;
     ser & msg;
-    event_debug("epoch %d: scheduling incoming event at %12.8e to switch %d",
-        epoch_, time.sec(), int(dst));
     event_handler* dst_handler;
-    if (msg->is_chunk()){
-      dst_handler = interconn_->switch_at(dst);
+    if (dst.is_switch_id()){
+      switch_id sid = dst.convert_to_switch_id();
+      event_debug("epoch %d: scheduling incoming event at %12.8e to switch %d",
+        epoch_, time.sec(), int(sid));
+      dst_handler = interconn_->switch_at(sid);
     } else {
-      sstmac::hw::node* dst_node = interconn_->node_at(msg->toaddr());
+      node_id nid = dst.convert_to_node_id();
+      event_debug("epoch %d: scheduling incoming event at %12.8e to node %d",
+        epoch_, time.sec(), int(nid));
+      sstmac::hw::node* dst_node = interconn_->node_at(nid);
 #if SSTMAC_SANITY_CHECK
       if (!dst_node){
         spkt_throw_printf(sprockit::value_error,
@@ -77,7 +80,7 @@ clock_cycle_event_map::schedule_incoming(const std::vector<void*>& buffers)
 #endif
       dst_handler = dst_node->get_nic();
     }
-    schedule(time, seqnum, new handler_event(msg, dst_handler, src));
+    schedule(time, seqnum, new handler_event_queue_entry(msg, dst_handler, src));
   }
 
   rt_->free_recv_buffers(buffers);
@@ -185,7 +188,7 @@ clock_cycle_event_map::do_next_event()
     ++epoch_;
   }
 
-  event* ev = pop_next_event();
+  event_queue_entry* ev = pop_next_event();
 
 #if DEBUG_DETERMINISM
   std::ofstream*& f = outs[ev->event_location()];
@@ -261,16 +264,16 @@ clock_cycle_event_map::ipc_schedule(timestamp t,
   event_loc_id dst,
   event_loc_id src,
   uint32_t seqnum,
-  const sst_message::ptr& msg)
+  event* ev)
 {
   event_debug("epoch %d: scheduling outgoing event at t=%12.8e to location %d",
     epoch_, t.sec(), int(dst.convert_to_switch_id()));
 
-  rt_->send_message(thread_id_, t,
+  rt_->send_event(thread_id_, t,
     dst.convert_to_switch_id(),
     src,
     seqnum,
-    msg);
+    ev);
 }
 
 }

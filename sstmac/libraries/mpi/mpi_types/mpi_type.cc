@@ -9,25 +9,21 @@
  *  SST/macroscale directory.
  */
 
-#include <sprockit/serializer.h>
 #include <sprockit/errors.h>
-#include <sstmac/common/sstmac_config.h>
 #include <sprockit/statics.h>
+#include <sprockit/delete.h>
+#include <sstmac/common/sstmac_config.h>
 #include <sstmac/libraries/mpi/mpi_types/mpi_type.h>
 #include <sstmac/libraries/mpi/mpi_types.h>
 #include <iostream>
 #include <sstream>
+#include <cstring>
 
-
-
-DeclareSerializable(sstmac::sw::pairdata);
-
-DeclareSerializable(sstmac::sw::vecdata);
-
-DeclareSerializable(sstmac::sw::inddata);
 
 namespace sstmac {
 namespace sw {
+
+static sprockit::need_delete_statics<mpi_type> del_statics;
 
 mpi_type::mpi_type() :
   id(-1),
@@ -408,65 +404,6 @@ mpi_type::contents(int* ints, int* addr, long* dtypes)
     }
 
   }
-}
-
-void
-pairdata::serialize_order(sprockit::serializer& ser)
-{
-  base1_->serialize_order(ser);
-  base2_->serialize_order(ser);
-}
-
-void
-vecdata::serialize_order(sprockit::serializer& ser)
-{
-  base_->serialize_order(ser);
-  ser & (count_);
-  ser & (blocklen_);
-  ser & (stride_);
-}
-
-void
-inddata::serialize_order(sprockit::serializer& ser)
-{
-  ser & (mindisp_);
-  ser & (maxbyte_);
-  ser & (ub_);
-  ser & (lb_);
-
-  size_t s = blocks.size();
-  ser & (s);
-
-  for (int i = 0; i < s; i++) {
-    blocks[i].base->serialize_order(ser);
-    ser & (blocks[i].disp);
-    ser & (blocks[i].num);
-  }
-
-}
-
-void
-mpi_type::serialize_order(sprockit::serializer& ser)
-{
-  ser & (id);
-  ser & (label);
-  ser & (parent_);
-  ser & (type_);
-  ser & (alignment_);
-  ser & (size_);
-  ser & (extent_);
-  ser & (op_);
-
-  if (type_ == PAIR) {
-    ser & (pdata_);
-  }
-  else if (type_ == VEC) {
-    ser & (vdata_);
-  }
-  else if (type_ == IND) {
-    ser & (idata_);
-  }
-
 }
 
 int

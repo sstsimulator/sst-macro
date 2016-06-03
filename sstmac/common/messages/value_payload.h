@@ -13,7 +13,6 @@
 #define SSTMAC_COMMON_MESSAGES_VALUEPAYLOAD_H_INCLUDED
 
 #include <sstmac/common/messages/payload.h>
-#include <sprockit/serialize.h>
 #include <sstream>
 
 namespace sstmac {
@@ -59,13 +58,13 @@ class bool_result<bool>
 template<typename T>
 class value_payload :
   public payload,
-  public sprockit::serializable_type<value_payload<T> >
+  public sstmac::serializable_type<value_payload<T> >
 {
   ImplementSerializable(value_payload)
 
-
-
  public:
+  value_payload(){} //for serialization
+
   typedef sprockit::refcount_ptr<value_payload<T> > ptr;
   typedef sprockit::refcount_ptr<const value_payload<T> > const_ptr;
 
@@ -268,19 +267,9 @@ class value_payload :
   }
 
   virtual void
-  serialize_order(sprockit::serializer& ser) {
+  serialize_order(sstmac::serializer& ser) {
     ser & (data_);
     ser & (size_);
-  }
-
-  virtual sprockit::serializable*
-  serialization_clone() const {
-    return new value_payload<T>(*this);
-  }
-
-  long
-  data_serialization_size() const {
-    return size_;
   }
 
   /**
@@ -419,19 +408,9 @@ class bitwisevaluepayload : public value_payload<T>
     return ret;
   }
 
-  virtual long
-  data_serialization_size() const {
-    return value_payload<T>::data_serialization_size();
-  }
-
   virtual void
-  serialize_order(sprockit::serializer& ser) {
+  serialize_order(sstmac::serializer& ser) {
     value_payload<T>::serialize_order(ser);
-  }
-
-  virtual sprockit::serializable*
-  serialization_clone() const {
-    return new bitwisevaluepayload<T>(*this);
   }
 
   /**

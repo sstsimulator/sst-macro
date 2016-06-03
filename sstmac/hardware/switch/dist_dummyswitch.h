@@ -43,7 +43,7 @@ class dist_dummy_switch : public network_switch
   }
 
   virtual void
-  handle(const sst_message::ptr& msg);
+  handle(event* ev);
 
   virtual void
   connect(
@@ -78,6 +78,11 @@ class dist_dummy_switch : public network_switch
 
   timestamp
   lookahead() const;
+
+  int
+  queue_length(int port) const {
+    return 0;
+  }
 
  protected:
   virtual void

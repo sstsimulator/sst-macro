@@ -90,7 +90,7 @@ mpi_simultaneous_btree_scan_engine::sendrecv()
 }
 
 void
-mpi_simultaneous_btree_scan_engine::send_complete(const mpi_message::ptr& msg)
+mpi_simultaneous_btree_scan_engine::send_complete(mpi_message* msg)
 {
   --pending_sends_;
   mpi_scan_debug("send complete to %d - now %d pending sends, %d pending recvs",
@@ -100,7 +100,7 @@ mpi_simultaneous_btree_scan_engine::send_complete(const mpi_message::ptr& msg)
 }
 
 void
-mpi_simultaneous_btree_scan_engine::recv_complete(const mpi_message::ptr& msg)
+mpi_simultaneous_btree_scan_engine::recv_complete(mpi_message* msg)
 {
   payload::const_ptr load = msg->content();
   if (load) {

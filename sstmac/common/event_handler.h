@@ -12,9 +12,9 @@
 #ifndef SSTMAC_COMMON_EVENTHANDLER_H_INCLUDED
 #define SSTMAC_COMMON_EVENTHANDLER_H_INCLUDED
 
-#include <sstmac/common/messages/sst_message.h>
 #include <sstmac/common/node_address.h>
 #include <sstmac/common/event_location.h>
+#include <sstmac/common/sst_event_fwd.h>
 
 namespace sstmac {
 
@@ -57,7 +57,7 @@ class event_handler
   virtual ~event_handler() {}
 
   virtual void
-  handle(const sst_message::ptr& msg) = 0;
+  handle(event* ev) = 0;
 
   event_loc_id
   event_location() const {
@@ -80,7 +80,7 @@ class event_handler
   }
 
   virtual void
-  deadlock_check(const sst_message::ptr& msg){}
+  deadlock_check(event* ev){}
   
   virtual void
   deadlock_check(){}
@@ -103,74 +103,6 @@ class event_handler
 
 };
 
-class multi_event_handler :
-  public event_handler
-{
- public:
-  typedef void (multi_event_handler::*handle_fxn)(const sst_message::ptr& msg);
-
-  class handle_functor {
-   public:
-    virtual void
-    handle(multi_event_handler* handler, const sst_message::ptr& msg) = 0;
-  };
-
-  template <class T, class Fxn>
-  class handle_functor_impl :
-    public handle_functor
-  {
-   public:
-    handle_functor_impl(Fxn fxn) : fxn_(fxn) {}
-
-    void
-    handle(multi_event_handler* handler, const sst_message::ptr& msg){
-      T* me = static_cast<T*>(handler);
-      (me->*fxn_)(msg);
-    }
-
-   protected:
-    Fxn fxn_;
-  };
-
-  template <class T, class Fxn>
-  void
-  new_handler(sst_message::message_type_t ty, T* t, Fxn fxn){
-    handle_functor* handler = new handle_functor_impl<T,Fxn>(fxn);
-    handle_type(ty, handler);
-  }
-
- public:
-  virtual ~multi_event_handler(){}
-
-  virtual void
-  handle(const sst_message::ptr& msg);
-
- protected:
-  void
-  handle_type(sst_message::message_type_t ty, handle_functor* handler);
-
- protected:
-  std::map<sst_message::message_type_t, handle_functor*> fxns_;
-};
-
-class do_nothing_handler :
-  public event_handler
-{
- public:
-  do_nothing_handler(event_loc_id id)
-  {
-    init_loc_id(id);
-  }
-
-  std::string
-  to_string() const {
-    return "do nothing handler";
-  }
-
-  void
-  handle(const sst_message::ptr& msg) {}
-
-};
 
 } // end of namespace sstmac
 #endif

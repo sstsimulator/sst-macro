@@ -8,11 +8,11 @@ SpktRegister("min_ad", router, minimal_adaptive_router,
             "a routing algorithm for minimal adaptive routing on regular topologies");
 
 void
-minimal_adaptive_router::route(const sst_message::ptr& msg)
+minimal_adaptive_router::route(packet* pkt)
 {
-  routable* rt = msg->interface<routable>();
+  routable* rt = pkt->interface<routable>();
   routing_info::path_set paths;
-  bool eject  = productive_paths_to_node(msg->toaddr(), paths);
+  bool eject  = productive_paths_to_node(pkt->toaddr(), paths);
   if (eject) {
     rt->rinfo().assign_path(paths[0]);
     return;
@@ -22,9 +22,9 @@ minimal_adaptive_router::route(const sst_message::ptr& msg)
   routing_info::path& min_path = paths[0];
   debug_printf(sprockit::dbg::router,
     "Routing %p from %ld to %ld: path 0 port=%d queue=%d",
-    msg.get(),
+    pkt,
     long(netsw_->addr()),
-    long(msg->toaddr()),
+    long(pkt->toaddr()),
     paths[0].outport,
     min_queue_length);
 

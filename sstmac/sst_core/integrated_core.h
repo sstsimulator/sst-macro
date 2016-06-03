@@ -2,6 +2,8 @@
 #ifndef SSTMAC_MICRO_INTEGRATED_SST_CORE_H_
 #define SSTMAC_MICRO_INTEGRATED_SST_CORE_H_
 
+#include <sst_config.h>
+
 #include <sst/core/element.h>
 #include <sst/core/params.h>
 
@@ -20,11 +22,10 @@ make_sim_params_from_params(
 )
 {
   sprockit::sim_parameters* rv = new sprockit::sim_parameters;
-  for(auto&& pair : map) {
+  std::set<std::string> key_names = map.getKeys();
+  for(auto&& key : key_names) {
     rv->parse_keyval(
-        map.getParamName(pair.first),
-        pair.second, false
-    );
+        key, map.find_string(key), false);
   }
   return rv;
 }

@@ -40,6 +40,8 @@ class simple_nic :
   virtual void
   finalize_init();
 
+  void handle(event *ev);
+
   virtual void
   connect(
     int src_outport,
@@ -63,7 +65,7 @@ class simple_nic :
     @param payload The network message to send
   */
   virtual void
-  do_send(const network_message::ptr& msg);
+  do_send(network_message* msg);
 
  protected:
   double inj_bw_inverse_;
@@ -73,8 +75,8 @@ class simple_nic :
   timestamp next_free_;
 
  private:
-  void send_to_injector(timestamp arrival, const network_message::ptr& netmsg);
-  void send_to_node(timestamp arrival, const network_message::ptr& netmsg);
+  void send_to_injector(timestamp arrival, network_message* netmsg);
+  void send_to_node(timestamp arrival, network_message* netmsg);
 
 };
 

@@ -1,11 +1,8 @@
 #ifndef PACKETFLOW_H
 #define PACKETFLOW_H
 
-#ifndef PACKET_TRAIN_H
-#define PACKET_TRAIN_H
-
 #include <sstmac/hardware/router/routable_message.h>
-#include <sstmac/common/messages/message_chunk.h>
+#include <sstmac/hardware/common/packet.h>
 #include <sprockit/debug.h>
 
 DeclareDebugSlot(packet_flow)
@@ -46,7 +43,7 @@ class packet_flow_interface
   }
 
   void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(serializer& ser);
 
   static const long infinity = -1;
 
@@ -80,24 +77,23 @@ class packet_flow_interface
  a larger message.
  */
 class packet_flow_payload :
-  public routable,
   public packet_flow_interface,
-  public message_chunk,
-  public sprockit::serializable_type<packet_flow_payload>
+  public routable,
+  public packet,
+  public serializable_type<packet_flow_payload>
 {
  public:
-  typedef sprockit::refcount_ptr<packet_flow_payload> ptr;
-  typedef sprockit::refcount_ptr<const packet_flow_payload> const_ptr;
-
   static const double uninitialized_bw;
 
   ImplementSerializable(packet_flow_payload)
 
  public:
   packet_flow_payload(
-    const sst_message::ptr& parent,
+    message* parent,
     int num_bytes,
     long offset);
+
+  packet_flow_payload(){} //for serialization
 
   virtual ~packet_flow_payload() {}
 
@@ -140,16 +136,6 @@ class packet_flow_payload :
   long
   num_bytes_total() const {
     return orig_->byte_length();
-  }
-
-  /**
-   @return The minimum number of bytes needed in a train. An 8K
-   messages with min_bytes=4K will be split into two
-   messages of size 4K.
-   */
-  static int
-  min_num_bytes_per_packet() {
-    return min_num_bytes_per_packet_;
   }
 
   /**
@@ -227,11 +213,8 @@ class packet_flow_payload :
   std::string
   to_string() const;
 
-  static void
-  init_statics(int min_bytes);
-
   void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(serializer& ser);
 
  protected:
   int inport_;
@@ -242,22 +225,20 @@ class packet_flow_payload :
 
   double arrival_;
 
-  static int min_num_bytes_per_packet_;
-
 };
 
 class packet_flow_credit :
-  public sst_message,
+  public event,
   public packet_flow_interface,
-  public sprockit::serializable_type<packet_flow_credit>
+  public serializable_type<packet_flow_credit>
 {
 
  public:
-  typedef sprockit::refcount_ptr<packet_flow_credit> ptr;
-
   ImplementSerializable(packet_flow_credit)
 
  public:
+  packet_flow_credit(){} //for serialization
+
   packet_flow_credit(
     int port,
     int vc,
@@ -296,7 +277,7 @@ class packet_flow_credit :
   to_string() const;
 
   void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(serializer& ser);
 
  protected:
   int num_credits_;
@@ -307,8 +288,6 @@ class packet_flow_credit :
 
 }
 }
-
-#endif // PACKET_TRAIN_H
 
 
 #endif // PACKETFLOW_H

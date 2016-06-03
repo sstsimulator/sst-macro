@@ -11,9 +11,9 @@ namespace hw {
 
 
 struct payload_queue {
-  std::list<packet_flow_payload::ptr> queue;
+  std::list<packet_flow_payload*> queue;
 
-  typedef std::list<packet_flow_payload::ptr>::iterator iterator;
+  typedef std::list<packet_flow_payload*>::iterator iterator;
 
   iterator
   begin() {
@@ -25,14 +25,14 @@ struct payload_queue {
     return queue.end();
   }
 
-  packet_flow_payload::ptr
+  packet_flow_payload*
   pop(int num_credits);
 
-  packet_flow_payload::ptr
+  packet_flow_payload*
   front();
 
   void
-  push_back(const packet_flow_payload::ptr& payload) {
+  push_back(packet_flow_payload* payload) {
     queue.push_back(payload);
   }
 
@@ -56,13 +56,13 @@ class packet_flow_handler :
   virtual ~packet_flow_handler() {}
 
   virtual void
-  handle(const sst_message::ptr& msg);
+  handle(event* ev);
 
   virtual void
-  handle_credit(const packet_flow_credit::ptr& msg) = 0;
+  handle_credit(packet_flow_credit* msg) = 0;
 
   virtual void
-  handle_payload(const packet_flow_payload::ptr& msg) = 0;
+  handle_payload(packet_flow_payload* msg) = 0;
 
   int
   thread_id() const {

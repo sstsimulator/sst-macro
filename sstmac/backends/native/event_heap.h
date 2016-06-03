@@ -51,13 +51,13 @@ class event_heap :
 
  protected:
   typedef std::priority_queue<event*,
-          std::vector<event*>, std::greater<event*> > queue_t;
+          std::vector<event_queue_entry*>, std::greater<event_queue_entry*> > queue_t;
 
-  event*
+  event_queue_entry*
   pop_next_event();
 
   void
-  add_event(event* ev);
+  add_event(event_queue_entry* ev);
 
  protected:
    queue_t queue_;

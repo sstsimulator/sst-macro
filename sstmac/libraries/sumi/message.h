@@ -5,30 +5,27 @@
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/software/process/key_fwd.h>
 #include <sstmac/common/messages/library_message.h>
-#include <sprockit/serializer_fwd.h>
-#include <sprockit/ser_ptr_type.h>
-#include <sprockit/clonable.h>
+#include <sstmac/libraries/sumi/message_fwd.h>
+#include <sumi/message_fwd.h>
 
 namespace sstmac {
 
 class transport_message :
   public ::sstmac::hw::network_message,
   public ::sstmac::library_interface,
-  public sprockit::serializable_type<transport_message>
+  public serializable_type<transport_message>
 {
    ImplementSerializable(transport_message)
-   typedef sprockit::clonable<sprockit::serializable_ptr_type> payload_t;
-   typedef sprockit::refcount_ptr<payload_t> payload_ptr;
 
  public:
-  typedef sprockit::refcount_ptr<transport_message> ptr;
+  transport_message(){} //needed for serialization
 
-  transport_message(const payload_ptr& msg, long byte_length);
+  transport_message(const sumi::message_ptr& msg, long byte_length);
 
   virtual void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(serializer& ser);
 
-  serializable_ptr_type::ptr
+  sumi::message_ptr
   payload() const {
     return payload_;
   }
@@ -72,18 +69,18 @@ class transport_message :
   void
   complete_transfer(void* buf);
 
-  ::sstmac::hw::network_message::ptr
+  ::sstmac::hw::network_message*
   clone_injection_ack() const;
 
  protected:
   void
-  clone_into(const ptr &cln) const;
+  clone_into(transport_message* cln) const;
 
   void
   reverse();
 
  private:
-  payload_ptr payload_;
+  sumi::message_ptr payload_;
   void* buffer_;
 
 };

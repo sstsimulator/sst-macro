@@ -15,6 +15,7 @@ void
 ugal_router::init_factory_params(sprockit::sim_parameters *params)
 {
   val_threshold_ = params->get_optional_int_param("ugal_threshold", 0);
+  val_preference_factor_ = params->get_optional_int_param("valiant_preference_factor",1);
   valiant_router::init_factory_params(params);
 }
 
@@ -26,18 +27,18 @@ ugal_router::finalize_init()
 }
 
 void
-ugal_router::route(const sst_message::ptr& msg)
+ugal_router::route(packet* pkt)
 {
-  routing_info& rinfo = msg->interface<routable>()->rinfo();
+  routing_info& rinfo = pkt->interface<routable>()->rinfo();
   rinfo.init_default_algo(routing::valiant);
   switch(rinfo.route_algo()){
     case routing::minimal:
-      minimal_route_to_node(msg->toaddr(), rinfo.current_path());
+      minimal_route_to_node(pkt->toaddr(), rinfo.current_path());
       return;
     case routing::valiant:
     case routing::ugal: //virtual methods overridden
       //just run the valiant algorithm
-      route_valiant(msg);
+      route_valiant(pkt);
       break;
     default:
       spkt_throw_printf(sprockit::value_error,
@@ -49,12 +50,12 @@ ugal_router::route(const sst_message::ptr& msg)
 valiant_router::next_action_t
 ugal_router::initial_step(
   routing_info& rinfo,
-  const sst_message::ptr& msg)
+  packet* pkt)
 {
   routing_info::path& path = rinfo.current_path();
   structured_topology* regtop = safe_cast(structured_topology, topol());
   int pathDir;
-  switch_id ej_addr = regtop->endpoint_to_ejection_switch(msg->toaddr(), pathDir);
+  switch_id ej_addr = regtop->endpoint_to_ejection_switch(pkt->toaddr(), pathDir);
 
   if (ej_addr == netsw_->addr()) {
     path.outport = pathDir;
@@ -92,7 +93,7 @@ ugal_router::initial_step(
   regtop->minimal_route_to_coords(src, inter, val_path);
   int min_queue_length = netsw_->queue_length(min_path.outport);
   int valiant_queue_length = netsw_->queue_length(val_path.outport);
-  int minimal_weight = min_queue_length * min_dst;
+  int minimal_weight = min_queue_length * min_dst * val_preference_factor_;
   int valiant_weight = valiant_queue_length * valiant_dst;
 
   debug_printf(sprockit::dbg::router,
@@ -123,7 +124,7 @@ ugal_router::initial_step(
 
     // intermediate_step() will handle the remaining path/vc setup.
     // Don't duplicate that here or bad things will happen.
-    return intermediate_step(rinfo, msg);
+    return intermediate_step(rinfo, pkt);
   }
 }
 

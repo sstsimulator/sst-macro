@@ -1,7 +1,7 @@
 
 #include <iomanip>
 #include <systolicmxm.h>
-#include <sstmac/software/libraries/compute/compute_message.h>
+#include <sstmac/software/libraries/compute/compute_event.h>
 #include <math.h>  // ceil
 
 using namespace sstmac;

@@ -14,7 +14,11 @@ void
 node_id_allocation::init_factory_params(sprockit::sim_parameters* params)
 {
   allocation_strategy::init_factory_params(params);
-  coord_file_ = params->get_param("launch_node_id_file");
+  if (params->has_param("launch_node_id_file")){
+    coord_file_ = params->get_param("launch_node_id_file");
+  } else {
+    coord_file_ = params->get_param("launch_node_id_allocation_file");
+  }
 }
 
 void

@@ -87,10 +87,10 @@ naddr(long nid)
   return sstmac::node_id(nid);
 }
 
-packet_flow_payload::ptr
+packet_flow_payload*
 msg(long nid)
 {
-  network_message::ptr new_msg = new network_message;
+  network_message* new_msg = new network_message;
   new_msg->set_toaddr(naddr(nid));
   new_msg->set_net_id(hw::network_id(0,0));
   return new packet_flow_payload(new_msg, 0, 0);

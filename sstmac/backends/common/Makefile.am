@@ -14,7 +14,7 @@ include $(top_srcdir)/Makefile.common
 noinst_LTLIBRARIES = libsstmac_backends.la
 
 AM_CPPFLAGS += -I$(top_srcdir)/sstmac/backends/common -I$(top_builddir)/sstmac/backends/common
-AM_CPPFLAGS += -I$(top_builddir)/dumpi -I$(top_srcdir)/dumpi
+AM_CPPFLAGS += -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi
 
 library_includedir=$(includedir)/sstmac/backends/common
 

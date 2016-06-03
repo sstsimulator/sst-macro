@@ -26,7 +26,6 @@
 #include <memory.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <sstmac/software/process/localize_global.h>
 
 
 
@@ -47,14 +46,6 @@ thread::init_thread(int physical_thread_id, threading_interface* threadcopy, voi
   stack_ = stack;
   stacksize_ = stacksize;
   os_ = os;
-  int size = global_variables::context_size;
-  if (size >= 0){
-    global_variables_ = new char[size];
-    ::memcpy(global_variables_, global_variables::global_initer, size);
-  } else {
-    global_variables_ = 0;
-  }
-
 
   init_id();
 
@@ -148,12 +139,12 @@ thread::cleanup()
 }
 
 class delete_thread_event :
-  public event
+  public event_queue_entry
 {
  public:
   delete_thread_event(thread* thr) :
     thr_(thr),
-    event(thr->os()->event_location(), thr->os()->event_location())
+    event_queue_entry(thr->os()->event_location(), thr->os()->event_location())
   {
   }
 
@@ -194,9 +185,7 @@ thread::run_routine(void* threadptr)
       //However, because of weird thread swapping the DES thread
       //might still operate on the thread... we need to delay the delete
       //until the DES thread has completely finished processing its current event
-      START_VALID_SCHEDULE(self->os())
       self->os()->schedule_now(new delete_thread_event(self));
-      STOP_VALID_SCHEDULE(self->os())
       //this doesn't so much kill the thread as context switch it out
       //it is up to the above delete thread event to actually to deletion/cleanup
       //all of this is happening ON THE THREAD - it kills itself
@@ -239,6 +228,7 @@ thread::thread() :
   schedule_key_(0),
   p_txt_(process_context::none),
   stack_(0),
+  context_(0),
   cpumask_(0),
   pthread_map_(0),
   parent_app_(0)
@@ -344,13 +334,10 @@ thread::physical_address()
 //
 thread::~thread()
 {
-  if (backtrace_){
-    graph_viz::delete_trace(backtrace_);
-  }
-
-  if (stack_){
-    os_->free_thread_stack(stack_);
-  }
+  if (backtrace_) graph_viz::delete_trace(backtrace_);
+  if (stack_) os_->free_thread_stack(stack_);
+  if (context_) delete context_;
+  if (schedule_key_) delete schedule_key_;
 
   //all my apis should have been deleted
   //since they are libraries

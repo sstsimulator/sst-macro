@@ -41,8 +41,7 @@ sst_switch_interconnect::init_factory_params(sprockit::sim_parameters *params)
 }
 #else
 
-macro_switch_interconnect::macro_switch_interconnect() :
-  vis_display("interconnect")
+macro_switch_interconnect::macro_switch_interconnect() 
 {
 }
 
@@ -90,8 +89,7 @@ macro_switch_interconnect::init_factory_params(sprockit::sim_parameters* params)
 {
   /** This builds the nodes */
   interconnect_base::init_factory_params(params);
-  sstmac_runtime::set_temp_topology(topology_);
-  vis_display::init_factory_params(params);
+  runtime::set_temp_topology(topology_);
 
   internal_map switches;
   sprockit::sim_parameters* switch_params = params->get_namespace("switch");
@@ -99,6 +97,7 @@ macro_switch_interconnect::init_factory_params(sprockit::sim_parameters* params)
     = new sprockit::template_factory<connectable, network_switch_factory>(switch_params->get_param("model"));
   network_switch* dummy = new dist_dummy_switch(switch_id());
   topology_->build_internal_connectables(switches, switch_builder, partition_, rt_->me(), switch_params, dummy);
+  delete switch_builder;
   copy_map(switches, switches_);
   switch_map::iterator it, end = switches_.end();
   for (it=switches_.begin(); it != end; ++it){
@@ -169,11 +168,11 @@ macro_switch_interconnect::init_factory_params(sprockit::sim_parameters* params)
     cerrn << "WARNING: rank was assigned no switches" << std::endl;
   }
 
-  sstmac_runtime::clear_temp_topology();
+  runtime::clear_temp_topology();
 }
 
 void
-macro_switch_interconnect::immediate_send(event_scheduler* src, const sst_message::ptr& msg, timestamp start) const
+macro_switch_interconnect::immediate_send(event_scheduler* src, message* msg, timestamp start) const
 {
   node* dst_node = node_at(msg->toaddr());
   int num_hops = topology_->num_hops_to_node(msg->fromaddr(), msg->toaddr());
@@ -186,15 +185,11 @@ macro_switch_interconnect::immediate_send(event_scheduler* src, const sst_messag
     msg->to_string().c_str(),
     num_hops, hop_bw_, hop_latency_.sec(), injection_latency_.sec());
 
-  START_VALID_SCHEDULE(src)
   if (dst_node){ //local operation
-    src->schedule(arrival, dst_node->get_nic(), msg);
+    src->schedule(arrival, dst_node->get_nic()->mtl_handler(), msg);
   } else {
-    //not a local operation - I have to derive a destination switch
-    switch_id sid = topology_->node_to_ejection_switch(msg->toaddr());
-    src->schedule(arrival, switches_.at(sid), msg);
+    src->ipc_schedule(arrival, dst_node, msg);
   }
-  STOP_VALID_SCHEDULE(src)
 }
 
 void
@@ -226,7 +221,7 @@ macro_switch_interconnect::thread_for_switch(switch_id sid) const
 void
 macro_switch_interconnect::set_event_manager(event_manager* m)
 {
-  sstmac_runtime::set_temp_topology(topology_);
+  runtime::set_temp_topology(topology_);
 
   int num_local_switches = partition_->local_num_switches();
   for (int i=0; i < num_local_switches; ++i){
@@ -240,26 +235,10 @@ macro_switch_interconnect::set_event_manager(event_manager* m)
   //an event manager
   interconnect_base::set_event_manager_common(m);
 
-  sstmac_runtime::clear_temp_topology();
+  runtime::clear_temp_topology();
 }
 
 
-vis::vis_topology::vis_switch_map
-macro_switch_interconnect::vis_nodes()
-{
-  vis::vis_topology::vis_switch_map vismap;
-  switch_map::iterator it, end = switches_.end();
-  for (it = switches_.begin(); it != end; it++) {
-    vismap[it->first] = it->second;
-  }
-  return vismap;
-}
-
-vis::vis_topology*
-macro_switch_interconnect::vis_topol()
-{
-  return topology_;
-}
 #endif
 
 }

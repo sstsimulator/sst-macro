@@ -1,9 +1,10 @@
 #! /usr/bin/env python
 
 import os
+import commands
 
 if os.path.isdir(".git"):
-  print "yes"
+  print commands.getoutput("git rev-parse --abbrev-ref HEAD").strip()
 else:
-  print "no"
+  print ""
 

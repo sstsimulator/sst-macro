@@ -76,7 +76,7 @@ class interconnect :
     return "interconnect";
   }
 
-  virtual ~interconnect(){}
+  virtual ~interconnect();
 
   virtual int
   num_nodes() const;
@@ -98,7 +98,7 @@ class interconnect :
     @param msg The message to send to the destination
   */
   virtual void
-  immediate_send(event_scheduler* src, const sst_message::ptr& msg, timestamp start) const = 0;
+  immediate_send(event_scheduler* src, message* msg, timestamp start) const = 0;
 
   virtual void
   set_event_manager(event_manager* mgr){};
@@ -240,26 +240,20 @@ class macro_interconnect : public interconnect
   }
 
   virtual void
-  handle(const sst_message::ptr& msg);
+  handle(event* ev);
 
  protected:
   macro_interconnect();
 
  protected:
-  /**
-    It may happen due to parallelism that we are only responsible
-    for a subset of all the nodes and switches. This might be null,
-    indicating the whole topology
-  */
-  index_subset* subset_;
   partition* partition_;
   parallel_runtime* rt_;
 
   typedef spkt_unordered_map<netlink_id, netlink*> netlink_map;
   netlink_map netlinks_;
 
-  typedef std::pair<timestamp, node_id> fail_event;
-  std::list<fail_event> failures_to_schedule_;
+  typedef std::pair<timestamp, node_id> node_fail_event;
+  std::list<node_fail_event> failures_to_schedule_;
 };
 typedef macro_interconnect interconnect_base;
 #endif

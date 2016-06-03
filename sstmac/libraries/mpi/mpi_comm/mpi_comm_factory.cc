@@ -44,9 +44,10 @@ mpi_comm_factory::mpi_comm_factory(app_id aid, mpi_api* parent) :
   aid_(aid),
   mpirun_np_(0),
   next_id_(1),
-  splittype_(0)
+  splittype_(0),
+  global_grp_(0),
+  self_grp_(0)
 {
-  //next_id_ = mpicommid(1);
 }
 
 //
@@ -54,8 +55,11 @@ mpi_comm_factory::mpi_comm_factory(app_id aid, mpi_api* parent) :
 //
 mpi_comm_factory::~mpi_comm_factory()
 {
-  delete worldcomm_;
-  delete selfcomm_;
+  if (worldcomm_) delete worldcomm_;
+  if (selfcomm_) delete selfcomm_;
+  if (splittype_) delete splittype_;
+  if (global_grp_) delete global_grp_;
+  if (self_grp_) delete self_grp_;
 }
 
 //
@@ -64,7 +68,7 @@ mpi_comm_factory::~mpi_comm_factory()
 void
 mpi_comm_factory::init(app_manager* env, mpi_id rank)
 {
-  next_id_.id_ = 1;
+  next_id_ = 1;
 
   mpirun_np_ = env->nproc();
 
@@ -75,15 +79,15 @@ mpi_comm_factory::init(app_manager* env, mpi_id rank)
   std::pair<app_id, mpi_comm_id> index = std::make_pair(aid_, cid);
   //std::make_pair<app_id, mpi_comm_id>(aid_, cid);
 
-  mpi_group* g = new mpi_group(mpirun_np_);
+  global_grp_ = new mpi_group(mpirun_np_);
 
-  worldcomm_ = new mpi_comm(mpi_comm_id(MPI_COMM_WORLD), rank, g, env, aid_);
+  worldcomm_ = new mpi_comm(mpi_comm_id(MPI_COMM_WORLD), rank, global_grp_, env, aid_);
 
   std::vector<task_id> selfp;
   selfp.push_back(task_id(rank));
 
-  mpi_group* g2 = new mpi_group(selfp);
-  selfcomm_ = new mpi_comm(mpi_comm_id(MPI_COMM_SELF), mpi_id(0), g2, env, aid_);
+  self_grp_ = new mpi_group(selfp);
+  selfcomm_ = new mpi_comm(mpi_comm_id(MPI_COMM_SELF), mpi_id(0), self_grp_, env, aid_);
 
   splittype_ = new mpi_type;
   splittype_->init_vector("split_type", mpi_type::mpi_int, 3, 1, 1, true,
@@ -95,10 +99,16 @@ mpi_comm_factory::init(app_manager* env, mpi_id rank)
 void
 mpi_comm_factory::finalize()
 {
-  delete splittype_;
-  parent_ = 0;
+  if (worldcomm_) delete worldcomm_;
+  if (selfcomm_) delete selfcomm_;
+  if (splittype_) delete splittype_;
+  if (global_grp_) delete global_grp_;
+  if (self_grp_) delete self_grp_;
   worldcomm_ = 0;
   selfcomm_ = 0;
+  splittype_ = 0;
+  global_grp_ = 0;
+  self_grp_ = 0;
 }
 
 //
@@ -121,7 +131,7 @@ mpi_comm_factory::comm_create(mpi_comm* caller, mpi_group* group)
 {
   //first reduce so we know everyone is on board, which is the necessary barrier
   //payload::const_ptr load = valuepayload<int>::construct(next_id_.id_);
-  payload::const_ptr load = new mpi_payload(&next_id_.id_,
+  payload::const_ptr load = new mpi_payload(&next_id_,
                             mpi_type::mpi_int, 1, false);
   payload::const_ptr result;
   parent_->allreduce(1, mpi_type::mpi_int->id,
@@ -139,9 +149,9 @@ mpi_comm_factory::comm_create(mpi_comm* caller, mpi_group* group)
   //now find my rank
   mpi_id newrank = group->rank_of_task(caller->my_task());
 
-  next_id_.id_ = cid.id_ + 1;
+  next_id_ = cid + 1;
 
-  if (newrank.id_ >= 0) {
+  if (newrank >= 0) {
     return new mpi_comm(cid, newrank, group, worldcomm_->env_, aid_);
   }
   else {
@@ -175,7 +185,7 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
   key_to_ranks_map key_map;
 #if SSTMAC_DISTRIBUTED_MEMORY && !SSTMAC_MMAP_COLLECTIVES
   int mydata[3];
-  mydata[0] = next_id_.id_;
+  mydata[0] = next_id_;
   mydata[1] = my_color;
   mydata[2] = my_key;
 
@@ -235,7 +245,7 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
   split_lock.unlock();
 
   int* my_data = entry.buf + 3*caller->rank();
-  my_data[0] = next_id_.id_;
+  my_data[0] = next_id_;
   my_data[1] = my_color;
   my_data[2] = my_key;
   std::vector<payload::const_ptr> dummy;
@@ -280,7 +290,7 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
 
 
   //the next id I use needs to be greater than this
-  next_id_.id_ = cid + 1;
+  next_id_ = cid + 1;
 
   std::vector<task_id> task_list(new_comm_size);
 
@@ -321,7 +331,7 @@ mpi_comm_factory::create_cart(mpi_comm*caller, int ndims,
                               int *dims, int *periods, int reorder)
 {
   //first reduce so we know everyone is on board, which is the necessary barrier
-  payload::const_ptr load = new mpi_payload(&next_id_.id_,
+  payload::const_ptr load = new mpi_payload(&next_id_,
                             mpi_type::mpi_int, 1, false);
   payload::const_ptr result;
   parent_->allreduce(1, mpi_type::mpi_int->id, mpi_op::max, caller, load, result);
@@ -340,9 +350,9 @@ mpi_comm_factory::create_cart(mpi_comm*caller, int ndims,
   mpi_id newrank = caller->group_->rank_of_task(caller->my_task());
 
 
-  next_id_.id_ = cid.id_ + 1;
+  next_id_ = cid + 1;
 
-  if (newrank.id_ >= 0) {
+  if (newrank >= 0) {
     return new mpi_comm_cart(cid, newrank, caller->group_,
                      worldcomm_->env_, aid_, ndims, dims, periods, reorder);
   }

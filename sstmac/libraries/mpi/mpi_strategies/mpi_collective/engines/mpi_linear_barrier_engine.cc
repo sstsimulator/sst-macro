@@ -32,15 +32,15 @@ mpi_linear_barrier_engine::sendrecv(bool firsttime)
 
   if (comm_->rank() == root_) {
     // Fire off all sends and receives.
-    for (long it = 0; it < comm_->size().id_; ++it) {
+    for (long it = 0; it < comm_->size(); ++it) {
       if (firsttime) {
-        if (it != root_.id_) {
+        if (it != root_) {
           ++pending_recvs_;
           this->start_recv(1, mpi_type::mpi_byte->id, tag_, mpi_id(it));
         }
       }
       else {
-        if (it != root_.id_) {
+        if (it != root_) {
           ++pending_sends_;
           this->start_send(1, mpi_type::mpi_byte->id, tag_, mpi_id(it),
                            payload::null());
@@ -69,7 +69,7 @@ mpi_linear_barrier_engine::sendrecv(bool firsttime)
 // Callback method to indicate that a send operation has completed.
 //
 void
-mpi_linear_barrier_engine::send_complete(const mpi_message::ptr& msg)
+mpi_linear_barrier_engine::send_complete(mpi_message* msg)
 {
   mpi_barrier_debug("send complete to %d, count=%d", int(msg->dest()), msg->count());
   --pending_sends_;
@@ -87,7 +87,7 @@ mpi_linear_barrier_engine::send_complete(const mpi_message::ptr& msg)
 // Callback method to indicate that a receive operation has completed.
 //
 void
-mpi_linear_barrier_engine::recv_complete(const mpi_message::ptr& msg)
+mpi_linear_barrier_engine::recv_complete(mpi_message* msg)
 {
   mpi_barrier_debug("recv complete from %d, count=%d", int(msg->source()), msg->count());
   --pending_recvs_;

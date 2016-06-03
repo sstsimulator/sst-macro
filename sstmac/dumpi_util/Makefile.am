@@ -17,7 +17,7 @@ AM_FCFLAGS = -I$(top_builddir) -I$(top_srcdir) -m32 -m64
 
 libsstmac_dumpi_la_LDFLAGS = 
 libsstmac_dumpi_la_LIBADD = \
-  ../../dumpi/dumpi/libundumpi/libundumpi.la 
+  ../../sst-dumpi/dumpi/libundumpi/libundumpi.la
 
 libsstmac_dumpi_la_SOURCES = \
 dumpi_meta.cc \

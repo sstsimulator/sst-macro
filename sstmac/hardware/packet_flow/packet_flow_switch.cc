@@ -52,6 +52,12 @@ vec_set_ev_parent(std::vector<T*>& themap, event_scheduler* m)
   }
 }
 
+packet_flow_params::~packet_flow_params()
+{
+  delete link_arbitrator_template;
+}
+
+
 void
 packet_flow_abstract_switch::init_factory_params(sprockit::sim_parameters *params)
 {
@@ -72,14 +78,6 @@ packet_flow_abstract_switch::init_factory_params(sprockit::sim_parameters *param
     = packet_flow_bandwidth_arbitrator_factory::get_optional_param(
         "arbitrator", "cut_through", params);
 
-  /**
-   sstkeyword {
-   docstring=The minimum number of bytes a single packet train can contain.ENDL
-   Raising this value increases the coarseness and lowers the accuracy.;
-   };
-   */
-  int min_bytes =
-    params->get_optional_int_param("mtu", 4096);
 
   /**
     sstkeyword {
@@ -99,8 +97,6 @@ packet_flow_abstract_switch::init_factory_params(sprockit::sim_parameters *param
   */
   params_->queue_depth_delta =
       params->get_optional_int_param("sanity_check_queue_depth_delta", 100);
-
-  packet_flow_payload::init_statics(min_bytes);
 }
 
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -113,6 +109,8 @@ packet_flow_switch::packet_flow_switch(
   byte_hops_(0),
   xbar_(0)
 {
+  init_factory_params(SSTIntegratedComponent::params_);
+  init_sst_params(params);
 }
 #else
 packet_flow_switch::packet_flow_switch() :
@@ -124,12 +122,30 @@ packet_flow_switch::packet_flow_switch() :
 }
 #endif
 
+packet_flow_switch::~packet_flow_switch()
+{
+  if (xbar_) delete xbar_;
+  if (bytes_sent_) delete bytes_sent_;
+  if (byte_hops_) delete byte_hops_;
+  if (congestion_spyplot_) delete congestion_spyplot_;
+ 
+  int nbuffers = out_buffers_.size();
+  for (int i=0; i < nbuffers; ++i){
+    packet_flow_sender* buf = out_buffers_[i];
+    if (buf) delete buf;
+  }
+
+  if (params_) delete params_;
+}
+
 void
 packet_flow_switch::init_factory_params(sprockit::sim_parameters *params)
 {
   packet_flow_abstract_switch::init_factory_params(params);
 
   acc_delay_ = params->get_optional_bool_param("accumulate_congestion_delay",false);
+
+  packet_size_ = params->get_optional_byte_length_param("packet_size", 4096);
 
   if (params->has_namespace("congestion_matrix")){
     sprockit::sim_parameters* congestion_params = params->get_namespace("congestion_matrix");
@@ -166,10 +182,6 @@ packet_flow_switch::set_topology(topology *top)
   network_switch::set_topology(top);
 }
 
-packet_flow_switch::~packet_flow_switch()
-{
-}
-
 void
 packet_flow_switch::initialize()
 {
@@ -200,7 +212,7 @@ packet_flow_switch::crossbar()
               params_->crossbar_bw,
               router_->max_num_vc(),
               params_->xbar_input_buffer_num_bytes,
-              params_->link_arbitrator_template->clone());
+              params_->link_arbitrator_template->clone(-1/*fake bw*/));
     xbar_->configure_basic_ports(topol()->max_num_ports());
     xbar_->set_event_location(my_addr_);
   }
@@ -218,12 +230,13 @@ packet_flow_switch::output_buffer(int port, double out_bw, int red)
 {
   if (!out_buffers_[port]){
     packet_flow_network_buffer* out_buffer
-      = new packet_flow_network_buffer(out_bw,
+      = new packet_flow_network_buffer(
                   params_->hop_lat,
                   timestamp(0), //assume credit latency to xbar is free
                   params_->xbar_output_buffer_num_bytes * red,
                   router_->max_num_vc(),
-                  params_->link_arbitrator_template->clone());
+                  packet_size_,
+                  params_->link_arbitrator_template->clone(out_bw));
     out_buffer->set_event_location(my_addr_);
     int buffer_outport = 0;
     out_buffer->init_credits(buffer_outport, params_->xbar_input_buffer_num_bytes);
@@ -348,24 +361,24 @@ int
 packet_flow_switch::queue_length(int port) const
 {
   packet_flow_buffer* buf = static_cast<packet_flow_buffer*>(out_buffers_[port]);
-  return buf->get_queue_length();
+  return buf->queue_length();
 }
 
 void
-packet_flow_switch::handle(const sst_message::ptr& msg)
+packet_flow_switch::handle(event* ev)
 {
   //this should only happen in parallel mode...
   //this means we are getting a message that has crossed the parallel boundary
-  packet_flow_interface* fmsg = ptr_interface_cast(packet_flow_interface, msg);
-  switch (fmsg->type()) {
+  packet_flow_interface* fpack = interface_cast(packet_flow_interface, ev);
+  switch (fpack->type()) {
     case packet_flow_interface::credit: {
-      packet_flow_credit::ptr credit = ptr_static_cast(packet_flow_credit, msg);
+      packet_flow_credit* credit = static_cast<packet_flow_credit*>(fpack);
       out_buffers_[credit->port()]->handle_credit(credit);
       break;
     }
     case packet_flow_interface::payload: {
-      packet_flow_payload::ptr payload = ptr_static_cast(packet_flow_payload, msg);
-      router_->route(payload.get());
+      packet_flow_payload* payload = static_cast<packet_flow_payload*>(fpack);
+      router_->route(payload);
       xbar_->handle_payload(payload);
       break;
     }

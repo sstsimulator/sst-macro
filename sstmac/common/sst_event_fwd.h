@@ -3,6 +3,7 @@
 
 namespace sstmac {
 
+class event_queue_entry;
 class event;
 
 }

@@ -12,14 +12,12 @@
 #ifndef SSTMAC_COMMON_event_scheduler_H_INCLUDED
 #define SSTMAC_COMMON_event_scheduler_H_INCLUDED
 
-#include <sstmac/common/event_manager.h>
 #include <sstmac/common/timestamp.h>
-#include <sstmac/common/messages/sst_message.h>
 #include <sstmac/common/stats/location_trace.h>
 #include <sstmac/common/event_handler.h>
 #include <sstmac/common/sst_event_fwd.h>
-#include <sstmac/common/event_manager_fwd.h>
 #include <sstmac/common/sstmac_config.h>
+#include <sstmac/common/event_manager_fwd.h>
 #include <sprockit/sim_parameters_fwd.h>
 
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -43,26 +41,7 @@
 #else
 #  define DeclareIntegratedComponent(comp)
 #  define ImplementIntegratedComponent(comp)
-#endif
-
-#ifdef INTEGRATED_SST_CORE_CHECK
-#define LINK_SCHEDULE_CHECK \
-  if (!correctly_scheduled_) spkt_throw(sprockit::illformed_error, "directly scheduled event");
-#define SCHEDULE(...) \
-  correctly_scheduled_ = true; schedule(__VA_ARGS__); correctly_scheduled_ = false
-#define SCHEDULE_DELAY(...) \
-  correctly_scheduled_ = true; schedule_delay(__VA_ARGS__); correctly_scheduled_ = false;
-#define SCHEDULE_NOW(...) \
-  correctly_scheduled_ = true; schedule_now(__VA_ARGS__); correctly_scheduled_ = false;
-#define START_VALID_SCHEDULE(x) x->set_correctly_scheduled(true);
-#define STOP_VALID_SCHEDULE(x) x->set_correctly_scheduled(false);
-#else
-#define LINK_SCHEDULE_CHECK
-#define SCHEDULE(...) schedule(__VA_ARGS__)
-#define SCHEDULE_DELAY(...) schedule_delay(__VA_ARGS__)
-#define SCHEDULE_NOW(...) schedule_now(__VA_ARGS__)
-#define START_VALID_SCHEDULE(x)
-#define STOP_VALID_SCHEDULE(x)
+#include <sstmac/common/event_manager.h>
 #endif
 
 namespace sstmac {
@@ -88,10 +67,21 @@ class event_scheduler :
   }
 
   virtual void
-  handle(const sst_message::ptr& msg);
+  handle(event* ev);
 
   void
   cancel_all_messages();
+
+  /**
+   * @brief ipc_schedule Should only be called on stub handlers for which handler->ipc_handler() returns true
+   * @param t         The time the event will run at
+   * @param handler   The handler to receive the event. This should always be a stub for a real handler on a remote process.
+   * @param ev        The event to deliver
+   */
+  void
+  ipc_schedule(timestamp t,
+    event_handler* handler,
+    event* ev);
 
   /**
    * Add an event to the event queue, where msg will get delivered to handler at time t.
@@ -102,35 +92,23 @@ class event_scheduler :
   void
   schedule(timestamp t,
            event_handler* handler,
-           const sst_message::ptr& msg);
+           event* ev);
 
   void
-  schedule(timestamp t, event_handler* handler);
+  schedule(timestamp t, event_queue_entry* ev);
 
   void
-  schedule(timestamp t, event* ev);
-
-  void
-  schedule_now(event* ev);
+  schedule_now(event_queue_entry* ev);
   
   void
-  schedule_now(event_handler* handler, const sst_message::ptr& msg);
+  schedule_now(event_handler* handler, event* ev);
 
   void
   schedule_delay(timestamp delay,
                  event_handler* handler,
-                 const sst_message::ptr& msg);
+                 event* ev);
   void
-  schedule_delay(timestamp delay, event* ev);
-
-  void
-  send_self_message(timestamp arrival, const sst_message::ptr& msg);
-
-  void
-  send_delayed_self_message(timestamp delay, const sst_message::ptr& msg);
-
-  void
-  send_now_self_message(const sst_message::ptr& msg);
+  schedule_delay(timestamp delay, event_queue_entry* ev);
 
   void
   send_self_event(timestamp arrival, event* ev);
@@ -140,6 +118,15 @@ class event_scheduler :
 
   void
   send_now_self_event(event* ev);
+
+  void
+  send_self_event_queue(timestamp arrival, event_queue_entry* ev);
+
+  void
+  send_delayed_self_event_queue(timestamp delay, event_queue_entry* ev);
+
+  void
+  send_now_self_event_queue(event_queue_entry* ev);
 
   void
   register_stat(stat_collector* coll);
@@ -177,7 +164,7 @@ class event_scheduler :
 
  private:
   void
-  schedule(SST::Time_t delay, event_handler* handler, const sst_message::ptr& msg);
+  schedule(SST::Time_t delay, event_handler* handler, event* ev);
 
 #else
  public:
@@ -214,6 +201,13 @@ class event_scheduler :
   uint32_t seqnum_;
 
  private:
+  void sanity_check(timestamp t);
+
+  void
+  multithread_schedule(int src_thread, int dst_thread,
+    timestamp t, event_queue_entry* ev);
+
+ private:
   event_manager* eventman_;
 #endif
 
@@ -232,18 +226,13 @@ class event_subscheduler :
     return parent_->now();
   }
 
-#if SSTMAC_INTEGRATED_SST_CORE
-  void
-  handle_event(SST::Event* ev);
-#endif
-
   virtual std::string
   to_string() const {
     return "event subscheduler";
   }
 
   virtual void
-  handle(const sst_message::ptr& msg);
+  handle(event* ev);
 
   /**
    * Add an event to the event queue, where msg will get delivered to handler at time t.
@@ -254,35 +243,23 @@ class event_subscheduler :
   void
   schedule(timestamp t,
            event_handler* handler,
-           const sst_message::ptr& msg);
+           event* ev);
 
   void
-  schedule(timestamp t, event_handler* handler);
+  schedule(timestamp t, event_queue_entry* ev);
 
   void
-  schedule(timestamp t, event* ev);
+  schedule_now(event_queue_entry* ev);
 
   void
-  schedule_now(event* ev);
-
-  void
-  schedule_now(event_handler* handler, const sst_message::ptr& msg);
+  schedule_now(event_handler* handler, event* ev);
 
   void
   schedule_delay(timestamp delay,
                  event_handler* handler,
-                 const sst_message::ptr& msg);
+                 event* ev);
   void
-  schedule_delay(timestamp delay, event* ev);
-
-  void
-  send_self_message(timestamp arrival, const sst_message::ptr& msg);
-
-  void
-  send_delayed_self_message(timestamp delay, const sst_message::ptr& msg);
-
-  void
-  send_now_self_message(const sst_message::ptr& msg);
+  schedule_delay(timestamp delay, event_queue_entry* ev);
 
   void
   send_self_event(timestamp arrival, event* ev);
@@ -293,6 +270,15 @@ class event_subscheduler :
   void
   send_now_self_event(event* ev);
 
+  void
+  send_self_event_queue(timestamp arrival, event_queue_entry* ev);
+
+  void
+  send_delayed_self_event_queue(timestamp delay, event_queue_entry* ev);
+
+  void
+  send_now_self_event_queue(event_queue_entry* ev);
+
   /**
    * Set the eventmanager for this scheduler.  Unfortunately,
    * this always has to be called after an event_scheduler is constructed.
@@ -302,6 +288,7 @@ class event_subscheduler :
   set_event_parent(event_scheduler* m){
     parent_ = m;
     init_thread_id(parent_->thread_id());
+    init_loc_id(parent_->event_location());
   }
 
   event_scheduler*

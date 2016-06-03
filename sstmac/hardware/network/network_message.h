@@ -10,15 +10,12 @@ namespace sstmac {
 namespace hw {
 
 class network_message :
-  public sst_message,
-  public sprockit::serializable_type<network_message>
+  public message,
+  public serializable_type<network_message>
 {
   ImplementSerializableDefaultConstructor(network_message)
 
  public:
-  typedef sprockit::refcount_ptr<network_message> ptr;
-  typedef sprockit::refcount_ptr<const network_message> const_ptr;
-
   typedef enum {
     RDMA_GET_FAILED,
     RDMA_GET_REQ_TO_RSP,
@@ -40,8 +37,6 @@ class network_message :
     nvram_get_payload=11,
     failure_notification=12
   } type_t;
-
-  static message_type_t NETWORK;
 
  public:
   network_message(node_id toaddr,
@@ -65,9 +60,9 @@ class network_message :
   bool
   is_metadata() const;
 
-  virtual network_message::ptr
+  virtual network_message*
   clone_injection_ack() const {
-    ptr cln = new network_message;
+    network_message* cln = new network_message;
     clone_into(cln);
     return cln;
   }
@@ -123,7 +118,7 @@ class network_message :
   }
 
   virtual void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(serializer& ser);
 
   void
   convert_to_ack();
@@ -181,7 +176,7 @@ class network_message :
 
  protected:
   void
-  clone_into(const ptr& cln) const;
+  clone_into(network_message* cln) const;
 
  protected:
   network_id net_id_;

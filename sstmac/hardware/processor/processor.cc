@@ -9,12 +9,13 @@
  *  SST/macroscale directory.
  */
 
+#include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/hardware/processor/processor.h>
 #include <sstmac/hardware/memory/memory_model.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/common/event_callback.h>
-#include <sstmac/software/libraries/compute/compute_message.h>
 #include <sprockit/statics.h>
+#include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 
 ImplementFactory(sstmac::hw::processor);
@@ -36,7 +37,12 @@ processor::~processor()
 void
 processor::finalize_init()
 {
-  init_loc_id(node_->event_location());
+}
+
+void
+processor::compute(event *ev)
+{
+  do_compute(safe_cast(sw::compute_event, ev));
 }
 
 void
@@ -54,29 +60,6 @@ processor::init_factory_params(sprockit::sim_parameters *params)
 void
 processor::delete_statics()
 {
-}
-
-void
-processor::handle(const sst_message::ptr &msg)
-{
-  spkt_throw(sprockit::unimplemented_error,
-    "processor::handle: should never handle anything"); 
-}
-
-void
-processor::os_delayed_notify(timestamp delay, const sw::compute_message::ptr& msg)
-{
-  START_VALID_SCHEDULE(node_)
-  node_->schedule_delay(delay, node_, msg);
-  STOP_VALID_SCHEDULE(node_)
-}
-
-void
-processor::os_notify_now(const sw::compute_message::ptr& msg)
-{
-  START_VALID_SCHEDULE(node_)
-  node_->schedule_now(node_, msg);
-  STOP_VALID_SCHEDULE(node_)
 }
 
 }

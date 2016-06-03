@@ -1,4 +1,7 @@
 #include <sstmac/hardware/analytic/simple/simple_nic.h>
+#include <sstmac/hardware/network/network_message.h>
+#include <sstmac/hardware/node/node.h>
+#include <sstmac/common/event_handler.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 
@@ -25,7 +28,7 @@ simple_nic::init_factory_params(sprockit::sim_parameters *params)
 }
 
 void
-simple_nic::do_send(const network_message::ptr& msg)
+simple_nic::do_send(network_message* msg)
 {
   long num_bytes = msg->byte_length();
   timestamp now_ = now();
@@ -37,9 +40,16 @@ simple_nic::do_send(const network_message::ptr& msg)
   next_free_ = start_send + time_to_inject;
   if (msg->needs_ack()) {
     //do whatever you need to do so that this msg decouples all pointers
-    network_message::ptr acker = msg->clone_injection_ack();
+    network_message* acker = msg->clone_injection_ack();
     send_to_node(next_free_, acker);
   }
+}
+
+void
+simple_nic::handle(event *ev)
+{
+  spkt_throw_printf(sprockit::value_error,
+    "simple_nic::handle: should never be called - should be routed directly to MTL handler");
 }
 
 void
@@ -49,9 +59,6 @@ simple_nic::connect(
     connection_type_t ty,
     connectable* mod)
 {
-  if (ty == connectable::output){
-    injector_ = safe_cast(event_handler, mod);
-  }
 }
 
 void
@@ -60,14 +67,14 @@ simple_nic::finalize_init()
 }
 
 void
-simple_nic::send_to_injector(timestamp t, const network_message::ptr& msg)
+simple_nic::send_to_injector(timestamp t, network_message* msg)
 {
   interconn_->immediate_send(parent(), msg, t);
 }
 
 void
-simple_nic::send_to_node(timestamp t, const network_message::ptr& msg){
-  SCHEDULE(t, parent_, msg);
+simple_nic::send_to_node(timestamp t, network_message* msg){
+  schedule(t, parent_, msg);
 }
 
 }

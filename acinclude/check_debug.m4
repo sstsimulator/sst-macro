@@ -4,7 +4,7 @@ AC_DEFUN([CHECK_DEBUG], [
 AC_ARG_ENABLE(sstmac-debug,
   [AS_HELP_STRING(
     [--(dis|en)able-sstmac-debug],
-    [Whether to include SSTMAC_DEBUG printing in code. Disabling optimizes code slightly by removing many IF statements.]
+    [Whether to allow debug printing in code. Disabling optimizes code slightly by removing many IF statements.]
     )],
   [
     enable_sstmac_debug=$enableval
@@ -40,7 +40,7 @@ fi
 AC_ARG_ENABLE(debug-swap,
   [AS_HELP_STRING(
     [--(dis|en)able-debug-swap],
-    [Whether or not to allow debug context switches]
+    [Whether or not to provide hooks for manual context switching in GDB]
     )],
   [
     enable_debug_swap=$enableval

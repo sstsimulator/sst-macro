@@ -101,7 +101,7 @@ dumpi_indexer::allocate(
 
   int nrank = getnumprocs(meta);
   result.resize(nrank);
-  app_manager* appman = sstmac_runtime::app_mgr(aid);
+  app_manager* appman = runtime::app_mgr(aid);
   cout0 << "nrank: " << nrank << std::endl;
   std::stringstream sstr;
   for (int i = 0; i < nrank; i++) {

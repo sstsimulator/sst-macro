@@ -20,7 +20,7 @@
 namespace sstmac {
 namespace sw {
 
-mpi_queue_send_request::mpi_queue_send_request(const mpi_message::ptr& mess,
+mpi_queue_send_request::mpi_queue_send_request(mpi_message* mess,
                                     mpi_request* key,
                                     mpi_queue* queue,
                                     event_handler* completion) :
@@ -46,7 +46,7 @@ mpi_queue_send_request::~mpi_queue_send_request() throw ()
 // Test whether we match a given message, for nic send acks.
 //
 bool
-mpi_queue_send_request::matches(const mpi_message::ptr& message) const
+mpi_queue_send_request::matches(mpi_message* message) const
 {
   bool same_id = seqnum_ == message->seqnum();
   bool tag_matches = tag_ == message->tag();
@@ -83,7 +83,7 @@ mpi_queue_send_request::wait_for_buffer()
 }
 
 void
-mpi_queue_send_request::complete(const mpi_message::ptr& msg)
+mpi_queue_send_request::complete(mpi_message* msg)
 {
   mpi_queue_action_debug(queue_->taskid_,
     "completing send_request dst=%d, tag=%d, cat=%s, count=%d, type=%s, seqnum=%d",
@@ -93,7 +93,7 @@ mpi_queue_send_request::complete(const mpi_message::ptr& msg)
 
   if (key_) {
     //don't build a status - send request
-    key_->complete(mpi_message::ptr());
+    key_->complete(NULL);
   }
 
   if (completion_) {

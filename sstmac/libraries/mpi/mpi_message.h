@@ -52,14 +52,12 @@ struct mpi_buffer {
 class mpi_message :
   public library_interface,
   public hw::network_message,
-  public sprockit::serializable_type<mpi_message>
+  public serializable_type<mpi_message>
 {
   ImplementSerializableDefaultConstructor(mpi_message);
 
  public:
-  typedef sprockit::refcount_ptr<mpi_message> ptr;
-  typedef sprockit::refcount_ptr<const mpi_message> const_ptr;
-  typedef_opaque_int(id, uint64_t);
+  typedef uint64_t id;
 
   /// The category label used to differentiate user data (which can be
   /// matched using wildcards or [later] probed using probe or iprobe)
@@ -113,10 +111,10 @@ class mpi_message :
   /// Goodbye.
   virtual ~mpi_message() throw ();
 
-  network_message::ptr
+  network_message*
   clone_injection_ack() const;
 
-  virtual mpi_message::ptr
+  virtual mpi_message*
   clone() const;
 
   /**
@@ -124,7 +122,7 @@ class mpi_message :
    * @param ser The serializer to use
    */
   virtual void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(serializer& ser);
 
   long
   payload_bytes() const;
@@ -299,7 +297,7 @@ class mpi_message :
 
  protected:
   void
-  clone_into(const ptr &cln) const;
+  clone_into(mpi_message* cln) const;
 
  protected:
   int64_t envelope_;
@@ -340,8 +338,6 @@ class mpi_message :
 #endif
 
 };
-
-implement_opaque_int(mpi_message::id)
 
 }
 } // end of namespace sstmac.

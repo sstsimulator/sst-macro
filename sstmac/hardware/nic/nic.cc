@@ -11,12 +11,15 @@
 
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
+#include <sstmac/hardware/network/network_message.h>
+#include <sstmac/hardware/node/node.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/stats/stat_spyplot.h>
 #include <sstmac/common/stats/stat_histogram.h>
 #include <sstmac/common/stats/stat_local_int.h>
 #include <sstmac/common/stats/stat_global_int.h>
 #include <sstmac/common/event_manager.h>
+#include <sstmac/common/event_callback.h>
 #include <sprockit/statics.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
@@ -45,7 +48,10 @@ nic::nic() :
   spy_bytes_(0),
   hist_msg_size_(0),
   local_bytes_sent_(0),
-  global_bytes_sent_(0)
+  global_bytes_sent_(0),
+  interconn_(0),
+  parent_(0),
+  mtl_handler_(0)
 {
 }
 
@@ -54,10 +60,18 @@ nic::~nic()
 }
 
 void
+nic::mtl_handle(event *ev)
+{
+  recv_message(static_cast<message*>(ev));
+}
+
+void
 nic::init_factory_params(sprockit::sim_parameters *params)
 {
   my_addr_ = node_id(params->get_int_param("id"));
   init_loc_id(event_loc_id(my_addr_));
+
+  mtl_handler_ = ev_callback(this, &nic::mtl_handle);
 
   negligible_size_ = params->get_optional_int_param("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
 
@@ -101,38 +115,21 @@ nic::init_factory_params(sprockit::sim_parameters *params)
 }
 
 void
-nic::recv_chunk(const sst_message::ptr& chunk)
-{
-  spkt_throw_printf(sprockit::unimplemented_error,
-            "nic::recv_chunk: not valid for %s receiving %s",
-            to_string().c_str(), chunk->to_string().c_str());
-}
-
-void
-nic::recv_credit(const sst_message::ptr &msg)
-{
-  //do nothing
-}
-
-void
 nic::delete_statics()
 {
 }
 
 void
-nic::finish_recv_ack(const sst_message::ptr& msg)
+nic::recv_message(message* msg)
 {
-}
+  if (parent_->failed()){
+    return;
+  }
 
-void
-nic::finish_recv_req(const sst_message::ptr& msg)
-{
-}
+  nic_debug("receiving message %p:%s",
+    msg, msg->to_string().c_str());
 
-void
-nic::recv_message(const sst_message::ptr& msg)
-{
-  network_message::ptr netmsg = ptr_safe_cast(network_message, msg);
+  network_message* netmsg = safe_cast(network_message, msg);
 
   nic_debug("handling message %s:%lu of type %s from node %d while running",
     netmsg->to_string().c_str(),
@@ -145,7 +142,6 @@ nic::recv_message(const sst_message::ptr& msg)
       netmsg->nic_reverse(network_message::rdma_get_payload);
       netmsg->put_on_wire();
       internode_send(netmsg);
-      finish_recv_req(msg);
       break;
     }
     case network_message::nvram_get_request: {
@@ -157,7 +153,6 @@ nic::recv_message(const sst_message::ptr& msg)
     case network_message::payload_sent_ack:
     case network_message::rdma_put_sent_ack: {
       parent_->handle(netmsg);
-      finish_recv_ack(msg);
       break;
     }
     case network_message::failure_notification: {
@@ -181,20 +176,22 @@ nic::recv_message(const sst_message::ptr& msg)
 }
 
 void
-nic::ack_send(const network_message::ptr& payload)
+nic::ack_send(network_message* payload)
 {
   if (payload->needs_ack()){
-    network_message::ptr ack = payload->clone_injection_ack();
+    network_message* ack = payload->clone_injection_ack();
     nic_debug("acking payload %p:%s with ack %p",
-      payload.get(), payload->to_string().c_str(), ack.get());
+      payload, payload->to_string().c_str(), ack);
     send_to_node(ack);
   }
 }
 
 void
-nic::intranode_send(const network_message::ptr& payload)
+nic::intranode_send(network_message* payload)
 {
   record_message(payload);
+  nic_debug("intranode send payload %p:%s",
+    payload, payload->to_string().c_str());
   switch(payload->type())
   {
   case network_message::nvram_get_request:
@@ -211,31 +208,16 @@ nic::intranode_send(const network_message::ptr& payload)
   ack_send(payload);
 }
 
+#if SSTMAC_INTEGRATED_SST_CORE
 void
-nic::handle(const sst_message::ptr& msg)
+nic::handle_event(SST::Event *ev)
 {
-  if (parent_->failed()){
-    return;
-  }
-
-  nic_debug("handling message %p:%s going %d->%d",
-    msg.get(),
-    msg->to_string().c_str(),
-    int(msg->fromaddr()),
-    int(msg->toaddr()));
-
-  if (msg->is_credit()){
-    recv_credit(msg);
-  } else if (msg->is_chunk()){
-    recv_chunk(msg);
-  } else {
-    recv_message(msg);
-  }
-
+  handle(static_cast<event*>(ev));
 }
+#endif
 
 void
-nic::record_message(const network_message::ptr& netmsg)
+nic::record_message(network_message* netmsg)
 {
   nic_debug("sending message %lu of size %ld of type %s to node %d: "
       "netid=%lu for %s",
@@ -274,9 +256,11 @@ nic::record_message(const network_message::ptr& netmsg)
 }
 
 void
-nic::internode_send(const network_message::ptr& netmsg)
+nic::internode_send(network_message* netmsg)
 {
   record_message(netmsg);
+  nic_debug("internode send payload %p:%s",
+    netmsg, netmsg->to_string().c_str());
   if (negligible_size(netmsg->byte_length())){
     send_to_interconn(netmsg);
     ack_send(netmsg);
@@ -288,16 +272,12 @@ nic::internode_send(const network_message::ptr& netmsg)
 void
 nic::finalize_init()
 {
-  //this is just a template nic
-  if (my_addr_ == node_id()) {
-    return;
-  }
 }
 
 void
-nic::send_to_node(const network_message::ptr& payload)
+nic::send_to_node(network_message* payload)
 {
-  SCHEDULE_NOW(parent_, payload);
+  schedule_now(parent_, payload);
 }
 
 void
@@ -307,7 +287,7 @@ nic::init_param1(sprockit::factory_type *interconn)
 }
 
 void
-nic::send_to_interconn(const network_message::ptr &netmsg)
+nic::send_to_interconn(network_message*netmsg)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   spkt_throw(sprockit::unimplemented_error,

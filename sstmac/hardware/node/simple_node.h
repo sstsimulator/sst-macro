@@ -30,9 +30,10 @@ class simple_node :
 #if SSTMAC_INTEGRATED_SST_CORE
   simple_node(
     SST::ComponentId_t id,
-    SST::Params& params
-  ) : node(id, params)
-  { }
+    SST::Params& params);
+
+    virtual void
+    init_sst_params(SST::Params &params);
 #endif
 
   virtual ~simple_node();
@@ -40,16 +41,17 @@ class simple_node :
   virtual void
   finalize_init();
 
+
   void
   init_factory_params(sprockit::sim_parameters* params);
 
   virtual void
   execute_kernel(ami::COMP_FUNC func,
-                 const sst_message::ptr& data);
+                 event* data);
 
   virtual void
   execute_kernel(ami::COMM_FUNC func,
-                 const sst_message::ptr& data);
+                 message* data);
 
   // ------- AMI functions --------- //
   virtual bool
@@ -67,7 +69,7 @@ class simple_node :
 
  protected:
   virtual bool
-  try_comp_kernels(ami::COMP_FUNC func, const sst_message::ptr& data);
+  try_comp_kernels(ami::COMP_FUNC func, event* data);
 
 };
 

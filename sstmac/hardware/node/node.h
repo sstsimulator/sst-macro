@@ -41,7 +41,8 @@ namespace hw {
 
 class node :
   public sprockit::factory_type,
-  public failable
+  public failable,
+  public connectable_component
 {
 
  public:
@@ -55,12 +56,11 @@ class node :
 
   void init(unsigned int phase);
 #endif
-
-  virtual ~node();
-  
   virtual void
   set_event_manager(event_manager* man);
 
+
+  virtual ~node();
   /**
    Standard factory type initializer. Perform extra initialization work
    after all parameters have been read in.
@@ -127,6 +127,8 @@ class node :
   */
   void fail_stop();
 
+  void compute(timestamp t);
+
   /**
    Choose a unique (64-bit) integer ID for a message. This will never be reused
    except for integer overflow.
@@ -144,7 +146,7 @@ class node :
   */
   virtual void
   execute_kernel(ami::COMP_FUNC func,
-                 const sst_message::ptr& data) = 0;
+                 event* data) = 0;
   /**
    Make the node execute a particular communication function
    @param func  Enum identifying the type of communication
@@ -152,7 +154,7 @@ class node :
   */
   virtual void
   execute_kernel(ami::COMM_FUNC func,
-                 const sst_message::ptr& data) = 0;
+                 message* data) = 0;
 
 
   /**
@@ -169,37 +171,17 @@ class node :
   virtual bool
   kernel_supported(ami::COMM_FUNC func) const = 0;
 
+  virtual void
+  handle(event* ev);
+
  protected:
   node();
-
-  /**
-   Node device might have failed. If failed, the NIC might still process incoming messages
-   and generate failure notifications depending on the "degree" of failure.
-   @param msg  The incoming event
-  */
-  virtual void
-  handle_while_running(const sst_message::ptr& msg);
-
-  /**
-   Node device might have failed. If failed, the NIC might still process incoming messages
-   and generate failure notifications depending on the "degree" of failure.
-   @param msg  The incoming event
-  */
-  virtual void
-  handle_while_failed(const sst_message::ptr& msg);
-
-  /**
-   Perform all actions necessary to process a node failure and propaage to subdevices
-   @param msg Event containing all the information about the node failure
-  */
-  virtual void
-  do_failure(const sst_message::ptr& msg);
 
   /**
    Push a network message (operation at the MTL layer) onto the NIC
    @param netmsg
   */
-  void send_to_nic(const network_message_ptr& netmsg);
+  void send_to_nic(network_message* netmsg);
 
   void connect_nic();
 
@@ -209,8 +191,6 @@ class node :
   sw::operating_system* os_;
 
   node_id my_addr_;
-
-  sprockit::sim_parameters* params_;
 
   memory_model* mem_model_;
 
@@ -226,12 +206,12 @@ class node :
   void build_launchers(sprockit::sim_parameters* params);
 
  private:
-  std::list<sw::launch_message_ptr> launchers_;
+  std::list<sw::launch_message*> launchers_;
   unique_msg_id next_outgoing_id_;
 
 #if !SSTMAC_INTEGRATED_SST_CORE
  public:
-  void launch(timestamp start, const sw::launch_message_ptr& msg);
+  void launch(timestamp start, sw::launch_message* msg);
 #else
   void launch();
 #endif

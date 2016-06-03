@@ -13,8 +13,8 @@
 #define SSTMAC_HARDWARE_PROCESSOR_SIMPLEPROCESSOR_H_INCLUDED
 
 #include <sstmac/hardware/processor/processor.h>
-#include <sstmac/common/messages/timed_message.h>
 #include <sstmac/common/timestamp.h>
+#include <sstmac/common/messages/timed_event.h>
 
 namespace sstmac {
 namespace hw {
@@ -34,7 +34,7 @@ class simple_processor :
   finalize_init();
 
   void
-  compute(const sst_message::ptr& msg);
+  do_compute(sw::compute_event* ev);
 
   virtual std::string
   to_string() const {

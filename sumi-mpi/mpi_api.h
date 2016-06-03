@@ -39,7 +39,7 @@
 #include <sprockit/unordered.h>
 #include <sprockit/factories/factory.h>
 
-#include <sumi/sst/sumi_transport.h>
+#include <sstmac/libraries/sumi/sumi_transport.h>
 
 namespace sumi {
 

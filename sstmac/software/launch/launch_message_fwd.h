@@ -7,7 +7,6 @@ namespace sstmac {
 namespace sw {
 
 class launch_message;
-typedef sprockit::refcount_ptr<launch_message> launch_message_ptr;
 
 }
 }

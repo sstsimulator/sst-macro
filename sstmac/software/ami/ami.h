@@ -38,12 +38,10 @@ namespace ami {
 
   enum COMP_FUNC {
     COMP_TIME = 67, //the basic compute-for-some-time
-    COMP_MEM,
     COMP_INSTR,
     COMP_EIGER,
     COMP_DISKACCESS,
     COMP_STOCH,
-    COMP_SLEEP,
     COMP_REGISTER_THREAD,
     GPU_MEMCPY,
     GPU_EX_ASYNC

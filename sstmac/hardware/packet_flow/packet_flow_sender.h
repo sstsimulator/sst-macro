@@ -1,6 +1,7 @@
 #ifndef PACKETFLOW_CREDITOR_H
 #define PACKETFLOW_CREDITOR_H
 
+#include <sprockit/util.h>
 #include <sstmac/common/stats/stat_spyplot_fwd.h>
 #include <sstmac/hardware/packet_flow/packet_flow.h>
 #include <sstmac/hardware/packet_flow/packet_flow_handler.h>
@@ -12,29 +13,11 @@
 namespace sstmac {
 namespace hw {
 
-class packet_flow_MTL
-{
- public:
-  packet_flow_MTL(int mtu) : mtu_(mtu) {}
-
-  virtual void mtl_send(const sst_message::ptr& msg) = 0;
-
-  packet_flow_payload::ptr
-  next_chunk(long byte_offset, const sst_message::ptr& parent);
-
- private:
-  int mtu_;
-
-};
-
 class packet_flow_sender :
   public packet_flow_handler
 {
  public:
   virtual ~packet_flow_sender() {}
-
-  virtual void
-  start(const sst_message::ptr& msg) = 0;
 
   void
   set_acker(event_handler* acker) {
@@ -56,7 +39,7 @@ class packet_flow_sender :
   num_initial_credits() const = 0;
 
   void
-  handle_payload(const packet_flow_payload::ptr& msg) {
+  handle_payload(packet_flow_payload* msg) {
     msg->set_arrival(now().sec());
     do_handle_payload(msg);
   }
@@ -106,17 +89,17 @@ class packet_flow_sender :
 
   void
   send_credit(const packet_flow_input& src,
-    const packet_flow_payload::ptr& payload,
+    packet_flow_payload* payload,
     timestamp packet_tail_leaves);
 
   void
   send(packet_flow_bandwidth_arbitrator* arb,
-       const packet_flow_payload::ptr& msg,
+       packet_flow_payload* msg,
        const packet_flow_input& src,
        const packet_flow_output& dest);
 
   virtual void
-  do_handle_payload(const packet_flow_payload::ptr& msg) = 0;
+  do_handle_payload(packet_flow_payload* msg) = 0;
 
  protected:
   stat_spyplot* congestion_spyplot_;

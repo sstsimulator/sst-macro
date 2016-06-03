@@ -5,10 +5,10 @@
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
-#include <sst/sumi_api.h>
+#include <sstmac/libraries/sumi/sumi.h>
+#include <sstmac/libraries/sumi/sumi_transport.h>
 #include <sstmac/common/runtime.h>
 #include <sumi/transport.h>
-#include <sumi/sst/sumi_transport.h>
 
 using namespace sumi;
 
@@ -28,15 +28,15 @@ main(int argc, char **argv)
   transport* tport = sumi_api();
   tport->init();
 
-  sstmac::sstmac_runtime::add_deadlock_check(
+  sstmac::runtime::add_deadlock_check(
     sstmac::new_deadlock_check(sumi_api(), &sumi::transport::deadlock_check));
 
-  sstmac::sstmac_runtime::enter_deadlock_region();
+  sstmac::runtime::enter_deadlock_region();
   run_test(tport,0);
   run_test(tport,1);
   run_test(tport,2);
   tport->finalize();
-  sstmac::sstmac_runtime::exit_deadlock_region();
+  sstmac::runtime::exit_deadlock_region();
   return 0;
 }
 

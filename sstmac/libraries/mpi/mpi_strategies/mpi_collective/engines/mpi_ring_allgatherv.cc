@@ -54,7 +54,7 @@ mpi_ring_allgatherv::mpi_ring_allgatherv(mpi_request* thekey,
 // Callback method to indicate that a send operation has completed.
 //
 void
-mpi_ring_allgatherv::send_complete(const mpi_message::ptr& msg)
+mpi_ring_allgatherv::send_complete(mpi_message* msg)
 {
   mpi_allgatherv_debug("send complete to %d, count=%d", int(msg->dest()), msg->count());
   --pending_sends_;
@@ -67,7 +67,7 @@ mpi_ring_allgatherv::send_complete(const mpi_message::ptr& msg)
 // Callback method to indicate that a receive operation has completed.
 //
 void
-mpi_ring_allgatherv::recv_complete(const mpi_message::ptr& msg)
+mpi_ring_allgatherv::recv_complete(mpi_message* msg)
 {
   mpi_allgatherv_debug("recv complete from %d, count=%d", int(msg->source()), msg->count());
 
@@ -120,7 +120,7 @@ void mpi_ring_allgatherv::start()
   mpi_allgatherv_debug("starting");
   mpi_collective::start();
   // Catch situations where comm_->size() is 1.
-  if(comm_->size().id_ <= 1) {
+  if(comm_->size() <= 1) {
     mpi_collective::complete(content_);
   }
   else {

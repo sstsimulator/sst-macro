@@ -7,39 +7,34 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <sst/core/event.h>
-
 #include <sstmac/common/event_handler.h>
-#include <sstmac/common/messages/sst_message.h>
 #include <sstmac/common/sst_event.h>
-
 #include <sprockit/util.h>
-
-#include <sprockit/serializer.h>
 
 namespace sstmac {
 
-class SSTMessageEvent : public SST::Event {
+class SSTEventWrapper : public SST::Event {
 
   public:
-    SSTMessageEvent(const sst_message::ptr& msg) : msg_to_deliver_(msg)
+    SSTEventWrapper(event_queue_entry* ev) : ev_to_deliver_(ev)
     {
 
     }
 
-    sst_message::ptr
-    message() const {
-      return msg_to_deliver_;
+    event_queue_entry*
+    toDeliver() const {
+      return ev_to_deliver_;
     }
 
-    virtual ~SSTMessageEvent() { }
+    virtual ~SSTEventWrapper() { }
 
   protected:
 
-    SSTMessageEvent() { }
+    SSTEventWrapper() { }
 
   private:
 
-    sst_message::ptr msg_to_deliver_;
+    event_queue_entry* ev_to_deliver_;
 
 };
 

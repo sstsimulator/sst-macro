@@ -25,7 +25,7 @@ static sprockit::need_delete_statics<memory_model> need_del;
 
 memory_model::memory_model()
 {
-  sst_message::ptr msg;
+  message* msg;
 }
 
 void
@@ -35,6 +35,11 @@ memory_model::init_param1(node* parent_node)
   nodeid_ = parent_node->addr();
   done_ = parent_node_;
   init_loc_id(event_loc_id(nodeid_));
+}
+
+node_id
+memory_model::addr() const {
+  return parent_node_->addr();
 }
 
 void

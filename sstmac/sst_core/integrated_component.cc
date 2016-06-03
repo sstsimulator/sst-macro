@@ -31,6 +31,11 @@ SSTIntegratedComponent::SSTIntegratedComponent(
 }
 
 void
+SSTIntegratedComponent::init_sst_params(SST::Params &params)
+{
+}
+
+void
 SSTIntegratedComponent::configure_self_link()
 {
   self_link_ = configureSelfLink("self", time_converter_, 
@@ -40,17 +45,21 @@ SSTIntegratedComponent::configure_self_link()
 void
 SSTIntegratedComponent::init(unsigned int phase)
 {
-  if (phase == 0){
-    init_factory_params(params_);
-  }
 }
 
 void
 SSTIntegratedComponent::handle_self_link(SST::Event* ev)
 {
-  SSTSelfEventWrapper* wrapper = static_cast<SSTSelfEventWrapper*>(ev);
-  wrapper->run();
-  delete wrapper;
+#if SSTMAC_SANITY_CHECK
+  sstmac::event_queue_entry* entry = dynamic_cast<sstmac::event_queue_entry*>(ev);
+  if (!entry){
+    spkt_throw_printf(sprockit::value_error,
+      "event on self link did not cast to an event entry");
+#else
+  sstmac::event_queue_entry* entry = static_cast<sstmac::event_queue_entry*>(ev);
+#endif
+  entry->execute();
+  delete entry;
 }
 
 SST::SimTime_t

@@ -3,7 +3,6 @@
 
 #include <sstmac/common/messages/sst_message.h>
 #include <sstmac/hardware/router/routing_info.h>
-#include <sprockit/serializer_fwd.h>
 
 namespace sstmac {
 namespace hw {
@@ -63,7 +62,7 @@ class routable
   }
 
   void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(serializer& ser);
 
   void
   add_hop() {

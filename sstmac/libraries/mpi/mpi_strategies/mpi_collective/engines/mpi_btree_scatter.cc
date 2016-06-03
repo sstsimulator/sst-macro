@@ -31,7 +31,7 @@ namespace sw {
 int
 mpi_btree_scatter::relrank(mpi_id therank) const
 {
-  return ((therank.id_ - root_.id_ + comm_->size().id_) % comm_->size().id_);
+  return ((therank - root_ + comm_->size()) % comm_->size());
 }
 
 //
@@ -40,7 +40,7 @@ mpi_btree_scatter::relrank(mpi_id therank) const
 mpi_id
 mpi_btree_scatter::absrank(int therank) const
 {
-  return mpi_id((therank + root_.id_) % comm_->size().id_);
+  return mpi_id((therank + root_) % comm_->size());
 }
 
 //
@@ -186,7 +186,7 @@ mpi_btree_scatter::mpi_btree_scatter(mpi_request* thekey,
 // Callback method to indicate that a send operation has completed.
 //
 void
-mpi_btree_scatter::send_complete(const mpi_message::ptr& msg)
+mpi_btree_scatter::send_complete(mpi_message* msg)
 {
   mpi_scatter_debug("send complete to %d, count=%d", int(msg->dest()), msg->count());
   --pending_sends_;
@@ -204,7 +204,7 @@ mpi_btree_scatter::send_complete(const mpi_message::ptr& msg)
 // Callback method to indicate that a receive operation has completed.
 //
 void
-mpi_btree_scatter::recv_complete(const mpi_message::ptr& msg)
+mpi_btree_scatter::recv_complete(mpi_message* msg)
 {
   mpi_scatter_debug("recv complete from %d, count=%d", int(msg->source()), msg->count());
   if (content_) {

@@ -33,7 +33,7 @@ eager1_rdma::send_needs_eager_ack() const
 
 void
 eager1_rdma::send_header(mpi_queue* queue,
-                         const mpi_message::ptr& msg)
+                         mpi_message* msg)
 {
   SSTMACBacktrace("MPI Eager 1 Protocol: Send RDMA Header");
 
@@ -53,7 +53,9 @@ eager1_rdma::send_header(mpi_queue* queue,
       /** we can complete the send request and allow
        the program to continue, but we have to wait
        for buffer resources to be completed by the rdma get */
-      sreq->wait_for_buffer();
+      //sreq->wait_for_buffer();
+      delete sreq;
+      queue->send_needs_eager_ack_.erase(it);
       return;
     }
   }
@@ -63,7 +65,7 @@ eager1_rdma::send_header(mpi_queue* queue,
 
 void
 eager1_rdma::incoming_header(mpi_queue* queue,
-                           const mpi_message::ptr& msg)
+                           mpi_message* msg)
 {
   SSTMACBacktrace("MPI Eager 1 Protocol: Handle RDMA Header");
 
@@ -99,7 +101,7 @@ eager1_rdma::incoming_header(mpi_queue* queue,
 
 void
 eager1_rdma::finish_recv_header(mpi_queue* queue,
-    const mpi_message::ptr& msg,
+    mpi_message* msg,
     mpi_queue_recv_request* req)
 {
   spkt_throw_printf(sprockit::illformed_error,
@@ -108,7 +110,7 @@ eager1_rdma::finish_recv_header(mpi_queue* queue,
 
 void
 eager1_rdma::finish_recv_payload(mpi_queue* queue,
-    const mpi_message::ptr& msg, mpi_queue_recv_request* req)
+    mpi_message* msg, mpi_queue_recv_request* req)
 {
 }
 
@@ -118,7 +120,7 @@ eager1_rdma_singlecpy::~eager1_rdma_singlecpy()
 
 void
 eager1_rdma_singlecpy::incoming_payload(mpi_queue* queue,
-                                      const mpi_message::ptr& msg)
+                                      mpi_message* msg)
 {
   SSTMACBacktrace("MPI Eager 1 Protocol: Handle RDMA Paylod");
 
@@ -133,6 +135,7 @@ eager1_rdma_singlecpy::incoming_payload(mpi_queue* queue,
     }
     //We have RDMA GOT direct into the buffer - just complete
     req->handle(msg);
+    delete msg;
   }
 }
 
@@ -142,7 +145,7 @@ eager1_rdma_doublecpy::~eager1_rdma_doublecpy()
 
 void
 eager1_rdma_doublecpy::incoming_payload(mpi_queue* queue,
-                                      const mpi_message::ptr& msg)
+                                      mpi_message* msg)
 {
   SSTMACBacktrace("MPI Eager 1 Protocol: Handle RDMA Paylod");
   //the recv request is expecting a user message - update the message to match
@@ -150,6 +153,7 @@ eager1_rdma_doublecpy::incoming_payload(mpi_queue* queue,
                                      true); //if not found, add to need_recv
   if (req) { //just finish things off by copying buffers
     queue->buffered_recv(msg, req);
+    delete msg;
   }
 }
 

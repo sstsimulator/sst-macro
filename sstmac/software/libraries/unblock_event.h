@@ -21,11 +21,16 @@
 namespace sstmac {
 namespace sw {
 
-class unblock_event : public event
+class unblock_event : public event_queue_entry
 {
 
  public:
   unblock_event(operating_system* os, key* k);
+
+  std::string
+  to_string() const {
+    return "unblock event";
+  }
 
   virtual void execute();
 
@@ -35,7 +40,7 @@ class unblock_event : public event
 
 };
 
-class timeout_event : public event
+class timeout_event : public event_queue_entry
 {
 
  public:

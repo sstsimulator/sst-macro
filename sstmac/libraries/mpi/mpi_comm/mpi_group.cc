@@ -41,7 +41,7 @@ mpi_id
 mpi_group::rank_of_task(task_id t)
 {
   if (is_comm_world_){
-    return mpi_id(t.id_);
+    return mpi_id(t);
   } else {
     for (int i=0; i < task_list_.size(); ++i){
       if (task_list_[i] == t){

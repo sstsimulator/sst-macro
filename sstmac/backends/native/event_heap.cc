@@ -11,7 +11,6 @@
 
 
 #include <sstmac/common/config.h>
-#if !SSTMAC_INTEGRATED_SST_CORE
 
 #include <sstmac/backends/native/event_heap.h>
 #include <sprockit/errors.h>
@@ -30,16 +29,16 @@ event_heap::~event_heap() throw ()
 {
 }
 
-event*
+event_queue_entry*
 event_heap::pop_next_event()
 {
-  event* ev = queue_.top();
+  event_queue_entry* ev = queue_.top();
   queue_.pop();
   return ev;
 }
 
 void
-event_heap::add_event(event* ev)
+event_heap::add_event(event_queue_entry* ev)
 {
   queue_.push( ev);
 }
@@ -65,7 +64,7 @@ event_heap::cancel_all_messages(event_loc_id canceled_loc)
 {
   queue_t temp;
   while (!queue_.empty()) {
-    event* t = queue_.top();
+    event_queue_entry* t = queue_.top();
     if (!(t->event_location() == canceled_loc)) {
       temp.push(t);
     }
@@ -77,4 +76,3 @@ event_heap::cancel_all_messages(event_loc_id canceled_loc)
 }
 } // end of namespace sstmac
 
-#endif // !SSTMAC_INTEGRATED_SST_CORE

@@ -15,7 +15,7 @@ noinst_LTLIBRARIES = libsstmac_mpi.la
 
 library_includedir=$(includedir)/sstmac/libraries/mpi
 
-AM_CPPFLAGS += -I$(top_builddir)/dumpi -I$(top_srcdir)/dumpi
+AM_CPPFLAGS += -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi
 
 AM_FCFLAGS = -I$(top_builddir) -I$(top_srcdir) -m32 -m64
 
@@ -35,7 +35,6 @@ libsstmac_mpi_la_SOURCES = \
   mpi_queue/mpi_queue_send_request.cc \
   mpi_queue/mpi_queue.cc \
   mpi_queue/user_thread_mpi_queue.cc \
-  mpi_queue/service_thread_mpi_queue.cc \
   mpi_implementation/mpi_implementation.cc \
   mpi_implementation/basic_mpi.cc \
   mpi_implementation/rdma_mpi.cc \
@@ -109,13 +108,7 @@ libsstmac_mpi_la_SOURCES = \
   mpi_payload.cc \
   rma/mpi_rma_message.cc \
   rma/mpi_queue_get_request.cc \
-  sstmac_mpi.cc \
-  type_operator.cc
-
-if FC_ENABLE
-  libsstmac_mpi_la_SOURCES += \
-    sstmac_mpi_f.cc
-endif
+  sstmac_mpi.cc 
 
 
 nobase_library_include_HEADERS = \
@@ -138,7 +131,6 @@ nobase_library_include_HEADERS = \
   mpi_queue/mpi_queue.h \
   mpi_queue/mpi_queue_fwd.h \
   mpi_queue/user_thread_mpi_queue.h \
-  mpi_queue/service_thread_mpi_queue.h \
   mpi_implementation/mpi_implementation.h \
   mpi_implementation/mpi_implementation_fwd.h \
   mpi_implementation/basic_mpi.h \
@@ -223,10 +215,5 @@ nobase_library_include_HEADERS = \
   sstmac_mpi_macro.h \
   type_operator.h
   
-
-if FC_ENABLE
-  nobase_library_include_HEADERS += \
-    sstmac_mpi_f.h
-endif
 
 

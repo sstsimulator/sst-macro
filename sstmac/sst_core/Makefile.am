@@ -25,7 +25,6 @@ libsstmac_sst_core_la_LDFLAGS =
 
 if EXTERNAL_BOOST
   libsstmac_sst_core_la_LDFLAGS += $(BOOST_LDFLAGS)
-  libsstmac_sst_core_la_LDFLAGS += $(BOOST_REGEX_LIB)
 endif
 
 nobase_library_include_HEADERS = \

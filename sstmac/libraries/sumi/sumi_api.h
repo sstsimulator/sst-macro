@@ -1,12 +1,13 @@
 #ifndef SSTMAC_SIMPMSG_API_H
 #define SSTMAC_SIMPMSG_API_H
 
-#include <sstmac/libraries/sumi/message.h>
+#include <sstmac/libraries/sumi/message_fwd.h>
 #include <sstmac/software/process/pmi.h>
 #include <sstmac/software/process/app_manager.h>
 #include <sstmac/software/libraries/service.h>
 #include <sstmac/software/api/api.h>
-#include <sstmac/hardware/network/network_message.h>
+#include <sstmac/hardware/network/network_message_fwd.h>
+#include <sumi/message_fwd.h>
 
 /**
  * SUMI = Simulator unified messagine interface
@@ -29,14 +30,14 @@ class sumi_queue
 
   sumi_queue();
 
-  transport_message::ptr
+  transport_message*
   poll_until_message();
 
-  transport_message::ptr
+  transport_message*
   poll_until_message(timestamp timeout);
 
   void
-  put_message(const transport_message::ptr& message);
+  put_message(transport_message* message);
 
   bool
   blocked() const {
@@ -44,7 +45,7 @@ class sumi_queue
   }
 
  private:
-  std::list<transport_message::ptr> pending_messages_;
+  std::list<transport_message*> pending_messages_;
 
   std::list<sstmac::sw::key*> blocked_keys_;
 
@@ -77,23 +78,23 @@ class sumi_api :
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
 
-  transport_message::payload_ptr
+  sumi::message_ptr
   poll_until_notification();
 
-  transport_message::payload_ptr
+  sumi::message_ptr
   poll_until_notification(timestamp timeout);
 
-  virtual transport_message::payload_ptr
-  handle(const transport_message::ptr& msg) = 0;
+  virtual sumi::message_ptr
+  handle(transport_message* msg) = 0;
   
   void
-  incoming_message(const transport_message::ptr& msg);
+  incoming_message(transport_message* msg);
 
   void
   transport_send(
     long byte_length,
-    const transport_message::payload_ptr& msg,
-    sstmac::hw::network_message::type_t ty,
+    const sumi::message_ptr& msg,
+    int ty,
     int dst,
     bool needs_ack,
     void* buffer = 0);
@@ -134,7 +135,7 @@ class sumi_server :
   sumi_server(int appid);
 
   void
-  incoming_message(const sstmac::sst_message::ptr& msg);
+  incoming_message(sstmac::message* msg);
 
   void
   register_proc(int rank, sumi_api* proc);

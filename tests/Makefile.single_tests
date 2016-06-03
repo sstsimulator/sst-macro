@@ -18,29 +18,35 @@ SINGLETESTS += \
 endif
 
 test_scan.$(CHKSUF): test_scan
-	$(PYRUNTEST) 20 test_scan.tmp.$(CHKSUF) ./test_scan --no-wall-time -f $(srcdir)/test_configs/test_scan.ini
-	-grep 'T=' test_scan.tmp.$(CHKSUF) > $@
+	$(PYRUNTEST) 20 $(top_srcdir) $@ notime \
+    ./test_scan --no-wall-time -f $(srcdir)/test_configs/test_scan.ini
 
 test_uq.$(CHKSUF): test_uq
-	$(PYRUNTEST) 6 $@ ./test_uq -f $(srcdir)/test_configs/test_uq.ini
+	$(PYRUNTEST) 6 $(top_srcdir) $@ notime \
+    ./test_uq -f $(srcdir)/test_configs/test_uq.ini
 
 test_utilities.$(CHKSUF): test_utilities
-	$(PYRUNTEST) 6 $@ ./test_utilities 
+	$(PYRUNTEST) 6 $(top_srcdir) $@ notime ./test_utilities 
 
 test_blas.$(CHKSUF): test_blas
-	$(PYRUNTEST) 6 $@ ./test_blas --no-wall-time -f $(srcdir)/test_configs/test_compute_blas.ini 
+	$(PYRUNTEST) 6 $(top_srcdir) $@ 't > 0.08 and t < 0.1' \
+    ./test_blas --no-wall-time -f $(srcdir)/test_configs/test_compute_blas.ini 
 
 test_blas_finegrained.$(CHKSUF): test_blas
-	$(PYRUNTEST) 6 $@ ./test_blas --no-wall-time -f $(srcdir)/test_configs/test_compute_blas_finegrained.ini 
+	$(PYRUNTEST) 6 $(top_srcdir) $@ 't > 0.08 and t < 0.1' \
+    ./test_blas --no-wall-time -f $(srcdir)/test_configs/test_compute_blas_finegrained.ini 
 
 test_node_noise.$(CHKSUF): test_blas
-	$(PYRUNTEST) 6 $@ ./test_blas --no-wall-time -f $(srcdir)/test_configs/test_compute_blas_node_noise.ini 
+	$(PYRUNTEST) 6 $(top_srcdir) $@ 't > 0.1 and t < 0.11' \
+    ./test_blas --no-wall-time -f $(srcdir)/test_configs/test_compute_blas_node_noise.ini 
 
 test_pthread.$(CHKSUF): test_pthread
-	$(PYRUNTEST) 6 $@ ./test_pthread --no-wall-time -f $(srcdir)/test_configs/pthread.ini 
+	$(PYRUNTEST) 6 $(top_srcdir) $@ True \
+    ./test_pthread --no-wall-time -f $(srcdir)/test_configs/pthread.ini 
 
 test_compute.$(CHKSUF): $(SSTMACEXEC)
-	$(PYRUNTEST) 6 $@ $(SSTMACEXEC) -f $(srcdir)/test_configs/test_compute.ini --no-wall-time 
+	$(PYRUNTEST) 6 $(top_srcdir) $@ True \
+    $(SSTMACEXEC) -f $(srcdir)/test_configs/test_compute.ini --no-wall-time 
 
 #------------------------------------------------------------------------------------------#
 #  DUMPI-related tests                                                                  {{{#
@@ -55,28 +61,18 @@ traces:
 	chmod u+w *.bin *.meta *.map # required for make distcheck (makes files r/o)
 
 test_dumpi_manager.$(CHKSUF): $(SSTMACEXEC) traces
-	$(PYRUNTEST) 5 $@ $(SSTMACEXEC) -f $(srcdir)/test_configs/test_dumpi_manager.ini \
+	$(PYRUNTEST) 5 $(top_srcdir) $@ True \
+    $(SSTMACEXEC) -f $(srcdir)/test_configs/test_dumpi_manager.ini \
           -d indexing,allocation --no-wall-time 
 
 test_dumpi_bgp.$(CHKSUF): $(SSTMACEXEC) traces
-	$(PYRUNTEST) 5 $@ $(SSTMACEXEC) -f $(srcdir)/test_configs/test_dumpi_bgp.ini \
+	$(PYRUNTEST) 5 $(top_srcdir) $@ True \
+    $(SSTMACEXEC) -f $(srcdir)/test_configs/test_dumpi_bgp.ini \
           -d indexing,allocation --no-wall-time 
 
 test_parsedumpi.$(CHKSUF): $(SSTMACEXEC) traces
-	$(PYRUNTEST) 3 $@ $(SSTMACEXEC) -f $(srcdir)/test_configs/test_parsedumpi.ini --no-wall-time 
-
-#------------------------------------------------------------------------------------------#
-#  Fortran tests (only if FC_ENABLE)                                                    {{{#
-#------------------------------------------------------------------------------------------#
-
-if FC_ENABLE
-SINGLETESTS += test_compute_f
-endif
-
-# TODO should this be PYRUNTEST?
-
-test_compute_f.$(CHKSUF): $(SSTMACEXEC)
-	$(SSTMACEXEC) -f $(srcdir)/test_configs/test_compute_f.ini \
-          --no-wall-time > $@
+	$(PYRUNTEST) 3 $(top_srcdir) $@ True \
+    $(SSTMACEXEC) -f $(srcdir)/test_configs/test_parsedumpi.ini --no-wall-time 
 
 endif
+

@@ -12,6 +12,7 @@
 #include <sstmac/software/launch/launcher.h>
 #include <sstmac/software/launch/launch_message.h>
 #include <sstmac/software/process/operating_system.h>
+#include <sprockit/util.h>
 #include <unistd.h>
 #include <getopt.h>
 
@@ -32,16 +33,17 @@ launcher::~launcher() throw()
 }
 
 void
-launcher::incoming_message(const sst_message::ptr& msg)
+launcher::incoming_message(message* msg)
 {
-  launch_message::ptr lmsg = ptr_safe_cast(launch_message, msg);
+  launch_message* lmsg = safe_cast(launch_message, msg);
   if (lmsg->is_nic_ack()){
+    delete lmsg;
     return;
   }
 
-  launch_info* linfo = lmsg->get_info();
+  launch_info* linfo = lmsg->info();
 
-  if (lmsg->get_launch_type() == launch_message::ARRIVE) {
+  if (lmsg->launch_type() == launch_message::ARRIVE) {
     software_id sid(linfo->aid(), lmsg->tid());
     app* theapp = linfo->app_template()->clone(sid);
     theapp->consume_params(linfo->app_template()->params());
@@ -51,9 +53,11 @@ launcher::incoming_message(const sst_message::ptr& msg)
     os_->start_app(theapp);
 
   }
-  else if(lmsg->get_launch_type() == launch_message::COMPLETE) {
+  else if(lmsg->launch_type() == launch_message::COMPLETE) {
     //do nothing
   }
+
+  delete lmsg;
 }
 
 void

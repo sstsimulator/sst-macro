@@ -8,7 +8,7 @@
 MakeDebugSlot(traffic_matrix)
 MakeDebugSlot(traffic_matrix_results)
 
-#define SST 1
+#define IS_SST 1
 
 #ifdef GNI
 #define model "gni"
@@ -16,7 +16,7 @@ static bool send_ack = true;
 static bool recv_ack = false;
 #endif
 
-#ifdef SST
+#ifdef IS_SST
 #define model "sst"
 static bool send_ack = false;
 static bool recv_ack = true;
@@ -43,13 +43,15 @@ static const int window_bytes = 262144;
 
 class config_message :
   public sumi::message,
-  public sprockit::serializable_type<config_message>
+  public sumi::serializable_type<config_message>
 {
   ImplementSerializable(config_message)
  public:
   typedef sprockit::refcount_ptr<config_message> ptr;
 
  public:
+  config_message(){} //need for serialization
+
   config_message(const sumi::public_buffer& recv_buf) :
     recv_buf_(recv_buf){}
 
@@ -59,7 +61,7 @@ class config_message :
   }
 
   virtual void
-  serialize_order(sprockit::serializer &ser){
+  serialize_order(sumi::serializer &ser){
     ser & recv_buf_;
     sumi::message::serialize_order(ser);
   }
@@ -70,13 +72,16 @@ class config_message :
 
 class rdma_message :
   public sumi::rdma_message,
-  public sprockit::serializable_type<rdma_message>
+  public sumi::serializable_type<rdma_message>
 {
  ImplementSerializable(rdma_message)
+
  public:
   typedef sprockit::refcount_ptr<rdma_message> ptr;
 
  public:
+  rdma_message(){} //need for serialization
+
   rdma_message(int iter, int num_bytes) :
    sumi::rdma_message(num_bytes),
    iter_(iter)
@@ -84,14 +89,14 @@ class rdma_message :
   }
 
   virtual void
-  serialize_order(sprockit::serializer& ser){
+  serialize_order(sumi::serializer& ser){
     ser & iter_;
     ser & start_;
     ser & finish_;
     sumi::rdma_message::serialize_order(ser);
   }
 
-  sumi::parent_message*
+  sumi::message*
   clone() const {
     rdma_message* cln = new rdma_message(iter_, num_bytes_);
     cln->set_start(start_);
@@ -115,15 +120,12 @@ class rdma_message :
   double finish_;
 };
 
-DeclareSerializable(rdma_message)
-DeclareSerializable(config_message)
-
-
 std::vector<std::map<int, std::map<int, rdma_message::ptr> > > results;
 static int num_done = 0;
 
 void
-progress_loop(sumi::transport* tport, double timeout, std::list<rdma_message::ptr>& done)
+progress_loop(sumi::transport* tport, double timeout,
+              std::list<rdma_message::ptr>& done)
 {
   double now = tport->wall_time();
   double stop = now + timeout;

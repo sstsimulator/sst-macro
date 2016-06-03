@@ -91,7 +91,7 @@ class circuit_switch : public cycle_accurate_switch
       return ptr(new circuitpacketinjector(params, par));
     }
 
-    void send(long nbytes, long byte_offset, const sst_message::ptr& msg);
+    void send(long nbytes, long byte_offset, sst_message* msg);
 
   };
 #endif

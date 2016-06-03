@@ -80,7 +80,7 @@ if test "x$want_boost" = "xyes"; then
 	dnl this location is chosen if boost libraries are installed with the --layout=system option
 	dnl or if you install boost with RPM
 	if test "$ac_boost_path" != ""; then
-	    AC_MSG_CHECKING(for boostlib >= $boost_lib_version_req in $ac_boost_path")
+	    AC_MSG_CHECKING(for boostlib >= $boost_lib_version_req in $ac_boost_path)
 		BOOST_LDFLAGS="-L$ac_boost_path/lib"
 		BOOST_CPPFLAGS="-I$ac_boost_path/include"
 	else
@@ -108,21 +108,23 @@ if test "x$want_boost" = "xyes"; then
 	LDFLAGS="$LDFLAGS $BOOST_LDFLAGS"
 	export LDFLAGS
 
-    AC_MSG_CHECKING(for boostlib in $BOOST_ROOT)
-        AC_LANG_PUSH(C++)
-     	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-	@%:@include <boost/version.hpp>
-	@%:@include <cstdio>
-	]], [[
-        printf("%d", BOOST_VERSION);
-	]])],[
-       	AC_MSG_RESULT(yes)
-	succeeded=yes
-	found_system=yes
-  CPPFLAGS="-I$BOOST_ROOT $CPPFLAGS"
-       	],[
-        AC_MSG_RESULT(no)
-       	])
+    if test "$BOOST_ROOT" != ""; then
+       AC_MSG_CHECKING(for boostlib in $BOOST_ROOT)
+           AC_LANG_PUSH(C++)
+           AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+           @%:@include <boost/version.hpp>
+           @%:@include <cstdio>
+           ]], [[
+           printf("%d", BOOST_VERSION);
+           ]])],[
+           AC_MSG_RESULT(yes)
+           succeeded=yes
+           found_system=yes
+           CPPFLAGS="-I$BOOST_ROOT $CPPFLAGS"
+           ],[
+           AC_MSG_RESULT(no)
+        ])
+    fi
 
     AC_MSG_CHECKING(for boostlib version >= $boost_lib_version_req)
         AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[

@@ -56,10 +56,10 @@ mpi_rma_message::mpi_rma_message(const payload::const_ptr& content,
 
 }
 
-mpi_message::ptr
+mpi_message*
 mpi_rma_message::deep_clone() const
 {
-  mpi_rma_message::ptr ret = new mpi_rma_message(lib_name_, 
+  mpi_rma_message* ret = new mpi_rma_message(lib_name_,
                                envelope_, mintrans_, count_, type_, type_packed_size_,
                                source_, dest_, commid_,
                                seqnum_, msgid_, cat_, src_task_, dest_task_, aid_, content_type_,

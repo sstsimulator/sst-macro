@@ -16,7 +16,6 @@
 #include <sstmac/hardware/interconnect/switch_interconnect_fwd.h>
 #include <sstmac/hardware/switch/network_switch_fwd.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
-#include <sstmac/common/vis/vis.h>
 #include <sprockit/unordered.h>
 
 namespace sstmac {
@@ -56,8 +55,7 @@ class sst_switch_interconnect :
 };
 #else
 class macro_switch_interconnect :
-  public switch_interconnect_base,
-  public vis::vis_display
+  public switch_interconnect_base
 {
  public:
   typedef spkt_unordered_map<switch_id, network_switch*> switch_map;
@@ -83,12 +81,6 @@ class macro_switch_interconnect :
   virtual void
   set_event_manager(event_manager* m);
 
-  virtual vis::vis_topology::vis_switch_map
-  vis_nodes();
-
-  virtual vis::vis_topology*
-  vis_topol();
-
   network_switch*
   switch_at(switch_id id) const
   {
@@ -100,7 +92,7 @@ class macro_switch_interconnect :
   }
 
   virtual void
-  immediate_send(event_scheduler* src, const sst_message::ptr& msg, timestamp start) const;
+  immediate_send(event_scheduler* src, message* msg, timestamp start) const;
 
   void
   write_graph_file(const std::string& graph_file);

@@ -15,6 +15,7 @@
 #include <sstmac/libraries/mpi/mpi_types/mpi_id.h>
 #include <sstmac/software/process/task_id.h>
 #include <vector>
+#include <string>
 
 namespace sstmac {
 namespace sw {

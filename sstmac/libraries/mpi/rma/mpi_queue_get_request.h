@@ -44,7 +44,7 @@ class mpi_queue_get_request {
 
   /// We be done.
   void
-  handle(const mpi_message::ptr& mess);
+  handle(mpi_message* mess);
 
   bool
   is_cancelled() const {

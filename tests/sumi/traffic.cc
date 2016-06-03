@@ -5,9 +5,9 @@
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/sstmac_env.h>
 #include <sstmac/libraries/sumi/sumi_api.h>
+#include <sstmac/libraries/sumi/sumi.h>
 #include <sstmac/hardware/topology/traffic/traffic.h>
 #include <sstmac/hardware/topology/topology.h>
-#include <sst/sumi_api.h>
 #include <sumi/transport.h>
 
 using namespace sumi;

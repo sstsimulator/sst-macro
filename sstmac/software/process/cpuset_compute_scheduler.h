@@ -1,5 +1,5 @@
-#ifndef CPUSET_COMPUTE_SCHEDULER_H
-#define CPUSET_COMPUTE_SCHEDULER_H
+#ifndef CPUSET_COMPUTE_scheduleR_H
+#define CPUSET_COMPUTE_scheduleR_H
 
 #include <sstmac/software/process/compute_scheduler.h>
 
@@ -55,4 +55,4 @@ class cpuset_compute_scheduler : public compute_scheduler
 }
 }
 
-#endif // CPUSET_COMPUTE_SCHEDULER_H
+#endif // CPUSET_COMPUTE_scheduleR_H

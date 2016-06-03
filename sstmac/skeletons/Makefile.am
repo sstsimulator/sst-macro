@@ -15,7 +15,7 @@ EXTRA_DIST = test/test.model
 noinst_LTLIBRARIES = libsstmac_skeletons.la
 library_includedir=$(includedir)/sstmac/skeletons
 
-AM_CPPFLAGS += -I$(top_builddir)/dumpi -I$(top_srcdir)/dumpi -I$(top_builddir)/sumi -I$(top_srcdir)/sumi
+AM_CPPFLAGS += -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi -I$(top_builddir)/sumi -I$(top_srcdir)/sumi
 
 AM_FCFLAGS = -I$(top_builddir) -I$(top_srcdir) -m32 -m64
 
@@ -28,6 +28,7 @@ libsstmac_skeletons_la_SOURCES = \
   test/test_compute.cc \
   test/test_os.cc \
   test/test_compute_c.c \
+  test/mpi_ping_all.cc \
   test/global_test.cc 
 
 nobase_library_include_HEADERS = \
@@ -50,7 +51,6 @@ libsstmac_skeletons_la_SOURCES += \
   test/mpi_print_nodes.cc \
   test/mpi_test_all.cc \
   test/mpi_pairwise.cc \
-  test/mpi_ping_all.cc \
   test/mpi_ping_pong.cc \
   test/mpi_topology.cc 
 
@@ -66,14 +66,6 @@ nobase_library_include_HEADERS += \
   test/test_onesided.h \
   test/test_mpi_barrier.h 
 
-if FC_ENABLE
-  libsstmac_skeletons_la_SOURCES += \
-    test/test_compute_f90.f90 \
-    test/test_compute_f.cc
-
-  nobase_library_include_HEADERS += \
-    test/test_compute_f.h
-endif
 
 endif
 

@@ -12,14 +12,13 @@
 #ifndef SSTMAC_HARDWARE_NETWORK_SWITCHES_SWITCHTOPOLOGY_H_INCLUDED
 #define SSTMAC_HARDWARE_NETWORK_SWITCHES_SWITCHTOPOLOGY_H_INCLUDED
 
-#include <sstmac/common/vis/vis.h>
 #include <sstmac/common/rng.h>
 #include <sstmac/hardware/topology/coordinates.h>
 #include <sstmac/hardware/topology/traffic/traffic.h>
 #include <sstmac/hardware/router/routing_info.h>
 #include <sstmac/hardware/router/router_fwd.h>
-#include <sstmac/hardware/common/clonable.h>
 #include <sstmac/hardware/common/connection.h>
+#include <sstmac/backends/common/sim_partition_fwd.h>
 #include <sprockit/sim_parameters_fwd.h>
 #include <sprockit/debug.h>
 #include <sprockit/factories/factory.h>
@@ -46,7 +45,6 @@ namespace hw {
   }
 
 class topology :
-  public virtual vis::vis_topology,
   virtual public sprockit::factory_type
 {
  public:
@@ -58,6 +56,9 @@ class topology :
 
  public:
   virtual ~topology();
+
+  virtual std::string
+  to_string() const = 0;
 
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
@@ -357,13 +358,6 @@ class topology :
         node_id nodeaddr, int ports[], int& num_ports) const {
     num_ports = 1;
     return endpoint_to_ejection_switch(nodeaddr, ports[0]);
-  }
-
-  virtual void
-  display_nodes(const vis_switch_map &switches,
-                vis::vis_engine* eng,
-                std::list<vis::vis_obj*> &objs) {
-    printf("topology::display_nodes: unsupported topology");
   }
 
   int

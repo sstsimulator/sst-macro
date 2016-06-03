@@ -15,8 +15,8 @@
 #include <sumi/comm_functions.h>
 #include <sumi-mpi/sstmac_mpi.h>
 #include <sprockit/spkt_config.h>
-#include <sprockit/serializable.h>
-#include <sprockit/opaque_typedef.h>
+#include <sprockit/unordered.h>
+#include <vector>
 
 #include <iosfwd>
 #include <map>

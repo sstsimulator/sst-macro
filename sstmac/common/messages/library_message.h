@@ -28,7 +28,7 @@ class library_interface
   }
 
   void
-  serialize_order(sprockit::serializer& ser);
+  serialize_order(serializer& ser);
 
  protected:
   library_interface(const std::string& libname) :

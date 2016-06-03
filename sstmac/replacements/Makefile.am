@@ -28,10 +28,14 @@ nobase_library_include_HEADERS += \
 nobase_nodist_library_include_HEADERS += \
   fstream \
   iostream \
+  ios \
+  ostream \
   istream \
   list \
   map \
   memory \
+  mutex \
+  thread \
   pthread.h \
   queue \
   sstream \

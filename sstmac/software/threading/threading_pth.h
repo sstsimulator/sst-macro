@@ -13,19 +13,10 @@
 #define SSTMAC_SOFTWARE_THREADING_THREADING_PTH_H_INCLUDED
 
 #include <sstmac/software/threading/threading_interface.h>
-
-#ifdef SSTMAC_HAVE_PTH
-#  ifdef SSTMAC_HAVE_PTH_CUSTOM
-#    include <pth-sstmac.h>
-#  else // SSTMAC_HAVE_PTH_CUSTOM
-#    include <pth.h>
-#  endif // SSTMAC_HAVE_PTH_CUSTOM
-#endif
+#include <pth.h>
 
 namespace sstmac {
 namespace sw {
-
-#ifdef SSTMAC_HAVE_PTH
 
 class threading_pth : public threading_interface
 {
@@ -66,7 +57,6 @@ class threading_pth : public threading_interface
 
 };
 
-#endif
 }
 } // end of namespace sstmac
 #endif

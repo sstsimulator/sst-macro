@@ -14,7 +14,6 @@
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
 #include <sstmac/software/process/operating_system.h>
 
-#include <sprockit/serializer.h>
 #include <sstmac/common/messages/payload.h>
 #include <sstmac/common/sstmac_env.h>
 #include <sprockit/debug.h>
@@ -22,8 +21,6 @@
 
 #include <stdlib.h>
 #include <sstream>
-
-DeclareSerializable(sumi::mpi_message);
 
 #define enumcase(x) case x: return #x
 
@@ -72,7 +69,7 @@ mpi_message::recompute_bytes()
   }
 }
 
-sumi::parent_message*
+sumi::message*
 mpi_message::clone() const
 {
   mpi_message* cln = new mpi_message;
@@ -81,7 +78,7 @@ mpi_message::clone() const
 }
 
 void
-mpi_message::serialize_order(sprockit::serializer& ser)
+mpi_message::serialize_order(serializer& ser)
 {
   ser & type_;
   ser & type_packed_size_;
@@ -91,7 +88,7 @@ mpi_message::serialize_order(sprockit::serializer& ser)
   ser & (tag_);
   ser & (commid_);
   ser & (seqnum_);
-  ser & (msgid_.id_);
+  ser & (msgid_);
   ser & (content_type_);
   ser & (ignore_seqnum_);
   ser & (protocol_);

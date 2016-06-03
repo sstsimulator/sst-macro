@@ -561,12 +561,11 @@ extern "C" int MPI_Initialized(int *flag)
 
 extern "C" int MPI_Finalize()
 {
-  mpi_api* app = current_mpi();
-  mpi_comm* world = app->comm_world();
-  int rank = world->rank();
-  app->finalize();
+  mpi_api* mpi = current_mpi();
+  mpi->finalize();
 
-  //erase_comm*(world->rank().id, world->id().id);
+  mpi_group* empty = mpi->get_group(MPI_GROUP_EMPTY);
+  delete empty;
 
   //these all need to get cleared
   //otherwise cxa_finalize can freak out
@@ -1158,7 +1157,7 @@ MPI_Reduce(void *sendbuf, void *recvbuf, int count,
   sstmac::payload::const_ptr res;
   mpi->reduce(count, mpi_type_id(datatype), get_mpi_op(op), mpi_id(root),
               commptr, load, res);
-  if (mpi->comm_rank(commptr).id_ == root) {
+  if (mpi->comm_rank(commptr) == root) {
     set_mpi_payload_collective(recvbuf, 0, count, datatype, res);
   }
   return MPI_SUCCESS;
@@ -1241,7 +1240,7 @@ MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype,
   std::vector<sstmac::payload::const_ptr> cc;
   mpi->gather(sendcnt, mpi_type_id(sendtype), recvcnt, hack_rtype,
               sstmac::sw::mpi_id(root), commptr, load, cc);
-  if (mpi->comm_rank(commptr).id_ == root) {
+  if (mpi->comm_rank(commptr) == root) {
     set_mpi_vector_payload(mpi, recvbuf, recvcnt, recvtype, cc);
   }
   return MPI_SUCCESS;
@@ -1279,7 +1278,7 @@ MPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype,
   mpi->gatherv(sendcnt, mpi_type_id(sendtype), cxx_recvcnts,
                hack_rtype, mpi_id(root), commptr, sendload, recvload);
 
-  if (commptr->rank().id_ == root){
+  if (commptr->rank() == root){
     set_displaced_payload_collective(recvbuf, commptr->size(), recvcnts, displs,
                           recvtype, recvload);
   }
@@ -1957,7 +1956,7 @@ MPI_Group_translate_ranks(MPI_Group group1, int n, int *ranks1,
     }
     else {
 
-      for (uint j = 0; j < g2->size(); j++) {
+      for (int j = 0; j < g2->size(); j++) {
 
         if (g2->at(j) == g1->at(ranks1[i])) {
           ranks2[i] = j;

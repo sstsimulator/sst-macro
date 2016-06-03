@@ -1,15 +1,10 @@
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sprockit/serializer.h>
-
-DeclareSerializable(sstmac::hw::network_message);
 
 #define enumcase(x) case x: return #x;
 
 namespace sstmac {
 namespace hw {
-
-RegisterEnum(sst_message::message_type_t, network_message::NETWORK);
 
 network_message::network_message()
   : needs_ack_(true),
@@ -17,7 +12,6 @@ network_message::network_message()
     route_algo_(routing::deflt),
     bytes_(0)
 {
-  msgtype_ = NETWORK;
 }
 
 network_message::network_message(long payload_bytes) :
@@ -26,7 +20,6 @@ network_message::network_message(long payload_bytes) :
   type_(null_netmsg_type),
   route_algo_(routing::deflt)
 {
-  msgtype_ = NETWORK;
 }
 
 network_message::network_message(
@@ -42,7 +35,6 @@ network_message::network_message(
     bytes_(bytes),
     type_(null_netmsg_type)
 {
-  msgtype_ = NETWORK;
 }
 
 bool
@@ -146,7 +138,7 @@ network_message::dest_thread(sw::operating_system*os) const
 }
 
 void
-network_message::serialize_order(sprockit::serializer& ser)
+network_message::serialize_order(serializer& ser)
 {
   ser & needs_ack_;
   ser & route_algo_;
@@ -157,7 +149,7 @@ network_message::serialize_order(sprockit::serializer& ser)
   ser & net_id_;
   ser & bytes_;
   ser & type_;
-  sst_message::serialize_order(ser);
+  message::serialize_order(ser);
 }
 
 bool
@@ -209,7 +201,7 @@ network_message::byte_length() const
 }
 
 void
-network_message::clone_into(const network_message::ptr& cln) const
+network_message::clone_into(network_message* cln) const
 {
   cln->needs_ack_ = needs_ack_;
   cln->route_algo_ = route_algo_;

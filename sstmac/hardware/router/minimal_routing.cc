@@ -9,24 +9,24 @@ SpktRegister("minimal", router, minimal_router,
 
 
 void
-minimal_router::route(const sst_message::ptr& msg)
+minimal_router::route(packet* pkt)
 {
-  routable* rt = msg->interface<routable>();
+  routable* rt = pkt->interface<routable>();
   minimal_route_to_node(rt->toaddr(),
     rt->rinfo().current_path());
   int outport = rt->rinfo().port();
   debug_printf(sprockit::dbg::router,
     "Routing %p from %ld to %ld on port=%d",
-     msg.get(),
+     pkt,
      long(addr()),
-     long(msg->toaddr()),
+     long(pkt->toaddr()),
      outport);
 }
 
 void
-minimal_router::route(const sst_message::ptr& msg, routing_info::path_set &paths)
+minimal_router::route(packet* pkt, routing_info::path_set &paths)
 {
-  routable* rt = msg->interface<routable>();
+  routable* rt = pkt->interface<routable>();
   minimal_routes_to_node(rt->toaddr(), rt->rinfo().current_path(), paths);
 }
 

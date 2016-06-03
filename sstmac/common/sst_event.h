@@ -12,19 +12,66 @@
 #ifndef SSTMAC_BACKENDS_NATIVE_SSTEVENT_H_INCLUDED
 #define SSTMAC_BACKENDS_NATIVE_SSTEVENT_H_INCLUDED
 
-#include <sprockit/serializable.h>
-#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/common/serializable.h>
 #include <sstmac/common/event_handler.h>
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/event_scheduler_fwd.h>
+#include <sstmac/common/event_location.h>
+#if SSTMAC_INTEGRATED_SST_CORE
+#include <sst/core/event.h>
+#include <sst/core/output.h>
+#endif
 
 namespace sstmac {
 
-class event  {
-
+class event :
+#if SSTMAC_INTEGRATED_SST_CORE
+  public SST::Event
+#else
+  public sprockit::serializable
+#endif
+{
  public:
-  virtual ~event() {}
+  virtual std::string
+  to_string() const = 0;
+
+  void
+  serialize_order(serializer& ser){}
+
+  /** convenience methods */
+  virtual bool
+  is_packet() const {
+    return false;
+  }
+
+  virtual bool
+  is_credit() const {
+    return false;
+  }
+
+  virtual bool
+  is_failure() const {
+    return false;
+  }
+
+  template <class T>
+  T*
+  interface(){
+    T* t = dynamic_cast<T*>(this);
+    return t;
+  }
+
+};
+
+class event_queue_entry
+#if SSTMAC_INTEGRATED_SST_CORE
+  : public SST::Event
+#endif
+{
+  NotSerializable(event_queue_entry)
+ public:
+  virtual ~event_queue_entry() {}
 
   virtual void
   execute() = 0;
@@ -33,13 +80,13 @@ class event  {
   to_string() const = 0;
 
 #if SSTMAC_INTEGRATED_SST_CORE
-  event(event_loc_id dst,
+  event_queue_entry(event_loc_id dst,
     event_loc_id src) 
   {
     //simply ignore parameters - not needed
   }
 #else
-  event(event_loc_id dst,
+  event_queue_entry(event_loc_id dst,
     event_loc_id src) :
     dst_loc_(dst),
     src_loc_(src),
@@ -91,79 +138,32 @@ class event  {
 
 };
 
-class handler_event :
-  public event
+class handler_event_queue_entry :
+  public event_queue_entry
 {
 
  public:
-  virtual ~handler_event() {}
+  virtual ~handler_event_queue_entry() {}
 
-  handler_event(const sst_message::ptr& msg,
+  handler_event_queue_entry(event* ev,
     event_handler* hand,
     event_loc_id src_loc);
 
   virtual std::string
   to_string() const;
 
-  sst_message::ptr
-  get_message() const {
-    return msg_to_deliver_;
-  }
-
-  event_handler*
-  get_handler() const {
-    return handler_;
-  }
-
   void
   execute();
 
  protected:
-  sst_message::ptr msg_to_deliver_;
+  event* ev_to_deliver_;
 
-  event_handler* handler_;
-
-};
-
-class null_msg_event :
-  public event
-{
-
- public:
-  null_msg_event(event_handler* handler,
-    event_loc_id src_loc)
-    : handler_(handler),
-      event(handler->event_location(), src_loc)
-  {
-  }
-
-  virtual ~null_msg_event() {}
-
-  virtual std::string
-  to_string() const {
-    return "null msg event";
-  }
-
-  event_handler*
-  get_handler() const {
-    return handler_;
-  }
-
-  event_loc_id
-  event_location() const {
-    return handler_->event_location();
-  }
-
-  void
-  execute();
-
- protected:
   event_handler* handler_;
 
 };
 
 class generic_event :
-  public event
+  public event_queue_entry
 {
 
  public:
@@ -179,7 +179,7 @@ class generic_event :
 
  protected:
   generic_event(event_loc_id local) :
-    event(local, local)
+    event_queue_entry(local, local)
   {
   }
 

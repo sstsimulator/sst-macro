@@ -137,16 +137,16 @@ test_fattree2(UnitTest& unit)
     router* router = sw->rter();
 
     routing_info::path path;
-    packet_flow_payload::ptr packet = msg(22);
+    packet_flow_payload* packet = msg(22);
     int port;
-    router->route(packet.get());
+    router->route(packet);
     port = packet->port();
     path = packet->rinfo().current_path();
     //assertEqual(unit, "route fat tree", path.dim, (int) fat_tree::up_dimension);
     //assert_dim_dir(unit, "fat tree dim/dir",
     //               sw, path, 22);
     packet=msg(23);
-    router->route(packet.get());
+    router->route(packet);
     port = packet->port();
     path = packet->rinfo().current_path();
     // this should rotate the paths taken
@@ -154,7 +154,7 @@ test_fattree2(UnitTest& unit)
     //assert_dim_dir(unit, "fat tree dim/dir",
     //               sw, path, 23);
     packet = msg(15);
-    router->route(packet.get());
+    router->route(packet);
     port = packet->port();
     assertEqual(unit, "route fat tree", port, 5);
     }
@@ -165,9 +165,9 @@ test_fattree2(UnitTest& unit)
     router* router = sw->rter();
 
     routing_info::path path;
-    packet_flow_payload::ptr packet = msg(4);
+    packet_flow_payload* packet = msg(4);
     int port;
-    router->route(packet.get());
+    router->route(packet);
     port = packet->port();
     path = packet->rinfo().current_path();
     //assertEqual(unit, "route fat tree", path.dim, (int) fat_tree::up_dimension);
@@ -176,20 +176,20 @@ test_fattree2(UnitTest& unit)
 
     // this should rotate the paths taken
     packet = msg(4);
-    router->route(packet.get());
+    router->route(packet);
     port = packet->port();
     path = packet->rinfo().current_path();
     //assert_dim_dir(unit, "fat tree dim/dir",
     //                sw, path, 42);
 
     packet = msg(15);
-    router->route(packet.get());
+    router->route(packet);
     port = packet->port();
     path = packet->rinfo().current_path();
     //assertEqual(unit, "route fat tree", path.dim, (int) fat_tree::up_dimension);
 
     packet = msg(23);
-    router->route(packet.get());
+    router->route(packet);
     port = packet->port();
     path = packet->rinfo().current_path();
     //assertEqual(unit, "route fat tree", path.dim, (int) fat_tree::down_dimension);
@@ -202,23 +202,23 @@ test_fattree2(UnitTest& unit)
     network_switch* sw = switches[switch_id(65)];
     router* rter = sw->rter();
     routing_info::path path;
-    packet_flow_payload::ptr packet = msg(4);
+    packet_flow_payload* packet = msg(4);
     int port;
-    rter->route(packet.get());
+    rter->route(packet);
     port = packet->port();
     path = packet->rinfo().current_path();
     //assertEqual(unit, "route fat tree from top", path.dim, (int) fat_tree::down_dimension);
     //assert_dim_dir(unit, "fat tree dim/dir at top",
     //                sw, path, 50);
     packet = msg(15);
-    rter->route(packet.get());
+    rter->route(packet);
     port = packet->port();
     path = packet->rinfo().current_path();
     //assertEqual(unit, "route fat tree", path.dim, (int) fat_tree::down_dimension);
     //assert_dim_dir(unit, "fat tree dim/dir at top",
     //                sw, path, 51);
     packet = msg(23);
-    rter->route(packet.get());
+    rter->route(packet);
     port = packet->port();
     path = packet->rinfo().current_path();
     //assertEqual(unit, "route fat tree", path.dim, (int) fat_tree::down_dimension);

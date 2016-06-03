@@ -15,7 +15,7 @@
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/launch/machine_descriptor.h>
 #include <sstmac/software/launch/launcher.h>
-#include <sstmac/common/messages/timed_message.h>
+#include <sstmac/common/messages/timed_event.h>
 
 #include <sprockit/errors.h>
 #include <sprockit/util.h>

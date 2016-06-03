@@ -142,16 +142,16 @@ The prototypes for these are:
 
 \begin{CppCode}
   virtual void
-  execute_kernel(ami::AMI_COMP_FUNC func, const sst_message_ptr& data);
+  execute_kernel(ami::AMI_COMP_FUNC func, sst_message* data);
 
   virtual void
-  execute_kernel(ami::AMI_COMM_FUNC func, const sst_message_ptr& data);
+  execute_kernel(ami::AMI_COMM_FUNC func, sst_message* data);
 
   virtual void
-  execute_kernel(ami::AMI_DISP_FUNC func, const sst_message_ptr& data);
+  execute_kernel(ami::AMI_DISP_FUNC func, sst_message* data);
 
   virtual void
-  execute_kernel(ami::AMI_HW_FUNC func, const sst_message_ptr& data);
+  execute_kernel(ami::AMI_HW_FUNC func, sst_message* data);
 \end{CppCode}	
 
 By default, the abstract \nodecls class throws an \inlinecode{sprockit::unimplemented_error}. These functions are not pure virtual.
@@ -174,7 +174,7 @@ leads to
   switch (func) {
     case sstmac::sw::ami::AMI_COMM_SEND: 
     {
-      network_message::ptr netmsg = ptr_safe_cast(network_message, data);
+      network_message* netmsg = ptr_safe_cast(network_message, data);
       netmsg->set_fromaddr(my_id_);
       if (netmsg->toaddr() == nodeid_) {
       	/* Intranode send */
@@ -199,7 +199,7 @@ For sending messages, the NIC must implement
 
 \begin{CppCode}
   virtual void
-  do_send(const network_message::ptr &payload);
+  do_send(network_message*payload);
 \end{CppCode}
 A non-virtual, top-level \inlinecode{send} function performs operations standard to all NICs.
 Once these operations are complete, the NIC invokes \inlinecode{do_send} to perform model-specific send operations.
@@ -210,7 +210,7 @@ For the bare-bones class \inlinecode{null_nic}, the function is
 \begin{CppCode}
   injector_->handle(msg);
   if (msg->get_needs_ack()) {
-    sst_message::ptr acker = msg->clone_ack();
+    sst_message* acker = msg->clone_ack();
     schedule(now(), parent_node_, acker);
   }
 \end{CppCode}
@@ -223,10 +223,10 @@ For receiving, messages can be moved across the network and delivered in two dif
 \begin{CppCode}
   virtual void
   recv_chunk(const message_chunk::ptr &chunk,
-             const network_message::ptr &parent_msg);
+             network_message*parent_msg);
 
   virtual void
-  recv_whole(const network_message::ptr &msg);
+  recv_whole(network_message*msg);
 \end{CppCode}
 
 Depending on the congestion model, a large message (say a 1 MB MPI message) might be broken up into many packets.
@@ -239,7 +239,7 @@ Again, for the bare-bones class \inlinecode{null_nic}, we have
 \begin{CppCode}
 void
 null_nic::recv_chunk(const message_chunk::ptr &chunk,
-                     const network_message::ptr &parent_msg)
+                     network_message*parent_msg)
 {
   bool complete = completion_queue_.recv(chunk);
   if (complete){
@@ -257,7 +257,7 @@ but it must funnel things through the a common function.
 
 \begin{CppCode}
   virtual void
-  access(const sst_message::ptr& msg);
+  access(sst_message* msg);
 \end{CppCode}
 
 The memory model must handle many different types of messages since so many different devices need to access the memory subsystem.
@@ -273,7 +273,7 @@ should be valid.
 \section{Network Switch}
 
 Unlike the other classes above, a network switch is not required to implement any specific functions.
-It is only required to be an \inlinecode{event_handler}, providing the usual \inlinecode{handle(const sst_message::ptr& msg)}.
+It is only required to be an \inlinecode{event_handler}, providing the usual \inlinecode{handle(sst_message* msg)}.
 The internal details can essentially be arbitrary.
 However, the basic scheme for most switches follows the code below for the simplest \inlinecode{packet_switch} model.
 
@@ -514,7 +514,7 @@ We now query for all possible paths.
 Some network switches (not all) provide functionality to query congestion info.
 
 \begin{CppCode}
-int test_length = rter->get_switch()->get_queue_length(paths[i].outport);
+int test_length = rter->get_switch()->queue_length(paths[i].outport);
 \end{CppCode}
 from which the lowest congestion path can be chosen.
 

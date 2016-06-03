@@ -1,7 +1,7 @@
 #include <sstmac/backends/common/sim_partition.h>
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sstmac/common/sstmac_config.h>
-#include <sprockit/serializer.h>
+#include <sstmac/common/serializable.h>
 #include <sprockit/output.h>
 #include <sprockit/fileio.h>
 #include <fstream>
@@ -101,6 +101,10 @@ parallel_runtime::init_factory_params(sprockit::sim_parameters* params)
 void
 parallel_runtime::init_partition_params(sprockit::sim_parameters *params)
 {
+#if SSTMAC_INTEGRATED_SST_CORE
+  spkt_throw(sprockit::unimplemented_error,
+    "parallel_runtime::init_partition_params: should not be used with integrated core");
+#else
   std::string netname = params->get_param("interconnect");
   if (netname == "simple"){
     sprockit::sim_parameters* subspace = params->get_namespace("topology");
@@ -114,6 +118,7 @@ parallel_runtime::init_partition_params(sprockit::sim_parameters *params)
     }
   }
   part_ = partition_factory::get_optional_param("partition", SSTMAC_DEFAULT_PARTITION_STRING, params, this);
+#endif
 }
 
 void
@@ -140,13 +145,17 @@ parallel_runtime::~parallel_runtime()
 }
 
 void
-parallel_runtime::send_message(int thread_id,
+parallel_runtime::send_event(int thread_id,
   timestamp t,
   topology_id dst,
   event_loc_id src,
   uint32_t seqnum,
-  const sst_message::ptr& msg)
+  event* ev)
 {
+#if SSTMAC_INTEGRATED_SST_CORE
+  spkt_throw_printf(sprockit::unimplemented_error,
+      "parallel_runtime::send_event: should not be called on integrated core");
+#else
   sprockit::serializer ser;
   void* buffer = send_buffer_pools_[thread_id].pop();
   ser.start_packing((char*)buffer, buf_size_);
@@ -154,7 +163,7 @@ parallel_runtime::send_message(int thread_id,
   ser & src;
   ser & seqnum;
   ser & t;
-  ser & msg;
+  ser & ev;
   if (ser.packer().size() > buf_size_){
     spkt_throw_printf(sprockit::value_error,
         "parallel_runtime::send_message:: buffer overrun %d > %d: set param serialization_buffer_size larger",
@@ -165,6 +174,7 @@ parallel_runtime::send_message(int thread_id,
   lock();
   do_send_message(lp, buffer, ser.packer().size());
   unlock();
+#endif
 }
 
 void

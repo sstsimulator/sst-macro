@@ -94,7 +94,7 @@ serial_runtime::send_recv_messages(std::vector<incoming_msg>& incoming)
 }
 
 void
-serial_runtime::send_message(timestamp t, topology_id tid, const sst_message::ptr& msg)
+serial_runtime::send_event(timestamp t, topology_id tid, event* ev)
 {
   spkt_throw_printf(sprockit::illformed_error,
      "serial_runtime::send_message: should not be sending any messages");

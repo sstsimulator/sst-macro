@@ -14,13 +14,11 @@
 
 #include <iostream>
 #include <sstream>
-#include <sprockit/opaque_typedef.h>
 
 namespace sstmac {
 namespace sw {
 
-typedef_opaque_int(thread_id, int);
-implement_opaque_int(thread_id)
+typedef int thread_id;
 
 }
 } // end of namespace sstmac

@@ -29,10 +29,7 @@ class simple_memory_model : public memory_model
   virtual ~simple_memory_model();
 
   virtual void
-  handle(const sst_message::ptr& msg);
-
-  virtual void
-  access(const sst_message::ptr& msg);
+  access(long bytes, double max_bw);
 
   double
   max_single_bw() const {

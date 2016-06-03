@@ -15,7 +15,7 @@
 
 include $(top_srcdir)/Makefile.common
 
-AM_CPPFLAGS += -I$(top_builddir)/dumpi -I$(top_srcdir)/dumpi \
+AM_CPPFLAGS += -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi \
   -I$(srcdir) -I$(top_builddir)/pth -I$(top_srcdir)/pth \
   -I$(top_builddir)/tests -I$(top_srcdir)/tests
 
@@ -30,15 +30,16 @@ endif
 # runtest arguments are:
 #   <timeout, in seconds> <output file> <executable> <arguments passed to executable...>
 PYRUNTEST = $(top_srcdir)/bin/runtest
+PYVALIDATE = $(top_srcdir)/bin/checktest
+NOOP = $(top_srcdir)/bin/noop
 DIFF=diff -u
 if INTEGRATED_SST_CORE
-OUTSUF=sst-out
 SSTMACEXEC = $(top_builddir)/bin/sstmac-check
 else
-OUTSUF=ref-out
 SSTMACEXEC = $(top_builddir)/bin/sstmac
 endif
 CHKSUF=chk-out
+OUTSUF=ref-out
 
 EXTRA_DIST = \
   reference \
@@ -58,14 +59,14 @@ CORE_LIBS += ../sstmac/backends/mpi/libsstmac_mpi_runtime.la
 endif
 
 if EXTERNAL_BOOST
-AM_LDFLAGS = $(BOOST_LDFLAGS)
-AM_LDFLAGS += $(BOOST_REGEX_LIB)
+AM_LDFLAGS += $(BOOST_LDFLAGS)
 endif
 
 
 CORETESTS=
 
 include Makefile.shared_core_tests
+if WITH_DEFAULT_MPI
 include Makefile.api_tests
 if !INTEGRATED_SST_CORE
 include Makefile.check_programs
@@ -76,8 +77,8 @@ include Makefile.unit_tests
 include Makefile.alloc_tests
 include Makefile.external_tests
 include Makefile.skeleton_tests
-include Makefile.tutorial_tests
 include Makefile.core_tests
+endif
 endif
 
 
@@ -108,34 +109,11 @@ else
 CHECK_TESTS += $(APITESTS)
 endif
 
-DIFF_CHECK_TEST_REPORT = $(SSTMACRO_TEST_REPORT_PREFIX)diff-cpp.test_report.xml
+check-local: $(CHECK_TESTS:%=%.$(CHKSUF))
+	$(PYVALIDATE) $+
 
-$(DIFF_CHECK_TEST_REPORT): $(CHECK_TESTS:%=%.$(CHKSUF)) $(CHECK_TESTS:%=reference/%.$(OUTSUF))
-	-$(PERL) $(top_srcdir)/bin/difftoxml.pl \
-		--xmlout $@ \
-		--suitename "diff-cpp" \
-		--outfiledir $(srcdir)/reference \
-    --outsuffix $(OUTSUF) \
-    --chksuffix $(CHKSUF) \
-		--verbose $(CHECK_TESTS)
-
-DIFF_INSTALLCHECK_TEST_REPORT = \
-  $(SSTMACRO_TEST_REPORT_PREFIX)diff-installcheck.test_report.xml
-
-$(DIFF_INSTALLCHECK_TEST_REPORT): $(INSTALLCHECK_TESTS:%=%.$(CHKSUF)) $(INSTALLCHECK_TESTS:%=reference/%.$(OUTSUF))
-	-$(PERL) $(top_srcdir)/bin/difftoxml.pl \
-		--xmlout $@ \
-		--suitename "diff-skeletons" \
-		--outfiledir $(srcdir)/reference \
-	        --outsuffix $(OUTSUF) \
-	        --chksuffix $(CHKSUF) \
-		--verbose $(INSTALLCHECK_TESTS)
-
-check-local: $(DIFF_CHECK_TEST_REPORT) 
-	$(PERL) $(top_srcdir)/bin/counttestresults.pl $^
-
-installcheck-local: $(DIFF_INSTALLCHECK_TEST_REPORT)
-	$(PERL) $(top_srcdir)/bin/counttestresults.pl $^
+installcheck-local: $(INSTALLCHECK_TESTS:%=%.$(CHKSUF))
+	$(PYVALIDATE) $+
 
 #------------------------------------------------------------------------------------------#
 
@@ -143,9 +121,9 @@ installcheck-local: $(DIFF_INSTALLCHECK_TEST_REPORT)
 #  Clean                                                                                {{{#
 #------------------------------------------------------------------------------------------#
 
-clean-local: clean-skeletons clean-tutorials
+clean-local: clean-skeletons 
 	rm -f *.$(CHKSUF)
-	rm -f *.test_report.xml
+	rm -f *.tmp-out
 	rm -f net.dot
 	rm -f callgrind.out
 	rm -f tracer_nodemap.txt
@@ -161,7 +139,5 @@ clean-local: clean-skeletons clean-tutorials
 clean-skeletons:
 	rm -rf skeletons
 
-clean-tutorials:
-	rm -rf tutorials
 
 #------------------------------------------------------------------------------------------#

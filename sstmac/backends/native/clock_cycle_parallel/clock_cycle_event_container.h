@@ -44,7 +44,7 @@ class clock_cycle_event_map :
     event_loc_id dst,
     event_loc_id src,
     uint32_t seqnum,
-    const sst_message::ptr& msg);
+    event* ev);
 
  protected:
   friend class multithreaded_event_container;

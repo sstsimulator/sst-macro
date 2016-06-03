@@ -15,11 +15,6 @@
 namespace sstmac {
 namespace hw {
 
-ImplementEnum(routing_info::metadata_slot);
-RegisterEnum(routing_info::metadata_slot, routing_info::valiant_stage);
-RegisterEnum(routing_info::metadata_slot, routing_info::final_stage);
-RegisterEnum(routing_info::metadata_slot, routing_info::crossed_timeline);
-
 #define enumcase(x) case x: return #x
 
 namespace routing {

@@ -3,23 +3,10 @@
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/common/stats/stat_spyplot.h>
 #include <sprockit/output.h>
+#include <sprockit/util.h>
 
 namespace sstmac {
 namespace hw {
-
-packet_flow_payload::ptr
-packet_flow_MTL::next_chunk(long byte_offset, const sst_message::ptr &parent)
-{
-  long bytes_left = parent->byte_length() - byte_offset;
-  long bytes_to_send = bytes_left > mtu_ ? mtu_ : bytes_left;
-
-  packet_flow_payload::ptr payload = new packet_flow_payload(
-                                         parent,
-                                         bytes_to_send, //only a single message
-                                         byte_offset);
-
-  return payload;
-}
 
 packet_flow_sender::packet_flow_sender(
   const timestamp& send_lat,
@@ -44,11 +31,11 @@ packet_flow_sender::packet_flow_sender() :
 void
 packet_flow_sender::send_credit(
   const packet_flow_input& src,
-  const packet_flow_payload::ptr& payload,
+  packet_flow_payload* payload,
   timestamp credit_leaves)
 {
   int src_vc = payload->vc(); //we have not updated to the new virtual channel
-  packet_flow_credit::ptr credit = new packet_flow_credit(src.src_outport,
+  packet_flow_credit* credit = new packet_flow_credit(src.src_outport,
                                    src_vc, payload->num_bytes());
   //there is a certain minimum latency on credits
   timestamp min_arrival = now() + credit_lat_;
@@ -61,14 +48,14 @@ packet_flow_sender::send_credit(
       src.src_outport, src_vc,
       payload->to_string().c_str(),
       credit_arrival.sec(), credit_lat_.sec(),
-      credit.get());
+      credit);
   schedule(credit_arrival, src.handler, credit);
 }
 
 void
 packet_flow_sender::send(
   packet_flow_bandwidth_arbitrator* arb,
-  const packet_flow_payload::ptr& msg,
+  packet_flow_payload* msg,
   const packet_flow_input& src,
   const packet_flow_output& dest)
 {
@@ -119,12 +106,10 @@ packet_flow_sender::send(
   }
 
   if (acker_ && msg->is_tail()) {
-    network_message::ptr netmsg = ptr_test_cast(network_message, msg->orig());
+    network_message* netmsg = test_cast(network_message, msg->orig());
     if (netmsg && netmsg->needs_ack()) {
-      START_VALID_SCHEDULE(this)
-      network_message::ptr ack = netmsg->clone_injection_ack();
+      network_message* ack = netmsg->clone_injection_ack();
       schedule(packet_tail_leaves, acker_, ack);
-      STOP_VALID_SCHEDULE(this)
     }
   }
 
@@ -144,9 +129,7 @@ packet_flow_sender::send(
   if (update_vc_) msg->update_vc();
 
   timestamp arrival = packet_head_leaves + send_lat_;
-  START_VALID_SCHEDULE(this)
   schedule(arrival, dest.handler, msg);
-  STOP_VALID_SCHEDULE(this)
 }
 
 std::string

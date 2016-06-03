@@ -10,7 +10,7 @@
 #
 include $(top_srcdir)/Makefile.common
 
-AM_CPPFLAGS += -I$(top_srcdir)/tests/mpi/include -Wp,-w -I$(top_builddir)/dumpi -I$(top_srcdir)/dumpi \
+AM_CPPFLAGS += -I$(top_srcdir)/tests/mpi/include -Wp,-w -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi \
   -I$(srcdir) -I$(top_builddir)/pth -I$(top_srcdir)/pth \
   -I$(top_builddir)/tests/api/mpi -I$(top_srcdir)/tests/api/mpi \
   -I$(top_builddir)/tests/api/mpi/include -I$(top_srcdir)/tests/api/mpi/include -DHAVE_MPI_WIN_CREATE
@@ -21,7 +21,7 @@ EXTRA_DIST = testmpi.h include
 if INTEGRATED_SST_CORE
 lib_LTLIBRARIES = libsstmac_api_mpi_test.la
 libsstmac_api_mpi_test_la_SOURCES = testmpi.cc testmpi_eli.cc util/mtest.cc
-libsstmac_api_mpi_test_la_LDFLAGS = -module -shared 
+libsstmac_api_mpi_test_la_LDFLAGS = -module -shared $(PTH_LDFLAGS)
 else
 check_PROGRAMS = testexec
 testexec_SOURCES = exec.cc

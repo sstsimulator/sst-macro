@@ -2,6 +2,7 @@
 #define CONNECTABLE_WRAPPER_H
 
 #include <sstmac/hardware/common/connection.h>
+#include <sprockit/unordered.h>
 #include <sst/core/link.h>
 #include <Python.h>
 
@@ -48,7 +49,7 @@ class integrated_connectable_wrapper
     }
 
     void
-    handle(const sst_message::ptr &msg){
+    handle(event* ev){
       spkt_throw(sprockit::unimplemented_error,
         "integrated_connectable_wrapper::handle: should never be called");
     }

@@ -52,7 +52,7 @@ mpi_ring_allgather::mpi_ring_allgather(mpi_request* thekey,
 // Callback method to indicate that a send operation has completed.
 //
 void
-mpi_ring_allgather::send_complete(const mpi_message::ptr& msg)
+mpi_ring_allgather::send_complete(mpi_message* msg)
 {
   mpi_allgather_debug("send complete to %d, count=%d", int(msg->dest()), msg->count());
   --pending_sends_;
@@ -65,7 +65,7 @@ mpi_ring_allgather::send_complete(const mpi_message::ptr& msg)
 // Callback method to indicate that a receive operation has completed.
 //
 void
-mpi_ring_allgather::recv_complete(const mpi_message::ptr& msg)
+mpi_ring_allgather::recv_complete(mpi_message* msg)
 {
   mpi_allgather_debug("recv complete from %d, count=%d", int(msg->source()), msg->count());
 

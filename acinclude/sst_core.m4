@@ -2,54 +2,70 @@
 AC_DEFUN([CHECK_SST_CORE], [
 
 have_integrated_core="no"
-AC_ARG_WITH([integrated-core],
-    AS_HELP_STRING([--with-integrated-core],
-        [Build shared library compatible with integrated SST core]
+AC_ARG_WITH([sst-core],
+    AS_HELP_STRING([--with-sst-core@<:@=DIR@:>@],
+        [Build shared library compatible with integrated SST core (optional).]
     ), [
-      AC_CONFIG_FILES([skeletons/sst/env.sh skeletons/sst/config.py])
-      AC_CONFIG_FILES([skeletons/sst/run], [chmod +x skeletons/sst/run])
-      AC_CONFIG_FILES([bin/sstmac], [chmod +x bin/sstmac])
-      AC_CONFIG_FILES([bin/sstmac-check], [chmod +x bin/sstmac-check])
-      AC_CONFIG_FILES([tests/api/mpi/testexec], [chmod +x tests/api/mpi/testexec])
-      AC_CONFIG_FILES([tests/api/globals/testexec], [chmod +x tests/api/globals/testexec])
-      AC_DEFINE_UNQUOTED([INTEGRATED_SST_CORE], 1, [Run on integrated SST core])
-      AC_SUBST([sst_prefix], "$withval")
-      AM_CONDITIONAL([INTEGRATED_SST_CORE], true)
       SST="$withval"
-      SST_INCLUDES="-I$SST/include -I$SST/include/sst"  
-      CPPFLAGS="$CPPFLAGS -DSSTMAC_INTEGRATED_SST_CORE=1 $SST_INCLUDES"
-      PY_INCLUDES="`python-config --includes`"
-      CPPFLAGS="$CPPFLAGS $PY_INCLUDES"
-      AC_CHECK_HEADERS([Python.h], [], 
-          [AC_MSG_ERROR([Could not locate Python installation needed by SST core])])
-      AC_CHECK_HEADERS([sst/core/element.h], [],
-          [AC_MSG_ERROR([Could not locate SST core header files at $SST])])
       have_integrated_core="yes"
     ], [
       AC_DEFINE_UNQUOTED([INTEGRATED_SST_CORE], 0, [Do not run on integrated SST core])
       AM_CONDITIONAL([INTEGRATED_SST_CORE], false)
+      have_integrated_core="no"
     ]
 )
 
-have_core_boost="no"
-AC_ARG_WITH([core-boost],
-  AS_HELP_STRING([--with-core-boost],
-      [Build shared library compatible with integrated SST core]
-  ), [
-    CPPFLAGS="$CPPFLAGS -I$withval/include"
-    have_core_boost="yes"
-    AC_CHECK_HEADERS([boost/version.hpp], [],
-        [AC_MSG_ERROR([Could not locate Boost header files for SST core at $withval])])
-  ], [
-    have_core_boost="no"
-  ]
-)
-
-
 if test "X$have_integrated_core" = "Xyes"; then
-  if test "X$have_core_boost" = "Xno"; then
-    AC_MSG_ERROR([Compiling for integrated core, but do not have Boost path. Please specify Boost used by SST core using --with-core-boost])
+  if test "X$HAVE_BOOST" = "Xyes"; then
+    AC_MSG_ERROR([Please don't specify --with-boost when compiling for integrated core, core's boost is automatically used.])
   fi
 fi
 
+if test "X$have_integrated_core" = "Xyes"; then
+  AC_CONFIG_FILES([skeletons/sst/env.sh skeletons/sst/config.py])
+  AC_CONFIG_FILES([skeletons/sst/run], [chmod +x skeletons/sst/run])
+  AC_CONFIG_FILES([bin/sstmac], [chmod +x bin/sstmac])
+  AC_CONFIG_FILES([bin/sstmac-check], [chmod +x bin/sstmac-check])
+  AC_CONFIG_FILES([tests/api/mpi/testexec], [chmod +x tests/api/mpi/testexec])
+  AC_CONFIG_FILES([tests/api/globals/testexec], [chmod +x tests/api/globals/testexec])
+  AC_DEFINE_UNQUOTED([INTEGRATED_SST_CORE], 1, [Run on integrated SST core])
+  AC_SUBST([sst_prefix], "$SST")
+  AM_CONDITIONAL([INTEGRATED_SST_CORE], true)
+  SST_INCLUDES="-I$SST/include -I$SST/include/sst -I$SST/include/sst/core"
+  SST_CPPFLAGS="-DSSTMAC_INTEGRATED_SST_CORE=1 $SST_INCLUDES -D__STDC_FORMAT_MACROS"
+  SAVE_CPPFLAGS="$CPPFLAGS"
+  PY_INCLUDES="`python-config --includes`"
+  SST_CPPFLAGS="$SST_CPPFLAGS $PY_INCLUDES"
+  CPPFLAGS="$CPPFLAGS $SST_CPPFLAGS"
+
+  # We have to use CXXFLAGS from sst-config script
+  SAVE_CXXFLAGS="$CXXFLAGS"
+  SST_CXXFLAGS="`$SST/bin/sst-config --CXXFLAGS`"
+  CXXFLAGS="$CXXFLAGS $SST_CXXFLAGS"
+
+  AC_CHECK_HEADERS([Python.h], [],
+      [AC_MSG_ERROR([Could not locate Python installation needed by SST core])])
+  AC_CHECK_HEADERS([sst/core/element.h], [],
+      [AC_MSG_ERROR([Could not locate SST core header files at $SST])])
+
+  SUMI_CPPFLAGS="$SST_INCLUDES"
+  AC_SUBST(SST_CPPFLAGS)
+  CPPFLAGS="$SAVE_CPPFLAGS"
+  AC_SUBST(SST_CXXFLAGS)
+  CXXFLAGS="$SAVE_CXXFLAGS"
+
+
+  # Already failed if user tried to specify --with-boost.  We insist on using whatever sst-core
+  # was configured with.
+  BOOST_CPPFLAGS="`$SST/bin/sst-config --BOOST_CPPFLAGS`"
+  BOOST_LDFLAGS="`$SST/bin/sst-config --BOOST_LDFLAGS`"
+  AC_SUBST(BOOST_CPPFLAGS)
+  AC_SUBST(BOOST_LDFLAGS)
+  AC_MSG_RESULT([set external boost to true])
+  AM_CONDITIONAL(EXTERNAL_BOOST, true)
+
+  AM_CONDITIONAL([USE_MPIPARALLEL], false)
+fi
+
 ])
+

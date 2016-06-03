@@ -10,18 +10,18 @@
  */
 
 #include <sstmac/hardware/interconnect/interconnect.h>
+#include <sstmac/hardware/node/node.h>
 
 #include <sstmac/common/sstmac_env.h>
-
 #include <sstmac/backends/common/sim_partition.h>
-#include <sstmac/backends/native/node_list.h>
-#include <sstmac/backends/native/manager.h>
+#if !SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/backends/native/event_map.h>
+#endif
+#include <sstmac/backends/native/manager.h>
 #include <sstmac/backends/native/clock_cycle_parallel/clock_cycle_event_container.h>
 #include <sstmac/backends/native/skeleton_app_manager.h>
 
 #include <sstmac/common/runtime.h>
-#include <sstmac/common/vis/vis.h>
 #include <sstmac/common/logger.h>
 
 #include <sstmac/dumpi_util/dumpi_meta.h>
@@ -166,7 +166,7 @@ manager::build_app(int appnum, const std::string& launch_prefix,
 
   app_managers_[appnum] = appman;
   app_starts_[appnum] = start;
-  sstmac_runtime::register_app_manager(aid, appman);
+  runtime::register_app_manager(aid, appman);
 }
 
 void
@@ -186,6 +186,11 @@ manager::build_apps(sprockit::sim_parameters* params)
 manager::~manager() throw ()
 {
   if (interconnect_) delete interconnect_;
+
+  std::map<int, app_manager*>::iterator it, end = app_managers_.end();
+  for (it=app_managers_.begin(); it != end; ++it){
+    delete it->second;
+  }
 }
 
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -229,8 +234,6 @@ macro_manager::init_factory_params(sprockit::sim_parameters* params)
 
   logger::timer_ = event_manager_;
 
-  has_vis_engine_ = params->has_param("vis_engine");
-
   //this should definitely be called last
   manager::init_factory_params(params);
 }
@@ -239,15 +242,6 @@ void
 macro_manager::start()
 {
   launch_apps();
-
-  // Setup the simulation before starting
-  if (has_vis_engine_) {
-    vis::vis_display* visd = test_cast(vis::vis_display, interconnect_);
-    if (visd) {
-      visd->vis_start(true);
-      std::cout << "--- Starting visualizer.\n";
-    }
-  }
 }
 
 //
@@ -276,17 +270,9 @@ macro_manager::run(timestamp until)
 void
 macro_manager::stop()
 {
-  if (has_vis_engine_){
-    vis::vis_display* visd = test_cast(vis::vis_display, interconnect_);
-    if (visd){
-      std::cout << "--- Closing vsisualizer.\n";
-      visd->vis_complete();
-    }
-  }
-
   event_manager::global = 0;
 
-  sstmac_runtime::finish();
+  runtime::finish();
 }
 
 macro_manager::macro_manager(parallel_runtime* rt) :
@@ -313,7 +299,7 @@ macro_manager::launch_app(int appnum, timestamp start, sw::app_manager* appman)
   sstmac::sw::app_id aid(appnum);
   for (int i=0; i < appman->nproc(); ++i) {
     node_id dst_nid = appman->node_assignment(i);
-    sstmac_runtime::register_node(aid, task_id(i), dst_nid);
+    runtime::register_node(aid, task_id(i), dst_nid);
 
     hw::node* dst_node = interconnect_->node_at(dst_nid);
     if (!dst_node) {
@@ -321,7 +307,7 @@ macro_manager::launch_app(int appnum, timestamp start, sw::app_manager* appman)
       continue;
     }
 
-    sw::launch_message::ptr lmsg = new launch_message(linfo, sw::launch_message::ARRIVE, task_id(i));
+    sw::launch_message* lmsg = new launch_message(linfo, sw::launch_message::ARRIVE, task_id(i));
 
     dst_node->launch(start, lmsg);
 

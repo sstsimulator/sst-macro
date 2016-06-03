@@ -70,7 +70,7 @@ The only method that must be implemented is
 
 \begin{CppCode}
 void
-handle(const sst_message::ptr& msg);
+handle(sst_message* msg);
 \end{CppCode}
 The function is the common interface for numerous different operations from network injection to memory access to MPI operations.
 In general, objects have two ``directions'' for the action - send or receive.
@@ -86,7 +86,7 @@ In most cases, events are created by calling the function
 void
 schedule(const timestamp &t,
   event_handler* handler,
-  const sst_message::ptr& msg);
+  sst_message* msg);
 \end{CppCode}
 
 This then creates a class of type \inlinecode{handler_event}, for which the execute function is

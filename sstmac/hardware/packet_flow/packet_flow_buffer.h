@@ -14,12 +14,14 @@ class packet_flow_buffer :
 {
 
  public:
+  virtual ~packet_flow_buffer();
+
   virtual void
   set_output(int this_outport, int dst_inport,
     event_handler* output);
 
   virtual int
-  get_queue_length() const {
+  queue_length() const {
     return 0;
   }
 
@@ -33,14 +35,20 @@ class packet_flow_buffer :
     return input_.handler->event_location();
   }
 
+
+
  protected:
+  /**
+   * @param send_lat
+   * @param credit_lat
+   * @param arb An arbitrator with outgoing bw already initialized
+   */
   packet_flow_buffer(
-    double out_bw,
     const timestamp& send_lat,
     const timestamp& credit_lat,
     packet_flow_bandwidth_arbitrator* arb);
 
-  packet_flow_buffer() : bytes_delayed_(0) {}
+  packet_flow_buffer() : bytes_delayed_(0), arb_(0) {}
 
   std::string
   buffer_string(const char* name) const;
@@ -59,6 +67,8 @@ class packet_flow_finite_buffer :
   public packet_flow_buffer
 {
  public:
+  virtual ~packet_flow_finite_buffer(){}
+
   virtual void
   set_input(int this_inport, int src_outport,
             event_handler* input);
@@ -77,13 +87,12 @@ class packet_flow_finite_buffer :
   long size_bytes_;
 
   packet_flow_finite_buffer(
-    double out_bw,
     const timestamp& send_lat,
     const timestamp& credit_lat,
     int max_num_bytes,
     packet_flow_bandwidth_arbitrator* arb) :
       size_bytes_(max_num_bytes),
-      packet_flow_buffer(out_bw, send_lat, credit_lat, arb)
+      packet_flow_buffer(send_lat, credit_lat, arb)
   {
   }
 
@@ -96,14 +105,15 @@ class packet_flow_infinite_buffer :
 {
  protected:
   packet_flow_infinite_buffer(
-    double out_bw,
     const timestamp& send_lat,
     packet_flow_bandwidth_arbitrator* arb):
-   packet_flow_buffer(out_bw, send_lat, timestamp(0), arb)
+   packet_flow_buffer(send_lat, timestamp(0), arb)
   {
   }
 
   packet_flow_infinite_buffer(){}
+
+  virtual ~packet_flow_infinite_buffer(){}
 
   void //no-op, I don't need to send credits to an input, I'm infinite
   set_input(int my_inport, int dst_outport, event_handler *input){}
@@ -120,12 +130,14 @@ class packet_flow_network_buffer :
   packet_flow_network_buffer() {}
 
   packet_flow_network_buffer(
-    double out_bw,
     const timestamp& send_lat,
     const timestamp& credit_lat,
     int max_num_bytes,
     int num_vc,
+    int packet_size,
     packet_flow_bandwidth_arbitrator* arb);
+
+  virtual ~packet_flow_network_buffer(){}
 
   int
   queue_length() const;
@@ -133,14 +145,11 @@ class packet_flow_network_buffer :
   void
   init_credits(int port, int num_credits);
 
-  virtual void
-  start(const sst_message::ptr& msg);
+  void
+  handle_credit(packet_flow_credit* msg);
 
   void
-  handle_credit(const packet_flow_credit::ptr& msg);
-
-  void
-  do_handle_payload(const packet_flow_payload::ptr& msg);
+  do_handle_payload(packet_flow_payload* msg);
 
   std::string
   packet_flow_name() const {
@@ -155,7 +164,7 @@ class packet_flow_network_buffer :
 
   void deadlock_check();
 
-  void deadlock_check(const sst_message::ptr &msg);
+  void deadlock_check(message*msg);
 
  protected:
   int num_vc_;
@@ -167,9 +176,10 @@ class packet_flow_network_buffer :
 
  private:
   std::set<int> deadlocked_channels_;
-  std::map<int, std::list<packet_flow_payload::ptr> > blocked_messages_;
+  std::map<int, std::list<packet_flow_payload*> > blocked_messages_;
   bool queue_depth_reporting_;
   int queue_depth_delta_;
+  int packet_size_;
 };
 
 class packet_flow_eject_buffer :
@@ -177,7 +187,6 @@ class packet_flow_eject_buffer :
 {
  public:
   packet_flow_eject_buffer(
-    double out_bw,
     const timestamp& send_lat,
     const timestamp& credit_lat,
     int max_num_bytes,
@@ -186,16 +195,13 @@ class packet_flow_eject_buffer :
   packet_flow_eject_buffer() {}
 
   void
-  handle_credit(const packet_flow_credit::ptr& msg);
+  handle_credit(packet_flow_credit* msg);
 
   void
-  return_credit(const message_chunk::ptr& msg);
+  return_credit(packet* msg);
 
   void
-  start(const sst_message::ptr& msg);
-
-  void
-  do_handle_payload(const packet_flow_payload::ptr& msg);
+  do_handle_payload(packet_flow_payload* msg);
 
   std::string
   packet_flow_name() const {
@@ -212,24 +218,26 @@ class packet_flow_injection_buffer :
 {
  public:
   packet_flow_injection_buffer(
-    double out_bw,
     const timestamp& out_lat,
-    packet_flow_bandwidth_arbitrator* arb);
-
-  virtual void
-  start(const sst_message::ptr& msg);
+    packet_flow_bandwidth_arbitrator* arb,
+    int packet_size);
 
   int
-  get_queue_length() const;
+  queue_length() const;
 
   void
   init_credits(int port, int num_credits);
 
-  void
-  handle_credit(const packet_flow_credit::ptr& msg);
+  bool
+  space_to_send(int bytes) const {
+    return credits_ >= bytes;
+  }
 
   void
-  do_handle_payload(const packet_flow_payload::ptr& msg);
+  handle_credit(packet_flow_credit* msg);
+
+  void
+  do_handle_payload(packet_flow_payload* msg);
 
   std::string
   packet_flow_name() const {
@@ -237,19 +245,11 @@ class packet_flow_injection_buffer :
   }
 
  protected:
-  struct pending_send{
-    sst_message::ptr msg;
-    long bytes_left;
-    long offset;
-  };
+  int packet_size_;
 
-  std::list<pending_send> pending_;
   long credits_;
 
   packet_flow_injection_buffer() {}
-
-  void
-  send_what_you_can();
 
 };
 

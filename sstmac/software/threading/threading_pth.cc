@@ -2,8 +2,6 @@
 #include <sstmac/common/thread_info.h>
 #include <sprockit/errors.h>
 
-#ifdef SSTMAC_HAVE_PTH
-
 namespace sstmac {
 namespace sw {
 
@@ -63,4 +61,3 @@ threading_pth::swap_context(threading_interface *to) {
 
 } }
 
-#endif

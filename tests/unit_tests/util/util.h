@@ -39,7 +39,7 @@ class ClassOutput<sstmac::hw::coordinates>
 sstmac::node_id
 naddr(long nid);
 
-sstmac::hw::packet_flow_payload::ptr
+sstmac::hw::packet_flow_payload*
 msg(long nid);
 
 sstmac::hw::coordinates

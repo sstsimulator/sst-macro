@@ -156,14 +156,14 @@ class event_manager :
     event_loc_id dst,
     event_loc_id src,
     uint32_t seqnum,
-    const sst_message_ptr& msg);
+    event* ev);
 
   virtual void
   multithread_schedule(
     int srcthread,
     int dstthread,
     uint32_t seqnum,
-    event* ev);
+    event_queue_entry* ev);
 
   virtual int
   lpid() const {
@@ -234,7 +234,7 @@ class event_manager :
 
  private:
   virtual void
-  schedule(timestamp start_time, uint32_t seqnum, event* event) = 0;
+  schedule(timestamp start_time, uint32_t seqnum, event_queue_entry* event_queue_entry) = 0;
 
 };
 

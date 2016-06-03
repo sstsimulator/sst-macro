@@ -1,89 +1,74 @@
 #include <sstmac/hardware/packet_flow/packet_flow_memory_model.h>
 #include <sstmac/hardware/node/node.h>
-#include <sstmac/software/libraries/compute/compute_message.h>
+#include <sstmac/software/libraries/compute/compute_event.h>
+#include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/runtime.h>
+#include <sstmac/common/event_callback.h>
 #include <sprockit/sim_parameters.h>
+#include <sprockit/util.h>
+
+MakeDebugSlot(packet_flow_memory)
+
+#define debug(...) debug_printf(sprockit::dbg::packet_flow_memory, __VA_ARGS__)
 
 namespace sstmac {
 namespace hw {
 
 SpktRegister("packet_flow", memory_model, packet_flow_memory_model);
 
-//int packet_flow_memory_model::mtu_;
-
-packet_flow_memory_system::packet_flow_memory_system(int mtu, node* parent) :
-  packet_flow_MTL(mtu),
+packet_flow_memory_packetizer::packet_flow_memory_packetizer() :
+  arb_(0),
   bw_noise_(0),
   interval_noise_(0),
-  num_noisy_intervals_(0),
-  parent_node_(parent)
+  num_noisy_intervals_(0)
 {
-  int num_channels = 4;
-  pending_.resize(num_channels);
-  for (int i=0; i < num_channels; ++i){
-    channels_available_.push_back(i);
-  }
 }
 
 void
-packet_flow_memory_system::init_params(sprockit::sim_parameters *params)
+packet_flow_memory_packetizer::init_factory_params(sprockit::sim_parameters *params)
 {
+  if (!params->has_param("packet_size"))
+    params->add_param("packet_size", "100GB");
+  packet_flow_packetizer::init_factory_params(params);
   max_single_bw_ = params->get_bandwidth_param("max_single_bandwidth");
   max_bw_ = params->get_bandwidth_param("total_bandwidth");
   latency_ = params->get_time_param("latency");
-  arb_ = packet_flow_bandwidth_arbitrator_factory::get_optional_param(
-        "arbitrator", "cut_through", params);
-  endpoint_ = packet_flow_endpoint_factory::get_optional_param(
-    "arbitrator", "cut_through", params);
+  arb_ = packet_flow_bandwidth_arbitrator_factory::get_value("cut_through", params);
 }
 
 void
-packet_flow_memory_system::set_event_parent(event_scheduler *m)
-{
-  endpoint_->set_event_parent(m);
-  packet_flow_sender::set_event_parent(m);
-}
-
-void
-packet_flow_memory_system::finalize_init()
+packet_flow_memory_packetizer::finalize_init()
 {
   //in and out ar the same
   arb_->set_outgoing_bw(max_bw_);
   init_noise_model();
-  endpoint_->set_exit(parent_node_);
-  endpoint_->init_param1(parent_node_->addr());
-  init_loc_id(event_loc_id(parent_node_->addr()));
 }
 
-void
-packet_flow_memory_system::init_noise_model()
+packet_flow_memory_packetizer::~packet_flow_memory_packetizer()
 {
-  if (bw_noise_){
-    arb_->partition(interval_noise_, num_noisy_intervals_);
-    arb_->init_noise_model(bw_noise_);
-  }
-}
-
-int
-packet_flow_memory_system::num_initial_credits() const
-{
-  spkt_throw_printf(sprockit::value_error,
-    "packet_flow_memory_model::num_initial_credits: should never be called");
+  if (arb_) delete arb_;
 }
 
 void
 packet_flow_memory_model::init_factory_params(sprockit::sim_parameters *params)
 {
+  nchannels_ = 4;
+  for (int i=0; i < nchannels_; ++i){
+    channels_available_.push_back(i);
+  }
+
   memory_model::init_factory_params(params);
-  int mtu = params->get_optional_int_param("mtu", 1<<30); //Defaults to huge value
   max_single_bw_ = params->get_bandwidth_param("max_single_bandwidth");
-  mem_sys_ = new packet_flow_memory_system(mtu, parent_node_);
-  mem_sys_->init_params(params);
-  mem_sys_->finalize_init();
+  mem_packetizer_ = new packet_flow_memory_packetizer;
+  mem_packetizer_->init_factory_params(params);
+  mem_packetizer_->finalize_init();
+
+  mem_packetizer_->setNotify(this);
 }
 
 packet_flow_memory_model::~packet_flow_memory_model()
 {
+  if (mem_packetizer_) delete mem_packetizer_;
 }
 
 void
@@ -96,28 +81,44 @@ void
 packet_flow_memory_model::set_event_parent(event_scheduler* m)
 {
   memory_model::set_event_parent(m);
-  mem_sys_->set_event_parent(m);
+  mem_packetizer_->set_event_parent(m);
 }
 
 void
-packet_flow_memory_model::access(const sst_message::ptr& msg)
+packet_flow_memory_model::access(long bytes, double max_bw)
 {
-  sw::compute_message::ptr cmsg = ptr_safe_cast(sw::compute_message, msg);
-  cmsg->set_access_id(parent_node_->allocate_unique_id());
-  mem_sys_->mtl_send(msg);
+  sw::key* k = sw::key::construct();
+  memory_message* msg = new memory_message(bytes, parent_node_->allocate_unique_id(), max_bw);
+  pending_requests_[msg] = k;
+
+  int channel = allocate_channel();
+  mem_packetizer_->start(channel, msg);
+  parent_node_->os()->block(k);
+
+}
+
+void
+packet_flow_memory_model::notify(int vn, message* msg)
+{
+  debug("finished access %lu on vn %d", msg->unique_id(), vn);
+
+  sw::key* k = pending_requests_[msg];
+  pending_requests_.erase(msg);
+  parent_node_->os()->unblock(k);
+  delete k;
+  channels_available_.push_front(vn);
 }
 
 int
-packet_flow_memory_system::allocate_channel()
+packet_flow_memory_model::allocate_channel()
 {
   if (channels_available_.empty()){
-    int oldsize = pending_.size();
     //double size of pending
-    int newsize = oldsize*2;
-    pending_.resize(newsize);
-    for (int i=oldsize; i != newsize; ++i){
+    int newsize = nchannels_*2;
+    for (int i=nchannels_; i != newsize; ++i){
       channels_available_.push_back(i);
     }
+    nchannels_ = newsize;
   }
   int channel = channels_available_.front();
   channels_available_.pop_front();
@@ -125,103 +126,65 @@ packet_flow_memory_system::allocate_channel()
 }
 
 void
-packet_flow_memory_system::mtl_send(const sst_message::ptr &msg)
+packet_flow_memory_packetizer::init_noise_model()
 {
-  sw::compute_message::ptr cmsg = ptr_safe_cast(sw::compute_message, msg);
-  packet_flow_payload::ptr payload = next_chunk(0L, cmsg);
-  if (cmsg->max_bw() != 0){
-    payload->set_bw(cmsg->max_bw());
+  if (bw_noise_){
+    arb_->partition(interval_noise_, num_noisy_intervals_);
+    arb_->init_noise_model(bw_noise_);
   }
-
-  if (!payload->is_tail()){
-    int channel = allocate_channel();
-    payload->set_inport(channel);
-    //not quite done - need to wait for credits to send the rest of this
-    pending_msg& p = pending_[channel];
-    p.byte_offset = payload->num_bytes();
-    p.msg = cmsg;
-    debug_printf(sprockit::dbg::packet_flow,
-      "memory starting payload %s for compute message of size %d on channel %d at byte offset %d\n",
-      payload->to_string().c_str(), cmsg->byte_length(), channel, p.byte_offset);
-  }
-
-  handle_payload(payload);
 }
+
 void
-packet_flow_memory_system::do_handle_payload(const packet_flow_payload::ptr& msg)
+packet_flow_memory_packetizer::inject(int vn, long bytes, long byte_offset, message* msg)
+{
+  packet_flow_payload* payload = new packet_flow_payload(
+                                         msg,
+                                         bytes, //only a single message
+                                         byte_offset);
+  payload->set_inport(vn);
+  memory_message* orig = safe_cast(memory_message, msg);
+  if (orig->max_bw() != 0){
+    payload->set_bw(orig->max_bw());
+  }
+
+  debug("injecting %s on vn %d", payload->to_string().c_str(), vn);
+
+  handle_payload(vn, payload);
+}
+
+void
+packet_flow_memory_packetizer::handle_payload(int vn, packet_flow_payload* pkt)
 {
   //set the bandwidth to the max single bw
-  msg->init_bw(max_single_bw_);
+  pkt->init_bw(max_single_bw_);
+  pkt->set_arrival(now().sec());
   timestamp packet_head_leaves;
   timestamp packet_tail_leaves;
   timestamp credit_leaves;
-  arb_->arbitrate(now(), msg, packet_head_leaves, packet_tail_leaves, credit_leaves);
-  timestamp finish = packet_head_leaves + latency_;
+  arb_->arbitrate(now(), pkt, packet_head_leaves, packet_tail_leaves, credit_leaves);
 
-  send_to_endpoint(finish, msg);
+  debug("memory packet %s leaving on vn %d at t=%8.4e",
+    pkt->to_string().c_str(), vn, packet_tail_leaves.sec());
+
+  send_self_event_queue(packet_tail_leaves,
+    new_event(this, &packetizer::packetArrived, vn, pkt));
 
   //might need to send some credits back
-  if (!msg->is_tail()){
+  if (!pkt->is_tail()){
     int ignore_vc = -1;
-    packet_flow_credit::ptr credit = new packet_flow_credit(msg->inport(), ignore_vc, msg->num_bytes());
+    packet_flow_credit* credit = new packet_flow_credit(vn, ignore_vc, pkt->num_bytes());
     //here we do not optimistically send credits = only when the packet leaves
-    packet_flow_handler::send_self_message(packet_tail_leaves, credit);
+    send_self_event(packet_tail_leaves, credit);
   }
 }
 
 void
-packet_flow_memory_system::send_to_endpoint(timestamp finish, const packet_flow_payload::ptr& msg)
+packet_flow_memory_packetizer::recv_credit(packet_flow_credit* msg)
 {
-  SCHEDULE(finish, endpoint_, msg);
-}
+  debug("got credit %s on vn %d", msg->to_string().c_str(), msg->port());
 
-void
-packet_flow_memory_system::set_input(int my_inport, int dst_outport, event_handler* input)
-{
-
-}
-
-void
-packet_flow_memory_system::set_output(int my_outport, int dst_inport, event_handler* output)
-{
-}
-
-void
-packet_flow_memory_system::init_credits(int port, int num_credits)
-{
-}
-
-void
-packet_flow_memory_system::handle_credit(const packet_flow_credit::ptr& msg)
-{
   int channel = msg->port();
-  pending_msg& p = pending_[channel];
-
-  //printf("Handling credit of size %d for channel %d\n",
-  //    msg->num_credits(), channel);
-
-  packet_flow_payload::ptr payload = next_chunk(p.byte_offset, p.msg);
-  if (p.msg->max_bw() != 0){
-    payload->set_bw(p.msg->max_bw());
-  }
-
-  payload->set_inport(channel);
-  p.byte_offset += payload->num_bytes();
-
-  //printf("Handling payload of size %d for message of size %d on channel %d at byte offset %d\n",
-  //  payload->num_bytes(), p.msg->byte_length(), channel, p.byte_offset);
-
-  if (p.byte_offset == p.msg->byte_length()){
-    //whole message has been sent
-    //channel is available
-    channels_available_.push_back(channel);
-    //and clear the pending message
-    p.byte_offset = 0;
-    p.msg = 0;
-  }
-
-
-  handle_payload(payload);
+  sendWhatYouCan(channel);
 }
 
 }

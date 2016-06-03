@@ -226,7 +226,7 @@ structured_topology::build_interface_connectables(
         if (interf_offset == 0){
           top_debug("Adding NIC %d connected to switch %d on rank %d",
             int(my_id), i, my_rank);
-          params->add_param_override("id", my_id);
+          params->add_param_override("id", int(my_id));
           connectables[my_id] = nic_factory->build(params, interconnect);
         }
       }
@@ -248,7 +248,7 @@ structured_topology::build_endpoint_connectables(
       std::vector<node_id> nodes = nodes_connected_to_switch(switch_id(i));
       for (int n=0; n < nodes.size(); ++n){
         node_id nid = nodes[n];
-        params->add_param_override("id", nid);
+        params->add_param_override("id", int(nid));
         connectables[nid] = factory->build(params);
       }
     }

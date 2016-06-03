@@ -13,7 +13,6 @@
 #include <sstmac/libraries/mpi/mpi_strategies/mpi_collective/engines/mpi_bruck_allgather.h>
 #include <sstmac/libraries/mpi/mpi_strategies/mpi_collective/engines/mpi_ring_allgather.h>
 #include <sstmac/libraries/mpi/mpi_queue/mpi_queue.h>
-#include <sstmac/software/libraries/unblock_handler.h>
 
 ImplementFactory(sstmac::sw::mpi_allgather_strategy);
 

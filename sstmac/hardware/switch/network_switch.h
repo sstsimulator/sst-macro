@@ -16,13 +16,10 @@
 
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
-#include <sstmac/common/vis/vis.h>
 
 #include <sstmac/hardware/common/connection.h>
-#include <sstmac/hardware/common/clonable.h>
 #include <sstmac/hardware/router/router_fwd.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
-#include <sstmac/hardware/nic/network_endpoint.h>
 #include <sprockit/sim_parameters_fwd.h>
 
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -38,8 +35,7 @@ namespace hw {
 
 class network_switch :
   public connectable_component,
-  public sprockit::factory_type,
-  public vis::vis_comp
+  public sprockit::factory_type
 {
  public:
   std::string
@@ -97,13 +93,7 @@ class network_switch :
   set_topology(topology* top);
 
   virtual int
-  queue_length(int port) const {
-    return 0;
-  }
-
-  virtual void
-  vis_update(const timestamp &per) {
-  }
+  queue_length(int port) const = 0;
 
   /**
     @param addr The destination node addr to eject to
@@ -143,12 +133,11 @@ class network_switch :
 
   virtual void
   set_event_manager(event_manager* m);
-
- protected:
 #if !SSTMAC_INTEGRATED_SST_CORE
+  protected:
   network_switch();
 #endif
-
+ protected:
   virtual void
   connect_injector(int src_outport, int dst_inport, event_handler* nic) = 0;
 

@@ -1,12 +1,13 @@
 #include <sstmac/libraries/mpi/mpi_strategies/mpi_collective/mpi_collective_recver.h>
+#include <sprockit/util.h>
 
 namespace sstmac {
 namespace sw {
 
 void
-mpi_collective::recver::handle(const sst_message::ptr& msg)
+mpi_collective::recver::handle(event* ev)
 {
-  mpi_message::ptr mmsg = ptr_safe_cast(mpi_message, msg);
+  mpi_message* mmsg = safe_cast(mpi_message, ev);
   parent_->recv_complete(mmsg);
 }
 

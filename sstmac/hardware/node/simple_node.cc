@@ -12,13 +12,12 @@
 #include <sstmac/hardware/node/simple_node.h>
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/memory/memory_model.h>
+#include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/processor/processor.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/launch/machine_descriptor.h>
 #include <sstmac/software/launch/launcher.h>
-
-#include <sstmac/common/messages/timed_message.h>
-
+#include <sstmac/common/messages/timed_event.h>
 
 #include <sprockit/errors.h>
 #include <sprockit/util.h>
@@ -26,8 +25,8 @@
 #include <iostream>
 
 namespace sstmac {
-
 namespace hw {
+
 #if !SSTMAC_INTEGRATED_SST_CORE
 SpktRegister("simple | simplenode", node, simple_node,
             "Simple node which implements basic OS/compute scheduling functionality");
@@ -54,7 +53,21 @@ simple_node::finalize_init()
   node::finalize_init();
 }
 
-#if !SSTMAC_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
+simple_node::simple_node(
+  SST::ComponentId_t id,
+  SST::Params& params) : node(id, params)
+{
+  init_factory_params(params_);
+  init_sst_params(params);
+}
+
+void
+simple_node::init_sst_params(SST::Params &params)
+{
+  nic_->init_sst_params(params, this);
+}
+#else
 void
 simple_node::set_event_manager(event_manager* m)
 {
@@ -64,11 +77,11 @@ simple_node::set_event_manager(event_manager* m)
 
 void
 simple_node::execute_kernel(ami::COMM_FUNC func,
-                            const sst_message::ptr& data)
+                            message* data)
 {
   switch (func) {
     case sstmac::ami::COMM_SEND: {
-      network_message::ptr netmsg = ptr_safe_cast(network_message, data);
+      network_message* netmsg = safe_cast(network_message, data);
       netmsg->set_fromaddr(my_addr_);
       node_debug("sending to %d", int(netmsg->toaddr()));
       send_to_nic(netmsg);
@@ -83,7 +96,7 @@ simple_node::execute_kernel(ami::COMM_FUNC func,
 
 bool
 simple_node::try_comp_kernels(ami::COMP_FUNC func,
-                              const sst_message::ptr& data)
+                              event* data)
 {
   bool handled = true;
 
@@ -91,17 +104,6 @@ simple_node::try_comp_kernels(ami::COMP_FUNC func,
     case sstmac::ami::COMP_INSTR:
     case sstmac::ami::COMP_TIME: {
       proc_->compute(data);
-      break;
-    }
-
-    case sstmac::ami::COMP_MEM: {
-      mem_model_->access(data);
-      break;
-    }
-
-    case sstmac::ami::COMP_SLEEP: {
-      timestamp delay = ptr_interface_cast(timed_interface, data)->time();
-      send_delayed_self_message(delay, data);
       break;
     }
     default:
@@ -113,7 +115,7 @@ simple_node::try_comp_kernels(ami::COMP_FUNC func,
 
 void
 simple_node::execute_kernel(ami::COMP_FUNC func,
-                            const sst_message::ptr& data)
+                            event* data)
 {
   bool hand = try_comp_kernels(func, data);
   if (!hand) {
@@ -127,9 +129,7 @@ simple_node::kernel_supported(ami::COMP_FUNC func) const
 {
   switch (func) {
     case sstmac::ami::COMP_TIME:
-    case sstmac::ami::COMP_SLEEP:
     case sstmac::ami::COMP_INSTR:
-    case sstmac::ami::COMP_MEM:
       return true;
     default:
       return false;

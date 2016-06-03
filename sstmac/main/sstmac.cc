@@ -75,12 +75,8 @@ static void
 print_finish(std::ostream& os, double wall_time)
 {
 #if SSTMAC_REPO_BUILD
-  os << sprockit::printf("SUMI   repo:   %s\n", sumi_REPO_HEADER);
-  os << sprockit::printf("Sprockit repo:   %s\n", sprockit_REPO_HEADER);
   os << sprockit::printf("SSTMAC   repo:   %s\n", sstmac_REPO_HEADER);
 #else
-  os << sprockit::printf("SUMI   %s\n", SUMI_VERSION);
-  os << sprockit::printf("Sprockit %s\n", SPKT_VERSION);
   os << sprockit::printf("SSTMAC   %s\n", SSTMAC_VERSION);
 #endif
   os << sprockit::printf("SST/macro ran for %12.4f seconds\n", wall_time);
@@ -89,6 +85,10 @@ print_finish(std::ostream& os, double wall_time)
 parallel_runtime*
 init()
 {
+#if SSTMAC_INTEGRATED_SST_CORE
+  spkt_throw(sprockit::unimplemented_error,
+    "parallel_runtime* init: should not be called in integrated core");
+#else
   //create a set of parameters from env variables
   //this is best way to piggy-back on process manager to configure things
   //in a parallel environment
@@ -113,6 +113,7 @@ init()
   parallel_runtime* rt = parallel_runtime_factory::get_param("runtime", &cmdline_params);
 
   return rt;
+#endif
 }
 
 void
@@ -227,7 +228,7 @@ run(opts& oo,
     fflush(stderr);
 
     mgr->interconn()->deadlock_check();
-    sstmac_runtime::check_deadlock();
+    runtime::check_deadlock();
 
     mgr->finish();
 

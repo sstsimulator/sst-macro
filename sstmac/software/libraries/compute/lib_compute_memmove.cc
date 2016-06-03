@@ -13,7 +13,7 @@
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/libraries/compute/lib_compute_memmove.h>
 #include <sstmac/software/libraries/compute/lib_compute_inst.h>
-#include <sstmac/software/libraries/compute/compute_message.h>
+#include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/common/event_callback.h>
 #include <sprockit/sim_parameters.h>
 
@@ -98,7 +98,7 @@ lib_compute_memmove::consume_params(sprockit::sim_parameters* params)
 bool
 lib_compute_memmove::supported() const
 {
-  return os_->kernel_supported(ami::COMP_MEM);
+  return os_->kernel_supported(ami::COMP_INSTR);
 }
 
 }

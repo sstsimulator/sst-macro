@@ -116,6 +116,7 @@ int redscat2( int argc, char **argv )
 
         free(recvbuf);
         free(sendbuf);
+        free(recvcounts);
     }
 
     MPI_Op_free(&left_op);

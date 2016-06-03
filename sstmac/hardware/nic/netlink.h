@@ -5,7 +5,6 @@
 #include <sprockit/sim_parameters_fwd.h>
 #include <sstmac/hardware/common/connection.h>
 #include <sstmac/common/node_address.h>
-#include <sstmac/hardware/nic/network_endpoint.h>
 
 namespace sstmac {
 namespace hw {

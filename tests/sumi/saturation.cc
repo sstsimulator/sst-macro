@@ -7,9 +7,9 @@
 #include <sumi/transport.h>
 #include <sstmac/libraries/sumi/sumi_api.h>
 #include <sstmac/libraries/sumi/sumi_thread.h>
+#include <sstmac/libraries/sumi/sumi.h>
 #include <sstmac/hardware/topology/traffic/traffic.h>
 #include <sstmac/hardware/topology/topology.h>
-#include <sst/sumi_api.h>
 
 using namespace sumi;
 using sstmac::timestamp;

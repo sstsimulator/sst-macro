@@ -7,8 +7,12 @@ if INTEGRATED_SST_CORE
 CORE_TEST_DEPS += ../sstmac/install/libmacro.la
 endif
 
+if WITH_DEFAULT_MPI
 CORETESTS+= \
-  test_core_apps_mpi_immediate_send_pflow \
+  test_core_apps_mpi_fattree 
+endif
+
+CORETESTS+= \
   test_core_apps_ping_all_null_arb \
   test_core_apps_ping_all_torus_pflow_minad \
   test_core_apps_ping_all_torus_pflow \
@@ -19,14 +23,18 @@ CORETESTS+= \
   test_core_apps_ping_all_hypercube \
   test_core_apps_ping_all_dragonfly \
   test_core_apps_ping_all_dragonfly_valiant  \
-  test_core_apps_mpi_fattree \
   test_core_apps_ping_all_fattree2 \
   test_core_apps_ping_all_fattree4 \
   test_core_apps_ping_all_crossbar \
   test_core_apps_ping_all_fbfly \
   test_core_apps_ping_all_crossbar_valiant 
 
-test_core_apps_%.$(CHKSUF): $(CORE_TEST_DEPS)
-	$(PYRUNTEST) 10 $@ $(MPI_LAUNCHER) $(SSTMACEXEC) -f $(srcdir)/test_configs/test_$*.ini --no-wall-time $(THREAD_ARGS)
+test_core_apps_mpi_%.$(CHKSUF): $(CORE_TEST_DEPS)
+	$(PYRUNTEST) 10 $(top_srcdir) $@ 't > 4 and t< 4.2' \
+    $(MPI_LAUNCHER) $(SSTMACEXEC) -f $(srcdir)/test_configs/test_mpi_$*.ini --no-wall-time $(THREAD_ARGS)
+
+test_core_apps_ping_%.$(CHKSUF): $(CORE_TEST_DEPS)
+	$(PYRUNTEST) 10 $(top_srcdir) $@ 't > 5 and t < 5.2' \
+    $(MPI_LAUNCHER) $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_$*.ini --no-wall-time $(THREAD_ARGS)
 	
 

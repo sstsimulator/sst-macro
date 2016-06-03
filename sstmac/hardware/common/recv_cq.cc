@@ -1,5 +1,6 @@
-#include <sstmac/common/messages/message_chunk.h>
+#include <sstmac/hardware/common/packet.h>
 #include <sstmac/hardware/common/recv_cq.h>
+#include <sstmac/common/messages/sst_message.h>
 #include <sprockit/output.h>
 
 namespace sstmac {
@@ -20,32 +21,23 @@ recv_cq::print()
   }
 }
 
-sst_message::ptr
-recv_cq::recv(const message_chunk::ptr& packet)
+message*
+recv_cq::recv(uint64_t unique_id, int bytes, message* orig)
 {
-  incoming_msg& incoming  = bytes_recved_[packet->unique_id()];
-  incoming.bytes_arrived += packet->byte_length();
-
+  incoming_msg& incoming  = bytes_recved_[unique_id];
 #if SSTMAC_SANITY_CHECK
-  if (incoming.msg && packet->orig()){
-    spkt_throw(sprockit::illformed_error,
-        "recv_cq::recv: only one message chunk should carry the parent payload");
+  if (incoming.msg && orig){
+    spkt_throw_printf(sprockit::illformed_error,
+        "recv_cq::recv: only one message chunk should carry the parent payload for %lu",
+        unique_id);
   }
 #endif
-
-  if (packet->orig()){
-#if DEBUG_CQ
-    coutn << sprockit::printf("Got parent message for id %lu\n", packet->unique_id());
-#endif
+  if (orig){
     //this guy is actually carrying the payload
-    incoming.msg = packet->orig();
-    incoming.bytes_total = packet->orig()->byte_length();
+    incoming.msg = orig;
+    incoming.bytes_total = orig->byte_length();
   }
-
-#if DEBUG_CQ
-    coutn << sprockit::printf("Now have %ld bytes for message %lu\n",
-            incoming.bytes_arrived, packet->unique_id());
-#endif
+  incoming.bytes_arrived += bytes;
 
 #if SSTMAC_SANITY_CHECK
   if (incoming.msg && (incoming.bytes_arrived > incoming.bytes_total)){
@@ -56,16 +48,19 @@ recv_cq::recv(const message_chunk::ptr& packet)
   }
 #endif
   if (incoming.bytes_arrived == incoming.bytes_total){
-#if DEBUG_CQ
-    coutn << sprockit::printf("Ejecting id %lu\n", packet->unique_id());
-#endif
-    sst_message::ptr ret = incoming.msg;
-    bytes_recved_.erase(packet->unique_id());
+    message* ret = incoming.msg;
+    bytes_recved_.erase(unique_id);
     return ret;
   }
   else {
-    return sst_message::ptr();
+    return NULL;
   }
+}
+
+message*
+recv_cq::recv(packet* pkt)
+{
+  return recv(pkt->unique_id(), pkt->byte_length(), pkt->orig());
 }
 
 }

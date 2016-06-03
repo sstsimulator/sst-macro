@@ -99,7 +99,7 @@ mpi_halving_reduce_scatter(mpi_request* thekey,
 // Callback method to indicate that a send operation has completed.
 //
 void
-mpi_halving_reduce_scatter::send_complete(const mpi_message::ptr& msg)
+mpi_halving_reduce_scatter::send_complete(mpi_message* msg)
 {
   mpi_redscat_debug("send complete to %d, count=%d", int(msg->dest()), msg->count());
   --pending_sends_;
@@ -110,7 +110,7 @@ mpi_halving_reduce_scatter::send_complete(const mpi_message::ptr& msg)
 // Callback method to indicate that a receive operation has completed.
 //
 void
-mpi_halving_reduce_scatter::recv_complete(const mpi_message::ptr& msg)
+mpi_halving_reduce_scatter::recv_complete(mpi_message* msg)
 {
   mpi_redscat_debug("recv complete from %d, count=%d", int(msg->source()), msg->count());
 
@@ -141,11 +141,11 @@ inline int partner(int rank, int pivot)
 //
 inline int to_pof2(mpi_id rank, int extras)
 {
-  if(rank.id_ >= 2*extras) {
-    return rank.id_-extras;
+  if(rank >= 2*extras) {
+    return rank-extras;
   }
   else {
-    return (rank.id_%2 ? -1 : rank.id_/2);
+    return (rank % 2 ? -1 : rank / 2);
   }
 }
 //
@@ -185,7 +185,7 @@ void mpi_halving_reduce_scatter::start()
   //
   // Figure out our entire pattern of sends and receives.
   const int size = msb(comm_->size());
-  const int extras = comm_->size().id_ - size;
+  const int extras = comm_->size() - size;
   const int rank = to_pof2(comm_->rank(), extras);
   // Set up mappings of how much we are sending/receiving.
   std::vector<int> sizes;

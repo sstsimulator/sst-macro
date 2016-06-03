@@ -10,9 +10,10 @@
  */
 
 #include <sstmac/hardware/interconnect/interconnect.h>
+#include <sstmac/hardware/node/node.h>
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/nic/netlink.h>
-#include <sstmac/hardware/common/messages/fail_message.h>
+#include <sstmac/hardware/common/fail_event.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/packet_flow/packet_flow.h>
@@ -52,6 +53,13 @@ SpktRegister("sst", interconnect, sst_interconnect,
 interconnect::interconnect() :
  topology_(0)
 {
+}
+
+
+interconnect::~interconnect() 
+{
+  sprockit::delete_vals(nodes_);
+  sprockit::delete_vals(nics_);
 }
 
 int
@@ -107,14 +115,14 @@ sst_interconnect::kill_node(node_id nid, timestamp t)
 }
 #else
 macro_interconnect::macro_interconnect() :
- subset_(0)
+  partition_(0)
 {
 }
 
 macro_interconnect::~macro_interconnect()
 {
   delete topology_;
-  sprockit::delete_vals(nodes_);
+  sprockit::delete_vals(netlinks_);
 }
 
 
@@ -145,7 +153,7 @@ macro_interconnect::init_factory_params(sprockit::sim_parameters* params)
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
   topology_ = topology_factory::get_param("name", top_params);
 
-  sstmac_runtime::set_temp_topology(topology_);
+  runtime::set_temp_topology(topology_);
 
   if (!available_.empty() || !allocated_.empty()) {
     spkt_throw_printf(sprockit::illformed_error,
@@ -160,14 +168,15 @@ macro_interconnect::init_factory_params(sprockit::sim_parameters* params)
   sprockit::sim_parameters* node_params = params->get_namespace("node");
   sprockit::factory<connectable>* node_builder
     = new sprockit::template_factory<connectable, node_factory>(node_params->get_param("model"));
+  topology_->build_endpoint_connectables(nodes, node_builder, partition_, rt_->me(), node_params);
+  delete node_builder;
+
+  int nic_conc = 1;
   sprockit::sim_parameters* nic_params = params->get_namespace("nic");
   sprockit::factory2<connectable>* nic_builder
     = new sprockit::template_factory2<connectable, nic_factory>(nic_params->get_param("model"));
-
-  topology_->build_endpoint_connectables(nodes, node_builder, partition_, rt_->me(), node_params);
-
-  int nic_conc = 1;
   topology_->build_interface_connectables(nic_conc, nics, nic_builder, partition_, rt_->me(), nic_params, this);
+  delete nic_builder;
 
   if (params->has_namespace("netlink")){
     int netlink_conc = topology_->num_nodes_per_netlink();
@@ -176,7 +185,9 @@ macro_interconnect::init_factory_params(sprockit::sim_parameters* params)
       = new sprockit::template_factory2<connectable, netlink_factory>(netlink_params->get_param("model"));
     topology_->build_interface_connectables(netlink_conc, netlinks, netlink_builder,
                   partition_, rt_->me(), netlink_params, this);
+    delete netlink_builder;
   }
+
 
   copy_map(nodes, nodes_);
   copy_map(nics, nics_);
@@ -191,26 +202,13 @@ macro_interconnect::init_factory_params(sprockit::sim_parameters* params)
     nc->set_node(nd);
   }
 
-  /**
-   * JJW 02/08/2016 Don't bother with this anymore 
-  if (nics_.empty()){
-    spkt_throw(sprockit::value_error,
-      "interconnect did not build any NICs");
-  }
-
-  if (nodes_.empty()){
-    spkt_throw(sprockit::value_error,
-      "interconnect did not build any nodes");
-  }
-  */
-
   int numNodes = topology_->num_nodes();
   for (int i=0; i < numNodes; ++i){
     node_id nid(i);
     available_.insert(nid);
   }
 
-  sstmac_runtime::clear_temp_topology();
+  runtime::clear_temp_topology();
 
   int failure_num = 1;
   while(1){
@@ -222,13 +220,13 @@ macro_interconnect::init_factory_params(sprockit::sim_parameters* params)
     int node_to_fail = params->get_int_param(next_param_name);
     next_param_name = sprockit::printf("node_failure_%d_time", failure_num);
     timestamp fail_time = params->get_time_param(next_param_name);
-    failures_to_schedule_.push_back(fail_event(fail_time, node_id(node_to_fail)));
+    failures_to_schedule_.push_back(node_fail_event(fail_time, node_id(node_to_fail)));
     ++failure_num;
   }
 }
 
 void
-macro_interconnect::handle(const sst_message::ptr& msg)
+macro_interconnect::handle(event* ev)
 {
   spkt_throw(sprockit::value_error, "interconnect should never handle messages");
 }
@@ -236,10 +234,10 @@ macro_interconnect::handle(const sst_message::ptr& msg)
 void
 macro_interconnect::set_event_manager_common(event_manager* m)
 {
-  std::list<fail_event>::iterator it, end = failures_to_schedule_.end();
+  std::list<node_fail_event>::iterator it, end = failures_to_schedule_.end();
   for (it=failures_to_schedule_.begin(); it != end; ++it){
-    node_fail_message::ptr fail_msg = new node_fail_message;
-    fail_event ev = *it;
+    fail_event* fail_msg = new fail_event;
+    node_fail_event ev = *it;
 
     //I might not own this node
     node_map::iterator it = nodes_.find(ev.second);
@@ -273,7 +271,7 @@ macro_interconnect::set_node_event_manager(node* the_node, event_manager* m)
 void
 macro_interconnect::set_event_manager(event_manager* m)
 {
-  sstmac_runtime::set_temp_topology(topology_);
+  runtime::set_temp_topology(topology_);
 
   node_map::iterator it, end = nodes_.end();
   for (it=nodes_.begin(); it != end; ++it) {
@@ -283,7 +281,7 @@ macro_interconnect::set_event_manager(event_manager* m)
 
   set_event_manager_common(m);
 
-  sstmac_runtime::clear_temp_topology();
+  runtime::clear_temp_topology();
 }
 #endif
 

@@ -79,7 +79,7 @@ packet_flow_tiled_switch::init_components()
         params_->crossbar_bw,
         router_->max_num_vc(),
         params_->xbar_input_buffer_num_bytes,
-        params_->link_arbitrator_template->clone());
+        params_->link_arbitrator_template->clone(-1));
       //we can route to a destination port that differs from the local port
       int xbar_mapper = ncols_; //map port by dividing by ncols
       xbar->set_event_location(my_addr_);
@@ -92,7 +92,7 @@ packet_flow_tiled_switch::init_components()
         params_->link_bw,
         router_->max_num_vc(),
         params_->xbar_output_buffer_num_bytes,
-        params_->link_arbitrator_template->clone());
+        params_->link_arbitrator_template->clone(-1));
       int muxer_offset = tile;
       int muxer_max_port = tile;
       muxer->set_event_location(my_addr_);
@@ -255,26 +255,26 @@ packet_flow_tiled_switch::queue_length(int port) const
 }
 
 void
-packet_flow_tiled_switch::handle(const sst_message::ptr& msg)
+packet_flow_tiled_switch::handle(event* ev)
 {
   //this should only happen in parallel mode...
   //this means we are getting a message that has crossed the parallel boundary
-  packet_flow_interface* fmsg = ptr_interface_cast(packet_flow_interface, msg);
+  packet_flow_interface* fmsg = interface_cast(packet_flow_interface, ev);
   switch (fmsg->type()) {
     case packet_flow_interface::credit: {
-      packet_flow_credit::ptr credit = ptr_static_cast(packet_flow_credit, msg);
+      packet_flow_credit* credit = static_cast<packet_flow_credit*>(ev);
       packet_flow_muxer* recver = col_output_muxers_[credit->port()];
       recver->handle_credit(credit);
       break;
     }
     case packet_flow_interface::payload: {
-      packet_flow_payload::ptr payload = ptr_static_cast(packet_flow_payload, msg);
+      packet_flow_payload* payload = static_cast<packet_flow_payload*>(ev);
       debug_printf(sprockit::dbg::packet_flow,
          "tiled switch %d: incoming payload %s",
           int(my_addr_), payload->to_string().c_str());
       packet_flow_demuxer* demuxer = row_input_demuxers_[payload->inport()];
       //now figure out the new port I am routing to
-      router_->route(payload.get());
+      router_->route(payload);
       debug_printf(sprockit::dbg::packet_flow,
          "tiled switch %d: routed payload %s to outport %d",
           int(my_addr_), payload->to_string().c_str(),
