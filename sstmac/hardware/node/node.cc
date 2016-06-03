@@ -109,6 +109,12 @@ node::~node()
   //if (nic_) delete nic_;
 }
 
+void
+node::connect(int src_outport, int dst_inport, connection_type_t ty, connectable *mod, config *cfg)
+{
+  spkt_throw(sprockit::unimplemented_error,
+    "node::connect: should never be called");
+}
 
 void
 node::init_factory_params(sprockit::sim_parameters *params)

@@ -29,6 +29,24 @@ dist_dummy_switch::connect_injector(int src_outport, int dst_inport, event_handl
 }
 
 void
+dist_dummy_switch::connect_input(
+  int src_outport,
+  int dst_inport,
+  connectable* comp,
+  config* cfg)
+{
+}
+
+void
+dist_dummy_switch::connect_output(
+  int src_outport,
+  int dst_inport,
+  connectable* comp,
+  config* cfg)
+{
+}
+
+void
 dist_dummy_switch::handle(event* ev)
 {
   spkt_throw(sprockit::illformed_error,

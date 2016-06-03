@@ -29,14 +29,12 @@ endif
 
 nobase_library_include_HEADERS = \
   connectable_wrapper.h \
-  message_event_wrapper.h \
   integrated_component.h \
   integrated_core.h
 
 # micro pieces, baseclasses, etc needed for linking in the rest of sstmac
 libsstmac_sst_core_la_SOURCES =  \
   connectable_wrapper.cc \
-  message_event_wrapper.cc \
 	python_topology.cc \
   integrated_component.cc \
   integrated_core.cc

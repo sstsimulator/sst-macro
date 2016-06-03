@@ -50,7 +50,8 @@ class packet_flow_nic :
     int src_outport,
     int dst_inport,
     connection_type_t ty,
-    connectable* mod);
+    connectable* mod,
+    config* cfg);
 
   virtual void
   set_event_parent(event_scheduler* m);
@@ -97,7 +98,12 @@ class packet_flow_netlink :
   init_factory_params(sprockit::sim_parameters *params);
 
   void
-  connect(int src_outport, int dst_inport, connection_type_t ty, connectable *mod);
+  connect(
+    int src_outport,
+    int dst_inport,
+    connection_type_t ty,
+    connectable *mod,
+    config* cfg);
 
   void
   set_event_parent(event_scheduler* m);

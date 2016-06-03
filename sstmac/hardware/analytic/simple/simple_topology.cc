@@ -157,23 +157,22 @@ simple_topology::nodes_connected_to_switch(switch_id swaddr) const
 void
 simple_topology::connect_objects(internal_connectable_map& objects)
 {
-  double link_weight = 1.0;
   top_debug("simple topology: connecting %d switches", int(objects.size()));
   internal_connectable_map::iterator ait, aend = objects.end();
   int ignore_port = 0;
-  double ignore_weight = 0;
-  int ignore_red = 1;
+  connectable::config cfg;
+  cfg.link_weight = 1.0;
+  cfg.red = 1;
   for (ait =  objects.begin(); ait != aend; ++ait) {
     switch_id a(ait->first);
     internal_connectable_map::iterator bit, bend = objects.end();
     for (bit = objects.begin(); bit != bend; ++bit) {
       switch_id b(bit->first);
       if (a != b){
-        objects[a]->connect_weighted(
+        objects[a]->connect(
         ignore_port, ignore_port,
         connectable::output,
-        objects[b],
-        ignore_weight, ignore_red);
+        objects[b], &cfg);
       }
     }
   }

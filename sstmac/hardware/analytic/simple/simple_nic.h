@@ -47,7 +47,8 @@ class simple_nic :
     int src_outport,
     int dst_inport,
     connection_type_t ty,
-    connectable* mod);
+    connectable* mod,
+    config* cfg);
 
   virtual std::string
   to_string() const {

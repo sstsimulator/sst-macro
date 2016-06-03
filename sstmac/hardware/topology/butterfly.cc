@@ -120,9 +120,6 @@ butterfly::init_factory_params(sprockit::sim_parameters* params)
 void
 butterfly::connect_objects(internal_connectable_map& objects)
 {
-  double link_weight = 1.0;
-  int red = 1;
-
   /**
     In 4-ary 3-fly, we have 16 switches per col
     with 3 columns or stages.  Thus we can label
@@ -159,6 +156,9 @@ butterfly::connect_objects(internal_connectable_map& objects)
   long connection_stride = nswitches_per_col_ / kary_;
   long block_size = nswitches_per_col_;
   long group_size = kary_;
+  connectable::config cfg;
+  cfg.link_weight = 1.0;
+  cfg.red = 1;
   for (int l=0; l < (nfly_-1); ++l) {
     long col_start_index = l * nswitches_per_col_;
     for (long i=0; i < nswitches_per_col_; ++i) {
@@ -186,18 +186,17 @@ butterfly::connect_objects(internal_connectable_map& objects)
         switch_id up_group_partner_addr(up_group_partner);
         connectable* partner_sw = objects[up_group_partner_addr];
         int outport = convert_to_port(up_dimension, c);
-        my_sw->connect_weighted(
+        my_sw->connect(
           outport,
           inport,
           connectable::output,
-          partner_sw,
-          link_weight, red);
+          partner_sw, &cfg);
 
         partner_sw->connect(
           outport,
           inport,
           connectable::input,
-          my_sw);
+          my_sw, &cfg);
       }
     }
 

@@ -142,7 +142,9 @@ fat_tree::connect_group(
   long up_group_offset,
   double bw_multiplier)
 {
-  int red = 1;
+  connectable::config cfg;
+  cfg.red = 1;
+  cfg.link_weight = bw_multiplier;
   long down_partner = down_group_offset;
   
   //total hack for now to taper bandwidth when appropriate
@@ -182,29 +184,27 @@ fat_tree::connect_group(
       top_debug("fattree: connecting up=(%d,%d) to down=(%d,%d) on port_offset=%d",
               u, up_port, d, down_port, port_offset);
 
-      down_switch->connect_weighted(
+      down_switch->connect(
         up_port, //up is out and down is in... got it!??!
         down_port,
         connectable::output,
-        up_switch,
-        bw_multiplier, red); // up
+        up_switch, &cfg);
       up_switch->connect(
         up_port,
         down_port,
         connectable::input,
-        down_switch);
+        down_switch, &cfg);
 
-      up_switch->connect_weighted(
+      up_switch->connect(
         down_port, //down is out and up is in... got it?!?
         up_port,
         connectable::output,
-        down_switch,
-        bw_multiplier, red); //down
+        down_switch, &cfg);
       down_switch->connect(
         down_port,
         up_port,
         connectable::input,
-        up_switch);
+        up_switch, &cfg);
 
       top_debug("fat tree: connection %ld:%d:(up,%d) <-> %ld:%d:(down,%d)",
          down_partner, up_port, u,
@@ -592,8 +592,9 @@ void
 simple_fat_tree::connect_objects(internal_connectable_map &switches)
 {
   int nswitches = numleafswitches_;
-  int bw_multiplier = 1;
-  double red = 1.0;
+  connectable::config cfg;
+  double bw_multiplier = 1.0;
+  cfg.red = 1;
   int stopLevel = l_ - 1;
   for (int l=0; l < stopLevel; ++l){
     int down_offset = level_offsets_[l];
@@ -604,7 +605,10 @@ simple_fat_tree::connect_objects(internal_connectable_map &switches)
       int up_id = up_offset + s/k_;
       connectable* down_switch = switches[switch_id(down_id)];
       connectable* up_switch = switches[switch_id(up_id)];
-      double link_weight = bw_multiplier * tapering;
+      cfg.link_weight = bw_multiplier * tapering;
+      cfg.src_buffer_weight = bw_multiplier;
+      cfg.dst_buffer_weight = bw_multiplier;
+      cfg.xbar_weight = bw_multiplier;
 
       int down_switch_outport = k_;
       int down_switch_inport = down_switch_outport;
@@ -617,17 +621,16 @@ simple_fat_tree::connect_objects(internal_connectable_map &switches)
        up_id, s/k_, up_switch_inport,
        l, l+1, bw_multiplier, tapering);
 
-      down_switch->connect_weighted(
+      down_switch->connect(
         down_switch_outport,
         up_switch_inport,
         connectable::output,
-        up_switch,
-        link_weight, red); // up
+        up_switch, &cfg);
       up_switch->connect(
         down_switch_outport,
         up_switch_inport,
         connectable::input,
-        down_switch);
+        down_switch, &cfg);
 
       top_debug(
        "Connecting %d(%d):%d->%d(%d):%d between levels %d,%d with multiplier=%d, tapering=%12.8f",
@@ -635,17 +638,16 @@ simple_fat_tree::connect_objects(internal_connectable_map &switches)
        down_id, s, down_switch_inport,
        l, l+1, bw_multiplier, tapering);
 
-      up_switch->connect_weighted(
+      up_switch->connect(
         up_switch_outport,
         down_switch_inport,
         connectable::output,
-        down_switch,
-        link_weight, red); //down
+        down_switch, &cfg);
       down_switch->connect(
         up_switch_outport,
         down_switch_inport,
         connectable::input,
-        up_switch);
+        up_switch, &cfg);
 
     }
     nswitches /= k_;

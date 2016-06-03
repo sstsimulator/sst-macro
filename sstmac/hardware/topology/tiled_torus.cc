@@ -77,16 +77,19 @@ tiled_torus::connect_dim(int dim,
   //times 2 for +/-1
   int nreplica = red_[dim];
   int outport, inport;
+  connectable::config cfg;
+  cfg.link_weight = 1.0;
+  cfg.red = 1;
   for (int r=0; r < nreplica; ++r){
     outport = inport = port(r, dim, hdtorus::pos);
     top_debug("\tconnecting + replica %d on port %d", r, outport);
-    center->connect_weighted(outport, inport, connectable::output, plus, 1.0, 1);
-    plus->connect_weighted(outport, inport, connectable::input, center, 1.0, 1);
+    center->connect(outport, inport, connectable::output, plus, &cfg);
+    plus->connect(outport, inport, connectable::input, center, &cfg);
 
     outport = inport = port(r, dim, hdtorus::neg);
     top_debug("\tconnecting + replica %d on port %d", r, outport);
-    center->connect_weighted(outport, inport, connectable::output, minus, 1.0, 1);
-    minus->connect_weighted(outport, inport, connectable::input, center, 1.0, 1);
+    center->connect(outport, inport, connectable::output, minus, &cfg);
+    minus->connect(outport, inport, connectable::input, center, &cfg);
   }
 }
 

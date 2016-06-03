@@ -23,8 +23,7 @@ class connection_details
     int dst_port;
     endpoint_t src_type;
     endpoint_t dst_type;
-    double weight;
-    int redundancy;
+    hw::connectable::config cfg;
 
     void parse_type_id(const std::string& str, endpoint_t& ep, int& id);
     void parse_src(const std::string& str);
@@ -97,13 +96,12 @@ class connectable_proxy_component
     }
 
     void
-    connect_weighted(
+    connect(
       int src_outport,
       int dst_inport,
       connection_type_t ty,
       connectable* other,
-      double weight,
-      int red);
+      config* cfg);
 
     ~connectable_proxy_component();
 

@@ -163,6 +163,9 @@ topology::connect_end_point_objects(internal_connectable_map& internal, end_poin
 {
   end_point_connectable_map::iterator it, end = end_points.end();
   int the_only_port = 0;
+  connectable::config cfg;
+  cfg.link_weight = 1.0;
+  cfg.red = 1;
   for (it = end_points.begin(); it != end; it++) {
     connectable* node = it->second;
     node_id nodeaddr = it->first;
@@ -178,8 +181,8 @@ topology::connect_end_point_objects(internal_connectable_map& internal, end_poin
       int switch_port = ports[i];
       top_debug("connecting switch %d to injector %d on ports %d:%d",
           int(injaddr), int(nodeaddr), switch_port, injector_port);
-      injsw->connect(injector_port, switch_port, connectable::input, node);
-      node->connect(injector_port, switch_port, connectable::output, injsw);
+      injsw->connect(injector_port, switch_port, connectable::input, node, &cfg);
+      node->connect(injector_port, switch_port, connectable::output, injsw, &cfg);
     }
 
     switch_id ejaddr = endpoint_to_ejection_switch(nodeaddr, ports, num_ports);
@@ -190,8 +193,8 @@ topology::connect_end_point_objects(internal_connectable_map& internal, end_poin
       int switch_port = ports[i];
       top_debug("connecting switch %d to ejector %d on ports %d:%d",
           int(ejaddr), int(nodeaddr), switch_port, ejector_port);
-      ejsw->connect(switch_port, ejector_port, connectable::output, node);
-      node->connect(switch_port, ejector_port, connectable::input, ejsw);
+      ejsw->connect(switch_port, ejector_port, connectable::output, node, &cfg);
+      node->connect(switch_port, ejector_port, connectable::input, ejsw, &cfg);
     }
 
   }

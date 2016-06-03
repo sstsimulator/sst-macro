@@ -226,20 +226,27 @@ packet_flow_switch::resize_buffers()
 }
 
 packet_flow_sender*
-packet_flow_switch::output_buffer(int port, double out_bw, int red)
+packet_flow_switch::output_buffer(int port, config* cfg)
 {
   if (!out_buffers_[port]){
+    double total_link_bw = params_->link_bw * cfg->link_weight * cfg->red;
+    int src_buffer_size = params_->xbar_output_buffer_num_bytes * cfg->red;
+    if (cfg->src_buffer_weight > 0) src_buffer_size *= cfg->src_buffer_weight;
+
+    int dst_buffer_size = params_->xbar_input_buffer_num_bytes * cfg->red;
+    if (cfg->dst_buffer_weight > 0) dst_buffer_size *= cfg->dst_buffer_weight;
+
     packet_flow_network_buffer* out_buffer
       = new packet_flow_network_buffer(
                   params_->hop_lat,
                   timestamp(0), //assume credit latency to xbar is free
-                  params_->xbar_output_buffer_num_bytes * red,
+                  src_buffer_size,
                   router_->max_num_vc(),
                   packet_size_,
-                  params_->link_arbitrator_template->clone(out_bw));
+                  params_->link_arbitrator_template->clone(total_link_bw));
     out_buffer->set_event_location(my_addr_);
     int buffer_outport = 0;
-    out_buffer->init_credits(buffer_outport, params_->xbar_input_buffer_num_bytes);
+    out_buffer->init_credits(buffer_outport, dst_buffer_size);
     out_buffer->set_sanity_params(params_->queue_depth_reporting,
                                 params_->queue_depth_delta);
     out_buffers_[port] = out_buffer;
@@ -252,14 +259,12 @@ packet_flow_switch::connect_output(
   int src_outport,
   int dst_inport,
   connectable* mod,
-  double weight, int red
-)
+  config* cfg)
 {
   resize_buffers();
 
   //create an output buffer for the port
-  double total_link_bw = params_->link_bw * weight * red;
-  packet_flow_sender* out_buffer = output_buffer(src_outport, total_link_bw, red);
+  packet_flow_sender* out_buffer = output_buffer(src_outport, cfg);
   out_buffer->set_output(src_outport, dst_inport, safe_cast(event_handler, mod));
 }
 
@@ -268,29 +273,26 @@ packet_flow_switch::connect_input(
   int src_outport,
   int dst_inport,
   connectable* mod,
-  double weight, int red
+  config* cfg
 )
 {
   crossbar()->set_input(dst_inport, src_outport, safe_cast(event_handler, mod));
 }
 
 void
-packet_flow_switch::connect_weighted(
+packet_flow_switch::connect(
   int src_outport,
   int dst_inport,
   connection_type_t ty,
   connectable* mod,
-  double weight, int red)
+  config* cfg)
 {
   switch(ty) {
     case output:
-      connect_output(src_outport, dst_inport, mod, weight, red);
+      connect_output(src_outport, dst_inport, mod, cfg);
       break;
     case input:
-      connect_input(src_outport, dst_inport, mod, weight, red);
-      break;
-    default:
-      network_switch::connect_weighted(src_outport, dst_inport, ty, mod, weight, red);
+      connect_input(src_outport, dst_inport, mod, cfg);
       break;
   }
 }
@@ -299,14 +301,14 @@ void
 packet_flow_switch::connect_injector(int src_outport, int dst_inport, event_handler* nic)
 {
   connectable* inp = safe_cast(connectable, nic);
-  connect_input(src_outport, dst_inport, inp, 1.0, 1);
+  connect_input(src_outport, dst_inport, inp, NULL); //no cfg
 }
 
 void
 packet_flow_switch::connect_ejector(int src_outport, int dst_inport, event_handler* nic)
 {
   connectable* inp = safe_cast(connectable, nic);
-  connect_output(src_outport, dst_inport, inp, 1.0, 1);
+  connect_output(src_outport, dst_inport, inp, NULL); //no cfg
 }
 
 std::vector<switch_id>

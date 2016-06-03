@@ -20,9 +20,7 @@ connectable_proxy_component::connect_weighted(
   int dst_port,
   connection_type_t ty,
   connectable* mod,
-  double weight,
-  int red
-)
+  config* cfg)
 {
   connectable_proxy_component* other = safe_cast(connectable_proxy_component, mod);
   std::string link_name = sprockit::printf(
@@ -32,11 +30,15 @@ connectable_proxy_component::connect_weighted(
       other->component_name.c_str(), dst_port
   );
   std::string port_name_prefix = sprockit::printf(
-      "__auto_port_%s_(%s)_%d_to_(%s)_%d_%f_%d",
+      "__auto_port_%s_(%s)_%d_to_(%s)_%d_%f_%f_%f_%f_%d",
       str(ty),
       component_name.c_str(), src_port,
       other->component_name.c_str(), dst_port,
-      weight, red
+      cfg->link_weight,
+      cfg->src_buffer_weight,
+      cfg->dst_buffer_weight,
+      cfg->xbar_weight,
+      cfg->red
   );
   std::string my_port_name = sprockit::printf("%s_src", port_name_prefix.c_str());
   std::string other_port_name = sprockit::printf("%s_dest", port_name_prefix.c_str());

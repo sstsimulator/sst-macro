@@ -134,12 +134,12 @@ class packet_flow_switch :
   }
 
   virtual void
-  connect_weighted(
+  connect(
     int src_outport,
     int dst_inport,
     connection_type_t ty,
     connectable* mod,
-    double weight, int red);
+    config* cfg);
 
   std::vector<switch_id>
   connected_switches() const;
@@ -198,19 +198,19 @@ class packet_flow_switch :
     int src_outport,
     int dst_inport,
     connectable* mod,
-    double weight, int red);
+    config* cfg);
 
   void
   connect_input(
     int src_outport,
     int dst_inport,
     connectable* mod,
-    double weight, int red);
+    config* cfg);
 
   void resize_buffers();
 
   packet_flow_sender*
-  output_buffer(int port, double bw, int red);
+  output_buffer(int port, config* cfg);
 
 };
 
