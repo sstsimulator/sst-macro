@@ -117,6 +117,9 @@ macro_switch_interconnect::init_factory_params(sprockit::sim_parameters* params)
   connectable::config nic_cfg;
   nic_cfg.link_weight = 1.0;
   nic_cfg.red = 1;
+
+
+
   if (!netlinks_.empty()){
     //we connect to netlinks, not nics
     topology_->connect_end_points(switches_, netlinks_);
@@ -140,7 +143,10 @@ macro_switch_interconnect::init_factory_params(sprockit::sim_parameters* params)
       the_nic->connect(inj_port, the_only_port, connectable::input, nlnk, &nic_cfg);
     }
   } else {
-    topology_->connect_end_points(switches_, nics_);
+    nic* theNic = nics_[0];
+    double inj_bw = theNic->injection_bandwidth();
+    timestamp inj_lat = theNic->injection_latency();
+    topology_->connect_end_points(switches_, nics_, inj_bw, inj_lat);
   }
 
   topology_->connect_topology(switches_);

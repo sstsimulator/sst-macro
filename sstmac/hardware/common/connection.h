@@ -20,21 +20,23 @@ class connectable
 
   static const int any_port = -1;
 
+  typedef enum {
+    RedundantConnection=0,
+    WeightedConnection=1,
+    FixedBandwidthConnection=2,
+    FixedConnection=3
+  } config_type_t;
+
   struct config {
+    config_type_t ty;
     double src_buffer_weight;
     double dst_buffer_weight;
     double xbar_weight;
     double link_weight;
     int red;
-
-    config() :
-      src_buffer_weight(-1),
-      dst_buffer_weight(-1),
-      xbar_weight(-1),
-      link_weight(-1),
-      red(-1)
-    {
-    }
+    double bw;
+    timestamp latency;
+    config() : xbar_weight(-1){}
   };
 
   typedef enum {

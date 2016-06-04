@@ -275,12 +275,13 @@ class topology :
   */
   template <class MapTypeInternal, class MapTypeEndPoint>
   void
-  connect_end_points(MapTypeInternal& internal_nodes, MapTypeEndPoint& end_points) {
+  connect_end_points(MapTypeInternal& internal_nodes, MapTypeEndPoint& end_points,
+        double inj_bw, timestamp lat) {
     internal_connectable_map internal_clone_map;
     end_point_connectable_map end_clone_map;
     copy_map(internal_nodes, internal_clone_map);
     copy_map(end_points, end_clone_map);
-    connect_end_point_objects(internal_clone_map, end_clone_map);
+    connect_end_point_objects(internal_clone_map, end_clone_map, inj_bw, lat);
   }
 
   /**

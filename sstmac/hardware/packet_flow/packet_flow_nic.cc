@@ -77,6 +77,13 @@ packet_flow_nic::~packet_flow_nic() throw ()
   if (packetizer_) delete packetizer_;
 }
 
+double
+packet_flow_nic::injection_bandwidth() const
+{
+  packet_flow_nic_packetizer* packer = safe_cast(packet_flow_nic_packetizer, packetizer_);
+  return packer->injection_bandwidth();
+}
+
 void
 packet_flow_nic::connect(
   int src_outport,

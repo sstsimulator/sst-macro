@@ -78,7 +78,6 @@ packet_flow_abstract_switch::init_factory_params(sprockit::sim_parameters *param
     = packet_flow_bandwidth_arbitrator_factory::get_optional_param(
         "arbitrator", "cut_through", params);
 
-
   /**
     sstkeyword {
       docstring=Enables output queue depth reporting.ENDL
@@ -185,7 +184,6 @@ packet_flow_switch::set_topology(topology *top)
 void
 packet_flow_switch::initialize()
 {
-  crossbar();
   xbar_->set_accumulate_delay(acc_delay_);
   int nbuffers = out_buffers_.size();
   int buffer_inport = 0;
@@ -203,13 +201,15 @@ packet_flow_switch::initialize()
 }
 
 packet_flow_crossbar*
-packet_flow_switch::crossbar()
+packet_flow_switch::crossbar(double xbar_weight)
 {
   if (!xbar_) {
+    double xbar_bw = xbar_weight > 0 ?
+          params_->crossbar_bw * xbar_weight : params_->crossbar_bw;
     xbar_ = new packet_flow_crossbar(
               timestamp(0), //assume zero-time send
               params_->hop_lat, //delayed credits
-              params_->crossbar_bw,
+              xbar_bw,
               router_->max_num_vc(),
               params_->xbar_input_buffer_num_bytes,
               params_->link_arbitrator_template->clone(-1/*fake bw*/));
@@ -229,12 +229,27 @@ packet_flow_sender*
 packet_flow_switch::output_buffer(int port, config* cfg)
 {
   if (!out_buffers_[port]){
-    double total_link_bw = params_->link_bw * cfg->link_weight * cfg->red;
-    int src_buffer_size = params_->xbar_output_buffer_num_bytes * cfg->red;
-    if (cfg->src_buffer_weight > 0) src_buffer_size *= cfg->src_buffer_weight;
-
-    int dst_buffer_size = params_->xbar_input_buffer_num_bytes * cfg->red;
-    if (cfg->dst_buffer_weight > 0) dst_buffer_size *= cfg->dst_buffer_weight;
+    double total_link_bw = params_->link_bw;
+    int dst_buffer_size = params_->xbar_input_buffer_num_bytes;
+    int src_buffer_size = params_->xbar_output_buffer_num_bytes;
+    timestamp lat = params_->hop_lat;
+    switch(cfg->ty){
+      case RedundantConnection:
+        total_link_bw *= red;
+        break;
+       case WeightedConnection:
+        total_link_bw *= cfg->link_weight;
+        src_buffer_size *= cfg->src_buffer_weight;
+        dst_buffer_size *= cfg->dst_buffer_weight;
+        break;
+      case FixedBandwidthConnection:
+        total_link_bw = cfg->bw;
+        break;
+      case FixedConnection:
+        total_link_bw = cfg->bw;
+        lat = cfg->latency;
+        break;
+    }
 
     packet_flow_network_buffer* out_buffer
       = new packet_flow_network_buffer(
@@ -244,6 +259,7 @@ packet_flow_switch::output_buffer(int port, config* cfg)
                   router_->max_num_vc(),
                   packet_size_,
                   params_->link_arbitrator_template->clone(total_link_bw));
+
     out_buffer->set_event_location(my_addr_);
     int buffer_outport = 0;
     out_buffer->init_credits(buffer_outport, dst_buffer_size);
@@ -273,10 +289,9 @@ packet_flow_switch::connect_input(
   int src_outport,
   int dst_inport,
   connectable* mod,
-  config* cfg
-)
+  config* cfg)
 {
-  crossbar()->set_input(dst_inport, src_outport, safe_cast(event_handler, mod));
+  crossbar(cfg->xbar_weight)->set_input(dst_inport, src_outport, safe_cast(event_handler, mod));
 }
 
 void

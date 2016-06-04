@@ -74,6 +74,11 @@ class packet_flow_nic_packetizer :
   void
   set_acker(event_handler* handler);
 
+  double
+  injection_bandwidth() const {
+    return inj_bw_;
+  }
+
  protected:
   void
   recv_packet_common(packet_flow_payload* pkt);

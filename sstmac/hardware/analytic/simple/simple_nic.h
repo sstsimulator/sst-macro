@@ -60,6 +60,11 @@ class simple_nic :
     return inj_lat_;
   }
 
+  double
+  injection_bandwidth() const {
+    return 1.0/inj_bw_inverse_;
+  }
+
  protected:
   /**
     Start the message sending and inject it into the network

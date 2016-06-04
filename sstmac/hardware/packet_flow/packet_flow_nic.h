@@ -61,6 +61,9 @@ class packet_flow_nic :
     return inj_lat_;
   }
 
+  double
+  injection_bandwidth() const;
+
   int
   initial_credits() const {
     return injection_credits_;

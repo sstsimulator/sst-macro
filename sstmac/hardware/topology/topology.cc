@@ -159,13 +159,16 @@ topology::random_intermediate_switch(switch_id current, switch_id dest)
 }
 
 void
-topology::connect_end_point_objects(internal_connectable_map& internal, end_point_connectable_map& end_points)
+topology::connect_end_point_objects(
+  internal_connectable_map& internal,
+  end_point_connectable_map& end_points,
+  double inj_bw)
 {
   end_point_connectable_map::iterator it, end = end_points.end();
   int the_only_port = 0;
   connectable::config cfg;
-  cfg.link_weight = 1.0;
-  cfg.red = 1;
+  cfg.ty = connectable::FixedBandwidthConnection;
+  cfg.bw = inj_bw;
   for (it = end_points.begin(); it != end; it++) {
     connectable* node = it->second;
     node_id nodeaddr = it->first;
