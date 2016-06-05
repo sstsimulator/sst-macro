@@ -24,7 +24,8 @@ class connectable
     RedundantConnection=0,
     WeightedConnection=1,
     FixedBandwidthConnection=2,
-    FixedConnection=3
+    FixedConnection=3,
+    BasicConnection=4
   } config_type_t;
 
   struct config {

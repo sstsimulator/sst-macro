@@ -110,14 +110,13 @@ def checkTime(refTime, chkTime):
   delta = abs(refTime - chkTime)
   percent = delta / refTime
   if delta > TIME_DELTA_TOO_BIG and percent > TIME_PERCENT_TOO_BIG:
-    return "REF time %f differs by too much from CHK time %f" % (refSim.times[i], chkSim.times[i])
+    return "REF time %f differs by too much from CHK time %f" % (refTime, chkTime)
   return None
 
 def checkOutput(srcdir, tmpfile, condition):
   splitter = condition.split("=")
   condType = "all"
   condition = splitter[-1]
-  print splitter
   if len(splitter) == 2:
     condType = splitter[0]
   elif splitter[0] == "notime":
@@ -145,7 +144,6 @@ def checkOutput(srcdir, tmpfile, condition):
     if errorMsg:
       return errorMsg
 
-  print condType
   if not condType == "notime":
     timeChecker = eval("lambda t: %s" % condition)
     if not timeChecker(chkSim.finalTime):

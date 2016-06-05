@@ -12,21 +12,11 @@ int main(int argc, char** argv)
   int nPoints = sizeof(bandwidths) / sizeof(double);
 
   sprockit::sim_parameters params;
-  params["congestion_model"] = "packet_flow";
-  params["amm_model"] = "amm3";
-  params["sleep_time"] = 0;
-  params["message_size"].setByteLength(16, "KB");
-  
   for (int i=0; i < nPoints; ++i){
     params["injection_bandwidth"].setBandwidth(bandwidths[i], "GB/s");
     Simulation* sim = queue.fork(params);
-    sim->setLabel(i);
-  }
-  
-  for (int i=0; i < nPoints; ++i){
-    Simulation* sim = queue.waitForCompleted();
-    int idx; sim->getLabel(idx);
-    results[idx] = sim->simulatedTime();
+    sim->waitFork();
+    results[i] = sim->simulatedTime();
   }
 
   for (int i=0; i < nPoints; ++i){

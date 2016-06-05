@@ -13,6 +13,7 @@
 #define SSTMAC_SSTMAC_H_INCLUDED
 
 #include <sprockit/sim_parameters_fwd.h>
+#include <sstmac/backends/native/manager_fwd.h>
 #include <sstmac/backends/common/parallel_runtime_fwd.h>
 #include <string>
 
@@ -91,6 +92,15 @@ void
 try_main(sprockit::sim_parameters* params,
    int argc, char **argv,
    bool params_only = false);
+
+void
+run_manager(native::manager* mgr,
+  sprockit::sim_parameters* params,
+   sim_stats& stats);
+
+native::manager*
+init_first_run(parallel_runtime* rt,
+    sprockit::sim_parameters* params);
 
 }
 

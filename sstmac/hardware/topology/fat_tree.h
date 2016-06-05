@@ -78,8 +78,6 @@ class abstract_fat_tree :
  protected:
   int l_, k_, numleafswitches_;
   int toplevel_;
-  std::vector<double> tapering_;
-
 };
 
 /**
@@ -160,8 +158,7 @@ class fat_tree :
     int down_group_size,
     long down_group_offset,
     int up_group_size,
-    long up_group_offset,
-    double bw_multiplier);
+    long up_group_offset);
 
   void
   connect_section(
@@ -171,8 +168,7 @@ class fat_tree :
     int down_group_size,
     long down_section_offset,
     int up_group_size,
-    long up_section_offset,
-    double bw_multiplier);
+    long up_section_offset);
 
   virtual void
   compute_switch_coords(switch_id uid, coordinates& coords) const;
@@ -267,6 +263,9 @@ class simple_fat_tree : public abstract_fat_tree
   std::vector<int> level_offsets_;
 
   int num_switches_;
+
+  std::vector<double> tapering_;
+
 
 };
 

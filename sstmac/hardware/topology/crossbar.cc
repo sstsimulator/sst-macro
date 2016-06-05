@@ -115,8 +115,7 @@ void
 crossbar::connect_objects(internal_connectable_map& objects)
 {
   connectable::config cfg;
-  cfg.link_weight = 1.0;
-  cfg.red = 1;
+  cfg.ty = connectable::BasicConnection;
   for (int i = 0; i < objects.size(); i++) {
     switch_id me(i);
 

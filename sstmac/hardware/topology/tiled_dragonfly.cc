@@ -378,8 +378,7 @@ void
 tiled_dragonfly::make_intragroup_connections(internal_connectable_map& objects)
 {
   connectable::config cfg;
-  cfg.link_weight = 1.0;
-  cfg.red = 1;
+  cfg.ty = connectable::BasicConnection;
   for (int g=0; g<numG(); ++g) {
     for( std::list<connection>::iterator it=intragrp_conns_.begin();
          it!=intragrp_conns_.end(); ++it ) {
@@ -455,8 +454,7 @@ void
 tiled_dragonfly::make_intergroup_connections(internal_connectable_map& objects)
 {
   connectable::config cfg;
-  cfg.link_weight = 1.0;
-  cfg.red = 1;
+  cfg.ty = connectable::BasicConnection;
   for( std::list<connection>::iterator it=intergrp_conns_.begin();
        it!=intergrp_conns_.end(); ++it ) {
 

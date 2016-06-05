@@ -15,6 +15,8 @@ class packet_flow_params  {
  public:
   double link_bw;
 
+  double ej_bw;
+
   ~packet_flow_params();
 
   timestamp hop_lat;
@@ -44,7 +46,6 @@ class packet_flow_abstract_switch :
   public packet_flow_component
 {
  public:
-
 #if SSTMAC_INTEGRATED_SST_CORE
   packet_flow_abstract_switch(
     SST::ComponentId_t id,
@@ -86,11 +87,7 @@ class packet_flow_abstract_switch :
 #endif
 
  protected:
-  packet_flow_params* params_
-#if SSTMAC_HAVE_CXX11
-    = nullptr
-#endif
-  ;
+  packet_flow_params* params_;
 };
 
 /**

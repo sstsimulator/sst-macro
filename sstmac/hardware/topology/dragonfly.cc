@@ -389,7 +389,7 @@ void
 dragonfly::connect_objects(internal_connectable_map& objects)
 {
   connectable::config cfg;
-  cfg.link_weight = 1.0;
+  cfg.ty = connectable::RedundantConnection;
   for (long i = 0; i < objects.size(); i++) {
     std::vector<int> connected;
     std::vector<int> connected_red;

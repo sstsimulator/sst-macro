@@ -74,6 +74,14 @@ packet_flow_abstract_switch::init_factory_params(sprockit::sim_parameters *param
   params_->xbar_input_buffer_num_bytes
     = params->get_byte_length_param("input_buffer_size");
 
+  if (params->has_param("ejection_bandwidth")){
+    params_->ej_bw =
+       params->get_bandwidth_param("ejection_bandwidth");
+  } else {
+    params_->ej_bw =
+       params->get_bandwidth_param("injection_bandwidth");
+  }
+
   params_->link_arbitrator_template
     = packet_flow_bandwidth_arbitrator_factory::get_optional_param(
         "arbitrator", "cut_through", params);
@@ -137,6 +145,7 @@ packet_flow_switch::~packet_flow_switch()
   if (params_) delete params_;
 }
 
+
 void
 packet_flow_switch::init_factory_params(sprockit::sim_parameters *params)
 {
@@ -144,7 +153,7 @@ packet_flow_switch::init_factory_params(sprockit::sim_parameters *params)
 
   acc_delay_ = params->get_optional_bool_param("accumulate_congestion_delay",false);
 
-  packet_size_ = params->get_optional_byte_length_param("packet_size", 4096);
+  packet_size_ = params->get_optional_byte_length_param("mtu", 4096);
 
   if (params->has_namespace("congestion_matrix")){
     sprockit::sim_parameters* congestion_params = params->get_namespace("congestion_matrix");
@@ -201,15 +210,13 @@ packet_flow_switch::initialize()
 }
 
 packet_flow_crossbar*
-packet_flow_switch::crossbar(double xbar_weight)
+packet_flow_switch::crossbar()
 {
   if (!xbar_) {
-    double xbar_bw = xbar_weight > 0 ?
-          params_->crossbar_bw * xbar_weight : params_->crossbar_bw;
     xbar_ = new packet_flow_crossbar(
               timestamp(0), //assume zero-time send
               params_->hop_lat, //delayed credits
-              xbar_bw,
+              params_->crossbar_bw,
               router_->max_num_vc(),
               params_->xbar_input_buffer_num_bytes,
               params_->link_arbitrator_template->clone(-1/*fake bw*/));
@@ -229,13 +236,17 @@ packet_flow_sender*
 packet_flow_switch::output_buffer(int port, config* cfg)
 {
   if (!out_buffers_[port]){
-    double total_link_bw = params_->link_bw;
+    bool inj_port = top_->is_injection_port(port);
+    double total_link_bw = inj_port ? params_->ej_bw : params_->link_bw;
     int dst_buffer_size = params_->xbar_input_buffer_num_bytes;
     int src_buffer_size = params_->xbar_output_buffer_num_bytes;
     timestamp lat = params_->hop_lat;
     switch(cfg->ty){
+      case BasicConnection:
+        break;
       case RedundantConnection:
-        total_link_bw *= red;
+        total_link_bw *= cfg->red;
+        src_buffer_size *= cfg->red;
         break;
        case WeightedConnection:
         total_link_bw *= cfg->link_weight;
@@ -249,7 +260,14 @@ packet_flow_switch::output_buffer(int port, config* cfg)
         total_link_bw = cfg->bw;
         lat = cfg->latency;
         break;
+      default:
+        spkt_throw_printf(sprockit::value_error,
+          "bad connection::config enum %d", cfg->ty);
     }
+
+    debug_printf(sprockit::dbg::packet_flow,
+      "making buffer with bw=%10.6e on port=%d for switch=%d",
+      total_link_bw, port, int(my_addr_));
 
     packet_flow_network_buffer* out_buffer
       = new packet_flow_network_buffer(
@@ -291,7 +309,7 @@ packet_flow_switch::connect_input(
   connectable* mod,
   config* cfg)
 {
-  crossbar(cfg->xbar_weight)->set_input(dst_inport, src_outport, safe_cast(event_handler, mod));
+  crossbar()->set_input(dst_inport, src_outport, safe_cast(event_handler, mod));
 }
 
 void
@@ -349,7 +367,10 @@ void
 packet_flow_switch::set_event_manager(event_manager* m)
 {
   network_switch::set_event_manager(m);
-  crossbar();
+  if (!xbar_){
+    spkt_throw(sprockit::value_error,
+       "crossbar uninitialized on switch");
+  }
 #if !SSTMAC_INTEGRATED_SST_CORE
   if (congestion_spyplot_){
     xbar_->set_congestion_spyplot(congestion_spyplot_);

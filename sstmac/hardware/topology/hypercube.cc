@@ -89,7 +89,7 @@ void
 hypercube::connect_objects(internal_connectable_map& objects)
 {
   connectable::config cfg;
-  cfg.link_weight = 1.0;
+  cfg.ty = connectable::RedundantConnection;
   top_debug("hypercube: connecting %d switches",
     int(objects.size()));
 

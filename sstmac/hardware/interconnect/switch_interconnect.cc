@@ -143,10 +143,7 @@ macro_switch_interconnect::init_factory_params(sprockit::sim_parameters* params)
       the_nic->connect(inj_port, the_only_port, connectable::input, nlnk, &nic_cfg);
     }
   } else {
-    nic* theNic = nics_[0];
-    double inj_bw = theNic->injection_bandwidth();
-    timestamp inj_lat = theNic->injection_latency();
-    topology_->connect_end_points(switches_, nics_, inj_bw, inj_lat);
+    topology_->connect_end_points(switches_, nics_);
   }
 
   topology_->connect_topology(switches_);

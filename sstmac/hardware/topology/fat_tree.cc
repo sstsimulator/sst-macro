@@ -61,18 +61,6 @@ abstract_fat_tree::init_factory_params(sprockit::sim_parameters *params)
    */
   toplevel_ = l_ - 1;
   numleafswitches_ = pow(k_, l_ - 1);
-
-  if (params->has_param("tapering")){
-    params->get_vector_param("tapering", tapering_);
-  } else {
-    tapering_.resize(toplevel_, 1.0);
-  }
-
-  if (tapering_.size() != toplevel_){
-    spkt_throw_printf(sprockit::value_error,
-      "fat_tree::tapering array of size %d is not of correct size %d",
-      tapering_.size(), toplevel_);
-  }
 }
 
 void
@@ -139,12 +127,11 @@ fat_tree::connect_group(
   int down_group_size,
   long down_group_offset,
   int up_group_size,
-  long up_group_offset,
-  double bw_multiplier)
+  long up_group_offset)
 {
   connectable::config cfg;
-  cfg.red = 1;
-  cfg.link_weight = bw_multiplier;
+  cfg.ty = connectable::BasicConnection;
+
   long down_partner = down_group_offset;
   
   //total hack for now to taper bandwidth when appropriate
@@ -222,17 +209,14 @@ fat_tree::connect_section(
   int down_group_size,
   long down_section_offset,
   int up_group_size,
-  long up_section_offset,
-  double bw_multiplier
-)
+  long up_section_offset)
 {
   for (int grp=0; grp < num_groups_per_section; ++grp) {
     long up_group_offset = up_section_offset + grp;
     long down_group_offset = down_section_offset + grp;
     connect_group(objects, group_stride,
                   down_group_size, down_group_offset,
-                  up_group_size, up_group_offset,
-                  bw_multiplier);
+                  up_group_size, up_group_offset);
   }
 }
 
@@ -317,8 +301,7 @@ fat_tree::connect_objects(internal_connectable_map& objects)
       connect_section(objects, group_stride,
                       num_groups_per_section,
                       group_size, down_section_offset,
-                      group_size, up_section_offset,
-                      tapering_.at(l));
+                      group_size, up_section_offset);
     }
     down_level_start += numleafswitches_;
     up_level_start += numleafswitches_;
@@ -585,6 +568,19 @@ simple_fat_tree::init_factory_params(sprockit::sim_parameters *params)
             num_switches_, l_);
   max_ports_injection_ = endpoints_per_switch_ = params->get_optional_int_param("concentration", k_);
   max_ports_intra_network_ = k_ + 1;
+
+  if (params->has_param("tapering")){
+    params->get_vector_param("tapering", tapering_);
+  } else {
+    tapering_.resize(toplevel_, 1.0);
+  }
+
+  if (tapering_.size() != toplevel_){
+    spkt_throw_printf(sprockit::value_error,
+      "fat_tree::tapering array of size %d is not of correct size %d",
+      tapering_.size(), toplevel_);
+  }
+
   structured_topology::init_factory_params(params);
 }
 
@@ -593,8 +589,8 @@ simple_fat_tree::connect_objects(internal_connectable_map &switches)
 {
   int nswitches = numleafswitches_;
   connectable::config cfg;
+  cfg.ty = connectable::WeightedConnection;
   double bw_multiplier = 1.0;
-  cfg.red = 1;
   int stopLevel = l_ - 1;
   for (int l=0; l < stopLevel; ++l){
     int down_offset = level_offsets_[l];

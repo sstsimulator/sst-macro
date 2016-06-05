@@ -110,8 +110,6 @@ class packet_flow_sender :
 
   timestamp credit_lat_;
 
-  timestamp credit_latency_;
-
   bool acc_delay_;
 
   bool update_vc_;

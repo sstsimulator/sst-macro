@@ -78,8 +78,7 @@ tiled_torus::connect_dim(int dim,
   int nreplica = red_[dim];
   int outport, inport;
   connectable::config cfg;
-  cfg.link_weight = 1.0;
-  cfg.red = 1;
+  cfg.ty = connectable::BasicConnection;
   for (int r=0; r < nreplica; ++r){
     outport = inport = port(r, dim, hdtorus::pos);
     top_debug("\tconnecting + replica %d on port %d", r, outport);

@@ -26,8 +26,7 @@ void
 flattened_butterfly::connect_objects(internal_connectable_map& objects)
 {
   connectable::config cfg;
-  cfg.link_weight = 1.0;
-  cfg.red = 1;
+  cfg.ty = connectable::BasicConnection;
   /**
     In 4-ary 3-fly, we have 16 switches per col
     with 3 columns or stages.  Thus we can label

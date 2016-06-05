@@ -36,6 +36,8 @@ connectable_proxy_component::connect(
         component_name.c_str(), src_port,
         other->component_name.c_str(), dst_port, cfg->ty);
   switch(cfg->ty){
+    case BasicConnection:
+      break;
     case RedundantConnection:
       port_name_prefix += sprockit::printf("_%d", cfg->red);
       break;
@@ -50,6 +52,9 @@ connectable_proxy_component::connect(
       port_name_prefix += sprockit::printf("_%f_%ld",
         cfg->bw, cfg->latency.ticks_int64());
       break;
+    default:
+      spkt_throw(sprockit::value_error,
+       "invalid connectable enum %d in proxy component", cfg->ty);
   }
 
 

@@ -92,6 +92,7 @@ class packet_flow_nic_packetizer :
   bool acc_delay_;
 
   double inj_bw_;
+  double ej_bw_;
   int buffer_size_;
   packet_flow_injection_buffer* inj_buffer_;
   packet_flow_eject_buffer* ej_buffer_;

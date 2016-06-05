@@ -157,8 +157,7 @@ butterfly::connect_objects(internal_connectable_map& objects)
   long block_size = nswitches_per_col_;
   long group_size = kary_;
   connectable::config cfg;
-  cfg.link_weight = 1.0;
-  cfg.red = 1;
+  cfg.ty = connectable::BasicConnection;
   for (int l=0; l < (nfly_-1); ++l) {
     long col_start_index = l * nswitches_per_col_;
     for (long i=0; i < nswitches_per_col_; ++i) {

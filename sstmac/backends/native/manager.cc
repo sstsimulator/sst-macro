@@ -329,7 +329,6 @@ macro_manager::launch_apps()
   }
 }
 
-
 //
 // Goodbye.
 //
