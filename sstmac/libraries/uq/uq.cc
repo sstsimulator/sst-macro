@@ -154,6 +154,7 @@ send_scan_point(SimulationQueue* q,
   sprockit::sim_parameters& params,
   char* bufferPtr,
   int nparams,
+  int nresults,
   const char* param_names[],
   uq_param_t* param_vals)
 {
@@ -176,7 +177,7 @@ send_scan_point(SimulationQueue* q,
     total_size += name_len + val_size;
   }
 
-  Simulation* sim = q->sendScanPoint(bufferPtr, nparams, total_size);
+  Simulation* sim = q->sendScanPoint(bufferPtr, total_size, nresults);
   return sim;
 }
 
@@ -187,6 +188,7 @@ sstmac_uq_run(void* queue,
   double* results[], uq_spawn_type_t spawn_ty)
 {
   SimulationQueue* q = (SimulationQueue*) queue;
+  if (max_nthread <= 0) max_nthread = q->maxParallelWorkers();
   Simulation** sims = new Simulation*[max_nthread];
 
   sprockit::sim_parameters params;
@@ -213,7 +215,7 @@ sstmac_uq_run(void* queue,
     }
     else if (spawn_ty == MPIScan){
       sims[num_running++] = send_scan_point(q, params, bufferPtr,
-                                nparams, param_names, param_values[j]);
+                                nparams, nresults, param_names, param_values[j]);
       bufferPtr += paramBufferSize;
     } else {
       spkt_throw_printf(sprockit::value_error,
@@ -221,11 +223,14 @@ sstmac_uq_run(void* queue,
     }
 
     if (num_running == max_nthread || j == last_job){
-      wait_sims(sims, num_running, results+result_offset, nresults, Fork);
+      wait_sims(sims, num_running, results+result_offset, nresults, spawn_ty);
+      printf("Finished through simulation point %d\n", j);
       result_offset += num_running;
       num_running = 0;
     }
   }
+
+  if (spawn_ty == MPIScan) q->teardown();
 
   delete[] sims;
 }

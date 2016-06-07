@@ -185,6 +185,10 @@ manager::build_apps(sprockit::sim_parameters* params)
 
 manager::~manager() throw ()
 {
+  if (sprockit::debug::prefix_fxn) 
+    delete sprockit::debug::prefix_fxn;
+  sprockit::debug::prefix_fxn = 0;
+
   if (interconnect_) delete interconnect_;
 
   std::map<int, app_manager*>::iterator it, end = app_managers_.end();
@@ -263,6 +267,7 @@ macro_manager::run(timestamp until)
   running_ = false;
   // Now call done routine to end simulation and print Stats.
   stop();
+
 
   return event_manager_->now();
 }

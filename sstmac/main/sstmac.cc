@@ -180,10 +180,9 @@ init_params(parallel_runtime* rt, opts& oo, sprockit::sim_parameters* params, bo
 }
 
 #if !SSTMAC_INTEGRATED_SST_CORE
-native::manager*
+void
 init_first_run(parallel_runtime* rt, sprockit::sim_parameters* params)
 {
-  native::manager* mgr = new native::macro_manager(rt);
   std::string rank = sprockit::printf("%d", rt->me());
   std::string nproc = sprockit::printf("%d", rt->nproc());
   params->add_param_override("sst_rank", rank);
@@ -197,16 +196,14 @@ init_first_run(parallel_runtime* rt, sprockit::sim_parameters* params)
   //don't fail on existing, but ovewrite whatever is there
   params->parse_keyval("topology.nworkers", nworkers, false, true, true);
   rt->init_partition_params(params);
-
-  //this must come after runtime has had a chance to init runtime params
-  mgr->init_factory_params(params);
-
-  return mgr;
 }
 
 void
-run_manager(native::manager* mgr, sprockit::sim_parameters* params, sim_stats& stats)
+run_params(parallel_runtime* rt, sprockit::sim_parameters* params, sim_stats& stats)
 {
+  native::manager* mgr = new native::macro_manager(rt);
+  mgr->init_factory_params(params);
+
   double start = sstmac_wall_time();
   timestamp stop_time = params->get_optional_time_param("stop_time", -1.);
   timestamp runtime;
@@ -272,8 +269,8 @@ run(opts& oo,
       return;
 
 #if !SSTMAC_INTEGRATED_SST_CORE
-  native::manager* mgr = init_first_run(rt, params);
-  run_manager(mgr, params, stats);
+  init_first_run(rt, params);
+  run_params(rt, params, stats);
 #endif
 }
 

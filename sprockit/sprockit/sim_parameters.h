@@ -357,10 +357,10 @@ class sim_parameters  {
   get_vector_param(const std::string& key, std::vector<std::string>& vals);
 
   sim_parameters*
-  get_namespace(const std::string& ns) const;
+  get_namespace(const std::string& ns);
 
   sim_parameters*
-  get_optional_namespace(const std::string& ns) const;
+  get_optional_namespace(const std::string& ns);
 
   typedef std::set<int>::const_iterator id_iterator;
 
@@ -391,8 +391,7 @@ class sim_parameters  {
   param_assign
   operator[](const std::string& key);
 
-  const sim_parameters*
-  top_parent() const;
+  sim_parameters* top_parent();
 
   key_value_map::iterator begin() { return params_.begin(); }
   key_value_map::const_iterator begin() const { return params_.begin(); }
@@ -450,11 +449,10 @@ class sim_parameters  {
     bool override_existing,
     bool mark_as_read);
 
-  sim_parameters*
-  get_param_scope(const std::string& ns);
 
   sim_parameters*
   get_scope_and_key(const std::string& key, std::string& final_key);
+
 
 };
 

@@ -49,6 +49,11 @@ struct sim_stats {
   double wallTime;
   double simulatedTime;
   int numResults;
+  sim_stats() : 
+    wallTime(0), 
+    simulatedTime(0), 
+    numResults(-1) 
+  {}
 };
 
 int
@@ -94,11 +99,11 @@ try_main(sprockit::sim_parameters* params,
    bool params_only = false);
 
 void
-run_manager(native::manager* mgr,
+run_params(parallel_runtime* rt,
   sprockit::sim_parameters* params,
    sim_stats& stats);
 
-native::manager*
+void
 init_first_run(parallel_runtime* rt,
     sprockit::sim_parameters* params);
 

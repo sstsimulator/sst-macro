@@ -119,6 +119,17 @@ class Simulation
     return results_;
   }
 
+
+  bool
+  complete() const {
+    return complete_;
+  }
+
+  void
+  setComplete(bool flag){
+    complete_ = flag;
+  }
+
   int
   numResults() const {
     return stats_.numResults;
@@ -205,6 +216,24 @@ class SimulationQueue
     return fork(&params);
   }
 
+  bool
+  runJobsOnMaster() const {
+    return nproc_ <= 4;
+  }
+
+  int
+  maxParallelWorkers() const {
+    if (runJobsOnMaster()) return nproc_;
+    else return nproc_ - 1;
+  }
+
+  void
+  setNextWorker(){
+    next_worker_ = (next_worker_ + 1) % nproc_;
+  }
+
+  void teardown();
+
   void init(int argc, char** argv);
 
   void finalize();
@@ -224,16 +253,6 @@ class SimulationQueue
   static void
   publishResults(double* results, int nresults);
 
- private:
-  std::list<Simulation*> pending_;
-  parallel_runtime* rt_;
-  sprockit::sim_parameters template_params_;
-  opts template_opts_;
-  static double* results_;
-  static int num_results_;
-
-#ifdef SSTMAC_MPI_DRIVER
- public:
   Simulation*
   sendScanPoint(char* bufferPtr, int nparams, int totalSize);
 
@@ -249,11 +268,18 @@ class SimulationQueue
   }
 
  private:
+  std::list<Simulation*> pending_;
+  parallel_runtime* rt_;
+  sprockit::sim_parameters template_params_;
+  opts template_opts_;
+  static double* results_;
+  static int num_results_;
+
+ private:
   int nproc_;
   int me_;
   int next_worker_;
-  native::manager* mgr_;
-#endif
+  bool first_run_;
 };
 
 }

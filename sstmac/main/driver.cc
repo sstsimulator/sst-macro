@@ -1,5 +1,6 @@
 #include <sstmac/main/driver.h>
 #include <sstmac/common/sstmac_config.h>
+#include <sstmac/common/sstmac_env.h>
 #include <sstmac/backends/native/manager.h>
 #include <sprockit/errors.h>
 #include <sprockit/fileio.h>
@@ -72,14 +73,24 @@ Simulation::finalize()
   complete_ = true;
 }
 
+
 SimulationQueue::SimulationQueue() :
-#if SSTMAC_MPI_DRIVER
- mgr_(0),
- next_worker_(1), //starts from 1
-#endif
+ first_run_(true),
+ next_worker_(0), //starts from 1
  me_(0),
  nproc_(1)
 {
+}
+
+void
+SimulationQueue::teardown()
+{
+#if SSTMAC_MPI_DRIVER
+  char buffer[1];
+  for (int i=1; i < nproc_; ++i){
+    MPI_Send(buffer, 1, MPI_INT, i, terminate_tag, MPI_COMM_WORLD);
+  }
+#endif
 }
 
 
@@ -175,6 +186,7 @@ SimulationQueue::init(int argc, char** argv)
   MPI_Init(&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &nproc_);
   MPI_Comm_rank(MPI_COMM_WORLD, &me_);
+  next_worker_ = 1%nproc_;
 #endif
   //set up the search path
   sprockit::SpktFileIO::add_path(SSTMAC_CONFIG_INSTALL_INCLUDE_PATH);
@@ -193,55 +205,103 @@ SimulationQueue::finalize()
 #endif
 }
 
-#if SSTMAC_MPI_DRIVER
 void
 Simulation::waitMPIScan()
 {
+#if SSTMAC_MPI_DRIVER
+  if (complete_) return;
+
+  driver_debug("master waiting for simulation to complete");
   MPI_Waitall(3, mpi_requests_, MPI_STATUSES_IGNORE);
+  driver_debug("received all results from simulation - now complete");
+  complete_ = true;
+#else
+  spkt_throw(sprockit::unimplemented_error,
+    "Simulation::waitMPIScan()");
+#endif
 }
 
 void
 SimulationQueue::busyLoopMPI()
 {
-  char paramBuffer[4096];
-  MPI_Status stat;
-  int master = 0;
-  MPI_Recv(paramBuffer, 4096, MPI_CHAR, master, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
-  if (stat.MPI_TAG == terminate_tag){
-    return;
-  } else {
-    sim_stats stats;
-    runScanPoint(paramBuffer, stats);
-    MPI_Send(&stats, sizeof(sim_stats), MPI_BYTE, master, stats_tag, MPI_COMM_WORLD);
-    MPI_Send(results_, num_results_, MPI_DOUBLE, master, results_tag, MPI_COMM_WORLD);
+#if SSTMAC_MPI_DRIVER
+  while (1){
+    int me; MPI_Comm_rank(MPI_COMM_WORLD, &me);
+    char paramBuffer[4096];
+    MPI_Status stat;
+    int master = 0;
+    driver_debug("worker %d waiting on for new job from master", me);
+    MPI_Recv(paramBuffer, 4096, MPI_CHAR, master, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
+    driver_debug("received buffer on tag %d on worker %d", stat.MPI_TAG, me);
+    if (stat.MPI_TAG == terminate_tag){
+      return;
+    } else {
+      sim_stats stats;
+      runScanPoint(paramBuffer, stats);
+      MPI_Request reqs[2];
+      MPI_Isend(&stats, sizeof(sim_stats), MPI_BYTE, master, stats_tag, MPI_COMM_WORLD, &reqs[0]);
+      MPI_Isend(results_, num_results_, MPI_DOUBLE, master, results_tag, MPI_COMM_WORLD, &reqs[1]);
+      driver_debug("worker %d waiting on send results to master", me);
+      MPI_Waitall(2, reqs, MPI_STATUSES_IGNORE);
+    }
   }
+#else
+  spkt_throw(sprockit::unimplemented_error,
+    "Simulation::busyLoopMPI()");
+#endif
 }
 
 Simulation*
 SimulationQueue::sendScanPoint(char *bufferPtr, int bufferSize, int nresults)
 {
+#if SSTMAC_MPI_DRIVER
+  driver_debug("sending scan point with buffer size=%d nresults=%d to worker %d",
+    bufferSize, nresults, next_worker_);
   Simulation* sim = new Simulation(nresults);
+
+  if (runJobsOnMaster() && next_worker_ == me_)
+    setNextWorker();
+ 
   if (next_worker_ == me_){
     sim_stats stats;
     //i have looped around - use me in running jobs
     runScanPoint(bufferPtr, stats);
     sim->setStats(stats);
+    if (num_results_ != nresults){
+      spkt_throw_printf(sprockit::value_error,
+        "got wrong number of results form simulation queue: %d != %d",
+        num_results_, nresults);
+
+    }
     ::memcpy(sim->results(), results_, num_results_*sizeof(double));
+    sim->setComplete(true);
   } else {
+    driver_debug("sending buffer of size %d on tag %d to worker %d",
+                  bufferSize, init_tag, next_worker_);
     MPI_Isend(bufferPtr, bufferSize, MPI_CHAR, next_worker_, init_tag,
               MPI_COMM_WORLD, sim->initSendRequest());
+    driver_debug("receiving stats on tag %d from worker %d",
+                  stats_tag, next_worker_);
     MPI_Irecv(sim->stats(), sizeof(sim_stats), MPI_BYTE, next_worker_, stats_tag,
               MPI_COMM_WORLD, sim->recvStatsRequest());
+    driver_debug("receiving %d results on tag %d from worker %d",
+                  nresults, results_tag, next_worker_);
     MPI_Irecv(sim->results(), nresults, MPI_DOUBLE, next_worker_, results_tag,
               MPI_COMM_WORLD, sim->recvResultsRequest());
   }
 
-  next_worker_ = (next_worker_ + 1) % nproc_;
+  setNextWorker();
+  return sim;
+#else
+  spkt_throw(sprockit::unimplemented_error,
+    "Simulation::sendScanPoint()");
+#endif
 }
 
 void
 SimulationQueue::runScanPoint(char* buffer, sim_stats& stats)
 {
+#if SSTMAC_MPI_DRIVER
   //first char is number of params
   char nparams = *buffer;
   char* bufferPtr = buffer + 1;
@@ -253,20 +313,33 @@ SimulationQueue::runScanPoint(char* buffer, sim_stats& stats)
     const char* param_val = bufferPtr;
     int val_len = ::strlen(bufferPtr) + 1; //+1 null char
     bufferPtr += val_len;
+    driver_debug("adding parameters %s = %s", 
+      param_name, param_val);
     params[param_name] = param_val;
   }
   rerun(&params, stats);
+  driver_debug("got stats with %d results", stats.numResults);
+#else
+  spkt_throw(sprockit::unimplemented_error,
+    "Simulation::runScanPoint()");
+#endif
 }
 
 void
 SimulationQueue::rerun(sprockit::sim_parameters* params, sim_stats& stats)
 {
   params->combine_into(&template_params_);
-  mgr_ = ::sstmac::init_first_run(rt_, params);
-  ::sstmac::run_manager(mgr_, params, stats);
-  delete mgr_;
-  mgr_ = 0;
+  sstmac::process_init_params(&template_params_);
+  sstmac::env::params = &template_params_;
+  //if (sprockit::debug::slot_active(sprockit::dbg::driver)){
+  //  template_params_.pretty_print_params();
+  //}
+  if (first_run_){
+    ::sstmac::init_first_run(rt_, &template_params_);
+    first_run_ = false;
+  }
+  ::sstmac::run_params(rt_, &template_params_, stats);
+  stats.numResults = num_results_;
 }
-#endif
 
 }

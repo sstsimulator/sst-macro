@@ -238,19 +238,7 @@ sim_parameters::has_namespace(const std::string &ns) const
 }
 
 sim_parameters*
-sim_parameters::get_optional_namespace(const std::string &ns) const
-{
-  KeywordRegistration::validate_namespace(ns);
-  std::map<std::string, sim_parameters*>::const_iterator it = subspaces_.find(ns);
-  if (it == subspaces_.end()){
-    return empty_ns_params_;
-  } else {
-    return it->second;
-  }
-}
-
-sim_parameters*
-sim_parameters::get_namespace(const std::string &ns) const
+sim_parameters::get_namespace(const std::string &ns) 
 {
   KeywordRegistration::validate_namespace(ns);
   std::map<std::string, sim_parameters*>::const_iterator it = subspaces_.find(ns);
@@ -336,7 +324,7 @@ sim_parameters::get_optional_param(const std::string &key, const std::string &de
 }
 
 sim_parameters*
-sim_parameters::get_param_scope(const std::string& ns)
+sim_parameters::get_optional_namespace(const std::string& ns)
 {
   sim_parameters*& params = subspaces_[ns];
   if (params == 0){
@@ -756,7 +744,7 @@ sim_parameters::print_params(
     sim_parameters* subspace = nsit->second;
     namespaces.push_back(ns);
     if (pretty_print){ //print the next namespace as a heading
-        os << prefix << "::" << ns << "\n";
+        os << prefix << subspace->namespace_ << "\n";
     } //else explicitly print the full namespace with each param
     subspace->print_params(os, pretty_print, namespaces);
     namespaces.pop_back();
@@ -799,7 +787,7 @@ sim_parameters::get_scope_and_key(const std::string& key, std::string& final_key
   while (ns_pos != std::string::npos) {
     std::string ns = final_key.substr(0, ns_pos);
     final_key  = final_key.substr(ns_pos+1);
-    scope = scope->get_param_scope(ns);
+    scope = scope->get_optional_namespace(ns);
     ns_pos = final_key.find(".");
   }
   return scope;
@@ -1001,7 +989,8 @@ sim_parameters::get_param(const std::string& key, bool throw_on_error)
       std::cerr << "Parameters given in namespace: " << std::endl;
       print_params(std::cerr);
       spkt_throw_printf(sprockit::value_error,
-               "sim_parameters: could not find parameter %s", key.c_str());
+               "sim_parameters: could not find parameter %s in namespace %s", 
+              key.c_str(), namespace_.c_str());
     } else {
       return "";
     }
@@ -1011,8 +1000,8 @@ sim_parameters::get_param(const std::string& key, bool throw_on_error)
   return entry.value;
 }
 
-const sim_parameters*
-sim_parameters::top_parent() const
+sim_parameters*
+sim_parameters::top_parent() 
 {
   if (parent_){
     return parent_->top_parent();
