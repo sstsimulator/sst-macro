@@ -296,7 +296,6 @@ try_main(sprockit::sim_parameters* params, int argc, char **argv, bool params_on
 
   //do some cleanup and processing of params
   sstmac::process_init_params(params);
-  sstmac::remap_deprecated_params(params);
 
   sstmac::run(oo, rt, params, stats, params_only);
   if (params_only){

@@ -33,9 +33,6 @@ class fat_tree_router :
   choose_up_path();
 
   virtual int
-  choose_down_path();
-
-  virtual int
   number_paths(message* msg) const;
 
   virtual void

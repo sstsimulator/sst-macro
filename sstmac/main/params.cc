@@ -123,9 +123,7 @@ param_remap remap_list[] = {
   pr("stack_chunk_size", "node.os.stack_chunk_size"),
   pr("stack_protect", "node.os.stack_protect"),
   pr("startup_libs", "node.os.startup_libs"),
-  pr("injection_latency", "switch.injection_latency", false),
   pr("injection_latency", "nic.injection_latency"),
-  pr("injection_bandwidth", "switch.injection_bandwidth", false),
   pr("injection_bandwidth", "nic.injection_bandwidth"),
   pr("__is_in_micro_mode", "__is_in_micro_mode"),
   pr("intragroup_connection_file", "topology.intragroup_connection_file", false),
@@ -163,6 +161,8 @@ process_init_params(sprockit::sim_parameters* params)
     sprockit::param_expander* hw_expander = sprockit::param_expander_factory::get_param("congestion_model", params);
     hw_expander->expand(params);
     delete hw_expander;
+  } else {
+    remap_deprecated_params(params);
   }
 
   //here is where we want to read debug params and active debug printing for stuff, maybe

@@ -121,7 +121,6 @@ SimulationQueue::run(sprockit::sim_parameters* params, sim_stats& stats)
 {
   params->combine_into(&template_params_);
   sstmac::process_init_params(&template_params_);
-  sstmac::remap_deprecated_params(&template_params_);
   ::sstmac::run(template_opts_, rt_, &template_params_, stats, false/*not just params*/);
 }
 
