@@ -447,8 +447,6 @@ simple_fat_tree::connect_objects(internal_connectable_map &switches)
       connectable* down_switch = switches[switch_id(down_id)];
       connectable* up_switch = switches[switch_id(up_id)];
       cfg.link_weight = bw_multiplier * tapering;
-      cfg.src_buffer_weight = bw_multiplier;
-      cfg.dst_buffer_weight = bw_multiplier;
       cfg.xbar_weight = bw_multiplier;
 
       int down_switch_outport = k_;
@@ -462,11 +460,14 @@ simple_fat_tree::connect_objects(internal_connectable_map &switches)
        up_id, s/k_, up_switch_inport,
        l, l+1, bw_multiplier, tapering);
 
+      cfg.src_buffer_weight = bw_multiplier;
+      cfg.dst_buffer_weight = bw_multiplier*k_;
       down_switch->connect(
         down_switch_outport,
         up_switch_inport,
         connectable::output,
         up_switch, &cfg);
+      cfg.xbar_weight = bw_multiplier*k_;
       up_switch->connect(
         down_switch_outport,
         up_switch_inport,
@@ -479,11 +480,14 @@ simple_fat_tree::connect_objects(internal_connectable_map &switches)
        down_id, s, down_switch_inport,
        l, l+1, bw_multiplier, tapering);
 
+      cfg.src_buffer_weight = bw_multiplier*k_;
+      cfg.dst_buffer_weight = bw_multiplier;
       up_switch->connect(
         up_switch_outport,
         down_switch_inport,
         connectable::output,
         down_switch, &cfg);
+      cfg.xbar_weight = bw_multiplier;
       down_switch->connect(
         up_switch_outport,
         down_switch_inport,

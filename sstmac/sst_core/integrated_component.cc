@@ -4,12 +4,19 @@
 #include <sstmac/sst_core/integrated_component.h>
 #include <sstmac/sst_core/integrated_core.h>
 #include <sstmac/sst_core/connectable_wrapper.h>
-
+#include <sstmac/common/sst_event.h>
+#include <sstmac/hardware/common/connection.h>
 #include <sprockit/output.h>
 
 namespace sstmac {
 
 SST::TimeConverter* SSTIntegratedComponent::time_converter_ = 0;
+
+void
+SSTIntegratedComponent::handle_event(SST::Event* ev)
+{
+  handle(static_cast<sstmac::event*>(ev));
+}
 
 SSTIntegratedComponent::SSTIntegratedComponent(
     SST::ComponentId_t id,
@@ -136,35 +143,35 @@ parse_port_name(const std::string& port_name, connection_details* rv)
   isstr >> read; // the other name
   rv->parse_dst(read);
   isstr >> rv->dst_port;
-  isstr >> rv->cfg.ty;
+  int cfg_ty;
+  isstr >> cfg_ty;
+  rv->cfg.ty = (hw::connectable::config_type_t) cfg_ty;
   switch (rv->cfg.ty){
-    case BasicConnection:
+    case hw::connectable::BasicConnection:
       break;
-    case RedundantConnection:
-      port_name_prefix += sprockit::printf("_%d", cfg->red);
+    case hw::connectable::RedundantConnection:
+      isstr >> rv->cfg.red;
       break;
-     case WeightedConnection:
-      port_name_prefix += sprockit::printf("_%d_%d_%d",
-        cfg->link_weight, cfg->src_buffer_weight, cfg->dst_buffer_weight);
+    case hw::connectable::WeightedConnection:
+      isstr >> rv->cfg.link_weight;
+      isstr >> rv->cfg.src_buffer_weight;
+      isstr >> rv->cfg.dst_buffer_weight;
+      isstr >> rv->cfg.xbar_weight;
       break;
-    case FixedBandwidthConnection:
-      port_name_prefix += sprockit::printf("_%f", cfg->bw);
+    case hw::connectable::FixedBandwidthConnection:
+      isstr >> rv->cfg.bw;
       break;
-    case FixedConnection:
-      port_name_prefix += sprockit::printf("_%f_%ld",
-        cfg->bw, cfg->latency.ticks_int64());
+    case hw::connectable::FixedConnection: {
+      isstr >> rv->cfg.bw;
+      int64_t lat_ticks;
+      isstr >> lat_ticks;
+      rv->cfg.latency = timestamp(lat_ticks, timestamp::exact);
       break;
+    }
     default:
       spkt_throw(sprockit::value_error,
-       "invalid connectable enum %d in proxy component", cfg->ty);
+       "invalid connectable enum %d in proxy component", rv->cfg.ty);
   }
-
-
-  isstr >> rv->cfg.link_weight;
-  isstr >> rv->cfg.src_buffer_weight;
-  isstr >> rv->cfg.dst_buffer_weight;
-  isstr >> rv->cfg.xbar_weight;
-  isstr >> rv->cfg.redundancy;
 }
 
 }

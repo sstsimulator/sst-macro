@@ -28,7 +28,6 @@
 #include <sprockit/output.h>
 
 #if SSTMAC_INTEGRATED_SST_CORE
-#include <sstmac/sst_core/message_event_wrapper.h>
 #include <sstmac/sst_core/integrated_component.h>
 #include <sstmac/sst_core/connectable_wrapper.h>
 #endif
@@ -56,14 +55,15 @@ node::connect_nic()
   for(auto&& pair : link_map_->getLinkMap()) {
     const std::string& port_name = pair.first;
     SST::Link* link = pair.second;
-    connection_details dets = parse_port_name(port_name);
+    connection_details dets; parse_port_name(port_name, &dets);
     if (dets.src_type == connection_details::node){
       //outgoing from me, make the link
       nic_debug("connecting to port %s", port_name.c_str());
       integrated_connectable_wrapper* next = new integrated_connectable_wrapper(link);
       nic_->connect(dets.src_port, 
             dets.dst_port,
-            dets.type, next);
+            dets.type, next,
+            &dets.cfg);
     } else { //I'm the receiving end
       configureLink(port_name, new SST::Event::Handler<nic>(nic_, &nic::handle_event));
     }

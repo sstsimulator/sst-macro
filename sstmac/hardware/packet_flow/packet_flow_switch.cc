@@ -210,9 +210,16 @@ packet_flow_switch::initialize()
 }
 
 packet_flow_crossbar*
-packet_flow_switch::crossbar()
+packet_flow_switch::crossbar(config* cfg)
 {
   if (!xbar_) {
+    double xbar_bw = params_->crossbar_bw;
+    if (cfg->ty == WeightedConnection){
+      xbar_bw *= cfg->xbar_weight;
+    }
+    debug_printf(sprockit::dbg::packet_flow | sprockit::dbg::packet_flow_config,
+      "Switch %d: creating crossbar with bandwidth %12.8e",
+      int(my_addr_), xbar_bw);
     xbar_ = new packet_flow_crossbar(
               timestamp(0), //assume zero-time send
               params_->hop_lat, //delayed credits
@@ -265,9 +272,9 @@ packet_flow_switch::output_buffer(int port, config* cfg)
           "bad connection::config enum %d", cfg->ty);
     }
 
-    debug_printf(sprockit::dbg::packet_flow,
-      "making buffer with bw=%10.6e on port=%d for switch=%d",
-      total_link_bw, port, int(my_addr_));
+    debug_printf(sprockit::dbg::packet_flow | sprockit::dbg::packet_flow_config,
+      "Switch %d: making buffer with bw=%10.6e on port=%d with buffer size %d going into buffer size %d",
+      int(my_addr_), total_link_bw, port, src_buffer_size, dst_buffer_size);
 
     packet_flow_network_buffer* out_buffer
       = new packet_flow_network_buffer(
@@ -309,7 +316,7 @@ packet_flow_switch::connect_input(
   connectable* mod,
   config* cfg)
 {
-  crossbar()->set_input(dst_inport, src_outport, safe_cast(event_handler, mod));
+  crossbar(cfg)->set_input(dst_inport, src_outport, safe_cast(event_handler, mod));
 }
 
 void

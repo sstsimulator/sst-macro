@@ -19,13 +19,12 @@
 #include <sprockit/keyword_registration.h>
 
 #if SSTMAC_INTEGRATED_SST_CORE
-#include <sstmac/sst_core/message_event_wrapper.h>
 #include <sstmac/sst_core/connectable_wrapper.h>
 #include <sstmac/sst_core/integrated_component.h>
 #endif
 
-ImplementFactory(sstmac::hw::network_switch);
-RegisterDebugSlot(network_switch);
+ImplementFactory(sstmac::hw::network_switch)
+RegisterDebugSlot(network_switch)
 
 namespace sstmac {
 
@@ -71,14 +70,16 @@ network_switch::init(unsigned int phase)
       if (dets.src_type == connection_details::sw && dets.src_id == my_addr_){ 
         //create the link
         integrated_connectable_wrapper* next = new integrated_connectable_wrapper(link);
-        connect_weighted(
+        connect(
             dets.src_port, 
             dets.dst_port,
             dets.type,
             next,
             &dets.cfg);
       } else { //somebody is injecting to me
-        configureLink(port_name, new SST::Event::Handler<SSTIntegratedComponent>(this, &SSTIntegratedComponent::handle_event));
+        configureLink(port_name,
+         new SST::Event::Handler<SSTIntegratedComponent>(
+              this, &SSTIntegratedComponent::handle_event));
       }
     }
     initialize();

@@ -37,7 +37,7 @@ class connectable
     int red;
     double bw;
     timestamp latency;
-    config() : xbar_weight(-1){}
+    config() : xbar_weight(1.0){}
   };
 
   typedef enum {

@@ -1,4 +1,5 @@
 #include <sstmac/sst_core/connectable_wrapper.h>
+#include <sprockit/util.h>
 #include <Python.h>
 
 namespace sstmac {
@@ -6,6 +7,18 @@ namespace sstmac {
 PyObject* connectable_proxy_component::sst = NULL;
 connectable_proxy_component::switch_map connectable_proxy_component::registered_switches;
 connectable_proxy_component::endpoint_map connectable_proxy_component::registered_endpoints;
+
+void
+integrated_connectable_wrapper::connect(
+  int src_outport,
+  int dst_inport,
+  connection_type_t ty,
+  connectable *mod,
+  config *cfg)
+{
+  spkt_throw(sprockit::unimplemented_error,
+   "integrated_connectable_wrapper::connect");
+}
 
 connectable_proxy_component::~connectable_proxy_component()
 {
@@ -42,8 +55,9 @@ connectable_proxy_component::connect(
       port_name_prefix += sprockit::printf("_%d", cfg->red);
       break;
      case WeightedConnection:
-      port_name_prefix += sprockit::printf("_%d_%d_%d",
-        cfg->link_weight, cfg->src_buffer_weight, cfg->dst_buffer_weight);
+      port_name_prefix += sprockit::printf("_%f_%f_%f_%f",
+        cfg->link_weight, cfg->src_buffer_weight,
+        cfg->dst_buffer_weight, cfg->xbar_weight);
       break;
     case FixedBandwidthConnection:
       port_name_prefix += sprockit::printf("_%f", cfg->bw);

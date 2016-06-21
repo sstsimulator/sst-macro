@@ -86,6 +86,9 @@ packet_flow_param_expander::expand(sprockit::sim_parameters* params)
         amm_type.c_str());
   }
 
+  nic_params->add_param_override("injection_credits",
+                    switch_params->get_param("input_buffer_size"));
+
   //erase all the top-level params so we don't have replica parameters
   //params->remove_param("network_bandwidth");
   //params->remove_param("network_switch_bandwidth");
@@ -172,7 +175,10 @@ packet_flow_param_expander::expand_amm3_network(sprockit::sim_parameters* params
 }
 
 void
-packet_flow_param_expander::expand_amm4_network(sprockit::sim_parameters* params, sprockit::sim_parameters* top_params, sprockit::sim_parameters* switch_params, int packet_size)
+packet_flow_param_expander::expand_amm4_network(sprockit::sim_parameters* params,
+  sprockit::sim_parameters* top_params,
+  sprockit::sim_parameters* switch_params,
+  int packet_size)
 {
   tiled_switch_ = true;
   std::string top = params->get_param("topology_name");

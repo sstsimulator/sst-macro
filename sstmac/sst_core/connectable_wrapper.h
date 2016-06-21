@@ -31,8 +31,8 @@ class connection_details
 
 };
 
-connection_details
-parse_port_name(const std::string& port_name);
+void
+parse_port_name(const std::string& port_name, connection_details* dets);
 
 class integrated_connectable_wrapper
   : public hw::connectable,
@@ -52,6 +52,13 @@ class integrated_connectable_wrapper
       spkt_throw(sprockit::unimplemented_error,
         "integrated_connectable_wrapper::handle: should never be called");
     }
+
+    void connect(
+      int src_outport,
+      int dst_inport,
+      connection_type_t ty,
+      connectable *mod,
+      config *cfg);
 
     event_loc_id
     event_location() const {

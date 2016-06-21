@@ -117,7 +117,7 @@ class packet_flow_switch :
   initialize();
 
   packet_flow_crossbar*
-  crossbar();
+  crossbar(config* cfg);
 
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
