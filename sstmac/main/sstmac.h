@@ -13,6 +13,7 @@
 #define SSTMAC_SSTMAC_H_INCLUDED
 
 #include <sprockit/sim_parameters_fwd.h>
+#include <sstmac/backends/native/manager_fwd.h>
 #include <sstmac/backends/common/parallel_runtime_fwd.h>
 #include <string>
 
@@ -48,6 +49,11 @@ struct sim_stats {
   double wallTime;
   double simulatedTime;
   int numResults;
+  sim_stats() : 
+    wallTime(0), 
+    simulatedTime(0), 
+    numResults(-1) 
+  {}
 };
 
 int
@@ -91,6 +97,15 @@ void
 try_main(sprockit::sim_parameters* params,
    int argc, char **argv,
    bool params_only = false);
+
+void
+run_params(parallel_runtime* rt,
+  sprockit::sim_parameters* params,
+   sim_stats& stats);
+
+void
+init_first_run(parallel_runtime* rt,
+    sprockit::sim_parameters* params);
 
 }
 

@@ -62,6 +62,11 @@ class packet :
   virtual node_id
   fromaddr() const = 0;
 
+  long
+  byte_offset() const {
+    return byte_offset_;
+  }
+
  protected:
   packet() : orig_(0) {}
 

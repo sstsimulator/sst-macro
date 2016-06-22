@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 #define debug_print(...) 
-//#define debug_print(...) printf(__VA_ARGS__)
+#define debug_print(...) printf(__VA_ARGS__)
 
 int main(int argc, char** argv)
 {
@@ -34,12 +34,13 @@ int main(int argc, char** argv)
     }
   }
 
-  void* queue = sstmac_uq_init(argc, argv);
+  int worker_id;
+  void* queue = sstmac_uq_init(argc, argv, &worker_id);
   int max_nthread = 1;
   sstmac_uq_run_units(queue,
     njobs, nparams, nresults, max_nthread,
     param_names, param_values, units,
-    results);
+    results, Fork);
 
   for (job=0; job < njobs; ++job){
     debug_print("Job %d: {\n", job);

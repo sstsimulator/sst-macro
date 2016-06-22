@@ -75,6 +75,7 @@ param_remap remap_list[] = {
   pr("packet_flow_memory_latency", "node.memory.latency"),
   pr("packet_flow_memory_arbitrator", "node.memory.arbitrator"),
   pr("packet_flow_memory_mtu", "node.memory.mtu"),
+  pr("packet_flow_injection_bandwidth", "switch.ejection_bandwidth", false),
   pr("packet_flow_injection_bandwidth", "nic.injection_bandwidth"),
   pr("packet_flow_injection_latency", "nic.injection_latency"),
   pr("packet_flow_eject_buffer_size", "nic.eject_buffer_size"),
@@ -84,11 +85,13 @@ param_remap remap_list[] = {
   pr("packet_flow_switch_crossbar_bandwidth", "switch.crossbar_bandwidth"),
   pr("packet_flow_switch_crossbar_latency", "switch.crossbar_latency"),
   pr("packet_flow_switch_input_buffer_size", "switch.input_buffer_size", false),
+#if SSTMAC_INTEGRATED_SST_CORE
   pr("packet_flow_switch_input_buffer_size", "nic.injection_credits"),
+#endif
   pr("packet_flow_arbitrator", "nic.arbitrator", false),
   pr("packet_flow_arbitrator", "switch.arbitrator"),
-  pr("packet_flow_mtu", "switch.packet_size", false),
-  pr("packet_flow_mtu", "nic.packet_size"),
+  pr("packet_flow_mtu", "switch.mtu", false),
+  pr("packet_flow_mtu", "nic.mtu"),
   pr("packet_flow_negligible_size", "switch.negligible_size"),
   pr("router", "switch.router"),
   pr("sanity_check_queue_depth_reporting", "switch.sanity_check_queue_depth_reporting"),
@@ -120,9 +123,7 @@ param_remap remap_list[] = {
   pr("stack_chunk_size", "node.os.stack_chunk_size"),
   pr("stack_protect", "node.os.stack_protect"),
   pr("startup_libs", "node.os.startup_libs"),
-  pr("injection_latency", "switch.injection_latency", false),
   pr("injection_latency", "nic.injection_latency"),
-  pr("injection_bandwidth", "switch.injection_bandwidth", false),
   pr("injection_bandwidth", "nic.injection_bandwidth"),
   pr("__is_in_micro_mode", "__is_in_micro_mode"),
   pr("intragroup_connection_file", "topology.intragroup_connection_file", false),
@@ -136,7 +137,11 @@ remap_deprecated_params(sprockit::sim_parameters* params)
   for (int i=0; i < num_remap; ++i){
     param_remap& p = remap_list[i];
     if (params->has_param(p.deprecated)){
-      params->parse_keyval(p.updated, params->get_param(p.deprecated), false);
+      params->parse_keyval(p.updated,
+         params->get_param(p.deprecated),
+         false/*do not fail on existing*/,
+         false/*do not overwrite anything*/,
+         false/*do not mark anything as read*/);
       if (p.del){
         params->remove_param(p.deprecated);
       }
@@ -156,6 +161,8 @@ process_init_params(sprockit::sim_parameters* params)
     sprockit::param_expander* hw_expander = sprockit::param_expander_factory::get_param("congestion_model", params);
     hw_expander->expand(params);
     delete hw_expander;
+  } else {
+    remap_deprecated_params(params);
   }
 
   //here is where we want to read debug params and active debug printing for stuff, maybe

@@ -129,7 +129,8 @@ class network_switch :
     int src_outport,
     int dst_inport,
     connection_type_t ty,
-    connectable* mod);
+    connectable* mod,
+    config* cfg);
 
   virtual void
   set_event_manager(event_manager* m);
@@ -143,6 +144,20 @@ class network_switch :
 
   virtual void
   connect_ejector(int src_outport, int dst_inport, event_handler* nic) = 0;
+
+  virtual void
+  connect_output(
+    int src_outport,
+    int dst_inport,
+    connectable* mod,
+    config* cfg) = 0;
+
+  virtual void
+  connect_input(
+    int src_outport,
+    int dst_inport,
+    connectable* mod,
+    config* cfg) = 0;
 
  protected:
   switch_id my_addr_;

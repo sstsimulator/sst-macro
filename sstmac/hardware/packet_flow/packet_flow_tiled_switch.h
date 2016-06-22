@@ -34,12 +34,18 @@ class packet_flow_tiled_switch :
   queue_length(int port) const;
 
   virtual void
-  connect_weighted(
+  connect(
     int src_outport,
     int dst_inport,
     connection_type_t ty,
     connectable* mod,
-    double weight, int red);
+    config* cfg);
+
+  virtual void
+  connect_output(int src_outport, int dst_inport, connectable* mod, config *cfg);
+
+  virtual void
+  connect_input(int src_outport, int dst_inport, connectable* mod, config *cfg);
 
   std::vector<switch_id>
   connected_switches() const;
@@ -117,14 +123,14 @@ class packet_flow_tiled_switch :
     int src_outport,
     int dst_inport,
     event_handler* mod,
-    double weight, int red);
+    config* cfg);
 
   void
   connect_input(
     int src_outport,
     int dst_inport,
     event_handler* mod,
-    double weight, int red);
+    config* cfg);
 
 };
 

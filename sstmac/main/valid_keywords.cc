@@ -140,6 +140,7 @@ namespace sstmac {
   "network_train_injection_bw",  
   "packet_length",  
   "packet_size",
+  "mtu",
   "network_concentration",
   "topology_geometry",   
   "topology_geometry",  

@@ -388,8 +388,8 @@ dragonfly::minimal_distance(
 void
 dragonfly::connect_objects(internal_connectable_map& objects)
 {
-  double intra_group_weight = 1.0;
-  double inter_group_weight = 1.0; //use red for now
+  connectable::config cfg;
+  cfg.ty = connectable::RedundantConnection;
   for (long i = 0; i < objects.size(); i++) {
     std::vector<int> connected;
     std::vector<int> connected_red;
@@ -431,19 +431,18 @@ dragonfly::connect_objects(internal_connectable_map& objects)
             int(them), set_string(x, myy, myg).c_str(),
             outport, inport);
 
-        objects[me]->connect_weighted(
+        cfg.red = red_[x_dimension];
+        objects[me]->connect(
           outport,
           inport,
           connectable::output,
-          objects[them],
-          intra_group_weight,
-          red_[x_dimension]);
+          objects[them], &cfg);
 
         objects[them]->connect(
           outport,
           inport,
           connectable::input,
-          objects[me]);
+          objects[me], &cfg);
 
         if (outputgraph_) {
           connected.push_back(them);
@@ -465,19 +464,18 @@ dragonfly::connect_objects(internal_connectable_map& objects)
             int(them), set_string(myx, y, myg).c_str(),
             outport, inport);
 
-        objects[me]->connect_weighted(
+        cfg.red = red_[y_dimension];
+        objects[me]->connect(
           outport,
           inport,
           connectable::output,
-          objects[them],
-          intra_group_weight,
-          red_[y_dimension]);
+          objects[them], &cfg);
 
         objects[them]->connect(
           outport,
           inport,
           connectable::input,
-          objects[me]);
+          objects[me], &cfg);
 
         if (outputgraph_) {
           connected.push_back(them);
@@ -500,19 +498,18 @@ dragonfly::connect_objects(internal_connectable_map& objects)
         int(them), set_string(myx, myy, dstg).c_str(),
         outport, inport);
 
-      objects[me]->connect_weighted(
+      cfg.red = red_[g_dimension];
+      objects[me]->connect(
           outport,
           inport,
           connectable::output,
-          objects[them],
-          inter_group_weight,
-          red_[g_dimension]);
+          objects[them], &cfg);
 
       objects[them]->connect(
           outport,
           inport,
           connectable::input,
-          objects[me]);
+          objects[me], &cfg);
 
     }
 

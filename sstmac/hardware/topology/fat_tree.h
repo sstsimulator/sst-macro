@@ -49,10 +49,17 @@ class abstract_fat_tree :
 
   virtual int
   ndimensions() const {
-    //l branches plus one extra
-    //that denotes which "redundant" router
-    //it is
-    return l_ + 1;
+    //fat-tree is indexed by row and column
+    return 2;
+  }
+
+  static int
+  pow(int a, int exp){
+    int res = 1;
+    for (int i=0; i < exp; ++i){
+      res *= a;
+    }
+    return res;
   }
 
   int
@@ -78,8 +85,6 @@ class abstract_fat_tree :
  protected:
   int l_, k_, numleafswitches_;
   int toplevel_;
-  std::vector<double> tapering_;
-
 };
 
 /**
@@ -109,9 +114,7 @@ class fat_tree :
 
   virtual int
   num_switches() const {
-    //there are l-1 levels with numleaf
-    //the top level has numleaf / 2
-    return numleafswitches_ * (l_ - 1) + numleafswitches_ / 2;
+    return numleafswitches_ * l_;
   }
 
   std::string
@@ -152,33 +155,20 @@ class fat_tree :
     const coordinates& src_coords,
     const coordinates& dest_coords) const;
 
+  int
+  switch_at_row_col(int row, int col) const {
+    return row * numleafswitches_ + col;
+  }
+
+  static int
+  upColumnConnection(int k, int myColumn, int upPort, int columnSize);
+
+  static int
+  downColumnConnection(int k, int myColumn, int downPort, int columnSize);
+
  protected:
-  void
-  connect_group(
-    internal_connectable_map& switches,
-    int group_stride,
-    int down_group_size,
-    long down_group_offset,
-    int up_group_size,
-    long up_group_offset,
-    double bw_multiplier);
-
-  void
-  connect_section(
-    internal_connectable_map& switches,
-    int group_stride,
-    int num_groups_per_section,
-    int down_group_size,
-    long down_section_offset,
-    int up_group_size,
-    long up_section_offset,
-    double bw_multiplier);
-
   virtual void
   compute_switch_coords(switch_id uid, coordinates& coords) const;
-
- protected:
-  long toplevel_id_start_;
 
 };
 
@@ -267,6 +257,9 @@ class simple_fat_tree : public abstract_fat_tree
   std::vector<int> level_offsets_;
 
   int num_switches_;
+
+  std::vector<double> tapering_;
+
 
 };
 

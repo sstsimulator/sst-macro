@@ -330,7 +330,6 @@ hdtorus::minimal_distance(
 void
 hdtorus::connect_objects(internal_connectable_map& objects)
 {
-  double link_weight = 1.0;
   top_debug("hdtorus: connecting %d switches",
     int(objects.size()));
 
@@ -442,25 +441,28 @@ hdtorus::connect_dim(
   connectable* plus_partner,
   connectable* minus_partner)
 {
+  connectable::config cfg;
+  cfg.ty = connectable::RedundantConnection;
+  cfg.red = red_[dim];
   int pos_outport = convert_to_port(dim, pos);
   int neg_outport = convert_to_port(dim, neg);
-  center->connect_weighted(
+  center->connect(
     pos_outport, neg_outport,
     connectable::output,
-    plus_partner, 1.0, red_[dim]);
+    plus_partner, &cfg);
   plus_partner->connect(
     pos_outport, neg_outport,
     connectable::input,
-    center);
+    center, &cfg);
 
-  center->connect_weighted(
+  center->connect(
     neg_outport, pos_outport,
     connectable::output,
-    minus_partner, 1.0, red_[dim]);
+    minus_partner, &cfg);
   minus_partner->connect(
     neg_outport, pos_outport,
     connectable::input,
-    center);
+    center, &cfg);
 }
 
 void

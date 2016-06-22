@@ -114,8 +114,8 @@ crossbar::minimal_distance(const coordinates &src_coords,
 void
 crossbar::connect_objects(internal_connectable_map& objects)
 {
-  double edge_weight = 1.0;
-  int red = 1;
+  connectable::config cfg;
+  cfg.ty = connectable::BasicConnection;
   for (int i = 0; i < objects.size(); i++) {
     switch_id me(i);
 
@@ -125,17 +125,16 @@ crossbar::connect_objects(internal_connectable_map& objects)
         int outport = convert_to_port(0, j);
         int inport = convert_to_port(0, i);
 
-        objects[me]->connect_weighted(
+        objects[me]->connect(
           outport,
           inport,
           connectable::output,
-          objects[them],
-          edge_weight, red);
+          objects[them], &cfg);
 
         objects[them]->connect(
           outport, inport,
           connectable::input,
-          objects[me]);
+          objects[me], &cfg);
       }
     }
   }
