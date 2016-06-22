@@ -128,7 +128,7 @@ class mpi_status  {
   /// Define the received type.
   void
   set_recv_type(mpi_type_id t) {
-    recv_type_ = t;
+    recv_type = t;
   }
 
   /// This is the content.

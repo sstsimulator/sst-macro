@@ -1,4 +1,4 @@
-#include <sumi/allgather.h>
+#include <sumi/alltoall.h>
 #include <sumi/partner_timeout.h>
 #include <sumi/transport.h>
 #include <sumi/domain.h>
@@ -13,151 +13,185 @@
 
 using namespace sprockit::dbg;
 
-RegisterDebugSlot(sumi_allgather,
-  "print all debug output associated with allgather collectives in the sumi framework");
+RegisterDebugSlot(sumi_alltoall,
+  "print all debug output associated with alltoall collectives in the sumi framework");
+
+#define SEND_SHUFFLE 0
+#define RECV_SHUFFLE 1
 
 namespace sumi
 {
 
-SpktRegister("bruck", dag_collective, bruck_collective);
+SpktRegister("bruck_alltoall", dag_collective, bruck_alltoall_collective);
 
 void
-bruck_actor::init_buffers(void* dst, void* src)
+bruck_alltoall_actor::init_buffers(void* dst, void* src)
 {
+  int log2nproc, num_rounds, nprocs_extra_round;
+  compute_tree(log2nproc, midpoint_, num_rounds, nprocs_extra_round);
+
   if (src){
     //put everything into the dst buffer to begin
-    std::memcpy(dst, src, nelems_ * type_size_);
-    long buffer_size = nelems_ * type_size_ * dom_->nproc();
-    send_buffer_ = my_api_->make_public_buffer(dst, buffer_size);
-    recv_buffer_ = send_buffer_;
-    result_buffer_ = send_buffer_;
+    //but we have to shuffle for bruck algorithm
+    int offset = dense_me_ * nelems_ * type_size_;
+    int total_size = dense_nproc_ * nelems_ * type_size_;
+    char* srcPtr = (char*) src;
+    char* dstPtr = (char*) dst;
+    int copySize = total_size - offset;
+    std::memcpy(dstPtr, srcPtr + offset, copySize);
+    std::memcpy(dstPtr + copySize, srcPtr, offset);
+
+    int tmp_buffer_size = nelems_ * type_size_ * midpoint_;
+    result_buffer_ = my_api_->make_public_buffer(dst, total_size);
+    send_buffer_ = my_api_->allocate_public_buffer(tmp_buffer_size);
+    recv_buffer_ = my_api_->allocate_public_buffer(tmp_buffer_size);
   }
 }
 
 void
-bruck_actor::finalize_buffers()
+bruck_alltoall_actor::finalize_buffers()
 {
-  long buffer_size = nelems_ * type_size_ * dom_->nproc();
-  my_api_->unmake_public_buffer(send_buffer_, buffer_size);
+  if (send_buffer_.ptr){
+    int buffer_size = nelems_ * type_size_ * dom_->nproc();
+    int tmp_buffer_size = nelems_ * type_size_ * midpoint_;
+    my_api_->unmake_public_buffer(result_buffer_, buffer_size);
+    my_api_->free_public_buffer(recv_buffer_, tmp_buffer_size);
+    my_api_->free_public_buffer(send_buffer_, tmp_buffer_size);
+  }
 }
 
 void
-bruck_actor::init_dag()
+bruck_alltoall_actor::shuffle(action *ac, void* tmpBuf, void* mainBuf, bool copyToTemp)
 {
-  int virtual_nproc = dense_nproc_;
-
-  /** let's go bruck algorithm for now */
-  int nproc = 1;
-  int log2nproc = 0;
-  while (nproc < virtual_nproc)
-  {
-    ++log2nproc;
-    nproc *= 2;
-  }
-
-  int num_extra_procs = 0;
-  if (nproc > virtual_nproc){
-    --log2nproc;
-    //we will have to do an extra exchange in the last round
-    num_extra_procs = virtual_nproc - nproc / 2;
-  }
-
-  int num_rounds = log2nproc;
-  int nprocs_extra_round = num_extra_procs;
-
-  debug_printf(sumi_collective | sumi_allgather,
-    "Bruck %s: configured for %d rounds with an extra round exchanging %d proc segments on tag=%d ",
-    rank_str().c_str(), log2nproc, num_extra_procs, tag_);
-
-  //in the last round, we send half of total data to nearest neighbor
-  //in the penultimate round, we send 1/4 data to neighbor at distance=2
-  //and so on...
-  nproc = dense_nproc_;
-
-  int partner_gap = 1;
-  int round_nelems = nelems_;
-  action *prev_send, *prev_recv;
-  for (int i=0; i < num_rounds; ++i){
-    int send_partner = (dense_me_ + nproc - partner_gap) % nproc;
-    int recv_partner = (dense_me_ + partner_gap) % nproc;
-    action* send_ac = new send_action(i, send_partner);
-    action* recv_ac = new recv_action(i, recv_partner);
-    send_ac->offset = 0;
-    recv_ac->offset = round_nelems;
-    send_ac->nelems = round_nelems;
-    recv_ac->nelems = round_nelems;
-    partner_gap *= 2;
-    round_nelems *= 2;
-
-    if (i == 0){
-      add_initial_action(send_ac);
-      add_initial_action(recv_ac);
+  int nproc = dense_nproc_;
+  char* tmp_buffer = (char*) tmpBuf;
+  char* main_buffer = (char*) mainBuf;
+  int blocksPerCopy = ac->offset;
+  int blockStride = blocksPerCopy*2;
+  int tmpBlock = 0;
+  for (int mainBlock=ac->offset; mainBlock < nproc; tmpBlock += blocksPerCopy, mainBlock += blockStride){
+    int remainingBlocks = nproc - mainBlock;
+    int numCopyBlocks = std::min(blocksPerCopy, remainingBlocks);
+    int copySize = numCopyBlocks * nelems_ * type_size_;
+    void* tmp = tmp_buffer + tmpBlock*nelems_*type_size_;
+    void* main = main_buffer + mainBlock*nelems_*type_size_;
+    if (copyToTemp){
+      ::memcpy(tmp, main, copySize);
     } else {
-      add_dependency(prev_send, send_ac);
-      add_dependency(prev_recv, send_ac);
-      add_dependency(prev_send, recv_ac);
-      add_dependency(prev_recv, recv_ac);
+      ::memcpy(main, tmp, copySize);
+    }
+  }
+}
+
+void
+bruck_alltoall_actor::start_shuffle(action *ac)
+{
+  if (result_buffer_.ptr == 0) return;
+
+  if (ac->partner == SEND_SHUFFLE){
+    //shuffle to get ready for a send
+    //shuffle from result_buffer into send_buffer
+    shuffle(ac, send_buffer_, result_buffer_, true/*copy to temp send buffer*/);
+  } else {
+    shuffle(ac, recv_buffer_, result_buffer_, false/*copy from temp recv into result*/);
+  }
+
+}
+
+void
+bruck_alltoall_actor::init_dag()
+{
+  int log2nproc, num_rounds, nprocs_extra_round;
+  compute_tree(log2nproc, midpoint_, num_rounds, nprocs_extra_round);
+
+  int partnerGap = 1;
+  int me = dense_me_;
+  int nproc = dense_nproc_;
+  action* prev_shuffle = 0;
+  if (nprocs_extra_round) ++num_rounds;
+
+  for (int round=0; round < num_rounds; ++round){
+    int up_partner = (me + partnerGap) % nproc;
+    int down_partner = (me - partnerGap + nproc) % nproc;
+    int intervalSendSize = partnerGap;
+    int elemStride = partnerGap*2;
+    int bruckIntervalSize = elemStride;
+
+    int sendWindowSize = nproc - partnerGap;
+    int numBruckIntervals = sendWindowSize / bruckIntervalSize;
+    int numSendBlocks = numBruckIntervals * intervalSendSize;
+    int remainder = sendWindowSize % bruckIntervalSize;
+    int extraSendBlocks = std::min(intervalSendSize, remainder);
+    numSendBlocks += extraSendBlocks;
+
+    action* send_shuffle = new shuffle_action(round, SEND_SHUFFLE);
+    action* recv_shuffle = new shuffle_action(round, RECV_SHUFFLE);
+    action* send = new send_action(round, up_partner);
+    action* recv = new recv_action(round, down_partner);
+
+    int nelemsRound = numSendBlocks * nelems_;
+
+    send->offset = 0;
+    send->nelems = nelemsRound;
+
+    recv->offset = 0;
+    recv->nelems = nelemsRound;
+    recv->recv_type = action::temp;
+
+    send_shuffle->offset = partnerGap;
+    recv_shuffle->offset = partnerGap;
+    send_shuffle->nelems = nelemsRound;
+    recv_shuffle->nelems = nelemsRound;
+
+    if (prev_shuffle){
+      add_dependency(prev_shuffle, send_shuffle);
+      add_dependency(prev_shuffle, send_shuffle);
+    } else {
+      add_initial_action(send_shuffle);
     }
 
-    prev_send = send_ac;
-    prev_recv = recv_ac;
-  }
+    add_dependency(send_shuffle, send);
+    add_dependency(send_shuffle, recv);
 
-  if (nprocs_extra_round){
-    int nelems_extra_round = nprocs_extra_round * nelems_;
-    int send_partner = (dense_me_ + nproc - partner_gap) % nproc;
-    int recv_partner = (dense_me_ + partner_gap) % nproc;
-    action* send_ac = new send_action(num_rounds+1,send_partner);
-    action* recv_ac = new recv_action(num_rounds+1,recv_partner);
-    send_ac->offset = 0;
-    recv_ac->offset = round_nelems;
-    send_ac->nelems = nelems_extra_round;
-    recv_ac->nelems = nelems_extra_round;
+    add_dependency(send, recv_shuffle);
+    add_dependency(recv, recv_shuffle);
 
-    add_dependency(prev_send, send_ac);
-    add_dependency(prev_recv, send_ac);
-    add_dependency(prev_send, recv_ac);
-    add_dependency(prev_recv, recv_ac);
+    prev_shuffle = recv_shuffle;
+    partnerGap *= 2;
   }
 }
 
 void
-bruck_actor::buffer_action(void *dst_buffer, void *msg_buffer, action* ac)
+bruck_alltoall_actor::buffer_action(void *dst_buffer, void *msg_buffer, action* ac)
 {
   std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
 }
 
 void
-bruck_actor::finalize()
+bruck_alltoall_actor::finalize()
 {
-  // rank 0 need not reorder
-  // or no buffers
-  if (dense_me_ == 0 || result_buffer_ == 0){
+  if (result_buffer_ == 0){
     return;
   }
 
-  //we need to reorder things a bit
-  //first, copy everything out
-  int total_nelems = nelems_* dense_nproc_;
-  int total_size = total_nelems * type_size_;
+  int total_size = dense_nproc_ * nelems_ * type_size_;
+  int block_size = nelems_ * type_size_;
   char* tmp = new char[total_size];
-  std::memcpy(tmp, result_buffer_, total_size);
+  char* result = (char*) result_buffer_.ptr;
+  for (int i=0; i < dense_nproc_; ++i){
+    char* src = result + i*block_size;
+    int dst_index = (dense_me_ + dense_nproc_ - i) % dense_nproc_;
+    char* dst = tmp + dst_index*block_size;
+    ::memcpy(dst, src, block_size);
+  }
 
+  ::memcpy(result, tmp, total_size);
 
-  int my_offset = nelems_ * dense_me_;
-
-  int copy_size = (total_nelems - my_offset) * type_size_;
-  int copy_offset = my_offset * type_size_;
-
-  void* src = tmp;
-  void* dst = ((char*)result_buffer_) + copy_offset;
-  std::memcpy(dst, src, copy_size);
-
-  copy_size = my_offset * type_size_;
-  copy_offset = (total_nelems - my_offset) * type_size_;
-  src = tmp + copy_offset;
-  dst = result_buffer_;
-  std::memcpy(dst, src, copy_size);
+  do_sumi_debug_print("final result buf",
+    rank_str().c_str(), dense_me_,
+    -1,
+    0, nelems_*dense_nproc_,
+    result_buffer_.ptr);
 
   delete[] tmp;
 }

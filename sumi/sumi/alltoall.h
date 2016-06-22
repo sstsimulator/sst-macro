@@ -11,7 +11,7 @@ DeclareDebugSlot(sumi_alltoall)
 namespace sumi {
 
 class bruck_alltoall_actor :
-  public dag_collective_actor
+  public bruck_actor
 {
 
  public:
@@ -29,7 +29,11 @@ class bruck_alltoall_actor :
 
   void buffer_action(void *dst_buffer, void *msg_buffer, action* ac);
 
+  void start_shuffle(action* ac);
 
+  void shuffle(action *ac, void* tmpBuf, void* mainBuf, bool copyToTemp);
+
+  int midpoint_;
 };
 
 class bruck_alltoall_collective :

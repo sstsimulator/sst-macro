@@ -25,7 +25,7 @@ mpi_round_by_round_collective::mpi_round_by_round_collective(
   recvcnt_(recvcnt)
 {
   send_type_ = send_type;
-  recv_type_ = recv_type;
+  recv_type = recv_type;
   send_type_obj_ = queue->api()->type_from_id(send_type);
   recv_type_obj_ = queue->api()->type_from_id(recv_type);
 }

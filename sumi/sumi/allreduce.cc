@@ -119,11 +119,11 @@ wilke_allreduce_actor::init_dag()
         action* send_ac = new send_action(rnd, partner);
         send_ac->offset = send_offset;
         send_ac->nelems = send_nelems;
-        send_ac->recv_type_ = action::out_of_place;
+        send_ac->recv_type = action::out_of_place;
         action* recv_ac = new recv_action(rnd, partner);
         recv_ac->offset = recv_offset;
         recv_ac->nelems = round_nelems - send_nelems;
-        recv_ac->recv_type_ = action::out_of_place;
+        recv_ac->recv_type = action::out_of_place;
 
         if (initial_send){ //initial send/recv
           add_initial_action(send_ac);

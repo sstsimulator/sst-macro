@@ -410,6 +410,40 @@ test_failed_collectives()
     << rank << std::endl;
 }
 
+void
+test_alltoall(int tag)
+{
+  int nproc = comm_nproc();
+  int me = comm_rank();
+  int nelems = 2;
+  int buffer_size = nelems*nproc;
+  int* src_buffer = new int[buffer_size];
+  int* dst_buffer = new int[buffer_size];
+  for (int i=0; i < buffer_size; ++i){
+    int partner = i / nelems;
+    int elem = partner*100 + me;
+    src_buffer[i] = elem;
+  }
+
+  //the all-to-all should accumulate it
+  comm_alltoall(dst_buffer, src_buffer, nelems, sizeof(int), tag);
+
+  message::ptr msg = comm_poll(); //wait on allgather
+  if (msg->class_type() != message::collective_done){
+    spkt_throw_printf(sprockit::value_error,
+      "all-to-all test: expected collective message, but got %s",
+      message::tostr(msg->class_type()));
+  }
+
+  for (int i=0; i < buffer_size; ++i){
+    int partner = i / nelems;
+    int elem = me*100 + partner;
+    if (dst_buffer[i] != elem){
+        std::cout << sprockit::printf("FAILED: all-to-all rank %d, partner %d\n", me, partner);
+    }
+  }
+}
+
 
 int
 main(int argc, char **argv)
@@ -420,7 +454,7 @@ main(int argc, char **argv)
   sstmac::runtime::add_deadlock_check(
     sstmac::new_deadlock_check(sumi_api(), &sumi::transport::deadlock_check));
 
-
+#if 0
   //test_dynamic_tree_vote(1);
   test_allreduce(2);
 
@@ -452,6 +486,9 @@ main(int argc, char **argv)
 
   test_allgatherv_even(17);
   test_allgatherv_uneven(18);
+#else
+  test_alltoall(20);
+#endif
 
   sstmac_sleep(100);
   //test_failed_collectives();
