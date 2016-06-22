@@ -73,6 +73,22 @@ Simulation::finalize()
   complete_ = true;
 }
 
+void
+Simulation::waitMPIScan()
+{
+#if SSTMAC_MPI_DRIVER
+  if (complete_) return;
+
+  driver_debug("master waiting for simulation to complete");
+  MPI_Waitall(3, mpi_requests_, MPI_STATUSES_IGNORE);
+  driver_debug("received all results from simulation - now complete");
+  complete_ = true;
+#else
+  spkt_throw(sprockit::unimplemented_error,
+    "Simulation::waitMPIScan()");
+#endif
+}
+
 
 SimulationQueue::SimulationQueue() :
  first_run_(true),
@@ -201,22 +217,6 @@ SimulationQueue::finalize()
   ::sstmac::finalize(rt_);
 #if SSTMAC_MPI_DRIVER
   MPI_Finalize();
-#endif
-}
-
-void
-Simulation::waitMPIScan()
-{
-#if SSTMAC_MPI_DRIVER
-  if (complete_) return;
-
-  driver_debug("master waiting for simulation to complete");
-  MPI_Waitall(3, mpi_requests_, MPI_STATUSES_IGNORE);
-  driver_debug("received all results from simulation - now complete");
-  complete_ = true;
-#else
-  spkt_throw(sprockit::unimplemented_error,
-    "Simulation::waitMPIScan()");
 #endif
 }
 

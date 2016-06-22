@@ -1,8 +1,6 @@
 #ifndef sstmac_main_DRIVER_H
 #define sstmac_main_DRIVER_H
 
-#define SSTMAC_MPI_DRIVER 1
-
 #include <sprockit/sim_parameters.h>
 #include <sstmac/backends/native/manager_fwd.h>
 #include <sstmac/main/sstmac.h>
@@ -180,10 +178,12 @@ class Simulation
   bool complete_;
   int idx_;
 
-#if SSTMAC_MPI_DRIVER
+
  public:
   void waitMPIScan();
 
+#if SSTMAC_MPI_DRIVER
+ public:
   MPI_Request*
   initSendRequest() {
     return mpi_requests_;
