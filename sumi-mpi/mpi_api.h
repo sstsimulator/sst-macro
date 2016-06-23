@@ -116,7 +116,7 @@ class mpi_api :
 
   /// Get type size.
   int
-  type_size(MPI_Datatype type);
+  type_size(MPI_Datatype type, int* size);
 
   /* Set up and tear down */
 
@@ -130,6 +130,23 @@ class mpi_api :
   int
   finalized(int* flag){
     *flag = (status_ == is_finalized);
+    return MPI_SUCCESS;
+  }
+
+  int
+  buffer_attach(void* buffer, int size){
+    return MPI_SUCCESS;
+  }
+
+  int
+  buffer_detach(void* buffer, int* size){
+    return MPI_SUCCESS;
+  }
+
+  int
+  init_thread(int* argc, char*** argv, int required, int* provided){
+    do_init(argc, argv);
+    *provided = required;
     return MPI_SUCCESS;
   }
 
@@ -147,6 +164,21 @@ class mpi_api :
   double
   wtime();
 
+  void abort(MPI_Comm comm, int errcode);
+
+  int errhandler_set(MPI_Comm comm, MPI_Errhandler handler){
+    return MPI_SUCCESS;
+  }
+
+  int
+  error_class(int errorcode, int* errorclass){
+    *errorclass = 0;
+    return MPI_SUCCESS;
+  }
+
+  int
+  error_string(int errorcode, char* str, int* resultlen);
+
   /* Create and destroy communicators. */
   /// Split a communicator.  This one is a little weird.
   int
@@ -161,6 +193,9 @@ class mpi_api :
   int
   comm_create(MPI_Comm input, MPI_Group group,
               MPI_Comm* output);
+
+  int
+  comm_group(MPI_Comm comm, MPI_Group* grp);
 
   int
   cart_create(MPI_Comm comm_old, int ndims, const int dims[],
@@ -190,12 +225,23 @@ class mpi_api :
   comm_free(MPI_Comm* input);
 
   int
+  comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler){
+    return MPI_SUCCESS;
+  }
+
+  int
   group_incl(int* ranks,
              int num_ranks,
              MPI_Group oldgrp,
              MPI_Group* newgrp);
 
   /* Basic point-to-point operations. */
+  int sendrecv(const void* sendbuf, int sendcount,
+        MPI_Datatype sendtype, int dest, int sendtag,
+        void* recvbuf, int recvcount,
+        MPI_Datatype recvtype, int source, int recvtag,
+        MPI_Comm comm, MPI_Status* status);
+
   int send(const void *buf, int count,
            MPI_Datatype datatype, int dest, int tag,
            MPI_Comm comm);
@@ -401,8 +447,32 @@ class mpi_api :
       int count, MPI_Datatype type, MPI_Op op,
        MPI_Comm comm);
 
+  int
+  type_get_name(MPI_Datatype type, char* type_name, int* resultlen);
+
+  int
+  type_set_name(MPI_Datatype type, const char* type_name);
+
+  int
+  type_extent(MPI_Datatype type, MPI_Aint* extent);
+
+  int pack_size(int incount,
+         MPI_Datatype datatype,
+         MPI_Comm comm,
+         int *size);
 
  public:
+  int op_create(MPI_User_function* user_fn, int commute, MPI_Op* op);
+
+  int op_free(MPI_Op* op);
+
+  int get_count(const MPI_Status* status, MPI_Datatype datatype, int* count);
+
+  int get_address(void* location, MPI_Aint* addr){
+    *addr = (MPI_Aint) location;
+    return MPI_SUCCESS;
+  }
+
   /// Duplicate a type.  Easy enough.
   int
   type_dup(MPI_Datatype intype, MPI_Datatype* outtype);
@@ -412,8 +482,14 @@ class mpi_api :
 
   /// Create an indexed type.  Yes, lets recreate C++ with MPI function calls.
   int
-  type_indexed(int count, int _blocklens_[], const int* _indices_,
-               MPI_Datatype intype, MPI_Datatype* outtype, bool in_elem, int comb);
+  type_indexed(int count, const int _blocklens_[], const int* _indices_,
+               MPI_Datatype intype, MPI_Datatype* outtype);
+
+  /// Create an indexed type.  Yes, lets recreate C++ with MPI function calls.
+  int
+  type_hindexed(int count, const int _blocklens_[], const MPI_Aint* _indices_,
+               MPI_Datatype intype, MPI_Datatype* outtype);
+
 
   /// Creates a contiguous datatype
   int
@@ -423,23 +499,29 @@ class mpi_api :
   int
   type_vector(int count, int blocklength, int stride,
               MPI_Datatype old_type,
-              MPI_Datatype* new_type,
-              bool stride_in_elem);
+              MPI_Datatype* new_type);
 
   /// Creates a struct datatype
   int
-  type_struct(const int count, const int* blocklens,
-              const int* indices,
+  type_create_struct(const int count, const int* blocklens,
+              const MPI_Aint* displs,
+              const MPI_Datatype* old_types,
+              MPI_Datatype* newtype);
+
+  /// Creates a struct datatype
+  int
+  type_create_struct(const int count, const int* blocklens,
+              const int* displs,
               const MPI_Datatype* old_types,
               MPI_Datatype* newtype);
 
   /// A datatype object has to be committed before use in communication.
   int
-  type_commit(MPI_Datatype type);
+  type_commit(MPI_Datatype* type);
 
   /// Mark datatype for deallocation.
   int
-  type_free(MPI_Datatype type);
+  type_free(MPI_Datatype* type);
 
   mpi_type*
   type_from_id(MPI_Datatype id);
@@ -500,9 +582,6 @@ class mpi_api :
 
   void
   add_comm_grp(MPI_Comm comm, MPI_Group grp);
-
-  MPI_Group
-  get_comm_grp(MPI_Comm comm);
 
   void
   check_key(int key);
@@ -574,6 +653,12 @@ class mpi_api :
   int start_scatterv(const void *sendbuf, void *recvbuf, const int* sendcounts, const int *displs, int recvcount, MPI_Datatype type, int root, MPI_Comm comm);
 
   bool test(MPI_Request *request, MPI_Status *status);
+
+  int type_size(MPI_Datatype type){
+    int ret;
+    type_size(type, &ret);
+    return ret;
+  }
 
  private:
   software_id id_;

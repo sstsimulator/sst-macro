@@ -146,6 +146,13 @@ mpi_api::~mpi_api()
   delete queue_;
 }
 
+void
+mpi_api::abort(MPI_Comm comm, int errcode)
+{
+  spkt_throw_printf(sprockit::value_error,
+    "MPI rank %d exited with code %d", rank_, errcode);
+}
+
 int
 mpi_api::comm_size(MPI_Comm comm, int *size)
 {
@@ -245,6 +252,13 @@ double
 mpi_api::wtime()
 {
   return os_->now().sec();
+}
+
+int
+mpi_api::get_count(const MPI_Status *status, MPI_Datatype datatype, int *count)
+{
+  *count = status->count;
+  return MPI_SUCCESS;
 }
 
 const char*
@@ -493,18 +507,6 @@ mpi_api::add_comm_grp(MPI_Comm comm, MPI_Group grp)
   comm_grp_map_[comm] = grp;
 }
 
-MPI_Group
-mpi_api::get_comm_grp(MPI_Comm comm)
-{
-  comm_grp_map::iterator it = comm_grp_map_.find(comm);
-  if (it == comm_grp_map_.end()) {
-    spkt_throw_printf(sprockit::spkt_error,
-        "could not find mpi group for comm %d for rank %d",
-        comm, int(rank_));
-  }
-  return it->second;
-}
-
 void
 mpi_api::check_key(int key)
 {
@@ -512,6 +514,15 @@ mpi_api::check_key(int key)
     spkt_throw_printf(sprockit::spkt_error,
         "mpi_api::check_key: could not find keyval %d in key_map", key);
   }
+}
+
+int
+mpi_api::error_string(int errorcode, char *str, int *resultlen)
+{
+  static const char* errorstr = "mpi error";
+  *resultlen = ::strlen(errorstr);
+  ::strcpy(str, errorstr);
+  return MPI_SUCCESS;
 }
 
 }

@@ -125,8 +125,8 @@ mpi_message::~mpi_message() throw ()
 void
 mpi_message::build_status(MPI_Status* stat) const
 {
-  stat->source = src_rank_;
-  stat->tag = tag_;
+  stat->MPI_SOURCE = src_rank_;
+  stat->MPI_TAG = tag_;
   stat->count = count_;
   stat->bytes_received = count_ * type_packed_size_;
 }

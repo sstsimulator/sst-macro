@@ -51,29 +51,25 @@ class mpi_type
 
   /** Annoying memory leak avoider */
   void
-  init_primitive(const char* label, const int sizeit, int align, int comb);
+  init_primitive(const char* label, const int sizeit, int align);
 
   void
-  init_primitive(const char* label, mpi_type* b1, mpi_type* b2,
-           int size, int comb);
+  init_primitive(const char* label, mpi_type* b1, mpi_type* b2, int size);
 
   void
-  init_primitive(const std::string& labelit, const int sizeit, int align,
-           int comb);
+  init_primitive(const std::string& labelit, const int sizeit, int align);
 
   //pair of primitives datatype
   void
-  init_primitive(const std::string& labelit, mpi_type* b1, mpi_type* b2,
-           int size, int comb);
+  init_primitive(const std::string& labelit, mpi_type* b1, mpi_type* b2, int size);
 
   void
-  init_vector(const std::string &labelit, mpi_type*base, int count,
-           int block, int str, bool in_elem, int comb);
+  init_vector(const std::string &labelit, mpi_type*base, int count, int block, int stride);
 
   void
   init_indexed(const std::string &labelit,
            inddata* dat,
-           int sz, int ext, int numint, int numdtype, int comb);
+           int sz, int ext);
 
   // id gets assigned automatically by the constructor.
   MPI_Datatype id;
@@ -95,16 +91,6 @@ class mpi_type
   }
 
   int
-  comb() const {
-    return combiner_;
-  }
-
-  void
-  set_comb(int c) {
-    combiner_ = c;
-  }
-
-  int
   packed_size() const {
     return size_;
   }
@@ -112,31 +98,11 @@ class mpi_type
   int
   bytes_to_elements(size_t bytes) const;
 
-  //returns the marker if available, true lb if not
-  int
-  lb() const;
-
-  //disregards the marker, returns lowest displacement
-  int
-  true_lb() const;
-
-  //returns the marker if available, true ub if not
-  int
-  ub() const;
-
   //returns the difference between markers if available, true extent if not
   int
-  extent() const;
-
-  //returns the actual difference between min and max displacements (ignore markers)
-  int
-  true_extent() const;
-
-  void
-  envelope(int* numint, int* numaddr, int* numdtype, int* comb);
-
-  void
-  contents(int* ints, int* addr, long* dtypes);
+  extent() const {
+    return extent_;
+  }
 
   void
   pack(const void *inbuf, void *outbuf, int bytes) const;
@@ -263,12 +229,6 @@ class mpi_type
 
   int size_; //this is the packed size !!!
   size_t extent_; //holds the extent, as defined by the MPI standard
-
-  //stuff for get_envelope
-  int combiner_;
-  int numints_;
-  int numaddr_;
-  int numdtype_;
 };
 
 struct pairdata
@@ -293,10 +253,6 @@ struct ind_block {
 };
 
 struct inddata {
-  int mindisp; //in bytes, true lb
-  int maxbyte; //top byte, true ub
-  int ub;
-  int lb;
   std::vector<ind_block> blocks;
 };
 

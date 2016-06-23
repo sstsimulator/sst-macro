@@ -1311,7 +1311,7 @@ on_MPI_Type_vector(const dumpi_type_vector *prm, uint16_t thread,
     }
   }
   MPI_Datatype newtype;
-  cb->getmpi()->type_vector(prm->count, prm->blocklength, 0, oldtype, &newtype, false);
+  cb->getmpi()->type_vector(prm->count, prm->blocklength, 0, oldtype, &newtype);
   cb->add_mpitype(prm->newtype, newtype);
   cb->end_mpi(cpu, wall, perf);
   return 1;
@@ -1340,7 +1340,7 @@ on_MPI_Type_indexed(const dumpi_type_indexed *prm, uint16_t thread,
   std::vector<int> disps; disps.assign(prm->indices, prm->indices + prm->count);
   MPI_Datatype oldtype = cb->get_mpitype(prm->oldtype);
   cb->getmpi()->type_indexed(prm->count, prm->lengths, prm->indices,
-    oldtype, &newtype, true, MPI_COMBINER_INDEXED);
+    oldtype, &newtype);
   cb->add_mpitype(prm->newtype, newtype);
   cb->end_mpi(cpu, wall, perf);
   return 1;
@@ -1367,7 +1367,7 @@ on_MPI_Type_struct(const dumpi_type_struct *prm, uint16_t thread,
   cb->start_mpi(cpu, wall, perf);
   MPI_Datatype* oldtypes = cb->get_mpitypes(prm->count, prm->oldtypes);
   MPI_Datatype newtype;
-  cb->getmpi()->type_struct(prm->count, prm->lengths, prm->indices, oldtypes, &newtype);
+  cb->getmpi()->type_create_struct(prm->count, prm->lengths, prm->indices, oldtypes, &newtype);
   cb->add_mpitype(prm->newtype, newtype);
   cb->end_mpi(cpu, wall, perf);
   return 1;
@@ -1424,7 +1424,8 @@ on_MPI_Type_commit(const dumpi_type_commit *prm, uint16_t thread,
       "on_MPI_Type_commit: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
-  cb->getmpi()->type_commit(cb->get_mpitype(prm->datatype));
+  MPI_Datatype dtype = cb->get_mpitype(prm->datatype);
+  cb->getmpi()->type_commit(&dtype);
   cb->end_mpi(cpu, wall, perf);
   return 1;
 }
@@ -1440,7 +1441,8 @@ on_MPI_Type_free(const dumpi_type_free *prm, uint16_t thread,
       "on_MPI_Type_free: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
-  cb->getmpi()->type_free(cb->get_mpitype(prm->datatype));
+  MPI_Datatype dtype = cb->get_mpitype(prm->datatype);
+  cb->getmpi()->type_free(&dtype);
   cb->end_mpi(cpu, wall, perf);
   return 1;
 }

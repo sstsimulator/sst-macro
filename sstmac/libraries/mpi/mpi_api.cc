@@ -3738,7 +3738,7 @@ mpi_api::get_group(MPI_Group grp)
 }
 
 void
-mpi_api::add_keyval(int key, keyval*keyval)
+mpi_api::add_keyval(int key, keyval* keyval)
 {
   keyvals_[key] = keyval;
 }
