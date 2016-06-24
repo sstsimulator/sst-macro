@@ -1,18 +1,19 @@
 #include <sumi-mpi/mpi_api.h>
 #include <sumi-mpi/mpi_comm/mpi_comm_cart.h>
 #include <sstmac/software/process/backtrace.h>
+#include <sprockit/stl_string.h>
 
 namespace sumi {
-
 
 int
 mpi_api::comm_dup(MPI_Comm input, MPI_Comm *output)
 {
   SSTMACBacktrace("MPI_Comm_dup");
-  mpi_api_debug(sprockit::dbg::mpi, "MPI_Comm_dup(...)");
   mpi_comm* inputPtr = get_comm(input);
   mpi_comm* outputPtr = comm_factory_->comm_dup(inputPtr);
   *output = add_comm_ptr(outputPtr);
+  mpi_api_debug(sprockit::dbg::mpi, "MPI_Comm_dup(%s,*%s)",
+                comm_str(input).c_str(), comm_str(*output).c_str());
   return MPI_SUCCESS;
 }
 
@@ -20,10 +21,12 @@ int
 mpi_api::comm_create(MPI_Comm input, MPI_Group group, MPI_Comm *output)
 {
   SSTMACBacktrace("MPI_Comm_create");
-  mpi_api_debug(sprockit::dbg::mpi, "MPI_Comm_create(...)");
   mpi_comm* inputPtr = get_comm(input);
   mpi_group* groupPtr = get_group(group);
+  std::cout << stl_string(groupPtr->ids()) << std::endl;
   *output = add_comm_ptr(comm_factory_->comm_create(inputPtr, groupPtr));
+  mpi_api_debug(sprockit::dbg::mpi, "MPI_Comm_create(%s,%d,*%s)",
+                comm_str(input).c_str(), group, comm_str(*output).c_str());
   return MPI_SUCCESS;
 }
 

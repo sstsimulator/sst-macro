@@ -133,13 +133,22 @@ class mpi_type
     fxns_[MPI_SUM] = &ReduceOp<Add,data_t>::op;
     fxns_[MPI_MAX] = &ReduceOp<Max,data_t>::op;
     fxns_[MPI_MIN] = &ReduceOp<Min,data_t>::op;
-    fxns_[MPI_BAND] = &ReduceOp<And,data_t>::op;
+    fxns_[MPI_LAND] = &ReduceOp<And,data_t>::op;
+    fxns_[MPI_LOR] = &ReduceOp<Or,data_t>::op;
+  }
+
+  template <typename data_t>
+  void
+  init_bitwise_ops(){
+    fxns_[MPI_BAND] = &ReduceOp<BAnd,data_t>::op;
+    fxns_[MPI_BOR] = &ReduceOp<BOr,data_t>::op;
+    fxns_[MPI_BOR] = &ReduceOp<BOr,data_t>::op;
+    fxns_[MPI_BXOR] = &ReduceOp<XOr,data_t>::op;
+    fxns_[MPI_LXOR] = &ReduceOp<XOr,data_t>::op;
   }
 
   sumi::reduce_fxn
-  op(MPI_Op theOp) const {
-    return fxns_.at(theOp);
-  }
+  op(MPI_Op theOp) const;
 
   std::string
   to_string() const;

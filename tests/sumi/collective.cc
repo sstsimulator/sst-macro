@@ -454,7 +454,7 @@ main(int argc, char **argv)
   sstmac::runtime::add_deadlock_check(
     sstmac::new_deadlock_check(sumi_api(), &sumi::transport::deadlock_check));
 
-#if 0
+
   //test_dynamic_tree_vote(1);
   test_allreduce(2);
 
@@ -486,9 +486,9 @@ main(int argc, char **argv)
 
   test_allgatherv_even(17);
   test_allgatherv_uneven(18);
-#else
+
   test_alltoall(20);
-#endif
+
 
   sstmac_sleep(100);
   //test_failed_collectives();

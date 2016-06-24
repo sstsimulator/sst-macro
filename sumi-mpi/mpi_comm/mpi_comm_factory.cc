@@ -107,10 +107,11 @@ mpi_comm_factory::comm_create(mpi_comm* caller, mpi_group* group)
 
   MPI_Comm cid = outputID;
 
-  std::pair<app_id, int> index = std::make_pair(aid_, cid);
-
   //now find my rank
   int newrank = group->rank_of_task(caller->my_task());
+
+  printf("Rank %d:%d making comm with new rank %d of %d\n",
+         worldcomm_->rank(), caller->rank(), newrank, group->size());
 
   next_id_ = cid + 1;
 

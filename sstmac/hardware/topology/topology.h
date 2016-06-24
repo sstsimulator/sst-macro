@@ -439,6 +439,11 @@ class topology :
     return num_nodes_per_netlink_;
   }
 
+  bool
+  netlink_endpoints() const {
+    return netlink_endpoints_;
+  }
+
   virtual void
   build_internal_connectables(
     internal_connectable_map& connectables,
@@ -483,6 +488,8 @@ class topology :
   */
   int endpoints_per_switch_;
 
+  int nodes_per_switch_;
+
   bool outputgraph_;
 
   RNG::rngint_t seed_;
@@ -498,6 +505,8 @@ class topology :
   int max_ports_intra_network_;
 
   int max_ports_injection_;
+
+  bool netlink_endpoints_;
 
   static topology* main_top_;
 

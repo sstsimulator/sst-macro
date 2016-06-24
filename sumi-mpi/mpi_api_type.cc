@@ -59,6 +59,7 @@ mpi_api::precommit_types()
 
     mpi_type::mpi_char->init_primitive("MPI_CHAR", 1, 4);
     mpi_type::mpi_char->init_ops<char>();
+    mpi_type::mpi_char->init_bitwise_ops<char>();
 
     mpi_type::mpi_signed_char->init_primitive("MPI_SIGNED_CHAR", 1, 4);
 
@@ -80,15 +81,19 @@ mpi_api::precommit_types()
 
     mpi_type::mpi_int->init_primitive("MPI_INT", 4, 4);
     mpi_type::mpi_int->init_ops<int>();
+    mpi_type::mpi_int->init_bitwise_ops<int>();
 
     mpi_type::mpi_unsigned->init_primitive("MPI_UNSIGNED", 4, 4);
     mpi_type::mpi_unsigned->init_ops<unsigned>();
+    mpi_type::mpi_unsigned->init_bitwise_ops<unsigned>();
 
     mpi_type::mpi_long->init_primitive("MPI_LONG", 8, 8);
     mpi_type::mpi_long->init_ops<long>();
+    mpi_type::mpi_long->init_bitwise_ops<long>();
 
     mpi_type::mpi_unsigned_long->init_primitive("MPI_UNSIGNED_LONG", 8, 8);
     mpi_type::mpi_unsigned_long->init_ops<unsigned long>();
+    mpi_type::mpi_unsigned_long->init_bitwise_ops<unsigned long>();
 
     mpi_type::mpi_float->init_primitive("MPI_FLOAT", 4, sizeof(float));
     mpi_type::mpi_float->init_ops<float>();

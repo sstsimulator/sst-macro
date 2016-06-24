@@ -722,6 +722,7 @@ transport::reduce(int root, void* dst, void *src, int nelems, int type_size, int
   coll->init(collective::reduce, this, dom, dst, src, nelems, type_size, tag, fault_aware, context);
   coll->init_root(root);
   coll->init_reduce(fxn);
+  start_collective(coll);
 }
 
 void
@@ -770,7 +771,8 @@ transport::scatter(int root, void *dst, void *src, int nelems, int type_size, in
 }
 
 void
-transport::alltoall(void *dst, void *src, int nelems, int type_size, int tag, bool fault_aware, int context, domain* dom)
+transport::alltoall(void *dst, void *src, int nelems, int type_size,
+                    int tag, bool fault_aware, int context, domain* dom)
 {
   if (skip_collective(collective::alltoall, dom, dst, src, nelems, type_size, tag))
     return;
@@ -784,7 +786,8 @@ transport::alltoall(void *dst, void *src, int nelems, int type_size, int tag, bo
 }
 
 void
-transport::allgather(void *dst, void *src, int nelems, int type_size, int tag, bool fault_aware, int context, domain* dom)
+transport::allgather(void *dst, void *src, int nelems, int type_size,
+                     int tag, bool fault_aware, int context, domain* dom)
 {
   if (skip_collective(collective::allgather, dom, dst, src, nelems, type_size, tag))
     return;

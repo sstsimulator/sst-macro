@@ -124,6 +124,17 @@ mpi_type::init_primitive(const std::string &labelit, mpi_type* b1,
   init_primitive(labelit.c_str(), b1, b2, s);
 }
 
+sumi::reduce_fxn
+mpi_type::op(MPI_Op theOp) const
+{
+  spkt_unordered_map<MPI_Op, sumi::reduce_fxn>::const_iterator it = fxns_.find(theOp);
+  if (it == fxns_.end()){
+    spkt_throw_printf(sprockit::value_error, "type %s has no operator %d",
+           to_string().c_str(), theOp);
+  }
+  return it->second;
+}
+
 void
 mpi_type::init_vector(const std::string &labelit, mpi_type* base,
                    int count, int block, int str)

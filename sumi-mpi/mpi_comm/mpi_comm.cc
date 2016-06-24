@@ -26,7 +26,8 @@ mpi_comm::mpi_comm() :
   group_(),
   next_collective_tag_(0),
   id_(-1),
-  rank_(-1)
+  rank_(-1),
+  domain(-1)
 {
   topotype_ = TOPO_NONE;
 }
@@ -35,6 +36,7 @@ mpi_comm::mpi_comm(
   MPI_Comm id, //const appid &aid,
   int rank, mpi_group* peers,
   app_manager* env, app_id aid) :
+  domain(rank),
   env_(env), group_(peers),
   next_collective_tag_(0),
   aid_(aid), id_(id), rank_(rank)

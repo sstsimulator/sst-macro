@@ -667,7 +667,7 @@ int testmode_ = -1;
 const char* valid_keywords[] = {
 "testsuite_testmode",
 "testsuite_numtests" };
-sprockit::StaticKeywordRegister reg(3, valid_keywords);
+sprockit::StaticKeywordRegister reg(2, valid_keywords);
 
 int USER_MAIN(int argc, char *argv[])
 {

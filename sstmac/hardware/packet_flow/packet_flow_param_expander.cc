@@ -65,21 +65,25 @@ packet_flow_param_expander::expand(sprockit::sim_parameters* params)
     expand_amm1_memory(params, mem_params);
     expand_amm1_network(params, switch_params, net_packet_size);
     expand_amm1_nic(params, nic_params);
+    top_params->add_param_override("netlink_endpoints", "false");
   }
   else if (amm_type == "amm2"){
     expand_amm2_memory(params, mem_params);
     expand_amm1_network(params, switch_params, net_packet_size);
     expand_amm1_nic(params, nic_params);
+    top_params->add_param_override("netlink_endpoints", "false");
   }
   else if (amm_type == "amm3"){
     expand_amm2_memory(params, mem_params);
     expand_amm3_network(params, switch_params, net_packet_size);
     expand_amm1_nic(params, nic_params);
+    top_params->add_param_override("netlink_endpoints", "false");
   }
   else if (amm_type == "amm4"){
     expand_amm2_memory(params, mem_params);
     expand_amm4_network(params, top_params, switch_params, net_packet_size);
     expand_amm4_nic(params, top_params, nic_params);
+    top_params->add_param_override("netlink_endpoints", "true");
   }
   else {
     spkt_throw_printf(sprockit::input_error, "invalid hardware model %s given",

@@ -27,6 +27,46 @@ struct Min
 };
 
 template <typename data_t>
+struct XOr
+{
+  typedef data_t type;
+  static void
+  op(data_t& dst, const data_t& src){
+    dst = dst ^ src;
+  }
+};
+
+template <typename data_t>
+struct BAnd
+{
+  typedef data_t type;
+  static void
+  op(data_t& dst, const data_t& src){
+    dst = dst & src;
+  }
+};
+
+template <typename data_t>
+struct BOr
+{
+  typedef data_t type;
+  static void
+  op(data_t& dst, const data_t& src){
+    dst = dst | src;
+  }
+};
+
+template <typename data_t>
+struct Or
+{
+  typedef data_t type;
+  static void
+  op(data_t& dst, const data_t& src){
+    dst = dst || src;
+  }
+};
+
+template <typename data_t>
 struct Max
 {
   typedef data_t type;

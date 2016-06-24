@@ -76,8 +76,10 @@ collective::init(type_t ty, transport *api, domain *dom, int tag, int context)
   dense_me_ = rank_map.dense_rank(dom->my_domain_rank());
 
   debug_printf(sumi_collective | sumi_vote,
-    "Rank %d=%d built collective of size %d in role=%d, tag=%d, context=%d with num_live=%d, failed=%s ",
-    my_api_->rank(), dom->my_domain_rank(), dom->nproc(), dense_me_, tag, context, dense_nproc_, failed.to_string().c_str());
+    "Rank %d=%d built collective of size %d in role=%d,"
+    "tag=%d, context=%d with num_live=%d, failed=%s ",
+    my_api_->rank(), dom->my_domain_rank(), dom->nproc(), dense_me_,
+    tag, context, dense_nproc_, failed.to_string().c_str());
 }
 
 collective::collective(type_t ty, transport* api, domain* dom, int tag, int context)

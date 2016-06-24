@@ -89,12 +89,13 @@ mpi_api::allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, vo
 }
 
 int
-mpi_api::start_alltoall(const void *sendbuf, void *recvbuf, int count, MPI_Datatype type, MPI_Comm comm)
+mpi_api::start_alltoall(const void *sendbuf, void *recvbuf,
+                        int count, MPI_Datatype type, MPI_Comm comm)
 {
   int typeSize = type_size(type);
   mpi_comm* commPtr = get_comm(comm);
   int tag = commPtr->next_collective_tag();
-  transport::alltoall(
+  transport::alltoall(const_cast<void*>(sendbuf), recvbuf, count, typeSize, tag,
     false, options::initial_context,
     (comm == MPI_COMM_WORLD ? 0 : commPtr)); //comm world is a "null" domain
   return tag;
@@ -120,11 +121,12 @@ int
 mpi_api::alltoall(int sendcount, MPI_Datatype sendtype,
                   int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
 {
-  alltoall(NULL, sendcount, sendtype, NULL, recvcount, recvtype, comm);
+  return alltoall(NULL, sendcount, sendtype, NULL, recvcount, recvtype, comm);
 }
 
 int
-mpi_api::start_allreduce(const void *src, void *dst, int count, MPI_Datatype type, MPI_Op op, MPI_Comm comm)
+mpi_api::start_allreduce(const void *src, void *dst, int count,
+                         MPI_Datatype type, MPI_Op op, MPI_Comm comm)
 {
   if (src == MPI_IN_PLACE) src = dst;
 
@@ -140,7 +142,8 @@ mpi_api::start_allreduce(const void *src, void *dst, int count, MPI_Datatype typ
 }
 
 int
-mpi_api::allreduce(const void *src, void *dst, int count, MPI_Datatype type, MPI_Op op, MPI_Comm comm)
+mpi_api::allreduce(const void *src, void *dst, int count,
+                   MPI_Datatype type, MPI_Op op, MPI_Comm comm)
 {
   SSTMACBacktrace("MPI_Allreduce");
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
@@ -214,7 +217,8 @@ mpi_api::bcast(int count, MPI_Datatype datatype, int root, MPI_Comm comm)
 }
 
 int
-mpi_api::start_gather(const void *sendbuf, void *recvbuf, int count, MPI_Datatype type, int root, MPI_Comm comm)
+mpi_api::start_gather(const void *sendbuf, void *recvbuf, int count,
+                      MPI_Datatype type, int root, MPI_Comm comm)
 {
   int typeSize = type_size(type);
   mpi_comm* commPtr = get_comm(comm);
@@ -229,7 +233,8 @@ mpi_api::start_gather(const void *sendbuf, void *recvbuf, int count, MPI_Datatyp
 }
 
 int
-mpi_api::gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
+mpi_api::gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
   SSTMACBacktrace("MPI_Gather");
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Gather(%d,%s,%d,%s,%d,%s)",
@@ -243,13 +248,15 @@ mpi_api::gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void 
 }
 
 int
-mpi_api::gather(int sendcount, MPI_Datatype sendtype, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
+mpi_api::gather(int sendcount, MPI_Datatype sendtype,
+                int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
   return gather(NULL, sendcount, sendtype, NULL, recvcount, recvtype, root, comm);
 }
 
 int
-mpi_api::start_reduce(const void *src, void *dst, int count, MPI_Datatype type, MPI_Op op, int root, MPI_Comm comm)
+mpi_api::start_reduce(const void *src, void *dst, int count,
+                      MPI_Datatype type, MPI_Op op, int root, MPI_Comm comm)
 {
   mpi_type* typePtr = type_from_id(type);
   reduce_fxn fxn = typePtr->op(op);
@@ -266,7 +273,8 @@ mpi_api::start_reduce(const void *src, void *dst, int count, MPI_Datatype type, 
 }
 
 int
-mpi_api::reduce(const void *src, void *dst, int count, MPI_Datatype type, MPI_Op op, int root, MPI_Comm comm)
+mpi_api::reduce(const void *src, void *dst, int count,
+                MPI_Datatype type, MPI_Op op, int root, MPI_Comm comm)
 {
   SSTMACBacktrace("MPI_Reduce");
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
@@ -284,7 +292,8 @@ mpi_api::reduce(int count, MPI_Datatype type, MPI_Op op, int root, MPI_Comm comm
 }
 
 int
-mpi_api::start_reduce_scatter(const void *src, void *dst, int *recvcnts, MPI_Datatype type, MPI_Op op, MPI_Comm comm)
+mpi_api::start_reduce_scatter(const void *src, void *dst, int *recvcnts,
+                              MPI_Datatype type, MPI_Op op, MPI_Comm comm)
 {
   mpi_type* typePtr = type_from_id(type);
   reduce_fxn fxn = typePtr->op(op);
@@ -300,7 +309,8 @@ mpi_api::start_reduce_scatter(const void *src, void *dst, int *recvcnts, MPI_Dat
 }
 
 int
-mpi_api::reduce_scatter(const void *src, void *dst, int *recvcnts, MPI_Datatype type, MPI_Op op, MPI_Comm comm)
+mpi_api::reduce_scatter(const void *src, void *dst, int *recvcnts,
+                        MPI_Datatype type, MPI_Op op, MPI_Comm comm)
 {
   SSTMACBacktrace("MPI_Reducescatter");
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
@@ -318,7 +328,8 @@ mpi_api::reduce_scatter(int *recvcnts, MPI_Datatype type, MPI_Op op, MPI_Comm co
 }
 
 int
-mpi_api::start_scan(const void *src, void *dst, int count, MPI_Datatype type, MPI_Op op, MPI_Comm comm)
+mpi_api::start_scan(const void *src, void *dst, int count,
+                    MPI_Datatype type, MPI_Op op, MPI_Comm comm)
 {
   mpi_type* typePtr = type_from_id(type);
   reduce_fxn fxn = typePtr->op(op);
@@ -352,7 +363,8 @@ mpi_api::scan(int count, MPI_Datatype type, MPI_Op op, MPI_Comm comm)
 }
 
 int
-mpi_api::start_scatter(const void *sendbuf, void *recvbuf, int count, MPI_Datatype type, int root, MPI_Comm comm)
+mpi_api::start_scatter(const void *sendbuf, void *recvbuf, int count,
+                       MPI_Datatype type, int root, MPI_Comm comm)
 {
   int typeSize = type_size(type);
   mpi_comm* commPtr = get_comm(comm);
@@ -367,7 +379,8 @@ mpi_api::start_scatter(const void *sendbuf, void *recvbuf, int count, MPI_Dataty
 }
 
 int
-mpi_api::scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
+mpi_api::scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                 void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
   SSTMACBacktrace("MPI_Scatter");
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Scatter(%d,%s,%d,%s,%d,%s)",
@@ -384,7 +397,8 @@ mpi_api::scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void
 }
 
 int
-mpi_api::scatter(int sendcount, MPI_Datatype sendtype, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
+mpi_api::scatter(int sendcount, MPI_Datatype sendtype,
+                 int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
   return scatter(NULL, sendcount, sendtype, NULL, recvcount, recvtype, root, comm);
 }
