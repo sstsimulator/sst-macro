@@ -17,15 +17,15 @@ using namespace sprockit::dbg;
 */
 
 RegisterDebugSlot(sumi_collective_init,
- "print all debug output for collectives performed within the sumi framework");
+ "print all debug output for collectives performed within the sumi framework")
 RegisterDebugSlot(sumi_collective,
- "print all debug output for collectives performed within the sumi framework");
+ "print all debug output for collectives performed within the sumi framework")
 RegisterDebugSlot(sumi_collective_sendrecv,
- "print all debug output for individual send/recv operations done by a sumi collective");
+ "print all debug output for individual send/recv operations done by a sumi collective")
 RegisterDebugSlot(sumi_collective_round,
- "print all debug output for configuring/running collectives like allreduce based on round-by-round communication");
+ "print all debug output for configuring/running collectives like allreduce based on round-by-round communication")
 RegisterDebugSlot(sumi_vote,
- "print all debug output for fault-tolerant voting collectives within the sumi framework");
+ "print all debug output for fault-tolerant voting collectives within the sumi framework")
 
 ImplementFactory(sumi::dag_collective)
 

@@ -14,15 +14,15 @@
 using namespace sprockit::dbg;
 
 RegisterDebugSlot(sumi_allgather,
-  "print all debug output associated with allgather collectives in the sumi framework")
+  "print all debug output associated with allgather collectives in the sumi framework");
 
 namespace sumi
 {
 
-SpktRegister("bruck_allgather", dag_collective, bruck_allgather_collective);
+SpktRegister("bruck", dag_collective, bruck_collective);
 
 void
-bruck_allgather_actor::init_buffers(void* dst, void* src)
+bruck_actor::init_buffers(void* dst, void* src)
 {
   if (src){
     //put everything into the dst buffer to begin
@@ -35,31 +35,47 @@ bruck_allgather_actor::init_buffers(void* dst, void* src)
 }
 
 void
-bruck_allgather_actor::finalize_buffers()
+bruck_actor::finalize_buffers()
 {
-  if (result_buffer_.ptr){
-    long buffer_size = nelems_ * type_size_ * dom_->nproc();
-    my_api_->unmake_public_buffer(send_buffer_, buffer_size);
-  }
+  long buffer_size = nelems_ * type_size_ * dom_->nproc();
+  my_api_->unmake_public_buffer(send_buffer_, buffer_size);
 }
 
 void
-bruck_allgather_actor::init_dag()
+bruck_actor::init_dag()
 {
-  int log2nproc, midpoint, nprocs_extra_round, num_rounds;
-  compute_tree(log2nproc, midpoint, num_rounds, nprocs_extra_round);
+  int virtual_nproc = dense_nproc_;
+
+  /** let's go bruck algorithm for now */
+  int nproc = 1;
+  int log2nproc = 0;
+  while (nproc < virtual_nproc)
+  {
+    ++log2nproc;
+    nproc *= 2;
+  }
+
+  int num_extra_procs = 0;
+  if (nproc > virtual_nproc){
+    --log2nproc;
+    //we will have to do an extra exchange in the last round
+    num_extra_procs = virtual_nproc - nproc / 2;
+  }
+
+  int num_rounds = log2nproc;
+  int nprocs_extra_round = num_extra_procs;
 
   debug_printf(sumi_collective | sumi_allgather,
     "Bruck %s: configured for %d rounds with an extra round exchanging %d proc segments on tag=%d ",
-    rank_str().c_str(), log2nproc, nprocs_extra_round, tag_);
+    rank_str().c_str(), log2nproc, num_extra_procs, tag_);
 
   //in the last round, we send half of total data to nearest neighbor
   //in the penultimate round, we send 1/4 data to neighbor at distance=2
   //and so on...
+  nproc = dense_nproc_;
 
   int partner_gap = 1;
   int round_nelems = nelems_;
-  int nproc = dense_nproc_;
   action *prev_send, *prev_recv;
   for (int i=0; i < num_rounds; ++i){
     int send_partner = (dense_me_ + nproc - partner_gap) % nproc;
@@ -106,13 +122,13 @@ bruck_allgather_actor::init_dag()
 }
 
 void
-bruck_allgather_actor::buffer_action(void *dst_buffer, void *msg_buffer, action* ac)
+bruck_actor::buffer_action(void *dst_buffer, void *msg_buffer, action* ac)
 {
   std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
 }
 
 void
-bruck_allgather_actor::finalize()
+bruck_actor::finalize()
 {
   // rank 0 need not reorder
   // or no buffers

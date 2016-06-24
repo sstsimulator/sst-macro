@@ -70,13 +70,9 @@ wilke_reduce_actor::init_buffers(void* dst, void* src)
 void
 wilke_reduce_actor::init_dag()
 {
-  int virtual_nproc = 1;
-  int log2nproc = 0;
-  while (virtual_nproc < dense_nproc_)
-  {
-    ++log2nproc;
-    virtual_nproc *= 2;
-  }
+  int log2nproc, midpoint, virtual_nproc;
+  compute_tree(log2nproc, midpoint, virtual_nproc);
+
   virtual_rank_map rank_map(dense_nproc_, virtual_nproc);
   std::vector<int> my_roles = rank_map.real_to_virtual(dense_me_);
   std::set<int> lookup_map;
@@ -85,7 +81,6 @@ wilke_reduce_actor::init_dag()
   }
 
   int num_doubling_rounds = log2nproc;
-  int midpoint = virtual_nproc / 2;
   bool i_am_midpoint = false;
 
   debug_printf(sumi_collective | sumi_reduce,
@@ -141,12 +136,12 @@ wilke_reduce_actor::init_dag()
         action* send_ac = new send_action(rnd, partner);
         send_ac->offset = send_offset;
         send_ac->nelems = send_nelems;
-        send_ac->recv_type_ = action::out_of_place;
+        send_ac->recv_type = action::out_of_place;
 
         action* recv_ac = new recv_action(rnd, partner);
         recv_ac->offset = recv_offset;
         recv_ac->nelems = round_nelems - send_nelems;
-        recv_ac->recv_type_ = action::out_of_place;
+        recv_ac->recv_type = action::out_of_place;
 
         if (initial_send){ //initial send/recv
           add_initial_action(send_ac);

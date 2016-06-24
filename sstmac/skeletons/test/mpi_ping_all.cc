@@ -8,6 +8,8 @@
 #include <sstmac/common/runtime.h>
 #include <sstmac/software/process/backtrace.h>
 
+#include <sumi-mpi/mpi_api.h>
+
 using sstmac::runtime;
 
 namespace pingall {
@@ -17,8 +19,13 @@ sstmac_register_app(mpi_ping_all);
 int
 mpi_ping_all_main(int argc, char** argv)
 {
+
   SSTMACBacktrace("main");
   MPI_Init(&argc, &argv);
+
+  sstmac::runtime::add_deadlock_check(
+    sstmac::new_deadlock_check(current_mpi(), &sumi::transport::deadlock_check));
+  sstmac::runtime::enter_deadlock_region();
 
   double t_start = MPI_Wtime();
 
@@ -70,6 +77,7 @@ mpi_ping_all_main(int argc, char** argv)
   if (print_times) ::printf("Rank %d = %8.4fms\n", me, t_total*1e3);
 
   MPI_Finalize();
+  sstmac::runtime::exit_deadlock_region();
   return 0;
 }
 
