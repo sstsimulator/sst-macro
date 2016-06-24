@@ -13,7 +13,7 @@
 #ifndef SSTMAC_SOFTWARE_SKELETONS_TEST_MPI_PROTOCOL_H_INCLUDED
 #define SSTMAC_SOFTWARE_SKELETONS_TEST_MPI_PROTOCOL_H_INCLUDED
 
-#include <sstmac/libraries/mpi/mpi_app.h>
+#include <sstmac/software/process/app.h>
 
 namespace sstmac {
 namespace sw {
@@ -21,7 +21,7 @@ namespace sw {
 /**
  * Basic MPI ping-pong.
  */
-class mpi_protocol_test : public mpi_app
+class mpi_protocol_test : public app
 {
 
  public:

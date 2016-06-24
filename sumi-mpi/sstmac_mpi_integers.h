@@ -132,6 +132,7 @@ enum _mpi_datatypes_ {
 #define MPI_GROUP_NULL     ((MPI_Group)0x08000000)
 #define MPI_DATATYPE_NULL  ((MPI_Datatype)0x0c000000)
 #define MPI_REQUEST_NULL   ((MPI_Request)0x2c000000)
+#define MPI_GROUP_WORLD   0
 
 #define MPI_ADDRESS_KIND  4
 

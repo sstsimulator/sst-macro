@@ -10,10 +10,7 @@
  */
 
 #include <sstmac/skeletons/test/mpi_protocol_test.h>
-#include <sstmac/libraries/mpi/mpi_implementation/rdma_mpi.h>
-#include <sstmac/libraries/mpi/mpi_api.h>
-#include <sstmac/libraries/mpi/mpi_queue/mpi_queue.h>
-#include <sstmac/libraries/mpi/sstmac_mpi.h>
+#include <sstmac/replacements/mpi.h>
 #include <sstmac/software/libraries/compute/lib_sleep.h>
 #include <sstmac/util.h>
 #include <sprockit/util.h>

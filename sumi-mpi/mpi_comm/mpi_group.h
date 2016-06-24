@@ -13,6 +13,7 @@
 #define SSTMAC_SOFTWARE_LIBRARIES_MPI_MPI_COMM_MPIGROUP_H_INCLUDED
 
 #include <sstmac/software/process/task_id.h>
+#include <sumi-mpi/sstmac_mpi_integers.h>
 #include <vector>
 
 namespace sumi {
@@ -43,12 +44,22 @@ class mpi_group  {
     return task_list_;
   }
 
+  MPI_Group
+  id() const {
+    return id_;
+  }
+
+  void
+  set_id(MPI_Group grp){
+    id_ = grp;
+  }
+
   int
   rank_of_task(task_id t);
 
  protected:
   std::vector<task_id> task_list_;
-
+  MPI_Group id_;
   size_t size_; //used for comm_world
   bool is_comm_world_;  //we don't save all the peers to save space
 

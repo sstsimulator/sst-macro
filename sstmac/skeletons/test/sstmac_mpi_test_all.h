@@ -12,13 +12,14 @@
 #ifndef SSTMAC_SOFTWARE_SKELETONS_TEST_SSTMPI_TESTALL_H_INCLUDED
 #define SSTMAC_SOFTWARE_SKELETONS_TEST_SSTMPI_TESTALL_H_INCLUDED
 
-#include <sstmac/libraries/mpi/mpi_app.h>
-#include <sstmac/libraries/mpi/sstmac_mpi.h>
+#include <sstmac/software/process/app.h>
+#include <sumi-mpi/sstmac_mpi_integers.h>
+
 
 namespace sstmac {
 namespace sw {
 
-class sstmac_mpi_test_all : public mpi_app
+class sstmac_mpi_test_all : public app
 {
 
  public:

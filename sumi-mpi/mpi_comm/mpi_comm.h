@@ -178,7 +178,7 @@ class mpi_comm : public domain
   /// The tasks participating in this communicator.  This is only used for an mpicomm* which is NOT WORLD_COMM.
   mpi_group* group_;
 
-  int next_collective_tag_;
+  uint16_t next_collective_tag_;
 
   spkt_unordered_map<int, keyval*> keyvals_;
 

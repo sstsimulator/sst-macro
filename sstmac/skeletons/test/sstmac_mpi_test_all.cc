@@ -10,9 +10,7 @@
  */
 
 #include <sstmac/skeletons/test/sstmac_mpi_test_all.h>
-#include <sstmac/libraries/mpi/sstmac_mpi.h>
-#include <sstmac/libraries/mpi/mpi_api.h>
-#include <sstmac/libraries/mpi/mpi_comm/mpi_comm.h>
+#include <sstmac/replacements/mpi.h>
 #include <sstmac/common/messages/value_payload.h>
 #include <sprockit/sim_parameters.h>
 #include <math.h>
@@ -139,14 +137,16 @@ sstmac_mpi_test_all::skeleton_main()
 void
 sstmac_mpi_test_all::test_scan()
 {
+#if 0
   mpi_comm* world = mpi()->comm_world();
-  mpi_id rank = world->rank();
-  mpi_id size = world->size();
+  int rank = world->rank();
+  int size = world->size();
 
   int count = 1;
   int send_pay = rank;
   int recv_pay = 0;
   MPI_Scan(&send_pay, &recv_pay, count, MPI_INT, MPI_SUM, world_);
+#endif
 }
 
 void
@@ -1286,6 +1286,7 @@ sstmac_mpi_test_all::test_probe()
 void
 sstmac_mpi_test_all::test_persistent()
 {
+#if 0
   int rank, size;
   MPI_Comm_rank(world_, &rank);
   MPI_Comm_size(world_, &size);
@@ -1347,7 +1348,7 @@ sstmac_mpi_test_all::test_persistent()
 
   //and also the recv
   MPI_Request_free(recv_req);
-
+#endif
 }
 
 }

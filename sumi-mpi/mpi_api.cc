@@ -82,7 +82,7 @@ sstmac_mpi()
 mpi_api::mpi_api() :
   status_(is_fresh),
   next_type_id_(0),
-  group_counter_(0),
+  group_counter_(MPI_GROUP_WORLD+1),
   req_counter_(0),
   queue_(0),
   comm_factory_(0),
@@ -205,6 +205,7 @@ mpi_api::do_init(int* argc, char*** argv)
 
   comm_map_[MPI_COMM_WORLD] = worldcomm_;
   comm_map_[MPI_COMM_SELF] = selfcomm_;
+  grp_map_[MPI_GROUP_WORLD] = worldcomm_->group();
 
   status_ = is_initialized;
 
@@ -451,7 +452,7 @@ mpi_api::erase_comm_ptr(MPI_Comm comm)
 }
 
 void
-mpi_api::add_group_ptr(MPI_Group grp, mpi_group*ptr)
+mpi_api::add_group_ptr(MPI_Group grp, mpi_group* ptr)
 {
   grp_map_[grp] = ptr;
 }
@@ -462,6 +463,7 @@ mpi_api::add_group_ptr(mpi_group* ptr)
 {
   MPI_Group grp = group_counter_++;
   grp_map_[grp] = ptr;
+  ptr->set_id(grp);
   return grp;
 }
 

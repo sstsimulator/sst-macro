@@ -126,6 +126,7 @@ void parsedumpi_callbacks::init_maps()
   mpicomm_[DUMPI_COMM_NULL]  = MPI_COMM_NULL;
   mpicomm_[DUMPI_COMM_WORLD] = MPI_COMM_WORLD;
   mpicomm_[DUMPI_COMM_SELF]  = MPI_COMM_SELF;
+  mpigroups_[DUMPI_FIRST_USER_GROUP] = MPI_GROUP_WORLD;
   // MPI operations
   mpiop_[DUMPI_MAX] = MPI_MAX;
   mpiop_[DUMPI_MIN] = MPI_MIN;

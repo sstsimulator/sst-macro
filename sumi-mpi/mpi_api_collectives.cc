@@ -94,13 +94,15 @@ mpi_api::start_alltoall(const void *sendbuf, void *recvbuf, int count, MPI_Datat
   int typeSize = type_size(type);
   mpi_comm* commPtr = get_comm(comm);
   int tag = commPtr->next_collective_tag();
-  spkt_throw(sprockit::unimplemented_error,
-    "sumi::alltoall");
+  transport::alltoall(
+    false, options::initial_context,
+    (comm == MPI_COMM_WORLD ? 0 : commPtr)); //comm world is a "null" domain
   return tag;
 }
 
 int
-mpi_api::alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
+mpi_api::alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                  void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
 {
   SSTMACBacktrace("MPI_Alltoall");
   validate_mpi_collective("alltoall", sendtype, recvtype);
@@ -112,6 +114,13 @@ mpi_api::alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype, voi
   int tag = start_alltoall(sendbuf, recvbuf, sendcount, sendtype, comm);
   collective_progress_loop(collective::alltoall, tag);
   return MPI_SUCCESS;
+}
+
+int
+mpi_api::alltoall(int sendcount, MPI_Datatype sendtype,
+                  int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
+{
+  alltoall(NULL, sendcount, sendtype, NULL, recvcount, recvtype, comm);
 }
 
 int

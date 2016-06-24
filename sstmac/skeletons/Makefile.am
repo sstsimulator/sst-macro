@@ -38,42 +38,23 @@ nobase_library_include_HEADERS = \
   test/test_compute.h \
   test/global_test.h 
 
-if WITH_DEFAULT_MPI
 libsstmac_skeletons_la_SOURCES += \
-  undumpi/parsedumpi.cc \
-  undumpi/parsedumpi_callbacks.cc  \
-  test/test_mpi_barrier.cc \
-  test/test_onesided.cc \
-  test/mpi_congestion.cc \
-  test/mpi_protocol_test.cc \
+  sumi_undumpi/parsedumpi.cc \
+  sumi_undumpi/parsedumpi_callbacks.cc \
   test/sstmac_mpi_test_all.cc \
   test/pdes_test.cc \
-  test/test_new_collectives.cc \
   test/mpi_print_nodes.cc \
-  test/mpi_test_all.cc \
-  test/mpi_pairwise.cc \
-  test/mpi_ping_pong.cc \
   test/mpi_topology.cc 
 
 nobase_library_include_HEADERS += \
-  undumpi/parsedumpi.h \
-  undumpi/parsedumpi_callbacks.h \
-  test/mpi_congestion.h \
-  test/mpi_protocol_test.h \
-  test/mpi_test_all.h \
-  test/mpi_pairwise.h \
-  test/mpi_ping_pong.h \
-  test/sstmac_mpi_test_all.h \
-  test/test_onesided.h \
-  test/test_mpi_barrier.h 
-else
-libsstmac_skeletons_la_SOURCES += \
-  sumi_undumpi/parsedumpi.cc \
-  sumi_undumpi/parsedumpi_callbacks.cc 
-endif
+  sumi_undumpi/parsedumpi.h \
+  sumi_undumpi/parsedumpi_callbacks.h \
+  test/sstmac_mpi_test_all.h 
 
 
 
+#  test/mpi_protocol_test.cc 
+#  test/mpi_protocol_test.h 
 
 
 
