@@ -105,12 +105,16 @@ parse_opts(int argc, char **argv, opts &oo)
       }
       break;
       case 'p': {
-        oo.params->parse_line(optarg);
+        //overwrite anything existing
+        oo.params->parse_line(optarg, false, true);
         break;
       }
-      case 'c':
-        oo.params->parse_line( std::string("cpu_affinity = ") + std::string(optarg) );
+      case 'c': {
+        //overwrite anything existing
+        std::string param_line = std::string("cpu_affinity = ") + std::string(optarg);
+        oo.params->parse_line(param_line, false, true);
         break;
+      }
       default:
         cerr0 << "Unhandled input flag" << std::endl;
         errorflag = true;

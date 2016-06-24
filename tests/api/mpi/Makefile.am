@@ -11,7 +11,7 @@
 include $(top_srcdir)/Makefile.common
 
 AM_CPPFLAGS += -I$(top_srcdir)/tests/mpi/include -Wp,-w -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi \
-  -I$(srcdir) -I$(top_builddir)/pth -I$(top_srcdir)/pth \
+  -I$(srcdir) -I$(top_builddir)/pth -I$(top_srcdir)/pth -I$(top_srcdir)/sumi -I$(top_builddir)/sumi \
   -I$(top_builddir)/tests/api/mpi -I$(top_srcdir)/tests/api/mpi \
   -I$(top_builddir)/tests/api/mpi/include -I$(top_srcdir)/tests/api/mpi/include -DHAVE_MPI_WIN_CREATE
 
@@ -45,7 +45,6 @@ TEST_SOURCE_FILES = \
   attr/attrerr.cc \
   attr/attrerrcomm.cc \
   attr/attrerrtype.cc \
-  attr/attric.cc \
   attr/attrorder.cc \
   attr/attrordercomm.cc \
   attr/attrordertype.cc \
@@ -94,20 +93,6 @@ TEST_SOURCE_FILES = \
   coll/exscan2.cc \
   coll/gather.cc \
   coll/gather2.cc \
-  coll/iallred.cc \
-  coll/icallgather.cc \
-  coll/icallgatherv.cc \
-  coll/icallreduce.cc \
-  coll/icalltoall.cc \
-  coll/icalltoallv.cc \
-  coll/icalltoallw.cc \
-  coll/icbarrier.cc \
-  coll/icbcast.cc \
-  coll/icgather.cc \
-  coll/icgatherv.cc \
-  coll/icreduce.cc \
-  coll/icscatter.cc \
-  coll/icscatterv.cc \
   coll/longuser.cc \
   coll/nonblocking.cc \
   coll/nonblocking2.cc \
@@ -155,7 +140,6 @@ TEST_SOURCE_FILES = \
   comm/ctxalloc.cc \
   comm/ctxsplit.cc \
   comm/dup.cc \
-  comm/dupic.cc \
   comm/ic1.cc \
   comm/ic2.cc \
   comm/iccreate.cc \
@@ -281,65 +265,8 @@ TEST_SOURCE_FILES = \
   pt2pt/sendrecv3.cc \
   pt2pt/sendself.cc \
   pt2pt/waitany-null.cc \
-  pt2pt/waittestnull.cc \
-  topo/cartcreates.cc \
-  topo/cartmap1.cc \
-  topo/cartshift1.cc \
-  topo/cartsuball.cc \
-  topo/cartzero.cc \
-  topo/dgraph_unwgt.cc \
-  topo/dims1.cc \
-  topo/dims2.cc \
-  topo/distgraph1.cc \
-  topo/graphcr.cc \
-  topo/graphcr2.cc \
-  topo/graphmap1.cc \
-  topo/neighb_coll.cc \
-  topo/topodup.cc \
-  topo/topotest.cc \
-  rma/accfence1.cc \
-  rma/accfence2_am.cc \
-  rma/accfence2.cc \
-  rma/allocmem.cc \
-  rma/attrorderwin.cc \
-  rma/baseattrwin.cc \
-  rma/contig_displ.cc \
-  rma/fetchandadd_am.cc \
-  rma/fetchandadd_tree_am.cc \
-  rma/fetchandadd_tree.cc \
-  rma/fetchandadd.cc \
-  rma/fkeyvalwin.cc \
-  rma/getfence1.cc \
-  rma/getgroup.cc \
-  rma/ircpi.cc \
-  rma/lockcontention.cc \
-  rma/locknull.cc \
-  rma/mixedsync.cc \
-  rma/nullpscw.cc \
-  rma/putfence1.cc \
-  rma/putfidx.cc \
-  rma/putpscw1.cc \
-  rma/selfrma.cc \
-  rma/test1_am.cc \
-  rma/test1.cc \
-  rma/test2_am.cc \
-  rma/test2.cc \
-  rma/test3_am.cc \
-  rma/test3.cc \
-  rma/test4_am.cc \
-  rma/test4.cc \
-  rma/test5_am.cc \
-  rma/test5.cc \
-  rma/transpose1.cc \
-  rma/transpose2.cc \
-  rma/transpose3.cc \
-  rma/transpose4.cc \
-  rma/transpose5.cc \
-  rma/transpose6.cc \
-  rma/transpose7.cc \
-  rma/wincall.cc \
-  rma/winname.cc \
-  rma/wintest.cc 
+  pt2pt/waittestnull.cc 
+
 EXTRA_DIST += $(TEST_SOURCE_FILES)
 
 

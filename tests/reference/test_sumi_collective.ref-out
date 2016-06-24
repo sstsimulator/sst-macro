@@ -22,9 +22,9 @@ test[2] = 3
 test[3] = 2
 Testing allgather payload with 1 elements
 Testing allgather payload with 4 elements
-t=4.00018: finished barrier on rank 0
-t=4.00018: finished barrier on rank 3
-t=4.00018: finished barrier on rank 4
-t=4.00018: finished barrier on rank 1
-t=4.00018: finished barrier on rank 2
-Estimated total runtime of         104.00018214 seconds
+t=4.0002: finished barrier on rank 0
+t=4.00021: finished barrier on rank 3
+t=4.00021: finished barrier on rank 4
+t=4.00021: finished barrier on rank 1
+t=4.00021: finished barrier on rank 2
+Estimated total runtime of         104.00020762 seconds

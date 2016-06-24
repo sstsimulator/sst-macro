@@ -1,10 +1,9 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*
  *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
  */
 #include <sstmac/replacements/mpi.h>
+#include <sstmac/compute.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpitest.h"

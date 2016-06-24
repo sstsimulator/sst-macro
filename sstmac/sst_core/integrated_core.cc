@@ -53,8 +53,10 @@ add_params(PyObject* dict, sprockit::sim_parameters* params)
 {
   sprockit::sim_parameters::key_value_map::iterator it, end = params->end();
   for (it=params->begin(); it != end; ++it){
-    PyObject* key = PyString_FromString(it->first.c_str());
-    PyObject* val = PyString_FromString(it->second.c_str());
+    const std::string& key_name = it->first;
+    const std::string& key_value = it->second.value;
+    PyObject* key = PyString_FromString(key_name.c_str());
+    PyObject* val = PyString_FromString(key_value.c_str());
     PyDict_SetItem(dict, key, val);
   }
 }

@@ -65,20 +65,7 @@ fat_tree_router::productive_paths_to_switch(
   minimal_route_to_switch(dst, tmp_path);
   int dim = tmp_path.outport / k_;
   int dir = tmp_path.outport % k_;
-  if (is_top_level()) {
-    paths.resize(2);
-    //we have two possible down connections
-    //these ports are offset by k_, though
-    int path_group = dir % k_;
-    int path0dir = path_group;
-    int path1dir = path_group + k_;
-    //paths[0].dim = paths[1].dim = fat_tree::down_dimension;
-    paths[0].outport = regtop_->convert_to_port(fat_tree::down_dimension, path0dir);
-    paths[1].outport = regtop_->convert_to_port(fat_tree::down_dimension, path1dir);
-    paths[0].vc = paths[1].vc = 1;
-    return;
-  }
-  else if (dim == fat_tree::down_dimension) {
+  if (dim == fat_tree::down_dimension) {
     //we have no choice - only one path down is correct
     paths.resize(1);
     paths[0] = tmp_path;
@@ -106,33 +93,10 @@ fat_tree_router::minimal_route_to_switch(
     int(ej_addr), top_->switch_coords(ej_addr).to_string().c_str());
 
   int pathDim, pathDir;
-  long ej_id = ej_addr;
-  if (myL_ == 0) {
-    // if we're on the first level and we're not there yet, go up
-    pathDim = fat_tree::up_dimension;
-    pathDir = choose_up_path();
-    path.vc = 0;
-    rter_debug("fat_tree: routing up from first level");
-  }
-  else if (is_top_level()) {
-    pathDim = fat_tree::down_dimension;
-    path.vc = 1;
-    //in an l=3,k=2 train, e.g.
-    // switch 8 performs the "role" of switches 8,9
-    // switch 9 performs the "role" of switches 10,11
-    // choose one of the roles to perform
-    int my_virtual_role = choose_down_path();
-    long relative_ej_id = ej_id - min_reachable_leaf_id_;
-    // the leaf ids are divided into groups of size num_leaf_switches_per_path
-    // based on which leaf nodes are reachable following a given path
-    long path_group = relative_ej_id / num_leaf_switches_per_path_;
-    // each node can play "two" roles giving two degenerate paths down
-    pathDir = path_group + my_virtual_role * k_;
-    // Because
-    ftree_rter_debug("routing down with dir %d: eject-id=%ld rel-eject-id=%ld num_leaf_switches_per_path-%ld my_virtual_role=%d",
-          pathDir, ej_id, relative_ej_id, num_leaf_switches_per_path_, my_virtual_role);
-  }
-  else if (ej_id >= min_reachable_leaf_id_ && ej_id < max_reachable_leaf_id_) {
+  int ej_id = ej_addr;
+
+  int myAddr = my_addr_;
+  if (ej_id >= min_reachable_leaf_id_ && ej_id < max_reachable_leaf_id_) {
     pathDim = fat_tree::down_dimension;
     path.vc = 1;
     long relative_ej_id = ej_id - min_reachable_leaf_id_;
@@ -161,41 +125,22 @@ fat_tree_router::choose_up_path()
 void
 fat_tree_router::finalize_init()
 {
-  //fat_tree* ft_top = safe_cast(fat_tree, top_);
-  //k_ = ft_top->k();
-  //l_ = ft_top->l();
-
   int switchesperlevel = pow(k_, l_ - 1);
   myL_ = my_addr_ / switchesperlevel;
-  logicalid_ = (my_addr_ - (myL_ * switchesperlevel)) / pow(k_,
-               myL_);
 
   num_leaf_switches_reachable_ = pow(k_, myL_);
   num_leaf_switches_per_path_ = num_leaf_switches_reachable_ / k_;
-  level_relative_id_ = my_addr_ - myL_ * switchesperlevel;
-  if (is_top_level()) {
-    level_relative_id_ *= 2;
-  }
+  int level_relative_id = my_addr_ - myL_ * switchesperlevel;
 
-  int my_leaf_group = level_relative_id_ / num_leaf_switches_reachable_;
+  int my_leaf_group = level_relative_id / num_leaf_switches_reachable_;
   min_reachable_leaf_id_ = my_leaf_group * num_leaf_switches_reachable_;
   max_reachable_leaf_id_ = min_reachable_leaf_id_ + num_leaf_switches_reachable_;
 
   pickstart_ = rng_->value() % k_;
   numpicked_ = 0;
-
   numpicktop_ = 0;
 
   structured_router::finalize_init();
-}
-
-int
-fat_tree_router::choose_down_path()
-{
-  int ret = numpicktop_;
-  int two_down_connections_per_top_switch = 2;
-  numpicktop_ = (numpicktop_ + 1) % two_down_connections_per_top_switch;
-  return ret;
 }
 
 int
@@ -205,12 +150,6 @@ fat_tree_router::number_paths(message* msg) const
   long ej_id = ej_addr;
   if (ej_addr == my_addr_) {
     return 1;
-  }
-  else if (myL_ == 0) {
-    return k_;
-  }
-  else if (is_top_level()) {
-    return 2;
   }
   else if (ej_id >= min_reachable_leaf_id_ && ej_id < max_reachable_leaf_id_) {
     return 1;

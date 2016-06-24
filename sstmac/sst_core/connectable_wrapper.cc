@@ -1,4 +1,5 @@
 #include <sstmac/sst_core/connectable_wrapper.h>
+#include <sprockit/util.h>
 #include <Python.h>
 
 namespace sstmac {
@@ -6,6 +7,18 @@ namespace sstmac {
 PyObject* connectable_proxy_component::sst = NULL;
 connectable_proxy_component::switch_map connectable_proxy_component::registered_switches;
 connectable_proxy_component::endpoint_map connectable_proxy_component::registered_endpoints;
+
+void
+integrated_connectable_wrapper::connect(
+  int src_outport,
+  int dst_inport,
+  connection_type_t ty,
+  connectable *mod,
+  config *cfg)
+{
+  spkt_throw(sprockit::unimplemented_error,
+   "integrated_connectable_wrapper::connect");
+}
 
 connectable_proxy_component::~connectable_proxy_component()
 {
@@ -15,14 +28,12 @@ connectable_proxy_component::~connectable_proxy_component()
 }
 
 void
-connectable_proxy_component::connect_weighted(
+connectable_proxy_component::connect(
   int src_port,
   int dst_port,
   connection_type_t ty,
   connectable* mod,
-  double weight,
-  int red
-)
+  config* cfg)
 {
   connectable_proxy_component* other = safe_cast(connectable_proxy_component, mod);
   std::string link_name = sprockit::printf(
@@ -31,13 +42,36 @@ connectable_proxy_component::connect_weighted(
       component_name.c_str(), src_port,
       other->component_name.c_str(), dst_port
   );
+
   std::string port_name_prefix = sprockit::printf(
-      "__auto_port_%s_(%s)_%d_to_(%s)_%d_%f_%d",
-      str(ty),
-      component_name.c_str(), src_port,
-      other->component_name.c_str(), dst_port,
-      weight, red
-  );
+        "__auto_port_%s_(%s)_%d_to_(%s)_%d_%d",
+        str(ty),
+        component_name.c_str(), src_port,
+        other->component_name.c_str(), dst_port, cfg->ty);
+  switch(cfg->ty){
+    case BasicConnection:
+      break;
+    case RedundantConnection:
+      port_name_prefix += sprockit::printf("_%d", cfg->red);
+      break;
+     case WeightedConnection:
+      port_name_prefix += sprockit::printf("_%f_%f_%f_%f",
+        cfg->link_weight, cfg->src_buffer_weight,
+        cfg->dst_buffer_weight, cfg->xbar_weight);
+      break;
+    case FixedBandwidthConnection:
+      port_name_prefix += sprockit::printf("_%f", cfg->bw);
+      break;
+    case FixedConnection:
+      port_name_prefix += sprockit::printf("_%f_%ld",
+        cfg->bw, cfg->latency.ticks_int64());
+      break;
+    default:
+      spkt_throw(sprockit::value_error,
+       "invalid connectable enum %d in proxy component", cfg->ty);
+  }
+
+
   std::string my_port_name = sprockit::printf("%s_src", port_name_prefix.c_str());
   std::string other_port_name = sprockit::printf("%s_dest", port_name_prefix.c_str());
 

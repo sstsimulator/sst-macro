@@ -49,7 +49,6 @@ libsstmac_skeletons_la_SOURCES += \
   test/sstmac_mpi_test_all.cc \
   test/pdes_test.cc \
   test/test_new_collectives.cc \
-  test/test_mpi_algorithms.cc \
   test/mpi_print_nodes.cc \
   test/mpi_test_all.cc \
   test/mpi_pairwise.cc \

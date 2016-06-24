@@ -54,10 +54,11 @@ simple_nic::handle(event *ev)
 
 void
 simple_nic::connect(
-    int src_outport,
-    int dst_inport,
-    connection_type_t ty,
-    connectable* mod)
+  int src_outport,
+  int dst_inport,
+  connection_type_t ty,
+  connectable* mod,
+  config* cfg)
 {
 }
 

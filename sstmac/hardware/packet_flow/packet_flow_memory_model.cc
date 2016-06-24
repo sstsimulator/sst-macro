@@ -27,8 +27,8 @@ packet_flow_memory_packetizer::packet_flow_memory_packetizer() :
 void
 packet_flow_memory_packetizer::init_factory_params(sprockit::sim_parameters *params)
 {
-  if (!params->has_param("packet_size"))
-    params->add_param("packet_size", "100GB");
+  if (!params->has_param("mtu"))
+    params->add_param("mtu", "100GB");
   packet_flow_packetizer::init_factory_params(params);
   max_single_bw_ = params->get_bandwidth_param("max_single_bandwidth");
   max_bw_ = params->get_bandwidth_param("total_bandwidth");

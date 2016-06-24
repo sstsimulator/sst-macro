@@ -159,7 +159,7 @@ init_params(parallel_runtime* rt, opts& oo, sprockit::sim_parameters* params, bo
     runtime_param_bcaster bcaster(rt);
     sprockit::sim_parameters::parallel_build_params(params, rt->me(), rt->nproc(), oo.configfile, &bcaster);
   } else {
-    params->parse_file(oo.configfile);
+    params->parse_file(oo.configfile, false, true);
   }
 
   if (oo.params) {
@@ -179,44 +179,32 @@ init_params(parallel_runtime* rt, opts& oo, sprockit::sim_parameters* params, bo
   sprockit::sprockit_init_cxx_heap(params);
 }
 
-void
-run(opts& oo,
-  parallel_runtime* rt,
-  sprockit::sim_parameters* params,
-  sim_stats& stats,
-  bool params_only = false)
-{
-  double start = sstmac_wall_time();
-  sstmac::env::params = params;
-  sstmac::env::rt = rt;
-
-  if (oo.debug != "") {
-    logger::set_user_param(oo.debug);
-  }
-
-  int max_nproc = native::manager::compute_max_nproc(params);
-  resize_topology(max_nproc, params);
-  if (params_only)
-      return;
-
 #if !SSTMAC_INTEGRATED_SST_CORE
-  native::manager* mgr = new native::macro_manager(rt);
+void
+init_first_run(parallel_runtime* rt, sprockit::sim_parameters* params)
+{
   std::string rank = sprockit::printf("%d", rt->me());
   std::string nproc = sprockit::printf("%d", rt->nproc());
-  params->add_param("sst_rank", rank);
-  params->add_param("sst_nproc", nproc);
+  params->add_param_override("sst_rank", rank);
+  params->add_param_override("sst_nproc", nproc);
   //and pass along to topology as well
 
   //we didn't have all the runtime params available when we first built this
   rt->init_runtime_params(params);
 
   std::string nworkers = sprockit::printf("%d", rt->nproc()*rt->nthread());
-  params->parse_keyval("topology.nworkers", nworkers, false);
+  //don't fail on existing, but ovewrite whatever is there
+  params->parse_keyval("topology.nworkers", nworkers, false, true, true);
   rt->init_partition_params(params);
+}
 
-  //this must come after runtime has had a chance to init runtime params
+void
+run_params(parallel_runtime* rt, sprockit::sim_parameters* params, sim_stats& stats)
+{
+  native::manager* mgr = new native::macro_manager(rt);
   mgr->init_factory_params(params);
 
+  double start = sstmac_wall_time();
   timestamp stop_time = params->get_optional_time_param("stop_time", -1.);
   timestamp runtime;
   try {
@@ -245,11 +233,44 @@ run(opts& oo,
     throw;
   } // catch
 
+  bool strict_params_test = params->get_optional_bool_param("strict_params", false);
+  if (strict_params_test){
+    bool unread_params = params->print_unread_params();
+    if (unread_params)
+      spkt_throw(sprockit::illformed_error, "simulation finished with unread parameters - abort");
+  }
+
   // now that we finished running, print the parameters that we used
 
   double stop = sstmac_wall_time();
   stats.wallTime = stop - start;
   stats.simulatedTime = runtime.sec();
+}
+
+#endif
+
+void
+run(opts& oo,
+  parallel_runtime* rt,
+  sprockit::sim_parameters* params,
+  sim_stats& stats,
+  bool params_only = false)
+{
+  sstmac::env::params = params;
+  sstmac::env::rt = rt;
+
+  if (oo.debug != "") {
+    logger::set_user_param(oo.debug);
+  }
+
+  int max_nproc = native::manager::compute_max_nproc(params);
+  resize_topology(max_nproc, params);
+  if (params_only)
+      return;
+
+#if !SSTMAC_INTEGRATED_SST_CORE
+  init_first_run(rt, params);
+  run_params(rt, params, stats);
 #endif
 }
 
@@ -275,7 +296,6 @@ try_main(sprockit::sim_parameters* params, int argc, char **argv, bool params_on
 
   //do some cleanup and processing of params
   sstmac::process_init_params(params);
-  sstmac::remap_deprecated_params(params);
 
   sstmac::run(oo, rt, params, stats, params_only);
   if (params_only){

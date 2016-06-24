@@ -377,6 +377,8 @@ tiled_dragonfly::read_intergroup_connections()
 void
 tiled_dragonfly::make_intragroup_connections(internal_connectable_map& objects)
 {
+  connectable::config cfg;
+  cfg.ty = connectable::BasicConnection;
   for (int g=0; g<numG(); ++g) {
     for( std::list<connection>::iterator it=intragrp_conns_.begin();
          it!=intragrp_conns_.end(); ++it ) {
@@ -440,10 +442,10 @@ tiled_dragonfly::make_intragroup_connections(internal_connectable_map& objects)
 
       objects[src_id]->connect(outport,inport,
                                connectable::output,
-                               objects[dst_id]);
+                               objects[dst_id], &cfg);
       objects[dst_id]->connect(outport,inport,
                                connectable::input,
-                               objects[src_id]);
+                               objects[src_id], &cfg);
     }
   }
 }
@@ -451,6 +453,8 @@ tiled_dragonfly::make_intragroup_connections(internal_connectable_map& objects)
 void
 tiled_dragonfly::make_intergroup_connections(internal_connectable_map& objects)
 {
+  connectable::config cfg;
+  cfg.ty = connectable::BasicConnection;
   for( std::list<connection>::iterator it=intergrp_conns_.begin();
        it!=intergrp_conns_.end(); ++it ) {
 
@@ -501,10 +505,10 @@ tiled_dragonfly::make_intergroup_connections(internal_connectable_map& objects)
 
     objects[src_id]->connect(outport,inport,
                              connectable::output,
-                             objects[dst_id]);
+                             objects[dst_id], &cfg);
     objects[dst_id]->connect(outport,inport,
                              connectable::input,
-                             objects[src_id]);
+                             objects[src_id], &cfg);
   }
 }
 

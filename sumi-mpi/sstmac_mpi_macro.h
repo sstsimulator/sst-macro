@@ -31,10 +31,17 @@
 #define MPI_Comm_group current_mpi()->comm_group
 #define MPI_Group_incl current_mpi()->group_incl
 #define MPI_Group_free current_mpi()->group_free
+#define MPI_Sendrecv current_mpi()->sendrecv
 #define MPI_Send current_mpi()->send
 #define MPI_Isend current_mpi()->isend
 #define MPI_Recv current_mpi()->recv
 #define MPI_Irecv current_mpi()->irecv
+#define MPI_Bsend current_mpi()->send
+#define MPI_Rsend current_mpi()->send
+#define MPI_Ssend current_mpi()->send
+#define MPI_Ibsend current_mpi()->isend
+#define MPI_Issend current_mpi()->isend
+#define MPI_Irsend current_mpi()->isend
 #define MPI_Allreduce current_mpi()->allreduce
 #define MPI_Reduce current_mpi()->reduce
 #define MPI_Barrier current_mpi()->barrier
@@ -60,7 +67,6 @@
 #define MPI_Iprobe current_mpi()->iprobe
 #define MPI_Gatherv current_mpi()->gatherv
 #define MPI_Alltoallv current_mpi()->alltoallv
-#define MPI_Type_struct current_mpi()->type_struct
 #define MPI_Type_contiguous current_mpi()->type_contiguous
 #define MPI_Type_commit current_mpi()->type_commit
 #define MPI_Type_free current_mpi()->type_free
@@ -97,8 +103,6 @@
 #define MPI_Pack current_mpi()->pack
 #define MPI_Unpack current_mpi()->unpack
 #define MPI_Pack_size current_mpi()->pack_size
-#define MPI_Op_create current_mpi()->op_create
-#define MPI_Op_free current_mpi()->op_free
 #define MPI_Group_size current_mpi()->group_size
 #define MPI_Group_rank current_mpi()->group_rank
 #define MPI_Group_range_incl current_mpi()->group_range_incl
@@ -114,6 +118,15 @@
 #define MPI_Type_get_true_extent current_mpi()->type_get_true_extent
 #define MPI_Alltoallw current_mpi()->alltoallw
 #define MPI_Exscan current_mpi()->exscan
+#define MPI_Comm_set_errhandler current_mpi()->comm_set_errhandler
+#define MPI_Error_class current_mpi()->error_class
+#define MPI_Error_string current_mpi()->error_string
+#define MPI_Type_create_struct current_mpi()->type_create_struct
+#define MPI_Type_struct current_mpi()->type_create_struct
+#define MPI_Get_address current_mpi()->get_address
+#define MPI_Buffer_attach current_mpi()->buffer_attach
+#define MPI_Buffer_detach current_mpi()->buffer_detach
+#define MPI_Init_thread current_mpi()->init_thread
 #else
 #define MPI_NodeAddress sstmac_mpi_nodeaddress
 #define MPI_Taskid sstmac_mpi_taskid
@@ -226,12 +239,10 @@
 #define MPI_Exscan sstmac_mpi_exscan
 #endif
 
+#define MPI_Op_create error not yet implemented
+#define MPI_Op_free error not yet implemented
 #define MPI_Intercomm_create error not yet implemented
 #define MPI_Comm_remote_size error not yet implemented
-#define MPI_Error_class error not yet implemented
-#define MPI_Error_string error not yet implemented
-#define MPI_Buffer_attach error not yet implemented
-#define MPI_Buffer_detach error not yet implemented
 #define MPI_Comm_test_inter error not yet implemented
 #define MPI_Comm_remote_group error not yet implemented
 #define MPI_Intercomm_merge error not yet implemented
@@ -287,7 +298,6 @@
 #define MPI_File_call_errhandler error not yet implemented
 #define MPI_Grequest_complete error not yet implemented
 #define MPI_Grequest_start error not yet implemented
-#define MPI_Init_thread sstmac_mpi_init_thread
 #define MPI_Is_thread_main error not yet implemented
 #define MPI_Query_thread error not yet implemented
 #define MPI_Status_set_cancelled error not yet implemented
@@ -312,12 +322,11 @@
 #define MPI_Alloc_mem error not yet implemented
 #define MPI_Comm_create_errhandler error not yet implemented
 #define MPI_Comm_get_errhandler error not yet implemented
-#define MPI_Comm_set_errhandler error not yet implemented
+
 #define MPI_File_create_errhandler error not yet implemented
 #define MPI_File_get_errhandler error not yet implemented
 #define MPI_File_set_errhandler error not yet implemented
 #define MPI_Free_mem error not yet implemented
-#define MPI_Get_address error not yet implemented
 #define MPI_Info_create error not yet implemented
 #define MPI_Info_delete error not yet implemented
 #define MPI_Info_dup error not yet implemented
@@ -335,7 +344,6 @@
 #define MPI_Type_create_hvector error not yet implemented
 #define MPI_Type_create_indexed_block error not yet implemented
 #define MPI_Type_create_resized error not yet implemented
-#define MPI_Type_create_struct error not yet implemented
 #define MPI_Type_create_subarray error not yet implemented
 #define MPI_Unpack_external error not yet implemented
 #define MPI_Win_create_errhandler error not yet implemented
@@ -348,24 +356,12 @@
 #define MPI_Dist_graph_create          error not yet implemented
 #define MPI_Dist_graph_neighbors_count error not yet implemented
 #define MPI_Dist_graph_neighbors       error not yet implemented
-#define MPI_Bsend error not yet implemented
-#define MPI_Rsend error not yet implemented
-#define MPI_Ssend error not yet implemented
-#define MPI_Sendrecv error not yet implemented
-#define MPI_Ibsend error not yet implemented
-#define MPI_Issend error not yet implemented
-#define MPI_Irsend error not yet implemented
 #define MPI_Send_init error not yet implemented
 #define MPI_Bsend_init error not yet implemented
 #define MPI_Rsend_init error not yet implemented
 #define MPI_Ssend_init error not yet implemented
 #define MPI_Address error not yet implemented
-#define MPI_Error_class error not yet implemented
-#define MPI_Error_string error not yet implemented
-#define MPI_Buffer_attach error not yet implemented
-#define MPI_Buffer_detach error not yet implemented
 #define MPI_Intercomm_create error not yet implemented
-#define MPI_Sendrecv error not yet implemented
 #define MPI_Sendrecv_replace error not yet implemented
 #define MPI_Group_translate_ranks error not yet implemented
 #define MPI_Get_elements error not yet implemented

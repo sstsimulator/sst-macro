@@ -25,7 +25,7 @@ make_sim_params_from_params(
   std::set<std::string> key_names = map.getKeys();
   for(auto&& key : key_names) {
     rv->parse_keyval(
-        key, map.find_string(key), false);
+        key, map.find_string(key), false, true, false);
   }
   return rv;
 }
@@ -38,7 +38,7 @@ make_sim_params_from_mapping(
 {
   sprockit::sim_parameters* rv = new sprockit::sim_parameters;
   for(auto&& pair : map) {
-    rv->parse_keyval(pair.first, pair.second, false);
+    rv->parse_keyval(pair.first, pair.second, false, true, false);
   }
   return rv;
 }

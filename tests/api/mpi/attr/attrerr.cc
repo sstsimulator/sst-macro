@@ -1,17 +1,3 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
-/*
-
-  Exercise attribute routines.
-  This version checks for correct behavior of the copy and delete functions
-  on an attribute, particularly the correct behavior when the routine returns
-  failure.
-
- */
 #include <stdio.h>
 #include <sstmac/replacements/mpi.h>
 #include "mpitest.h"

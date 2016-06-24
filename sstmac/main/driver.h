@@ -2,9 +2,14 @@
 #define sstmac_main_DRIVER_H
 
 #include <sprockit/sim_parameters.h>
+#include <sstmac/backends/native/manager_fwd.h>
 #include <sstmac/main/sstmac.h>
 #include <list>
 #include <iostream>
+
+#ifdef SSTMAC_MPI_DRIVER
+#include <mpi.h>
+#endif
 
 namespace sstmac {
 
@@ -62,78 +67,34 @@ class Simulation
  public:
   Simulation() : 
     complete_(false),
-    results_(0), 
-    num_results_(0)
+    results_(0)
   {
   }
 
-  double wallTime() const {
-    return wall_time_;
+  Simulation(int nresults) :
+    complete_(false),
+    results_(new double[nresults])
+  {
   }
 
-  double simulatedTime() const {
-    return sim_time_;
+  double
+  wallTime() const {
+    return stats_.wallTime;
+  }
+
+  double
+  simulatedTime() const {
+    return stats_.simulatedTime;
+  }
+
+  sim_stats*
+  stats() {
+    return &stats_;
   }
 
   void finalize();
 
-  void wait();
-
-  template <class A>
-  void
-  setLabel(const A& a){
-    label_offset_ = 0;
-    add(a);
-  }
-
-  template <class A, class B>
-  void
-  setLabel(const A& a, const B& b){
-    label_offset_ = 0;
-    add(a); add(b);
-  }
-
-  template <class A, class B, class C>
-  void
-  setLabel(const A& a, const B&b, const C& c){
-    label_offset_ = 0;
-    add(a); add(b); add(c);
-  }
-
-  template <class A, class B, class C, class D>
-  void
-  setLabel(const A& a, const B&b, const C& c, const D& d){
-    label_offset_ = 0;
-    add(a); add(b); add(c); add(d);
-  }
-
-  template <class A>
-  void
-  getLabel(A& a){
-    label_offset_ = 0;
-    extract(a);
-  }
-
-  template <class A, class B>
-  void
-  getLabel(A& a, B& b){
-    label_offset_ = 0;
-    extract(a); extract(b);
-  }
-
-  template <class A, class B, class C>
-  void
-  getLabel(A& a, B&b, C& c){
-    label_offset_ = 0;
-    extract(a); extract(b); extract(c);
-  }
-
-  template <class A, class B, class C, class D>
-  void
-  getLabel(A& a, B&b, C& c, D& d){
-    label_offset_ = 0;
-    extract(a); extract(b); extract(c); extract(d);
-  }
+  void waitFork();
 
   pid_t
   pid() const {
@@ -143,7 +104,12 @@ class Simulation
   void
   setResults(double* results, int numResults){
     results_ = results;
-    num_results_ = numResults;
+    stats_.numResults = numResults;
+  }
+
+  void
+  setStats(const sim_stats& stats) {
+    stats_ = stats;
   }
 
   double*
@@ -151,37 +117,36 @@ class Simulation
     return results_;
   }
 
+
+  bool
+  complete() const {
+    return complete_;
+  }
+
+  void
+  setComplete(bool flag){
+    complete_ = flag;
+  }
+
   int
   numResults() const {
-    return num_results_;
+    return stats_.numResults;
+  }
+
+  void
+  setLabel(int idx){
+    idx_ = idx;
+  }
+
+  int
+  label() const {
+    return idx_;
   }
 
  private:
-  template <class T>
-  void
-  add(const T& t){
-    label_offset_ += append_label(label_ + label_offset_, t);
-  }
-
-  template <class T>
-  void
-  extract(T& t){
-    label_offset_ += extract_label(label_ + label_offset_, t);
-  }
-
   void
   setPid(pid_t pid){
     pid_ = pid;
-  }
-
-  void
-  setWallTime(double wallTime){
-    wall_time_ = wallTime;
-  }
-
-  void
-  setSimulatedTime(double simTime){
-    sim_time_ = simTime;
   }
 
   void
@@ -204,15 +169,39 @@ class Simulation
   setParameters(sprockit::sim_parameters* params);
 
   sprockit::sim_parameters params_;
-  double sim_time_;
-  double wall_time_;
+  sim_stats stats_;
   char label_[256];
   int label_offset_;
   pid_t pid_;
   pipe_t pfd_;
   double* results_;
-  int num_results_;
   bool complete_;
+  int idx_;
+
+
+ public:
+  void waitMPIScan();
+
+#if SSTMAC_MPI_DRIVER
+ public:
+  MPI_Request*
+  initSendRequest() {
+    return mpi_requests_;
+  }
+
+  MPI_Request*
+  recvResultsRequest() {
+    return &mpi_requests_[2];
+  }
+
+  MPI_Request*
+  recvStatsRequest() {
+    return &mpi_requests_[1];
+  }
+
+ private:
+  MPI_Request mpi_requests_[3];
+#endif
 
 };
 
@@ -220,10 +209,30 @@ class Simulation
 class SimulationQueue
 {
  public:
+  SimulationQueue();
+
   Simulation*
   fork(sprockit::sim_parameters& params){
     return fork(&params);
   }
+
+  bool
+  runJobsOnMaster() const {
+    return nproc_ <= 4;
+  }
+
+  int
+  maxParallelWorkers() const {
+    if (runJobsOnMaster()) return nproc_;
+    else return nproc_ - 1;
+  }
+
+  void
+  setNextWorker(){
+    next_worker_ = (next_worker_ + 1) % nproc_;
+  }
+
+  void teardown();
 
   void init(int argc, char** argv);
 
@@ -233,7 +242,7 @@ class SimulationQueue
   fork(sprockit::sim_parameters* params);
 
   Simulation*
-  waitForCompleted();
+  waitForForked();
 
   void
   clear(Simulation* sim);
@@ -244,6 +253,20 @@ class SimulationQueue
   static void
   publishResults(double* results, int nresults);
 
+  Simulation*
+  sendScanPoint(char* bufferPtr, int nparams, int totalSize);
+
+  void
+  rerun(sprockit::sim_parameters* params, sim_stats& stats);
+
+  void busyLoopMPI();
+
+  void runScanPoint(char* buffer, sim_stats& stats);
+
+  int workerID() const {
+    return me_;
+  }
+
  private:
   std::list<Simulation*> pending_;
   parallel_runtime* rt_;
@@ -251,6 +274,12 @@ class SimulationQueue
   opts template_opts_;
   static double* results_;
   static int num_results_;
+
+ private:
+  int nproc_;
+  int me_;
+  int next_worker_;
+  bool first_run_;
 };
 
 }

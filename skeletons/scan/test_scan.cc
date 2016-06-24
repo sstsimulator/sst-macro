@@ -18,7 +18,7 @@ int main(int argc, char** argv)
   params["message_size"].setByteLength(16, "KB");
   
   for (int i=0; i < nPoints; ++i){
-    params["injection_bandwidth"].setBandwidth(bandwidths[i], "GB/s");
+    //params["injection_bandwidth"].setBandwidth(bandwidths[i], "GB/s");
     Simulation* sim = queue.fork(params);
     sim->setLabel(i);
   }

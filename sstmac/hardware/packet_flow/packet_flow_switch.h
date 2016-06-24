@@ -15,6 +15,8 @@ class packet_flow_params  {
  public:
   double link_bw;
 
+  double ej_bw;
+
   ~packet_flow_params();
 
   timestamp hop_lat;
@@ -44,7 +46,6 @@ class packet_flow_abstract_switch :
   public packet_flow_component
 {
  public:
-
 #if SSTMAC_INTEGRATED_SST_CORE
   packet_flow_abstract_switch(
     SST::ComponentId_t id,
@@ -86,11 +87,7 @@ class packet_flow_abstract_switch :
 #endif
 
  protected:
-  packet_flow_params* params_
-#if SSTMAC_HAVE_CXX11
-    = nullptr
-#endif
-  ;
+  packet_flow_params* params_;
 };
 
 /**
@@ -120,7 +117,7 @@ class packet_flow_switch :
   initialize();
 
   packet_flow_crossbar*
-  crossbar();
+  crossbar(config* cfg);
 
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
@@ -134,12 +131,12 @@ class packet_flow_switch :
   }
 
   virtual void
-  connect_weighted(
+  connect(
     int src_outport,
     int dst_inport,
     connection_type_t ty,
     connectable* mod,
-    double weight, int red);
+    config* cfg);
 
   std::vector<switch_id>
   connected_switches() const;
@@ -198,19 +195,19 @@ class packet_flow_switch :
     int src_outport,
     int dst_inport,
     connectable* mod,
-    double weight, int red);
+    config* cfg);
 
   void
   connect_input(
     int src_outport,
     int dst_inport,
     connectable* mod,
-    double weight, int red);
+    config* cfg);
 
   void resize_buffers();
 
   packet_flow_sender*
-  output_buffer(int port, double bw, int red);
+  output_buffer(int port, config* cfg);
 
 };
 

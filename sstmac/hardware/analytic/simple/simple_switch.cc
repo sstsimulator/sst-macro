@@ -92,12 +92,21 @@ simple_switch::add_switch(connectable* mod)
 }
 
 void
-simple_switch::connect_weighted(
+simple_switch::connect_input(
   int src_outport,
   int dst_inport,
-  connection_type_t ty,
-  connectable* mod,
-  double weight, int red)
+  connectable *mod,
+  config *cfg)
+{
+  add_switch(mod);
+}
+
+void
+simple_switch::connect_output(
+  int src_outport,
+  int dst_inport,
+  connectable *mod,
+  config *cfg)
 {
   add_switch(mod);
 }
