@@ -63,7 +63,7 @@ class mpi_type
   init_primitive(const std::string& labelit, mpi_type* b1, mpi_type* b2, int size);
 
   void
-  init_vector(const std::string &labelit, mpi_type*base, int count, int block, int stride);
+  init_vector(const std::string &labelit, mpi_type*base, int count, int block, MPI_Aint byte_stride);
 
   void
   init_indexed(const std::string &labelit,
@@ -284,13 +284,13 @@ struct vecdata
   mpi_type* base;
   int count;
   int blocklen;
-  int stride; //always in bytes!!!!
+  int byte_stride; //always in bytes!!!!
 
 };
 
 struct ind_block {
   mpi_type* base;
-  int disp; ///always in bytes!!!!
+  int byte_disp; ///always in bytes!!!!
   int num;
 };
 

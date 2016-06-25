@@ -51,24 +51,16 @@ wilke_allreduce_actor::init_dag()
   int virtual_nproc, log2nproc, midpoint;
   compute_tree(log2nproc, midpoint, virtual_nproc);
   virtual_rank_map rank_map(dense_nproc_, virtual_nproc);
-  std::vector<int> my_roles = rank_map.real_to_virtual(dense_me_);
-  std::set<int> lookup_map;
-  for (int i=0; i < my_roles.size(); ++i){
-    lookup_map.insert(my_roles[i]);
-  }
+  int my_roles[2];
+  int num_roles = rank_map.real_to_virtual(dense_me_, my_roles);
 
   int num_doubling_rounds = log2nproc;
 
   debug_printf(sumi_collective,
-    "Rank %s configured allreduce for tag=%d for nproc=%d(%d) virtualized to n=%d over %d rounds for roles=%s",
-    rank_str().c_str(), tag_, dense_nproc_, my_api_->nproc(), virtual_nproc, log2nproc, stl_string(my_roles).c_str());
+    "Rank %s configured allreduce for tag=%d for nproc=%d(%d) virtualized to n=%d over %d rounds",
+    rank_str().c_str(), tag_, dense_nproc_, my_api_->nproc(), virtual_nproc, log2nproc);
 
-  //this is a bit weird
-  //if we are in a "virtual" environment without a 2*n number of procs
-  //odd virtual roles have to use a different numbering of the rounds
-  int odd_role_round_offset = dense_nproc_ != virtual_nproc ? 2*num_doubling_rounds : 0;
-
-  for (int role=0; role < my_roles.size(); ++role){
+  for (int role=0; role < num_roles; ++role){
     action* null = 0;
     std::vector<action*> send_rounds(num_doubling_rounds, null);
     std::vector<action*> recv_rounds(num_doubling_rounds, null);
@@ -111,7 +103,7 @@ wilke_allreduce_actor::init_dag()
 
       recv_nelems = round_nelems - send_nelems;
 
-      if (lookup_map.find(virtual_partner) == lookup_map.end()){
+      if (!is_shared_role(virtual_partner, num_roles, my_roles)){
         int partner = rank_map.virtual_to_real(virtual_partner);
         //this is not colocated with me - real send/recv
         action* send_ac = new send_action(rnd, partner);

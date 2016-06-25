@@ -42,6 +42,7 @@ const int options::initial_context = -2;
 
 collective_algorithm_selector* transport::allgather_selector_ = 0;
 collective_algorithm_selector* transport::alltoall_selector_ = 0;
+collective_algorithm_selector* transport::alltoallv_selector_ = 0;
 collective_algorithm_selector* transport::allreduce_selector_ = 0;
 collective_algorithm_selector* transport::allgatherv_selector_ = 0;
 collective_algorithm_selector* transport::bcast_selector_ = 0;
@@ -834,14 +835,13 @@ transport::alltoallv(void *dst, void *src, int* send_counts, int* recv_counts, i
   if (skip_collective(collective::alltoallv, dom, dst, src, send_counts[0], type_size, tag))
     return;
 
-  dag_collective* coll = alltoall_selector_ == 0
-      ? new bruck_alltoallv_collective
-      : alltoall_selector_->select(dom->nproc(), send_counts);
+  dag_collective* coll = alltoallv_selector_ == 0
+      ? new direct_alltoallv_collective
+      : alltoallv_selector_->select(dom->nproc(), send_counts);
 
   coll->init(collective::alltoallv, this, dom, dst, src, 0, type_size, tag, fault_aware, context);
   coll->init_recv_counts(recv_counts);
   coll->init_send_counts(send_counts);
-  spkt_throw(sprockit::unimplemented_error, "alltoallv");
   start_collective(coll);
 }
 

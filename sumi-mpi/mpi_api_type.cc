@@ -241,25 +241,50 @@ mpi_api::op_free(MPI_Op *op)
 }
 
 int
-mpi_api::type_hindexed(int count, const int lens[], const MPI_Aint* ind,
-                      MPI_Datatype intype, MPI_Datatype* outtype)
+mpi_api::do_type_hvector(int count, int blocklength, MPI_Aint stride,
+                         mpi_type* old, MPI_Datatype* new_type)
 {
-  int new_ind[count];
-  for (int i=0; i < count; ++i){
-    new_ind[i] = ind[i];
-  }
+  std::stringstream ss;
+  ss << "vector-" << old->label << "\n";
 
-  int rc = type_indexed(count, lens, new_ind, intype, outtype);
-  return rc;
+  mpi_type* new_type_obj = new mpi_type;
+  new_type_obj->init_vector(ss.str(), old,
+                        count, blocklength, stride);
+
+  allocate_type_id(new_type_obj);
+  *new_type = new_type_obj->id;
+  mpi_api_debug(sprockit::dbg::mpi,
+                "MPI_Type_vector(%d,%d,%d,%s,*%s)",
+                count, blocklength, stride,
+                type_str(old->id).c_str(), type_str(*new_type).c_str());
+
+  return MPI_SUCCESS;
 }
 
 int
-mpi_api::type_indexed(int count, const int lens[], const int* displs,
-                      MPI_Datatype intype, MPI_Datatype* outtype)
+mpi_api::type_hvector(int count, int blocklength, MPI_Aint stride,
+                     MPI_Datatype old_type, MPI_Datatype* new_type)
+{
+  return do_type_hvector(count, blocklength, stride, type_from_id(old_type), new_type);
+}
+
+/// Creates a vector (strided) datatype
+int
+mpi_api::type_vector(int count, int blocklength, int stride,
+                     MPI_Datatype old_type, MPI_Datatype* new_type)
+{
+  mpi_type* old = type_from_id(old_type);
+  MPI_Aint byte_stride = stride * old->extent();
+  return do_type_hvector(count, blocklength, byte_stride, old, new_type);
+}
+
+int
+mpi_api::do_type_hindexed(int count, const int lens[],
+                          const MPI_Aint* displs, mpi_type *in_type_obj,
+                          MPI_Datatype *outtype)
 {
   mpi_type* out_type_obj = new mpi_type;
 
-  mpi_type* in_type_obj = type_from_id(intype);
   inddata* idata = new inddata;
   int packed_size = 0;
   int extent = 0;
@@ -276,14 +301,11 @@ mpi_api::type_indexed(int count, const int lens[], const int* displs,
   for (int i = 0; i < count; i++) {
     if (lens[i] > 0) {
       ind_block& next = idata->blocks[index];
-      idata->blocks[index] = ind_block();
       next.base = in_type_obj;
-      next.disp = extent;
+      next.byte_disp = extent;
       next.num = lens[i];
-
-      idata->blocks[index].num = lens[i];
       packed_size += lens[i] * in_type_obj->packed_size();
-      extent += displs[i] * in_type_obj->extent();
+      extent += displs[i];
       index++;
     }
   }
@@ -295,9 +317,29 @@ mpi_api::type_indexed(int count, const int lens[], const int* displs,
 
   mpi_api_debug(sprockit::dbg::mpi,
                 "MPI_Type_indexed(%d,<...>,<...>,%s,*%s)",
-                count, type_str(intype).c_str(), type_str(*outtype).c_str());
+                count, type_str(in_type_obj->id).c_str(), type_str(*outtype).c_str());
 
   return MPI_SUCCESS;
+}
+
+int
+mpi_api::type_hindexed(int count, const int lens[], const MPI_Aint* displs,
+                      MPI_Datatype intype, MPI_Datatype* outtype)
+{
+  return do_type_hindexed(count, lens, displs, type_from_id(intype), outtype);
+}
+
+int
+mpi_api::type_indexed(int count, const int lens[], const int* displs,
+                      MPI_Datatype intype, MPI_Datatype* outtype)
+{
+  mpi_type* in_type_obj = type_from_id(intype);
+  int type_extent = in_type_obj->extent();
+  MPI_Aint byte_displs[count];
+  for (int i=0; i < count; ++i){
+    byte_displs[i] = displs[i] * type_extent;
+  }
+  return do_type_hindexed(count, lens, byte_displs, in_type_obj, outtype);
 }
 
 std::string
@@ -359,27 +401,6 @@ mpi_api::type_contiguous(int count, MPI_Datatype old_type,
   return MPI_SUCCESS;
 }
 
-/// Creates a vector (strided) datatype
-int
-mpi_api::type_vector(int count, int blocklength, int stride,
-                     MPI_Datatype old_type, MPI_Datatype* new_type)
-{
-  std::stringstream ss;
-  ss << "vector-" << type_label(old_type) << "\n";
-
-  mpi_type* new_type_obj = new mpi_type;
-  new_type_obj->init_vector(ss.str(), type_from_id(old_type),
-                        count, blocklength, stride);
-
-  allocate_type_id(new_type_obj);
-  *new_type = new_type_obj->id;
-  mpi_api_debug(sprockit::dbg::mpi,
-                "MPI_Type_vector(%d,%d,%d,%s,*%s)",
-                count, blocklength, stride,
-                type_str(old_type).c_str(), type_str(*new_type).c_str());
-  return MPI_SUCCESS;
-}
-
 int
 mpi_api::type_create_struct(const int count, const int* blocklens,
                      const MPI_Aint* indices, const MPI_Datatype* old_types,
@@ -422,7 +443,7 @@ mpi_api::type_create_struct(const int count, const int* blocklens,
       mpi_type* old_type_obj = type_from_id(old_types[i]);
       ind_block& next = idata->blocks[index];
       next.base = old_type_obj;
-      next.disp = indices[i];
+      next.byte_disp = indices[i];
       next.num = blocklens[i];
       packed_size += old_type_obj->packed_size() * blocklens[i];
       extent += old_type_obj->packed_size() * blocklens[i];

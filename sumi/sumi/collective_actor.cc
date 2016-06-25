@@ -1183,26 +1183,20 @@ bruck_actor::compute_tree(int &log2nproc, int &midpoint, int &num_rounds, int &n
   }
 }
 
-virtual_rank_map::virtual_rank_map(int nproc, int virtual_nproc)
-{
-  nproc_ = nproc;
-  virtual_nproc_ = virtual_nproc;
-}
-
-std::vector<int>
-virtual_rank_map::real_to_virtual(int rank) const
+int
+virtual_rank_map::real_to_virtual(int rank, int* ret) const
 {
   int num_actors_two_roles = virtual_nproc_ - nproc_;
   if (rank >= num_actors_two_roles){
     std::vector<int> ret(1);
     ret[0] = num_actors_two_roles + rank;
-    return ret;
+    return 1;
   }
   else {
     std::vector<int> ret(2);
     ret[0] = 2*rank;
     ret[1] = ret[0] + 1;
-    return ret;
+    return 2;
   }
 }
 

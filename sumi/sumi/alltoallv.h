@@ -8,12 +8,12 @@
 
 namespace sumi {
 
-class bruck_alltoallv_actor :
+class direct_alltoallv_actor :
   public bruck_actor
 {
 
  public:
-  bruck_alltoallv_actor(int* send_counts, int* recv_counts) :
+  direct_alltoallv_actor(int* send_counts, int* recv_counts) :
     send_counts_(send_counts), recv_counts_(recv_counts) {}
 
   std::string
@@ -25,23 +25,28 @@ class bruck_alltoallv_actor :
   void finalize();
 
   void finalize_buffers();
+
   void init_buffers(void *dst, void *src);
+
   void init_dag();
 
   void buffer_action(void *dst_buffer, void *msg_buffer, action* ac);
 
-  void start_shuffle(action* ac);
-
-  void shuffle(action *ac, void* tmpBuf, void* mainBuf, bool copyToTemp);
-
  private:
+  void add_action(
+    const std::vector<action*>& actions,
+    int stride_direction,
+    int num_initial,
+    int stride);
+
   int midpoint_;
   int* send_counts_;
   int* recv_counts_;
-
+  int total_recv_size_;
+  int total_send_size_;
 };
 
-class bruck_alltoallv_collective :
+class direct_alltoallv_collective :
   public dag_collective
 {
 
@@ -53,12 +58,12 @@ class bruck_alltoallv_collective :
 
   dag_collective_actor*
   new_actor() const {
-    return new bruck_alltoallv_actor(send_counts_, recv_counts_);
+    return new direct_alltoallv_actor(send_counts_, recv_counts_);
   }
 
   dag_collective*
   clone() const {
-    return new bruck_alltoallv_collective;
+    return new direct_alltoallv_collective;
   }
 
   void init_send_counts(int* nelems){

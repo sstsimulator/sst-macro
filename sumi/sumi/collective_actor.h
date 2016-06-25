@@ -405,6 +405,16 @@ class dag_collective_actor :
   virtual void
   start_shuffle(action* ac);
 
+  static bool
+  is_shared_role(int role, int num_roles, int* my_roles){
+    for (int r=0; r < num_roles; ++r){
+      if (role == my_roles[r]){
+        return true;
+      }
+    }
+    return false;
+  }
+
  private:
   typedef std::map<uint32_t, action*> active_map;
   typedef std::multimap<uint32_t, action*> pending_map;
@@ -488,8 +498,14 @@ class virtual_rank_map
   int
   virtual_to_real(int rank) const;
 
-  std::vector<int>
-  real_to_virtual(int rank) const;
+  /**
+   * @brief real_to_virtual
+   * @param rank
+   * @param virtual_ranks An array large enough to hold the number of ranks
+   * @return The number of virtual ranks
+   */
+  int
+  real_to_virtual(int rank, int* virtual_ranks) const;
 
   int
   virtual_nproc() const {
@@ -501,7 +517,20 @@ class virtual_rank_map
     return nproc_;
   }
 
-  virtual_rank_map(int nproc, int virtual_nproc);
+  void
+  init(int nproc, int virtual_nproc) {
+    nproc_ = nproc;
+    virtual_nproc_ = virtual_nproc;
+  }
+
+  virtual_rank_map(int nproc, int virtual_nproc) :
+    nproc_(nproc), virtual_nproc_(virtual_nproc)
+  {
+  }
+
+  virtual_rank_map() : nproc_(-1), virtual_nproc_(-1)
+  {
+  }
 
  protected:
   int nproc_;

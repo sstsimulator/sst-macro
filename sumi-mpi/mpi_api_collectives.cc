@@ -9,28 +9,9 @@ mpi_api::validate_mpi_collective(const char* name,
              const void*& sendbuf, void*& recvbuf,
              MPI_Datatype& sendtype, MPI_Datatype& recvtype)
 {
-  if (sendtype == MPI_DATATYPE_NULL || sendtype == MPI_NULL){
-    sendtype = recvtype;
-  }
-
-  if (sendbuf == MPI_IN_PLACE){
-    sendbuf = recvbuf;
-  }
-
-  if (sendtype != recvtype){
-    spkt_throw_printf(sprockit::unimplemented_error,
-      "%s: cannot handle different types %s and %s for send/recv",
-      name, type_str(sendtype).c_str(), type_str(recvtype).c_str());
-  }
-
-  mpi_type* sendtypePtr = type_from_id(sendtype);
-  mpi_type* recvtypePtr = type_from_id(recvtype);
-  if (!sendtypePtr->contiguous() || !recvtypePtr->contiguous()){
-    spkt_throw_printf(sprockit::unimplemented_error,
-      "%s: cannot handle non-contiguous types for send/recv",
-      name);
-  }
-
+  int ignore;
+  validate_mpi_collective(name, sendbuf, recvbuf,
+                          ignore, ignore, sendtype, recvtype);
 }
 
 void
@@ -39,11 +20,35 @@ mpi_api::validate_mpi_collective(const char* name,
              int& sendcnt, int& recvcnt,
              MPI_Datatype& sendtype, MPI_Datatype& recvtype)
 {
-  if (sendtype == MPI_DATATYPE_NULL || sendtype == MPI_NULL){
-    sendtype = recvtype;
-    sendcnt = recvcnt;
+  if (sendtype != recvtype){
+    if (sendtype == MPI_DATATYPE_NULL || sendtype == MPI_NULL){
+      sendtype = recvtype;
+      sendcnt = recvcnt;
+    } else if (recvtype == MPI_DATATYPE_NULL || recvtype == MPI_NULL){
+      recvtype = sendtype;
+      recvcnt = sendcnt;
+    }
+    else {
+      spkt_throw_printf(sprockit::unimplemented_error,
+        "%s: cannot handle different types %s and %s for send/recv",
+        name, type_str(sendtype).c_str(), type_str(recvtype).c_str());
+
+    }
   }
-  validate_mpi_collective(name, sendbuf, recvbuf, sendtype, recvtype);
+
+  if (sendbuf == MPI_IN_PLACE){
+    sendbuf = recvbuf;
+  }
+
+  mpi_type* sendtypePtr = type_from_id(sendtype);
+  mpi_type* recvtypePtr = type_from_id(recvtype);
+  if (sendbuf || recvbuf){
+    bool both_contiguous = sendtypePtr->contiguous() && recvtypePtr->contiguous();
+    if (!both_contiguous){
+      spkt_throw_printf(sprockit::unimplemented_error,
+        "%s: cannot handle non-contiguous types for send/recv in collective", name);
+    }
+  }
 }
 
 void
@@ -269,7 +274,7 @@ mpi_api::gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
     recvcount, type_str(recvtype).c_str(),
     int(root), comm_str(comm).c_str());
 
-  validate_mpi_collective("gather", sendbuf, recvbuf, sendtype, recvtype);
+  validate_mpi_collective("gather", sendbuf, recvbuf, sendcount, recvcount, sendtype, recvtype);
   int tag = start_gather(sendbuf, recvbuf, sendcount, sendtype, root, comm);
   collective_progress_loop(collective::gather, tag);
   return MPI_SUCCESS;

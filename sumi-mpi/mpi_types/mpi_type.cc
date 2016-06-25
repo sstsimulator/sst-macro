@@ -145,7 +145,7 @@ mpi_type::op(MPI_Op theOp) const
 
 void
 mpi_type::init_vector(const std::string &labelit, mpi_type* base,
-                   int count, int block, int str)
+                   int count, int block, MPI_Aint byte_stride)
 {
   if (base->id == -1){
     spkt_throw_printf(sprockit::value_error,
@@ -159,16 +159,23 @@ mpi_type::init_vector(const std::string &labelit, mpi_type* base,
   vdata_->base = base;
   vdata_->count = count;
   vdata_->blocklen = (block);
-  vdata_->stride = str;
+  vdata_->byte_stride = byte_stride;
 
-  extent_ = str * base->extent_;
+  extent_ = byte_stride;
   size_ = count * block * base->size_;
+  int block_extent = block*base->extent();
 
-  if (str < (count*block)){
+  if (byte_stride < block_extent){
     spkt_throw_printf(sprockit::value_error,
-      "vector stride=%d must be at least as big as count*block=%d",
-      str, count*block);
+      "vector stride=%d must be at least as big as blocksize=%d",
+     byte_stride, block*base->extent());
   }
+
+  //if the byte_stride matches the blocksize
+  //and the underlying type is contiguous
+  //then this type is again contiguous
+  contiguous_ = byte_stride == block_extent && base->contiguous();
+
 }
 
 void
@@ -306,7 +313,7 @@ mpi_type::pack_action_vector(void* packed_buf, void* unpacked_buf, int bytes, bo
   {
     int bytes_this_round = vdata_->blocklen * vdata_->base->packed_size();
     for (int j=0; j < vdata_->count && bytes_left > 0; ++j){
-      char* this_unpacked_ptr = unpacked_ptr + vdata_->stride * j;
+      char* this_unpacked_ptr = unpacked_ptr + vdata_->byte_stride * j;
       bytes_this_round = std::min(bytes_this_round, bytes_left);
       vdata_->base->pack_action(packed_ptr, this_unpacked_ptr, bytes_this_round, pack);
       packed_ptr += bytes_this_round;
@@ -326,7 +333,7 @@ mpi_type::pack_action_indexed(void* packed_buf, void* unpacked_buf, int bytes, b
   {
     for (int j=0; j < idata_->blocks.size() && bytes_left > 0; ++j){
       const ind_block& next_block = idata_->blocks[j];
-      char* this_unpacked_ptr = unpacked_ptr + next_block.disp;
+      char* this_unpacked_ptr = unpacked_ptr + next_block.byte_disp;
       int bytes_this_round = next_block.num * next_block.base->packed_size();
       bytes_this_round = std::min(bytes_this_round, bytes_left);
       next_block.base->pack_action(packed_ptr, this_unpacked_ptr, bytes_this_round, pack);
@@ -408,7 +415,7 @@ mpi_type::to_string() const
     ss << "mpitype(vector, label=\"" << label << "\", size=" << size_
        << ", base=" << vdata_->base->to_string() << ", count="
        << vdata_->count << ", blocklen=" << vdata_->blocklen
-       << ", stride=" << vdata_->stride << ")";
+       << ", stride=" << vdata_->byte_stride << ")";
   }
   else if (type_ == IND) {
     ss << "mpitype(indexed/struct, label=\"" << label << "\", size="

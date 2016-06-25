@@ -737,6 +737,7 @@ class transport :
  private:
   static collective_algorithm_selector* allgather_selector_;
   static collective_algorithm_selector* alltoall_selector_;
+  static collective_algorithm_selector* alltoallv_selector_;
   static collective_algorithm_selector* allreduce_selector_;
   static collective_algorithm_selector* allgatherv_selector_;
   static collective_algorithm_selector* bcast_selector_;

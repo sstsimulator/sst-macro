@@ -510,6 +510,11 @@ class mpi_api :
               MPI_Datatype old_type,
               MPI_Datatype* new_type);
 
+  int
+  type_hvector(int count, int blocklength, MPI_Aint stride,
+              MPI_Datatype old_type,
+              MPI_Datatype* new_type);
+
   /// Creates a struct datatype
   int
   type_create_struct(const int count, const int* blocklens,
@@ -604,6 +609,16 @@ class mpi_api :
  private:
   int
   do_wait(MPI_Request *request, MPI_Status *status);
+
+  int
+  do_type_hvector(int count, int blocklength, MPI_Aint stride,
+              mpi_type* old_type,
+              MPI_Datatype* new_type);
+
+  int
+  do_type_hindexed(int count, const int _blocklens_[],
+       const MPI_Aint* _indices_,
+       mpi_type* old_type, MPI_Datatype* outtype);
 
   void
   validate_mpi_collective(
