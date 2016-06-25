@@ -358,6 +358,10 @@ class transport :
              bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
 
   virtual void
+  gatherv(void* dst, void* src, int* sendcnt, int* recv_counts, int type_size, int tag,
+          bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+
+  virtual void
   alltoall(void* dst, void* src, int nelems, int type_size, int tag,
              bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
 

@@ -34,58 +34,75 @@ typedef int MPI_Errhandler;
 //ops
 enum _mpi_ops_ {
   MPI_MAX = 1,
-  MPI_MIN,
-  MPI_SUM,
-  MPI_PROD,
-  MPI_LAND,
-  MPI_BAND,
-  MPI_LOR,
-  MPI_BOR,
-  MPI_LXOR,
-  MPI_BXOR,
-  MPI_MAXLOC,
-  MPI_MINLOC,
-  MPI_REPLACE  //for MPI_Accumulate
+  MPI_MIN = 2,
+  MPI_SUM = 3,
+  MPI_PROD = 4,
+  MPI_LAND = 5,
+  MPI_BAND = 6,
+  MPI_LOR = 7,
+  MPI_BOR = 8,
+  MPI_LXOR = 9,
+  MPI_BXOR = 10,
+  MPI_MAXLOC = 11,
+  MPI_MINLOC = 12,
+  MPI_REPLACE = 13  //for MPI_Accumulate
 };
 
 // datatypes
 enum _mpi_datatypes_ {
   MPI_NULL = 0,
-  MPI_CHAR,
-  MPI_BYTE,
-  MPI_SHORT,
-  MPI_INT,
-  MPI_LONG,
-  MPI_FLOAT,
-  MPI_DOUBLE,
-  MPI_UNSIGNED_CHAR,
-  MPI_UNSIGNED_SHORT,
-  MPI_UNSIGNED,
-  MPI_UNSIGNED_LONG,
-  MPI_LONG_DOUBLE,
-  MPI_LONG_LONG_INT,
-  MPI_PACKED,
-  MPI_UB,
-  MPI_LB,
-  MPI_DOUBLE_INT,
-  MPI_2INT,
-  MPI_LONG_INT,
-  MPI_FLOAT_INT,
-  MPI_SHORT_INT,
-  MPI_LONG_DOUBLE_INT,
-  MPI_SIGNED_CHAR   ,
-  MPI_WCHAR         ,
-  MPI_UNSIGNED_LONG_LONG,
-  MPI_COMPLEX          ,
-  MPI_DOUBLE_COMPLEX   ,
-  MPI_LOGICAL          ,
+  MPI_CHAR = 1,
+  MPI_BYTE = 2,
+  MPI_SHORT = 3,
+  MPI_INT = 4,
+  MPI_LONG = 5,
+  MPI_FLOAT = 6,
+  MPI_DOUBLE = 7,
+  MPI_UNSIGNED_CHAR = 8,
+  MPI_UNSIGNED_SHORT = 9,
+  MPI_UNSIGNED = 10,
+  MPI_UNSIGNED_LONG = 11,
+  MPI_LONG_DOUBLE = 12,
+  MPI_LONG_LONG_INT = 13,
+  MPI_PACKED = 14,
+  MPI_UB = 15,
+  MPI_LB = 16,
+  MPI_DOUBLE_INT = 17,
+  MPI_2INT = 18,
+  MPI_LONG_INT = 19,
+  MPI_FLOAT_INT = 20,
+  MPI_SHORT_INT = 21,
+  MPI_LONG_DOUBLE_INT = 22,
+  MPI_SIGNED_CHAR = 23,
+  MPI_WCHAR = 24,
+  MPI_UNSIGNED_LONG_LONG = 25,
+  MPI_COMPLEX = 26,
+  MPI_DOUBLE_COMPLEX = 27,
+  MPI_LOGICAL = 28,
   MPI_REAL             ,
   MPI_DOUBLE_PRECISION ,
   MPI_INTEGER          ,
   MPI_2INTEGER         ,
   MPI_2REAL            ,
   MPI_2DOUBLE_PRECISION,
-  MPI_CHARACTER
+  MPI_CHARACTER,
+ MPI_INT8_T,
+MPI_INT16_T,
+MPI_INT32_T,
+MPI_INT64_T,
+MPI_UINT8_T,
+MPI_UINT16_T,
+MPI_UINT32_T,
+MPI_UINT64_T,
+MPI_REAL4,
+MPI_REAL8,
+MPI_REAL16,
+MPI_COMPLEX8,
+MPI_COMPLEX16,
+MPI_INTEGER1,
+MPI_INTEGER2,
+MPI_INTEGER4,
+MPI_INTEGER8
 };
 #define MPI_LONG_LONG MPI_LONG_LONG_INT
 
@@ -98,27 +115,10 @@ enum _mpi_datatypes_ {
 #define MPI_UNEQUAL   3
 
 /* Size-specific types (see MPI-2, 10.2.5) */
-#define MPI_REAL4             ((MPI_Datatype)0x4c000427)
-#define MPI_REAL8             ((MPI_Datatype)0x4c000829)
-#define MPI_REAL16            ((MPI_Datatype)0x4c00102b)
-#define MPI_COMPLEX8          ((MPI_Datatype)0x4c000828)
-#define MPI_COMPLEX16         ((MPI_Datatype)0x4c00102a)
-#define MPI_COMPLEX32         ((MPI_Datatype)0x4c00202c)
-#define MPI_INTEGER1          ((MPI_Datatype)0x4c00012d)
-#define MPI_INTEGER2          ((MPI_Datatype)0x4c00022f)
-#define MPI_INTEGER4          ((MPI_Datatype)0x4c000430)
-#define MPI_INTEGER8          ((MPI_Datatype)0x4c000831)
-#define MPI_INTEGER16         ((MPI_Datatype)MPI_DATATYPE_NULL)
+
 
 /* C99 fixed-width datatypes */
-#define MPI_INT8_T            ((MPI_Datatype)0x4c000137)
-#define MPI_INT16_T           ((MPI_Datatype)0x4c000238)
-#define MPI_INT32_T           ((MPI_Datatype)0x4c000439)
-#define MPI_INT64_T           ((MPI_Datatype)0x4c00083a)
-#define MPI_UINT8_T           ((MPI_Datatype)0x4c00013b)
-#define MPI_UINT16_T          ((MPI_Datatype)0x4c00023c)
-#define MPI_UINT32_T          ((MPI_Datatype)0x4c00043d)
-#define MPI_UINT64_T          ((MPI_Datatype)0x4c00083e)
+
 
 /* These are only guesses; make sure you change them in mpif.h as well */
 #define MPI_MAX_PROCESSOR_NAME 128

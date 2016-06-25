@@ -4,14 +4,23 @@
 
 namespace sumi {
 
-
 void
-mpi_api::validate_mpi_collective(const char* name, MPI_Datatype sendtype, MPI_Datatype recvtype)
+mpi_api::validate_mpi_collective(const char* name,
+             const void*& sendbuf, void*& recvbuf,
+             MPI_Datatype& sendtype, MPI_Datatype& recvtype)
 {
+  if (sendtype == MPI_DATATYPE_NULL || sendtype == MPI_NULL){
+    sendtype = recvtype;
+  }
+
+  if (sendbuf == MPI_IN_PLACE){
+    sendbuf = recvbuf;
+  }
+
   if (sendtype != recvtype){
     spkt_throw_printf(sprockit::unimplemented_error,
-      "%s: cannot handle different types for send/recv",
-      name);
+      "%s: cannot handle different types %s and %s for send/recv",
+      name, type_str(sendtype).c_str(), type_str(recvtype).c_str());
   }
 
   mpi_type* sendtypePtr = type_from_id(sendtype);
@@ -22,6 +31,19 @@ mpi_api::validate_mpi_collective(const char* name, MPI_Datatype sendtype, MPI_Da
       name);
   }
 
+}
+
+void
+mpi_api::validate_mpi_collective(const char* name,
+             const void*& sendbuf, void*& recvbuf,
+             int& sendcnt, int& recvcnt,
+             MPI_Datatype& sendtype, MPI_Datatype& recvtype)
+{
+  if (sendtype == MPI_DATATYPE_NULL || sendtype == MPI_NULL){
+    sendtype = recvtype;
+    sendcnt = recvcnt;
+  }
+  validate_mpi_collective(name, sendbuf, recvbuf, sendtype, recvtype);
 }
 
 void
@@ -56,7 +78,8 @@ mpi_api::collective_progress_loop(collective::type_t ty, int tag)
 }
 
 int
-mpi_api::start_allgather(const void *sendbuf, void *recvbuf, int count, MPI_Datatype type, MPI_Comm comm)
+mpi_api::start_allgather(const void *sendbuf, void *recvbuf, int count,
+                         MPI_Datatype type, MPI_Comm comm)
 {
   int typeSize = type_size(type);
   mpi_comm* commPtr = get_comm(comm);
@@ -68,21 +91,25 @@ mpi_api::start_allgather(const void *sendbuf, void *recvbuf, int count, MPI_Data
 }
 
 int
-mpi_api::allgather(int sendcount, MPI_Datatype sendtype, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
+mpi_api::allgather(int sendcount, MPI_Datatype sendtype,
+                   int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
 {
   return allgather(NULL, sendcount, sendtype, NULL, recvcount, recvtype, comm);
 }
 
 int
-mpi_api::allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
+mpi_api::allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                   void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
 {
   SSTMACBacktrace("MPI_Allgather");
-  validate_mpi_collective("allgather", sendtype, recvtype);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
     "MPI_Allgather(%d,%s,%d,%s,%s)",
     sendcount, type_str(sendtype).c_str(),
     recvcount, type_str(recvtype).c_str(),
     comm_str(comm).c_str());
+
+  validate_mpi_collective("allgather", sendbuf, recvbuf, sendcount, recvcount, sendtype, recvtype);
+
   int tag = start_allgather(sendbuf, recvbuf, sendcount, sendtype, comm);
   collective_progress_loop(collective::allgather, tag);
   return MPI_SUCCESS;
@@ -95,7 +122,7 @@ mpi_api::start_alltoall(const void *sendbuf, void *recvbuf,
   int typeSize = type_size(type);
   mpi_comm* commPtr = get_comm(comm);
   int tag = commPtr->next_collective_tag();
-  transport::alltoall(const_cast<void*>(sendbuf), recvbuf, count, typeSize, tag,
+  transport::alltoall(recvbuf, const_cast<void*>(sendbuf), count, typeSize, tag,
     false, options::initial_context,
     (comm == MPI_COMM_WORLD ? 0 : commPtr)); //comm world is a "null" domain
   return tag;
@@ -106,7 +133,7 @@ mpi_api::alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                   void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
 {
   SSTMACBacktrace("MPI_Alltoall");
-  validate_mpi_collective("alltoall", sendtype, recvtype);
+  validate_mpi_collective("alltoall", sendbuf, recvbuf, sendcount, recvcount, sendtype, recvtype);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
     "MPI_Alltoall(%d,%s,%d,%s,%s)",
     sendcount, type_str(sendtype).c_str(),
@@ -241,9 +268,10 @@ mpi_api::gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
     sendcount, type_str(sendtype).c_str(),
     recvcount, type_str(recvtype).c_str(),
     int(root), comm_str(comm).c_str());
-  validate_mpi_collective("scatter", sendtype, recvtype);
+
+  validate_mpi_collective("gather", sendbuf, recvbuf, sendtype, recvtype);
   int tag = start_gather(sendbuf, recvbuf, sendcount, sendtype, root, comm);
-  collective_progress_loop(collective::reduce, tag);
+  collective_progress_loop(collective::gather, tag);
   return MPI_SUCCESS;
 }
 
@@ -390,7 +418,7 @@ mpi_api::scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 
   if (sendtype == MPI_NULL) sendtype = recvtype;
 
-  validate_mpi_collective("scatter", sendtype, recvtype);
+  validate_mpi_collective("scatter", sendbuf, recvbuf, sendtype, recvtype);
   int tag = start_scatter(sendbuf, recvbuf, sendcount, sendtype, root, comm);
   collective_progress_loop(collective::scatter, tag);
   return MPI_SUCCESS;

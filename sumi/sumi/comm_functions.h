@@ -17,6 +17,15 @@ struct Add {
 };
 
 template <typename data_t>
+struct Prod {
+  typedef data_t type;
+    static void
+    op(data_t& dst, const data_t& src){
+        dst *= src;
+    }
+};
+
+template <typename data_t>
 struct Min
 {
   typedef data_t type;

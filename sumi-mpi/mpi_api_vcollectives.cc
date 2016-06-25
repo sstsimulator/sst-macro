@@ -13,8 +13,6 @@ mpi_api::start_allgatherv(const void *sendbuf, void *recvbuf, int sendcount, con
   int typeSize = type_size(type);
   mpi_comm* commPtr = get_comm(comm);
   int tag = commPtr->next_collective_tag();
-  spkt_throw(sprockit::unimplemented_error,
-    "sumi::allgatherv");
 
   transport::allgatherv(recvbuf, const_cast<void*>(sendbuf), const_cast<int*>(recvcounts), typeSize, tag,
     false, options::initial_context,
@@ -25,7 +23,9 @@ mpi_api::start_allgatherv(const void *sendbuf, void *recvbuf, int sendcount, con
 }
 
 int
-mpi_api::allgatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, const int *recvcounts, const int *displs, MPI_Datatype recvtype, MPI_Comm comm)
+mpi_api::allgatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                    void *recvbuf, const int *recvcounts, const int *displs,
+                    MPI_Datatype recvtype, MPI_Comm comm)
 {
   SSTMACBacktrace("MPI_Allgatherv");
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
@@ -33,7 +33,8 @@ mpi_api::allgatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, v
     sendcount, type_str(sendtype).c_str(),
     type_str(recvtype).c_str(),
     comm_str(comm).c_str());
-  validate_mpi_collective("allgatherv", sendtype, recvtype);
+
+  validate_mpi_collective("allgatherv", sendbuf, recvbuf, sendtype, recvtype);
   int tag = start_allgatherv(sendbuf, recvbuf, sendcount, recvcounts, displs, sendtype, comm);
   collective_progress_loop(collective::allgatherv, tag);
   return MPI_SUCCESS;
@@ -63,7 +64,7 @@ mpi_api::alltoallv(const void *sendbuf, const int *sendcounts, const int *sdispl
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
     "MPI_Alltoallv(<...>,%s,<...>,%s,%s)",
     type_str(sendtype).c_str(), type_str(recvtype).c_str(), comm_str(comm).c_str());
-  validate_mpi_collective("alltoallv", sendtype, recvtype);
+  validate_mpi_collective("alltoallv", sendbuf, recvbuf, sendtype, recvtype);
   int tag = start_alltoallv(sendbuf, recvbuf, sendcounts, sdispls, recvcounts, rdispls, sendtype, comm);
   collective_progress_loop(collective::alltoallv, tag);
   return MPI_SUCCESS;
@@ -81,8 +82,7 @@ mpi_api::start_gatherv(const void *sendbuf, void *recvbuf, int sendcount, const 
   int typeSize = type_size(type);
   mpi_comm* commPtr = get_comm(comm);
   int tag = commPtr->next_collective_tag();
-  spkt_throw(sprockit::unimplemented_error,
-    "sumi::gatherv");
+  transport::gather
   return tag;
 }
 
@@ -94,7 +94,7 @@ mpi_api::gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void
     sendcount, type_str(sendtype).c_str(),
     type_str(recvtype).c_str(),
     int(root), comm_str(comm).c_str());
-  validate_mpi_collective("gatherv", sendtype, recvtype);
+  validate_mpi_collective("gatherv", sendbuf, recvbuf, sendtype, recvtype);
   int tag = start_gatherv(sendbuf, recvbuf, sendcount, recvcounts, displs, sendtype, root, comm);
   collective_progress_loop(collective::gatherv, tag);
   return MPI_SUCCESS;
@@ -125,7 +125,7 @@ mpi_api::scatterv(const void *sendbuf, const int *sendcounts, const int *displs,
     type_str(sendtype).c_str(),
     recvcount, type_str(recvtype).c_str(),
     int(root), comm_str(comm).c_str());
-  validate_mpi_collective("alltoallv", sendtype, recvtype);
+  validate_mpi_collective("alltoallv", sendbuf, recvbuf, sendtype, recvtype);
   int tag = start_scatterv(sendbuf, recvbuf, sendcounts, displs, recvcount, sendtype, root, comm);
   collective_progress_loop(collective::scatterv, tag);
   return MPI_SUCCESS;

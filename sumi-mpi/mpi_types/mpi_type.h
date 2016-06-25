@@ -49,9 +49,8 @@ class mpi_type
 
   mpi_type();
 
-  /** Annoying memory leak avoider */
   void
-  init_primitive(const char* label, const int sizeit, int align);
+  init_primitive(const char* label, const int sizeit);
 
   void
   init_primitive(const char* label, mpi_type* b1, mpi_type* b2, int size);
@@ -129,12 +128,38 @@ class mpi_type
 
   template <typename data_t>
   void
+  init_integer(const char* name){
+    init_primitive(name, sizeof(data_t));
+    init_ops<data_t>();
+    init_bitwise_ops<data_t>();
+  }
+
+  template <typename data_t>
+  void
+  init_with_ops(const char* name){
+    init_primitive(name, sizeof(data_t));
+    init_ops<data_t>();
+  }
+
+  void
+  init_op(MPI_Op op, sumi::reduce_fxn fxn){
+    fxns_[op] = fxn;
+  }
+
+  void
+  init_no_ops(const char* name, int size){
+    init_primitive(name, size);
+  }
+
+  template <typename data_t>
+  void
   init_ops(){
     fxns_[MPI_SUM] = &ReduceOp<Add,data_t>::op;
     fxns_[MPI_MAX] = &ReduceOp<Max,data_t>::op;
     fxns_[MPI_MIN] = &ReduceOp<Min,data_t>::op;
     fxns_[MPI_LAND] = &ReduceOp<And,data_t>::op;
     fxns_[MPI_LOR] = &ReduceOp<Or,data_t>::op;
+    fxns_[MPI_PROD] = &ReduceOp<Prod,data_t>::op;
   }
 
   template <typename data_t>
@@ -207,6 +232,14 @@ class mpi_type
   static mpi_type* mpi_2real;
   static mpi_type* mpi_2double_precision;
   static mpi_type* mpi_character;
+  static mpi_type* mpi_int8_t;
+  static mpi_type* mpi_int16_t;
+  static mpi_type* mpi_int32_t;
+  static mpi_type* mpi_int64_t;
+  static mpi_type* mpi_uint8_t;
+  static mpi_type* mpi_uint16_t;
+  static mpi_type* mpi_uint32_t;
+  static mpi_type* mpi_uint64_t;
 
  protected:
   void

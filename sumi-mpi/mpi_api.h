@@ -597,7 +597,17 @@ class mpi_api :
   do_wait(MPI_Request *request, MPI_Status *status);
 
   void
-  validate_mpi_collective(const char* name, MPI_Datatype sendtype, MPI_Datatype recvtype);
+  validate_mpi_collective(
+      const char* name,
+      const void*& sendbuf, void*& recvbuf,
+      int& sendcnt, int& recvcnt,
+      MPI_Datatype& sendtype, MPI_Datatype& recvtype);
+
+  void
+  validate_mpi_collective(
+      const char* name,
+      const void*& sendbuf, void*& recvbuf,
+      MPI_Datatype& sendtype, MPI_Datatype& recvtype);
 
   void collective_progress_loop(sumi::collective::type_t ty, int tag);
 

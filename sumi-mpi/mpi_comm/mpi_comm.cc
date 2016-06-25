@@ -23,9 +23,9 @@ namespace sumi {
 mpi_comm* mpi_comm::comm_null;
 
 mpi_comm::mpi_comm() :
-  group_(),
+  group_(0),
   next_collective_tag_(0),
-  id_(-1),
+  id_(MPI_COMM_NULL),
   rank_(-1),
   domain(-1)
 {

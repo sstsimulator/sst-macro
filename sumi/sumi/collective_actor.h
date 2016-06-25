@@ -14,12 +14,16 @@ DeclareDebugSlot(sumi_collective_buffer)
 
 #define sumi_case(x) case x: return #x
 
-#define do_sumi_debug_print(...) if (sprockit::debug::slot_active(sprockit::dbg::sumi_collective_buffer)) debug_print(__VA_ARGS__)
+#define do_sumi_debug_print(...)  \
+ if (sprockit::debug::slot_active(sprockit::dbg::sumi_collective_buffer)) \
+   debug_print(__VA_ARGS__)
 
 namespace sumi {
 
 void
-debug_print(const char* info, const std::string& rank_str, int partner, int round, int offset, int nelems, const void* buffer);
+debug_print(const char* info, const std::string& rank_str,
+            int partner, int round, int offset,
+            int nelems, int type_size, const void* buffer);
 
 struct action
 {

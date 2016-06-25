@@ -35,11 +35,18 @@ bruck_allgatherv_actor::init_buffers(void* dst, void* src)
     total_nelems_ += recv_counts_[i];
   }
 
+  bool in_place = dst == src;
   if (src){
     //put everything into the dst buffer to begin
-    std::memcpy(dst, src, recv_counts_[dense_me_] * type_size_);
-    int* idst = (int*) dst;
-    int* isrc = (int*) src;
+    if (in_place){
+      if (dense_me_ != 0){
+        int inPlaceOffset = my_offset_ * type_size_;
+        void* inPlaceSrc = ((char*)src + inPlaceOffset);
+        std::memcpy(dst, inPlaceSrc, recv_counts_[dense_me_]*type_size_);
+      }
+    } else {
+      std::memcpy(dst, src, recv_counts_[dense_me_] * type_size_);
+    }
     long buffer_size = total_nelems_ * type_size_;
     send_buffer_ = my_api_->make_public_buffer(dst, buffer_size);
     recv_buffer_ = send_buffer_;

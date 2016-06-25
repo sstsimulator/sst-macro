@@ -1224,8 +1224,8 @@ MTestGetIntracommGeneral(MPI_Comm *comm, int min_size, int allowSmaller)
       done = 1;
     }
 
-    /* we are only done if all processes are done */MPI_Allreduce(MPI_IN_PLACE,
-        &done, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
+    /* we are only done if all processes are done */
+    MPI_Allreduce(MPI_IN_PLACE, &done, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
 
     /* Advance the comm index whether we are done or not, otherwise we could
      * spin forever trying to allocate a too-small communicator over and

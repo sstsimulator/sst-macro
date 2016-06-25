@@ -191,6 +191,7 @@ bruck_alltoall_actor::finalize()
     rank_str().c_str(), dense_me_,
     -1,
     0, nelems_*dense_nproc_,
+    type_size_,
     result_buffer_.ptr);
 
   delete[] tmp;

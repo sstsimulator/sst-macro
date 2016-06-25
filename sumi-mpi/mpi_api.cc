@@ -154,13 +154,6 @@ mpi_api::abort(MPI_Comm comm, int errcode)
 }
 
 int
-mpi_api::comm_size(MPI_Comm comm, int *size)
-{
-  *size = get_comm(comm)->size();
-  return MPI_SUCCESS;
-}
-
-int
 mpi_api::comm_rank(MPI_Comm comm, int *rank)
 {
   *rank = get_comm(comm)->rank();
@@ -293,15 +286,15 @@ mpi_api::type_str(MPI_Datatype mid)
   switch(ty->type())
   {
     case mpi_type::PRIM:
-      return ty->label;
+      return sprockit::printf("%s=%d", ty->label.c_str(), mid);
     case mpi_type::PAIR:
-      return "PAIR";
+      return sprockit::printf("PAIR=%d", mid);
     case mpi_type::VEC:
-      return "VEC";
+      return sprockit::printf("VEC=%d", mid);
     case mpi_type::IND:
-      return "IND";
+      return sprockit::printf("IND=%d", mid);
     case mpi_type::NONE:
-      return "NONE";
+      return sprockit::printf("NONE=%d", mid);
   }
 }
 

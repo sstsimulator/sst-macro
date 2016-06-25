@@ -24,9 +24,19 @@ SpktRegister("bruck_allgather", dag_collective, bruck_allgather_collective);
 void
 bruck_allgather_actor::init_buffers(void* dst, void* src)
 {
+  bool in_place = dst == src;
   if (src){
-    //put everything into the dst buffer to begin
-    std::memcpy(dst, src, nelems_ * type_size_);
+    int block_size = nelems_ * type_size_;
+    if (in_place){
+      if (dense_me_ != 0){
+        int inPlaceOffset = dense_me_* block_size;
+        void* inPlaceSrc = ((char*)src + inPlaceOffset);
+        std::memcpy(dst, inPlaceSrc, block_size);
+      }
+    } else {
+      //put everything into the dst buffer to begin
+      std::memcpy(dst, src, block_size);
+    }
     long buffer_size = nelems_ * type_size_ * dom_->nproc();
     send_buffer_ = my_api_->make_public_buffer(dst, buffer_size);
     recv_buffer_ = send_buffer_;
@@ -70,8 +80,6 @@ bruck_allgather_actor::init_dag()
     recv_ac->offset = round_nelems;
     send_ac->nelems = round_nelems;
     recv_ac->nelems = round_nelems;
-    partner_gap *= 2;
-    round_nelems *= 2;
 
     if (i == 0){
       add_initial_action(send_ac);
@@ -83,6 +91,8 @@ bruck_allgather_actor::init_dag()
       add_dependency(prev_recv, recv_ac);
     }
 
+    partner_gap *= 2;
+    round_nelems *= 2;
     prev_send = send_ac;
     prev_recv = recv_ac;
   }

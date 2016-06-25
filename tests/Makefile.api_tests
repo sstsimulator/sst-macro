@@ -26,8 +26,6 @@ APITESTS = \
   testsuite_mpi_26 \
   testsuite_mpi_27 \
   testsuite_mpi_29 \
-  testsuite_mpi_30 \
-  testsuite_mpi_31 \
   testsuite_mpi_37 \
   testsuite_mpi_38 \
   testsuite_mpi_40 \
@@ -165,6 +163,8 @@ APITESTS_DISABLED = \
 
 # These pass, but take too long (some very very long)
 SUPERCHECK_APITESTS = \
+  testsuite_mpi_30 \
+  testsuite_mpi_31 \
   testsuite_mpi_35 \
   testsuite_mpi_36 \
   testsuite_mpi_113 \

@@ -85,13 +85,21 @@ mpi_type::delete_statics()
   free_static_ptr(mpi_2real);
   free_static_ptr(mpi_2double_precision);
   free_static_ptr(mpi_character);
+  free_static_ptr(mpi_int8_t);
+  free_static_ptr(mpi_int16_t);
+  free_static_ptr(mpi_int32_t);
+  free_static_ptr(mpi_int64_t);
+  free_static_ptr(mpi_uint8_t);
+  free_static_ptr(mpi_uint16_t);
+  free_static_ptr(mpi_uint32_t);
+  free_static_ptr(mpi_uint64_t);
 }
 
 void
-mpi_type::init_primitive(const char* labelit, const int sizeit, int comb)
+mpi_type::init_primitive(const char* labelit, int size)
 {
-  extent_ = sizeit;
-  size_ = sizeit;
+  extent_ = size;
+  size_ = size;
   type_ = PRIM;
   label = labelit;
 }
@@ -473,6 +481,16 @@ mpi_type* mpi_type::mpi_real16 = new mpi_type;
 mpi_type* mpi_type::mpi_complex8 = new mpi_type;
 mpi_type* mpi_type::mpi_complex16 = new mpi_type;
 mpi_type* mpi_type::mpi_complex32 = new mpi_type;
+
+mpi_type* mpi_type::mpi_int8_t = new mpi_type;
+mpi_type* mpi_type::mpi_int16_t = new mpi_type;
+mpi_type* mpi_type::mpi_int32_t = new mpi_type;
+mpi_type* mpi_type::mpi_int64_t = new mpi_type;
+
+mpi_type* mpi_type::mpi_uint8_t = new mpi_type;
+mpi_type* mpi_type::mpi_uint16_t = new mpi_type;
+mpi_type* mpi_type::mpi_uint32_t = new mpi_type;
+mpi_type* mpi_type::mpi_uint64_t = new mpi_type;
 
 //fortran pairs
 mpi_type* mpi_type::mpi_2integer = new mpi_type;

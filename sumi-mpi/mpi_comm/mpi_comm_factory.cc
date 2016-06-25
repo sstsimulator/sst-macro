@@ -110,9 +110,6 @@ mpi_comm_factory::comm_create(mpi_comm* caller, mpi_group* group)
   //now find my rank
   int newrank = group->rank_of_task(caller->my_task());
 
-  printf("Rank %d:%d making comm with new rank %d of %d\n",
-         worldcomm_->rank(), caller->rank(), newrank, group->size());
-
   next_id_ = cid + 1;
 
   if (newrank >= 0) {
@@ -151,6 +148,10 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
   mydata[0] = next_id_;
   mydata[1] = my_color;
   mydata[2] = my_key;
+
+  //printf("Rank %d = {%d %d %d}\n",
+  //       caller->rank(), next_id_, my_color, my_key);
+
 #if SSTMAC_DISTRIBUTED_MEMORY && !SSTMAC_MMAP_COLLECTIVES
   if (my_color < 0){ //I'm not part of this!
     return mpi_comm::comm_null;
@@ -191,13 +192,18 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
     entry.buf = new int[3*caller->size()];
 #endif
   }
+  int* result = entry.buf;
+  int* mybuf = result + 3*caller->rank();
+  mybuf[0] = mydata[0];
+  mybuf[1] = mydata[1];
+  mybuf[2] = mydata[2];
   split_lock.unlock();
 
   //just model the allgather
   parent_->allgather(NULL, 3, MPI_INT,
                      NULL, 3, MPI_INT,
                      caller->id());
-  int* result = entry.buf;
+
 #endif
 
   if (my_color < 0){ //I'm not part of this!
@@ -213,6 +219,9 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
     int comm_id = thisdata[0];
     int color = thisdata[1];
     int key = thisdata[2];
+
+    //printf("Rank %d[%d] = {%d %d %d}\n",
+    //       caller->rank(), rank, comm_id, color, key);
 
     if (color >= 0 && color == my_color){
       key_map[key].push_back(rank);

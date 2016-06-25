@@ -30,13 +30,30 @@ action::to_string() const
 }
 
 void
-debug_print(const char* info, const std::string& rank_str, int partner, int round, int offset, int nelems, const void* buffer)
+debug_print(const char* info, const std::string& rank_str,
+            int partner, int round, int offset, int nelems,
+            int type_size, const void* buffer)
 {
+  if (!buffer) return;
+
   std::cout << sprockit::printf("Rank %s, partner %d, round=%d, %s %p [%2d:%2d] = { ",
       rank_str.c_str(), partner, round, info, buffer, offset, offset + nelems);
-  int* tmp = (int*) buffer;
-  for (int i=0; i < nelems; ++i){
-    std::cout << sprockit::printf("%2d ", tmp[i]);
+  char* tmp = (char*) buffer;
+  for (int i=0; i < nelems; ++i, tmp += type_size){
+    int elem;
+    if (type_size == sizeof(int)){
+      int* elemPtr = (int*) tmp;
+      elem = *elemPtr;
+    }
+    else if (type_size == sizeof(double)){
+      double* elemPtr = (double*) tmp;
+      elem = *elemPtr;
+    } else {
+      int* elemPtr = (int*) tmp;
+      elem = *elemPtr;
+    }
+
+    std::cout << sprockit::printf("%2d ", elem);
   }
   std::cout << " }\n";
 }
@@ -346,23 +363,23 @@ dag_collective_actor::start_action(action* ac)
       do_sumi_debug_print("recv buf before shuffle",
         rank_str().c_str(), ac->partner,
         ac->round,
-        0, ac->nelems,
+        0, ac->nelems, type_size_,
         recv_buffer_.ptr);
       do_sumi_debug_print("result buf before shuffle",
         rank_str().c_str(), ac->partner,
         ac->round,
-        0, nelems_*dense_nproc_,
+        0, nelems_*dense_nproc_, type_size_,
         result_buffer_.ptr);
       start_shuffle(ac);
       do_sumi_debug_print("result buf after shuffle",
         rank_str().c_str(), ac->partner,
         ac->round,
-        0, nelems_*dense_nproc_,
+        0, nelems_*dense_nproc_, type_size_,
         result_buffer_.ptr);
       do_sumi_debug_print("send buf after shuffle",
         rank_str().c_str(), ac->partner,
         ac->round,
-        0, ac->nelems,
+        0, ac->nelems, type_size_,
         send_buffer_.ptr);
       clear_action(ac);
       break;
@@ -442,7 +459,7 @@ dag_collective_actor::send_eager_message(action* ac)
    ac->offset, send_buffer_.ptr);
 
   do_sumi_debug_print("sending to", rank_str().c_str(), ac->partner,
-   ac->round, ac->offset, msg->nelems(), msg->eager_buffer());
+   ac->round, ac->offset, msg->nelems(), type_size_, msg->eager_buffer());
 
   send_payload(ac->partner, msg);
   action_done(ac);
@@ -808,7 +825,7 @@ dag_collective_actor::data_recved(action *ac, const collective_work_message::ptr
     int sender_domain_rank = domain_rank(msg->dense_sender());
     if (my_domain_rank == sender_domain_rank){
       do_sumi_debug_print("ignoring", rank_str().c_str(), msg->dense_sender(),
-        ac->round, 0, nelems_, recv_buffer_);
+        ac->round, 0, nelems_, type_size_, recv_buffer_);
     } else {
       bool need_recv_action = ac->recv_type == action::out_of_place || msg->payload_type() == message::eager_payload;
       void* buffer_to_use = ac->recv_type == action::temp ? recv_buffer_ : result_buffer_;
@@ -822,12 +839,13 @@ dag_collective_actor::data_recved(action *ac, const collective_work_message::ptr
 
       do_sumi_debug_print("currently",
        rank_str().c_str(), ac->partner,
-       ac->round, ac->offset, ac->nelems, dst_buffer);
+       ac->round, ac->offset, ac->nelems, type_size_,
+       dst_buffer);
 
       do_sumi_debug_print("receiving",
         rank_str().c_str(), ac->partner,
         ac->round,
-        ac->offset, ac->nelems,
+        ac->offset, ac->nelems, type_size_,
         recvd_buffer);
 
       if (need_recv_action){
@@ -836,7 +854,8 @@ dag_collective_actor::data_recved(action *ac, const collective_work_message::ptr
 
       do_sumi_debug_print("now", rank_str().c_str(),
         ac->partner, ac->round,
-        0, ac->offset + ac->nelems, buffer_to_use);
+        0, ac->offset + ac->nelems, type_size_,
+        buffer_to_use);
     }
   }
 
@@ -950,12 +969,12 @@ dag_collective_actor::next_round_ready_to_get(
 
     do_sumi_debug_print("rdma get into",
        rank_str().c_str(), ac->partner,
-       ac->round, ac->offset, ac->nelems,
+       ac->round, ac->offset, ac->nelems, type_size_,
        get_req->local_buffer());
 
     do_sumi_debug_print("rdma get from",
        rank_str().c_str(), ac->partner,
-       ac->round, ac->offset, ac->nelems,
+       ac->round, ac->offset, ac->nelems, type_size_,
        get_req->remote_buffer());
 
 

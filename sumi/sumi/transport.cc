@@ -247,7 +247,7 @@ transport::notify_collective_done(const collective_done_message::ptr &msg)
 {
   collective* coll = collectives_[msg->type()][msg->tag()];
   if (!coll){
-    spkt_throw(sprockit::value_error,
+    spkt_throw_printf(sprockit::value_error,
       "transport::notify_collective_done: invalid collective of type %s, tag %d",
        collective::tostr(msg->type()), msg->tag());   
   }
