@@ -20,23 +20,43 @@ namespace sumi {
 
 using sstmac::sw::key;
 
+/**
+ * Persistent send operations (send, bsend, rsend, ssend)
+ */
+class persistent_op
+{
+ public:
+  typedef enum {
+    Send,
+    Recv
+  } op_type_t;
+  /// The arguments.
+  int count;
+  MPI_Datatype datatype;
+  MPI_Comm comm;
+  op_type_t optype;
+  int partner;
+  int tag;
+  void* content;
+
+};
+
 class mpi_request  {
   // ------- constructor / boost stuff -------------//
 
  public:
   mpi_request(const key::category& cat);
 
-  virtual std::string
+  std::string
   to_string() const {
     return "mpirequest";
   }
 
-  virtual
-  ~mpi_request();
-
   static mpi_request*
   construct(const key::category& cat);
   // --------------------------------------//
+
+  ~mpi_request();
 
   void
   complete(const mpi_message::ptr& msg);
@@ -50,6 +70,16 @@ class mpi_request  {
   cancel() {
     cancelled_ = true;
     complete(mpi_message::ptr());
+  }
+
+  void
+  persist(persistent_op* op) {
+    persistent_op_ = op;
+  }
+
+  persistent_op*
+  op() const {
+    return persistent_op_;
   }
 
   const MPI_Status&
@@ -67,9 +97,9 @@ class mpi_request  {
     return cancelled_;
   }
 
-  virtual bool
+  bool
   is_persistent() const {
-    return false;
+    return persistent_op_;
   }
 
  protected:
@@ -77,6 +107,7 @@ class mpi_request  {
   key* key_;
   bool complete_;
   bool cancelled_;
+  persistent_op* persistent_op_;
 };
 
 }

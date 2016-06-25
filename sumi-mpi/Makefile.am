@@ -37,7 +37,6 @@ libsstmac_mpi_la_SOURCES = \
   mpi_protocol/eager0.cc \
   mpi_protocol/rendezvous_rdma.cc \
   mpi_types/mpi_type.cc \
-  mpi_api_persistent.cc \
   mpi_api.cc \
   mpi_api_collectives.cc \
   mpi_api_comm.cc \
@@ -73,7 +72,6 @@ nobase_library_include_HEADERS = \
   mpi_protocol/mpi_protocol_fwd.h \
   mpi_types/mpi_type.h \
   mpi_types/mpi_type_fwd.h \
-  mpi_api_persistent.h \
   mpi_api.h \
   mpi_api_fwd.h \
   mpi_debug.h \

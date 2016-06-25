@@ -82,7 +82,8 @@ mpi_api::start_gatherv(const void *sendbuf, void *recvbuf, int sendcount, const 
   int typeSize = type_size(type);
   mpi_comm* commPtr = get_comm(comm);
   int tag = commPtr->next_collective_tag();
-  transport::gather
+  spkt_throw(sprockit::unimplemented_error,
+    "sumi::gatherv");
   return tag;
 }
 

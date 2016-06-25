@@ -32,8 +32,11 @@ mpi_api::do_wait(MPI_Request *request, MPI_Status *status)
     *status = reqPtr->status();
   }
 
-  delete reqPtr;
-  *request = MPI_REQUEST_NULL;
+  if (!reqPtr->is_persistent()){
+    delete reqPtr;
+    *request = MPI_REQUEST_NULL;
+  }
+
   return MPI_SUCCESS;
 }
 
@@ -69,8 +72,10 @@ mpi_api::waitany(int count, MPI_Request array_of_requests[], int *indx, MPI_Stat
         if (status != MPI_STATUS_IGNORE){
           *status = reqPtr->status();
         }
-        array_of_requests[i] = MPI_REQUEST_NULL;
-        delete reqPtr;
+        if (!reqPtr->is_persistent()){
+          array_of_requests[i] = MPI_REQUEST_NULL;
+          delete reqPtr;
+        }
         return MPI_SUCCESS;
       }
       reqPtrs[numNonnull++] = reqPtr;
@@ -92,8 +97,10 @@ mpi_api::waitany(int count, MPI_Request array_of_requests[], int *indx, MPI_Stat
       if (status != MPI_STATUS_IGNORE){
         *status = reqPtr->status();
       }
-      array_of_requests[i] = MPI_REQUEST_NULL;
-      delete reqPtr;
+      if (!reqPtr->is_persistent()){
+        array_of_requests[i] = MPI_REQUEST_NULL;
+        delete reqPtr;
+      }
       return MPI_SUCCESS;
     }
   }
@@ -120,8 +127,10 @@ mpi_api::waitsome(int incount, MPI_Request array_of_requests[], int *outcount, i
         if (array_of_statuses != MPI_STATUS_IGNORE){
           array_of_statuses[i] = reqPtr->status();
         }
-        array_of_requests[i] = MPI_REQUEST_NULL;
-        delete reqPtr;
+        if (!reqPtr->is_persistent()){
+          array_of_requests[i] = MPI_REQUEST_NULL;
+          delete reqPtr;
+        }
       } else {
         reqPtrs[numIncomplete++] = reqPtr;
       }
@@ -147,8 +156,10 @@ mpi_api::waitsome(int incount, MPI_Request array_of_requests[], int *outcount, i
         if (array_of_statuses != MPI_STATUS_IGNORE){
           array_of_statuses[i] = reqPtr->status();
         }
-        array_of_requests[i] = MPI_REQUEST_NULL;
-        delete reqPtr;
+        if (!reqPtr->is_persistent()){
+          array_of_requests[i] = MPI_REQUEST_NULL;
+          delete reqPtr;
+        }
       }
     }
   }

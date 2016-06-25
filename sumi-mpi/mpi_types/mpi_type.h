@@ -160,6 +160,7 @@ class mpi_type
     fxns_[MPI_LAND] = &ReduceOp<And,data_t>::op;
     fxns_[MPI_LOR] = &ReduceOp<Or,data_t>::op;
     fxns_[MPI_PROD] = &ReduceOp<Prod,data_t>::op;
+    fxns_[MPI_LXOR] = &ReduceOp<LXOr,data_t>::op;
   }
 
   template <typename data_t>
@@ -168,8 +169,7 @@ class mpi_type
     fxns_[MPI_BAND] = &ReduceOp<BAnd,data_t>::op;
     fxns_[MPI_BOR] = &ReduceOp<BOr,data_t>::op;
     fxns_[MPI_BOR] = &ReduceOp<BOr,data_t>::op;
-    fxns_[MPI_BXOR] = &ReduceOp<XOr,data_t>::op;
-    fxns_[MPI_LXOR] = &ReduceOp<XOr,data_t>::op;
+    fxns_[MPI_BXOR] = &ReduceOp<BXOr,data_t>::op;
   }
 
   sumi::reduce_fxn

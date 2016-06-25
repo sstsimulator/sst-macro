@@ -36,7 +36,17 @@ struct Min
 };
 
 template <typename data_t>
-struct XOr
+struct LXOr
+{
+  typedef data_t type;
+  static void
+  op(data_t& dst, const data_t& src){
+    dst = bool(dst) ^ bool(src);
+  }
+};
+
+template <typename data_t>
+struct BXOr
 {
   typedef data_t type;
   static void

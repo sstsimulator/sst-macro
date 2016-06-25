@@ -40,7 +40,6 @@ APITESTS = \
   testsuite_mpi_50 \
   testsuite_mpi_69 \
   testsuite_mpi_71 \
-  testsuite_mpi_73 \
   testsuite_mpi_74 \
   testsuite_mpi_75 \
   testsuite_mpi_76 \
@@ -48,23 +47,18 @@ APITESTS = \
   testsuite_mpi_78 \
   testsuite_mpi_79 \
   testsuite_mpi_80 \
+  testsuite_mpi_81 \
   testsuite_mpi_82 \
+  testsuite_mpi_83 \
   testsuite_mpi_88 \
   testsuite_mpi_89 \
   testsuite_mpi_90 \
-  testsuite_mpi_91 \
   testsuite_mpi_97 \
-  testsuite_mpi_98 \
   testsuite_mpi_99 \
   testsuite_mpi_100 \
   testsuite_mpi_101 \
   testsuite_mpi_103 \
   testsuite_mpi_104 \
-  testsuite_mpi_105 \
-  testsuite_mpi_106 \
-  testsuite_mpi_107 \
-  testsuite_mpi_108 \
-  testsuite_mpi_109 \
   testsuite_mpi_110 \
   testsuite_mpi_112 \
   testsuite_mpi_115 \
@@ -163,11 +157,19 @@ APITESTS_DISABLED = \
 
 # These pass, but take too long (some very very long)
 SUPERCHECK_APITESTS = \
+  testsuite_mpi_73 \
   testsuite_mpi_30 \
   testsuite_mpi_31 \
   testsuite_mpi_35 \
   testsuite_mpi_36 \
+  testsuite_mpi_91 \
+  testsuite_mpi_98 \
+  testsuite_mpi_106 \
+  testsuite_mpi_108 \
+  testsuite_mpi_109 \
+  testsuite_mpi_107 \
   testsuite_mpi_113 \
+  testsuite_mpi_105 \
   testsuite_mpi_114
 
 

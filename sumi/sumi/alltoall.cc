@@ -13,9 +13,6 @@
 
 using namespace sprockit::dbg;
 
-RegisterDebugSlot(sumi_alltoall,
-  "print all debug output associated with alltoall collectives in the sumi framework");
-
 #define SEND_SHUFFLE 0
 #define RECV_SHUFFLE 1
 

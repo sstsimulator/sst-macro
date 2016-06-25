@@ -1,12 +1,10 @@
-#ifndef sstmac_sw_api_simpsg_alltoall_H
-#define sstmac_sw_api_simpsg_alltoall_H
+#ifndef alltoall_H
+#define alltoall_H
 
 #include <sumi/collective.h>
 #include <sumi/collective_actor.h>
 #include <sumi/collective_message.h>
 #include <sumi/comm_functions.h>
-
-DeclareDebugSlot(sumi_alltoall)
 
 namespace sumi {
 

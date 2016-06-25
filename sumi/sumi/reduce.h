@@ -6,8 +6,6 @@
 #include <sumi/collective_message.h>
 #include <sumi/comm_functions.h>
 
-DeclareDebugSlot(sumi_reduce)
-
 namespace sumi {
 
 class wilke_reduce_actor :

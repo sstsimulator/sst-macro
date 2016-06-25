@@ -37,7 +37,50 @@ mpi_api::sendrecv(const void *sendbuf, int sendcount,
 }
 
 int
-mpi_api::isend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request)
+mpi_api::start(MPI_Request* req)
+{
+  mpi_request* reqPtr = get_request(*req);
+  persistent_op* op = reqPtr->op();
+  if (op == 0){
+    spkt_throw_printf(sprockit::value_error,
+                      "Starting MPI_Request that is not persistent");
+  }
+
+  mpi_comm* commPtr = get_comm(op->comm);
+  if (op->optype == persistent_op::Send){
+    queue_->send(reqPtr, op->count, op->datatype, op->partner, op->tag, commPtr, op->content);
+  } else {
+    queue_->recv(reqPtr, op->count, op->datatype, op->partner, op->tag, commPtr, op->content);
+  }
+
+  return MPI_SUCCESS;
+}
+
+int
+mpi_api::send_init(const void *buf, int count,
+                   MPI_Datatype datatype, int dest, int tag,
+                   MPI_Comm comm, MPI_Request *request)
+{
+  mpi_request* req = mpi_request::construct(default_key_category);
+  *request = add_request_ptr(req);
+
+  persistent_op* op = new persistent_op;
+  op->content = const_cast<void*>(buf);
+  op->count = count;
+  op->datatype = datatype;
+  op->partner = dest;
+  op->tag = tag;
+  op->comm = comm;
+  op->optype = persistent_op::Send;
+
+  req->persist(op);
+
+  return MPI_SUCCESS;
+}
+
+int
+mpi_api::isend(const void *buf, int count, MPI_Datatype datatype, int dest,
+               int tag, MPI_Comm comm, MPI_Request *request)
 {
   SSTMACBacktrace("MPI_Isend");
   mpi_comm* commPtr = get_comm(comm);
@@ -52,7 +95,8 @@ mpi_api::isend(const void *buf, int count, MPI_Datatype datatype, int dest, int 
 }
 
 int
-mpi_api::recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status)
+mpi_api::recv(void *buf, int count, MPI_Datatype datatype, int source,
+              int tag, MPI_Comm comm, MPI_Status *status)
 {
   SSTMACBacktrace("MPI_Recv");
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_pt2pt,
@@ -70,7 +114,29 @@ mpi_api::recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, 
 }
 
 int
-mpi_api::irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Request *request)
+mpi_api::recv_init(void *buf, int count, MPI_Datatype datatype, int source,
+                   int tag, MPI_Comm comm, MPI_Request *request)
+{
+  mpi_request* req = mpi_request::construct(default_key_category);
+  *request = add_request_ptr(req);
+
+  persistent_op* op = new persistent_op;
+  op->content = buf;
+  op->count = count;
+  op->datatype = datatype;
+  op->partner = source;
+  op->tag = tag;
+  op->comm = comm;
+  op->optype = persistent_op::Recv;
+
+  req->persist(op);
+
+  return MPI_SUCCESS;
+}
+
+int
+mpi_api::irecv(void *buf, int count, MPI_Datatype datatype, int source,
+               int tag, MPI_Comm comm, MPI_Request *request)
 {
   SSTMACBacktrace("MPI_Irecv");
   mpi_comm* commPtr = get_comm(comm);

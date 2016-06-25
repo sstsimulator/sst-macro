@@ -20,7 +20,6 @@
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
 
 #include <sumi-mpi/mpi_api.h>
-#include <sumi-mpi/mpi_api_persistent.h>
 #include <sumi-mpi/mpi_status.h>
 #include <sumi-mpi/mpi_request.h>
 

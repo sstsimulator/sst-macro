@@ -1,26 +1,25 @@
-#ifndef scatter_H
-#define scatter_H
+#ifndef scatterv_H
+#define scatterv_H
 
 #include <sumi/collective.h>
 #include <sumi/collective_actor.h>
 #include <sumi/collective_message.h>
 #include <sumi/comm_functions.h>
 
-DeclareDebugSlot(sumi_scatter)
-
 namespace sumi {
 
-class btree_scatter_actor :
+class btree_scatterv_actor :
   public dag_collective_actor
 {
 
  public:
   std::string
   to_string() const {
-    return "bruck actor";
+    return "btree scatterv actor";
   }
 
-  btree_scatter_actor(int root) : root_(root) {}
+  btree_scatterv_actor(int root, int* send_counts) :
+    root_(root), send_counts_(send_counts) {}
 
  protected:
   void finalize_buffers();
@@ -34,39 +33,46 @@ class btree_scatter_actor :
   int root_;
   int midpoint_;
   int log2nproc_;
+  int* send_counts_;
 
 };
 
-class btree_scatter :
+class btree_scatterv :
   public dag_collective
 {
 
  public:
-  btree_scatter(int root) : root_(root){}
+  btree_scatterv(int root) :
+    root_(root) {}
 
-  btree_scatter() : root_(-1){}
+  btree_scatterv() : root_(-1){}
 
   std::string
   to_string() const {
-    return "allgather";
+    return "btree scatterv";
   }
 
   dag_collective_actor*
   new_actor() const {
-    return new btree_scatter_actor(root_);
+    return new btree_scatterv_actor(root_, send_counts_);
   }
 
   dag_collective*
   clone() const {
-    return new btree_scatter(root_);
+    return new btree_scatterv(root_);
   }
 
   void init_root(int root){
     root_ = root;
   }
 
+  void init_send_counts(int *nelems){
+    send_counts_ = nelems;
+  }
+
  private:
   int root_;
+  int* send_counts_;
 
 };
 

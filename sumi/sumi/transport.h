@@ -358,7 +358,11 @@ class transport :
              bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
 
   virtual void
-  gatherv(void* dst, void* src, int* sendcnt, int* recv_counts, int type_size, int tag,
+  gather(int root, void* dst, void* src, int nelems, int type_size, int tag,
+         bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+
+  virtual void
+  gatherv(int root, void* dst, void* src, int sendcnt, int* recv_counts, int type_size, int tag,
           bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
 
   virtual void
@@ -366,11 +370,15 @@ class transport :
              bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
 
   virtual void
-  gather(int root, void* dst, void* src, int nelems, int type_size, int tag,
-         bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+  alltoallv(void* dst, void* src, int* send_counts, int* recv_counts, int type_size, int tag,
+             bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
 
   virtual void
   scatter(int root, void* dst, void* src, int nelems, int type_size, int tag,
+          bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+
+  virtual void
+  scatterv(int root, void* dst, void* src, int* send_counts, int recvcnt, int type_size, int tag,
           bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
 
   /**

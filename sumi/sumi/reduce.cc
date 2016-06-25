@@ -13,8 +13,6 @@
 
 using namespace sprockit::dbg;
 
-RegisterDebugSlot(sumi_reduce, "print all debug output associated with reduce collectives in the sumi framework");
-
 namespace sumi
 {
 
@@ -83,7 +81,7 @@ wilke_reduce_actor::init_dag()
   int num_doubling_rounds = log2nproc;
   bool i_am_midpoint = false;
 
-  debug_printf(sumi_collective | sumi_reduce,
+  debug_printf(sumi_collective,
     "Rank %s configured reduce for tag=%d for nproc=%d(%d) virtualized to n=%d over %d rounds for roles=%s",
     rank_str().c_str(), tag_, dense_nproc_, my_api_->nproc(), virtual_nproc, log2nproc, stl_string(my_roles).c_str());
 
@@ -103,7 +101,7 @@ wilke_reduce_actor::init_dag()
     bool i_am_even = (virtual_me % 2) == 0;
     int round_offset = 2*num_doubling_rounds;
     bool initial_send = true;
-    debug_printf(sumi_collective | sumi_reduce,
+    debug_printf(sumi_collective,
       "Rank %d configuring reduce for virtual role=%d tag=%d for nproc=%d(%d) virtualized to n=%d over %d rounds ",
       my_api_->rank(), virtual_me, tag_, dense_nproc_, my_api_->nproc(), virtual_nproc, log2nproc);
     for (int i=0; i < num_doubling_rounds; ++i){
@@ -124,7 +122,7 @@ wilke_reduce_actor::init_dag()
         recv_offset = my_buffer_offset + send_nelems;
       }
 
-      debug_printf(sumi_collective | sumi_reduce,
+      debug_printf(sumi_collective,
         "Rank %d:%d testing partner=%d tag=%d for round=%d,%d",
         my_api_->rank(), virtual_me, virtual_partner, tag_, i, rnd);
 
@@ -160,7 +158,7 @@ wilke_reduce_actor::init_dag()
         prev_recv = recv_ac;
       } //end if not real send/recv
       else {
-        debug_printf(sumi_collective | sumi_reduce,
+        debug_printf(sumi_collective,
           "Rank %d:%d skipping partner=%d on round %d with send=(%d,%d) recv=(%d,%d)",
           my_api_->rank(), virtual_me, virtual_partner, i,
           send_offset, send_offset + send_nelems,

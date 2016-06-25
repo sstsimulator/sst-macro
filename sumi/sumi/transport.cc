@@ -6,10 +6,13 @@
 #include <sumi/allgather.h>
 #include <sumi/allgatherv.h>
 #include <sumi/alltoall.h>
+#include <sumi/alltoallv.h>
 #include <sumi/domain.h>
 #include <sumi/bcast.h>
 #include <sumi/gather.h>
 #include <sumi/scatter.h>
+#include <sumi/gatherv.h>
+#include <sumi/scatterv.h>
 #include <sprockit/stl_string.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
@@ -741,7 +744,26 @@ transport::bcast(int root, void *buf, int nelems, int type_size, int tag, bool f
 }
 
 void
-transport::gather(int root, void *dst, void *src, int nelems, int type_size, int tag, bool fault_aware, int context, domain* dom)
+transport::gatherv(int root, void *dst, void *src,
+                   int sendcnt, int *recv_counts,
+                   int type_size, int tag, bool fault_aware, int context, domain *dom)
+{
+  if (skip_collective(collective::gatherv, dom, dst, src, sendcnt, type_size, tag))
+    return;
+
+  dag_collective* coll = gatherv_selector_ == 0
+      ? new btree_gatherv
+      : gatherv_selector_->select(dom->nproc(), recv_counts);
+  coll->init(collective::gatherv, this, dom, dst, src, sendcnt, type_size, tag, fault_aware, context);
+  coll->init_root(root);
+  coll->init_recv_counts(recv_counts);
+  spkt_throw(sprockit::unimplemented_error, "gatherv");
+  start_collective(coll);
+}
+
+void
+transport::gather(int root, void *dst, void *src, int nelems,
+                  int type_size, int tag, bool fault_aware, int context, domain* dom)
 {
   if (skip_collective(collective::gather, dom, dst, src, nelems, type_size, tag))
     return;
@@ -756,7 +778,8 @@ transport::gather(int root, void *dst, void *src, int nelems, int type_size, int
 }
 
 void
-transport::scatter(int root, void *dst, void *src, int nelems, int type_size, int tag, bool fault_aware, int context, domain* dom)
+transport::scatter(int root, void *dst, void *src, int nelems,
+                   int type_size, int tag, bool fault_aware, int context, domain* dom)
 {
   if (skip_collective(collective::scatter, dom, dst, src, nelems, type_size, tag))
     return;
@@ -767,6 +790,25 @@ transport::scatter(int root, void *dst, void *src, int nelems, int type_size, in
 
   coll->init(collective::scatter, this, dom, dst, src, nelems, type_size, tag, fault_aware, context);
   coll->init_root(root);
+  start_collective(coll);
+}
+
+void
+transport::scatterv(int root, void *dst, void *src, int* send_counts, int recvcnt,
+                    int type_size, int tag, bool fault_aware, int context, domain* dom)
+{
+  if (skip_collective(collective::scatterv, dom, dst, src, recvcnt, type_size, tag))
+    return;
+
+  dag_collective* coll = scatterv_selector_ == 0
+      ? new btree_scatterv
+      : scatterv_selector_->select(dom->nproc(), send_counts);
+
+  coll->init(collective::scatterv, this, dom, dst, src, recvcnt,
+             type_size, tag, fault_aware, context);
+  coll->init_root(root);
+  coll->init_send_counts(send_counts);
+  spkt_throw(sprockit::unimplemented_error, "scatterv");
   start_collective(coll);
 }
 
@@ -782,6 +824,24 @@ transport::alltoall(void *dst, void *src, int nelems, int type_size,
       : alltoall_selector_->select(dom->nproc(), nelems);
 
   coll->init(collective::alltoall, this, dom, dst, src, nelems, type_size, tag, fault_aware, context);
+  start_collective(coll);
+}
+
+void
+transport::alltoallv(void *dst, void *src, int* send_counts, int* recv_counts, int type_size,
+                    int tag, bool fault_aware, int context, domain* dom)
+{
+  if (skip_collective(collective::alltoallv, dom, dst, src, send_counts[0], type_size, tag))
+    return;
+
+  dag_collective* coll = alltoall_selector_ == 0
+      ? new bruck_alltoallv_collective
+      : alltoall_selector_->select(dom->nproc(), send_counts);
+
+  coll->init(collective::alltoallv, this, dom, dst, src, 0, type_size, tag, fault_aware, context);
+  coll->init_recv_counts(recv_counts);
+  coll->init_send_counts(send_counts);
+  spkt_throw(sprockit::unimplemented_error, "alltoallv");
   start_collective(coll);
 }
 

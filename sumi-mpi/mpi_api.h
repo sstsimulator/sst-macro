@@ -246,6 +246,9 @@ class mpi_api :
            MPI_Datatype datatype, int dest, int tag,
            MPI_Comm comm);
 
+  int send_init(const void *buf, int count, MPI_Datatype datatype, int dest,
+                int tag, MPI_Comm comm, MPI_Request *request);
+
   int isend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
             MPI_Comm comm, MPI_Request *request);
 
@@ -254,6 +257,12 @@ class mpi_api :
 
   int irecv(void *buf, int count, MPI_Datatype datatype, int source,
             int tag, MPI_Comm comm, MPI_Request *request);
+
+  int recv_init(void *buf, int count, MPI_Datatype datatype,
+      int source, int tag, MPI_Comm comm, MPI_Request *request);
+
+  int
+  start(MPI_Request* req);
 
   /* Completion of outstanding requests */
   int

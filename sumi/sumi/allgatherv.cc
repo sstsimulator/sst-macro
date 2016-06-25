@@ -13,8 +13,6 @@
 
 using namespace sprockit::dbg;
 
-RegisterDebugSlot(sumi_allgatherv)
-
 namespace sumi
 {
 
@@ -97,7 +95,7 @@ bruck_allgatherv_actor::init_dag()
   int num_rounds = log2nproc;
   int nprocs_extra_round = num_extra_procs;
 
-  debug_printf(sumi_collective | sumi_allgatherv,
+  debug_printf(sumi_collective,
     "Bruckv %s: configured for %d rounds with an extra round exchanging %d proc segments on tag=%d ",
     rank_str().c_str(), log2nproc, num_extra_procs, tag_);
 

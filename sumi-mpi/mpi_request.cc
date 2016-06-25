@@ -17,13 +17,15 @@ namespace sumi {
 mpi_request::mpi_request(const key::category& cat) :
  key_(key::construct(cat)),
  complete_(false),
- cancelled_(false)
+ cancelled_(false),
+ persistent_op_(0)
 {
 }
 
 mpi_request::~mpi_request()
 {
   delete key_;
+  if (persistent_op_) delete persistent_op_;
 }
 
 //

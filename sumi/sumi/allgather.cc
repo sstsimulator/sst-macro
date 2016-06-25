@@ -13,8 +13,6 @@
 
 using namespace sprockit::dbg;
 
-RegisterDebugSlot(sumi_allgather,
-  "print all debug output associated with allgather collectives in the sumi framework")
 
 namespace sumi
 {
@@ -59,7 +57,7 @@ bruck_allgather_actor::init_dag()
   int log2nproc, midpoint, nprocs_extra_round, num_rounds;
   compute_tree(log2nproc, midpoint, num_rounds, nprocs_extra_round);
 
-  debug_printf(sumi_collective | sumi_allgather,
+  debug_printf(sumi_collective,
     "Bruck %s: configured for %d rounds with an extra round exchanging %d proc segments on tag=%d ",
     rank_str().c_str(), log2nproc, nprocs_extra_round, tag_);
 

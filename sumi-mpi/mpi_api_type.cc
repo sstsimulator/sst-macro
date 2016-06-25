@@ -10,6 +10,11 @@ struct float_int_t {
   int index;
 };
 
+struct long_double_int_t {
+  long double value;
+  int index;
+};
+
 struct double_int_t {
   double value;
   int index;
@@ -123,8 +128,6 @@ mpi_api::precommit_types()
 
   int_precommit_type(char, mpi_type::mpi_byte, MPI_BYTE);
 
-  op_precommit_type(double, mpi_type::mpi_double, MPI_DOUBLE);
-
   int_precommit_type(int, mpi_type::mpi_int, MPI_INT);
 
   int_precommit_type(unsigned, mpi_type::mpi_unsigned, MPI_UNSIGNED);
@@ -139,27 +142,24 @@ mpi_api::precommit_types()
 
   int_precommit_type(unsigned long, mpi_type::mpi_unsigned_long, MPI_UNSIGNED_LONG);
 
-  op_precommit_type(float, mpi_type::mpi_float, MPI_FLOAT);
-
   //fortran nonsense
   noop_precommit_type(2*sizeof(float), mpi_type::mpi_complex, MPI_COMPLEX);
 
   noop_precommit_type(2*sizeof(double), mpi_type::mpi_double_complex, MPI_DOUBLE_COMPLEX);
 
+  op_precommit_type(float, mpi_type::mpi_float, MPI_FLOAT);
   op_precommit_type(float, mpi_type::mpi_real, MPI_REAL);
-
   op_precommit_type(double, mpi_type::mpi_double_precision, MPI_DOUBLE_PRECISION);
+  op_precommit_type(double, mpi_type::mpi_double, MPI_DOUBLE);
+  op_precommit_type(float, mpi_type::mpi_real4, MPI_REAL4);
+  op_precommit_type(double, mpi_type::mpi_real8, MPI_REAL8);
+  op_precommit_type(long double, mpi_type::mpi_long_double, MPI_LONG_DOUBLE);
 
   int_precommit_type(int, mpi_type::mpi_integer, MPI_INTEGER);
-
   int_precommit_type(char, mpi_type::mpi_integer1, MPI_INTEGER1);
-
   int_precommit_type(int16_t, mpi_type::mpi_integer2, MPI_INTEGER2);
-
   int_precommit_type(int32_t, mpi_type::mpi_integer4, MPI_INTEGER4);
-
   int_precommit_type(int64_t, mpi_type::mpi_integer8, MPI_INTEGER8);
-
   int_precommit_type(int8_t, mpi_type::mpi_int8_t, MPI_INT8_T);
   int_precommit_type(int16_t, mpi_type::mpi_int16_t, MPI_INT16_T);
   int_precommit_type(int32_t, mpi_type::mpi_int32_t, MPI_INT32_T);
@@ -168,18 +168,14 @@ mpi_api::precommit_types()
   int_precommit_type(uint16_t, mpi_type::mpi_uint16_t, MPI_UINT16_T);
   int_precommit_type(uint32_t, mpi_type::mpi_uint32_t, MPI_UINT32_T);
   int_precommit_type(uint64_t, mpi_type::mpi_uint64_t, MPI_UINT64_T);
-
-  op_precommit_type(float, mpi_type::mpi_real4, MPI_REAL4);
-
-  op_precommit_type(double, mpi_type::mpi_real8, MPI_REAL8);
+  int_precommit_type(char, mpi_type::mpi_character, MPI_CHARACTER);
 
   index_precommit_type(int_int_t, mpi_type::mpi_2int, MPI_2INT);
   index_precommit_type(double_int_t, mpi_type::mpi_double_int, MPI_DOUBLE_INT);
   index_precommit_type(float_int_t, mpi_type::mpi_float_int, MPI_FLOAT_INT);
   index_precommit_type(long_int_t, mpi_type::mpi_long_int, MPI_LONG_INT);
   index_precommit_type(short_int_t, mpi_type::mpi_short_int, MPI_SHORT_INT);
-
-  int_precommit_type(char, mpi_type::mpi_character, MPI_CHARACTER);
+  index_precommit_type(long_double_int_t, mpi_type::mpi_long_double_int, MPI_LONG_DOUBLE_INT);
 
   for (int i=0; i < num_builtins; ++i){
     int size = builtin_sizes[i];
@@ -188,9 +184,6 @@ mpi_api::precommit_types()
 
   lock.unlock();
 
-  //op_precommit_type(mpi_type::mpi_long_double, MPI_LONG_DOUBLE);
-  //noop_precommit_type(mpi_type::mpi_2int, MPI_2INT);
-  //precommit_type(mpi_type::mpi_float_int, MPI_FLOAT_INT);
   //precommit_type(mpi_type::mpi_packed, MPI_PACKED);
 }
 

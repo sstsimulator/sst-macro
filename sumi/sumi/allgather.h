@@ -6,7 +6,6 @@
 #include <sumi/collective_message.h>
 #include <sumi/comm_functions.h>
 
-DeclareDebugSlot(sumi_allgather)
 
 namespace sumi {
 
@@ -17,7 +16,7 @@ class bruck_allgather_actor :
  public:
   std::string
   to_string() const {
-    return "bruck actor";
+    return "bruck allgather actor";
   }
 
  protected:
@@ -39,7 +38,7 @@ class bruck_allgather_collective :
  public:
   std::string
   to_string() const {
-    return "allgather";
+    return "bruck allgather";
   }
 
   dag_collective_actor*
