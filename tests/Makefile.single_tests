@@ -52,9 +52,6 @@ test_compute.$(CHKSUF): $(SSTMACEXEC)
 #  DUMPI-related tests                                                                  {{{#
 #------------------------------------------------------------------------------------------#
 
-SINGLETESTS += \
-  test_parsedumpi
-
 traces:
 	rm -fr *.bin *.meta *.map
 	cp -f $(top_srcdir)/tests/test_traces/* ./
@@ -70,9 +67,6 @@ test_dumpi_bgp.$(CHKSUF): $(SSTMACEXEC) traces
     $(SSTMACEXEC) -f $(srcdir)/test_configs/test_dumpi_bgp.ini \
           -d indexing,allocation --no-wall-time 
 
-test_parsedumpi.$(CHKSUF): $(SSTMACEXEC) traces
-	$(PYRUNTEST) 3 $(top_srcdir) $@ True \
-    $(SSTMACEXEC) -f $(srcdir)/test_configs/test_parsedumpi.ini --no-wall-time 
 
 endif
 

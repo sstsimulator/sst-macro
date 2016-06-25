@@ -1188,12 +1188,10 @@ virtual_rank_map::real_to_virtual(int rank, int* ret) const
 {
   int num_actors_two_roles = virtual_nproc_ - nproc_;
   if (rank >= num_actors_two_roles){
-    std::vector<int> ret(1);
     ret[0] = num_actors_two_roles + rank;
     return 1;
   }
   else {
-    std::vector<int> ret(2);
     ret[0] = 2*rank;
     ret[1] = ret[0] + 1;
     return 2;

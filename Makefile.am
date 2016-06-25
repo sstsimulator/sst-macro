@@ -17,11 +17,7 @@ EXTRA_DIST = LICENSE benchmarks bootstrap.sh \
   qt-gui \
   skeletons
 
-SUBDIRS = $(subdirs) 
-
-if WITH_SUMI_MPI
-SUBDIRS += sumi-mpi
-endif
+SUBDIRS = $(subdirs) sumi-mpi
 
 SUBDIRS += sstmac bin python tests configurations 
 

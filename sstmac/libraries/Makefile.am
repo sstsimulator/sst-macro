@@ -18,9 +18,6 @@ sockets \
 pthread \
 uq
 
-if WITH_DEFAULT_MPI
-SUBDIRS += mpi
-endif
 
 library_includedir=$(includedir)/sstmac/libraries
 library_include_HEADERS =
