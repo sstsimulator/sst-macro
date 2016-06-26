@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #include <sprockit/spkt_config.h>
+#include <sstmac/common/serializable.h>
 
 namespace sstmac {
 namespace hw {
@@ -60,6 +61,18 @@ struct unique_msg_id {
 
 }
 }
+
+START_SERIALIZATION_NAMESPACE
+template <>
+class serialize<sstmac::hw::unique_msg_id>
+{
+ public:
+  void
+  operator()(sstmac::hw::unique_msg_id& id, serializer& ser){
+    ser.primitive(id);
+  }
+};
+END_SERIALIZATION_NAMESPACE
 
 
 #if SPKT_HAVE_CPP11

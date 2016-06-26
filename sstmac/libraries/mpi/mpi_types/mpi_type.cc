@@ -152,8 +152,8 @@ mpi_type::init_primitive(const std::string &labelit, mpi_type* b1,
 }
 
 void
-mpi_type::init_vector(const std::string &labelit, mpi_type*base,
-                   int count, int block, int str, int comb)
+mpi_type::init_vector(const std::string &labelit, mpi_type* base,
+                   int count, int block, int str, bool in_elem, int comb)
 {
   if (base->id == -1){
     spkt_throw_printf(sprockit::value_error,

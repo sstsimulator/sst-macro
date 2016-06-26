@@ -6,7 +6,21 @@
 #include <sumi/rdma_interface.h>
 #include <sumi/serialization.h>
 
+START_SERIALIZATION_NAMESPACE
+template <>
+class serialize<sumi::public_buffer>
+{
+ public:
+  void
+  operator()(sumi::public_buffer& buf, serializer& ser){
+    ser.primitive(buf);
+  }
+};
+END_SERIALIZATION_NAMESPACE
+
 namespace sumi {
+
+
 
 class message :
   public sprockit::ptr_type,

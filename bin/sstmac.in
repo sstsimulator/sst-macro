@@ -1,8 +1,7 @@
 #! /usr/bin/env bash
 
 export PYTHONPATH=$PYTHONPATH:@prefix@/include/python:@prefix@/lib
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:@prefix@/lib
-export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:@prefix@/lib
+export SST_LIB_PATH=$SST_LIB_PATH:@prefix@/lib
 
 options="$@"
 @sst_prefix@/bin/sst @prefix@/include/python/default.py --model-options="$options"

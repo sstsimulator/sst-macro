@@ -62,7 +62,7 @@ class mpi_type
            int size, int comb, mpi_type_operator* o);
 
   void
-  init_vector(const std::string &labelit, mpi_type*base, int count,
+  init_vector(const std::string &labelit, mpi_type* base, int count,
            int block, int str, bool in_elem, int comb);
 
   void

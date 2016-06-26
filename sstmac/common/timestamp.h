@@ -15,6 +15,7 @@
 #include <iosfwd>
 #include <stdint.h>
 #include <iostream>
+#include <sstmac/common/serializable.h>
 
 namespace sstmac {
 
@@ -215,6 +216,18 @@ to_printf_type(timestamp t);
 
 
 } // end of namespace sstmac
+
+START_SERIALIZATION_NAMESPACE
+template <>
+class serialize<sstmac::timestamp>
+{
+ public:
+  void
+  operator()(sstmac::timestamp& t, serializer& ser){
+    ser.primitive(t);
+  }
+};
+END_SERIALIZATION_NAMESPACE
 
 #endif
 
