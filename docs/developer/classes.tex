@@ -7,9 +7,8 @@
 \subsection{Basic Class}
 Most classes are manually managed, being explicitly deleted.  Whenever possible,
 smart pointers should be avoided since they create thread-safety headaches.
-For compatibility with the Boost \inlinecode{intrusive_ptr} memory management system,
-some classes in \sstmacro can inherit from the top-level class \inlinecode{ptr_type}, 
-which exists in \inlinecode{namespace sstmac}. 
+Classes in \sstmacro can inherit from the top-level class \inlinecode{ptr_type}, 
+which exists in \inlinecode{namespace sprockit}. 
 The examples here can be found in the code repository in \inlineshell{tutorials/programming/basic}.
 
 To begin, you just need to include the appropriate header file, declare the namespace desired, and start the class declaration (see \inlineshell{illustration.h}).
@@ -344,22 +343,7 @@ init_factory_params(sprockit::sim_parameters* params);
 In general, constructors for factory types do no work.
 Reading parameters and initializing values happens entirely in this function.
 
-Optionally, in many cases, a factory type may want to clone itself directly without parameters.
 
-\begin{CppCode}
-virtual actor::ptr
-clone() const = 0;
-\end{CppCode}
-
-In this case, the class should have a protected function
-
-\begin{CppCode}
- protected:
-  void
-  clone_into(actor* cln) const;
-\end{CppCode}
-
-That does the work of initializing member variables in the clone object.
 The parent class has a single member variable
 
 \begin{CppCode}
@@ -489,28 +473,7 @@ mandy_patinkin::init_factory_params(sprockit::sim_parameters* params)
 }
 \end{CppCode}
 We are safe to throw exceptions here since we are not in the constructor.
-The child class must invoke the parent class method. For the clone functions, we have
-
-\begin{CppCode}
-actor::ptr
-mandy_patinkin::clone() const
-{
-  mandy_patinkin* cln = new mandy_patinkin;
-  clone_into(cln);
-  return cln;
-}
-
-void
-mandy_patinkin::clone_into(mandy_patinkin* cln) const
-{
-  cln->sword_hand_ = sword_hand_;
-  actor::clone_into(cln);
-}
-\end{CppCode}
-
-The child class must invoke the parent class method. From here it should be clear why we use a protected helper function.
-If a further subclass is created, it needs the parent function to complete a clone operation. 
-
+The child class must invoke the parent class method. 
 Finally, we specify the acting behavior
 
 \begin{CppCode}
@@ -526,7 +489,7 @@ Another example \inlineshell{guest.h} and \inlineshell{guest.cc} in the code fol
 
 \subsection{External Linkage}
 If you glance at the Makefile, you will see how and why the executable is created.
-A helper script points the makefile to the \sstmacro libraries, including a library \inlineshell{libsstmac_main} that actually implements the \inlinecode{main} routine and the \sstmacro driver.
+A compiler wrapper \inlineshell{sst++} points the makefile to the \sstmacro libraries, including a library \inlineshell{libsstmac_main} that actually implements the \inlinecode{main} routine and the \sstmacro driver.
 By creating another executable, arbitrary code can be linked together with the core \sstmacro framework.
 The same \sstmacro driver is invoked in the external executable as would be invoked by the default main executable.
 

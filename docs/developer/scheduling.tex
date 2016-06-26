@@ -41,24 +41,22 @@ Any pending events after 100 seconds are ignored and the simulation exits.
 \item The simulation runs out of events.  With nothing left to do, the simulation exits.
 \end{itemize}
 
-Event objects are an abstract class
+Events are stored in a queue (sorted by time)
 
 \begin{CppCode}
 namespace sstmac {
 
-class event
+class event_queue_entry
 {
  public:
   virtual void
   execute() = 0;
 
-  virtual event_loc_id
-  event_location() const = 0;
+  ...
 };
 \end{CppCode}
 
 The execute function is invoked by the \evmgr to run the underlying event.
-Every event must identify its location via the \inlinecode{event_loc_id} struct.
 There are generally two basic event types in \sstmacro, which we now introduce.
 
 \subsection{Event Handlers}
@@ -70,11 +68,11 @@ The only method that must be implemented is
 
 \begin{CppCode}
 void
-handle(sst_message* msg);
+handle(event* ev);
 \end{CppCode}
 The function is the common interface for numerous different operations from network injection to memory access to MPI operations.
 In general, objects have two ``directions'' for the action - send or receive.
-A NIC could ``handle'' a message by injecting it into the network or ``handle'' a message by reporting up the network stack the message has arrived.
+A NIC could ``handle'' a packet by injecting it into the network or ``handle'' a message by reporting up the network stack the message has arrived.
 In most cases, the handled message must therefore carry with it some notion of directionality or final destination.
 An event handler will therefore either process the message and delete the message, or, if that handler is not the final destination, forward it along.
 Some event handlers will only ever receive, such as a handler representing a blocking $MPI_Recv$ call.
@@ -86,17 +84,17 @@ In most cases, events are created by calling the function
 void
 schedule(const timestamp &t,
   event_handler* handler,
-  sst_message* msg);
+  event* ev);
 \end{CppCode}
 
-This then creates a class of type \inlinecode{handler_event}, for which the execute function is
+This then creates a class of type \inlinecode{event_queue_entry}, for which the execute function is
 
 \begin{CppCode}
 void
-handler_event::execute()
+handler_event_queue_entry::execute()
 {
   if (!canceled_) {
-    handler_->handle(msg_to_deliver_);
+    handler_->handle(ev_to_deliver_);
   }
 }
 \end{CppCode}
@@ -111,8 +109,8 @@ mpi_queue_recv_request* req = next_request();
 event* ev = new_event(this, &mpi_queue::start_recv, req);
 \end{CppCode}
 The new event macro takes as first argument an object and second argument a member function pointer to be invoked when the event is run.
-The remaining arguments are an arbitrary-length list of inputs of any type - they don't need to be messages. 
-These inputs should match the member function prototype. 
+The remaining arguments are an arbitrary-length list of parameters of any type - they don't need to be messages. 
+These parameters should match the member function prototype. 
 For example, the prototype
 
 \begin{CppCode}
@@ -126,9 +124,9 @@ takes a single \inlinecode{recv_request} object as input.
 This eases the programming burden in two ways.
 First, it avoids having to always create \evhandler types.
 Without template events, you would have to create a new class the inherits from \evhandler that performs a single, desired action.
-Second, it helps direct messages to the right place.  A single \evhandler might process many different types of messages or objects.
-If every message went to a single \inlinecode{handle} method, the handle method would need either a long if-else block or switch to sort messages.
-The message would also need to be dynamic cast to the correct type.
+Second, it helps direct messages to the right place.  A single \evhandler might process many different types of events or objects.
+If every event went to a single \inlinecode{handle} method, the handle method would need either a long if-else block or switch to sort messages.
+The event would also need to be dynamic cast to the correct type.
 By creating event functors, the message can be immediately directed to the correct type and correct action.
 
 For generic events, one must ensure the event is scheduled to the same node and does not cross any network boundaries.
@@ -140,20 +138,11 @@ The major distinction between different event containers is the data structured 
 The simplest data structure is an event heap or ordered event map.
 The event manager needs to always be processing the minimum event time, which maps naturally onto a min-heap structure.
 Insertion and removal are therefore log(N) operations where N is the number of currently scheduled events.
-In some cases where many short events are created, the log(N) overhead can actually become very expensive.
-The simulation may spend $\tfrac{1}{3}$ or $\tfrac{1}{2}$ of it's time just scheduling and ordering events.
 For most cases, the number and length of events is such that the min-heap is fine.
-
-\subsection{Event Calendar}
-For certain pathological cases, O(1) event scheduling and event processing is highly desirable.
-Rather than using a tree or heap to sort events, an array of bins (an event calendar) can be created.
-Based on the timestamp, an event is directly mapped to its corresponding bin.
-The array access is O(1).
-The price you pay is potentially needing a very large array to store the event calendar.
 
 \section{Event Schedulers}
 The simulation is partitioned into objects that are capable of scheduling events.
-Many \evscheduler objects are also \evhandler objects.
+\evscheduler objects are also \evhandler objects, although their handle methods might never be used.
 Common examples of \evscheduler objects are nodes, NICs, memory systems, or the operating system.
 In serial runs, an event scheduler is essentially just a wrapper for the \evmgr and the class is not strictly necessary.
 In parallel simulation, though, the simulation must be partitioned into different scheduling units.
