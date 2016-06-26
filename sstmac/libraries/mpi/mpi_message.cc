@@ -164,7 +164,10 @@ mpi_message::serialize_order(serializer& ser)
   ser & (ignore_seqnum_);
   ser & (bytes_);
   ser & (protocol_);
-  ser & (content_);
+
+  sstmac::payload* p = const_cast<sstmac::payload*>(content_.get());
+  ser & (p);
+  content_ = p;
 
   ser & buffer_;
   if (buffer_.eager && network_message::type() != network_message::rdma_get_request){

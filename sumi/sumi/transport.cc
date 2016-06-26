@@ -2,9 +2,13 @@
 #include <sumi/transport.h>
 #include <sumi/dynamic_tree_vote.h>
 #include <sumi/allreduce.h>
+#include <sumi/reduce.h>
 #include <sumi/allgather.h>
+#include <sumi/allgatherv.h>
 #include <sumi/domain.h>
 #include <sumi/bcast.h>
+#include <sumi/gather.h>
+#include <sumi/scatter.h>
 #include <sprockit/stl_string.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
@@ -434,9 +438,13 @@ transport::init_factory_params(sprockit::sim_parameters* params)
 
   lazy_watch_ = params->get_optional_bool_param("lazy_watch", true);
 
+  allgathervs_[0] = new bruckv_collective;
   allgathers_[0] = new bruck_collective;
   allreduces_[0] = new wilke_halving_allreduce;
   bcasts_[0] = new binary_tree_bcast_collective;
+  gathers_[0] = new btree_gather;
+  reduces_[0] = new wilke_halving_reduce;
+  scatters_[0] = new btree_scatter;
 }
 
 void
@@ -621,6 +629,7 @@ transport::validate_collective(collective::type_t ty, int tag)
 void
 transport::start_collective(collective* coll)
 {
+  coll->init_actors();
   int tag = coll->tag();
   collective::type_t ty = coll->type();
   START_COLLECTIVE_FUNCTION();
@@ -679,15 +688,15 @@ transport::deadlock_check()
 dag_collective*
 transport::build_collective(collective::type_t ty,
   std::map<int,dag_collective*>& algorithms,
+  domain* dom,
   void* dst, void *src,
   int nelems, int type_size,
   int tag,
   bool fault_aware,
-  int context, domain* dom,
-  reduce_fxn fxn)
+  int context)
 {
-  CHECK_IF_I_AM_DEAD(return 0);
   if (dom == 0) dom = global_domain_;
+
   if (dom->nproc() == 1){
     if (dst && src && (dst != src)){
       ::memcpy(dst, src, nelems*type_size);
@@ -698,9 +707,7 @@ transport::build_collective(collective::type_t ty,
     handle(dmsg);
     return 0; //null indicates no work to do
   }
-
   dag_collective* coll = pick_collective(ty, type_size*nelems, algorithms);
-  coll->init_reduce(fxn); //probably does nothing
   coll->init(ty, this, dom, dst, src, nelems, type_size, tag, fault_aware, context);
   return coll;
 }
@@ -708,29 +715,81 @@ transport::build_collective(collective::type_t ty,
 void
 transport::allreduce(void* dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn, bool fault_aware, int context, domain* dom)
 {
-  dag_collective* coll = build_collective(collective::allreduce, allreduces_,
-    dst, src, nelems, type_size, tag, fault_aware, context, dom, fxn);
+  dag_collective* coll = build_collective(collective::allreduce, allreduces_, dom, dst, src, nelems, type_size, tag, fault_aware, context);
+  if (coll){
+    coll->init_reduce(fxn);
+    start_collective(coll);
+  }
+}
+
+void
+transport::reduce(int root, void* dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn, bool fault_aware, int context, domain* dom)
+{
+  dag_collective* coll = build_collective(collective::reduce, reduces_, dom, dst, src, nelems, type_size, tag, fault_aware, context);
+  if (coll){
+    coll->init_root(root);
+    coll->init_reduce(fxn);
+    start_collective(coll);
+  }
+}
+
+void
+transport::bcast(int root, void *buf, int nelems, int type_size, int tag, bool fault_aware, int context, domain* dom)
+{
+  dag_collective* coll = build_collective(collective::bcast, bcasts_, dom, buf, buf, nelems, type_size, tag, fault_aware, context);
+  if (coll){
+    coll->init_root(root);
+    start_collective(coll);
+  }
+}
+
+void
+transport::gather(int root, void *dst, void *src, int nelems, int type_size, int tag, bool fault_aware, int context, domain* dom)
+{
+  dag_collective* coll = build_collective(collective::gather, gathers_, dom, dst, src, nelems, type_size, tag, fault_aware, context);
+  if (coll){
+    coll->init_root(root);
+    start_collective(coll);
+  }
+}
+
+void
+transport::scatter(int root, void *dst, void *src, int nelems, int type_size, int tag, bool fault_aware, int context, domain* dom)
+{
+  dag_collective* coll = build_collective(collective::scatter, scatters_, dom, dst, src, nelems, type_size, tag, fault_aware, context);
+  if (coll){
+    coll->init_root(root);
+    start_collective(coll);
+  }
+}
+
+void
+transport::allgather(void *dst, void *src, int nelems, int type_size, int tag, bool fault_aware, int context, domain* dom)
+{
+  dag_collective* coll = build_collective(collective::allgather, allgathers_, dom, dst, src, nelems, type_size, tag, fault_aware, context);
   if (coll){
     start_collective(coll);
   }
 }
 
 void
-transport::bcast(void *buf, int nelems, int type_size, int tag, bool fault_aware, int context, domain* dom)
+transport::allgatherv(void *dst, void *src, int* recv_counts, int type_size, int tag, bool fault_aware, int context, domain* dom)
 {
-  dag_collective* coll = build_collective(collective::bcast, bcasts_,
-    buf, buf, nelems, type_size, tag, fault_aware, context, dom);
-  if (coll)
+  //for the time being, ignore size and use the small-message algorithm
+  dag_collective* coll = build_collective(collective::allgatherv, allgathervs_, dom, dst, src, 0, type_size, tag, fault_aware, context);
+  if (coll){
+    coll->init_recv_counts(recv_counts);
     start_collective(coll);
+  }
 }
 
 void
-transport::allgather(void *dst, void *src, int nelems, int type_size, int tag, bool fault_aware, int context, domain* dom)
+transport::barrier(int tag, bool fault_aware, domain* dom)
 {
-  dag_collective* coll = build_collective(collective::allgather, allgathers_,
-    dst, src, nelems, type_size, tag, fault_aware, context, dom);
-  if (coll)
+  dag_collective* coll = build_collective(collective::barrier, allgathers_, dom, 0, 0, 0, 0, tag, fault_aware, options::initial_context);
+  if (coll){
     start_collective(coll);
+  }
 }
 
 void
@@ -774,14 +833,7 @@ transport::finish_collective(collective* coll, const collective_done_message::pt
     failed_ranks_.to_string().c_str());
 }
 
-void
-transport::barrier(int tag, bool fault_aware, domain* dom)
-{
-  //use a zero-size allgather to execute the barrier
-  dag_collective* coll = build_collective(collective::barrier, allgathers_,
-    0, 0, 0, 0, tag, fault_aware, options::initial_context, dom);
-  if (coll) start_collective(coll);
-}
+
 
 static const thread_safe_set<int> empty_set;
 

@@ -342,5 +342,17 @@ class mpi_message :
 }
 } // end of namespace sstmac.
 
+START_SERIALIZATION_NAMESPACE
+template <>
+class serialize<sstmac::sw::mpi_buffer>
+{
+ public:
+  void
+  operator()(sstmac::sw::mpi_buffer& buf, serializer& ser){
+    ser.primitive(buf);
+  }
+};
+END_SERIALIZATION_NAMESPACE
+
 #endif
 

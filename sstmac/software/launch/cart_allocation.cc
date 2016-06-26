@@ -58,6 +58,14 @@ void
 cart_allocation::set_topology(hw::topology *top)
 {
   regtop_ = safe_cast(hw::structured_topology, top);
+  int ndims = regtop_->ndimensions();
+  //add extra dimension for concentration
+  if (regtop_->concentration(switch_id(0))) ++ndims;
+  if (sizes_.size() != ndims){
+    spkt_throw_printf(sprockit::value_error,
+       "topology ndims does not match cart_allocation: %d != %d",
+       sizes_.size(), ndims);
+  }
 }
 
 void

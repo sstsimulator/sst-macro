@@ -2,6 +2,7 @@
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
 #include <sumi-mpi/mpi_queue/mpi_queue_recv_request.h>
 #include <sstmac/software/process/backtrace.h>
+#include <sumi-mpi/mpi_api.h>
 
 namespace sumi {
 
@@ -49,11 +50,11 @@ rendezvous_get::incoming_payload(mpi_queue* queue,
   mpi_queue::pending_req_map::iterator it = queue->recv_needs_payload_.find(
         msg->unique_int());
   if (it == queue->recv_needs_payload_.end()) {
+    int rank; queue->api_->comm_rank(MPI_COMM_WORLD, &rank);
     spkt_throw_printf(sprockit::illformed_error,
-                     "mpi_queue[%s]: rendezvous_get::handle_payload: "
+                     "mpi_queue[%d]: rendezvous_get::handle_payload: "
                      "data message without a matching ack on %s",
-                     queue->id_string().c_str(),
-                     msg->to_string().c_str());
+                     rank, msg->to_string().c_str());
   }
   mpi_queue_recv_request* recver = it->second;
   queue->recv_needs_payload_.erase(it);

@@ -47,7 +47,8 @@ class simple_nic :
     int src_outport,
     int dst_inport,
     connection_type_t ty,
-    connectable* mod);
+    connectable* mod,
+    config* cfg);
 
   virtual std::string
   to_string() const {
@@ -57,6 +58,11 @@ class simple_nic :
   timestamp
   injection_latency() const {
     return inj_lat_;
+  }
+
+  double
+  injection_bandwidth() const {
+    return 1.0/inj_bw_inverse_;
   }
 
  protected:

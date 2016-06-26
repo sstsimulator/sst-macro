@@ -1,12 +1,3 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
-/*      Warning - this test will fail for MPI_PROD & maybe MPI_SUM
- *        if more than 10 MPI processes are used.  Loss of precision
- *        will occur as the number of processors is increased.
- */
 
 #include <sstmac/replacements/mpi.h>
 #include "mpitest.h"

@@ -22,6 +22,21 @@ mpi_api::send(const void *buf, int count, MPI_Datatype datatype, int dest, int t
 }
 
 int
+mpi_api::sendrecv(const void *sendbuf, int sendcount,
+ MPI_Datatype sendtype, int dest, int sendtag,
+ void *recvbuf, int recvcount,
+ MPI_Datatype recvtype, int source, int recvtag,
+ MPI_Comm comm, MPI_Status *status)
+{
+  MPI_Request recvreq, sendreq;
+  isend(sendbuf, sendcount, sendtype, dest, sendtag, comm, &sendreq);
+  irecv(recvbuf, recvcount, recvtype, source, recvtag, comm, &recvreq);
+  wait(&sendreq, MPI_STATUS_IGNORE);
+  wait(&recvreq, status);
+  return MPI_SUCCESS;
+}
+
+int
 mpi_api::isend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request)
 {
   SSTMACBacktrace("MPI_Isend");

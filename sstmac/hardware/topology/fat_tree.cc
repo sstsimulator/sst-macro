@@ -61,18 +61,6 @@ abstract_fat_tree::init_factory_params(sprockit::sim_parameters *params)
    */
   toplevel_ = l_ - 1;
   numleafswitches_ = pow(k_, l_ - 1);
-
-  if (params->has_param("tapering")){
-    params->get_vector_param("tapering", tapering_);
-  } else {
-    tapering_.resize(toplevel_, 1.0);
-  }
-
-  if (tapering_.size() != toplevel_){
-    spkt_throw_printf(sprockit::value_error,
-      "fat_tree::tapering array of size %d is not of correct size %d",
-      tapering_.size(), toplevel_);
-  }
 }
 
 void
@@ -112,7 +100,6 @@ fat_tree::init_factory_params(sprockit::sim_parameters* params)
 {
   abstract_fat_tree::init_factory_params(params);
 
-  toplevel_id_start_ = numleafswitches_ * (l_ - 1);
   max_ports_injection_ = endpoints_per_switch_ = params->get_optional_int_param("concentration", k_);
   max_ports_intra_network_ = 2*k_;
   eject_geometric_id_ = max_ports_intra_network_;
@@ -132,197 +119,82 @@ fat_tree::productive_path(
     "productive outports are determined differently from other topologies");
 }
 
-void
-fat_tree::connect_group(
-  internal_connectable_map& objects,
-  int group_stride,
-  int down_group_size,
-  long down_group_offset,
-  int up_group_size,
-  long up_group_offset,
-  double bw_multiplier)
+int
+fat_tree::upColumnConnection(int k, int myColumn, int upPort, int myBranchSize)
 {
-  int red = 1;
-  long down_partner = down_group_offset;
-  
-  //total hack for now to taper bandwidth when appropriate
-  //
-
-  top_debug("fat tree: connecting group stride=%d down_size=%d down_offset=%d up_size=%d up_offset=%d",
-       group_stride,
-       down_group_size, down_group_offset,
-       up_group_size, up_group_offset);
-  
-  for (int d=0; d < down_group_size; ++d, down_partner += group_stride) {
-    switch_id down_addr(down_partner);
-    connectable* down_switch = objects[down_addr];
-
-    long up_partner = up_group_offset;
-    for (int u=0; u < up_group_size; ++u, up_partner += group_stride) {
-      // the top level is a little bit weird
-      // we only have half the number of switches on the top level
-      // the 1/2 number of switches sort of simulates a full level
-      // because it only connects downward and has no up connections
-      long actual_up_partner = up_partner;
-      int port_offset = 0;
-      if (up_partner >= toplevel_id_start_) {
-        //in an l=3,k=2 tree for example
-        //switch 8 connects as if it were both switch 8 and 9
-        //switch 9 connects as if it were both switch 9 and 10
-        long level_id = up_partner - toplevel_id_start_;
-        actual_up_partner = (level_id / 2) + toplevel_id_start_;
-        port_offset = k_ * (level_id % 2);
-      }
-      switch_id up_addr(actual_up_partner);
-      connectable* up_switch = objects[up_addr];
-
-      int up_port = convert_to_port(up_dimension, u);
-      int down_port = convert_to_port(down_dimension, d + port_offset);
-
-      top_debug("fattree: connecting up=(%d,%d) to down=(%d,%d) on port_offset=%d",
-              u, up_port, d, down_port, port_offset);
-
-      down_switch->connect_weighted(
-        up_port, //up is out and down is in... got it!??!
-        down_port,
-        connectable::output,
-        up_switch,
-        bw_multiplier, red); // up
-      up_switch->connect(
-        up_port,
-        down_port,
-        connectable::input,
-        down_switch);
-
-      up_switch->connect_weighted(
-        down_port, //down is out and up is in... got it?!?
-        up_port,
-        connectable::output,
-        down_switch,
-        bw_multiplier, red); //down
-      down_switch->connect(
-        down_port,
-        up_port,
-        connectable::input,
-        up_switch);
-
-      top_debug("fat tree: connection %ld:%d:(up,%d) <-> %ld:%d:(down,%d)",
-         down_partner, up_port, u,
-         actual_up_partner, down_port, d + port_offset);
-
-    }
-  }
+  upPort = upPort % k;
+  int myReplicaID = myColumn % myBranchSize;
+  int portStride = myBranchSize;
+  int upBranchSize = myBranchSize*k;
+  int myVirtualBranch = myColumn/myBranchSize;
+  int upVirtualBranch = myVirtualBranch/k;
+  int ret = upVirtualBranch*upBranchSize + upPort*portStride + myReplicaID;
+  //printf("(c=%d,vc=%d,p=%d)->(c=%d,vc=%d)",
+  //     myColumn, myVirtualColumn, upPort, ret, upVirtualColumn);
+  return ret;
 }
 
-void
-fat_tree::connect_section(
-  internal_connectable_map& objects,
-  int group_stride,
-  int num_groups_per_section,
-  int down_group_size,
-  long down_section_offset,
-  int up_group_size,
-  long up_section_offset,
-  double bw_multiplier
-)
+int
+fat_tree::downColumnConnection(int k, int myColumn, int downPort, int myBranchSize)
 {
-  for (int grp=0; grp < num_groups_per_section; ++grp) {
-    long up_group_offset = up_section_offset + grp;
-    long down_group_offset = down_section_offset + grp;
-    connect_group(objects, group_stride,
-                  down_group_size, down_group_offset,
-                  up_group_size, up_group_offset,
-                  bw_multiplier);
-  }
+  downPort = downPort % k;
+  int myVirtualBranch = myColumn / myBranchSize;
+  int myReplicaID = myColumn % myBranchSize;
+  int lowerBranchSize = myBranchSize / k;
+  int lowerReplicaID = myReplicaID % lowerBranchSize;
+  return myVirtualBranch*k + downPort*lowerBranchSize + lowerReplicaID;
 }
 
 void
 fat_tree::connect_objects(internal_connectable_map& objects)
 {
-  long level_size = numleafswitches_;
-  int group_size = k_;
-  int group_stride = 1;
-  long down_level_start = 0;
-  long up_level_start = numleafswitches_;
+  connectable::config cfg;
+  cfg.ty = connectable::BasicConnection;
 
-  /**
-  Consider an l=4, k=2 tree
-  On L=0, we have
-  0 <-> 8 <-> 1
-  0 <-> 9 <-> 1
-  2 <-> 10 <-> 3
-  2 <-> 11 <-> 3
-  Etc...
-  6 <-> 15 <-> 7
-  This level is divided into 4 sections/4 groups
-  {0,1,8,9} form one connection group/section
-  {2,3,10,11} form another connection group/section, etc
+  int branchSize = 1;
+  int maxLevel = l_ - 2;
+  for (int row=0; row <= maxLevel; ++row){
+    int nColumns = numleafswitches_;
+    for (int col=0; col < nColumns; ++col){
+      int lower_id = switch_at_row_col(row, col);
+      connectable* lower_switch = objects[switch_id(lower_id)];
+      int myBranch = col / branchSize;
+      for (int k=0; k < k_; ++k){
+        int upColumn = upColumnConnection(k_, col, k, branchSize);
+        int upper_id = switch_at_row_col(row+1,upColumn);
 
-  On L=1, we have
-  8 <-> 16 <-> 10
-  8 <-> 18 <-> 10
-  9 <-> 17 <-> 11
-  9 <-> 19 <-> 11
-  ---
-  12 <-> 20 <-> 14
-  12 <-> 22 <-> 14
-  13 <-> 21 <-> 15
-  13 <-> 23 <-> 15
-  This level is divided into 2 sections/4 groups. Even switches
-  8,9 do connect to the same switches, their links "cross"
-  putting them into the same tree "cross" section
-  {8,9,19,11,16,17,18,19} form a connection section
-        {8,10,16,18} form a connection group
-        {9,11,17,19} form another connection group
-  {12,13,14,15,20,21,22,23} for a connection section
-        {12,14,20,22} form a connection group
-        {13,15,21,23} form another connection group
+        int up_port = convert_to_port(up_dimension, k);
+        int down_port = convert_to_port(down_dimension, myBranch % k_);
 
-  For L=3, the top level, we have
-  16 <-> 24* <-> 20
-  16 <-> 28* <-> 20
-  17 <-> 25* <-> 21
-  17 <-> 29* <-> 21
-  18 <-> 26* <-> 22
-  18 <-> 30* <-> 22
-  19 <-> 27* <-> 23
-  19 <-> 31* <-> 23
-  The level is now all one section (all switches have cross links)
-  We still have 4 groups.
-  Switches 24-31 have an asterisk indicating it's actually just
-  a 'virtual' label.  The top level only has 4 switches, not 8.
-  We only need 4 switches because top level switches can use all
-  2*k ports for down connection.  Thus, each top level switch
-  performs the role of two 'virtual' switches.
-  Switch 24 actually performs the virtual role 24,25
-  Switch 25 actually performs the virtual role 26,27
-  Thus, the actual set of connections is
-  16 <-> 24 <-> 20
-  16 <-> 26 <-> 20
-  17 <-> 24 <-> 21
-  17 <-> 26 <-> 21
-  18 <-> 25 <-> 22
-  18 <-> 27 <-> 22
-  19 <-> 25 <-> 23
-  19 <-> 27 <-> 23
-  */
-  for (int l = 0; l < toplevel_; l++) {
-    int num_tree_sections = level_size / group_stride / k_;
-    int section_size = level_size / num_tree_sections;
-    int num_groups = level_size / group_size;
-    int num_groups_per_section = num_groups / num_tree_sections;
-    for (int secnum=0; secnum < num_tree_sections; ++secnum) {
-      long up_section_offset = up_level_start + section_size * secnum;
-      long down_section_offset = down_level_start + section_size * secnum;
-      connect_section(objects, group_stride,
-                      num_groups_per_section,
-                      group_size, down_section_offset,
-                      group_size, up_section_offset,
-                      tapering_.at(l));
+        top_debug("fattree: connecting up=(%d,%d:%d) to down=(%d,%d:%d)",
+                row, col, up_port, row+1, upColumn, down_port);
+
+        connectable* upper_switch = objects[switch_id(upper_id)];
+
+        lower_switch->connect(
+          up_port, //up is out and down is in... got it!??!
+          down_port,
+          connectable::output,
+          upper_switch, &cfg);
+        upper_switch->connect(
+          up_port,
+          down_port,
+          connectable::input,
+          lower_switch, &cfg);
+
+        upper_switch->connect(
+          down_port, //down is out and up is in... got it?!?
+          up_port,
+          connectable::output,
+          lower_switch, &cfg);
+        lower_switch->connect(
+          down_port,
+          up_port,
+          connectable::input,
+          upper_switch, &cfg);
+      }
     }
-    down_level_start += numleafswitches_;
-    up_level_start += numleafswitches_;
-    group_stride *= k_;
+    branchSize *= k_;
   }
 }
 
@@ -335,62 +207,18 @@ fat_tree::configure_vc_routing(std::map<routing::algorithm_t, int> &m) const
 switch_id
 fat_tree::switch_number(const coordinates &coords) const
 {
-  long levels_down = coords[0];
-  if (levels_down == 0) {
-    long my_col = coords[1];
-    //we have l - 1 rows of numleafswitches
-    //before getting to my row
-    long uid = (l_ - 1) * numleafswitches_ + my_col;
-    return switch_id(uid);
-  }
-
-  long branch_offset = 0;
-  long router_degeneracy = numleafswitches_ / k_;
-  for (int i=1; i <= levels_down; ++i) {
-    long offset_increment = coords[i] * router_degeneracy;
-    branch_offset += offset_increment;
-    router_degeneracy /= k_;
-  }
-  long replicate_num = coords[levels_down+1];
-  long levels_up = l_ - 1 - levels_down;
-  long sid = branch_offset + replicate_num + levels_up * numleafswitches_;
-  return switch_id(sid);
+  int row = coords[0];
+  int col = coords[1];
+  return row*numleafswitches_ + col;
 }
 
 void
 fat_tree::compute_switch_coords(switch_id uid, coordinates& coords) const
 {
-  // first we indicate which level of the tree
-  int levels_up = uid / numleafswitches_;
-  int levels_down = l_ - 1 - levels_up;
-  long my_col = uid % numleafswitches_;
-  if (levels_down == 0) {
-    coords[0] = 0;
-    coords[1] = my_col;
-    coords.resize(2);
-    return;
-  }
-
-  // first coordinate indicates the level counting top-down
-  // second set of coordinates indicates each branch taken on the way down
-  // final coordinate indicates which "replicate" this switch is
-  // a "virtual" fat-tree switch is implemented via multiple commodity switches
-  int num_coords = 1 + levels_down + 1;
-  coords.resize(num_coords);
-  coords[0] = levels_down;
-  long router_degeneracy = numleafswitches_ / k_;
-  long replicate_num = 0;
-  long branch_offset = 0;
-  for (int lvl=1; lvl <= levels_down; ++lvl) {
-    //figure out which branch to take
-    long idx = my_col - branch_offset;
-    long branch = idx / router_degeneracy;
-    coords[lvl] = branch;
-    replicate_num = idx % router_degeneracy;
-    branch_offset += branch*router_degeneracy;
-    router_degeneracy /= k_;
-  }
-  coords[levels_down+1] = replicate_num;
+  int row = uid / numleafswitches_;
+  int col = uid % numleafswitches_;
+  coords[0] = row;
+  coords[1] = col;
 }
 
 void
@@ -406,19 +234,26 @@ coordinates
 fat_tree::neighbor_at_port(switch_id sid, int port)
 {
   coordinates my_coords = switch_coords(sid);
-  if (port < 0)
+  if (is_injection_port(port)){
     return my_coords;
+  }
 
+  int row = my_coords[0];
+  int col = my_coords[1];
   int dir = port % k_;
   int dim = port / k_;
-  int ncoords = my_coords.size();
+
+  int branchSize = 1;
+  for (int l=0; l < row; ++l){
+    branchSize *= k_;
+  }
+
   if (dim == up_dimension){
-    my_coords[0] -=1;
-    my_coords.resize(ncoords-1); //just truncate by 1
-    my_coords[ncoords-2] = dir;
+    my_coords[0] = row+1;
+    my_coords[1] = upColumnConnection(k_, col, port, branchSize);
   } else {
-    my_coords[0] += 1;
-    my_coords.push_back(dir);
+    my_coords[0] = row-1;
+    my_coords[1] = downColumnConnection(k_, col, port, branchSize);
   }
   return my_coords;
 }
@@ -433,32 +268,25 @@ int
 fat_tree::minimal_distance(const coordinates &src_coords,
                            const coordinates &dest_coords) const
 {
-  //can we go straight down? or do we need to go up
-  //first coordinate is the number of levels down
-  int smallest_depth = std::min(src_coords[0], dest_coords[0]);
-  //find the largest index that differs
-  int num_branches_different = 0;
-  for (int i=smallest_depth; i >= 1; --i) {
-    if (src_coords[i] != dest_coords[i]) {
-      num_branches_different = smallest_depth - i + 1;
-    }
+  int srcRow = src_coords[0];
+  int dstRow = dest_coords[0];
+  int startRow = std::min(srcRow, dstRow);
+  int branchSize = pow(k_, startRow);
+  int srcCol = src_coords[1];
+  int dstCol = dest_coords[1];
+  int srcBranch = srcCol / branchSize;
+  int dstBranch = dstCol / branchSize;
+  int stopRow = startRow;
+  //keep going up until these land in the same branch
+  while (srcBranch != dstBranch){
+    branchSize *= k_;
+    srcBranch = srcCol / branchSize;
+    dstBranch = dstCol / branchSize;
+    ++stopRow;
   }
 
-  int csize = src_coords.size();
-  int dsize = dest_coords.size();
-  if (num_branches_different == 0 && csize == dsize) {
-    //we might be on the same branch, but
-    //we might be different replicate numbers
-    int lastidx = csize - 1;
-    //if different, two hops are needed
-    //one up, then one back down to correct replicate number
-    return src_coords[lastidx] == dest_coords[lastidx] ? 0 : 2;
-  }
-  else {
-    // we need to go up and back down max_idx steps
-    // then fill out the difference
-    return 2*num_branches_different + abs(csize - dsize);
-  }
+  int distance = (stopRow - srcRow)  + (stopRow - dstRow);
+  return distance;
 }
 
 void
@@ -585,6 +413,19 @@ simple_fat_tree::init_factory_params(sprockit::sim_parameters *params)
             num_switches_, l_);
   max_ports_injection_ = endpoints_per_switch_ = params->get_optional_int_param("concentration", k_);
   max_ports_intra_network_ = k_ + 1;
+
+  if (params->has_param("tapering")){
+    params->get_vector_param("tapering", tapering_);
+  } else {
+    tapering_.resize(toplevel_, 1.0);
+  }
+
+  if (tapering_.size() != toplevel_){
+    spkt_throw_printf(sprockit::value_error,
+      "fat_tree::tapering array of size %d is not of correct size %d",
+      tapering_.size(), toplevel_);
+  }
+
   structured_topology::init_factory_params(params);
 }
 
@@ -592,8 +433,9 @@ void
 simple_fat_tree::connect_objects(internal_connectable_map &switches)
 {
   int nswitches = numleafswitches_;
-  int bw_multiplier = 1;
-  double red = 1.0;
+  connectable::config cfg;
+  cfg.ty = connectable::WeightedConnection;
+  double bw_multiplier = 1.0;
   int stopLevel = l_ - 1;
   for (int l=0; l < stopLevel; ++l){
     int down_offset = level_offsets_[l];
@@ -604,7 +446,8 @@ simple_fat_tree::connect_objects(internal_connectable_map &switches)
       int up_id = up_offset + s/k_;
       connectable* down_switch = switches[switch_id(down_id)];
       connectable* up_switch = switches[switch_id(up_id)];
-      double link_weight = bw_multiplier * tapering;
+      cfg.link_weight = bw_multiplier * tapering;
+      cfg.xbar_weight = bw_multiplier;
 
       int down_switch_outport = k_;
       int down_switch_inport = down_switch_outport;
@@ -617,17 +460,19 @@ simple_fat_tree::connect_objects(internal_connectable_map &switches)
        up_id, s/k_, up_switch_inport,
        l, l+1, bw_multiplier, tapering);
 
-      down_switch->connect_weighted(
+      cfg.src_buffer_weight = bw_multiplier;
+      cfg.dst_buffer_weight = bw_multiplier*k_;
+      down_switch->connect(
         down_switch_outport,
         up_switch_inport,
         connectable::output,
-        up_switch,
-        link_weight, red); // up
+        up_switch, &cfg);
+      cfg.xbar_weight = bw_multiplier*k_;
       up_switch->connect(
         down_switch_outport,
         up_switch_inport,
         connectable::input,
-        down_switch);
+        down_switch, &cfg);
 
       top_debug(
        "Connecting %d(%d):%d->%d(%d):%d between levels %d,%d with multiplier=%d, tapering=%12.8f",
@@ -635,17 +480,19 @@ simple_fat_tree::connect_objects(internal_connectable_map &switches)
        down_id, s, down_switch_inport,
        l, l+1, bw_multiplier, tapering);
 
-      up_switch->connect_weighted(
+      cfg.src_buffer_weight = bw_multiplier*k_;
+      cfg.dst_buffer_weight = bw_multiplier;
+      up_switch->connect(
         up_switch_outport,
         down_switch_inport,
         connectable::output,
-        down_switch,
-        link_weight, red); //down
+        down_switch, &cfg);
+      cfg.xbar_weight = bw_multiplier;
       down_switch->connect(
         up_switch_outport,
         down_switch_inport,
         connectable::input,
-        up_switch);
+        up_switch, &cfg);
 
     }
     nswitches /= k_;

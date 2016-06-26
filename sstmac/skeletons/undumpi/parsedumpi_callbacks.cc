@@ -2172,7 +2172,6 @@ on_MPI_Scatterv(const dumpi_scatterv *prm, uint16_t thread,
                          cb->get_mpiid(prm->root),
                          cb->get_mpicomm(prm->comm));
   cb->end_mpi(cpu, wall, perf);
-  cb->end_mpi(cpu, wall, perf);
   return 1;
 }
 

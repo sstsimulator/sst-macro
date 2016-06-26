@@ -27,7 +27,6 @@ mpi_type::mpi_type() :
   contiguous_(true),
   type_(NONE),
   size_(-1),
-  combiner_(-1),
   pdata_(0),
   idata_(0),
   vdata_(0)
@@ -89,13 +88,9 @@ mpi_type::delete_statics()
 }
 
 void
-mpi_type::init_primitive(const char* labelit, const int sizeit, int align, int comb)
+mpi_type::init_primitive(const char* labelit, const int sizeit, int comb)
 {
   extent_ = sizeit;
-  numints_ = 0;
-  numaddr_ = 0;
-  numdtype_ = 1;
-  combiner_ = comb;
   size_ = sizeit;
   type_ = PRIM;
   label = labelit;
@@ -105,24 +100,18 @@ mpi_type::init_primitive(const char* labelit, const int sizeit, int align, int c
 // MPI datatypes.
 //
 void
-mpi_type::init_primitive(const std::string& labelit, const int sizeit, int align,
-                   int comb)
+mpi_type::init_primitive(const std::string& labelit, const int sizeit, int align)
 {
-  init_primitive(labelit.c_str(), sizeit, align, comb);
+  init_primitive(labelit.c_str(), sizeit, align);
 }
 
 void
-mpi_type::init_primitive(const char* labelit, mpi_type* b1,
-                   mpi_type* b2, int s, int comb)
+mpi_type::init_primitive(const char* labelit, mpi_type* b1, mpi_type* b2, int s)
 {
   label = labelit;
   type_ = PAIR;
   extent_ = s;
   size_ = b1->size_ + b2->size_;
-  numints_ = 0;
-  numaddr_ = 0;
-  numdtype_ = 1;
-  combiner_ = comb;
   pdata_ = new pairdata;
   pdata_->base1 = b1;
   pdata_->base2 = b2;
@@ -130,14 +119,14 @@ mpi_type::init_primitive(const char* labelit, mpi_type* b1,
 
 void
 mpi_type::init_primitive(const std::string &labelit, mpi_type* b1,
-                   mpi_type* b2, int s, int comb)
+                   mpi_type* b2, int s)
 {
-  init_primitive(labelit.c_str(), b1, b2, s, comb);
+  init_primitive(labelit.c_str(), b1, b2, s);
 }
 
 void
 mpi_type::init_vector(const std::string &labelit, mpi_type* base,
-                   int count, int block, int str, bool in_elem, int comb)
+                   int count, int block, int str)
 {
   if (base->id == -1){
     spkt_throw_printf(sprockit::value_error,
@@ -151,36 +140,27 @@ mpi_type::init_vector(const std::string &labelit, mpi_type* base,
   vdata_->base = base;
   vdata_->count = count;
   vdata_->blocklen = (block);
-  if (in_elem) {
-    vdata_->stride = (str) * base->extent();
-  }
-  else {
-    vdata_->stride = str;
-  }
+  vdata_->stride = str;
 
-  extent_ = (count - 1) * abs(vdata_->stride) + base->extent_;
+  extent_ = str * base->extent_;
   size_ = count * block * base->size_;
 
-  numints_ = 3;
-  numaddr_ = 0;
-  numdtype_ = 1;
-  combiner_ = comb;
+  if (str < (count*block)){
+    spkt_throw_printf(sprockit::value_error,
+      "vector stride=%d must be at least as big as count*block=%d",
+      str, count*block);
+  }
 }
 
 void
 mpi_type::init_indexed(const std::string &labelit,
-                   inddata* dat, int sz, int ext, int numint,
-                   int numdtype, int comb)
+                   inddata* dat, int sz, int ext)
 {
   label = labelit;
   type_ = IND;
   size_ = sz;
   extent_ = ext;
-  numints_ = numint;
-  numdtype_ = numdtype;
   idata_ = dat;
-  numaddr_ = 0;
-  combiner_ = comb;
 }
 
 mpi_type::~mpi_type()
@@ -188,79 +168,6 @@ mpi_type::~mpi_type()
  if (idata_) delete idata_;
  if (vdata_) delete vdata_;
  if (pdata_) delete pdata_;
-}
-
-int
-mpi_type::lb() const
-{
-  if (type_ == PRIM || type_ == PAIR) {
-    return 0;
-  }
-  else if (type_ == VEC) {
-    return vdata_->base->lb();
-  }
-  else if (type_ == IND) {
-    return idata_->lb;
-  }
-  else {
-    spkt_throw_printf(sprockit::value_error, "mpitype::get_lb - unknown type category");
-  }
-}
-
-int
-mpi_type::true_lb() const
-{
-  if (type_ == PRIM || type_ == PAIR || type_ == VEC) {
-    return 0;
-  }
-  else if (type_ == IND) {
-    return idata_->mindisp;
-  }
-  else {
-    spkt_throw_printf(sprockit::value_error, "mpitype::get_lb - unknown type category");
-  }
-}
-
-int
-mpi_type::ub() const
-{
-  if (type_ == PRIM || type_ == PAIR || type_ == VEC) {
-    return extent_;
-  }
-  else if (type_ == IND) {
-    return idata_->ub;
-  }
-  else {
-    spkt_throw_printf(sprockit::value_error, "mpitype::get_lb - unknown type category");
-  }
-}
-
-int
-mpi_type::extent() const
-{
-  if (type_ == PRIM || type_ == PAIR || type_ == VEC) {
-    return extent_;
-  }
-  else if (type_ == IND) {
-    return idata_->ub - idata_->lb;
-  }
-  else {
-    spkt_throw_printf(sprockit::value_error, "mpitype::get_lb - unknown type category");
-  }
-}
-
-int
-mpi_type::true_extent() const
-{
-  if (type_ == PRIM || type_ == PAIR || type_ == VEC) {
-    return extent_;
-  }
-  else if (type_ == IND) {
-    return idata_->maxbyte - idata_->mindisp;
-  }
-  else {
-    spkt_throw_printf(sprockit::value_error, "mpitype::get_lb - unknown type category");
-  }
 }
 
 int
@@ -338,53 +245,6 @@ mpi_type::bytes_to_elements(size_t bytes) const
                    "mpitype::bytes_to_elements: invalid type %d",
                    type_);
   return 0;
-}
-
-void
-mpi_type::envelope(int* numint, int* numaddr, int* numdtype, int* comb)
-{
-  *comb = combiner_;
-  *numint = numints_;
-  *numaddr = numaddr_;
-  *numdtype = numdtype_;
-}
-
-void
-mpi_type::contents(int* ints, int* addr, long* dtypes)
-{
-  if (type_ == PRIM || type_ == PAIR) {
-    dtypes[0] = id;
-  }
-  else if (type_ == VEC) {
-    ints[0] = vdata_->count;
-    ints[1] = vdata_->blocklen;
-    if (combiner_ == MPI_COMBINER_HVECTOR) {
-      ints[2] = vdata_->stride;
-    }
-    else {
-      ints[2] = vdata_->stride / vdata_->base->extent();
-    }
-    dtypes[0] = vdata_->base->id;
-  }
-  else if (type_ == IND) {
-    ints[0] = idata_->blocks.size();
-
-    for (int i = 0; i < ints[0]; i++) {
-      ints[i + 1] = idata_->blocks[i].num;
-      if (combiner_ == MPI_COMBINER_HINDEXED || combiner_
-          == MPIX_COMBINER_HINDEXED_BLOCK || combiner_
-          == MPI_COMBINER_STRUCT) {
-        ints[i + 1 + ints[0]] = idata_->blocks[i].disp;
-      }
-      else
-        ints[i + 1 + ints[0]] = idata_->blocks[i].disp
-                                / idata_->blocks[i].base->extent();
-      if (numdtype_ > i) {
-        dtypes[i] = idata_->blocks[i].base->id;
-      }
-    }
-
-  }
 }
 
 void

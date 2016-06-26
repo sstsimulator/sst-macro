@@ -86,8 +86,6 @@ try_top_info_main(int argc, char **argv)
   //to SST parameter names
   map_env_params(params);
 
-  remap_deprecated_params(params);
-
   //do some cleanup and processing of params
   process_init_params(params);
 

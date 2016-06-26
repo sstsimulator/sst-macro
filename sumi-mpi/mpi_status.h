@@ -14,8 +14,9 @@
 
 struct MPI_Status
 {
-  int source;
-  int tag;
+  int MPI_SOURCE;
+  int MPI_TAG;
+  int MPI_ERROR;
   int count;
   int bytes_received;
 };

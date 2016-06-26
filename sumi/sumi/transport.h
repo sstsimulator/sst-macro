@@ -327,6 +327,17 @@ class transport :
     allreduce(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
   }
 
+  virtual void
+  reduce(int root, void* dst, void* src, int nelems, int type_size, int tag,
+    reduce_fxn fxn, bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+
+  template <typename data_t, template <typename> class Op>
+  void
+  reduce(int root, void* dst, void* src, int nelems, int tag, bool fault_aware = false, int context = options::initial_context, domain* dom = 0){
+    typedef ReduceOp<Op, data_t> op_class_type;
+    reduce(root, dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
+  }
+
 
   /**
    * The total size of the input/result buffer in bytes is nelems*type_size
@@ -341,6 +352,15 @@ class transport :
   virtual void
   allgather(void* dst, void* src, int nelems, int type_size, int tag, bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
 
+  virtual void
+  allgatherv(void* dst, void* src, int* recv_counts, int type_size, int tag, bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+
+  virtual void
+  gather(int root, void* dst, void* src, int nelems, int type_size, int tag, bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+
+  virtual void
+  scatter(int root, void* dst, void* src, int nelems, int type_size, int tag, bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+
   /**
    * Essentially just executes a zero-byte allgather.
    * @param tag
@@ -350,7 +370,7 @@ class transport :
   barrier(int tag, bool fault_aware = false, domain* dom = 0);
 
   void
-  bcast(void* buf, int nelems, int type_size, int tag, bool fault_aware, int context=options::initial_context, domain* dom=0);
+  bcast(int root, void* buf, int nelems, int type_size, int tag, bool fault_aware, int context=options::initial_context, domain* dom=0);
   
   int 
   rank() const {
@@ -620,12 +640,12 @@ class transport :
   dag_collective*
   build_collective(collective::type_t ty,
     std::map<int,dag_collective*>& algorithms,
+    domain* dom,
     void* dst, void *src,
     int nelems, int type_size,
     int tag,
     bool fault_aware,
-    int context, domain* dom,
-    reduce_fxn fxn = &Null::op);
+    int context);
   
  private:
   int heartbeat_tag_;
@@ -724,8 +744,12 @@ class transport :
  private:
   /** Each integer indicates the minimum size required to use a particular collective */
   std::map<int, dag_collective*> allgathers_;
+  std::map<int, dag_collective*> allgathervs_;
+  std::map<int, dag_collective*> gathers_;
   std::map<int, dag_collective*> allreduces_;
   std::map<int, dag_collective*> bcasts_;
+  std::map<int, dag_collective*> reduces_;
+  std::map<int, dag_collective*> scatters_;
 
 };
 

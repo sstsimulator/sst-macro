@@ -25,7 +25,7 @@ mpi_api::validate_mpi_collective(const char* name, MPI_Datatype sendtype, MPI_Da
 }
 
 void
-mpi_api::collective_progress_loop(collective::type_t ty, int tag, bool tmp_domain)
+mpi_api::collective_progress_loop(collective::type_t ty, int tag)
 {
   std::list<collective_done_message::ptr> pending;
   while (1){
@@ -37,9 +37,6 @@ mpi_api::collective_progress_loop(collective::type_t ty, int tag, bool tmp_domai
                     "found collective done message of type=%s tag=%d: need %s,%d",
                     collective::tostr(cmsg->type()), cmsg->tag(), collective::tostr(ty), tag);
       if (tag == cmsg->tag() && ty == cmsg->type()){  //done!
-        if (tmp_domain){
-          delete cmsg->dom();
-        }
         break;
       } else {
         //a different collective completed
@@ -180,12 +177,10 @@ mpi_api::start_bcast(void *buffer, int count, MPI_Datatype type, int root, MPI_C
   int tag = commPtr->next_collective_tag();
 
   sumi::domain* dom = comm == MPI_COMM_WORLD ? global_dom() : commPtr;
-  if (root != 0){
-    //shift everyone in the domain
-    dom = new sumi::shifted_domain(dom, root);
-  }
 
-  transport::bcast(buffer, count, typeSize, tag,
+  fflush(stdout);
+
+  transport::bcast(root, buffer, count, typeSize, tag,
     false, options::initial_context, dom);
 
   return tag;
@@ -199,7 +194,7 @@ mpi_api::bcast(void *buffer, int count, MPI_Datatype type, int root, MPI_Comm co
     count, type_str(type).c_str(), int(root), comm_str(comm).c_str());
   int tag = start_bcast(buffer, count, type, root, comm);
 
-  collective_progress_loop(collective::bcast, tag, root!=0/*whether a tmp domain*/);
+  collective_progress_loop(collective::bcast, tag);
   return MPI_SUCCESS;
 }
 
@@ -215,8 +210,12 @@ mpi_api::start_gather(const void *sendbuf, void *recvbuf, int count, MPI_Datatyp
   int typeSize = type_size(type);
   mpi_comm* commPtr = get_comm(comm);
   int tag = commPtr->next_collective_tag();
-  spkt_throw(sprockit::unimplemented_error,
-    "sumi::gather");
+
+  sumi::domain* dom = comm == MPI_COMM_WORLD ? global_dom() : commPtr;
+
+  transport::gather(root, recvbuf, const_cast<void*>(sendbuf), count, typeSize, tag,
+    false, options::initial_context, dom);
+
   return tag;
 }
 
@@ -248,11 +247,12 @@ mpi_api::start_reduce(const void *src, void *dst, int count, MPI_Datatype type, 
   int typeSize = typePtr->packed_size();
   mpi_comm* commPtr = get_comm(comm);
   int tag = commPtr->next_collective_tag();
-  //transport::reduce(src, dst, count, typeSize, tag, fxn, root,
-  //  false, options::initial_context,
-  //  (comm == MPI_COMM_WORLD ? 0, commPtr));
-  spkt_throw(sprockit::unimplemented_error,
-    "sumi::reduce");
+
+  sumi::domain* dom = comm == MPI_COMM_WORLD ? global_dom() : commPtr;
+
+  transport::reduce(root, dst, const_cast<void*>(src), count, typeSize, tag, fxn,
+    false, options::initial_context, dom);
+
   return tag;
 }
 
@@ -348,8 +348,12 @@ mpi_api::start_scatter(const void *sendbuf, void *recvbuf, int count, MPI_Dataty
   int typeSize = type_size(type);
   mpi_comm* commPtr = get_comm(comm);
   int tag = commPtr->next_collective_tag();
-  spkt_throw(sprockit::unimplemented_error,
-    "sumi::scatter");
+
+  sumi::domain* dom = comm == MPI_COMM_WORLD ? global_dom() : commPtr;
+
+  transport::scatter(root, recvbuf, const_cast<void*>(sendbuf), count, typeSize, tag,
+    false, options::initial_context, dom);
+
   return tag;
 }
 
@@ -361,8 +365,11 @@ mpi_api::scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void
     sendcount, type_str(sendtype).c_str(),
     recvcount, type_str(recvtype).c_str(),
     int(root), comm_str(comm).c_str());
+
+  if (sendtype == MPI_NULL) sendtype = recvtype;
+
   validate_mpi_collective("scatter", sendtype, recvtype);
-  int tag =start_scatter(sendbuf, recvbuf, sendcount, sendtype, root, comm);
+  int tag = start_scatter(sendbuf, recvbuf, sendcount, sendtype, root, comm);
   collective_progress_loop(collective::scatter, tag);
   return MPI_SUCCESS;
 }
@@ -370,7 +377,7 @@ mpi_api::scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void
 int
 mpi_api::scatter(int sendcount, MPI_Datatype sendtype, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
-  return scatter(sendcount, sendtype, recvcount, recvtype, root, comm);
+  return scatter(NULL, sendcount, sendtype, NULL, recvcount, recvtype, root, comm);
 }
 
 }

@@ -31,6 +31,8 @@ libsstmac_skeletons_la_SOURCES = \
   test/mpi_ping_all.cc \
   test/global_test.cc 
 
+
+
 nobase_library_include_HEADERS = \
   test/app_hello_world.h \
   test/test_compute.h \
@@ -39,7 +41,7 @@ nobase_library_include_HEADERS = \
 if WITH_DEFAULT_MPI
 libsstmac_skeletons_la_SOURCES += \
   undumpi/parsedumpi.cc \
-  undumpi/parsedumpi_callbacks.cc \
+  undumpi/parsedumpi_callbacks.cc  \
   test/test_mpi_barrier.cc \
   test/test_onesided.cc \
   test/mpi_congestion.cc \
@@ -47,7 +49,6 @@ libsstmac_skeletons_la_SOURCES += \
   test/sstmac_mpi_test_all.cc \
   test/pdes_test.cc \
   test/test_new_collectives.cc \
-  test/test_mpi_algorithms.cc \
   test/mpi_print_nodes.cc \
   test/mpi_test_all.cc \
   test/mpi_pairwise.cc \
@@ -65,8 +66,10 @@ nobase_library_include_HEADERS += \
   test/sstmac_mpi_test_all.h \
   test/test_onesided.h \
   test/test_mpi_barrier.h 
-
-
+else
+libsstmac_skeletons_la_SOURCES += \
+  sumi_undumpi/parsedumpi.cc \
+  sumi_undumpi/parsedumpi_callbacks.cc 
 endif
 
 

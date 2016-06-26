@@ -74,10 +74,17 @@ packet_flow_abstract_switch::init_factory_params(sprockit::sim_parameters *param
   params_->xbar_input_buffer_num_bytes
     = params->get_byte_length_param("input_buffer_size");
 
+  if (params->has_param("ejection_bandwidth")){
+    params_->ej_bw =
+       params->get_bandwidth_param("ejection_bandwidth");
+  } else {
+    params_->ej_bw =
+       params->get_bandwidth_param("injection_bandwidth");
+  }
+
   params_->link_arbitrator_template
     = packet_flow_bandwidth_arbitrator_factory::get_optional_param(
         "arbitrator", "cut_through", params);
-
 
   /**
     sstkeyword {
@@ -138,6 +145,7 @@ packet_flow_switch::~packet_flow_switch()
   if (params_) delete params_;
 }
 
+
 void
 packet_flow_switch::init_factory_params(sprockit::sim_parameters *params)
 {
@@ -145,7 +153,7 @@ packet_flow_switch::init_factory_params(sprockit::sim_parameters *params)
 
   acc_delay_ = params->get_optional_bool_param("accumulate_congestion_delay",false);
 
-  packet_size_ = params->get_optional_byte_length_param("packet_size", 4096);
+  packet_size_ = params->get_optional_byte_length_param("mtu", 4096);
 
   if (params->has_namespace("congestion_matrix")){
     sprockit::sim_parameters* congestion_params = params->get_namespace("congestion_matrix");
@@ -185,7 +193,6 @@ packet_flow_switch::set_topology(topology *top)
 void
 packet_flow_switch::initialize()
 {
-  crossbar();
   xbar_->set_accumulate_delay(acc_delay_);
   int nbuffers = out_buffers_.size();
   int buffer_inport = 0;
@@ -203,9 +210,16 @@ packet_flow_switch::initialize()
 }
 
 packet_flow_crossbar*
-packet_flow_switch::crossbar()
+packet_flow_switch::crossbar(config* cfg)
 {
   if (!xbar_) {
+    double xbar_bw = params_->crossbar_bw;
+    if (cfg->ty == WeightedConnection){
+      xbar_bw *= cfg->xbar_weight;
+    }
+    debug_printf(sprockit::dbg::packet_flow | sprockit::dbg::packet_flow_config,
+      "Switch %d: creating crossbar with bandwidth %12.8e",
+      int(my_addr_), xbar_bw);
     xbar_ = new packet_flow_crossbar(
               timestamp(0), //assume zero-time send
               params_->hop_lat, //delayed credits
@@ -226,20 +240,54 @@ packet_flow_switch::resize_buffers()
 }
 
 packet_flow_sender*
-packet_flow_switch::output_buffer(int port, double out_bw, int red)
+packet_flow_switch::output_buffer(int port, config* cfg)
 {
   if (!out_buffers_[port]){
+    bool inj_port = top_->is_injection_port(port);
+    double total_link_bw = inj_port ? params_->ej_bw : params_->link_bw;
+    int dst_buffer_size = params_->xbar_input_buffer_num_bytes;
+    int src_buffer_size = params_->xbar_output_buffer_num_bytes;
+    timestamp lat = params_->hop_lat;
+    switch(cfg->ty){
+      case BasicConnection:
+        break;
+      case RedundantConnection:
+        total_link_bw *= cfg->red;
+        src_buffer_size *= cfg->red;
+        break;
+       case WeightedConnection:
+        total_link_bw *= cfg->link_weight;
+        src_buffer_size *= cfg->src_buffer_weight;
+        dst_buffer_size *= cfg->dst_buffer_weight;
+        break;
+      case FixedBandwidthConnection:
+        total_link_bw = cfg->bw;
+        break;
+      case FixedConnection:
+        total_link_bw = cfg->bw;
+        lat = cfg->latency;
+        break;
+      default:
+        spkt_throw_printf(sprockit::value_error,
+          "bad connection::config enum %d", cfg->ty);
+    }
+
+    debug_printf(sprockit::dbg::packet_flow | sprockit::dbg::packet_flow_config,
+      "Switch %d: making buffer with bw=%10.6e on port=%d with buffer size %d going into buffer size %d",
+      int(my_addr_), total_link_bw, port, src_buffer_size, dst_buffer_size);
+
     packet_flow_network_buffer* out_buffer
       = new packet_flow_network_buffer(
                   params_->hop_lat,
                   timestamp(0), //assume credit latency to xbar is free
-                  params_->xbar_output_buffer_num_bytes * red,
+                  src_buffer_size,
                   router_->max_num_vc(),
                   packet_size_,
-                  params_->link_arbitrator_template->clone(out_bw));
+                  params_->link_arbitrator_template->clone(total_link_bw));
+
     out_buffer->set_event_location(my_addr_);
     int buffer_outport = 0;
-    out_buffer->init_credits(buffer_outport, params_->xbar_input_buffer_num_bytes);
+    out_buffer->init_credits(buffer_outport, dst_buffer_size);
     out_buffer->set_sanity_params(params_->queue_depth_reporting,
                                 params_->queue_depth_delta);
     out_buffers_[port] = out_buffer;
@@ -252,14 +300,12 @@ packet_flow_switch::connect_output(
   int src_outport,
   int dst_inport,
   connectable* mod,
-  double weight, int red
-)
+  config* cfg)
 {
   resize_buffers();
 
   //create an output buffer for the port
-  double total_link_bw = params_->link_bw * weight * red;
-  packet_flow_sender* out_buffer = output_buffer(src_outport, total_link_bw, red);
+  packet_flow_sender* out_buffer = output_buffer(src_outport, cfg);
   out_buffer->set_output(src_outport, dst_inport, safe_cast(event_handler, mod));
 }
 
@@ -268,29 +314,25 @@ packet_flow_switch::connect_input(
   int src_outport,
   int dst_inport,
   connectable* mod,
-  double weight, int red
-)
+  config* cfg)
 {
-  crossbar()->set_input(dst_inport, src_outport, safe_cast(event_handler, mod));
+  crossbar(cfg)->set_input(dst_inport, src_outport, safe_cast(event_handler, mod));
 }
 
 void
-packet_flow_switch::connect_weighted(
+packet_flow_switch::connect(
   int src_outport,
   int dst_inport,
   connection_type_t ty,
   connectable* mod,
-  double weight, int red)
+  config* cfg)
 {
   switch(ty) {
     case output:
-      connect_output(src_outport, dst_inport, mod, weight, red);
+      connect_output(src_outport, dst_inport, mod, cfg);
       break;
     case input:
-      connect_input(src_outport, dst_inport, mod, weight, red);
-      break;
-    default:
-      network_switch::connect_weighted(src_outport, dst_inport, ty, mod, weight, red);
+      connect_input(src_outport, dst_inport, mod, cfg);
       break;
   }
 }
@@ -299,14 +341,14 @@ void
 packet_flow_switch::connect_injector(int src_outport, int dst_inport, event_handler* nic)
 {
   connectable* inp = safe_cast(connectable, nic);
-  connect_input(src_outport, dst_inport, inp, 1.0, 1);
+  connect_input(src_outport, dst_inport, inp, NULL); //no cfg
 }
 
 void
 packet_flow_switch::connect_ejector(int src_outport, int dst_inport, event_handler* nic)
 {
   connectable* inp = safe_cast(connectable, nic);
-  connect_output(src_outport, dst_inport, inp, 1.0, 1);
+  connect_output(src_outport, dst_inport, inp, NULL); //no cfg
 }
 
 std::vector<switch_id>
@@ -332,7 +374,10 @@ void
 packet_flow_switch::set_event_manager(event_manager* m)
 {
   network_switch::set_event_manager(m);
-  crossbar();
+  if (!xbar_){
+    spkt_throw(sprockit::value_error,
+       "crossbar uninitialized on switch");
+  }
 #if !SSTMAC_INTEGRATED_SST_CORE
   if (congestion_spyplot_){
     xbar_->set_congestion_spyplot(congestion_spyplot_);

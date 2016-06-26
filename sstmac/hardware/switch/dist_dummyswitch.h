@@ -55,14 +55,18 @@ class dist_dummy_switch : public network_switch
   }
 
   virtual void
-  connect_weighted(
+  connect_input(
     int src_outport,
     int dst_inport,
-    connection_type_t ty,
     connectable* comp,
-    double weight, int red)
-  { //no op
-  }
+    config* cfg);
+
+  virtual void
+  connect_output(
+    int src_outport,
+    int dst_inport,
+    connectable* comp,
+    config* cfg);
 
   std::vector<switch_id>
   connected_switches() const {

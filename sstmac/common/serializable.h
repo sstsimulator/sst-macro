@@ -9,6 +9,11 @@
 #include <sst/core/serialization/serialize_serializable.h>
 #include <sst/core/serialization/serializer.h>
 
+#define START_SERIALIZATION_NAMESPACE namespace SST { namespace Core { namespace Serialization {
+#define END_SERIALIZATION_NAMESPACE } } }
+
+#define FRIEND_SERIALIZATION   template <class T, class Enable> friend class sstmac::serialize
+
 namespace sstmac {
 using SST::Core::Serialization::serializable;
 using SST::Core::Serialization::serializable_type;
@@ -27,6 +32,11 @@ using SST::Core::Serialization::buffer;
 #include <sprockit/serializable.h>
 #include <sprockit/serialize_serializable.h>
 #include <sprockit/serializer.h>
+
+#define START_SERIALIZATION_NAMESPACE namespace sprockit {
+#define END_SERIALIZATION_NAMESPACE }
+
+#define FRIEND_SERIALIZATION   template <class T> friend class sstmac::serialize
 
 namespace sstmac {
 using sprockit::serializable;

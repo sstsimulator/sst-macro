@@ -23,7 +23,7 @@ int main(int argc, char** argv)
         std::cout << "Testing torus...\n";
             test_torus(unit);
         std::cout << "Testing fat tree...\n";
-            test_fattree2(unit);
+            //test_fattree2(unit);
             test_fattree4(unit);
         std::cout << "Testing crossbar...\n";
             test_crossbar(unit);

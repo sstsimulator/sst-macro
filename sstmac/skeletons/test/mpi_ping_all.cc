@@ -30,6 +30,7 @@ mpi_ping_all_main(int argc, char** argv)
   void* null_buffer = 0;
   sprockit::sim_parameters* params = get_params();
   int count = params->get_optional_byte_length_param("message_size", 100);
+  bool print_times = params->get_optional_bool_param("print_times", true);
   int tag = 42;
   //one for each send, one for each recv
   MPI_Request* reqs = new MPI_Request[2*nproc];
@@ -39,9 +40,9 @@ mpi_ping_all_main(int argc, char** argv)
       continue;
     }
 
-    MPI_Isend(null_buffer, count, MPI_INT, i, tag, MPI_COMM_WORLD, reqptr);
+    MPI_Isend(null_buffer, count, MPI_BYTE, i, tag, MPI_COMM_WORLD, reqptr);
     ++reqptr;
-    MPI_Irecv(null_buffer, count, MPI_INT, i, tag, MPI_COMM_WORLD, reqptr);
+    MPI_Irecv(null_buffer, count, MPI_BYTE, i, tag, MPI_COMM_WORLD, reqptr);
     ++reqptr;
   }
   int num_requests = 2*nproc - 2;
@@ -66,9 +67,7 @@ mpi_ping_all_main(int argc, char** argv)
 
   double t_stop = MPI_Wtime();
   double t_total = t_stop - t_start;
-  if (me == 0){
-    ::printf("Runtime = %8.4fms\n", t_total*1e3);
-  }
+  if (print_times) ::printf("Rank %d = %8.4fms\n", me, t_total*1e3);
 
   MPI_Finalize();
   return 0;

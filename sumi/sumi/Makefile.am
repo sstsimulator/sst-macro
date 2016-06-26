@@ -27,8 +27,12 @@ nodist_library_include_HEADERS = config.h sumi_config.h
 
 library_include_HEADERS = \
  allgather.h \
+ allgatherv.h \
  allreduce.h \
+ gather.h \
  bcast.h \
+ reduce.h \
+ scatter.h \
  collective.h \
  collective_actor.h \
  collective_actor_fwd.h \
@@ -62,9 +66,14 @@ library_include_HEADERS = \
  transport_fwd.h 
 
 libsumi_la_SOURCES = \
+ transport.cc \
  allgather.cc \
+ allgatherv.cc \
  allreduce.cc \
  bcast.cc \
+ gather.cc \
+ reduce.cc \
+ scatter.cc \
  collective.cc \
  collective_actor.cc \
  collective_message.cc \
@@ -76,8 +85,7 @@ libsumi_la_SOURCES = \
  partner_timeout.cc \
  ping.cc \
  thread_lock.cc \
- thread_safe_set.cc \
- transport.cc
+ thread_safe_set.cc 
 
 
 if ENABLE_MPI

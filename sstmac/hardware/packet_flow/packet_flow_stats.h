@@ -13,7 +13,7 @@ namespace hw {
 class stat_bytes_sent :
   public stat_collector
 {
-  template <class T> friend class sstmac::serialize;
+  FRIEND_SERIALIZATION;
 
  public:
   stat_bytes_sent() : top_(0), local_aggregation_(0) {}

@@ -23,8 +23,7 @@ class connection_details
     int dst_port;
     endpoint_t src_type;
     endpoint_t dst_type;
-    double weight;
-    int redundancy;
+    hw::connectable::config cfg;
 
     void parse_type_id(const std::string& str, endpoint_t& ep, int& id);
     void parse_src(const std::string& str);
@@ -32,8 +31,8 @@ class connection_details
 
 };
 
-connection_details
-parse_port_name(const std::string& port_name);
+void
+parse_port_name(const std::string& port_name, connection_details* dets);
 
 class integrated_connectable_wrapper
   : public hw::connectable,
@@ -53,6 +52,13 @@ class integrated_connectable_wrapper
       spkt_throw(sprockit::unimplemented_error,
         "integrated_connectable_wrapper::handle: should never be called");
     }
+
+    void connect(
+      int src_outport,
+      int dst_inport,
+      connection_type_t ty,
+      connectable *mod,
+      config *cfg);
 
     event_loc_id
     event_location() const {
@@ -97,13 +103,12 @@ class connectable_proxy_component
     }
 
     void
-    connect_weighted(
+    connect(
       int src_outport,
       int dst_inport,
       connection_type_t ty,
       connectable* other,
-      double weight,
-      int red);
+      config* cfg);
 
     ~connectable_proxy_component();
 

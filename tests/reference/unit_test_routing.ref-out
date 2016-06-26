@@ -13,33 +13,18 @@ SUCCESS: num productive ports route_hdtorus.cc:58
 SUCCESS: productive port 0 route_hdtorus.cc:62
 SUCCESS: min distance route_hdtorus.cc:70
 SUCCESS: min distance route_hdtorus.cc:78
-SUCCESS: fat tree cast topology route_fattree.cc:110
-SUCCESS: num productive ports route_fattree.cc:141
-SUCCESS: productive port route_fattree.cc:142
-SUCCESS: productive port route_fattree.cc:143
-SUCCESS: num productive ports route_fattree.cc:156
-SUCCESS: productive port route_fattree.cc:158
-SUCCESS: productive port route_fattree.cc:158
-SUCCESS: min distance route_fattree.cc:167
-SUCCESS: min distance route_fattree.cc:176
-SUCCESS: min distance route_fattree.cc:185
-SUCCESS: min distance route_fattree.cc:194
-SUCCESS: min distance route_fattree.cc:203
-SUCCESS: min distance route_fattree.cc:212
-SUCCESS: min distance route_fattree.cc:221
 SUCCESS: fat tree cast topology route_fattree.cc:19
-SUCCESS: num productive ports route_fattree.cc:45
-SUCCESS: productive port route_fattree.cc:46
-SUCCESS: productive port route_fattree.cc:47
-SUCCESS: num productive ports route_fattree.cc:60
-SUCCESS: productive port route_fattree.cc:62
-SUCCESS: productive port route_fattree.cc:62
-SUCCESS: productive port route_fattree.cc:62
-SUCCESS: productive port route_fattree.cc:62
-SUCCESS: num productive ports route_fattree.cc:75
-SUCCESS: productive port route_fattree.cc:76
-SUCCESS: min distance route_fattree.cc:85
-SUCCESS: min distance route_fattree.cc:94
+SUCCESS: num productive ports route_fattree.cc:34
+SUCCESS: productive port route_fattree.cc:36
+SUCCESS: num productive ports route_fattree.cc:49
+SUCCESS: productive port route_fattree.cc:52
+SUCCESS: productive port route_fattree.cc:52
+SUCCESS: productive port route_fattree.cc:52
+SUCCESS: productive port route_fattree.cc:52
+SUCCESS: num productive ports route_fattree.cc:66
+SUCCESS: productive port route_fattree.cc:68
+SUCCESS: min distance route_fattree.cc:77
+SUCCESS: min distance route_fattree.cc:86
 SUCCESS: crossbar cast topology route_crossbar.cc:16
 SUCCESS: num productive ports route_crossbar.cc:32
 SUCCESS: productive port 0 route_crossbar.cc:36

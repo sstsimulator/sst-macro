@@ -152,7 +152,7 @@ mpi_type::init_primitive(const std::string &labelit, mpi_type* b1,
 }
 
 void
-mpi_type::init_vector(const std::string &labelit, mpi_type*base,
+mpi_type::init_vector(const std::string &labelit, mpi_type* base,
                    int count, int block, int str, bool in_elem, int comb)
 {
   if (base->id == -1){
@@ -168,12 +168,7 @@ mpi_type::init_vector(const std::string &labelit, mpi_type*base,
   vdata_->base_ = base;
   vdata_->count_ = count;
   vdata_->blocklen_ = (block);
-  if (in_elem) {
-    vdata_->stride_ = (str) * base->extent();
-  }
-  else {
-    vdata_->stride_ = str;
-  }
+  vdata_->stride_ = (str) * base->extent();
 
   extent_ = (count - 1) * abs(vdata_->stride_) + base->extent_;
   size_ = count * block * base->size_;

@@ -25,8 +25,8 @@ SpktRegister("fbfly | flattenedbfly | flattenedbutterfly", topology,
 void
 flattened_butterfly::connect_objects(internal_connectable_map& objects)
 {
-  double link_weight = 1.0;
-  int red = 1;
+  connectable::config cfg;
+  cfg.ty = connectable::BasicConnection;
   /**
     In 4-ary 3-fly, we have 16 switches per col
     with 3 columns or stages.  Thus we can label
@@ -107,30 +107,28 @@ flattened_butterfly::connect_objects(internal_connectable_map& objects)
         offset = l * kary_ + my_intra_group_index;
         int down_port = convert_to_port(down_dimension, offset);
 
-        my_sw->connect_weighted(
+        my_sw->connect(
           up_port, //up is out, down is in - got it?
           down_port,
           connectable::output,
-          partner_sw,
-          link_weight, red);
+          partner_sw, &cfg);
         partner_sw->connect(
           up_port,
           down_port,
           connectable::input,
-          my_sw);
+          my_sw, &cfg);
 
         //printf("Connecting %ld:%d->%ld\n", up_group_partner, port, my_switch_index);
-        partner_sw->connect_weighted(
+        partner_sw->connect(
           down_port,
           up_port,
           connectable::output,
-          my_sw,
-          link_weight, red);
+          my_sw, &cfg);
         my_sw->connect(
           down_port,
           up_port,
           connectable::input,
-          partner_sw);
+          partner_sw, &cfg);
       }
     }
 

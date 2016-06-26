@@ -13,6 +13,11 @@ typedef enum {
   ValueWithUnits
 } uq_param_type_t;
 
+typedef enum {
+  Fork,
+  MPIScan
+} uq_spawn_type_t;
+
 typedef struct 
 {
   double value;
@@ -20,7 +25,6 @@ typedef struct
   const char* cstr;
   uq_param_type_t type;
 } uq_param_t;
-
 /**
  Allocate a 2D double array
  @param njobs
@@ -63,13 +67,19 @@ void free_params(uq_param_t** params);
 /**
  @param argc The argc that would be used by a standalone SST/macro simulation
  @param argv The argv that would be used by a standalone SST/macro simulation
+ @param workerID The ID of this worker in a parallel group. 0 return means master.
+                 Workers who receiver other than zero should immediately go into
+                 sstmac_uq_busy_loop and do nothing else.
  @return A void* pointer to the simulation queue object. This pointer
          should NOT be freed. Value is void* for C compatibility.
 */
-void* sstmac_uq_init(int argc, char** argv);
+void* sstmac_uq_init(int argc, char** argv, int* workerID);
+
+
+void sstmac_uq_busy_loop(void* queue);
 
 /**
- Run a set of jobs with particular parameters
+ Run a set of jobs with particular parameters, forking new procs for parallelism
  @param queue A pointer to a queue object created by sstmac_uq_init
  @param njobs The number of jobs (simulations) to run
  @param nparams The number of parameters to set for each job
@@ -84,11 +94,12 @@ void* sstmac_uq_init(int argc, char** argv);
  @param results      A 2D array of size njobs X nresults 
                      Will hold the result values for each job
                      Indexed as p[jobID][resultID]
+ @param ty        The type of run to perform. Fork new procs or MPI scan.
 */
 void sstmac_uq_run(void* queue,
   int njobs, int nparams, int nresults, int max_nthread,
   const char* param_names[], uq_param_t* param_values[],
-  double* results[]);
+  double* results[], uq_spawn_type_t ty);
 
 /**
  Run a set of jobs with particular parameters
@@ -110,7 +121,7 @@ void sstmac_uq_run(void* queue,
 void sstmac_uq_run_units(void* queue,
   int njobs, int nparams, int nresults, int max_nthread,
   const char* param_names[], double* param_values[], const char* units[],
-  double* results[]);
+  double* results[], uq_spawn_type_t spwan_ty);
 
 /**
  @param queue A pointer to a queue object created by sstmac_uq_init

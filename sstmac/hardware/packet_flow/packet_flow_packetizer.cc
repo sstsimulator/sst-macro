@@ -84,6 +84,11 @@ packet_flow_nic_packetizer::init_factory_params(sprockit::sim_parameters *params
     }
   }
   inj_bw_ = params->get_bandwidth_param("injection_bandwidth");
+  if (params->has_param("ejection_bandwidth")){
+    ej_bw_ = params->get_bandwidth_param("ejection_bandwidth");
+  } else {
+    ej_bw_ = inj_bw_;
+  }
 
   buffer_size_ = params->get_optional_byte_length_param("eject_buffer_size", 1<<30);
 
@@ -98,7 +103,7 @@ packet_flow_nic_packetizer::init_factory_params(sprockit::sim_parameters *params
   //total hack for now, assume that the buffer has a delayed send, but ultra-fast credit latency
   packet_flow_bandwidth_arbitrator* ej_arb = packet_flow_bandwidth_arbitrator_factory::get_optional_param(
         "arbitrator", "cut_through", params);
-  ej_arb->set_outgoing_bw(inj_bw_);
+  ej_arb->set_outgoing_bw(ej_bw_);
   timestamp inj_lat = params->get_time_param("injection_latency");
   ej_buffer_ = new packet_flow_eject_buffer(inj_lat, small_latency, buffer_size_, ej_arb);
 }
@@ -207,6 +212,9 @@ packet_flow_cut_through_packetizer::recv_packet(packet_flow_payload *pkt)
   int vn = 0;
   recv_packet_common(pkt);
   timestamp delay(pkt->num_bytes() / pkt->bw());
+  debug_printf(sprockit::dbg::packet_flow,
+    "packet %s scheduled to arrive at packetizer after delay of t=%12.6es",
+     pkt->to_string().c_str(), delay.sec());
   send_delayed_self_event_queue(delay,
     new_event(this, &packetizer::packetArrived, vn, pkt));
 }

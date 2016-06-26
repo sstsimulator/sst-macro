@@ -13,14 +13,15 @@ stat_bytes_sent::output_switch(int sid, std::fstream& data_str, structured_topol
 {
   port_map& pmap = global_aggregation_[sid];
   port_map::iterator it, end = pmap.end();
+  long total = 0;
   for (it=pmap.begin(); it != end; ++it){
     int port = it->first;
     long bytes = it->second;
+    total += bytes;
     coordinates neighbor_coords = top->neighbor_at_port(switch_id(sid), port);
     data_str << sprockit::printf("\t%3d %12ld: %s\n",
       port, bytes, neighbor_coords.to_string().c_str());
   }
-
 }
 
 void
