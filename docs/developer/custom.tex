@@ -62,8 +62,7 @@ The topology then needs to tell objects how to connect
 
 \begin{CppCode}
 void
-xpress_ring::connect_objects(connectable_map& objects,
-                             connectable_factory* cloner)
+xpress_ring::connect_objects(connectable_map& objects)
 {
   for (int i=0; i < ring_size_; ++i) {
     connectable* center_obj = objects[switch_id(i)];
@@ -235,9 +234,9 @@ To specify the new topology
 
 \begin{ViFile}
 # Topology
-topology_name = xpress
-xpress_ring_size = 10
-xpress_jump_size = 5
+topology.name = xpress
+topology.xpress_ring_size = 10
+topology.xpress_jump_size = 5
 \end{ViFile}
 with application launch parameters
 
