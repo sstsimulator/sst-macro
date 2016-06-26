@@ -54,37 +54,6 @@ Skeletonization and UQ are the two main elements in the ``canonical'' \sstmacro 
 \section{Currently Supported}
 \label{sec:intro:supported}
 
-\subsection{Programming APIs}
-\label{subsec:intro:apis}
-
-The following sections describe the state of the software API's (found in \folder{sstmac}) that are available in \sstmacro for use by applications, as of this release. The level of testing indicates 
-the integration of compliance/functionality tests into our make check test suite.  
-
-\subsubsection{Final and Tested}
-\label{subsubsec:intro:tested}
-
-\begin{itemize}
-\item{MPI:} Because of its popularity, MPI is one of our main priorities in providing programming model support.  
-We currently test against the MPICH test suite. All tests compile, so you should never see compilation errors.  
-However, since many of the functions are not typically used in the community, we only test commonly-used functions.   
-See Section \ref{subsec:issues:mpi} for functions that are not supported.  
-Functions that are not implemented will throw a \class{unimplemented\_error}, reporting the function name. 
-\item{OpenSHMEM:} Most of the standard OpenSHMEM tests pass. The ones that don't are because they haven't been ported to C++, or test the single unsupported feature (collect). 
-\end{itemize}
-
-\subsubsection{Some testing complete}
-\label{subsubsec:intro:sometesting}
-
-\begin{itemize}
-\item{Sockets:} The Socket API is mostly implemented. Most basic client/server functionality is available.  However, only the default socket options are allowed. In most cases, \inlinecode{setsockopt} is just a no-op.
-\item{Pthreads:}  Only the \func{pthread\_create()}, \func{pthread\_join()}, and \func{pthread\_self()} along with mutex and condition variables are implemented.  A basic  pthread test validates the core spawn/run/join behavior.
-\end{itemize}
-
-\subsubsection{In development}
-\label{subsubsec:intro:inutero}
-\begin{itemize}
-\item{GASNet:}  An SST conduit is in development for supporting codes that use the GASNet transport layer.
-\end{itemize}
 
 \subsection{Analysis Tools and Statistics}
 \label{subsec:intro:toolsandstats}
@@ -185,26 +154,6 @@ Even if configured so that time progresses, the code will work but will take a v
 \begin{itemize}
 \item \func{MPI\_Is\_thread\_main()} is not implemented.
 \end{itemize}
-
-\subsection{OpenSHMEM}
-\label{subsec:issues:shmem}
-
-Only the collect and fcollect functions of the API are not implemented (they will be in future releases).
-
-Also, like handling of global variables discussed in Sections \ref{subsec:issues:globals} and \ref{sec:skel:globals}, SHMEM globals need to use a different type.  
-For primitives and primitive arrays, refer to \inlinecode{<sstmac/openshmem/shmem/globals.h>} for replacing types, e.g. the following code
-
-\begin{ViFile}
-int my_global_var = 4;
-double an_array[6];
-\end{ViFile}
-
-needs to become
-
-\begin{ViFile}
-shmem_int my_global_var(4);
-shmem_arr<double, 6> an_array;
-\end{ViFile}
 
 
 \subsection{Fortran}
