@@ -84,6 +84,11 @@ class mpi_api :
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
 
+  void
+  incoming_event(sstmac::event *ev){
+    library::incoming_event(ev);
+  }
+
   mpi_queue*
   queue() {
     return queue_;

@@ -23,7 +23,7 @@
 #include <sstmac/software/process/app_manager_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/software/launch/launcher_fwd.h>
-#include <sstmac/software/launch/launch_message_fwd.h>
+#include <sstmac/software/launch/launch_event_fwd.h>
 #include <sstmac/software/libraries/service_fwd.h>
 #include <sstmac/hardware/nic/nic_fwd.h>
 #include <sstmac/hardware/memory/memory_model_fwd.h>
@@ -211,12 +211,12 @@ class node :
   void build_launchers(sprockit::sim_parameters* params);
 
  private:
-  std::list<sw::launch_message*> launchers_;
+  std::list<sw::launch_event*> launchers_;
   unique_msg_id next_outgoing_id_;
 
 #if !SSTMAC_INTEGRATED_SST_CORE
  public:
-  void launch(timestamp start, sw::launch_message* msg);
+  void launch(timestamp start, sw::launch_event* msg);
 #else
   void launch();
 #endif

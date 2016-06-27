@@ -15,8 +15,10 @@
 #include <sstmac/software/process/task_id.h>
 #include <sumi-mpi/sstmac_mpi_integers.h>
 #include <vector>
+#include <cstring>
 
 namespace sumi {
+
 
 using sstmac::sw::task_id;
 

@@ -36,7 +36,7 @@ class service :
   }
 
   virtual void
-  incoming_message(message* msg) = 0;
+  incoming_event(event* ev) = 0;
 
  protected:
   service();

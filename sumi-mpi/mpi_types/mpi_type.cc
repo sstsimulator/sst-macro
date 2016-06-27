@@ -16,7 +16,7 @@
 #include <sumi-mpi/mpi_types.h>
 #include <iostream>
 #include <sstream>
-
+#include <cstring>
 
 namespace sumi {
 

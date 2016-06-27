@@ -151,14 +151,14 @@ sumi_server::sumi_server(int appid)
 }
 
 void
-sumi_server::incoming_message(message* msg)
+sumi_server::incoming_event(event* ev)
 {
- transport_message* smsg = safe_cast(transport_message, msg);
+ transport_message* smsg = safe_cast(transport_message, ev);
  try {
   get_proc(smsg->dest())->incoming_message(smsg);
  } catch (sprockit::value_error& e) {
    cerrn << "sumi_server::handle: failed handling "
-     << msg->to_string() << std::endl;
+     << ev->to_string() << std::endl;
    throw e;
  }
 

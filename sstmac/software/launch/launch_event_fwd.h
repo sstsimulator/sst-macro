@@ -6,7 +6,7 @@
 namespace sstmac {
 namespace sw {
 
-class launch_message;
+class launch_event;
 
 }
 }

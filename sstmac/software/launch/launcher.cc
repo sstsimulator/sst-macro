@@ -10,8 +10,10 @@
  */
 
 #include <sstmac/software/launch/launcher.h>
-#include <sstmac/software/launch/launch_message.h>
+#include <sstmac/software/launch/launch_event.h>
 #include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/process/app.h>
+#include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 #include <unistd.h>
 #include <getopt.h>
@@ -33,31 +35,26 @@ launcher::~launcher() throw()
 }
 
 void
-launcher::incoming_message(message* msg)
+launcher::incoming_event(event* ev)
 {
-  launch_message* lmsg = safe_cast(launch_message, msg);
-  if (lmsg->is_nic_ack()){
-    delete lmsg;
-    return;
-  }
-
-  launch_info* linfo = lmsg->info();
-
-  if (lmsg->launch_type() == launch_message::ARRIVE) {
-    software_id sid(linfo->aid(), lmsg->tid());
+  launch_event* lev = safe_cast(launch_event, ev);
+  launch_info* linfo = lev->info();
+  if (lev->launch_type() == launch_event::ARRIVE) {
+    software_id sid(linfo->aid(), lev->tid());
     app* theapp = linfo->app_template()->clone(sid);
-    theapp->consume_params(linfo->app_template()->params());
+    sprockit::sim_parameters* app_params = linfo->app_template()->params();
+    theapp->consume_params(app_params);
     int intranode_rank = num_apps_launched_[linfo->aid()]++;
     int core_affinity = linfo->core_affinity(intranode_rank);
     theapp->set_affinity(core_affinity);
     os_->start_app(theapp);
 
   }
-  else if(lmsg->launch_type() == launch_message::COMPLETE) {
+  else if(lev->launch_type() == launch_event::COMPLETE) {
     //do nothing
   }
 
-  delete lmsg;
+  delete lev;
 }
 
 void

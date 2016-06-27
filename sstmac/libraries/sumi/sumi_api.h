@@ -135,10 +135,10 @@ class sumi_server :
   sumi_server(int appid);
 
   void
-  incoming_message(sstmac::message* msg);
+  register_proc(int rank, sumi_api* proc);
 
   void
-  register_proc(int rank, sumi_api* proc);
+  incoming_event(event *ev);
 
  private:
   int appid_;

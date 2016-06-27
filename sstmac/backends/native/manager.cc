@@ -26,7 +26,7 @@
 
 #include <sstmac/dumpi_util/dumpi_meta.h>
 
-#include <sstmac/software/launch/launch_message.h>
+#include <sstmac/software/launch/launch_event.h>
 #include <sstmac/software/process/app_manager.h>
 
 #include <sprockit/driver_util.h>
@@ -312,7 +312,7 @@ macro_manager::launch_app(int appnum, timestamp start, sw::app_manager* appman)
       continue;
     }
 
-    sw::launch_message* lmsg = new launch_message(linfo, sw::launch_message::ARRIVE, task_id(i));
+    sw::launch_event* lmsg = new launch_event(linfo, sw::launch_event::ARRIVE, task_id(i));
 
     dst_node->launch(start, lmsg);
 

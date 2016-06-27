@@ -14,7 +14,6 @@ SUBDIRS = \
 machines \
 blas \
 sumi \
-sockets \
 pthread \
 uq
 

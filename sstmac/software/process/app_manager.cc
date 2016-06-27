@@ -46,7 +46,10 @@ app_manager::init_factory_params(sprockit::sim_parameters* params)
     params->get_vector_param(launch_prefix_ + "_core_affinities",
                              core_affinities_);
   }
-  app_template_ = sw::app_factory::get_value(appname_, params);
+  std::string app_namespace = sprockit::printf("app%d", int(aid_));
+  sprockit::sim_parameters* app_params
+      = params->get_optional_namespace(app_namespace);
+  app_template_ = sw::app_factory::get_value(appname_, app_params);
   app_template_->init_argv(aid_, params);
 
   STATIC_INIT_INTERCONNECT(params)

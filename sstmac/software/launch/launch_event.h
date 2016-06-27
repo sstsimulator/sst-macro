@@ -20,28 +20,26 @@
 namespace sstmac {
 namespace sw {
 
-class launch_message :
-  public hw::network_message,
+class launch_event :
+  public event,
   public library_interface,
   public timed_interface
 {
-
+  NotSerializable(launch_event)
  public:
   enum LAUNCHTYPE {
     ARRIVE, START, COMPLETE, KILL, RESTART
   };
 
  public:
-  launch_message(launch_info* i,
+  launch_event(launch_info* i,
                  LAUNCHTYPE t,
                  task_id tid) :
     library_interface("launcher"),
     timed_interface(timestamp(0)),
-    network_message(node_id(), node_id(), tid, tid, 0), //use zero bytes
     info_(i),
     launchtype_(t),
     tid_(tid) {
-    needs_ack_ = false;
   }
 
   /**
@@ -58,11 +56,6 @@ class launch_message :
     return info_;
   }
 
-  virtual long
-  byte_length() const {
-    return 16;
-  }
-
   LAUNCHTYPE
   launch_type() const {
     return launchtype_;
@@ -71,12 +64,6 @@ class launch_message :
   task_id
   tid() const {
     return tid_;
-  }
-
-  virtual void
-  serialize_order(serializer& ser){
-    spkt_throw(sprockit::unimplemented_error,
-        "launch_message::serializer_order");
   }
 
  protected:

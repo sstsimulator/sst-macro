@@ -19,7 +19,7 @@
 namespace sstmac {
 namespace sw {
 
-class arrive_message : public launch_message
+class arrive_message : public launch_event
 {
 
  public:

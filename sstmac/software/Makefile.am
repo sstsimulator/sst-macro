@@ -165,8 +165,8 @@ nobase_library_include_HEADERS = \
   launch/launch_handler.h \
   launch/launch_info.h  \
   launch/launch_info_fwd.h  \
-  launch/launch_message.h  \
-  launch/launch_message_fwd.h  \
+  launch/launch_event.h  \
+  launch/launch_event_fwd.h  \
   launch/machine_descriptor.h 
 
 if HAVE_UCONTEXT
