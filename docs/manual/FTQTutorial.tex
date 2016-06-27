@@ -44,3 +44,11 @@ ftq_epoch=5us
 Events are accumulated into a single data point per ``epoch.''
 If the timestamp is too small, too little data will be collected and the time interval won't be large enough to give a meaningful picture.
 If the timestamp is too large, too many events will be grouped togther into a single data point, losing temporal structure.
+
+Using fully namespace parameters, this would be specified as:
+
+
+\begin{ViFile}
+node.os.ftq.fileroot=<fileroot>
+node.os.ftq.epoch=5us
+\end{ViFile}

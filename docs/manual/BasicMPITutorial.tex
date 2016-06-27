@@ -28,17 +28,17 @@ The starting point is creating a main routine for the application.
 The simulator itself already provides a \inlinecode{main} routine.
 The SST compiler automatically changes the function name to \inlinecode{user_skeleton_main},
 which provides an entry point for the application to actually begin.
-When \sstmacro launches, it will invoke this routine and pass in any command line arguments specified via the \inlinefile{launch_app1_argv} parameter.  Upon entering the main routine, 
+When \sstmacro launches, it will invoke this routine and pass in any command line arguments specified via the \inlinefile{app1.argv} parameter.  Upon entering the main routine, 
 the code is now indistinguishable from regular MPI C code.  
 In the parameter file to be used with the simulation, you must set
 
 \begin{ViFile}
-launch_app1 = user_app_c
+app1.name = user_app_c
 \end{ViFile}
 or, if compiling as C++
 
 \begin{ViFile}
-launch_app1 = user_app_cxx
+app1.name = user_app_cxx
 \end{ViFile}
 
 At the very top of the file, the \inlineshell{mpi.h} header is actually mapped by the SST compiler to an \sstmacro header file.

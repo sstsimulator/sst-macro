@@ -179,33 +179,6 @@ Even if configured so that time progresses, the code will work but will take a v
 \item Calling MPI functions from user-defined reduce operations (MPI test 39; including \func{MPI\_Comm\_rank}).
 \end{itemize}
 
-\subsubsection{Miscellaneous}
-\label{subsubsec:issues:mpi:misc}
-
-\begin{itemize}
-\item \func{MPI\_Is\_thread\_main()} is not implemented.
-\end{itemize}
-
-\subsection{OpenSHMEM}
-\label{subsec:issues:shmem}
-
-Only the collect and fcollect functions of the API are not implemented (they will be in future releases).
-
-Also, like handling of global variables discussed in Sections \ref{subsec:issues:globals} and \ref{sec:skel:globals}, SHMEM globals need to use a different type.  
-For primitives and primitive arrays, refer to \inlinecode{<sstmac/openshmem/shmem/globals.h>} for replacing types, e.g. the following code
-
-\begin{ViFile}
-int my_global_var = 4;
-double an_array[6];
-\end{ViFile}
-
-needs to become
-
-\begin{ViFile}
-shmem_int my_global_var(4);
-shmem_arr<double, 6> an_array;
-\end{ViFile}
-
 
 \subsection{Fortran}
 \label{subsec:issues:fortran}
