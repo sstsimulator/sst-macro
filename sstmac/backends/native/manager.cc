@@ -86,15 +86,14 @@ manager::init_factory_params(sprockit::sim_parameters* params)
 }
 
 int
-manager::compute_max_nproc(int appnum, sprockit::sim_parameters* params)
+manager::compute_max_nproc_for_app(sprockit::sim_parameters* app_params)
 {
   int max_nproc = 0;
   /** Do a bunch of dumpi stuff */
   static const char* dmeta = "launch_dumpi_metaname";
-  std::string launch_param_name = sprockit::printf("launch_app%d", appnum);
-  if (params->get_param(launch_param_name) == "parsedumpi"){
+  if (app_params->get_param("name") == "parsedumpi"){
     std::string dumpi_meta_filename;
-    if (!params->has_param(dmeta)){
+    if (!app_params->has_param(dmeta)){
       FILE *fp = popen("ls *.meta", "r");
       char buf[1024];
       char* ret = fgets(buf, 1024, fp);
@@ -105,20 +104,20 @@ manager::compute_max_nproc(int appnum, sprockit::sim_parameters* params)
           lastchar = '\0';
         }
         cout0 << "Using dumpi meta " << buf << std::endl;
-        params->add_param(dmeta, buf);
+        app_params->add_param(dmeta, buf);
       } else {
         spkt_throw(sprockit::input_error,
          "no dumpi file found in folder or specified with launch_dumpi_metaname");
       }
       dumpi_meta_filename = buf;
     } else {
-      dumpi_meta_filename = params->get_param(dmeta);
+      dumpi_meta_filename = app_params->get_param(dmeta);
     }
-    if (!params->has_param("launch_app1_cmd")){
+    if (!app_params->has_param("launch_cmd")){
       sw::dumpi_meta* meta = new sw::dumpi_meta(dumpi_meta_filename);
       int nproc = meta->num_procs();
       std::string cmd = sprockit::printf("aprun -n %d -N 1", nproc);
-      params->add_param("launch_app1_cmd", cmd);
+      app_params->add_param("launch_cmd", cmd);
       max_nproc = std::max(max_nproc, nproc);
       delete meta;
     }
@@ -127,8 +126,7 @@ manager::compute_max_nproc(int appnum, sprockit::sim_parameters* params)
     //regular application
     int nproc, procs_per_node;
     std::vector<int> ignore;
-    skeleton_app_manager::parse_launch_cmd(launch_param_name,
-        params, nproc, procs_per_node, ignore);
+    skeleton_app_manager::parse_launch_cmd(app_params, nproc, procs_per_node, ignore);
     max_nproc = std::max(nproc, max_nproc);
   }
   return max_nproc;
@@ -140,11 +138,12 @@ manager::compute_max_nproc(sprockit::sim_parameters* params)
   int appnum = 1;
   int max_nproc = 0;
   while (true) {
-    std::string launch_prefix = sprockit::printf("launch_app%d", appnum);
-    if (!params->has_param(launch_prefix)) {
+    std::string app_namespace = sprockit::printf("app%d", appnum);
+    if (!params->has_namespace(app_namespace))
       break;
-    }
-    int nproc = compute_max_nproc(appnum, params);
+
+    sprockit::sim_parameters* app_params = params->get_namespace(app_namespace);
+    int nproc = compute_max_nproc_for_app(app_params);
     max_nproc = std::max(nproc, max_nproc);
     ++appnum;
   }
@@ -152,16 +151,13 @@ manager::compute_max_nproc(sprockit::sim_parameters* params)
 }
 
 void
-manager::build_app(int appnum, const std::string& launch_prefix,
-    sprockit::sim_parameters* params)
+manager::build_app(int appnum, sprockit::sim_parameters* params)
 {
-  std::string param_name = launch_prefix + "_type";
-  timestamp start = params->get_optional_time_param(
-                      launch_prefix + "_start", 0);
+  timestamp start = params->get_optional_time_param("start", 0);
 
   sstmac::sw::app_id aid(appnum);
-  app_manager* appman = app_manager_factory::get_optional_param(param_name,
-                            "skeleton", params, aid, rt_);
+  app_manager* appman = app_manager_factory::get_optional_param(
+        "launch_type", "skeleton", params, aid, rt_);
   appman->set_interconnect(interconnect_);
 
   app_managers_[appnum] = appman;
@@ -174,11 +170,13 @@ manager::build_apps(sprockit::sim_parameters* params)
 {
   int appnum = 1;
   while (true) {
-    std::string launch_prefix = sprockit::printf("launch_app%d", appnum);
-    if (!params->has_param(launch_prefix)) {
+    std::string app_namespace = sprockit::printf("app%d", appnum);
+    if (!params->has_namespace(app_namespace))
       break;
-    }
-    build_app(appnum, launch_prefix, params);
+
+    sprockit::sim_parameters* app_params
+        = params->get_namespace(app_namespace);
+    build_app(appnum, app_params);
     ++appnum;
   }
 }

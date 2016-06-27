@@ -62,6 +62,9 @@ class app :
   int
   allocate_tls_key(destructor_fxn fnx);
 
+  static sprockit::sim_parameters*
+  get_params();
+
   software_id
   sid() const {
    return id_;

@@ -221,7 +221,7 @@ int traffic_matrix_main(int argc, char** argv)
     "Rank %d entering initial param bcast",
     tport->rank());
 
-  sprockit::sim_parameters* params = sstmac::env::params;
+  sprockit::sim_parameters* params = sstmac::sw::app::get_params();
 
   /** This configures the compute intensity as a function of baseline bandwidth
    *  Messages are sent in windows of size 100 us

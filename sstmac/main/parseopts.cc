@@ -87,12 +87,12 @@ parse_opts(int argc, char **argv, opts &oo)
         break;
       case 'a': {
         oo.configfile = "debug.ini";
-        oo.params->add_param_override("launch_app1", "user_app_cxx");
-        oo.params->add_param_override("launch_app1_cmd", "aprun -n 1");
+        oo.params->add_param_override("app1.name", "user_app_cxx");
+        oo.params->add_param_override("app1.launch_cmd", "aprun -n 1");
         break;
       }
       case 'n' : {
-        oo.params->add_param_override("launch_app1_cmd", sprockit::printf("aprun -n %s -N 1", optarg));
+        oo.params->add_param_override("app1.launch_cmd", sprockit::printf("aprun -n %s -N 1", optarg));
         break;
       }
       case 'f':
@@ -139,7 +139,7 @@ parse_opts(int argc, char **argv, opts &oo)
 
   if (dodumpi) {
     oo.configfile = "debug.ini";
-    oo.params->add_param("launch_app1", "parsedumpi");
+    oo.params->add_param("app1.name", "parsedumpi");
   }
 
   if (pisces_debug) {
@@ -151,7 +151,7 @@ parse_opts(int argc, char **argv, opts &oo)
   }
 
   if (run_ping_all){
-    oo.params->add_param("launch_app1", "mpi_ping_all");
+    oo.params->add_param("app1.name", "mpi_ping_all");
   }
 
   if (debugflags){
@@ -167,7 +167,7 @@ parse_opts(int argc, char **argv, opts &oo)
     oo.configfile = "mpi_test_all.ini";
   }
   if (printnodes) {
-    oo.params->add_param_override("launch_app1", "mpi_printnodes");
+    oo.params->add_param_override("app1.name", "mpi_printnodes");
   }
 
   if (lowrestimer){

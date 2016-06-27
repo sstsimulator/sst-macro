@@ -243,9 +243,10 @@ sim_parameters::get_namespace(const std::string &ns)
   KeywordRegistration::validate_namespace(ns);
   std::map<std::string, sim_parameters*>::const_iterator it = subspaces_.find(ns);
   if (it == subspaces_.end()){
+    pretty_print_params();
     spkt_throw_printf(input_error,
-        "cannot enter namespace %s, does not exist",
-        ns.c_str());
+        "cannot enter namespace %s, does not exist inside namespace %s",
+        ns.c_str(), namespace_.c_str());
   }
   return it->second;
 }

@@ -129,8 +129,6 @@ class app_manager :
 
   std::string appname_;
 
-  std::string launch_prefix_;
-
   std::vector<int> core_affinities_;
 
   task_to_node_map nodeids_;

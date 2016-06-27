@@ -229,6 +229,12 @@ app::compute_block_write(long bytes)
   compute_mem_move_->write(bytes);
 }
 
+sprockit::sim_parameters*
+app::get_params()
+{
+  return operating_system::current_thread()->parent_app()->params();
+}
+
 void
 app::init_argv(app_id aid, sprockit::sim_parameters* params)
 {
@@ -239,15 +245,11 @@ app::init_argv(app_id aid, sprockit::sim_parameters* params)
       argv_for_app_.push_back((char**) NULL);
       argc_for_app_.push_back(0);
     }
-    char param_str[64];
-    sprintf(param_str, "launch_app%d", appnum);
-    std::string appname = params->get_param(param_str);
-
-    sprintf(param_str, "launch_app%d_argv", appnum);
+    std::string appname = params->get_param("name");
     std::vector<std::string> argv_param_vec;
     argv_param_vec.push_back(appname);
-    if (params->has_param(param_str)) {
-      params->get_vector_param(param_str, argv_param_vec);
+    if (params->has_param("argv")) {
+      params->get_vector_param("argv", argv_param_vec);
     }
     int argc = argv_param_vec.size();
     char* argv_buffer = new char[256 * argc];

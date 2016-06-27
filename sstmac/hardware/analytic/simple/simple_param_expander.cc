@@ -43,7 +43,7 @@ simple_param_expander::expand(sprockit::sim_parameters* params)
   }
 
   if (!params->has_param("nic_negligible_size")){
-    nic_params->add_param_override("nic.negligible_size", "512");
+    nic_params->add_param_override("negligible_size", "512");
   }
 
   std::string amm_type = params->get_param("amm_model");

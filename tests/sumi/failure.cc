@@ -90,7 +90,7 @@ try_main(int argc, char **argv)
   int me = comm_rank();
   //int nproc = comm_nproc();
 
-  sprockit::sim_parameters* params = sstmac::env::params;
+  sprockit::sim_parameters* params = sstmac::sw::app::get_params();
   bool heartbeat = params->get_optional_bool_param("heartbeat", false);
   if (heartbeat)
     comm_start_heartbeat(100e-3);

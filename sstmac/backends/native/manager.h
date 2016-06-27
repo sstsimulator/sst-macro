@@ -65,13 +65,13 @@ class manager : public sprockit::factory_type {
 
  protected:
   void
-  build_app(int appnum, const std::string& launch_prefix, sprockit::sim_parameters* params);
+  build_app(int appnum, sprockit::sim_parameters* params);
 
   void
   build_apps(sprockit::sim_parameters* params);
 
   static int
-  compute_max_nproc(int appnum, sprockit::sim_parameters *params);
+  compute_max_nproc_for_app(sprockit::sim_parameters* app_params);
 
  protected:
   /// Next parallel process id.

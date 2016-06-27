@@ -61,17 +61,14 @@ skeleton_app_manager::do_allocate_and_index_jobs()
 
 void
 skeleton_app_manager::parse_launch_cmd(
-  const std::string& prefix,
   sprockit::sim_parameters* params,
   int& nproc,
   int& procs_per_node,
   std::vector<int>& affinities)
 {
-  std::string appname = params->get_param(prefix);
-  std::string launch_cmd_key = prefix + "_cmd";
-  if (params->has_param(launch_cmd_key)) {
+  if (params->has_param("launch_cmd")) {
     /** Check for an aprun launch */
-    std::string launch_cmd = params->get_param(launch_cmd_key);
+    std::string launch_cmd = params->get_param("launch_cmd");
     size_t pos = launch_cmd.find_first_of(' ');
     std::string launcher;
     if (pos != std::string::npos) {
@@ -82,25 +79,25 @@ skeleton_app_manager::parse_launch_cmd(
     }
 
     if (launcher == "aprun") {
-      parse_aprun(launch_cmd, nproc, procs_per_node, affinities, appname);
+      parse_aprun(launch_cmd, nproc, procs_per_node, affinities);
       if (procs_per_node == -1) { //nothing given
         int ncores = params->get_optional_int_param("node_cores", 1);
         procs_per_node = ncores > nproc ? nproc : ncores;
       }
     }
     else {
-      spkt_throw_printf(sprockit::value_error, "invalid launcher %s given", launcher.c_str());
+      spkt_throw_printf(sprockit::value_error,
+                        "invalid launcher %s given", launcher.c_str());
     }
   }
   else { //standard launch
     try {
-      nproc = params->get_long_param(prefix + "_size");
-      procs_per_node = params->get_optional_long_param(prefix + "_ntask_per_node", 1);
+      nproc = params->get_long_param("size");
+      procs_per_node = params->get_optional_long_param("ntask_per_node", 1);
     }
     catch (sprockit::input_error& e) {
-      cerr0 << "Problem reading " << prefix <<
-                "_size parameter in skeleton app manager.\n"
-                << "If this is a DUMPI trace, set " << prefix << "_type to dumpi.\n";
+      cerr0 << "Problem reading app size parameter in skeleton app manager.\n"
+               "If this is a DUMPI trace, set app name to dumpi.\n";
       throw e;
     }
   }
@@ -109,15 +106,14 @@ skeleton_app_manager::parse_launch_cmd(
 void
 skeleton_app_manager::parse_launch_cmd(sprockit::sim_parameters* params)
 {
-  parse_launch_cmd(launch_prefix_, params, nproc_, procs_per_node_, core_affinities_);
+  parse_launch_cmd(params, nproc_, procs_per_node_, core_affinities_);
 }
 
 void
 skeleton_app_manager::parse_aprun(
   const std::string &cmd,
   int &nproc, int &nproc_per_node,
-  std::vector<int>& core_affinities,
-  const std::string &appname)
+  std::vector<int>& core_affinities)
 {
   int aprun_numa_containment = 0;
   option aprun_gopt[] = {
