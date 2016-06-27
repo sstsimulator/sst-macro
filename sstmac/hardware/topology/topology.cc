@@ -76,6 +76,7 @@ topology::init_factory_params(sprockit::sim_parameters* params)
 
   netlink_endpoints_ = params->get_optional_bool_param("netlink_endpoints", false);
   num_nodes_per_netlink_ = params->get_optional_int_param("netlink_radix", 1);
+
   if (netlink_endpoints_){
     endpoints_per_switch_ /= num_nodes_per_netlink_;
   } else {

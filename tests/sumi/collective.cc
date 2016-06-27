@@ -454,8 +454,8 @@ main(int argc, char **argv)
   sstmac::runtime::add_deadlock_check(
     sstmac::new_deadlock_check(sumi_api(), &sumi::transport::deadlock_check));
 
+  test_dynamic_tree_vote(1);
 
-  //test_dynamic_tree_vote(1);
   test_allreduce(2);
 
   test_allreduce_payload(3);

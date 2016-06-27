@@ -49,6 +49,7 @@ IGNORE = 0
 TIME_POINT = 1
 FINAL_TIME = 2
 TEXT_LINE = 3
+CORE_TIME = 4
 
 time_point_regexp = re.compile("T\s*=\s*(\d+[.]\d+)")
 final_time_regexp = re.compile("[Rr]untime.*?(\d+[.]\d+)(.*)")
@@ -56,6 +57,9 @@ final_time_regexp = re.compile("[Rr]untime.*?(\d+[.]\d+)(.*)")
 def parseLine(line):
   if "WARNING:" in line or "Maximum bad" in line:
     return IGNORE, None
+
+  if "Event queue empty" in line:
+    return CORE_TIME, None
 
   match = time_point_regexp.search(line)
   if match:
@@ -79,6 +83,7 @@ class SimOutput:
     self.lines = {}
     self.times = []
     self.finalTime = -1
+    self.integratedCore = False
 
 def parseFile(fname):
   lines = open(fname).read().splitlines()
@@ -95,6 +100,8 @@ def parseFile(fname):
       sim.times.append(value)
     elif lineType == FINAL_TIME:
       sim.finalTime = value
+    elif lineType == CORE_TIME:
+      sim.integratedCore = True
     elif lineType == IGNORE:
       pass
     else:
@@ -144,7 +151,9 @@ def checkOutput(srcdir, tmpfile, condition):
     if errorMsg:
       return errorMsg
 
-  if not condType == "notime":
+  if chkSim.integratedCore:
+    pass
+  elif not condType == "notime":
     timeChecker = eval("lambda t: %s" % condition)
     if not timeChecker(chkSim.finalTime):
       return "t=%f failed time check %s" % (chkSim.finalTime, condition)

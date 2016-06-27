@@ -488,7 +488,7 @@ class topology :
   */
   int endpoints_per_switch_;
 
-  int nodes_per_switch_;
+  bool netlink_endpoints_;
 
   bool outputgraph_;
 

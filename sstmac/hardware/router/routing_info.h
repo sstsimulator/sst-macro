@@ -17,6 +17,7 @@
 #include <sprockit/errors.h>
 #include <sstmac/hardware/router/routing_enum.h>
 #include <sstmac/common/node_address.h>
+#include <sstmac/common/serializable.h>
 #include <vector>
 
 namespace sstmac {
@@ -164,8 +165,30 @@ class routing_info
 
 };
 
+}
+}
 
-}
-}
+START_SERIALIZATION_NAMESPACE
+template <>
+class serialize<sstmac::hw::routing_info>
+{
+ public:
+  void
+  operator()(sstmac::hw::routing_info& info, serializer& ser){
+    ser.primitive(info);
+  }
+};
+
+template <>
+class serialize<sstmac::hw::routing_info::path>
+{
+ public:
+  void
+  operator()(sstmac::hw::routing_info::path& info, serializer& ser){
+    ser.primitive(info);
+  }
+};
+END_SERIALIZATION_NAMESPACE
+
 #endif
 

@@ -34,7 +34,6 @@ APITESTS = \
   testsuite_mpi_47 \
   testsuite_mpi_48 \
   testsuite_mpi_49 \
-  testsuite_mpi_69 \
   testsuite_mpi_71 \
   testsuite_mpi_74 \
   testsuite_mpi_75 \
@@ -56,7 +55,6 @@ APITESTS = \
   testsuite_mpi_103 \
   testsuite_mpi_104 \
   testsuite_mpi_110 \
-  testsuite_mpi_112 \
   testsuite_mpi_115 \
   testsuite_mpi_207 \
   testsuite_mpi_209 \
@@ -65,9 +63,6 @@ APITESTS = \
   testsuite_mpi_214 \
   testsuite_mpi_216 \
   testsuite_mpi_222 \
-  testsuite_mpi_231 \
-  testsuite_mpi_232 \
-  testsuite_mpi_234 \
   testsuite_mpi_236 \
   testsuite_mpi_238 \
   testsuite_mpi_239 \
