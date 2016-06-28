@@ -41,7 +41,8 @@ mpi_api::do_wait(MPI_Request *request, MPI_Status *status)
 }
 
 int
-mpi_api::waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of_statuses[])
+mpi_api::waitall(int count, MPI_Request array_of_requests[],
+                 MPI_Status array_of_statuses[])
 {
   SSTMACBacktrace("MPI_Waitall");
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, 
@@ -82,6 +83,11 @@ mpi_api::waitany(int count, MPI_Request array_of_requests[], int *indx, MPI_Stat
     }
   }
 
+  if (numNonnull == 0){
+    printf("all null\n");
+    return MPI_SUCCESS;
+  }
+
   //none of them are already done
   reqPtrs.resize(numNonnull);
   queue_->start_progress_loop(reqPtrs);
@@ -93,24 +99,28 @@ mpi_api::waitany(int count, MPI_Request array_of_requests[], int *indx, MPI_Stat
       mpi_request* reqPtr = reqPtrs[numNonnull++];
       if (reqPtr->is_complete()){
         *indx = i;
+        if (status != MPI_STATUS_IGNORE){
+          *status = reqPtr->status();
+        }
+        if (!reqPtr->is_persistent()){
+          array_of_requests[i] = MPI_REQUEST_NULL;
+          delete reqPtr;
+        }
+        return MPI_SUCCESS;
       }
-      if (status != MPI_STATUS_IGNORE){
-        *status = reqPtr->status();
-      }
-      if (!reqPtr->is_persistent()){
-        array_of_requests[i] = MPI_REQUEST_NULL;
-        delete reqPtr;
-      }
-      return MPI_SUCCESS;
     }
   }
+
+  spkt_throw_printf(sprockit::value_error,
+                    "MPI_Waitany finished, but had no completed requests");
 
   //must have all been null
   return MPI_SUCCESS;
 }
 
 int
-mpi_api::waitsome(int incount, MPI_Request array_of_requests[], int *outcount, int array_of_indices[], MPI_Status array_of_statuses[])
+mpi_api::waitsome(int incount, MPI_Request array_of_requests[],
+                  int *outcount, int array_of_indices[], MPI_Status array_of_statuses[])
 {
   SSTMACBacktrace("MPI_Waitsome");
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request,
@@ -138,12 +148,11 @@ mpi_api::waitsome(int incount, MPI_Request array_of_requests[], int *outcount, i
   }
 
   if (numComplete > 0){
+    *outcount = numComplete;
     return MPI_SUCCESS;
   }
 
   reqPtrs.resize(numIncomplete);
-
-  assert(numIncomplete + numComplete == incount);
 
   queue_->start_progress_loop(reqPtrs);
 
@@ -164,6 +173,7 @@ mpi_api::waitsome(int incount, MPI_Request array_of_requests[], int *outcount, i
     }
   }
 
+  *outcount = numComplete;
   return MPI_SUCCESS;
 }
 

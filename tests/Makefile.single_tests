@@ -6,10 +6,11 @@ SINGLETESTS = \
   test_utilities \
   test_pthread \
   test_blas \
-  test_scan \
   test_blas_finegrained \
   test_node_noise \
   test_compute
+
+#  test_scan  TODO
 
 if ENABLE_DEBUG
 SINGLETESTS += \

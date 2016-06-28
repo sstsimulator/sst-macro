@@ -506,8 +506,6 @@ class topology :
 
   int max_ports_injection_;
 
-  bool netlink_endpoints_;
-
   static topology* main_top_;
 
  private:

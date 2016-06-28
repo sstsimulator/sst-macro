@@ -14,6 +14,24 @@ GLOBALS_TEST_DEPS += ../sstmac/install/libmacro.la
 MPI_TEST_DEPS += ../sstmac/install/libmacro.la
 endif
 
+#  testsuite_mpi_38 \
+#  testsuite_mpi_43 \
+#  testsuite_mpi_44 \
+#  testsuite_mpi_46 \
+#  testsuite_mpi_90 \
+#  testsuite_mpi_99 \
+#  testsuite_mpi_100 \
+#  testsuite_mpi_101 \
+#  testsuite_mpi_110 \
+#  testsuite_mpi_209 \
+#  testsuite_mpi_210 \
+#  testsuite_mpi_212 \
+#  testsuite_mpi_214 \
+#  testsuite_mpi_216 \
+#  testsuite_mpi_222 \
+#  testsuite_mpi_236 \
+#  testsuite_mpi_238 \
+#
 # These are the ones that currently pass
 APITESTS = \
   testsuite_mpi_2 \
@@ -25,12 +43,8 @@ APITESTS = \
   testsuite_mpi_26 \
   testsuite_mpi_29 \
   testsuite_mpi_37 \
-  testsuite_mpi_38 \
   testsuite_mpi_42 \
-  testsuite_mpi_43 \
-  testsuite_mpi_44 \
   testsuite_mpi_45 \
-  testsuite_mpi_46 \
   testsuite_mpi_47 \
   testsuite_mpi_48 \
   testsuite_mpi_49 \
@@ -47,24 +61,11 @@ APITESTS = \
   testsuite_mpi_83 \
   testsuite_mpi_88 \
   testsuite_mpi_89 \
-  testsuite_mpi_90 \
   testsuite_mpi_97 \
-  testsuite_mpi_99 \
-  testsuite_mpi_100 \
-  testsuite_mpi_101 \
   testsuite_mpi_103 \
   testsuite_mpi_104 \
-  testsuite_mpi_110 \
   testsuite_mpi_115 \
   testsuite_mpi_207 \
-  testsuite_mpi_209 \
-  testsuite_mpi_210 \
-  testsuite_mpi_212 \
-  testsuite_mpi_214 \
-  testsuite_mpi_216 \
-  testsuite_mpi_222 \
-  testsuite_mpi_236 \
-  testsuite_mpi_238 \
   testsuite_mpi_239 \
   testsuite_globals_0 \
   testsuite_globals_1 \

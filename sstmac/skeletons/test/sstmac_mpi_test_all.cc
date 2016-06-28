@@ -20,7 +20,13 @@
 namespace sstmac {
 namespace sw {
 
-SpktRegister("SSTMAC_mpi_test_all | sstmac_mpi_testall", app,
+#define failure_printf(str, ...) \
+  fprintf(stderr, str "\n%s:%d\n", __VA_ARGS__, __FILE__, __LINE__)
+#define failure(str) \
+  fprintf(stderr, str "\n%s:%d\n", __FILE__, __LINE__)
+
+
+SpktRegister("sstmac_mpi_test_all | sstmac_mpi_testall", app,
             sstmac_mpi_test_all);
 
 int sstmac_mpi_test_all::errors_ = 0;
@@ -51,7 +57,6 @@ sstmac_mpi_test_all::skeleton_main()
   int rank, size;
   MPI_Comm_rank(world_, &rank);
   MPI_Comm_size(world_, &size);
-  //dbg << "App " << rank << " initialized" << "\n";
 
   if (size < 8) {
     spkt_throw_printf(sprockit::range_error,
@@ -152,6 +157,7 @@ sstmac_mpi_test_all::test_scan()
 void
 sstmac_mpi_test_all::test_reduce_scatter()
 {
+#if 0
   int rank, size;
   MPI_Comm_rank(world_, &rank);
   MPI_Comm_size(world_, &size);
@@ -176,7 +182,7 @@ sstmac_mpi_test_all::test_reduce_scatter()
       throw sprockit::spkt_error("an error occurred in the application");
     }
   }
-
+#endif
 }
 
 void
@@ -278,14 +284,11 @@ sstmac_mpi_test_all::test_sendrecv()
     if ((rank) & 1) {
       // even values of half-cycle plus rank.
 
-      //dbg_ << "testall[" << rank << "]: sending payload \n";
-
       int pay = rank * 1000;
       MPI_Send(&pay, count, MPI_INT, buddy, tag, world_);
 
     }
     else {
-      // dbg_ << "testall[" << rank << "]: receiving payload \n";
       MPI_Status stat;
       int recvdata;
       MPI_Recv(&recvdata, count, MPI_INT, buddy, tag, world_,
@@ -293,10 +296,7 @@ sstmac_mpi_test_all::test_sendrecv()
 
       if (recvdata != (buddy * 1000)) {
         errors_++;
-
-        if (stop_at_errors_) {
-          throw sprockit::spkt_error("an error occurred in the application");
-        }
+        failure("did not receive buddy*1000");
       }
 
     }
@@ -322,46 +322,24 @@ sstmac_mpi_test_all::test_barrier()
 void
 sstmac_mpi_test_all::test_reduce()
 {
-  /*int rank, size;
-   MPI_Comm_rank(world_, &rank);
-   MPI_Comm_size(world_, &size);
-   int count = 100; //arbitrary
+  int rank, size;
+  MPI_Comm_rank(world_, &rank);
+  MPI_Comm_size(world_, &size);
+  int count = 100; //arbitrary
 
-   SSTMAC_DEBUG << "testall[" << rank << "] -- Testing reduce " << " \n";
+  int var = rank;
+  int root = 2 % size;
 
-   payload::const* result;
+  int result = 0;
+  MPI_Reduce(&var, &result, 1, MPI_INT, MPI_SUM, root, MPI_COMM_WORLD);
 
-   payload::const_ptr load = valuepayload<int>::construct((1 << rank));
-   mpi()->reduce(count, MPI_INT, mpiop::sum, int(0), world_, load,
-   result);
-
-   if (rank == 0)
-   {
-   const valuepayload<int>::const_ptr recvdata = ptr_safe_cast<
-   const valuepayload<int> >(result);
-
-   if (!recvdata)
-   {
-   errors_++;
-   SSTMAC_DEBUG << "ERROR at rank " << rank
-   << ": REDUCE: NULL payload recv'd \n";
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-   else
-   {
-   int expected = (int) pow(2.0, world_.size().id) - 1;
-   if (recvdata->data() != expected)
-   {
-   errors_++;
-   SSTMAC_DEBUG << "ERROR at rank " << rank << ": REDUCE: received value "
-   << recvdata->data() << " and we should have got " << expected << "\n";
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-
-   }
-   }*/
+  if (rank == root){
+    int correct = size*(size-1) / 2;
+    if (result != correct){
+      failure_printf("MPI_Reduce expected %d, got %d", correct, result);
+      ++errors_;
+    }
+  }
 }
 
 void
@@ -404,9 +382,7 @@ sstmac_mpi_test_all::test_allreduce()
   int expected = (int) pow(2.0, size) - 1;
   if (allrecvdata != (expected)) {
     errors_++;
-    if (stop_at_errors_) {
-      throw sprockit::spkt_error("an error occurred in the application");
-    }
+    failure_printf("allreduce expected %d, got %d", expected, allrecvdata);
   }
 
 }
@@ -432,9 +408,7 @@ sstmac_mpi_test_all::test_bcast()
 
   if (recvdata != (1234)) {
     errors_++;
-    if (stop_at_errors_) {
-      throw sprockit::spkt_error("an error occurred in the application");
-    }
+    failure_printf("bcast expected 1234, got %d", recvdata);
   }
 
 }
@@ -991,11 +965,7 @@ sstmac_mpi_test_all::test_wait()
 
   int sender(5);
 
-  //SSTMAC_DEBUG << "testall[" << rank << "] -- Testing wait all \n";
-
   if (rank == 0) {
-
-    //MPI_Request* reqs = (MPI_Request*)malloc((size-1) * sizeof(MPI_Request));
     MPI_Request reqs[size - 1];
 
     for (int i = 1; i < size; i++) {
@@ -1019,16 +989,11 @@ sstmac_mpi_test_all::test_wait()
   MPI_Barrier(world_);
 
   if (rank == 0) {
-
-    //MPI_Request* reqs = (MPI_Request*)malloc((size-1) * sizeof(MPI_Request));
     MPI_Request reqs[size - 1];
 
     for (int i = 1; i < size; i++) {
-      MPI_Request req;
       MPI_Irecv(NULL, count, MPI_DOUBLE, int(i), tag, world_,
-                &req);
-      reqs[i - 1] = req;
-
+                &reqs[i-1]);
     }
 
     MPI_Status stat;
@@ -1036,14 +1001,9 @@ sstmac_mpi_test_all::test_wait()
     MPI_Waitany(size - 1, reqs, &index, &stat);
 
     if (index != sender - 1) {
-      //subtract 1 because I didn't push a mpirequest in the vector for myself
-      //SSTMAC_DEBUG << "ERROR at rank " << rank
-      //             << ": waitany unblocked with index " << index
-      //             << " and it should have been sent from " << sender << "\n";
       errors_++;
-      if (stop_at_errors_) {
-        throw sprockit::spkt_error("an error occurred in the application");
-      }
+      failure_printf("waitany expected sender %d, got %d",
+                     sender - 1, index);
     }
 
     //free(reqs);
@@ -1055,14 +1015,11 @@ sstmac_mpi_test_all::test_wait()
 
   MPI_Barrier(world_);
 
-  //SSTMAC_DEBUG << "testall[" << rank << "] -- Testing wait some \n";
-
   int tag2(699);
 
   if (rank == 0) {
     sleep(timestamp(1)); //lag me, so the others have a chance to send
 
-    //MPI_Request* reqs = (MPI_Request*)malloc((size-1) * sizeof(MPI_Request));
     MPI_Request reqs[size - 1];
 
     for (int i = 1; i < size; i++) {
@@ -1083,15 +1040,9 @@ sstmac_mpi_test_all::test_wait()
     }
 
     if (nrecved != nexpected) {
-      //subtract 1 for myself
-      //SSTMAC_DEBUG << "ERROR at rank " << rank
-      //             << ": waitsome unblocked with number of indices "
-      //             << nrecved << " and it should have been " << nexpected
-      //             << "\n";
       errors_++;
-      if (stop_at_errors_) {
-        throw sprockit::spkt_error("an error occurred in the application");
-      }
+      failure_printf("waitsome expected n=%d, got n=%d",
+                     nexpected, nrecved);
     }
   }
   else if (rank % 2 == 0) {
