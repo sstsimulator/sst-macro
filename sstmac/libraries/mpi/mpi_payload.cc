@@ -177,7 +177,7 @@ mpi_payload::serialize_order(serializer& ser)
   ser & (wrapped_);
   ser & (given_);
   ser & real_;
-  ser & buffer(buf_, bufsize_);
+  ser & array(buf_, bufsize_);
 }
 
 std::string

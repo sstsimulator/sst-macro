@@ -163,6 +163,35 @@ class serializer
     }
     }
   }
+
+  template <typename Int>
+  void
+  binary(void*& buffer, Int& size){
+    switch (mode_)
+    {
+    case SIZER: {
+      sizer_.add(sizeof(Int));
+      sizer_.add(size);
+      break;
+    }
+    case PACK: {
+      if (buffer && size){
+        pack(size);
+        packer_.pack_buffer(buffer, size);
+      } else {
+        Int sz(0);
+        pack(sz);
+      }
+      break;
+    }
+    case UNPACK: {
+      unpacker_.unpack(size);
+      unpacker_.unpack_buffer(&buffer, size);
+      break;
+    }
+    }
+  }
+
   
   void
   string(std::string& str);

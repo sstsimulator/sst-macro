@@ -151,7 +151,7 @@ message::serialize_order(sumi::serializer &ser)
 void
 payload_message::serialize_order(sumi::serializer &ser)
 {
-  ser & sumi::buffer(buffer_, num_bytes_);
+  ser & sumi::array(buffer_, num_bytes_);
   message::serialize_order(ser);
 }
 

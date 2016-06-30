@@ -14,8 +14,8 @@
 namespace sumi {
 using SST::Core::Serialization::serializable;
 using SST::Core::Serialization::serializable_type;
-using SST::Core::Serialization::buffer;
 using SST::Core::Serialization::array;
+using SST::Core::Serialization::raw_ptr;
 using SST::Core::Serialization::serialize;
 typedef SST::Core::Serialization::serializer serializer;
 }
@@ -33,8 +33,8 @@ namespace sumi {
 using sprockit::serializable;
 using sprockit::serializable_type;
 typedef sprockit::serializer serializer;
-using sprockit::buffer;
 using sprockit::array;
+using sprockit::raw_ptr;
 }
 #endif
 

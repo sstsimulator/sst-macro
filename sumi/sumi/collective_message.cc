@@ -43,7 +43,7 @@ void
 collective_eager_message::serialize_order(sumi::serializer &ser)
 {
   collective_work_message::serialize_order(ser);
-  ser & sumi::buffer(buffer_, num_bytes_);
+  ser & sumi::array(buffer_, num_bytes_);
 }
 
 void

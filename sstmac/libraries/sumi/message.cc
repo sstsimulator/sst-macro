@@ -23,11 +23,9 @@ transport_message::serialize_order(serializer& ser)
   ser & msg;
   payload_ = msg;
   if (network_message::is_metadata()){
-    uintptr_t ptr = (uintptr_t) buffer_;
-    ser & ptr; //just dump the void*, rdma request or similar
-    buffer_ = (void*) ptr;
+    ser & sstmac::raw_ptr(buffer_);
   } else { //I am a data thing, need to send the actual payload
-    ser & sstmac::buffer(buffer_, bytes_);
+    ser & sstmac::array(buffer_, bytes_);
   }
 }
 
