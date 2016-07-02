@@ -40,7 +40,7 @@ int
 mpi_api::start(MPI_Request* req)
 {
   mpi_request* reqPtr = get_request(*req);
-  persistent_op* op = reqPtr->op();
+  persistent_op* op = reqPtr->persistent_data();
   if (op == 0){
     spkt_throw_printf(sprockit::value_error,
                       "Starting MPI_Request that is not persistent");

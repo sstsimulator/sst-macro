@@ -31,13 +31,15 @@ int gather2( int argc, char **argv )
 	MPI_Comm_size( comm, &size );
 	
 	for (root=0; root<size; root++) {
-	    for (count = 1; count < 65000; count = count * 2) {
+
+      for (int iter = 0; iter < 1; ++iter) {
 		n = 12;
-		stride = 10;
+    int blocklength = 1;
+    stride = 10;
 		vecin = (double *)malloc( n * stride * size * sizeof(double) );
 		vecout = (double *)malloc( size * n * sizeof(double) );
 		
-		MPI_Type_vector( n, 1, stride, MPI_DOUBLE, &vec );
+    MPI_Type_vector( n, blocklength, stride, MPI_DOUBLE, &vec );
 		MPI_Type_commit( &vec );
 		
 		for (i=0; i<n*stride; i++) vecin[i] =-2;
@@ -51,7 +53,7 @@ int gather2( int argc, char **argv )
 				vecout, n, MPI_DOUBLE, root, comm );
 		}
 		else {
-		    MPI_Gather( vecin, 1, vec, NULL, -1, MPI_DATATYPE_NULL, 
+        MPI_Gather( vecin, blocklength, vec, NULL, -1, MPI_DATATYPE_NULL,
 				root, comm );
 		}
 		if (rank == root) {

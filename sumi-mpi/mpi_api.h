@@ -626,19 +626,22 @@ class mpi_api :
        mpi_type* old_type, MPI_Datatype* outtype);
 
   void
-  validate_mpi_collective(
-      const char* name,
-      const void*& sendbuf, void*& recvbuf,
-      int& sendcnt, int& recvcnt,
-      MPI_Datatype& sendtype, MPI_Datatype& recvtype);
+  start_mpi_collective(
+      collective::type_t ty,
+      const void* sendbuf, void* recvbuf,
+      MPI_Datatype sendtype, MPI_Datatype recvtype,
+      collective_op_base* op);
 
-  void
-  validate_mpi_collective(
-      const char* name,
-      const void*& sendbuf, void*& recvbuf,
-      MPI_Datatype& sendtype, MPI_Datatype& recvtype);
 
-  void collective_progress_loop(sumi::collective::type_t ty, int tag);
+  void* allocate_temp_pack_buffer(int count, mpi_type* type);
+
+  void free_temp_pack_buffer(void* srcbuf);
+
+  void pack_send(void* srcbuf, void* dstbuf, int sendcnt, mpi_type* type);
+
+  void unpack_recv(void* srcbuf, void* dstbuf, int recvcnt, mpi_type* type);
+
+  void wait_collective(collective_op_base* op);
 
   void
   free_requests(int nreqs,
@@ -663,33 +666,37 @@ class mpi_api :
    * @param comm
    * @return A unique tag identifying the collective
    */
-  int start_allgather(const void *sendbuf, void *recvbuf, int count, MPI_Datatype type, MPI_Comm comm);
+  void start_allgather(collective_op* op);
 
-  int start_alltoall(const void *sendbuf, void *recvbuf, int count, MPI_Datatype type, MPI_Comm comm);
+  void start_alltoall(collective_op* op);
 
-  int start_allreduce(const void *src, void *dst, int count, MPI_Datatype type, MPI_Op op, MPI_Comm comm);
+  void start_allreduce(collective_op* op);
 
-  int start_barrier(MPI_Comm comm);
+  void start_barrier(collective_op* op);
 
-  int start_bcast(void *buffer, int count, MPI_Datatype type, int root, MPI_Comm comm);
+  void start_bcast(collective_op* op);
 
-  int start_gather(const void *sendbuf, void *recvbuf, int count, MPI_Datatype type, int root, MPI_Comm comm);
+  void start_gather(collective_op* op);
 
-  int start_reduce(const void *src, void *dst, int count, MPI_Datatype type, MPI_Op op, int root, MPI_Comm comm);
+  void start_reduce(collective_op* op);
 
-  int start_reduce_scatter(const void *src, void *dst, int *recvcnts, MPI_Datatype type, MPI_Op op, MPI_Comm comm);
+  void start_reduce_scatter(collective_op* op);
 
-  int start_scan(const void *src, void *dst, int count, MPI_Datatype type, MPI_Op op, MPI_Comm comm);
+  void start_scan(collective_op* op);
 
-  int start_scatter(const void *sendbuf, void *recvbuf, int count, MPI_Datatype type, int root, MPI_Comm comm);
+  void start_scatter(collective_op* op);
 
-  int start_allgatherv(const void *sendbuf, void *recvbuf, int sendcount, const int *recvcounts, const int *displs, MPI_Datatype type, MPI_Comm comm);
+  void start_allgatherv(collectivev_op* op);
 
-  int start_alltoallv(const void *sendbuf,  void *recvbuf, const int *sendcounts, const int *sdispls, const int *recvcounts, const int *rdispls, MPI_Datatype type, MPI_Comm comm);
+  void start_alltoallv(collectivev_op* op);
 
-  int start_gatherv(const void *sendbuf, void *recvbuf, int sendcount, const int *recvcounts, const int *displs, MPI_Datatype type, int root, MPI_Comm comm);
+  void start_gatherv(collectivev_op* op);
 
-  int start_scatterv(const void *sendbuf, void *recvbuf, const int* sendcounts, const int *displs, int recvcount, MPI_Datatype type, int root, MPI_Comm comm);
+  void start_scatterv(collectivev_op* op);
+
+  void finish_collective_op(collective_op_base* op_);
+
+  void finish_vcollective_op(collective_op_base* op_);
 
   bool test(MPI_Request *request, MPI_Status *status);
 

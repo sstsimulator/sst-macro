@@ -274,80 +274,67 @@ mpi_type::bytes_to_elements(size_t bytes) const
 }
 
 void
-mpi_type::pack(const void *inbuf, void *outbuf, int bytes) const
+mpi_type::pack(const void* inbuf, void *outbuf) const
 {
   //we are packing from inbuf into outbuf
-  pack_action(outbuf, const_cast<void*>(inbuf), bytes, true);
+  pack_action(outbuf, const_cast<void*>(inbuf), true);
 }
 
 void
-mpi_type::unpack(const void *inbuf, void *outbuf, int bytes) const
+mpi_type::unpack(const void* inbuf, void *outbuf) const
 {
   //we are unpacking from inbuf into outbuf
   //false = unpack
-  pack_action(const_cast<void*>(inbuf), outbuf, bytes, false);
+  pack_action(const_cast<void*>(inbuf), outbuf, false);
 }
 
 void
-mpi_type::pack_action_primitive(void* packed_buf, void* unpacked_buf, int bytes, bool pack) const
+mpi_type::pack_action_primitive(void* packed_buf, void* unpacked_buf, bool pack) const
 {
   char* packed_ptr = (char*) packed_buf;
   char* unpacked_ptr = (char*) unpacked_buf;
   if (pack){
     //copy into packed array
-    ::memcpy(packed_ptr, unpacked_ptr, bytes);
+    ::memcpy(packed_ptr, unpacked_ptr, size_);
   }
   else {
     //copy into unpacked array
-    ::memcpy(unpacked_ptr, packed_ptr, bytes);
+    ::memcpy(unpacked_ptr, packed_ptr, size_);
   }
 }
 
 void
-mpi_type::pack_action_vector(void* packed_buf, void* unpacked_buf, int bytes, bool pack) const
+mpi_type::pack_action_vector(void* packed_buf, void* unpacked_buf, bool pack) const
 {
-  int bytes_left = bytes;
   char* packed_ptr = (char*) packed_buf;
   char* unpacked_ptr = (char*) unpacked_buf;
-  while (bytes_left > 0)
-  {
-    int bytes_this_round = vdata_->blocklen * vdata_->base->packed_size();
-    for (int j=0; j < vdata_->count && bytes_left > 0; ++j){
-      char* this_unpacked_ptr = unpacked_ptr + vdata_->byte_stride * j;
-      bytes_this_round = std::min(bytes_this_round, bytes_left);
-      vdata_->base->pack_action(packed_ptr, this_unpacked_ptr, bytes_this_round, pack);
-      packed_ptr += bytes_this_round;
-      bytes_left -= bytes_this_round;
-    }
-    unpacked_ptr += extent_;
+  int packed_stride = vdata_->base->packed_size();
+  for (int j=0; j < vdata_->count; ++j){
+    char* this_unpacked_ptr = unpacked_ptr + vdata_->byte_stride * j;
+    vdata_->base->pack_action(packed_ptr, this_unpacked_ptr, pack);
+    packed_ptr += packed_stride;
   }
+  unpacked_ptr += extent_;
 }
 
 void
-mpi_type::pack_action_indexed(void* packed_buf, void* unpacked_buf, int bytes, bool pack) const
+mpi_type::pack_action_indexed(void* packed_buf, void* unpacked_buf, bool pack) const
 {
-  int bytes_left = bytes;
   char* packed_ptr = (char*) packed_buf;
   char* unpacked_ptr = (char*) unpacked_buf;
-  while (bytes_left > 0)
-  {
-    for (int j=0; j < idata_->blocks.size() && bytes_left > 0; ++j){
-      const ind_block& next_block = idata_->blocks[j];
-      char* this_unpacked_ptr = unpacked_ptr + next_block.byte_disp;
-      int bytes_this_round = next_block.num * next_block.base->packed_size();
-      bytes_this_round = std::min(bytes_this_round, bytes_left);
-      next_block.base->pack_action(packed_ptr, this_unpacked_ptr, bytes_this_round, pack);
-      bytes_left -= bytes_this_round;
-      //std::cout << sprockit::printf("copying %d bytes at displacement %d, packed=%p unpacked=%p %d bytes left\n",
-      //                  bytes_this_round, next_block.disp, packed*, this_unpacked*, bytes_left);
-      packed_ptr += bytes_this_round;
-    }
-    unpacked_ptr += extent_;
+  for (int j=0; j < idata_->blocks.size(); ++j){
+    const ind_block& next_block = idata_->blocks[j];
+    char* this_unpacked_ptr = unpacked_ptr + next_block.byte_disp;
+    next_block.base->pack_action(packed_ptr, this_unpacked_ptr, pack);
+    //std::cout << sprockit::printf("copying %d bytes at displacement %d, packed=%p unpacked=%p %d bytes left\n",
+    //                  bytes_this_round, next_block.disp, packed*, this_unpacked*, bytes_left);
+    packed_ptr += next_block.base->packed_size();
   }
+  unpacked_ptr += extent_;
 }
 
 void
-mpi_type::pack_action_pair(void* packed_buf, void* unpacked_buf, int bytes, bool pack) const
+mpi_type::pack_action_pair(void* packed_buf, void* unpacked_buf, bool pack) const
 {
   int bytes_done = 0;
   int first_size = pdata_->base1->size_;
@@ -357,40 +344,38 @@ mpi_type::pack_action_pair(void* packed_buf, void* unpacked_buf, int bytes, bool
   char* packed_ptr = (char*) packed_buf;
   char* unpacked_ptr = (char*) unpacked_buf;
 
-  while (bytes_done < bytes){
-    if (pack){
-      ::memcpy(packed_ptr, unpacked_ptr, first_size);
-      ::memcpy(packed_ptr + first_size, unpacked_ptr + pair_alignment, second_size);
-    }
-    else {
-      ::memcpy(unpacked_ptr, packed_ptr, first_size);
-      ::memcpy(unpacked_ptr + pair_alignment, packed_ptr + first_size, second_size);
-    }
-    unpacked_ptr += extent_;
-    packed_ptr += size_;
-    bytes_done += (first_size + second_size);
+  if (pack){
+    ::memcpy(packed_ptr, unpacked_ptr, first_size);
+    ::memcpy(packed_ptr + first_size, unpacked_ptr + pair_alignment, second_size);
   }
+  else {
+    ::memcpy(unpacked_ptr, packed_ptr, first_size);
+    ::memcpy(unpacked_ptr + pair_alignment, packed_ptr + first_size, second_size);
+  }
+  unpacked_ptr += extent_;
+  packed_ptr += size_;
+  bytes_done += (first_size + second_size);
 }
 
 void
-mpi_type::pack_action(void* packed_buf, void* unpacked_buf, int bytes, bool pack) const
+mpi_type::pack_action(void* packed_buf, void* unpacked_buf, bool pack) const
 {
   switch(type_)
   {
   case PRIM: {
-    pack_action_primitive(packed_buf, unpacked_buf, bytes, pack);
+    pack_action_primitive(packed_buf, unpacked_buf, pack);
     break;
   }
   case PAIR: {
-    pack_action_pair(packed_buf, unpacked_buf, bytes, pack);
+    pack_action_pair(packed_buf, unpacked_buf, pack);
     break;
   }
   case VEC: {
-    pack_action_vector(packed_buf, unpacked_buf, bytes, pack);
+    pack_action_vector(packed_buf, unpacked_buf, pack);
     break;
   }
   case IND: {
-    pack_action_indexed(packed_buf, unpacked_buf, bytes, pack);
+    pack_action_indexed(packed_buf, unpacked_buf, pack);
     break;
   }
   case NONE: {
