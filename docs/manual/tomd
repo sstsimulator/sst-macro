@@ -53,7 +53,6 @@ def repl_title(x):
   return "# %s" % x.groups()[0]
 
 def repl_quotes(x):
-  sys.stderr.write("%s\n" % x.groups()[0])
   return '"%s"' % x.groups()[0]
 
 paragraph_split_cleanup_regexp = re.compile(r'\n[\t ]*\n')
@@ -243,9 +242,13 @@ repls = [
   (macro_regexp('textit') , return_self),
   (macro_regexp('author') , ""),
   (r'\sstmacro' , 'SST-macro'),
+  (r'\sprockit', 'SProCKit'),
   (r'\maketitle' , ''),
   (r'\begin{document}' , ''),
   (r'\end{document}' , ''),
+  (r'\evhandler', '`event_handler`'),
+  (r'\evscheduler', '`event_scheduler`'),
+  (r'\evmgr', '`event_manager`'),
 ]
 
 

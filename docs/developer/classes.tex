@@ -1,10 +1,10 @@
 % !TEX root = developer.tex
 
-\chapter{\sstmacro Classes}
+\chapter{\sstmacro Classes}\label{chapter:classes}
 
-\section{Class Style}
+\section{Class Style}\label{sec:style}
 
-\subsection{Basic Class}
+\subsection{Basic Class}\label{subsec:basicClass}
 Most classes are manually managed, being explicitly deleted.  Whenever possible,
 smart pointers should be avoided since they create thread-safety headaches.
 Classes in \sstmacro can inherit from the top-level class \inlinecode{ptr_type}, 
@@ -66,7 +66,7 @@ After any \inlinecode{private}/\inlinecode{protected} functions, member variable
 NOTE: We already have our first style violation here.  The entire class is implemented here in a header file.
 In general, unless a trivial function like set/get, put the function implementation into a .cc file.
 
-\subsection{Inheritance and Parent Classes}
+\subsection{Inheritance and Parent Classes}\label{subsec:inheritance}
 We can also work through an example with inheritance.  
 If you are going to use smart pointers, inheritance is somewhat tricky.  
 Here we demonstrate in detail how to use smart pointers with virtual inheritance, 
@@ -210,6 +210,7 @@ Finally, we declare member variables
 
 \subsection{Exceptions}
 \label{classes:style:basic:exceptions}
+
 The \inlinecode{ptr_type.h} header file automatically includes a common set of exceptions, all in \inlinecode{namespace sprockit}.
 The most notable are:
 \begin{itemize}
@@ -228,7 +229,7 @@ spkt_throw_printf(value_error, "invalid number of carats %d", num_carats_);
 \end{CppCode}
  
 
-\section{Factory Types}
+\section{Factory Types}\label{sec:factory}
 We here introduce factory types, i.e. polymorphic types linked to keywords in the input file.
 String parameters are linked to a lookup table, finding a factory that produces the desired type.
 In this way, the user can swap in and out C++ classes using just the input file.
@@ -237,7 +238,7 @@ There are factories for topology, NIC, node, memory, switch, routing algorithm -
 Here show how to declare a new factory type and implement various polymorphic instances.
 The example files can be found in \inlineshell{tutorials/programming/factories}.
 
-\subsection{Usage}
+\subsection{Usage}\label{subsec:usage}
 Before looking at how to implement factory types, let's look at how they are used.
 Here we consider the example of an abstract interface called \inlinecode{actor}.
 The code example is found in \inlineshell{main.cc}. The file begins
@@ -307,7 +308,7 @@ SST/macro ran for       0.0025 seconds
 Changing the values produces a different class type and different behavior.
 Thus we can manage polymorphic types by changing the input file.
 
-\subsection{Base Class}
+\subsection{Base Class}\label{subsec:baseClass}
 To declare a new factory type, you must include the factory header file and inherit from the base class \inlinecode{factory_type}.
 
 \begin{CppCode}
@@ -390,7 +391,7 @@ ImplementFactory(sstmac::tutorial::actor);
 that defines certain symbols needed for implementing the new factory type.
 For subtle reasons, this must be done in the global namespace.
 
-\subsection{Child Class}
+\subsection{Child Class}\label{subsec:childClass}
 Let's now look at a fully implemented, complete actor type.  We declare it
 
 \begin{CppCode}
@@ -487,7 +488,7 @@ mandy_patinkin::act()
 
 Another example \inlineshell{guest.h} and \inlineshell{guest.cc} in the code folder shows the implementation for the second class.
 
-\subsection{External Linkage}
+\subsection{External Linkage}\label{subsec:linkage}
 If you glance at the Makefile, you will see how and why the executable is created.
 A compiler wrapper \inlineshell{sst++} points the makefile to the \sstmacro libraries, including a library \inlineshell{libsstmac_main} that actually implements the \inlinecode{main} routine and the \sstmacro driver.
 By creating another executable, arbitrary code can be linked together with the core \sstmacro framework.
