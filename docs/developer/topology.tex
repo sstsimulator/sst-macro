@@ -81,7 +81,7 @@ Combining the factory system for polymorphic types and the connectable system fo
 \sstmacro provides flexibility for building essentially any machine model you want.
 However, \sstmacro provides a recommended machine structure to guide constructing machine models.
 
-\section{Interconnect}
+\section{Interconnect}\label{sec:topInterconnect}
 For all standard runs, the entire hardware model is driven by the interconnect object.
 The interconnect creates nodes, creates network switches, chooses a topology, and connects all of the network endpoints together.
 In this regard, the interconnect also choose what types of components are being connected together.
@@ -135,7 +135,7 @@ Second, when a parameter object arrives in the \inlinecode{init_factory_params} 
 It may happen that after leaving \inlinecode{init_factory_params}, the interconnect needs to create more nodes and the parameters are no longer available.
 The only option at this point is to have a template lying around that can be cloned.
 
-\section{Node}
+\section{Node}\label{sec:node}
 Although the \nodecls can be implemented as a very complex model, it fundamentally only requires a single set of functions to meet the public interface.
 The \nodecls must provide \inlinecode{execute_kernel} functions that are invoked by the \inlinecode{operating_system} or other other software objects.
 The prototypes for these are:
@@ -146,12 +146,6 @@ The prototypes for these are:
 
   virtual void
   execute_kernel(ami::AMI_COMM_FUNC func, sst_message* data);
-
-  virtual void
-  execute_kernel(ami::AMI_DISP_FUNC func, sst_message* data);
-
-  virtual void
-  execute_kernel(ami::AMI_HW_FUNC func, sst_message* data);
 \end{CppCode}	
 
 By default, the abstract \nodecls class throws an \inlinecode{sprockit::unimplemented_error}. These functions are not pure virtual.
@@ -186,7 +180,7 @@ leads to
 \end{CppCode}
 All dynamic casts are routed through a special macro \inlinecode{safe_cast} for most types or \inlinecode{ptr_safe_cast} for smart pointer types.
 
-\section{Network Interface (NIC)}
+\section{Network Interface (NIC)}\label{sec:nic}
 The network interface can implement many services, but the basic public interface requires the NIC to do three things:
 
 \begin{itemize}
@@ -251,7 +245,7 @@ null_nic::recv_chunk(const message_chunk::ptr &chunk,
 A special completion queue object tracks chunks and processes out-of-order arrivals,
 notifying the NIC when the entire message is done.
 
-\section{Memory Model}
+\section{Memory Model}\label{sec:memModel}
 As with the NIC and node, the memory model class can have a complex implementation under the hood,
 but it must funnel things through the a common function.
 
@@ -270,7 +264,7 @@ In this regard, any message that implements
 \end{CppCode}
 should be valid.
 
-\section{Network Switch}
+\section{Network Switch}\label{sec:networkSwitch}
 
 Unlike the other classes above, a network switch is not required to implement any specific functions.
 It is only required to be an \inlinecode{event_handler}, providing the usual \inlinecode{handle(sst_message* msg)}.
@@ -370,7 +364,7 @@ The switch is not able to determine for itself which outport to route along.
 The topology tells the switch which port it needs and the switch determines what sort of congestion delay to expect on that port.
 This division of labor is complicated a bit by adaptive routing, but remains essentially the same.  More details are given later.
 
-\subsection{Structured Topology}
+\subsection{Structured Topology}\label{subsec:structuredTopology}
 
 The structured topology assumes a regular, ordered connecting of nodes like a torus.
 It is synonymous with any topology that can be mapped onto a coordinate system.
@@ -416,7 +410,7 @@ For example, if I want to move in the X dimension in a 3D-torus, what path (port
 It can be that any step along that dimension is unproductive - you've already arrived.
 The behavior is then undefined.
 
-\section{Router}
+\section{Router}\label{sec:router}
 The router has a simple public interface
 
 \begin{CppCode}
