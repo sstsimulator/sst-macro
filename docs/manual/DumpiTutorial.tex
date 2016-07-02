@@ -10,13 +10,13 @@ As noted in the introduction, \sstmacro is primarily intended to be an on-line s
 Although DUMPI is automatically included as a subproject in the \sstmacro download, trace collection can be easier if DUMPI is built independently from \sstmacro.  The code can be downloaded from \url{https://bitbucket.org/sst-ca/dumpi}. If downloaded through Mercurial, one must initialize the build system and create the configure script.
 
 \begin{ShellCmd}
-dumpi$ ./bootstraps.h
+dumpi> ./bootstraps.h
 \end{ShellCmd}
 
 DUMPI must be built with an MPI compiler.
 
 \begin{ShellCmd}
-dumpi/build$ ../configure CC=mpicc CXX=mpicxx \ 
+dumpi/build> ../configure CC=mpicc CXX=mpicxx \ 
 	              --enable-libdumpi --prefix=$DUMPI_PATH
 \end{ShellCmd}
 The \inlineshell{--enable-libdumpi} flag is needed to configure the trace collection library.
@@ -26,7 +26,7 @@ Collecting application traces requires only a trivial modification to the standa
 Using the same compiler, simply add the DUMPI library path and library name to your project's \inlineshell{LDFLAGS}.
 
 \begin{ShellCmd}
-your_project/build$ ../configure CC=mpicc CXX=mpicxx \
+your_project/build> ../configure CC=mpicc CXX=mpicxx \
                                   LDFLAGS=``-L$DUMPI_PATH/lib -ldumpi"
 \end{ShellCmd}
 
@@ -65,12 +65,12 @@ int main(int argc, char** argv)
 After compiling the program named \inlineshell{test} with DUMPI, we run MPI in the standard way.
 
 \begin{ShellCmd}
-example$ mpiexec -n 2 ./test
+example> mpiexec -n 2 ./test
 \end{ShellCmd}
 After running, there are now three new files in the directory.
 
 \begin{ShellCmd}
-example$ ls dumpi*
+example> ls dumpi*
 dumpi-2013.09.26.10.55.53-0000.bin	
 dumpi-2013.09.26.10.55.53-0001.bin	
 dumpi-2013.09.26.10.55.53.meta
@@ -81,7 +81,7 @@ The contents of the binary files can be displayed in human-readable form by runn
 program, which should have been installed in \inlineshell{\$DUMPI_PATH/bin}.
 
 \begin{ShellCmd}
-example$ dumpi2ascii dumpi-2013.09.26.10.55.53-0000.bin
+example> dumpi2ascii dumpi-2013.09.26.10.55.53-0000.bin
 \end{ShellCmd}
 This produces the output
 
@@ -138,7 +138,7 @@ To extract the topology information, locate the \inlineshell{.bin} file correspo
 To print topology info, run
 
 \begin{ShellCmd}
-traces$ dumpi2ascii -H testbgp-0000.bin 
+traces> dumpi2ascii -H testbgp-0000.bin 
 \end{ShellCmd}
 which produces the output
 
@@ -223,21 +223,3 @@ We also no longer require a hostname map.
 The trace is only used to generate MPI events and no topology or hostname data is used.
 The MPI ranks are mapped to physical nodes entirely independent of the trace.
 
-\subsubsection{Building the Hostname Map}
-\label{subsec:dumpi:hostnamemap} 
-Not all HPC machines support topology queries.  
-The current scheme is only valid for Cray machines, which support topology queries via \inlineshell{xtdb2proc}.
-NOTE: As of 01/15/2014, this command seems to be broken at NERSC.
-\sstmacro comes with a script in the bin folder, \inlineshell{xt2nodemap.pl}, that parses the Cray file
-into the DUMPI format.  We first run
-
-\begin{ShellCmd}
-cray$ xtdb2proc -f - > db.txt
-\end{ShellCmd}
-to generate a Cray-formatted file \inlineshell{db.txt}.
-Next we run the conversion script
-
-\begin{ShellCmd}
-cray$ xt2nodemap.pl -t hdtorus < db.txt > nodemap.txt
-\end{ShellCmd}
-generating the hostname map.

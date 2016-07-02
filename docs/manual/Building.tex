@@ -56,7 +56,7 @@ sst-macro/build> ../configure --prefix=/path-to-install
 \end{ShellCmd}
 
 
-A complete list of options can be seen by running `../configure --help'.   Some common options:
+A complete list of options can be seen by running \inlineshell{../configure --help}.   Some common options:
 
 \begin{itemize}
 \item --(dis|en)able-cpp11 : Controls whether features requiring C++11 language features are compiled. Feature is enabled by default (reverts to disabled if C++11 features are not available).
@@ -166,8 +166,8 @@ It is not recommended to disable libundumpi support, which wouldn't make much se
 DUMPI can also be used as stand-alone tool/library if you wish (\eg~for simplicity if you're only tracing). 
 To get DUMPI by itself, either copy the \folder{sstmacro/dumpi} directory somewhere else or visit \url{https://github.com/sstsimulator/sst-dumpi} and follow similar instructions for obtaining \sstmacro.
 
-To see a list of configuration options for DUMPI, run `./configure --help'.  
-If you're trying to configure DUMPI for trace collection, use `--enable-libdumpi'.
+To see a list of configuration options for DUMPI, run \inlineshell{./configure --help}.  
+If you're trying to configure DUMPI for trace collection, use \inlineshell{--enable-libdumpi}.
 Your build process might look like this (if you're building in a separate directory from the dumpi source tree) :
 
 \begin{ShellCmd}
@@ -253,7 +253,7 @@ This can be relative to the current directory, an absolute path, or the name of 
 
 \subsection{Distributed Memory Parallel}
 \label{subsec:mpiparallel}
-In order to run distributed memory parallel, you must configure the simulator with the `--enable-mpiparallel' flag.
+In order to run distributed memory parallel, you must configure the simulator with the \inlineshell{--enable-mpiparallel} flag.
 Configure will check for MPI and ensure that you're using
 the standard MPI compilers.  Your configure should look something like:
 

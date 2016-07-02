@@ -8,22 +8,35 @@ import os
 section_template = r'\\begin{%s}(.*?)\\end{%s}'
 input_regexp = r'\\input{(.*?)}'
 comment_regexp = re.compile(r'%(.*)')
+quotes_regexp = re.compile("``(.*?)''", re.DOTALL)
+#display_regexp = re.compile(r'\\\[(.*?)\\\]', re.DOTALL)
 
-section = 1
-subsection = 1
-subsubsection = 1 
-chapter = 1
+toc_lines = ["# Table of Contents"]
+
+section = 0
+subsection = 0
+subsubsection = 0
+chapter = 0
 
 refs = {
 }
 
 figureCount = 1
 
+def make_toc(text):
+  toc_text = "\n".join(toc_lines)
+  text = text.replace(r'\tableofcontents', toc_text)
+  return text
+
 def macro_regexp(x, n=1):
   retext = r'\\%s{(.*?)[}]+' % x
   for i in range(1,n):
     retext += '{(.*?)}'
   return re.compile(retext, re.DOTALL)
+
+def section_header_regexp():
+  retext = r'\\([a-z]+){(.*?)}\s*\\label{(.*?)}' 
+  return re.compile(retext)
 
 def labeled_macro_regexp(x):
   retext = r'\\%s{(.*?)}\s*\\label{(.*?)}' % x
@@ -36,6 +49,12 @@ def optmacro_regexp(x):
 def section_regexp(x):
   return re.compile(section_template % (x,x), re.DOTALL)
 
+def repl_title(x):
+  return "# %s" % x.groups()[0]
+
+def repl_quotes(x):
+  sys.stderr.write("%s\n" % x.groups()[0])
+  return '"%s"' % x.groups()[0]
 
 paragraph_split_cleanup_regexp = re.compile(r'\n[\t ]*\n')
 def process_paragraphs(text):
@@ -52,6 +71,9 @@ def process_paragraphs(text):
       paragraph = " ".join(str_arr)
       par_arr.append(paragraph)
   return "\n\n".join(par_arr)
+
+def repl_display(match):
+  return '\[display\n%s\n\]' % match.groups()[0]
 
 def process_itemize(match):
   items = match.groups()[0].split(r'\item')
@@ -77,9 +99,9 @@ def get_figure_text(label, caption, text):
   
   labelText = ""
   if label:
-    labelText = '<a name="%s"></a>'
+    labelText = '<a name="%s"></a>' % label
 
-  return "![%s](%s) %s" % (caption, fname, labelText)
+  return "\n![%s](%s) %s\n\n*%s*\n\n" % (labelText, fname, labelText, caption)
 
 def process_title_pic(match):
   text = match.groups()[0] + "}"
@@ -95,31 +117,53 @@ def repl_section_header(match, sectionType, count):
   prefix = '#' * count
   name = ""
   ref = ""
+  text = "%s %d %d %d %d" % (str(match.groups()), chapter, section, subsection, subsubsection)
+  toc_line = None
   if sectionType == "chapter":
+    chapter += 1
     name = "Chapter %d" % chapter
     ref = "%d" % chapter
-    chapter += 1
+    section = 0
+    subsection = 0
+    subsubsection = 0
   elif sectionType == "section":
+    section += 1
     ref = "%d.%d" % (chapter, section)
     name = "Section %s" % ref
-    section += 1
+    subsection = 0
+    subsubsection = 0
   elif sectionType == "subsection":
-    ref = "%d.%d.%d" % (chapter, section, subsection)
-    name = ""
     subsection += 1
+    ref = "%d.%d.%d" % (chapter, section, subsection)
+    name = ref
+    subsubsection = 0
   elif sectionType == "subsubsection":
+    subsubsection += 1
     ref = "%d.%d.%d.%d" % (chapter, section, subsection, subsubsection)
     name = ""
-    subsubsection += 1
-  if len(match.groups()) == 2: #labeled
-    header, label = match.groups()
-    sys.stderr.write("%s %s\n" % (header, count))
-    refs[label] = ref
-    return '%s %s: %s <a name="%s"></a>\n\n' % (prefix, name, header, label)
+
+  toc_prefix = "   " * (count-1)
+
+  header = match.groups()[1]
+  text = None
+  if name:
+    text =  '%s: %s' % (name, header)
   else:
-    header = match.groups()[0]
-    sys.stderr.write("%s %s\n" % (header, count))
-    return "%s %s: %s\n\n" % (prefix, name, header)
+    text =  header
+
+  toc_line = "%s- [%s]" % (toc_prefix, text)
+
+  if len(match.groups()) == 3: #labeled
+    label = match.groups()[2]
+    toc_line += "(#%s)" % label
+    refs[label] = ref
+    text += '<a name="%s"></a>' % label
+
+  toc_lines.append(toc_line)
+  
+  return "%s %s\n\n" % (prefix, text)
+
+
 
 def process_figure(match):
   global figureCount
@@ -179,21 +223,15 @@ def header_pair(sectionName, count):
   return (macro_regexp(sectionName), lambda x: repl_section_header(x, sectionName, count))
 
 repls = [
+  (quotes_regexp, repl_quotes),
   (section_regexp("CppCode")  , repl_code_block),
   (section_regexp("ShellCmd") , repl_code_block),
   (section_regexp("ViFile")   , repl_code_block),
   (section_regexp("figure")   , process_figure),
   (section_regexp("itemize")   , process_itemize),
-  labeled_header_pair('subsubsection', 5),
-  header_pair('subsubsection', 5),
-  labeled_header_pair('subsection', 4),
-  header_pair('subsection', 4),
-  labeled_header_pair('section', 3),
-  header_pair('section', 3),
-  labeled_header_pair('chapter', 2),
-  header_pair('chapter', 2),
+  (section_regexp("center") , return_self),
   (paragraph_split_cleanup_regexp , "\n\n"),
-  (macro_regexp('title') , lambda x: repl_section_header(x, "Overview", 1)),
+  (macro_regexp('title') , repl_title),
   (macro_regexp('input') , process_input),
   (macro_regexp('aside') , return_self),
   (macro_regexp('titlepic') , process_title_pic),
@@ -201,6 +239,8 @@ repls = [
   (macro_regexp('inlinecode') , return_code),
   (macro_regexp('inlinefile') , return_code),
   (macro_regexp('func') , return_code),
+  (macro_regexp('emph') , return_self),
+  (macro_regexp('textit') , return_self),
   (macro_regexp('author') , ""),
   (r'\sstmacro' , 'SST-macro'),
   (r'\maketitle' , ''),
@@ -223,9 +263,28 @@ doProcessFile = processFile
 
 startFile = sys.argv[1]
 
+sections = {
+  "chapter" : 2,
+  "section" : 3,
+  "subsection" : 4,
+  "subsubsection" : 5
+}
+
 text = processFile(startFile)
+reobj = section_header_regexp()
+foundMatch = True
+while foundMatch:
+  foundMatch = reobj.search(text)
+  if foundMatch:
+    sectionType = foundMatch.groups()[0]
+    if not sectionType in sections:
+      continue
+
+    repl = lambda x: repl_section_header(x, sectionType, sections[sectionType])
+    text = reobj.sub(repl, text, 1)
 text = macro_regexp('ref').sub(process_ref, text)
 text = process_paragraphs(text)
+text = make_toc(text)
 print text
 
 

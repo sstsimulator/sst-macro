@@ -74,6 +74,21 @@ tests/reference/upd
 sstmac/common/config.h.in
 sstmac/common/config.h.in~
 
+docs/developer/developer.aux
+docs/developer/developer.log
+docs/developer/developer.out
+docs/developer/developer.pdf
+docs/developer/developer.synctex.gz
+docs/developer/developer.toc
+docs/manual/index.html
+docs/manual/manual.aux
+docs/manual/manual.log
+docs/manual/manual.md
+docs/manual/manual.out
+docs/manual/manual.pdf
+docs/manual/manual.synctex.gz
+docs/manual/manual.toc
+
 *.pyc
 
 sstmac_repo.h

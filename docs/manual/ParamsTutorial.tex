@@ -84,35 +84,3 @@ memory_bandwidth = $mybw
 \end{ViFile}
 The bandwidths can now be tuned through a single variable.
 
-
-%\subsection{Parameter Sweeping with fork()}
-%\label{sec:parameters:multi}
-%
-%Often, an experiment consists of sweeping one or more parameters and observing the effect on performance.  This 
-%can be accomplished by specifying a set of parameter values in brackets, separated by $|$, like so:
-%
-%\begin{ViFile}
-%...
-%sendrecv_message_size = {128|256|512|1024}
-%multisim_nproc = 2
-%\end{ViFile}
-%
-%\sstmacro will automatically fork to run each configuration separately, and a file for each configuration will be created with the simulator output.  The \inlinefile{multisim_nproc} parameter controls how many simulations will be run concurrently.   If multiple parameters specify ranges, then
-%\sstmacro will run every permutation of them.   Sometimes only a subset of all permutations is desired, so to address this you can also apply this mechanism to the \inlinefile{include} directive, like so:
-%
-%\begin{ViFile}
-%include {machine1.ini | machine2.ini}
-%...
-%sendrecv_message_size = {128|256|512|1024}
-%multisim_nproc = 10
-%\end{ViFile}
-%
-%Note that an \textit{included} parameter file can also have parameter ranges, but this can get out of hand quickly keeping track of everything, so we recommend sticking to the above methods.
-%
-%The simulator will number each configuration and print this numbering before it starts anything, and ask you to hit enter to continue.    If you want to run a single configuration, usually for debugging without having to change the parameter file,
-%you can specify the -r [number] command line option to run just that configuration.
-
-%%\subsection{Parameter Sweeping with MPI}
-%%\label{sec:parameters:mpisweep}
-%%
-%%\sstmacro also has the ability to use the above format for parameter sweeping, but use a cluster and MPI to do the parallel simulations.  Just configure \sstmacro with `--enable-mpiparallel', like you would for enabling parallel discrete event simulation (see Section \ref{sec:PDES}), and a binary will be built at \inlinefile{bin/sstmac-mpisweep}.  Just launch this program like you would any MPI program.
