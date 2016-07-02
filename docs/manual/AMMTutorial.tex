@@ -52,9 +52,13 @@ node_sockets = 4
 \subsection{AMM1}
 \label{subsec:ammOne}
 
+\begin{figure}[h!]
 \begin{center}
 \includegraphics[width=0.4\textwidth]{figures/amm/AMM1.pdf}
 \end{center}
+\caption{AMM1: Used when focusing on network traffic only}
+\label{fig:amm1}
+\end{figure}
 
 This is simplest abstract machine model and incorporates three basic components (i.e. congestion points).
 Each node has a memory subsystem and NIC (injection/ejection).
@@ -89,9 +93,13 @@ More details (and their fixes) are given in the next abstract machine models.
 
 \subsection{AMM2}
 
+\begin{figure}
 \begin{center}
 \includegraphics[width=0.4\textwidth]{figures/amm/amm2_membus.pdf}
 \end{center}
+\caption{AMM2: Adds extra memory model details to AMM1}
+\label{fig:amm2}
+\end{figure}
 
 \label{subsec:ammTwo}
 A major deficiency of AMM1 is that it grants exclusive access to memory resources.
@@ -122,9 +130,13 @@ Thus parameter names should not change - only new parameters should be added.
 \subsection{AMM3}
 \label{subsec:ammThree}
 
+\begin{figure}
 \begin{center}
 \includegraphics[width=0.5\textwidth]{figures/amm/amm3_switch.pdf}
 \end{center}
+\caption{AMM3: Adds extra router (switch) details to AMM2}
+\label{fig:amm3}
+\end{figure}
 
 A major deficiency of AMM2 is its inability to distinguish between the network link bandwidth (associated with the outport port serializer/deserializer) and the switch bandwidth (associated with the crossbar that arbitrates packets).  
 Only packets traveling the same path cause congestion on the network links in AMM1 and AMM2.

@@ -12,24 +12,24 @@ This code should be compiled with SST compiler wrappers installed in the \inline
 
 int main(int argc, char **argv) 
 {
-    int message_size = 128;
-    int me, nproc;
-    int tag = 0;
-    int dst = 1;
-    int src = 0;
-    MPI_Status stat;
+  int message_size = 128;
+  int me, nproc;
+  int tag = 0;
+  int dst = 1;
+  int src = 0;
+  MPI_Status stat;
 
-    MPI_Init(&argc,&argv);
-    MPI_Comm world = MPI_COMM_WORLD;
-    MPI_Comm_rank(world,&me);
-    MPI_Comm_size(world,&nproc);
+  MPI_Init(&argc,&argv);
+  MPI_Comm world = MPI_COMM_WORLD;
+  MPI_Comm_rank(world,&me);
+  MPI_Comm_size(world,&nproc);
 \end{CppCode}
 The starting point is creating a main routine for the application.
 The simulator itself already provides a \inlinecode{main} routine.
 The SST compiler automatically changes the function name to \inlinecode{user_skeleton_main},
 which provides an entry point for the application to actually begin.
 When \sstmacro launches, it will invoke this routine and pass in any command line arguments specified via the \inlinefile{app1.argv} parameter.  Upon entering the main routine, 
-the code is now indistinguishable from regular MPI C code.  
+the code is now indistinguishable from regular MPI C++ code.  
 In the parameter file to be used with the simulation, you must set
 
 \begin{ViFile}

@@ -10,68 +10,32 @@
 \subsection{Downloading}
 \label{subsec:build:downloading}
 
-\sstmacro is available at \url{http://bitbucket.org/sst-ca/sstmacro}.  You can get \sstmacro in the following ways:
-
-\begin{itemize}
-\item Download a .tar of a release on the downloads page  \\ 
-(\url{bitbucket.org/sst-ca/sstmacro/downloads})
-\item Download a .tar of the repository on the main overview page
-\item Clone the repository with Mercurial. 
-\end{itemize}
-
-
-If you're using Mercurial, you can run the command:
-
+\sstmacro is available at \url{https://github.com/sstsimulator/sst-macro}
 
 \begin{ShellCmd}
-$ hg clone http://bitbucket.org/sst-ca/sstmacro -r default
+shell> git clone https://github.com/sstsimulator/sst-macro.git 
 \end{ShellCmd}
+or for ssh
 
-The \inlineshell{-r default} only downloads the current development branch and can be omitted if you want to bring in the entire history.
-The download can take a very long time on some systems to generate the ``deltas" in the revision history.
-You can save yourself a lot of waiting by only downloading the default revision.
-If you're behind a firewall, make sure the http proxy is set in your \mytilde/.hgrc file:
-
-\begin{ViFile}
-[http_proxy]
-host=path-to-proxy:prox-port 
-[https_proxy] 
-host=path-to-proxy:prox-port 
-\end{ViFile}
-
-
-If you'd like to use ssh for convenience, you'll have to modify your clone slightly by adding the ``hg" username:
 \begin{ShellCmd}
-$ hg clone ssh://hg@bitbucket.org/sst-ca/sstmacro
+shell> git clone ssh://git@github.com/sstsimulator/sst-macro.git 
 \end{ShellCmd}
-and also add your public key to your bitbucket user account. Also, \sstmacro uses subrepos, so for using ssh you should add
-the following to your \mytilde/.hgrc
-\begin{ViFile}
-[subpaths]
-https://bitbucket.org/sst-ca/sprockit = \
-        ssh://hg@bitbucket.org/sst-ca/sprockit
-https://bitbucket.org/sst-ca/dumpi = \
-	ssh://hg@bitbucket.org/sst-ca/dumpi
-https://bitbucket.org/sst-ca/sstmacro-pth = \
-	ssh://hg@bitbucket.org/sst-ca/sstmacro-pth
-\end{ViFile}
-so that the http requests are converted to ssh.
+
+
+If you'd like to use ssh for convenience, make sure you have added a public key for your GitHub account.
 
 \subsection{Dependencies}
 \label{subsec:build:dependencies}
 
+The following are dependencies for \sstmacro.
+
 \begin{itemize}
-\item (optional) Mercurial is needed in order to clone the source code repository, but you can also download a tar (Section \ref{subsec:build:downloading}).
+\item (optional) Git is needed in order to clone the source code repository, but you can also download a tar (Section \ref{subsec:build:downloading}).
 \item (optional, recommended) Autoconf and related tools are needed unless you are using an unmodified release or snapshot tar archive.
-\begin{subItemize}
-\item Autoconf: 2.64 or later should work and 2.68 is known to work
-\item Automake: 1.11 or later should work and 1.11.1 is known to work\item Libtool: 2.2.6 or later should work and 2.4 is known to work
-\end{subItemize}
-\item A C/C++ compiler is required.  gcc 4.4 and onward is known to work. 
-\begin{subItemize}
-\item C++11 support allows the best performance and error checking, although support is not required (Section \ref{subsec:build:configure}).
-\end{subItemize}
-\item (optional) Boost can, alternatively, provide the features needed for high performance and error checking when available compilers do not support C++11 (Section \ref{subsec:build:configure}).
+\item Autoconf: 2.68 or later 
+\item Automake: 1.11.1 or later 
+\item Libtool: 2.4 or later 
+\item A C/C++ compiler is required with C++11 support.  gcc 4.8 and onward is known to work. 
 \item (optional) Doxygen and Graphviz are needed to build the documentation.
 \item (optional) Graphviz is needed to collect call graphs.
 %\item (optional, recommended) Qt libraries and build system (qmake) are needed to build the GUI input configuration tool.
@@ -85,37 +49,37 @@ so that the http requests are converted to ssh.
 Once \sstmacro is extracted to a directory, we recommend the following as a baseline configuration, including building outside the source tree:
 
 \begin{ShellCmd}
-sstmacro$ ./bootstrap.sh
-sstmacro$ mkdir build
-sstmacro$ cd build
-sstmacro/build$ ../configure --prefix=/path-to-install 
+sst-macro> ./bootstrap.sh
+sst-macro> mkdir build
+sst-macro> cd build
+sst-macro/build> ../configure --prefix=/path-to-install 
 \end{ShellCmd}
 
 
-A complete list of options can be seen by running `../configure --help'.   Some common options:
+A complete list of options can be seen by running \inlineshell{../configure --help}.   Some common options:
 
 \begin{itemize}
-\item --(dis$|$en)able-cpp11 : Controls whether features requiring C++11 language features are compiled. Feature is enabled by default (reverts to disabled if C++11 features are not available).
-\item --with-boost=$<$path$>$: Use Boost.
-The $<$path$>$ argument is optional. If not given, default system paths like /usr/local will be searched for a Boost installation.
-Alternatively, if $<$path$>$ is omitted and the \$BOOST\_ROOT environment variable is defined, the Boost source tree will be directly used
+\item --(dis|en)able-cpp11 : Controls whether features requiring C++11 language features are compiled. Feature is enabled by default (reverts to disabled if C++11 features are not available).
+\item --with-boost=\textless path \textgreater: Use Boost.
+The \textless path \textgreater argument is optional. If not given, default system paths like /usr/local will be searched for a Boost installation.
+Alternatively, if \textless path \textgreater is omitted and the \$BOOST\_ROOT environment variable is defined, the Boost source tree will be directly used
 instead of an installation directory.
-\item --(dis$|$en)able-graphviz : Enables the collection of simulated call graphs, which can be viewed with graphviz.
+\item --(dis|en)able-graphviz : Enables the collection of simulated call graphs, which can be viewed with graphviz.
 %\item --with-qt=\$QMAKE: Direct \sstmacro to the qmake executable.  
 %If no value is specified, it just assumes qmake is in your \$PATH  (see Section \ref{sec:building:gui}).
-\item --(dis$|$en)able-unordered-containers : Unordered containers can provide better performance for large maps and sets.
+\item --(dis|en)able-unordered-containers : Unordered containers can provide better performance for large maps and sets.
 Enabled by default. Disable if not using Boost or C++11. Ordered maps can be used as a replacement, but with lower performance.
-\item --(dis$|$en)able-regex : Regular expressions can be used to proofread input files, but this requires either Boost or C++11.
+\item --(dis|en)able-regex : Regular expressions can be used to proofread input files, but this requires either Boost or C++11.
 Enabled by default. Disable if not using Boost or C++11.
-\item --(dis$|$en)able-custom-new : Memory is allocated in larger chunks in the simulator, which can speed up large simulations.
-\item --(dis$|$en)able-fortran : Enable support for running fortran skeletons.
-\item --(dis$|$en)able-mpiparallel: Enable parallel discrete event simulation in distributed memory over MPI.  See Section \ref{sec:PDES}.
-\item --(dis$|$en)able-replacement-headers : This configures a compiler wrapper that will automagically compile existing MPI/pThread code for simulation, rather than actual execution. This is off by default, but actually recommended.
-\item --(dis$|$en)able-multithread : This configures for thread-level parallelism for (hopefully) faster simulation
+\item --(dis|en)able-custom-new : Memory is allocated in larger chunks in the simulator, which can speed up large simulations.
+\item --(dis|en)able-fortran : Enable support for running fortran skeletons.
+\item --(dis|en)able-mpiparallel: Enable parallel discrete event simulation in distributed memory over MPI.  See Section \ref{sec:PDES}.
+\item --(dis|en)able-replacement-headers : This configures a compiler wrapper that will automagically compile existing MPI/pThread code for simulation, rather than actual execution. This is off by default, but actually recommended.
+\item --(dis|en)able-multithread : This configures for thread-level parallelism for (hopefully) faster simulation
 \end{itemize}
 
-Once configuration has completed, printing a summary of the things it found, simply type `make'.  
-It is recommended to use the `-j' option for a parallel build with as many cores as you have (otherwise it will take quite a while).  
+Once configuration has completed, printing a summary of the things it found, simply type \inlineshell{make}.  
+It is recommended to use the -j option for a parallel build with as many cores as you have (otherwise it will take quite a while).  
 
 \subsubsection{Boost vs. C++11}
 \sstmacro now requires either C++11 support or the use of boost for the best performance and full error checking.
@@ -148,10 +112,10 @@ If the build was successful, it is recommended to run the range of tests to make
 To do this, and also install \sstmacro  to the install path specified during installation, run the following commands:
 
 \begin{ShellCmd}
-sstmacro/build$ make -j8 check
-sstmacro/build$ sudo make install
-sstmacro/build$ export PATH=$PATH:/path-to-install
-sstmacro/build$ make -j8 installcheck
+sst-macro/build> make -j8 check
+sst-macro/build> sudo make install
+sst-macro/build> export PATH=$PATH:/path-to-install
+sst-macro/build> make -j8 installcheck
 \end{ShellCmd}
 Make check runs all the tests we use for development, which checks all functionality of the simulator.  
 Make installcheck compiles some of the skeletons that come with \sstmacro, linking against the installation.  
@@ -195,22 +159,21 @@ In particular, template code which is correct and compiles on several other plat
 
 By default, DUMPI is configured and built along with SST/macro with support for reading and parsing DUMPI traces, known as libundumpi.  
 DUMPI binaries and libraries are also installed along with everything for \sstmacro during make install.   
-DUMPI can be used as it's own library within the \sstmacro source tree by changing to \folder{sstmacro/dumpi}, 
+DUMPI can be used as it's own library within the \sstmacro source tree by changing to \inlineshell{sst-macro/sst-dumpi}, 
 where you can change its configuration options.  
 It is not recommended to disable libundumpi support, which wouldn't make much sense anyway. 
 
 DUMPI can also be used as stand-alone tool/library if you wish (\eg~for simplicity if you're only tracing). 
-To get DUMPI by itself, either copy the \folder{sstmacro/dumpi} directory somewhere else or visit \url{bitbucket.org/sst-ca/dumpi} 
-and follow similar instructions for obtaining \sstmacro.
+To get DUMPI by itself, either copy the \inlineshell{sstmacro/dumpi} directory somewhere else or visit \url{https://github.com/sstsimulator/sst-dumpi} and follow similar instructions for obtaining \sstmacro.
 
-To see a list of configuration options for DUMPI, run `./configure --help'.  
-If you're trying to configure DUMPI for trace collection, use `--enable-libdumpi'.
+To see a list of configuration options for DUMPI, run \inlineshell{./configure --help}.  
+If you're trying to configure DUMPI for trace collection, use \inlineshell{--enable-libdumpi}.
 Your build process might look like this (if you're building in a separate directory from the dumpi source tree) :
 
 \begin{ShellCmd}
-dumpi/build$ ../configure --prefix=/path-to-install --enable-libdumpi
-dumpi/build$ make -j8
-dumpi/build$ sudo make install
+sst-dumpi/build> ../configure --prefix=/path-to-install --enable-libdumpi
+sst-dumpi/build> make -j8
+sst-dumpi/build> sudo make install
 \end{ShellCmd}
 
 \subsection{Known Issues}
@@ -226,42 +189,17 @@ This will clear all the erroneous linker flags.  The compilation/linkage should 
 all necessary flags are set by the wrappers. 
 \end{itemize}
 
-%\section{Building the GUI}
-%\label{sec:building:gui}
-%
-%The GUI depends on Qt 5.0 or greater.  These can be easily downloaded from the Qt website. 
-%To configure \sstmacro for compiling the GUI, an additional flag must be added:
-%
-%\begin{ShellCmd}
-%sstmacro/build$ ../configure --prefix=/path-to-install --with-qt=$QMAKE
-%\end{ShellCmd}
-%The variable \$QMAKE must point to the qmake executable.  If qmake is in \$PATH, only `--with-qt' needs to be added.  
-%The GUI is compiled independently from SST/macro.  In the build directory, just invoke:
-%
-%\begin{ShellCmd}
-%sstmacro/build$ make gui
-%\end{ShellCmd}
-%You will see the Qt compilation output followed by output from the source code parser.  
-%Keyword input to the GUI is automatically generated from the source code.  
-%Once parsing is complete, the GUI is ready to use.  
-%The executable is found in the qt-qui folder.  
-%On Mac, an application is generated, which can be run:
-%
-%\begin{ShellCmd}
-%sstmacro/build$ open qt-gui/SSTMacro.app
-%\end{ShellCmd}
-%On linux, a simple executable is generated.
-
 \section{Running an Application}
 \label{sec:tutorial:runapp}
 
-To demonstrate how an application is run in \sstmacro, we'll use a very simple send-recv program located in \folder{sstmacro/tutorials/sendrecv\_c}.  We will take a closer look at the actual code in Section \ref{sec:tutorial:basicmpi}.
+To demonstrate how an application is run in \sstmacro, we'll use a very simple send-recv program located in \inlineshell{skeletons/sendrecv}.
+We will take a closer look at the actual code in Section \ref{sec:tutorial:basicmpi}.
 After \sstmacro has been installed and your PATH variable set correctly, run: 
 
 \begin{ShellCmd}
-sstmacro$ cd tutorials/sendrecv_c
-sstmacro/tutorials/sendrecv_c$ make
-sstmacro/tutorials/sendrecv_c$ ./runsstmac -f parameters.ini
+sst-macro> cd skeletons/sendrecv
+sst-macro/skeleton/sendrecv> make
+sst-macro/skeleton/sendrecv> ./runsstmac -f parameters.ini
 \end{ShellCmd}
 
 You should see some output that tells you 1) the estimated total (simulated) runtime of the simulation, and 
@@ -274,7 +212,7 @@ Then you run that binary and pass it a parameter file which describes the machin
 \subsection{Makefiles}
 \label{subsec:tutorial:makefiles}
 
-We recommend structuring the Makefile for your project like the one seen in \folder{tutorials/sendrecv\_c/Makefile} :
+We recommend structuring the Makefile for your project like the one seen in \inlineshell{skeletons/sendrecv/Makefile} :
 
 \begin{ViFile}
 TARGET := runsstmac
@@ -290,14 +228,6 @@ LDFLAGS :=  -Wl,-rpath,$(PREFIX)/lib
 ...
 \end{ViFile}
 The SST compiler wrappers \inlineshell{sst++} and \inlineshell{sstcc} automagically configure and map the code for simulation.  More details are given in Section \ref{sec:skel:linkage}.
-
-\subsection{C vs. C++}
-\label{subsec:tutorial:cprog}
-
-The three `sendrecv' skeletons in sstmacro/tutorials show the 
-different usage of C and C++ linking against \sstmacro: C, C++ but with a C-style main, and a C++ class that inherits from \class{sstmac::sw::mpiapp}.   
-Using C++ inheritance (such as in the \folder{sendrecv\_cxx2} folder) will 
-give you the most flexibility, including the ability to run more than one named application in a single simulation (see Section \ref{sec:parameters} for more info).  
 
 \subsection{Command-line arguments}
 \label{subsec:tutorial:cmdline}
@@ -323,12 +253,12 @@ This can be relative to the current directory, an absolute path, or the name of 
 
 \subsection{Distributed Memory Parallel}
 \label{subsec:mpiparallel}
-In order to run distributed memory parallel, you must configure the simulator with the `--enable-mpiparallel' flag.
+In order to run distributed memory parallel, you must configure the simulator with the \inlineshell{--enable-mpiparallel} flag.
 Configure will check for MPI and ensure that you're using
 the standard MPI compilers.  Your configure should look something like:
 
 \begin{ShellCmd}
-sstmacro/build$ ../configure --enable-mpiparallel CXX=mpicxx CC=mpicc ...
+sst-macro/build> ../configure --enable-mpiparallel CXX=mpicxx CC=mpicc ...
 \end{ShellCmd}
 
 \sstmacro can now run parallel jobs without any graph partitioning packages.
@@ -341,7 +271,7 @@ With the above options, you can just compile and go.
 Use your favorite MPI launcher to run, e.g. for OpenMPI
 
 \begin{ShellCmd}
-mysim$ mpirun -n 4 sstmac -f parameters.ini
+mysim> mpirun -n 4 sstmac -f parameters.ini
 \end{ShellCmd}
 
 or for MPICH
@@ -356,8 +286,6 @@ If you are having issues, then check the following.
 You might have to set the environment variable \inlineshell{SSTMAC_PARALLEL=mpi}.
 If another value like \inlineshell{SSTMAC_PARALLEL=serial} is set, the run will fail.
 No changes to the input file should be necessary. 
-However, if you are having trouble, try including \inlinefile{include mpi.ini} at the top of your input.
-The most important input file configuration options that are set by \inlinefile{mpi.ini} are:
 \begin{itemize}
 \item \inlinefile{transport = mpi}: for non-MPI compilation \sstmacro assumes \inlinefile{transport = serial}.
 \item \inlinefile{event_manager = clock_cycle_parallel}:  for non-MPI compilation \sstmacro uses a serial event map.  
@@ -382,7 +310,7 @@ However, at the partitioning stage of the simulation the simulator is actually u
 
 \subsection{Shared Memory Parallel}
 \label{subsec:parallelopt}
-In order to run shared memory parallel, you must configure the simulator with the `--enable-multithread' flag.
+In order to run shared memory parallel, you must configure the simulator with the \inlineshell{--enable-multithread} flag.
 Partitioning for threads is currently always done using block partitioning and there is no need to set an input parameter.
 Including the integer parameter \inlineshell{sst_nthread} specifies the number of threads to be used (per rank in MPI+pthreads mode) in the simulation.
 The following configuration options may provide better threaded performance.
@@ -404,7 +332,7 @@ Job launchers may in some cases provide duplicate functionality and either metho
 \item If the number of simulated processes specified by e.g. \inlinefile{aprun -n 100} does not match the number of nodes in the topology (i.e. you are not space-filling the whole simulated machine),
 parallel performance will suffer. \sstmacro partitions nodes, not processes.
 \item Furthermore, if you don't space-fill the simulated machine, you might even get weird errors. Some MPI ranks might have zero virtual processes, which leads to undefined behavior.
-\item If running an MPI program,  you should probably be safe and use the `mpicheck' debug flag (see below) to ensure the simulation runs to completion.
+\item If running an MPI program,  you should probably be safe and use the mpicheck debug flag (see below) to ensure the simulation runs to completion.
 The flag ensures \inlinecode{MPI_Finalize} is called and the simulation did not ``deadlock.''
 While the PDES implementation should be stable, it's best to treat it as Beta++ to ensure program correctness.
 \end{itemize}
@@ -422,7 +350,7 @@ Even without speedup, parallel simulation can certainly be useful in overcoming 
 To list the set of all valid flags with documentation, the user can run
 
 \begin{ShellCmd}
-bin$ ./sstmac --debug-flags
+bin> ./sstmac --debug-flags
 \end{ShellCmd}
 
 which will output something like
