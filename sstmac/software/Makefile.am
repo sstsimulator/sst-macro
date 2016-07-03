@@ -34,10 +34,7 @@ libsstmac_sw_la_SOURCES = \
   process/api.cc \
   process/thread.cc \
   process/app.cc \
-  process/user_app.cc \
   process/time.cc \
-  process/user_app_cxx.cc \
-  process/user_app_c.cc \
   threading/context_util.cc \
   threading/stack_alloc_chunk.cc \
   threading/stack_alloc.cc \
@@ -95,7 +92,6 @@ nobase_library_include_HEADERS = \
   process/ftq_fwd.h \
   process/app.h \
   process/app_fwd.h \
-  process/user_app.h \
   process/api.h \
   process/app_id.h \
   process/key.h \
@@ -117,8 +113,6 @@ nobase_library_include_HEADERS = \
   process/global_ptr_array.h \
   process/global_struct.h \
   process/process_context.h \
-  process/user_app_cxx.h \
-  process/user_app_c.h \
   threading/context_util.h \
   threading/stack_alloc_chunk.h \
   threading/stack_alloc.h \

@@ -44,8 +44,8 @@ app_manager::init_factory_params(sprockit::sim_parameters* params)
   if (params->has_param("core_affinities")) {
     params->get_vector_param("core_affinities", core_affinities_);
   }
+
   app_template_ = sw::app_factory::get_value(appname_, params);
-  app_template_->init_argv(aid_, params);
 
   STATIC_INIT_INTERCONNECT(params)
 }

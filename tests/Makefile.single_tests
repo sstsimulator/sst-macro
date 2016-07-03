@@ -7,8 +7,7 @@ SINGLETESTS = \
   test_pthread \
   test_blas \
   test_blas_finegrained \
-  test_node_noise \
-  test_compute
+  test_node_noise 
 
 #  test_scan  TODO
 
@@ -44,10 +43,6 @@ test_node_noise.$(CHKSUF): test_blas
 test_pthread.$(CHKSUF): test_pthread
 	$(PYRUNTEST) 6 $(top_srcdir) $@ True \
     ./test_pthread --no-wall-time -f $(srcdir)/test_configs/pthread.ini 
-
-test_compute.$(CHKSUF): $(SSTMACEXEC)
-	$(PYRUNTEST) 6 $(top_srcdir) $@ True \
-    $(SSTMACEXEC) -f $(srcdir)/test_configs/test_compute.ini --no-wall-time 
 
 #------------------------------------------------------------------------------------------#
 #  DUMPI-related tests                                                                  {{{#

@@ -9,10 +9,13 @@
 #include <sstmac/hardware/topology/traffic/traffic.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sumi/transport.h>
+#include <sstmac/skeleton.h>
 
 using namespace sumi;
 
 static long done = 0;
+
+#define sstmac_app_name "user_app_cxx"
 
 void run_test(
   sstmac::hw::traffic_pattern::type_t ty,

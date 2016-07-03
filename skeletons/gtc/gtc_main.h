@@ -12,7 +12,7 @@
 #ifndef SSTMAC_SOFTWARE_SKELETONS_MINI_GTC_GTC_MAIN_H_INCLUDED
 #define SSTMAC_SOFTWARE_SKELETONS_MINI_GTC_GTC_MAIN_H_INCLUDED
 
-#include <sstmac/libraries/mpi/mpi_app.h>
+#include <sstmac/software/process/app.h>
 #include <mpi.h>
 
 #include <gtc_modules.h>
@@ -46,7 +46,7 @@ namespace gtc
    * Basic MPI ping-pong.
    */
   class gtc_main :
-    public sstmac::sw::mpi_app
+    public sstmac::sw::app
   {
     std::map<std::string,double> param_map_;
 
@@ -155,6 +155,7 @@ namespace gtc
     int nthreads_;
     field_array::ptr field_array_;
     particle_decomp::ptr part_decomp_;
+    mpi_api* mpi_;
 
 
     RNG::SHR3* rng_;

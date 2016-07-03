@@ -1,6 +1,7 @@
 #include <sstmac/replacements/mpi.h>
 #include <sstmac/replacements/sys/time.h>
 #include <sstmac/util.h>
+#include <sstmac/skeleton.h>
 #include <sstmac/common/runtime.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
@@ -670,6 +671,8 @@ const char* valid_keywords[] = {
 "testsuite_numtests" };
 
 sprockit::StaticKeywordRegister reg(sizeof(valid_keywords) / sizeof(const char*), valid_keywords);
+
+#define sstmac_app_name "apitest"
 
 int USER_MAIN(int argc, char *argv[])
 {

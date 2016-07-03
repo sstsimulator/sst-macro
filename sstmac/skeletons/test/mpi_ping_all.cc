@@ -10,14 +10,12 @@
 
 #include <sumi-mpi/mpi_api.h>
 
-using sstmac::runtime;
+#include <sstmac/replacements/mpi.h>
+#include <sstmac/skeleton.h>
 
-namespace pingall {
+#define sstmac_app_name "mpi_ping_all"
 
-sstmac_register_app(mpi_ping_all);
-
-int
-mpi_ping_all_main(int argc, char** argv)
+int USER_MAIN(int argc, char** argv)
 {
 
   SSTMACBacktrace("main");
@@ -81,5 +79,4 @@ mpi_ping_all_main(int argc, char** argv)
   return 0;
 }
 
-}
 

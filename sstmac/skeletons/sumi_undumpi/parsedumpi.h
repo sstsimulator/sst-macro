@@ -43,7 +43,7 @@ class parsedumpi : public sstmac::sw::app
 
   /// IT'S AN ADDAMS!
   app*
-  clone_type(){
+  clone_type() const {
     return new parsedumpi;
   }
 

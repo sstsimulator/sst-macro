@@ -370,6 +370,10 @@ mpi_api::get_comm(MPI_Comm comm)
   spkt_unordered_map<MPI_Comm, mpi_comm*>::iterator it
     = comm_map_.find(comm);
   if (it == comm_map_.end()) {
+    if (comm == MPI_COMM_WORLD){
+      cerrn << "Could not find MPI_COMM_WORLD! "
+            << "Are you sure you called MPI_Init" << std::endl;
+    }
     spkt_throw_printf(sprockit::spkt_error,
         "could not find mpi communicator %d for rank %d",
         comm, int(rank_));

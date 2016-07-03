@@ -88,9 +88,8 @@ def run(typ, extralibs="", include_main=True, make_library=False, redefine_symbo
         "-I%s/include/sumi" % prefix,
         "-Dmain=USER_MAIN",
         "-DSSTMAC=1",
-        "-include sstmac/libraries/blas/blas.h",
-        "-include sstmac/util.h",
         "-include sstmac/compute.h",
+        "-include sstmac/skeleton.h",
         "-D__thread=dontallow",
       ]
 

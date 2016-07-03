@@ -111,6 +111,8 @@ mpi_queue::init_factory_params(sprockit::sim_parameters* params)
         "MPI spyplot specified as %s, must be spyplot or spyplot_png",
         params->get_param("type").c_str());
     }
+    spy_bytes_->add_suffix("num_bytes");
+    spy_num_messages_->add_suffix("num_messages");
   }
 
   max_vshort_msg_size_ = params->get_optional_byte_length_param("max_vshort_msg_size", 512);
