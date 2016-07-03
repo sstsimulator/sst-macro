@@ -13,8 +13,11 @@
 #define SSTMAC_SOFTWARE_LIBRARIES_MPI_MPIREQUEST_H_INCLUDED
 
 #include <sstmac/software/process/key.h>
+#include <sumi/collective.h>
 #include <sumi-mpi/mpi_status.h>
 #include <sumi-mpi/mpi_message.h>
+#include <sumi-mpi/mpi_comm/mpi_comm_fwd.h>
+
 
 namespace sumi {
 
@@ -38,7 +41,52 @@ class persistent_op
   int partner;
   int tag;
   void* content;
+};
 
+struct collective_op_base
+{
+
+  bool packed_send;
+  bool packed_recv;
+  void* sendbuf;
+  void* recvbuf;
+  void* tmp_sendbuf;
+  void* tmp_recvbuf;
+  int tag;
+  MPI_Op op;
+  mpi_type* sendtype;
+  mpi_type* recvtype;
+  collective::type_t ty;
+  mpi_comm* comm;
+  int sendcnt;
+  int recvcnt;
+  int root;
+
+ protected:
+  collective_op_base(mpi_comm* cm);
+
+};
+
+struct collective_op : public collective_op_base
+{
+  collective_op(int count, mpi_comm* comm);
+  collective_op(int sendcnt, int recvcnt, mpi_comm* comm);
+
+
+};
+
+struct collectivev_op : public collective_op_base
+{
+  collectivev_op(int scnt, int* recvcnts, int* disps, mpi_comm* comm);
+  collectivev_op(int* sendcnts, int* disps, int rcnt, mpi_comm* comm);
+  collectivev_op(int* sendcnts, int* sdisps,
+                 int* recvcnts, int* rdisps, mpi_comm* comm);
+
+  int* recvcounts;
+  int* sendcounts;
+  int* sdisps;
+  int* rdisps;
+  int size;
 };
 
 class mpi_request  {
@@ -78,8 +126,13 @@ class mpi_request  {
   }
 
   persistent_op*
-  op() const {
+  persistent_data() const {
     return persistent_op_;
+  }
+
+  collective_op*
+  collective_data() const {
+    return collective_op_;
   }
 
   const MPI_Status&
@@ -102,12 +155,18 @@ class mpi_request  {
     return persistent_op_;
   }
 
+  bool
+  is_collective() const {
+    return collective_op_;
+  }
+
  protected:
   MPI_Status stat_;
   key* key_;
   bool complete_;
   bool cancelled_;
   persistent_op* persistent_op_;
+  collective_op* collective_op_;
 };
 
 }

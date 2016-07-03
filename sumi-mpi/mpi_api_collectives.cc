@@ -5,54 +5,134 @@
 namespace sumi {
 
 void
-mpi_api::validate_mpi_collective(const char* name,
-             const void*& sendbuf, void*& recvbuf,
-             MPI_Datatype& sendtype, MPI_Datatype& recvtype)
+mpi_api::start_mpi_collective(collective::type_t ty,
+                              const void *sendbuf, void *recvbuf,
+                              MPI_Datatype sendtype, MPI_Datatype recvtype,
+                              collective_op_base* op)
 {
-  int ignore;
-  validate_mpi_collective(name, sendbuf, recvbuf,
-                          ignore, ignore, sendtype, recvtype);
-}
+  op->ty = ty;
+  op->sendbuf = const_cast<void*>(sendbuf);
+  op->recvbuf = recvbuf;
+  const char* name = collective::tostr(ty);
 
-void
-mpi_api::validate_mpi_collective(const char* name,
-             const void*& sendbuf, void*& recvbuf,
-             int& sendcnt, int& recvcnt,
-             MPI_Datatype& sendtype, MPI_Datatype& recvtype)
-{
+  if (sendbuf == MPI_IN_PLACE){
+    if (recvbuf){
+      mpi_type* type = type_from_id(recvtype);
+      int offset;
+      switch(ty){
+        case collective::gather:
+        case collective::allgather:
+          offset = type->extent() * op->recvcnt * op->comm->rank();
+          break;
+        default:
+          offset = 0;
+          break;
+      }
+      op->sendbuf = ((char*)recvbuf) + offset;
+    }
+    op->sendcnt = op->recvcnt;
+    sendtype = recvtype;
+  }
+
   if (sendtype != recvtype){
     if (sendtype == MPI_DATATYPE_NULL || sendtype == MPI_NULL){
       sendtype = recvtype;
-      sendcnt = recvcnt;
+      op->sendcnt = op->recvcnt;
+      if (sendbuf != MPI_IN_PLACE) op->sendbuf = 0;
     } else if (recvtype == MPI_DATATYPE_NULL || recvtype == MPI_NULL){
       recvtype = sendtype;
-      recvcnt = sendcnt;
-    }
-    else {
-      spkt_throw_printf(sprockit::unimplemented_error,
-        "%s: cannot handle different types %s and %s for send/recv",
-        name, type_str(sendtype).c_str(), type_str(recvtype).c_str());
-
+      op->recvcnt = op->sendcnt;
+      if (recvbuf != MPI_IN_PLACE) op->recvbuf = 0;
     }
   }
 
-  if (sendbuf == MPI_IN_PLACE){
-    sendbuf = recvbuf;
+  op->tmp_sendbuf = op->sendbuf;
+  op->tmp_recvbuf = op->recvbuf;
+
+  op->sendtype = type_from_id(sendtype);
+  op->recvtype = type_from_id(recvtype);
+  op->packed_recv = false;
+  op->packed_send = false;
+
+  if (op->sendbuf && !op->sendtype->contiguous()){
+    void* newbuf = allocate_temp_pack_buffer(op->sendcnt, op->sendtype);
+    pack_send(op->sendbuf, newbuf, op->sendcnt, op->sendtype);
+    op->tmp_sendbuf = newbuf;
+    op->packed_send = true;
+  } else {
+    op->tmp_sendbuf = op->sendbuf;
   }
 
-  mpi_type* sendtypePtr = type_from_id(sendtype);
-  mpi_type* recvtypePtr = type_from_id(recvtype);
-  if (sendbuf || recvbuf){
-    bool both_contiguous = sendtypePtr->contiguous() && recvtypePtr->contiguous();
-    if (!both_contiguous){
-      spkt_throw_printf(sprockit::unimplemented_error,
-        "%s: cannot handle non-contiguous types for send/recv in collective", name);
-    }
+  if (op->recvbuf && !op->recvtype->contiguous()){
+    void* newbuf = allocate_temp_pack_buffer(op->recvcnt, op->recvtype);
+    op->tmp_recvbuf = newbuf;
+    op->packed_recv = true;
+  } else {
+    op->tmp_recvbuf = recvbuf;
+  }
+
+}
+
+
+
+void
+mpi_api::pack_send(void* srcbuf, void* dstbuf, int sendcnt, mpi_type* sendtypePtr)
+{
+  char* src = (char*) srcbuf;
+  char* dst = (char*) dstbuf;
+  int src_stride = sendtypePtr->extent();
+  int dst_stride = sendtypePtr->packed_size();
+  for (int i=0; i < sendcnt; ++i, src += src_stride, dst += dst_stride){
+    sendtypePtr->pack(src, dst);
+  }
+}
+
+void*
+mpi_api::allocate_temp_pack_buffer(int count, mpi_type* type)
+{
+  char* newbuf = new char[type->packed_size()*count];
+  return newbuf;
+}
+
+void
+mpi_api::free_temp_pack_buffer(void* srcbuf)
+{
+  char* buf = (char*) srcbuf;
+  delete[] buf;
+}
+
+void
+mpi_api::unpack_recv(void *srcbuf, void *dstbuf, int recvcnt, mpi_type* recvtypePtr)
+{
+  char* src = (char*) srcbuf;
+  char* dst = (char*) dstbuf;
+  int src_stride = recvtypePtr->packed_size();
+  int dst_stride = recvtypePtr->extent();
+  for (int i=0; i < recvcnt; ++i, src += src_stride, dst += dst_stride){
+    recvtypePtr->unpack(src, dst);
   }
 }
 
 void
-mpi_api::collective_progress_loop(collective::type_t ty, int tag)
+mpi_api::finish_collective_op(collective_op_base* op_)
+{
+  collective_op* op = static_cast<collective_op*>(op_);
+  mpi_api_debug(sprockit::dbg::mpi_collective,
+                "finishing op on tag %d for collective %s: packed=(%d,%d)",
+                op->tag, collective::tostr(op->ty),
+                op->packed_send, op->packed_recv);
+
+  if (op->packed_recv){
+    unpack_recv(op->tmp_recvbuf, op->recvbuf, op->recvcnt, op->recvtype);
+    free_temp_pack_buffer(op->tmp_recvbuf);
+  }
+  if (op->packed_send){
+    free_temp_pack_buffer(op->tmp_sendbuf);
+  }
+}
+
+void
+mpi_api::wait_collective(collective_op_base* op)
 {
   std::list<collective_done_message::ptr> pending;
   while (1){
@@ -62,8 +142,9 @@ mpi_api::collective_progress_loop(collective::type_t ty, int tag)
       collective_done_message::ptr cmsg = ptr_safe_cast(collective_done_message, msg);
       mpi_api_debug(sprockit::dbg::mpi_collective,
                     "found collective done message of type=%s tag=%d: need %s,%d",
-                    collective::tostr(cmsg->type()), cmsg->tag(), collective::tostr(ty), tag);
-      if (tag == cmsg->tag() && ty == cmsg->type()){  //done!
+                    collective::tostr(cmsg->type()), cmsg->tag(),
+                    collective::tostr(op->ty), op->tag);
+      if (op->tag == cmsg->tag() && op->ty == cmsg->type()){  //done!
         break;
       } else {
         //a different collective completed
@@ -75,6 +156,28 @@ mpi_api::collective_progress_loop(collective::type_t ty, int tag)
     }
   }
 
+  switch(op->ty){
+    case collective::reduce:
+    case collective::alltoall:
+    case collective::gather:
+    case collective::scatter:
+    case collective::allreduce:
+    case collective::scan:
+    case collective::allgather:
+    case collective::barrier:
+    case collective::reduce_scatter:
+    case collective::bcast:
+      finish_collective_op(op);
+      break;
+    case collective::alltoallv:
+    case collective::gatherv:
+    case collective::scatterv:
+    case collective::allgatherv:
+      finish_vcollective_op(op);
+      break;
+  }
+
+
   
   std::list<collective_done_message::ptr>::iterator it, end = pending.end();
   for (it=pending.begin(); it != end; ++it){
@@ -82,17 +185,12 @@ mpi_api::collective_progress_loop(collective::type_t ty, int tag)
   }
 }
 
-int
-mpi_api::start_allgather(const void *sendbuf, void *recvbuf, int count,
-                         MPI_Datatype type, MPI_Comm comm)
+void
+mpi_api::start_allgather(collective_op *op)
 {
-  int typeSize = type_size(type);
-  mpi_comm* commPtr = get_comm(comm);
-  int tag = commPtr->next_collective_tag();
-  transport::allgather(recvbuf, const_cast<void*>(sendbuf), count, typeSize, tag,
-    false, options::initial_context,
-    (comm == MPI_COMM_WORLD ? 0 : commPtr)); //comm world is a "null" domain
-  return tag;
+  transport::allgather(op->tmp_recvbuf, op->tmp_sendbuf,
+                  op->sendcnt, op->sendtype->packed_size(), op->tag,
+                  false, options::initial_context, op->comm);
 }
 
 int
@@ -113,24 +211,20 @@ mpi_api::allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
     recvcount, type_str(recvtype).c_str(),
     comm_str(comm).c_str());
 
-  validate_mpi_collective("allgather", sendbuf, recvbuf, sendcount, recvcount, sendtype, recvtype);
-
-  int tag = start_allgather(sendbuf, recvbuf, sendcount, sendtype, comm);
-  collective_progress_loop(collective::allgather, tag);
+  collective_op* op = new collective_op(sendcount, recvcount, get_comm(comm));
+  start_mpi_collective(collective::allgather, sendbuf, recvbuf, sendtype, recvtype, op);
+  start_allgather(op);
+  wait_collective(op);
+  delete op;
   return MPI_SUCCESS;
 }
 
-int
-mpi_api::start_alltoall(const void *sendbuf, void *recvbuf,
-                        int count, MPI_Datatype type, MPI_Comm comm)
+void
+mpi_api::start_alltoall(collective_op* op)
 {
-  int typeSize = type_size(type);
-  mpi_comm* commPtr = get_comm(comm);
-  int tag = commPtr->next_collective_tag();
-  transport::alltoall(recvbuf, const_cast<void*>(sendbuf), count, typeSize, tag,
-    false, options::initial_context,
-    (comm == MPI_COMM_WORLD ? 0 : commPtr)); //comm world is a "null" domain
-  return tag;
+  transport::alltoall(op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
+                      op->sendtype->packed_size(), op->tag,
+                      false, options::initial_context, op->comm);
 }
 
 int
@@ -138,14 +232,16 @@ mpi_api::alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                   void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
 {
   SSTMACBacktrace("MPI_Alltoall");
-  validate_mpi_collective("alltoall", sendbuf, recvbuf, sendcount, recvcount, sendtype, recvtype);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
     "MPI_Alltoall(%d,%s,%d,%s,%s)",
     sendcount, type_str(sendtype).c_str(),
     recvcount, type_str(recvtype).c_str(),
     comm_str(comm).c_str());
-  int tag = start_alltoall(sendbuf, recvbuf, sendcount, sendtype, comm);
-  collective_progress_loop(collective::alltoall, tag);
+  collective_op* op = new collective_op(sendcount, recvcount, get_comm(comm));
+  start_mpi_collective(collective::alltoall, sendbuf, recvbuf, sendtype, recvtype, op);
+  start_alltoall(op);
+  wait_collective(op);
+  delete op;
   return MPI_SUCCESS;
 }
 
@@ -156,33 +252,35 @@ mpi_api::alltoall(int sendcount, MPI_Datatype sendtype,
   return alltoall(NULL, sendcount, sendtype, NULL, recvcount, recvtype, comm);
 }
 
-int
-mpi_api::start_allreduce(const void *src, void *dst, int count,
-                         MPI_Datatype type, MPI_Op op, MPI_Comm comm)
+void
+mpi_api::start_allreduce(collective_op* op)
 {
-  if (src == MPI_IN_PLACE) src = dst;
-
-  mpi_type* typePtr = type_from_id(type);
-  reduce_fxn fxn = typePtr->op(op);
-  int typeSize = typePtr->packed_size();
-  mpi_comm* commPtr = get_comm(comm);
-  int tag = commPtr->next_collective_tag();
-  transport::allreduce(dst, const_cast<void*>(src), count, typeSize, tag, fxn,
-    false, options::initial_context,
-    (comm == MPI_COMM_WORLD ? 0 : commPtr)); //comm world is a "null" domain
-  return tag;
+  reduce_fxn fxn = op->sendtype->op(op->op);
+  transport::allreduce(op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
+                       op->sendtype->packed_size(), op->tag,
+                       fxn, false, options::initial_context, op->comm);
 }
 
 int
 mpi_api::allreduce(const void *src, void *dst, int count,
-                   MPI_Datatype type, MPI_Op op, MPI_Comm comm)
+                   MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
 {
   SSTMACBacktrace("MPI_Allreduce");
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
     "MPI_Allreduce(%d,%s,%s,%s)",
-    count, type_str(type).c_str(), op_str(op), comm_str(comm).c_str());
-  int tag = start_allreduce(src, dst, count, type, op, comm);
-  collective_progress_loop(collective::allreduce, tag);
+    count, type_str(type).c_str(), op_str(mop), comm_str(comm).c_str());
+
+  collective_op* op = new collective_op(count, get_comm(comm));
+  if (src == MPI_IN_PLACE){
+    src = dst;
+  }
+
+  op->op = mop;
+  start_mpi_collective(collective::allreduce, src, dst, type, type, op);
+  start_allreduce(op);
+  wait_collective(op);
+  delete op;
+
   return MPI_SUCCESS;
 }
 
@@ -192,53 +290,64 @@ mpi_api::allreduce(int count, MPI_Datatype type, MPI_Op op, MPI_Comm comm)
   return allreduce(NULL, NULL, count, type, op, comm);
 }
 
-int
-mpi_api::start_barrier(MPI_Comm comm)
+void
+mpi_api::start_barrier(collective_op* op)
 {
-  mpi_comm* commPtr = get_comm(comm);
-  int tag = commPtr->next_collective_tag();
-  transport::barrier(tag, false,
-    (comm == MPI_COMM_WORLD ? 0 : commPtr)); //comm world is a "null" domain
-  return tag;
+  op->ty = collective::barrier;
+  transport::barrier(op->tag, false, op->comm);
 }
 
 int
 mpi_api::barrier(MPI_Comm comm)
 {
   SSTMACBacktrace("MPI_Barrier");
-  int tag = start_barrier(comm);
+  collective_op* op = new collective_op(0, get_comm(comm));
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Barrier(%s) on tag %d",
-    comm_str(comm).c_str(), int(tag));
-  collective_progress_loop(collective::barrier, tag);
+    comm_str(comm).c_str(), int(op->tag));
+  start_barrier(op);
+  wait_collective(op);
+  delete op;
+
   return MPI_SUCCESS;
 }
 
-int
-mpi_api::start_bcast(void *buffer, int count, MPI_Datatype type, int root, MPI_Comm comm)
+void
+mpi_api::start_bcast(collective_op* op)
 {
-  int typeSize = type_size(type);
-  mpi_comm* commPtr = get_comm(comm);
-  int tag = commPtr->next_collective_tag();
-
-  sumi::domain* dom = comm == MPI_COMM_WORLD ? global_dom() : commPtr;
-
-  fflush(stdout);
-
-  transport::bcast(root, buffer, count, typeSize, tag,
-    false, options::initial_context, dom);
-
-  return tag;
+  void* buf = op->comm->rank() == op->root ? op->tmp_sendbuf : op->tmp_recvbuf;
+  transport::bcast(op->root, buf,
+                   op->sendcnt,
+                   op->sendtype->packed_size(), op->tag,
+                   false, options::initial_context, op->comm);
 }
 
 int
-mpi_api::bcast(void *buffer, int count, MPI_Datatype type, int root, MPI_Comm comm)
+mpi_api::bcast(void* buffer, int count, MPI_Datatype type, int root, MPI_Comm comm)
 {
   SSTMACBacktrace("MPI_Bcast");
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Bcast(%d,%s,%d,%s)",
     count, type_str(type).c_str(), int(root), comm_str(comm).c_str());
-  int tag = start_bcast(buffer, count, type, root, comm);
+  collective_op* op = new collective_op(count, get_comm(comm));
+  void* sendbuf, *recvbuf;
+  op->root = root;
+  MPI_Datatype sendtype, recvtype;
+  if (op->comm->rank() == root){
+    sendbuf = buffer;
+    recvbuf = 0;
+    sendtype = type;
+    recvtype = MPI_DATATYPE_NULL;
+  } else {
+    sendbuf = 0;
+    recvbuf = buffer;
+    sendtype = MPI_DATATYPE_NULL;
+    recvtype = type;
+  }
 
-  collective_progress_loop(collective::bcast, tag);
+  start_mpi_collective(collective::bcast, sendbuf, recvbuf, sendtype, recvtype, op);
+  start_bcast(op);
+  wait_collective(op);
+  delete op;
+
   return MPI_SUCCESS;
 }
 
@@ -248,20 +357,12 @@ mpi_api::bcast(int count, MPI_Datatype datatype, int root, MPI_Comm comm)
   return bcast(NULL, count, datatype, root, comm);
 }
 
-int
-mpi_api::start_gather(const void *sendbuf, void *recvbuf, int count,
-                      MPI_Datatype type, int root, MPI_Comm comm)
+void
+mpi_api::start_gather(collective_op* op)
 {
-  int typeSize = type_size(type);
-  mpi_comm* commPtr = get_comm(comm);
-  int tag = commPtr->next_collective_tag();
-
-  sumi::domain* dom = comm == MPI_COMM_WORLD ? global_dom() : commPtr;
-
-  transport::gather(root, recvbuf, const_cast<void*>(sendbuf), count, typeSize, tag,
-    false, options::initial_context, dom);
-
-  return tag;
+  transport::gather(op->root, op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
+                    op->sendtype->packed_size(), op->tag,
+                    false, options::initial_context, op->comm);
 }
 
 int
@@ -274,9 +375,31 @@ mpi_api::gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
     recvcount, type_str(recvtype).c_str(),
     int(root), comm_str(comm).c_str());
 
-  validate_mpi_collective("gather", sendbuf, recvbuf, sendcount, recvcount, sendtype, recvtype);
-  int tag = start_gather(sendbuf, recvbuf, sendcount, sendtype, root, comm);
-  collective_progress_loop(collective::gather, tag);
+  if (sendbuf == MPI_IN_PLACE){
+    if (recvbuf){
+      mpi_type* type = type_from_id(recvtype);
+      mpi_comm* cm = get_comm(comm);
+      int offset = type->extent() * recvcount * cm->rank();
+      sendbuf = ((char*)recvbuf) + offset;
+    }
+    sendcount = recvcount;
+    sendtype = recvtype;
+  }
+
+  collective_op* op = new collective_op(sendcount, recvcount, get_comm(comm));
+  op->root = root;
+
+  if (root == op->comm->rank()){
+    //pass
+  } else {
+    recvtype = MPI_DATATYPE_NULL;
+    recvbuf = 0;
+  }
+
+  start_mpi_collective(collective::gather, sendbuf, recvbuf, sendtype, recvtype, op);
+  start_gather(op);
+  wait_collective(op);
+  delete op;
   return MPI_SUCCESS;
 }
 
@@ -287,34 +410,42 @@ mpi_api::gather(int sendcount, MPI_Datatype sendtype,
   return gather(NULL, sendcount, sendtype, NULL, recvcount, recvtype, root, comm);
 }
 
-int
-mpi_api::start_reduce(const void *src, void *dst, int count,
-                      MPI_Datatype type, MPI_Op op, int root, MPI_Comm comm)
+void
+mpi_api::start_reduce(collective_op* op)
 {
-  mpi_type* typePtr = type_from_id(type);
-  reduce_fxn fxn = typePtr->op(op);
-  int typeSize = typePtr->packed_size();
-  mpi_comm* commPtr = get_comm(comm);
-  int tag = commPtr->next_collective_tag();
-
-  sumi::domain* dom = comm == MPI_COMM_WORLD ? global_dom() : commPtr;
-
-  transport::reduce(root, dst, const_cast<void*>(src), count, typeSize, tag, fxn,
-    false, options::initial_context, dom);
-
-  return tag;
+  reduce_fxn fxn = op->sendtype->op(op->op);
+  transport::reduce(op->root, op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
+                    op->sendtype->packed_size(), op->tag,
+                    fxn, false, options::initial_context, op->comm);
 }
 
 int
 mpi_api::reduce(const void *src, void *dst, int count,
-                MPI_Datatype type, MPI_Op op, int root, MPI_Comm comm)
+                MPI_Datatype type, MPI_Op mop, int root, MPI_Comm comm)
 {
   SSTMACBacktrace("MPI_Reduce");
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
     "MPI_Reduce(%d,%s,%s,%d,%s)", count, type_str(type).c_str(),
-    op_str(op), int(root), comm_str(comm).c_str());
-  int tag = start_reduce(src, dst, count, type, op, root, comm);
-  collective_progress_loop(collective::reduce, tag);
+    op_str(mop), int(root), comm_str(comm).c_str());
+
+  collective_op* op = new collective_op(count, get_comm(comm));
+  op->root = root;
+  op->op = mop;
+  MPI_Datatype sendtype, recvtype;
+  if (root == op->comm->rank()){
+    sendtype = type;
+    recvtype = type;
+  } else {
+    sendtype = type;
+    recvtype = MPI_DATATYPE_NULL;
+    dst = 0;
+  }
+
+  start_mpi_collective(collective::reduce, src, dst, sendtype, recvtype, op);
+  start_reduce(op);
+  wait_collective(op);
+  delete op;
+
   return MPI_SUCCESS;
 }
 
@@ -324,33 +455,37 @@ mpi_api::reduce(int count, MPI_Datatype type, MPI_Op op, int root, MPI_Comm comm
   return reduce(NULL, NULL, count, type, op, root, comm);
 }
 
-int
-mpi_api::start_reduce_scatter(const void *src, void *dst, int *recvcnts,
-                              MPI_Datatype type, MPI_Op op, MPI_Comm comm)
+void
+mpi_api::start_reduce_scatter(collective_op* op)
 {
-  mpi_type* typePtr = type_from_id(type);
-  reduce_fxn fxn = typePtr->op(op);
-  int typeSize = typePtr->packed_size();
-  mpi_comm* commPtr = get_comm(comm);
-  int tag = commPtr->next_collective_tag();
-  //transport::reduce_scatter(src, dst, recvcnts, typeSize, tag, fxn,
-  //  false, options::initial_context,
-  //  (comm == MPI_COMM_WORLD ? 0, commPtr));
   spkt_throw(sprockit::unimplemented_error,
     "sumi::reduce_scatter");
-  return tag;
+  //transport::allreduce(op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
+  //                     op->sendtype->packed_size(), op->tag,
+  //                     fxn, false, options::initial_context, op->comm);
+
 }
 
 int
 mpi_api::reduce_scatter(const void *src, void *dst, int *recvcnts,
-                        MPI_Datatype type, MPI_Op op, MPI_Comm comm)
+                        MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
 {
   SSTMACBacktrace("MPI_Reducescatter");
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
     "MPI_Reduce_scatter(<...>,%s,%s,%s)",
-    type_str(type).c_str(), op_str(op), comm_str(comm).c_str());
-  int tag = start_reduce_scatter(src, dst, recvcnts, type, op, comm);
-  collective_progress_loop(collective::reduce_scatter, tag);
+    type_str(type).c_str(), op_str(mop), comm_str(comm).c_str());
+
+  spkt_throw(sprockit::unimplemented_error,
+    "sumi::reduce_scatter");
+
+  collective_op* op = 0;//new collective_op(count, get_comm(comm));
+  op->op = mop;
+
+  start_mpi_collective(collective::reduce_scatter, src, dst, type, type, op);
+  start_reduce_scatter(op);
+  wait_collective(op);
+  delete op;
+
   return MPI_SUCCESS;
 }
 
@@ -360,32 +495,32 @@ mpi_api::reduce_scatter(int *recvcnts, MPI_Datatype type, MPI_Op op, MPI_Comm co
   return reduce_scatter(NULL, NULL, recvcnts, type, op, comm);
 }
 
-int
-mpi_api::start_scan(const void *src, void *dst, int count,
-                    MPI_Datatype type, MPI_Op op, MPI_Comm comm)
+void
+mpi_api::start_scan(collective_op* op)
 {
-  mpi_type* typePtr = type_from_id(type);
-  reduce_fxn fxn = typePtr->op(op);
-  int typeSize = typePtr->packed_size();
-  mpi_comm* commPtr = get_comm(comm);
-  int tag = commPtr->next_collective_tag();
-  //transport::reduce_scatter(src, dst, recvcnts, typeSize, tag, fxn,
-  //  false, options::initial_context,
-  //  (comm == MPI_COMM_WORLD ? 0, commPtr));
   spkt_throw(sprockit::unimplemented_error,
     "sumi::scan");
-  return tag;
+  //transport::reduce(op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
+  //                     op->sendtype->packed_size(), op->tag,
+  //                     fxn, false, options::initial_context, op->comm);
 }
 
 int
-mpi_api::scan(const void *src, void *dst, int count, MPI_Datatype type, MPI_Op op, MPI_Comm comm)
+mpi_api::scan(const void *src, void *dst, int count, MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
 {
   SSTMACBacktrace("MPI_Scan");
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
     "MPI_Scan(%d,%s,%s,%s)",
-    count, type_str(type).c_str(), op_str(op), comm_str(comm).c_str());
-  int tag = start_scan(src, dst, count, type, op, comm);
-  collective_progress_loop(collective::scan, tag);
+    count, type_str(type).c_str(), op_str(mop), comm_str(comm).c_str());
+
+  collective_op* op = new collective_op(count, get_comm(comm));
+  op->op = mop;
+
+  start_mpi_collective(collective::scan, src, dst, type, type, op);
+  start_scan(op);
+  wait_collective(op);
+  delete op;
+
   return MPI_SUCCESS;
 }
 
@@ -395,20 +530,12 @@ mpi_api::scan(int count, MPI_Datatype type, MPI_Op op, MPI_Comm comm)
   return scan(NULL, NULL, count, type, op, comm);
 }
 
-int
-mpi_api::start_scatter(const void *sendbuf, void *recvbuf, int count,
-                       MPI_Datatype type, int root, MPI_Comm comm)
+void
+mpi_api::start_scatter(collective_op* op)
 {
-  int typeSize = type_size(type);
-  mpi_comm* commPtr = get_comm(comm);
-  int tag = commPtr->next_collective_tag();
-
-  sumi::domain* dom = comm == MPI_COMM_WORLD ? global_dom() : commPtr;
-
-  transport::scatter(root, recvbuf, const_cast<void*>(sendbuf), count, typeSize, tag,
-    false, options::initial_context, dom);
-
-  return tag;
+  transport::scatter(op->root, op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
+                     op->sendtype->packed_size(), op->tag,
+                     false, options::initial_context, op->comm);
 }
 
 int
@@ -421,11 +548,21 @@ mpi_api::scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
     recvcount, type_str(recvtype).c_str(),
     int(root), comm_str(comm).c_str());
 
-  if (sendtype == MPI_NULL) sendtype = recvtype;
+  collective_op* op = new collective_op(sendcount, recvcount, get_comm(comm));
 
-  validate_mpi_collective("scatter", sendbuf, recvbuf, sendtype, recvtype);
-  int tag = start_scatter(sendbuf, recvbuf, sendcount, sendtype, root, comm);
-  collective_progress_loop(collective::scatter, tag);
+  op->root = root;
+  if (root == op->comm->rank()){
+    //pass
+  } else {
+    sendtype = MPI_DATATYPE_NULL;
+    sendbuf = 0;
+  }
+
+  start_mpi_collective(collective::scatter, sendbuf, recvbuf, sendtype, recvtype, op);
+  start_scatter(op);
+  wait_collective(op);
+  delete op;
+
   return MPI_SUCCESS;
 }
 

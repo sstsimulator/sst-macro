@@ -48,6 +48,8 @@ APITESTS = \
   testsuite_mpi_47 \
   testsuite_mpi_48 \
   testsuite_mpi_49 \
+  testsuite_mpi_53 \
+  testsuite_mpi_54 \
   testsuite_mpi_71 \
   testsuite_mpi_74 \
   testsuite_mpi_75 \
@@ -90,8 +92,6 @@ APITESTS_DISABLED = \
   testsuite_mpi_228 \
   testsuite_mpi_241 \
   testsuite_mpi_242 \
-  testsuite_mpi_54 \
-  testsuite_mpi_53 \
   testsuite_mpi_41 \
   testsuite_mpi_81 \
   testsuite_mpi_83

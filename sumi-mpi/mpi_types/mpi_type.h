@@ -104,10 +104,10 @@ class mpi_type
   }
 
   void
-  pack(const void *inbuf, void *outbuf, int bytes) const;
+  pack(const void *inbuf, void *outbuf) const;
 
   void
-  unpack(const void *inbuf, void *outbuf, int bytes) const;
+  unpack(const void *inbuf, void *outbuf) const;
 
   void
   set_committed(bool flag){
@@ -243,19 +243,19 @@ class mpi_type
 
  protected:
   void
-  pack_action(void* packed_buf, void* unpacked_buf, int bytes, bool pack) const;
+  pack_action(void* packed_buf, void* unpacked_buf, bool pack) const;
 
   void
-  pack_action_primitive(void* packed_buf, void* unpacked_buf, int bytes, bool pack) const;
+  pack_action_primitive(void* packed_buf, void* unpacked_buf, bool pack) const;
 
   void
-  pack_action_pair(void* packed_buf, void* unpacked_buf, int bytes, bool pack) const;
+  pack_action_pair(void* packed_buf, void* unpacked_buf, bool pack) const;
 
   void
-  pack_action_vector(void* packed_buf, void* unpacked_buf, int bytes, bool pack) const;
+  pack_action_vector(void* packed_buf, void* unpacked_buf, bool pack) const;
 
   void
-  pack_action_indexed(void* packed_buf, void* unpacked_buf, int bytes, bool pack) const;
+  pack_action_indexed(void* packed_buf, void* unpacked_buf, bool pack) const;
 
 
  private:

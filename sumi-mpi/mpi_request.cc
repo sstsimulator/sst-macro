@@ -10,9 +10,57 @@
  */
 
 #include <sumi-mpi/mpi_request.h>
+#include <sumi-mpi/mpi_comm/mpi_comm.h>
 
 namespace sumi {
 
+collective_op_base::collective_op_base(mpi_comm* cm) :
+  comm(cm), packed_send(false), packed_recv(false),
+  tag(cm->next_collective_tag())
+{
+}
+
+collective_op::collective_op(int scnt, int rcnt, mpi_comm *cm) :
+    collective_op_base(cm)
+{
+  sendcnt = scnt;
+  recvcnt = rcnt;
+}
+
+collectivev_op::collectivev_op(int scnt, int* recvcnts, int* rd, mpi_comm* cm) :
+    collective_op_base(cm),
+    recvcounts(recvcnts),
+    sendcounts(0), rdisps(rd)
+{
+  sendcnt = scnt;
+  recvcnt = 0;
+}
+
+collectivev_op::collectivev_op(int* sendcnts, int* sd, int rcnt, mpi_comm* cm) :
+    collective_op_base(cm),
+    sendcounts(sendcnts),
+    sdisps(sd)
+{
+  sendcnt = 0;
+  recvcnt = rcnt;
+}
+
+collectivev_op::collectivev_op(int* sendcnts, int* sd,
+                               int* recvcnts, int *rd, mpi_comm* cm) :
+  collective_op_base(cm),
+  recvcounts(recvcnts), sendcounts(sendcnts),
+  sdisps(sd), rdisps(rd)
+{
+  sendcnt = 0;
+  recvcnt = 0;
+}
+
+collective_op::collective_op(int count, mpi_comm* cm) :
+  collective_op_base(cm)
+{
+  sendcnt = count;
+  recvcnt = count;
+}
 
 mpi_request::mpi_request(const key::category& cat) :
  key_(key::construct(cat)),
