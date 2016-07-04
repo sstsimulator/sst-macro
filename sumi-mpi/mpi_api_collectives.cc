@@ -132,6 +132,34 @@ mpi_api::finish_collective_op(collective_op_base* op_)
 }
 
 void
+mpi_api::finish_collective(collective_op_base* op)
+{
+  switch(op->ty){
+    case collective::reduce:
+    case collective::alltoall:
+    case collective::gather:
+    case collective::scatter:
+    case collective::allreduce:
+    case collective::scan:
+    case collective::allgather:
+    case collective::barrier:
+    case collective::reduce_scatter:
+    case collective::bcast:
+      finish_collective_op(op);
+      break;
+    case collective::alltoallv:
+    case collective::gatherv:
+    case collective::scatterv:
+    case collective::allgatherv:
+      finish_vcollective_op(op);
+      break;
+    case collective::dynamic_tree_vote:
+    case collective::heartbeat:
+      break; //nothing doing
+  }
+}
+
+void
 mpi_api::wait_collective(collective_op_base* op)
 {
   std::list<collective_done_message::ptr> pending;
@@ -156,28 +184,7 @@ mpi_api::wait_collective(collective_op_base* op)
     }
   }
 
-  switch(op->ty){
-    case collective::reduce:
-    case collective::alltoall:
-    case collective::gather:
-    case collective::scatter:
-    case collective::allreduce:
-    case collective::scan:
-    case collective::allgather:
-    case collective::barrier:
-    case collective::reduce_scatter:
-    case collective::bcast:
-      finish_collective_op(op);
-      break;
-    case collective::alltoallv:
-    case collective::gatherv:
-    case collective::scatterv:
-    case collective::allgatherv:
-      finish_vcollective_op(op);
-      break;
-  }
-
-
+  finish_collective(op);
   
   std::list<collective_done_message::ptr>::iterator it, end = pending.end();
   for (it=pending.begin(); it != end; ++it){
@@ -419,13 +426,13 @@ mpi_api::start_reduce(collective_op* op)
                     fxn, false, options::initial_context, op->comm);
 }
 
-int
-mpi_api::reduce(const void *src, void *dst, int count,
-                MPI_Datatype type, MPI_Op mop, int root, MPI_Comm comm)
+collective_op*
+mpi_api::start_reduce(const char* name, const void *src, void *dst, int count,
+                      MPI_Datatype type, MPI_Op mop, int root, MPI_Comm comm)
 {
-  SSTMACBacktrace("MPI_Reduce");
+  SSTMACBacktrace(name);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
-    "MPI_Reduce(%d,%s,%s,%d,%s)", count, type_str(type).c_str(),
+    "%s(%d,%s,%s,%d,%s)", name, count, type_str(type).c_str(),
     op_str(mop), int(root), comm_str(comm).c_str());
 
   collective_op* op = new collective_op(count, get_comm(comm));
@@ -443,6 +450,15 @@ mpi_api::reduce(const void *src, void *dst, int count,
 
   start_mpi_collective(collective::reduce, src, dst, sendtype, recvtype, op);
   start_reduce(op);
+
+  return op;
+}
+
+int
+mpi_api::reduce(const void *src, void *dst, int count,
+                MPI_Datatype type, MPI_Op mop, int root, MPI_Comm comm)
+{
+  collective_op* op = start_reduce("MPI_Reduce", src, dst, count, type, mop, root, comm);
   wait_collective(op);
   delete op;
 
@@ -453,6 +469,25 @@ int
 mpi_api::reduce(int count, MPI_Datatype type, MPI_Op op, int root, MPI_Comm comm)
 {
   return reduce(NULL, NULL, count, type, op, root, comm);
+}
+
+int
+mpi_api::ireduce(const void* sendbuf, void* recvbuf, int count,
+                 MPI_Datatype type, MPI_Op mop, int root, MPI_Comm comm,
+                 MPI_Request* req)
+{
+  collective_op* op = start_reduce("Ireduce", sendbuf, recvbuf, count, type, mop, root, comm);
+  mpi_request* reqPtr = mpi_request::construct(default_key_category);
+  reqPtr->set_collective(op);
+  op->comm->add_request(op->tag, reqPtr);
+  *req = add_request_ptr(reqPtr);
+  return MPI_SUCCESS;
+}
+
+int
+mpi_api::ireduce(int count, MPI_Datatype type, MPI_Op op, int root, MPI_Comm comm, MPI_Request* req)
+{
+  return ireduce(NULL, NULL, count, type, op, root, comm, req);
 }
 
 void

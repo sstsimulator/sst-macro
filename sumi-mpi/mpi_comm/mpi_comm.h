@@ -20,6 +20,7 @@
 #include <sumi-mpi/mpi_comm/keyval_fwd.h>
 #include <sumi-mpi/mpi_comm/mpi_group.h>
 #include <sumi-mpi/sstmac_mpi_integers.h>
+#include <sumi-mpi/mpi_request_fwd.h>
 
 namespace sumi {
 
@@ -163,6 +164,22 @@ class mpi_comm : public domain
     return !this->operator==(other);
   }
 
+  void
+  add_request(int tag, mpi_request* req){
+    ireqs_[tag] = req;
+  }
+
+  mpi_request*
+  get_request(int tag) const {
+    std::map<int, mpi_request*>::const_iterator it = ireqs_.find(tag);
+    if (it == ireqs_.end()){
+      spkt_throw_printf(sprockit::value_error,
+          "cannot find tag %d on comm %d for returning collective MPI_Request",
+          tag, id_);
+    }
+    return it->second;
+  }
+
  protected:
   friend std::ostream&
   operator<<(std::ostream &os, mpi_comm* comm);
@@ -187,6 +204,8 @@ class mpi_comm : public domain
   topotypes topotype_;
 
   std::string name_;
+
+  std::map<int, mpi_request*> ireqs_;
 
 
 };

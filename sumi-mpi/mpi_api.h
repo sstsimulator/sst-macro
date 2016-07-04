@@ -310,8 +310,6 @@ class mpi_api :
          MPI_Status *status);
 
   /* Collective operations */
-  /// Set a barrier.
-  /// \return the time at which this node was released from the barrier.
   int
   barrier(MPI_Comm comm);
 
@@ -406,56 +404,42 @@ class mpi_api :
             const int *recvcounts, const int *rdispls, MPI_Datatype recvtype,
             MPI_Comm comm);
 
-  /// Reduce data from all nodes to all nodes and give all nodes access
-  /// to the payload posted by each node.  The result pointer will point to
-  /// an object of type mpicollpayload.
   int
   reduce(int count, MPI_Datatype type, MPI_Op op, int root,
             MPI_Comm comm);
-
-  /// Reduce data from all nodes to all nodes and give all nodes access
-  /// to the payload posted by each node.  The result pointer will point to
-  /// an object of type mpicollpayload.
   int
   reduce(const void* src, void* dst,
-            int count, MPI_Datatype type, MPI_Op op, int root,
-            MPI_Comm comm);
+         int count, MPI_Datatype type, MPI_Op op, int root,
+         MPI_Comm comm);
 
-  /// Reduce data from all nodes to all nodes and give all nodes access
-  /// to the payload posted by each node.  The result pointer will point to
-  /// an object of type mpicollpayload.
+  int
+  ireduce(const void* sendbuf, void* recvbuf, int count,
+                   MPI_Datatype type, MPI_Op op, int root, MPI_Comm comm,
+                   MPI_Request* req);
+  int
+  ireduce(int count, MPI_Datatype type, MPI_Op op, int root, MPI_Comm comm, MPI_Request* req);
+
   int
   allreduce(int count, MPI_Datatype type, MPI_Op op,
             MPI_Comm comm);
 
-  /// Reduce data from all nodes to all nodes and give all nodes access
-  /// to the payload posted by each node.  The result pointer will point to
-  /// an object of type mpicollpayload.
   int
   allreduce(const void* src, void* dst,
             int count, MPI_Datatype type, MPI_Op op,
             MPI_Comm comm);
 
-  /// Reduce data and scatter results.
-  /// All nodes will get a pointer to all payload.
   int
   reduce_scatter(int* recvcnts, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm);
 
-  /// Reduce data and scatter results.
-  /// All nodes will get a pointer to all payload.
   int
   reduce_scatter(const void* src, void* dst,
                  int* recvcnts, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm);
 
-  /// Compute partial reductions on data.
   int
   scan(int count, MPI_Datatype type, MPI_Op op, MPI_Comm comm);
 
-  /// Compute partial reductions on data and share data.
-  /// Each node will have as a result its own payload and that of
-  /// all lower-ranked nodes
   int
   scan(const void* src, void* dst,
       int count, MPI_Datatype type, MPI_Op op,
@@ -487,29 +471,24 @@ class mpi_api :
     return MPI_SUCCESS;
   }
 
-  /// Duplicate a type.  Easy enough.
   int
   type_dup(MPI_Datatype intype, MPI_Datatype* outtype);
 
   int
   type_set_name(MPI_Datatype id, const std::string &name);
 
-  /// Create an indexed type.  Yes, lets recreate C++ with MPI function calls.
   int
   type_indexed(int count, const int _blocklens_[], const int* _indices_,
                MPI_Datatype intype, MPI_Datatype* outtype);
 
-  /// Create an indexed type.  Yes, lets recreate C++ with MPI function calls.
   int
   type_hindexed(int count, const int _blocklens_[], const MPI_Aint* _indices_,
                MPI_Datatype intype, MPI_Datatype* outtype);
 
 
-  /// Creates a contiguous datatype
   int
   type_contiguous(int count, MPI_Datatype old_type, MPI_Datatype* new_type);
 
-  /// Creates a vector (strided) datatype
   int
   type_vector(int count, int blocklength, int stride,
               MPI_Datatype old_type,
@@ -520,25 +499,21 @@ class mpi_api :
               MPI_Datatype old_type,
               MPI_Datatype* new_type);
 
-  /// Creates a struct datatype
   int
   type_create_struct(const int count, const int* blocklens,
               const MPI_Aint* displs,
               const MPI_Datatype* old_types,
               MPI_Datatype* newtype);
 
-  /// Creates a struct datatype
   int
   type_create_struct(const int count, const int* blocklens,
               const int* displs,
               const MPI_Datatype* old_types,
               MPI_Datatype* newtype);
 
-  /// A datatype object has to be committed before use in communication.
   int
   type_commit(MPI_Datatype* type);
 
-  /// Mark datatype for deallocation.
   int
   type_free(MPI_Datatype* type);
 
@@ -611,6 +586,9 @@ class mpi_api :
   keyval*
   get_keyval(int key);
 
+  void
+  finish_collective(collective_op_base* op);
+
  private:
   int
   do_wait(MPI_Request *request, MPI_Status *status);
@@ -657,15 +635,6 @@ class mpi_api :
   std::string
   type_label(MPI_Datatype tid);
 
-  /**
-   * @brief start_allgather
-   * @param sendbuf
-   * @param recvbuf
-   * @param count
-   * @param type
-   * @param comm
-   * @return A unique tag identifying the collective
-   */
   void start_allgather(collective_op* op);
 
   void start_alltoall(collective_op* op);
@@ -679,6 +648,11 @@ class mpi_api :
   void start_gather(collective_op* op);
 
   void start_reduce(collective_op* op);
+
+  collective_op*
+  start_reduce(const char* name, const void* src, void* dst,
+         int count, MPI_Datatype type, MPI_Op op, int root,
+         MPI_Comm comm);
 
   void start_reduce_scatter(collective_op* op);
 
@@ -719,9 +693,6 @@ class mpi_api :
 
   /// The builder for mpi communicators.
   mpi_comm_factory* comm_factory_;
-
-  /// Ensure that collective operations are given unique tags
-  /// to protect shared back-end data (magic payload info).
 
   /// The state of this object (initialized or not).
   enum {

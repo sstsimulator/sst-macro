@@ -94,26 +94,18 @@ int
 mpi_api::alltoallv(const int *sendcounts, MPI_Datatype sendtype,
                    const int *recvcounts, MPI_Datatype recvtype, MPI_Comm comm)
 {
-  //don't actually do an alltoallv - this is stupid and annoying
+  //might not actually need an alltoallv - this is stupid and annoying
   //if I don't need the buffers, don't use them
   mpi_comm* commPtr = get_comm(comm);
-  int total_buffer_size = 0;
+  int total_count = 0;
   int nproc = commPtr->size();
   for (int i=0; i < nproc; ++i){
-    total_buffer_size += sendcounts[i];
+    total_count += sendcounts[i];
   }
 
-  int avg_size = total_buffer_size / nproc;
-  int byte_size = avg_size * type_size(sendtype);
-
-  if (byte_size > 2056){
-    return alltoallv(NULL, sendcounts, NULL, sendtype,
-                     NULL, recvcounts, NULL, recvtype,
-                     comm);
-  } else {
-    //latency-bound anyway
-    return alltoall(NULL, avg_size, sendtype, NULL, avg_size, recvtype, comm);
-  }
+  int avg_count = total_count / nproc;
+  //probably latency-bound anyway
+  return alltoall(NULL, avg_count, sendtype, NULL, avg_count, sendtype, comm);
 }
 
 void
@@ -162,7 +154,20 @@ mpi_api::gatherv(int sendcount, MPI_Datatype sendtype,
                  const int *recvcounts, MPI_Datatype recvtype,
                  int root, MPI_Comm comm)
 {
-  return gatherv(NULL, sendcount, sendtype, NULL, recvcounts, NULL, recvtype, root, comm);
+  //if I don't need the buffers, don't use them
+  mpi_comm* commPtr = get_comm(comm);
+  if (commPtr->rank() == root){
+    int total_count = 0;
+    int nproc = commPtr->size();
+    for (int i=0; i < nproc; ++i){
+      total_count += recvcounts[i];
+    }
+    int avg_count = total_count / nproc;
+    //probably latency-bound anyway
+    return gather(sendcount, sendtype, avg_count, recvtype, root, comm);
+  } else {
+    return gather(sendcount, sendtype, -1, MPI_DATATYPE_NULL, root, comm);
+  }
 }
 
 void
@@ -209,7 +214,20 @@ mpi_api::scatterv(const void* sendbuf, const int* sendcounts, const int *displs,
 int
 mpi_api::scatterv(const int *sendcounts, MPI_Datatype sendtype, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
-  return scatterv(NULL, sendcounts, NULL, sendtype, NULL, recvcount, recvtype, root, comm);
+  //if I don't need the buffers, don't use them
+  mpi_comm* commPtr = get_comm(comm);
+  if (commPtr->rank() == root){
+    int total_count = 0;
+    int nproc = commPtr->size();
+    for (int i=0; i < nproc; ++i){
+      total_count += sendcounts[i];
+    }
+    int avg_count = total_count / nproc;
+    //probably latency-bound anyway
+    return scatter(avg_count, sendtype, recvcount, recvtype, root, comm);
+  } else {
+    return scatter(NULL, -1, MPI_DATATYPE_NULL, NULL, recvcount, recvtype, root, comm);
+  }
 }
 
 

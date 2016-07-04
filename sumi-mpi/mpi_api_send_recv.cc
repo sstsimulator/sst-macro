@@ -73,7 +73,7 @@ mpi_api::send_init(const void *buf, int count,
   op->comm = comm;
   op->optype = persistent_op::Send;
 
-  req->persist(op);
+  req->set_persistent(op);
 
   return MPI_SUCCESS;
 }
@@ -129,7 +129,7 @@ mpi_api::recv_init(void *buf, int count, MPI_Datatype datatype, int source,
   op->comm = comm;
   op->optype = persistent_op::Recv;
 
-  req->persist(op);
+  req->set_persistent(op);
 
   return MPI_SUCCESS;
 }

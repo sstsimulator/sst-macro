@@ -117,17 +117,27 @@ class mpi_request  {
   void
   cancel() {
     cancelled_ = true;
-    complete(mpi_message::ptr());
+    complete();
   }
 
   void
-  persist(persistent_op* op) {
+  complete() {
+    complete_ = true;
+  }
+
+  void
+  set_persistent(persistent_op* op) {
     persistent_op_ = op;
   }
 
   persistent_op*
   persistent_data() const {
     return persistent_op_;
+  }
+
+  void
+  set_collective(collective_op* op) {
+    collective_op_ = op;
   }
 
   collective_op*
