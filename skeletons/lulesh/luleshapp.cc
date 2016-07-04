@@ -6,28 +6,24 @@
 #include "luleshapp.h"
 #include <math.h>
 #include <stdio.h>
-
 #include <mpi.h>
 
 using namespace sstmac::sw;
 
 namespace luleshmodel
 {
-  SpktRegisterApp("lulesh", luleshapp);
+  SpktRegister("lulesh", app, luleshapp);
 
   // Overrides app::skeleton_main virtual function
   // The task thread context is started by a call into this function
   void
   luleshapp::skeleton_main()
   {
-
-    // initialize mpi
-    if (mpi() == 0)
-      spkt_throw(sprockit::null_error, "luleshapp:  mpiapi pointer is null");
+    sprockit::sim_parameters* params = get_params();
 
     int argc = 0; char** argv = 0;
     MPI_Init(&argc, &argv);
-    timestamp start(MPI_Wtime());
+    double start(MPI_Wtime());
     world_ = MPI_COMM_WORLD;
     int rank; 
     MPI_Comm_rank(world_, &rank);
@@ -46,11 +42,11 @@ namespace luleshmodel
     }
 
     // calculate data layout
-    int nx = sstmac::env::params->get_int_param("lulesh_nx");
-    int ny = sstmac::env::params->get_int_param("lulesh_ny");
-    int nz = sstmac::env::params->get_int_param("lulesh_nz");
+    int nx = params->get_int_param("lulesh_nx");
+    int ny = params->get_int_param("lulesh_ny");
+    int nz = params->get_int_param("lulesh_nz");
 
-    int iter_max = sstmac::env::params->get_int_param("lulesh_iter");
+    int iter_max = params->get_int_param("lulesh_iter");
 
     if (rank == 0)
     {
@@ -79,29 +75,13 @@ namespace luleshmodel
       //SSTMAC_DEBUG << " -> Iter (Max):       " << iter_max << "\n";
     }
 
-    sstmac::timestamp start_main = mpi()->wtime();
+    double start_main = MPI_Wtime();
     application_main(iter_max, nx * ny * nz, (nx + 1) * (ny + 1) + (nz + 1),
         pe_x, nx);
-    sstmac::timestamp end_main = mpi()->wtime();
+    double end_main = MPI_Wtime();
 
-    if (rank == 0)
-    {
-      //SSTMAC_DEBUG << "Main Compute Section:\n";
-      //SSTMAC_DEBUG << " -> Total Time (sec)    : " << (end_main.sec() - start_main.sec()) << "\n";
-      //SSTMAC_DEBUG << " -> Total Time (sec/itr): " << ((end_main.sec() - start_main.sec()) / iter_max) << "\n";
-    }
 
-    // finalize 
-    // sstmac::timestamp done = mpi()->wtime();
-    MPI_Finalize();
-    sstmac::timestamp done(MPI_Wtime());
-
-    if (rank == 0)
-    {
-      //SSTMAC_DEBUG << "Total Runtime Information:\n";
-      //SSTMAC_DEBUG << " -> Total Time (sec)    : " << (done.sec() - start.sec()) << "\n";
-      //SSTMAC_DEBUG << " -> Total Time (sec/itr): " << (done.sec() - start.sec()) / iter_max << "\n";
-    }
+    double done(MPI_Wtime());
   }
 
   void
@@ -1113,7 +1093,7 @@ namespace luleshmodel
     // so we need a per-elem time
     // compute(numElem * 0.0);
     sstmac::timestamp comp_event(numElem * SPTL_INTEGRATE_STRESS_ELEMS);
-    compute(comp_event);
+    app::compute(comp_event);
   }
 
   void

@@ -61,7 +61,7 @@ namespace gtc
 
     /// Get a copy.
     virtual sstmac::sw::app*
-    clone_type()
+    clone_type() const
     {
       return new gtc_main;
     }
@@ -80,7 +80,7 @@ namespace gtc
     }
 
     // -------------- GTC Functions
-  protected:
+  private:
 
     void
     setup();
@@ -147,7 +147,7 @@ namespace gtc
 
     // -------------Configuration Parameters ----------------- //
     // ------------------------------------------------------- //
-  protected:
+  private:
 
     config_parameters::ptr gtcparams_;
 
@@ -155,7 +155,11 @@ namespace gtc
     int nthreads_;
     field_array::ptr field_array_;
     particle_decomp::ptr part_decomp_;
-    mpi_api* mpi_;
+
+    sumi::mpi_api* mpi_;
+    sumi::mpi_api* mpi() const {
+      return mpi_;
+    }
 
 
     RNG::SHR3* rng_;

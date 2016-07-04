@@ -1,0 +1,46 @@
+usage: runsendrecv -f <config file> [options] 
+ 
+Options are: 
+	[(--help|-h)]                          
+	[(--print-apps|-P)]                    
+	[(--debug|-d)             <value> ]    
+	[(--configfile|-f)        <value> ]    
+	[(--param|-p)       <key>=<value> ]    
+	[(--stoptime|-t)          <value> ]    
+	[(--mode|-m)              <value> ]    
+	[(--include|-i)           <value> ]    
+	[(--runnumber|-r)         <value> ]    
+	[(--cpu-affinity|-c)      <value>,<value>,... ]    
+
+Configuration file is not optional. See parameters.ini for 
+a list of parameters. 
+
+--param (-p) is used to override any parameters in the 
+configuration file, for example: 
+	-p network_name=buffer 
+
+--include (-i) is used to include a pre-made parameter file 
+from the configurations folder into your parameter set
+
+--stoptime (-t) stops the simulation at the given time, 
+which is useful for debugging 
+
+--mode (-m) can be used to open the debugger by saying -m debug, 
+and can turn off printing the simulation at the end with -m notime 
+
+--cpu-affinity takes a comma separated list of processor affinities
+with size equal to the number of PDES tasks per node
+
+Valid arguments to --debug (-d) are strings of the form 
+"<(debug|stats)> (name1) | (name2) | ... " 
+	- examples: 
+		- "<debug> mpi" turns on all mpi output 
+		- "<debug> app | mpicollective" turns on all 
+		skeleton and mpicollective output 
+		- "<stats> all" turns on all stat collection 
+	- some current useful debug tags are: 
+		software: app mpi mpiapi sstmac_mpi mpicollective mpi_queue 
+		hardware: node network nic  
+		system: launch allocation indexing 
+	- current stat tags are: 
+		all spyplot congestion network 

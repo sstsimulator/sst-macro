@@ -212,7 +212,6 @@ AC_CONFIG_FILES([
  sstmac/libraries/blas/Makefile
  sstmac/libraries/sumi/Makefile
  sstmac/libraries/pthread/Makefile
- sstmac/libraries/sockets/Makefile
  sstmac/libraries/machines/Makefile
  sstmac/libraries/uq/Makefile
  sstmac/libraries/Makefile

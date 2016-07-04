@@ -1,4 +1,4 @@
-TARGET := runsst
+TARGET := runmultiapp
 SRC := $(shell ls *.cc) 
 
 CXX :=    sst++
