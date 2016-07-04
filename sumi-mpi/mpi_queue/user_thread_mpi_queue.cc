@@ -57,8 +57,10 @@ mpi_queue::handle_collective_done(const sumi::message::ptr& msg)
   collective_done_message::ptr cmsg = ptr_safe_cast(collective_done_message, msg);
   mpi_comm* comm = safe_cast(mpi_comm, cmsg->dom());
   mpi_request* req = comm->get_request(cmsg->tag());
-  api_->finish_collective(req->collective_data());
+  collective_op_base* op = req->collective_data();
+  api_->finish_collective(op);
   req->complete();
+  delete op;
 }
 
 void

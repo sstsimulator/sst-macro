@@ -136,11 +136,11 @@ class mpi_request  {
   }
 
   void
-  set_collective(collective_op* op) {
+  set_collective(collective_op_base* op) {
     collective_op_ = op;
   }
 
-  collective_op*
+  collective_op_base*
   collective_data() const {
     return collective_op_;
   }
@@ -176,7 +176,7 @@ class mpi_request  {
   bool complete_;
   bool cancelled_;
   persistent_op* persistent_op_;
-  collective_op* collective_op_;
+  collective_op_base* collective_op_;
 };
 
 }

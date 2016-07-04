@@ -5,6 +5,15 @@
 namespace sumi {
 
 void
+mpi_api::add_immediate_collective(collective_op_base* op, MPI_Request* req)
+{
+  mpi_request* reqPtr = mpi_request::construct(default_key_category);
+  reqPtr->set_collective(op);
+  op->comm->add_request(op->tag, reqPtr);
+  *req = add_request_ptr(reqPtr);
+}
+
+void
 mpi_api::start_mpi_collective(collective::type_t ty,
                               const void *sendbuf, void *recvbuf,
                               MPI_Datatype sendtype, MPI_Datatype recvtype,
@@ -200,6 +209,24 @@ mpi_api::start_allgather(collective_op *op)
                   false, options::initial_context, op->comm);
 }
 
+collective_op*
+mpi_api::start_allgather(const char* name, const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                   void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
+{
+  SSTMACBacktrace(name);
+  mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
+    "%s(%d,%s,%d,%s,%s)",
+    name,
+    sendcount, type_str(sendtype).c_str(),
+    recvcount, type_str(recvtype).c_str(),
+    comm_str(comm).c_str());
+
+  collective_op* op = new collective_op(sendcount, recvcount, get_comm(comm));
+  start_mpi_collective(collective::allgather, sendbuf, recvbuf, sendtype, recvtype, op);
+  start_allgather(op);
+  return op;
+}
+
 int
 mpi_api::allgather(int sendcount, MPI_Datatype sendtype,
                    int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
@@ -211,19 +238,31 @@ int
 mpi_api::allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                    void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
 {
-  SSTMACBacktrace("MPI_Allgather");
-  mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
-    "MPI_Allgather(%d,%s,%d,%s,%s)",
-    sendcount, type_str(sendtype).c_str(),
-    recvcount, type_str(recvtype).c_str(),
-    comm_str(comm).c_str());
-
-  collective_op* op = new collective_op(sendcount, recvcount, get_comm(comm));
-  start_mpi_collective(collective::allgather, sendbuf, recvbuf, sendtype, recvtype, op);
-  start_allgather(op);
+  collective_op* op = start_allgather("MPI_Allgather",
+                        sendbuf, sendcount, sendtype,
+                        recvbuf, recvcount, recvtype, comm);
   wait_collective(op);
   delete op;
   return MPI_SUCCESS;
+}
+
+int
+mpi_api::iallgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                    void *recvbuf, int recvcount, MPI_Datatype recvtype,
+                    MPI_Comm comm, MPI_Request *req)
+{
+  collective_op* op = start_allgather("MPI_Iallgather", sendbuf, sendcount, sendtype,
+                                      recvbuf, recvcount, recvtype, comm);
+  add_immediate_collective(op, req);
+  return MPI_SUCCESS;
+}
+
+int
+mpi_api::iallgather(int sendcount, MPI_Datatype sendtype,
+                    int recvcount, MPI_Datatype recvtype,
+                    MPI_Comm comm, MPI_Request *req)
+{
+  return iallgather(NULL, sendcount, sendtype, NULL, recvcount, recvtype, comm, req);
 }
 
 void
@@ -234,29 +273,60 @@ mpi_api::start_alltoall(collective_op* op)
                       false, options::initial_context, op->comm);
 }
 
-int
-mpi_api::alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+collective_op*
+mpi_api::start_alltoall(const char* name, const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                   void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
 {
-  SSTMACBacktrace("MPI_Alltoall");
+  SSTMACBacktrace(name);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
-    "MPI_Alltoall(%d,%s,%d,%s,%s)",
+    "%s(%d,%s,%d,%s,%s)", name,
     sendcount, type_str(sendtype).c_str(),
     recvcount, type_str(recvtype).c_str(),
     comm_str(comm).c_str());
   collective_op* op = new collective_op(sendcount, recvcount, get_comm(comm));
   start_mpi_collective(collective::alltoall, sendbuf, recvbuf, sendtype, recvtype, op);
   start_alltoall(op);
+  return op;
+}
+
+int
+mpi_api::alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                  void *recvbuf, int recvcount, MPI_Datatype recvtype,
+                  MPI_Comm comm)
+{
+  collective_op* op = start_alltoall("MPI_Alltoall", sendbuf, sendcount, sendtype,
+                                     recvbuf, recvcount, recvtype, comm);
   wait_collective(op);
   delete op;
   return MPI_SUCCESS;
 }
+
 
 int
 mpi_api::alltoall(int sendcount, MPI_Datatype sendtype,
                   int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
 {
   return alltoall(NULL, sendcount, sendtype, NULL, recvcount, recvtype, comm);
+}
+
+int
+mpi_api::ialltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                  void *recvbuf, int recvcount, MPI_Datatype recvtype,
+                  MPI_Comm comm, MPI_Request* req)
+{
+  collective_op* op = start_alltoall("MPI_Ialltoall", sendbuf, sendcount, sendtype,
+                                     recvbuf, recvcount, recvtype, comm);
+  add_immediate_collective(op, req);
+  return MPI_SUCCESS;
+}
+
+int
+mpi_api::ialltoall(int sendcount, MPI_Datatype sendtype,
+                  int recvcount, MPI_Datatype recvtype,
+                   MPI_Comm comm, MPI_Request* req)
+{
+  return ialltoall(NULL, sendcount, sendtype, NULL,
+                   recvcount, recvtype, comm, req);
 }
 
 void
@@ -268,13 +338,13 @@ mpi_api::start_allreduce(collective_op* op)
                        fxn, false, options::initial_context, op->comm);
 }
 
-int
-mpi_api::allreduce(const void *src, void *dst, int count,
+collective_op*
+mpi_api::start_allreduce(const char* name, const void *src, void *dst, int count,
                    MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
 {
-  SSTMACBacktrace("MPI_Allreduce");
+  SSTMACBacktrace(name);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
-    "MPI_Allreduce(%d,%s,%s,%s)",
+    "%s(%d,%s,%s,%s)", name,
     count, type_str(type).c_str(), op_str(mop), comm_str(comm).c_str());
 
   collective_op* op = new collective_op(count, get_comm(comm));
@@ -285,9 +355,17 @@ mpi_api::allreduce(const void *src, void *dst, int count,
   op->op = mop;
   start_mpi_collective(collective::allreduce, src, dst, type, type, op);
   start_allreduce(op);
+  return op;
+}
+
+int
+mpi_api::allreduce(const void *src, void *dst, int count,
+                   MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
+{
+  collective_op* op = start_allreduce("MPI_Allreduce",
+                                      src, dst, count, type, mop, comm);
   wait_collective(op);
   delete op;
-
   return MPI_SUCCESS;
 }
 
@@ -297,6 +375,24 @@ mpi_api::allreduce(int count, MPI_Datatype type, MPI_Op op, MPI_Comm comm)
   return allreduce(NULL, NULL, count, type, op, comm);
 }
 
+int
+mpi_api::iallreduce(const void *src, void *dst, int count,
+                   MPI_Datatype type, MPI_Op mop,
+                    MPI_Comm comm, MPI_Request* req)
+{
+  collective_op* op = start_allreduce("MPI_Iallreduce",
+                                      src, dst, count, type, mop, comm);
+  add_immediate_collective(op, req);
+  return MPI_SUCCESS;
+}
+
+int
+mpi_api::iallreduce(int count, MPI_Datatype type, MPI_Op op,
+                    MPI_Comm comm, MPI_Request* req)
+{
+  return iallreduce(NULL, NULL, count, type, op, comm, req);
+}
+
 void
 mpi_api::start_barrier(collective_op* op)
 {
@@ -304,17 +400,31 @@ mpi_api::start_barrier(collective_op* op)
   transport::barrier(op->tag, false, op->comm);
 }
 
+collective_op*
+mpi_api::start_barrier(const char* name, MPI_Comm comm)
+{
+  SSTMACBacktrace(name);
+  collective_op* op = new collective_op(0, get_comm(comm));
+  mpi_api_debug(sprockit::dbg::mpi, "%s(%s) on tag %d",
+    name, comm_str(comm).c_str(), int(op->tag));
+  start_barrier(op);
+  return op;
+}
+
 int
 mpi_api::barrier(MPI_Comm comm)
 {
-  SSTMACBacktrace("MPI_Barrier");
-  collective_op* op = new collective_op(0, get_comm(comm));
-  mpi_api_debug(sprockit::dbg::mpi, "MPI_Barrier(%s) on tag %d",
-    comm_str(comm).c_str(), int(op->tag));
-  start_barrier(op);
+  collective_op* op = start_barrier("MPI_Barrier", comm);
   wait_collective(op);
   delete op;
+  return MPI_SUCCESS;
+}
 
+int
+mpi_api::ibarrier(MPI_Comm comm, MPI_Request *req)
+{
+  collective_op* op = start_barrier("MPI_Ibarrier", comm);
+  add_immediate_collective(op, req);
   return MPI_SUCCESS;
 }
 
@@ -328,11 +438,12 @@ mpi_api::start_bcast(collective_op* op)
                    false, options::initial_context, op->comm);
 }
 
-int
-mpi_api::bcast(void* buffer, int count, MPI_Datatype type, int root, MPI_Comm comm)
+collective_op*
+mpi_api::start_bcast(const char* name, void* buffer, int count,
+               MPI_Datatype type, int root, MPI_Comm comm)
 {
-  SSTMACBacktrace("MPI_Bcast");
-  mpi_api_debug(sprockit::dbg::mpi, "MPI_Bcast(%d,%s,%d,%s)",
+  SSTMACBacktrace(name);
+  mpi_api_debug(sprockit::dbg::mpi, "%s(%d,%s,%d,%s)", name,
     count, type_str(type).c_str(), int(root), comm_str(comm).c_str());
   collective_op* op = new collective_op(count, get_comm(comm));
   void* sendbuf, *recvbuf;
@@ -352,9 +463,16 @@ mpi_api::bcast(void* buffer, int count, MPI_Datatype type, int root, MPI_Comm co
 
   start_mpi_collective(collective::bcast, sendbuf, recvbuf, sendtype, recvtype, op);
   start_bcast(op);
+
+  return op;
+}
+
+int
+mpi_api::bcast(void* buffer, int count, MPI_Datatype type, int root, MPI_Comm comm)
+{
+  collective_op* op = start_bcast("MPI_Bcast", buffer, count, type, root, comm);
   wait_collective(op);
   delete op;
-
   return MPI_SUCCESS;
 }
 
@@ -362,6 +480,22 @@ int
 mpi_api::bcast(int count, MPI_Datatype datatype, int root, MPI_Comm comm)
 {
   return bcast(NULL, count, datatype, root, comm);
+}
+
+int
+mpi_api::ibcast(void* buffer, int count, MPI_Datatype type, int root,
+                MPI_Comm comm, MPI_Request* req)
+{
+  collective_op* op = start_bcast("MPI_Ibcast", buffer, count, type, root, comm);
+  add_immediate_collective(op, req);
+  return MPI_SUCCESS;
+}
+
+int
+mpi_api::ibcast(int count, MPI_Datatype datatype, int root,
+                MPI_Comm comm, MPI_Request* req)
+{
+  return ibcast(NULL, count, datatype, root, comm, req);
 }
 
 void
@@ -372,12 +506,13 @@ mpi_api::start_gather(collective_op* op)
                     false, options::initial_context, op->comm);
 }
 
-int
-mpi_api::gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+collective_op*
+mpi_api::start_gather(const char* name, const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                 void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
-  SSTMACBacktrace("MPI_Gather");
-  mpi_api_debug(sprockit::dbg::mpi, "MPI_Gather(%d,%s,%d,%s,%d,%s)",
+  SSTMACBacktrace(name);
+  mpi_api_debug(sprockit::dbg::mpi,
+    "%s(%d,%s,%d,%s,%d,%s)", name,
     sendcount, type_str(sendtype).c_str(),
     recvcount, type_str(recvtype).c_str(),
     int(root), comm_str(comm).c_str());
@@ -405,6 +540,15 @@ mpi_api::gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 
   start_mpi_collective(collective::gather, sendbuf, recvbuf, sendtype, recvtype, op);
   start_gather(op);
+  return op;
+}
+
+int
+mpi_api::gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
+{
+  collective_op* op = start_gather("MPI_Gather", sendbuf, sendcount, sendtype,
+                                   recvbuf, recvcount, recvtype, root, comm);
   wait_collective(op);
   delete op;
   return MPI_SUCCESS;
@@ -415,6 +559,26 @@ mpi_api::gather(int sendcount, MPI_Datatype sendtype,
                 int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
   return gather(NULL, sendcount, sendtype, NULL, recvcount, recvtype, root, comm);
+}
+
+int
+mpi_api::igather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                void *recvbuf, int recvcount, MPI_Datatype recvtype, int root,
+                MPI_Comm comm, MPI_Request* req)
+{
+  collective_op* op = start_gather("MPI_Gather", sendbuf, sendcount, sendtype,
+                                   recvbuf, recvcount, recvtype, root, comm);
+  add_immediate_collective(op, req);
+  return MPI_SUCCESS;
+}
+
+int
+mpi_api::igather(int sendcount, MPI_Datatype sendtype,
+                int recvcount, MPI_Datatype recvtype, int root,
+                MPI_Comm comm, MPI_Request* req)
+{
+  return igather(NULL, sendcount, sendtype, NULL,
+                 recvcount, recvtype, root, comm, req);
 }
 
 void
@@ -461,7 +625,6 @@ mpi_api::reduce(const void *src, void *dst, int count,
   collective_op* op = start_reduce("MPI_Reduce", src, dst, count, type, mop, root, comm);
   wait_collective(op);
   delete op;
-
   return MPI_SUCCESS;
 }
 
@@ -477,10 +640,7 @@ mpi_api::ireduce(const void* sendbuf, void* recvbuf, int count,
                  MPI_Request* req)
 {
   collective_op* op = start_reduce("Ireduce", sendbuf, recvbuf, count, type, mop, root, comm);
-  mpi_request* reqPtr = mpi_request::construct(default_key_category);
-  reqPtr->set_collective(op);
-  op->comm->add_request(op->tag, reqPtr);
-  *req = add_request_ptr(reqPtr);
+  add_immediate_collective(op, req);
   return MPI_SUCCESS;
 }
 
@@ -501,9 +661,10 @@ mpi_api::start_reduce_scatter(collective_op* op)
 
 }
 
-int
-mpi_api::reduce_scatter(const void *src, void *dst, int *recvcnts,
-                        MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
+collective_op*
+mpi_api::start_reduce_scatter(const char *name, const void *src, void *dst,
+                              int *recvcnts, MPI_Datatype type,
+                              MPI_Op mop, MPI_Comm comm)
 {
   SSTMACBacktrace("MPI_Reducescatter");
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
@@ -513,14 +674,21 @@ mpi_api::reduce_scatter(const void *src, void *dst, int *recvcnts,
   spkt_throw(sprockit::unimplemented_error,
     "sumi::reduce_scatter");
 
-  collective_op* op = 0;//new collective_op(count, get_comm(comm));
-  op->op = mop;
-
+  collective_op* op = 0;
   start_mpi_collective(collective::reduce_scatter, src, dst, type, type, op);
   start_reduce_scatter(op);
+  op->op = mop;
+
+  return op;
+}
+
+int
+mpi_api::reduce_scatter(const void *src, void *dst, int *recvcnts,
+                        MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
+{
+  collective_op* op = start_reduce_scatter("MPI_Reduce_scatter", src, dst, recvcnts, type, mop, comm);
   wait_collective(op);
   delete op;
-
   return MPI_SUCCESS;
 }
 
@@ -528,6 +696,23 @@ int
 mpi_api::reduce_scatter(int *recvcnts, MPI_Datatype type, MPI_Op op, MPI_Comm comm)
 {
   return reduce_scatter(NULL, NULL, recvcnts, type, op, comm);
+}
+
+int
+mpi_api::ireduce_scatter(const void *src, void *dst, int *recvcnts,
+                        MPI_Datatype type, MPI_Op mop,
+                        MPI_Comm comm, MPI_Request* req)
+{
+  collective_op* op = start_reduce_scatter("MPI_Ireduce_scatter", src, dst, recvcnts, type, mop, comm);
+  add_immediate_collective(op, req);
+  return MPI_SUCCESS;
+}
+
+int
+mpi_api::ireduce_scatter(int *recvcnts, MPI_Datatype type,
+                         MPI_Op op, MPI_Comm comm, MPI_Request* req)
+{
+  return ireduce_scatter(NULL, NULL, recvcnts, type, op, comm, req);
 }
 
 void
@@ -540,12 +725,13 @@ mpi_api::start_scan(collective_op* op)
   //                     fxn, false, options::initial_context, op->comm);
 }
 
-int
-mpi_api::scan(const void *src, void *dst, int count, MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
+collective_op*
+mpi_api::start_scan(const char* name, const void *src, void *dst,
+                    int count, MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
 {
-  SSTMACBacktrace("MPI_Scan");
+  SSTMACBacktrace(name);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
-    "MPI_Scan(%d,%s,%s,%s)",
+    "%s(%d,%s,%s,%s)", name,
     count, type_str(type).c_str(), op_str(mop), comm_str(comm).c_str());
 
   collective_op* op = new collective_op(count, get_comm(comm));
@@ -553,9 +739,15 @@ mpi_api::scan(const void *src, void *dst, int count, MPI_Datatype type, MPI_Op m
 
   start_mpi_collective(collective::scan, src, dst, type, type, op);
   start_scan(op);
+  return op;
+}
+
+int
+mpi_api::scan(const void *src, void *dst, int count, MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
+{
+  collective_op* op = start_scan("MPI_Scan", src, dst, count, type, mop, comm);
   wait_collective(op);
   delete op;
-
   return MPI_SUCCESS;
 }
 
@@ -563,6 +755,22 @@ int
 mpi_api::scan(int count, MPI_Datatype type, MPI_Op op, MPI_Comm comm)
 {
   return scan(NULL, NULL, count, type, op, comm);
+}
+
+int
+mpi_api::iscan(const void *src, void *dst, int count, MPI_Datatype type,
+               MPI_Op mop, MPI_Comm comm, MPI_Request* req)
+{
+  collective_op* op = start_scan("MPI_Iscan", src, dst, count, type, mop, comm);
+  add_immediate_collective(op, req);
+  return MPI_SUCCESS;
+}
+
+int
+mpi_api::iscan(int count, MPI_Datatype type, MPI_Op op,
+               MPI_Comm comm, MPI_Request* req)
+{
+  return iscan(NULL, NULL, count, type, op, comm, req);
 }
 
 void
@@ -573,12 +781,13 @@ mpi_api::start_scatter(collective_op* op)
                      false, options::initial_context, op->comm);
 }
 
-int
-mpi_api::scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+collective_op*
+mpi_api::start_scatter(const char* name, const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                  void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
-  SSTMACBacktrace("MPI_Scatter");
-  mpi_api_debug(sprockit::dbg::mpi, "MPI_Scatter(%d,%s,%d,%s,%d,%s)",
+  SSTMACBacktrace(name);
+  mpi_api_debug(sprockit::dbg::mpi,
+    "%s(%d,%s,%d,%s,%d,%s)", name,
     sendcount, type_str(sendtype).c_str(),
     recvcount, type_str(recvtype).c_str(),
     int(root), comm_str(comm).c_str());
@@ -595,9 +804,19 @@ mpi_api::scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 
   start_mpi_collective(collective::scatter, sendbuf, recvbuf, sendtype, recvtype, op);
   start_scatter(op);
+
+  return op;
+}
+
+int
+mpi_api::scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                 void *recvbuf, int recvcount, MPI_Datatype recvtype, int root,
+                 MPI_Comm comm)
+{
+  collective_op* op = start_scatter("MPI_Scatter", sendbuf, sendcount, sendtype,
+                                    recvbuf, recvcount, recvtype, root, comm);
   wait_collective(op);
   delete op;
-
   return MPI_SUCCESS;
 }
 
@@ -606,6 +825,27 @@ mpi_api::scatter(int sendcount, MPI_Datatype sendtype,
                  int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
   return scatter(NULL, sendcount, sendtype, NULL, recvcount, recvtype, root, comm);
+}
+
+int
+mpi_api::iscatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                 void *recvbuf, int recvcount, MPI_Datatype recvtype, int root,
+                 MPI_Comm comm, MPI_Request* req)
+{
+  collective_op* op = start_scatter("MPI_Iscatter", sendbuf, sendcount, sendtype,
+                                    recvbuf, recvcount, recvtype, root, comm);
+  add_immediate_collective(op, req);
+  return MPI_SUCCESS;
+}
+
+int
+mpi_api::iscatter(int sendcount, MPI_Datatype sendtype,
+                 int recvcount, MPI_Datatype recvtype,
+                 int root, MPI_Comm comm, MPI_Request* req)
+{
+  return iscatter(NULL, sendcount, sendtype,
+                 NULL, recvcount, recvtype,
+                 root, comm, req);
 }
 
 }
