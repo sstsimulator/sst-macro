@@ -541,7 +541,7 @@ enum TEST_MODE
 #include "pt2pt/bottom.cc"
 #include "pt2pt/bsend1.cc"
 #include "pt2pt/bsend2.cc"
-//send init #include "pt2pt/bsend3.cc"
+#include "pt2pt/bsend3.cc"
 #include "pt2pt/bsend4.cc"
 //intercomm #include "pt2pt/bsend5.cc"
 #include "pt2pt/bsendalign.cc"
@@ -1244,15 +1244,15 @@ int USER_MAIN(int argc, char *argv[])
   case PT2PT_BSEND2:
     bsend2::bsend2(argc, argv);
     break;
-  /** case PT2PT_BSEND3:
-    bsend3::bsend3(argc, argv);
-    break; */
+  //case PT2PT_BSEND3:
+  //  bsend3::bsend3(argc, argv);
+  //  break;
   case PT2PT_BSEND4:
     bsend4::bsend4(argc, argv);
     break;
-  /** case PT2PT_BSEND5:
-    bsend5::bsend5(argc, argv);
-    break; */
+  //case PT2PT_BSEND5:
+  //  bsend5::bsend5(argc, argv);
+  //  break;
   case PT2PT_BSENDALIGN:
     bsendalign::bsendalign(argc, argv);
     break;

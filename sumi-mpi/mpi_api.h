@@ -266,6 +266,8 @@ class mpi_api :
   int recv_init(void *buf, int count, MPI_Datatype datatype,
       int source, int tag, MPI_Comm comm, MPI_Request *request);
 
+  int request_free(MPI_Request* req);
+
   int
   start(MPI_Request* req);
 

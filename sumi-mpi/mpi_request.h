@@ -126,6 +126,11 @@ class mpi_request  {
   }
 
   void
+  set_complete(bool flag){
+    complete_ = flag;
+  }
+
+  void
   set_persistent(persistent_op* op) {
     persistent_op_ = op;
   }
