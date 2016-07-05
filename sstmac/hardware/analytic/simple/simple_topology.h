@@ -76,6 +76,9 @@ class simple_topology :
   void
   connect_objects(internal_connectable_map& objects);
 
+  coordinates
+  node_coords(node_id uid) const;
+
   void
   minimal_route_to_coords(
     const coordinates& src_coords,

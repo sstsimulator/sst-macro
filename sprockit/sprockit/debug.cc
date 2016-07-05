@@ -196,5 +196,10 @@ debug::slot_active(const debug_int& allowed){
   return bool(bitmask);
 }
 
+debug_prefix_fxn::~debug_prefix_fxn()
+{
+}
+
+
 }
 

@@ -10,10 +10,19 @@
 #
 include $(top_srcdir)/Makefile.common
 
-AM_CPPFLAGS += -I$(top_srcdir)/tests/mpi/include -Wp,-w -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi \
-  -I$(srcdir) -I$(top_builddir)/pth -I$(top_srcdir)/pth -I$(top_srcdir)/sumi -I$(top_builddir)/sumi \
-  -I$(top_builddir)/tests/api/mpi -I$(top_srcdir)/tests/api/mpi \
-  -I$(top_builddir)/tests/api/mpi/include -I$(top_srcdir)/tests/api/mpi/include -DHAVE_MPI_WIN_CREATE
+AM_CPPFLAGS += \
+ -I$(top_srcdir)/tests/mpi/include  \
+ -I$(srcdir) -I$(top_builddir)/pth \
+ -I$(top_srcdir)/pth \
+ -I$(top_srcdir)/sumi \
+ -I$(top_builddir)/sumi \
+ -I$(top_builddir)/tests/api/mpi \
+ -I$(top_srcdir)/tests/api/mpi \
+ -I$(top_builddir)/tests/api/mpi/include \
+ -I$(top_srcdir)/tests/api/mpi/include 
+
+AM_CPPFLAGS += -I$(top_srcdir)/sstmac/install -DSSTMAC=1
+AM_CPPFLAGS += -I$(top_builddir)/sstmac/replacements -I$(top_srcdir)/sstmac/replacements
 
 EXTRA_DIST = testmpi.h include
 

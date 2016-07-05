@@ -15,8 +15,6 @@
 #include <sumi-mpi/mpi_api.h>
 #include <sumi-mpi/sstmac_mpi_integers.h>
 #include <sumi-mpi/mpi_types.h>
-#include <sstmac/common/thread_lock.h>
-#include <sstmac/common/thread_info.h>
 #include <sprockit/errors.h>
 
 #include <sys/types.h>
@@ -153,9 +151,6 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
   //       caller->rank(), next_id_, my_color, my_key);
 
 #if SSTMAC_DISTRIBUTED_MEMORY && !SSTMAC_MMAP_COLLECTIVES
-  if (my_color < 0){ //I'm not part of this!
-    return mpi_comm::comm_null;
-  }
   int* result = new int[3*caller->size()];
   parent_->allgather(&mydata, 3, MPI_INT,
                      result, 3, MPI_INT,
@@ -207,6 +202,9 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
 #endif
 
   if (my_color < 0){ //I'm not part of this!
+#if SSTMAC_DISTRIBUTED_MEMORY && !SSTMAC_MMAP_COLLECTIVES
+    delete[] result;
+#endif
     return mpi_comm::comm_null;
   }
 

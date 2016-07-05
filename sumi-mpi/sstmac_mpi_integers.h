@@ -9,8 +9,8 @@ typedef long MPI_Op;
 
 typedef uint16_t MPI_Datatype;
 typedef long MPI_Comm;
-#define MPI_COMM_WORLD ((MPI_Comm)0x44000000)
-#define MPI_COMM_SELF  ((MPI_Comm)0x44000001)
+#define MPI_COMM_WORLD ((MPI_Comm)0)
+#define MPI_COMM_SELF  ((MPI_Comm)1)
 
 typedef long MPI_Group;
 #define MPI_GROUP_EMPTY ((MPI_Group)0x48000000)

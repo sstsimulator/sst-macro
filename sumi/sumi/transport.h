@@ -30,6 +30,8 @@ class transport :
 {
 
  public:
+  virtual ~transport(){}
+
   virtual void
   init();
   
@@ -610,6 +612,7 @@ class transport :
    */
   void 
   do_heartbeat(int prev_context);  
+
   
  protected:
   transport();
@@ -715,7 +718,7 @@ class transport :
 
   int nspares_;
 
-#if SPKT_USE_SPINLOCK
+#if SUMI_USE_SPINLOCK
   spin_thread_lock lock_;
 #else
   mutex_thread_lock lock_;

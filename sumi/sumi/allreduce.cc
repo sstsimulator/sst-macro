@@ -37,7 +37,8 @@ wilke_allreduce_actor::init_buffers(void* dst, void* src)
   if (src){
     //memcpy the src into the dst
     //we will now only work with the dst buffer
-    std::memcpy(dst, src, size);
+    if (src != dst)
+      std::memcpy(dst, src, size);
     //but! we need a temporary recv buffer
     recv_buffer_ = my_api_->allocate_public_buffer(size);
   }

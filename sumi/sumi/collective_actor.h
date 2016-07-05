@@ -71,12 +71,13 @@ struct action
 
   static void
   details(uint32_t round, type_t& ty, int& r, int& p){
+    const int num_enums = 4;
     uint32_t remainder = round;
-    p = remainder / max_round / 2;
-    remainder -= p*max_round*2;
+    p = remainder / max_round / num_enums;
+    remainder -= p*max_round*num_enums;
 
-    r = remainder / 2;
-    remainder -= r*2;
+    r = remainder / num_enums;
+    remainder -= r*num_enums;
 
     ty = (type_t) remainder;
   }

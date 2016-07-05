@@ -413,12 +413,13 @@ dag_collective_actor::clear_action(action* ac)
     pending->join_counter--;
     debug_printf(sumi_collective,
       "Rank %s satisfying dependency to join counter %d for action %s to partner %s on round %d"
-      " with action %s from partner %s on round %d",
+      " with action %s from partner %s on round %d tag=%d",
       rank_str().c_str(), pending->join_counter,
       action::tostr(pending->type),
       rank_str(pending->partner).c_str(), pending->round,
       action::tostr(ac->type),
-      rank_str(ac->partner).c_str(), ac->round);
+      rank_str(ac->partner).c_str(), ac->round,
+      tag_);
 
     if (pending->join_counter == 0){
       start_action(pending);
@@ -434,9 +435,10 @@ void
 dag_collective_actor::action_done(action* ac)
 {
   debug_printf(sumi_collective,
-    "Rank %s finishing action %s to partner %s on round %d -> id %u",
+    "Rank %s finishing action %s to partner %s on round %d -> id %u tag=%d",
     rank_str().c_str(), action::tostr(ac->type),
-    rank_str(ac->partner).c_str(), ac->round, ac->id);
+    rank_str(ac->partner).c_str(), ac->round, ac->id,
+    tag_);
 
   cancel_ping(ac->partner);
   clear_action(ac);
@@ -518,8 +520,9 @@ void
 dag_collective_actor::add_initial_action(action* ac)
 {
   debug_printf(sumi_collective | sumi_collective_init,
-   "Rank %s, collective %s adding initial %s",
-   rank_str().c_str(), collective::tostr(type_), ac->to_string().c_str());
+   "Rank %s, collective %s adding initial %s on tag=%d",
+   rank_str().c_str(), collective::tostr(type_), 
+   ac->to_string().c_str(), tag_);
   initial_actions_.push_back(ac);
 }
 
@@ -528,10 +531,10 @@ dag_collective_actor::add_dependency(action* precursor, action *ac)
 {
   if (precursor){
     debug_printf(sumi_collective | sumi_collective_init,
-     "Rank %s, collective %s adding dependency %s to %s",
+     "Rank %s, collective %s adding dependency %s to %s tag=%d",
      rank_str().c_str(), collective::tostr(type_),
      precursor->to_string().c_str(),
-     ac->to_string().c_str());
+     ac->to_string().c_str(), tag_);
     pending_comms_.insert(std::make_pair(precursor->id, ac));
     ac->join_counter++;
   } else {

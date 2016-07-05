@@ -1,8 +1,14 @@
 #include <sumi-mpi/mpi_api.h>
-#include <sstmac/common/thread_lock.h>
 #include <climits>
 
+namespace sstmac {
+namespace sw {
+extern void api_lock();
+extern void api_unlock();
+} }
+
 namespace sumi {
+
 
 
 struct float_int_t {
@@ -87,8 +93,7 @@ mpi_api::precommit_types()
   static const int builtin_sizes[] = {1, 2, 4, 6, 8, 12, 16, 20, 32, 48, 64};
   static const int num_builtins = sizeof(builtin_sizes) / sizeof(int);
 
-  static sstmac::thread_lock lock;
-  lock.lock();
+  sstmac::sw::api_lock();
 
   bool need_init = !mpi_type::mpi_null->committed();
 
@@ -182,7 +187,7 @@ mpi_api::precommit_types()
     allocate_type_id(&mpi_type::builtins[size]);
   }
 
-  lock.unlock();
+  sstmac::sw::api_unlock();
 
   //precommit_type(mpi_type::mpi_packed, MPI_PACKED);
 }
