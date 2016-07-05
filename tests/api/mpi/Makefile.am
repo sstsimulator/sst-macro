@@ -62,8 +62,6 @@ TEST_SOURCE_FILES = \
   coll/allgatherv4.cc \
   coll/allred.cc \
   coll/allred2.cc \
-  coll/allred3.cc \
-  coll/allred4.cc \
   coll/allred5.cc \
   coll/allred6.cc \
   coll/allredmany.cc \
@@ -77,8 +75,6 @@ TEST_SOURCE_FILES = \
   coll/bcast3.cc \
   coll/bcasttest.cc \
   coll/bcastzerotype.cc \
-  coll/coll10.cc \
-  coll/coll11.cc \
   coll/coll12.cc \
   coll/coll13.cc \
   coll/coll2.cc \
@@ -94,10 +90,6 @@ TEST_SOURCE_FILES = \
   coll/gather.cc \
   coll/gather2.cc \
   coll/longuser.cc \
-  coll/nonblocking.cc \
-  coll/nonblocking2.cc \
-  coll/nonblocking3.cc \
-  coll/op_commutative.cc \
   coll/opband.cc \
   coll/opbor.cc \
   coll/opbxor.cc \
@@ -110,19 +102,13 @@ TEST_SOURCE_FILES = \
   coll/opminloc.cc \
   coll/opprod.cc \
   coll/opsum.cc \
-  coll/red3.cc \
-  coll/red4.cc \
   coll/red_scat_block.cc \
-  coll/red_scat_block2.cc \
   coll/redscat.cc \
-  coll/redscat2.cc \
   coll/redscat3.cc \
   coll/redscatbkinter.cc \
   coll/redscatblk3.cc \
   coll/redscatinter.cc \
   coll/reduce.cc \
-  coll/reduce_local.cc \
-  coll/scantst.cc \
   coll/scatter2.cc \
   coll/scatter3.cc \
   coll/scattern.cc \

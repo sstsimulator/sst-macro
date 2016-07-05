@@ -332,7 +332,7 @@ mpi_api::ialltoall(int sendcount, MPI_Datatype sendtype,
 void
 mpi_api::start_allreduce(collective_op* op)
 {
-  reduce_fxn fxn = op->sendtype->op(op->op);
+  reduce_fxn fxn = get_collective_function(op);
   transport::allreduce(op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
                        op->sendtype->packed_size(), op->tag,
                        fxn, false, options::initial_context, op->comm);
@@ -581,10 +581,36 @@ mpi_api::igather(int sendcount, MPI_Datatype sendtype,
                  recvcount, recvtype, root, comm, req);
 }
 
+reduce_fxn
+mpi_api::get_collective_function(collective_op_base* op)
+{
+  if (op->op >= first_custom_op_id){
+    auto iter = custom_ops_.find(op->op);
+    if (iter == custom_ops_.end()){
+      spkt_throw_printf(sprockit::value_error,
+                        "Got invalid MPI_Op %d",
+                        op->op);
+   }
+    MPI_User_function* mpifxn = iter->second;
+    MPI_Datatype dtype = op->sendtype->id;
+    reduce_fxn fxn = ([=](void* dst, const void* src, int count){
+      MPI_Datatype copy_type = dtype;
+      (*mpifxn)(const_cast<void*>(src), dst, &count, &copy_type);
+    });
+    return fxn;
+  } else if (op->tmp_sendbuf){
+    return op->sendtype->op(op->op);
+  } else {
+    //the function is irrelevant
+    //just give it the integer add - function
+    return &ReduceOp<Add,int>::op;
+  }
+}
+
 void
 mpi_api::start_reduce(collective_op* op)
 {
-  reduce_fxn fxn = op->sendtype->op(op->op);
+  reduce_fxn fxn = get_collective_function(op);
   transport::reduce(op->root, op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
                     op->sendtype->packed_size(), op->tag,
                     fxn, false, options::initial_context, op->comm);
@@ -622,7 +648,8 @@ int
 mpi_api::reduce(const void *src, void *dst, int count,
                 MPI_Datatype type, MPI_Op mop, int root, MPI_Comm comm)
 {
-  collective_op* op = start_reduce("MPI_Reduce", src, dst, count, type, mop, root, comm);
+  collective_op* op = start_reduce("MPI_Reduce", src, dst, count,
+                                   type, mop, root, comm);
   wait_collective(op);
   delete op;
   return MPI_SUCCESS;
@@ -655,6 +682,9 @@ mpi_api::start_reduce_scatter(collective_op* op)
 {
   spkt_throw(sprockit::unimplemented_error,
     "sumi::reduce_scatter");
+
+  reduce_fxn fxn = get_collective_function(op);
+
   //transport::allreduce(op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
   //                     op->sendtype->packed_size(), op->tag,
   //                     fxn, false, options::initial_context, op->comm);
@@ -666,9 +696,9 @@ mpi_api::start_reduce_scatter(const char *name, const void *src, void *dst,
                               int *recvcnts, MPI_Datatype type,
                               MPI_Op mop, MPI_Comm comm)
 {
-  SSTMACBacktrace("MPI_Reducescatter");
+  SSTMACBacktrace(name);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
-    "MPI_Reduce_scatter(<...>,%s,%s,%s)",
+    "%s(<...>,%s,%s,%s)", name,
     type_str(type).c_str(), op_str(mop), comm_str(comm).c_str());
 
   spkt_throw(sprockit::unimplemented_error,
@@ -686,7 +716,8 @@ int
 mpi_api::reduce_scatter(const void *src, void *dst, int *recvcnts,
                         MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
 {
-  collective_op* op = start_reduce_scatter("MPI_Reduce_scatter", src, dst, recvcnts, type, mop, comm);
+  collective_op* op = start_reduce_scatter("MPI_Reduce_scatter", src, dst,
+                                           recvcnts, type, mop, comm);
   wait_collective(op);
   delete op;
   return MPI_SUCCESS;
@@ -715,11 +746,70 @@ mpi_api::ireduce_scatter(int *recvcnts, MPI_Datatype type,
   return ireduce_scatter(NULL, NULL, recvcnts, type, op, comm, req);
 }
 
+collective_op*
+mpi_api::start_reduce_scatter_block(const char *name, const void *src, void *dst,
+                              int recvcnt, MPI_Datatype type,
+                              MPI_Op mop, MPI_Comm comm)
+{
+  SSTMACBacktrace(name);
+  mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
+    "%s(<...>,%s,%s,%s)", name,
+    type_str(type).c_str(), op_str(mop), comm_str(comm).c_str());
+
+  spkt_throw(sprockit::unimplemented_error,
+    "sumi::reduce_scatter");
+
+  collective_op* op = 0;
+  start_mpi_collective(collective::reduce_scatter, src, dst, type, type, op);
+  start_reduce_scatter(op);
+  op->op = mop;
+
+  return op;
+}
+
+int
+mpi_api::reduce_scatter_block(const void *src, void *dst, int recvcnt,
+                        MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
+{
+  collective_op* op = start_reduce_scatter_block(
+       "MPI_Reduce_scatter_block", src, dst,
+       recvcnt, type, mop, comm);
+  wait_collective(op);
+  delete op;
+  return MPI_SUCCESS;
+}
+
+int
+mpi_api::reduce_scatter_block(int recvcnt, MPI_Datatype type, MPI_Op op, MPI_Comm comm)
+{
+  return reduce_scatter_block(NULL, NULL, recvcnt, type, op, comm);
+}
+
+int
+mpi_api::ireduce_scatter_block(const void *src, void *dst, int recvcnt,
+                        MPI_Datatype type, MPI_Op mop,
+                        MPI_Comm comm, MPI_Request* req)
+{
+  collective_op* op = start_reduce_scatter_block(
+        "MPI_Ireduce_scatter_block", src, dst, recvcnt, type, mop, comm);
+  add_immediate_collective(op, req);
+  return MPI_SUCCESS;
+}
+
+int
+mpi_api::ireduce_scatter_block(int recvcnt, MPI_Datatype type,
+                         MPI_Op op, MPI_Comm comm, MPI_Request* req)
+{
+  return ireduce_scatter_block(NULL, NULL, recvcnt, type, op, comm, req);
+}
+
+
+
 void
 mpi_api::start_scan(collective_op* op)
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "sumi::scan");
+  spkt_throw(sprockit::unimplemented_error, "sumi::scan");
+  reduce_fxn fxn = get_collective_function(op);
   //transport::reduce(op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
   //                     op->sendtype->packed_size(), op->tag,
   //                     fxn, false, options::initial_context, op->comm);

@@ -81,6 +81,7 @@ sstmac_mpi()
 mpi_api::mpi_api() :
   status_(is_fresh),
   next_type_id_(0),
+  next_op_id_(first_custom_op_id),
   group_counter_(MPI_GROUP_WORLD+1),
   req_counter_(0),
   queue_(0),

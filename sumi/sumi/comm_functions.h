@@ -1,11 +1,12 @@
 #ifndef sumi_api_FUNCTIONS_H
 #define sumi_api_FUNCTIONS_H
 
+#include <functional>
+
 namespace sumi {
 
-typedef void (*reduce_fxn)(void*,const void*,int);
-
-typedef void (*vote_fxn)(int&,const int&);
+typedef std::function<void(void*,const void*,int)> reduce_fxn;
+typedef std::function<void(int&, const int&)> vote_fxn;
 
 template <typename data_t>
 struct Add {

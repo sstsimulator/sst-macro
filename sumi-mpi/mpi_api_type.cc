@@ -231,13 +231,20 @@ mpi_api::type_get_name(MPI_Datatype id, char* name, int* resultlen)
 int
 mpi_api::op_create(MPI_User_function *user_fn, int commute, MPI_Op *op)
 {
-  spkt_throw_printf(sprockit::unimplemented_error, "mpi_api::op_create");
+  if (!commute){
+    spkt_throw_printf(sprockit::unimplemented_error,
+                      "mpi_api::op_create: non-commutative operations");
+  }
+  *op = next_op_id_++;
+  custom_ops_[*op] = user_fn;
+  return MPI_SUCCESS;
 }
 
 int
 mpi_api::op_free(MPI_Op *op)
 {
-  spkt_throw_printf(sprockit::unimplemented_error, "mpi_api::op_free");
+  custom_ops_.erase(*op);
+  return MPI_SUCCESS;
 }
 
 int

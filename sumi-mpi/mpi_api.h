@@ -431,6 +431,15 @@ class mpi_api :
                  MPI_Op op, MPI_Comm comm);
 
   int
+  reduce_scatter_block(int recvcnt, MPI_Datatype type,
+                 MPI_Op op, MPI_Comm comm);
+
+  int
+  reduce_scatter_block(const void* src, void* dst,
+                 int recvcnt, MPI_Datatype type,
+                 MPI_Op op, MPI_Comm comm);
+
+  int
   scan(int count, MPI_Datatype type, MPI_Op op, MPI_Comm comm);
 
   int
@@ -558,6 +567,15 @@ class mpi_api :
   int
   ireduce_scatter(const void* src, void* dst,
                  int* recvcnts, MPI_Datatype type,
+                 MPI_Op op, MPI_Comm comm, MPI_Request* req);
+
+  int
+  ireduce_scatter_block(int recvcnt, MPI_Datatype type,
+                 MPI_Op op, MPI_Comm comm, MPI_Request* req);
+
+  int
+  ireduce_scatter_block(const void* src, void* dst,
+                 int recvcnt, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm, MPI_Request* req);
 
   int
@@ -775,6 +793,8 @@ class mpi_api :
 
   void start_reduce_scatter(collective_op* op);
 
+  void start_reduce_scatter_block(collective_op* op);
+
   void start_scan(collective_op* op);
 
   void start_scatter(collective_op* op);
@@ -857,6 +877,11 @@ class mpi_api :
                  MPI_Op op, MPI_Comm comm);
 
   collective_op*
+  start_reduce_scatter_block(const char* name, const void* src, void* dst,
+                 int recvcnt, MPI_Datatype type,
+                 MPI_Op op, MPI_Comm comm);
+
+  collective_op*
   start_scan(const char* name, const void* src, void* dst,
       int count, MPI_Datatype type, MPI_Op op,
        MPI_Comm comm);
@@ -872,6 +897,9 @@ class mpi_api :
     return ret;
   }
 
+  reduce_fxn
+  get_collective_function(collective_op_base* op);
+
  private:
   software_id id_;
 
@@ -882,6 +910,9 @@ class mpi_api :
   int rank_;
 
   MPI_Datatype next_type_id_;
+
+  static const MPI_Op first_custom_op_id = 1000;
+  MPI_Op next_op_id_;
 
   /// The builder for mpi communicators.
   mpi_comm_factory* comm_factory_;
@@ -903,6 +934,9 @@ class mpi_api :
   //----------------------------------------------------------------
   typedef std::map<MPI_Datatype, mpi_type*> type_map;
   type_map known_types_;
+
+  typedef spkt_unordered_map<MPI_Op, MPI_User_function*> op_map;
+  op_map custom_ops_;
 
   typedef spkt_unordered_map<MPI_Comm, mpi_comm*> comm_ptr_map;
   comm_ptr_map comm_map_;

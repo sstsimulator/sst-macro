@@ -265,7 +265,7 @@ wilke_reduce_actor::buffer_action(void *dst_buffer, void *msg_buffer, action* ac
 {
   int rnd = ac->round % num_total_rounds_;
   if (rnd < num_reducing_rounds_){
-    (*fxn_)(dst_buffer, msg_buffer, ac->nelems);
+    (fxn_)(dst_buffer, msg_buffer, ac->nelems);
   }
   else {
     std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
