@@ -76,13 +76,6 @@ mpi_queue::mpi_queue() :
 }
 
 void
-mpi_queue::finalize_init()
-{
-  // need to debug dangling messages.
-  next_id_ = mpi_message::id(int(taskid_) * int64_t(4000000000LL));
-}
-
-void
 mpi_queue::init_os(operating_system* os){
   os_ = os;
   std::string libname = sprockit::printf("mpi_queue-user-lib-mem-%d-%d",
@@ -95,6 +88,8 @@ mpi_queue::init_os(operating_system* os){
   os_->register_lib(this, user_lib_time_);
 
   mpi_queue_debug("init on node %d", int(operating_system::current_node_id()));
+
+  next_id_ = uint64_t(taskid_) << 32;
 }
 
 void
@@ -226,7 +221,6 @@ mpi_queue::start_recv(mpi_queue_recv_request* req)
 {
   mpi_message::ptr mess = find_matching_recv(req);
   if (mess) {
-    //if rendezvous protocol, this will never be > 0
     //if eager protocol, race condition
     if (mess->is_payload()) {
       buffered_recv(mess, req);

@@ -94,5 +94,17 @@ mpi_request::complete(const mpi_message::ptr& msg)
   complete();
 }
 
+std::string
+mpi_request::type_str() const 
+{
+  if (is_persistent()){
+    return "persistent";
+  } else if (is_collective()){
+    return "collective";
+  } else {
+    return "regular";
+  }
+}
+
 }
 

@@ -134,14 +134,15 @@ manager::compute_max_nproc(sprockit::sim_parameters* params)
 {
   int appnum = 1;
   int max_nproc = 0;
-  while (true) {
+  bool found_app = true;
+  while (found_app || appnum < 10) {
     std::string app_namespace = sprockit::printf("app%d", appnum);
-    if (!params->has_namespace(app_namespace))
-      break;
-
-    sprockit::sim_parameters* app_params = params->get_namespace(app_namespace);
-    int nproc = compute_max_nproc_for_app(app_params);
-    max_nproc = std::max(nproc, max_nproc);
+    found_app = params->has_namespace(app_namespace);
+    if (found_app){
+      sprockit::sim_parameters* app_params = params->get_namespace(app_namespace);
+      int nproc = compute_max_nproc_for_app(app_params);
+      max_nproc = std::max(nproc, max_nproc);
+    }
     ++appnum;
   }
   return max_nproc;
@@ -166,14 +167,15 @@ void
 manager::build_apps(sprockit::sim_parameters* params)
 {
   int appnum = 1;
-  while (true) {
+  bool found_app = true;
+  while (found_app || appnum < 10) {
     std::string app_namespace = sprockit::printf("app%d", appnum);
-    if (!params->has_namespace(app_namespace))
-      break;
-
-    sprockit::sim_parameters* app_params
-        = params->get_namespace(app_namespace);
-    build_app(appnum, app_params);
+    found_app = params->has_namespace(app_namespace);
+    if (found_app){
+      sprockit::sim_parameters* app_params
+          = params->get_namespace(app_namespace);
+      build_app(appnum, app_params);
+    }
     ++appnum;
   }
 }

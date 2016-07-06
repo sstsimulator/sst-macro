@@ -19,9 +19,12 @@ mpi_api::do_wait(MPI_Request *request, MPI_Status *status)
 {
   MPI_Request req = *request;
 
-  if (*request == MPI_REQUEST_NULL){
+  if (req == MPI_REQUEST_NULL){
     return MPI_SUCCESS;
   }
+
+  mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, 
+    "   MPI_Wait_nonnull(%d)", req);
 
   mpi_request* reqPtr = get_request(req);
   if (!reqPtr->is_complete()){
@@ -32,7 +35,9 @@ mpi_api::do_wait(MPI_Request *request, MPI_Status *status)
     *status = reqPtr->status();
   }
 
+
   if (!reqPtr->is_persistent()){
+    req_map_.erase(req);
     delete reqPtr;
     *request = MPI_REQUEST_NULL;
   }

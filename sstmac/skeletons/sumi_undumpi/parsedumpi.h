@@ -13,7 +13,7 @@
 #define SSTMAC_SOFTWARE_SKELETONS_UNDUMPI_PARSEDUMPI_H_INCLUDED
 
 #include <sstmac/software/process/app.h>
-#include <sumi-mpi/mpi_api.h>
+#include <sumi-mpi/mpi_api_fwd.h>
 #include <sumi-mpi/mpi_comm/mpi_comm_fwd.h>
 #include <sstmac/dumpi_util/dumpi_meta.h>
 #include <sstmac/hardware/topology/topology.h>
@@ -47,13 +47,7 @@ class parsedumpi : public sstmac::sw::app
     return new parsedumpi;
   }
 
-  mpi_api*
-  mpi() {
-    if (mpi_) return mpi_;
-
-    mpi_ = get_api<mpi_api>();
-    return mpi_;
-  }
+  mpi_api* mpi();
 
   virtual void
   consume_params(sprockit::sim_parameters* params);

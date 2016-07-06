@@ -100,6 +100,9 @@ class mpi_request  {
     return "mpirequest";
   }
 
+  std::string
+  type_str() const;
+
   static mpi_request*
   construct(const key::category& cat);
   // --------------------------------------//

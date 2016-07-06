@@ -190,14 +190,15 @@ mpi_api::irecv(void *buf, int count, MPI_Datatype datatype, int source,
 {
   SSTMACBacktrace("MPI_Irecv");
   mpi_comm* commPtr = get_comm(comm);
+
+  mpi_request* req = mpi_request::construct(default_key_category);
+  *request = add_request_ptr(req);
+
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request | sprockit::dbg::mpi_pt2pt,
     "MPI_Irecv(%d,%s,%s,%s,%s;REQ=%d)",
     count, type_str(datatype).c_str(),
     src_str(commPtr, source).c_str(), tag_str(tag).c_str(),
     comm_str(comm).c_str(), *request);
-
-  mpi_request* req = mpi_request::construct(default_key_category);
-  *request = add_request_ptr(req);
 
   queue_->recv(req, count, datatype, source, tag, commPtr, buf);
   return MPI_SUCCESS;

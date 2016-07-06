@@ -116,9 +116,6 @@ class mpi_queue
   init_os(operating_system* os);
 
   void
-  finalize_init();
-
-  void
   set_api(mpi_api* api){
     api_ = api;
   }
