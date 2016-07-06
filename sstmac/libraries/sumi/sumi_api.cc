@@ -32,15 +32,12 @@ sumi_api::init()
   // only do one server per app per node
   if (server_lib == 0) {
     server = new sumi_server(sid_.app_);
+    register_lib(server);
+    server->start();
   }
   else {
     server = safe_cast(sumi_server, server_lib);
   }
-
-  register_lib(server);
-
-  if (server_lib == 0)
-    server->start();
 
   server->register_proc(rank_, this);
 

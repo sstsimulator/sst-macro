@@ -5,14 +5,13 @@
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/replacements/mpi.h>
 #include <sstmac/hardware/topology/topology.h>
+#include <sstmac/skeleton.h>
+
+#define sstmac_app_name "mpi_topology"
 
 using namespace sstmac;
+using namespace sstmac::sw;
 using namespace sstmac::hw;
-
-namespace sstmac {
-namespace sw {
-
-sstmac_register_app(mpi_topology)
 
 void sleep(int seconds)
 {
@@ -93,8 +92,7 @@ void do_sendrecv(traffic_pattern::type_t ty)
   }
 }
 
-int
-mpi_topology_main(int argc, char** argv)
+int USER_MAIN(int argc, char** argv)
 {
   MPI_Init(&argc, &argv);
   do_sendrecv(traffic_pattern::nearest_neighbor);
@@ -104,6 +102,4 @@ mpi_topology_main(int argc, char** argv)
   return 0;
 }
 
-}
-}
 

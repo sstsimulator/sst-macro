@@ -1,8 +1,14 @@
 #include <sumi-mpi/mpi_api.h>
-#include <sstmac/common/thread_lock.h>
 #include <climits>
 
+namespace sstmac {
+namespace sw {
+extern void api_lock();
+extern void api_unlock();
+} }
+
 namespace sumi {
+
 
 
 struct float_int_t {
@@ -87,8 +93,7 @@ mpi_api::precommit_types()
   static const int builtin_sizes[] = {1, 2, 4, 6, 8, 12, 16, 20, 32, 48, 64};
   static const int num_builtins = sizeof(builtin_sizes) / sizeof(int);
 
-  static sstmac::thread_lock lock;
-  lock.lock();
+  sstmac::sw::api_lock();
 
   bool need_init = !mpi_type::mpi_null->committed();
 
@@ -182,7 +187,7 @@ mpi_api::precommit_types()
     allocate_type_id(&mpi_type::builtins[size]);
   }
 
-  lock.unlock();
+  sstmac::sw::api_unlock();
 
   //precommit_type(mpi_type::mpi_packed, MPI_PACKED);
 }
@@ -231,13 +236,20 @@ mpi_api::type_get_name(MPI_Datatype id, char* name, int* resultlen)
 int
 mpi_api::op_create(MPI_User_function *user_fn, int commute, MPI_Op *op)
 {
-  spkt_throw_printf(sprockit::unimplemented_error, "mpi_api::op_create");
+  if (!commute){
+    spkt_throw_printf(sprockit::unimplemented_error,
+                      "mpi_api::op_create: non-commutative operations");
+  }
+  *op = next_op_id_++;
+  custom_ops_[*op] = user_fn;
+  return MPI_SUCCESS;
 }
 
 int
 mpi_api::op_free(MPI_Op *op)
 {
-  spkt_throw_printf(sprockit::unimplemented_error, "mpi_api::op_free");
+  custom_ops_.erase(*op);
+  return MPI_SUCCESS;
 }
 
 int

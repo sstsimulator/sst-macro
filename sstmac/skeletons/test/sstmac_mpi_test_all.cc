@@ -9,7 +9,10 @@
  *  SST/macroscale directory.
  */
 
-#include <sstmac/skeletons/test/sstmac_mpi_test_all.h>
+#define sstmac_app_name "sstmac_mpi_testall"
+
+#include <sstmac/skeleton.h>
+#include <sstmac/compute.h>
 #include <sstmac/replacements/mpi.h>
 #include <sstmac/common/messages/value_payload.h>
 #include <sprockit/sim_parameters.h>
@@ -17,51 +20,85 @@
 
 #define heisenbug printf("%s: %d\n", __FILE__, __LINE__); fflush(stdout)
 
-namespace sstmac {
-namespace sw {
-
 #define failure_printf(str, ...) \
   fprintf(stderr, str "\n%s:%d\n", __VA_ARGS__, __FILE__, __LINE__)
 #define failure(str) \
   fprintf(stderr, str "\n%s:%d\n", __FILE__, __LINE__)
 
 
-SpktRegister("sstmac_mpi_test_all | sstmac_mpi_testall", app,
-            sstmac_mpi_test_all);
+static int errors_ = 0;
 
-int sstmac_mpi_test_all::errors_ = 0;
+static void
+test_sendrecv();
 
-void
-sstmac_mpi_test_all::consume_params(sprockit::sim_parameters* params)
+static void
+test_barrier();
+
+static void
+test_asynch();
+
+static void
+test_bcast();
+
+static void
+test_scatter();
+
+static void
+test_gather();
+
+static void
+test_scan();
+
+static void
+test_send();
+
+static void
+test_isend();
+
+static void
+test_allgather();
+
+static void
+test_reduce();
+
+static void
+test_allreduce();
+
+static void
+test_alltoall();
+
+static void
+test_comms();
+
+static void
+test_wait();
+
+static void
+test_reducescatter();
+
+static void
+test_probe();
+
+static void
+test_persistent();
+
+static void
+test_reduce_scatter();
+
+int USER_MAIN(int argc, char** argv)
 {
-  if (params->has_param("testMPI_stop_at_errors")) {
-    stop_at_errors_ = params->get_int_param("testMPI_stop_at_errors");
-  }
-  else {
-    stop_at_errors_ = false;
-  }
-
-  usetopo_ = params->get_optional_bool_param("use_libtopomap", false);
-}
-
-void
-sstmac_mpi_test_all::skeleton_main()
-{
-  int argc; char** argv;
   MPI_Init(&argc, &argv);
-
-  world_ = MPI_COMM_WORLD;
 
   double start = MPI_Wtime();
 
   int rank, size;
-  MPI_Comm_rank(world_, &rank);
-  MPI_Comm_size(world_, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
 
   if (size < 8) {
     spkt_throw_printf(sprockit::range_error,
-                     "sstmac_mpi_testall needs at least 8 nodes to run - only have %d",
-                     size);
+       "sstmac_mpi_testall needs at least 8 nodes to run - only have %d",
+       size);
   }
 
   //----------first, lets do a ping pong with payload
@@ -118,7 +155,7 @@ sstmac_mpi_test_all::skeleton_main()
   // test_reducescatter();
 
   // ----- finalize
-  MPI_Barrier(world_);
+  MPI_Barrier(MPI_COMM_WORLD);
 
   if (rank == 0 && errors_ == 0) {
     std::cout << "- Finished testing! test successful \n";
@@ -137,10 +174,11 @@ sstmac_mpi_test_all::skeleton_main()
     ::printf("Total runtime %8.4fms\n", t_total*1e3);
   }
 
+  return 0;
 }
 
 void
-sstmac_mpi_test_all::test_scan()
+test_scan()
 {
 #if 0
   mpi_comm* world = mpi()->comm_world();
@@ -150,17 +188,17 @@ sstmac_mpi_test_all::test_scan()
   int count = 1;
   int send_pay = rank;
   int recv_pay = 0;
-  MPI_Scan(&send_pay, &recv_pay, count, MPI_INT, MPI_SUM, world_);
+  MPI_Scan(&send_pay, &recv_pay, count, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 #endif
 }
 
 void
-sstmac_mpi_test_all::test_reduce_scatter()
+test_reduce_scatter()
 {
 #if 0
   int rank, size;
-  MPI_Comm_rank(world_, &rank);
-  MPI_Comm_size(world_, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
 
   int* sends = (int*) malloc(sizeof(int) * (size * 2));
   int* recvs = (int*) malloc(sizeof(int) * 2);
@@ -173,7 +211,7 @@ sstmac_mpi_test_all::test_reduce_scatter()
   }
 
   MPI_Reduce_scatter(sends, recvs, recvcnts, MPI_INT, MPI_SUM,
-                     world_);
+                     MPI_COMM_WORLD);
 
   if (recvs[0] != size || recvs[1] != size * 2) {
     errors_++;
@@ -186,89 +224,89 @@ sstmac_mpi_test_all::test_reduce_scatter()
 }
 
 void
-sstmac_mpi_test_all::test_send()
+test_send()
 {
   int rank, size;
-  MPI_Comm_rank(world_, &rank);
-  MPI_Comm_size(world_, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
 
   int src = (rank + size - 1) % size;
   int dst = (rank + size + 1) % size;
 
   if (rank % 2 == 0) {
-    MPI_Send(MPI_PAYLOAD_IGNORE, 10, MPI_INT, dst, 0, world_);
-    MPI_Recv(MPI_PAYLOAD_IGNORE, 10, MPI_INT, src, 0, world_,
+    MPI_Send(MPI_PAYLOAD_IGNORE, 10, MPI_INT, dst, 0, MPI_COMM_WORLD);
+    MPI_Recv(MPI_PAYLOAD_IGNORE, 10, MPI_INT, src, 0, MPI_COMM_WORLD,
              MPI_STATUS_IGNORE);
 
-    MPI_Bsend(MPI_PAYLOAD_IGNORE, 10, MPI_INT, dst, 0, world_);
-    MPI_Recv(MPI_PAYLOAD_IGNORE, 10, MPI_INT, src, 0, world_,
+    MPI_Bsend(MPI_PAYLOAD_IGNORE, 10, MPI_INT, dst, 0, MPI_COMM_WORLD);
+    MPI_Recv(MPI_PAYLOAD_IGNORE, 10, MPI_INT, src, 0, MPI_COMM_WORLD,
              MPI_STATUS_IGNORE);
 
-    MPI_Rsend(MPI_PAYLOAD_IGNORE, 10, MPI_INT, dst, 0, world_);
-    MPI_Recv(MPI_PAYLOAD_IGNORE, 10, MPI_INT, src, 0, world_,
+    MPI_Rsend(MPI_PAYLOAD_IGNORE, 10, MPI_INT, dst, 0, MPI_COMM_WORLD);
+    MPI_Recv(MPI_PAYLOAD_IGNORE, 10, MPI_INT, src, 0, MPI_COMM_WORLD,
              MPI_STATUS_IGNORE);
 
-    MPI_Ssend(MPI_PAYLOAD_IGNORE, 10, MPI_INT, dst, 0, world_);
-    MPI_Recv(MPI_PAYLOAD_IGNORE, 10, MPI_INT, src, 0, world_,
+    MPI_Ssend(MPI_PAYLOAD_IGNORE, 10, MPI_INT, dst, 0, MPI_COMM_WORLD);
+    MPI_Recv(MPI_PAYLOAD_IGNORE, 10, MPI_INT, src, 0, MPI_COMM_WORLD,
              MPI_STATUS_IGNORE);
   }
   else {
-    MPI_Recv(MPI_PAYLOAD_IGNORE, 10, MPI_INT, src, 0, world_,
+    MPI_Recv(MPI_PAYLOAD_IGNORE, 10, MPI_INT, src, 0, MPI_COMM_WORLD,
              MPI_STATUS_IGNORE);
-    MPI_Send(MPI_PAYLOAD_IGNORE, 10, MPI_INT, dst, 0, world_);
+    MPI_Send(MPI_PAYLOAD_IGNORE, 10, MPI_INT, dst, 0, MPI_COMM_WORLD);
 
-    MPI_Recv(MPI_PAYLOAD_IGNORE, 10, MPI_INT, src, 0, world_,
+    MPI_Recv(MPI_PAYLOAD_IGNORE, 10, MPI_INT, src, 0, MPI_COMM_WORLD,
              MPI_STATUS_IGNORE);
-    MPI_Bsend(MPI_PAYLOAD_IGNORE, 10, MPI_INT, dst, 0, world_);
+    MPI_Bsend(MPI_PAYLOAD_IGNORE, 10, MPI_INT, dst, 0, MPI_COMM_WORLD);
 
-    MPI_Recv(MPI_PAYLOAD_IGNORE, 10, MPI_INT, src, 0, world_,
+    MPI_Recv(MPI_PAYLOAD_IGNORE, 10, MPI_INT, src, 0, MPI_COMM_WORLD,
              MPI_STATUS_IGNORE);
-    MPI_Rsend(MPI_PAYLOAD_IGNORE, 10, MPI_INT, dst, 0, world_);
+    MPI_Rsend(MPI_PAYLOAD_IGNORE, 10, MPI_INT, dst, 0, MPI_COMM_WORLD);
 
-    MPI_Recv(MPI_PAYLOAD_IGNORE, 10, MPI_INT, src, 0, world_,
+    MPI_Recv(MPI_PAYLOAD_IGNORE, 10, MPI_INT, src, 0, MPI_COMM_WORLD,
              MPI_STATUS_IGNORE);
-    MPI_Ssend(MPI_PAYLOAD_IGNORE, 10, MPI_INT, dst, 0, world_);
+    MPI_Ssend(MPI_PAYLOAD_IGNORE, 10, MPI_INT, dst, 0, MPI_COMM_WORLD);
   }
 }
 
 void
-sstmac_mpi_test_all::test_isend()
+test_isend()
 {
   int rank, size;
-  MPI_Comm_rank(world_, &rank);
-  MPI_Comm_size(world_, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
 
   int src = (rank + size - 1) % size;
   int dst = (rank + size + 1) % size;
 
   MPI_Request reqs[8];
-  MPI_Isend(MPI_PAYLOAD_IGNORE, 10, MPI_INT, dst, 0, world_,
+  MPI_Isend(MPI_PAYLOAD_IGNORE, 10, MPI_INT, dst, 0, MPI_COMM_WORLD,
             &reqs[0]);
-  MPI_Ibsend(MPI_PAYLOAD_IGNORE, 10, MPI_INT, dst, 0, world_,
+  MPI_Ibsend(MPI_PAYLOAD_IGNORE, 10, MPI_INT, dst, 0, MPI_COMM_WORLD,
              &reqs[2]);
-  MPI_Irsend(MPI_PAYLOAD_IGNORE, 10, MPI_INT, dst, 0, world_,
+  MPI_Irsend(MPI_PAYLOAD_IGNORE, 10, MPI_INT, dst, 0, MPI_COMM_WORLD,
              &reqs[4]);
-  MPI_Issend(MPI_PAYLOAD_IGNORE, 10, MPI_INT, dst, 0, world_,
+  MPI_Issend(MPI_PAYLOAD_IGNORE, 10, MPI_INT, dst, 0, MPI_COMM_WORLD,
              &reqs[6]);
 
-  MPI_Irecv(MPI_PAYLOAD_IGNORE, 10, MPI_INT, src, 0, world_,
+  MPI_Irecv(MPI_PAYLOAD_IGNORE, 10, MPI_INT, src, 0, MPI_COMM_WORLD,
             &reqs[1]);
-  MPI_Irecv(MPI_PAYLOAD_IGNORE, 10, MPI_INT, src, 0, world_,
+  MPI_Irecv(MPI_PAYLOAD_IGNORE, 10, MPI_INT, src, 0, MPI_COMM_WORLD,
             &reqs[3]);
-  MPI_Irecv(MPI_PAYLOAD_IGNORE, 10, MPI_INT, src, 0, world_,
+  MPI_Irecv(MPI_PAYLOAD_IGNORE, 10, MPI_INT, src, 0, MPI_COMM_WORLD,
             &reqs[5]);
-  MPI_Irecv(MPI_PAYLOAD_IGNORE, 10, MPI_INT, src, 0, world_,
+  MPI_Irecv(MPI_PAYLOAD_IGNORE, 10, MPI_INT, src, 0, MPI_COMM_WORLD,
             &reqs[7]);
 
   MPI_Waitall(8, reqs, MPI_STATUSES_IGNORE);
 }
 
 void
-sstmac_mpi_test_all::test_sendrecv()
+test_sendrecv()
 {
   int rank, size;
-  MPI_Comm_rank(world_, &rank);
-  MPI_Comm_size(world_, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
 
   int count = 1; //arbitrary
 
@@ -285,13 +323,13 @@ sstmac_mpi_test_all::test_sendrecv()
       // even values of half-cycle plus rank.
 
       int pay = rank * 1000;
-      MPI_Send(&pay, count, MPI_INT, buddy, tag, world_);
+      MPI_Send(&pay, count, MPI_INT, buddy, tag, MPI_COMM_WORLD);
 
     }
     else {
       MPI_Status stat;
       int recvdata;
-      MPI_Recv(&recvdata, count, MPI_INT, buddy, tag, world_,
+      MPI_Recv(&recvdata, count, MPI_INT, buddy, tag, MPI_COMM_WORLD,
                &stat);
 
       if (recvdata != (buddy * 1000)) {
@@ -305,26 +343,25 @@ sstmac_mpi_test_all::test_sendrecv()
 }
 
 void
-sstmac_mpi_test_all::test_barrier()
+test_barrier()
 {
   int rank, size;
-  MPI_Comm_rank(world_, &rank);
-  MPI_Comm_size(world_, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
 
   if (rank % 2 == 0) {
-    timestamp t(2e-3);
-    compute(t);
+    sstmac_compute(2e-3);
   }
 
-  MPI_Barrier(world_);
+  MPI_Barrier(MPI_COMM_WORLD);
 }
 
 void
-sstmac_mpi_test_all::test_reduce()
+test_reduce()
 {
   int rank, size;
-  MPI_Comm_rank(world_, &rank);
-  MPI_Comm_size(world_, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
   int count = 100; //arbitrary
 
   int var = rank;
@@ -343,41 +380,41 @@ sstmac_mpi_test_all::test_reduce()
 }
 
 void
-sstmac_mpi_test_all::test_asynch()
+test_asynch()
 {
   int rank, size;
-  MPI_Comm_rank(world_, &rank);
-  MPI_Comm_size(world_, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
   int count = 100; //arbitrary
 
   MPI_Status stat;
   if (rank == 0) {
     int r(1);
     int t(1);
-    MPI_Send(NULL, count, MPI_INT, r, t, world_);
+    MPI_Send(NULL, count, MPI_INT, r, t, MPI_COMM_WORLD);
 
   }
   else if (rank == 1) {
     MPI_Request req;
     int r(0);
     int t(1);
-    MPI_Irecv(NULL, count, MPI_INT, r, t, world_, &req);
+    MPI_Irecv(NULL, count, MPI_INT, r, t, MPI_COMM_WORLD, &req);
     MPI_Wait(&req, &stat);
   }
 }
 
 void
-sstmac_mpi_test_all::test_allreduce()
+test_allreduce()
 {
   int rank, size;
-  MPI_Comm_rank(world_, &rank);
-  MPI_Comm_size(world_, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
   int count = 1; //arbitrary
 
   int pay = 1 << rank;
   ;
   int allrecvdata;
-  MPI_Allreduce(&pay, &allrecvdata, count, MPI_INT, MPI_SUM, world_);
+  MPI_Allreduce(&pay, &allrecvdata, count, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
   int expected = (int) pow(2.0, size) - 1;
   if (allrecvdata != (expected)) {
@@ -388,14 +425,12 @@ sstmac_mpi_test_all::test_allreduce()
 }
 
 void
-sstmac_mpi_test_all::test_bcast()
+test_bcast()
 {
   int rank, size;
-  MPI_Comm_rank(world_, &rank);
-  MPI_Comm_size(world_, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
   int count = 1; //arbitrary
-
-  payload::const_ptr load;
 
   int root(0);
   int pay;
@@ -403,7 +438,7 @@ sstmac_mpi_test_all::test_bcast()
     pay = 1234;
   }
 
-  MPI_Bcast(&pay, count, MPI_DOUBLE, root, world_);
+  MPI_Bcast(&pay, count, MPI_DOUBLE, root, MPI_COMM_WORLD);
   int recvdata = pay;
 
   if (recvdata != (1234)) {
@@ -414,11 +449,11 @@ sstmac_mpi_test_all::test_bcast()
 }
 
 void
-sstmac_mpi_test_all::test_scatter()
+test_scatter()
 {
   /*  int rank, size;
-   MPI_Comm_rank(world_, &rank);
-   MPI_Comm_size(world_, &size);
+   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+   MPI_Comm_size(MPI_COMM_WORLD, &size);
    int count = 100; //arbitrary
 
    SSTMAC_DEBUG << "testall[" << rank << "] -- Testing scatter " << " \n";
@@ -439,7 +474,7 @@ sstmac_mpi_test_all::test_scatter()
    payload::const* result;
 
    mpi()->scatter(count, MPI_DOUBLE, count, MPI_DOUBLE, int(0),
-   world_, vals, result);
+   MPI_COMM_WORLD, vals, result);
 
    const valuepayload<int>::const_ptr scatterdata = ptr_safe_cast<
    const valuepayload<int> >(result);
@@ -467,7 +502,7 @@ sstmac_mpi_test_all::test_scatter()
 
    SSTMAC_DEBUG << "testall[" << rank << "] -- Testing scatterv " << " \n";
    mpi()->scatterv(vcounts, MPI_DOUBLE, count, MPI_DOUBLE,
-   int(0), world_, vals, result);
+   int(0), MPI_COMM_WORLD, vals, result);
 
    const valuepayload<int>::const_ptr scatterdata2 = ptr_safe_cast<
    const valuepayload<int> >(result);
@@ -496,11 +531,11 @@ sstmac_mpi_test_all::test_scatter()
 }
 
 void
-sstmac_mpi_test_all::test_gather()
+test_gather()
 {
   /*  int rank, size;
-   MPI_Comm_rank(world_, &rank);
-   MPI_Comm_size(world_, &size);
+   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+   MPI_Comm_size(MPI_COMM_WORLD, &size);
    int count = 100; //arbitrary
 
    SSTMAC_DEBUG << "testall[" << rank << "] -- Testing gather " << " \n";
@@ -510,16 +545,16 @@ sstmac_mpi_test_all::test_gather()
    payload::const_ptr load = valuepayload<int>::construct(1 << rank);
 
    mpi()->gather(count, MPI_DOUBLE, count, MPI_DOUBLE, int(0),
-   world_, load, vals);
+   MPI_COMM_WORLD, load, vals);
 
    if (rank == 0)
    {
    std::vector::iterator<payload::const*>:: it, end = vals.end();
 
-   if (vals.size() != world_.size().id)
+   if (vals.size() != MPI_COMM_WORLD.size().id)
    {
    SSTMAC_DEBUG << "ERROR at rank " << rank << ": GATHER: result vector size ("
-   << vals.size() << ") does not match world_ comm size (" << world_.size().id
+   << vals.size() << ") does not match MPI_COMM_WORLD comm size (" << MPI_COMM_WORLD.size().id
    << ") \n";
    if (stop_at_errors_)
    throw sprockit::spkt_error("an error occurred in the application");
@@ -571,16 +606,16 @@ sstmac_mpi_test_all::test_gather()
    }
 
    mpi()->gatherv(count, MPI_DOUBLE, vcounts, MPI_DOUBLE,
-   int(0), world_, load2, vals2);
+   int(0), MPI_COMM_WORLD, load2, vals2);
 
    if (rank == 0)
    {
    std::vector::iterator<payload::const*>:: it, end = vals2.end();
 
-   if (vals2.size() != world_.size().id)
+   if (vals2.size() != MPI_COMM_WORLD.size().id)
    {
    SSTMAC_DEBUG << "ERROR at rank " << rank << ": GATHERV: result vector size ("
-   << vals.size() << ") does not match world_ comm size (" << world_.size().id
+   << vals.size() << ") does not match MPI_COMM_WORLD comm size (" << MPI_COMM_WORLD.size().id
    << ") \n";
    }
 
@@ -619,11 +654,11 @@ sstmac_mpi_test_all::test_gather()
 }
 
 void
-sstmac_mpi_test_all::test_allgather()
+test_allgather()
 {
   /*  int rank, size;
-   MPI_Comm_rank(world_, &rank);
-   MPI_Comm_size(world_, &size);
+   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+   MPI_Comm_size(MPI_COMM_WORLD, &size);
    int count = 100; //arbitrary
 
    SSTMAC_DEBUG << "testall[" << rank << "] -- Testing allgather " << " \n";
@@ -632,17 +667,17 @@ sstmac_mpi_test_all::test_allgather()
 
    payload::const_ptr load = valuepayload<int>::construct(1 << rank);
 
-   mpi()->allgather(count, MPI_DOUBLE, count, MPI_DOUBLE, world_,
+   mpi()->allgather(count, MPI_DOUBLE, count, MPI_DOUBLE, MPI_COMM_WORLD,
    load, vals);
 
    std::vector::iterator<payload::const*>:: it, end = vals.end();
 
-   if (vals.size() != world_.size().id)
+   if (vals.size() != MPI_COMM_WORLD.size().id)
    {
    errors_++;
    SSTMAC_DEBUG << "ERROR at rank " << rank
    << ": ALLGATHER: result vector size (" << vals.size()
-   << ") does not match world_ comm size (" << world_.size().id << ") \n";
+   << ") does not match MPI_COMM_WORLD comm size (" << MPI_COMM_WORLD.size().id << ") \n";
    if (stop_at_errors_)
    throw sprockit::spkt_error("an error occurred in the application");
    }
@@ -691,16 +726,16 @@ sstmac_mpi_test_all::test_allgather()
    }
 
    mpi()->allgatherv(count, MPI_DOUBLE, vcounts, MPI_DOUBLE,
-   world_, load2, vals2);
+   MPI_COMM_WORLD, load2, vals2);
 
    std::vector::iterator<payload::const*>:: it2, end2 = vals2.end();
 
-   if (vals2.size() != world_.size().id)
+   if (vals2.size() != MPI_COMM_WORLD.size().id)
    {
    errors_++;
    SSTMAC_DEBUG << "ERROR at rank " << rank
    << ": ALLGATHERV: result vector size (" << vals.size()
-   << ") does not match world_ comm size (" << world_.size().id << ") \n";
+   << ") does not match MPI_COMM_WORLD comm size (" << MPI_COMM_WORLD.size().id << ") \n";
    if (stop_at_errors_)
    throw sprockit::spkt_error("an error occurred in the application");
    }
@@ -739,11 +774,11 @@ sstmac_mpi_test_all::test_allgather()
 }
 
 void
-sstmac_mpi_test_all::test_alltoall()
+test_alltoall()
 {
   /*  int rank, size;
-   MPI_Comm_rank(world_, &rank);
-   MPI_Comm_size(world_, &size);
+   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+   MPI_Comm_size(MPI_COMM_WORLD, &size);
    int count = 100; //arbitrary
 
    SSTMAC_DEBUG << "testall[" << rank << "] -- Testing alltoall " << " \n";
@@ -758,17 +793,17 @@ sstmac_mpi_test_all::test_alltoall()
 
    std::vector<payload::const_ptr> result;
 
-   mpi()->alltoall(count, MPI_DOUBLE, count, MPI_DOUBLE, world_,
+   mpi()->alltoall(count, MPI_DOUBLE, count, MPI_DOUBLE, MPI_COMM_WORLD,
    vals, result);
 
    std::vector::iterator<payload::const*>:: it, end = result.end();
 
-   if (result.size() != world_.size().id)
+   if (result.size() != MPI_COMM_WORLD.size().id)
    {
    errors_++;
    SSTMAC_DEBUG << "ERROR at rank " << rank
    << ": ALLTOALL: result vector size (" << result.size()
-   << ") does not match world_ comm size (" << world_.size().id << ") \n";
+   << ") does not match MPI_COMM_WORLD comm size (" << MPI_COMM_WORLD.size().id << ") \n";
    if (stop_at_errors_)
    throw sprockit::spkt_error("an error occurred in the application");
    }
@@ -807,11 +842,11 @@ sstmac_mpi_test_all::test_alltoall()
 }
 
 void
-sstmac_mpi_test_all::test_comms()
+test_comms()
 {
   /*int rank, size;
-   MPI_Comm_rank(world_, &rank);
-   MPI_Comm_size(world_, &size);
+   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
    SSTMAC_DEBUG << "testall[" << rank << "] -- Testing comm create \n";
 
@@ -827,7 +862,7 @@ sstmac_mpi_test_all::test_comms()
 
    MPI_Comm evens;
 
-   MPI_Comm_create(world_, gr_ev, &evens);
+   MPI_Comm_create(MPI_COMM_WORLD, gr_ev, &evens);
 
    if (rank % 2 == 0)
    {
@@ -954,11 +989,11 @@ sstmac_mpi_test_all::test_comms()
 }
 
 void
-sstmac_mpi_test_all::test_wait()
+test_wait()
 {
   int rank, size;
-  MPI_Comm_rank(world_, &rank);
-  MPI_Comm_size(world_, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
 
   int count = 100;
   int tag(698);
@@ -970,7 +1005,7 @@ sstmac_mpi_test_all::test_wait()
 
     for (int i = 1; i < size; i++) {
       MPI_Request req;
-      MPI_Irecv(NULL, count, MPI_DOUBLE, int(i), tag, world_,
+      MPI_Irecv(NULL, count, MPI_DOUBLE, int(i), tag, MPI_COMM_WORLD,
                 &req);
       reqs[i - 1] = req;
 
@@ -983,16 +1018,16 @@ sstmac_mpi_test_all::test_wait()
 
   }
   else {
-    MPI_Send(NULL, count, MPI_DOUBLE, int(0), tag, world_);
+    MPI_Send(NULL, count, MPI_DOUBLE, int(0), tag, MPI_COMM_WORLD);
   }
 
-  MPI_Barrier(world_);
+  MPI_Barrier(MPI_COMM_WORLD);
 
   if (rank == 0) {
     MPI_Request reqs[size - 1];
 
     for (int i = 1; i < size; i++) {
-      MPI_Irecv(NULL, count, MPI_DOUBLE, int(i), tag, world_,
+      MPI_Irecv(NULL, count, MPI_DOUBLE, int(i), tag, MPI_COMM_WORLD,
                 &reqs[i-1]);
     }
 
@@ -1010,21 +1045,21 @@ sstmac_mpi_test_all::test_wait()
 
   }
   else if (rank == sender) {
-    MPI_Send(NULL, count, MPI_DOUBLE, int(0), tag, world_);
+    MPI_Send(NULL, count, MPI_DOUBLE, int(0), tag, MPI_COMM_WORLD);
   }
 
-  MPI_Barrier(world_);
+  MPI_Barrier(MPI_COMM_WORLD);
 
   int tag2(699);
 
   if (rank == 0) {
-    sleep(timestamp(1)); //lag me, so the others have a chance to send
+    sstmac_sleep(1); //lag me, so the others have a chance to send
 
     MPI_Request reqs[size - 1];
 
     for (int i = 1; i < size; i++) {
       MPI_Request req;
-      MPI_Irecv(NULL, count, MPI_DOUBLE, int(i), tag2, world_,
+      MPI_Irecv(NULL, count, MPI_DOUBLE, int(i), tag2, MPI_COMM_WORLD,
                 &req);
       reqs[i - 1] = (req);
     }
@@ -1046,19 +1081,19 @@ sstmac_mpi_test_all::test_wait()
     }
   }
   else if (rank % 2 == 0) {
-    MPI_Send(NULL, count, MPI_DOUBLE, int(0), tag2, world_);
+    MPI_Send(NULL, count, MPI_DOUBLE, int(0), tag2, MPI_COMM_WORLD);
   }
 
-  MPI_Barrier(world_);
+  MPI_Barrier(MPI_COMM_WORLD);
 
 }
 
 void
-sstmac_mpi_test_all::test_reducescatter()
+test_reducescatter()
 {
   /* int rank, size;
-   MPI_Comm_rank(world_, &rank);
-   MPI_Comm_size(world_, &size);
+   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
    SSTMAC_DEBUG << "testall[" << rank << "] -- Testing reduce_scatter \n";
 
@@ -1069,7 +1104,7 @@ sstmac_mpi_test_all::test_reducescatter()
    recvcounts.push_back(10 * rank);
    }
 
-   mpi()->reduce_scatter(recvcounts, MPI_DOUBLE, mpiop::sum, world_);
+   mpi()->reduce_scatter(recvcounts, MPI_DOUBLE, mpiop::sum, MPI_COMM_WORLD);
 
    SSTMAC_DEBUG << "testall[" << rank << "]: reduce_scatter: recv counts: ";
    for (int i = 0; i < recvcounts.size(); i++)
@@ -1082,17 +1117,17 @@ sstmac_mpi_test_all::test_reducescatter()
 }
 
 void
-sstmac_mpi_test_all::test_probe()
+test_probe()
 {
   /*int rank, size;
-   MPI_Comm_rank(world_, &rank);
-   MPI_Comm_size(world_, &size);
+   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
    int count = 100;
    int tag(713);
    int tag2(714);
 
-   mpi()->barrier(world_);
+   mpi()->barrier(MPI_COMM_WORLD);
 
    int sender(5);
 
@@ -1106,7 +1141,7 @@ sstmac_mpi_test_all::test_probe()
    for (int i = 1; i < size; i++)
    {
    MPI_Request req;
-   mpi()->irecv(count, MPI_DOUBLE, int(i), tag, world_, req);
+   mpi()->irecv(count, MPI_DOUBLE, int(i), tag, MPI_COMM_WORLD, req);
    reqs.push_back(req);
    }
 
@@ -1149,7 +1184,7 @@ sstmac_mpi_test_all::test_probe()
    throw sprockit::spkt_error("an error occurred in the application");
    }
 
-   mpi()->iprobe(sender, tag, world_, flag, stat);
+   mpi()->iprobe(sender, tag, MPI_COMM_WORLD, flag, stat);
 
    if (flag)
    {
@@ -1161,7 +1196,7 @@ sstmac_mpi_test_all::test_probe()
    }
 
    // -------  here is the blocking probe ----------- //
-   mpi()->probe(sender, tag, world_, stat);
+   mpi()->probe(sender, tag, MPI_COMM_WORLD, stat);
 
    if (!stat)
    {
@@ -1208,7 +1243,7 @@ sstmac_mpi_test_all::test_probe()
 
    sleep(timestamp(1));
 
-   mpi()->iprobe(sender, tag2, world_, flag, stat);
+   mpi()->iprobe(sender, tag2, MPI_COMM_WORLD, flag, stat);
 
    if (!flag)
    {
@@ -1219,28 +1254,28 @@ sstmac_mpi_test_all::test_probe()
    throw sprockit::spkt_error("an error occurred in the application");
    }
 
-   mpi()->recv(count, MPI_DOUBLE, sender, tag2, world_, stat);
+   mpi()->recv(count, MPI_DOUBLE, sender, tag2, MPI_COMM_WORLD, stat);
 
    }
    else if (rank == sender)
    {
    compute(timestamp(2));
-   mpi()->send(count, MPI_DOUBLE, int(0), tag, world_);
+   mpi()->send(count, MPI_DOUBLE, int(0), tag, MPI_COMM_WORLD);
 
-   mpi()->send(count, MPI_DOUBLE, int(0), tag2, world_);
+   mpi()->send(count, MPI_DOUBLE, int(0), tag2, MPI_COMM_WORLD);
    }
 
-   mpi()->barrier(world_);*/
+   mpi()->barrier(MPI_COMM_WORLD);*/
 
 }
 
 void
-sstmac_mpi_test_all::test_persistent()
+test_persistent()
 {
 #if 0
   int rank, size;
-  MPI_Comm_rank(world_, &rank);
-  MPI_Comm_size(world_, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
 
   int src = (rank + size - 1) % size;
   int dst = (rank + size + 1) % size;
@@ -1252,9 +1287,9 @@ sstmac_mpi_test_all::test_persistent()
   MPI_Request* recv_req = &reqs[1];
 
   MPI_Send_init(MPI_PAYLOAD_IGNORE, count, MPI_INT, dst, tag,
-                world_, send_req);
+                MPI_COMM_WORLD, send_req);
   MPI_Recv_init(MPI_PAYLOAD_IGNORE, count, MPI_INT, src, tag,
-                world_, recv_req);
+                MPI_COMM_WORLD, recv_req);
   MPI_Start(send_req);
   MPI_Start(recv_req);
   MPI_Wait(send_req, MPI_STATUS_IGNORE);
@@ -1265,7 +1300,7 @@ sstmac_mpi_test_all::test_persistent()
   MPI_Request_free(send_req);
 
   MPI_Bsend_init(MPI_PAYLOAD_IGNORE, count, MPI_INT, dst, tag,
-                 world_, send_req);
+                 MPI_COMM_WORLD, send_req);
   MPI_Start(send_req);
   MPI_Start(recv_req);
   MPI_Wait(send_req, MPI_STATUS_IGNORE);
@@ -1276,7 +1311,7 @@ sstmac_mpi_test_all::test_persistent()
   MPI_Request_free(send_req);
 
   MPI_Rsend_init(MPI_PAYLOAD_IGNORE, count, MPI_INT, dst, tag,
-                 world_, send_req);
+                 MPI_COMM_WORLD, send_req);
   MPI_Start(send_req);
   MPI_Start(recv_req);
   MPI_Wait(send_req, MPI_STATUS_IGNORE);
@@ -1287,7 +1322,7 @@ sstmac_mpi_test_all::test_persistent()
   MPI_Request_free(send_req);
 
   MPI_Ssend_init(MPI_PAYLOAD_IGNORE, count, MPI_INT, dst, tag,
-                 world_, send_req);
+                 MPI_COMM_WORLD, send_req);
   MPI_Start(send_req);
   MPI_Start(recv_req);
   MPI_Wait(send_req, MPI_STATUS_IGNORE);
@@ -1302,6 +1337,4 @@ sstmac_mpi_test_all::test_persistent()
 #endif
 }
 
-}
-} //end of namespace sstmac
 

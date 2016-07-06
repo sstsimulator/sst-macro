@@ -15,8 +15,6 @@
 #include <sumi-mpi/mpi_api.h>
 #include <sumi-mpi/sstmac_mpi_integers.h>
 #include <sumi-mpi/mpi_types.h>
-#include <sstmac/common/thread_lock.h>
-#include <sstmac/common/thread_info.h>
 #include <sprockit/errors.h>
 
 #include <sys/types.h>
@@ -29,6 +27,13 @@
 
 #include <stdint.h>
 #include <iterator>
+
+namespace sstmac {
+namespace sw {
+void api_lock();
+void api_unlock();
+}
+}
 
 namespace sumi {
 
@@ -124,7 +129,6 @@ mpi_comm_factory::comm_create(mpi_comm* caller, mpi_group* group)
 typedef std::map<int, std::list<int> > key_to_ranks_map;
 #if !SSTMAC_DISTRIBUTED_MEMORY || SSTMAC_MMAP_COLLECTIVES
 
-static sstmac::thread_lock split_lock;
 typedef std::map<int, key_to_ranks_map> color_to_key_map;
 //comm id, comm root task id, tag
 
@@ -153,15 +157,12 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
   //       caller->rank(), next_id_, my_color, my_key);
 
 #if SSTMAC_DISTRIBUTED_MEMORY && !SSTMAC_MMAP_COLLECTIVES
-  if (my_color < 0){ //I'm not part of this!
-    return mpi_comm::comm_null;
-  }
   int* result = new int[3*caller->size()];
   parent_->allgather(&mydata, 3, MPI_INT,
                      result, 3, MPI_INT,
                      caller->id());
 #else
-  split_lock.lock();
+  sstmac::sw::api_lock();
   int root = caller->peer_task(int(0));
   int tag = caller->next_collective_tag();
   comm_split_entry& entry = comm_split_entries[int(caller->id())][root][tag];
@@ -197,7 +198,7 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
   mybuf[0] = mydata[0];
   mybuf[1] = mydata[1];
   mybuf[2] = mydata[2];
-  split_lock.unlock();
+  sstmac::sw::api_unlock();
 
   //just model the allgather
   parent_->allgather(NULL, 3, MPI_INT,
@@ -207,6 +208,9 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
 #endif
 
   if (my_color < 0){ //I'm not part of this!
+#if SSTMAC_DISTRIBUTED_MEMORY && !SSTMAC_MMAP_COLLECTIVES
+    delete[] result;
+#endif
     return mpi_comm::comm_null;
   }
 

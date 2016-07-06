@@ -25,7 +25,7 @@ class btree_gather_actor :
   void init_buffers(void *dst, void *src);
   void init_dag();
   void init_tree();
-
+  void start_shuffle(action *ac);
   void buffer_action(void *dst_buffer, void *msg_buffer, action* ac);
 
  private:

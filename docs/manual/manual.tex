@@ -8,6 +8,7 @@
 %%% Preamble
 \documentclass[10pt]{report}	% Article class of KOMA-script with 11pt font and a4 format
 
+\usepackage[T1]{fontenc}
 \usepackage{color}
 \usepackage{framed}
 \usepackage{textcomp}
@@ -36,20 +37,19 @@
 \newcommand{\sstmacro}{{SST/\raise.35ex\hbox{macro}}\xspace}
 \newcommand{\eg}{\textit{e.g.}}
 
-\newcommand{\class}[1]{\textcolor{blue}{#1}}
-
-\newcommand{\func}[1]{\textcolor{purple}{#1}}
-
-\newcommand{\folder}[1]{\textcolor{dkgreen}{#1}}
-
 \newcommand{\aside}[1]{\begin{framed} #1 \end{framed}}
 
-\newcommand{\guikey}[1]{\emph{#1}}
-
 \newcommand{\inlinefile}[1]{{\lstset{basicstyle=\ttfamily,keywordstyle={}}\lstinline$#1$}}
-
 \newcommand{\inlinecode}[1]{{\lstset{basicstyle=\ttfamily,keywordstyle={},showstringspaces=false}\lstinline$#1$}}
 \newcommand{\inlineshell}[1]{{\lstset{basicstyle=\ttfamily,keywordstyle={},showstringspaces=false}\lstinline$#1$}}
+
+\newcommand{\startcpp}{\begin{CppCode}}
+\newcommand{\stopcpp}{\end{CppCode}}
+\newcommand{\startshell}{\begin{ShellCmd}}
+\newcommand{\stopshell}{\end{ShellCmd}}
+\newcommand{\startvi}{\begin{ViFile}}
+\newcommand{\stopvi}{\end{ViFile}}
+
 
 \title{SST/macro 6.0: User's Manual}
 \titlepic{\includegraphics[width=0.3\textwidth]{figures/sstlogo.png}}
@@ -64,11 +64,10 @@
 
 
 \tableofcontents
-
 \input{Introduction}
 \input{Building}
 \input{Tutorials}
-\input{Topology.tex}
+\input{Topology}
 \input{Skeletonization}
 %\input{UQ}
 %\input{Appendix}

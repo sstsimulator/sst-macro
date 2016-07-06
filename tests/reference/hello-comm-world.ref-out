@@ -1,6 +1,0 @@
-multmpi[mpiid(id=0)]::run(): mpi()->init() at 
-multmpi[mpiid(id=1)]::run(): mpi()->init() at 
-mpiid(id=0): Why, hello world!
-multmpi[mpiid(id=0)]::run():  mpi()->finalize() at 
-mpiid(id=1): Why, hello world!
-multmpi[mpiid(id=1)]::run():  mpi()->finalize() at 

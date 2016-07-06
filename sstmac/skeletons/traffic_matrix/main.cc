@@ -4,6 +4,7 @@
 #include <sstmac/main/driver.h>
 #include <sstmac/software/process/app.h>
 #include <sumi/sumi/transport.h>
+#include <sstmac/skeleton.h>
 
 MakeDebugSlot(traffic_matrix)
 MakeDebugSlot(traffic_matrix_results)
@@ -205,9 +206,9 @@ quiesce(sumi::transport* tport,
   }
 }
 
-sstmac_register_app(traffic_matrix);
+#define sstmac_app_name "traffic_matrix"
 
-int traffic_matrix_main(int argc, char** argv)
+int USER_MAIN(int argc, char** argv)
 {
   sprockit::sim_parameters init_params;
   init_params["ping_timeout"] = "100ms";

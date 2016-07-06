@@ -38,7 +38,7 @@ mpi_comm::mpi_comm(
   app_manager* env, app_id aid) :
   domain(rank),
   env_(env), group_(peers),
-  next_collective_tag_(0),
+  next_collective_tag_(MPI_COMM_WORLD + 100),
   aid_(aid), id_(id), rank_(rank)
 {
   if (peers->size() == 0) {
@@ -64,8 +64,10 @@ mpi_comm::dup_keyvals(mpi_comm* m)
 {
   spkt_unordered_map<int, keyval*>::iterator it, end = m->keyvals_.end();
   for (it = m->keyvals_.begin(); it != end; it++) {
-    keyval* c = (it->second)->clone(keyval::get_new_key());
-    keyvals_[c->key()] = c;
+    spkt_throw(sprockit::unimplemented_error,
+      "dup_keyvals");
+    //keyval* c = (it->second)->clone(keyval::get_new_key());
+    //keyvals_[c->key()] = c;
   }
 }
 

@@ -118,8 +118,11 @@ class debug_indent
 };
 
 class debug_prefix_fxn {
- public:
+
+public:
   virtual std::string str() = 0;
+  virtual ~debug_prefix_fxn() = 0;
+
 };
 
 

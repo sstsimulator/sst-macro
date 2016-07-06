@@ -57,7 +57,6 @@ For large systems or heavy congestion, the flow model is actually much slower th
 \subsection{Packet-flow}
 \label{subsec:tutorial:train}
 Packet-flow is a hybrid-model of flow and packet, trying to correct the latency errors in the packet model while avoiding the ripple effect of the flow model.
-%The term train is applied since each train is a medium-size unit (1-8 KB) of many packets (100 B) linked together and traveling the same speed on the same route.
 Much like packets, the packet-flow model begins by converting messages into many discrete chunks of fixed size.
 In contrast to the packet model, channel arbitration is not exclusive.  
 When multiple packets compete for a channel, each packet ``samples'' the current congestion (Figure \ref{fig:tutorial:congestion}C).
@@ -71,10 +70,4 @@ The sampling procedure also allows two packets to multiplex across a channel.
 Because messages are broken into discrete chunks, the number of events per message is constant regardless of congestion, avoiding the ripple effect.
 
 For more details on packet-flow parameters, see the \inlineshell{hopper_amm.ini} files in the \inlineshell{configurations} folder in the \sstmacro source.
-%The train model can also be explored via the GUI (see \ref{sec:basicgui}).
-%The train model is currently recommended and is the default configuration when the GUI is opened.
-
-%% walk through events for packet
-%% walk through events for flower
-%% walk through events for train
 

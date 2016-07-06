@@ -3,6 +3,7 @@
 #include <sumi-mpi/mpi_queue/mpi_queue_recv_request.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sumi-mpi/mpi_api.h>
+#include <sumi-mpi/mpi_debug.h>
 
 namespace sumi {
 
@@ -28,15 +29,16 @@ rendezvous_get::incoming_header(mpi_queue* queue,
 
   mpi_queue_recv_request* req = queue->find_pending_request(msg);
   if (req) {
-    if (req->open_source()) {
-      //we have to initialize the recv
-      //event* ev = new_event(req, &mpi_queue::recvrequest::handle, msg);
-      //init_system_recv(msg->payload_bytes(), queue, ev);
-      req->handle(msg);
-    }
-    else {
-      req->handle(msg);
-    }
+    mpi_queue_action_debug(
+      queue->api()->comm_world()->rank(), 
+      "found matching request for %s", 
+      msg->to_string().c_str());
+    req->handle(msg);
+  } else {
+    mpi_queue_action_debug(
+      queue->api()->comm_world()->rank(), 
+      "no matching requests for %s", 
+      msg->to_string().c_str());
   }
   queue->notify_probes(msg);
 }
@@ -50,11 +52,24 @@ rendezvous_get::incoming_payload(mpi_queue* queue,
   mpi_queue::pending_req_map::iterator it = queue->recv_needs_payload_.find(
         msg->unique_int());
   if (it == queue->recv_needs_payload_.end()) {
+    if (queue->recv_needs_payload_.empty()){
+      std::cerr << "No recv requests waiting" << std::endl;
+    }
+    for (auto& p : queue->recv_needs_payload_){
+      mpi_message::id id = p.first;
+      mpi_queue_recv_request* req = p.second;
+      std::cerr << sprockit::printf("Waiting request: count=%d tag=%s comm=%s source=%s",
+                    req->count_, 
+                    queue->api()->tag_str(req->tag_).c_str(),
+                    queue->api()->comm_str(req->comm_).c_str(),
+                    queue->api()->src_str(req->source_).c_str()) 
+                << std::endl;
+    }
     int rank; queue->api_->comm_rank(MPI_COMM_WORLD, &rank);
     spkt_throw_printf(sprockit::illformed_error,
-                     "mpi_queue[%d]: rendezvous_get::handle_payload: "
-                     "data message without a matching ack on %s",
-                     rank, msg->to_string().c_str());
+     "mpi_queue[%d]: rendezvous_get::handle_payload: "
+     "queue %p data message %lu without a matching ack on %s",
+      rank, queue, msg->unique_int(), msg->to_string().c_str());
   }
   mpi_queue_recv_request* recver = it->second;
   queue->recv_needs_payload_.erase(it);

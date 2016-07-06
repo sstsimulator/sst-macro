@@ -1,7 +1,0 @@
-#! /usr/bin/env bash
-
-make install
-./runshmem >& test.out
-./parse test.out >& parse.out
-./runleaks >& leaks.out
-

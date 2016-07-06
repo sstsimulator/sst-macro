@@ -10,7 +10,8 @@
 #include <sstmac/libraries/sumi/sumi.h>
 #include <sstmac/hardware/topology/traffic/traffic.h>
 #include <sstmac/hardware/topology/topology.h>
-
+#include <sstmac/skeleton.h>
+#define sstmac_app_name "user_app_cxx"
 using namespace sumi;
 using sstmac::timestamp;
 using sstmac::hw::traffic_pattern;

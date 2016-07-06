@@ -15,6 +15,7 @@
 #include <sprockit/test/test.h>
 #include <sprockit/sim_parameters.h>
 #include <sstmac/util.h>
+#include <sstmac/common/sstmac_env.h>
 
 template <class A>
 class ContainerAppend<sstmac::hw::coordinates, A>

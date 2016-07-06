@@ -91,7 +91,9 @@ manager::compute_max_nproc_for_app(sprockit::sim_parameters* app_params)
   int max_nproc = 0;
   /** Do a bunch of dumpi stuff */
   static const char* dmeta = "launch_dumpi_metaname";
-  if (app_params->get_param("name") == "parsedumpi"){
+  if (app_params->get_param("name") == "parsedumpi"
+    && !app_params->has_param("launch_cmd"))
+  {
     std::string dumpi_meta_filename;
     if (!app_params->has_param(dmeta)){
       FILE *fp = popen("ls *.meta", "r");
@@ -113,23 +115,18 @@ manager::compute_max_nproc_for_app(sprockit::sim_parameters* app_params)
     } else {
       dumpi_meta_filename = app_params->get_param(dmeta);
     }
-    if (!app_params->has_param("launch_cmd")){
-      sw::dumpi_meta* meta = new sw::dumpi_meta(dumpi_meta_filename);
-      int nproc = meta->num_procs();
-      std::string cmd = sprockit::printf("aprun -n %d -N 1", nproc);
-      app_params->add_param("launch_cmd", cmd);
-      max_nproc = std::max(max_nproc, nproc);
-      delete meta;
-    }
+    sw::dumpi_meta* meta = new sw::dumpi_meta(dumpi_meta_filename);
+    int nproc = meta->num_procs();
+    std::string cmd = sprockit::printf("aprun -n %d -N 1", nproc);
+    app_params->add_param("launch_cmd", cmd);
+    max_nproc = std::max(max_nproc, nproc);
+    delete meta;
   }
-  else {
-    //regular application
-    int nproc, procs_per_node;
-    std::vector<int> ignore;
-    skeleton_app_manager::parse_launch_cmd(app_params, nproc, procs_per_node, ignore);
-    max_nproc = std::max(nproc, max_nproc);
-  }
-  return max_nproc;
+  int nproc, procs_per_node;
+  std::vector<int> ignore;
+  skeleton_app_manager::parse_launch_cmd(app_params, nproc, 
+    procs_per_node, ignore);
+  return std::max(nproc, max_nproc);
 }
 
 int
@@ -137,14 +134,15 @@ manager::compute_max_nproc(sprockit::sim_parameters* params)
 {
   int appnum = 1;
   int max_nproc = 0;
-  while (true) {
+  bool found_app = true;
+  while (found_app || appnum < 10) {
     std::string app_namespace = sprockit::printf("app%d", appnum);
-    if (!params->has_namespace(app_namespace))
-      break;
-
-    sprockit::sim_parameters* app_params = params->get_namespace(app_namespace);
-    int nproc = compute_max_nproc_for_app(app_params);
-    max_nproc = std::max(nproc, max_nproc);
+    found_app = params->has_namespace(app_namespace);
+    if (found_app){
+      sprockit::sim_parameters* app_params = params->get_namespace(app_namespace);
+      int nproc = compute_max_nproc_for_app(app_params);
+      max_nproc = std::max(nproc, max_nproc);
+    }
     ++appnum;
   }
   return max_nproc;
@@ -169,14 +167,15 @@ void
 manager::build_apps(sprockit::sim_parameters* params)
 {
   int appnum = 1;
-  while (true) {
+  bool found_app = true;
+  while (found_app || appnum < 10) {
     std::string app_namespace = sprockit::printf("app%d", appnum);
-    if (!params->has_namespace(app_namespace))
-      break;
-
-    sprockit::sim_parameters* app_params
-        = params->get_namespace(app_namespace);
-    build_app(appnum, app_params);
+    found_app = params->has_namespace(app_namespace);
+    if (found_app){
+      sprockit::sim_parameters* app_params
+          = params->get_namespace(app_namespace);
+      build_app(appnum, app_params);
+    }
     ++appnum;
   }
 }

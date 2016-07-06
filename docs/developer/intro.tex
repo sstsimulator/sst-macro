@@ -1,15 +1,15 @@
 % !TEX root = developer.tex
 
-\chapter{Introduction}
+\chapter{Introduction}\label{chapter:intro}
 
-\section{Use of C++/Boost}
+\section{Use of C++/Boost}\label{sec:boost}
 SST/macro (Structural Simulation Toolkit for Macroscale) is a discrete event simulator designed for macroscale (system-level) experiments in HPC. 
 SST/macro is an object-oriented C++ code that makes heavy use of dynamic types and polymorphism.
 While a great deal of template machinery exists under the hood, nearly all users and even most developers will never actually need to interact with any C++ templates.
 Most template wizardry is hidden in easy-to-use macros.
 While C++ allows a great deal of flexibility in syntax and code structure, we are striving towards a unified coding style.
 
-\section{Polymorphism and Modularity}
+\section{Polymorphism and Modularity}\label{sec:polymorphism}
 The simulation progresses with different modules (classes) exchanging messages.
 In general, when module 1 sendings a message to module 2, module 1 only sees an abstract interface for module 2.
 The polymorphic type of module 2 can vary freely to employ different physics or congestions models without affecting the implementation of module 1. 
@@ -43,7 +43,7 @@ Only when the types are fully defined at runtime can an incompatibility error be
 Again, efforts are being made to convert as many type-usage problems into compiler errors.
 We prefer simulation flexibility to compiler strictness, though. 
 
-\section{Most Important Style and Coding Rules}
+\section{Most Important Style and Coding Rules}\label{sec:stylerules}
 Here is a selection of C++ rules we have tended to follow.  
 Detailed more below, example scripts are included to reformat the code style however you may prefer for local editing.
 However, if committing changes to the repository, only use the default formatting in the example scripts.
@@ -70,13 +70,13 @@ where conflicts require a prefix. Functions for modifying variables are prefixed
 \item Forward declarations.  There are a lot of interrelated classes, often creating circular dependencies. In addition, you can add up with an explosion of include files, often involving classes that are never used in a given \inlineshell{.cc} file.  For cleanliness of compilation, you will find many \inlineshell{*_fwd.h} files throughout the code. If you need a forward declaration, we encourage including this header file rather than ad hoc forward declarations throughout the code.
 \end{itemize}
 
-\section{Code Style Reformatting}
+\section{Code Style Reformatting}\label{sec:styleReformat}
 Since we respect the sensitivity of code-style wars, we include scripts that demonstrate basic usage of the C++ code formatting tool \emph{astyle}.
 This can be downloaded from {http://astyle.sourceforge.net}. 
 A python script called \inlineshell{fix_style} is included in the top-level bin directory.
 It recursively reformats all files in a given directory and its subdirectories.
 
-\section{Memory Allocation}
+\section{Memory Allocation}\label{sec:memalloc}
 To improve performance, custom memory allocation strategies can be employed in C++.
 At present, a global custom \inlinecode{operator new} can be optionally activated which is optimized for large pages and memory pools.
 At present, no class-specific implementation of \inlinecode{operator new} is used.

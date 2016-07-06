@@ -37,7 +37,8 @@ wilke_allreduce_actor::init_buffers(void* dst, void* src)
   if (src){
     //memcpy the src into the dst
     //we will now only work with the dst buffer
-    std::memcpy(dst, src, size);
+    if (src != dst)
+      std::memcpy(dst, src, size);
     //but! we need a temporary recv buffer
     recv_buffer_ = my_api_->allocate_public_buffer(size);
   }
@@ -192,7 +193,7 @@ wilke_allreduce_actor::buffer_action(void *dst_buffer, void *msg_buffer, action*
 {
   int rnd = ac->round % num_total_rounds_;
   if (rnd < num_reducing_rounds_){
-    (*fxn_)(dst_buffer, msg_buffer, ac->nelems);
+    (fxn_)(dst_buffer, msg_buffer, ac->nelems);
   }
   else {
     std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);

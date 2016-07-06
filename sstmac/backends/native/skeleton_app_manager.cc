@@ -48,7 +48,7 @@ skeleton_app_manager::do_allocate_and_index_jobs()
 
     for (int i=0; i < num_nodes; ++i){
       node_id nid = rank_to_node_indexing_[i];
-      if (top_){
+      if (regtop){
         hw::coordinates coords = regtop->node_coords(nid);
         cout0 << sprockit::printf("Rank %d -> nid%d %s\n",
             i, int(nid), stl_string(coords).c_str());

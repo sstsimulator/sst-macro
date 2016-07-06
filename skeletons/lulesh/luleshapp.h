@@ -3,7 +3,8 @@
  * A very simple mpi skeleton application.
  */
 #include <sstmac/sstmacro.h>
-#include <sstmac/libraries/mpi/mpi_app.h>
+#include <sstmac/skeleton.h>
+#include <sstmac/software/process/app.h>
 
 
 /// A hello world example mpi skeleton application.
@@ -15,7 +16,7 @@ namespace luleshmodel {
     * implement a run() method].
     */
 
-  class luleshapp : public sstmac::sw::mpi_app {
+  class luleshapp : public sstmac::sw::app {
 
   protected:
 
@@ -47,7 +48,7 @@ namespace luleshmodel {
     luleshapp(){}
 
     /** Get a copy, launchers can use this to create app threads. */
-    sstmac::sw::app* clone_type() {
+    sstmac::sw::app* clone_type() const {
       return new luleshapp;
     }
 

@@ -50,8 +50,8 @@ dumpi_file_name(int rank, std::string fileroot_)
   }
   // If we get here, then no file was found.
   spkt_throw_printf(sprockit::io_error,
-                   "failed to a find a dumpi file starting from the fileroot %s",
-                   fileroot_.c_str());
+    "failed to a find a dumpi file for rank %d starting from the fileroot %s",
+    rank, fileroot_.c_str());
 }
 
 int

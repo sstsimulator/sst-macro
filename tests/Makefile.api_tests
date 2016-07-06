@@ -39,8 +39,12 @@ APITESTS = \
   testsuite_mpi_18 \
   testsuite_mpi_19 \
   testsuite_mpi_20 \
+  testsuite_mpi_21 \
+  testsuite_mpi_22 \
   testsuite_mpi_23 \
   testsuite_mpi_26 \
+  testsuite_mpi_27 \
+  testsuite_mpi_28 \
   testsuite_mpi_29 \
   testsuite_mpi_37 \
   testsuite_mpi_42 \
@@ -48,7 +52,8 @@ APITESTS = \
   testsuite_mpi_47 \
   testsuite_mpi_48 \
   testsuite_mpi_49 \
-  testsuite_mpi_71 \
+  testsuite_mpi_53 \
+  testsuite_mpi_54 \
   testsuite_mpi_74 \
   testsuite_mpi_75 \
   testsuite_mpi_76 \
@@ -59,9 +64,6 @@ APITESTS = \
   testsuite_mpi_81 \
   testsuite_mpi_82 \
   testsuite_mpi_83 \
-  testsuite_mpi_88 \
-  testsuite_mpi_89 \
-  testsuite_mpi_97 \
   testsuite_mpi_103 \
   testsuite_mpi_104 \
   testsuite_mpi_115 \
@@ -74,6 +76,9 @@ APITESTS = \
   testsuite_globals_4
 
 APITESTS_DISABLED = \
+  testsuite_mpi_88 \
+  testsuite_mpi_89 \
+  testsuite_mpi_97 \
   testsuite_mpi_229 \
   testsuite_mpi_233 \
   testsuite_mpi_217 \
@@ -90,8 +95,6 @@ APITESTS_DISABLED = \
   testsuite_mpi_228 \
   testsuite_mpi_241 \
   testsuite_mpi_242 \
-  testsuite_mpi_54 \
-  testsuite_mpi_53 \
   testsuite_mpi_41 \
   testsuite_mpi_81 \
   testsuite_mpi_83

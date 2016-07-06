@@ -224,9 +224,9 @@ class event_manager :
     bool reduce_all;
     bool dump_all;
     bool dump_main;
-    stat_collector* main;
+    stat_collector* main_collector;
     std::list<stat_collector*> collectors;
-    stats_entry() : main(0) {}
+    stats_entry() : main_collector(0) {}
   };
   std::map<std::string, stats_entry> stats_;
 
