@@ -43,9 +43,6 @@ block_indexing::allocate(
   node_set::const_iterator it, end = nodes.end();
   long i = 0;
 
-  char hostname[64];
-  app_manager* appman = runtime::app_mgr(aid);
-  std::stringstream sstr;
   int num_physical_nodes = nproc / ppn;
   if (nproc % ppn){
     ++num_physical_nodes;
@@ -66,17 +63,9 @@ block_indexing::allocate(
       this_ppn = ppn;
     }
 
-    //just give it a fake hostname for now
-    sprintf(hostname, "nid%ld", long(addr));
-    for (int tid=result.size(); tid < this_ppn; ++tid) {
-      appman->add_hostname(task_id(tid), hostname, addr);
-      sstr << hostname << "\n";
-    }
-
     result.insert(result.end(), this_ppn, addr);
     i++;
   }
-  appman->setenv("SSTMAC_NODELIST", sstr.str());
 }
 
 }

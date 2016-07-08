@@ -108,17 +108,6 @@ class operating_system :
   static node_id
   remote_node(int tid);
 
-  static std::string
-  current_hostname();
-
-  static app_manager*
-  current_env();
-
-  void
-  restarting(bool res) {
-    restarting_ = res;
-  }
-
   void
   execute_kernel(ami::COMP_FUNC func, event* data);
 
@@ -302,10 +291,6 @@ class operating_system :
   std::vector<std::string> startup_libs_;
 
   std::stack<thread_data_t> threadstack_;
-
-  std::deque<event*> pending_eventss_;
-
-  bool restarting_;
 
   int current_thread_id_;
 

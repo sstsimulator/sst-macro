@@ -65,49 +65,6 @@ app_manager::static_app_manager(int aid, sprockit::sim_parameters* params)
   return static_app_managers_[aid];
 }
 
-std::string
-app_manager::getenv(const std::string &name) const
-{
-  shell_var_map::const_iterator it = shell_env_.find(name);
-  if (it == shell_env_.end()) {
-    return "";
-  }
-  return it->second;
-}
-
-std::string
-app_manager::hostname(sw::task_id tid) const
-{
-  task_to_hostname_map::const_iterator it = hostnames_.find(tid);
-  if (it == hostnames_.end()) {
-    spkt_throw_printf(sprockit::value_error,
-                     "environment::get_hostname: unable to find hostname for task %d",
-                     int(tid));
-  }
-  return it->second;
-}
-
-void
-app_manager::add_hostname(sw::task_id tid, const std::string &name,
-                          node_id addr)
-{
-  hostnames_[tid] = name;
-  inet_addrs_[name] = addr;
-}
-
-node_id
-app_manager::node_address(const std::string& name) const
-{
-  hostname_to_addr_map::const_iterator it = inet_addrs_.find(name);
-  if (it == inet_addrs_.end()) {
-    spkt_throw_printf(
-      sprockit::value_error,
-      "unable to find nodaddress for hostname %s",
-      name.c_str());
-  }
-  return it->second;
-}
-
 node_id
 app_manager::node_for_task(sw::task_id tid) const
 {

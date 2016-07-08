@@ -34,9 +34,11 @@ skeleton_app_manager::do_allocate_and_index_jobs()
   if (remainder) {
     ++num_nodes;
   }
-  allocator_->allocate(num_nodes, allocation);
-  indexer_->allocate(aid_, allocation, procs_per_node_, rank_to_node_indexing_,
-                     nproc_);
+  hw::interconnect::node_set& available = interconn_->available();
+  allocator_->allocate(num_nodes, available, allocation);
+  indexer_->allocate(aid_, allocation,
+               procs_per_node_, rank_to_node_indexing_,
+               nproc_);
 
   if (sprockit::debug::slot_active(sprockit::dbg::indexing)){
     cout0 << sprockit::printf("Allocated and indexed %d nodes\n",

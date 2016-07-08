@@ -27,6 +27,8 @@
 #include <sstmac/dumpi_util/dumpi_meta.h>
 
 #include <sstmac/software/launch/launch_event.h>
+#include <sstmac/software/launch/job_launcher.h>
+#include <sstmac/software/launch/job_launch_event.h>
 #include <sstmac/software/process/app_manager.h>
 
 #include <sprockit/driver_util.h>
@@ -233,6 +235,9 @@ macro_manager::init_factory_params(sprockit::sim_parameters* params)
   event_manager_->set_interconnect(interconnect_);
   interconnect_->set_event_manager(event_manager_);
 
+  launcher_ = job_launcher_factory::get_optional_param("job_launcher", "default", params);
+  launcher_->set_interconnect(interconnect_);
+
   logger::timer_ = event_manager_;
 
   //this should definitely be called last
@@ -296,27 +301,9 @@ macro_manager::finish()
 void
 macro_manager::launch_app(int appnum, timestamp start, sw::app_manager* appman)
 {
-  appman->allocate_and_index_jobs();
-  launch_info* linfo = appman->launch_info();
-  sstmac::sw::app_id aid(appnum);
-  for (int i=0; i < appman->nproc(); ++i) {
-    node_id dst_nid = appman->node_assignment(i);
-    runtime::register_node(aid, task_id(i), dst_nid);
-
-    hw::node* dst_node = interconnect_->node_at(dst_nid);
-    if (!dst_node) {
-      // mpiparallel, this node belongs to someone else
-      continue;
-    }
-
-    sw::launch_event* lmsg = new launch_event(linfo, sw::launch_event::ARRIVE, task_id(i));
-
-    dst_node->launch(start, lmsg);
-
-
-    //int dstthread = dst_node->thread_id();
-    //event_manager_->ev_man_for_thread(dstthread)->schedule(start, new handler_event(lmsg, dst_node));
-  }
+  sw::job_launch_event* ev = new sw::job_launch_event(appnum, appman);
+  event_manager_->schedule(start, appnum,
+                new handler_event_queue_entry(ev, launcher_, event_loc_id::null));
 }
 
 void

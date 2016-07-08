@@ -68,6 +68,7 @@ libsstmac_sw_la_SOURCES = \
   launch/random_indexing.cc \
   launch/round_robin_indexing.cc \
   launch/node_id_indexing.cc \
+  launch/job_launcher.cc \
   launch/launcher.cc \
   launch/launch_info.cc 
 
@@ -154,11 +155,13 @@ nobase_library_include_HEADERS = \
   launch/random_indexing.h \
   launch/node_id_indexing.h \
   launch/round_robin_indexing.h  \
+  launch/job_launcher.h \
   launch/launcher.h \
   launch/launcher_fwd.h \
   launch/launch_handler.h \
   launch/launch_info.h  \
   launch/launch_info_fwd.h  \
+  launch/job_launch_event.h \
   launch/launch_event.h  \
   launch/launch_event_fwd.h  \
   launch/machine_descriptor.h 

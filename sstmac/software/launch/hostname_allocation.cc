@@ -56,13 +56,6 @@ hostname_allocation::init_factory_params(sprockit::sim_parameters* params)
 }
 
 void
-hostname_allocation::set_topology(hw::topology *top)
-{
-  allocation_strategy::set_topology(top);
-  regtop_ = safe_cast(hw::structured_topology, top);
-}
-
-void
 hostname_allocation::read_map_file(
   parallel_runtime* rt,
   const char* here,
@@ -129,7 +122,7 @@ hostname_allocation::read_map_file(
 
 void
 hostname_allocation::allocate(int nnode_requested,
-                              node_set &allocation)
+ const node_set& available, node_set &allocation) const
 {
   std::map<std::string, std::vector<int> > hostmap;
   read_map_file(rt_, "hostname_allocation::allocate", mapfile_, hostmap);
@@ -138,13 +131,14 @@ hostname_allocation::allocate(int nnode_requested,
     spkt_throw_printf(sprockit::value_error, "hostname_allocation::allocate: null topology");
   }
 
+  hw::structured_topology* regtop = safe_cast(hw::structured_topology, topology_);
   std::map<std::string, std::vector<int> >::iterator it, end = hostmap.end();
 
   for (it = hostmap.begin(); it != end; it++) {
     std::vector<int> coords = it->second;
 
     // find node index for this vertex
-    node_id nid = regtop_->node_addr(coords);
+    node_id nid = regtop->node_addr(coords);
     hostnamemap_[it->first] = nid;
     nodenum_to_host_map_[nid] = it->first;
     allocation.insert(nid);

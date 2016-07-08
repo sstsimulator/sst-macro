@@ -50,7 +50,6 @@ hostname_indexer::allocate(
   std::istream& nodelist = *nodelistptr;
 
   std::stringstream sstr;
-  app_manager* env = runtime::app_mgr(aid);
   for (int i = 0; i < nrank; i++) {
     std::string hostname;
     nodelist >> hostname;
@@ -93,10 +92,8 @@ hostname_indexer::allocate(
         i, hostname.c_str(), int(nid));
 
     result[i] = nid;
-    env->add_hostname(task_id(i), hostname, nid);
 
   }
-  env->setenv("SSTMAC_NODELIST", sstr.str());
 
   delete nodelistptr;
 }

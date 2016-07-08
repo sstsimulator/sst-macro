@@ -13,16 +13,14 @@ class coordinate_allocation :
 
  public:
   virtual void
-  set_topology(hw::topology *top);
-
-  virtual void
   init_factory_params(sprockit::sim_parameters* params);
 
   virtual ~coordinate_allocation() throw() {}
 
   virtual void
   allocate(int nnode_requested,
-           node_set &allocation);
+    const node_set& available,
+    node_set &allocation) const;
 
   static void
   read_coordinate_file(
@@ -31,7 +29,6 @@ class coordinate_allocation :
     std::vector<hw::coordinates>& node_list);
 
  protected:
-  sstmac::hw::structured_topology* regtop_;
   std::string coord_file_;
 
 };

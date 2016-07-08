@@ -25,7 +25,10 @@ class first_available_allocation : public allocation_strategy
   ~first_available_allocation() throw ();
 
   void
-  allocate(int nnode_requested, node_set& allocation);
+  allocate(
+    int nnode_requested,
+    const node_set& available,
+    node_set& allocation) const;
 
 };
 

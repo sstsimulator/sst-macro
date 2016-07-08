@@ -27,7 +27,10 @@ class random_allocation : public allocation_strategy
   ~random_allocation() throw ();
 
   void
-  allocate(int nnode_requested, node_set& allocation);
+  allocate(
+    int nnode_requested,
+    const node_set& available,
+    node_set& allocation) const;
 
  protected:
   RNG::UniformInteger* rng_;

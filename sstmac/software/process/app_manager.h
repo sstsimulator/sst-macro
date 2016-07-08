@@ -83,23 +83,6 @@ class app_manager :
   virtual sw::launch_info*
   launch_info() const = 0;
 
-  void
-  add_hostname(sw::task_id tid, const std::string& name, node_id addr);
-
-  void
-  setenv(const std::string& name, const std::string& value) {
-    shell_env_[name] = value;
-  }
-
-  std::string
-  getenv(const std::string& name) const;
-
-  std::string
-  hostname(sw::task_id tid) const;
-
-  node_id
-  node_address(const std::string& hostname) const;
-
   node_id
   node_for_task(sw::task_id tid) const;
 
@@ -132,12 +115,6 @@ class app_manager :
   std::vector<int> core_affinities_;
 
   task_to_node_map nodeids_;
-
-  task_to_hostname_map hostnames_;
-
-  hostname_to_addr_map inet_addrs_;
-
-  shell_var_map shell_env_;
 
   app_manager();
 

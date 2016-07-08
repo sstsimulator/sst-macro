@@ -19,7 +19,8 @@ class node_id_allocation :
 
   virtual void
   allocate(int nnode_requested,
-           node_set &allocation);
+    const node_set& available,
+    node_set &allocation) const;
 
   static void
   read_coordinate_file(const std::string& file,

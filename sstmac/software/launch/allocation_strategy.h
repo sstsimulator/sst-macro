@@ -44,18 +44,7 @@ class allocation_strategy : public sprockit::factory_type
     rt_ = rt;
   }
 
-  /**
-    @return The topology being allocated from
-  */
-  hw::topology*
-  topol() const {
-    return topology_;
-  }
-
   void
-  set_interconnect(hw::interconnect* ic);
-
-  virtual void
   set_topology(hw::topology* top) {
     topology_ = top;
   }
@@ -73,29 +62,21 @@ class allocation_strategy : public sprockit::factory_type
 
   /** Get nodes.
     @param nnode number of nodes requested
+    @param available the set of nodes that can be given
     @param allocation returns the nodes that have been allocated
-    @throw value_error If not enough nodes are available, then this will throw.
-    Nodes are removed from available and put into allocated.
+    @return Whether the allocation succeeded based on available nodes
   */
   virtual void
-  allocate(int nnode, node_set& allocation) = 0;
-
-  /**
-    Release a set of nodes back into the allocation
-    @param alloc The nodes to deallocate
-  */
-  virtual void
-  release(const node_set& alloc);
+  allocate(int nnode,
+   const node_set& available,
+   node_set& allocation) const = 0;
 
  protected:
   allocation_strategy() :
-    rt_(0), interconn_(0), topology_(0) {}
-
-  void validate_num_nodes(int num_nodes, const char* type);
+    rt_(0), topology_(0) {}
 
  protected:
   hw::topology* topology_;
-  hw::interconnect* interconn_;
   parallel_runtime* rt_;
 
 };

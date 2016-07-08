@@ -25,9 +25,6 @@ class hostname_allocation : public allocation_strategy
 
  public:
   virtual void
-  set_topology(hw::topology *top);
-
-  virtual void
   init_factory_params(sprockit::sim_parameters* params);
 
   /**
@@ -44,7 +41,8 @@ class hostname_allocation : public allocation_strategy
 
   virtual void
   allocate(int nnode_requested,
-           node_set &allocation);
+    const node_set& available,
+    node_set &allocation) const;
 
   virtual
   ~hostname_allocation() throw () {
@@ -57,7 +55,6 @@ class hostname_allocation : public allocation_strategy
 
  protected:
   std::string mapfile_;
-  sstmac::hw::structured_topology* regtop_;
 
 };
 

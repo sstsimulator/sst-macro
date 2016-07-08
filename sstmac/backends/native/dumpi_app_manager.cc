@@ -29,9 +29,12 @@ dumpi_app_manager::do_allocate_and_index_jobs()
   hw::interconnect::node_set allocation;
   int ignore_num_nodes = 0; //dumpi determines this automatically
   int ignore_procs_per_node = 0;
-  allocator_->allocate(ignore_num_nodes, allocation);
+  hw::interconnect::node_set& available = interconn_->available();
+  allocator_->allocate(ignore_num_nodes, available, allocation);
   indexer_->allocate(aid_, allocation,
-                     ignore_procs_per_node, rank_to_node_indexing_, nproc_);
+              ignore_procs_per_node,
+              rank_to_node_indexing_,
+              nproc_);
 
   if (sprockit::debug::slot_active(sprockit::dbg::indexing)){
     cout0 << sprockit::printf("Allocated and indexed %d nodes\n",

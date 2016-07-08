@@ -29,46 +29,9 @@ allocation_strategy::~allocation_strategy() throw ()
 }
 
 void
-allocation_strategy::set_interconnect(hw::interconnect* interconn)
-{
-  interconn_ = interconn;
-  set_topology(interconn->topol());
-}
-
-void
-allocation_strategy::validate_num_nodes(int num_nodes, const char *type)
-{
-  int max_available = interconn_->available().size();
-  if (num_nodes > max_available) {
-    spkt_throw_printf(sprockit::value_error,
-                     "%s::allocate: requested %d nodes, only %d are available",
-                     type, num_nodes, max_available);
-  }
-  else if (num_nodes <= 0) {
-    spkt_throw_printf(sprockit::value_error,
-                     "%s::allocate: requested %d nodes, but I need a positive number."
-                     "If you're running DUMPI or another tracer, launch_allocation parameter "
-                     "needs to be hostname or dumpi",
-                     type, num_nodes);
-  }
-}
-
-void
 allocation_strategy::init_factory_params(sprockit::sim_parameters *params)
 {
   STATIC_INIT_TOPOLOGY(params);
-}
-
-void
-allocation_strategy::release(const node_set& alloc)
-{
-  hw::interconnect::node_set& available = interconn_->available();
-  hw::interconnect::node_set& allocated = interconn_->allocated();
-  node_set::const_iterator it, end = alloc.end();
-  for (it = alloc.begin(); it != end; it++) {
-    allocated.erase(*it);
-    available.insert(*it);
-  }
 }
 
 

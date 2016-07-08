@@ -54,8 +54,8 @@ void
 indexing_app_manager::set_interconnect(hw::interconnect *interconn)
 {
   app_manager::set_interconnect(interconn);
-  allocator_->set_interconnect(interconn_);
   indexer_->set_topology(top_);
+  allocator_->set_topology(top_);
 }
 
 }

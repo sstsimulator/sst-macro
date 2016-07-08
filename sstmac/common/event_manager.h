@@ -27,6 +27,7 @@
 #include <sstmac/backends/common/sim_partition_fwd.h>
 #include <sstmac/backends/common/parallel_runtime_fwd.h>
 #include <sstmac/common/event_scheduler_fwd.h>
+#include <sstmac/backends/native/manager_fwd.h>
 
 #include <vector>
 
@@ -47,8 +48,8 @@ class event_manager :
   public sprockit::factory_type
 {
   friend class event_scheduler;
-  friend class manager;
-  friend class macro_manager;
+  friend class native::manager;
+  friend class native::macro_manager;
 
  public:
   virtual std::string

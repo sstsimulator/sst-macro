@@ -18,7 +18,7 @@
 #include <sstmac/software/process/app_manager_fwd.h>
 #include <sstmac/hardware/node/node_fwd.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
-
+#include <sstmac/software/launch/job_launcher_fwd.h>
 #include <sprockit/factories/factory.h>
 
 DeclareDebugSlot(timestamp);
@@ -111,24 +111,26 @@ class macro_manager : public manager
 
   void finish();
 
- protected:
+ private:
   void
   launch_app(int appnum, timestamp start, sw::app_manager* appman);
 
   void
   launch_apps();
 
- protected:
+  void start();
+
+  void stop();
+
+ private:
   /// The event manager.
   event_manager* event_manager_;
 
   /// Monitor whether the simulator is currently running.
   bool running_;
 
- private:
-  void start();
+  sw::job_launcher* launcher_;
 
-  void stop();
 
 };
 #endif

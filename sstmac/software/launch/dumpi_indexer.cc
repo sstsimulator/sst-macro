@@ -101,9 +101,8 @@ dumpi_indexer::allocate(
 
   int nrank = getnumprocs(meta);
   result.resize(nrank);
-  app_manager* appman = runtime::app_mgr(aid);
   cout0 << "nrank: " << nrank << std::endl;
-  std::stringstream sstr;
+
   for (int i = 0; i < nrank; i++) {
     std::string fname = dumpi_file_name(i, meta->dirplusfileprefix_);
     dumpi_profile *profile = undumpi_open(fname.c_str());
@@ -135,10 +134,7 @@ dumpi_indexer::allocate(
         i, hostname.c_str(), int(nid));
 
     result[i] = nid;
-    appman->add_hostname(task_id(i), hostname, nid);
-    sstr << hostname << "\n";
   }
-  appman->setenv("SSTMAC_NODELIST", sstr.str());
 }
 
 }

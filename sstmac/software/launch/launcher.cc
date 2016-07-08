@@ -48,7 +48,6 @@ launcher::incoming_event(event* ev)
     int core_affinity = linfo->core_affinity(intranode_rank);
     theapp->set_affinity(core_affinity);
     os_->start_app(theapp);
-
   }
   else if(lev->launch_type() == launch_event::COMPLETE) {
     //do nothing
