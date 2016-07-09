@@ -9,7 +9,7 @@
  *  SST/macroscale directory.
  */
 
-#include <sstmac/hardware/router/routing_info.h>
+#include <sstmac/hardware/router/routing_enum.h>
 #include <sstmac/hardware/router/router.h>
 
 namespace sstmac {

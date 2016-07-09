@@ -205,7 +205,7 @@ packet_flow_netlink::handle(event* ev)
             int(id_), this, payload->to_string().c_str());
       node_id toaddr = payload->toaddr();
       netlink_id dst_netid(toaddr / num_eject_);
-      routing_info::path& p = rtbl->rinfo().current_path();
+      routable::path& p = rtbl->current_path();
       if (dst_netid == id_){
         //stays local - goes to a node
         int node_offset = toaddr % num_eject_;

@@ -9,6 +9,75 @@ namespace hw {
 
 class routable
 {
+ public:
+  typedef enum {
+   valiant_stage,
+   final_stage,
+   crossed_timeline
+  } metadata_slot;
+
+  static const int uninitialized = -123;
+
+  struct path {
+   int outport;
+   int vc;
+   /** An identifier indicating what geometric path on the topology this is following */
+   int geometric_id;
+   sprockit::metadata_bits<uint32_t> metadata;
+
+   path() :
+     outport(uninitialized),
+  #if SSTMAC_SANITY_CHECK
+     vc(uninitialized)
+  #else
+     vc(0)
+  #endif
+   {
+   }
+
+   bool
+   metadata_bit(metadata_slot slot) const {
+     return metadata.bit(slot);
+   }
+
+   void
+   set_metadata_bit(metadata_slot slot) {
+     metadata.set_bit(slot);
+   }
+
+   void
+   unset_metadata_bit(metadata_slot slot) {
+     metadata.unset_bit(slot);
+   }
+
+   void
+   clear_metadata() {
+     metadata.clear();
+   }
+  };
+
+ #define MAX_PATHS 32
+ class path_set
+ {
+  public:
+   path_set() : size_(0) {}
+   int size() const { return size_; }
+   void resize(int s){
+     if (s > MAX_PATHS){
+       spkt_throw_printf(sprockit::value_error,
+         "routable::path_set size exceeds max %d", MAX_PATHS);
+     }
+     size_ = s;
+   }
+
+   path& operator[](int idx){
+     return paths_[idx];
+   }
+
+  private:
+   int size_;
+   path paths_[MAX_PATHS];
+ };
 
  public:
   node_id
@@ -31,50 +100,61 @@ class routable
     fromaddr_ = from;
   }
 
-  const routing_info&
-  rinfo() const {
-    return rinfo_;
+  path&
+  current_path() {
+    return path_;
   }
 
-  routing_info&
-  rinfo() {
-    return rinfo_;
+  void
+  assign_path(const path& pth) {
+    path_ = pth;
+  }
+
+  void
+  check_vc() {
+    if (path_.vc == routable::uninitialized)
+      path_.vc = 0;
+  }
+
+  virtual int
+  vc() const {
+    return path_.vc;
   }
 
   int
   port() const {
-    return rinfo_.port();
+    return path_.outport;
   }
-
-  int
-  vc() const {
-    return rinfo_.vc();
-  }
-
-  routing::algorithm_t
-  algo() const {
-    return rinfo_.route_algo();
-  }
-
-  void
-  set_algo(routing::algorithm_t algo) {
-    rinfo_.set_route_algo(algo);
-  }
-
   void
   serialize_order(serializer& ser);
+
+
+  void
+  set_dest_switch(switch_id sid) {
+    dest_switch_ = sid;
+  }
+
+  switch_id
+  dest_switch() const {
+    return dest_switch_;
+  }
 
  protected:
   routable() {}
 
   routable(node_id toaddr, node_id fromaddr);
 
- protected:
-  routing_info rinfo_;
-
+ private:
   node_id toaddr_;
 
   node_id fromaddr_;
+
+  path path_;
+
+  switch_id dest_switch_;
+
+
+
 
 };
 

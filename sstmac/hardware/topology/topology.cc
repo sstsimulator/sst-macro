@@ -131,7 +131,7 @@ void
 topology::minimal_route_to_node(
   switch_id current_sw_addr,
   node_id dest_node_addr,
-  routing_info::path& path) const
+  routable::path& path) const
 {
   abort();
   int dir;

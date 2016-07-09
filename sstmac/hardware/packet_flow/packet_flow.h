@@ -118,7 +118,7 @@ class packet_flow_payload :
   void
   update_vc() {
     int new_vc = next_vc();
-    if (new_vc == routing_info::uninitialized){
+    if (new_vc == routable::uninitialized){
       vc_ = 0;
     } else {
       vc_ = new_vc;

@@ -13,7 +13,7 @@ routable::serialize_order(serializer& ser)
 {
   ser & toaddr_;
   ser & fromaddr_;
-  ser & rinfo_;
+  ser & path_;
 }
 
 }

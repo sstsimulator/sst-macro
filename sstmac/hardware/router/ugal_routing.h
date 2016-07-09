@@ -26,7 +26,7 @@ class ugal_router :
 
  protected:
   next_action_t initial_step(
-    routing_info& rinfo,
+    routable* rtbl,
     packet* pkt);
 
   /**
