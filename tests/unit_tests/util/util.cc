@@ -93,7 +93,7 @@ msg(long nid)
   network_message* new_msg = new network_message;
   new_msg->set_toaddr(naddr(nid));
   new_msg->set_net_id(hw::network_id(0,0));
-  return new packet_flow_payload(new_msg, 0, 0);
+  return new routable_packet_flow(new_msg, 0, 0);
 }
 
 void

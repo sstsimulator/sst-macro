@@ -149,7 +149,7 @@ class packet_flow_network_buffer :
   handle_credit(packet_flow_credit* msg);
 
   void
-  do_handle_payload(packet_flow_payload* msg);
+  do_handle_payload(packet_flow_payload* pkt);
 
   std::string
   packet_flow_name() const {
@@ -158,7 +158,7 @@ class packet_flow_network_buffer :
 
   void deadlock_check();
 
-  void deadlock_check(message*msg);
+  void deadlock_check(event* ev);
 
  protected:
   int num_vc_;
@@ -195,7 +195,7 @@ class packet_flow_eject_buffer :
   return_credit(packet* msg);
 
   void
-  do_handle_payload(packet_flow_payload* msg);
+  do_handle_payload(packet_flow_payload* pkt);
 
   std::string
   packet_flow_name() const {
@@ -231,7 +231,7 @@ class packet_flow_injection_buffer :
   handle_credit(packet_flow_credit* msg);
 
   void
-  do_handle_payload(packet_flow_payload* msg);
+  do_handle_payload(packet_flow_payload* pkt);
 
   std::string
   packet_flow_name() const {

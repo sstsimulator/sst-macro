@@ -276,6 +276,7 @@ packet_flow_tiled_switch::handle(event* ev)
     }
     case packet_flow_interface::payload: {
       packet_flow_payload* payload = static_cast<packet_flow_payload*>(ev);
+      //routable* rtbl = payload->interface<routable>();
       debug_printf(sprockit::dbg::packet_flow,
          "tiled switch %d: incoming payload %s",
           int(my_addr_), payload->to_string().c_str());
@@ -285,7 +286,7 @@ packet_flow_tiled_switch::handle(event* ev)
       debug_printf(sprockit::dbg::packet_flow,
          "tiled switch %d: routed payload %s to outport %d",
           int(my_addr_), payload->to_string().c_str(),
-          payload->rinfo().current_path().outport);
+          payload->next_port());
       demuxer->handle_payload(payload);
       break;
     }

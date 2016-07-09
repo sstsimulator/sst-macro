@@ -96,7 +96,7 @@ packet_flow_sender::send(
   packet_flow_debug(
     "On %s:%p, sending to port:%d vc:%d {%s} to handler %s:%p on inport %d at head_leaves=%9.5e tail_leaves=%9.5e",
     to_string().c_str(), this,
-    pkt->port(), pkt->rinfo().current_path().vc,
+    pkt->next_port(), pkt->next_vc(),
     pkt->to_string().c_str(),
     dest.handler->to_string().c_str(), dest.handler,
     dest.dst_inport,

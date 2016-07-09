@@ -142,7 +142,7 @@ packet_flow_nic_packetizer::spaceToSend(int vn, int num_bits) const
 void
 packet_flow_nic_packetizer::inject(int vn, long bytes, long byte_offset, message* msg)
 {
-  packet_flow_payload* payload = new packet_flow_payload(msg, bytes, byte_offset);
+  packet_flow_payload* payload = new routable_packet_flow(msg, bytes, byte_offset);
   inj_buffer_->handle_payload(payload);
 }
 

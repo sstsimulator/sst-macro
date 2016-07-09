@@ -27,7 +27,7 @@ packet_flow_payload::packet_flow_payload(
   int num_bytes,
   long offset) :
   packet(parent, num_bytes, offset),
-  routable(parent->toaddr(), parent->fromaddr()),
+  //routable(parent->toaddr(), parent->fromaddr()),
   packet_flow_interface(payload),
   bw_(uninitialized_bw),
   max_in_bw_(1.0)
@@ -49,7 +49,7 @@ void
 packet_flow_payload::serialize_order(serializer& ser)
 {
   packet_flow_interface::serialize_order(ser);
-  routable::serialize_order(ser);
+  //routable::serialize_order(ser);
   packet::serialize_order(ser);
   ser & inport_;
   ser & bw_;

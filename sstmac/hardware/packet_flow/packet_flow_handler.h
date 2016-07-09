@@ -80,7 +80,7 @@ class packet_flow_handler :
   handle_credit(packet_flow_credit* msg) = 0;
 
   virtual void
-  handle_payload(packet_flow_payload* msg) = 0;
+  handle_payload(packet_flow_payload* pkt) = 0;
 
   int
   thread_id() const {

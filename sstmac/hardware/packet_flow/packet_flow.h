@@ -78,14 +78,13 @@ class packet_flow_interface
  */
 class packet_flow_payload :
   public packet_flow_interface,
-  public routable,
-  public packet,
-  public serializable_type<packet_flow_payload>
+  public packet
+  //public serializable_type<packet_flow_payload>
 {
  public:
   static const double uninitialized_bw;
 
-  ImplementSerializable(packet_flow_payload)
+  //ImplementSerializable(packet_flow_payload)
 
  public:
   packet_flow_payload(
@@ -102,16 +101,6 @@ class packet_flow_payload :
     return payload;
   }
 
-  node_id
-  toaddr() const {
-    return routable::toaddr();
-  }
-
-  node_id
-  fromaddr() const {
-    return routable::fromaddr();
-  }
-
   /**
     Needed because of routable_message ambiguity.
   */
@@ -120,12 +109,19 @@ class packet_flow_payload :
     return vc_;
   }
 
+  virtual int
+  next_vc() const = 0;
+
+  virtual int
+  next_port() const = 0;
+
   void
   update_vc() {
-    if (routable::vc() == routing_info::uninitialized){
+    int new_vc = next_vc();
+    if (new_vc == routing_info::uninitialized){
       vc_ = 0;
     } else {
-      vc_ = routable::vc();
+      vc_ = new_vc;
     }
   }
 
@@ -224,6 +220,44 @@ class packet_flow_payload :
   double max_in_bw_;
 
   double arrival_;
+
+};
+
+class routable_packet_flow :
+ public packet_flow_payload,
+ public routable
+{
+  NotSerializable(routable_packet_flow)
+
+  public:
+   routable_packet_flow(
+     message* parent,
+     int num_bytes,
+     long offset) :
+    packet_flow_payload(parent, num_bytes, offset),
+    routable(parent->toaddr(), parent->fromaddr())
+  {
+  }
+
+  node_id
+  toaddr() const {
+   return routable::toaddr();
+  }
+
+  node_id
+  fromaddr() const {
+    return routable::fromaddr();
+  }
+
+  int
+  next_port() const {
+    return routable::port();
+  }
+
+  int
+  next_vc() const {
+    return routable::vc();
+  }
 
 };
 

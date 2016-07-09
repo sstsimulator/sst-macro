@@ -137,7 +137,7 @@ packet_flow_memory_packetizer::init_noise_model()
 void
 packet_flow_memory_packetizer::inject(int vn, long bytes, long byte_offset, message* msg)
 {
-  packet_flow_payload* payload = new packet_flow_payload(
+  packet_flow_payload* payload = new routable_packet_flow(
                                          msg,
                                          bytes, //only a single message
                                          byte_offset);

@@ -113,7 +113,7 @@ test_dragonfly_v1(UnitTest& unit)
     router* router = sw->rter();
     packet_flow_payload* packet = msg(4);
     router->route(packet);
-    const routing_info::path& path = packet->rinfo().current_path();
+    //const routing_info::path& path = packet->rinfo().current_path();
     //assertEqual(unit, "route dragonfly dim", path.dim, (int) dragonfly::x_dimension);
     //assertEqual(unit, "route dragonfly dir", path.dir, 2);
     //assert_dim_dir(unit, "dragonfly dim/dir",
@@ -125,7 +125,7 @@ test_dragonfly_v1(UnitTest& unit)
     router* router = sw->rter();
     packet_flow_payload* packet = msg(4);
     router->route(packet);
-    const routing_info::path& path = packet->rinfo().current_path();
+    //const routing_info::path& path = packet->rinfo().current_path();
     //assertEqual(unit, "route dragonfly dim", path.dim, (int) dragonfly::y_dimension);
     //assertEqual(unit, "route dragonfly dir", path.dir, 0);
     //assert_dim_dir(unit, "dragonfly dim/dir",
@@ -137,7 +137,7 @@ test_dragonfly_v1(UnitTest& unit)
     router* router = sw->rter();
     packet_flow_payload* packet = msg(4);
     router->route(packet);
-    const routing_info::path& path = packet->rinfo().current_path();
+    //const routing_info::path& path = packet->rinfo().current_path();
     //assertEqual(unit, "route dragonfly dim", path.dim, (int) dragonfly::g_dimension);
     //assertEqual(unit, "route dragonfly dir", path.dir, 0);
     //assert_dim_dir(unit, "dragonfly dim/dir",

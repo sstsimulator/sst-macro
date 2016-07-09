@@ -53,12 +53,12 @@ test_arbitrator(UnitTest& unit)
 
 
   message* parent = new test_message(num_packets_in_parent * packet_size);
-  packet_flow_payload* test_msg = new packet_flow_payload(parent, packet_size, 0);
+  packet_flow_payload* test_msg = new routable_packet_flow(parent, packet_size, 0);
   test_msg->set_bw(link_bw);
 
-  packet_flow_payload* test_msg0 = new packet_flow_payload(parent, 0*packet_size, 0);
-  packet_flow_payload* test_msg2 = new packet_flow_payload(parent, 2*packet_size, 0);
-  packet_flow_payload* test_msg4 = new packet_flow_payload(parent, 4*packet_size, 0);
+  packet_flow_payload* test_msg0 = new routable_packet_flow(parent, 0*packet_size, 0);
+  packet_flow_payload* test_msg2 = new routable_packet_flow(parent, 2*packet_size, 0);
+  packet_flow_payload* test_msg4 = new routable_packet_flow(parent, 4*packet_size, 0);
 
   packet_stats_st st;
   st.now = timestamp(0);

@@ -162,7 +162,7 @@ bytes_sent_collector::init_factory_params(sprockit::sim_parameters* params)
 void
 bytes_sent_collector::collect_single_event(const packet_stats_st& st)
 {
-  bytes_sent_->record(st.pkt->port(), st.pkt->byte_length());
+  bytes_sent_->record(st.pkt->next_port(), st.pkt->byte_length());
 }
 
 void

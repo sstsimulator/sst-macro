@@ -40,9 +40,9 @@ class packet_flow_sender :
   num_initial_credits() const = 0;
 
   void
-  handle_payload(packet_flow_payload* msg) {
-    msg->set_arrival(now().sec());
-    do_handle_payload(msg);
+  handle_payload(packet_flow_payload* pkt) {
+    pkt->set_arrival(now().sec());
+    do_handle_payload(pkt);
   }
 
   void
@@ -85,12 +85,12 @@ class packet_flow_sender :
 
   void
   send(packet_flow_bandwidth_arbitrator* arb,
-       packet_flow_payload* msg,
+       packet_flow_payload* pkt,
        const packet_flow_input& src,
        const packet_flow_output& dest);
 
   virtual void
-  do_handle_payload(packet_flow_payload* msg) = 0;
+  do_handle_payload(packet_flow_payload* pkt) = 0;
 
  protected:
   packet_sent_stats* stat_collector_;

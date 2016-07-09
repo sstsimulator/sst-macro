@@ -81,7 +81,7 @@ class packet_flow_memory_packetizer : public packet_flow_packetizer
 
  private:
   void
-  handle_payload(int vn, packet_flow_payload* msg);
+  handle_payload(int vn, packet_flow_payload* pkt);
 
   void
   init_noise_model();
