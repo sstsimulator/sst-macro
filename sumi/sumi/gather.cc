@@ -89,6 +89,9 @@ btree_gather_actor::init_dag()
     maxGap = midpoint_ / 2;
   }
 
+  //as with the allgather, it makes no sense to run the gather on unpacked data
+  //everyone should immediately pack all their buffers and then run the collective
+  //directly on already packed data
 
   action* prev = 0;
 
@@ -102,7 +105,7 @@ btree_gather_actor::init_dag()
       //I am a recver
       int partner = me + partnerGap;
       if (partner < nproc){
-        action* recv = new recv_action(round, partner);
+        action* recv = new recv_action(round, partner, recv_action::in_place);
         int recvChunkStart = me + partnerGap;
         int recvChunkStop = std::min(recvChunkStart+partnerGap, nproc);
         int recvChunkSize = recvChunkStop - recvChunkStart;
@@ -114,7 +117,7 @@ btree_gather_actor::init_dag()
     } else {
       //I am a sender
       int partner = me - partnerGap;
-      action* send = new send_action(round, partner);
+      action* send = new send_action(round, partner, send_action::in_place);
       int sendChunkStart = me;
       int sendChunkStop = std::min(sendChunkStart+partnerGap,nproc);
       int sendChunkSize = sendChunkStop - sendChunkStart;
@@ -151,13 +154,13 @@ btree_gather_actor::init_dag()
       int size_1st_half = midpoint_;
       int size_2nd_half = nproc - midpoint_;
       //recv 1st half from 0
-      action* recv = new recv_action(round, 0);
+      action* recv = new recv_action(round, 0, recv_action::in_place);
       recv->offset = 0;
       recv->nelems = nelems_ * size_1st_half;
       add_dependency(prev, recv);
       //recv 2nd half from midpoint - unless I am the midpoint
       if (midpoint_ != root_){
-        recv = new recv_action(round, midpoint_);
+        recv = new recv_action(round, midpoint_, recv_action::in_place);
         recv->offset = midpoint_*nelems_;
         recv->nelems = nelems_ * size_2nd_half;
         add_dependency(prev, recv);
@@ -165,7 +168,7 @@ btree_gather_actor::init_dag()
     }
     //0 must send the first half to the root
     if (me == 0){
-      action* send = new send_action(round, root_);
+      action* send = new send_action(round, root_, send_action::in_place);
       send->offset = 0; //send whole thing
       send->nelems = nelems_*midpoint_;
       add_dependency(prev,send);
@@ -173,7 +176,7 @@ btree_gather_actor::init_dag()
     //midpoint must send the second half to the root
     //unless it is the root
     if (me == midpoint_ && midpoint_ != root_){
-      action* send = new send_action(round, root_);
+      action* send = new send_action(round, root_, send_action::in_place);
       int size = nproc - midpoint_;
       send->offset = 0;
       send->nelems = nelems_ * size;

@@ -107,6 +107,9 @@ bruck_alltoall_actor::init_dag()
   action* prev_shuffle = 0;
   if (nprocs_extra_round) ++num_rounds;
 
+  //similar to the allgather - makes no sense to run this on unpacked ata
+  //first thing everyone should do is pack all their data
+
   for (int round=0; round < num_rounds; ++round){
     int up_partner = (me + partnerGap) % nproc;
     int down_partner = (me - partnerGap + nproc) % nproc;
@@ -123,8 +126,9 @@ bruck_alltoall_actor::init_dag()
 
     action* send_shuffle = new shuffle_action(round, SEND_SHUFFLE);
     action* recv_shuffle = new shuffle_action(round, RECV_SHUFFLE);
-    action* send = new send_action(round, up_partner);
-    action* recv = new recv_action(round, down_partner);
+    action* send = new send_action(round, up_partner, send_action::temp_send);
+    //always recv into a temp buf - and leave it packed, do not unpack
+    action* recv = new recv_action(round, down_partner, recv_action::packed_temp_buf);
 
     int nelemsRound = numSendBlocks * nelems_;
 
@@ -133,7 +137,6 @@ bruck_alltoall_actor::init_dag()
 
     recv->offset = 0;
     recv->nelems = nelemsRound;
-    recv->recv_type = action::temp;
 
     send_shuffle->offset = partnerGap;
     recv_shuffle->offset = partnerGap;

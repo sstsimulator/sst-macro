@@ -104,19 +104,26 @@ btree_scatter_actor::init_dag()
 
   action* prev = 0;
 
+  //as with many other collectives - make absolutely no sense to run this on unpacked data
+  //collective does not really need to worry about processing packed versus unpacked data
+
+  //the root always sends from a send buffer
+  //the other nodes will recv into a temp buffer - and then send from that
+  send_action::buf_type_t send_ty = me == root_ ?
+        send_action::temp_send : send_action::prev_recv;
+
   if (me == root_){
     //send half my data to midpoint to begin the scatter
-    action* ac = new send_action(round, midpoint_);
+    action* ac = new send_action(round, midpoint_, send_ty);
     ac->offset = nelems_ * midpoint_;
     ac->nelems = nelems_ * std::min(nproc-midpoint_, midpoint_);;
     add_initial_action(ac);
     prev = ac;
   }
   if (me == midpoint_){
-    action* ac = new recv_action(round, root_);
+    action* ac = new recv_action(round, root_, recv_action::packed_temp_buf);
     ac->offset = 0;
     ac->nelems = nelems_ * std::min(nproc-midpoint_, midpoint_);
-    ac->recv_type = action::temp;
     add_initial_action(ac);
     prev = ac;
   }
@@ -124,15 +131,14 @@ btree_scatter_actor::init_dag()
   if (root_ != 0){
     //uh oh - need an extra send
     if (me == root_){
-      action* ac = new send_action(round, 0);
+      action* ac = new send_action(round, 0, send_ty);
       ac->nelems = nelems_ * midpoint_;
       ac->offset = 0;
       add_initial_action(ac);
     } else if (me == 0){
-      action* ac = new recv_action(round, root_);
+      action* ac = new recv_action(round, root_, recv_action::packed_temp_buf);
       ac->nelems = nelems_ * midpoint_;
       ac->offset = 0;
-      ac->recv_type = action::temp;
       add_initial_action(ac);
       prev = ac;
     }
@@ -150,7 +156,7 @@ btree_scatter_actor::init_dag()
         //I send up
         int partner = me + partnerGap;
         if (partner < nproc){
-          action* ac = new send_action(round, partner);
+          action* ac = new send_action(round, partner, send_ty);
           ac->offset = partnerGap * nelems_;
           ac->nelems = std::min(nproc-partner,partnerGap) * nelems_;
           add_dependency(prev, ac);
@@ -159,10 +165,16 @@ btree_scatter_actor::init_dag()
       } else {
         //I recv down
         int partner = me - partnerGap;
-        action* ac = new recv_action(round, partner);
+        recv_action::buf_type_t bufty;
+        if (partnerGap != 1){
+          bufty = recv_action::packed_temp_buf; //not done - receive into temp buffer
+        } else {
+          bufty = recv_action::in_place;
+        }
+        action* ac = new recv_action(round, partner, bufty);
         ac->offset = 0;
         ac->nelems = std::min(nproc-me,partnerGap) * nelems_;
-        if (partnerGap != 1) ac->recv_type = action::temp; //not done - receive into temp buffer
+
         add_dependency(prev, ac);
         prev = ac;
       }

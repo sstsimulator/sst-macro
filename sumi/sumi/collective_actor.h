@@ -14,9 +14,9 @@ DeclareDebugSlot(sumi_collective_buffer)
 
 #define sumi_case(x) case x: return #x
 
-#define do_sumi_debug_print(...)  \
- if (sprockit::debug::slot_active(sprockit::dbg::sumi_collective_buffer)) \
-   debug_print(__VA_ARGS__)
+#define do_sumi_debug_print(...)
+// if (sprockit::debug::slot_active(sprockit::dbg::sumi_collective_buffer)) \
+//   debug_print(__VA_ARGS__)
 
 namespace sumi {
 
@@ -28,7 +28,6 @@ debug_print(const char* info, const std::string& rank_str,
 struct action
 {
   typedef enum { send=0, recv=1, shuffle=2, unroll=3 } type_t;
-  typedef enum { in_place_result=0, out_of_place=1, temp=2 } recv_type_t;
   type_t type;
   int partner;
   int join_counter;
@@ -36,7 +35,6 @@ struct action
   int offset;
   int nelems;
   uint32_t id;
-  recv_type_t recv_type;
 
   static const char*
   tostr(type_t ty){
@@ -45,15 +43,6 @@ struct action
       sumi_case(recv);
       sumi_case(shuffle);
       sumi_case(unroll);
-    }
-  }
-
-  static const char*
-  tostr(recv_type_t ty){
-    switch(ty){
-      sumi_case(in_place_result);
-      sumi_case(out_of_place);
-      sumi_case(temp);
     }
   }
 
@@ -84,8 +73,9 @@ struct action
 
  protected:
   action(type_t ty, int r, int p) :
-    type(ty), round(r), partner(p),
-    join_counter(0), recv_type(in_place_result)
+    type(ty), round(r),
+    partner(p),
+    join_counter(0)
   {
     id = message_id(ty, r, p);
   }
@@ -93,18 +83,74 @@ struct action
 
 struct recv_action : public action
 {
-  recv_action(int round, int partner) :
-    action(recv, round, partner)
+  typedef enum {
+    in_place=0,
+    reduce=1,
+    packed_temp_buf=2,
+    unpack_temp_buf=3
+  } buf_type_t;
+
+  buf_type_t buf_type;
+
+  static const char*
+  tostr(buf_type_t ty){
+    switch(ty){
+      sumi_case(in_place);
+      sumi_case(reduce);
+      sumi_case(packed_temp_buf);
+      sumi_case(unpack_temp_buf);
+    }
+  }
+
+  typedef enum {
+    rdvz_in_place=0,
+    rdvz_reduce=1,
+    rdvz_packed_temp_buf=2,
+    rdvz_unpack_temp_buf=3,
+    eager_in_place=4,
+    eager_reduce=5,
+    eager_packed_temp_buf=6,
+    eager_unpack_temp_buf=7
+  } recv_type_t;
+
+  static recv_type_t
+  recv_type(bool eager, buf_type_t ty){
+    int shift = eager ? 4 : 0;
+    return recv_type_t(ty + shift);
+  }
+
+  recv_action(int round, int partner, buf_type_t bty) :
+    action(recv, round, partner),
+    buf_type(bty)
   {
   }
 };
 
 struct send_action : public action
 {
-  send_action(int round, int partner) :
-    action(send, round, partner)
+  typedef enum {
+    in_place=0,
+    prev_recv=1,
+    temp_send=2
+  } buf_type_t;
+
+  buf_type_t buf_type;
+
+  static const char*
+  tostr(buf_type_t ty){
+    switch(ty){
+      sumi_case(in_place);
+      sumi_case(prev_recv);
+      sumi_case(temp_send);
+    }
+  }
+
+  send_action(int round, int partner, buf_type_t ty) :
+    action(send, round, partner),
+    buf_type(ty)
   {
   }
+
 };
 
 struct shuffle_action : public action
@@ -276,6 +322,85 @@ class collective_actor
 
 };
 
+class slicer {
+ public:
+  /**
+   * @brief pack_in
+   * @param packedBuf
+   * @param unpackedBuf
+   * @param offset
+   * @param nelems
+   * @return
+   */
+  virtual void
+  pack_send_buf(void* packedBuf, void* unpackedObj,
+                int offset, int nelems) const = 0;
+
+  virtual void
+  unpack_recv_buf(void* packedBuf, void* unpackedObj,
+                  int offset, int nelems) const = 0;
+
+  virtual void
+  memcpy_packed_bufs(void* dst, void* src, int nelems) const = 0;
+
+  virtual void
+  unpack_reduce(void* packedBuf, void* unpackedObj,
+            int offset, int nelems) const {
+    spkt_throw(sprockit::unimplemented_error,
+          "slicer for collective does not implement a reduce op");
+  }
+
+  virtual bool
+  contiguous() const = 0;
+
+  virtual int
+  element_packed_size() const = 0;
+};
+
+class default_slicer :
+ public slicer
+{
+
+ public:
+  void
+  pack_send_buf(void* packedBuf, void* unpackedObj, int offset, int nelems) const {
+    char* dstptr = (char*) packedBuf;
+    char* srcptr = (char*) unpackedObj + offset*type_size;
+    ::memcpy(dstptr, srcptr, nelems*type_size);
+  }
+
+  void
+  unpack_recv_buf(void* packedBuf, void* unpackedObj, int offset, int nelems) const {
+    char* dstptr = (char*) unpackedObj + offset*type_size;
+    char* srcptr = (char*) packedBuf;
+    ::memcpy(dstptr, srcptr, nelems*type_size);
+  }
+
+  virtual void
+  memcpy_packed_bufs(void *dst, void *src, int nelems) const {
+    ::memcpy(dst, src, nelems*type_size);
+  }
+
+  virtual void
+  unpack_reduce(void *packedBuf, void *unpackedObj, int offset, int nelems) const {
+    char* dstptr = (char*) unpackedObj + offset*type_size;
+    (fxn)(dstptr, packedBuf, nelems);
+  }
+
+  int
+  element_packed_size() const {
+    return type_size;
+  }
+
+  bool
+  contiguous() const {
+    return true;
+  }
+
+  int type_size;
+  reduce_fxn fxn;
+};
+
 /**
  * @class collective_actor
  * Object that actually does the work (the actor)
@@ -324,6 +449,8 @@ class dag_collective_actor :
     type_ = type;
     nelems_ = nelems;
     type_size_ = type_size;
+    slicer_ = new default_slicer;
+    slicer_->type_size = type_size;
   }
 
   virtual void init_buffers(void* dst, void* src) = 0;
@@ -389,7 +516,7 @@ class dag_collective_actor :
 
   void* message_buffer(void* buffer, int offset);
 
-  public_buffer send_buffer(int offset);
+  public_buffer send_buffer(action* ac);
 
   public_buffer recv_buffer(action* ac);
 
@@ -473,6 +600,8 @@ class dag_collective_actor :
   public_buffer result_buffer_;
 
   collective::type_t type_;
+
+  default_slicer* slicer_;
 
 };
 
