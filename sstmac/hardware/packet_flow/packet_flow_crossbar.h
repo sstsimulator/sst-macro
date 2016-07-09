@@ -235,19 +235,6 @@ class packet_flow_crossbar :
     int buffer_size,
     const char* name = 0);
 
-  virtual void
-  do_handle_payload(packet_flow_payload* msg);
-
-  void
-  set_bytes_sent_collector(stat_bytes_sent* coll){
-    bytes_sent_ = coll;
-  }
-
-  void
-  set_byte_hops_collector(stat_global_int* coll){
-    byte_hops_ = coll;
-  }
-
   std::string
   packet_flow_name() const {
     if (name_) return name_;
@@ -255,8 +242,6 @@ class packet_flow_crossbar :
   }
 
  private:
-  stat_bytes_sent* bytes_sent_;
-  stat_global_int* byte_hops_;
   const char* name_;
 
 };

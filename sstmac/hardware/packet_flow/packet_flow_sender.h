@@ -6,6 +6,7 @@
 #include <sstmac/hardware/packet_flow/packet_flow.h>
 #include <sstmac/hardware/packet_flow/packet_flow_handler.h>
 #include <sstmac/hardware/packet_flow/packet_flow_arbitrator.h>
+#include <sstmac/hardware/packet_flow/packet_flow_stats.h>
 
 #define packet_flow_debug(...) \
   debug_printf(sprockit::dbg::packet_flow, __VA_ARGS__)
@@ -55,18 +56,8 @@ class packet_flow_sender :
   }
 
   void
-  set_congestion_spyplot(stat_spyplot* plot){
-    congestion_spyplot_ = plot;
-  }
-
-  bool
-  accumulate_delay() const {
-    return acc_delay_;
-  }
-
-  void
-  set_accumulate_delay(bool flag) {
-    acc_delay_ = flag;
+  set_stat_collector(packet_sent_stats* c){
+    stat_collector_ = c;
   }
 
   std::string
@@ -102,15 +93,13 @@ class packet_flow_sender :
   do_handle_payload(packet_flow_payload* msg) = 0;
 
  protected:
-  stat_spyplot* congestion_spyplot_;
+  packet_sent_stats* stat_collector_;
 
   event_handler* acker_;
 
   timestamp send_lat_;
 
   timestamp credit_lat_;
-
-  bool acc_delay_;
 
   bool update_vc_;
 

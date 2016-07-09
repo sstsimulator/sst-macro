@@ -4,7 +4,7 @@ namespace sstmac {
 namespace hw {
 
 routable::routable(node_id toaddr, node_id fromaddr)
-  : toaddr_(toaddr), fromaddr_(fromaddr), n_hops_(0)
+  : toaddr_(toaddr), fromaddr_(fromaddr)
 {
 }
 

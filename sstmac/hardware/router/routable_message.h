@@ -64,18 +64,8 @@ class routable
   void
   serialize_order(serializer& ser);
 
-  void
-  add_hop() {
-    ++n_hops_;
-  }
-
-  int
-  n_hops() {
-    return n_hops_;
-  }
-
  protected:
-  routable() : n_hops_(0) {}
+  routable() {}
 
   routable(node_id toaddr, node_id fromaddr);
 
@@ -85,8 +75,6 @@ class routable
   node_id toaddr_;
 
   node_id fromaddr_;
-
-  int n_hops_;
 
 };
 

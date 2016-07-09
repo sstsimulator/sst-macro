@@ -46,6 +46,7 @@ void
 stat_collector::init_factory_params(sprockit::sim_parameters* params)
 {
   fileroot_ = params->get_param("fileroot");
+  id_ = params->get_optional_int_param("id", -1);
 }
 
 void

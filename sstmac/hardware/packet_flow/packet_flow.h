@@ -143,7 +143,7 @@ class packet_flow_payload :
    the total number of bytes in the parent message.
    See #num_bytes_total
    */
-  long
+  int
   num_bytes() const {
     return num_bytes_;
   }

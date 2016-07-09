@@ -87,10 +87,6 @@ class packet_flow_nic_packetizer :
   recv_credit(packet_flow_credit* credit);
 
  protected:
-  stat_histogram* congestion_hist_;
-  stat_spyplot* congestion_spyplot_;
-  bool acc_delay_;
-
   double inj_bw_;
   double ej_bw_;
   int buffer_size_;
@@ -100,6 +96,9 @@ class packet_flow_nic_packetizer :
   recv_cq completion_queue_;
 
   node_id my_addr_;
+
+  packet_sent_stats* stat_collector_;
+  packet_sent_stats* buf_stats_;
 
 };
 

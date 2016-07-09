@@ -156,12 +156,6 @@ class packet_flow_network_buffer :
     return "network buffer";
   }
 
-  void
-  set_sanity_params(bool queue_depth_reporting, int queue_depth_delta) {
-    queue_depth_reporting_ = queue_depth_reporting;
-    queue_depth_delta_ = queue_depth_delta;
-  }
-
   void deadlock_check();
 
   void deadlock_check(message*msg);

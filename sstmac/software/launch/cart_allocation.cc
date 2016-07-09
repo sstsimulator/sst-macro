@@ -78,7 +78,8 @@ cart_allocation::allocate_dim(
   ordered_node_set& allocation) const
 {
   if (dim == sizes_.size()) {
-    insert(regtop, vec, available, allocation);;
+    insert(regtop, vec, available, allocation);
+    return;
   }
 
   int dim_size = sizes_[dim];

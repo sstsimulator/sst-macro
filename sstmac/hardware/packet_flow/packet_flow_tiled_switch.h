@@ -75,7 +75,7 @@ class packet_flow_tiled_switch :
 
   int
   initial_credits() const {
-    return params_->row_buffer_num_bytes;
+    return row_buffer_num_bytes;
   }
 
   virtual

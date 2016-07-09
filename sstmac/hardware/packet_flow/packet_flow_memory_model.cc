@@ -158,15 +158,15 @@ packet_flow_memory_packetizer::handle_payload(int vn, packet_flow_payload* pkt)
   //set the bandwidth to the max single bw
   pkt->init_bw(max_single_bw_);
   pkt->set_arrival(now().sec());
-  timestamp packet_head_leaves;
-  timestamp packet_tail_leaves;
-  timestamp credit_leaves;
-  arb_->arbitrate(now(), pkt, packet_head_leaves, packet_tail_leaves, credit_leaves);
+  packet_stats_st st;
+  st.pkt = pkt;
+  st.now = now();
+  arb_->arbitrate(st);
 
   debug("memory packet %s leaving on vn %d at t=%8.4e",
-    pkt->to_string().c_str(), vn, packet_tail_leaves.sec());
+    pkt->to_string().c_str(), vn, st.tail_leaves.sec());
 
-  send_self_event_queue(packet_tail_leaves,
+  send_self_event_queue(st.tail_leaves,
     new_event(this, &packetizer::packetArrived, vn, pkt));
 
   //might need to send some credits back
@@ -174,7 +174,7 @@ packet_flow_memory_packetizer::handle_payload(int vn, packet_flow_payload* pkt)
     int ignore_vc = -1;
     packet_flow_credit* credit = new packet_flow_credit(vn, ignore_vc, pkt->num_bytes());
     //here we do not optimistically send credits = only when the packet leaves
-    send_self_event(packet_tail_leaves, credit);
+    send_self_event(st.tail_leaves, credit);
   }
 }
 

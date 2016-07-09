@@ -24,8 +24,6 @@ packet_flow_crossbar::packet_flow_crossbar(
   int buffer_size,
   packet_flow_bandwidth_arbitrator* arb) :
   packet_flow_NtoM_queue(send_lat, credit_lat, out_bw, num_vc, buffer_size, arb),
-  bytes_sent_(0),
-  byte_hops_(0),
   name_(0)
 {
 }
@@ -37,8 +35,6 @@ packet_flow_crossbar::packet_flow_crossbar(
   int buffer_size,
   const char* name) :
   packet_flow_NtoM_queue(send_lat, credit_lat, num_vc, buffer_size),
-  bytes_sent_(0),
-  byte_hops_(0),
   name_(name)
 {
 }
@@ -61,18 +57,6 @@ packet_flow_muxer::packet_flow_muxer(
   packet_flow_bandwidth_arbitrator *arb) :
   packet_flow_NtoM_queue(send_lat, credit_lat, out_bw, num_vc, buffer_size, arb)
 {
-}
-
-void
-packet_flow_crossbar::do_handle_payload(packet_flow_payload* msg)
-{
-  if (bytes_sent_){
-    bytes_sent_->record(msg->port(), msg->byte_length());
-  }
-  if (byte_hops_){
-    byte_hops_->collect(msg->byte_length());
-  }
-  packet_flow_NtoM_queue::handle_routed_payload(msg);
 }
 
 packet_flow_NtoM_queue::packet_flow_NtoM_queue(
