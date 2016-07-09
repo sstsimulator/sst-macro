@@ -3,7 +3,7 @@
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/software/launch/launch_event.h>
 #include <sstmac/software/launch/job_launch_event.h>
-#include <sstmac/software/process/app_manager.h>
+#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/common/runtime.h>
 #include <sprockit/util.h>
 
@@ -31,7 +31,7 @@ job_launcher::set_interconnect(hw::interconnect *ic)
   }
 }
 
-app_manager*
+app_launch*
 job_launcher::task_mapper(app_id aid) const
 {
   auto iter = apps_launched_.find(aid);
@@ -52,12 +52,12 @@ job_launcher::node_for_task(app_id aid, task_id tid) const
                "cannot find launched application %d",
                int(aid));
   }
-  app_manager* appman = iter->second;
+  app_launch* appman = iter->second;
   return appman->node_assignment(int(tid));
 }
 
 void
-default_job_launcher::handle_new_launch_request(int appnum, app_manager* appman)
+default_job_launcher::handle_new_launch_request(int appnum, app_launch* appman)
 {
   ordered_node_set allocation;
   appman->request_allocation(available_, allocation);
@@ -72,7 +72,6 @@ default_job_launcher::handle_new_launch_request(int appnum, app_manager* appman)
   appman->index_allocation(allocation);
   apps_launched_[appnum] = appman;
 
-  launch_info* linfo = appman->launch_info();
   sstmac::sw::app_id aid(appnum);
   for (int i=0; i < appman->nproc(); ++i) {
     node_id dst_nid = appman->node_assignment(i);
@@ -83,7 +82,8 @@ default_job_launcher::handle_new_launch_request(int appnum, app_manager* appman)
       continue;
     }
 
-    sw::launch_event* lmsg = new launch_event(linfo, sw::launch_event::ARRIVE, task_id(i));
+    sw::launch_event* lmsg = new launch_event(appman->app_template(),
+                                    aid, task_id(i), appman->core_affinities());
     dst_node->handle(lmsg);
   }
 

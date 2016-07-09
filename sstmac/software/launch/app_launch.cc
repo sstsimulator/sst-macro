@@ -2,8 +2,7 @@
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/software/process/app.h>
-#include <sstmac/software/process/app_manager.h>
-#include <sstmac/software/launch/launch_info.h>
+#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/dumpi_util/dumpi_meta.h>
 #include <sprockit/output.h>
 #include <sprockit/sim_parameters.h>
@@ -14,26 +13,25 @@
 #include <unistd.h>
 #include <getopt.h>
 
-ImplementFactory(sstmac::sw::app_manager);
-RegisterNamespaces("app_manager");
+ImplementFactory(sstmac::sw::app_launch);
+RegisterNamespaces("app_launch");
 
 namespace sstmac {
 namespace sw {
 
-std::map<int, app_manager*> app_manager::static_app_managers_;
+std::map<int, app_launch*> app_launch::static_app_launches_;
 
-SpktRegister("default", app_manager, app_manager);
+SpktRegister("default", app_launch, app_launch);
 
-app_manager::~app_manager()
+app_launch::~app_launch()
 {
   delete app_template_;
   delete allocator_;
   delete indexer_;
-  delete linfo_;
 }
 
 void
-app_manager::set_topology(hw::topology *top)
+app_launch::set_topology(hw::topology *top)
 {
   top_ = top;
   indexer_->set_topology(top_);
@@ -41,7 +39,7 @@ app_manager::set_topology(hw::topology *top)
 }
 
 void
-app_manager::init_factory_params(sprockit::sim_parameters* params)
+app_launch::init_factory_params(sprockit::sim_parameters* params)
 {
   appname_ = params->get_param("name");
 
@@ -68,31 +66,25 @@ app_manager::init_factory_params(sprockit::sim_parameters* params)
   indexer_ = sw::task_mapper_factory::get_optional_param("launch_indexing",
                "block", params, rt_);
 
-  linfo_ = new sw::launch_info(
-             app_template_,
-             aid_,
-             nproc_,
-             core_affinities_);
-
   STATIC_INIT_INTERCONNECT(params)
 }
 
-app_manager*
-app_manager::static_app_manager(int aid, sprockit::sim_parameters* params)
+app_launch*
+app_launch::static_app_launch(int aid, sprockit::sim_parameters* params)
 {
-  spkt_throw(sprockit::unimplemented_error, "static_app_manager");
-  if (!static_app_managers_[aid]){
+  spkt_throw(sprockit::unimplemented_error, "static_app_launch");
+  if (!static_app_launches_[aid]){
     std::string app_namespace = sprockit::printf("app%d", aid);
     sprockit::sim_parameters* app_params = params->top_parent()->get_namespace(app_namespace);
-    app_manager* mgr = app_manager_factory::get_optional_param(
+    app_launch* mgr = app_launch_factory::get_optional_param(
           "launch_type", "skeleton", app_params, app_id(aid), 0/*no parallel runtime*/);
-    static_app_managers_[aid] = mgr;
+    static_app_launches_[aid] = mgr;
   }
-  return static_app_managers_[aid];
+  return static_app_launches_[aid];
 }
 
 void
-app_manager::index_allocation(const ordered_node_set &allocation)
+app_launch::index_allocation(const ordered_node_set &allocation)
 {
   indexer_->map_ranks(aid_, allocation,
                procs_per_node_, rank_to_node_indexing_,
@@ -128,7 +120,7 @@ app_manager::index_allocation(const ordered_node_set &allocation)
 }
 
 void
-app_manager::request_allocation(
+app_launch::request_allocation(
   const sw::ordered_node_set& available,
   sw::ordered_node_set& allocation)
 {
@@ -141,7 +133,7 @@ app_manager::request_allocation(
 }
 
 void
-app_manager::parse_launch_cmd(
+app_launch::parse_launch_cmd(
   sprockit::sim_parameters* params,
   int& nproc,
   int& procs_per_node,
@@ -185,13 +177,13 @@ app_manager::parse_launch_cmd(
 }
 
 void
-app_manager::parse_launch_cmd(sprockit::sim_parameters* params)
+app_launch::parse_launch_cmd(sprockit::sim_parameters* params)
 {
   parse_launch_cmd(params, nproc_, procs_per_node_, core_affinities_);
 }
 
 void
-app_manager::parse_aprun(
+app_launch::parse_aprun(
   const std::string &cmd,
   int &nproc, int &nproc_per_node,
   std::vector<int>& core_affinities)

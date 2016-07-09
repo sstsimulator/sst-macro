@@ -29,7 +29,7 @@
 #include <sstmac/software/libraries/service_fwd.h>
 #include <sstmac/software/process/ftq_fwd.h>
 #include <sstmac/software/process/graphviz_fwd.h>
-#include <sstmac/software/process/app_manager_fwd.h>
+#include <sstmac/software/launch/app_launch_fwd.h>
 #include <sstmac/software/process/compute_scheduler_fwd.h>
 
 #include <sstmac/hardware/node/node_fwd.h>

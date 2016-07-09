@@ -15,7 +15,7 @@
 #include <sstmac/software/launch/coordinate_task_mapper.h>
 #include <sstmac/software/launch/coordinate_allocation.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/process/app_manager.h>
+#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/launch/launcher.h>
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/common/runtime.h>

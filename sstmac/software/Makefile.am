@@ -29,7 +29,6 @@ libsstmac_sw_la_SOURCES = \
   process/global.cc \
   process/graphviz.cc \
   process/ftq.cc \
-  process/app_manager.cc \
   process/operating_system.cc \
   process/api.cc \
   process/thread.cc \
@@ -52,6 +51,7 @@ libsstmac_sw_la_SOURCES = \
   libraries/compute/sstmac_compute.cc \
   libraries/unblock_event.cc \
   libraries/service.cc \
+  launch/app_launch.cc \
   launch/node_allocator.cc \
   launch/cart_allocation.cc \
   launch/coordinate_allocation.cc \
@@ -69,8 +69,7 @@ libsstmac_sw_la_SOURCES = \
   launch/round_robin_task_mapper.cc \
   launch/node_id_task_mapper.cc \
   launch/job_launcher.cc \
-  launch/launcher.cc \
-  launch/launch_info.cc 
+  launch/launcher.cc 
 
 
 library_includedir=$(includedir)/sstmac/software
@@ -79,8 +78,6 @@ nobase_library_include_HEADERS = \
   ami/ami.h \
   api/api.h \
   api/api_fwd.h \
-  process/app_manager.h \
-  process/app_manager_fwd.h \
   process/pmi.h \
   process/simple_compute_scheduler.h \
   process/cpuset_compute_scheduler.h \
@@ -139,6 +136,8 @@ nobase_library_include_HEADERS = \
   libraries/unblock_event.h \
   libraries/service.h \
   libraries/service_fwd.h \
+  launch/app_launch.h \
+  launch/app_launch_fwd.h \
   launch/node_allocator.h \
   launch/cart_allocation.h  \
   launch/coordinate_allocation.h \
@@ -160,8 +159,6 @@ nobase_library_include_HEADERS = \
   launch/launcher.h \
   launch/launcher_fwd.h \
   launch/launch_handler.h \
-  launch/launch_info.h  \
-  launch/launch_info_fwd.h  \
   launch/job_launch_event.h \
   launch/launch_event.h  \
   launch/launch_event_fwd.h  \

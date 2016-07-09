@@ -15,7 +15,8 @@
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/common/messages/library_message.h>
 #include <sstmac/common/messages/timed_event.h>
-#include <sstmac/software/launch/launch_info.h>
+#include <sstmac/software/process/app_fwd.h>
+#include <sstmac/software/process/app_id.h>
 
 namespace sstmac {
 namespace sw {
@@ -26,20 +27,19 @@ class launch_event :
   public timed_interface
 {
   NotSerializable(launch_event)
- public:
-  enum LAUNCHTYPE {
-    ARRIVE, START, COMPLETE, KILL, RESTART
-  };
 
  public:
-  launch_event(launch_info* i,
-                 LAUNCHTYPE t,
-                 task_id tid) :
+  launch_event(app* apptype,
+               app_id aid,
+               task_id tid,
+               const std::vector<int>& core_affinities) :
     library_interface("launcher"),
     timed_interface(timestamp(0)),
-    info_(i),
-    launchtype_(t),
-    tid_(tid) {
+    tid_(tid),
+    aid_(aid),
+    apptype_(apptype),
+    core_affinities_(core_affinities)
+  {
   }
 
   /**
@@ -48,17 +48,7 @@ class launch_event :
    */
   virtual std::string
   to_string() const {
-    return "launch_message";
-  }
-
-  launch_info*
-  info() {
-    return info_;
-  }
-
-  LAUNCHTYPE
-  launch_type() const {
-    return launchtype_;
+    return "launch event";
   }
 
   task_id
@@ -66,11 +56,24 @@ class launch_event :
     return tid_;
   }
 
- protected:
-  launch_info* info_;
-  LAUNCHTYPE launchtype_;
-  task_id tid_;
+  app_id
+  aid() const {
+    return aid_;
+  }
 
+  app*
+  app_template() const {
+    return apptype_;
+  }
+
+  int
+  core_affinity(int intranode_rank) const;
+
+ protected:
+  task_id tid_;
+  app* apptype_;
+  app_id aid_;
+  std::vector<int> core_affinities_;
 };
 
 }

@@ -2,8 +2,7 @@
 #define JOB_LAUNCH_EVENT_H
 
 #include <sstmac/common/sst_event.h>
-#include <sstmac/software/launch/launch_info_fwd.h>
-#include <sstmac/software/process/app_manager_fwd.h>
+#include <sstmac/software/launch/app_launch_fwd.h>
 
 namespace sstmac {
 namespace sw {
@@ -14,7 +13,7 @@ class job_launch_event :
   NotSerializable(job_launch_event)
 
  public:
-  job_launch_event(int appnum, app_manager* appman) :
+  job_launch_event(int appnum, app_launch* appman) :
     appnum_(appnum), appman_(appman)
   {
   }
@@ -23,7 +22,7 @@ class job_launch_event :
     return appnum_;
   }
 
-  app_manager*
+  app_launch*
   appman() const {
     return appman_;
   }
@@ -35,7 +34,7 @@ class job_launch_event :
 
  private:
   int appnum_;
-  app_manager* appman_;
+  app_launch* appman_;
 };
 
 }

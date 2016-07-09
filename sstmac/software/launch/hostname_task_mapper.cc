@@ -16,7 +16,7 @@
 #include <sstmac/software/launch/hostname_allocation.h>
 #include <sstmac/software/launch/launcher.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/process/app_manager.h>
+#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/common/runtime.h>
 #include <sprockit/fileio.h>
 #include <sprockit/errors.h>

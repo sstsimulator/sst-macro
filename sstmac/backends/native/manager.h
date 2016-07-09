@@ -15,7 +15,7 @@
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/event_manager_fwd.h>
 #include <sstmac/software/process/app_id.h>
-#include <sstmac/software/process/app_manager_fwd.h>
+#include <sstmac/software/launch/app_launch_fwd.h>
 #include <sstmac/hardware/node/node_fwd.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/software/launch/job_launcher_fwd.h>
@@ -77,7 +77,7 @@ class manager : public sprockit::factory_type {
   /// Next parallel process id.
   sstmac::sw::app_id next_ppid_;
 
-  std::map<int, sw::app_manager*> app_managers_;
+  std::map<int, sw::app_launch*> app_managers_;
   std::map<int, timestamp> app_starts_;
 
   sstmac::hw::interconnect* interconnect_;
@@ -113,7 +113,7 @@ class macro_manager : public manager
 
  private:
   void
-  launch_app(int appnum, timestamp start, sw::app_manager* appman);
+  launch_app(int appnum, timestamp start, sw::app_launch* appman);
 
   void
   launch_apps();

@@ -4,7 +4,7 @@
 namespace sstmac {
 namespace sw {
 
-class app_manager;
+class app_launch;
 
 }
 }

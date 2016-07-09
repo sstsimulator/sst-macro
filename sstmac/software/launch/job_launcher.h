@@ -4,9 +4,11 @@
 #include <sprockit/factories/factory.h>
 #include <sprockit/unordered.h>
 #include <sstmac/common/event_handler.h>
-#include <sstmac/software/launch/launch_info.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/software/launch/node_set.h>
+#include <sstmac/software/process/task_id.h>
+#include <sstmac/software/process/app_id.h>
+#include <sstmac/software/launch/app_launch_fwd.h>
 
 namespace sstmac {
 namespace sw {
@@ -34,7 +36,7 @@ class job_launcher :
   node_id
   node_for_task(app_id aid, task_id tid) const;
 
-  app_manager*
+  app_launch*
   task_mapper(app_id aid) const;
 
  private:
@@ -47,14 +49,14 @@ class job_launcher :
    *                of the application being launched
    */
   virtual void
-  handle_new_launch_request(int appnum, app_manager* appman) = 0;
+  handle_new_launch_request(int appnum, app_launch* appman) = 0;
 
  protected:
   hw::interconnect* interconnect_;
   ordered_node_set allocated_;
   ordered_node_set available_;
 
-  std::map<app_id, app_manager*> apps_launched_;
+  std::map<app_id, app_launch*> apps_launched_;
 
 };
 
@@ -70,7 +72,7 @@ class default_job_launcher :
   }
 
  private:
-  void handle_new_launch_request(int appnum, app_manager* appman);
+  void handle_new_launch_request(int appnum, app_launch* appman);
 
 };
 

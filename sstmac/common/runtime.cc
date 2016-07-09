@@ -1,7 +1,7 @@
 #include <sstmac/common/runtime.h>
 #include <sprockit/statics.h>
 #include <sprockit/delete.h>
-#include <sstmac/software/process/app_manager.h>
+#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/node/node.h>

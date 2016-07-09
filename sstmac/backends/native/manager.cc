@@ -28,7 +28,7 @@
 #include <sstmac/software/launch/launch_event.h>
 #include <sstmac/software/launch/job_launcher.h>
 #include <sstmac/software/launch/job_launch_event.h>
-#include <sstmac/software/process/app_manager.h>
+#include <sstmac/software/launch/app_launch.h>
 
 #include <sprockit/driver_util.h>
 #include <sprockit/keyword_registration.h>
@@ -125,7 +125,7 @@ manager::compute_max_nproc_for_app(sprockit::sim_parameters* app_params)
   }
   int nproc, procs_per_node;
   std::vector<int> ignore;
-  app_manager::parse_launch_cmd(app_params, nproc,
+  app_launch::parse_launch_cmd(app_params, nproc,
     procs_per_node, ignore);
   return std::max(nproc, max_nproc);
 }
@@ -155,7 +155,7 @@ manager::build_app(int appnum, sprockit::sim_parameters* params)
   timestamp start = params->get_optional_time_param("start", 0);
 
   sstmac::sw::app_id aid(appnum);
-  app_manager* appman = app_manager_factory::get_optional_param(
+  app_launch* appman = app_launch_factory::get_optional_param(
         "launch_type", "default", params, aid, rt_);
   appman->set_topology(interconnect_->topol());
 
@@ -188,7 +188,7 @@ manager::~manager() throw ()
 
   if (interconnect_) delete interconnect_;
 
-  std::map<int, app_manager*>::iterator it, end = app_managers_.end();
+  std::map<int, app_launch*>::iterator it, end = app_managers_.end();
   for (it=app_managers_.begin(); it != end; ++it){
     delete it->second;
   }
@@ -299,7 +299,7 @@ macro_manager::finish()
 }
 
 void
-macro_manager::launch_app(int appnum, timestamp start, sw::app_manager* appman)
+macro_manager::launch_app(int appnum, timestamp start, sw::app_launch* appman)
 {
   sw::job_launch_event* ev = new sw::job_launch_event(appnum, appman);
   event_manager_->schedule(start, appnum,
@@ -309,10 +309,10 @@ macro_manager::launch_app(int appnum, timestamp start, sw::app_manager* appman)
 void
 macro_manager::launch_apps()
 {
-  std::map<int, app_manager*>::iterator it, end = app_managers_.end();
+  std::map<int, app_launch*>::iterator it, end = app_managers_.end();
   for (it=app_managers_.begin(); it != end; ++it){
     int appnum = it->first;
-    app_manager* appman = it->second;
+    app_launch* appman = it->second;
     timestamp start = app_starts_[appnum];
     launch_app(appnum, start, appman);
   }

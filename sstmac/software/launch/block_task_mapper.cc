@@ -11,7 +11,7 @@
 
 #include <sstmac/software/launch/block_task_mapper.h>
 #include <sstmac/software/launch/launcher.h>
-#include <sstmac/software/process/app_manager.h>
+#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/common/runtime.h>
 #include <sprockit/errors.h>
 #include <math.h>

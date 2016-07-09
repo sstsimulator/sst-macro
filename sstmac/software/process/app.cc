@@ -13,7 +13,6 @@
 #include <sstmac/software/api/api.h>
 #include <sstmac/software/process/api.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/launch/launch_info.h>
 #include <sstmac/common/sstmac_env.h>
 #include <sstmac/common/logger.h>
 #include <sprockit/statics.h>

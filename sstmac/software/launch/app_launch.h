@@ -10,7 +10,6 @@
 #include <sprockit/unordered.h>
 
 #include <sstmac/software/process/app_fwd.h>
-#include <sstmac/software/launch/launch_info_fwd.h>
 #include <sstmac/hardware/node/node_fwd.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
@@ -24,8 +23,8 @@
 #if SSTMAC_INTEGRATED_SST_CORE
 #define STATIC_INIT_APP_MANAGER(params) \
 { \
-  sstmac::sw::app_manager* mgr = sstmac::sw::app_manager::static_app_manager(params); \
-  set_app_manager(mgr); \
+  sstmac::sw::app_launch* mgr = sstmac::sw::app_launch::static_app_launch(params); \
+  set_app_launch(mgr); \
 }
 
 #else
@@ -35,12 +34,12 @@
 namespace sstmac {
 namespace sw {
 
-class app_manager :
+class app_launch :
   public sprockit::factory_type
 {
 
  public:
-  virtual ~app_manager();
+  virtual ~app_launch();
 
   int
   nproc() const {
@@ -60,6 +59,16 @@ class app_manager :
   virtual void
   init_param1(sw::app_id aid) {
     aid_ = aid;
+  }
+
+  app*
+  app_template() const {
+    return app_template_;
+  }
+
+  std::vector<int>
+  core_affinities() const {
+    return core_affinities_;
   }
 
   virtual void
@@ -98,13 +107,8 @@ class app_manager :
   void
   index_allocation(const ordered_node_set& allocation);
 
-  sw::launch_info*
-  launch_info() const {
-    return linfo_;
-  }
-
-  static app_manager*
-  static_app_manager(int aid, sprockit::sim_parameters* params);
+  static app_launch*
+  static_app_launch(int aid, sprockit::sim_parameters* params);
 
   static void
   parse_aprun(const std::string& cmd, int& nproc, int& nproc_per_node,
@@ -122,7 +126,6 @@ class app_manager :
   sw::task_mapper* indexer_;
   std::vector<node_id> rank_to_node_indexing_;
   std::vector<std::list<int> > node_to_rank_indexing_;
-  sw::launch_info* linfo_;
 
   parallel_runtime* rt_;
 
@@ -143,13 +146,13 @@ class app_manager :
   void parse_launch_cmd(sprockit::sim_parameters* params);
 
  private:
-  static std::map<int, app_manager*> static_app_managers_;
+  static std::map<int, app_launch*> static_app_launches_;
 
   void init_launch_info();
 
 };
 
-DeclareFactory2InitParams(app_manager, sw::app_id, parallel_runtime*);
+DeclareFactory2InitParams(app_launch, sw::app_id, parallel_runtime*);
 
 }
 }

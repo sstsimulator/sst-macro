@@ -1,6 +1,6 @@
 #include <sstmac/libraries/blas/blas_api.h>
 #include <sstmac/software/process/app.h>
-#include <sstmac/software/process/app_manager.h>
+#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/launch/launcher.h>
 

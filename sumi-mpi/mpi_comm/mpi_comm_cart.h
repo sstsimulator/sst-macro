@@ -16,7 +16,7 @@
 
 namespace sumi {
 
-using sstmac::sw::app_manager;
+using sstmac::sw::app_launch;
 using sstmac::sw::app_id;
 
 class mpi_comm_cart : public mpi_comm
