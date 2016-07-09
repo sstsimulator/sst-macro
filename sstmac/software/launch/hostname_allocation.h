@@ -12,7 +12,7 @@
 #ifndef SSTMAC_BACKENDS_NATIVE_LAUNCH_hostname_allocation_H_INCLUDED
 #define SSTMAC_BACKENDS_NATIVE_LAUNCH_hostname_allocation_H_INCLUDED
 
-#include <sstmac/software/launch/allocation_strategy.h>
+#include <sstmac/software/launch/node_allocator.h>
 #include <sstmac/dumpi_util/dumpi_meta.h>
 
 #include <sstmac/hardware/topology/structured_topology.h>
@@ -20,7 +20,7 @@
 namespace sstmac {
 
 namespace sw {
-class hostname_allocation : public allocation_strategy
+class hostname_allocation : public node_allocator
 {
 
  public:
@@ -41,8 +41,8 @@ class hostname_allocation : public allocation_strategy
 
   virtual void
   allocate(int nnode_requested,
-    const node_set& available,
-    node_set &allocation) const;
+    const ordered_node_set& available,
+    ordered_node_set &allocation) const;
 
   virtual
   ~hostname_allocation() throw () {

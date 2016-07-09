@@ -7,7 +7,7 @@
 namespace sstmac {
 namespace sw {
 
-SpktRegister("random", allocation_strategy, random_allocation,
+SpktRegister("random", node_allocator, random_allocation,
             "Allocate a random set of nodes from the list of available nodes. This will give a non-contiguous allocation.");
 
 random_allocation::~random_allocation() throw ()
@@ -17,7 +17,7 @@ random_allocation::~random_allocation() throw ()
 void
 random_allocation::init_factory_params(sprockit::sim_parameters *params)
 {
-  allocation_strategy::init_factory_params(params);
+  node_allocator::init_factory_params(params);
   int seed = params->get_optional_int_param("random_allocation_seed", -1);
   if (seed == -1){
     seed = time(NULL);
@@ -28,8 +28,8 @@ random_allocation::init_factory_params(sprockit::sim_parameters *params)
 void
 random_allocation::allocate(
   int nnode_requested,
-  const node_set& available,
-  node_set &allocation) const
+  const ordered_node_set& available,
+  ordered_node_set& allocation) const
 {
   if (available.size() < nnode_requested){
     spkt_throw_printf(sprockit::value_error,

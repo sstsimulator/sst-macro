@@ -9,7 +9,7 @@
  *  SST/macroscale directory.
  */
 
-#include <sstmac/software/launch/block_indexing.h>
+#include <sstmac/software/launch/block_task_mapper.h>
 #include <sstmac/software/launch/launcher.h>
 #include <sstmac/software/process/app_manager.h>
 #include <sstmac/common/runtime.h>
@@ -21,18 +21,19 @@
 namespace sstmac  {
 namespace sw {
 
-SpktRegister("block", index_strategy, block_indexing,
-            "Tries to group consecutive MPI ranks on the same node (i.e. in a block). Otherwise, indexes in the same order as the allocation list.");
+SpktRegister("block", task_mapper, block_task_mapper,
+   "Tries to group consecutive MPI ranks on the same node (i.e. in a block)."
+   "Otherwise, indexes in the same order as the allocation list.");
 
 
-block_indexing::~block_indexing() throw()
+block_task_mapper::~block_task_mapper() throw()
 {
 }
 
 void
-block_indexing::allocate(
+block_task_mapper::map_ranks(
   const app_id& aid,
-  const node_set &nodes,
+  const ordered_node_set& nodes,
   int ppn,
   std::vector<node_id> &result,
   int nproc)
@@ -40,7 +41,7 @@ block_indexing::allocate(
   nproc = validate_nproc(ppn, nodes.size(), nproc, "blockindexing");
 
   result.clear();
-  node_set::const_iterator it, end = nodes.end();
+  ordered_node_set::const_iterator it, end = nodes.end();
   long i = 0;
 
   int num_physical_nodes = nproc / ppn;

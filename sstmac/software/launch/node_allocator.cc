@@ -14,22 +14,23 @@
 #include <iterator>
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/topology/topology.h>
-#include <sstmac/software/launch/allocation_strategy.h>
+#include <sstmac/software/launch/node_allocator.h>
 #include <sprockit/errors.h>
 
-ImplementFactory(sstmac::sw::allocation_strategy);
+ImplementFactory(sstmac::sw::node_allocator);
+
 RegisterDebugSlot(allocation);
 
 namespace sstmac {
 namespace sw {
 
 
-allocation_strategy::~allocation_strategy() throw ()
+node_allocator::~node_allocator() throw ()
 {
 }
 
 void
-allocation_strategy::init_factory_params(sprockit::sim_parameters *params)
+node_allocator::init_factory_params(sprockit::sim_parameters *params)
 {
   STATIC_INIT_TOPOLOGY(params);
 }

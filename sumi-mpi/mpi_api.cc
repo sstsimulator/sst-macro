@@ -174,13 +174,8 @@ mpi_api::do_init(int* argc, char*** argv)
     spkt_throw(sprockit::null_error, "mpiapi::init: os has not been initialized yet");
   }
 
-  app_manager* env = os_->env(id_.app_);
-  if (!env) {
-    spkt_throw(sprockit::null_error, "mpi_api::init: no environment found");
-  }
-
   comm_factory_ = new mpi_comm_factory(id_.app_, this);
-  comm_factory_->init(env, rank_);
+  comm_factory_->init(rank_, transport::nproc_);
 
   worldcomm_ = comm_factory_->world();
   selfcomm_ = comm_factory_->self();

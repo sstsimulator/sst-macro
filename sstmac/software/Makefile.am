@@ -52,7 +52,7 @@ libsstmac_sw_la_SOURCES = \
   libraries/compute/sstmac_compute.cc \
   libraries/unblock_event.cc \
   libraries/service.cc \
-  launch/allocation_strategy.cc \
+  launch/node_allocator.cc \
   launch/cart_allocation.cc \
   launch/coordinate_allocation.cc \
   launch/random_allocation.cc \
@@ -60,14 +60,14 @@ libsstmac_sw_la_SOURCES = \
   launch/hostname_allocation.cc \
   launch/dumpi_allocation.cc \
   launch/first_available_allocation.cc \
-  launch/index_strategy.cc \
-  launch/block_indexing.cc \
-  launch/coordinate_indexing.cc \
-  launch/dumpi_indexer.cc \
-  launch/hostname_indexer.cc \
-  launch/random_indexing.cc \
-  launch/round_robin_indexing.cc \
-  launch/node_id_indexing.cc \
+  launch/task_mapper.cc \
+  launch/block_task_mapper.cc \
+  launch/coordinate_task_mapper.cc \
+  launch/dumpi_task_mapper.cc \
+  launch/hostname_task_mapper.cc \
+  launch/random_task_mapper.cc \
+  launch/round_robin_task_mapper.cc \
+  launch/node_id_task_mapper.cc \
   launch/job_launcher.cc \
   launch/launcher.cc \
   launch/launch_info.cc 
@@ -139,7 +139,7 @@ nobase_library_include_HEADERS = \
   libraries/unblock_event.h \
   libraries/service.h \
   libraries/service_fwd.h \
-  launch/allocation_strategy.h \
+  launch/node_allocator.h \
   launch/cart_allocation.h  \
   launch/coordinate_allocation.h \
   launch/node_id_allocation.h \
@@ -147,14 +147,15 @@ nobase_library_include_HEADERS = \
   launch/hostname_allocation.h \
   launch/dumpi_allocation.h \
   launch/first_available_allocation.h \
-  launch/index_strategy.h \
-  launch/block_indexing.h \
-  launch/coordinate_indexing.h \
-  launch/dumpi_indexer.h \
-  launch/hostname_indexer.h \
-  launch/random_indexing.h \
-  launch/node_id_indexing.h \
-  launch/round_robin_indexing.h  \
+  launch/task_mapper.h \
+  launch/block_task_mapper.h \
+  launch/coordinate_task_mapper.h \
+  launch/dumpi_task_mapper.h \
+  launch/hostname_task_mapper.h \
+  launch/random_task_mapper.h \
+  launch/node_id_task_mapper.h \
+  launch/round_robin_task_mapper.h  \
+  launch/node_set.h \
   launch/job_launcher.h \
   launch/launcher.h \
   launch/launcher_fwd.h \

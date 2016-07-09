@@ -9,7 +9,7 @@
  *  SST/macroscale directory.
  */
 
-#include <sstmac/software/launch/random_indexing.h>
+#include <sstmac/software/launch/random_task_mapper.h>
 #include <sprockit/errors.h>
 #include <sprockit/sim_parameters.h>
 #include <algorithm>
@@ -18,13 +18,13 @@
 namespace sstmac {
 namespace sw {
 
-SpktRegister("random", index_strategy, random_indexing,
+SpktRegister("random", task_mapper, random_task_mapper,
             "randomly assigns tasks to nodes");
 
 void
-random_indexing::init_factory_params(sprockit::sim_parameters *params)
+random_task_mapper::init_factory_params(sprockit::sim_parameters *params)
 {
-  index_strategy::init_factory_params(params);
+  task_mapper::init_factory_params(params);
   if(params->has_param("random_indexer_seed")) {
     long seed = params->get_long_param("random_indexer_seed");
     rng_ = RNG::SimpleCombo::construct(seed);
@@ -34,21 +34,21 @@ random_indexing::init_factory_params(sprockit::sim_parameters *params)
   }
 }
 
-random_indexing::~random_indexing() throw ()
+random_task_mapper::~random_task_mapper() throw ()
 {
 }
 
 void
-random_indexing::allocate(
+random_task_mapper::map_ranks(
   const app_id& aid,
-  const node_set &nodes,
+  const ordered_node_set& nodes,
   int ppn,
   std::vector<node_id> &result,
   int nproc)
 {
   nproc = validate_nproc(ppn, nodes.size(), nproc, "randomindexing");
 
-  node_set::iterator iter = nodes.begin();
+  ordered_node_set::iterator iter = nodes.begin();
   for(long i = 0; i < nproc / ppn; i++) {
     iter++;
   }

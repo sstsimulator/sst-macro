@@ -12,23 +12,23 @@
 #ifndef SSTMAC_SOFTWARE_SERVICES_LAUNCH_INDEXING_FROMFILEINDEXER_H_INCLUDED
 #define SSTMAC_SOFTWARE_SERVICES_LAUNCH_INDEXING_FROMFILEINDEXER_H_INCLUDED
 
-#include <sstmac/software/launch/index_strategy.h>
+#include <sstmac/software/launch/task_mapper.h>
 
 namespace sstmac {
 namespace sw {
 
 
-class hostname_indexer : public index_strategy
+class hostname_task_mapper : public task_mapper
 {
 
  public:
   virtual void
   init_factory_params(sprockit::sim_parameters *params);
 
-  virtual ~hostname_indexer() throw() {}
+  virtual ~hostname_task_mapper() throw() {}
 
-  void allocate(const app_id& aid,
-                const node_set &nodes,
+  void map_ranks(const app_id& aid,
+                const ordered_node_set& nodes,
                 int ppn,
                 std::vector<node_id> &result,
                 int nproc);

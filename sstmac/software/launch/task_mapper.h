@@ -16,11 +16,10 @@
 #include <sstmac/software/process/app_id.h>
 #include <sstmac/backends/common/parallel_runtime_fwd.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
-#include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sprockit/debug.h>
 #include <sprockit/factories/factory.h>
-#include <set>
 #include <vector>
+#include <sstmac/software/launch/node_set.h>
 
 DeclareDebugSlot(indexing);
 
@@ -31,16 +30,14 @@ namespace sw {
  * Base class for strategies regarding how to sequentially number nodes
  * in a parallel simulation.
  */
-class index_strategy :
+class task_mapper :
   public sprockit::factory_type
 {
- public:
-  typedef std::set<node_id> node_set;
 
  public:
   virtual std::string
   to_string() const {
-    return "index strategy";
+    return "task mapper";
   }
 
   virtual void
@@ -57,11 +54,11 @@ class index_strategy :
   init_factory_params(sprockit::sim_parameters *params);
 
   virtual
-  ~index_strategy() throw ();
+  ~task_mapper() throw ();
 
   /** Assign processes to nodes.
    @param aid The application ID for the application whose processes are being indexed
-   @param nodes is the list of unique nodes to be used for the allocation
+   @param nodes is the set of unique nodes to be used for the allocation
    @param ppn is the nominal number of processes allocated on each node.
    @param result is the resulting vector of length nodes (size nproc)
    @param nproc the total number of processes to allocate
@@ -70,15 +67,15 @@ class index_strategy :
    @throw value_error if nodes.size()*ppn < nproc
   */
   virtual void
-  allocate(
+  map_ranks(
     const app_id& aid,
-    const node_set& allocation,
+    const ordered_node_set& allocation,
     int ppn,
-    std::vector<node_id> &result,
+    std::vector<node_id>& result,
     int nproc) = 0;
 
  protected:
-  index_strategy() :
+  task_mapper() :
     rt_(0), topology_(0) {}
 
   int
@@ -90,7 +87,7 @@ class index_strategy :
 
 };
 
-DeclareFactory1InitParam(index_strategy, parallel_runtime*);
+DeclareFactory1InitParam(task_mapper, parallel_runtime*);
 
 }
 } // end of namespace sstmac

@@ -27,8 +27,10 @@ class mpi_comm_cart : public mpi_comm
   mpi_comm_cart(
     MPI_Comm id,
     int rank, mpi_group* peers,
-    app_manager* env, app_id aid, int ndims,
-    const int *dims, const int *periods, int reorder);
+    app_id aid, int ndims,
+    const int *dims,
+    const int *periods,
+    int reorder);
 
   /// Goodbye.
   virtual

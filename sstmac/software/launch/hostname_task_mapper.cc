@@ -12,7 +12,7 @@
 #include <fstream>
 #include <sstream>
 #include <sstmac/backends/common/parallel_runtime.h>
-#include <sstmac/software/launch/hostname_indexer.h>
+#include <sstmac/software/launch/hostname_task_mapper.h>
 #include <sstmac/software/launch/hostname_allocation.h>
 #include <sstmac/software/launch/launcher.h>
 #include <sstmac/software/process/operating_system.h>
@@ -25,20 +25,20 @@
 namespace sstmac {
 namespace sw {
 
-SpktRegister("hostname", index_strategy, hostname_indexer,
+SpktRegister("hostname", task_mapper, hostname_task_mapper,
             "assigns tasks to nodes based on hostname map of topology and hostname list in file");
 
 void
-hostname_indexer::init_factory_params(sprockit::sim_parameters *params)
+hostname_task_mapper::init_factory_params(sprockit::sim_parameters *params)
 {
-  index_strategy::init_factory_params(params);
+    task_mapper::init_factory_params(params);
   listfile_ = params->get_param("launch_hostname_list");
 }
 
 void
-hostname_indexer::allocate(
+hostname_task_mapper::map_ranks(
   const app_id& aid,
-  const node_set &nodes,
+  const ordered_node_set& nodes,
   int ppn,
   std::vector<node_id> &result,
   int nproc)
@@ -88,7 +88,7 @@ hostname_indexer::allocate(
     node_id nid = nid_it->second;
 
     debug_printf(sprockit::dbg::indexing,
-        "hostname_indexer: rank %d is on hostname %s at nid=%d",
+        "hostname_task_mapper: rank %d is on hostname %s at nid=%d",
         i, hostname.c_str(), int(nid));
 
     result[i] = nid;

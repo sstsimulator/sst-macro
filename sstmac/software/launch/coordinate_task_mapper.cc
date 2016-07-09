@@ -12,7 +12,7 @@
 #include <fstream>
 #include <sstream>
 
-#include <sstmac/software/launch/coordinate_indexing.h>
+#include <sstmac/software/launch/coordinate_task_mapper.h>
 #include <sstmac/software/launch/coordinate_allocation.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/app_manager.h>
@@ -27,21 +27,21 @@
 namespace sstmac {
 namespace sw {
 
-SpktRegister("coordinate", index_strategy, coordinate_indexing,
+SpktRegister("coordinate", task_mapper, coordinate_task_mapper,
             "assigns tasks to nodes based on hostname map of topology and hostname list in file");
 
 
 void
-coordinate_indexing::init_factory_params(sprockit::sim_parameters *params)
+coordinate_task_mapper::init_factory_params(sprockit::sim_parameters *params)
 {
-  index_strategy::init_factory_params(params);
+  task_mapper::init_factory_params(params);
   listfile_ = params->get_param("launch_coordinate_file");
 }
 
 void
-coordinate_indexing::allocate(
+coordinate_task_mapper::map_ranks(
   const app_id& aid,
-  const node_set &nodes,
+  const ordered_node_set& nodes,
   int ppn,
   std::vector<node_id> &result,
   int nproc)

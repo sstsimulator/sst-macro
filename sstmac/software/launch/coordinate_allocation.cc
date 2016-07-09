@@ -12,12 +12,12 @@
 namespace sstmac {
 namespace sw {
 
-SpktRegister("coordinate", allocation_strategy, coordinate_allocation);
+SpktRegister("coordinate", node_allocator, coordinate_allocation);
 
 void
 coordinate_allocation::init_factory_params(sprockit::sim_parameters* params)
 {
-  allocation_strategy::init_factory_params(params);
+  node_allocator::init_factory_params(params);
   coord_file_ = params->get_param("launch_coordinate_file");
 }
 
@@ -51,8 +51,8 @@ coordinate_allocation::read_coordinate_file(
 void
 coordinate_allocation::allocate(
   int nnode_requested,
-  const node_set& available,
-  node_set& allocation) const
+  const ordered_node_set& available,
+  ordered_node_set& allocation) const
 {
   std::vector<hw::coordinates> node_list;
   read_coordinate_file(rt_, coord_file_, node_list);

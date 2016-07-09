@@ -109,7 +109,7 @@ class sumi_api :
 
   sstmac::sw::software_id sid_;
 
-  sstmac::sw::app_manager* env_;
+  sstmac::sw::app_manager* rank_mapper_;
 
   /**
    * @brief queue_

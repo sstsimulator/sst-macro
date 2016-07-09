@@ -732,12 +732,6 @@ operating_system::task_threadid(const task_id &id) const
   return it->second;
 }
 
-node_id
-operating_system::task_addr(software_id sid) const
-{
-  return runtime::app_mgr(sid.app_)->node_for_task(sid.task_);
-}
-
 void
 operating_system::register_lib(void* owner, library* lib)
 {
@@ -815,12 +809,6 @@ operating_system::lib(const std::string& name) const
   else {
     return it->second;
   }
-}
-
-app_manager*
-operating_system::env(app_id aid) const
-{
-  return runtime::app_mgr(aid);
 }
 
 thread*

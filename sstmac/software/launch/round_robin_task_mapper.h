@@ -12,7 +12,7 @@
 #ifndef SSTMAC_BACKENDS_NATIVE_LAUNCH_ROUNDROBININDEXING_H_INCLUDED
 #define SSTMAC_BACKENDS_NATIVE_LAUNCH_ROUNDROBININDEXING_H_INCLUDED
 
-#include <sstmac/software/launch/index_strategy.h>
+#include <sstmac/software/launch/task_mapper.h>
 
 namespace sstmac {
 namespace sw {
@@ -20,17 +20,17 @@ namespace sw {
 /**
  * An index strategy that allocates indices using a round robin.
  */
-class round_robin_indexing : public index_strategy
+class round_robin_task_mapper : public task_mapper
 {
 
  public:
   virtual
-  ~round_robin_indexing() throw ();
+  ~round_robin_task_mapper() throw ();
 
   virtual void
-  allocate(
+  map_ranks(
     const app_id& aid,
-    const node_set &nodes,
+    const ordered_node_set& nodes,
     int ppn,
     std::vector<node_id> &result,
     int nproc);

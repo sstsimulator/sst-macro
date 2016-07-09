@@ -2,14 +2,25 @@
 #define JOB_LAUNCHER_H
 
 #include <sprockit/factories/factory.h>
+#include <sprockit/unordered.h>
 #include <sstmac/common/event_handler.h>
 #include <sstmac/software/launch/launch_info.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
-
+#include <sstmac/software/launch/node_set.h>
 
 namespace sstmac {
 namespace sw {
 
+/**
+ * @brief The job_launcher class performs the combined operations a queue scheduler like PBS or MOAB
+ * and a job launcher like SLURM (srun) or ALPS (aprun).
+ * The job launcher allocates nodes to each requested MPI job (or other application).
+ * Once nodes are allocated, the job_launcher has to assign MPI ranks to each node (mapping or indexing).
+ * Each application can request its a specific allocation or indexing.
+ * However, it is ultimately the responsibility of the job launcher to decide on the final
+ * allocation/indexing. In most cases, the job_launcher will honor exactly each applications's request
+ * unless there is a conflict - in which case the job_launcher must arbitrate conflicting requests.
+ */
 class job_launcher :
   public sprockit::factory_type,
   public event_handler
@@ -18,16 +29,32 @@ class job_launcher :
   void handle(event *ev);
 
   void
-  set_interconnect(hw::interconnect* ic){
-    interconnect_ = ic;
-  }
+  set_interconnect(hw::interconnect* ic);
+
+  node_id
+  node_for_task(app_id aid, task_id tid) const;
+
+  app_manager*
+  task_mapper(app_id aid) const;
 
  private:
+  /**
+   * @brief handle_new_launch_request As if a new job had been submitted with qsub or salloc.
+   * The job_launcher receives a new request to launch an application, at which point
+   * it can choose to launch the application immediately if node allocation succeeds.
+   * @param appnum  A unique integer identifying the application launched
+   * @param appman  An object specifying all the details (indexing, allocation, application type)
+   *                of the application being launched
+   */
   virtual void
-  handle_new_launch(int appnum, app_manager* appman) = 0;
+  handle_new_launch_request(int appnum, app_manager* appman) = 0;
 
  protected:
   hw::interconnect* interconnect_;
+  ordered_node_set allocated_;
+  ordered_node_set available_;
+
+  std::map<app_id, app_manager*> apps_launched_;
 
 };
 
@@ -43,7 +70,7 @@ class default_job_launcher :
   }
 
  private:
-  void handle_new_launch(int appnum, app_manager* appman);
+  void handle_new_launch_request(int appnum, app_manager* appman);
 
 };
 

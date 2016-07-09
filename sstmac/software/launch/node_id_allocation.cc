@@ -8,12 +8,12 @@
 namespace sstmac {
 namespace sw {
 
-SpktRegister("node_id", allocation_strategy, node_id_allocation);
+SpktRegister("node_id", node_allocator, node_id_allocation);
 
 void
 node_id_allocation::init_factory_params(sprockit::sim_parameters* params)
 {
-  allocation_strategy::init_factory_params(params);
+  node_allocator::init_factory_params(params);
   if (params->has_param("launch_node_id_file")){
     coord_file_ = params->get_param("launch_node_id_file");
   } else {
@@ -56,7 +56,8 @@ node_id_allocation::read_coordinate_file(
 
 void
 node_id_allocation::allocate(int nnode_requested,
-  const node_set& available, node_set &allocation) const
+  const ordered_node_set& available,
+  ordered_node_set &allocation) const
 {
   std::vector<node_id> node_list;
   read_coordinate_file(coord_file_, node_list, topology_);

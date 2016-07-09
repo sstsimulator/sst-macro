@@ -146,12 +146,6 @@ class operating_system :
 
   library*
   lib(const std::string& name) const;
-
-  node_id
-  task_addr(software_id sid) const;
-
-  app_manager*
-  env(app_id aid) const;
   
   void
   set_ncores(int ncores, int nsocket);

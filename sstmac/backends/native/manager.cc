@@ -19,7 +19,6 @@
 #endif
 #include <sstmac/backends/native/manager.h>
 #include <sstmac/backends/native/clock_cycle_parallel/clock_cycle_event_container.h>
-#include <sstmac/backends/native/skeleton_app_manager.h>
 
 #include <sstmac/common/runtime.h>
 #include <sstmac/common/logger.h>
@@ -126,7 +125,7 @@ manager::compute_max_nproc_for_app(sprockit::sim_parameters* app_params)
   }
   int nproc, procs_per_node;
   std::vector<int> ignore;
-  skeleton_app_manager::parse_launch_cmd(app_params, nproc, 
+  app_manager::parse_launch_cmd(app_params, nproc,
     procs_per_node, ignore);
   return std::max(nproc, max_nproc);
 }
@@ -157,12 +156,11 @@ manager::build_app(int appnum, sprockit::sim_parameters* params)
 
   sstmac::sw::app_id aid(appnum);
   app_manager* appman = app_manager_factory::get_optional_param(
-        "launch_type", "skeleton", params, aid, rt_);
-  appman->set_interconnect(interconnect_);
+        "launch_type", "default", params, aid, rt_);
+  appman->set_topology(interconnect_->topol());
 
   app_managers_[appnum] = appman;
   app_starts_[appnum] = start;
-  runtime::register_app_manager(aid, appman);
 }
 
 void
@@ -237,6 +235,8 @@ macro_manager::init_factory_params(sprockit::sim_parameters* params)
 
   launcher_ = job_launcher_factory::get_optional_param("job_launcher", "default", params);
   launcher_->set_interconnect(interconnect_);
+
+  sstmac::runtime::set_job_launcher(launcher_);
 
   logger::timer_ = event_manager_;
 

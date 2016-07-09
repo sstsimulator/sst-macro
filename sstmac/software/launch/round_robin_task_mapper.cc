@@ -9,31 +9,32 @@
  *  SST/macroscale directory.
  */
 
-#include <sstmac/software/launch/round_robin_indexing.h>
+#include <sstmac/software/launch/round_robin_task_mapper.h>
 #include <sprockit/errors.h>
 
 namespace sstmac {
 namespace sw {
-SpktRegister("round | round_robin", index_strategy, round_robin_indexing,
-            "Tries to spread out ranks across the nodes. Ranks 0,1,2,3 are on different nodes. Ranks 0,4,8 are on the same node. Round robin and block indexing are equivalent if there is one process per node."
-           );
+SpktRegister("round | round_robin", task_mapper, round_robin_task_mapper,
+   "Tries to spread out ranks across the nodes. Ranks 0,1,2,3 are on different nodes."
+   "Ranks 0,4,8 are on the same node."
+   "Round robin and block indexing are equivalent if there is one process per node.");
 
 
-round_robin_indexing::~round_robin_indexing() throw ()
+round_robin_task_mapper::~round_robin_task_mapper() throw ()
 {
 }
 
 void
-round_robin_indexing::allocate(
+round_robin_task_mapper::map_ranks(
   const app_id& aid,
-  const node_set &nodes,
+  const ordered_node_set& nodes,
   int ppn,
   std::vector<node_id> &result,
   int nproc)
 {
   nproc = validate_nproc(ppn, nodes.size(), nproc, "blockindexing");
 
-  node_set::iterator iter = nodes.begin();
+  ordered_node_set::iterator iter = nodes.begin();
   for (long i = 0; i < nproc / ppn; i++) {
     iter++;
   }

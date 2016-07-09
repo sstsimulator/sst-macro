@@ -4,7 +4,7 @@
 namespace sstmac {
 namespace sw {
 
-SpktRegister("first_available | first", allocation_strategy,
+SpktRegister("first_available | first", node_allocator,
             first_available_allocation,
             "Allocate the first set of nodes from the list of available nodes. In most cases, allocating from the available node list will give you a regular, contiguous allocation");
 
@@ -17,8 +17,8 @@ first_available_allocation::~first_available_allocation() throw ()
 void
 first_available_allocation::allocate(
   int nnode_requested,
-  const node_set& available,
-  node_set& allocation) const
+  const ordered_node_set& available,
+  ordered_node_set& allocation) const
 {
   if (available.size() < nnode_requested){
     spkt_throw_printf(sprockit::value_error,

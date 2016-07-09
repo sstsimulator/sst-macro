@@ -15,7 +15,7 @@
 #include <sstmac/hardware/topology/topology.h>
 
 #include <sstmac/software/launch/dumpi_allocation.h>
-#include <sstmac/software/launch/allocation_strategy.h>
+#include <sstmac/software/launch/node_allocator.h>
 #include <sstmac/dumpi_util/dumpi_util.h>
 #include <sstmac/dumpi_util/dumpi_meta.h>
 
@@ -27,13 +27,13 @@
 
 namespace sstmac {
 namespace sw {
-SpktRegister("dumpi", allocation_strategy, dumpi_allocation,
+SpktRegister("dumpi", node_allocator, dumpi_allocation,
             "Allocate nodes directly from the trace files themselves");
 
 void
 dumpi_allocation::init_factory_params(sprockit::sim_parameters* params)
 {
-  allocation_strategy::init_factory_params(params);
+  node_allocator::init_factory_params(params);
   metafile_ = params->get_param("launch_dumpi_metaname");
 
 }
@@ -41,8 +41,8 @@ dumpi_allocation::init_factory_params(sprockit::sim_parameters* params)
 void
 dumpi_allocation::allocate(
   int nnode_requested,
-   const node_set& available,
-   node_set& allocation) const
+   const ordered_node_set& available,
+   ordered_node_set& allocation) const
 {
   hw::structured_topology* regtop = safe_cast(hw::structured_topology, topology_);
 

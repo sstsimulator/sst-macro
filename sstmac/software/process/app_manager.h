@@ -4,9 +4,10 @@
 #include <sstmac/software/process/task_id.h>
 #include <sstmac/software/process/app_id.h>
 #include <sstmac/common/node_address.h>
-#include <sprockit/unordered.h>
+#include <sstmac/software/launch/node_set.h>
 
 #include <sprockit/factories/factory.h>
+#include <sprockit/unordered.h>
 
 #include <sstmac/software/process/app_fwd.h>
 #include <sstmac/software/launch/launch_info_fwd.h>
@@ -14,6 +15,9 @@
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/backends/common/parallel_runtime_fwd.h>
+
+#include <sstmac/software/launch/node_allocator.h>
+#include <sstmac/software/launch/task_mapper.h>
 
 #include <vector>
 
@@ -36,17 +40,22 @@ class app_manager :
 {
 
  public:
-
   virtual ~app_manager();
 
-  virtual int
-  nproc() const = 0;
+  int
+  nproc() const {
+    return nproc_;
+  }
 
-  virtual node_id
-  node_assignment(int rank) const = 0;
+  node_id
+  node_assignment(int rank) const {
+    return rank_to_node_indexing_[rank];
+  }
 
-  virtual const std::list<int>&
-  rank_assignment(node_id nid) const = 0;
+  const std::list<int>&
+  rank_assignment(node_id nid) const {
+    return node_to_rank_indexing_[nid];
+  }
 
   virtual void
   init_param1(sw::app_id aid) {
@@ -59,52 +68,65 @@ class app_manager :
   }
 
   virtual void
-  set_interconnect(hw::interconnect* interconn);
-
-  virtual void
   init_factory_params(sprockit::sim_parameters* params);
+
+  void
+  set_topology(hw::topology* top);
 
   hw::topology*
   topol() const {
     return top_;
   }
 
-  hw::interconnect*
-  interconn() const {
-    return interconn_;
-  }
-
-  hw::node*
-  node_at(node_id nid) const;
-
-  virtual void
-  allocate_and_index_jobs() = 0;
-
-  virtual sw::launch_info*
-  launch_info() const = 0;
-
-  node_id
-  node_for_task(sw::task_id tid) const;
-
+  /**
+   * @brief request_allocation  Request a set of nodes to be used by the job
+   * @param available   The set of nodes available
+   * @param allocation  Reference return. Will contain all the nodes request for the allocation.
+   *                    The allocation is NOT necessarily a subset of availabe. If the allocation fails
+   *                    the function can still return an allocation request that might be satisfied
+   *                    at a later time.
+   */
   void
-  set_node_address(sw::task_id tid, node_id n) {
-    nodeids_[tid] = n;
+  request_allocation(const ordered_node_set& available,
+                     ordered_node_set& allocation);
+
+  /**
+   * @brief index_allocation  Given an allocation of nodes, index or map the job. For MPI,
+   *                          this means assigning MPI ranks to nodes (and possibly even cores).
+   * @param allocation        The set of nodes returned by the allocation request
+   */
+  void
+  index_allocation(const ordered_node_set& allocation);
+
+  sw::launch_info*
+  launch_info() const {
+    return linfo_;
   }
 
   static app_manager*
   static_app_manager(int aid, sprockit::sim_parameters* params);
 
- protected:
-  typedef spkt_unordered_map<sw::task_id, node_id> task_to_node_map;
-  typedef spkt_unordered_map<sw::task_id, std::string> task_to_hostname_map;
-  typedef spkt_unordered_map<std::string, std::string> shell_var_map;
-  typedef spkt_unordered_map<std::string, node_id> hostname_to_addr_map;
+  static void
+  parse_aprun(const std::string& cmd, int& nproc, int& nproc_per_node,
+              std::vector<int>& core_affinities);
+
+  static void
+  parse_launch_cmd(
+    sprockit::sim_parameters* params,
+    int& nproc,
+    int& procs_per_node,
+    std::vector<int>& affinities);
+
+ private:
+  sw::node_allocator* allocator_;
+  sw::task_mapper* indexer_;
+  std::vector<node_id> rank_to_node_indexing_;
+  std::vector<std::list<int> > node_to_rank_indexing_;
+  sw::launch_info* linfo_;
 
   parallel_runtime* rt_;
 
   hw::topology* top_;
-
-  hw::interconnect* interconn_;
 
   sw::app* app_template_;
 
@@ -114,14 +136,18 @@ class app_manager :
 
   std::vector<int> core_affinities_;
 
-  task_to_node_map nodeids_;
+  int nproc_;
 
-  app_manager();
+  int procs_per_node_;
+
+  void parse_launch_cmd(sprockit::sim_parameters* params);
 
  private:
   static std::map<int, app_manager*> static_app_managers_;
-};
 
+  void init_launch_info();
+
+};
 
 DeclareFactory2InitParams(app_manager, sw::app_id, parallel_runtime*);
 

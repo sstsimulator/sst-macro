@@ -12,13 +12,13 @@
 
 namespace sstmac {
 namespace sw {
-SpktRegister("cart | cartesian", allocation_strategy, cart_allocation,
+SpktRegister("cart | cartesian", node_allocator, cart_allocation,
             "Allocate a regular, cartesian volume of nodes.  This is meant mostly for torus topologies, but is also meaningful for dragonfly and hypercube.");
 
 void
 cart_allocation::init_factory_params(sprockit::sim_parameters* params)
 {
-  allocation_strategy::init_factory_params(params);
+  node_allocator::init_factory_params(params);
   if (params->has_param("cart_launch_sizes")){
     /**
       sstkeyword {
@@ -58,8 +58,8 @@ void
 cart_allocation::insert(
   hw::structured_topology* regtop,
   const std::vector<int>& coords,
-  const node_set& available,
-  node_set& allocation) const
+  const ordered_node_set& available,
+  ordered_node_set& allocation) const
 {
   node_id nid = regtop->node_addr(coords);
   debug_printf(sprockit::dbg::allocation,
@@ -74,8 +74,8 @@ cart_allocation::allocate_dim(
   hw::structured_topology* regtop,
   int dim,
   std::vector<int>& vec,
-  const node_set& available,
-  node_set& allocation) const
+  const ordered_node_set& available,
+  ordered_node_set& allocation) const
 {
   if (dim == sizes_.size()) {
     insert(regtop, vec, available, allocation);;
@@ -92,8 +92,8 @@ cart_allocation::allocate_dim(
 void
 cart_allocation::allocate(
   int nnode,
-  const node_set& available,
-  node_set &allocation) const
+  const ordered_node_set& available,
+  ordered_node_set& allocation) const
 {
   hw::structured_topology* regtop =
       safe_cast(hw::structured_topology, topology_);

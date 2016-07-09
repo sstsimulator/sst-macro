@@ -12,25 +12,25 @@
  *  SST/macroscale directory.
  */
 
-#include <sstmac/software/launch/index_strategy.h>
+#include <sstmac/software/launch/task_mapper.h>
 
 namespace sstmac {
 namespace sw {
 
 
-class node_id_indexing : public index_strategy
+class node_id_task_mapper : public task_mapper
 {
 
  public:
-  virtual ~node_id_indexing() throw() {}
+  virtual ~node_id_task_mapper() throw() {}
 
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
 
-  void allocate(const app_id& aid,
-                const node_set &nodes,
+  void map_ranks(const app_id& aid,
+                const ordered_node_set& nodes,
                 int ppn,
-                std::vector<node_id> &result,
+                std::vector<node_id>& result,
                 int nproc);
 
  protected:

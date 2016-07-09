@@ -68,9 +68,6 @@ class interconnect :
   typedef spkt_unordered_map<switch_id, connectable*> internal_map;
   typedef spkt_unordered_map<node_id, connectable*> endpoint_map;
 
-
-  typedef std::set<node_id> node_set;
-
   virtual std::string
   to_string() const {
     return "interconnect";
@@ -103,14 +100,6 @@ class interconnect :
   virtual void
   set_event_manager(event_manager* mgr){};
 #endif
-
-  node_set& allocated() {
-    return allocated_;
-  }
-
-  node_set& available() {
-    return available_;
-  }
 
   /**
    * @brief Return the node corresponding to given ID.
@@ -158,8 +147,7 @@ class interconnect :
     This is moved here from allocation strategy.
     The allocation strategy still does the actual work, but the interconnect stores the arrays
   */
-  node_set allocated_;
-  node_set available_;
+
 
   topology* topology_;
 

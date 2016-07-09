@@ -11,26 +11,26 @@
 
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/topology/topology.h>
-#include <sstmac/software/launch/index_strategy.h>
+#include <sstmac/software/launch/task_mapper.h>
 
-ImplementFactory(sstmac::sw::index_strategy);
+ImplementFactory(sstmac::sw::task_mapper);
 RegisterDebugSlot(indexing);
 
 namespace sstmac {
 namespace sw {
 
-index_strategy::~index_strategy() throw()
+task_mapper::~task_mapper() throw()
 {
 }
 
 void
-index_strategy::init_factory_params(sprockit::sim_parameters *params)
+task_mapper::init_factory_params(sprockit::sim_parameters *params)
 {
   STATIC_INIT_TOPOLOGY(params)
 }
 
 int
-index_strategy::validate_nproc(int ppn, int num_nodes, int nproc,
+task_mapper::validate_nproc(int ppn, int num_nodes, int nproc,
                                const char *name) const
 {
   if(nproc < 0) {

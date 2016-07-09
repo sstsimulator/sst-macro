@@ -16,7 +16,7 @@
 #include <fstream>
 #include <sstream>
 
-#include <sstmac/software/launch/node_id_indexing.h>
+#include <sstmac/software/launch/node_id_task_mapper.h>
 #include <sstmac/software/launch/node_id_allocation.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/launch/launcher.h>
@@ -27,25 +27,25 @@
 namespace sstmac {
 namespace sw {
 
-SpktRegister("node_id", index_strategy, node_id_indexing,
+SpktRegister("node_id", task_mapper, node_id_task_mapper,
             "assigns tasks to nodes based on list of nodes ids in file");
 
 
 void
-node_id_indexing::init_factory_params(sprockit::sim_parameters* params)
+node_id_task_mapper::init_factory_params(sprockit::sim_parameters* params)
 {
-  index_strategy::init_factory_params(params);
+  task_mapper::init_factory_params(params);
   if (params->has_param("launch_node_id_file")){
     listfile_ = params->get_param("launch_node_id_file" );
   } else {
-    listfile_ = params->get_param("launch_node_id_indexing_file");
+    listfile_ = params->get_param("launch_node_id_mapper_file");
   }
 }
 
 void
-node_id_indexing::allocate(
+node_id_task_mapper::map_ranks(
   const app_id& aid,
-  const node_set &nodes,
+  const ordered_node_set& nodes,
   int ppn,
   std::vector<node_id> &result,
   int nproc)

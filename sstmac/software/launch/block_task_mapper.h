@@ -12,7 +12,7 @@
 #ifndef SSTMAC_BACKENDS_NATIVE_LAUNCH_BLOCKINDEXING_H_INCLUDED
 #define SSTMAC_BACKENDS_NATIVE_LAUNCH_BLOCKINDEXING_H_INCLUDED
 
-#include <sstmac/software/launch/index_strategy.h>
+#include <sstmac/software/launch/task_mapper.h>
 
 namespace sstmac {
 namespace sw {
@@ -20,16 +20,17 @@ namespace sw {
 /**
  * An index strategy that allocates indices using a round robin.
  */
-class block_indexing : public index_strategy
+class block_task_mapper : public task_mapper
 {
 
  public:
   virtual
-  ~block_indexing() throw ();
+  ~block_task_mapper() throw ();
 
   virtual void
-  allocate(const app_id& aid, const node_set &nodes, int ppn,
-           std::vector<node_id> &result, int nproc);
+  map_ranks(const app_id& aid,
+     const ordered_node_set& nodes, int ppn,
+     std::vector<node_id> &result, int nproc);
 
 };
 

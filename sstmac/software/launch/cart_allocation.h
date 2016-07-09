@@ -14,13 +14,13 @@
 
 #include <vector>
 #include <sstmac/hardware/topology/structured_topology.h>
-#include <sstmac/software/launch/allocation_strategy.h>
+#include <sstmac/software/launch/node_allocator.h>
 
 namespace sstmac {
 namespace sw {
 
 class cart_allocation :
-  public allocation_strategy
+  public node_allocator
 {
 
  public:
@@ -39,8 +39,8 @@ class cart_allocation :
    */
   void
   allocate(int nnode,
-   const node_set& available,
-   node_set &allocation) const;
+   const ordered_node_set& available,
+   ordered_node_set& allocation) const;
 
  private:
   /**
@@ -54,8 +54,8 @@ class cart_allocation :
   insert(
     hw::structured_topology* regtop,
     const std::vector<int>& coords,
-    const node_set& available,
-    node_set& allocation) const;
+    const ordered_node_set& available,
+    ordered_node_set& allocation) const;
 
   /**
    * @brief allocate_dim  Recursive method for looping dimensions in the block
@@ -71,8 +71,8 @@ class cart_allocation :
    hw::structured_topology* regtop,
    int dim,
    std::vector<int>& vec,
-   const node_set& available,
-   node_set& allocation) const;
+   const ordered_node_set& available,
+   ordered_node_set& allocation) const;
 
   std::vector<int> sizes_;
   std::vector<int> offsets_;

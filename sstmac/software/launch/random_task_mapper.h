@@ -12,7 +12,7 @@
 #ifndef SSTMAC_BACKENDS_NATIVE_LAUNCH_RANDOMINDEXING_H_INCLUDED
 #define SSTMAC_BACKENDS_NATIVE_LAUNCH_RANDOMINDEXING_H_INCLUDED
 
-#include <sstmac/software/launch/index_strategy.h>
+#include <sstmac/software/launch/task_mapper.h>
 #include <sstmac/common/rng.h>
 
 namespace sstmac {
@@ -21,7 +21,7 @@ namespace sw {
 /**
  * An index strategy that allocates indices using a round robin.
  */
-class random_indexing : public index_strategy
+class random_task_mapper : public task_mapper
 {
 
  public:
@@ -29,12 +29,12 @@ class random_indexing : public index_strategy
   init_factory_params(sprockit::sim_parameters *params);
 
   virtual
-  ~random_indexing() throw ();
+  ~random_task_mapper() throw ();
 
   virtual void
-  allocate(
+  map_ranks(
     const app_id& aid,
-    const node_set &nodes,
+    const ordered_node_set& nodes,
     int ppn,
     std::vector<node_id> &result,
     int nproc);

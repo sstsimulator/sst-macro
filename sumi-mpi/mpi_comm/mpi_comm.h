@@ -49,7 +49,6 @@ class mpi_comm : public domain
     MPI_Comm id,
     int rank,
     mpi_group* peers,
-    app_manager* env,
     app_id aid);
 
   /// Goodbye.
@@ -144,14 +143,6 @@ class mpi_comm : public domain
   task_id
   peer_task(int rank) const;
 
-  node_id
-  my_node() const;
-
-  /// The list of nodes involved in this communicator.
-  /// Indexing is done by mpiid::rank().id.
-  node_id
-  node_at(int rank) const;
-
   /// Equality comparison.
   inline bool
   operator==(mpi_comm* other) const {
@@ -189,8 +180,6 @@ class mpi_comm : public domain
 
  protected:
   friend class mpi_comm_factory;
-
-  app_manager* env_;
 
   /// The tasks participating in this communicator.  This is only used for an mpicomm* which is NOT WORLD_COMM.
   mpi_group* group_;

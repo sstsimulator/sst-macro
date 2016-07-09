@@ -17,12 +17,12 @@
 #include <sstmac/backends/common/parallel_runtime_fwd.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
+#include <sstmac/software/launch/node_set.h>
 
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
 #include <sprockit/sim_parameters_fwd.h>
-
-#include <set>
+#include <sprockit/unordered.h>
 
 DeclareDebugSlot(allocation);
 
@@ -33,10 +33,8 @@ namespace sw {
  * Strategy type for assigning processes to nodes in a parallel run.
  *
  */
-class allocation_strategy : public sprockit::factory_type
+class node_allocator : public sprockit::factory_type
 {
- protected:
-  typedef std::set<node_id> node_set;
 
  public:
   virtual void
@@ -58,7 +56,7 @@ class allocation_strategy : public sprockit::factory_type
   }
 
   virtual
-  ~allocation_strategy() throw ();
+  ~node_allocator() throw ();
 
   /** Get nodes.
     @param nnode number of nodes requested
@@ -68,11 +66,11 @@ class allocation_strategy : public sprockit::factory_type
   */
   virtual void
   allocate(int nnode,
-   const node_set& available,
-   node_set& allocation) const = 0;
+   const ordered_node_set& available,
+   ordered_node_set& allocation) const = 0;
 
  protected:
-  allocation_strategy() :
+  node_allocator() :
     rt_(0), topology_(0) {}
 
  protected:
@@ -83,7 +81,7 @@ class allocation_strategy : public sprockit::factory_type
 
 
 
-DeclareFactory1InitParam(allocation_strategy, parallel_runtime*);
+DeclareFactory1InitParam(node_allocator, parallel_runtime*);
 
 }
 } // end of namespace sstmac

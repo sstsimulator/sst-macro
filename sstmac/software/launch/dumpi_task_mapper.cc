@@ -14,7 +14,7 @@
 
 #include <sstmac/dumpi_util/dumpi_util.h>
 #include <sstmac/dumpi_util/dumpi_meta.h>
-#include <sstmac/software/launch/dumpi_indexer.h>
+#include <sstmac/software/launch/dumpi_task_mapper.h>
 #include <sstmac/software/launch/hostname_allocation.h>
 #include <sstmac/software/launch/launcher.h>
 #include <sstmac/software/process/app_manager.h>
@@ -28,11 +28,11 @@
 namespace sstmac {
 namespace sw {
 
-SpktRegister("dumpi", index_strategy, dumpi_indexer,
+SpktRegister("dumpi", task_mapper, dumpi_task_mapper,
             "indexes nodes based on hostname map file and hostname list in dumpi trace");
 
 node_id
-dumpi_indexer::node_id_from_hostname(const std::string& hostname)
+dumpi_task_mapper::node_id_from_hostname(const std::string& hostname)
 {
   hostname_allocation::nodemap_t::const_iterator
   aptr_it = hostname_allocation::hostnamemap_.find(hostname),
@@ -65,7 +65,7 @@ dumpi_indexer::node_id_from_hostname(const std::string& hostname)
 }
 
 node_id
-dumpi_indexer::node_id_from_coordinates(int ncoord, int *coords)
+dumpi_task_mapper::node_id_from_coordinates(int ncoord, int *coords)
 {
   hw::coordinates coord_vec(ncoord);
   for (int i=0; i < ncoord; ++i) {
@@ -75,24 +75,24 @@ dumpi_indexer::node_id_from_coordinates(int ncoord, int *coords)
 }
 
 void
-dumpi_indexer::init_factory_params(sprockit::sim_parameters *params)
+dumpi_task_mapper::init_factory_params(sprockit::sim_parameters *params)
 {
-  index_strategy::init_factory_params(params);
+  task_mapper::init_factory_params(params);
 
   metaname_ = params->get_param("launch_dumpi_metaname");
 }
 
 void
-dumpi_indexer::set_topology(hw::topology *top)
+dumpi_task_mapper::set_topology(hw::topology *top)
 {
-  index_strategy::set_topology(top);
+  task_mapper::set_topology(top);
   regtop_ = safe_cast(hw::structured_topology, top);
 }
 
 void
-dumpi_indexer::allocate(
+dumpi_task_mapper::map_ranks(
   const app_id& aid,
-  const node_set &nodes,
+  const ordered_node_set& nodes,
   int ppn,
   std::vector<node_id> &result,
   int nproc)
@@ -130,7 +130,7 @@ dumpi_indexer::allocate(
     dumpi_free_header(header);
 
     debug_printf(sprockit::dbg::indexing,
-        "dumpi_indexer: rank %d is on hostname %s at nid=%d",
+        "dumpi_task_mapper: rank %d is on hostname %s at nid=%d",
         i, hostname.c_str(), int(nid));
 
     result[i] = nid;

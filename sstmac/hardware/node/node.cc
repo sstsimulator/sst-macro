@@ -173,8 +173,8 @@ node::build_launchers(sprockit::sim_parameters* params)
   std::list<int>::const_iterator it, end = my_ranks.end();
   for (it=my_ranks.begin(); it != end; ++it){
     int rank = *it;
-    sw::launch_event* lmsg = new launch_event(appman->launch_info(), sw::launch_event::ARRIVE, task_id(rank));
-    runtime::register_node(sw::app_id(aid), task_id(rank), my_addr_);
+    sw::launch_event* lmsg = new launch_event(appman->launch_info(),
+                                    sw::launch_event::ARRIVE, task_id(rank));
     launchers_.push_back(lmsg);
   }
 }

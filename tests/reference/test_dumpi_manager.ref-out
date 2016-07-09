@@ -1,9 +1,9 @@
 hostname_allocation: reading map file testparsedumpi.map
 nrank: 4
-dumpi_indexer: rank 0 is on hostname hadalst-mbp.ca.sandia.gov at nid=9
-dumpi_indexer: rank 1 is on hostname hadalst-mbp.ca.sandia.gov at nid=9
-dumpi_indexer: rank 2 is on hostname hadalst-mbp.ca.sandia.gov at nid=9
-dumpi_indexer: rank 3 is on hostname hadalst-mbp.ca.sandia.gov at nid=9
+dumpi_task_mapper: rank 0 is on hostname hadalst-mbp.ca.sandia.gov at nid=9
+dumpi_task_mapper: rank 1 is on hostname hadalst-mbp.ca.sandia.gov at nid=9
+dumpi_task_mapper: rank 2 is on hostname hadalst-mbp.ca.sandia.gov at nid=9
+dumpi_task_mapper: rank 3 is on hostname hadalst-mbp.ca.sandia.gov at nid=9
 Allocated and indexed 4 nodes
 Rank 0 -> nid9 [ 0 1 0 1 ]
 Rank 1 -> nid9 [ 0 1 0 1 ]

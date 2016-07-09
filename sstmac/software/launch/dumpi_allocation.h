@@ -19,7 +19,7 @@
 namespace sstmac {
 namespace sw {
 
-class dumpi_allocation : public allocation_strategy
+class dumpi_allocation : public node_allocator
 {
 
  public:
@@ -28,8 +28,8 @@ class dumpi_allocation : public allocation_strategy
 
   virtual void
   allocate(int nnode_requested,
-    const node_set& available,
-    node_set &allocation) const;
+    const ordered_node_set& available,
+    ordered_node_set& allocation) const;
 
   virtual
   ~dumpi_allocation() throw () {

@@ -2,12 +2,14 @@
 #include <sstmac/software/process/app_manager.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/libraries/unblock_event.h>
+#include <sstmac/software/launch/job_launcher.h>
 #include <sstmac/libraries/sumi/sumi_api.h>
 #include <sstmac/libraries/sumi/message.h>
 #include <sprockit/util.h>
 #include <sprockit/output.h>
 #include <sprockit/sim_parameters.h>
 #include <sumi/message.h>
+#include <sstmac/common/runtime.h>
 
 using namespace sprockit::dbg;
 
@@ -22,8 +24,8 @@ sumi_api::sumi_api()
 void
 sumi_api::init()
 {
-  env_ = os_->env(sid_.app_);
-  nproc_ = env_->nproc();
+  rank_mapper_ = runtime::launcher()->task_mapper(sid_.app_);
+  nproc_ = rank_mapper_->nproc();
   loc_ = os_->event_location();
 
   library* server_lib = os_->lib(server_libname_);
@@ -91,7 +93,7 @@ sumi_api::transport_send(
   transport_message* tmsg = new transport_message(msg, byte_length);
   tmsg->hw::network_message::set_type(ty);
   tmsg->set_lib_name(server_libname_);
-  tmsg->toaddr_ = env_->node_for_task(sw::task_id(dst));
+  tmsg->toaddr_ = rank_mapper_->node_assignment(sw::task_id(dst));
   tmsg->set_needs_ack(needs_ack);
   tmsg->set_src(rank_);
   tmsg->set_dest(dst);
