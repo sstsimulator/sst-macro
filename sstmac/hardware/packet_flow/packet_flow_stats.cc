@@ -32,6 +32,12 @@ congestion_delay_us(const packet_stats_st& st)
 }
 
 void
+packet_sent_stats::init_factory_params(sprockit::sim_parameters* params)
+{
+  id_ = params->get_int_param("id");
+}
+
+void
 packet_sent_stats::collect_final_event(packet_flow_payload *pkt)
 {
   spkt_throw(sprockit::value_error,

@@ -66,6 +66,11 @@ class app_launch :
     return app_template_;
   }
 
+  app_id
+  aid() const {
+    return aid_;
+  }
+
   std::vector<int>
   core_affinities() const {
     return core_affinities_;

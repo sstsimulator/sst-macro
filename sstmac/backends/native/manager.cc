@@ -301,7 +301,7 @@ macro_manager::finish()
 void
 macro_manager::launch_app(int appnum, timestamp start, sw::app_launch* appman)
 {
-  sw::job_launch_event* ev = new sw::job_launch_event(appnum, appman);
+  sw::job_launch_event* ev = new sw::job_launch_event(appman);
   event_manager_->schedule(start, appnum,
                 new handler_event_queue_entry(ev, launcher_, event_loc_id::null));
 }

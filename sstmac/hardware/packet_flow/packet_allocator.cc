@@ -52,7 +52,7 @@ class geometry_routable_packet_allocator :
 {
  public:
   virtual packet_flow_payload*
-  new_packet(long bytes, long byte_offset, message *msg){
+  new_packet(int bytes, long byte_offset, message *msg){
     return new geometry_routable_packet_flow(msg, bytes, byte_offset);
   }
 

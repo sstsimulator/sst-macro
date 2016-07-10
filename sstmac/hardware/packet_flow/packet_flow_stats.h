@@ -41,6 +41,21 @@ class packet_sent_stats :
   virtual void
   set_event_manager(event_manager* ev_mgr) = 0;
 
+  virtual void
+  init_factory_params(sprockit::sim_parameters *params);
+
+  /**
+   * @brief id
+   * Either a node or switch id, depending on the device
+   * @return
+   */
+  int id() const {
+    return id_;
+  }
+
+ private:
+  int id_;
+
 };
 
 DeclareFactory(packet_sent_stats)

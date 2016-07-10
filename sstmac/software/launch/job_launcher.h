@@ -49,7 +49,11 @@ class job_launcher :
    *                of the application being launched
    */
   virtual void
-  handle_new_launch_request(int appnum, app_launch* appman) = 0;
+  handle_new_launch_request(app_launch* appman) = 0;
+
+ protected:
+  void
+  satisfy_launch_request(app_launch* appman);
 
  protected:
   hw::interconnect* interconnect_;
@@ -71,8 +75,8 @@ class default_job_launcher :
     return "default job launcher";
   }
 
- private:
-  void handle_new_launch_request(int appnum, app_launch* appman);
+ protected:
+  void handle_new_launch_request(app_launch* appman);
 
 };
 
