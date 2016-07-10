@@ -27,23 +27,23 @@ class structured_router
   void
   minimal_route_to_node(
     node_id node_addr,
-    routable::path& path);
+    geometry_routable::path& path);
 
   void
   minimal_routes_to_node(
     node_id node_addr,
-    routable::path& current_path,
-    routable::path_set& path);
+    geometry_routable::path& current_path,
+    geometry_routable::path_set& path);
 
   virtual void
   minimal_route_to_switch(
     switch_id sw_addr,
-    routable::path& path);
+    geometry_routable::path& path);
 
   virtual void
   productive_paths_to_switch(
     switch_id dst,
-    routable::path_set& paths);
+    geometry_routable::path_set& paths);
 
  protected:
   structured_topology* regtop_;

@@ -24,7 +24,7 @@
 #include <sumi-mpi/mpi_request.h>
 
 #include <sstmac/hardware/node/node.h>
-#include <sstmac/hardware/topology/structured_topology.h>
+//#include <sstmac/hardware/topology/structured_topology.h>
 
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/software/process/operating_system.h>
@@ -35,7 +35,7 @@
 #include <sumi-mpi/mpi_comm/mpi_comm_factory.h>
 #include <sumi-mpi/mpi_types.h>
 
-#include <sstmac/software/launch/hostname_allocation.h>
+//#include <sstmac/software/launch/hostname_allocation.h>
 
 #include <sprockit/errors.h>
 #include <sprockit/statics.h>

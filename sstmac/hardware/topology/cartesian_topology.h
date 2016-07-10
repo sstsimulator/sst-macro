@@ -22,8 +22,8 @@ class cartesian_topology :
   minimal_routes_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    routable::path &current_path,
-    routable::path_set &paths) const;
+    geometry_routable::path &current_path,
+    geometry_routable::path_set &paths) const;
 
  protected:
   virtual void

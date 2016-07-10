@@ -7,6 +7,7 @@
 #include <sstmac/hardware/packet_flow/packet_flow_switch.h>
 #include <sstmac/hardware/common/packetizer.h>
 #include <sstmac/common/stats/stat_histogram.h>
+#include <sstmac/hardware/packet_flow/packet_allocator_fwd.h>
 
 namespace sstmac {
 namespace hw {
@@ -99,6 +100,7 @@ class packet_flow_nic_packetizer :
 
   packet_sent_stats* stat_collector_;
   packet_sent_stats* buf_stats_;
+  packet_allocator* pkt_allocator_;
 
 };
 

@@ -19,6 +19,7 @@
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/event_callback.h>
 #include <sstmac/common/stats/stat_spyplot.h>
+#include <sstmac/hardware/packet_flow/packet_allocator.h>
 #include <sprockit/errors.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
@@ -86,6 +87,9 @@ packet_flow_nic_packetizer::init_factory_params(sprockit::sim_parameters *params
   ej_arb->set_outgoing_bw(ej_bw_);
   timestamp inj_lat = params->get_time_param("injection_latency");
   ej_buffer_ = new packet_flow_eject_buffer(inj_lat, small_latency, buffer_size_, ej_arb);
+
+  pkt_allocator_ = packet_allocator_factory
+      ::get_optional_param("packet_allocator", "geometry_routable", params);
 }
 
 void
@@ -142,7 +146,7 @@ packet_flow_nic_packetizer::spaceToSend(int vn, int num_bits) const
 void
 packet_flow_nic_packetizer::inject(int vn, long bytes, long byte_offset, message* msg)
 {
-  packet_flow_payload* payload = new routable_packet_flow(msg, bytes, byte_offset);
+  packet_flow_payload* payload = pkt_allocator_->new_packet(bytes, byte_offset, msg);
   inj_buffer_->handle_payload(payload);
 }
 

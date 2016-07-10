@@ -94,6 +94,7 @@ class packet_flow_memory_packetizer : public packet_flow_packetizer
   noise_model* bw_noise_;
   noise_model* interval_noise_;
   int num_noisy_intervals_;
+  packet_allocator* pkt_allocator_;
 
 };
 

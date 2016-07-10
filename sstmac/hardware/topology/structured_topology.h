@@ -100,14 +100,14 @@ class structured_topology : public topology
   minimal_route_to_coords(
     const coordinates& src_coords,
     const coordinates& dest_coords,
-    routable::path& path) const = 0;
+    geometry_routable::path& path) const = 0;
 
   virtual void
   minimal_routes_to_coords(
     const coordinates& src_coords,
     const coordinates& dest_coords,
-    routable::path& current_path,
-    routable::path_set& paths) const {
+    geometry_routable::path& current_path,
+    geometry_routable::path_set& paths) const {
     //by default, most things only have one path
     paths.resize(1);
     minimal_route_to_coords(src_coords, dest_coords, paths[0]);
@@ -155,7 +155,7 @@ class structured_topology : public topology
     int dim,
     const coordinates& src,
     const coordinates& dst,
-    routable::path& path) const = 0;
+    geometry_routable::path& path) const = 0;
   /**** END PURE VIRTUAL INTERFACE *****/
 
   virtual void
@@ -228,7 +228,7 @@ class structured_topology : public topology
 
   virtual void
   productive_paths(
-    routable::path_set &paths,
+    geometry_routable::path_set &paths,
     const coordinates &current,
     const coordinates &dst);
 
@@ -251,15 +251,15 @@ class structured_topology : public topology
   minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    routable::path& path
+    geometry_routable::path& path
   ) const;
 
   virtual void
   minimal_routes_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    routable::path& current_path,
-    routable::path_set& paths) const {
+    geometry_routable::path& current_path,
+    geometry_routable::path_set& paths) const {
     paths.resize(1);
     minimal_route_to_switch(current_sw_addr, dest_sw_addr, paths[0]);
   }
@@ -268,7 +268,7 @@ class structured_topology : public topology
   eject_paths_on_switch(
     node_id dest_addr,
     switch_id sw_addr,
-    routable::path_set& paths) const;
+    geometry_routable::path_set& paths) const;
 
   virtual int
   num_hops_to_node(node_id src, node_id dst) const;

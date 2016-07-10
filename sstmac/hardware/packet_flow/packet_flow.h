@@ -1,8 +1,10 @@
 #ifndef PACKETFLOW_H
 #define PACKETFLOW_H
 
-#include <sstmac/hardware/router/routable_message.h>
 #include <sstmac/hardware/common/packet.h>
+#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/hardware/router/routing_enum.h>
+#include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
 
 DeclareDebugSlot(packet_flow)
@@ -118,7 +120,7 @@ class packet_flow_payload :
   void
   update_vc() {
     int new_vc = next_vc();
-    if (new_vc == routable::uninitialized){
+    if (new_vc == routing::uninitialized){
       vc_ = 0;
     } else {
       vc_ = new_vc;
@@ -220,44 +222,6 @@ class packet_flow_payload :
   double max_in_bw_;
 
   double arrival_;
-
-};
-
-class routable_packet_flow :
- public packet_flow_payload,
- public routable
-{
-  NotSerializable(routable_packet_flow)
-
-  public:
-   routable_packet_flow(
-     message* parent,
-     int num_bytes,
-     long offset) :
-    packet_flow_payload(parent, num_bytes, offset),
-    routable(parent->toaddr(), parent->fromaddr())
-  {
-  }
-
-  node_id
-  toaddr() const {
-   return routable::toaddr();
-  }
-
-  node_id
-  fromaddr() const {
-    return routable::fromaddr();
-  }
-
-  int
-  next_port() const {
-    return routable::port();
-  }
-
-  int
-  next_vc() const {
-    return routable::vc();
-  }
 
 };
 

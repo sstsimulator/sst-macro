@@ -57,7 +57,7 @@ class flattened_butterfly :
   minimal_route_to_coords(
     const coordinates &src_coords,
     const coordinates &dest_coords,
-    routable::path& path) const;
+    geometry_routable::path& path) const;
 
   int
   minimal_distance(const coordinates &src_coords,
@@ -77,7 +77,7 @@ class flattened_butterfly :
     int dim,
     const coordinates& src,
     const coordinates& dst,
-    routable::path& path) const;
+    geometry_routable::path& path) const;
 
  protected:
   virtual void

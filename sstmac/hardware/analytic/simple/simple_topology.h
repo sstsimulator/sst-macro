@@ -83,7 +83,7 @@ class simple_topology :
   minimal_route_to_coords(
     const coordinates& src_coords,
     const coordinates& dest_coords,
-    routable::path& path) const;
+    geometry_routable::path& path) const;
 
   int
   minimal_distance(
@@ -126,7 +126,7 @@ class simple_topology :
     int dim,
     const coordinates& src,
     const coordinates& dst,
-    routable::path& path) const;
+    geometry_routable::path& path) const;
 
  protected:
   int num_switches_;

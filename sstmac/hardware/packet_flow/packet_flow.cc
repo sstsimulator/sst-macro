@@ -1,4 +1,5 @@
 #include <sstmac/hardware/packet_flow/packet_flow.h>
+#include <sstmac/hardware/router/routable.h>
 
 RegisterDebugSlot(packet_flow,
     "print all the details of the packet_flow model including crossbar arbitration"
@@ -71,7 +72,6 @@ packet_flow_credit::serialize_order(serializer& ser)
   ser & num_credits_;
   ser & port_;
 }
-
 
 }
 }

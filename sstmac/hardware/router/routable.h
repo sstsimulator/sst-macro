@@ -2,12 +2,12 @@
 #define sstmac_hardware_network_interconnect_INTERCONNECT_MESSAGE_H
 
 #include <sstmac/common/messages/sst_message.h>
-#include <sstmac/hardware/router/routing_info.h>
+#include <sstmac/hardware/router/routing_enum.h>
 
 namespace sstmac {
 namespace hw {
 
-class routable
+class geometry_routable
 {
  public:
   typedef enum {
@@ -15,8 +15,6 @@ class routable
    final_stage,
    crossed_timeline
   } metadata_slot;
-
-  static const int uninitialized = -123;
 
   struct path {
    int outport;
@@ -26,7 +24,7 @@ class routable
    sprockit::metadata_bits<uint32_t> metadata;
 
    path() :
-     outport(uninitialized),
+     outport(routing::uninitialized),
   #if SSTMAC_SANITY_CHECK
      vc(uninitialized)
   #else
@@ -112,7 +110,7 @@ class routable
 
   void
   check_vc() {
-    if (path_.vc == routable::uninitialized)
+    if (path_.vc == routing::uninitialized)
       path_.vc = 0;
   }
 
@@ -140,9 +138,9 @@ class routable
   }
 
  protected:
-  routable() {}
+  geometry_routable() {}
 
-  routable(node_id toaddr, node_id fromaddr);
+  geometry_routable(node_id toaddr, node_id fromaddr);
 
  private:
   node_id toaddr_;

@@ -1,4 +1,5 @@
 #include <sstmac/hardware/packet_flow/packet_flow_memory_model.h>
+#include <sstmac/hardware/packet_flow/packet_allocator.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/software/process/operating_system.h>
@@ -34,6 +35,8 @@ packet_flow_memory_packetizer::init_factory_params(sprockit::sim_parameters *par
   max_bw_ = params->get_bandwidth_param("total_bandwidth");
   latency_ = params->get_time_param("latency");
   arb_ = packet_flow_bandwidth_arbitrator_factory::get_value("cut_through", params);
+  pkt_allocator_ = packet_allocator_factory
+      ::get_optional_param("packet_allocator", "geometry_routable", params);
 }
 
 void
@@ -137,10 +140,8 @@ packet_flow_memory_packetizer::init_noise_model()
 void
 packet_flow_memory_packetizer::inject(int vn, long bytes, long byte_offset, message* msg)
 {
-  packet_flow_payload* payload = new routable_packet_flow(
-                                         msg,
-                                         bytes, //only a single message
-                                         byte_offset);
+  packet_flow_payload* payload = pkt_allocator_->new_packet(bytes, byte_offset, msg);
+
   payload->set_inport(vn);
   memory_message* orig = safe_cast(memory_message, msg);
   if (orig->max_bw() != 0){
