@@ -88,9 +88,9 @@ sumi_api::transport_send(
   bool needs_ack,
   void* buffer)
 {
-
+  sstmac::sw::app_id aid = sid_.app_;
   sstmac::hw::network_message::type_t ty = (sstmac::hw::network_message::type_t) sendType;
-  transport_message* tmsg = new transport_message(msg, byte_length);
+  transport_message* tmsg = new transport_message(aid, msg, byte_length);
   tmsg->hw::network_message::set_type(ty);
   tmsg->set_lib_name(server_libname_);
   tmsg->toaddr_ = rank_mapper_->node_assignment(sw::task_id(dst));

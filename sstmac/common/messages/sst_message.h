@@ -26,26 +26,11 @@
 
 namespace sstmac {
 
-/**
- * A class describing an event.
- */
-class message :
-  public event
+class flow : public event
 {
-
-
  public:
-  virtual ~message() {}
-
-  virtual std::string
-  to_string() const {
-    return "sst_message";
-  }
-
-  // --------------------------------------//
-
- public:
-  message();
+  virtual uint64_t
+  unique_id() const = 0;
 
   /**
    * Virtual function to return size. Child classes should impement this
@@ -54,25 +39,23 @@ class message :
    */
   virtual long
   byte_length() const = 0;
+};
 
-  /**
-   * Serialize this message during parallel simulation.
-   * @param ser The serializer to use
-   */
-  virtual void
-  serialize_order(serializer& ser);
+/**
+ * A class describing an event.
+ */
+class message :
+  public flow
+{
+
+ public:
+  virtual ~message() {}
 
   virtual node_id
   toaddr() const = 0;
 
   virtual node_id
   fromaddr() const = 0;
-
-  virtual uint64_t
-  unique_id() const = 0;
-
- protected:
-  sw::key* key_;
 
 };
 

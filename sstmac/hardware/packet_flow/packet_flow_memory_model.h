@@ -30,6 +30,11 @@ class memory_message : public message
     return id_;
   }
 
+  std::string
+  to_string() const {
+    return "memory message";
+  }
+
   node_id
   toaddr() const {
     return node_id();
