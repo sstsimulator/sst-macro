@@ -9,53 +9,30 @@
  *  SST/macroscale directory.
  */
 
-#include <sstmac/skeletons/test/global_test.h>
+#include <sstmac/skeleton.h>
+#include <sstmac/compute.h>
+#include <sstmac/util.h>
+#include <sstmac/replacements/mpi.h>
 
-namespace sstmac {
-namespace sw {
-SpktRegister("global_test | test_global", app, global_test);
+#define sstmac_app_name "global_test"
 
+global_int class_global_;
 
-//either initialization mechanism works, apparently.
-global_int global_test::class_global_(9);
-global_double global(10);
-
-void
-global_test::consume_params(sprockit::sim_parameters* params)
+int USER_MAIN(int argc, char** argv)
 {
+  int rank, size;
+  MPI_Init(&argc, &argv);
 
-}
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-void
-global_test::skeleton_main()
-{
-  std::cout << "Hello World! " << appnum() << " "  << tasknum() << "\n"
-               " I'm located at "
-               << physical_address()
-               << ", and I have initial value of " << class_global_
-               << " for my class global, and an initial value of " << global
-               << " for the file global.\n";
-
-  class_global_ = global = tasknum();
-
-  std::cout << "class global after assignment: " << class_global_
-               << "\n";
-  std::cout << "file global after assignment: " << global << "\n";
-
-  timestamp t(rand() % 20);
-  sleep(t);
-
+  class_global_ = 0;
+  printf("Rank %d got initial global %d\n", rank, int(class_global_));
+  sstmac_sleep(1);
   class_global_ = class_global_ + 1;
-  global = global + 1;
+  printf("Rank %d got final global %d\n", rank, int(class_global_));
+  MPI_Finalize();
 
-  std::cout << "test(" << tasknum() << "): added one to class: " <<
-               class_global_ << "\n";
-  std::cout << "test(" << tasknum() << "): added one to file: " << global
-               << "\n";
-
-
+  return 0;
 }
-
-}
-} //end of namespace sstmac
 

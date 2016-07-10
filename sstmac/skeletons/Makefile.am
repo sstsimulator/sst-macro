@@ -16,64 +16,22 @@ noinst_LTLIBRARIES = libsstmac_skeletons.la
 library_includedir=$(includedir)/sstmac/skeletons
 
 AM_CPPFLAGS += -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi -I$(top_builddir)/sumi -I$(top_srcdir)/sumi
-
-AM_FCFLAGS = -I$(top_builddir) -I$(top_srcdir) -m32 -m64
+AM_CPPFLAGS += -I$(top_builddir)/sstmac/replacements -I$(top_srcdir)/sstmac/replacements
 
 libsstmac_skeletons_la_LDFLAGS = 
 
 libsstmac_skeletons_la_SOURCES = \
   traffic_matrix/main.cc \
   test/app_hello_world.cc \
-  test/app_unittest.cc \
-  test/test_compute.cc \
-  test/test_os.cc \
-  test/test_compute_c.c \
   test/mpi_ping_all.cc \
   test/global_test.cc 
 
-
-
-nobase_library_include_HEADERS = \
-  test/app_hello_world.h \
-  test/test_compute.h \
-  test/global_test.h 
-
-if WITH_DEFAULT_MPI
-libsstmac_skeletons_la_SOURCES += \
-  undumpi/parsedumpi.cc \
-  undumpi/parsedumpi_callbacks.cc  \
-  test/test_mpi_barrier.cc \
-  test/test_onesided.cc \
-  test/mpi_congestion.cc \
-  test/mpi_protocol_test.cc \
-  test/sstmac_mpi_test_all.cc \
-  test/pdes_test.cc \
-  test/test_new_collectives.cc \
-  test/mpi_print_nodes.cc \
-  test/mpi_test_all.cc \
-  test/mpi_pairwise.cc \
-  test/mpi_ping_pong.cc \
-  test/mpi_topology.cc 
-
-nobase_library_include_HEADERS += \
-  undumpi/parsedumpi.h \
-  undumpi/parsedumpi_callbacks.h \
-  test/mpi_congestion.h \
-  test/mpi_protocol_test.h \
-  test/mpi_test_all.h \
-  test/mpi_pairwise.h \
-  test/mpi_ping_pong.h \
-  test/sstmac_mpi_test_all.h \
-  test/test_onesided.h \
-  test/test_mpi_barrier.h 
-else
 libsstmac_skeletons_la_SOURCES += \
   sumi_undumpi/parsedumpi.cc \
-  sumi_undumpi/parsedumpi_callbacks.cc 
-endif
-
-
-
+  sumi_undumpi/parsedumpi_callbacks.cc \
+  test/sstmac_mpi_test_all.cc \
+  test/mpi_print_nodes.cc \
+  test/mpi_topology.cc 
 
 
 

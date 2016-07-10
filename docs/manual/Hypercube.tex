@@ -7,8 +7,8 @@ The (k,n) generalized hypercube is geometrically an N-dimensional torus with eac
 Here we show a (4,2) generalized hypercube (Figure \ref{fig:topologies:hypercubeConnected}).  This would be specified in SST as:
 
 \begin{ViFile}
-topology_name = hypercube
-topology_geometry = 4 4 
+topology.name = hypercube
+topology.geometry = 4 4 
 \end{ViFile}
 indicating size 4 in two dimensions. 
 
@@ -28,8 +28,8 @@ Whereas a torus has a few fat links connecting switches, a hypercube has many th
 A hypercube can have more dimensions and be asymmetric, e.g.
 
 \begin{ViFile}
-topology_name = hypercube
-topology_geometry = 4 5 6
+topology.name = hypercube
+topology.geometry = 4 5 6
 \end{ViFile}
 
 where now we have full connections within horizontal rows, horizontal columns, and vertical columns.
@@ -39,10 +39,10 @@ Here each switch has radix 12 (3 connections in X, 4 connections in Y, 5 connect
 A hypercube has the same coordinate system as a torus. For example, to create a very specific, irregular allocation on a hyerpcube:
 
 \begin{ViFile}
-launch_app1_cmd = aprun -n 5
-launch_indexing = coordinate
-launch_allocation = coordinate
-launch_coordinate_file = coords.txt
+app1.launch_cmd = aprun -n 5
+app1.launch_indexing = coordinate
+app1.launch_allocation = coordinate
+app1.launch_coordinate_file = coords.txt
 \end{ViFile}
 
 and then a coordinate file named \inlineshell{coords.txt}

@@ -20,7 +20,7 @@
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/app_manager.h>
 #include <sstmac/software/launch/launcher.h>
-#include <sstmac/software/launch/launch_message.h>
+#include <sstmac/software/launch/launch_event.h>
 #include <sstmac/common/runtime.h>
 #include <sprockit/keyword_registration.h>
 #include <sprockit/sim_parameters.h>
@@ -173,7 +173,7 @@ node::build_launchers(sprockit::sim_parameters* params)
   std::list<int>::const_iterator it, end = my_ranks.end();
   for (it=my_ranks.begin(); it != end; ++it){
     int rank = *it;
-    sw::launch_message* lmsg = new launch_message(appman->launch_info(), sw::launch_message::ARRIVE, task_id(rank));
+    sw::launch_event* lmsg = new launch_event(appman->launch_info(), sw::launch_event::ARRIVE, task_id(rank));
     runtime::register_node(sw::app_id(aid), task_id(rank), my_addr_);
     launchers_.push_back(lmsg);
   }
@@ -264,7 +264,7 @@ node::launch()
 }
 #else
 void
-node::launch(timestamp start, launch_message* msg)
+node::launch(timestamp start, launch_event* msg)
 {
   schedule(start, new handler_event_queue_entry(msg, this, this->event_location()));
 }

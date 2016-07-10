@@ -14,7 +14,6 @@ library_includedir=$(includedir)/sstmac/configurations
 library_include_HEADERS = \
     mpi.ini \
     runtest.ini \
-    cxx.ini \
     debug.ini \
     pisces.ini \
     macrels.ini \

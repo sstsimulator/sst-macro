@@ -61,7 +61,7 @@ Because of its popularity, MPI is one of our main priorities in providing progra
 We currently test against the MPICH test suite. All tests compile, so you should never see compilation errors.  
 However, since many of the functions are not typically used in the community, we only test commonly-used functions.   
 See Section \ref{subsec:issues:mpi} for functions that are not supported.  
-Functions that are not implemented will throw a \class{unimplemented\_error}, reporting the function name. 
+Functions that are not implemented will throw a \inlinecode{unimplemented\_error}, reporting the function name. 
 
 
 \subsection{Analysis Tools and Statistics}
@@ -156,13 +156,6 @@ Even if configured so that time progresses, the code will work but will take a v
 \item \inlinecode{MPI_Reduce_Scatter_block()} is not implemented.
 \item \inlinecode{MPIX_*} functions are not implemented  (like non-blocking collectives).
 \item Calling MPI functions from user-defined reduce operations (MPI test 39; including \inlinecode{MPI_Comm_rank}).
-\end{itemize}
-
-\subsubsection{Miscellaneous}
-\label{subsubsec:issues:mpi:misc}
-
-\begin{itemize}
-\item \inlinecode{MPI_Is_thread_main()} is not implemented.
 \end{itemize}
 
 

@@ -47,7 +47,7 @@ index_strategy::validate_nproc(int ppn, int num_nodes, int nproc,
     spkt_throw_printf(sprockit::value_error,
                      "%s::allocate:  ppn must be > 0. "
                      "If you're running DUMPI or another tracer, launch_indexing parameter "
-                     "needs to be hostname or dumpi. Alternatively you can specify a launch_app1_cmd.",
+                     "needs to be hostname or dumpi. Alternatively you can specify a app1.launch_cmd.",
                      name);
   }
 

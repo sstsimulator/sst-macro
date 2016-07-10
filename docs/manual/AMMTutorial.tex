@@ -33,10 +33,19 @@ If the parameter is set to 100-1000 bytes, e.g., that means we are doing more fi
 The following parameters define the CPU and compute power of the node (independent of memory subsystem).
 They are universal and are valid for all abstract machine models.
 
+Using the preferred (current) namespace parameters:
+\begin{ViFile}
+node.model = simple
+node.frequency = 2.1ghz
+node.ncores = 24
+node.nsockets = 4
+\end{ViFile}
+
+or using the deprecated parameters:
 \begin{ViFile}
 node_name = simple
 node_frequency = 2.1ghz
-node_cores = 24
+node_ccores = 24
 node_sockets = 4
 \end{ViFile}
 
@@ -54,7 +63,7 @@ node_sockets = 4
 This is simplest abstract machine model and incorporates three basic components (i.e. congestion points).
 Each node has a memory subsystem and NIC (injection/ejection).
 Once packets are injected, they traverse a series of network switches.
-The memory, injection, and network are all defined by a single bandwidth/latency parameter pair.
+The memory, injection, and network are all defined by a bandwidth/latency parameter pair.
 
 \begin{ViFile}
 network_bandwidth = 6GB/s
@@ -64,6 +73,9 @@ injection_latency = 1us
 memory_bandwidth = 10GB/s
 memory_latency = 15ns
 \end{ViFile}
+
+These are special parameters used by the AMM configurations.
+They can be by-passed by directly using fully namespaced parameters (not shown).
 
 NOTE: there is no parameter \inlinefile{network_latency}.
 The parameter is \inlinefile{network_hop_latency}.
@@ -101,7 +113,8 @@ In many cases, multiple memory links or management units are connect to a shared
 The bus determines to the total, aggregate memory bandwidth.
 However, the individual links determine the maximum observed bandwidth by any single component.
 AMM2 has all the same parameters as AMM1, but now allows an additional parameter for memory.
-
+These are special parameters used by the AMM configurations.
+They can be by-passed by directly using fully namespaced parameters (not shown).
 
 \begin{ViFile}
 max_memory_bandwidth = 5GB/s
@@ -131,6 +144,8 @@ However, packets ``intersecting'' at a switch - even if following separate paths
 AMM3 generalize the network parameters by adding a switch bandwidth.
 We note again here that AMM3 has all the same parameters as AMM2, plus the additional switch bandwidth parameter.
 Thus, higher-numbered abstract machine models always add more detail.
+These are special parameters used by the AMM configurations.
+They can be by-passed by directly using fully namespaced parameters (not shown) for more detailed configurations.
 
 \begin{ViFile}
 network_switch_bandwidth = 12GB/s

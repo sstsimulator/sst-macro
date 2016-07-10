@@ -13,20 +13,18 @@
 
 using namespace sprockit::dbg;
 
-RegisterDebugSlot(sumi_allgatherv);
-
 namespace sumi
 {
 
-SpktRegister("bruckv", dag_collective, bruckv_collective);
+SpktRegister("bruck_allgatherv", dag_collective, bruck_allgatherv_collective);
 
 
-bruckv_actor::bruckv_actor(int* counts) : recv_counts_(counts)
+bruck_allgatherv_actor::bruck_allgatherv_actor(int* counts) : recv_counts_(counts)
 {
 }
 
 void
-bruckv_actor::init_buffers(void* dst, void* src)
+bruck_allgatherv_actor::init_buffers(void* dst, void* src)
 {
   total_nelems_ = 0;
   for (int i=0; i < dense_nproc_; ++i){
@@ -35,11 +33,18 @@ bruckv_actor::init_buffers(void* dst, void* src)
     total_nelems_ += recv_counts_[i];
   }
 
+  bool in_place = dst == src;
   if (src){
     //put everything into the dst buffer to begin
-    std::memcpy(dst, src, recv_counts_[dense_me_] * type_size_);
-    int* idst = (int*) dst;
-    int* isrc = (int*) src;
+    if (in_place){
+      if (dense_me_ != 0){
+        int inPlaceOffset = my_offset_ * type_size_;
+        void* inPlaceSrc = ((char*)src + inPlaceOffset);
+        std::memcpy(dst, inPlaceSrc, recv_counts_[dense_me_]*type_size_);
+      }
+    } else {
+      std::memcpy(dst, src, recv_counts_[dense_me_] * type_size_);
+    }
     long buffer_size = total_nelems_ * type_size_;
     send_buffer_ = my_api_->make_public_buffer(dst, buffer_size);
     recv_buffer_ = send_buffer_;
@@ -48,14 +53,14 @@ bruckv_actor::init_buffers(void* dst, void* src)
 }
 
 void
-bruckv_actor::finalize_buffers()
+bruck_allgatherv_actor::finalize_buffers()
 {
   long buffer_size = nelems_ * type_size_ * dom_->nproc();
   my_api_->unmake_public_buffer(send_buffer_, buffer_size);
 }
 
 int
-bruckv_actor::nelems_to_recv(int partner, int partner_gap)
+bruck_allgatherv_actor::nelems_to_recv(int partner, int partner_gap)
 {
   int nelems_to_recv = 0;
   for (int p=0; p < partner_gap; ++p){
@@ -66,7 +71,7 @@ bruckv_actor::nelems_to_recv(int partner, int partner_gap)
 }
 
 void
-bruckv_actor::init_dag()
+bruck_allgatherv_actor::init_dag()
 {
 
   int virtual_nproc = dense_nproc_;
@@ -90,7 +95,7 @@ bruckv_actor::init_dag()
   int num_rounds = log2nproc;
   int nprocs_extra_round = num_extra_procs;
 
-  debug_printf(sumi_collective | sumi_allgatherv,
+  debug_printf(sumi_collective,
     "Bruckv %s: configured for %d rounds with an extra round exchanging %d proc segments on tag=%d ",
     rank_str().c_str(), log2nproc, num_extra_procs, tag_);
 
@@ -153,13 +158,13 @@ bruckv_actor::init_dag()
 }
 
 void
-bruckv_actor::buffer_action(void *dst_buffer, void *msg_buffer, action* ac)
+bruck_allgatherv_actor::buffer_action(void *dst_buffer, void *msg_buffer, action* ac)
 {
   std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
 }
 
 void
-bruckv_actor::finalize()
+bruck_allgatherv_actor::finalize()
 {
   // rank 0 need not reorder
   // or no buffers

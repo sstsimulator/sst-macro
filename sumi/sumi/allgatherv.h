@@ -6,21 +6,19 @@
 #include <sumi/collective_message.h>
 #include <sumi/comm_functions.h>
 
-DeclareDebugSlot(sumi_allgatherv)
-
 namespace sumi {
 
-class bruckv_actor :
-  public dag_collective_actor
+class bruck_allgatherv_actor :
+  public bruck_actor
 {
 
  public:
   std::string
   to_string() const {
-    return "bruck actor";
+    return "bruck allgatherv actor";
   }
 
-  bruckv_actor(int* recv_counts);
+  bruck_allgatherv_actor(int* recv_counts);
 
  protected:
   void finalize();
@@ -40,24 +38,24 @@ class bruckv_actor :
 
 };
 
-class bruckv_collective :
+class bruck_allgatherv_collective :
   public dag_collective
 {
 
  public:
   std::string
   to_string() const {
-    return "allgatherv";
+    return "bruck allgatherv";
   }
 
   dag_collective_actor*
   new_actor() const {
-    return new bruckv_actor(recv_counts_);
+    return new bruck_allgatherv_actor(recv_counts_);
   }
 
   dag_collective*
   clone() const {
-    return new bruckv_collective;
+    return new bruck_allgatherv_collective;
   }
 
   void init_recv_counts(int* counts){

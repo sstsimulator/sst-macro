@@ -19,6 +19,9 @@ mpi_api::group_incl(int *ranks, int num_ranks, MPI_Group oldgrp, MPI_Group *newg
   mpi_group* newgrpPtr = new mpi_group(vec_ranks);
   *newgrp = add_group_ptr(newgrpPtr);
 
+  mpi_api_debug(sprockit::dbg::mpi, "MPI_Group_incl(%d,%d,*%d)",
+                num_ranks, oldgrp, *newgrp);
+
   return MPI_SUCCESS;
 }
 

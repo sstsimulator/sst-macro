@@ -51,6 +51,11 @@ void
 comm_nvram_get(int dst, const message::ptr& msg);
 
 void
+comm_alltoall(void* dst, void* src, int nelems,
+   int type_size, int tag, bool fault_aware = false,
+   int context = options::initial_context, domain* dom = 0);
+
+void
 comm_allgather(void* dst, void* src, int nelems,
    int type_size, int tag, bool fault_aware = false,
    int context = options::initial_context, domain* dom = 0);

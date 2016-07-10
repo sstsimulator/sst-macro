@@ -87,7 +87,7 @@ try_top_info_main(int argc, char **argv)
   map_env_params(params);
 
   //do some cleanup and processing of params
-  process_init_params(params);
+  process_init_params(params, true);
 
   //at this point, we have read in parameters - init malloc system
   //set the global parameters object

@@ -23,8 +23,10 @@ simple_param_expander::expand(sprockit::sim_parameters* params)
   switch_params->add_param_override("model", "simple");
   mem_params->add_param_override("model", "packet_flow");
 
-  int conc = params->get_optional_int_param("network_nodes_per_switch", 1);
-  top_params->add_param_override("concentration", conc);
+  if (!top_params->has_param("concentration")){
+    int conc = params->get_optional_int_param("network_nodes_per_switch", 1);
+    top_params->add_param_override("concentration", conc);
+  }
 
   proc_params->add_param_override("frequency", params->get_param("node_frequency"));
   node_params->add_param_override("ncores", params->get_param("node_cores"));
@@ -32,18 +34,23 @@ simple_param_expander::expand(sprockit::sim_parameters* params)
 
   top_params->add_param_override("name", params->get_param("topology_name"));
 
-  if (params->has_param("topology_geometry"))
+  if (!top_params->has_param("geometry") 
+    && params->has_param("topology_geometry")){
     top_params->add_param_override("geometry", params->get_param("topology_geometry"));
-  if (params->has_param("topology_redundant")){
+  }
+  if (!top_params->has_param("redundant") 
+    && params->has_param("topology_redundant")){
     top_params->add_param_override("redundant", params->get_param("topology_redundant"));
   }
-  if (params->has_param("topology_group_connections")){
+  if (!top_params->has_param("group_connections") 
+    && params->has_param("topology_group_connections")){
     top_params->add_param_override("group_connections",
                      params->get_param("topology_group_connections"));
   }
 
-  if (!params->has_param("nic_negligible_size")){
-    nic_params->add_param_override("nic.negligible_size", "512");
+  if (!nic_params->has_param("negligible_size")
+    && !params->has_param("nic_negligible_size")){
+    nic_params->add_param_override("negligible_size", "512");
   }
 
   std::string amm_type = params->get_param("amm_model");

@@ -116,9 +116,6 @@ class mpi_queue
   init_os(operating_system* os);
 
   void
-  finalize_init();
-
-  void
   set_api(mpi_api* api){
     api_ = api;
   }
@@ -203,6 +200,9 @@ class mpi_queue
  private:
   void 
   handle_incoming_message(const mpi_message::ptr& message);
+
+  void
+  handle_collective_done(const sumi::message::ptr& msg);
 
   void
   do_send(const mpi_message::ptr& mess);

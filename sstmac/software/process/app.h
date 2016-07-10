@@ -59,8 +59,14 @@ class app :
  public:
   typedef void (*destructor_fxn)(void*);
 
+  typedef int (*main_fxn)(int argc, char** argv);
+  typedef int (*empty_main_fxn)();
+
   int
   allocate_tls_key(destructor_fxn fnx);
+
+  static sprockit::sim_parameters*
+  get_params();
 
   software_id
   sid() const {
@@ -135,15 +141,11 @@ class app :
   /// Goodbye.
   virtual ~app();
 
-  char** argv();
-
-  int argc();
-
   virtual void
   consume_params(sprockit::sim_parameters* params) = 0;
 
   virtual app*
-  clone_type() = 0;
+  clone_type() const = 0;
 
   app*
   clone(software_id newid);
@@ -155,9 +157,6 @@ class app :
   skeleton_main() = 0;
 
   virtual void run();
-
-  static void
-  init_argv(app_id aid, sprockit::sim_parameters* params);
 
   virtual void
   init_factory_params(sprockit::sim_parameters *params);
@@ -236,8 +235,10 @@ class app :
 
   virtual void init_mem_lib();
 
- private:
   sprockit::sim_parameters* params_;
+  software_id id_;
+
+ private:
   lib_compute_inst* compute_inst_;
   lib_compute_time* compute_time_;
   lib_compute_memmove* compute_mem_move_;
@@ -245,14 +246,8 @@ class app :
   lib_sleep* sleep_lib_;
   long next_tls_key_;
 
-  software_id id_;
-
   int next_condition_;
   int next_mutex_;
-
-  static std::vector<char**> argv_for_app_;
-
-  static std::vector<int> argc_for_app_;
 
   std::map<long, thread*> subthreads_;
 
@@ -261,6 +256,59 @@ class app :
   std::map<int, condition_t> conditions_;
 
   std::map<int, destructor_fxn> tls_key_fxns_;
+
+};
+
+class user_app_cxx_full_main : public app
+{
+ public:
+  static void
+  register_main_fxn(const char* name, app::main_fxn fxn);
+
+  void skeleton_main();
+
+  virtual void
+  consume_params(sprockit::sim_parameters *params);
+
+  app*
+  clone_type() const {
+    return new user_app_cxx_full_main;
+  }
+
+  struct argv_entry {
+    char** argv;
+    int argc;
+    argv_entry() : argv(0), argc(0) {}
+  };
+
+ private:
+  void init_argv(argv_entry& entry);
+
+  static std::map<std::string, app::main_fxn>* main_fxns_;
+  static std::map<app_id, argv_entry> argv_map_;
+  app::main_fxn fxn_;
+
+};
+
+class user_app_cxx_empty_main : public app
+{
+ public:
+  static void
+  register_main_fxn(const char* name, app::empty_main_fxn fxn);
+
+  virtual void
+  consume_params(sprockit::sim_parameters *params);
+
+  app*
+  clone_type() const {
+    return new user_app_cxx_empty_main;
+  }
+
+  void skeleton_main();
+
+ private:
+  static std::map<std::string, app::empty_main_fxn>* empty_main_fxns_;
+  app::empty_main_fxn fxn_;
 
 };
 
@@ -282,38 +330,7 @@ class app_factory : public sprockit::SpktFactory<app>
 }
 } // end of namespace sstmac.
 
-#define SpktRegisterApp(appstr, appname, ...) \
-    SpktRegister(appstr, ::sstmac::sw::app, appname, __VA_ARGS__)
 
-#define sstmac_register_app(cls) \
-static int cls##_main(int argc, char** argv); \
-class cls :  \
-    public ::sstmac::sw::app \
-{ \
- public: \
-  cls(){} \
-  \
-  virtual ~cls() throw () {} \
-\
-  ::sstmac::sw::app* \
-  clone_type() { \
-      return new cls; \
-  } \
-\
-  void consume_params(::sprockit::sim_parameters* params) \
-  { \
-  } \
-    \
-  std::string \
-  to_string() const { \
-    return "new skeleton"; \
-  } \
-\
-  void skeleton_main() { \
-      cls##_main(argc(), argv()); \
-  } \
-}; \
-SpktRegister(#cls, ::sstmac::sw::app, cls);
 
 
 #endif

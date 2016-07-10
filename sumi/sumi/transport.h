@@ -30,6 +30,8 @@ class transport :
 {
 
  public:
+  virtual ~transport(){}
+
   virtual void
   init();
   
@@ -350,16 +352,36 @@ class transport :
    * @param context The context (i.e. initial set of failed procs)
    */
   virtual void
-  allgather(void* dst, void* src, int nelems, int type_size, int tag, bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+  allgather(void* dst, void* src, int nelems, int type_size, int tag,
+            bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
 
   virtual void
-  allgatherv(void* dst, void* src, int* recv_counts, int type_size, int tag, bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+  allgatherv(void* dst, void* src, int* recv_counts, int type_size, int tag,
+             bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
 
   virtual void
-  gather(int root, void* dst, void* src, int nelems, int type_size, int tag, bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+  gather(int root, void* dst, void* src, int nelems, int type_size, int tag,
+         bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
 
   virtual void
-  scatter(int root, void* dst, void* src, int nelems, int type_size, int tag, bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+  gatherv(int root, void* dst, void* src, int sendcnt, int* recv_counts, int type_size, int tag,
+          bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+
+  virtual void
+  alltoall(void* dst, void* src, int nelems, int type_size, int tag,
+             bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+
+  virtual void
+  alltoallv(void* dst, void* src, int* send_counts, int* recv_counts, int type_size, int tag,
+             bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+
+  virtual void
+  scatter(int root, void* dst, void* src, int nelems, int type_size, int tag,
+          bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+
+  virtual void
+  scatterv(int root, void* dst, void* src, int* send_counts, int recvcnt, int type_size, int tag,
+          bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
 
   /**
    * Essentially just executes a zero-byte allgather.
@@ -590,6 +612,7 @@ class transport :
    */
   void 
   do_heartbeat(int prev_context);  
+
   
  protected:
   transport();
@@ -612,41 +635,14 @@ class transport :
 
   void end_function();
 
- private:
-  /**
-   * Based on size cutoffs, selective the collective algorithm
-   * @param size      The size of the input buffer
-   * @param coll_map  The set of the collectives to choose from
-   * @return A collective (copy) ready to use - returns a clone
-   */
-  dag_collective* pick_collective(collective::type_t ty,
-        int size, std::map<int, dag_collective*>& coll_map);
-
-  /**
-   * Build a collective of a particular type. Might return null
-   * if the collective doesn't need to do any work (e.g. 1 proc)
-   * @param ty
-   * @param algorithms  The set of algorithms to choose from based on size
-   * @param dst
-   * @param src
-   * @param nelems
-   * @param type_size
-   * @param tag
-   * @param fault_aware
-   * @param context
-   * @param dom
-   * @return
-   */
-  dag_collective*
-  build_collective(collective::type_t ty,
-    std::map<int,dag_collective*>& algorithms,
-    domain* dom,
+ private:  
+  bool
+  skip_collective(collective::type_t ty,
+    domain*& dom,
     void* dst, void *src,
     int nelems, int type_size,
-    int tag,
-    bool fault_aware,
-    int context);
-  
+    int tag);
+
  private:
   int heartbeat_tag_;
   typedef spkt_unordered_map<int,collective*> tag_to_collective_map;
@@ -722,7 +718,7 @@ class transport :
 
   int nspares_;
 
-#if SPKT_USE_SPINLOCK
+#if SUMI_USE_SPINLOCK
   spin_thread_lock lock_;
 #else
   mutex_thread_lock lock_;
@@ -742,18 +738,21 @@ class transport :
   }
 
  private:
-  /** Each integer indicates the minimum size required to use a particular collective */
-  std::map<int, dag_collective*> allgathers_;
-  std::map<int, dag_collective*> allgathervs_;
-  std::map<int, dag_collective*> gathers_;
-  std::map<int, dag_collective*> allreduces_;
-  std::map<int, dag_collective*> bcasts_;
-  std::map<int, dag_collective*> reduces_;
-  std::map<int, dag_collective*> scatters_;
+  static collective_algorithm_selector* allgather_selector_;
+  static collective_algorithm_selector* alltoall_selector_;
+  static collective_algorithm_selector* alltoallv_selector_;
+  static collective_algorithm_selector* allreduce_selector_;
+  static collective_algorithm_selector* allgatherv_selector_;
+  static collective_algorithm_selector* bcast_selector_;
+  static collective_algorithm_selector* gather_selector_;
+  static collective_algorithm_selector* gatherv_selector_;
+  static collective_algorithm_selector* reduce_selector_;
+  static collective_algorithm_selector* scatter_selector_;
+  static collective_algorithm_selector* scatterv_selector_;
 
 };
 
-DeclareFactory(transport);
+DeclareFactory(transport)
 
 
 class terminate_exception : public std::exception

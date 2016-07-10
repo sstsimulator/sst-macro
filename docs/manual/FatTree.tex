@@ -6,8 +6,8 @@
 Within SST, a fat tree is defined by the following parameters:
 
 \begin{ViFile}
-topology_name = fattree
-topology_geometry = 4 2
+topology.name = fattree
+topology.geometry = 4 2
 \end{ViFile}
 The first number, 4, indicates the number of levels in the fat tree.
 The second number, 2, indicates the radix or branching factor of the tree.
@@ -20,7 +20,7 @@ This is done for a very specific reason.
 At the final level, you may wish to have a different branching fraction for the compute nodes, e.g.
 
 \begin{ViFile}
-network_nodes_per_switch = 1
+topology.concentration = 1
 \end{ViFile}
 This loads the injection bandwidth for the compute node dedicating its own injection switch.
 If the parameter \inlineshell{network_nodes_per_switch} is omitted, it defaults to the fat tree radix.
@@ -28,8 +28,8 @@ This case is shown in Figure \ref{fig:topologies:abstractfattree} where there ar
 Higher radix fat trees can be specified, e.g.
 
 \begin{ViFile}
-topology_name = fattree
-topology_geometry = 3 4
+topology.name = fattree
+topology.geometry = 3 4
 \end{ViFile}
 which would have $4^3 = 64$ compute nodes.
 
@@ -86,7 +86,7 @@ The numbering of compute nodes is shown in Figure \ref{fig:topologies:fattreeids
 Consider the case
 
 \begin{ViFile}
-launch_app1_cmd = aprun -n 4 -N 1
+app1.launch_cmd = aprun -n 4 -N 1
 \end{ViFile}
 which launches four processes all on distinct nodes.
 In the simplest allocation and indexing scheme (first available),
@@ -94,9 +94,9 @@ processes would be placed in order on 0,1,2,3.
 An alternative allocation/indexing scheme uses the Node ID allocator.
 
 \begin{ViFile}
-launch_allocation = node_id
-launch_indexing = node_id
-launch_node_id_file = nodes.txt
+app1.launch_allocation = node_id
+app1.launch_indexing = node_id
+app1.launch_node_id_file = nodes.txt
 \end{ViFile}
 Here \inlineshell{nodes.txt} would contain the number of nodes on the first line, followed by the list of Node IDs, in order, of where to place MPI ranks.
 For the file
@@ -114,15 +114,15 @@ If indexing differs from allocation (usually because there are multiple MPI rank
 Suppose we have:
 
 \begin{ViFile}
-launch_app1_cmd = aprun -n 4 -N 2
+app1.launch_cmd = aprun -n 4 -N 2
 \end{ViFile}
 We then need:
 
 \begin{ViFile}
-launch_allocation = node_id
-launch_indexing = node_id
-launch_node_id_allocation_file = alloc.txt
-launch_node_id_indexing_file = index.txt
+app1.launch_allocation = node_id
+app1.launch_indexing = node_id
+app1.launch_node_id_allocation_file = alloc.txt
+app1.launch_node_id_indexing_file = index.txt
 \end{ViFile}
 where the contents of \inlineshell{alloc.txt} are, e.g.
 

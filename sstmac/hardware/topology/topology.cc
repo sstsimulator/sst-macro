@@ -74,13 +74,8 @@ topology::init_factory_params(sprockit::sim_parameters* params)
 {
   outputgraph_ = params->get_optional_bool_param("output_graph", false);
 
-  num_nodes_per_netlink_ = params->get_optional_int_param("netlink_radix", 1);
   netlink_endpoints_ = params->get_optional_bool_param("netlink_endpoints", false);
-
-  //we might have an intermediate layer between end points and internal topology
-  //the topology should be blissfully unaware of this
-  //just change the effect nps_
-  endpoints_per_switch_ /= num_nodes_per_netlink_;
+  num_nodes_per_netlink_ = params->get_optional_int_param("netlink_radix", 1);
 
   if (netlink_endpoints_){
     endpoints_per_switch_ /= num_nodes_per_netlink_;

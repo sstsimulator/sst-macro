@@ -21,7 +21,7 @@ class skeleton_app_manager :
   }
 
   static void
-  parse_launch_cmd(const std::string& prefix,
+  parse_launch_cmd(
     sprockit::sim_parameters* params,
     int& nproc,
     int& procs_per_node,
@@ -34,7 +34,7 @@ class skeleton_app_manager :
 
   static void
   parse_aprun(const std::string& cmd, int& nproc, int& nproc_per_node,
-              std::vector<int>& core_affinities, const std::string& appname);
+              std::vector<int>& core_affinities);
 
  private:
   virtual void

@@ -10,11 +10,10 @@ if !INTEGRATED_SST_CORE
 # These are run with the same rule
 SKELETONCASES= \
   gtc \
-  osu \
-  lu \
-  sweep3d \
   miniFE \
-  HPCCG 
+  lflr \
+  multiapp \
+  sendrecv
 
 if EXTERNAL_BOOST
   SKELETONCASES += boxml

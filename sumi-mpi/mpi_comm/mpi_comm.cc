@@ -23,10 +23,11 @@ namespace sumi {
 mpi_comm* mpi_comm::comm_null;
 
 mpi_comm::mpi_comm() :
-  group_(),
-  next_collective_tag_(10235),
-  id_(-1),
-  rank_(-1)
+  group_(0),
+  next_collective_tag_(0),
+  id_(MPI_COMM_NULL),
+  rank_(-1),
+  domain(-1)
 {
   topotype_ = TOPO_NONE;
 }
@@ -35,7 +36,9 @@ mpi_comm::mpi_comm(
   MPI_Comm id, //const appid &aid,
   int rank, mpi_group* peers,
   app_manager* env, app_id aid) :
-  env_(env), group_(peers), next_collective_tag_(10235),
+  domain(rank),
+  env_(env), group_(peers),
+  next_collective_tag_(MPI_COMM_WORLD + 100),
   aid_(aid), id_(id), rank_(rank)
 {
   if (peers->size() == 0) {
@@ -61,8 +64,10 @@ mpi_comm::dup_keyvals(mpi_comm* m)
 {
   spkt_unordered_map<int, keyval*>::iterator it, end = m->keyvals_.end();
   for (it = m->keyvals_.begin(); it != end; it++) {
-    keyval* c = (it->second)->clone(keyval::get_new_key());
-    keyvals_[c->key()] = c;
+    spkt_throw(sprockit::unimplemented_error,
+      "dup_keyvals");
+    //keyval* c = (it->second)->clone(keyval::get_new_key());
+    //keyvals_[c->key()] = c;
   }
 }
 
@@ -120,8 +125,10 @@ mpi_comm::get_keyval(keyval* k, void* val, int* flag)
 int
 mpi_comm::next_collective_tag()
 {
+  uint16_t id = id_;
+  int next_tag = (id << 16) | next_collective_tag_;
   next_collective_tag_++;
-  return next_collective_tag_;
+  return next_tag;
 }
 
 void

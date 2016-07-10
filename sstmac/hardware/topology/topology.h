@@ -439,6 +439,11 @@ class topology :
     return num_nodes_per_netlink_;
   }
 
+  bool
+  netlink_endpoints() const {
+    return netlink_endpoints_;
+  }
+
   virtual void
   build_internal_connectables(
     internal_connectable_map& connectables,

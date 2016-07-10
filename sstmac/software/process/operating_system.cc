@@ -19,6 +19,7 @@
 #include <sstmac/common/event_callback.h>
 #include <sstmac/common/runtime.h>
 #include <sstmac/common/event_manager.h>
+#include <sstmac/common/messages/library_message.h>
 
 #if SSTMAC_HAVE_GNU_PTH
 #include <sstmac/software/threading/threading_pth.h>
@@ -27,7 +28,6 @@
 #include <sstmac/software/threading/threading_pthread.h>
 #endif
 #include <sstmac/software/libraries/service.h>
-#include <sstmac/software/launch/complete_message.h>
 #include <sstmac/software/launch/launcher.h>
 #include <sstmac/software/process/graphviz.h>
 #include <sstmac/software/process/ftq.h>
@@ -980,11 +980,11 @@ operating_system::start_app(app* theapp)
 void
 operating_system::handle_event(event* ev)
 {  
-  //this better be an incoming message to a library, probably from off node
+  //this better be an incoming event to a library, probably from off node
   library_interface* libmsg = test_cast(library_interface, ev);
   if (!libmsg) {
     spkt_throw_printf(sprockit::illformed_error,
-      "operating_system::handle_message: got message %s instead of library message",
+      "operating_system::handle_event: got event %s instead of library event",
       ev->to_string().c_str());
   }
 
@@ -1001,17 +1001,17 @@ operating_system::handle_event(event* ev)
         cerrn << it->first << std::endl;
       }
       spkt_throw_printf(sprockit::os_error,
-                     "operating_system::handle_message: can't find library %s on os %d for msg %s",
+                     "operating_system::handle_event: can't find library %s on os %d for event %s",
                      libmsg->lib_name().c_str(), int(addr()),
                      ev->to_string().c_str());
     } else {
-      //drop the message
+      //drop the event
     }
   }
   else {
     os_debug("delivering message to lib %s: %s",
         libn.c_str(), ev->to_string().c_str());
-    it->second->incoming_message(safe_cast(message, ev));
+    it->second->incoming_event(ev);
   }
 }
 

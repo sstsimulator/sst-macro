@@ -12,7 +12,7 @@
 #ifndef SSTMAC_SOFTWARE_LIBRARIES_LIBRARY_H_INCLUDED
 #define SSTMAC_SOFTWARE_LIBRARIES_LIBRARY_H_INCLUDED
 
-#include <sstmac/common/messages/sst_message_fwd.h>
+#include <sstmac/common/sst_event_fwd.h>
 #include <sstmac/common/event_location.h>
 #include <sstmac/software/process/key.h>
 #include <sstmac/software/process/software_id.h>
@@ -56,7 +56,7 @@ class library  {
   consume_params(sprockit::sim_parameters* params);
 
   virtual void
-  incoming_message(message* msg);
+  incoming_event(event* ev) = 0;
 
   operating_system*
   os() const {

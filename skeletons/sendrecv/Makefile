@@ -1,4 +1,4 @@
-TARGET := runsst
+TARGET := runsendrecv
 SRC := $(shell ls *.cc) 
 
 CXX :=    sst++

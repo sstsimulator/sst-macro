@@ -159,12 +159,12 @@ In particular, template code which is correct and compiles on several other plat
 
 By default, DUMPI is configured and built along with SST/macro with support for reading and parsing DUMPI traces, known as libundumpi.  
 DUMPI binaries and libraries are also installed along with everything for \sstmacro during make install.   
-DUMPI can be used as it's own library within the \sstmacro source tree by changing to \folder{sst-macro/sst-dumpi}, 
+DUMPI can be used as it's own library within the \sstmacro source tree by changing to \inlineshell{sst-macro/sst-dumpi}, 
 where you can change its configuration options.  
 It is not recommended to disable libundumpi support, which wouldn't make much sense anyway. 
 
 DUMPI can also be used as stand-alone tool/library if you wish (\eg~for simplicity if you're only tracing). 
-To get DUMPI by itself, either copy the \folder{sstmacro/dumpi} directory somewhere else or visit \url{https://github.com/sstsimulator/sst-dumpi} and follow similar instructions for obtaining \sstmacro.
+To get DUMPI by itself, either copy the \inlineshell{sstmacro/dumpi} directory somewhere else or visit \url{https://github.com/sstsimulator/sst-dumpi} and follow similar instructions for obtaining \sstmacro.
 
 To see a list of configuration options for DUMPI, run \inlineshell{./configure --help}.  
 If you're trying to configure DUMPI for trace collection, use \inlineshell{--enable-libdumpi}.
@@ -192,7 +192,7 @@ all necessary flags are set by the wrappers.
 \section{Running an Application}
 \label{sec:tutorial:runapp}
 
-To demonstrate how an application is run in \sstmacro, we'll use a very simple send-recv program located in \folder{skeletons/sendrecv}.
+To demonstrate how an application is run in \sstmacro, we'll use a very simple send-recv program located in \inlineshell{skeletons/sendrecv}.
 We will take a closer look at the actual code in Section \ref{sec:tutorial:basicmpi}.
 After \sstmacro has been installed and your PATH variable set correctly, run: 
 
@@ -212,7 +212,7 @@ Then you run that binary and pass it a parameter file which describes the machin
 \subsection{Makefiles}
 \label{subsec:tutorial:makefiles}
 
-We recommend structuring the Makefile for your project like the one seen in \folder{skeletons/sendrecv/Makefile} :
+We recommend structuring the Makefile for your project like the one seen in \inlineshell{skeletons/sendrecv/Makefile} :
 
 \begin{ViFile}
 TARGET := runsstmac

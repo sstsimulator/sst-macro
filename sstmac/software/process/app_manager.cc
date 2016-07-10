@@ -39,15 +39,13 @@ app_manager::set_interconnect(hw::interconnect* interconn)
 void
 app_manager::init_factory_params(sprockit::sim_parameters* params)
 {
-  launch_prefix_ = sprockit::printf("launch_app%d", int(aid_));
-  appname_ = params->get_param(launch_prefix_);
+  appname_ = params->get_param("name");
 
-  if (params->has_param(launch_prefix_ + "_core_affinities")) {
-    params->get_vector_param(launch_prefix_ + "_core_affinities",
-                             core_affinities_);
+  if (params->has_param("core_affinities")) {
+    params->get_vector_param("core_affinities", core_affinities_);
   }
+
   app_template_ = sw::app_factory::get_value(appname_, params);
-  app_template_->init_argv(aid_, params);
 
   STATIC_INIT_INTERCONNECT(params)
 }
@@ -56,10 +54,10 @@ app_manager*
 app_manager::static_app_manager(int aid, sprockit::sim_parameters* params)
 {
   if (!static_app_managers_[aid]){
-    sprockit::sim_parameters* app_params = params->top_parent()->get_namespace("app_manager");
-    std::string param_name = sprockit::printf("launch_app%d_type", aid);
+    std::string app_namespace = sprockit::printf("app%d", aid);
+    sprockit::sim_parameters* app_params = params->top_parent()->get_namespace(app_namespace);
     app_manager* mgr = app_manager_factory::get_optional_param(
-      param_name, "skeleton", app_params, app_id(aid), 0/*no parallel runtime*/);
+          "launch_type", "skeleton", app_params, app_id(aid), 0/*no parallel runtime*/);
     static_app_managers_[aid] = mgr;
     runtime::register_app_manager(app_id(aid), mgr);
     mgr->allocate_and_index_jobs();

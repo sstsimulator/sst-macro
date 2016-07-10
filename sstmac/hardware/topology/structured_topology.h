@@ -200,7 +200,7 @@ class structured_topology : public topology
     @param nid The unique index defining a node location
     @return The unique coordinates of the node
   */
-  coordinates
+  virtual coordinates
   node_coords(node_id nid) const;
 
   coordinates

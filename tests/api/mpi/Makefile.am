@@ -10,10 +10,19 @@
 #
 include $(top_srcdir)/Makefile.common
 
-AM_CPPFLAGS += -I$(top_srcdir)/tests/mpi/include -Wp,-w -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi \
-  -I$(srcdir) -I$(top_builddir)/pth -I$(top_srcdir)/pth -I$(top_srcdir)/sumi -I$(top_builddir)/sumi \
-  -I$(top_builddir)/tests/api/mpi -I$(top_srcdir)/tests/api/mpi \
-  -I$(top_builddir)/tests/api/mpi/include -I$(top_srcdir)/tests/api/mpi/include -DHAVE_MPI_WIN_CREATE
+AM_CPPFLAGS += \
+ -I$(top_srcdir)/tests/mpi/include  \
+ -I$(srcdir) -I$(top_builddir)/pth \
+ -I$(top_srcdir)/pth \
+ -I$(top_srcdir)/sumi \
+ -I$(top_builddir)/sumi \
+ -I$(top_builddir)/tests/api/mpi \
+ -I$(top_srcdir)/tests/api/mpi \
+ -I$(top_builddir)/tests/api/mpi/include \
+ -I$(top_srcdir)/tests/api/mpi/include 
+
+AM_CPPFLAGS += -I$(top_srcdir)/sstmac/install -DSSTMAC=1
+AM_CPPFLAGS += -I$(top_builddir)/sstmac/replacements -I$(top_srcdir)/sstmac/replacements
 
 EXTRA_DIST = testmpi.h include
 
@@ -62,8 +71,6 @@ TEST_SOURCE_FILES = \
   coll/allgatherv4.cc \
   coll/allred.cc \
   coll/allred2.cc \
-  coll/allred3.cc \
-  coll/allred4.cc \
   coll/allred5.cc \
   coll/allred6.cc \
   coll/allredmany.cc \
@@ -77,8 +84,6 @@ TEST_SOURCE_FILES = \
   coll/bcast3.cc \
   coll/bcasttest.cc \
   coll/bcastzerotype.cc \
-  coll/coll10.cc \
-  coll/coll11.cc \
   coll/coll12.cc \
   coll/coll13.cc \
   coll/coll2.cc \
@@ -94,10 +99,6 @@ TEST_SOURCE_FILES = \
   coll/gather.cc \
   coll/gather2.cc \
   coll/longuser.cc \
-  coll/nonblocking.cc \
-  coll/nonblocking2.cc \
-  coll/nonblocking3.cc \
-  coll/op_commutative.cc \
   coll/opband.cc \
   coll/opbor.cc \
   coll/opbxor.cc \
@@ -110,19 +111,13 @@ TEST_SOURCE_FILES = \
   coll/opminloc.cc \
   coll/opprod.cc \
   coll/opsum.cc \
-  coll/red3.cc \
-  coll/red4.cc \
   coll/red_scat_block.cc \
-  coll/red_scat_block2.cc \
   coll/redscat.cc \
-  coll/redscat2.cc \
   coll/redscat3.cc \
   coll/redscatbkinter.cc \
   coll/redscatblk3.cc \
   coll/redscatinter.cc \
   coll/reduce.cc \
-  coll/reduce_local.cc \
-  coll/scantst.cc \
   coll/scatter2.cc \
   coll/scatter3.cc \
   coll/scattern.cc \

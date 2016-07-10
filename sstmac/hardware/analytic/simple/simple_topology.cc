@@ -45,6 +45,13 @@ simple_topology::endpoint_to_ejection_switch(node_id nodeaddr, int &switch_port)
   return endpoint_to_injection_switch(nodeaddr, switch_port);
 }
 
+coordinates
+simple_topology::node_coords(node_id uid) const
+{
+  auto t = safe_cast(structured_topology, actual_topology_);
+  return t->node_coords(uid);
+}
+
 void
 simple_topology::init_factory_params(sprockit::sim_parameters* params)
 {

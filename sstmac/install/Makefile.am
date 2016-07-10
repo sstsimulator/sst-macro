@@ -28,17 +28,11 @@ libsstmac_la_LIBADD = \
   ../libraries/uq/libsstmac_uq.la \
   ../libraries/machines/libsstmac_machines.la \
   ../libraries/pthread/libsstmac_pthread.la \
-  ../libraries/sockets/libsstmac_sockets.la \
   ../libraries/sumi/libsstmac_sumi.la \
   ../main/libsstmac_driver.la \
   ../skeletons/libsstmac_skeletons.la \
-  ../software/libsstmac_sw.la  
-
-if WITH_DEFAULT_MPI
-libsstmac_la_LIBADD += ../libraries/mpi/libsstmac_mpi.la 
-else
-libsstmac_la_LIBADD += ../../sumi-mpi/libsstmac_mpi.la
-endif
+  ../software/libsstmac_sw.la \
+  ../../sumi-mpi/libsstmac_mpi.la
 
 if USE_MPIPARALLEL
 libsstmac_la_LIBADD += ../backends/mpi/libsstmac_mpi_runtime.la 

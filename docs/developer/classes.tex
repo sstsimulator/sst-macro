@@ -244,25 +244,25 @@ Here we consider the example of an abstract interface called \inlinecode{actor}.
 The code example is found in \inlineshell{main.cc}. The file begins
 
 \begin{CppCode}
-#include <sstmac/software/process/app.h>
-#include <sstmac/common/sstmac_env.h>
+#include <sstmac/skeleton.h>
 #include "actor.h"
 
 namespace sstmac {
     namespace tutorial {
-sstmac_register_app(rob_reiner);
+
+#define sstmac_app_name "rob_reiner"
 
 int
-rob_reiner_main(int argc, char **argv)
+main(int argc, char **argv)
 {
 \end{CppCode}
-The details of declaring and using external apps is found in the manual.
+The details of declaring and using external apps is found in the user's manual.
 From here it should be apparent that we defined a new application with name \inlinecode{rob_reiner}
-which is invoked via the \inlinecode{rob_reiner_main} function.
+which is invoked via the \inlinecode{main} function.
 Inside the main function, we create an object of type \inlinecode{actor}.
 
 \begin{CppCode}
-actor* the_guy = actor_factory::get_param("actor_name", sstmac::env::params);
+actor* the_guy = actor_factory::get_param("actor_name", get_params());
 the_guy->act();
 return 0;
 \end{CppCode}
@@ -273,7 +273,7 @@ The input file contains several parameters related to constructing a machine mod
 The important parameters are:
 
 \begin{ViFile}
-launch_app1 = rob_reiner
+app1.name = rob_reiner
 biggest_fan = jeremy_wilke
 actor_name = patinkin
 sword_hand = right
@@ -290,7 +290,7 @@ SST/macro ran for       0.0025 seconds
 If we change the parameters:
 
 \begin{ViFile}
-launch_app1 = rob_reiner
+app1.name = rob_reiner
 biggest_fan = jeremy_wilke
 actor_name = guest
 num_fingers = 6

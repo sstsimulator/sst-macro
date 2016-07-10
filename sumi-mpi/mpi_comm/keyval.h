@@ -12,24 +12,16 @@
 #ifndef SSTMAC_SOFTWARE_LIBRARIES_MPI_MPI_COMM_KEYVAL_H_INCLUDED
 #define SSTMAC_SOFTWARE_LIBRARIES_MPI_MPI_COMM_KEYVAL_H_INCLUDED
 
-#include <sstmac/common/thread_safe_int.h>
 #include <sumi-mpi/sstmac_mpi_integers.h>
 #include <string>
 
 namespace sumi {
-
-using sstmac::thread_safe_int;
 
 class keyval  {
 
  public:
   keyval(int k, MPI_Copy_function* c, MPI_Delete_function* d, void* e) :
     key_(k), copy_(c), del_(d), extra_(e) {
-  }
-
-  static int
-  get_new_key() {
-    return keycount++;
   }
 
   virtual
@@ -64,11 +56,7 @@ class keyval  {
   MPI_Copy_function* copy_;
   MPI_Delete_function* del_;
   void* extra_;
-
-
   void* val_;
-
-  static thread_safe_int keycount;
 
 };
 
