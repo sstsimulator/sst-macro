@@ -72,7 +72,7 @@ class config_message :
 };
 
 class rdma_message :
-  public sumi::rdma_message,
+  public sumi::message,
   public sumi::serializable_type<rdma_message>
 {
  ImplementSerializable(rdma_message)
@@ -84,7 +84,7 @@ class rdma_message :
   rdma_message(){} //need for serialization
 
   rdma_message(int iter, int num_bytes) :
-   sumi::rdma_message(num_bytes),
+   sumi::message(num_bytes),
    iter_(iter)
   {
   }
@@ -94,7 +94,7 @@ class rdma_message :
     ser & iter_;
     ser & start_;
     ser & finish_;
-    sumi::rdma_message::serialize_order(ser);
+    sumi::message::serialize_order(ser);
   }
 
   sumi::message*

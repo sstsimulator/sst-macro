@@ -163,7 +163,7 @@ sumi_transport::wall_time() const
 void
 sumi_transport::do_send_ping_request(int dst)
 {
-  rdma_message::ptr msg = new rdma_message;
+  message::ptr msg = new message;
   msg->set_class_type(message::ping);
   //here, a simple rdma get
   rdma_get(dst, msg);

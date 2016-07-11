@@ -411,10 +411,8 @@ dag_collective_actor::comm_action_done(action* ac)
 void
 dag_collective_actor::send_eager_message(action* ac)
 {
-  collective_eager_message::ptr msg
-    = new collective_eager_message(type_, collective_work_message::eager_payload,
-      send_buffer(ac), ac->nelems, type_size_, tag_,
-      ac->round, dense_me_, ac->partner);
+  collective_work_message::ptr msg = new_message(
+        ac, collective_work_message::eager_payload);
 
   debug_printf(sumi_collective | sumi_collective_sendrecv | sumi_failure,
    "Rank %s, collective %s(%p) sending eager message to %d on tag=%d "
@@ -434,14 +432,8 @@ dag_collective_actor::send_eager_message(action* ac)
 void
 dag_collective_actor::send_rdma_put_header(action* ac)
 {
-  collective_rdma_message::ptr msg
-    = new collective_rdma_message(type_,
-      collective_work_message::rdma_put_header,
-      ac->nelems, type_size_, tag_,
-      ac->round,
-      dense_me_,
-      ac->partner);
-  msg->remote_buffer() = recv_buffer(ac);
+  collective_work_message::ptr msg = new_message(
+                        ac, collective_work_message::rdma_put_header);
 
   debug_printf(sumi_collective | sumi_collective_sendrecv | sumi_failure,
    "Rank %s, collective %s(%p) sending put header %p to %s on round=%d tag=%d "
@@ -458,12 +450,10 @@ dag_collective_actor::send_rdma_put_header(action* ac)
 void
 dag_collective_actor::send_rdma_get_header(action* ac)
 {
-  collective_rdma_message::ptr msg = new collective_rdma_message(
-    type_, collective_work_message::rdma_get_header,
-       ac->nelems, type_size_, tag_,
-       ac->round, dense_me_,
-       ac->partner);
-  msg->remote_buffer() = send_buffer(ac);
+  collective_work_message::ptr msg = new_message(
+        ac, collective_work_message::rdma_get_header);
+
+  //msg->remote_buffer() = send_buffer(ac);
 
   debug_printf(sumi_collective | sumi_collective_sendrecv | sumi_failure,
    "Rank %s, collective %s(%p) sending rdma get message to %s on round=%d tag=%d "
@@ -752,11 +742,10 @@ dag_collective_actor::send_failure_message(
 
   void* no_buffer = 0;
   int no_elems = 0;
-  int no_size = 0;
   //send a failure message to the neighbor letting him know to abandon the collective
-  collective_work_message::ptr msg = new collective_eager_message(
+  collective_work_message::ptr msg = new collective_work_message(
       type_, ty,
-      no_buffer, no_elems, no_size, tag_,
+      no_elems, tag_,
       ac->round, dense_me_,
       ac->partner);
   msg->append_failed(failed_ranks_);
@@ -919,25 +908,24 @@ dag_collective_actor::data_recved(
   data_recved(ac, msg, recvd_buffer);
 }
 
-public_buffer
-dag_collective_actor::recv_buffer(action* ac_)
+void
+dag_collective_actor::set_recv_buffer(action* ac_, public_buffer& recv_buf)
 {
   recv_action* ac = static_cast<recv_action*>(ac_);
-  public_buffer recv_buf = ac->buf_type != recv_action::in_place
+  recv_buf = ac->buf_type != recv_action::in_place
                 ? recv_buffer_ : result_buffer_;
   recv_buf.offset_ptr(ac->offset*type_size_);
   if (result_buffer_.ptr && recv_buf.ptr == 0){
     spkt_throw(sprockit::value_error,
       "working with real payload, but somehow getting a null buffer");
   }
-  return recv_buf;
 }
 
-public_buffer
-dag_collective_actor::send_buffer(action* ac_)
+size_t
+dag_collective_actor::set_send_buffer(action* ac_, public_buffer& send_buf)
 {
   send_action* ac = static_cast<send_action*>(ac_);
-  public_buffer send_buf;
+  size_t nbytes = ac->nelems * type_size_;
   switch(ac->buf_type){
     case send_action::in_place:
       if (slicer_->contiguous()){
@@ -945,20 +933,51 @@ dag_collective_actor::send_buffer(action* ac_)
         send_buf.offset_ptr(ac->offset*slicer_->element_packed_size());
       } else {
         send_buf = send_buffer_; //will use a temp buffer
-        slicer_->pack_send_buf(send_buffer_, result_buffer_,
+        nbytes = slicer_->pack_send_buf(send_buffer_, result_buffer_,
                                ac->offset, ac->nelems);
       }
       break;
     case send_action::temp_send:
       send_buf = send_buffer_;
-      send_buf.offset_ptr(ac->offset*slicer_->element_packed_size());
+      send_buf.offset_ptr(ac->offset*type_size_);
       break;
     case send_action::prev_recv:
       send_buf = recv_buffer_;
-      send_buf.offset_ptr(ac->offset*slicer_->element_packed_size());
+      send_buf.offset_ptr(ac->offset*type_size_);
       break;
   }
-  return send_buf;
+  return nbytes;
+}
+
+collective_work_message::ptr
+dag_collective_actor::new_message(action* ac, collective_work_message::action_t act)
+{
+  collective_work_message::ptr msg = new collective_work_message(
+    type_, act,
+    tag_,
+    ac->round, dense_me_,
+    ac->partner);
+
+  switch(act){
+    case collective_work_message::eager_payload: {
+      size_t nbytes = set_send_buffer(ac, msg->local_buffer());
+      msg->set_byte_length(nbytes);
+      break;
+    }
+    case collective_work_message::rdma_get_header: {
+      size_t nbytes = set_send_buffer(ac, msg->remote_buffer());
+      msg->set_byte_length(nbytes);
+      break;
+    }
+    case collective_work_message::rdma_put_header:
+      set_recv_buffer(ac, msg->remote_buffer());
+      break;
+    default:
+    spkt_throw(sprockit::value_error,
+               "collective_actor::new message: created with invalid type %s",
+               collective_work_message::tostr(act));
+  }
+  return msg;
 }
 
 void
@@ -977,19 +996,19 @@ dag_collective_actor::next_round_ready_to_put(
     comm_action_done(ac);
   } else {
     //reuse the header and send it back
-    collective_rdma_message::ptr put_payload = ptr_safe_cast(collective_rdma_message, header);
-    put_payload->set_action(collective_work_message::put_data);
-    put_payload->reverse();
-    put_payload->local_buffer() = send_buffer(ac);
+    header->set_action(collective_work_message::put_data);
+    header->reverse();
+    size_t size = set_send_buffer(ac, header->local_buffer());
+    header->set_byte_length(size);
 
     debug_printf(sumi_collective | sumi_collective_sendrecv,
       "Rank %s, collective %s(%p) starting put %d elems at offset %d to %d(%d) for round=%d tag=%d msg %p",
       rank_str().c_str(), to_string().c_str(), this,
       ac->nelems, ac->offset,
       header->dense_sender(), header->sender(),
-      ac->round, tag_, put_payload.get());
+      ac->round, tag_, header.get());
 
-    my_api_->rdma_put(ac->phys_partner, put_payload,
+    my_api_->rdma_put(ac->phys_partner, header,
       true/*need a send ack*/,
       true/*need a remote recv ack*/);
   }
@@ -1011,17 +1030,15 @@ dag_collective_actor::next_round_ready_to_get(
   }
   else {
     //reuse the header and send it back
-    collective_rdma_message::ptr get_req = ptr_safe_cast(collective_rdma_message, header);
-    get_req->set_action(collective_work_message::get_data);
-
-    get_req->local_buffer() = recv_buffer(ac);
+    header->set_action(collective_work_message::get_data);
+    set_recv_buffer(ac, header->local_buffer());
 
     debug_printf(sumi_collective | sumi_collective_sendrecv,
         "Rank %s, collective %s(%p) starting get %d elems at offset %d from %d(%d) for round=%d tag=%d msg %p",
         rank_str().c_str(), to_string().c_str(), this,
         ac->nelems, ac->offset,
         header->dense_sender(), header->sender(),
-        header->round(), tag_, get_req.get());
+        header->round(), tag_, header.get());
 
     do_sumi_debug_print("rdma get into",
        rank_str().c_str(), ac->partner,
@@ -1034,7 +1051,7 @@ dag_collective_actor::next_round_ready_to_get(
        get_req->remote_buffer());
 
 
-    my_api_->rdma_get(ac->phys_partner, get_req,
+    my_api_->rdma_get(ac->phys_partner, header,
       true/*need a send ack*/,
       true/*need a local recv ack*/);
   }

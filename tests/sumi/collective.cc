@@ -186,6 +186,7 @@ test_allreduce_payload(int tag)
 void
 test_allgatherv_uneven(int tag)
 {
+
   //now do a collective with payloads
   int rank = comm_rank();
   int nproc = comm_nproc();
@@ -221,6 +222,10 @@ test_allgatherv_uneven(int tag)
       }
       //std::cout << sprockit::printf("T[%d][%d] = %d\n", rank, idx, test_elem);
     }
+  }
+
+  if (rank == 0){
+    printf("Finished uneven allgatherv on tag %d\n", tag);
   }
 }
 
@@ -261,6 +266,10 @@ test_allgatherv_even(int tag)
       }
       //std::cout << sprockit::printf("T[%d][%d] = %d\n", rank, idx, test_elem);
     }
+  }
+
+  if (rank == 0){
+    printf("Finished even allgatherv on tag %d\n", tag);
   }
 }
 
@@ -445,8 +454,11 @@ test_alltoall(int tag)
         std::cout << sprockit::printf("FAILED: all-to-all rank %d, partner %d\n", me, partner);
     }
   }
-}
 
+  if (me == 0){
+    printf("Finished alltoall on tag %d\n", tag);
+  }
+}
 
 int
 main(int argc, char **argv)

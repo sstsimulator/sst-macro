@@ -38,36 +38,12 @@ message::clone_ack() const
   return ack;
 }
 
-void*&
-message::eager_buffer()
-{
-  //by default, messages have no extra eager buffer
-  static void* no_buffer = 0;
-  return no_buffer;
-}
-
 void
 message::reverse()
 {
   int tmp = sender_;
   sender_ = recver_;
   recver_ = tmp;
-}
-
-public_buffer&
-message::local_buffer()
-{
-  spkt_throw_printf(sprockit::unimplemented_error,
-    "rdma_interface unimplemented for %s",
-    to_string().c_str());
-}
-
-public_buffer&
-message::remote_buffer()
-{
-  spkt_throw_printf(sprockit::unimplemented_error,
-    "rdma_interface unimplemented for %s",
-    to_string().c_str());
 }
 
 message*
@@ -146,27 +122,6 @@ message::serialize_order(sumi::serializer &ser)
   ser & transaction_id_;
   ser & needs_send_ack_;
   ser & needs_recv_ack_;
-}
-
-void
-payload_message::serialize_order(sumi::serializer &ser)
-{
-  ser & sumi::array(buffer_, num_bytes_);
-  message::serialize_order(ser);
-}
-
-void
-rdma_message::clone_into(rdma_message *cln) const
-{
-  cln->local_buffer_ = local_buffer_;
-  cln->remote_buffer_ = remote_buffer_;
-  message::clone_into(cln);
-}
-
-void
-rdma_message::serialize_order(sumi::serializer &ser)
-{
-  message::serialize_order(ser);
   ser & local_buffer_;
   ser & remote_buffer_;
 }

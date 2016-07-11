@@ -322,7 +322,7 @@ class slicer {
    * @param nelems
    * @return
    */
-  virtual void
+  virtual size_t
   pack_send_buf(void* packedBuf, void* unpackedObj,
                 int offset, int nelems) const = 0;
 
@@ -352,11 +352,12 @@ class default_slicer :
 {
 
  public:
-  void
+  size_t
   pack_send_buf(void* packedBuf, void* unpackedObj, int offset, int nelems) const {
     char* dstptr = (char*) packedBuf;
     char* srcptr = (char*) unpackedObj + offset*type_size;
     ::memcpy(dstptr, srcptr, nelems*type_size);
+    return nelems*type_size;
   }
 
   void
@@ -528,9 +529,20 @@ class dag_collective_actor :
 
   void* message_buffer(void* buffer, int offset);
 
-  public_buffer send_buffer(action* ac);
+  /**
+   * @brief set_send_buffer
+   * @param ac  The action being performed (eager, rdma get, rdma put)
+   * @param buf in/out parameter that will hold the correct buffer
+   * @return The size of the buffer in bytes
+   */
+  size_t
+  set_send_buffer(action* ac, public_buffer& buf);
 
-  public_buffer recv_buffer(action* ac);
+  void
+  set_recv_buffer(action* ac, public_buffer& buf);
+
+  collective_work_message::ptr
+  new_message(action* ac, collective_work_message::action_t act);
 
   collective_done_message::ptr
   done_msg() const;
