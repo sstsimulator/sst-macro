@@ -1,7 +1,7 @@
 #include <sumi/alltoall.h>
 #include <sumi/partner_timeout.h>
 #include <sumi/transport.h>
-#include <sumi/domain.h>
+#include <sumi/communicator.h>
 #include <sprockit/output.h>
 #include <cstring>
 
@@ -49,7 +49,7 @@ void
 bruck_alltoall_actor::finalize_buffers()
 {
   if (send_buffer_.ptr){
-    int buffer_size = nelems_ * type_size_ * dom_->nproc();
+    int buffer_size = nelems_ * type_size_ * comm_->nproc();
     int tmp_buffer_size = nelems_ * type_size_ * midpoint_;
     my_api_->unmake_public_buffer(result_buffer_, buffer_size);
     my_api_->free_public_buffer(recv_buffer_, tmp_buffer_size);
@@ -143,12 +143,8 @@ bruck_alltoall_actor::init_dag()
     send_shuffle->nelems = nelemsRound;
     recv_shuffle->nelems = nelemsRound;
 
-    if (prev_shuffle){
-      add_dependency(prev_shuffle, send_shuffle);
-      add_dependency(prev_shuffle, send_shuffle);
-    } else {
-      add_initial_action(send_shuffle);
-    }
+    add_dependency(prev_shuffle, send_shuffle);
+    add_dependency(prev_shuffle, send_shuffle);
 
     add_dependency(send_shuffle, send);
     add_dependency(send_shuffle, recv);

@@ -27,7 +27,7 @@ mpi_comm::mpi_comm() :
   next_collective_tag_(0),
   id_(MPI_COMM_NULL),
   rank_(-1),
-  domain(-1)
+  communicator(-1)
 {
   topotype_ = TOPO_NONE;
 }
@@ -36,7 +36,7 @@ mpi_comm::mpi_comm(
   MPI_Comm id, //const appid &aid,
   int rank, mpi_group* peers,
   app_manager* env, app_id aid) :
-  domain(rank),
+  communicator(rank),
   env_(env), group_(peers),
   next_collective_tag_(MPI_COMM_WORLD + 100),
   aid_(aid), id_(id), rank_(rank)
@@ -53,10 +53,10 @@ mpi_comm::mpi_comm(
 }
 
 int
-mpi_comm::global_to_domain_rank(int global_rank) const
+mpi_comm::global_to_comm_rank(int global_rank) const
 {
   spkt_throw(sprockit::unimplemented_error,
-    "mpi_comm::global_to_domain_rank");
+    "mpi_comm::global_to_comm_rank");
 }
 
 void

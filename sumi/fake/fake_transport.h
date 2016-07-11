@@ -68,13 +68,13 @@ class fake_transport : public transport
   simulate_vote(int context, const thread_safe_set<int>& failures);
 
   void
-  allgather(void *dst, void *src, int nelems, int type_size, int tag, bool fault_aware, int context, domain *dom){} //do nothing
+  allgather(void *dst, void *src, int nelems, int type_size, int tag, bool fault_aware, int context, communicator *dom){} //do nothing
 
   void
-  allreduce(void *dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn, bool fault_aware, int context, domain *dom){} //do nothing
+  allreduce(void *dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn, bool fault_aware, int context, communicator *dom){} //do nothing
 
   void
-  dynamic_tree_vote(int vote, int tag, vote_fxn fxn, int context, domain *dom){}
+  dynamic_tree_vote(int vote, int tag, vote_fxn fxn, int context, communicator *dom){}
 
  private:
   message::ptr

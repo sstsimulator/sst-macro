@@ -1,7 +1,7 @@
 #include <sumi/alltoallv.h>
 #include <sumi/partner_timeout.h>
 #include <sumi/transport.h>
-#include <sumi/domain.h>
+#include <sumi/communicator.h>
 #include <sprockit/output.h>
 #include <cstring>
 
@@ -58,7 +58,7 @@ direct_alltoallv_actor::add_action(
   int partner = (dense_me_ + dense_nproc_ + stride*stride_direction) % dense_nproc_;
   action* ac = actions[partner];
   if (stride < num_initial){
-    add_initial_action(ac);
+    dag_collective_actor::add_action(ac);
   } else {
     int prev_partner = (partner + dense_nproc_ - num_initial*stride_direction) % dense_nproc_;
     action* prev = actions[prev_partner];

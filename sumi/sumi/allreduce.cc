@@ -1,6 +1,6 @@
 #include <sumi/allreduce.h>
 #include <sumi/transport.h>
-#include <sumi/domain.h>
+#include <sumi/communicator.h>
 #include <sprockit/output.h>
 #include <sprockit/stl_string.h>
 #include <cstring>
@@ -87,12 +87,11 @@ wilke_allreduce_actor::init_dag()
     int partner_gap = 1;
     int round_nelems = nelems_;
 
-    action *prev_send, *prev_recv;
+    action *prev_send = 0, *prev_recv = 0;
 
     int virtual_me = my_roles[role];
     bool i_am_even = (virtual_me % 2) == 0;
     int round_offset = 2*num_doubling_rounds;
-    bool initial_send = true;
     debug_printf(sumi_collective,
       "Rank %d configuring allreduce for virtual role=%d tag=%d for nproc=%d(%d) virtualized to n=%d over %d rounds ",
       my_api_->rank(), virtual_me, tag_, dense_nproc_, my_api_->nproc(), virtual_nproc, log2nproc);
@@ -130,16 +129,11 @@ wilke_allreduce_actor::init_dag()
         recv_ac->offset = recv_offset;
         recv_ac->nelems = round_nelems - send_nelems;
 
-        if (initial_send){ //initial send/recv
-          add_initial_action(send_ac);
-          add_initial_action(recv_ac);
-          initial_send = false;
-        } else {
-          add_dependency(prev_send, send_ac);
-          add_dependency(prev_send, recv_ac);
-          add_dependency(prev_recv, send_ac);
-          add_dependency(prev_recv, recv_ac);
-        }
+        add_dependency(prev_send, send_ac);
+        add_dependency(prev_send, recv_ac);
+        add_dependency(prev_recv, send_ac);
+        add_dependency(prev_recv, recv_ac);
+
         send_rounds[i] = send_ac;
         recv_rounds[i] = recv_ac;
 

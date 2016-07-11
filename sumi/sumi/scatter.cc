@@ -1,5 +1,5 @@
 #include <sumi/scatter.h>
-#include <sumi/domain.h>
+#include <sumi/communicator.h>
 #include <sumi/transport.h>
 
 namespace sumi {
@@ -18,8 +18,8 @@ btree_scatter_actor::init_buffers(void *dst, void *src)
   if (!dst)
     return;
 
-  int me = dom_->my_domain_rank();
-  int nproc = dom_->nproc();
+  int me = comm_->my_comm_rank();
+  int nproc = comm_->nproc();
   int result_size = nelems_ * type_size_;
   int max_recv_buf_size = midpoint_*nelems_*type_size_;
   if (me == root_){
@@ -66,8 +66,8 @@ btree_scatter_actor::finalize_buffers()
   if (!result_buffer_.ptr)
     return;
 
-  int nproc = dom_->nproc();
-  int me = dom_->my_domain_rank();
+  int nproc = comm_->nproc();
+  int me = comm_->my_comm_rank();
   int result_size = nelems_*type_size_;
   int max_recv_buf_size = midpoint_*nelems_*type_size_;
   if (me == root_){
@@ -98,8 +98,8 @@ btree_scatter_actor::buffer_action(void *dst_buffer, void *msg_buffer, action *a
 void
 btree_scatter_actor::init_dag()
 {
-  int me = dom_->my_domain_rank();
-  int nproc = dom_->nproc();
+  int me = comm_->my_comm_rank();
+  int nproc = comm_->nproc();
   int round = 0;
 
   action* prev = 0;
@@ -117,14 +117,14 @@ btree_scatter_actor::init_dag()
     action* ac = new send_action(round, midpoint_, send_ty);
     ac->offset = nelems_ * midpoint_;
     ac->nelems = nelems_ * std::min(nproc-midpoint_, midpoint_);;
-    add_initial_action(ac);
+    add_dependency(prev, ac);
     prev = ac;
   }
   if (me == midpoint_){
     action* ac = new recv_action(round, root_, recv_action::packed_temp_buf);
     ac->offset = 0;
     ac->nelems = nelems_ * std::min(nproc-midpoint_, midpoint_);
-    add_initial_action(ac);
+    add_dependency(prev, ac);
     prev = ac;
   }
 
@@ -134,12 +134,12 @@ btree_scatter_actor::init_dag()
       action* ac = new send_action(round, 0, send_ty);
       ac->nelems = nelems_ * midpoint_;
       ac->offset = 0;
-      add_initial_action(ac);
+      add_dependency(prev, ac);
     } else if (me == 0){
       action* ac = new recv_action(round, root_, recv_action::packed_temp_buf);
       ac->nelems = nelems_ * midpoint_;
       ac->offset = 0;
-      add_initial_action(ac);
+      add_dependency(prev, ac);
       prev = ac;
     }
   }

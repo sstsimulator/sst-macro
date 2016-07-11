@@ -24,7 +24,7 @@ class collective_done_message :
     return "collective done message";
   }
 
-  collective_done_message(int tag, collective::type_t ty, domain* dom) :
+  collective_done_message(int tag, collective::type_t ty, communicator* dom) :
     tag_(tag), result_(0), vote_(0), type_(ty),
     all_ranks_know_failure_(false), dom_(dom)
   {
@@ -42,7 +42,7 @@ class collective_done_message :
     return type_;
   }
 
-  domain*
+  communicator*
   dom() const {
     return dom_;
   }
@@ -110,13 +110,13 @@ class collective_done_message :
   message*
   clone() const;
 
-  int domain_rank() const {
-    return domain_rank_;
+  int comm_rank() const {
+    return comm_rank_;
   }
 
   void
-  set_domain_rank(int rank){
-    domain_rank_ = rank;
+  set_comm_rank(int rank){
+    comm_rank_ = rank;
   }
 
  protected:
@@ -126,8 +126,8 @@ class collective_done_message :
   collective::type_t type_;
   thread_safe_set<int> failed_procs_;
   bool all_ranks_know_failure_;
-  int domain_rank_;
-  domain* dom_;
+  int comm_rank_;
+  communicator* dom_;
 
 };
 

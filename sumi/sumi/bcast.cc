@@ -1,5 +1,5 @@
 #include <sumi/bcast.h>
-#include <sumi/domain.h>
+#include <sumi/communicator.h>
 #include <sumi/transport.h>
 
 namespace sumi {
@@ -22,7 +22,7 @@ binary_tree_bcast_actor::init_root(int me, int roundNproc, int nproc)
       action* send = new send_action(0, partner, send_action::in_place);
       send->nelems = nelems_;
       send->offset = 0;
-      add_initial_action(send);
+      add_action(send);
     }
     partnerGap /= 2;
   }
@@ -41,7 +41,7 @@ binary_tree_bcast_actor::init_internal(int offsetMe, int windowSize,
         send_action::in_place : send_action::prev_recv;
 
   int stride = windowSize;
-  int nproc = dom_->nproc();
+  int nproc = comm_->nproc();
   while (stride > 0){
     int partner = offsetMe + stride;
     if (partner < windowStop){ //might not be power of 2
@@ -77,7 +77,7 @@ binary_tree_bcast_actor::init_child(int offsetMe, int roundNproc, int nproc)
   action* recv = new recv_action(0, parent, buf_ty);
   recv->nelems = nelems_;
   recv->offset = 0;
-  add_initial_action(recv);
+  add_action(recv);
 
   int windowStop = std::min(nproc, (windowSplit + windowSize));
   debug_printf(sprockit::dbg::sumi_collective_init,
@@ -103,8 +103,8 @@ void
 binary_tree_bcast_actor::init_dag()
 {
   int roundNproc = 1;
-  int nproc = dom_->nproc();
-  int me = dom_->my_domain_rank();
+  int nproc = comm_->nproc();
+  int me = comm_->my_comm_rank();
   while (roundNproc < nproc){
     roundNproc *= 2;
   }

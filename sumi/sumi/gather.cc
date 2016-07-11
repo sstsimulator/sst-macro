@@ -1,5 +1,5 @@
 #include <sumi/gather.h>
-#include <sumi/domain.h>
+#include <sumi/communicator.h>
 #include <sumi/transport.h>
 
 namespace sumi {
@@ -9,7 +9,7 @@ btree_gather_actor::init_tree()
 {
   log2nproc_ = 0;
   midpoint_ = 1;
-  int nproc = dom_->nproc();
+  int nproc = comm_->nproc();
   while (midpoint_ < nproc){
     midpoint_ *= 2;
     log2nproc_++;
@@ -24,8 +24,8 @@ btree_gather_actor::init_buffers(void *dst, void *src)
   if (!src)
     return;
 
-  int me = dom_->my_domain_rank();
-  int nproc = dom_->nproc();
+  int me = comm_->my_comm_rank();
+  int nproc = comm_->nproc();
 
   if (me == root_){
     int buf_size = nproc * nelems_ * type_size_;
@@ -48,8 +48,8 @@ btree_gather_actor::finalize_buffers()
   if (!result_buffer_.ptr)
     return;
 
-  int nproc = dom_->nproc();
-  int me = dom_->my_domain_rank();
+  int nproc = comm_->nproc();
+  int me = comm_->my_comm_rank();
   if (me == root_){
     int buf_size = nproc * nelems_ * type_size_;
     my_api_->unmake_public_buffer(result_buffer_, buf_size);
@@ -79,8 +79,8 @@ btree_gather_actor::buffer_action(void *dst_buffer, void *msg_buffer, action *ac
 void
 btree_gather_actor::init_dag()
 {
-  int me = dom_->my_domain_rank();
-  int nproc = dom_->nproc();
+  int me = comm_->my_comm_rank();
+  int nproc = comm_->nproc();
   int round = 0;
 
   int maxGap = midpoint_;
@@ -139,11 +139,7 @@ btree_gather_actor::init_dag()
     action* shuffle = new shuffle_action(round, me);
     shuffle->offset = midpoint_ * nelems_;
     shuffle->nelems = (nproc - midpoint_) * nelems_;
-    if (prev){
-      add_dependency(prev, shuffle);
-    } else {
-      add_initial_action(shuffle);
-    }
+    add_dependency(prev, shuffle);
     prev = shuffle;
   }
 

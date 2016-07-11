@@ -4,6 +4,7 @@
 #include <sumi/collective.h>
 #include <sumi/collective_message.h>
 #include <sumi/dense_rank_map.h>
+#include <sumi/communicator.h>
 #include <set>
 #include <map>
 #include <stdint.h>
@@ -27,9 +28,10 @@ debug_print(const char* info, const std::string& rank_str,
 
 struct action
 {
-  typedef enum { send=0, recv=1, shuffle=2, unroll=3 } type_t;
+  typedef enum { send=0, recv=1, shuffle=2, unroll=3, resolve=4, join=5 } type_t;
   type_t type;
   int partner;
+  int phys_partner;
   int join_counter;
   int round;
   int offset;
@@ -43,6 +45,8 @@ struct action
       sumi_case(recv);
       sumi_case(shuffle);
       sumi_case(unroll);
+      sumi_case(resolve);
+      sumi_case(join);
     }
   }
 
@@ -54,13 +58,13 @@ struct action
   static uint32_t
   message_id(type_t ty, int r, int p){
     //factor of two is for send or receive
-    const int num_enums = 4;
+    const int num_enums = 6;
     return p*max_round*num_enums + r*num_enums + ty;
   }
 
   static void
   details(uint32_t round, type_t& ty, int& r, int& p){
-    const int num_enums = 4;
+    const int num_enums = 6;
     uint32_t remainder = round;
     p = remainder / max_round / num_enums;
     remainder -= p*max_round*num_enums;
@@ -71,7 +75,6 @@ struct action
     ty = (type_t) remainder;
   }
 
- protected:
   action(type_t ty, int r, int p) :
     type(ty), round(r),
     partner(p),
@@ -192,10 +195,10 @@ class collective_actor
   std::string
   rank_str() const;
 
-  void init(transport* my_api, domain* dom, int tag, int context, bool fault_aware);
+  void init(transport* my_api, communicator* dom, int tag, int context, bool fault_aware);
 
  protected:
-  collective_actor(transport* my_api, domain* dom, int tag, int context, bool fault_aware);
+  collective_actor(transport* my_api, communicator* dom, int tag, int context, bool fault_aware);
 
   collective_actor(){} //will be initialized later
 
@@ -226,12 +229,10 @@ class collective_actor
    * 1 -> 0
    * 2 -> 2
    * 3 -> 2
-   * Map a virtual actor rank to the actual domain rank.
-   * @param virtual_rank
    * @return
    */
-  virtual int
-  domain_rank(int dense_rank) const;
+  int
+  comm_rank(int dense_rank) const;
 
   /**
    * Notification that a partner failed.
@@ -241,18 +242,6 @@ class collective_actor
    */
   virtual void
   dense_partner_ping_failed(int dense_rank) = 0;
-
-  void
-  send_header(int dense_dst, const message::ptr& msg);
-
-  void
-  send_payload(int dense_dst, const message::ptr& msg);
-
-  void
-  rdma_get(int dense_dst, const message::ptr& msg);
-
-  void
-  rdma_put(int dense_dst, const message::ptr& msg);
 
   std::string
   rank_str(int dense_rank) const;
@@ -271,7 +260,7 @@ class collective_actor
   finalize(){}
 
   bool
-  ping_domain_rank(int phys_rank, int dense_rank);
+  ping_rank(int phys_rank, int dense_rank);
 
   bool is_failed(int dense_rank) const {
     return failed_ranks_.count(dense_rank);
@@ -280,6 +269,7 @@ class collective_actor
   bool is_alive(int dense_rank) const {
     return failed_ranks_.count(dense_rank) == 0;
   }
+
   virtual bool
   check_neighbor(int global_phys_rank);
 
@@ -300,7 +290,7 @@ class collective_actor
  protected:
   transport* my_api_;
 
-  domain* dom_;
+  communicator* comm_;
 
   int dense_me_;
 
@@ -411,7 +401,8 @@ class default_slicer :
  * the actual physical number.
  */
 class dag_collective_actor :
- public collective_actor
+ public collective_actor,
+ public communicator::rank_callback
 {
  public:
   virtual std::string
@@ -439,7 +430,7 @@ class dag_collective_actor :
   void init(
     collective::type_t type,
     transport* my_api,
-    domain* dom,
+    communicator* dom,
     int nelems,
     int type_size,
     int tag,
@@ -458,12 +449,34 @@ class dag_collective_actor :
   virtual void init_dag() = 0;
   virtual void init_tree(){}
 
+ private:
+  typedef std::map<uint32_t, action*> active_map;
+  typedef std::multimap<uint32_t, action*> pending_map;
+  typedef std::multimap<uint32_t, collective_work_message::ptr> pending_msg_map;
+
  protected:
-  void
-  add_dependency(action* precursor, action* ac);
+  void add_dependency(action* precursor, action* ac);
+  void add_action(action* ac);
 
   void
-  check_collective_done();
+  compute_tree(int& log2nproc, int& midpoint, int& nproc) const;
+
+  static bool
+  is_shared_role(int role, int num_roles, int* my_roles){
+    for (int r=0; r < num_roles; ++r){
+      if (role == my_roles[r]){
+        return true;
+      }
+    }
+    return false;
+  }
+
+ private:
+  void add_comm_dependency(action* precursor, action* ac);
+  void add_dependency_to_map(uint32_t id, action* ac);
+  void rank_resolved(int global_rank, int comm_rank);
+
+  void check_collective_done();
 
   void put_done_notification();
 
@@ -495,7 +508,6 @@ class dag_collective_actor :
   void
   incoming_send_message(action* ac, const collective_work_message::ptr& msg);
 
- protected:
   void
   incoming_message(const collective_work_message::ptr& msg);
 
@@ -523,38 +535,13 @@ class dag_collective_actor :
   collective_done_message::ptr
   done_msg() const;
 
-  void add_initial_action(action* ac);
-
   void dense_partner_ping_failed(int dense_rank);
-
-  void
-  compute_tree(int& log2nproc, int& midpoint, int& nproc) const;
 
   virtual void
   start_shuffle(action* ac);
 
-  static bool
-  is_shared_role(int role, int num_roles, int* my_roles){
-    for (int r=0; r < num_roles; ++r){
-      if (role == my_roles[r]){
-        return true;
-      }
-    }
-    return false;
-  }
-
- private:
-  typedef std::map<uint32_t, action*> active_map;
-  typedef std::multimap<uint32_t, action*> pending_map;
-  active_map active_comms_;
-  pending_map pending_comms_;
-  std::list<action*> completed_actions_;
-
-  typedef std::multimap<uint32_t, collective_work_message::ptr> pending_msg_map;
-  pending_msg_map pending_send_headers_;
-  pending_msg_map pending_recv_headers_;
-
   void erase_pending(uint32_t id, pending_msg_map& m);
+
   void reput_pending(uint32_t id, pending_msg_map& m);
 
   /**
@@ -564,7 +551,7 @@ class dag_collective_actor :
    *        Should only be called for actions that became active
    * @param ac
    */
-  void action_done(action* ac);
+  void comm_action_done(action* ac);
 
   /**
    * @brief Satisfy dependences and check if done.
@@ -575,11 +562,11 @@ class dag_collective_actor :
    */
   void clear_action(action* ac);
 
-  void action_done(action::type_t ty, int round, int partner);
+  void clear_dependencies(action* ac);
+
+  void comm_action_done(action::type_t ty, int round, int partner);
 
   void fail_actions(int dense_rank);
-
-  std::list<action*> initial_actions_;
 
  protected:
   int type_size_;
@@ -587,21 +574,33 @@ class dag_collective_actor :
   int nelems_;
 
   /**
-   * @brief This where I send data from
-   */
+  * @brief This where I send data from
+  */
   public_buffer send_buffer_;
   /**
-   * @brief This is where I directly receive data from neighbors
-   */
+  * @brief This is where I directly receive data from neighbors
+  */
   public_buffer recv_buffer_;
   /**
-   * @brief This is where I accumulate or put results after a receive
-   */
+  * @brief This is where I accumulate or put results after a receive
+  */
   public_buffer result_buffer_;
 
   collective::type_t type_;
 
   default_slicer* slicer_;
+
+ private:
+  active_map active_comms_;
+  pending_map pending_comms_;
+  std::list<action*> completed_actions_;
+
+  pending_msg_map pending_send_headers_;
+  pending_msg_map pending_recv_headers_;
+
+  std::set<action*> initial_actions_;
+
+
 
 };
 

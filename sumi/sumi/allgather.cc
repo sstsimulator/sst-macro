@@ -1,7 +1,7 @@
 #include <sumi/allgather.h>
 #include <sumi/partner_timeout.h>
 #include <sumi/transport.h>
-#include <sumi/domain.h>
+#include <sumi/communicator.h>
 #include <sprockit/output.h>
 #include <cstring>
 
@@ -35,7 +35,7 @@ bruck_allgather_actor::init_buffers(void* dst, void* src)
       //put everything into the dst buffer to begin
       std::memcpy(dst, src, block_size);
     }
-    long buffer_size = nelems_ * type_size_ * dom_->nproc();
+    long buffer_size = nelems_ * type_size_ * comm_->nproc();
     result_buffer_ = my_api_->make_public_buffer(dst, buffer_size);
     send_buffer_ = result_buffer_;
     recv_buffer_ = result_buffer_;
@@ -46,7 +46,7 @@ void
 bruck_allgather_actor::finalize_buffers()
 {
   if (result_buffer_.ptr){
-    long buffer_size = nelems_ * type_size_ * dom_->nproc();
+    long buffer_size = nelems_ * type_size_ * comm_->nproc();
     my_api_->unmake_public_buffer(send_buffer_, buffer_size);
   }
 }
@@ -74,7 +74,7 @@ bruck_allgather_actor::init_dag()
   int partner_gap = 1;
   int round_nelems = nelems_;
   int nproc = dense_nproc_;
-  action *prev_send, *prev_recv;
+  action *prev_send = 0, *prev_recv = 0;
   for (int i=0; i < num_rounds; ++i){
     int send_partner = (dense_me_ + nproc - partner_gap) % nproc;
     int recv_partner = (dense_me_ + partner_gap) % nproc;
@@ -85,15 +85,10 @@ bruck_allgather_actor::init_dag()
     send_ac->nelems = round_nelems;
     recv_ac->nelems = round_nelems;
 
-    if (i == 0){
-      add_initial_action(send_ac);
-      add_initial_action(recv_ac);
-    } else {
-      add_dependency(prev_send, send_ac);
-      add_dependency(prev_recv, send_ac);
-      add_dependency(prev_send, recv_ac);
-      add_dependency(prev_recv, recv_ac);
-    }
+    add_dependency(prev_send, send_ac);
+    add_dependency(prev_recv, send_ac);
+    add_dependency(prev_send, recv_ac);
+    add_dependency(prev_recv, recv_ac);
 
     partner_gap *= 2;
     round_nelems *= 2;

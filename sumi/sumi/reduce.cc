@@ -1,6 +1,6 @@
 #include <sumi/reduce.h>
 #include <sumi/transport.h>
-#include <sumi/domain.h>
+#include <sumi/communicator.h>
 #include <sprockit/output.h>
 #include <sprockit/stl_string.h>
 #include <cstring>
@@ -95,7 +95,8 @@ wilke_reduce_actor::init_dag()
   send_action::buf_type_t fan_in_send_type = slicer_->contiguous() ?
         send_action::in_place : send_action::prev_recv;
 
-  action *prev_send, *prev_recv;
+  action* final_join = new action(action::join, 0, 0);
+
   for (int role=0; role < num_roles; ++role){
     action* null = 0;
     std::vector<action*> send_rounds(num_doubling_rounds, null);
@@ -106,11 +107,12 @@ wilke_reduce_actor::init_dag()
     int partner_gap = 1;
     int round_nelems = nelems_;
 
+    action *prev_send = 0, *prev_recv = 0;
+
     int virtual_me = my_roles[role];
     if (virtual_me == midpoint) i_am_midpoint = true;
     bool i_am_even = (virtual_me % 2) == 0;
     int round_offset = 2*num_doubling_rounds;
-    bool initial_send = true;
     debug_printf(sumi_collective,
       "Rank %d configuring reduce for virtual role=%d tag=%d for nproc=%d(%d) virtualized to n=%d over %d rounds ",
       my_api_->rank(), virtual_me, tag_, dense_nproc_, my_api_->nproc(), virtual_nproc, log2nproc);
@@ -149,16 +151,12 @@ wilke_reduce_actor::init_dag()
         recv_ac->offset = recv_offset;
         recv_ac->nelems = round_nelems - send_nelems;
 
-        if (initial_send){ //initial send/recv
-          add_initial_action(send_ac);
-          add_initial_action(recv_ac);
-          initial_send = false;
-        } else {
-          add_dependency(prev_send, send_ac);
-          add_dependency(prev_send, recv_ac);
-          add_dependency(prev_recv, send_ac);
-          add_dependency(prev_recv, recv_ac);
-        }
+
+        add_dependency(prev_send, send_ac);
+        add_dependency(prev_send, recv_ac);
+        add_dependency(prev_recv, send_ac);
+        add_dependency(prev_recv, recv_ac);
+
         send_rounds[i] = send_ac;
         recv_rounds[i] = recv_ac;
 
@@ -224,6 +222,8 @@ wilke_reduce_actor::init_dag()
       max_active_rank /= 2;
     } //end loop over fan-in recv rounds
 
+    add_dependency(prev_send, final_join);
+    add_dependency(prev_recv, final_join);
   }
 
   if (root_ != 0){
@@ -234,30 +234,26 @@ wilke_reduce_actor::init_dag()
       action* send_ac = new send_action(round, root_, fan_in_send_type);
       send_ac->nelems = nelems_split;
       send_ac->offset = 0;
-      if (prev_send) add_dependency(prev_send, send_ac);
-      if (prev_recv) add_dependency(prev_recv, send_ac);
+      add_dependency(final_join, send_ac);
     }
 
     if (dense_me_ == 1){
       action* send_ac = new send_action(round, root_, fan_in_send_type);
       send_ac->nelems = nelems_ - nelems_split;
       send_ac->offset = nelems_split;
-      if (prev_send) add_dependency(prev_send, send_ac);
-      if (prev_recv) add_dependency(prev_recv, send_ac);
+      add_dependency(final_join, send_ac);
     }
 
     if (dense_me_ == root_){
       action* recv_ac = new recv_action(round, 0, fan_in_recv_type);
       recv_ac->nelems = nelems_split;
       recv_ac->offset = 0;
-      if (prev_send) add_dependency(prev_send, recv_ac);
-      if (prev_recv) add_dependency(prev_recv, recv_ac);
+      add_dependency(final_join, recv_ac);
 
       recv_ac = new recv_action(round, 1, fan_in_recv_type);
       recv_ac->nelems = nelems_ - nelems_split;
       recv_ac->offset = nelems_split;
-      if (prev_send) add_dependency(prev_send, recv_ac);
-      if (prev_recv) add_dependency(prev_recv, recv_ac);
+      add_dependency(final_join, recv_ac);
     }
   }
 

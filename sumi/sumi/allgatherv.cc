@@ -1,7 +1,7 @@
 #include <sumi/allgatherv.h>
 #include <sumi/partner_timeout.h>
 #include <sumi/transport.h>
-#include <sumi/domain.h>
+#include <sumi/communicator.h>
 #include <sprockit/output.h>
 #include <cstring>
 
@@ -55,7 +55,7 @@ bruck_allgatherv_actor::init_buffers(void* dst, void* src)
 void
 bruck_allgatherv_actor::finalize_buffers()
 {
-  long buffer_size = nelems_ * type_size_ * dom_->nproc();
+  long buffer_size = nelems_ * type_size_ * comm_->nproc();
   my_api_->unmake_public_buffer(send_buffer_, buffer_size);
 }
 
@@ -110,7 +110,7 @@ bruck_allgatherv_actor::init_dag()
 
 
   int partner_gap = 1;
-  action *prev_send, *prev_recv;
+  action *prev_send = 0, *prev_recv = 0;
   int nelems_recvd = recv_counts_[dense_me_];
   for (int i=0; i < num_rounds; ++i){
     int send_partner = (dense_me_ + nproc - partner_gap) % nproc;
@@ -127,15 +127,11 @@ bruck_allgatherv_actor::init_dag()
     partner_gap *= 2;
     nelems_recvd += recv_ac->nelems;
 
-    if (i == 0){
-      add_initial_action(send_ac);
-      add_initial_action(recv_ac);
-    } else {
-      add_dependency(prev_send, send_ac);
-      add_dependency(prev_recv, send_ac);
-      add_dependency(prev_send, recv_ac);
-      add_dependency(prev_recv, recv_ac);
-    }
+
+    add_dependency(prev_send, send_ac);
+    add_dependency(prev_recv, send_ac);
+    add_dependency(prev_send, recv_ac);
+    add_dependency(prev_recv, recv_ac);
 
     prev_send = send_ac;
     prev_recv = recv_ac;

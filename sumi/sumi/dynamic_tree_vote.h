@@ -92,7 +92,7 @@ class dynamic_tree_vote_actor :
   dynamic_tree_vote_actor(int vote,
     vote_fxn fxn, int tag,
     transport* my_api,
-    domain* dom,
+    communicator* dom,
     int context);
 
   stage_t
@@ -304,7 +304,7 @@ class dynamic_tree_vote_collective :
     vote_fxn fxn,
     int tag,
     transport* my_api,
-    domain* dom,
+    communicator* dom,
     int context);
 
  protected:
