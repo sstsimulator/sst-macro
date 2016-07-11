@@ -18,7 +18,7 @@
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/common/fail_event.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/process/app_manager.h>
+#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/launch/launcher.h>
 #include <sstmac/software/launch/launch_event.h>
 #include <sstmac/common/runtime.h>
@@ -142,21 +142,9 @@ node::init_factory_params(sprockit::sim_parameters *params)
   proc_ = processor_factory::get_optional_param("processor", "instruction",
           proc_params,
           mem_model_, this);
-  /**
-  sstkeyword {
-      gui=4;
-      docstring=The total number of cores on the node.ENDL
-      The number of cores per NUMA block is node_cores/node_sockets.;
-  }
-  */
+
   ncores_ = params->get_int_param("ncores");
-  /**
-  sstkeyword {
-      gui=4;
-      docstring=The total number of distinct sockets on the node.ENDL
-      Taken to be synonymous with the number of distinct NUMA blocks.;
-  }
-  */
+
   nsocket_ = params->get_optional_int_param("nsockets", 1);
 
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -168,14 +156,14 @@ void
 node::build_launchers(sprockit::sim_parameters* params)
 {
   int aid = 1;
-  app_manager* appman = app_manager::static_app_manager(aid, params);
+  app_launch* appman = app_launch::static_app_launch(aid, params);
   const std::list<int>& my_ranks = appman->rank_assignment(my_addr_);
   std::list<int>::const_iterator it, end = my_ranks.end();
   for (it=my_ranks.begin(); it != end; ++it){
     int rank = *it;
-    sw::launch_event* lmsg = new launch_event(appman->launch_info(), sw::launch_event::ARRIVE, task_id(rank));
-    runtime::register_node(sw::app_id(aid), task_id(rank), my_addr_);
-    launchers_.push_back(lmsg);
+    sw::launch_event* lev = new launch_event(appman->app_template(), aid,
+                                    rank, appman->core_affinities());
+    launchers_.push_back(lev);
   }
 }
 

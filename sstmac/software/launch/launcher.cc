@@ -38,21 +38,15 @@ void
 launcher::incoming_event(event* ev)
 {
   launch_event* lev = safe_cast(launch_event, ev);
-  launch_info* linfo = lev->info();
-  if (lev->launch_type() == launch_event::ARRIVE) {
-    software_id sid(linfo->aid(), lev->tid());
-    app* theapp = linfo->app_template()->clone(sid);
-    sprockit::sim_parameters* app_params = linfo->app_template()->params();
-    theapp->consume_params(app_params);
-    int intranode_rank = num_apps_launched_[linfo->aid()]++;
-    int core_affinity = linfo->core_affinity(intranode_rank);
-    theapp->set_affinity(core_affinity);
-    os_->start_app(theapp);
 
-  }
-  else if(lev->launch_type() == launch_event::COMPLETE) {
-    //do nothing
-  }
+  software_id sid(lev->aid(), lev->tid());
+  app* theapp = lev->app_template()->clone(sid);
+  sprockit::sim_parameters* app_params = lev->app_template()->params();
+  theapp->consume_params(app_params);
+  int intranode_rank = num_apps_launched_[lev->aid()]++;
+  int core_affinity = lev->core_affinity(intranode_rank);
+  theapp->set_affinity(core_affinity);
+  os_->start_app(theapp);
 
   delete lev;
 }
@@ -64,6 +58,17 @@ launcher::start()
   if (!os_) {
     spkt_throw_printf(sprockit::value_error,
                      "instantlaunch::start: OS hasn't been registered yet");
+  }
+}
+
+int
+launch_event::core_affinity(int intranode_rank) const
+{
+  if (core_affinities_.size() > 0) { //we are assigned
+    return core_affinities_[intranode_rank];
+  }
+  else {
+    return thread::no_core_affinity;
   }
 }
 

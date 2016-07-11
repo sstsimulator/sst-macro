@@ -16,7 +16,7 @@
 #include <sstmac/common/node_address.h>
 #include <sstmac/software/process/task_id.h>
 #include <sstmac/software/process/app_id.h>
-#include <sstmac/software/process/app_manager.h>
+#include <sstmac/software/launch/app_launch.h>
 #include <sumi-mpi/mpi_comm/keyval_fwd.h>
 #include <sumi-mpi/mpi_comm/mpi_group.h>
 #include <sumi-mpi/sstmac_mpi_integers.h>
@@ -25,7 +25,7 @@
 namespace sumi {
 
 using sstmac::sw::app_id;
-using sstmac::sw::app_manager;
+using sstmac::sw::app_launch;
 using sstmac::node_id;
 
 /**
@@ -49,7 +49,6 @@ class mpi_comm : public domain
     MPI_Comm id,
     int rank,
     mpi_group* peers,
-    app_manager* env,
     app_id aid);
 
   /// Goodbye.
@@ -144,14 +143,6 @@ class mpi_comm : public domain
   task_id
   peer_task(int rank) const;
 
-  node_id
-  my_node() const;
-
-  /// The list of nodes involved in this communicator.
-  /// Indexing is done by mpiid::rank().id.
-  node_id
-  node_at(int rank) const;
-
   /// Equality comparison.
   inline bool
   operator==(mpi_comm* other) const {
@@ -189,8 +180,6 @@ class mpi_comm : public domain
 
  protected:
   friend class mpi_comm_factory;
-
-  app_manager* env_;
 
   /// The tasks participating in this communicator.  This is only used for an mpicomm* which is NOT WORLD_COMM.
   mpi_group* group_;

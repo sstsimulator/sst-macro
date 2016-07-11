@@ -6,6 +6,7 @@
 #include <sstmac/common/timestamp.h>
 #include <sprockit/factories/factory.h>
 #include <sstmac/hardware/noise/noise.h>
+#include <sstmac/hardware/packet_flow/packet_flow_stats.h>
 
 namespace sstmac {
 namespace hw {
@@ -20,12 +21,7 @@ class packet_flow_bandwidth_arbitrator :
       @return The time at which the packet can be forwarded to the next switch/node/etc.
   */
   virtual void
-  arbitrate(
-    timestamp now,
-    packet_flow_payload* payload,
-    timestamp& packet_head_leaves,
-    timestamp& packet_tail_leaves,
-    timestamp& credit_leaves) = 0;
+  arbitrate(packet_stats_st& st) = 0;
 
   virtual std::string
   to_string() const = 0;
@@ -65,7 +61,7 @@ class packet_flow_bandwidth_arbitrator :
   clone(double bw) const = 0;
 
   virtual int
-  bytes_sending(const timestamp& now) const = 0;
+  bytes_sending(timestamp now) const = 0;
 
  protected:
   packet_flow_bandwidth_arbitrator();
@@ -73,7 +69,6 @@ class packet_flow_bandwidth_arbitrator :
  protected:
   double out_bw_;
   double inv_out_bw_;
-  static const int min_trans_;
 
 };
 
@@ -84,11 +79,7 @@ class packet_flow_null_arbitrator :
   packet_flow_null_arbitrator();
 
   virtual void
-  arbitrate(timestamp next_free,
-    packet_flow_payload* payload,
-    timestamp& packet_head_leaves,
-    timestamp& packet_tail_leaves,
-    timestamp& credit_leaves);
+  arbitrate(packet_stats_st& st);
 
   virtual packet_flow_bandwidth_arbitrator*
   clone(double bw) const {
@@ -103,7 +94,7 @@ class packet_flow_null_arbitrator :
   }
 
   int
-  bytes_sending(const timestamp& now) const;
+  bytes_sending(timestamp now) const;
 
 };
 
@@ -115,11 +106,7 @@ class packet_flow_simple_arbitrator :
   packet_flow_simple_arbitrator();
 
   virtual void
-  arbitrate(timestamp now,
-    packet_flow_payload* payload,
-    timestamp& packet_head_leaves,
-    timestamp& packet_tail_leaves,
-    timestamp& credit_leaves);
+  arbitrate(packet_stats_st& st);
 
   virtual packet_flow_bandwidth_arbitrator*
   clone(double bw) const {
@@ -134,7 +121,7 @@ class packet_flow_simple_arbitrator :
   }
 
   int
-  bytes_sending(const timestamp& now) const;
+  bytes_sending(timestamp now) const;
 
  protected:
   timestamp next_free_;
@@ -151,17 +138,13 @@ class packet_flow_cut_through_arbitrator :
   ~packet_flow_cut_through_arbitrator();
 
   virtual void
-  arbitrate(timestamp now,
-    packet_flow_payload* payload,
-    timestamp& packet_head_leaves,
-    timestamp& packet_tail_leaves,
-    timestamp& credit_leaves);
+  arbitrate(packet_stats_st& st);
 
   virtual void
   set_outgoing_bw(double bw);
 
   int
-  bytes_sending(const timestamp &now) const;
+  bytes_sending(timestamp now) const;
 
   packet_flow_bandwidth_arbitrator*
   clone(double bw) const {
@@ -187,10 +170,7 @@ class packet_flow_cut_through_arbitrator :
   void clean_up(double now);
 
   void
-  do_arbitrate(timestamp now,
-    packet_flow_payload* payload,
-    timestamp& packet_head_leaves,
-    timestamp& packet_tail_leaves);
+  do_arbitrate(packet_stats_st& st);
 
   struct bandwidth_epoch {
     double bw_available;

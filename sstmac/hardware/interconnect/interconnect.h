@@ -67,9 +67,8 @@ class interconnect :
  public:
   typedef spkt_unordered_map<switch_id, connectable*> internal_map;
   typedef spkt_unordered_map<node_id, connectable*> endpoint_map;
-
-
-  typedef std::set<node_id> node_set;
+  typedef spkt_unordered_map<node_id, node*> node_map;
+  typedef spkt_unordered_map<node_id, nic*> nic_map;
 
   virtual std::string
   to_string() const {
@@ -104,14 +103,6 @@ class interconnect :
   set_event_manager(event_manager* mgr){};
 #endif
 
-  node_set& allocated() {
-    return allocated_;
-  }
-
-  node_set& available() {
-    return available_;
-  }
-
   /**
    * @brief Return the node corresponding to given ID.
    *        No bounds checking is done for validity of ID.
@@ -128,6 +119,11 @@ class interconnect :
     } else {
       return it->second;
     }
+  }
+
+  const node_map&
+  nodes() const {
+    return nodes_;
   }
 
   virtual void
@@ -152,24 +148,9 @@ class interconnect :
   interconnect();
 
  protected:
-  /**
-    JJW 12/05/2013
-    The interconnect should really keep track of allocated and available nodes.
-    This is moved here from allocation strategy.
-    The allocation strategy still does the actual work, but the interconnect stores the arrays
-  */
-  node_set allocated_;
-  node_set available_;
-
   topology* topology_;
 
-  /// The node objects.
-  /// We would make this a vector, but because of parallel
-  /// It can happen that a weird subset of nodes is created
-  typedef spkt_unordered_map<node_id, node*> node_map;
   node_map nodes_;
-
-  typedef spkt_unordered_map<node_id, nic*> nic_map;
   nic_map nics_;
 
  private:

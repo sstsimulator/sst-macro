@@ -35,9 +35,9 @@ mpi_comm::mpi_comm() :
 mpi_comm::mpi_comm(
   MPI_Comm id, //const appid &aid,
   int rank, mpi_group* peers,
-  app_manager* env, app_id aid) :
+  app_id aid) :
   domain(rank),
-  env_(env), group_(peers),
+  group_(peers),
   next_collective_tag_(MPI_COMM_WORLD + 100),
   aid_(aid), id_(id), rank_(rank)
 {
@@ -172,24 +172,6 @@ mpi_comm::peer_task(int rank) const
 {
   validate("peer_task");
   return group_->at(rank);
-}
-
-node_id
-mpi_comm::my_node() const
-{
-  validate("my_node");
-  task_id tid = my_task();
-  return env_->node_for_task(tid);
-}
-
-/// The list of nodes involved in this communicator.
-/// Indexing is done by mpiid::rank().id.
-node_id
-mpi_comm::node_at(int rank) const
-{
-  validate("node_at");
-  task_id tid = peer_task(rank);
-  return env_->node_for_task(tid);
 }
 
 //

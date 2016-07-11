@@ -53,7 +53,7 @@ crossbar::productive_path(
   int dim,
   const coordinates &src,
   const coordinates &dst,
-  routing_info::path& path) const
+  geometry_routable::path& path) const
 {
 #if SSTMAC_SANITY_CHECK
   if (dim == topology::eject) {
@@ -87,7 +87,7 @@ void
 crossbar::minimal_route_to_coords(
   const coordinates &src_coords,
   const coordinates &dest_coords,
-  routing_info::path& path) const
+  geometry_routable::path& path) const
 {
   path.vc = 0;
   path.outport = dest_coords[0];
@@ -97,7 +97,7 @@ void
 crossbar::minimal_route_to_switch(
   switch_id current_sw_addr,
   switch_id dest_sw_addr,
-  routing_info::path& path) const
+  geometry_routable::path& path) const
 {
   //current switch actually doesn't matter
   path.vc = 0;

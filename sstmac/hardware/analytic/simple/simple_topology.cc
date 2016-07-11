@@ -115,7 +115,7 @@ void
 simple_topology::minimal_route_to_coords(
   const coordinates &src_coords,
   const coordinates &dest_coords,
-  routing_info::path& path) const
+  geometry_routable::path& path) const
 {
   spkt_throw(sprockit::unimplemented_error,
     "simple_topology::minimal_route_to_coords: should never be called");
@@ -191,7 +191,7 @@ simple_topology::productive_path(
   int dim,
   const coordinates &src_coords,
   const coordinates &dst_coords,
-  routing_info::path& path) const
+  geometry_routable::path& path) const
 {
   spkt_throw(sprockit::unimplemented_error,
     "simple_topology::productive_path: should never be called");

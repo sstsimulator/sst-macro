@@ -34,7 +34,7 @@
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/key.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/process/app_manager.h>
+#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/process/compute_scheduler.h>
 #include <sstmac/software/libraries/unblock_event.h>
 
@@ -83,7 +83,6 @@ operating_system::operating_system() :
   params_(0),
   compute_sched_(0)
 {
-  restarting_ = false;
 }
 
 operating_system::~operating_system()
@@ -388,12 +387,6 @@ operating_system::switch_to_context(int aid, int tid)
   spkt_throw_printf(sprockit::illformed_error,
                    "operating system is not configured to track code positions");
 #endif
-}
-
-app_manager*
-operating_system::current_env()
-{
-  return runtime::app_mgr(current_aid());
 }
 
 library*
@@ -715,12 +708,6 @@ operating_system::is_task_here(const task_id &id) const
 
 }
 
-std::string
-operating_system::current_hostname()
-{
-  return current_env()->hostname(current_tid());
-}
-
 long
 operating_system::task_threadid(const task_id &id) const
 {
@@ -743,12 +730,6 @@ operating_system::task_threadid(const task_id &id) const
                      long(my_addr()));
   }
   return it->second;
-}
-
-node_id
-operating_system::task_addr(software_id sid) const
-{
-  return runtime::app_mgr(sid.app_)->node_for_task(sid.task_);
 }
 
 void
@@ -828,12 +809,6 @@ operating_system::lib(const std::string& name) const
   else {
     return it->second;
   }
-}
-
-app_manager*
-operating_system::env(app_id aid) const
-{
-  return runtime::app_mgr(aid);
 }
 
 thread*
@@ -968,13 +943,6 @@ operating_system::start_app(app* theapp)
 #endif
   add_application(theapp);
   switch_to_thread(thread_data_t(theapp->context_, theapp));
-  //check pending messages
-  int psize = pending_eventss_.size();
-  for (int i = 0; i < psize; i++) {
-    event* ev = pending_eventss_.front();
-    pending_eventss_.pop_front();
-    handle_event(ev);
-  }
 }
 
 void

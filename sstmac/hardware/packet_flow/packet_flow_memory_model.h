@@ -30,6 +30,11 @@ class memory_message : public message
     return id_;
   }
 
+  std::string
+  to_string() const {
+    return "memory message";
+  }
+
   node_id
   toaddr() const {
     return node_id();
@@ -81,7 +86,7 @@ class packet_flow_memory_packetizer : public packet_flow_packetizer
 
  private:
   void
-  handle_payload(int vn, packet_flow_payload* msg);
+  handle_payload(int vn, packet_flow_payload* pkt);
 
   void
   init_noise_model();
@@ -94,6 +99,7 @@ class packet_flow_memory_packetizer : public packet_flow_packetizer
   noise_model* bw_noise_;
   noise_model* interval_noise_;
   int num_noisy_intervals_;
+  packet_allocator* pkt_allocator_;
 
 };
 

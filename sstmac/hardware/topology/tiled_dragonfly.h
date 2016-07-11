@@ -75,15 +75,15 @@ class tiled_dragonfly : public dragonfly
   minimal_routes_to_switch(
       switch_id current_sw_addr,
       switch_id dest_sw_addr,
-      routing_info::path &current_path,
-      routing_info::path_set &paths) const;
+      geometry_routable::path &current_path,
+      geometry_routable::path_set &paths) const;
 
   virtual void
   minimal_routes_to_coords(
       const coordinates &src_coords,
       const coordinates &dest_coords,
-      routing_info::path &current_path,
-      routing_info::path_set &paths) const;
+      geometry_routable::path &current_path,
+      geometry_routable::path_set &paths) const;
 
   virtual bool
   xy_connected_to_group(int myX, int myY, int myG,
@@ -100,14 +100,14 @@ class tiled_dragonfly : public dragonfly
   eject_paths_on_switch(
       node_id dest_addr,
       switch_id sw_addr,
-      routing_info::path_set &paths) const;
+      geometry_routable::path_set &paths) const;
 
   // throw unimplemented exception on the following
   virtual void
   minimal_route_to_coords(
     const coordinates &current_coords,
     const coordinates &dest_coords,
-    routing_info::path& path) const;
+    geometry_routable::path& path) const;
 
   virtual int
   port(int replica, int dim, int dir);

@@ -20,16 +20,5 @@
 namespace sstmac {
 
 
-message::message() :
-  key_(0)
-{
-}
-
-void
-message::serialize_order(serializer& ser)
-{
-}
-
-
 } // end of namespace sstmac
 

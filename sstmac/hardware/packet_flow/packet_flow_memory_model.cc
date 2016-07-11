@@ -1,4 +1,5 @@
 #include <sstmac/hardware/packet_flow/packet_flow_memory_model.h>
+#include <sstmac/hardware/packet_flow/packet_allocator.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/software/process/operating_system.h>
@@ -34,6 +35,8 @@ packet_flow_memory_packetizer::init_factory_params(sprockit::sim_parameters *par
   max_bw_ = params->get_bandwidth_param("total_bandwidth");
   latency_ = params->get_time_param("latency");
   arb_ = packet_flow_bandwidth_arbitrator_factory::get_value("cut_through", params);
+  pkt_allocator_ = packet_allocator_factory
+      ::get_optional_param("packet_allocator", "geometry_routable", params);
 }
 
 void
@@ -137,10 +140,8 @@ packet_flow_memory_packetizer::init_noise_model()
 void
 packet_flow_memory_packetizer::inject(int vn, long bytes, long byte_offset, message* msg)
 {
-  packet_flow_payload* payload = new packet_flow_payload(
-                                         msg,
-                                         bytes, //only a single message
-                                         byte_offset);
+  packet_flow_payload* payload = pkt_allocator_->new_packet(bytes, byte_offset, msg);
+
   payload->set_inport(vn);
   memory_message* orig = safe_cast(memory_message, msg);
   if (orig->max_bw() != 0){
@@ -158,15 +159,15 @@ packet_flow_memory_packetizer::handle_payload(int vn, packet_flow_payload* pkt)
   //set the bandwidth to the max single bw
   pkt->init_bw(max_single_bw_);
   pkt->set_arrival(now().sec());
-  timestamp packet_head_leaves;
-  timestamp packet_tail_leaves;
-  timestamp credit_leaves;
-  arb_->arbitrate(now(), pkt, packet_head_leaves, packet_tail_leaves, credit_leaves);
+  packet_stats_st st;
+  st.pkt = pkt;
+  st.now = now();
+  arb_->arbitrate(st);
 
   debug("memory packet %s leaving on vn %d at t=%8.4e",
-    pkt->to_string().c_str(), vn, packet_tail_leaves.sec());
+    pkt->to_string().c_str(), vn, st.tail_leaves.sec());
 
-  send_self_event_queue(packet_tail_leaves,
+  send_self_event_queue(st.tail_leaves,
     new_event(this, &packetizer::packetArrived, vn, pkt));
 
   //might need to send some credits back
@@ -174,7 +175,7 @@ packet_flow_memory_packetizer::handle_payload(int vn, packet_flow_payload* pkt)
     int ignore_vc = -1;
     packet_flow_credit* credit = new packet_flow_credit(vn, ignore_vc, pkt->num_bytes());
     //here we do not optimistically send credits = only when the packet leaves
-    send_self_event(packet_tail_leaves, credit);
+    send_self_event(st.tail_leaves, credit);
   }
 }
 

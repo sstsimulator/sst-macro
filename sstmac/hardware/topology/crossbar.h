@@ -71,13 +71,13 @@ class crossbar : public structured_topology
   minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    routing_info::path& path) const;
+    geometry_routable::path& path) const;
 
   void
   minimal_route_to_coords(
     const coordinates &src_coords,
     const coordinates &dest_coords,
-    routing_info::path& path) const;
+    geometry_routable::path& path) const;
 
   int
   minimal_distance(
@@ -90,7 +90,7 @@ class crossbar : public structured_topology
     int dim,
     const coordinates& src,
     const coordinates& dst,
-    routing_info::path& path) const;
+    geometry_routable::path& path) const;
 
   virtual int
   convert_to_port(int dim, int dir) const;

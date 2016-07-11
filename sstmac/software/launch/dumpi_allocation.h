@@ -19,19 +19,17 @@
 namespace sstmac {
 namespace sw {
 
-class dumpi_allocation : public allocation_strategy
+class dumpi_allocation : public node_allocator
 {
 
  public:
-  virtual void
-  set_topology(hw::topology *top);
-
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
 
   virtual void
   allocate(int nnode_requested,
-           node_set &allocation);
+    const ordered_node_set& available,
+    ordered_node_set& allocation) const;
 
   virtual
   ~dumpi_allocation() throw () {
@@ -40,7 +38,6 @@ class dumpi_allocation : public allocation_strategy
  protected:
   std::string metafile_;
 
-  sstmac::hw::structured_topology* regtop_;
 
 };
 

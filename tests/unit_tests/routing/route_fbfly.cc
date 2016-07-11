@@ -26,7 +26,7 @@ void test_fbfly(UnitTest& unit)
 
         node_id dst = bfly->node_addr(get_vector(3,2,1));
 
-        routing_info::path_set paths;
+        geometry_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         assertEqual(unit, "num productive ports", paths.size(), 1);
 
@@ -42,7 +42,7 @@ void test_fbfly(UnitTest& unit)
 
         node_id dst = bfly->node_addr(get_vector(2,2,1));
 
-        routing_info::path_set paths;
+        geometry_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         assertEqual(unit, "num productive ports", paths.size(), 2);
 

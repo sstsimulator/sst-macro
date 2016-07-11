@@ -29,7 +29,7 @@
 #include <sstmac/software/libraries/service_fwd.h>
 #include <sstmac/software/process/ftq_fwd.h>
 #include <sstmac/software/process/graphviz_fwd.h>
-#include <sstmac/software/process/app_manager_fwd.h>
+#include <sstmac/software/launch/app_launch_fwd.h>
 #include <sstmac/software/process/compute_scheduler_fwd.h>
 
 #include <sstmac/hardware/node/node_fwd.h>
@@ -108,17 +108,6 @@ class operating_system :
   static node_id
   remote_node(int tid);
 
-  static std::string
-  current_hostname();
-
-  static app_manager*
-  current_env();
-
-  void
-  restarting(bool res) {
-    restarting_ = res;
-  }
-
   void
   execute_kernel(ami::COMP_FUNC func, event* data);
 
@@ -157,12 +146,6 @@ class operating_system :
 
   library*
   lib(const std::string& name) const;
-
-  node_id
-  task_addr(software_id sid) const;
-
-  app_manager*
-  env(app_id aid) const;
   
   void
   set_ncores(int ncores, int nsocket);
@@ -302,10 +285,6 @@ class operating_system :
   std::vector<std::string> startup_libs_;
 
   std::stack<thread_data_t> threadstack_;
-
-  std::deque<event*> pending_eventss_;
-
-  bool restarting_;
 
   int current_thread_id_;
 

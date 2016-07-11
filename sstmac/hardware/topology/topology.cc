@@ -116,7 +116,7 @@ topology::random_number(uint32_t max, uint32_t attempt) const
   if (debug_seed_){
     std::vector<RNG::rngint_t> seeds(2);
     uint32_t time = event_manager::global ? event_manager::global->now().msec() : 42;
-    seeds[1] = seed_ * (time+31) << attempt + 5;
+    seeds[1] = seed_ * (time+31) << (attempt + 5);
     seeds[0] = (time+5)*7 + seeds[0]*attempt*42 + 3;
     rng_->vec_reseed(seeds);
   } 
@@ -131,7 +131,7 @@ void
 topology::minimal_route_to_node(
   switch_id current_sw_addr,
   node_id dest_node_addr,
-  routing_info::path& path) const
+  geometry_routable::path& path) const
 {
   abort();
   int dir;

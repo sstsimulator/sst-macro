@@ -15,7 +15,8 @@
 #include <sstmac/common/rng.h>
 #include <sstmac/hardware/topology/coordinates.h>
 #include <sstmac/hardware/topology/traffic/traffic.h>
-#include <sstmac/hardware/router/routing_info.h>
+#include <sstmac/hardware/router/routable.h>
+#include <sstmac/hardware/router/routing_enum.h>
 #include <sstmac/hardware/router/router_fwd.h>
 #include <sstmac/hardware/common/connection.h>
 #include <sstmac/backends/common/sim_partition_fwd.h>
@@ -221,7 +222,7 @@ class topology :
   minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    routing_info::path& path) const = 0;
+    geometry_routable::path& path) const = 0;
 
   /**
      Given a traffic pattern (e.g. bit-complement),
@@ -424,7 +425,7 @@ class topology :
   minimal_route_to_node(
     switch_id current_sw_addr,
     node_id dest_node_addr,
-    routing_info::path& path) const;
+    geometry_routable::path& path) const;
 
   /**
      Informs topology that a new routing stage has begun, allowing any
@@ -432,7 +433,7 @@ class topology :
      @param rinfo Routing info object
   */
   virtual void
-  new_routing_stage(routing_info& rinfo) { }
+  new_routing_stage(geometry_routable* rtbl) { }
 
   int
   num_nodes_per_netlink() const {

@@ -652,7 +652,6 @@ sprockit::StaticKeywordRegister reg(sizeof(valid_keywords) / sizeof(const char*)
 
 int USER_MAIN(int argc, char *argv[])
 {
-  printf("sizeof=%d\n", sizeof(sumi::transport));
   sprockit::sim_parameters* params = get_params();
   testmode_ = params->get_int_param("testsuite_testmode");
 

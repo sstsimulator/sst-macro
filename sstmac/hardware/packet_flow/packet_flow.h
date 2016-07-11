@@ -1,8 +1,10 @@
 #ifndef PACKETFLOW_H
 #define PACKETFLOW_H
 
-#include <sstmac/hardware/router/routable_message.h>
 #include <sstmac/hardware/common/packet.h>
+#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/hardware/router/routing_enum.h>
+#include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
 
 DeclareDebugSlot(packet_flow)
@@ -78,14 +80,13 @@ class packet_flow_interface
  */
 class packet_flow_payload :
   public packet_flow_interface,
-  public routable,
-  public packet,
-  public serializable_type<packet_flow_payload>
+  public packet
+  //public serializable_type<packet_flow_payload>
 {
  public:
   static const double uninitialized_bw;
 
-  ImplementSerializable(packet_flow_payload)
+  //ImplementSerializable(packet_flow_payload)
 
  public:
   packet_flow_payload(
@@ -102,16 +103,6 @@ class packet_flow_payload :
     return payload;
   }
 
-  node_id
-  toaddr() const {
-    return routable::toaddr();
-  }
-
-  node_id
-  fromaddr() const {
-    return routable::fromaddr();
-  }
-
   /**
     Needed because of routable_message ambiguity.
   */
@@ -120,12 +111,19 @@ class packet_flow_payload :
     return vc_;
   }
 
+  virtual int
+  next_vc() const = 0;
+
+  virtual int
+  next_port() const = 0;
+
   void
   update_vc() {
-    if (routable::vc() == routing_info::uninitialized){
+    int new_vc = next_vc();
+    if (new_vc == routing::uninitialized){
       vc_ = 0;
     } else {
-      vc_ = routable::vc();
+      vc_ = new_vc;
     }
   }
 
@@ -143,7 +141,7 @@ class packet_flow_payload :
    the total number of bytes in the parent message.
    See #num_bytes_total
    */
-  long
+  int
   num_bytes() const {
     return num_bytes_;
   }

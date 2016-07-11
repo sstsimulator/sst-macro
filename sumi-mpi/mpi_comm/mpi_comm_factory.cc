@@ -62,23 +62,21 @@ mpi_comm_factory::~mpi_comm_factory()
 // Initialize.
 //
 void
-mpi_comm_factory::init(app_manager* env, int rank)
+mpi_comm_factory::init(int rank, int nproc)
 {
   next_id_ = 1;
 
-  mpirun_np_ = env->nproc();
-
-  MPI_Comm cid(0);
+  mpirun_np_ = nproc;
 
   mpi_group* g = new mpi_group(mpirun_np_);
 
-  worldcomm_ = new mpi_comm(MPI_COMM_WORLD, rank, g, env, aid_);
+  worldcomm_ = new mpi_comm(MPI_COMM_WORLD, rank, g, aid_);
 
   std::vector<task_id> selfp;
   selfp.push_back(task_id(rank));
 
   mpi_group* g2 = new mpi_group(selfp);
-  selfcomm_ = new mpi_comm(MPI_COMM_SELF, int(0), g2, env, aid_);
+  selfcomm_ = new mpi_comm(MPI_COMM_SELF, int(0), g2, aid_);
 }
 
 void
@@ -118,7 +116,7 @@ mpi_comm_factory::comm_create(mpi_comm* caller, mpi_group* group)
   next_id_ = cid + 1;
 
   if (newrank >= 0) {
-    return new mpi_comm(cid, newrank, group, worldcomm_->env_, aid_);
+    return new mpi_comm(cid, newrank, group, aid_);
   }
   else {
     return mpi_comm::comm_null;
@@ -271,7 +269,7 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
 #endif
   }
 #endif
-  return new mpi_comm(cid, my_new_rank, new mpi_group(task_list), worldcomm_->env_, aid_);
+  return new mpi_comm(cid, my_new_rank, new mpi_group(task_list), aid_);
 }
 
 mpi_comm*
@@ -291,7 +289,7 @@ mpi_comm_factory::create_cart(mpi_comm* caller, int ndims,
 
   if (newrank >= 0) {
     return new mpi_comm_cart(cid, newrank, caller->group_,
-                     worldcomm_->env_, aid_, ndims, dims, periods, reorder);
+                     aid_, ndims, dims, periods, reorder);
   }
   else {
     return mpi_comm::comm_null;

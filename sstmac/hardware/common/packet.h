@@ -28,7 +28,7 @@ class packet :
     return orig_;
   }
 
-  long
+  int
   byte_length() const {
     return num_bytes_;
   }
@@ -78,7 +78,7 @@ class packet :
  protected:
   message* orig_;
 
-  long num_bytes_;
+  int num_bytes_;
 
   long byte_offset_;
 

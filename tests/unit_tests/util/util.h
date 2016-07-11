@@ -8,14 +8,14 @@
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/interconnect/switch_interconnect.h>
 #include <sstmac/hardware/network/network_message.h>
-#include <sstmac/hardware/router/routable_message.h>
+#include <sstmac/hardware/router/routable.h>
 #include <sstmac/hardware/topology/topology.h>
-#include <sstmac/hardware/router/routing_info.h>
 #include <sstmac/hardware/packet_flow/packet_flow.h>
 #include <sprockit/test/test.h>
 #include <sprockit/sim_parameters.h>
 #include <sstmac/util.h>
 #include <sstmac/common/sstmac_env.h>
+#include <sstmac/common/messages/sst_message_fwd.h>
 
 template <class A>
 class ContainerAppend<sstmac::hw::coordinates, A>
@@ -42,6 +42,9 @@ naddr(long nid);
 
 sstmac::hw::packet_flow_payload*
 msg(long nid);
+
+sstmac::hw::packet_flow_payload*
+new_packet(sstmac::message* msg, int bytes, int byte_offset);
 
 sstmac::hw::coordinates
 get_vector(int a);
@@ -70,7 +73,7 @@ void init_switches(sstmac::hw::switch_interconnect::switch_map& switches,
 
 
 void _assert_dim_dir(UnitTest& unit, const char* descr, const char* file, int line,
-                    sstmac::hw::network_switch* sw, const sstmac::hw::routing_info::path& path,
+                    sstmac::hw::network_switch* sw, const sstmac::hw::geometry_routable::path& path,
                     long outport_sw_id);
 
 #define assert_dim_dir(unit, descr, ...) \

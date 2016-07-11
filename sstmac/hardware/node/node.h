@@ -20,7 +20,7 @@
 
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/hardware/network/network_message_fwd.h>
-#include <sstmac/software/process/app_manager_fwd.h>
+#include <sstmac/software/launch/app_launch_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/software/launch/launcher_fwd.h>
 #include <sstmac/software/launch/launch_event_fwd.h>
@@ -191,7 +191,7 @@ class node :
   void connect_nic();
 
  protected:
-  sw::app_manager* env_;
+  sw::app_launch* env_;
 
   sw::operating_system* os_;
 

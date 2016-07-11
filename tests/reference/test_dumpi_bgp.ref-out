@@ -1,11 +1,11 @@
 nrank: 7
-dumpi_indexer: rank 0 is on hostname R00-M1-N01-J01.challenger at nid=0
-dumpi_indexer: rank 1 is on hostname R00-M1-N01-J01.challenger at nid=0
-dumpi_indexer: rank 2 is on hostname R00-M1-N01-J01.challenger at nid=0
-dumpi_indexer: rank 3 is on hostname R00-M1-N01-J01.challenger at nid=0
-dumpi_indexer: rank 4 is on hostname R00-M1-N01-J01.challenger at nid=1
-dumpi_indexer: rank 5 is on hostname R00-M1-N01-J01.challenger at nid=1
-dumpi_indexer: rank 6 is on hostname R00-M1-N01-J01.challenger at nid=1
+dumpi_task_mapper: rank 0 is on hostname R00-M1-N01-J01.challenger at nid=0
+dumpi_task_mapper: rank 1 is on hostname R00-M1-N01-J01.challenger at nid=0
+dumpi_task_mapper: rank 2 is on hostname R00-M1-N01-J01.challenger at nid=0
+dumpi_task_mapper: rank 3 is on hostname R00-M1-N01-J01.challenger at nid=0
+dumpi_task_mapper: rank 4 is on hostname R00-M1-N01-J01.challenger at nid=1
+dumpi_task_mapper: rank 5 is on hostname R00-M1-N01-J01.challenger at nid=1
+dumpi_task_mapper: rank 6 is on hostname R00-M1-N01-J01.challenger at nid=1
 Allocated and indexed 7 nodes
 Rank 0 -> nid0 [ 0 0 0 0 ]
 Rank 1 -> nid0 [ 0 0 0 0 ]

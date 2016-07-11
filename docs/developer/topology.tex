@@ -326,7 +326,7 @@ class topology
   minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    routing_info::path& path) const = 0;
+    routable::path& path) const = 0;
 
   virtual int
   num_hops_to_node(node_id src, node_id dst) const = 0;
@@ -386,7 +386,7 @@ class structured_topology :
   minimal_route_to_coords(
     const coordinates& src_coords,
     const coordinates& dest_coords,
-    routing_info::path& path) const = 0;
+    routable::path& path) const = 0;
 
   virtual int
   minimal_distance(
@@ -398,7 +398,7 @@ class structured_topology :
     int dim,
     const coordinates& src,
     const coordinates& dst,
-    routing_info::path& path) const = 0;
+    routable::path& path) const = 0;
   ...
 };
 \end{CppCode}
@@ -424,12 +424,12 @@ class router :
   virtual void
   minimal_route_to_node(
     node_id node_addr,
-    routing_info::path& path) = 0;
+    routable::path& path) = 0;
     
   virtual void
   minimal_route_to_switch(
     switch_id sw_addr,
-    routing_info::path& path) = 0;
+    routable::path& path) = 0;
 ...
 };
 \end{CppCode}
@@ -474,7 +474,7 @@ minimal_routing::route(
 void
 structured_router::minimal_route_to_node(
   node_id dest_node_addr,
-  routing_info::path& path)
+  routable::path& path)
 {
   switch_id ej_addr = regtop_->node_to_ejector_addr(dest_node_addr, path.dir);
   if (ej_addr == me_) {
@@ -497,7 +497,7 @@ minimal_adaptive_routing::route(
   const routable_message::ptr &msg,
   router* rter)
 {
-  routing_info::path_set paths;
+  routable::path_set paths;
   bool eject  = rter->get_productive_paths_to_node(msg->toaddr(), paths);
   if (eject) {
     msg->rinfo()->assign_path(paths[0]);

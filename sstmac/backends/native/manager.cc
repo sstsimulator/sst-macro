@@ -19,7 +19,6 @@
 #endif
 #include <sstmac/backends/native/manager.h>
 #include <sstmac/backends/native/clock_cycle_parallel/clock_cycle_event_container.h>
-#include <sstmac/backends/native/skeleton_app_manager.h>
 
 #include <sstmac/common/runtime.h>
 #include <sstmac/common/logger.h>
@@ -27,7 +26,9 @@
 #include <sstmac/dumpi_util/dumpi_meta.h>
 
 #include <sstmac/software/launch/launch_event.h>
-#include <sstmac/software/process/app_manager.h>
+#include <sstmac/software/launch/job_launcher.h>
+#include <sstmac/software/launch/job_launch_event.h>
+#include <sstmac/software/launch/app_launch.h>
 
 #include <sprockit/driver_util.h>
 #include <sprockit/keyword_registration.h>
@@ -124,7 +125,7 @@ manager::compute_max_nproc_for_app(sprockit::sim_parameters* app_params)
   }
   int nproc, procs_per_node;
   std::vector<int> ignore;
-  skeleton_app_manager::parse_launch_cmd(app_params, nproc, 
+  app_launch::parse_launch_cmd(app_params, nproc,
     procs_per_node, ignore);
   return std::max(nproc, max_nproc);
 }
@@ -154,13 +155,12 @@ manager::build_app(int appnum, sprockit::sim_parameters* params)
   timestamp start = params->get_optional_time_param("start", 0);
 
   sstmac::sw::app_id aid(appnum);
-  app_manager* appman = app_manager_factory::get_optional_param(
-        "launch_type", "skeleton", params, aid, rt_);
-  appman->set_interconnect(interconnect_);
+  app_launch* appman = app_launch_factory::get_optional_param(
+        "launch_type", "default", params, aid, rt_);
+  appman->set_topology(interconnect_->topol());
 
   app_managers_[appnum] = appman;
   app_starts_[appnum] = start;
-  runtime::register_app_manager(aid, appman);
 }
 
 void
@@ -188,7 +188,7 @@ manager::~manager() throw ()
 
   if (interconnect_) delete interconnect_;
 
-  std::map<int, app_manager*>::iterator it, end = app_managers_.end();
+  std::map<int, app_launch*>::iterator it, end = app_managers_.end();
   for (it=app_managers_.begin(); it != end; ++it){
     delete it->second;
   }
@@ -232,6 +232,11 @@ macro_manager::init_factory_params(sprockit::sim_parameters* params)
 
   event_manager_->set_interconnect(interconnect_);
   interconnect_->set_event_manager(event_manager_);
+
+  launcher_ = job_launcher_factory::get_optional_param("job_launcher", "default", params);
+  launcher_->set_interconnect(interconnect_);
+
+  sstmac::runtime::set_job_launcher(launcher_);
 
   logger::timer_ = event_manager_;
 
@@ -294,38 +299,20 @@ macro_manager::finish()
 }
 
 void
-macro_manager::launch_app(int appnum, timestamp start, sw::app_manager* appman)
+macro_manager::launch_app(int appnum, timestamp start, sw::app_launch* appman)
 {
-  appman->allocate_and_index_jobs();
-  launch_info* linfo = appman->launch_info();
-  sstmac::sw::app_id aid(appnum);
-  for (int i=0; i < appman->nproc(); ++i) {
-    node_id dst_nid = appman->node_assignment(i);
-    runtime::register_node(aid, task_id(i), dst_nid);
-
-    hw::node* dst_node = interconnect_->node_at(dst_nid);
-    if (!dst_node) {
-      // mpiparallel, this node belongs to someone else
-      continue;
-    }
-
-    sw::launch_event* lmsg = new launch_event(linfo, sw::launch_event::ARRIVE, task_id(i));
-
-    dst_node->launch(start, lmsg);
-
-
-    //int dstthread = dst_node->thread_id();
-    //event_manager_->ev_man_for_thread(dstthread)->schedule(start, new handler_event(lmsg, dst_node));
-  }
+  sw::job_launch_event* ev = new sw::job_launch_event(appman);
+  event_manager_->schedule(start, appnum,
+                new handler_event_queue_entry(ev, launcher_, event_loc_id::null));
 }
 
 void
 macro_manager::launch_apps()
 {
-  std::map<int, app_manager*>::iterator it, end = app_managers_.end();
+  std::map<int, app_launch*>::iterator it, end = app_managers_.end();
   for (it=app_managers_.begin(); it != end; ++it){
     int appnum = it->first;
-    app_manager* appman = it->second;
+    app_launch* appman = it->second;
     timestamp start = app_starts_[appnum];
     launch_app(appnum, start, appman);
   }

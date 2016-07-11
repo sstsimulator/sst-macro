@@ -33,7 +33,7 @@ void test_butterfly(UnitTest& unit)
 
     {
     network_switch* sw = switches[switch_id(7)];
-    routing_info::path path;
+    geometry_routable::path path;
     bfly->minimal_route_to_node(switch_id(7), node_id(4), path);
     //assertEqual(unit, "route butterfly dim", path.dim, (int) butterfly::up_dimension);
     //assertEqual(unit, "route butterfly dir", path.dir, 0);

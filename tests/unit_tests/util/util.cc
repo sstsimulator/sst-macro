@@ -87,13 +87,57 @@ naddr(long nid)
   return sstmac::node_id(nid);
 }
 
+class routable_packet_flow :
+ public packet_flow_payload,
+ public geometry_routable
+{
+  NotSerializable(routable_packet_flow)
+
+  public:
+   routable_packet_flow(
+     message* parent,
+     int num_bytes,
+     long offset) :
+    packet_flow_payload(parent, num_bytes, offset),
+    geometry_routable(parent->toaddr(), parent->fromaddr())
+  {
+  }
+
+  node_id
+  toaddr() const {
+   return geometry_routable::toaddr();
+  }
+
+  node_id
+  fromaddr() const {
+    return geometry_routable::fromaddr();
+  }
+
+  int
+  next_port() const {
+    return geometry_routable::port();
+  }
+
+  int
+  next_vc() const {
+    return geometry_routable::vc();
+  }
+
+};
+
 packet_flow_payload*
 msg(long nid)
 {
   network_message* new_msg = new network_message;
   new_msg->set_toaddr(naddr(nid));
   new_msg->set_net_id(hw::network_id(0,0));
-  return new packet_flow_payload(new_msg, 0, 0);
+  return new routable_packet_flow(new_msg, 0, 0);
+}
+
+packet_flow_payload*
+new_packet(message *msg, int bytes, int byte_offset)
+{
+  return new routable_packet_flow(msg, bytes, byte_offset);
 }
 
 void

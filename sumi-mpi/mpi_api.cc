@@ -24,7 +24,7 @@
 #include <sumi-mpi/mpi_request.h>
 
 #include <sstmac/hardware/node/node.h>
-#include <sstmac/hardware/topology/structured_topology.h>
+//#include <sstmac/hardware/topology/structured_topology.h>
 
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/software/process/operating_system.h>
@@ -35,7 +35,7 @@
 #include <sumi-mpi/mpi_comm/mpi_comm_factory.h>
 #include <sumi-mpi/mpi_types.h>
 
-#include <sstmac/software/launch/hostname_allocation.h>
+//#include <sstmac/software/launch/hostname_allocation.h>
 
 #include <sprockit/errors.h>
 #include <sprockit/statics.h>
@@ -174,13 +174,8 @@ mpi_api::do_init(int* argc, char*** argv)
     spkt_throw(sprockit::null_error, "mpiapi::init: os has not been initialized yet");
   }
 
-  app_manager* env = os_->env(id_.app_);
-  if (!env) {
-    spkt_throw(sprockit::null_error, "mpi_api::init: no environment found");
-  }
-
   comm_factory_ = new mpi_comm_factory(id_.app_, this);
-  comm_factory_->init(env, rank_);
+  comm_factory_->init(rank_, transport::nproc_);
 
   worldcomm_ = comm_factory_->world();
   selfcomm_ = comm_factory_->self();

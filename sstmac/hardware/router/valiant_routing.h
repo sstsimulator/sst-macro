@@ -16,7 +16,7 @@ class valiant_router : public minimal_router
   route(packet* pkt);
 
   virtual void
-  route(packet* pkt, routing_info::path_set& paths);
+  route(packet* pkt, geometry_routable::path_set& paths);
 
   virtual std::string
   to_string() const {
@@ -69,24 +69,24 @@ class valiant_router : public minimal_router
   } next_action_t;
 
   next_action_t
-  intermediate_step(routing_info& rinfo,
+  intermediate_step(geometry_routable* rtbl,
                     packet* pkt);
 
   /**
    Different for pure valiant and UGAL.
    */
   virtual next_action_t
-  initial_step(routing_info& rinfo,
+  initial_step(geometry_routable* rtbl,
                packet* pkt);
 
   next_action_t
   next_routing_stage(packet* pkt);
 
   void
-  configure_intermediate_path(routing_info::path& path);
+  configure_intermediate_path(geometry_routable::path& path);
 
   void
-  configure_final_path(routing_info::path& path);
+  configure_final_path(geometry_routable::path& path);
 
  protected:
   void route_valiant(packet* pkt);

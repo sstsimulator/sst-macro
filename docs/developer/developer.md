@@ -1153,7 +1153,7 @@ virtual switch_id node_to_injector_addr(node_id nodeaddr, int& switch_port) cons
 
 virtual switch_id node_to_ejector_addr(node_id nodeaddr, int& switch_port) const = 0;
 
-virtual void minimal_route_to_switch( switch_id current_sw_addr, switch_id dest_sw_addr, routing_info::path& path) const = 0;
+virtual void minimal_route_to_switch( switch_id current_sw_addr, switch_id dest_sw_addr, routable::path& path) const = 0;
 
 virtual int
   num_hops_to_node(node_id src, node_id dst) const = 0;
@@ -1190,7 +1190,7 @@ class structured_topology :
 
 virtual void compute_switch_coords(switch_id swid, coordinates& coords) const = 0;
 
-virtual void minimal_route_to_coords( const coordinates& src_coords, const coordinates& dest_coords, routing_info::path& path) const = 0;
+virtual void minimal_route_to_coords( const coordinates& src_coords, const coordinates& dest_coords, routable::path& path) const = 0;
 
 virtual int minimal_distance( const coordinates& src_coords, const coordinates& dest_coords) const = 0;
 
@@ -1199,7 +1199,7 @@ virtual void
     int dim,
     const coordinates& src,
     const coordinates& dst,
-    routing_info::path& path) const = 0;
+    routable::path& path) const = 0;
   ...
 };
 ````
@@ -1223,12 +1223,12 @@ class router :
   void
   route(const routable_message::ptr& msg);
 
-virtual void minimal_route_to_node( node_id node_addr, routing_info::path& path) = 0;
+virtual void minimal_route_to_node( node_id node_addr, routable::path& path) = 0;
 
 virtual void
   minimal_route_to_switch(
     switch_id sw_addr,
-    routing_info::path& path) = 0;
+    routable::path& path) = 0;
 ...
 };
 ````
@@ -1270,7 +1270,7 @@ minimal_routing::route(
 void
 structured_router::minimal_route_to_node(
   node_id dest_node_addr,
-  routing_info::path& path)
+  routable::path& path)
 {
   switch_id ej_addr = regtop_->node_to_ejector_addr(dest_node_addr, path.dir);
   if (ej_addr == me_) {
@@ -1293,7 +1293,7 @@ minimal_adaptive_routing::route(
   const routable_message::ptr &msg,
   router* rter)
 {
-  routing_info::path_set paths;
+  routable::path_set paths;
   bool eject  = rter->get_productive_paths_to_node(msg->toaddr(), paths);
   if (eject) {
     msg->rinfo()->assign_path(paths[0]);
@@ -1411,7 +1411,7 @@ xpress_ring::get_switch_id(const coordinates& coords) const
   return switch_id(coords[0]);
 }
 
-void xpress_ring::get_productive_path( int dim, const coordinates& src, const coordinates& dst, routing_info::path& path) const { minimal_route_to_coords(src, dst, path); }
+void xpress_ring::get_productive_path( int dim, const coordinates& src, const coordinates& dst, routable::path& path) const { minimal_route_to_coords(src, dst, path); }
 
 void
 xpress_ring::compute_switch_coords(switch_id swid, coordinates& coords) const
@@ -1428,7 +1428,7 @@ void
 xpress_ring::minimal_route_to_coords(
   const coordinates& src_coords,
   const coordinates& dest_coords,
-  routing_info::path& path) const
+  routable::path& path) const
 {
   int src_pos = src_coords[0];
   int dest_pos = dest_coords[0];
@@ -1488,7 +1488,7 @@ xpress_ring::get_productive_path(
   int dim,
   const coordinates& src,
   const coordinates& dst,
-  routing_info::path& path) const
+  routable::path& path) const
 {
   minimal_route_to_coords(src, dst, path);
 }

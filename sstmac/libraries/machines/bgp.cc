@@ -9,7 +9,7 @@ extern "C"
 void
 Kernel_GetPersonality(_BGP_Personality_t *p, int size)
 {
-  sstmac::hw::node* the_node = sstmac::runtime::current_node();
+  sstmac::node_id nid = sstmac::runtime::current_node();
   sstmac::hw::topology* top = sstmac::runtime::current_topology();
 
   sstmac::hw::hdtorus* torus = test_cast(sstmac::hw::hdtorus, top);
@@ -18,7 +18,7 @@ Kernel_GetPersonality(_BGP_Personality_t *p, int size)
         "Kernel_GetPersonality for BGP being called, but topology is not a 3D torus");
   }
 
-  std::vector<int> coords = torus->node_coords(the_node->addr());
+  std::vector<int> coords = torus->node_coords(nid);
   std::vector<int> dims = torus->dimensions();
   p->Network_Config.Xcoord = coords[0];
   p->Network_Config.Ycoord = coords[1];

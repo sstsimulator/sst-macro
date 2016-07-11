@@ -51,7 +51,7 @@ void
 xpress_ring::minimal_route_to_coords(
   const coordinates& src_coords,
   const coordinates& dest_coords,
-  routing_info::path& path) const
+  geometry_routable::path& path) const
 {
   int src_pos = src_coords[0];
   int dest_pos = dest_coords[0];
@@ -129,7 +129,7 @@ xpress_ring::productive_path(
   int dim,
   const coordinates& src,
   const coordinates& dst,
-  routing_info::path& path) const
+  geometry_routable::path& path) const
 {
   minimal_route_to_coords(src, dst, path);
 }

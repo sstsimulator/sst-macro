@@ -6,9 +6,10 @@
 
 namespace sstmac {
   
-transport_message::transport_message(const sumi::message_ptr& msg, long byte_length)
+transport_message::transport_message(sw::app_id aid,
+ const sumi::message_ptr& msg, long byte_length)
   : library_interface("sumi"),
-    network_message(byte_length),
+    network_message(aid, byte_length),
     payload_(msg),
     buffer_(0)
 {

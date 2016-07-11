@@ -9,31 +9,31 @@ namespace hw {
 network_message::network_message()
   : needs_ack_(true),
     type_(null_netmsg_type),
-    route_algo_(routing::deflt),
     bytes_(0)
 {
 }
 
-network_message::network_message(long payload_bytes) :
+network_message::network_message(sw::app_id aid, long payload_bytes) :
   bytes_(payload_bytes),
   needs_ack_(true),
   type_(null_netmsg_type),
-  route_algo_(routing::deflt)
+  aid_(aid)
 {
 }
 
 network_message::network_message(
+  sw::app_id aid,
   node_id to, node_id from,
   sw::task_id src, sw::task_id dst,
   long bytes)
   : needs_ack_(true),
-    route_algo_(routing::deflt),
     toaddr_(to),
     fromaddr_(from),
     src_task_(src),
     dest_task_(dst),
     bytes_(bytes),
-    type_(null_netmsg_type)
+    type_(null_netmsg_type),
+    aid_(aid)
 {
 }
 
@@ -141,7 +141,6 @@ void
 network_message::serialize_order(serializer& ser)
 {
   ser & needs_ack_;
-  ser & route_algo_;
   ser & toaddr_;
   ser & fromaddr_;
   ser & src_task_;
@@ -204,7 +203,6 @@ void
 network_message::clone_into(network_message* cln) const
 {
   cln->needs_ack_ = needs_ack_;
-  cln->route_algo_ = route_algo_;
   cln->toaddr_ = toaddr_;
   cln->fromaddr_ = fromaddr_;
   cln->src_task_ = src_task_;

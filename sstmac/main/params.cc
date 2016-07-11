@@ -14,7 +14,7 @@
 #include <sstmac/common/cartgrid.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/software/process/app.h>
-#include <sstmac/software/process/app_manager.h>
+#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sprockit/fileio.h>
 #include <sprockit/statics.h>
