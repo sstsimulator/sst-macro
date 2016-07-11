@@ -354,7 +354,7 @@ test_barrier(int tag)
 
   message::ptr msg = comm_poll();
   collective_done_message::ptr dmsg = ptr_safe_cast(collective_done_message, msg);
-  if (dmsg->tag() != 20 || dmsg->type() != collective::barrier){
+  if (dmsg->tag() != tag || dmsg->type() != collective::barrier){
     spkt_throw(sprockit::value_error,
       "barrier got invalid completion message");
   }
@@ -418,7 +418,6 @@ main(int argc, char **argv)
     sstmac::new_deadlock_check(sumi_api(), &sumi::transport::deadlock_check));
 
 
-#if 0
   test_dynamic_tree_vote(1);
 
   test_allreduce(2);
@@ -448,9 +447,8 @@ main(int argc, char **argv)
   test_scatter(15, 0);
 
   test_scatter(16, 3);
-#endif
 
-  //test_allgatherv_even(17);
+  test_allgatherv_even(17);
   test_allgatherv_uneven(18);
 
   sstmac_sleep(100);

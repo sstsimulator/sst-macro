@@ -483,6 +483,8 @@ class topology :
   */
   int endpoints_per_switch_;
 
+  bool netlink_endpoints_;
+
   bool outputgraph_;
 
   RNG::rngint_t seed_;

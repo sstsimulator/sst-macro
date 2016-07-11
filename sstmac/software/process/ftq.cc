@@ -406,35 +406,6 @@ task_ftq_calendar::task_ftq_calendar()
 void
 task_ftq_calendar::dump(std::ofstream &os)
 {
-  //this isn'y really good for much
-#if 0
-  int num_categories = key::num_categories();
-  char ev_chars[num_categories];
-  ev_chars[key::mpi] = 'M';
-  ev_chars[key::compute] = 'C';
-  ev_chars[key::sleep] = 'S';
-  ev_chars[key::general] = 'G';
-  ev_chars[key::buffer] = 'B';
-
-  long num_ticks_per_char = 1000 * 1000 * 100;
-  long num_chars = max_tick_ / num_ticks_per_char;
-
-  char* newline = new char[num_chars+1];
-  newline[num_chars] = '\0';
-  ::memset(newline, ' ' , num_chars);
-  EventNode* node = head_;
-  while (node) {
-    long idx_begin = node->ticks_begin / num_ticks_per_char;
-    long idx_end = node->ticks_end / num_ticks_per_char;
-    char next_char = ev_chars[node->ev_type];
-    for (long idx=idx_begin; idx < idx_end; ++idx) {
-      newline[idx] = next_char;
-    }
-    node = node->next;
-  }
-  os << newline;
-  os << "\n";
-#endif
 }
 
 task_ftq_calendar::~task_ftq_calendar()
