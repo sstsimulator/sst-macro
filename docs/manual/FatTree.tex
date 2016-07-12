@@ -42,13 +42,13 @@ which would have $4^3 = 64$ compute nodes.
 
 In reality, it is not practical to implement a fat tree exactly as shown in Figure \ref{fig:topologies:abstractfattree}.
 One would need to buy many non-standard, high capacity switches for the higher levels in the fat-tree.
+The simple model is available by specifying \inlineshell{simple_fattree} as the topology, and SST will construct special large switches at higher levels.
 The best practical implementation employs all uniform, commodity switches (Figure \ref{fig:topologies:fattreeids}).
 The fat tree is ``virtual'' with several commodity switches grouped together to simulate a heavy-weight, high capacity switch
 at higher levels of the fat tree.
 The connection between the physical implementation and the conceptual fat tree can easily be seen by the color coding.
 For example, the second row contains eight switches, but only two virtual switches.
 Each virtual switch is composed of four commodity switches.
-The top row only requires half the number of switches since it connects all links down.
 
 \begin{figure}[h!]
 \centering
@@ -62,24 +62,8 @@ In addition, each compute node is also assigned a unique ID from 0 to 15.
 The switches can also be defined by a set of coordinates.
 While the choice of coordinate system for a 3D torus is obvious, 
 the coordinate system for the fat tree is less clear.
-Here we choose a coordinate system that defines the level of the switch and the branch it lies on (Figure \ref{fig:topologies:fattreecoords}).
-The first coordinate is the level. 
-The final coordinate is the virtual number, 
-i.e. since each virtual switch is composed of multiple commodity switches,
-this tells which replica number it is.
-For example, in the top row, we have switches $(0,0)$, $(0,1)$, $(0,2)$, and $(0,3)$.
-The coordinates tell you each switch is at level 0 (top level) and that we have replicas 0 to 3 composing a single virtual switch.
-As you move down the fat tree, the additional coordinates tell you the branch.
-At the next level, you have switches $(1,0,0)$ and $(1,1,0)$.
-This tells you level 1 (first level down), branch 0, replica 0 (or branch 1, replica 0).
-As you continue moving down, you add more branch definitions.
+In SST, we define a 2D mesh coordinate system for the row (level) and column of the switch.
 
-\begin{figure}[h!]
-\centering
-\includegraphics[width=0.9\textwidth]{figures/tikz/fattree/fattree_coords.pdf}
-\caption{Physical implementation of Fat Tree with commodity switches showing coordinate system}
-\label{fig:topologies:fattreecoords}
-\end{figure}
 
 \subsection{Allocation and indexing}
 The numbering of compute nodes is shown in Figure \ref{fig:topologies:fattreeids}.
