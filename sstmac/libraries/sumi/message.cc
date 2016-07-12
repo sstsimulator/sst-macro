@@ -19,9 +19,13 @@ transport_message::serialize_order(serializer& ser)
 {
   network_message::serialize_order(ser);
   library_interface::serialize_order(ser);
-  ser & payload_;
+  sumi::message* msg = payload_.get();
+  ser & msg;
+  payload_ = msg;
   if (network_message::is_metadata()){
-    ser & buffer_; //just dump the void*, rdma request or similar
+    uintptr_t ptr = (uintptr_t) buffer_;
+    ser & ptr; //just dump the void*, rdma request or similar
+    buffer_ = (void*) ptr;
   } else { //I am a data thing, need to send the actual payload
     ser & sstmac::buffer(buffer_, bytes_);
   }

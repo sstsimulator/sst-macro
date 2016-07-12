@@ -5,6 +5,8 @@
 #include <sprockit/output.h>
 #include <sprockit/util.h>
 
+MakeDebugSlot(packet_flow_timeline)
+
 namespace sstmac {
 namespace hw {
 
@@ -130,6 +132,20 @@ packet_flow_sender::send(
 
   timestamp arrival = packet_head_leaves + send_lat_;
   schedule(arrival, dest.handler, msg);
+
+  if (msg->byte_length() >= 200){
+    debug_printf(sprockit::dbg::packet_flow_timeline,
+     "%25s:%3d: %8.4e %8.4e %8.4e %8.4e %8.4e %6d:%lu",
+      to_string().c_str(),
+      src.src_outport,
+      packet_head_leaves.sec(),
+      credit_leaves.sec(),
+      packet_tail_leaves.sec(),
+      arrival.sec(),
+      msg->bw(),
+      msg->byte_offset(),
+      msg->unique_id());
+  }
 }
 
 std::string

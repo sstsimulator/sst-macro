@@ -55,7 +55,6 @@ interconnect::interconnect() :
 {
 }
 
-
 interconnect::~interconnect() 
 {
   sprockit::delete_vals(nodes_);

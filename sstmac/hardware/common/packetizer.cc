@@ -26,7 +26,7 @@ packetizer::start(int vn, message *msg)
 void
 packetizer::init_factory_params(sprockit::sim_parameters *params)
 {
-  packet_size_ = params->get_optional_byte_length_param("packet_size", 4096);
+  packet_size_ = params->get_optional_byte_length_param("mtu", 4096);
 }
 
 void

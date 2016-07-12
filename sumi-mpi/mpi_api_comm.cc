@@ -28,6 +28,19 @@ mpi_api::comm_create(MPI_Comm input, MPI_Group group, MPI_Comm *output)
 }
 
 int
+mpi_api::comm_group(MPI_Comm comm, MPI_Group* grp)
+{
+  comm_grp_map::iterator it = comm_grp_map_.find(comm);
+  if (it == comm_grp_map_.end()) {
+    spkt_throw_printf(sprockit::spkt_error,
+        "could not find mpi group for comm %d for rank %d",
+        comm, int(rank_));
+  }
+  *grp = it->second;
+  return MPI_SUCCESS;
+}
+
+int
 mpi_api::cart_create(MPI_Comm comm_old, int ndims, const int dims[],
                     const int periods[], int reorder, MPI_Comm *comm_cart)
 {

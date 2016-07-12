@@ -19,7 +19,8 @@ namespace sw {
 void
 mpi_collective_payload::serialize_order(serializer& ser)
 {
-  ser & (contents_);
+  spkt_throw_printf(sprockit::unimplemented_error,
+   "mpi_collective_payload::serializer_order");
 }
 
 void

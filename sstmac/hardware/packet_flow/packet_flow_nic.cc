@@ -77,12 +77,20 @@ packet_flow_nic::~packet_flow_nic() throw ()
   if (packetizer_) delete packetizer_;
 }
 
+double
+packet_flow_nic::injection_bandwidth() const
+{
+  packet_flow_nic_packetizer* packer = safe_cast(packet_flow_nic_packetizer, packetizer_);
+  return packer->injection_bandwidth();
+}
+
 void
 packet_flow_nic::connect(
   int src_outport,
   int dst_inport,
   connection_type_t ty,
-  connectable* mod)
+  connectable* mod,
+  config* cfg)
 {
   packet_flow_nic_packetizer* packer = safe_cast(packet_flow_nic_packetizer, packetizer_);
   switch(ty) {
@@ -106,9 +114,6 @@ packet_flow_nic::connect(
       packer->set_input(src_outport, mod);
       break;
     }
-    default:
-      nic::connect(src_outport, dst_inport, ty, mod);
-      break;
   }
 }
 
@@ -134,7 +139,9 @@ packet_flow_nic::set_event_parent(event_scheduler* m)
 }
 
 void
-packet_flow_netlink::connect(int src_outport, int dst_inport, connection_type_t ty, connectable *mod)
+packet_flow_netlink::connect(int src_outport, int dst_inport,
+  connection_type_t ty, connectable *mod,
+  connectable::config* cfg)
 {
   init();
 

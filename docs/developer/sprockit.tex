@@ -2,13 +2,11 @@
 
 \chapter{SProCKit}
 \sstmacro is largely built on the Sandia Productivity C++ Toolkit (\sprockit),
-which is external to \sstmacro.
+which is included in the \sstmacro distribution.
 Projects developed within the simulator using \sprockit can easily 
 move to running the application on real machines while still using the \sprockit infrastructure.
-One of the major contributions, reference counted pointer types, has already been covered.
+One of the major contributions is reference counted pointer types.
 The parameter files and input deck are also part of \sprockit.
-A single input file can therefore be used for configuring applications in the simulator and in real runs.
-
 
 \section{Debug}
 The goal of the \sprockit debug framework is to be both lightweight and flexible.
@@ -55,33 +53,6 @@ DeclareDebugSlot(job_launch);
 launch.cc
 RegisterDebugSlot(job_launch);
 \end{CppCode}
-
-\section{Expandable Enums}
-There are certain cases in which a program wants to run switch/if statements on constant integers.
-However, an \inlinecode{enum} type requires all possible values to be declared at once in a single header file.
-\sprockit leverages initialization of static variables to allow a flexible enum type called \inlinecode{expandable_enum}.
-First an \inlinecode{enum} type is declared in a header file, for example in \inlinecode{sst_message}
-
-\begin{CppCode}
-  declare_expandable_enum(message_type_t);
-  static message_type_t SST;
-  static message_type_t NONE;
-\end{CppCode}
-
-The macro creates a new integer type.
-We then declare two enumerated values.
-In a source file, we need to make a few symbols
-
-\begin{CppCode}
-ImplementEnum(sst_message::message_type_t);
-RegisterEnum(sst_message::message_type_t, sst_message::SST);
-RegisterEnum(sst_message::message_type_t, sst_message::NONE);
-\end{CppCode}
-
-The first macro creates the code associated with the newly declared type.
-The next two macros register the enumerated types and assign unique values.
-New names and values can be declared and registered anywhere, including in external libraries.
-Because of C++ initialization standards, all enums will have unique values assigned once the program enters \inlinecode{main}.
 
 \section{Serialization}
 Internally, \sstmacro makes heavy use of object serialization/deserialization in order to run in parallel with MPI.

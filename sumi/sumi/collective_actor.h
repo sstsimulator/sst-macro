@@ -15,6 +15,7 @@ namespace sumi {
 struct action
 {
   typedef enum { send=0, recv=1 } type_t;
+  typedef enum { in_place_result=0, out_of_place=1, temp=2 } recv_type_t;
   type_t type;
   int partner;
   int join_counter;
@@ -22,6 +23,7 @@ struct action
   int offset;
   int nelems;
   uint32_t id;
+  bool recv_type_;
 
   static const char*
   tostr(type_t ty){
@@ -52,7 +54,7 @@ struct action
  protected:
   action(type_t ty, int r, int p) :
     type(ty), round(r), partner(p),
-    join_counter(0)
+    join_counter(0), recv_type_(in_place_result)
   {
     id = message_id(ty, r, p);
   }
@@ -288,6 +290,7 @@ class dag_collective_actor :
   virtual void init_buffers(void* dst, void* src) = 0;
   virtual void finalize_buffers() = 0;
   virtual void init_dag() = 0;
+  virtual void init_tree(){}
 
  protected:
   void
@@ -349,7 +352,7 @@ class dag_collective_actor :
 
   public_buffer send_buffer(int offset);
 
-  public_buffer recv_buffer(int round, int offset);
+  public_buffer recv_buffer(action* ac);
 
   collective_done_message::ptr
   done_msg() const;
@@ -357,11 +360,6 @@ class dag_collective_actor :
   void add_initial_action(action* ac);
 
   void dense_partner_ping_failed(int dense_rank);
-
-  bool
-  out_of_place_round(int rnd) const {
-    return out_of_place_rounds_.find(rnd) != out_of_place_rounds_.end();
-  }
 
  private:
   typedef std::map<uint32_t, action*> active_map;
@@ -422,7 +420,6 @@ class dag_collective_actor :
 
   collective::type_t type_;
 
-  std::set<int> out_of_place_rounds_;
 };
 
 /**

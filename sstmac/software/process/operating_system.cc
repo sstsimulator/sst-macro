@@ -767,6 +767,11 @@ operating_system::register_lib(library* lib)
               "operating_system: trying to register a lib with no name");
   }
 #endif
+  static bool already_registered = false;
+  if (addr() == 512 && lib->lib_name() == "sumi_server_1"){
+    if (already_registered) abort();
+    already_registered = true;
+  }
   os_debug("registering lib %s", lib->lib_name().c_str());
   int& refcount = lib_refcounts_[lib];
   ++refcount;

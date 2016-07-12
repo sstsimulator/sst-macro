@@ -28,7 +28,7 @@ class sumi_param_bcaster : public sprockit::param_bcaster
   sumi_param_bcaster(sumi::transport* tp) : tport_(tp), tag_(12345) {}
 
   void bcast(void *buf, int size, int me, int root){
-    tport_->bcast(buf, size, sizeof(char), tag_, false);
+    tport_->bcast(root, buf, size, sizeof(char), tag_, false);
     tport_->collective_block(sumi::collective::bcast, tag_);
     ++tag_;
   }
@@ -335,9 +335,9 @@ int traffic_matrix_main(int argc, char** argv)
   ++num_done;
 
   int nresults = nproc*num_iterations*npartners;
-  double* resultsArr = new double[nresults];
-  int result_idx = 0;
   if (num_done == nproc){
+    double* resultsArr = new double[nresults];
+    int result_idx = 0;
     for (int p=0; p < nproc; ++p){
       for (int i=0; i < num_iterations; ++i){
         std::map<int, rdma_message::ptr>& done = results[p][i];
@@ -351,13 +351,13 @@ int traffic_matrix_main(int argc, char** argv)
             "Message iter=%3d source=%5d dest=%d throughput=%10.4fGB/s start=%8.4ems stop=%8.4ems",
             msg->iter(), msg->sender(), msg->recver(), throughput_gbs,
             msg->start()*1e3, msg->finish()*1e3);
-        }
-      }
+       }
+     }
    }
+   sstmac::SimulationQueue::publishResults(resultsArr, nresults);
+   num_done = 0;
  }
- sstmac::SimulationQueue::publishResults(resultsArr, nresults);
-
-  tport->finalize();
-  return 0;
+ tport->finalize();
+ return 0;
 }
 

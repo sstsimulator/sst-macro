@@ -114,6 +114,12 @@ macro_switch_interconnect::init_factory_params(sprockit::sim_parameters* params)
 
   int the_only_port = 0;
 
+  connectable::config nic_cfg;
+  nic_cfg.link_weight = 1.0;
+  nic_cfg.red = 1;
+
+
+
   if (!netlinks_.empty()){
     //we connect to netlinks, not nics
     topology_->connect_end_points(switches_, netlinks_);
@@ -130,11 +136,11 @@ macro_switch_interconnect::init_factory_params(sprockit::sim_parameters* params)
       top_debug("Connecting NIC %d to netlink %d on ports %d:%d",
              int(nid), int(netid), the_only_port, inj_port);
       //injection ports have to be offset
-      nlnk->connect(the_only_port, inj_port, connectable::input, the_nic);
-      the_nic->connect(the_only_port, inj_port, connectable::output, nlnk);
+      nlnk->connect(the_only_port, inj_port, connectable::input, the_nic, &nic_cfg);
+      the_nic->connect(the_only_port, inj_port, connectable::output, nlnk, &nic_cfg);
 
-      nlnk->connect(inj_port, the_only_port, connectable::output, the_nic);
-      the_nic->connect(inj_port, the_only_port, connectable::input, nlnk);
+      nlnk->connect(inj_port, the_only_port, connectable::output, the_nic, &nic_cfg);
+      the_nic->connect(inj_port, the_only_port, connectable::input, nlnk, &nic_cfg);
     }
   } else {
     topology_->connect_end_points(switches_, nics_);

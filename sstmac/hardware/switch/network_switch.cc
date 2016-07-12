@@ -19,13 +19,12 @@
 #include <sprockit/keyword_registration.h>
 
 #if SSTMAC_INTEGRATED_SST_CORE
-#include <sstmac/sst_core/message_event_wrapper.h>
 #include <sstmac/sst_core/connectable_wrapper.h>
 #include <sstmac/sst_core/integrated_component.h>
 #endif
 
-ImplementFactory(sstmac::hw::network_switch);
-RegisterDebugSlot(network_switch);
+ImplementFactory(sstmac::hw::network_switch)
+RegisterDebugSlot(network_switch)
 
 namespace sstmac {
 
@@ -66,19 +65,21 @@ network_switch::init(unsigned int phase)
     for(auto&& pair : link_map_->getLinkMap()) {
       const std::string& port_name = pair.first;
       SST::Link* link = pair.second;
-      connection_details dets = parse_port_name(port_name);
+      connection_details dets;
+      parse_port_name(port_name, &dets);
       if (dets.src_type == connection_details::sw && dets.src_id == my_addr_){ 
         //create the link
         integrated_connectable_wrapper* next = new integrated_connectable_wrapper(link);
-        connect_weighted(
+        connect(
             dets.src_port, 
             dets.dst_port,
             dets.type,
             next,
-            dets.weight,
-            dets.redundancy);
+            &dets.cfg);
       } else { //somebody is injecting to me
-        configureLink(port_name, new SST::Event::Handler<SSTIntegratedComponent>(this, &SSTIntegratedComponent::handle_event));
+        configureLink(port_name,
+         new SST::Event::Handler<SSTIntegratedComponent>(
+              this, &SSTIntegratedComponent::handle_event));
       }
     }
     initialize();
@@ -150,18 +151,18 @@ network_switch::set_topology(topology *top)
 
 void
 network_switch::connect(
-    int src_outport,
-    int dst_inport,
-    connection_type_t ty,
-    connectable* mod)
+  int src_outport,
+  int dst_inport,
+  connection_type_t ty,
+  connectable* mod,
+  connectable::config* cfg)
 {
  switch (ty) {
    case input: {
       if (top_->is_injection_port(dst_inport)){
         connect_injector(src_outport, dst_inport, safe_cast(event_handler, mod));
       } else {
-        //printf("Connecting %d->%d not injection\n", src_outport, dst_inport);
-        connect_weighted(src_outport, dst_inport, ty, mod, 1.0, 1);
+        connect_input(src_outport, dst_inport, mod, cfg);
       }
       break;
     }
@@ -169,11 +170,9 @@ network_switch::connect(
       if (top_->is_injection_port(src_outport)){
         connect_ejector(src_outport, dst_inport, safe_cast(event_handler, mod));
       } else {
-        //printf("Connecting %d->%d not ejection\n", src_outport, dst_inport);
-        connect_weighted(src_outport, dst_inport, ty, mod, 1.0, 1);
+        connect_output(src_outport, dst_inport, mod, cfg);
       }
       //here my outport is zero
-
       break;
     }
     default:

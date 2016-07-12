@@ -138,25 +138,26 @@ bruck_actor::finalize()
 
   //we need to reorder things a bit
   //first, copy everything out
-  int nproc = dense_nproc_;
-  int total_size = nelems_ * type_size_ * nproc;
+  int total_nelems = nelems_* dense_nproc_;
+  int total_size = total_nelems * type_size_;
   char* tmp = new char[total_size];
   std::memcpy(tmp, result_buffer_, total_size);
 
-  //int* buf = (int*) tmp;
-  //for (int i=0; i < nelems_ * nproc; ++i){
-  //  printf("Start[%d] = %d\n", i, buf[i]);
-  //}
 
-  for (int rank=0; rank < nproc; ++rank){
-    //this rank is shifted to the wrong position
-    int src_rank_offset = (rank + nproc - dense_me_) % nproc;
-    int src_buffer_offset = src_rank_offset * nelems_ * type_size_;
-    int dst_buffer_offset = rank * nelems_ * type_size_;
-    void* src = tmp + src_buffer_offset;
-    void* dst = ((char*)result_buffer_) + dst_buffer_offset;
-    std::memcpy(dst, src, nelems_ * type_size_);
-  }
+  int my_offset = nelems_ * dense_me_;
+
+  int copy_size = (total_nelems - my_offset) * type_size_;
+  int copy_offset = my_offset * type_size_;
+
+  void* src = tmp;
+  void* dst = ((char*)result_buffer_) + copy_offset;
+  std::memcpy(dst, src, copy_size);
+
+  copy_size = my_offset * type_size_;
+  copy_offset = (total_nelems - my_offset) * type_size_;
+  src = tmp + copy_offset;
+  dst = result_buffer_;
+  std::memcpy(dst, src, copy_size);
 
   delete[] tmp;
 }

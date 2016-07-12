@@ -5,25 +5,42 @@
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/hardware/packet_flow/packet_flow.h>
 #include <sstmac/hardware/topology/topology.h>
+#include <list>
 
 namespace sstmac {
 namespace hw {
 
+struct payload_arbitration_slot
+{
+  payload_arbitration_slot() : port_bitmap(0){}
+
+  std::list<packet_flow_payload*> queue;
+  uint64_t port_bitmap;
+
+  void
+  clear_port(int port) {
+    port_bitmap = port_bitmap ^ (1<<port);
+  }
+
+  bool
+  push_back(packet_flow_payload* flow){
+    uint64_t flow_bitmask = (1 << flow->inport());
+    if (port_bitmap & flow_bitmask){
+      port_bitmap = port_bitmap | flow_bitmask;
+      queue.push_back(flow);
+      return false;
+    } else {
+      return false;
+    }
+  }
+
+};
 
 struct payload_queue {
+
   std::list<packet_flow_payload*> queue;
 
   typedef std::list<packet_flow_payload*>::iterator iterator;
-
-  iterator
-  begin() {
-    return queue.begin();
-  }
-
-  iterator
-  end() {
-    return queue.end();
-  }
 
   packet_flow_payload*
   pop(int num_credits);
@@ -32,13 +49,14 @@ struct payload_queue {
   front();
 
   void
-  push_back(packet_flow_payload* payload) {
-    queue.push_back(payload);
-  }
+  push_back(packet_flow_payload* payload);
 
-  int size() const {
-    return queue.size();
-  }
+  packet_flow_payload*
+  find_pending(int num_credits, std::list<packet_flow_payload*>& queue);
+
+  #define MAX_PAYLOAD_QUEUE_INDEX 4
+  payload_arbitration_slot slots_[MAX_PAYLOAD_QUEUE_INDEX];
+  std::list<packet_flow_payload*> extras_;
 };
 
 class packet_flow_handler :

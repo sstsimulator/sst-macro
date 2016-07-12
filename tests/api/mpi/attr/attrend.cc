@@ -1,15 +1,4 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2008 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
-/*
-      The MPI-2 specification makes it clear that delect attributes are 
-      called on MPI_COMM_WORLD and MPI_COMM_SELF at the very beginning of
-      MPI_Finalize.  This is useful for tools that want to perform the MPI 
-      equivalent of an "at_exit" action.
- */
 #include <stdio.h>
 #include <sstmac/replacements/mpi.h>
 #include "mpitest.h"

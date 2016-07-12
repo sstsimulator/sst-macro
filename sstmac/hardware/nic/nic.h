@@ -141,6 +141,9 @@ class nic :
   virtual timestamp
   injection_latency() const = 0;
 
+  virtual double
+  injection_bandwidth() const = 0;
+
   virtual void
   set_event_parent(event_scheduler* m);
 

@@ -11,10 +11,12 @@ if test "X$with_sumi_mpi" = "Xyes"; then
   AM_CONDITIONAL([WITH_SUMI_MPI], true)
   AM_CONDITIONAL([WITH_DEFAULT_MPI], false)
   AC_SUBST([mpi_header_file], ["<sumi-mpi/mpi_wrapper.h>"])
+  AC_DEFINE_UNQUOTED([DEFAULT_MPI], 0, "Shared-memory optimizations off")
 else
   AM_CONDITIONAL([WITH_SUMI_MPI], false)
   AM_CONDITIONAL([WITH_DEFAULT_MPI], true)
   AC_SUBST([mpi_header_file], ["<sstmac/libraries/mpi/mpi_wrapper.h>"])
+  AC_DEFINE_UNQUOTED([DEFAULT_MPI], 1, "Shared-memory optimizations off")
 fi
 
 AC_ARG_ENABLE([large-mpi-payloads],

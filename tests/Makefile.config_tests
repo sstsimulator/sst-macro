@@ -23,8 +23,9 @@ CONFIGTESTS = \
   test_configs_exa1_pflow \
   test_configs_exa1_simple \
   test_configs_exa2_pflow \
-  test_configs_exa2_simple \
-  test_configs_hopper_amm4 
+  test_configs_exa2_simple 
+
+#  test_configs_hopper_amm4 
 
 test_configs_exa%.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 5 $(top_srcdir) $@ 't > 4 and t < 4.2' \

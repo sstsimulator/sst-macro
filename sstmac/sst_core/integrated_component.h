@@ -52,7 +52,9 @@
 #include <sst/core/linkMap.h>
 #include <sst/core/params.h>
 #include <sst/core/element.h>
-#include <sstmac/sst_core/message_event_wrapper.h>
+#include <sstmac/common/sst_event_fwd.h>
+#include <sstmac/common/timestamp.h>
+
 namespace sstmac {
 
 // lightweight layer in between integrated components and SST core, useful for common helper functions, etc
@@ -60,9 +62,7 @@ class SSTIntegratedComponent
   : public SST::Component
 {
  public:
-  void handle_event(SST::Event* ev){
-    handle(static_cast<sstmac::event*>(ev));
-  }
+  void handle_event(SST::Event* ev);
 
   virtual void
   handle(event* ev) = 0;

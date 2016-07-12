@@ -252,9 +252,6 @@ class mpi_queue
   void
   send_completion_ack(const mpi_message::ptr& message);
 
-  std::string
-  id_string() const;
-
   mpi_message::ptr
   send_message(int count, MPI_Datatype type,
     int dst_rank, int tag, mpi_comm* comm);

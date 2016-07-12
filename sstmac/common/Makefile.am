@@ -34,7 +34,6 @@ libsstmac_common_la_SOURCES = \
   messages/message_buffer_cache.cc \
   messages/payload.cc \
   messages/library_message.cc \
-  messages/sleep_event.cc \
   messages/timed_event.cc \
   messages/sst_message.cc \
   messages/wrapper_payload.cc \

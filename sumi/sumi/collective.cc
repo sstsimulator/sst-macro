@@ -154,6 +154,20 @@ dag_collective::construct(const std::string& name, sprockit::sim_parameters *par
 }
 
 void
+dag_collective::init_actors()
+{
+  dag_collective_actor* actor = new_actor();
+
+  actor->init(type_, my_api_, dom_, nelems_, type_size_, tag_, fault_aware_, context_);
+  actor->init_tree();
+  actor->init_buffers(dst_buffer_, src_buffer_);
+  actor->init_dag();
+
+  my_actors_[dense_me_] = actor;
+  refcounts_[dom_->my_domain_rank()] = my_actors_.size();
+}
+
+void
 dag_collective::init(type_t type,
   transport *my_api, domain *dom,
   void *dst, void *src,
@@ -167,21 +181,6 @@ dag_collective::init(type_t type,
   type_size_ = type_size;
   src_buffer_ = src;
   dst_buffer_ = dst;
-  dag_collective_actor* actor = new_actor();
-
-  actor->init(type, my_api_, dom_, nelems, type_size, tag_, fault_aware_, context);
-  actor->init_buffers(dst_buffer_, src_buffer_);
-  actor->init_dag();
-
-  my_actors_[dense_me_] = actor;
-  refcounts_[dom_->my_domain_rank()] = my_actors_.size();
-
-  bool has_src = src;
-  bool has_dst = dst;
-  if ((has_src && !has_dst) || (has_dst && !has_src)){
-    spkt_throw(sprockit::illformed_error,
-        "collective: must specify both src,dst buffers to be null or non-null, not mixed");
-  }
 }
 
 void

@@ -86,15 +86,39 @@ comm_allreduce(void *dst, void *src, int nelems, int type_size, int tag, reduce_
 }
 
 void
+comm_reduce(int root, void *dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn, bool fault_aware, int context, domain* dom)
+{
+  current_transport()->reduce(root, dst, src, nelems, type_size, tag, fxn, fault_aware, context, dom);
+}
+
+void
 comm_allgather(void *dst, void *src, int nelems, int type_size, int tag, bool fault_aware, int context, domain* dom)
 {
   current_transport()->allgather(dst, src, nelems, type_size, tag, fault_aware, context, dom);
 }
 
 void
-comm_bcast(void *buffer, int nelems, int type_size, int tag, bool fault_aware, int context, domain *dom)
+comm_allgatherv(void *dst, void *src, int* recv_counts, int type_size, int tag, bool fault_aware, int context, domain* dom)
 {
-  current_transport()->bcast(buffer, nelems, type_size, tag, fault_aware, context, dom);
+  current_transport()->allgatherv(dst, src, recv_counts, type_size, tag, fault_aware, context, dom);
+}
+
+void
+comm_gather(int root, void *dst, void *src, int nelems, int type_size, int tag, bool fault_aware, int context, domain* dom)
+{
+  current_transport()->gather(root, dst, src, nelems, type_size, tag, fault_aware, context, dom);
+}
+
+void
+comm_scatter(int root, void *dst, void *src, int nelems, int type_size, int tag, bool fault_aware, int context, domain* dom)
+{
+  current_transport()->scatter(root, dst, src, nelems, type_size, tag, fault_aware, context, dom);
+}
+
+void
+comm_bcast(int root, void *buffer, int nelems, int type_size, int tag, bool fault_aware, int context, domain *dom)
+{
+  current_transport()->bcast(root, buffer, nelems, type_size, tag, fault_aware, context, dom);
 }
 
 void

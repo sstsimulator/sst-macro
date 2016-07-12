@@ -40,13 +40,13 @@ class param_assign {
     param_ = str;
   }
 
-  void setByteLength(long x, const char* units);
-  void setBandwidth(double x, const char* units);
-  void setFrequency(double x, const char* units);
-  void setTime(double x, const char* units);
-  void setValue(double x, const char* units);
-  void set(const char* str);
-  void set(const std::string& str);
+  const std::string& setByteLength(long x, const char* units);
+  const std::string& setBandwidth(double x, const char* units);
+  const std::string& setFrequency(double x, const char* units);
+  const std::string& setTime(double x, const char* units);
+  const std::string& setValue(double x, const char* units);
+  const std::string& set(const char* str);
+  const std::string& set(const std::string& str);
 
   long getByteLength() const;
   double getBandwidth() const;
@@ -79,7 +79,15 @@ class param_bcaster {
 class sim_parameters  {
 
  public:
-  typedef spkt_unordered_map<std::string, std::string> key_value_map;
+  struct parameter_entry
+  {
+    parameter_entry() : read(false) {}
+    std::string value;
+    bool read;
+  };
+
+  typedef spkt_unordered_map<std::string, parameter_entry> key_value_map;
+
   sim_parameters();
 
   sim_parameters(const key_value_map& p);
@@ -104,7 +112,7 @@ class sim_parameters  {
   remove_param(const std::string &key);
 
   std::string
-  get_param(const std::string& key) ;
+  get_param(const std::string& key, bool throw_on_error = true);
 
   std::string
   reread_param(const std::string& key) {
@@ -168,6 +176,9 @@ class sim_parameters  {
     std::list<std::string> ns;
     print_params(os, true, ns);
   }
+
+  bool
+  print_unread_params(std::ostream& os = std::cerr) const;
 
   bool
   has_param(const std::string& key) const;
@@ -346,10 +357,10 @@ class sim_parameters  {
   get_vector_param(const std::string& key, std::vector<std::string>& vals);
 
   sim_parameters*
-  get_namespace(const std::string& ns) const;
+  get_namespace(const std::string& ns);
 
   sim_parameters*
-  get_optional_namespace(const std::string& ns) const;
+  get_optional_namespace(const std::string& ns);
 
   typedef std::set<int>::const_iterator id_iterator;
 
@@ -357,13 +368,13 @@ class sim_parameters  {
   has_namespace(const std::string& ns) const;
 
   void
-  parse_file(const std::string& fname, bool fail_on_existing = false);
+  parse_file(const std::string& fname, bool fail_on_existing, bool override_existing);
 
   void
-  parse_stream(std::istream& in, bool fail_on_existing = false);
+  parse_stream(std::istream& in, bool fail_on_existing, bool override_existing);
 
   void
-  parse_line(const std::string& line, bool fail_on_existing = false);
+  parse_line(const std::string& line, bool fail_on_existing, bool override_existing);
 
   /**
     @param key
@@ -371,14 +382,16 @@ class sim_parameters  {
     @param fail_on_existing Fail if the parameter named by key already exists
   */
   void
-  parse_keyval(const std::string& key, const std::string& value,
-    bool fail_on_existing);
+  parse_keyval(const std::string& key,
+    const std::string& value,
+    bool fail_on_existing,
+    bool override_existing,
+    bool mark_as_read);
 
   param_assign
   operator[](const std::string& key);
 
-  const sim_parameters*
-  top_parent() const;
+  sim_parameters* top_parent();
 
   key_value_map::iterator begin() { return params_.begin(); }
   key_value_map::const_iterator begin() const { return params_.begin(); }
@@ -401,16 +414,18 @@ class sim_parameters  {
 
   static sim_parameters* empty_ns_params_;
 
-  key_value_map params_;
+  std::string namespace_;
 
-  sim_parameters*
-  subspace_clone() {
-    return new sim_parameters;
-  }
+  key_value_map params_;
 
   void
   set_parent(sim_parameters* p) {
     parent_ = p;
+  }
+
+  void
+  set_namespace(const std::string& str) {
+    namespace_ = str;
   }
 
   bool
@@ -422,23 +437,22 @@ class sim_parameters  {
   split_line(const std::string& line, std::pair<std::string, std::string>& p);
 
   void
-  try_to_parse(const std::string& fname, bool fail_on_existing = false);
+  try_to_parse(const std::string& fname, bool fail_on_existing, bool override_existing);
 
   void
   print_params(const key_value_map& pmap, std::ostream& os, bool pretty_print, std::list<std::string>& ns) const;
 
   void
-  do_add_param(const std::string& key, const std::string& val,
-    bool fail_on_existing);
+  do_add_param(const std::string& key,
+    const std::string& val,
+    bool fail_on_existing,
+    bool override_existing,
+    bool mark_as_read);
 
-  sim_parameters*
-  get_param_scope(const std::string& ns);
-
-  std::string
-  go_get_param(const std::string &key, bool throw_on_error = true) const;
 
   sim_parameters*
   get_scope_and_key(const std::string& key, std::string& final_key);
+
 
 };
 
