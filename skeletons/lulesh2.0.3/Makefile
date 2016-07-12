@@ -8,8 +8,10 @@ LULESH_EXEC = lulesh2.0
 MPI_INC = /opt/local/include/openmpi
 MPI_LIB = /opt/local/lib
 
-SERCXX = sst++ -DUSE_MPI=0
-MPICXX = sst++ -DUSE_MPI=1
+LULESH_SST_FLAGS=-DLULESH_SST_MODS
+
+SERCXX = sst++ -DUSE_MPI=0 $(LULESH_SST_FLAGS)
+MPICXX = sst++ -DUSE_MPI=1 $(LULESH_SST_FLAGS)
 #CXX = $(MPICXX)
 CXX = $(SERCXX)
 
