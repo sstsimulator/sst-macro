@@ -139,6 +139,10 @@ class Domain {
 
    void AllocateNodePersistent(Int_t numNode) // Node-centered
    {
+#if defined(LULESH_SST_MODS) && defined(LULESH_SST_VERBOSE)
+      std::cout << "AllocateNodePersistent " << numNode << std::endl;
+#endif
+
       m_x.resize(numNode);  // coordinates
       m_y.resize(numNode);
       m_z.resize(numNode);
@@ -160,6 +164,10 @@ class Domain {
 
    void AllocateElemPersistent(Int_t numElem) // Elem-centered
    {
+#if defined(LULESH_SST_MODS) && defined(LULESH_SST_VERBOSE)
+      std::cout << "AllocateElemPersistent " << numElem << std::endl;
+#endif
+
       m_nodelist.resize(8*numElem);
 
       // elem connectivities through face
@@ -194,6 +202,10 @@ class Domain {
 
    void AllocateGradients(Int_t numElem, Int_t allElem)
    {
+#if defined(LULESH_SST_MODS) && defined(LULESH_SST_VERBOSE)
+      std::cout << "AllocateGradients " << numElem << " " << allElem << std::endl;
+#endif
+
       // Position gradients
       m_delx_xi.resize(numElem) ;
       m_delx_eta.resize(numElem) ;
@@ -207,6 +219,10 @@ class Domain {
 
    void DeallocateGradients()
    {
+#if defined(LULESH_SST_MODS) && defined(LULESH_SST_VERBOSE)
+     std::cout << "DeallocateGradients" << std::endl;
+#endif
+
       m_delx_zeta.clear() ;
       m_delx_eta.clear() ;
       m_delx_xi.clear() ;
@@ -218,6 +234,10 @@ class Domain {
 
    void AllocateStrains(Int_t numElem)
    {
+#if defined(LULESH_SST_MODS) && defined(LULESH_SST_VERBOSE)
+      std::cout << "AllocateStrains " << numElem << std::endl;
+#endif
+
       m_dxx.resize(numElem) ;
       m_dyy.resize(numElem) ;
       m_dzz.resize(numElem) ;
@@ -225,6 +245,10 @@ class Domain {
 
    void DeallocateStrains()
    {
+#if defined(LULESH_SST_MODS) && defined(LULESH_SST_VERBOSE)
+     std::cout << "DeallocateStrains" << std::endl;
+#endif
+
       m_dzz.clear() ;
       m_dyy.clear() ;
       m_dxx.clear() ;
