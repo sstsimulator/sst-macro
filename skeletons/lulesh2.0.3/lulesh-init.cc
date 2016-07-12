@@ -133,7 +133,11 @@ Domain::Domain(Int_t numRanks, Index_t colLoc,
    // probably easier/better to just run a fixed number of timesteps
    // using the -i flag in 2.x
 
+#ifdef LULESH_SST_MODS
+   dtfixed() = Real_t(1.0e-6) ; // Negative means use courant condition
+#else
    dtfixed() = Real_t(-1.0e-6) ; // Negative means use courant condition
+#endif
    stoptime()  = Real_t(1.0e-2); // *Real_t(edgeElems*tp/45.0) ;
 
    // Initial conditions
