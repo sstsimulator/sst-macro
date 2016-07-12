@@ -198,6 +198,15 @@ void Release(T **ptr)
    }
 }
 
+#ifdef LULESH_SST_MODS
+template <typename T>
+void Release(VariablePtr<T> *ptr)
+{
+#ifdef LULESH_SST_VERBOSE
+   std::cout << "Release" << std::endl;
+#endif
+}
+#endif
 
 
 /******************************************/
@@ -313,7 +322,7 @@ void CollectDomainNodesToElemNodes(Domain &domain,
 
 static inline
 void InitStressTermsForElems(Domain &domain,
-                             Real_t *sigxx, Real_t *sigyy, Real_t *sigzz,
+                             Real_t_ptr_sim sigxx, Real_t_ptr_sim sigyy, Real_t_ptr_sim sigzz,
                              Index_t numElem)
 {
    //
@@ -333,7 +342,7 @@ void CalcElemShapeFunctionDerivatives( Real_t const x[],
                                        Real_t const y[],
                                        Real_t const z[],
                                        Real_t b[][8],
-                                       Real_t* const volume )
+                                       Real_t_ptr_sim volume )
 {
   const Real_t x0 = x[0] ;   const Real_t x1 = x[1] ;
   const Real_t x2 = x[2] ;   const Real_t x3 = x[3] ;
@@ -521,7 +530,7 @@ void SumElemStressesToNodeForces( const Real_t B[][8],
                                   const Real_t stress_xx,
                                   const Real_t stress_yy,
                                   const Real_t stress_zz,
-                                  Real_t fx[], Real_t fy[], Real_t fz[] )
+                                  Real_t_ptr_sim fx, Real_t_ptr_sim fy, Real_t_ptr_sim fz )
 {
    for(Index_t i = 0; i < 8; i++) {
       fx[i] = -( stress_xx * B[0][i] );
@@ -534,8 +543,8 @@ void SumElemStressesToNodeForces( const Real_t B[][8],
 
 static inline
 void IntegrateStressForElems( Domain &domain,
-                              Real_t *sigxx, Real_t *sigyy, Real_t *sigzz,
-                              Real_t *determ, Index_t numElem, Index_t numNode)
+                              Real_t_ptr_sim sigxx, Real_t_ptr_sim sigyy, Real_t_ptr_sim sigzz,
+                              Real_t_ptr_sim determ, Index_t numElem, Index_t numNode)
 {
 #if _OPENMP
    Index_t numthreads = omp_get_max_threads();
@@ -544,18 +553,18 @@ void IntegrateStressForElems( Domain &domain,
 #endif
 
    Index_t numElem8 = numElem * 8 ;
-   Real_t *fx_elem;
-   Real_t *fy_elem;
-   Real_t *fz_elem;
+   Real_t_ptr_sim fx_elem;
+   Real_t_ptr_sim fy_elem;
+   Real_t_ptr_sim fz_elem;
    Real_t fx_local[8] ;
    Real_t fy_local[8] ;
    Real_t fz_local[8] ;
 
 
   if (numthreads > 1) {
-     fx_elem = Allocate<Real_t>(numElem8) ;
-     fy_elem = Allocate<Real_t>(numElem8) ;
-     fz_elem = Allocate<Real_t>(numElem8) ;
+     fx_elem = Allocate<Real_t_sim>(numElem8) ;
+     fy_elem = Allocate<Real_t_sim>(numElem8) ;
+     fz_elem = Allocate<Real_t_sim>(numElem8) ;
   }
   // loop over all elements
 
@@ -750,9 +759,9 @@ void CalcElemFBHourglassForce(Real_t *xd, Real_t *yd, Real_t *zd,  Real_t hourga
 
 static inline
 void CalcFBHourglassForceForElems( Domain &domain,
-                                   Real_t *determ,
-                                   Real_t *x8n, Real_t *y8n, Real_t *z8n,
-                                   Real_t *dvdx, Real_t *dvdy, Real_t *dvdz,
+                                   Real_t_ptr_sim determ,
+                                   Real_t_ptr_sim x8n, Real_t_ptr_sim y8n, Real_t_ptr_sim z8n,
+                                   Real_t_ptr_sim dvdx, Real_t_ptr_sim dvdy, Real_t_ptr_sim dvdz,
                                    Real_t hourg, Index_t numElem,
                                    Index_t numNode)
 {
@@ -771,14 +780,14 @@ void CalcFBHourglassForceForElems( Domain &domain,
   
    Index_t numElem8 = numElem * 8 ;
 
-   Real_t *fx_elem; 
-   Real_t *fy_elem; 
-   Real_t *fz_elem; 
+   Real_t_ptr_sim fx_elem; 
+   Real_t_ptr_sim fy_elem; 
+   Real_t_ptr_sim fz_elem; 
 
    if(numthreads > 1) {
-      fx_elem = Allocate<Real_t>(numElem8) ;
-      fy_elem = Allocate<Real_t>(numElem8) ;
-      fz_elem = Allocate<Real_t>(numElem8) ;
+      fx_elem = Allocate<Real_t_sim>(numElem8) ;
+      fy_elem = Allocate<Real_t_sim>(numElem8) ;
+      fz_elem = Allocate<Real_t_sim>(numElem8) ;
    }
 
    Real_t  gamma[4][8];
@@ -822,7 +831,7 @@ void CalcFBHourglassForceForElems( Domain &domain,
 
 #pragma omp parallel for firstprivate(numElem, hourg)
    for(Index_t i2=0;i2<numElem;++i2){
-      Real_t *fx_local, *fy_local, *fz_local ;
+      Real_t_ptr_sim fx_local, fy_local, fz_local ;
       Real_t hgfx[8], hgfy[8], hgfz[8] ;
 
       Real_t coefficient;
@@ -1035,16 +1044,16 @@ void CalcFBHourglassForceForElems( Domain &domain,
 
 static inline
 void CalcHourglassControlForElems(Domain& domain,
-                                  Real_t determ[], Real_t hgcoef)
+                                  Real_t_ptr_sim determ, Real_t hgcoef)
 {
    Index_t numElem = domain.numElem() ;
    Index_t numElem8 = numElem * 8 ;
-   Real_t *dvdx = Allocate<Real_t>(numElem8) ;
-   Real_t *dvdy = Allocate<Real_t>(numElem8) ;
-   Real_t *dvdz = Allocate<Real_t>(numElem8) ;
-   Real_t *x8n  = Allocate<Real_t>(numElem8) ;
-   Real_t *y8n  = Allocate<Real_t>(numElem8) ;
-   Real_t *z8n  = Allocate<Real_t>(numElem8) ;
+   Real_t_ptr_sim dvdx = Allocate<Real_t_sim>(numElem8) ;
+   Real_t_ptr_sim dvdy = Allocate<Real_t_sim>(numElem8) ;
+   Real_t_ptr_sim dvdz = Allocate<Real_t_sim>(numElem8) ;
+   Real_t_ptr_sim x8n  = Allocate<Real_t_sim>(numElem8) ;
+   Real_t_ptr_sim y8n  = Allocate<Real_t_sim>(numElem8) ;
+   Real_t_ptr_sim z8n  = Allocate<Real_t_sim>(numElem8) ;
 
    /* start loop over elements */
 #pragma omp parallel for firstprivate(numElem)
@@ -1073,10 +1082,12 @@ void CalcHourglassControlForElems(Domain& domain,
 
       /* Do a check for negative volumes */
       if ( domain.v(i) <= Real_t(0.0) ) {
+#if !defined(LULESH_SST_MODS) || !defined(LULESH_SST_SIM)
 #if USE_MPI         
          MPI_Abort(MPI_COMM_WORLD, VolumeError) ;
 #else
          exit(VolumeError);
+#endif
 #endif
       }
    }
@@ -1105,10 +1116,10 @@ void CalcVolumeForceForElems(Domain& domain)
    Index_t numElem = domain.numElem() ;
    if (numElem != 0) {
       Real_t  hgcoef = domain.hgcoef() ;
-      Real_t *sigxx  = Allocate<Real_t>(numElem) ;
-      Real_t *sigyy  = Allocate<Real_t>(numElem) ;
-      Real_t *sigzz  = Allocate<Real_t>(numElem) ;
-      Real_t *determ = Allocate<Real_t>(numElem) ;
+      Real_t_ptr_sim sigxx  = Allocate<Real_t_sim>(numElem) ;
+      Real_t_ptr_sim sigyy  = Allocate<Real_t_sim>(numElem) ;
+      Real_t_ptr_sim sigzz  = Allocate<Real_t_sim>(numElem) ;
+      Real_t_ptr_sim determ = Allocate<Real_t_sim>(numElem) ;
 
       /* Sum contributions to total stress tensor */
       InitStressTermsForElems(domain, sigxx, sigyy, sigzz, numElem);
@@ -1123,10 +1134,12 @@ void CalcVolumeForceForElems(Domain& domain)
 #pragma omp parallel for firstprivate(numElem)
       for ( Index_t k=0 ; k<numElem ; ++k ) {
          if (determ[k] <= Real_t(0.0)) {
+#if !defined(LULESH_SST_MODS) || !defined(LULESH_SST_SIM)
 #if USE_MPI            
             MPI_Abort(MPI_COMM_WORLD, VolumeError) ;
 #else
             exit(VolumeError);
+#endif
 #endif
          }
       }
@@ -1543,7 +1556,7 @@ void CalcElemVelocityGradient( const Real_t* const xvel,
 /******************************************/
 
 //static inline
-void CalcKinematicsForElems( Domain &domain, Real_t *vnew, 
+void CalcKinematicsForElems( Domain &domain, Real_t_ptr_sim vnew, 
                              Real_t deltaTime, Index_t numElem )
 {
 
@@ -1611,7 +1624,7 @@ void CalcKinematicsForElems( Domain &domain, Real_t *vnew,
 /******************************************/
 
 static inline
-void CalcLagrangeElements(Domain& domain, Real_t* vnew)
+void CalcLagrangeElements(Domain& domain, Real_t_ptr_sim vnew)
 {
    Index_t numElem = domain.numElem() ;
    if (numElem > 0) {
@@ -1638,10 +1651,12 @@ void CalcLagrangeElements(Domain& domain, Real_t* vnew)
         // See if any volumes are negative, and take appropriate action.
          if (vnew[k] <= Real_t(0.0))
         {
+#if !defined(LULESH_SST_MODS) || !defined(LULESH_SST_SIM)
 #if USE_MPI           
            MPI_Abort(MPI_COMM_WORLD, VolumeError) ;
 #else
            exit(VolumeError);
+#endif
 #endif
         }
       }
@@ -1652,7 +1667,7 @@ void CalcLagrangeElements(Domain& domain, Real_t* vnew)
 /******************************************/
 
 static inline
-void CalcMonotonicQGradientsForElems(Domain& domain, Real_t vnew[])
+void CalcMonotonicQGradientsForElems(Domain& domain, Real_t_ptr_sim vnew)
 {
    Index_t numElem = domain.numElem();
 
@@ -1801,7 +1816,7 @@ void CalcMonotonicQGradientsForElems(Domain& domain, Real_t vnew[])
 
 static inline
 void CalcMonotonicQRegionForElems(Domain &domain, Int_t r,
-                                  Real_t vnew[], Real_t ptiny)
+                                  Real_t_ptr_sim vnew, Real_t ptiny)
 {
    Real_t monoq_limiter_mult = domain.monoq_limiter_mult();
    Real_t monoq_max_slope = domain.monoq_max_slope();
@@ -1964,7 +1979,7 @@ void CalcMonotonicQRegionForElems(Domain &domain, Int_t r,
 /******************************************/
 
 static inline
-void CalcMonotonicQForElems(Domain& domain, Real_t vnew[])
+void CalcMonotonicQForElems(Domain& domain, Real_t_ptr_sim vnew)
 {  
    //
    // initialize parameters
@@ -1985,7 +2000,7 @@ void CalcMonotonicQForElems(Domain& domain, Real_t vnew[])
 /******************************************/
 
 static inline
-void CalcQForElems(Domain& domain, Real_t vnew[])
+void CalcQForElems(Domain& domain, Real_t_ptr_sim vnew)
 {
    //
    // MONOTONIC Q option
@@ -2054,9 +2069,9 @@ void CalcQForElems(Domain& domain, Real_t vnew[])
 /******************************************/
 
 static inline
-void CalcPressureForElems(Real_t* p_new, Real_t* bvc,
-                          Real_t* pbvc, Real_t* e_old,
-                          Real_t* compression, Real_t *vnewc,
+void CalcPressureForElems(Real_t_ptr_sim p_new, Real_t_ptr_sim bvc,
+                          Real_t_ptr_sim pbvc, Real_t_ptr_sim e_old,
+                          Real_t_ptr_sim compression, Real_t_ptr_sim vnewc,
                           Real_t pmin,
                           Real_t p_cut, Real_t eosvmax,
                           Index_t length, Index_t *regElemList)
@@ -2088,18 +2103,18 @@ void CalcPressureForElems(Real_t* p_new, Real_t* bvc,
 /******************************************/
 
 static inline
-void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
-                        Real_t* bvc, Real_t* pbvc,
-                        Real_t* p_old, Real_t* e_old, Real_t* q_old,
-                        Real_t* compression, Real_t* compHalfStep,
-                        Real_t* vnewc, Real_t* work, Real_t* delvc, Real_t pmin,
+void CalcEnergyForElems(Real_t_ptr_sim p_new, Real_t_ptr_sim e_new, Real_t_ptr_sim q_new,
+                        Real_t_ptr_sim bvc, Real_t_ptr_sim pbvc,
+                        Real_t_ptr_sim p_old, Real_t_ptr_sim e_old, Real_t_ptr_sim q_old,
+                        Real_t_ptr_sim compression, Real_t_ptr_sim compHalfStep,
+                        Real_t_ptr_sim vnewc, Real_t_ptr_sim work, Real_t_ptr_sim delvc, Real_t pmin,
                         Real_t p_cut, Real_t  e_cut, Real_t q_cut, Real_t emin,
-                        Real_t* qq_old, Real_t* ql_old,
+                        Real_t_ptr_sim qq_old, Real_t_ptr_sim ql_old,
                         Real_t rho0,
                         Real_t eosvmax,
                         Index_t length, Index_t *regElemList)
 {
-   Real_t *pHalfStep = Allocate<Real_t>(length) ;
+   Real_t_ptr_sim pHalfStep = Allocate<Real_t_sim>(length) ;
 
 #pragma omp parallel for firstprivate(length, emin)
    for (Index_t i = 0 ; i < length ; ++i) {
@@ -2221,9 +2236,9 @@ void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
 
 static inline
 void CalcSoundSpeedForElems(Domain &domain,
-                            Real_t *vnewc, Real_t rho0, Real_t *enewc,
-                            Real_t *pnewc, Real_t *pbvc,
-                            Real_t *bvc, Real_t ss4o3,
+                            Real_t_ptr_sim vnewc, Real_t rho0, Real_t_ptr_sim enewc,
+                            Real_t_ptr_sim pnewc, Real_t_ptr_sim pbvc,
+                            Real_t_ptr_sim bvc, Real_t ss4o3,
                             Index_t len, Index_t *regElemList)
 {
 #pragma omp parallel for firstprivate(rho0, ss4o3)
@@ -2244,7 +2259,7 @@ void CalcSoundSpeedForElems(Domain &domain,
 /******************************************/
 
 static inline
-void EvalEOSForElems(Domain& domain, Real_t *vnewc,
+void EvalEOSForElems(Domain& domain, Real_t_ptr_sim vnewc,
                      Int_t numElemReg, Index_t *regElemList, Int_t rep)
 {
    Real_t  e_cut = domain.e_cut() ;
@@ -2261,20 +2276,20 @@ void EvalEOSForElems(Domain& domain, Real_t *vnewc,
    // These temporaries will be of different size for 
    // each call (due to different sized region element
    // lists)
-   Real_t *e_old = Allocate<Real_t>(numElemReg) ;
-   Real_t *delvc = Allocate<Real_t>(numElemReg) ;
-   Real_t *p_old = Allocate<Real_t>(numElemReg) ;
-   Real_t *q_old = Allocate<Real_t>(numElemReg) ;
-   Real_t *compression = Allocate<Real_t>(numElemReg) ;
-   Real_t *compHalfStep = Allocate<Real_t>(numElemReg) ;
-   Real_t *qq_old = Allocate<Real_t>(numElemReg) ;
-   Real_t *ql_old = Allocate<Real_t>(numElemReg) ;
-   Real_t *work = Allocate<Real_t>(numElemReg) ;
-   Real_t *p_new = Allocate<Real_t>(numElemReg) ;
-   Real_t *e_new = Allocate<Real_t>(numElemReg) ;
-   Real_t *q_new = Allocate<Real_t>(numElemReg) ;
-   Real_t *bvc = Allocate<Real_t>(numElemReg) ;
-   Real_t *pbvc = Allocate<Real_t>(numElemReg) ;
+   Real_t_ptr_sim e_old = Allocate<Real_t_sim>(numElemReg) ;
+   Real_t_ptr_sim delvc = Allocate<Real_t_sim>(numElemReg) ;
+   Real_t_ptr_sim p_old = Allocate<Real_t_sim>(numElemReg) ;
+   Real_t_ptr_sim q_old = Allocate<Real_t_sim>(numElemReg) ;
+   Real_t_ptr_sim compression = Allocate<Real_t_sim>(numElemReg) ;
+   Real_t_ptr_sim compHalfStep = Allocate<Real_t_sim>(numElemReg) ;
+   Real_t_ptr_sim qq_old = Allocate<Real_t_sim>(numElemReg) ;
+   Real_t_ptr_sim ql_old = Allocate<Real_t_sim>(numElemReg) ;
+   Real_t_ptr_sim work = Allocate<Real_t_sim>(numElemReg) ;
+   Real_t_ptr_sim p_new = Allocate<Real_t_sim>(numElemReg) ;
+   Real_t_ptr_sim e_new = Allocate<Real_t_sim>(numElemReg) ;
+   Real_t_ptr_sim q_new = Allocate<Real_t_sim>(numElemReg) ;
+   Real_t_ptr_sim bvc = Allocate<Real_t_sim>(numElemReg) ;
+   Real_t_ptr_sim pbvc = Allocate<Real_t_sim>(numElemReg) ;
  
    //loop to add load imbalance based on region number 
    for(Int_t j = 0; j < rep; j++) {
@@ -2368,7 +2383,7 @@ void EvalEOSForElems(Domain& domain, Real_t *vnewc,
 /******************************************/
 
 static inline
-void ApplyMaterialPropertiesForElems(Domain& domain, Real_t vnew[])
+void ApplyMaterialPropertiesForElems(Domain& domain, Real_t_ptr_sim vnew)
 {
    Index_t numElem = domain.numElem() ;
 
@@ -2411,10 +2426,12 @@ void ApplyMaterialPropertiesForElems(Domain& domain, Real_t vnew[])
                 vc = eosvmax ;
           }
           if (vc <= 0.) {
+#if !defined(LULESH_SST_MODS) || !defined(LULESH_SST_SIM)
 #if USE_MPI             
              MPI_Abort(MPI_COMM_WORLD, VolumeError) ;
 #else
              exit(VolumeError);
+#endif
 #endif
           }
        }
@@ -2443,7 +2460,7 @@ void ApplyMaterialPropertiesForElems(Domain& domain, Real_t vnew[])
 /******************************************/
 
 static inline
-void UpdateVolumesForElems(Domain &domain, Real_t *vnew,
+void UpdateVolumesForElems(Domain &domain, Real_t_ptr_sim vnew,
                            Real_t v_cut, Index_t length)
 {
    if (length != 0) {
@@ -2466,7 +2483,7 @@ void UpdateVolumesForElems(Domain &domain, Real_t *vnew,
 static inline
 void LagrangeElements(Domain& domain, Index_t numElem)
 {
-  Real_t *vnew = Allocate<Real_t>(numElem) ;  /* new relative vol -- temp */
+  Real_t_ptr_sim vnew = Allocate<Real_t_sim>(numElem) ;  /* new relative vol -- temp */
 
   CalcLagrangeElements(domain, vnew) ;
 

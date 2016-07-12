@@ -24,6 +24,10 @@
 #include <math.h>
 #include <vector>
 
+#if defined(LULESH_SST_MODS) && defined(LULESH_SST_SIM)
+#include <variable.h>
+#endif
+
 //**************************************************
 // Allow flexibility for arithmetic representations 
 //**************************************************
@@ -39,6 +43,14 @@ typedef long double  real10 ;  // 10 bytes on x86
 typedef int    Index_t ; // array subscript and loop index
 typedef real8  Real_t ;  // floating point representation
 typedef int    Int_t ;   // integer representation
+
+#if defined(LULESH_SST_MODS) && defined(LULESH_SST_SIM)
+typedef Variable<Real_t> Real_t_sim;
+typedef VariablePtr<Real_t> Real_t_ptr_sim;
+#else
+typedef Real_t Real_t_sim;
+typedef Real_t* Real_t_ptr_sim;
+#endif
 
 enum { VolumeError = -1, QStopError = -2 } ;
 
