@@ -60,15 +60,15 @@ class manager : public sprockit::factory_type {
     return interconnect_;
   }
 
-  static int
-  compute_max_nproc(sprockit::sim_parameters *params);
-
- protected:
-  void
-  build_app(int appnum, sprockit::sim_parameters* params);
-
   void
   build_apps(sprockit::sim_parameters* params);
+
+  void
+  build_app(int appnum,
+   sprockit::sim_parameters* params);
+
+  static int
+  compute_max_nproc(sprockit::sim_parameters *params);
 
   static int
   compute_max_nproc_for_app(sprockit::sim_parameters* app_params);
@@ -78,7 +78,6 @@ class manager : public sprockit::factory_type {
   sstmac::sw::app_id next_ppid_;
 
   std::map<int, sw::app_launch*> app_managers_;
-  std::map<int, timestamp> app_starts_;
 
   sstmac::hw::interconnect* interconnect_;
   parallel_runtime* rt_;

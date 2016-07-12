@@ -5,7 +5,7 @@
 namespace sstmac {
 namespace hw {
 
-SpktRegister("packet_flow", sprockit::param_expander, packet_flow_param_expander);
+SpktRegister("packet_flow", sstmac::param_expander, packet_flow_param_expander);
 
 void
 packet_flow_param_expander::expand(sprockit::sim_parameters* params)

@@ -23,7 +23,7 @@
 #include <sprockit/spkt_new.h>
 #include <sprockit/output.h>
 #include <sprockit/basic_string_tokenizer.h>
-#include <sprockit/param_expander.h>
+#include <sstmac/common/param_expander.h>
 
 namespace sstmac {
 
@@ -165,7 +165,7 @@ process_init_params(sprockit::sim_parameters* params, bool remap_params)
     if (!params->has_param("amm_model")){
       spkt_throw(sprockit::input_error, "require an abstract machine model via amm_model parameter");
     }
-    sprockit::param_expander* hw_expander = sprockit::param_expander_factory::get_param("congestion_model", params);
+    sstmac::param_expander* hw_expander = sstmac::param_expander_factory::get_param("congestion_model", params);
     hw_expander->expand(params);
     delete hw_expander;
   }

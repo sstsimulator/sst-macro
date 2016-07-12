@@ -31,6 +31,12 @@ job_launcher::set_interconnect(hw::interconnect *ic)
   }
 }
 
+void
+job_launcher::init_factory_params(sprockit::sim_parameters *params)
+{
+  STATIC_INIT_INTERCONNECT(params);
+}
+
 app_launch*
 job_launcher::task_mapper(app_id aid) const
 {

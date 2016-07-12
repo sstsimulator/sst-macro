@@ -51,7 +51,7 @@ libmacro_la_SOURCES =
 nodist_EXTRA_libmacro_la_SOURCES = dummy.cxx
 
 libmacro_la_LIBADD = \
-  ../../sprockit/sprockit/libsprockit.la \
+  ../../sprockit/sprockit/libspkt_temp.la \
   libsstmac.la
 
 libmacro_la_LDFLAGS = -module -shared -version-info @SSTMAC_LIBVERSION@

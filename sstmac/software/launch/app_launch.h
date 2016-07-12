@@ -4,6 +4,7 @@
 #include <sstmac/software/process/task_id.h>
 #include <sstmac/software/process/app_id.h>
 #include <sstmac/common/node_address.h>
+#include <sstmac/common/timestamp.h>
 #include <sstmac/software/launch/node_set.h>
 
 #include <sprockit/factories/factory.h>
@@ -64,6 +65,11 @@ class app_launch :
   app*
   app_template() const {
     return app_template_;
+  }
+
+  timestamp
+  start() const {
+    return start_;
   }
 
   app_id
@@ -143,6 +149,8 @@ class app_launch :
   std::string appname_;
 
   std::vector<int> core_affinities_;
+
+  timestamp start_;
 
   int nproc_;
 

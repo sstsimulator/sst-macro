@@ -150,21 +150,7 @@ manager::compute_max_nproc(sprockit::sim_parameters* params)
 }
 
 void
-manager::build_app(int appnum, sprockit::sim_parameters* params)
-{
-  timestamp start = params->get_optional_time_param("start", 0);
-
-  sstmac::sw::app_id aid(appnum);
-  app_launch* appman = app_launch_factory::get_optional_param(
-        "launch_type", "default", params, aid, rt_);
-  appman->set_topology(interconnect_->topol());
-
-  app_managers_[appnum] = appman;
-  app_starts_[appnum] = start;
-}
-
-void
-manager::build_apps(sprockit::sim_parameters* params)
+manager::build_apps(sprockit::sim_parameters *params)
 {
   int appnum = 1;
   bool found_app = true;
@@ -178,6 +164,18 @@ manager::build_apps(sprockit::sim_parameters* params)
     }
     ++appnum;
   }
+}
+
+void
+manager::build_app(int appnum,
+ sprockit::sim_parameters* params)
+{
+  sstmac::sw::app_id aid(appnum);
+  app_launch* appman = app_launch_factory::get_optional_param(
+        "launch_type", "default", params, aid, rt_);
+  appman->set_topology(interconnect_->topol());
+
+  app_managers_[appnum] = appman;
 }
 
 manager::~manager() throw ()
@@ -313,8 +311,7 @@ macro_manager::launch_apps()
   for (it=app_managers_.begin(); it != end; ++it){
     int appnum = it->first;
     app_launch* appman = it->second;
-    timestamp start = app_starts_[appnum];
-    launch_app(appnum, start, appman);
+    launch_app(appnum, appman->start(), appman);
   }
 }
 

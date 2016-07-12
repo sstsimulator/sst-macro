@@ -18,9 +18,11 @@
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/common/fail_event.h>
 #include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/process/app.h>
 #include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/launch/launcher.h>
 #include <sstmac/software/launch/launch_event.h>
+
 #include <sstmac/common/runtime.h>
 #include <sprockit/keyword_registration.h>
 #include <sprockit/sim_parameters.h>
@@ -155,15 +157,24 @@ node::init_factory_params(sprockit::sim_parameters *params)
 void
 node::build_launchers(sprockit::sim_parameters* params)
 {
+  bool keep_going = true;
   int aid = 1;
-  app_launch* appman = app_launch::static_app_launch(aid, params);
-  const std::list<int>& my_ranks = appman->rank_assignment(my_addr_);
-  std::list<int>::const_iterator it, end = my_ranks.end();
-  for (it=my_ranks.begin(); it != end; ++it){
-    int rank = *it;
-    sw::launch_event* lev = new launch_event(appman->app_template(), aid,
-                                    rank, appman->core_affinities());
-    launchers_.push_back(lev);
+  while (keep_going || aid < 10){
+    app_launch* appman = app_launch::static_app_launch(aid, params);
+    if (appman){
+      const std::list<int>& my_ranks = appman->rank_assignment(my_addr_);
+      std::list<int>::const_iterator it, end = my_ranks.end();
+      for (it=my_ranks.begin(); it != end; ++it){
+        int rank = *it;
+        sw::launch_event* lev = new launch_event(appman->app_template(), aid,
+                                        rank, appman->core_affinities());
+        launchers_.push_back(lev);
+      }
+      keep_going = true;
+    } else {
+      keep_going = false;
+    }
+    ++aid;
   }
 }
 
@@ -242,19 +253,19 @@ node::send_to_nic(network_message* netmsg)
 void
 node::launch()
 {
-  std::list<sw::launch_message*>::iterator it, end = launchers_.end();
+  std::list<sw::launch_event*>::iterator it, end = launchers_.end();
   for (it=launchers_.begin(); it != end; ++it){
-    sw::launch_message* lmsg = *it;
+    sw::launch_event* lev = *it;
     node_debug("launching task %d on node %d",
-      int(lmsg->tid()), int(addr()));
-    os_->handle_event(lmsg);
+      int(lev->tid()), int(addr()));
+    os_->handle_event(lev);
   }
 }
 #else
 void
-node::launch(timestamp start, launch_event* msg)
+node::launch(timestamp start, launch_event* ev)
 {
-  schedule(start, new handler_event_queue_entry(msg, this, this->event_location()));
+  schedule(start, new handler_event_queue_entry(ev, this, this->event_location()));
 }
 #endif
 

@@ -85,7 +85,6 @@ packet_flow_switch::packet_flow_switch(
   SST::ComponentId_t id,
   SST::Params& params
 ) : packet_flow_abstract_switch(id, params),
-  congestion_spyplot_(0),
   xbar_(0)
 {
   init_factory_params(SSTIntegratedComponent::params_);

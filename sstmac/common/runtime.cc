@@ -27,6 +27,12 @@ runtime::check_deadlock()
   }
 }
 
+node_id
+runtime::current_node()
+{
+  return sw::operating_system::current_node_id();
+}
+
 void
 runtime::delete_statics()
 {

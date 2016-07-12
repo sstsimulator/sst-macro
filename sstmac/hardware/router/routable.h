@@ -151,14 +151,22 @@ class geometry_routable
 
   switch_id dest_switch_;
 
-
-
-
 };
 
+}
+}
 
-}
-}
+START_SERIALIZATION_NAMESPACE
+template <>
+class serialize<sstmac::hw::geometry_routable::path>
+{
+ public:
+  void
+  operator()(sstmac::hw::geometry_routable::path& info, serializer& ser){
+    ser.primitive(info);
+  }
+};
+END_SERIALIZATION_NAMESPACE
 
 #endif // INTERCONNECT_MESSAGE_H
 

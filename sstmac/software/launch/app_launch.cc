@@ -3,6 +3,8 @@
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/launch/app_launch.h>
+#include <sstmac/software/launch/job_launcher.h>
+#include <sstmac/common/thread_lock.h>
 #include <sstmac/dumpi_util/dumpi_meta.h>
 #include <sprockit/output.h>
 #include <sprockit/sim_parameters.h>
@@ -47,6 +49,8 @@ app_launch::init_factory_params(sprockit::sim_parameters* params)
     params->get_vector_param("core_affinities", core_affinities_);
   }
 
+  start_ = params->get_optional_time_param("start", 0);
+
   app_template_ = sw::app_factory::get_value(appname_, params);
 
   if (params->has_param("launch_cmd")){
@@ -66,20 +70,34 @@ app_launch::init_factory_params(sprockit::sim_parameters* params)
   indexer_ = sw::task_mapper_factory::get_optional_param("launch_indexing",
                "block", params, rt_);
 
-  STATIC_INIT_INTERCONNECT(params)
+  STATIC_INIT_TOPOLOGY(params)
 }
 
 app_launch*
 app_launch::static_app_launch(int aid, sprockit::sim_parameters* params)
 {
-  spkt_throw(sprockit::unimplemented_error, "static_app_launch");
+  static thread_lock lock;
+  static job_launcher* launcher = 0;
+
+  lock.lock();
+
+  if (!launcher){
+    launcher = job_launcher_factory::get_value("default", params);
+    sstmac::runtime::set_job_launcher(launcher);
+  }
+
   if (!static_app_launches_[aid]){
     std::string app_namespace = sprockit::printf("app%d", aid);
-    sprockit::sim_parameters* app_params = params->top_parent()->get_namespace(app_namespace);
-    app_launch* mgr = app_launch_factory::get_optional_param(
-          "launch_type", "skeleton", app_params, app_id(aid), 0/*no parallel runtime*/);
-    static_app_launches_[aid] = mgr;
+    sprockit::sim_parameters* top_params = params->top_parent();
+    if (top_params->has_namespace(app_namespace)){
+      sprockit::sim_parameters* app_params = params->top_parent()->get_namespace(app_namespace);
+      app_launch* mgr = app_launch_factory::get_optional_param(
+            "launch_type", "default", app_params, app_id(aid), 0/*no parallel runtime*/);
+      static_app_launches_[aid] = mgr;
+      launcher->handle_new_launch_request(mgr);
+    }
   }
+  lock.unlock();
   return static_app_launches_[aid];
 }
 
@@ -169,7 +187,7 @@ app_launch::parse_launch_cmd(
       procs_per_node = params->get_optional_long_param("ntask_per_node", 1);
     }
     catch (sprockit::input_error& e) {
-      cerr0 << "Problem reading app size parameter in skeleton app manager.\n"
+      cerr0 << "Problem reading app size parameter in app_launch.\n"
                "If this is a DUMPI trace, set app name to dumpi.\n";
       throw e;
     }
@@ -249,7 +267,7 @@ app_launch::parse_aprun(
   if (core_aff_str.size() > 0) { //we got a core affinity spec
     if (!core_affinities.empty()) {
       spkt_throw_printf(sprockit::illformed_error,
-                       "skeleton_appmanager::parse_aprun: core affinities already assigned, cannot use -cc option");
+                       "app_launch::parse_aprun: core affinities already assigned, cannot use -cc option");
     }
 
     std::string tosep = core_aff_str;

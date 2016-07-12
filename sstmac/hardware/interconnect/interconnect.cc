@@ -95,10 +95,6 @@ void
 sst_interconnect::init_factory_params(sprockit::sim_parameters* params)
 {
   interconnect::init_factory_params(params);
-  int num_nodes = topology_->num_nodes();
-  for (int i=0; i < num_nodes; ++i){
-    available_.insert(node_id(i));
-  }
 }
 
 void

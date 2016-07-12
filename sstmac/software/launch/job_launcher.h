@@ -39,7 +39,9 @@ class job_launcher :
   app_launch*
   task_mapper(app_id aid) const;
 
- private:
+  virtual void
+  init_factory_params(sprockit::sim_parameters *params);
+
   /**
    * @brief handle_new_launch_request As if a new job had been submitted with qsub or salloc.
    * The job_launcher receives a new request to launch an application, at which point

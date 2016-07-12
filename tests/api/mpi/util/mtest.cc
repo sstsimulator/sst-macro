@@ -5,6 +5,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include <sstmac/replacements/mpi.h>
+#include <sstmac/software/process/global.h>
 #include <sstmac/util.h>
 #include "mpitestconf.h"
 #include "mpitest.h"

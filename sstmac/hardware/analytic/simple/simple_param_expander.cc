@@ -5,7 +5,7 @@
 namespace sstmac {
 namespace hw {
 
-SpktRegister("simple", sprockit::param_expander, simple_param_expander);
+SpktRegister("simple", sstmac::param_expander, simple_param_expander);
 
 void
 simple_param_expander::expand(sprockit::sim_parameters* params)
