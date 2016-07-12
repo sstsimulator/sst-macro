@@ -2835,6 +2835,10 @@ int main(int argc, char *argv[])
       VerifyAndWriteFinalOutput(elapsed_timeG, *locDom, opts.nx, numRanks);
    }
 
+#if defined(LULESH_SST_MODS) && defined(LULESH_SST_SIM)
+   std::cout << "nops=" << Real_t_sim::nops << std::endl;
+#endif
+
 #if USE_MPI
    MPI_Finalize() ;
 #endif
