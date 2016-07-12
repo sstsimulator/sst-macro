@@ -175,7 +175,11 @@ T *Allocate(size_t size)
 #if defined(LULESH_SST_MODS) && defined(LULESH_SST_VERBOSE)
    std::cout << "Allocate " << size << std::endl;
 #endif
+#ifdef LULESH_SST_MODS
+   return new T[size];
+#else
    return static_cast<T *>(malloc(sizeof(T)*size)) ;
+#endif
 }
 
 template <typename T>
@@ -185,7 +189,11 @@ void Release(T **ptr)
    std::cout << "Release" << std::endl;
 #endif
    if (*ptr != NULL) {
+#ifdef LULESH_SST_MODS
+      delete [] *ptr;
+#else
       free(*ptr) ;
+#endif
       *ptr = NULL ;
    }
 }
