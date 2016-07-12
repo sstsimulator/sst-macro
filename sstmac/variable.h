@@ -44,8 +44,7 @@ class Variable
     return *this;
   }
 
-  template <class U>
-  constexpr operator U() const {
+  constexpr operator T() const {
     return 0;
   }
 
@@ -127,10 +126,12 @@ class VariablePtr
     return nothing_;
   }
 
-  template <class U,
-    typename = std::enable_if<std::is_convertible<T*,U>::value>>
-  operator U() const {
-    return 0;
+  Variable<T>& operator*() {
+    return nothing_;
+  }
+
+  const Variable<T>& operator*() const {
+    return nothing_;
   }
 
   template <class U,
