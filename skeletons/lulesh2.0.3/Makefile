@@ -22,12 +22,12 @@ SOURCES2.0 = \
 OBJECTS2.0 = $(SOURCES2.0:.cc=.o)
 
 #Default build suggestions with OpenMP for g++
-CXXFLAGS = -g -O3 -fopenmp -I. -Wall
-LDFLAGS = -g -O3 -fopenmp
+#CXXFLAGS = -g -O3 -fopenmp -I. -Wall
+#LDFLAGS = -g -O3 -fopenmp
 
 #Below are reasonable default flags for a serial build
-#CXXFLAGS = -g -O3 -I. -Wall
-#LDFLAGS = -g -O3 
+CXXFLAGS = -g -O3 -I. -Wall
+LDFLAGS = -g -O3
 
 #common places you might find silo on the Livermore machines.
 #SILO_INCDIR = /opt/local/include
