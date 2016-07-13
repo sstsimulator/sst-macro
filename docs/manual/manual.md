@@ -233,7 +233,7 @@ If you'd like to use ssh for convenience, make sure you have added a public key 
 
 #### 2.1.2: Dependencies<a name="subsec:build:dependencies"></a>
 
-The most critical change is that C++11 is now a strict prerequisite. Workarounds had previously existing for older compilers. These are no longer supported. The following are dependencies for SST-macro.
+The most critical change is that C++11 is now a strict prerequisite. Workarounds had previously existed for older compilers. These are no longer supported. The following are dependencies for SST-macro.
 
 -   (optional) Git is needed in order to clone the source code repository, but you can also download a tar (Section [2.1.1](#subsec:build:downloading)).
 -   (optional, recommended) Autoconf and related tools are needed unless you are using an unmodified release or snapshot tar archive.
@@ -250,19 +250,19 @@ The most critical change is that C++11 is now a strict prerequisite. Workarounds
 
 SST/macro is an SST element library, proving a set of simulation components that run on the main SST core.  The SST core provides the parallel discrete event simulation manager that manages time synchronization and sending events in serial, MPI parallel, multi-threaded, or MPI + threaded mode.  The core does not provide any simulation components like node models, interconnect models, MPI trace readers, etc.  The actual simulation models are contained in the element library.
 
-The SST core is a standalone executable that dynamically loads shared objects files containing the element libraries.  For many element libraries, a Python input file is created that builds and connects the various simulation components.  For maximum flexibility, this will become the preferred mode.  However, SST/macro has historically had a text-file input `parameters.ini` that configures the simulation.  To preserve that mode for existing users, a wrapper Python script is provided that processes SST/macro input files.
+The SST core is a standalone executable that dynamically loads shared object files containing the element libraries.  For many element libraries, a Python input file is created that builds and connects the various simulation components.  For maximum flexibility, this will become the preferred mode.  However, SST/macro has historically had a text-file input `parameters.ini` that configures the simulation.  To preserve that mode for existing users, a wrapper Python script is provided that processes SST/macro input files.
 
 The workflow for installing and running is therefore:
 
 -   Build and install SST core
 -   Build and install the SST/macro element library `libmacro.so`
 -   Make sure paths are properly configured for `libmacro.so` to be visible to the SST core
--   Run the `sstmac` wrapper Python script that runs SST/macro-specific parameter OR
+-   Run the `sstmac` wrapper Python script that runs SST/macro-specific parameters OR
 -   Write a custom Python script
 
 ##### Build SST core<a name="subsec:buildSSTCore"></a>
 
-The recommended mode for maximum flexibility is to run using the SST core downloadable from \url{}. Building and installing sets up the discrete event simulation core require for all SST elements. SST core still has a few Boost dependencies, which should be the only complication in building. For building Boost, we recommend two files: `user-config.jam` to configure the Boost compiler flags and a `runme.sh` that bootstraps, compiles, and installs and the prerequisite Boost libraries. For GCC, the `user-config.jam` should go in the top-level home directory and the file should contain the line:
+The recommended mode for maximum flexibility is to run using the SST core downloadable from \url{http://sst-simulator.org/SSTPages/SSTMainDownloads/}. Building and installing sets up the discrete event simulation core required for all SST elements. SST core still has a few Boost dependencies, which should be the only complication in building. For building Boost, we recommend two files: `user-config.jam` to configure the Boost compiler flags and a `runme.sh` that bootstraps, compiles, and installs the prerequisite Boost libraries. For GCC, the `user-config.jam` should go in the top-level home directory and the file should contain the line:
 
 ````
 using gcc : : $PATH_TO_MPIC++  : <compileflags>-std=c++1y ;
