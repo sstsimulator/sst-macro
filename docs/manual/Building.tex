@@ -63,7 +63,8 @@ The workflow for installing and running is therefore:
 \end{itemize}
 
 \subsubsection{Build SST core}\label{subsec:buildSSTCore}
-The recommended mode for maximum flexibility is to run using the SST core downloadable from \url{}.  Building and installing sets up the discrete event simulation core require for all SST elements.
+The recommended mode for maximum flexibility is to run using the SST core downloadable from \url{}.  
+Building and installing sets up the discrete event simulation core require for all SST elements.
 SST core still has a few Boost dependencies, which should be the only complication in building. For building Boost, we recommend two files: \inlineshell{user-config.jam} to configure the Boost compiler flags and a \inlineshell{runme.sh} that bootstraps, compiles, and installs and the prerequisite Boost libraries. For GCC, the \inlineshell{user-config.jam} should go in the top-level home directory and the file should contain the line:
 
 \begin{ViFile}
@@ -199,7 +200,7 @@ all necessary flags are set by the wrappers.
 
 \section{Running an Application}
 \subsection{SST Python Scripts}
-Full details on building SST Python scripts can be found at \url{http://sst-simulator.org}.  To preserve the old parameter format in the near-term, SST/macro provides the \inlineshell{sstmac} script:
+Full details on building SST Python scripts can be found at \url{http://sst-simulator.org}.  To preserve the old parameter format in the near-term, SST/macro provides the \inlineshell{pysstmac} script:
 
 \begin{ViFile}
 export PYTHONPATH=$PYTHONPATH:$SSTMAC_PREFIX/include/python:$SSTMAC_PREFIX/lib
@@ -213,9 +214,14 @@ The script configures the necessary paths and then launches with a Python script
 Assuming the path is configured properly, users can run
 
 \begin{ShellCmd}
+pysstmac -f parameters.ini
+\end{ShellCmd}
+with a properly formatted parameter file. If running in standalone mode, the command would be similarly (but different)
+
+\begin{ShellCmd}
 sstmac -f parameters.ini
 \end{ShellCmd}
-with a properly formatted parameter file.
+since there is no Python setup involved.
 
 \subsection{Building Skeleton Applications}
 \label{sec:tutorial:runapp}

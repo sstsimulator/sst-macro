@@ -28,7 +28,7 @@ get_pthread_mutex_vars \
 get_pthread_cond_vars
 
 if INTEGRATED_SST_CORE
-dist_bin_SCRIPTS += sstmac
+dist_bin_SCRIPTS += pysstmac
 endif
 
 bin_SCRIPTS = sstmacro-config sstccvars.py
