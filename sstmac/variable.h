@@ -3,6 +3,7 @@
 #define fake_variable_h_
 
 #include <type_traits>
+#include <cstddef>
 
 template <class T>
 void
@@ -168,6 +169,20 @@ class VariablePtr
   bool
   operator!=(const U& ptr) const {
     return true;
+  }
+
+  constexpr operator void*() const {
+    return 0;
+  }
+
+  VariablePtr<T>&
+  operator+=(const ptrdiff_t &offset){
+    return *this;
+  }
+
+  VariablePtr<T>&
+  operator-=(const ptrdiff_t &offset){
+    return *this;
   }
 
  private:
