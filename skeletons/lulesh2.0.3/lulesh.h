@@ -331,8 +331,8 @@ class Domain {
    Index_t&  regElemSize(Index_t idx) { return m_regElemSize[idx] ; }
    Index_t&  regNumList(Index_t idx) { return m_regNumList[idx] ; }
    Index_t*  regNumList()            { return &m_regNumList[0] ; }
-   Index_t*  regElemlist(Int_t r)    { return m_regElemlist[r] ; }
-   Index_t&  regElemlist(Int_t r, Index_t idx) { return m_regElemlist[r][idx] ; }
+   Index_t_ptr_sim  regElemlist(Int_t r)    { return m_regElemlist[r] ; }
+   Index_t_sim&  regElemlist(Int_t r, Index_t idx) { return m_regElemlist[r][idx] ; }
 
    Index_t_ptr_sim  nodelist(Index_t idx)    { return &m_nodelist[Index_t(8)*idx] ; }
 
@@ -515,8 +515,9 @@ class Domain {
    Int_t    m_numReg ;                                 // NLS: NEEDED FOR FLOPS
    Int_t    m_cost; //imbalance cost                   // NLS: NEEDED FOR FLOPS
    Index_t *m_regElemSize ;   // Size of region sets   // NLS: NEEDED FOR FLOPS
+   // NLS: NEEDED TO COMPUTE m_regElemSize BUT COULD BE FREED AFTER THAT (UNLESS DUMP VTK)
    Index_t *m_regNumList ;    // Region number per domain element
-   Index_t **m_regElemlist ;  // region indexset 
+   Index_t_ptr_sim *m_regElemlist ;  // region indexset 
 
    Index_t_vec_sim  m_nodelist ;     /* elemToNode connectivity */
 

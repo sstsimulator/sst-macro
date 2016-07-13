@@ -390,7 +390,7 @@ Domain::CreateRegionIndexSets(Int_t nr, Int_t balance)
 #endif
    this->numReg() = nr;
    m_regElemSize = new Index_t[numReg()];
-   m_regElemlist = new Index_t*[numReg()];
+   m_regElemlist = new Index_t_ptr_sim[numReg()];
    Index_t nextIndex = 0;
    //if we only have one region just fill it
    // Fill out the regNumList with material numbers, which are always
@@ -475,7 +475,7 @@ Domain::CreateRegionIndexSets(Int_t nr, Int_t balance)
    }
    // Second, allocate each region index set
    for (Index_t i=0 ; i<numReg() ; ++i) {
-      m_regElemlist[i] = new Index_t[regElemSize(i)];
+      m_regElemlist[i] = new Index_t_sim[regElemSize(i)];
       regElemSize(i) = 0;
    }
    // Third, fill index sets
