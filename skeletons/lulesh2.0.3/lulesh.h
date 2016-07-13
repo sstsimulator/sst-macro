@@ -511,9 +511,10 @@ class Domain {
    // Element-centered
 
    // Region information
-   Int_t    m_numReg ;
-   Int_t    m_cost; //imbalance cost
-   Index_t *m_regElemSize ;   // Size of region sets
+
+   Int_t    m_numReg ;                                 // NLS: NEEDED FOR FLOPS
+   Int_t    m_cost; //imbalance cost                   // NLS: NEEDED FOR FLOPS
+   Index_t *m_regElemSize ;   // Size of region sets   // NLS: NEEDED FOR FLOPS
    Index_t *m_regNumList ;    // Region number per domain element
    Index_t **m_regElemlist ;  // region indexset 
 
@@ -606,8 +607,8 @@ class Domain {
    Index_t m_sizeX ;             // NLS: NEEDED FOR COMM PATTERN
    Index_t m_sizeY ;             // NLS: NEEDED FOR COMM PATTERN
    Index_t m_sizeZ ;             // NLS: NEEDED FOR COMM PATTERN
-   Index_t m_numElem ;           // NLS: NEEDED FOR COMM PATTERN
-   Index_t m_numNode ;
+   Index_t m_numElem ;           // NLS: NEEDED FOR COMM PATTERN AND FLOPS
+   Index_t m_numNode ;           // NLS: NEEDED FOR FLOPS
 
    Index_t m_maxPlaneSize ;      // NLS: NEEDED FOR COMM PATTERN
    Index_t m_maxEdgeSize ;       // NLS: NEEDED FOR COMM PATTERN
