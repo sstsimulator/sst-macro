@@ -2057,10 +2057,12 @@ void CalcQForElems(Domain& domain, Real_t_ptr_sim vnew)
       }
 
       if(idx >= 0) {
+#if !defined(LULESH_SST_MODS) || !defined(LULESH_SST_SIM)
 #if USE_MPI         
          MPI_Abort(MPI_COMM_WORLD, QStopError) ;
 #else
          exit(QStopError);
+#endif
 #endif
       }
    }

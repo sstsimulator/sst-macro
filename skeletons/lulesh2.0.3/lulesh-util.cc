@@ -185,7 +185,11 @@ void VerifyAndWriteFinalOutput(Real_t elapsed_time,
    printf("   Problem size        =  %i \n",    nx);
    printf("   MPI tasks           =  %i \n",    numRanks);
    printf("   Iteration count     =  %i \n",    locDom.cycle());
+#ifdef LULESH_SST_MODS
+   printf("   Final Origin Energy = %12.6e \n", (double)(locDom.e(ElemId)));
+#else
    printf("   Final Origin Energy = %12.6e \n", locDom.e(ElemId));
+#endif
 
    Real_t   MaxAbsDiff = Real_t(0.0);
    Real_t TotalAbsDiff = Real_t(0.0);
