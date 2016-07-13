@@ -152,7 +152,7 @@ Domain::Domain(Int_t numRanks, Index_t colLoc,
    // initialize field data 
    for (Index_t i=0; i<numElem(); ++i) {
       Real_t x_local[8], y_local[8], z_local[8] ;
-      Index_t *elemToNode = nodelist(i) ;
+      Index_t_ptr_sim elemToNode = nodelist(i) ;
       for( Index_t lnode=0 ; lnode<8 ; ++lnode )
       {
         Index_t gnode = elemToNode[lnode];
@@ -223,7 +223,7 @@ Domain::BuildMesh(Int_t nx, Int_t edgeNodes, Int_t edgeElems)
   for (Index_t plane=0; plane<edgeElems; ++plane) {
     for (Index_t row=0; row<edgeElems; ++row) {
       for (Index_t col=0; col<edgeElems; ++col) {
-	Index_t *localNode = nodelist(zidx) ;
+	Index_t_ptr_sim localNode = nodelist(zidx) ;
 	localNode[0] = nidx                                       ;
 	localNode[1] = nidx                                   + 1 ;
 	localNode[2] = nidx                       + edgeNodes + 1 ;
@@ -261,7 +261,7 @@ Domain::SetupThreadSupportStructures()
     }
 
     for (Index_t i=0; i<numElem(); ++i) {
-      Index_t *nl = nodelist(i) ;
+      Index_t_ptr_sim nl = nodelist(i) ;
       for (Index_t j=0; j < 8; ++j) {
 	++(nodeElemCount[nl[j]] );
       }
@@ -283,7 +283,7 @@ Domain::SetupThreadSupportStructures()
     }
 
     for (Index_t i=0; i < numElem(); ++i) {
-      Index_t *nl = nodelist(i) ;
+      Index_t_ptr_sim nl = nodelist(i) ;
       for (Index_t j=0; j < 8; ++j) {
 	Index_t m = nl[j];
 	Index_t k = i*8 + j ;

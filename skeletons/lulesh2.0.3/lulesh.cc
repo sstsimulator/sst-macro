@@ -275,7 +275,7 @@ void TimeIncrement(Domain& domain)
 
 static inline
 void CollectDomainNodesToElemNodes(Domain &domain,
-                                   const Index_t* elemToNode,
+                                   const Index_t_ptr_sim elemToNode,
                                    Real_t elemX[8],
                                    Real_t elemY[8],
                                    Real_t elemZ[8])
@@ -571,7 +571,7 @@ void IntegrateStressForElems( Domain &domain,
 #pragma omp parallel for firstprivate(numElem)
   for( Index_t k=0 ; k<numElem ; ++k )
   {
-    const Index_t* const elemToNode = domain.nodelist(k);
+    const Index_t_ptr_sim elemToNode = domain.nodelist(k);
     Real_t B[3][8] ;// shape function derivatives
     Real_t x_local[8] ;
     Real_t y_local[8] ;
@@ -839,7 +839,7 @@ void CalcFBHourglassForceForElems( Domain &domain,
       Real_t hourgam[8][4];
       Real_t xd1[8], yd1[8], zd1[8] ;
 
-      const Index_t *elemToNode = domain.nodelist(i2);
+      const Index_t_ptr_sim elemToNode = domain.nodelist(i2);
       Index_t i3=8*i2;
       Real_t volinv=Real_t(1.0)/determ[i2];
       Real_t ss1, mass1, volume13 ;
@@ -1061,7 +1061,7 @@ void CalcHourglassControlForElems(Domain& domain,
       Real_t  x1[8],  y1[8],  z1[8] ;
       Real_t pfx[8], pfy[8], pfz[8] ;
 
-      Index_t* elemToNode = domain.nodelist(i);
+      Index_t_ptr_sim elemToNode = domain.nodelist(i);
       CollectDomainNodesToElemNodes(domain, elemToNode, x1, y1, z1);
 
       CalcElemVolumeDerivative(pfx, pfy, pfz, x1, y1, z1);
@@ -1576,7 +1576,7 @@ void CalcKinematicsForElems( Domain &domain, Real_t_ptr_sim vnew,
 
     Real_t volume ;
     Real_t relativeVolume ;
-    const Index_t* const elemToNode = domain.nodelist(k) ;
+    const Index_t_ptr_sim elemToNode = domain.nodelist(k) ;
 
     // get nodal coordinates from global arrays and copy into local arrays.
     CollectDomainNodesToElemNodes(domain, elemToNode, x_local, y_local, z_local);
@@ -1677,7 +1677,7 @@ void CalcMonotonicQGradientsForElems(Domain& domain, Real_t_ptr_sim vnew)
       Real_t ax,ay,az ;
       Real_t dxv,dyv,dzv ;
 
-      const Index_t *elemToNode = domain.nodelist(i);
+      const Index_t_ptr_sim elemToNode = domain.nodelist(i);
       Index_t n0 = elemToNode[0] ;
       Index_t n1 = elemToNode[1] ;
       Index_t n2 = elemToNode[2] ;

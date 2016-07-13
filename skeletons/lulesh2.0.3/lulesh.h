@@ -48,10 +48,24 @@ typedef int    Int_t ;   // integer representation
 typedef Variable<Real_t> Real_t_sim;
 typedef VariablePtr<Real_t> Real_t_ptr_sim;
 typedef VariablePtr<Real_t> Real_t_vec_sim;
+
+typedef Variable<Index_t> Index_t_sim;
+typedef VariablePtr<Index_t> Index_t_ptr_sim;
+typedef VariablePtr<Index_t> Index_t_vec_sim;
+
+typedef Variable<Int_t> Int_t_sim;
+typedef VariablePtr<Int_t> Int_t_vec_sim;
 #else
 typedef Real_t Real_t_sim;
 typedef Real_t* Real_t_ptr_sim;
 typedef std::vector<Real_t> Real_t_vec_sim;
+
+typedef Index_t Index_t_sim;
+typedef Index_t* Index_t_ptr_sim;
+typedef std::vector<Index_t> Index_t_vec_sim;
+
+typedef Int_t Int_t_sim;
+typedef std::vector<Int_t> Int_t_vec_sim;
 #endif
 
 enum { VolumeError = -1, QStopError = -2 } ;
@@ -275,35 +289,41 @@ class Domain {
    // Node-centered
 
    // Nodal coordinates
-   Real_t& x(Index_t idx)    { return m_x[idx] ; }
-   Real_t& y(Index_t idx)    { return m_y[idx] ; }
-   Real_t& z(Index_t idx)    { return m_z[idx] ; }
+   Real_t_sim& x(Index_t idx)    { return m_x[idx] ; }
+   Real_t_sim& y(Index_t idx)    { return m_y[idx] ; }
+   Real_t_sim& z(Index_t idx)    { return m_z[idx] ; }
 
    // Nodal velocities
-   Real_t& xd(Index_t idx)   { return m_xd[idx] ; }
-   Real_t& yd(Index_t idx)   { return m_yd[idx] ; }
-   Real_t& zd(Index_t idx)   { return m_zd[idx] ; }
+   Real_t_sim& xd(Index_t idx)   { return m_xd[idx] ; }
+   Real_t_sim& yd(Index_t idx)   { return m_yd[idx] ; }
+   Real_t_sim& zd(Index_t idx)   { return m_zd[idx] ; }
 
    // Nodal accelerations
-   Real_t& xdd(Index_t idx)  { return m_xdd[idx] ; }
-   Real_t& ydd(Index_t idx)  { return m_ydd[idx] ; }
-   Real_t& zdd(Index_t idx)  { return m_zdd[idx] ; }
+   Real_t_sim& xdd(Index_t idx)  { return m_xdd[idx] ; }
+   Real_t_sim& ydd(Index_t idx)  { return m_ydd[idx] ; }
+   Real_t_sim& zdd(Index_t idx)  { return m_zdd[idx] ; }
 
    // Nodal forces
-   Real_t& fx(Index_t idx)   { return m_fx[idx] ; }
-   Real_t& fy(Index_t idx)   { return m_fy[idx] ; }
-   Real_t& fz(Index_t idx)   { return m_fz[idx] ; }
+   Real_t_sim& fx(Index_t idx)   { return m_fx[idx] ; }
+   Real_t_sim& fy(Index_t idx)   { return m_fy[idx] ; }
+   Real_t_sim& fz(Index_t idx)   { return m_fz[idx] ; }
 
    // Nodal mass
-   Real_t& nodalMass(Index_t idx) { return m_nodalMass[idx] ; }
+   Real_t_sim& nodalMass(Index_t idx) { return m_nodalMass[idx] ; }
 
    // Nodes on symmertry planes
-   Index_t symmX(Index_t idx) { return m_symmX[idx] ; }
-   Index_t symmY(Index_t idx) { return m_symmY[idx] ; }
-   Index_t symmZ(Index_t idx) { return m_symmZ[idx] ; }
+   Index_t_sim symmX(Index_t idx) { return m_symmX[idx] ; }
+   Index_t_sim symmY(Index_t idx) { return m_symmY[idx] ; }
+   Index_t_sim symmZ(Index_t idx) { return m_symmZ[idx] ; }
+#if defined(LULESH_SST_MODS) && defined(LULESH_SST_SIM)
+   bool symmXempty()          { return m_colLoc != 0; }
+   bool symmYempty()          { return m_rowLoc != 0; }
+   bool symmZempty()          { return m_planeLoc != 0; }
+#else
    bool symmXempty()          { return m_symmX.empty(); }
    bool symmYempty()          { return m_symmY.empty(); }
    bool symmZempty()          { return m_symmZ.empty(); }
+#endif
 
    //
    // Element-centered
@@ -314,18 +334,18 @@ class Domain {
    Index_t*  regElemlist(Int_t r)    { return m_regElemlist[r] ; }
    Index_t&  regElemlist(Int_t r, Index_t idx) { return m_regElemlist[r][idx] ; }
 
-   Index_t*  nodelist(Index_t idx)    { return &m_nodelist[Index_t(8)*idx] ; }
+   Index_t_ptr_sim  nodelist(Index_t idx)    { return &m_nodelist[Index_t(8)*idx] ; }
 
    // elem connectivities through face
-   Index_t&  lxim(Index_t idx) { return m_lxim[idx] ; }
-   Index_t&  lxip(Index_t idx) { return m_lxip[idx] ; }
-   Index_t&  letam(Index_t idx) { return m_letam[idx] ; }
-   Index_t&  letap(Index_t idx) { return m_letap[idx] ; }
-   Index_t&  lzetam(Index_t idx) { return m_lzetam[idx] ; }
-   Index_t&  lzetap(Index_t idx) { return m_lzetap[idx] ; }
+   Index_t_sim&  lxim(Index_t idx) { return m_lxim[idx] ; }
+   Index_t_sim&  lxip(Index_t idx) { return m_lxip[idx] ; }
+   Index_t_sim&  letam(Index_t idx) { return m_letam[idx] ; }
+   Index_t_sim&  letap(Index_t idx) { return m_letap[idx] ; }
+   Index_t_sim&  lzetam(Index_t idx) { return m_lzetam[idx] ; }
+   Index_t_sim&  lzetap(Index_t idx) { return m_lzetap[idx] ; }
 
    // elem face symm/free-surface flag
-   Int_t&  elemBC(Index_t idx) { return m_elemBC[idx] ; }
+   Int_t_sim&  elemBC(Index_t idx) { return m_elemBC[idx] ; }
 
    // Principal strains - temporary
    Real_t_sim& dxx(Index_t idx)  { return m_dxx[idx] ; }
@@ -333,9 +353,9 @@ class Domain {
    Real_t_sim& dzz(Index_t idx)  { return m_dzz[idx] ; }
 
    // Velocity gradient - temporary
-   Real_t& delv_xi(Index_t idx)    { return m_delv_xi[idx] ; }
-   Real_t& delv_eta(Index_t idx)   { return m_delv_eta[idx] ; }
-   Real_t& delv_zeta(Index_t idx)  { return m_delv_zeta[idx] ; }
+   Real_t_sim& delv_xi(Index_t idx)    { return m_delv_xi[idx] ; }
+   Real_t_sim& delv_eta(Index_t idx)   { return m_delv_eta[idx] ; }
+   Real_t_sim& delv_zeta(Index_t idx)  { return m_delv_zeta[idx] ; }
 
    // Position gradient - temporary
    Real_t_sim& delx_xi(Index_t idx)    { return m_delx_xi[idx] ; }
@@ -361,7 +381,7 @@ class Domain {
    Real_t_sim& delv(Index_t idx)       { return m_delv[idx] ; }
 
    // Reference volume
-   Real_t& volo(Index_t idx)       { return m_volo[idx] ; }
+   Real_t_sim& volo(Index_t idx)       { return m_volo[idx] ; }
 
    // volume derivative over volume
    Real_t_sim& vdov(Index_t idx)       { return m_vdov[idx] ; }
@@ -467,30 +487,30 @@ class Domain {
 
    /* Node-centered */
    // NLS: THESE ARE COMMUNICATED
-   std::vector<Real_t> m_x ;  /* coordinates */
-   std::vector<Real_t> m_y ;
-   std::vector<Real_t> m_z ;
+   Real_t_vec_sim m_x ;  /* coordinates */
+   Real_t_vec_sim m_y ;
+   Real_t_vec_sim m_z ;
 
    // NLS: THESE ARE COMMUNICATED
-   std::vector<Real_t> m_xd ; /* velocities */
-   std::vector<Real_t> m_yd ;
-   std::vector<Real_t> m_zd ;
+   Real_t_vec_sim m_xd ; /* velocities */
+   Real_t_vec_sim m_yd ;
+   Real_t_vec_sim m_zd ;
 
-   std::vector<Real_t> m_xdd ; /* accelerations */
-   std::vector<Real_t> m_ydd ;
-   std::vector<Real_t> m_zdd ;
+   Real_t_vec_sim m_xdd ; /* accelerations */
+   Real_t_vec_sim m_ydd ;
+   Real_t_vec_sim m_zdd ;
 
    // NLS: THESE ARE COMMUNICATED
-   std::vector<Real_t> m_fx ;  /* forces */
-   std::vector<Real_t> m_fy ;
-   std::vector<Real_t> m_fz ;
+   Real_t_vec_sim m_fx ;  /* forces */
+   Real_t_vec_sim m_fy ;
+   Real_t_vec_sim m_fz ;
 
    // NLS: THIS IS COMMUNICATED
-   std::vector<Real_t> m_nodalMass ;  /* mass */
+   Real_t_vec_sim m_nodalMass ;  /* mass */
 
-   std::vector<Index_t> m_symmX ;  /* symmetry plane nodesets */
-   std::vector<Index_t> m_symmY ;
-   std::vector<Index_t> m_symmZ ;
+   Index_t_vec_sim m_symmX ;  /* symmetry plane nodesets */
+   Index_t_vec_sim m_symmY ;
+   Index_t_vec_sim m_symmZ ;
 
    // Element-centered
 
@@ -501,25 +521,26 @@ class Domain {
    Index_t *m_regNumList ;    // Region number per domain element
    Index_t **m_regElemlist ;  // region indexset 
 
-   std::vector<Index_t>  m_nodelist ;     /* elemToNode connectivity */
+   // NLS: NEEDED FOR TIMESTEP COMPUTATION
+   Index_t_vec_sim  m_nodelist ;     /* elemToNode connectivity */
 
-   std::vector<Index_t>  m_lxim ;  /* element connectivity across each face */
-   std::vector<Index_t>  m_lxip ;
-   std::vector<Index_t>  m_letam ;
-   std::vector<Index_t>  m_letap ;
-   std::vector<Index_t>  m_lzetam ;
-   std::vector<Index_t>  m_lzetap ;
+   Index_t_vec_sim  m_lxim ;  /* element connectivity across each face */
+   Index_t_vec_sim  m_lxip ;
+   Index_t_vec_sim  m_letam ;
+   Index_t_vec_sim  m_letap ;
+   Index_t_vec_sim  m_lzetam ;
+   Index_t_vec_sim  m_lzetap ;
 
-   std::vector<Int_t>    m_elemBC ;  /* symmetry/free-surface flags for each elem face */
+   Int_t_vec_sim    m_elemBC ;  /* symmetry/free-surface flags for each elem face */
 
    Real_t_vec_sim m_dxx ;  /* principal strains -- temporary */
    Real_t_vec_sim m_dyy ;
    Real_t_vec_sim m_dzz ;
 
    // NLS: THESE ARE COMMUNICATED
-   std::vector<Real_t> m_delv_xi ;    /* velocity gradient -- temporary */
-   std::vector<Real_t> m_delv_eta ;
-   std::vector<Real_t> m_delv_zeta ;
+   Real_t_vec_sim m_delv_xi ;    /* velocity gradient -- temporary */
+   Real_t_vec_sim m_delv_eta ;
+   Real_t_vec_sim m_delv_zeta ;
 
    Real_t_vec_sim m_delx_xi ;    /* coordinate gradient -- temporary */
    Real_t_vec_sim m_delx_eta ;
@@ -533,7 +554,8 @@ class Domain {
    Real_t_vec_sim m_qq ;  /* quadratic term for q */
 
    Real_t_vec_sim m_v ;     /* relative volume */
-   std::vector<Real_t> m_volo ;  /* reference volume */
+   // NLS: NEEDED FOR TIMESTEP COMPUTATION
+   Real_t_vec_sim m_volo ;  /* reference volume */
    Real_t_vec_sim m_vnew ;  /* new relative volume -- temporary */
    Real_t_vec_sim m_delv ;  /* m_vnew - m_v */
    Real_t_vec_sim m_vdov ;  /* volume derivative over volume */
@@ -608,7 +630,7 @@ class Domain {
 
 } ;
 
-typedef Real_t &(Domain::* Domain_member )(Index_t) ;
+typedef Real_t_sim &(Domain::* Domain_member )(Index_t) ;
 
 struct cmdLineOpts {
    Int_t its; // -i 
