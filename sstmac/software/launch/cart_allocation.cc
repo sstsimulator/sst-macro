@@ -12,13 +12,13 @@
 
 namespace sstmac {
 namespace sw {
-SpktRegister("cart | cartesian", allocation_strategy, cart_allocation,
+SpktRegister("cart | cartesian", node_allocator, cart_allocation,
             "Allocate a regular, cartesian volume of nodes.  This is meant mostly for torus topologies, but is also meaningful for dragonfly and hypercube.");
 
 void
 cart_allocation::init_factory_params(sprockit::sim_parameters* params)
 {
-  allocation_strategy::init_factory_params(params);
+  node_allocator::init_factory_params(params);
   if (params->has_param("cart_launch_sizes")){
     /**
       sstkeyword {
@@ -55,39 +55,30 @@ cart_allocation::init_factory_params(sprockit::sim_parameters* params)
 }
 
 void
-cart_allocation::set_topology(hw::topology *top)
+cart_allocation::insert(
+  hw::structured_topology* regtop,
+  const std::vector<int>& coords,
+  const ordered_node_set& available,
+  ordered_node_set& allocation) const
 {
-  regtop_ = safe_cast(hw::structured_topology, top);
-  int ndims = regtop_->ndimensions();
-  //add extra dimension for concentration
-  if (regtop_->concentration(switch_id(0))) ++ndims;
-  if (sizes_.size() != ndims){
-    spkt_throw_printf(sprockit::value_error,
-       "topology ndims does not match cart_allocation: %d != %d",
-       sizes_.size(), ndims);
-  }
-}
-
-void
-cart_allocation::insert(const std::vector<int>& coords, node_set& allocation)
-{
-  node_id nid = regtop_->node_addr(coords);
-  allocation.insert(nid);
+  node_id nid = regtop->node_addr(coords);
   debug_printf(sprockit::dbg::allocation,
       "adding node %d : %s to allocation",
       int(nid), stl_string(coords).c_str());
-
-  interconn_->allocated().insert(nid);
-  interconn_->available().erase(nid);
+  allocation.insert(nid);
 }
 
 
 void
-cart_allocation::allocate_dim(int dim, std::vector<int>& vec,
-                              node_set& allocation)
+cart_allocation::allocate_dim(
+  hw::structured_topology* regtop,
+  int dim,
+  std::vector<int>& vec,
+  const ordered_node_set& available,
+  ordered_node_set& allocation) const
 {
   if (dim == sizes_.size()) {
-    insert(vec, allocation);
+    insert(regtop, vec, available, allocation);
     return;
   }
 
@@ -95,14 +86,28 @@ cart_allocation::allocate_dim(int dim, std::vector<int>& vec,
   int dim_offset = offsets_[dim];
   for (int i = 0; i < dim_size; ++i) {
     vec[dim] = dim_offset + i;
-    allocate_dim(dim + 1, vec, allocation);
+    allocate_dim(regtop, dim + 1, vec, available, allocation);
   }
 }
 
 void
-cart_allocation::allocate(int nnode, node_set &allocation)
+cart_allocation::allocate(
+  int nnode,
+  const ordered_node_set& available,
+  ordered_node_set& allocation) const
 {
-  validate_num_nodes(nnode, "cart_allocation");
+  hw::structured_topology* regtop =
+      safe_cast(hw::structured_topology, topology_);
+
+  int ndims = regtop->ndimensions();
+  //add extra dimension for concentration
+  if (regtop->concentration(switch_id(0))) ++ndims;
+  if (sizes_.size() != ndims){
+    spkt_throw_printf(sprockit::value_error,
+       "topology ndims does not match cart_allocation: %d != %d",
+       sizes_.size(), ndims);
+  }
+
   if (auto_allocate_){
     std::vector<int> coords; coords.resize(3);
     int nx, ny, nz; gen_cart_grid(nnode, nx, ny, nz);
@@ -112,16 +117,14 @@ cart_allocation::allocate(int nnode, node_set &allocation)
         coords[y] = y;
         for (int z=0; z < nz; ++z){
           coords[z] = z;
-          node_id nid = regtop_->node_addr(coords);
-          allocation.insert(nid);
+          insert(regtop, coords, available, allocation);
         }
       }
     }
   } else {
     std::vector<int> vec(sizes_.size(), 0);
-    allocate_dim(0, vec, allocation);
+    allocate_dim(regtop, 0, vec, available, allocation);
   }
-
 }
 
 } // end namespace sw

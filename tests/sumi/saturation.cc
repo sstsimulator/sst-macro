@@ -10,7 +10,8 @@
 #include <sstmac/libraries/sumi/sumi.h>
 #include <sstmac/hardware/topology/traffic/traffic.h>
 #include <sstmac/hardware/topology/topology.h>
-
+#include <sstmac/skeleton.h>
+#define sstmac_app_name "user_app_cxx"
 using namespace sumi;
 using sstmac::timestamp;
 using sstmac::hw::traffic_pattern;
@@ -135,7 +136,9 @@ main(int argc, char** argv)
 {
   comm_init();
 
-  std::string pattern = sstmac::env::params->get_param("traffic_pattern");
+  sprockit::sim_parameters* params = sstmac::sw::app::get_params();
+
+  std::string pattern = params->get_param("traffic_pattern");
   traffic_pattern::type_t ty;
   if (pattern == "NN" || pattern == "nearest_neighbor") {
     ty = traffic_pattern::nearest_neighbor;
@@ -154,33 +157,27 @@ main(int argc, char** argv)
 
   double offered_load_bw = 0;
 
-  if (sstmac::env::params->has_param("packet_flow_injection_bandwidth")) {
-    offered_load_bw =
-      sstmac::env::params->get_bandwidth_param("packet_flow_injection_bandwidth");
+  if (params->has_param("packet_flow_injection_bandwidth")) {
+    offered_load_bw = params->get_bandwidth_param("packet_flow_injection_bandwidth");
   }
-  else if (sstmac::env::params->has_param("cycle_accurate_switch_bandwidth_n2r")) {
-    offered_load_bw =
-      sstmac::env::params->get_bandwidth_param("cycle_accurate_switch_bandwidth_n2r");
+  else if (params->has_param("cycle_accurate_switch_bandwidth_n2r")) {
+    offered_load_bw = params->get_bandwidth_param("cycle_accurate_switch_bandwidth_n2r");
   }
-  else if (sstmac::env::params->has_param("network_injector_capacity_bw")) {
-    offered_load_bw =
-      sstmac::env::params->get_bandwidth_param("network_injector_capacity_bw");
+  else if (params->has_param("network_injector_capacity_bw")) {
+    offered_load_bw = params->get_bandwidth_param("network_injector_capacity_bw");
   }
-  else if (sstmac::env::params->has_param("packet_switch_bandwidth_n2r")) {
-    offered_load_bw =
-      sstmac::env::params->get_bandwidth_param("packet_switch_bandwidth_n2r");
+  else if (params->has_param("packet_switch_bandwidth_n2r")) {
+    offered_load_bw = params->get_bandwidth_param("packet_switch_bandwidth_n2r");
   }
-  else if (sstmac::env::params->has_param("network_train_injection_bw")) {
-    offered_load_bw =
-      sstmac::env::params->get_bandwidth_param("network_train_injection_bw");
+  else if (params->has_param("network_train_injection_bw")) {
+    offered_load_bw = params->get_bandwidth_param("network_train_injection_bw");
   }
   else {
     spkt_throw_printf(sprockit::input_error,
                      "throughput application did not find injection bandwidth");
   }
 
-
-  timestamp inject_time = sstmac::env::params->get_time_param("inject_time");
+  timestamp inject_time = params->get_time_param("inject_time");
   long inject_length = offered_load_bw * inject_time.sec();
 
   run_test(ty, inject_length, offered_load_bw);

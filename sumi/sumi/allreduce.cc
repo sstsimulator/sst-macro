@@ -13,17 +13,10 @@
 
 using namespace sprockit::dbg;
 
-RegisterDebugSlot(sumi_allreduce, "print all debug output associated with allreduce collectives in the sumi framework");
-
 namespace sumi
 {
 
 SpktRegister("wilke", dag_collective, wilke_halving_allreduce);
-
-wilke_halving_allreduce::wilke_halving_allreduce(reduce_fxn fxn) :
- fxn_(fxn)
-{
-}
 
 void
 wilke_allreduce_actor::finalize_buffers()
@@ -44,7 +37,8 @@ wilke_allreduce_actor::init_buffers(void* dst, void* src)
   if (src){
     //memcpy the src into the dst
     //we will now only work with the dst buffer
-    std::memcpy(dst, src, size);
+    if (src != dst)
+      std::memcpy(dst, src, size);
     //but! we need a temporary recv buffer
     recv_buffer_ = my_api_->allocate_public_buffer(size);
   }
@@ -55,32 +49,19 @@ wilke_allreduce_actor::init_buffers(void* dst, void* src)
 void
 wilke_allreduce_actor::init_dag()
 {
-  int virtual_nproc = 1;
-  int log2nproc = 0;
-  while (virtual_nproc < dense_nproc_)
-  {
-    ++log2nproc;
-    virtual_nproc *= 2;
-  }
+  int virtual_nproc, log2nproc, midpoint;
+  compute_tree(log2nproc, midpoint, virtual_nproc);
   virtual_rank_map rank_map(dense_nproc_, virtual_nproc);
-  std::vector<int> my_roles = rank_map.real_to_virtual(dense_me_);
-  std::set<int> lookup_map;
-  for (int i=0; i < my_roles.size(); ++i){
-    lookup_map.insert(my_roles[i]);
-  }
+  int my_roles[2];
+  int num_roles = rank_map.real_to_virtual(dense_me_, my_roles);
 
   int num_doubling_rounds = log2nproc;
 
-  debug_printf(sumi_collective | sumi_allreduce,
-    "Rank %s configured allreduce for tag=%d for nproc=%d(%d) virtualized to n=%d over %d rounds for roles=%s",
-    rank_str().c_str(), tag_, dense_nproc_, my_api_->nproc(), virtual_nproc, log2nproc, stl_string(my_roles).c_str());
+  debug_printf(sumi_collective,
+    "Rank %s configured allreduce for tag=%d for nproc=%d(%d) virtualized to n=%d over %d rounds",
+    rank_str().c_str(), tag_, dense_nproc_, my_api_->nproc(), virtual_nproc, log2nproc);
 
-  //this is a bit weird
-  //if we are in a "virtual" environment without a 2*n number of procs
-  //odd virtual roles have to use a different numbering of the rounds
-  int odd_role_round_offset = dense_nproc_ != virtual_nproc ? 2*num_doubling_rounds : 0;
-
-  for (int role=0; role < my_roles.size(); ++role){
+  for (int role=0; role < num_roles; ++role){
     action* null = 0;
     std::vector<action*> send_rounds(num_doubling_rounds, null);
     std::vector<action*> recv_rounds(num_doubling_rounds, null);
@@ -96,7 +77,7 @@ wilke_allreduce_actor::init_dag()
     bool i_am_even = (virtual_me % 2) == 0;
     int round_offset = 2*num_doubling_rounds;
     bool initial_send = true;
-    debug_printf(sumi_collective | sumi_allreduce,
+    debug_printf(sumi_collective,
       "Rank %d configuring allreduce for virtual role=%d tag=%d for nproc=%d(%d) virtualized to n=%d over %d rounds ",
       my_api_->rank(), virtual_me, tag_, dense_nproc_, my_api_->nproc(), virtual_nproc, log2nproc);
     for (int i=0; i < num_doubling_rounds; ++i){
@@ -117,23 +98,23 @@ wilke_allreduce_actor::init_dag()
         recv_offset = my_buffer_offset + send_nelems;
       }
 
-      debug_printf(sumi_collective | sumi_allreduce,
+      debug_printf(sumi_collective,
         "Rank %d:%d testing partner=%d tag=%d for round=%d,%d",
         my_api_->rank(), virtual_me, virtual_partner, tag_, i, rnd);
 
       recv_nelems = round_nelems - send_nelems;
 
-      if (lookup_map.find(virtual_partner) == lookup_map.end()){
+      if (!is_shared_role(virtual_partner, num_roles, my_roles)){
         int partner = rank_map.virtual_to_real(virtual_partner);
         //this is not colocated with me - real send/recv
         action* send_ac = new send_action(rnd, partner);
         send_ac->offset = send_offset;
         send_ac->nelems = send_nelems;
-        send_ac->recv_type_ = action::out_of_place;
+        send_ac->recv_type = action::out_of_place;
         action* recv_ac = new recv_action(rnd, partner);
         recv_ac->offset = recv_offset;
         recv_ac->nelems = round_nelems - send_nelems;
-        recv_ac->recv_type_ = action::out_of_place;
+        recv_ac->recv_type = action::out_of_place;
 
         if (initial_send){ //initial send/recv
           add_initial_action(send_ac);
@@ -152,7 +133,7 @@ wilke_allreduce_actor::init_dag()
         prev_recv = recv_ac;
       } //end if not real send/recv
       else {
-        debug_printf(sumi_collective | sumi_allreduce,
+        debug_printf(sumi_collective,
           "Rank %d:%d skipping partner=%d on round %d with send=(%d,%d) recv=(%d,%d)",
           my_api_->rank(), virtual_me, virtual_partner, i,
           send_offset, send_offset + send_nelems,
@@ -200,11 +181,6 @@ wilke_allreduce_actor::init_dag()
   num_total_rounds_ = num_doubling_rounds * 2;
 }
 
-wilke_allreduce_actor::wilke_allreduce_actor(reduce_fxn fxn) :
-   fxn_(fxn)
-{
-}
-
 bool
 wilke_allreduce_actor::is_lower_partner(int virtual_me, int partner_gap)
 {
@@ -217,7 +193,7 @@ wilke_allreduce_actor::buffer_action(void *dst_buffer, void *msg_buffer, action*
 {
   int rnd = ac->round % num_total_rounds_;
   if (rnd < num_reducing_rounds_){
-    (*fxn_)(dst_buffer, msg_buffer, ac->nelems);
+    (fxn_)(dst_buffer, msg_buffer, ac->nelems);
   }
   else {
     std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);

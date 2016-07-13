@@ -60,6 +60,17 @@ btree_gather_actor::finalize_buffers()
 }
 
 void
+btree_gather_actor::start_shuffle(action *ac)
+{
+  //only ever arises in weird midpoint scenarios
+  int copy_size = ac->nelems * type_size_;
+  int copy_offset = ac->offset * type_size_;
+  char* dst = ((char*)result_buffer_.ptr) + copy_offset;
+  char* src = ((char*)result_buffer_.ptr);
+  ::memcpy(dst, src, copy_size);
+}
+
+void
 btree_gather_actor::buffer_action(void *dst_buffer, void *msg_buffer, action *ac)
 {
   std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
@@ -120,10 +131,21 @@ btree_gather_actor::init_dag()
   }
 
   round = log2nproc_;
-  if (root_ != 0 && root_ == midpoint_){
-    spkt_throw(sprockit::unimplemented_error,
-      "gather in which root is midpoint of binary tree");
-  } else if (root_ != 0){
+  if (root_ != 0 && root_ == midpoint_ && me == root_){
+    //I have to shuffle my data
+    action* shuffle = new shuffle_action(round, me);
+    shuffle->offset = midpoint_ * nelems_;
+    shuffle->nelems = (nproc - midpoint_) * nelems_;
+    if (prev){
+      add_dependency(prev, shuffle);
+    } else {
+      add_initial_action(shuffle);
+    }
+    prev = shuffle;
+  }
+
+
+  if (root_ != 0){
     //the root must receive from 0 and midpoint
     if (me == root_){
       int size_1st_half = midpoint_;
@@ -133,17 +155,24 @@ btree_gather_actor::init_dag()
       recv->offset = 0;
       recv->nelems = nelems_ * size_1st_half;
       add_dependency(prev, recv);
-      //recv 2nd half from midpoint
-      recv = new recv_action(round, midpoint_);
-      recv->offset = midpoint_*nelems_;
-      recv->nelems = nelems_ * size_2nd_half;
-      add_dependency(prev, recv);
-    } else if (me == 0){
+      //recv 2nd half from midpoint - unless I am the midpoint
+      if (midpoint_ != root_){
+        recv = new recv_action(round, midpoint_);
+        recv->offset = midpoint_*nelems_;
+        recv->nelems = nelems_ * size_2nd_half;
+        add_dependency(prev, recv);
+      }
+    }
+    //0 must send the first half to the root
+    if (me == 0){
       action* send = new send_action(round, root_);
       send->offset = 0; //send whole thing
       send->nelems = nelems_*midpoint_;
       add_dependency(prev,send);
-    } else if (me == midpoint_){
+    }
+    //midpoint must send the second half to the root
+    //unless it is the root
+    if (me == midpoint_ && midpoint_ != root_){
       action* send = new send_action(round, root_);
       int size = nproc - midpoint_;
       send->offset = 0;

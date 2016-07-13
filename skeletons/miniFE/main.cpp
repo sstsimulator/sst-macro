@@ -101,6 +101,8 @@ inline void print_box(int myproc, const char* name, const Box& box,
 //vector, then solve the linear-system using Conjugate Gradients.
 //
 
+#define sstmac_app_name "minife"
+
 int main(int argc, char** argv) {
   miniFE::Parameters params;
   miniFE::get_parameters(argc, argv, params);

@@ -6,10 +6,10 @@ SINGLETESTS = \
   test_utilities \
   test_pthread \
   test_blas \
-  test_scan \
   test_blas_finegrained \
-  test_node_noise \
-  test_compute
+  test_node_noise 
+
+#  test_scan  TODO
 
 if ENABLE_DEBUG
 SINGLETESTS += \
@@ -44,16 +44,9 @@ test_pthread.$(CHKSUF): test_pthread
 	$(PYRUNTEST) 6 $(top_srcdir) $@ True \
     ./test_pthread --no-wall-time -f $(srcdir)/test_configs/pthread.ini 
 
-test_compute.$(CHKSUF): $(SSTMACEXEC)
-	$(PYRUNTEST) 6 $(top_srcdir) $@ True \
-    $(SSTMACEXEC) -f $(srcdir)/test_configs/test_compute.ini --no-wall-time 
-
 #------------------------------------------------------------------------------------------#
 #  DUMPI-related tests                                                                  {{{#
 #------------------------------------------------------------------------------------------#
-
-SINGLETESTS += \
-  test_parsedumpi
 
 traces:
 	rm -fr *.bin *.meta *.map
@@ -70,9 +63,6 @@ test_dumpi_bgp.$(CHKSUF): $(SSTMACEXEC) traces
     $(SSTMACEXEC) -f $(srcdir)/test_configs/test_dumpi_bgp.ini \
           -d indexing,allocation --no-wall-time 
 
-test_parsedumpi.$(CHKSUF): $(SSTMACEXEC) traces
-	$(PYRUNTEST) 3 $(top_srcdir) $@ True \
-    $(SSTMACEXEC) -f $(srcdir)/test_configs/test_parsedumpi.ini --no-wall-time 
 
 endif
 

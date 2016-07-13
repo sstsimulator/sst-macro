@@ -15,8 +15,6 @@
 #include <sumi-mpi/mpi_api.h>
 #include <sumi-mpi/sstmac_mpi_integers.h>
 #include <sumi-mpi/mpi_types.h>
-#include <sstmac/common/thread_lock.h>
-#include <sstmac/common/thread_info.h>
 #include <sprockit/errors.h>
 
 #include <sys/types.h>
@@ -29,6 +27,13 @@
 
 #include <stdint.h>
 #include <iterator>
+
+namespace sstmac {
+namespace sw {
+void api_lock();
+void api_unlock();
+}
+}
 
 namespace sumi {
 
@@ -57,23 +62,21 @@ mpi_comm_factory::~mpi_comm_factory()
 // Initialize.
 //
 void
-mpi_comm_factory::init(app_manager* env, int rank)
+mpi_comm_factory::init(int rank, int nproc)
 {
   next_id_ = 1;
 
-  mpirun_np_ = env->nproc();
-
-  MPI_Comm cid(0);
+  mpirun_np_ = nproc;
 
   mpi_group* g = new mpi_group(mpirun_np_);
 
-  worldcomm_ = new mpi_comm(MPI_COMM_WORLD, rank, g, env, aid_);
+  worldcomm_ = new mpi_comm(MPI_COMM_WORLD, rank, g, aid_);
 
   std::vector<task_id> selfp;
   selfp.push_back(task_id(rank));
 
   mpi_group* g2 = new mpi_group(selfp);
-  selfcomm_ = new mpi_comm(MPI_COMM_SELF, int(0), g2, env, aid_);
+  selfcomm_ = new mpi_comm(MPI_COMM_SELF, int(0), g2, aid_);
 }
 
 void
@@ -107,15 +110,13 @@ mpi_comm_factory::comm_create(mpi_comm* caller, mpi_group* group)
 
   MPI_Comm cid = outputID;
 
-  std::pair<app_id, int> index = std::make_pair(aid_, cid);
-
   //now find my rank
   int newrank = group->rank_of_task(caller->my_task());
 
   next_id_ = cid + 1;
 
   if (newrank >= 0) {
-    return new mpi_comm(cid, newrank, group, worldcomm_->env_, aid_);
+    return new mpi_comm(cid, newrank, group, aid_);
   }
   else {
     return mpi_comm::comm_null;
@@ -126,7 +127,6 @@ mpi_comm_factory::comm_create(mpi_comm* caller, mpi_group* group)
 typedef std::map<int, std::list<int> > key_to_ranks_map;
 #if !SSTMAC_DISTRIBUTED_MEMORY || SSTMAC_MMAP_COLLECTIVES
 
-static sstmac::thread_lock split_lock;
 typedef std::map<int, key_to_ranks_map> color_to_key_map;
 //comm id, comm root task id, tag
 
@@ -150,16 +150,17 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
   mydata[0] = next_id_;
   mydata[1] = my_color;
   mydata[2] = my_key;
+
+  //printf("Rank %d = {%d %d %d}\n",
+  //       caller->rank(), next_id_, my_color, my_key);
+
 #if SSTMAC_DISTRIBUTED_MEMORY && !SSTMAC_MMAP_COLLECTIVES
-  if (my_color < 0){ //I'm not part of this!
-    return mpi_comm::comm_null;
-  }
   int* result = new int[3*caller->size()];
   parent_->allgather(&mydata, 3, MPI_INT,
                      result, 3, MPI_INT,
                      caller->id());
 #else
-  split_lock.lock();
+  sstmac::sw::api_lock();
   int root = caller->peer_task(int(0));
   int tag = caller->next_collective_tag();
   comm_split_entry& entry = comm_split_entries[int(caller->id())][root][tag];
@@ -190,16 +191,24 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
     entry.buf = new int[3*caller->size()];
 #endif
   }
-  split_lock.unlock();
+  int* result = entry.buf;
+  int* mybuf = result + 3*caller->rank();
+  mybuf[0] = mydata[0];
+  mybuf[1] = mydata[1];
+  mybuf[2] = mydata[2];
+  sstmac::sw::api_unlock();
 
   //just model the allgather
   parent_->allgather(NULL, 3, MPI_INT,
                      NULL, 3, MPI_INT,
                      caller->id());
-  int* result = entry.buf;
+
 #endif
 
   if (my_color < 0){ //I'm not part of this!
+#if SSTMAC_DISTRIBUTED_MEMORY && !SSTMAC_MMAP_COLLECTIVES
+    delete[] result;
+#endif
     return mpi_comm::comm_null;
   }
 
@@ -212,6 +221,9 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
     int comm_id = thisdata[0];
     int color = thisdata[1];
     int key = thisdata[2];
+
+    //printf("Rank %d[%d] = {%d %d %d}\n",
+    //       caller->rank(), rank, comm_id, color, key);
 
     if (color >= 0 && color == my_color){
       key_map[key].push_back(rank);
@@ -257,7 +269,7 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
 #endif
   }
 #endif
-  return new mpi_comm(cid, my_new_rank, new mpi_group(task_list), worldcomm_->env_, aid_);
+  return new mpi_comm(cid, my_new_rank, new mpi_group(task_list), aid_);
 }
 
 mpi_comm*
@@ -277,7 +289,7 @@ mpi_comm_factory::create_cart(mpi_comm* caller, int ndims,
 
   if (newrank >= 0) {
     return new mpi_comm_cart(cid, newrank, caller->group_,
-                     worldcomm_->env_, aid_, ndims, dims, periods, reorder);
+                     aid_, ndims, dims, periods, reorder);
   }
   else {
     return mpi_comm::comm_null;

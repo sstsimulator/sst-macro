@@ -109,8 +109,8 @@ tiled_dragonfly::configure_geometric_paths(std::vector<int> &redundancies)
 void
 tiled_dragonfly::minimal_routes_to_switch(switch_id current_sw_addr,
                                           switch_id dest_sw_addr,
-                                          routing_info::path &current_path,
-                                          routing_info::path_set &paths) const
+                                          geometry_routable::path &current_path,
+                                          geometry_routable::path_set &paths) const
 {
   coordinates src = switch_coords(current_sw_addr);
   coordinates dst = switch_coords(dest_sw_addr);
@@ -121,8 +121,8 @@ void
 tiled_dragonfly::minimal_routes_to_coords(
   const coordinates &src_coords,
   const coordinates &dest_coords,
-  routing_info::path &current_path,
-  routing_info::path_set &paths) const
+  geometry_routable::path &current_path,
+  geometry_routable::path_set &paths) const
 {
   top_debug("tiled dfly: minimal routes from %s to %s",
             set_string(src_coords[0], src_coords[1], src_coords[2]).c_str(),
@@ -133,7 +133,7 @@ tiled_dragonfly::minimal_routes_to_coords(
 
   //if we crossed a global link in the past, set to 1
   current_path.vc = current_path.metadata_bit(
-        routing_info::crossed_timeline) ? 1 : 0;
+        geometry_routable::crossed_timeline) ? 1 : 0;
 
   xy_list_t* ports;
   coordinates dst(dest_coords);
@@ -211,8 +211,8 @@ tiled_dragonfly::minimal_routes_to_coords(
 
     // copy over virtual channel and related metadata
     paths[i].vc = current_path.vc;
-    if (current_path.metadata_bit(routing_info::crossed_timeline))
-      paths[i].set_metadata_bit(routing_info::crossed_timeline);
+    if (current_path.metadata_bit(geometry_routable::crossed_timeline))
+      paths[i].set_metadata_bit(geometry_routable::crossed_timeline);
 
     top_debug("minimal_routes_to_coords: outport: %d, geometric id: %d, vc: %d",
               paths[i].outport, paths[i].geometric_id, paths[i].vc);
@@ -256,7 +256,7 @@ tiled_dragonfly::endpoint_to_ejection_switch(
 
 void
 tiled_dragonfly::eject_paths_on_switch(
-   node_id dest_addr, switch_id sw_addr, routing_info::path_set &paths) const
+   node_id dest_addr, switch_id sw_addr, geometry_routable::path_set &paths) const
 {
   paths.resize(injection_redundancy_);
   int node_offset = dest_addr % endpoints_per_switch_;
@@ -272,7 +272,7 @@ void
 tiled_dragonfly::minimal_route_to_coords(
   const coordinates &current_coords,
   const coordinates &dest_coords,
-  routing_info::path& path) const
+  geometry_routable::path& path) const
 {
   spkt_throw(sprockit::unimplemented_error, "tiled_dragonfly::minimal_route_to_coords");
 }

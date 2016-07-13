@@ -8,12 +8,12 @@
 namespace sstmac {
 namespace sw {
 
-SpktRegister("node_id", allocation_strategy, node_id_allocation);
+SpktRegister("node_id", node_allocator, node_id_allocation);
 
 void
 node_id_allocation::init_factory_params(sprockit::sim_parameters* params)
 {
-  allocation_strategy::init_factory_params(params);
+  node_allocator::init_factory_params(params);
   if (params->has_param("launch_node_id_file")){
     coord_file_ = params->get_param("launch_node_id_file");
   } else {
@@ -23,9 +23,9 @@ node_id_allocation::init_factory_params(sprockit::sim_parameters* params)
 
 void
 node_id_allocation::read_coordinate_file(
-    const std::string &file,
-    std::vector<node_id> &node_list,
-    hw::topology* top)
+  const std::string &file,
+  std::vector<node_id> &node_list,
+  hw::topology* top)
 {
   std::ifstream in;
   sprockit::SpktFileIO::open_file(in, file);
@@ -56,15 +56,16 @@ node_id_allocation::read_coordinate_file(
 
 void
 node_id_allocation::allocate(int nnode_requested,
-                              node_set &allocation)
+  const ordered_node_set& available,
+  ordered_node_set &allocation) const
 {
   std::vector<node_id> node_list;
   read_coordinate_file(coord_file_, node_list, topology_);
 
   if (node_list.size() < nnode_requested){
     spkt_throw_printf(sprockit::value_error,
-        "node_id_allocation::allocation: requested %d, but only have %d nodes",
-        nnode_requested, int(node_list.size()) );
+       "application needs %d node, but only %d listed in file %s",
+       nnode_requested, node_list.size(), coord_file_.c_str());
   }
 
   for (int i=0; i < nnode_requested; ++i){

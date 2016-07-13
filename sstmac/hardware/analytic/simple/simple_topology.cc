@@ -45,6 +45,13 @@ simple_topology::endpoint_to_ejection_switch(node_id nodeaddr, int &switch_port)
   return endpoint_to_injection_switch(nodeaddr, switch_port);
 }
 
+coordinates
+simple_topology::node_coords(node_id uid) const
+{
+  auto t = safe_cast(structured_topology, actual_topology_);
+  return t->node_coords(uid);
+}
+
 void
 simple_topology::init_factory_params(sprockit::sim_parameters* params)
 {
@@ -108,7 +115,7 @@ void
 simple_topology::minimal_route_to_coords(
   const coordinates &src_coords,
   const coordinates &dest_coords,
-  routing_info::path& path) const
+  geometry_routable::path& path) const
 {
   spkt_throw(sprockit::unimplemented_error,
     "simple_topology::minimal_route_to_coords: should never be called");
@@ -184,7 +191,7 @@ simple_topology::productive_path(
   int dim,
   const coordinates &src_coords,
   const coordinates &dst_coords,
-  routing_info::path& path) const
+  geometry_routable::path& path) const
 {
   spkt_throw(sprockit::unimplemented_error,
     "simple_topology::productive_path: should never be called");

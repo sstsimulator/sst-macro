@@ -50,7 +50,8 @@ class SpktFactory_base
  public:
   static void
   add_to_map(const std::string& namestr, SpktDesc_base* desc,
-             std::map<std::string, SpktDesc_base*> *m);
+             std::map<std::string, SpktDesc_base*>* descr_map,
+             std::map<std::string, std::list<std::string> >* alias_map);
 
   static std::string
   value(const std::string& key, sim_parameters* params);
@@ -69,6 +70,8 @@ class SpktFactoryTemplateBase : public SpktFactory_base
  protected:
   typedef std::map<std::string, SpktDesc_base*> descr_map;
   static descr_map* object_map_;
+  typedef std::map<std::string, std::list<std::string> > alias_map;
+  static alias_map* alias_map_;
   static const char* name_;
 
  public:
@@ -77,7 +80,10 @@ class SpktFactoryTemplateBase : public SpktFactory_base
     if (!object_map_) {
       object_map_ = new descr_map;
     }
-    add_to_map(name, descr, object_map_);
+    if (!alias_map_){
+      alias_map_ = new alias_map;
+    }
+    add_to_map(name, descr, object_map_, alias_map_);
   }
 
   static void
@@ -150,7 +156,26 @@ class SpktFactory : public SpktFactoryTemplateBase<T>
   typedef SpktFactoryTemplateBase<T> parent;
   typedef T element_type;
   using SpktFactoryTemplateBase<T>::object_map_;
+  using SpktFactoryTemplateBase<T>::alias_map_;
   using SpktFactoryTemplateBase<T>::name_;
+
+  static void
+  register_alias(const std::string& oldname, const std::string& newname){
+    if (!object_map_) {
+      object_map_ = new typename parent::descr_map;
+    }
+    if (!alias_map_){
+      alias_map_ = new typename parent::alias_map;
+    }
+
+    SpktDesc_base* base = (*object_map_)[oldname];
+    if (!base){
+      (*alias_map_)[oldname].push_back(newname);
+    } else {
+      (*object_map_)[newname] = base;
+    }
+
+  }
 
  protected:
   static T*
@@ -480,6 +505,7 @@ class SpktFactory_desc : public SpktDesc_base
     namespace sprockit { \
     template<> const char* ::sprockit::SpktFactoryTemplateBase<type_name>::name_ = #type_name; \
     template<> std::map<std::string, SpktDesc_base*>* SpktFactoryTemplateBase<type_name>::object_map_ = 0; \
+    template<> std::map<std::string, std::list<std::string>>* SpktFactoryTemplateBase<type_name>::alias_map_ = 0; \
     static need_delete_statics<SpktFactory< type_name > > factory_del_statics; \
     }
 

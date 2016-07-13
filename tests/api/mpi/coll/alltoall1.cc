@@ -40,7 +40,7 @@ int alltoall1( int argc, char *argv[] )
 	MPI_Comm_size( comm, &size );
 	
 	/* printf( "Size of comm = %d\n", size ); */
-	for (count = 1; count < 65000; count = count * 2) {
+  for (count = 1; count < 65000; count = count * 2) {
 	    
 	    /* Create a send buf and a receive buf suitable for testing
 	       all to all.  */
@@ -76,7 +76,7 @@ int alltoall1( int argc, char *argv[] )
 			if (errs < 10) {
 			    fprintf( stderr, "Error with communicator %s and size=%d count=%d\n",
 				     MTestGetIntracommName(), size, count );
-			    fprintf( stderr, "recvbuf[%d,%d] = %d, should %d\n",
+          fprintf( stderr, "recvbuf[%d,%d] = %d, should be %d\n",
 				     j,i, *p, rank * size + j + i );
 			}
 		    }

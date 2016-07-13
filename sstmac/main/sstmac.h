@@ -84,7 +84,7 @@ void
 remap_deprecated_params(sprockit::sim_parameters* params);
 
 void
-process_init_params(sprockit::sim_parameters* params);
+process_init_params(sprockit::sim_parameters* params, bool remap_params);
 
 void
 run(opts& oo,

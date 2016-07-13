@@ -10,6 +10,7 @@ sstmac_extra_ldflags = [
 
 sstmac_cppflags = [
 "@BOOST_CPPFLAGS@",
+"@SST_CPPFLAGS@",
 "@CPPFLAGS@",
 "-I${includedir}/sstmac",
 "-I${includedir}",
@@ -17,10 +18,12 @@ sstmac_cppflags = [
 "-I${includedir}/sstmac/tools"
 ]
 
+sst_core="@SST_CPPFLAGS@"
+
 prefix="@prefix@"
 exec_prefix="@exec_prefix@"
 includedir="@includedir@"
-cxxflags="@CXXFLAGS@"
+cxxflags="@CXXFLAGS@ @SST_CXXFLAGS@"
 cflags="@CFLAGS@"
 cc="@CC@"
 cxx="@CXX@"

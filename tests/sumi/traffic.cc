@@ -9,10 +9,13 @@
 #include <sstmac/hardware/topology/traffic/traffic.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sumi/transport.h>
+#include <sstmac/skeleton.h>
 
 using namespace sumi;
 
 static long done = 0;
+
+#define sstmac_app_name "user_app_cxx"
 
 void run_test(
   sstmac::hw::traffic_pattern::type_t ty,
@@ -70,7 +73,9 @@ main(int argc, char** argv)
 {
   comm_init();
 
-  std::string pattern = sstmac::env::params->get_param("traffic_pattern");
+  sprockit::sim_parameters* params = sstmac::sw::app::get_params();
+
+  std::string pattern = params->get_param("traffic_pattern");
   sstmac::hw::traffic_pattern::type_t ty;
   if (pattern == "NN" || pattern == "nearest_neighbor") {
     ty = sstmac::hw::traffic_pattern::nearest_neighbor;
@@ -87,8 +92,7 @@ main(int argc, char** argv)
                      pattern.c_str());
   }
 
-  long num_bytes_per_msg =
-    sstmac::env::params->get_byte_length_param("message_length");
+  long num_bytes_per_msg = params->get_byte_length_param("message_length");
 
   run_test(ty, num_bytes_per_msg);
 

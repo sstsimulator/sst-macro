@@ -3,7 +3,7 @@
 
 #include <sstmac/libraries/sumi/message_fwd.h>
 #include <sstmac/software/process/pmi.h>
-#include <sstmac/software/process/app_manager.h>
+#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/libraries/service.h>
 #include <sstmac/software/api/api.h>
 #include <sstmac/hardware/network/network_message_fwd.h>
@@ -109,7 +109,7 @@ class sumi_api :
 
   sstmac::sw::software_id sid_;
 
-  sstmac::sw::app_manager* env_;
+  sstmac::sw::app_launch* rank_mapper_;
 
   /**
    * @brief queue_
@@ -135,10 +135,10 @@ class sumi_server :
   sumi_server(int appid);
 
   void
-  incoming_message(sstmac::message* msg);
+  register_proc(int rank, sumi_api* proc);
 
   void
-  register_proc(int rank, sumi_api* proc);
+  incoming_event(event *ev);
 
  private:
   int appid_;

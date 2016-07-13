@@ -33,6 +33,11 @@ class lib_sleep : public library
 
   lib_sleep(const std::string& id);
 
+  virtual void
+  incoming_event(event *ev){
+    library::incoming_event(ev);
+  }
+
   void
   sleep(timestamp time);
 

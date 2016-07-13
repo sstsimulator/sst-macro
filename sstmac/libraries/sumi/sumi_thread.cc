@@ -1,5 +1,5 @@
 #include <sstmac/libraries/sumi/sumi_thread.h>
-#include <sstmac/software/process/app_manager.h>
+#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/process/operating_system.h>
 
 namespace sstmac {

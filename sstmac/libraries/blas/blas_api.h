@@ -71,6 +71,11 @@ class blas_api :
   void
   ddot(int n);
 
+  void
+  incoming_event(event *ev){
+    library::incoming_event(ev);
+  }
+
  protected:
   void init_kernels(sprockit::sim_parameters* params);
 

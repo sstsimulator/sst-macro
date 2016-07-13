@@ -5,7 +5,7 @@
 namespace sstmac {
 namespace hw {
 
-SpktRegister("packet_flow", sprockit::param_expander, packet_flow_param_expander);
+SpktRegister("packet_flow", sstmac::param_expander, packet_flow_param_expander);
 
 void
 packet_flow_param_expander::expand(sprockit::sim_parameters* params)
@@ -30,23 +30,32 @@ packet_flow_param_expander::expand(sprockit::sim_parameters* params)
   switch_params->add_param_override("model", "packet_flow");
   mem_params->add_param_override("model", "packet_flow");
 
-  int conc = params->get_optional_int_param("network_nodes_per_switch", 1);
-  top_params->add_param_override("concentration", conc);
+  if (!top_params->has_param("concentration")){
+    int conc = params->get_optional_int_param("network_nodes_per_switch", 1);
+    top_params->add_param_override("concentration", conc);
+  }
 
   proc_params->add_param_override("frequency", params->get_param("node_frequency"));
   node_params->add_param_override("ncores", params->get_param("node_cores"));
   node_params->add_param_override("nsockets", params->get_optional_param("node_sockets", "1"));
 
-  top_params->add_param_override("name", params->get_param("topology_name"));
-  top_params->add_param_override("geometry", params->get_param("topology_geometry"));
-  if (params->has_param("topology_redundant")){
+  if (!top_params->has_param("name")){
+    top_params->add_param_override("name", params->get_param("topology_name"));
+  }
+  if (!top_params->has_param("geometry")){
+    top_params->add_param_override("geometry", params->get_param("topology_geometry"));
+  }
+
+  if (!top_params->has_param("topology.redundant")
+    && params->has_param("topology_redundant")){
     top_params->add_param_override("redundant", params->get_param("topology_redundant"));
   }
-  if (params->has_param("topology_group_connections")){
+
+  if (!top_params->has_param("group_connections") 
+    && params->has_param("topology_group_connections")){
     top_params->add_param_override("group_connections",
                      params->get_param("topology_group_connections"));
   }
-
 
   int red = params->get_optional_int_param("injection_redundant", 1);
   top_params->add_param_override("injection_redundant", red);

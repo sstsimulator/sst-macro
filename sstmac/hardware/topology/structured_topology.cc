@@ -105,7 +105,7 @@ structured_topology::endpoint_to_injection_switch(
 
 void
 structured_topology::eject_paths_on_switch(
-   node_id dest_addr, switch_id sw_addr, routing_info::path_set &paths) const
+   node_id dest_addr, switch_id sw_addr, geometry_routable::path_set &paths) const
 {
   int node_offset = dest_addr % endpoints_per_switch_;
   int switch_port = node_offset + max_ports_intra_network_;
@@ -169,7 +169,7 @@ structured_topology::finalize_init()
 
 void
 structured_topology::productive_paths(
-  routing_info::path_set &paths,
+  geometry_routable::path_set &paths,
   const coordinates &current,
   const coordinates &dst)
 {
@@ -184,7 +184,7 @@ structured_topology::productive_paths(
   int pathidx = 0;
   for (int i=0; i < ncoords; ++i) {
     if (current[i] != dst[i]) {
-      routing_info::path& next_path = paths[pathidx++];
+      geometry_routable::path& next_path = paths[pathidx++];
       productive_path(i, current, dst, next_path);
     }
   }
@@ -194,7 +194,7 @@ void
 structured_topology::minimal_route_to_switch(
   switch_id current_sw_addr,
   switch_id dest_sw_addr,
-  routing_info::path& path) const
+  geometry_routable::path& path) const
 {
   coordinates src_coords = switch_coords(current_sw_addr);
   coordinates dest_coords = switch_coords(dest_sw_addr);

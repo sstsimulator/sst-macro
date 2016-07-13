@@ -25,7 +25,7 @@
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sstmac/backends/native/manager.h>
 #include <sstmac/software/process/app.h>
-#include <sstmac/software/process/app_manager.h>
+#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sprockit/fileio.h>
@@ -87,7 +87,7 @@ try_top_info_main(int argc, char **argv)
   map_env_params(params);
 
   //do some cleanup and processing of params
-  process_init_params(params);
+  process_init_params(params, true);
 
   //at this point, we have read in parameters - init malloc system
   //set the global parameters object

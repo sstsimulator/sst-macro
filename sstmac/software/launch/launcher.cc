@@ -10,8 +10,10 @@
  */
 
 #include <sstmac/software/launch/launcher.h>
-#include <sstmac/software/launch/launch_message.h>
+#include <sstmac/software/launch/launch_event.h>
 #include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/process/app.h>
+#include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 #include <unistd.h>
 #include <getopt.h>
@@ -33,31 +35,20 @@ launcher::~launcher() throw()
 }
 
 void
-launcher::incoming_message(message* msg)
+launcher::incoming_event(event* ev)
 {
-  launch_message* lmsg = safe_cast(launch_message, msg);
-  if (lmsg->is_nic_ack()){
-    delete lmsg;
-    return;
-  }
+  launch_event* lev = safe_cast(launch_event, ev);
 
-  launch_info* linfo = lmsg->info();
+  software_id sid(lev->aid(), lev->tid());
+  app* theapp = lev->app_template()->clone(sid);
+  sprockit::sim_parameters* app_params = lev->app_template()->params();
+  theapp->consume_params(app_params);
+  int intranode_rank = num_apps_launched_[lev->aid()]++;
+  int core_affinity = lev->core_affinity(intranode_rank);
+  theapp->set_affinity(core_affinity);
+  os_->start_app(theapp);
 
-  if (lmsg->launch_type() == launch_message::ARRIVE) {
-    software_id sid(linfo->aid(), lmsg->tid());
-    app* theapp = linfo->app_template()->clone(sid);
-    theapp->consume_params(linfo->app_template()->params());
-    int intranode_rank = num_apps_launched_[linfo->aid()]++;
-    int core_affinity = linfo->core_affinity(intranode_rank);
-    theapp->set_affinity(core_affinity);
-    os_->start_app(theapp);
-
-  }
-  else if(lmsg->launch_type() == launch_message::COMPLETE) {
-    //do nothing
-  }
-
-  delete lmsg;
+  delete lev;
 }
 
 void
@@ -67,6 +58,17 @@ launcher::start()
   if (!os_) {
     spkt_throw_printf(sprockit::value_error,
                      "instantlaunch::start: OS hasn't been registered yet");
+  }
+}
+
+int
+launch_event::core_affinity(int intranode_rank) const
+{
+  if (core_affinities_.size() > 0) { //we are assigned
+    return core_affinities_[intranode_rank];
+  }
+  else {
+    return thread::no_core_affinity;
   }
 }
 

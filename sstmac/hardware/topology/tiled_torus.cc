@@ -37,8 +37,8 @@ void
 tiled_torus::minimal_routes_to_coords(
   const coordinates &src_coords,
   const coordinates &dest_coords,
-  routing_info::path& current,
-  routing_info::path_set &paths) const
+  geometry_routable::path& current,
+  geometry_routable::path_set &paths) const
 {
   hdtorus::minimal_route_to_coords(src_coords, dest_coords, current);
   int dim = current.outport / 2; //2 for +/-
@@ -121,7 +121,7 @@ tiled_torus::endpoint_to_injection_switch(
 void
 tiled_torus::eject_paths_on_switch(
   node_id dest_addr, switch_id sw_addr,
-  routing_info::path_set &paths) const
+  geometry_routable::path_set &paths) const
 {
   int node_offset = dest_addr % endpoints_per_switch_;
   int port = max_ports_intra_network_ + node_offset*injection_redundancy_;

@@ -9,43 +9,18 @@
  *  SST/macroscale directory.
  */
 
-#include <sstmac/skeletons/test/app_hello_world.h>
-#include <sprockit/sim_parameters.h>
+#define sstmac_app_name "hello_world"
 
-namespace sstmac {
-namespace sw {
+#include <sstmac/skeleton.h>
+#include <sstmac/compute.h>
+#include <sstmac/util.h>
 
-SpktRegister("hello | hello_world", app, app_hello_world);
-
-void
-app_hello_world::consume_params(sprockit::sim_parameters* params)
+int USER_MAIN(int argc, char** argv)
 {
-  whatToSay = params->get_param("hello_world_what");
+  sprockit::sim_parameters* params = get_params();
+  std::string message = params->get_param("message");
+  sstmac_compute(1e-6);
+  std::cout <<"t=" << sstmac_now() << " " << message << std::endl;
+  return 0;
 }
-
-app_hello_world::~app_hello_world()
-{
-
-}
-
-void
-app_hello_world::skeleton_main()
-{
-  int my_app_id = sid().app_;
-  int my_task_id = sid().task_;
-  std::cout << "t=" << now() << ": Hello World! AppID = " << my_app_id
-               << ", my id = " << my_task_id << ", I'm located at "
-               << physical_address()
-               << ", and I'm supposed to say: " << whatToSay <<
-               ".  I'll compute for a little!\n";
-
-  timestamp t(1e-6);
-  compute(t);
-
-  std::cout <<"t=" << now() << "It's me again! (" << my_task_id << ") - I'm all done! \n";
-
-}
-
-}
-} //end of namespace sstmac
 

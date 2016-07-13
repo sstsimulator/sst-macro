@@ -38,13 +38,13 @@ The group number defines a $Z$ or $G$ coordinate.
 Thus the topology in Figure \ref{fig:topologies:dragonfly} would be specified as
 
 \begin{ViFile}
-topology_name = dragonfly
-topology_geometry = 3 3 3
+topology.name = dragonfly
+topology.geometry = 3 3 3
 \end{ViFile}
 for groups of size $3 \times 3$ with a total of 3 groups.
 To complete the specification, the number of global links ($h$) for each router must be given
 \begin{ViFile}
-topology_group_connections = 10
+topology.group_connections = 10
 \end{ViFile}
 
 \subsection{Routing}

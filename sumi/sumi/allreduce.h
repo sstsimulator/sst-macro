@@ -6,8 +6,6 @@
 #include <sumi/collective_message.h>
 #include <sumi/comm_functions.h>
 
-DeclareDebugSlot(sumi_allreduce)
-
 namespace sumi {
 
 class wilke_allreduce_actor :
@@ -23,7 +21,7 @@ class wilke_allreduce_actor :
   void
   buffer_action(void *dst_buffer, void *msg_buffer, action* ac);
 
-  wilke_allreduce_actor(reduce_fxn fxn);
+  wilke_allreduce_actor(reduce_fxn fxn) : fxn_(fxn) {}
 
  private:
   bool is_lower_partner(int virtual_me, int partner_gap);
@@ -49,7 +47,7 @@ class wilke_halving_allreduce :
     return "sumi allreduce";
   }
 
-  wilke_halving_allreduce(reduce_fxn fxn);
+  wilke_halving_allreduce(reduce_fxn fxn) : fxn_(fxn) {}
 
   wilke_halving_allreduce(){}
 

@@ -108,10 +108,10 @@ library::consume_params(sprockit::sim_parameters* params)
 }
 
 void
-library::incoming_message(message* msg)
+library::incoming_event(event* ev)
 {
   spkt_throw_printf(sprockit::unimplemented_error,
-    "%s::incoming_message: this library should only block, never receive incoming",
+    "%s::incoming_event: this library should only block, never receive incoming",
      to_string().c_str());
 }
 

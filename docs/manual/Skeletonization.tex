@@ -19,8 +19,9 @@ Virtual processes share the same address space and the same global variables.  S
 
 \section{Redirected linkage}
 \label{sec:skel:linkage}
-As stated above, in contrast to previous versions, this is essentially automatic now if using the SST compiler wrappers.
-The only minor wrinkle is potentially changing the application's entry point, i.e. \inlinecode{main}.
+Because of the way libraries are import in the SST core, using external skeleton apps is more complicated than previously.  Steps are being taken to re-automate this process, which will hopefully be available in the next subversion. For running the standalone version, this is essentially automatic  if using the SST compiler wrappers.  The compiler wrappers produce a new executable incorporating your new skeleton.
+
+The wrinkle is external skeletons apps is changing the application's entry point, i.e. \inlinecode{main}.
 The SST/macro framework has already taken the \texttt{main} function, and consequently the user application becomes a sub-routine within the simulation environment. As introduced in Section~\ref{sec:tutorial:basicmpi}, one needs to change the entry function from \texttt{main} to \texttt{user\_skeleton\_main}, which has the same function signature as the \texttt{main} function.  This refactoring happens automatically in the SST compiler wrappers. 
 
 If you need to use more than one application in the simulator at a time, you need multiple application entry points.
@@ -36,6 +37,19 @@ int my_app_main(int argc, char** argv)
 \end{CppCode}
 where the refactored \inlinecode{main} function matches the name of the declared application.
 
+\subsection{Loading external skeletons with the integrated core}\label{subsec:linkageCore}
+While the main \inlineshell{libmacro.so} provides the bulk of SST/macro functionality, 
+users may wish to compile and run external skeletons.  This gets a bit confusing with SST core since you have an external skeleton for an external element.  Follow the instructions on \url{http://sst-simulator.org}. You must create an element info struct name \inlinecode{X_eli} for X your library name.  You can still use the \inlineshell{sst++} compiler wrappers for building, but you must now manually create a \inlineshell{libX.so} from the compiled object files.  The \inlineshell{sstmacro.py} script installed must also be edited.  The top lines was previously
+
+\begin{ViFile}
+import sst.macro
+\end{ViFile}
+This only loads the main components, not the external skeleton. You must add
+
+\begin{ViFile}
+import sst.X
+\end{ViFile}
+where X is the name of your skeleton. This causes the core to also load the shared library corresponding to your external skeleton app.
 
 \section{Skeletonization}
 
@@ -123,18 +137,16 @@ The main issue that arises during skeletonization is data-dependent communicatio
 
 \begin{itemize}
 \item \textit{Loop convergence} - In some algorithms, the number of times you iterate through the main loop depends on an error converging to near zero, or some other converging mechanism.  This basically means you can't take out anything at all, because the final result of the computation dictates the number of loops.  In this case, we usually set the number of main loop iterations to a fixed (parameterized) number.  Do we really care exactly how many loops we went through?  Most of the time, no, it's enough just to produce the behavior of the application.  
-\item \textit{Particle migration} - Some codes have a particle-in-cell structure, where the spatial domain is decomposed among processes, and particles or elements are distributed among them, and forces between particles are calculated.  When a particle moves to another domain/process (because it's moving through space), this usually requires communication that is different from the force calculation, and thus depends entirely on the data in the application.  We can handle this in two ways:
-\begin{enumerate}
-\item \textit{Ignore it} - If it doesn't happen that often, maybe it's not significant anyway.  So just remove the communication, recognizing that the behavior of the skeleton will not be fully reproduced.
-\item \textit{Approximate it} - If all we need to know is that this migration/communication happens sometimes, then we can just make it happen every so many iterations, or even sample from a probability distribution.  
-\end{enumerate}
-\item \textit{AMR} - Some applications, like adaptive mesh refinement (AMR), exhibit communication that is entirely dependent on the computation.  In this case, skeletonization is basically impossible, so you're left with the following options:
+\item \textit{Particle migration} - Some codes have a particle-in-cell structure, where the spatial domain is decomposed among processes, and particles or elements are distributed among them, and forces between particles are calculated.  When a particle moves to another domain/process (because it's moving through space), this usually requires communication that is different from the force calculation, and thus depends entirely on the data in the application.  We can handle this in two ways: 1) \textit{Ignore it} - If it doesn't happen that often, maybe it's not significant anyway.  So just remove the communication, recognizing that the behavior of the skeleton will not be fully reproduced or 2) \textit{Approximate it} - If all we need to know is that this migration/communication happens sometimes, then we can just make it happen every so many iterations, or even sample from a probability distribution.  
+\item \textit{AMR} - Some applications, like adaptive mesh refinement (AMR), exhibit communication that is entirely dependent on the computation.  In this case, skeletonization is basically impossible, so you're left with a few options
+\end{itemize}
+
+For applications with heavy dynamic data dependence, we have the following strategies:
 \begin{itemize}
 \item \textit{Traces}  - revert to DUMPI traces, where you will be limited by existing machine size.  Trace extrapolation is also an option here.
 \item \textit{Run it} - get yourself a few servers with a lot of memory, and run the whole code in \sstmacro.
 \item \textit{Synthetic} - It may be possible to replace communication with randomly-generated data and decisions, which emulate how the original application worked. This hasn't been tried yet.
 \item \textit{Hybrid} - It is possible to construct meta-traces that describe the problem from a real run, and read them into \sstmacro to reconstruct the communication that happens.  Future versions of this manual will have more detailed descriptions as we formalize this process.
-\end{itemize}
 \end{itemize}
 
 \section{Process Encapsulation}
@@ -159,7 +171,7 @@ When printing a global variable with \inlinecode{printf}, the user should explic
 \begin{CppCode}
 print("Hello world on rank %d", int(rank));
 \end{CppCode}
-If not explicitly cast, the \inlinecode{va\_args} function will be misinterpreted and produce an ``Illegal instruction" error.  
+If not explicitly cast, the \inlinecode{va\_args} function will be misinterpreted and produce an ``Illegal instruction'' error.  
 This still follows the ``single-source'' principle since whether compiling for \sstmacro or a real machine, the code is still valid.
 
 \subsection{Automatically refactoring global variables}
@@ -168,230 +180,3 @@ This involves running the source code through a compiler tool chain that then cr
 encapsulating all global variables into thread-specific classes.
 This process is only for advanced users and requires developer help.
 
-%\section{Eiger}
-%
-%The most flexible, but most complex, method for modeling computation is to use the Eiger Statistical Modeling framework to generate performance models that are polled at runtime. These models take as parameters application-level metrics and map them to performance based on statistical models generated from instrumentation data collected off-line from simulation with SST/macro. These models are generated based off empirical data; patterns about the effect variations in the input values have on performance appear as the sample size grows. This means that by collecting instrumentation data for a large range of application problem sizes, the models are capable of extrapolating performance as problem size grows. Typically the input metrics for these models are any values that may have a direct or indirect effect on the performance of the application. For example, it would be safe to assume that the matrix sizes for a matrix multiplication kernel would correlate with execution time, and therefore would be a good candidate for inclusion in instrumentation. The Eiger framework is robust to handling large sets of input metrics, so the rule of thumb is to be liberal when deciding what to include.
-%
-%The method for polling Eiger models is through
-%\begin{ViFile}
-%void SSTMAC_compute_eiger(std::map<std::string, double> values, std::string model_name)
-%\end{ViFile}
-%The \textit{values} parameter maps metric names to their associated values to poll the model \textit{model\_name}. We also provide convenience functions
-%\begin{ViFile}
-%void SSTMAC_compute_eiger1(std::string model_name, std::string prefix, 
-%                           std::string name1, double val1);
-%void SSTMAC_compute_eiger2(std::string model_name, std::string prefix, 
-%                           std::string name1, double val1, std::string name2, double val2);
-%void SSTMAC_compute_eiger3(std::string model_name, std::string prefix, 
-%                           std::string name1, double val1, std::string name2, double val2,
-%                           std::string name3, double val3);
-%\end{ViFile}
-%and so on up to 7. For these versions, the \textit{prefix} parameter allows annotating a prefix to the file name containing the model.
-%
-%Example usage of Eiger in a skeleton is minimd-cpu, found in sstmacro/skeletons.
-%
-%Please visit \url{https://bitbucket.org/eanger/eiger} for more information on getting, installing, and using Eiger to generate models, as well as methodology for adding instrumentation to your code.
-%
-%
-%
-%
-%
-%\section{Semi-Automatic Skeletonization}
-%\label{sec:skel:method}
-%
-%\noindent The skeletonization process described here is an iterative process to generate a program skeleton from source code. The skeleton extraction process consists of several sub-processes:
-%
-%\begin{enumerate}
-%\item Static code analysis.
-%\item User guidance to augment analysis.
-%\item API Specification of skeletonization target characteristics.
-%\item Code transformation and generation.
-%\end{enumerate}
-%
-%\subsection{Building the Auto-skeletonizer}
-%The latest version of the auto-skeletonizer is shipped as part of the ROSE compiler project. It will be build automatically when building the ROSE compiler from source, which can be obtained from GitHub:
-%
-%\begin{ShellCmd}
-%$ git co https://github.com/rose-compiler/edg4x-rose.git
-%\end{ShellCmd}
-%For detailed instructions on how to build the ROSE compiler, please refer to the ROSE documentation on:\\\url{http://rosecompiler.org/}.
-%If an old version of ROSE installation is avaible to your enviroment, the auto-skeletonizer might also be build separeately using the existing ROSE installation.
-%First, obtain the source code of the stand alone auto-skeletonizer using git:
-%
-%\begin{ShellCmd}
-%$ git co https://github.com/mjsottile/rose-mpi-skeletons.git rose-mpi-skeletons
-%\end{ShellCmd}
-%Then modify the makefile inside the \texttt{rose-mpi-skeletons} folder making it pointing to the existing ROSE installation. Edit the first two lines of the makefile as follows:
-%
-%\begin{ViFile}
-%ROSEINSTALL=/path/to/your/rose/installation/dir/
-%BOOSTINTALL=/path/to/your/boost/installation/dir/
-%\end{ViFile}
-%Last, building the executables with the default makefile:
-%
-%\begin{ShellCmd}
-%$ make
-%\end{ShellCmd}
-%A successful build using either approach should give your three executables: extractMPISkeleton, generateSignatures, and summarizeSignatures. The use of these executables to generate skeleton source code is explained in the following section.
-%
-%\subsection{Static Analysis}
-%
-%\noindent In the static analysis phase, the compilation analysis is performed in three parts:
-%
-%\begin{enumerate}
-%
-%\item[1.1] Generating summary information for each function in a given compilation unit.
-%
-%\item[1.2] Combining individual summary files into a larger summary of the program.
-%
-%\item[1.3] Extraction of the MPI skeleton using the combined summary information.
-%
-%\end{enumerate}
-%
-%\noindent In 1.1, in order to generate the summary information of a source program, we can invoke the following tool:
-%
-%\begin{ShellCmd}
-%$  generateSignatures [options] file...
-%\end{ShellCmd}
-%
-%\noindent The command-line options are as follows:
-%
-%\begin{CppCode}
-% -signature:(o|output) filename - Use 'filename' as the output.
-% -signature:(d|debug)           - Print debugging messages.
-%\end{CppCode}
-%
-%\noindent In 1.2, we can combine several compilation units from 1.1 to generate a combined signature by invoking the following tool: 
-%
-%\begin{ShellCmd}
-%$  summarizeSignatures [options] <signature files>
-%\end{ShellCmd}
-%
-%\noindent The command-line options are as follows:
-%
-%\begin{CppCode}
-% -summarize:(o|output) filename - Use 'filename' as the output.
-% -summarize:(s|spec) filename   - Use 'filename' as API specification.
-% -summarize:(d|debug)           - Print debugging messages.
-%\end{CppCode}
-%
-%\noindent The last two options are only needed for debugging.
-%
-%\noindent The user should specify all the signature files from the previous step of the analysis in a single step. While the generation of the summary is additive, the overall analysis is more efficient if performed in a single step. \\
-%
-%\noindent In 1.3, the user can extract the program skeleton using the summarized signature file from 1.2 by invoking the following tool: 
-%
-%\begin{ShellCmd}
-%$  extractMPISkeleton [options] file...
-%\end{ShellCmd}
-%
-%\noindent The filenames are skeletonized and the output is written to files with `rose ' prepended to the filenames. \\
-%
-%\noindent The command line options are these: 
-%
-%\begin{CppCode}
-% -skel:(o|outline)       - Outline everything not in the skeleton.                   
-% -skel:(s|spec) filename - Use 'filename' as the specification of the API.
-% -skel:(g|sig)  filename - Use 'filename' as the summary information.
-% -skel:(d|debug)         - Print debugging messages.
-% -skel:(p|pdf)           - Generate PDF of the generated AST.
-%\end{CppCode}
-%
-%\noindent The last two options are only needed for debugging. In order for the analysis to be complete, a signature file generated from the summarizeSignatures tool must be provided.\\
-%
-%\noindent Current limitations:
-%\noindent The skeleton generator supports C and C++ only. Fortran is not supported with this version of the program skeletonization tool.
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-%\subsection{User guidance to augment analysis}
-%
-%In this phase, users can annotate the program skeleton file to augment the code analysis. \\
-%
-%\noindent Annotations used by this tool are specified in the following format:
-%
-%\begin{CppCode}
-%#pragma skel [specific pragma text here]
-%\end{CppCode}
-%
-%\noindent Currently, three types of data annotation are supported:
-%
-%\subsubsection{Loop annotations}
-%
-%It is not uncommon for skeletonized code to no longer have the looping behavior of the parent application. 
-%
-%To fix any problems stemming from the modified loop behavior, three options for loop annotations are available:
-%
-%\begin{CppCode}
-%#pragma skel loop iterate exactly(n)
-%#pragma skel loop iterate atmost(n)
-%#pragma skel loop iterate atleast(n)
-%\end{CppCode}
-%
-%These options correspond to forcing an exact, upper, and lower bound on the iteration count. The pragma must be placed immediately preceding the loop of interest. Loops constructed with 'for', 'while', or 'do while' are all supported as well as loops containing break and continue statements.
-%
-%\subsubsection{Data declaration annotations}
-%
-%If a program contains an array that should be preserved in the skeleton, it is useful to have control over how it is initialized since often the skeleton will not contain the computation code that populates the array elements.  The initializer pragma allows these element values to be specified.
-%
-%\begin{CppCode}
-%#pragma skel initializer repeat(x)
-%int myArray[14];
-%\end{CppCode}
-%
-%(Where 'x' is a C-expression interpreted in the current scope of the program.)
-%
-%\subsubsection{Conditional statement annotations}
-%
-%The conditional annotation currently allows programmers to experiment with skeletons that will randomly branch one way or the other with a specified probability.
-%
-%The general case is:
-%
-%\begin{CppCode}
-%#pragma skel condition prob(p)
-%\end{CppCode}
-%
-%(Where 'p' is a C-expression interpreted in the current scope of the program
-%which should be a floating point number between 0 and 1.0.  As noted above,
-%floating point constants are not allowed due to current limitations of
-%ROSE.)
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-%\subsection{API Specification of skeletonization points}
-%
-%The skeleton generator skeletonizes programs relative to one or more API specifications. 
-%
-%\noindent APIs are specified in a configuration file that uses an s-expression format. Each API call is a sub-expression with the format:
-%
-%\begin{CppCode}
-%(API_FUNCTION_NAME ARGUMENT_COUNT (deptype argA ..) (deptype argB ..) ...)
-%\end{CppCode}
-%
-%The API collection file is specified using the -skel:s
-%command line option:
-%
-%\begin{ShellCmd}
-%$ extractMPISkeleton -skel:s /where/is/the/collection/file
-%\end{ShellCmd}
-%
-%\subsection{Outlining}
-%
-%The skeleton generator can work in an alternate mode, Outlining.  This mode is specified with the following command-line option:
-%
-%\begin{CppCode}
-%  -skel:o
-%  -skel:outline
-%\end{CppCode}
-%
-%In this mode, rather than removing the non-skeleton code, the tool will "outline" (move into separate functions, the converse of inlining) all non-skeleton code.
-%
-%\subsection{Skeleton Behavior Validation}
-%\label{sec:skel:validation}
-%Skeleton correctness is important in studying the scalability of an application using the skeleton-driven approach. Based on the trace files produced by the DUMPI library in Section~\ref{sec:tutorial:dumpi}, the trace analysis tool creates a statistical report of various metrics and characteristics of the program skeleton.
-%
-%The trace analysis tool is built as part of the SST/macro package and can be found in the installation directory. The following command will invoke the trace analysis tool on an existing trace file:
-%\begin{ShellCmd}
-%$ <SSTMAC_INSTALL>/bin/traceanalyzer -v -o report.xml dumpitracer.meta
-%\end{ShellCmd}
-%A XML report file will be generated after the analyzing process is done. When comparing the report file with one generated from the original applicaiton, the MPI message and traffic count can be used to verify if the desired communication behavior is preserved.

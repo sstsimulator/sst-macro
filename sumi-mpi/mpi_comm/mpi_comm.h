@@ -16,15 +16,16 @@
 #include <sstmac/common/node_address.h>
 #include <sstmac/software/process/task_id.h>
 #include <sstmac/software/process/app_id.h>
-#include <sstmac/software/process/app_manager.h>
+#include <sstmac/software/launch/app_launch.h>
 #include <sumi-mpi/mpi_comm/keyval_fwd.h>
 #include <sumi-mpi/mpi_comm/mpi_group.h>
 #include <sumi-mpi/sstmac_mpi_integers.h>
+#include <sumi-mpi/mpi_request_fwd.h>
 
 namespace sumi {
 
 using sstmac::sw::app_id;
-using sstmac::sw::app_manager;
+using sstmac::sw::app_launch;
 using sstmac::node_id;
 
 /**
@@ -48,7 +49,6 @@ class mpi_comm : public domain
     MPI_Comm id,
     int rank,
     mpi_group* peers,
-    app_manager* env,
     app_id aid);
 
   /// Goodbye.
@@ -143,14 +143,6 @@ class mpi_comm : public domain
   task_id
   peer_task(int rank) const;
 
-  node_id
-  my_node() const;
-
-  /// The list of nodes involved in this communicator.
-  /// Indexing is done by mpiid::rank().id.
-  node_id
-  node_at(int rank) const;
-
   /// Equality comparison.
   inline bool
   operator==(mpi_comm* other) const {
@@ -163,6 +155,22 @@ class mpi_comm : public domain
     return !this->operator==(other);
   }
 
+  void
+  add_request(int tag, mpi_request* req){
+    ireqs_[tag] = req;
+  }
+
+  mpi_request*
+  get_request(int tag) const {
+    std::map<int, mpi_request*>::const_iterator it = ireqs_.find(tag);
+    if (it == ireqs_.end()){
+      spkt_throw_printf(sprockit::value_error,
+          "cannot find tag %d on comm %d for returning collective MPI_Request",
+          tag, id_);
+    }
+    return it->second;
+  }
+
  protected:
   friend std::ostream&
   operator<<(std::ostream &os, mpi_comm* comm);
@@ -173,12 +181,10 @@ class mpi_comm : public domain
  protected:
   friend class mpi_comm_factory;
 
-  app_manager* env_;
-
   /// The tasks participating in this communicator.  This is only used for an mpicomm* which is NOT WORLD_COMM.
   mpi_group* group_;
 
-  int next_collective_tag_;
+  uint16_t next_collective_tag_;
 
   spkt_unordered_map<int, keyval*> keyvals_;
 
@@ -187,6 +193,8 @@ class mpi_comm : public domain
   topotypes topotype_;
 
   std::string name_;
+
+  std::map<int, mpi_request*> ireqs_;
 
 
 };

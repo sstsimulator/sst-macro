@@ -15,7 +15,7 @@
 #include <sstmac/hardware/topology/topology.h>
 
 #include <sstmac/software/launch/dumpi_allocation.h>
-#include <sstmac/software/launch/allocation_strategy.h>
+#include <sstmac/software/launch/node_allocator.h>
 #include <sstmac/dumpi_util/dumpi_util.h>
 #include <sstmac/dumpi_util/dumpi_meta.h>
 
@@ -27,28 +27,25 @@
 
 namespace sstmac {
 namespace sw {
-SpktRegister("dumpi", allocation_strategy, dumpi_allocation,
+SpktRegister("dumpi", node_allocator, dumpi_allocation,
             "Allocate nodes directly from the trace files themselves");
 
 void
 dumpi_allocation::init_factory_params(sprockit::sim_parameters* params)
 {
-  allocation_strategy::init_factory_params(params);
+  node_allocator::init_factory_params(params);
   metafile_ = params->get_param("launch_dumpi_metaname");
 
 }
 
 void
-dumpi_allocation::set_topology(hw::topology *top)
+dumpi_allocation::allocate(
+  int nnode_requested,
+   const ordered_node_set& available,
+   ordered_node_set& allocation) const
 {
-  allocation_strategy::set_topology(top);
-  regtop_ = safe_cast(hw::structured_topology, top);
-}
+  hw::structured_topology* regtop = safe_cast(hw::structured_topology, topology_);
 
-void
-dumpi_allocation::allocate(int nnode_requested,
-                           node_set &allocation)
-{
   dumpi_meta* meta = new dumpi_meta(metafile_);
   int nrank = meta->num_procs();
   for (int i = 0; i < nrank; i++) {
@@ -78,7 +75,7 @@ dumpi_allocation::allocate(int nnode_requested,
     for (int i=0; i < header->meshdim; ++i) {
       coord_vec[i] = header->meshcrd[i];
     }
-    node_id nid = regtop_->node_addr(coord_vec);
+    node_id nid = regtop->node_addr(coord_vec);
 
     allocation.insert(nid);
     dumpi_free_header(header);

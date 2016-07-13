@@ -76,7 +76,7 @@ mpi_queue_send_request::complete(const mpi_message::ptr& msg)
 
   if (key_) {
     //don't build a status - send request
-    key_->complete(mpi_message::ptr());
+    key_->complete();
   }
 
 }

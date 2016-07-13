@@ -5,6 +5,7 @@ namespace sstmac {
 namespace native {
 
 class manager;
+class macro_manager;
 
 }
 }

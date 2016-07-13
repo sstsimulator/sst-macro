@@ -7,15 +7,8 @@ namespace sumi {
 void
 btree_scatter_actor::init_tree()
 {
-  log2nproc_ = 0;
-  midpoint_ = 1;
-  int nproc = dom_->nproc();
-  while (midpoint_ < nproc){
-    midpoint_ *= 2;
-    log2nproc_++;
-  }
-  //unrull one - we went too far
-  midpoint_ /= 2;
+  int nproc;
+  compute_tree(log2nproc_, midpoint_, nproc);
 }
 
 void
@@ -40,6 +33,15 @@ btree_scatter_actor::init_buffers(void *dst, void *src)
       recv_buffer_ = result_buffer_; //won't ever actually be used
       result_buffer_.ptr = dst;
     }
+    debug_printf(sprockit::dbg::sumi_collective_buffer,
+      "Rank %d root scatter\n"
+      "Rank %d recv   buffer %p of size %d\n"
+      "Rank %d send   buffer %p of size %d\n"
+      "Rank %d result buffer %p of size %d",
+      me,
+      me, recv_buffer_.ptr, max_recv_buf_size,
+      me, send_buffer_.ptr, buf_size,
+      me, result_buffer_.ptr, result_size);
   } else {
     recv_buffer_ = my_api_->allocate_public_buffer(max_recv_buf_size);
     send_buffer_ = recv_buffer_;
@@ -48,6 +50,13 @@ btree_scatter_actor::init_buffers(void *dst, void *src)
     } else {
       result_buffer_.ptr = dst;
     }
+    debug_printf(sprockit::dbg::sumi_collective_buffer,
+      "Rank %d scatter from root %d\n"
+      "Rank %d recv   buffer %p of size %d\n"
+      "Rank %d result buffer %p of size %d",
+      me, root_,
+      me, recv_buffer_.ptr, max_recv_buf_size,
+      me, result_buffer_.ptr, result_size);
   }
 }
 
@@ -107,7 +116,7 @@ btree_scatter_actor::init_dag()
     action* ac = new recv_action(round, root_);
     ac->offset = 0;
     ac->nelems = nelems_ * std::min(nproc-midpoint_, midpoint_);
-    ac->recv_type_ = action::temp;
+    ac->recv_type = action::temp;
     add_initial_action(ac);
     prev = ac;
   }
@@ -123,7 +132,7 @@ btree_scatter_actor::init_dag()
       action* ac = new recv_action(round, root_);
       ac->nelems = nelems_ * midpoint_;
       ac->offset = 0;
-      ac->recv_type_ = action::temp;
+      ac->recv_type = action::temp;
       add_initial_action(ac);
       prev = ac;
     }
@@ -153,7 +162,7 @@ btree_scatter_actor::init_dag()
         action* ac = new recv_action(round, partner);
         ac->offset = 0;
         ac->nelems = std::min(nproc-me,partnerGap) * nelems_;
-        if (partnerGap != 1) ac->recv_type_ = action::temp; //not done - receive into temp buffer
+        if (partnerGap != 1) ac->recv_type = action::temp; //not done - receive into temp buffer
         add_dependency(prev, ac);
         prev = ac;
       }

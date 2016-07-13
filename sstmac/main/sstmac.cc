@@ -28,7 +28,7 @@
 #include <sstmac/backends/native/serial_runtime.h>
 #include <sstmac/backends/native/manager.h>
 #include <sstmac/software/process/app.h>
-#include <sstmac/software/process/app_manager.h>
+#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/time.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
@@ -264,6 +264,11 @@ run(opts& oo,
   }
 
   int max_nproc = native::manager::compute_max_nproc(params);
+  if (max_nproc == 0){
+    params->pretty_print_params(std::cerr);
+    spkt_throw(sprockit::value_error,
+               "computed max nproc=0 from parameters");
+  }
   resize_topology(max_nproc, params);
   if (params_only)
       return;
@@ -295,7 +300,7 @@ try_main(sprockit::sim_parameters* params, int argc, char **argv, bool params_on
   sstmac::init_params(rt, oo, params, parallel);
 
   //do some cleanup and processing of params
-  sstmac::process_init_params(params);
+  sstmac::process_init_params(params, true/*remap deprecated params*/);
 
   sstmac::run(oo, rt, params, stats, params_only);
   if (params_only){

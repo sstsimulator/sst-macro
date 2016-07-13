@@ -19,16 +19,10 @@ AM_CPPFLAGS += -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi
 library_includedir=$(includedir)/sstmac/backends/native
 nobase_library_include_HEADERS = \
   manager.h \
-  manager_fwd.h \
-  dumpi_app_manager.h \
-  indexing_app_manager.h \
-  skeleton_app_manager.h 
+  manager_fwd.h 
 
 libsstmac_native_la_SOURCES = \
-  manager.cc \
-  dumpi_app_manager.cc \
-  indexing_app_manager.cc \
-  skeleton_app_manager.cc 
+  manager.cc 
 
 if !INTEGRATED_SST_CORE
 nobase_library_include_HEADERS += \

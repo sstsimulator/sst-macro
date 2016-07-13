@@ -1,6 +1,6 @@
 % !TEX root = developer.tex
 
-\chapter{SProCKit}
+\chapter{SProCKit}\label{chapter:sprockit}
 \sstmacro is largely built on the Sandia Productivity C++ Toolkit (\sprockit),
 which is included in the \sstmacro distribution.
 Projects developed within the simulator using \sprockit can easily 
@@ -8,7 +8,7 @@ move to running the application on real machines while still using the \sprockit
 One of the major contributions is reference counted pointer types.
 The parameter files and input deck are also part of \sprockit.
 
-\section{Debug}
+\section{Debug}\label{sec:debug}
 The goal of the \sprockit debug framework is to be both lightweight and flexible.
 The basic problem encountered in \sstmacro development early on was the desire to have very fine-grained control over when and where something prints.
 Previously declared debug flags are passed through the \inlinecode{debug_printf} macro.
@@ -54,7 +54,7 @@ launch.cc
 RegisterDebugSlot(job_launch);
 \end{CppCode}
 
-\section{Serialization}
+\section{Serialization}\label{sec:serialize}
 Internally, \sstmacro makes heavy use of object serialization/deserialization in order to run in parallel with MPI.
 To create a serialization archive, the code is illustrated below. Suppose we have a set of variables
 
@@ -200,7 +200,7 @@ my_object::serializer_order(spkt_serializer& ser)
 \end{CppCode}
 The child object should always remember to invoke the parent serialization method.
 
-\section{Keyword Registration}
+\section{Keyword Registration}\label{sec:keywords}
 As stated previously, \sprockit actually implements all the machinery for parameter files.
 This is not part of the \sstmacro core.
 To avoid annoying bugs, the \sprockit input system requires all allowed values for input parameters to be declared.

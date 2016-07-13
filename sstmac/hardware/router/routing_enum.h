@@ -5,6 +5,8 @@ namespace sstmac {
     namespace hw {
       namespace routing {
 
+  static const int uninitialized = -123;
+
   typedef enum {
     minimal,
     minimal_adaptive,

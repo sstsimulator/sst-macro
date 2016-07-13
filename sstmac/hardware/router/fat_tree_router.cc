@@ -10,6 +10,7 @@
  */
 
 #include <sstmac/hardware/router/fat_tree_router.h>
+#include <sstmac/hardware/router/routable.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/topology/fat_tree.h>
 #include <sprockit/util.h>
@@ -54,14 +55,14 @@ void
 fat_tree_router::route(packet* pkt)
 {
   minimal_route_to_node(pkt->toaddr(),
-    pkt->interface<routable>()->rinfo().current_path());
+    pkt->interface<geometry_routable>()->current_path());
 }
 
 void
 fat_tree_router::productive_paths_to_switch(
-  switch_id dst, routing_info::path_set &paths)
+  switch_id dst, geometry_routable::path_set &paths)
 {
-  routing_info::path tmp_path;
+  geometry_routable::path tmp_path;
   minimal_route_to_switch(dst, tmp_path);
   int dim = tmp_path.outport / k_;
   int dir = tmp_path.outport % k_;
@@ -85,7 +86,7 @@ fat_tree_router::productive_paths_to_switch(
 void
 fat_tree_router::minimal_route_to_switch(
   switch_id ej_addr,
-  routing_info::path& path)
+  geometry_routable::path& path)
 {
 
   rter_debug("routing from switch %d:%s -> %d:%s on fat tree router",

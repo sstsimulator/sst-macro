@@ -15,15 +15,11 @@ namespace allgatherv4 {
 /* FIXME: What is this test supposed to accomplish? */
 
 #define START_BUF (1)
-#define LARGE_BUF (256 * 1024)
+#define LARGE_BUF (8 * 1024)
 
 /* FIXME: MAX_BUF is too large */
-#define MAX_BUF   (128 * 1024 * 1024)
-#define LOOPS 10
-
-char * sbuf, * rbuf;
-int * recvcounts, * displs;
-int errs = 0;
+#define MAX_BUF   (8 * 1024 * 1024)
+#define LOOPS 2
 
 /* #define dprintf printf */
 #define dprintf(...)
@@ -37,11 +33,17 @@ typedef enum {
     BELL_CURVE
 } test_t;
 
-void comm_tests(MPI_Comm comm);
-double run_test(long long msg_size, MPI_Comm comm, test_t test_type, double * max_time);
+void comm_tests(MPI_Comm comm, char*,char*,int*,int*);
+double run_test(long long msg_size, MPI_Comm comm, test_t test_type, double * max_time,
+                char*,char*,int*,int*);
 
 int allgatherv4(int argc, char ** argv)
 {
+  char * sbuf, * rbuf;
+  int * recvcounts, * displs;
+  int errs = 0;
+
+
     int comm_size, comm_rank;
     MPI_Comm comm;
 
@@ -81,7 +83,7 @@ int allgatherv4(int argc, char ** argv)
         dprintf("                         MPI_COMM_WORLD\n");
         dprintf("==========================================================\n");
     }
-    comm_tests(MPI_COMM_WORLD);
+    comm_tests(MPI_COMM_WORLD,sbuf,rbuf,recvcounts,displs);
 
     /* non-COMM_WORLD tests */
     if (!comm_rank) {
@@ -91,7 +93,7 @@ int allgatherv4(int argc, char ** argv)
     }
     MPI_Comm_split(MPI_COMM_WORLD, (comm_rank == comm_size - 1) ? 0 : 1, 0, &comm);
     if (comm_rank < comm_size - 1)
-        comm_tests(comm);
+        comm_tests(comm,sbuf,rbuf,recvcounts,displs);
     MPI_Comm_free(&comm);
 
     /* Randomized communicator tests */
@@ -101,7 +103,7 @@ int allgatherv4(int argc, char ** argv)
         dprintf("==========================================================\n");
     }
     MPI_Comm_split(MPI_COMM_WORLD, 0, rand(), &comm);
-    comm_tests(comm);
+    comm_tests(comm, sbuf, rbuf, recvcounts, displs);
     MPI_Comm_free(&comm);
 
     free(sbuf);
@@ -116,7 +118,7 @@ fn_exit:
     return 0;
 }
 
-void comm_tests(MPI_Comm comm)
+void comm_tests(MPI_Comm comm, char* sbuf, char* rbuf, int* recvcounts, int* displs)
 {
     int comm_size, comm_rank;
     double rtime, max_time;
@@ -131,37 +133,37 @@ void comm_tests(MPI_Comm comm)
             fflush(stdout);
         }
 
-        rtime = run_test(msg_size, comm, REGULAR, &max_time);
+        rtime = run_test(msg_size, comm, REGULAR, &max_time, sbuf, rbuf, recvcounts, displs);
         if (!comm_rank) {
             dprintf("REGULAR:\tAVG: %.3f\tMAX: %.3f\n", rtime, max_time);
             fflush(stdout);
         }
 
-        rtime = run_test(msg_size, comm, BCAST, &max_time);
+        rtime = run_test(msg_size, comm, BCAST, &max_time, sbuf, rbuf, recvcounts, displs);
         if (!comm_rank) {
             dprintf("BCAST:\tAVG: %.3f\tMAX: %.3f\n", rtime, max_time);
             fflush(stdout);
         }
 
-        rtime = run_test(msg_size, comm, SPIKE, &max_time);
+        rtime = run_test(msg_size, comm, SPIKE, &max_time, sbuf, rbuf, recvcounts, displs);
         if (!comm_rank) {
             dprintf("SPIKE:\tAVG: %.3f\tMAX: %.3f\n", rtime, max_time);
             fflush(stdout);
         }
 
-        rtime = run_test(msg_size, comm, HALF_FULL, &max_time);
+        rtime = run_test(msg_size, comm, HALF_FULL, &max_time, sbuf, rbuf, recvcounts, displs);
         if (!comm_rank) {
             dprintf("HALF_FULL:\tAVG: %.3f\tMAX: %.3f\n", rtime, max_time);
             fflush(stdout);
         }
 
-        rtime = run_test(msg_size, comm, LINEAR_DECREASE, &max_time);
+        rtime = run_test(msg_size, comm, LINEAR_DECREASE, &max_time, sbuf, rbuf, recvcounts, displs);
         if (!comm_rank) {
             dprintf("LINEAR_DECREASE:\tAVG: %.3f\tMAX: %.3f\n", rtime, max_time);
             fflush(stdout);
         }
 
-        rtime = run_test(msg_size, comm, BELL_CURVE, &max_time);
+        rtime = run_test(msg_size, comm, BELL_CURVE, &max_time, sbuf, rbuf, recvcounts, displs);
         if (!comm_rank) {
             dprintf("BELL_CURVE:\tAVG: %.3f\tMAX: %.3f\n", rtime, max_time);
             fflush(stdout);
@@ -170,7 +172,7 @@ void comm_tests(MPI_Comm comm)
 }
 
 double run_test(long long msg_size, MPI_Comm comm, test_t test_type, 
-		double * max_time)
+    double * max_time, char* sbuf, char* rbuf, int* recvcounts, int* displs)
 {
     int i, j;
     int comm_size, comm_rank;

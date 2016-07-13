@@ -37,7 +37,7 @@ class launcher :
   virtual ~launcher() throw ();
 
   virtual void
-  incoming_message(message* msg);
+  incoming_event(event* ev);
 
   virtual void
   start();
