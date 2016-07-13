@@ -26,7 +26,9 @@ If you'd like to use ssh for convenience, make sure you have added a public key 
 
 \subsection{Dependencies}
 \label{subsec:build:dependencies}
-
+The most critical change is that C++11 is now a strict prerequisite. 
+Workarounds had previously existing for older compilers. 
+These are no longer supported.
 The following are dependencies for \sstmacro.
 
 \begin{itemize}
@@ -46,62 +48,69 @@ The following are dependencies for \sstmacro.
 \subsection{Configuration and Building}
 \label{subsec:build:configure}
 
+SST/macro is an SST element library, proving a set of simulation components that run on the main SST core.  The SST core provides the parallel discrete event simulation manager that manages time synchronization and sending events in serial, MPI parallel, multi-threaded, or MPI + threaded mode.  The core does not provide any simulation components like node models, interconnect models, MPI trace readers, etc.  The actual simulation models are contained in the element library.  
+
+The SST core is a standalone executable that dynamically loads shared objects files containing the element libraries.  For many element libraries, a Python input file is created that builds and connects the various simulation components.  For maximum flexibility, this will become the preferred mode.  However, SST/macro has historically had a text-file input \inlineshell{parameters.ini} that configures the simulation.  To preserve that mode for existing users, a wrapper Python script is provided that processes SST/macro input files.  
+
+The workflow for installing and running is therefore:
+
+\begin{itemize}
+\item	Build and install SST core
+\item Build and install the SST/macro element library \inlineshell{libmacro.so}
+\item Make sure paths are properly configured for \inlineshell{libmacro.so} to be visible to the SST core
+\item Run the \inlineshell{sstmac} wrapper Python script that runs SST/macro-specific parameter OR
+\item Write a custom Python script 
+\end{itemize}
+
+\subsubsection{Build SST core}
+The recommended mode for maximum flexibility is to run using the SST core downloadable from \url{}.  Building and installing sets up the discrete event simulation core require for all SST elements.
+SST core still has a few Boost dependencies, which should be the only complication in building. For building Boost, we recommend two files: \inlineshell{user-config.jam} to configure the Boost compiler flags and a \inlineshell{runme.sh} that bootstraps, compiles, and installs and the prerequisite Boost libraries. For GCC, the \inlineshell{user-config.jam} should go in the top-level home directory and the file should contain the line:
+
+\begin{ViFile}
+using gcc : : $PATH_TO_MPIC++  : <compileflags>-std=c++1y ;
+\end{ViFile}
+For Clang on Mac, use:
+
+\begin{ViFile}
+using clang : : $PATH_TO_CLANG_MPIC++  : <compileflags>-std=c++1y <linkflags>-stdlib=libc++ 
+\end{ViFile}
+
+We recommend Boost 1.59.  Other Boost versions should work as well, but this seems the most stable.  In the top-level Boost directory, make a script \inlineshell{runme.sh} that contains:
+
+\begin{ViFile}
+./bootstrap.sh \
+  --with-libraries=program_options,serialization,filesystem \
+  --with-toolset=gcc
+
+./b2 ---prefix=$INSTALL
+./b2 --layout=tagged --prefix=$INSTALL
+\end{ViFile}
+
+The toolset can be changed from gcc to clang, as needed.  For maximum safety, Boost should install both ``tagged" versions of libraries and un-tagged versions.  Once Boost is installed with these options, configuration and installation of SST core should be straightforward following documentation in the core library.
+
+\subsubsection{Build SST/macro element library}
 Once \sstmacro is extracted to a directory, we recommend the following as a baseline configuration, including building outside the source tree:
 
 \begin{ShellCmd}
 sst-macro> ./bootstrap.sh
 sst-macro> mkdir build
 sst-macro> cd build
-sst-macro/build> ../configure --prefix=/path-to-install 
+sst-macro/build> ../configure --prefix=/path-to-install --with-sst=$PATH_TO_SST_CORE CC=$MPICC CXX=$MPICXX
 \end{ShellCmd}
+\inlinecode{PATH_TO_SST_CORE} should be the prefix install directory used when installing the core.  The MPI compilers should be the same compilers used for building Boost and SST core.
 
-
-A complete list of options can be seen by running \inlineshell{../configure --help}.   Some common options:
+SST/macro can still be built in standalone mode for a select set of features that have not been fully migrated to the SST core.  The installation and running are the same for both modes - simply remove the \inlineshell{--with--sst} parameter.  A complete list of options for standalone building can be seen by running \inlineshell{../configure --help}.   Some common options include:
 
 \begin{itemize}
-\item --(dis|en)able-cpp11 : Controls whether features requiring C++11 language features are compiled. Feature is enabled by default (reverts to disabled if C++11 features are not available).
-\item --with-boost=\textless path \textgreater: Use Boost.
-The \textless path \textgreater argument is optional. If not given, default system paths like /usr/local will be searched for a Boost installation.
-Alternatively, if \textless path \textgreater is omitted and the \$BOOST\_ROOT environment variable is defined, the Boost source tree will be directly used
-instead of an installation directory.
 \item --(dis|en)able-graphviz : Enables the collection of simulated call graphs, which can be viewed with graphviz.
-%\item --with-qt=\$QMAKE: Direct \sstmacro to the qmake executable.  
-%If no value is specified, it just assumes qmake is in your \$PATH  (see Section \ref{sec:building:gui}).
-\item --(dis|en)able-unordered-containers : Unordered containers can provide better performance for large maps and sets.
 Enabled by default. Disable if not using Boost or C++11. Ordered maps can be used as a replacement, but with lower performance.
 \item --(dis|en)able-regex : Regular expressions can be used to proofread input files, but this requires either Boost or C++11.
 Enabled by default. Disable if not using Boost or C++11.
 \item --(dis|en)able-custom-new : Memory is allocated in larger chunks in the simulator, which can speed up large simulations.
-\item --(dis|en)able-fortran : Enable support for running fortran skeletons.
-\item --(dis|en)able-mpiparallel: Enable parallel discrete event simulation in distributed memory over MPI.  See Section \ref{sec:PDES}.
-\item --(dis|en)able-replacement-headers : This configures a compiler wrapper that will automagically compile existing MPI/pThread code for simulation, rather than actual execution. This is off by default, but actually recommended.
 \item --(dis|en)able-multithread : This configures for thread-level parallelism for (hopefully) faster simulation
 \end{itemize}
 
 Once configuration has completed, printing a summary of the things it found, simply type \inlineshell{make}.  
-It is recommended to use the -j option for a parallel build with as many cores as you have (otherwise it will take quite a while).  
-
-\subsubsection{Boost vs. C++11}
-\sstmacro now requires either C++11 support or the use of boost for the best performance and full error checking.
-On some compilers (particularly GCC 4.8), C++11 regular expressions may not work.  In this case, regular expression use can be disabled using the \inlineshell{--disable-regex} configure flag. Input files will not be proofread for errors, which an lead to unexplained behavior from input file typos.  There are many parameters with default values meaning that a type-o will not cause an error - instead it will cause the default value to be used. 
-
-GCC compilers with C++11 support are known to work with the following known exceptions:
-
-\begin{itemize}
-\item GCC 4.9 with C++11 can produce stack alignment errors for certain statistic tests.
-This error only occurs on the Mac OS X version. The vast majority of tests still pass.
-\item GCC 4.8 with C++11 has bugs in regular expression parsing on RHEL 6.
-\end{itemize}
-
-It is possible to use neither Boost nor C++11.
-As before, the \inlineshell{--disable-regex} flag must be used since there is no regular expression support built into C++98/03.
-In addition, \sstmacro leverages unordered map/set containers heavily within the code, which are only available in Boost and C++11.
-The requirement for unordered containers can be avoided.
-Use the \inlineshell{--disable-unordered-containers} configure flag.
-While the code will not be as efficient as a Boost or C++11 build,
-it will still run correctly with decent performance.
-
-%TODO building with SST/micro backend
 
 \subsection{Post-Build}
 \label{subsec:postbuild}
@@ -113,8 +122,7 @@ To do this, and also install \sstmacro  to the install path specified during ins
 
 \begin{ShellCmd}
 sst-macro/build> make -j8 check
-sst-macro/build> sudo make install
-sst-macro/build> export PATH=$PATH:/path-to-install
+sst-macro/build> make install
 sst-macro/build> make -j8 installcheck
 \end{ShellCmd}
 Make check runs all the tests we use for development, which checks all functionality of the simulator.  
@@ -190,6 +198,20 @@ all necessary flags are set by the wrappers.
 \end{itemize}
 
 \section{Running an Application}
+\subsection{SST Python Scripts}
+Full details on building SST Python scripts can be found at \url{http://sst-simulator.org/SSTPages/SSTMainDocumentation}.  To preserve the old parameter format in the near-term, SST/macro provides the \inlineshell{sstmac} script:
+
+\begin{ViFile}
+export PYTHONPATH=$PYTHONPATH:$SSTMAC_PREFIX/include/python:$SSTMAC_PREFIX/lib
+export SST_LIB_PATH=$SST_LIB_PATH:$SSTMAC_PREFIX/lib
+
+options="$@"
+$SST_PREFIX/sst $SSTMAC_PREFIX/include/python/default.py --model-options="$options"
+\end{ViFile}
+
+The script configures the necessary paths and then launches with a Python script \inlineshell{default.py}.  Interested users can look at the details of the Python file to understand how SST/macro converts parameter files into a Python config graph compatible with SST core.
+
+\subsection{Running SST/macro Parameter Files}
 \label{sec:tutorial:runapp}
 
 To demonstrate how an application is run in \sstmacro, we'll use a very simple send-recv program located in \inlineshell{skeletons/sendrecv}.
@@ -246,10 +268,10 @@ This can be relative to the current directory, an absolute path, or the name of 
 \item -c: If multithreaded, give a comma-separated list (no spaces) of the core affinities to use - see Section \ref{subsec:parallelopt}
 \end{itemize}
 
-\section{Parallel Simulations}
+\section{Parallel Simulations in Standalone Mode}
 \label{sec:PDES}
 
-\sstmacro supports running parallel discrete event simulation (PDES) in distributed memory (MPI), threaded shared memory (pthreads) and hybrid (MPI+pthreads) modes.  
+\sstmacro supports running parallel discrete event simulation (PDES) in distributed memory (MPI), threaded shared memory (pthreads) and hybrid (MPI+pthreads) modes.  Running these in standalone mode is generally discouraged as parallel simulations should use the unified SST core.
 
 \subsection{Distributed Memory Parallel}
 \label{subsec:mpiparallel}
@@ -280,33 +302,10 @@ or for MPICH
 mysim$ mpiexec -n 4 sstmac -f parameters.ini
 \end{ShellCmd}
 
-If you set the --enable-mpiparallel flag for configure and use an MPI compiler,
-\sstmacro should by default correctly configure everything to run in parallel.
-If you are having issues, then check the following.
-You might have to set the environment variable \inlineshell{SSTMAC_PARALLEL=mpi}.
-If another value like \inlineshell{SSTMAC_PARALLEL=serial} is set, the run will fail.
-No changes to the input file should be necessary. 
-\begin{itemize}
-\item \inlinefile{transport = mpi}: for non-MPI compilation \sstmacro assumes \inlinefile{transport = serial}.
-\item \inlinefile{event_manager = clock_cycle_parallel}:  for non-MPI compilation \sstmacro uses a serial event map.  
-Currently, only one form of parallelism is supported - conservative, clock-cycle parallelism.  
-More types of parallel event managers may be available in future versions.
-If running on a single processor, \inlinefile{clock_cycle_parallel} is functionally equivalent to a serial event map.
-\item \inlinefile{partition = block}: this uses a simple block partitioning strategy.  
-\end{itemize}
-
 Even if you compile for MPI parallelism, the code can still be run in serial with the same configuration options.
 \sstmacro will notice the total number of ranks is 1 and ignore any parallel options.
 When launched with multiple MPI ranks, \sstmacro will automatically figure out how many partitions (MPI processes) 
 you are using, partition the network topology into contiguous blocks, and start running in parallel.   
-
-Naive block partitioning will create significant load imbalance when the number of unoccupied switches is large.
-Adding \inlinefile{partition = occupied_block} to the input will force occupied and unoccupied switches to be partitioned separately, improving load balance between partitions.
-However, at the partitioning stage of the simulation the simulator is actually unaware of the number of application tasks that will be created, so the \inlinefile{occupied_switches} parameter must be set to inform the partitioner how many switches will be occupied in the simulated network.
-
-%If you installed it and want to try METIS, set 
-%\inlinefile{partition = metis}.
-
 
 \subsection{Shared Memory Parallel}
 \label{subsec:parallelopt}

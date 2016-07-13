@@ -1107,10 +1107,8 @@ sim_parameters::combine_into(sim_parameters* sp)
   for (it=subspaces_.begin(); it != end; ++it){
     std::string name = it->first;
     sim_parameters* my_subspace = it->second;
-    sim_parameters* &his_subspace = sp->subspaces_[name];
-    if (!his_subspace){
-      his_subspace = new sim_parameters;
-    }
+    sim_parameters* his_subspace = sp->get_optional_namespace(name);
+    my_subspace->combine_into(his_subspace);
     my_subspace->combine_into(his_subspace);
   }}
 

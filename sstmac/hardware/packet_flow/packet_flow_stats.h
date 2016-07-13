@@ -185,6 +185,9 @@ class stat_bytes_sent :
   }
 
   void
+  init_factory_params(sprockit::sim_parameters *params);
+
+  void
   simulation_finished(timestamp end);
 
   void

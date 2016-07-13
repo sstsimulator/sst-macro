@@ -263,6 +263,7 @@ stat_bytes_sent::collect_buffer_at_root(char* buffer, int buffer_size)
   int num_entries = entries.size();
   for (int i=0; i < num_entries; ++i){
     aggregation::entry& entry = entries[i];
+    fflush(stdout);
     global_aggregation_[entry.sid] = entry.pmap;
   }
 }
@@ -276,7 +277,8 @@ stat_bytes_sent::collect_counts_at_root(parallel_runtime* rt, int src, global_ga
 }
 
 void
-stat_bytes_sent::global_reduce_root(parallel_runtime* rt, global_gather_stats_t* stats, char* my_buffer, int my_buffer_size)
+stat_bytes_sent::global_reduce_root(parallel_runtime* rt, global_gather_stats_t* stats,
+                                    char* my_buffer, int my_buffer_size)
 {
   //figure out how many total entries we have
   global_aggregation_.resize(top_->num_switches());
@@ -295,6 +297,12 @@ stat_bytes_sent::aggregation::entry::serialize_order(serializer& ser)
 {
   ser & pmap;
   ser & sid;
+}
+
+void
+stat_bytes_sent::init_factory_params(sprockit::sim_parameters *params)
+{
+  stat_collector::init_factory_params(params);
 }
 
 void

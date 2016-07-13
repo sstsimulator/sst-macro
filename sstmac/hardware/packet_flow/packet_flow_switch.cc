@@ -74,6 +74,7 @@ packet_flow_abstract_switch::init_factory_params(sprockit::sim_parameters *param
         "arbitrator", "cut_through", params);
 
   sprockit::sim_parameters* xbar_params = params->get_optional_namespace("xbar");
+
   xbar_stats_ = packet_sent_stats_factory::get_optional_param("stats", "null", xbar_params);
 
   sprockit::sim_parameters* buf_params = params->get_optional_namespace("output_buffer");
