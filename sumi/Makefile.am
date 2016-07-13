@@ -11,8 +11,6 @@
 
 ACLOCAL_AMFLAGS = -I acinclude
 
-SUBDIRS = test
-
 if ENABLE_GNI
 SUBDIRS += gni
 endif
