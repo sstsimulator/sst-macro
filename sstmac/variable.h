@@ -32,7 +32,7 @@ class Variable
   }
 
   VariablePtr<T> operator&() {
-    return 0;
+    return nothing_;
   }
 
   void* operator new[](std::size_t count) throw() {
@@ -50,10 +50,12 @@ class Variable
 
   static size_t nops;
 
+  static VariablePtr<T> nothing_;
 };
 
 
 template <class T> size_t Variable<T>::nops = 0;
+template <class T> VariablePtr<T> Variable<T>::nothing_;
 
 #define COMPARE(op) \
   template <class T, class U> \
@@ -163,7 +165,7 @@ class VariablePtr
   }
 
  private:
-  Variable<T> nothing_;
+  static Variable<T> nothing_;
 };
 
 template <class T>
@@ -179,6 +181,8 @@ memcpy(const VariablePtr<T>& dst, const VariablePtr<T>& src, size_t size){
   Variable<T>::nops += size / sizeof(T);
   return 0;
 }
+
+template <class T> Variable<T> VariablePtr<T>::nothing_;
 
 typedef Variable<double> Double;
 typedef VariablePtr<double> DoublePtr;
