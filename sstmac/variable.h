@@ -120,6 +120,10 @@ class VariablePtr
 
   VariablePtr(){}
 
+  void resize(size_t n){}
+
+  void clear(){}
+
   Variable<T>& operator[](int idx){
     return nothing_;
   }
