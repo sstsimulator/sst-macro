@@ -62,7 +62,7 @@ The workflow for installing and running is therefore:
 \item Write a custom Python script 
 \end{itemize}
 
-\subsubsection{Build SST core}
+\subsubsection{Build SST core}\label{subsec:buildSSTCore}
 The recommended mode for maximum flexibility is to run using the SST core downloadable from \url{}.  Building and installing sets up the discrete event simulation core require for all SST elements.
 SST core still has a few Boost dependencies, which should be the only complication in building. For building Boost, we recommend two files: \inlineshell{user-config.jam} to configure the Boost compiler flags and a \inlineshell{runme.sh} that bootstraps, compiles, and installs and the prerequisite Boost libraries. For GCC, the \inlineshell{user-config.jam} should go in the top-level home directory and the file should contain the line:
 
@@ -88,7 +88,7 @@ We recommend Boost 1.59.  Other Boost versions should work as well, but this see
 
 The toolset can be changed from gcc to clang, as needed.  For maximum safety, Boost should install both ``tagged" versions of libraries and un-tagged versions.  Once Boost is installed with these options, configuration and installation of SST core should be straightforward following documentation in the core library.
 
-\subsubsection{Build SST/macro element library}
+\subsubsection{Build SST/macro element library}\label{subsec:buildElementLib}
 Once \sstmacro is extracted to a directory, we recommend the following as a baseline configuration, including building outside the source tree:
 
 \begin{ShellCmd}
@@ -199,22 +199,28 @@ all necessary flags are set by the wrappers.
 
 \section{Running an Application}
 \subsection{SST Python Scripts}
-Full details on building SST Python scripts can be found at \url{http://sst-simulator.org/SSTPages/SSTMainDocumentation}.  To preserve the old parameter format in the near-term, SST/macro provides the \inlineshell{sstmac} script:
+Full details on building SST Python scripts can be found at \url{http://sst-simulator.org}.  To preserve the old parameter format in the near-term, SST/macro provides the \inlineshell{sstmac} script:
 
 \begin{ViFile}
 export PYTHONPATH=$PYTHONPATH:$SSTMAC_PREFIX/include/python:$SSTMAC_PREFIX/lib
 export SST_LIB_PATH=$SST_LIB_PATH:$SSTMAC_PREFIX/lib
 
 options="$@"
-$SST_PREFIX/sst $SSTMAC_PREFIX/include/python/default.py --model-options="$options"
+$SST_PREFIX/bin/sst $SSTMAC_PREFIX/include/python/default.py --model-options="$options"
 \end{ViFile}
 
 The script configures the necessary paths and then launches with a Python script \inlineshell{default.py}.  Interested users can look at the details of the Python file to understand how SST/macro converts parameter files into a Python config graph compatible with SST core.
+Assuming the path is configured properly, users can run
 
-\subsection{Running SST/macro Parameter Files}
+\begin{ShellCmd}
+sstmac -f parameters.ini
+\end{ShellCmd}
+with a properly formatted parameter file.
+
+\subsection{Building Skeleton Applications}
 \label{sec:tutorial:runapp}
 
-To demonstrate how an application is run in \sstmacro, we'll use a very simple send-recv program located in \inlineshell{skeletons/sendrecv}.
+To demonstrate how an external skeleton application is run in \sstmacro, we'll use a very simple send-recv program located in \inlineshell{skeletons/sendrecv}.
 We will take a closer look at the actual code in Section \ref{sec:tutorial:basicmpi}.
 After \sstmacro has been installed and your PATH variable set correctly, run: 
 
@@ -249,7 +255,7 @@ PREFIX :=   ...
 LDFLAGS :=  -Wl,-rpath,$(PREFIX)/lib
 ...
 \end{ViFile}
-The SST compiler wrappers \inlineshell{sst++} and \inlineshell{sstcc} automagically configure and map the code for simulation.  More details are given in Section \ref{sec:skel:linkage}.
+The SST compiler wrappers \inlineshell{sst++} and \inlineshell{sstcc} automagically configure and map the code for simulation.  More details are given in Section \ref{sec:skel:linkage}.  If using external skeleton applications, the default Python script for SST/macro will not work and a small modification will be required.
 
 \subsection{Command-line arguments}
 \label{subsec:tutorial:cmdline}

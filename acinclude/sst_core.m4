@@ -65,6 +65,11 @@ if test "X$have_integrated_core" = "Xyes"; then
   AM_CONDITIONAL(EXTERNAL_BOOST, true)
 
   AM_CONDITIONAL([USE_MPIPARALLEL], false)
+else
+  SST_CPPFLAGS=""
+  SST_CXXFLAGS=""
+  AC_SUBST(SST_CPPFLAGS)
+  AC_SUBST(SST_CXXFLAGS)
 fi
 
 ])

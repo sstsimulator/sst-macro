@@ -7,6 +7,7 @@
 
 #include <sprockit/sim_parameters.h>
 #include <sstmac/software/process/global.h>
+#include <sstmac/common/sstmac_config.h>
 
 /** Automatically inherit runtime types */
 using sprockit::sim_parameters;

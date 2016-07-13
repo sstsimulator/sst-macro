@@ -10,6 +10,7 @@ sstmac_libs = [
 from sstccvars import sstmac_default_ldflags, sstmac_extra_ldflags, sstmac_cppflags
 from sstccvars import prefix, exec_prefix, includedir, cc, cxx, cxxflags, cflags
 from sstccvars import includedir
+from sstccvars import sst_core
 
 
 sstmac_ldflags = []
@@ -86,10 +87,7 @@ def run(typ, extralibs="", include_main=True, make_library=False, redefine_symbo
     if redefine_symbols:
         extra_cppflags = [
         "-I%s/include/sumi" % prefix,
-        "-Dmain=USER_MAIN",
         "-DSSTMAC=1",
-        "-include sstmac/compute.h",
-        "-include sstmac/skeleton.h",
         "-D__thread=dontallow",
       ]
 
@@ -126,7 +124,18 @@ def run(typ, extralibs="", include_main=True, make_library=False, redefine_symbo
           ldpath_maker
         ]
     elif obj_files:
+        global verbose
+        global exe_target
+        if sst_core:
+          verbose = True
+          make_library = True
+          ldflags=ldflags.replace("-lsstmac","")
+
         if make_library:
+          if sst_core:
+            exe_target="lib%s.so" % exe_target
+          os.system("touch %s" % exe_target)
+          os.system("chmod +x %s" % exe_target)
           cmd_arr = [
             ld,
             "-shared",
@@ -134,8 +143,6 @@ def run(typ, extralibs="", include_main=True, make_library=False, redefine_symbo
             ldflags,
             ldpath_maker
           ]
-          os.system("touch %s" % exe_target)
-          os.system("chmod +x %s" % exe_target)
         else: #executable
           cmd_arr = [
             ld,

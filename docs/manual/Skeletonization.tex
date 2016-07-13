@@ -19,8 +19,9 @@ Virtual processes share the same address space and the same global variables.  S
 
 \section{Redirected linkage}
 \label{sec:skel:linkage}
-As stated above, in contrast to previous versions, this is essentially automatic now if using the SST compiler wrappers.
-The only minor wrinkle is potentially changing the application's entry point, i.e. \inlinecode{main}.
+Because of the way libraries are import in the SST core, using external skeleton apps is more complicated than previously.  Steps are being taken to re-automate this process, which will hopefully be available in the next subversion. For running the standalone version, this is essentially automatic  if using the SST compiler wrappers.  The compiler wrappers produce a new executable incorporating your new skeleton.
+
+The wrinkle is external skeletons apps is changing the application's entry point, i.e. \inlinecode{main}.
 The SST/macro framework has already taken the \texttt{main} function, and consequently the user application becomes a sub-routine within the simulation environment. As introduced in Section~\ref{sec:tutorial:basicmpi}, one needs to change the entry function from \texttt{main} to \texttt{user\_skeleton\_main}, which has the same function signature as the \texttt{main} function.  This refactoring happens automatically in the SST compiler wrappers. 
 
 If you need to use more than one application in the simulator at a time, you need multiple application entry points.
@@ -36,6 +37,19 @@ int my_app_main(int argc, char** argv)
 \end{CppCode}
 where the refactored \inlinecode{main} function matches the name of the declared application.
 
+\subsection{Loading external skeletons with the integrated core}\label{subsec:linkageCore}
+While the main \inlineshell{libmacro.so} provides the bulk of SST/macro functionality, 
+users may wish to compile and run external skeletons.  This gets a bit confusing with SST core since you have an external skeleton for an external element.  Follow the instructions on \url{http://sst-simulator.org}. You must create an element info struct name \inlinecode{X_eli} for X your library name.  You can still use the \inlineshell{sst++} compiler wrappers for building, but you must now manually create a \inlineshell{libX.so} from the compiled object files.  The \inlineshell{sstmacro.py} script installed must also be edited.  The top lines was previously
+
+\begin{ViFile}
+import sst.macro
+\end{ViFile}
+This only loads the main components, not the external skeleton. You must add
+
+\begin{ViFile}
+import sst.X
+\end{ViFile}
+where X is the name of your skeleton. This causes the core to also load the shared library corresponding to your external skeleton app.
 
 \section{Skeletonization}
 

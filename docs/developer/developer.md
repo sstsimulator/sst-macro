@@ -1,10 +1,54 @@
+
+
+
+
+
+
+
+
+\documentclass[10pt]{report}
+
+\usepackage{color} \usepackage{framed} \usepackage{textcomp} \usepackage{listings} \usepackage{hyperref} \usepackage[page]{appendix} \usepackage{graphicx} \usepackage{verbatim} \usepackage{amsmath} \usepackage{xspace}
+
+\usepackage{mtcoff} \usepackage[tt]{titlepic}
+
+\usepackage{sstmacro}
+
+\usepackage[textwidth=6.5in]{geometry}
+
+\definecolor{shadecolor}{rgb}{1,0.8,0.3} \definecolor{dkgreen}{rgb}{0,0.6,0} \definecolor{purple}{rgb}{1,0,1}
+
+\newcommand{\todo}[1] {\textcolor{red}{-[#1]-}}
+
+\newcommand{\mytilde}{{\raise.17ex\hbox{$\scriptstyle\sim$}}}
+
+\newcommand{SST-macro}{{SST/\raise.35ex\hbox{macro}}\xspace} \newcommand{SProCKit}{{SProCKit}\xspace} \newcommand{\eg}{e.g.
+
+\newcommand{\class}[1]{\textcolor{blue}{#1}}
+
+\newcommand{\func}[1]{\textcolor{purple}{#1}}
+
+\newcommand{\folder}[1]{\textcolor{dkgreen}{#1}}
+
+\newcommand{\aside}[1]{\begin{framed} #1 \end{framed}}
+
+\newcommand{\guikey}[1]{#1
+
+\newcommand{\inlinefile}[1]{{\lstset{basicstyle=\ttfamily,keywordstyle={}}\lstinline$#1$}}
+
+\newcommand{\inlinecode}[1]{{\lstset{basicstyle=\ttfamily,keywordstyle={},showstringspaces=false}\lstinline$#1$}} \newcommand{\inlineshell}[1]{{\lstset{basicstyle=\ttfamily,keywordstyle={},showstringspaces=false}\lstinline$#1$}}
+
 # SST/macro 6.0: Developer's Reference
+
+
 
 ![](figures/sstlogo.png)
 
 **
 
 
+
+\setlength{\parindent}{0cm} \setlength{\parskip}{2mm plus1mm minus1mm}
 
 
 
@@ -552,23 +596,24 @@ We here introduce factory types, i.e. polymorphic types linked to keywords in th
 Before looking at how to implement factory types, let's look at how they are used. Here we consider the example of an abstract interface called `actor`. The code example is found in `main.cc`. The file begins
 
 ````
-#include <sstmac/software/process/app.h>
-#include <sstmac/common/sstmac_env.h>
+#include <sstmac/skeleton.h>
 #include "actor.h"
 
-namespace sstmac { namespace tutorial { sstmac_register_app(rob_reiner);
+namespace sstmac { namespace tutorial {
+
+#define sstmac_app_name "rob_reiner"
 
 int
-rob_reiner_main(int argc, char **argv)
+main(int argc, char **argv)
 {
 ````
-The details of declaring and using external apps is found in the manual.
+The details of declaring and using external apps is found in the user's manual.
 From here it should be apparent that we defined a new application with name `rob_reiner`
-which is invoked via the `rob_reiner_main` function.
+which is invoked via the `main` function.
 Inside the main function, we create an object of type `actor`.
 
 ````
-actor* the_guy = actor_factory::get_param("actor_name", sstmac::env::params);
+actor* the_guy = actor_factory::get_param("actor_name", get_params());
 the_guy->act();
 return 0;
 ````
@@ -579,7 +624,7 @@ The input file contains several parameters related to constructing a machine mod
 The important parameters are:
 
 ````
-launch_app1 = rob_reiner
+app1.name = rob_reiner
 biggest_fan = jeremy_wilke
 actor_name = patinkin
 sword_hand = right
@@ -596,7 +641,7 @@ SST/macro ran for       0.0025 seconds
 If we change the parameters:
 
 ````
-launch_app1 = rob_reiner
+app1.name = rob_reiner
 biggest_fan = jeremy_wilke
 actor_name = guest
 num_fingers = 6
@@ -927,25 +972,26 @@ class connectable
     int src_outport,
     int dst_inport,
     connection_type_t ty,
-    connectable* mod);
-
-virtual void
-  connect_weighted(
-    int src_outport,
-    int dst_inport, 
-    connection_type_t ty,
     connectable* mod,
-    double weight, int red);
+    config* cfg) = 0;
 };
 ````
 
-Any connection is identified by two parameters. First, a port number must be assigned. For example, a switch may have several outgoing connections, each of which must be assigned a unique port number. Second, a device may make several different types of connections. A network switch might connect to other network switches or it might connect an injection link to a node's network interface. A network interface might connect to an injector or the memory subsystem. Given the two parameters, the device is free to implement or store the connection in any way. Two port numbers must be given.  The output port on the router sending messages must be given, but also the input port on which the destination will receive the packet. Both port numbers must be given since the destination may have to return credits to the sender.
+First, port numbers must be assigned identifying the output port at the source and in the input port at the destination. For example, a switch may have several outgoing connections, each of which must be assigned a unique port number. The connection must be configured at both source and destination. The function is called twice for each side of the connection. If we have a source and destination:
 
-A certain style and set of rules is recommended for all connectables. If these rules are ignored, setting up connections can quicky become confusing and produce difficult to maintain code.
+````
+connectable* src = ...
+connectable* dst = ...
+connectable::config cfg = ...
+src->connect(inport, outport, Output, dst, &cfg);
+dst->connect(inport, outport, Input, src, &cfg);
+````
 
-The first and most important rule is that `connectables` never make their own connections. Some "meta"-object should create connections between objects. In general, this work is left to a topology object. An object should never be responsible for knowing about the "world" outside itself. A topology or interconnect tells the object to make a connection rather than the object deciding to make the connection itself. This will be illustrated below in [5.7](#sec:topology).
+The "direction" of the link as input or output is identified by `connection_type_t`.
 
-The second rule to follow is that a connect function should never call another connect function. In general, a single call to a connect function should create a single link. If connect functions start calling other connect functions, you can end up a with a recursive disaster. If you need a bidirectional link (A $\rightarrow$ B, B $\rightarrow$ A), two separate function calls should be made
+A certain style and set of rules is recommended for all connectables. If these rules are ignored, setting up connections can quicky become confusing and produce difficult to maintain code. The first and most important rule is that `connectables` never make their own connections. Some "meta"-object should create connections between objects. In general, this work is left to a `topology` object. An object should never be responsible for knowing about the "world" outside itself. A topology or interconnect tells the object to make a connection rather than the object deciding to make the connection itself. This will be illustrated below in [5.7](#sec:topology).
+
+The second rule to follow is that a connect function should never call another connect function. In general, a single call to a connect function should create a single link. If connect functions start calling other connect functions, you can end up a with a recursive mess. If you need a bidirectional link (A $\rightarrow$ B, B $\rightarrow$ A), two separate function calls should be made
 
 ````
 A->connect(B);
@@ -954,7 +1000,7 @@ B->connect(A);
 
 rather than having, e.g. A create a bidirectional link.
 
-The first two rules should be considered rigorous. A third recommended rule is that all port numbers should be non-negative, and, in most cases, should start numbering from zero. Negative port numbers are generally used to indicate special meaning, not an actual port number. For example, routers generally return a negative number to indicate a packet has arrived at its destination and should be ejected.
+The first two rules should be considered rigorous. A third recommended rule is that all port numbers should be non-negative, and, in most cases, should start numbering from zero.
 
 Combining the factory system for polymorphic types and the connectable system for building arbitrary machine links and topologies, SST-macro provides flexibility for building essentially any machine model you want. However, SST-macro provides a recommended machine structure to guide constructing machine models.
 
@@ -968,35 +1014,43 @@ To illustrate, here is the code for the interconnect that creates the node objec
 void
 interconnect::init_factory_params(sprockit::sim_parameters* params)
 {
-  topology_ = topology_factory::get_param("topology_name", params);
+  sprockit::sim_parameters* top_params = params->get_namespace("topology");
+  topology_ = topology_factory::get_param("name", top_params);
 
-node_tmpl_ = node_factory::get_param("node_name", params, node_id());
-
-nic_tmpl_ = nic_factory::get_param("nic_name", params, node_tmpl_, this);
-
-long count = topology_->num_nodes();
-  for (long i = 0; i < count; i++) {
-    add_node(node_id(i));
-  }
+endpoint_map nodes;
+  sprockit::sim_parameters* node_params = params->get_namespace("node");
+  sprockit::factory<connectable>* node_builder
+    = new sprockit::template_factory<connectable, node_factory>(node_params->get_param("model"));
+  topology_->build_endpoint_connectables(nodes, node_builder, partition_, rt_->me(), node_params);
 }
 ````
 
-The interconnect creates a topology and then template objects for the node and NIC. The topology object tells the interconnect how many nodes to create.
+The interconnect creates a topology and factory builder for the nodes. Note here the use of parameter namespaces to isolate parameters. This continues for the NIC and switches.
 
 ````
-void
-interconnect::add_node(node_id nid)
-{
-  node* newnode = node_tmpl_->clone(nid);
-  nic* newnic = nic_tmpl_->clone(newnode, this);
-  newnode->set_nic(newnic);
-
-nodes_[nid] = newnode;
-  available_.insert(nid);
-}
+endpoint_map nics;
+  sprockit::sim_parameters* nic_params = params->get_namespace("nic");
+  sprockit::factory2<connectable>* nic_builder
+    = new sprockit::template_factory2<connectable, nic_factory>(nic_params->get_param("model"));
+  topology_->build_interface_connectables(1, nics, nic_builder, partition_, rt_->me(), nic_pa
 ````
 
-Here we use the clone interface, creating copies of the template NIC and node. The `node_factory` and `nic_factory` could have been used to create new nodes from the parameter object instead of cloning. In general, SST-macro follows a style of creating a single template from the factory and then cloning it. This is done for two reasons. First, cloning is essentially just a memcpy, which is significantly cheaper than reading parameters and doing string conversion operations. This can save a lot of time and effort when there are a million hardware objects to create. Second, when a parameter object arrives in the `init_factory_params` function, it is correctly "namespaced" for the local scope. It may happen that after leaving `init_factory_params`, the interconnect needs to create more nodes and the parameters are no longer available. The only option at this point is to have a template lying around that can be cloned.
+````
+internal_map switches;
+  sprockit::sim_parameters* switch_params = params->get_namespace("switch");
+  sprockit::factory<connectable>* switch_builder
+    = new sprockit::template_factory<connectable, network_switch_factory>(switch_params->get_param("model"));
+  network_switch* dummy = new dist_dummy_switch(switch_id());
+  topology_->build_internal_connectables(switches, switch_builder, partition_, rt_->me(), switch_params, dummy);
+````
+Some special parameters (dummy switches) are important for MPI parallel simulations,
+but these can be ignored for now.
+
+Once these components are constructed, the topology connects them.
+````
+topology_->connect_end_points(switches_, nics_);
+  topology_->connect_topology(switches_);
+````
 
 ### Section 5.3: Node<a name="sec:node"></a>
 
@@ -1004,13 +1058,13 @@ Although the \nodecls can be implemented as a very complex model, it fundamental
 
 ````
 virtual void
-  execute_kernel(ami::AMI_COMP_FUNC func, sst_message* data);
+  execute_kernel(ami::COMP_FUNC func, event* data);
 
 virtual void
-  execute_kernel(ami::AMI_COMM_FUNC func, sst_message* data);
+  execute_kernel(ami::COMM_FUNC func, event* data);
 ````
 
-By default, the abstract \nodecls class throws an `sprockit::unimplemented_error`. These functions are not pure virtual. A node is only required to implement those functions that it needs to do. The various function parameters are enums for the different operations a node may perform: computation, communication, or other hardware events. The distinction between computation and hardware is subtle. Hardware operations are things like interrupts, device resets, device failures. They are not necessarily "kernels" in the standard parlance.
+By default, the abstract \nodecls class throws an `sprockit::unimplemented_error`. These functions are not pure virtual. A node is only required to implement those functions that it needs to do. The various function parameters are enums for the different operations a node may perform: computation or communication. The distinction between computation and hardware is subtle. Hardware operations are things like interrupts, device resets, device failures. They are not necessarily "kernels" in the standard parlance.
 
 To illustrate a single example, we show the code that handles the function call
 
@@ -1048,7 +1102,7 @@ For sending messages, the NIC must implement
 
 ````
 virtual void
-  do_send(network_message*payload);
+  do_send(network_message* payload);
 ````
 A non-virtual, top-level `send` function performs operations standard to all NICs.
 Once these operations are complete, the NIC invokes `do_send` to perform model-specific send operations.
@@ -1067,28 +1121,12 @@ After injecting, the NIC creates an ACK and delivers the notification to the \no
 In general, all arriving messages or ACKs should be delivered to the node.
 The node is responsible for generating any software events in the OS.
 
-For receiving, messages can be moved across the network and delivered in two different ways.
+For receiving, messages can be moved across the network and delivered in two different ways: either at the byte-transfer layer (BTL) or message-transfer layer (MTL). Depending on the congestion model, a large message (say a 1 MB MPI message) might be broken up into many packets. These message chunks are moved across the network independently and then reassembled at the receiving end. Alternatively, for flow models or simple analytical models, the message is not packetized and instead delivered as a single whole. The methods are not pure virtual.  Depending on the congestion model,  the NIC might only implement chunk receives or whole receives. Upon receipt, just as for ACKs, the NIC should deliver the message to the node to interpret. In general, `nic::handle` is intended to handle packets. If a NIC supports direct handling of complete messages (MTL) instead of packets (BTL), it should provide a message handler:
 
 ````
-virtual void
-  recv_chunk(const message_chunk::ptr &chunk,
-             network_message*parent_msg);
-
-virtual void
-  recv_whole(network_message*msg);
-````
-
-Depending on the congestion model, a large message (say a 1 MB MPI message) might be broken up into many packets. These message chunks are moved across the network independently and then reassembled at the receiving end. Alternatively, for flow models or simple analytical models, the message is not packetized and instead delivered as a single whole. The methods are not pure virtual.  Depending on the congestion model,  the NIC might only implement chunk receives or whole receives. Upon receipt, just as for ACKs, the NIC should deliver the message to the node to interpret. Again, for the bare-bones class `null_nic`, we have
-
-````
-void
-null_nic::recv_chunk(const message_chunk::ptr &chunk,
-                     network_message*parent_msg)
-{
-  bool complete = completion_queue_.recv(chunk);
-  if (complete){
-    parent_->handle(parent_msg);
-  }
+event_handler*
+mtl_handler() const {
+  return mtl_handler_;
 }
 ````
 
@@ -1100,40 +1138,40 @@ As with the NIC and node, the memory model class can have a complex implementati
 
 ````
 virtual void
-  access(sst_message* msg);
+access(long bytes, double max_bw) = 0;
 ````
 
-The memory model must handle many different types of messages since so many different devices need to access the memory subsystem. A NIC, the CPU, a GPU, disk may all issue requests to the memory. In this regard, any message that implements
-
-````
-virtual long
-  byte_length() const;
-````
-should be valid.
+This function is intended to be called from an application user-space thread. As such, it should block until complete. For more details on the use of user-space threading to model applications, see the User's manual.
 
 ### Section 5.6: Network Switch<a name="sec:networkSwitch"></a>
 
 
 
-Unlike the other classes above, a network switch is not required to implement any specific functions. It is only required to be an `event_handler`, providing the usual `handle(sst_message* msg)`. The internal details can essentially be arbitrary. However, the basic scheme for most switches follows the code below for the simplest `packet_switch` model.
+Unlike the other classes above, a network switch is not required to implement any specific functions. It is only required to be an `event_handler`, providing the usual `handle(event* ev)`. The internal details can essentially be arbitrary. However, the basic scheme for most switches follows the code below for the `packet_flow` model.
 
 ````
-packet_message::ptr pack = safe_cast(packet_message, msg);
-  router_->route(pack);
-  int port = pack->rinfo()->port();
-  timestamp bw_delay(pack->byte_length() / portbw_[port]);
-  timestamp delay = lat_r2r_ + bw_delay;
-  event_handler* dest = outports_[port];
-  schedule(now()+ delay, dest, msg);
+packet_flow_interface* fpack = interface_cast(packet_flow_interface, ev);
+  switch (fpack->type()) {
+    case packet_flow_interface::credit: {
+      packet_flow_credit* credit = static_cast<packet_flow_credit*>(fpack);
+      out_buffers_[credit->port()]->handle_credit(credit);
+      break;
+    }
+    case packet_flow_interface::payload: {
+      packet_flow_payload* payload = static_cast<packet_flow_payload*>(fpack);
+      router_->route(payload);
+      xbar_->handle_payload(payload);
+      break;
+    }
+  }
 ````
-The router object selects the next destination (port).
-Then bandwidth and latency terms determine the packet delay.
-The packet is then scheduled to the next switch.
-Generally, a negative port number indicates ejection.
+The arriving event is determined to either be a new packet or a credit.
+If a packet, the router object selects the next destination (port).
+The packet is then passed to the crossbar for arbitration.
 
 ### Section 5.7: Topology<a name="sec:topology"></a>
 
-Of critical importance for the network modeling is the topology of the interconnect. Common examples are the torus, fat tree, or butterfly. To understand what these topologies are, there are many resources on the web that do a better job than we could. Regardless of the actual structure as a torus or tree, the topology should present a common interface to the interconnect and NIC for routing messages. Here we detail the public interface. \subsection{Basic Topology} Not all topologies are "regular" like a torus.  Ad hoc computer networks (like the internet) are ordered with IP addresses, but don't follow a regular geometric structure. The abstract topology base class is intended to cover both cases. Irregular or arbitrary topology connections are not fully supported yet.
+Of critical importance for the network modeling is the topology of the interconnect. Common examples are the torus, fat tree, or butterfly. To understand what these topologies are, there are many resources on the web. Regardless of the actual structure as a torus or tree, the topology should present a common interface to the interconnect and NIC for routing messages. Here we detail the public interface. \subsection{Basic Topology} Not all topologies are "regular" like a torus.  Ad hoc computer networks (like the internet) are ordered with IP addresses, but don't follow a regular geometric structure. The abstract topology base class is intended to cover both cases. Irregular or arbitrary topology connections are not fully supported yet.
 
 The most important functions in the \topcls class are
 
@@ -1147,11 +1185,11 @@ virtual long num_switches() const = 0;
 
 virtual long num_nodes() const = 0;
 
-virtual void connect_objects(connectable_map& objects, connectable_factory* cloner) = 0;
+virtual void connect_objects(connectable_map& objects) = 0;
 
-virtual switch_id node_to_injector_addr(node_id nodeaddr, int& switch_port) const = 0;
+virtual switch_id node_to_injection_switch(node_id nodeaddr, int& switch_port) const = 0;
 
-virtual switch_id node_to_ejector_addr(node_id nodeaddr, int& switch_port) const = 0;
+virtual switch_id node_to_ejection_switch(node_id nodeaddr, int& switch_port) const = 0;
 
 virtual void minimal_route_to_switch( switch_id current_sw_addr, switch_id dest_sw_addr, routable::path& path) const = 0;
 
@@ -1159,16 +1197,16 @@ virtual int
   num_hops_to_node(node_id src, node_id dst) const = 0;
 ````
 
-These functions are documented at some length in the `topology.h` header file. The most important thing to distinguish here are \nodeid and \switchid types. These are both special opaque integer types that distinguish between a switch or internal object in the topology and a node or network endpoint. The first few functions just give the number of switches, number of nodes, and finally which nodes are connected to a given switch. The most critical function for a topology is the `connect_objects` function that takes a list of objects and actually forms the links between them. Each compute node will be connected to an injector switch and an ejector switch (often the same switch). The topology must provide a mapping between a node and its ejection and injection points. Additionally, the topology must indicate a port number or offset for the injection in case the switch has many nodes injecting to it.
+These functions are documented in the `topology.h` header file. The first few functions just give the number of switches, number of nodes, and finally which nodes are connected to a given switch. The most critical function for a topology is the `connect_objects` function that takes a list of objects and actually forms the links between them. Each compute node will be connected to an injector switch and an ejector switch (often the same switch). The topology must provide a mapping between a node and its ejection and injection points. Additionally, the topology must indicate a port number or offset for the injection in case the switch has many nodes injecting to it. The most important thing to distinguish here are \nodeid and \switchid types. These are typedefs that distinguish between a switch or internal object in the topology and a node or network endpoint.
 
 Besides just forming the connections, a topology is responsible for routing. Given a source switch and the final destination, a topology must fill out path information.
 
 ````
 struct path {
-  int outport;
-  int dim;
-  int dir;
-  int vc;
+    int outport;
+    int vc;
+    int geometric_id;
+    sprockit::metadata_bits<uint32_t> metadata;
 }
 ````
 
@@ -1220,8 +1258,8 @@ class router :
   public sprockit::factory_type
 {
 ...
-  void
-  route(const routable_message::ptr& msg);
+  virtual void
+  route(packet* pkt) = 0;
 
 virtual void minimal_route_to_node( node_id node_addr, routable::path& path) = 0;
 
@@ -1233,38 +1271,7 @@ virtual void
 };
 ````
 
-Here the route function queries the message for algorithm info.
-
-````
-void
-router::route(const routable_message::ptr& msg)
-{
-  if (!msg->routing_initialized()) {
-    init_routing(msg);
-  }
-  routing_algorithm* algo = algos_[msg->rinfo()->route_algo()];
-  if (unlikely(!algo)) {
-    spkt_throw_printf(sprockit::value_error,
-                     "routing algorithm 
-                     routing_info::tostr(msg->rinfo()->route_algo()));
-  }
-  algo->route(msg, this);
-}
-````
-
-The actual routing work is done by a routing algorithm object rather than the router. Different messages may choose different algorithms and we do not want to hard-wire routing to a single algorithm for the entire machine. The router object exists as a routing metadata store, potentially accumulating congestion or other data over time to inform future routing decisions. Thus, routing algorithms are static objects with no state - just instructions. Router carry the location-specific state.
-
-For minimal routing on regular routers, the algorithm code is extremely simple
-
-````
-void
-minimal_routing::route(
-  const routable_message::ptr& msg,
-  router* rter)
-{
-  rter->minimal_route_to_node(msg->toaddr(), msg->rinfo()->get_path());
-}
-````
+Different routers exist for the different routing algorithms: 	minimal, valiant, ugal. The router objects are specific to a switch and can therefore store state information. However, the router should query the topology object for any path-specific information, e.g.
 
 ````
 void
@@ -1272,11 +1279,11 @@ structured_router::minimal_route_to_node(
   node_id dest_node_addr,
   routable::path& path)
 {
-  switch_id ej_addr = regtop_->node_to_ejector_addr(dest_node_addr, path.dir);
-  if (ej_addr == me_) {
-    path.dim = topology::EJECT;
+  netlink_id endpoint_id(dest_node_addr / top_->num_nodes_per_netlink());
+  //Query the topology for path info
+  switch_id ej_addr = regtop_->endpoint_to_ejection_switch(endpoint_id, path.outport);
+  if (ej_addr == my_addr_) {
     path.vc = 0;
-    path.outport = topology::eject_port(path.dir);
   }
   else {
     minimal_route_to_switch(ej_addr, path);
@@ -1285,28 +1292,12 @@ structured_router::minimal_route_to_node(
 ...
 ````
 
-For adaptive routing, a bit more work is done
+For adaptive routing, a bit more work is done. Each router is connect to a switch object which holds all the information about queue lengths, e.g.
 
 ````
-void
-minimal_adaptive_routing::route(
-  const routable_message::ptr &msg,
-  router* rter)
-{
-  routable::path_set paths;
-  bool eject  = rter->get_productive_paths_to_node(msg->toaddr(), paths);
-  if (eject) {
-    msg->rinfo()->assign_path(paths[0]);
-    return;
-  }
+int test_length = get_switch()->queue_length(paths[i].outport);
 ````
-We now query for all possible paths.
-Some network switches (not all) provide functionality to query congestion info.
-
-````
-int test_length = rter->get_switch()->queue_length(paths[i].outport);
-````
-from which the lowest congestion path can be chosen.
+allowing the router to select an alternate path if the congestion is too high.
 
 
 
@@ -1355,8 +1346,7 @@ The topology then needs to tell objects how to connect
 
 ````
 void
-xpress_ring::connect_objects(connectable_map& objects,
-                             connectable_factory* cloner)
+xpress_ring::connect_objects(connectable_map& objects)
 {
   for (int i=0; i < ring_size_; ++i) {
     connectable* center_obj = objects[switch_id(i)];
@@ -1498,9 +1488,9 @@ We are now ready to use our topology in an application. In this case, we just de
 
 ````
 # Topology
-topology_name = xpress
-xpress_ring_size = 10
-xpress_jump_size = 5
+topology.name = xpress
+topology.xpress_ring_size = 10
+topology.xpress_jump_size = 5
 ````
 with application launch parameters
 
@@ -1786,6 +1776,10 @@ class ftq_calendar {
 ````
 which creates a static, aggregated set of results.
 The `ftq_calendar` must ensure thread-safety itself via a thread-lock.
+
+
+
+
 
 
 

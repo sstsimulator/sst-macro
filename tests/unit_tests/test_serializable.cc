@@ -1,8 +1,10 @@
-#include <sstmac/replacements/mpi.h>
 #include <sstmac/util.h>
 #include <sprockit/serializer.h>
 #include <sprockit/output.h>
 #include <sprockit/test/test.h>
+#include <sprockit/debug.h>
+#include <sstmac/common/node_address.h>
+#include <sstmac/common/messages/sst_message.h>
 
 sstmac::node_id
 naddr(long nid)
@@ -12,7 +14,6 @@ naddr(long nid)
 
 using namespace sstmac;
 using namespace sstmac::sw;
-using namespace sstmac::hw;
 
 char buf[4096];
 

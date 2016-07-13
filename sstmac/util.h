@@ -7,7 +7,6 @@
 #include <sprockit/spkt_string.h>
 #include <sprockit/errors.h>
 #include <sprockit/debug.h>
-#include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/task_id.h>
 
 /** Automatically inherit the errors */
