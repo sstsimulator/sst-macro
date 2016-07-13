@@ -108,6 +108,8 @@ OPERATOR(+=,,&)
 OPERATOR(*=,,&)
 OPERATOR(-=,,&)
 OPERATOR(/=,,&)
+OPERATOR(&=,,&)
+OPERATOR(|=,,&)
 
 
 template <class T>
