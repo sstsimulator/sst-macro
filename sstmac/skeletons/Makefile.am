@@ -10,8 +10,6 @@
 
 include $(top_srcdir)/Makefile.common
 
-EXTRA_DIST = test/test.model
-
 noinst_LTLIBRARIES = libsstmac_skeletons.la
 library_includedir=$(includedir)/sstmac/skeletons
 

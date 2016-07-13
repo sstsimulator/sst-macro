@@ -12,9 +12,8 @@
 include $(top_srcdir)/Makefile.common
 
 # Files that should be distributed but are not built.
-EXTRA_DIST = LICENSE benchmarks bootstrap.sh \
+EXTRA_DIST = LICENSE bootstrap.sh \
   docs \
-  qt-gui \
   skeletons
 
 SUBDIRS = $(subdirs) sumi-mpi
