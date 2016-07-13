@@ -24,6 +24,10 @@ libsstmac_skeletons_la_SOURCES = \
   test/mpi_ping_all.cc \
   test/global_test.cc 
 
+nobase_library_include_HEADERS = \
+  sumi_undumpi/parsedumpi.h \
+  sumi_undumpi/parsedumpi_callbacks.h 
+
 libsstmac_skeletons_la_SOURCES += \
   sumi_undumpi/parsedumpi.cc \
   sumi_undumpi/parsedumpi_callbacks.cc \

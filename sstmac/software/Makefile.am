@@ -156,6 +156,7 @@ nobase_library_include_HEADERS = \
   launch/round_robin_task_mapper.h  \
   launch/node_set.h \
   launch/job_launcher.h \
+  launch/job_launcher_fwd.h \
   launch/launcher.h \
   launch/launcher_fwd.h \
   launch/launch_handler.h \

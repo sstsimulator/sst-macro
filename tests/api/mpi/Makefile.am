@@ -100,6 +100,7 @@ TEST_SOURCE_FILES = \
   coll/gather2.cc \
   coll/longuser.cc \
   coll/opband.cc \
+  coll/iallred.cc \
   coll/opbor.cc \
   coll/opbxor.cc \
   coll/opland.cc \
