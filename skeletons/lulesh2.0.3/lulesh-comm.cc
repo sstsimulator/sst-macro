@@ -371,7 +371,7 @@ void CommSend(Domain& domain, int msgType,
    Index_t cmsg = 0 ; /* corner comm msg */
    MPI_Datatype baseType = ((sizeof(Real_t) == 4) ? MPI_FLOAT : MPI_DOUBLE) ;
    MPI_Status status[26] ;
-   Real_t *destAddr ;
+   Real_t_ptr_sim destAddr ;
    bool rowMin, rowMax, colMin, colMax, planeMin, planeMax ;
    /* assume communication to 6 neighbors by default */
    rowMin = rowMax = colMin = colMax = planeMin = planeMax = true ;
@@ -730,7 +730,7 @@ void CommSend(Domain& domain, int msgType,
       if (rowMin && colMin && planeMin) {
          /* corner at domain logical coord (0, 0, 0) */
          int toRank = myRank - domain.tp()*domain.tp() - domain.tp() - 1 ;
-         Real_t *comBuf = &domain.commDataSend[pmsg * maxPlaneComm +
+         Real_t_ptr_sim comBuf = &domain.commDataSend[pmsg * maxPlaneComm +
                                                 emsg * maxEdgeComm +
                                       cmsg * CACHE_COHERENCE_PAD_REAL] ;
          for (Index_t fi=0; fi<xferFields; ++fi) {
@@ -743,7 +743,7 @@ void CommSend(Domain& domain, int msgType,
       if (rowMin && colMin && planeMax && doSend) {
          /* corner at domain logical coord (0, 0, 1) */
          int toRank = myRank + domain.tp()*domain.tp() - domain.tp() - 1 ;
-         Real_t *comBuf = &domain.commDataSend[pmsg * maxPlaneComm +
+         Real_t_ptr_sim comBuf = &domain.commDataSend[pmsg * maxPlaneComm +
                                                 emsg * maxEdgeComm +
                                          cmsg * CACHE_COHERENCE_PAD_REAL] ;
          Index_t idx = dx*dy*(dz - 1) ;
@@ -757,7 +757,7 @@ void CommSend(Domain& domain, int msgType,
       if (rowMin && colMax && planeMin) {
          /* corner at domain logical coord (1, 0, 0) */
          int toRank = myRank - domain.tp()*domain.tp() - domain.tp() + 1 ;
-         Real_t *comBuf = &domain.commDataSend[pmsg * maxPlaneComm +
+         Real_t_ptr_sim comBuf = &domain.commDataSend[pmsg * maxPlaneComm +
                                                 emsg * maxEdgeComm +
                                          cmsg * CACHE_COHERENCE_PAD_REAL] ;
          Index_t idx = dx - 1 ;
@@ -771,7 +771,7 @@ void CommSend(Domain& domain, int msgType,
       if (rowMin && colMax && planeMax && doSend) {
          /* corner at domain logical coord (1, 0, 1) */
          int toRank = myRank + domain.tp()*domain.tp() - domain.tp() + 1 ;
-         Real_t *comBuf = &domain.commDataSend[pmsg * maxPlaneComm +
+         Real_t_ptr_sim comBuf = &domain.commDataSend[pmsg * maxPlaneComm +
                                                 emsg * maxEdgeComm +
                                          cmsg * CACHE_COHERENCE_PAD_REAL] ;
          Index_t idx = dx*dy*(dz - 1) + (dx - 1) ;
@@ -785,7 +785,7 @@ void CommSend(Domain& domain, int msgType,
       if (rowMax && colMin && planeMin) {
          /* corner at domain logical coord (0, 1, 0) */
          int toRank = myRank - domain.tp()*domain.tp() + domain.tp() - 1 ;
-         Real_t *comBuf = &domain.commDataSend[pmsg * maxPlaneComm +
+         Real_t_ptr_sim comBuf = &domain.commDataSend[pmsg * maxPlaneComm +
                                                 emsg * maxEdgeComm +
                                          cmsg * CACHE_COHERENCE_PAD_REAL] ;
          Index_t idx = dx*(dy - 1) ;
@@ -799,7 +799,7 @@ void CommSend(Domain& domain, int msgType,
       if (rowMax && colMin && planeMax && doSend) {
          /* corner at domain logical coord (0, 1, 1) */
          int toRank = myRank + domain.tp()*domain.tp() + domain.tp() - 1 ;
-         Real_t *comBuf = &domain.commDataSend[pmsg * maxPlaneComm +
+         Real_t_ptr_sim comBuf = &domain.commDataSend[pmsg * maxPlaneComm +
                                                 emsg * maxEdgeComm +
                                          cmsg * CACHE_COHERENCE_PAD_REAL] ;
          Index_t idx = dx*dy*(dz - 1) + dx*(dy - 1) ;
@@ -813,7 +813,7 @@ void CommSend(Domain& domain, int msgType,
       if (rowMax && colMax && planeMin) {
          /* corner at domain logical coord (1, 1, 0) */
          int toRank = myRank - domain.tp()*domain.tp() + domain.tp() + 1 ;
-         Real_t *comBuf = &domain.commDataSend[pmsg * maxPlaneComm +
+         Real_t_ptr_sim comBuf = &domain.commDataSend[pmsg * maxPlaneComm +
                                                 emsg * maxEdgeComm +
                                          cmsg * CACHE_COHERENCE_PAD_REAL] ;
          Index_t idx = dx*dy - 1 ;
@@ -827,7 +827,7 @@ void CommSend(Domain& domain, int msgType,
       if (rowMax && colMax && planeMax && doSend) {
          /* corner at domain logical coord (1, 1, 1) */
          int toRank = myRank + domain.tp()*domain.tp() + domain.tp() + 1 ;
-         Real_t *comBuf = &domain.commDataSend[pmsg * maxPlaneComm +
+         Real_t_ptr_sim comBuf = &domain.commDataSend[pmsg * maxPlaneComm +
                                                 emsg * maxEdgeComm +
                                          cmsg * CACHE_COHERENCE_PAD_REAL] ;
          Index_t idx = dx*dy*dz - 1 ;
@@ -863,7 +863,7 @@ void CommSBN(Domain& domain, int xferFields, Domain_member *fieldData) {
    Index_t dy = domain.sizeY() + 1 ;
    Index_t dz = domain.sizeZ() + 1 ;
    MPI_Status status ;
-   Real_t *srcAddr ;
+   Real_t_ptr_sim srcAddr ;
    Index_t rowMin, rowMax, colMin, colMax, planeMin, planeMax ;
    /* assume communication to 6 neighbors by default */
    rowMin = rowMax = colMin = colMax = planeMin = planeMax = 1 ;
@@ -1161,7 +1161,7 @@ void CommSBN(Domain& domain, int xferFields, Domain_member *fieldData) {
 
    if (rowMin & colMin & planeMin) {
       /* corner at domain logical coord (0, 0, 0) */
-      Real_t *comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
+      Real_t_ptr_sim comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
                                              emsg * maxEdgeComm +
                                       cmsg * CACHE_COHERENCE_PAD_REAL] ;
       MPI_Wait(&domain.recvRequest[pmsg+emsg+cmsg], &status) ;
@@ -1172,7 +1172,7 @@ void CommSBN(Domain& domain, int xferFields, Domain_member *fieldData) {
    }
    if (rowMin & colMin & planeMax) {
       /* corner at domain logical coord (0, 0, 1) */
-      Real_t *comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
+      Real_t_ptr_sim comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
                                              emsg * maxEdgeComm +
                                       cmsg * CACHE_COHERENCE_PAD_REAL] ;
       Index_t idx = dx*dy*(dz - 1) ;
@@ -1184,7 +1184,7 @@ void CommSBN(Domain& domain, int xferFields, Domain_member *fieldData) {
    }
    if (rowMin & colMax & planeMin) {
       /* corner at domain logical coord (1, 0, 0) */
-      Real_t *comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
+      Real_t_ptr_sim comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
                                              emsg * maxEdgeComm +
                                       cmsg * CACHE_COHERENCE_PAD_REAL] ;
       Index_t idx = dx - 1 ;
@@ -1196,7 +1196,7 @@ void CommSBN(Domain& domain, int xferFields, Domain_member *fieldData) {
    }
    if (rowMin & colMax & planeMax) {
       /* corner at domain logical coord (1, 0, 1) */
-      Real_t *comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
+      Real_t_ptr_sim comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
                                              emsg * maxEdgeComm +
                                       cmsg * CACHE_COHERENCE_PAD_REAL] ;
       Index_t idx = dx*dy*(dz - 1) + (dx - 1) ;
@@ -1208,7 +1208,7 @@ void CommSBN(Domain& domain, int xferFields, Domain_member *fieldData) {
    }
    if (rowMax & colMin & planeMin) {
       /* corner at domain logical coord (0, 1, 0) */
-      Real_t *comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
+      Real_t_ptr_sim comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
                                              emsg * maxEdgeComm +
                                       cmsg * CACHE_COHERENCE_PAD_REAL] ;
       Index_t idx = dx*(dy - 1) ;
@@ -1220,7 +1220,7 @@ void CommSBN(Domain& domain, int xferFields, Domain_member *fieldData) {
    }
    if (rowMax & colMin & planeMax) {
       /* corner at domain logical coord (0, 1, 1) */
-      Real_t *comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
+      Real_t_ptr_sim comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
                                              emsg * maxEdgeComm +
                                       cmsg * CACHE_COHERENCE_PAD_REAL] ;
       Index_t idx = dx*dy*(dz - 1) + dx*(dy - 1) ;
@@ -1232,7 +1232,7 @@ void CommSBN(Domain& domain, int xferFields, Domain_member *fieldData) {
    }
    if (rowMax & colMax & planeMin) {
       /* corner at domain logical coord (1, 1, 0) */
-      Real_t *comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
+      Real_t_ptr_sim comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
                                              emsg * maxEdgeComm +
                                       cmsg * CACHE_COHERENCE_PAD_REAL] ;
       Index_t idx = dx*dy - 1 ;
@@ -1244,7 +1244,7 @@ void CommSBN(Domain& domain, int xferFields, Domain_member *fieldData) {
    }
    if (rowMax & colMax & planeMax) {
       /* corner at domain logical coord (1, 1, 1) */
-      Real_t *comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
+      Real_t_ptr_sim comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
                                              emsg * maxEdgeComm +
                                       cmsg * CACHE_COHERENCE_PAD_REAL] ;
       Index_t idx = dx*dy*dz - 1 ;
@@ -1276,7 +1276,7 @@ void CommSyncPosVel(Domain& domain) {
    Index_t dy = domain.sizeY() + 1 ;
    Index_t dz = domain.sizeZ() + 1 ;
    MPI_Status status ;
-   Real_t *srcAddr ;
+   Real_t_ptr_sim srcAddr ;
    bool rowMin, rowMax, colMin, colMax, planeMin, planeMax ;
 
    /* assume communication to 6 neighbors by default */
@@ -1584,7 +1584,7 @@ void CommSyncPosVel(Domain& domain) {
 
    if (rowMin && colMin && planeMin && doRecv) {
       /* corner at domain logical coord (0, 0, 0) */
-      Real_t *comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
+      Real_t_ptr_sim comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
                                              emsg * maxEdgeComm +
                                       cmsg * CACHE_COHERENCE_PAD_REAL] ;
       MPI_Wait(&domain.recvRequest[pmsg+emsg+cmsg], &status) ;
@@ -1595,7 +1595,7 @@ void CommSyncPosVel(Domain& domain) {
    }
    if (rowMin && colMin && planeMax) {
       /* corner at domain logical coord (0, 0, 1) */
-      Real_t *comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
+      Real_t_ptr_sim comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
                                              emsg * maxEdgeComm +
                                       cmsg * CACHE_COHERENCE_PAD_REAL] ;
       Index_t idx = dx*dy*(dz - 1) ;
@@ -1607,7 +1607,7 @@ void CommSyncPosVel(Domain& domain) {
    }
    if (rowMin && colMax && planeMin && doRecv) {
       /* corner at domain logical coord (1, 0, 0) */
-      Real_t *comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
+      Real_t_ptr_sim comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
                                              emsg * maxEdgeComm +
                                       cmsg * CACHE_COHERENCE_PAD_REAL] ;
       Index_t idx = dx - 1 ;
@@ -1619,7 +1619,7 @@ void CommSyncPosVel(Domain& domain) {
    }
    if (rowMin && colMax && planeMax) {
       /* corner at domain logical coord (1, 0, 1) */
-      Real_t *comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
+      Real_t_ptr_sim comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
                                              emsg * maxEdgeComm +
                                       cmsg * CACHE_COHERENCE_PAD_REAL] ;
       Index_t idx = dx*dy*(dz - 1) + (dx - 1) ;
@@ -1631,7 +1631,7 @@ void CommSyncPosVel(Domain& domain) {
    }
    if (rowMax && colMin && planeMin && doRecv) {
       /* corner at domain logical coord (0, 1, 0) */
-      Real_t *comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
+      Real_t_ptr_sim comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
                                              emsg * maxEdgeComm +
                                       cmsg * CACHE_COHERENCE_PAD_REAL] ;
       Index_t idx = dx*(dy - 1) ;
@@ -1643,7 +1643,7 @@ void CommSyncPosVel(Domain& domain) {
    }
    if (rowMax && colMin && planeMax) {
       /* corner at domain logical coord (0, 1, 1) */
-      Real_t *comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
+      Real_t_ptr_sim comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
                                              emsg * maxEdgeComm +
                                       cmsg * CACHE_COHERENCE_PAD_REAL] ;
       Index_t idx = dx*dy*(dz - 1) + dx*(dy - 1) ;
@@ -1655,7 +1655,7 @@ void CommSyncPosVel(Domain& domain) {
    }
    if (rowMax && colMax && planeMin && doRecv) {
       /* corner at domain logical coord (1, 1, 0) */
-      Real_t *comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
+      Real_t_ptr_sim comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
                                              emsg * maxEdgeComm +
                                       cmsg * CACHE_COHERENCE_PAD_REAL] ;
       Index_t idx = dx*dy - 1 ;
@@ -1667,7 +1667,7 @@ void CommSyncPosVel(Domain& domain) {
    }
    if (rowMax && colMax && planeMax) {
       /* corner at domain logical coord (1, 1, 1) */
-      Real_t *comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
+      Real_t_ptr_sim comBuf = &domain.commDataRecv[pmsg * maxPlaneComm +
                                              emsg * maxEdgeComm +
                                       cmsg * CACHE_COHERENCE_PAD_REAL] ;
       Index_t idx = dx*dy*dz - 1 ;
@@ -1696,7 +1696,7 @@ void CommMonoQ(Domain& domain)
    Index_t dy = domain.sizeY() ;
    Index_t dz = domain.sizeZ() ;
    MPI_Status status ;
-   Real_t *srcAddr ;
+   Real_t_ptr_sim srcAddr ;
    bool rowMin, rowMax, colMin, colMax, planeMin, planeMax ;
    /* assume communication to 6 neighbors by default */
    rowMin = rowMax = colMin = colMax = planeMin = planeMax = true ;

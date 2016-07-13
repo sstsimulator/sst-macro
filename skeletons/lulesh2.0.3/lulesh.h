@@ -463,8 +463,8 @@ class Domain {
 
 #if USE_MPI   
    // Communication Work space 
-   Real_t *commDataSend ;
-   Real_t *commDataRecv ;
+   Real_t_ptr_sim commDataSend ;
+   Real_t_ptr_sim commDataRecv ;
    
    // Maximum number of block neighbors 
    MPI_Request recvRequest[26] ; // 6 faces + 12 edges + 8 corners 
@@ -486,12 +486,10 @@ class Domain {
    //
 
    /* Node-centered */
-   // NLS: THESE ARE COMMUNICATED
    Real_t_vec_sim m_x ;  /* coordinates */
    Real_t_vec_sim m_y ;
    Real_t_vec_sim m_z ;
 
-   // NLS: THESE ARE COMMUNICATED
    Real_t_vec_sim m_xd ; /* velocities */
    Real_t_vec_sim m_yd ;
    Real_t_vec_sim m_zd ;
@@ -500,12 +498,10 @@ class Domain {
    Real_t_vec_sim m_ydd ;
    Real_t_vec_sim m_zdd ;
 
-   // NLS: THESE ARE COMMUNICATED
    Real_t_vec_sim m_fx ;  /* forces */
    Real_t_vec_sim m_fy ;
    Real_t_vec_sim m_fz ;
 
-   // NLS: THIS IS COMMUNICATED
    Real_t_vec_sim m_nodalMass ;  /* mass */
 
    Index_t_vec_sim m_symmX ;  /* symmetry plane nodesets */
@@ -521,7 +517,6 @@ class Domain {
    Index_t *m_regNumList ;    // Region number per domain element
    Index_t **m_regElemlist ;  // region indexset 
 
-   // NLS: NEEDED FOR TIMESTEP COMPUTATION
    Index_t_vec_sim  m_nodelist ;     /* elemToNode connectivity */
 
    Index_t_vec_sim  m_lxim ;  /* element connectivity across each face */
@@ -537,7 +532,6 @@ class Domain {
    Real_t_vec_sim m_dyy ;
    Real_t_vec_sim m_dzz ;
 
-   // NLS: THESE ARE COMMUNICATED
    Real_t_vec_sim m_delv_xi ;    /* velocity gradient -- temporary */
    Real_t_vec_sim m_delv_eta ;
    Real_t_vec_sim m_delv_zeta ;
@@ -554,7 +548,6 @@ class Domain {
    Real_t_vec_sim m_qq ;  /* quadratic term for q */
 
    Real_t_vec_sim m_v ;     /* relative volume */
-   // NLS: NEEDED FOR TIMESTEP COMPUTATION
    Real_t_vec_sim m_volo ;  /* reference volume */
    Real_t_vec_sim m_vnew ;  /* new relative volume -- temporary */
    Real_t_vec_sim m_delv ;  /* m_vnew - m_v */
