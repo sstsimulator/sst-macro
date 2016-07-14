@@ -105,7 +105,7 @@ def get_figure_text(label, caption, text):
   else:
     captionText = "*%s*" % caption
 
-  return "\n![%s](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/%s) %s\n\n%s\n\n" % (captionText, fname, "", captionText)
+  return "\n![%s](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/%s) %s\n\n%s\n\n" % (caption, fname, "", captionText)
 
 def process_title_pic(match):
   text = match.groups()[0] + "}"
