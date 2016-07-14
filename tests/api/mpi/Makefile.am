@@ -24,7 +24,7 @@ AM_CPPFLAGS += \
 AM_CPPFLAGS += -I$(top_srcdir)/sstmac/install -DSSTMAC=1
 AM_CPPFLAGS += -I$(top_builddir)/sstmac/replacements -I$(top_srcdir)/sstmac/replacements
 
-EXTRA_DIST = testmpi.h include
+EXTRA_DIST = testmpi.h include config.py
 
 
 if INTEGRATED_SST_CORE
