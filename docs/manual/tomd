@@ -264,7 +264,7 @@ def processFile(f):
   newline = "\n"
   iscode = False
   for l in lines:
-    if l.find("CppCode") < 0:
+    if l.find("CppCode") > -1:
       if iscode == True:
         iscode = False
       else:

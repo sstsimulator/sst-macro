@@ -75,8 +75,6 @@
    - [Chapter 4: Topologies](#chapter:topologies)
       - [Section 4.1: Torus](#subsec:tutorial:hypercube)
       - [Section 4.2: Hypercube](#subsec:tutorial:hypercube)
-         - [4.2.1: Butterfly](#subsec:tutorial:butterfly)
-         - [4.2.2: Flattened Butterfly](#subsec:tutorial:fbfly)
       - [Section 4.3: Fat Tree](#sec:tutorial:fattree)
       - [Section 4.4: Dragonfly](#sec:tutorial:dragonfly)
    - [Chapter 5: Applications and Skeletonization](#sec:skeletonization)
@@ -85,7 +83,7 @@
          - [5.2.1: Loading external skeletons with the integrated core](#subsec:linkageCore)
          - [5.2.2: Manually refactoring global variables](#sec:skel:globals)
 
-%% !TEX root = manual.tex
+
 
 ## Chapter 1: Introduction<a name="sec:intro"></a>
 
@@ -210,7 +208,7 @@ SST-macro previously provided some experimental support for Fortran90 applicatio
 
 
 
-%% !TEX root = manual.tex
+
 
 ## Chapter 2: Building and Running SST/macro<a name="chapter:building"></a>
 
@@ -249,11 +247,6 @@ The most critical change is that C++11 is now a strict prerequisite. Workarounds
 -   A C/C++ compiler is required with C++11 support.  gcc 4.8 and onward is known to work.
 -   (optional) Doxygen and Graphviz are needed to build the documentation.
 -   (optional) Graphviz is needed to collect call graphs.
-%
--   (optional, recommended) Qt libraries and build system (qmake) are needed to build the GUI input configuration tool.
-
-%
--   (optional) VTK is needed for advanced vis features.
 
 #### 2.1.3: Configuration and Building<a name="subsec:build:configure"></a>
 
@@ -482,9 +475,11 @@ In order to run distributed memory parallel, you must configure the simulator wi
 sst-macro/build> ../configure --enable-mpiparallel CXX=mpicxx CC=mpicc ...
 ````
 
-SST-macro can now run parallel jobs without any graph partitioning packages. In previous versions, SST-macro required METIS for partitioning the workload amongst parallel processes. With the above options, you can just compile and go. %For some cases, you may wish to use METIS for a more intelligent partitioning of the nodes to improve parallel performance.
+SST-macro can now run parallel jobs without any graph partitioning packages. In previous versions, SST-macro required METIS for partitioning the workload amongst parallel processes. With the above options, you can just compile and go.
 
-%METIS can be found at http://glaros.dtc.umn.edu/gkhome/metis/metis/download. SST-macro is run exactly like the serial version, but is spawned like any other MPI parallel program. Use your favorite MPI launcher to run, e.g. for OpenMPI
+
+
+SST-macro is run exactly like the serial version, but is spawned like any other MPI parallel program. Use your favorite MPI launcher to run, e.g. for OpenMPI
 
 ````
 mysim> mpirun -n 4 sstmac -f parameters.ini
@@ -564,13 +559,13 @@ The new system allows much finer-grained, simpler printing of debug output.
 Additionally, it allows new debug flags to very easily defined.
 More info on declaring new debug flags in your own code can be found in the developer's reference.
 
-%% !TEX root = manual.tex
+
 
 ## Chapter 3: Basic Tutorials<a name="chapter:tutorials"></a>
 
 
 
-%% !TEX root = manual.tex
+
 
 ### Section 3.1: SST/macro Parameter files<a name="sec:parameters"></a>
 
@@ -653,7 +648,7 @@ sendrecv_message_size = 128
 
 
 
-%% !TEX root = manual.tex
+
 
 ### Section 3.2: Abstract Machine Models<a name="sec:amm"></a>
 
@@ -755,7 +750,7 @@ network_hop_latency = 100ns
 
 
 
-%% !TEX root = manual.tex
+
 
 ### Section 3.3: Basic MPI Program<a name="sec:tutorial:basicmpi"></a>
 
@@ -798,11 +793,11 @@ if (nproc != 2) {
     }
     if (me == 0) {
         MPI_Send(NULL, message_size, MPI_INT, dst, tag, world);
-        printf("rank 
+        printf("rank %i sending a message\n", me);
     }
     else {
         MPI_Recv(NULL, message_size, MPI_INT, src, tag, world, &stat);
-        printf("rank 
+        printf("rank %i receiving a message\n", me);
     }
     MPI_Finalize();
     return 0;
@@ -812,7 +807,7 @@ Here the code just checks the MPI rank and sends (rank 0) or receives (rank 1) a
 
 
 
-%% !TEX root = manual.tex
+
 
 ### Section 3.4: Network Topologies and Routing<a name="sec:tutorial:topology"></a>
 
@@ -901,7 +896,7 @@ There are now multiple valid paths between network endpoints, one of which is il
 
 At each network hop, the router chooses the productive path with least congestion. In some cases, however, there is only one minimal path (node $(0,0)$ sending to $(2,0)$ with only $X$ different). For these messages, minimal adaptive is exactly equivalent to dimension-order routing. Other supported routing schemes are valiant and UGAL.  More routing schemes are scheduled to be added in future versions. A full description of more complicated routing schemes will be given in its own chapter in future versions. For now, we direct users to existing resources such as "High Performance Datacenter Networks" by Dennis Abts and John Kim.
 
-%% !TEX root = manual.tex
+
 
 ### Section 3.5: Discrete Event Simulation<a name="sec:tutorial:des"></a>
 
@@ -925,7 +920,7 @@ The simulator is now out of events at t=1 $\mu$s and therefore progresses its ti
 
 
 
-%% !TEX root = manual.tex
+
 
 ### Section 3.6: Network Model<a name="sec:tutorial:networkmodel"></a>
 
@@ -949,9 +944,9 @@ The flow model, in simple cases, corrects the most severe problems of the packet
 
 The flow model starts to break down for large systems or under heavy congestion. In the packet model, all congestion events are "local" to a given router. The number of events is also constant in packet models regardless of congestion since we are modeling a fixed number of discrete units. In flow models, flow update events can be "non-local," propagating across the system and causing flow update events on other routers. When congestion occurs, this "ripple effect" can cause the number of events to explode, overwhelming the simulator. For large systems or heavy congestion, the flow model is actually much slower than the packet model. Support for this model has been completely removed.
 
-%With modest congestion, the approximations are still relatively accurate and should produce good results.
 
-%The flow model can also be explored via the GUI (see ).
+
+
 
 #### 3.6.3: Packet-flow<a name="subsec:tutorial:train"></a>
 
@@ -963,7 +958,7 @@ For more details on packet-flow parameters, see the `hopper_amm.ini` files in th
 
 
 
-%% !TEX root = manual.tex
+
 
 ### Section 3.7: Launching, Allocation, and Indexing<a name="sec:tutorial:launchetc"></a>
 
@@ -1062,67 +1057,69 @@ Random indexing on a Cartesian allocation still gives a contiguous block of node
 even if consecutive MPI ranks are scattered around.
 A random allocation (unless allocating the whole machine) will not give a contiguous set of nodes.
 
-%% !TEX root = manual.tex
 
-%\section{Configuring MPI}
 
-%
 
-%Here we introduce the MPI tuning parameters and what they mean for performance experiments.
 
-%\subsection{MPI Implementation}
 
-%
 
-%The default parameter is `mpi_implementation = basic`,
 
-%The cutoff for eager to rendezvous can be tuned by specifying, e.g.
 
-%````
-%
-````
 
-%
 
-%which now allows a fancier set of protocols that leverage RDMA.
 
-%
 
-%smp_single_copy_size = 8KB
 
-%max_vshort_msg_size = 1KB
 
-%
 
-%at https://www.nersc.gov/assets/NUG-Meetings/2012/HowardP-MPI-NUG2012.png.
 
-%For small messages below the cutoff, an eager protocol is used where the message is copied into an intermediate buffer.
 
-%The parameter `max_eager_msg_size` controls the crossover from an eager protocol using send buffers to a rendezvous protocol with zero-copy.
 
-%For very small messages, a special pathway can be taken avoiding RDMA and just directly sending the small message into a pre-allocated mailbox on the receiver.
 
-%
 
-%The implementation of individual collectives can vary widely depending on the platform, message size, or distribution.
 
-%of which MPI collective algorithms are used.  Currently, only MPI\_Allgather and MPI\_Allreduce can have alternative implementations chosen.
 
-%to use either a basic ring algorithm or to use the Br{\"u}ck algorithm.  In the same way, one can either specify
 
-%More details can be found in "Optimization of Collective Communication Operations in MPICH" by Rajeev Thakur and Rolf Rabenseifner.
 
-%Future versions of SST-macro are expected to include a more complete library of collective algorithms with the ability to tune which algorithms are selected for specific buffer sizes.
 
-%\subsection{MPI Queue}
 
-%Most current MPI implementations have integrated progress engines that only move forward inside MPI\_Wait or MPI\_Test calls.
 
-%For the parameter `mpi_queue_thread_type`, you can either specify `user`, integrated progress engine that is part of the user application,
 
-%If using the call graph feature (Section [3.9](#sec:tutorials:callgraph)), far more detail is available if using the integrated engine with `user`.
 
-%% !TEX root = manual.tex
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ### Section 3.8: Using DUMPI<a name="sec:tutorial:dumpi"></a>
 
@@ -1455,7 +1452,7 @@ node.os.ftq.epoch=5us
 
 
 
-%% !TEX root = manual.tex
+
 
 ## Chapter 4: Topologies<a name="chapter:topologies"></a>
 
@@ -1502,7 +1499,7 @@ The program is just exited with Ctrl-C. The meaning of the above coordinates is 
 
 
 
-% !TEX root = manual.tex ### Section 4.1: Torus<a name="subsec:tutorial:hypercube"></a>
+### Section 4.1: Torus<a name="subsec:tutorial:hypercube"></a>
 
 
 
@@ -1539,7 +1536,9 @@ We allocate a set of switches across an XY plane (2 in X, 2 in Y, 1 in Z for a s
 
 
 
-% !TEX root = manual.tex ### Section 4.2: Hypercube<a name="subsec:tutorial:hypercube"></a>
+
+
+### Section 4.2: Hypercube<a name="subsec:tutorial:hypercube"></a>
 
 
 
@@ -1611,25 +1610,9 @@ To fully maximize path diversity on adversarial traffic patterns, though, path-d
 
 
 
-%
-
-#### 4.2.1: Butterfly<a name="subsec:tutorial:butterfly"></a>
 
 
 
-\subsubsection{Allocation and indexing}
-
-\subsubsection{Routing}
-
-#### 4.2.2: Flattened Butterfly<a name="subsec:tutorial:fbfly"></a>
-
-
-
-\subsubsection{Allocation and indexing}
-
-\subsubsection{Routing}
-
-%% !TEX root = manual.tex
 
 ### Section 4.3: Fat Tree<a name="sec:tutorial:fattree"></a>
 
@@ -1741,7 +1724,7 @@ which round-robin assigns rank 0 to node, rank 1 to node 1, rank 2 to node 0, an
 
 \subsection{Routing} Fat tree routing is actually straightforward, but can employ path diversity. Suppose you are routing from Node 0 to Node 2 (Figure [26](#fig:topologies:fattreeids)). At the first stage, you have no choice. You must route to Switch 1. At the second stage, you can either route to Switch 8 or Switch 9. Suppose you branch to Switch 9. At this point, you are done moving up. The packet now proceeds down the fat-tree. On the downward routing, there is no path diversity. Only a single, minimal route exists to the destination node. In the simplest case, Switch 1 alternates between selecting Switch 8 and Switch 9 to distribute load. In a more complicated scheme, Switch 1 could adaptively route selecting either Switch 8 or Switch 9 based on congestion information.
 
-%% !TEX root = manual.tex
+
 
 ### Section 4.4: Dragonfly<a name="sec:tutorial:dragonfly"></a>
 
@@ -1824,7 +1807,7 @@ router = ugal
 
 
 
-% !TEX root = manual.tex
+
 
 ## Chapter 5: Applications and Skeletonization<a name="sec:skeletonization"></a>
 
