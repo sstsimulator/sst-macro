@@ -101,7 +101,7 @@ Although SST-macro supports both on-line and off-line modes, on-line simulation 
 
 For large, system-level experiments with thousands of network endpoints, high-accuracy cycle-accurate simulation is not possible, or at least not convenient. Simulation requires coarse-grained approximations to be practical. SST-macro is therefore designed for specific cost/accuracy tradeoffs. It should still capture complex cause/effect behavior in applications and hardware, but be efficient enough to simulate at the system-level. For speeding up simulator execution, we encourage skeletonization, discussed further in Chapter [5](#sec:skeletonization). A high-quality skeleton is an application model that reproduces certain characteristics with only limited computation. We also encourage uncertainty quantification (UQ) for validating simulator results, to be detailed in a pending SAND report. Skeletonization and UQ are the two main elements in the "canonical" SST-macro workflow (Figure [1](#fig:workflow)).
 
-![*Figure 1: SST/macro workflow.*](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/workflow.pdf)
+![*Figure 1: SST/macro workflow.*](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/workflow.png)
 
 *Figure 1: SST/macro workflow.*
 
