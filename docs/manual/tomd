@@ -225,6 +225,9 @@ def labeled_header_pair(sectionName, count):
 def header_pair(sectionName, count):
   return (macro_regexp(sectionName), lambda x: repl_section_header(x, sectionName, count))
 
+def return_bold(match):
+  return "*%s*" % match.groups()[0]
+
 repls = [
   (quotes_regexp, repl_quotes),
   (section_regexp("CppCode")  , repl_code_block),
@@ -246,6 +249,7 @@ repls = [
   (macro_regexp('textit') , return_self),
   (macro_regexp('author') , ""),
   (macro_regexp('url') , return_self),
+  (macro_regexp('subsection'), return_bold),
   (r'\sstmacro' , 'SST-macro'),
   (r'\sprockit', 'SProCKit'),
   (r'\maketitle' , ''),
