@@ -8,9 +8,14 @@ LULESH_EXEC = lulesh2.0
 MPI_INC = /opt/local/include/openmpi
 MPI_LIB = /opt/local/lib
 
-#LULESH_SST_FLAGS=-DLULESH_SST_MODS -DLULESH_SST_VERBOSE -DLULESH_SST_SIM
-LULESH_SST_FLAGS=-DLULESH_SST_MODS -DLULESH_SST_SIM
+# For pure(ish) Lulesh:
 #LULESH_SST_FLAGS=
+
+# For slightly tweaked Lulesh (for apples-to-apples comparison with SST model):
+#LULESH_SST_FLAGS=-DLULESH_SST_MODS
+
+# For SST model:
+LULESH_SST_FLAGS=-DLULESH_SST_MODS -DLULESH_SST_SIM
 
 SERCXX = sst++ -DUSE_MPI=0 $(LULESH_SST_FLAGS)
 MPICXX = sst++ -DUSE_MPI=1 $(LULESH_SST_FLAGS)

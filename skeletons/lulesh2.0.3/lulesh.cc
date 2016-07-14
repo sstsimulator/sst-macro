@@ -176,9 +176,6 @@ Additional BSD Notice
 template <typename T>
 T *Allocate(size_t size)
 {
-#if defined(LULESH_SST_MODS) && defined(LULESH_SST_VERBOSE)
-   std::cout << "Allocate " << size << std::endl;
-#endif
 #ifdef LULESH_SST_MODS
    return new T[size];
 #else
@@ -189,9 +186,6 @@ T *Allocate(size_t size)
 template <typename T>
 void Release(T **ptr)
 {
-#if defined(LULESH_SST_MODS) && defined(LULESH_SST_VERBOSE)
-   std::cout << "Release" << std::endl;
-#endif
    if (*ptr != NULL) {
 #ifdef LULESH_SST_MODS
       delete [] *ptr;
@@ -202,13 +196,10 @@ void Release(T **ptr)
    }
 }
 
-#ifdef LULESH_SST_MODS
+#if defined(LULESH_SST_MODS) && defined(LULESH_SST_SIM)
 template <typename T>
 void Release(VariablePtr<T> *ptr)
 {
-#ifdef LULESH_SST_VERBOSE
-   std::cout << "Release" << std::endl;
-#endif
 }
 #endif
 

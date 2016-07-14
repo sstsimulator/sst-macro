@@ -185,7 +185,7 @@ void VerifyAndWriteFinalOutput(Real_t elapsed_time,
    printf("   Problem size        =  %i \n",    nx);
    printf("   MPI tasks           =  %i \n",    numRanks);
    printf("   Iteration count     =  %i \n",    locDom.cycle());
-#ifdef LULESH_SST_MODS
+#if defined(LULESH_SST_MODS) && defined(LULESH_SST_SIM)
    printf("   Final Origin Energy = %12.6e \n", (double)(locDom.e(ElemId)));
 #else
    printf("   Final Origin Energy = %12.6e \n", locDom.e(ElemId));
