@@ -250,6 +250,7 @@ repls = [
   (macro_regexp('author') , ""),
   (macro_regexp('url') , return_self),
   (macro_regexp('subsection'), return_bold),
+  (macro_regexp('section'), return_bold),
   (r'\sstmacro' , 'SST-macro'),
   (r'\sprockit', 'SProCKit'),
   (r'\maketitle' , ''),

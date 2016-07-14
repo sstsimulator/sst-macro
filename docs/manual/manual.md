@@ -14,45 +14,21 @@
 
 # Table of Contents
    - [Chapter 1: Introduction](#sec:intro)
-      - [Section 1.1: Overview](#sec:intro:overview)
-      - [Section 1.2: Currently Supported](#sec:intro:supported)
             - [Fully tested](#subsubsec:intro:fulltestedtools)
-      - [Section 1.3: Known Issues and Limitations](#sec:intro:issues)
             - [Communicators](#subsubsec:issues:mpi:comm)
             - [Datatypes and Addressing](#subsubsec:issues:mpi:types)
             - [Info and Attributes](#subsubsec:issues:mpi:info)
             - [Point-to-Point](#subsubsec:issues:mpi:ptpt)
             - [Collectives](#subsubsec:issues:mpi:collectives)
    - [Chapter 2: Building and Running SST/macro](#chapter:building)
-      - [Section 2.1: Build and Installation of SST-macro](#sec:buildinstall)
             - [Build SST core](#subsec:buildSSTCore)
             - [Build SST/macro element library](#subsec:buildElementLib)
-      - [Section 2.2: Building DUMPI](#sec:building:dumpi)
-      - [Section 2.3: Parallel Simulations in Standalone Mode](#sec:PDES)
-      - [Section 2.4: Debug Output](#sec:dbgoutput)
    - [Chapter 3: Basic Tutorials](#chapter:tutorials)
-      - [Section 3.1: SST/macro Parameter files](#sec:parameters)
-      - [Section 3.2: Abstract Machine Models](#sec:amm)
-      - [Section 3.3: Basic MPI Program](#sec:tutorial:basicmpi)
-      - [Section 3.4: Network Topologies and Routing](#sec:tutorial:topology)
-      - [Section 3.5: Discrete Event Simulation](#sec:tutorial:des)
-      - [Section 3.6: Network Model](#sec:tutorial:networkmodel)
-      - [Section 3.7: Launching, Allocation, and Indexing](#sec:tutorial:launchetc)
             - [Indexing Schemes](#subsec:tutorial:indexing)
-      - [Section 3.8: Using DUMPI](#sec:tutorial:dumpi)
             - [Trace Collection](#subsec:dumpi:tracecollection)
             - [Trace Replay](#subsec:dumpi:tracereplay)
-      - [Section 3.9: Call Graph Visualization](#sec:tutorials:callgraph)
-      - [Section 3.10: Spyplot Diagrams](#sec:tutorials:spyplot)
-      - [Section 3.11: Fixed-Time Quanta Charts](#sec:tutorials:ftq)
    - [Chapter 4: Topologies](#chapter:topologies)
-      - [Section 4.1: Torus](#subsec:tutorial:hypercube)
-      - [Section 4.2: Hypercube](#subsec:tutorial:hypercube)
-      - [Section 4.3: Fat Tree](#sec:tutorial:fattree)
-      - [Section 4.4: Dragonfly](#sec:tutorial:dragonfly)
    - [Chapter 5: Applications and Skeletonization](#sec:skeletonization)
-      - [Section 5.1: Basic Application porting](#sec:skel:basic)
-      - [Section 5.2: Redirected linkage](#sec:skel:linkage)
 
 
 
@@ -60,13 +36,11 @@
 
 
 
-### Section 1.1: Overview<a name="sec:intro:overview"></a>
-
-
+**Overview** \label{sec:intro:overview}
 
 The SST-macro software package provides a simulator for large-scale parallel computer architectures. It permits the coarse-grained study of distributed-memory applications. The simulator is driven from either a trace file or skeleton application. The simulator architecture is modular, allowing it to easily be extended with additional network models, trace file formats, software services, and processor models.
 
-Simulation can be broadly categorized as either off-line or on-line. Off-line simulators typically first run a full parallel application on a real machine, recording certain communication and computation events to a simulation trace. This event trace can then be replayed post-mortem in the simulator. Most common are MPI traces which record all MPI events, and SST-macro provides the DUMPI utility ([3.8](#sec:tutorial:dumpi)) for collecting and replaying MPI traces. Trace extrapolation can extend the usefulness of off-line simulation by estimating large or untraceable system scales without having to collect a trace, it is typically only limited to strictly weak scaling.
+Simulation can be broadly categorized as either off-line or on-line. Off-line simulators typically first run a full parallel application on a real machine, recording certain communication and computation events to a simulation trace. This event trace can then be replayed post-mortem in the simulator. Most common are MPI traces which record all MPI events, and SST-macro provides the DUMPI utility () for collecting and replaying MPI traces. Trace extrapolation can extend the usefulness of off-line simulation by estimating large or untraceable system scales without having to collect a trace, it is typically only limited to strictly weak scaling.
 
 We turn to on-line simulation when the hardware or applications parameters need to change. On-line simulators instead run real application code, allowing native C/C++/Fortran to be compiled directly into the simulator. SST-macro intercepts certain function calls, estimating how much time passes rather than actually executing the function. In MPI programs, for example, calls to MPI\_Send are linked to the simulator instead of passing to the real MPI library. If desired, SST-macro can actually be a full MPI emulator, delivering messages between ranks and replicating the behavior of a full MPI implementation.
 
@@ -80,9 +54,7 @@ For large, system-level experiments with thousands of network endpoints, high-ac
 
 
 
-### Section 1.2: Currently Supported<a name="sec:intro:supported"></a>
-
-
+**Currently Supported** \label{sec:intro:supported}
 
 **Programming APIs** \label{subsec:intro:apis}
 
@@ -94,17 +66,15 @@ Because of its popularity, MPI is one of our main priorities in providing progra
 
 
 
--   Call graph: Generates callgrind.out file that can be visualized in either KCacheGrind or QCacheGrind. More details are given in [3.9](#sec:tutorials:callgraph).
--   Spyplot: Generates .csv data files tabulating the number of messages and number of bytes sent between MPI ranks. SST-macro can also directly generate a PNG file. Otherwise, the .csv files can be visualized in the plotting program Scilab. More details are given in [3.10](#sec:tutorials:spyplot).
--   Fixed-time quanta (FTQ): Generates a .csv data tabulating the amount of time spent doing computation/communication as the application progresses along with a Gnuplot script for visualization as a histogram. More details are given in [3.11](#sec:tutorials:ftq)
+-   Call graph: Generates callgrind.out file that can be visualized in either KCacheGrind or QCacheGrind. More details are given in .
+-   Spyplot: Generates .csv data files tabulating the number of messages and number of bytes sent between MPI ranks. SST-macro can also directly generate a PNG file. Otherwise, the .csv files can be visualized in the plotting program Scilab. More details are given in .
+-   Fixed-time quanta (FTQ): Generates a .csv data tabulating the amount of time spent doing computation/communication as the application progresses along with a Gnuplot script for visualization as a histogram. More details are given in
 
-### Section 1.3: Known Issues and Limitations<a name="sec:intro:issues"></a>
-
-
+**Known Issues and Limitations** \label{sec:intro:issues}
 
 **Global Variables** \label{subsec:issues:globals}
 
-The use of global variables in SST-macro inherently creates a false-sharing scenario because of the use of user-space threads to model parallel processes. While we do have a mechanism for supporting them (see [5.1](#sec:skel:basic) for more information), the file using them must be compiled with C++. This is somewhat unfortunate, because many C programs will use global variables as a convenient means of accessing program data. In almost every case, though, a C program can simply be compiled as C++ by changing the extension to .cc or .cpp.
+The use of global variables in SST-macro inherently creates a false-sharing scenario because of the use of user-space threads to model parallel processes. While we do have a mechanism for supporting them (see  for more information), the file using them must be compiled with C++. This is somewhat unfortunate, because many C programs will use global variables as a convenient means of accessing program data. In almost every case, though, a C program can simply be compiled as C++ by changing the extension to .cc or .cpp.
 
 **MPI** \label{subsec:issues:mpi}
 
@@ -175,9 +145,7 @@ SST-macro previously provided some experimental support for Fortran90 applicatio
 
 
 
-### Section 2.1: Build and Installation of SST-macro<a name="sec:buildinstall"></a>
-
-
+**Build and Installation of SST-macro** \label{sec:buildinstall}
 
 **Downloading** \label{subsec:build:downloading}
 
@@ -309,9 +277,7 @@ It can be fixed easily enough.
 -   Compilation with clang should work, although the compiler is very sensitive.  
 In particular, template code which is correct and compiles on several other platforms can mysteriously fail.  Tread with caution.
 
-### Section 2.2: Building DUMPI<a name="sec:building:dumpi"></a>
-
-
+**Building DUMPI** \label{sec:building:dumpi}
 
 By default, DUMPI is configured and built along with SST/macro with support for reading and parsing DUMPI traces, known as libundumpi. DUMPI binaries and libraries are also installed along with everything for SST-macro during make install. DUMPI can be used as it's own library within the SST-macro source tree by changing to `sst-macro/sst-dumpi`, where you can change its configuration options. It is not recommended to disable libundumpi support, which wouldn't make much sense anyway.
 
@@ -335,7 +301,7 @@ the libtool script.  Search for predeps/postdeps and set the values to empty.
 This will clear all the erroneous linker flags.  The compilation/linkage should still work since 
 all necessary flags are set by the wrappers.
 
-\section{Running an Application} **SST Python Scripts** Full details on building SST Python scripts can be found at http://sst-simulator.org.  To preserve the old parameter format in the near-term, SST/macro provides the `pysstmac` script:
+**Running an Application** **SST Python Scripts** Full details on building SST Python scripts can be found at http://sst-simulator.org.  To preserve the old parameter format in the near-term, SST/macro provides the `pysstmac` script:
 
 ````
 export PYTHONPATH=$PYTHONPATH:$SSTMAC_PREFIX/include/python:$SSTMAC_PREFIX/lib
@@ -359,7 +325,7 @@ since there is no Python setup involved.
 
 **Building Skeleton Applications** \label{sec:tutorial:runapp}
 
-To demonstrate how an external skeleton application is run in SST-macro, we'll use a very simple send-recv program located in `skeletons/sendrecv`. We will take a closer look at the actual code in Section [3.3](#sec:tutorial:basicmpi). After SST-macro has been installed and your PATH variable set correctly, run:
+To demonstrate how an external skeleton application is run in SST-macro, we'll use a very simple send-recv program located in `skeletons/sendrecv`. We will take a closer look at the actual code in Section . After SST-macro has been installed and your PATH variable set correctly, run:
 
 ````
 sst-macro> cd skeletons/sendrecv
@@ -388,7 +354,7 @@ PREFIX :=   ...
 LDFLAGS :=  -Wl,-rpath,$(PREFIX)/lib
 ...
 ````
-The SST compiler wrappers `sst++` and `sstcc` automagically configure and map the code for simulation.  More details are given in Section [5.2](#sec:skel:linkage).  If using external skeleton applications, the default Python script for SST/macro will not work and a small modification will be required.
+The SST compiler wrappers `sst++` and `sstcc` automagically configure and map the code for simulation.  More details are given in Section .  If using external skeleton applications, the default Python script for SST/macro will not work and a small modification will be required.
 
 **Command-line arguments** \label{subsec:tutorial:cmdline}
 
@@ -399,14 +365,12 @@ There are only a few basic command-line arguments you'll ever need to use with S
 This can be relative to the current directory, an absolute path, or the name of a pre-set file that is in sstmacro/configurations 
 (which installs to /path-to-install/include/configurations, and gets searched along with current directory).
 -   --dumpi: If you are in a folder with all the DUMPI traces, you can invoke the main `sstmac` executable with this option.  This replays the trace in a special debug mode for quickly validating the correctness of a trace.
--   -d [debug flags]: A list of debug flags to activate as a comma-separated list (no spaces) - see Section [2.4](#sec:dbgoutput)
+-   -d [debug flags]: A list of debug flags to activate as a comma-separated list (no spaces) - see Section 
 -   -p [parameter]=[value]: Setting a parameter value (overrides what is in the parameter file)
 -   -t [value]: Stop the simulation at simulated time [value]
 -   -c: If multithreaded, give a comma-separated list (no spaces) of the core affinities to use - see Section
 
-### Section 2.3: Parallel Simulations in Standalone Mode<a name="sec:PDES"></a>
-
-
+**Parallel Simulations in Standalone Mode** \label{sec:PDES}
 
 SST-macro supports running parallel discrete event simulation (PDES) in distributed memory (MPI), threaded shared memory (pthreads) and hybrid (MPI+pthreads) modes.  Running these in standalone mode is generally discouraged as parallel simulations should use the unified SST core.
 
@@ -457,9 +421,7 @@ While the PDES implementation should be stable, it's best to treat it as Beta++ 
 
 Parallel simulation speedups are likely to be modest for small runs. Speeds are best with serious congestion or heavy interconnect traffic. Weak scaling is usually achievable with 100-500 simulated MPI ranks per logical process. Even without speedup, parallel simulation can certainly be useful in overcoming memory constraints, expanding the maximum memory footprint.
 
-### Section 2.4: Debug Output<a name="sec:dbgoutput"></a>
-
-SST-macro defines a set of debug flags that can be specified in the parameter file to control debug output printed by the simulator. To list the set of all valid flags with documentation, the user can run
+**Debug Output** \label{sec:dbgoutput} SST-macro defines a set of debug flags that can be specified in the parameter file to control debug output printed by the simulator. To list the set of all valid flags with documentation, the user can run
 
 ````
 bin> ./sstmac --debug-flags
@@ -504,9 +466,7 @@ More info on declaring new debug flags in your own code can be found in the deve
 
 
 
-### Section 3.1: SST/macro Parameter files<a name="sec:parameters"></a>
-
-A minimal parameter file setting up a 2D-torus topology is shown below. The preferred (current) version uses namespaces (ns.param syntax). However, we also show the deprecated parameters used by previous versions.
+**SST/macro Parameter files** \label{sec:parameters} A minimal parameter file setting up a 2D-torus topology is shown below. The preferred (current) version uses namespaces (ns.param syntax). However, we also show the deprecated parameters used by previous versions.
 
 ````
 # Launch parameters
@@ -536,7 +496,7 @@ Comments can be included on lines starting with \#.
 
 The input file is broken into sections via comments. First, application launch parameters must be chosen determining what application will launch, how nodes will be allocated, how ranks will be indexed, and finally what application will be run. Additionally, you must specify how many processes to launch and how many to spawn per node. We currently recommend using aprun syntax (the launcher for Cray machines), although support is being added for other process management systems. SST-macro can simulate command line parameters by giving a value for `app1.argv`.
 
-A network must also be chosen. In the simplest possible case, the network is modeled via a simple latency/bandwidth formula. For more complicated network models, many more than two parameters will be required. See [3.6](#sec:tutorial:networkmodel) for a brief explanation of SST-macro network congestion models. A topology is also needed for constructing the network. In this case we choose a 2-D 4$\times$4 torus (16 switches).  The `topology_geometry` parameter takes an arbitrarily long list of numbers as the dimensions to the torus.
+A network must also be chosen. In the simplest possible case, the network is modeled via a simple latency/bandwidth formula. For more complicated network models, many more than two parameters will be required. See  for a brief explanation of SST-macro network congestion models. A topology is also needed for constructing the network. In this case we choose a 2-D 4$\times$4 torus (16 switches).  The `topology_geometry` parameter takes an arbitrarily long list of numbers as the dimensions to the torus.
 
 Finally, we must construct a node model. In this case, again, we use the simplest possible models (null model) for the node, network interface controller (NIC), and memory. The null model is essentially a no-op, generating the correct control flow but not actually simulating any computation. This is useful for validating program correctness or examining questions only related to the network. More accurate (and complicated) models will require parameters for node frequency, memory bandwidth, injection latency, etc.
 
@@ -587,11 +547,9 @@ sendrecv_message_size = 128
 
 
 
-### Section 3.2: Abstract Machine Models<a name="sec:amm"></a>
+**Abstract Machine Models** \label{sec:amm}
 
-
-
-The preferred mode for usage of SST-macro will be through specifying parameters for well-defined abstract machine models. This represents an intermediate-level mode that should cover the vast majority of use cases. The highly configurable, detailed parameter files will remain valid but will represent advanced usage mode for corner cases. The primary advantage of the abstract machine models is a uniform set of parameters regardless of the underlying congestion model or accuracy level (e.g. packet, flow, train, packet-flow, LogGOPSim). Each input file requires the usual set of software parameters given in [3.1](#sec:parameters). For hardware parameters, two initial parameters are required and one is optional.
+The preferred mode for usage of SST-macro will be through specifying parameters for well-defined abstract machine models. This represents an intermediate-level mode that should cover the vast majority of use cases. The highly configurable, detailed parameter files will remain valid but will represent advanced usage mode for corner cases. The primary advantage of the abstract machine models is a uniform set of parameters regardless of the underlying congestion model or accuracy level (e.g. packet, flow, train, packet-flow, LogGOPSim). Each input file requires the usual set of software parameters given in . For hardware parameters, two initial parameters are required and one is optional.
 
 ````
 congestion_model = packet_flow
@@ -685,9 +643,7 @@ network_hop_latency = 100ns
 
 
 
-### Section 3.3: Basic MPI Program<a name="sec:tutorial:basicmpi"></a>
-
-Let us go back to the simple send/recv skeleton and actually look at the code. This code should be compiled with SST compiler wrappers installed in the `bin` folder.
+**Basic MPI Program** \label{sec:tutorial:basicmpi} Let us go back to the simple send/recv skeleton and actually look at the code. This code should be compiled with SST compiler wrappers installed in the `bin` folder.
 
 ````
 #include <stdlib.h>
@@ -742,9 +698,7 @@ Here the code just checks the MPI rank and sends (rank 0) or receives (rank 1) a
 
 
 
-### Section 3.4: Network Topologies and Routing<a name="sec:tutorial:topology"></a>
-
-We here give a brief introduction to specifying different topologies and routing strategies. We will only discuss one basic example (torus). A more thorough introduction covering all topologies is planned for future releases. Excellent resources are "Principles and Practices of Interconnection Networks" by Brian Towles and William Dally published by Morgan Kaufman and "High Performance Datacenter Networks" by Dennis Abts and John Kim published by Morgan and Claypool.
+**Network Topologies and Routing** \label{sec:tutorial:topology} We here give a brief introduction to specifying different topologies and routing strategies. We will only discuss one basic example (torus). A more thorough introduction covering all topologies is planned for future releases. Excellent resources are "Principles and Practices of Interconnection Networks" by Brian Towles and William Dally published by Morgan Kaufman and "High Performance Datacenter Networks" by Dennis Abts and John Kim published by Morgan and Claypool.
 
 **Topology** \label{subsec:tutorial:topology}
 
@@ -827,9 +781,7 @@ At each network hop, the router chooses the productive path with least congestio
 
 
 
-### Section 3.5: Discrete Event Simulation<a name="sec:tutorial:des"></a>
-
-Although not necessary for using the simulator, a basic understanding of discrete event simulation can be helpful in giving users an intuition for network models and parameters. Here we walk through a basic program that executes a single send/recv pair. SST-macro simulates many parallel processes, but itself runs as a single process with only one address space (SST-macro can actually run in parallel mode, but we ignore that complication here). SST-macro manages each parallel process as a user-space thread (application thread), allocating a thread stack and frame of execution. User-space threading is necessary for large simulations since otherwise the kernel would be overwhelmed scheduling thousands of threads.
+**Discrete Event Simulation** \label{sec:tutorial:des} Although not necessary for using the simulator, a basic understanding of discrete event simulation can be helpful in giving users an intuition for network models and parameters. Here we walk through a basic program that executes a single send/recv pair. SST-macro simulates many parallel processes, but itself runs as a single process with only one address space (SST-macro can actually run in parallel mode, but we ignore that complication here). SST-macro manages each parallel process as a user-space thread (application thread), allocating a thread stack and frame of execution. User-space threading is necessary for large simulations since otherwise the kernel would be overwhelmed scheduling thousands of threads.
 
 SST-macro is driven by a simulation thread which manages the user-space thread scheduling (Figure [9](#fig:des)). In the most common (and simplest) use case, all user-space threads are serialized, running one at a time. The main simulation thread must manage all synchronizations, yielding execution to process threads at the appropriate times. The main simulation thread is usually abbreviated as the DES (discrete event simulation) thread. The simulation progresses by scheduling future events. For example, if a message is estimated to take 5 $\mu$s to arrive, the simulator will schedule a MESSAGE ARRIVED event 5 $\mu$s ahead of the current time stamp. Every simulation starts by scheduling the same set of events: launch process 0, launch process 1, etc.
 
@@ -851,9 +803,7 @@ The simulator is now out of events at t=1 $\mu$s and therefore progresses its ti
 
 
 
-### Section 3.6: Network Model<a name="sec:tutorial:networkmodel"></a>
-
-
+**Network Model** \label{sec:tutorial:networkmodel}
 
 **Packet** \label{subsec:tutorial:packet} The packet model is the simplest and most intuitive of the congestion models for simulating network traffic. The physics correspond naturally to a real machine: messages are broken into small chunks (packets) and routed individually through the network. When two messages compete for the same channel (Figure [10](#fig:tutorial:congestion)A), arbitration occurs at regular intervals to select which packet has access. Packets that lose arbitration are delayed, leading to network congestion. In SST-macro, the packet model is still coarse-grained. In a real machine, packet sizes can be very small (100 B). Additionally, arbitration can happen on flits (flow control units), an even smaller unit than the packet. Flit-level arbitration or even 100B packet arbitration is far too fine-grained to do system-level simulation. While packet size is tunable in SST-macro, the simulator is designed for coarse-grained packet sizes of 1 KB to 8 KB. The same flow control (routing, arbitration, congestion avoidance) is performed on coarse-grained packets, but some accuracy is lost.
 
@@ -865,7 +815,7 @@ The coarse-grained packet model has two main sources of error. First, coarse-gra
 
 
 
-**Flow** \label{subsec:tutorial:flow} The flow model, in simple cases, corrects the most severe problems of the packet model. Instead of discrete chunks, messages are modeled as fluid flows moving through the network (Figure [10](#fig:tutorial:congestion)B). Congestion is treated as a fluid dynamics problem, sharing bandwidth between competing flows. Without congestion, a flow only requires a FLOW START and FLOW STOP event to be modeled (see tutorial on discrete event simulation in [3.5](#sec:tutorial:des)). While the packet model would require many, many events to simulate a 1 MB message, the flow model might only require two. With congestion, flow update events must be scheduled whenever congestion changes on a network link. For limited congestion, only a few update events must occur. The flow model also corrects the latency and multiplexing problems in the packet model, providing higher-accuracy for coarse-grained simulation.
+**Flow** \label{subsec:tutorial:flow} The flow model, in simple cases, corrects the most severe problems of the packet model. Instead of discrete chunks, messages are modeled as fluid flows moving through the network (Figure [10](#fig:tutorial:congestion)B). Congestion is treated as a fluid dynamics problem, sharing bandwidth between competing flows. Without congestion, a flow only requires a FLOW START and FLOW STOP event to be modeled (see tutorial on discrete event simulation in ). While the packet model would require many, many events to simulate a 1 MB message, the flow model might only require two. With congestion, flow update events must be scheduled whenever congestion changes on a network link. For limited congestion, only a few update events must occur. The flow model also corrects the latency and multiplexing problems in the packet model, providing higher-accuracy for coarse-grained simulation.
 
 The flow model starts to break down for large systems or under heavy congestion. In the packet model, all congestion events are "local" to a given router. The number of events is also constant in packet models regardless of congestion since we are modeling a fixed number of discrete units. In flow models, flow update events can be "non-local," propagating across the system and causing flow update events on other routers. When congestion occurs, this "ripple effect" can cause the number of events to explode, overwhelming the simulator. For large systems or heavy congestion, the flow model is actually much slower than the packet model. Support for this model has been completely removed.
 
@@ -883,9 +833,7 @@ For more details on packet-flow parameters, see the `hopper_amm.ini` files in th
 
 
 
-### Section 3.7: Launching, Allocation, and Indexing<a name="sec:tutorial:launchetc"></a>
-
-
+**Launching, Allocation, and Indexing** \label{sec:tutorial:launchetc}
 
 **Launch Commands** \label{subsec:tutorial:launch} Just as jobs must be launched on a shared supercomputer using Slurm or aprun, SST/macro requires the user to specify a launch command for the application. Currently, we encourage the user to use aprun from Cray, for which documentation can easily be found online. In the parameter file you specify, e.g.
 
@@ -1040,9 +988,7 @@ A random allocation (unless allocating the whole machine) will not give a contig
 
 
 
-### Section 3.8: Using DUMPI<a name="sec:tutorial:dumpi"></a>
-
-
+**Using DUMPI** \label{sec:tutorial:dumpi}
 
 **Building DUMPI** \label{subset:dump:build} As noted in the introduction, SST-macro is primarily intended to be an on-line simulator. Real application code runs, but SST-macro  intercepts calls to communication (MPI) and computation functions to simulate time passing.  However, SST-macro can also run off-line, replaying application traces collected from real production runs.  This trace collection and trace replay library is called DUMPI.
 
@@ -1142,7 +1088,7 @@ subsubversion=0
 
 It is often useful to validate the correctness of a trace.  Sometimes there can be problems with trace collection. There are also a few nooks and crannies of the MPI standard left unimplemented. To validate the trace, you can run in a special debug mode that runs the simulation with a very coarse-grained model to ensure as quickly as possible that all functions execute correctly. This can be done straightforwardly by running the executable with the dumpi flag: `sstmac --dumpi`.
 
-To replay a trace in the simulator, a small modification is required to the example input file in [3.1](#sec:parameters). We have two choices for the trace replay.  First, we can attempt to exactly replay the trace as it ran on the host machine. Second, we could replay the trace on a new machine or different layout.
+To replay a trace in the simulator, a small modification is required to the example input file in . We have two choices for the trace replay.  First, we can attempt to exactly replay the trace as it ran on the host machine. Second, we could replay the trace on a new machine or different layout.
 
 For exact replay, the key issue is specifying the machine topology. For some architectures, topology information can be directly encoded into the trace. This is generally true on Blue Gene, but not Cray. When topology information is recorded, trace replay is much easier. The parameter file then becomes, e.g.
 
@@ -1240,9 +1186,7 @@ The MPI ranks are mapped to physical nodes entirely independent of the trace.
 
 
 
-### Section 3.9: Call Graph Visualization<a name="sec:tutorials:callgraph"></a>
-
-Generating call graphs requires a special build of SST-macro.
+**Call Graph Visualization** \label{sec:tutorials:callgraph} Generating call graphs requires a special build of SST-macro.
 
 ````
 build$ ../configure --prefix=$INSTALL_PATH --enable-graphviz
@@ -1284,9 +1228,7 @@ The basic QCachegrind GUI is shown in Figure [16](#fig:qcgui). On the left, a si
 
 
 
-### Section 3.10: Spyplot Diagrams<a name="sec:tutorials:spyplot"></a>
-
-
+**Spyplot Diagrams** \label{sec:tutorials:spyplot}
 
 Spyplots visualize communication matrices, showing either the number of messages or number of bytes sent between two network endpoints. They are essentially contour diagrams, where instead of a continuous function $F(x,y)$ we are plotting the communication matrix $M(i,j)$. An example spyplot is shown for a simple application that only executes an MPI\_Allreduce (Figure [19](#fig:spyplot)). Larger amounts of data (red) are sent to nearest neighbors while decreasing amounts (blue) are sent to MPI ranks further away.
 
@@ -1329,9 +1271,7 @@ This gives a better sense of spatial locality when many MPI ranks are on the sam
 
 *Figure 20: Application Activity (Fixed-Time Quanta; FTQ) for Simple MPI Test Suite*
 
-### Section 3.11: Fixed-Time Quanta Charts<a name="sec:tutorials:ftq"></a>
-
-Another way of visualizing application activity is a fixed-time quanta (FTQ) chart. While the call graph gives a very detailed profile of what code regions are most important for the application, they lack temporal information. The FTQ histogram gives a time-dependent profile of what the application is doing (Figure [20](#fig:ftq)). This can be useful for observing the ratio of communication to computation. It can also give a sense of how "steady" the application is, i.e. if the application oscillates between heavy computation and heavy communication or if it keeps a constant ratio. In the simple example, Figure [20](#fig:ftq), we show the FTQ profile of a simple MPI test suite with random computation mixed in. In general, communication (MPI) dominates.  However, there are a few compute-intensive and memory-intensive regions.
+**Fixed-Time Quanta Charts** \label{sec:tutorials:ftq} Another way of visualizing application activity is a fixed-time quanta (FTQ) chart. While the call graph gives a very detailed profile of what code regions are most important for the application, they lack temporal information. The FTQ histogram gives a time-dependent profile of what the application is doing (Figure [20](#fig:ftq)). This can be useful for observing the ratio of communication to computation. It can also give a sense of how "steady" the application is, i.e. if the application oscillates between heavy computation and heavy communication or if it keeps a constant ratio. In the simple example, Figure [20](#fig:ftq), we show the FTQ profile of a simple MPI test suite with random computation mixed in. In general, communication (MPI) dominates.  However, there are a few compute-intensive and memory-intensive regions.
 
 The FTQ visualization is activated by another input parameter
 
@@ -1375,9 +1315,9 @@ node.os.ftq.epoch=5us
 
 
 
-The torus topology is straightforward and easy to understand. Here we introduce the basics of other topologies within SST that are more complex and require extra documentation to configure properly. These are generally higher-radix or path-diverse topologies like fat tree, dragonfly, and flattened butterfly. As noted in [3.4](#sec:tutorial:topology), a more thorough and excellent discussions of these topologies is given in "High Performance Datacenter Networks" by Dennis Abts and John Kim.
+The torus topology is straightforward and easy to understand. Here we introduce the basics of other topologies within SST that are more complex and require extra documentation to configure properly. These are generally higher-radix or path-diverse topologies like fat tree, dragonfly, and flattened butterfly. As noted in , a more thorough and excellent discussions of these topologies is given in "High Performance Datacenter Networks" by Dennis Abts and John Kim.
 
-\section{Topology Query Utility} Understanding topology inputs and geometries can sometimes be challenging. SST-macro provides an executable for testing topology inputs and doing example coordinate computations. After making and installing, an executable `sstmac_top_info` will appear in the `bin` folder. The invocation of `sstmac_top_info` is exactly the same as the main `sstmac` executable. For the example parameter file named `machine.ini`:
+**Topology Query Utility** Understanding topology inputs and geometries can sometimes be challenging. SST-macro provides an executable for testing topology inputs and doing example coordinate computations. After making and installing, an executable `sstmac_top_info` will appear in the `bin` folder. The invocation of `sstmac_top_info` is exactly the same as the main `sstmac` executable. For the example parameter file named `machine.ini`:
 
 ````
 topology.name = fattree
@@ -1412,13 +1352,11 @@ NextInput: 2 0 1 2
 Coordinates map to switch ID 32
 ````
 
-The program is just exited with Ctrl-C. The meaning of the above coordinates is detail below for fat tree (Section [4.3](#sec:tutorial:fattree)).
+The program is just exited with Ctrl-C. The meaning of the above coordinates is detail below for fat tree (Section ).
 
 
 
-### Section 4.1: Torus<a name="subsec:tutorial:hypercube"></a>
-
-
+**Torus** \label{subsec:tutorial:hypercube}
 
 The torus is the simplest topology and fairly easy to understand. We have already discussed basic indexing and allocation as well as routing. More complicated allocation schemes with greater fine-grained control can be used such as the coordinate allocation scheme (see hypercube below for examples) and the node ID allocation scheme (see fat tree below for examples). More complicated Valiant and UGAL routing schemes are shown below for hypercube and dragonfly, but apply equally well to torus.
 
@@ -1455,9 +1393,7 @@ We allocate a set of switches across an XY plane (2 in X, 2 in Y, 1 in Z for a s
 
 
 
-### Section 4.2: Hypercube<a name="subsec:tutorial:hypercube"></a>
-
-
+**Hypercube** \label{subsec:tutorial:hypercube}
 
 Although never used at scale in a production system, the generalized hypercube is an important topology to understand, particularly for flattened butterfly and dragonfly. The (k,n) generalized hypercube is geometrically an N-dimensional torus with each dimension having size k (although dimension sizes need not be equal). Here we show a (4,2) generalized hypercube (Figure [21](#fig:topologies:hypercubeConnected)).  This would be specified in SST as:
 
@@ -1531,9 +1467,7 @@ To fully maximize path diversity on adversarial traffic patterns, though, path-d
 
 
 
-### Section 4.3: Fat Tree<a name="sec:tutorial:fattree"></a>
-
-
+**Fat Tree** \label{sec:tutorial:fattree}
 
 Within SST, a fat tree is defined by the following parameters:
 
@@ -1643,9 +1577,7 @@ which round-robin assigns rank 0 to node, rank 1 to node 1, rank 2 to node 0, an
 
 
 
-### Section 4.4: Dragonfly<a name="sec:tutorial:dragonfly"></a>
-
-
+**Dragonfly** \label{sec:tutorial:dragonfly}
 
 ![Figure 27: Schematic of dragonfly with three groups showing hypercube intragroup links and high bandwidth intergroup global links](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/dragonfly/dragonfly.png)
 
@@ -1730,9 +1662,7 @@ router = ugal
 
 
 
-### Section 5.1: Basic Application porting<a name="sec:skel:basic"></a>
-
-There are three parts to successfully taking a C++ code and turning it into a running application.
+**Basic Application porting** \label{sec:skel:basic} There are three parts to successfully taking a C++ code and turning it into a running application.
 
 -   Redirected linkage: Rather than linking to MPI, pThreads, or other parallel libraries (or even calling `hostname`), these functions must be redirected to SST-macro rather than actually executing.
 If you compiled with the `--enable-replacement-headers` flag, you get all redirected linkage for free by using
@@ -1741,11 +1671,9 @@ the SST compiler wrappers `sst++` and `sstcc` installed in the `bin` folder.
 -   Process encapsulation: Each virtual process being simulated is not an actual physical process. It is instead modeled as a lightweight user-space thread.  This means each virtual process has its own stack and register variables, but that is it.
 Virtual processes share the same address space and the same global variables.  Some refactoring may be necessary if you have global variables.
 
-### Section 5.2: Redirected linkage<a name="sec:skel:linkage"></a>
+**Redirected linkage** \label{sec:skel:linkage} Because of the way libraries are import in the SST core, using external skeleton apps is more complicated than previously.  Steps are being taken to re-automate this process, which will hopefully be available in the next subversion. For running the standalone version, this is essentially automatic  if using the SST compiler wrappers.  The compiler wrappers produce a new executable incorporating your new skeleton.
 
-Because of the way libraries are import in the SST core, using external skeleton apps is more complicated than previously.  Steps are being taken to re-automate this process, which will hopefully be available in the next subversion. For running the standalone version, this is essentially automatic  if using the SST compiler wrappers.  The compiler wrappers produce a new executable incorporating your new skeleton.
-
-The wrinkle is external skeletons apps is changing the application's entry point, i.e. `main`. The SST/macro framework has already taken the \texttt{main} function, and consequently the user application becomes a sub-routine within the simulation environment. As introduced in Section~[3.3](#sec:tutorial:basicmpi), one needs to change the entry function from \texttt{main} to \texttt{user\_skeleton\_main}, which has the same function signature as the \texttt{main} function.  This refactoring happens automatically in the SST compiler wrappers.
+The wrinkle is external skeletons apps is changing the application's entry point, i.e. `main`. The SST/macro framework has already taken the \texttt{main} function, and consequently the user application becomes a sub-routine within the simulation environment. As introduced in Section~, one needs to change the entry function from \texttt{main} to \texttt{user\_skeleton\_main}, which has the same function signature as the \texttt{main} function.  This refactoring happens automatically in the SST compiler wrappers.
 
 If you need to use more than one application in the simulator at a time, you need multiple application entry points. It is no longer possible to do automatic refactoring.  You must explicitly use the macro `sstmac_register_app` and change the name of your `main`.  Thus, a code might look like
 
@@ -1770,7 +1698,7 @@ import sst.X
 ````
 where X is the name of your skeleton. This causes the core to also load the shared library corresponding to your external skeleton app.
 
-\section{Skeletonization}
+**Skeletonization**
 
 A program skeleton is a simplified program derived from a parent application. The purpose of a skeleton application is to retain the performance characteristics of interest. At the same time, program logic that is orthogonal to performance properties is removed.  The rest of this chapter will talk about skeletonizing an MPI program, but the concepts mostly apply regardless of what programming/communication model you're using.
 
@@ -1845,7 +1773,7 @@ For applications with heavy dynamic data dependence, we have the following strat
 -   Synthetic - It may be possible to replace communication with randomly-generated data and decisions, which emulate how the original application worked. This hasn't been tried yet.
 -   Hybrid - It is possible to construct meta-traces that describe the problem from a real run, and read them into SST-macro to reconstruct the communication that happens.  Future versions of this manual will have more detailed descriptions as we formalize this process.
 
-\section{Process Encapsulation}
+**Process Encapsulation**
 
 As mentioned above, virtual processes are not real, physical processes inside the OS. They are explicitly managed user-space threads with a private stack, but without a private set of global variables. When porting an application to SST/macro, global variables used in C programs will not be mapped to separate memory addresses causing incorrect execution or even segmentation faults. If you have avoided global variables, there is no major issue. If you have read-only global variables with the same value on each machine, there is still no issue. If you have mutable global variables or read-only variables such as `mpi_rank` that differ across processes, there is so minor refactoring that needs to be done.
 
