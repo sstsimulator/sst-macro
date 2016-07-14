@@ -162,8 +162,8 @@ there is so minor refactoring that needs to be done.
 \subsection{Manually refactoring global variables}
 \label{sec:skel:globals}
 \sstmacro provides a complete set of global variable replacements from 
-\inlinecode{\#include <sstmac/sstmac\_global.h>}, which is automatically included the SST compiler wrappers.
-Then replace the variable type declaration with the ones that have a \inlinecode{global\_} prefix in the header file.
+\inlinecode{\#include <sstmac/sstmac_global.h>}, which is automatically included the SST compiler wrappers.
+Then replace the variable type declaration with the ones that have a \inlinecode{global_} prefix in the header file.
 To use this file, you must compile your application with a C++ compiler as a C++ program.  While most of C++ is backwards-compatible, there are some things that are not, and will require either a compiler flag to relax strictness or quick refactor of some of your syntax.
 
 When printing a global variable with \inlinecode{printf}, the user should explicitly invoke a cast to the primitive type in the function call:
@@ -171,7 +171,7 @@ When printing a global variable with \inlinecode{printf}, the user should explic
 \begin{CppCode}
 print("Hello world on rank %d", int(rank));
 \end{CppCode}
-If not explicitly cast, the \inlinecode{va\_args} function will be misinterpreted and produce an ``Illegal instruction'' error.  
+If not explicitly cast, the \inlinecode{va_args} function will be misinterpreted and produce an ``Illegal instruction'' error.  
 This still follows the ``single-source'' principle since whether compiling for \sstmacro or a real machine, the code is still valid.
 
 \subsection{Automatically refactoring global variables}

@@ -216,7 +216,6 @@ def repl_code_block(match):
   repl = "````\n%s\n````" % newBlock
   return repl
 
-
 def return_self(match):
   return match.groups()[0]
 
@@ -260,13 +259,26 @@ repls = [
 
 def processFile(f):
   text = open(f).read()
-  text = comment_regexp.sub("", text)
+  lines = text.split("\n")
+  newtext = ""
+  newline = "\n"
+  iscode = False
+  for l in lines:
+    if l.find("CppCode") < 0:
+      if iscode == True:
+        iscode = False
+      else:
+        iscode = True
+    if not iscode:
+      l = comment_regexp.sub("", l)
+    newtext = newline.join((newtext,l))
+  #text = comment_regexp.sub("", text)
   for matcher, repl in repls:
     if isinstance(matcher, str):
-      text = text.replace(matcher, repl)
+      newtext = newtext.replace(matcher, repl)
     else:
-      text = matcher.sub(repl, text)
-  return text
+      newtext = matcher.sub(repl, newtext)
+  return newtext
 doProcessFile = processFile
 
 
