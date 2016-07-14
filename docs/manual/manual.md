@@ -218,7 +218,7 @@ SST-macro previously provided some experimental support for Fortran90 applicatio
 
 
 
-SST-macro is available at \url{https://github.com/sstsimulator/sst-macro}
+SST-macro is available at https://github.com/sstsimulator/sst-macro
 
 ````
 shell> git clone https://github.com/sstsimulator/sst-macro.git
@@ -262,7 +262,7 @@ The workflow for installing and running is therefore:
 
 ##### Build SST core<a name="subsec:buildSSTCore"></a>
 
-The recommended mode for maximum flexibility is to run using the SST core downloadable from \url{http://sst-simulator.org/SSTPages/SSTMainDownloads/}. Building and installing sets up the discrete event simulation core required for all SST elements. SST core still has a few Boost dependencies, which should be the only complication in building. For building Boost, we recommend two files: `user-config.jam` to configure the Boost compiler flags and a `runme.sh` that bootstraps, compiles, and installs the prerequisite Boost libraries. For GCC, the `user-config.jam` should go in the top-level home directory and the file should contain the line:
+The recommended mode for maximum flexibility is to run using the SST core downloadable from http://sst-simulator.org/SSTPages/SSTMainDownloads/. Building and installing sets up the discrete event simulation core required for all SST elements. SST core still has a few Boost dependencies, which should be the only complication in building. For building Boost, we recommend two files: `user-config.jam` to configure the Boost compiler flags and a `runme.sh` that bootstraps, compiles, and installs the prerequisite Boost libraries. For GCC, the `user-config.jam` should go in the top-level home directory and the file should contain the line:
 
 ````
 using gcc : : $PATH_TO_MPIC++  : <compileflags>-std=c++1y ;
@@ -360,7 +360,7 @@ In particular, template code which is correct and compiles on several other plat
 
 By default, DUMPI is configured and built along with SST/macro with support for reading and parsing DUMPI traces, known as libundumpi. DUMPI binaries and libraries are also installed along with everything for SST-macro during make install. DUMPI can be used as it's own library within the SST-macro source tree by changing to `sst-macro/sst-dumpi`, where you can change its configuration options. It is not recommended to disable libundumpi support, which wouldn't make much sense anyway.
 
-DUMPI can also be used as stand-alone tool/library if you wish (\eg~for simplicity if you're only tracing). To get DUMPI by itself, either copy the `sstmacro/dumpi` directory somewhere else or visit \url{https://github.com/sstsimulator/sst-dumpi} and follow similar instructions for obtaining SST-macro.
+DUMPI can also be used as stand-alone tool/library if you wish (\eg~for simplicity if you're only tracing). To get DUMPI by itself, either copy the `sstmacro/dumpi` directory somewhere else or visit https://github.com/sstsimulator/sst-dumpi and follow similar instructions for obtaining SST-macro.
 
 To see a list of configuration options for DUMPI, run `./configure --help`. If you're trying to configure DUMPI for trace collection, use `--enable-libdumpi`. Your build process might look like this (if you're building in a separate directory from the dumpi source tree) :
 
@@ -382,7 +382,7 @@ the libtool script.  Search for predeps/postdeps and set the values to empty.
 This will clear all the erroneous linker flags.  The compilation/linkage should still work since 
 all necessary flags are set by the wrappers.
 
-\section{Running an Application} \subsection{SST Python Scripts} Full details on building SST Python scripts can be found at \url{http://sst-simulator.org}.  To preserve the old parameter format in the near-term, SST/macro provides the `pysstmac` script:
+\section{Running an Application} \subsection{SST Python Scripts} Full details on building SST Python scripts can be found at http://sst-simulator.org.  To preserve the old parameter format in the near-term, SST/macro provides the `pysstmac` script:
 
 ````
 export PYTHONPATH=$PYTHONPATH:$SSTMAC_PREFIX/include/python:$SSTMAC_PREFIX/lib
@@ -1113,7 +1113,7 @@ A random allocation (unless allocating the whole machine) will not give a contig
 
 As noted in the introduction, SST-macro is primarily intended to be an on-line simulator. Real application code runs, but SST-macro  intercepts calls to communication (MPI) and computation functions to simulate time passing.  However, SST-macro can also run off-line, replaying application traces collected from real production runs.  This trace collection and trace replay library is called DUMPI.
 
-Although DUMPI is automatically included as a subproject in the SST-macro download, trace collection can be easier if DUMPI is built independently from SST-macro.  The code can be downloaded from \url{https://bitbucket.org/sst-ca/dumpi}. If downloaded through Mercurial, one must initialize the build system and create the configure script.
+Although DUMPI is automatically included as a subproject in the SST-macro download, trace collection can be easier if DUMPI is built independently from SST-macro.  The code can be downloaded from https://bitbucket.org/sst-ca/dumpi. If downloaded through Mercurial, one must initialize the build system and create the configure script.
 
 ````
 dumpi> ./bootstraps.h
@@ -1325,7 +1325,7 @@ call_graph = <fileroot>
 ````
 After running, a `<fileroot>.callgrind.out` file should appear in the folder.
 
-To visualize the call graph, you must download KCachegrind: \url{http://kcachegrind.sourceforge.net/html/Download.html}. KCachegrind is built on the KDE environment, which is simple to build for Linux but can be very tedious for Mac. The download also includes a QCachegrind subfolder, providing the same functionality built on top of Qt. This is highly recommended for Mac users.
+To visualize the call graph, you must download KCachegrind: http://kcachegrind.sourceforge.net/html/Download.html. KCachegrind is built on the KDE environment, which is simple to build for Linux but can be very tedious for Mac. The download also includes a QCachegrind subfolder, providing the same functionality built on top of Qt. This is highly recommended for Mac users.
 
 ![<a name="fig:qcgui"></a>](figures/graphviz/gui.pdf) <a name="fig:qcgui"></a>
 
@@ -1411,7 +1411,7 @@ After running, two new files appear in the folder: `<fileroot>_app1.p` and `<fil
 ````
 your_project$ gnuplot plot_app1.p > output.ps
 ````
-Gnuplot can be downloaded from \url{http://www.gnuplot.info} or installed via MacPorts.
+Gnuplot can be downloaded from http://www.gnuplot.info or installed via MacPorts.
 We recommend version 4.4, but at least 4.2 should be compatible.
 
 The granularity of the chart is controlled by the `ftq_epoch` parameter in the input file. The above figure was collected with
@@ -1821,7 +1821,7 @@ where the refactored `main` function matches the name of the declared applicatio
 
 #### 5.2.1: Loading external skeletons with the integrated core<a name="subsec:linkageCore"></a>
 
-While the main `libmacro.so` provides the bulk of SST/macro functionality, users may wish to compile and run external skeletons.  This gets a bit confusing with SST core since you have an external skeleton for an external element.  Follow the instructions on \url{http://sst-simulator.org}. You must create an element info struct name `X_eli` for X your library name.  You can still use the `sst++` compiler wrappers for building, but you must now manually create a `libX.so` from the compiled object files.  The `sstmacro.py` script installed must also be edited.  The top lines was previously
+While the main `libmacro.so` provides the bulk of SST/macro functionality, users may wish to compile and run external skeletons.  This gets a bit confusing with SST core since you have an external skeleton for an external element.  Follow the instructions on http://sst-simulator.org. You must create an element info struct name `X_eli` for X your library name.  You can still use the `sst++` compiler wrappers for building, but you must now manually create a `libX.so` from the compiled object files.  The `sstmacro.py` script installed must also be edited.  The top lines was previously
 
 ````
 import sst.macro
@@ -1891,7 +1891,7 @@ However, given the coarse-grained nature of the simulation, explicit simulation 
 Additional improvements are likely to involve adding parameters for pipelining and prefetching.
 This is currently the most active area of SST-macro development.
 
-The characterization of a compute kernel must occur outside SST-macro using performance analysis tools like Vtune or PAPI. For the number of flops, it can be quite easy to just count the number of flops by hand. The number of bytes is much harder. For simple kernels like a dot product or certain types of stencil computation, it may be possible to pen-and-paper derive estimates of the number of bytes read/written from memory since every read is essentially a cache miss. In the same way, certain kernels that use small blocks (dense linear algebra), it may be possible to reason a priori about the cache behavior. For more complicated kernels, performance metrics might be the only way. Further discussion and analysis of operational intensity and roofline models can be found in "Roofline Model Toolkit: A Practical Tool for Architectural and Program Analysis" by Yung Ju Lo et al.  The PDF is available at \url{http://www.dcs.warwick.ac.uk/~sdh/pmbs14/PMBS14/Workshop_Schedule.html}.
+The characterization of a compute kernel must occur outside SST-macro using performance analysis tools like Vtune or PAPI. For the number of flops, it can be quite easy to just count the number of flops by hand. The number of bytes is much harder. For simple kernels like a dot product or certain types of stencil computation, it may be possible to pen-and-paper derive estimates of the number of bytes read/written from memory since every read is essentially a cache miss. In the same way, certain kernels that use small blocks (dense linear algebra), it may be possible to reason a priori about the cache behavior. For more complicated kernels, performance metrics might be the only way. Further discussion and analysis of operational intensity and roofline models can be found in "Roofline Model Toolkit: A Practical Tool for Architectural and Program Analysis" by Yung Ju Lo et al.  The PDF is available at http://www.dcs.warwick.ac.uk/~sdh/pmbs14/PMBS14/Workshop_Schedule.html.
 
 \subsection{Skeletonization Issues}
 

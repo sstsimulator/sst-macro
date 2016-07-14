@@ -241,6 +241,7 @@ repls = [
   (macro_regexp('emph') , return_self),
   (macro_regexp('textit') , return_self),
   (macro_regexp('author') , ""),
+  (macro_regexp('url') , return_self),
   (r'\sstmacro' , 'SST-macro'),
   (r'\sprockit', 'SProCKit'),
   (r'\maketitle' , ''),
