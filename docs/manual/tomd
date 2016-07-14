@@ -226,7 +226,7 @@ def header_pair(sectionName, count):
   return (macro_regexp(sectionName), lambda x: repl_section_header(x, sectionName, count))
 
 def return_bold(match):
-  return "*%s*" % match.groups()[0]
+  return "**%s**" % match.groups()[0]
 
 repls = [
   (quotes_regexp, repl_quotes),
