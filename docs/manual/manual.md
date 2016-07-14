@@ -1,6 +1,6 @@
 # SST/macro 6.0 User's Manual
 
-![](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/sstlogo.png)
+![](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/sstlogo.png)
 
 
 
@@ -101,7 +101,7 @@ Although SST-macro supports both on-line and off-line modes, on-line simulation 
 
 For large, system-level experiments with thousands of network endpoints, high-accuracy cycle-accurate simulation is not possible, or at least not convenient. Simulation requires coarse-grained approximations to be practical. SST-macro is therefore designed for specific cost/accuracy tradeoffs. It should still capture complex cause/effect behavior in applications and hardware, but be efficient enough to simulate at the system-level. For speeding up simulator execution, we encourage skeletonization, discussed further in Chapter [5](#sec:skeletonization). A high-quality skeleton is an application model that reproduces certain characteristics with only limited computation. We also encourage uncertainty quantification (UQ) for validating simulator results, to be detailed in a pending SAND report. Skeletonization and UQ are the two main elements in the "canonical" SST-macro workflow (Figure [1](#fig:workflow)).
 
-![<a name="fig:workflow"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/workflow.pdf)
+![<a name="fig:workflow"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/workflow.pdf)
 
 *Figure 1: SST/macro workflow.*
 
@@ -680,7 +680,7 @@ node_sockets = 4
 
 
 
-![<a name="fig:amm1"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/amm/AMM1.pdf)
+![<a name="fig:amm1"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/amm/AMM1.pdf)
 
 *Figure 2: AMM1: Used when focusing on network traffic only*
 
@@ -705,7 +705,7 @@ This abstract machine model is a good place to start for getting a "lay of the l
 
 \subsection{AMM2}
 
-![<a name="fig:amm2"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/amm/amm2_membus.pdf)
+![<a name="fig:amm2"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/amm/amm2_membus.pdf)
 
 *Figure 3: AMM2: Adds extra memory model details to AMM1*
 
@@ -728,7 +728,7 @@ Thus parameter names should not change - only new parameters should be added.
 
 
 
-![<a name="fig:amm3"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/amm/amm3_switch.pdf)
+![<a name="fig:amm3"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/amm/amm3_switch.pdf)
 
 *Figure 4: AMM3: Adds extra router (switch) details to AMM2*
 
@@ -816,7 +816,7 @@ Here we choose a 2D-torus topology with extent 4 in both the $X$ and $Y$ dimensi
 The topology is laid out in a regular grid with network links connecting nearest neighbors.  
 Additionally, wrap-around links connect the nodes on each boundary.
 
-![<a name="fig:hdtorus:basic"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/torus/torus.pdf)
+![<a name="fig:hdtorus:basic"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/torus/torus.pdf)
 
 *Figure 5: 4 x 4 2D Torus*
 
@@ -824,7 +824,7 @@ Additionally, wrap-around links connect the nodes on each boundary.
 
 The figure is actually an oversimplification. The `topology_geometry` parameter actually specifies the topology of the network switches, not the compute nodes. A torus is an example of a direct network in which each switch has one or more nodes "directly" connected to it. A more accurate picture of the network is given in Figure [6](#fig:hdtorus:withnodes).
 
-![<a name="fig:hdtorus:withnodes"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/torus/withnodes.pdf)
+![<a name="fig:hdtorus:withnodes"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/torus/withnodes.pdf)
 
 *Figure 6: 4 x 4 2D Torus of Network Switches with Compute Nodes*
 
@@ -868,7 +868,7 @@ The first network has ONE link carrying 2 GB/s. The second network has TWO links
 
 By default, SST-macro uses the simplest possible routing algorithm: dimension-order minimal routing (Figure [7](#fig:torus:basicrouting)).
 
-![<a name="fig:torus:basicrouting"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/torus/minroutetorus.pdf)
+![<a name="fig:torus:basicrouting"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/torus/minroutetorus.pdf)
 
 *Figure 7: Dimension-Order Minimal Routing on a 2D Torus*
 
@@ -880,7 +880,7 @@ router = min_ad
 which specifies minimal adaptive routing. 
 There are now multiple valid paths between network endpoints, one of which is illustrated in Figure [8](#fig:torus:minadrouting).
 
-![<a name="fig:torus:minadrouting"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/torus/minadroutetorus.pdf)
+![<a name="fig:torus:minadrouting"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/torus/minadroutetorus.pdf)
 
 *Figure 8: Adaptive Minimal Routing on a 2D Torus*
 
@@ -894,7 +894,7 @@ Although not necessary for using the simulator, a basic understanding of discret
 
 SST-macro is driven by a simulation thread which manages the user-space thread scheduling (Figure [9](#fig:des)). In the most common (and simplest) use case, all user-space threads are serialized, running one at a time. The main simulation thread must manage all synchronizations, yielding execution to process threads at the appropriate times. The main simulation thread is usually abbreviated as the DES (discrete event simulation) thread. The simulation progresses by scheduling future events. For example, if a message is estimated to take 5 $\mu$s to arrive, the simulator will schedule a MESSAGE ARRIVED event 5 $\mu$s ahead of the current time stamp. Every simulation starts by scheduling the same set of events: launch process 0, launch process 1, etc.
 
-![<a name="fig:des"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/des/events.pdf)
+![<a name="fig:des"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/des/events.pdf)
 
 *Figure 9: Progression of Discrete Event Simulation for Simple Send/Recv Example*
 
@@ -922,7 +922,7 @@ The packet model is the simplest and most intuitive of the congestion models for
 
 The coarse-grained packet model has two main sources of error. First, coarse-grained packets systematically overestimate (de)serialization latency. Before a packet can be forwarded to its next destination, it must be completely deserialized off the network link into a buffer. In a real machine, data can be forwarded on a flit-by-flit basis, efficiently pipelining packets. Flits that would send in a real system are artificially delayed until the rest of the coarse-grained packet arrives. Second, coarse-grained packets exclusively reserve network links for the entire length of the packet. In a real machine, two packets could multiplex across a link on a flit-by-flit basis.
 
-![<a name="fig:tutorial:congestion"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/network/congestion.pdf)
+![<a name="fig:tutorial:congestion"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/network/congestion.pdf)
 
 *Figure 10: Schematic of two messages competing for same channel in the different SST-macro congestion models. (A) Packet Model  (B) Flow Model (C) Packet-flow Model *
 
@@ -980,7 +980,7 @@ Our first option is to specify the first available allocation scheme (Figure [11
 app1.launch_allocation = first_available
 ````
 
-![<a name="fig:allocation:first_available"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/allocation/firstavailable.pdf)
+![<a name="fig:allocation:first_available"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/allocation/firstavailable.pdf)
 
 *Figure 11: First available Allocation of 4 Compute Codes on a 3x3 2D Torus*
 
@@ -994,7 +994,7 @@ app1.cart_launch_sizes = 2 2
 app1.cart_launch_offsets = 0 0
 ````
 
-![<a name="fig:allocation:cartesian"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/allocation/cartesian.pdf)
+![<a name="fig:allocation:cartesian"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/allocation/cartesian.pdf)
 
 *Figure 12: Cartesian Allocation of 4 Compute Codes on a 3x3 2D Torus*
 
@@ -1004,7 +1004,7 @@ Rather than just looping through the list of available nodes, we explicitly allo
 app1.launch_allocation = random
 ````
 
-![<a name="fig:allocation:random"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/allocation/random.pdf)
+![<a name="fig:allocation:random"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/allocation/random.pdf)
 
 *Figure 13: Random Allocation of 4 Compute Codes on a 3x3 2D Torus*
 
@@ -1020,7 +1020,7 @@ Once nodes are allocated, the MPI ranks (or equivalent) must be assigned to phys
 app1.launch_indexing = block
 ````
 
-![<a name="fig:indexing:block"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/indexing/block.pdf)
+![<a name="fig:indexing:block"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/indexing/block.pdf)
 
 *Figure 14: Block Indexing of 8 MPI Ranks on 4 Compute Nodes*
 
@@ -1030,7 +1030,7 @@ In contrast, round-robin spreads out MPI ranks by assigning consecutive MPI rank
 app1.launch_indexing = round_robin
 ````
 
-![<a name="fig:indexing:round_robin"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/indexing/roundrobin.pdf)
+![<a name="fig:indexing:round_robin"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/indexing/roundrobin.pdf)
 
 *Figure 15: Round-Robin Indexing of 8 MPI Ranks on 4 Compute Nodes*
 
@@ -1327,7 +1327,7 @@ After running, a `<fileroot>.callgrind.out` file should appear in the folder.
 
 To visualize the call graph, you must download KCachegrind: http://kcachegrind.sourceforge.net/html/Download.html. KCachegrind is built on the KDE environment, which is simple to build for Linux but can be very tedious for Mac. The download also includes a QCachegrind subfolder, providing the same functionality built on top of Qt. This is highly recommended for Mac users.
 
-![<a name="fig:qcgui"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/graphviz/gui.pdf)
+![<a name="fig:qcgui"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/graphviz/gui.pdf)
 
 *Figure 16: QCachegrind GUI*
 
@@ -1335,13 +1335,13 @@ To visualize the call graph, you must download KCachegrind: http://kcachegrind.s
 
 The basic QCachegrind GUI is shown in Figure [16](#fig:qcgui). On the left, a sidebar contains the list of all functions instrumented with the percent of total execution time spent in the function. In the center pane, the call graph is shown. To navigate the call graph, a small window in the bottom right corner can be used to change the view pane. Zooming into one region (Figure [17](#fig:qcgraphone)), we see a set of MPI functions (Barrier, Scan, Allgatherv). Each of the functions enters a polling loop, which dominates the total execution time. A small portion of the polling loop calls the "Handle Socket Header" function. Double-clicking this node unrolls more details in the call graph (Figure [18](#fig:qcgraphtwo)). Here we see the function splits execution time between buffering messages (memcpy) and posting headers (Compute Time).
 
-![<a name="fig:qcgraphone"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/graphviz/callgraph1.pdf)
+![<a name="fig:qcgraphone"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/graphviz/callgraph1.pdf)
 
 *Figure 17: QCachegrind Call Graph of MPI Functions*
 
 
 
-![<a name="fig:qcgraphtwo"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/graphviz/callgraph2.pdf)
+![<a name="fig:qcgraphtwo"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/graphviz/callgraph2.pdf)
 
 *Figure 18: QCachegrind Expanded Call Graph of Eager 0 Function*
 
@@ -1355,7 +1355,7 @@ The basic QCachegrind GUI is shown in Figure [16](#fig:qcgui). On the left, a si
 
 Spyplots visualize communication matrices, showing either the number of messages or number of bytes sent between two network endpoints. They are essentially contour diagrams, where instead of a continuous function $F(x,y)$ we are plotting the communication matrix $M(i,j)$. An example spyplot is shown for a simple application that only executes an MPI\_Allreduce (Figure [19](#fig:spyplot)). Larger amounts of data (red) are sent to nearest neighbors while decreasing amounts (blue) are sent to MPI ranks further away.
 
-![<a name="fig:spyplot"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/spyplot/mpi_spyplot.pdf)
+![<a name="fig:spyplot"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/spyplot/mpi_spyplot.pdf)
 
 *Figure 19: Spyplot of Bytes Transferred Between MPI Ranks for MPI\_Allreduce*
 
@@ -1390,7 +1390,7 @@ This gives a better sense of spatial locality when many MPI ranks are on the sam
 
 
 
-![<a name="fig:ftq"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/gnuplot/ftq/ftq.pdf)
+![<a name="fig:ftq"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/gnuplot/ftq/ftq.pdf)
 
 *Figure 20: Application Activity (Fixed-Time Quanta; FTQ) for Simple MPI Test Suite*
 
@@ -1532,7 +1532,7 @@ indicating size 4 in two dimensions.
 
 While a torus only has nearest-neighbor connections, a hypercube has full connectivity within a row and column (Figure [21](#fig:topologies:hypercubeConnected)). Any switches in the same row or same column can send packets with only a single hop.
 
-![<a name="fig:topologies:hypercubeConnected"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/hypercube/hypercube_connected.pdf)
+![<a name="fig:topologies:hypercubeConnected"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/hypercube/hypercube_connected.pdf)
 
 *Figure 21: Hypercube with links and connections within a row/column*
 
@@ -1568,7 +1568,7 @@ and then a coordinate file named `coords.txt`
 The first line indicates 5 entries each with 2 coordinates.
 Each line then defines where MPI ranks 0-4 will be placed
 
-![<a name="fig:topologies:hypercubeAllocation"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/hypercube/hypercube_allocation.pdf)
+![<a name="fig:topologies:hypercubeAllocation"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/hypercube/hypercube_allocation.pdf)
 
 *Figure 22: Hypercube allocation for given set of coordinates*
 
@@ -1576,7 +1576,7 @@ Each line then defines where MPI ranks 0-4 will be placed
 
 \subsection{Routing} Hypercubes allow very path-diverse routing because of its extra connections. In the case of minimal routing (Figure [23](#fig:topologies:hypercubePath)), two different minimal paths from blue to red are shown. While dimension order routing would rigorously go X then Y, you can still route minimally over two paths either randomly selecting to balance load or routing based on congestion.
 
-![<a name="fig:topologies:hypercubePath"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/hypercube/hypercube_path.pdf)
+![<a name="fig:topologies:hypercubePath"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/hypercube/hypercube_path.pdf)
 
 *Figure 23: Minimal routing within a hypercube showing path diversity. Packet travels from blue to red, passing through green intermediate switches.*
 
@@ -1584,7 +1584,7 @@ Each line then defines where MPI ranks 0-4 will be placed
 
 To fully maximize path diversity on adversarial traffic patterns, though, path-diverse topologies can benefit from Valiant routing. Here, rather than directly routing to the final destination, packets first route to random intermediate switches on a minimal path. Then they route again from the intermediate switch to the final destination also on a minimal path (Figure [24](#fig:topologies:hypercubeValiant)). Although it increases the hop count and therefore the point-to-point latency, it utilizes more paths and therefore increases the effective point-to-point bandwidth.
 
-![<a name="fig:topologies:hypercubeValiant"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/hypercube/hypercube_valiant.pdf)
+![<a name="fig:topologies:hypercubeValiant"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/hypercube/hypercube_valiant.pdf)
 
 *Figure 24: Valiant routing within a hypercube.  Packet travels from blue to red via a random intermediate destination shown in gray. Additional intermediate switches are shown in green.*
 
@@ -1626,7 +1626,7 @@ topology.geometry = 3 4
 ````
 which would have $4^3 = 64$ compute nodes.
 
-![<a name="fig:topologies:abstractfattree"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/fattree/abstract_fattree.pdf)
+![<a name="fig:topologies:abstractfattree"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/fattree/abstract_fattree.pdf)
 
 *Figure 25: Abstract, conceptual picture of Fat Tree topology*
 
@@ -1634,7 +1634,7 @@ which would have $4^3 = 64$ compute nodes.
 
 In reality, it is not practical to implement a fat tree exactly as shown in Figure [25](#fig:topologies:abstractfattree). One would need to buy many non-standard, high capacity switches for the higher levels in the fat-tree. The simple model is available by specifying `simple_fattree` as the topology, and SST will construct special large switches at higher levels. The best practical implementation employs all uniform, commodity switches (Figure [26](#fig:topologies:fattreeids)). The fat tree is "virtual" with several commodity switches grouped together to simulate a heavy-weight, high capacity switch at higher levels of the fat tree. The connection between the physical implementation and the conceptual fat tree can easily be seen by the color coding. For example, the second row contains eight switches, but only two virtual switches. Each virtual switch is composed of four commodity switches.
 
-![<a name="fig:topologies:fattreeids"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/fattree/fattree_ids.pdf)
+![<a name="fig:topologies:fattreeids"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/fattree/fattree_ids.pdf)
 
 *Figure 26: Physical implementation of Fat Tree with commodity switches showing ID numbering*
 
@@ -1708,7 +1708,7 @@ which round-robin assigns rank 0 to node, rank 1 to node 1, rank 2 to node 0, an
 
 
 
-![<a name="fig:topologies:dragonfly"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/dragonfly/dragonfly.pdf)
+![<a name="fig:topologies:dragonfly"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/dragonfly/dragonfly.pdf)
 
 *Figure 27: Schematic of dragonfly with three groups showing hypercube intragroup links and high bandwidth intergroup global links*
 
@@ -1736,7 +1736,7 @@ topology.group_connections = 10
 
 \subsection{Routing} It is important to understand the distinction between link bandwidth, channel bandwidth, and pin bandwidth. All topologies have the same pin bandwidth and channel bandwidth (assuming they use the same technology). Each router in a topology is constrained to have the same number of channels (called radix, usually about $k=64$). The number of channels per link changes dramatically from topology to topology. Low radix topologies like 3D torus can allocate more channels per link, giving higher bandwidth between adjacent routers. Dragonfly is higher radix, having many more connections but having lower bandwidth between adjacent routers. While minimal routing is often sufficient on torus topologies because of the high link bandwidth, dragonfly will exhibit very poor performance with minimal routing. To effectively utilize all the available bandwidth, packets should have a high amount of path diversity. Packets sent between two routers should take as many different paths as possible to maximize the effective bandwidth point-to-point.
 
-![<a name="fig:topologies:dflyminroute"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/dragonfly/dflyminroute.pdf)
+![<a name="fig:topologies:dflyminroute"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/dragonfly/dflyminroute.pdf)
 
 *Figure 28: Schematic of dragonfly showing minimal route. Traveling between groups requires routing to the correct global link, hopping the global link, then routing within a group to the correct final node.*
 
@@ -1744,7 +1744,7 @@ topology.group_connections = 10
 
 Minimal routing itself has a few complications (Figure [28](#fig:topologies:dflyminroute)). Each router only has a few global links. Thus, traveling from e.g. the blue router at X=3,Y=2,G=0 to the red router at X=1,Y=2,G=2, there is no direct link between the routers. Furthermore, there is no direct link between Groups 0 and 2. Thus packets must route through the purple intermediate nodes. First, the packet hops to X=3,Y=3, G=0. This router has a global link to Group 2, allowing the packet to hop to the next intermediate router at X=1, Y=3, G=2. Finally, the minimal route completes by hopping within Group 2 to the final destination.
 
-![<a name="fig:topologies:dflyvaliantroute"></a>](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/dragonfly/dflyvaliant.pdf)
+![<a name="fig:topologies:dflyvaliantroute"></a>](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/dragonfly/dflyvaliant.pdf)
 
 *Figure 29: Schematic of dragonfly showing Valiant route. Traveling between groups requires routing to a random intermediate node, then routing minimally to the final destination.*
 
