@@ -100,7 +100,12 @@ def get_figure_text(label, caption, text):
   if label:
     labelText = '<a name="%s"></a>' % label
 
-  return "\n![%s](%s) %s\n\n*%s*\n\n" % (labelText, fname, labelText, caption)
+  if caption == "":
+    captionText = ""
+  else:
+    captionText = "*%s*" % caption
+
+  return "\n![%s](http://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/%s) %s\n\n%s\n\n" % (labelText, fname, "", captionText)
 
 def process_title_pic(match):
   text = match.groups()[0] + "}"
