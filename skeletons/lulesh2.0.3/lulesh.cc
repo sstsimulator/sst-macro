@@ -271,9 +271,9 @@ void TimeIncrement(Domain& domain)
 static inline
 void CollectDomainNodesToElemNodes(Domain &domain,
                                    const Index_t_ptr_sim elemToNode,
-                                   Real_t elemX[8],
-                                   Real_t elemY[8],
-                                   Real_t elemZ[8])
+                                   Real_t_sim elemX[8],
+                                   Real_t_sim elemY[8],
+                                   Real_t_sim elemZ[8])
 {
    Index_t nd0i = elemToNode[0] ;
    Index_t nd1i = elemToNode[1] ;
@@ -333,33 +333,33 @@ void InitStressTermsForElems(Domain &domain,
 /******************************************/
 
 static inline
-void CalcElemShapeFunctionDerivatives( Real_t const x[],
-                                       Real_t const y[],
-                                       Real_t const z[],
-                                       Real_t b[][8],
+void CalcElemShapeFunctionDerivatives( Real_t_sim const x[],
+                                       Real_t_sim const y[],
+                                       Real_t_sim const z[],
+                                       Real_t_sim b[][8],
                                        Real_t_ptr_sim volume )
 {
-  const Real_t x0 = x[0] ;   const Real_t x1 = x[1] ;
-  const Real_t x2 = x[2] ;   const Real_t x3 = x[3] ;
-  const Real_t x4 = x[4] ;   const Real_t x5 = x[5] ;
-  const Real_t x6 = x[6] ;   const Real_t x7 = x[7] ;
+  const Real_t_sim x0 = x[0] ;   const Real_t_sim x1 = x[1] ;
+  const Real_t_sim x2 = x[2] ;   const Real_t_sim x3 = x[3] ;
+  const Real_t_sim x4 = x[4] ;   const Real_t_sim x5 = x[5] ;
+  const Real_t_sim x6 = x[6] ;   const Real_t_sim x7 = x[7] ;
 
-  const Real_t y0 = y[0] ;   const Real_t y1 = y[1] ;
-  const Real_t y2 = y[2] ;   const Real_t y3 = y[3] ;
-  const Real_t y4 = y[4] ;   const Real_t y5 = y[5] ;
-  const Real_t y6 = y[6] ;   const Real_t y7 = y[7] ;
+  const Real_t_sim y0 = y[0] ;   const Real_t_sim y1 = y[1] ;
+  const Real_t_sim y2 = y[2] ;   const Real_t_sim y3 = y[3] ;
+  const Real_t_sim y4 = y[4] ;   const Real_t_sim y5 = y[5] ;
+  const Real_t_sim y6 = y[6] ;   const Real_t_sim y7 = y[7] ;
 
-  const Real_t z0 = z[0] ;   const Real_t z1 = z[1] ;
-  const Real_t z2 = z[2] ;   const Real_t z3 = z[3] ;
-  const Real_t z4 = z[4] ;   const Real_t z5 = z[5] ;
-  const Real_t z6 = z[6] ;   const Real_t z7 = z[7] ;
+  const Real_t_sim z0 = z[0] ;   const Real_t_sim z1 = z[1] ;
+  const Real_t_sim z2 = z[2] ;   const Real_t_sim z3 = z[3] ;
+  const Real_t_sim z4 = z[4] ;   const Real_t_sim z5 = z[5] ;
+  const Real_t_sim z6 = z[6] ;   const Real_t_sim z7 = z[7] ;
 
-  Real_t fjxxi, fjxet, fjxze;
-  Real_t fjyxi, fjyet, fjyze;
-  Real_t fjzxi, fjzet, fjzze;
-  Real_t cjxxi, cjxet, cjxze;
-  Real_t cjyxi, cjyet, cjyze;
-  Real_t cjzxi, cjzet, cjzze;
+  Real_t_sim fjxxi, fjxet, fjxze;
+  Real_t_sim fjyxi, fjyet, fjyze;
+  Real_t_sim fjzxi, fjzet, fjzze;
+  Real_t_sim cjxxi, cjxet, cjxze;
+  Real_t_sim cjyxi, cjyet, cjyze;
+  Real_t_sim cjzxi, cjzet, cjzze;
 
   fjxxi = Real_t(.125) * ( (x6-x0) + (x5-x3) - (x7-x1) - (x4-x2) );
   fjxet = Real_t(.125) * ( (x6-x0) - (x5-x3) + (x7-x1) - (x4-x2) );
@@ -424,24 +424,24 @@ void CalcElemShapeFunctionDerivatives( Real_t const x[],
 /******************************************/
 
 static inline
-void SumElemFaceNormal(Real_t *normalX0, Real_t *normalY0, Real_t *normalZ0,
-                       Real_t *normalX1, Real_t *normalY1, Real_t *normalZ1,
-                       Real_t *normalX2, Real_t *normalY2, Real_t *normalZ2,
-                       Real_t *normalX3, Real_t *normalY3, Real_t *normalZ3,
-                       const Real_t x0, const Real_t y0, const Real_t z0,
-                       const Real_t x1, const Real_t y1, const Real_t z1,
-                       const Real_t x2, const Real_t y2, const Real_t z2,
-                       const Real_t x3, const Real_t y3, const Real_t z3)
+void SumElemFaceNormal(Real_t_ptr_sim normalX0, Real_t_ptr_sim normalY0, Real_t_ptr_sim normalZ0,
+                       Real_t_ptr_sim normalX1, Real_t_ptr_sim normalY1, Real_t_ptr_sim normalZ1,
+                       Real_t_ptr_sim normalX2, Real_t_ptr_sim normalY2, Real_t_ptr_sim normalZ2,
+                       Real_t_ptr_sim normalX3, Real_t_ptr_sim normalY3, Real_t_ptr_sim normalZ3,
+                       const Real_t_sim x0, const Real_t_sim y0, const Real_t_sim z0,
+                       const Real_t_sim x1, const Real_t_sim y1, const Real_t_sim z1,
+                       const Real_t_sim x2, const Real_t_sim y2, const Real_t_sim z2,
+                       const Real_t_sim x3, const Real_t_sim y3, const Real_t_sim z3)
 {
-   Real_t bisectX0 = Real_t(0.5) * (x3 + x2 - x1 - x0);
-   Real_t bisectY0 = Real_t(0.5) * (y3 + y2 - y1 - y0);
-   Real_t bisectZ0 = Real_t(0.5) * (z3 + z2 - z1 - z0);
-   Real_t bisectX1 = Real_t(0.5) * (x2 + x1 - x3 - x0);
-   Real_t bisectY1 = Real_t(0.5) * (y2 + y1 - y3 - y0);
-   Real_t bisectZ1 = Real_t(0.5) * (z2 + z1 - z3 - z0);
-   Real_t areaX = Real_t(0.25) * (bisectY0 * bisectZ1 - bisectZ0 * bisectY1);
-   Real_t areaY = Real_t(0.25) * (bisectZ0 * bisectX1 - bisectX0 * bisectZ1);
-   Real_t areaZ = Real_t(0.25) * (bisectX0 * bisectY1 - bisectY0 * bisectX1);
+   Real_t_sim bisectX0 = Real_t(0.5) * (x3 + x2 - x1 - x0);
+   Real_t_sim bisectY0 = Real_t(0.5) * (y3 + y2 - y1 - y0);
+   Real_t_sim bisectZ0 = Real_t(0.5) * (z3 + z2 - z1 - z0);
+   Real_t_sim bisectX1 = Real_t(0.5) * (x2 + x1 - x3 - x0);
+   Real_t_sim bisectY1 = Real_t(0.5) * (y2 + y1 - y3 - y0);
+   Real_t_sim bisectZ1 = Real_t(0.5) * (z2 + z1 - z3 - z0);
+   Real_t_sim areaX = Real_t(0.25) * (bisectY0 * bisectZ1 - bisectZ0 * bisectY1);
+   Real_t_sim areaY = Real_t(0.25) * (bisectZ0 * bisectX1 - bisectX0 * bisectZ1);
+   Real_t_sim areaZ = Real_t(0.25) * (bisectX0 * bisectY1 - bisectY0 * bisectX1);
 
    *normalX0 += areaX;
    *normalX1 += areaX;
@@ -462,12 +462,12 @@ void SumElemFaceNormal(Real_t *normalX0, Real_t *normalY0, Real_t *normalZ0,
 /******************************************/
 
 static inline
-void CalcElemNodeNormals(Real_t pfx[8],
-                         Real_t pfy[8],
-                         Real_t pfz[8],
-                         const Real_t x[8],
-                         const Real_t y[8],
-                         const Real_t z[8])
+void CalcElemNodeNormals(Real_t_sim pfx[8],
+                         Real_t_sim pfy[8],
+                         Real_t_sim pfz[8],
+                         const Real_t_sim x[8],
+                         const Real_t_sim y[8],
+                         const Real_t_sim z[8])
 {
    for (Index_t i = 0 ; i < 8 ; ++i) {
       pfx[i] = Real_t(0.0);
@@ -521,10 +521,10 @@ void CalcElemNodeNormals(Real_t pfx[8],
 /******************************************/
 
 static inline
-void SumElemStressesToNodeForces( const Real_t B[][8],
-                                  const Real_t stress_xx,
-                                  const Real_t stress_yy,
-                                  const Real_t stress_zz,
+void SumElemStressesToNodeForces( const Real_t_sim B[][8],
+                                  const Real_t_sim stress_xx,
+                                  const Real_t_sim stress_yy,
+                                  const Real_t_sim stress_zz,
                                   Real_t_ptr_sim fx, Real_t_ptr_sim fy, Real_t_ptr_sim fz )
 {
    for(Index_t i = 0; i < 8; i++) {
@@ -551,9 +551,9 @@ void IntegrateStressForElems( Domain &domain,
    Real_t_ptr_sim fx_elem;
    Real_t_ptr_sim fy_elem;
    Real_t_ptr_sim fz_elem;
-   Real_t fx_local[8] ;
-   Real_t fy_local[8] ;
-   Real_t fz_local[8] ;
+   Real_t_sim fx_local[8] ;
+   Real_t_sim fy_local[8] ;
+   Real_t_sim fz_local[8] ;
 
 
   if (numthreads > 1) {
@@ -567,10 +567,10 @@ void IntegrateStressForElems( Domain &domain,
   for( Index_t k=0 ; k<numElem ; ++k )
   {
     const Index_t_ptr_sim elemToNode = domain.nodelist(k);
-    Real_t B[3][8] ;// shape function derivatives
-    Real_t x_local[8] ;
-    Real_t y_local[8] ;
-    Real_t z_local[8] ;
+    Real_t_sim B[3][8] ;// shape function derivatives
+    Real_t_sim x_local[8] ;
+    Real_t_sim y_local[8] ;
+    Real_t_sim z_local[8] ;
 
     // get nodal coordinates from global arrays and copy into local arrays.
     CollectDomainNodesToElemNodes(domain, elemToNode, x_local, y_local, z_local);
@@ -612,9 +612,9 @@ void IntegrateStressForElems( Domain &domain,
      {
         Index_t count = domain.nodeElemCount(gnode) ;
         Index_t *cornerList = domain.nodeElemCornerList(gnode) ;
-        Real_t fx_tmp = Real_t(0.0) ;
-        Real_t fy_tmp = Real_t(0.0) ;
-        Real_t fz_tmp = Real_t(0.0) ;
+        Real_t_sim fx_tmp = Real_t(0.0) ;
+        Real_t_sim fy_tmp = Real_t(0.0) ;
+        Real_t_sim fz_tmp = Real_t(0.0) ;
         for (Index_t i=0 ; i < count ; ++i) {
            Index_t elem = cornerList[i] ;
            fx_tmp += fx_elem[elem] ;
@@ -634,15 +634,15 @@ void IntegrateStressForElems( Domain &domain,
 /******************************************/
 
 static inline
-void VoluDer(const Real_t x0, const Real_t x1, const Real_t x2,
-             const Real_t x3, const Real_t x4, const Real_t x5,
-             const Real_t y0, const Real_t y1, const Real_t y2,
-             const Real_t y3, const Real_t y4, const Real_t y5,
-             const Real_t z0, const Real_t z1, const Real_t z2,
-             const Real_t z3, const Real_t z4, const Real_t z5,
-             Real_t* dvdx, Real_t* dvdy, Real_t* dvdz)
+void VoluDer(const Real_t_sim x0, const Real_t_sim x1, const Real_t_sim x2,
+             const Real_t_sim x3, const Real_t_sim x4, const Real_t_sim x5,
+             const Real_t_sim y0, const Real_t_sim y1, const Real_t_sim y2,
+             const Real_t_sim y3, const Real_t_sim y4, const Real_t_sim y5,
+             const Real_t_sim z0, const Real_t_sim z1, const Real_t_sim z2,
+             const Real_t_sim z3, const Real_t_sim z4, const Real_t_sim z5,
+             Real_t_ptr_sim dvdx, Real_t_ptr_sim dvdy, Real_t_ptr_sim dvdz)
 {
-   const Real_t twelfth = Real_t(1.0) / Real_t(12.0) ;
+   const Real_t_sim twelfth = Real_t(1.0) / Real_t(12.0) ;
 
    *dvdx =
       (y1 + y2) * (z0 + z1) - (y0 + y1) * (z1 + z2) +
@@ -666,12 +666,12 @@ void VoluDer(const Real_t x0, const Real_t x1, const Real_t x2,
 /******************************************/
 
 static inline
-void CalcElemVolumeDerivative(Real_t dvdx[8],
-                              Real_t dvdy[8],
-                              Real_t dvdz[8],
-                              const Real_t x[8],
-                              const Real_t y[8],
-                              const Real_t z[8])
+void CalcElemVolumeDerivative(Real_t_sim dvdx[8],
+                              Real_t_sim dvdy[8],
+                              Real_t_sim dvdz[8],
+                              const Real_t_sim x[8],
+                              const Real_t_sim y[8],
+                              const Real_t_sim z[8])
 {
    VoluDer(x[1], x[2], x[3], x[4], x[5], x[7],
            y[1], y[2], y[3], y[4], y[5], y[7],
@@ -1053,8 +1053,8 @@ void CalcHourglassControlForElems(Domain& domain,
    /* start loop over elements */
 #pragma omp parallel for firstprivate(numElem)
    for (Index_t i=0 ; i<numElem ; ++i){
-      Real_t  x1[8],  y1[8],  z1[8] ;
-      Real_t pfx[8], pfy[8], pfz[8] ;
+      Real_t_sim  x1[8],  y1[8],  z1[8] ;
+      Real_t_sim pfx[8], pfy[8], pfz[8] ;
 
       Index_t_ptr_sim elemToNode = domain.nodelist(i);
       CollectDomainNodesToElemNodes(domain, elemToNode, x1, y1, z1);
@@ -1320,18 +1320,18 @@ void LagrangeNodal(Domain& domain)
 /******************************************/
 
 static inline
-Real_t CalcElemVolume( const Real_t x0, const Real_t x1,
-               const Real_t x2, const Real_t x3,
-               const Real_t x4, const Real_t x5,
-               const Real_t x6, const Real_t x7,
-               const Real_t y0, const Real_t y1,
-               const Real_t y2, const Real_t y3,
-               const Real_t y4, const Real_t y5,
-               const Real_t y6, const Real_t y7,
-               const Real_t z0, const Real_t z1,
-               const Real_t z2, const Real_t z3,
-               const Real_t z4, const Real_t z5,
-               const Real_t z6, const Real_t z7 )
+Real_t CalcElemVolume( const Real_t_sim x0, const Real_t_sim x1,
+               const Real_t_sim x2, const Real_t_sim x3,
+               const Real_t_sim x4, const Real_t_sim x5,
+               const Real_t_sim x6, const Real_t_sim x7,
+               const Real_t_sim y0, const Real_t_sim y1,
+               const Real_t_sim y2, const Real_t_sim y3,
+               const Real_t_sim y4, const Real_t_sim y5,
+               const Real_t_sim y6, const Real_t_sim y7,
+               const Real_t_sim z0, const Real_t_sim z1,
+               const Real_t_sim z2, const Real_t_sim z3,
+               const Real_t_sim z4, const Real_t_sim z5,
+               const Real_t_sim z6, const Real_t_sim z7 )
 {
   Real_t twelveth = Real_t(1.0)/Real_t(12.0);
 
@@ -1407,7 +1407,7 @@ Real_t CalcElemVolume( const Real_t x0, const Real_t x1,
 /******************************************/
 
 //inline
-Real_t CalcElemVolume( const Real_t x[8], const Real_t y[8], const Real_t z[8] )
+Real_t CalcElemVolume( const Real_t_sim x[8], const Real_t_sim y[8], const Real_t_sim z[8] )
 {
 return CalcElemVolume( x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7],
                        y[0], y[1], y[2], y[3], y[4], y[5], y[6], y[7],
@@ -1441,10 +1441,10 @@ Real_t AreaFace( const Real_t x0, const Real_t x1,
 /******************************************/
 
 static inline
-Real_t CalcElemCharacteristicLength( const Real_t x[8],
-                                     const Real_t y[8],
-                                     const Real_t z[8],
-                                     const Real_t volume)
+Real_t CalcElemCharacteristicLength( const Real_t_sim x[8],
+                                     const Real_t_sim y[8],
+                                     const Real_t_sim z[8],
+                                     const Real_t_sim volume)
 {
    Real_t a, charLength = Real_t(0.0);
 
@@ -1486,18 +1486,18 @@ Real_t CalcElemCharacteristicLength( const Real_t x[8],
 /******************************************/
 
 static inline
-void CalcElemVelocityGradient( const Real_t* const xvel,
-                                const Real_t* const yvel,
-                                const Real_t* const zvel,
-                                const Real_t b[][8],
-                                const Real_t detJ,
-                                Real_t* const d )
+void CalcElemVelocityGradient( const Real_t_ptr_sim xvel,
+                                const Real_t_ptr_sim yvel,
+                                const Real_t_ptr_sim zvel,
+                                const Real_t_sim b[][8],
+                                const Real_t_sim detJ,
+                                Real_t_ptr_sim d )
 {
-  const Real_t inv_detJ = Real_t(1.0) / detJ ;
-  Real_t dyddx, dxddy, dzddx, dxddz, dzddy, dyddz;
-  const Real_t* const pfx = b[0];
-  const Real_t* const pfy = b[1];
-  const Real_t* const pfz = b[2];
+  const Real_t_sim inv_detJ = Real_t(1.0) / detJ ;
+  Real_t_sim dyddx, dxddy, dzddx, dxddz, dzddy, dyddz;
+  const Real_t_ptr_sim pfx = b[0];
+  const Real_t_ptr_sim pfy = b[1];
+  const Real_t_ptr_sim pfz = b[2];
 
   d[0] = inv_detJ * ( pfx[0] * (xvel[0]-xvel[6])
                      + pfx[1] * (xvel[1]-xvel[7])
@@ -1559,18 +1559,18 @@ void CalcKinematicsForElems( Domain &domain, Real_t_ptr_sim vnew,
 #pragma omp parallel for firstprivate(numElem, deltaTime)
   for( Index_t k=0 ; k<numElem ; ++k )
   {
-    Real_t B[3][8] ; /** shape function derivatives */
-    Real_t D[6] ;
-    Real_t x_local[8] ;
-    Real_t y_local[8] ;
-    Real_t z_local[8] ;
-    Real_t xd_local[8] ;
-    Real_t yd_local[8] ;
-    Real_t zd_local[8] ;
-    Real_t detJ = Real_t(0.0) ;
+    Real_t_sim B[3][8] ; /** shape function derivatives */
+    Real_t_sim D[6] ;
+    Real_t_sim x_local[8] ;
+    Real_t_sim y_local[8] ;
+    Real_t_sim z_local[8] ;
+    Real_t_sim xd_local[8] ;
+    Real_t_sim yd_local[8] ;
+    Real_t_sim zd_local[8] ;
+    Real_t_sim detJ = Real_t(0.0) ;
 
-    Real_t volume ;
-    Real_t relativeVolume ;
+    Real_t_sim volume ;
+    Real_t_sim relativeVolume ;
     const Index_t_ptr_sim elemToNode = domain.nodelist(k) ;
 
     // get nodal coordinates from global arrays and copy into local arrays.

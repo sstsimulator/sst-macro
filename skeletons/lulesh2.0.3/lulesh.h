@@ -620,9 +620,9 @@ struct cmdLineOpts {
 // Function Prototypes
 
 // lulesh-par
-Real_t CalcElemVolume( const Real_t x[8],
-                       const Real_t y[8],
-                       const Real_t z[8]);
+Real_t CalcElemVolume( const Real_t_sim x[8],
+                       const Real_t_sim y[8],
+                       const Real_t_sim z[8]);
 
 // lulesh-util
 void ParseCommandLineOptions(int argc, char *argv[],

@@ -151,7 +151,7 @@ Domain::Domain(Int_t numRanks, Index_t colLoc,
 
    // initialize field data 
    for (Index_t i=0; i<numElem(); ++i) {
-      Real_t x_local[8], y_local[8], z_local[8] ;
+      Real_t_sim x_local[8], y_local[8], z_local[8] ;
       Index_t_ptr_sim elemToNode = nodelist(i) ;
       for( Index_t lnode=0 ; lnode<8 ; ++lnode )
       {
@@ -162,7 +162,7 @@ Domain::Domain(Int_t numRanks, Index_t colLoc,
       }
 
       // volume calculations
-      Real_t volume = CalcElemVolume(x_local, y_local, z_local );
+      Real_t_sim volume = CalcElemVolume(x_local, y_local, z_local );
       volo(i) = volume ;
       elemMass(i) = volume ;
       for (Index_t j=0; j<8; ++j) {
