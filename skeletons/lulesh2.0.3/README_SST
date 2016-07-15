@@ -3,8 +3,7 @@ Commit b7ace3fadce629e83138f2b4def31ccb3b890507 is the clean Lulesh
 made in the skeletonization process.
 
 With no LULESH_SST_* macros enabled, the modified version of Lulesh
-should build equivalent to the original modulo a few missing const
-qualifiers on pointers.
+should reduce to the original.
 
 The macro LULESH_SST_MODS can be enabled to implement basic changes
 to Lulesh that are required for an apples-to-apples comparison with

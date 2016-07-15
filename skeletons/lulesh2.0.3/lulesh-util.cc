@@ -169,7 +169,7 @@ void ParseCommandLineOptions(int argc, char *argv[],
 
 /////////////////////////////////////////////////////////////////////
 
-void VerifyAndWriteFinalOutput(Real_t elapsed_time,
+void VerifyAndWriteFinalOutput(Real_t_sim elapsed_time,
                                Domain& locDom,
                                Int_t nx,
                                Int_t numRanks)
@@ -177,8 +177,8 @@ void VerifyAndWriteFinalOutput(Real_t elapsed_time,
    // GrindTime1 only takes a single domain into account, and is thus a good way to measure
    // processor speed indepdendent of MPI parallelism.
    // GrindTime2 takes into account speedups from MPI parallelism 
-   Real_t grindTime1 = ((elapsed_time*1e6)/locDom.cycle())/(nx*nx*nx);
-   Real_t grindTime2 = ((elapsed_time*1e6)/locDom.cycle())/(nx*nx*nx*numRanks);
+   Real_t_sim grindTime1 = ((elapsed_time*1e6)/locDom.cycle())/(nx*nx*nx);
+   Real_t_sim grindTime2 = ((elapsed_time*1e6)/locDom.cycle())/(nx*nx*nx*numRanks);
 
    Index_t ElemId = 0;
    printf("Run completed:  \n");
@@ -186,23 +186,23 @@ void VerifyAndWriteFinalOutput(Real_t elapsed_time,
    printf("   MPI tasks           =  %i \n",    numRanks);
    printf("   Iteration count     =  %i \n",    locDom.cycle());
 #if defined(LULESH_SST_MODS) && defined(LULESH_SST_SIM)
-   printf("   Final Origin Energy = %12.6e \n", (double)(locDom.e(ElemId)));
+   printf("   Final Origin Energy = %12.6e \n", (Real_t)(locDom.e(ElemId)));
 #else
    printf("   Final Origin Energy = %12.6e \n", locDom.e(ElemId));
 #endif
 
-   Real_t   MaxAbsDiff = Real_t(0.0);
-   Real_t TotalAbsDiff = Real_t(0.0);
-   Real_t   MaxRelDiff = Real_t(0.0);
+   Real_t_sim   MaxAbsDiff = Real_t_sim(0.0);
+   Real_t_sim TotalAbsDiff = Real_t_sim(0.0);
+   Real_t_sim   MaxRelDiff = Real_t_sim(0.0);
 
    for (Index_t j=0; j<nx; ++j) {
       for (Index_t k=j+1; k<nx; ++k) {
-         Real_t AbsDiff = FABS(locDom.e(j*nx+k)-locDom.e(k*nx+j));
+         Real_t_sim AbsDiff = FABS(locDom.e(j*nx+k)-locDom.e(k*nx+j));
          TotalAbsDiff  += AbsDiff;
 
          if (MaxAbsDiff <AbsDiff) MaxAbsDiff = AbsDiff;
 
-         Real_t RelDiff = AbsDiff / locDom.e(k*nx+j);
+         Real_t_sim RelDiff = AbsDiff / locDom.e(k*nx+j);
 
          if (MaxRelDiff <RelDiff)  MaxRelDiff = RelDiff;
       }
@@ -210,13 +210,24 @@ void VerifyAndWriteFinalOutput(Real_t elapsed_time,
 
    // Quick symmetry check
    printf("   Testing Plane 0 of Energy Array on rank 0:\n");
+#if defined(LULESH_SST_MODS) && defined(LULESH_SST_SIM)
+   printf("        MaxAbsDiff   = %12.6e\n",   (Real_t)MaxAbsDiff   );
+   printf("        TotalAbsDiff = %12.6e\n",   (Real_t)TotalAbsDiff );
+   printf("        MaxRelDiff   = %12.6e\n\n", (Real_t)MaxRelDiff   );
+#else
    printf("        MaxAbsDiff   = %12.6e\n",   MaxAbsDiff   );
    printf("        TotalAbsDiff = %12.6e\n",   TotalAbsDiff );
    printf("        MaxRelDiff   = %12.6e\n\n", MaxRelDiff   );
+#endif
 
    // Timing information
+#if defined(LULESH_SST_MODS) && defined(LULESH_SST_SIM)
+   printf("\nElapsed time         = %10.2f (s)\n", (Real_t)elapsed_time);
+   printf("Grind time (us/z/c)  = %10.8g (per dom)  (%10.8g overall)\n", (Real_t)grindTime1, (Real_t)grindTime2);
+#else
    printf("\nElapsed time         = %10.2f (s)\n", elapsed_time);
    printf("Grind time (us/z/c)  = %10.8g (per dom)  (%10.8g overall)\n", grindTime1, grindTime2);
+#endif
    printf("FOM                  = %10.8g (z/s)\n\n", 1000.0/grindTime2); // zones per second
 
    return ;
