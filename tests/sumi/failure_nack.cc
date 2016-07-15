@@ -6,7 +6,8 @@
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
 #include <sstmac/libraries/sumi/sumi.h>
-
+#include <sstmac/skeleton.h>
+#define sstmac_app_name "user_app_cxx"
 using namespace sumi;
 
 

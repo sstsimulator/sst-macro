@@ -6,8 +6,6 @@
 #include <sumi/collective_message.h>
 #include <sumi/comm_functions.h>
 
-DeclareDebugSlot(sumi_gather)
-
 namespace sumi {
 
 class btree_gather_actor :
@@ -17,7 +15,7 @@ class btree_gather_actor :
  public:
   std::string
   to_string() const {
-    return "bruck actor";
+    return "btree gather actor";
   }
 
   btree_gather_actor(int root) : root_(root) {}
@@ -27,12 +25,8 @@ class btree_gather_actor :
   void init_buffers(void *dst, void *src);
   void init_dag();
   void init_tree();
-
+  void start_shuffle(action *ac);
   void buffer_action(void *dst_buffer, void *msg_buffer, action* ac);
-
-  void dense_partner_ping_failed(int dense_rank){
-    dag_collective_actor::dense_partner_ping_failed(dense_rank);
-  }
 
  private:
   int root_;
@@ -52,7 +46,7 @@ class btree_gather :
 
   std::string
   to_string() const {
-    return "allgather";
+    return "btree gather";
   }
 
   dag_collective_actor*
@@ -70,6 +64,7 @@ class btree_gather :
   }
 
  private:
+  int* recv_counts_;
   int root_;
 
 };

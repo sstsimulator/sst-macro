@@ -25,6 +25,7 @@ namespace sumi {
  */
 class mpi_queue_recv_request  {
   friend class mpi_queue;
+  friend class rendezvous_get;
 
  public:
   virtual std::string

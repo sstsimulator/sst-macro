@@ -51,9 +51,6 @@ SpktRegister("cut_through", packet_flow_bandwidth_arbitrator,
             "This is a much better approximation to wormhole or virtual cut_through routing");
 
 
-/** Make this modifiable by a parameter */
-const int packet_flow_bandwidth_arbitrator::min_trans_ = 8;
-
 static void
 validate_bw(double test_bw)
 {
@@ -91,28 +88,23 @@ packet_flow_bandwidth_arbitrator::init_noise_model(noise_model* noise)
 }
 
 void
-packet_flow_simple_arbitrator::arbitrate(
-  timestamp now,
-  packet_flow_payload* msg,
-  timestamp& packet_head_leaves,
-  timestamp& packet_tail_leaves,
-  timestamp& credit_leaves)
+packet_flow_simple_arbitrator::arbitrate(packet_stats_st &st)
 {
-  const timestamp& start_send = next_free_ < now ? now : next_free_;
-  timestamp ser_delay(msg->num_bytes() * inv_out_bw_);
+  timestamp start_send = next_free_ < st.now ? st.now : next_free_;
+  timestamp ser_delay(st.pkt->num_bytes() * inv_out_bw_);
   next_free_ = start_send + ser_delay;
-  msg->set_bw(out_bw_);
+  st.pkt->set_bw(out_bw_);
   //store and forward
   //head/tail are linked and go "at same time"
-  packet_head_leaves = packet_tail_leaves = next_free_;
+  st.head_leaves = st.tail_leaves = next_free_;
   //we can send the credit a bit ahead of time
-  credit_leaves = packet_head_leaves
-    + credit_delay(msg->max_incoming_bw(), out_bw_, msg->num_bytes());
-  msg->set_max_incoming_bw(out_bw_);
+  st.credit_leaves = st.head_leaves
+    + credit_delay(st.pkt->max_incoming_bw(), out_bw_, st.pkt->num_bytes());
+  st.pkt->set_max_incoming_bw(out_bw_);
 }
 
 int
-packet_flow_simple_arbitrator::bytes_sending(const timestamp& now) const
+packet_flow_simple_arbitrator::bytes_sending(timestamp now) const
 {
   double send_delay = next_free_ > now ? (next_free_ - now).sec() : 0;
   int bytes_sending = send_delay * out_bw_;
@@ -124,25 +116,20 @@ packet_flow_null_arbitrator::packet_flow_null_arbitrator()
 }
 
 void
-packet_flow_null_arbitrator::arbitrate(
-  timestamp now,
-  packet_flow_payload* msg,
-  timestamp& packet_head_leaves,
-  timestamp& packet_tail_leaves,
-  timestamp& credit_leaves)
+packet_flow_null_arbitrator::arbitrate(packet_stats_st &st)
 {
-  msg->set_max_bw(out_bw_);
-  timestamp ser_delay(msg->num_bytes() / msg->bw());
-  packet_head_leaves = now;
-  packet_tail_leaves = now + ser_delay;
+  st.pkt->set_max_bw(out_bw_);
+  timestamp ser_delay(st.pkt->num_bytes() / st.pkt->bw());
+  st.head_leaves = st.now;
+  st.tail_leaves = st.now + ser_delay;
   //we can send the credit a bit ahead of the tail
-  credit_leaves = packet_head_leaves
-    + credit_delay(msg->max_incoming_bw(), out_bw_, msg->num_bytes());
-  msg->set_max_incoming_bw(out_bw_);
+  st.credit_leaves = st.head_leaves
+    + credit_delay(st.pkt->max_incoming_bw(), out_bw_, st.pkt->num_bytes());
+  st.pkt->set_max_incoming_bw(out_bw_);
 }
 
 int
-packet_flow_null_arbitrator::bytes_sending(const timestamp& now) const
+packet_flow_null_arbitrator::bytes_sending(timestamp now) const
 {
   return 0;
 }
@@ -177,7 +164,7 @@ packet_flow_cut_through_arbitrator::~packet_flow_cut_through_arbitrator()
 }
 
 int
-packet_flow_cut_through_arbitrator::bytes_sending(const timestamp &now) const
+packet_flow_cut_through_arbitrator::bytes_sending(timestamp now) const
 {
   double next_free =
     head_->start; //just assume that at head_->start link is fully available
@@ -203,7 +190,7 @@ packet_flow_cut_through_arbitrator::partition(noise_model* noise, int num_interv
 }
 
 void
-packet_flow_cut_through_arbitrator::init_noise_model(noise_model*noise)
+packet_flow_cut_through_arbitrator::init_noise_model(noise_model* noise)
 {
   bandwidth_epoch* next = head_;
   while (next){
@@ -261,37 +248,29 @@ packet_flow_cut_through_arbitrator::clean_up(double now)
 }
 
 void
-packet_flow_cut_through_arbitrator::arbitrate(
-  timestamp now,
-  packet_flow_payload* payload,
-  timestamp &packet_head_leaves,
-  timestamp &packet_tail_leaves,
-  timestamp &credit_leaves)
+packet_flow_cut_through_arbitrator::arbitrate(packet_stats_st &st)
 {
-  do_arbitrate(now, payload, packet_head_leaves, packet_tail_leaves);
-  packet_head_leaves.correct_round_off(now);
+  do_arbitrate(st);
+  st.head_leaves.correct_round_off(st.now);
   //we can send the credit a bit ahead of the tail
-  credit_leaves = packet_head_leaves
-    + credit_delay(payload->max_incoming_bw(), out_bw_, payload->num_bytes());
-  payload->set_max_incoming_bw(out_bw_);
+  st.credit_leaves = st.head_leaves
+    + credit_delay(st.pkt->max_incoming_bw(), out_bw_, st.pkt->num_bytes());
+  st.pkt->set_max_incoming_bw(out_bw_);
 }
 
 void
-packet_flow_cut_through_arbitrator::do_arbitrate(
-  timestamp now,
-  packet_flow_payload* payload,
-  timestamp& packet_head_leaves,
-  timestamp& packet_tail_leaves)
+packet_flow_cut_through_arbitrator::do_arbitrate(packet_stats_st &st)
 {
+  packet_flow_payload* payload = st.pkt;
+
   payload->init_bw(out_bw_);
 #if SSTMAC_SANITY_CHECK
   validate_bw(payload->bw());
 #endif
 
-  double now_ = now.sec();
-
   //first things first - clean out any old epochs
-  clean_up(now_);
+  double now = st.now.sec();
+  clean_up(now);
 
   double send_start = head_->start;
 
@@ -303,10 +282,11 @@ packet_flow_cut_through_arbitrator::do_arbitrate(
                      payload->bw(), send_start, payload->arrival());
   }
 #endif
-  int bytes_to_send = std::max(payload->num_bytes(), long(min_trans_));
+  //zero byte packets break the math below - if tiny, just push it up to 8
+  int bytes_to_send = std::max(payload->num_bytes(), 8);
 
   pflow_arb_debug_printf_l0("cut_through arbitrator handling %s at time %10.5e that started arriving at %10.5e",
-                         payload->to_string().c_str(), now_, payload->arrival());
+        payload->to_string().c_str(), st.now, payload->arrival());
 
   bandwidth_epoch* epoch = head_;
   //bandwidth sanity check - available bw should only ever go up in future epochs
@@ -342,8 +322,8 @@ packet_flow_cut_through_arbitrator::do_arbitrate(
         epoch->truncate_after(time_to_send);
         pflow_arb_debug_printf_l1("truncate epoch: start=%12.8e stop=%12.8e send_time=%12.8e new_bw=%12.8e",
                                 send_start, payload_stop, total_send_time, new_bw);
-        packet_head_leaves = timestamp(send_start);
-        packet_tail_leaves = timestamp(payload_stop);
+        st.head_leaves = timestamp(send_start);
+        st.tail_leaves = timestamp(payload_stop);
         return;
       }
       else if (time_to_send == epoch->length) {
@@ -358,8 +338,8 @@ packet_flow_cut_through_arbitrator::do_arbitrate(
         delete epoch;
         pflow_arb_debug_printf_l2("exact fit: start=%12.8e stop=%12.8e send_time=%12.8e new_bw=%12.8e\n",
                                    send_start, payload_stop, total_send_time, new_bw);
-        packet_head_leaves = timestamp(send_start);
-        packet_tail_leaves = timestamp(payload_stop);
+        st.head_leaves = timestamp(send_start);
+        st.tail_leaves = timestamp(payload_stop);
         return;
       }
       else {
@@ -395,8 +375,8 @@ packet_flow_cut_through_arbitrator::do_arbitrate(
         payload->set_bw(new_bw);
         pflow_arb_debug_printf_l2("send finishes: start=%12.8e stop=%12.8e new_bw=%12.8e",
                                send_start, send_done, new_bw);
-        packet_head_leaves = timestamp(send_start);
-        packet_tail_leaves = timestamp(send_done);
+        st.head_leaves = timestamp(send_start);
+        st.tail_leaves = timestamp(send_done);
         return;
       }
       else {
@@ -457,8 +437,8 @@ packet_flow_cut_through_arbitrator::do_arbitrate(
         pflow_arb_debug_printf_l2("send finishes: start=%12.8e stop=%12.8e new_bw=%12.8e",
                                send_start, send_done, new_bw);
         epoch->truncate_after(time_to_send);
-        packet_head_leaves = timestamp(send_start);
-        packet_tail_leaves = timestamp(send_done);
+        st.head_leaves = timestamp(send_start);
+        st.tail_leaves = timestamp(send_done);
         return;
       }
       else if (time_to_send == epoch->length) {

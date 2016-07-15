@@ -233,6 +233,9 @@ else:
             text = "TIMEOUT: %s" % outputFile
             print bcolors.FAIL, text, bcolors.ENDC
             open(outputFile,"w").write(text)
+        else:
+          text = "TERMINATED WITH SIGNAL %d" % sig
+          open(outputFile,"w").write(text)
         try: os.kill(exepid, signal.SIGTERM)
         except OSError: pass
     elif rc == 0:
@@ -246,7 +249,8 @@ else:
           print bcolors.OKGREEN, text, bcolors.ENDC
         open(outputFile,"w").write(text)
     elif rc == 111:
-        pass #already printed stuff
+        text = "TERMINATED WITH UNKNOWN ERROR"
+        open(outputFile,"w").write(text)
     else:
         text = "ERROR/EXCEPTION: %s" % outputFile
         print bcolors.FAIL, text, bcolors.ENDC

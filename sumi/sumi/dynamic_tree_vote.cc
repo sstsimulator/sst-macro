@@ -434,7 +434,7 @@ dynamic_tree_vote_actor::merge_result(const dynamic_tree_vote_message::ptr& msg)
       stl_string(msg->failed_procs()).c_str(), tag_,
       vote_, failed_ranks_.to_string().c_str());
     agreed_upon_failures_.insert_all(extra_failed);
-    (*fxn_)(vote_, msg->vote());
+    (fxn_)(vote_, msg->vote());
   }
 
   failed_ranks_.insert_all(extra_failed);

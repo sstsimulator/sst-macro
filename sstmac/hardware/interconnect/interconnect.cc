@@ -95,10 +95,6 @@ void
 sst_interconnect::init_factory_params(sprockit::sim_parameters* params)
 {
   interconnect::init_factory_params(params);
-  int num_nodes = topology_->num_nodes();
-  for (int i=0; i < num_nodes; ++i){
-    available_.insert(node_id(i));
-  }
 }
 
 void
@@ -152,13 +148,7 @@ macro_interconnect::init_factory_params(sprockit::sim_parameters* params)
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
   topology_ = topology_factory::get_param("name", top_params);
 
-  runtime::set_temp_topology(topology_);
-
-  if (!available_.empty() || !allocated_.empty()) {
-    spkt_throw_printf(sprockit::illformed_error,
-                     "interconnect::init_factory_params: available and allocated arrays are not empty");
-  }
-  available_.clear();
+  runtime::set_topology(topology_);
 
   endpoint_map nodes;
   endpoint_map nics;
@@ -200,14 +190,6 @@ macro_interconnect::init_factory_params(sprockit::sim_parameters* params)
     nd->set_nic(nc);
     nc->set_node(nd);
   }
-
-  int numNodes = topology_->num_nodes();
-  for (int i=0; i < numNodes; ++i){
-    node_id nid(i);
-    available_.insert(nid);
-  }
-
-  runtime::clear_temp_topology();
 
   int failure_num = 1;
   while(1){
@@ -270,7 +252,7 @@ macro_interconnect::set_node_event_manager(node* the_node, event_manager* m)
 void
 macro_interconnect::set_event_manager(event_manager* m)
 {
-  runtime::set_temp_topology(topology_);
+  runtime::set_topology(topology_);
 
   node_map::iterator it, end = nodes_.end();
   for (it=nodes_.begin(); it != end; ++it) {
@@ -279,8 +261,6 @@ macro_interconnect::set_event_manager(event_manager* m)
   }
 
   set_event_manager_common(m);
-
-  runtime::clear_temp_topology();
 }
 #endif
 

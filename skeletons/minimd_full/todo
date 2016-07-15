@@ -1,4 +1,0 @@
-ForceLJ::compute_halfneigh
-ForceEAM::compute_halfneigh
-Neighbor::build
-Integrate::initalIntegrate

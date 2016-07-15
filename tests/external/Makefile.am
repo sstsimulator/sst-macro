@@ -21,6 +21,7 @@ AM_CPPFLAGS += -I$(top_builddir)/sstmac/replacements \
  -Dmain=USER_MAIN \
  -DSSTMAC=1 \
  -include sstmac/util.h \
+ -include sstmac/skeleton.h \
  -include sstmac/compute.h
 
 test_LDADD = 

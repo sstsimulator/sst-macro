@@ -62,8 +62,7 @@ The topology then needs to tell objects how to connect
 
 \begin{CppCode}
 void
-xpress_ring::connect_objects(connectable_map& objects,
-                             connectable_factory* cloner)
+xpress_ring::connect_objects(connectable_map& objects)
 {
   for (int i=0; i < ring_size_; ++i) {
     connectable* center_obj = objects[switch_id(i)];
@@ -139,7 +138,7 @@ xpress_ring::get_productive_path(
   int dim,
   const coordinates& src,
   const coordinates& dst,
-  routing_info::path& path) const
+  routable::path& path) const
 {
   minimal_route_to_coords(src, dst, path);
 }
@@ -159,7 +158,7 @@ void
 xpress_ring::minimal_route_to_coords(
   const coordinates& src_coords,
   const coordinates& dest_coords,
-  routing_info::path& path) const
+  routable::path& path) const
 {
   int src_pos = src_coords[0];
   int dest_pos = dest_coords[0];
@@ -221,7 +220,7 @@ xpress_ring::get_productive_path(
   int dim,
   const coordinates& src,
   const coordinates& dst,
-  routing_info::path& path) const
+  routable::path& path) const
 {
   minimal_route_to_coords(src, dst, path);
 }
@@ -235,9 +234,9 @@ To specify the new topology
 
 \begin{ViFile}
 # Topology
-topology_name = xpress
-xpress_ring_size = 10
-xpress_jump_size = 5
+topology.name = xpress
+topology.xpress_ring_size = 10
+topology.xpress_jump_size = 5
 \end{ViFile}
 with application launch parameters
 

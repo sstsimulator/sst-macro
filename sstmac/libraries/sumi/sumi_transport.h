@@ -61,6 +61,11 @@ class sumi_transport :
   void
   ping_timeout(pinger* pnger);
 
+  void
+  incoming_event(sstmac::event *ev){
+    library::incoming_event(ev);
+  }
+
  protected:
   void
   do_smsg_send(int dst, const message::ptr &msg);

@@ -77,7 +77,7 @@ A generic workflow consists of 4 steps:
 gen_sam.x <domain_file> <sampling_type(Q/U)> <N_samples> <N_val>
 \end{ShellCmd}
 The list of arguments:
-\subitem \emph{domain\_file}: A file with $d$ rows and 2 columns. $d$ is the total number of parameters being explored.
+\subitem \emph{domain\_file}: A file with \bgmth d \endmth rows and 2 columns. \bgmth d \endmth is the total number of parameters being explored.
            The two columns are the lower and upper bound of the corresponding parameter.
 \subitem \emph{sampling\_type}: Q (Quadrature) or U (uniformly random). Note that currently in this script set, only Q is supported for further PCE generation.
 \subitem \emph{N\_samples}: Number of samples used for training, i.e. for building PCE.
@@ -88,7 +88,7 @@ The list of arguments:
 model.x
 \end{ShellCmd}
 This is a black-box model that takes no arguments. However, it expects two input files mparam.dat and minput.dat, and returns the function evaluations in the output file moutput.dat.
-\subitem \emph{mparam.dat}: a single column $d$$\times$1 of the parameters of interest, where d is the number of parameters 
+\subitem \emph{mparam.dat}: a single column $d\times$1 of the parameters of interest, where d is the number of parameters 
 \subitem \emph{minput.dat}: controllable input in a matrix form, $N$$\times$$k$, where $k$ is the number of controllable parameters and $N$ is the number of values or model observables.
 \subitem \emph{moutput.dat}: the model output in a column format $N$$\times$1.
 

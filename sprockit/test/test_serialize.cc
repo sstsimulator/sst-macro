@@ -49,7 +49,7 @@ test_serialize_array(UnitTest& unit)
   ser & array(correct_array, correct_size);
   void* correct_buffer = correct_array;
   int correct_buffer_size = correct_size*sizeof(int)/sizeof(char);
-  ser & buffer(correct_buffer, correct_buffer_size);
+  ser & array(correct_buffer, correct_buffer_size);
 
 
 
@@ -63,7 +63,7 @@ test_serialize_array(UnitTest& unit)
   assertEqual(unit, "test arrays", test, correct);
 
   void* test_buffer;
-  ser & buffer(test_buffer, test_size);
+  ser & array(test_buffer, test_size);
   test_size /= sizeof(int)/sizeof(char);
   test_array = (int*) test_buffer;
   std::vector<int> buftest(test_array, test_array + test_size);

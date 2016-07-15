@@ -26,13 +26,17 @@ library_includedir=$(includedir)/sumi/sumi
 nodist_library_include_HEADERS = config.h sumi_config.h
 
 library_include_HEADERS = \
+ alltoall.h \
+ alltoallv.h \
  allgather.h \
  allgatherv.h \
  allreduce.h \
  gather.h \
+ gatherv.h \
  bcast.h \
  reduce.h \
  scatter.h \
+ scatterv.h \
  collective.h \
  collective_actor.h \
  collective_actor_fwd.h \
@@ -66,14 +70,18 @@ library_include_HEADERS = \
  transport_fwd.h 
 
 libsumi_la_SOURCES = \
+ alltoall.cc \
+ alltoallv.cc \
  transport.cc \
  allgather.cc \
  allgatherv.cc \
  allreduce.cc \
  bcast.cc \
  gather.cc \
+ gatherv.cc \
  reduce.cc \
  scatter.cc \
+ scatterv.cc \
  collective.cc \
  collective_actor.cc \
  collective_message.cc \

@@ -10,11 +10,24 @@
 #include <sumi/thread_safe_set.h>
 #include <sumi/config.h>
 
+DeclareDebugSlot(sumi_collective_buffer)
+
+#define sumi_case(x) case x: return #x
+
+#define do_sumi_debug_print(...)  \
+ if (sprockit::debug::slot_active(sprockit::dbg::sumi_collective_buffer)) \
+   debug_print(__VA_ARGS__)
+
 namespace sumi {
+
+void
+debug_print(const char* info, const std::string& rank_str,
+            int partner, int round, int offset,
+            int nelems, int type_size, const void* buffer);
 
 struct action
 {
-  typedef enum { send=0, recv=1 } type_t;
+  typedef enum { send=0, recv=1, shuffle=2, unroll=3 } type_t;
   typedef enum { in_place_result=0, out_of_place=1, temp=2 } recv_type_t;
   type_t type;
   int partner;
@@ -23,30 +36,48 @@ struct action
   int offset;
   int nelems;
   uint32_t id;
-  bool recv_type_;
+  recv_type_t recv_type;
 
   static const char*
   tostr(type_t ty){
-    if (ty == send) return "send";
-    else return "recv";
+    switch(ty){
+      sumi_case(send);
+      sumi_case(recv);
+      sumi_case(shuffle);
+      sumi_case(unroll);
+    }
   }
 
-  static const uint32_t max_round = 22;
+  static const char*
+  tostr(recv_type_t ty){
+    switch(ty){
+      sumi_case(in_place_result);
+      sumi_case(out_of_place);
+      sumi_case(temp);
+    }
+  }
+
+  std::string
+  to_string() const;
+
+  static const uint32_t max_round = 50;
 
   static uint32_t
   message_id(type_t ty, int r, int p){
     //factor of two is for send or receive
-    return p*max_round*2 + r*2 + ty;
+    const int num_enums = 4;
+    return p*max_round*num_enums + r*num_enums + ty;
   }
 
   static void
   details(uint32_t round, type_t& ty, int& r, int& p){
+    const int num_enums = 4;
     uint32_t remainder = round;
-    p = remainder / max_round / 2;
-    remainder -= p*max_round*2;
+    p = remainder / max_round / num_enums;
+    remainder -= p*max_round*num_enums;
 
-    r = remainder / 2;
-    remainder -= r*2;
+    r = remainder / num_enums;
+    remainder -= r*num_enums;
 
     ty = (type_t) remainder;
   }
@@ -54,7 +85,7 @@ struct action
  protected:
   action(type_t ty, int r, int p) :
     type(ty), round(r), partner(p),
-    join_counter(0), recv_type_(in_place_result)
+    join_counter(0), recv_type(in_place_result)
   {
     id = message_id(ty, r, p);
   }
@@ -72,6 +103,14 @@ struct send_action : public action
 {
   send_action(int round, int partner) :
     action(send, round, partner)
+  {
+  }
+};
+
+struct shuffle_action : public action
+{
+  shuffle_action(int round, int partner) :
+    action(shuffle, round, partner)
   {
   }
 };
@@ -361,11 +400,26 @@ class dag_collective_actor :
 
   void dense_partner_ping_failed(int dense_rank);
 
+  void
+  compute_tree(int& log2nproc, int& midpoint, int& nproc) const;
+
+  virtual void
+  start_shuffle(action* ac);
+
+  static bool
+  is_shared_role(int role, int num_roles, int* my_roles){
+    for (int r=0; r < num_roles; ++r){
+      if (role == my_roles[r]){
+        return true;
+      }
+    }
+    return false;
+  }
+
  private:
   typedef std::map<uint32_t, action*> active_map;
   typedef std::multimap<uint32_t, action*> pending_map;
-  active_map active_sends_;
-  active_map active_recvs_;
+  active_map active_comms_;
   pending_map pending_comms_;
   std::list<action*> completed_actions_;
 
@@ -383,7 +437,7 @@ class dag_collective_actor :
    *        Should only be called for actions that became active
    * @param ac
    */
-  void action_done(action* ac, active_map& m);
+  void action_done(action* ac);
 
   /**
    * @brief Satisfy dependences and check if done.
@@ -392,11 +446,11 @@ class dag_collective_actor :
    * @param ac
    * @param m
    */
-  void clear_action(action* ac, active_map& m);
+  void clear_action(action* ac);
 
   void action_done(action::type_t ty, int round, int partner);
 
-  void fail_actions(int dense_rank, active_map& m);
+  void fail_actions(int dense_rank);
 
   std::list<action*> initial_actions_;
 
@@ -422,6 +476,15 @@ class dag_collective_actor :
 
 };
 
+class bruck_actor : public dag_collective_actor
+{
+ protected:
+  void
+  compute_tree(int& log2nproc, int& midpoint,
+               int& num_rounds, int& nprocs_extra_round) const;
+
+};
+
 /**
  * @class virtual_rank_map
  * Maps a given number of live processors
@@ -436,8 +499,14 @@ class virtual_rank_map
   int
   virtual_to_real(int rank) const;
 
-  std::vector<int>
-  real_to_virtual(int rank) const;
+  /**
+   * @brief real_to_virtual
+   * @param rank
+   * @param virtual_ranks An array large enough to hold the number of ranks
+   * @return The number of virtual ranks
+   */
+  int
+  real_to_virtual(int rank, int* virtual_ranks) const;
 
   int
   virtual_nproc() const {
@@ -449,7 +518,20 @@ class virtual_rank_map
     return nproc_;
   }
 
-  virtual_rank_map(int nproc, int virtual_nproc);
+  void
+  init(int nproc, int virtual_nproc) {
+    nproc_ = nproc;
+    virtual_nproc_ = virtual_nproc;
+  }
+
+  virtual_rank_map(int nproc, int virtual_nproc) :
+    nproc_(nproc), virtual_nproc_(virtual_nproc)
+  {
+  }
+
+  virtual_rank_map() : nproc_(-1), virtual_nproc_(-1)
+  {
+  }
 
  protected:
   int nproc_;

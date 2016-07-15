@@ -11,7 +11,6 @@
 
 #include <sstmac/hardware/router/router.h>
 #include <sstmac/hardware/switch/network_switch.h>
-#include <sstmac/hardware/router/routing_info.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sprockit/util.h>
 #include <sprockit/delete.h>
@@ -65,7 +64,7 @@ router::router() : max_num_vc_(0)
 
 bool
 router::productive_paths_to_node(node_id dst,
-                                 routing_info::path_set &paths)
+                                 geometry_routable::path_set &paths)
 {
   int ej_port;
   switch_id ej_addr = top_->endpoint_to_ejection_switch(dst, ej_port);
@@ -84,7 +83,7 @@ router::productive_paths_to_node(node_id dst,
 }
 
 void
-router::minimal_route_to_node(node_id node_addr, routing_info::path& path)
+router::minimal_route_to_node(node_id node_addr, geometry_routable::path& path)
 {
   spkt_throw(sprockit::unimplemented_error,
             to_string(),
@@ -92,7 +91,7 @@ router::minimal_route_to_node(node_id node_addr, routing_info::path& path)
 }
 
 void
-router::minimal_route_to_switch(switch_id node_addr, routing_info::path& path)
+router::minimal_route_to_switch(switch_id node_addr, geometry_routable::path& path)
 {
   spkt_throw(sprockit::unimplemented_error,
             to_string(),

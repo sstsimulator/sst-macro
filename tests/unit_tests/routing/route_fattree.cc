@@ -29,7 +29,7 @@ test_fattree4(UnitTest& unit)
 
         node_id dst = ftree->node_addr(get_vector(0,0,1));
 
-        routing_info::path_set paths;
+        geometry_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         assertEqual(unit, "num productive ports", paths.size(), 1);
         assertEqual(unit, "productive port", paths[0].outport,
@@ -44,7 +44,7 @@ test_fattree4(UnitTest& unit)
 
         node_id dst = ftree->node_addr(get_vector(0,3,1));
 
-        routing_info::path_set paths;
+        geometry_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         assertEqual(unit, "num productive ports", paths.size(), 4);
         for (int k=0; k < paths.size(); ++k){
@@ -61,7 +61,7 @@ test_fattree4(UnitTest& unit)
 
         node_id dst = ftree->node_addr(get_vector(0,6),2);
 
-        routing_info::path_set paths;
+        geometry_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         assertEqual(unit, "num productive ports", paths.size(), 1);
         assertEqual(unit, "productive port", paths[0].outport,
@@ -128,7 +128,7 @@ test_fattree2(UnitTest& unit)
 
         node_id dst = ftree->node_addr(get_vector(4,1,0,1,0,0));
 
-        routing_info::path_set paths;
+        geometry_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         assertEqual(unit, "num productive ports", paths.size(), 2);
         assertEqual(unit, "productive port", paths[0].outport, router->convert_to_port(fat_tree::down_dimension, 0));
@@ -143,7 +143,7 @@ test_fattree2(UnitTest& unit)
 
         node_id dst = ftree->node_addr(get_vector(4,1,0,1,0,0,0));
 
-        routing_info::path_set paths;
+        geometry_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         assertEqual(unit, "num productive ports", paths.size(), 2);
         for (int k=0; k < paths.size(); ++k)

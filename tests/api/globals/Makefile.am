@@ -15,6 +15,7 @@ AM_CPPFLAGS += -I$(top_srcdir)/tests/mpi/include -Wp,-w \
   -I$(top_builddir)/tests -I$(top_srcdir)/tests
 
 EXTRA_DIST = \
+  config.py \
   tests/test_conflicts.cc \
   tests/test_operators.cc \
   tests/test_functions.cc \

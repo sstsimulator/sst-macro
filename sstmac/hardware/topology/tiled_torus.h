@@ -18,8 +18,8 @@ class tiled_torus :
   minimal_routes_to_coords(
     const coordinates &src_coords,
     const coordinates &dest_coords,
-    routing_info::path& current,
-    routing_info::path_set &paths) const;
+    geometry_routable::path& current,
+    geometry_routable::path_set &paths) const;
 
   std::string
   default_router() const {
@@ -37,7 +37,7 @@ class tiled_torus :
   void
   eject_paths_on_switch(
       node_id dest_addr, switch_id sw_addr,
-      routing_info::path_set &paths) const;
+      geometry_routable::path_set &paths) const;
 
  protected:
   virtual void

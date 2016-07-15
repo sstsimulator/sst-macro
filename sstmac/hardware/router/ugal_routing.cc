@@ -29,11 +29,12 @@ ugal_router::finalize_init()
 void
 ugal_router::route(packet* pkt)
 {
-  routing_info& rinfo = pkt->interface<routable>()->rinfo();
-  rinfo.init_default_algo(routing::valiant);
-  switch(rinfo.route_algo()){
+  //routing_info& rinfo = pkt->interface<routable>()->rinfo();
+  routing::algorithm_t algo = routing::ugal;
+  geometry_routable* rtbl = pkt->interface<geometry_routable>();
+  switch(algo){
     case routing::minimal:
-      minimal_route_to_node(pkt->toaddr(), rinfo.current_path());
+      minimal_route_to_node(pkt->toaddr(), rtbl->current_path());
       return;
     case routing::valiant:
     case routing::ugal: //virtual methods overridden
@@ -43,16 +44,16 @@ ugal_router::route(packet* pkt)
     default:
       spkt_throw_printf(sprockit::value_error,
         "ugal router got invalid routing type %s",
-        routing::tostr(rinfo.route_algo()));
+        routing::tostr(algo));
   }
 }
 
 valiant_router::next_action_t
 ugal_router::initial_step(
-  routing_info& rinfo,
+  geometry_routable* rtbl,
   packet* pkt)
 {
-  routing_info::path& path = rinfo.current_path();
+  geometry_routable::path& path = rtbl->current_path();
   structured_topology* regtop = safe_cast(structured_topology, topol());
   int pathDir;
   switch_id ej_addr = regtop->endpoint_to_ejection_switch(pkt->toaddr(), pathDir);
@@ -83,11 +84,11 @@ ugal_router::initial_step(
 
   // Since min_path might really be used as a path, it needs to be a copy of
   // path so that the routing function will have correct metadata to work with.
-  routing_info::path min_path = path;
+  geometry_routable::path min_path = path;
 
   // Conversely, val_path is never used as a real path since
   // intermediate_step() recomputes the path.
-  routing_info::path val_path;
+  geometry_routable::path val_path;
 
   regtop->minimal_route_to_coords(src, dst, min_path);
   regtop->minimal_route_to_coords(src, inter, val_path);
@@ -107,7 +108,7 @@ ugal_router::initial_step(
       "UGAL minimal routing to port %d",
       min_path.outport);
     min_path.vc = zero_stage_vc(min_path.vc);
-    rinfo.assign_path(min_path);
+    rtbl->assign_path(min_path);
     return minimal;
   }
   else {
@@ -115,16 +116,16 @@ ugal_router::initial_step(
     debug_printf(sprockit::dbg::router,
       "UGAL valiant routing to switch %ld, port %d",
       long(inter_addr), val_path.outport);
-    rinfo.set_dest_switch(inter_addr);
-    rinfo.current_path().set_metadata_bit(routing_info::valiant_stage);
+    rtbl->set_dest_switch(inter_addr);
+    rtbl->current_path().set_metadata_bit(geometry_routable::valiant_stage);
 
     // Let topology know we're switching to a new routing stage,
     // metadata may need to be modified.
-    regtop->new_routing_stage(rinfo);
+    regtop->new_routing_stage(rtbl);
 
     // intermediate_step() will handle the remaining path/vc setup.
     // Don't duplicate that here or bad things will happen.
-    return intermediate_step(rinfo, pkt);
+    return intermediate_step(rtbl, pkt);
   }
 }
 

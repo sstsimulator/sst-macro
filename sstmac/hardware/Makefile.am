@@ -51,7 +51,10 @@ nobase_library_include_HEADERS = \
   common/param_expander.h \
   common/recv_cq.h \
   common/unique_id.h \
+  packet_flow/packet_allocator.h \
+  packet_flow/packet_allocator_fwd.h \
   packet_flow/packet_flow.h \
+  packet_flow/packet_flow_fwd.h \
   packet_flow/packet_flow_stats.h \
   packet_flow/packet_flow_stats_fwd.h \
   packet_flow/packet_flow_param_expander.h \
@@ -96,9 +99,9 @@ nobase_library_include_HEADERS = \
   topology/traffic/traffic.h \
   router/router.h \
   router/router_fwd.h \
-  router/routable_message.h \
+  router/routable.h \
+  router/routable_fwd.h \
   router/minad_routing.h \
-  router/routing_info.h \
   router/routing_enum.h \
   router/minimal_routing.h \
   router/multipath_routing.h \
@@ -131,6 +134,7 @@ libsstmac_hw_la_SOURCES =  \
   node/null_node.cc \
   node/simple_node.cc \
   packet_flow/packet_flow.cc \
+  packet_flow/packet_allocator.cc \
   packet_flow/packet_flow_stats.cc \
   packet_flow/packet_flow_arbitrator.cc \
   packet_flow/packet_flow_buffer.cc \
@@ -161,14 +165,13 @@ libsstmac_hw_la_SOURCES =  \
   topology/traffic/traffic.cc \
   router/router.cc \
   router/structured_router.cc \
-  router/routable_message.cc \
+  router/routable.cc \
   router/fat_tree_router.cc \
   router/minad_routing.cc \
   router/minimal_routing.cc \
   router/multipath_routing.cc \
   router/ugal_routing.cc \
   router/valiant_routing.cc \
-  router/routing_info.cc \
   topology/structured_topology.cc \
   topology/cartesian_topology.cc \
   topology/topology.cc 

@@ -1,16 +1,3 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
-/*
- *  (C) 2009 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
-/*
- * Test of reduce scatter block.
- *
- * Each process contributes its rank + the index to the reduction,
- * then receives the ith sum
- *
- * Can be called with any number of processes.
- */
 
 #include <sstmac/replacements/mpi.h>
 #include "mpitest.h"
@@ -32,7 +19,6 @@ int red_scat_block(int argc, char **argv)
     MPI_Comm_size(comm, &size);
     MPI_Comm_rank(comm, &rank);
 
-#if MTEST_HAVE_MIN_MPI_VERSION(2,2)
     /* MPI_Reduce_scatter block was added in MPI-2.2 */
     sendbuf = (int *) malloc(size * sizeof(int));
     recvbuf = (int *) malloc(size * sizeof(int));
@@ -68,7 +54,6 @@ int red_scat_block(int argc, char **argv)
         fprintf(stdout, "[%d] Got %d expected %d\n", rank, recvbuf[0], sumval);
     }
     free(recvbuf);
-#endif
 
     MPI_Allreduce(&err, &toterr, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
     if (rank == 0 && toterr == 0) {

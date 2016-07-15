@@ -40,7 +40,7 @@ class fat_tree_router :
   }
 
   void
-  productive_paths_to_switch(switch_id dst, routing_info::path_set &paths);
+  productive_paths_to_switch(switch_id dst, geometry_routable::path_set &paths);
 
   virtual void
   path_teardown(int fromport, int toport) {
@@ -69,7 +69,7 @@ class fat_tree_router :
   void
   minimal_route_to_switch(
     switch_id sw_addr,
-    routing_info::path& path);
+    geometry_routable::path& path);
 
  protected:
   int l_;

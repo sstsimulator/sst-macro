@@ -1,8 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
 #include <stdio.h>
 #include <sstmac/replacements/mpi.h>
 
@@ -22,7 +18,7 @@ int allredmany( int argc, char **argv )
   MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
   MPI_Comm_rank(MPI_COMM_WORLD,&myid);
 
-  for ( i=0; i<10000; i++) {
+  for ( i=0; i<256; i++) {
     MPI_Allreduce(&wscale,&scale,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
   }
 

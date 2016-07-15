@@ -15,7 +15,12 @@ noinst_LTLIBRARIES = libsstmac_mpi.la
 
 library_includedir=$(includedir)/sumi-mpi
 
-AM_CPPFLAGS += -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi -I$(top_srcdir)/sumi -I$(top_builddir)/sumi
+AM_CPPFLAGS += \
+	-I$(top_srcdir)/sumi \
+	-I$(top_builddir)/sumi
+
+AM_CPPFLAGS += -I$(top_srcdir)/sstmac/install -DSSTMAC=1
+AM_CPPFLAGS += -I$(top_builddir)/sstmac/replacements -I$(top_srcdir)/sstmac/replacements
 
 AM_FCFLAGS = -I$(top_builddir) -I$(top_srcdir) -m32 -m64
 
@@ -37,7 +42,6 @@ libsstmac_mpi_la_SOURCES = \
   mpi_protocol/eager0.cc \
   mpi_protocol/rendezvous_rdma.cc \
   mpi_types/mpi_type.cc \
-  mpi_api_persistent.cc \
   mpi_api.cc \
   mpi_api_collectives.cc \
   mpi_api_comm.cc \
@@ -73,7 +77,6 @@ nobase_library_include_HEADERS = \
   mpi_protocol/mpi_protocol_fwd.h \
   mpi_types/mpi_type.h \
   mpi_types/mpi_type_fwd.h \
-  mpi_api_persistent.h \
   mpi_api.h \
   mpi_api_fwd.h \
   mpi_debug.h \

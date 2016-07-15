@@ -89,7 +89,7 @@ macro_switch_interconnect::init_factory_params(sprockit::sim_parameters* params)
 {
   /** This builds the nodes */
   interconnect_base::init_factory_params(params);
-  runtime::set_temp_topology(topology_);
+  runtime::set_topology(topology_);
 
   internal_map switches;
   sprockit::sim_parameters* switch_params = params->get_namespace("switch");
@@ -173,8 +173,6 @@ macro_switch_interconnect::init_factory_params(sprockit::sim_parameters* params)
     //don't even need to assign these values - will never be used
     cerrn << "WARNING: rank was assigned no switches" << std::endl;
   }
-
-  runtime::clear_temp_topology();
 }
 
 void
@@ -227,7 +225,7 @@ macro_switch_interconnect::thread_for_switch(switch_id sid) const
 void
 macro_switch_interconnect::set_event_manager(event_manager* m)
 {
-  runtime::set_temp_topology(topology_);
+  runtime::set_topology(topology_);
 
   int num_local_switches = partition_->local_num_switches();
   for (int i=0; i < num_local_switches; ++i){
@@ -240,8 +238,6 @@ macro_switch_interconnect::set_event_manager(event_manager* m)
   //this assumes that node/switches have been assigned
   //an event manager
   interconnect_base::set_event_manager_common(m);
-
-  runtime::clear_temp_topology();
 }
 
 

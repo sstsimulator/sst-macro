@@ -13,12 +13,81 @@
 #define SSTMAC_SOFTWARE_LIBRARIES_MPI_MPIREQUEST_H_INCLUDED
 
 #include <sstmac/software/process/key.h>
+#include <sumi/collective.h>
 #include <sumi-mpi/mpi_status.h>
 #include <sumi-mpi/mpi_message.h>
+#include <sumi-mpi/mpi_comm/mpi_comm_fwd.h>
+
 
 namespace sumi {
 
 using sstmac::sw::key;
+
+/**
+ * Persistent send operations (send, bsend, rsend, ssend)
+ */
+class persistent_op
+{
+ public:
+  typedef enum {
+    Send,
+    Recv
+  } op_type_t;
+  /// The arguments.
+  int count;
+  MPI_Datatype datatype;
+  MPI_Comm comm;
+  op_type_t optype;
+  int partner;
+  int tag;
+  void* content;
+};
+
+struct collective_op_base
+{
+
+  bool packed_send;
+  bool packed_recv;
+  void* sendbuf;
+  void* recvbuf;
+  void* tmp_sendbuf;
+  void* tmp_recvbuf;
+  int tag;
+  MPI_Op op;
+  mpi_type* sendtype;
+  mpi_type* recvtype;
+  collective::type_t ty;
+  mpi_comm* comm;
+  int sendcnt;
+  int recvcnt;
+  int root;
+
+ protected:
+  collective_op_base(mpi_comm* cm);
+
+};
+
+struct collective_op : public collective_op_base
+{
+  collective_op(int count, mpi_comm* comm);
+  collective_op(int sendcnt, int recvcnt, mpi_comm* comm);
+
+
+};
+
+struct collectivev_op : public collective_op_base
+{
+  collectivev_op(int scnt, int* recvcnts, int* disps, mpi_comm* comm);
+  collectivev_op(int* sendcnts, int* disps, int rcnt, mpi_comm* comm);
+  collectivev_op(int* sendcnts, int* sdisps,
+                 int* recvcnts, int* rdisps, mpi_comm* comm);
+
+  int* recvcounts;
+  int* sendcounts;
+  int* sdisps;
+  int* rdisps;
+  int size;
+};
 
 class mpi_request  {
   // ------- constructor / boost stuff -------------//
@@ -26,17 +95,19 @@ class mpi_request  {
  public:
   mpi_request(const key::category& cat);
 
-  virtual std::string
+  std::string
   to_string() const {
     return "mpirequest";
   }
 
-  virtual
-  ~mpi_request();
+  std::string
+  type_str() const;
 
   static mpi_request*
   construct(const key::category& cat);
   // --------------------------------------//
+
+  ~mpi_request();
 
   void
   complete(const mpi_message::ptr& msg);
@@ -49,7 +120,37 @@ class mpi_request  {
   void
   cancel() {
     cancelled_ = true;
-    complete(mpi_message::ptr());
+    complete();
+  }
+
+  void
+  complete() {
+    complete_ = true;
+  }
+
+  void
+  set_complete(bool flag){
+    complete_ = flag;
+  }
+
+  void
+  set_persistent(persistent_op* op) {
+    persistent_op_ = op;
+  }
+
+  persistent_op*
+  persistent_data() const {
+    return persistent_op_;
+  }
+
+  void
+  set_collective(collective_op_base* op) {
+    collective_op_ = op;
+  }
+
+  collective_op_base*
+  collective_data() const {
+    return collective_op_;
   }
 
   const MPI_Status&
@@ -67,9 +168,14 @@ class mpi_request  {
     return cancelled_;
   }
 
-  virtual bool
+  bool
   is_persistent() const {
-    return false;
+    return persistent_op_;
+  }
+
+  bool
+  is_collective() const {
+    return collective_op_;
   }
 
  protected:
@@ -77,6 +183,8 @@ class mpi_request  {
   key* key_;
   bool complete_;
   bool cancelled_;
+  persistent_op* persistent_op_;
+  collective_op_base* collective_op_;
 };
 
 }

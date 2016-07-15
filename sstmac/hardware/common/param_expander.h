@@ -1,12 +1,12 @@
 #ifndef sstmac_hw_common_PARAM_EXPANDER_H
 #define sstmac_hw_common_PARAM_EXPANDER_H
 
-#include <sprockit/param_expander.h>
+#include <sstmac/common/param_expander.h>
 
 namespace sstmac {
 namespace hw {
 
-class param_expander : public sprockit::param_expander
+class param_expander : public sstmac::param_expander
 {
 
  protected:

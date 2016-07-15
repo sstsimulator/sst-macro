@@ -49,6 +49,7 @@ namespace sstmac {
   "post_header_delay",
   "post_rdma_delay",
   "launch_node_id_file",
+  "launch_node_id_mapper_file",
   "link_bytes_per_cycle",
   "mean",
   "injector",

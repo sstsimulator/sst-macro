@@ -61,9 +61,6 @@ event_scheduler::cancel_all_messages()
 }
 
 #if SSTMAC_INTEGRATED_SST_CORE
-
-// TODO fill in event_scheduler using SelfLink and stuff @integrated_core @critical
-
 timestamp
 event_scheduler::now() const
 {

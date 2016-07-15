@@ -14,9 +14,6 @@
 
 namespace sumi {
 
-
-thread_safe_int keyval::keycount(0);
-
 keyval*
 keyval::clone(int k) const {
     keyval* ret = new keyval(k, copy_, del_, extra_);

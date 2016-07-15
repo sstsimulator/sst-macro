@@ -17,20 +17,18 @@ The invocation of \inlineshell{sstmac_top_info} is exactly the same as the main 
 For the example parameter file named \inlineshell{machine.ini}:
 
 \begin{ViFile}
-topology_name = fattree
-topology_geometry = 4 3
+topology.name = fattree
+topology.geometry = 4 3
 \end{ViFile}
 
 we run
 
 \begin{ShellCmd}
-bin$ sstmac_top_info -f machine.ini
+bin> sstmac_top_info -f machine.ini
 \end{ShellCmd}
 which produces the output
 
 \begin{ViFile}
-topology_name             = fattree
-topology_geometry         = 4 3
 Number of nodes:         81
 Number of leaf switches: 27
 Number of switches:      94

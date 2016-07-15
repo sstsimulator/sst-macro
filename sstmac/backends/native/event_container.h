@@ -12,8 +12,6 @@
 #ifndef SSTMAC_BACKENDS_NATIVE_EVENTCONTAINER_H_INCLUDED
 #define SSTMAC_BACKENDS_NATIVE_EVENTCONTAINER_H_INCLUDED
 
-#define DEBUG_DETERMINISM 1
-
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/common/sst_event.h>

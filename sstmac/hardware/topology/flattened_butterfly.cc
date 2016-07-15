@@ -166,7 +166,7 @@ flattened_butterfly::convert_to_port(int dim, int dir) const
 }
 
 void
-flattened_butterfly::productive_path(int i, const coordinates &src_coords, const coordinates &dest_coords, routing_info::path &path) const
+flattened_butterfly::productive_path(int i, const coordinates &src_coords, const coordinates &dest_coords, geometry_routable::path &path) const
 {
   // this is the port that leads to the correct coordinate
   int dir = i * kary_ + dest_coords[i];
@@ -186,7 +186,7 @@ void
 flattened_butterfly::minimal_route_to_coords(
   const coordinates &src_coords,
   const coordinates &dest_coords,
-  routing_info::path& path) const
+  geometry_routable::path& path) const
 {
   for (int i=0; i < src_coords.size(); ++i) {
     if (src_coords[i] != dest_coords[i]) {

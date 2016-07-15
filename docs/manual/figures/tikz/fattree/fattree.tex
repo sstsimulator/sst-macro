@@ -26,9 +26,9 @@
 \begin{document}
 \begin{tikzpicture}
 \useasboundingbox (-1.8in,-1.6in) rectangle (1.8in,2.1in);
-\boxGrid{8}{3}{1.15cm}{\boxsize}{\boxsize}{0cm,0cm}{}{main}
-\boxGrid{4}{1}{0.95cm}{\boxsize}{\boxsize}{0cm,3cm}{}{top}
-\boxGrid{16}{1}{0.57cm}{0.4cm}{0.25cm}{0cm,-1.7cm}{}{nodes}
+\boxGrid{8}{3}{1.15cm}{\boxsize}{\boxsize}{0cm,0cm}{}{mainmesh}
+\boxGrid{8}{1}{0.95cm}{\boxsize}{\boxsize}{0cm,3cm}{}{topmesh}
+\boxGrid{16}{1}{0.57cm}{0.4cm}{0.25cm}{0cm,-1.7cm}{}{nodesmesh}
 
 \node at (0cm,-1.8cm) { Compute Nodes };
 
@@ -60,6 +60,10 @@
 \myRectangle{fill=red!50}{topmesh21BxL}{\boxsize,\boxsize}
 \myRectangle{fill=red!50}{topmesh31BxL}{\boxsize,\boxsize}
 \myRectangle{fill=red!50}{topmesh41BxL}{\boxsize,\boxsize}
+\myRectangle{fill=red!50}{topmesh51BxL}{\boxsize,\boxsize}
+\myRectangle{fill=red!50}{topmesh61BxL}{\boxsize,\boxsize}
+\myRectangle{fill=red!50}{topmesh71BxL}{\boxsize,\boxsize}
+\myRectangle{fill=red!50}{topmesh81BxL}{\boxsize,\boxsize}
 
 \myRectangle{fill=yellow}{nodesmesh11BxL}{0.4cm,0.25cm}
 \myRectangle{fill=yellow}{nodesmesh21BxL}{0.4cm,0.25cm}
@@ -143,24 +147,24 @@
 \draw [thick] (mainmesh82TxC) -- (mainmesh81BxC);
 
 \draw [thick] (mainmesh11TxC) -- (topmesh11BxC);
-\draw [thick] (mainmesh11TxC) -- (topmesh31BxC);
-\draw [thick] (mainmesh21TxC) -- (topmesh11BxC);
-\draw [thick] (mainmesh21TxC) -- (topmesh31BxC);
+\draw [thick] (mainmesh11TxC) -- (topmesh51BxC);
+\draw [thick] (mainmesh21TxC) -- (topmesh21BxC);
+\draw [thick] (mainmesh21TxC) -- (topmesh61BxC);
 
-\draw [thick] (mainmesh31TxC) -- (topmesh21BxC);
-\draw [thick] (mainmesh31TxC) -- (topmesh41BxC);
-\draw [thick] (mainmesh41TxC) -- (topmesh21BxC);
+\draw [thick] (mainmesh31TxC) -- (topmesh31BxC);
+\draw [thick] (mainmesh31TxC) -- (topmesh71BxC);
 \draw [thick] (mainmesh41TxC) -- (topmesh41BxC);
+\draw [thick] (mainmesh41TxC) -- (topmesh81BxC);
 
 \draw [thick] (mainmesh51TxC) -- (topmesh11BxC);
-\draw [thick] (mainmesh61TxC) -- (topmesh31BxC);
-\draw [thick] (mainmesh51TxC) -- (topmesh11BxC);
-\draw [thick] (mainmesh61TxC) -- (topmesh31BxC);
+\draw [thick] (mainmesh61TxC) -- (topmesh21BxC);
+\draw [thick] (mainmesh51TxC) -- (topmesh51BxC);
+\draw [thick] (mainmesh61TxC) -- (topmesh61BxC);
 
-\draw [thick] (mainmesh71TxC) -- (topmesh21BxC);
-\draw [thick] (mainmesh71TxC) -- (topmesh41BxC);
-\draw [thick] (mainmesh81TxC) -- (topmesh21BxC);
+\draw [thick] (mainmesh71TxC) -- (topmesh31BxC);
+\draw [thick] (mainmesh71TxC) -- (topmesh71BxC);
 \draw [thick] (mainmesh81TxC) -- (topmesh41BxC);
+\draw [thick] (mainmesh81TxC) -- (topmesh81BxC);
 
 \node at (mainmesh13Center) { \textsize \shortstack{Switch\\0} };
 \node at (mainmesh23Center) { \textsize \shortstack{Switch\\1} };
@@ -193,7 +197,10 @@
 \node at (topmesh21Center) { \textsize \shortstack{Switch\\25} };
 \node at (topmesh31Center) { \textsize \shortstack{Switch\\26} };
 \node at (topmesh41Center) { \textsize \shortstack{Switch\\27} };
-
+\node at (topmesh51Center) { \textsize \shortstack{Switch\\28} };
+\node at (topmesh61Center) { \textsize \shortstack{Switch\\29} };
+\node at (topmesh71Center) { \textsize \shortstack{Switch\\30} };
+\node at (topmesh81Center) { \textsize \shortstack{Switch\\31} };
 
 \node at (nodesmesh11Center) { \tiny 0};
 \node at (nodesmesh21Center) { \tiny 1};

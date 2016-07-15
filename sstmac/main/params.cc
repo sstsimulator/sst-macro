@@ -14,7 +14,7 @@
 #include <sstmac/common/cartgrid.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/software/process/app.h>
-#include <sstmac/software/process/app_manager.h>
+#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sprockit/fileio.h>
 #include <sprockit/statics.h>
@@ -23,7 +23,7 @@
 #include <sprockit/spkt_new.h>
 #include <sprockit/output.h>
 #include <sprockit/basic_string_tokenizer.h>
-#include <sprockit/param_expander.h>
+#include <sstmac/common/param_expander.h>
 
 namespace sstmac {
 
@@ -128,6 +128,14 @@ param_remap remap_list[] = {
   pr("__is_in_micro_mode", "__is_in_micro_mode"),
   pr("intragroup_connection_file", "topology.intragroup_connection_file", false),
   pr("intergroup_connection_file", "topology.intergroup_connection_file"),
+  pr("launch_app1", "app1.name"),
+  pr("launch_app1_start", "app1.start"),
+  pr("launch_allocation", "app1.launch_allocation"),
+  pr("launch_indexing", "app1.launch_indexing"),
+  pr("launch_app1_cmd", "app1.launch_cmd"),
+  pr("launch_app1_type", "app1.launch_type"),
+  pr("launch_app1_argv", "app1.argv"),
+  pr("launch_app1_size", "app1.size"),
 };
 
 void
@@ -150,18 +158,19 @@ remap_deprecated_params(sprockit::sim_parameters* params)
 }
 
 void
-process_init_params(sprockit::sim_parameters* params)
+process_init_params(sprockit::sim_parameters* params, bool remap_params)
 {
-
   //here is where we might need to build supplemental params
   if (params->has_param("congestion_model")){
     if (!params->has_param("amm_model")){
       spkt_throw(sprockit::input_error, "require an abstract machine model via amm_model parameter");
     }
-    sprockit::param_expander* hw_expander = sprockit::param_expander_factory::get_param("congestion_model", params);
+    sstmac::param_expander* hw_expander = sstmac::param_expander_factory::get_param("congestion_model", params);
     hw_expander->expand(params);
     delete hw_expander;
-  } else {
+  }
+
+  if (remap_params){
     remap_deprecated_params(params);
   }
 

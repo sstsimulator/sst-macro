@@ -24,8 +24,6 @@ packet_flow_crossbar::packet_flow_crossbar(
   int buffer_size,
   packet_flow_bandwidth_arbitrator* arb) :
   packet_flow_NtoM_queue(send_lat, credit_lat, out_bw, num_vc, buffer_size, arb),
-  bytes_sent_(0),
-  byte_hops_(0),
   name_(0)
 {
 }
@@ -37,8 +35,6 @@ packet_flow_crossbar::packet_flow_crossbar(
   int buffer_size,
   const char* name) :
   packet_flow_NtoM_queue(send_lat, credit_lat, num_vc, buffer_size),
-  bytes_sent_(0),
-  byte_hops_(0),
   name_(name)
 {
 }
@@ -61,18 +57,6 @@ packet_flow_muxer::packet_flow_muxer(
   packet_flow_bandwidth_arbitrator *arb) :
   packet_flow_NtoM_queue(send_lat, credit_lat, out_bw, num_vc, buffer_size, arb)
 {
-}
-
-void
-packet_flow_crossbar::do_handle_payload(packet_flow_payload* msg)
-{
-  if (bytes_sent_){
-    bytes_sent_->record(msg->port(), msg->byte_length());
-  }
-  if (byte_hops_){
-    byte_hops_->collect(msg->byte_length());
-  }
-  packet_flow_NtoM_queue::handle_routed_payload(msg);
 }
 
 packet_flow_NtoM_queue::packet_flow_NtoM_queue(
@@ -117,21 +101,21 @@ packet_flow_NtoM_queue::deadlock_check()
 {
   for (int i=0; i < queues_.size(); ++i){
     payload_queue& queue = queues_[i];
-    packet_flow_payload* msg = queue.front();
-    if (msg){
-      deadlocked_channels_[msg->port()].insert(msg->routable::vc());
-      packet_flow_output& poutput = outputs_[local_port(msg->port())];
-      event_handler* output = output_handler(msg);
-      msg->set_inport(poutput.dst_inport);
-      int vc = update_vc_ ? msg->routable::vc() : msg->vc();
+    packet_flow_payload* pkt = queue.front();
+    if (pkt){
+      deadlocked_channels_[pkt->next_port()].insert(pkt->next_vc());
+      packet_flow_output& poutput = outputs_[local_port(pkt->next_port())];
+      event_handler* output = output_handler(pkt);
+      pkt->set_inport(poutput.dst_inport);
+      int vc = update_vc_ ? pkt->next_vc() : pkt->vc();
       std::cerr << "Starting deadlock check on " << to_string() << " on queue " << i 
         << " going to " << output->to_string() 
-        << " outport=" << msg->port() 
-        << " inport=" << msg->inport() 
+        << " outport=" << pkt->next_port()
+        << " inport=" << pkt->inport()
         << " vc=" << vc
-        << " for message " << msg->to_string()
+        << " for message " << pkt->to_string()
         << std::endl;
-      output->deadlock_check(msg);
+      output->deadlock_check(pkt);
     }
   }
 }
@@ -142,27 +126,27 @@ packet_flow_NtoM_queue::build_blocked_messages()
   //std::cerr << "\tbuild blocked messages on " << to_string() << std::endl;
   for (int i=0; i < queues_.size(); ++i){
     payload_queue& queue = queues_[i];
-    packet_flow_payload* msg = queue.pop(1000000);
-    while (msg){
-      blocked_messages_[msg->inport()][msg->vc()].push_back(msg);
+    packet_flow_payload* pkt = queue.pop(1000000);
+    while (pkt){
+      blocked_messages_[pkt->inport()][pkt->vc()].push_back(pkt);
       //std::cerr << "\t\t" << "into port=" << msg->inport() << " vc=" << msg->vc()
       //  << " out on port=" << msg->port() << " vc=" << msg->routable_message::vc() << std::endl;
-      msg = queue.pop(10000000);
+      pkt = queue.pop(10000000);
     }
   }
 }
 
 void
-packet_flow_NtoM_queue::deadlock_check(message* msg)
+packet_flow_NtoM_queue::deadlock_check(event* ev)
 {
   if (blocked_messages_.empty()){
     build_blocked_messages();
   }
 
-  packet_flow_payload* payload = safe_cast(packet_flow_payload, msg);
-  int outport = payload->port();
+  packet_flow_payload* payload = safe_cast(packet_flow_payload, ev);
+  int outport = payload->next_port();
   int inport = payload->inport();
-  int vc = update_vc_ ? payload->routable::vc() : payload->vc();
+  int vc = update_vc_ ? payload->next_vc() : payload->vc();
   std::set<int>& deadlocked_vcs = deadlocked_channels_[outport];
   if (deadlocked_vcs.find(vc) != deadlocked_vcs.end()){
     spkt_throw_printf(sprockit::value_error,
@@ -182,9 +166,9 @@ packet_flow_NtoM_queue::deadlock_check(message* msg)
     event_handler* output = output_handler(next);
     next->set_inport(poutput.dst_inport);
     std::cerr << to_string() << " going to " << output->to_string() 
-      << " outport=" << next->port() 
+      << " outport=" << next->next_port()
       << " inport=" << next->inport()
-      << " vc=" << next->routable::vc()
+      << " vc=" << next->next_vc()
       << " : " << next->to_string()
       << std::endl;
     output->deadlock_check(next);
@@ -192,16 +176,16 @@ packet_flow_NtoM_queue::deadlock_check(message* msg)
 }
 
 std::string
-packet_flow_NtoM_queue::input_name(packet_flow_payload* msg)
+packet_flow_NtoM_queue::input_name(packet_flow_payload* pkt)
 {
-  event_handler* handler = inputs_[msg->inport()].handler;
+  event_handler* handler = inputs_[pkt->inport()].handler;
   return handler->to_string();
 }
 
 event_handler*
-packet_flow_NtoM_queue::output_handler(packet_flow_payload* msg)
+packet_flow_NtoM_queue::output_handler(packet_flow_payload* pkt)
 {
-  int loc_port = local_port(msg->port());
+  int loc_port = local_port(pkt->next_port());
   event_handler* handler = outputs_[loc_port].handler;
   packet_flow_tiled_switch* sw = test_cast(packet_flow_tiled_switch, handler);
   if (!handler) {
@@ -210,42 +194,42 @@ packet_flow_NtoM_queue::output_handler(packet_flow_payload* msg)
     }
     spkt_throw_printf(sprockit::value_error,
       "no output handler for port %d:%d",
-      msg->port(), loc_port);
+      pkt->next_port(), loc_port);
   }
   if (sw){
-    return sw->demuxer(msg->port());
+    return sw->demuxer(pkt->next_port());
   } else {
     return handler;
   }
 }
 
 std::string
-packet_flow_NtoM_queue::output_name(packet_flow_payload* msg)
+packet_flow_NtoM_queue::output_name(packet_flow_payload* pkt)
 {
-  return output_handler(msg)->to_string();
+  return output_handler(pkt)->to_string();
 }
 
 void
-packet_flow_NtoM_queue::send_payload(packet_flow_payload* msg)
+packet_flow_NtoM_queue::send_payload(packet_flow_payload* pkt)
 {
-  int loc_port = local_port(msg->port());
+  int loc_port = local_port(pkt->next_port());
   packet_flow_bandwidth_arbitrator* arb = port_arbitrators_[loc_port];
   packet_flow_debug(
     "On %s:%p mapped port:%d vc:%d to local port %d handling {%s} going to %s:%p",
      to_string().c_str(), this,
-     msg->port(), msg->rinfo().current_path().vc,
+     pkt->next_port(), pkt->next_vc(),
      loc_port,
-     msg->to_string().c_str(),
-     output_name(msg).c_str(),
-     output_handler(msg));
-  send(arb, msg, inputs_[msg->inport()], outputs_[loc_port]);
+     pkt->to_string().c_str(),
+     output_name(pkt).c_str(),
+     output_handler(pkt));
+  send(arb, pkt, inputs_[pkt->inport()], outputs_[loc_port]);
 }
 
 void
-packet_flow_NtoM_queue::handle_credit(packet_flow_credit* msg)
+packet_flow_NtoM_queue::handle_credit(packet_flow_credit* pkt)
 {
-  int outport = msg->port();
-  int vc = msg->vc();
+  int outport = pkt->port();
+  int vc = pkt->vc();
   int channel = outport * num_vc_ + vc;
 
   int& num_credits = credit(outport, vc);
@@ -254,10 +238,10 @@ packet_flow_NtoM_queue::handle_credit(packet_flow_credit* msg)
     "On %s:%p with %d credits, handling credit {%s} for port:%d vc:%d channel:%d",
      to_string().c_str(), this,
      num_credits,
-     msg->to_string().c_str(),
+     pkt->to_string().c_str(),
      outport, vc, channel);
 
-  num_credits += msg->num_credits();
+  num_credits += pkt->num_credits();
 
   packet_flow_payload* payload = queue(outport, vc).pop(num_credits);
   if (payload) {
@@ -265,21 +249,21 @@ packet_flow_NtoM_queue::handle_credit(packet_flow_credit* msg)
     send_payload(payload);
   }
 
-  delete msg;
+  delete pkt;
 }
 
 void
-packet_flow_NtoM_queue::handle_routed_payload(packet_flow_payload* msg)
+packet_flow_NtoM_queue::handle_routed_payload(packet_flow_payload* pkt)
 {
-  int dst_vc = update_vc_ ? msg->routable::vc() : msg->vc();
-  int dst_port = msg->port();
+  int dst_vc = update_vc_ ? pkt->next_vc() : pkt->vc();
+  int dst_port = pkt->next_port();
 
   int& num_credits = credit(dst_port, dst_vc);
    packet_flow_debug(
     "On %s:%p with %d credits, handling {%s} for port:%d vc:%d -> local port %d going to",// %s:%p",
      to_string().c_str(), this,
      num_credits,
-     msg->to_string().c_str(),
+     pkt->to_string().c_str(),
      dst_port,
      dst_vc,
      local_port(dst_port));
@@ -288,12 +272,12 @@ packet_flow_NtoM_queue::handle_routed_payload(packet_flow_payload* msg)
   if (dst_vc < 0 || dst_port < 0){
     spkt_throw_printf(sprockit::value_error,
        "On %s handling {%s}, got negative vc,port %d,%d",
-        to_string().c_str(), msg->to_string().c_str(), dst_port, dst_vc);
+        to_string().c_str(), pkt->to_string().c_str(), dst_port, dst_vc);
   }
 
-  if (num_credits >= msg->num_bytes()) {
-    num_credits -= msg->num_bytes();
-    send_payload(msg);
+  if (num_credits >= pkt->num_bytes()) {
+    num_credits -= pkt->num_bytes();
+    send_payload(pkt);
   }
   else {
     packet_flow_debug(
@@ -301,7 +285,7 @@ packet_flow_NtoM_queue::handle_routed_payload(packet_flow_payload* msg)
       to_string().c_str(), this,
       local_slot(dst_port, dst_vc), dst_port, dst_vc, queues_.size(), num_vc_,
       port_offset_, port_div_, port_mod_);
-    queue(dst_port, dst_vc).push_back(msg);
+    queue(dst_port, dst_vc).push_back(pkt);
   }
 }
 
@@ -416,7 +400,7 @@ packet_flow_NtoM_queue::set_output(int my_outport, int dst_inport,
 
 #if PRINT_FINISH_DETAILS
 void
-print_msg(const std::string& prefix, switch_id addr, packet_flow_payload* msg)
+print_msg(const std::string& prefix, switch_id addr, packet_flow_payload* pkt)
 {
   structured_topology* top = safe_cast(structured_topology, sstmac_runtime::current_topology());
   coordinates src_coords = top->get_node_coords(msg->fromaddr());
@@ -454,7 +438,7 @@ packet_flow_NtoM_queue::start_message(message* msg)
         payload_queue& que = vec[i];
         payload_queue::iterator pit, pend = que.end();
         for (pit = que.begin(); pit != pend; ++pit){
-            packet_flow_payload* msg = *pit;
+            packet_flow_payload* pkt = *pit;
             print_msg("\t\t\tPending: ", router_->get_addr(), msg);
         }
     }

@@ -2,13 +2,13 @@
 #define NODE_ID_ALLOCATION_H
 
 #include <sstmac/hardware/topology/structured_topology.h>
-#include <sstmac/software/launch/allocation_strategy.h>
+#include <sstmac/software/launch/node_allocator.h>
 
 namespace sstmac {
 namespace sw {
 
 class node_id_allocation :
-  public allocation_strategy
+  public node_allocator
 {
 
  public:
@@ -19,7 +19,8 @@ class node_id_allocation :
 
   virtual void
   allocate(int nnode_requested,
-           node_set &allocation);
+    const ordered_node_set& available,
+    ordered_node_set &allocation) const;
 
   static void
   read_coordinate_file(const std::string& file,

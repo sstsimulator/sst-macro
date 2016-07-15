@@ -76,11 +76,14 @@ class simple_topology :
   void
   connect_objects(internal_connectable_map& objects);
 
+  coordinates
+  node_coords(node_id uid) const;
+
   void
   minimal_route_to_coords(
     const coordinates& src_coords,
     const coordinates& dest_coords,
-    routing_info::path& path) const;
+    geometry_routable::path& path) const;
 
   int
   minimal_distance(
@@ -123,7 +126,7 @@ class simple_topology :
     int dim,
     const coordinates& src,
     const coordinates& dst,
-    routing_info::path& path) const;
+    geometry_routable::path& path) const;
 
  protected:
   int num_switches_;

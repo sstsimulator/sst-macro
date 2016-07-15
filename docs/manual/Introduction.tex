@@ -46,8 +46,8 @@ Skeletonization and UQ are the two main elements in the ``canonical'' \sstmacro 
 
 \begin{figure}[t]
   \centering
-    \includegraphics[width=0.99\columnwidth]{figures/workflow.pdf}
-      \caption{SST/macro workflow. }
+    \includegraphics[width=0.99\columnwidth]{figures/workflow.png}
+      \caption{SST/macro workflow.}
       \label{fig:workflow}
 \end{figure}
 
@@ -57,39 +57,17 @@ Skeletonization and UQ are the two main elements in the ``canonical'' \sstmacro 
 \subsection{Programming APIs}
 \label{subsec:intro:apis}
 
-The following sections describe the state of the software API's (found in \folder{sstmac}) that are available in \sstmacro for use by applications, as of this release. The level of testing indicates 
-the integration of compliance/functionality tests into our make check test suite.  
-
-\subsubsection{Final and Tested}
-\label{subsubsec:intro:tested}
-
-\begin{itemize}
-\item{MPI:} Because of its popularity, MPI is one of our main priorities in providing programming model support.  
+Because of its popularity, MPI is one of our main priorities in providing programming model support.  
 We currently test against the MPICH test suite. All tests compile, so you should never see compilation errors.  
 However, since many of the functions are not typically used in the community, we only test commonly-used functions.   
 See Section \ref{subsec:issues:mpi} for functions that are not supported.  
-Functions that are not implemented will throw a \class{unimplemented\_error}, reporting the function name. 
-\item{OpenSHMEM:} Most of the standard OpenSHMEM tests pass. The ones that don't are because they haven't been ported to C++, or test the single unsupported feature (collect). 
-\end{itemize}
-
-\subsubsection{Some testing complete}
-\label{subsubsec:intro:sometesting}
-
-\begin{itemize}
-\item{Sockets:} The Socket API is mostly implemented. Most basic client/server functionality is available.  However, only the default socket options are allowed. In most cases, \inlinecode{setsockopt} is just a no-op.
-\item{Pthreads:}  Only the \func{pthread\_create()}, \func{pthread\_join()}, and \func{pthread\_self()} along with mutex and condition variables are implemented.  A basic  pthread test validates the core spawn/run/join behavior.
-\end{itemize}
-
-\subsubsection{In development}
-\label{subsubsec:intro:inutero}
-\begin{itemize}
-\item{GASNet:}  An SST conduit is in development for supporting codes that use the GASNet transport layer.
-\end{itemize}
+Functions that are not implemented will throw a \inlinecode{unimplemented_error}, reporting the function name. 
 
 \subsection{Analysis Tools and Statistics}
 \label{subsec:intro:toolsandstats}
 The following analysis tools are currently available in \sstmacro.
 Some are thoroughly tested. Others have undergone some testing, but are still considered Beta.  Others have been implemented, but are relatively untested.
+
 \subsubsection{Fully tested}
 \label{subsubsec:intro:fulltestedtools}
 \begin{itemize}
@@ -121,7 +99,7 @@ The following are \textit{not} implemented (categorized by MPI concepts):
 \label{subsubsec:issues:mpi:comm}
 
 \begin{itemize}
-\item Anything using or having to do with Inter-communicators (\func{MPI\_Intercomm\_create()})
+\item Anything using or having to do with Inter-communicators (\inlinecode{MPI_Intercomm_create()})
 \item Topology communicators
 \end{itemize}
 
@@ -129,26 +107,26 @@ The following are \textit{not} implemented (categorized by MPI concepts):
 \label{subsubsec:issues:mpi:types}
 
 \begin{itemize}
-\item Complicated use of MPI\_LB and MPI\_UB to define a struct, and collections of structs (MPI test 138). 
-\item Changing the name of built-in datatypes with \func{MPI\_Type\_set\_name()} (MPI test 171).
-\item \func{MPI\_Create\_darray()}, \func{MPI\_Create\_subarray()}, and \func{MPI\_Create\_resized()}
-\item \func{MPI\_Pack\_external() }, which is only useful for sending messages across MPI implementations apparently.
-\item \func{MPI\_Type\_match\_size() }  - extended fortran support
-\item Use of MPI\_BOTTOM (relative addressing).  Use normal buffers. 
-\item Using Fortran types (\eg MPI\_COMLEX) from C.
+\item Complicated use of \inlinecode{MPI_LB} and \inlinecode{MPI_UB} to define a struct, and collections of structs (MPI test 138). 
+\item Changing the name of built-in datatypes with \inlinecode{MPI_Type_set_name()} (MPI test 171).
+\item \inlinecode{MPI_Create_darray()}, \inlinecode{MPI_Create_subarray()}, and \inlinecode{MPI_Create_resized()}
+\item \inlinecode{MPI_Pack_external()}, which is only useful for sending messages across MPI implementations apparently.
+\item \inlinecode{MPI_Type_match_size()}  - extended fortran support
+\item Use of \inlinecode{MPI_BOTTOM} (relative addressing).  Use normal buffers. 
+\item Using Fortran types (\eg \inlinecode{MPI_COMPLEX}) from C.
 \end{itemize}
 
 
 \subsubsection{Info and Attributes}
 \label{subsubsec:issues:mpi:info}
 
-No \func{MPI\_Info\_*}, \func{MPI\_*\_keyval}, or \func{MPI\_Attr\_*} functions are supported.
+No \inlinecode{MPI_Info_*}, \inlinecode{MPI_*_keyval}, or \inlinecode{MPI_Attr_*} functions are supported.
 
 \subsubsection{Point-to-Point}
 \label{subsubsec:issues:mpi:ptpt}
 
 \begin{itemize}
-\item \func{MPI\_Grequest\_*} functions (generalized requests).
+\item \inlinecode{MPI_Grequest_*} functions (generalized requests).
 \item Use of testing non-blocking functions in a loop, such as:
 
 
@@ -170,41 +148,14 @@ Even if configured so that time progresses, the code will work but will take a v
 \label{subsubsec:issues:mpi:collectives}
 
 \begin{itemize}
-\item There seems to be a problem with using MPI\_FLOAT and MPI\_PROD in \func{MPI\_Allreduce()} (MPI test 22)
-\item There seems to be a problem with using non-commutative user-defined operators in \func{MPI\_Reduce()} and \func{MPI\_Allreduce()}.
-\item \func{MPI\_Alltoallw()} is not implemented
-\item \func{MPI\_Exscan()} is not implemented
-\item \func{MPI\_Reduce\_Scatter\_block()} is not implemented.
-\item \func{MPIX\_*} functions are not implemented  (like non-blocking collectives).
-\item Calling MPI functions from user-defined reduce operations (MPI test 39; including \func{MPI\_Comm\_rank}).
+\item There seems to be a problem with using \inlinecode{MPI_FLOAT} and \inlinecode{MPI_PROD} in \inlinecode{MPI_Allreduce()} (MPI test 22)
+\item There seems to be a problem with using non-commutative user-defined operators in \inlinecode{MPI_Reduce()} and \inlinecode{MPI_Allreduce()}.
+\item \inlinecode{MPI_Alltoallw()} is not implemented
+\item \inlinecode{MPI_Exscan()} is not implemented
+\item \inlinecode{MPI_Reduce_Scatter_block()} is not implemented.
+\item \inlinecode{MPIX_*} functions are not implemented  (like non-blocking collectives).
+\item Calling MPI functions from user-defined reduce operations (MPI test 39; including \inlinecode{MPI_Comm_rank}).
 \end{itemize}
-
-\subsubsection{Miscellaneous}
-\label{subsubsec:issues:mpi:misc}
-
-\begin{itemize}
-\item \func{MPI\_Is\_thread\_main()} is not implemented.
-\end{itemize}
-
-\subsection{OpenSHMEM}
-\label{subsec:issues:shmem}
-
-Only the collect and fcollect functions of the API are not implemented (they will be in future releases).
-
-Also, like handling of global variables discussed in Sections \ref{subsec:issues:globals} and \ref{sec:skel:globals}, SHMEM globals need to use a different type.  
-For primitives and primitive arrays, refer to \inlinecode{<sstmac/openshmem/shmem/globals.h>} for replacing types, e.g. the following code
-
-\begin{ViFile}
-int my_global_var = 4;
-double an_array[6];
-\end{ViFile}
-
-needs to become
-
-\begin{ViFile}
-shmem_int my_global_var(4);
-shmem_arr<double, 6> an_array;
-\end{ViFile}
 
 
 \subsection{Fortran}

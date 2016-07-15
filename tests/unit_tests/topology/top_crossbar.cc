@@ -35,7 +35,7 @@ void test_crossbar(UnitTest& unit)
 
     {
     network_switch* sw = switches[switch_id(7)];
-    routing_info::path path;
+    geometry_routable::path path;
     xbar->minimal_route_to_node(switch_id(7), node_id(4), path);
     //assertEqual(unit, "route crossbar", path.dim, 0);
     //assert_dim_dir(unit, "crossbar dim/dir",

@@ -15,7 +15,8 @@
 
 #include <sstmac/common/node_address.h>
 #include <sstmac/common/event_manager_fwd.h>
-#include <sstmac/hardware/router/routable_message.h>
+#include <sstmac/hardware/router/routable.h>
+#include <sstmac/hardware/router/routing_enum.h>
 #include <sstmac/hardware/common/packet.h>
 
 #include <sprockit/debug.h>
@@ -91,7 +92,7 @@ class router :
   virtual void
   minimal_route_to_node(
     node_id node_addr,
-    routing_info::path& path);
+    geometry_routable::path& path);
 
   /**
     Compute the minimal path to a switch.
@@ -106,7 +107,7 @@ class router :
   virtual void
   minimal_route_to_switch(
     switch_id sw_addr,
-    routing_info::path& path);
+    geometry_routable::path& path);
 
   virtual void
   init_stats(event_manager* m){}
@@ -125,12 +126,12 @@ class router :
   bool
   productive_paths_to_node(
     node_id dst,
-    routing_info::path_set& paths);
+    geometry_routable::path_set& paths);
 
   virtual void
   productive_paths_to_switch(
     switch_id dst,
-    routing_info::path_set& paths) = 0;
+    geometry_routable::path_set& paths) = 0;
 
   network_switch*
   get_switch() const {

@@ -13,7 +13,7 @@ It is useful for an intuitive understanding of the code to walk through the step
 
 We can walk through each of these steps in more detail.
 
-\section{Configuration of Simulation}
+\section{Configuration of Simulation}\label{sec:simConfig}
 The configuration proceeds through the following basic steps:
 \begin{enumerate}
 \item Basic initialization of the \inlinecode{parallel_runtime} object from environment variables and command line parameters
@@ -42,7 +42,7 @@ After creation of the \inlinecode{manager} object,
 since all of the parameters even from the input file are now available,
 a more detailed configuration of the \inlinecode{manager} and \inlinecode{parallel_runtime} can be done.
 
-\section{Building and configuration of simulator components}
+\section{Building and configuration of simulator components}\label{sec:buildConfig}
 Inside the function \inlinecode{mgr->init_factory_params},
 the simulation manager now proceeds to build all the necessary components.
 There are three basic classes of components to build.
@@ -53,7 +53,7 @@ There are three basic classes of components to build.
 \item The generation of application objects that will drive the software events
 \end{itemize}
 
-\subsection{Event Manager}
+\subsection{Event Manager}\label{sec:eventMan}
 The \inlinecode{event_manager} object is a polymorphic type that depends on 1) what sort of parallelism is being used and 2) what sort of data structure is being used.
 Some allowed values include \inlineshell{event_map} or \inlineshell{event_calendar} via the \inlineshell{event_manager} variable in the input file.
 For parallel simulation, only the \inlineshell{event_map} data structure is currently supported.
@@ -70,7 +70,7 @@ For now, the event manager reads the topology information from the input file.
 It then determines the total number of hardware components and does the partitioning.
 This partitioning object is passed on to the interconnect.
 
-\subsection{Interconnect}
+\subsection{Interconnect}\label{subsec:interconnect}
 The interconnect is the workhorse for building all hardware components.
 After receiving the partition information from the \inlinecode{event_manager},
 the interconnect creates all the nodes, switches, and NICs the current MPI rank is responsible for.
@@ -79,7 +79,7 @@ The interconnect then also creates all the connections between components that a
 For components that are not owned by the current MPI rank, the interconnect inserts a dummy handler that informs the \inlinecode{event_manager}
 that the message needs to be re-routed to another MPI rank.
 
-\subsection{Applications}
+\subsection{Applications}\label{subsec:apps}
 All events generated in the simulation ultimately originate from application objects.
 All hardware events start from real application code.
 To generate application objects,
@@ -127,7 +127,7 @@ If a null node is returned, that indicates the physical node is owned by another
 Finally a launch message containing the launch info is scheduled to arrive at the node.
 When the node receives the launch message, it will actually create the application object and pass it off to the \inlinecode{operating_system} object to allocate stack resources and start it running.
 
-\section{Running}
+\section{Running}\label{sec:running}
 Now that all hardware components have been created and all application objects have been assigned to physical nodes,
 the \inlinecode{event_manager} created above is started.
 It begins looping through all events in the queue ordered by timestamp and runs them.

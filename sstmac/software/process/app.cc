@@ -11,11 +11,12 @@
 
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/api/api.h>
+#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/process/api.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/launch/launch_info.h>
 #include <sstmac/common/sstmac_env.h>
 #include <sstmac/common/logger.h>
+#include <sstmac/dumpi_util/dumpi_meta.h>
 #include <sprockit/statics.h>
 #include <sprockit/delete.h>
 #include <sprockit/output.h>
@@ -27,9 +28,15 @@ ImplementFactory(sstmac::sw::app);
 namespace sstmac {
 namespace sw {
 
-std::vector<char**> app::argv_for_app_;
-std::vector<int> app::argc_for_app_;
-static sprockit::need_delete_statics<app> del_statics;
+
+SpktRegister("user_app_cxx_full_main", app, user_app_cxx_full_main);
+SpktRegister("user_app_cxx_empty_main", app, user_app_cxx_empty_main);
+
+std::map<std::string, app::main_fxn>*
+  user_app_cxx_full_main::main_fxns_ = 0;
+std::map<std::string, app::empty_main_fxn>*
+  user_app_cxx_empty_main::empty_main_fxns_ = 0;
+std::map<app_id, user_app_cxx_full_main::argv_entry> user_app_cxx_full_main::argv_map_;
 
 void
 app_factory::print_apps()
@@ -118,14 +125,6 @@ app::compute_loops_lib()
 void
 app::delete_statics()
 {
-  for (int i=0; i < argv_for_app_.size(); ++i){
-    char** argv = argv_for_app_[i];
-    if (argv){
-        char* argv_buf = argv[0];
-        delete[] argv_buf;
-        delete[] argv;
-    }
-  }
 }
 
 void
@@ -142,18 +141,6 @@ app::kill()
   subthreads_.clear();
 
   thread::kill();
-
-  int appnum = id_.app_;
-  char** argv = (int) argv_for_app_.size() > appnum ? argv_for_app_[appnum]
-                : 0;
-
-  if (argv) {
-    char* argv_buffer = argv[0];
-    delete[] argv;
-    delete[] argv_buffer;
-    argv_for_app_[appnum] = 0;
-  }
-
 }
 
 void
@@ -229,52 +216,10 @@ app::compute_block_write(long bytes)
   compute_mem_move_->write(bytes);
 }
 
-void
-app::init_argv(app_id aid, sprockit::sim_parameters* params)
+sprockit::sim_parameters*
+app::get_params()
 {
-  int appnum = aid;
-  /** haven't yet computed argv for this app */
-  if ((int) argv_for_app_.size() <= appnum || argv_for_app_[appnum] == 0) {
-    for (int idx = argv_for_app_.size(); idx <= appnum; ++idx) {
-      argv_for_app_.push_back((char**) NULL);
-      argc_for_app_.push_back(0);
-    }
-    char param_str[64];
-    sprintf(param_str, "launch_app%d", appnum);
-    std::string appname = params->get_param(param_str);
-
-    sprintf(param_str, "launch_app%d_argv", appnum);
-    std::vector<std::string> argv_param_vec;
-    argv_param_vec.push_back(appname);
-    if (params->has_param(param_str)) {
-      params->get_vector_param(param_str, argv_param_vec);
-    }
-    int argc = argv_param_vec.size();
-    char* argv_buffer = new char[256 * argc];
-    char* argv_buffer_ptr = argv_buffer;
-    char** argv = new char*[argc];
-    for (int i = 0; i < argc; ++i) {
-      const std::string& src_str = argv_param_vec[i];
-      ::strcpy(argv_buffer_ptr, src_str.c_str());
-      argv[i] = argv_buffer_ptr;
-      //increment pointer for next strcpy
-      argv_buffer_ptr += src_str.size() + 1; //+1 for null terminator
-    }
-    argv_for_app_[appnum] = argv;
-    argc_for_app_[appnum] = argc;
-  }
-}
-
-int
-app::argc()
-{
-  return argc_for_app_[id_.app_];
-}
-
-char**
-app::argv()
-{
-  return argv_for_app_[id_.app_];
+  return operating_system::current_thread()->parent_app()->params();
 }
 
 void
@@ -461,6 +406,97 @@ app::get_condition(int id)
   } else {
     return &it->second;
   }
+}
+
+void
+user_app_cxx_full_main::consume_params(sprockit::sim_parameters *params)
+{
+  if (!main_fxns_) main_fxns_ = new std::map<std::string, main_fxn>;
+
+  std::string name = params->get_param("name");
+  std::map<std::string, main_fxn>::iterator it = main_fxns_->find(name);
+  if (it == main_fxns_->end()){
+    spkt_throw_printf(sprockit::value_error,
+                     "no user app with the name %s registered",
+                     name.c_str());
+  }
+  fxn_ = it->second;
+}
+
+void
+user_app_cxx_full_main::register_main_fxn(const char *name, app::main_fxn fxn)
+{
+  if (!main_fxns_) main_fxns_ = new std::map<std::string, main_fxn>;
+
+  (*main_fxns_)[name] = fxn;
+  app_factory::register_alias("user_app_cxx_full_main", name);
+}
+
+void
+user_app_cxx_full_main::init_argv(argv_entry& entry)
+{
+  std::string appname = params_->get_param("name");
+  std::vector<std::string> argv_param_vec;
+  argv_param_vec.push_back(appname);
+  if (params_->has_param("argv")) {
+    params_->get_vector_param("argv", argv_param_vec);
+  }
+  int argc = argv_param_vec.size();
+  char* argv_buffer = new char[256 * argc];
+  char* argv_buffer_ptr = argv_buffer;
+  char** argv = new char*[argc];
+  for (int i = 0; i < argc; ++i) {
+    const std::string& src_str = argv_param_vec[i];
+    ::strcpy(argv_buffer_ptr, src_str.c_str());
+    argv[i] = argv_buffer_ptr;
+    //increment pointer for next strcpy
+    argv_buffer_ptr += src_str.size() + 1; //+1 for null terminator
+  }
+  entry.argc = argc;
+  entry.argv = argv;
+}
+
+void
+user_app_cxx_full_main::skeleton_main()
+{
+  argv_entry& entry = argv_map_[id_.app_];
+  if (entry.argv == 0){
+    init_argv(entry);
+  }
+  (*fxn_)(entry.argc, entry.argv);
+}
+
+
+void
+user_app_cxx_empty_main::consume_params(sprockit::sim_parameters *params)
+{
+  if (!empty_main_fxns_)
+    empty_main_fxns_ = new std::map<std::string, empty_main_fxn>;
+
+  std::string name = params->get_param("name");
+  std::map<std::string, empty_main_fxn>::iterator it = empty_main_fxns_->find(name);
+  if (it == empty_main_fxns_->end()){
+    spkt_throw_printf(sprockit::value_error,
+                     "no user app with the name %s registered",
+                     name.c_str());
+  }
+  fxn_ = it->second;
+}
+
+void
+user_app_cxx_empty_main::register_main_fxn(const char *name, app::empty_main_fxn fxn)
+{
+  if (!empty_main_fxns_)
+    empty_main_fxns_ = new std::map<std::string, empty_main_fxn>;
+
+  (*empty_main_fxns_)[name] = fxn;
+  app_factory::register_alias("user_app_cxx_empty_main", name);
+}
+
+void
+user_app_cxx_empty_main::skeleton_main()
+{
+  (*fxn_)();
 }
 
 void compute_time(double tsec)

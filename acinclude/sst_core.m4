@@ -24,7 +24,7 @@ fi
 if test "X$have_integrated_core" = "Xyes"; then
   AC_CONFIG_FILES([skeletons/sst/env.sh skeletons/sst/config.py])
   AC_CONFIG_FILES([skeletons/sst/run], [chmod +x skeletons/sst/run])
-  AC_CONFIG_FILES([bin/sstmac], [chmod +x bin/sstmac])
+  AC_CONFIG_FILES([bin/pysstmac], [chmod +x bin/pysstmac])
   AC_CONFIG_FILES([bin/sstmac-check], [chmod +x bin/sstmac-check])
   AC_CONFIG_FILES([tests/api/mpi/testexec], [chmod +x tests/api/mpi/testexec])
   AC_CONFIG_FILES([tests/api/globals/testexec], [chmod +x tests/api/globals/testexec])
@@ -65,6 +65,11 @@ if test "X$have_integrated_core" = "Xyes"; then
   AM_CONDITIONAL(EXTERNAL_BOOST, true)
 
   AM_CONDITIONAL([USE_MPIPARALLEL], false)
+else
+  SST_CPPFLAGS=""
+  SST_CXXFLAGS=""
+  AC_SUBST(SST_CPPFLAGS)
+  AC_SUBST(SST_CXXFLAGS)
 fi
 
 ])

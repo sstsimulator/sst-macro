@@ -9,7 +9,8 @@
 #include <sumi/dense_rank_map.h>
 #include <sumi/transport.h>
 #include <sumi/thread_safe_set.h>
-
+#include <sstmac/skeleton.h>
+#define sstmac_app_name "user_app_cxx"
 using namespace sumi;
 
 void

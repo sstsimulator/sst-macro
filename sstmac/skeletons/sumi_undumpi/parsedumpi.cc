@@ -12,6 +12,7 @@
 
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/event_manager.h>
+#include <sstmac/common/runtime.h>
 #include <sstmac/skeletons/sumi_undumpi/parsedumpi.h>
 #include <sstmac/skeletons/sumi_undumpi/parsedumpi_callbacks.h>
 #include <sstmac/dumpi_util/dumpi_meta.h>
@@ -36,7 +37,6 @@ using namespace sstmac::hw;
 void
 parsedumpi::consume_params(sprockit::sim_parameters* params)
 {
-
   fileroot_ = params->reread_param("launch_dumpi_metaname");
 
   timescaling_ = params->get_optional_double_param("parsedumpi_timescale", 1);
@@ -44,6 +44,15 @@ parsedumpi::consume_params(sprockit::sim_parameters* params)
   print_progress_ = params->get_optional_bool_param("parsedumpi_print_progress", true);
 
   percent_terminate_ = params->get_optional_double_param("parsedumpi_terminate_percent", -1);
+}
+
+mpi_api* 
+parsedumpi::mpi() 
+{
+  if (mpi_) return mpi_;
+
+  mpi_ = get_api<mpi_api>();
+  return mpi_;
 }
 
 //
@@ -72,12 +81,18 @@ void parsedumpi::skeleton_main()
   //only rank 0 should cause termination
   double my_percent_terminate = rank == 0 ? percent_terminate_ : -1;
 
+  sstmac::runtime::add_deadlock_check(
+    sstmac::new_deadlock_check(mpi(), &sumi::transport::deadlock_check));
+  sstmac::runtime::enter_deadlock_region();
+
   cbacks.parse_stream(fname.c_str(), print_my_progress, my_percent_terminate);
 
   if (rank == 0) {
-    std::cout << "Parsedumpi finalized on rank 0.  Trace run successful!" <<
-              std::endl;
+    std::cout << "Parsedumpi finalized on rank 0 - trace "
+      << fileroot_ << " successful!" << std::endl;
   }
+
+  sstmac::runtime::exit_deadlock_region();
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   // TODO make this work with @integrated_core

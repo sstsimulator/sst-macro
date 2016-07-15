@@ -14,7 +14,7 @@
 
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/router/router.h>
-#include <sstmac/hardware/router/routable_message.h>
+#include <sstmac/hardware/router/routable.h>
 
 #if !SSTMAC_INTEGRATED_SST_CORE
 

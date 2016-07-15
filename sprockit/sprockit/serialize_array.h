@@ -17,14 +17,13 @@ class ser_array_wrapper
 
 };
 
-template <class IntType>
-class ser_buffer_wrapper
+template <class TPtr>
+class raw_ptr_wrapper
 {
- public:
-  void*& bufptr;
-  IntType& sizeptr;
-  ser_buffer_wrapper(void*& buf, IntType& size) :
-    bufptr(buf), sizeptr(size) {}
+public:
+    TPtr*& bufptr;
+    raw_ptr_wrapper(TPtr*& ptr) :
+        bufptr(ptr) {}
 };
 
 }
@@ -46,11 +45,11 @@ array(TPtr& buf, IntType& size)
   return pvt::ser_array_wrapper<TPtr,IntType>(buf, size);
 }
 
-template <class IntType>
-pvt::ser_buffer_wrapper<IntType>
-buffer(void*& buf, IntType& size)
+template <class TPtr>
+inline pvt::raw_ptr_wrapper<TPtr>
+raw_ptr(TPtr*& ptr)
 {
-  return pvt::ser_buffer_wrapper<IntType>(buf,size);
+  return pvt::raw_ptr_wrapper<TPtr>(ptr);
 }
 
 template <class TPtr, class IntType>
@@ -59,12 +58,13 @@ operator&(serializer& ser, pvt::ser_array_wrapper<TPtr,IntType> arr){
   ser.binary(arr.bufptr, arr.sizeptr);
 }
 
-template <class IntType>
+// Needed only because the default version in serialize.h can't get
+// the template expansions quite right trying to look through several
+// levels of expansion
+template <class TPtr>
 inline void
-operator&(serializer& ser, pvt::ser_buffer_wrapper<IntType> buf){
-  char* tmp = (char*) buf.bufptr;
-  ser.binary(tmp, buf.sizeptr);
-  buf.bufptr = tmp;
+operator&(serializer& ser, pvt::raw_ptr_wrapper<TPtr> ptr){
+  ser.primitive(ptr.bufptr);
 }
 
 }
