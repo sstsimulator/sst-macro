@@ -223,13 +223,11 @@ class VariablePtr
 
   VariablePtr<T>&
   operator+=(const ptrdiff_t &offset){
-    Variable<ptrdiff_t>::nops++;
     return *this;
   }
 
   VariablePtr<T>&
   operator-=(const ptrdiff_t &offset){
-    Variable<ptrdiff_t>::nops++;
     return *this;
   }
 

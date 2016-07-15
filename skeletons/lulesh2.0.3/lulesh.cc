@@ -2834,22 +2834,11 @@ int main(int argc, char *argv[])
 
 #if defined(LULESH_SST_MODS) && defined(LULESH_SST_SIM)
    std::cout << "nops(Real_t)=" << Real_t_sim::nops << std::endl;
-   if (std::is_same<Index_t_sim, Int_t_sim>::value &&
-       std::is_same<Index_t_sim, Variable<ptrdiff_t>>::value){
-      std::cout << "nops(Index_t+Int_t+ptrdiff_t)=" << Index_t_sim::nops << std::endl;
-   } else if (std::is_same<Index_t_sim, Int_t_sim>::value){
+   if (std::is_same<Index_t_sim, Int_t_sim>::value){
       std::cout << "nops(Index_t+Int_t)=" << Index_t_sim::nops << std::endl;
-      std::cout << "nops(ptrdiff_t)=" << Variable<ptrdiff_t>::nops << std::endl;
-   } else if (std::is_same<Index_t_sim, Variable<ptrdiff_t>>::value){
-      std::cout << "nops(Index_t+ptrdiff_t)=" << Index_t_sim::nops << std::endl;
-      std::cout << "nops(Int_t)=" << Int_t_sim::nops << std::endl;
-   } else if (std::is_same<Int_t_sim, Variable<ptrdiff_t>>::value){
-      std::cout << "nops(Index_t)=" << Index_t_sim::nops << std::endl;
-      std::cout << "nops(Int_t+ptrdiff_t)=" << Int_t_sim::nops << std::endl;
    } else {
       std::cout << "nops(Index_t)=" << Index_t_sim::nops << std::endl;
       std::cout << "nops(Int_t)=" << Int_t_sim::nops << std::endl;
-      std::cout << "nops(ptrdiff_t)=" << Variable<ptrdiff_t>::nops << std::endl;
    }
 #endif
 
