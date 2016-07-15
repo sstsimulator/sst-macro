@@ -1,17 +1,3 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
-/*
- *  (C) 2009 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
-/* Based on a test case contributed by Michael Hofmann.
- *
- * This test makes sure that zero counts with non-zero-sized types on the
- * send (recv) side match and don't cause a problem with non-zero counts and
- * zero-sized types on the recv (send) side when using MPI_Alltoallw and
- * MPI_Alltoallv.  */
-
-/* TODO test intercommunicators as well */
-
 
 #include <stdio.h>
 #include <stdlib.h>

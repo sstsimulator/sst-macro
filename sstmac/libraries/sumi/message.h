@@ -20,7 +20,9 @@ class transport_message :
  public:
   transport_message(){} //needed for serialization
 
-  transport_message(const sumi::message_ptr& msg, long byte_length);
+  transport_message(sw::app_id aid,
+     const sumi::message_ptr& msg,
+     long byte_length);
 
   virtual void
   serialize_order(serializer& ser);

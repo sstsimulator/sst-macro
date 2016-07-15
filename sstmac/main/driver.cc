@@ -135,8 +135,9 @@ SimulationQueue::clear(Simulation *sim)
 void
 SimulationQueue::run(sprockit::sim_parameters* params, sim_stats& stats)
 {
+  bool remap_params = false;
   params->combine_into(&template_params_);
-  sstmac::process_init_params(&template_params_);
+  sstmac::process_init_params(&template_params_, remap_params);
   ::sstmac::run(template_opts_, rt_, &template_params_, stats, false/*not just params*/);
 }
 
@@ -328,7 +329,8 @@ void
 SimulationQueue::rerun(sprockit::sim_parameters* params, sim_stats& stats)
 {
   params->combine_into(&template_params_);
-  sstmac::process_init_params(&template_params_);
+  bool remap_params = false;
+  sstmac::process_init_params(&template_params_, remap_params);
   sstmac::env::params = &template_params_;
   //if (sprockit::debug::slot_active(sprockit::dbg::driver)){
   //  template_params_.pretty_print_params();

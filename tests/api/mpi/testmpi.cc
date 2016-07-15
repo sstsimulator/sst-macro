@@ -1,6 +1,8 @@
 #include <sstmac/replacements/mpi.h>
 #include <sstmac/replacements/sys/time.h>
 #include <sstmac/util.h>
+#include <sstmac/skeleton.h>
+#include <sstmac/common/runtime.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 
@@ -41,10 +43,8 @@ enum TEST_MODE
   COLL_ALLGATHERV4 = 21,
   COLL_ALLRED = 22,
   COLL_ALLRED2 = 23,
-  //COLL_ALLRED3 = 24,
-  //COLL_ALLRED4 = 25,
   COLL_ALLRED5 = 26,
-  //COLL_ALLRED6 = 27,
+  COLL_ALLRED6 = 27,
   COLL_ALLREDMANY = 28,
   COLL_ALLTOALL1 = 29,
   COLL_ALLTOALLV = 30,
@@ -56,8 +56,6 @@ enum TEST_MODE
   COLL_BCAST3 = 36,
   COLL_BCASTTEST = 37,
   COLL_BCASTZEROTYPE = 38,
-  //COLL_COLL10 = 39,
-  //COLL_COLL11 = 40,
   COLL_COLL12 = 41,
   COLL_COLL13 = 42,
   COLL_COLL2 = 43,
@@ -67,7 +65,7 @@ enum TEST_MODE
   COLL_COLL6 = 47,
   COLL_COLL7 = 48,
   COLL_COLL8 = 49,
-  //COLL_COLL9 = 50,
+  COLL_COLL9 = 50,
   //COLL_EXSCAN = 51,
   //COLL_EXSCAN2 = 52,
   COLL_GATHER = 53,
@@ -87,9 +85,6 @@ enum TEST_MODE
   //COLL_ICSCATTER = 67,
   //COLL_ICSCATTERV = 68,
   //COLL_LONGUSER = 69,
-  COLL_NONBLOCKING = 70,
-  COLL_NONBLOCKING2 = 71,
-  COLL_NONBLOCKING3 = 72,
   //COLL_OP_COMMUTATIVE = 73,
   COLL_OPBAND = 74,
   COLL_OPBOR = 75,
@@ -103,19 +98,15 @@ enum TEST_MODE
   COLL_OPMINLOC = 83,
   COLL_OPPROD = 84,
   COLL_OPSUM = 85,
-  //COLL_RED3 = 86,
-  //COLL_RED4 = 87,
-  COLL_RED_SCAT_BLOCK = 88,
-  COLL_RED_SCAT_BLOCK2 = 89,
+  //COLL_RED_SCAT_BLOCK = 88,
+  //COLL_RED_SCAT_BLOCK2 = 89,
   COLL_REDSCAT = 90,
-  //COLL_REDSCAT2 = 91,
   COLL_REDSCAT3 = 92,
   //COLL_REDSCATBKINTER = 93,
   //COLL_REDSCATBLK3 = 94,
   //COLL_REDSCATINTER = 95,
   COLL_REDUCE = 96,
   COLL_REDUCE_LOCAL = 97,
-  //COLL_SCANTST = 98,
   COLL_SCATTER2 = 99,
   COLL_SCATTER3 = 100,
   COLL_SCATTERN = 101,
@@ -362,10 +353,8 @@ enum TEST_MODE
 #include "coll/allgatherv4.cc"
 #include "coll/allred.cc"
 #include "coll/allred2.cc"
-//TODO #include "coll/allred3.cc"
-//TODO #include "coll/allred4.cc"
 #include "coll/allred5.cc"
-//TODO #include "coll/allred6.cc"
+#include "coll/allred6.cc"
 #include "coll/allredmany.cc"
 #include "coll/alltoall1.cc"
 #include "coll/alltoallv.cc"
@@ -377,8 +366,6 @@ enum TEST_MODE
 #include "coll/bcast3.cc"
 #include "coll/bcasttest.cc"
 #include "coll/bcastzerotype.cc"
-//#include "coll/coll10.cc"
-//#include "coll/coll11.cc"
 #include "coll/coll12.cc"
 #include "coll/coll13.cc"
 #include "coll/coll2.cc"
@@ -388,7 +375,7 @@ enum TEST_MODE
 #include "coll/coll6.cc"
 #include "coll/coll7.cc"
 #include "coll/coll8.cc"
-//#include "coll/coll9.cc"
+#include "coll/coll9.cc"
 //#include "coll/exscan.cc"
 //#include "coll/exscan2.cc"
 #include "coll/gather.cc"
@@ -408,9 +395,6 @@ enum TEST_MODE
 //#include "coll/icscatter.cc"
 //#include "coll/icscatterv.cc"
 //#include "coll/longuser.cc"
-#include "coll/nonblocking.cc"
-#include "coll/nonblocking2.cc"
-#include "coll/nonblocking3.cc"
 //#include "coll/op_commutative.cc"
 #include "coll/opband.cc"
 #include "coll/opbor.cc"
@@ -424,19 +408,13 @@ enum TEST_MODE
 #include "coll/opminloc.cc"
 #include "coll/opprod.cc"
 #include "coll/opsum.cc"
-//#include "coll/red3.cc"
-//#include "coll/red4.cc"
 #include "coll/red_scat_block.cc"
-#include "coll/red_scat_block2.cc"
 #include "coll/redscat.cc"
-//#include "coll/redscat2.cc"
 #include "coll/redscat3.cc"
 //#include "coll/redscatbkinter.cc"
 //#include "coll/redscatblk3.cc"
 //#include "coll/redscatinter.cc"
 #include "coll/reduce.cc"
-#include "coll/reduce_local.cc"
-//#include "coll/scantst.cc"
 #include "coll/scatter2.cc"
 #include "coll/scatter3.cc"
 #include "coll/scattern.cc"
@@ -563,7 +541,7 @@ enum TEST_MODE
 #include "pt2pt/bottom.cc"
 #include "pt2pt/bsend1.cc"
 #include "pt2pt/bsend2.cc"
-//send init #include "pt2pt/bsend3.cc"
+#include "pt2pt/bsend3.cc"
 #include "pt2pt/bsend4.cc"
 //intercomm #include "pt2pt/bsend5.cc"
 #include "pt2pt/bsendalign.cc"
@@ -667,12 +645,19 @@ int testmode_ = -1;
 const char* valid_keywords[] = {
 "testsuite_testmode",
 "testsuite_numtests" };
+
 sprockit::StaticKeywordRegister reg(sizeof(valid_keywords) / sizeof(const char*), valid_keywords);
+
+#define sstmac_app_name "apitest"
 
 int USER_MAIN(int argc, char *argv[])
 {
   sprockit::sim_parameters* params = get_params();
   testmode_ = params->get_int_param("testsuite_testmode");
+
+  sstmac::runtime::add_deadlock_check(
+    sstmac::new_deadlock_check(current_mpi(), &sumi::transport::deadlock_check));
+  sstmac::runtime::enter_deadlock_region();
   
   int thr_id = sstmac::sw::operating_system::current_thread()->thread_id();
   double t_start, t_stop;
@@ -754,18 +739,12 @@ int USER_MAIN(int argc, char *argv[])
   case COLL_ALLRED2:
     allred2::allred2(argc, argv);
     break;
-  /** case COLL_ALLRED3:
-    allred3::allred3(argc, argv);
-    break;
-  case COLL_ALLRED4:
-    allred4::allred4(argc, argv);
-    break; */
   case COLL_ALLRED5:
     allred5::allred5(argc, argv);
     break;
-  /** case COLL_ALLRED6:
+  case COLL_ALLRED6:
     allred6::allred6(argc, argv);
-    break; */
+    break;
   case COLL_ALLREDMANY:
     allredmany::allredmany(argc, argv);
     break;
@@ -832,9 +811,10 @@ int USER_MAIN(int argc, char *argv[])
   case COLL_COLL8:
     coll8::coll8(argc, argv);
     break;
-  /** case COLL_COLL9:
+  case COLL_COLL9:
     coll9::coll9(argc, argv);
     break;
+  /**
   case COLL_EXSCAN:
     exscan::exscan(argc, argv);
     break;
@@ -888,21 +868,6 @@ int USER_MAIN(int argc, char *argv[])
     break;
   case COLL_ICSCATTERV:
     icscatterv::icscatterv(argc, argv);
-    break;
-  case COLL_LONGUSER:
-    longuser::longuser(argc, argv);
-    break; */
-  case COLL_NONBLOCKING:
-    nonblocking::nonblocking(argc, argv);
-    break;
-  case COLL_NONBLOCKING2:
-    nonblocking2::nonblocking2(argc, argv);
-    break;
-  case COLL_NONBLOCKING3:
-    nonblocking3::nonblocking3(argc, argv);
-    break;
-  /** case COLL_OP_COMMUTATIVE:
-    op_commutative::op_commutative(argc, argv);
     break; */
   case COLL_OPBAND:
     opband::opband(argc, argv);
@@ -940,27 +905,15 @@ int USER_MAIN(int argc, char *argv[])
   case COLL_OPSUM:
     opsum::opsum(argc, argv);
     break;
-  /** case COLL_RED3:
-    red3::red3(argc, argv);
-    break;
-  case COLL_RED4:
-    red4::red4(argc, argv);
-    break; */
-  case COLL_RED_SCAT_BLOCK:
+  /** case COLL_RED_SCAT_BLOCK:
     red_scat_block::red_scat_block(argc, argv);
-    break;
-  case COLL_RED_SCAT_BLOCK2:
-    red_scat_block2::red_scat_block2(argc, argv);
     break;
   case COLL_REDSCAT:
     redscat::redscat(argc, argv);
     break;
-  /** case COLL_REDSCAT2:
-    redscat2::redscat2(argc, argv);
-    break; */
   case COLL_REDSCAT3:
     redscat3::redscat3(argc, argv);
-    break;
+    break; */
   /** case COLL_REDSCATBKINTER:
     redscatbkinter::redscatbkinter(argc, argv);
     break;
@@ -973,12 +926,6 @@ int USER_MAIN(int argc, char *argv[])
   case COLL_REDUCE:
     reduce::reduce(argc, argv);
     break;
-  case COLL_REDUCE_LOCAL:
-    reduce_local::reduce_local(argc, argv);
-    break;
-  /** case COLL_SCANTST:
-    scantst::scantst(argc, argv);
-    break; */
   case COLL_SCATTER2:
     scatter2::scatter2(argc, argv);
     break;
@@ -1297,15 +1244,15 @@ int USER_MAIN(int argc, char *argv[])
   case PT2PT_BSEND2:
     bsend2::bsend2(argc, argv);
     break;
-  /** case PT2PT_BSEND3:
-    bsend3::bsend3(argc, argv);
-    break; */
+  //case PT2PT_BSEND3:
+  //  bsend3::bsend3(argc, argv);
+  //  break;
   case PT2PT_BSEND4:
     bsend4::bsend4(argc, argv);
     break;
-  /** case PT2PT_BSEND5:
-    bsend5::bsend5(argc, argv);
-    break; */
+  //case PT2PT_BSEND5:
+  //  bsend5::bsend5(argc, argv);
+  //  break;
   case PT2PT_BSENDALIGN:
     bsendalign::bsendalign(argc, argv);
     break;
@@ -1576,6 +1523,8 @@ int USER_MAIN(int argc, char *argv[])
     double t_total = t_stop - t_start;
     printf("MPI test ran for %8.4fms\n", t_total*1e3);
   }
+
+  sstmac::runtime::exit_deadlock_region();
 
   return 0;
 }

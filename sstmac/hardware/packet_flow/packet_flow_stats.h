@@ -5,10 +5,166 @@
 #include <sstmac/common/serializable.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/hardware/topology/structured_topology_fwd.h>
+#include <sstmac/hardware/packet_flow/packet_flow.h>
+#include <sstmac/common/stats/stat_spyplot_fwd.h>
+#include <sstmac/common/stats/stat_global_int_fwd.h>
+#include <sstmac/common/stats/stat_histogram_fwd.h>
+#include <sstmac/common/event_manager_fwd.h>
 #include <vector>
 
 namespace sstmac {
 namespace hw {
+
+struct packet_stats_st
+{
+  double incoming_bw;
+  double outgoing_bw;
+  timestamp now;
+  timestamp head_leaves;
+  timestamp tail_leaves;
+  timestamp credit_leaves;
+  packet_flow_payload* pkt;
+  int src_outport;
+  int dst_inport;
+};
+
+class packet_sent_stats :
+  public sprockit::factory_type
+{
+ public:
+  virtual void
+  collect_single_event(const packet_stats_st& st);
+
+  virtual void
+  collect_final_event(packet_flow_payload* pkt);
+
+  virtual void
+  set_event_manager(event_manager* ev_mgr) = 0;
+
+  virtual void
+  init_factory_params(sprockit::sim_parameters *params);
+
+  /**
+   * @brief id
+   * Either a node or switch id, depending on the device
+   * @return
+   */
+  int id() const {
+    return id_;
+  }
+
+ private:
+  int id_;
+
+};
+
+DeclareFactory(packet_sent_stats)
+
+class congestion_spyplot :
+ virtual public packet_sent_stats
+{
+ public:
+  virtual void
+  collect_single_event(const packet_stats_st& st);
+
+  virtual void
+  collect_final_event(packet_flow_payload* pkt);
+
+  virtual void
+  init_factory_params(sprockit::sim_parameters* params);
+
+  virtual void
+  set_event_manager(event_manager* ev_mgr);
+
+ protected:
+  void collect(double delay_us, packet_flow_payload* pkt);
+
+ private:
+  stat_spyplot* congestion_spyplot_;
+};
+
+class delay_histogram :
+  virtual public packet_sent_stats
+{
+ public:
+  virtual void
+  collect_final_event(packet_flow_payload* pkt);
+
+  virtual void
+  collect_single_event(const packet_stats_st& st);
+
+  virtual void
+  init_factory_params(sprockit::sim_parameters* params);
+
+  virtual void
+  set_event_manager(event_manager* ev_mgr);
+
+ private:
+  stat_histogram* congestion_hist_;
+};
+
+class packet_delay_stats :
+ virtual public packet_sent_stats
+{
+ public:
+  virtual void
+  collect_single_event(const packet_stats_st& st);
+
+  virtual void
+  set_event_manager(event_manager *ev_mgr){}
+
+ protected:
+  void collect(double delay_us, packet_flow_payload* pkt);
+
+};
+
+class null_stats : public packet_sent_stats
+{
+ public:
+  virtual void
+  collect_single_event(const packet_stats_st &st){}
+
+  virtual void
+  collect_final_event(packet_flow_payload *pkt){}
+
+  virtual void
+  set_event_manager(event_manager* ev_mgr){}
+
+};
+
+class byte_hop_collector :
+ virtual public packet_sent_stats
+{
+ public:
+  virtual void
+  collect_single_event(const packet_stats_st& st);
+
+  virtual void
+  init_factory_params(sprockit::sim_parameters* params);
+
+  virtual void
+  set_event_manager(event_manager* ev_mgr);
+
+ private:
+  stat_global_int* byte_hops_;
+};
+
+class spyplot_and_delay_stats :
+  public congestion_spyplot,
+  public packet_delay_stats
+{
+ public:
+  virtual void
+  collect_single_event(const packet_stats_st& st);
+
+  virtual void
+  init_factory_params(sprockit::sim_parameters* params);
+
+  virtual void
+  set_event_manager(event_manager *ev_mgr){
+    congestion_spyplot::set_event_manager(ev_mgr);
+  }
+};
 
 class stat_bytes_sent :
   public stat_collector
@@ -27,6 +183,9 @@ class stat_bytes_sent :
   set_topology(topology* top){
     top_ = top;
   }
+
+  void
+  init_factory_params(sprockit::sim_parameters *params);
 
   void
   simulation_finished(timestamp end);
@@ -146,6 +305,23 @@ class stat_bytes_sent :
   aggregation* local_aggregation_;
   std::vector<port_map> global_aggregation_;
 
+};
+
+class bytes_sent_collector :
+ virtual public packet_sent_stats
+{
+ public:
+  virtual void
+  collect_single_event(const packet_stats_st &st);
+
+  virtual void
+  init_factory_params(sprockit::sim_parameters* params);
+
+  virtual void
+  set_event_manager(event_manager* ev_mgr);
+
+ private:
+  stat_bytes_sent* bytes_sent_;
 };
 
 }

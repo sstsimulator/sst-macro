@@ -19,15 +19,16 @@
 #endif
 #include <sstmac/backends/native/manager.h>
 #include <sstmac/backends/native/clock_cycle_parallel/clock_cycle_event_container.h>
-#include <sstmac/backends/native/skeleton_app_manager.h>
 
 #include <sstmac/common/runtime.h>
 #include <sstmac/common/logger.h>
 
 #include <sstmac/dumpi_util/dumpi_meta.h>
 
-#include <sstmac/software/launch/launch_message.h>
-#include <sstmac/software/process/app_manager.h>
+#include <sstmac/software/launch/launch_event.h>
+#include <sstmac/software/launch/job_launcher.h>
+#include <sstmac/software/launch/job_launch_event.h>
+#include <sstmac/software/launch/app_launch.h>
 
 #include <sprockit/driver_util.h>
 #include <sprockit/keyword_registration.h>
@@ -86,15 +87,16 @@ manager::init_factory_params(sprockit::sim_parameters* params)
 }
 
 int
-manager::compute_max_nproc(int appnum, sprockit::sim_parameters* params)
+manager::compute_max_nproc_for_app(sprockit::sim_parameters* app_params)
 {
   int max_nproc = 0;
   /** Do a bunch of dumpi stuff */
   static const char* dmeta = "launch_dumpi_metaname";
-  std::string launch_param_name = sprockit::printf("launch_app%d", appnum);
-  if (params->get_param(launch_param_name) == "parsedumpi"){
+  if (app_params->get_param("name") == "parsedumpi"
+    && !app_params->has_param("launch_cmd"))
+  {
     std::string dumpi_meta_filename;
-    if (!params->has_param(dmeta)){
+    if (!app_params->has_param(dmeta)){
       FILE *fp = popen("ls *.meta", "r");
       char buf[1024];
       char* ret = fgets(buf, 1024, fp);
@@ -105,33 +107,27 @@ manager::compute_max_nproc(int appnum, sprockit::sim_parameters* params)
           lastchar = '\0';
         }
         cout0 << "Using dumpi meta " << buf << std::endl;
-        params->add_param(dmeta, buf);
+        app_params->add_param(dmeta, buf);
       } else {
         spkt_throw(sprockit::input_error,
          "no dumpi file found in folder or specified with launch_dumpi_metaname");
       }
       dumpi_meta_filename = buf;
     } else {
-      dumpi_meta_filename = params->get_param(dmeta);
+      dumpi_meta_filename = app_params->get_param(dmeta);
     }
-    if (!params->has_param("launch_app1_cmd")){
-      sw::dumpi_meta* meta = new sw::dumpi_meta(dumpi_meta_filename);
-      int nproc = meta->num_procs();
-      std::string cmd = sprockit::printf("aprun -n %d -N 1", nproc);
-      params->add_param("launch_app1_cmd", cmd);
-      max_nproc = std::max(max_nproc, nproc);
-      delete meta;
-    }
+    sw::dumpi_meta* meta = new sw::dumpi_meta(dumpi_meta_filename);
+    int nproc = meta->num_procs();
+    std::string cmd = sprockit::printf("aprun -n %d -N 1", nproc);
+    app_params->add_param("launch_cmd", cmd);
+    max_nproc = std::max(max_nproc, nproc);
+    delete meta;
   }
-  else {
-    //regular application
-    int nproc, procs_per_node;
-    std::vector<int> ignore;
-    skeleton_app_manager::parse_launch_cmd(launch_param_name,
-        params, nproc, procs_per_node, ignore);
-    max_nproc = std::max(nproc, max_nproc);
-  }
-  return max_nproc;
+  int nproc, procs_per_node;
+  std::vector<int> ignore;
+  app_launch::parse_launch_cmd(app_params, nproc,
+    procs_per_node, ignore);
+  return std::max(nproc, max_nproc);
 }
 
 int
@@ -139,48 +135,47 @@ manager::compute_max_nproc(sprockit::sim_parameters* params)
 {
   int appnum = 1;
   int max_nproc = 0;
-  while (true) {
-    std::string launch_prefix = sprockit::printf("launch_app%d", appnum);
-    if (!params->has_param(launch_prefix)) {
-      break;
+  bool found_app = true;
+  while (found_app || appnum < 10) {
+    std::string app_namespace = sprockit::printf("app%d", appnum);
+    found_app = params->has_namespace(app_namespace);
+    if (found_app){
+      sprockit::sim_parameters* app_params = params->get_namespace(app_namespace);
+      int nproc = compute_max_nproc_for_app(app_params);
+      max_nproc = std::max(nproc, max_nproc);
     }
-    int nproc = compute_max_nproc(appnum, params);
-    max_nproc = std::max(nproc, max_nproc);
     ++appnum;
   }
   return max_nproc;
 }
 
 void
-manager::build_app(int appnum, const std::string& launch_prefix,
-    sprockit::sim_parameters* params)
+manager::build_apps(sprockit::sim_parameters *params)
 {
-  std::string param_name = launch_prefix + "_type";
-  timestamp start = params->get_optional_time_param(
-                      launch_prefix + "_start", 0);
-
-  sstmac::sw::app_id aid(appnum);
-  app_manager* appman = app_manager_factory::get_optional_param(param_name,
-                            "skeleton", params, aid, rt_);
-  appman->set_interconnect(interconnect_);
-
-  app_managers_[appnum] = appman;
-  app_starts_[appnum] = start;
-  runtime::register_app_manager(aid, appman);
+  int appnum = 1;
+  bool found_app = true;
+  while (found_app || appnum < 10) {
+    std::string app_namespace = sprockit::printf("app%d", appnum);
+    found_app = params->has_namespace(app_namespace);
+    if (found_app){
+      sprockit::sim_parameters* app_params
+          = params->get_namespace(app_namespace);
+      build_app(appnum, app_params);
+    }
+    ++appnum;
+  }
 }
 
 void
-manager::build_apps(sprockit::sim_parameters* params)
+manager::build_app(int appnum,
+ sprockit::sim_parameters* params)
 {
-  int appnum = 1;
-  while (true) {
-    std::string launch_prefix = sprockit::printf("launch_app%d", appnum);
-    if (!params->has_param(launch_prefix)) {
-      break;
-    }
-    build_app(appnum, launch_prefix, params);
-    ++appnum;
-  }
+  sstmac::sw::app_id aid(appnum);
+  app_launch* appman = app_launch_factory::get_optional_param(
+        "launch_type", "default", params, aid, rt_);
+  appman->set_topology(interconnect_->topol());
+
+  app_managers_[appnum] = appman;
 }
 
 manager::~manager() throw ()
@@ -191,7 +186,7 @@ manager::~manager() throw ()
 
   if (interconnect_) delete interconnect_;
 
-  std::map<int, app_manager*>::iterator it, end = app_managers_.end();
+  std::map<int, app_launch*>::iterator it, end = app_managers_.end();
   for (it=app_managers_.begin(); it != end; ++it){
     delete it->second;
   }
@@ -235,6 +230,11 @@ macro_manager::init_factory_params(sprockit::sim_parameters* params)
 
   event_manager_->set_interconnect(interconnect_);
   interconnect_->set_event_manager(event_manager_);
+
+  launcher_ = job_launcher_factory::get_optional_param("job_launcher", "default", params);
+  launcher_->set_interconnect(interconnect_);
+
+  sstmac::runtime::set_job_launcher(launcher_);
 
   logger::timer_ = event_manager_;
 
@@ -297,40 +297,21 @@ macro_manager::finish()
 }
 
 void
-macro_manager::launch_app(int appnum, timestamp start, sw::app_manager* appman)
+macro_manager::launch_app(int appnum, timestamp start, sw::app_launch* appman)
 {
-  appman->allocate_and_index_jobs();
-  launch_info* linfo = appman->launch_info();
-  sstmac::sw::app_id aid(appnum);
-  for (int i=0; i < appman->nproc(); ++i) {
-    node_id dst_nid = appman->node_assignment(i);
-    runtime::register_node(aid, task_id(i), dst_nid);
-
-    hw::node* dst_node = interconnect_->node_at(dst_nid);
-    if (!dst_node) {
-      // mpiparallel, this node belongs to someone else
-      continue;
-    }
-
-    sw::launch_message* lmsg = new launch_message(linfo, sw::launch_message::ARRIVE, task_id(i));
-
-    dst_node->launch(start, lmsg);
-
-
-    //int dstthread = dst_node->thread_id();
-    //event_manager_->ev_man_for_thread(dstthread)->schedule(start, new handler_event(lmsg, dst_node));
-  }
+  sw::job_launch_event* ev = new sw::job_launch_event(appman);
+  event_manager_->schedule(start, appnum,
+                new handler_event_queue_entry(ev, launcher_, event_loc_id::null));
 }
 
 void
 macro_manager::launch_apps()
 {
-  std::map<int, app_manager*>::iterator it, end = app_managers_.end();
+  std::map<int, app_launch*>::iterator it, end = app_managers_.end();
   for (it=app_managers_.begin(); it != end; ++it){
     int appnum = it->first;
-    app_manager* appman = it->second;
-    timestamp start = app_starts_[appnum];
-    launch_app(appnum, start, appman);
+    app_launch* appman = it->second;
+    launch_app(appnum, appman->start(), appman);
   }
 }
 

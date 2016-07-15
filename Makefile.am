@@ -12,16 +12,11 @@
 include $(top_srcdir)/Makefile.common
 
 # Files that should be distributed but are not built.
-EXTRA_DIST = LICENSE benchmarks bootstrap.sh \
+EXTRA_DIST = LICENSE bootstrap.sh \
   docs \
-  qt-gui \
   skeletons
 
-SUBDIRS = $(subdirs) 
-
-if WITH_SUMI_MPI
-SUBDIRS += sumi-mpi
-endif
+SUBDIRS = $(subdirs) sumi-mpi
 
 SUBDIRS += sstmac bin python tests configurations 
 

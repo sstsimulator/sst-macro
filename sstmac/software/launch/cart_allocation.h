@@ -14,39 +14,69 @@
 
 #include <vector>
 #include <sstmac/hardware/topology/structured_topology.h>
-#include <sstmac/software/launch/allocation_strategy.h>
+#include <sstmac/software/launch/node_allocator.h>
 
 namespace sstmac {
 namespace sw {
 
 class cart_allocation :
-  public allocation_strategy
+  public node_allocator
 {
 
  public:
-  virtual void
-  set_topology(hw::topology *top);
-
   void
   init_factory_params(sprockit::sim_parameters* params);
 
   virtual
   ~cart_allocation() throw () {}
 
+  /**
+   * @brief allocate
+   * @param nnode
+   * @param available
+   * @param allocation
+   * @return  Whether the allocation succeeded based on the available nodes
+   */
   void
-  allocate(int nnode, node_set &allocation);
+  allocate(int nnode,
+   const ordered_node_set& available,
+   ordered_node_set& allocation) const;
 
  private:
+  /**
+   * @brief insert
+   * @param coords     The cartesian coordinates defining the node
+   * @param available  The set of available nodes
+   * @param allocation The set of nodes storing the current allocation
+   * @return Whether the insertion succeeded based on the available nodes
+   */
   void
-  insert(const std::vector<int>& coords, node_set& allocation);
+  insert(
+    hw::structured_topology* regtop,
+    const std::vector<int>& coords,
+    const ordered_node_set& available,
+    ordered_node_set& allocation) const;
 
+  /**
+   * @brief allocate_dim  Recursive method for looping dimensions in the block
+   *                      and adding them to the allocation
+   * @param dim
+   * @param vec
+   * @param available
+   * @param allocation
+   * @return Whether the allocation succeeded based on the available nodes
+   */
   void
-  allocate_dim(int dim, std::vector<int>& vec, node_set& allocation);
+  allocate_dim(
+   hw::structured_topology* regtop,
+   int dim,
+   std::vector<int>& vec,
+   const ordered_node_set& available,
+   ordered_node_set& allocation) const;
 
   std::vector<int> sizes_;
   std::vector<int> offsets_;
 
-  hw::structured_topology* regtop_;
   bool auto_allocate_;
 
 };

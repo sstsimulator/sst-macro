@@ -66,7 +66,7 @@ class stat_collector : virtual public sprockit::factory_type
     return "stat_collector";
   }
 
-  void
+  virtual void
   init_factory_params(sprockit::sim_parameters *params);
 
   bool

@@ -132,13 +132,13 @@ class dragonfly : public cartesian_topology
     int dim,
     const coordinates& src,
     const coordinates& dst,
-    routing_info::path& path) const;
+    geometry_routable::path& path) const;
 
   void
   minimal_route_to_coords(
     const coordinates &src_coords,
     const coordinates &dest_coords,
-    routing_info::path& path) const;
+    geometry_routable::path& path) const;
 
   int
   minimal_distance(
@@ -166,7 +166,7 @@ class dragonfly : public cartesian_topology
     std::vector<node_id>& partners) const;
 
   virtual void
-  new_routing_stage(routing_info& rinfo);
+  new_routing_stage(geometry_routable* rtbl);
 
   virtual void
   configure_geometric_paths(std::vector<int> &redundancies);

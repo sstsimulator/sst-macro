@@ -1,0 +1,314 @@
+#! /usr/bin/env python
+
+import glob
+import sys
+import re
+import os
+
+section_template = r'\\begin{%s}(.*?)\\end{%s}'
+input_regexp = r'\\input{(.*?)}'
+comment_regexp = re.compile(r'%(.*)')
+quotes_regexp = re.compile("``(.*?)''", re.DOTALL)
+#display_regexp = re.compile(r'\\\[(.*?)\\\]', re.DOTALL)
+
+toc_lines = ["# Table of Contents"]
+
+section = 0
+subsection = 0
+subsubsection = 0
+chapter = 0
+
+refs = {
+}
+
+figureCount = 1
+
+def make_toc(text):
+  toc_text = "\n".join(toc_lines)
+  text = text.replace(r'\tableofcontents', toc_text)
+  return text
+
+def macro_regexp(x, n=1):
+  retext = r'\\%s{(.*?)[}]+' % x
+  for i in range(1,n):
+    retext += '{(.*?)}'
+  return re.compile(retext, re.DOTALL)
+
+def section_header_regexp():
+  retext = r'\\([a-z]+){(.*?)}\s*\\label{(.*?)}' 
+  return re.compile(retext)
+
+def labeled_macro_regexp(x):
+  retext = r'\\%s{(.*?)}\s*\\label{(.*?)}' % x
+  return re.compile(retext)
+
+def optmacro_regexp(x):
+  retext = r'\\%s\s*\[(.*?)\]\s*{(.*?)[}]+' % x
+  return re.compile(retext, re.DOTALL)
+
+def section_regexp(x):
+  return re.compile(section_template % (x,x), re.DOTALL)
+
+def repl_title(x):
+  return "# %s" % x.groups()[0]
+
+def repl_quotes(x):
+  return '"%s"' % x.groups()[0]
+
+paragraph_split_cleanup_regexp = re.compile(r'\n[\t ]*\n')
+def process_paragraphs(text):
+  par_arr = []
+  for paragraph in text.split("\n\n"):
+    paragraph = paragraph.strip()
+    if "```" in paragraph or "-  " in paragraph:
+      par_arr.append(paragraph)
+    else:
+      str_arr = []
+      for line in paragraph.splitlines():
+        line = line.strip()
+        str_arr.append(line)
+      paragraph = " ".join(str_arr)
+      par_arr.append(paragraph)
+  return "\n\n".join(par_arr)
+
+def repl_display(match):
+  return '\[display\n%s\n\]' % match.groups()[0]
+
+def process_itemize(match):
+  items = match.groups()[0].split(r'\item')
+  str_arr = [""]
+  for item in items[1:]:
+    item = item.strip()
+    str_arr.append("-   %s" % item)
+  return "\n".join(str_arr)
+
+include_fig_optargs_regexp = optmacro_regexp("includegraphics")
+include_fig_regexp = macro_regexp("includegraphics")
+def get_figure_text(label, caption, text):
+  fname = include_fig_regexp.search(text)
+  if not fname:
+    fname = include_fig_optargs_regexp.search(text)
+    if not fname:
+      print text
+      sys.exit("failed parsing figure")
+    else:
+      fname = fname.groups()[1]
+  else:
+    fname = match.groups()[0]
+  
+  labelText = ""
+  if label:
+    labelText = '<a name="%s"></a>' % label
+
+  if caption == "":
+    captionText = ""
+  else:
+    captionText = "*%s*" % caption
+
+  return "\n![%s](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/%s) %s\n\n%s\n\n" % (caption, fname, "", captionText)
+
+def process_title_pic(match):
+  text = match.groups()[0] + "}"
+  return get_figure_text(None, "", text)
+
+label_regexp = macro_regexp("label")
+caption_regexp = macro_regexp("caption")
+
+doProcessFile = None
+
+def repl_section_header(match, sectionType, count):
+  global chapter, section, subsection, subsubsection
+  prefix = '#' * count
+  name = ""
+  ref = ""
+  text = "%s %d %d %d %d" % (str(match.groups()), chapter, section, subsection, subsubsection)
+  toc_line = None
+  if sectionType == "chapter":
+    chapter += 1
+    name = "Chapter %d" % chapter
+    ref = "%d" % chapter
+    section = 0
+    subsection = 0
+    subsubsection = 0
+  elif sectionType == "section":
+    section += 1
+    ref = "%d.%d" % (chapter, section)
+    name = "Section %s" % ref
+    subsection = 0
+    subsubsection = 0
+  elif sectionType == "subsection":
+    subsection += 1
+    ref = "%d.%d.%d" % (chapter, section, subsection)
+    name = ref
+    subsubsection = 0
+  elif sectionType == "subsubsection":
+    subsubsection += 1
+    ref = "%d.%d.%d.%d" % (chapter, section, subsection, subsubsection)
+    name = ""
+
+  toc_prefix = "   " * (count-1)
+
+  header = match.groups()[1]
+  text = None
+  if name:
+    text =  '%s: %s' % (name, header)
+  else:
+    text =  header
+
+  toc_line = "%s- [%s]" % (toc_prefix, text)
+
+  if len(match.groups()) == 3: #labeled
+    label = match.groups()[2]
+    toc_line += "(#%s)" % label
+    refs[label] = ref
+    text += '<a name="%s"></a>' % label
+
+  toc_lines.append(toc_line)
+  
+  return "%s %s\n\n" % (prefix, text)
+
+
+
+def process_figure(match):
+  global figureCount
+  text = match.groups()[0]
+
+  next_fig_id = figureCount
+  figureCount += 1
+
+  label = label_regexp.search(text)
+  if label: 
+    label = label.groups()[0].strip()
+    refs[label] = "%d" % next_fig_id
+  
+  caption = caption_regexp.search(text)
+
+  if caption: 
+    caption = "Figure %d: %s" % (next_fig_id, caption.groups()[0])
+  else:
+    caption = "Figure %d" % next_fig_id
+
+    
+  return get_figure_text(label, caption, text)
+
+
+def delete_comment(x):
+  return ""
+
+def return_code(x):
+  return '`%s`' % x.groups()[0]
+
+def process_ref(match):
+  try:
+    label = match.groups()[0]
+    return "[%s](#%s)" % (refs[label], label)
+  except KeyError:
+    return ""
+
+def process_input(match):
+  fname = match.groups()[0] + ".tex"
+  text = doProcessFile(fname)
+  return text
+
+def repl_code_block(match):
+  oldBlock = match.groups()[0].strip()
+  newBlock = "\n".join(oldBlock.splitlines())
+  repl = "````\n%s\n````" % newBlock
+  return repl
+
+def return_self(match):
+  return match.groups()[0]
+
+def labeled_header_pair(sectionName, count):
+  return (labeled_macro_regexp(sectionName), lambda x: repl_section_header(x, sectionName, count))
+
+def header_pair(sectionName, count):
+  return (macro_regexp(sectionName), lambda x: repl_section_header(x, sectionName, count))
+
+def return_bold(match):
+  return "**%s**" % match.groups()[0]
+
+repls = [
+  (quotes_regexp, repl_quotes),
+  (section_regexp("CppCode")  , repl_code_block),
+  (section_regexp("ShellCmd") , repl_code_block),
+  (section_regexp("ViFile")   , repl_code_block),
+  (section_regexp("figure")   , process_figure),
+  (section_regexp("itemize")   , process_itemize),
+  (section_regexp("center") , return_self),
+  (paragraph_split_cleanup_regexp , "\n\n"),
+  (macro_regexp('title') , repl_title),
+  (macro_regexp('input') , process_input),
+  (macro_regexp('aside') , return_self),
+  (macro_regexp('titlepic') , process_title_pic),
+  (macro_regexp('inlineshell') , return_code),
+  (macro_regexp('inlinecode') , return_code),
+  (macro_regexp('inlinefile') , return_code),
+  (macro_regexp('func') , return_code),
+  (macro_regexp('emph') , return_self),
+  (macro_regexp('textit') , return_self),
+  (macro_regexp('author') , ""),
+  (macro_regexp('url') , return_self),
+  (r'\sstmacro' , 'SST-macro'),
+  (r'\sprockit', 'SProCKit'),
+  (r'\maketitle' , ''),
+  (r'\begin{document}' , ''),
+  (r'\end{document}' , ''),
+  (r'\evhandler', '`event_handler`'),
+  (r'\evscheduler', '`event_scheduler`'),
+  (r'\evmgr', '`event_manager`'),
+]
+
+
+def processFile(f):
+  text = open(f).read()
+  lines = text.split("\n")
+  newtext = ""
+  newline = "\n"
+  iscode = False
+  for l in lines:
+    if l.find("CppCode") > -1:
+      if iscode == True:
+        iscode = False
+      else:
+        iscode = True
+    if not iscode:
+      l = comment_regexp.sub("", l)
+    newtext = newline.join((newtext,l))
+  #text = comment_regexp.sub("", text)
+  for matcher, repl in repls:
+    if isinstance(matcher, str):
+      newtext = newtext.replace(matcher, repl)
+    else:
+      newtext = matcher.sub(repl, newtext)
+  return newtext
+doProcessFile = processFile
+
+
+startFile = sys.argv[1]
+
+sections = {
+  "chapter" : 2,
+  "section" : 3,
+  "subsection" : 4,
+  "subsubsection" : 5
+}
+
+text = processFile(startFile)
+reobj = section_header_regexp()
+foundMatch = True
+while foundMatch:
+  foundMatch = reobj.search(text)
+  if foundMatch:
+    sectionType = foundMatch.groups()[0]
+    if not sectionType in sections:
+      continue
+
+    repl = lambda x: repl_section_header(x, sectionType, sections[sectionType])
+    text = reobj.sub(repl, text, 1)
+text = macro_regexp('ref').sub(process_ref, text)
+text = process_paragraphs(text)
+text = make_toc(text)
+print text
+
+

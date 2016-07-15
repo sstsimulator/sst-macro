@@ -6,9 +6,10 @@
 
 namespace sstmac {
   
-transport_message::transport_message(const sumi::message_ptr& msg, long byte_length)
+transport_message::transport_message(sw::app_id aid,
+ const sumi::message_ptr& msg, long byte_length)
   : library_interface("sumi"),
-    network_message(byte_length),
+    network_message(aid, byte_length),
     payload_(msg),
     buffer_(0)
 {
@@ -23,11 +24,9 @@ transport_message::serialize_order(serializer& ser)
   ser & msg;
   payload_ = msg;
   if (network_message::is_metadata()){
-    uintptr_t ptr = (uintptr_t) buffer_;
-    ser & ptr; //just dump the void*, rdma request or similar
-    buffer_ = (void*) ptr;
+    ser & sstmac::raw_ptr(buffer_);
   } else { //I am a data thing, need to send the actual payload
-    ser & sstmac::buffer(buffer_, bytes_);
+    ser & sstmac::array(buffer_, bytes_);
   }
 }
 

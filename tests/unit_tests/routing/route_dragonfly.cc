@@ -31,7 +31,7 @@ test_dragonfly_v1(UnitTest& unit)
 
         node_id dst = dfly->node_addr(get_vector(3,2,1,0));
 
-        routing_info::path_set paths;
+        geometry_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         assertEqual(unit, "num productive ports", paths.size(), 1);
 
@@ -47,7 +47,7 @@ test_dragonfly_v1(UnitTest& unit)
 
         node_id dst = dfly->node_addr(get_vector(0,2,1,0));
 
-        routing_info::path_set paths;
+        geometry_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         assertEqual(unit, "num productive ports", paths.size(), 2);
 
@@ -65,7 +65,7 @@ test_dragonfly_v1(UnitTest& unit)
 
         node_id dst = dfly->node_addr(get_vector(0,2,0,0));
 
-        routing_info::path_set paths;
+        geometry_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         assertEqual(unit, "num productive ports", paths.size(), 3);
 
@@ -131,7 +131,7 @@ test_dragonfly_v2(UnitTest& unit)
 
         node_id dst = dfly->node_addr(get_vector(3,2,1,0));
 
-        routing_info::path_set paths;
+        geometry_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         assertEqual(unit, "num productive ports", paths.size(), 1);
 
@@ -147,7 +147,7 @@ test_dragonfly_v2(UnitTest& unit)
 
         node_id dst = dfly->node_addr(get_vector(0,2,1,0));
 
-        routing_info::path_set paths;
+        geometry_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         assertEqual(unit, "num productive ports", paths.size(), 2);
 
@@ -165,7 +165,7 @@ test_dragonfly_v2(UnitTest& unit)
 
         node_id dst = dfly->node_addr(get_vector(0,2,0,0));
 
-        routing_info::path_set paths;
+        geometry_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         assertEqual(unit, "num productive ports", paths.size(), 3);
 
@@ -185,7 +185,7 @@ test_dragonfly_v2(UnitTest& unit)
 
         node_id dst = dfly->node_addr(get_vector(0,2,5,0));
 
-        routing_info::path_set paths;
+        geometry_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         assertEqual(unit, "num productive ports", paths.size(), 3);
 

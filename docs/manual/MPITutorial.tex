@@ -1,59 +1,59 @@
 %% !TEX root = manual.tex
 
-\section{Configuring MPI}
-\label{sec:tutorial:mpi}
-
-The actual implementation of MPI collectives and even the underlying protocol of MPI send/recv operations is highly configurable.
-Here we introduce the MPI tuning parameters and what they mean for performance experiments.
-
-\subsection{MPI Implementation}
-\label{subsec:mpi:implementation}
-
-The MPI implementation itself is flexible to change depending on how you want to utilize the network hardware.
-The default parameter is \inlineshell{mpi_implementation = basic},
-which only uses basic eager and rendezvous protocols and does not use RDMA.
-The cutoff for eager to rendezvous can be tuned by specifying, e.g.
-
-\begin{ViFile}
-mpi_handshake_size = 8KB
-\end{ViFile}
-giving the cutoff as an arbitrary byte length.
-
-For more complicated protocols, we can specify \inlineshell{mpi_implementation = rdma},
-which now allows a fancier set of protocols that leverage RDMA.
-The parameters here are tuned, e.g.
-
-\begin{ViFile}
-smp_single_copy_size = 8KB
-max_eager_msg_size = 8KB
-max_vshort_msg_size = 1KB
-\end{ViFile}
-
-The details of these protocols are best explained in the presentation ``Tuning the MPI Runtime Environment and Best Practices for Message Passing on Hopper''
-at \url{https://www.nersc.gov/assets/NUG-Meetings/2012/HowardP-MPI-NUG2012.pdf}.
-The parameter \inlineshell{smp_single_copy_size} is for intranode message passing.
-For small messages below the cutoff, an eager protocol is used where the message is copied into an intermediate buffer.
-For larger messages wishing to have zero-copy, a rendezvous protocol is used and the message is directly copied from send to receive buffer.
-The parameter \inlineshell{max_eager_msg_size} controls the crossover from an eager protocol using send buffers to a rendezvous protocol with zero-copy.
-Both the eager and rendezvous protocol use RDMA, creating a bit of a latency overhead.
-For very small messages, a special pathway can be taken avoiding RDMA and just directly sending the small message into a pre-allocated mailbox on the receiver.
-The cutoff for very small messages is given by \inlineshell{max_vshort_msg_size}.
-
-\subsection{MPI Collectives}
-The implementation of individual collectives can vary widely depending on the platform, message size, or distribution.
-\sstmacro provides limited flexibility for tuning collectives, but infrastructure is being developed to allow very fine-grained tuning
-of which MPI collective algorithms are used.  Currently, only MPI\_Allgather and MPI\_Allreduce can have alternative implementations chosen.
-For MPI\_Allgather, in the input file, one can specify \inlineshell{mpi_allgather = ring} or \inlineshell{mpi_allgather = bruck}
-to use either a basic ring algorithm or to use the Br{\"u}ck algorithm.  In the same way, one can either specify
-\inlineshell{mpi_allgather = rabenseifner} or \inlineshell{mpi_allgather = wilke}.
-More details can be found in ``Optimization of Collective Communication Operations in MPICH'' by Rajeev Thakur and Rolf Rabenseifner.
-The Wilke algorithm is a variation binary blocks algorithm described therein.
-Future versions of \sstmacro are expected to include a more complete library of collective algorithms with the ability to tune which algorithms are selected for specific buffer sizes.
-
-\subsection{MPI Queue}
-The implementation of the progress engine in MPI can either be a service (asynchronous progress thread distinct from the application) or an integrated part of the application.
-Most current MPI implementations have integrated progress engines that only move forward inside MPI\_Wait or MPI\_Test calls.
-However, you may wish to experiment with what performance gains can be had with an asynchronous progress thread.
-For the parameter \inlineshell{mpi_queue_thread_type}, you can either specify \inlineshell{user}, integrated progress engine that is part of the user application,
-or \inlineshell{service}, progress engine on asynchronous thread.
-If using the call graph feature (Section \ref{sec:tutorials:callgraph}), far more detail is available if using the integrated engine with \inlineshell{user}.
+%\section{Configuring MPI}
+%\label{sec:tutorial:mpi}
+%
+%The actual implementation of MPI collectives and even the underlying protocol of MPI send/recv operations is highly configurable.
+%Here we introduce the MPI tuning parameters and what they mean for performance experiments.
+%
+%\subsection{MPI Implementation}
+%\label{subsec:mpi:implementation}
+%
+%The MPI implementation itself is flexible to change depending on how you want to utilize the network hardware.
+%The default parameter is \inlineshell{mpi_implementation = basic},
+%which only uses basic eager and rendezvous protocols and does not use RDMA.
+%The cutoff for eager to rendezvous can be tuned by specifying, e.g.
+%
+%\begin{ViFile}
+%mpi_handshake_size = 8KB
+%\end{ViFile}
+%giving the cutoff as an arbitrary byte length.
+%
+%For more complicated protocols, we can specify \inlineshell{mpi_implementation = rdma},
+%which now allows a fancier set of protocols that leverage RDMA.
+%The parameters here are tuned, e.g.
+%
+%\begin{ViFile}
+%smp_single_copy_size = 8KB
+%max_eager_msg_size = 8KB
+%max_vshort_msg_size = 1KB
+%\end{ViFile}
+%
+%The details of these protocols are best explained in the presentation ``Tuning the MPI Runtime Environment and Best Practices for Message Passing on Hopper''
+%at \url{https://www.nersc.gov/assets/NUG-Meetings/2012/HowardP-MPI-NUG2012.png}.
+%The parameter \inlineshell{smp_single_copy_size} is for intranode message passing.
+%For small messages below the cutoff, an eager protocol is used where the message is copied into an intermediate buffer.
+%For larger messages wishing to have zero-copy, a rendezvous protocol is used and the message is directly copied from send to receive buffer.
+%The parameter \inlineshell{max_eager_msg_size} controls the crossover from an eager protocol using send buffers to a rendezvous protocol with zero-copy.
+%Both the eager and rendezvous protocol use RDMA, creating a bit of a latency overhead.
+%For very small messages, a special pathway can be taken avoiding RDMA and just directly sending the small message into a pre-allocated mailbox on the receiver.
+%The cutoff for very small messages is given by \inlineshell{max_vshort_msg_size}.
+%
+%\subsection{MPI Collectives}
+%The implementation of individual collectives can vary widely depending on the platform, message size, or distribution.
+%\sstmacro provides limited flexibility for tuning collectives, but infrastructure is being developed to allow very fine-grained tuning
+%of which MPI collective algorithms are used.  Currently, only MPI\_Allgather and MPI\_Allreduce can have alternative implementations chosen.
+%For MPI\_Allgather, in the input file, one can specify \inlineshell{mpi_allgather = ring} or \inlineshell{mpi_allgather = bruck}
+%to use either a basic ring algorithm or to use the Br{\"u}ck algorithm.  In the same way, one can either specify
+%\inlineshell{mpi_allgather = rabenseifner} or \inlineshell{mpi_allgather = wilke}.
+%More details can be found in ``Optimization of Collective Communication Operations in MPICH'' by Rajeev Thakur and Rolf Rabenseifner.
+%The Wilke algorithm is a variation binary blocks algorithm described therein.
+%Future versions of \sstmacro are expected to include a more complete library of collective algorithms with the ability to tune which algorithms are selected for specific buffer sizes.
+%
+%\subsection{MPI Queue}
+%The implementation of the progress engine in MPI can either be a service (asynchronous progress thread distinct from the application) or an integrated part of the application.
+%Most current MPI implementations have integrated progress engines that only move forward inside MPI\_Wait or MPI\_Test calls.
+%However, you may wish to experiment with what performance gains can be had with an asynchronous progress thread.
+%For the parameter \inlineshell{mpi_queue_thread_type}, you can either specify \inlineshell{user}, integrated progress engine that is part of the user application,
+%or \inlineshell{service}, progress engine on asynchronous thread.
+%If using the call graph feature (Section \ref{sec:tutorials:callgraph}), far more detail is available if using the integrated engine with \inlineshell{user}.

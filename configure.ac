@@ -15,7 +15,7 @@ dnl
 #-------------------------------------------------
 
 # Version info, used both in library versioning and inside sstmacro.
-m4_define([SSTMAC_VERSION_TAG], 5)
+m4_define([SSTMAC_VERSION_TAG], 6)
 m4_define([SSTMAC_SUBVERSION_TAG], 0)
 m4_define([SSTMAC_SUBSUBVERSION_TAG], 0)
 
@@ -209,11 +209,9 @@ AC_CONFIG_FILES([
  sstmac/Makefile
  sstmac/install/Makefile
  sstmac/dumpi_util/Makefile
- sstmac/libraries/mpi/Makefile
  sstmac/libraries/blas/Makefile
  sstmac/libraries/sumi/Makefile
  sstmac/libraries/pthread/Makefile
- sstmac/libraries/sockets/Makefile
  sstmac/libraries/machines/Makefile
  sstmac/libraries/uq/Makefile
  sstmac/libraries/Makefile

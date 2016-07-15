@@ -3,7 +3,7 @@
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.6\textwidth]{figures/gnuplot/ftq/ftq.pdf}
+\includegraphics[width=0.6\textwidth]{figures/gnuplot/ftq/ftq.png}
 \caption{Application Activity (Fixed-Time Quanta; FTQ) for Simple MPI Test Suite}
 \label{fig:ftq}
 \end{figure}
@@ -44,3 +44,11 @@ ftq_epoch=5us
 Events are accumulated into a single data point per ``epoch.''
 If the timestamp is too small, too little data will be collected and the time interval won't be large enough to give a meaningful picture.
 If the timestamp is too large, too many events will be grouped togther into a single data point, losing temporal structure.
+
+Using fully namespace parameters, this would be specified as:
+
+
+\begin{ViFile}
+node.os.ftq.fileroot=<fileroot>
+node.os.ftq.epoch=5us
+\end{ViFile}

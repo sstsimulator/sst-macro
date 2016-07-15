@@ -13,6 +13,8 @@
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
 #include <sumi-mpi/mpi_message.h>
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
+#include <sumi-mpi/mpi_debug.h>
+#include <sumi-mpi/mpi_api.h>
 #include <sprockit/debug.h>
 #include <sprockit/errors.h>
 
@@ -93,12 +95,24 @@ mpi_queue_recv_request::handle(const mpi_message::ptr& mess)
   switch (mess->content_type())
   {
   case mpi_message::header:
+    mpi_queue_action_debug(
+      queue_->api()->comm_world()->rank(), 
+      "receive request handling header: %s", 
+      mess->to_string().c_str());
     mess->protocol()->finish_recv_header(queue_, mess, this);
     break;
   case mpi_message::eager_payload:
+    mpi_queue_action_debug(
+      queue_->api()->comm_world()->rank(), 
+      "receive request handling eager: %s", 
+      mess->to_string().c_str());
     finish_message(mess->eager_buffer(), mess);
     delme = this;
   case mpi_message::data: {
+    mpi_queue_action_debug(
+     queue_->api()->comm_world()->rank(), 
+     "receive request handling data: %s", 
+     mess->to_string().c_str());
     finish_message(mess->local_buffer(), mess);
     delme = this;
     break;

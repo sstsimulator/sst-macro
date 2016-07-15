@@ -91,6 +91,11 @@ class macro_switch_interconnect :
     return it->second;
   }
 
+  const switch_map&
+  switches() const {
+    return switches_;
+  }
+
   virtual void
   immediate_send(event_scheduler* src, message* msg, timestamp start) const;
 

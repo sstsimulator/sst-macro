@@ -12,20 +12,13 @@
 namespace sstmac {
 namespace sw {
 
-SpktRegister("coordinate", allocation_strategy, coordinate_allocation);
+SpktRegister("coordinate", node_allocator, coordinate_allocation);
 
 void
 coordinate_allocation::init_factory_params(sprockit::sim_parameters* params)
 {
-  allocation_strategy::init_factory_params(params);
+  node_allocator::init_factory_params(params);
   coord_file_ = params->get_param("launch_coordinate_file");
-}
-
-void
-coordinate_allocation::set_topology(hw::topology *top)
-{
-  allocation_strategy::set_topology(top);
-  regtop_ = safe_cast(hw::structured_topology, top);
 }
 
 void
@@ -56,25 +49,25 @@ coordinate_allocation::read_coordinate_file(
 }
 
 void
-coordinate_allocation::allocate(int nnode_requested,
-                              node_set &allocation)
+coordinate_allocation::allocate(
+  int nnode_requested,
+  const ordered_node_set& available,
+  ordered_node_set& allocation) const
 {
   std::vector<hw::coordinates> node_list;
   read_coordinate_file(rt_, coord_file_, node_list);
 
+  hw::structured_topology* regtop
+      = safe_cast(hw::structured_topology, topology_);
+
   int num_coords = node_list[0].size();
-  int top_ndim = regtop_->ndimensions();
-  int nps = regtop_->concentration(switch_id(0));
+  int top_ndim = regtop->ndimensions();
+  int nps = regtop->concentration(switch_id(0));
   if (nps > 1) ++top_ndim;
   if (top_ndim != num_coords){
     spkt_throw_printf(sprockit::value_error,
         "coordinate_allocation::read_coordinate_file: mismatch between topology ndim=%d and file ncoords=%d, concentration=%d",
          top_ndim, num_coords, nps);
-  }
-
-  if (!topology_) {
-    spkt_throw_printf(sprockit::null_error,
-        "coordinate_allocation::allocate: null topology");
   }
 
   if (node_list.size() < nnode_requested){
@@ -85,12 +78,13 @@ coordinate_allocation::allocate(int nnode_requested,
 
   for (int i=0; i < nnode_requested; ++i){
     const hw::coordinates& coords = node_list[i];
-    node_id nid = regtop_->node_addr(coords);
+    node_id nid = regtop->node_addr(coords);
     debug_printf(sprockit::dbg::allocation,
         "adding node %d : %s to allocation",
         int(nid), stl_string(coords).c_str());
     allocation.insert(nid);
   }
+
 }
 
 }

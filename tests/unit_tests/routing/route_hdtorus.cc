@@ -29,7 +29,7 @@ void test_torus(UnitTest& unit)
 
         node_id dst = torus->node_addr(get_vector(1,1,1,0));
 
-        routing_info::path_set paths;
+        geometry_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         //this should tell me that the productive ports are -X, -Y, -Z
         assertEqual(unit, "num productive ports", paths.size(), 3);
@@ -52,7 +52,7 @@ void test_torus(UnitTest& unit)
 
         node_id dst = torus->node_addr(get_vector(3,2,0,1));
 
-        routing_info::path_set paths;
+        geometry_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         //this should tell me that the productive ports are -X, -Y, -Z
         assertEqual(unit, "num productive ports", paths.size(), 1);

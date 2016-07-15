@@ -71,7 +71,7 @@ class abstract_butterfly :
     int dim,
     const coordinates& src,
     const coordinates& dst,
-    routing_info::path& path) const;
+    geometry_routable::path& path) const;
 
   void
   configure_vc_routing(std::map<routing::algorithm_t, int> &m) const;
@@ -120,7 +120,7 @@ class butterfly :
   minimal_route_to_coords(
     const coordinates &src_coords,
     const coordinates &dest_coords,
-    routing_info::path& path) const;
+    geometry_routable::path& path) const;
 
   int
   minimal_distance(
@@ -162,7 +162,7 @@ class butterfly :
 
   void
   productive_paths(
-    routing_info::path_set &paths,
+    geometry_routable::path_set &paths,
     const coordinates &current,
     const coordinates &dst);
 

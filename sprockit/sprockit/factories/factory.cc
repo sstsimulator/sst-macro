@@ -34,7 +34,8 @@ SpktFactory_base::exists(const std::string &key, sim_parameters *params)
 
 void
 SpktFactory_base::add_to_map(const std::string& namestr, SpktDesc_base* desc,
-                            std::map<std::string, SpktDesc_base*>* m)
+                            std::map<std::string, SpktDesc_base*>* descr_map,
+                            std::map<std::string, std::list<std::string> >* alias_map)
 {
   std::string space = "|";
   std::deque<std::string> tok;
@@ -47,9 +48,18 @@ SpktFactory_base::add_to_map(const std::string& namestr, SpktDesc_base* desc,
 
     temp = trim_str(temp);
 
-    (*m)[temp] = desc;
+    std::map<std::string, std::list<std::string> >::iterator it = alias_map->find(temp);
+    if (it != alias_map->end()){
+      std::list<std::string>& alias_list = it->second;
+      std::list<std::string>::iterator ait, end = alias_list.end();
+      for (ait=alias_list.begin(); ait != end; ++ait){
+        (*descr_map)[*ait] = desc;
+      }
+    }
 
+    (*descr_map)[temp] = desc;
   }
+
 }
 
 }

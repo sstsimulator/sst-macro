@@ -29,15 +29,11 @@ libsstmac_sw_la_SOURCES = \
   process/global.cc \
   process/graphviz.cc \
   process/ftq.cc \
-  process/app_manager.cc \
   process/operating_system.cc \
   process/api.cc \
   process/thread.cc \
   process/app.cc \
-  process/user_app.cc \
   process/time.cc \
-  process/user_app_cxx.cc \
-  process/user_app_c.cc \
   threading/context_util.cc \
   threading/stack_alloc_chunk.cc \
   threading/stack_alloc.cc \
@@ -55,7 +51,8 @@ libsstmac_sw_la_SOURCES = \
   libraries/compute/sstmac_compute.cc \
   libraries/unblock_event.cc \
   libraries/service.cc \
-  launch/allocation_strategy.cc \
+  launch/app_launch.cc \
+  launch/node_allocator.cc \
   launch/cart_allocation.cc \
   launch/coordinate_allocation.cc \
   launch/random_allocation.cc \
@@ -63,16 +60,16 @@ libsstmac_sw_la_SOURCES = \
   launch/hostname_allocation.cc \
   launch/dumpi_allocation.cc \
   launch/first_available_allocation.cc \
-  launch/index_strategy.cc \
-  launch/block_indexing.cc \
-  launch/coordinate_indexing.cc \
-  launch/dumpi_indexer.cc \
-  launch/hostname_indexer.cc \
-  launch/random_indexing.cc \
-  launch/round_robin_indexing.cc \
-  launch/node_id_indexing.cc \
-  launch/launcher.cc \
-  launch/launch_info.cc 
+  launch/task_mapper.cc \
+  launch/block_task_mapper.cc \
+  launch/coordinate_task_mapper.cc \
+  launch/dumpi_task_mapper.cc \
+  launch/hostname_task_mapper.cc \
+  launch/random_task_mapper.cc \
+  launch/round_robin_task_mapper.cc \
+  launch/node_id_task_mapper.cc \
+  launch/job_launcher.cc \
+  launch/launcher.cc 
 
 
 library_includedir=$(includedir)/sstmac/software
@@ -81,8 +78,6 @@ nobase_library_include_HEADERS = \
   ami/ami.h \
   api/api.h \
   api/api_fwd.h \
-  process/app_manager.h \
-  process/app_manager_fwd.h \
   process/pmi.h \
   process/simple_compute_scheduler.h \
   process/cpuset_compute_scheduler.h \
@@ -95,7 +90,6 @@ nobase_library_include_HEADERS = \
   process/ftq_fwd.h \
   process/app.h \
   process/app_fwd.h \
-  process/user_app.h \
   process/api.h \
   process/app_id.h \
   process/key.h \
@@ -117,8 +111,6 @@ nobase_library_include_HEADERS = \
   process/global_ptr_array.h \
   process/global_struct.h \
   process/process_context.h \
-  process/user_app_cxx.h \
-  process/user_app_c.h \
   threading/context_util.h \
   threading/stack_alloc_chunk.h \
   threading/stack_alloc.h \
@@ -144,7 +136,9 @@ nobase_library_include_HEADERS = \
   libraries/unblock_event.h \
   libraries/service.h \
   libraries/service_fwd.h \
-  launch/allocation_strategy.h \
+  launch/app_launch.h \
+  launch/app_launch_fwd.h \
+  launch/node_allocator.h \
   launch/cart_allocation.h  \
   launch/coordinate_allocation.h \
   launch/node_id_allocation.h \
@@ -152,21 +146,23 @@ nobase_library_include_HEADERS = \
   launch/hostname_allocation.h \
   launch/dumpi_allocation.h \
   launch/first_available_allocation.h \
-  launch/index_strategy.h \
-  launch/block_indexing.h \
-  launch/coordinate_indexing.h \
-  launch/dumpi_indexer.h \
-  launch/hostname_indexer.h \
-  launch/random_indexing.h \
-  launch/node_id_indexing.h \
-  launch/round_robin_indexing.h  \
+  launch/task_mapper.h \
+  launch/block_task_mapper.h \
+  launch/coordinate_task_mapper.h \
+  launch/dumpi_task_mapper.h \
+  launch/hostname_task_mapper.h \
+  launch/random_task_mapper.h \
+  launch/node_id_task_mapper.h \
+  launch/round_robin_task_mapper.h  \
+  launch/node_set.h \
+  launch/job_launcher.h \
+  launch/job_launcher_fwd.h \
   launch/launcher.h \
   launch/launcher_fwd.h \
   launch/launch_handler.h \
-  launch/launch_info.h  \
-  launch/launch_info_fwd.h  \
-  launch/launch_message.h  \
-  launch/launch_message_fwd.h  \
+  launch/job_launch_event.h \
+  launch/launch_event.h  \
+  launch/launch_event_fwd.h  \
   launch/machine_descriptor.h 
 
 if HAVE_UCONTEXT

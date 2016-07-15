@@ -7,8 +7,8 @@ The (k,n) generalized hypercube is geometrically an N-dimensional torus with eac
 Here we show a (4,2) generalized hypercube (Figure \ref{fig:topologies:hypercubeConnected}).  This would be specified in SST as:
 
 \begin{ViFile}
-topology_name = hypercube
-topology_geometry = 4 4 
+topology.name = hypercube
+topology.geometry = 4 4 
 \end{ViFile}
 indicating size 4 in two dimensions. 
 
@@ -17,7 +17,7 @@ Any switches in the same row or same column can send packets with only a single 
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.5\textwidth]{figures/tikz/hypercube/hypercube_connected.pdf}
+\includegraphics[width=0.5\textwidth]{figures/tikz/hypercube/hypercube_connected.png}
 \caption{Hypercube with links and connections within a row/column}
 \label{fig:topologies:hypercubeConnected}
 \end{figure}
@@ -28,8 +28,8 @@ Whereas a torus has a few fat links connecting switches, a hypercube has many th
 A hypercube can have more dimensions and be asymmetric, e.g.
 
 \begin{ViFile}
-topology_name = hypercube
-topology_geometry = 4 5 6
+topology.name = hypercube
+topology.geometry = 4 5 6
 \end{ViFile}
 
 where now we have full connections within horizontal rows, horizontal columns, and vertical columns.
@@ -39,10 +39,10 @@ Here each switch has radix 12 (3 connections in X, 4 connections in Y, 5 connect
 A hypercube has the same coordinate system as a torus. For example, to create a very specific, irregular allocation on a hyerpcube:
 
 \begin{ViFile}
-launch_app1_cmd = aprun -n 5
-launch_indexing = coordinate
-launch_allocation = coordinate
-launch_coordinate_file = coords.txt
+app1.launch_cmd = aprun -n 5
+app1.launch_indexing = coordinate
+app1.launch_allocation = coordinate
+app1.launch_coordinate_file = coords.txt
 \end{ViFile}
 
 and then a coordinate file named \inlineshell{coords.txt}
@@ -59,7 +59,7 @@ Each line then defines where MPI ranks 0-4 will be placed
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.5\textwidth]{figures/tikz/hypercube/hypercube_allocation.pdf}
+\includegraphics[width=0.5\textwidth]{figures/tikz/hypercube/hypercube_allocation.png}
 \caption{Hypercube allocation for given set of coordinates}
 \label{fig:topologies:hypercubeAllocation}
 \end{figure}
@@ -71,7 +71,7 @@ While dimension order routing would rigorously go X then Y, you can still route 
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.5\textwidth]{figures/tikz/hypercube/hypercube_path.pdf}
+\includegraphics[width=0.5\textwidth]{figures/tikz/hypercube/hypercube_path.png}
 \caption{Minimal routing within a hypercube showing path diversity. Packet travels from blue to red, passing through green intermediate switches.}
 \label{fig:topologies:hypercubePath}
 \end{figure}
@@ -83,7 +83,7 @@ Although it increases the hop count and therefore the point-to-point latency, it
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.5\textwidth]{figures/tikz/hypercube/hypercube_valiant.pdf}
+\includegraphics[width=0.5\textwidth]{figures/tikz/hypercube/hypercube_valiant.png}
 \caption{Valiant routing within a hypercube.  Packet travels from blue to red via a random intermediate destination shown in gray. Additional intermediate switches are shown in green.}
 \label{fig:topologies:hypercubeValiant}
 \end{figure}

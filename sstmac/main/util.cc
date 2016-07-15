@@ -1,7 +1,7 @@
 #include <sstmac/util.h>
+#include <sstmac/skeleton.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/app.h>
-#include <sstmac/software/process/user_app.h>
 
 extern "C" double
 sstmac_now(){
@@ -14,25 +14,17 @@ get_params(){
 }
 
 int
-user_skeleton_main_init_fxn(main_fxn fxn)
+user_skeleton_main_init_fxn(const char* name, main_fxn fxn)
 {
-  sstmac::sw::user_skeleton_main = fxn;
+  sstmac::sw::user_app_cxx_full_main::register_main_fxn(name, fxn);
   return 42;
 }
 
 static empty_main_fxn empty_skeleton_main;
 
 int
-user_skeleton_main_empty_wrapper(int argc, char** argv)
+user_skeleton_main_init_fxn(const char* name, empty_main_fxn fxn)
 {
-  (*empty_skeleton_main)();
-  return 0;
-}
-
-int
-user_skeleton_main_init_fxn(empty_main_fxn fxn)
-{
-  sstmac::sw::user_skeleton_main = &user_skeleton_main_empty_wrapper;
-  empty_skeleton_main = fxn;
+  sstmac::sw::user_app_cxx_empty_main::register_main_fxn(name, fxn);
   return 42;
 }

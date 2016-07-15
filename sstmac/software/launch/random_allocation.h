@@ -12,12 +12,12 @@
 #ifndef random_alloCATION_H
 #define random_alloCATION_H
 
-#include <sstmac/software/launch/allocation_strategy.h>
+#include <sstmac/software/launch/node_allocator.h>
 
 namespace sstmac {
 namespace sw {
 
-class random_allocation : public allocation_strategy
+class random_allocation : public node_allocator
 {
  public:
   void
@@ -27,7 +27,10 @@ class random_allocation : public allocation_strategy
   ~random_allocation() throw ();
 
   void
-  allocate(int nnode_requested, node_set& allocation);
+  allocate(
+    int nnode_requested,
+    const ordered_node_set& available,
+    ordered_node_set& allocation) const;
 
  protected:
   RNG::UniformInteger* rng_;

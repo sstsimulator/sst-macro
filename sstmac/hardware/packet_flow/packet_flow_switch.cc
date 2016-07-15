@@ -52,58 +52,33 @@ vec_set_ev_parent(std::vector<T*>& themap, event_scheduler* m)
   }
 }
 
-packet_flow_params::~packet_flow_params()
-{
-  delete link_arbitrator_template;
-}
-
-
 void
 packet_flow_abstract_switch::init_factory_params(sprockit::sim_parameters *params)
 {
   network_switch::init_factory_params(params);
-  params_ = new packet_flow_params;
-  params_->link_bw =
-    params->get_bandwidth_param("link_bandwidth");
-  params_->hop_lat =
-    params->get_time_param("hop_latency");
-  params_->xbar_output_buffer_num_bytes
-    = params->get_byte_length_param("output_buffer_size");
-  params_->crossbar_bw =
-    params->get_bandwidth_param("crossbar_bandwidth");
-  params_->xbar_input_buffer_num_bytes
-    = params->get_byte_length_param("input_buffer_size");
+  packet_size_ = params->get_optional_byte_length_param("mtu", 4096);
+  link_bw = params->get_bandwidth_param("link_bandwidth");
+  hop_lat = params->get_time_param("hop_latency");
+  xbar_output_buffer_num_bytes = params->get_byte_length_param("output_buffer_size");
+  xbar_bw = params->get_bandwidth_param("crossbar_bandwidth");
+  xbar_input_buffer_num_bytes  = params->get_byte_length_param("input_buffer_size");
 
   if (params->has_param("ejection_bandwidth")){
-    params_->ej_bw =
-       params->get_bandwidth_param("ejection_bandwidth");
+    ej_bw = params->get_bandwidth_param("ejection_bandwidth");
   } else {
-    params_->ej_bw =
-       params->get_bandwidth_param("injection_bandwidth");
+    ej_bw = params->get_bandwidth_param("injection_bandwidth");
   }
 
-  params_->link_arbitrator_template
+  link_arbitrator_template
     = packet_flow_bandwidth_arbitrator_factory::get_optional_param(
         "arbitrator", "cut_through", params);
 
-  /**
-    sstkeyword {
-      docstring=Enables output queue depth reporting.ENDL
-      If set to true, warnings will be provided each time an output queue increases by a given number.
-      This can only be enabled if sanity check is enabled by configure.;
-    }
-  */
-  params_->queue_depth_reporting =
-      params->get_optional_bool_param("sanity_check_queue_depth_reporting",false);
+  sprockit::sim_parameters* xbar_params = params->get_optional_namespace("xbar");
 
-  /**
-    sstkeyword {
-      docstring=Sets the count delta for output queue depth reporting.ENDL
-      The default is 100.;
-    }
-  */
-  params_->queue_depth_delta =
-      params->get_optional_int_param("sanity_check_queue_depth_delta", 100);
+  xbar_stats_ = packet_sent_stats_factory::get_optional_param("stats", "null", xbar_params);
+
+  sprockit::sim_parameters* buf_params = params->get_optional_namespace("output_buffer");
+  buf_stats_ = packet_sent_stats_factory::get_optional_param("stats", "null", buf_params);
 }
 
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -111,9 +86,6 @@ packet_flow_switch::packet_flow_switch(
   SST::ComponentId_t id,
   SST::Params& params
 ) : packet_flow_abstract_switch(id, params),
-  congestion_spyplot_(0),
-  bytes_sent_(0),
-  byte_hops_(0),
   xbar_(0)
 {
   init_factory_params(SSTIntegratedComponent::params_);
@@ -121,10 +93,7 @@ packet_flow_switch::packet_flow_switch(
 }
 #else
 packet_flow_switch::packet_flow_switch() :
- xbar_(0),
- congestion_spyplot_(0),
- bytes_sent_(0),
- byte_hops_(0)
+ xbar_(0)
 {
 }
 #endif
@@ -132,68 +101,31 @@ packet_flow_switch::packet_flow_switch() :
 packet_flow_switch::~packet_flow_switch()
 {
   if (xbar_) delete xbar_;
-  if (bytes_sent_) delete bytes_sent_;
-  if (byte_hops_) delete byte_hops_;
-  if (congestion_spyplot_) delete congestion_spyplot_;
  
   int nbuffers = out_buffers_.size();
   for (int i=0; i < nbuffers; ++i){
     packet_flow_sender* buf = out_buffers_[i];
     if (buf) delete buf;
   }
-
-  if (params_) delete params_;
 }
 
 
 void
 packet_flow_switch::init_factory_params(sprockit::sim_parameters *params)
 {
+  params_ = params;
   packet_flow_abstract_switch::init_factory_params(params);
-
-  acc_delay_ = params->get_optional_bool_param("accumulate_congestion_delay",false);
-
-  packet_size_ = params->get_optional_byte_length_param("mtu", 4096);
-
-  if (params->has_namespace("congestion_matrix")){
-    sprockit::sim_parameters* congestion_params = params->get_namespace("congestion_matrix");
-    congestion_spyplot_ = test_cast(stat_spyplot, stat_collector_factory::get_optional_param("type", "spyplot_png", congestion_params));
-    if (!congestion_spyplot_){
-      spkt_throw_printf(sprockit::value_error,
-        "packet flow congestion stats must be spyplot or spyplot_png, %s given",
-        congestion_params->get_param("type").c_str());
-    }
-  }
-
-  if (params->has_namespace("bytes_sent")){
-    sprockit::sim_parameters* byte_params = params->get_namespace("bytes_sent");
-    bytes_sent_ = test_cast(stat_bytes_sent, stat_collector_factory::get_optional_param("type", "bytes_sent", byte_params));
-    if (!bytes_sent_){
-      spkt_throw_printf(sprockit::value_error,
-        "packet flow bytes sent stats must be bytes_sent, %s given",
-        byte_params->get_param("type").c_str());
-    }
-    bytes_sent_->set_id(my_addr_);
-  }
-
-  if (params->has_namespace("byte_hops")) {
-    sprockit::sim_parameters* traffic_params = params->get_namespace("byte_hops");
-    byte_hops_ = test_cast(stat_global_int, stat_collector_factory::get_optional_param("type", "global_int", traffic_params));
-    byte_hops_->set_label("Byte Hops");
-  }
 }
 
 void
 packet_flow_switch::set_topology(topology *top)
 {
-  if (bytes_sent_) bytes_sent_->set_topology(top);
   network_switch::set_topology(top);
 }
 
 void
 packet_flow_switch::initialize()
 {
-  xbar_->set_accumulate_delay(acc_delay_);
   int nbuffers = out_buffers_.size();
   int buffer_inport = 0;
   for (int i=0; i < nbuffers; ++i){
@@ -204,7 +136,6 @@ packet_flow_switch::initialize()
       xbar_->init_credits(outport, buf->num_initial_credits());
       buf->set_input(buffer_inport, outport, xbar_);
       buf->set_event_location(my_addr_);
-      buf->set_accumulate_delay(acc_delay_);
     }
   }
 }
@@ -213,22 +144,23 @@ packet_flow_crossbar*
 packet_flow_switch::crossbar(config* cfg)
 {
   if (!xbar_) {
-    double xbar_bw = params_->crossbar_bw;
+    double bw = xbar_bw;
     if (cfg->ty == WeightedConnection){
-      xbar_bw *= cfg->xbar_weight;
+      bw *= cfg->xbar_weight;
     }
     debug_printf(sprockit::dbg::packet_flow | sprockit::dbg::packet_flow_config,
       "Switch %d: creating crossbar with bandwidth %12.8e",
       int(my_addr_), xbar_bw);
     xbar_ = new packet_flow_crossbar(
               timestamp(0), //assume zero-time send
-              params_->hop_lat, //delayed credits
-              params_->crossbar_bw,
+              hop_lat, //delayed credits
+              bw,
               router_->max_num_vc(),
-              params_->xbar_input_buffer_num_bytes,
-              params_->link_arbitrator_template->clone(-1/*fake bw*/));
+              xbar_input_buffer_num_bytes,
+              link_arbitrator_template->clone(-1/*fake bw*/));
     xbar_->configure_basic_ports(topol()->max_num_ports());
     xbar_->set_event_location(my_addr_);
+    xbar_->set_stat_collector(xbar_stats_);
   }
   return xbar_;
 }
@@ -244,10 +176,10 @@ packet_flow_switch::output_buffer(int port, config* cfg)
 {
   if (!out_buffers_[port]){
     bool inj_port = top_->is_injection_port(port);
-    double total_link_bw = inj_port ? params_->ej_bw : params_->link_bw;
-    int dst_buffer_size = params_->xbar_input_buffer_num_bytes;
-    int src_buffer_size = params_->xbar_output_buffer_num_bytes;
-    timestamp lat = params_->hop_lat;
+    double total_link_bw = inj_port ? ej_bw : link_bw;
+    int dst_buffer_size = xbar_input_buffer_num_bytes;
+    int src_buffer_size = xbar_output_buffer_num_bytes;
+    timestamp lat = hop_lat;
     switch(cfg->ty){
       case BasicConnection:
         break;
@@ -278,18 +210,17 @@ packet_flow_switch::output_buffer(int port, config* cfg)
 
     packet_flow_network_buffer* out_buffer
       = new packet_flow_network_buffer(
-                  params_->hop_lat,
+                  hop_lat,
                   timestamp(0), //assume credit latency to xbar is free
                   src_buffer_size,
                   router_->max_num_vc(),
                   packet_size_,
-                  params_->link_arbitrator_template->clone(total_link_bw));
+                  link_arbitrator_template->clone(total_link_bw));
 
+    out_buffer->set_stat_collector(buf_stats_);
     out_buffer->set_event_location(my_addr_);
     int buffer_outport = 0;
     out_buffer->init_credits(buffer_outport, dst_buffer_size);
-    out_buffer->set_sanity_params(params_->queue_depth_reporting,
-                                params_->queue_depth_delta);
     out_buffers_[port] = out_buffer;
   }
   return out_buffers_[port];
@@ -378,26 +309,10 @@ packet_flow_switch::set_event_manager(event_manager* m)
     spkt_throw(sprockit::value_error,
        "crossbar uninitialized on switch");
   }
-#if !SSTMAC_INTEGRATED_SST_CORE
-  if (congestion_spyplot_){
-    xbar_->set_congestion_spyplot(congestion_spyplot_);
-    for (int i=0; i < out_buffers_.size(); ++i){
-      packet_flow_buffer* buf = test_cast(packet_flow_buffer, out_buffers_[i]);
-      if (buf) buf->set_congestion_spyplot(congestion_spyplot_);
-    }
-    m->register_stat(congestion_spyplot_);
-  }
 
-  if (bytes_sent_){
-    xbar_->set_bytes_sent_collector(bytes_sent_);
-    m->register_stat(bytes_sent_);
-  }
+  xbar_stats_->set_event_manager(m);
+  buf_stats_->set_event_manager(m);
 
-  if (byte_hops_) {
-    xbar_->set_byte_hops_collector(byte_hops_);
-    m->register_stat(byte_hops_);
-  }
-#endif
   vec_set_ev_parent(out_buffers_, this);
   xbar_->set_event_parent(this);
 }

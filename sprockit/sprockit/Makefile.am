@@ -15,9 +15,12 @@ include $(top_srcdir)/Makefile.common
 
 SUBDIRS = 
 
+noinst_LTLIBRARIES = libspkt_temp.la
 lib_LTLIBRARIES = libsprockit.la
+libsprockit_la_LIBADD = libspkt_temp.la
+EXTRA_DIST = libsprockit.c
 
-libsprockit_la_SOURCES = \
+SOURCES = \
   sim_parameters.cc \
   malloc.cc \
   debug.cc \
@@ -28,9 +31,10 @@ libsprockit_la_SOURCES = \
   spkt_string.cc \
   units.cc \
   driver_util.cc \
-  param_expander.cc \
   test/test.cc \
   keyword_registration.cc
+
+libspkt_temp_la_SOURCES = $(SOURCES)
 
 library_includedir=$(includedir)/sprockit
 
@@ -61,7 +65,6 @@ nobase_library_include_HEADERS = \
   util.h \
   units.h \
   factories/factory.h \
-  param_expander.h \
   unordered.h \
   test/assert.h \
   test/test.h \
@@ -72,12 +75,12 @@ nobase_library_include_HEADERS = \
   keyword_registration.h
 
 if HAVE_REGEXP
-libsprockit_la_SOURCES += regexp.cc
+libspkt_temp_la_SOURCES += regexp.cc
 nobase_library_include_HEADERS += regexp.h
 endif
 
 if !INTEGRATED_SST_CORE
-libsprockit_la_SOURCES += \
+libspkt_temp_la_SOURCES += \
   serialize_serializable.cc \
   serializer.cc \
   serializable.cc 

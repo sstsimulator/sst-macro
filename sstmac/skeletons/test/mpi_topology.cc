@@ -3,17 +3,15 @@
 #include <sprockit/util.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sstmac/libraries/mpi/mpi_api.h>
-#include <sstmac/libraries/mpi/sstmac_mpi.h>
+#include <sstmac/replacements/mpi.h>
 #include <sstmac/hardware/topology/topology.h>
+#include <sstmac/skeleton.h>
+
+#define sstmac_app_name "mpi_topology"
 
 using namespace sstmac;
+using namespace sstmac::sw;
 using namespace sstmac::hw;
-
-namespace sstmac {
-namespace sw {
-
-sstmac_register_app(mpi_topology);
 
 void sleep(int seconds)
 {
@@ -26,7 +24,7 @@ void do_sendrecv(traffic_pattern::type_t ty)
 {
   int tag = 101;
   std::vector<node_id> node_partners;
-  mpi_api* mpi = sstmac_mpi();
+  sumi::mpi_api* mpi = current_mpi();
   topology::global()->send_partners(
     ty,
     mpi->my_addr(),
@@ -94,8 +92,7 @@ void do_sendrecv(traffic_pattern::type_t ty)
   }
 }
 
-int
-mpi_topology_main(int argc, char** argv)
+int USER_MAIN(int argc, char** argv)
 {
   MPI_Init(&argc, &argv);
   do_sendrecv(traffic_pattern::nearest_neighbor);
@@ -105,6 +102,4 @@ mpi_topology_main(int argc, char** argv)
   return 0;
 }
 
-}
-}
 

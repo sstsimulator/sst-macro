@@ -28,7 +28,7 @@ CONFIGTESTS = \
 #  test_configs_hopper_amm4 
 
 test_configs_exa%.$(CHKSUF): $(SSTMACEXEC)
-	$(PYRUNTEST) 5 $(top_srcdir) $@ 't > 4 and t < 4.2' \
+	$(PYRUNTEST) 5 $(top_srcdir) $@ 't > 1 and t < 1.2' \
     $(SSTMACEXEC) -f mpi_test_all.ini -i default.ini -i exa$*.ini -i exa_mini_top.ini \
     --no-wall-time -p mpi_test_print_all=false 
 
@@ -43,7 +43,7 @@ test_configs_hopper_amm4.$(CHKSUF): $(SSTMACEXEC)
     --no-wall-time -p mpi_test_print_all=false 
 
 test_configs_%.$(CHKSUF): $(SSTMACEXEC)
-	$(PYRUNTEST) 5 $(top_srcdir) $@ 't > 4 and t < 4.2' \
+	$(PYRUNTEST) 5 $(top_srcdir) $@ 't > 1 and t < 1.2' \
     $(SSTMACEXEC) -f mpi_test_all.ini -i default.ini -i $*.ini \
     --no-wall-time -p mpi_test_print_all=false 
 

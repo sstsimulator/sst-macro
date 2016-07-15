@@ -229,22 +229,22 @@ event_manager::finish_stats()
         name.c_str());
     }
 
-    if (!entry.main){
+    if (!entry.main_collector){
       if (entry.collectors.size() == 1){
-        entry.main = entry.collectors.front();
+        entry.main_collector = entry.collectors.front();
         entry.collectors.clear();
       } else {
         stat_collector* first = entry.collectors.front();
-        entry.main = first->clone();
+        entry.main_collector = first->clone();
       }
     }
 
-    finish_stats(entry.main, name, now());
+    finish_stats(entry.main_collector, name, now());
 
     if (entry.reduce_all){
-      entry.main->global_reduce(rt_);
+      entry.main_collector->global_reduce(rt_);
       if (rt_->me() == 0){
-        entry.main->dump_global_data();
+        entry.main_collector->dump_global_data();
       }
     }
   }

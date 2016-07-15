@@ -47,6 +47,12 @@ class lib_compute_memmove :
   consume_params(sprockit::sim_parameters* params);
 
   void
+  incoming_event(event *ev){
+    //forward to parent, which throws
+    library::incoming_event(ev);
+  }
+
+  void
   read(long bytes);
 
 
@@ -64,12 +70,6 @@ class lib_compute_memmove :
 
   void
   do_access(long bytes);
-
-  void
-  compute(message* msg);
-
-  void
-  finish(message* msg);
 
 
  protected:

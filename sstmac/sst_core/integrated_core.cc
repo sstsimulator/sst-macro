@@ -136,7 +136,6 @@ ElementLibraryInfo macro_eli = {
     NULL,                              // Partitioners
     NULL,                              // Generators
     gen_sst_macro_integrated_pymodule  // Python Module Generator
-
 };
 
 

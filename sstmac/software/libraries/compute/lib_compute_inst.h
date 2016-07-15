@@ -55,6 +55,11 @@ class lib_compute_inst :
   virtual void
   consume_params(sprockit::sim_parameters* params);
 
+  void
+  incoming_event(event *ev){
+    library::incoming_event(ev);
+  }
+
  protected:
   double loop_overhead_;
 

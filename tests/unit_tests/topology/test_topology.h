@@ -1,11 +1,12 @@
-#include <sstmac/replacements/mpi.h>
 #include <sstmac/util.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/network/network_message.h>
-#include <sstmac/hardware/router/routable_message.h>
+#include <sstmac/hardware/router/routable.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <tests/unit_tests/util/util.h>
 #include <sprockit/test/test.h>
+#include <sprockit/debug.h>
+#include <sstmac/common/node_address.h>
 
 void test_torus_traffic(UnitTest& unit);
 void test_torus(UnitTest& unit);

@@ -17,15 +17,15 @@ using namespace sprockit::dbg;
 */
 
 RegisterDebugSlot(sumi_collective_init,
- "print all debug output for collectives performed within the sumi framework");
+ "print all debug output for collectives performed within the sumi framework")
 RegisterDebugSlot(sumi_collective,
- "print all debug output for collectives performed within the sumi framework");
+ "print all debug output for collectives performed within the sumi framework")
 RegisterDebugSlot(sumi_collective_sendrecv,
- "print all debug output for individual send/recv operations done by a sumi collective");
+ "print all debug output for individual send/recv operations done by a sumi collective")
 RegisterDebugSlot(sumi_collective_round,
- "print all debug output for configuring/running collectives like allreduce based on round-by-round communication");
+ "print all debug output for configuring/running collectives like allreduce based on round-by-round communication")
 RegisterDebugSlot(sumi_vote,
- "print all debug output for fault-tolerant voting collectives within the sumi framework");
+ "print all debug output for fault-tolerant voting collectives within the sumi framework")
 
 ImplementFactory(sumi::dag_collective)
 
@@ -76,8 +76,10 @@ collective::init(type_t ty, transport *api, domain *dom, int tag, int context)
   dense_me_ = rank_map.dense_rank(dom->my_domain_rank());
 
   debug_printf(sumi_collective | sumi_vote,
-    "Rank %d=%d built collective of size %d in role=%d, tag=%d, context=%d with num_live=%d, failed=%s ",
-    my_api_->rank(), dom->my_domain_rank(), dom->nproc(), dense_me_, tag, context, dense_nproc_, failed.to_string().c_str());
+    "Rank %d=%d built collective of size %d in role=%d,"
+    "tag=%d, context=%d with num_live=%d, failed=%s ",
+    my_api_->rank(), dom->my_domain_rank(), dom->nproc(), dense_me_,
+    tag, context, dense_nproc_, failed.to_string().c_str());
 }
 
 collective::collective(type_t ty, transport* api, domain* dom, int tag, int context)

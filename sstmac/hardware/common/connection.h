@@ -21,11 +21,13 @@ class connectable
   static const int any_port = -1;
 
   typedef enum {
-    RedundantConnection=0,
-    WeightedConnection=1,
-    FixedBandwidthConnection=2,
-    FixedConnection=3,
-    BasicConnection=4
+    RedundantConnection=0, /*!< The connection has extra redundant links */
+    WeightedConnection=1, /*!< The connection is weighted. Weighting applies
+                               to bandwidths and buffer sizes */
+    FixedBandwidthConnection=2, /*!< The connection has a fixed bandwidth */
+    FixedConnection=3, /*!< The connection has a fixex bandwidth and latency */
+    BasicConnection=4 /*!< The connection has no special properties
+                           Use only the defauly properties */
   } config_type_t;
 
   struct config {
@@ -54,6 +56,14 @@ class connectable
     }
   }
 
+  /**
+   * @brief connect
+   * @param src_outport The outgoing port at the source
+   * @param dst_inport The incoming port at the destination
+   * @param ty    Whether we are configuring the input or output direction
+   * @param mod   The device currently being connected
+   * @param cfg   A struct with various special configuration options
+   */
   virtual void
   connect(
     int src_outport,

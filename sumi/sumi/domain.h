@@ -24,6 +24,9 @@ class domain {
   global_to_domain_rank(int global_rank) const = 0;
 
  protected:
+  domain(int domain_rank) : my_domain_rank_(domain_rank){}
+
+ private:
   int my_domain_rank_;
 
 };
@@ -49,10 +52,10 @@ class shifted_domain :
 {
  public:
   shifted_domain(domain* dom, int left_shift) :
+    domain((dom->my_domain_rank() - left_shift + dom->nproc()) % dom->nproc()),
     dom_(dom),
     shift_(left_shift),
     nproc_(dom->nproc()) {
-    my_domain_rank_ = (dom->my_domain_rank() - left_shift + nproc_) % nproc_;
   }
 
   int
@@ -88,9 +91,9 @@ class index_domain :
    * @param proc_list
    */
   index_domain(int domain_rank, int nproc, int* proc_list) :
-    proc_list_(proc_list), nproc_(nproc)
+    proc_list_(proc_list), nproc_(nproc),
+    domain(domain_rank)
   {
-    my_domain_rank_ = domain_rank;
   }
 
   int nproc() const {
@@ -120,9 +123,9 @@ class rotate_domain :
    * @param me
    */
   rotate_domain(int my_global_rank, int nproc, int shift) :
-    nproc_(nproc), shift_(shift)
+    nproc_(nproc), shift_(shift),
+    domain(global_to_domain_rank(my_global_rank))
   {
-    my_domain_rank_ = global_to_domain_rank(my_global_rank);
   }
 
   int nproc() const {
@@ -148,9 +151,9 @@ class subrange_domain :
 {
  public:
   subrange_domain(int my_global_rank, int start, int nproc) :
-    nproc_(nproc), start_(start)
+    nproc_(nproc), start_(start),
+    domain(global_to_domain_rank(my_global_rank))
   {
-    my_domain_rank_ = global_to_domain_rank(my_global_rank);
   }
 
   int nproc() const {
