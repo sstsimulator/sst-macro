@@ -5,16 +5,6 @@
 #include <type_traits>
 #include <cstddef>
 
-template <class T>
-void
-del(const T* t){
-  if (t) delete[] t;
-}
-
-//inline void release(void* ptr){
-//  if (ptr) free(ptr);
-//}
-
 template <class T> class VariablePtr;
 
 template <class T>
@@ -47,6 +37,31 @@ class Variable
 
   constexpr operator T() const {
     return 0;
+  }
+
+  Variable operator-() const {
+    nops++;
+    return *this;
+  }
+
+  Variable& operator++(){
+    nops++;
+    return *this;
+  }
+
+  Variable operator++(int u){
+    nops++;
+    return *this;
+  }
+
+  Variable& operator--(){
+    nops++;
+    return *this;
+  }
+
+  Variable operator--(int u){
+    nops++;
+    return *this;
   }
 
   static size_t nops;
@@ -105,12 +120,35 @@ OPERATOR(+,const,)
 OPERATOR(-,const,)
 OPERATOR(*,const,)
 OPERATOR(/,const,)
+OPERATOR(&,const,)
+OPERATOR(|,const,)
 OPERATOR(+=,,&)
 OPERATOR(*=,,&)
 OPERATOR(-=,,&)
 OPERATOR(/=,,&)
 OPERATOR(&=,,&)
 OPERATOR(|=,,&)
+
+template <class T>
+Variable<T>
+sqrt(const Variable<T> &t){
+  Variable<T>::nops++;
+  return t;
+}
+
+template <class T>
+Variable<T>
+cbrt(const Variable<T> &t){
+  Variable<T>::nops++;
+  return t;
+}
+
+template <class T>
+Variable<T>
+fabs(const Variable<T> &t){
+  Variable<T>::nops++;
+  return t;
+}
 
 
 template <class T>
@@ -132,6 +170,14 @@ class VariablePtr
   }
 
   const Variable<T>& operator[](int idx) const {
+    return nothing_;
+  }
+
+  Variable<T>& operator[](Variable<int> idx){
+    return nothing_;
+  }
+
+  const Variable<T>& operator[](Variable<int> idx) const {
     return nothing_;
   }
 
