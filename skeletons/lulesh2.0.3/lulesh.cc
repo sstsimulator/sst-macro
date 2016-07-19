@@ -162,8 +162,8 @@ Additional BSD Notice
 
 #include "lulesh.h"
 
-#if defined(LULESH_SST_MODS) && defined(LULESH_SST_SIM)
 #define sstmac_app_name "lulesh2.0.3"
+#if defined(LULESH_SST_MODS) && defined(LULESH_SST_SIM)
 #include <type_traits>
 #endif
 
