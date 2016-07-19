@@ -11,5 +11,8 @@ the SST model.
 
 The macro LULESH_SST_SIM, when paired with LULESH_SST_MODS, can be
 enabled to replace the real Lulesh computation with an SST simulation
-that counts flops.
+that counts flops.  This mode does not support OpenMP.
+
+Skeletonization of the alternative data layout, lulesh_tuple.h, is
+incomplete.
 
