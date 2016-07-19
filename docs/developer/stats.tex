@@ -93,7 +93,7 @@ Internally in the event manager, all objects with the same file root are grouped
 Thus the \inlineshell{fileroot} parameter is critical for defining unique groups of stats object.
 This is important during simulation post-processing when the event manager wants to aggregate results from each individual node.
 
-\section{Dumping Data}
+\section{Dumping Data}\label{sec:dumping}
 The first set of virtual functions that every stats object must provide are
 
 \begin{CppCode}
@@ -116,7 +116,7 @@ The last method, \inlinecode{dump_global_data}, dumps aggregate data for all nod
 Here a unique filename based on the file root parameter is generated.
 For the default histogram, a data file and gnuplot script are created.
 
-\section{Reduction and Aggregation}
+\section{Reduction and Aggregation}\label{sec:reduceStats}
 Before the \inlinecode{dump_global_data} function can be called, an aggregation of results must be performed.
 Each stats object is therefore required to provide the functions
 
@@ -178,7 +178,7 @@ stat_histogram::global_reduce(parallel_runtime* rt)
 }
 \end{CppCode}
 
-\section{Storage Contraints}
+\section{Storage Contraints}\label{sec:storageStats}
 In some cases, storage constraints prevent each node from having its own copy of the data.
 This is particularly important for the fixed-time quanta charts which generate several MB of data even in the reduced, aggregated form.
 In this case it is acceptable to operate on global or static data.

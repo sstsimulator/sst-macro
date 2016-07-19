@@ -385,7 +385,6 @@ int allred( int argc, char **argv )
     }
 
     test_types_set2(sum, 1);
-    test_types_set2(prod, 1);
     test_types_set2(max, 1);
     test_types_set2(min, 1);
 
@@ -416,7 +415,6 @@ int allred( int argc, char **argv )
     test_types_set3(bxor, 3);
 
     test_types_set4(sum, 1);
-    test_types_set4(prod, 1);
 
     test_types_set5(lor, 1);
     test_types_set5(lor, 2);

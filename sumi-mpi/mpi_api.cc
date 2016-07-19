@@ -20,12 +20,11 @@
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
 
 #include <sumi-mpi/mpi_api.h>
-#include <sumi-mpi/mpi_api_persistent.h>
 #include <sumi-mpi/mpi_status.h>
 #include <sumi-mpi/mpi_request.h>
 
 #include <sstmac/hardware/node/node.h>
-#include <sstmac/hardware/topology/structured_topology.h>
+//#include <sstmac/hardware/topology/structured_topology.h>
 
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/software/process/operating_system.h>
@@ -36,7 +35,7 @@
 #include <sumi-mpi/mpi_comm/mpi_comm_factory.h>
 #include <sumi-mpi/mpi_types.h>
 
-#include <sstmac/software/launch/hostname_allocation.h>
+//#include <sstmac/software/launch/hostname_allocation.h>
 
 #include <sprockit/errors.h>
 #include <sprockit/statics.h>
@@ -82,7 +81,8 @@ sstmac_mpi()
 mpi_api::mpi_api() :
   status_(is_fresh),
   next_type_id_(0),
-  group_counter_(0),
+  next_op_id_(first_custom_op_id),
+  group_counter_(MPI_GROUP_WORLD+1),
   req_counter_(0),
   queue_(0),
   comm_factory_(0),
@@ -154,13 +154,6 @@ mpi_api::abort(MPI_Comm comm, int errcode)
 }
 
 int
-mpi_api::comm_size(MPI_Comm comm, int *size)
-{
-  *size = get_comm(comm)->size();
-  return MPI_SUCCESS;
-}
-
-int
 mpi_api::comm_rank(MPI_Comm comm, int *rank)
 {
   *rank = get_comm(comm)->rank();
@@ -181,13 +174,8 @@ mpi_api::do_init(int* argc, char*** argv)
     spkt_throw(sprockit::null_error, "mpiapi::init: os has not been initialized yet");
   }
 
-  app_manager* env = os_->env(id_.app_);
-  if (!env) {
-    spkt_throw(sprockit::null_error, "mpi_api::init: no environment found");
-  }
-
   comm_factory_ = new mpi_comm_factory(id_.app_, this);
-  comm_factory_->init(env, rank_);
+  comm_factory_->init(rank_, transport::nproc_);
 
   worldcomm_ = comm_factory_->world();
   selfcomm_ = comm_factory_->self();
@@ -200,11 +188,13 @@ mpi_api::do_init(int* argc, char*** argv)
   queue_->init_os(os_);
 
   sstmac::hw::node* mynode = os_->node();
+#if !SSTMAC_INTEGRATED_SST_CORE
   queue_->set_event_manager(mynode->event_mgr());
-
+#endif
 
   comm_map_[MPI_COMM_WORLD] = worldcomm_;
   comm_map_[MPI_COMM_SELF] = selfcomm_;
+  grp_map_[MPI_GROUP_WORLD] = worldcomm_->group();
 
   status_ = is_initialized;
 
@@ -292,15 +282,15 @@ mpi_api::type_str(MPI_Datatype mid)
   switch(ty->type())
   {
     case mpi_type::PRIM:
-      return ty->label;
+      return sprockit::printf("%s=%d", ty->label.c_str(), mid);
     case mpi_type::PAIR:
-      return "PAIR";
+      return sprockit::printf("PAIR=%d", mid);
     case mpi_type::VEC:
-      return "VEC";
+      return sprockit::printf("VEC=%d", mid);
     case mpi_type::IND:
-      return "IND";
+      return sprockit::printf("IND=%d", mid);
     case mpi_type::NONE:
-      return "NONE";
+      return sprockit::printf("NONE=%d", mid);
   }
 }
 
@@ -377,6 +367,10 @@ mpi_api::get_comm(MPI_Comm comm)
   spkt_unordered_map<MPI_Comm, mpi_comm*>::iterator it
     = comm_map_.find(comm);
   if (it == comm_map_.end()) {
+    if (comm == MPI_COMM_WORLD){
+      cerrn << "Could not find MPI_COMM_WORLD! "
+            << "Are you sure you called MPI_Init" << std::endl;
+    }
     spkt_throw_printf(sprockit::spkt_error,
         "could not find mpi communicator %d for rank %d",
         comm, int(rank_));
@@ -451,7 +445,7 @@ mpi_api::erase_comm_ptr(MPI_Comm comm)
 }
 
 void
-mpi_api::add_group_ptr(MPI_Group grp, mpi_group*ptr)
+mpi_api::add_group_ptr(MPI_Group grp, mpi_group* ptr)
 {
   grp_map_[grp] = ptr;
 }
@@ -462,6 +456,7 @@ mpi_api::add_group_ptr(mpi_group* ptr)
 {
   MPI_Group grp = group_counter_++;
   grp_map_[grp] = ptr;
+  ptr->set_id(grp);
   return grp;
 }
 

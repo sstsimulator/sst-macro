@@ -11,8 +11,6 @@
 
 ACLOCAL_AMFLAGS = -I acinclude
 
-EXTRA_DIST = bin/runtest
-
 SUBDIRS = 
 
 if ENABLE_GNI

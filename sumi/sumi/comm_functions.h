@@ -1,11 +1,12 @@
 #ifndef sumi_api_FUNCTIONS_H
 #define sumi_api_FUNCTIONS_H
 
+#include <functional>
+
 namespace sumi {
 
-typedef void (*reduce_fxn)(void*,const void*,int);
-
-typedef void (*vote_fxn)(int&,const int&);
+typedef std::function<void(void*,const void*,int)> reduce_fxn;
+typedef std::function<void(int&, const int&)> vote_fxn;
 
 template <typename data_t>
 struct Add {
@@ -17,12 +18,71 @@ struct Add {
 };
 
 template <typename data_t>
+struct Prod {
+  typedef data_t type;
+    static void
+    op(data_t& dst, const data_t& src){
+        dst *= src;
+    }
+};
+
+template <typename data_t>
 struct Min
 {
   typedef data_t type;
   static void
   op(data_t& dst, const data_t& src){
     dst = dst < src ? dst : src;
+  }
+};
+
+template <typename data_t>
+struct LXOr
+{
+  typedef data_t type;
+  static void
+  op(data_t& dst, const data_t& src){
+    dst = bool(dst) ^ bool(src);
+  }
+};
+
+template <typename data_t>
+struct BXOr
+{
+  typedef data_t type;
+  static void
+  op(data_t& dst, const data_t& src){
+    dst = dst ^ src;
+  }
+};
+
+template <typename data_t>
+struct BAnd
+{
+  typedef data_t type;
+  static void
+  op(data_t& dst, const data_t& src){
+    dst = dst & src;
+  }
+};
+
+template <typename data_t>
+struct BOr
+{
+  typedef data_t type;
+  static void
+  op(data_t& dst, const data_t& src){
+    dst = dst | src;
+  }
+};
+
+template <typename data_t>
+struct Or
+{
+  typedef data_t type;
+  static void
+  op(data_t& dst, const data_t& src){
+    dst = dst || src;
   }
 };
 

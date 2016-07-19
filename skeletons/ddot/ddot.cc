@@ -3,6 +3,8 @@
 #include <cstdio>
 #include <cstdlib>
 
+#define sstmac_app_name "ddot"
+
 int main(int argc, char** argv)
 {
   MPI_Init(&argc, &argv);

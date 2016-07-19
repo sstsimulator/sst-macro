@@ -86,20 +86,20 @@ def setupDeprecated():
 
   nodeParams = params["node"]
   launchParams = [
-    "launch_app1",
-    "launch_app1_size",
-    "launch_app1_cmd",
-    "launch_app1_start",
+    "name",
+    "size",
+    "launch_cmd",
+    "start",
     "launch_allocation",
     "launch_indexing",
   ]
 
-  appParams = {}
-  for param in launchParams:
-    if params.has_key(param):
-      appParams[param] = params[param]
-      del params[param]
-  nodeParams["app_manager"] = appParams
+  for i in range(10):
+    ns = "app%d" % i
+    if params.has_key(ns):
+      appParams = params[ns]
+      nodeParams[ns] = appParams
+      del params[ns]
 
   known_ns = "node","topology","nic","switch"
   for param in params:

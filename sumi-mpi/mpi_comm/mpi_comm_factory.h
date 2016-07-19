@@ -43,7 +43,7 @@ class mpi_comm_factory  {
   virtual ~mpi_comm_factory();
 
   /// Initialize the object.
-  void init(app_manager* env, int rank);
+  void init(int rank, int nproc);
 
   void finalize();
 

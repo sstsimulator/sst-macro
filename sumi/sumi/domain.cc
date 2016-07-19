@@ -5,9 +5,8 @@
 namespace sumi {
 
 global_domain::global_domain(transport *tport) :
-  transport_(tport)
+  transport_(tport), domain(tport->rank())
 {
-  my_domain_rank_ = tport->rank();
 }
 
 int

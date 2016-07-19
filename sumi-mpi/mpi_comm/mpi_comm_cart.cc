@@ -6,9 +6,10 @@ namespace sumi {
 mpi_comm_cart::mpi_comm_cart(
   MPI_Comm id,
   int rank, mpi_group* peers,
-  app_manager* env, app_id aid, int ndims,
+  app_id aid, int ndims,
   const int *dims, const int *periods, int reorder) :
-  mpi_comm(id, rank, peers, env, aid), ndims_(ndims), reorder_(reorder)
+  mpi_comm(id, rank, peers, aid),
+  ndims_(ndims), reorder_(reorder)
 {
 
   for (int i = 0; i < ndims; i++) {

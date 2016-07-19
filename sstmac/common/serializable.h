@@ -20,7 +20,7 @@ using SST::Core::Serialization::serializable_type;
 using SST::Core::Serialization::serialize;
 using SST::Core::Serialization::serializer;
 using SST::Core::Serialization::array;
-using SST::Core::Serialization::buffer;
+using SST::Core::Serialization::raw_ptr;
 }
 
 #define SER_NAMESPACE_OPEN \
@@ -44,7 +44,7 @@ using sprockit::serializable_type;
 using sprockit::serialize;
 using sprockit::serializer;
 using sprockit::array;
-using sprockit::buffer;
+using sprockit::raw_ptr;
 }
 
 #define SER_NAMESPACE_OPEN namespace sprockit {

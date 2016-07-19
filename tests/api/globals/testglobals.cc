@@ -9,6 +9,7 @@
  *  SST/macroscale directory.
  */
 #include <sstmac/util.h>
+#include <sstmac/skeleton.h>
 #include <sprockit/keyword_registration.h>
 
 using namespace sstmac;
@@ -44,6 +45,8 @@ const char* valid_keywords[] = {
 "testsuite_print",
 "testsuite_numtests" };
 sprockit::StaticKeywordRegister reg(3, valid_keywords);
+
+#define sstmac_app_name "apitest"
 
 int
 USER_MAIN(int argc, char *argv[])

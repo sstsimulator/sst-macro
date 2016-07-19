@@ -19,7 +19,7 @@
 
 namespace gtc
 {
-    SpktRegisterApp("gtc", gtc_main, "gyroknetic toroidal code");
+  SpktRegister("gtc", sstmac::sw::app, gtc_main, "gyroknetic toroidal code");
 
   using namespace sstmac;
   using namespace sstmac::sw;
@@ -238,6 +238,7 @@ namespace gtc
   void
   gtc_main::skeleton_main()
   {
+    mpi_ = get_api<sumi::mpi_api>();
     /* use global_parameters
      use particle_array
      use particle_tracking

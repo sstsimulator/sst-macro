@@ -2,9 +2,22 @@
 #include <sprockit/errors.h>
 #include <sprockit/util.h>
 #include <sprockit/statics.h>
+#include <sstmac/common/thread_lock.h>
 
 namespace sstmac {
 namespace sw {
+
+static thread_lock lock;
+
+void api_lock()
+{
+  lock.lock();
+}
+
+void api_unlock()
+{
+  lock.unlock();
+}
 
 int APIBase::id_counter = 0;
 spkt_unordered_map<std::string, int>* APIBase::name_to_id = 0;

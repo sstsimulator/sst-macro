@@ -12,12 +12,12 @@
 #ifndef FIRSTAVAILABLEALLOCATION_H
 #define FIRSTAVAILABLEALLOCATION_H
 
-#include <sstmac/software/launch/allocation_strategy.h>
+#include <sstmac/software/launch/node_allocator.h>
 
 namespace sstmac {
 namespace sw {
 
-class first_available_allocation : public allocation_strategy
+class first_available_allocation : public node_allocator
 {
 
  public:
@@ -25,7 +25,10 @@ class first_available_allocation : public allocation_strategy
   ~first_available_allocation() throw ();
 
   void
-  allocate(int nnode_requested, node_set& allocation);
+  allocate(
+    int nnode_requested,
+    const ordered_node_set& available,
+    ordered_node_set& allocation) const;
 
 };
 

@@ -19,9 +19,12 @@ mpi_api::do_wait(MPI_Request *request, MPI_Status *status)
 {
   MPI_Request req = *request;
 
-  if (*request == MPI_REQUEST_NULL){
+  if (req == MPI_REQUEST_NULL){
     return MPI_SUCCESS;
   }
+
+  mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, 
+    "   MPI_Wait_nonnull(%d)", req);
 
   mpi_request* reqPtr = get_request(req);
   if (!reqPtr->is_complete()){
@@ -32,13 +35,19 @@ mpi_api::do_wait(MPI_Request *request, MPI_Status *status)
     *status = reqPtr->status();
   }
 
-  delete reqPtr;
-  *request = MPI_REQUEST_NULL;
+
+  if (!reqPtr->is_persistent()){
+    req_map_.erase(req);
+    delete reqPtr;
+    *request = MPI_REQUEST_NULL;
+  }
+
   return MPI_SUCCESS;
 }
 
 int
-mpi_api::waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of_statuses[])
+mpi_api::waitall(int count, MPI_Request array_of_requests[],
+                 MPI_Status array_of_statuses[])
 {
   SSTMACBacktrace("MPI_Waitall");
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, 
@@ -69,12 +78,19 @@ mpi_api::waitany(int count, MPI_Request array_of_requests[], int *indx, MPI_Stat
         if (status != MPI_STATUS_IGNORE){
           *status = reqPtr->status();
         }
-        array_of_requests[i] = MPI_REQUEST_NULL;
-        delete reqPtr;
+        if (!reqPtr->is_persistent()){
+          array_of_requests[i] = MPI_REQUEST_NULL;
+          delete reqPtr;
+        }
         return MPI_SUCCESS;
       }
       reqPtrs[numNonnull++] = reqPtr;
     }
+  }
+
+  if (numNonnull == 0){
+    printf("all null\n");
+    return MPI_SUCCESS;
   }
 
   //none of them are already done
@@ -88,22 +104,28 @@ mpi_api::waitany(int count, MPI_Request array_of_requests[], int *indx, MPI_Stat
       mpi_request* reqPtr = reqPtrs[numNonnull++];
       if (reqPtr->is_complete()){
         *indx = i;
+        if (status != MPI_STATUS_IGNORE){
+          *status = reqPtr->status();
+        }
+        if (!reqPtr->is_persistent()){
+          array_of_requests[i] = MPI_REQUEST_NULL;
+          delete reqPtr;
+        }
+        return MPI_SUCCESS;
       }
-      if (status != MPI_STATUS_IGNORE){
-        *status = reqPtr->status();
-      }
-      array_of_requests[i] = MPI_REQUEST_NULL;
-      delete reqPtr;
-      return MPI_SUCCESS;
     }
   }
+
+  spkt_throw_printf(sprockit::value_error,
+                    "MPI_Waitany finished, but had no completed requests");
 
   //must have all been null
   return MPI_SUCCESS;
 }
 
 int
-mpi_api::waitsome(int incount, MPI_Request array_of_requests[], int *outcount, int array_of_indices[], MPI_Status array_of_statuses[])
+mpi_api::waitsome(int incount, MPI_Request array_of_requests[],
+                  int *outcount, int array_of_indices[], MPI_Status array_of_statuses[])
 {
   SSTMACBacktrace("MPI_Waitsome");
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request,
@@ -120,8 +142,10 @@ mpi_api::waitsome(int incount, MPI_Request array_of_requests[], int *outcount, i
         if (array_of_statuses != MPI_STATUS_IGNORE){
           array_of_statuses[i] = reqPtr->status();
         }
-        array_of_requests[i] = MPI_REQUEST_NULL;
-        delete reqPtr;
+        if (!reqPtr->is_persistent()){
+          array_of_requests[i] = MPI_REQUEST_NULL;
+          delete reqPtr;
+        }
       } else {
         reqPtrs[numIncomplete++] = reqPtr;
       }
@@ -129,12 +153,11 @@ mpi_api::waitsome(int incount, MPI_Request array_of_requests[], int *outcount, i
   }
 
   if (numComplete > 0){
+    *outcount = numComplete;
     return MPI_SUCCESS;
   }
 
   reqPtrs.resize(numIncomplete);
-
-  assert(numIncomplete + numComplete == incount);
 
   queue_->start_progress_loop(reqPtrs);
 
@@ -147,12 +170,15 @@ mpi_api::waitsome(int incount, MPI_Request array_of_requests[], int *outcount, i
         if (array_of_statuses != MPI_STATUS_IGNORE){
           array_of_statuses[i] = reqPtr->status();
         }
-        array_of_requests[i] = MPI_REQUEST_NULL;
-        delete reqPtr;
+        if (!reqPtr->is_persistent()){
+          array_of_requests[i] = MPI_REQUEST_NULL;
+          delete reqPtr;
+        }
       }
     }
   }
 
+  *outcount = numComplete;
   return MPI_SUCCESS;
 }
 

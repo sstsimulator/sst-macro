@@ -58,7 +58,7 @@ void
 hypercube::minimal_route_to_coords(
   const coordinates &src_coords,
   const coordinates &dest_coords,
-  routing_info::path& path) const
+  geometry_routable::path& path) const
 {
   for (int i=0; i < src_coords.size(); ++i) {
     if (src_coords[i] != dest_coords[i]) {
@@ -141,7 +141,7 @@ hypercube::productive_path(
   int dim,
   const coordinates &src,
   const coordinates &dst,
-  routing_info::path& path) const
+  geometry_routable::path& path) const
 {
   path.outport = dim_to_outport_[dim] + dst[dim];
   path.vc = 0;

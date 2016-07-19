@@ -54,6 +54,18 @@
 #define MPI_Scatter current_mpi()->scatter
 #define MPI_Scatterv current_mpi()->scatterv
 #define MPI_Alltoall current_mpi()->alltoall
+#define MPI_Iallreduce current_mpi()->iallreduce
+#define MPI_Ireduce current_mpi()->ireduce
+#define MPI_Ibarrier current_mpi()->ibarrier
+#define MPI_Ibcast current_mpi()->ibcast
+#define MPI_Iscan current_mpi()->iscan
+#define MPI_Igather current_mpi()->igather
+#define MPI_Igatherv current_mpi()->igatherv
+#define MPI_Iallgather current_mpi()->iallgather
+#define MPI_Iallgatherv current_mpi()->iallgatherv
+#define MPI_Iscatter current_mpi()->iscatter
+#define MPI_Iscatterv current_mpi()->iscatterv
+#define MPI_Ialltoall current_mpi()->ialltoall
 #define MPI_Wtime current_mpi()->wtime
 #define MPI_Disable_Payloads current_mpi()->disable_Payloads
 #define MPI_Enable_Payloads current_mpi()->enable_Payloads
@@ -127,6 +139,14 @@
 #define MPI_Buffer_attach current_mpi()->buffer_attach
 #define MPI_Buffer_detach current_mpi()->buffer_detach
 #define MPI_Init_thread current_mpi()->init_thread
+#define MPI_Op_create current_mpi()->op_create
+#define MPI_Op_free current_mpi()->op_free
+#define MPI_Reduce_scatter_block   current_mpi()->reduce_scatter_block
+#define MPI_Ireduce_scatter_block   current_mpi()->ireduce_scatter_block
+#define MPI_Send_init current_mpi()->send_init
+#define MPI_Bsend_init current_mpi()->send_init
+#define MPI_Rsend_init current_mpi()->send_init
+#define MPI_Ssend_init current_mpi()->send_init
 #else
 #define MPI_NodeAddress sstmac_mpi_nodeaddress
 #define MPI_Taskid sstmac_mpi_taskid
@@ -239,8 +259,7 @@
 #define MPI_Exscan sstmac_mpi_exscan
 #endif
 
-#define MPI_Op_create error not yet implemented
-#define MPI_Op_free error not yet implemented
+
 #define MPI_Intercomm_create error not yet implemented
 #define MPI_Comm_remote_size error not yet implemented
 #define MPI_Comm_test_inter error not yet implemented
@@ -351,15 +370,10 @@
 #define MPI_Win_set_errhandler error not yet implemented
 #define MPI_Get error not yet implemented
 #define MPI_Put error not yet implemented
-#define MPI_Reduce_scatter_block       error not yet implemented
 #define MPI_Dist_graph_create_adjacent error not yet implemented
 #define MPI_Dist_graph_create          error not yet implemented
 #define MPI_Dist_graph_neighbors_count error not yet implemented
 #define MPI_Dist_graph_neighbors       error not yet implemented
-#define MPI_Send_init error not yet implemented
-#define MPI_Bsend_init error not yet implemented
-#define MPI_Rsend_init error not yet implemented
-#define MPI_Ssend_init error not yet implemented
 #define MPI_Address error not yet implemented
 #define MPI_Intercomm_create error not yet implemented
 #define MPI_Sendrecv_replace error not yet implemented

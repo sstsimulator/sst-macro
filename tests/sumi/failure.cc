@@ -1,5 +1,6 @@
 #include <sprockit/test/test.h>
 #include <sstmac/util.h>
+#include <sstmac/skeleton.h>
 #include <sstmac/compute.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
@@ -8,7 +9,8 @@
 #include <sumi/dense_rank_map.h>
 #include <sumi/thread_safe_set.h>
 #include <sumi/transport.h>
-
+#include <sstmac/skeleton.h>
+#define sstmac_app_name "user_app_cxx"
 using namespace sstmac;
 using namespace sstmac::sw;
 using namespace sstmac::hw;
@@ -90,7 +92,7 @@ try_main(int argc, char **argv)
   int me = comm_rank();
   //int nproc = comm_nproc();
 
-  sprockit::sim_parameters* params = sstmac::env::params;
+  sprockit::sim_parameters* params = sstmac::sw::app::get_params();
   bool heartbeat = params->get_optional_bool_param("heartbeat", false);
   if (heartbeat)
     comm_start_heartbeat(100e-3);
@@ -110,6 +112,8 @@ try_main(int argc, char **argv)
 
   return 0;
 }
+
+#define sstmac_app_name "user_app_cxx"
 
 int
 main(int argc, char** argv)

@@ -202,6 +202,13 @@ class dag_collective :
   std::list<collective_work_message_ptr> pending_;
 };
 
+class collective_algorithm_selector
+{
+ public:
+  virtual dag_collective* select(int nproc, int nelems) = 0;
+  virtual dag_collective* select(int nproc, int* counts) = 0;
+};
+
 DeclareFactory(dag_collective)
 
 

@@ -4,13 +4,12 @@
 #include <sstmac/software/process/thread.h>
 #include <sstmac/software/libraries/compute/sstmac_compute.h>
 #include <sstmac/libraries/pthread/sstmac_pthread.h>
+#include <sstmac/skeleton.h>
 
 
 using namespace sstmac;
 using namespace sstmac::sw;
 using namespace sstmac::hw;
-
-sstmac_register_app(test_pthread);
 
 extern "C" int ubuntu_cant_name_mangle() { return 0; }
 
@@ -66,10 +65,10 @@ void* ptest2(void* args)
   return 0;
 }
 
+#define sstmac_app_name "test_pthread"
 
 
-int
-test_pthread_main(int argc, char** argv)
+int USER_MAIN(int argc, char** argv)
 {
     void* no_args = 0;
     pthread_t thr1, thr2;

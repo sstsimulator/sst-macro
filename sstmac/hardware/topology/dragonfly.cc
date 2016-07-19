@@ -63,10 +63,10 @@ dragonfly::productive_path(
   int dim,
   const coordinates &src,
   const coordinates &dst,
-  routing_info::path& path) const
+  geometry_routable::path& path) const
 {
   //if we crossed a global link in the past, set to 1
-  path.vc = path.metadata_bit(routing_info::crossed_timeline) ? 1 : 0;
+  path.vc = path.metadata_bit(geometry_routable::crossed_timeline) ? 1 : 0;
   int nextDim, nextDir;
   if (dim == g_dimension){
     int myX = src[x_dimension];
@@ -75,7 +75,7 @@ dragonfly::productive_path(
     int dstg = dst[g_dimension];
     minimal_route_to_group(myX, myY, myG, nextDim, nextDir, dstg);
     if  (nextDim == g_dimension){
-        path.set_metadata_bit(routing_info::crossed_timeline);
+        path.set_metadata_bit(geometry_routable::crossed_timeline);
     }
   }
   else {
@@ -327,7 +327,7 @@ void
 dragonfly::minimal_route_to_coords(
   const coordinates &current_coords,
   const coordinates &dest_coords,
-  routing_info::path& path) const
+  geometry_routable::path& path) const
 {
   debug_printf(sprockit::dbg::router,
     "Finding dragonfly minimal route from %s to %s",
@@ -641,9 +641,9 @@ dragonfly::bit_complement_partners(
 }
 
 void
-dragonfly::new_routing_stage(routing_info& rinfo)
+dragonfly::new_routing_stage(geometry_routable* rtbl)
 {
-  rinfo.current_path().unset_metadata_bit(routing_info::crossed_timeline);
+  rtbl->current_path().unset_metadata_bit(geometry_routable::crossed_timeline);
 }
 
 int

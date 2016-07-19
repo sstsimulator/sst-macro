@@ -8,11 +8,10 @@
 #include <sstmac/common/event_manager.h>
 #include <sprockit/output.h>
 #include <sprockit/util.h>
+#include <sstmac/skeleton.h>
 
-namespace sstmac {
-namespace sw {
-
-sstmac_register_app(mpi_print_nodes);
+using namespace sstmac;
+using namespace sstmac::sw;
 
 class node_name_logger
   : public stat_collector
@@ -64,7 +63,9 @@ class node_name_logger
 
 static node_name_logger* nodelog = 0;
 
-int mpi_print_nodes_main(int argc, char** argv)
+#define sstmac_app_name "mpi_print_nodes"
+
+int USER_MAIN(int argc, char** argv)
 {
   if (!nodelog) {
     nodelog = new node_name_logger("mpilog");
@@ -88,9 +89,6 @@ int mpi_print_nodes_main(int argc, char** argv)
   nodelog->add_node(operating_system::current_tid(), label);
 
   return 0;
-}
-
-}
 }
 
 

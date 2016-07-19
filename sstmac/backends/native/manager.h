@@ -15,10 +15,10 @@
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/event_manager_fwd.h>
 #include <sstmac/software/process/app_id.h>
-#include <sstmac/software/process/app_manager_fwd.h>
+#include <sstmac/software/launch/app_launch_fwd.h>
 #include <sstmac/hardware/node/node_fwd.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
-
+#include <sstmac/software/launch/job_launcher_fwd.h>
 #include <sprockit/factories/factory.h>
 
 DeclareDebugSlot(timestamp);
@@ -60,25 +60,24 @@ class manager : public sprockit::factory_type {
     return interconnect_;
   }
 
-  static int
-  compute_max_nproc(sprockit::sim_parameters *params);
-
- protected:
-  void
-  build_app(int appnum, const std::string& launch_prefix, sprockit::sim_parameters* params);
-
   void
   build_apps(sprockit::sim_parameters* params);
 
+  void
+  build_app(int appnum,
+   sprockit::sim_parameters* params);
+
   static int
-  compute_max_nproc(int appnum, sprockit::sim_parameters *params);
+  compute_max_nproc(sprockit::sim_parameters *params);
+
+  static int
+  compute_max_nproc_for_app(sprockit::sim_parameters* app_params);
 
  protected:
   /// Next parallel process id.
   sstmac::sw::app_id next_ppid_;
 
-  std::map<int, sw::app_manager*> app_managers_;
-  std::map<int, timestamp> app_starts_;
+  std::map<int, sw::app_launch*> app_managers_;
 
   sstmac::hw::interconnect* interconnect_;
   parallel_runtime* rt_;
@@ -111,24 +110,26 @@ class macro_manager : public manager
 
   void finish();
 
- protected:
+ private:
   void
-  launch_app(int appnum, timestamp start, sw::app_manager* appman);
+  launch_app(int appnum, timestamp start, sw::app_launch* appman);
 
   void
   launch_apps();
 
- protected:
+  void start();
+
+  void stop();
+
+ private:
   /// The event manager.
   event_manager* event_manager_;
 
   /// Monitor whether the simulator is currently running.
   bool running_;
 
- private:
-  void start();
+  sw::job_launcher* launcher_;
 
-  void stop();
 
 };
 #endif

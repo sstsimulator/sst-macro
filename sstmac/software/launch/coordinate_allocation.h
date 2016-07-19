@@ -2,19 +2,16 @@
 #define COORDINATE_ALLOCATION_H
 
 #include <sstmac/hardware/topology/structured_topology.h>
-#include <sstmac/software/launch/allocation_strategy.h>
+#include <sstmac/software/launch/node_allocator.h>
 
 namespace sstmac {
 namespace sw {
 
 class coordinate_allocation :
-  public allocation_strategy
+  public node_allocator
 {
 
  public:
-  virtual void
-  set_topology(hw::topology *top);
-
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
 
@@ -22,7 +19,8 @@ class coordinate_allocation :
 
   virtual void
   allocate(int nnode_requested,
-           node_set &allocation);
+    const ordered_node_set& available,
+    ordered_node_set& allocation) const;
 
   static void
   read_coordinate_file(
@@ -31,7 +29,6 @@ class coordinate_allocation :
     std::vector<hw::coordinates>& node_list);
 
  protected:
-  sstmac::hw::structured_topology* regtop_;
   std::string coord_file_;
 
 };

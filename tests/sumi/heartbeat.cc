@@ -6,7 +6,8 @@
 #include <sstmac/libraries/sumi/sumi.h>
 #include <sumi/dense_rank_map.h>
 #include <sumi/thread_safe_set.h>
-
+#include <sstmac/skeleton.h>
+#define sstmac_app_name "user_app_cxx"
 using namespace sstmac;
 using namespace sstmac::sw;
 using namespace sstmac::hw;

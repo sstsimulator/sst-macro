@@ -1,8 +1,7 @@
 #include <sstmac/util.h>
 #include <sstmac/libraries/blas/cblas.h>
 #include <sstmac/software/process/app.h>
-
-sstmac_register_app(test_blas);
+#include <sstmac/skeleton.h>
 
 #define run_fxn(fxn, ...) \
 {  \
@@ -19,8 +18,9 @@ sstmac_register_app(test_blas);
 extern "C" int ubuntu_cant_name_mangle() { return 0; }
 
 
-int
-test_blas_main(int argc, char** argv)
+#define sstmac_app_name "test_blas"
+
+int USER_MAIN(int argc, char** argv)
 {
   run_fxn(sstmac_simple_daxpy,10000);
   run_fxn(sstmac_simple_dgemv,1000,1000);

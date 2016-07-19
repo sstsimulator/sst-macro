@@ -1,3 +1,0 @@
-t=timestamp(0 secs): Hello World, i'm computer number 0, about to begin computing.
-F90 compute test consumed timestamp(0.1234 secs)
-Estimated total runtime of           0.12340023 seconds

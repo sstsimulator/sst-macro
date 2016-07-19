@@ -26,7 +26,7 @@ class minimal_router :
 
  protected:
   virtual void
-  route(packet* pkt, routing_info::path_set& paths);
+  route(packet* pkt, geometry_routable::path_set& paths);
 
 };
 

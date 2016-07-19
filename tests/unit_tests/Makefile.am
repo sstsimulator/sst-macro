@@ -11,10 +11,7 @@
 include $(top_srcdir)/Makefile.common
 
 AM_CPPFLAGS += -I$(top_srcdir)/tests -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi
-
-if WITH_SUMI_MPI
 AM_CPPFLAGS += -I$(top_srcdir)/sumi -I$(top_builddir)/sumi
-endif
 
 if !INTEGRATED_SST_CORE
 SUBDIRS = util
@@ -66,15 +63,6 @@ if EXTERNAL_BOOST
   TEST_LDFLAGS += $(BOOST_LDFLAGS)
 endif
 
-if !WITH_SUMI_MPI
-check_PROGRAMS += test_parsedumpi
-test_parsedumpi_SOURCES = \
-    test_parsedumpi.cc 
-test_parsedumpi_LDADD = $(TEST_LDFLAGS) \
-  $(top_builddir)/sstmac/main/libsstmac_main.la \
-  $(top_builddir)/sstmac/skeletons/libsstmac_skeletons.la  \
-  $(top_builddir)/sstmac/libraries/mpi/libsstmac_mpi.la 
-endif
 test_packet_flow_LDADD = $(TEST_LDFLAGS) 
 test_routing_LDADD = $(TEST_LDFLAGS)
 test_serializable_LDADD = $(TEST_LDFLAGS)

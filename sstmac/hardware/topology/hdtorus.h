@@ -57,14 +57,14 @@ class hdtorus :
     int dim,
     const coordinates& src,
     const coordinates& dst,
-    routing_info::path& path) const;
+    geometry_routable::path& path) const;
 
   void
   up_path(
     int dim,
     const coordinates& src,
     const coordinates& dst,
-    routing_info::path& path) const;
+    geometry_routable::path& path) const;
 
   bool
   shortest_path_positive(
@@ -77,10 +77,10 @@ class hdtorus :
     int dim,
     const coordinates& src,
     const coordinates& dst,
-    routing_info::path& path) const;
+    geometry_routable::path& path) const;
 
   void
-  pick_vc(routing_info::path& path) const;
+  pick_vc(geometry_routable::path& path) const;
 
   switch_id
   switch_number(const coordinates& v) const;
@@ -124,7 +124,7 @@ class hdtorus :
   minimal_route_to_coords(
     const coordinates &src_coords,
     const coordinates &dest_coords,
-    routing_info::path& path) const;
+    geometry_routable::path& path) const;
 
   virtual void
   connect_objects(internal_connectable_map& switches);

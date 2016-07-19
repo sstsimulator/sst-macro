@@ -5,6 +5,7 @@
 #include <sstmac/hardware/router/routing_enum.h>
 #include <sstmac/hardware/network/network_id.h>
 #include <sstmac/software/process/task_id.h>
+#include <sstmac/software/process/app_id.h>
 
 namespace sstmac {
 namespace hw {
@@ -39,15 +40,22 @@ class network_message :
   } type_t;
 
  public:
-  network_message(node_id toaddr,
-                  node_id fromaddr,
-                  sw::task_id src,
-                  sw::task_id dst,
-                  long payload_bytes);
+  network_message(
+    sw::app_id aid,
+    node_id toaddr,
+    node_id fromaddr,
+    sw::task_id src,
+    sw::task_id dst,
+    long payload_bytes);
 
-  network_message(long payload_bytes);
+  network_message(sw::app_id aid, long payload_bytes);
 
-  network_message();
+  network_message(); //for serialization
+
+  virtual std::string
+  to_string() const {
+    return "network message";
+  }
 
   virtual ~network_message() {}
 
@@ -67,18 +75,8 @@ class network_message :
     return cln;
   }
 
-  routing::algorithm_t
-  route_algo() const {
-    return route_algo_;
-  }
-
   virtual void
   nic_reverse(type_t newtype);
-
-  void
-  set_route_algo(routing::algorithm_t algo) {
-    route_algo_ = algo;
-  }
 
   bool
   is_nic_ack() const;
@@ -143,6 +141,11 @@ class network_message :
     return src_task_;
   }
 
+  sw::app_id
+  aid() const {
+    return aid_;
+  }
+
   sw::task_id
   dest_task() const {
     return dest_task_;
@@ -181,9 +184,9 @@ class network_message :
  protected:
   network_id net_id_;
 
-  bool needs_ack_;
+  sw::app_id aid_;
 
-  routing::algorithm_t route_algo_;
+  bool needs_ack_;
 
   sw::task_id src_task_;
 

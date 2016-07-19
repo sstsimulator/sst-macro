@@ -10,6 +10,8 @@ pthread_run(void* args){
   return 0;
 }
 
+#define sstmac_app_name "user_app_cxx"
+
 int main(int argc, char** argv)
 {
   int nthread = 10;

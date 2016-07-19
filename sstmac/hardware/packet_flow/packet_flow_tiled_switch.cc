@@ -31,7 +31,7 @@ void
 packet_flow_tiled_switch::init_factory_params(sprockit::sim_parameters *params)
 {
   packet_flow_abstract_switch::init_factory_params(params);
-  params_->row_buffer_num_bytes = params->get_byte_length_param("row_buffer_size");
+  row_buffer_num_bytes = params->get_byte_length_param("row_buffer_size");
   nrows_ = params->get_int_param("nrows");
   ncols_ = params->get_int_param("ncols");
 }
@@ -76,10 +76,10 @@ packet_flow_tiled_switch::init_components()
       packet_flow_crossbar* xbar = new packet_flow_crossbar(
         timestamp(0), //just assume no latency in crossbar
         timestamp(0), //just assume no latency in crossbar
-        params_->crossbar_bw,
+        xbar_bw,
         router_->max_num_vc(),
-        params_->xbar_input_buffer_num_bytes,
-        params_->link_arbitrator_template->clone(-1));
+        xbar_input_buffer_num_bytes,
+        link_arbitrator_template->clone(-1));
       //we can route to a destination port that differs from the local port
       int xbar_mapper = ncols_; //map port by dividing by ncols
       xbar->set_event_location(my_addr_);
@@ -87,12 +87,12 @@ packet_flow_tiled_switch::init_components()
       xbar->set_update_vc(false);
 
       packet_flow_muxer* muxer = new packet_flow_muxer(
-        params_->hop_lat, //put all the latency in the send
+        hop_lat, //put all the latency in the send
         timestamp(0), //assume zero latency credits
-        params_->link_bw,
+        link_bw,
         router_->max_num_vc(),
-        params_->xbar_output_buffer_num_bytes,
-        params_->link_arbitrator_template->clone(-1));
+        xbar_output_buffer_num_bytes,
+        link_arbitrator_template->clone(-1));
       int muxer_offset = tile;
       int muxer_max_port = tile;
       muxer->set_event_location(my_addr_);
@@ -100,9 +100,9 @@ packet_flow_tiled_switch::init_components()
 
       packet_flow_demuxer* dm = new packet_flow_demuxer(
         timestamp(0), //assume zero latency send
-        params_->hop_lat, //credit latency
+        hop_lat, //credit latency
         router_->max_num_vc(),
-        params_->row_buffer_num_bytes);
+        row_buffer_num_bytes);
       //routed port numbers are 0-48, e.g. for a 6x8
       //we route locally to a given column number
       int dm_mod = ncols_;
@@ -174,7 +174,7 @@ packet_flow_tiled_switch::connect_output(
 {
   packet_flow_sender* muxer = col_output_muxers_[src_outport];
   muxer->set_output(src_outport, dst_inport, mod);
-  muxer->init_credits(src_outport, params_->row_buffer_num_bytes);
+  muxer->init_credits(src_outport, row_buffer_num_bytes);
 }
 
 void
@@ -276,6 +276,7 @@ packet_flow_tiled_switch::handle(event* ev)
     }
     case packet_flow_interface::payload: {
       packet_flow_payload* payload = static_cast<packet_flow_payload*>(ev);
+      //routable* rtbl = payload->interface<routable>();
       debug_printf(sprockit::dbg::packet_flow,
          "tiled switch %d: incoming payload %s",
           int(my_addr_), payload->to_string().c_str());
@@ -285,7 +286,7 @@ packet_flow_tiled_switch::handle(event* ev)
       debug_printf(sprockit::dbg::packet_flow,
          "tiled switch %d: routed payload %s to outport %d",
           int(my_addr_), payload->to_string().c_str(),
-          payload->rinfo().current_path().outport);
+          payload->next_port());
       demuxer->handle_payload(payload);
       break;
     }

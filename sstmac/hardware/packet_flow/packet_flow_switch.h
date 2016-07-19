@@ -6,40 +6,9 @@
 #include <sstmac/hardware/packet_flow/packet_flow_crossbar.h>
 #include <sstmac/hardware/packet_flow/packet_flow_arbitrator.h>
 #include <sstmac/hardware/packet_flow/packet_flow_stats_fwd.h>
-#include <sstmac/common/stats/stat_global_int_fwd.h>
 
 namespace sstmac {
 namespace hw {
-
-class packet_flow_params  {
- public:
-  double link_bw;
-
-  double ej_bw;
-
-  ~packet_flow_params();
-
-  timestamp hop_lat;
-
-  int xbar_output_buffer_num_bytes;
-
-  int xbar_input_buffer_num_bytes;
-
-  double crossbar_bw;
-
-  int row_buffer_num_bytes;
-
-  packet_flow_bandwidth_arbitrator* link_arbitrator_template;
-
-  bool queue_depth_reporting;
-  int queue_depth_delta;
-
-  std::string
-  to_string() const {
-    return "packet_flow parameters";
-  }
-
-};
 
 class packet_flow_abstract_switch :
   public network_switch,
@@ -62,12 +31,12 @@ class packet_flow_abstract_switch :
 
   timestamp
   hop_latency() const {
-    return params_->hop_lat;
+    return hop_lat;
   }
 
   timestamp
   lookahead() const {
-    return params_->hop_lat;
+    return hop_lat;
   }
 
   virtual int
@@ -75,19 +44,30 @@ class packet_flow_abstract_switch :
 
   double
   hop_bandwidth() const {
-    return params_->link_bw;
+    return link_bw;
   }
 
  protected:
-#if !SSTMAC_INTEGRATED_SST_CORE
-  packet_flow_abstract_switch() :
-    params_(0)
-  {
-  }
-#endif
+  int packet_size_;
 
- protected:
-  packet_flow_params* params_;
+  double link_bw;
+
+  double ej_bw;
+
+  int xbar_output_buffer_num_bytes;
+
+  int xbar_input_buffer_num_bytes;
+
+  double xbar_bw;
+
+  int row_buffer_num_bytes;
+
+  timestamp hop_lat;
+
+  packet_flow_bandwidth_arbitrator* link_arbitrator_template;
+
+  packet_sent_stats* xbar_stats_;
+  packet_sent_stats* buf_stats_;
 };
 
 /**
@@ -127,7 +107,7 @@ class packet_flow_switch :
 
   int
   initial_credits() const {
-    return params_->xbar_input_buffer_num_bytes;
+    return xbar_input_buffer_num_bytes;
   }
 
   virtual void
@@ -177,17 +157,11 @@ class packet_flow_switch :
   connect_ejector(int src_outport, int dst_inport, event_handler* nic);
 
  protected:
-  stat_spyplot* congestion_spyplot_;
-  stat_bytes_sent* bytes_sent_;
-  stat_global_int* byte_hops_;
+  sprockit::sim_parameters* params_;
 
   std::vector<packet_flow_sender*> out_buffers_;
 
   packet_flow_crossbar* xbar_;
-
-  bool acc_delay_;
-
-  int packet_size_;
 
  private:
   void

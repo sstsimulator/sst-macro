@@ -37,6 +37,11 @@ class lib_compute_time :
   construct(const std::string& str);
 
   void
+  incoming_event(event *ev){
+    library::incoming_event(ev);
+  }
+
+  void
   compute(timestamp time);
 
   virtual bool

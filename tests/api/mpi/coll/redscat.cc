@@ -1,16 +1,3 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
-/* 
- * Test of reduce scatter.
- *
- * Each processor contributes its rank + the index to the reduction, 
- * then receives the ith sum
- *
- * Can be called with any number of processors.
- */
 
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>

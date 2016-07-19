@@ -89,7 +89,6 @@ CHECK_SPINLOCK()
 AC_CONFIG_FILES([
  Makefile
  sumi/Makefile
- test/Makefile
  sumi/config.h:config.h.in
 ])
 AC_OUTPUT

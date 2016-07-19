@@ -9,15 +9,21 @@
  *  SST/macroscale directory.
  */
 
-#include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/skeletons/sumi_undumpi/parsedumpi_callbacks.h>
-#include <sumi-mpi/mpi_api.h>
-#include <sumi-mpi/mpi_types.h>
-#include <sstmac/common/thread_lock.h>
 #include <sprockit/errors.h>
 #include <sprockit/output.h>
 #include <cstring>
+#include <sumi-mpi/mpi_api.h>
+#include <sumi-mpi/mpi_types.h>
+
+
+namespace sstmac {
+namespace sw {
+extern void api_lock();
+extern void api_unlock();
+}}
 
 namespace sumi {
 
@@ -54,20 +60,20 @@ parsedumpi_callbacks(parsedumpi *parent) :
   parent_(parent),
   initialized_(false)
 {
-  static sstmac::thread_lock lock;
-  lock.lock();
+  sstmac::sw::api_lock();
   if(cbacks_ == NULL) {
     set_callbacks();
   }
   trace_compute_start_.sec = -1;
   init_maps();
   memset(&datatype_sizes_, 0, sizeof(dumpi_sizeof));
-  lock.unlock();
+  sstmac::sw::api_unlock();
 }
 
 /// Start parsing.
 void
-parsedumpi_callbacks::parse_stream(const std::string &fname,
+parsedumpi_callbacks::parse_stream(
+  const std::string &fname,
   bool print_progress,
   double percent_terminate)
 {
@@ -80,7 +86,8 @@ parsedumpi_callbacks::parse_stream(const std::string &fname,
     throw sprockit::io_error(here + ":  Unable to open \"" + fname + "\" for reading.");
   }
   datatype_sizes_ = undumpi_read_datatype_sizes(profile);
-  int retval = undumpi_read_stream_full(profile, cbacks_, this, print_progress, percent_terminate);
+  int retval = undumpi_read_stream_full(
+                  fname.c_str(), profile, cbacks_, this, print_progress, percent_terminate);
   if(retval != 1) {
     spkt_throw(sprockit::io_error, here + ":  Failed reading dumpi stream.\n");
   }
@@ -92,7 +99,7 @@ void parsedumpi_callbacks::init_maps()
 {
   // Null requests.
   request_[DUMPI_REQUEST_ERROR] = 0;
-  request_[DUMPI_REQUEST_NULL] = 0;
+  request_[DUMPI_REQUEST_NULL] = MPI_REQUEST_NULL;
   // Built-in mpitypes.
   mpitype_[DUMPI_DATATYPE_ERROR] = MPI_DATATYPE_NULL;
   mpitype_[DUMPI_DATATYPE_NULL] = MPI_DATATYPE_NULL;
@@ -126,6 +133,7 @@ void parsedumpi_callbacks::init_maps()
   mpicomm_[DUMPI_COMM_NULL]  = MPI_COMM_NULL;
   mpicomm_[DUMPI_COMM_WORLD] = MPI_COMM_WORLD;
   mpicomm_[DUMPI_COMM_SELF]  = MPI_COMM_SELF;
+  mpigroups_[DUMPI_FIRST_USER_GROUP] = MPI_GROUP_WORLD;
   // MPI operations
   mpiop_[DUMPI_MAX] = MPI_MAX;
   mpiop_[DUMPI_MIN] = MPI_MIN;
@@ -224,6 +232,7 @@ void parsedumpi_callbacks::
 store_request(dumpi_request id, MPI_Request request)
 {
   if(id >= DUMPI_FIRST_USER_REQUEST) {
+    //printf(" (%d->%d)", id, request);
     request_[id] = request;
   }
 }
@@ -238,6 +247,7 @@ parsedumpi_callbacks::get_request_ptr(dumpi_request id)
        "parsedumpi_callbacks::get_request %d on node unmapped request id %d",
         int(id), int(parent_->mpi()->comm_world()->rank()));
   }
+  //printf(" (%d->%d)", id, it->second);
   return &it->second;
 }
 
@@ -284,7 +294,7 @@ void parsedumpi_callbacks::complete_requests(Iter begin, Iter end)
 void parsedumpi_callbacks::
 nullify_request(dumpi_request rid)
 {
-  request_[rid] = 0;
+  request_[rid] = MPI_REQUEST_NULL;
 }
 
 void parsedumpi_callbacks::
@@ -366,7 +376,7 @@ parsedumpi_callbacks::get_mpitypes(int count, const dumpi_datatype *dumpitypes)
       "parsedumpi_callbacks::get_requests: negative request count");
   }
   for(int i = 0; i < count; ++i) {
-    mpitypes[i] = *get_request_ptr(dumpitypes[i]);
+    mpitypes[i] = get_mpitype(dumpitypes[i]);
   }
   return mpitypes;
 }
@@ -488,8 +498,6 @@ parsedumpi_callbacks::get_mpiop(dumpi_op id)
 /// Set all callbacks.
 void parsedumpi_callbacks::set_callbacks()
 {
-  static sstmac::thread_lock lock;
-  lock.lock();
   //libundumpi_clear_callbacks(cbacks_);
   if(cbacks_ == NULL) {
     cbacks_ = new libundumpi_callbacks;
@@ -784,7 +792,6 @@ void parsedumpi_callbacks::set_callbacks()
   cbacks_->on_iowaitany                 = on_MPIO_Waitany                 ;
   cbacks_->on_iowaitsome                = on_MPIO_Waitsome                ;
   cbacks_->on_iotestsome                = on_MPIO_Testsome                ;
-  lock.unlock();
 }
 
 int parsedumpi_callbacks::
@@ -916,7 +923,9 @@ on_MPI_Isend(const dumpi_isend *prm, uint16_t thread,
   cb->getmpi()->isend(NULL, prm->count, cb->get_mpitype(prm->datatype),
                       cb->get_mpiid(prm->dest), cb->get_mpitag(prm->tag),
                       cb->get_mpicomm(prm->comm), &req);
+  //printf("Rank %4d: storing aliases: ", cb->getmpi()->comm_world()->rank());
   cb->store_request(prm->request, req);
+  //printf("\n");
   cb->end_mpi(cpu, wall, perf);
   return 1;
 }
@@ -936,7 +945,9 @@ on_MPI_Irecv(const dumpi_irecv *prm, uint16_t thread,
   cb->getmpi()->irecv(NULL, prm->count, cb->get_mpitype(prm->datatype),
                       cb->get_mpiid(prm->source), cb->get_mpitag(prm->tag),
                       cb->get_mpicomm(prm->comm), &req);
+  //printf("Rank %d: storing aliases: ", cb->getmpi()->comm_world()->rank());
   cb->store_request(prm->request, req);
+  //printf("\n");
   cb->end_mpi(cpu, wall, perf);
   return 1;
 }
@@ -1066,7 +1077,9 @@ on_MPI_Waitall(const dumpi_waitall *prm, uint16_t thread,
       "MPI_Waitall: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
+  //printf("Rank %4d: getting aliases: ", cb->getmpi()->comm_world()->rank());
   MPI_Request* reqs = cb->get_requests(prm->count, prm->requests);
+  //printf("\n");
   cb->getmpi()->waitall(prm->count, reqs, MPI_STATUSES_IGNORE);
   cb->complete_requests(prm->requests, prm->requests + prm->count);
   cb->nullify_requests(prm->count, prm->requests);

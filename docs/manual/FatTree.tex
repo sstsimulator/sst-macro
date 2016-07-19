@@ -6,8 +6,8 @@
 Within SST, a fat tree is defined by the following parameters:
 
 \begin{ViFile}
-topology_name = fattree
-topology_geometry = 4 2
+topology.name = fattree
+topology.geometry = 4 2
 \end{ViFile}
 The first number, 4, indicates the number of levels in the fat tree.
 The second number, 2, indicates the radix or branching factor of the tree.
@@ -20,7 +20,7 @@ This is done for a very specific reason.
 At the final level, you may wish to have a different branching fraction for the compute nodes, e.g.
 
 \begin{ViFile}
-network_nodes_per_switch = 1
+topology.concentration = 1
 \end{ViFile}
 This loads the injection bandwidth for the compute node dedicating its own injection switch.
 If the parameter \inlineshell{network_nodes_per_switch} is omitted, it defaults to the fat tree radix.
@@ -28,31 +28,31 @@ This case is shown in Figure \ref{fig:topologies:abstractfattree} where there ar
 Higher radix fat trees can be specified, e.g.
 
 \begin{ViFile}
-topology_name = fattree
-topology_geometry = 3 4
+topology.name = fattree
+topology.geometry = 3 4
 \end{ViFile}
 which would have $4^3 = 64$ compute nodes.
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.9\textwidth]{figures/tikz/fattree/abstract_fattree.pdf}
+\includegraphics[width=0.9\textwidth]{figures/tikz/fattree/abstract_fattree.png}
 \caption{Abstract, conceptual picture of Fat Tree topology}
 \label{fig:topologies:abstractfattree}
 \end{figure}
 
 In reality, it is not practical to implement a fat tree exactly as shown in Figure \ref{fig:topologies:abstractfattree}.
 One would need to buy many non-standard, high capacity switches for the higher levels in the fat-tree.
+The simple model is available by specifying \inlineshell{simple_fattree} as the topology, and SST will construct special large switches at higher levels.
 The best practical implementation employs all uniform, commodity switches (Figure \ref{fig:topologies:fattreeids}).
 The fat tree is ``virtual'' with several commodity switches grouped together to simulate a heavy-weight, high capacity switch
 at higher levels of the fat tree.
 The connection between the physical implementation and the conceptual fat tree can easily be seen by the color coding.
 For example, the second row contains eight switches, but only two virtual switches.
 Each virtual switch is composed of four commodity switches.
-The top row only requires half the number of switches since it connects all links down.
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.9\textwidth]{figures/tikz/fattree/fattree_ids.pdf}
+\includegraphics[width=0.9\textwidth]{figures/tikz/fattree/fattree_ids.png}
 \caption{Physical implementation of Fat Tree with commodity switches showing ID numbering}
 \label{fig:topologies:fattreeids}
 \end{figure}
@@ -62,31 +62,15 @@ In addition, each compute node is also assigned a unique ID from 0 to 15.
 The switches can also be defined by a set of coordinates.
 While the choice of coordinate system for a 3D torus is obvious, 
 the coordinate system for the fat tree is less clear.
-Here we choose a coordinate system that defines the level of the switch and the branch it lies on (Figure \ref{fig:topologies:fattreecoords}).
-The first coordinate is the level. 
-The final coordinate is the virtual number, 
-i.e. since each virtual switch is composed of multiple commodity switches,
-this tells which replica number it is.
-For example, in the top row, we have switches $(0,0)$, $(0,1)$, $(0,2)$, and $(0,3)$.
-The coordinates tell you each switch is at level 0 (top level) and that we have replicas 0 to 3 composing a single virtual switch.
-As you move down the fat tree, the additional coordinates tell you the branch.
-At the next level, you have switches $(1,0,0)$ and $(1,1,0)$.
-This tells you level 1 (first level down), branch 0, replica 0 (or branch 1, replica 0).
-As you continue moving down, you add more branch definitions.
+In SST, we define a 2D mesh coordinate system for the row (level) and column of the switch.
 
-\begin{figure}[h!]
-\centering
-\includegraphics[width=0.9\textwidth]{figures/tikz/fattree/fattree_coords.pdf}
-\caption{Physical implementation of Fat Tree with commodity switches showing coordinate system}
-\label{fig:topologies:fattreecoords}
-\end{figure}
 
 \subsection{Allocation and indexing}
 The numbering of compute nodes is shown in Figure \ref{fig:topologies:fattreeids}.
 Consider the case
 
 \begin{ViFile}
-launch_app1_cmd = aprun -n 4 -N 1
+app1.launch_cmd = aprun -n 4 -N 1
 \end{ViFile}
 which launches four processes all on distinct nodes.
 In the simplest allocation and indexing scheme (first available),
@@ -94,9 +78,9 @@ processes would be placed in order on 0,1,2,3.
 An alternative allocation/indexing scheme uses the Node ID allocator.
 
 \begin{ViFile}
-launch_allocation = node_id
-launch_indexing = node_id
-launch_node_id_file = nodes.txt
+app1.launch_allocation = node_id
+app1.launch_indexing = node_id
+app1.launch_node_id_file = nodes.txt
 \end{ViFile}
 Here \inlineshell{nodes.txt} would contain the number of nodes on the first line, followed by the list of Node IDs, in order, of where to place MPI ranks.
 For the file
@@ -114,15 +98,15 @@ If indexing differs from allocation (usually because there are multiple MPI rank
 Suppose we have:
 
 \begin{ViFile}
-launch_app1_cmd = aprun -n 4 -N 2
+app1.launch_cmd = aprun -n 4 -N 2
 \end{ViFile}
 We then need:
 
 \begin{ViFile}
-launch_allocation = node_id
-launch_indexing = node_id
-launch_node_id_allocation_file = alloc.txt
-launch_node_id_indexing_file = index.txt
+app1.launch_allocation = node_id
+app1.launch_indexing = node_id
+app1.launch_node_id_allocation_file = alloc.txt
+app1.launch_node_id_indexing_file = index.txt
 \end{ViFile}
 where the contents of \inlineshell{alloc.txt} are, e.g.
 

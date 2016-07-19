@@ -1,22 +1,10 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpitest.h"
 
 namespace allred6 {
-/*
-static char MTEST_Descrip[] = "Test MPI_Allreduce with apparent non-commutative operators";
-*/
-/* While the operator is in fact commutative, this forces the MPI code to
-   run the code that is used for non-commutative operators, and for 
-   various message lengths.  Other tests check truly non-commutative 
-   operators */
 
 void mysum( void *cinPtr, void *coutPtr, int *count, MPI_Datatype *dtype );
 
@@ -39,7 +27,7 @@ int allred6( int argc, char *argv[] )
 
     MTest_Init( &argc, &argv );
 
-    MPI_Op_create( mysum, 0, &op );
+    MPI_Op_create( mysum, 1, &op );
 
     while (MTestGetIntracommGeneral( &comm, minsize, 1 )) {
 	if (comm == MPI_COMM_NULL) continue;

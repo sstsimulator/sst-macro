@@ -36,8 +36,8 @@ class packet_flow_NtoM_queue :
   }
 
   virtual void
-  do_handle_payload(packet_flow_payload* msg){
-    handle_routed_payload(msg);
+  do_handle_payload(packet_flow_payload* pkt){
+    handle_routed_payload(pkt);
   }
 
   void
@@ -100,7 +100,7 @@ class packet_flow_NtoM_queue :
   deadlock_check();
 
   void
-  deadlock_check(message* msg);
+  deadlock_check(event* ev);
 
  protected:
   struct request {
@@ -113,7 +113,7 @@ class packet_flow_NtoM_queue :
   typedef spkt_unordered_map<int, buffer_request_list> xbar_request_map;
 
   void
-  handle_routed_payload(packet_flow_payload* msg);
+  handle_routed_payload(packet_flow_payload* pkt);
 
  protected:
   typedef spkt_unordered_map<int, packet_flow_input> input_map;
@@ -148,7 +148,7 @@ class packet_flow_NtoM_queue :
 
  protected:
   void
-  send_payload(packet_flow_payload* msg);
+  send_payload(packet_flow_payload* pkt);
 
   void
   build_blocked_messages();
@@ -165,13 +165,13 @@ class packet_flow_NtoM_queue :
   }
 
   std::string
-  input_name(packet_flow_payload* msg);
+  input_name(packet_flow_payload* pkt);
 
   std::string
-  output_name(packet_flow_payload* msg);
+  output_name(packet_flow_payload* pkt);
 
   event_handler*
-  output_handler(packet_flow_payload* msg);
+  output_handler(packet_flow_payload* pkt);
 
 };
 
@@ -235,19 +235,6 @@ class packet_flow_crossbar :
     int buffer_size,
     const char* name = 0);
 
-  virtual void
-  do_handle_payload(packet_flow_payload* msg);
-
-  void
-  set_bytes_sent_collector(stat_bytes_sent* coll){
-    bytes_sent_ = coll;
-  }
-
-  void
-  set_byte_hops_collector(stat_global_int* coll){
-    byte_hops_ = coll;
-  }
-
   std::string
   packet_flow_name() const {
     if (name_) return name_;
@@ -255,8 +242,6 @@ class packet_flow_crossbar :
   }
 
  private:
-  stat_bytes_sent* bytes_sent_;
-  stat_global_int* byte_hops_;
   const char* name_;
 
 };
