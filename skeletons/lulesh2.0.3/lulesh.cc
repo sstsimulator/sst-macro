@@ -2833,12 +2833,16 @@ int main(int argc, char *argv[])
    }
 
 #if defined(LULESH_SST_MODS) && defined(LULESH_SST_SIM)
-   std::cout << "nops(Real_t)=" << Real_t_sim::nops << std::endl;
-   if (std::is_same<Index_t_sim, Int_t_sim>::value){
-      std::cout << "nops(Index_t+Int_t)=" << Index_t_sim::nops << std::endl;
-   } else {
-      std::cout << "nops(Index_t)=" << Index_t_sim::nops << std::endl;
-      std::cout << "nops(Int_t)=" << Int_t_sim::nops << std::endl;
+   if (myRank == 0) {
+     // assuming that MPI_Reduce above ensures that all other ranks have finished
+     // contributing to nops by this point
+      std::cout << "nops(Real_t)=" << Real_t_sim::nops << std::endl;
+      if (std::is_same<Index_t_sim, Int_t_sim>::value){
+         std::cout << "nops(Index_t+Int_t)=" << Index_t_sim::nops << std::endl;
+      } else {
+         std::cout << "nops(Index_t)=" << Index_t_sim::nops << std::endl;
+         std::cout << "nops(Int_t)=" << Int_t_sim::nops << std::endl;
+      }
    }
 #endif
 
