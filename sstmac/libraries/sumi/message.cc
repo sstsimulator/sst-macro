@@ -33,9 +33,18 @@ transport_message::serialize_order(serializer& ser)
 std::string
 transport_message::to_string() const
 {
-  message* msg = ptr_test_cast(message, payload_);
+  std::string message_str;
+  sumi::message* smsg = ptr_test_cast(sumi::message, payload_);
+  sstmac::message* msg = ptr_test_cast(sstmac::message, payload_);
+  if (smsg){
+    message_str = smsg->to_string();
+  } else if (msg){
+    message_str = msg->to_string();
+  } else {
+    message_str = "null payload";
+  }
   return sprockit::printf("sumi transport message %lu carrying %s",
-    unique_id(), (msg ? msg->to_string().c_str() : "null"));
+    unique_id(), message_str.c_str());
 }
 
 void

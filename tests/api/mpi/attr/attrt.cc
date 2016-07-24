@@ -6,7 +6,7 @@
 
 namespace attrt {
 
-/* #define DEBUG */
+/** #define DEBUG */
 int test_communicators ( void );
 int copy_fn ( MPI_Comm, int, void *, void *, void *, int * );
 int delete_fn ( MPI_Comm, int, void *, void * );
@@ -30,7 +30,7 @@ int attrt( int argc, char **argv )
 int copy_fn( MPI_Comm oldcomm, int keyval, void *extra_state,
 	     void *attribute_val_in, void *attribute_val_out, int *flag)
 {
-    /* Note that if (sizeof(int) < sizeof(void *), just setting the int
+    /** Note that if (sizeof(int) < sizeof(void *), just setting the int
        part of attribute_val_out may leave some dirty bits
     */
     *(MPI_Aint *)attribute_val_out = (MPI_Aint)attribute_val_in;
@@ -72,7 +72,7 @@ int test_communicators( void )
 
     MPI_Comm_dup( MPI_COMM_WORLD, &dup_comm_world );
 
-    /*
+    /**
       Exercise Comm_create by creating an equivalent to dup_comm_world
       (sans attributes) and a half-world communicator.
     */
@@ -123,9 +123,9 @@ int test_communicators( void )
 	    MPI_Abort(MPI_COMM_WORLD, 3002 );
 	}
 	else {
-	    /* printf( "lo in\n" );FFLUSH; */
+	    /** printf( "lo in\n" );FFLUSH; */
 	    MPI_Barrier(lo_comm );
-	    /* printf( "lo out\n" );FFLUSH; */
+	    /** printf( "lo out\n" );FFLUSH; */
 	}
     }
     else {
@@ -144,7 +144,7 @@ int test_communicators( void )
 #ifdef DEBUG
     printf( "bar!\n" );FFLUSH;
 #endif
-    /*
+    /**
       Check Comm_dup by adding attributes to lo_comm & duplicating
     */
 #ifdef DEBUG
@@ -162,15 +162,15 @@ int test_communicators( void )
 	MPI_Keyval_create(MPI_NULL_COPY_FN, MPI_NULL_DELETE_FN,
 			  &key_3, &value ); 
 
-	/* This may generate a compilation warning; it is, however, an
+	/** This may generate a compilation warning; it is, however, an
 	   easy way to cache a value instead of a pointer */
-	/* printf( "key1 = %x key3 = %x\n", key_1, key_3 ); */
+	/** printf( "key1 = %x key3 = %x\n", key_1, key_3 ); */
 	MPI_Attr_put(lo_comm, key_1, (void *) (MPI_Aint) world_rank );
 	MPI_Attr_put(lo_comm, key_3, (void *)0 );
 	
 	MPI_Comm_dup(lo_comm, &dup_comm );
 
-	/* Note that if sizeof(int) < sizeof(void *), we can't use
+	/** Note that if sizeof(int) < sizeof(void *), we can't use
 	   (void **)&value to get the value we passed into Attr_put.  To avoid 
 	   problems (e.g., alignment errors), we recover the value into 
 	   a (void *) and cast to int. Note that this may generate warning
@@ -204,7 +204,7 @@ int test_communicators( void )
 	MPI_Keyval_free(&key_1 );
 	MPI_Keyval_free(&key_3 );
     }
-    /* 
+    /** 
        Split the world into even & odd communicators with reversed ranks.
     */
 #ifdef DEBUG
@@ -227,7 +227,7 @@ int test_communicators( void )
     }
     
     MPI_Barrier(split_comm );
-    /*
+    /**
       Test each possible Comm_compare result
     */
 #ifdef DEBUG
@@ -275,7 +275,7 @@ int test_communicators( void )
 	    MPI_Abort(MPI_COMM_WORLD, 3013 );
 	}
     }
-    /*
+    /**
       Free all communicators created
     */
 #ifdef DEBUG

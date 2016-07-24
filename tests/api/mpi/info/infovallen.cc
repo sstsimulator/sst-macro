@@ -1,9 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <string.h>
@@ -24,13 +20,13 @@ int infovallen( int argc, char *argv[] )
     MTest_Init( &argc, &argv );
 
     MPI_Info_create( &info );
-    /* Use only named keys incase the info implementation only supports
+    /** Use only named keys incase the info implementation only supports
        the predefined keys (e.g., IBM) */
     for (i=0; i<NKEYS; i++) {
 	MPI_Info_set( info, keys[i], values[i] );
     }
 
-    /* Check that all values are present */
+    /** Check that all values are present */
     for (i=0; i<NKEYS; i++) {
 	MPI_Info_get_valuelen( info, keys[i], &vallen, &flag );
 	if (!flag) {

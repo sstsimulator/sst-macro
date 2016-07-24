@@ -77,8 +77,8 @@ nic::init_factory_params(sprockit::sim_parameters *params)
 
   if (params->has_namespace("traffic_matrix")){
     sprockit::sim_parameters* traffic_params = params->get_namespace("traffic_matrix");
-    spy_num_messages_ = test_cast(stat_spyplot, stat_collector_factory::get_optional_param("type", "spyplot_png", traffic_params));
-    spy_bytes_ = test_cast(stat_spyplot, stat_collector_factory::get_optional_param("type", "spyplot_png", traffic_params));
+    spy_num_messages_ = test_cast(stat_spyplot, stat_collector_factory::get_optional_param("type", "spyplot", traffic_params));
+    spy_bytes_ = test_cast(stat_spyplot, stat_collector_factory::get_optional_param("type", "spyplot", traffic_params));
 
     if (!spy_num_messages_ || !spy_bytes_){
       spkt_throw_printf(sprockit::value_error,
@@ -189,9 +189,12 @@ nic::ack_send(network_message* payload)
 void
 nic::intranode_send(network_message* payload)
 {
-  record_message(payload);
+  //Stop recording for now
+  //record_message(payload);
+
   nic_debug("intranode send payload %p:%s",
     payload, payload->to_string().c_str());
+
   switch(payload->type())
   {
   case network_message::nvram_get_request:

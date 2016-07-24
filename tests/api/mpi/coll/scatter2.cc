@@ -6,7 +6,7 @@
 
 namespace scatter2 {
 
-/* This example sends a vector and receives individual elements, but the
+/** This example sends a vector and receives individual elements, but the
    root process does not receive any data */
 
 int scatter2( int argc, char **argv )
@@ -35,7 +35,7 @@ int scatter2( int argc, char **argv )
 	printf( "Vector extent is %ld, should be %ld\n", 
 		 (long) vextent, (long)(((n-1)*stride+1)*sizeof(double)) );
     }
-    /* Note that the exted of type vector is from the first to the
+    /** Note that the exted of type vector is from the first to the
        last element, not n*stride.
        E.g., with n=1, the extent is a single double */
 

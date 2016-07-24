@@ -5,11 +5,11 @@
 #include "mpitest.h"
 
 namespace oplor {
-/*
+/**
 static char MTEST_Descrip[] = "Test MPI_LOR operations on optional datatypes dupported by MPICH2";
 */
 
-/*
+/**
  * This test looks at the handling of logical and for types that are not 
  * integers or are not required integers (e.g., long long).  MPICH2 allows
  * these as well.  A strict MPI test should not include this test.
@@ -32,7 +32,7 @@ int oplor( int argc, char *argv[] )
     MPI_Comm_rank( comm, &rank );
     MPI_Comm_size( comm, &size );
 
-    /* Some MPI implementations do not implement all of the required
+    /** Some MPI implementations do not implement all of the required
        (datatype,operations) combinations, and further, they do not
        always provide clear and specific error messages.  By catching 
        the error, we can provide a higher quality, more specific message.
@@ -40,7 +40,7 @@ int oplor( int argc, char *argv[] )
     MPI_Comm_set_errhandler( comm, MPI_ERRORS_RETURN );
 
 #ifndef USE_STRICT_MPI
-    /* char */
+    /** char */
     MTestPrintfMsg( 10, "Reduce of MPI_CHAR\n" );
     cinbuf[0] = 1;
     cinbuf[1] = 0;
@@ -70,9 +70,9 @@ int oplor( int argc, char *argv[] )
 	    }
 	}
     }
-#endif /* USE_STRICT_MPI */
+#endif /** USE_STRICT_MPI */
 
-    /* signed char */
+    /** signed char */
     MTestPrintfMsg( 10, "Reduce of MPI_SIGNED_CHAR\n" );
     scinbuf[0] = 1;
     scinbuf[1] = 0;
@@ -103,7 +103,7 @@ int oplor( int argc, char *argv[] )
 	}
     }
 
-    /* unsigned char */
+    /** unsigned char */
     MTestPrintfMsg( 10, "Reduce of MPI_UNSIGNED_CHAR\n" );
     ucinbuf[0] = 1;
     ucinbuf[1] = 0;
@@ -135,7 +135,7 @@ int oplor( int argc, char *argv[] )
     }
 
 #ifndef USE_STRICT_MPI
-    /* float */
+    /** float */
     MTestPrintfMsg( 10, "Reduce of MPI_FLOAT\n" );
     finbuf[0] = 1;
     finbuf[1] = 0;
@@ -166,7 +166,7 @@ int oplor( int argc, char *argv[] )
 	}
     }
 
-    /* double */
+    /** double */
     MTestPrintfMsg( 10, "Reduce of MPI_DOUBLE\n" );
     dinbuf[0] = 1;
     dinbuf[1] = 0;
@@ -199,7 +199,7 @@ int oplor( int argc, char *argv[] )
 
 #ifdef HAVE_LONG_DOUBLE
     { long double ldinbuf[3], ldoutbuf[3];
-    /* long double */
+    /** long double */
     ldinbuf[0] = 1;
     ldinbuf[1] = 0;
     ldinbuf[2] = (rank > 0);
@@ -232,13 +232,13 @@ int oplor( int argc, char *argv[] )
 	}
 	}
     }
-#endif /* HAVE_LONG_DOUBLE */
-#endif /* USE_STRICT_MPI */
+#endif /** HAVE_LONG_DOUBLE */
+#endif /** USE_STRICT_MPI */
 
 #ifdef HAVE_LONG_LONG
     {
 	long long llinbuf[3], lloutbuf[3];
-    /* long long */
+    /** long long */
     llinbuf[0] = 1;
     llinbuf[1] = 0;
     llinbuf[2] = (rank > 0);

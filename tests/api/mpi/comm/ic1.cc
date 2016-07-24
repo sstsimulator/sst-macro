@@ -1,10 +1,7 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
 
-/*
+
+
+/**
  * A simple test of the intercomm create routine, with a communication test
  */
 #include <sstmac/replacements/mpi.h>
@@ -22,7 +19,7 @@ int ic1( int argc, char *argv[] )
     MTest_Init( &argc, &argv );
 
     trigger = 1;
-/*    while (trigger) ; */
+/**    while (trigger) ; */
 
     MPI_Comm_size( MPI_COMM_WORLD, &size );
     if (size < 2) {
@@ -32,7 +29,7 @@ int ic1( int argc, char *argv[] )
 
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );
 
-    /* Make an intercomm of the first two elements of comm_world */
+    /** Make an intercomm of the first two elements of comm_world */
     if (rank < 2) {
 	int lrank = rank, rrank = -1;
 	MPI_Status status;
@@ -42,7 +39,7 @@ int ic1( int argc, char *argv[] )
 			      MPI_COMM_WORLD, remote_rank, 27, 
 			      &intercomm );
 
-	/* Now, communicate between them */
+	/** Now, communicate between them */
 	MPI_Sendrecv( &lrank, 1, MPI_INT, 0, 13, 
 		      &rrank, 1, MPI_INT, 0, 13, intercomm, &status );
 
@@ -55,7 +52,7 @@ int ic1( int argc, char *argv[] )
 	MPI_Comm_free( &intercomm );
     }
     
-    /* The next test should create an intercomm with groups of different
+    /** The next test should create an intercomm with groups of different
        sizes FIXME */
 
     MTest_Finalize( errs );

@@ -1,16 +1,11 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpitest.h"
 
 namespace cmsplit {
-/*
+/**
 static char MTEST_Descrip[] = "Test comm split";
 */
 
@@ -37,7 +32,7 @@ int cmsplit( int argc, char *argv[] )
     MPI_Comm_split( comm, color, size - rank, &scomm );
     
     if (rank < 2) {
-	/* Check that the ranks are ordered correctly */
+	/** Check that the ranks are ordered correctly */
 	MPI_Comm_rank( scomm, &srank );
 	if (srank != 1 - rank) {
 	    errs++;

@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,30 +11,30 @@
 namespace blockindexed_zero_count {
 static int verbose = 1;
 
-/* tests */
+/** tests */
 int blockindexed_test(void);
 
-/* helper functions */
+/** helper functions */
 int parse_args(int argc, char **argv);
 
 int blockindexed_zero_count(int argc, char **argv)
 {
     int err, errs = 0;
 
-    MPI_Init(&argc, &argv); /* MPI-1.2 doesn't allow for MPI_Init(0,0) */
+    MPI_Init(&argc, &argv); /** MPI-1.2 doesn't allow for MPI_Init(0,0) */
     parse_args(argc, argv);
 
-    /* To improve reporting of problems about operations, we
+    /** To improve reporting of problems about operations, we
        change the error handler to errors return */
     MPI_Comm_set_errhandler( MPI_COMM_WORLD, MPI_ERRORS_RETURN );
 
-    /* perform some tests */
+    /** perform some tests */
     err = blockindexed_test();
     if (err && verbose) fprintf(stderr, "%d errors in blockindexed test.\n",
 				err);
     errs += err;
 
-    /* print message and exit */
+    /** print message and exit */
     if (errs) {
 	fprintf(stderr, "Found %d errors\n", errs);
     }
@@ -48,7 +45,7 @@ int blockindexed_zero_count(int argc, char **argv)
     return 0;
 }
 
-/* blockindexed_test()
+/** blockindexed_test()
  *
  * Tests behavior with a zero-count blockindexed.
  *
@@ -119,7 +116,7 @@ int blockindexed_test(void)
 
 int parse_args(int argc, char **argv)
 {
-    /*
+    /**
     int ret;
 
     while ((ret = getopt(argc, argv, "v")) >= 0)

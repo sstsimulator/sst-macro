@@ -1,9 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 
@@ -16,7 +12,7 @@ int typelb( int argc, char **argv)
 
     MPI_Init(&argc, &argv);
 
-    /* Set some values in locations that should not be accessed */
+    /** Set some values in locations that should not be accessed */
     blockcnt[1] = -1;
     offsets[1] = -1;
 
@@ -34,7 +30,7 @@ int typelb( int argc, char **argv)
 	MPI_Type_extent(newtype, &extent);
 	MPI_Type_ub(newtype, &ub);
 	
-	/* Check that the results are correct */
+	/** Check that the results are correct */
 #ifdef DEBUG
 	printf("lb=%ld, ub=%ld, extent=%ld\n", lb, ub, extent);
 	printf("Should be lb=4, ub=5, extent=1\n");

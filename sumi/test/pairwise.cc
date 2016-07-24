@@ -4,6 +4,7 @@
 
 using namespace sumi;
 
+#undef BUFSIZE
 #define BUFSIZE 1024
 #define EAGERSIZE 100
 #define DEBUG 0

@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include "mpitest.h"
@@ -11,10 +8,10 @@
 
 namespace unpack {
 
-/* Test sent in by Avery Ching to report a bug in MPICH2. 
+/** Test sent in by Avery Ching to report a bug in MPICH2. 
    Adding it as a regression test. */
 
-/*
+/**
 static void print_char_buf(char *buf_name, char *buf, int buf_len)
 {
     int i;
@@ -56,7 +53,7 @@ int unpack(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &myid);
     MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
 
-    /* Creating the datatype to use for unpacking */
+    /** Creating the datatype to use for unpacking */
     MPI_Type_indexed(COUNT, blk_arr, dsp_arr,
                      MPI_CHAR, &tmp_dtype);
     MPI_Type_commit(&tmp_dtype);
@@ -88,14 +85,14 @@ int unpack(int argc, char **argv)
     for (i = 0; i < unpack_buf_sz; i++)
 	unpack_buf[i] = 'a' + i;
     
-    /* print_char_buf("mem_buf before unpack", mem_buf, 2 * mem_dtype_ext); */
+    /** print_char_buf("mem_buf before unpack", mem_buf, 2 * mem_dtype_ext); */
 
     MPI_Unpack(unpack_buf, unpack_buf_sz, &buf_pos,
 	       mem_buf, 2, mem_dtype, MPI_COMM_SELF);
-    /* Note: Unpack without a Pack is not technically correct, but should work
+    /** Note: Unpack without a Pack is not technically correct, but should work
      * with MPICH2. */
 
-    /* print_char_buf("mem_buf after unpack", mem_buf, 2 * mem_dtype_ext);
+    /** print_char_buf("mem_buf after unpack", mem_buf, 2 * mem_dtype_ext);
        print_char_buf("correct buffer should be", 
                        correct_buf, 2 * mem_dtype_ext); */
 

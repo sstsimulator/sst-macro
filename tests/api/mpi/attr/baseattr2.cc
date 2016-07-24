@@ -20,7 +20,7 @@ int baseattr2( int argc, char **argv)
     MPI_Comm_size( MPI_COMM_WORLD, &size );
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );
 
-    /* Set errors return so that we can provide better information 
+    /** Set errors return so that we can provide better information 
        should a routine reject one of the attribute values */
     MPI_Errhandler_set( MPI_COMM_WORLD, MPI_ERRORS_RETURN );
 
@@ -89,7 +89,7 @@ int baseattr2( int argc, char **argv)
     }
     else {
 	if (flag) {
-	    /* Wtime need not be set */
+	    /** Wtime need not be set */
 	    vval = *(int*)v;
 	    if (vval < 0 || vval > 1) {
 		errs++;
@@ -105,7 +105,7 @@ int baseattr2( int argc, char **argv)
 	errs++;
     }
     else {
-	/* appnum need not be set */
+	/** appnum need not be set */
 	if (flag) {
 	    vval = *(int *)v;
 	    if (vval < 0) {
@@ -121,7 +121,7 @@ int baseattr2( int argc, char **argv)
 	errs++;
     }
     else {
-	/* MPI_UNIVERSE_SIZE need not be set */
+	/** MPI_UNIVERSE_SIZE need not be set */
 	if (flag) {
 	    vval = *(int *)v;
 	    if (vval < size) {
@@ -137,7 +137,7 @@ int baseattr2( int argc, char **argv)
 	errs++;
     }
     else {
-	/* Last used code must be defined and >= MPI_ERR_LASTCODE */
+	/** Last used code must be defined and >= MPI_ERR_LASTCODE */
 	if (flag) {
 	    vval = *(int*)v;
 	    if (vval < MPI_ERR_LASTCODE) {

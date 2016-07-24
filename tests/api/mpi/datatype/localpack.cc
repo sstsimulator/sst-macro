@@ -1,9 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
-/* based on the pack.c test in the mpich suite.
+
+
+/** based on the pack.c test in the mpich suite.
  */
 
 #include <sstmac/replacements/mpi.h>
@@ -32,7 +29,7 @@ int localpack(int argc, char *argv[])
     double a,b;
     int pos;
 
-    /* Initialize MPI */
+    /** Initialize MPI */
     MPI_Init(&argc, &argv);
     parse_args(argc, argv);
 
@@ -54,7 +51,7 @@ int localpack(int argc, char *argv[])
     MPI_Unpack(buffer, size, &pos, &n, 1, MPI_INT, MPI_COMM_WORLD);
     MPI_Unpack(buffer, size, &pos, &a, 1, MPI_DOUBLE, MPI_COMM_WORLD);
     MPI_Unpack(buffer, size, &pos, &b, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-    /* Check results */
+    /** Check results */
     if (n != 10) { 
 	errs++;
 	if (verbose) fprintf(stderr, "Wrong value for n; got %d expected %d\n", n, 10 );
@@ -68,7 +65,7 @@ int localpack(int argc, char *argv[])
 	if (verbose) fprintf(stderr, "Wrong value for b; got %f expected %f\n", b, 2.2 );
     }
 
-    /* print message and exit */
+    /** print message and exit */
     if (errs) {
 	fprintf(stderr, "Found %d errors\n", errs);
     }
@@ -81,7 +78,7 @@ int localpack(int argc, char *argv[])
 
 int parse_args(int argc, char **argv)
 {
-    /*
+    /**
     int ret;
 
     while ((ret = getopt(argc, argv, "v")) >= 0)

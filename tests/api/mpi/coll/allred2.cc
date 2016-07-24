@@ -5,7 +5,7 @@
 #include "mpitest.h"
 
 namespace allred2 {
-/*
+/**
 static char MTEST_Descrip[] = "Test MPI_Allreduce with MPI_IN_PLACE";
 */
 
@@ -25,11 +25,11 @@ int allred2( int argc, char *argv[] )
 	MPI_Comm_rank( comm, &rank );
 	
 	for (count = 1; count < 65000; count = count * 2) {
-	    /* Contiguous data */
+	    /** Contiguous data */
 	    buf = (int *)malloc( count * sizeof(int) );
 	    for (i=0; i<count; i++) buf[i] = rank + i;
 	    MPI_Allreduce( MPI_IN_PLACE, buf, count, MPI_INT, MPI_SUM, comm );
-	    /* Check the results */
+	    /** Check the results */
 	    for (i=0; i<count; i++) {
 		int result = i * size + (size*(size-1))/2;
 		if (buf[i] != result) {

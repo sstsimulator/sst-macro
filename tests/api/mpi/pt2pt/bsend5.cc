@@ -1,13 +1,11 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
 #include <stdio.h>
 #include <sstmac/replacements/mpi.h>
 #include "mpitest.h" 
 
 namespace bsend5 {
+
+#undef BUFSIZE
 #define BUFSIZE 2000
 int bsend5( int argc, char *argv[] )
 {

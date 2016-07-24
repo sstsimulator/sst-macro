@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include "mpitestconf.h"
 #ifdef HAVE_UNISTD_H
@@ -15,7 +12,7 @@ namespace contents {
 
 static int verbose = 1;
 
-/* tests */
+/** tests */
 int builtin_float_test(void);
 int vector_of_vectors_test(void);
 int optimizable_vector_of_basics_test(void);
@@ -23,7 +20,7 @@ int indexed_of_basics_test(void);
 int indexed_of_vectors_test(void);
 int struct_of_basics_test(void);
 
-/* helper functions */
+/** helper functions */
 char *combiner_to_string(int combiner);
 int parse_args(int argc, char **argv);
 
@@ -31,14 +28,14 @@ int contents(int argc, char **argv)
 {
     int err, errs = 0;
 
-    MPI_Init(&argc, &argv); /* MPI-1.2 doesn't allow for MPI_Init(0,0) */
+    MPI_Init(&argc, &argv); /** MPI-1.2 doesn't allow for MPI_Init(0,0) */
     parse_args(argc, argv);
 
-    /* To improve reporting of problems about operations, we
+    /** To improve reporting of problems about operations, we
        change the error handler to errors return */
     MPI_Comm_set_errhandler( MPI_COMM_WORLD, MPI_ERRORS_RETURN );
 
-    /* perform some tests */
+    /** perform some tests */
     err = builtin_float_test();
     errs += err;
     if (err) {
@@ -74,7 +71,7 @@ int contents(int argc, char **argv)
     errs += err;
 #endif
 
-    /* print message and exit */
+    /** print message and exit */
     if (errs) {
 	fprintf(stderr, "Found %d errors\n", errs);
     }
@@ -85,7 +82,7 @@ int contents(int argc, char **argv)
     return 0;
 }
 
-/* builtin_float_test()
+/** builtin_float_test()
  *
  * Tests functionality of get_envelope() and get_contents() on a MPI_FLOAT.
  *
@@ -108,11 +105,11 @@ int builtin_float_test(void)
 	fprintf(stderr, "combiner = %s; should be named\n", 
 		combiner_to_string(combiner));
 
-    /* Note: it is erroneous to call MPI_Type_get_contents() on a basic. */
+    /** Note: it is erroneous to call MPI_Type_get_contents() on a basic. */
     return errs;
 }
 
-/* vector_of_vectors_test()
+/** vector_of_vectors_test()
  *
  * Builds a vector of a vector of ints.  Assuming an int array of size 9 
  * integers, and treating the array as a 3x3 2D array, this will grab the 
@@ -133,7 +130,7 @@ int vector_of_vectors_test(void)
 
     int err, errs = 0;
 
-    /* set up type */
+    /** set up type */
     err = MPI_Type_vector(2,
 			  1,
 			  2,
@@ -158,7 +155,7 @@ int vector_of_vectors_test(void)
 	return errs+1;
     }
 
-    /* decode outer vector (get envelope, then contents) */
+    /** decode outer vector (get envelope, then contents) */
     err = MPI_Type_get_envelope(outer_vector,
 				&nints,
 				&nadds,
@@ -199,7 +196,7 @@ int vector_of_vectors_test(void)
     if (nadds) adds = (MPI_Aint*)malloc(nadds * sizeof(*adds));
     types = (MPI_Datatype*)malloc(ntypes * sizeof(*types));
 
-    /* get contents of outer vector */
+    /** get contents of outer vector */
     err = MPI_Type_get_contents(outer_vector,
 				nints,
 				nadds,
@@ -232,7 +229,7 @@ int vector_of_vectors_test(void)
     if (nadds) free(adds);
     free(types);
 
-    /* decode inner vector */
+    /** decode inner vector */
     err = MPI_Type_get_envelope(inner_vector_copy,
 				&nints,
 				&nadds,
@@ -312,7 +309,7 @@ int vector_of_vectors_test(void)
     return 0;
 }
 
-/* optimizable_vector_of_basics_test()
+/** optimizable_vector_of_basics_test()
  *
  * Builds a vector of ints.  Count is 10, blocksize is 2, stride is 2, so this
  * is equivalent to a contig of 20.  But remember...we should get back our
@@ -330,14 +327,14 @@ int optimizable_vector_of_basics_test(void)
 
     int err, errs = 0;
 
-    /* set up type */
+    /** set up type */
     err = MPI_Type_vector(10,
 			  2,
 			  2,
 			  MPI_INT,
 			  &parent_type);
 
-    /* decode */
+    /** decode */
     err = MPI_Type_get_envelope(parent_type,
 				&nints,
 				&nadds,
@@ -395,7 +392,7 @@ int optimizable_vector_of_basics_test(void)
 }
 
 
-/* indexed_of_basics_test(void)
+/** indexed_of_basics_test(void)
  *
  * Simple indexed type.
  *
@@ -413,14 +410,14 @@ int indexed_of_basics_test(void)
 
     int err, errs = 0;
 
-    /* set up type */
+    /** set up type */
     err = MPI_Type_indexed(s_count,
 			   s_blocklengths,
 			   s_displacements,
 			   MPI_INT,
 			   &parent_type);
 
-    /* decode */
+    /** decode */
     err = MPI_Type_get_envelope(parent_type,
 				&nints,
 				&nadds,
@@ -488,7 +485,7 @@ int indexed_of_basics_test(void)
     return errs;
 }
 
-/* indexed_of_vectors_test()
+/** indexed_of_vectors_test()
  *
  * Builds an indexed type of vectors of ints.
  *
@@ -510,7 +507,7 @@ int indexed_of_vectors_test(void)
 
     int err, errs = 0;
 
-    /* set up type */
+    /** set up type */
     err = MPI_Type_vector(2,
 			  1,
 			  2,
@@ -535,7 +532,7 @@ int indexed_of_vectors_test(void)
 	return errs+1;
     }
 
-    /* decode outer vector (get envelope, then contents) */
+    /** decode outer vector (get envelope, then contents) */
     err = MPI_Type_get_envelope(outer_indexed,
 				&nints,
 				&nadds,
@@ -571,7 +568,7 @@ int indexed_of_vectors_test(void)
     if (nadds) adds = (MPI_Aint*)malloc(nadds * sizeof(*adds));
     types = (MPI_Datatype*)malloc(ntypes * sizeof(*types));
 
-    /* get contents of outer vector */
+    /** get contents of outer vector */
     err = MPI_Type_get_contents(outer_indexed,
 				nints,
 				nadds,
@@ -615,7 +612,7 @@ int indexed_of_vectors_test(void)
     if (nadds) free(adds);
     free(types);
 
-    /* decode inner vector */
+    /** decode inner vector */
     err = MPI_Type_get_envelope(inner_vector_copy,
 				&nints,
 				&nadds,
@@ -697,7 +694,7 @@ int indexed_of_vectors_test(void)
 
 
 #ifdef HAVE_MPI_TYPE_CREATE_STRUCT
-/* struct_of_basics_test(void)
+/** struct_of_basics_test(void)
  *
  * There's nothing simple about structs :).  Although this is an easy one.
  *
@@ -718,14 +715,14 @@ int struct_of_basics_test(void)
 
     int err, errs = 0;
 
-    /* set up type */
+    /** set up type */
     err = MPI_Type_create_struct(s_count,
 				 s_blocklengths,
 				 s_displacements,
 				 s_types,
 				 &parent_type);
 
-    /* decode */
+    /** decode */
     err = MPI_Type_get_envelope(parent_type,
 				&nints,
 				&nadds,
@@ -802,7 +799,7 @@ int struct_of_basics_test(void)
 }
 #endif
 
-/* combiner_to_string(combiner)
+/** combiner_to_string(combiner)
  *
  * Converts a numeric combiner into a pointer to a string used for printing.
  */

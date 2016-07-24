@@ -1,14 +1,11 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2005 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <stdio.h>
 #include <sstmac/replacements/mpi.h>
 #include "mpitest.h"
 
 namespace probenull {
-/* 
+/** 
  * This program checks that MPI_Iprobe and MPI_Probe correctly handle
  * a source of MPI_PROC_NULL
  */
@@ -38,7 +35,7 @@ int probenull(int argc, char **argv)
 	    errs++;
 	}
     }
-    /* If Iprobe failed, probe is likely to as well.  Avoid a possible hang 
+    /** If Iprobe failed, probe is likely to as well.  Avoid a possible hang 
        by testing Probe only if Iprobe test passed */
     if (errs == 0) {
 	MPI_Probe(  MPI_PROC_NULL, 10, MPI_COMM_WORLD, &status );

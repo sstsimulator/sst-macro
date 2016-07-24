@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include "mpitest.h"
@@ -45,7 +42,7 @@ int gtranks( int argc, char *argv[] )
 	ranks[i] = i;
 	ranksout[i] = -1;
     }
-    /* Try translating ranks from comm world compared against
+    /** Try translating ranks from comm world compared against
        comm self, so most will be UNDEFINED */
     MPI_Group_translate_ranks( gworld, size, ranks, gself, ranksout );
     
@@ -66,7 +63,7 @@ int gtranks( int argc, char *argv[] )
 	}
     }
 
-    /* MPI-2 Errata requires that MPI_PROC_NULL is mapped to MPI_PROC_NULL */
+    /** MPI-2 Errata requires that MPI_PROC_NULL is mapped to MPI_PROC_NULL */
     ranks[0] = MPI_PROC_NULL;
     ranks[1] = 1;
     ranks[2] = rank;
@@ -102,7 +99,7 @@ int gtranks( int argc, char *argv[] )
 
     MPI_Group_free(&gself);
 
-    /* Now, try comparing small groups against larger groups, and use groups
+    /** Now, try comparing small groups against larger groups, and use groups
        with irregular members (to bypass optimizations in group_translate_ranks
        for simple groups)
      */

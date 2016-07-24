@@ -1,15 +1,12 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2008 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <sstmac/replacements/mpi.h>
 
 namespace sendflood {
-/*
+/**
  * Run this test with 8 processes.  This test was submitted by xxx
  * as a result of problems seen with the ch3:shm device on a Solaris 
  * system.  The symptom is that the test hangs; this is due to losing 
@@ -119,7 +116,7 @@ int sendflood( int argc, char *argv[] )
 	       fprintf( pf, "  send to master\n" ) ;
 	       fflush( pf ) ;
 	   }
-	   /*
+	   /**
 	   else if (loopProgress && (i & PROGRESS_COUNT) == 0) {
 	     fprintf( pf, "Slave: loop %d\n", i ); fflush( pf );
 	   }
@@ -147,7 +144,7 @@ int sendflood( int argc, char *argv[] )
     }
     MPI_Finalize() ;
 
-    /* This test fails if it hangs */
+    /** This test fails if it hangs */
     if (rank == 0) {
 	printf( " No Errors\n" );
     }

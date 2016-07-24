@@ -12,16 +12,16 @@
 
 namespace allgatherv4 {
 
-/* FIXME: What is this test supposed to accomplish? */
+/** FIXME: What is this test supposed to accomplish? */
 
 #define START_BUF (1)
 #define LARGE_BUF (8 * 1024)
 
-/* FIXME: MAX_BUF is too large */
+/** FIXME: MAX_BUF is too large */
 #define MAX_BUF   (8 * 1024 * 1024)
 #define LOOPS 2
 
-/* #define dprintf printf */
+/** #define dprintf printf */
 #define dprintf(...)
 
 typedef enum {
@@ -77,7 +77,7 @@ int allgatherv4(int argc, char ** argv)
     }
 
 
-    /* COMM_WORLD tests */
+    /** COMM_WORLD tests */
     if (!comm_rank) {
         dprintf("\n\n==========================================================\n");
         dprintf("                         MPI_COMM_WORLD\n");
@@ -85,7 +85,7 @@ int allgatherv4(int argc, char ** argv)
     }
     comm_tests(MPI_COMM_WORLD,sbuf,rbuf,recvcounts,displs);
 
-    /* non-COMM_WORLD tests */
+    /** non-COMM_WORLD tests */
     if (!comm_rank) {
         dprintf("\n\n==========================================================\n");
         dprintf("                         non-COMM_WORLD\n");
@@ -96,7 +96,7 @@ int allgatherv4(int argc, char ** argv)
         comm_tests(comm,sbuf,rbuf,recvcounts,displs);
     MPI_Comm_free(&comm);
 
-    /* Randomized communicator tests */
+    /** Randomized communicator tests */
     if (!comm_rank) {
         dprintf("\n\n==========================================================\n");
         dprintf("                         Randomized Communicator\n");
@@ -201,7 +201,7 @@ double run_test(long long msg_size, MPI_Comm comm, test_t test_type,
 	    }
             recvcounts[i] = (int) tmp;
 
-            /* If the maximum message size is too large, don't run */
+            /** If the maximum message size is too large, don't run */
             if (tmp > MAX_BUF) return 0;
         }
         else if (test_type == BELL_CURVE) {
@@ -211,7 +211,7 @@ double run_test(long long msg_size, MPI_Comm comm, test_t test_type,
                 recvcounts[i - 1 + j] = (int) tmp;
                 displs[i - 1 + j] = 0;
 
-                /* If the maximum message size is too large, don't run */
+                /** If the maximum message size is too large, don't run */
                 if (tmp > MAX_BUF) return 0;
             }
         }
@@ -220,7 +220,7 @@ double run_test(long long msg_size, MPI_Comm comm, test_t test_type,
             displs[i+1] = displs[i] + recvcounts[i];
     }
 
-    /* Test that:
+    /** Test that:
        1: sbuf is large enough
        2: rbuf is large enough
        3: There were no failures (e.g., tmp nowhere > rbuf size 
@@ -234,7 +234,7 @@ double run_test(long long msg_size, MPI_Comm comm, test_t test_type,
     end = MPI_Wtime();
     MPI_Barrier(comm);
 
-    /* Convert to microseconds (why?) */
+    /** Convert to microseconds (why?) */
     total_time = 1.0e6 * (end - start);
     MPI_Reduce(&total_time, &avg_time, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
     MPI_Reduce(&total_time, max_time, 1, MPI_DOUBLE, MPI_MAX, 0, comm);

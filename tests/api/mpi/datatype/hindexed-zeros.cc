@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,11 +22,11 @@ int hindexed_zeros(int argc, char *argv[])
 {
     int err, errs = 0;
 
-    /* Initialize MPI */
+    /** Initialize MPI */
     MPI_Init(&argc, &argv);
     parse_args(argc, argv);
 
-    /* To improve reporting of problems about operations, we
+    /** To improve reporting of problems about operations, we
        change the error handler to errors return */
     MPI_Comm_set_errhandler( MPI_COMM_WORLD, MPI_ERRORS_RETURN );
 
@@ -41,7 +38,7 @@ int hindexed_zeros(int argc, char *argv[])
     if (verbose && err) fprintf(stderr, "error in hindexed_sparsetype_test\n");
     errs += err;
 
-    /* print message and exit */
+    /** print message and exit */
     if (errs) {
 	fprintf(stderr, "Found %d errors\n", errs);
     }
@@ -52,7 +49,7 @@ int hindexed_zeros(int argc, char *argv[])
     return 0;
 }
 
-/* tests with an hindexed type with all zero length blocks */
+/** tests with an hindexed type with all zero length blocks */
 int hindexed_zerotype_test(void)
 {
     int err, errs = 0;
@@ -98,7 +95,7 @@ int hindexed_zerotype_test(void)
 	}
     }
 
-    /* verify count and elements */
+    /** verify count and elements */
     err = MPI_Get_count(&status, mytype, &count);
     if (err != MPI_SUCCESS) {
 	errs++;
@@ -132,7 +129,7 @@ int hindexed_zerotype_test(void)
     return errs;
 }
 
-/* tests a short receive into a sparse hindexed type with a zero
+/** tests a short receive into a sparse hindexed type with a zero
  * length block in it.  sort of eccentric, but we've got the basic
  * stuff covered with other tests.
  */
@@ -188,7 +185,7 @@ int hindexed_sparsetype_test(void)
 	}
     }
  
-    /* verify data */
+    /** verify data */
     for (i=0; i < 16; i++) {
 	if (recvbuf[i] != correct[i]) {
 	    errs++;
@@ -199,7 +196,7 @@ int hindexed_sparsetype_test(void)
 	}
     }
 
-    /* verify count and elements */
+    /** verify count and elements */
     err = MPI_Get_count(&status, mytype, &count);
     if (err != MPI_SUCCESS) {
 	errs++;
@@ -237,7 +234,7 @@ int hindexed_sparsetype_test(void)
 
 int parse_args(int argc, char **argv)
 {
-    /*
+    /**
     int ret;
 
     while ((ret = getopt(argc, argv, "v")) >= 0)

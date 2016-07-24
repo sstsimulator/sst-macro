@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,7 +13,7 @@ static int verbose = 0;
 
 int short_int_pack_test(void);
 
-/* helper functions */
+/** helper functions */
 int parse_args(int argc, char **argv);
 static int pack_and_unpack(char *typebuf,
 			   int count,
@@ -27,17 +24,17 @@ int pairtype_pack(int argc, char *argv[])
 {
     int err, errs = 0;
 
-    MPI_Init(&argc, &argv); /* MPI-1.2 doesn't allow for MPI_Init(0,0) */
+    MPI_Init(&argc, &argv); /** MPI-1.2 doesn't allow for MPI_Init(0,0) */
     //parse_args(argc, argv);
 
-    /* To improve reporting of problems about operations, we
+    /** To improve reporting of problems about operations, we
        change the error handler to errors return */
     MPI_Comm_set_errhandler( MPI_COMM_WORLD, MPI_ERRORS_RETURN );
 
     err = short_int_pack_test();
     errs += err;
 
-    /* print message and exit */
+    /** print message and exit */
     if (errs) {
 	fprintf(stderr, "Found %d errors\n", errs);
     }
@@ -93,7 +90,7 @@ int short_int_pack_test(void)
     return errs;
 }
 
-/* pack_and_unpack()
+/** pack_and_unpack()
  *
  * Perform packing and unpacking of a buffer for the purposes of checking
  * to see if we are processing a type correctly.  Zeros the buffer between
@@ -197,7 +194,7 @@ static int pack_and_unpack(char *typebuf,
 
 int parse_args(int argc, char **argv)
 {
-    /*
+    /**
     int ret;
 
     while ((ret = getopt(argc, argv, "v")) >= 0)

@@ -6,7 +6,7 @@
 #include <string.h>
 
 namespace alltoallw2 {
-/*
+/**
   This program tests MPI_Alltoallw by having processor i send different
   amounts of data to each processor.  This is just the MPI_Alltoallv test,
   but with displacements in bytes rather than units of the datatype.
@@ -36,7 +36,7 @@ int alltoallw2( int argc, char **argv )
     while (MTestGetIntracommGeneral( &comm, 2, 1 )) {
       if (comm == MPI_COMM_NULL) continue;
 
-      /* Create the buffer */
+      /** Create the buffer */
       MPI_Comm_size( comm, &size );
       MPI_Comm_rank( comm, &rank );
       sbuf = (int *)malloc( size * size * sizeof(int) );
@@ -46,13 +46,13 @@ int alltoallw2( int argc, char **argv )
 	MPI_Abort( comm, 1 );
       }
       
-      /* Load up the buffers */
+      /** Load up the buffers */
       for (i=0; i<size*size; i++) {
 	sbuf[i] = i + 100*rank;
 	rbuf[i] = -i;
       }
       
-      /* Create and load the arguments to alltoallv */
+      /** Create and load the arguments to alltoallv */
       sendcounts = (int *)malloc( size * sizeof(int) );
       recvcounts = (int *)malloc( size * sizeof(int) );
       rdispls    = (int *)malloc( size * sizeof(int) );
@@ -63,7 +63,7 @@ int alltoallw2( int argc, char **argv )
 	fprintf( stderr, "Could not allocate arg items!\n" );
 	MPI_Abort( comm, 1 );
       }
-      /* Note that process 0 sends no data (sendcounts[0] = 0) */
+      /** Note that process 0 sends no data (sendcounts[0] = 0) */
       for (i=0; i<size; i++) {
 	sendcounts[i] = i;
 	recvcounts[i] = rank;
@@ -74,7 +74,7 @@ int alltoallw2( int argc, char **argv )
       MPI_Alltoallw( sbuf, sendcounts, sdispls, sendtypes,
 		     rbuf, recvcounts, rdispls, recvtypes, comm );
       
-      /* Check rbuf */
+      /** Check rbuf */
       for (i=0; i<size; i++) {
 	p = rbuf + rdispls[i]/sizeof(int);
 	for (j=0; j<rank; j++) {
@@ -92,7 +92,7 @@ int alltoallw2( int argc, char **argv )
       free(sbuf);
 
 #if MTEST_HAVE_MIN_MPI_VERSION(2,2)
-      /* check MPI_IN_PLACE, added in MPI-2.2 */
+      /** check MPI_IN_PLACE, added in MPI-2.2 */
       free( rbuf );
       rbuf = (int *)malloc( size * (2 * size) * sizeof(int) );
       if (!rbuf) {
@@ -100,9 +100,9 @@ int alltoallw2( int argc, char **argv )
         MPI_Abort( comm, 1 );
       }
 
-      /* Load up the buffers */
+      /** Load up the buffers */
       for (i = 0; i < size; i++) {
-        /* alltoallw displs are in bytes, not in type extents */
+        /** alltoallw displs are in bytes, not in type extents */
         rdispls[i]    = i * (2 * size) * sizeof(int);
         recvtypes[i]  = MPI_INT;
         recvcounts[i] = i + rank;
@@ -118,7 +118,7 @@ int alltoallw2( int argc, char **argv )
       MPI_Alltoallw( MPI_IN_PLACE, NULL, NULL, NULL,
                      rbuf, recvcounts, rdispls, recvtypes, comm );
 
-      /* Check rbuf */
+      /** Check rbuf */
       for (i=0; i<size; i++) {
         p = rbuf + (rdispls[i] / sizeof(int));
         for (j=0; j<recvcounts[i]; j++) {

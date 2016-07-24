@@ -1,9 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <sstmac/software/process/global.h>
 #include <sstmac/util.h>
@@ -21,7 +17,7 @@
 #ifdef HAVE_STDARG_H
 #include <stdarg.h>
 #endif
-/* The following two includes permit the collection of resource usage
+/** The following two includes permit the collection of resource usage
  data in the tests
  */
 #ifdef HAVE_SYS_TIME_H
@@ -32,7 +28,7 @@
 #endif
 #include <errno.h>
 
-/*
+/**
  * Utility routines for writing MPI tests.
  *
  * We check the return codes on all MPI routines (other than INIT)
@@ -46,18 +42,18 @@
 static void
 MTestResourceSummary(FILE *);
 
-/* Here is where we could put the includes and definitions to enable
+/** Here is where we could put the includes and definitions to enable
  memory testing */
 
-static int dbgflag = 0; /* Flag used for debugging */
-global_int wrank(-1); /* World rank */
-static int verbose = 1; /* Message level (0 is none) */
-static int returnWithVal = 0; /* Allow programs to return with a non-zero
+static int dbgflag = 0; /** Flag used for debugging */
+global_int wrank(-1); /** World rank */
+static int verbose = 1; /** Message level (0 is none) */
+static int returnWithVal = 0; /** Allow programs to return with a non-zero
  if there was an error (may cause problems
  with some runtime systems) */
-static int usageOutput = 0; /* */
+static int usageOutput = 0; /** */
 
-/* Provide backward portability to MPI 1 */
+/** Provide backward portability to MPI 1 */
 #ifndef MPI_VERSION
 #define MPI_VERSION 1
 #endif
@@ -65,11 +61,11 @@ static int usageOutput = 0; /* */
 #define MPI_THREAD_SINGLE 0
 #endif
 
-/* 
+/** 
  * Initialize and Finalize MTest
  */
 
-/*
+/**
  Initialize MTest, initializing MPI if necessary.
 
  Environment Variables:
@@ -90,7 +86,7 @@ MTest_Init_thread(int *argc, char ***argv, int required, int *provided)
   MPI_Initialized(&flag);
   if (!flag)
   {
-    /* Permit an MPI that claims only MPI 1 but includes the
+    /** Permit an MPI that claims only MPI 1 but includes the
      MPI_Init_thread routine (e.g., IBM MPI) */
 #if MPI_VERSION >= 2 || defined(HAVE_MPI_INIT_THREAD)
     MPI_Init_thread(argc, argv, required, provided);
@@ -99,14 +95,14 @@ MTest_Init_thread(int *argc, char ***argv, int required, int *provided)
     *provided = -1;
 #endif
   }
-  /* Check for debugging control */
+  /** Check for debugging control */
   if (getenv( "MPITEST_DEBUG" ))
   {
     dbgflag = 1;
     MPI_Comm_rank(MPI_COMM_WORLD, &wrank);
   }
 
-  /* Check for verbose control */
+  /** Check for verbose control */
   envval = getenv( "MPITEST_VERBOSE" );
   if (envval)
   {
@@ -114,7 +110,7 @@ MTest_Init_thread(int *argc, char ***argv, int required, int *provided)
     long val = strtol(envval, &s, 0);
     if (s == envval)
     {
-      /* This is the error case for strtol */
+      /** This is the error case for strtol */
       fprintf(stderr, "Warning: %s not valid for MPITEST_VERBOSE\n", envval);
       fflush(stderr);
     }
@@ -131,7 +127,7 @@ MTest_Init_thread(int *argc, char ***argv, int required, int *provided)
       }
     }
   }
-  /* Check for option to return success/failure in the return value of main */
+  /** Check for option to return success/failure in the return value of main */
   envval = getenv( "MPITEST_RETURN_WITH_CODE" );
   if (envval)
   {
@@ -153,13 +149,13 @@ MTest_Init_thread(int *argc, char ***argv, int required, int *provided)
     }
   }
 
-  /* Print rusage data if set */
+  /** Print rusage data if set */
   if (getenv( "MPITEST_RUSAGE" ))
   {
     usageOutput = 1;
   }
 }
-/* 
+/** 
  * Initialize the tests, using an MPI-1 style init.  Supports 
  * MTEST_THREADLEVEL_DEFAULT to test with user-specified thread level
  */
@@ -196,18 +192,18 @@ MTest_Init(int *argc, char ***argv)
     else
     {
       fprintf(stderr, "Unrecognized thread level %s\n", str);
-      /* Use exit since MPI_Init/Init_thread has not been called. */
+      /** Use exit since MPI_Init/Init_thread has not been called. */
       exit(1);
     }
   }
   MTest_Init_thread(argc, argv, threadLevel, &provided);
 #else
-  /* If the MPI_VERSION is 1, there is no MPI_THREAD_xxx defined */
+  /** If the MPI_VERSION is 1, there is no MPI_THREAD_xxx defined */
   MTest_Init_thread( argc, argv, 0, &provided );
 #endif    
 }
 
-/*
+/**
  Finalize MTest.  errs is the number of errors on the calling process;
  this routine will write the total number of errors over all of MPI_COMM_WORLD
  to the process with rank zero, or " No Errors".
@@ -241,8 +237,8 @@ MTest_Finalize(int errs)
   if (usageOutput)
     MTestResourceSummary(stdout);
 }
-/* ------------------------------------------------------------------------ */
-/* This routine may be used instead of "return 0;" at the end of main; 
+/** ------------------------------------------------------------------------ */
+/** This routine may be used instead of "return 0;" at the end of main; 
  it allows the program to use the return value to signal success or failure.
  */
 int
@@ -252,9 +248,9 @@ MTestReturnValue(int errors)
     return errors ? 1 : 0;
   return 0;
 }
-/* ------------------------------------------------------------------------ */
+/** ------------------------------------------------------------------------ */
 
-/*
+/**
  * Miscellaneous utilities, particularly to eliminate OS dependencies
  * from the tests.
  * MTestSleep( seconds )
@@ -274,7 +270,7 @@ MTestSleep(int sec)
 }
 #endif
 
-/*
+/**
  * Datatypes
  *
  * Eventually, this could read a description of a file.  For now, we hard 
@@ -297,10 +293,10 @@ MTestSleep(int sec)
  */
 global_int datatype_index(0);
 
-/* ------------------------------------------------------------------------ */
-/* Datatype routines for contiguous datatypes                               */
-/* ------------------------------------------------------------------------ */
-/* 
+/** ------------------------------------------------------------------------ */
+/** Datatype routines for contiguous datatypes                               */
+/** ------------------------------------------------------------------------ */
+/** 
  * Setup contiguous buffers of n copies of a datatype.
  */
 static void *
@@ -324,7 +320,7 @@ MTestTypeContigInit(MTestDatatype *mtype)
     p = (signed char *) (mtype->buf);
     if (!p)
     {
-      /* Error - out of memory */
+      /** Error - out of memory */
       MTestError("Out of memory in type buffer init");
     }
     for (i = 0; i < totsize; i++)
@@ -343,7 +339,7 @@ MTestTypeContigInit(MTestDatatype *mtype)
   return mtype->buf;
 }
 
-/* 
+/** 
  * Setup contiguous buffers of n copies of a datatype.  Initialize for
  * reception (e.g., set initial data to detect failure)
  */
@@ -368,7 +364,7 @@ MTestTypeContigInitRecv(MTestDatatype *mtype)
     p = (signed char *) (mtype->buf);
     if (!p)
     {
-      /* Error - out of memory */
+      /** Error - out of memory */
       MTestError("Out of memory in type buffer init");
     }
     for (i = 0; i < totsize; i++)
@@ -428,9 +424,9 @@ MTestTypeContigCheckbuf(MTestDatatype *mtype)
   return err;
 }
 
-/* ------------------------------------------------------------------------ */
-/* Datatype routines for vector datatypes                                   */
-/* ------------------------------------------------------------------------ */
+/** ------------------------------------------------------------------------ */
+/** Datatype routines for vector datatypes                                   */
+/** ------------------------------------------------------------------------ */
 
 static void *
 MTestTypeVectorInit(MTestDatatype *mtype)
@@ -454,24 +450,24 @@ MTestTypeVectorInit(MTestDatatype *mtype)
     p = (unsigned char *) (mtype->buf);
     if (!p)
     {
-      /* Error - out of memory */
+      /** Error - out of memory */
       MTestError("Out of memory in type buffer init");
     }
 
-    /* First, set to -1 */
+    /** First, set to -1 */
     for (i = 0; i < totsize; i++)
       p[i] = 0xff;
 
-    /* Now, set the actual elements to the successive values.
+    /** Now, set the actual elements to the successive values.
      To do this, we need to run 3 loops */
     nc = 0;
-    /* count is usually one for a vector type */
+    /** count is usually one for a vector type */
     for (k = 0; k < mtype->count; k++)
     {
-      /* For each element (block) */
+      /** For each element (block) */
       for (i = 0; i < mtype->nelm; i++)
       {
-        /* For each value */
+        /** For each value */
         for (j = 0; j < mtype->blksize; j++)
         {
           p[j] = (0xff ^ (nc & 0xff));
@@ -499,11 +495,11 @@ MTestTypeVectorFree(MTestDatatype *mtype)
   return 0;
 }
 
-/* ------------------------------------------------------------------------ */
-/* Datatype routines for indexed block datatypes                            */
-/* ------------------------------------------------------------------------ */
+/** ------------------------------------------------------------------------ */
+/** Datatype routines for indexed block datatypes                            */
+/** ------------------------------------------------------------------------ */
 
-/* 
+/** 
  * Setup a buffer for one copy of an indexed datatype. 
  */
 static void *
@@ -521,7 +517,7 @@ MTestTypeIndexedInit(MTestDatatype *mtype)
     signed char *p;
     int i, k, offset, j;
 
-    /* Allocate the send/recv buffer */
+    /** Allocate the send/recv buffer */
     merr = MPI_Type_extent(mtype->datatype, &totsize);
     if (merr)
       MTestPrintError(merr);
@@ -534,20 +530,20 @@ MTestTypeIndexedInit(MTestDatatype *mtype)
     {
       MTestError("Out of memory in type buffer init\n");
     }
-    /* Initialize the elements */
-    /* First, set to -1 */
+    /** Initialize the elements */
+    /** First, set to -1 */
     for (i = 0; i < totsize; i++)
       p[i] = 0xff;
 
-    /* Now, set the actual elements to the successive values.
+    /** Now, set the actual elements to the successive values.
      We require that the base type is a contiguous type */
     k = 0;
     for (i = 0; i < mtype->nelm; i++)
     {
       int b;
-      /* Compute the offset: */
+      /** Compute the offset: */
       offset = mtype->displs[i] * mtype->basesize;
-      /* For each element in the block */
+      /** For each element in the block */
       for (b = 0; b < mtype->index[i]; b++)
       {
         for (j = 0; j < mtype->basesize; j++)
@@ -560,7 +556,7 @@ MTestTypeIndexedInit(MTestDatatype *mtype)
   }
   else
   {
-    /* count == 0 */
+    /** count == 0 */
     if (mtype->buf)
     {
       free(mtype->buf);
@@ -570,7 +566,7 @@ MTestTypeIndexedInit(MTestDatatype *mtype)
   return mtype->buf;
 }
 
-/* 
+/** 
  * Setup indexed buffers for 1 copy of a datatype.  Initialize for
  * reception (e.g., set initial data to detect failure)
  */
@@ -598,7 +594,7 @@ MTestTypeIndexedInitRecv(MTestDatatype *mtype)
     p = (signed char *) (mtype->buf);
     if (!p)
     {
-      /* Error - out of memory */
+      /** Error - out of memory */
       MTestError("Out of memory in type buffer init\n");
     }
     for (i = 0; i < totsize; i++)
@@ -608,7 +604,7 @@ MTestTypeIndexedInitRecv(MTestDatatype *mtype)
   }
   else
   {
-    /* count == 0 */
+    /** count == 0 */
     if (mtype->buf)
     {
       free(mtype->buf);
@@ -653,7 +649,7 @@ MTestTypeIndexedCheckbuf(MTestDatatype *mtype)
     for (i = 0; i < mtype->nelm; i++)
     {
       int b;
-      /* Compute the offset: */
+      /** Compute the offset: */
       offset = mtype->displs[i] * mtype->basesize;
       for (b = 0; b < mtype->index[i]; b++)
       {
@@ -679,12 +675,12 @@ MTestTypeIndexedCheckbuf(MTestDatatype *mtype)
   return err;
 }
 
-/* ------------------------------------------------------------------------ */
-/* Routines to select a datatype and associated buffer create/fill/check    */
-/* routines                                                                 */
-/* ------------------------------------------------------------------------ */
+/** ------------------------------------------------------------------------ */
+/** Routines to select a datatype and associated buffer create/fill/check    */
+/** routines                                                                 */
+/** ------------------------------------------------------------------------ */
 
-/* 
+/** 
  Create a range of datatypes with a given count elements.
  This uses a selection of types, rather than an exhaustive collection.
  It allocates both send and receive types so that they can have the same
@@ -714,10 +710,10 @@ MTestGetDatatypes(MTestDatatype *sendtype, MTestDatatype *recvtype, int count)
   sendtype->buf = 0;
   recvtype->buf = 0;
 
-  /* Set the defaults for the message lengths */
+  /** Set the defaults for the message lengths */
   sendtype->count = count;
   recvtype->count = count;
-  /* Use datatype_index to choose a datatype to use.  If at the end of the
+  /** Use datatype_index to choose a datatype to use.  If at the end of the
    list, return 0 */
   switch ((int) datatype_index)
   {
@@ -752,12 +748,12 @@ MTestGetDatatypes(MTestDatatype *sendtype, MTestDatatype *recvtype, int count)
     merr = MPI_Type_set_name(recvtype->datatype, (char*) "dup of MPI_INT");
     if (merr)
       MTestPrintError(merr);
-    /* dup'ed types are already committed if the original type
+    /** dup'ed types are already committed if the original type
      was committed (MPI-2, section 8.8) */
     break;
   case 4:
-    /* vector send type and contiguous receive type */
-    /* These sizes are in bytes (see the VectorInit code) */
+    /** vector send type and contiguous receive type */
+    /** These sizes are in bytes (see the VectorInit code) */
     sendtype->stride = 3 * sizeof(int);
     sendtype->blksize = sizeof(int);
     sendtype->nelm = recvtype->count;
@@ -783,7 +779,7 @@ MTestGetDatatypes(MTestDatatype *sendtype, MTestDatatype *recvtype, int count)
     break;
 
   case 5:
-    /* Indexed send using many small blocks and contig receive */
+    /** Indexed send using many small blocks and contig receive */
     sendtype->blksize = sizeof(int);
     sendtype->nelm = recvtype->count;
     sendtype->basesize = sizeof(int);
@@ -793,7 +789,7 @@ MTestGetDatatypes(MTestDatatype *sendtype, MTestDatatype *recvtype, int count)
     {
       MTestError("Out of memory in type init\n");
     }
-    /* Make the sizes larger (4 ints) to help push the total
+    /** Make the sizes larger (4 ints) to help push the total
      size to over 256k in some cases, as the MPICH2 code as of
      10/1/06 used large internal buffers for packing non-contiguous
      messages */
@@ -826,7 +822,7 @@ MTestGetDatatypes(MTestDatatype *sendtype, MTestDatatype *recvtype, int count)
     break;
 
   case 6:
-    /* Indexed send using 2 large blocks and contig receive */
+    /** Indexed send using 2 large blocks and contig receive */
     sendtype->blksize = sizeof(int);
     sendtype->nelm = 2;
     sendtype->basesize = sizeof(int);
@@ -836,12 +832,12 @@ MTestGetDatatypes(MTestDatatype *sendtype, MTestDatatype *recvtype, int count)
     {
       MTestError("Out of memory in type init\n");
     }
-    /* index -> block size */
+    /** index -> block size */
     sendtype->index[0] = (recvtype->count + 1) / 2;
     sendtype->displs[0] = 0;
     sendtype->index[1] = recvtype->count - sendtype->index[0];
     sendtype->displs[1] = sendtype->index[0] + 1;
-    /* There is a deliberate gap here */
+    /** There is a deliberate gap here */
 
     merr = MPI_Type_indexed(sendtype->nelm, sendtype->index, sendtype->displs,
         MPI_INT, &sendtype->datatype);
@@ -868,7 +864,7 @@ MTestGetDatatypes(MTestDatatype *sendtype, MTestDatatype *recvtype, int count)
     break;
 
   case 7:
-    /* Indexed receive using many small blocks and contig send */
+    /** Indexed receive using many small blocks and contig send */
     recvtype->blksize = sizeof(int);
     recvtype->nelm = recvtype->count;
     recvtype->basesize = sizeof(int);
@@ -878,11 +874,11 @@ MTestGetDatatypes(MTestDatatype *sendtype, MTestDatatype *recvtype, int count)
     {
       MTestError("Out of memory in type recv init\n");
     }
-    /* Make the sizes larger (4 ints) to help push the total
+    /** Make the sizes larger (4 ints) to help push the total
      size to over 256k in some cases, as the MPICH2 code as of
      10/1/06 used large internal buffers for packing non-contiguous
      messages */
-    /* Note that there are gaps in the indexed type */
+    /** Note that there are gaps in the indexed type */
     for (i = 0; i < recvtype->nelm; i++)
     {
       recvtype->index[i] = 4;
@@ -912,7 +908,7 @@ MTestGetDatatypes(MTestDatatype *sendtype, MTestDatatype *recvtype, int count)
     sendtype->CheckBuf = 0;
     break;
 
-    /* Less commonly used but still simple types */
+    /** Less commonly used but still simple types */
   case 8:
     sendtype->datatype = MPI_SHORT;
     sendtype->isBasic = 1;
@@ -945,7 +941,7 @@ MTestGetDatatypes(MTestDatatype *sendtype, MTestDatatype *recvtype, int count)
     break;
 
 #ifndef USE_STRICT_MPI
-    /* MPI_BYTE may only be used with MPI_BYTE in strict MPI */
+    /** MPI_BYTE may only be used with MPI_BYTE in strict MPI */
   case 13:
     sendtype->datatype = MPI_INT;
     sendtype->isBasic = 1;
@@ -997,7 +993,7 @@ MTestGetDatatypes(MTestDatatype *sendtype, MTestDatatype *recvtype, int count)
   return datatype_index;
 }
 
-/* Reset the datatype index (start from the initial data type.
+/** Reset the datatype index (start from the initial data type.
  Note: This routine is rarely needed; MTestGetDatatypes automatically
  starts over after the last available datatype is used.
  */
@@ -1006,7 +1002,7 @@ MTestResetDatatypes(void)
 {
   datatype_index = 0;
 }
-/* Return the index of the current datatype.  This is rarely needed and
+/** Return the index of the current datatype.  This is rarely needed and
  is provided mostly to enable debugging of the MTest package itself */
 int
 MTestGetDatatypeIndex(void)
@@ -1014,18 +1010,18 @@ MTestGetDatatypeIndex(void)
   return datatype_index;
 }
 
-/* Free the storage associated with a datatype */
+/** Free the storage associated with a datatype */
 void
 MTestFreeDatatype(MTestDatatype *mtype)
 {
   int merr;
-  /* Invoke a datatype-specific free function to handle
+  /** Invoke a datatype-specific free function to handle
    both the datatype and the send/receive buffers */
   if (mtype->FreeBuf)
   {
     (mtype->FreeBuf)(mtype);
   }
-  /* Free the datatype itself if it was created */
+  /** Free the datatype itself if it was created */
   if (!mtype->isBasic)
   {
     merr = MPI_Type_free(&mtype->datatype);
@@ -1034,7 +1030,7 @@ MTestFreeDatatype(MTestDatatype *mtype)
   }
 }
 
-/* Check that a message was received correctly.  Returns the number of
+/** Check that a message was received correctly.  Returns the number of
  errors detected.  Status may be NULL or MPI_STATUS_IGNORE */
 int
 MTestCheckRecv(MPI_Status *status, MTestDatatype *recvtype)
@@ -1048,14 +1044,14 @@ MTestCheckRecv(MPI_Status *status, MTestDatatype *recvtype)
     if (merr)
       MTestPrintError(merr);
 
-    /* Check count against expected count */
+    /** Check count against expected count */
     if (count != recvtype->count)
     {
       errs++;
     }
   }
 
-  /* Check received data */
+  /** Check received data */
   if (!errs && recvtype->CheckBuf(recvtype))
   {
     errs++;
@@ -1063,7 +1059,7 @@ MTestCheckRecv(MPI_Status *status, MTestDatatype *recvtype)
   return errs;
 }
 
-/* This next routine uses a circular buffer of static name arrays just to
+/** This next routine uses a circular buffer of static name arrays just to
  simplify the use of the routine */
 const char *
 MTestGetDatatypeName(MTestDatatype *dtype)
@@ -1079,9 +1075,9 @@ MTestGetDatatypeName(MTestDatatype *dtype)
     MTestPrintError(merr);
   return (const char *) name[sp++];
 }
-/* ----------------------------------------------------------------------- */
+/** ----------------------------------------------------------------------- */
 
-/* 
+/** 
  * Create communicators.  Use separate routines for inter and intra
  * communicators (there is a routine to give both)
  * Note that the routines may return MPI_COMM_NULL, so code should test for
@@ -1093,7 +1089,7 @@ global_int intraCommIdx(0);
 sstmac::sw::sstmac_global_builtin<const char*> intraCommName(0);
 sstmac::sw::sstmac_global_builtin<const char*> interCommName(0);
 
-/* 
+/** 
  * Get an intracommunicator with at least min_size members.  If "allowSmaller"
  * is true, allow the communicator to be smaller than MPI_COMM_WORLD and
  * for this routine to return MPI_COMM_NULL for some values.  Returns 0 if
@@ -1107,7 +1103,7 @@ MTestGetIntracommGeneral(MPI_Comm *comm, int min_size, int allowSmaller)
   int isBasic = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  /* The while loop allows us to skip communicators that are too small.
+  /** The while loop allows us to skip communicators that are too small.
    MPI_COMM_NULL is always considered large enough */
   while (!done)
   {
@@ -1121,14 +1117,14 @@ MTestGetIntracommGeneral(MPI_Comm *comm, int min_size, int allowSmaller)
       intraCommName = "MPI_COMM_WORLD";
       break;
     case 1:
-      /* dup of world */
+      /** dup of world */
       merr = MPI_Comm_dup(MPI_COMM_WORLD, comm);
       if (merr)
         MTestPrintError(merr);
       intraCommName = "Dup of MPI_COMM_WORLD";
       break;
     case 2:
-      /* reverse ranks */
+      /** reverse ranks */
       merr = MPI_Comm_size(MPI_COMM_WORLD, &size);
       if (merr)
         MTestPrintError(merr);
@@ -1141,7 +1137,7 @@ MTestGetIntracommGeneral(MPI_Comm *comm, int min_size, int allowSmaller)
       intraCommName = "Rank reverse of MPI_COMM_WORLD";
       break;
     case 3:
-      /* subset of world, with reversed ranks */
+      /** subset of world, with reversed ranks */
       merr = MPI_Comm_size(MPI_COMM_WORLD, &size);
       if (merr)
         MTestPrintError(merr);
@@ -1160,7 +1156,7 @@ MTestGetIntracommGeneral(MPI_Comm *comm, int min_size, int allowSmaller)
       intraCommName = "MPI_COMM_SELF";
       break;
 
-      /* These next cases are communicators that include some
+      /** These next cases are communicators that include some
        but not all of the processes */
     case 5:
     case 6:
@@ -1194,7 +1190,7 @@ MTestGetIntracommGeneral(MPI_Comm *comm, int min_size, int allowSmaller)
       }
       else
       {
-        /* Act like default */
+        /** Act like default */
 
         *comm = MPI_COMM_NULL;
         intraCommIdx = -1;
@@ -1202,7 +1198,7 @@ MTestGetIntracommGeneral(MPI_Comm *comm, int min_size, int allowSmaller)
     }
       break;
 
-      /* Other ideas: dup of self, cart comm, graph comm */
+      /** Other ideas: dup of self, cart comm, graph comm */
     default:
 
       *comm = MPI_COMM_NULL;
@@ -1225,17 +1221,17 @@ MTestGetIntracommGeneral(MPI_Comm *comm, int min_size, int allowSmaller)
       done = 1;
     }
 
-    /* we are only done if all processes are done */
+    /** we are only done if all processes are done */
     MPI_Allreduce(MPI_IN_PLACE, &done, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
 
-    /* Advance the comm index whether we are done or not, otherwise we could
+    /** Advance the comm index whether we are done or not, otherwise we could
      * spin forever trying to allocate a too-small communicator over and
      * over again. */
     intraCommIdx++;
 
     if (!done && !isBasic && *comm != MPI_COMM_NULL)
     {
-      /* avoid leaking communicators */
+      /** avoid leaking communicators */
       merr = MPI_Comm_free(comm);
       if (merr)
         MTestPrintError(merr);
@@ -1247,7 +1243,7 @@ MTestGetIntracommGeneral(MPI_Comm *comm, int min_size, int allowSmaller)
   return intraCommIdx;
 }
 
-/* 
+/** 
  * Get an intracommunicator with at least min_size members.
  */
 int
@@ -1256,7 +1252,7 @@ MTestGetIntracomm(MPI_Comm *comm, int min_size)
   return MTestGetIntracommGeneral(comm, min_size, 0);
 }
 
-/* Return the name of an intra communicator */
+/** Return the name of an intra communicator */
 const char *
 MTestGetIntracommName(void)
 {
@@ -1264,7 +1260,7 @@ MTestGetIntracommName(void)
 }
 
 
-/* Get a communicator of a given minimum size.  Both intra and inter 
+/** Get a communicator of a given minimum size.  Both intra and inter 
  communicators are provided */
 int
 MTestGetComm(MPI_Comm *comm, int min_size)
@@ -1274,7 +1270,7 @@ MTestGetComm(MPI_Comm *comm, int min_size)
   return MTestGetIntracomm(comm, min_size);
 }
 
-/* Free a communicator.  It may be called with a predefined communicator
+/** Free a communicator.  It may be called with a predefined communicator
  or MPI_COMM_NULL */
 void
 MTestFreeComm(MPI_Comm *comm)
@@ -1289,7 +1285,7 @@ MTestFreeComm(MPI_Comm *comm)
   }
 }
 
-/* ------------------------------------------------------------------------ */
+/** ------------------------------------------------------------------------ */
 void
 MTestPrintError(int errcode)
 {
@@ -1312,8 +1308,8 @@ MTestPrintErrorMsg(const char msg[], int errcode)
   printf("%s: Error class %d (%s)\n", msg, errclass, string);
   fflush(stdout);
 }
-/* ------------------------------------------------------------------------ */
-/* 
+/** ------------------------------------------------------------------------ */
+/** 
  If verbose output is selected and the level is at least that of the
  value of the verbose flag, then perform printf( format, ... );
  */
@@ -1331,7 +1327,7 @@ MTestPrintfMsg(int level, const char format[], ...)
     fflush(stdout);
   }
 }
-/* Fatal error.  Report and exit */
+/** Fatal error.  Report and exit */
 void
 MTestError(const char *msg)
 {
@@ -1339,7 +1335,7 @@ MTestError(const char *msg)
   fflush(stderr);
   MPI_Abort(MPI_COMM_WORLD, 1);
 }
-/* ------------------------------------------------------------------------ */
+/** ------------------------------------------------------------------------ */
 static void
 MTestResourceSummary(FILE *fp)
 {
@@ -1349,7 +1345,7 @@ MTestResourceSummary(FILE *fp)
   int doOutput = 1;
   if (getrusage(RUSAGE_SELF, &ru) == 0)
   {
-    /* There is an option to generate output only when a resource
+    /** There is an option to generate output only when a resource
      exceeds a threshold.  To date, only page faults supported. */
     if (pfThreshold == -2)
     {
@@ -1366,12 +1362,12 @@ MTestResourceSummary(FILE *fp)
     }
     if (doOutput)
     {
-      /* Cast values to long in case some system has defined them
+      /** Cast values to long in case some system has defined them
        as another integer type */
       fprintf(fp, "RUSAGE: max resident set = %ldKB\n", (long) ru.ru_maxrss);
       fprintf(fp, "RUSAGE: page faults = %ld : %ld\n", (long) ru.ru_minflt,
           (long) ru.ru_majflt);
-      /* Not every Unix provides useful information for the xxrss fields */
+      /** Not every Unix provides useful information for the xxrss fields */
       fprintf(fp, "RUSAGE: memory in text/data/stack = %ld : %ld : %ld\n",
           (long) ru.ru_ixrss, (long) ru.ru_idrss, (long) ru.ru_isrss);
       fprintf(fp, "RUSAGE: I/O in and out = %ld : %ld\n", (long) ru.ru_inblock,

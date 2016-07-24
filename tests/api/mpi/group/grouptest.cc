@@ -1,9 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,13 +24,13 @@ int grouptest( int argc, char *argv[] )
 	    errs++;
 	}
 
-	/* 16 members, this process is rank 0, return in group 1 */
+	/** 16 members, this process is rank 0, return in group 1 */
 	ranks[0] = myrank; ranks[1] = 2; ranks[2] = 7;
 	if (myrank == 2) ranks[1] = 3;
 	if (myrank == 7) ranks[2] = 6;
 	MPI_Group_incl( g1, 3, ranks, &g2 );
 	
-	/* Check the resulting group */
+	/** Check the resulting group */
 	MPI_Group_size( g2, &size );
 	MPI_Group_rank( g2, &rank );
 	
@@ -57,7 +53,7 @@ int grouptest( int argc, char *argv[] )
 	    }
 	}
 	
-	/* Translate the process of the self group against another group */
+	/** Translate the process of the self group against another group */
 	MPI_Comm_group( MPI_COMM_SELF, &selfgroup );
 	rin[0] = 0;
 	MPI_Group_translate_ranks( selfgroup, 1, rin, g1, rout );
@@ -84,7 +80,7 @@ int grouptest( int argc, char *argv[] )
 	}
 	MPI_Group_free( &selfgroup );
 
-	/* Exclude everyone in our group */
+	/** Exclude everyone in our group */
 	{
 	    int ii, *lranks, g1size;
 
@@ -101,8 +97,8 @@ int grouptest( int argc, char *argv[] )
 	    free( lranks );
 	}
 	
-	/* Add tests for additional group operations */
-	/* 
+	/** Add tests for additional group operations */
+	/** 
 	   g2 = incl 1,3,7
 	   g3 = excl 1,3,7
 	   intersect ( w, g2 ) => g2
@@ -141,7 +137,7 @@ int grouptest( int argc, char *argv[] )
 	MPI_Group_free( &g5 );
 	MPI_Group_free( &g45 );
 
-	/* Now, duplicate the test, but using negative strides */
+	/** Now, duplicate the test, but using negative strides */
 	range[0][0] = size-1;
 	range[0][1] = 1;
 	range[0][2] = -2;

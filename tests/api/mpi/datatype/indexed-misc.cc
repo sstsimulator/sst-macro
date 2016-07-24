@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,13 +13,13 @@ namespace indexed_misc{
 
 static int verbose = 1;
 
-/* tests */
+/** tests */
 int indexed_contig_test(void);
 int indexed_zeroblock_first_test(void);
 int indexed_zeroblock_middle_test(void);
 int indexed_zeroblock_last_test(void);
 
-/* helper functions */
+/** helper functions */
 int parse_args(int argc, char **argv);
 static int pack_and_unpack(char *typebuf,
 			   int count,
@@ -33,14 +30,14 @@ int indexed_misc(int argc, char **argv)
 {
     int err, errs = 0;
 
-    MPI_Init(&argc, &argv); /* MPI-1.2 doesn't allow for MPI_Init(0,0) */
+    MPI_Init(&argc, &argv); /** MPI-1.2 doesn't allow for MPI_Init(0,0) */
     parse_args(argc, argv);
 
-    /* To improve reporting of problems about operations, we
+    /** To improve reporting of problems about operations, we
        change the error handler to errors return */
     MPI_Comm_set_errhandler( MPI_COMM_WORLD, MPI_ERRORS_RETURN );
 
-    /* perform some tests */
+    /** perform some tests */
     err = indexed_contig_test();
     if (err && verbose) fprintf(stderr,
 				"%d errors in indexed_contig_test.\n",
@@ -65,7 +62,7 @@ int indexed_misc(int argc, char **argv)
 				err);
     errs += err;
 
-    /* print message and exit */
+    /** print message and exit */
     if (errs) {
 	fprintf(stderr, "Found %d errors\n", errs);
     }
@@ -202,7 +199,7 @@ int indexed_zeroblock_last_test(void)
     return errs;
 }
 
-/* indexed_contig_test()
+/** indexed_contig_test()
  *
  * Tests behavior with an indexed array that can be compacted but should
  * continue to be stored as an indexed type.  Specifically for coverage.
@@ -287,7 +284,7 @@ int indexed_contig_test(void)
 		goodval = 6;
 		break;
 	    default:
-		goodval = 0; /* pack_and_unpack() zeros before unpack */
+		goodval = 0; /** pack_and_unpack() zeros before unpack */
 		break;
 	}
 	if (buf[i] != goodval) {
@@ -302,7 +299,7 @@ int indexed_contig_test(void)
     return errs;
 }
 
-/* pack_and_unpack()
+/** pack_and_unpack()
  *
  * Perform packing and unpacking of a buffer for the purposes of checking
  * to see if we are processing a type correctly.  Zeros the buffer between
@@ -405,7 +402,7 @@ static int pack_and_unpack(char *typebuf,
 
 int parse_args(int argc, char **argv)
 {
-    /*
+    /**
     int ret;
 
     while ((ret = getopt(argc, argv, "v")) >= 0)

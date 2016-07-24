@@ -1,16 +1,12 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpitest.h"
 
 namespace tfree {
-/*
+/**
 static char MTEST_Descrip[] = "Test that freed datatypes have reference count semantics";
 */
 
@@ -43,7 +39,7 @@ int tfree( int argc, char *argv[] )
     source  = 0;
     dest    = size - 1;
 
-    /* 
+    /** 
        The idea here is to create a simple but non-contig datatype,
        perform an irecv with it, free it, and then create 
        many new datatypes.  While not a complete test, if the datatype
@@ -87,14 +83,14 @@ int tfree( int argc, char *argv[] )
     else if (rank == source) {
 	buf = (int *)malloc( VEC_NELM * sizeof(int) );
 	for (i=0; i<VEC_NELM; i++) buf[i] = i;
-	/* Synchronize with the receiver */
+	/** Synchronize with the receiver */
 	MPI_Sendrecv( 0, 0, MPI_INT, dest, 1, 
 		      0, 0, MPI_INT, dest, 1, comm, &status );
 	MPI_Send( buf, VEC_NELM, MPI_INT, dest, 0, comm );
 	free( buf );
     }
 
-    /* Clean up the strideType */
+    /** Clean up the strideType */
     if (rank != dest) {
 	MPI_Type_free( &strideType );
     }

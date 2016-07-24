@@ -5,11 +5,11 @@
 #include "mpitest.h"
 
 namespace opbor {
-/*
+/**
 static char MTEST_Descrip[] = "Test MPI_BOR operations on optional datatypes dupported by MPICH2";
 */
 
-/*
+/**
  * This test looks at the handling of logical and for types that are not 
  * integers or are not required integers (e.g., long long).  MPICH2 allows
  * these as well.  A strict MPI test should not include this test.
@@ -34,7 +34,7 @@ int opbor( int argc, char *argv[] )
     MTest_Init( &argc, &argv );
 
     comm = MPI_COMM_WORLD;
-    /* Set errors return so that we can provide better information 
+    /** Set errors return so that we can provide better information 
        should a routine reject one of the operand/datatype pairs */
     MPI_Errhandler_set( comm, MPI_ERRORS_RETURN );
 
@@ -42,7 +42,7 @@ int opbor( int argc, char *argv[] )
     MPI_Comm_size( comm, &size );
 
 #ifndef USE_STRICT_MPI
-    /* char */
+    /** char */
     MTestPrintfMsg( 10, "Reduce of MPI_CHAR\n" );
     cinbuf[0] = 0xff;
     cinbuf[1] = 0;
@@ -72,9 +72,9 @@ int opbor( int argc, char *argv[] )
 	    }
 	}
     }
-#endif /* USE_STRICT_MPI */
+#endif /** USE_STRICT_MPI */
 
-    /* signed char */
+    /** signed char */
     MTestPrintfMsg( 10, "Reduce of MPI_SIGNED_CHAR\n" );
     scinbuf[0] = 0xff;
     scinbuf[1] = 0;
@@ -105,7 +105,7 @@ int opbor( int argc, char *argv[] )
 	}
     }
 
-    /* unsigned char */
+    /** unsigned char */
     MTestPrintfMsg( 10, "Reduce of MPI_UNSIGNED_CHAR\n" );
     ucinbuf[0] = 0xff;
     ucinbuf[1] = 0;
@@ -136,7 +136,7 @@ int opbor( int argc, char *argv[] )
 	}
     }
 
-    /* bytes */
+    /** bytes */
     MTestPrintfMsg( 10, "Reduce of MPI_BYTE\n" );
     cinbuf[0] = 0xff;
     cinbuf[1] = 0;
@@ -167,7 +167,7 @@ int opbor( int argc, char *argv[] )
 	}
     }
 
-    /* short */
+    /** short */
     MTestPrintfMsg( 10, "Reduce of MPI_SHORT\n" );
     sinbuf[0] = 0xffff;
     sinbuf[1] = 0;
@@ -198,7 +198,7 @@ int opbor( int argc, char *argv[] )
 	}
     }
 
-    /* unsigned short */
+    /** unsigned short */
     MTestPrintfMsg( 10, "Reduce of MPI_UNSIGNED_SHORT\n" );
     usinbuf[0] = 0xffff;
     usinbuf[1] = 0;
@@ -229,7 +229,7 @@ int opbor( int argc, char *argv[] )
 	}
     }
 
-    /* unsigned */
+    /** unsigned */
     MTestPrintfMsg( 10, "Reduce of MPI_UNSIGNED\n" );
     uinbuf[0] = 0xffffffff;
     uinbuf[1] = 0;
@@ -260,7 +260,7 @@ int opbor( int argc, char *argv[] )
 	}
     }
 
-    /* int */
+    /** int */
     MTestPrintfMsg( 10, "Reduce of MPI_INT\n" );
     iinbuf[0] = 0xffffffff;
     iinbuf[1] = 0;
@@ -291,7 +291,7 @@ int opbor( int argc, char *argv[] )
 	}
     }
 
-    /* long */
+    /** long */
     MTestPrintfMsg( 10, "Reduce of MPI_LONG\n" );
     linbuf[0] = 0xffffffff;
     linbuf[1] = 0;
@@ -322,7 +322,7 @@ int opbor( int argc, char *argv[] )
 	}
     }
 
-    /* unsigned long */
+    /** unsigned long */
     MTestPrintfMsg( 10, "Reduce of MPI_UNSIGNED_LONG\n" );
     ulinbuf[0] = 0xffffffff;
     ulinbuf[1] = 0;
@@ -356,7 +356,7 @@ int opbor( int argc, char *argv[] )
 #ifdef HAVE_LONG_LONG
     {
 	long long llinbuf[3], lloutbuf[3];
-    /* long long */
+    /** long long */
     llinbuf[0] = 0xffffffff;
     llinbuf[1] = 0;
     llinbuf[2] = (rank > 0) ? 0x3c3c3c3c : 0xc3c3c3c3;

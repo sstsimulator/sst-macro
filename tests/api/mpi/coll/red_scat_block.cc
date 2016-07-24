@@ -19,7 +19,7 @@ int red_scat_block(int argc, char **argv)
     MPI_Comm_size(comm, &size);
     MPI_Comm_rank(comm, &rank);
 
-    /* MPI_Reduce_scatter block was added in MPI-2.2 */
+    /** MPI_Reduce_scatter block was added in MPI-2.2 */
     sendbuf = (int *) malloc(size * sizeof(int));
     recvbuf = (int *) malloc(size * sizeof(int));
     if (!sendbuf || !recvbuf) {
@@ -41,7 +41,7 @@ int red_scat_block(int argc, char **argv)
 
     free(sendbuf);
 
-    /* let's try it again with MPI_IN_PLACE this time */
+    /** let's try it again with MPI_IN_PLACE this time */
     for (i=0; i<size; i++)
         recvbuf[i] = rank + i;
 

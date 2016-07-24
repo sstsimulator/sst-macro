@@ -5,7 +5,7 @@
 
 namespace bcast2 {
 
-/*
+/**
 static char MTEST_Descrip[] = "Test of broadcast with various roots and datatypes";
 */
 
@@ -19,22 +19,22 @@ int bcast2( int argc, char *argv[] )
 
     MTest_Init( &argc, &argv );
 
-    /* The following illustrates the use of the routines to 
+    /** The following illustrates the use of the routines to 
        run through a selection of communicators and datatypes.
        Use subsets of these for tests that do not involve combinations 
        of communicators, datatypes, and counts of datatypes */
     while (MTestGetIntracommGeneral( &comm, minsize, 1 )) {
 	if (comm == MPI_COMM_NULL) continue;
 
-	/* Determine the sender and receiver */
+	/** Determine the sender and receiver */
 	MPI_Comm_rank( comm, &rank );
 	MPI_Comm_size( comm, &size );
 	
-	/* To improve reporting of problems about operations, we
+	/** To improve reporting of problems about operations, we
 	   change the error handler to errors return */
 	MPI_Errhandler_set( comm, MPI_ERRORS_RETURN );
 
-	/* The max value of count must be very large to ensure that we 
+	/** The max value of count must be very large to ensure that we 
 	   reach the long message algorithms */
 	for (count = 1; count < 280000; count = count * 4) {
 	    while (MTestGetDatatypes( &sendtype, &recvtype, count )) {

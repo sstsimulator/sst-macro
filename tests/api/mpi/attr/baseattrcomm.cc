@@ -58,7 +58,7 @@ int baseattrcomm( int argc, char **argv)
 
     MPI_Comm_get_attr( MPI_COMM_WORLD, MPI_WTIME_IS_GLOBAL, &v, &flag );
     if (flag) {
-	/* Wtime need not be set */
+	/** Wtime need not be set */
 	vval = *(int*)v;
 	if (vval < 0 || vval > 1) {
 	    errs++;
@@ -67,12 +67,12 @@ int baseattrcomm( int argc, char **argv)
 	}
     }
 
-    /* MPI 2.0, section 5.5.3 - MPI_APPNUM should be set if the program is
+    /** MPI 2.0, section 5.5.3 - MPI_APPNUM should be set if the program is
        started with more than one executable name (e.g., in MPMD instead
        of SPMD mode).  This is independent of the dynamic process routines,
        and should be supported even if MPI_COMM_SPAWN and friends are not. */
     MPI_Comm_get_attr( MPI_COMM_WORLD, MPI_APPNUM, &v, &flag );
-    /* appnum need not be set */
+    /** appnum need not be set */
     if (flag) {
 	vval = *(int *)v;
 	if (vval < 0) {
@@ -81,12 +81,12 @@ int baseattrcomm( int argc, char **argv)
 	}
     }
 
-    /* MPI 2.0 section 5.5.1.  MPI_UNIVERSE_SIZE need not be set, but
+    /** MPI 2.0 section 5.5.1.  MPI_UNIVERSE_SIZE need not be set, but
        should be present.  */
     MPI_Comm_get_attr( MPI_COMM_WORLD, MPI_UNIVERSE_SIZE, &v, &flag );
-    /* MPI_UNIVERSE_SIZE need not be set */
+    /** MPI_UNIVERSE_SIZE need not be set */
     if (flag) {
-	/* But if it is set, it must be at least the size of comm_world */
+	/** But if it is set, it must be at least the size of comm_world */
 	vval = *(int *)v;
 	if (vval < size) {
 	    errs++;
@@ -95,7 +95,7 @@ int baseattrcomm( int argc, char **argv)
     }
     
     MPI_Comm_get_attr( MPI_COMM_WORLD, MPI_LASTUSEDCODE, &v, &flag );
-    /* Last used code must be defined and >= MPI_ERR_LASTCODE */
+    /** Last used code must be defined and >= MPI_ERR_LASTCODE */
     if (flag) {
 	vval = *(int*)v;
 	if (vval < MPI_ERR_LASTCODE) {

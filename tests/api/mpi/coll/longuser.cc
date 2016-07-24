@@ -1,15 +1,11 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 namespace longuser {
 
 int add ( double *, double *, int *, MPI_Datatype * );
-/*
+/**
  * User-defined operation on a long value (tests proper handling of
  * possible pipelining in the implementation of reductions with user-defined
  * operations).
@@ -52,7 +48,7 @@ int longuser( int argc, char **argv )
 	}
 	MPI_Allreduce( inbuf, outbuf, bufsize, MPI_DOUBLE, op, 
 		       MPI_COMM_WORLD );
-	/* Check values */
+	/** Check values */
 	value = (size & 0x1) ? -1.0 : 0.0;
 	for (i=0; i<bufsize; i++) {
 	    if (outbuf[i] != value) {

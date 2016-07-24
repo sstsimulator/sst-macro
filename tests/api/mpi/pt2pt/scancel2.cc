@@ -1,15 +1,12 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpitest.h"
 
 namespace scancel2 {
-/*
+/**
 static char MTEST_Descrip[] = "Test of send cancel (failure) calls";
 */
 
@@ -61,7 +58,7 @@ int scancel2( int argc, char *argv[] )
 	    {
 		n = 0;
 	    }
-	    /* Send the size, zero for not cancelled (success) */
+	    /** Send the size, zero for not cancelled (success) */
 	    MPI_Send( &n, 1, MPI_INT, dest, 123, comm );
 	}
 	else if (rank == dest)

@@ -99,7 +99,7 @@ int foo_initialize(void)
 {
     int mpi_errno;
 
-    /* create keyval for use later */
+    /** create keyval for use later */
     mpi_errno = MPI_Type_create_keyval(foo_copy_attr_function,
 				       foo_delete_attr_function,
 				       &foo_keyval,
@@ -113,7 +113,7 @@ void foo_finalize(void)
 {
     int mpi_errno;
 
-    /* remove keyval */
+    /** remove keyval */
     mpi_errno = MPI_Type_free_keyval(&foo_keyval);
 
     if (verbose) printf("freed keyval\n");

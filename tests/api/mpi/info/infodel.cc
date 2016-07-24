@@ -1,9 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,13 +25,13 @@ int infodel( int argc, char *argv[] )
     MTest_Init( &argc, &argv );
 
     MPI_Info_create( &info );
-    /* Use only named keys incase the info implementation only supports
+    /** Use only named keys incase the info implementation only supports
        the predefined keys (e.g., IBM) */
     for (i=0; i<NKEYS; i++) {
 	MPI_Info_set( info, keys[i], values[i] );
     }
 
-    /* Check that all values are present */
+    /** Check that all values are present */
     for (i=0; i<NKEYS; i++) { 
 	MPI_Info_get( info, keys[i], MPI_MAX_INFO_VAL, value, &flag );
 	if (!flag) {
@@ -49,7 +45,7 @@ int infodel( int argc, char *argv[] )
 	}
     }
 
-    /* Now, change one value and remove another, then check again */
+    /** Now, change one value and remove another, then check again */
     MPI_Info_delete( info, keys[NKEYS-1] );
     MPI_Info_get_nkeys( info, &nkeys );
     if (nkeys != NKEYS - 1) {

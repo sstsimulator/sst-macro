@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
@@ -32,7 +29,7 @@ MPI_Aint pairtype_displacement(MPI_Datatype type, int *out_size_p)
 {
     MPI_Aint disp;
 
-    /* Note that a portable test may not use a switch statement for 
+    /** Note that a portable test may not use a switch statement for 
        datatypes, as they are not required to be compile-time constants */
     if (type == MPI_FLOAT_INT) {
 	struct { float a; int b; } foo;
@@ -84,7 +81,7 @@ int pairtype_size_extent(int argc, char *argv[])
 
 	types[0] = pairtypes[i].atype;
 
-	/* Check for undefined optional types, such as
+	/** Check for undefined optional types, such as
 	   LONG_DOUBLE_INT (if, for example, long double or
 	   long long are not supported) */
 	if (types[0] == MPI_DATATYPE_NULL) continue;
@@ -120,7 +117,7 @@ int pairtype_size_extent(int argc, char *argv[])
     }
     
 
-    /* print message and exit */
+    /** print message and exit */
     if (errs) {
 	fprintf(stderr, "Found %d errors\n", errs);
     }
@@ -133,7 +130,7 @@ int pairtype_size_extent(int argc, char *argv[])
 
 int parse_args(int argc, char **argv)
 {
-    /* We use a simple test because getopt isn't universally available */
+    /** We use a simple test because getopt isn't universally available */
     if (argc > 1 && strcmp(argv[1], "-v") == 0)
 	verbose = 1;
     if (argc > 1 && strcmp(argv[1], "-nov") == 0)

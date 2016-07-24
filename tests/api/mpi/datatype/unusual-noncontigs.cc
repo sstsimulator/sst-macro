@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <math.h>
 #include <assert.h>
 #include <stdio.h>
@@ -11,7 +8,7 @@
 #include <sstmac/replacements/mpi.h>
 
 namespace unusual_noncontigs {
-/* 
+/** 
    The default behavior of the test routines should be to briefly indicate
    the cause of any errors - in this test, that means that verbose needs
    to be set. Verbose should turn on output that is independent of error
@@ -33,11 +30,11 @@ int unusual_noncontigs(int argc, char *argv[])
 {
     int err, errs = 0;
 
-    /* Initialize MPI */
+    /** Initialize MPI */
     MPI_Init(&argc, &argv);
     parse_args(argc, argv);
 
-    /* To improve reporting of problems about operations, we
+    /** To improve reporting of problems about operations, we
        change the error handler to errors return */
     MPI_Comm_set_errhandler( MPI_COMM_WORLD, MPI_ERRORS_RETURN );
 
@@ -61,7 +58,7 @@ int unusual_noncontigs(int argc, char *argv[])
     if (verbose && err) fprintf(stderr, "error in flatten_test\n");
     errs += err;
 
-    /* print message and exit */
+    /** print message and exit */
     if (errs) {
 	fprintf(stderr, "Found %d errors\n", errs);
     }
@@ -72,7 +69,7 @@ int unusual_noncontigs(int argc, char *argv[])
     return 0;
 }
 
-/* test uses a struct type that describes data that is contiguous,
+/** test uses a struct type that describes data that is contiguous,
  * but processed in a noncontiguous way.
  */
 int struct_negdisp_test(void)
@@ -122,7 +119,7 @@ int struct_negdisp_test(void)
 	}
     }
 
-    /* verify data */
+    /** verify data */
     if (recvbuf[0] != -1) {
 	errs++;
 	if (verbose) {
@@ -165,7 +162,7 @@ int struct_negdisp_test(void)
     return errs;
 }
 
-/* test uses a vector type that describes data that is contiguous,
+/** test uses a vector type that describes data that is contiguous,
  * but processed in a noncontiguous way.  this is effectively the
  * same type as in the struct_negdisp_test above.
  */
@@ -212,7 +209,7 @@ int vector_negstride_test(void)
 	}
     }
 
-    /* verify data */
+    /** verify data */
     if (recvbuf[0] != -1) {
 	errs++;
 	if (verbose) {
@@ -255,7 +252,7 @@ int vector_negstride_test(void)
     return errs;
 }
 
-/* test uses a indexed type that describes data that is contiguous,
+/** test uses a indexed type that describes data that is contiguous,
  * but processed in a noncontiguous way.  this is effectively the same
  * type as in the two tests above.
  */
@@ -305,7 +302,7 @@ int indexed_negdisp_test(void)
 	}
     }
 
-    /* verify data */
+    /** verify data */
     if (recvbuf[0] != -1) {
 	errs++;
 	if (verbose) {
@@ -361,7 +358,7 @@ int indexed_negdisp_test(void)
             }                                                                 \
         }                                                                     \
     } while (0)
-/* test case from tt#1030 ported to C
+/** test case from tt#1030 ported to C
  *
  * Thanks to Matthias Lieber for reporting the bug and providing a good test
  * program. */
@@ -378,7 +375,7 @@ int struct_struct_test(void)
     MPI_Datatype types[COUNT];
     MPI_Datatype datatype;
 
-    /* A slight difference from the F90 test: F90 arrays are column-major, C
+    /** A slight difference from the F90 test: F90 arrays are column-major, C
      * arrays are row-major.  So we invert the order of dimensions. */
 #define N (2)
 #define M (4)
@@ -388,7 +385,7 @@ int struct_struct_test(void)
     MPI_Aint astart, aend;
     MPI_Aint size_exp = 0;
 
-    /* 1st section selects elements 1 and 2 out of 2nd dimension, complete 1st dim.
+    /** 1st section selects elements 1 and 2 out of 2nd dimension, complete 1st dim.
      * should receive the values 1, 2, 3, 4 */
     astart = 1;
     aend   = 2;
@@ -402,7 +399,7 @@ int struct_struct_test(void)
     displ[0] = 0;
     size_exp = size_exp + N * (aend-astart+1) * sizeof(int);
 
-    /* 2nd section selects last element of 2nd dimension, complete 1st dim.
+    /** 2nd section selects last element of 2nd dimension, complete 1st dim.
      * should receive the values 5, 6 */
     astart = 3;
     aend   = 3;
@@ -416,7 +413,7 @@ int struct_struct_test(void)
     displ[1] = 0;
     size_exp = size_exp + N * (aend-astart+1) * sizeof(int);
 
-    /* create type */
+    /** create type */
     err = MPI_Type_create_struct(COUNT, blens, displ, types, &datatype);
     check_err(MPI_Type_create_struct);
     err = MPI_Type_commit(&datatype);
@@ -430,9 +427,9 @@ int struct_struct_test(void)
     }
 
 
-    /* send the type to ourselves to make sure that the type describes data correctly */
+    /** send the type to ourselves to make sure that the type describes data correctly */
     for (i = 0; i < (N*M) ; ++i)
-        seq_array[i] = i + 1; /* source values 1..(N*M) */
+        seq_array[i] = i + 1; /** source values 1..(N*M) */
     err = MPI_Isend(&seq_array[0], dt_size/sizeof(int), MPI_INT, 0, 42, MPI_COMM_SELF, &req[0]);
     check_err(MPI_Isend);
     err = MPI_Irecv(&array[0][0], 1, datatype, 0, 42, MPI_COMM_SELF, &req[1]);
@@ -440,7 +437,7 @@ int struct_struct_test(void)
     err = MPI_Waitall(2, req, MPI_STATUSES_IGNORE);
     check_err(MPI_Waitall);
 
-    /* check against expected */
+    /** check against expected */
     for (i = 0; i < N; ++i) {
         for (j = 0; j < M; ++j) {
             if (array[i][j] != expected[i][j]) {
@@ -464,7 +461,7 @@ int struct_struct_test(void)
 #undef COUNT
 }
 
-/*   create a datatype for a 1D int array subsection
+/**   create a datatype for a 1D int array subsection
 
      - a subsection of the first dimension is defined via astart, aend
      - indexes are assumed to start with 0, that means:
@@ -489,17 +486,17 @@ int build_array_section_type(MPI_Aint aext, MPI_Aint astart, MPI_Aint aend, MPI_
 
     *datatype = MPI_DATATYPE_NULL;
 
-    /* lower bound marker */
+    /** lower bound marker */
     types[0] = MPI_LB;
     displ[0] = 0;
     blens[0] = 1;
 
-    /* subsection starting at astart */
+    /** subsection starting at astart */
     displ[1] = astart * sizeof(int);
     types[1] = MPI_INT;
     blens[1] = aend - astart + 1;
 
-    /* upper bound marker */
+    /** upper bound marker */
     types[2] = MPI_UB;
     displ[2] = aext * sizeof(int);
     blens[2] = 1;
@@ -516,7 +513,7 @@ int build_array_section_type(MPI_Aint aext, MPI_Aint astart, MPI_Aint aend, MPI_
 #undef COUNT
 }
 
-/* start_idx is the "zero" point for the unpack */
+/** start_idx is the "zero" point for the unpack */
 static int pack_and_check_expected(MPI_Datatype type, const char *name,
                                    int start_idx, int size,
                                    int *array, int *expected)
@@ -546,7 +543,7 @@ static int pack_and_check_expected(MPI_Datatype type, const char *name,
     check_err(MPI_Unpack);
     free(pack_buf);
 
-    /* check against expected */
+    /** check against expected */
     for (i = 0; i < size; ++i) {
         if (array[i] != expected[i]) {
             errs++;
@@ -558,13 +555,13 @@ static int pack_and_check_expected(MPI_Datatype type, const char *name,
     return errs;
 }
 
-/* regression for tt#1030, checks for bad offset math in the
+/** regression for tt#1030, checks for bad offset math in the
  * blockindexed and indexed dataloop flattening code */
 int flatten_test(void)
 {
     int err, errs = 0;
 #define ARR_SIZE (9)
-    /* real indices              0  1  2  3  4  5  6  7  8
+    /** real indices              0  1  2  3  4  5  6  7  8
      * indices w/ &array[3]     -3 -2 -1  0  1  2  3  4  5 */
     int array[ARR_SIZE]      = {-1,-1,-1,-1,-1,-1,-1,-1,-1};
     int expected[ARR_SIZE]   = {-1, 0, 1,-1, 2,-1, 3,-1, 4};
@@ -577,23 +574,23 @@ int flatten_test(void)
     int blens[COUNT];
     MPI_Datatype types[COUNT];
 
-    /* indexed type layout:
+    /** indexed type layout:
      * XX_X
      * 2101  <-- pos (left of 0 is neg)
      *
      * different blens to prevent optimization into a blockindexed
      */
     blens[0] = 2;
-    displ[0] = -2; /* elements, puts byte after block end at 0 */
+    displ[0] = -2; /** elements, puts byte after block end at 0 */
     blens[1] = 1;
-    displ[1] = 1; /*elements*/
+    displ[1] = 1; /**elements*/
 
     err = MPI_Type_indexed(COUNT, blens, displ, MPI_INT, &idx_type);
     check_err(MPI_Type_indexed);
     err = MPI_Type_commit(&idx_type);
     check_err(MPI_Type_commit);
 
-    /* indexed type layout:
+    /** indexed type layout:
      * _X_X
      * 2101  <-- pos (left of 0 is neg)
      */
@@ -604,25 +601,25 @@ int flatten_test(void)
     err = MPI_Type_commit(&blkidx_type);
     check_err(MPI_Type_commit);
 
-    /* struct type layout:
+    /** struct type layout:
      * II_I_B_B  (I=idx_type, B=blkidx_type)
      * 21012345  <-- pos (left of 0 is neg)
      */
     blens[0]  = 1;
-    adispl[0] = 0; /*bytes*/
+    adispl[0] = 0; /**bytes*/
     types[0]  = idx_type;
 
     blens[1]  = 1;
-    adispl[1] = 4 * sizeof(int); /* bytes */
+    adispl[1] = 4 * sizeof(int); /** bytes */
     types[1]  = blkidx_type;
 
-    /* must be a struct in order to trigger flattening code */
+    /** must be a struct in order to trigger flattening code */
     err = MPI_Type_create_struct(COUNT, blens, adispl, types, &combo);
     check_err(MPI_Type_indexed);
     err = MPI_Type_commit(&combo);
     check_err(MPI_Type_commit);
 
-    /* pack/unpack with &array[3] */
+    /** pack/unpack with &array[3] */
     errs += pack_and_check_expected(combo, "combo", 3, ARR_SIZE, array, expected);
 
     MPI_Type_free(&combo);
@@ -636,7 +633,7 @@ int flatten_test(void)
 
 int parse_args(int argc, char **argv)
 {
-    /*
+    /**
     int ret;
 
     while ((ret = getopt(argc, argv, "v")) >= 0)

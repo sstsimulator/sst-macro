@@ -1,9 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,7 +21,7 @@ int infodup( int argc, char *argv[] )
     MTest_Init( &argc, &argv );
 
     MPI_Info_create( &info1 );
-    /* Use only named keys incase the info implementation only supports
+    /** Use only named keys incase the info implementation only supports
        the predefined keys (e.g., IBM) */
     MPI_Info_set( info1, (char*)"host", (char*)"myhost.myorg.org" );
     MPI_Info_set( info1, (char*)"file", (char*)"runfile.txt" );
@@ -42,7 +38,7 @@ int infodup( int argc, char *argv[] )
     }
     vallen = MPI_MAX_INFO_VAL;
     for (i=0; i<nkeys; i++) {
-	/* MPI requires that the keys are in the same order after the dup */
+	/** MPI requires that the keys are in the same order after the dup */
 	MPI_Info_get_nthkey( info1, i, key );
 	MPI_Info_get_nthkey( infodup, i, keydup );
 	if (strcmp(key, keydup)) {
@@ -63,7 +59,7 @@ int infodup( int argc, char *argv[] )
 	}
     }
 
-    /* Change info and check that infodup does NOT have the new value 
+    /** Change info and check that infodup does NOT have the new value 
        (ensure that lazy dups are still duped) */
     MPI_Info_set( info1, (char*)"path", (char*)"/a:/b:/c/d" );
 
