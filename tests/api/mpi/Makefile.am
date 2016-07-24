@@ -24,7 +24,7 @@ AM_CPPFLAGS += \
 AM_CPPFLAGS += -I$(top_srcdir)/sstmac/install -DSSTMAC=1
 AM_CPPFLAGS += -I$(top_builddir)/sstmac/replacements -I$(top_srcdir)/sstmac/replacements
 
-EXTRA_DIST = testmpi.h include
+EXTRA_DIST = testmpi.h include config.py
 
 
 if INTEGRATED_SST_CORE
@@ -100,6 +100,7 @@ TEST_SOURCE_FILES = \
   coll/gather2.cc \
   coll/longuser.cc \
   coll/opband.cc \
+  coll/iallred.cc \
   coll/opbor.cc \
   coll/opbxor.cc \
   coll/opland.cc \

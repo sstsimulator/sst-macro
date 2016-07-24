@@ -100,7 +100,12 @@ def get_figure_text(label, caption, text):
   if label:
     labelText = '<a name="%s"></a>' % label
 
-  return "\n![%s](%s) %s\n\n*%s*\n\n" % (labelText, fname, labelText, caption)
+  if caption == "":
+    captionText = ""
+  else:
+    captionText = "*%s*" % caption
+
+  return "\n![%s](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/%s) %s\n\n%s\n\n" % (caption, fname, "", captionText)
 
 def process_title_pic(match):
   text = match.groups()[0] + "}"
@@ -211,7 +216,6 @@ def repl_code_block(match):
   repl = "````\n%s\n````" % newBlock
   return repl
 
-
 def return_self(match):
   return match.groups()[0]
 
@@ -220,6 +224,9 @@ def labeled_header_pair(sectionName, count):
 
 def header_pair(sectionName, count):
   return (macro_regexp(sectionName), lambda x: repl_section_header(x, sectionName, count))
+
+def return_bold(match):
+  return "**%s**" % match.groups()[0]
 
 repls = [
   (quotes_regexp, repl_quotes),
@@ -241,6 +248,7 @@ repls = [
   (macro_regexp('emph') , return_self),
   (macro_regexp('textit') , return_self),
   (macro_regexp('author') , ""),
+  (macro_regexp('url') , return_self),
   (r'\sstmacro' , 'SST-macro'),
   (r'\sprockit', 'SProCKit'),
   (r'\maketitle' , ''),
@@ -254,13 +262,26 @@ repls = [
 
 def processFile(f):
   text = open(f).read()
-  text = comment_regexp.sub("", text)
+  lines = text.split("\n")
+  newtext = ""
+  newline = "\n"
+  iscode = False
+  for l in lines:
+    if l.find("CppCode") > -1:
+      if iscode == True:
+        iscode = False
+      else:
+        iscode = True
+    if not iscode:
+      l = comment_regexp.sub("", l)
+    newtext = newline.join((newtext,l))
+  #text = comment_regexp.sub("", text)
   for matcher, repl in repls:
     if isinstance(matcher, str):
-      text = text.replace(matcher, repl)
+      newtext = newtext.replace(matcher, repl)
     else:
-      text = matcher.sub(repl, text)
-  return text
+      newtext = matcher.sub(repl, newtext)
+  return newtext
 doProcessFile = processFile
 
 

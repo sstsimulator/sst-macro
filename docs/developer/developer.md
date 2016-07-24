@@ -1,54 +1,10 @@
-
-
-
-
-
-
-
-
-\documentclass[10pt]{report}
-
-\usepackage{color} \usepackage{framed} \usepackage{textcomp} \usepackage{listings} \usepackage{hyperref} \usepackage[page]{appendix} \usepackage{graphicx} \usepackage{verbatim} \usepackage{amsmath} \usepackage{xspace}
-
-\usepackage{mtcoff} \usepackage[tt]{titlepic}
-
-\usepackage{sstmacro}
-
-\usepackage[textwidth=6.5in]{geometry}
-
-\definecolor{shadecolor}{rgb}{1,0.8,0.3} \definecolor{dkgreen}{rgb}{0,0.6,0} \definecolor{purple}{rgb}{1,0,1}
-
-\newcommand{\todo}[1] {\textcolor{red}{-[#1]-}}
-
-\newcommand{\mytilde}{{\raise.17ex\hbox{$\scriptstyle\sim$}}}
-
-\newcommand{SST-macro}{{SST/\raise.35ex\hbox{macro}}\xspace} \newcommand{SProCKit}{{SProCKit}\xspace} \newcommand{\eg}{e.g.
-
-\newcommand{\class}[1]{\textcolor{blue}{#1}}
-
-\newcommand{\func}[1]{\textcolor{purple}{#1}}
-
-\newcommand{\folder}[1]{\textcolor{dkgreen}{#1}}
-
-\newcommand{\aside}[1]{\begin{framed} #1 \end{framed}}
-
-\newcommand{\guikey}[1]{#1
-
-\newcommand{\inlinefile}[1]{{\lstset{basicstyle=\ttfamily,keywordstyle={}}\lstinline$#1$}}
-
-\newcommand{\inlinecode}[1]{{\lstset{basicstyle=\ttfamily,keywordstyle={},showstringspaces=false}\lstinline$#1$}} \newcommand{\inlineshell}[1]{{\lstset{basicstyle=\ttfamily,keywordstyle={},showstringspaces=false}\lstinline$#1$}}
-
 # SST/macro 6.0: Developer's Reference
-
-
 
 ![](figures/sstlogo.png)
 
 **
 
 
-
-\setlength{\parindent}{0cm} \setlength{\parskip}{2mm plus1mm minus1mm}
 
 
 
@@ -1776,10 +1732,6 @@ class ftq_calendar {
 ````
 which creates a static, aggregated set of results.
 The `ftq_calendar` must ensure thread-safety itself via a thread-lock.
-
-
-
-
 
 
 

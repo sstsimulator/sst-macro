@@ -30,5 +30,9 @@ libsstmac_skeletons_la_SOURCES = \
   test/mpi_print_nodes.cc \
   test/mpi_topology.cc 
 
+nobase_library_include_HEADERS = \
+  sumi_undumpi/parsedumpi.h \
+  sumi_undumpi/parsedumpi_callbacks.h 
+
 
 

@@ -27,7 +27,7 @@ If you'd like to use ssh for convenience, make sure you have added a public key 
 \subsection{Dependencies}
 \label{subsec:build:dependencies}
 The most critical change is that C++11 is now a strict prerequisite. 
-Workarounds had previously existing for older compilers. 
+Workarounds had previously existed for older compilers. 
 These are no longer supported.
 The following are dependencies for \sstmacro.
 
@@ -50,7 +50,7 @@ The following are dependencies for \sstmacro.
 
 SST/macro is an SST element library, proving a set of simulation components that run on the main SST core.  The SST core provides the parallel discrete event simulation manager that manages time synchronization and sending events in serial, MPI parallel, multi-threaded, or MPI + threaded mode.  The core does not provide any simulation components like node models, interconnect models, MPI trace readers, etc.  The actual simulation models are contained in the element library.  
 
-The SST core is a standalone executable that dynamically loads shared objects files containing the element libraries.  For many element libraries, a Python input file is created that builds and connects the various simulation components.  For maximum flexibility, this will become the preferred mode.  However, SST/macro has historically had a text-file input \inlineshell{parameters.ini} that configures the simulation.  To preserve that mode for existing users, a wrapper Python script is provided that processes SST/macro input files.  
+The SST core is a standalone executable that dynamically loads shared object files containing the element libraries.  For many element libraries, a Python input file is created that builds and connects the various simulation components.  For maximum flexibility, this will become the preferred mode.  However, SST/macro has historically had a text-file input \inlineshell{parameters.ini} that configures the simulation.  To preserve that mode for existing users, a wrapper Python script is provided that processes SST/macro input files.  
 
 The workflow for installing and running is therefore:
 
@@ -58,13 +58,14 @@ The workflow for installing and running is therefore:
 \item	Build and install SST core
 \item Build and install the SST/macro element library \inlineshell{libmacro.so}
 \item Make sure paths are properly configured for \inlineshell{libmacro.so} to be visible to the SST core
-\item Run the \inlineshell{sstmac} wrapper Python script that runs SST/macro-specific parameter OR
+\item Run the \inlineshell{sstmac} wrapper Python script that runs SST/macro-specific parameters OR
 \item Write a custom Python script 
 \end{itemize}
 
 \subsubsection{Build SST core}\label{subsec:buildSSTCore}
-The recommended mode for maximum flexibility is to run using the SST core downloadable from \url{}.  Building and installing sets up the discrete event simulation core require for all SST elements.
-SST core still has a few Boost dependencies, which should be the only complication in building. For building Boost, we recommend two files: \inlineshell{user-config.jam} to configure the Boost compiler flags and a \inlineshell{runme.sh} that bootstraps, compiles, and installs and the prerequisite Boost libraries. For GCC, the \inlineshell{user-config.jam} should go in the top-level home directory and the file should contain the line:
+The recommended mode for maximum flexibility is to run using the SST core downloadable from \url{http://sst-simulator.org/SSTPages/SSTMainDownloads/}.
+Building and installing sets up the discrete event simulation core required for all SST elements.
+SST core still has a few Boost dependencies, which should be the only complication in building. For building Boost, we recommend two files: \inlineshell{user-config.jam} to configure the Boost compiler flags and a \inlineshell{runme.sh} that bootstraps, compiles, and installs the prerequisite Boost libraries. For GCC, the \inlineshell{user-config.jam} should go in the top-level home directory and the file should contain the line:
 
 \begin{ViFile}
 using gcc : : $PATH_TO_MPIC++  : <compileflags>-std=c++1y ;
@@ -199,7 +200,7 @@ all necessary flags are set by the wrappers.
 
 \section{Running an Application}
 \subsection{SST Python Scripts}
-Full details on building SST Python scripts can be found at \url{http://sst-simulator.org}.  To preserve the old parameter format in the near-term, SST/macro provides the \inlineshell{sstmac} script:
+Full details on building SST Python scripts can be found at \url{http://sst-simulator.org}.  To preserve the old parameter format in the near-term, SST/macro provides the \inlineshell{pysstmac} script:
 
 \begin{ViFile}
 export PYTHONPATH=$PYTHONPATH:$SSTMAC_PREFIX/include/python:$SSTMAC_PREFIX/lib
@@ -213,9 +214,14 @@ The script configures the necessary paths and then launches with a Python script
 Assuming the path is configured properly, users can run
 
 \begin{ShellCmd}
+pysstmac -f parameters.ini
+\end{ShellCmd}
+with a properly formatted parameter file. If running in standalone mode, the command would be similarly (but different)
+
+\begin{ShellCmd}
 sstmac -f parameters.ini
 \end{ShellCmd}
-with a properly formatted parameter file.
+since there is no Python setup involved.
 
 \subsection{Building Skeleton Applications}
 \label{sec:tutorial:runapp}
