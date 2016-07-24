@@ -24,41 +24,12 @@ packet_flow_param_expander::expand(sprockit::sim_parameters* params)
   sprockit::sim_parameters* top_params = params->get_optional_namespace("topology");
   sprockit::sim_parameters* proc_params = node_params->get_optional_namespace("proc");
 
-  node_params->add_param_override("model", params->get_param("node_name"));
   nic_params->add_param_override("model", "packet_flow");
   params->add_param_override("interconnect", "switch");
   switch_params->add_param_override("model", "packet_flow");
-  mem_params->add_param_override("model", "packet_flow");
-
-  if (!top_params->has_param("concentration")){
-    int conc = params->get_optional_int_param("network_nodes_per_switch", 1);
-    top_params->add_param_override("concentration", conc);
+  if (!mem_params->has_scoped_param("model")){
+      mem_params->add_param_override("model", "packet_flow");
   }
-
-  proc_params->add_param_override("frequency", params->get_param("node_frequency"));
-  node_params->add_param_override("ncores", params->get_param("node_cores"));
-  node_params->add_param_override("nsockets", params->get_optional_param("node_sockets", "1"));
-
-  if (!top_params->has_param("name")){
-    top_params->add_param_override("name", params->get_param("topology_name"));
-  }
-  if (!top_params->has_param("geometry")){
-    top_params->add_param_override("geometry", params->get_param("topology_geometry"));
-  }
-
-  if (!top_params->has_param("topology.redundant")
-    && params->has_param("topology_redundant")){
-    top_params->add_param_override("redundant", params->get_param("topology_redundant"));
-  }
-
-  if (!top_params->has_param("group_connections") 
-    && params->has_param("topology_group_connections")){
-    top_params->add_param_override("group_connections",
-                     params->get_param("topology_group_connections"));
-  }
-
-  int red = params->get_optional_int_param("injection_redundant", 1);
-  top_params->add_param_override("injection_redundant", red);
 
   buffer_depth_ = params->get_optional_int_param("network_buffer_depth", 8);
 
@@ -72,13 +43,13 @@ packet_flow_param_expander::expand(sprockit::sim_parameters* params)
 
   if (amm_type == "amm1"){
     expand_amm1_memory(params, mem_params);
-    expand_amm1_network(params, switch_params, net_packet_size);
+    expand_amm1_network(params, switch_params, net_packet_size, true/*set xbar*/);
     expand_amm1_nic(params, nic_params);
     top_params->add_param_override("netlink_endpoints", "false");
   }
   else if (amm_type == "amm2"){
     expand_amm2_memory(params, mem_params);
-    expand_amm1_network(params, switch_params, net_packet_size);
+    expand_amm1_network(params, switch_params, net_packet_size, true/*set xbar*/);
     expand_amm1_nic(params, nic_params);
     top_params->add_param_override("netlink_endpoints", "false");
   }
@@ -113,78 +84,85 @@ packet_flow_param_expander::expand(sprockit::sim_parameters* params)
 }
 
 void
-packet_flow_param_expander::expand_amm1_memory(sprockit::sim_parameters* params, sprockit::sim_parameters* mem_params) 
+packet_flow_param_expander::expand_amm1_memory(sprockit::sim_parameters* params,
+                                               sprockit::sim_parameters* mem_params)
 {
-  //verify we have valid timstamp and bandwidth params
-  mem_params->add_param_override("latency", params->get_param("memory_latency"));
-  mem_params->add_param_override("total_bandwidth", params->get_param("memory_bandwidth"));
-  mem_params->add_param_override("max_single_bandwidth", params->get_param("memory_bandwidth"));
+  if (mem_params->get_scoped_param("model") != "null"){
+    mem_params->add_param_override("total_bandwidth", mem_params->get_param("bandwidth"));
+    mem_params->add_param_override("max_single_bandwidth", mem_params->get_param("bandwidth"));
+  }
 }
 
 void
-packet_flow_param_expander::expand_amm1_network(sprockit::sim_parameters* params, sprockit::sim_parameters* switch_params, int packet_size)
+packet_flow_param_expander::expand_amm1_network(sprockit::sim_parameters* params,
+                                                sprockit::sim_parameters* switch_params,
+                                                int packet_size, bool set_xbar)
 {
-  //here is where the enormous complexity lies - how do we pick the number of virtual channels
 
-  //verify correct formatting and then add params
 
   //if redundant links, appropriately multiply the bandwidth
   double bw_multiplier = network_bandwidth_multiplier(params);
+  double link_bw = switch_params->get_bandwidth_param("link_bandwidth");
   if (bw_multiplier > 1.0001){
-    double link_bw = params->get_bandwidth_param("network_bandwidth");
-    double xbar_bw = link_bw * bw_multiplier;
+    link_bw *= bw_multiplier;
     switch_params->add_param_override("link_bandwidth", link_bw);
-    switch_params->add_param_override("crossbar_bandwidth", xbar_bw);
-  } else {
-    std::string bw = params->get_param("network_bandwidth");
-    switch_params->add_param_override("link_bandwidth", bw);
-    switch_params->add_param_override("crossbar_bandwidth", bw);
   }
 
-  switch_params->add_param_override("hop_latency", params->get_param("network_hop_latency"));
+  //make the xbar much faster than links
+  if (set_xbar){
+    double xbar_bw = link_bw * buffer_depth_;
+    switch_params->add_param_override("crossbar_bandwidth", xbar_bw);
+  }
+
 
   int size_multiplier = switch_buffer_multiplier(params);
   int buffer_size = buffer_depth_ * packet_size * size_multiplier;
   switch_params->add_param_override("input_buffer_size", buffer_size);
   switch_params->add_param_override("output_buffer_size", buffer_size);
 
-  if (params->has_param("ejection_bandwidth")){
-    switch_params->add_param_override("ejection_bandwidth", params->get_bandwidth_param("ejection_bandwidth"));
-  } else {
-    switch_params->add_param_override("ejection_bandwidth", params->get_param("injection_bandwidth"));
+  if (!switch_params->has_param("ejection_bandwidth")){
+    sprockit::sim_parameters* nic_params = params->get_namespace("nic");
+    if (nic_params->has_param("ejection_bandwidth")){
+      switch_params->add_param_override("ejection_bandwidth",
+                                nic_params->get_bandwidth_param("ejection_bandwidth"));
+    } else {
+      switch_params->add_param_override("ejection_bandwidth",
+                                nic_params->get_bandwidth_param("injection_bandwidth"));
+    }
   }
 
 }
 
 void
-packet_flow_param_expander::expand_amm1_nic(sprockit::sim_parameters* params, sprockit::sim_parameters* nic_params)
+packet_flow_param_expander::expand_amm1_nic(sprockit::sim_parameters* params,
+                                            sprockit::sim_parameters* nic_params)
 {
-  //verify formatting
-  nic_params->add_param_override("injection_bandwidth", params->get_param("injection_bandwidth"));
-  nic_params->add_param_override("injection_latency", params->get_param("injection_latency"));
-
-  if (params->has_param("ejection_bandwidth")){
-    nic_params->add_param_override("ejection_bandwidth", params->get_param("ejection_bandwidth"));
-  } 
+  //nothing doing here
 }
 
 void
-packet_flow_param_expander::expand_amm2_memory(sprockit::sim_parameters* params, sprockit::sim_parameters* mem_params)
+packet_flow_param_expander::expand_amm2_memory(sprockit::sim_parameters* params,
+                                               sprockit::sim_parameters* mem_params)
 {
   expand_amm1_memory(params, mem_params);
-  mem_params->add_param_override("max_single_bandwidth", params->get_param("max_memory_bandwidth"));
+  if (mem_params->get_scoped_param("model") != "null"){
+    mem_params->add_param_override("max_single_bandwidth", params->get_param("max_memory_bandwidth"));
+  }
 }
 
 void
-packet_flow_param_expander::expand_amm3_network(sprockit::sim_parameters* params, sprockit::sim_parameters* switch_params, int packet_size)
+packet_flow_param_expander::expand_amm3_network(sprockit::sim_parameters* params,
+                                                sprockit::sim_parameters* switch_params,
+                                                int packet_size)
 {
-  expand_amm1_network(params, switch_params, packet_size);
-  //verify
+  expand_amm1_network(params, switch_params, packet_size, false);
 
-  double sw_bw = params->get_bandwidth_param("network_switch_bandwidth");
+  double sw_bw = switch_params->get_bandwidth_param("crossbar_bandwidth");
   double bw_multiplier = switch_bandwidth_multiplier(params);
-  double xbar_bw = sw_bw * bw_multiplier;
-  switch_params->add_param_override("crossbar_bandwidth", xbar_bw);
+  //if (bw_multiplier > 1.0001){
+    double xbar_bw = sw_bw * bw_multiplier;
+    switch_params->add_param_override("crossbar_bandwidth", xbar_bw);
+  //}
 }
 
 void
@@ -194,9 +172,9 @@ packet_flow_param_expander::expand_amm4_network(sprockit::sim_parameters* params
   int packet_size)
 {
   tiled_switch_ = true;
-  std::string top = params->get_param("topology_name");
+  std::string top = top_params->get_param("name");
   std::string newtop = std::string("tiled_") + top;
-  std::vector<int> switch_geom; params->get_vector_param("switch_geometry", switch_geom);
+  std::vector<int> switch_geom; switch_params->get_vector_param("geometry", switch_geom);
   if (switch_geom.size() != 2){
     spkt_throw(sprockit::input_error,
       "AMM4: need switch geometry vector with 2 params:\n"
@@ -211,8 +189,8 @@ packet_flow_param_expander::expand_amm4_network(sprockit::sim_parameters* params
   switch_params->add_param_override("model", "packet_flow_tiled");
   switch_params->add_param_override("geometry", params->get_param("switch_geometry"));
 
-  if (params->has_param("router")){
-    std::string router = params->get_param("router");
+  if (switch_params->has_param("router")){
+    std::string router = switch_params->get_param("router");
     std::string new_router = router + "_multipath";
     switch_params->add_param_override("router", new_router);
   } else {
@@ -231,11 +209,13 @@ packet_flow_param_expander::expand_amm4_network(sprockit::sim_parameters* params
 }
 
 void
-packet_flow_param_expander::expand_amm4_nic(sprockit::sim_parameters* params, sprockit::sim_parameters* top_params, sprockit::sim_parameters* nic_params)
+packet_flow_param_expander::expand_amm4_nic(sprockit::sim_parameters* params,
+                                            sprockit::sim_parameters* top_params,
+                                            sprockit::sim_parameters* nic_params)
 {
   expand_amm1_nic(params, nic_params);
   sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
-  int red = params->get_optional_int_param("injection_redundant", 1);
+  int red = top_params->get_optional_int_param("redundant", 1);
   int radix = params->get_optional_int_param("netlink_radix", 1);
   //the netlink block combines all the paths together
   netlink_params->add_param_override("ninject", red);

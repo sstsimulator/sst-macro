@@ -115,6 +115,9 @@ class sim_parameters  {
   get_param(const std::string& key, bool throw_on_error = true);
 
   std::string
+  get_scoped_param(const std::string& key, bool throw_on_error = true);
+
+  std::string
   reread_param(const std::string& key) {
     return get_param(key);
   }
@@ -182,6 +185,9 @@ class sim_parameters  {
 
   bool
   has_param(const std::string& key) const;
+
+  bool
+  has_scoped_param(const std::string& key) const;
 
   int
   get_int_param(const std::string& key);
@@ -406,7 +412,7 @@ class sim_parameters  {
   namespace_iterator ns_end() { return subspaces_.end(); }
   const_namespace_iterator ns_end() const { return subspaces_.end(); }
 
- protected:
+ private:
   std::map<std::string, sim_parameters*> subspaces_;
   std::map<std::string, std::string> variables_;
 
@@ -417,6 +423,9 @@ class sim_parameters  {
   std::string namespace_;
 
   key_value_map params_;
+
+  void
+  throw_key_error(const std::string& key) const;
 
   void
   set_parent(sim_parameters* p) {

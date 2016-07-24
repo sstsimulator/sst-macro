@@ -49,7 +49,7 @@ COVERAGETESTS = \
 
 test_coverage_%.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 15 $(top_srcdir) $@ True \
-    $(SSTMACEXEC) -f mpi_coverage.ini -i default.ini -i $*.ini -i exa_mini_top.ini \
+    $(SSTMACEXEC) -f mpi_coverage.ini -i $*.ini -i exa_mini_top.ini \
     --no-wall-time 
 
 test_configs_exa%.$(CHKSUF): $(SSTMACEXEC)
