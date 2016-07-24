@@ -41,6 +41,7 @@ typedef param_remap pr;
 
 param_remap remap_list[] = {
   pr("network_name", "interconnect"),
+  pr("router", "switch.router"),
   pr("topology_name", "topology.name"),
   pr("topology_geometry", "topology.geometry"),
   pr("network_nodes_per_switch", "topology.concentration"),

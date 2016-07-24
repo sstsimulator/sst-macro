@@ -73,14 +73,6 @@ packet_flow_param_expander::expand(sprockit::sim_parameters* params)
   nic_params->add_param_override("injection_credits",
                     switch_params->get_param("input_buffer_size"));
 
-  //erase all the top-level params so we don't have replica parameters
-  //params->remove_param("network_bandwidth");
-  //params->remove_param("network_switch_bandwidth");
-  //params->remove_param("network_hop_latency");
-  //params->remove_param("memory_bandwidth");
-  //params->remove_param("memory_latency");
-  //params->remove_param("max_memory_banwidth");
-  //params->remove_param("accuracy_parameter");
 }
 
 void
@@ -159,10 +151,10 @@ packet_flow_param_expander::expand_amm3_network(sprockit::sim_parameters* params
 
   double sw_bw = switch_params->get_bandwidth_param("crossbar_bandwidth");
   double bw_multiplier = switch_bandwidth_multiplier(params);
-  //if (bw_multiplier > 1.0001){
+  if (bw_multiplier > 1.0001){
     double xbar_bw = sw_bw * bw_multiplier;
     switch_params->add_param_override("crossbar_bandwidth", xbar_bw);
-  //}
+  }
 }
 
 void
@@ -187,7 +179,6 @@ packet_flow_param_expander::expand_amm4_network(sprockit::sim_parameters* params
   top_params->add_param_override("name", newtop);
 
   switch_params->add_param_override("model", "packet_flow_tiled");
-  switch_params->add_param_override("geometry", params->get_param("switch_geometry"));
 
   if (switch_params->has_param("router")){
     std::string router = switch_params->get_param("router");
