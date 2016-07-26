@@ -1,16 +1,11 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpitest.h"
 
 namespace cmfree {
-/*
+/**
 static char MTEST_Descrip[] = "Test that communicators have reference count semantics";
 */
 
@@ -31,7 +26,7 @@ int cmfree( int argc, char *argv[] )
 
     MPI_Comm_dup( MPI_COMM_WORLD, &comm );
 
-    /* This is similar to the datatype test, except that we post
+    /** This is similar to the datatype test, except that we post
        an irecv on a simple data buffer but use a rank-reordered communicator.
        In this case, an error in handling the reference count will most 
        likely cause the program to hang, so this should be run only
@@ -89,7 +84,7 @@ int cmfree( int argc, char *argv[] )
 	for (i=0; i<NCOMM; i++) {
 	    MPI_Comm_split( MPI_COMM_WORLD, 0, size - rank, &tmpComm[i] );
 	}
-	/* Synchronize with the receiver */
+	/** Synchronize with the receiver */
 	MPI_Sendrecv( 0, 0, MPI_INT, dest, 1, 
 		      0, 0, MPI_INT, dest, 1, MPI_COMM_WORLD, &status );
 	MPI_Send( buf, NELM, MPI_INT, dest, 0, comm );
@@ -104,7 +99,7 @@ int cmfree( int argc, char *argv[] )
     MPI_Barrier( MPI_COMM_WORLD );
 
     if (rank != dest) {
-	/* Clean up the communicators */
+	/** Clean up the communicators */
 	for (i=0; i<NCOMM; i++) {
 	    MPI_Comm_free( &tmpComm[i] );
 	}

@@ -1,15 +1,11 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include "mpitest.h"
 
 namespace commcall {
-/*
+/**
 static char MTEST_Descrip[] = "Test comm_call_errhandler";
 */
 
@@ -52,7 +48,7 @@ int commcall( int argc, char *argv[] )
 	printf( "Error handler not called\n" );
     }
 
-    /* Here we apply the test to many copies of a communicator */
+    /** Here we apply the test to many copies of a communicator */
     for (reset_handler = 0; reset_handler <= 1; ++reset_handler) {
         for (i=0; i<1000; i++) {
             MPI_Comm comm2;
@@ -70,7 +66,7 @@ int commcall( int argc, char *argv[] )
             MPI_Comm_dup( comm, &comm2 );
             calls = 0;
             mycomm = comm2;
-            /* comm2 must inherit the error handler from comm */
+            /** comm2 must inherit the error handler from comm */
             MPI_Comm_call_errhandler( comm2, MPI_ERR_OTHER );
             if (calls != 1) {
                 errs++;
@@ -78,7 +74,7 @@ int commcall( int argc, char *argv[] )
             }
 
             if (reset_handler) {
-                /* extra checking of the reference count handling */
+                /** extra checking of the reference count handling */
                 MPI_Comm_set_errhandler( comm, MPI_ERRORS_ARE_FATAL );
             }
             MPI_Errhandler_free( &newerr );

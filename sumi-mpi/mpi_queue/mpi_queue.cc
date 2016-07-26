@@ -98,15 +98,15 @@ mpi_queue::init_factory_params(sprockit::sim_parameters* params)
   if (params->has_namespace("traffic_matrix")){
     sprockit::sim_parameters* tparams = params->get_namespace("traffic_matrix");
     spy_bytes_ = test_cast(sstmac::stat_spyplot,
-      sstmac::stat_collector_factory::get_optional_param("type", "spyplot_png", tparams));
+      sstmac::stat_collector_factory::get_optional_param("type", "spyplot", tparams));
     spy_num_messages_ = test_cast(sstmac::stat_spyplot,
-      sstmac::stat_collector_factory::get_optional_param("type", "spyplot_png", tparams));
+      sstmac::stat_collector_factory::get_optional_param("type", "spyplot", tparams));
     if (!spy_bytes_){
       spkt_throw(sprockit::value_error,
         "MPI spyplot specified as %s, must be spyplot or spyplot_png",
         params->get_param("type").c_str());
     }
-    spy_bytes_->add_suffix("num_bytes");
+    spy_bytes_->add_suffix("bytes");
     spy_num_messages_->add_suffix("num_messages");
   }
 
@@ -186,6 +186,12 @@ mpi_queue::send(mpi_request *key, int count, MPI_Datatype type,
 {
   mpi_message::ptr mess = send_message(count, type, dest, tag, comm);
   configure_send_request(mess, key);
+
+  if (dest >= comm->size()){
+    spkt_throw_printf(sprockit::value_error,
+               "mpi_queue::send: sending to destination %d on MPI_Comm %d,"
+               " but maximum rank is %d", dest, comm->id(), comm->size());
+  }
 
 #if !SSTMAC_ALLOW_LARGE_PAYLOADS
   if (buffer && mess->byte_length() > 64){

@@ -5,7 +5,7 @@
 #include "mpitest.h"
 
 namespace opsum {
-/*
+/**
 static char MTEST_Descrip[] = "Test MPI_SUM operations on optional datatypes dupported by MPICH2";
 */
 
@@ -14,7 +14,7 @@ typedef struct { double r, i; } d_complex;
 typedef struct { long double r, i; } ld_complex;
 #endif
 
-/*
+/**
  * This test looks at the handling of logical and for types that are not 
  * integers or are not required integers (e.g., long long).  MPICH2 allows
  * these as well.  A strict MPI test should not include this test.
@@ -37,7 +37,7 @@ int opsum( int argc, char *argv[] )
     MPI_Comm_size( comm, &size );
 
 #ifndef USE_STRICT_MPI
-    /* char */
+    /** char */
     MTestPrintfMsg( 10, "Reduce of MPI_CHAR\n" );
     cinbuf[0] = 1;
     cinbuf[1] = 0;
@@ -61,9 +61,9 @@ int opsum( int argc, char *argv[] )
 	    fprintf( stderr, "char SUM(>) test failed\n" );
 	}
     }
-#endif /* USE_MPI_STRICT */
+#endif /** USE_MPI_STRICT */
 
-    /* signed char */
+    /** signed char */
     MTestPrintfMsg( 10, "Reduce of MPI_SIGNED_CHAR\n" );
     scinbuf[0] = 1;
     scinbuf[1] = 0;
@@ -88,7 +88,7 @@ int opsum( int argc, char *argv[] )
 	}
     }
 
-    /* unsigned char */
+    /** unsigned char */
     MTestPrintfMsg( 10, "Reduce of MPI_UNSIGNED_CHAR\n" );
     ucinbuf[0] = 1;
     ucinbuf[1] = 0;
@@ -114,17 +114,17 @@ int opsum( int argc, char *argv[] )
     }
 
 #ifndef USE_STRICT_MPI
-    /* For some reason, complex is not allowed for sum and prod */
+    /** For some reason, complex is not allowed for sum and prod */
     if (MPI_DOUBLE_COMPLEX != MPI_DATATYPE_NULL) {
 	int dc;
 #ifdef HAVE_LONG_DOUBLE	
 	ld_complex ldinbuf[3], ldoutbuf[3];
 #endif	
-	/* Must determine which C type matches this Fortran type */
+	/** Must determine which C type matches this Fortran type */
 	MPI_Type_size( MPI_DOUBLE_COMPLEX, &dc );
 	if (dc == sizeof(d_complex)) {
 	    MTestPrintfMsg( 10, "Reduce of MPI_DOUBLE_COMPLEX\n" );
-	    /* double complex; may be null if we do not have Fortran support */
+	    /** double complex; may be null if we do not have Fortran support */
 	    dinbuf[0].r = 1;
 	    dinbuf[1].r = 0;
 	    dinbuf[2].r = (rank > 0);
@@ -157,7 +157,7 @@ int opsum( int argc, char *argv[] )
 #ifdef HAVE_LONG_DOUBLE
 	else if (dc == sizeof(ld_complex)) {
 	    MTestPrintfMsg( 10, "Reduce of MPI_DOUBLE_COMPLEX\n" );
-	    /* double complex; may be null if we do not have Fortran support */
+	    /** double complex; may be null if we do not have Fortran support */
 	    ldinbuf[0].r = 1;
 	    ldinbuf[1].r = 0;
 	    ldinbuf[2].r = (rank > 0);
@@ -189,13 +189,13 @@ int opsum( int argc, char *argv[] )
 	    }
 	}
 #endif
-	/* Implicitly ignore if there is no matching C type */
+	/** Implicitly ignore if there is no matching C type */
     }
-#endif /* USE_STRICT_MPI */
+#endif /** USE_STRICT_MPI */
 
 #ifdef HAVE_LONG_DOUBLE
     { long double ldinbuf[3], ldoutbuf[3];
-    /* long double */
+    /** long double */
     ldinbuf[0] = 1;
     ldinbuf[1] = 0;
     ldinbuf[2] = (rank > 0);
@@ -227,7 +227,7 @@ int opsum( int argc, char *argv[] )
 #ifdef HAVE_LONG_LONG
     {
 	long long llinbuf[3], lloutbuf[3];
-    /* long long */
+    /** long long */
     llinbuf[0] = 1;
     llinbuf[1] = 0;
     llinbuf[2] = (rank > 0);

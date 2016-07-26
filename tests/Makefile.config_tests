@@ -25,7 +25,32 @@ CONFIGTESTS = \
   test_configs_exa2_pflow \
   test_configs_exa2_simple 
 
+COVERAGETESTS = \
+  test_coverage_smp_pflow \
+  test_coverage_simple_switch \
+  test_coverage_edison_amm1 \
+  test_coverage_edison_amm2 \
+  test_coverage_edison_amm3 \
+  test_coverage_hopper_amm1 \
+  test_coverage_hopper_amm2 \
+  test_coverage_hopper_amm3 \
+  test_coverage_hopper_amm1_simple \
+  test_coverage_hopper_amm2_simple \
+  test_coverage_hopper_amm3_simple \
+  test_coverage_deepthought \
+  test_coverage_franklin \
+  test_coverage_sequoia \
+  test_coverage_exa1_pflow \
+  test_coverage_exa1_simple \
+  test_coverage_exa2_pflow \
+  test_coverage_exa2_simple 
+
 #  test_configs_hopper_amm4 
+
+test_coverage_%.$(CHKSUF): $(SSTMACEXEC)
+	$(PYRUNTEST) 15 $(top_srcdir) $@ True \
+    $(SSTMACEXEC) -f mpi_coverage.ini -i $*.ini -i exa_mini_top.ini \
+    --no-wall-time 
 
 test_configs_exa%.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 5 $(top_srcdir) $@ 't > 1 and t < 1.2' \

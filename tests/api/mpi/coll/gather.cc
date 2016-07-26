@@ -7,7 +7,7 @@
 #include <sumi/collective_actor.h>
 
 namespace gather {
-/* Gather data from a vector to contiguous */
+/** Gather data from a vector to contiguous */
 
 int gather( int argc, char **argv )
 {
@@ -22,7 +22,7 @@ int gather( int argc, char **argv )
 
     while (MTestGetIntracommGeneral( &comm, minsize, 1 )) {
 	if (comm == MPI_COMM_NULL) continue;
-	/* Determine the sender and receiver */
+	/** Determine the sender and receiver */
 	MPI_Comm_rank( comm, &rank );
 	MPI_Comm_size( comm, &size );
 	
@@ -62,7 +62,7 @@ int gather( int argc, char **argv )
 	MTestFreeComm( &comm );
     }
 
-    /* do a zero length gather */
+    /** do a zero length gather */
     MPI_Gather( NULL, 0, MPI_BYTE, NULL, 0, MPI_BYTE, 0, MPI_COMM_WORLD );
 
     MTest_Finalize( errs );

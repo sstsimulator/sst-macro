@@ -36,7 +36,7 @@ struct double_test { double a; int b; };
      (op == MPI_MINLOC) ? "MPI_MINLOC" : \
      "MPI_NO_OP")
 
-/* calloc to avoid spurious valgrind warnings when "type" has padding bytes */
+/** calloc to avoid spurious valgrind warnings when "type" has padding bytes */
 #define DECL_MALLOC_IN_OUT_SOL(type)                 \
     type *in, *out, *sol;                            \
     in  = (type *) calloc(count, sizeof(type));      \
@@ -97,7 +97,7 @@ struct double_test { double a; int b; };
         free(in); free(out); free(sol);                                 \
     } while(0)
 
-/* The logic on the error check on MPI_Allreduce assumes that all 
+/** The logic on the error check on MPI_Allreduce assumes that all 
    MPI_Allreduce routines return a failure if any do - this is sufficient
    for MPI implementations that reject some of the valid op/datatype pairs
    (and motivated this addition, as some versions of the IBM MPI 
@@ -311,7 +311,7 @@ struct double_test { double a; int b; };
         op##_test##post(unsigned char, MPI_BYTE);                   \
     }
 
-/* Make sure that we test complex and double complex, even if long 
+/** Make sure that we test complex and double complex, even if long 
    double complex is not available */
 #if defined(USE_LONG_DOUBLE_COMPLEX)
 
@@ -344,7 +344,7 @@ struct double_test { double a; int b; };
 #define test_types_set4(op, post) do { } while (0)
 #endif
 
-#endif /* defined(USE_LONG_DOUBLE_COMPLEX) */
+#endif /** defined(USE_LONG_DOUBLE_COMPLEX) */
 
 #if MTEST_HAVE_MIN_MPI_VERSION(2,2) && defined(HAVE__BOOL)
 #define test_types_set5(op, post)           \
@@ -368,12 +368,12 @@ int allred( int argc, char **argv )
 	MPI_Abort( MPI_COMM_WORLD, 1 );
     }
 
-    /* Set errors return so that we can provide better information 
+    /** Set errors return so that we can provide better information 
        should a routine reject one of the operand/datatype pairs */
     MPI_Errhandler_set( MPI_COMM_WORLD, MPI_ERRORS_RETURN );
 
     count = 10;
-    /* Allow an argument to override the count.
+    /** Allow an argument to override the count.
        Note that the product tests may fail if the count is very large.
      */
     if (argc >= 2) {

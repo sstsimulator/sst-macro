@@ -1,15 +1,11 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include "mpitest.h"
 
 namespace ctxalloc {
-/*
+/**
  * This program tests the allocation (and deallocation) of contexts.
  * 
  */
@@ -21,11 +17,11 @@ int ctxalloc( int argc, char **argv )
 
     MTest_Init( &argc, &argv );
 
-    /* Get a separate communicator to duplicate */
+    /** Get a separate communicator to duplicate */
     MPI_Comm_dup( MPI_COMM_WORLD, &newcomm1 );
 
     MPI_Errhandler_set( newcomm1, MPI_ERRORS_RETURN );
-    /* Allocate many communicators in batches, then free them */
+    /** Allocate many communicators in batches, then free them */
     for (i=0; i<1000; i++) {
 	for (j=0; j<200; j++) {
 	    err = MPI_Comm_dup( newcomm1, &newcomm2[j] );

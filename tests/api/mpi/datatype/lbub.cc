@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,7 +10,7 @@
 #endif
 
 namespace lbub {
-/* 
+/** 
    The default behavior of the test routines should be to briefly indicate
    the cause of any errors - in this test, that means that verbose needs
    to be set. Verbose should turn on output that is independent of error
@@ -21,7 +18,7 @@ namespace lbub {
 */
 static int verbose = 1;
 
-/* tests */
+/** tests */
 int int_with_lb_ub_test(void);
 int contig_of_int_with_lb_ub_test(void);
 int contig_negextent_of_int_with_lb_ub_test(void);
@@ -33,7 +30,7 @@ int vector_blklen_negstride_negextent_of_int_with_lb_ub_test(void);
 int int_with_negextent_test(void);
 int vector_blklen_negstride_of_int_with_lb_ub_test(void);
 
-/* helper functions */
+/** helper functions */
 int parse_args(int argc, char **argv);
 
 int lbub(int argc, char **argv)
@@ -43,11 +40,11 @@ int lbub(int argc, char **argv)
     MTest_Init( &argc, &argv );
     parse_args(argc, argv);
 
-    /* To improve reporting of problems about operations, we
+    /** To improve reporting of problems about operations, we
        change the error handler to errors return */
     MPI_Comm_set_errhandler( MPI_COMM_WORLD, MPI_ERRORS_RETURN );
 
-    /* perform some tests */
+    /** perform some tests */
     err = int_with_lb_ub_test();
     if (err && verbose) fprintf(stderr, "found %d errors in simple lb/ub test\n", err);
     errs += err;
@@ -95,7 +92,7 @@ int lbub(int argc, char **argv)
 
 int parse_args(int argc, char **argv)
 {
-    /*
+    /**
     int ret;
 
     while ((ret = getopt(argc, argv, "v")) >= 0)
@@ -229,7 +226,7 @@ int contig_of_int_with_lb_ub_test(void)
 
     MPI_Datatype inttype, eviltype;
 
-    /* build same type as in int_with_lb_ub_test() */
+    /** build same type as in int_with_lb_ub_test() */
     typemapstring = (char*)"{ (LB,-3),4*(BYTE,0),(UB,6) }";
     err = MPI_Type_struct(3, blocks, disps, types, &inttype);
     if (err != MPI_SUCCESS) {
@@ -237,7 +234,7 @@ int contig_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  MPI_Type_struct of %s failed.\n",
 			     typemapstring );
 	if (verbose) MTestPrintError( err  );
-	/* no point in continuing */
+	/** no point in continuing */
 	return errs;
     }
 
@@ -248,7 +245,7 @@ int contig_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  MPI_Type_contiguous of %s failed.\n",
 			     typemapstring );
 	if (verbose) MTestPrintError( err  );
-	/* no point in continuing */
+	/** no point in continuing */
 	return errs;
     }
 
@@ -356,7 +353,7 @@ int contig_negextent_of_int_with_lb_ub_test(void)
 
     MPI_Datatype inttype, eviltype;
 
-    /* build same type as in int_with_lb_ub_test() */
+    /** build same type as in int_with_lb_ub_test() */
     typemapstring = (char*)"{ (LB,6),4*(BYTE,0),(UB,-3) }";
     err = MPI_Type_struct(3, blocks, disps, types, &inttype);
     if (err != MPI_SUCCESS) {
@@ -364,7 +361,7 @@ int contig_negextent_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  MPI_Type_struct of %s failed.\n",
 			     typemapstring );
 	if (verbose) MTestPrintError( err  );
-	/* No point in continuing */
+	/** No point in continuing */
 	return errs;
     }
 
@@ -375,7 +372,7 @@ int contig_negextent_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  MPI_Type_contiguous of %s failed.\n",
 			     typemapstring);
 	if (verbose) MTestPrintError( err  );
-	/* No point in continuing */
+	/** No point in continuing */
 	return errs;
     }
 
@@ -480,13 +477,13 @@ int vector_of_int_with_lb_ub_test(void)
 
     MPI_Datatype inttype, eviltype;
 
-    /* build same type as in int_with_lb_ub_test() */
+    /** build same type as in int_with_lb_ub_test() */
     err = MPI_Type_struct(3, blocks, disps, types, &inttype);
     if (err != MPI_SUCCESS) {
 	errs++;
 	if (verbose) fprintf(stderr, "  MPI_Type_struct failed.\n");
 	if (verbose) MTestPrintError( err  );
-	/* no point in continuing */
+	/** no point in continuing */
 	return errs;
     }
 
@@ -495,7 +492,7 @@ int vector_of_int_with_lb_ub_test(void)
 	errs++;
 	if (verbose) fprintf(stderr, "  MPI_Type_vector failed.\n");
 	if (verbose) MTestPrintError( err  );
-	/* no point in continuing */
+	/** no point in continuing */
 	return errs;
     }
 
@@ -589,7 +586,7 @@ int vector_of_int_with_lb_ub_test(void)
     return errs;
 }
 
-/*
+/**
  * blklen = 4
  */
 int vector_blklen_of_int_with_lb_ub_test(void)
@@ -602,13 +599,13 @@ int vector_blklen_of_int_with_lb_ub_test(void)
 
     MPI_Datatype inttype, eviltype;
 
-    /* build same type as in int_with_lb_ub_test() */
+    /** build same type as in int_with_lb_ub_test() */
     err = MPI_Type_struct(3, blocks, disps, types, &inttype);
     if (err != MPI_SUCCESS) {
 	errs++;
 	if (verbose) fprintf(stderr, "  MPI_Type_struct failed.\n");
 	if (verbose) MTestPrintError( err  );
-	/* no point in continuing */
+	/** no point in continuing */
 	return errs;
     }
 
@@ -617,7 +614,7 @@ int vector_blklen_of_int_with_lb_ub_test(void)
 	errs++;
 	if (verbose) fprintf(stderr, "  MPI_Type_vector failed.\n");
 	if (verbose) MTestPrintError( err  );
-	/* no point in continuing */
+	/** no point in continuing */
 	return errs;
     }
 
@@ -723,7 +720,7 @@ int vector_blklen_stride_of_int_with_lb_ub_test(void)
 
     MPI_Datatype inttype, eviltype;
 
-    /* build same type as in int_with_lb_ub_test() */
+    /** build same type as in int_with_lb_ub_test() */
     typemapstring = (char*)"{ (LB,-3),4*(BYTE,0),(UB,6) }";
     err = MPI_Type_struct(3, blocks, disps, types, &inttype);
     if (err != MPI_SUCCESS) {
@@ -731,7 +728,7 @@ int vector_blklen_stride_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  MPI_Type_struct of %s failed.\n",
 			     typemapstring );
 	if (verbose) MTestPrintError( err  );
-	/* No point in continuing */
+	/** No point in continuing */
 	return errs;
     }
 
@@ -740,7 +737,7 @@ int vector_blklen_stride_of_int_with_lb_ub_test(void)
 	errs++;
 	if (verbose) fprintf(stderr, "  MPI_Type_vector failed.\n");
 	if (verbose) MTestPrintError( err  );
-	/* no point in continuing */
+	/** no point in continuing */
 	return errs;
     }
 
@@ -844,13 +841,13 @@ int vector_blklen_negstride_of_int_with_lb_ub_test(void)
 
     MPI_Datatype inttype, eviltype;
 
-    /* build same type as in int_with_lb_ub_test() */
+    /** build same type as in int_with_lb_ub_test() */
     err = MPI_Type_struct(3, blocks, disps, types, &inttype);
     if (err != MPI_SUCCESS) {
 	errs++;
 	if (verbose) fprintf(stderr, "  MPI_Type_struct failed.\n");
 	if (verbose) MTestPrintError( err  );
-	/* no point in continuing */
+	/** no point in continuing */
 	return errs;
     }
 
@@ -859,7 +856,7 @@ int vector_blklen_negstride_of_int_with_lb_ub_test(void)
 	errs++;
 	if (verbose) fprintf(stderr, "  MPI_Type_vector failed.\n");
 	if (verbose) MTestPrintError( err  );
-	/* no point in continuing */
+	/** no point in continuing */
 	return errs;
     }
 
@@ -971,7 +968,7 @@ int int_with_negextent_test(void)
 	if (verbose) fprintf(stderr, "  MPI_Type_struct of %s failed.\n",
 			     typemapstring );
 	if (verbose) MTestPrintError( err  );
-	/* No point in contiuing */
+	/** No point in contiuing */
 	return errs;
     }
 
@@ -1074,7 +1071,7 @@ int vector_blklen_stride_negextent_of_int_with_lb_ub_test(void)
     MPI_Datatype inttype, eviltype;
     char *typemapstring = 0;
 
-    /* build same type as in int_with_lb_ub_test() */
+    /** build same type as in int_with_lb_ub_test() */
     typemapstring = (char*)"{ (LB,6),4*(BYTE,0),(UB,-3) }";
     err = MPI_Type_struct(3, blocks, disps, types, &inttype);
     if (err != MPI_SUCCESS) {
@@ -1082,7 +1079,7 @@ int vector_blklen_stride_negextent_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  MPI_Type_struct of %s failed.\n",
 			     typemapstring );
 	if (verbose) MTestPrintError( err  );
-	/* No point in continuing */
+	/** No point in continuing */
 	return errs;
     }
 
@@ -1091,7 +1088,7 @@ int vector_blklen_stride_negextent_of_int_with_lb_ub_test(void)
 	errs++;
 	if (verbose) fprintf(stderr, "  MPI_Type_vector failed.\n");
 	if (verbose) MTestPrintError( err  );
-	/* no point in continuing */
+	/** no point in continuing */
 	return errs;
     }
 
@@ -1195,13 +1192,13 @@ int vector_blklen_negstride_negextent_of_int_with_lb_ub_test(void)
 
     MPI_Datatype inttype, eviltype;
 
-    /* build same type as in int_with_lb_ub_test() */
+    /** build same type as in int_with_lb_ub_test() */
     err = MPI_Type_struct(3, blocks, disps, types, &inttype);
     if (err != MPI_SUCCESS) {
 	errs++;
 	if (verbose) fprintf(stderr, "  MPI_Type_struct failed.\n");
 	if (verbose) MTestPrintError( err  );
-	/* no point in continuing */
+	/** no point in continuing */
 	return errs;
     }
 
@@ -1210,7 +1207,7 @@ int vector_blklen_negstride_negextent_of_int_with_lb_ub_test(void)
 	errs++;
 	if (verbose) fprintf(stderr, "  MPI_Type_vector failed.\n");
 	if (verbose) MTestPrintError( err  );
-	/* no point in continuing */
+	/** no point in continuing */
 	return errs;
     }
 

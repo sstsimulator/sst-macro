@@ -1,9 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +11,7 @@
 
 namespace adderr {
 
-/* Create NCLASSES new classes, each with 5 codes (160 total) */
+/** Create NCLASSES new classes, each with 5 codes (160 total) */
 #define NCLASSES 32
 #define NCODES   5
 
@@ -28,7 +24,7 @@ int adderr( int argc, char *argv[] )
 
     MTest_Init( &argc, &argv );
 
-    /* Initialize the new codes */
+    /** Initialize the new codes */
     for (i=0; i<NCLASSES; i++) {
 	MPI_Add_error_class( &newclass[i] );
 	for (j=0; j<NCODES; j++) {
@@ -38,7 +34,7 @@ int adderr( int argc, char *argv[] )
 	}
     }
 
-    /* check the values */
+    /** check the values */
     for (i=0; i<NCLASSES; i++) {
 	MPI_Error_class( newclass[i], &outclass );
 	if (outclass != newclass[i]) {

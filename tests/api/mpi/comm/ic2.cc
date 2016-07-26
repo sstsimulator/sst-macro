@@ -1,11 +1,7 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2012 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
 
-/* regression test for ticket #1574
+
+
+/** regression test for ticket #1574
  *
  * Based on test code from N. Radclif @ Cray. */
 
@@ -39,12 +35,12 @@ int ic2(int argc, char **argv)
         return 1;
     }
 
-    /* group of c0
+    /** group of c0
      * NOTE: a>=32 is essential for exercising the loop bounds bug from tt#1574 */
     a = 32;
     b = 24;
 
-    /* group of c1 */
+    /** group of c1 */
     c = 25;
     d = 26;
 

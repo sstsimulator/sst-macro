@@ -7,7 +7,7 @@
 
 namespace alltoallv {
 
-/*
+/**
   This program tests MPI_Alltoallv by having processor i send different
   amounts of data to each processor.
 
@@ -35,7 +35,7 @@ int alltoallv( int argc, char **argv )
     while (MTestGetIntracommGeneral( &comm, 2, 1 )) {
       if (comm == MPI_COMM_NULL) continue;
 
-      /* Create the buffer */
+      /** Create the buffer */
       MPI_Comm_size( comm, &size );
       MPI_Comm_rank( comm, &rank );
       sbuf = (int *)malloc( size * size * sizeof(int) );
@@ -45,13 +45,13 @@ int alltoallv( int argc, char **argv )
 	MPI_Abort( comm, 1 );
       }
       
-      /* Load up the buffers */
+      /** Load up the buffers */
       for (i=0; i<size*size; i++) {
 	sbuf[i] = i + 100*rank;
 	rbuf[i] = -i;
       }
       
-      /* Create and load the arguments to alltoallv */
+      /** Create and load the arguments to alltoallv */
       sendcounts = (int *)malloc( size * sizeof(int) );
       recvcounts = (int *)malloc( size * sizeof(int) );
       rdispls    = (int *)malloc( size * sizeof(int) );
@@ -69,7 +69,7 @@ int alltoallv( int argc, char **argv )
       MPI_Alltoallv( sbuf, sendcounts, sdispls, MPI_INT,
 		     rbuf, recvcounts, rdispls, MPI_INT, comm );
       
-      /* Check rbuf */
+      /** Check rbuf */
       for (i=0; i<size; i++) {
 	p = rbuf + rdispls[i];
 	for (j=0; j<rank; j++) {
@@ -86,7 +86,7 @@ int alltoallv( int argc, char **argv )
       free( sbuf );
 
 #if MTEST_HAVE_MIN_MPI_VERSION(2,2)
-      /* check MPI_IN_PLACE, added in MPI-2.2 */
+      /** check MPI_IN_PLACE, added in MPI-2.2 */
       free( rbuf );
       rbuf = (int *)malloc( size * (2 * size) * sizeof(int) );
       if (!rbuf) {
@@ -94,7 +94,7 @@ int alltoallv( int argc, char **argv )
         MPI_Abort( comm, 1 );
       }
 
-      /* Load up the buffers */
+      /** Load up the buffers */
       for (i = 0; i < size; i++) {
         recvcounts[i] = i + rank;
         rdispls[i]    = i * (2 * size);
@@ -108,7 +108,7 @@ int alltoallv( int argc, char **argv )
       }
       MPI_Alltoallv( MPI_IN_PLACE, NULL, NULL, MPI_INT,
                      rbuf, recvcounts, rdispls, MPI_INT, comm );
-      /* Check rbuf */
+      /** Check rbuf */
       for (i=0; i<size; i++) {
         p = rbuf + rdispls[i];
         for (j=0; j<recvcounts[i]; j++) {

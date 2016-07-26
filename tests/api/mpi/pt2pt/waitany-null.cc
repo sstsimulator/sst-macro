@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpitestconf.h"
@@ -32,8 +29,8 @@ int waitany_null(int argc, char *argv[])
 	requests[i] = MPI_REQUEST_NULL;
     }
 
-    /* begin testing */
-    /* To improve reporting of problems about operations, we
+    /** begin testing */
+    /** To improve reporting of problems about operations, we
        change the error handler to errors return */
     MPI_Comm_set_errhandler( MPI_COMM_WORLD, MPI_ERRORS_RETURN );
 
@@ -49,7 +46,7 @@ int waitany_null(int argc, char *argv[])
 	fprintf(stderr, "MPI_Waitany did not set index to MPI_UNDEFINED\n");
     }
 
-    /* end testing */
+    /** end testing */
     
     MPI_Comm_set_errhandler( MPI_COMM_WORLD, MPI_ERRORS_ARE_FATAL );
     MPI_Comm_rank( MPI_COMM_WORLD, & rank );
@@ -68,7 +65,7 @@ int waitany_null(int argc, char *argv[])
 
 int parse_args(int argc, char **argv)
 {
-    /*
+    /**
     int ret;
 
     while ((ret = getopt(argc, argv, "v")) >= 0)

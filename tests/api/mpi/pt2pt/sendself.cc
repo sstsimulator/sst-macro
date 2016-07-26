@@ -1,15 +1,12 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2006 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpitest.h"
 
 namespace sendself {
-/*
+/**
 static char MTEST_Descrip[] = "Test of sending to self (with a preposted receive)";
 */
 
@@ -28,7 +25,7 @@ int sendself( int argc, char *argv[] )
     MPI_Comm_rank( comm, &rank );
     MPI_Comm_size( comm, &size );
 
-    /* To improve reporting of problems about operations, we
+    /** To improve reporting of problems about operations, we
        change the error handler to errors return */
     MPI_Comm_set_errhandler( comm, MPI_ERRORS_RETURN );
     

@@ -1,16 +1,12 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2007 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpitest.h"
 
 namespace icsplit {
-/*
+/**
  * This program tests that MPI_Comm_split applies to intercommunicators;
  * this is an extension added in MPI-2
  */
@@ -36,14 +32,14 @@ int icsplit( int argc, char *argv[] )
 
         if (intercomm == MPI_COMM_NULL) continue;
 
-	/* Split this intercomm.  The new intercomms contain the 
+	/** Split this intercomm.  The new intercomms contain the 
 	   processes that had odd (resp even) rank in their local group
 	   in the original intercomm */
 	MTestPrintfMsg( 1, "Created intercomm %s\n", MTestGetIntercommName() );
 	MPI_Comm_rank( intercomm, &key );
 	color = (key % 2);
 	MPI_Comm_split( intercomm, color, key, &newcomm );
-	/* Make sure that the new communicator has the appropriate pieces */
+	/** Make sure that the new communicator has the appropriate pieces */
 	if (newcomm != MPI_COMM_NULL) {
 	    int orig_rsize, orig_size, new_rsize, new_size;
 	    int predicted_size, flag, commok=1;
@@ -59,7 +55,7 @@ int icsplit( int argc, char *argv[] )
 	    MPI_Comm_remote_size( newcomm, &new_rsize );
 	    MPI_Comm_size( intercomm, &orig_size );
 	    MPI_Comm_size( newcomm, &new_size );
-	    /* The local size is 1/2 the original size, +1 if the 
+	    /** The local size is 1/2 the original size, +1 if the 
 	       size was odd and the color was even.  More precisely,
 	       let n be the orig_size.  Then
 	                        color 0     color 1
@@ -89,18 +85,18 @@ int icsplit( int argc, char *argv[] )
 			orig_size, orig_rsize );
 		commok = 0;
 	    }
-	    /* ... more to do */
+	    /** ... more to do */
 	    if (commok) {
 		errs += TestIntercomm( newcomm );
 	    }
 	}
 	else {
 	    int orig_rsize;
-	    /* If the newcomm is null, then this means that remote group
+	    /** If the newcomm is null, then this means that remote group
 	       for this color is of size zero (since all processes in this 
 	       test have been given colors other than MPI_UNDEFINED).
 	       Confirm that here */
-	    /* FIXME: ToDo */
+	    /** FIXME: ToDo */
 	    MPI_Comm_remote_size( intercomm, &orig_rsize );
 	    if (orig_rsize == 1) {
 		if (color == 0) {
@@ -120,7 +116,7 @@ int icsplit( int argc, char *argv[] )
     return 0;
 }
 
-/* FIXME: This is copied from iccreate.  It should be in one place */
+/** FIXME: This is copied from iccreate.  It should be in one place */
 int TestIntercomm( MPI_Comm comm )
 {
     int local_size, remote_size, rank, **bufs, *bufmem, rbuf[2], j;
@@ -158,7 +154,7 @@ int TestIntercomm( MPI_Comm comm )
 	return errs;
     }
 
-    /* Each process sends a message containing its own rank and the
+    /** Each process sends a message containing its own rank and the
        rank of the destination with a nonblocking send.  Because we're using
        nonblocking sends, we need to use different buffers for each isend */
     for (j=0; j<remote_size; j++) {

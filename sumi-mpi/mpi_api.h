@@ -814,76 +814,76 @@ class mpi_api :
   void finish_vcollective_op(collective_op_base* op_);
 
   /* Collective operations */
-  collective_op*
+  collective_op_base*
   start_barrier(const char* name, MPI_Comm comm);
 
-  collective_op*
+  collective_op_base*
   start_bcast(const char* name, void *buffer, int count, MPI_Datatype datatype, int root,
         MPI_Comm comm);
 
-  collective_op*
+  collective_op_base*
   start_scatter(const char* name, const void *sendbuf, int sendcount, MPI_Datatype sendtype,
            void *recvbuf, int recvcount, MPI_Datatype recvtype, int root,
            MPI_Comm comm);
 
-  collectivev_op*
+  collective_op_base*
   start_scatterv(const char* name, const void *sendbuf, const int *sendcounts, const int *displs,
            MPI_Datatype sendtype, void *recvbuf, int recvcount,
            MPI_Datatype recvtype,
            int root, MPI_Comm comm);
 
-  collective_op*
+  collective_op_base*
   start_gather(const char* name, const void *sendbuf, int sendcount, MPI_Datatype sendtype,
          void *recvbuf, int recvcount, MPI_Datatype recvtype,
          int root, MPI_Comm comm);
 
-  collectivev_op*
+  collective_op_base*
   start_gatherv(const char* name, const void *sendbuf, int sendcount, MPI_Datatype sendtype,
           void *recvbuf, const int *recvcounts, const int *displs,
           MPI_Datatype recvtype, int root, MPI_Comm comm);
 
-  collective_op*
+  collective_op_base*
   start_allgather(const char* name, const void *sendbuf, int sendcount, MPI_Datatype sendtype,
             void *recvbuf, int recvcount, MPI_Datatype recvtype,
             MPI_Comm comm);
 
-  collectivev_op*
+  collective_op_base*
   start_allgatherv(const char* name, const void *sendbuf, int sendcount, MPI_Datatype sendtype,
              void *recvbuf, const int *recvcounts, const int *displs,
              MPI_Datatype recvtype, MPI_Comm comm);
 
-  collective_op*
+  collective_op_base*
   start_alltoall(const char* name, const void *sendbuf, int sendcount, MPI_Datatype sendtype,
             void *recvbuf, int recvcount, MPI_Datatype recvtype,
             MPI_Comm comm);
 
-  collectivev_op*
+  collective_op_base*
   start_alltoallv(const char* name, const void *sendbuf, const int *sendcounts,
             const int *sdispls, MPI_Datatype sendtype, void *recvbuf,
             const int *recvcounts, const int *rdispls, MPI_Datatype recvtype,
             MPI_Comm comm);
 
-  collective_op*
+  collective_op_base*
   start_reduce(const char* name, const void* src, void* dst,
          int count, MPI_Datatype type, MPI_Op op, int root,
          MPI_Comm comm);
 
-  collective_op*
+  collective_op_base*
   start_allreduce(const char* name, const void* src, void* dst,
             int count, MPI_Datatype type, MPI_Op op,
             MPI_Comm comm);
 
-  collective_op*
+  collective_op_base*
   start_reduce_scatter(const char* name, const void* src, void* dst,
                  int* recvcnts, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm);
 
-  collective_op*
+  collective_op_base*
   start_reduce_scatter_block(const char* name, const void* src, void* dst,
                  int recvcnt, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm);
 
-  collective_op*
+  collective_op_base*
   start_scan(const char* name, const void* src, void* dst,
       int count, MPI_Datatype type, MPI_Op op,
        MPI_Comm comm);

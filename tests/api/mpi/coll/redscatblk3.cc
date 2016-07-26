@@ -44,7 +44,7 @@ int redscatblk3( int argc, char **argv )
 			      comm );
 
     sumval = size * rank + ((size - 1) * size)/2;
-    /* recvbuf should be size * (rank + i) */
+    /** recvbuf should be size * (rank + i) */
     for (i=0; i<mycount; i++) {
 	if (recvbuf[i] != sumval) {
 	    err++;
@@ -57,7 +57,7 @@ int redscatblk3( int argc, char **argv )
 			comm );
 
     sumval = size * rank + ((size - 1) * size)/2;
-    /* recv'ed values for my process should be size * (rank + i) */
+    /** recv'ed values for my process should be size * (rank + i) */
     for (i=0; i<mycount; i++) {
 	if (sendbuf[rank*mycount+i] != sumval) {
 	    err++;

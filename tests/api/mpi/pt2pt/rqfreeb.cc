@@ -1,15 +1,12 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2006 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpitest.h"
 
 namespace rqfreeb {
-/* Test Ibsend and Request_free */
+/** Test Ibsend and Request_free */
 int rqfreeb( int argc, char *argv[] )
 {
     MPI_Comm comm = MPI_COMM_WORLD;
@@ -35,7 +32,7 @@ int rqfreeb( int argc, char *argv[] )
 
 	MPI_Barrier( MPI_COMM_WORLD );
 
-	/* According to the standard, we must use the PACK_SIZE length of each
+	/** According to the standard, we must use the PACK_SIZE length of each
 	   message in the computation of the message buffer size */
 	MPI_Pack_size( 5, MPI_INT, comm, &s1 );
 	bufsize = MPI_BSEND_OVERHEAD + s1 + 2000;
@@ -78,7 +75,7 @@ int rqfreeb( int argc, char *argv[] )
 	MPI_Isend( &smsg[4], 1, MPI_INT, dest, tag+4, comm, &r );
 	MPI_Wait( &r, MPI_STATUS_IGNORE );
 
-	/* We can't guarantee that messages arrive until the detach */
+	/** We can't guarantee that messages arrive until the detach */
  	MPI_Buffer_detach( &bbuf, &bsize ); 
     }
 
@@ -89,7 +86,7 @@ int rqfreeb( int argc, char *argv[] )
 	for (i=0; i<5; i++) {
 	    MPI_Irecv( &rmsg[i], 1, MPI_INT, src, tag+i, comm, &r[i] );
 	}
-	if (rank != src) /* Just in case rank == src */
+	if (rank != src) /** Just in case rank == src */
 	    MPI_Barrier( MPI_COMM_WORLD );
 
 	for (i=0; i<4; i++) {
@@ -99,7 +96,7 @@ int rqfreeb( int argc, char *argv[] )
 		fprintf( stderr, "message %d (%d) should be %d\n", i, rmsg[i], 10+i );
 	    }
 	}
-	/* The MPI standard says that there is no way to use MPI_Request_free
+	/** The MPI standard says that there is no way to use MPI_Request_free
 	   safely with receive requests.  A strict MPI implementation may
 	   choose to consider these erroreous (an IBM MPI implementation
 	   does so)  */

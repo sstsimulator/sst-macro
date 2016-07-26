@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,13 +13,13 @@ namespace blockindexed_misc
 
   static int verbose = 1;
 
-  /* tests */
+  /** tests */
   int
   blockindexed_contig_test(void);
   int
   blockindexed_vector_test(void);
 
-  /* helper functions */
+  /** helper functions */
   int
   parse_args(int argc, char **argv);
   static int
@@ -34,14 +31,14 @@ namespace blockindexed_misc
   {
     int err, errs = 0;
 
-    MPI_Init(&argc, &argv); /* MPI-1.2 doesn't allow for MPI_Init(0,0) */
+    MPI_Init(&argc, &argv); /** MPI-1.2 doesn't allow for MPI_Init(0,0) */
     parse_args(argc, argv);
 
-    /* To improve reporting of problems about operations, we
+    /** To improve reporting of problems about operations, we
      change the error handler to errors return */MPI_Comm_set_errhandler(
         MPI_COMM_WORLD, MPI_ERRORS_RETURN);
 
-    /* perform some tests */
+    /** perform some tests */
     err = blockindexed_contig_test();
     if (err && verbose)
       fprintf(stderr, "%d errors in blockindexed test.\n", err);
@@ -52,7 +49,7 @@ namespace blockindexed_misc
       fprintf(stderr, "%d errors in blockindexed vector test.\n", err);
     errs += err;
 
-    /* print message and exit */
+    /** print message and exit */
     if (errs)
     {
       fprintf(stderr, "Found %d errors\n", errs);
@@ -65,7 +62,7 @@ namespace blockindexed_misc
     return 0;
   }
 
-  /* blockindexed_contig_test()
+  /** blockindexed_contig_test()
    *
    * Tests behavior with a blockindexed that can be converted to a
    * contig easily.  This is specifically for coverage.
@@ -163,7 +160,7 @@ namespace blockindexed_misc
         goodval = 7;
         break;
       default:
-        goodval = 0; /* pack_and_unpack() zeros before unpack */
+        goodval = 0; /** pack_and_unpack() zeros before unpack */
         break;
       }
       if (buf[i] != goodval)
@@ -179,7 +176,7 @@ namespace blockindexed_misc
     return errs;
   }
 
-  /* blockindexed_vector_test()
+  /** blockindexed_vector_test()
    *
    * Tests behavior with a blockindexed of some vector types;
    * this shouldn't be easily convertable into anything else.
@@ -202,7 +199,7 @@ namespace blockindexed_misc
 
     int size, int_size;
 
-    /* create a vector type of 2 ints, skipping one in between */
+    /** create a vector type of 2 ints, skipping one in between */
     err = MPI_Type_vector(2, 1, 2, MPI_INT, &vectype);
     if (err != MPI_SUCCESS)
     {
@@ -293,7 +290,7 @@ namespace blockindexed_misc
     return errs;
   }
 
-  /* pack_and_unpack()
+  /** pack_and_unpack()
    *
    * Perform packing and unpacking of a buffer for the purposes of checking
    * to see if we are processing a type correctly.  Zeros the buffer between
@@ -394,7 +391,7 @@ namespace blockindexed_misc
   int
   parse_args(int argc, char **argv)
   {
-    /*
+    /**
      int ret;
 
      while ((ret = getopt(argc, argv, "v")) >= 0)

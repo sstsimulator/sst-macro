@@ -1,5 +1,6 @@
 #include <sstmac/hardware/router/structured_router.h>
 #include <sstmac/hardware/topology/structured_topology.h>
+#include <sstmac/hardware/topology/fat_tree.h>
 #include <sprockit/util.h>
 
 namespace sstmac {
@@ -9,7 +10,7 @@ void
 structured_router::set_topology(topology* top)
 {
   regtop_ = safe_cast(structured_topology, top);
-  router::set_topology(top);
+  router::set_topology(top);  
 }
 
 void

@@ -4,14 +4,14 @@
 
 namespace attrend2 {
 
-/* 20 ought to be enough attributes to ensure that hash-table based MPI
+/** 20 ought to be enough attributes to ensure that hash-table based MPI
  * implementations do not accidentally pass the test except by being extremely
  * "lucky".  There are (20!) possible permutations which means that there is
  * about a 1 in 2.43e18 chance of getting LIFO ordering out of a hash table,
  * assuming a decent hash function is used. */
 #define NUM_TEST_ATTRS (20)
 
-static int exit_keys[NUM_TEST_ATTRS]; /* init to MPI_KEYVAL_INVALID */
+static int exit_keys[NUM_TEST_ATTRS]; /** init to MPI_KEYVAL_INVALID */
 static int was_called[NUM_TEST_ATTRS];
 int foundError = 0;
 int delete_fn (MPI_Comm, int, void *, void *);
@@ -30,23 +30,23 @@ int attrend2(int argc, char **argv)
         exit_keys[i] = MPI_KEYVAL_INVALID;
         was_called[i] = 0;
 
-        /* create the keyval for the exit handler */
+        /** create the keyval for the exit handler */
         MPI_Comm_create_keyval(MPI_COMM_NULL_COPY_FN, delete_fn, &exit_keys[i], NULL);
-        /* attach to comm_self */
+        /** attach to comm_self */
         MPI_Comm_set_attr(MPI_COMM_SELF, exit_keys[i], (void*)(long)i);
     }
 
-    /* we can free the keys now */
+    /** we can free the keys now */
     for (i = 0; i < NUM_TEST_ATTRS; ++i) {
         MPI_Comm_free_keyval(&exit_keys[i]);
     }
 
-    /* now, exit MPI */
+    /** now, exit MPI */
     MPI_Finalize();
 
-    /* check that the exit handlers were called in LIFO order, and without error */
+    /** check that the exit handlers were called in LIFO order, and without error */
     if (wrank == 0) {
-        /* In case more than one process exits MPI_Finalize */
+        /** In case more than one process exits MPI_Finalize */
         for (i = 0; i < NUM_TEST_ATTRS; ++i) {
             if (was_called[i] < 1) {
                 errs++;
@@ -69,7 +69,7 @@ int attrend2(int argc, char **argv)
         }
         fflush(stdout);
     }
-#else /* this is a pre-MPI-2.2 implementation, ordering is not defined */
+#else /** this is a pre-MPI-2.2 implementation, ordering is not defined */
     MPI_Finalize();
     if (wrank == 0)
         printf(" No Errors\n");
@@ -97,7 +97,7 @@ int delete_fn(MPI_Comm comm, int keyval, void *attribute_val, void *extra_state)
         foundError++;
     }
 
-    /* since attributes were added in 0..(NUM_TEST_ATTRS-1) order, they will be
+    /** since attributes were added in 0..(NUM_TEST_ATTRS-1) order, they will be
      * called in (NUM_TEST_ATTRS-1)..0 order */
     for (i = 0; i < my_idx; ++i) {
         if (was_called[i] != 0) {

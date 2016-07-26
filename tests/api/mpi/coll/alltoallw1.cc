@@ -6,7 +6,7 @@
 
 namespace alltoallw1 {
 
-  /* Specify the maximum number of errors to report. */
+  /** Specify the maximum number of errors to report. */
   #define MAX_ERRORS 10
 #define MAX_SIZE 64
 
@@ -14,7 +14,7 @@ MPI_Datatype transpose_type(int M, int m, int n, MPI_Datatype type);
 MPI_Datatype submatrix_type(int N, int m, int n, MPI_Datatype type);
 void Transpose(float *localA, float *localB, int M, int N, MPI_Comm comm);
 void Transpose(float *localA, float *localB, int M, int N, MPI_Comm comm)
-/* transpose MxN matrix A that is block distributed (1-D) on  
+/** transpose MxN matrix A that is block distributed (1-D) on  
    processes of comm onto block distributed matrix B  */
 {
   int i, j, extent, myrank, p, n[2], m[2];
@@ -25,12 +25,12 @@ void Transpose(float *localA, float *localB, int M, int N, MPI_Comm comm)
 
   MTestPrintfMsg( 2, "M = %d, N = %d\n", M, N );
 
-  /* compute parameters */
+  /** compute parameters */
   MPI_Comm_size(comm, &p);
   MPI_Comm_rank(comm, &myrank);
   extent = sizeof(float);
 
-  /* allocate arrays */
+  /** allocate arrays */
   sendcounts = (int *)malloc(p*sizeof(int));
   recvcounts = (int *)malloc(p*sizeof(int));
   sdispls    = (int *)malloc(p*sizeof(int));
@@ -38,20 +38,20 @@ void Transpose(float *localA, float *localB, int M, int N, MPI_Comm comm)
   sendtypes  = (MPI_Datatype *)malloc(p*sizeof(MPI_Datatype));
   recvtypes  = (MPI_Datatype *)malloc(p*sizeof(MPI_Datatype));
 
-  /* compute block sizes */
+  /** compute block sizes */
   m[0] = M/p;
   m[1] = M - (p-1)*(M/p);
   n[0] = N/p;
   n[1] = N - (p-1)*(N/p);
 
-  /* compute types */
+  /** compute types */
   for (i=0; i <= 1; i++)
       for (j=0; j <= 1; j++) {
 	  xtype[i][j] = transpose_type(N, m[i], n[j], MPI_FLOAT);
 	  stype[i][j] = submatrix_type(M, m[i], n[j], MPI_FLOAT);
       }
   
-  /* prepare collective operation arguments */
+  /** prepare collective operation arguments */
   lasti = myrank == p-1;
   for (j=0;  j < p; j++) {
     lastj	  = j == p-1;
@@ -63,15 +63,15 @@ void Transpose(float *localA, float *localB, int M, int N, MPI_Comm comm)
     recvtypes[j]  = stype[lastj][lasti];
   }
   
-  /* communicate */
+  /** communicate */
   MTestPrintfMsg( 2, "Begin Alltoallw...\n" ); 
-  /* -- Note that the book incorrectly uses &localA and &localB 
+  /** -- Note that the book incorrectly uses &localA and &localB 
      as arguments to MPI_Alltoallw */
   MPI_Alltoallw(localA, sendcounts, sdispls, sendtypes, 
                 localB, recvcounts, rdispls, recvtypes, comm);
   MTestPrintfMsg( 2, "Done with Alltoallw\n" ); 
 
-  /* Free buffers */
+  /** Free buffers */
   free( sendcounts );
   free( recvcounts );
   free( sdispls );
@@ -79,7 +79,7 @@ void Transpose(float *localA, float *localB, int M, int N, MPI_Comm comm)
   free( sendtypes );
   free( recvtypes );
 
-  /* Free datatypes */
+  /** Free datatypes */
   for (i=0; i <= 1; i++)
       for (j=0; j <= 1; j++) {
 	  MPI_Type_free( &xtype[i][j] );
@@ -88,28 +88,28 @@ void Transpose(float *localA, float *localB, int M, int N, MPI_Comm comm)
 }
 
 
-/* Define an n x m submatrix in a n x M local matrix (this is the 
+/** Define an n x m submatrix in a n x M local matrix (this is the 
    destination in the transpose matrix */
 MPI_Datatype submatrix_type(int M, int m, int n, MPI_Datatype type)
-/* computes a datatype for an mxn submatrix within an MxN matrix 
+/** computes a datatype for an mxn submatrix within an MxN matrix 
    with entries of type type */
 {
-  /* MPI_Datatype subrow; */
+  /** MPI_Datatype subrow; */
   MPI_Datatype submatrix;
 
-  /* The book, MPI: The Complete Reference, has the wrong type constructor 
+  /** The book, MPI: The Complete Reference, has the wrong type constructor 
      here.  Since the stride in the vector type is relative to the input 
      type, the stride in the book's code is n times as long as is intended. 
      Since n may not exactly divide N, it is better to simply use the 
      blocklength argument in Type_vector */
-  /*
+  /**
   MPI_Type_contiguous(n, type, &subrow);
   MPI_Type_vector(m, 1, N, subrow, &submatrix);  
   */
   MPI_Type_vector(n, m, M, type, &submatrix );
   MPI_Type_commit(&submatrix);
 
-  /* Add a consistency test: the size of submatrix should be
+  /** Add a consistency test: the size of submatrix should be
      n * m * sizeof(type) and the extent should be ((n-1)*M+m) * sizeof(type) */
   {
       int      tsize;
@@ -125,10 +125,10 @@ MPI_Datatype submatrix_type(int M, int m, int n, MPI_Datatype type)
   return(submatrix);
 }
 
-/* Extract an m x n submatrix within an m x N matrix and transpose it.
+/** Extract an m x n submatrix within an m x N matrix and transpose it.
    Assume storage by rows; the defined datatype accesses by columns */
 MPI_Datatype transpose_type(int N, int m, int n, MPI_Datatype type)
-/* computes a datatype for the transpose of an mxn matrix 
+/** computes a datatype for the transpose of an mxn matrix 
    with entries of type type */
 {
   MPI_Datatype subrow, subrow1, submatrix;
@@ -142,7 +142,7 @@ MPI_Datatype transpose_type(int N, int m, int n, MPI_Datatype type)
   MPI_Type_free( &subrow );
   MPI_Type_free( &subrow1 );
 
-  /* Add a consistency test: the size of submatrix should be
+  /** Add a consistency test: the size of submatrix should be
      n * m * sizeof(type) and the extent should be ((m-1)*N+n) * sizeof(type) */
   {
       int      tsize;
@@ -159,7 +159,7 @@ MPI_Datatype transpose_type(int N, int m, int n, MPI_Datatype type)
   return(submatrix);
 }
 
-/* -- CUT HERE -- */
+/** -- CUT HERE -- */
 
 int alltoallw1( int argc, char *argv[] )
 {
@@ -177,14 +177,14 @@ int alltoallw1( int argc, char *argv[] )
     gM = 20;
     gN = 30;
 
-    /* Each block is lm x ln in size, except for the last process, 
+    /** Each block is lm x ln in size, except for the last process, 
        which has lmlast x lnlast */
     lm     = gM/size;
     lmlast = gM - (size - 1)*lm;
     ln     = gN/size;
     lnlast = gN - (size - 1)*ln;
 
-    /* Create the local matrices.
+    /** Create the local matrices.
        Initialize the input matrix so that the entries are 
        consequtive integers, by row, starting at 0.
      */
@@ -209,10 +209,10 @@ int alltoallw1( int argc, char *argv[] )
     }
 
     MTestPrintfMsg( 2, "Allocated local arrays\n" );
-    /* Transpose */
+    /** Transpose */
     Transpose( localA, localB, gM, gN, comm );
 
-    /* check the transposed matrix
+    /** check the transposed matrix
        In the global matrix, the transpose has consequtive integers, 
        organized by columns.
      */
@@ -244,7 +244,7 @@ int alltoallw1( int argc, char *argv[] )
 	}
     }
 
-    /* Free storage */
+    /** Free storage */
     free( localA );
     free( localB );
 

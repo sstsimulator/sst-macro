@@ -152,6 +152,7 @@ mpi_queue::post_header(const mpi_message::ptr& msg, bool needs_ack)
   api_->send_header(dst_world_rank, msg, needs_ack);
 }
 
+
 void
 mpi_queue::post_rdma(const mpi_message::ptr& msg,
   bool needs_send_ack,
@@ -161,9 +162,10 @@ mpi_queue::post_rdma(const mpi_message::ptr& msg,
   if (post_rdma_delay_.ticks_int64()) {
     user_lib_time_->compute(post_rdma_delay_);
   }
-  mpi_comm* comm = api_->get_comm(msg->comm());
-  int src_world_rank = comm->peer_task(msg->src_rank());
-  api_->rdma_get(src_world_rank, msg, needs_send_ack, needs_recv_ack);
+  //JJW cannot assume the comm is available for certain eager protocols
+  //mpi_comm* comm = api_->get_comm(msg->comm());
+  //int src_world_rank = comm->peer_task(msg->src_rank());
+  api_->rdma_get(msg->sender(), msg, needs_send_ack, needs_recv_ack);
 }
 
 }

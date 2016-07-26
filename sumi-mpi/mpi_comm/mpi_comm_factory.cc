@@ -16,6 +16,7 @@
 #include <sumi-mpi/sstmac_mpi_integers.h>
 #include <sumi-mpi/mpi_types.h>
 #include <sprockit/errors.h>
+#include <sprockit/stl_string.h>
 
 #include <sys/types.h>
 #include <sys/mman.h>
@@ -64,7 +65,7 @@ mpi_comm_factory::~mpi_comm_factory()
 void
 mpi_comm_factory::init(int rank, int nproc)
 {
-  next_id_ = 1;
+  next_id_ = 2;
 
   mpirun_np_ = nproc;
 
@@ -269,7 +270,8 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
 #endif
   }
 #endif
-  return new mpi_comm(cid, my_new_rank, new mpi_group(task_list), aid_);
+  mpi_group* grp = new mpi_group(task_list);
+  return new mpi_comm(cid, my_new_rank, grp, aid_);
 }
 
 mpi_comm*

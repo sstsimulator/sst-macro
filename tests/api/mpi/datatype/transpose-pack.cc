@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <math.h>
 #include <stdio.h>
@@ -21,7 +18,7 @@ int parse_args(int argc, char **argv);
 
 int transpose_pack(int argc, char *argv[])
 {
-    /* Variable declarations */
+    /** Variable declarations */
     int a[100][100], b[100][100];
     MPI_Datatype row, xpose;
     MPI_Aint sizeofint;
@@ -32,7 +29,7 @@ int transpose_pack(int argc, char *argv[])
   
     int i, j;
   
-    /* Initialize a to some known values. */
+    /** Initialize a to some known values. */
     for(i = 0; i < 100; i++) {
 	for(j = 0; j < 100; j++) {
 	    a[i][j] = i*1000+j;
@@ -40,22 +37,22 @@ int transpose_pack(int argc, char *argv[])
 	}
     }
   
-    /* Initialize MPI */
+    /** Initialize MPI */
     MPI_Init(&argc, &argv);
     parse_args(argc, argv);
 
     MPI_Type_extent(MPI_INT, &sizeofint);
 	
-    /* Create datatypes. */
+    /** Create datatypes. */
     MPI_Type_vector(100, 1, 100, MPI_INT, &row);
     MPI_Type_hvector(100, 1, sizeofint, row, &xpose);
     MPI_Type_commit(&xpose);
 	
-    /* Pack it. */
+    /** Pack it. */
     MPI_Pack_size(1, xpose, MPI_COMM_WORLD, &bufsize);
     buffer = (char *) malloc((unsigned) bufsize);
 
-    /* To improve reporting of problems about operations, we
+    /** To improve reporting of problems about operations, we
        change the error handler to errors return */
     MPI_Comm_set_errhandler( MPI_COMM_WORLD, MPI_ERRORS_RETURN );
 
@@ -67,7 +64,7 @@ int transpose_pack(int argc, char *argv[])
 		   &position,
 		   MPI_COMM_WORLD);
 	
-    /* Unpack the buffer into b. */
+    /** Unpack the buffer into b. */
     position = 0;
     err = MPI_Unpack(buffer,
 		     bufsize,
@@ -90,7 +87,7 @@ int transpose_pack(int argc, char *argv[])
     MPI_Type_free(&xpose);
     MPI_Type_free(&row);
     
-    /* print message and exit */
+    /** print message and exit */
     if (errs) {
 	fprintf(stderr, "Found %d errors\n", errs);
     }
@@ -104,7 +101,7 @@ int transpose_pack(int argc, char *argv[])
 
 int parse_args(int argc, char **argv)
 {
-    /*
+    /**
     int ret;
 
     while ((ret = getopt(argc, argv, "v")) >= 0)

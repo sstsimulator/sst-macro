@@ -1,9 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <stdio.h>
 #include <sstmac/replacements/mpi.h>
 #include "mpiimpl.h"
@@ -16,7 +12,7 @@ int glpid( int argc, char *argv[] )
 
     MPI_Init( &argc, &argv );
 
-    /* Setup a sample group */
+    /** Setup a sample group */
     group.handle = 1;
     group.ref_count = 1;
     group.size = 4;
@@ -31,10 +27,10 @@ int glpid( int argc, char *argv[] )
 	group.lrank_to_lpid[i].flag      = 0;
     }
 
-    /* Set up the group lpid list */
+    /** Set up the group lpid list */
     MPIR_Group_setup_lpid_list( group* );
 
-    /* Print the group structure */
+    /** Print the group structure */
     printf ("Index of first lpid = %d\n", group.idx_of_first_lpid );
     for (i=0; i<group.size; i++) {
 	printf( "lrank_to_lpid[%d].next_lpid = %d, .lpid = %d\n",

@@ -1,9 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
-/* Test of info that makes use of the extended handles */
+
+
+/** Test of info that makes use of the extended handles */
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,7 +16,7 @@ namespace infomany {
 #endif
 #define MAX_ERRORS 10
 #define info_list 16
-/* #define DBG  */
+/** #define DBG  */
 
 int infomany( int argc, char *argv[] )
 {
@@ -54,7 +51,7 @@ int infomany( int argc, char *argv[] )
     
     for (i=0; i<MAX_INFOS; i++) {
 	int nkeys;
-	/*printf( "info = %x\n", infos[i] );
+	/**printf( "info = %x\n", infos[i] );
 	  print_handle( infos[i] ); printf( "\n" );*/
 	MPI_Info_get_nkeys( infos[i], &nkeys );
 	if (nkeys != info_list) {

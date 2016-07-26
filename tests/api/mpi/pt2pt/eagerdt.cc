@@ -1,15 +1,12 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2006 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpitest.h"
 
 namespace eagerdt {
-/*
+/**
 static char MTEST_Descrip[] = "Test of a large number of derived-datatype messages eagerly, with no preposted receive so that an MPI implementation may have to queue up messages on the sending side";
 */
 
@@ -34,17 +31,17 @@ int eagerdt( int argc, char *argv[] )
     source = 0;
     dest   = size - 1;
     
-    /* Setup by creating a blocked datatype that is likely to be processed
+    /** Setup by creating a blocked datatype that is likely to be processed
        in a piecemeal fashion */
     for (i=0; i<30; i++) {
 	indices[i] = i*40;
     }
 
-    /* 30 blocks of size 10 */
+    /** 30 blocks of size 10 */
     MPI_Type_create_indexed_block( 30, 10, indices, MPI_INT, &dtype );
     MPI_Type_commit( &dtype );
     
-    /* Create the corresponding message buffers */
+    /** Create the corresponding message buffers */
     MPI_Type_extent( dtype, &extent );
     for (i=0; i<MAX_MSGS; i++) {
 	bufs[i] = (int *)malloc( extent );

@@ -6,7 +6,7 @@
 
 namespace keyval_double_free {
 
-/* tests multiple invocations of Keyval_free on the same keyval */
+/** tests multiple invocations of Keyval_free on the same keyval */
 
 int delete_fn(MPI_Comm comm, int keyval, void *attr, void *extra);
 int delete_fn(MPI_Comm comm, int keyval, void *attr, void *extra) {
@@ -30,11 +30,11 @@ int keyval_double_free (int argc, char **argv)
     MPI_Attr_put(MPI_COMM_SELF, keyval, NULL);
     MPI_Attr_put(duped, keyval, NULL);
 
-    MPI_Comm_free(&duped);         /* first MPI_Keyval_free */
-    MPI_Keyval_free(&keyval);      /* second MPI_Keyval_free */
-    MPI_Keyval_free(&keyval_copy); /* third MPI_Keyval_free */
+    MPI_Comm_free(&duped);         /** first MPI_Keyval_free */
+    MPI_Keyval_free(&keyval);      /** second MPI_Keyval_free */
+    MPI_Keyval_free(&keyval_copy); /** third MPI_Keyval_free */
     MTest_Finalize( errs );
-    MPI_Finalize();                /* fourth MPI_Keyval_free */
+    MPI_Finalize();                /** fourth MPI_Keyval_free */
     return 0;
 }
 

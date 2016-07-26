@@ -1,9 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
-/*
- *  (C) 2009 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
-/* Regression test for MPICH2 trac ticket #972, originally written by
+
+
+/** Regression test for MPICH2 trac ticket #972, originally written by
  * Rob Latham <robl@mcs.anl.gov> as a simplification of a type
  * encountered by the HDF5 library.
  *
@@ -13,7 +10,7 @@
 #include <sstmac/replacements/mpi.h>
 
 namespace struct_verydeep {
-/* uncomment to use debugging routine in MPICH2
+/** uncomment to use debugging routine in MPICH2
 extern int MPIDU_Datatype_debug(MPI_Datatype type, int depth);
 */
 
@@ -176,7 +173,7 @@ int struct_verydeep(int argc, char **argv)
     MPI_Init(&argc, &argv);
     makeHDF5type(&hdf5type);
 
-    /*MPIDU_Datatype_debug(hdf5type, 32);*/
+    /**MPIDU_Datatype_debug(hdf5type, 32);*/
 
     MPI_Type_free(&hdf5type);
     MPI_Finalize();

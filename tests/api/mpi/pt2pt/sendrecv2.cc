@@ -1,9 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include "mpitestconf.h"
 #include <stdio.h>
@@ -50,7 +46,7 @@ int sendrecv2( int argc, char *argv[] )
 	memset(buf, 0, 64*129);
 
 	if (rank == 0) {
-	    /* init buffer */
+	    /** init buffer */
 	    for (j=0; j < i; j++) {
 		int k;
 		for (k=0; k < 129; k++) {
@@ -58,14 +54,14 @@ int sendrecv2( int argc, char *argv[] )
 		}
 	    }
 
-	    /* send */
+	    /** send */
 	    MPI_Send(buf, 1, newtype, 1, i, MPI_COMM_WORLD);
 	}
 	else if (rank == 1) {
-	    /* recv */
+	    /** recv */
 	    MPI_Recv(buf, 1, newtype, 0, i, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-	    /* check buffer */
+	    /** check buffer */
 	    for (j=0; j < i; j++) {
 		int k;
 		for (k=0; k < 129; k++) {
@@ -106,7 +102,7 @@ int sendrecv2( int argc, char *argv[] )
  fn_exit:
 
     free(buf);
-    /* print message and exit */
+    /** print message and exit */
     if (errs) {
 	if (rank == 0) fprintf(stderr, "Found %d errors\n", errs);
     }
@@ -119,7 +115,7 @@ int sendrecv2( int argc, char *argv[] )
 
 static int parse_args(int argc, char **argv)
 {
-    /*
+    /**
     int ret;
 
     while ((ret = getopt(argc, argv, "v")) >= 0)

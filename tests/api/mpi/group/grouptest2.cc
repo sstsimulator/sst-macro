@@ -1,11 +1,7 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
 
-/*
+
+
+/**
    Test the group routines
    (some tested elsewere)
 
@@ -21,7 +17,7 @@ MPI_Group_union
  */
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
-/* stdlib.h Needed for malloc declaration */
+/** stdlib.h Needed for malloc declaration */
 #include <stdlib.h>
 
 namespace grouptest2 {
@@ -46,7 +42,7 @@ int grouptest2( int argc, char **argv )
     MPI_Comm_rank( comm, &rank );
     MPI_Comm_size( comm, &size );
 
-/* Get the basic information on this group */
+/** Get the basic information on this group */
     MPI_Group_rank( basegroup, &grp_rank );
     if (grp_rank != rank) {
 	errs++;
@@ -60,7 +56,7 @@ int grouptest2( int argc, char **argv )
     }
 
 
-/* Form a new communicator with inverted ranking */
+/** Form a new communicator with inverted ranking */
     MPI_Comm_split( comm, 0, size - rank, &newcomm );
     MPI_Comm_group( newcomm, &g1 );
     ranks	  = (int *)malloc( size * sizeof(int) );
@@ -76,7 +72,7 @@ int grouptest2( int argc, char **argv )
 	}
     }
 
-/* Check Compare */
+/** Check Compare */
     MPI_Group_compare( basegroup, g1, &result );
     if (result != MPI_SIMILAR) {
 	errs++;
@@ -100,7 +96,7 @@ int grouptest2( int argc, char **argv )
 		 result );
     }
 
-    /* Build two groups that have this process and one other, but do not
+    /** Build two groups that have this process and one other, but do not
        have the same processes */
     ranks[0] = rank;
     ranks[1] = (rank + 1) % size;
@@ -114,20 +110,20 @@ int grouptest2( int argc, char **argv )
     }
     
 
-/* Build two new groups by excluding members; use Union to put them
+/** Build two new groups by excluding members; use Union to put them
    together again */
 
-/* Exclude 0 */
+/** Exclude 0 */
     for (i=0; i<size; i++) ranks[i] = i;
     MPI_Group_excl( basegroup, 1, ranks, &g4 );
-/* Exclude 1-(size-1) */
+/** Exclude 1-(size-1) */
     MPI_Group_excl( basegroup, size-1, ranks+1, &g5 );
     MPI_Group_union( g5, g4, &g6 );
     MPI_Group_compare( basegroup, g6, &result );
     if (result != MPI_IDENT) {
 	int usize;
 	errs++;
-	/* See ordering requirements on union */
+	/** See ordering requirements on union */
 	fprintf( stdout, "Group excl and union did not give ident groups\n" );
 	fprintf( stdout, "[%d] result of compare was %d\n", rank, result );
 	MPI_Group_size( g6, &usize );
@@ -144,21 +140,21 @@ int grouptest2( int argc, char **argv )
 	fprintf( stdout, "Size of union is %d, should be %d\n", usize, size );
     }
 
-/* Use range_excl instead of ranks */
-    /* printf ("range excl\n" ); fflush( stdout ); */
+/** Use range_excl instead of ranks */
+    /** printf ("range excl\n" ); fflush( stdout ); */
     range[0][0] = 1;
     range[0][1] = size-1;
     range[0][2] = 1;
     MPI_Group_range_excl( basegroup, 1, range, &g8 );
-    /* printf( "out  of range excl\n" ); fflush( stdout ); */
+    /** printf( "out  of range excl\n" ); fflush( stdout ); */
     MPI_Group_compare( g5, g8, &result );
-    /* printf( "out of compare\n" ); fflush( stdout ); */
+    /** printf( "out of compare\n" ); fflush( stdout ); */
     if (result != MPI_IDENT) {
 	errs++;
 	fprintf( stdout, "Group range excl did not give ident groups\n" );
     }
 
-    /* printf( "intersection\n" ); fflush( stdout ); */
+    /** printf( "intersection\n" ); fflush( stdout ); */
     MPI_Group_intersection( basegroup, g4, &g9 );
     MPI_Group_compare( g9, g4, &result );
     if (result != MPI_IDENT) {
@@ -166,16 +162,16 @@ int grouptest2( int argc, char **argv )
 	fprintf( stdout, "Group intersection did not give ident groups\n" );
     }
 
-/* Exclude EVERYTHING and check against MPI_GROUP_EMPTY */
-    /* printf( "range excl all\n" ); fflush( stdout ); */
+/** Exclude EVERYTHING and check against MPI_GROUP_EMPTY */
+    /** printf( "range excl all\n" ); fflush( stdout ); */
     range[0][0] = 0;
     range[0][1] = size-1;
     range[0][2] = 1;
     MPI_Group_range_excl( basegroup, 1, range, &g10 );
 
-    /* printf( "done range excl all\n" ); fflush(stdout); */
+    /** printf( "done range excl all\n" ); fflush(stdout); */
     MPI_Group_compare( g10, MPI_GROUP_EMPTY, &result );
-    /* printf( "done compare to MPI_GROUP_EMPTY\n" ); fflush(stdout); */
+    /** printf( "done compare to MPI_GROUP_EMPTY\n" ); fflush(stdout); */
 
     if (result != MPI_IDENT) {
 	errs++;
@@ -183,7 +179,7 @@ int grouptest2( int argc, char **argv )
 		 "MPI_GROUP_EMPTY didn't compare against empty group\n");
     }
 
-    /* printf( "freeing groups\n" ); fflush( stdout ); */
+    /** printf( "freeing groups\n" ); fflush( stdout ); */
     MPI_Group_free( &basegroup );
     MPI_Group_free( &g1 );
     MPI_Group_free( &g2 );

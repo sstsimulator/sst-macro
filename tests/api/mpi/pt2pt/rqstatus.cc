@@ -1,15 +1,11 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include "mpitest.h"
 
 namespace rqstatus {
-/*
+/**
 static char MTEST_Descrip[] = "Test Request_get_status";
 */
 
@@ -25,14 +21,14 @@ int rqstatus( int argc, char *argv[] )
     MTest_Init( &argc, &argv );
 
     comm = MPI_COMM_WORLD;
-    /* Determine the sender and receiver */
+    /** Determine the sender and receiver */
     MPI_Comm_rank( comm, &rank );
     MPI_Comm_size( comm, &size );
     source = 0;
     dest   = size - 1;
 
 
-    /* Handling MPI_REQUEST_NULL in MPI_Request_get_status was only required
+    /** Handling MPI_REQUEST_NULL in MPI_Request_get_status was only required
        starting with MPI-2.2. */
 #if MTEST_HAVE_MIN_MPI_VERSION(2,2)
     MPI_Request_get_status( MPI_REQUEST_NULL, &flag, &status );
@@ -48,7 +44,7 @@ int rqstatus( int argc, char *argv[] )
         fprintf( stderr, "non-empty MPI_Status returned for MPI_REQUEST_NULL\n" );
     }
 
-    /* also pass MPI_STATUS_IGNORE to make sure the implementation doesn't
+    /** also pass MPI_STATUS_IGNORE to make sure the implementation doesn't
      * blow up when it is passed as the status argument */
     MPI_Request_get_status( MPI_REQUEST_NULL, &flag, MPI_STATUS_IGNORE );
     if (!flag) {
@@ -66,7 +62,7 @@ int rqstatus( int argc, char *argv[] )
 	MPI_Irecv( buf, 2, MPI_INT, source, 10, comm, &req );
     }
     MPI_Barrier( comm );
-    /* At this point, we know that the receive has at least started,
+    /** At this point, we know that the receive has at least started,
        because of the Ssend.  Check the status on the request */
     if (rank == dest) {
 	status.MPI_SOURCE = -1;
@@ -91,9 +87,9 @@ int rqstatus( int argc, char *argv[] )
 	    errs++;
 	    fprintf( stderr, "Unexpected flag value from get_status\n" );
 	}
-	/* Now, complete the request */
+	/** Now, complete the request */
 	MPI_Wait( &req, &status2 );
-	/* Check that the status is correct */
+	/** Check that the status is correct */
 	if (status2.MPI_TAG != 10) {
 	    errs++;
 	    fprintf( stderr, "(wait)Tag value %d should be 10\n", status2.MPI_TAG );

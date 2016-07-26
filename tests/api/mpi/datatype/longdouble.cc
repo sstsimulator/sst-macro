@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
-/*
- *  (C) 2012 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -10,7 +7,7 @@
 #include "mpitest.h"
 
 namespace longdouble {
-/* Some MPI implementations should not support MPI_LONG_DOUBLE because it has
+/** Some MPI implementations should not support MPI_LONG_DOUBLE because it has
  * different representations/sizes among several concurrently supported
  * compilers.  For example, a 16-byte GCC implementation and an 8-byte Cray
  * compiler implementation.

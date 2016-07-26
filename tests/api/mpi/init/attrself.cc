@@ -1,16 +1,12 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2009 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include "mpitest.h"
 
 
 namespace attrself {
-/*
+/**
 static char MTestDescrip[] = "Test creating and inserting attributes in \
 different orders to ensure that the list management code handles all cases.";
 */
@@ -19,13 +15,13 @@ int checkAttrs( MPI_Comm, int, int [], int [] );
 int delete_fn( MPI_Comm, int, void *, void *);
 
 #define NKEYS 5
-static int key[NKEYS];      /* Keys in creation order */
-static int keyorder[NKEYS]; /* Index (into key) of keys in order added to comm 
+static int key[NKEYS];      /** Keys in creation order */
+static int keyorder[NKEYS]; /** Index (into key) of keys in order added to comm 
 			    (key[keyorder[0]] is first set) */
 static int nkeys = 0;
 static int ncall = 0;
 static int errs  = 0;
-/* 
+/** 
  * Test that attributes on comm self are deleted in LIFO order 
  */
 
@@ -41,14 +37,14 @@ int attrself( int argc, char *argv[] )
 
     comm = MPI_COMM_SELF;
     
-    /* Create key values */
+    /** Create key values */
     for (nkeys=0; nkeys<NKEYS; nkeys++) {
 	MPI_Comm_create_keyval( MPI_NULL_COPY_FN, delete_fn,
 				&key[nkeys], (void *)0 );
 	attrval[nkeys] = 1024 * nkeys;
     }
     
-    /* Insert attribute in several orders.  Test after put with get,
+    /** Insert attribute in several orders.  Test after put with get,
        then delete, then confirm delete with get. */
     
     MPI_Comm_set_attr( comm, key[3], &attrval[3] ); keyorder[0] = 3;
@@ -60,7 +56,7 @@ int attrself( int argc, char *argv[] )
     errs += checkAttrs( comm, NKEYS, key, attrval );
     
     for (i=0; i<NKEYS; i++) {
-	/* Save the key value so that we can compare it in the 
+	/** Save the key value so that we can compare it in the 
 	   delete function */
 	int keyval = key[i];
 	MPI_Comm_free_keyval( &keyval );
@@ -102,7 +98,7 @@ int checkAttrs( MPI_Comm comm, int n, int lkey[], int attrval[] )
     return lerrs;
 }
 
-/* We *should* be deleting key[keyorder[nkeys-ncall]] */
+/** We *should* be deleting key[keyorder[nkeys-ncall]] */
 int delete_fn( MPI_Comm comm, int keyval, void *attribute_val, 
 	       void *extra_state)
 {
@@ -111,7 +107,7 @@ int delete_fn( MPI_Comm comm, int keyval, void *attribute_val,
 	errs++;
     }
 
-    /* As of MPI 2.2, the order of deletion of attributes on 
+    /** As of MPI 2.2, the order of deletion of attributes on 
        MPI_COMM_SELF is defined */
     if (MPI_VERSION > 2 || (MPI_VERSION == 2 && MPI_SUBVERSION >= 2)) {
 	if (keyval != key[keyorder[nkeys-1-ncall]]) {
@@ -124,7 +120,7 @@ int delete_fn( MPI_Comm comm, int keyval, void *attribute_val,
     return MPI_SUCCESS;
 }
 
-/*
+/**
 int checkNoAttrs( MPI_Comm comm, int n, int lkey[] )
 {
     int lerrs = 0;

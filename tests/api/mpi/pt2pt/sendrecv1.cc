@@ -1,15 +1,11 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include "mpitest.h"
 
 namespace sendrecv1 {
-/*
+/**
 static char MTEST_Descrip[] = "Send-Recv";
 */
 
@@ -23,26 +19,26 @@ int sendrecv1( int argc, char *argv[] )
 
     MTest_Init( &argc, &argv );
 
-    /* The following illustrates the use of the routines to 
+    /** The following illustrates the use of the routines to 
        run through a selection of communicators and datatypes.
        Use subsets of these for tests that do not involve combinations 
        of communicators, datatypes, and counts of datatypes */
     while (MTestGetIntracommGeneral( &comm, minsize, 1 )) {
 	if (comm == MPI_COMM_NULL) continue;
 
-	/* Determine the sender and receiver */
+	/** Determine the sender and receiver */
 	MPI_Comm_rank( comm, &rank );
 	MPI_Comm_size( comm, &size );
 	source = 0;
 	dest   = size - 1;
 
-	/* To improve reporting of problems about operations, we
+	/** To improve reporting of problems about operations, we
 	   change the error handler to errors return */
 	MPI_Comm_set_errhandler( comm, MPI_ERRORS_RETURN );
 
 	for (count = 1; count < 65000; count = count * 2) {
 	    while (MTestGetDatatypes( &sendtype, &recvtype, count )) {
-		/* Make sure that everyone has a recv buffer */
+		/** Make sure that everyone has a recv buffer */
 		recvtype.InitBuf( &recvtype );
 
 		if (rank == source) {

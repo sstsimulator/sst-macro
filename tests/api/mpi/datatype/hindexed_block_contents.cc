@@ -1,16 +1,13 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
-/*
- *  (C) 2012 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
 
-/* test based on a bug report from Lisandro Dalcin:
+
+
+/** test based on a bug report from Lisandro Dalcin:
  * http://lists.mcs.anl.gov/pipermail/mpich2-dev/2012-October/000978.html */
 
 #include <sstmac/replacements/mpi.h>
 #include <stdlib.h>
 #include <stdio.h>
-/* USE_STRICT_MPI may be defined in mpitestconf.h */
+/** USE_STRICT_MPI may be defined in mpitestconf.h */
 #include "mpitestconf.h"
 
 namespace hindexed_block_contents {
@@ -20,7 +17,7 @@ namespace hindexed_block_contents {
 #  define TEST_MPI3_ROUTINES 1
 #endif
 
-/* assert-like macro that bumps the err count and emits a message */
+/** assert-like macro that bumps the err count and emits a message */
 #define check(x_)                                                                 \
     do {                                                                          \
         if (!(x_)) {                                                              \
@@ -72,7 +69,7 @@ int hindexed_block_contents(int argc, char **argv)
 
         MPI_Type_free(&t);
     }
-#endif /* defined(TEST_MPI3_ROUTINES) */
+#endif /** defined(TEST_MPI3_ROUTINES) */
 
     if (rank == 0) {
         if (errs) {

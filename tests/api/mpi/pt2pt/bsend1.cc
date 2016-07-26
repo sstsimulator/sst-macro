@@ -1,8 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,7 +9,7 @@
 #endif
 
 namespace bsend1 {
-/* 
+/** 
  * This is a simple program that tests bsend.  It may be run as a single
  * process to simplify debugging; in addition, bsend allows send-to-self
  * programs.
@@ -34,7 +30,7 @@ int bsend1( int argc, char *argv[] )
     MTest_Init( &argc, &argv );
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );
 
-    /* According to the standard, we must use the PACK_SIZE length of each
+    /** According to the standard, we must use the PACK_SIZE length of each
        message in the computation of the message buffer size */
     MPI_Pack_size( 7, MPI_CHAR, comm, &s1 );
     MPI_Pack_size( 2, MPI_DOUBLE, comm, &s2 );
@@ -48,7 +44,7 @@ int bsend1( int argc, char *argv[] )
     msg2[0] = 1.23; msg2[1] = 3.21;
 
     if (rank == src) {
-	/* These message sizes are chosen to expose any alignment problems */
+	/** These message sizes are chosen to expose any alignment problems */
 	MPI_Bsend( msg1, 7, MPI_CHAR, dest, tag, comm );
 	MPI_Bsend( msg2, 2, MPI_DOUBLE, dest, tag, comm );
 	MPI_Bsend( msg3, 17, MPI_CHAR, dest, tag, comm );
@@ -75,7 +71,7 @@ int bsend1( int argc, char *argv[] )
 	}
     }
 
-    /* We can't guarantee that messages arrive until the detach */
+    /** We can't guarantee that messages arrive until the detach */
     MPI_Buffer_detach( &bbuf, &bsize );
 
     MTest_Finalize( errs );

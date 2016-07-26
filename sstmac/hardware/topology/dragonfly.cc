@@ -56,6 +56,8 @@ dragonfly::init_common_params(sprockit::sim_parameters* params)
   }
 
   endpoints_per_switch_ = params->get_optional_int_param("concentration", 1);
+
+  neighbor_at_port(0, 14);
 }
 
 void
@@ -131,14 +133,16 @@ dragonfly::neighbor_at_port(switch_id sid, int port)
   coordinates coords;
   compute_switch_coords(sid, coords);
 
-  int dim, dir;
   if (port >= (x_ + y_)){ //g
-    if (port >= (x_ + y_ + g_)) // eject
+    if (port >= (x_ + y_ + g_)){ // eject
       return coords;
+    }
     int dir = port - (x_ + y_);
-    coords[g_dimension] =
-        xyg_dir_to_group(coords[x_dimension], coords[y_dimension],
-                        coords[g_dimension], dir);
+    coords[g_dimension] = dir;
+    //JJW 07/24/2016 - don't know where this got inserted
+    //the port-dir-G connection is basic addition
+    //xyg_dir_to_group(coords[x_dimension], coords[y_dimension],
+    //                    coords[g_dimension], dir);
   }
   else if (port >= x_) //y
     coords[y_dimension] = port - x_;

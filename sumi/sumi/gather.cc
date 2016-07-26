@@ -62,12 +62,14 @@ btree_gather_actor::finalize_buffers()
 void
 btree_gather_actor::start_shuffle(action *ac)
 {
-  //only ever arises in weird midpoint scenarios
-  int copy_size = ac->nelems * type_size_;
-  int copy_offset = ac->offset * type_size_;
-  char* dst = ((char*)result_buffer_.ptr) + copy_offset;
-  char* src = ((char*)result_buffer_.ptr);
-  ::memcpy(dst, src, copy_size);
+  if (result_buffer_.ptr){
+    //only ever arises in weird midpoint scenarios
+    int copy_size = ac->nelems * type_size_;
+    int copy_offset = ac->offset * type_size_;
+    char* dst = ((char*)result_buffer_.ptr) + copy_offset;
+    char* src = ((char*)result_buffer_.ptr);
+    ::memcpy(dst, src, copy_size);
+  }
 }
 
 void

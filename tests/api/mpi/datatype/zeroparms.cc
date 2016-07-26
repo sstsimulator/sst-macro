@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 
 #include <stdio.h>
@@ -15,7 +12,7 @@ int zeroparms( int argc, char *argv[] )
 
     MPI_Init( 0, 0 );
 
-    /* create a legitimate type to see that we don't 
+    /** create a legitimate type to see that we don't 
      * emit spurious errors.
      */
     MPI_Type_hvector( 0, 1, 10, MPI_DOUBLE, &newtype );

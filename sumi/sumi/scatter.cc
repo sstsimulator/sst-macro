@@ -28,6 +28,13 @@ btree_scatter_actor::init_buffers(void *dst, void *src)
     if (root_ != 0){
       recv_buffer_ = my_api_->allocate_public_buffer(max_recv_buf_size);
       result_buffer_ = my_api_->make_public_buffer(dst, result_size);
+      if (root_ == midpoint_){
+        int offset = midpoint_ * nelems_ * type_size_;
+        int copy_size = (nproc - midpoint_) * nelems_ * type_size_;
+        void* src_buffer = (char*) send_buffer_ + offset;
+        void* dst_buffer = (char*) recv_buffer_.ptr;
+        ::memcpy(dst_buffer, src_buffer, copy_size);
+      }
     } else {
       ::memcpy(dst, src, result_size);
       recv_buffer_ = result_buffer_; //won't ever actually be used
@@ -104,21 +111,23 @@ btree_scatter_actor::init_dag()
 
   action* prev = 0;
 
-  if (me == root_){
-    //send half my data to midpoint to begin the scatter
-    action* ac = new send_action(round, midpoint_);
-    ac->offset = nelems_ * midpoint_;
-    ac->nelems = nelems_ * std::min(nproc-midpoint_, midpoint_);;
-    add_initial_action(ac);
-    prev = ac;
-  }
-  if (me == midpoint_){
-    action* ac = new recv_action(round, root_);
-    ac->offset = 0;
-    ac->nelems = nelems_ * std::min(nproc-midpoint_, midpoint_);
-    ac->recv_type = action::temp;
-    add_initial_action(ac);
-    prev = ac;
+  if (root_ != midpoint_){ //if they are equal, this will be taken care of in init_buffers
+    if (me == root_){
+      //send half my data to midpoint to begin the scatter
+      action* ac = new send_action(round, midpoint_);
+      ac->offset = nelems_ * midpoint_;
+      ac->nelems = nelems_ * std::min(nproc-midpoint_, midpoint_);
+      add_initial_action(ac);
+      prev = ac;
+    }
+    if (me == midpoint_){
+      action* ac = new recv_action(round, root_);
+      ac->offset = 0;
+      ac->nelems = nelems_ * std::min(nproc-midpoint_, midpoint_);
+      ac->recv_type = action::temp;
+      add_initial_action(ac);
+      prev = ac;
+    }
   }
 
   if (root_ != 0){

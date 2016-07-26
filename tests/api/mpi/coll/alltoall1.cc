@@ -1,9 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include "mpitest.h"
@@ -11,7 +6,7 @@
 
 namespace alltoall1 {
 
-/*
+/**
 static char MTEST_Descrip[] = "";
 */
 
@@ -28,21 +23,21 @@ int alltoall1( int argc, char *argv[] )
 
     MTest_Init( &argc, &argv );
 
-    /* The following illustrates the use of the routines to 
+    /** The following illustrates the use of the routines to 
        run through a selection of communicators and datatypes.
        Use subsets of these for tests that do not involve combinations 
        of communicators, datatypes, and counts of datatypes */
     while (MTestGetIntracommGeneral( &comm, minsize, 1 )) {
 	if (comm == MPI_COMM_NULL) continue;
 
-	/* Determine the sender and receiver */
+	/** Determine the sender and receiver */
 	MPI_Comm_rank( comm, &rank );
 	MPI_Comm_size( comm, &size );
 	
-	/* printf( "Size of comm = %d\n", size ); */
+	/** printf( "Size of comm = %d\n", size ); */
   for (count = 1; count < 65000; count = count * 2) {
 	    
-	    /* Create a send buf and a receive buf suitable for testing
+	    /** Create a send buf and a receive buf suitable for testing
 	       all to all.  */
 	    sendcount = count;
 	    recvcount = count;
@@ -85,14 +80,14 @@ int alltoall1( int argc, char *argv[] )
 	    }
 
 #if MTEST_HAVE_MIN_MPI_VERSION(2,2)
-            /* check MPI_IN_PLACE, added in MPI-2.2 */
+            /** check MPI_IN_PLACE, added in MPI-2.2 */
             p = recvbuf;
             for (j=0; j<size; j++) {
                 for (i=0; i<count; i++) {
                     *p++ = j * size + rank + i;
                 }
             }
-            MPI_Alltoall( MPI_IN_PLACE, -1/*ignored*/, MPI_DATATYPE_NULL/*ignored*/,
+            MPI_Alltoall( MPI_IN_PLACE, -1/**ignored*/, MPI_DATATYPE_NULL/**ignored*/,
                           recvbuf, recvcount, recvtype, comm );
             p = recvbuf;
             for (j=0; j<size; j++) {
