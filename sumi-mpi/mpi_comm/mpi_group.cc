@@ -10,9 +10,10 @@
  */
 
 #include <sumi-mpi/mpi_comm/mpi_group.h>
+#include <sprockit/errors.h>
+#include <sprockit/stl_string.h>
 
 namespace sumi {
-
 
 mpi_group::mpi_group(const std::vector<task_id>& tl) :
   task_list_(tl),
@@ -33,6 +34,12 @@ mpi_group::at(int rank)
   if (is_comm_world_){
     return task_id(rank);
   } else {
+    if (rank >= task_list_.size()){
+      spkt_throw_printf(sprockit::value_error,
+                        "invalid rank %d requested for MPI group %p of size %d with ranks %s",
+                        rank, this, task_list_.size(),
+                        task_list_.size() < 6 ? stl_string(task_list_).c_str() : "");
+    }
     return task_list_[rank];
   }
 }

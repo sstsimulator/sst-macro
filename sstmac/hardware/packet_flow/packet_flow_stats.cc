@@ -170,14 +170,6 @@ void
 bytes_sent_collector::collect_single_event(const packet_stats_st& st)
 {
   bytes_sent_->record(st.pkt->next_port(), st.pkt->byte_length());
-  if (st.pkt->next_port() >= 16){
-    printf("Switch %d: eject %s\n", id(), st.pkt->to_string().c_str());
-    if (st.pkt->is_tail()){
-      printf("eject %lu to %d\n",
-             st.pkt->orig()->unique_id(),
-             st.pkt->toaddr());
-    }
-  }
 }
 
 void
