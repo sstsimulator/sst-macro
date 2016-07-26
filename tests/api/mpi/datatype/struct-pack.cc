@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,11 +25,11 @@ int struct_pack(int argc, char *argv[])
 {
     int err, errs = 0;
 
-    /* Initialize MPI */
+    /** Initialize MPI */
     MPI_Init(&argc, &argv);
     parse_args(argc, argv);
 
-    /* To improve reporting of problems about operations, we
+    /** To improve reporting of problems about operations, we
        change the error handler to errors return */
     MPI_Comm_set_errhandler( MPI_COMM_WORLD, MPI_ERRORS_RETURN );
 
@@ -48,7 +45,7 @@ int struct_pack(int argc, char *argv[])
     if (verbose && err) fprintf(stderr, "error in struct_of_structs_test\n");
     errs += err;
 
-    /* print message and exit */
+    /** print message and exit */
     if (errs) {
 	fprintf(stderr, "Found %d errors\n", errs);
     }
@@ -67,7 +64,7 @@ int single_struct_test(void)
     MPI_Datatype mystruct;
     char *buffer;
 
-    MPI_Aint disps[3] = {0, 2*sizeof(int), 3*sizeof(int)}; /* guessing... */
+    MPI_Aint disps[3] = {0, 2*sizeof(int), 3*sizeof(int)}; /** guessing... */
     int blks[3] = { 2, 2, 1 };
     MPI_Datatype types[3] = { MPI_INT, MPI_CHAR, MPI_INT };
 
@@ -166,7 +163,7 @@ int array_of_structs_test(void)
     MPI_Datatype mystruct;
     char *buffer;
 
-    MPI_Aint disps[3] = {0, 2*sizeof(int), 3*sizeof(int)}; /* guessing... */
+    MPI_Aint disps[3] = {0, 2*sizeof(int), 3*sizeof(int)}; /** guessing... */
     int blks[3] = { 2, 2, 1 };
     MPI_Datatype types[3] = { MPI_INT, MPI_CHAR, MPI_INT };
 
@@ -280,7 +277,7 @@ int struct_of_structs_test(void)
     int blks[3] = {2, 1, 0};
     MPI_Datatype types[3], chartype, tiletype1, tiletype2, finaltype;
 
-    /* build a contig of one char to try to keep optimizations
+    /** build a contig of one char to try to keep optimizations
      * from being applied.
      */
     err = MPI_Type_contiguous(1, MPI_CHAR, &chartype);
@@ -292,7 +289,7 @@ int struct_of_structs_test(void)
 	return errs;
     }
 
-    /* build a type that we can tile a few times */
+    /** build a type that we can tile a few times */
     types[0] = MPI_CHAR;
     types[1] = chartype;
 
@@ -305,7 +302,7 @@ int struct_of_structs_test(void)
 	return errs;
     }
 
-    /* build the same type again, again to avoid optimizations */
+    /** build the same type again, again to avoid optimizations */
     err = MPI_Type_struct(2, blks, disps, types, &tiletype2);
     if (err != MPI_SUCCESS) {
 	errs++;
@@ -315,7 +312,7 @@ int struct_of_structs_test(void)
 	return errs;
     }
 
-    /* build a combination of those two tiletypes */
+    /** build a combination of those two tiletypes */
     disps[0] = 0;
     disps[1] = 5;
     disps[2] = 10;
@@ -400,7 +397,7 @@ int struct_of_structs_test(void)
 
 int parse_args(int argc, char **argv)
 {
-    /*
+    /**
     int ret;
 
     while ((ret = getopt(argc, argv, "v")) >= 0)

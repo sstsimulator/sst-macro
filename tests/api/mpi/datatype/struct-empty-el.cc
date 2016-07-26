@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,11 +21,11 @@ int struct_empty_el(int argc, char *argv[])
 {
     int err, errs = 0;
 
-    /* Initialize MPI */
+    /** Initialize MPI */
     MPI_Init(&argc, &argv);
     parse_args(argc, argv);
 
-    /* To improve reporting of problems about operations, we
+    /** To improve reporting of problems about operations, we
        change the error handler to errors return */
     MPI_Comm_set_errhandler( MPI_COMM_WORLD, MPI_ERRORS_RETURN );
 
@@ -36,7 +33,7 @@ int struct_empty_el(int argc, char *argv[])
     if (verbose && err) fprintf(stderr, "error in single_struct_test\n");
     errs += err;
 
-    /* print message and exit */
+    /** print message and exit */
     if (errs) {
 	fprintf(stderr, "Found %d errors\n", errs);
     }
@@ -57,7 +54,7 @@ int single_struct_test(void)
     MPI_Request request;
     MPI_Status status;
 
-    /* note: first element of struct has zero blklen and should be dropped */
+    /** note: first element of struct has zero blklen and should be dropped */
     MPI_Aint disps[3]     = { 2*sizeof(float), 0,       2*sizeof(int) };
     int blks[3]           = { 0,               1,       2 };
     MPI_Datatype types[3] = { MPI_FLOAT,       MPI_INT, MPI_INT };
@@ -106,7 +103,7 @@ int single_struct_test(void)
 	}
     }
 
-    /* verify data */
+    /** verify data */
     if (ts1[0].a != 1) {
 	errs++;
 	if (verbose) {
@@ -156,7 +153,7 @@ int single_struct_test(void)
 	}
     }
 
-    /* verify count and elements */
+    /** verify count and elements */
     err = MPI_Get_count(&status, mystruct, &count);
     if (err != MPI_SUCCESS) {
 	errs++;
@@ -193,7 +190,7 @@ int single_struct_test(void)
 
 int parse_args(int argc, char **argv)
 {
-    /*
+    /**
     int ret;
 
     while ((ret = getopt(argc, argv, "v")) >= 0)

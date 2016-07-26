@@ -1,10 +1,7 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
 
-/* Tests that Type_get_extent of a couple of basic types succeeds. */
+
+
+/** Tests that Type_get_extent of a couple of basic types succeeds. */
 
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
@@ -30,7 +27,7 @@ int simple_size_extent(int argc, char **argv)
     MPI_Init(&argc, &argv);
     parse_args(argc, argv);
 
-    /* To improve reporting of problems about operations, we
+    /** To improve reporting of problems about operations, we
        change the error handler to errors return */
     MPI_Comm_set_errhandler( MPI_COMM_WORLD, MPI_ERRORS_RETURN );
 
@@ -138,7 +135,7 @@ int simple_size_extent(int argc, char **argv)
 	errs++;
     }
 
-    /* print message and exit */
+    /** print message and exit */
     if (errs) {
 	fprintf(stderr, "Found %d errors\n", errs);
     }
@@ -151,7 +148,7 @@ int simple_size_extent(int argc, char **argv)
 
 int parse_args(int argc, char **argv)
 {
-    /*
+    /**
     int ret;
 
     while ((ret = getopt(argc, argv, "v")) >= 0)

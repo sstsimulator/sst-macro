@@ -27,7 +27,7 @@ int redscat( int argc, char **argv )
     MPI_Reduce_scatter( sendbuf, &recvbuf, recvcounts, MPI_INT, MPI_SUM, comm );
 
     sumval = size * rank + ((size - 1) * size)/2;
-/* recvbuf should be size * (rank + i) */
+/** recvbuf should be size * (rank + i) */
     if (recvbuf != sumval) {
 	err++;
 	fprintf( stdout, "Did not get expected value for reduce scatter\n" );

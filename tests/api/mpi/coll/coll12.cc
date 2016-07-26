@@ -14,26 +14,26 @@ int coll12( int argc, char **argv )
   int    i;
   int    errors = 0, toterrors;
 
-  /* Initialize the environment and some variables */
+  /** Initialize the environment and some variables */
   MTest_Init( &argc, &argv );
   MPI_Comm_rank( MPI_COMM_WORLD, &rank );
   MPI_Comm_size( MPI_COMM_WORLD, &size );
 
-  /* Initialize the maxloc data */
+  /** Initialize the maxloc data */
   for ( i=0; i<TABLE_SIZE; i++ ) a[i] = 0;
   for ( i=rank; i<TABLE_SIZE; i++ ) a[i] = (double)rank + 1.0;
 
-  /* Copy data to the "in" buffer */
+  /** Copy data to the "in" buffer */
   for (i=0; i<TABLE_SIZE; i++) { 
 	in[i].a = a[i];
 	in[i].b = rank;
   }
 
-  /* Reduce it! */
+  /** Reduce it! */
   MPI_Reduce( in, out, TABLE_SIZE, MPI_DOUBLE_INT, MPI_MAXLOC, 0, MPI_COMM_WORLD );
   MPI_Bcast ( out, TABLE_SIZE, MPI_DOUBLE_INT, 0, MPI_COMM_WORLD );
 
-  /* Check to see that we got the right answers */
+  /** Check to see that we got the right answers */
   for (i=0; i<TABLE_SIZE; i++) 
 	if (i % size == rank)
 	  if (out[i].b != rank) {
@@ -41,20 +41,20 @@ int coll12( int argc, char **argv )
 		errors++;
       }
 
-  /* Initialize the minloc data */
+  /** Initialize the minloc data */
   for ( i=0; i<TABLE_SIZE; i++ ) a[i] = 0;
   for ( i=rank; i<TABLE_SIZE; i++ ) a[i] = -(double)rank - 1.0;
 
-  /* Copy data to the "in" buffer */
+  /** Copy data to the "in" buffer */
   for (i=0; i<TABLE_SIZE; i++)  {
 	in[i].a = a[i];
 	in[i].b = rank;
   }
 
-  /* Reduce it! */
+  /** Reduce it! */
   MPI_Allreduce( in, out, TABLE_SIZE, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD );
 
-  /* Check to see that we got the right answers */
+  /** Check to see that we got the right answers */
   for (i=0; i<TABLE_SIZE; i++) 
 	if (i % size == rank)
 	  if (out[i].b != rank) {
@@ -62,7 +62,7 @@ int coll12( int argc, char **argv )
 		errors++;
       }
 
-  /* Finish up! */
+  /** Finish up! */
   MTest_Finalize( errors );
   MPI_Finalize();
   return MTestReturnValue( errors );

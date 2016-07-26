@@ -1,21 +1,17 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sstmac/replacements/mpi.h>
 #include "mpitest.h"
 
 namespace bsendfrag {
-/*
+/**
 static char MTEST_Descrip[] = "Test bsend message handling where \
 different messages are received in different orders";
 */
 
-/*
+/**
  * Notes on the test.
  *
  * To ensure that messages remain in the bsend buffer until received,
@@ -61,14 +57,14 @@ int bsendfrag( int argc, char *argv[] )
 	}
 	MPI_Buffer_attach( buf, bufsize );
 
-	/* Initialize data */
+	/** Initialize data */
 	for (i=0; i<MSG_SIZE; i++) {
 	    b1[i] = i;
 	    b2[i] = MSG_SIZE + i;
 	    b3[i] = 2 * MSG_SIZE + i;
 	    b4[i] = 3 * MSG_SIZE + i;
 	}
-	/* Send and reset buffers after bsend returns */
+	/** Send and reset buffers after bsend returns */
 	MPI_Bsend( b1, MSG_SIZE, MPI_INT, dest, 0, comm );
 	for (i=0; i<MSG_SIZE; i++) b1[i] = -b1[i];
 	MPI_Bsend( b2, MSG_SIZE, MPI_INT, dest, 1, comm );
@@ -79,7 +75,7 @@ int bsendfrag( int argc, char *argv[] )
 	for (i=0; i<MSG_SIZE; i++) b4[i] = -b4[i];
 
 	MPI_Barrier( comm );
-	/* Detach waits until all messages received */
+	/** Detach waits until all messages received */
 	MPI_Buffer_detach( &buf, &bsize );
     }
     else if (rank == dest) {
@@ -90,7 +86,7 @@ int bsendfrag( int argc, char *argv[] )
 	MPI_Recv( b4, MSG_SIZE, MPI_INT, src, 3, comm, &status );
 	MPI_Recv( b3, MSG_SIZE, MPI_INT, src, 2, comm, &status );
 
-	/* Check received data */
+	/** Check received data */
 	for (i=0; i<MSG_SIZE; i++) {
 	    if (b1[i] != i) {
 		errs++;

@@ -6,7 +6,7 @@
 
 namespace allgatherv2 {
 
-/* Gather data from a vector to contiguous.  Use IN_PLACE.  This is 
+/** Gather data from a vector to contiguous.  Use IN_PLACE.  This is 
    the trivial version based on the allgather test (allgatherv but with
    constant data sizes) */
 
@@ -23,7 +23,7 @@ int allgatherv2( int argc, char **argv )
 
     while (MTestGetIntracommGeneral( &comm, minsize, 1 )) {
 	if (comm == MPI_COMM_NULL) continue;
-	/* Determine the sender and receiver */
+	/** Determine the sender and receiver */
 	MPI_Comm_rank( comm, &rank );
 	MPI_Comm_size( comm, &size );
 

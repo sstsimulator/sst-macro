@@ -24,6 +24,9 @@ class minimal_router :
   virtual void
   finalize_init();
 
+  virtual void
+  set_topology(topology *top);
+
  protected:
   virtual void
   route(packet* pkt, geometry_routable::path_set& paths);

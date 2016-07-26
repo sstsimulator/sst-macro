@@ -19,25 +19,25 @@ int attrerrcomm( int argc, char **argv )
     return 0;
 }
 
-/* 
+/** 
  * MPI 1.2 Clarification: Clarification of Error Behavior of 
  *                        Attribute Callback Functions 
  * Any return value other than MPI_SUCCESS is erroneous.  The specific value
  * returned to the user is undefined (other than it can't be MPI_SUCCESS).
  * Proposals to specify particular values (e.g., user's value) failed.
  */
-/* Return an error as the value */
+/** Return an error as the value */
 int copybomb_fn( MPI_Comm oldcomm, int keyval, void *extra_state,
 		void *attribute_val_in, void *attribute_val_out, int *flag)
 {
-    /* Note that if (sizeof(int) < sizeof(void *), just setting the int
+    /** Note that if (sizeof(int) < sizeof(void *), just setting the int
        part of attribute_val_out may leave some dirty bits
     */
     *flag = 1;
     return MPI_ERR_OTHER;
 }
 
-/* Set delete flag to 1 to allow the attribute to be deleted */
+/** Set delete flag to 1 to allow the attribute to be deleted */
 static int delete_flag = 0;
 
 int deletebomb_fn( MPI_Comm comm, int keyval, void *attribute_val, 
@@ -89,7 +89,7 @@ int test_communicators( void )
 	printf( "delete function return code was MPI_SUCCESS in put\n" );
     }
 
-    /* Because the attribute delete function should fail, the attribute
+    /** Because the attribute delete function should fail, the attribute
        should *not be removed* */
     err = MPI_Comm_delete_attr( dup_comm_world, key_1 );
     if (err == MPI_SUCCESS) {
@@ -112,7 +112,7 @@ int test_communicators( void )
 	}
     }
 #ifndef USE_STRICT_MPI
-    /* Another interpretation is to leave d2 unchanged on error */
+    /** Another interpretation is to leave d2 unchanged on error */
     if (err && d2 != MPI_COMM_NULL) {
 	errs++;
 	printf( "dup did not return MPI_COMM_NULL on error\n" );

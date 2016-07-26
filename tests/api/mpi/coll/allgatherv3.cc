@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 namespace allgatherv3 {
-/* Gather data from a vector to contiguous.  This is 
+/** Gather data from a vector to contiguous.  This is 
    the trivial version based on the allgather test (allgatherv but with
    constant data sizes) */
 
@@ -22,7 +22,7 @@ int allgatherv3( int argc, char **argv )
 
     while (MTestGetIntracommGeneral( &comm, minsize, 1 )) {
 	if (comm == MPI_COMM_NULL) continue;
-	/* Determine the sender and receiver */
+	/** Determine the sender and receiver */
 	MPI_Comm_rank( comm, &rank );
 	MPI_Comm_size( comm, &size );
 

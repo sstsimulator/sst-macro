@@ -66,6 +66,7 @@
 #define MPI_Iscatter current_mpi()->iscatter
 #define MPI_Iscatterv current_mpi()->iscatterv
 #define MPI_Ialltoall current_mpi()->ialltoall
+#define MPI_Ialltoallv current_mpi()->ialltoallv
 #define MPI_Wtime current_mpi()->wtime
 #define MPI_Disable_Payloads current_mpi()->disable_Payloads
 #define MPI_Enable_Payloads current_mpi()->enable_Payloads

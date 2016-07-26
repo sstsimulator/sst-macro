@@ -6,11 +6,11 @@
 #include <assert.h>
 
 namespace allred5 {
-/*
+/**
 static char MTEST_Descrip[] = "Test MPI_Allreduce with count greater than the number of processes";
 */
 
-/* We make the error count global so that we can easily control the output
+/** We make the error count global so that we can easily control the output
    of error information (in particular, limiting it after the first 10 
    errors */
 int errs = 0;
@@ -43,7 +43,7 @@ int allred5( int argc, char *argv[] )
 
 	dtype = MPI_INT;
 	MPI_Allreduce( bufin, bufout, count, dtype, MPI_SUM, comm );
-	/* Check output */
+	/** Check output */
 	for (i=0; i<count; i++) {
 	    if (bufout[i] != i * size) {
 		fprintf( stderr, "Expected bufout[%d] = %d but found %d\n",

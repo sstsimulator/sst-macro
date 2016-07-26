@@ -1,15 +1,11 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include "mpitest.h"
 
 namespace getpartelm {
-/*
+/**
 static char MTest_descrip[] = "Receive partial datatypes and check that\
 MPI_Getelements gives the correct version";
 */
@@ -41,10 +37,10 @@ int getpartelm( int argc, char *argv[] )
 
     if (rank == src) {
 	int buf[128], position, cnt;
-	/* sender */
+	/** sender */
 
-	/* Create a datatype and send it (multiple of sizeof(int)) */
-	/* Create a send struct type */
+	/** Create a datatype and send it (multiple of sizeof(int)) */
+	/** Create a send struct type */
 	oldtypes[0] = MPI_INT;
 	oldtypes[1] = MPI_CHAR;
 	blklens[0]  = 1;
@@ -55,12 +51,12 @@ int getpartelm( int argc, char *argv[] )
 	MPI_Type_commit( &outtype );
 
 	buf[0] = 4*sizeof(int);
-	/* printf( "About to send to %d\n", dest ); */
+	/** printf( "About to send to %d\n", dest ); */
 	MPI_Send( buf, 1, outtype, dest, 0, comm );
 	MPI_Type_free( &outtype );
 
-	/* Create a datatype and send it (not a multiple of sizeof(int)) */
-	/* Create a send struct type */
+	/** Create a datatype and send it (not a multiple of sizeof(int)) */
+	/** Create a send struct type */
 	oldtypes[0] = MPI_INT;
 	oldtypes[1] = MPI_CHAR;
 	blklens[0]  = 1;
@@ -74,7 +70,7 @@ int getpartelm( int argc, char *argv[] )
 	MPI_Send( buf, 1, outtype, dest, 1, comm );
 	MPI_Type_free( &outtype );
 
-	/* Pack data and send as packed */
+	/** Pack data and send as packed */
 	position = 0;
 	cnt = 7;
 	MPI_Pack( &cnt, 1, MPI_INT, 
@@ -87,8 +83,8 @@ int getpartelm( int argc, char *argv[] )
 	MPI_Status status;
 	int        buf[128], i, elms, count;
 
-	/* Receiver */
-	/* Create a receive struct type */
+	/** Receiver */
+	/** Create a receive struct type */
 	oldtypes[0] = MPI_INT;
 	oldtypes[1] = MPI_CHAR;
 	blklens[0]  = 1;
@@ -100,7 +96,7 @@ int getpartelm( int argc, char *argv[] )
 
 	for (i=0; i<3; i++) {
 	    tag = i;
-	    /* printf( "about to receive tag %d from %d\n", i, src ); */
+	    /** printf( "about to receive tag %d from %d\n", i, src ); */
 	    MPI_Recv( buf, 1, outtype, src, tag, comm, &status );
 	    MPI_Get_elements( &status, outtype, &elms );
 	    if (elms != buf[0] + 1) {

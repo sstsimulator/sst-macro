@@ -1,9 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
@@ -23,7 +19,7 @@ int commname( int argc, char *argv[] )
     char name[MPI_MAX_OBJECT_NAME], nameout[MPI_MAX_OBJECT_NAME];
     MTest_Init( &argc, &argv );
 
-    /* Check world and self firt */
+    /** Check world and self firt */
     nameout[0] = 0;
     MPI_Comm_get_name( MPI_COMM_WORLD, nameout, &rlen );
     if (strcmp(nameout,"MPI_COMM_WORLD")) {
@@ -40,7 +36,7 @@ int commname( int argc, char *argv[] )
 		nameout );
     }
 
-    /* Now, handle other communicators, including world/self */
+    /** Now, handle other communicators, including world/self */
     cnt = 0;
     while (MTestGetComm( &comm, 1 )) {
 	if (comm == MPI_COMM_NULL) continue;

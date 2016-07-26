@@ -1,9 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include "mpitest.h"
@@ -14,7 +10,7 @@ int initstat( int argc, char *argv[] )
     int errs = 0;
     int provided, flag, claimed;
 
-    /* MTest_Init( &argc, &argv ); */
+    /** MTest_Init( &argc, &argv ); */
 
     MPI_Init_thread( 0, 0, MPI_THREAD_MULTIPLE, &provided );
     

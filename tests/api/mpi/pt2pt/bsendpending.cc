@@ -1,5 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
+
+/**
  *
  */
 #include <sstmac/replacements/mpi.h>
@@ -10,7 +10,7 @@
 
 
 namespace bsendpending {
-/*
+/**
 static char MTEST_Descrip[] = "Test the handling of BSend operations when a detach occurs before the bsend data has been sent.";
 */
 
@@ -27,7 +27,7 @@ int bsendpending( int argc, char *argv[] )
 
     MTest_Init( &argc, &argv );
 
-    /* The following illustrates the use of the routines to 
+    /** The following illustrates the use of the routines to 
        run through a selection of communicators and datatypes.
        Use subsets of these for tests that do not involve combinations 
        of communicators, datatypes, and counts of datatypes */
@@ -37,15 +37,15 @@ int bsendpending( int argc, char *argv[] )
     msg3 = msg2 + msgsize;
     while (MTestGetIntracommGeneral( &comm, minsize, 1 )) {
 	if (comm == MPI_COMM_NULL) continue;
-	/* Determine the sender and receiver */
+	/** Determine the sender and receiver */
 	MPI_Comm_rank( comm, &rank );
 	MPI_Comm_size( comm, &size );
 	source = 0;
 	dest   = size - 1;
 
-	/* Here is the test:  The sender */
+	/** Here is the test:  The sender */
 	if (rank == source) {
-	    /* Get a bsend buffer.  Make it large enough that the Bsend
+	    /** Get a bsend buffer.  Make it large enough that the Bsend
 	       internals will (probably) not use a eager send for the data.
 	       Have three such messages */
 	    bufsize = 3 * (MPI_BSEND_OVERHEAD + msgsize);
@@ -58,23 +58,23 @@ int bsendpending( int argc, char *argv[] )
 	    
 	    MPI_Buffer_attach( buf, bufsize );
 
-	    /* Initialize the buffers */
+	    /** Initialize the buffers */
 	    for (i=0; i<msgsize; i++) {
 		msg1[i] = 0xff ^ (i & 0xff);
 		msg2[i] = 0xff ^ (3*i & 0xff);
 		msg3[i] = 0xff ^ (5*i & 0xff);
 	    }
 
-	    /* Initiate the bsends */
+	    /** Initiate the bsends */
 	    MPI_Bsend( msg1, msgsize, MPI_CHAR, dest, 0, comm );
 	    MPI_Bsend( msg2, msgsize, MPI_CHAR, dest, 0, comm );
 	    MPI_Bsend( msg3, msgsize, MPI_CHAR, dest, 0, comm );
 
-	    /* Synchronize with our partner */
+	    /** Synchronize with our partner */
 	    MPI_Sendrecv( 0, 0, MPI_CHAR, dest, 10, 
 			  0, 0, MPI_CHAR, dest, 10, comm, MPI_STATUS_IGNORE );
 
-	    /* Detach the buffers.  There should be pending operations */
+	    /** Detach the buffers.  There should be pending operations */
 	    MPI_Buffer_detach ( &bufp, &outsize );
 	    if (bufp != buf) {
 		fprintf( stderr, "Wrong buffer returned\n" );
@@ -88,26 +88,26 @@ int bsendpending( int argc, char *argv[] )
 	else if (rank == dest) {
 	    double tstart;
 
-	    /* Clear the message buffers */
+	    /** Clear the message buffers */
 	    for (i=0; i<msgsize; i++) {
 		msg1[i] = 0;
 		msg2[i] = 0;
 		msg3[i] = 0;
 	    }
 
-	    /* Wait for the synchronize */
+	    /** Wait for the synchronize */
 	    MPI_Sendrecv( 0, 0, MPI_CHAR, source, 10, 
 			  0, 0, MPI_CHAR, source, 10, comm, MPI_STATUS_IGNORE );
 
-	    /* Wait 2 seconds */
+	    /** Wait 2 seconds */
 	    SSTMAC_compute(2);
 
-	    /* Now receive the messages */
+	    /** Now receive the messages */
 	    MPI_Recv( msg1, msgsize, MPI_CHAR, source, 0, comm, &status1 );
 	    MPI_Recv( msg2, msgsize, MPI_CHAR, source, 0, comm, &status2 );
 	    MPI_Recv( msg3, msgsize, MPI_CHAR, source, 0, comm, &status3 );
 
-	    /* Check that we have the correct data */
+	    /** Check that we have the correct data */
 	    for (i=0; i<msgsize; i++) {
 		if (msg1[i] != (0xff ^ (i & 0xff))) { 
 		    if (errs < 10) {

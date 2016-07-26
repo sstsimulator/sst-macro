@@ -19,10 +19,10 @@ int coll6( int argc, char **argv )
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );
     MPI_Comm_size( MPI_COMM_WORLD, &size );
 
-    /* A maximum of MAX_PROCESSES processes can participate */
+    /** A maximum of MAX_PROCESSES processes can participate */
     if ( size > MAX_PROCESSES ) participants = MAX_PROCESSES;
     else              participants = size;
-    /* while (MAX_PROCESSES % participants) participants--; */
+    /** while (MAX_PROCESSES % participants) participants--; */
     if (MAX_PROCESSES % participants) {
 	fprintf( stderr, "Number of processors must divide %d\n",
 		MAX_PROCESSES );
@@ -30,29 +30,29 @@ int coll6( int argc, char **argv )
 	}
     if ( (rank < participants) ) {
 
-      /* Determine what rows are my responsibility */
+      /** Determine what rows are my responsibility */
       int block_size = MAX_PROCESSES / participants;
       int begin_row  = rank * block_size;
       int end_row    = (rank+1) * block_size;
       int send_count = block_size * MAX_PROCESSES;
       
-      /* Fill in the displacements and recv_counts */
+      /** Fill in the displacements and recv_counts */
       for (i=0; i<participants; i++) {
 	displs[i]      = i * block_size * MAX_PROCESSES;
 	recv_counts[i] = send_count;
       }
 
-      /* Paint my rows my color */
+      /** Paint my rows my color */
       for (i=begin_row; i<end_row ;i++)
 	for (j=0; j<MAX_PROCESSES; j++)
 	  table[i][j] = rank + 10;
       
-      /* Everybody gets the gathered data */
+      /** Everybody gets the gathered data */
       MPI_Allgatherv(&table[begin_row][0], send_count, MPI_INT, 
 		     &table[0][0], recv_counts, displs, 
 		     MPI_INT, MPI_COMM_WORLD);
 
-      /* Everybody should have the same table now.
+      /** Everybody should have the same table now.
 
 	 The entries are:
 	 Table[i][j] = (i/block_size) + 10;
@@ -66,7 +66,7 @@ int coll6( int argc, char **argv )
 	      }
 	  }
       if (errors) {
-	  /* Print out table if there are any errors */
+	  /** Print out table if there are any errors */
 	  for (i=0; i<MAX_PROCESSES;i++) {
 	      printf("\n");
 	      for (j=0; j<MAX_PROCESSES; j++)

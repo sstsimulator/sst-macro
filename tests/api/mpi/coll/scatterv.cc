@@ -5,10 +5,10 @@
 
 namespace scatterv {
 
-/* Prototypes for picky compilers */
+/** Prototypes for picky compilers */
 void SetData ( double *, double *, int, int, int, int, int, int );
 int CheckData ( double *, int, int, int, int, int, int );
-/*
+/**
    This is an example of using scatterv to send a matrix from one
    process to all others, with the matrix stored in Fortran order.
    Note the use of an explicit UB to enable the sources to overlap.
@@ -55,7 +55,7 @@ int CheckData( double *recvbuf,
     p      = recvbuf;
     for (m=0; m<ny; m++) {
         for (k=0; k<nx; k++) {
-            /* If expect_no_value is true then we assume that the pre-scatterv
+            /** If expect_no_value is true then we assume that the pre-scatterv
              * value should remain in the recvbuf for our portion of the array.
              * This is the case for the root process when using MPI_IN_PLACE. */
             if (expect_no_value)
@@ -96,7 +96,7 @@ int scatterv( int argc, char **argv )
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );
     MPI_Comm_size( MPI_COMM_WORLD, &size );
 
-    /* Get a 2-d decomposition of the processes */
+    /** Get a 2-d decomposition of the processes */
     dims[0] = 0; dims[1] = 0;
     MPI_Dims_create( size, 2, dims );
     periods[0] = 0; periods[1] = 0;
@@ -104,12 +104,12 @@ int scatterv( int argc, char **argv )
     MPI_Cart_get( comm2d, 2, dims, periods, coords );
     myrow = coords[0];
     mycol = coords[1];
-/*
+/**
     if (rank == 0)
         printf( "Decomposition is [%d x %d]\n", dims[0], dims[1] );
 */
 
-    /* Get the size of the matrix */
+    /** Get the size of the matrix */
     nx = 10;
     ny = 8;
     stride = nx * dims[0];
@@ -137,12 +137,12 @@ int scatterv( int argc, char **argv )
     MPI_Type_free( &vec );
     MPI_Type_commit( &block );
 
-    /* Set up the transfer */
+    /** Set up the transfer */
     cnt     = 0;
     for (i=0; i<dims[1]; i++) {
         for (j=0; j<dims[0]; j++) {
             sendcounts[cnt] = 1;
-            /* Using Cart_coords makes sure that ranks (used by
+            /** Using Cart_coords makes sure that ranks (used by
                sendrecv) matches the cartesian coordinates (used to
                set data in the matrix) */
             MPI_Cart_coords( comm2d, cnt, 2, lcoords );
@@ -157,7 +157,7 @@ int scatterv( int argc, char **argv )
         fprintf( stdout, "Failed to transfer data\n" );
     }
 
-    /* once more, but this time passing MPI_IN_PLACE for the root */
+    /** once more, but this time passing MPI_IN_PLACE for the root */
     SetData( sendbuf, recvbuf, nx, ny, myrow, mycol, dims[0], dims[1] );
     MPI_Scatterv( sendbuf, sendcounts, scdispls, block,
                   (rank == 0 ? MPI_IN_PLACE : recvbuf), nx * ny, MPI_DOUBLE, 0, comm2d );

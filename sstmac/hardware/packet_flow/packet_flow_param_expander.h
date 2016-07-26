@@ -21,15 +21,21 @@ class packet_flow_param_expander :
   private:
     void expand_amm1_nic(sprockit::sim_parameters* params, sprockit::sim_parameters* nic_params);
 
-    void expand_amm1_network(sprockit::sim_parameters* params, sprockit::sim_parameters* switch_params, int packet_size);
+    void expand_amm1_network(sprockit::sim_parameters* params,
+                             sprockit::sim_parameters* switch_params,
+                             int packet_size, bool set_xbar);
 
     void expand_amm1_memory(sprockit::sim_parameters* params, sprockit::sim_parameters* mem_params);
 
     void expand_amm2_memory(sprockit::sim_parameters* params, sprockit::sim_parameters* mem_params);
 
-    void expand_amm3_network(sprockit::sim_parameters* params, sprockit::sim_parameters* switch_params, int packet_size);
+    void expand_amm3_network(sprockit::sim_parameters* params,
+                             sprockit::sim_parameters* switch_params,
+                             int packet_size);
 
-    void expand_amm4_nic(sprockit::sim_parameters* params, sprockit::sim_parameters* top_params, sprockit::sim_parameters* nic_params);
+    void expand_amm4_nic(sprockit::sim_parameters* params,
+                         sprockit::sim_parameters* top_params,
+                         sprockit::sim_parameters* nic_params);
 
     void expand_amm4_network(sprockit::sim_parameters* params, sprockit::sim_parameters* top_params,
                              sprockit::sim_parameters* nic_params, int packet_size);
@@ -55,7 +61,7 @@ class packet_flow_param_expander :
       if (tiled_switch_){
         return 1.0;
       } else {
-        return param_expander::switch_bandwidth_multiplier(params);
+        return param_expander::network_bandwidth_multiplier(params);
       }
     }
 

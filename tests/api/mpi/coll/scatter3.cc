@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 namespace scatter3 {
-/* This example sends contiguous data and receives a vector on some nodes
+/** This example sends contiguous data and receives a vector on some nodes
    and contiguous data on others.  There is some evidence that some
    MPI implementations do not check recvcount on the root process; this
    test checks for that case 
@@ -27,7 +27,7 @@ int scatter3( int argc, char **argv )
 
     n = 12;
     stride = 10;
-    /* Note that vecout really needs to be only (n-1)*stride+1 doubles, but
+    /** Note that vecout really needs to be only (n-1)*stride+1 doubles, but
        this is easier and allows a little extra room if there is a bug */
     vecout = (double *)malloc( n * stride * sizeof(double) );
     vecin  = (double *)malloc( n * size * sizeof(double) );
@@ -40,7 +40,7 @@ int scatter3( int argc, char **argv )
 	printf( "Vector extent is %ld, should be %ld\n", 
 		 (long) vextent, (long)(((n-1)*stride+1)*sizeof(double)) );
     }
-    /* Note that the exted of type vector is from the first to the
+    /** Note that the exted of type vector is from the first to the
        last element, not n*stride.
        E.g., with n=1, the extent is a single double */
 
@@ -48,7 +48,7 @@ int scatter3( int argc, char **argv )
     for (root=0; root<size; root++) {
 	for (i=0; i<n*stride; i++) vecout[i] = -1.0;
 	if (rank == root) {
-	    /* Receive into a vector */
+	    /** Receive into a vector */
 	    MPI_Scatter( vecin, n, MPI_DOUBLE, vecout, 1, vec, 
 			 root, MPI_COMM_WORLD );
 	    for (i=0; i<n; i++) {
@@ -61,7 +61,7 @@ int scatter3( int argc, char **argv )
 	    }
 	}
 	else {
-	    /* Receive into contiguous data */
+	    /** Receive into contiguous data */
 	    MPI_Scatter( NULL, -1, MPI_DATATYPE_NULL, vecout, n, MPI_DOUBLE,
 			 root, MPI_COMM_WORLD );
 	    for (i=0; i<n; i++) {

@@ -1,18 +1,15 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include "mpiimpl.h"
 #include <stdio.h>
 
 namespace segtest {
-/* 
+/** 
  * Simple segment test, including timing code
  */
 
-/* 
+/** 
  * Build datatype structures
  *
  * Contiguous
@@ -33,10 +30,10 @@ namespace segtest {
  * 
  */
 
-/*
+/**
  * Routines to create dataloops for basic dataloops
  */
-/*
+/**
  *  Contig
  */
 MPID_Dataloop *MPID_Dataloop_init_contig( int count )
@@ -53,7 +50,7 @@ MPID_Dataloop *MPID_Dataloop_init_contig( int count )
     return ct;
 }
 
-/*
+/**
  * Vector
  */
 MPID_Dataloop *MPID_Dataloop_init_vector( int count, int blocksize, 
@@ -73,7 +70,7 @@ MPID_Dataloop *MPID_Dataloop_init_vector( int count, int blocksize,
     return v;
 }
 
-/* 
+/** 
  * Block indexed
  */
 MPID_Dataloop *MPID_Dataloop_init_blockindexed( int count, int blocksize, 
@@ -101,7 +98,7 @@ MPID_Dataloop *MPID_Dataloop_init_blockindexed( int count, int blocksize,
     return bi;
 }
 
-/*
+/**
  * Indexed 
  */
 MPID_Dataloop *MPID_Dataloop_init_indexed( int count, int *blocksize, 
@@ -132,7 +129,7 @@ MPID_Dataloop *MPID_Dataloop_init_indexed( int count, int *blocksize,
 
 int segtest( int argc, char **argv )
 {
-    /* MPID_Dataloop *vecloop; */
+    /** MPID_Dataloop *vecloop; */
     MPI_Datatype vectype;
     int count=200, blocksize=4, stride = 7*4;
     char *src_buf, *dest_buf;
@@ -141,11 +138,11 @@ int segtest( int argc, char **argv )
 
     MPI_Init( &argc, &argv );
     
-/*    vecloop = MPID_Dataloop_init_vector( count, blocksize, stride ); */
+/**    vecloop = MPID_Dataloop_init_vector( count, blocksize, stride ); */
 
     MPI_Type_vector( count, 1, 7, MPI_INT, &vectype );
 
-    /* Initialize the data */
+    /** Initialize the data */
     src_buf = (char *)MPIU_Malloc( (count - 1) * stride + blocksize );
     for (i=0; i<(count-1)*stride+blocksize; i++) 
 	src_buf[i] = -i;
@@ -160,7 +157,7 @@ int segtest( int argc, char **argv )
     r1 = MPI_Wtime();
     for (i=0; i<100; i++) {
 	int position = 0;
-	/*MPID_Segment_pack( vecloop, src_buf, dest_buf );*/
+	/**MPID_Segment_pack( vecloop, src_buf, dest_buf );*/
 	MPI_Pack( src_buf, count, vectype, dest_buf, count*blocksize, 
 		  &position, MPI_COMM_WORLD );
     }
@@ -209,7 +206,7 @@ int segtest( int argc, char **argv )
     return 0;
 }
 
-/*
+/**
  * Nested vector.
  *   The y-z subface is
  *   Type_vector( ey-sy+1, 1, nx, MPI_DOUBLE, &newx1 );

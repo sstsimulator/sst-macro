@@ -1,21 +1,18 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
-/*
- *  (C) 2010 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpitest.h"
 
-#include <math.h> /* for fabs(3) */
+#include <math.h> /** for fabs(3) */
 #ifdef HAVE_UNISTD_H
-#include <unistd.h> /* for sleep(3) */
+#include <unistd.h> /** for sleep(3) */
 #endif
 
 namespace gtranksperf {
 
-/* Measure and compare the relative performance of MPI_Group_translate_ranks
+/** Measure and compare the relative performance of MPI_Group_translate_ranks
  * with small and large group2 sizes but a constant number of ranks.  This
  * serves as a performance sanity check for the Scalasca use case where we
  * translate to MPI_COMM_WORLD ranks.  The performance should only depend on the
@@ -24,7 +21,7 @@ namespace gtranksperf {
  * This test is probably only meaningful for large-ish process counts, so we may
  * not be able to run this test by default in the nightlies. */
 
-/* number of iterations used for timing */
+/** number of iterations used for timing */
 #define NUM_LOOPS (1000000)
 
 int gtranksperf( int argc, char *argv[] )
@@ -52,13 +49,13 @@ int gtranksperf( int argc, char *argv[] )
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
-    /* generate a comm with the rank order reversed */
+    /** generate a comm with the rank order reversed */
     MPI_Comm_split(comm, 0, (size-rank-1), &commrev);
     MPI_Comm_group(commrev, &grev);
     MPI_Comm_group(MPI_COMM_SELF, &gself);
     MPI_Comm_group(comm, &gworld);
 
-    /* sanity check correctness first */
+    /** sanity check correctness first */
     for (i=0; i < size; i++) {
         ranks[i] = i;
         ranksout[i] = -1;
@@ -81,9 +78,9 @@ int gtranksperf( int argc, char *argv[] )
         }
     }
 
-    /* now compare relative performance */
+    /** now compare relative performance */
 
-    /* we needs lots of procs to get a group large enough to have meaningful
+    /** we needs lots of procs to get a group large enough to have meaningful
      * numbers.  On most testing machines this means that we're oversubscribing
      * cores in a big way, which might perturb the timing results.  So we make
      * sure everyone started up and then everyone but rank 0 goes to sleep to
@@ -93,10 +90,10 @@ int gtranksperf( int argc, char *argv[] )
     if (rank != 0) {
         sleep(10);
     }
-    else /* rank==0 */ {
-        sleep(1); /* try to avoid timing while everyone else is making syscalls */
+    else /** rank==0 */ {
+        sleep(1); /** try to avoid timing while everyone else is making syscalls */
 
-        MPI_Group_translate_ranks(grev, size, ranks, gworld, ranksout); /*throwaway iter*/
+        MPI_Group_translate_ranks(grev, size, ranks, gworld, ranksout); /**throwaway iter*/
         start = MPI_Wtime();
         for (i = 0; i < NUM_LOOPS; ++i) {
             MPI_Group_translate_ranks(grev, size, ranks, gworld, ranksout);
@@ -104,7 +101,7 @@ int gtranksperf( int argc, char *argv[] )
         end = MPI_Wtime();
         time1 = end - start;
 
-        MPI_Group_translate_ranks(grev, size, ranks, gself, ranksout); /*throwaway iter*/
+        MPI_Group_translate_ranks(grev, size, ranks, gself, ranksout); /**throwaway iter*/
         start = MPI_Wtime();
         for (i = 0; i < NUM_LOOPS; ++i) {
             MPI_Group_translate_ranks(grev, size, ranks, gself, ranksout);
@@ -112,7 +109,7 @@ int gtranksperf( int argc, char *argv[] )
         end = MPI_Wtime();
         time2 = end - start;
 
-        /* complain if the "gworld" time exceeds 2x the "gself" time */
+        /** complain if the "gworld" time exceeds 2x the "gself" time */
         if (fabs(time1 - time2) > (2.00 * time2)) {
             printf("too much difference in MPI_Group_translate_ranks performance:\n");
             printf("time1=%f time2=%f\n", time1, time2);

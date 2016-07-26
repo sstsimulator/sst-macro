@@ -1,14 +1,10 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 
 namespace contigstruct {
-/*
+/**
  * This test checks to see if we can create a simple datatype
  * made from many contiguous copies of a single struct.  The
  * struct is built with monotone decreasing displacements to
@@ -39,7 +35,7 @@ int contigstruct( int argc, char **argv )
     MPI_Type_free( &ntype2 );
 	MPI_Type_free( &ntype1 );
 
-    /* The only failure mode has been SEGV or aborts within the datatype
+    /** The only failure mode has been SEGV or aborts within the datatype
        routines */
     if (rank == 0) {
 	printf( " No Errors\n" );

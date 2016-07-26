@@ -1,15 +1,12 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpitest.h"
 
 namespace scancel {
-/*
+/**
 static char MTEST_Descrip[] = "Test of various send cancel calls";
 */
 
@@ -23,7 +20,7 @@ int scancel( int argc, char *argv[] )
     static int bufsizes[4] = { 1, 100, 10000, 1000000 };
     char *buf;
 #ifdef TEST_IRSEND
-    int veryPicky = 0;   /* Set to 1 to test "quality of implementation" in
+    int veryPicky = 0;   /** Set to 1 to test "quality of implementation" in
 			    a tricky part of cancel */
 #endif
     int  cs, flag, n;
@@ -61,9 +58,9 @@ int scancel( int argc, char *argv[] )
 	    {
 		n = 0;
 	    }
-	    /* Send the size, zero for successfully cancelled */
+	    /** Send the size, zero for successfully cancelled */
 	    MPI_Send( &n, 1, MPI_INT, dest, 123, comm );
-	    /* Send the tag so the message can be received */
+	    /** Send the tag so the message can be received */
 	    n = cs+n+1;
 	    MPI_Send( &n, 1, MPI_INT, dest, 123, comm );
 	    free( buf );
@@ -76,7 +73,7 @@ int scancel( int argc, char *argv[] )
 	    MPI_Recv( &tag, 1, MPI_INT, 0, 123, comm, &status );
 	    if (nn > 0)
 	    {
-		/* If the message was not cancelled, receive it here */
+		/** If the message was not cancelled, receive it here */
 		btemp = (char*)malloc( nn );
 		if (!btemp)
 		{
@@ -120,9 +117,9 @@ int scancel( int argc, char *argv[] )
 	    {
 		n = 0;
 	    }
-	    /* Send the size, zero for successfully cancelled */
+	    /** Send the size, zero for successfully cancelled */
 	    MPI_Send( &n, 1, MPI_INT, dest, 123, comm );
-	    /* Send the tag so the message can be received */
+	    /** Send the tag so the message can be received */
 	    n = cs+n+2;
 	    MPI_Send( &n, 1, MPI_INT, dest, 123, comm );
 	    free( buf );
@@ -137,7 +134,7 @@ int scancel( int argc, char *argv[] )
 	    MPI_Recv( &tag, 1, MPI_INT, 0, 123, comm, &status );
 	    if (nn > 0)
 	    {
-		/* If the message was not cancelled, receive it here */
+		/** If the message was not cancelled, receive it here */
 		btemp = (char*)malloc( nn );
 		if (!btemp)
 		{
@@ -150,10 +147,10 @@ int scancel( int argc, char *argv[] )
 	}
 	MPI_Barrier( comm );
 
-	/* Because this test is erroneous, we do not perform it unless
+	/** Because this test is erroneous, we do not perform it unless
 	   TEST_IRSEND is defined.  */
 #ifdef TEST_IRSEND
-	/* We avoid ready send to self because an implementation
+	/** We avoid ready send to self because an implementation
 	   is free to detect the error in delivering a message to
 	   itself without a pending receive; we could also check
 	   for an error return from the MPI_Irsend */
@@ -169,7 +166,7 @@ int scancel( int argc, char *argv[] )
 	    MPI_Cancel( &req );
 	    MPI_Wait( &req, &status );
 	    MPI_Test_cancelled( &status, &flag );
-	    /* This can be pretty ugly.  The standard is clear (Section 3.8)
+	    /** This can be pretty ugly.  The standard is clear (Section 3.8)
 	       that either a sent message is received or the 
 	       sent message is successfully cancelled.  Since this message
 	       can never be received, the cancel must complete
@@ -187,9 +184,9 @@ int scancel( int argc, char *argv[] )
 	    {
 		n = 0;
 	    }
-	    /* Send the size, zero for successfully cancelled */
+	    /** Send the size, zero for successfully cancelled */
 	    MPI_Send( &n, 1, MPI_INT, dest, 123, comm );
-	    /* Send the tag so the message can be received */
+	    /** Send the tag so the message can be received */
 	    n = cs+n+3;
 	    MPI_Send( &n, 1, MPI_INT, dest, 123, comm );
 	    free( buf );
@@ -202,7 +199,7 @@ int scancel( int argc, char *argv[] )
 	    MPI_Recv( &tag, 1, MPI_INT, 0, 123, comm, &status );
 	    if (n > 0)
 	    {
-		/* If the message was not cancelled, receive it here */
+		/** If the message was not cancelled, receive it here */
 		btemp = (char*)malloc( n );
 		if (!btemp)
 		{
@@ -237,9 +234,9 @@ int scancel( int argc, char *argv[] )
 	    {
 		n = 0;
 	    }
-	    /* Send the size, zero for successfully cancelled */
+	    /** Send the size, zero for successfully cancelled */
 	    MPI_Send( &n, 1, MPI_INT, dest, 123, comm );
-	    /* Send the tag so the message can be received */
+	    /** Send the tag so the message can be received */
 	    n = cs+n+4;
 	    MPI_Send( &n, 1, MPI_INT, dest, 123, comm );
 	    free( buf );
@@ -252,7 +249,7 @@ int scancel( int argc, char *argv[] )
 	    MPI_Recv( &tag, 1, MPI_INT, 0, 123, comm, &status );
 	    if (nn > 0)
 	    {
-		/* If the message was not cancelled, receive it here */
+		/** If the message was not cancelled, receive it here */
 		btemp = (char*)malloc( nn );
 		if (!btemp)
 		{

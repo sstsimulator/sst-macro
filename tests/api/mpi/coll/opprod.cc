@@ -5,7 +5,7 @@
 #include "mpitest.h"
 
 namespace opprod {
-/*
+/**
 static char MTEST_Descrip[] = "Test MPI_PROD operations on optional datatypes dupported by MPICH2";
 */
 
@@ -14,7 +14,7 @@ typedef struct { double r, i; } d_complex;
 typedef struct { long double r, i; } ld_complex;
 #endif
 
-/*
+/**
  * This test looks at the handling of logical and for types that are not 
  * integers or are not required integers (e.g., long long).  MPICH2 allows
  * these as well.  A strict MPI test should not include this test.
@@ -38,13 +38,13 @@ int opprod( int argc, char *argv[] )
     if (size > 5) maxsize = 5;
     else          maxsize = size;
 
-    /* General forumula: If we multiple the values from 1 to n, the 
+    /** General forumula: If we multiple the values from 1 to n, the 
        product is n!.  This grows very fast, so we'll only use the first 
        five (1! = 1, 2! = 2, 3! = 6, 4! = 24, 5! = 120), with n!
        stored in the array result[n] */
 
 #ifndef USE_STRICT_MPI
-    /* char */
+    /** char */
     MTestPrintfMsg( 10, "Reduce of MPI_CHAR\n" );
     cinbuf[0] = (rank < maxsize && rank > 0) ? rank : 1;
     cinbuf[1] = 0;
@@ -69,9 +69,9 @@ int opprod( int argc, char *argv[] )
 	    fprintf( stderr, "char PROD(>) test failed\n" );
 	}
     }
-#endif /* USE_STRICT_MPI */
+#endif /** USE_STRICT_MPI */
 
-    /* signed char */
+    /** signed char */
     MTestPrintfMsg( 10, "Reduce of MPI_SIGNED_CHAR\n" );
     scinbuf[0] = (rank < maxsize && rank > 0) ? rank : 1;
     scinbuf[1] = 0;
@@ -97,7 +97,7 @@ int opprod( int argc, char *argv[] )
 	}
     }
 
-    /* unsigned char */
+    /** unsigned char */
     MTestPrintfMsg( 10, "Reduce of MPI_UNSIGNED_CHAR\n" );
     ucinbuf[0] = (rank < maxsize && rank > 0) ? rank : 1;
     ucinbuf[1] = 0;
@@ -123,16 +123,16 @@ int opprod( int argc, char *argv[] )
     }
 
 #ifndef USE_STRICT_MPI
-    /* For some reason, complex is not allowed for sum and prod */
+    /** For some reason, complex is not allowed for sum and prod */
     if (MPI_DOUBLE_COMPLEX != MPI_DATATYPE_NULL) {
 	int dc;
 #ifdef HAVE_LONG_DOUBLE	
 	ld_complex ldinbuf[3], ldoutbuf[3];
 #endif	
-	/* Must determine which C type matches this Fortran type */
+	/** Must determine which C type matches this Fortran type */
 	MPI_Type_size( MPI_DOUBLE_COMPLEX, &dc );
 	if (dc == sizeof(d_complex)) {
-	    /* double complex; may be null if we do not have Fortran support */
+	    /** double complex; may be null if we do not have Fortran support */
 	    dinbuf[0].r = (rank < maxsize && rank > 0) ? rank : 1;
 	    dinbuf[1].r = 0;
 	    dinbuf[2].r = (rank > 0);
@@ -153,8 +153,8 @@ int opprod( int argc, char *argv[] )
 		    errs++;
 		    fprintf( stderr, "double complex PROD(rank) test failed\n" );
 		}
-		/* Multiplying the imaginary part depends on size mod 4 */
-		imag = 1.0; real = 0.0; /* Make compiler happy */
+		/** Multiplying the imaginary part depends on size mod 4 */
+		imag = 1.0; real = 0.0; /** Make compiler happy */
 		switch (size % 4) {
 		case 1: imag = 1.0; real = 0.0; break;
 		case 2: imag = 0.0; real = -1.0; break;
@@ -174,7 +174,7 @@ int opprod( int argc, char *argv[] )
 	}
 #ifdef HAVE_LONG_DOUBLE
 	else if (dc == sizeof(ld_complex)) {
-	    /* double complex; may be null if we do not have Fortran support */
+	    /** double complex; may be null if we do not have Fortran support */
 	    ldinbuf[0].r = (rank < maxsize && rank > 0) ? rank : 1;
 	    ldinbuf[1].r = 0;
 	    ldinbuf[2].r = (rank > 0);
@@ -195,8 +195,8 @@ int opprod( int argc, char *argv[] )
 		    errs++;
 		    fprintf( stderr, "double complex PROD(rank) test failed\n" );
 		}
-		/* Multiplying the imaginary part depends on size mod 4 */
-		imag = 1.0; real = 0.0; /* Make compiler happy */
+		/** Multiplying the imaginary part depends on size mod 4 */
+		imag = 1.0; real = 0.0; /** Make compiler happy */
 		switch (size % 4) {
 		case 1: imag = 1.0; real = 0.0; break;
 		case 2: imag = 0.0; real = -1.0; break;
@@ -214,13 +214,13 @@ int opprod( int argc, char *argv[] )
 		}
 	    }
 	}
-#endif /* HAVE_LONG_DOUBLE */
+#endif /** HAVE_LONG_DOUBLE */
     }
-#endif /* USE_STRICT_MPI */
+#endif /** USE_STRICT_MPI */
 
 #ifdef HAVE_LONG_DOUBLE
     { long double ldinbuf[3], ldoutbuf[3];
-    /* long double */
+    /** long double */
     ldinbuf[0] = (rank < maxsize && rank > 0) ? rank : 1;
     ldinbuf[1] = 0;
     ldinbuf[2] = (rank > 0);
@@ -246,12 +246,12 @@ int opprod( int argc, char *argv[] )
 	}
     }
     }
-#endif /* HAVE_LONG_DOUBLE */
+#endif /** HAVE_LONG_DOUBLE */
 
 #ifdef HAVE_LONG_LONG
     {
 	long long llinbuf[3], lloutbuf[3];
-    /* long long */
+    /** long long */
     llinbuf[0] = (rank < maxsize && rank > 0) ? rank : 1;
     llinbuf[1] = 0;
     llinbuf[2] = (rank > 0);
@@ -277,7 +277,7 @@ int opprod( int argc, char *argv[] )
 	}
     }
     }
-#endif /* HAVE_LONG_LONG */
+#endif /** HAVE_LONG_LONG */
 
     MTest_Finalize( errs );
     MPI_Finalize();

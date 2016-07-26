@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2007 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include "mpitest.h"
 #include <stdio.h>
@@ -10,7 +7,7 @@
 #include <string.h>
 
 namespace typefree {
-/*
+/**
  * This test may be used to confirm that memory is properly recovered from
  * freed datatypes.  To test this, build the MPI implementation with memory
  * leak checking.  As this program may be run with a single process, it should

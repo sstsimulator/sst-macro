@@ -1,12 +1,9 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 
 namespace exitst3 {
-/* 
+/** 
  * This is a special test to check that mpiexec handles the death of
  * some processes without an Abort or clean exit
  */
@@ -18,7 +15,7 @@ int exitst3( int argc, char *argv[] )
     MPI_Comm_size( MPI_COMM_WORLD, &size );
     MPI_Barrier( MPI_COMM_WORLD );
     if (rank == size-1) {
-	/* Cause some processes to exit */
+	/** Cause some processes to exit */
 	int *p =0 ;
 	*p = rank;
     }

@@ -4,6 +4,7 @@
 #include <sprockit/sim_parameters.h>
 #include <sstmac/backends/native/manager_fwd.h>
 #include <sstmac/main/sstmac.h>
+#include <sstmac/common/sstmac_config.h>
 #include <list>
 #include <iostream>
 

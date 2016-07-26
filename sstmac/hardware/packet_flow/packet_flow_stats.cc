@@ -56,7 +56,7 @@ congestion_spyplot::init_factory_params(sprockit::sim_parameters* params)
 {
   sprockit::sim_parameters* congestion_params = params->get_namespace("congestion_spyplot");
   congestion_spyplot_ = test_cast(stat_spyplot,
-        stat_collector_factory::get_optional_param("type", "spyplot_png", congestion_params));
+        stat_collector_factory::get_optional_param("type", "spyplot", congestion_params));
   if (!congestion_spyplot_){
     spkt_throw_printf(sprockit::value_error,
       "packet flow congestion stats must be spyplot or spyplot_png, %s given",
@@ -154,6 +154,7 @@ spyplot_and_delay_stats::collect_single_event(const packet_stats_st& st)
 void
 bytes_sent_collector::init_factory_params(sprockit::sim_parameters* params)
 {
+  packet_sent_stats::init_factory_params(params);
   sprockit::sim_parameters* byte_params = params->get_namespace("bytes_sent");
   bytes_sent_ = test_cast(stat_bytes_sent,
                  stat_collector_factory::get_optional_param("type", "bytes_sent", byte_params));

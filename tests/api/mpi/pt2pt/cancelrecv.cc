@@ -1,13 +1,10 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2006 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpitest.h"
-#include <string.h>   /* For memset */
+#include <string.h>   /** For memset */
 
 namespace cancelrecv {
 int cancelrecv( int argc, char *argv[] )
@@ -98,7 +95,7 @@ int cancelrecv( int argc, char *argv[] )
 	    }
 	}
 	else {
-	    /* If all requests are not complete, then neither r nor s 
+	    /** If all requests are not complete, then neither r nor s 
 	       may be changed */
 	    if ( (s[0].MPI_ERROR) != -3) {
 		errs++;

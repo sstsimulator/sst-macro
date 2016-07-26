@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,7 +8,7 @@
 #include "mpitest.h"
 
 namespace lots_of_types{
-/* 
+/** 
    The default behavior of the test routines should be to briefly indicate
    the cause of any errors - in this test, that means that verbose needs
    to be set. Verbose should turn on output that is independent of error
@@ -31,11 +28,11 @@ int lots_of_types(int argc, char *argv[])
 {
     int err, errs = 0;
 
-    /* Initialize MPI */
+    /** Initialize MPI */
     MTest_Init(&argc, &argv);
     parse_args(argc, argv);
 
-    /* To improve reporting of problems about operations, we
+    /** To improve reporting of problems about operations, we
        change the error handler to errors return */
     MPI_Comm_set_errhandler( MPI_COMM_WORLD, MPI_ERRORS_RETURN );
 
@@ -43,14 +40,14 @@ int lots_of_types(int argc, char *argv[])
     if (verbose && err) fprintf(stderr, "error in lots_of_types_test\n");
     errs += err;
 
-    /* print message and exit */
+    /** print message and exit */
     MTest_Finalize( errs );
 
     MPI_Finalize();
     return 0;
 }
 
-/* this test allocates 1024 indexed datatypes with 1024 distinct blocks
+/** this test allocates 1024 indexed datatypes with 1024 distinct blocks
  * each.  it's possible that a low memory machine will run out of memory
  * running this test; it appears to take ~25MB of memory at this time.
  * -- Rob Ross, 11/2/2005
@@ -69,7 +66,7 @@ int lots_of_types_test(void)
     MPI_Request request;
     MPI_Status status;
 
-    /* note: first element of struct has zero blklen and should be dropped */
+    /** note: first element of struct has zero blklen and should be dropped */
     int disps[NUM_BLOCKS];
     int blks[NUM_BLOCKS];
 
@@ -105,7 +102,7 @@ int lots_of_types_test(void)
 	int j;
 	int recvbuf[4] = { -1, -1, -1, -1 };
 
-	/* we will only receive 4 ints, so short buffer is ok */
+	/** we will only receive 4 ints, so short buffer is ok */
 	err = MPI_Irecv(recvbuf, 1, mytypes[i], 0, 0, MPI_COMM_SELF, &request);
 	if (err != MPI_SUCCESS) {
 	    errs++;
@@ -130,7 +127,7 @@ int lots_of_types_test(void)
 	    }
 	}
 	
-	/* verify data */
+	/** verify data */
 	for (j=0; j < 4; j++) {
 	    if (recvbuf[j] != sendbuf[j]) {
 		errs++;
@@ -141,7 +138,7 @@ int lots_of_types_test(void)
 	    }
 	}
 
-	/* verify count and elements */
+	/** verify count and elements */
 	err = MPI_Get_count(&status, mytypes[i], &count);
 	if (err != MPI_SUCCESS) {
 	    errs++;
@@ -184,7 +181,7 @@ int lots_of_types_test(void)
 
 int parse_args(int argc, char **argv)
 {
-    /*
+    /**
     int ret;
 
     while ((ret = getopt(argc, argv, "v")) >= 0)

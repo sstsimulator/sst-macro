@@ -1,15 +1,12 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2007 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <string.h>
 #include "mpitest.h"
 
 namespace commcreate1 {
-/* Check that Communicators can be created from various subsets of the
+/** Check that Communicators can be created from various subsets of the
    processes in the communicator.
 */
 
@@ -40,7 +37,7 @@ int commcreate1( int argc, char *argv[] )
     MPI_Comm_size( MPI_COMM_WORLD, &wsize );
     MPI_Comm_rank( MPI_COMM_WORLD, &wrank );
 
-    /* Create some groups */
+    /** Create some groups */
     MPI_Comm_group( MPI_COMM_WORLD, &wGroup );
 
     MTestPrintfMsg( 2, "Creating groups\n" );
@@ -70,7 +67,7 @@ int commcreate1( int argc, char *argv[] )
 
     MPI_Comm_dup( MPI_COMM_WORLD, &dupWorld );
     MPI_Comm_set_name( dupWorld, (char*)"Dup of world" );
-    /* First, use the groups to create communicators from world and a dup
+    /** First, use the groups to create communicators from world and a dup
        of world */
     errs += BuildComm( MPI_COMM_WORLD, ghigh, "ghigh" );
     errs += BuildComm( MPI_COMM_WORLD, godd, "godd" );
@@ -80,7 +77,7 @@ int commcreate1( int argc, char *argv[] )
     errs += BuildComm( dupWorld, geven, "geven" );
 
 #if MTEST_HAVE_MIN_MPI_VERSION(2,2)
-    /* check that we can create multiple communicators from a single collective
+    /** check that we can create multiple communicators from a single collective
      * call to MPI_Comm_create as long as the groups are all disjoint */
     errs += BuildComm( MPI_COMM_WORLD, (wrank % 2 ? godd : geven), "godd+geven" );
     errs += BuildComm( dupWorld,       (wrank % 2 ? godd : geven), "godd+geven" );

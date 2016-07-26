@@ -7,9 +7,10 @@ namespace hw {
 double
 param_expander::network_bandwidth_multiplier(sprockit::sim_parameters *params) const
 {
-  if (params->has_param("topology_redundant")){
+  sprockit::sim_parameters* top_params = params->get_optional_namespace("topology");
+  if (top_params->has_param("redundant")){
     std::vector<int> red;
-    params->get_vector_param("topology_redundant", red);
+    top_params->get_vector_param("redundant", red);
     int sum = 0;
     for (int i=0; i < red.size(); ++i){
       sum += red[i];
@@ -23,9 +24,10 @@ param_expander::network_bandwidth_multiplier(sprockit::sim_parameters *params) c
 double
 param_expander::switch_bandwidth_multiplier(sprockit::sim_parameters *params) const
 {
-  if (params->has_param("switch_geometry")){
+  sprockit::sim_parameters* sw_params = params->get_optional_namespace("switch");
+  if (sw_params->has_param("geometry")){
     std::vector<int> geom;
-    params->get_vector_param("switch_geometry", geom);
+    sw_params->get_vector_param("geometry", geom);
     int prod = 1;
     for (int i=0; i < geom.size(); ++i){
       prod *= geom[i];
@@ -39,9 +41,10 @@ param_expander::switch_bandwidth_multiplier(sprockit::sim_parameters *params) co
 int
 param_expander::switch_buffer_multiplier(sprockit::sim_parameters *params) const
 {
-  if (params->has_param("topology_redundant")){
+  sprockit::sim_parameters* top_params = params->get_optional_namespace("topology");
+  if (top_params->has_param("redundant")){
     std::vector<int> red;
-    params->get_vector_param("topology_redundant", red);
+    top_params->get_vector_param("redundant", red);
     int sum = 0;
     for (int i=0; i < red.size(); ++i){
       sum += red[i];

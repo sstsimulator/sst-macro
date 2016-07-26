@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
-/*
- *  (C) 2012 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,14 +9,14 @@
 
 namespace mprobe {
 
-/* This is a temporary #ifdef to control whether we test this functionality.  A
+/** This is a temporary #ifdef to control whether we test this functionality.  A
  * configure-test or similar would be better.  Eventually the MPI-3 standard
  * will be released and this can be gated on a MPI_VERSION check */
 #if !defined(USE_STRICT_MPI) && defined(MPICH2)
 #define TEST_MPROBE_ROUTINES 1
 #endif
 
-/* assert-like macro that bumps the err count and emits a message */
+/** assert-like macro that bumps the err count and emits a message */
 #define check(x_)                                                                 \
     do {                                                                          \
         if (!(x_)) {                                                              \
@@ -53,13 +50,13 @@ int mprobe(int argc, char **argv)
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
-    /* all processes besides ranks 0 & 1 aren't used by this test */
+    /** all processes besides ranks 0 & 1 aren't used by this test */
     if (rank >= 2) {
         goto epilogue;
     }
 
 #ifdef TEST_MPROBE_ROUTINES
-    /* test 0: simple send & mprobe+mrecv */
+    /** test 0: simple send & mprobe+mrecv */
     if (rank == 0) {
         sendbuf[0] = 0xdeadbeef;
         sendbuf[1] = 0xfeedface;
@@ -68,7 +65,7 @@ int mprobe(int argc, char **argv)
     else {
         memset(&s1, 0xab, sizeof(MPI_Status));
         memset(&s2, 0xab, sizeof(MPI_Status));
-        /* the error field should remain unmodified */
+        /** the error field should remain unmodified */
         s1.MPI_ERROR = MPI_ERR_DIMS;
         s2.MPI_ERROR = MPI_ERR_TOPOLOGY;
 
@@ -94,7 +91,7 @@ int mprobe(int argc, char **argv)
         check(msg == MPIX_MESSAGE_NULL);
     }
 
-    /* test 1: simple send & mprobe+imrecv */
+    /** test 1: simple send & mprobe+imrecv */
     if (rank == 0) {
         sendbuf[0] = 0xdeadbeef;
         sendbuf[1] = 0xfeedface;
@@ -103,7 +100,7 @@ int mprobe(int argc, char **argv)
     else {
         memset(&s1, 0xab, sizeof(MPI_Status));
         memset(&s2, 0xab, sizeof(MPI_Status));
-        /* the error field should remain unmodified */
+        /** the error field should remain unmodified */
         s1.MPI_ERROR = MPI_ERR_DIMS;
         s2.MPI_ERROR = MPI_ERR_TOPOLOGY;
 
@@ -132,7 +129,7 @@ int mprobe(int argc, char **argv)
         check(msg == MPIX_MESSAGE_NULL);
     }
 
-    /* test 2: simple send & improbe+mrecv */
+    /** test 2: simple send & improbe+mrecv */
     if (rank == 0) {
         sendbuf[0] = 0xdeadbeef;
         sendbuf[1] = 0xfeedface;
@@ -141,7 +138,7 @@ int mprobe(int argc, char **argv)
     else {
         memset(&s1, 0xab, sizeof(MPI_Status));
         memset(&s2, 0xab, sizeof(MPI_Status));
-        /* the error field should remain unmodified */
+        /** the error field should remain unmodified */
         s1.MPI_ERROR = MPI_ERR_DIMS;
         s2.MPI_ERROR = MPI_ERR_TOPOLOGY;
 
@@ -170,7 +167,7 @@ int mprobe(int argc, char **argv)
         check(msg == MPIX_MESSAGE_NULL);
     }
 
-    /* test 3: simple send & improbe+imrecv */
+    /** test 3: simple send & improbe+imrecv */
     if (rank == 0) {
         sendbuf[0] = 0xdeadbeef;
         sendbuf[1] = 0xfeedface;
@@ -179,7 +176,7 @@ int mprobe(int argc, char **argv)
     else {
         memset(&s1, 0xab, sizeof(MPI_Status));
         memset(&s2, 0xab, sizeof(MPI_Status));
-        /* the error field should remain unmodified */
+        /** the error field should remain unmodified */
         s1.MPI_ERROR = MPI_ERR_DIMS;
         s2.MPI_ERROR = MPI_ERR_TOPOLOGY;
 
@@ -209,11 +206,11 @@ int mprobe(int argc, char **argv)
         check(msg == MPIX_MESSAGE_NULL);
     }
 
-    /* test 4: mprobe+mrecv with MPI_PROC_NULL */
+    /** test 4: mprobe+mrecv with MPI_PROC_NULL */
     {
         memset(&s1, 0xab, sizeof(MPI_Status));
         memset(&s2, 0xab, sizeof(MPI_Status));
-        /* the error field should remain unmodified */
+        /** the error field should remain unmodified */
         s1.MPI_ERROR = MPI_ERR_DIMS;
         s2.MPI_ERROR = MPI_ERR_TOPOLOGY;
 
@@ -231,10 +228,10 @@ int mprobe(int argc, char **argv)
         recvbuf[0] = 0x01234567;
         recvbuf[1] = 0x89abcdef;
         MPIX_Mrecv(recvbuf, count, MPI_INT, &msg, &s2);
-        /* recvbuf should remain unmodified */
+        /** recvbuf should remain unmodified */
         check(recvbuf[0] == 0x01234567);
         check(recvbuf[1] == 0x89abcdef);
-        /* should get back "proc null status" */
+        /** should get back "proc null status" */
         check(s2.MPI_SOURCE == MPI_PROC_NULL);
         check(s2.MPI_TAG == MPI_ANY_TAG);
         check(s2.MPI_ERROR == MPI_ERR_TOPOLOGY);
@@ -244,11 +241,11 @@ int mprobe(int argc, char **argv)
         check(count == 0);
     }
 
-    /* test 5: mprobe+imrecv with MPI_PROC_NULL */
+    /** test 5: mprobe+imrecv with MPI_PROC_NULL */
     {
         memset(&s1, 0xab, sizeof(MPI_Status));
         memset(&s2, 0xab, sizeof(MPI_Status));
-        /* the error field should remain unmodified */
+        /** the error field should remain unmodified */
         s1.MPI_ERROR = MPI_ERR_DIMS;
         s2.MPI_ERROR = MPI_ERR_TOPOLOGY;
 
@@ -268,12 +265,12 @@ int mprobe(int argc, char **argv)
         MPIX_Imrecv(recvbuf, count, MPI_INT, &msg, &rreq);
         check(rreq != MPI_REQUEST_NULL);
         completed = 0;
-        MPI_Test(&rreq, &completed, &s2); /* single test should always succeed */
+        MPI_Test(&rreq, &completed, &s2); /** single test should always succeed */
         check(completed);
-        /* recvbuf should remain unmodified */
+        /** recvbuf should remain unmodified */
         check(recvbuf[0] == 0x01234567);
         check(recvbuf[1] == 0x89abcdef);
-        /* should get back "proc null status" */
+        /** should get back "proc null status" */
         check(s2.MPI_SOURCE == MPI_PROC_NULL);
         check(s2.MPI_TAG == MPI_ANY_TAG);
         check(s2.MPI_ERROR == MPI_ERR_TOPOLOGY);
@@ -283,11 +280,11 @@ int mprobe(int argc, char **argv)
         check(count == 0);
     }
 
-    /* test 6: improbe+mrecv with MPI_PROC_NULL */
+    /** test 6: improbe+mrecv with MPI_PROC_NULL */
     {
         memset(&s1, 0xab, sizeof(MPI_Status));
         memset(&s2, 0xab, sizeof(MPI_Status));
-        /* the error field should remain unmodified */
+        /** the error field should remain unmodified */
         s1.MPI_ERROR = MPI_ERR_DIMS;
         s2.MPI_ERROR = MPI_ERR_TOPOLOGY;
 
@@ -306,10 +303,10 @@ int mprobe(int argc, char **argv)
         recvbuf[0] = 0x01234567;
         recvbuf[1] = 0x89abcdef;
         MPIX_Mrecv(recvbuf, count, MPI_INT, &msg, &s2);
-        /* recvbuf should remain unmodified */
+        /** recvbuf should remain unmodified */
         check(recvbuf[0] == 0x01234567);
         check(recvbuf[1] == 0x89abcdef);
-        /* should get back "proc null status" */
+        /** should get back "proc null status" */
         check(s2.MPI_SOURCE == MPI_PROC_NULL);
         check(s2.MPI_TAG == MPI_ANY_TAG);
         check(s2.MPI_ERROR == MPI_ERR_TOPOLOGY);
@@ -319,11 +316,11 @@ int mprobe(int argc, char **argv)
         check(count == 0);
     }
 
-    /* test 7: improbe+imrecv */
+    /** test 7: improbe+imrecv */
     {
         memset(&s1, 0xab, sizeof(MPI_Status));
         memset(&s2, 0xab, sizeof(MPI_Status));
-        /* the error field should remain unmodified */
+        /** the error field should remain unmodified */
         s1.MPI_ERROR = MPI_ERR_DIMS;
         s2.MPI_ERROR = MPI_ERR_TOPOLOGY;
 
@@ -342,12 +339,12 @@ int mprobe(int argc, char **argv)
         MPIX_Imrecv(recvbuf, count, MPI_INT, &msg, &rreq);
         check(rreq != MPI_REQUEST_NULL);
         completed = 0;
-        MPI_Test(&rreq, &completed, &s2); /* single test should always succeed */
+        MPI_Test(&rreq, &completed, &s2); /** single test should always succeed */
         check(completed);
-        /* recvbuf should remain unmodified */
+        /** recvbuf should remain unmodified */
         check(recvbuf[0] == 0x01234567);
         check(recvbuf[1] == 0x89abcdef);
-        /* should get back "proc null status" */
+        /** should get back "proc null status" */
         check(s2.MPI_SOURCE == MPI_PROC_NULL);
         check(s2.MPI_TAG == MPI_ANY_TAG);
         check(s2.MPI_ERROR == MPI_ERR_TOPOLOGY);
@@ -357,12 +354,12 @@ int mprobe(int argc, char **argv)
         check(count == 0);
     }
 
-    /* TODO MPI_ANY_SOURCE and MPI_ANY_TAG should be tested as well */
-    /* TODO a full range of message sizes should be tested too */
-    /* TODO threaded tests are also needed, but they should go in a separate
+    /** TODO MPI_ANY_SOURCE and MPI_ANY_TAG should be tested as well */
+    /** TODO a full range of message sizes should be tested too */
+    /** TODO threaded tests are also needed, but they should go in a separate
      * program */
 
-    /* simple test to ensure that c2f/f2c routines are present (initially missed
+    /** simple test to ensure that c2f/f2c routines are present (initially missed
      * in MPICH2 impl) */
     {
         MPI_Fint f_handle = 0xdeadbeef;
@@ -371,7 +368,7 @@ int mprobe(int argc, char **argv)
         check(f_handle != 0xdeadbeef);
         check(msg == MPIX_MESSAGE_NULL);
 
-        /* PMPIX_ versions should also exists */
+        /** PMPIX_ versions should also exists */
         f_handle = 0xdeadbeef;
         f_handle = PMPIX_Message_c2f(MPIX_MESSAGE_NULL);
         msg = PMPIX_Message_f2c(f_handle);
@@ -379,7 +376,7 @@ int mprobe(int argc, char **argv)
         check(msg == MPIX_MESSAGE_NULL);
     }
 
-#endif /* TEST_MPROBE_ROUTINES */
+#endif /** TEST_MPROBE_ROUTINES */
 
 epilogue:
     MPI_Reduce((rank == 0 ? MPI_IN_PLACE : &errs), &errs, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);

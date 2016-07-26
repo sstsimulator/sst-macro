@@ -1,9 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include "mpitest.h"
@@ -18,10 +14,10 @@ int duptest( int argc, char **argv )
 
     MTest_Init( &argc, &argv );
 
-    /* Can we run comm dup at all? */
+    /** Can we run comm dup at all? */
     MPI_Comm_dup( MPI_COMM_WORLD, &newcomm );
 
-    /* Check basic properties */
+    /** Check basic properties */
     MPI_Comm_size( MPI_COMM_WORLD, &wsize );
     MPI_Comm_rank( MPI_COMM_WORLD, &wrank );
     MPI_Comm_size( newcomm, &size );
@@ -33,7 +29,7 @@ int duptest( int argc, char **argv )
 	fflush( stderr );
     }
 
-    /* Can we communicate with this new communicator? */
+    /** Can we communicate with this new communicator? */
     dest = MPI_PROC_NULL;
     if (rank == 0) {
 	dest = size - 1;

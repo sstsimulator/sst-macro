@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <stdio.h>
 #include <sstmac/replacements/mpi.h>
 #include "mpitest.h"
@@ -21,14 +18,14 @@ int zeroblks( int argc, char *argv[] )
 
     MTest_Init( &argc, &argv );
 
-    /* Initialize data in the buffers */
+    /** Initialize data in the buffers */
     for (i=0; i<60; i++) {
 	send_buffer[i] = i;
 	recv_buffer[i] = -1;
 	pack_buffer[i] = -2;
     }
 
-    /* Create an indexed type with an empty first block */
+    /** Create an indexed type with an empty first block */
     dis[0] = 0;
     dis[1] = 20;
 
@@ -46,7 +43,7 @@ int zeroblks( int argc, char *argv[] )
     MPI_Unpack( pack_buffer, pack_size, &position, recv_buffer, 1, type, 
 		MPI_COMM_WORLD );
 
-    /* Check that the last 40 entries of the recv_buffer have the corresponding
+    /** Check that the last 40 entries of the recv_buffer have the corresponding
        elements from the send buffer */
     for (i=0; i<20; i++) {
 	if (recv_buffer[i] != -1) {

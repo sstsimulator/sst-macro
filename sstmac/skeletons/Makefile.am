@@ -21,19 +21,18 @@ libsstmac_skeletons_la_LDFLAGS =
 libsstmac_skeletons_la_SOURCES = \
   traffic_matrix/main.cc \
   test/app_hello_world.cc \
+  test/mpi_coverage_test.cc \
   test/mpi_ping_all.cc \
-  test/global_test.cc 
-
-nobase_library_include_HEADERS = \
-  sumi_undumpi/parsedumpi.h \
-  sumi_undumpi/parsedumpi_callbacks.h 
-
-libsstmac_skeletons_la_SOURCES += \
+  test/global_test.cc \
   sumi_undumpi/parsedumpi.cc \
   sumi_undumpi/parsedumpi_callbacks.cc \
   test/sstmac_mpi_test_all.cc \
   test/mpi_print_nodes.cc \
   test/mpi_topology.cc 
+
+nobase_library_include_HEADERS = \
+  sumi_undumpi/parsedumpi.h \
+  sumi_undumpi/parsedumpi_callbacks.h 
 
 
 

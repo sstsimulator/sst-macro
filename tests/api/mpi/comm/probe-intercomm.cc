@@ -1,9 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,7 +7,7 @@
 #include "mpitest.h"
 
 namespace probe_intercomm{
-/*
+/**
 static char MTEST_Descrip[] = "Test MPI_Probe() for an intercomm";
 */
 #define MAX_DATA_LEN 100
@@ -40,7 +36,7 @@ int probe_intercomm( int argc, char *argv[] )
 
         MPI_Comm_rank(intercomm, &rank);
 
-        /* 0 ranks on each side communicate, everyone else does nothing */
+        /** 0 ranks on each side communicate, everyone else does nothing */
         if(rank == 0) {
             if (isLeft) {
                 recvlen = -1;

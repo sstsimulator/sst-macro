@@ -1,8 +1,3 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
-/*
- *  (C) 2012 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,14 +7,14 @@
 
 namespace comm_idup {
 
-/* This is a temporary #ifdef to control whether we test this functionality.  A
+/** This is a temporary #ifdef to control whether we test this functionality.  A
  * configure-test or similar would be better.  Eventually the MPI-3 standard
  * will be released and this can be gated on a MPI_VERSION check */
 #if !defined(USE_STRICT_MPI) && defined(MPICH2)
 #define TEST_IDUP 1
 #endif
 
-/* assert-like macro that bumps the err count and emits a message */
+/** assert-like macro that bumps the err count and emits a message */
 #define check(x_)                                                                 \
     do {                                                                          \
         if (!(x_)) {                                                              \
@@ -51,7 +46,7 @@ int comm_idup(int argc, char **argv)
 
 #ifdef TEST_IDUP
 
-    /* test plan: make rank 0 wait in a blocking recv until all other processes
+    /** test plan: make rank 0 wait in a blocking recv until all other processes
      * have posted their MPIX_Comm_idup ops, then post last.  Should ensure that
      * idup doesn't block on the non-zero ranks, otherwise we'll get a deadlock.
      */
@@ -73,7 +68,7 @@ int comm_idup(int argc, char **argv)
         MPI_Wait(&rreq, MPI_STATUS_IGNORE);
     }
 
-    /* do some communication to make sure that newcomm works */
+    /** do some communication to make sure that newcomm works */
     buf[0] = rank;
     buf[1] = 0xfeedface;
     MPI_Allreduce(&buf[0], &buf[1], 1, MPI_INT, MPI_SUM, newcomm);
@@ -81,7 +76,7 @@ int comm_idup(int argc, char **argv)
 
     MPI_Comm_free(&newcomm);
 
-    /* now construct an intercomm and make sure we can dup that too */
+    /** now construct an intercomm and make sure we can dup that too */
     MPI_Comm_split(MPI_COMM_WORLD, rank % 2, rank, &localcomm);
     MPI_Intercomm_create(localcomm, 0, MPI_COMM_WORLD, (rank == 0 ? 1 : 0), 1234, &ic);
     MPI_Comm_free(&localcomm);
@@ -90,7 +85,7 @@ int comm_idup(int argc, char **argv)
     MPI_Comm_size(ic, &lsize);
     MPI_Comm_remote_size(ic, &rsize);
 
-    /* Similar to above pattern, but all non-local-rank-0 processes send to
+    /** Similar to above pattern, but all non-local-rank-0 processes send to
      * remote rank 0.  Both sides participate in this way. */
     if (lrank == 0) {
         for (i = 1; i < rsize; ++i) {
@@ -109,7 +104,7 @@ int comm_idup(int argc, char **argv)
         MPI_Wait(&rreq, MPI_STATUS_IGNORE);
     }
 
-    /* do some communication to make sure that newcomm works */
+    /** do some communication to make sure that newcomm works */
     buf[0] = lrank;
     buf[1] = 0xfeedface;
     MPI_Allreduce(&buf[0], &buf[1], 1, MPI_INT, MPI_SUM, newcomm);
@@ -118,7 +113,7 @@ int comm_idup(int argc, char **argv)
     MPI_Comm_free(&newcomm);
     MPI_Comm_free(&ic);
 
-#endif /* TEST_IDUP */
+#endif /** TEST_IDUP */
 
     MPI_Reduce((rank == 0 ? MPI_IN_PLACE : &errs), &errs, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
     if (rank == 0) {

@@ -1,9 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2007 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,7 +8,7 @@
 
 
 namespace sendall {
-/* 
+/** 
  * This test makes sure that each process can send to each other process.
  * If there are bugs in the handling of request completions or in 
  * queue operations, then this test may fail on them (it did with
@@ -75,7 +71,7 @@ int sendall ( int argc, char *argv[] )
 	}
     }
 
-  /* Simple completion is all that we normally ask of this program */
+  /** Simple completion is all that we normally ask of this program */
 
   MTest_Finalize( 0 );
 

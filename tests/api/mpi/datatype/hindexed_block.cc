@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,11 +15,11 @@ namespace hindexed_block {
 
 static int verbose = 0;
 
-/* tests */
+/** tests */
 int hindexed_block_contig_test(void);
 int hindexed_block_vector_test(void);
 
-/* helper functions */
+/** helper functions */
 int parse_args(int argc, char **argv);
 static int pack_and_unpack(char *typebuf, int count, MPI_Datatype datatype, int typebufsz);
 
@@ -31,16 +28,16 @@ int hindexed_block(int argc, char **argv)
     int err, errs = 0;
     int rank;
 
-    MPI_Init(&argc, &argv);     /* MPI-1.2 doesn't allow for MPI_Init(0,0) */
+    MPI_Init(&argc, &argv);     /** MPI-1.2 doesn't allow for MPI_Init(0,0) */
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #if defined(TEST_HINDEXED_BLOCK)
     parse_args(argc, argv);
 
-    /* To improve reporting of problems about operations, we
+    /** To improve reporting of problems about operations, we
      * change the error handler to errors return */
     MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
 
-    /* perform some tests */
+    /** perform some tests */
     err = hindexed_block_contig_test();
     if (err && verbose)
         fprintf(stderr, "%d errors in hindexed_block test.\n", err);
@@ -50,9 +47,9 @@ int hindexed_block(int argc, char **argv)
     if (err && verbose)
         fprintf(stderr, "%d errors in hindexed_block vector test.\n", err);
     errs += err;
-#endif /*defined(TEST_HINDEXED_BLOCK)*/
+#endif /**defined(TEST_HINDEXED_BLOCK)*/
 
-    /* print message and exit */
+    /** print message and exit */
     if (rank == 0) {
         if (errs) {
             fprintf(stderr, "Found %d errors\n", errs);
@@ -67,7 +64,7 @@ int hindexed_block(int argc, char **argv)
 
 #if defined(TEST_HINDEXED_BLOCK)
 
-/* hindexed_block_contig_test()
+/** hindexed_block_contig_test()
  *
  * Tests behavior with a hindexed_block that can be converted to a
  * contig easily.  This is specifically for coverage.
@@ -144,7 +141,7 @@ int hindexed_block_contig_test(void)
             goodval = 7;
             break;
         default:
-            goodval = 0;        /* pack_and_unpack() zeros before unpack */
+            goodval = 0;        /** pack_and_unpack() zeros before unpack */
             break;
         }
         if (buf[i] != goodval) {
@@ -159,7 +156,7 @@ int hindexed_block_contig_test(void)
     return errs;
 }
 
-/* hindexed_block_vector_test()
+/** hindexed_block_vector_test()
  *
  * Tests behavior with a hindexed_block of some vector types;
  * this shouldn't be easily convertable into anything else.
@@ -194,7 +191,7 @@ int hindexed_block_vector_test(void)
     int size, int_size;
     MPI_Aint extent;
 
-    /* create a vector type of 2 ints, skipping one in between */
+    /** create a vector type of 2 ints, skipping one in between */
     err = MPI_Type_vector(2, 1, 2, MPI_INT, &vectype);
     if (err != MPI_SUCCESS) {
         if (verbose) {
@@ -261,7 +258,7 @@ int hindexed_block_vector_test(void)
 }
 
 
-/* pack_and_unpack()
+/** pack_and_unpack()
  *
  * Perform packing and unpacking of a buffer for the purposes of checking
  * to see if we are processing a type correctly.  Zeros the buffer between
@@ -345,6 +342,6 @@ int parse_args(int argc, char **argv)
         verbose = 1;
     return 0;
 }
-#endif /*defined(TEST_HINDEXED_BLOCK)*/
+#endif /**defined(TEST_HINDEXED_BLOCK)*/
 
 }

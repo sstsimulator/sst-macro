@@ -21,7 +21,7 @@ AC_ARG_ENABLE([mpi-driver],
   [with_mpi_driver=no])
 
 AC_MSG_CHECKING([Checking for MPI scan driver])
-if test "$Xwith_mpi_driver" = "Xyes"; then
+if test "X$with_mpi_driver" = "Xyes"; then
 AC_MSG_RESULT([yes])
 AC_DEFINE_UNQUOTED([MPI_DRIVER], 1, "MPI scan driver active")
 else

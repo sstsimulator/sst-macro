@@ -6,7 +6,7 @@
 
 namespace redscat3 {
 
-/* Limit the number of error reports */
+/** Limit the number of error reports */
 #define MAX_ERRORS 10
 
 int redscat3( int argc, char **argv )
@@ -56,7 +56,7 @@ int redscat3( int argc, char **argv )
     MPI_Reduce_scatter( sendbuf, recvbuf, recvcounts, MPI_INT, MPI_SUM, comm );
 
     sumval = size * rank + ((size - 1) * size)/2;
-    /* recvbuf should be size * (rank + i) */
+    /** recvbuf should be size * (rank + i) */
     for (i=0; i<mycount; i++) {
 	if (recvbuf[i] != sumval) {
 	    err++;
@@ -72,7 +72,7 @@ int redscat3( int argc, char **argv )
 			comm );
 
     sumval = size * rank + ((size - 1) * size)/2;
-    /* recv'ed values for my process should be size * (rank + i) */
+    /** recv'ed values for my process should be size * (rank + i) */
     for (i=0; i<mycount; i++) {
 	if (sendbuf[i] != sumval) {
 	    err++;

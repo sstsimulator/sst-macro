@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,7 +7,7 @@
 #include "mpitest.h"
 
 namespace darray_pack {
-/* 
+/** 
    The default behavior of the test routines should be to briefly indicate
    the cause of any errors - in this test, that means that verbose needs
    to be set. Verbose should turn on output that is independent of error
@@ -18,11 +15,11 @@ namespace darray_pack {
 */
 static int verbose = 1;
 
-/* tests */
+/** tests */
 int darray_2d_c_test1(void);
 int darray_4d_c_test1(void);
 
-/* helper functions */
+/** helper functions */
 static int parse_args(int argc, char **argv);
 static int pack_and_unpack(char *typebuf,
 			   int count,
@@ -36,11 +33,11 @@ int darray_pack(int argc, char **argv)
     MTest_Init( &argc, &argv );
     parse_args(argc, argv);
 
-    /* To improve reporting of problems about operations, we
+    /** To improve reporting of problems about operations, we
        change the error handler to errors return */
     MPI_Comm_set_errhandler( MPI_COMM_WORLD, MPI_ERRORS_RETURN );
 
-    /* perform some tests */
+    /** perform some tests */
     err = darray_2d_c_test1();
     if (err && verbose) fprintf(stderr,
 				"%d errors in 2d darray c test 1.\n", err);
@@ -51,8 +48,8 @@ int darray_pack(int argc, char **argv)
 				"%d errors in 4d darray c test 1.\n", err);
     errs += err;
 
-    /* print message and exit */
-    /* Allow the use of more than one process - some MPI implementations
+    /** print message and exit */
+    /** Allow the use of more than one process - some MPI implementations
        (including IBM's) check that the number of processes given to 
        Type_create_darray is no larger than MPI_COMM_WORLD */
 
@@ -61,7 +58,7 @@ int darray_pack(int argc, char **argv)
     return 0;
 }
 
-/* darray_2d_test1()
+/** darray_2d_test1()
  *
  * Performs a sequence of tests building darrays with single-element
  * blocks, running through all the various positions that the element might
@@ -72,7 +69,7 @@ int darray_pack(int argc, char **argv)
 int darray_2d_c_test1(void)
 {
     MPI_Datatype darray;
-    int array[9]; /* initialized below */
+    int array[9]; /** initialized below */
     int array_size[2] = {3, 3};
     int array_distrib[2] = {MPI_DISTRIBUTE_BLOCK, MPI_DISTRIBUTE_BLOCK};
     int array_dargs[2] = {MPI_DISTRIBUTE_DFLT_DARG, MPI_DISTRIBUTE_DFLT_DARG};
@@ -80,17 +77,17 @@ int darray_2d_c_test1(void)
 
     int i, rank, err, errs = 0, sizeoftype;
 
-    /* pretend we are each rank, one at a time */
+    /** pretend we are each rank, one at a time */
     for (rank=0; rank < 9; rank++) {
-	/* set up buffer */
+	/** set up buffer */
 	for (i=0; i < 9; i++) {
 	    array[i] = i;
 	}
 
-	/* set up type */
-	err = MPI_Type_create_darray(9, /* size */
+	/** set up type */
+	err = MPI_Type_create_darray(9, /** size */
 				     rank,
-				     2, /* dims */
+				     2, /** dims */
 				     array_size,
 				     array_distrib,
 				     array_dargs,
@@ -140,7 +137,7 @@ int darray_2d_c_test1(void)
     return errs;
 }
 
-/* darray_4d_c_test1()
+/** darray_4d_c_test1()
  *
  * Returns the number of errors encountered.
  */
@@ -162,15 +159,15 @@ int darray_4d_c_test1(void)
     int i, rank, err, errs = 0, sizeoftype;
 
     for (rank=0; rank < 18; rank++) {
-	/* set up array */
+	/** set up array */
 	for (i=0; i < 72; i++) {
 	    array[i] = i;
 	}
 
-	/* set up type */
-	err = MPI_Type_create_darray(18, /* size */
+	/** set up type */
+	err = MPI_Type_create_darray(18, /** size */
 				     rank,
-				     4, /* dims */
+				     4, /** dims */
 				     array_size,
 				     array_distrib,
 				     array_dargs,
@@ -191,7 +188,7 @@ int darray_4d_c_test1(void)
 
 	MPI_Type_commit(&darray);
 
-	/* verify the size of the type */
+	/** verify the size of the type */
 	MPI_Type_size(darray, &sizeoftype);
 	if (sizeoftype != 4*sizeof(int)) {
 	    errs++;
@@ -200,7 +197,7 @@ int darray_4d_c_test1(void)
 	    return errs;
 	}
 
-	/* pack and unpack the type, zero'ing out all other values */
+	/** pack and unpack the type, zero'ing out all other values */
 	err = pack_and_unpack((char *) array, 1, darray, 72*sizeof(int));
 
 	for (i=0; i < 4*rank; i++) {
@@ -231,9 +228,9 @@ int darray_4d_c_test1(void)
     return errs;
 }
 
-/******************************************************************/
+/*******************************************************************/
 
-/* pack_and_unpack()
+/** pack_and_unpack()
  *
  * Perform packing and unpacking of a buffer for the purposes of checking
  * to see if we are processing a type correctly.  Zeros the buffer between
@@ -339,7 +336,7 @@ static int pack_and_unpack(char *typebuf,
 
 static int parse_args(int argc, char **argv)
 {
-    /*
+    /**
     int ret;
 
     while ((ret = getopt(argc, argv, "v")) >= 0)

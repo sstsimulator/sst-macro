@@ -1,16 +1,13 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 
 namespace finalized {
-/* FIXME: This test program assumes that MPI_Error_string will work even
+/** FIXME: This test program assumes that MPI_Error_string will work even
    if MPI is not initialized.  That is not guaranteed.  */
 
-/* Normally, when checking for error returns from MPI calls, you must ensure 
+/** Normally, when checking for error returns from MPI calls, you must ensure 
    that the error handler on the relevant object (communicator, file, or
    window) has been set to MPI_ERRORS_RETURN.  The tests in this 
    program are a special case, as either a failure or an abort will

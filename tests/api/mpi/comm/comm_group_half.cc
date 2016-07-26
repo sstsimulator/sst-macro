@@ -1,12 +1,7 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
 
 #include <stdio.h>
 #include <sstmac/replacements/mpi.h>
-/* USE_STRICT_MPI may be defined in mpitestconf.h */
+/** USE_STRICT_MPI may be defined in mpitestconf.h */
 #include "mpitestconf.h"
 namespace comm_group_half {
 
@@ -33,7 +28,7 @@ int comm_group_half(int argc, char **argv)
         MPI_Barrier(comm);
         MPI_Comm_free(&comm);
     }
-#endif /* USE_STRICT_MPI */
+#endif /** USE_STRICT_MPI */
 
     MPI_Group_free(&half_group);
     MPI_Group_free(&full_group);

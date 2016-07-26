@@ -5,7 +5,7 @@
 #include <sstmac/replacements/mpi.h>
 
 namespace bcastzerotype {
-/* test broadcast behavior with non-zero counts but zero-sized types */
+/** test broadcast behavior with non-zero counts but zero-sized types */
 
 int bcastzerotype(int argc, char *argv[])
 {
@@ -18,7 +18,7 @@ int bcastzerotype(int argc, char *argv[])
     MPI_Comm_rank(MPI_COMM_WORLD, &wrank);
     MPI_Comm_size(MPI_COMM_WORLD, &wsize);
 
-    /* a random non-zero sized buffer */
+    /** a random non-zero sized buffer */
 #define NELEM (10)
     buf =(char*) malloc(NELEM*sizeof(int));
     assert(buf);
@@ -27,16 +27,16 @@ int bcastzerotype(int argc, char *argv[])
         buf[i] = wrank * NELEM + i;
     }
 
-    /* create a zero-size type */
+    /** create a zero-size type */
     MPI_Type_contiguous(0, MPI_INT, &type);
     MPI_Type_commit(&type);
     MPI_Type_size(type, &type_size);
     assert(type_size == 0);
 
-    /* do the broadcast, which will break on some MPI implementations */
+    /** do the broadcast, which will break on some MPI implementations */
     MPI_Bcast(buf, NELEM, type, 0, MPI_COMM_WORLD);
 
-    /* check that the buffer remains unmolested */
+    /** check that the buffer remains unmolested */
     for (i = 0; i < NELEM; i++) {
         assert(buf[i] == wrank * NELEM + i);
     }

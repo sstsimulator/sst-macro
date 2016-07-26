@@ -6,11 +6,11 @@
 #include "mpitest.h"
 
 namespace opmaxloc {
-/*
+/**
 static char MTEST_Descrip[] = "Test MPI_MAXLOC operations on datatypes dupported by MPICH2";
 */
 
-/*
+/**
  * This test looks at the handling of char and types that  are not required 
  * integers (e.g., long long).  MPICH2 allows
  * these as well.  A strict MPI test should not include this test.
@@ -31,7 +31,7 @@ int opmaxloc( int argc, char *argv[] )
     MPI_Comm_rank( comm, &rank );
     MPI_Comm_size( comm, &size );
 
-    /* 2 int */
+    /** 2 int */
     {
 	struct twoint { int val; int loc; } cinbuf[3], coutbuf[3];
  	
@@ -69,7 +69,7 @@ int opmaxloc( int argc, char *argv[] )
 	}
     }
 
-    /* float int */
+    /** float int */
     {
 	struct floatint { float val; int loc; } cinbuf[3], coutbuf[3];
  	
@@ -107,7 +107,7 @@ int opmaxloc( int argc, char *argv[] )
 	}
     }
     
-    /* long int */
+    /** long int */
     {
 	struct longint { long val; int loc; } cinbuf[3], coutbuf[3];
  	
@@ -145,7 +145,7 @@ int opmaxloc( int argc, char *argv[] )
 	}
     }
 
-    /* short int */
+    /** short int */
     {
 	struct shortint { short val; int loc; } cinbuf[3], coutbuf[3];
  	
@@ -187,7 +187,7 @@ int opmaxloc( int argc, char *argv[] )
 	}
     }
     
-    /* double int */
+    /** double int */
     {
 	struct doubleint { double val; int loc; } cinbuf[3], coutbuf[3];
  	
@@ -226,11 +226,11 @@ int opmaxloc( int argc, char *argv[] )
     }
     
 #ifdef HAVE_LONG_DOUBLE
-    /* long double int */
+    /** long double int */
     {
 	struct longdoubleint { long double val; int loc; } cinbuf[3], coutbuf[3];
 
-        /* avoid valgrind warnings about padding bytes in the long double */
+        /** avoid valgrind warnings about padding bytes in the long double */
         memset(&cinbuf[0], 0, sizeof(cinbuf));
         memset(&coutbuf[0], 0, sizeof(coutbuf));
 

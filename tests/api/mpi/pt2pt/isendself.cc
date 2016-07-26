@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <stdio.h>
 #include <sstmac/replacements/mpi.h>
 #include "mpitest.h"
@@ -36,7 +33,7 @@ int isendself( int argc, char *argv[] )
 	printf ("1 status = %d %d %d %d\n", status.MPI_SOURCE, status.MPI_TAG,
 		status.MPI_ERROR, count );
     }
-    /* printf( "b[0] = %d\n", b[0] );*/
+    /** printf( "b[0] = %d\n", b[0] );*/
     MPI_Wait( &request, &status );
 
     MPI_Isend( 0, 0, MPI_INT, rank, 0, MPI_COMM_WORLD, &request );

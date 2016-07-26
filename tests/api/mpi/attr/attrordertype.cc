@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include "mpitest.h"
 
-/*
+/**
 static char MTestDescrip[] = "Test creating and inserting attributes in \
 different orders to ensure that the list management code handles all cases.";
 */
@@ -25,14 +25,14 @@ int attrordertype( int argc, char *argv[] )
 
     {
 	type = MPI_INT;
-	/* Create key values */
+	/** Create key values */
 	for (i=0; i<3; i++) {
 	    MPI_Type_create_keyval( MPI_NULL_COPY_FN, MPI_NULL_DELETE_FN,
 			       &key[i], (void *)0 );
 	    attrval[i] = 1024 * i;
 	}
 	
-	/* Insert attribute in several orders.  Test after put with get,
+	/** Insert attribute in several orders.  Test after put with get,
 	 then delete, then confirm delete with get. */
 
 	MPI_Type_set_attr( type, key[2], &attrval[2] );

@@ -971,6 +971,16 @@ sim_parameters::print_unread_params(std::ostream &os) const
   return have_unread;
 }
 
+void
+sim_parameters::throw_key_error(const std::string& key) const
+{
+  std::cerr << "Parameters given in namespace: " << std::endl;
+  print_params(std::cerr);
+  spkt_throw_printf(sprockit::value_error,
+           "sim_parameters: could not find parameter %s in namespace %s",
+          key.c_str(), namespace_.c_str());
+}
+
 std::string
 sim_parameters::get_param(const std::string& key, bool throw_on_error)
 {
@@ -978,23 +988,29 @@ sim_parameters::get_param(const std::string& key, bool throw_on_error)
     "sim_parameters: getting key %s\n",
     key.c_str());
 
-  key_value_map::iterator it = params_.find(key);
-  if (it == params_.end()) {
-    if (parent_){
-      std::string val = parent_->get_param(key, false);
-      if (val.size()) return val;
-    }
+  std::string match = get_scoped_param(key, false); //do not throw
+  if (match.size() != 0)
+      return match;
 
-    if (throw_on_error){
-      const sim_parameters* top = top_parent();
-      std::cerr << "Parameters given in namespace: " << std::endl;
-      print_params(std::cerr);
-      spkt_throw_printf(sprockit::value_error,
-               "sim_parameters: could not find parameter %s in namespace %s", 
-              key.c_str(), namespace_.c_str());
-    } else {
-      return "";
-    }
+  if (parent_){
+    std::string val = parent_->get_param(key, false);
+    if (val.size()) return val;
+  }
+
+  if (throw_on_error){
+    throw_key_error(key);
+  }
+
+  return "";
+}
+
+std::string
+sim_parameters::get_scoped_param(const std::string& key, bool throw_on_error)
+{
+  key_value_map::iterator it = params_.find(key);
+  if (it == params_.end()){
+    if (throw_on_error) throw_key_error(key);
+    else return "";
   }
   parameter_entry& entry = it->second;
   entry.read = true;
@@ -1011,9 +1027,15 @@ sim_parameters::top_parent()
 }
 
 bool
+sim_parameters::has_scoped_param(const std::string& key) const
+{
+  return params_.find(key) != params_.end();
+}
+
+bool
 sim_parameters::has_param(const std::string& key) const
 {
-  bool has_here = params_.find(key) != params_.end();
+  bool has_here = has_scoped_param(key);
   if (!has_here && parent_){
     return parent_->has_param(key);
   } else {
