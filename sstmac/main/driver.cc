@@ -329,7 +329,7 @@ void
 SimulationQueue::rerun(sprockit::sim_parameters* params, sim_stats& stats)
 {
   params->combine_into(&template_params_);
-  bool remap_params = false;
+  bool remap_params = true;
   sstmac::process_init_params(&template_params_, remap_params);
   sstmac::env::params = &template_params_;
   //if (sprockit::debug::slot_active(sprockit::dbg::driver)){
