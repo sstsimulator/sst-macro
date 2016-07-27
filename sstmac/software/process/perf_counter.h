@@ -9,6 +9,8 @@ namespace sw {
 
 class perf_counter
 {
+ public:
+  virtual ~perf_counter() = default;
 };
 
 class perf_counter_model :
