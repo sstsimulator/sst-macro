@@ -55,11 +55,8 @@ class processor :
   static void
   delete_statics();
 
-  void
-  compute(event* ev);
-  
   virtual void
-  do_compute(sw::compute_event* cev) = 0;
+  compute(event* cev) = 0;
 
  protected:
   processor();

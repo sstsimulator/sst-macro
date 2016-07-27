@@ -73,10 +73,10 @@ lib_compute_loops::compute_loop_work(long long loop, double numlines)
   lib_compute_memmove::read(bytes);
   doing_memory_ = false;
 
-  compute_event* inst = new compute_event;
-  long long flops = std::max((long long) 1,
-                             (long long) (loop * flop_line_ratio_ * numlines));
-  inst->set_event_value(compute_event::flop, flops);
+  basic_compute_event* inst = new basic_compute_event;
+  basic_instructions_st& st = inst->data();
+  st.flops = std::max((long long) 1,
+                       (long long) (loop * flop_line_ratio_ * numlines));
   lib_compute_inst::compute_inst(inst);
   delete inst;
 }
@@ -87,8 +87,9 @@ void
 lib_compute_loops::compute_fft()
 {
   if (do_loops_) {
-    compute_event* inst = new compute_event;
-    inst->set_event_value(compute_event::flop, 500);
+    basic_compute_event* inst = new basic_compute_event;
+    basic_instructions_st& st = inst->data();
+    st.flops = 500;
     lib_compute_inst::compute_inst(inst);
     delete inst;
   }

@@ -47,11 +47,11 @@ lib_compute_inst::compute_detailed(
   uint64_t bytes)
 {
   /** Configure the compute request */
-  compute_event* cmsg = new compute_event;
-  cmsg->set_event_value(compute_event::flop, flops);
-  cmsg->set_event_value(compute_event::intop, nintops);
-  cmsg->set_event_value(compute_event::mem_sequential, bytes);
-
+  auto cmsg = new compute_event_impl<basic_instructions_st>;
+  basic_instructions_st& st = cmsg->data();
+  st.flops = flops;
+  st.intops = nintops;
+  st.mem_sequential = bytes;
   compute_inst(cmsg);
   delete cmsg;
 }
@@ -89,11 +89,6 @@ lib_compute_inst::compute_inst(compute_event* cmsg)
   SSTMACBacktrace("Compute Instructions");
 
   os_->execute_kernel(ami::COMP_INSTR, cmsg);
-
-  debug_printf(sprockit::dbg::compute_intensity,
-    "Node %d: finishing compute %s",
-    int(os_->my_addr()),
-    cmsg->debug_string().c_str());
 }
 
 }

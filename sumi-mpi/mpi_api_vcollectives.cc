@@ -1,6 +1,7 @@
 #include <sumi-mpi/mpi_api.h>
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
 #include <sstmac/software/process/backtrace.h>
+#include <sstmac/software/process/operating_system.h>
 
 using namespace sumi;
 
@@ -37,7 +38,7 @@ mpi_api::start_allgatherv(const char* name,
     void *recvbuf, const int *recvcounts, const int *displs,
     MPI_Datatype recvtype, MPI_Comm comm)
 {
-  SSTMACBacktrace(name);
+  start_mpi_call(name);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
     "%s(%d,%s,<...>,%s,%s)", name,
     sendcount, type_str(sendtype).c_str(),
@@ -106,7 +107,7 @@ mpi_api::start_alltoallv(const char* name, const void *sendbuf, const int *sendc
                    void *recvbuf, const int *recvcounts,
                    const int *rdispls, MPI_Datatype recvtype, MPI_Comm comm)
 {
-  SSTMACBacktrace(name);
+  start_mpi_call(name);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
     "%s(<...>,%s,<...>,%s,%s)", name,
     type_str(sendtype).c_str(), type_str(recvtype).c_str(), comm_str(comm).c_str());
@@ -196,7 +197,7 @@ mpi_api::start_gatherv(const char* name,
                  void *recvbuf, const int *recvcounts, const int *displs,
                  MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
-  SSTMACBacktrace(name);
+  start_mpi_call(name);
   mpi_api_debug(sprockit::dbg::mpi,
     "%s(%d,%s,<...>,%s,%d,%s)", name,
     sendcount, type_str(sendtype).c_str(),
@@ -294,7 +295,7 @@ mpi_api::start_scatterv(const char* name,
    const void* sendbuf, const int* sendcounts, const int *displs, MPI_Datatype sendtype,
    void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
-  SSTMACBacktrace(name);
+  start_mpi_call(name);
   mpi_api_debug(sprockit::dbg::mpi,
     "%s(<...>,%s,%d,%s,%d,%s)", name,
     type_str(sendtype).c_str(),

@@ -42,6 +42,7 @@ launcher::incoming_event(event* ev)
   software_id sid(lev->aid(), lev->tid());
   app* theapp = lev->app_template()->clone(sid);
   sprockit::sim_parameters* app_params = lev->app_template()->params();
+  theapp->init_perf_model_params(app_params);
   theapp->consume_params(app_params);
   int intranode_rank = num_apps_launched_[lev->aid()]++;
   int core_affinity = lev->core_affinity(intranode_rank);

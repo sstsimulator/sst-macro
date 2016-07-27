@@ -1,6 +1,7 @@
 #include <sumi-mpi/mpi_api.h>
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
 #include <sstmac/software/process/backtrace.h>
+#include <sstmac/software/process/operating_system.h>
 
 namespace sumi {
 
@@ -213,7 +214,7 @@ collective_op_base*
 mpi_api::start_allgather(const char* name, const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                    void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
 {
-  SSTMACBacktrace(name);
+  start_mpi_call(name);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
     "%s(%d,%s,%d,%s,%s)",
     name,
@@ -277,7 +278,7 @@ collective_op_base*
 mpi_api::start_alltoall(const char* name, const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                   void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
 {
-  SSTMACBacktrace(name);
+  start_mpi_call(name);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
     "%s(%d,%s,%d,%s,%s)", name,
     sendcount, type_str(sendtype).c_str(),
@@ -342,7 +343,7 @@ collective_op_base*
 mpi_api::start_allreduce(const char* name, const void *src, void *dst, int count,
                    MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
 {
-  SSTMACBacktrace(name);
+  start_mpi_call(name);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
     "%s(%d,%s,%s,%s)", name,
     count, type_str(type).c_str(), op_str(mop), comm_str(comm).c_str());
@@ -403,7 +404,7 @@ mpi_api::start_barrier(collective_op* op)
 collective_op_base*
 mpi_api::start_barrier(const char* name, MPI_Comm comm)
 {
-  SSTMACBacktrace(name);
+  start_mpi_call(name);
   collective_op* op = new collective_op(0, get_comm(comm));
   mpi_api_debug(sprockit::dbg::mpi, "%s(%s) on tag %d",
     name, comm_str(comm).c_str(), int(op->tag));
@@ -442,7 +443,7 @@ collective_op_base*
 mpi_api::start_bcast(const char* name, void* buffer, int count,
                MPI_Datatype type, int root, MPI_Comm comm)
 {
-  SSTMACBacktrace(name);
+  start_mpi_call(name);
   mpi_api_debug(sprockit::dbg::mpi, "%s(%d,%s,%d,%s)", name,
     count, type_str(type).c_str(), int(root), comm_str(comm).c_str());
   collective_op* op = new collective_op(count, get_comm(comm));
@@ -510,7 +511,7 @@ collective_op_base*
 mpi_api::start_gather(const char* name, const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                 void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
-  SSTMACBacktrace(name);
+  start_mpi_call(name);
   mpi_api_debug(sprockit::dbg::mpi,
     "%s(%d,%s,%d,%s,%d,%s)", name,
     sendcount, type_str(sendtype).c_str(),
@@ -620,7 +621,7 @@ collective_op_base*
 mpi_api::start_reduce(const char* name, const void *src, void *dst, int count,
                       MPI_Datatype type, MPI_Op mop, int root, MPI_Comm comm)
 {
-  SSTMACBacktrace(name);
+  start_mpi_call(name);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
     "%s(%d,%s,%s,%d,%s)", name, count, type_str(type).c_str(),
     op_str(mop), int(root), comm_str(comm).c_str());
@@ -696,7 +697,7 @@ mpi_api::start_reduce_scatter(const char *name, const void *src, void *dst,
                               int *recvcnts, MPI_Datatype type,
                               MPI_Op mop, MPI_Comm comm)
 {
-  SSTMACBacktrace(name);
+  start_mpi_call(name);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
     "%s(<...>,%s,%s,%s)", name,
     type_str(type).c_str(), op_str(mop), comm_str(comm).c_str());
@@ -751,7 +752,7 @@ mpi_api::start_reduce_scatter_block(const char *name, const void *src, void *dst
                               int recvcnt, MPI_Datatype type,
                               MPI_Op mop, MPI_Comm comm)
 {
-  SSTMACBacktrace(name);
+  start_mpi_call(name);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
     "%s(<...>,%s,%s,%s)", name,
     type_str(type).c_str(), op_str(mop), comm_str(comm).c_str());
@@ -819,7 +820,7 @@ collective_op_base*
 mpi_api::start_scan(const char* name, const void *src, void *dst,
                     int count, MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
 {
-  SSTMACBacktrace(name);
+  start_mpi_call(name);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
     "%s(%d,%s,%s,%s)", name,
     count, type_str(type).c_str(), op_str(mop), comm_str(comm).c_str());
@@ -875,7 +876,7 @@ collective_op_base*
 mpi_api::start_scatter(const char* name, const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                  void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
-  SSTMACBacktrace(name);
+  start_mpi_call(name);
   mpi_api_debug(sprockit::dbg::mpi,
     "%s(%d,%s,%d,%s,%d,%s)", name,
     sendcount, type_str(sendtype).c_str(),

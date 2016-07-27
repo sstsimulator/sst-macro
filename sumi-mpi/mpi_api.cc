@@ -166,7 +166,7 @@ mpi_api::comm_rank(MPI_Comm comm, int *rank)
 int
 mpi_api::do_init(int* argc, char*** argv)
 {
-  SSTMACBacktrace("MPI_Init");
+  start_mpi_call("MPI_Init");
 
   sumi_transport::init();
 
@@ -209,7 +209,7 @@ mpi_api::do_init(int* argc, char*** argv)
 int
 mpi_api::do_finalize()
 {  
-  SSTMACBacktrace("MPI_Finalize");
+  start_mpi_call("MPI_Finalize");
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Finalize()");
 
   barrier(worldcomm_->id());

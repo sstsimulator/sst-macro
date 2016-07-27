@@ -139,7 +139,7 @@ class node :
    except for integer overflow.
    @return A unique 64-bit integer
   */
-  unique_msg_id
+  unique_event_id
   allocate_unique_id() {
     return next_outgoing_id_++;
   }
@@ -212,7 +212,7 @@ class node :
 
  private:
   std::list<sw::launch_event*> launchers_;
-  unique_msg_id next_outgoing_id_;
+  unique_event_id next_outgoing_id_;
 
 #if !SSTMAC_INTEGRATED_SST_CORE
  public:

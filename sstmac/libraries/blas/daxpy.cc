@@ -38,17 +38,14 @@ default_daxpy::init_factory_params(sprockit::sim_parameters* params)
 compute_event*
 default_daxpy::op_1d(int n)
 {
+  basic_compute_event* ev = new basic_compute_event;
+  basic_instructions_st& st = ev->data();
   int nops = n;
-  long nflops = nops / long(pipeline_);
-  long loop_ops = nops / long(loop_unroll_) / long(pipeline_);
+  st.flops = nops / long(pipeline_);
+  st.intops = nops / long(loop_unroll_) / long(pipeline_);
   // y += alpha * x ... 2 vectors
-  long total_bytes = 2*n*sizeof(double);
-
-  compute_event* msg = new compute_event;
-  msg->set_event_value(compute_event::flop, nflops);
-  msg->set_event_value(compute_event::intop, loop_ops);
-  msg->set_event_value(compute_event::mem_sequential, total_bytes);
-  return msg;
+  st.mem_sequential = 2*n*sizeof(double);
+  return ev;
 }
 
 }

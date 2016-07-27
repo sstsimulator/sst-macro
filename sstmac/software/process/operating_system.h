@@ -215,6 +215,9 @@ class operating_system :
   schedule_unblock_now(key* k);
 
   void
+  start_api_call();
+
+  void
   schedule_timeout(timestamp delay, key* k);
 
   void

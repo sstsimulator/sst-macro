@@ -40,12 +40,6 @@ processor::finalize_init()
 }
 
 void
-processor::compute(event *ev)
-{
-  do_compute(safe_cast(sw::compute_event, ev));
-}
-
-void
 processor::init_factory_params(sprockit::sim_parameters *params)
 {
   /** sstkeyword {

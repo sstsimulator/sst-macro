@@ -41,6 +41,10 @@
 
 #include <sstmac/libraries/sumi/sumi_transport.h>
 
+#define start_mpi_call(fxn) \
+  SSTMACBacktrace(fxn); \
+  os_->start_api_call()
+
 namespace sumi {
 
 using sstmac::sw::key;

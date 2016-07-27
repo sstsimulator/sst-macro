@@ -17,7 +17,7 @@
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/launch/machine_descriptor.h>
 #include <sstmac/software/launch/launcher.h>
-#include <sstmac/common/messages/timed_event.h>
+#include <sstmac/software/libraries/compute/compute_event.h>
 
 #include <sprockit/errors.h>
 #include <sprockit/util.h>
@@ -102,8 +102,11 @@ simple_node::try_comp_kernels(ami::COMP_FUNC func,
 
   switch (func) {
     case sstmac::ami::COMP_INSTR:
-    case sstmac::ami::COMP_TIME: {
       proc_->compute(data);
+      break;
+    case sstmac::ami::COMP_TIME: {
+      sw::timed_compute_event* ev = safe_cast(timed_compute_event, data);
+      compute(ev->data());
       break;
     }
     default:
