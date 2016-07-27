@@ -57,6 +57,10 @@ class null_perf_counter_model : public perf_counter_model
 class flops_perf_counter_model : public perf_counter_model
 {
  public:
+  flops_perf_counter_model() {
+    flops_.counters() = 0;
+  }
+
   compute_event*
   get_next_event() {
     sstmac::sw::basic_compute_event* ev = new sstmac::sw::basic_compute_event;
