@@ -4,30 +4,132 @@
 
 #include <type_traits>
 #include <cstddef>
+#include <sstmac/software/process/thread.h>
+
+#define DECLARE_OPERATOR(op,CONST,REF) \
+  template <class T, class U> \
+  Variable<T>REF \
+  operator op(CONST Variable<T>& t, const U& u); \
+  template <class T, class U> \
+  U REF \
+  operator op(CONST U& u, const Variable<T>& t); \
+  template <class T, class U> \
+  Variable<T> REF \
+  operator op(CONST Variable<T>& t, const Variable<U>& u);
+
+#define FRIEND_OPERATOR(op,CONST,REF) \
+  template <class T1, class U> \
+  friend Variable<T1> REF \
+  operator op(CONST Variable<T1>& t, const U& u); \
+  template <class T1, class U> \
+  friend U REF \
+  operator op(CONST U& u, const Variable<T1>& t); \
+  template <class T1, class U> \
+  friend Variable<T1> REF \
+  operator op(CONST Variable<T1>& t, const Variable<U>& u);
 
 template <class T> class VariablePtr;
+template <class T> class Variable;
+
+DECLARE_OPERATOR(+,const,)
+DECLARE_OPERATOR(-,const,)
+DECLARE_OPERATOR(*,const,)
+DECLARE_OPERATOR(/,const,)
+DECLARE_OPERATOR(&,const,)
+DECLARE_OPERATOR(|,const,)
+DECLARE_OPERATOR(+=,,&)
+DECLARE_OPERATOR(*=,,&)
+DECLARE_OPERATOR(-=,,&)
+DECLARE_OPERATOR(/=,,&)
+DECLARE_OPERATOR(&=,,&)
+DECLARE_OPERATOR(|=,,&)
+
+template <class T>
+Variable<T>
+sqrt(const Variable<T> &t);
+
+template <class T>
+Variable<T>
+cbrt(const Variable<T> &t);
+
+template <class T>
+Variable<T>
+fabs(const Variable<T> &t);
+
+template <class T>
+void*
+memset(const VariablePtr<T>& t, int value, size_t size);
+
+template <class T>
+void*
+memcpy(const VariablePtr<T>& dst, const VariablePtr<T>& src, size_t size);
 
 template <class T>
 class Variable 
 {
+  FRIEND_OPERATOR(+,const,)
+  FRIEND_OPERATOR(-,const,)
+  FRIEND_OPERATOR(*,const,)
+  FRIEND_OPERATOR(/,const,)
+  FRIEND_OPERATOR(&,const,)
+  FRIEND_OPERATOR(|,const,)
+  FRIEND_OPERATOR(+=,,&)
+  FRIEND_OPERATOR(*=,,&)
+  FRIEND_OPERATOR(-=,,&)
+  FRIEND_OPERATOR(/=,,&)
+  FRIEND_OPERATOR(&=,,&)
+  FRIEND_OPERATOR(|=,,&)
+  friend Variable<T> sqrt<>(const Variable<T> &t);
+  friend Variable<T> cbrt<>(const Variable<T> &t);
+  friend Variable<T> fabs<>(const Variable<T> &t);
+
  public:
-  template <typename U,
-    typename = std::enable_if<std::is_convertible<T,U>::value>>
-  Variable(const U& u){
-   //do nothing
+  template <typename = std::enable_if<std::is_default_constructible<T>::value>>
+  Variable()
+    : nops(sstmac::sw::operating_system::current_thread()
+            ->register_perf_ctr_variable<uint64_t>(this)),
+      owns_nops(true)
+  {
   }
 
-  template <typename = std::enable_if<std::is_default_constructible<T>::value>>
-  Variable(){
-   //do nothing
+  template <typename U,
+    typename = std::enable_if<std::is_convertible<T,U>::value>>
+  Variable(const U& u)
+    : nops(sstmac::sw::operating_system::current_thread()
+            ->register_perf_ctr_variable<uint64_t>(this)),
+      owns_nops(true)
+  {
+  }
+
+  Variable(uint64_t &nops_array)
+    : nops(nops_array),
+      owns_nops(false)
+  {
+  }
+
+  Variable(const Variable& v)
+    : nops(sstmac::sw::operating_system::current_thread()
+            ->register_perf_ctr_variable<uint64_t>(this)),
+      owns_nops(true)
+  {
+  }
+
+  ~Variable(){
+    if (owns_nops)
+      sstmac::sw::operating_system::current_thread()
+          ->remove_perf_ctr_variable(this);
   }
 
   VariablePtr<T> operator&() {
-    return nothing_;
+    return VariablePtr<T>(nops);
   }
 
   void* operator new[](std::size_t count) throw() {
     return 0;
+  }
+
+  Variable& operator=(const Variable& v) {
+    return *this;
   }
 
   template <class U>
@@ -64,14 +166,10 @@ class Variable
     return *this;
   }
 
-  static size_t nops;
-
-  static VariablePtr<T> nothing_;
+ private:
+  uint64_t &nops;
+  bool owns_nops;
 };
-
-
-template <class T> size_t Variable<T>::nops = 0;
-template <class T> VariablePtr<T> Variable<T>::nothing_;
 
 #define COMPARE(op) \
   template <class T, class U> \
@@ -94,19 +192,19 @@ template <class T> VariablePtr<T> Variable<T>::nothing_;
   template <class T, class U> \
   Variable<T>REF \
   operator op(CONST Variable<T>& t, const U& u){ \
-    Variable<T>::nops++; \
+    t.nops++; \
     return t; \
   } \
   template <class T, class U> \
   U REF \
   operator op(CONST U& u, const Variable<T>& t){ \
-    Variable<T>::nops++; \
+    t.nops++; \
     return u;\
   } \
   template <class T, class U> \
   Variable<T> REF \
   operator op(CONST Variable<T>& t, const Variable<U>& u){ \
-    Variable<T>::nops++; \
+    t.nops++; \
     return t; \
   }
 
@@ -132,21 +230,21 @@ OPERATOR(|=,,&)
 template <class T>
 Variable<T>
 sqrt(const Variable<T> &t){
-  Variable<T>::nops++;
+  t.nops++;
   return t;
 }
 
 template <class T>
 Variable<T>
 cbrt(const Variable<T> &t){
-  Variable<T>::nops++;
+  t.nops++;
   return t;
 }
 
 template <class T>
 Variable<T>
 fabs(const Variable<T> &t){
-  Variable<T>::nops++;
+  t.nops++;
   return t;
 }
 
@@ -154,39 +252,74 @@ fabs(const Variable<T> &t){
 template <class T>
 class VariablePtr
 {
+  friend void* memset<>(const VariablePtr<T>& t, int value, size_t size);
+  friend void* memcpy<>(const VariablePtr<T>& dst, const VariablePtr<T>& src, size_t size);
+
  public:
+  VariablePtr()
+    : nops(sstmac::sw::operating_system::current_thread()
+            ->register_perf_ctr_variable<uint64_t>(this)),
+      elem(nops)
+  {
+  }
+
   template <typename U,
     typename = std::enable_if<std::is_convertible<T*,U>::value>>
-  VariablePtr(const U& u){}
+  VariablePtr(const U& u)
+    : nops(sstmac::sw::operating_system::current_thread()
+            ->register_perf_ctr_variable<uint64_t>(this)),
+      elem(nops)
+  {
+  }
 
-  VariablePtr(){}
+  VariablePtr(uint64_t &nops_elem)
+    : nops(nops_elem)
+  {
+  }
+
+  VariablePtr(const VariablePtr &vp)
+    : nops(sstmac::sw::operating_system::current_thread()
+            ->register_perf_ctr_variable<uint64_t>(this)),
+      elem(nops)
+  {
+  }
+
+  ~VariablePtr(){
+    sstmac::sw::operating_system::current_thread()
+        ->remove_perf_ctr_variable(this);
+  }
 
   void resize(size_t n){}
 
   void clear(){}
 
   Variable<T>& operator[](int idx){
-    return nothing_;
+    return elem;
   }
 
   const Variable<T>& operator[](int idx) const {
-    return nothing_;
+    return elem;
   }
 
   Variable<T>& operator[](Variable<int> idx){
-    return nothing_;
+    return elem;
   }
 
   const Variable<T>& operator[](Variable<int> idx) const {
-    return nothing_;
+    return elem;
   }
 
   Variable<T>& operator*() {
-    return nothing_;
+    return elem;
   }
 
   const Variable<T>& operator*() const {
-    return nothing_;
+    return elem;
+  }
+
+  VariablePtr<T>&
+  operator=(const VariablePtr& ptr){
+    return *this;
   }
 
   template <class U,
@@ -232,24 +365,23 @@ class VariablePtr
   }
 
  private:
-  static Variable<T> nothing_;
+  uint64_t &nops;
+  Variable<T> elem;
 };
 
 template <class T>
 void*
 memset(const VariablePtr<T>& t, int value, size_t size){
-  Variable<T>::nops += size / sizeof(T);
+  t.nops += size / sizeof(T);
   return 0;
 }
 
 template <class T>
 void*
 memcpy(const VariablePtr<T>& dst, const VariablePtr<T>& src, size_t size){
-  Variable<T>::nops += size / sizeof(T);
+  dst.nops += size / sizeof(T);
   return 0;
 }
-
-template <class T> Variable<T> VariablePtr<T>::nothing_;
 
 typedef Variable<double> Double;
 typedef VariablePtr<double> DoublePtr;
