@@ -26,6 +26,8 @@ class fat_tree_router :
   ~fat_tree_router() {
   }
 
+  fat_tree_router() : structured_router(routing::minimal){}
+
   virtual void
   finalize_init();
 

@@ -46,6 +46,9 @@ class structured_router
     geometry_routable::path_set& paths);
 
  protected:
+  structured_router(routing::algorithm_t algo) :
+    router(algo){}
+
   structured_topology* regtop_;
 
 };

@@ -28,7 +28,6 @@ class netlink :
     return tile_offset;
   }
 
-
  protected:
   netlink(sprockit::factory_type* ty){}
 

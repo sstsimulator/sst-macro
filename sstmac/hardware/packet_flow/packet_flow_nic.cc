@@ -170,6 +170,12 @@ packet_flow_netlink::init_factory_params(sprockit::sim_parameters *params)
 }
 
 void
+packet_flow_netlink::deadlock_check()
+{
+  block_->deadlock_check();
+}
+
+void
 packet_flow_netlink::set_event_parent(event_scheduler* m)
 {
   block_->set_event_parent(m);

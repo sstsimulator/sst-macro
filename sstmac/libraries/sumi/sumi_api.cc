@@ -9,6 +9,7 @@
 #include <sprockit/output.h>
 #include <sprockit/sim_parameters.h>
 #include <sumi/message.h>
+#include <sumi/transport.h>
 #include <sstmac/common/runtime.h>
 
 using namespace sprockit::dbg;
@@ -45,7 +46,9 @@ sumi_api::init()
     server->start();
   }
   else {
+    //add me to the ref count
     server = safe_cast(sumi_server, server_lib);
+    register_lib(server);
   }
 
   server->register_proc(rank_, this);
@@ -152,6 +155,9 @@ void
 sumi_server::incoming_event(event* ev)
 {
  transport_message* smsg = safe_cast(transport_message, ev);
+ debug_printf(sprockit::dbg::sumi,
+              "sumi_server %d: incoming message %s",
+              os_->addr(), smsg->payload()->to_string().c_str());
  try {
   get_proc(smsg->dest())->incoming_message(smsg);
  } catch (sprockit::value_error& e) {

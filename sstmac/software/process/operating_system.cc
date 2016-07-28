@@ -56,6 +56,8 @@
 RegisterDebugSlot(os,
     "print debug output related to operating system operators - the majority of this debug info will be related to thread context switching");
 
+MakeDebugSlot(dropped_events)
+
 #define os_debug(...) \
   debug_printf(sprockit::dbg::os, "OS on Node %d: %s", \
     int(my_addr()), sprockit::printf(__VA_ARGS__).c_str())
@@ -765,6 +767,9 @@ operating_system::register_lib(library* lib)
   int& refcount = lib_refcounts_[lib];
   ++refcount;
   libs_[lib->lib_name()] = lib;
+  debug_printf(sprockit::dbg::dropped_events,
+               "OS %d should no longer drop events for %s",
+               addr(), lib->lib_name().c_str());
   if (refcount == 1){
     //first init
     lib->init_os(this);
@@ -779,6 +784,9 @@ operating_system::unregister_lib(library* lib)
   int& refcount = lib_refcounts_[lib];
   if (refcount == 1){
     lib_refcounts_.erase(lib);
+    debug_printf(sprockit::dbg::dropped_events,
+                 "OS %d will now drop events for %s",
+                 addr(), lib->lib_name().c_str());
     libs_.erase(lib->lib_name());
     unregister_all_libs(lib);
     deleted_libs_.insert(lib->lib_name());
@@ -981,6 +989,9 @@ operating_system::handle_event(event* ev)
                      libmsg->lib_name().c_str(), int(addr()),
                      ev->to_string().c_str());
     } else {
+      debug_printf(sprockit::dbg::dropped_events | sprockit::dbg::os,
+                   "OS %d for library %s dropping event %s",
+                   addr(), libn.c_str(), ev->to_string().c_str());
       //drop the event
     }
   }

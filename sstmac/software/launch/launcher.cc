@@ -23,7 +23,7 @@ namespace sw {
 
 launcher::launcher() :
   is_completed_(false),
-  service("launcher", software_id(0,0))
+  service(std::string("launcher"), software_id(0,0))
 {
 }
 

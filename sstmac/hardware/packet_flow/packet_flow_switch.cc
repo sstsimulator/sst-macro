@@ -302,6 +302,12 @@ packet_flow_switch::deadlock_check()
 }
 
 void
+packet_flow_switch::deadlock_check(event *ev)
+{
+  xbar_->deadlock_check(ev);
+}
+
+void
 packet_flow_switch::set_event_manager(event_manager* m)
 {
   network_switch::set_event_manager(m);

@@ -115,6 +115,9 @@ class packet_flow_netlink :
     config* cfg);
 
   void
+  deadlock_check();
+
+  void
   set_event_parent(event_scheduler* m);
 
   void

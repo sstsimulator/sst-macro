@@ -159,7 +159,7 @@ class router :
   }
 
  protected:
-  router();
+  router(routing::algorithm_t algo);
 
   routing::algorithm_t
   str_to_algo(const std::string& str);
@@ -179,6 +179,8 @@ class router :
 
   typedef std::map<routing::algorithm_t, int> algo_to_vc_map;
   algo_to_vc_map num_vc_lookup_;
+
+  routing::algorithm_t algo_;
 
 };
 

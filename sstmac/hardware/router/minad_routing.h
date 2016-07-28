@@ -11,6 +11,9 @@ class minimal_adaptive_router :
 {
 
  public:
+  minimal_adaptive_router() :
+    minimal_router(routing::minimal_adaptive){}
+
   virtual std::string
   to_string() const {
     return "min_ad";

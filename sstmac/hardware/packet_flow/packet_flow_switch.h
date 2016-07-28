@@ -130,6 +130,8 @@ class packet_flow_switch :
 
   void deadlock_check();
 
+  void deadlock_check(event* ev);
+
   /**
    Set the link to use when ejecting packets at their endpoint.  A packet_flow_switch
    can have any number of ejectors, corresponding to the number of nodes

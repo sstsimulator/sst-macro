@@ -66,6 +66,13 @@ packet_flow_tiled_switch::init_components()
   if (!xbar_tiles_.empty())
     return;
 
+  int min_buffer_size = xbar_input_buffer_num_bytes / router_->max_num_vc();
+  if (min_buffer_size < packet_size_){
+    spkt_throw(sprockit::value_error,
+               "chosen packet size of %d is bigger than chosen buffer size %d = %d over %d vcs",
+               packet_size_, min_buffer_size, xbar_input_buffer_num_bytes, router_->max_num_vc());
+  }
+
   int ntiles = nrows_ * ncols_;
   row_input_demuxers_.resize(ntiles);
   xbar_tiles_.resize(ntiles);

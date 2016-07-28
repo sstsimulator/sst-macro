@@ -1,14 +1,14 @@
 Rank 0 on MPI_Comm 0 passed test: 1.15e-02
 Rank 0 on MPI_Comm 0 passed test: 3.00e-02
 Rank 0 on MPI_Comm 0 passed test: 3.13e-02
-Rank 0 on MPI_Comm 0 passed test: 3.17e-02
+Rank 0 on MPI_Comm 0 passed test: 3.16e-02
 Rank 0 on MPI_Comm 0 passed test: 3.21e-02
-Rank 0 on MPI_Comm 2 passed test: 4.37e-02
-Rank 0 on MPI_Comm 2 passed test: 4.37e-02
-Rank 0 on MPI_Comm 2 passed test: 4.37e-02
-Rank 0 on MPI_Comm 2 passed test: 4.37e-02
-Rank 0 on MPI_Comm 2 passed test: 4.37e-02
-Rank 0 on MPI_Comm 2 passed test: 4.37e-02
+Rank 0 on MPI_Comm 2 passed test: 4.36e-02
+Rank 0 on MPI_Comm 2 passed test: 4.36e-02
+Rank 0 on MPI_Comm 2 passed test: 4.36e-02
+Rank 0 on MPI_Comm 2 passed test: 4.36e-02
+Rank 0 on MPI_Comm 2 passed test: 4.36e-02
+Rank 0 on MPI_Comm 2 passed test: 4.36e-02
 Rank 0 on MPI_Comm 2 passed test: 4.43e-02
 Rank 0 on MPI_Comm 2 passed test: 4.43e-02
 Rank 0 on MPI_Comm 2 passed test: 4.43e-02
@@ -93,4 +93,4 @@ Rank 0 on MPI_Comm 3 passed test: 5.63e-02
 Rank 0 on MPI_Comm 3 passed test: 5.63e-02
 Rank 0 on MPI_Comm 3 passed test: 5.63e-02
 Rank 0 on MPI_Comm 3 passed test: 5.63e-02
-Estimated total runtime of           0.05634485 seconds
+Estimated total runtime of           0.05632435 seconds

@@ -143,8 +143,8 @@ progress_loop(sumi::transport* tport, double timeout,
       msg->set_finish(now);
       done.push_back(msg);
       debug_printf(sprockit::dbg::traffic_matrix,
-        "Rank %d got incoming message at t=%10.6e of type %s",
-        tport->rank(), now, sumi::message::tostr(msg->payload_type()));
+        "Rank %d got incoming message at t=%10.6e of type %s from %d",
+        tport->rank(), now, sumi::message::tostr(msg->payload_type()), msg->sender());
     } else {
       debug_printf(sprockit::dbg::traffic_matrix,
         "Rank %d timed out in progress loop at t=%10.6e",
@@ -174,7 +174,7 @@ void do_all_sends(
     msg->local_buffer() = send_chunks[i];
     msg->remote_buffer() = recv_chunks[i];
     debug_printf(sprockit::dbg::traffic_matrix,
-      "Putting from %d to %d on iteration %d chunk of size %d: %p -> %p",
+      "Rank %d putting to %d on iteration %d chunk of size %d: %p -> %p",
       tport->rank(), send_partners[i], 
       iteration, chunk_size,
       ((void*)send_chunks[i]), ((void*)recv_chunks[i]));

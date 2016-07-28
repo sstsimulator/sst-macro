@@ -40,6 +40,7 @@ packet_flow_param_expander::expand(sprockit::sim_parameters* params)
 
   mem_params->add_param_override("mtu", mem_packet_size);
   switch_params->add_param_override("mtu", net_packet_size);
+  nic_params->add_param_override("mtu", net_packet_size);
 
   if (amm_type == "amm1"){
     expand_amm1_memory(params, mem_params);
@@ -206,7 +207,7 @@ packet_flow_param_expander::expand_amm4_nic(sprockit::sim_parameters* params,
 {
   expand_amm1_nic(params, nic_params);
   sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
-  int red = top_params->get_optional_int_param("redundant", 1);
+  int red = top_params->get_optional_int_param("injection_redundant", 1);
   int radix = params->get_optional_int_param("netlink_radix", 1);
   //the netlink block combines all the paths together
   netlink_params->add_param_override("ninject", red);

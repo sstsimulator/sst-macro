@@ -102,20 +102,24 @@ packet_flow_NtoM_queue::deadlock_check()
   for (int i=0; i < queues_.size(); ++i){
     payload_queue& queue = queues_[i];
     packet_flow_payload* pkt = queue.front();
-    if (pkt){
+    while (pkt){
       deadlocked_channels_[pkt->next_port()].insert(pkt->next_vc());
       packet_flow_output& poutput = outputs_[local_port(pkt->next_port())];
       event_handler* output = output_handler(pkt);
-      pkt->set_inport(poutput.dst_inport);
-      int vc = update_vc_ ? pkt->next_vc() : pkt->vc();
-      std::cerr << "Starting deadlock check on " << to_string() << " on queue " << i 
-        << " going to " << output->to_string() 
-        << " outport=" << pkt->next_port()
-        << " inport=" << pkt->inport()
-        << " vc=" << vc
-        << " for message " << pkt->to_string()
-        << std::endl;
-      output->deadlock_check(pkt);
+      if (output){
+        pkt->set_inport(poutput.dst_inport);
+        int vc = update_vc_ ? pkt->next_vc() : pkt->vc();
+        std::cerr << "Starting deadlock check on " << to_string() << " on queue " << i
+          << " going to " << output->to_string()
+          << " outport=" << pkt->next_port()
+          << " inport=" << pkt->inport()
+          << " vc=" << vc
+          << " for message " << pkt->to_string()
+          << std::endl;
+        output->deadlock_check(pkt);
+      }
+      queue.pop(1000000);
+      pkt = queue.front();
     }
   }
 }
@@ -187,15 +191,10 @@ packet_flow_NtoM_queue::output_handler(packet_flow_payload* pkt)
 {
   int loc_port = local_port(pkt->next_port());
   event_handler* handler = outputs_[loc_port].handler;
+  if (!handler)
+    return nullptr;
+
   packet_flow_tiled_switch* sw = test_cast(packet_flow_tiled_switch, handler);
-  if (!handler) {
-    for (int i=0; i< outputs_.size(); ++i) {
-      std::cerr << "outputs[" << i << "] = " << outputs_[i].handler << "\n";
-    }
-    spkt_throw_printf(sprockit::value_error,
-      "no output handler for port %d:%d",
-      pkt->next_port(), loc_port);
-  }
   if (sw){
     return sw->demuxer(pkt->next_port());
   } else {
