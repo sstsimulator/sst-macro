@@ -30,7 +30,7 @@ lib_compute_inst::lib_compute_inst(const std::string& libname, software_id id)
 }
 
 lib_compute_inst::lib_compute_inst(software_id sid) :
-  lib_compute(sprockit::printf("computelibinstr%s", sid.to_string().c_str()), sid)
+  lib_compute("computelibinstr%s", sid)
 {
 }
 

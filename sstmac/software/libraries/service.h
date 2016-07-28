@@ -43,6 +43,10 @@ class service :
     library(libname, sid)
   {}
 
+  service(const char* prefix, software_id sid) :
+    library(prefix, sid)
+  {}
+
   virtual
   ~service(){}
 

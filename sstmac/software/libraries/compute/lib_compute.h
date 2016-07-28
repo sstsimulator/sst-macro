@@ -22,6 +22,12 @@ class lib_compute :
     key_cat_ = lib_compute::key_category;
   }
 
+  lib_compute(const char* name, software_id sid)
+    : library(name, sid)
+  {
+     key_cat_ = lib_compute::key_category;
+  }
+
 };
 
 }

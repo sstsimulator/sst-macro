@@ -23,8 +23,8 @@ lib_compute_time::lib_compute_time(software_id id) :
 {
 }
 
-lib_compute_time::lib_compute_time(const char* unique_name, software_id id) :
-  lib_compute(sprockit::printf("%s%s", unique_name, id.to_string().c_str()), id)
+lib_compute_time::lib_compute_time(const char* prefix, software_id id) :
+  lib_compute(prefix, id)
 {
 }
 

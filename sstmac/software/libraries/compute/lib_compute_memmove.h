@@ -29,7 +29,7 @@ class lib_compute_memmove :
 
   lib_compute_memmove(software_id id);
 
-  lib_compute_memmove(const char* unique_name, software_id id);
+  lib_compute_memmove(const char* prefix, software_id id);
 
   virtual void
   unregister_all_libs();

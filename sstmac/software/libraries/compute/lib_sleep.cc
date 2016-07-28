@@ -21,7 +21,7 @@ namespace sw {
 key::category lib_sleep::key_category("Sleep");
 
 lib_sleep::lib_sleep(software_id id)
-  : library(sprockit::printf("sleeplib%s", id.to_string().c_str()), id)
+  : library("sleeplib", id)
 {
   key_cat_ = lib_sleep::key_category;
 }

@@ -68,7 +68,8 @@ transport::transport() :
   use_hardware_ack_(false),
   global_domain_(0),
   nspares_(0),
-  recovery_lock_(0)
+  recovery_lock_(0),
+  notify_cb_(0)
 {
   heartbeat_tag_start_ = 1e9;
   heartbeat_tag_stop_ = heartbeat_tag_start_ + 10000;
@@ -170,8 +171,12 @@ transport::finalize()
 void
 transport::operation_done(const message::ptr &msg)
 {
-  completion_queue_.push_back(msg);
-  cq_notify();
+  if (notify_cb_ && msg->class_type() != message::collective_done){
+    notify_cb_->notify(msg);
+  } else {
+    completion_queue_.push_back(msg);
+    cq_notify();
+  }
 }
 
 void

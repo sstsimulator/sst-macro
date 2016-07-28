@@ -66,22 +66,24 @@ class message :
   typedef sprockit::refcount_ptr<message> ptr;
 
   message() :
-   payload_type_(none),
-   class_(pt2pt),
-   transaction_id_(-1),
-   needs_send_ack_(false),
-   needs_recv_ack_(false)
+    message(sizeof(message))
   {
-    num_bytes_ = sizeof(message);
   }
 
   message(long num_bytes) :
-   payload_type_(none),
-   class_(pt2pt),
-   transaction_id_(-1),
-   num_bytes_(num_bytes),
-   needs_send_ack_(false),
-   needs_recv_ack_(false)
+    message(-1,-1,num_bytes)
+  {
+  }
+
+  message(int sender, int recver, long num_bytes) :
+    sender_(sender),
+    recver_(recver),
+    num_bytes_(num_bytes),
+    payload_type_(none),
+    class_(pt2pt),
+    transaction_id_(-1),
+    needs_send_ack_(false),
+    needs_recv_ack_(false)
   {
   }
 

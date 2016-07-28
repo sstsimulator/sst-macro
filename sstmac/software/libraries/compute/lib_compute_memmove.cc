@@ -29,8 +29,8 @@ lib_compute_memmove::lib_compute_memmove(software_id id) :
   init();
 }
 
-lib_compute_memmove::lib_compute_memmove(const char* unique_name, software_id sid) :
-  lib_compute_inst(sprockit::printf("%s%s", unique_name, sid.to_string().c_str()), sid)
+lib_compute_memmove::lib_compute_memmove(const char* prefix, software_id sid) :
+  lib_compute_inst(prefix, sid)
 {
   key_cat_ = key_category;
   init();

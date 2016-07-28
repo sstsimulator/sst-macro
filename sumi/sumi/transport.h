@@ -30,6 +30,28 @@ class transport :
 {
 
  public:
+  class notify_callback {
+   public:
+    virtual void
+    notify(const message::ptr& msg) = 0;
+  };
+
+  template <class Fxn, class T, class MsgType>
+   class notify_callback_impl {
+    public:
+     notify_callback_impl(T* t, Fxn f) :
+       t_(f), fxn_(f){}
+
+     void notify(const message::ptr& msg){
+       sprockit::refcount_ptr<MsgType> mmsg = ptr_safe_cast(MsgType, msg);
+       (t_->*fxn_)(mmsg);
+     }
+
+    private:
+     Fxn fxn_;
+     T* t_;
+  };
+
   virtual ~transport(){}
 
   virtual void
@@ -535,6 +557,16 @@ class transport :
   void
   send_unexpected_rdma(int dst, const message::ptr& msg);
 
+  void
+  set_callback(notify_callback* cb){
+    notify_cb_ = cb;
+  }
+
+  void
+  unset_callback(){
+    notify_cb_ = 0;
+  }
+
  protected:
   void
   start_transaction(const message::ptr& msg);
@@ -716,6 +748,8 @@ class transport :
 
   domain* global_domain_;
 
+  notify_callback* notify_cb_;
+
   int nspares_;
 
 #if SUMI_USE_SPINLOCK
@@ -754,6 +788,11 @@ class transport :
 
 DeclareFactory(transport);
 
+template <class MsgType, class T, class Fxn>
+transport::notify_callback*
+new_notify_callback(T* t, Fxn f){
+  return new transport::notify_callback_impl<Fxn,T,MsgType>(f,t);
+}
 
 class terminate_exception : public std::exception
 {

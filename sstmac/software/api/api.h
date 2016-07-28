@@ -72,7 +72,7 @@ class api :
 
   api(const char* name,
       software_id sid) :
-    library(sprockit::printf("%s%s", name, sid.to_string().c_str()), sid),
+    library(name, sid),
     startcount_(0),
     endcount_(0)
   {

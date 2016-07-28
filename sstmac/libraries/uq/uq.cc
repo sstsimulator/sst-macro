@@ -1,9 +1,12 @@
 #include <sstmac/libraries/uq/uq.h>
 #include <sstmac/main/driver.h>
 #include <sprockit/errors.h>
+#include <sprockit/debug.h>
 #include <cstring>
 
 using namespace sstmac;
+
+MakeDebugSlot(uq);
 
 extern "C" void*
 sstmac_uq_init(int argc, char** argv, int* workerID)
@@ -224,7 +227,8 @@ sstmac_uq_run(void* queue,
 
     if (num_running == max_nthread || j == last_job){
       wait_sims(sims, num_running, results+result_offset, nresults, spawn_ty);
-      printf("Finished through simulation point %d\n", j);
+      debug_printf(sprockit::dbg::uq,
+                   "Finished through simulation point %d\n", j);
       result_offset += num_running;
       num_running = 0;
     }

@@ -269,7 +269,7 @@ SimulationQueue::sendScanPoint(char *bufferPtr, int bufferSize, int nresults)
     sim->setStats(stats);
     if (num_results_ != nresults){
       spkt_throw_printf(sprockit::value_error,
-        "got wrong number of results form simulation queue: %d != %d",
+        "got wrong number of results from simulation queue: %d != %d",
         num_results_, nresults);
 
     }

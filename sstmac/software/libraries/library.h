@@ -67,6 +67,11 @@ class library  {
   {
   }
 
+  library(const char* prefix, software_id sid) :
+    sid_(sid), libname_(sprockit::printf("%s%s", prefix, sid.to_string().c_str())), os_(0)
+  {
+  }
+
   /**
    * This function is provided so that libraries can instantiate, register, and use other libraries.
    * @param lib the library to register
