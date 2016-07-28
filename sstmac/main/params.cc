@@ -143,7 +143,7 @@ remap_deprecated_params(sprockit::sim_parameters* params)
     if (params->has_param(p.deprecated)){
       params->parse_keyval(p.updated,
          params->get_param(p.deprecated),
-         true/*fail on existing*/,
+         false/*fail on existing*/,
          false/*do not overwrite anything*/,
          false/*do not mark anything as read*/);
       if (p.del){
