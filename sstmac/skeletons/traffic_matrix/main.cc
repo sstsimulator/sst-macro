@@ -3,6 +3,8 @@
 #include <sstmac/common/sstmac_env.h>
 #include <sstmac/main/driver.h>
 #include <sstmac/software/process/app.h>
+#include <sstmac/software/process/operating_system.h>
+#include <sstmac/libraries/sumi/sumi_transport.h>
 #include <sumi/sumi/transport.h>
 #include <sstmac/skeleton.h>
 
@@ -210,11 +212,7 @@ quiesce(sumi::transport* tport,
 
 int USER_MAIN(int argc, char** argv)
 {
-  sprockit::sim_parameters init_params;
-  init_params["ping_timeout"] = "100ms";
-  init_params["transport"] = model;
-  init_params["eager_cutoff"] = "512";
-  sumi::transport* tport = sumi::transport_factory::get_param("transport", &init_params);
+  sumi::transport* tport = sstmac::sw::operating_system::current_thread()->get_api<sumi::sumi_transport>();
 
   tport->init();
 

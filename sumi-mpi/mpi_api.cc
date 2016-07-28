@@ -78,7 +78,7 @@ sstmac_mpi()
 //
 // Build a new mpiapi.
 //
-mpi_api::mpi_api() :
+mpi_api::mpi_api(sstmac::sw::software_id sid) :
   status_(is_fresh),
   next_type_id_(0),
   next_op_id_(first_custom_op_id),
@@ -87,9 +87,13 @@ mpi_api::mpi_api() :
   queue_(0),
   comm_factory_(0),
   worldcomm_(0),
-  selfcomm_(0)
+  selfcomm_(0),
+  rank_(sid.task_),
+  sumi_transport("mpi", sid)
 {
+  sumi_transport::init_param1(sid);
 }
+
 
 void
 mpi_api::init_factory_params(sprockit::sim_parameters* params)
@@ -103,7 +107,7 @@ mpi_api::init_factory_params(sprockit::sim_parameters* params)
     }
   */
   queue_ = new mpi_queue;
-  queue_->init_sid(id_);
+  queue_->init_sid(sid());
   queue_->init_factory_params(queue_params);
   queue_->set_api(this);
 }
@@ -111,16 +115,6 @@ mpi_api::init_factory_params(sprockit::sim_parameters* params)
 void
 mpi_api::finalize_init()
 {
-}
-
-void
-mpi_api::init_param1(const software_id& id)
-{
-  sumi_transport::init_param1(id);
-  process_manager::init_param1(id);
-  id_ = id;
-  rank_ = int(int(id.task_));
-  libname_ = "mpiapi" + id.to_string();
 }
 
 void
@@ -174,7 +168,7 @@ mpi_api::do_init(int* argc, char*** argv)
     spkt_throw(sprockit::null_error, "mpiapi::init: os has not been initialized yet");
   }
 
-  comm_factory_ = new mpi_comm_factory(id_.app_, this);
+  comm_factory_ = new mpi_comm_factory(sid().app_, this);
   comm_factory_->init(rank_, transport::nproc_);
 
   worldcomm_ = comm_factory_->world();
@@ -221,7 +215,7 @@ mpi_api::do_finalize()
       "MPI application with ID %s passed barrier in finalize on Rank 0\n"
       "at simulation time %10.6e seconds. This generally validates the \n"
       "simulation meaning everyhing has cleanly terminate\n",
-      id_.to_string().c_str(),
+      sid().to_string().c_str(),
       os_->now().sec());
   }
   comm_factory_->finalize();

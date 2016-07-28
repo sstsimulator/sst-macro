@@ -18,16 +18,13 @@
 #include <unistd.h>
 #include <getopt.h>
 
-
-ImplementFactory(sstmac::sw::launcher);
-
 namespace sstmac {
 namespace sw {
 
 launcher::launcher() :
-  is_completed_(false)
+  is_completed_(false),
+  service("launcher", software_id(0,0))
 {
-  libname_ = "launcher";
 }
 
 launcher::~launcher() throw()

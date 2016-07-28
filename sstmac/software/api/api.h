@@ -62,16 +62,20 @@ class api :
   public library
 {
  public:
-  api(const key::category& ty) :
-    library() {
-    startcount_ = 0;
-    endcount_ = 0;
+  api(const char* name,
+      software_id sid,
+      const key::category& ty) :
+    api(name, sid)
+  {
     key_cat_ = ty;
   }
 
-  api() {
-    startcount_ = 0;
-    endcount_ = 0;
+  api(const char* name,
+      software_id sid) :
+    library(sprockit::printf("%s%s", name, sid.to_string().c_str()), sid),
+    startcount_(0),
+    endcount_(0)
+  {
   }
 
   virtual
@@ -82,10 +86,13 @@ class api :
   }
 
   virtual void
-  init_os(operating_system* os);
+  init(){}
 
   virtual void
-  init_param1(const software_id& sid);
+  finalize(){}
+
+  virtual void
+  init_os(operating_system* os);
 
   timestamp
   now() const;
@@ -112,11 +119,10 @@ class api :
   long startcount_;
   long endcount_;
   lib_compute_time* compute_;
-  software_id sid_;
 
 };
-DeclareFactory1InitParam(api,software_id)
-;
+
+DeclareFactory(api,software_id);
 
 }
 }

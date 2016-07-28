@@ -32,11 +32,10 @@ class memory_model :
 {
 
  public:
+  memory_model(node* node);
+
   static void
   delete_statics();
-
-  virtual void
-  init_param1(node* parent_node);
 
   virtual void
   init_factory_params(sprockit::sim_parameters* params);

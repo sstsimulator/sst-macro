@@ -15,10 +15,8 @@ using namespace sprockit::dbg;
 
 namespace sumi {
 
-SpktRegister("sst", transport, sumi_transport,
-            "Create a SUMI transport suitable for SST/macro");
-
-sumi_transport::sumi_transport()
+sumi_transport::sumi_transport(const char* name, sstmac::sw::software_id sid) :
+  sumi_api(name, sid)
 {
 }
 

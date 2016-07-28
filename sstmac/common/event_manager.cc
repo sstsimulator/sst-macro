@@ -17,9 +17,9 @@
 #include <sprockit/util.h>
 #include <sprockit/output.h>
 
-ImplementFactory(sstmac::event_manager)
-
 RegisterDebugSlot(event_manager);
+
+ImplementFactory(sstmac::event_manager);
 
 namespace sstmac {
 
@@ -53,16 +53,6 @@ std::vector<pthread_t> event_manager::pthreads_;
 std::vector<pthread_attr_t> event_manager::pthread_attrs_;
 event_manager* event_manager::global = 0;
 
-event_manager::event_manager() :
-  finish_on_stop_(true),
-  stopped_(true),
-  thread_id_(0),
-  nthread_(1),
-  me_(0),
-  nproc_(1),
-  complete_(false)
-{
-}
 
 event_manager*
 event_manager::ev_man_for_thread(int thread_id) const

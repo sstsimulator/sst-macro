@@ -23,13 +23,7 @@ namespace hw {
 
 static sprockit::need_delete_statics<memory_model> need_del;
 
-memory_model::memory_model()
-{
-  message* msg;
-}
-
-void
-memory_model::init_param1(node* parent_node)
+memory_model::memory_model(node* parent_node)
 {
   parent_node_ = parent_node;
   nodeid_ = parent_node->addr();

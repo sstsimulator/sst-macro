@@ -20,6 +20,9 @@ namespace sw {
 class random_allocation : public node_allocator
 {
  public:
+  random_allocation(parallel_runtime* rt) :
+    node_allocator(rt){}
+
   void
   init_factory_params(sprockit::sim_parameters *params);
 

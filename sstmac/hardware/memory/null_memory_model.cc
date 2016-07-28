@@ -7,10 +7,6 @@ namespace hw {
 SpktRegister("null",memory_model,null_memory_model,
             "Implements a null memory model that just reads infinitely fast");
 
-null_memory_model::null_memory_model()
-{
-}
-
 null_memory_model::~null_memory_model()
 {
 }

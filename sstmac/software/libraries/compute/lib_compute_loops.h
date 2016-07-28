@@ -27,12 +27,9 @@ class lib_compute_loops :
 
  public:
   virtual
-  ~lib_compute_loops() {
-  }
+  ~lib_compute_loops() {}
 
   lib_compute_loops(software_id id);
-
-  lib_compute_loops(const std::string& id);
 
   template<typename Type>
   void

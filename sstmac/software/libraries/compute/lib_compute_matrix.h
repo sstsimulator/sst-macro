@@ -25,8 +25,7 @@ class lib_compute_matrix :
 
  public:
   lib_compute_matrix(software_id id) :
-    lib_compute_memmove(id) {
-    libname_ = "computelibmatrix" + id.to_string();
+    lib_compute_memmove("computelibmatrix", id) {
   }
 
   virtual

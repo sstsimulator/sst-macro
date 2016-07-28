@@ -25,7 +25,12 @@ class instruction_processor :
   public simple_processor
 {
  public:
-  instruction_processor();
+  instruction_processor(memory_model* mem, node* nd) :
+    simple_processor(mem, nd),
+    noise_model_(0),
+    negligible_time_sec_(0)
+  {
+  }
 
   virtual std::string
   to_string() const {

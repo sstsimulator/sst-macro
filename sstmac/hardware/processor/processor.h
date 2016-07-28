@@ -42,16 +42,6 @@ class processor :
   virtual void
   finalize_init();
 
-  virtual void
-  init_param1(memory_model* mem){
-    mem_ = mem;
-  }
-  
-  virtual void
-  init_param2(node* nd){
-    node_ = nd;
-  }
-
   static void
   delete_statics();
 
@@ -62,7 +52,8 @@ class processor :
   do_compute(sw::compute_event* cev) = 0;
 
  protected:
-  processor();
+  processor(memory_model* mem, node* nd) :
+    mem_(mem), node_(nd) {}
 
  protected:
   double freq_;

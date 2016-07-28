@@ -29,16 +29,8 @@ double lib_compute_loops::flop_line_ratio_ = -1;
 bool lib_compute_loops::do_loops_ = true;
 
 lib_compute_loops::lib_compute_loops(software_id id) :
-  lib_compute_memmove(id)
+  lib_compute_memmove("lib_compute_loops", id)
 {
-  libname_ = "computelibloops" + id.to_string();
-  key_cat_ = lib_compute::key_category;
-}
-
-lib_compute_loops::lib_compute_loops(const std::string& id) :
-  lib_compute_memmove(id)
-{
-  libname_ = id;
   key_cat_ = lib_compute::key_category;
 }
 

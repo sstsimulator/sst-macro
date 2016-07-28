@@ -19,6 +19,7 @@
 #include <sstmac/software/libraries/library.h>
 #include <sstmac/software/process/thread_fwd.h>
 #include <sstmac/software/process/app_fwd.h>
+#include <sstmac/software/api/api_fwd.h>
 
 #include <sstmac/common/messages/sst_message.h>
 #include <sstmac/common/stats/event_trace.h>
@@ -184,6 +185,11 @@ class operating_system :
     return threadstack_.top();
   }
 
+  static void
+  shutdown() {
+    current_os()->local_shutdown();
+  }
+
   void
   print_libs(std::ostream& os = std::cout) const;
 
@@ -260,7 +266,7 @@ class operating_system :
   init_threading();
 
   void
-  init_startup_libs();
+  init_services();
 
   os_thread_context&
   current_os_thread_context();
@@ -270,6 +276,9 @@ class operating_system :
 
   void
   unregister_lib(library* lib);
+
+  void
+  local_shutdown();
   
  private:
   hw::node* node_;
@@ -283,6 +292,8 @@ class operating_system :
   std::list<thread*> threads_;
 
   std::vector<std::string> startup_libs_;
+
+  std::list<api*> services_;
 
   std::stack<thread_data_t> threadstack_;
 

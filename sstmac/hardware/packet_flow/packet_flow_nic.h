@@ -22,7 +22,12 @@ class packet_flow_nic :
 {
 
  public:
-  packet_flow_nic();
+  packet_flow_nic(sprockit::factory_type* interconn) :
+    nic(interconn),
+    packetizer_(0),
+    injection_credits_(0)
+  {
+  }
 
   std::string
   to_string() const {
@@ -85,7 +90,8 @@ class packet_flow_netlink :
   public packet_flow_component
 {
  public:
-  packet_flow_netlink() :
+  packet_flow_netlink(sprockit::factory_type* interconn) :
+    netlink(interconn),
     block_(0),
     tile_rotater_(0),
     inited_(false)

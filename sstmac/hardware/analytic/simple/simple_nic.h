@@ -29,7 +29,8 @@ class simple_nic :
   public nic
 {
  public:
-  simple_nic();
+  simple_nic(sprockit::factory_type* interconn) :
+    nic(interconn), next_free_(0) {}
 
   /// Goodbye.
   virtual ~simple_nic() {}

@@ -63,7 +63,7 @@ class mpi_api :
   static key::category memcpy_key_category;
 
   /// Build a new mpiapi.
-  mpi_api();
+  mpi_api(sstmac::sw::software_id sid);
 
   virtual void
   finalize_init();
@@ -74,9 +74,6 @@ class mpi_api :
  public:
   virtual
   ~mpi_api();
-
-  void
-  init_param1(const software_id& id);
 
   void
   init_os(operating_system* os);
@@ -903,8 +900,6 @@ class mpi_api :
   get_collective_function(collective_op_base* op);
 
  private:
-  software_id id_;
-
   /// The MPI server.
   mpi_queue* queue_;
 

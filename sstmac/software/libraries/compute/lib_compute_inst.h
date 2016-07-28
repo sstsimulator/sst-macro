@@ -30,7 +30,7 @@ class lib_compute_inst :
  public:
   lib_compute_inst(software_id id);
 
-  lib_compute_inst(const std::string& id);
+  lib_compute_inst(const std::string& libname, software_id id);
 
   virtual
   ~lib_compute_inst() { }

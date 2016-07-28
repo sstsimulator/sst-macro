@@ -49,6 +49,7 @@
 #include <sprockit/delete.h>
 #include <sprockit/output.h>
 #include <sprockit/util.h>
+#include <sstmac/software/api/api.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 
@@ -222,20 +223,32 @@ operating_system::init_threading()
 }
 
 void
-operating_system::init_startup_libs()
+operating_system::init_services()
 {
   std::vector<std::string>::const_iterator it, end = startup_libs_.end();
+  software_id sid(0, addr());
   for (it=startup_libs_.begin(); it != end; ++it) {
     const std::string& libname = *it;
-    library* lib = library::construct_lib(libname);
+    sprockit::sim_parameters* lib_params = params_->get_optional_namespace(libname);
+    api* lib = api_factory::get_value(libname, lib_params, sid);
+    lib->init();
     libs_[libname] = lib;
+    services_.push_back(lib);
+  }
+}
+
+void
+operating_system::local_shutdown()
+{
+  for (api* lib : services_){
+    lib->finalize();
   }
 }
 
 void
 operating_system::finalize_init()
 {
-  init_startup_libs();
+  init_services();
 }
 
 void
@@ -748,11 +761,6 @@ operating_system::register_lib(library* lib)
               "operating_system: trying to register a lib with no name");
   }
 #endif
-  static bool already_registered = false;
-  if (addr() == 512 && lib->lib_name() == "sumi_server_1"){
-    if (already_registered) abort();
-    already_registered = true;
-  }
   os_debug("registering lib %s", lib->lib_name().c_str());
   int& refcount = lib_refcounts_[lib];
   ++refcount;

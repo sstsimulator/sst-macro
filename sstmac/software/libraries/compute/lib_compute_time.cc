@@ -18,26 +18,19 @@
 namespace sstmac {
 namespace sw {
 
-lib_compute_time::lib_compute_time(software_id id)
+lib_compute_time::lib_compute_time(software_id id) :
+  lib_compute_time("libcomputetime", id)
 {
-  libname_ = "computelib" + id.to_string();
 }
 
-lib_compute_time::lib_compute_time(const std::string& id)
+lib_compute_time::lib_compute_time(const char* unique_name, software_id id) :
+  lib_compute(sprockit::printf("%s%s", unique_name, id.to_string().c_str()), id)
 {
-  libname_ = id;
 }
 
-lib_compute_time*
-lib_compute_time::construct(software_id id)
+lib_compute_time::lib_compute_time(const std::string& name, software_id id) :
+  lib_compute(name, id)
 {
-  return new lib_compute_time(id);
-}
-
-lib_compute_time*
-lib_compute_time::construct(const std::string& id)
-{
-  return new lib_compute_time(id);
 }
 
 lib_compute_time::~lib_compute_time()

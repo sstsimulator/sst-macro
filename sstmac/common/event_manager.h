@@ -190,16 +190,20 @@ class event_manager :
   static int
   current_thread_id();
 
-  void
-  init_param1(parallel_runtime* rt){
-    rt_ = rt;
-  }
-
   virtual void
   schedule_stop(timestamp until);
 
  protected:
-  event_manager();
+  event_manager(parallel_runtime* rt) :
+    rt_(rt),
+    finish_on_stop_(true),
+    stopped_(true),
+    thread_id_(0),
+    nthread_(1),
+    me_(0),
+    nproc_(1),
+    complete_(false)
+  {}
 
   void
   set_now(const timestamp &ts);
@@ -239,9 +243,12 @@ class event_manager :
 
 };
 
-DeclareFactory1InitParam(event_manager, parallel_runtime*);
+DeclareFactory(event_manager, parallel_runtime*);
+
 #endif
 
 } // end of namespace sstmac
+
+
 #endif
 

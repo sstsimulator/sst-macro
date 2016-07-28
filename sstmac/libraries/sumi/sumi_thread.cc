@@ -6,12 +6,10 @@ namespace sstmac {
 
 uint64_t sumi_thread::num_threads_ = 0;
 
-sumi_thread::sumi_thread()
+sumi_thread::sumi_thread(sw::software_id sid)
 {
-  std::string libcomp_name = sprockit::printf("sumi_thread_compute_%lu",
-                                       num_threads_);
-  compute_ = sstmac::sw::lib_compute_time::construct(libcomp_name);
-  ++num_threads_;
+  std::string libname = sprockit::printf("sumi_compute_thread%lu", num_threads_);
+  compute_ = new sstmac::sw::lib_compute_time(libname, sid);
 }
 
 void

@@ -64,16 +64,6 @@ class nic :
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
 
-
-  /**
-   * Initialize the first construction parameter.
-   * This should be an event handler which encapsulates
-   * the network interconnect
-   * @param interconn
-   */
-  virtual void
-  init_param1(sprockit::factory_type* interconn);
-
   /**
    * @return A unique ID for the NIC positions. Opaque typedef to an int.
    */
@@ -149,7 +139,7 @@ class nic :
 
 
  protected:
-  nic();
+  nic(sprockit::factory_type* interconn);
 
   /**
     Start the message sending and inject it into the network

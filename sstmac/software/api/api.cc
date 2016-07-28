@@ -15,7 +15,7 @@
 #include <sstmac/common/sstmac_env.h>
 #include <sprockit/sim_parameters.h>
 
-ImplementFactory(sstmac::sw::api);
+ImplementFactory(sstmac::sw::api)
 
 namespace sstmac {
 namespace sw {
@@ -23,18 +23,12 @@ namespace sw {
 bool api::hostcompute_ = false;
 
 void
-api::init_param1(const software_id& sid)
-{
-  sid_ = sid;
-}
-
-void
 api::init_factory_params(sprockit::sim_parameters* params)
 {
   hostcompute_ = params->get_optional_bool_param("host_compute_modeling", false);
   if (hostcompute_) {
     timer_ = new Timer();
-    compute_ = lib_compute_time::construct("api-hostcompute-" + sid_.to_string());
+    compute_ = new lib_compute_time("api-hostcompute", sid());
   }
 }
 

@@ -112,6 +112,11 @@ class packet_flow_memory_model :
   public packetizer_callback
 {
  public:
+  packet_flow_memory_model(node* nd) :
+    memory_model(nd)
+  {
+  }
+
   virtual ~packet_flow_memory_model();
 
   void

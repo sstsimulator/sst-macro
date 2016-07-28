@@ -24,14 +24,14 @@ namespace sw {
 static const char* deprecated[] = { "lib_compute_unroll_loops" };
 static sprockit::StaticKeywordRegister deprecated_keys(1, deprecated);
 
-lib_compute_inst::lib_compute_inst(software_id id)
+lib_compute_inst::lib_compute_inst(const std::string& libname, software_id id)
+  : lib_compute(libname, id)
 {
-  libname_ = "computelibinstr" + id.to_string();
 }
 
-lib_compute_inst::lib_compute_inst(const std::string& id)
+lib_compute_inst::lib_compute_inst(software_id sid) :
+  lib_compute(sprockit::printf("computelibinstr%s", sid.to_string().c_str()), sid)
 {
-  libname_ = id;
 }
 
 bool

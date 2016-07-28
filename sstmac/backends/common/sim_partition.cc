@@ -36,21 +36,15 @@ SpktRegister("metis", partition, metis_partition);
 SpktRegister("topology", partition, topology_partition);
 SpktRegister("serial", partition, serial_partition);
 
-partition::partition()
+partition::partition(parallel_runtime* rt) : rt_(rt)
 {
+  nproc_ = rt_->nproc();
+  me_ = rt_->me();
+  nthread_ = rt_->nthread();
 }
 
 partition::~partition()
 {
-}
-
-void
-partition::init_param1(parallel_runtime* rt)
-{
-  rt_ = rt;
-  nproc_ = rt_->nproc();
-  me_ = rt_->me();
-  nthread_ = rt_->nthread();
 }
 
 void
@@ -109,9 +103,6 @@ partition::build_subsets_from_array()
 }
 #endif
 
-serial_partition::serial_partition()
-{
-}
 
 serial_partition::~serial_partition()
 {
@@ -271,10 +262,6 @@ metis_partition::read_partition(const std::string &partfilename, int nproc)
 
 }
 
-topology_partition::topology_partition()
-{
-}
-
 topology_partition::~topology_partition()
 {
 }
@@ -302,10 +289,6 @@ topology_partition::finalize_init()
     local_switch_to_thread_, local_num_switches_, 
     me_, nproc_, nthread_, noccupied_);
   init_local_switches();
-}
-
-block_partition::block_partition()
-{
 }
 
 block_partition::~block_partition()
@@ -352,10 +335,6 @@ block_partition::partition_switches()
   int remainder = num_switches_total_ - sw_per_lp*me_;
   remainder = std::max(0, remainder);
   local_num_switches_ = std::min(remainder, sw_per_lp);
-}
-
-occupied_block_partition::occupied_block_partition()
-{
 }
 
 occupied_block_partition::~occupied_block_partition()

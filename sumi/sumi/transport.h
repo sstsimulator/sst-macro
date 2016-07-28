@@ -752,7 +752,7 @@ class transport :
 
 };
 
-DeclareFactory(transport)
+DeclareFactory(transport);
 
 
 class terminate_exception : public std::exception

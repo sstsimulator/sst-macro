@@ -59,7 +59,7 @@ class sumi_api :
 {
 
  public:
-  sumi_api();
+  sumi_api(const char* name, sstmac::sw::software_id sid);
 
   virtual void
   init();
@@ -107,8 +107,6 @@ class sumi_api :
  private:
   std::string server_libname_;
 
-  sstmac::sw::software_id sid_;
-
   sstmac::sw::app_launch* rank_mapper_;
 
   /**
@@ -132,7 +130,7 @@ class sumi_server :
 {
 
  public:
-  sumi_server(int appid);
+  sumi_server(const std::string& libname, int appid);
 
   void
   register_proc(int rank, sumi_api* proc);

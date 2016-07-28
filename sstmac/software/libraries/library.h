@@ -27,15 +27,6 @@ namespace sw {
 class library  {
   
  public:
-  static library*
-  construct_lib(const std::string& libname);
-
-  static library*
-  construct_lib(const std::string& libname, const software_id& sid);
-
-  static void
-  register_builder(const std::string& libname, library_builder* builder);
-
   virtual void
   unregister_all_libs();
 
@@ -63,10 +54,18 @@ class library  {
     return os_;
   }
 
+  software_id
+  sid() const {
+    return sid_;
+  }
+
   virtual ~library();
 
  protected:
-  library();
+  library(const std::string& libname, software_id sid) :
+    sid_(sid), libname_(libname), os_(0)
+  {
+  }
 
   /**
    * This function is provided so that libraries can instantiate, register, and use other libraries.
@@ -85,39 +84,15 @@ class library  {
     return true;
   }
 
-  static library_builder*
-  builder(const std::string& name);
-
-
  protected:
   operating_system* os_;
-  std::string libname_;
   key::category key_cat_;
+  software_id sid_;
+
+ private:
+  std::string libname_;
 
 };
-
-class library_builder
-{
- public:
-  virtual library* construct(const std::string& libname) = 0;
-};
-
-template <class T>
-class library_builder_tmpl :
-  public library_builder
-{
-
- public:
-  library_builder_tmpl(const std::string& libname) {
-    library::register_builder(libname, this);
-  }
-
-  library* construct(const std::string& libname) {
-    return T::construct(libname);
-  }
-
-};
-
 
 
 }

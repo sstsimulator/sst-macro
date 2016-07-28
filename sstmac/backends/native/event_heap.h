@@ -34,6 +34,8 @@ class event_heap :
 {
 
  public:
+  event_heap(parallel_runtime* rt) : event_container(rt){}
+
   ~event_heap() throw ();
 
   /// Clear all events and set time back to a zero of your choice.

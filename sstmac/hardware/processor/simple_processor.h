@@ -27,6 +27,9 @@ class simple_processor :
   public processor
 {
  public:
+  simple_processor(memory_model* mem, node* nd) :
+    processor(mem, nd) {}
+
   /// Goodbye.
   virtual ~simple_processor() {}
 

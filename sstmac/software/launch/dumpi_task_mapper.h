@@ -23,6 +23,9 @@ class dumpi_task_mapper : public task_mapper
 {
 
  public:
+  dumpi_task_mapper(parallel_runtime* rt) :
+    task_mapper(rt){}
+
   void
   set_topology(hw::topology *top);
 

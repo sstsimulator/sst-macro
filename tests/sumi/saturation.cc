@@ -43,7 +43,12 @@ class throughput_thread :
   public sstmac::sumi_thread
 {
  public:
+  throughput_thread(sstmac::sw::software_id sid) :
+    sstmac::sumi_thread(sid){}
+
   virtual void run();
+
+  ~throughput_thread(){}
 };
 
 void
@@ -109,7 +114,9 @@ void run_test(
     recv_partners[i] = simp->get_partner(node_partners[i]);
   }
 
-  throughput_thread* thr = new throughput_thread;
+  int aid = 1; //assume 1 for now
+  sstmac::sw::software_id sid(aid, comm_rank());
+  throughput_thread* thr = new throughput_thread(sid);
   thr->start();
 
   int me = comm_rank();

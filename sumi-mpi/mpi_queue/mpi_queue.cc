@@ -37,8 +37,6 @@ RegisterNamespaces("traffic_matrix");
 DeclareDebugSlot(mpi_all_sends);
 RegisterDebugSlot(mpi_all_sends);
 
-ImplementFactory(sumi::mpi_queue);
-
 namespace sumi {
 
 
@@ -78,13 +76,13 @@ mpi_queue::mpi_queue() :
 void
 mpi_queue::init_os(operating_system* os){
   os_ = os;
-  std::string libname = sprockit::printf("mpi_queue-user-lib-mem-%d-%d",
-                                  int(taskid_), int(appid_));
-  user_lib_mem_ = new sstmac::sw::lib_compute_memmove(libname);
+
+  sstmac::sw::software_id sid(appid_, taskid_);
+
+  user_lib_mem_ = new sstmac::sw::lib_compute_memmove("mpi_queue-user-lib-mem", sid);
   os_->register_lib(this, user_lib_mem_);
 
-  user_lib_time_ = sstmac::sw::lib_compute_time::construct(
-                     sprockit::printf("mpi_queue-user-lib-time-%d-%d", int(taskid_), int(appid_)));
+  user_lib_time_ = new sstmac::sw::lib_compute_time("mpi_queue-user-lib-time", sid);
   os_->register_lib(this, user_lib_time_);
 
   mpi_queue_debug("init on node %d", int(operating_system::current_node_id()));

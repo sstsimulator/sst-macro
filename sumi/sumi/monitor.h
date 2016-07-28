@@ -43,6 +43,7 @@ class activity_monitor :
   public sprockit::factory_type
 {
  public:
+  activity_monitor(transport* t) : api_(t){}
 
   virtual ~activity_monitor(){}
 
@@ -54,9 +55,6 @@ class activity_monitor :
 
   virtual void
   message_received(const message::ptr& msg) = 0;
-
-  virtual void
-  init_param1(transport* api);
 
   virtual void
   renew_pings(double wtime) = 0;
@@ -71,9 +69,8 @@ class activity_monitor :
   transport* api_;
 
 };
-DeclareFactory1InitParam(activity_monitor, transport*);
 
-
+DeclareFactory(activity_monitor, transport*);
 
 }
 

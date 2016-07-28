@@ -13,11 +13,6 @@ namespace hw {
 SpktRegister("simple", nic, simple_nic,
             "implements a nic that models messages via a simple latency/bandwidth injection delay");
 
-simple_nic::simple_nic() :
-  next_free_(0)
-{
-}
-
 void
 simple_nic::init_factory_params(sprockit::sim_parameters *params)
 {

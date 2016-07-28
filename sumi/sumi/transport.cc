@@ -17,8 +17,10 @@
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 
-RegisterDebugSlot(sumi)
+RegisterDebugSlot(sumi);
+
 ImplementFactory(sumi::transport)
+
 
 RegisterKeywords("lazy_watch", "eager_cutoff", "use_put_protocol");
 

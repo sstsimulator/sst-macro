@@ -26,9 +26,6 @@ namespace hw {
 
 static sprockit::need_delete_statics<processor> del_statics;
 
-processor::processor()
-{
-}
 
 processor::~processor()
 {

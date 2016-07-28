@@ -17,14 +17,21 @@ namespace sstmac {
 
 #define print_extra_stuff 0
 
-sumi_api::sumi_api()
+sumi_api::sumi_api(const char *name, sw::software_id sid) :
+  api(name, sid),
+  process_manager(sid)
 {
+  rank_ = sid.task_;
+  server_libname_ = sprockit::printf("sumi_server_%d", int(sid.app_));
+  sw::thread* thr = sw::operating_system::current_thread();
+  sw::app* my_app = safe_cast(sw::app, thr);
+  my_app->compute(timestamp(1e-6));
 }
 
 void
 sumi_api::init()
 {
-  rank_mapper_ = runtime::launcher()->task_mapper(sid_.app_);
+  rank_mapper_ = runtime::launcher()->task_mapper(sid().app_);
   nproc_ = rank_mapper_->nproc();
   loc_ = os_->event_location();
 
@@ -33,7 +40,7 @@ sumi_api::init()
 
   // only do one server per app per node
   if (server_lib == 0) {
-    server = new sumi_server(sid_.app_);
+    server = new sumi_server(server_libname_, sid().app_);
     register_lib(server);
     server->start();
   }
@@ -62,15 +69,7 @@ sumi_api::finalize()
 void
 sumi_api::init_param1(const sstmac::sw::software_id &sid)
 {
-  sid_ = sid;
-  rank_ = sid.task_;
-  libname_ = sprockit::printf("sumi_api_%d_%d",
-                       int(sid.app_), int(sid.task_));
-  server_libname_ = sprockit::printf("sumi_server_%d", int(sid_.app_));
-  process_manager::init_param1(sid);
-  sw::thread* thr = sw::operating_system::current_thread();
-  sw::app* my_app = safe_cast(sw::app, thr);
-  my_app->compute(timestamp(1e-6));
+
 }
 
 void
@@ -88,7 +87,7 @@ sumi_api::transport_send(
   bool needs_ack,
   void* buffer)
 {
-  sstmac::sw::app_id aid = sid_.app_;
+  sstmac::sw::app_id aid = sid().app_;
   sstmac::hw::network_message::type_t ty = (sstmac::hw::network_message::type_t) sendType;
   transport_message* tmsg = new transport_message(aid, msg, byte_length);
   tmsg->hw::network_message::set_type(ty);
@@ -143,10 +142,10 @@ sumi_api::incoming_message(transport_message* msg)
   queue_->put_message(msg);
 }
 
-sumi_server::sumi_server(int appid)
-  : appid_(appid)
+sumi_server::sumi_server(const std::string& libname, int appid)
+  : appid_(appid),
+    service(libname, sstmac::sw::software_id(appid, -1))
 {
-  libname_ = sprockit::printf("sumi_server_%d", appid);
 }
 
 void

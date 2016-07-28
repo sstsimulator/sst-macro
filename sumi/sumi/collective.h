@@ -209,7 +209,7 @@ class collective_algorithm_selector
   virtual dag_collective* select(int nproc, int* counts) = 0;
 };
 
-DeclareFactory(dag_collective)
+DeclareFactory(dag_collective);
 
 
 }

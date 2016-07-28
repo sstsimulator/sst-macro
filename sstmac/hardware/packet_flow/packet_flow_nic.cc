@@ -38,12 +38,6 @@ SpktRegister("packet_flow", netlink, packet_flow_netlink,
 
 const int packet_flow_netlink::really_big_buffer = 1<<30;
 
-packet_flow_nic::packet_flow_nic() :
-  packetizer_(0),
-  injection_credits_(0)
-{
-}
-
 void
 packet_flow_nic::init_factory_params(sprockit::sim_parameters *params)
 {

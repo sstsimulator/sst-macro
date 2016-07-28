@@ -28,10 +28,10 @@ class netlink :
     return tile_offset;
   }
 
-  void
-  init_param1(sprockit::factory_type*){}
 
  protected:
+  netlink(sprockit::factory_type* ty){}
+
   int num_eject_;
   int num_inject_;
   netlink_id id_;

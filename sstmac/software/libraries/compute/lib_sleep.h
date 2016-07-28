@@ -26,12 +26,9 @@ class lib_sleep : public library
 
  public:
   virtual
-  ~lib_sleep() {
-  }
+  ~lib_sleep() {}
 
   lib_sleep(software_id id);
-
-  lib_sleep(const std::string& id);
 
   virtual void
   incoming_event(event *ev){

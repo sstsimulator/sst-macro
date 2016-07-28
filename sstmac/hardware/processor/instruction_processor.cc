@@ -29,12 +29,6 @@ namespace hw {
 SpktRegister("instruction", processor, instruction_processor,
             "Extension of simpleprocessor that estimates compute time of instruction counters");
 
-instruction_processor::instruction_processor() :
- noise_model_(0),
- negligible_time_sec_(0)
-{
-}
-
 void
 instruction_processor::finalize_init()
 {

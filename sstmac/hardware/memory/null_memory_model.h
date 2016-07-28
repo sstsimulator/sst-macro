@@ -10,7 +10,10 @@ class null_memory_model :
   public memory_model
 {
  public:
-  null_memory_model();
+  null_memory_model(node* nd) :
+    memory_model(nd)
+  {
+  }
 
   virtual ~null_memory_model();
 

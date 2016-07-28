@@ -28,7 +28,6 @@ ImplementFactory(sstmac::sw::app);
 namespace sstmac {
 namespace sw {
 
-
 SpktRegister("user_app_cxx_full_main", app, user_app_cxx_full_main);
 SpktRegister("user_app_cxx_empty_main", app, user_app_cxx_empty_main);
 
@@ -38,18 +37,6 @@ std::map<std::string, app::empty_main_fxn>*
   user_app_cxx_empty_main::empty_main_fxns_ = 0;
 std::map<app_id, user_app_cxx_full_main::argv_entry> user_app_cxx_full_main::argv_map_;
 
-void
-app_factory::print_apps()
-{
-  std::map<std::string, sprockit::SpktDesc_base*>::const_iterator
-  it = object_map_->begin(), end = object_map_->end();
-  cout0 << "Valid SST/macro apps are:\n";
-  for ( ; it != end; ++it) {
-    cout0 << it->first << "\n";
-  }
-  cout0 << std::endl;
-}
-
 int
 app::allocate_tls_key(destructor_fxn fxn)
 {
@@ -57,16 +44,6 @@ app::allocate_tls_key(destructor_fxn fxn)
   tls_key_fxns_[next] = fxn;
   ++next_tls_key_;
   return next;
-}
-
-void
-app_factory::clear_apps()
-{
-  std::map<std::string, sprockit::SpktDesc_base*>::const_iterator
-  it = object_map_->begin(), end = object_map_->end();
-  for ( ; it != end; ++it) {
-    it->second->clear();
-  }
 }
 
 void
@@ -269,7 +246,7 @@ app::compute_name()
 {
 
   if (!compute_time_) {
-    compute_time_ = lib_compute_time::construct(id_);
+    compute_time_ = new lib_compute_time(id_);
     register_lib(compute_time_);
   }
   return compute_time_->lib_name();

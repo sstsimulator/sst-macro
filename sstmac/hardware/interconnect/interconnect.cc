@@ -109,11 +109,6 @@ sst_interconnect::kill_node(node_id nid, timestamp t)
   spkt_throw(sprockit::unimplemented_error, "interconnect::kill_node");
 }
 #else
-macro_interconnect::macro_interconnect() :
-  partition_(0)
-{
-}
-
 macro_interconnect::~macro_interconnect()
 {
   delete topology_;

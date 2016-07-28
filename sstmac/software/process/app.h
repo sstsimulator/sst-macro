@@ -315,23 +315,10 @@ class user_app_cxx_empty_main : public app
 /** utility function for computing stuff */
 void compute_time(double tsec);
 
-class app_factory : public sprockit::SpktFactory<app>
-{
-
- public:
-  static void
-  print_apps();
-
-  static void
-  clear_apps();
-
-};
+DeclareFactory(app)
 
 }
 } // end of namespace sstmac.
-
-
-
 
 #endif
 

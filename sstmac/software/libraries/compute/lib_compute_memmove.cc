@@ -23,17 +23,15 @@ namespace sw {
 key::category lib_compute_memmove::key_category("Memory");
 
 lib_compute_memmove::lib_compute_memmove(software_id id) :
-  lib_compute_inst(id)
+  lib_compute_memmove("libmemmove", id)
 {
-  libname_ = static_name(id.to_string());
   key_cat_ = key_category;
   init();
 }
 
-lib_compute_memmove::lib_compute_memmove(const std::string& libname) :
-  lib_compute_inst(libname)
+lib_compute_memmove::lib_compute_memmove(const char* unique_name, software_id sid) :
+  lib_compute_inst(sprockit::printf("%s%s", unique_name, sid.to_string().c_str()), sid)
 {
-  libname_ = static_name(libname);
   key_cat_ = key_category;
   init();
 }

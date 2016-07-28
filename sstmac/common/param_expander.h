@@ -20,7 +20,7 @@ class param_expander :
 
 };
 
-DeclareFactory(param_expander)
+DeclareFactory(param_expander);
 
 }
 

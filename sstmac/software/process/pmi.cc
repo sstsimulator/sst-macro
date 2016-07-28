@@ -14,6 +14,17 @@ namespace sw {
 process_manager::app_to_proc_to_node_map process_manager::node_map_;
 process_manager::app_to_node_to_proc_map process_manager::proc_map_;
 
+process_manager::process_manager(software_id sid) :
+  sid_(sid)
+{
+  node_id addr = runtime::node_for_task(sid.app_, sid.task_);
+  static thread_lock lock;
+  lock.lock();
+  node_map_[sid.app_][sid.task_] = addr;
+  proc_map_[sid.app_][addr] = sid.task_;
+  lock.unlock();
+  my_addr_ = addr;
+}
 
 process_manager::~process_manager()
 {
@@ -35,20 +46,6 @@ process_manager::kill_process()
 {
   spkt_throw(sprockit::unimplemented_error,
     "process_manager::kill_process");
-}
-
-void
-process_manager::init_param1(const software_id &sid)
-{
-  sid_ = sid;
-
-  node_id addr = runtime::node_for_task(sid.app_, sid.task_);
-  static thread_lock lock;
-  lock.lock();
-  node_map_[sid.app_][sid.task_] = addr;
-  proc_map_[sid.app_][addr] = sid.task_;
-  lock.unlock();
-  my_addr_ = addr;
 }
 
 void

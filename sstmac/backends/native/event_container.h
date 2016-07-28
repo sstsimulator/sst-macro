@@ -50,7 +50,7 @@ class event_container : public event_manager
   init_factory_params(sprockit::sim_parameters* params);
 
  protected:
-  event_container();
+  event_container(parallel_runtime* rt);
 
   virtual void
   do_next_event();

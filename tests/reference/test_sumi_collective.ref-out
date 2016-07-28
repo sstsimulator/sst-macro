@@ -43,10 +43,10 @@ test[8] = 2
 Testing allgather payload with 2 elements
 Testing allgather payload with 2 elements
 t=9.00024: finished barrier on rank 1
-t=9.00025: finished barrier on rank 0
-t=9.00025: finished barrier on rank 3
-t=9.00025: finished barrier on rank 9
-t=9.00025: finished barrier on rank 7
+t=9.00024: finished barrier on rank 0
+t=9.00024: finished barrier on rank 3
+t=9.00024: finished barrier on rank 9
+t=9.00024: finished barrier on rank 7
 t=9.00025: finished barrier on rank 2
 t=9.00025: finished barrier on rank 8
 t=9.00025: finished barrier on rank 6
@@ -138,4 +138,4 @@ test[17] = 2
 test[18] = 1
 test[19] = 1
 Testing scatter on root=3
-Estimated total runtime of         109.00052510 seconds
+Estimated total runtime of         109.00052410 seconds

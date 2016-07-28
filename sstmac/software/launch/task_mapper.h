@@ -46,11 +46,6 @@ class task_mapper :
   }
 
   virtual void
-  init_param1(parallel_runtime* rt){
-    rt_ = rt;
-  }
-
-  virtual void
   init_factory_params(sprockit::sim_parameters *params);
 
   virtual
@@ -75,8 +70,8 @@ class task_mapper :
     int nproc) = 0;
 
  protected:
-  task_mapper() :
-    rt_(0), topology_(0) {}
+  task_mapper(parallel_runtime* rt) :
+    rt_(rt), topology_(0) {}
 
   int
   validate_nproc(int ppn, int num_nodes, int nproc, const char* name) const;
@@ -87,7 +82,7 @@ class task_mapper :
 
 };
 
-DeclareFactory1InitParam(task_mapper, parallel_runtime*);
+DeclareFactory(task_mapper, parallel_runtime*);
 
 }
 } // end of namespace sstmac

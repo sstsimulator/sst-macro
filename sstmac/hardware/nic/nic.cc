@@ -43,7 +43,7 @@ namespace hw {
 
 static sprockit::need_delete_statics<nic> del_statics;
 
-nic::nic() :
+nic::nic(sprockit::factory_type *interconn) :
   spy_num_messages_(0),
   spy_bytes_(0),
   hist_msg_size_(0),
@@ -53,6 +53,7 @@ nic::nic() :
   parent_(0),
   mtl_handler_(0)
 {
+  if (interconn) interconn_ = safe_cast(interconnect, interconn);
 }
 
 nic::~nic()
@@ -284,13 +285,7 @@ nic::send_to_node(network_message* payload)
 }
 
 void
-nic::init_param1(sprockit::factory_type *interconn)
-{
-  if (interconn) interconn_ = safe_cast(interconnect, interconn);
-}
-
-void
-nic::send_to_interconn(network_message*netmsg)
+nic::send_to_interconn(network_message* netmsg)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   spkt_throw(sprockit::unimplemented_error,

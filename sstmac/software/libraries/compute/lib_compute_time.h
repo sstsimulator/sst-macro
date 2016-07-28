@@ -25,16 +25,12 @@ class lib_compute_time :
  public:
   lib_compute_time(software_id id);
 
-  lib_compute_time(const std::string& id);
+  lib_compute_time(const char* unique_name, software_id id);
+
+  lib_compute_time(const std::string& name, software_id id);
 
   virtual
   ~lib_compute_time();
-
-  static lib_compute_time*
-  construct(software_id id);
-
-  static lib_compute_time*
-  construct(const std::string& str);
 
   void
   incoming_event(event *ev){
