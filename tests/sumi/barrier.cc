@@ -10,7 +10,7 @@
 #include <sstmac/libraries/sumi/sumi_transport.h>
 #include <sstmac/common/runtime.h>
 #include <sumi/transport.h>
-#define sstmac_app_name "user_app_cxx"
+#define sstmac_app_name user_app_cxx
 using namespace sumi;
 
 void

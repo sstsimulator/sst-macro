@@ -15,10 +15,8 @@ dist_bin_SCRIPTS = aprun \
 fix_style \
 readsymbols \
 sst++ \
-lsst++ \
 dsst++ \
 sstcc \
-lsstcc \
 dsstcc \
 sstcclib.py \
 check_repo_build \

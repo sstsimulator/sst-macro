@@ -65,7 +65,7 @@ void* ptest2(void* args)
   return 0;
 }
 
-#define sstmac_app_name "test_pthread"
+#define sstmac_app_name test_pthread
 
 
 int USER_MAIN(int argc, char** argv)

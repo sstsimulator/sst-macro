@@ -208,7 +208,7 @@ quiesce(sumi::transport* tport,
   }
 }
 
-#define sstmac_app_name "traffic_matrix"
+#define sstmac_app_name traffic_matrix
 
 int USER_MAIN(int argc, char** argv)
 {

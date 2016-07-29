@@ -648,7 +648,7 @@ const char* valid_keywords[] = {
 
 sprockit::StaticKeywordRegister reg(sizeof(valid_keywords) / sizeof(const char*), valid_keywords);
 
-#define sstmac_app_name "apitest"
+#define sstmac_app_name apitest
 
 int USER_MAIN(int argc, char *argv[])
 {

@@ -19,6 +19,7 @@ sstmac_cppflags = [
 ]
 
 sst_core="@SST_CPPFLAGS@"
+so_flags="@LD_SO_FLAGS@"
 
 prefix="@prefix@"
 exec_prefix="@exec_prefix@"

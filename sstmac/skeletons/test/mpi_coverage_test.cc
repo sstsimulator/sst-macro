@@ -1,4 +1,4 @@
-#define sstmac_app_name "mpi_coverage"
+#define sstmac_app_name mpi_coverage
 
 #include <sstmac/skeleton.h>
 #include <sstmac/compute.h>

@@ -14,7 +14,7 @@
 #include <sstmac/util.h>
 #include <sstmac/replacements/mpi.h>
 
-#define sstmac_app_name "global_test"
+#define sstmac_app_name global_test
 
 global_int class_global_;
 

@@ -21,9 +21,10 @@
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/sst_core/connectable_wrapper.h>
 #include <sstmac/sst_core/integrated_component.h>
+#else
+ImplementFactory(sstmac::hw::network_switch);
 #endif
 
-ImplementFactory(sstmac::hw::network_switch)
 RegisterDebugSlot(network_switch)
 
 namespace sstmac {

@@ -3,7 +3,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-#define sstmac_app_name "ddot"
+#define sstmac_app_name ddot
 
 int main(int argc, char** argv)
 {

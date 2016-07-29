@@ -84,14 +84,22 @@ def setupDeprecated():
   sst.macro.init()
   params = sst.macro.readParams(sys.argv)
 
+
   nodeParams = params["node"]
-  launchParams = [
-    "name",
-    "size",
-    "launch_cmd",
-    "start",
-    "launch_allocation",
-    "launch_indexing",
+
+  builtinApps = [
+    "apitest",
+    "global_test",
+    "hello_world",
+    "mpi_coverage",
+    "mpi_ping_all",
+    "mpi_print_nodes",
+    "mpi_topology",
+    "parsedumpi",
+    "sstmac_mpi_testall",
+    "traffic_matrix",
+    "user_app_cxx_empty_main",
+    "user_app_cxx_full_main",
   ]
 
   for i in range(10):
@@ -99,6 +107,10 @@ def setupDeprecated():
     if params.has_key(ns):
       appParams = params[ns]
       nodeParams[ns] = appParams
+      appName = appParams["name"]
+      if not appName in builtinApps:
+        cmd = "import sst.%s" % appName
+        exec(cmd)
       del params[ns]
 
   known_ns = "node","topology","nic","switch"

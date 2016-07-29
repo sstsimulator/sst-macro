@@ -7,7 +7,7 @@
 #include <sstmac/software/process/thread.h>
 #include <sstmac/libraries/sumi/sumi.h>
 #include <sstmac/skeleton.h>
-#define sstmac_app_name "user_app_cxx"
+#define sstmac_app_name user_app_cxx
 using namespace sumi;
 
 int indices[] = { 0,1,0,1,2,1 };

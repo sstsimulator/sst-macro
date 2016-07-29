@@ -13,7 +13,7 @@
 #include <sstmac/replacements/mpi.h>
 #include <sstmac/skeleton.h>
 
-#define sstmac_app_name "mpi_ping_all"
+#define sstmac_app_name mpi_ping_all
 
 int USER_MAIN(int argc, char** argv)
 {

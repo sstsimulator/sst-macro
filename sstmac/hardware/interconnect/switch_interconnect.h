@@ -52,6 +52,9 @@ class sst_switch_interconnect :
   public switch_interconnect_base
 {
  public:
+  sst_switch_interconnect(partition* part, parallel_runtime* rt) :
+    switch_interconnect_base(part, rt){}
+
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
 
