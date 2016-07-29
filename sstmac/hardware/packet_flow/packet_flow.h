@@ -146,7 +146,7 @@ class packet_flow_payload :
     return num_bytes_;
   }
 
-  double
+  timestamp
   arrival() const {
     return arrival_;
   }
@@ -221,7 +221,7 @@ class packet_flow_payload :
 
   double max_in_bw_;
 
-  double arrival_;
+  timestamp arrival_;
 
 };
 

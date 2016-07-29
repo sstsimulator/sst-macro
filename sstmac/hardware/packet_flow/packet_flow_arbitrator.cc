@@ -139,8 +139,8 @@ packet_flow_cut_through_arbitrator::packet_flow_cut_through_arbitrator()
 {
   timestamp sec(1.0);
   timestamp tick(1, timestamp::exact);
-  bw_sec_to_tick_conversion_ = sec.ticks_int64();
-  bw_tick_to_sec_conversion_ = tick.sec();
+  bw_sec_to_tick_conversion_ = tick.sec();
+  bw_tick_to_sec_conversion_ = sec.ticks_int64();
 }
 
 
@@ -150,11 +150,10 @@ packet_flow_cut_through_arbitrator::set_outgoing_bw(double out_bw)
   pflow_arb_debug_printf_l0("initializing cut through arbitrator with bw=%8.4e", out_bw);
   packet_flow_bandwidth_arbitrator::set_outgoing_bw(out_bw);
   head_ = new bandwidth_epoch;
-  head_->bw_available = out_bw;
+  head_->bw_available = out_bw * bw_sec_to_tick_conversion_;
   head_->start = 0;
   //just set to super long
-  head_->length = 1e30;
-
+  head_->length = std::numeric_limits<uint64_t>::max();
 }
 
 packet_flow_cut_through_arbitrator::~packet_flow_cut_through_arbitrator()
@@ -204,7 +203,7 @@ packet_flow_cut_through_arbitrator::init_noise_model(noise_model* noise)
 }
 
 void
-packet_flow_cut_through_arbitrator::bandwidth_epoch::split(time_t delta_t)
+packet_flow_cut_through_arbitrator::bandwidth_epoch::split(ticks_t delta_t)
 {
   bandwidth_epoch* new_epoch = new bandwidth_epoch;
   new_epoch->bw_available = this->bw_available;
@@ -216,16 +215,16 @@ packet_flow_cut_through_arbitrator::bandwidth_epoch::split(time_t delta_t)
 }
 
 void
-packet_flow_cut_through_arbitrator::bandwidth_epoch::truncate_after(time_t delta_t)
+packet_flow_cut_through_arbitrator::bandwidth_epoch::truncate_after(ticks_t delta_t)
 {
-  time_t finish = start + length;
+  ticks_t finish = start + length;
   start += delta_t;
 
   length -= delta_t;
 }
 
 void
-packet_flow_cut_through_arbitrator::clean_up(time_t now)
+packet_flow_cut_through_arbitrator::clean_up(ticks_t now)
 {
   bandwidth_epoch* epoch = head_;
   while (1) {
@@ -234,7 +233,7 @@ packet_flow_cut_through_arbitrator::clean_up(time_t now)
       return; // we are done
     }
 
-    time_t delta_t = now - epoch->start;
+    ticks_t delta_t = now - epoch->start;
     if (delta_t >= epoch->length) { //this epoch has expired
       //delete and move on
       head_ = epoch->next;
@@ -268,18 +267,18 @@ packet_flow_cut_through_arbitrator::do_arbitrate(packet_stats_st &st)
 {
   packet_flow_payload* payload = st.pkt;
   payload->init_bw(out_bw_);
-  double payload_bw = payload->bw();
+  double payload_bw = payload->bw() * bw_sec_to_tick_conversion_;
 #if SSTMAC_SANITY_CHECK
   validate_bw(payload->bw());
 #endif
 
   //first things first - clean out any old epochs
-  time_t now = st.now.sec();
+  ticks_t now = st.now.ticks_int64();
   clean_up(now);
 
-  time_t send_start = head_->start;
+  ticks_t send_start = head_->start;
 
-  long bytes_queued = payload_bw * (send_start - payload->arrival());
+  long bytes_queued = payload_bw * (send_start - payload->arrival().ticks_int64());
 #if SSTMAC_SANITY_CHECK
   if (bytes_queued < 0) {
     spkt_throw_printf(sprockit::value_error,
@@ -291,11 +290,9 @@ packet_flow_cut_through_arbitrator::do_arbitrate(packet_stats_st &st)
   int bytes_to_send = std::max(payload->num_bytes(), 8);
 
   pflow_arb_debug_printf_l0("cut_through arbitrator handling %s at time %10.5e that started arriving at %10.5e",
-        payload->to_string().c_str(), st.now, payload->arrival());
+                            payload->to_string().c_str(), st.now.sec(), payload->arrival().sec());
 
   bandwidth_epoch* epoch = head_;
-  //bandwidth sanity check - available bw should only ever go up in future epochs
-  double last_epoch_bw = 0;
   while (1) {
     pflow_arb_debug_printf_l1("epoch BW=%9.5e start=%9.5e length=%9.5e: bytes_to_send=%d bytes_queued=%d",
                            epoch->bw_available,
@@ -308,43 +305,38 @@ packet_flow_cut_through_arbitrator::do_arbitrate(packet_stats_st &st)
 
     /**
         This is basically assuming payload->bw >= bw_available
-        We use the -1 to avoid huge numbers in the else block
+        We use the -1e-6 to avoid huge numbers in the else block
         We are maximally utilizing all bw available
     */
-    if (delta_bw > -1.) {
+    if (delta_bw > -1e-6) {
       //see if we can send all the bytes in this epoch
-      time_t time_to_send = bytes_to_send / epoch->bw_available;
-      pflow_arb_debug_printf_l2("delta=%8.4e, send_time=%8.4e using all available bandwidth in epoch",
+      ticks_t time_to_send = bytes_to_send / epoch->bw_available;
+      pflow_arb_debug_printf_l2("delta=%8.4e, send_time=%lu using all available bandwidth in epoch",
                              delta_bw, time_to_send);
       if (time_to_send < epoch->length) {
-        time_t payload_stop = epoch->start + time_to_send;
-        time_t total_send_time = payload_stop - send_start;
-        double new_bw = payload->num_bytes() / total_send_time;
-#if SSTMAC_SANITY_CHECK
-        validate_bw(new_bw);
-#endif
+        ticks_t payload_stop = epoch->start + time_to_send;
+        ticks_t total_send_time = payload_stop - send_start;
+        double new_bw = payload->num_bytes() * bw_tick_to_sec_conversion_ / total_send_time;
+
         payload->set_bw(new_bw);
         epoch->truncate_after(time_to_send);
-        pflow_arb_debug_printf_l1("truncate epoch: start=%12.8e stop=%12.8e send_time=%12.8e new_bw=%12.8e",
-                                send_start, payload_stop, total_send_time, new_bw);
-        st.head_leaves = timestamp(send_start);
-        st.tail_leaves = timestamp(payload_stop);
+        pflow_arb_debug_printf_l1("truncate epoch: start=%llu stop=%llu send_time=%llu new_bw=%12.8e",
+                                send_start, payload_stop, total_send_time, payload->bw());
+        st.head_leaves = timestamp(send_start, timestamp::exact);
+        st.tail_leaves = timestamp(payload_stop, timestamp::exact);
         return;
       }
       else if (time_to_send == epoch->length) {
-        time_t payload_stop = epoch->start + time_to_send;
-        time_t total_send_time = payload_stop - send_start;
-        double new_bw = payload->num_bytes() / total_send_time;
+        ticks_t payload_stop = epoch->start + time_to_send;
+        ticks_t total_send_time = payload_stop - send_start;
+        double new_bw = payload->num_bytes()*bw_tick_to_sec_conversion_ / total_send_time;
         payload->set_bw(new_bw);
-#if SSTMAC_SANITY_CHECK
-        validate_bw(new_bw);
-#endif
         head_ = epoch->next;
         delete epoch;
-        pflow_arb_debug_printf_l2("exact fit: start=%12.8e stop=%12.8e send_time=%12.8e new_bw=%12.8e\n",
-                                   send_start, payload_stop, total_send_time, new_bw);
-        st.head_leaves = timestamp(send_start);
-        st.tail_leaves = timestamp(payload_stop);
+        pflow_arb_debug_printf_l2("exact fit: start=%llu stop=%llu send_time=%llu new_bw=%12.8e\n",
+                                   send_start, payload_stop, total_send_time, payload->bw());
+        st.head_leaves = timestamp(send_start, timestamp::exact);
+        st.tail_leaves = timestamp(payload_stop, timestamp::exact);
         return;
       }
       else {
@@ -364,7 +356,7 @@ packet_flow_cut_through_arbitrator::do_arbitrate(packet_stats_st &st)
     else if (bytes_queued == 0) {
       //we are under-utilizing the bandwidth
       double time_to_send = bytes_to_send / payload_bw;
-      pflow_arb_debug_printf_l2("underutilized, No Queue: time_to_send=%12.8e",
+      pflow_arb_debug_printf_l2("underutilized, No Queue: time_to_send=%llu",
                                 time_to_send);
 
       if (time_to_send <= epoch->length) {
@@ -372,16 +364,13 @@ packet_flow_cut_through_arbitrator::do_arbitrate(packet_stats_st &st)
         epoch->bw_available -= payload_bw;
 
         //configure bandwidth
-        time_t send_done = epoch->start + time_to_send;
-        double new_bw = payload->num_bytes() / (send_done - send_start);
-#if SSTMAC_SANITY_CHECK
-        validate_bw(new_bw);
-#endif
+        ticks_t send_done = epoch->start + time_to_send;
+        double new_bw = payload->num_bytes() * bw_tick_to_sec_conversion_ / (send_done - send_start);
         payload->set_bw(new_bw);
-        pflow_arb_debug_printf_l2("send finishes: start=%12.8e stop=%12.8e new_bw=%12.8e",
-                               send_start, send_done, new_bw);
-        st.head_leaves = timestamp(send_start);
-        st.tail_leaves = timestamp(send_done);
+        pflow_arb_debug_printf_l2("send finishes: start=%llu stop=%llu new_bw=%12.8e",
+                               send_start, send_done, payload->bw());
+        st.head_leaves = timestamp(send_start, timestamp::exact);
+        st.tail_leaves = timestamp(send_done, timestamp::exact);
         return;
       }
       else {
@@ -422,28 +411,25 @@ packet_flow_cut_through_arbitrator::do_arbitrate(packet_stats_st &st)
       //subject to t >= 0
 
       //the intersection might come after whole message is sent
-      time_t send_all_time = bytes_to_send / epoch->bw_available;
-      time_t time_to_intersect = bytes_queued / (-delta_bw);
-      time_t time_to_send = std::min(epoch->length, std::min(send_all_time,
+      ticks_t send_all_time = bytes_to_send / epoch->bw_available;
+      ticks_t time_to_intersect = bytes_queued / (-delta_bw);
+      ticks_t time_to_send = std::min(epoch->length, std::min(send_all_time,
                                      time_to_intersect));
 
       pflow_arb_debug_printf_l2("underutilized, but %d bytes queued: delta=%12.8e "
-                             "send_all_time=%12.8e time_to_intersect=%12.8e time_to_send=%12.8e",
+                             "send_all_time=%llu time_to_intersect=%llu time_to_send=%llu",
                              bytes_queued, delta_bw, send_all_time, time_to_intersect, time_to_send);
 
       if (time_to_send == send_all_time) {
         //and the message completely finishes
-        time_t send_done = epoch->start + time_to_send;
-        double new_bw = payload->num_bytes() / (send_done - send_start);
+        ticks_t send_done = epoch->start + time_to_send;
+        double new_bw = payload->num_bytes() * bw_tick_to_sec_conversion_ / (send_done - send_start);
         payload->set_bw(new_bw);
-#if SSTMAC_SANITY_CHECK
-        validate_bw(new_bw);
-#endif
-        pflow_arb_debug_printf_l2("send finishes: start=%12.8e stop=%12.8e new_bw=%12.8e",
-                               send_start, send_done, new_bw);
+        pflow_arb_debug_printf_l2("send finishes: start=%llu stop=%llu new_bw=%12.8e",
+                               send_start, send_done, payload->bw());
         epoch->truncate_after(time_to_send);
-        st.head_leaves = timestamp(send_start);
-        st.tail_leaves = timestamp(send_done);
+        st.head_leaves = timestamp(send_start, timestamp::exact);
+        st.tail_leaves = timestamp(send_done, timestamp::exact);
         return;
       }
       else if (time_to_send == epoch->length) {
@@ -477,7 +463,6 @@ packet_flow_cut_through_arbitrator::do_arbitrate(packet_stats_st &st)
         bytes_to_send -= ceil(epoch->bw_available * time_to_send);
         //we are also draining the queue
         //delta < 0 so this is really a subtraction
-        long save_bytes_queued = bytes_queued;
         bytes_queued += ceil(delta_bw * epoch->length);
 #if SSTMAC_SANITY_CHECK
         if (bytes_queued < 0) {

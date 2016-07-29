@@ -25,9 +25,9 @@ SpktRegister("null", packet_sent_stats, null_stats);
 static inline double
 congestion_delay_us(const packet_stats_st& st)
 {
-  double delta_t = st.tail_leaves.sec() - st.pkt->arrival();
+  timestamp delta_t = st.tail_leaves - st.pkt->arrival();
   double min_delta_t = st.pkt->byte_length() / st.incoming_bw;
-  double congestion_delay_us = std::max(0., 1e6*(delta_t - min_delta_t));
+  double congestion_delay_us = std::max(0., 1e6*(delta_t.sec() - min_delta_t));
   return congestion_delay_us;
 }
 

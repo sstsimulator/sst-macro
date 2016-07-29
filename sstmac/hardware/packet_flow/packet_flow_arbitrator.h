@@ -131,7 +131,7 @@ class packet_flow_simple_arbitrator :
 class packet_flow_cut_through_arbitrator :
   public packet_flow_bandwidth_arbitrator
 {
-  typedef double time_t;
+  typedef uint64_t ticks_t;
   typedef double bw_t;
 
  public:
@@ -169,34 +169,32 @@ class packet_flow_cut_through_arbitrator :
   init_noise_model(noise_model* noise);
 
  private:
-  void clean_up(time_t now);
+  void clean_up(ticks_t now);
 
   void
   do_arbitrate(packet_stats_st& st);
 
   struct bandwidth_epoch {
-    bw_t bw_available;
-    time_t start;
-    time_t length;
+    bw_t bw_available; //bandwidth is bytes per timestamp tick
+    ticks_t start;
+    ticks_t length;
     bandwidth_epoch* next;
 
     bandwidth_epoch() :
       next(0) {
       counter_ = counter++;
-      //printf("allocating epoch %d\n", counter_);
     }
     
     ~bandwidth_epoch(){
-      //printf("deleting epoch %d\n", counter_);
     }
 
     static int counter;
 
     int counter_;
 
-    void truncate_after(time_t delta_t);
+    void truncate_after(ticks_t delta_t);
 
-    void split(time_t delta_t);
+    void split(ticks_t delta_t);
   };
 
   bandwidth_epoch* head_;
