@@ -30,6 +30,7 @@
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/api.h>
 #include <sstmac/software/process/thread.h>
+#include <sstmac/software/launch/job_launcher.h>
 
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
 #include <sumi-mpi/mpi_comm/mpi_comm_factory.h>
@@ -92,6 +93,7 @@ mpi_api::mpi_api(sstmac::sw::software_id sid) :
   sumi_transport("mpi", sid)
 {
   sumi_transport::init_param1(sid);
+
 }
 
 
@@ -173,6 +175,9 @@ mpi_api::do_init(int* argc, char*** argv)
 
   worldcomm_ = comm_factory_->world();
   selfcomm_ = comm_factory_->self();
+  comm_map_[MPI_COMM_WORLD] = worldcomm_;
+  comm_map_[MPI_COMM_SELF] = selfcomm_;
+  grp_map_[MPI_GROUP_WORLD] = worldcomm_->group();
 
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Init()");
 
@@ -186,15 +191,21 @@ mpi_api::do_init(int* argc, char*** argv)
   queue_->set_event_manager(mynode->event_mgr());
 #endif
 
-  comm_map_[MPI_COMM_WORLD] = worldcomm_;
-  comm_map_[MPI_COMM_SELF] = selfcomm_;
-  grp_map_[MPI_GROUP_WORLD] = worldcomm_->group();
-
   status_ = is_initialized;
 
   barrier(MPI_COMM_WORLD);
 
   return MPI_SUCCESS;
+}
+
+void
+mpi_api::check_init()
+{
+  if (status_ != is_initialized){
+    spkt_throw_printf(sprockit::value_error,
+      "MPI Rank %d calling functions before calling MPI_Init",
+      rank_);
+  }
 }
 
 //

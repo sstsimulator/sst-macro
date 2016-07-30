@@ -404,9 +404,10 @@ mpi_api::type_contiguous(int count, MPI_Datatype old_type,
 {
   mpi_type* new_type_obj = new mpi_type;
   mpi_type* old_type_obj = type_from_id(old_type);
+  MPI_Aint byte_stride = count * old_type_obj->extent();
   new_type_obj->init_vector("contiguous-" + old_type_obj->label,
                         old_type_obj,
-                        count, 1, count);
+                        count, 1, byte_stride);
 
   allocate_type_id(new_type_obj);
   *new_type = new_type_obj->id;

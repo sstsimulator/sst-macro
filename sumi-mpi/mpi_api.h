@@ -899,6 +899,8 @@ class mpi_api :
   reduce_fxn
   get_collective_function(collective_op_base* op);
 
+  void check_init();
+
  private:
   /// The MPI server.
   mpi_queue* queue_;

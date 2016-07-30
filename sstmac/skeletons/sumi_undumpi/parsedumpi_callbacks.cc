@@ -2356,7 +2356,11 @@ on_MPI_Init_thread(const dumpi_init_thread *prm, uint16_t thread,
     cerr0 << ".\n Compute times reported will be meaningless if MPI calls are made from different threads." << std::endl;
   }
   cb->start_mpi(cpu, wall, perf);
-  cb->getmpi()->init();
+  int provided;
+  int argc = prm->argc;
+  char** argv = const_cast<char**>(prm->argv);
+  cb->getmpi()->init_thread(&argc, &argv, 
+                        prm->required, &provided);
   cb->end_mpi(cpu, wall, perf);
   return 1;
 }
