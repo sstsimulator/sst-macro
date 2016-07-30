@@ -113,7 +113,7 @@ test_root_collectives(MPI_Comm comm)
       MPI_Ibcast(NULL, count, MPI_INT, root, comm, &reqs[reqIdx]);
       ++reqIdx;
     }
-    MPI_Waitall(4*size, reqs, MPI_STATUSES_IGNORE);
+    MPI_Waitall(reqIdx, reqs, MPI_STATUSES_IGNORE);
   }
   delete[] reqs;
   finish_test();

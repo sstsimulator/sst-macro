@@ -87,15 +87,6 @@ class message :
   {
   }
 
-  virtual public_buffer&
-  local_buffer();
-
-  virtual public_buffer&
-  remote_buffer();
-
-  virtual void*&
-  eager_buffer();
-
   static const char*
   tostr(payload_type_t ty);
 
@@ -228,67 +219,21 @@ class message :
 
   bool needs_recv_ack_;
 
-};
-
-class payload_message :
-  public message,
-  public sumi::serializable_type<payload_message>
-{
-  ImplementSerializable(payload_message)
-
  public:
-  payload_message(){} //for serialization
+  sumi::public_buffer& local_buffer() { return local_buffer_; }
+  sumi::public_buffer& remote_buffer() { return remote_buffer_; }
 
-  payload_message(void* buffer, int num_bytes)
-  {
-    class_ = pt2pt;
-    num_bytes_ = num_bytes;
+  void*&
+  eager_buffer() {
+   return local_buffer_.ptr;
   }
-
-  void
-  serialize_order(sumi::serializer &ser);
 
  private:
-  void* buffer_;
-};
+  sumi::public_buffer local_buffer_;
+  sumi::public_buffer remote_buffer_;
 
-class rdma_message :
-  public message,
-  public sumi::serializable_type<rdma_message>
-{
-  ImplementSerializableDefaultConstructor(rdma_message)
-  ImplementRdmaAPI
-
- public:
-  typedef sprockit::refcount_ptr<rdma_message> ptr;
-
- public:
-  rdma_message()
-  {
-    class_ = pt2pt;
-  }
-
-  rdma_message(long num_bytes) :
-    message(num_bytes)
-  {
-  }
-
-  virtual message*
-  clone() const {
-    rdma_message* ptr = new rdma_message;
-    clone_into(ptr);
-    return ptr;
-  }
-
-  virtual void
-  serialize_order(sumi::serializer& ser);
-
- protected:
-  void
-  clone_into(rdma_message* cln) const;
 
 };
-
 
 }
 

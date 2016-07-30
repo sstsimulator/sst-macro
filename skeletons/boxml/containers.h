@@ -17,7 +17,7 @@ static std::set<int> empty_set;
 
 namespace lblxml
 {
-  typedef spkt_unordered_map<int,int> box_to_domain_rank_map;
+  typedef spkt_unordered_map<int,int> box_to_comm_rank_map;
   typedef spkt_unordered_map<int,std::set<int> > box_to_listener_map;
   typedef spkt_unordered_set<int> int_container_t;
   typedef spkt_unordered_set<int>::iterator int_container_iter;
@@ -364,8 +364,8 @@ namespace lblxml
       for(int i=0; i<splitvec.size(); ++i) {
         std::string id = splitvec[i];
         int box_number = get_index(id);
-        int domain_rank = i;
-        team_map_[box_number] = domain_rank;
+        int comm_rank = i;
+        team_map_[box_number] = comm_rank;
       }
     }
 
@@ -374,13 +374,13 @@ namespace lblxml
       return box_array_.data();
     }
 
-    box_to_domain_rank_map& get_team()
+    box_to_comm_rank_map& get_team()
     {
       return team_map_;
     }
 
-    int domain_rank(int box_number) const {
-      box_to_domain_rank_map::const_iterator it = team_map_.find(box_number);
+    int comm_rank(int box_number) const {
+      box_to_comm_rank_map::const_iterator it = team_map_.find(box_number);
       if (it == team_map_.end()){
         spkt_throw_printf(sprockit::value_error,
           "invalid box number %d to allreduce id %d", box_number, index());
@@ -395,11 +395,11 @@ namespace lblxml
     void
     compute_box_array() {
       box_array_.resize(team_map_.size());
-      box_to_domain_rank_map::iterator it, end = team_map_.end();
+      box_to_comm_rank_map::iterator it, end = team_map_.end();
       for (it=team_map_.begin(); it != end; ++it){
-        int domain_rank = it->second;
+        int comm_rank = it->second;
         int box_number = it->first;
-        box_array_[domain_rank] = box_number;
+        box_array_[comm_rank] = box_number;
       }
     }
 
@@ -436,7 +436,7 @@ namespace lblxml
 
    private:
     int size_;
-    box_to_domain_rank_map team_map_;
+    box_to_comm_rank_map team_map_;
     box_to_listener_map listener_map_;
     std::vector<int> box_array_;
 

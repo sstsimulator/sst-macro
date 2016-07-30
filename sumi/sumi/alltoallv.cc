@@ -1,7 +1,7 @@
 #include <sumi/alltoallv.h>
 #include <sumi/partner_timeout.h>
 #include <sumi/transport.h>
-#include <sumi/domain.h>
+#include <sumi/communicator.h>
 #include <sprockit/output.h>
 #include <cstring>
 
@@ -58,7 +58,7 @@ direct_alltoallv_actor::add_action(
   int partner = (dense_me_ + dense_nproc_ + stride*stride_direction) % dense_nproc_;
   action* ac = actions[partner];
   if (stride < num_initial){
-    add_initial_action(ac);
+    dag_collective_actor::add_action(ac);
   } else {
     int prev_partner = (partner + dense_nproc_ - num_initial*stride_direction) % dense_nproc_;
     action* prev = actions[prev_partner];
@@ -72,12 +72,15 @@ direct_alltoallv_actor::init_dag()
   std::vector<action*> recvs(dense_nproc_);
   std::vector<action*> sends(dense_nproc_);
 
+  recv_action::buf_type_t recv_ty = slicer_->contiguous() ?
+        recv_action::in_place : recv_action::unpack_temp_buf;
+
   int send_offset = 0;
   int recv_offset = 0;
   int round = 0;
   for (int i=0; i < dense_nproc_; ++i){
-    action* recv = new recv_action(round, i);
-    action* send = new send_action(round, i);
+    action* recv = new recv_action(round, i, recv_ty);
+    action* send = new send_action(round, i, send_action::in_place);
     send->offset = send_offset;
     send->nelems = send_counts_[i];
     recv->offset = recv_offset;

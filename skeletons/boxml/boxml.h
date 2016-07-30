@@ -65,7 +65,7 @@ namespace lblxml
     int event_index() { return event_index_; }
   };
 
-  class box_domain : public sumi::domain
+  class box_domain : public sumi::communicator
   {
   private:
     const int* boxes_;
@@ -76,10 +76,10 @@ namespace lblxml
 
     box_domain() { }
 
-    box_domain (int domain_rank, int nboxes, const int* boxes, const int* map) :
+    box_domain (int comm_rank, int nboxes, const int* boxes, const int* map) :
       map_(map), boxes_(boxes), size_(nboxes)
     {
-      my_domain_rank_ = domain_rank;
+      my_comm_rank_ = comm_rank;
     }
 
     ~box_domain() { }
@@ -89,19 +89,19 @@ namespace lblxml
 
     int
     my_box_number() const {
-      return boxes_[my_domain_rank_];
+      return boxes_[my_comm_rank_];
     }
 
     int
-    domain_to_global_rank(int domain_rank) const {
-      int box = boxes_[domain_rank];
+    comm_to_global_rank(int comm_rank) const {
+      int box = boxes_[comm_rank];
       int grank =  map_[box];
       return grank;
     }
 
     int
-    global_to_domain_rank(int global_rank) const {
-      std::cerr << "global_to_domain_rank() aborting\n";
+    global_to_comm_rank(int global_rank) const {
+      std::cerr << "global_to_comm_rank() aborting\n";
       abort();
     }
 

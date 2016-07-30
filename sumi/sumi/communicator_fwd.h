@@ -2,7 +2,7 @@
 #define sumi_DOMAIN_FWD_H
 
 namespace sumi {
-class domain;
+class communicator;
 }
 
 

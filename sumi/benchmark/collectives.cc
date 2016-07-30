@@ -1,7 +1,7 @@
 
 #include <pthread.h>
 #include <sumi/transport.h>
-#include <sumi/domain.h>
+#include <sumi/communicator.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 #include <sprockit/stl_string.h>
@@ -19,7 +19,7 @@ typedef enum {
 static const int nreplica = 15;
 
 void
-run_test(const std::string& test, transport* t, domain* dom, int nelems, int context, int& tag)
+run_test(const std::string& test, transport* t, communicator* dom, int nelems, int context, int& tag)
 {
   if (t->rank() >= dom->nproc()){
     ++tag; //gotta increment this thought to stay consistent
@@ -54,7 +54,7 @@ run_test(const std::string& test, transport* t, domain* dom, int nelems, int con
   if (dst_buf) ::free(dst_buf);
   if (reduce_buf) ::free(reduce_buf);
 
-  if (dom->my_domain_rank() == 0){
+  if (dom->my_comm_rank() == 0){
     printf("Test %s: nelems=%d nproc=%d t=%20.12f ms\n",
       test.c_str(), nelems, nproc, t_total*1e3);
   }
@@ -63,7 +63,7 @@ run_test(const std::string& test, transport* t, domain* dom, int nelems, int con
 }
 
 void
-run_test(transport* t, domain* dom, int& tag, int* nelems, int ntests, const char* name)
+run_test(transport* t, communicator* dom, int& tag, int* nelems, int ntests, const char* name)
 {
   for (int i=0; i < ntests; ++i){
     for (int r=0; r < nreplica; ++r){
@@ -73,7 +73,7 @@ run_test(transport* t, domain* dom, int& tag, int* nelems, int ntests, const cha
 }
 
 void
-run_test(transport* t, domain* dom, int& tag)
+run_test(transport* t, communicator* dom, int& tag)
 {
   int reduce_nelems[] = { 64, 256, 1024, 4096, 16384 };
   int allgather_nelems[] = { 32, 64, 128, 512, 1024 };
@@ -94,14 +94,14 @@ run_test(transport* t, int& tag)
   int domain_nproc = nproc;
 
   while (domain_nproc >= 4){
-    domain* dom = new subrange_domain(me, 0, domain_nproc);
+    communicator* dom = new subrange_communicator(me, 0, domain_nproc);
     run_test(t,dom,tag);
     domain_nproc /= 2;
   }
 }
 
 void
-run_vote_test(const char* name, transport* t, domain* dom, int num_failures, int& tag)
+run_vote_test(const char* name, transport* t, communicator* dom, int num_failures, int& tag)
 {
   if (dom->nproc() <= t->rank()){
     return;
@@ -125,7 +125,7 @@ run_vote_test(const char* name, transport *t, int num_failures, int &tag)
 {
   int nproc = t->nproc();
   while (nproc >= 4){
-    domain* dom = new subrange_domain(t->rank(), 0, nproc);
+    communicator* dom = new subrange_communicator(t->rank(), 0, nproc);
     nproc /= 2;
     run_vote_test(name, t, dom, num_failures, tag);
     ++tag;

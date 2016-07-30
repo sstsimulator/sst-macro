@@ -1,6 +1,6 @@
 #include <sumi/reduce.h>
 #include <sumi/transport.h>
-#include <sumi/domain.h>
+#include <sumi/communicator.h>
 #include <sprockit/output.h>
 #include <sprockit/stl_string.h>
 #include <cstring>
@@ -68,6 +68,8 @@ wilke_reduce_actor::init_buffers(void* dst, void* src)
 void
 wilke_reduce_actor::init_dag()
 {
+  slicer_->fxn = fxn_;
+
   int log2nproc, midpoint, virtual_nproc;
   compute_tree(log2nproc, midpoint, virtual_nproc);
 
@@ -82,7 +84,19 @@ wilke_reduce_actor::init_dag()
     "Rank %s configured reduce for tag=%d for nproc=%d(%d) virtualized to n=%d over %d rounds",
     rank_str().c_str(), tag_, dense_nproc_, my_api_->nproc(), virtual_nproc, log2nproc);
 
-  action *prev_send, *prev_recv;
+  //I either receive directly into the final buffer
+  //Or I have to receive a bunch of packed stuff into a temp buffer
+  recv_action::buf_type_t fan_in_recv_type = slicer_->contiguous() ?
+        recv_action::in_place : recv_action::packed_temp_buf;
+
+  //on the fan-in, I'll be received packed data
+  //there's no need to unpack during the fan-in
+  //only need an unpack at the very end
+  send_action::buf_type_t fan_in_send_type = slicer_->contiguous() ?
+        send_action::in_place : send_action::prev_recv;
+
+  action* final_join = new action(action::join, 0, 0);
+
   for (int role=0; role < num_roles; ++role){
     action* null = 0;
     std::vector<action*> send_rounds(num_doubling_rounds, null);
@@ -93,11 +107,12 @@ wilke_reduce_actor::init_dag()
     int partner_gap = 1;
     int round_nelems = nelems_;
 
+    action *prev_send = 0, *prev_recv = 0;
+
     int virtual_me = my_roles[role];
     if (virtual_me == midpoint) i_am_midpoint = true;
     bool i_am_even = (virtual_me % 2) == 0;
     int round_offset = 2*num_doubling_rounds;
-    bool initial_send = true;
     debug_printf(sumi_collective,
       "Rank %d configuring reduce for virtual role=%d tag=%d for nproc=%d(%d) virtualized to n=%d over %d rounds ",
       my_api_->rank(), virtual_me, tag_, dense_nproc_, my_api_->nproc(), virtual_nproc, log2nproc);
@@ -128,26 +143,20 @@ wilke_reduce_actor::init_dag()
       if (!is_shared_role(virtual_partner, num_roles, my_roles)){
         int partner = rank_map.virtual_to_real(virtual_partner);
         //this is not colocated with me - real send/recv
-        action* send_ac = new send_action(rnd, partner);
+        action* send_ac = new send_action(rnd, partner, send_action::in_place);
         send_ac->offset = send_offset;
         send_ac->nelems = send_nelems;
-        send_ac->recv_type = action::out_of_place;
 
-        action* recv_ac = new recv_action(rnd, partner);
+        action* recv_ac = new recv_action(rnd, partner, recv_action::reduce);
         recv_ac->offset = recv_offset;
         recv_ac->nelems = round_nelems - send_nelems;
-        recv_ac->recv_type = action::out_of_place;
 
-        if (initial_send){ //initial send/recv
-          add_initial_action(send_ac);
-          add_initial_action(recv_ac);
-          initial_send = false;
-        } else {
-          add_dependency(prev_send, send_ac);
-          add_dependency(prev_send, recv_ac);
-          add_dependency(prev_recv, send_ac);
-          add_dependency(prev_recv, recv_ac);
-        }
+
+        add_dependency(prev_send, send_ac);
+        add_dependency(prev_send, recv_ac);
+        add_dependency(prev_recv, send_ac);
+        add_dependency(prev_recv, recv_ac);
+
         send_rounds[i] = send_ac;
         recv_rounds[i] = recv_ac;
 
@@ -188,14 +197,20 @@ wilke_reduce_actor::init_dag()
       }
       action* mirror_send = send_rounds[mirror_round];
       action* mirror_recv = recv_rounds[mirror_round];
-      if (mirror_send && mirror_recv){ //if it's a real action, not colocated
-        action* send_ac = new send_action(my_round, mirror_recv->partner);
+      if (mirror_send && mirror_recv){
+        //if it's a real action, not colocated
+        //for the first fan-in send, always send in-place from the result buf
+        //for the rest of the fan-in sends, changes for non-contiguous types
+        //the fan-in should operate entirely on packed data
+        action* send_ac = new send_action(my_round, mirror_recv->partner,
+                               i == 0 ? send_action::in_place : fan_in_send_type);
         send_ac->nelems = mirror_recv->nelems;
         send_ac->offset = mirror_recv->offset;
         add_dependency(prev_send, send_ac);
         add_dependency(prev_recv, send_ac);
 
-        action* recv_ac = new recv_action(my_round, mirror_send->partner);
+        action* recv_ac = new recv_action(my_round, mirror_send->partner,
+                                          fan_in_recv_type);
         recv_ac->nelems = mirror_send->nelems;
         recv_ac->offset = mirror_send->offset;
         add_dependency(prev_send, recv_ac);
@@ -207,6 +222,8 @@ wilke_reduce_actor::init_dag()
       max_active_rank /= 2;
     } //end loop over fan-in recv rounds
 
+    add_dependency(prev_send, final_join);
+    add_dependency(prev_recv, final_join);
   }
 
   if (root_ != 0){
@@ -214,33 +231,29 @@ wilke_reduce_actor::init_dag()
     int nelems_split = divide_by_2_round_up(nelems_);
     //rank 0 and midpoint must send to root
     if (dense_me_ == 0){
-      action* send_ac = new send_action(round, root_);
+      action* send_ac = new send_action(round, root_, fan_in_send_type);
       send_ac->nelems = nelems_split;
       send_ac->offset = 0;
-      if (prev_send) add_dependency(prev_send, send_ac);
-      if (prev_recv) add_dependency(prev_recv, send_ac);
+      add_dependency(final_join, send_ac);
     }
 
     if (dense_me_ == 1){
-      action* send_ac = new send_action(round, root_);
+      action* send_ac = new send_action(round, root_, fan_in_send_type);
       send_ac->nelems = nelems_ - nelems_split;
       send_ac->offset = nelems_split;
-      if (prev_send) add_dependency(prev_send, send_ac);
-      if (prev_recv) add_dependency(prev_recv, send_ac);
+      add_dependency(final_join, send_ac);
     }
 
     if (dense_me_ == root_){
-      action* recv_ac = new recv_action(round, 0);
+      action* recv_ac = new recv_action(round, 0, fan_in_recv_type);
       recv_ac->nelems = nelems_split;
       recv_ac->offset = 0;
-      if (prev_send) add_dependency(prev_send, recv_ac);
-      if (prev_recv) add_dependency(prev_recv, recv_ac);
+      add_dependency(final_join, recv_ac);
 
-      recv_ac = new recv_action(round, 1);
+      recv_ac = new recv_action(round, 1, fan_in_recv_type);
       recv_ac->nelems = nelems_ - nelems_split;
       recv_ac->offset = nelems_split;
-      if (prev_send) add_dependency(prev_send, recv_ac);
-      if (prev_recv) add_dependency(prev_recv, recv_ac);
+      add_dependency(final_join, recv_ac);
     }
   }
 

@@ -95,9 +95,9 @@ namespace lblxml
       int box_number = pair.second;
       event* ev = g_events[index];
       reduce_t* comm = static_cast<reduce_t*>(ev);
-      int my_domain_rank = comm->domain_rank(box_number);
+      int my_comm_rank = comm->comm_rank(box_number);
       const int* boxes = comm->box_array();
-      sumi::domain* dom = new box_domain(my_domain_rank, comm->nboxes(), boxes, g_boxindex_to_rank.data());
+      sumi::communicator* dom = new box_domain(my_comm_rank, comm->nboxes(), boxes, g_boxindex_to_rank.data());
 
       int count = comm->size();
       if (debug_ > 0)

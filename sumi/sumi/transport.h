@@ -7,7 +7,7 @@
 #include <sumi/options.h>
 #include <sumi/ping.h>
 #include <sumi/rdma.h>
-#include <sumi/domain_fwd.h>
+#include <sumi/communicator_fwd.h>
 #include <sumi/thread_safe_int.h>
 #include <sumi/thread_safe_list.h>
 #include <sumi/thread_safe_set.h>
@@ -321,11 +321,11 @@ class transport :
    * @param context The context (i.e. initial set of failed procs)
    */
   virtual void
-  dynamic_tree_vote(int vote, int tag, vote_fxn fxn, int context = options::initial_context, domain* dom = 0);
+  dynamic_tree_vote(int vote, int tag, vote_fxn fxn, int context = options::initial_context, communicator* dom = 0);
 
   template <template <class> class VoteOp>
   void
-  vote(int vote, int tag, int context = options::initial_context, domain* dom = 0){
+  vote(int vote, int tag, int context = options::initial_context, communicator* dom = 0){
     typedef VoteOp<int> op_class_type;
     dynamic_tree_vote(vote, tag, &op_class_type::op, context, dom);
   }
@@ -342,22 +342,22 @@ class transport :
    * @param context The context (i.e. initial set of failed procs)
    */
   virtual void
-  allreduce(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn, bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+  allreduce(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn, bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
 
   template <typename data_t, template <typename> class Op>
   void
-  allreduce(void* dst, void* src, int nelems, int tag, bool fault_aware = false, int context = options::initial_context, domain* dom = 0){
+  allreduce(void* dst, void* src, int nelems, int tag, bool fault_aware = false, int context = options::initial_context, communicator* dom = 0){
     typedef ReduceOp<Op, data_t> op_class_type;
     allreduce(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
   }
 
   virtual void
   reduce(int root, void* dst, void* src, int nelems, int type_size, int tag,
-    reduce_fxn fxn, bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+    reduce_fxn fxn, bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
 
   template <typename data_t, template <typename> class Op>
   void
-  reduce(int root, void* dst, void* src, int nelems, int tag, bool fault_aware = false, int context = options::initial_context, domain* dom = 0){
+  reduce(int root, void* dst, void* src, int nelems, int tag, bool fault_aware = false, int context = options::initial_context, communicator* dom = 0){
     typedef ReduceOp<Op, data_t> op_class_type;
     reduce(root, dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
   }
@@ -375,35 +375,35 @@ class transport :
    */
   virtual void
   allgather(void* dst, void* src, int nelems, int type_size, int tag,
-            bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+            bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
 
   virtual void
   allgatherv(void* dst, void* src, int* recv_counts, int type_size, int tag,
-             bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+             bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
 
   virtual void
   gather(int root, void* dst, void* src, int nelems, int type_size, int tag,
-         bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+         bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
 
   virtual void
   gatherv(int root, void* dst, void* src, int sendcnt, int* recv_counts, int type_size, int tag,
-          bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+          bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
 
   virtual void
   alltoall(void* dst, void* src, int nelems, int type_size, int tag,
-             bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+             bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
 
   virtual void
   alltoallv(void* dst, void* src, int* send_counts, int* recv_counts, int type_size, int tag,
-             bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+             bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
 
   virtual void
   scatter(int root, void* dst, void* src, int nelems, int type_size, int tag,
-          bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+          bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
 
   virtual void
   scatterv(int root, void* dst, void* src, int* send_counts, int recvcnt, int type_size, int tag,
-          bool fault_aware = false, int context = options::initial_context, domain* dom = 0);
+          bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
 
   /**
    * Essentially just executes a zero-byte allgather.
@@ -411,10 +411,10 @@ class transport :
    * @param fault_aware
    */
   void
-  barrier(int tag, bool fault_aware = false, domain* dom = 0);
+  barrier(int tag, bool fault_aware = false, communicator* dom = 0);
 
   void
-  bcast(int root, void* buf, int nelems, int type_size, int tag, bool fault_aware, int context=options::initial_context, domain* dom=0);
+  bcast(int root, void* buf, int nelems, int type_size, int tag, bool fault_aware, int context=options::initial_context, communicator* dom=0);
   
   int 
   rank() const {
@@ -436,7 +436,7 @@ class transport :
     return failed_ranks_.size();
   }
 
-  domain*
+  communicator*
   global_dom() const;
 
   /**
@@ -670,7 +670,7 @@ class transport :
  private:  
   bool
   skip_collective(collective::type_t ty,
-    domain*& dom,
+    communicator*& dom,
     void* dst, void *src,
     int nelems, int type_size,
     int tag);
@@ -746,7 +746,7 @@ class transport :
 
   bool use_hardware_ack_;
 
-  domain* global_domain_;
+  communicator* global_domain_;
 
   notify_callback* notify_cb_;
 

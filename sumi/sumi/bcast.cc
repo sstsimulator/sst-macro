@@ -1,5 +1,5 @@
 #include <sumi/bcast.h>
-#include <sumi/domain.h>
+#include <sumi/communicator.h>
 #include <sumi/transport.h>
 
 namespace sumi {
@@ -19,26 +19,34 @@ binary_tree_bcast_actor::init_root(int me, int roundNproc, int nproc)
   while (partnerGap > 0){
     if (partnerGap < nproc){ //might not be power of 2
       int partner = (root_ + partnerGap) % nproc; //everything offset by root
-      action* send = new send_action(0, partner);
+      action* send = new send_action(0, partner, send_action::in_place);
       send->nelems = nelems_;
       send->offset = 0;
-      add_initial_action(send);
+      add_action(send);
     }
     partnerGap /= 2;
   }
 }
 
 void
-binary_tree_bcast_actor::init_internal(int offsetMe, int windowSize, int windowStop, action* recv)
+binary_tree_bcast_actor::init_internal(int offsetMe, int windowSize,
+                                       int windowStop, action* recv)
 {
 
+  //if contiguous - do everything through the result buf
+  //if not contiguous, well, I'll have receive packed data
+  //continue to send out that packed data
+  //no need to unpack and re-pack
+  send_action::buf_type_t send_ty = slicer_->contiguous() ?
+        send_action::in_place : send_action::prev_recv;
+
   int stride = windowSize;
-  int nproc = dom_->nproc();
+  int nproc = comm_->nproc();
   while (stride > 0){
     int partner = offsetMe + stride;
     if (partner < windowStop){ //might not be power of 2
       partner = (partner + root_) % nproc; //everything offset by root
-      action* send = new send_action(0, partner);
+      action* send = new send_action(0, partner, send_ty);
       send->nelems = nelems_;
       send->offset = 0;
       add_dependency(recv, send);
@@ -62,11 +70,14 @@ binary_tree_bcast_actor::init_child(int offsetMe, int roundNproc, int nproc)
     windowSplit = windowStart + windowSize;
   }
 
+  recv_action::buf_type_t buf_ty = slicer_->contiguous() ?
+        recv_action::in_place : recv_action::unpack_temp_buf;
+
   int parent = (windowStart + root_) % nproc; //everything offset by root
-  action* recv = new recv_action(0, parent);
+  action* recv = new recv_action(0, parent, buf_ty);
   recv->nelems = nelems_;
   recv->offset = 0;
-  add_initial_action(recv);
+  add_action(recv);
 
   int windowStop = std::min(nproc, (windowSplit + windowSize));
   debug_printf(sprockit::dbg::sumi_collective_init,
@@ -92,8 +103,8 @@ void
 binary_tree_bcast_actor::init_dag()
 {
   int roundNproc = 1;
-  int nproc = dom_->nproc();
-  int me = dom_->my_domain_rank();
+  int nproc = comm_->nproc();
+  int me = comm_->my_comm_rank();
   while (roundNproc < nproc){
     roundNproc *= 2;
   }

@@ -28,27 +28,12 @@
 
 namespace sumi {
 
-
-struct mpi_buffer {
-
-  mpi_buffer() : data(0), eager(false) {}
-
-  ~mpi_buffer(){
-    if (eager && data){
-      delete[] data;
-    }
-  }
-
-  char* data;
-  bool eager;
-};
-
 /**
  * A specialization of networkdata that contains envelope information
  * relevant to MPI messaging.
  */
 class mpi_message :
-  public sumi::rdma_message,
+  public sumi::message,
   public serializable_type<mpi_message>
 {
   ImplementSerializableDefaultConstructor(mpi_message)
@@ -205,11 +190,6 @@ class mpi_message :
   set_content_type(content_type_t ty) {
     content_type_ = ty;
     recompute_bytes();
-  }
-
-  void*&
-  eager_buffer(){
-    return local_buffer().ptr;
   }
 
   void

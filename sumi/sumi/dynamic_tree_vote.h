@@ -52,7 +52,7 @@ class dynamic_tree_vote_message :
     //0 = type_size
     //-1 = not done by round
     collective_work_message(collective::dynamic_tree_vote, eager_payload,
-      1/*nelems*/, 8/*type_size*/, //just assume 8 byte message for now
+      sizeof(int) + sizeof(std::set<int>),
       tag, -1, virtual_src, virtual_dst),
     type_(ty),
     vote_(vote)
@@ -92,7 +92,7 @@ class dynamic_tree_vote_actor :
   dynamic_tree_vote_actor(int vote,
     vote_fxn fxn, int tag,
     transport* my_api,
-    domain* dom,
+    communicator* dom,
     int context);
 
   stage_t
@@ -304,7 +304,7 @@ class dynamic_tree_vote_collective :
     vote_fxn fxn,
     int tag,
     transport* my_api,
-    domain* dom,
+    communicator* comm,
     int context);
 
  protected:
