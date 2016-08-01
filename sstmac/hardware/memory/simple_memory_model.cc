@@ -23,7 +23,7 @@ SpktRegister("simple",memory_model,simple_memory_model,
 
 simple_memory_model::~simple_memory_model()
 {
-  link_ = 0;
+  if (link_) delete link_;
 }
 
 void

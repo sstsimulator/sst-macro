@@ -213,6 +213,7 @@ event_manager::finish_stats()
   for (it = stats_.begin(); it != end; ++it){
     std::string name = it->first;
     stats_entry& entry = it->second;
+    bool main_allocated = false;
     if (entry.collectors.empty()){
       spkt_throw_printf(sprockit::value_error,
         "there is a stats slot named %s, but there are no collectors",
@@ -226,6 +227,7 @@ event_manager::finish_stats()
       } else {
         stat_collector* first = entry.collectors.front();
         entry.main_collector = first->clone();
+        main_allocated = true;
       }
     }
 
@@ -237,6 +239,8 @@ event_manager::finish_stats()
         entry.main_collector->dump_global_data();
       }
     }
+
+    if (main_allocated) delete entry.main_collector;
   }
 }
 

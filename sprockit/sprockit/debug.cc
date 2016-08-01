@@ -49,6 +49,7 @@ debug::delete_statics()
 {
   free_static_ptr(debug_ints_);
   free_static_ptr(docstrings_);
+  if (prefix_fxn) delete prefix_fxn;
 }
 
 void

@@ -15,11 +15,11 @@ class mpi_protocol  {
 
  public:
   enum PROTOCOL_ID {
-    PROTOCOL_INVALID,
-    EAGER0,
-    EAGER1_SINGLECPY,
-    EAGER1_DOUBLECPY,
-    RENDEZVOUS_GET,
+    PROTOCOL_INVALID=0,
+    EAGER0=1,
+    EAGER1_SINGLECPY=2,
+    EAGER1_DOUBLECPY=3,
+    RENDEZVOUS_GET=4
   };
 
  public:

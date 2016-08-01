@@ -6,6 +6,12 @@ ImplementFactory(sstmac::hw::packetizer)
 namespace sstmac {
 namespace hw {
 
+packetizer::~packetizer()
+{
+  //do not delete - notifiers are owned by the person that passes them in
+  //if (notifier_) delete notifier_;
+}
+
 void
 packetizer::start(int vn, message *msg)
 {

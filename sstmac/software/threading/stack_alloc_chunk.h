@@ -42,7 +42,7 @@ class stack_alloc::chunk
   chunk(size_t stacksize, size_t suggested_chunk_size, bool use_mprot);
 
   /// Goodbye.
-  virtual ~chunk();
+  ~chunk();
 
   void* 
   get_next_stack();

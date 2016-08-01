@@ -1079,6 +1079,9 @@ test_wait()
       failure_printf("waitsome expected n=%d, got n=%d",
                      nexpected, nrecved);
     }
+
+    delete[] stat;
+    delete[] index;
   }
   else if (rank % 2 == 0) {
     MPI_Send(NULL, count, MPI_DOUBLE, int(0), tag2, MPI_COMM_WORLD);

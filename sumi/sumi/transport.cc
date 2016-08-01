@@ -66,10 +66,11 @@ transport::transport() :
   is_dead_(false),
   use_put_protocol_(false),
   use_hardware_ack_(false),
-  global_domain_(0),
+  global_domain_(nullptr),
+  monitor_(nullptr),
+  notify_cb_(nullptr),
   nspares_(0),
-  recovery_lock_(0),
-  notify_cb_(0)
+  recovery_lock_(0)
 {
   heartbeat_tag_start_ = 1e9;
   heartbeat_tag_stop_ = heartbeat_tag_start_ + 10000;
@@ -448,6 +449,12 @@ transport::fail_watcher(int dst)
   function_set& fset = it->second;
   fset.timeout_all_listeners(dst);
   watchers_.erase(dst);
+}
+
+transport::~transport()
+{
+  if (monitor_) delete monitor_;
+  if (global_domain_) delete global_domain_;
 }
 
 void
@@ -1002,7 +1009,8 @@ transport::end_function()
 }
 
 void
-transport::smsg_send(int dst, message::payload_type_t ev, const message::ptr& msg, bool needs_ack)
+transport::smsg_send(int dst, message::payload_type_t ev,
+                     const message::ptr& msg, bool needs_ack)
 {
   CHECK_IF_I_AM_DEAD(return);
   START_PT2PT_FUNCTION(dst);
@@ -1018,7 +1026,16 @@ transport::smsg_send(int dst, message::payload_type_t ev, const message::ptr& ms
 
   if (dst == rank_) {
     //deliver to self
+    debug_printf(sprockit::dbg::sumi,
+      "Rank %d SUMI sending self message", rank_);
+
     delayed_transport_handle(msg);
+    if (needs_ack){
+      message::ptr ack = msg->clone();
+      msg->set_payload_type(message::eager_payload_ack);
+      delayed_transport_handle(ack);
+    }
+
   }
   else {
     do_smsg_send(dst, msg);

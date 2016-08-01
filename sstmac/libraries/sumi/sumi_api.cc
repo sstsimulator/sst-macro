@@ -20,13 +20,19 @@ namespace sstmac {
 
 sumi_api::sumi_api(const char *name, sw::software_id sid) :
   api(name, sid),
-  process_manager(sid)
+  process_manager(sid),
+  queue_(nullptr)
 {
   rank_ = sid.task_;
   server_libname_ = sprockit::printf("sumi_server_%d", int(sid.app_));
   sw::thread* thr = sw::operating_system::current_thread();
   sw::app* my_app = safe_cast(sw::app, thr);
   my_app->compute(timestamp(1e-6));
+}
+
+sumi_api::~sumi_api()
+{
+  if (queue_) delete queue_;
 }
 
 void
@@ -70,12 +76,6 @@ sumi_api::finalize()
 }
 
 void
-sumi_api::init_param1(const sstmac::sw::software_id &sid)
-{
-
-}
-
-void
 sumi_api::init_factory_params(sprockit::sim_parameters *params)
 {
   api::init_factory_params(params);
@@ -100,7 +100,6 @@ sumi_api::transport_send(
   tmsg->set_src(rank_);
   tmsg->set_dest(dst);
   tmsg->set_buffer(buffer);
-
   sw::library::os_->execute_kernel(ami::COMM_SEND, tmsg);
 }
 
@@ -116,6 +115,7 @@ sumi_api::poll_until_notification()
   while (1) {
     transport_message* msg = queue_->poll_until_message();
     sumi::message_ptr notification = handle(msg);
+    delete msg;
     if (notification){
       return notification;
     }
@@ -129,6 +129,7 @@ sumi_api::poll_until_notification(timestamp timeout)
     transport_message* msg = queue_->poll_until_message(timeout);
     if (msg){
       sumi::message_ptr notification = handle(msg);
+      delete msg;
       if (notification){
         return notification;
       }
@@ -202,6 +203,10 @@ sumi_queue::sumi_queue(sstmac::sw::operating_system* os)
 
 sumi_queue::sumi_queue() :
   os_(sstmac::sw::operating_system::current_os())
+{
+}
+
+sumi_queue::~sumi_queue()
 {
 }
 

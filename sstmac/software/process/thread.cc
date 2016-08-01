@@ -221,21 +221,20 @@ key::category schedule_delay("CPU_Sched Delay");
 thread::thread() :
   state_(PENDING),
   isInit(false),
-  backtrace_(0),
+  backtrace_(nullptr),
   bt_nfxn_(0),
   last_bt_collect_nfxn_(0),
   thread_id_(thread::main_thread),
-  schedule_key_(0),
+  schedule_key_(key::construct(schedule_delay)),
   p_txt_(process_context::none),
-  stack_(0),
-  context_(0),
+  stack_(nullptr),
+  context_(nullptr),
   cpumask_(0),
-  pthread_map_(0),
-  parent_app_(0)
+  pthread_map_(nullptr),
+  parent_app_(nullptr)
 {
   //make all cores possible active
   cpumask_ = ~(cpumask_);
-  schedule_key_ = key::construct(schedule_delay);
 }
 
 long
@@ -336,7 +335,10 @@ thread::~thread()
 {
   if (backtrace_) graph_viz::delete_trace(backtrace_);
   if (stack_) os_->free_thread_stack(stack_);
-  if (context_) delete context_;
+  if (context_) {
+    context_->destroy_context();
+    delete context_;
+  }
   if (schedule_key_) delete schedule_key_;
 
   //all my apis should have been deleted

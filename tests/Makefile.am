@@ -31,6 +31,7 @@ endif
 #   <timeout, in seconds> <output file> <executable> <arguments passed to executable...>
 PYRUNTEST = $(top_srcdir)/bin/runtest
 PYVALIDATE = $(top_srcdir)/bin/checktest
+
 NOOP = $(top_srcdir)/bin/noop
 DIFF=diff -u
 if INTEGRATED_SST_CORE
@@ -86,13 +87,14 @@ endif
 #------------------------------------------------------------------------------------------#
 
 CHECK_TESTS = \
-  $(SINGLETESTS) \
   $(CORETESTS) \
   $(STATSTESTS) \
   $(CONFIGTESTS) \
   $(COVERAGETESTS) \
-  $(UNITTESTS) \
-  $(ALLOCTESTS) 
+  $(ALLOCTESTS) \
+  $(SINGLETESTS) \
+  $(UNITTESTS) 
+
 if USE_REPLACEMENT_HEADERS
 CHECK_TESTS += $(EXTERNALTESTS)
 endif

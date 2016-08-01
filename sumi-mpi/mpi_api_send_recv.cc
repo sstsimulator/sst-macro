@@ -4,7 +4,6 @@
 
 namespace  sumi {
 
-
 int
 mpi_api::send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
 {

@@ -6,7 +6,6 @@
 
 namespace sumi {
 
-
 void
 eager1::send_header(mpi_queue* queue,
                     const mpi_message::ptr& msg)
@@ -24,10 +23,8 @@ eager1::send_header(mpi_queue* queue,
       // Match.
       mpi_queue_send_request* sreq = *it;
       sreq->complete(msg);
-      /** we can complete the send request and allow
-       the program to continue, but we have to wait
-       for buffer resources to be completed by the rdma get */
-      sreq->wait_for_buffer();
+      queue->send_needs_eager_ack_.erase(it);
+      delete sreq;
       return;
     }
   }

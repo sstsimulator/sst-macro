@@ -48,6 +48,10 @@ class packet_flow_abstract_switch :
   }
 
  protected:
+  packet_flow_abstract_switch();
+
+  virtual ~packet_flow_abstract_switch();
+
   int packet_size_;
 
   double link_bw;
@@ -91,7 +95,7 @@ class packet_flow_switch :
   );
 #endif
 
-  ~packet_flow_switch();
+  virtual ~packet_flow_switch();
 
   virtual void
   initialize();

@@ -13,7 +13,6 @@ mpi_api::wait(MPI_Request *request, MPI_Status *status)
   return do_wait(request, status);
 }
 
-
 int
 mpi_api::do_wait(MPI_Request *request, MPI_Status *status)
 {

@@ -161,6 +161,7 @@ mpi_api::comm_free(MPI_Comm* input)
   mpi_api_debug(sprockit::dbg::mpi,
                 "MPI_Comm_free(%s)", comm_str(*input).c_str());
   mpi_comm* inputPtr = get_comm(*input);
+  comm_map_.erase(*input);
   delete inputPtr;
   *input = MPI_COMM_NULL;
   return MPI_SUCCESS;

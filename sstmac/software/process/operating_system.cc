@@ -69,7 +69,7 @@ namespace sw {
 
 static sprockit::need_delete_statics<operating_system> del_statics;
 size_t operating_system::stacksize_ = 0;
-graph_viz* operating_system::call_graph_ = 0;
+graph_viz* operating_system::call_graph_ = nullptr;
 
 #if SSTMAC_USE_MULTITHREAD
 std::vector<operating_system::os_thread_context> operating_system::os_thread_contexts_;
@@ -80,21 +80,28 @@ operating_system::os_thread_context operating_system::os_thread_context_;
 operating_system::operating_system() :
   current_thread_id_(thread::main_thread),
   next_msg_id_(0),
-  des_context_(0),
-  event_trace_(0),
-  ftq_trace_(0),
-  params_(0),
-  compute_sched_(0)
+  des_context_(nullptr),
+  event_trace_(nullptr),
+  ftq_trace_(nullptr),
+  params_(nullptr),
+  compute_sched_(nullptr)
 {
 }
 
 operating_system::~operating_system()
 {
-  if (des_context_) delete des_context_;
+  if (des_context_) {
+    des_context_->destroy_context();
+    delete des_context_;
+  }
   if (compute_sched_) delete compute_sched_;
   /** JJW 01/28/2016 This should already be cleared out
    *  It not, leave it. It's a leak */
   //sprockit::delete_vals(libs_);
+  current_os_thread_context().stackalloc.clear();
+
+  if (event_trace_) delete event_trace_;
+  if (ftq_trace_) delete ftq_trace_;
 }
 
 static bool you_have_been_warned = false;

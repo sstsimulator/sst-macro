@@ -66,7 +66,8 @@ mpi_request::mpi_request(const key::category& cat) :
  key_(key::construct(cat)),
  complete_(false),
  cancelled_(false),
- persistent_op_(0)
+ persistent_op_(nullptr),
+ collective_op_(nullptr)
 {
 }
 
@@ -74,6 +75,8 @@ mpi_request::~mpi_request()
 {
   delete key_;
   if (persistent_op_) delete persistent_op_;
+  //do not delete - deleted elsewhere
+  //if (collective_op_) delete collective_op_;
 }
 
 //

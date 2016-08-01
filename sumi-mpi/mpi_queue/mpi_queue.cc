@@ -37,8 +37,8 @@ RegisterNamespaces("traffic_matrix");
 DeclareDebugSlot(mpi_all_sends);
 RegisterDebugSlot(mpi_all_sends);
 
-namespace sumi {
 
+namespace sumi {
 
 static sprockit::need_delete_statics<mpi_queue> del_statics;
 
@@ -160,7 +160,8 @@ mpi_queue::send_message(int count, MPI_Datatype type,
 
 
 void
-mpi_queue::configure_send_request(const mpi_message::ptr& mess, mpi_request* key)
+mpi_queue::configure_send_request(const mpi_message::ptr& mess,
+                                  mpi_request* key)
 {
   mpi_queue_send_request* req = new mpi_queue_send_request(mess, key, this);
 
@@ -410,6 +411,7 @@ mpi_queue::handle_incoming_message(const mpi_message::ptr& message)
 void
 mpi_queue::incoming_completion_ack(const mpi_message::ptr& message)
 {
+
   mpi_message::id id = message->unique_int();
   mpi_queue_debug("queue has incoming send completion ack from %d for unique id %llu",
      message->sender(), int(message->unique_int()));
@@ -578,6 +580,8 @@ mpi_queue::find_waiting_request(const mpi_message::ptr& message)
   }
   return req;
 }
+
+
 
 void
 mpi_queue::complete_nic_ack(const mpi_message::ptr& message)

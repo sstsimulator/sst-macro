@@ -46,7 +46,9 @@ mpi_comm_factory::mpi_comm_factory(app_id aid, mpi_api* parent) :
   parent_(parent),
   aid_(aid),
   mpirun_np_(0),
-  next_id_(1)
+  next_id_(1),
+  worldcomm_(nullptr),
+  selfcomm_(nullptr)
 {
 }
 
@@ -55,8 +57,10 @@ mpi_comm_factory::mpi_comm_factory(app_id aid, mpi_api* parent) :
 //
 mpi_comm_factory::~mpi_comm_factory()
 {
-  delete worldcomm_;
-  delete selfcomm_;
+  //do not delete
+  //these will get deleted by mpi_api
+  //if (worldcomm_) delete worldcomm_;
+  //if (selfcomm_) delete selfcomm_;
 }
 
 //
@@ -77,15 +81,8 @@ mpi_comm_factory::init(int rank, int nproc)
   selfp.push_back(task_id(rank));
 
   mpi_group* g2 = new mpi_group(selfp);
-  selfcomm_ = new mpi_comm(MPI_COMM_SELF, int(0), g2, aid_);
-}
-
-void
-mpi_comm_factory::finalize()
-{
-  parent_ = 0;
-  worldcomm_ = 0;
-  selfcomm_ = 0;
+  selfcomm_ = new mpi_comm(MPI_COMM_SELF, int(0),
+                           g2, aid_, true/*owns group*/);
 }
 
 //
@@ -271,7 +268,7 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
   }
 #endif
   mpi_group* grp = new mpi_group(task_list);
-  return new mpi_comm(cid, my_new_rank, grp, aid_);
+  return new mpi_comm(cid, my_new_rank, grp, aid_, true/*delete this group*/);
 }
 
 mpi_comm*

@@ -5,7 +5,6 @@
 namespace sstmac {
 namespace sw {
 
-// Initializing a context.
 void
 threading_pth::init_context() {
   if (pth_uctx_create(&context_) != TRUE) {

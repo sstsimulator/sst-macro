@@ -9,8 +9,8 @@
  *  SST/macroscale directory.
  */
 
-#include <sprockit/errors.h>
 #include <sstmac/common/sstmac_config.h>
+#include <sprockit/errors.h>
 #include <sprockit/statics.h>
 #include <sumi-mpi/mpi_types/mpi_type.h>
 #include <sumi-mpi/mpi_types.h>
@@ -18,8 +18,9 @@
 #include <sstream>
 #include <cstring>
 
-namespace sumi {
+sprockit::need_delete_statics<sumi::mpi_type> delete_static_types;
 
+namespace sumi {
 
 mpi_type::mpi_type() :
   id(-1),

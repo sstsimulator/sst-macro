@@ -25,6 +25,8 @@
 
 ImplementFactory(sstmac::sw::app);
 
+static sprockit::need_delete_statics<sstmac::sw::user_app_cxx_full_main> del_app_statics;
+
 namespace sstmac {
 namespace sw {
 
@@ -383,6 +385,20 @@ app::get_condition(int id)
   } else {
     return &it->second;
   }
+}
+
+void
+user_app_cxx_full_main::delete_statics()
+{
+  for (auto& pair : argv_map_){
+    argv_entry& entry = pair.second;
+    char* main_buffer = entry.argv[0];
+    delete[] main_buffer;
+    delete[] entry.argv;
+  }
+  argv_map_.clear();
+  if (main_fxns_) delete main_fxns_;
+  main_fxns_ = nullptr;
 }
 
 void

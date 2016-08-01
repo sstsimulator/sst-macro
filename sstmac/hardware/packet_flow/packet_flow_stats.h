@@ -32,6 +32,8 @@ class packet_sent_stats :
   public sprockit::factory_type
 {
  public:
+  virtual ~packet_sent_stats(){}
+
   virtual void
   collect_single_event(const packet_stats_st& st);
 
@@ -64,6 +66,8 @@ class congestion_spyplot :
  virtual public packet_sent_stats
 {
  public:
+  virtual ~congestion_spyplot();
+
   virtual void
   collect_single_event(const packet_stats_st& st);
 
@@ -87,6 +91,8 @@ class delay_histogram :
   virtual public packet_sent_stats
 {
  public:
+  virtual ~delay_histogram();
+
   virtual void
   collect_final_event(packet_flow_payload* pkt);
 
@@ -136,6 +142,11 @@ class byte_hop_collector :
  virtual public packet_sent_stats
 {
  public:
+  byte_hop_collector() :
+    byte_hops_(nullptr){}
+
+  virtual ~byte_hop_collector();
+
   virtual void
   collect_single_event(const packet_stats_st& st);
 
@@ -172,7 +183,13 @@ class stat_bytes_sent :
   FRIEND_SERIALIZATION;
 
  public:
-  stat_bytes_sent() : top_(0), local_aggregation_(0) {}
+  stat_bytes_sent() :
+      top_(0),
+      local_aggregation_(nullptr)
+  {
+  }
+
+  virtual ~stat_bytes_sent();
 
   void
   record(int port, long bytes){
@@ -311,6 +328,13 @@ class bytes_sent_collector :
  virtual public packet_sent_stats
 {
  public:
+  bytes_sent_collector() :
+    bytes_sent_(nullptr)
+  {
+  }
+
+  virtual ~bytes_sent_collector();
+
   virtual void
   collect_single_event(const packet_stats_st &st);
 

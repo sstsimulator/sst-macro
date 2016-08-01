@@ -456,6 +456,9 @@ class dag_collective_actor :
   typedef std::multimap<uint32_t, collective_work_message::ptr> pending_msg_map;
 
  protected:
+  dag_collective_actor() :
+    slicer_(nullptr){}
+
   void add_dependency(action* precursor, action* ac);
   void add_action(action* ac);
 

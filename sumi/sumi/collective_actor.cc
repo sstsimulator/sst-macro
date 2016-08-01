@@ -552,6 +552,7 @@ dag_collective_actor::~dag_collective_actor()
     delete ac;
   }
   completed_actions_.clear();
+  if (slicer_) delete slicer_;
 }
 
 void

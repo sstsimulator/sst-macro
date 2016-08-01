@@ -199,7 +199,9 @@ init_first_run(parallel_runtime* rt, sprockit::sim_parameters* params)
 }
 
 void
-run_params(parallel_runtime* rt, sprockit::sim_parameters* params, sim_stats& stats)
+run_params(parallel_runtime* rt,
+           sprockit::sim_parameters* params,
+           sim_stats& stats)
 {
   native::manager* mgr = new native::macro_manager(rt);
   mgr->init_factory_params(params);
@@ -245,6 +247,8 @@ run_params(parallel_runtime* rt, sprockit::sim_parameters* params, sim_stats& st
   double stop = sstmac_wall_time();
   stats.wallTime = stop - start;
   stats.simulatedTime = runtime.sec();
+
+  sstmac::runtime::delete_statics();
 }
 
 #endif
@@ -280,7 +284,8 @@ run(opts& oo,
 }
 
 void
-try_main(sprockit::sim_parameters* params, int argc, char **argv, bool params_only)
+try_main(sprockit::sim_parameters* params,
+         int argc, char **argv, bool params_only)
 {
   //set up the search path
   sprockit::SpktFileIO::add_path(SSTMAC_CONFIG_INSTALL_INCLUDE_PATH);

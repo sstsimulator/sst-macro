@@ -57,6 +57,9 @@ int USER_MAIN(int argc, char** argv)
   MPI_Comm_split(splitComm, splitRank % 3, (rank +123)<<4, &splitCommX2);
   test_all(splitCommX2);
 
+  MPI_Comm_free(&splitComm);
+  MPI_Comm_free(&splitCommX2);
+
   MPI_Finalize();
   return 0;
 }
@@ -70,19 +73,25 @@ test_pt2pt(MPI_Comm comm)
   MPI_Comm_size(comm, &size);
 
   static const int num_sendrecvs = 4;
-  MPI_Request reqs[num_sendrecvs*2];
+  MPI_Request* reqs = new MPI_Request[num_sendrecvs*2];
   int disp = 1;
   for (int count=1; count < max_pt2pt_count; count *= 2){
     int tag = count / 2;
+    int reqIdx = 0;
     for (int i=1; i < num_sendrecvs; ++i){
       disp = disp % size;
       int send_to = (rank + disp) % size;
       int recv_from = (rank + size - disp) % size;
       disp *= 2;
-      MPI_Isend(NULL, count, MPI_INT, send_to, tag, comm, &reqs[i]);
-      MPI_Irecv(NULL, count, MPI_INT, recv_from, tag, comm, &reqs[i+num_sendrecvs]);
+      MPI_Isend(NULL, count, MPI_INT, send_to, tag, comm, &reqs[reqIdx]);
+      ++reqIdx;
+      MPI_Irecv(NULL, count, MPI_INT, recv_from,
+                tag, comm, &reqs[reqIdx]);
+      ++reqIdx;
     }
+    MPI_Waitall(reqIdx, reqs, MPI_STATUSES_IGNORE);
   }
+  delete [] reqs;
   finish_test();
 }
 
@@ -122,8 +131,6 @@ test_root_collectives(MPI_Comm comm)
 void
 test_rootv_collectives(MPI_Comm comm)
 {
-
-
   int rank, size;
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
@@ -138,9 +145,13 @@ test_rootv_collectives(MPI_Comm comm)
 
     int reqIdx = 0;
     for (int root=0; root < 1; ++root){
-      //MPI_Igatherv(NULL, count, MPI_INT, NULL, sizes, displs, MPI_INT, root, comm, &reqs[reqIdx]);
+      //MPI_Igatherv(NULL, count, MPI_INT,
+      //               NULL, sizes, displs, MPI_INT,
+      //               root, comm, &reqs[reqIdx]);
       //++reqIdx;
-      MPI_Iscatterv(NULL, sizes, NULL, MPI_INT, NULL, count, MPI_INT, root, comm, &reqs[reqIdx]);
+      MPI_Iscatterv(NULL, sizes, NULL, MPI_INT,
+                    NULL, count, MPI_INT,
+                    root, comm, &reqs[reqIdx]);
       ++reqIdx;
     }
     MPI_Waitall(reqIdx, reqs, MPI_STATUSES_IGNORE);

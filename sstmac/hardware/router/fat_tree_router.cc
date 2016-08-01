@@ -40,6 +40,11 @@ fat_tree_router::build_rng()
   rng_ = RNG::Combo::construct(seeds);
 }
 
+fat_tree_router::~fat_tree_router()
+{
+  if (rng_) delete rng_;
+}
+
 void
 fat_tree_router::set_topology(topology *top)
 {

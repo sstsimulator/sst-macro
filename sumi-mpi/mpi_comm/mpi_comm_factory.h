@@ -25,10 +25,6 @@ namespace sumi {
  * Construct mpi communicators.
  */
 class mpi_comm_factory  {
-  /// The private type used to manage communicators under construction.
-  class pending;
-  class pending_create;
-  class pending_split;
 
  public:
   virtual std::string
@@ -44,8 +40,6 @@ class mpi_comm_factory  {
 
   /// Initialize the object.
   void init(int rank, int nproc);
-
-  void finalize();
 
  public:
   /// Get the world communicator for the given node.

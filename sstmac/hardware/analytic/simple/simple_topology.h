@@ -39,7 +39,12 @@ class simple_topology :
     return "simple topology";
   }
 
-  virtual ~simple_topology() {}
+  virtual ~simple_topology();
+
+  simple_topology() :
+    actual_topology_(nullptr)
+  {
+  }
 
   void
   init_factory_params(sprockit::sim_parameters* params);

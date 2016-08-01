@@ -36,7 +36,6 @@ libsstmac_common_la_SOURCES = \
   messages/payload.cc \
   messages/library_message.cc \
   messages/timed_event.cc \
-  messages/sst_message.cc \
   messages/wrapper_payload.cc \
   stats/stat_collector.cc \
   stats/stat_spyplot.cc \

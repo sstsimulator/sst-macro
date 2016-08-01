@@ -44,20 +44,26 @@ namespace hw {
 static sprockit::need_delete_statics<nic> del_statics;
 
 nic::nic(sprockit::factory_type *interconn) :
-  spy_num_messages_(0),
-  spy_bytes_(0),
-  hist_msg_size_(0),
-  local_bytes_sent_(0),
-  global_bytes_sent_(0),
-  interconn_(0),
-  parent_(0),
-  mtl_handler_(0)
+  spy_num_messages_(nullptr),
+  spy_bytes_(nullptr),
+  hist_msg_size_(nullptr),
+  local_bytes_sent_(nullptr),
+  global_bytes_sent_(nullptr),
+  interconn_(nullptr),
+  parent_(nullptr),
+  mtl_handler_(nullptr)
 {
   if (interconn) interconn_ = safe_cast(interconnect, interconn);
 }
 
 nic::~nic()
 {
+  if (mtl_handler_) delete mtl_handler_;
+  if (spy_bytes_) delete spy_bytes_;
+  if (spy_num_messages_) delete spy_num_messages_;
+  if (local_bytes_sent_) delete local_bytes_sent_;
+  if (global_bytes_sent_) delete global_bytes_sent_;
+  if (hist_msg_size_) delete hist_msg_size_;
 }
 
 void

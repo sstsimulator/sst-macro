@@ -49,12 +49,12 @@ class mpi_comm : public communicator
     MPI_Comm id,
     int rank,
     mpi_group* peers,
-    app_id aid);
+    app_id aid,
+    bool del_grp = false);
 
   /// Goodbye.
   virtual
-  ~mpi_comm() {
-  }
+  ~mpi_comm();
 
   void
   set_name(std::string name) {
@@ -65,6 +65,9 @@ class mpi_comm : public communicator
   name() const {
     return name_;
   }
+
+  static void
+  delete_statics();
 
   topotypes
   topo_type() const {
@@ -189,6 +192,8 @@ class mpi_comm : public communicator
   spkt_unordered_map<int, keyval*> keyvals_;
 
   app_id aid_;
+
+  bool del_grp_;
 
   topotypes topotype_;
 

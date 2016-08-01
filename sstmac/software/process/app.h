@@ -270,6 +270,9 @@ class user_app_cxx_full_main : public app
   virtual void
   consume_params(sprockit::sim_parameters *params);
 
+  static void
+  delete_statics();
+
   app*
   clone_type() const {
     return new user_app_cxx_full_main;

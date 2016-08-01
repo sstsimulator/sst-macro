@@ -52,7 +52,7 @@ class transport :
      T* t_;
   };
 
-  virtual ~transport(){}
+  virtual ~transport();
 
   virtual void
   init();

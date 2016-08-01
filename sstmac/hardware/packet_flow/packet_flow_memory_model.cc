@@ -18,9 +18,9 @@ namespace hw {
 SpktRegister("packet_flow", memory_model, packet_flow_memory_model);
 
 packet_flow_memory_packetizer::packet_flow_memory_packetizer() :
-  arb_(0),
-  bw_noise_(0),
-  interval_noise_(0),
+  arb_(nullptr),
+  bw_noise_(nullptr),
+  interval_noise_(nullptr),
   num_noisy_intervals_(0)
 {
 }
@@ -50,6 +50,9 @@ packet_flow_memory_packetizer::finalize_init()
 packet_flow_memory_packetizer::~packet_flow_memory_packetizer()
 {
   if (arb_) delete arb_;
+  if (pkt_allocator_) delete pkt_allocator_;
+  if (bw_noise_) delete bw_noise_;
+  if (interval_noise_) delete interval_noise_;
 }
 
 void
@@ -91,13 +94,15 @@ void
 packet_flow_memory_model::access(long bytes, double max_bw)
 {
   sw::key* k = sw::key::construct();
-  memory_message* msg = new memory_message(bytes, parent_node_->allocate_unique_id(), max_bw);
+  memory_message* msg = new memory_message(bytes,
+                   parent_node_->allocate_unique_id(), max_bw);
   pending_requests_[msg] = k;
 
   int channel = allocate_channel();
   mem_packetizer_->start(channel, msg);
   parent_node_->os()->block(k);
 
+  delete msg;
 }
 
 void

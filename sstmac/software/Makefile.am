@@ -50,7 +50,6 @@ libsstmac_sw_la_SOURCES = \
   libraries/compute/lib_compute_loops.cc \
   libraries/compute/sstmac_compute.cc \
   libraries/unblock_event.cc \
-  libraries/service.cc \
   launch/app_launch.cc \
   launch/node_allocator.cc \
   launch/cart_allocation.cc \

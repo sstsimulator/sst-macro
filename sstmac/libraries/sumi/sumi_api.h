@@ -30,6 +30,8 @@ class sumi_queue
 
   sumi_queue();
 
+  ~sumi_queue();
+
   transport_message*
   poll_until_message();
 
@@ -67,10 +69,7 @@ class sumi_api :
   virtual void
   finalize();
 
-  virtual ~sumi_api(){}
-
-  virtual void
-  init_param1(const sstmac::sw::software_id& sid);
+  virtual ~sumi_api();
 
   virtual void
   init_os(sstmac::sw::operating_system* os);

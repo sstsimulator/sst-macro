@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define debug_print(...) 
 #define debug_print(...) printf(__VA_ARGS__)
 
 int main(int argc, char** argv)

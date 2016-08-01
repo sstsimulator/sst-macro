@@ -82,6 +82,18 @@ class Factory
   }
 
   static void
+  clean_up(){
+    //do not iterate the builder map and delete entry
+    //each builder_t is a static objec that gets cleaned up automatically
+
+    if (builder_map_) delete builder_map_;
+    if (alias_map_) delete alias_map_;
+
+    builder_map_ = 0;
+    alias_map_ = 0;
+  }
+
+  static void
   register_name(const std::string& name, builder_t* descr) {
     if (!builder_map_) {
       builder_map_ = new builder_map;
@@ -269,7 +281,13 @@ class template_factory2 : public factory2<T>
   std::string param_name_;
 };
 
-
+template <class Factory>
+class CleanupFactory {
+ public:
+  ~CleanupFactory(){
+    Factory::clean_up();
+  }
+};
 
 }
 
@@ -282,7 +300,9 @@ class template_factory2 : public factory2<T>
 #define ImplementFactory(type_name) \
   template<> const char* type_name##_factory::name_ = FirstArgStr(__VA_ARGS__); \
   template<> std::map<std::string, type_name##_factory::builder_t*>* type_name##_factory::builder_map_ = 0; \
-  template<> std::map<std::string, std::list<std::string>>* type_name##_factory::alias_map_ = 0;
+  template<> std::map<std::string, std::list<std::string>>* type_name##_factory::alias_map_ = 0; \
+  namespace { static sprockit::CleanupFactory<type_name##_factory> cleaner; }
+
 
 
 #define SpktTemplateRegister(cls_str, parent_cls, child_cls, unique_name, ...) \

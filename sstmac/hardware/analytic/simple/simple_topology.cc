@@ -39,6 +39,11 @@ simple_topology::endpoint_to_injection_switch(node_id nodeaddr, int &switch_port
   }
 }
 
+simple_topology::~simple_topology()
+{
+  if (actual_topology_) delete actual_topology_;
+}
+
 switch_id
 simple_topology::endpoint_to_ejection_switch(node_id nodeaddr, int &switch_port) const
 {

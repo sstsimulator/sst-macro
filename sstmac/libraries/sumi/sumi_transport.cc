@@ -108,6 +108,7 @@ sumi_transport::finalize()
   stop_heartbeat();
   //sstmac_usleep(heartbeat_interval_*1e6);
   delete monitor_;
+  monitor_ = nullptr;
 
 }
 
@@ -127,12 +128,6 @@ sumi_transport::go_revive()
 void
 sumi_transport::init_factory_params(sprockit::sim_parameters* params)
 {
-  //have to init this as an api, too
-  sstmac::sw::thread* thr = sstmac::sw::thread::current();
-  sstmac::sw::app_id aid = thr->aid();
-  sstmac::sw::task_id tid = thr->tid();
-  sstmac::sw::software_id sid(aid, tid);
-  init_param1(sid);
   sstmac::sumi_api::init_factory_params(params);
   transport::init_factory_params(params);
 }

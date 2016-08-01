@@ -59,7 +59,6 @@ sprockit::StaticNamespaceRegister queue_ns_reg("queue");
 
 namespace sumi {
 
-
 SpktRegister("mpi", sstmac::sw::api, mpi_api, "Create bindings for MPI runtime");
 
 key::category mpi_api::default_key_category("MPI");
@@ -85,15 +84,13 @@ mpi_api::mpi_api(sstmac::sw::software_id sid) :
   next_op_id_(first_custom_op_id),
   group_counter_(MPI_GROUP_WORLD+1),
   req_counter_(0),
-  queue_(0),
-  comm_factory_(0),
-  worldcomm_(0),
-  selfcomm_(0),
+  queue_(nullptr),
+  comm_factory_(nullptr),
+  worldcomm_(nullptr),
+  selfcomm_(nullptr),
   rank_(sid.task_),
   sumi_transport("mpi", sid)
 {
-  sumi_transport::init_param1(sid);
-
 }
 
 
@@ -139,7 +136,22 @@ mpi_api::~mpi_api()
   //this is weird with context switching
   //an unblock finishes finalize... so finalize is called while the DES thread is still inside the queue
   //the queue outlives mpi_api::finalize!
-  delete queue_;
+  if (queue_) delete queue_;
+  if (comm_factory_) delete comm_factory_;
+
+  //these are often not cleaned up correctly by app
+  for (auto& pair : grp_map_){
+    mpi_group* grp = pair.second;
+    delete grp;
+  }
+
+  //these are often not cleaned up correctly by app
+  //do not delete this one
+  comm_map_.erase(MPI_COMM_NULL);
+  for (auto& pair : comm_map_){
+    mpi_comm* comm = pair.second;
+    delete comm;
+  }
 }
 
 void
@@ -156,18 +168,21 @@ mpi_api::comm_rank(MPI_Comm comm, int *rank)
   return MPI_SUCCESS;
 }
 
-//
-// Initialize MPI.
-//
 int
 mpi_api::do_init(int* argc, char*** argv)
 {
+  if (status_ == is_initialized){
+    spkt_throw(sprockit::value_error,
+               "MPI_Init cannot be called twice");
+  }
+
   SSTMACBacktrace("MPI_Init");
 
   sumi_transport::init();
 
   if (!os_) {
-    spkt_throw(sprockit::null_error, "mpiapi::init: os has not been initialized yet");
+    spkt_throw(sprockit::null_error,
+               "mpiapi::init: os has not been initialized yet");
   }
 
   comm_factory_ = new mpi_comm_factory(sid().app_, this);
@@ -215,9 +230,8 @@ int
 mpi_api::do_finalize()
 {  
   SSTMACBacktrace("MPI_Finalize");
+  barrier(MPI_COMM_WORLD);
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Finalize()");
-
-  barrier(worldcomm_->id());
 
   status_ = is_finalized;
 
@@ -229,11 +243,11 @@ mpi_api::do_finalize()
       sid().to_string().c_str(),
       os_->now().sec());
   }
-  comm_factory_->finalize();
 
   queue_->unregister_all_libs();
 
   delete comm_factory_;
+  comm_factory_ = 0;
 
   transport::finalize();
 
