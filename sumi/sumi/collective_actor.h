@@ -53,7 +53,7 @@ struct action
   std::string
   to_string() const;
 
-  static const uint32_t max_round = 50;
+  static const uint32_t max_round = 500;
 
   static uint32_t
   message_id(type_t ty, int r, int p){
