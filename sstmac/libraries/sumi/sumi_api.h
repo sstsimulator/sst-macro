@@ -95,8 +95,7 @@ class sumi_api :
     const sumi::message_ptr& msg,
     int ty,
     int dst,
-    bool needs_ack,
-    void* buffer = 0);
+    bool needs_ack);
   
   bool
   blocked() const {

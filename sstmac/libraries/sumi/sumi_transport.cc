@@ -46,19 +46,17 @@ sumi_transport::handle(sstmac::transport_message* smsg)
     break;
    case sstmac::hw::network_message::payload:
    {
-    if (smsg->buffer() && my_msg->payload_type() == message::eager_payload){
-      my_msg->eager_buffer() = smsg->buffer();
-    }
+    //no work to do - just receive the buffer
     transport::handle(my_msg);
     break;
    }
    case sstmac::hw::network_message::rdma_get_payload:
-    smsg->complete_transfer(my_msg->local_buffer());
+    my_msg->move_remote_to_local();
     if (my_msg->needs_recv_ack()) //only if I requested to be notified
       transport::handle(my_msg);
     break;
    case sstmac::hw::network_message::rdma_put_payload:
-    smsg->complete_transfer(my_msg->remote_buffer());
+    my_msg->move_local_to_remote();
     if (my_msg->needs_recv_ack()) //only if I requested to be notified
       transport::handle(my_msg);
     break;
@@ -144,7 +142,7 @@ sumi_transport::do_smsg_send(int dst, const message::ptr &msg)
 {
   transport_send(msg->byte_length(), msg,
     sstmac::hw::network_message::payload,
-    dst, msg->needs_send_ack(), msg->eager_buffer());
+    dst, msg->needs_send_ack());
 }
 
 double
@@ -167,7 +165,7 @@ sumi_transport::do_rdma_get(int dst, const message::ptr& msg)
 {
   transport_send(msg->byte_length(), msg,
     sstmac::hw::network_message::rdma_get_request,
-    dst, msg->needs_send_ack(), msg->remote_buffer());
+    dst, msg->needs_send_ack());
 }
 
 void
@@ -175,7 +173,7 @@ sumi_transport::do_rdma_put(int dst, const message::ptr& msg)
 {
   transport_send(msg->byte_length(), msg,
     sstmac::hw::network_message::rdma_put_payload,
-    dst, msg->needs_send_ack(), msg->local_buffer());
+    dst, msg->needs_send_ack());
 }
 
 void
@@ -183,7 +181,7 @@ sumi_transport::do_nvram_get(int dst, const message::ptr& msg)
 {
   transport_send(msg->byte_length(), msg,
     sstmac::hw::network_message::nvram_get_request,
-    dst, msg->needs_send_ack(), msg->remote_buffer());
+    dst, msg->needs_send_ack());
 }
 
 message::ptr

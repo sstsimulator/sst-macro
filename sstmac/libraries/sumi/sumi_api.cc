@@ -87,8 +87,7 @@ sumi_api::transport_send(
   const sumi::message_ptr &msg,
   int sendType,
   int dst,
-  bool needs_ack,
-  void* buffer)
+  bool needs_ack)
 {
   sstmac::sw::app_id aid = sid().app_;
   sstmac::hw::network_message::type_t ty = (sstmac::hw::network_message::type_t) sendType;
@@ -99,7 +98,6 @@ sumi_api::transport_send(
   tmsg->set_needs_ack(needs_ack);
   tmsg->set_src(rank_);
   tmsg->set_dest(dst);
-  tmsg->set_buffer(buffer);
   sw::library::os_->execute_kernel(ami::COMM_SEND, tmsg);
 }
 

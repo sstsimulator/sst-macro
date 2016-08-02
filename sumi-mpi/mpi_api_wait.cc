@@ -79,6 +79,7 @@ mpi_api::waitany(int count, MPI_Request array_of_requests[], int *indx, MPI_Stat
         }
         if (!reqPtr->is_persistent()){
           array_of_requests[i] = MPI_REQUEST_NULL;
+          req_map_.erase(req);
           delete reqPtr;
         }
         return MPI_SUCCESS;
@@ -109,6 +110,7 @@ mpi_api::waitany(int count, MPI_Request array_of_requests[], int *indx, MPI_Stat
         if (!reqPtr->is_persistent()){
           array_of_requests[i] = MPI_REQUEST_NULL;
           delete reqPtr;
+          req_map_.erase(req);
         }
         return MPI_SUCCESS;
       }
@@ -144,6 +146,7 @@ mpi_api::waitsome(int incount, MPI_Request array_of_requests[],
         if (!reqPtr->is_persistent()){
           array_of_requests[i] = MPI_REQUEST_NULL;
           delete reqPtr;
+          req_map_.erase(req);
         }
       } else {
         reqPtrs[numIncomplete++] = reqPtr;
@@ -172,6 +175,7 @@ mpi_api::waitsome(int incount, MPI_Request array_of_requests[],
         if (!reqPtr->is_persistent()){
           array_of_requests[i] = MPI_REQUEST_NULL;
           delete reqPtr;
+          req_map_.erase(req);
         }
       }
     }

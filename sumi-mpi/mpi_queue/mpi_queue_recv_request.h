@@ -26,6 +26,10 @@ namespace sumi {
 class mpi_queue_recv_request  {
   friend class mpi_queue;
   friend class rendezvous_get;
+  friend class eager1;
+  friend class eager1_doublecpy;
+  friend class eager0;
+  friend class eager1_singlecpy;
 
  public:
   virtual std::string
@@ -36,7 +40,7 @@ class mpi_queue_recv_request  {
   /// Hello.
   mpi_queue_recv_request(mpi_request* key, mpi_queue* queue, int count,
                MPI_Datatype type, int source, int tag,
-               MPI_Comm comm);
+               MPI_Comm comm, void* buffer);
 
   /// Goodbye.
   virtual ~mpi_queue_recv_request();
@@ -44,22 +48,17 @@ class mpi_queue_recv_request  {
   /// Do we match the given message?
   bool matches(const mpi_message::ptr& msg);
 
-  bool open_source() const;
-
   void
   set_seqnum(int seqnum) {
     seqnum_ = seqnum;
   }
-
-  void
-  handle(const mpi_message::ptr& mess);
 
   bool
   is_cancelled() const;
 
  private:
   void
-  finish_message(void* buffer, const mpi_message::ptr& mess);
+  finish_message(const mpi_message::ptr& mess);
 
  private:
   /// The queue to whom we belong.

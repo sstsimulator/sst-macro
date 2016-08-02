@@ -205,9 +205,18 @@ class mpi_message :
     return ignore_seqnum_;
   }
 
+  virtual void
+  move_remote_to_local();
+
+  virtual void
+  move_local_to_remote();
+
  protected:
   void
   clone_into(mpi_message* cln) const;
+
+  virtual void
+  buffer_send();
 
  protected:
   int src_rank_;

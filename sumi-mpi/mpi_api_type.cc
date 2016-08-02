@@ -88,7 +88,7 @@ struct ldcomplex {
 };
 
 void
-mpi_api::precommit_types()
+mpi_api::commit_builtin_types()
 {
   static const int builtin_sizes[] = {1, 2, 4, 6, 8, 12, 16, 20, 32, 48, 64};
   static const int num_builtins = sizeof(builtin_sizes) / sizeof(int);
@@ -99,21 +99,21 @@ mpi_api::precommit_types()
 
 #define int_precommit_type(datatype, typeObj, id) \
   if (need_init) typeObj->init_integer<datatype>(#id); \
-  precommit_type(typeObj, id)
+  commit_builtin_type(typeObj, id)
 
 #define op_precommit_type(datatype, typeObj, id) \
   if (need_init) typeObj->init_with_ops<datatype>(#id); \
-  precommit_type(typeObj, id)
+  commit_builtin_type(typeObj, id)
 
 #define noop_precommit_type(size, typeObj, id) \
   if (need_init) typeObj->init_no_ops(#id, size); \
-  precommit_type(typeObj, id)
+  commit_builtin_type(typeObj, id)
 
 #define index_precommit_type(datatype, typeObj, id) \
   if (need_init) typeObj->init_no_ops(#id, sizeof(datatype)); \
   if (need_init) typeObj->init_op(MPI_MAXLOC, &ReduceOp<MaxLocPair,datatype>::op); \
   if (need_init) typeObj->init_op(MPI_MINLOC, &ReduceOp<MinLocPair,datatype>::op); \
-  precommit_type(typeObj, id);
+  commit_builtin_type(typeObj, id);
 
   noop_precommit_type(0, mpi_type::mpi_null, MPI_NULL);
 
@@ -384,13 +384,14 @@ mpi_api::allocate_type_id(mpi_type* type)
 }
 
 void
-mpi_api::precommit_type(mpi_type* type, MPI_Datatype id)
+mpi_api::commit_builtin_type(mpi_type* type, MPI_Datatype id)
 {
   if (known_types_.find(id) != known_types_.end()){
     spkt_throw_printf(sprockit::value_error,
       "mpi_api::precommit_type: %d already exists", id);
   }
   type->id = id;
+  type->set_builtin(true);
   known_types_[id] = type;
   known_types_[id]->set_committed(true);
 }
@@ -512,8 +513,12 @@ mpi_api::type_free(MPI_Datatype* type)
   mpi_api_debug(sprockit::dbg::mpi,
                 "MPI_Type_free(%s)",
                 type_str(*type).c_str());
-  mpi_type* type_obj = type_from_id(*type);
-  type_obj->set_committed(false);
+  auto iter = known_types_.find(*type);
+  if (iter != known_types_.end()){
+    mpi_type* obj = iter->second;
+    known_types_.erase(iter);
+    delete obj;
+  }
   return MPI_SUCCESS;
 }
 

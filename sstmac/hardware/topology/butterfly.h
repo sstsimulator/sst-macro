@@ -9,10 +9,10 @@
  *  SST/macroscale directory.
  */
 
-// butterfly.h: Interface for butterfly networks.
+
 //
-// Based on butterfly.c by Jim Schutt
-// Adapted by Curtis Janssen <cljanss@ca.sandia.gov>
+// Author: Jeremiah Wilke <jjwilke@sandia.gov>
+
 #ifndef SSTMAC_HARDWARE_NETWORK_TOPOLOGY_butterfly_H_INCLUDED
 #define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_butterfly_H_INCLUDED
 

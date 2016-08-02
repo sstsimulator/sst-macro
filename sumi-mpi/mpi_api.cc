@@ -152,6 +152,13 @@ mpi_api::~mpi_api()
     mpi_comm* comm = pair.second;
     delete comm;
   }
+
+  //people can be sloppy cleaning up requests
+  //clean up for them
+  for (auto& pair : req_map_){
+    mpi_request* req = pair.second;
+    delete req;
+  }
 }
 
 void
@@ -197,7 +204,7 @@ mpi_api::do_init(int* argc, char*** argv)
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Init()");
 
   /** Make sure all the default types are known */
-  precommit_types();
+  commit_builtin_types();
 
   queue_->init_os(os_);
 

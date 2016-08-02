@@ -27,7 +27,7 @@ class instruction_processor :
  public:
   instruction_processor(memory_model* mem, node* nd) :
     simple_processor(mem, nd),
-    noise_model_(0),
+    noise_model_(nullptr),
     negligible_time_sec_(0)
   {
   }
@@ -37,7 +37,7 @@ class instruction_processor :
     return "instruction processor";
   }
 
-  virtual ~instruction_processor() {}
+  virtual ~instruction_processor();
 
   virtual void
   init_factory_params(sprockit::sim_parameters* params);

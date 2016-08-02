@@ -112,6 +112,9 @@ class message :
   virtual message*
   clone() const;
 
+  virtual void
+  buffer_send();
+
   message*
   clone_ack() const;
 
@@ -198,9 +201,23 @@ class message :
     needs_recv_ack_ = need;
   }
 
+  bool
+  has_payload() const {
+    return local_buffer_.ptr || remote_buffer_.ptr;
+  }
+
+  virtual void
+  move_remote_to_local();
+
+  virtual void
+  move_local_to_remote();
+
  protected:
   void
   clone_into(message* cln) const;
+
+  static void
+  buffer_send(public_buffer& buf, long num_bytes);
 
  protected:
   payload_type_t payload_type_;
@@ -228,7 +245,7 @@ class message :
    return local_buffer_.ptr;
   }
 
- private:
+ protected:
   sumi::public_buffer local_buffer_;
   sumi::public_buffer remote_buffer_;
 

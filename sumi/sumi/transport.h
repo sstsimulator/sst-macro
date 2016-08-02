@@ -148,6 +148,9 @@ class transport :
     bool needs_send_ack,
     bool needs_recv_ack);
 
+  virtual void
+  free_eager_buffer(const message::ptr& msg);
+
   void
   nvram_get(int src, const message::ptr& msg);
   

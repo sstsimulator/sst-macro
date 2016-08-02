@@ -55,21 +55,8 @@ class transport_message :
     src_task_ = ::sstmac::sw::task_id(src);
   }
 
-  void
-  set_buffer(void* buf){
-    buffer_ = buf;
-  }
-
-  void*
-  buffer() const {
-    return buffer_;
-  }
-
   virtual void
   put_on_wire();
-
-  void
-  complete_transfer(void* buf);
 
   ::sstmac::hw::network_message*
   clone_injection_ack() const;
@@ -83,7 +70,6 @@ class transport_message :
 
  private:
   sumi::message_ptr payload_;
-  void* buffer_;
 
 };
 

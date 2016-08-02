@@ -1070,6 +1070,7 @@ dag_collective_actor::incoming_recv_message(action* ac, const collective_work_me
   case collective_work_message::eager_payload:
     //data recved will clear the actions
     data_recved(ac, msg, msg->eager_buffer());
+    my_api_->free_eager_buffer(msg);
     break;
   case collective_work_message::nack_get_header:
   case collective_work_message::nack_eager:

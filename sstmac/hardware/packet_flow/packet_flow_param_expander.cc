@@ -110,8 +110,14 @@ packet_flow_param_expander::expand_amm1_network(sprockit::sim_parameters* params
 
   int size_multiplier = switch_buffer_multiplier(params);
   int buffer_size = buffer_depth_ * packet_size * size_multiplier;
-  switch_params->add_param_override("input_buffer_size", buffer_size);
-  switch_params->add_param_override("output_buffer_size", buffer_size);
+  if (!switch_params->has_param("input_buffer_size")){
+    switch_params->add_param_override("input_buffer_size", buffer_size);
+  }
+  if (!switch_params->has_param("output_buffer_size")){
+    switch_params->add_param_override("output_buffer_size", buffer_size);
+  }
+
+
 
   if (!switch_params->has_param("ejection_bandwidth")){
     sprockit::sim_parameters* nic_params = params->get_namespace("nic");

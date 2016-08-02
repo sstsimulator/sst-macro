@@ -15,6 +15,8 @@ class structured_router
 {
 
  public:
+  virtual ~structured_router(){}
+
   virtual void
   set_topology(topology* top);
 

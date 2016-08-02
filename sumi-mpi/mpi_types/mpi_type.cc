@@ -30,7 +30,8 @@ mpi_type::mpi_type() :
   size_(-1),
   pdata_(0),
   idata_(0),
-  vdata_(0)
+  vdata_(0),
+  builtin_(false)
 {
 }
 

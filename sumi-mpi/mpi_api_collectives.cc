@@ -189,7 +189,7 @@ mpi_api::wait_collective(collective_op_base* op)
       }
     } else {
       mpi_message::ptr mpiMsg = ptr_safe_cast(mpi_message, msg);
-      queue_->incoming_message(mpiMsg);
+      queue_->incoming_progress_loop_message(mpiMsg);
     }
   }
 

@@ -111,6 +111,31 @@ mpi_message::clone_into(mpi_message* cln) const
   cln->ignore_seqnum_ = ignore_seqnum_;
 }
 
+void
+mpi_message::buffer_send()
+{
+  if (protocol_ == mpi_protocol::RENDEZVOUS_GET){
+    message::buffer_send();
+  } else {
+    //eager protocols - already buffered
+  }
+}
+
+void
+mpi_message::move_remote_to_local()
+{
+  if (protocol_ == mpi_protocol::EAGER1_DOUBLECPY){
+    //do nothing - we do not have the remote buffer yet
+  } else {
+    message::move_remote_to_local();
+  }
+}
+
+void
+mpi_message::move_local_to_remote()
+{
+  message::move_local_to_remote();
+}
 
 //
 // Goodbye.

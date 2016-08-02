@@ -149,6 +149,15 @@ transport::init_spares(int nspares)
 }
 
 void
+transport::free_eager_buffer(const message::ptr& msg)
+{
+  char* buf = (char*) msg->eager_buffer();
+  if (buf){
+    delete[] buf;
+  }
+}
+
+void
 transport::finalize()
 {
   clean_up();

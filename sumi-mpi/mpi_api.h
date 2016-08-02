@@ -768,10 +768,10 @@ class mpi_api :
     int* inds);
 
   void
-  precommit_types();
+  commit_builtin_types();
 
   void
-  precommit_type(mpi_type* type, MPI_Datatype id);
+  commit_builtin_type(mpi_type* type, MPI_Datatype id);
 
   std::string
   type_label(MPI_Datatype tid);

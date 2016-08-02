@@ -112,6 +112,54 @@ message::clone_into(message* cln) const
 }
 
 void
+message::buffer_send(public_buffer& buf, long num_bytes)
+{
+  void* new_buf = new char[num_bytes];
+  void* old_buf = buf.ptr;
+  ::memcpy(new_buf, old_buf, num_bytes);
+  buf.ptr = new_buf;
+}
+
+void
+message::move_local_to_remote()
+{
+  ::memcpy(remote_buffer_.ptr, local_buffer_.ptr, num_bytes_);
+  delete[] (char*) local_buffer_.ptr;
+  local_buffer_.ptr = 0;
+}
+
+void
+message::move_remote_to_local()
+{
+  ::memcpy(local_buffer_.ptr, remote_buffer_.ptr, num_bytes_);
+  delete[] (char*) remote_buffer_.ptr;
+  remote_buffer_.ptr = 0;
+}
+
+void
+message::buffer_send()
+{
+  //nothing to do
+  if (local_buffer_.ptr == nullptr)
+    return;
+
+  switch(payload_type_){
+    case rdma_get:
+      buffer_send(remote_buffer_, num_bytes_);
+      break;
+    case rdma_put:
+      buffer_send(local_buffer_, num_bytes_);
+      break;
+    case eager_payload:
+      buffer_send(local_buffer_, num_bytes_);
+      break;
+    default:
+      //do nothing
+      break;
+  }
+}
+
+void
 message::serialize_order(sumi::serializer &ser)
 {
   ser & sender_;
@@ -124,6 +172,22 @@ message::serialize_order(sumi::serializer &ser)
   ser & needs_recv_ack_;
   ser & local_buffer_;
   ser & remote_buffer_;
+  switch (payload_type_)
+  {
+    case rdma_get:
+      if (remote_buffer_.ptr){
+        sumi::array(remote_buffer_.ptr, num_bytes_);
+      }
+      break;
+    case rdma_put:
+    case eager_payload:
+      if (local_buffer_.ptr){
+        sumi::array(local_buffer_.ptr, num_bytes_);
+      }
+      break;
+    default:
+      break;
+  }
 }
 
 }

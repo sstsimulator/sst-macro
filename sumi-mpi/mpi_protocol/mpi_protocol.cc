@@ -51,8 +51,28 @@ mpi_protocol::handle_nic_ack(mpi_queue* queue,
 }
 
 void
-mpi_protocol::incoming_payload(mpi_queue* queue,
+mpi_protocol::incoming_header(mpi_queue* queue,
   const mpi_message::ptr& msg)
+{
+  spkt_throw_printf(sprockit::illformed_error,
+    "%s should never handle header",
+     to_string().c_str());
+}
+
+void
+mpi_protocol::incoming_header(mpi_queue* queue,
+  const mpi_message::ptr& msg,
+  mpi_queue_recv_request* req)
+{
+  spkt_throw_printf(sprockit::illformed_error,
+    "%s should never handle header",
+     to_string().c_str());
+}
+
+void
+mpi_protocol::incoming_payload(mpi_queue* queue,
+  const mpi_message::ptr& msg,
+  mpi_queue_recv_request* req)
 {
   spkt_throw_printf(sprockit::illformed_error,
     "%s should never handle payload",
@@ -60,27 +80,12 @@ mpi_protocol::incoming_payload(mpi_queue* queue,
 }
 
 void
-eager0::configure_send_buffer(const mpi_message::ptr& msg, void *buffer)
+mpi_protocol::incoming_payload(mpi_queue* queue,
+  const mpi_message::ptr& msg)
 {
-  long length = msg->payload_bytes();
-  void* eager_buf = new char[length];
-  ::memcpy(eager_buf, buffer, length);
-  msg->eager_buffer() = eager_buf;
-}
-
-void
-eager1::configure_send_buffer(const mpi_message::ptr& msg, void *buffer)
-{
-  long length = msg->payload_bytes();
-  void* eager_buf = new char[length];
-  ::memcpy(eager_buf, buffer, length);
-  msg->local_buffer().ptr = eager_buf;
-}
-
-void
-rendezvous_get::configure_send_buffer(const mpi_message::ptr& msg, void *buffer)
-{
-  msg->local_buffer().ptr = buffer;
+  spkt_throw_printf(sprockit::illformed_error,
+    "%s should never handle payload",
+     to_string().c_str());
 }
 
 }

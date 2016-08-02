@@ -371,6 +371,7 @@ stat_bytes_sent::global_reduce(parallel_runtime *rt)
     global_reduce_non_root(rt, root, buffer, total_size);
   }
 
+  delete[] buffer;
 }
 
 void
