@@ -161,21 +161,6 @@ class node :
   execute_kernel(ami::COMM_FUNC func,
                  message* data) = 0;
 
-
-  /**
-   @param func  Enum identifying the type of computation
-   @return Whether the given node and processor models supports the compute function
-  */
-  virtual bool
-  kernel_supported(ami::COMP_FUNC func) const = 0;
-
-  /**
-   @param func  Enum identifying the type of communication
-   @return Whether the given node and nic models supports the comm function
-  */
-  virtual bool
-  kernel_supported(ami::COMM_FUNC func) const = 0;
-
   virtual void
   handle(event* ev);
 

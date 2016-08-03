@@ -34,12 +34,6 @@ lib_compute_inst::lib_compute_inst(software_id sid) :
 {
 }
 
-bool
-lib_compute_inst::supported() const
-{
-  return os_->kernel_supported(ami::COMP_INSTR);
-}
-
 void
 lib_compute_inst::compute_detailed(
   uint64_t flops,

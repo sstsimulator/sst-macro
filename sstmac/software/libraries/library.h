@@ -79,16 +79,6 @@ class library  {
   void
   register_lib(library* lib);
 
-  /**
-   * This is usually convenient to define to check if the node was set up correctly to support
-   * what this library wants to do. This function is not currently a strict part of an interface.
-   * @return true if the hardware supports this libraries functions
-   */
-  virtual bool
-  supported() const {
-    return true;
-  }
-
  protected:
   operating_system* os_;
   key::category key_cat_;

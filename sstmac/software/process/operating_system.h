@@ -115,12 +115,6 @@ class operating_system :
   void
   execute_kernel(ami::COMM_FUNC func, message* data);
 
-  bool
-  kernel_supported(ami::COMP_FUNC) const;
-
-  bool
-  kernel_supported(ami::COMM_FUNC) const;
-
   static void
   stack_check();
   

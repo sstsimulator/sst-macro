@@ -251,12 +251,6 @@ class lib_compute_loops :
   static bool do_loops_;
 
  protected:
-  virtual bool
-  supported() const {
-    return lib_compute_inst::supported()
-           && lib_compute_memmove::supported();
-  }
-
   void consume_params(sprockit::sim_parameters *params);
 
   void

@@ -124,31 +124,6 @@ simple_node::execute_kernel(ami::COMP_FUNC func,
   }
 }
 
-bool
-simple_node::kernel_supported(ami::COMP_FUNC func) const
-{
-  switch (func) {
-    case sstmac::ami::COMP_TIME:
-    case sstmac::ami::COMP_INSTR:
-      return true;
-    default:
-      return false;
-  }
-  return false;
-}
-
-bool
-simple_node::kernel_supported(ami::COMM_FUNC func) const
-{
-  switch (func) {
-    case sstmac::ami::COMM_SEND:
-      return true;
-    default:
-      return false;
-  }
-  return false;
-}
-
 }
 } // end of namespace sstmac.
 

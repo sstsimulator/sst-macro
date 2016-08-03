@@ -368,18 +368,6 @@ operating_system::execute_kernel(ami::COMM_FUNC func,
   node_->execute_kernel(func, data);
 }
 
-bool
-operating_system::kernel_supported(ami::COMP_FUNC func) const
-{
-  return node_->kernel_supported(func);
-}
-
-bool
-operating_system::kernel_supported(ami::COMM_FUNC func) const
-{
-  return node_->kernel_supported(func);
-}
-
 // ------- THREADING functions ----------
 void
 operating_system::simulation_done()

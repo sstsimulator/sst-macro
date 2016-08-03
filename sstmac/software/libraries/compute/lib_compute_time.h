@@ -40,9 +40,6 @@ class lib_compute_time :
   void
   compute(timestamp time);
 
-  virtual bool
-  supported() const;
-
 };
 
 }
