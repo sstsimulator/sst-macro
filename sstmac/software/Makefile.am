@@ -98,6 +98,7 @@ nobase_library_include_HEADERS = \
   process/software_id.h \
   process/task_id.h \
   process/time.h \
+  process/perf_counter.h \
   process/thread_data.h \
   process/thread.h \
   process/thread_fwd.h \

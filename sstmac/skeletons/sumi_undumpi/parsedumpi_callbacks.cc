@@ -178,7 +178,7 @@ start_mpi(const dumpi_time *cpu, const dumpi_time *wall,
         spkt_throw(sprockit::illformed_error, "parsedumpi_callbacks::start_mpi:  "
                               "Number of active perfcounters changed "
                               "between calls.");
-      sstmac::sw::compute_event* evts = new sstmac::sw::compute_event;
+      //sstmac::sw::compute_event* evts = new sstmac::sw::compute_event;
       for(int i = 0; i < perf->count; ++i) {
         int64_t evtval = perf->invalue[i] - perfctr_compute_start_[i];
         if(evtval < 0) {
@@ -191,8 +191,8 @@ start_mpi(const dumpi_time *cpu, const dumpi_time *wall,
          evts->set_event_value(perf->counter_tag[i], evtval);
         */
       }
-      parent_->compute_inst(evts);
-      delete evts;
+      //parent_->compute_inst(evts);
+      //delete evts;
     }
     else {
       // We get here if we are not using processor modeling.

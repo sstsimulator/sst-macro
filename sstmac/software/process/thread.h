@@ -28,7 +28,7 @@
 #include <sstmac/software/libraries/compute/lib_sleep_fwd.h>
 #include <sstmac/software/api/api_fwd.h>
 #include <sstmac/software/threading/threading_interface_fwd.h>
-
+#include <sstmac/software/process/perf_counter.h>
 #include <queue>
 #include <map>
 #include <utility>
@@ -38,7 +38,6 @@
 
 namespace sstmac {
 namespace sw {
-
 
 class thread
 {
@@ -139,6 +138,9 @@ class thread
   get_state() const {
     return state_;
   }
+
+  virtual void
+  init_perf_model_params(sprockit::sim_parameters* params);
 
   app_id aid() const {
     return aid_;
@@ -280,7 +282,29 @@ class thread
   zero_affinity(){
     cpumask_ = 0;
   }
+
+  template <class T>
+  T&
+  register_perf_ctr_variable(void* ptr){
+    perf_counter* ctr = perf_model_->register_variable(ptr);
+    perf_counter_impl<T>* pctr = dynamic_cast<perf_counter_impl<T>*>(ctr);
+    if (!pctr){
+      spkt_throw(sprockit::value_error,
+                 "failed casting perf_counter type - check perf_model in params");
+    }
+    return pctr->counters();
+  }
   
+  void
+  remove_perf_ctr_variable(void* ptr){
+    perf_model_->remove_variable(ptr);
+  }
+
+  perf_counter_model*
+  perf_ctr_model() const {
+    return perf_model_;
+  }
+
   void
   set_cpumask(uint64_t cpumask){
     cpumask_ = cpumask;
@@ -370,7 +394,7 @@ class thread
   int last_bt_collect_nfxn_;
 
   /// The stack given to this thread.
-  void *stack_;
+  void* stack_;
   /// The stacksize.
   size_t stacksize_;
 
@@ -380,6 +404,7 @@ class thread
   
   long thread_id_;
 
+  perf_counter_model* perf_model_;
 
   threading_interface* context_;
 

@@ -1,12 +1,12 @@
 #include <sumi-mpi/mpi_api.h>
+#include <sstmac/software/process/operating_system.h>
 
 namespace sumi {
-
 
 bool
 mpi_api::test(MPI_Request *request, MPI_Status *status)
 {
-  SSTMACBacktrace("MPI_Test");
+  start_mpi_call("MPI_Test");
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, "MPI_Test(...)");
 
   if (*request == MPI_REQUEST_NULL){

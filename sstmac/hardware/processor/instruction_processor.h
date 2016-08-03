@@ -46,7 +46,7 @@ class instruction_processor :
   finalize_init();
 
   virtual void
-  do_compute(sw::compute_event* cev);
+  compute(event* ev);
 
  protected:
   void
@@ -56,7 +56,7 @@ class instruction_processor :
   set_flop_distribution(double stdev);
 
   double
-  instruction_time(sw::compute_event* msg);
+  instruction_time(sw::basic_compute_event* msg);
 
  protected:
   double tflop_;

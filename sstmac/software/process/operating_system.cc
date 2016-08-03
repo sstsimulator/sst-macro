@@ -37,6 +37,7 @@
 #include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/process/compute_scheduler.h>
 #include <sstmac/software/libraries/unblock_event.h>
+#include <sstmac/software/libraries/compute/compute_event.h>
 
 #if SSTMAC_HAVE_UCONTEXT
 #include <sstmac/software/threading/threading_ucontext.h>
@@ -937,6 +938,17 @@ operating_system::add_task(const task_id& id)
 {
   task_to_thread_[id] = current_threadid();
   // thread_to_task_[current_threadid()] = id;
+}
+
+void
+operating_system::start_api_call()
+{
+  os_thread_context& ctxt = current_os_thread_context();
+  perf_counter_model* mdl = ctxt.current_thread->perf_ctr_model();
+  compute_event* ev = mdl->get_next_event();
+  if (ev){
+    node_->execute_kernel(ami::COMP_INSTR, ev);
+  }
 }
 
 void

@@ -15,6 +15,7 @@
 #include <sstmac/common/messages/sst_message.h>
 #include <sstmac/common/timestamp.h>
 #include <sstmac/hardware/memory/memory_id.h>
+#include <type_traits>
 #include <sprockit/debug.h>
 #include <sprockit/typedefs.h>
 #include <stdint.h>
@@ -31,73 +32,20 @@ namespace sw {
  * Keys are defined in the libraries that use them.
  */
 class compute_event :
-  public event,
-  public serializable_type<compute_event>
+ public event
 {
-
-  ImplementSerializableDefaultConstructor(compute_event)
-
  public:
-  virtual void
-  serialize_order(serializer &ser){}
-
-  typedef enum {
-    mem_random = 0,
-    mem_sequential = 1,
-    flop = 2,
-    intop = 3,
-    time = 4
-  } event_type_t;
-
-  compute_event();
-
-  virtual ~compute_event() {}
-
-  std::string
-  to_string() const {
-    return "compute message";
-  }
-
-  /**
-   * @param key the key
-   * @param val value to associate with the given key
-   */
-  void
-  set_event_value(event_type_t ty, uint64_t val){
-    event_data_[ty] = val;
-  }
-
-  /**
-    * Get event data
-    * @param key the key
-    * @return value associated with given key
-    */
-  uint64_t
-  event_value(event_type_t ty) const {
-    return event_data_[ty];
-  }
-
-  void
-  set_event_time(const timestamp& t) {
-    event_data_[time] = t.ticks_int64();
-  }
-
-  std::string
-  debug_string() const;
-
-  timestamp
-  event_time() const {
-    return timestamp(event_data_[time], timestamp::exact);
-  }
-  
-  bool
-  timed_computed() const {
-    return event_data_[time];
-  }
+  virtual bool
+  is_timed_compute() const = 0;
 
   void
   set_core(int core){
     core_ = core;
+  }
+
+  std::string
+  to_string() const {
+    return "compute event";
   }
 
   int
@@ -120,18 +68,45 @@ class compute_event :
     return uint64_t(unique_id_);
   }
 
-  long
-  byte_length() const;
-
  private:
   int core_;
-
-  #define MAX_EVENTS 8
-  uint64_t event_data_[MAX_EVENTS];
 
   hw::memory_access_id unique_id_;
 
 };
+
+template <class T>
+class compute_event_impl :
+ public compute_event
+{
+  NotSerializable(compute_event_impl)
+
+ public:
+  bool
+  is_timed_compute() const {
+    return std::is_same<T,timestamp>::value;
+  }
+
+  T& data() {
+    return t_;
+  }
+
+
+ private:
+  T t_;
+
+};
+
+struct basic_instructions_st
+{
+  uint64_t mem_random = 0ULL;
+  uint64_t mem_sequential = 0ULL;
+  uint64_t flops = 0ULL;
+  uint64_t intops = 0ULL;
+};
+
+typedef compute_event_impl<timestamp> timed_compute_event;
+typedef compute_event_impl<basic_instructions_st> basic_compute_event;
 
 }
 }  // end of namespace sstmac

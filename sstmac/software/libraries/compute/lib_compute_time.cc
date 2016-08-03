@@ -45,21 +45,10 @@ lib_compute_time::compute(timestamp time)
     spkt_throw(sprockit::value_error,
               "lib_compute_time can't compute for less than zero time");
   }
-  compute_event* cmsg = new compute_event;
-  cmsg->set_event_time(time);
+  auto cmsg = new timed_compute_event;
+  cmsg->data() = time;
   os_->execute_kernel(ami::COMP_TIME, cmsg);
-
-  debug_printf(sprockit::dbg::lib_compute,
-      "lib_compute_time: %p finishing compute kernel for delta_t=%12.8e sec",
-      this, time.sec());
-
-  debug_printf(sprockit::dbg::compute_intensity,
-    "Node %d: finishing compute %s",
-    int(os_->my_addr()),
-    cmsg->debug_string().c_str());
   delete cmsg;
-
-
 }
 
 }

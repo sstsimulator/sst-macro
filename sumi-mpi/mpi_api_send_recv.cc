@@ -1,13 +1,14 @@
 #include <sumi-mpi/mpi_api.h>
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
 #include <sstmac/software/process/backtrace.h>
+#include <sstmac/software/process/operating_system.h>
 
 namespace  sumi {
 
 int
 mpi_api::send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
 {
-  SSTMACBacktrace("MPI_Send");
+  start_mpi_call("MPI_Send");
   mpi_comm* commPtr = get_comm(comm);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_pt2pt,
     "MPI_Send(%d,%s,%d:%d,%s,%s)",
@@ -59,7 +60,7 @@ mpi_api::request_free(MPI_Request *req)
 int
 mpi_api::start(MPI_Request* req)
 {
-  SSTMACBacktrace("MPI_Start");
+  start_mpi_call("MPI_Start");
 
   mpi_request* reqPtr = get_request(*req);
   persistent_op* op = reqPtr->persistent_data();
@@ -91,7 +92,7 @@ mpi_api::send_init(const void *buf, int count,
                    MPI_Datatype datatype, int dest, int tag,
                    MPI_Comm comm, MPI_Request *request)
 {
-  SSTMACBacktrace("MPI_Send_init");
+  start_mpi_call("MPI_Send_init");
 
   mpi_request* req = mpi_request::construct(default_key_category);
   *request = add_request_ptr(req);
@@ -121,7 +122,7 @@ int
 mpi_api::isend(const void *buf, int count, MPI_Datatype datatype, int dest,
                int tag, MPI_Comm comm, MPI_Request *request)
 {
-  SSTMACBacktrace("MPI_Isend");
+  start_mpi_call("MPI_Isend");
   mpi_comm* commPtr = get_comm(comm);
   mpi_request* req = mpi_request::construct(default_key_category);
   *request = add_request_ptr(req);
@@ -137,7 +138,7 @@ int
 mpi_api::recv(void *buf, int count, MPI_Datatype datatype, int source,
               int tag, MPI_Comm comm, MPI_Status *status)
 {
-  SSTMACBacktrace("MPI_Recv");
+  start_mpi_call("MPI_Recv");
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_pt2pt,
     "MPI_Recv(%d,%s,%s,%s,%s)",
     count, type_str(datatype).c_str(),
@@ -158,7 +159,7 @@ int
 mpi_api::recv_init(void *buf, int count, MPI_Datatype datatype, int source,
                    int tag, MPI_Comm comm, MPI_Request *request)
 {
-  SSTMACBacktrace("MPI_Recv_init");
+  start_mpi_call("MPI_Recv_init");
 
   mpi_request* req = mpi_request::construct(default_key_category);
   *request = add_request_ptr(req);
@@ -187,7 +188,7 @@ int
 mpi_api::irecv(void *buf, int count, MPI_Datatype datatype, int source,
                int tag, MPI_Comm comm, MPI_Request *request)
 {
-  SSTMACBacktrace("MPI_Irecv");
+  start_mpi_call("MPI_Irecv");
   mpi_comm* commPtr = get_comm(comm);
 
   mpi_request* req = mpi_request::construct(default_key_category);

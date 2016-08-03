@@ -15,6 +15,7 @@
 #include <sstmac/software/process/key.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/libraries/library.h>
+#include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/software/api/api.h>
 #include <sstmac/common/sst_event.h>
 #include <sprockit/errors.h>
@@ -27,10 +28,62 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
+ImplementFactory(sstmac::sw::perf_counter_model);
 
 namespace sstmac {
 namespace sw {
+
+class null_perf_counter_model : public perf_counter_model
+{
+ public:
+  compute_event*
+  get_next_event() {
+    return nullptr;
+  }
+
+  perf_counter*
+  register_variable(void *ptr){
+    return &null_counter;
+  }
+
+  void
+  remove_variable(void *ptr){}
+
+ private:
+  perf_counter null_counter;
+
+};
+
+class flops_perf_counter_model : public perf_counter_model
+{
+ public:
+  flops_perf_counter_model() {
+    flops_.counters() = 0;
+  }
+
+  compute_event*
+  get_next_event() {
+    sstmac::sw::basic_compute_event* ev = new sstmac::sw::basic_compute_event;
+    ev->data().flops = flops_.counters();
+    flops_.counters() = 0;
+    return ev;
+  }
+
+  perf_counter*
+  register_variable(void* ptr){
+    return &flops_;
+  }
+
+  void
+  remove_variable(void *ptr){}
+
+ private:
+  perf_counter_impl<uint64_t> flops_;
+
+};
+
+SpktRegister("null", perf_counter_model, null_perf_counter_model);
+SpktRegister("flops", perf_counter_model, flops_perf_counter_model);
 
 static thread_safe_long THREAD_ID_CNT(0);
 const app_id thread::main_thread_aid(-1);
@@ -231,10 +284,18 @@ thread::thread() :
   context_(nullptr),
   cpumask_(0),
   pthread_map_(nullptr),
-  parent_app_(nullptr)
+  parent_app_(nullptr),
+  perf_model_(nullptr)
 {
   //make all cores possible active
   cpumask_ = ~(cpumask_);
+}
+
+void
+thread::init_perf_model_params(sprockit::sim_parameters *params)
+{
+  perf_model_ = perf_counter_model_factory
+                  ::get_optional_param("perf_model", "null", params);
 }
 
 long
