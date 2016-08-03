@@ -55,7 +55,6 @@ nobase_library_include_HEADERS = \
   cartgrid.h \
   c_params.h \
   event_callback.h \
-  event_callback_fwd.h \
   event_handler.h \
   event_handler_fwd.h \
   event_location.h \

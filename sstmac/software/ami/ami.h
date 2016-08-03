@@ -32,8 +32,6 @@ namespace ami {
 
   enum COMM_FUNC {
     COMM_SEND = 10101, //pretty much have to implement this one
-    COMM_BCAST,
-    COMM_BARRIER
   };
 
   enum COMP_FUNC {

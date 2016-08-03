@@ -21,7 +21,7 @@ class null_memory_model :
   init_factory_params(sprockit::sim_parameters* params);
 
   virtual void
-  access(long bytes, double max_bw);
+  access(long bytes, double max_bw, callback* cb);
 
   double
   max_single_bw() const {

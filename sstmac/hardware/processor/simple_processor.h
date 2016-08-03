@@ -37,7 +37,7 @@ class simple_processor :
   finalize_init();
 
   void
-  compute(event* ev);
+  compute(event* ev, callback* cb);
 
   virtual std::string
   to_string() const {

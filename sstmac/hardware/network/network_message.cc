@@ -1,5 +1,4 @@
 #include <sstmac/hardware/network/network_message.h>
-#include <sstmac/software/process/operating_system.h>
 
 #define enumcase(x) case x: return #x;
 
@@ -123,18 +122,6 @@ network_message::tostr(type_t ty)
   spkt_throw_printf(sprockit::value_error,
     "network_message::tostr: unknown type_t %d",
     ty);
-}
-
-long
-network_message::source_thread(sw::operating_system*os) const
-{
-  return os->task_threadid(src_task_);
-}
-
-long
-network_message::dest_thread(sw::operating_system*os) const
-{
-  return os->task_threadid(dest_task_);
 }
 
 void

@@ -17,281 +17,156 @@
 
 namespace sstmac {
 
-/**
- * The main interface for something that can respond to an event (sst_message).
- */
-class event_callback : public event_handler
+template<int ...>
+struct seq { };
+
+template<int N, int ...S>
+struct gens : gens<N-1, N-1, S...> { };
+
+template<int ...S>
+struct gens<0, S...> {
+  typedef seq<S...> type;
+};
+
+class member_fxn_handler :
+  public event_handler
 {
  public:
-
- public:
-  virtual ~event_callback(){}
-
-  virtual void
-  handle(event* ev) = 0;
+  virtual ~member_fxn_handler(){}
 
   virtual std::string
   to_string() const {
-    return "event callback";
+    return "member fxn handler";
   }
-
  protected:
-  event_callback(event_loc_id id)
+  member_fxn_handler(event_loc_id id)
   {
     init_loc_id(id);
   }
+};
+
+template <class Cls, typename Fxn, class ...Args>
+class member_fxn_handler_impl :
+  public member_fxn_handler
+{
+
+ public:
+  virtual ~member_fxn_handler_impl(){}
+
+  void
+  handle(event* ev) {
+    dispatch(ev, typename gens<sizeof...(Args)>::type());
+  }
+
+  member_fxn_handler_impl(event_loc_id id, Cls* obj, Fxn fxn, const Args&... args) :
+    params_(args...),
+    obj_(obj),
+    fxn_(fxn),
+    member_fxn_handler(id)
+  {
+  }
+
+ private:
+  template <int ...S>
+  void
+  dispatch(event* ev, seq<S...>){
+    (obj_->*fxn_)(ev, std::get<S>(params_)...);
+  }
+
+  std::tuple<Args...> params_;
+  Fxn fxn_;
+  Cls* obj_;
 
 };
 
-template<class Cls, typename Fxn>
-class event_callback_instance : public event_callback
+#if 0
+template <class Cls, typename Fxn>
+class member_fxn_handler_impl<Cls,Fxn> :
+  public member_fxn_handler
 {
- private:
-  Cls* obj_;
-
-  Fxn fxn_;
-
  public:
-  event_callback_instance(event_loc_id loc, Cls* obj, Fxn fxn) :
-    obj_(obj), fxn_(fxn),
-    event_callback(loc)
-  {
-  }
+  virtual ~member_fxn_handler_impl(){}
 
   void
   handle(event* ev) {
     (obj_->*fxn_)(ev);
   }
 
-};
-
-template<class Cls, typename Fxn, typename Arg1>
-class event_callback_1_args : public event_callback
-{
- private:
-  Cls* obj_;
-
-  Fxn fxn_;
-
-  Arg1 arg1_;
-
-
- public:
-  event_callback_1_args(event_loc_id loc, Cls* obj, Fxn fxn,
-                           const Arg1& arg1) :
-    obj_(obj), fxn_(fxn), arg1_(arg1),
-    event_callback(loc)
+  member_fxn_handler_impl(event_loc_id id, Cls* obj, Fxn fxn) :
+    obj_(obj),
+    fxn_(fxn),
+    member_fxn_handler(id)
   {
   }
 
-  void
-  handle(event* ev) {
-    Cls& obj = *obj_;
-    (obj_->*fxn_)(ev, arg1_);
-  }
-
-};
-
-template<class Cls, typename Fxn, typename Arg1, typename Arg2>
-class event_callback_2_args : public event_callback
-{
  private:
-  Cls* obj_;
-
   Fxn fxn_;
+  Cls* obj_;
+};
+#endif
 
-  Arg1 arg1_;
+template<class Cls, typename Fxn, class ...Args>
+event_handler*
+new_handler(Cls* cls, Fxn fxn, const Args&... args)
+{
+  return new member_fxn_handler_impl<Cls, Fxn, Args...>(
+        cls->event_location(), cls, fxn, args...);
+}
 
-  Arg2 arg2_;
+
+template <class Cls, typename Fxn, class ...Args>
+class member_fxn_callback :
+  public callback
+{
 
  public:
-  event_callback_2_args(event_loc_id loc, Cls* obj, Fxn fxn,
-                            const Arg1& arg1, const Arg2& arg2) :
-    obj_(obj), fxn_(fxn), arg1_(arg1), arg2_(arg2),
-    event_callback(loc)
-  {
-  }
-
-  void
-  handle(event* ev) {
-    Cls& obj = *obj_;
-    (obj_->*fxn_)(ev, arg1_, arg2_);
-  }
-
-};
-
-template<class Cls, typename Fxn>
-event_callback*
-ev_callback(Cls* cls, Fxn fxn)
-{
-  event_callback* callback = new event_callback_instance<Cls, Fxn> (cls->event_location(), cls, fxn);
-  return callback;
-}
-
-template<class Cls, typename Fxn>
-event_callback*
-ev_callback(event_loc_id loc, Cls* cls, Fxn fxn)
-{
-  event_callback* callback = new event_callback_instance<Cls, Fxn> (loc, cls, fxn);
-  return callback;
-}
-
-template<class Cls, typename Fxn, typename Arg1>
-event_callback*
-ev_callback(event_loc_id loc, Cls* cls, Fxn fxn,
-             const Arg1& arg1)
-{
-  event_callback* callback = new event_callback_1_args<Cls, Fxn,
-  Arg1> (loc, cls, fxn, arg1);
-  return callback;
-}
-
-template<class Cls, typename Fxn, typename Arg1, typename Arg2>
-event_callback*
-ev_callback(event_loc_id loc, Cls* cls, Fxn fxn,
-             const Arg1& arg1, const Arg2& arg2)
-{
-  event_callback* callback = new event_callback_2_args<Cls, Fxn,
-  Arg1, Arg2> (loc, cls, fxn, arg1, arg2);
-  return callback;
-}
-
-
-template <class Cls, class Fxn>
-class generic_event_0_args :
-  public generic_event
-{
- private:
-  Cls* obj_;
-
-  Fxn fxn_;
-
- public:
-  generic_event_0_args(event_loc_id local, Cls* obj, Fxn fxn) :
-    obj_(obj), fxn_(fxn), generic_event(local)
-  {
-  }
+  virtual ~member_fxn_callback(){}
 
   void
   execute() {
-    if (obj_) {
-      (obj_->*fxn_)();
-    }
+    dispatch(typename gens<sizeof...(Args)>::type());
   }
 
-  std::string
+  virtual std::string
   to_string() const {
-    return "generic event with 0 args";
+    return "member fxn callback";
   }
 
-};
-
-template <class Cls, class Fxn, class Arg1>
-class generic_event_1_args :
-  public generic_event
-{
- private:
-  Cls* obj_;
-
-  Fxn fxn_;
-
-  Arg1 arg1_;
-
- public:
-  generic_event_1_args(event_loc_id local, Cls* obj, Fxn fxn,
-                       const Arg1& arg1) :
-    obj_(obj), fxn_(fxn), arg1_(arg1), generic_event(local)
+  member_fxn_callback(event_loc_id id, Cls* obj, Fxn fxn, const Args&... args) :
+    callback(id),
+    params_(args...),
+    obj_(obj),
+    fxn_(fxn)
   {
   }
 
-  void
-  execute() {
-    if (obj_) {
-      (obj_->*fxn_)(arg1_);
-    }
-  }
-
-  std::string
-  to_string() const {
-    return "generic event with 1 arg";
-  }
-
-};
-
-template <class Cls, class Fxn, class Arg1, class Arg2>
-class generic_event_2_args :
-  public generic_event
-{
  private:
+  template <int ...S>
+  void
+  dispatch(seq<S...>){
+    (obj_->*fxn_)(std::get<S>(params_)...);
+  }
+
+  std::tuple<Args...> params_;
+  Fxn fxn_;
   Cls* obj_;
 
-  Fxn fxn_;
-
-  Arg1 arg1_;
-
-  Arg2 arg2_;
-
- public:
-  generic_event_2_args(event_loc_id local, Cls* obj, Fxn fxn,
-                       const Arg1& arg1, const Arg2& arg2) :
-    obj_(obj), fxn_(fxn), arg1_(arg1), arg2_(arg2), generic_event(local)
-  {
-  }
-
-  std::string
-  to_string() const {
-    return "generic event with 2 args";
-  }
-
-  void
-  execute() {
-    if (obj_) {
-      (obj_->*fxn_)(arg1_, arg2_);
-    }
-  }
-
 };
 
-template<class Cls, typename Fxn, class Arg1>
-event_queue_entry*
-new_event(Cls* cls, Fxn fxn, const Arg1& arg1)
+template<class Cls, typename Fxn, class ...Args>
+callback*
+new_callback(Cls* cls, Fxn fxn, const Args&... args)
 {
-  event_queue_entry* callback = new generic_event_1_args<Cls, Fxn, Arg1> (cls->event_location(), cls, fxn, arg1);
-  return callback;
+  return new member_fxn_callback<Cls, Fxn, Args...>(
+        cls->event_location(), cls, fxn, args...);
 }
 
-template<class Cls, typename Fxn, class Arg1, class Arg2>
-event_queue_entry*
-new_event(Cls* cls, Fxn fxn, const Arg1& arg1, const Arg2& arg2)
+template<class Cls, typename Fxn, class ...Args>
+callback*
+new_callback(event_loc_id id, Cls* cls, Fxn fxn, const Args&... args)
 {
-  event_queue_entry* callback = new generic_event_2_args<Cls, Fxn, Arg1, Arg2> (cls->event_location(), cls, fxn, arg1, arg2);
-  return callback;
-}
-
-template<class Cls, typename Fxn>
-event_queue_entry*
-new_event(event_loc_id local, Cls* cls, Fxn fxn)
-{
-  event_queue_entry* callback = new generic_event_0_args<Cls, Fxn> (local, cls, fxn);
-  return callback;
-}
-
-template<class Cls, typename Fxn, class Arg1>
-event_queue_entry*
-new_event(event_loc_id local, Cls* cls, Fxn fxn, const Arg1& arg1)
-{
-  event_queue_entry* callback = new generic_event_1_args<Cls, Fxn, Arg1> (local, cls, fxn, arg1);
-  return callback;
-}
-
-template<class Cls, typename Fxn, class Arg1, class Arg2>
-event_queue_entry*
-new_event(event_loc_id local, Cls* cls, Fxn fxn, const Arg1& arg1,
-          const Arg2& arg2)
-{
-  event_queue_entry* callback = new generic_event_2_args<Cls, Fxn, Arg1, Arg2> (local, cls, fxn,
-      arg1, arg2);
-  return callback;
+  return new member_fxn_callback<Cls, Fxn, Args...>(
+        id, cls, fxn, args...);
 }
 
 } // end of namespace sstmac

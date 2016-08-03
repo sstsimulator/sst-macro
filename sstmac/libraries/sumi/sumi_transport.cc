@@ -259,13 +259,15 @@ sumi_transport::do_send_terminate(int dst)
 void
 sumi_transport::schedule_next_heartbeat()
 {
-  schedule_delay(heartbeat_interval_, new_event(loc_, this, &sumi_transport::next_heartbeat));
+  schedule_delay(heartbeat_interval_,
+         new_callback(loc_, this, &sumi_transport::next_heartbeat));
 }
 
 void
 sumi_transport::delayed_transport_handle(const sumi::message::ptr &msg)
 {
-  sstmac::event_queue_entry* done_ev = sstmac::new_event(loc_, this, &transport::handle, msg);
+  sstmac::callback* done_ev = sstmac::new_callback(
+        loc_, this, &transport::handle, msg);
   schedule_delay(sstmac::timestamp(1e-9), done_ev);
 }
 
@@ -273,7 +275,8 @@ void
 sumi_transport::schedule_ping_timeout(sumi::pinger* pnger, double to)
 {
   sstmac::timestamp next_ping_time = api::now() + to;
-  sstmac::event_queue_entry* cb_event = sstmac::new_event(loc_, this, &sumi_transport::ping_timeout, pnger);
+  sstmac::callback* cb_event = sstmac::new_callback(
+        loc_, this, &sumi_transport::ping_timeout, pnger);
   api::schedule(next_ping_time, cb_event);
 }
 

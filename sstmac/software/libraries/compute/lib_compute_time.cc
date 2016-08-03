@@ -45,10 +45,7 @@ lib_compute_time::compute(timestamp time)
     spkt_throw(sprockit::value_error,
               "lib_compute_time can't compute for less than zero time");
   }
-  auto cmsg = new timed_compute_event;
-  cmsg->data() = time;
-  os_->execute_kernel(ami::COMP_TIME, cmsg);
-  delete cmsg;
+  os_->compute(time);
 }
 
 }

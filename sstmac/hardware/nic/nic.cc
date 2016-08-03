@@ -78,7 +78,7 @@ nic::init_factory_params(sprockit::sim_parameters *params)
   my_addr_ = node_id(params->get_int_param("id"));
   init_loc_id(event_loc_id(my_addr_));
 
-  mtl_handler_ = ev_callback(this, &nic::mtl_handle);
+  mtl_handler_ = new_handler(this, &nic::mtl_handle);
 
   negligible_size_ = params->get_optional_int_param("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
 

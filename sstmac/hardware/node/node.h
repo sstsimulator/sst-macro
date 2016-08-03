@@ -15,6 +15,7 @@
 #include <sstmac/software/ami/ami.h>
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/event_scheduler.h>
+#include <sstmac/common/sst_event_fwd.h>
 #include <sstmac/hardware/common/unique_id.h>
 #include <sstmac/hardware/common/failable.h>
 
@@ -132,8 +133,6 @@ class node :
   */
   void fail_stop();
 
-  void compute(timestamp t);
-
   /**
    Choose a unique (64-bit) integer ID for a message. This will never be reused
    except for integer overflow.
@@ -148,30 +147,24 @@ class node :
    Make the node execute a particular compute function
    @param func  Enum identifying the type of computation
    @param data  Event object encapsulating data/metadata for computation
+   @param cb    The event to execute when kernel is complete
   */
   virtual void
   execute_kernel(ami::COMP_FUNC func,
-                 event* data) = 0;
-  /**
-   Make the node execute a particular communication function
-   @param func  Enum identifying the type of communication
-   @param data  Event object encapsulating data/metadata for communication
-  */
-  virtual void
-  execute_kernel(ami::COMM_FUNC func,
-                 message* data) = 0;
+                 event* data,
+                 callback* cb) = 0;
 
   virtual void
   handle(event* ev);
-
- protected:
-  node();
 
   /**
    Push a network message (operation at the MTL layer) onto the NIC
    @param netmsg
   */
   void send_to_nic(network_message* netmsg);
+
+ protected:
+  node();
 
   void connect_nic();
 

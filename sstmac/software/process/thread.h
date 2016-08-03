@@ -70,9 +70,6 @@ class thread
   virtual api*
   build_api(int aid, const std::string& name);
 
-  virtual void
-  init_os(operating_system* os);
-
   template <class T>
   void
   add_api(T* api) {

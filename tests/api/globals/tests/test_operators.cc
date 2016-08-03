@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <sstmac/software/process/global.h>
-#include <sstmac/software/libraries/compute/sstmac_compute.h>
+#include <sstmac/compute.h>
 
 namespace test_operators
 {

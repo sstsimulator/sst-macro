@@ -114,8 +114,6 @@ thread::init_thread(int physical_thread_id, threading_interface* threadcopy, voi
 
   pending_libs_.clear();
 
-  init_os(os);
-
   context_ = threadcopy->copy();
 
   threadinfo* info = new threadinfo();
@@ -143,12 +141,6 @@ thread::build_api(int aid, const std::string &name)
                      "thread::build_api: thread has no parent thread");
     return 0;
   }
-}
-
-void
-thread::init_os(operating_system* os)
-{
-  //nothing by default
 }
 
 void

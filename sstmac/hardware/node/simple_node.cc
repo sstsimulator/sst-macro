@@ -76,54 +76,25 @@ simple_node::set_event_manager(event_manager* m)
 #endif
 
 void
-simple_node::execute_kernel(ami::COMM_FUNC func,
-                            message* data)
+simple_node::execute_kernel(ami::COMP_FUNC func,
+                            event* data,
+                            callback* cb)
 {
-  switch (func) {
-    case sstmac::ami::COMM_SEND: {
-      network_message* netmsg = safe_cast(network_message, data);
-      netmsg->set_fromaddr(my_addr_);
-      node_debug("sending to %d", int(netmsg->toaddr()));
-      send_to_nic(netmsg);
-      break;
-    }
-    default:
-      spkt_throw_printf(sprockit::unimplemented_error,
-         "simplenode: cannot process kernel %s", ami::tostr(func));
-      break;
-  }
-}
-
-bool
-simple_node::try_comp_kernels(ami::COMP_FUNC func,
-                              event* data)
-{
-  bool handled = true;
-
+  node_debug("executing kernel %s on node %d",
+             ami::tostr(func), my_addr_);
   switch (func) {
     case sstmac::ami::COMP_INSTR:
-      proc_->compute(data);
+      proc_->compute(data, cb);
       break;
     case sstmac::ami::COMP_TIME: {
       sw::timed_compute_event* ev = safe_cast(timed_compute_event, data);
-      compute(ev->data());
+      schedule_delay(ev->data(), cb);
       break;
     }
     default:
-      handled = false;
-  }
-
-  return handled;
-}
-
-void
-simple_node::execute_kernel(ami::COMP_FUNC func,
-                            event* data)
-{
-  bool hand = try_comp_kernels(func, data);
-  if (!hand) {
-    spkt_throw_printf(sprockit::spkt_error, "simplenode: cannot process kernel %s",
-                     ami::tostr(func));
+      spkt_throw_printf(sprockit::spkt_error,
+            "simplenode: cannot process kernel %s",
+            ami::tostr(func));
   }
 }
 

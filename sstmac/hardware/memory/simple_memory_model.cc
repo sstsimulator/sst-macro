@@ -44,12 +44,14 @@ simple_memory_model::finalize_init()
 }
 
 void
-simple_memory_model::access(long bytes, double max_bw)
+simple_memory_model::access(long bytes,
+                            double max_bw,
+                            callback* cb)
 {
   mem_debug("simple model: doing access of %ld bytes", bytes);
 
   timestamp delta_t = link_->new_access(now(), bytes, max_bw);
-  parent_node_->compute(delta_t);
+  parent_node_->schedule_delay(delta_t, cb);
   link_->access_done();
 }
 

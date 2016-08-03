@@ -48,9 +48,8 @@ void
 instruction_processor::init_factory_params(sprockit::sim_parameters* params)
 {
   simple_processor::init_factory_params(params);
-  timestamp negligible_time = params->get_optional_time_param("negligible_compute_time", 100e-9);
-  negligible_time_sec_ = negligible_time.sec();
-  negligible_bytes_ = params->get_optional_byte_length_param("negligible_compute_bytes", 64);
+  negligible_bytes_ = params->get_optional_byte_length_param(
+        "negligible_compute_bytes", 64);
 
   parallelism_ = params->get_optional_double_param("parallelism", 1.0);
 
@@ -85,7 +84,7 @@ instruction_processor::instruction_time(sw::basic_compute_event* cmsg)
 }
 
 void
-instruction_processor::compute(event* ev)
+instruction_processor::compute(event* ev, callback* cb)
 {
   sw::basic_compute_event* bev = test_cast(sw::basic_compute_event, ev);
   sw::basic_instructions_st& st = bev->data();
@@ -95,16 +94,13 @@ instruction_processor::compute(event* ev)
   long bytes = st.mem_sequential;
   // max_single_mem_bw is the bandwidth achievable if ZERO instructions are executed
   double best_possible_time = instr_time + bytes / max_single_mem_bw_;
-  if (best_possible_time < negligible_time_sec_){
-    //no delay, just continue on
-  }
-  else if (bytes <= negligible_bytes_) {
-    node_->compute(timestamp(instr_time));
+  if (bytes <= negligible_bytes_) {
+    node_->schedule_delay(timestamp(instr_time), cb);
   }
   else {
     //do the full memory modeling
     double best_possible_bw = bytes / best_possible_time;
-    mem_->access(bytes, best_possible_bw);
+    mem_->access(bytes, best_possible_bw, cb);
   }
 
 }

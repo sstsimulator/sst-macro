@@ -56,12 +56,12 @@ app::init_factory_params(sprockit::sim_parameters *params)
 }
 
 app::app() :
-  compute_inst_(0),
-  compute_time_(0),
-  compute_mem_move_(0),
-  compute_loops_(0),
-  sleep_lib_(0),
-  params_(0),
+  compute_inst_(nullptr),
+  compute_time_(nullptr),
+  compute_mem_move_(nullptr),
+  compute_loops_(nullptr),
+  sleep_lib_(nullptr),
+  params_(nullptr),
   next_tls_key_(0),
   next_condition_(0),
   next_mutex_(0)
@@ -153,7 +153,7 @@ app::compute_inst(compute_event* cmsg)
 }
 
 void
-app::compute_loop(long num_loops,
+app::compute_loop(uint64_t num_loops,
   int nflops_per_loop,
   int nintops_per_loop,
   int bytes_per_loop)
@@ -181,7 +181,6 @@ app::compute_block_read(long bytes)
   if (!compute_mem_move_) {
     init_mem_lib();
   }
-
   compute_mem_move_->read(bytes);
 }
 
@@ -191,7 +190,6 @@ app::compute_block_write(long bytes)
   if (!compute_mem_move_) {
     init_mem_lib();
   }
-
   compute_mem_move_->write(bytes);
 }
 
@@ -214,7 +212,6 @@ app::compute_block_memcpy(long bytes)
   if (!compute_mem_move_) {
     init_mem_lib();
   }
-
   compute_mem_move_->copy(bytes);
 }
 
@@ -236,42 +233,6 @@ app::build_api(int aid, const std::string &name)
   else {
    return my_api;
   }
-}
-
-void
-app::init_os(operating_system* os)
-{
-}
-
-std::string
-app::compute_name()
-{
-
-  if (!compute_time_) {
-    compute_time_ = new lib_compute_time(id_);
-    register_lib(compute_time_);
-  }
-  return compute_time_->lib_name();
-}
-
-std::string
-app::compute_inst_name()
-{
-  if (!compute_inst_) {
-    compute_inst_ = new lib_compute_inst(id_);
-    register_lib(compute_inst_);
-  }
-  return compute_inst_->lib_name();
-}
-
-std::string
-app::compute_memmove_name()
-{
-  if (!compute_mem_move_) {
-    compute_mem_move_ = new lib_compute_memmove(id_);
-    register_lib(compute_mem_move_);
-  }
-  return compute_mem_move_->lib_name();
 }
 
 void

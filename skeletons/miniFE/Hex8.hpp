@@ -350,8 +350,9 @@ KERNEL_PREFIX void diffusionMatrix_symm(const Scalar* elemNodeCoords,
   }//for ig
 #endif
 #ifdef SSTMAC
-  SSTMAC_compute_loop4(0,numGaussPointsPerDim,0,numGaussPointsPerDim,
-                       0,numGaussPointsPerDim,0,numNodesPerElem,9);
+  SSTMAC_compute_loop4(numGaussPointsPerDim,numGaussPointsPerDim,
+                       numGaussPointsPerDim,numNodesPerElem,
+                       18, 0, 10);
 #endif
 
 //int offset = 0;
@@ -420,8 +421,9 @@ KERNEL_PREFIX void sourceVector(const Scalar* elemNodeCoords,
   }
 #endif
 #ifdef SSTMAC
-  SSTMAC_compute_loop4(0,numGaussPointsPerDim,0,numGaussPointsPerDim,
-                       0,numGaussPointsPerDim,0,numNodesPerElem, 1);
+  SSTMAC_compute_loop4(numGaussPointsPerDim,numGaussPointsPerDim,
+                       numGaussPointsPerDim,numNodesPerElem,
+                       1, 0, 2);
 #endif
 }
 

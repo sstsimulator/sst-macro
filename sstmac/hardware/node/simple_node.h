@@ -47,20 +47,13 @@ class simple_node :
 
   virtual void
   execute_kernel(ami::COMP_FUNC func,
-                 event* data);
-
-  virtual void
-  execute_kernel(ami::COMM_FUNC func,
-                 message* data);
+                 event* data,
+                 callback* cb);
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   virtual void
   set_event_manager(event_manager* man);
 #endif
-
- protected:
-  virtual bool
-  try_comp_kernels(ami::COMP_FUNC func, event* data);
 
 };
 

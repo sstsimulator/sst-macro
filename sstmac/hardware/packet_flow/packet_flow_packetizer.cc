@@ -195,7 +195,7 @@ packet_flow_cut_through_packetizer::recv_packet(packet_flow_payload *pkt)
     "packet %s scheduled to arrive at packetizer after delay of t=%12.6es",
      pkt->to_string().c_str(), delay.sec());
   send_delayed_self_event_queue(delay,
-    new_event(this, &packetizer::packetArrived, vn, pkt));
+    new_callback(this, &packetizer::packetArrived, vn, (packet*)pkt));
 }
 
 }

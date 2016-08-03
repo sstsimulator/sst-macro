@@ -238,7 +238,6 @@ sum_in_symm_elem_matrix(size_t num,
     int offset = i;
     for(size_t j=0; j<i; ++j) {
       Scalar coef = coefs[offset];
-//std::cout<<"i: "<<i<<", j: "<<j<<", offset: "<<offset<<std::endl;
       sum_into_row(mat_row_len, mat_row_cols, mat_row_coefs,
                    1, &indices[j], &coef);
       offset += num - (j+1);
@@ -246,7 +245,7 @@ sum_in_symm_elem_matrix(size_t num,
   }
 #endif
 #ifdef SSTMAC
-  SSTMAC_compute_loop(0,num,(num-1)/2 * 2);
+  SSTMAC_compute_loop(num,(num-1)/2 * 2,1,3);
 #endif
 }
 
@@ -521,9 +520,9 @@ impose_dirichlet(typename MatrixType::ScalarType prescribed_value,
 #endif
 
 #ifdef SSTMAC
-  SSTMAC_compute_loop(0,bcitems,3);
+  SSTMAC_compute_loop(bcitems,3,1,2);
   //second loop is data-dependent, so guess on loop length
-  SSTMAC_compute_loop2(0,A.rows.size(),0,10,2);
+  SSTMAC_compute_loop2(A.rows.size(),10,2,0,2);
 #endif
 
 #if defined(_USE_EIGER_MODEL) || defined(_USE_EIGER) || \
@@ -614,7 +613,7 @@ void operator()(MatrixType& A,
   comp_node.parallel_for(mvop.n, mvop);
 #endif
 #ifdef SSTMAC
-  SSTMAC_compute_loop(0,mvop.n,1);
+  SSTMAC_compute_loop(mvop.n,1,0,1);
 #endif
 }
 };

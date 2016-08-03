@@ -9,6 +9,7 @@
  *  SST/macroscale directory.
  */
 
+#include <sstmac/common/event_callback.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/software/libraries/compute/lib_compute_inst.h>
@@ -81,8 +82,7 @@ void
 lib_compute_inst::compute_inst(compute_event* cmsg)
 {
   SSTMACBacktrace("Compute Instructions");
-
-  os_->execute_kernel(ami::COMP_INSTR, cmsg);
+  os_->execute_kernel(ami::COMP_INSTR, cmsg, key_category);
 }
 
 }

@@ -110,7 +110,9 @@ class operating_system :
   remote_node(int tid);
 
   void
-  execute_kernel(ami::COMP_FUNC func, event* data);
+  execute_kernel(ami::COMP_FUNC func,
+                 event* data,
+                 key::category cat = key::general);
 
   void
   execute_kernel(ami::COMM_FUNC func, message* data);
@@ -247,6 +249,9 @@ class operating_system :
 
   void
   sleep(timestamp t);
+
+  void
+  compute(timestamp t);
 
   void kill_node();
 

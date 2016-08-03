@@ -94,9 +94,6 @@ class app :
   api*
   build_api(int aid, const std::string &name);
 
-  virtual void
-  init_os(operating_system* os);
-
   void
   sleep(timestamp time);
 
@@ -109,7 +106,7 @@ class app :
   compute_inst(compute_event* cmsg);
 
   void
-  compute_loop(long num_loops,
+  compute_loop(uint64_t,
     int nflops_per_loop,
     int nintops_per_loop,
     int bytes_per_loop);
@@ -128,15 +125,6 @@ class app :
 
   lib_compute_loops*
   compute_loops_lib();
-
-  std::string
-  compute_name();
-
-  std::string
-  compute_inst_name();
-
-  std::string
-  compute_memmove_name();
 
   /// Goodbye.
   virtual ~app();

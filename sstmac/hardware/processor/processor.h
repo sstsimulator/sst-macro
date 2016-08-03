@@ -46,7 +46,7 @@ class processor :
   delete_statics();
 
   virtual void
-  compute(event* cev) = 0;
+  compute(event* cev, callback* cb) = 0;
 
  protected:
   processor(memory_model* mem, node* nd) :

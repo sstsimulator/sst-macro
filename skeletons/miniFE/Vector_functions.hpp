@@ -111,7 +111,7 @@ void sum_into_vector(size_t num_indices,
   }
 #endif
 #ifdef SSTMAC
-  SSTMAC_compute_loop(0,num_indices,2);
+  SSTMAC_compute_loop(num_indices,2,0,2);
 #endif
 }
 
@@ -168,7 +168,7 @@ void
   compute_node.parallel_for(waxpbyop.n, waxpbyop);
 #endif
 #ifdef SSTMAC
-  SSTMAC_compute_loop(0,x.local_size, 1);
+  SSTMAC_compute_loop(x.local_size, 1, 0, 1);
 #endif
 }
 
@@ -213,7 +213,7 @@ void
   compute_node.parallel_for(waxpbyop.n, waxpbyop);
 #endif
 #ifdef SSTMAC
-  SSTMAC_compute_loop(0,x.local_size, 1);
+  SSTMAC_compute_loop(x.local_size, 1, 0, 1);
 #endif
 }
 
@@ -253,7 +253,7 @@ typename TypeTraits<typename Vector::ScalarType>::magnitude_type
   compute_node.parallel_reduce(n, dotop);
 #endif
 #ifdef SSTMAC
-  SSTMAC_compute_loop(0,x.local_size, 1);
+  SSTMAC_compute_loop(x.local_size, 1, 0, 1);
 #endif
 
 #ifdef HAVE_MPI

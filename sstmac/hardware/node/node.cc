@@ -228,20 +228,12 @@ node::fail_stop()
 }
 
 void
-node::compute(timestamp t)
-{
-  sw::key* k = sw::key::construct();
-  sw::unblock_event* ev = new sw::unblock_event(os_, k);
-  schedule_delay(t, ev);
-  os_->block(k);
-  delete k;
-}
-
-void
 node::send_to_nic(network_message* netmsg)
 {
+  node_debug("sending to %d", int(netmsg->toaddr()));
   netmsg->set_net_id(allocate_unique_id());
   netmsg->put_on_wire();
+
   if (netmsg->toaddr() == my_addr_){
     nic_->intranode_send(netmsg);
   } else {

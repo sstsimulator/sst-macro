@@ -31,10 +31,10 @@ simple_processor::finalize_init()
 }
 
 void
-simple_processor::compute(event* ev)
+simple_processor::compute(event* ev, callback* cb)
 {
   sw::timed_compute_event* tev = safe_cast(sw::timed_compute_event, ev);
-  node_->compute(tev->data());
+  node_->schedule_delay(tev->data(), cb);
 }
 
 

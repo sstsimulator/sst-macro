@@ -91,18 +91,16 @@ packet_flow_memory_model::set_event_parent(event_scheduler* m)
 }
 
 void
-packet_flow_memory_model::access(long bytes, double max_bw)
+packet_flow_memory_model::access(
+  long bytes, double max_bw,
+  callback* cb)
 {
-  sw::key* k = sw::key::construct();
   memory_message* msg = new memory_message(bytes,
                    parent_node_->allocate_unique_id(), max_bw);
-  pending_requests_[msg] = k;
-
+  pending_requests_[msg] = cb;
   int channel = allocate_channel();
+  debug("starting access %lu on vn %d", msg->unique_id(), channel);
   mem_packetizer_->start(channel, msg);
-  parent_node_->os()->block(k);
-
-  delete msg;
 }
 
 void
@@ -110,11 +108,12 @@ packet_flow_memory_model::notify(int vn, message* msg)
 {
   debug("finished access %lu on vn %d", msg->unique_id(), vn);
 
-  sw::key* k = pending_requests_[msg];
+  callback* cb = pending_requests_[msg];
   pending_requests_.erase(msg);
-  parent_node_->os()->unblock(k);
-  delete k;
   channels_available_.push_front(vn);
+  //happening now
+  delete msg;
+  parent_->schedule_now(cb);
 }
 
 int
@@ -173,7 +172,7 @@ packet_flow_memory_packetizer::handle_payload(int vn, packet_flow_payload* pkt)
     pkt->to_string().c_str(), vn, st.tail_leaves.sec());
 
   send_self_event_queue(st.tail_leaves,
-    new_event(this, &packetizer::packetArrived, vn, pkt));
+    new_callback(this, &packetizer::packetArrived, vn, pkt));
 
   //might need to send some credits back
   if (!pkt->is_tail()){
