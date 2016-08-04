@@ -12,8 +12,6 @@
 #ifndef SSTMAC_SOFTWARE_LIBRARIES_MPI_MPIAPI_H_INCLUDED
 #define SSTMAC_SOFTWARE_LIBRARIES_MPI_MPIAPI_H_INCLUDED
 
-#include <sstmac/common/messages/payload.h>
-
 #include <sstmac/software/libraries/library.h>
 #include <sstmac/software/api/api.h>
 

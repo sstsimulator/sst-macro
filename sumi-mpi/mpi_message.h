@@ -20,7 +20,6 @@
 #include <sumi-mpi/sstmac_mpi.h>
 #include <sstmac/software/process/task_id.h>
 #include <sstmac/software/process/app_id.h>
-#include <sstmac/common/messages/payload.h>
 
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sumi-mpi/mpi_protocol/mpi_protocol_fwd.h>

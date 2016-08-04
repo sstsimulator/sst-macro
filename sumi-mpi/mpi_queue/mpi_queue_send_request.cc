@@ -14,7 +14,6 @@
 #include <sumi-mpi/mpi_message.h>
 #include <sumi-mpi/mpi_api.h>
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
-#include <sstmac/common/messages/payload.h>
 
 namespace sumi {
 

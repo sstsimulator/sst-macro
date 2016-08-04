@@ -14,7 +14,6 @@
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
 #include <sstmac/software/process/operating_system.h>
 
-#include <sstmac/common/messages/payload.h>
 #include <sstmac/common/sstmac_env.h>
 #include <sprockit/debug.h>
 #include <sprockit/errors.h>

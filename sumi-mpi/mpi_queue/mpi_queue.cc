@@ -19,7 +19,6 @@
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
 #include <sstmac/common/stats/stat_spyplot.h>
 #include <sstmac/common/event_manager.h>
-#include <sstmac/common/messages/payload.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
