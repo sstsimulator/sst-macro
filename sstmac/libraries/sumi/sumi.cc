@@ -231,10 +231,25 @@ comm_partner(long nid)
   return current_transport()->get_partner(node_id(nid));
 }
 
+void sleep_until(double sec)
+{
+  thread* thr = thread::current();
+  app* my_app = thr->parent_app();
+  double time = sec - my_app->now().sec();
+  my_app->sleep(timestamp(time));
+}
+
+void sleep(double sec)
+{
+  thread* thr = thread::current();
+  app* my_app = thr->parent_app();
+  my_app->sleep(timestamp(sec));
+}
+
 void compute(double sec)
 {
   thread* thr = thread::current();
-  app* my_app = safe_cast(app, thr);
+  app* my_app = thr->parent_app();
   my_app->compute(timestamp(sec));
 }
 

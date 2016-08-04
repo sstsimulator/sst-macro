@@ -58,8 +58,8 @@ class Timer
 };
 
 class api :
-  virtual public sprockit::factory_type,
-  public library
+  public library,
+  virtual public sprockit::factory_type
 {
  public:
   api(const char* name,
@@ -69,6 +69,8 @@ class api :
   {
     key_cat_ = ty;
   }
+
+  virtual void finalize_init(){}
 
   api(const char* name,
       software_id sid) :
@@ -114,13 +116,24 @@ class api :
   end_api_call();
 
  protected:
-  static bool hostcompute_;
+  bool hostcompute_;
   Timer* timer_;
   long startcount_;
   long endcount_;
   lib_compute_time* compute_;
 
 };
+
+void api_lock();
+void api_unlock();
+
+#define ImplementAPI(x) \
+ public: \
+  static const char* api_name;
+
+#define RegisterAPI(name, child_cls) \
+  SpktRegister(name, sstmac::sw::api, child_cls); \
+  const char* child_cls::api_name = name
 
 DeclareFactory(api,software_id);
 

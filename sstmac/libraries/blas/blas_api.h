@@ -35,6 +35,7 @@ DeclareFactory(blas_kernel);
 class blas_api :
   public api
 {
+  ImplementAPI(blas_api)
 
  public:
   blas_api(software_id sid);

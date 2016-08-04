@@ -365,6 +365,14 @@ operating_system::compute(timestamp t)
   compute_sched_->release_core(thr);
 }
 
+
+void
+operating_system::async_kernel(ami::SERVICE_FUNC func,
+                               event *data)
+{
+  node_->execute_kernel(func, data);
+}
+
 void
 operating_system::execute_kernel(ami::COMP_FUNC func,
                                  event* data,
@@ -527,18 +535,6 @@ operating_system::print_libs(std::ostream &os) const
     os << it->first << "\n";
   }
 }
-
-#if 0
-void
-operating_system::time_block(timestamp t, key::category cat)
-{
-  key* k = key::construct(cat);
-  unblock_event* ev = new unblock_event(this, k);
-  timestamp unblock_time = eventman_->now() + t;
-  eventman_->schedule(unblock_time, ev);
-  block(k);
-}
-#endif
 
 timestamp
 operating_system::block(key* req)

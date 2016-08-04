@@ -3,17 +3,18 @@
 #include <sst/core/event.h>
 #endif
 #include <sstmac/libraries/sumi/sumi_transport.h>
-#include <sstmac/software/process/api.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/common/event_callback.h>
 #include <sstmac/libraries/sumi/message.h>
 #include <sumi/message.h>
 
-ImplementAPI(sumi, sumi_transport, "sumi");
+
 
 using namespace sprockit::dbg;
 
 namespace sumi {
+
+RegisterAPI("sumi_transport", sumi_transport);
 
 sumi_transport::sumi_transport(const char* name, sstmac::sw::software_id sid) :
   sumi_api(name, sid)

@@ -19,6 +19,7 @@
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/software/libraries/library_fwd.h>
 #include <sprockit/sim_parameters_fwd.h>
+#include <map>
 
 
 namespace sstmac {
@@ -86,6 +87,30 @@ class library  {
 
  private:
   std::string libname_;
+
+};
+
+class blocking_library :
+  public library
+{
+ protected:
+  blocking_library(const char* prefix, software_id sid) :
+    library(prefix, sid)
+  {
+  }
+
+  blocking_library(const std::string& libname, software_id sid) :
+    library(libname, sid)
+  {
+  }
+
+  void wait_event(event* ev, key::category = key::general);
+
+  virtual void
+  incoming_event(event *ev);
+
+ private:
+  std::map<event*,key*> blocked_events_;
 
 };
 

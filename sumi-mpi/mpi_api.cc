@@ -27,7 +27,6 @@
 
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/process/api.h>
 #include <sstmac/software/process/thread.h>
 #include <sstmac/software/launch/job_launcher.h>
 
@@ -43,9 +42,6 @@
 #include <sprockit/malloc.h>
 #include <sprockit/keyword_registration.h>
 
-ImplementAPI(sumi, mpi_api, "mpi")
-
-
 DeclareDebugSlot(mpi_check)
 RegisterDebugSlot(mpi_check,
     "validation flag that performs various sanity checks to ensure MPI application"
@@ -56,7 +52,7 @@ sprockit::StaticNamespaceRegister queue_ns_reg("queue");
 
 namespace sumi {
 
-SpktRegister("mpi", sstmac::sw::api, mpi_api, "Create bindings for MPI runtime");
+RegisterAPI("mpi", mpi_api);
 
 key::category mpi_api::default_key_category("MPI");
 key::category mpi_api::poll_key_category("MPI Poll");

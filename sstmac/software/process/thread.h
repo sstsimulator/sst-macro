@@ -16,7 +16,7 @@
 #include <sstmac/common/timestamp.h>
 #include <sstmac/software/process/process_context.h>
 #include <sstmac/software/process/software_id.h>
-#include <sstmac/software/process/api.h>
+#include <sstmac/software/api/api.h>
 #include <sprockit/errors.h>
 
 #include <sstmac/software/launch/app_launch_fwd.h>
@@ -67,44 +67,18 @@ class thread
     thr->apis_ = apis_;
   }
 
-  virtual api*
-  build_api(int aid, const std::string& name);
-
-  template <class T>
-  void
-  add_api(T* api) {
-    if (API<T>::id == API<T>::null_id) {
-      spkt_throw_printf(sprockit::illformed_error, "API %s is not initialized."
-                       "Make sure API is statically initialized correctly"
-                       " using ImplementAPI macro.",
-                       API<T>::name);
-    }
-    apis_[API<T>::id] = api;
-  }
-
   static thread*
   current();
 
   template <class T>
   T*
   get_api() {
-    if (API<T>::id == API<T>::null_id) {
-      spkt_throw_printf(sprockit::illformed_error, "API %s is not initialized."
-                       "Make sure API is statically initialized correctly"
-                       " using ImplementAPI macro.",
-                       API<T>::name);
-    }
-
-    api* api = apis_[API<T>::id];
-    if (!api) {
-      api = build_api(API<T>::id, API<T>::name);
-      apis_[API<T>::id] = api;
-    }
-
-    T* casted = dynamic_cast<T*>(api);
+    api* a = _get_api(T::api_name);
+    T* casted = dynamic_cast<T*>(a);
     if (!casted) {
-      spkt_throw_printf(sprockit::value_error, "Failed to cast API of type %s",
-                       API<T>::name);
+      spkt_throw_printf(sprockit::value_error,
+               "Failed to cast API to correct type for %s",
+                T::api_name);
     }
     return casted;
   }
@@ -140,11 +114,16 @@ class thread
   init_perf_model_params(sprockit::sim_parameters* params);
 
   app_id aid() const {
-    return aid_;
+    return sid_.app_;
   }
 
   task_id tid() const {
-    return tid_;
+    return sid_.task_;
+  }
+
+  void
+  set_sid(software_id sid){
+    sid_ = sid;
   }
 
   void
@@ -334,20 +313,20 @@ class thread
   void
   set_tls_value(long thekey, void* ptr);
 
- protected:
-  thread();
-
-  void
-  unregister_all_libs();
-
   timestamp
   now();
 
-  node_id
-  physical_address();
+ protected:
+  thread();
+
+  friend api* static_get_api(const char *name);
+  friend class app;
+
+  virtual api*
+  _get_api(const char* name);
 
   void
-  set_sid(const software_id& sid);
+  unregister_all_libs();
   
  private:
   /// Run routine that defines the initial context for this task.
@@ -363,7 +342,7 @@ class thread
   void cleanup();
 
  protected:
-  spkt_unordered_map<int, api*> apis_;
+  spkt_unordered_map<std::string, api*> apis_;
 
   /// Monitor state for deadlock detection.
   state state_;
@@ -395,9 +374,7 @@ class thread
   /// The stacksize.
   size_t stacksize_;
 
-  app_id aid_;
-
-  task_id tid_;
+  software_id sid_;
   
   long thread_id_;
 

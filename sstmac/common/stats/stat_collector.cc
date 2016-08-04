@@ -55,5 +55,25 @@ stat_collector::clone_into(stat_collector *cln) const
   cln->fileroot_ = fileroot_;
 }
 
+stat_collector*
+stat_collector::optional_build(sprockit::sim_parameters* params,
+                      const std::string& ns,
+                      const std::string& deflt,
+                      const char* suffix)
+{
+  if (params->has_namespace(ns)){
+    sprockit::sim_parameters* ns_params = params->get_namespace(ns);
+    stat_collector* stats = stat_collector_factory::get_optional_param(
+          "type", deflt, ns_params);
+
+    if (suffix) stats->add_suffix(suffix);
+    return stats;
+  } else {
+    return nullptr;
+  }
+}
+
+
+
 } // end of namespace sstmac
 

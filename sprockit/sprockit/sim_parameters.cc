@@ -981,6 +981,31 @@ sim_parameters::throw_key_error(const std::string& key) const
           key.c_str(), namespace_.c_str());
 }
 
+bool
+sim_parameters::get_scoped_param(std::string& inout,
+                          const std::string& key)
+{
+  key_value_map::iterator it = params_.find(key);
+  if (it == params_.end()){
+    return false;
+  }
+  parameter_entry& entry = it->second;
+  entry.read = true;
+  inout = entry.value;
+  return true;
+}
+
+bool
+sim_parameters::get_param(std::string& inout, const std::string& key)
+{
+  bool found = get_scoped_param(inout, key);
+  if (!found && parent_){
+    return parent_->get_param(inout, key);
+  } else {
+    return found;
+  }
+}
+
 std::string
 sim_parameters::get_param(const std::string& key, bool throw_on_error)
 {
@@ -988,33 +1013,24 @@ sim_parameters::get_param(const std::string& key, bool throw_on_error)
     "sim_parameters: getting key %s\n",
     key.c_str());
 
-  std::string match = get_scoped_param(key, false); //do not throw
-  if (match.size() != 0)
-      return match;
-
-  if (parent_){
-    std::string val = parent_->get_param(key, false);
-    if (val.size()) return val;
-  }
-
-  if (throw_on_error){
+  std::string match;
+  bool found = get_param(match, key);
+  if (!found && throw_on_error){
     throw_key_error(key);
   }
 
-  return "";
+  return match;
 }
 
 std::string
 sim_parameters::get_scoped_param(const std::string& key, bool throw_on_error)
 {
-  key_value_map::iterator it = params_.find(key);
-  if (it == params_.end()){
-    if (throw_on_error) throw_key_error(key);
-    else return "";
+  std::string ret;
+  bool found = get_scoped_param(ret, key);
+  if (!found && throw_on_error){
+    throw_key_error(key);
   }
-  parameter_entry& entry = it->second;
-  entry.read = true;
-  return entry.value;
+  return ret;
 }
 
 sim_parameters*

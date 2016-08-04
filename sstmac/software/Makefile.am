@@ -30,7 +30,6 @@ libsstmac_sw_la_SOURCES = \
   process/graphviz.cc \
   process/ftq.cc \
   process/operating_system.cc \
-  process/api.cc \
   process/thread.cc \
   process/app.cc \
   process/time.cc \
@@ -88,7 +87,6 @@ nobase_library_include_HEADERS = \
   process/ftq_fwd.h \
   process/app.h \
   process/app_fwd.h \
-  process/api.h \
   process/app_id.h \
   process/key.h \
   process/key_fwd.h \

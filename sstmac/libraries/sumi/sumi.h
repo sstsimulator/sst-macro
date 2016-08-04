@@ -9,6 +9,8 @@
 #include <sumi/communicator.h>
 #include <sumi/thread_safe_set.h>
 
+#define main USER_MAIN
+
 namespace sumi {
 
 void
@@ -171,8 +173,11 @@ comm_collective_block(collective::type_t ty, int tag);
 message::ptr
 comm_poll();
 
-void
-compute(double sec);
+void compute(double sec);
+
+void sleep(double sec);
+
+void sleep_until(double sec);
 
 /**
  * Map a physical node location to its virtual assignment in the communicator

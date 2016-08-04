@@ -82,20 +82,10 @@ nic::init_factory_params(sprockit::sim_parameters *params)
 
   negligible_size_ = params->get_optional_int_param("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
 
-  if (params->has_namespace("traffic_matrix")){
-    sprockit::sim_parameters* traffic_params = params->get_namespace("traffic_matrix");
-    spy_num_messages_ = test_cast(stat_spyplot, stat_collector_factory::get_optional_param("type", "spyplot", traffic_params));
-    spy_bytes_ = test_cast(stat_spyplot, stat_collector_factory::get_optional_param("type", "spyplot", traffic_params));
-
-    if (!spy_num_messages_ || !spy_bytes_){
-      spkt_throw_printf(sprockit::value_error,
-        "NIC traffic_matrix must be spyplot or spyplot_png, %s given",
-        traffic_params->get_param("type").c_str());
-    }
-
-    spy_num_messages_->add_suffix("num_messages");
-    spy_bytes_->add_suffix("bytes");
-  }
+  spy_num_messages_ = optional_stats<stat_spyplot>(
+        params, "traffic_matrix", "spyplot", "num_messages");
+  spy_bytes_ = optional_stats<stat_spyplot>(
+        params, "traffic_matrix", "spyplot", "bytes");
 
   if (params->has_namespace("local_bytes_sent")) {
     sprockit::sim_parameters* traffic_params = params->get_namespace("local_bytes_sent");

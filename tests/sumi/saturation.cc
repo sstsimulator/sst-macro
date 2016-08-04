@@ -19,13 +19,6 @@ using sstmac::node_id;
 using sstmac::env;
 using sstmac::hw::topology;
 
-void sleep(double seconds)
-{
-  sstmac::sw::thread* thr =
-    sstmac::sw::operating_system::current_thread();
-  sstmac::sw::app* app = safe_cast(sstmac::sw::app, thr);
-  app->sleep(timestamp(seconds));
-}
 
 //static long done = 0;
 

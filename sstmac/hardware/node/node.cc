@@ -119,6 +119,13 @@ node::connect(int src_outport, int dst_inport, connection_type_t ty, connectable
 }
 
 void
+node::execute_kernel(ami::SERVICE_FUNC func, event* data)
+{
+  spkt_throw(sprockit::unimplemented_error,
+             "node does not implement asynchronous services - choose new node model");
+}
+
+void
 node::init_factory_params(sprockit::sim_parameters *params)
 {
   sprockit::sim_parameters* os_params = params->get_optional_namespace("os");

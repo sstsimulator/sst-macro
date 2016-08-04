@@ -91,9 +91,6 @@ class app :
   static void
   delete_statics();
 
-  api*
-  build_api(int aid, const std::string &name);
-
   void
   sleep(timestamp time);
 
@@ -219,7 +216,12 @@ class app :
   clear_subthread_from_parent_app();
 
  protected:
+  friend class thread;
+
   app();
+
+  api*
+  _get_api(const char* name);
 
   virtual void init_mem_lib();
 

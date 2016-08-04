@@ -462,6 +462,11 @@ class sim_parameters  {
   sim_parameters*
   get_scope_and_key(const std::string& key, std::string& final_key);
 
+  bool
+  get_param(std::string& inout, const std::string& key);
+
+  bool
+  get_scoped_param(std::string& inout, const std::string& key);
 
 };
 

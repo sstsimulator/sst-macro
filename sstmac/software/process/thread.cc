@@ -129,18 +129,9 @@ thread::current()
 }
 
 api*
-thread::build_api(int aid, const std::string &name)
+thread::_get_api(const char* name)
 {
-  if (parent_app_) {
-    api* a = parent_app_->build_api(aid, name);
-    register_lib(a);
-    return a;
-  }
-  else {
-    spkt_throw_printf(sprockit::illformed_error,
-                     "thread::build_api: thread has no parent thread");
-    return 0;
-  }
+  return parent_app_->_get_api(name);
 }
 
 void
@@ -319,13 +310,6 @@ thread::set_tls_value(long thekey, void *ptr)
 }
 
 void
-thread::set_sid(const software_id& sid)
-{
-  aid_ = sid.app_;
-  tid_ = sid.task_;
-}
-
-void
 thread::append_backtrace(void* fxn)
 {
   backtrace_[bt_nfxn_] = fxn;
@@ -375,15 +359,6 @@ thread::now()
   return os_->now();
 }
 
-node_id
-thread::physical_address()
-{
-  return os_->my_addr();
-}
-
-//
-// Goodbye.
-//
 thread::~thread()
 {
   if (backtrace_) graph_viz::delete_trace(backtrace_);
@@ -400,9 +375,7 @@ thread::~thread()
   apis_.clear();
 }
 
-//
-// Start a new thread.
-//
+
 void
 thread::start_thread(thread* thr)
 {
@@ -410,9 +383,7 @@ thread::start_thread(thread* thr)
   os_->start_thread(thr);
 }
 
-//
-// Join threads.
-//
+
 void
 thread::join()
 {

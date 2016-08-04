@@ -144,7 +144,8 @@ class node :
   }
 
   /**
-   Make the node execute a particular compute function
+   Make the node execute a particular compute function. This
+   generally causes the function to be executed immediately.
    @param func  Enum identifying the type of computation
    @param data  Event object encapsulating data/metadata for computation
    @param cb    The event to execute when kernel is complete
@@ -153,6 +154,17 @@ class node :
   execute_kernel(ami::COMP_FUNC func,
                  event* data,
                  callback* cb) = 0;
+
+  /**
+   * @brief execute_kernel Asynchronously execute a kernel on some
+   * service associated with the node. This generally enqueues an operation
+   * to be performed - not necessarily executing it immediately.
+   * @param func
+   * @param data
+   */
+  virtual void
+  execute_kernel(ami::SERVICE_FUNC func,
+                 event* data);
 
   virtual void
   handle(event* ev);

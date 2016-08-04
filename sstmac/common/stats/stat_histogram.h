@@ -17,7 +17,7 @@ class stat_histogram :
   collect(double value);
 
   void
-  collect(double value, int num);
+  collect(double value, int64_t num);
 
   void
   simulation_finished(timestamp end);
@@ -37,7 +37,7 @@ class stat_histogram :
   void
   reduce(stat_collector *coll);
 
-  void
+  virtual void
   init_factory_params(sprockit::sim_parameters *params);
 
   stat_histogram*
@@ -61,13 +61,21 @@ class stat_histogram :
   clone_into(stat_histogram* cln) const;
 
  protected:
-  std::vector<long> counts_;
+  std::vector<int64_t> counts_;
 
   double bin_size_;
 
-  long max_bin_;
+  int64_t max_bin_;
 
   bool is_log_;
+
+};
+
+class stat_time_histogram :
+  public stat_histogram
+{
+ public:
+  void record(timestamp t, int64_t num);
 
 };
 

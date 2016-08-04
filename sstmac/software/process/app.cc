@@ -12,7 +12,6 @@
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/api/api.h>
 #include <sstmac/software/launch/app_launch.h>
-#include <sstmac/software/process/api.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/sstmac_env.h>
 #include <sstmac/common/logger.h>
@@ -216,10 +215,10 @@ app::compute_block_memcpy(long bytes)
 }
 
 api*
-app::build_api(int aid, const std::string &name)
+app::_get_api(const char* name)
 {
   // an underlying thread may have built this
-  api* my_api = apis_[aid];
+  api* my_api = apis_[name];
   if (!my_api) {
     bool new_params = params_->has_namespace(name);
     sprockit::sim_parameters* app_params = params_;
@@ -227,7 +226,7 @@ app::build_api(int aid, const std::string &name)
       app_params = params_->get_namespace(name);
     api* new_api = api_factory::get_value(name, app_params, id_);
     register_lib(new_api);
-    apis_[aid] = new_api;
+    apis_[name] = new_api;
     return new_api;
   }
   else {

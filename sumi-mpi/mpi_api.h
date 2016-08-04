@@ -54,9 +54,8 @@ using sstmac::sw::operating_system;
 class mpi_api :
   public sumi_transport
 {
-  /// Nested classes to take care of persistent communications.
- public:
-  class persistent;
+  ImplementAPI(mpi_api)
+
  private:
   class persistent_send;
   class persistent_recv;
@@ -66,7 +65,6 @@ class mpi_api :
   static key::category poll_key_category;
   static key::category memcpy_key_category;
 
-  /// Build a new mpiapi.
   mpi_api(sstmac::sw::software_id sid);
 
   virtual void

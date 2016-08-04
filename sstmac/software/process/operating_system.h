@@ -115,6 +115,10 @@ class operating_system :
                  key::category cat = key::general);
 
   void
+  async_kernel(ami::SERVICE_FUNC func,
+               event* data);
+
+  void
   execute_kernel(ami::COMM_FUNC func, message* data);
 
   static void
