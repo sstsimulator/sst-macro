@@ -212,6 +212,8 @@ class SimulationQueue
  public:
   SimulationQueue();
 
+  ~SimulationQueue();
+
   Simulation*
   fork(sprockit::sim_parameters& params){
     return fork(&params);
@@ -234,6 +236,10 @@ class SimulationQueue
   }
 
   void teardown();
+
+  void buildUp(){
+    built_up_ = true;
+  }
 
   void init(int argc, char** argv);
 
@@ -273,13 +279,36 @@ class SimulationQueue
     return me_;
   }
 
+  Simulation**
+  allocateSims(int max_nthread);
+
+  char*
+  allocateTmpBuffer(size_t buf_size);
+
+  double**
+  allocateResults(int njobs, int nresults);
+
+  double**
+  allocateParams(int njobs, int nparams);
+
  private:
+  bool built_up_;
   std::list<Simulation*> pending_;
   parallel_runtime* rt_;
   sprockit::sim_parameters template_params_;
   opts template_opts_;
   static double* results_;
   static int num_results_;
+  Simulation** sims_;
+  int nsims_;
+  char* tmp_buffer_;
+  size_t tmp_buf_size_;
+
+  std::pair<int,int> result_buf_size_;
+  std::pair<int,int> param_buf_size_;
+
+  double** tmp_results_;
+  double** tmp_params_;
 
  private:
   int nproc_;

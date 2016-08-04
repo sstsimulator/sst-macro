@@ -163,7 +163,7 @@ remap_params(sprockit::sim_parameters* params, bool verbose)
   if (max_nproc == 0){
     params->pretty_print_params(std::cerr);
     spkt_throw(sprockit::value_error,
-               "computed max nproc=0 from parameters");
+               "computed max nproc=0 from parameters - need app1.launch_cmd or app1.size");
   }
   resize_topology(max_nproc, params, verbose);
 

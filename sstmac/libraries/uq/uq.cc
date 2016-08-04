@@ -98,15 +98,17 @@ tmpl_allocate_values(int nrows, int ncols)
 }
 
 double**
-allocate_values(int nrows, int ncols)
+allocate_values(void* queue, int nrows, int ncols)
 {
-  return tmpl_allocate_values<double>(nrows, ncols);
+  SimulationQueue* q = (SimulationQueue*) queue;
+  return q->allocateParams(nrows, ncols);
 }
 
 double**
-allocate_results(int nrows, int ncols)
+allocate_results(void* queue, int nrows, int ncols)
 {
-  return tmpl_allocate_values<double>(nrows, ncols);
+  SimulationQueue* q = (SimulationQueue*) queue;
+  return q->allocateResults(nrows, ncols);
 }
 
 uq_param_t**
@@ -237,6 +239,13 @@ send_scan_point(SimulationQueue* q,
 }
 
 extern "C" void
+sstmac_uq_stop(void* queue)
+{
+  SimulationQueue* q = (SimulationQueue*) queue;
+  q->teardown();
+}
+
+extern "C" void
 sstmac_uq_run(void* queue,
   int njobs, int nparams, int nresults, int max_nthread,
   const char* param_names[], uq_param_t* param_values[],
@@ -244,20 +253,24 @@ sstmac_uq_run(void* queue,
 {
   SimulationQueue* q = (SimulationQueue*) queue;
   if (max_nthread <= 0) max_nthread = q->maxParallelWorkers();
-  Simulation** sims = new Simulation*[max_nthread];
 
-  sprockit::sim_parameters params;
-
+  Simulation** sims = q->allocateSims(max_nthread);
+  char* bufferPtr = 0;
   int num_running = 0;
   int result_offset = 0;
   int last_job = njobs - 1;
-  char* bufferPtr = 0;
   int entrySize = 64;
   int totalParamBufferSize = njobs*nparams*entrySize;
   int paramBufferSize = nparams*entrySize;
+
   if (spawn_ty == MPIScan){
-    bufferPtr = new char[totalParamBufferSize];
+    bufferPtr = q->allocateTmpBuffer(totalParamBufferSize);
   }
+
+  q->buildUp();
+
+  sprockit::sim_parameters params;
+
 
   for (int j=0; j < njobs; ++j){
     uq_param_t* param_vals = param_values[j];
@@ -285,10 +298,6 @@ sstmac_uq_run(void* queue,
       num_running = 0;
     }
   }
-
-  if (spawn_ty == MPIScan) q->teardown();
-
-  delete[] sims;
 }
 
 

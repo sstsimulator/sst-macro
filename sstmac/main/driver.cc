@@ -94,19 +94,134 @@ SimulationQueue::SimulationQueue() :
  first_run_(true),
  next_worker_(0), //starts from 1
  me_(0),
- nproc_(1)
+ nproc_(1),
+ tmp_buffer_(nullptr),
+ sims_(nullptr),
+ tmp_results_(nullptr),
+ tmp_params_(nullptr),
+ tmp_buf_size_(0),
+ built_up_(false),
+ nsims_(0),
+ result_buf_size_(0,0),
+ param_buf_size_(0,0)
 {
+}
+
+
+template <class T>
+T**
+tmpl_allocate_values(int nrows, int ncols)
+{
+  T* vals = new T[nrows*ncols];
+  T** ptrs = new T*[nrows];
+  T* ptr = vals;
+  for (int i=0; i < nrows; ++i, ptr += ncols){
+    ptrs[i] = ptr;
+  }
+  return ptrs;
+}
+
+template <class T>
+void
+tmpl_free_values(T** vals)
+{
+  delete[] vals[0];
+  delete[] vals;
+}
+
+SimulationQueue::~SimulationQueue()
+{
+  if (sims_) delete[] sims_;
+  if (tmp_buffer_) delete[] tmp_buffer_;
+  if (tmp_results_) tmpl_free_values(tmp_results_);
+  if (tmp_params_) tmpl_free_values(tmp_params_);
+}
+
+double**
+SimulationQueue::allocateResults(int njobs, int nresults)
+{
+  int& my_njobs = result_buf_size_.first;
+  int& my_nresults = result_buf_size_.second;
+  if (tmp_results_){
+    if (my_njobs >= njobs && my_nresults >= nresults){
+      return tmp_results_;
+    } else {
+      tmpl_free_values(tmp_results_);
+      results_ = nullptr;
+    }
+  }
+  tmp_results_ = tmpl_allocate_values<double>(njobs, nresults);
+  my_njobs = njobs;
+  my_nresults = nresults;
+  return tmp_results_;
+}
+
+double**
+SimulationQueue::allocateParams(int njobs, int nparams)
+{
+  int& my_njobs = param_buf_size_.first;
+  int& my_nparams = param_buf_size_.second;
+  if (tmp_params_){
+    if (my_njobs >= njobs && my_nparams >= nparams){
+      return tmp_params_;
+    } else {
+      tmpl_free_values(tmp_params_);
+      tmp_params_ = nullptr;
+    }
+  }
+  tmp_params_ = tmpl_allocate_values<double>(njobs, nparams);
+  my_njobs = njobs;
+  my_nparams = nparams;
+  return tmp_params_;
+}
+
+
+Simulation**
+SimulationQueue::allocateSims(int max_nthread)
+{
+  if (sims_){ 
+    if (nsims_ >= max_nthread){
+      return sims_;
+    } else {
+      //not enough
+      delete[] sims_;
+      sims_ = 0;
+    }
+  } 
+  sims_ = new Simulation*[max_nthread];
+  nsims_ = max_nthread;
+  return sims_;
+}
+
+char*
+SimulationQueue::allocateTmpBuffer(size_t size)
+{
+  if (tmp_buffer_){
+    if (tmp_buf_size_ >= size){
+      return tmp_buffer_;
+    } else {
+      delete [] tmp_buffer_;
+      tmp_buffer_ = 0;
+    }
+  }
+  tmp_buffer_ = new char[size];
+  tmp_buf_size_ = size;
+  return tmp_buffer_;
 }
 
 void
 SimulationQueue::teardown()
 {
+  if (!built_up_)
+    return;
+
 #if SSTMAC_MPI_DRIVER
   char buffer[1];
   for (int i=1; i < nproc_; ++i){
     MPI_Send(buffer, 1, MPI_INT, i, terminate_tag, MPI_COMM_WORLD);
   }
 #endif
+  built_up_ = false;
 }
 
 
@@ -217,6 +332,8 @@ SimulationQueue::init(int argc, char** argv)
 void
 SimulationQueue::finalize()
 {
+  if (built_up_)
+    teardown();
   ::sstmac::finalize(rt_);
 #if SSTMAC_MPI_DRIVER
   MPI_Finalize();

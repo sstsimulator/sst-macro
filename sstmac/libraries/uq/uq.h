@@ -30,14 +30,14 @@ typedef struct
  @param njobs
  @param nresults
 */
-double** allocate_results(int njobs, int nresults);
+double** allocate_results(void* queue, int njobs, int nresults);
 
 /**
  Allocate a 2D double array
  @param njobs
  @param nparams
 */
-double** allocate_values(int njobs, int nparams);
+double** allocate_values(void* queue, int njobs, int nparams);
 
 /**
  Allocate a 2D array of param structs
@@ -83,6 +83,7 @@ void free_params(uq_param_t** params);
 */
 void* sstmac_uq_init(int argc, char** argv, int* workerID);
 
+void sstmac_uq_stop(void* queue);
 
 void sstmac_uq_busy_loop(void* queue);
 
