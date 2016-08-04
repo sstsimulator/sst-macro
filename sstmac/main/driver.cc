@@ -135,10 +135,9 @@ SimulationQueue::clear(Simulation *sim)
 void
 SimulationQueue::run(sprockit::sim_parameters* params, sim_stats& stats)
 {
-  bool remap_params = true;
-  params->combine_into(&template_params_);
-  sstmac::process_init_params(&template_params_, remap_params);
-  ::sstmac::run(template_opts_, rt_, &template_params_, stats, false/*not just params*/);
+  template_params_.combine_into(params);
+  sstmac::remap_params(params, false /* not verbose */);
+  ::sstmac::run(template_opts_, rt_, params, stats);
 }
 
 Simulation*
@@ -168,7 +167,7 @@ SimulationQueue::fork(sprockit::sim_parameters* params)
     Simulation* sim = new Simulation;
     driver_debug("forked process %d", pid);
     sim->setPid(pid);
-    sim->setParameters(&template_params_);
+    sim->setParameters(params);
     sim->setPipe(pfd);
     pending_.push_back(sim);
     return sim;
@@ -210,6 +209,9 @@ SimulationQueue::init(int argc, char** argv)
   rt_ = ::sstmac::init();
   init_opts(template_opts_, argc, argv);
   init_params(rt_, template_opts_, &template_params_, true);
+  if (sprockit::debug::slot_active(sprockit::dbg::driver)){
+    template_params_.pretty_print_params();
+  }
 }
 
 void
@@ -306,6 +308,7 @@ SimulationQueue::runScanPoint(char* buffer, sim_stats& stats)
   char nparams = *buffer;
   char* bufferPtr = buffer + 1;
   sprockit::sim_parameters params;
+  template_params_.combine_into(&params);
   for (int i=0; i < nparams; ++i){
     const char* param_name = bufferPtr;
     int name_len = ::strlen(bufferPtr) + 1; //null char
@@ -328,18 +331,13 @@ SimulationQueue::runScanPoint(char* buffer, sim_stats& stats)
 void
 SimulationQueue::rerun(sprockit::sim_parameters* params, sim_stats& stats)
 {
-  params->combine_into(&template_params_);
-  bool remap_params = true;
-  sstmac::process_init_params(&template_params_, remap_params);
-  sstmac::env::params = &template_params_;
-  //if (sprockit::debug::slot_active(sprockit::dbg::driver)){
-  //  template_params_.pretty_print_params();
-  //}
+  sstmac::remap_params(params, false /*not verbose*/);
+  sstmac::env::params = params;
   if (first_run_){
-    ::sstmac::init_first_run(rt_, &template_params_);
+    ::sstmac::init_first_run(rt_, params);
     first_run_ = false;
   }
-  ::sstmac::run_params(rt_, &template_params_, stats);
+  ::sstmac::run_params(rt_, params, stats);
   stats.numResults = num_results_;
 }
 

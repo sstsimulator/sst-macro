@@ -93,16 +93,19 @@ packet_flow_param_expander::expand_amm1_network(sprockit::sim_parameters* params
 {
 
 
+  //JJW - no, don't do this
+  //The link banwidthds will get multiplied during the connect
   //if redundant links, appropriately multiply the bandwidth
-  double bw_multiplier = network_bandwidth_multiplier(params);
-  double link_bw = switch_params->get_bandwidth_param("link_bandwidth");
-  if (bw_multiplier > 1.0001){
-    link_bw *= bw_multiplier;
-    switch_params->add_param_override("link_bandwidth", link_bw);
-  }
+  //double bw_multiplier = network_bandwidth_multiplier(params);
+  //double link_bw = switch_params->get_bandwidth_param("link_bandwidth");
+  //if (bw_multiplier > 1.0001){
+  //  link_bw *= bw_multiplier;
+  //  switch_params->add_param_override("link_bandwidth", link_bw);
+  //}
 
   //make the xbar much faster than links
   if (set_xbar){
+    double link_bw = switch_params->get_bandwidth_param("link_bandwidth");
     double xbar_bw = link_bw * buffer_depth_;
     switch_params->add_param_override("crossbar_bandwidth", xbar_bw);
   }
@@ -123,10 +126,10 @@ packet_flow_param_expander::expand_amm1_network(sprockit::sim_parameters* params
     sprockit::sim_parameters* nic_params = params->get_namespace("nic");
     if (nic_params->has_param("ejection_bandwidth")){
       switch_params->add_param_override("ejection_bandwidth",
-                                nic_params->get_bandwidth_param("ejection_bandwidth"));
+                                nic_params->get_param("ejection_bandwidth"));
     } else {
       switch_params->add_param_override("ejection_bandwidth",
-                                nic_params->get_bandwidth_param("injection_bandwidth"));
+                                nic_params->get_param("injection_bandwidth"));
     }
   }
 

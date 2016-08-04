@@ -320,7 +320,6 @@ class thread
   thread();
 
   friend api* static_get_api(const char *name);
-  friend class app;
 
   virtual api*
   _get_api(const char* name);

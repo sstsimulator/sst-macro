@@ -267,14 +267,14 @@ sim_parameters::copy_optional_param(const std::string &oldname, const std::strin
 void
 sim_parameters::add_param_override(const std::string &key, double val, const char* units)
 {
-  add_param_override(key, printf("%20.12f%s", val, units));
+  add_param_override(key, printf("%20.8f%s", val, units));
 }
 
 
 void
 sim_parameters::add_param_override(const std::string &key, double val)
 {
-  add_param_override(key, printf("%20.12f", val));
+  add_param_override(key, printf("%20.8f", val));
 }
 
 void

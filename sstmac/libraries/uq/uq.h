@@ -46,6 +46,14 @@ double** allocate_values(int njobs, int nparams);
 */
 uq_param_t** allocate_params(int njobs, int nparams);
 
+int sstmac_uq_int_param(void* queue, const char* param);
+
+int sstmac_uq_double_param(void* queue, const char* param);
+
+int sstmac_uq_sim_nproc(void* queue);
+
+int sstmac_uq_max_nproc(void* queue);
+
 /**
  Free a 2D array allocated by allocate_results function
  @param results

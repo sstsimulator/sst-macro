@@ -16,6 +16,7 @@
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/launch/app_launch.h>
 #include <sstmac/backends/common/parallel_runtime.h>
+#include <sstmac/backends/native/manager.h>
 #include <sprockit/fileio.h>
 #include <sprockit/statics.h>
 #include <sprockit/sim_parameters.h>
@@ -154,11 +155,17 @@ remap_deprecated_params(sprockit::sim_parameters* params)
 }
 
 void
-process_init_params(sprockit::sim_parameters* params, bool remap_params)
+remap_params(sprockit::sim_parameters* params, bool verbose)
 {
-  if (remap_params){
-    remap_deprecated_params(params);
+  remap_deprecated_params(params);
+
+  int max_nproc = native::manager::compute_max_nproc(params);
+  if (max_nproc == 0){
+    params->pretty_print_params(std::cerr);
+    spkt_throw(sprockit::value_error,
+               "computed max nproc=0 from parameters");
   }
+  resize_topology(max_nproc, params, verbose);
 
   //here is where we might need to build supplemental params
   if (params->has_param("congestion_model")){
@@ -188,14 +195,6 @@ process_init_params(sprockit::sim_parameters* params, bool remap_params)
     }
   }
 
-  /**
-    sstkeyword {
-      docstring=The number of ps per single timestamp 'tick'.ENDL
-      This sets the highest resolution different between times.
-      Higher values mean a lower resolution, i.e. 100 ps resolution
-      is lower resolution and 1 ps.;
-    }
-  */
   int timescale = params->get_optional_int_param("timestamp_resolution", 1);
   timestamp::init_stamps(timescale);
 
@@ -203,12 +202,13 @@ process_init_params(sprockit::sim_parameters* params, bool remap_params)
     std::string log_params = params->get_param("logger_params");
     logger::set_user_param(log_params);
   }
+
 }
 
 }
 
 void
-resize_topology(int max_nproc, sprockit::sim_parameters *params)
+resize_topology(int max_nproc, sprockit::sim_parameters *params, bool verbose)
 {
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
   if (top_params->has_param("geometry") || top_params->get_param("name") != "hdtorus"){
@@ -220,7 +220,8 @@ resize_topology(int max_nproc, sprockit::sim_parameters *params)
   gen_cart_grid(max_nproc, x, y, z);
   std::string paramval = sprockit::printf("%d %d %d", x, y, z);
   params->add_param("topology.geometry", paramval);
-  cout0 << sprockit::printf("Using auto-generated geometry [%d %d %d] for nproc=%d\n", x, y, z, max_nproc);
+  if (verbose)
+    cout0 << sprockit::printf("Using auto-generated geometry [%d %d %d] for nproc=%d\n", x, y, z, max_nproc);
 }
 
 void

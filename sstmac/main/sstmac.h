@@ -45,6 +45,9 @@ struct opts {
   ~opts();
 };
 
+std::ostream&
+operator<<(std::ostream &os, const opts &oo);
+
 struct sim_stats {
   double wallTime;
   double simulatedTime;
@@ -64,7 +67,7 @@ print_help(int argc, char **argv);
 
 
 void
-resize_topology(int max_nproc, sprockit::sim_parameters* params);
+resize_topology(int max_nproc, sprockit::sim_parameters* params, bool verbose = true);
 
 void
 map_env_params(sprockit::sim_parameters* params);
@@ -84,14 +87,13 @@ void
 remap_deprecated_params(sprockit::sim_parameters* params);
 
 void
-process_init_params(sprockit::sim_parameters* params, bool remap_params);
+remap_params(sprockit::sim_parameters* params, bool verbose = true);
 
 void
 run(opts& oo,
     sstmac::parallel_runtime* rt,
     sprockit::sim_parameters* params,
-    sim_stats& stats,
-    bool params_only);
+    sim_stats& stats);
 
 void
 try_main(sprockit::sim_parameters* params,

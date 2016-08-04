@@ -257,6 +257,11 @@ class SimulationQueue
   Simulation*
   sendScanPoint(char* bufferPtr, int nparams, int totalSize);
 
+  sprockit::sim_parameters*
+  template_params() {
+    return &template_params_;
+  }
+
   void
   rerun(sprockit::sim_parameters* params, sim_stats& stats);
 
