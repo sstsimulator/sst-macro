@@ -1206,7 +1206,19 @@ on_MPI_Send_init(const dumpi_send_init *prm, uint16_t thread,
                  const dumpi_time *cpu, const dumpi_time *wall,
                  const dumpi_perfinfo *perf, void *uarg)
 {
-  return not_implemented("on_MPI_Send_init");
+  parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
+  if(cb == NULL) {
+    spkt_throw(sprockit::null_error,
+    "MPI_Send_init: null callback pointer");
+  }
+  cb->start_mpi(cpu, wall, perf);
+  MPI_Request req;
+  cb->getmpi()->send_init(NULL, prm->count, cb->get_mpitype(prm->datatype),
+                    cb->get_mpiid(prm->dest), cb->get_mpitag(prm->tag),
+                    cb->get_mpicomm(prm->comm), &req);
+  cb->store_request(prm->request, req);
+  cb->end_mpi(cpu, wall, perf);
+  return 1;
 }
 
 int parsedumpi_callbacks::
@@ -1241,7 +1253,20 @@ on_MPI_Recv_init(const dumpi_recv_init *prm, uint16_t thread,
                  const dumpi_time *cpu, const dumpi_time *wall,
                  const dumpi_perfinfo *perf, void *uarg)
 {
-  spkt_throw(sprockit::unimplemented_error, "on_MPI_Recv_init");
+  parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
+  if(cb == NULL) {
+  spkt_throw_printf(sprockit::null_error,
+  "MPI_Recv_init: null callback pointer");
+  }
+  cb->start_mpi(cpu, wall, perf);
+
+  MPI_Request req;
+  cb->getmpi()->recv_init(NULL, prm->count, cb->get_mpitype(prm->datatype),
+                          cb->get_mpiid(prm->source), cb->get_mpitag(prm->tag),
+                          cb->get_mpicomm(prm->comm), &req);
+  cb->store_request(prm->request, req);
+
+  cb->end_mpi(cpu, wall, perf);
   return 1;
 }
 
@@ -1250,7 +1275,14 @@ on_MPI_Start(const dumpi_start *prm, uint16_t thread,
              const dumpi_time *cpu, const dumpi_time *wall,
              const dumpi_perfinfo *perf, void *uarg)
 {
-  spkt_throw(sprockit::unimplemented_error, "on_MPI_Start");
+  parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
+  if(cb == NULL) {
+    spkt_throw(sprockit::null_error,
+    "MPI_Start: null callback pointer");
+  }
+  cb->start_mpi(cpu, wall, perf);
+  cb->getmpi()->start(cb->get_request_ptr(prm->request));
+  cb->end_mpi(cpu, wall, perf);
   return 1;
 }
 
@@ -1259,7 +1291,15 @@ on_MPI_Startall(const dumpi_startall *prm, uint16_t thread,
                 const dumpi_time *cpu, const dumpi_time *wall,
                 const dumpi_perfinfo *perf, void *uarg)
 {
-  spkt_throw(sprockit::unimplemented_error, "on_MPI_Startall");
+  parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
+  if(cb == NULL) {
+    spkt_throw(sprockit::null_error,
+    "MPI_Startall: null callback pointer");
+  }
+  cb->start_mpi(cpu, wall, perf);
+  MPI_Request* reqs = cb->get_requests(prm->count, prm->requests);
+  cb->getmpi()->startall(prm->count, reqs);
+  cb->end_mpi(cpu, wall, perf);
   return 1;
 }
 
@@ -1268,7 +1308,18 @@ on_MPI_Sendrecv(const dumpi_sendrecv *prm, uint16_t thread,
                 const dumpi_time *cpu, const dumpi_time *wall,
                 const dumpi_perfinfo *perf, void *uarg)
 {
-  spkt_throw(sprockit::unimplemented_error, "on_MPI_Sendrecv");
+  parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
+  if(cb == NULL) {
+    spkt_throw_printf(sprockit::null_error,
+    "MPI_Sendrecv: null callback pointer");
+  }
+  cb->start_mpi(cpu, wall, perf);
+  cb->getmpi()->sendrecv(NULL, prm->sendcount, cb->get_mpitype(prm->sendtype),
+                        cb->get_mpiid(prm->dest), cb->get_mpitag(prm->sendtag),
+                        NULL, prm->recvcount, cb->get_mpitype(prm->recvtype),
+                        cb->get_mpiid(prm->source), cb->get_mpitag(prm->recvtag),
+                        cb->get_mpicomm(prm->comm), MPI_STATUS_IGNORE);
+  cb->end_mpi(cpu, wall, perf);
   return 1;
 }
 

@@ -268,6 +268,9 @@ class mpi_api :
   int
   start(MPI_Request* req);
 
+  int
+  startall(int count, MPI_Request* req);
+
   /* Completion of outstanding requests */
   int
   wait(MPI_Request *request, MPI_Status *status);
@@ -884,6 +887,8 @@ class mpi_api :
   start_scan(const char* name, const void* src, void* dst,
       int count, MPI_Datatype type, MPI_Op op,
        MPI_Comm comm);
+
+  void do_start(MPI_Request req);
 
   void
   add_immediate_collective(collective_op_base* op, MPI_Request* req);
