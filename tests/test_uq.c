@@ -3,8 +3,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-//#define debug_print(...) printf(__VA_ARGS__)
-#define debug_print(...) 
+#define debug_print(...) printf(__VA_ARGS__)
+//#define debug_print(...) 
 
 int main(int argc, char** argv)
 {
@@ -19,7 +19,7 @@ int main(int argc, char** argv)
     "network_bandwidth",
   };
 
-  double inj_bws[] = { 0.1, 0.1 }; int nInj = sizeof(inj_bws) / sizeof(double);
+  double inj_bws[] = { 1.0, 1.0 }; int nInj = sizeof(inj_bws) / sizeof(double);
   double net_bws[] = { 1.0, 1.0 }; int nNet = sizeof(net_bws) / sizeof(double);
   const char* units[] = { "GB/s", "GB/s" };
 

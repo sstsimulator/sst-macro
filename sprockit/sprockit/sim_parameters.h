@@ -163,7 +163,10 @@ class sim_parameters  {
   add_param_override(const std::string& key, int val);
 
   void
-  combine_into(sim_parameters* sp);
+  combine_into(sim_parameters* sp,
+               bool fail_on_existing = false,
+               bool override_existing = true,
+               bool mark_as_read = true);
 
   void
   print_params(std::ostream& os, bool pretty_print, std::list<std::string>& namespaces) const;

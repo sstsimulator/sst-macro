@@ -1134,11 +1134,17 @@ sim_parameters::add_param_override(
 }
 
 void
-sim_parameters::combine_into(sim_parameters* sp)
+sim_parameters::combine_into(sim_parameters* sp,
+                             bool fail_on_existing,
+                             bool override_existing,
+                             bool mark_as_read)
 {
   {key_value_map::iterator it, end = params_.end();
   for (it=params_.begin(); it != end; ++it){
-    sp->add_param_override(it->first, it->second.value);
+    const std::string& key = it->first;
+    const parameter_entry& value = it->second;
+    sp->parse_keyval(key, value.value,
+                 fail_on_existing, override_existing, mark_as_read);
   }}
 
   {std::map<std::string, sim_parameters*>::iterator it, end = subspaces_.end();
@@ -1146,8 +1152,8 @@ sim_parameters::combine_into(sim_parameters* sp)
     std::string name = it->first;
     sim_parameters* my_subspace = it->second;
     sim_parameters* his_subspace = sp->get_optional_namespace(name);
-    my_subspace->combine_into(his_subspace);
-    my_subspace->combine_into(his_subspace);
+    my_subspace->combine_into(his_subspace,
+             fail_on_existing, override_existing, mark_as_read);
   }}
 
 }

@@ -250,7 +250,7 @@ SimulationQueue::clear(Simulation *sim)
 void
 SimulationQueue::run(sprockit::sim_parameters* params, sim_stats& stats)
 {
-  template_params_.combine_into(params);
+  template_params_.combine_into(params, false, false/*no overwrite*/, true);
   sstmac::remap_params(params, false /* not verbose */);
   ::sstmac::run(template_opts_, rt_, params, stats);
 }
@@ -258,6 +258,7 @@ SimulationQueue::run(sprockit::sim_parameters* params, sim_stats& stats)
 Simulation*
 SimulationQueue::fork(sprockit::sim_parameters* params)
 {
+  template_params_.combine_into(params, false, false, true);
   pipe_t pfd;
   if (pipe(pfd) == -1){
     fprintf(stderr, "failed opening pipe\n");
@@ -425,7 +426,7 @@ SimulationQueue::runScanPoint(char* buffer, sim_stats& stats)
   char nparams = *buffer;
   char* bufferPtr = buffer + 1;
   sprockit::sim_parameters params;
-  template_params_.combine_into(&params);
+  template_params_.combine_into(&params, false, false /*no overwrite*/, true);
   for (int i=0; i < nparams; ++i){
     const char* param_name = bufferPtr;
     int name_len = ::strlen(bufferPtr) + 1; //null char
