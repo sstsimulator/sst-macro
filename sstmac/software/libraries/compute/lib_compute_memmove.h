@@ -34,9 +34,6 @@ class lib_compute_memmove :
   virtual void
   unregister_all_libs();
 
-  virtual bool
-  supported() const;
-
   void
   consume_params(sprockit::sim_parameters* params);
 

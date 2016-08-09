@@ -9,6 +9,7 @@
  *  SST/macroscale directory.
  */
 
+#include <sstmac/common/event_callback.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/software/libraries/compute/lib_compute_inst.h>
@@ -34,12 +35,6 @@ lib_compute_inst::lib_compute_inst(software_id sid) :
 {
 }
 
-bool
-lib_compute_inst::supported() const
-{
-  return os_->kernel_supported(ami::COMP_INSTR);
-}
-
 void
 lib_compute_inst::compute_detailed(
   uint64_t flops,
@@ -47,11 +42,11 @@ lib_compute_inst::compute_detailed(
   uint64_t bytes)
 {
   /** Configure the compute request */
-  compute_event* cmsg = new compute_event;
-  cmsg->set_event_value(compute_event::flop, flops);
-  cmsg->set_event_value(compute_event::intop, nintops);
-  cmsg->set_event_value(compute_event::mem_sequential, bytes);
-
+  auto cmsg = new compute_event_impl<basic_instructions_st>;
+  basic_instructions_st& st = cmsg->data();
+  st.flops = flops;
+  st.intops = nintops;
+  st.mem_sequential = bytes;
   compute_inst(cmsg);
   delete cmsg;
 }
@@ -87,13 +82,7 @@ void
 lib_compute_inst::compute_inst(compute_event* cmsg)
 {
   SSTMACBacktrace("Compute Instructions");
-
-  os_->execute_kernel(ami::COMP_INSTR, cmsg);
-
-  debug_printf(sprockit::dbg::compute_intensity,
-    "Node %d: finishing compute %s",
-    int(os_->my_addr()),
-    cmsg->debug_string().c_str());
+  os_->execute_kernel(ami::COMP_INSTR, cmsg, key_category);
 }
 
 }

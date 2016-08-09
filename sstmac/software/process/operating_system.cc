@@ -37,12 +37,14 @@
 #include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/process/compute_scheduler.h>
 #include <sstmac/software/libraries/unblock_event.h>
+#include <sstmac/software/libraries/compute/compute_event.h>
 
 #if SSTMAC_HAVE_UCONTEXT
 #include <sstmac/software/threading/threading_ucontext.h>
 #endif
 
 #include <sstmac/hardware/node/node.h>
+#include <sstmac/hardware/network/network_message.h>
 
 #include <sprockit/errors.h>
 #include <sprockit/statics.h>
@@ -344,12 +346,37 @@ operating_system::construct(sprockit::sim_parameters* params)
 void
 operating_system::sleep(timestamp t)
 {
-  node_->compute(t);
+  sw::key* k = sw::key::construct();
+  sw::unblock_event* ev = new sw::unblock_event(this, k);
+  schedule_delay(t, ev);
+  block(k);
+  delete k;
+}
+
+void
+operating_system::compute(timestamp t)
+{
+  //first thing's first - make sure I have a core to execute on
+  thread_data_t top = threadstack_.top();
+  thread* thr = top.second;
+  //this will block if the thread has no core to run on
+  compute_sched_->reserve_core(thr);
+  sleep(t);
+  compute_sched_->release_core(thr);
+}
+
+
+void
+operating_system::async_kernel(ami::SERVICE_FUNC func,
+                               event *data)
+{
+  node_->execute_kernel(func, data);
 }
 
 void
 operating_system::execute_kernel(ami::COMP_FUNC func,
-                                 event* data)
+                                 event* data,
+                                 key::category cat)
 {
   //first thing's first - make sure I have a core to execute on
   thread_data_t top = threadstack_.top();  
@@ -357,27 +384,27 @@ operating_system::execute_kernel(ami::COMP_FUNC func,
   //this will block if the thread has no core to run on
   compute_sched_->reserve_core(thr);
   //initiate the hardware events
-  node_->execute_kernel(func, data);
+  key* k = new key(cat);
+  callback* cb = new_callback(this, &operating_system::unblock, k);
+  node_->execute_kernel(func, data, cb);
+  block(k);
   compute_sched_->release_core(thr);
+  delete k;
+  //callbacks deleted by core
 }
 
 void
 operating_system::execute_kernel(ami::COMM_FUNC func,
                                  message* data)
 {
-  node_->execute_kernel(func, data);
-}
-
-bool
-operating_system::kernel_supported(ami::COMP_FUNC func) const
-{
-  return node_->kernel_supported(func);
-}
-
-bool
-operating_system::kernel_supported(ami::COMM_FUNC func) const
-{
-  return node_->kernel_supported(func);
+  switch(func){
+  case sstmac::ami::COMM_SEND: {
+    hw::network_message* netmsg = safe_cast(hw::network_message, data);
+    netmsg->set_fromaddr(my_addr_);
+    node_->send_to_nic(netmsg);
+    break;
+  }
+  }
 }
 
 // ------- THREADING functions ----------
@@ -508,18 +535,6 @@ operating_system::print_libs(std::ostream &os) const
     os << it->first << "\n";
   }
 }
-
-#if 0
-void
-operating_system::time_block(timestamp t, key::category cat)
-{
-  key* k = key::construct(cat);
-  unblock_event* ev = new unblock_event(this, k);
-  timestamp unblock_time = eventman_->now() + t;
-  eventman_->schedule(unblock_time, ev);
-  block(k);
-}
-#endif
 
 timestamp
 operating_system::block(key* req)
@@ -949,6 +964,19 @@ operating_system::add_task(const task_id& id)
 {
   task_to_thread_[id] = current_threadid();
   // thread_to_task_[current_threadid()] = id;
+}
+
+void
+operating_system::start_api_call()
+{
+  os_thread_context& ctxt = current_os_thread_context();
+  perf_counter_model* mdl = ctxt.current_thread->perf_ctr_model();
+  compute_event* ev = mdl->get_next_event();
+  os_debug("starting api call with event %s",
+           ev ? ev->to_string().c_str() : "null");
+  if (ev){
+    execute_kernel(ami::COMP_INSTR, ev);
+  }
 }
 
 void

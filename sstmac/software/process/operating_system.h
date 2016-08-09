@@ -110,16 +110,16 @@ class operating_system :
   remote_node(int tid);
 
   void
-  execute_kernel(ami::COMP_FUNC func, event* data);
+  execute_kernel(ami::COMP_FUNC func,
+                 event* data,
+                 key::category cat = key::general);
+
+  void
+  async_kernel(ami::SERVICE_FUNC func,
+               event* data);
 
   void
   execute_kernel(ami::COMM_FUNC func, message* data);
-
-  bool
-  kernel_supported(ami::COMP_FUNC) const;
-
-  bool
-  kernel_supported(ami::COMM_FUNC) const;
 
   static void
   stack_check();
@@ -221,6 +221,9 @@ class operating_system :
   schedule_unblock_now(key* k);
 
   void
+  start_api_call();
+
+  void
   schedule_timeout(timestamp delay, key* k);
 
   void
@@ -250,6 +253,9 @@ class operating_system :
 
   void
   sleep(timestamp t);
+
+  void
+  compute(timestamp t);
 
   void kill_node();
 

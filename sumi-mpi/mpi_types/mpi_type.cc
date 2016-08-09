@@ -167,12 +167,6 @@ mpi_type::init_vector(const std::string &labelit, mpi_type* base,
   size_ = count * block * base->size_;
   int block_extent = block*base->extent();
 
-  if (byte_stride < block_extent){
-    spkt_throw_printf(sprockit::value_error,
-      "vector stride=%d must be at least as big as blocksize=%d",
-     byte_stride, block*base->extent());
-  }
-
   //if the byte_stride matches the blocksize
   //and the underlying type is contiguous
   //then this type is again contiguous

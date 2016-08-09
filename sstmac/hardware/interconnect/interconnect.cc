@@ -172,7 +172,6 @@ macro_interconnect::init_factory_params(sprockit::sim_parameters* params)
     delete netlink_builder;
   }
 
-
   copy_map(nodes, nodes_);
   copy_map(nics, nics_);
   copy_map(netlinks, netlinks_);

@@ -162,29 +162,16 @@ class handler_event_queue_entry :
 
 };
 
-class generic_event :
+class callback :
   public event_queue_entry
 {
-
- public:
-  virtual std::string
-  to_string() const {
-    return "generic event";
-  }
-
-  virtual ~generic_event() { }
-
-  virtual void
-  execute() = 0;
-
  protected:
-  generic_event(event_loc_id local) :
+  callback(event_loc_id local) :
     event_queue_entry(local, local)
   {
   }
-
-
 };
+
 
 } // end of namespace sstmac
 

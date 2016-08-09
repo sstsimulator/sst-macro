@@ -181,16 +181,11 @@ class packet_flow_cut_through_arbitrator :
     bandwidth_epoch* next;
 
     bandwidth_epoch() :
-      next(0) {
-      counter_ = counter++;
+      next(nullptr) {
     }
     
     ~bandwidth_epoch(){
     }
-
-    static int counter;
-
-    int counter_;
 
     void truncate_after(ticks_t delta_t);
 

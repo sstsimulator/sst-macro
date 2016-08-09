@@ -353,7 +353,6 @@ int USER_MAIN(int argc, char** argv)
        }
      }
    }
-   printf("publishing %d results\n", nresults);
    sstmac::SimulationQueue::publishResults(resultsArr, nresults);
    num_done = 0;
  }

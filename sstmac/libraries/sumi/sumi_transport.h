@@ -16,6 +16,7 @@ class sumi_transport :
   public sstmac::sumi_api,
   public transport
 {
+  ImplementAPI(sumi_transport)
  public:  
   sumi_transport(sstmac::sw::software_id sid) :
     sumi_api("sumi", sid)

@@ -3,7 +3,6 @@
 #include <sstmac/skeleton.h>
 #include <sstmac/compute.h>
 #include <sstmac/replacements/mpi.h>
-#include <sstmac/common/messages/value_payload.h>
 #include <sprockit/sim_parameters.h>
 #include <math.h>
 

@@ -49,9 +49,6 @@ class lib_compute_inst :
     uint32_t intops_per_loop,
     uint32_t bytes_per_loop);
 
-  virtual bool
-  supported() const;
-
   virtual void
   consume_params(sprockit::sim_parameters* params);
 

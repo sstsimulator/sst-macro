@@ -65,6 +65,27 @@ library::incoming_event(event* ev)
      to_string().c_str());
 }
 
+void
+blocking_library::wait_event(event *ev, key::category cat)
+{
+  key* k = key::construct(cat);
+  blocked_events_[ev] = k;
+  os_->block(k);
+  delete k;
+}
+
+void
+blocking_library::incoming_event(event *ev)
+{
+  key* k = blocked_events_[ev];
+  if (!k){
+    spkt_throw(sprockit::value_error,
+               "blocking_library::incoming_event: got invalid event");
+  }
+  blocked_events_.erase(ev);
+  os_->unblock(k);
+}
+
 
 }
 } //end namespace

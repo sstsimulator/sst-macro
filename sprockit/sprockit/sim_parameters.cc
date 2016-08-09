@@ -267,14 +267,14 @@ sim_parameters::copy_optional_param(const std::string &oldname, const std::strin
 void
 sim_parameters::add_param_override(const std::string &key, double val, const char* units)
 {
-  add_param_override(key, printf("%20.12f%s", val, units));
+  add_param_override(key, printf("%20.8f%s", val, units));
 }
 
 
 void
 sim_parameters::add_param_override(const std::string &key, double val)
 {
-  add_param_override(key, printf("%20.12f", val));
+  add_param_override(key, printf("%20.8f", val));
 }
 
 void
@@ -981,6 +981,31 @@ sim_parameters::throw_key_error(const std::string& key) const
           key.c_str(), namespace_.c_str());
 }
 
+bool
+sim_parameters::get_scoped_param(std::string& inout,
+                          const std::string& key)
+{
+  key_value_map::iterator it = params_.find(key);
+  if (it == params_.end()){
+    return false;
+  }
+  parameter_entry& entry = it->second;
+  entry.read = true;
+  inout = entry.value;
+  return true;
+}
+
+bool
+sim_parameters::get_param(std::string& inout, const std::string& key)
+{
+  bool found = get_scoped_param(inout, key);
+  if (!found && parent_){
+    return parent_->get_param(inout, key);
+  } else {
+    return found;
+  }
+}
+
 std::string
 sim_parameters::get_param(const std::string& key, bool throw_on_error)
 {
@@ -988,33 +1013,24 @@ sim_parameters::get_param(const std::string& key, bool throw_on_error)
     "sim_parameters: getting key %s\n",
     key.c_str());
 
-  std::string match = get_scoped_param(key, false); //do not throw
-  if (match.size() != 0)
-      return match;
-
-  if (parent_){
-    std::string val = parent_->get_param(key, false);
-    if (val.size()) return val;
-  }
-
-  if (throw_on_error){
+  std::string match;
+  bool found = get_param(match, key);
+  if (!found && throw_on_error){
     throw_key_error(key);
   }
 
-  return "";
+  return match;
 }
 
 std::string
 sim_parameters::get_scoped_param(const std::string& key, bool throw_on_error)
 {
-  key_value_map::iterator it = params_.find(key);
-  if (it == params_.end()){
-    if (throw_on_error) throw_key_error(key);
-    else return "";
+  std::string ret;
+  bool found = get_scoped_param(ret, key);
+  if (!found && throw_on_error){
+    throw_key_error(key);
   }
-  parameter_entry& entry = it->second;
-  entry.read = true;
-  return entry.value;
+  return ret;
 }
 
 sim_parameters*
@@ -1118,11 +1134,17 @@ sim_parameters::add_param_override(
 }
 
 void
-sim_parameters::combine_into(sim_parameters* sp)
+sim_parameters::combine_into(sim_parameters* sp,
+                             bool fail_on_existing,
+                             bool override_existing,
+                             bool mark_as_read)
 {
   {key_value_map::iterator it, end = params_.end();
   for (it=params_.begin(); it != end; ++it){
-    sp->add_param_override(it->first, it->second.value);
+    const std::string& key = it->first;
+    const parameter_entry& value = it->second;
+    sp->parse_keyval(key, value.value,
+                 fail_on_existing, override_existing, mark_as_read);
   }}
 
   {std::map<std::string, sim_parameters*>::iterator it, end = subspaces_.end();
@@ -1130,8 +1152,8 @@ sim_parameters::combine_into(sim_parameters* sp)
     std::string name = it->first;
     sim_parameters* my_subspace = it->second;
     sim_parameters* his_subspace = sp->get_optional_namespace(name);
-    my_subspace->combine_into(his_subspace);
-    my_subspace->combine_into(his_subspace);
+    my_subspace->combine_into(his_subspace,
+             fail_on_existing, override_existing, mark_as_read);
   }}
 
 }

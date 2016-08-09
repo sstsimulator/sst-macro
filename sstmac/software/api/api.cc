@@ -10,9 +10,11 @@
  */
 
 #include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/process/thread.h>
 #include <sstmac/software/api/api.h>
 #include <sstmac/common/messages/sst_message.h>
 #include <sstmac/common/sstmac_env.h>
+#include <sstmac/common/thread_lock.h>
 #include <sprockit/sim_parameters.h>
 
 ImplementFactory(sstmac::sw::api)
@@ -20,7 +22,24 @@ ImplementFactory(sstmac::sw::api)
 namespace sstmac {
 namespace sw {
 
-bool api::hostcompute_ = false;
+static thread_lock the_api_lock;
+
+void
+api_lock() {
+  the_api_lock.lock();
+}
+
+void
+api_unlock() {
+  the_api_lock.unlock();
+}
+
+api*
+static_get_api(const char *name)
+{
+  api* a = operating_system::current_thread()->_get_api(name);
+  return a;
+}
 
 void
 api::init_factory_params(sprockit::sim_parameters* params)

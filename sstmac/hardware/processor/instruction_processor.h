@@ -27,8 +27,7 @@ class instruction_processor :
  public:
   instruction_processor(memory_model* mem, node* nd) :
     simple_processor(mem, nd),
-    noise_model_(nullptr),
-    negligible_time_sec_(0)
+    noise_model_(nullptr)
   {
   }
 
@@ -46,7 +45,7 @@ class instruction_processor :
   finalize_init();
 
   virtual void
-  do_compute(sw::compute_event* cev);
+  compute(event* ev, callback* cb);
 
  protected:
   void
@@ -56,7 +55,7 @@ class instruction_processor :
   set_flop_distribution(double stdev);
 
   double
-  instruction_time(sw::compute_event* msg);
+  instruction_time(sw::basic_compute_event* msg);
 
  protected:
   double tflop_;
@@ -66,7 +65,6 @@ class instruction_processor :
 
   double max_single_mem_bw_;
 
-  double negligible_time_sec_;
   double negligible_bytes_;
 
   double parallelism_;

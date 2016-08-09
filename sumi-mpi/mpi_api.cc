@@ -24,19 +24,15 @@
 #include <sumi-mpi/mpi_request.h>
 
 #include <sstmac/hardware/node/node.h>
-//#include <sstmac/hardware/topology/structured_topology.h>
 
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/process/api.h>
 #include <sstmac/software/process/thread.h>
 #include <sstmac/software/launch/job_launcher.h>
 
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
 #include <sumi-mpi/mpi_comm/mpi_comm_factory.h>
 #include <sumi-mpi/mpi_types.h>
-
-//#include <sstmac/software/launch/hostname_allocation.h>
 
 #include <sprockit/errors.h>
 #include <sprockit/statics.h>
@@ -45,9 +41,6 @@
 #include <sprockit/sim_parameters.h>
 #include <sprockit/malloc.h>
 #include <sprockit/keyword_registration.h>
-
-ImplementAPI(sumi, mpi_api, "mpi")
-
 
 DeclareDebugSlot(mpi_check)
 RegisterDebugSlot(mpi_check,
@@ -59,7 +52,7 @@ sprockit::StaticNamespaceRegister queue_ns_reg("queue");
 
 namespace sumi {
 
-SpktRegister("mpi", sstmac::sw::api, mpi_api, "Create bindings for MPI runtime");
+RegisterAPI("mpi", mpi_api);
 
 key::category mpi_api::default_key_category("MPI");
 key::category mpi_api::poll_key_category("MPI Poll");
@@ -183,7 +176,7 @@ mpi_api::do_init(int* argc, char*** argv)
                "MPI_Init cannot be called twice");
   }
 
-  SSTMACBacktrace("MPI_Init");
+  start_mpi_call("MPI_Init");
 
   sumi_transport::init();
 
@@ -236,7 +229,7 @@ mpi_api::check_init()
 int
 mpi_api::do_finalize()
 {  
-  SSTMACBacktrace("MPI_Finalize");
+  start_mpi_call("MPI_Finalize");
   barrier(MPI_COMM_WORLD);
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Finalize()");
 

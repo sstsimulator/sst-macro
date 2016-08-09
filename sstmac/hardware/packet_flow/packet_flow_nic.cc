@@ -123,7 +123,7 @@ packet_flow_nic::do_send(network_message* payload)
 {
   nic_debug("packet flow: sending %s", payload->to_string().c_str());
   int vn = 0; //we only ever use one virtual network
-  schedule_delay(inj_lat_, new_event(packetizer_, &packetizer::start, vn, payload));
+  schedule_delay(inj_lat_, new_callback(packetizer_, &packetizer::start, vn, payload));
 }
 
 void

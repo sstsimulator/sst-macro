@@ -37,16 +37,12 @@ class simple_processor :
   finalize_init();
 
   void
-  do_compute(sw::compute_event* ev);
+  compute(event* ev, callback* cb);
 
   virtual std::string
   to_string() const {
     return "simple_processor";
   }
-
- protected:
-  void
-  do_compute(timed_interface* msg, long thread_id);
 
 };
 

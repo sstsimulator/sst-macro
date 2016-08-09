@@ -16,13 +16,15 @@ packet_flow_sender::packet_flow_sender(
   const timestamp& credit_lat)
   : send_lat_(send_lat),
     credit_lat_(credit_lat),
-    acker_(0),
+    acker_(nullptr),
+    stat_collector_(nullptr),
     update_vc_(true)
 {
 }
 
 packet_flow_sender::packet_flow_sender() :
-  acker_(0),
+  acker_(nullptr),
+  stat_collector_(nullptr),
   update_vc_(true)
 {
 }

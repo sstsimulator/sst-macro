@@ -38,9 +38,6 @@ class lib_sleep : public library
   void
   sleep(timestamp time);
 
-  virtual bool
-  supported() const;
-
 };
 
 }

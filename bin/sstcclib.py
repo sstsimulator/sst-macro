@@ -7,11 +7,14 @@ sstmac_libs = [
 '-lsstmac',
 ]
 
+
+
 from sstccvars import sstmac_default_ldflags, sstmac_extra_ldflags, sstmac_cppflags
 from sstccvars import prefix, exec_prefix, includedir, cc, cxx, cxxflags, cflags
 from sstccvars import includedir
 from sstccvars import sst_core
 from sstccvars import so_flags
+
 
 
 sstmac_ldflags = []
@@ -68,6 +71,14 @@ if os.environ.has_key("SSTMAC_VERBOSE"):
     verbose = verbose or flag
 
 def run(typ, extralibs="", include_main=True, make_library=False, redefine_symbols=True):
+    import os
+    if sys.argv[1] == "--version" or sys.argv[1] == "-V":
+      import inspect, os
+      print os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+      cmd = "%s %s" % (cxx, sys.argv[1])
+      os.system(cmd)
+      sys.exit()
+
     compiler_flags = ""
     compiler = ""
     cmd = ""

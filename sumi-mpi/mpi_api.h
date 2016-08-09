@@ -12,8 +12,6 @@
 #ifndef SSTMAC_SOFTWARE_LIBRARIES_MPI_MPIAPI_H_INCLUDED
 #define SSTMAC_SOFTWARE_LIBRARIES_MPI_MPIAPI_H_INCLUDED
 
-#include <sstmac/common/messages/payload.h>
-
 #include <sstmac/software/libraries/library.h>
 #include <sstmac/software/api/api.h>
 
@@ -41,6 +39,10 @@
 
 #include <sstmac/libraries/sumi/sumi_transport.h>
 
+#define start_mpi_call(fxn) \
+  SSTMACBacktrace(fxn); \
+  os_->start_api_call()
+
 namespace sumi {
 
 using sstmac::sw::key;
@@ -50,9 +52,8 @@ using sstmac::sw::operating_system;
 class mpi_api :
   public sumi_transport
 {
-  /// Nested classes to take care of persistent communications.
- public:
-  class persistent;
+  ImplementAPI(mpi_api)
+
  private:
   class persistent_send;
   class persistent_recv;
@@ -62,7 +63,6 @@ class mpi_api :
   static key::category poll_key_category;
   static key::category memcpy_key_category;
 
-  /// Build a new mpiapi.
   mpi_api(sstmac::sw::software_id sid);
 
   virtual void
@@ -267,6 +267,9 @@ class mpi_api :
 
   int
   start(MPI_Request* req);
+
+  int
+  startall(int count, MPI_Request* req);
 
   /* Completion of outstanding requests */
   int
@@ -884,6 +887,8 @@ class mpi_api :
   start_scan(const char* name, const void* src, void* dst,
       int count, MPI_Datatype type, MPI_Op op,
        MPI_Comm comm);
+
+  void do_start(MPI_Request req);
 
   void
   add_immediate_collective(collective_op_base* op, MPI_Request* req);

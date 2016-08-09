@@ -161,7 +161,10 @@ class ftq_calendar :
 
   virtual ~ftq_calendar();
 
-  void collect(int event_typeid, int aid, int tid, long ticks_begin,
+  void collect(int event_typeid,
+               int aid,
+               int tid,
+               long ticks_begin,
                long num_ticks);
 
   app_ftq_calendar* get_calendar(int aid) const;

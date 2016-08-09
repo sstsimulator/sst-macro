@@ -22,7 +22,6 @@
 #include <sstmac/software/libraries/compute/lib_compute_time.h>
 
 #include <sstmac/common/event_handler.h>
-#include <sstmac/common/messages/payload.h>
 
 #include <sprockit/factories/factory.h>
 

@@ -2,10 +2,9 @@
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
-#include <sstmac/software/libraries/compute/sstmac_compute.h>
 #include <sstmac/libraries/pthread/sstmac_pthread.h>
 #include <sstmac/skeleton.h>
-
+#include <sstmac/compute.h>
 
 using namespace sstmac;
 using namespace sstmac::sw;

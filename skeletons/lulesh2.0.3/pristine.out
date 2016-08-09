@@ -1,0 +1,54 @@
+./lulesh2.0 \
+  --debug="" \
+  --configfile="" \
+
+Running problem size 10^3 per domain until completion
+Num processors: 1
+Total number of elements: 1000
+
+To run other sizes, use -s <integer>.
+To run a fixed number of iterations, use -i <integer>.
+To run a more or less balanced region set, use -b <integer>.
+To change the relative costs of regions, use -c <integer>.
+To print out progress, use -p
+To write an output file for VisIt, use -v
+See help (-h) for more options
+
+cycle = 1, time = 6.042222e-05, dt=6.042222e-05
+cycle = 2, time = 1.329289e-04, dt=7.250667e-05
+cycle = 3, time = 1.577814e-04, dt=2.485252e-05
+cycle = 4, time = 1.785352e-04, dt=2.075378e-05
+cycle = 5, time = 1.970364e-04, dt=1.850120e-05
+cycle = 6, time = 2.142156e-04, dt=1.717920e-05
+cycle = 7, time = 2.305486e-04, dt=1.633299e-05
+cycle = 8, time = 2.463245e-04, dt=1.577590e-05
+cycle = 9, time = 2.617391e-04, dt=1.541457e-05
+cycle = 10, time = 2.769363e-04, dt=1.519719e-05
+cycle = 11, time = 2.951729e-04, dt=1.823663e-05
+cycle = 12, time = 3.157630e-04, dt=2.059010e-05
+cycle = 13, time = 3.352273e-04, dt=1.946426e-05
+cycle = 14, time = 3.535703e-04, dt=1.834305e-05
+cycle = 15, time = 3.707910e-04, dt=1.722074e-05
+cycle = 16, time = 3.872315e-04, dt=1.644046e-05
+cycle = 17, time = 4.031820e-04, dt=1.595050e-05
+cycle = 18, time = 4.188919e-04, dt=1.570987e-05
+cycle = 19, time = 4.345993e-04, dt=1.570739e-05
+cycle = 20, time = 4.503067e-04, dt=1.570739e-05
+Run completed:  
+   Problem size        =  10 
+   MPI tasks           =  1 
+   Iteration count     =  20 
+   Final Origin Energy = 1.622358e+05 
+   Testing Plane 0 of Energy Array on rank 0:
+        MaxAbsDiff   = 1.091394e-11
+        TotalAbsDiff = 1.337284e-11
+        MaxRelDiff   = 2.479668e-13
+
+
+Elapsed time         =       0.00 (s)
+Grind time (us/z/c)  =          0 (per dom)  (         0 overall)
+FOM                  =        inf (z/s)
+
+Estimated total runtime of           0.00000000 seconds
+SSTMAC   repo:   6c16596a3ed5e98f162d9aee78f4f97709705f19
+SST/macro ran for       0.0324 seconds

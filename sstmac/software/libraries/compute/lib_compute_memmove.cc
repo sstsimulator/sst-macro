@@ -93,12 +93,6 @@ lib_compute_memmove::consume_params(sprockit::sim_parameters* params)
   access_width_bytes_ = params->get_optional_int_param("lib_compute_access_width", 64) / 8;
 }
 
-bool
-lib_compute_memmove::supported() const
-{
-  return os_->kernel_supported(ami::COMP_INSTR);
-}
-
 }
 } //end of namespace sstmac
 

@@ -59,7 +59,6 @@ class sumi_api :
   public sstmac::sw::api,
   public sstmac::sw::process_manager
 {
-
  public:
   sumi_api(const char* name, sstmac::sw::software_id sid);
 

@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #define debug_print(...) printf(__VA_ARGS__)
+//#define debug_print(...) 
 
 int main(int argc, char** argv)
 {
@@ -17,12 +18,16 @@ int main(int argc, char** argv)
     "injection_bandwidth", 
     "network_bandwidth",
   };
-  double** param_values = allocate_values(njobs, nparams);
-  double** results = allocate_results(njobs, nresults);
 
   double inj_bws[] = { 1.0, 1.0 }; int nInj = sizeof(inj_bws) / sizeof(double);
   double net_bws[] = { 1.0, 1.0 }; int nNet = sizeof(net_bws) / sizeof(double);
   const char* units[] = { "GB/s", "GB/s" };
+
+  int worker_id;
+  void* queue = sstmac_uq_init(argc, argv, &worker_id);
+
+  double** param_values = allocate_values(queue, njobs, nparams);
+  double** results = allocate_results(queue, njobs, nresults);
 
   int job = 0;
   int i,j;
@@ -33,8 +38,6 @@ int main(int argc, char** argv)
     }
   }
 
-  int worker_id;
-  void* queue = sstmac_uq_init(argc, argv, &worker_id);
   int max_nthread = 1;
   sstmac_uq_run_units(queue,
     njobs, nparams, nresults, max_nthread,

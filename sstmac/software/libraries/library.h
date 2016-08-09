@@ -19,6 +19,7 @@
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/software/libraries/library_fwd.h>
 #include <sprockit/sim_parameters_fwd.h>
+#include <map>
 
 
 namespace sstmac {
@@ -79,16 +80,6 @@ class library  {
   void
   register_lib(library* lib);
 
-  /**
-   * This is usually convenient to define to check if the node was set up correctly to support
-   * what this library wants to do. This function is not currently a strict part of an interface.
-   * @return true if the hardware supports this libraries functions
-   */
-  virtual bool
-  supported() const {
-    return true;
-  }
-
  protected:
   operating_system* os_;
   key::category key_cat_;
@@ -96,6 +87,30 @@ class library  {
 
  private:
   std::string libname_;
+
+};
+
+class blocking_library :
+  public library
+{
+ protected:
+  blocking_library(const char* prefix, software_id sid) :
+    library(prefix, sid)
+  {
+  }
+
+  blocking_library(const std::string& libname, software_id sid) :
+    library(libname, sid)
+  {
+  }
+
+  void wait_event(event* ev, key::category = key::general);
+
+  virtual void
+  incoming_event(event *ev);
+
+ private:
+  std::map<event*,key*> blocked_events_;
 
 };
 
