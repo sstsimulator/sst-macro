@@ -148,8 +148,12 @@ mpi_message::ptr
 mpi_queue::send_message(int count, MPI_Datatype type,
                 int dst_rank, int tag, mpi_comm* comm)
 {
-
   mpi_type* typeobj = api_->type_from_id(type);
+  if (typeobj->packed_size() < 0){
+    spkt_throw_printf(sprockit::value_error,
+      "MPI_Datatype %s has negative size %ld",
+      api_->type_str(type).c_str(), typeobj->packed_size());
+  }
   long bytes = count * int64_t(typeobj->packed_size());
   mpi_protocol* prot = protocol(bytes);
   mpi_queue_debug("starting send count=%d, type=%s, dest=%d, tag=%d, comm=%s, prot=%s",

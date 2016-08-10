@@ -245,6 +245,7 @@ mpi_api::allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   wait_collective(op);
   delete op;
   return MPI_SUCCESS;
+
 }
 
 int

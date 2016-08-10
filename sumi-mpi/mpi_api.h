@@ -43,6 +43,7 @@
   SSTMACBacktrace(fxn); \
   os_->start_api_call()
 
+
 namespace sumi {
 
 using sstmac::sw::key;
@@ -966,6 +967,7 @@ sstmac_mpi();
   mpi_debug(worldcomm_->rank(), flags, __VA_ARGS__)
 
 }
+
 
 #endif
 

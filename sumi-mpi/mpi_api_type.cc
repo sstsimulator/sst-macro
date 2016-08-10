@@ -91,8 +91,6 @@ struct ldcomplex {
 void
 mpi_api::commit_builtin_types()
 {
-  static const int builtin_sizes[] = {1, 2, 4, 6, 8, 12, 16, 20, 32, 48, 64};
-  static const int num_builtins = sizeof(builtin_sizes) / sizeof(int);
 
   sstmac::sw::api_lock();
 
@@ -115,6 +113,11 @@ mpi_api::commit_builtin_types()
   if (need_init) typeObj->init_op(MPI_MAXLOC, &ReduceOp<MaxLocPair,datatype>::op); \
   if (need_init) typeObj->init_op(MPI_MINLOC, &ReduceOp<MinLocPair,datatype>::op); \
   commit_builtin_type(typeObj, id);
+
+#define precommit_builtin(size) \
+  if (need_init) mpi_type::builtins[size].init_no_ops("builtin-" #size, size); \
+  allocate_type_id(&mpi_type::builtins[size])
+
 
   noop_precommit_type(0, mpi_type::mpi_null, MPI_NULL);
 
@@ -147,6 +150,8 @@ mpi_api::commit_builtin_types()
   int_precommit_type(long long, mpi_type::mpi_long_long_int, MPI_LONG_LONG_INT);
 
   int_precommit_type(unsigned long, mpi_type::mpi_unsigned_long, MPI_UNSIGNED_LONG);
+
+  int_precommit_type(char, mpi_type::mpi_packed, MPI_PACKED);
 
   //fortran nonsense
   noop_precommit_type(2*sizeof(float), mpi_type::mpi_complex, MPI_COMPLEX);
@@ -183,14 +188,21 @@ mpi_api::commit_builtin_types()
   index_precommit_type(short_int_t, mpi_type::mpi_short_int, MPI_SHORT_INT);
   index_precommit_type(long_double_int_t, mpi_type::mpi_long_double_int, MPI_LONG_DOUBLE_INT);
 
-  for (int i=0; i < num_builtins; ++i){
-    int size = builtin_sizes[i];
-    allocate_type_id(&mpi_type::builtins[size]);
-  }
+  precommit_builtin(1);
+  precommit_builtin(2);
+  precommit_builtin(4);
+  precommit_builtin(6);
+  precommit_builtin(8);
+  precommit_builtin(12);
+  precommit_builtin(16);
+  precommit_builtin(20);
+  precommit_builtin(32);
+  precommit_builtin(48);
+  precommit_builtin(64);
+
 
   sstmac::sw::api_unlock();
 
-  //precommit_type(mpi_type::mpi_packed, MPI_PACKED);
 }
 
 int

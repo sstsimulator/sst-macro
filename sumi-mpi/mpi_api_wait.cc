@@ -41,7 +41,6 @@ mpi_api::do_wait(MPI_Request *request, MPI_Status *status)
     delete reqPtr;
     *request = MPI_REQUEST_NULL;
   }
-
   return MPI_SUCCESS;
 }
 
@@ -181,9 +180,9 @@ mpi_api::waitsome(int incount, MPI_Request array_of_requests[],
       }
     }
   }
-
   *outcount = numComplete;
   return MPI_SUCCESS;
 }
 
 }
+
