@@ -109,17 +109,73 @@ class operating_system :
   static node_id
   remote_node(int tid);
 
+  /**
+   * @brief execute Execute a compute function.
+   * This function MUST begin on a user-space thread
+   * since it may block and context switch until completion.
+   * To invoke compute operations for the main DES thread,
+   * use execute_kernel
+   * @param func  The function to perform
+   * @param data  Event carrying all the data describing the compute
+   * @param cat   An optional category labeling the type of
+   *              operation
+   */
+  void
+  execute(ami::COMP_FUNC, event* data,
+          key::category cat = key::general);
+
+  /**
+   * @brief execute Execute a communication function.
+   * This function MUST begin on a user-space thread
+   * since it may block and context switch until completion.
+   * To invoke compute operations for the main DES thread,
+   * use execute_kernel
+   * @param data  Event carrying all the data describing the compute
+   */
+  void
+  execute(ami::COMM_FUNC func,
+          message* data){
+    execute_kernel(func, data);
+  }
+
+  /**
+   * @brief execute Execute a compute function.
+   * This function takes place in "kernel" land
+   * and will never block and context switch.
+   * This function can therefore run on the main DES thread
+   * @param func  The function to perform
+   * @param data  Event carrying all the data describing the compute
+   */
+  void
+  execute_kernel(ami::COMM_FUNC func,
+                 message* data);
+
+  /**
+   * @brief execute Execute a communication function.
+   * This function takes place in "kernel" land
+   * and will never block and context switch.
+   * This function can therefore run on the main DES thread
+   * @param func  The function to perform
+   * @param data  Event carrying all the data describing the compute
+   * @param cb    The callback to invoke when the kernel is complete
+   */
   void
   execute_kernel(ami::COMP_FUNC func,
                  event* data,
-                 key::category cat = key::general);
-
+                 callback* cb);
+  /**
+   * @brief execute Enqueue an operation to perform
+   * This function takes place in "kernel" land
+   * and will never block and context switch.
+   * This function can therefore run on the main DES thread.
+   * The function must run asynchronously and immediately return
+   * with no virtual time advancing.
+   * @param func  The function to perform
+   * @param data  Event carrying all the data describing the compute
+   */
   void
   async_kernel(ami::SERVICE_FUNC func,
                event* data);
-
-  void
-  execute_kernel(ami::COMM_FUNC func, message* data);
 
   static void
   stack_check();
@@ -154,19 +210,8 @@ class operating_system :
   void
   set_event_parent(event_scheduler* man);
 
-  node_id my_addr() const;
-
-  long
-  task_threadid(const task_id& id) const;
-
-  bool
-  is_task_here(const task_id &id) const;
-
   void
   add_application(app* a);
-
-  void
-  add_task(const task_id& tid);
 
   void
   start_app(app* a);
@@ -218,19 +263,10 @@ class operating_system :
   }
 
   void
-  schedule_unblock_now(key* k);
-
-  void
   start_api_call();
 
   void
   schedule_timeout(timestamp delay, key* k);
-
-  void
-  add_blocker(key* req);
-
-  void
-  remove_blocker(key* req);
 
   void
   free_thread_stack(void* stack);

@@ -76,7 +76,7 @@ simple_node::set_event_manager(event_manager* m)
 #endif
 
 void
-simple_node::execute_kernel(ami::COMP_FUNC func,
+simple_node::execute(ami::COMP_FUNC func,
                             event* data,
                             callback* cb)
 {

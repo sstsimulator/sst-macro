@@ -62,7 +62,7 @@ MakeDebugSlot(dropped_events)
 
 #define os_debug(...) \
   debug_printf(sprockit::dbg::os, "OS on Node %d: %s", \
-    int(my_addr()), sprockit::printf(__VA_ARGS__).c_str())
+    int(addr()), sprockit::printf(__VA_ARGS__).c_str())
 
 RegisterNamespaces("call_graph", "ftq");
 
@@ -370,13 +370,21 @@ void
 operating_system::async_kernel(ami::SERVICE_FUNC func,
                                event *data)
 {
-  node_->execute_kernel(func, data);
+  node_->execute(func, data);
 }
 
 void
-operating_system::execute_kernel(ami::COMP_FUNC func,
-                                 event* data,
-                                 key::category cat)
+operating_system::execute_kernel(ami::COMP_FUNC func, event *data,
+                                 callback* cb)
+{
+  spkt_throw(sprockit::unimplemented_error,
+             "operating_system::execute_kernel(COMP_FUNC)");
+}
+
+void
+operating_system::execute(ami::COMP_FUNC func,
+                           event* data,
+                           key::category cat)
 {
   //first thing's first - make sure I have a core to execute on
   thread_data_t top = threadstack_.top();  
@@ -386,7 +394,7 @@ operating_system::execute_kernel(ami::COMP_FUNC func,
   //initiate the hardware events
   key* k = new key(cat);
   callback* cb = new_callback(this, &operating_system::unblock, k);
-  node_->execute_kernel(func, data, cb);
+  node_->execute(func, data, cb);
   block(k);
   compute_sched_->release_core(thr);
   delete k;
@@ -407,7 +415,6 @@ operating_system::execute_kernel(ami::COMM_FUNC func,
   }
 }
 
-// ------- THREADING functions ----------
 void
 operating_system::simulation_done()
 {
@@ -584,7 +591,7 @@ operating_system::block(key* req)
     event_trace_->collect(
       req->event_typeid(),
       req->name(),
-      my_addr(),
+      addr(),
       ctxt.current_thread->thread_id(),
       ctxt.current_aid, ctxt.current_tid,
       before_ticks, delta_ticks);
@@ -600,27 +607,6 @@ void
 operating_system::schedule_timeout(timestamp delay, key* k)
 {
   send_delayed_self_event_queue(delay, new timeout_event(this, k));
-}
-
-void
-operating_system::add_blocker(key* k)
-{
-  k->block_thread(current_context());
-#if SSTMAC_SANITY_CHECK
-  if (k->still_blocked()){
-    spkt_throw(sprockit::value_error, "operating_system::add_block: key is already blocked");
-  }
-  valid_keys_.insert(k);
-#endif
-}
-
-void
-operating_system::remove_blocker(key* k)
-{
-#if SSTMAC_SANITY_CHECK
-  valid_keys_.erase(k);
-#endif
-  k->clear();
 }
 
 timestamp
@@ -727,46 +713,6 @@ operating_system::complete_thread(bool succ)
   spkt_throw(sprockit::illformed_error,
             "operating_system::complete: thread switched in again "
             "after calling complete and relinquishing stack.");
-}
-
-// ---------------------
-
-node_id
-operating_system::my_addr() const
-{
-  return node_->addr();
-}
-
-bool
-operating_system::is_task_here(const task_id &id) const
-{
-  spkt_unordered_map<task_id, long>::const_iterator it = task_to_thread_.find(id);
-  return it != task_to_thread_.end();
-
-}
-
-long
-operating_system::task_threadid(const task_id &id) const
-{
-  if (id == task_id() || task_to_thread_.size() == 0) {
-    return thread::main_thread;
-  }
-
-  spkt_unordered_map<task_id, long>::const_iterator it = task_to_thread_.find(id);
-  if (it == task_to_thread_.end()) {
-    spkt_unordered_map<task_id, long>::const_iterator it, end =
-      task_to_thread_.end();
-
-    for (it = task_to_thread_.begin(); it != end; it++) {
-      cerrn << "we have task " << int(it->first) << "\n";
-    }
-
-    spkt_throw_printf(sprockit::value_error,
-                     "invalid task id %d passed to operating system on node %ld",
-                     int(id),
-                     long(my_addr()));
-  }
-  return it->second;
 }
 
 void
@@ -960,13 +906,6 @@ operating_system::add_application(app* a)
 }
 
 void
-operating_system::add_task(const task_id& id)
-{
-  task_to_thread_[id] = current_threadid();
-  // thread_to_task_[current_threadid()] = id;
-}
-
-void
 operating_system::start_api_call()
 {
   os_thread_context& ctxt = current_os_thread_context();
@@ -975,7 +914,7 @@ operating_system::start_api_call()
   os_debug("starting api call with event %s",
            ev ? ev->to_string().c_str() : "null");
   if (ev){
-    execute_kernel(ami::COMP_INSTR, ev);
+    execute(ami::COMP_INSTR, ev);
   }
 }
 

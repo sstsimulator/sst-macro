@@ -29,7 +29,8 @@ While the heap and stack are easy to provide for each virtual MPI rank,
 there is no easy way to provide a unique global variable segment to each MPI rank.
 The current solution involves thread-specific storage and the use of special C++ variables (more below).
 
-\section{Applications and User-space Threads}\label{sec:appThreads}
+\section{Applications and User-space Threads}
+\label{sec:appThreads}
 
 In a standard discrete event simulation (DES), you have only components and events.
 Components send events to other components, which may in turn create and send more events.
@@ -91,7 +92,8 @@ When the ACK arrives back from the NIC, the ACK signals to MPI that the operatio
 The ACK is handled by a \inlinecode{service} object (which is the SST-specific implementation of an MPI server). 
 A \inlinecode{service} is a special type of object, that we will discuss in more detail below.
 
-\subsection{Thread-specific storage}\label{subsec:threadStorage}
+\subsection{Thread-specific storage}
+\label{subsec:threadStorage}
 Let us look at the capture of the \inlinecode{MPI_Send} call. 
 First, a macro redefines the call to avoid symbol clashes if using an MPI compiler (both virtual and real MPI cannot share symbols).
 MPI uses global function calls to execute, meaning MPI has to operate on global variables.
@@ -108,7 +110,41 @@ To access a specific API, a special helper template function \inlinecode{get_api
 Thus, instead of calling a global function \inlinecode{MPI_Send},
 SST/macro redirects to a member function \inlinecode{send} on an \inlinecode{mpi_api} object that is specific to a virtual MPI rank.
 
-\section{Libraries}\label{sec:libraries}
+\begin{table}
+\def\arraystretch{1.5}
+\begin{tabular}{>{\raggedright}p{2cm} >{\raggedright}p{3cm} >{\raggedright}p{3cm} >{\raggedright}p{3cm} >{\raggedright\arraybackslash}p{3cm}}
+\hline
+ & OS & Node & API & Service \\
+\hline
+Runs on Thread & 
+  Both user-space and main DES thread &
+  Only main DES thread (user-space with rare exceptions for optimization) &
+%  Only main DES thread &
+  Only user-space thread &
+  Only main DES thread \\
+How Advances Time & 
+  Both blocking and scheduling events, depending on context &
+  Scheduling events to other components &
+%  Scheduling events to other components &
+  Blocking or unblocking &
+  Scheduling events to other components \\
+Receives Events Via &
+  Function calls from API/Service or from Node via \inlinecode{handle_event} function &
+  Function calls from OS, receives scheduled events via the \inlinecode{handle} function &
+%  Function calls from Node, receives scheduled events via \inlinecode{handle} function &
+  Does not usually receive events - only blocks or unblocks &
+  OS forwards messages to \inlinecode{incoming_event} function \\
+Sends Events Via &
+  Makes function calls and schedules events to Node &
+  Makes function calls and schedules events to NIC, Memory &
+%  Schedules events to Node, Interconnect &
+  Does not usually send events - only blocks or unblocks &
+  Makes function calls and schedules events to OS, unblocks APIs
+\end{tabular}
+\end{table}
+
+\section{Libraries}
+\label{sec:libraries}
 The creating and handling of software events is managed through \inlinecode{library} objects.
 Each \inlinecode{node} has an \inlinecode{operating_system} member variable that will manage software events on a virtual compute node.
 Each library object is stored in a lookup table in the operating system,
@@ -149,8 +185,7 @@ void incoming_event(event* ev){...}
 Generally speaking, event notifications will arrive from the NIC (new messages, ACKs), memory system (data arrived), processor (computation complete), etc.
 These hardware events must be routed to the correct software library for processing.
 
-The operating system provides an abstract interface (independent of the exact implementation of threading library)
-through \inlinecode{key} objects.
+The operating system provides an abstract interface (independent of the exact implementation of threading library) through \inlinecode{key} objects.
 Each blocking call:
 
 \begin{CppCode}
@@ -173,8 +208,12 @@ operating_system::handle_event(event* ev) {
   lib->incoming_event(ev);
 }
 \end{CppCode}
+In order to route events to the correct library, the operating system maintains a string lookup table of \inlinecode{library} objects.
+All events associated with that library must be constructed with the correct string label, 
+accessible through the event accessor function \inlinecode{lib_name}.
 
 \subsection{API}
+\label{subsec:softwareAPI}
 The SST/macro definition of API was alluded to in \ref{subsec:threadStorage}.
 The base \inlinecode{api} class inherits from \inlinecode{library}.
 All API code must execute on a user-space thread.
@@ -201,6 +240,7 @@ Other prominent examples include the various computation APIs such as \inlinecod
 
 
 \subsection{Service}
+\label{subsec:service}
 In contrast to an API that always executes on a user-space, services always execute on the main event thread.
 They therefore never block (or unblock).
 Services do not perform compute-heavy operations and therefore, in a simulator approximation, do not consume resources. 

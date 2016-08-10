@@ -46,9 +46,9 @@ class simple_node :
   init_factory_params(sprockit::sim_parameters* params);
 
   virtual void
-  execute_kernel(ami::COMP_FUNC func,
-                 event* data,
-                 callback* cb);
+  execute(ami::COMP_FUNC func,
+         event* data,
+         callback* cb);
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   virtual void

@@ -151,19 +151,19 @@ class node :
    @param cb    The event to execute when kernel is complete
   */
   virtual void
-  execute_kernel(ami::COMP_FUNC func,
-                 event* data,
-                 callback* cb) = 0;
+  execute(ami::COMP_FUNC func,
+           event* data,
+           callback* cb) = 0;
 
   /**
-   * @brief execute_kernel Asynchronously execute a kernel on some
+   * @brief execute Asynchronously execute a kernel on some
    * service associated with the node. This generally enqueues an operation
    * to be performed - not necessarily executing it immediately.
    * @param func
    * @param data
    */
   virtual void
-  execute_kernel(ami::SERVICE_FUNC func,
+  execute(ami::SERVICE_FUNC func,
                  event* data);
 
   virtual void

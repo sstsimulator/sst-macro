@@ -98,7 +98,7 @@ sumi_api::transport_send(
   tmsg->set_needs_ack(needs_ack);
   tmsg->set_src(rank_);
   tmsg->set_dest(dst);
-  sw::library::os_->execute_kernel(ami::COMM_SEND, tmsg);
+  sw::library::os_->execute(ami::COMM_SEND, tmsg);
 }
 
 sumi::message_ptr
