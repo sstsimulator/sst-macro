@@ -117,6 +117,8 @@ parallel_runtime::init_partition_params(sprockit::sim_parameters *params)
       spkt_throw(sprockit::input_error, "must give actual topology other than \"simple\"");
     }
   }
+  //out with the old, in with the new
+  if (part_) delete part_;
   part_ = partition_factory::get_optional_param("partition", SSTMAC_DEFAULT_PARTITION_STRING, params, this);
 #endif
 }
@@ -136,12 +138,13 @@ parallel_runtime::init_runtime_params(sprockit::sim_parameters *params)
 }
 
 parallel_runtime::parallel_runtime()
+  : part_(nullptr)
 {
 }
 
 parallel_runtime::~parallel_runtime()
 {
-  delete part_;
+  if (part_) delete part_;
 }
 
 void

@@ -112,9 +112,10 @@ allocate_results(void* queue, int nrows, int ncols)
 }
 
 uq_param_t**
-allocate_params(int nrows, int ncols)
+allocate_params(void* queue, int nrows, int ncols)
 {
-  return tmpl_allocate_values<uq_param_t>(nrows, ncols);
+  SimulationQueue* q = (SimulationQueue*) queue;
+  return q->allocateParamStructs(nrows, ncols);
 }
 
 void
@@ -193,7 +194,7 @@ sstmac_uq_run_units(void* queue,
   const char* param_units[],
   double* results[], uq_spawn_type_t ty)
 {
-  uq_param_t** params = allocate_params(njobs, nparams);
+  uq_param_t** params = allocate_params(queue, njobs, nparams);
   for (int j=0; j < njobs; ++j){
     for (int p=0; p < nparams; ++p){
       params[j][p].value = param_values[j][p];
@@ -203,7 +204,6 @@ sstmac_uq_run_units(void* queue,
   }
   sstmac_uq_run(queue, njobs, nparams, nresults, max_nthread,
     param_names, params, results, ty);
-  free_params(params);
 }
 
 static Simulation*
@@ -211,6 +211,7 @@ send_scan_point(SimulationQueue* q,
   sprockit::sim_parameters& params,
   char* bufferPtr,
   int nparams,
+  double* resultPtr,
   int nresults,
   const char* param_names[],
   uq_param_t* param_vals)
@@ -234,7 +235,7 @@ send_scan_point(SimulationQueue* q,
     total_size += name_len + val_size;
   }
 
-  Simulation* sim = q->sendScanPoint(bufferPtr, total_size, nresults);
+  Simulation* sim = q->sendScanPoint(total_size, bufferPtr, nresults, resultPtr);
   return sim;
 }
 
@@ -279,11 +280,11 @@ sstmac_uq_run(void* queue,
     }
 
     if (spawn_ty == Fork){
-      sims[num_running++] = q->fork(params);
+      sims[num_running++] = q->fork(params, nresults, results[j]);
     }
     else if (spawn_ty == MPIScan){
       sims[num_running++] = send_scan_point(q, params, bufferPtr,
-                                nparams, nresults, param_names, param_values[j]);
+                                nparams, results[j], nresults, param_names, param_values[j]);
       bufferPtr += paramBufferSize;
     } else {
       spkt_throw_printf(sprockit::value_error,

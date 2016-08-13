@@ -36,7 +36,9 @@ SpktRegister("metis", partition, metis_partition);
 SpktRegister("topology", partition, topology_partition);
 SpktRegister("serial", partition, serial_partition);
 
-partition::partition(parallel_runtime* rt) : rt_(rt)
+partition::partition(parallel_runtime* rt) : 
+  rt_(rt),
+  local_switches_(nullptr)
 {
   nproc_ = rt_->nproc();
   me_ = rt_->me();
@@ -45,6 +47,7 @@ partition::partition(parallel_runtime* rt) : rt_(rt)
 
 partition::~partition()
 {
+  if (local_switches_) delete[] local_switches_;
 }
 
 void

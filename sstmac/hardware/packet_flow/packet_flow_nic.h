@@ -92,11 +92,13 @@ class packet_flow_netlink :
  public:
   packet_flow_netlink(sprockit::factory_type* interconn) :
     netlink(interconn),
-    block_(0),
+    block_(nullptr),
     tile_rotater_(0),
     inited_(false)
   {
   }
+
+  virtual ~packet_flow_netlink();
 
   std::string
   to_string() const {

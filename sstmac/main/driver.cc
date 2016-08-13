@@ -4,6 +4,7 @@
 #include <sstmac/backends/native/manager.h>
 #include <sprockit/errors.h>
 #include <sprockit/fileio.h>
+#include <sprockit/statics.h>
 
 #include <iostream>
 #include <stdio.h>
@@ -23,7 +24,9 @@ MakeDebugSlot(driver)
 
 namespace sstmac {
 
-double* SimulationQueue::results_ = 0;
+static sprockit::need_delete_statics<SimulationQueue> del_statics;
+
+double* SimulationQueue::results_ = nullptr;
 int SimulationQueue::num_results_ = 0;
 
 static int results_tag = 42;
@@ -40,12 +43,18 @@ Simulation::setParameters(sprockit::sim_parameters *params)
   params->combine_into(&params_);
 }
 
+Simulation::~Simulation()
+{
+  if (allocated_results_)
+    delete[] results_;
+}
+
 void
 Simulation::waitFork()
 {
   if (complete_){
-    return;
     driver_debug("forked process %d already complete", pid_);
+    return;
   }
 
   int status;
@@ -64,7 +73,10 @@ Simulation::finalize()
          "failed reading pipe from simulation");
   }
   if (stats_.numResults){
-    results_ = new double[stats_.numResults];
+    if (!results_){
+      allocated_results_ = true;
+      results_ = new double[stats_.numResults];
+    }
     bytes = read(readPipe(), results_, stats_.numResults*sizeof(double));
     driver_debug("finalize nresults=%d", stats_.numResults);
   }
@@ -99,12 +111,19 @@ SimulationQueue::SimulationQueue() :
  sims_(nullptr),
  tmp_results_(nullptr),
  tmp_params_(nullptr),
+ tmp_structs_(nullptr),
  tmp_buf_size_(0),
  built_up_(false),
  nsims_(0),
  result_buf_size_(0,0),
  param_buf_size_(0,0)
 {
+}
+
+void
+SimulationQueue::delete_statics()
+{
+  if (results_) delete[] results_;
 }
 
 
@@ -125,16 +144,37 @@ template <class T>
 void
 tmpl_free_values(T** vals)
 {
-  delete[] vals[0];
+  T* valarray = vals[0];
+  delete[] valarray;
   delete[] vals;
 }
 
 SimulationQueue::~SimulationQueue()
 {
-  if (sims_) delete[] sims_;
-  if (tmp_buffer_) delete[] tmp_buffer_;
+  if (sims_)        delete[] sims_;
+  if (tmp_buffer_)  delete[] tmp_buffer_;
   if (tmp_results_) tmpl_free_values(tmp_results_);
-  if (tmp_params_) tmpl_free_values(tmp_params_);
+  if (tmp_params_)  tmpl_free_values(tmp_params_);
+  if (tmp_structs_) tmpl_free_values(tmp_structs_);
+}
+
+uq_param_t**
+SimulationQueue::allocateParamStructs(int njobs, int nparams)
+{
+  int& my_njobs = struct_buf_size_.first;
+  int& my_nparams = struct_buf_size_.second;
+  if (tmp_structs_){
+    if (my_njobs >= njobs && my_nparams >= nparams){
+      return tmp_structs_;
+    } else {
+      tmpl_free_values(tmp_structs_);
+      tmp_structs_ = nullptr;
+    }
+  }
+  tmp_structs_ = tmpl_allocate_values<uq_param_t>(njobs, nparams);
+  my_njobs = njobs;
+  my_nparams = nparams;
+  return tmp_structs_;
 }
 
 double**
@@ -147,7 +187,7 @@ SimulationQueue::allocateResults(int njobs, int nresults)
       return tmp_results_;
     } else {
       tmpl_free_values(tmp_results_);
-      results_ = nullptr;
+      tmp_results_ = nullptr;
     }
   }
   tmp_results_ = tmpl_allocate_values<double>(njobs, nresults);
@@ -225,11 +265,22 @@ SimulationQueue::teardown()
 }
 
 
-void
-SimulationQueue::publishResults(double* results, int nresults)
+double*
+SimulationQueue::allocateResults(int nresults)
 {
-  results_ = results;
+  if (results_){
+    if (num_results_ >= nresults){
+      //already good
+      num_results_ = nresults;
+      return results_;
+    }
+    delete [] results_;
+    results_ = nullptr;
+  }
+
+  results_ = new double[nresults];
   num_results_ = nresults;
+  return results_;
 }
 
 void
@@ -256,7 +307,7 @@ SimulationQueue::run(sprockit::sim_parameters* params, sim_stats& stats)
 }
 
 Simulation*
-SimulationQueue::fork(sprockit::sim_parameters* params)
+SimulationQueue::fork(sprockit::sim_parameters* params, int nresults, double* resultPtr)
 {
   template_params_.combine_into(params, false, false, true);
   pipe_t pfd;
@@ -281,6 +332,7 @@ SimulationQueue::fork(sprockit::sim_parameters* params)
   } else {
     close(pfd[WRITE]);
     Simulation* sim = new Simulation;
+    sim->setResults(resultPtr, nresults);
     driver_debug("forked process %d", pid);
     sim->setPid(pid);
     sim->setParameters(params);
@@ -372,12 +424,16 @@ SimulationQueue::busyLoopMPI()
 }
 
 Simulation*
-SimulationQueue::sendScanPoint(char *bufferPtr, int bufferSize, int nresults)
+SimulationQueue::sendScanPoint(int bufferSize, char *bufferPtr, int nresults, double* resultPtr)
 {
 #if SSTMAC_MPI_DRIVER
   driver_debug("sending scan point with buffer size=%d nresults=%d to worker %d",
     bufferSize, nresults, next_worker_);
-  Simulation* sim = new Simulation(nresults);
+  
+
+  Simulation* sim = new Simulation;
+  if (resultPtr) sim->setResults(resultPtr, nresults);
+  else sim->allocateResults(nresults);
 
   if (runJobsOnMaster() && next_worker_ == me_)
     setNextWorker();

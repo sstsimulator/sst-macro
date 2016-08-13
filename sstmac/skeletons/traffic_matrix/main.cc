@@ -276,8 +276,8 @@ int USER_MAIN(int argc, char** argv)
     rank_to_send_partner_index[send_partners[i]] = i;
   }
 
-  sumi::public_buffer send_buf = tport->allocate_public_buffer(window_bytes);
-  sumi::public_buffer recv_buf = tport->allocate_public_buffer(window_bytes);
+  sumi::public_buffer send_buf;// = tport->allocate_public_buffer(window_bytes);
+  sumi::public_buffer recv_buf;// = tport->allocate_public_buffer(window_bytes);
   int chunk_size = window_bytes / mixing;
   for (int i=0; i < npartners; ++i){
     send_chunks[i] = send_buf;
@@ -335,7 +335,7 @@ int USER_MAIN(int argc, char** argv)
 
   int nresults = nproc*num_iterations*npartners;
   if (num_done == nproc){
-    double* resultsArr = new double[nresults];
+    double* resultsArr = sstmac::SimulationQueue::allocateResults(nresults);
     int result_idx = 0;
     for (int p=0; p < nproc; ++p){
       for (int i=0; i < num_iterations; ++i){
@@ -353,7 +353,7 @@ int USER_MAIN(int argc, char** argv)
        }
      }
    }
-   sstmac::SimulationQueue::publishResults(resultsArr, nresults);
+   sstmac::SimulationQueue::publishResults();
    num_done = 0;
  }
  tport->finalize();

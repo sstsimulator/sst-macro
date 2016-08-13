@@ -123,6 +123,7 @@ finalize(parallel_runtime* rt)
   sstmac::sw::operating_system::simulation_done();
   sprockit::statics::finish();
   sprockit::sprockit_finalize_cxx_heap();
+  delete rt;
 }
 
 void

@@ -244,6 +244,11 @@ packet_flow_netlink::init()
   block_->configure_basic_ports(num_inject_ + num_eject_);
 }
 
+packet_flow_netlink::~packet_flow_netlink()
+{
+  if (block_) delete block_;
+}
+
 }
 } // end of namespace sstmac.
 

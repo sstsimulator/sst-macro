@@ -38,6 +38,15 @@ packet_flow_tiled_switch::init_factory_params(sprockit::sim_parameters *params)
 
 packet_flow_tiled_switch::~packet_flow_tiled_switch()
 {
+  for (packet_flow_demuxer* dm : row_input_demuxers_){
+    if (dm) delete dm;
+  }
+  for (packet_flow_crossbar* xbar : xbar_tiles_){
+    if (xbar) delete xbar;
+  }
+  for (packet_flow_muxer* mux : col_output_muxers_){
+    if (mux) delete mux;
+  }
 }
 
 int

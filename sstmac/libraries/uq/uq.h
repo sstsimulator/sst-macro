@@ -1,3 +1,5 @@
+#ifndef sstmac_libraries_uq_uq_h
+#define sstmac_libraries_uq_uq_h
 
 #ifdef __cplusplus
 extern "C" {
@@ -142,3 +144,4 @@ void sstmac_uq_finalize(void* queue);
 }
 #endif
 
+#endif

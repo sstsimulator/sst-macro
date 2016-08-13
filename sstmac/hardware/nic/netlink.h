@@ -15,6 +15,8 @@ class netlink :
   public event_subscheduler
 {
  public:
+  virtual ~netlink(){}
+  
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
 

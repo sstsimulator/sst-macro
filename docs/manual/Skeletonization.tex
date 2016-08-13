@@ -8,7 +8,7 @@
 There are three parts to successfully taking a C++ code and turning it into a running application.
 \begin{itemize}
 \item Redirected linkage: Rather than linking to MPI, pThreads, or other parallel libraries (or even calling \inlinecode{hostname}), these functions must be redirected to \sstmacro rather than actually executing.
-If you compiled with the \inlineshell{--enable-replacement-headers} flag, you get all redirected linkage for free by using
+You get all redirected linkage for free by using
 the SST compiler wrappers \inlineshell{sst++} and \inlineshell{sstcc} installed in the \inlineshell{bin} folder.
 \item Skeletonization: While \sstmacro can run in emulation mode, executing your entire application exactly, this is not scalable.  To simulate at scale (i.e. 100K or more MPI ranks) you must strip down or ``skeletonize'' the application to the minimal amount of computation.  The energy and time cost of expensive compute kernels are then simulated via models rather than explicitly executed. 
 
