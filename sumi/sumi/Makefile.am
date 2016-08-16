@@ -55,7 +55,6 @@ library_include_HEADERS = \
  partner_timeout.h \
  ping.h \
  rdma.h \
- rdma_interface.h \
  rdma_mdata.h \
  serialization.h \
  thread.h \

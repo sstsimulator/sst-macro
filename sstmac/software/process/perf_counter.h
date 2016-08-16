@@ -17,6 +17,8 @@ class perf_counter_model :
  public sprockit::factory_type
 {
  public:
+  virtual ~perf_counter_model(){}
+
   virtual compute_event*
   get_next_event() = 0;
 

@@ -3,8 +3,8 @@
 
 #include <sprockit/util.h>
 #include <sprockit/ptr_type.h>
-#include <sumi/rdma_interface.h>
 #include <sumi/serialization.h>
+#include <sumi/config.h>
 
 START_SERIALIZATION_NAMESPACE
 template <>

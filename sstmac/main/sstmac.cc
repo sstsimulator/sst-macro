@@ -179,11 +179,12 @@ init_params(parallel_runtime* rt, opts& oo, sprockit::sim_parameters* params, bo
   //set the global parameters object
   sprockit::sprockit_init_cxx_heap(params);
 
+#if !SSTMAC_INTEGRATED_SST_CORE
   std::string rank = sprockit::printf("%d", rt->me());
   std::string nproc = sprockit::printf("%d", rt->nproc());
   params->add_param_override("sst_rank", rank);
   params->add_param_override("sst_nproc", nproc);
-
+#endif
 }
 
 #if !SSTMAC_INTEGRATED_SST_CORE
@@ -295,9 +296,11 @@ try_main(sprockit::sim_parameters* params,
   bool parallel = rt && rt->nproc() > 1;
   sstmac::init_params(rt, oo, params, parallel);
 
+#if !SSTMAC_INTEGRATED_SST_CORE
   if (rt->me() == 0){
     cerr0 << std::string(argv[0]) << "\n" << oo << std::endl;
   }
+#endif
 
   //do some cleanup and processing of params
   sstmac::remap_params(params);

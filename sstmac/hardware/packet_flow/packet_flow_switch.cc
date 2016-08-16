@@ -52,12 +52,14 @@ vec_set_ev_parent(std::vector<T*>& themap, event_scheduler* m)
   }
 }
 
+#if !SSTMAC_INTEGRATED_SST_CORE
 packet_flow_abstract_switch::packet_flow_abstract_switch() :
   buf_stats_(nullptr),
   xbar_stats_(nullptr),
   link_arbitrator_template(nullptr)
 {
 }
+#endif
 
 
 packet_flow_abstract_switch::~packet_flow_abstract_switch()
