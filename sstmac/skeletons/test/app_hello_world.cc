@@ -9,7 +9,7 @@
  *  SST/macroscale directory.
  */
 
-#define sstmac_app_name "hello_world"
+#define sstmac_app_name hello_world
 
 #include <sstmac/skeleton.h>
 #include <sstmac/compute.h>

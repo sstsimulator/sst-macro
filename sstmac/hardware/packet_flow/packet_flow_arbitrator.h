@@ -131,6 +131,8 @@ class packet_flow_simple_arbitrator :
 class packet_flow_cut_through_arbitrator :
   public packet_flow_bandwidth_arbitrator
 {
+  typedef uint64_t ticks_t;
+  typedef double bw_t;
 
  public:
   packet_flow_cut_through_arbitrator();
@@ -141,7 +143,7 @@ class packet_flow_cut_through_arbitrator :
   arbitrate(packet_stats_st& st);
 
   virtual void
-  set_outgoing_bw(double bw);
+  set_outgoing_bw(bw_t bw);
 
   int
   bytes_sending(timestamp now) const;
@@ -167,38 +169,34 @@ class packet_flow_cut_through_arbitrator :
   init_noise_model(noise_model* noise);
 
  private:
-  void clean_up(double now);
+  void clean_up(ticks_t now);
 
   void
   do_arbitrate(packet_stats_st& st);
 
   struct bandwidth_epoch {
-    double bw_available;
-    double start;
-    double length;
+    bw_t bw_available; //bandwidth is bytes per timestamp tick
+    ticks_t start;
+    ticks_t length;
     bandwidth_epoch* next;
 
     bandwidth_epoch() :
-      next(0) {
-      counter_ = counter++;
-      //printf("allocating epoch %d\n", counter_);
+      next(nullptr) {
     }
     
     ~bandwidth_epoch(){
-      //printf("deleting epoch %d\n", counter_);
     }
 
-    static int counter;
+    void truncate_after(ticks_t delta_t);
 
-    int counter_;
-
-    void truncate_after(double delta_t);
-
-    void split(double delta_t);
+    void split(ticks_t delta_t);
   };
 
   bandwidth_epoch* head_;
 
+  /** Convert from bytes/sec to bytes/tick */
+  double bw_tick_to_sec_conversion_;
+  double bw_sec_to_tick_conversion_;
 
 };
 

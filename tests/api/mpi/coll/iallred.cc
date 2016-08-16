@@ -4,7 +4,7 @@
 #include "mpitest.h"
 
 namespace iallred {
-/* Since MPICH2 is currently the only NBC implementation in existence, just use
+/** Since MPICH2 is currently the only NBC implementation in existence, just use
  * this quick-and-dirty #ifdef to decide whether to test the nonblocking
  * collectives.  Eventually we can add a configure option or configure test, or
  * the MPI-3 standard will be released and these can be gated on a MPI_VERSION

@@ -229,7 +229,10 @@ class NormalDistribution
   double Y_;
 
  public:
-  NormalDistribution(double mean, double stdev, double maxZ = 2.0, rngint_t seed = 0);
+  NormalDistribution(double mean, double stdev,
+                     double maxZ = 2.0, rngint_t seed = 0);
+
+  ~NormalDistribution();
 
   double value();
 
@@ -353,6 +356,8 @@ class SimpleCombo : public UniformInteger
 class Table256 : public UniformInteger
 {
  public:
+  ~Table256();
+
   void
   vec_reseed(const std::vector<rngint_t> &seeds);
 

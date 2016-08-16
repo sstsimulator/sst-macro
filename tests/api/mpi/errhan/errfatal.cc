@@ -1,14 +1,11 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2004 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 
 namespace errfatal {
 
-/* FIXME: This behavior of this test is implementation specific. */
+/** FIXME: This behavior of this test is implementation specific. */
 
 static int verbose = 0;
 
@@ -35,7 +32,7 @@ int errfatal(int argc, char** argv) {
 	    printf("Calling Error Handler\n");
 	MPI_Comm_call_errhandler(MPI_COMM_WORLD, MY_ERROR_CODE);
 
-	/* We should not get here, because the default error handler
+	/** We should not get here, because the default error handler
 	   is ERRORS_ARE_FATAL.  This makes sure that the correct error 
 	   handler is called and that no failure occured (such as 
 	   a SEGV) in Comm_call_errhandler on the default 

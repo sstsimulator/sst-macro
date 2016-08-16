@@ -1,15 +1,11 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include "mpitest.h"
 
 namespace greq1 {
-/*
+/**
 static char MTEST_Descrip[] = "Simple test of generalized requests";
 */
 
@@ -17,7 +13,7 @@ static char MTEST_Descrip[] = "Simple test of generalized requests";
 int query_fn( void *extra_state, MPI_Status *status );
 int query_fn( void *extra_state, MPI_Status *status )
 {
-    /* Set a default status */
+    /** Set a default status */
     status->MPI_SOURCE = MPI_UNDEFINED;
     status->MPI_TAG    = MPI_UNDEFINED;
     MPI_Status_set_cancelled( status, 0 );
@@ -29,7 +25,7 @@ int free_fn( void *extra_state )
 {
     int *b = (int *)extra_state;
     if (b) *b = *b - 1;
-    /* The value returned by the free function is the error code
+    /** The value returned by the free function is the error code
        returned by the wait/test function */
     return 0;
 }
@@ -39,7 +35,7 @@ int cancel_fn( void *extra_state, int complete )
     return 0;
 }
 
-/*
+/**
  * This is a very simple test of generalized requests.  Normally, the
  * MPI_Grequest_complete function would be called from another routine,
  * often running in a separate thread.  This simple code allows us to

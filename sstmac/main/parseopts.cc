@@ -20,7 +20,7 @@ activate_debugs(const std::string& debug_list)
   }
 }
 
-static std::ostream&
+std::ostream&
 operator<<(std::ostream &os, const opts &oo)
 {
   if (oo.help) {
@@ -177,14 +177,6 @@ parse_opts(int argc, char **argv, opts &oo)
   /** double negative, sorry about that */
   oo.print_walltime = !no_wall_time;
 
-  cerr0 << argv[0] << " \\\n" << oo;
-  if (paramlist.size()) {
-    for (std::list<std::pair<std::string, std::string> >::iterator i =
-           paramlist.begin(); i != paramlist.end(); i++) {
-      cerr0 << " \\\n  --param \"" << i->first << "=" << i->second << "\"";
-    }
-  }
-  cerr0 << "\n";
 
   return PARSE_OPT_SUCCESS;
 }

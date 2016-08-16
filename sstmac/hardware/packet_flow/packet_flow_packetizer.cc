@@ -36,9 +36,21 @@ SpktRegister("cut_through | null", packetizer, packet_flow_cut_through_packetize
 SpktRegister("simple", packetizer, packet_flow_simple_packetizer);
 
 packet_flow_nic_packetizer::packet_flow_nic_packetizer() :
- inj_buffer_(0),
- ej_buffer_(0)
+ inj_buffer_(nullptr),
+ ej_buffer_(nullptr),
+ stat_collector_(nullptr),
+ buf_stats_(nullptr),
+ pkt_allocator_(nullptr)
 {
+}
+
+packet_flow_nic_packetizer::~packet_flow_nic_packetizer()
+{
+  if (inj_buffer_) delete inj_buffer_;
+  if (ej_buffer_) delete ej_buffer_;
+  if (stat_collector_) delete stat_collector_;
+  if (buf_stats_) delete buf_stats_;
+  if (pkt_allocator_) delete pkt_allocator_;
 }
 
 void
@@ -96,15 +108,6 @@ void
 packet_flow_nic_packetizer::set_acker(event_handler *handler)
 {
   inj_buffer_->set_acker(handler);
-}
-
-//
-// Goodbye.
-//
-packet_flow_nic_packetizer::~packet_flow_nic_packetizer() throw ()
-{
-  if (inj_buffer_) delete inj_buffer_;
-  if (ej_buffer_) delete ej_buffer_;
 }
 
 void
@@ -192,7 +195,7 @@ packet_flow_cut_through_packetizer::recv_packet(packet_flow_payload *pkt)
     "packet %s scheduled to arrive at packetizer after delay of t=%12.6es",
      pkt->to_string().c_str(), delay.sec());
   send_delayed_self_event_queue(delay,
-    new_event(this, &packetizer::packetArrived, vn, pkt));
+    new_callback(this, &packetizer::packetArrived, vn, (packet*)pkt));
 }
 
 }

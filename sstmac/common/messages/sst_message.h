@@ -15,14 +15,9 @@
 
 #include <sstmac/common/serializable.h>
 #include <sstmac/common/node_address.h>
-
 #include <sprockit/metadata_bits.h>
-
 #include <sstmac/common/sst_event.h>
-#include <sstmac/common/event_callback_fwd.h>
-#include <sstmac/common/event_handler_fwd.h>
-#include <sstmac/software/process/operating_system_fwd.h>
-#include <sstmac/software/process/key_fwd.h>
+
 
 namespace sstmac {
 

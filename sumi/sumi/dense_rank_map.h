@@ -2,7 +2,7 @@
 #define sumi_api_DENSE_RANK_MAP_H
 
 #include <set>
-#include <sumi/domain_fwd.h>
+#include <sumi/communicator_fwd.h>
 #include <sumi/thread_safe_set.h>
 
 namespace sumi {
@@ -26,12 +26,12 @@ class dense_rank_map {
 
   dense_rank_map();
 
-  dense_rank_map(const thread_safe_set<int>& failed, domain* dom = 0);
+  dense_rank_map(const thread_safe_set<int>& failed, communicator* dom = 0);
 
   ~dense_rank_map();
 
   void
-  init(const thread_safe_set<int>& failed, domain* dom = 0);
+  init(const thread_safe_set<int>& failed, communicator* dom = 0);
 
  protected:
   static const int tree_cutoff = 4;

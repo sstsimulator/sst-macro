@@ -15,6 +15,8 @@ class netlink :
   public event_subscheduler
 {
  public:
+  virtual ~netlink(){}
+  
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
 
@@ -28,10 +30,9 @@ class netlink :
     return tile_offset;
   }
 
-  void
-  init_param1(sprockit::factory_type*){}
-
  protected:
+  netlink(sprockit::factory_type* ty){}
+
   int num_eject_;
   int num_inject_;
   netlink_id id_;

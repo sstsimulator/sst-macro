@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,7 +8,7 @@
 namespace subarray_pack {
 static int verbose = 0;
 
-/* tests */
+/** tests */
 int subarray_1d_c_test1(void);
 int subarray_1d_fortran_test1(void);
 int subarray_2d_c_test1(void);
@@ -20,7 +17,7 @@ int subarray_2d_c_test2(void);
 int subarray_2d_fortran_test1(void);
 int subarray_4d_fortran_test1(void);
 
-/* helper functions */
+/** helper functions */
 static int parse_args(int argc, char **argv);
 static int pack_and_unpack(char *typebuf,
 			   int count,
@@ -31,14 +28,14 @@ int subarray_pack(int argc, char **argv)
 {
     int err, errs = 0;
 
-    MPI_Init(&argc, &argv); /* MPI-1.2 doesn't allow for MPI_Init(0,0) */
+    MPI_Init(&argc, &argv); /** MPI-1.2 doesn't allow for MPI_Init(0,0) */
     parse_args(argc, argv);
 
-    /* To improve reporting of problems about operations, we
+    /** To improve reporting of problems about operations, we
        change the error handler to errors return */
     MPI_Comm_set_errhandler( MPI_COMM_WORLD, MPI_ERRORS_RETURN );
 
-    /* perform some tests */
+    /** perform some tests */
     err = subarray_1d_c_test1();
     if (err && verbose) fprintf(stderr,
 				"%d errors in 1d subarray c test 1.\n", err);
@@ -76,7 +73,7 @@ int subarray_pack(int argc, char **argv)
 				"%d errors in 4d subarray fortran test 1.\n", err);
     errs += err;
 
-    /* print message and exit */
+    /** print message and exit */
     if (errs) {
 	fprintf(stderr, "Found %d errors\n", errs);
     }
@@ -87,7 +84,7 @@ int subarray_pack(int argc, char **argv)
     return 0;
 }
 
-/* subarray_1d_c_test1()
+/** subarray_1d_c_test1()
  *
  * Returns the number of errors encountered.
  */
@@ -101,8 +98,8 @@ int subarray_1d_c_test1(void)
 
     int i, err, errs = 0, sizeoftype;
 
-    /* set up type */
-    err = MPI_Type_create_subarray(1, /* dims */
+    /** set up type */
+    err = MPI_Type_create_subarray(1, /** dims */
 				   array_size,
 				   array_subsize,
 				   array_start,
@@ -143,7 +140,7 @@ int subarray_1d_c_test1(void)
 		goodval = 3;
 		break;
 	    default:
-		goodval = 0; /* pack_and_unpack() zeros before unpacking */
+		goodval = 0; /** pack_and_unpack() zeros before unpacking */
 		break;
 	}
 	if (array[i] != goodval) {
@@ -157,7 +154,7 @@ int subarray_1d_c_test1(void)
     return errs;
 }
 
-/* subarray_1d_fortran_test1()
+/** subarray_1d_fortran_test1()
  *
  * Returns the number of errors encountered.
  */
@@ -171,8 +168,8 @@ int subarray_1d_fortran_test1(void)
 
     int i, err, errs = 0, sizeoftype;
 
-    /* set up type */
-    err = MPI_Type_create_subarray(1, /* dims */
+    /** set up type */
+    err = MPI_Type_create_subarray(1, /** dims */
 				   array_size,
 				   array_subsize,
 				   array_start,
@@ -213,7 +210,7 @@ int subarray_1d_fortran_test1(void)
 		goodval = 3;
 		break;
 	    default:
-		goodval = 0; /* pack_and_unpack() zeros before unpacking */
+		goodval = 0; /** pack_and_unpack() zeros before unpacking */
 		break;
 	}
 	if (array[i] != goodval) {
@@ -228,7 +225,7 @@ int subarray_1d_fortran_test1(void)
 }
 
 
-/* subarray_2d_test()
+/** subarray_2d_test()
  *
  * Returns the number of errors encountered.
  */
@@ -244,8 +241,8 @@ int subarray_2d_c_test1(void)
 
     int i, err, errs = 0, sizeoftype;
 
-    /* set up type */
-    err = MPI_Type_create_subarray(2, /* dims */
+    /** set up type */
+    err = MPI_Type_create_subarray(2, /** dims */
 				   array_size,
 				   array_subsize,
 				   array_start,
@@ -303,7 +300,7 @@ int subarray_2d_c_test1(void)
     return errs;
 }
 
-/* subarray_2d_c_test2()
+/** subarray_2d_c_test2()
  *
  * Returns the number of errors encountered.
  */
@@ -318,8 +315,8 @@ int subarray_2d_c_test2(void)
 
     int i, err, errs = 0, sizeoftype;
 
-    /* set up type */
-    err = MPI_Type_create_subarray(2, /* dims */
+    /** set up type */
+    err = MPI_Type_create_subarray(2, /** dims */
 				   array_size,
 				   array_subsize,
 				   array_start,
@@ -371,7 +368,7 @@ int subarray_2d_c_test2(void)
     return errs;
 }
 
-/* subarray_4d_c_test1()
+/** subarray_4d_c_test1()
  *
  * Returns the number of errors encountered.
  */
@@ -399,8 +396,8 @@ int subarray_4d_c_test1(void)
 
     int i, err, errs = 0, sizeoftype;
 
-    /* set up type */
-    err = MPI_Type_create_subarray(4, /* dims */
+    /** set up type */
+    err = MPI_Type_create_subarray(4, /** dims */
 				   array_size,
 				   array_subsize,
 				   array_start,
@@ -463,7 +460,7 @@ int subarray_4d_c_test1(void)
     MPI_Type_free(&subarray);
     return errs;
 }
-/* subarray_4d_fortran_test1()
+/** subarray_4d_fortran_test1()
  *
  * Returns the number of errors encountered.
  */
@@ -491,8 +488,8 @@ int subarray_4d_fortran_test1(void)
 
     int i, err, errs = 0, sizeoftype;
 
-    /* set up type */
-    err = MPI_Type_create_subarray(4, /* dims */
+    /** set up type */
+    err = MPI_Type_create_subarray(4, /** dims */
 				   array_size,
 				   array_subsize,
 				   array_start,
@@ -557,7 +554,7 @@ int subarray_4d_fortran_test1(void)
 }
 
 
-/* subarray_2d_fortran_test1()
+/** subarray_2d_fortran_test1()
  *
  * Returns the number of errors encountered.
  */
@@ -572,8 +569,8 @@ int subarray_2d_fortran_test1(void)
 
     int i, err, errs = 0, sizeoftype;
 
-    /* set up type */
-    err = MPI_Type_create_subarray(2, /* dims */
+    /** set up type */
+    err = MPI_Type_create_subarray(2, /** dims */
 				   array_size,
 				   array_subsize,
 				   array_start,
@@ -625,9 +622,9 @@ int subarray_2d_fortran_test1(void)
     return errs;
 }
 
-/******************************************************************/
+/*******************************************************************/
 
-/* pack_and_unpack()
+/** pack_and_unpack()
  *
  * Perform packing and unpacking of a buffer for the purposes of checking
  * to see if we are processing a type correctly.  Zeros the buffer between
@@ -730,7 +727,7 @@ static int pack_and_unpack(char *typebuf,
 
 static int parse_args(int argc, char **argv)
 {
-    /*
+    /**
     int ret;
 
     while ((ret = getopt(argc, argv, "v")) >= 0)

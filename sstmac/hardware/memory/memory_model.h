@@ -32,18 +32,19 @@ class memory_model :
 {
 
  public:
+  memory_model(node* node);
+
   static void
   delete_statics();
-
-  virtual void
-  init_param1(node* parent_node);
 
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
 
   virtual ~memory_model();
 
-  virtual void access(long bytes, double max_bw) = 0;
+  virtual void
+  access(long bytes, double max_bw,
+         callback* cb) = 0;
 
   virtual std::string
   to_string() const {

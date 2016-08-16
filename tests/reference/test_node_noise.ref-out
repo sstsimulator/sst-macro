@@ -8,10 +8,10 @@ T(sstmac_simple_dgemv) =   1.74805032 ms
 T(sstmac_simple_dgemv) =   1.74805032 ms
 T(sstmac_simple_dgemm) =  93.53498046 ms
 T(sstmac_simple_dgemm) =  93.53498046 ms
-T(sstmac_simple_ddot) =   0.03768384 ms
-T(sstmac_simple_ddot) =   0.03768384 ms
-T(sstmac_simple_dgemm) = 102.33527558 ms
-T(sstmac_simple_dgemm) = 102.33527558 ms
-T(sstmac_simple_ddot) =   0.03687175 ms
-T(sstmac_simple_ddot) =   0.03687175 ms
-Estimated total runtime of           0.10415612 seconds
+T(sstmac_simple_ddot) =   0.03768400 ms
+T(sstmac_simple_ddot) =   0.03768400 ms
+T(sstmac_simple_dgemm) = 102.33528045 ms
+T(sstmac_simple_dgemm) = 102.33528045 ms
+T(sstmac_simple_ddot) =   0.03687191 ms
+T(sstmac_simple_ddot) =   0.03687191 ms
+Estimated total runtime of           0.10415613 seconds

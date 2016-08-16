@@ -3,7 +3,7 @@
 #include <sumi/dense_rank_map.h>
 #include <sumi/message.h>
 #include <sumi/transport.h>
-#include <sumi/domain.h>
+#include <sumi/communicator.h>
 #include <sumi/thread_safe_set.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/stl_string.h>
@@ -60,10 +60,10 @@ collective::tostr(type_t ty)
 }
 
 void
-collective::init(type_t ty, transport *api, domain *dom, int tag, int context)
+collective::init(type_t ty, transport *api, communicator *dom, int tag, int context)
 {
   my_api_ = api;
-  dom_ = dom;
+  comm_ = dom;
   context_ = context;
   complete_ = false;
   tag_ = tag;
@@ -73,30 +73,30 @@ collective::init(type_t ty, transport *api, domain *dom, int tag, int context)
   dense_rank_map rank_map(failed, dom);
 
   dense_nproc_ = rank_map.dense_rank(dom->nproc());
-  dense_me_ = rank_map.dense_rank(dom->my_domain_rank());
+  dense_me_ = rank_map.dense_rank(dom->my_comm_rank());
 
   debug_printf(sumi_collective | sumi_vote,
     "Rank %d=%d built collective of size %d in role=%d,"
     "tag=%d, context=%d with num_live=%d, failed=%s ",
-    my_api_->rank(), dom->my_domain_rank(), dom->nproc(), dense_me_,
+    my_api_->rank(), dom->my_comm_rank(), dom->nproc(), dense_me_,
     tag, context, dense_nproc_, failed.to_string().c_str());
 }
 
-collective::collective(type_t ty, transport* api, domain* dom, int tag, int context)
+collective::collective(type_t ty, transport* api, communicator* dom, int tag, int context)
 {
   init(ty, api, dom, tag, context);
 }
 
 void
-collective::actor_done(int domain_rank, bool& generate_cq_msg, bool& delete_collective)
+collective::actor_done(int comm_rank, bool& generate_cq_msg, bool& delete_collective)
 {
   generate_cq_msg = false;
   delete_collective = false;
 
-  int& refcount = refcounts_[domain_rank];
+  int& refcount = refcounts_[comm_rank];
   refcount--;
   if (refcount == 0){
-    refcounts_.erase(domain_rank);
+    refcounts_.erase(comm_rank);
     generate_cq_msg = true;
   }
 
@@ -160,18 +160,18 @@ dag_collective::init_actors()
 {
   dag_collective_actor* actor = new_actor();
 
-  actor->init(type_, my_api_, dom_, nelems_, type_size_, tag_, fault_aware_, context_);
+  actor->init(type_, my_api_, comm_, nelems_, type_size_, tag_, fault_aware_, context_);
   actor->init_tree();
   actor->init_buffers(dst_buffer_, src_buffer_);
   actor->init_dag();
 
   my_actors_[dense_me_] = actor;
-  refcounts_[dom_->my_domain_rank()] = my_actors_.size();
+  refcounts_[comm_->my_comm_rank()] = my_actors_.size();
 }
 
 void
 dag_collective::init(type_t type,
-  transport *my_api, domain *dom,
+  transport *my_api, communicator *dom,
   void *dst, void *src,
   int nelems, int type_size,
   int tag,
@@ -248,7 +248,7 @@ dag_collective::add_actors(collective* coll)
     my_actors_[it->first] = it->second;
   } }
 
-  refcounts_[coll->dom()->my_domain_rank()] = ar->my_actors_.size();
+  refcounts_[coll->comm()->my_comm_rank()] = ar->my_actors_.size();
 
   std::list<collective_work_message::ptr> pending = pending_;
   pending_.clear();

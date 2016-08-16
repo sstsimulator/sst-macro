@@ -22,7 +22,6 @@
 #include <sstmac/software/libraries/compute/lib_compute_time.h>
 
 #include <sstmac/common/event_handler.h>
-#include <sstmac/common/messages/payload.h>
 
 #include <sprockit/factories/factory.h>
 
@@ -84,9 +83,6 @@ class mpi_queue
        void* buffer);
 
   void
-  start_send(const mpi_message::ptr& msg);
-
-  void
   recv(mpi_request* key, int count, MPI_Datatype type,
        int source, int tag, mpi_comm* comm,
        void* buffer = 0);
@@ -98,10 +94,8 @@ class mpi_queue
   bool
   iprobe(mpi_comm* comm, int source, int tag, MPI_Status* stat);
 
-  /// CALLBACK used by mpiserver when this object has a message.
-   void
-  incoming_message(const mpi_message::ptr& message);
-
+  void
+  incoming_progress_loop_message(const mpi_message::ptr& message);
 
   void
   set_event_manager(event_manager* m);
@@ -139,7 +133,8 @@ class mpi_queue
   }
 
   void
-  finalize_recv(const mpi_message::ptr& msg);
+  finalize_recv(const mpi_message::ptr& msg,
+                mpi_queue_recv_request* req);
 
   timestamp
   progress_loop(mpi_request* req);
@@ -153,15 +148,6 @@ class mpi_queue
 
   void
   finish_progress_loop(const std::vector<mpi_request*>& req);
-
-  void
-  start_recv(mpi_queue_recv_request* req);
-
-  void
-  buffered_send(const mpi_message::ptr& msg);
-
-  void
-  buffered_recv(const mpi_message::ptr& msg, mpi_queue_recv_request* req);
 
   void
   buffer_unexpected(const mpi_message::ptr& msg);
@@ -198,38 +184,21 @@ class mpi_queue
 
 
  private:
-  void 
-  handle_incoming_message(const mpi_message::ptr& message);
-
   void
   handle_collective_done(const sumi::message::ptr& msg);
 
   void
-  do_send(const mpi_message::ptr& mess);
-
-  void
-  do_recv(mpi_queue_recv_request* req);
-
-  void
   incoming_completion_ack(const mpi_message::ptr& message);
 
-  /// The incoming_message method forwards to here when the message is
-  /// a new message, whehter it's an eager send or a new handshake request.
   void
   incoming_new_message(const mpi_message::ptr& message);
 
-  /// Called by the mpiserver when it figured out that the nic is sending
-  /// back an ack that indicates that the message was sent
   void
   handle_nic_ack(const mpi_message::ptr& message);
 
-  /// Called by the mpiserver when it figured out that the nic is sending
-  /// back an ack that indicates that the message was sent
   void
   complete_nic_ack(const mpi_message::ptr& message);
 
-  /// The incoming_new_message method calls here to complete an
-  /// inbound message.  At this point, arrival ordering has been ensured.
   void
   handle_new_message(const mpi_message::ptr& message);
 
@@ -237,14 +206,14 @@ class mpi_queue
   notify_probes(const mpi_message::ptr& message);
 
   mpi_queue_recv_request*
-  find_request(pending_message_t& pending, const mpi_message::ptr& message);
+  pop_matching_request(pending_message_t& pending, const mpi_message::ptr& message);
 
   mpi_queue_recv_request*
-  find_pending_request(const mpi_message::ptr& message,
+  pop_pending_request(const mpi_message::ptr& message,
                        bool set_need_recv = true);
 
   mpi_queue_recv_request*
-  find_waiting_request(const mpi_message::ptr& message);
+  pop_waiting_request(const mpi_message::ptr& message);
 
   mpi_message::ptr
   find_matching_recv(mpi_queue_recv_request* req);

@@ -35,9 +35,10 @@ DeclareFactory(blas_kernel);
 class blas_api :
   public api
 {
+  ImplementAPI(blas_api)
 
  public:
-  blas_api();
+  blas_api(software_id sid);
 
   virtual ~blas_api();
 
@@ -49,9 +50,6 @@ class blas_api :
 
   virtual void
   finalize_init();
-
-  virtual void
-  init_param1(const software_id &sid);
 
   /**
    A(m,n) * B(n,k) = C(m,k)

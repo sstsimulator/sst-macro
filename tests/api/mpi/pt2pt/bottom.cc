@@ -1,15 +1,10 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include "mpitest.h"
 
 namespace bottom {
-/*
+/**
 static char MTEST_Descrip[] = "Use of MPI_BOTTOM in communication";
 */
 
@@ -44,7 +39,7 @@ int bottom( int argc, char *argv[] )
     source = 0;
     dest = 1;
 
-    /* To improve reporting of problems about operations, we
+    /** To improve reporting of problems about operations, we
        change the error handler to errors return */
     MPI_Comm_set_errhandler( comm, MPI_ERRORS_RETURN );
 

@@ -44,8 +44,8 @@ library_include_HEADERS = \
  collective_message_fwd.h \
  comm_functions.h \
  dense_rank_map.h \
- domain.h \
- domain_fwd.h \
+ communicator.h \
+ communicator_fwd.h \
  dynamic_tree_vote.h \
  lockable.h \
  message.h \
@@ -55,7 +55,6 @@ library_include_HEADERS = \
  partner_timeout.h \
  ping.h \
  rdma.h \
- rdma_interface.h \
  rdma_mdata.h \
  serialization.h \
  thread.h \
@@ -86,7 +85,7 @@ libsumi_la_SOURCES = \
  collective_actor.cc \
  collective_message.cc \
  dense_rank_map.cc \
- domain.cc \
+ communicator.cc \
  dynamic_tree_vote.cc \
  message.cc \
  monitor.cc \

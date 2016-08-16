@@ -1,9 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include "mpitest.h"
@@ -18,7 +14,7 @@ int groupnullincl( int argc, char *argv[] )
     MPI_Comm comm;
 
     MTest_Init( &argc, &argv );
-    /* To improve reporting of problems about operations, we
+    /** To improve reporting of problems about operations, we
        change the error handler to errors return */
     MPI_Comm_set_errhandler( MPI_COMM_WORLD, MPI_ERRORS_RETURN );
 
@@ -32,7 +28,7 @@ int groupnullincl( int argc, char *argv[] )
 	    MTestPrintError( rc );
 	    printf( "Error in creating an empty group with (0,0)\n" );
 	    
-	    /* Some MPI implementations may reject a null "ranks" pointer */
+	    /** Some MPI implementations may reject a null "ranks" pointer */
 	    rc = MPI_Group_incl( group, 0, ranks, &outgroup );
 	    if (rc) {
 		errs++;
@@ -42,7 +38,7 @@ int groupnullincl( int argc, char *argv[] )
 	}
 
 	if (outgroup != MPI_GROUP_EMPTY) {
-	    /* Is the group equivalent to group empty? */
+	    /** Is the group equivalent to group empty? */
 	    rc = MPI_Group_compare( outgroup, MPI_GROUP_EMPTY, &result );
 	    if (result != MPI_IDENT) {
 		errs++;

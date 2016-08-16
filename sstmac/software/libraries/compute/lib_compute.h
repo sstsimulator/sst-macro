@@ -17,9 +17,15 @@ class lib_compute :
   static key::category key_category;
   
  protected:
-  lib_compute()
-    : library() {
+  lib_compute(const std::string& libname, software_id sid)
+    : library(libname, sid) {
     key_cat_ = lib_compute::key_category;
+  }
+
+  lib_compute(const char* name, software_id sid)
+    : library(name, sid)
+  {
+     key_cat_ = lib_compute::key_category;
   }
 
 };

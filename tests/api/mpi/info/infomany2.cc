@@ -1,9 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
-/* Test of info that makes use of the extended handles, including
+
+
+/** Test of info that makes use of the extended handles, including
    inserts and deletes */
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
@@ -20,7 +17,7 @@ namespace infomany2 {
 #endif
 #define MAX_ERRORS 10
 #define info_list 16
-/* #define DBG  */
+/** #define DBG  */
 
 #ifdef DEBUG
 #define DBGPRINTF(a) printf a; fflush(stdout)
@@ -37,13 +34,13 @@ int infomany2( int argc, char *argv[] )
 
     MTest_Init( &argc, &argv );
 
-    /* We create max_info items, then delete the middle third of them,
+    /** We create max_info items, then delete the middle third of them,
        then recreate them, then check them, then 
        delete them all.  This checks that the MPICH2 algorithm for 
        handling large numbers of items works correctly; other MPI 
        implementations should also be able to handle this */
 
-    /* Create them all */
+    /** Create them all */
     for (i=0; i<MAX_INFOS; i++) {
 	MPI_Info_create( &infos[i] );
 	DBGPRINTF( ( "Info handle is %x\n", infos[i] ) );
@@ -62,12 +59,12 @@ int infomany2( int argc, char *argv[] )
 #endif
     }
 
-    /* Delete the middle set */
+    /** Delete the middle set */
     for (i=MAX_INFOS/3; i<(2*MAX_INFOS/3); i++) {
 	MPI_Info_free( &infos[i] );
     }
     
-    /* Recreate the middle set */
+    /** Recreate the middle set */
     for (i=MAX_INFOS/3; i<(2*MAX_INFOS/3); i++) {
 	MPI_Info_create( &infos[i] );
 	DBGPRINTF( ( "Info handle is %x\n", infos[i] ) );
@@ -79,10 +76,10 @@ int infomany2( int argc, char *argv[] )
 	}
     }
 
-    /* Now, check that they are still valid */
+    /** Now, check that they are still valid */
     for (i=0; i<MAX_INFOS; i++) {
 	int nkeys;
-	/*printf( "info = %x\n", infos[i] );
+	/**printf( "info = %x\n", infos[i] );
 	  print_handle( infos[i] ); printf( "\n" );*/
 	MPI_Info_get_nkeys( infos[i], &nkeys );
 	if (nkeys != info_list) {

@@ -91,12 +91,6 @@ class app :
   static void
   delete_statics();
 
-  api*
-  build_api(int aid, const std::string &name);
-
-  virtual void
-  init_os(operating_system* os);
-
   void
   sleep(timestamp time);
 
@@ -109,7 +103,7 @@ class app :
   compute_inst(compute_event* cmsg);
 
   void
-  compute_loop(long num_loops,
+  compute_loop(uint64_t,
     int nflops_per_loop,
     int nintops_per_loop,
     int bytes_per_loop);
@@ -128,15 +122,6 @@ class app :
 
   lib_compute_loops*
   compute_loops_lib();
-
-  std::string
-  compute_name();
-
-  std::string
-  compute_inst_name();
-
-  std::string
-  compute_memmove_name();
 
   /// Goodbye.
   virtual ~app();
@@ -231,7 +216,12 @@ class app :
   clear_subthread_from_parent_app();
 
  protected:
+  friend class thread;
+
   app();
+
+  api*
+  _get_api(const char* name);
 
   virtual void init_mem_lib();
 
@@ -269,6 +259,9 @@ class user_app_cxx_full_main : public app
 
   virtual void
   consume_params(sprockit::sim_parameters *params);
+
+  static void
+  delete_statics();
 
   app*
   clone_type() const {
@@ -315,23 +308,10 @@ class user_app_cxx_empty_main : public app
 /** utility function for computing stuff */
 void compute_time(double tsec);
 
-class app_factory : public sprockit::SpktFactory<app>
-{
-
- public:
-  static void
-  print_apps();
-
-  static void
-  clear_apps();
-
-};
+DeclareFactory(app)
 
 }
 } // end of namespace sstmac.
-
-
-
 
 #endif
 

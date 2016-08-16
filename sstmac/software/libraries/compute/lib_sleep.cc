@@ -21,16 +21,8 @@ namespace sw {
 key::category lib_sleep::key_category("Sleep");
 
 lib_sleep::lib_sleep(software_id id)
-  : library()
+  : library("sleeplib", id)
 {
-  libname_ = "sleeplib" + id.to_string();
-  key_cat_ = lib_sleep::key_category;
-}
-
-lib_sleep::lib_sleep(const std::string& id)
-  : library()
-{
-  libname_ = id;
   key_cat_ = lib_sleep::key_category;
 }
 
@@ -38,19 +30,7 @@ void
 lib_sleep::sleep(timestamp time)
 {
   SSTMACBacktrace("Sleep");
-  if (supported()) {
-    os_->sleep(time);
-  }
-  else {
-    spkt_throw(sprockit::value_error,
-      "lib_sleep requires the presence of a processor model which can sleep");
-  }
-}
-
-bool
-lib_sleep::supported() const
-{
-  return true;
+  os_->sleep(time);
 }
 
 }

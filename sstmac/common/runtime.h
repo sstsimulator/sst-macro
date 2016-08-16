@@ -16,6 +16,9 @@ namespace sstmac {
 class deadlock_check {
  public:
   virtual void run() = 0;
+
+  virtual ~deadlock_check(){}
+
 };
 
 template <class T, class Fxn> class deadlock_check_impl : public deadlock_check
@@ -26,6 +29,8 @@ template <class T, class Fxn> class deadlock_check_impl : public deadlock_check
   void run(){
     (t_->*f_)();
   }
+
+  virtual ~deadlock_check_impl(){}
 
  private:
   T* t_;

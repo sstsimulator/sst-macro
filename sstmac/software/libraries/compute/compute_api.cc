@@ -45,7 +45,37 @@ sstmac_compute_detailed(long nflops, long nintops, long bytes){
 }
 
 extern "C" void
-sstmac_compute_loop(long num_loops, int nflops_per_loop, int nintops_per_loop, int bytes_per_loop){
+sstmac_compute_loop(long num_loops, int nflops_per_loop,
+                    int nintops_per_loop, int bytes_per_loop){
+  sstmac::sw::operating_system::current_thread()->parent_app()
+    ->compute_loop(num_loops, nflops_per_loop, nintops_per_loop, bytes_per_loop);
+}
+
+extern "C" void
+sstmac_compute_loop2(long isize, long jsize,
+                     int nflops_per_loop,
+                    int nintops_per_loop, int bytes_per_loop){
+  uint64_t num_loops = isize * jsize;
+  sstmac::sw::operating_system::current_thread()->parent_app()
+    ->compute_loop(num_loops, nflops_per_loop, nintops_per_loop, bytes_per_loop);
+}
+
+extern "C" void
+sstmac_compute_loop3(long isize, long jsize, long ksize,
+                    int nflops_per_loop,
+                    int nintops_per_loop,
+                    int bytes_per_loop){
+  uint64_t num_loops = isize * jsize * ksize;
+  sstmac::sw::operating_system::current_thread()->parent_app()
+    ->compute_loop(num_loops, nflops_per_loop, nintops_per_loop, bytes_per_loop);
+}
+
+extern "C" void
+sstmac_compute_loop4(long isize, long jsize, long ksize, long lsize,
+                     int nflops_per_loop,
+                     int nintops_per_loop,
+                     int bytes_per_loop){
+  uint64_t num_loops = isize * jsize * ksize * lsize;
   sstmac::sw::operating_system::current_thread()->parent_app()
     ->compute_loop(num_loops, nflops_per_loop, nintops_per_loop, bytes_per_loop);
 }

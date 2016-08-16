@@ -25,9 +25,9 @@ SpktRegister("null", packet_sent_stats, null_stats);
 static inline double
 congestion_delay_us(const packet_stats_st& st)
 {
-  double delta_t = st.tail_leaves.sec() - st.pkt->arrival();
+  timestamp delta_t = st.tail_leaves - st.pkt->arrival();
   double min_delta_t = st.pkt->byte_length() / st.incoming_bw;
-  double congestion_delay_us = std::max(0., 1e6*(delta_t - min_delta_t));
+  double congestion_delay_us = std::max(0., 1e6*(delta_t.sec() - min_delta_t));
   return congestion_delay_us;
 }
 
@@ -56,12 +56,17 @@ congestion_spyplot::init_factory_params(sprockit::sim_parameters* params)
 {
   sprockit::sim_parameters* congestion_params = params->get_namespace("congestion_spyplot");
   congestion_spyplot_ = test_cast(stat_spyplot,
-        stat_collector_factory::get_optional_param("type", "spyplot_png", congestion_params));
+        stat_collector_factory::get_optional_param("type", "spyplot", congestion_params));
   if (!congestion_spyplot_){
     spkt_throw_printf(sprockit::value_error,
       "packet flow congestion stats must be spyplot or spyplot_png, %s given",
       congestion_params->get_param("type").c_str());
   }
+}
+
+congestion_spyplot::~congestion_spyplot()
+{
+  if (congestion_spyplot_) delete congestion_spyplot_;
 }
 
 void
@@ -101,6 +106,11 @@ delay_histogram::init_factory_params(sprockit::sim_parameters* params)
       "congestion delay stats must be histogram, %s given",
       hist_params->get_param("type").c_str());
   }
+}
+
+delay_histogram::~delay_histogram()
+{
+  if (congestion_hist_) delete congestion_hist_;
 }
 
 void
@@ -151,9 +161,15 @@ spyplot_and_delay_stats::collect_single_event(const packet_stats_st& st)
   packet_delay_stats::collect(delay, st.pkt);
 }
 
+bytes_sent_collector::~bytes_sent_collector()
+{
+  if (bytes_sent_) delete bytes_sent_;
+}
+
 void
 bytes_sent_collector::init_factory_params(sprockit::sim_parameters* params)
 {
+  packet_sent_stats::init_factory_params(params);
   sprockit::sim_parameters* byte_params = params->get_namespace("bytes_sent");
   bytes_sent_ = test_cast(stat_bytes_sent,
                  stat_collector_factory::get_optional_param("type", "bytes_sent", byte_params));
@@ -175,6 +191,11 @@ void
 bytes_sent_collector::set_event_manager(event_manager *ev_mgr)
 {
   ev_mgr->register_stat(bytes_sent_);
+}
+
+byte_hop_collector::~byte_hop_collector()
+{
+  delete byte_hops_;
 }
 
 void
@@ -305,6 +326,11 @@ stat_bytes_sent::init_factory_params(sprockit::sim_parameters *params)
   stat_collector::init_factory_params(params);
 }
 
+stat_bytes_sent::~stat_bytes_sent()
+{
+  if (local_aggregation_) delete local_aggregation_;
+}
+
 void
 stat_bytes_sent::global_reduce(parallel_runtime *rt)
 {
@@ -345,13 +371,14 @@ stat_bytes_sent::global_reduce(parallel_runtime *rt)
     global_reduce_non_root(rt, root, buffer, total_size);
   }
 
+  delete[] buffer;
 }
 
 void
 stat_bytes_sent::reduce(stat_collector *coll)
 {
   stat_bytes_sent* input = safe_cast(stat_bytes_sent, coll);
-  if (local_aggregation_ == 0){
+  if (local_aggregation_ == nullptr){
     local_aggregation_ = new aggregation;
   }
   local_aggregation_->append(input->id(), input->port_map_);

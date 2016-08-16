@@ -15,6 +15,7 @@
 #include <sstmac/software/process/key.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/libraries/library.h>
+#include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/software/api/api.h>
 #include <sstmac/common/sst_event.h>
 #include <sprockit/errors.h>
@@ -27,10 +28,62 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
+ImplementFactory(sstmac::sw::perf_counter_model);
 
 namespace sstmac {
 namespace sw {
+
+class null_perf_counter_model : public perf_counter_model
+{
+ public:
+  compute_event*
+  get_next_event() {
+    return nullptr;
+  }
+
+  perf_counter*
+  register_variable(void *ptr){
+    return &null_counter;
+  }
+
+  void
+  remove_variable(void *ptr){}
+
+ private:
+  perf_counter null_counter;
+
+};
+
+class flops_perf_counter_model : public perf_counter_model
+{
+ public:
+  flops_perf_counter_model() {
+    flops_.counters() = 0;
+  }
+
+  compute_event*
+  get_next_event() {
+    sstmac::sw::basic_compute_event* ev = new sstmac::sw::basic_compute_event;
+    ev->data().flops = flops_.counters();
+    flops_.counters() = 0;
+    return ev;
+  }
+
+  perf_counter*
+  register_variable(void* ptr){
+    return &flops_;
+  }
+
+  void
+  remove_variable(void *ptr){}
+
+ private:
+  perf_counter_impl<uint64_t> flops_;
+
+};
+
+SpktRegister("null", perf_counter_model, null_perf_counter_model);
+SpktRegister("flops", perf_counter_model, flops_perf_counter_model);
 
 static thread_safe_long THREAD_ID_CNT(0);
 const app_id thread::main_thread_aid(-1);
@@ -61,8 +114,6 @@ thread::init_thread(int physical_thread_id, threading_interface* threadcopy, voi
 
   pending_libs_.clear();
 
-  init_os(os);
-
   context_ = threadcopy->copy();
 
   threadinfo* info = new threadinfo();
@@ -78,24 +129,9 @@ thread::current()
 }
 
 api*
-thread::build_api(int aid, const std::string &name)
+thread::_get_api(const char* name)
 {
-  if (parent_app_) {
-    api* a = parent_app_->build_api(aid, name);
-    register_lib(a);
-    return a;
-  }
-  else {
-    spkt_throw_printf(sprockit::illformed_error,
-                     "thread::build_api: thread has no parent thread");
-    return 0;
-  }
-}
-
-void
-thread::init_os(operating_system* os)
-{
-  //nothing by default
+  return parent_app_->_get_api(name);
 }
 
 void
@@ -221,21 +257,28 @@ key::category schedule_delay("CPU_Sched Delay");
 thread::thread() :
   state_(PENDING),
   isInit(false),
-  backtrace_(0),
+  backtrace_(nullptr),
   bt_nfxn_(0),
   last_bt_collect_nfxn_(0),
   thread_id_(thread::main_thread),
-  schedule_key_(0),
+  schedule_key_(key::construct(schedule_delay)),
   p_txt_(process_context::none),
-  stack_(0),
-  context_(0),
+  stack_(nullptr),
+  context_(nullptr),
   cpumask_(0),
-  pthread_map_(0),
-  parent_app_(0)
+  pthread_map_(nullptr),
+  parent_app_(nullptr),
+  perf_model_(nullptr)
 {
   //make all cores possible active
   cpumask_ = ~(cpumask_);
-  schedule_key_ = key::construct(schedule_delay);
+}
+
+void
+thread::init_perf_model_params(sprockit::sim_parameters *params)
+{
+  perf_model_ = perf_counter_model_factory
+                  ::get_optional_param("perf_model", "null", params);
 }
 
 long
@@ -264,13 +307,6 @@ void
 thread::set_tls_value(long thekey, void *ptr)
 {
   tls_values_[thekey] = ptr;
-}
-
-void
-thread::set_sid(const software_id& sid)
-{
-  aid_ = sid.app_;
-  tid_ = sid.task_;
 }
 
 void
@@ -323,21 +359,16 @@ thread::now()
   return os_->now();
 }
 
-node_id
-thread::physical_address()
-{
-  return os_->my_addr();
-}
-
-//
-// Goodbye.
-//
 thread::~thread()
 {
   if (backtrace_) graph_viz::delete_trace(backtrace_);
   if (stack_) os_->free_thread_stack(stack_);
-  if (context_) delete context_;
+  if (context_) {
+    context_->destroy_context();
+    delete context_;
+  }
   if (schedule_key_) delete schedule_key_;
+  if (perf_model_) delete perf_model_;
 
   //all my apis should have been deleted
   //since they are libraries
@@ -345,9 +376,7 @@ thread::~thread()
   apis_.clear();
 }
 
-//
-// Start a new thread.
-//
+
 void
 thread::start_thread(thread* thr)
 {
@@ -355,9 +384,7 @@ thread::start_thread(thread* thr)
   os_->start_thread(thr);
 }
 
-//
-// Join threads.
-//
+
 void
 thread::join()
 {

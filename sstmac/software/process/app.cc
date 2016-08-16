@@ -12,7 +12,6 @@
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/api/api.h>
 #include <sstmac/software/launch/app_launch.h>
-#include <sstmac/software/process/api.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/sstmac_env.h>
 #include <sstmac/common/logger.h>
@@ -25,9 +24,10 @@
 
 ImplementFactory(sstmac::sw::app);
 
+static sprockit::need_delete_statics<sstmac::sw::user_app_cxx_full_main> del_app_statics;
+
 namespace sstmac {
 namespace sw {
-
 
 SpktRegister("user_app_cxx_full_main", app, user_app_cxx_full_main);
 SpktRegister("user_app_cxx_empty_main", app, user_app_cxx_empty_main);
@@ -37,18 +37,6 @@ std::map<std::string, app::main_fxn>*
 std::map<std::string, app::empty_main_fxn>*
   user_app_cxx_empty_main::empty_main_fxns_ = 0;
 std::map<app_id, user_app_cxx_full_main::argv_entry> user_app_cxx_full_main::argv_map_;
-
-void
-app_factory::print_apps()
-{
-  std::map<std::string, sprockit::SpktDesc_base*>::const_iterator
-  it = object_map_->begin(), end = object_map_->end();
-  cout0 << "Valid SST/macro apps are:\n";
-  for ( ; it != end; ++it) {
-    cout0 << it->first << "\n";
-  }
-  cout0 << std::endl;
-}
 
 int
 app::allocate_tls_key(destructor_fxn fxn)
@@ -60,16 +48,6 @@ app::allocate_tls_key(destructor_fxn fxn)
 }
 
 void
-app_factory::clear_apps()
-{
-  std::map<std::string, sprockit::SpktDesc_base*>::const_iterator
-  it = object_map_->begin(), end = object_map_->end();
-  for ( ; it != end; ++it) {
-    it->second->clear();
-  }
-}
-
-void
 app::init_factory_params(sprockit::sim_parameters *params)
 {
   params_ = params;
@@ -77,12 +55,12 @@ app::init_factory_params(sprockit::sim_parameters *params)
 }
 
 app::app() :
-  compute_inst_(0),
-  compute_time_(0),
-  compute_mem_move_(0),
-  compute_loops_(0),
-  sleep_lib_(0),
-  params_(0),
+  compute_inst_(nullptr),
+  compute_time_(nullptr),
+  compute_mem_move_(nullptr),
+  compute_loops_(nullptr),
+  sleep_lib_(nullptr),
+  params_(nullptr),
   next_tls_key_(0),
   next_condition_(0),
   next_mutex_(0)
@@ -174,7 +152,7 @@ app::compute_inst(compute_event* cmsg)
 }
 
 void
-app::compute_loop(long num_loops,
+app::compute_loop(uint64_t num_loops,
   int nflops_per_loop,
   int nintops_per_loop,
   int bytes_per_loop)
@@ -202,7 +180,6 @@ app::compute_block_read(long bytes)
   if (!compute_mem_move_) {
     init_mem_lib();
   }
-
   compute_mem_move_->read(bytes);
 }
 
@@ -212,7 +189,6 @@ app::compute_block_write(long bytes)
   if (!compute_mem_move_) {
     init_mem_lib();
   }
-
   compute_mem_move_->write(bytes);
 }
 
@@ -235,15 +211,14 @@ app::compute_block_memcpy(long bytes)
   if (!compute_mem_move_) {
     init_mem_lib();
   }
-
   compute_mem_move_->copy(bytes);
 }
 
 api*
-app::build_api(int aid, const std::string &name)
+app::_get_api(const char* name)
 {
   // an underlying thread may have built this
-  api* my_api = apis_[aid];
+  api* my_api = apis_[name];
   if (!my_api) {
     bool new_params = params_->has_namespace(name);
     sprockit::sim_parameters* app_params = params_;
@@ -251,48 +226,12 @@ app::build_api(int aid, const std::string &name)
       app_params = params_->get_namespace(name);
     api* new_api = api_factory::get_value(name, app_params, id_);
     register_lib(new_api);
-    apis_[aid] = new_api;
+    apis_[name] = new_api;
     return new_api;
   }
   else {
    return my_api;
   }
-}
-
-void
-app::init_os(operating_system* os)
-{
-}
-
-std::string
-app::compute_name()
-{
-
-  if (!compute_time_) {
-    compute_time_ = lib_compute_time::construct(id_);
-    register_lib(compute_time_);
-  }
-  return compute_time_->lib_name();
-}
-
-std::string
-app::compute_inst_name()
-{
-  if (!compute_inst_) {
-    compute_inst_ = new lib_compute_inst(id_);
-    register_lib(compute_inst_);
-  }
-  return compute_inst_->lib_name();
-}
-
-std::string
-app::compute_memmove_name()
-{
-  if (!compute_mem_move_) {
-    compute_mem_move_ = new lib_compute_memmove(id_);
-    register_lib(compute_mem_move_);
-  }
-  return compute_mem_move_->lib_name();
 }
 
 void
@@ -406,6 +345,20 @@ app::get_condition(int id)
   } else {
     return &it->second;
   }
+}
+
+void
+user_app_cxx_full_main::delete_statics()
+{
+  for (auto& pair : argv_map_){
+    argv_entry& entry = pair.second;
+    char* main_buffer = entry.argv[0];
+    delete[] main_buffer;
+    delete[] entry.argv;
+  }
+  argv_map_.clear();
+  if (main_fxns_) delete main_fxns_;
+  main_fxns_ = nullptr;
 }
 
 void

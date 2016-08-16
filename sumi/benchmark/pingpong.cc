@@ -1,7 +1,7 @@
 
 #include <pthread.h>
 #include <sumi/transport.h>
-#include <sumi/domain.h>
+#include <sumi/communicator.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 #include <sprockit/stl_string.h>

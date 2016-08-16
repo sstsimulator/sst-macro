@@ -10,7 +10,7 @@
 #include <sumi/transport.h>
 #include <sstmac/skeleton.h>
 
-#define sstmac_app_name "user_app_cxx"
+#define sstmac_app_name user_app_cxx
 
 using namespace sumi;
 
@@ -186,6 +186,7 @@ test_allreduce_payload(int tag)
 void
 test_allgatherv_uneven(int tag)
 {
+
   //now do a collective with payloads
   int rank = comm_rank();
   int nproc = comm_nproc();
@@ -221,6 +222,10 @@ test_allgatherv_uneven(int tag)
       }
       //std::cout << sprockit::printf("T[%d][%d] = %d\n", rank, idx, test_elem);
     }
+  }
+
+  if (rank == 0){
+    printf("Finished uneven allgatherv on tag %d\n", tag);
   }
 }
 
@@ -261,6 +266,10 @@ test_allgatherv_even(int tag)
       }
       //std::cout << sprockit::printf("T[%d][%d] = %d\n", rank, idx, test_elem);
     }
+  }
+
+  if (rank == 0){
+    printf("Finished even allgatherv on tag %d\n", tag);
   }
 }
 
@@ -365,8 +374,7 @@ test_barrier(int tag)
       "barrier got invalid completion message");
   }
 
-  std::cout << "t=" << sstmac_now() << ": finished barrier on rank "
-    << rank << std::endl;
+  printf("t=%4.2f finished barrier on rank %d\n", sstmac_now(), rank);
 }
 
 
@@ -402,15 +410,13 @@ test_failed_collectives()
 
   comm_allreduce<char,Add>(null,null,nelems,tag,true);
   comm_collective_block(collective::allreduce, tag);
-  std::cout << "t=" << sstmac_now() << ": passed failed allreduce on rank "
-    << rank << std::endl;
+  printf("t=%6.2f: passed failed allreduce on rank %d\n", sstmac_now(), rank);
 
 
   tag = 818;
   comm_allgather(null,null,nelems,sizeof(int),tag,true);
   comm_collective_block(collective::allgather, tag);
-  std::cout << "t=" << sstmac_now() << ": passed failed allgather on rank "
-    << rank << std::endl;
+  printf("t=%6.2f: passed failed allgather on rank %d\n", sstmac_now(), rank);
 }
 
 void
@@ -445,8 +451,11 @@ test_alltoall(int tag)
         std::cout << sprockit::printf("FAILED: all-to-all rank %d, partner %d\n", me, partner);
     }
   }
-}
 
+  if (me == 0){
+    printf("Finished alltoall on tag %d\n", tag);
+  }
+}
 
 int
 main(int argc, char **argv)

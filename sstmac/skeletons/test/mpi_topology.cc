@@ -7,7 +7,7 @@
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/skeleton.h>
 
-#define sstmac_app_name "mpi_topology"
+#define sstmac_app_name mpi_topology
 
 using namespace sstmac;
 using namespace sstmac::sw;

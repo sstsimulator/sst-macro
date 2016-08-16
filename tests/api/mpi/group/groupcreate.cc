@@ -1,11 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
-/* stdlib.h Needed for malloc declaration */
+/** stdlib.h Needed for malloc declaration */
 #include <stdlib.h>
 
 namespace groupcreate {
@@ -41,7 +38,7 @@ int groupcreate( int argc, char **argv )
 	    break;
 	}
 	else {
-	    /* Check that the group was created (and that any errors were
+	    /** Check that the group was created (and that any errors were
 	       caught) */
 	    rc = MPI_Group_size( group_array[i], &group_size );
 	    if (group_size != size) {
@@ -69,7 +66,7 @@ int groupcreate( int argc, char **argv )
 
     MPI_Reduce( &n, &n_all, 1, MPI_INT, MPI_MIN, 0, MPI_COMM_WORLD );
     if (rank == 0) {
-	/* printf( "Completed test of %d type creations\n", n_all ); */
+	/** printf( "Completed test of %d type creations\n", n_all ); */
 	if (n_all != n_goal) {
 	    printf (
 "This MPI implementation limits the number of groups that can be created\n\

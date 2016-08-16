@@ -161,12 +161,6 @@ class network_message :
     type_ = ty;
   }
 
-  long
-  source_thread(sw::operating_system* os) const;
-
-  long
-  dest_thread(sw::operating_system* os) const;
-
   virtual void
   reverse();
 

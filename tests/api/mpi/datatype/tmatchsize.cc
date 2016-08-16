@@ -1,20 +1,16 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpitest.h"
 
 namespace tmatchsize {
-/*
+/**
 static char MTEST_Descrip[] = "Test of type_match_size";
 */
 
-/*
+/**
  * type match size is part of the extended Fortran support, and may not
  * be present in 
  */
@@ -27,7 +23,7 @@ int tmatchsize( int argc, char *argv[] )
 
     MTest_Init( &argc, &argv );
 
-    /* Check the most likely cases.  Note that it is an error to
+    /** Check the most likely cases.  Note that it is an error to
        free the type returned by MPI_Type_match_size.  Also note
        that it is an error to request a size not supported by the compiler,
        so Type_match_size should generate an error in that case */
@@ -133,7 +129,7 @@ int tmatchsize( int argc, char *argv[] )
     }
 #endif
 
-    /* COMPLEX is a FORTRAN type.  The MPICH2 Type_match_size attempts
+    /** COMPLEX is a FORTRAN type.  The MPICH2 Type_match_size attempts
        to give a valid datatype, but if Fortran is not available,
        MPI_COMPLEX and MPI_DOUBLE_COMPLEX are not supported.  
        Allow this case by testing for MPI_DATATYPE_NULL */

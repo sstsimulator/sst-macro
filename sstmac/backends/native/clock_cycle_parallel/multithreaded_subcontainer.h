@@ -31,7 +31,9 @@ class multithreaded_subcontainer :
 
   void run();
 
-  multithreaded_subcontainer(int thread_id,
+  multithreaded_subcontainer(
+    parallel_runtime* rt,
+    int thread_id,
     multithreaded_event_container* parent);
 
  protected:

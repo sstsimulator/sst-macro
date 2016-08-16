@@ -5,40 +5,18 @@
 
 namespace sumi {
 
-
 void
-eager0::finish_recv_header(
-  mpi_queue* queue,
-  const mpi_message::ptr& msg,
-  mpi_queue_recv_request* req
-)
+eager0::configure_send_buffer(const mpi_message::ptr& msg, void *buffer)
 {
-  spkt_throw_printf(sprockit::illformed_error,
-        "%s should never have recv-request handle a header",
-        to_string().c_str());
-}
-
-void
-eager0::finish_recv_payload(
-  mpi_queue* queue,
-  const mpi_message::ptr& msg,
-  mpi_queue_recv_request* req
-)
-{
-}
-
-void
-eager0::incoming_header(mpi_queue* queue,
-                                const mpi_message::ptr& msg)
-{
-  spkt_throw_printf(sprockit::illformed_error,
-       "%s handling header, but only payloads should arrive",
-       to_string().c_str());
+  long length = msg->payload_bytes();
+  void* eager_buf = new char[length];
+  ::memcpy(eager_buf, buffer, length);
+  msg->eager_buffer() = eager_buf;
 }
 
 void
 eager0::send_header(mpi_queue* queue,
-                         const mpi_message::ptr& msg)
+                    const mpi_message::ptr& msg)
 {
   SSTMACBacktrace("MPI Eager 0 Protocol: Send Header");
   msg->set_content_type(mpi_message::eager_payload);
@@ -47,18 +25,32 @@ eager0::send_header(mpi_queue* queue,
 
 void
 eager0::incoming_payload(mpi_queue* queue,
-                           const mpi_message::ptr& msg)
+                        const mpi_message::ptr& msg)
+{
+  mpi_queue_recv_request* req = queue->pop_pending_request(msg);
+  incoming_payload(queue, msg, req);
+}
+
+void
+eager0::incoming_payload(mpi_queue *queue,
+                  const mpi_message::ptr& msg,
+                  mpi_queue_recv_request* req)
 {
   SSTMACBacktrace("MPI Eager 0 Protocol: Handle Header");
-  mpi_queue_recv_request* req = queue->find_pending_request(msg);
   if (req) {
-    req->handle(msg);
+    if (msg->local_buffer().ptr && req->buffer_){
+      msg->remote_buffer().ptr = req->buffer_;
+      msg->move_local_to_remote();
+    }
+    queue->finalize_recv(msg, req);
   }
   else {
     queue->buffer_unexpected(msg);
   }
   queue->notify_probes(msg);
+
 }
+
 
 }
 

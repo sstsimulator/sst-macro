@@ -16,6 +16,7 @@
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/launch/app_launch.h>
 #include <sstmac/backends/common/parallel_runtime.h>
+#include <sstmac/backends/native/manager.h>
 #include <sprockit/fileio.h>
 #include <sprockit/statics.h>
 #include <sprockit/sim_parameters.h>
@@ -41,6 +42,7 @@ typedef param_remap pr;
 
 param_remap remap_list[] = {
   pr("network_name", "interconnect"),
+  pr("router", "switch.router"),
   pr("topology_name", "topology.name"),
   pr("topology_geometry", "topology.geometry"),
   pr("network_nodes_per_switch", "topology.concentration"),
@@ -50,8 +52,11 @@ param_remap remap_list[] = {
   pr("topology_redundant", "topology.redundant"),
   pr("topology_output_graph", "topology.output_graph"),
   pr("topology_seed", "topology.seed"),
+  pr("topology_redundant", "topology.redundant"),
   pr("topology_group_connections", "topology.group_connections"),
-  pr("circuitswitch_blocked_protocol", "switch.blocked_protcol"),
+  pr("switch_geometry", "switch.geometry"),
+  pr("memory_latency", "node.memory.latency"),
+  pr("memory_bandwidth", "node.memory.bandwidth"),
   pr("node_name", "node.model"),
   pr("node_mem_latency", "node.memory.latency"),
   pr("node_mem_bandwidth", "node.memory.bandwidth"),
@@ -60,15 +65,12 @@ param_remap remap_list[] = {
   pr("nic_name", "nic.model"),
   pr("node_memory_model", "node.memory.model"),
   pr("node_frequency", "node.proc.frequency"),
-  pr("packet_switch_latency_r2r", "switch.hop_latency"),
-  pr("packet_switch_bandwidth_n2r", "switch.injection_bandwidth", false),
-  pr("packet_switch_bandwidth_n2r", "nic.injection_bandwidth"),
-  pr("network_bandwidth_link", "switch.bandwidth_link"),
+  pr("network_bandwidth_link", "switch.link_bandwidth"),
+  pr("network_bandwidth", "switch.link_bandwidth", false),
   pr("network_bandwidth", "switch.bandwidth"),
+  pr("network_switch_bandwidth", "switch.crossbar_bandwidth"),
   pr("network_latency", "switch.hop_latency"),
   pr("network_hop_latency", "switch.hop_latency"),
-  pr("nic_injector", "nic.injector"),
-  pr("nic_ejector", "nic.ejector"),
   pr("network_switch_type", "switch.model"),
   pr("packet_flow_memory_bandwidth", "node.memory.total_bandwidth"),
   pr("packet_flow_memory_single_bandwidth", "node.memory.max_single_bandwidth"),
@@ -102,11 +104,6 @@ param_remap remap_list[] = {
   pr("node_model", "node.model"),
   pr("negligible_compute_time", "node.negligible_compute_time"),
   pr("node_pipeline_speedup", "node.proc.parallelism"),
-  pr("mpi_allreduce", "mpi.allreduce"),
-  pr("mpi_allgather", "mpi.allgather"),
-  pr("mpi_queue_thread_type", "mpi.queue.type"),
-  pr("mpi_handshake_size", "mpi.handshake_size"),
-  pr("mpi_envelope", "mpi.envelope"),
   pr("smp_single_copy_size", "mpi.smp_single_copy_size"),
   pr("max_eager_msg_size", "mpi.max_eager_msg_size"),
   pr("max_vshort_msg_size", "mpi.max_vshort_msg_size"),
@@ -147,7 +144,7 @@ remap_deprecated_params(sprockit::sim_parameters* params)
     if (params->has_param(p.deprecated)){
       params->parse_keyval(p.updated,
          params->get_param(p.deprecated),
-         false/*do not fail on existing*/,
+         false/*fail on existing*/,
          false/*do not overwrite anything*/,
          false/*do not mark anything as read*/);
       if (p.del){
@@ -158,8 +155,18 @@ remap_deprecated_params(sprockit::sim_parameters* params)
 }
 
 void
-process_init_params(sprockit::sim_parameters* params, bool remap_params)
+remap_params(sprockit::sim_parameters* params, bool verbose)
 {
+  remap_deprecated_params(params);
+
+  int max_nproc = native::manager::compute_max_nproc(params);
+  if (max_nproc == 0){
+    params->pretty_print_params(std::cerr);
+    spkt_throw(sprockit::value_error,
+               "computed max nproc=0 from parameters - need app1.launch_cmd or app1.size");
+  }
+  resize_topology(max_nproc, params, verbose);
+
   //here is where we might need to build supplemental params
   if (params->has_param("congestion_model")){
     if (!params->has_param("amm_model")){
@@ -168,10 +175,6 @@ process_init_params(sprockit::sim_parameters* params, bool remap_params)
     sstmac::param_expander* hw_expander = sstmac::param_expander_factory::get_param("congestion_model", params);
     hw_expander->expand(params);
     delete hw_expander;
-  }
-
-  if (remap_params){
-    remap_deprecated_params(params);
   }
 
   //here is where we want to read debug params and active debug printing for stuff, maybe
@@ -192,14 +195,6 @@ process_init_params(sprockit::sim_parameters* params, bool remap_params)
     }
   }
 
-  /**
-    sstkeyword {
-      docstring=The number of ps per single timestamp 'tick'.ENDL
-      This sets the highest resolution different between times.
-      Higher values mean a lower resolution, i.e. 100 ps resolution
-      is lower resolution and 1 ps.;
-    }
-  */
   int timescale = params->get_optional_int_param("timestamp_resolution", 1);
   timestamp::init_stamps(timescale);
 
@@ -207,12 +202,13 @@ process_init_params(sprockit::sim_parameters* params, bool remap_params)
     std::string log_params = params->get_param("logger_params");
     logger::set_user_param(log_params);
   }
+
 }
 
 }
 
 void
-resize_topology(int max_nproc, sprockit::sim_parameters *params)
+resize_topology(int max_nproc, sprockit::sim_parameters *params, bool verbose)
 {
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
   if (top_params->has_param("geometry") || top_params->get_param("name") != "hdtorus"){
@@ -224,7 +220,8 @@ resize_topology(int max_nproc, sprockit::sim_parameters *params)
   gen_cart_grid(max_nproc, x, y, z);
   std::string paramval = sprockit::printf("%d %d %d", x, y, z);
   params->add_param("topology.geometry", paramval);
-  cout0 << sprockit::printf("Using auto-generated geometry [%d %d %d] for nproc=%d\n", x, y, z, max_nproc);
+  if (verbose)
+    cout0 << sprockit::printf("Using auto-generated geometry [%d %d %d] for nproc=%d\n", x, y, z, max_nproc);
 }
 
 void

@@ -9,19 +9,13 @@ namespace sw {
 class simple_compute_scheduler : public compute_scheduler
 {
  public:
-  simple_compute_scheduler() : ncore_active_(0) {}
+  simple_compute_scheduler(operating_system* os)
+    : ncore_active_(0), compute_scheduler(os)
+  {}
   
   void reserve_core(thread* thr);
   
   void release_core(thread* thr);
-  
-  compute_scheduler*
-  clone(operating_system* os) const {
-    simple_compute_scheduler* cln = new simple_compute_scheduler;
-    cln->os_ = os;
-    compute_scheduler::clone_into(cln);
-    return cln;
-  }
 
  private:
   std::list<thread*> pending_threads_;

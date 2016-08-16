@@ -1,4 +1,5 @@
 #include <sumi-mpi/mpi_api.h>
+#include <sstmac/software/process/operating_system.h>
 #include <climits>
 
 namespace sstmac {
@@ -88,10 +89,8 @@ struct ldcomplex {
 };
 
 void
-mpi_api::precommit_types()
+mpi_api::commit_builtin_types()
 {
-  static const int builtin_sizes[] = {1, 2, 4, 6, 8, 12, 16, 20, 32, 48, 64};
-  static const int num_builtins = sizeof(builtin_sizes) / sizeof(int);
 
   sstmac::sw::api_lock();
 
@@ -99,21 +98,26 @@ mpi_api::precommit_types()
 
 #define int_precommit_type(datatype, typeObj, id) \
   if (need_init) typeObj->init_integer<datatype>(#id); \
-  precommit_type(typeObj, id)
+  commit_builtin_type(typeObj, id)
 
 #define op_precommit_type(datatype, typeObj, id) \
   if (need_init) typeObj->init_with_ops<datatype>(#id); \
-  precommit_type(typeObj, id)
+  commit_builtin_type(typeObj, id)
 
 #define noop_precommit_type(size, typeObj, id) \
   if (need_init) typeObj->init_no_ops(#id, size); \
-  precommit_type(typeObj, id)
+  commit_builtin_type(typeObj, id)
 
 #define index_precommit_type(datatype, typeObj, id) \
   if (need_init) typeObj->init_no_ops(#id, sizeof(datatype)); \
   if (need_init) typeObj->init_op(MPI_MAXLOC, &ReduceOp<MaxLocPair,datatype>::op); \
   if (need_init) typeObj->init_op(MPI_MINLOC, &ReduceOp<MinLocPair,datatype>::op); \
-  precommit_type(typeObj, id);
+  commit_builtin_type(typeObj, id);
+
+#define precommit_builtin(size) \
+  if (need_init) mpi_type::builtins[size].init_no_ops("builtin-" #size, size); \
+  allocate_type_id(&mpi_type::builtins[size])
+
 
   noop_precommit_type(0, mpi_type::mpi_null, MPI_NULL);
 
@@ -146,6 +150,8 @@ mpi_api::precommit_types()
   int_precommit_type(long long, mpi_type::mpi_long_long_int, MPI_LONG_LONG_INT);
 
   int_precommit_type(unsigned long, mpi_type::mpi_unsigned_long, MPI_UNSIGNED_LONG);
+
+  int_precommit_type(char, mpi_type::mpi_packed, MPI_PACKED);
 
   //fortran nonsense
   noop_precommit_type(2*sizeof(float), mpi_type::mpi_complex, MPI_COMPLEX);
@@ -182,14 +188,21 @@ mpi_api::precommit_types()
   index_precommit_type(short_int_t, mpi_type::mpi_short_int, MPI_SHORT_INT);
   index_precommit_type(long_double_int_t, mpi_type::mpi_long_double_int, MPI_LONG_DOUBLE_INT);
 
-  for (int i=0; i < num_builtins; ++i){
-    int size = builtin_sizes[i];
-    allocate_type_id(&mpi_type::builtins[size]);
-  }
+  precommit_builtin(1);
+  precommit_builtin(2);
+  precommit_builtin(4);
+  precommit_builtin(6);
+  precommit_builtin(8);
+  precommit_builtin(12);
+  precommit_builtin(16);
+  precommit_builtin(20);
+  precommit_builtin(32);
+  precommit_builtin(48);
+  precommit_builtin(64);
+
 
   sstmac::sw::api_unlock();
 
-  //precommit_type(mpi_type::mpi_packed, MPI_PACKED);
 }
 
 int
@@ -384,13 +397,14 @@ mpi_api::allocate_type_id(mpi_type* type)
 }
 
 void
-mpi_api::precommit_type(mpi_type* type, MPI_Datatype id)
+mpi_api::commit_builtin_type(mpi_type* type, MPI_Datatype id)
 {
   if (known_types_.find(id) != known_types_.end()){
     spkt_throw_printf(sprockit::value_error,
       "mpi_api::precommit_type: %d already exists", id);
   }
   type->id = id;
+  type->set_builtin(true);
   known_types_[id] = type;
   known_types_[id]->set_committed(true);
 }
@@ -404,9 +418,10 @@ mpi_api::type_contiguous(int count, MPI_Datatype old_type,
 {
   mpi_type* new_type_obj = new mpi_type;
   mpi_type* old_type_obj = type_from_id(old_type);
+  MPI_Aint byte_stride = count * old_type_obj->extent();
   new_type_obj->init_vector("contiguous-" + old_type_obj->label,
                         old_type_obj,
-                        count, 1, count);
+                        count, 1, byte_stride);
 
   allocate_type_id(new_type_obj);
   *new_type = new_type_obj->id;
@@ -511,8 +526,12 @@ mpi_api::type_free(MPI_Datatype* type)
   mpi_api_debug(sprockit::dbg::mpi,
                 "MPI_Type_free(%s)",
                 type_str(*type).c_str());
-  mpi_type* type_obj = type_from_id(*type);
-  type_obj->set_committed(false);
+  auto iter = known_types_.find(*type);
+  if (iter != known_types_.end()){
+    mpi_type* obj = iter->second;
+    known_types_.erase(iter);
+    delete obj;
+  }
   return MPI_SUCCESS;
 }
 

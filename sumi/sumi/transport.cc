@@ -7,7 +7,7 @@
 #include <sumi/allgatherv.h>
 #include <sumi/alltoall.h>
 #include <sumi/alltoallv.h>
-#include <sumi/domain.h>
+#include <sumi/communicator.h>
 #include <sumi/bcast.h>
 #include <sumi/gather.h>
 #include <sumi/scatter.h>
@@ -17,8 +17,10 @@
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 
-RegisterDebugSlot(sumi)
+RegisterDebugSlot(sumi);
+
 ImplementFactory(sumi::transport)
+
 
 RegisterKeywords("lazy_watch", "eager_cutoff", "use_put_protocol");
 
@@ -64,7 +66,9 @@ transport::transport() :
   is_dead_(false),
   use_put_protocol_(false),
   use_hardware_ack_(false),
-  global_domain_(0),
+  global_domain_(nullptr),
+  monitor_(nullptr),
+  notify_cb_(nullptr),
   nspares_(0),
   recovery_lock_(0)
 {
@@ -119,7 +123,7 @@ transport::revive()
   go_revive();
 }
 
-domain*
+communicator*
 transport::global_dom() const
 {
   return global_domain_;
@@ -130,7 +134,7 @@ transport::init()
 {
   //THIS SHOULD ONLY BE CALLED AFTER RANK and NPROC are known
   inited_ = true;
-  global_domain_ = new global_domain(this);
+  global_domain_ = new global_communicator(this);
   const char* nspare_str = getenv("SUMI_NUM_SPARES");
   if (nspare_str){
     int nspares = atoi(nspare_str);
@@ -142,6 +146,15 @@ void
 transport::init_spares(int nspares)
 {
 
+}
+
+void
+transport::free_eager_buffer(const message::ptr& msg)
+{
+  char* buf = (char*) msg->eager_buffer();
+  if (buf){
+    delete[] buf;
+  }
 }
 
 void
@@ -168,8 +181,12 @@ transport::finalize()
 void
 transport::operation_done(const message::ptr &msg)
 {
-  completion_queue_.push_back(msg);
-  cq_notify();
+  if (notify_cb_ && msg->class_type() != message::collective_done){
+    notify_cb_->notify(msg);
+  } else {
+    completion_queue_.push_back(msg);
+    cq_notify();
+  }
 }
 
 void
@@ -443,6 +460,12 @@ transport::fail_watcher(int dst)
   watchers_.erase(dst);
 }
 
+transport::~transport()
+{
+  if (monitor_) delete monitor_;
+  if (global_domain_) delete global_domain_;
+}
+
 void
 transport::init_factory_params(sprockit::sim_parameters* params)
 {
@@ -456,12 +479,12 @@ transport::init_factory_params(sprockit::sim_parameters* params)
 }
 
 void
-transport::dynamic_tree_vote(int vote, int tag, vote_fxn fxn, int context, domain* dom)
+transport::dynamic_tree_vote(int vote, int tag, vote_fxn fxn, int context, communicator* dom)
 {
   if (dom == 0) dom = global_domain_;
   if (dom->nproc() == 1){
     collective_done_message::ptr dmsg = new collective_done_message(tag, collective::dynamic_tree_vote, dom);
-    dmsg->set_domain_rank(0);
+    dmsg->set_comm_rank(0);
     dmsg->set_vote(vote);
     votes_done_[tag] = vote_result(vote, thread_safe_set<int>());
     handle(dmsg);
@@ -679,7 +702,7 @@ transport::deadlock_check()
 
 bool
 transport::skip_collective(collective::type_t ty,
-  domain*& dom,
+  communicator*& dom,
   void* dst, void *src,
   int nelems, int type_size,
   int tag)
@@ -691,7 +714,7 @@ transport::skip_collective(collective::type_t ty,
       ::memcpy(dst, src, nelems*type_size);
     }
     collective_done_message::ptr dmsg = new collective_done_message(tag, ty, dom);
-    dmsg->set_domain_rank(0);
+    dmsg->set_comm_rank(0);
     dmsg->set_result(dst);
     handle(dmsg);
     return true; //null indicates no work to do
@@ -701,7 +724,7 @@ transport::skip_collective(collective::type_t ty,
 }
 
 void
-transport::allreduce(void* dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn, bool fault_aware, int context, domain* dom)
+transport::allreduce(void* dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn, bool fault_aware, int context, communicator* dom)
 {
   if (skip_collective(collective::allreduce, dom, dst, src, nelems, type_size, tag))
     return;
@@ -715,7 +738,7 @@ transport::allreduce(void* dst, void *src, int nelems, int type_size, int tag, r
 }
 
 void
-transport::reduce(int root, void* dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn, bool fault_aware, int context, domain* dom)
+transport::reduce(int root, void* dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn, bool fault_aware, int context, communicator* dom)
 {
   if (skip_collective(collective::reduce, dom, dst, src, nelems, type_size, tag))
     return;
@@ -730,7 +753,7 @@ transport::reduce(int root, void* dst, void *src, int nelems, int type_size, int
 }
 
 void
-transport::bcast(int root, void *buf, int nelems, int type_size, int tag, bool fault_aware, int context, domain* dom)
+transport::bcast(int root, void *buf, int nelems, int type_size, int tag, bool fault_aware, int context, communicator* dom)
 {
   if (skip_collective(collective::bcast, dom, buf, buf, nelems, type_size, tag))
     return;
@@ -747,7 +770,7 @@ transport::bcast(int root, void *buf, int nelems, int type_size, int tag, bool f
 void
 transport::gatherv(int root, void *dst, void *src,
                    int sendcnt, int *recv_counts,
-                   int type_size, int tag, bool fault_aware, int context, domain *dom)
+                   int type_size, int tag, bool fault_aware, int context, communicator *dom)
 {
   if (skip_collective(collective::gatherv, dom, dst, src, sendcnt, type_size, tag))
     return;
@@ -764,7 +787,7 @@ transport::gatherv(int root, void *dst, void *src,
 
 void
 transport::gather(int root, void *dst, void *src, int nelems,
-                  int type_size, int tag, bool fault_aware, int context, domain* dom)
+                  int type_size, int tag, bool fault_aware, int context, communicator* dom)
 {
   if (skip_collective(collective::gather, dom, dst, src, nelems, type_size, tag))
     return;
@@ -780,7 +803,7 @@ transport::gather(int root, void *dst, void *src, int nelems,
 
 void
 transport::scatter(int root, void *dst, void *src, int nelems,
-                   int type_size, int tag, bool fault_aware, int context, domain* dom)
+                   int type_size, int tag, bool fault_aware, int context, communicator* dom)
 {
   if (skip_collective(collective::scatter, dom, dst, src, nelems, type_size, tag))
     return;
@@ -796,7 +819,7 @@ transport::scatter(int root, void *dst, void *src, int nelems,
 
 void
 transport::scatterv(int root, void *dst, void *src, int* send_counts, int recvcnt,
-                    int type_size, int tag, bool fault_aware, int context, domain* dom)
+                    int type_size, int tag, bool fault_aware, int context, communicator* dom)
 {
   if (skip_collective(collective::scatterv, dom, dst, src, recvcnt, type_size, tag))
     return;
@@ -815,7 +838,7 @@ transport::scatterv(int root, void *dst, void *src, int* send_counts, int recvcn
 
 void
 transport::alltoall(void *dst, void *src, int nelems, int type_size,
-                    int tag, bool fault_aware, int context, domain* dom)
+                    int tag, bool fault_aware, int context, communicator* dom)
 {
   if (skip_collective(collective::alltoall, dom, dst, src, nelems, type_size, tag))
     return;
@@ -830,7 +853,7 @@ transport::alltoall(void *dst, void *src, int nelems, int type_size,
 
 void
 transport::alltoallv(void *dst, void *src, int* send_counts, int* recv_counts, int type_size,
-                    int tag, bool fault_aware, int context, domain* dom)
+                    int tag, bool fault_aware, int context, communicator* dom)
 {
   if (skip_collective(collective::alltoallv, dom, dst, src, send_counts[0], type_size, tag))
     return;
@@ -847,7 +870,7 @@ transport::alltoallv(void *dst, void *src, int* send_counts, int* recv_counts, i
 
 void
 transport::allgather(void *dst, void *src, int nelems, int type_size,
-                     int tag, bool fault_aware, int context, domain* dom)
+                     int tag, bool fault_aware, int context, communicator* dom)
 {
   if (skip_collective(collective::allgather, dom, dst, src, nelems, type_size, tag))
     return;
@@ -861,7 +884,7 @@ transport::allgather(void *dst, void *src, int nelems, int type_size,
 }
 
 void
-transport::allgatherv(void *dst, void *src, int* recv_counts, int type_size, int tag, bool fault_aware, int context, domain* dom)
+transport::allgatherv(void *dst, void *src, int* recv_counts, int type_size, int tag, bool fault_aware, int context, communicator* dom)
 {
   //if the allgatherv is skipped, we have a single recv count
   int nelems = *recv_counts;
@@ -879,7 +902,7 @@ transport::allgatherv(void *dst, void *src, int* recv_counts, int type_size, int
 }
 
 void
-transport::barrier(int tag, bool fault_aware, domain* dom)
+transport::barrier(int tag, bool fault_aware, communicator* dom)
 {
   if (skip_collective(collective::barrier, dom, 0, 0, 0, 0, tag))
     return;
@@ -894,7 +917,7 @@ void
 transport::finish_collective(collective* coll, const collective_done_message::ptr& dmsg)
 {
   bool deliver_cq_msg; bool delete_collective;
-  coll->actor_done(dmsg->domain_rank(), deliver_cq_msg, delete_collective);
+  coll->actor_done(dmsg->comm_rank(), deliver_cq_msg, delete_collective);
   debug_printf(sprockit::dbg::sumi,
     "Rank %d finishing collective of type %s tag %d and failures %s",
     rank_, collective::tostr(dmsg->type()), dmsg->tag(),
@@ -995,7 +1018,8 @@ transport::end_function()
 }
 
 void
-transport::smsg_send(int dst, message::payload_type_t ev, const message::ptr& msg, bool needs_ack)
+transport::smsg_send(int dst, message::payload_type_t ev,
+                     const message::ptr& msg, bool needs_ack)
 {
   CHECK_IF_I_AM_DEAD(return);
   START_PT2PT_FUNCTION(dst);
@@ -1011,7 +1035,16 @@ transport::smsg_send(int dst, message::payload_type_t ev, const message::ptr& ms
 
   if (dst == rank_) {
     //deliver to self
+    debug_printf(sprockit::dbg::sumi,
+      "Rank %d SUMI sending self message", rank_);
+
     delayed_transport_handle(msg);
+    if (needs_ack){
+      message::ptr ack = msg->clone();
+      msg->set_payload_type(message::eager_payload_ack);
+      delayed_transport_handle(ack);
+    }
+
   }
   else {
     do_smsg_send(dst, msg);

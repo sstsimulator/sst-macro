@@ -66,7 +66,7 @@ class job_launcher :
 
 };
 
-DeclareFactory(job_launcher)
+DeclareFactory(job_launcher);
 
 class default_job_launcher :
   public job_launcher

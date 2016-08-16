@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+
 #include <stdio.h>
 #include <sstmac/replacements/mpi.h>
 #include "mpitest.h"
@@ -8,7 +8,7 @@ namespace attrend {
 int exit_key = MPI_KEYVAL_INVALID;
 int wasCalled = 0;
 int foundError = 0;
-/* #define DEBUG */
+/** #define DEBUG */
 int delete_fn ( MPI_Comm, int, void *, void * );
 #ifdef DEBUG
 #define FFLUSH fflush(stdout);
@@ -24,21 +24,21 @@ int attrend( int argc, char **argv )
 
     MPI_Comm_rank( MPI_COMM_WORLD, &wrank );
     
-    /* create the keyval for the exit handler */
+    /** create the keyval for the exit handler */
     MPI_Keyval_create( MPI_NULL_COPY_FN, delete_fn, &exit_key, (void *)0 );
 
-    /* Attach to comm_self */
+    /** Attach to comm_self */
     MPI_Attr_put( MPI_COMM_SELF, exit_key, (void*)0 );
-    /* We can free the key now */
+    /** We can free the key now */
     MPI_Keyval_free( &exit_key );
 
-    /* Now, exit MPI */
-    /* MTest_Finalize( errs ); */
+    /** Now, exit MPI */
+    /** MTest_Finalize( errs ); */
     MPI_Finalize();
 
-    /* Check that the exit handler was called, and without error */
+    /** Check that the exit handler was called, and without error */
     if (wrank == 0) {
-	/* In case more than one process exits MPI_Finalize */
+	/** In case more than one process exits MPI_Finalize */
 	if (wasCalled != 1) {
 	    errs++;
 	    printf( "Attribute delete function on MPI_COMM_SELF was not called\n" );

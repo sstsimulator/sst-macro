@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2006 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <stdio.h>
 #include <sstmac/replacements/mpi.h>
 #include "mpitest.h"
@@ -42,7 +39,7 @@ int typecommit(int argc, char **argv)
     foo((void*) 0x1, MPI_SHORT_INT, (void*) 0x2, MPI_BYTE);
     foo((void*) 0x1, MPI_2INT, (void*) 0x2, MPI_BYTE);
 #ifdef HAVE_LONG_DOUBLE
-    /* Optional type may be NULL */
+    /** Optional type may be NULL */
     if (MPI_LONG_DOUBLE_INT != MPI_DATATYPE_NULL) {
 	foo((void*) 0x1, MPI_LONG_DOUBLE_INT, (void*) 0x2, MPI_BYTE);
     }

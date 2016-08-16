@@ -11,7 +11,7 @@
 
 // flattenedbutterfly.h: Interface for torus networks.
 //
-// Author: Ali Pinar <apinar@sandia.gov>
+// Author: Jeremiah Wilke <jjwilke@sandia.gov>
 
 #ifndef SSTMAC_HARDWARE_NETWORK_TOPOLOGY_flattenedbutterfly_H_INCLUDED
 #define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_flattenedbutterfly_H_INCLUDED

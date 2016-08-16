@@ -19,8 +19,10 @@ namespace sw {
 
 class first_available_allocation : public node_allocator
 {
-
  public:
+  first_available_allocation(parallel_runtime* rt) :
+    node_allocator(rt){}
+
   virtual
   ~first_available_allocation() throw ();
 

@@ -1,6 +1,6 @@
 #include <sumi/dynamic_tree_vote.h>
 #include <sumi/transport.h>
-#include <sumi/domain.h>
+#include <sumi/communicator.h>
 #include <sprockit/stl_string.h>
 
 /*
@@ -131,7 +131,7 @@ dynamic_tree_vote_actor::dynamic_tree_vote_actor(int vote,
     vote_fxn fxn,
     int tag,
     transport* my_api,
-    domain* dom,
+    communicator* dom,
     int context) :
   collective_actor(my_api, dom, tag, context, true), //true for always fault-aware
   vote_(vote),
@@ -443,8 +443,8 @@ dynamic_tree_vote_actor::merge_result(const dynamic_tree_vote_message::ptr& msg)
 void
 dynamic_tree_vote_actor::put_done_notification()
 {
-  collective_done_message::ptr msg = new collective_done_message(tag_, collective::dynamic_tree_vote, dom_);
-  msg->set_domain_rank(dom_->my_domain_rank());
+  collective_done_message::ptr msg = new collective_done_message(tag_, collective::dynamic_tree_vote, comm_);
+  msg->set_comm_rank(comm_->my_comm_rank());
   //convert the virtual ranks to physical ranks
   thread_safe_set<int>::const_iterator it, end = agreed_upon_failures_.start_iteration();
   for (it = agreed_upon_failures_.begin(); it != end; ++it){
@@ -652,14 +652,14 @@ dynamic_tree_vote_actor::recv(const dynamic_tree_vote_message::ptr&msg)
 
 dynamic_tree_vote_collective::dynamic_tree_vote_collective(
   int vote, vote_fxn fxn, int tag,
-  transport* my_api, domain* dom,
+  transport* my_api, communicator* dom,
   int context) :
   collective(collective::dynamic_tree_vote, my_api, dom, tag, context),
   vote_(vote),
   fxn_(fxn)
 {
   actors_[dense_me_] = new dynamic_tree_vote_actor(vote, fxn, tag, my_api, dom, context);
-  refcounts_[dom_->my_domain_rank()] = actors_.size();
+  refcounts_[comm_->my_comm_rank()] = actors_.size();
 }
 
 void

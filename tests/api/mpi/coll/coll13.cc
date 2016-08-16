@@ -1,7 +1,7 @@
 
 #include <sstmac/replacements/mpi.h>
 
-/* 
+/** 
 From: hook@nas.nasa.gov (Edward C. Hook)
  */
 
@@ -60,14 +60,14 @@ int coll13( int argc, char *argv[] )
 	rb[i] = 0;
     }
 
-    /* fputs("Before MPI_Alltoall\n",stdout); */
+    /** fputs("Before MPI_Alltoall\n",stdout); */
 
-    /* This should really send MPI_CHAR, but since sb and rb were allocated
+    /** This should really send MPI_CHAR, but since sb and rb were allocated
        as chunk*size*sizeof(int), the buffers are large enough */
     status = MPI_Alltoall(sb,chunk,MPI_INT,rb,chunk,MPI_INT,
 			  MPI_COMM_WORLD);
 
-    /* fputs("Before MPI_Allreduce\n",stdout); */
+    /** fputs("Before MPI_Allreduce\n",stdout); */
 
     MTest_Finalize( status );
 

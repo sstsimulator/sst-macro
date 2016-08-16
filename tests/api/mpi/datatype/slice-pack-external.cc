@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -15,12 +12,12 @@ int a[100][100][100], e[9][9][9];
 
 int slice_pack_external(int argc, char *argv[]);
 
-/* helper functions */
+/** helper functions */
 static int parse_args(int argc, char **argv);
 
 int slice_pack_external(int argc, char *argv[])
 {
-    /* Variable declarations */
+    /** Variable declarations */
     MPI_Datatype oneslice, twoslice, threeslice;
     int errs = 0;
     MPI_Aint sizeofint, bufsize, position;
@@ -28,7 +25,7 @@ int slice_pack_external(int argc, char *argv[])
 	
     int i, j, k;
 	
-    /* Initialize a to some known values. */
+    /** Initialize a to some known values. */
     for (i = 0; i < 100; i++) {
 	for (j = 0; j < 100; j++) {
 	    for (k = 0; k < 100; k++) {
@@ -37,25 +34,25 @@ int slice_pack_external(int argc, char *argv[])
 	}
     }
 	
-    /* Initialize MPI */
+    /** Initialize MPI */
     MPI_Init(&argc, &argv);
     MPI_Type_extent(MPI_INT, &sizeofint);
   
     parse_args(argc, argv);
 
-    /* Create data types. */
-    /* NOTE: This differs from the way that it's done on the sheet. */
-    /* On the sheet, the slice is a[0, 2, 4, ..., 16][2-10][1-9]. */
-    /* Below, the slice is a[0-8][2-10][1, 3, 5, ..., 17]. */
+    /** Create data types. */
+    /** NOTE: This differs from the way that it's done on the sheet. */
+    /** On the sheet, the slice is a[0, 2, 4, ..., 16][2-10][1-9]. */
+    /** Below, the slice is a[0-8][2-10][1, 3, 5, ..., 17]. */
     MPI_Type_vector(9, 1, 2, MPI_INT, &oneslice);
     MPI_Type_hvector(9, 1, 100*sizeofint, oneslice, &twoslice);
     MPI_Type_hvector(9, 1, 100*100*sizeofint, twoslice, &threeslice);
 	
     MPI_Type_commit(&threeslice);
 	
-    /* Pack it into a buffer. */
+    /** Pack it into a buffer. */
     position = 0;
-/*     MPI_Pack_size(1, threeslice, MPI_COMM_WORLD, &bufsize); */
+/**     MPI_Pack_size(1, threeslice, MPI_COMM_WORLD, &bufsize); */
     MPI_Pack_external_size((char*)"external32", 1, threeslice, &bufsize);
     if (bufsize != 2916)
     {
@@ -63,7 +60,7 @@ int slice_pack_external(int argc, char *argv[])
     }
     buffer = (void *) malloc((unsigned) bufsize);
 
-    /* -1 to indices on sheet to compensate for Fortran --> C */
+    /** -1 to indices on sheet to compensate for Fortran --> C */
     MPI_Pack_external((char*)"external32",
 		      &(a[0][2][1]),
 		      1, threeslice,
@@ -71,7 +68,7 @@ int slice_pack_external(int argc, char *argv[])
 		      bufsize,
 		      &position);
 
-    /* Unpack the buffer into e. */
+    /** Unpack the buffer into e. */
     position = 0;
     MPI_Unpack_external((char*)"external32",
 			buffer,
@@ -80,11 +77,11 @@ int slice_pack_external(int argc, char *argv[])
 			e, 9*9*9,
 			MPI_INT);
 	
-    /* Display errors, if any. */
+    /** Display errors, if any. */
     for (i = 0; i < 9; i++) {
 	for (j = 0; j < 9; j++) {
 	    for (k = 0; k < 9; k++) {
-	       /* The truncation in integer division makes this safe. */
+	       /** The truncation in integer division makes this safe. */
 		if (e[i][j][k] != a[i][j+2][k*2+1]) {
 		    errs++;
 		    if (verbose) {
@@ -96,7 +93,7 @@ int slice_pack_external(int argc, char *argv[])
 	}
     } 
   
-    /* Release memory. */
+    /** Release memory. */
     free(buffer);
 
     if (errs) {
@@ -114,7 +111,7 @@ int slice_pack_external(int argc, char *argv[])
     return 0;
 }
 
-/* parse_args()
+/** parse_args()
  */
 static int parse_args(int argc, char **argv)
 {

@@ -72,8 +72,8 @@ class timestamp_prefix_fxn :
 //
 manager::manager() :
   next_ppid_(0),
-  interconnect_(0),
-  rt_(0)
+  interconnect_(nullptr),
+  rt_(nullptr)
 {
 }
 
@@ -282,7 +282,8 @@ macro_manager::stop()
 
 macro_manager::macro_manager(parallel_runtime* rt) :
   running_(false),
-  event_manager_(0)
+  launcher_(nullptr),
+  event_manager_(nullptr)
 {
   rt_ = rt;
 }
@@ -324,6 +325,7 @@ macro_manager::~macro_manager() throw ()
     cerrn << "FATAL:  manager going out of scope while still running.\n";
     abort();
   }
+  if (launcher_) delete launcher_;
   if (event_manager_) delete event_manager_;
 }
 #endif

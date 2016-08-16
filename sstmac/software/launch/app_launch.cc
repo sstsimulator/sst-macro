@@ -15,7 +15,8 @@
 #include <unistd.h>
 #include <getopt.h>
 
-ImplementFactory(sstmac::sw::app_launch);
+ImplementFactory(sstmac::sw::app_launch)
+
 RegisterNamespaces("app_launch");
 
 namespace sstmac {

@@ -38,16 +38,13 @@ default_dgemv::init_factory_params(sprockit::sim_parameters* params)
 compute_event*
 default_dgemv::op_2d(int m, int n)
 {
+  basic_compute_event* msg = new basic_compute_event;
+  basic_instructions_st& st = msg->data();
+
   long nops = long(m) * long(n);
-  long nflops = nops / long(pipeline_);
-  long loop_ops = nops / long(loop_unroll_) / long(pipeline_);
-
-  long total_bytes = long(m)*long(n)*sizeof(double);
-
-  compute_event* msg = new compute_event;
-  msg->set_event_value(compute_event::flop, nflops);
-  msg->set_event_value(compute_event::intop, loop_ops);
-  msg->set_event_value(compute_event::mem_sequential, total_bytes);
+  st.flops= nops / long(pipeline_);
+  st.intops = nops / long(loop_unroll_) / long(pipeline_);
+  st.mem_sequential = long(m)*long(n)*sizeof(double);
   return msg;
 }
 

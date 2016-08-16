@@ -35,13 +35,7 @@ namespace sw {
  */
 class node_allocator : public sprockit::factory_type
 {
-
  public:
-  virtual void
-  init_param1(parallel_runtime* rt){
-    rt_ = rt;
-  }
-
   void
   set_topology(hw::topology* top) {
     topology_ = top;
@@ -70,8 +64,8 @@ class node_allocator : public sprockit::factory_type
    ordered_node_set& allocation) const = 0;
 
  protected:
-  node_allocator() :
-    rt_(0), topology_(0) {}
+  node_allocator(parallel_runtime* rt) :
+    rt_(rt), topology_(0) {}
 
  protected:
   hw::topology* topology_;
@@ -80,8 +74,7 @@ class node_allocator : public sprockit::factory_type
 };
 
 
-
-DeclareFactory1InitParam(node_allocator, parallel_runtime*);
+DeclareFactory(node_allocator, parallel_runtime*);
 
 }
 } // end of namespace sstmac

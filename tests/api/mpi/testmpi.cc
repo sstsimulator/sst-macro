@@ -185,7 +185,7 @@ enum TEST_MODE
   //DATATYPE_ZERO_BLKLEN_VECTOR = 174,
   //DATATYPE_ZEROBLKS = 175,
   //DATATYPE_ZEROPARMS = 176,
-  /** ERRHAN_ADDERR = 177,
+  /*** ERRHAN_ADDERR = 177,
   ERRHAN_COMMCALL = 178,
   ERRHAN_ERRCODE = 179,
   ERRHAN_ERRFATAL = 180,
@@ -251,7 +251,7 @@ enum TEST_MODE
   PT2PT_SENDSELF = 240,
   PT2PT_WAITANY_NULL = 241,
   PT2PT_WAITTESTNULL = 242,
-  /** TOPO_CARTCREATES = 243,
+  /*** TOPO_CARTCREATES = 243,
   TOPO_CARTMAP1 = 244,
   TOPO_CARTSHIFT1 = 245,
   TOPO_CARTSUBALL = 246,
@@ -314,7 +314,7 @@ enum TEST_MODE
 };
 
 //-------- attr ---------//
-/** TODO
+/*** TODO
 #include "attr/attr2type.cc"
 #include "attr/attrend.cc"
 #include "attr/attrerr.cc"
@@ -574,7 +574,7 @@ enum TEST_MODE
 #include "pt2pt/waitany-null.cc"
 #include "pt2pt/waittestnull.cc"
 
-/** no topo
+/*** no topo
 // --------------- topo ------------ //
 #include "topo/cartcreates.cc"
 #include "topo/cartmap1.cc"
@@ -594,7 +594,7 @@ enum TEST_MODE
 */
 
 // -------------- RMA ------------ //
-/** no RMA
+/*** no RMA
 #include "rma/accfence1.cc"
 #include "rma/accfence2_am.cc"
 #include "rma/accfence2.cc"
@@ -648,7 +648,7 @@ const char* valid_keywords[] = {
 
 sprockit::StaticKeywordRegister reg(sizeof(valid_keywords) / sizeof(const char*), valid_keywords);
 
-#define sstmac_app_name "apitest"
+#define sstmac_app_name apitest
 
 int USER_MAIN(int argc, char *argv[])
 {
@@ -667,16 +667,16 @@ int USER_MAIN(int argc, char *argv[])
 
   switch (testmode_)
   {
-  /* case ATTR_ATTR2TYPE:
+  /** case ATTR_ATTR2TYPE:
     attr2type::attr2type(argc, argv);
     break; */
-  /* case ATTR_ATTREND:
+  /** case ATTR_ATTREND:
     attrend::attrend(argc, argv);
     break; */
   case ATTR_ATTREND2:
     attrend2::attrend2(argc, argv);
     break;
-  /** case ATTR_ATTRERR:
+  /*** case ATTR_ATTRERR:
     attrerr::attrerr(argc, argv);
     break;
   case ATTR_ATTRERRCOMM:
@@ -757,7 +757,7 @@ int USER_MAIN(int argc, char *argv[])
   case COLL_ALLTOALLV0:
     alltoallv0::alltoallv0(argc, argv);
     break;
-  /** case COLL_ALLTOALLW1:
+  /*** case COLL_ALLTOALLW1:
     alltoallw1::alltoallw1(argc, argv);
     break;
   case COLL_ALLTOALLW2:
@@ -778,7 +778,7 @@ int USER_MAIN(int argc, char *argv[])
   case COLL_BCASTZEROTYPE:
     bcastzerotype::bcastzerotype(argc, argv);
     break;
-  /** case COLL_COLL10:
+  /*** case COLL_COLL10:
     coll10::coll10(argc, argv);
     break;
   case COLL_COLL11:
@@ -814,7 +814,7 @@ int USER_MAIN(int argc, char *argv[])
   case COLL_COLL9:
     coll9::coll9(argc, argv);
     break;
-  /**
+  /***
   case COLL_EXSCAN:
     exscan::exscan(argc, argv);
     break;
@@ -830,7 +830,7 @@ int USER_MAIN(int argc, char *argv[])
   case COLL_IALLRED:
     iallred::iallred(argc, argv);
     break;
-  /** case COLL_ICALLGATHER:
+  /*** case COLL_ICALLGATHER:
     icallgather::icallgather(argc, argv);
     break;
   case COLL_ICALLGATHERV:
@@ -905,7 +905,7 @@ int USER_MAIN(int argc, char *argv[])
   case COLL_OPSUM:
     opsum::opsum(argc, argv);
     break;
-  /** case COLL_RED_SCAT_BLOCK:
+  /*** case COLL_RED_SCAT_BLOCK:
     red_scat_block::red_scat_block(argc, argv);
     break;
   case COLL_REDSCAT:
@@ -914,7 +914,7 @@ int USER_MAIN(int argc, char *argv[])
   case COLL_REDSCAT3:
     redscat3::redscat3(argc, argv);
     break; */
-  /** case COLL_REDSCATBKINTER:
+  /*** case COLL_REDSCATBKINTER:
     redscatbkinter::redscatbkinter(argc, argv);
     break;
   case COLL_REDSCATBLK3:
@@ -935,7 +935,7 @@ int USER_MAIN(int argc, char *argv[])
   case COLL_SCATTERN:
     scattern::scattern(argc, argv);
     break;
-  /** case COLL_SCATTERV:
+  /*** case COLL_SCATTERV:
     scatterv::scatterv(argc, argv);
     break; */
   case COMM_CMFREE:
@@ -944,7 +944,7 @@ int USER_MAIN(int argc, char *argv[])
   case COMM_CMSPLIT:
     cmsplit::cmsplit(argc, argv);
     break;
-  /** case COMM_CMSPLIT2:
+  /*** case COMM_CMSPLIT2:
     cmsplit2::cmsplit2(argc, argv);
     break;
   case COMM_CMSPLIT_TYPE:
@@ -962,7 +962,7 @@ int USER_MAIN(int argc, char *argv[])
   case COMM_COMM_IDUP:
     comm_idup::comm_idup(argc, argv);
     break;
-  /** case COMM_COMMCREATE1:
+  /*** case COMM_COMMCREATE1:
     commcreate1::commcreate1(argc, argv);
     break;
   case COMM_COMMNAME:
@@ -977,7 +977,7 @@ int USER_MAIN(int argc, char *argv[])
   case COMM_DUP:
     duptest::duptest(argc, argv);
     break;
-  /**   case COMM_DUPIC:
+  /***   case COMM_DUPIC:
     dupic::dupic(argc, argv);
     break;
   case COMM_IC1:
@@ -1262,7 +1262,7 @@ int USER_MAIN(int argc, char *argv[])
   case PT2PT_BSENDPENDING:
     bsendpending::bsendpending(argc, argv);
     break;
-  /** case PT2PT_CANCELRECV:
+  /*** case PT2PT_CANCELRECV:
     cancelrecv::cancelrecv(argc, argv);
     break;
   case PT2PT_EAGERDT:
@@ -1296,7 +1296,7 @@ int USER_MAIN(int argc, char *argv[])
   case PT2PT_PROBENULL:
     probenull::probenull(argc, argv);
     break;
-  /** case PT2PT_PSCANCEL:
+  /*** case PT2PT_PSCANCEL:
     pscancel::pscancel(argc, argv);
     break;
   case PT2PT_RCANCEL:
@@ -1338,7 +1338,7 @@ int USER_MAIN(int argc, char *argv[])
   case PT2PT_WAITTESTNULL:
     waittestnull::waittestnull(argc, argv);
     break;
-  /** case TOPO_CARTCREATES:
+  /*** case TOPO_CARTCREATES:
     cartcreates::cartcreates(argc, argv);
     break;
   case TOPO_CARTMAP1:

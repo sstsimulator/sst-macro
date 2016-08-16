@@ -38,12 +38,19 @@ packet_flow_payload::packet_flow_payload(
 std::string
 packet_flow_payload::to_string() const
 {
-  return sprockit::printf("flow %16lu, %5lu:%5lu bw=%8.4e %d->%d %p",
+  std::string orig_str;
+  if (orig_){
+    orig_str = sprockit::printf(" %d payload bytes", orig_->byte_length());
+  } else {
+    orig_str = "null payload";
+  }
+
+  return sprockit::printf("flow %16lu, %5lu:%5lu bw=%8.4e %d->%d %s",
                    uint64_t(unique_id()),
                    byte_offset_,
                    byte_offset_ + num_bytes_, bw_,
                    int(fromaddr()), int(toaddr()),
-                   bw_, orig());
+                   bw_, orig_str.c_str());
 }
 
 void

@@ -62,7 +62,7 @@ comm_finalize()
 }
 
 void
-comm_vote(int vote, int tag, vote_fxn fxn, int context, domain* dom)
+comm_vote(int vote, int tag, vote_fxn fxn, int context, communicator* dom)
 {
   current_transport()->dynamic_tree_vote(vote, tag, fxn, context, dom);
 }
@@ -80,62 +80,62 @@ comm_stop_heartbeat()
 }
 
 void
-comm_allreduce(void *dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn, bool fault_aware, int context, domain* dom)
+comm_allreduce(void *dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn, bool fault_aware, int context, communicator* dom)
 {
   current_transport()->allreduce(dst, src, nelems, type_size, tag, fxn, fault_aware, context, dom);
 }
 
 void
 comm_reduce(int root, void *dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn,
-            bool fault_aware, int context, domain* dom)
+            bool fault_aware, int context, communicator* dom)
 {
   current_transport()->reduce(root, dst, src, nelems, type_size, tag, fxn, fault_aware, context, dom);
 }
 
 void
 comm_alltoall(void *dst, void *src, int nelems, int type_size, int tag,
-                bool fault_aware, int context, domain* dom)
+                bool fault_aware, int context, communicator* dom)
 {
   current_transport()->alltoall(dst, src, nelems, type_size, tag, fault_aware, context, dom);
 }
 
 void
 comm_allgather(void *dst, void *src, int nelems, int type_size, int tag,
-               bool fault_aware, int context, domain* dom)
+               bool fault_aware, int context, communicator* dom)
 {
   current_transport()->allgather(dst, src, nelems, type_size, tag, fault_aware, context, dom);
 }
 
 void
 comm_allgatherv(void *dst, void *src, int* recv_counts, int type_size, int tag,
-                bool fault_aware, int context, domain* dom)
+                bool fault_aware, int context, communicator* dom)
 {
   current_transport()->allgatherv(dst, src, recv_counts, type_size, tag, fault_aware, context, dom);
 }
 
 void
 comm_gather(int root, void *dst, void *src, int nelems, int type_size, int tag,
-            bool fault_aware, int context, domain* dom)
+            bool fault_aware, int context, communicator* dom)
 {
   current_transport()->gather(root, dst, src, nelems, type_size, tag, fault_aware, context, dom);
 }
 
 void
 comm_scatter(int root, void *dst, void *src, int nelems, int type_size, int tag,
-             bool fault_aware, int context, domain* dom)
+             bool fault_aware, int context, communicator* dom)
 {
   current_transport()->scatter(root, dst, src, nelems, type_size, tag, fault_aware, context, dom);
 }
 
 void
 comm_bcast(int root, void *buffer, int nelems, int type_size, int tag,
-           bool fault_aware, int context, domain *dom)
+           bool fault_aware, int context, communicator *dom)
 {
   current_transport()->bcast(root, buffer, nelems, type_size, tag, fault_aware, context, dom);
 }
 
 void
-comm_barrier(int tag, bool fault_aware, domain* dom)
+comm_barrier(int tag, bool fault_aware, communicator* dom)
 {
   current_transport()->barrier(tag, fault_aware, dom);
 }
@@ -231,10 +231,25 @@ comm_partner(long nid)
   return current_transport()->get_partner(node_id(nid));
 }
 
+void sleep_until(double sec)
+{
+  thread* thr = thread::current();
+  app* my_app = thr->parent_app();
+  double time = sec - my_app->now().sec();
+  my_app->sleep(timestamp(time));
+}
+
+void sleep(double sec)
+{
+  thread* thr = thread::current();
+  app* my_app = thr->parent_app();
+  my_app->sleep(timestamp(sec));
+}
+
 void compute(double sec)
 {
   thread* thr = thread::current();
-  app* my_app = safe_cast(app, thr);
+  app* my_app = thr->parent_app();
   my_app->compute(timestamp(sec));
 }
 

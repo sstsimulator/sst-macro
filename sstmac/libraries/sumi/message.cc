@@ -10,8 +10,7 @@ transport_message::transport_message(sw::app_id aid,
  const sumi::message_ptr& msg, long byte_length)
   : library_interface("sumi"),
     network_message(aid, byte_length),
-    payload_(msg),
-    buffer_(0)
+    payload_(msg)
 {
 }
 
@@ -23,36 +22,30 @@ transport_message::serialize_order(serializer& ser)
   sumi::message* msg = payload_.get();
   ser & msg;
   payload_ = msg;
-  if (network_message::is_metadata()){
-    ser & sstmac::raw_ptr(buffer_);
-  } else { //I am a data thing, need to send the actual payload
-    ser & sstmac::array(buffer_, bytes_);
-  }
 }
 
 std::string
 transport_message::to_string() const
 {
-  message* msg = ptr_test_cast(message, payload_);
+  std::string message_str;
+  sumi::message* smsg = ptr_test_cast(sumi::message, payload_);
+  sstmac::message* msg = ptr_test_cast(sstmac::message, payload_);
+  if (smsg){
+    message_str = smsg->to_string();
+  } else if (msg){
+    message_str = msg->to_string();
+  } else {
+    message_str = "null payload";
+  }
   return sprockit::printf("sumi transport message %lu carrying %s",
-    unique_id(), (msg ? msg->to_string().c_str() : "null"));
+    unique_id(), message_str.c_str());
 }
 
 void
 transport_message::put_on_wire()
 {
-  if (buffer_ && !is_metadata()){
-    void* new_buf = new char[bytes_];
-    ::memcpy(new_buf, buffer_, bytes_);
-    buffer_ = new_buf;
-  }
-}
-
-void
-transport_message::complete_transfer(void *buf)
-{
-  if (buffer_){
-    ::memcpy(buf, buffer_, bytes_);
+  if (!is_metadata()){
+    payload_->buffer_send();
   }
 }
 
@@ -84,7 +77,6 @@ transport_message::clone_into(transport_message* cln) const
   cln->payload_ = payload_->clone();
   network_message::clone_into(cln);
   library_interface::clone_into(cln);
-  cln->buffer_ = buffer_;
 }
 
 void

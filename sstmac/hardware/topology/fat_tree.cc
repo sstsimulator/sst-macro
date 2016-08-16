@@ -10,7 +10,7 @@
  */
 // fattree.cc: Implementation of fat tree networks.
 //
-// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Author: Jeremiah Wilke <jjwilke@sandia.gov>
 #include <sstream>
 #include <sstmac/hardware/topology/fat_tree.h>
 #include <sstmac/hardware/router/router.h>

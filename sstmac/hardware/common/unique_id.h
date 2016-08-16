@@ -10,15 +10,15 @@
 namespace sstmac {
 namespace hw {
 
-struct unique_msg_id {
+struct unique_event_id {
   uint32_t src_node;
   uint32_t msg_num;
 
-  unique_msg_id(uint32_t src, uint32_t num) :
+  unique_event_id(uint32_t src, uint32_t num) :
     src_node(src), msg_num(num) {
   }
 
-  unique_msg_id() :
+  unique_event_id() :
     src_node(-1), msg_num(0) {
   }
 
@@ -46,13 +46,13 @@ struct unique_msg_id {
     msg_num = seed;
   }
 
-  unique_msg_id& operator++() {
+  unique_event_id& operator++() {
     ++msg_num;
     return *this;
   }
 
-  unique_msg_id operator++(int) {
-    unique_msg_id other(*this);
+  unique_event_id operator++(int) {
+    unique_event_id other(*this);
     ++msg_num;
     return other;
   }
@@ -64,11 +64,11 @@ struct unique_msg_id {
 
 START_SERIALIZATION_NAMESPACE
 template <>
-class serialize<sstmac::hw::unique_msg_id>
+class serialize<sstmac::hw::unique_event_id>
 {
  public:
   void
-  operator()(sstmac::hw::unique_msg_id& id, serializer& ser){
+  operator()(sstmac::hw::unique_event_id& id, serializer& ser){
     ser.primitive(id);
   }
 };
@@ -78,14 +78,14 @@ END_SERIALIZATION_NAMESPACE
 #if SPKT_HAVE_CPP11
 namespace std {
 template <>
-struct hash<sstmac::hw::unique_msg_id>
+struct hash<sstmac::hw::unique_event_id>
   : public std::hash<uint64_t>
 { };
 }
 #else
 namespace sstmac { namespace hw {
 inline std::size_t
-hash_value(const unique_msg_id& id){
+hash_value(const unique_event_id& id){
   return uint64_t(id);
 }
 }}

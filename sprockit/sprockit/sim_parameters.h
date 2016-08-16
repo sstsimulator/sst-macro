@@ -115,6 +115,9 @@ class sim_parameters  {
   get_param(const std::string& key, bool throw_on_error = true);
 
   std::string
+  get_scoped_param(const std::string& key, bool throw_on_error = true);
+
+  std::string
   reread_param(const std::string& key) {
     return get_param(key);
   }
@@ -160,7 +163,10 @@ class sim_parameters  {
   add_param_override(const std::string& key, int val);
 
   void
-  combine_into(sim_parameters* sp);
+  combine_into(sim_parameters* sp,
+               bool fail_on_existing = false,
+               bool override_existing = true,
+               bool mark_as_read = true);
 
   void
   print_params(std::ostream& os, bool pretty_print, std::list<std::string>& namespaces) const;
@@ -182,6 +188,9 @@ class sim_parameters  {
 
   bool
   has_param(const std::string& key) const;
+
+  bool
+  has_scoped_param(const std::string& key) const;
 
   int
   get_int_param(const std::string& key);
@@ -406,7 +415,7 @@ class sim_parameters  {
   namespace_iterator ns_end() { return subspaces_.end(); }
   const_namespace_iterator ns_end() const { return subspaces_.end(); }
 
- protected:
+ private:
   std::map<std::string, sim_parameters*> subspaces_;
   std::map<std::string, std::string> variables_;
 
@@ -417,6 +426,9 @@ class sim_parameters  {
   std::string namespace_;
 
   key_value_map params_;
+
+  void
+  throw_key_error(const std::string& key) const;
 
   void
   set_parent(sim_parameters* p) {
@@ -453,6 +465,11 @@ class sim_parameters  {
   sim_parameters*
   get_scope_and_key(const std::string& key, std::string& final_key);
 
+  bool
+  get_param(std::string& inout, const std::string& key);
+
+  bool
+  get_scoped_param(std::string& inout, const std::string& key);
 
 };
 

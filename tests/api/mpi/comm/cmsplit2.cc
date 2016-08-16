@@ -1,15 +1,3 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
-/*
- *  (C) 2011 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
-
-/* This test ensures that MPI_Comm_split breaks ties in key values by using the
- * original rank in the input communicator.  This typically corresponds to
- * the difference between using a stable sort or using an unstable sort.
- *
- * It checks all sizes from 1..comm_size(world)-1, so this test does not need to
- * be run multiple times at process counts from a higher-level test driver. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,7 +44,7 @@ int cmsplit2(int argc, char **argv)
     }
 
     for (cs = 1; cs <= wsize; ++cs) {
-        /* yes, we are using comm_split to test comm_split, but this test is
+        /** yes, we are using comm_split to test comm_split, but this test is
          * mainly about ensuring that the stable sort behavior is correct, not
          * about whether the partitioning by color behavior is correct */
         MPI_Comm_split(MPI_COMM_WORLD, (wrank < cs ? 0 : MPI_UNDEFINED), wrank, &comm);
@@ -65,12 +53,12 @@ int cmsplit2(int argc, char **argv)
             MPI_Comm_size(comm, &size);
 
             for (modulus = 1; modulus <= size; ++modulus) {
-                /* Divide all ranks into one of "modulus" equivalence classes.  Ranks in
+                /** Divide all ranks into one of "modulus" equivalence classes.  Ranks in
                  * output comm will be ordered first by class, then within the class by
                  * rank in comm world. */
                 key = rank % modulus;
 
-                /* all pass same color, variable keys */
+                /** all pass same color, variable keys */
                 MPI_Comm_split(comm, 5, key, &splitcomm);
                 MPI_Comm_rank(splitcomm, &newrank);
                 MPI_Comm_size(splitcomm, &newsize);
@@ -87,10 +75,10 @@ int cmsplit2(int argc, char **argv)
                 if (splitcomm != MPI_COMM_NULL)
                     MPI_Comm_free(&splitcomm);
 
-                /* now check that comm_split broke any ties correctly */
+                /** now check that comm_split broke any ties correctly */
                 if (rank == 0) {
                     if (verbose) {
-                        /* debugging code that is useful when the test fails */
+                        /** debugging code that is useful when the test fails */
                         printf("modulus=%d oldranks={", modulus);
                         for (i = 0; i < size - 1; ++i) {
                             printf("%d,", oldranks[i]);
@@ -104,7 +92,7 @@ int cmsplit2(int argc, char **argv)
 
                     pos = 0;
                     for (i = 0; i < modulus; ++i) {
-                        /* there's probably a better way to write these loop bounds and
+                        /** there's probably a better way to write these loop bounds and
                          * indices, but this is the first (correct) way that occurred to me */
                         for (j = 0; j < (size / modulus + (i < size % modulus ? 1 : 0)); ++j) {
                             if (errs < ERRLIMIT && oldranks[pos] != i+modulus*j) {

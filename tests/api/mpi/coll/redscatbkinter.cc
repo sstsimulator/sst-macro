@@ -10,9 +10,9 @@ int redscatbkinter( int argc, char **argv )
 {
     int      err = 0;
     int      size, rsize, rank, i;
-    int      recvcount, /* Each process receives this much data */
-             sendcount, /* Each process contributes this much data */
-	     basecount; /* Unit of elements - basecount *rsize is recvcount, 
+    int      recvcount, /** Each process receives this much data */
+             sendcount, /** Each process contributes this much data */
+	     basecount; /** Unit of elements - basecount *rsize is recvcount, 
 			   etc. */
     int      isLeftGroup;
     long long *sendbuf, *recvbuf;
@@ -64,7 +64,7 @@ int redscatbkinter( int argc, char **argv )
 	MPI_Reduce_scatter_block( sendbuf, recvbuf, recvcount, MPI_LONG_LONG, 
 				  MPI_SUM, comm );
 
-	/* Check received data */
+	/** Check received data */
 	for (i=0; i<recvcount; i++) {
 	    sumval = (long long)(sendcount) * (long long)((rsize * (rsize-1))/2) +
 		(long long)(i + rank * rsize * basecount) * (long long)rsize;

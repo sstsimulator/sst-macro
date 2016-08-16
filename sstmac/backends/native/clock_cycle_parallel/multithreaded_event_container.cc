@@ -125,7 +125,7 @@ multithreaded_event_container::init_factory_params(sprockit::sim_parameters* par
 
   subthreads_.resize(nthread_);
   for (int i=1; i < nthread_; ++i){
-    multithreaded_subcontainer* ev_man = new multithreaded_subcontainer(i, this);
+    multithreaded_subcontainer* ev_man = new multithreaded_subcontainer(rt_, i, this);
     ev_man->finalize_init();
     subthreads_[i] = ev_man;
   }

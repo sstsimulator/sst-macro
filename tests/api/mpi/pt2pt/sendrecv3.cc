@@ -1,16 +1,12 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpitest.h"
 
 namespace sendrecv3 {
-/*
+/**
 static char MTEST_Descrip[] = "Head to head send-recv to test backoff in device when large messages are being transferred";
 */
 
@@ -53,7 +49,7 @@ int sendrecv3( int argc, char *argv[] )
 	    MPI_Sendrecv( MPI_BOTTOM, 0, MPI_INT, partner, 10, 
 			  MPI_BOTTOM, 0, MPI_INT, partner, 10, comm, 
 			  MPI_STATUS_IGNORE );
-	    /* Try to fill up the outgoing message buffers */
+	    /** Try to fill up the outgoing message buffers */
 	    for (i=0; i<nmsg; i++) {
 		MPI_Isend( buf[i], msgSize, MPI_CHAR, partner, testnum, comm,
 			   &r[i] );
@@ -64,12 +60,12 @@ int sendrecv3( int argc, char *argv[] )
 	    }
 	    MPI_Waitall( nmsg, r, MPI_STATUSES_IGNORE );
 
-	    /* Repeat the test, but make one of the processes sleep */
+	    /** Repeat the test, but make one of the processes sleep */
 	    MPI_Sendrecv( MPI_BOTTOM, 0, MPI_INT, partner, 10, 
 			  MPI_BOTTOM, 0, MPI_INT, partner, 10, comm, 
 			  MPI_STATUS_IGNORE );
 	    if (rank == dest) MTestSleep( 1 );
-	    /* Try to fill up the outgoing message buffers */
+	    /** Try to fill up the outgoing message buffers */
 	    tsend = MPI_Wtime();
 	    for (i=0; i<nmsg; i++) {
 		MPI_Isend( buf[i], msgSize, MPI_CHAR, partner, testnum, comm,

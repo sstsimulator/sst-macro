@@ -2,17 +2,21 @@
 #include <sumi-mpi/mpi_comm/mpi_comm_cart.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sprockit/stl_string.h>
+#include <sstmac/software/process/operating_system.h>
 
 namespace sumi {
 
 int
 mpi_api::comm_dup(MPI_Comm input, MPI_Comm *output)
 {
-  SSTMACBacktrace("MPI_Comm_dup");
+  check_init();
+  start_mpi_call("MPI_Comm_dup");
+  mpi_api_debug(sprockit::dbg::mpi, "MPI_Comm_dup(%s) start",
+                comm_str(input).c_str()); 
   mpi_comm* inputPtr = get_comm(input);
   mpi_comm* outputPtr = comm_factory_->comm_dup(inputPtr);
   *output = add_comm_ptr(outputPtr);
-  mpi_api_debug(sprockit::dbg::mpi, "MPI_Comm_dup(%s,*%s)",
+  mpi_api_debug(sprockit::dbg::mpi, "MPI_Comm_dup(%s,*%s) finish",
                 comm_str(input).c_str(), comm_str(*output).c_str());
   return MPI_SUCCESS;
 }
@@ -29,10 +33,9 @@ mpi_api::comm_size(MPI_Comm comm, int *size)
 int
 mpi_api::comm_create(MPI_Comm input, MPI_Group group, MPI_Comm *output)
 {
-  SSTMACBacktrace("MPI_Comm_create");
+  start_mpi_call("MPI_Comm_create");
   mpi_comm* inputPtr = get_comm(input);
   mpi_group* groupPtr = get_group(group);
-  std::cout << stl_string(groupPtr->ids()) << std::endl;
   *output = add_comm_ptr(comm_factory_->comm_create(inputPtr, groupPtr));
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Comm_create(%s,%d,*%s)",
                 comm_str(input).c_str(), group, comm_str(*output).c_str());
@@ -56,7 +59,7 @@ int
 mpi_api::cart_create(MPI_Comm comm_old, int ndims, const int dims[],
                     const int periods[], int reorder, MPI_Comm *comm_cart)
 {
-  SSTMACBacktrace("MPI_Cart_create");
+  start_mpi_call("MPI_Cart_create");
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Cart_create(...)");
   mpi_comm* incommPtr = get_comm(comm_old);
   mpi_comm* outcommPtr = comm_factory_->create_cart(incommPtr, ndims, dims, periods, reorder);
@@ -68,7 +71,7 @@ int
 mpi_api::cart_get(MPI_Comm comm, int maxdims, int dims[], int periods[],
                  int coords[])
 {
-  SSTMACBacktrace("MPI_Cart_get");
+  start_mpi_call("MPI_Cart_get");
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Cart_get(...)");
 
   mpi_comm* incommPtr = get_comm(comm);
@@ -88,7 +91,7 @@ mpi_api::cart_get(MPI_Comm comm, int maxdims, int dims[], int periods[],
 int
 mpi_api::cartdim_get(MPI_Comm comm, int *ndims)
 {
-  SSTMACBacktrace("MPI_Cartdim_get");
+  start_mpi_call("MPI_Cartdim_get");
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Cartdim_get(...)");
   mpi_comm* incommPtr = get_comm(comm);
   mpi_comm_cart* c = safe_cast(mpi_comm_cart, incommPtr,
@@ -100,7 +103,7 @@ mpi_api::cartdim_get(MPI_Comm comm, int *ndims)
 int
 mpi_api::cart_rank(MPI_Comm comm, const int coords[], int *rank)
 {
-  SSTMACBacktrace("MPI_Cart_rank");
+  start_mpi_call("MPI_Cart_rank");
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Cart_rank(...)");
   mpi_comm* incommPtr = get_comm(comm);
   mpi_comm_cart* c = safe_cast(mpi_comm_cart, incommPtr,
@@ -113,7 +116,7 @@ int
 mpi_api::cart_shift(MPI_Comm comm, int direction, int disp, int *rank_source,
                   int *rank_dest)
 {
-  SSTMACBacktrace("MPI_Cart_shift");
+  start_mpi_call("MPI_Cart_shift");
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Cart_shift(...)");
   mpi_comm* incommPtr = get_comm(comm);
   mpi_comm_cart* c = safe_cast(mpi_comm_cart, incommPtr,
@@ -126,7 +129,7 @@ mpi_api::cart_shift(MPI_Comm comm, int direction, int disp, int *rank_source,
 int
 mpi_api::cart_coords(MPI_Comm comm, int rank, int maxdims, int coords[])
 {
-  SSTMACBacktrace("MPI_Cart_coords");
+  start_mpi_call("MPI_Cart_coords");
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Cart_coords(...)");
   mpi_comm* incommPtr = get_comm(comm);
   mpi_comm_cart* c = safe_cast(mpi_comm_cart, incommPtr,
@@ -139,7 +142,7 @@ mpi_api::cart_coords(MPI_Comm comm, int rank, int maxdims, int coords[])
 int
 mpi_api::comm_split(MPI_Comm incomm, int color, int key, MPI_Comm *outcomm)
 {
-  SSTMACBacktrace("MPI_Comm_split");
+  start_mpi_call("MPI_Comm_split");
   mpi_api_debug(sprockit::dbg::mpi,
       "MPI_Comm_split(%s,%d,%d) enter",
        comm_str(incomm).c_str(), color, key);
@@ -155,10 +158,11 @@ mpi_api::comm_split(MPI_Comm incomm, int color, int key, MPI_Comm *outcomm)
 int
 mpi_api::comm_free(MPI_Comm* input)
 {
-  SSTMACBacktrace("MPI_Comm_free");
+  start_mpi_call("MPI_Comm_free");
   mpi_api_debug(sprockit::dbg::mpi,
                 "MPI_Comm_free(%s)", comm_str(*input).c_str());
   mpi_comm* inputPtr = get_comm(*input);
+  comm_map_.erase(*input);
   delete inputPtr;
   *input = MPI_COMM_NULL;
   return MPI_SUCCESS;

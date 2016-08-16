@@ -121,6 +121,8 @@ if test "X$os" = "Xubuntu"; then
 LDFLAGS="$LDFLAGS -Wl,--no-as-needed"
 fi
 
+CHECK_CLANG()
+
 CHECK_SST_CORE()
 
 if test "X$have_integrated_core" = "Xyes"; then

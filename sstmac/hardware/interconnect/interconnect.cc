@@ -109,11 +109,6 @@ sst_interconnect::kill_node(node_id nid, timestamp t)
   spkt_throw(sprockit::unimplemented_error, "interconnect::kill_node");
 }
 #else
-macro_interconnect::macro_interconnect() :
-  partition_(0)
-{
-}
-
 macro_interconnect::~macro_interconnect()
 {
   delete topology_;
@@ -176,7 +171,6 @@ macro_interconnect::init_factory_params(sprockit::sim_parameters* params)
                   partition_, rt_->me(), netlink_params, this);
     delete netlink_builder;
   }
-
 
   copy_map(nodes, nodes_);
   copy_map(nics, nics_);

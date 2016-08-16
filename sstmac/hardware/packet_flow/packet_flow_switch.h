@@ -15,14 +15,6 @@ class packet_flow_abstract_switch :
   public packet_flow_component
 {
  public:
-#if SSTMAC_INTEGRATED_SST_CORE
-  packet_flow_abstract_switch(
-    SST::ComponentId_t id,
-    SST::Params& params
-  ) : network_switch(id, params)
-  { }
-#endif
-
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
 
@@ -47,7 +39,32 @@ class packet_flow_abstract_switch :
     return link_bw;
   }
 
+  packet_sent_stats*
+  xbar_stats() const {
+    return xbar_stats_;
+  }
+
+  packet_sent_stats*
+  buf_stats() const {
+    return buf_stats_;
+  }
+
  protected:
+#if SSTMAC_INTEGRATED_SST_CORE
+  packet_flow_abstract_switch(
+    SST::ComponentId_t id,
+    SST::Params& params
+  ) : network_switch(id, params),
+    buf_stats_(nullptr),
+    xbar_stats_(nullptr),
+    link_arbitrator_template(nullptr)
+  { }
+#else
+  packet_flow_abstract_switch();
+#endif
+
+  virtual ~packet_flow_abstract_switch();
+
   int packet_size_;
 
   double link_bw;
@@ -91,7 +108,7 @@ class packet_flow_switch :
   );
 #endif
 
-  ~packet_flow_switch();
+  virtual ~packet_flow_switch();
 
   virtual void
   initialize();
@@ -129,6 +146,8 @@ class packet_flow_switch :
   handle(event* ev);
 
   void deadlock_check();
+
+  void deadlock_check(event* ev);
 
   /**
    Set the link to use when ejecting packets at their endpoint.  A packet_flow_switch

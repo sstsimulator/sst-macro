@@ -22,7 +22,12 @@ class packet_flow_nic :
 {
 
  public:
-  packet_flow_nic();
+  packet_flow_nic(sprockit::factory_type* interconn) :
+    nic(interconn),
+    packetizer_(0),
+    injection_credits_(0)
+  {
+  }
 
   std::string
   to_string() const {
@@ -85,12 +90,15 @@ class packet_flow_netlink :
   public packet_flow_component
 {
  public:
-  packet_flow_netlink() :
-    block_(0),
+  packet_flow_netlink(sprockit::factory_type* interconn) :
+    netlink(interconn),
+    block_(nullptr),
     tile_rotater_(0),
     inited_(false)
   {
   }
+
+  virtual ~packet_flow_netlink();
 
   std::string
   to_string() const {
@@ -107,6 +115,9 @@ class packet_flow_netlink :
     connection_type_t ty,
     connectable *mod,
     config* cfg);
+
+  void
+  deadlock_check();
 
   void
   set_event_parent(event_scheduler* m);

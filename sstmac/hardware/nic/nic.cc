@@ -43,20 +43,27 @@ namespace hw {
 
 static sprockit::need_delete_statics<nic> del_statics;
 
-nic::nic() :
-  spy_num_messages_(0),
-  spy_bytes_(0),
-  hist_msg_size_(0),
-  local_bytes_sent_(0),
-  global_bytes_sent_(0),
-  interconn_(0),
-  parent_(0),
-  mtl_handler_(0)
+nic::nic(sprockit::factory_type *interconn) :
+  spy_num_messages_(nullptr),
+  spy_bytes_(nullptr),
+  hist_msg_size_(nullptr),
+  local_bytes_sent_(nullptr),
+  global_bytes_sent_(nullptr),
+  interconn_(nullptr),
+  parent_(nullptr),
+  mtl_handler_(nullptr)
 {
+  if (interconn) interconn_ = safe_cast(interconnect, interconn);
 }
 
 nic::~nic()
 {
+  if (mtl_handler_) delete mtl_handler_;
+  if (spy_bytes_) delete spy_bytes_;
+  if (spy_num_messages_) delete spy_num_messages_;
+  if (local_bytes_sent_) delete local_bytes_sent_;
+  if (global_bytes_sent_) delete global_bytes_sent_;
+  if (hist_msg_size_) delete hist_msg_size_;
 }
 
 void
@@ -71,24 +78,14 @@ nic::init_factory_params(sprockit::sim_parameters *params)
   my_addr_ = node_id(params->get_int_param("id"));
   init_loc_id(event_loc_id(my_addr_));
 
-  mtl_handler_ = ev_callback(this, &nic::mtl_handle);
+  mtl_handler_ = new_handler(this, &nic::mtl_handle);
 
   negligible_size_ = params->get_optional_int_param("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
 
-  if (params->has_namespace("traffic_matrix")){
-    sprockit::sim_parameters* traffic_params = params->get_namespace("traffic_matrix");
-    spy_num_messages_ = test_cast(stat_spyplot, stat_collector_factory::get_optional_param("type", "spyplot_png", traffic_params));
-    spy_bytes_ = test_cast(stat_spyplot, stat_collector_factory::get_optional_param("type", "spyplot_png", traffic_params));
-
-    if (!spy_num_messages_ || !spy_bytes_){
-      spkt_throw_printf(sprockit::value_error,
-        "NIC traffic_matrix must be spyplot or spyplot_png, %s given",
-        traffic_params->get_param("type").c_str());
-    }
-
-    spy_num_messages_->add_suffix("num_messages");
-    spy_bytes_->add_suffix("bytes");
-  }
+  spy_num_messages_ = optional_stats<stat_spyplot>(
+        params, "traffic_matrix", "spyplot", "num_messages");
+  spy_bytes_ = optional_stats<stat_spyplot>(
+        params, "traffic_matrix", "spyplot", "bytes");
 
   if (params->has_namespace("local_bytes_sent")) {
     sprockit::sim_parameters* traffic_params = params->get_namespace("local_bytes_sent");
@@ -189,9 +186,12 @@ nic::ack_send(network_message* payload)
 void
 nic::intranode_send(network_message* payload)
 {
-  record_message(payload);
+  //Stop recording for now
+  //record_message(payload);
+
   nic_debug("intranode send payload %p:%s",
     payload, payload->to_string().c_str());
+
   switch(payload->type())
   {
   case network_message::nvram_get_request:
@@ -281,13 +281,7 @@ nic::send_to_node(network_message* payload)
 }
 
 void
-nic::init_param1(sprockit::factory_type *interconn)
-{
-  if (interconn) interconn_ = safe_cast(interconnect, interconn);
-}
-
-void
-nic::send_to_interconn(network_message*netmsg)
+nic::send_to_interconn(network_message* netmsg)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   spkt_throw(sprockit::unimplemented_error,

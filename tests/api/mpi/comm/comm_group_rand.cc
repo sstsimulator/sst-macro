@@ -1,13 +1,10 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <sstmac/replacements/mpi.h>
-/* USE_STRICT_MPI may be defined in mpitestconf.h */
+/** USE_STRICT_MPI may be defined in mpitestconf.h */
 #include "mpitestconf.h"
 
 namespace comm_group_rand {
@@ -29,11 +26,11 @@ int comm_group_rand(int argc, char **argv)
     MPI_Comm_group(MPI_COMM_WORLD, &full_group);
 
     for (j = 0; j < LOOPS; j++) {
-        srand(j); /* Deterministic seed */
+        srand(j); /** Deterministic seed */
 
         count = 0;
         for (i = 0; i < size; i++) {
-            if (rand() % 2) { /* randomly include a rank */
+            if (rand() % 2) { /** randomly include a rank */
                 included[i] = 1;
                 ranks[count++] = i;
             }
@@ -49,7 +46,7 @@ int comm_group_rand(int argc, char **argv)
             MPI_Barrier(comm);
             MPI_Comm_free(&comm);
         }
-#endif /* USE_STRICT_MPI */
+#endif /** USE_STRICT_MPI */
 
         MPI_Group_free(&sub_group);
     }

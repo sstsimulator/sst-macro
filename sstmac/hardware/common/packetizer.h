@@ -18,6 +18,8 @@ class packetizer_callback
 {
  public:
   virtual void notify(int vn, message* msg) = 0;
+
+  virtual ~packetizer_callback(){}
 };
 
 class packetizer :
@@ -26,6 +28,8 @@ class packetizer :
 {
 
  public:
+  virtual ~packetizer();
+
   void start(int vn, message* payload);
 
   void packetArrived(int vn, packet* pkt);
@@ -70,6 +74,8 @@ class packetizer :
   packetizer_callback* notifier_;
 
  protected:
+  packetizer() : notifier_(nullptr){}
+
   void bytesArrived(int vn, uint64_t unique_id, int bytes, message* parent);
 
 };

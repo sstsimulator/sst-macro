@@ -9,7 +9,7 @@
 namespace sstmac {
 namespace hw {
 
-typedef unique_msg_id memory_access_id;
+typedef unique_event_id memory_access_id;
 
 }
 }

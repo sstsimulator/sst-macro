@@ -56,7 +56,7 @@ SSTMAC_pthread_create(sstmac_pthread_t* pthread,
                            parent_app,
                            start_routine, arg);
 
-
+  tr->init_perf_model_params(parent_app->params());
   parent_app->add_subthread(tr);
   *pthread = tr->thread_id();
 

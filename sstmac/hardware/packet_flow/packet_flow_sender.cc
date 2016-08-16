@@ -16,13 +16,15 @@ packet_flow_sender::packet_flow_sender(
   const timestamp& credit_lat)
   : send_lat_(send_lat),
     credit_lat_(credit_lat),
-    acker_(0),
+    acker_(nullptr),
+    stat_collector_(nullptr),
     update_vc_(true)
 {
 }
 
 packet_flow_sender::packet_flow_sender() :
-  acker_(0),
+  acker_(nullptr),
+  stat_collector_(nullptr),
   update_vc_(true)
 {
 }
@@ -70,7 +72,7 @@ packet_flow_sender::send(
     st.head_leaves = st.tail_leaves = st.credit_leaves = now();
   }
 
-  stat_collector_->collect_single_event(st);
+  if (stat_collector_) stat_collector_->collect_single_event(st);
 
 #if SSTMAC_SANITY_CHECK
   if (msg->bw() <= 0 && msg->bw() != packet_flow_payload::uninitialized_bw) {

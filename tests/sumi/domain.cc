@@ -10,11 +10,11 @@
 #include <sumi/transport.h>
 #include <sumi/thread_safe_set.h>
 #include <sstmac/skeleton.h>
-#define sstmac_app_name "user_app_cxx"
+#define sstmac_app_name user_app_cxx
 using namespace sumi;
 
 void
-run_test(domain* dom, int todie, int nproc_live, int context, int tag)
+run_test(communicator* dom, int todie, int nproc_live, int context, int tag)
 {
   int me = comm_rank();
   thread_safe_set<int> known_failures = comm_failed_ranks(context);
@@ -41,7 +41,7 @@ run_test(domain* dom, int todie, int nproc_live, int context, int tag)
   dense_rank_map domain_rmap(known_failures, dom);
   for (int i=0; i < nproc_live; ++i){
     int sparse_rank = domain_rmap.sparse_rank(i);
-    int global_rank = dom->domain_to_global_rank(sparse_rank);
+    int global_rank = dom->comm_to_global_rank(sparse_rank);
     int correct = rmap.dense_rank(global_rank);
     if (dst[i] != correct){
       for (int j=0; j < nproc_live; ++j){
@@ -81,10 +81,10 @@ run_test(domain* dom, int todie, int nproc_live, int context, int tag)
 }
 
 void
-test_allreduce(domain* dom, int tag)
+test_allreduce(communicator* dom, int tag)
 {
   //now do a collective with payloads
-  int rank = dom->my_domain_rank();
+  int rank = dom->my_comm_rank();
   int nproc = dom->nproc();
   int nelems = 2*nproc;
   int numfill = 2*rank + 1;
@@ -112,11 +112,11 @@ test_allreduce(domain* dom, int tag)
 }
 
 void
-test_allgather(domain* dom, int tag)
+test_allgather(communicator* dom, int tag)
 {
   int nelems = 10;
 
-  int rank = dom->my_domain_rank();
+  int rank = dom->my_comm_rank();
   int nproc = dom->nproc();
 
   int* src_buffer = new int[nelems];
@@ -174,12 +174,12 @@ main(int argc, char **argv)
   int stop = start + nsubrange;
 
   if (rank >= start && rank < stop){
-    domain* dom = new subrange_domain(rank, start, nsubrange);
+    communicator* dom = new subrange_communicator(rank, start, nsubrange);
     //test_allgather(dom, 0);
     //test_allreduce(dom, 1);
   }
 
-  domain* dom = new rotate_domain(rank, nproc, 3);
+  communicator* dom = new rotate_communicator(rank, nproc, 3);
   //test_allgather(dom, 2);
   //test_allreduce(dom, 3);
 

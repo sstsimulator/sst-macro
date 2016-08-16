@@ -1,15 +1,12 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2005 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpitest.h"
 
 namespace inactivereq {
-/* This test program checks that the point-to-point completion routines
+/** This test program checks that the point-to-point completion routines
    can be applied to an inactive persistent request, as required by the 
    MPI-1 standard. See section 3.7.3, for example, 
 
@@ -37,7 +34,7 @@ int StatusEmpty( MPI_Status *s )
 	errs++;
 	printf( "count in status is not 0\n" );
     }
-    /* Return true only if status passed all tests */
+    /** Return true only if status passed all tests */
     return errs ? 0 : 1;
 }
 
@@ -58,7 +55,7 @@ int inactivereq(int argc, char *argv[])
     MPI_Comm_size( MPI_COMM_WORLD, &size );
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );
 
-    /* Create a persistent send request */
+    /** Create a persistent send request */
     MPI_Send_init( buf, 10, MPI_INT, dest, tag, MPI_COMM_WORLD, &r );
 
     flag = 0;
@@ -86,7 +83,7 @@ int inactivereq(int argc, char *argv[])
 	printf( "Status not empty after MPI_Wait (send)\n" );
     }
 
-    /* Now try to use that request, then check again */
+    /** Now try to use that request, then check again */
     if (rank == 0) {
 	int i;
 	MPI_Request *rr = (MPI_Request *)malloc(size * sizeof(MPI_Request));
@@ -131,7 +128,7 @@ int inactivereq(int argc, char *argv[])
 
     MPI_Request_free( &r );
 
-    /* Create a persistent receive request */
+    /** Create a persistent receive request */
     MPI_Recv_init( buf, 10, MPI_INT, dest, tag, MPI_COMM_WORLD, &r );
 
     flag = 0;

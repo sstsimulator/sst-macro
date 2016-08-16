@@ -9,8 +9,8 @@
  *  SST/macroscale directory.
  */
 
-#include <sprockit/errors.h>
 #include <sstmac/common/sstmac_config.h>
+#include <sprockit/errors.h>
 #include <sprockit/statics.h>
 #include <sumi-mpi/mpi_types/mpi_type.h>
 #include <sumi-mpi/mpi_types.h>
@@ -18,8 +18,9 @@
 #include <sstream>
 #include <cstring>
 
-namespace sumi {
+sprockit::need_delete_statics<sumi::mpi_type> delete_static_types;
 
+namespace sumi {
 
 mpi_type::mpi_type() :
   id(-1),
@@ -29,7 +30,8 @@ mpi_type::mpi_type() :
   size_(-1),
   pdata_(0),
   idata_(0),
-  vdata_(0)
+  vdata_(0),
+  builtin_(false)
 {
 }
 
@@ -164,12 +166,6 @@ mpi_type::init_vector(const std::string &labelit, mpi_type* base,
   extent_ = byte_stride;
   size_ = count * block * base->size_;
   int block_extent = block*base->extent();
-
-  if (byte_stride < block_extent){
-    spkt_throw_printf(sprockit::value_error,
-      "vector stride=%d must be at least as big as blocksize=%d",
-     byte_stride, block*base->extent());
-  }
 
   //if the byte_stride matches the blocksize
   //and the underlying type is contiguous

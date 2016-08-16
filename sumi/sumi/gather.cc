@@ -1,5 +1,5 @@
 #include <sumi/gather.h>
-#include <sumi/domain.h>
+#include <sumi/communicator.h>
 #include <sumi/transport.h>
 
 namespace sumi {
@@ -9,7 +9,7 @@ btree_gather_actor::init_tree()
 {
   log2nproc_ = 0;
   midpoint_ = 1;
-  int nproc = dom_->nproc();
+  int nproc = comm_->nproc();
   while (midpoint_ < nproc){
     midpoint_ *= 2;
     log2nproc_++;
@@ -24,8 +24,8 @@ btree_gather_actor::init_buffers(void *dst, void *src)
   if (!src)
     return;
 
-  int me = dom_->my_domain_rank();
-  int nproc = dom_->nproc();
+  int me = comm_->my_comm_rank();
+  int nproc = comm_->nproc();
 
   if (me == root_){
     int buf_size = nproc * nelems_ * type_size_;
@@ -48,8 +48,8 @@ btree_gather_actor::finalize_buffers()
   if (!result_buffer_.ptr)
     return;
 
-  int nproc = dom_->nproc();
-  int me = dom_->my_domain_rank();
+  int nproc = comm_->nproc();
+  int me = comm_->my_comm_rank();
   if (me == root_){
     int buf_size = nproc * nelems_ * type_size_;
     my_api_->unmake_public_buffer(result_buffer_, buf_size);
@@ -62,12 +62,14 @@ btree_gather_actor::finalize_buffers()
 void
 btree_gather_actor::start_shuffle(action *ac)
 {
-  //only ever arises in weird midpoint scenarios
-  int copy_size = ac->nelems * type_size_;
-  int copy_offset = ac->offset * type_size_;
-  char* dst = ((char*)result_buffer_.ptr) + copy_offset;
-  char* src = ((char*)result_buffer_.ptr);
-  ::memcpy(dst, src, copy_size);
+  if (result_buffer_.ptr){
+    //only ever arises in weird midpoint scenarios
+    int copy_size = ac->nelems * type_size_;
+    int copy_offset = ac->offset * type_size_;
+    char* dst = ((char*)result_buffer_.ptr) + copy_offset;
+    char* src = ((char*)result_buffer_.ptr);
+    ::memcpy(dst, src, copy_size);
+  }
 }
 
 void
@@ -79,8 +81,8 @@ btree_gather_actor::buffer_action(void *dst_buffer, void *msg_buffer, action *ac
 void
 btree_gather_actor::init_dag()
 {
-  int me = dom_->my_domain_rank();
-  int nproc = dom_->nproc();
+  int me = comm_->my_comm_rank();
+  int nproc = comm_->nproc();
   int round = 0;
 
   int maxGap = midpoint_;
@@ -89,6 +91,9 @@ btree_gather_actor::init_dag()
     maxGap = midpoint_ / 2;
   }
 
+  //as with the allgather, it makes no sense to run the gather on unpacked data
+  //everyone should immediately pack all their buffers and then run the collective
+  //directly on already packed data
 
   action* prev = 0;
 
@@ -102,7 +107,7 @@ btree_gather_actor::init_dag()
       //I am a recver
       int partner = me + partnerGap;
       if (partner < nproc){
-        action* recv = new recv_action(round, partner);
+        action* recv = new recv_action(round, partner, recv_action::in_place);
         int recvChunkStart = me + partnerGap;
         int recvChunkStop = std::min(recvChunkStart+partnerGap, nproc);
         int recvChunkSize = recvChunkStop - recvChunkStart;
@@ -114,7 +119,7 @@ btree_gather_actor::init_dag()
     } else {
       //I am a sender
       int partner = me - partnerGap;
-      action* send = new send_action(round, partner);
+      action* send = new send_action(round, partner, send_action::in_place);
       int sendChunkStart = me;
       int sendChunkStop = std::min(sendChunkStart+partnerGap,nproc);
       int sendChunkSize = sendChunkStop - sendChunkStart;
@@ -136,11 +141,7 @@ btree_gather_actor::init_dag()
     action* shuffle = new shuffle_action(round, me);
     shuffle->offset = midpoint_ * nelems_;
     shuffle->nelems = (nproc - midpoint_) * nelems_;
-    if (prev){
-      add_dependency(prev, shuffle);
-    } else {
-      add_initial_action(shuffle);
-    }
+    add_dependency(prev, shuffle);
     prev = shuffle;
   }
 
@@ -151,13 +152,13 @@ btree_gather_actor::init_dag()
       int size_1st_half = midpoint_;
       int size_2nd_half = nproc - midpoint_;
       //recv 1st half from 0
-      action* recv = new recv_action(round, 0);
+      action* recv = new recv_action(round, 0, recv_action::in_place);
       recv->offset = 0;
       recv->nelems = nelems_ * size_1st_half;
       add_dependency(prev, recv);
       //recv 2nd half from midpoint - unless I am the midpoint
       if (midpoint_ != root_){
-        recv = new recv_action(round, midpoint_);
+        recv = new recv_action(round, midpoint_, recv_action::in_place);
         recv->offset = midpoint_*nelems_;
         recv->nelems = nelems_ * size_2nd_half;
         add_dependency(prev, recv);
@@ -165,7 +166,7 @@ btree_gather_actor::init_dag()
     }
     //0 must send the first half to the root
     if (me == 0){
-      action* send = new send_action(round, root_);
+      action* send = new send_action(round, root_, send_action::in_place);
       send->offset = 0; //send whole thing
       send->nelems = nelems_*midpoint_;
       add_dependency(prev,send);
@@ -173,7 +174,7 @@ btree_gather_actor::init_dag()
     //midpoint must send the second half to the root
     //unless it is the root
     if (me == midpoint_ && midpoint_ != root_){
-      action* send = new send_action(round, root_);
+      action* send = new send_action(round, root_, send_action::in_place);
       int size = nproc - midpoint_;
       send->offset = 0;
       send->nelems = nelems_ * size;

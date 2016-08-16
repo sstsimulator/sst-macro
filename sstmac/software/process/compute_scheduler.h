@@ -29,8 +29,11 @@ class compute_scheduler :
   public sprockit::factory_type
 {
  public:
+  compute_scheduler(sw::operating_system* os) :
+    os_(os)
+  {
+  }
 
- public:
   virtual std::string
   to_string() const {
     return "compute_scheduler";
@@ -40,11 +43,6 @@ class compute_scheduler :
 
   void
   init_factory_params(sprockit::sim_parameters* params);
-  
-  virtual void
-  init_param1(sw::operating_system* os) {
-    os_ = os;
-  }
 
   int
   ncores() const {
@@ -59,9 +57,6 @@ class compute_scheduler :
   virtual void
   finalize_init();
 
-  virtual compute_scheduler*
-  clone(sw::operating_system* os) const = 0;
-
   virtual void
   reserve_core(thread* thr) = 0;
   
@@ -73,9 +68,6 @@ class compute_scheduler :
 
  protected:
   compute_scheduler();
-
-  void
-  clone_into(compute_scheduler* cln) const;
 
  protected:
   int ncores_;

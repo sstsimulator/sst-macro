@@ -1,14 +1,11 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2005 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <stdio.h>
 #include <sstmac/replacements/mpi.h>
 #include "mpitest.h"
 
 namespace waittestnull {
-/* 
+/** 
  * This program checks that the various MPI_Test and MPI_Wait routines 
  * allow both null requests and in the multiple completion cases, empty
  * lists of requests.

@@ -7,7 +7,7 @@
 #include <sstmac/software/process/thread.h>
 #include <sstmac/libraries/sumi/sumi.h>
 #include <sstmac/skeleton.h>
-#define sstmac_app_name "user_app_cxx"
+#define sstmac_app_name user_app_cxx
 using namespace sumi;
 
 
@@ -20,7 +20,7 @@ main(int argc, char **argv)
   int partner = (rank + 1) % comm_nproc();
   long bytes = 8192;
   for (int i=0; i < 10; i++){
-    comm_rdma_get(partner, new rdma_message(bytes));
+    comm_rdma_get(partner, new message(bytes));
     sstmac_usleep(1);
   }
 

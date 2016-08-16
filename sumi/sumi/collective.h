@@ -4,7 +4,7 @@
 #include <sumi/timeout.h>
 #include <sumi/collective_message_fwd.h>
 #include <sumi/transport_fwd.h>
-#include <sumi/domain_fwd.h>
+#include <sumi/communicator_fwd.h>
 #include <sumi/collective_actor_fwd.h>
 #include <sumi/comm_functions.h>
 #include <sprockit/factories/factory.h>
@@ -71,9 +71,9 @@ class collective
   virtual void
   start() = 0;
 
-  domain*
-  dom() const {
-    return dom_;
+  communicator*
+  comm() const {
+    return comm_;
   }
 
   bool
@@ -97,7 +97,7 @@ class collective
   }
 
   void
-  actor_done(int domain_rank, bool& generate_cq_msg, bool& delete_event);
+  actor_done(int comm_rank, bool& generate_cq_msg, bool& delete_event);
 
   virtual void
   add_actors(collective* coll);
@@ -108,18 +108,18 @@ class collective
   deadlock_check(){}
 
   void
-  init(type_t type, transport* api, domain* dom, int tag, int context);
+  init(type_t type, transport* api, communicator* comm, int tag, int context);
 
   virtual void init_actors(){}
 
  protected:
-  collective(type_t type, transport* api, domain* dom, int tag, int context);
+  collective(type_t type, transport* api, communicator* comm, int tag, int context);
 
   collective(){} //to be initialized later
 
  protected:
   transport* my_api_;
-  domain* dom_;
+  communicator* comm_;
   int dense_me_;
   int dense_nproc_;
   int context_;
@@ -144,7 +144,7 @@ class dag_collective :
 
   void
   init(type_t type,
-    transport *my_api, domain *dom,
+    transport *my_api, communicator *comm,
     void *dst, void *src,
     int nelems, int type_size,
     int tag,
@@ -209,7 +209,7 @@ class collective_algorithm_selector
   virtual dag_collective* select(int nproc, int* counts) = 0;
 };
 
-DeclareFactory(dag_collective)
+DeclareFactory(dag_collective);
 
 
 }

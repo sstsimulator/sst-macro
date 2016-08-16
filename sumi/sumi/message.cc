@@ -38,36 +38,12 @@ message::clone_ack() const
   return ack;
 }
 
-void*&
-message::eager_buffer()
-{
-  //by default, messages have no extra eager buffer
-  static void* no_buffer = 0;
-  return no_buffer;
-}
-
 void
 message::reverse()
 {
   int tmp = sender_;
   sender_ = recver_;
   recver_ = tmp;
-}
-
-public_buffer&
-message::local_buffer()
-{
-  spkt_throw_printf(sprockit::unimplemented_error,
-    "rdma_interface unimplemented for %s",
-    to_string().c_str());
-}
-
-public_buffer&
-message::remote_buffer()
-{
-  spkt_throw_printf(sprockit::unimplemented_error,
-    "rdma_interface unimplemented for %s",
-    to_string().c_str());
 }
 
 message*
@@ -136,6 +112,58 @@ message::clone_into(message* cln) const
 }
 
 void
+message::buffer_send(public_buffer& buf, long num_bytes)
+{
+  void* new_buf = new char[num_bytes];
+  void* old_buf = buf.ptr;
+  ::memcpy(new_buf, old_buf, num_bytes);
+  buf.ptr = new_buf;
+}
+
+void
+message::move_local_to_remote()
+{
+  if (local_buffer_.ptr){ //might be null
+    ::memcpy(remote_buffer_.ptr, local_buffer_.ptr, num_bytes_);
+    delete[] (char*) local_buffer_.ptr;
+    local_buffer_.ptr = 0;
+  }
+}
+
+void
+message::move_remote_to_local()
+{
+  if (remote_buffer_.ptr){
+    ::memcpy(local_buffer_.ptr, remote_buffer_.ptr, num_bytes_);
+    delete[] (char*) remote_buffer_.ptr;
+    remote_buffer_.ptr = 0;
+  }
+}
+
+void
+message::buffer_send()
+{
+  //nothing to do
+  if (local_buffer_.ptr == nullptr)
+    return;
+
+  switch(payload_type_){
+    case rdma_get:
+      buffer_send(remote_buffer_, num_bytes_);
+      break;
+    case rdma_put:
+      buffer_send(local_buffer_, num_bytes_);
+      break;
+    case eager_payload:
+      buffer_send(local_buffer_, num_bytes_);
+      break;
+    default:
+      //do nothing
+      break;
+  }
+}
+
+void
 message::serialize_order(sumi::serializer &ser)
 {
   ser & sender_;
@@ -146,29 +174,24 @@ message::serialize_order(sumi::serializer &ser)
   ser & transaction_id_;
   ser & needs_send_ack_;
   ser & needs_recv_ack_;
-}
-
-void
-payload_message::serialize_order(sumi::serializer &ser)
-{
-  ser & sumi::array(buffer_, num_bytes_);
-  message::serialize_order(ser);
-}
-
-void
-rdma_message::clone_into(rdma_message *cln) const
-{
-  cln->local_buffer_ = local_buffer_;
-  cln->remote_buffer_ = remote_buffer_;
-  message::clone_into(cln);
-}
-
-void
-rdma_message::serialize_order(sumi::serializer &ser)
-{
-  message::serialize_order(ser);
   ser & local_buffer_;
   ser & remote_buffer_;
+  switch (payload_type_)
+  {
+    case rdma_get:
+      if (remote_buffer_.ptr){
+        sumi::array(remote_buffer_.ptr, num_bytes_);
+      }
+      break;
+    case rdma_put:
+    case eager_payload:
+      if (local_buffer_.ptr){
+        sumi::array(local_buffer_.ptr, num_bytes_);
+      }
+      break;
+    default:
+      break;
+  }
 }
 
 }

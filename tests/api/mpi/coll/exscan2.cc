@@ -5,7 +5,7 @@
 #include "mpitest.h"
 
 namespace exscan2{
-/*
+/**
 static char MTEST_Descrip[] = "Test MPI_Exscan (simple test)";
 */
 
@@ -27,7 +27,7 @@ int exscan2( int argc, char *argv[] )
 	    
     MPI_Exscan( sendbuf, recvbuf, 1, MPI_INT, MPI_SUM, comm );
 
-    /* Check the results.  rank 0 has no data.  Input is
+    /** Check the results.  rank 0 has no data.  Input is
        0  1  2  3  4  5  6  7  8 ...
        Output is
        -  0  1  3  6 10 15 21 28 36
@@ -35,7 +35,7 @@ int exscan2( int argc, char *argv[] )
     */
     if (rank > 0) {
 	int result = (((rank) * (rank-1))/2);
-	/* printf( "%d: %d\n", rank, result ); */
+	/** printf( "%d: %d\n", rank, result ); */
 	if (recvbuf[0] != result) {
 	    errs++;
 	    fprintf( stderr, "Error in recvbuf = %d on %d, expected %d\n",

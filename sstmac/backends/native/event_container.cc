@@ -18,10 +18,11 @@ static uint64_t num_events = 0;
 //
 // Hello.
 //
-event_container::event_container() :
+event_container::event_container(parallel_runtime* rt) :
   running_(false),
   event_rate_reporting_(false),
-  event_rate_window_(0)
+  event_rate_window_(0),
+  event_manager(rt)
 {
   set_now(timestamp(0));
 }

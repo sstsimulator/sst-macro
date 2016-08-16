@@ -117,7 +117,7 @@ perform_element_loop(const simple_mesh_description<GlobalOrdinal>& mesh,
   }
 #endif
 #ifdef SSTMAC
-  SSTMAC_compute_loop(0,elemIDs.size(), 2500);
+  SSTMAC_compute_loop(elemIDs.size(), 2500, 0, 0);
 #endif
 //std::cout << std::endl<<"get-nodes: " << t_gn << std::endl;
 //std::cout << "compute-elems: " << t_ce << std::endl;

@@ -11,13 +11,6 @@ ImplementFactory(sumi::activity_monitor);
 namespace sumi {
 
 void
-activity_monitor::init_param1(transport* api)
-{
-  api_ = api;
-}
-
-
-void
 function_set::timeout_all_listeners(int dst)
 {
   //we have failed! loop through the functions and time them out

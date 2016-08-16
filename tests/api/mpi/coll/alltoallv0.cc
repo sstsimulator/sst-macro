@@ -6,7 +6,7 @@
 
 namespace alltoallv0 {
 
-/*
+/**
   This program tests MPI_Alltoallv by having processor each process 
   send data to two neighbors only, using counts of 0 for the other processes.
   This idiom is sometimes used for halo exchange operations.
@@ -39,7 +39,7 @@ int alltoallv0( int argc, char **argv )
       
       if (size < 3) continue;
 
-      /* Create and load the arguments to alltoallv */
+      /** Create and load the arguments to alltoallv */
       sendcounts = (int *)malloc( size * sizeof(int) );
       recvcounts = (int *)malloc( size * sizeof(int) );
       rdispls    = (int *)malloc( size * sizeof(int) );
@@ -49,11 +49,11 @@ int alltoallv0( int argc, char **argv )
 	MPI_Abort( comm, 1 );
       }
 
-      /* Get the neighbors */
+      /** Get the neighbors */
       left  = (rank - 1 + size) % size;
       right = (rank + 1) % size;
 
-      /* Set the defaults */
+      /** Set the defaults */
       for (i=0; i<size; i++) {
 	  sendcounts[i] = 0;
 	  recvcounts[i] = 0;
@@ -62,7 +62,7 @@ int alltoallv0( int argc, char **argv )
       }
 
       for (length=1; length < 66000; length = length*2+1 ) {
-	  /* Get the buffers */
+	  /** Get the buffers */
 	  sbuf = (int *)malloc( 2 * length * sizeof(int) );
 	  rbuf = (int *)malloc( 2 * length * sizeof(int) );
 	  if (!sbuf || !rbuf) {
@@ -70,7 +70,7 @@ int alltoallv0( int argc, char **argv )
 	      MPI_Abort( comm, 1 );
 	  }
 	  
-	  /* Load up the buffers */
+	  /** Load up the buffers */
 	  for (i=0; i<length; i++) {
 	      sbuf[i]        = i + 100000*rank;
 	      sbuf[i+length] = i + 100000*rank;
@@ -89,8 +89,8 @@ int alltoallv0( int argc, char **argv )
 	  MPI_Alltoallv( sbuf, sendcounts, sdispls, MPI_INT,
 			 rbuf, recvcounts, rdispls, MPI_INT, comm );
       
-	  /* Check rbuf */
-	  p = rbuf;          /* left */
+	  /** Check rbuf */
+	  p = rbuf;          /** left */
 
 	  for (i=0; i<length; i++) {
 	      if (p[i] != i + 100000 * left) {
@@ -102,7 +102,7 @@ int alltoallv0( int argc, char **argv )
 	      }
 	  }
 
-	  p = rbuf + length; /* right */
+	  p = rbuf + length; /** right */
 	  for (i=0; i<length; i++) {
 	      if (p[i] != i + 100000 * right) {
 		  if (err < 10) {

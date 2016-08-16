@@ -26,9 +26,6 @@ namespace hw {
 
 static sprockit::need_delete_statics<processor> del_statics;
 
-processor::processor()
-{
-}
 
 processor::~processor()
 {
@@ -37,12 +34,6 @@ processor::~processor()
 void
 processor::finalize_init()
 {
-}
-
-void
-processor::compute(event *ev)
-{
-  do_compute(safe_cast(sw::compute_event, ev));
 }
 
 void

@@ -1,8 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2009 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,7 +7,7 @@
 namespace anyall {
 #define MAX_MSGS 30
 
-/*
+/**
 static char MTEST_Descrip[] = "One implementation delivered incorrect data when an MPI recieve uses both ANY_SOURCE and ANY_TAG";
 */
 
@@ -33,10 +29,10 @@ int anyall( int argc, char *argv[] )
     master = 0;
     worker = 1;
 
-    /* The test takes advantage of the ordering rules for messages*/
+    /** The test takes advantage of the ordering rules for messages*/
 
     if (wrank == master) {
-	/* Initialize the send buffer */
+	/** Initialize the send buffer */
 	for (i=0; i<MAX_MSGS; i++) {
 	    for (j=0; j<MAX_MSGS; j++) {
 		buf[i][j] = i*MAX_MSGS + j;
@@ -48,7 +44,7 @@ int anyall( int argc, char *argv[] )
 	}
     }
     else if (wrank == worker) {
-	/* Initialize the recv buffer */
+	/** Initialize the recv buffer */
 	for (i=0; i<MAX_MSGS; i++) {
 	    for (j=0; j<MAX_MSGS; j++) {
 		buf[i][j] = -1;
@@ -61,13 +57,13 @@ int anyall( int argc, char *argv[] )
 	MPI_Barrier( MPI_COMM_WORLD );
 	for (i=0; i<MAX_MSGS; i++) {
 	    MPI_Waitany( MAX_MSGS, r, &idx, &status );
-	    /* Message idx should have length MAX_MSGS-idx */
+	    /** Message idx should have length MAX_MSGS-idx */
 	    MPI_Get_count( &status, MPI_INT, &count );
 	    if (count != MAX_MSGS-idx) {
 		errs++;
 	    }
 	    else {
-		/* Check for the correct answers */
+		/** Check for the correct answers */
 		for (j=0; j < MAX_MSGS-idx; j++) {
 		    if (buf[idx][j] != idx * MAX_MSGS + j) {
 			errs ++;

@@ -12,7 +12,7 @@
 #ifndef SSTMAC_SOFTWARE_LIBRARIES_MPI_MPI_COMM_MPICOMM_H_INCLUDED
 #define SSTMAC_SOFTWARE_LIBRARIES_MPI_MPI_COMM_MPICOMM_H_INCLUDED
 
-#include <sumi/domain.h>
+#include <sumi/communicator.h>
 #include <sstmac/common/node_address.h>
 #include <sstmac/software/process/task_id.h>
 #include <sstmac/software/process/app_id.h>
@@ -31,7 +31,7 @@ using sstmac::node_id;
 /**
  * An MPI communicator handle.
  */
-class mpi_comm : public domain
+class mpi_comm : public communicator
 {
  public:
 
@@ -49,12 +49,12 @@ class mpi_comm : public domain
     MPI_Comm id,
     int rank,
     mpi_group* peers,
-    app_id aid);
+    app_id aid,
+    bool del_grp = false);
 
   /// Goodbye.
   virtual
-  ~mpi_comm() {
-  }
+  ~mpi_comm();
 
   void
   set_name(std::string name) {
@@ -65,6 +65,9 @@ class mpi_comm : public domain
   name() const {
     return name_;
   }
+
+  static void
+  delete_statics();
 
   topotypes
   topo_type() const {
@@ -117,12 +120,12 @@ class mpi_comm : public domain
   }
 
   int
-  domain_to_global_rank(int domain_rank) const {
-    return int(peer_task(domain_rank));
+  comm_to_global_rank(int comm_rank) const {
+    return int(peer_task(comm_rank));
   }
 
   int
-  global_to_domain_rank(int global_rank) const;
+  global_to_comm_rank(int global_rank) const;
 
   int
   nproc() const {
@@ -189,6 +192,8 @@ class mpi_comm : public domain
   spkt_unordered_map<int, keyval*> keyvals_;
 
   app_id aid_;
+
+  bool del_grp_;
 
   topotypes topotype_;
 

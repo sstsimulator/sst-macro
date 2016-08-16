@@ -11,7 +11,7 @@
 #include <sstmac/hardware/topology/traffic/traffic.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/skeleton.h>
-#define sstmac_app_name "user_app_cxx"
+#define sstmac_app_name user_app_cxx
 using namespace sumi;
 using sstmac::timestamp;
 using sstmac::hw::traffic_pattern;
@@ -19,13 +19,6 @@ using sstmac::node_id;
 using sstmac::env;
 using sstmac::hw::topology;
 
-void sleep(double seconds)
-{
-  sstmac::sw::thread* thr =
-    sstmac::sw::operating_system::current_thread();
-  sstmac::sw::app* app = safe_cast(sstmac::sw::app, thr);
-  app->sleep(timestamp(seconds));
-}
 
 //static long done = 0;
 
@@ -43,7 +36,12 @@ class throughput_thread :
   public sstmac::sumi_thread
 {
  public:
+  throughput_thread(sstmac::sw::software_id sid) :
+    sstmac::sumi_thread(sid){}
+
   virtual void run();
+
+  ~throughput_thread(){}
 };
 
 void
@@ -109,7 +107,9 @@ void run_test(
     recv_partners[i] = simp->get_partner(node_partners[i]);
   }
 
-  throughput_thread* thr = new throughput_thread;
+  int aid = 1; //assume 1 for now
+  sstmac::sw::software_id sid(aid, comm_rank());
+  throughput_thread* thr = new throughput_thread(sid);
   thr->start();
 
   int me = comm_rank();

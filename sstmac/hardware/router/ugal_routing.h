@@ -11,6 +11,9 @@ class ugal_router :
 {
 
  public:
+  ugal_router() :
+    valiant_router(routing::ugal){}
+
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
 

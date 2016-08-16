@@ -1,8 +1,5 @@
-/* -*- Mode: c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
-/*
- *  (C) 2011 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
@@ -10,7 +7,7 @@
 #include <assert.h>
 
 namespace get_elements {
-/* Tests MPI_Get_elements with a contiguous datatype that triggered a bug in
+/** Tests MPI_Get_elements with a contiguous datatype that triggered a bug in
  * past versions of MPICH2.  See ticket #1467 for more info. */
 
 struct test_struct {
@@ -32,7 +29,7 @@ int get_elements(int argc, char **argv)
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    /* We use a contig of a struct in order to satisfy two properties:
+    /** We use a contig of a struct in order to satisfy two properties:
      * (A) a type that contains more than one element type (the struct portion)
      * (B) a type that has an odd number of ints in its "type contents" (1 in
      *     this case)
@@ -58,17 +55,17 @@ int get_elements(int argc, char **argv)
     recvbuf.b = -1;
     recvbuf.c = -1;
 
-    /* send to ourself */
+    /** send to ourself */
     MPI_Sendrecv(&sendbuf, 1, contig, 0, 0,
                  &recvbuf, 1, contig, 0, 0,
                  MPI_COMM_SELF, &status);
 
-    /* sanity */
+    /** sanity */
     assert(sendbuf.a == recvbuf.a);
     assert(sendbuf.b == recvbuf.b);
     assert(sendbuf.c == recvbuf.c);
 
-    /* now check that MPI_Get_elements returns the correct answer and that the
+    /** now check that MPI_Get_elements returns the correct answer and that the
      * library doesn't explode in the process */
     count = 0xdeadbeef;
     MPI_Get_elements(&status, contig, &count);

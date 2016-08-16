@@ -42,16 +42,16 @@ test[7] = 3
 test[8] = 2
 Testing allgather payload with 2 elements
 Testing allgather payload with 2 elements
-t=9.00027: finished barrier on rank 1
-t=9.00028: finished barrier on rank 0
-t=9.00028: finished barrier on rank 3
-t=9.00028: finished barrier on rank 9
-t=9.00028: finished barrier on rank 7
-t=9.00028: finished barrier on rank 2
-t=9.00028: finished barrier on rank 8
-t=9.00028: finished barrier on rank 6
-t=9.00028: finished barrier on rank 5
-t=9.00028: finished barrier on rank 4
+t=9.00 finished barrier on rank 1
+t=9.00 finished barrier on rank 0
+t=9.00 finished barrier on rank 3
+t=9.00 finished barrier on rank 9
+t=9.00 finished barrier on rank 7
+t=9.00 finished barrier on rank 2
+t=9.00 finished barrier on rank 8
+t=9.00 finished barrier on rank 6
+t=9.00 finished barrier on rank 5
+t=9.00 finished barrier on rank 4
 Testing gather on root=0
 T[0] = 0
 T[1] = 0
@@ -138,4 +138,7 @@ test[17] = 2
 test[18] = 1
 test[19] = 1
 Testing scatter on root=3
-Estimated total runtime of         109.00058635 seconds
+Finished even allgatherv on tag 17
+Finished uneven allgatherv on tag 18
+Finished alltoall on tag 20
+Estimated total runtime of         109.00052584 seconds

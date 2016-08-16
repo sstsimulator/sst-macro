@@ -51,14 +51,17 @@ router::init_vc()
 {
   max_num_vc_ = 0;
   top_->configure_vc_routing(num_vc_lookup_);
-  std::map<routing::algorithm_t, int>::iterator it, end = num_vc_lookup_.end();
-  for (it=num_vc_lookup_.begin(); it != end; ++it){
-    int nvc = it->second;
-    max_num_vc_ = std::max(max_num_vc_, nvc);
+  auto iter = num_vc_lookup_.find(algo_);
+  if (iter == num_vc_lookup_.end()){
+    spkt_throw_printf(sprockit::value_error,
+                      "invalid routing algorithm %s for given router",
+                      routing::tostr(algo_));
   }
+  max_num_vc_ = iter->second;
 }
 
-router::router() : max_num_vc_(0)
+router::router(routing::algorithm_t max_algo) :
+  max_num_vc_(0), algo_(max_algo)
 {
 }
 

@@ -13,7 +13,7 @@
 #include <sstmac/replacements/mpi.h>
 #include <sstmac/skeleton.h>
 
-#define sstmac_app_name "mpi_ping_all"
+#define sstmac_app_name mpi_ping_all
 
 int USER_MAIN(int argc, char** argv)
 {
@@ -73,6 +73,8 @@ int USER_MAIN(int argc, char** argv)
   double t_stop = MPI_Wtime();
   double t_total = t_stop - t_start;
   if (print_times) ::printf("Rank %d = %8.4fms\n", me, t_total*1e3);
+
+  delete[] reqs;
 
   MPI_Finalize();
   sstmac::runtime::exit_deadlock_region();

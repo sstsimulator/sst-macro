@@ -25,14 +25,18 @@ class instruction_processor :
   public simple_processor
 {
  public:
-  instruction_processor();
+  instruction_processor(memory_model* mem, node* nd) :
+    simple_processor(mem, nd),
+    noise_model_(nullptr)
+  {
+  }
 
   virtual std::string
   to_string() const {
     return "instruction processor";
   }
 
-  virtual ~instruction_processor() {}
+  virtual ~instruction_processor();
 
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
@@ -41,7 +45,7 @@ class instruction_processor :
   finalize_init();
 
   virtual void
-  do_compute(sw::compute_event* cev);
+  compute(event* ev, callback* cb);
 
  protected:
   void
@@ -51,7 +55,7 @@ class instruction_processor :
   set_flop_distribution(double stdev);
 
   double
-  instruction_time(sw::compute_event* msg);
+  instruction_time(sw::basic_compute_event* msg);
 
  protected:
   double tflop_;
@@ -61,7 +65,6 @@ class instruction_processor :
 
   double max_single_mem_bw_;
 
-  double negligible_time_sec_;
   double negligible_bytes_;
 
   double parallelism_;

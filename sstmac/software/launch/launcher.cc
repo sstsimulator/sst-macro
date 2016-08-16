@@ -18,16 +18,13 @@
 #include <unistd.h>
 #include <getopt.h>
 
-
-ImplementFactory(sstmac::sw::launcher);
-
 namespace sstmac {
 namespace sw {
 
 launcher::launcher() :
-  is_completed_(false)
+  is_completed_(false),
+  service(std::string("launcher"), software_id(0,0))
 {
-  libname_ = "launcher";
 }
 
 launcher::~launcher() throw()
@@ -42,6 +39,7 @@ launcher::incoming_event(event* ev)
   software_id sid(lev->aid(), lev->tid());
   app* theapp = lev->app_template()->clone(sid);
   sprockit::sim_parameters* app_params = lev->app_template()->params();
+  theapp->init_perf_model_params(app_params);
   theapp->consume_params(app_params);
   int intranode_rank = num_apps_launched_[lev->aid()]++;
   int core_affinity = lev->core_affinity(intranode_rank);

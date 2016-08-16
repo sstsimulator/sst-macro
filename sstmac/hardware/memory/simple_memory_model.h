@@ -20,6 +20,11 @@ namespace hw {
 class simple_memory_model : public memory_model
 {
  public:
+  simple_memory_model(node* nd) :
+    memory_model(nd)
+  {
+  }
+
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
 
@@ -29,7 +34,7 @@ class simple_memory_model : public memory_model
   virtual ~simple_memory_model();
 
   virtual void
-  access(long bytes, double max_bw);
+  access(long bytes, double max_bw, callback* cb);
 
   double
   max_single_bw() const {

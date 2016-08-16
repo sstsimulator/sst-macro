@@ -37,27 +37,32 @@
 #include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/process/compute_scheduler.h>
 #include <sstmac/software/libraries/unblock_event.h>
+#include <sstmac/software/libraries/compute/compute_event.h>
 
 #if SSTMAC_HAVE_UCONTEXT
 #include <sstmac/software/threading/threading_ucontext.h>
 #endif
 
 #include <sstmac/hardware/node/node.h>
+#include <sstmac/hardware/network/network_message.h>
 
 #include <sprockit/errors.h>
 #include <sprockit/statics.h>
 #include <sprockit/delete.h>
 #include <sprockit/output.h>
 #include <sprockit/util.h>
+#include <sstmac/software/api/api.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 
 RegisterDebugSlot(os,
     "print debug output related to operating system operators - the majority of this debug info will be related to thread context switching");
 
+MakeDebugSlot(dropped_events)
+
 #define os_debug(...) \
   debug_printf(sprockit::dbg::os, "OS on Node %d: %s", \
-    int(my_addr()), sprockit::printf(__VA_ARGS__).c_str())
+    int(addr()), sprockit::printf(__VA_ARGS__).c_str())
 
 RegisterNamespaces("call_graph", "ftq");
 
@@ -66,7 +71,7 @@ namespace sw {
 
 static sprockit::need_delete_statics<operating_system> del_statics;
 size_t operating_system::stacksize_ = 0;
-graph_viz* operating_system::call_graph_ = 0;
+graph_viz* operating_system::call_graph_ = nullptr;
 
 #if SSTMAC_USE_MULTITHREAD
 std::vector<operating_system::os_thread_context> operating_system::os_thread_contexts_;
@@ -77,21 +82,28 @@ operating_system::os_thread_context operating_system::os_thread_context_;
 operating_system::operating_system() :
   current_thread_id_(thread::main_thread),
   next_msg_id_(0),
-  des_context_(0),
-  event_trace_(0),
-  ftq_trace_(0),
-  params_(0),
-  compute_sched_(0)
+  des_context_(nullptr),
+  event_trace_(nullptr),
+  ftq_trace_(nullptr),
+  params_(nullptr),
+  compute_sched_(nullptr)
 {
 }
 
 operating_system::~operating_system()
 {
-  if (des_context_) delete des_context_;
+  if (des_context_) {
+    des_context_->destroy_context();
+    delete des_context_;
+  }
   if (compute_sched_) delete compute_sched_;
   /** JJW 01/28/2016 This should already be cleared out
    *  It not, leave it. It's a leak */
   //sprockit::delete_vals(libs_);
+  current_os_thread_context().stackalloc.clear();
+
+  if (event_trace_) delete event_trace_;
+  if (ftq_trace_) delete ftq_trace_;
 }
 
 static bool you_have_been_warned = false;
@@ -222,20 +234,32 @@ operating_system::init_threading()
 }
 
 void
-operating_system::init_startup_libs()
+operating_system::init_services()
 {
   std::vector<std::string>::const_iterator it, end = startup_libs_.end();
+  software_id sid(0, addr());
   for (it=startup_libs_.begin(); it != end; ++it) {
     const std::string& libname = *it;
-    library* lib = library::construct_lib(libname);
+    sprockit::sim_parameters* lib_params = params_->get_optional_namespace(libname);
+    api* lib = api_factory::get_value(libname, lib_params, sid);
+    lib->init();
     libs_[libname] = lib;
+    services_.push_back(lib);
+  }
+}
+
+void
+operating_system::local_shutdown()
+{
+  for (api* lib : services_){
+    lib->finalize();
   }
 }
 
 void
 operating_system::finalize_init()
 {
-  init_startup_libs();
+  init_services();
 }
 
 void
@@ -322,12 +346,45 @@ operating_system::construct(sprockit::sim_parameters* params)
 void
 operating_system::sleep(timestamp t)
 {
-  node_->compute(t);
+  sw::key* k = sw::key::construct();
+  sw::unblock_event* ev = new sw::unblock_event(this, k);
+  schedule_delay(t, ev);
+  block(k);
+  delete k;
 }
 
 void
-operating_system::execute_kernel(ami::COMP_FUNC func,
-                                 event* data)
+operating_system::compute(timestamp t)
+{
+  //first thing's first - make sure I have a core to execute on
+  thread_data_t top = threadstack_.top();
+  thread* thr = top.second;
+  //this will block if the thread has no core to run on
+  compute_sched_->reserve_core(thr);
+  sleep(t);
+  compute_sched_->release_core(thr);
+}
+
+
+void
+operating_system::async_kernel(ami::SERVICE_FUNC func,
+                               event *data)
+{
+  node_->execute(func, data);
+}
+
+void
+operating_system::execute_kernel(ami::COMP_FUNC func, event *data,
+                                 callback* cb)
+{
+  spkt_throw(sprockit::unimplemented_error,
+             "operating_system::execute_kernel(COMP_FUNC)");
+}
+
+void
+operating_system::execute(ami::COMP_FUNC func,
+                           event* data,
+                           key::category cat)
 {
   //first thing's first - make sure I have a core to execute on
   thread_data_t top = threadstack_.top();  
@@ -335,30 +392,29 @@ operating_system::execute_kernel(ami::COMP_FUNC func,
   //this will block if the thread has no core to run on
   compute_sched_->reserve_core(thr);
   //initiate the hardware events
-  node_->execute_kernel(func, data);
+  key* k = new key(cat);
+  callback* cb = new_callback(this, &operating_system::unblock, k);
+  node_->execute(func, data, cb);
+  block(k);
   compute_sched_->release_core(thr);
+  delete k;
+  //callbacks deleted by core
 }
 
 void
 operating_system::execute_kernel(ami::COMM_FUNC func,
                                  message* data)
 {
-  node_->execute_kernel(func, data);
+  switch(func){
+  case sstmac::ami::COMM_SEND: {
+    hw::network_message* netmsg = safe_cast(hw::network_message, data);
+    netmsg->set_fromaddr(my_addr_);
+    node_->send_to_nic(netmsg);
+    break;
+  }
+  }
 }
 
-bool
-operating_system::kernel_supported(ami::COMP_FUNC func) const
-{
-  return node_->kernel_supported(func);
-}
-
-bool
-operating_system::kernel_supported(ami::COMM_FUNC func) const
-{
-  return node_->kernel_supported(func);
-}
-
-// ------- THREADING functions ----------
 void
 operating_system::simulation_done()
 {
@@ -487,18 +543,6 @@ operating_system::print_libs(std::ostream &os) const
   }
 }
 
-#if 0
-void
-operating_system::time_block(timestamp t, key::category cat)
-{
-  key* k = key::construct(cat);
-  unblock_event* ev = new unblock_event(this, k);
-  timestamp unblock_time = eventman_->now() + t;
-  eventman_->schedule(unblock_time, ev);
-  block(k);
-}
-#endif
-
 timestamp
 operating_system::block(key* req)
 {
@@ -547,7 +591,7 @@ operating_system::block(key* req)
     event_trace_->collect(
       req->event_typeid(),
       req->name(),
-      my_addr(),
+      addr(),
       ctxt.current_thread->thread_id(),
       ctxt.current_aid, ctxt.current_tid,
       before_ticks, delta_ticks);
@@ -563,27 +607,6 @@ void
 operating_system::schedule_timeout(timestamp delay, key* k)
 {
   send_delayed_self_event_queue(delay, new timeout_event(this, k));
-}
-
-void
-operating_system::add_blocker(key* k)
-{
-  k->block_thread(current_context());
-#if SSTMAC_SANITY_CHECK
-  if (k->still_blocked()){
-    spkt_throw(sprockit::value_error, "operating_system::add_block: key is already blocked");
-  }
-  valid_keys_.insert(k);
-#endif
-}
-
-void
-operating_system::remove_blocker(key* k)
-{
-#if SSTMAC_SANITY_CHECK
-  valid_keys_.erase(k);
-#endif
-  k->clear();
 }
 
 timestamp
@@ -692,46 +715,6 @@ operating_system::complete_thread(bool succ)
             "after calling complete and relinquishing stack.");
 }
 
-// ---------------------
-
-node_id
-operating_system::my_addr() const
-{
-  return node_->addr();
-}
-
-bool
-operating_system::is_task_here(const task_id &id) const
-{
-  spkt_unordered_map<task_id, long>::const_iterator it = task_to_thread_.find(id);
-  return it != task_to_thread_.end();
-
-}
-
-long
-operating_system::task_threadid(const task_id &id) const
-{
-  if (id == task_id() || task_to_thread_.size() == 0) {
-    return thread::main_thread;
-  }
-
-  spkt_unordered_map<task_id, long>::const_iterator it = task_to_thread_.find(id);
-  if (it == task_to_thread_.end()) {
-    spkt_unordered_map<task_id, long>::const_iterator it, end =
-      task_to_thread_.end();
-
-    for (it = task_to_thread_.begin(); it != end; it++) {
-      cerrn << "we have task " << int(it->first) << "\n";
-    }
-
-    spkt_throw_printf(sprockit::value_error,
-                     "invalid task id %d passed to operating system on node %ld",
-                     int(id),
-                     long(my_addr()));
-  }
-  return it->second;
-}
-
 void
 operating_system::register_lib(void* owner, library* lib)
 {
@@ -748,15 +731,13 @@ operating_system::register_lib(library* lib)
               "operating_system: trying to register a lib with no name");
   }
 #endif
-  static bool already_registered = false;
-  if (addr() == 512 && lib->lib_name() == "sumi_server_1"){
-    if (already_registered) abort();
-    already_registered = true;
-  }
   os_debug("registering lib %s", lib->lib_name().c_str());
   int& refcount = lib_refcounts_[lib];
   ++refcount;
   libs_[lib->lib_name()] = lib;
+  debug_printf(sprockit::dbg::dropped_events,
+               "OS %d should no longer drop events for %s",
+               addr(), lib->lib_name().c_str());
   if (refcount == 1){
     //first init
     lib->init_os(this);
@@ -771,6 +752,9 @@ operating_system::unregister_lib(library* lib)
   int& refcount = lib_refcounts_[lib];
   if (refcount == 1){
     lib_refcounts_.erase(lib);
+    debug_printf(sprockit::dbg::dropped_events,
+                 "OS %d will now drop events for %s",
+                 addr(), lib->lib_name().c_str());
     libs_.erase(lib->lib_name());
     unregister_all_libs(lib);
     deleted_libs_.insert(lib->lib_name());
@@ -922,10 +906,16 @@ operating_system::add_application(app* a)
 }
 
 void
-operating_system::add_task(const task_id& id)
+operating_system::start_api_call()
 {
-  task_to_thread_[id] = current_threadid();
-  // thread_to_task_[current_threadid()] = id;
+  os_thread_context& ctxt = current_os_thread_context();
+  perf_counter_model* mdl = ctxt.current_thread->perf_ctr_model();
+  compute_event* ev = mdl->get_next_event();
+  os_debug("starting api call with event %s",
+           ev ? ev->to_string().c_str() : "null");
+  if (ev){
+    execute(ami::COMP_INSTR, ev);
+  }
 }
 
 void
@@ -973,6 +963,9 @@ operating_system::handle_event(event* ev)
                      libmsg->lib_name().c_str(), int(addr()),
                      ev->to_string().c_str());
     } else {
+      debug_printf(sprockit::dbg::dropped_events | sprockit::dbg::os,
+                   "OS %d for library %s dropping event %s",
+                   addr(), libn.c_str(), ev->to_string().c_str());
       //drop the event
     }
   }

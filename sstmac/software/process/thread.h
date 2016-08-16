@@ -16,7 +16,7 @@
 #include <sstmac/common/timestamp.h>
 #include <sstmac/software/process/process_context.h>
 #include <sstmac/software/process/software_id.h>
-#include <sstmac/software/process/api.h>
+#include <sstmac/software/api/api.h>
 #include <sprockit/errors.h>
 
 #include <sstmac/software/launch/app_launch_fwd.h>
@@ -28,7 +28,7 @@
 #include <sstmac/software/libraries/compute/lib_sleep_fwd.h>
 #include <sstmac/software/api/api_fwd.h>
 #include <sstmac/software/threading/threading_interface_fwd.h>
-
+#include <sstmac/software/process/perf_counter.h>
 #include <queue>
 #include <map>
 #include <utility>
@@ -38,7 +38,6 @@
 
 namespace sstmac {
 namespace sw {
-
 
 class thread
 {
@@ -68,47 +67,18 @@ class thread
     thr->apis_ = apis_;
   }
 
-  virtual api*
-  build_api(int aid, const std::string& name);
-
-  virtual void
-  init_os(operating_system* os);
-
-  template <class T>
-  void
-  add_api(T* api) {
-    if (API<T>::id == API<T>::null_id) {
-      spkt_throw_printf(sprockit::illformed_error, "API %s is not initialized."
-                       "Make sure API is statically initialized correctly"
-                       " using ImplementAPI macro.",
-                       API<T>::name);
-    }
-    apis_[API<T>::id] = api;
-  }
-
   static thread*
   current();
 
   template <class T>
   T*
   get_api() {
-    if (API<T>::id == API<T>::null_id) {
-      spkt_throw_printf(sprockit::illformed_error, "API %s is not initialized."
-                       "Make sure API is statically initialized correctly"
-                       " using ImplementAPI macro.",
-                       API<T>::name);
-    }
-
-    api* api = apis_[API<T>::id];
-    if (!api) {
-      api = build_api(API<T>::id, API<T>::name);
-      apis_[API<T>::id] = api;
-    }
-
-    T* casted = dynamic_cast<T*>(api);
+    api* a = _get_api(T::api_name);
+    T* casted = dynamic_cast<T*>(a);
     if (!casted) {
-      spkt_throw_printf(sprockit::value_error, "Failed to cast API of type %s",
-                       API<T>::name);
+      spkt_throw_printf(sprockit::value_error,
+               "Failed to cast API to correct type for %s",
+                T::api_name);
     }
     return casted;
   }
@@ -140,12 +110,20 @@ class thread
     return state_;
   }
 
+  virtual void
+  init_perf_model_params(sprockit::sim_parameters* params);
+
   app_id aid() const {
-    return aid_;
+    return sid_.app_;
   }
 
   task_id tid() const {
-    return tid_;
+    return sid_.task_;
+  }
+
+  void
+  set_sid(software_id sid){
+    sid_ = sid;
   }
 
   void
@@ -280,7 +258,29 @@ class thread
   zero_affinity(){
     cpumask_ = 0;
   }
+
+  template <class T>
+  T&
+  register_perf_ctr_variable(void* ptr){
+    perf_counter* ctr = perf_model_->register_variable(ptr);
+    perf_counter_impl<T>* pctr = dynamic_cast<perf_counter_impl<T>*>(ctr);
+    if (!pctr){
+      spkt_throw(sprockit::value_error,
+                 "failed casting perf_counter type - check perf_model in params");
+    }
+    return pctr->counters();
+  }
   
+  void
+  remove_perf_ctr_variable(void* ptr){
+    perf_model_->remove_variable(ptr);
+  }
+
+  perf_counter_model*
+  perf_ctr_model() const {
+    return perf_model_;
+  }
+
   void
   set_cpumask(uint64_t cpumask){
     cpumask_ = cpumask;
@@ -313,20 +313,19 @@ class thread
   void
   set_tls_value(long thekey, void* ptr);
 
- protected:
-  thread();
-
-  void
-  unregister_all_libs();
-
   timestamp
   now();
 
-  node_id
-  physical_address();
+ protected:
+  thread();
+
+  friend api* static_get_api(const char *name);
+
+  virtual api*
+  _get_api(const char* name);
 
   void
-  set_sid(const software_id& sid);
+  unregister_all_libs();
   
  private:
   /// Run routine that defines the initial context for this task.
@@ -342,7 +341,7 @@ class thread
   void cleanup();
 
  protected:
-  spkt_unordered_map<int, api*> apis_;
+  spkt_unordered_map<std::string, api*> apis_;
 
   /// Monitor state for deadlock detection.
   state state_;
@@ -370,16 +369,15 @@ class thread
   int last_bt_collect_nfxn_;
 
   /// The stack given to this thread.
-  void *stack_;
+  void* stack_;
   /// The stacksize.
   size_t stacksize_;
 
-  app_id aid_;
-
-  task_id tid_;
+  software_id sid_;
   
   long thread_id_;
 
+  perf_counter_model* perf_model_;
 
   threading_interface* context_;
 

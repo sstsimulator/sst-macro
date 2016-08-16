@@ -15,7 +15,7 @@ using namespace sumi;
 
 static long done = 0;
 
-#define sstmac_app_name "user_app_cxx"
+#define sstmac_app_name user_app_cxx
 
 void run_test(
   sstmac::hw::traffic_pattern::type_t ty,

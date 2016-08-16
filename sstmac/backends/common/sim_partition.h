@@ -84,9 +84,6 @@ class partition :
     return local_num_switches_;
   }
 
-  virtual void
-  init_param1(parallel_runtime* rt);
-
   int
   lpid_for_switch(int switch_id) const {
 #if SSTMAC_SANITY_CHECK
@@ -103,7 +100,7 @@ class partition :
   thread_for_local_switch(int local_idx) const;
 
  protected:
-  partition();
+  partition(parallel_runtime* rt);
 
   void init_local_switches();
 
@@ -139,7 +136,7 @@ class serial_partition :
   public partition
 {
  public:
-  serial_partition();
+  serial_partition(parallel_runtime* rt) : partition(rt) {}
 
   virtual ~serial_partition();
 
@@ -156,6 +153,8 @@ class metis_partition :
   public partition
 {
  public:
+  metis_partition(parallel_runtime* rt) : partition(rt){}
+
   virtual ~metis_partition();
 
   virtual void
@@ -177,7 +176,7 @@ class topology_partition :
   public partition
 {
  public:
-  topology_partition();
+  topology_partition(parallel_runtime* rt) : partition(rt) {}
 
   virtual ~topology_partition();
 
@@ -205,7 +204,7 @@ class block_partition :
   public partition
 {
  public:
-  block_partition();
+  block_partition(parallel_runtime* rt) : partition(rt) {}
 
   virtual ~block_partition();
 
@@ -227,7 +226,7 @@ class occupied_block_partition :
   public block_partition
 {
  public:
-  occupied_block_partition();
+  occupied_block_partition(parallel_runtime* rt) : block_partition(rt){}
 
   virtual ~occupied_block_partition();
 

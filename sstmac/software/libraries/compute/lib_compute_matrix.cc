@@ -47,14 +47,14 @@ lib_compute_matrix::double_compute(long ndata_read,
                                    long working_set_size_write, long nadd, long nmult, long nmultadd,
                                    long nthread)
 {
-  compute_event* inst = new compute_event;
+  auto inst = new basic_compute_event;
+  basic_instructions_st& inst_st = inst->data();
+  inst_st.flops = ceil(double(nadd + nmult + 2 * nmultadd) / nthread);
   doing_memory_ = true;
   lib_compute_memmove::read(working_set_size_read / nthread);
   lib_compute_memmove::write(working_set_size_write / nthread);
   doing_memory_ = false;
 
-  inst->set_event_value(compute_event::flop,
-                        ceil(double(nadd + nmult + 2 * nmultadd) / nthread));
   lib_compute_inst::compute_inst(inst);
   delete inst;
 }

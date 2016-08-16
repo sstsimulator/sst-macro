@@ -52,6 +52,23 @@ vec_set_ev_parent(std::vector<T*>& themap, event_scheduler* m)
   }
 }
 
+#if !SSTMAC_INTEGRATED_SST_CORE
+packet_flow_abstract_switch::packet_flow_abstract_switch() :
+  buf_stats_(nullptr),
+  xbar_stats_(nullptr),
+  link_arbitrator_template(nullptr)
+{
+}
+#endif
+
+
+packet_flow_abstract_switch::~packet_flow_abstract_switch()
+{
+  if (buf_stats_) delete buf_stats_;
+  if (xbar_stats_) delete xbar_stats_;
+  if (link_arbitrator_template) delete link_arbitrator_template;
+}
+
 void
 packet_flow_abstract_switch::init_factory_params(sprockit::sim_parameters *params)
 {
@@ -86,14 +103,14 @@ packet_flow_switch::packet_flow_switch(
   SST::ComponentId_t id,
   SST::Params& params
 ) : packet_flow_abstract_switch(id, params),
-  xbar_(0)
+  xbar_(nullptr)
 {
   init_factory_params(SSTIntegratedComponent::params_);
   init_sst_params(params);
 }
 #else
 packet_flow_switch::packet_flow_switch() :
- xbar_(0)
+ xbar_(nullptr)
 {
 }
 #endif
@@ -299,6 +316,12 @@ void
 packet_flow_switch::deadlock_check()
 {
   xbar_->deadlock_check();
+}
+
+void
+packet_flow_switch::deadlock_check(event *ev)
+{
+  xbar_->deadlock_check(ev);
 }
 
 void

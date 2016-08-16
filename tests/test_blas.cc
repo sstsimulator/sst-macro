@@ -18,7 +18,7 @@
 extern "C" int ubuntu_cant_name_mangle() { return 0; }
 
 
-#define sstmac_app_name "test_blas"
+#define sstmac_app_name test_blas
 
 int USER_MAIN(int argc, char** argv)
 {

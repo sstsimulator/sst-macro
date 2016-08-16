@@ -5,7 +5,7 @@
 
 namespace scattern {
 
-/* This example sends a vector and receives individual elements */
+/** This example sends a vector and receives individual elements */
 
 int scattern( int argc, char **argv )
 {

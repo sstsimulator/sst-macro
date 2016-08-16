@@ -22,8 +22,12 @@ class fat_tree_router :
   public structured_router
 {
  public:
-  virtual
-  ~fat_tree_router() {
+  virtual ~fat_tree_router();
+
+  fat_tree_router() :
+    structured_router(routing::minimal),
+    rng_(nullptr)
+  {
   }
 
   virtual void
@@ -48,6 +52,9 @@ class fat_tree_router :
 
   void
   init_factory_params(sprockit::sim_parameters *params);
+
+  void
+  set_topology(topology *top);
 
   virtual std::string
   to_string() const {

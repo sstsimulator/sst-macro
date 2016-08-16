@@ -42,14 +42,6 @@ compute_scheduler::configure(int ncores, int nsocket)
   cores_per_socket_ = ncores_ / nsocket_;  
 }
 
-void
-compute_scheduler::clone_into(compute_scheduler* cln) const
-{
-  cln->ncores_ = ncores_;
-  cln->nsocket_ = nsocket_;
-  cln->cores_per_socket_  = cores_per_socket_;
-}
-
 } //end namespace hw
 } //end of namespace sstmac
 

@@ -29,10 +29,9 @@ namespace hw {
 SpktRegister("instruction", processor, instruction_processor,
             "Extension of simpleprocessor that estimates compute time of instruction counters");
 
-instruction_processor::instruction_processor() :
- noise_model_(0),
- negligible_time_sec_(0)
+instruction_processor::~instruction_processor()
 {
+  if (noise_model_) delete noise_model_;
 }
 
 void
@@ -49,9 +48,8 @@ void
 instruction_processor::init_factory_params(sprockit::sim_parameters* params)
 {
   simple_processor::init_factory_params(params);
-  timestamp negligible_time = params->get_optional_time_param("negligible_compute_time", 100e-9);
-  negligible_time_sec_ = negligible_time.sec();
-  negligible_bytes_ = params->get_optional_byte_length_param("negligible_compute_bytes", 64);
+  negligible_bytes_ = params->get_optional_byte_length_param(
+        "negligible_compute_bytes", 64);
 
   parallelism_ = params->get_optional_double_param("parallelism", 1.0);
 
@@ -63,11 +61,11 @@ instruction_processor::init_factory_params(sprockit::sim_parameters* params)
 }
 
 double
-instruction_processor::instruction_time(sw::compute_event* cmsg)
+instruction_processor::instruction_time(sw::basic_compute_event* cmsg)
 {
+  sw::basic_instructions_st& st = cmsg->data();
   double tsec = 0;
   long nop = 0;
-  nop = cmsg->event_value(sw::compute_event::flop);
   double tintop, tflop;
   if (noise_model_){
     tflop = tintop = 1.0/noise_model_->value();
@@ -75,9 +73,8 @@ instruction_processor::instruction_time(sw::compute_event* cmsg)
     tintop = tintop_;
     tflop = tflop_;
   }
-  tsec += nop*tflop/parallelism_;
-  nop = cmsg->event_value(sw::compute_event::intop);
-  tsec += nop*tintop/parallelism_;
+  tsec += st.flops*tflop/parallelism_;
+  tsec += st.intops*tintop/parallelism_;
   if (tsec < 0){
     spkt_throw_printf(sprockit::value_error,
         "instruction_processor: computed negative instruction time of %8.4e sec",
@@ -87,34 +84,23 @@ instruction_processor::instruction_time(sw::compute_event* cmsg)
 }
 
 void
-instruction_processor::do_compute(sw::compute_event* ev)
+instruction_processor::compute(event* ev, callback* cb)
 {
-  debug_printf(sprockit::dbg::compute_intensity,
-    "Node %d: starting compute %s",
-    int(node_->addr()),
-    ev->debug_string().c_str());
-
-  if (ev->timed_computed()){
-    node_->compute(ev->event_time());
+  sw::basic_compute_event* bev = test_cast(sw::basic_compute_event, ev);
+  sw::basic_instructions_st& st = bev->data();
+  // compute execution time in seconds
+  double instr_time = instruction_time(bev);
+  // now count the number of bytes
+  long bytes = st.mem_sequential;
+  // max_single_mem_bw is the bandwidth achievable if ZERO instructions are executed
+  double best_possible_time = instr_time + bytes / max_single_mem_bw_;
+  if (bytes <= negligible_bytes_) {
+    node_->schedule_delay(timestamp(instr_time), cb);
   }
   else {
-    // compute execution time in seconds
-    double instr_time = instruction_time(ev);
-    // now count the number of bytes
-    long bytes = ev->event_value(sw::compute_event::mem_sequential);
-    // max_single_mem_bw is the bandwidth achievable if ZERO instructions are executed
-    double best_possible_time = instr_time + bytes / max_single_mem_bw_;
-    if (best_possible_time < negligible_time_sec_){
-      //no delay, just continue on
-    }
-    else if (bytes <= negligible_bytes_) {
-      node_->compute(timestamp(instr_time));
-    }
-    else {
-      //do the full memory modeling
-      double best_possible_bw = bytes / best_possible_time;
-      mem_->access(bytes, best_possible_bw);
-    }
+    //do the full memory modeling
+    double best_possible_bw = bytes / best_possible_time;
+    mem_->access(bytes, best_possible_bw, cb);
   }
 
 }

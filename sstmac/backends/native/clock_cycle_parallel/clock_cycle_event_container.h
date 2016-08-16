@@ -17,6 +17,9 @@ class clock_cycle_event_map :
   public event_map
 {
  public:
+  clock_cycle_event_map(parallel_runtime* rt) :
+    event_map(rt){}
+
   typedef enum {
     vote_max,
     vote_min

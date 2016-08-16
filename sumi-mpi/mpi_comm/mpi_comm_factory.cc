@@ -16,6 +16,7 @@
 #include <sumi-mpi/sstmac_mpi_integers.h>
 #include <sumi-mpi/mpi_types.h>
 #include <sprockit/errors.h>
+#include <sprockit/stl_string.h>
 
 #include <sys/types.h>
 #include <sys/mman.h>
@@ -45,7 +46,9 @@ mpi_comm_factory::mpi_comm_factory(app_id aid, mpi_api* parent) :
   parent_(parent),
   aid_(aid),
   mpirun_np_(0),
-  next_id_(1)
+  next_id_(1),
+  worldcomm_(nullptr),
+  selfcomm_(nullptr)
 {
 }
 
@@ -54,8 +57,10 @@ mpi_comm_factory::mpi_comm_factory(app_id aid, mpi_api* parent) :
 //
 mpi_comm_factory::~mpi_comm_factory()
 {
-  delete worldcomm_;
-  delete selfcomm_;
+  //do not delete
+  //these will get deleted by mpi_api
+  //if (worldcomm_) delete worldcomm_;
+  //if (selfcomm_) delete selfcomm_;
 }
 
 //
@@ -64,7 +69,7 @@ mpi_comm_factory::~mpi_comm_factory()
 void
 mpi_comm_factory::init(int rank, int nproc)
 {
-  next_id_ = 1;
+  next_id_ = 2;
 
   mpirun_np_ = nproc;
 
@@ -76,15 +81,8 @@ mpi_comm_factory::init(int rank, int nproc)
   selfp.push_back(task_id(rank));
 
   mpi_group* g2 = new mpi_group(selfp);
-  selfcomm_ = new mpi_comm(MPI_COMM_SELF, int(0), g2, aid_);
-}
-
-void
-mpi_comm_factory::finalize()
-{
-  parent_ = 0;
-  worldcomm_ = 0;
-  selfcomm_ = 0;
+  selfcomm_ = new mpi_comm(MPI_COMM_SELF, int(0),
+                           g2, aid_, true/*owns group*/);
 }
 
 //
@@ -205,59 +203,57 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
 
 #endif
 
+  mpi_comm* ret;
   if (my_color < 0){ //I'm not part of this!
-#if SSTMAC_DISTRIBUTED_MEMORY && !SSTMAC_MMAP_COLLECTIVES
-    delete[] result;
-#endif
-    return mpi_comm::comm_null;
-  }
+    ret = mpi_comm::comm_null;
+  } else {
+    int cid = -1;
+    int ninput_ranks = caller->size();
+    int new_comm_size = 0;
+    for (unsigned rank = 0; rank < ninput_ranks; rank++) {
+      int* thisdata = result + 3*rank;
 
-  int cid = -1;
-  int ninput_ranks = caller->size();
-  int new_comm_size = 0;
-  for (unsigned rank = 0; rank < ninput_ranks; rank++) {
-    int* thisdata = result + 3*rank;
+      int comm_id = thisdata[0];
+      int color = thisdata[1];
+      int key = thisdata[2];
 
-    int comm_id = thisdata[0];
-    int color = thisdata[1];
-    int key = thisdata[2];
+      if (color >= 0 && color == my_color){
+        key_map[key].push_back(rank);
+        ++new_comm_size;
+      }
 
-    //printf("Rank %d[%d] = {%d %d %d}\n",
-    //       caller->rank(), rank, comm_id, color, key);
-
-    if (color >= 0 && color == my_color){
-      key_map[key].push_back(rank);
-      ++new_comm_size;
-    }
-
-    if (comm_id > cid) {
-      cid = comm_id;
-    }
-  }
-
-
-  //the next id I use needs to be greater than this
-  next_id_ = cid + 1;
-
-  std::vector<task_id> task_list(new_comm_size);
-
-  key_to_ranks_map::iterator it, end = key_map.end();
-  //iterate map in sorted order
-  int next_rank = 0;
-  int my_new_rank = -1;
-  for (it=key_map.begin(); it != end; ++it){
-    std::list<int>& ranks = it->second;
-    ranks.sort();
-    std::list<int>::iterator rit, rend = ranks.end();
-    for (rit=ranks.begin(); rit != rend; ++rit, ++next_rank){
-      int comm_rank = *rit;
-      task_id tid = caller->peer_task(int(comm_rank));
-      task_list[next_rank] = tid;
-      if (comm_rank == caller->rank()){
-        my_new_rank = next_rank;
+      if (comm_id > cid) {
+        cid = comm_id;
       }
     }
+
+
+    //the next id I use needs to be greater than this
+    next_id_ = cid + 1;
+
+    std::vector<task_id> task_list(new_comm_size);
+
+    key_to_ranks_map::iterator it, end = key_map.end();
+    //iterate map in sorted order
+    int next_rank = 0;
+    int my_new_rank = -1;
+    for (it=key_map.begin(); it != end; ++it){
+      std::list<int>& ranks = it->second;
+      ranks.sort();
+      std::list<int>::iterator rit, rend = ranks.end();
+      for (rit=ranks.begin(); rit != rend; ++rit, ++next_rank){
+        int comm_rank = *rit;
+        task_id tid = caller->peer_task(int(comm_rank));
+        task_list[next_rank] = tid;
+        if (comm_rank == caller->rank()){
+          my_new_rank = next_rank;
+        }
+      }
+    }
+    mpi_group* grp = new mpi_group(task_list);
+    ret = new mpi_comm(cid, my_new_rank, grp, aid_, true/*delete this group*/);
   }
+
 #if !SSTMAC_DISTRIBUTED_MEMORY || SSTMAC_MMAP_COLLECTIVES
   entry.refcount--;
   if (entry.refcount == 0){
@@ -269,7 +265,8 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
 #endif
   }
 #endif
-  return new mpi_comm(cid, my_new_rank, new mpi_group(task_list), aid_);
+
+  return ret;
 }
 
 mpi_comm*

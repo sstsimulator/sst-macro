@@ -5,7 +5,7 @@
 #include "mpitest.h"
 
 namespace exscan {
-/*
+/**
 static char MTEST_Descrip[] = "Test MPI_Exscan";
 */
 
@@ -19,7 +19,7 @@ int exscan( int argc, char *argv[] )
 
     MTest_Init( &argc, &argv );
 
-    /* The following illustrates the use of the routines to 
+    /** The following illustrates the use of the routines to 
        run through a selection of communicators and datatypes.
        Use subsets of these for tests that do not involve combinations 
        of communicators, datatypes, and counts of datatypes */
@@ -41,7 +41,7 @@ int exscan( int argc, char *argv[] )
 	    
 	    MPI_Exscan( sendbuf, recvbuf, count, MPI_INT, MPI_SUM, comm );
 
-	    /* Check the results.  rank 0 has no data */
+	    /** Check the results.  rank 0 has no data */
 	    if (rank > 0) {
 		int result;
 		for (i=0; i<count; i++) {
@@ -57,15 +57,15 @@ int exscan( int argc, char *argv[] )
 	    }
 
 #if MTEST_HAVE_MIN_MPI_VERSION(2,2)
-            /* now try the MPI_IN_PLACE flavor */
+            /** now try the MPI_IN_PLACE flavor */
             for (i=0; i<count; i++) {
-                sendbuf[i] = -1; /* unused */
+                sendbuf[i] = -1; /** unused */
                 recvbuf[i] = rank + i * size;
             }
 
             MPI_Exscan( MPI_IN_PLACE, recvbuf, count, MPI_INT, MPI_SUM, comm );
 
-            /* Check the results.  rank 0's data must remain unchanged */
+            /** Check the results.  rank 0's data must remain unchanged */
             for (i=0; i<count; i++) {
                 int result;
                 if (rank == 0)

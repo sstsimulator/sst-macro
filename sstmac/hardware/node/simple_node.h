@@ -46,30 +46,14 @@ class simple_node :
   init_factory_params(sprockit::sim_parameters* params);
 
   virtual void
-  execute_kernel(ami::COMP_FUNC func,
-                 event* data);
-
-  virtual void
-  execute_kernel(ami::COMM_FUNC func,
-                 message* data);
-
-  // ------- AMI functions --------- //
-  virtual bool
-  kernel_supported(ami::COMP_FUNC) const;
-
-  virtual bool
-  kernel_supported(ami::COMM_FUNC) const;
-
-  // --------------------- //
+  execute(ami::COMP_FUNC func,
+         event* data,
+         callback* cb);
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   virtual void
   set_event_manager(event_manager* man);
 #endif
-
- protected:
-  virtual bool
-  try_comp_kernels(ami::COMP_FUNC func, event* data);
 
 };
 

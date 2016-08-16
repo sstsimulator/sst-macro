@@ -16,56 +16,6 @@
 namespace sstmac {
 namespace sw {
 
-static std::map<std::string, library_builder*>* library_builders_ = 0;
-
-void
-library::register_builder(const std::string &libname,
-                          library_builder *builder)
-{
-  if (!library_builders_) {
-    library_builders_ = new std::map<std::string, library_builder*>;
-  }
-  (*library_builders_)[libname] = builder;
-}
-
-library_builder*
-library::builder(const std::string &libname)
-{
-  if (!library_builders_) {
-    spkt_throw_printf(sprockit::value_error, "no library builders registered");
-  }
-
-  library_builder* builder = (*library_builders_)[libname];
-  if (!builder) {
-    spkt_throw_printf(sprockit::value_error,
-        "name %s is not known for constructing library",
-        libname.c_str());
-  }
-  return builder;
-}
-
-library*
-library::construct_lib(const std::string& libname, const software_id& sid)
-{
-  library_builder* blder = builder(libname);
-  std::string sid_libname = libname + sid.to_string();
-  library* lib = blder->construct(sid_libname);
-  return lib;
-}
-
-library*
-library::construct_lib(const std::string& libname)
-{
-  library_builder* bldr = builder(libname);
-  library* lib = bldr->construct(libname);
-  return lib;
-}
-
-library::library() :
-  os_(0)
-{
-}
-
 library::~library()
 {
 }
@@ -113,6 +63,27 @@ library::incoming_event(event* ev)
   spkt_throw_printf(sprockit::unimplemented_error,
     "%s::incoming_event: this library should only block, never receive incoming",
      to_string().c_str());
+}
+
+void
+blocking_library::wait_event(event *ev, key::category cat)
+{
+  key* k = key::construct(cat);
+  blocked_events_[ev] = k;
+  os_->block(k);
+  delete k;
+}
+
+void
+blocking_library::incoming_event(event *ev)
+{
+  key* k = blocked_events_[ev];
+  if (!k){
+    spkt_throw(sprockit::value_error,
+               "blocking_library::incoming_event: got invalid event");
+  }
+  blocked_events_.erase(ev);
+  os_->unblock(k);
 }
 
 

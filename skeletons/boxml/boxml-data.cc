@@ -309,8 +309,8 @@ namespace lblxml
 
   void boxml::distribute_allreduce(int i, event* ev){
     reduce_t* comm = static_cast<reduce_t*>(ev);
-    box_to_domain_rank_map& team_map = comm->get_team();
-    box_to_domain_rank_map::iterator it, end = team_map.end();
+    box_to_comm_rank_map& team_map = comm->get_team();
+    box_to_comm_rank_map::iterator it, end = team_map.end();
     for (it=team_map.begin(); it != end; ++it){
       int box_number = it->first;
       int team_rank = g_boxindex_to_rank[box_number];
@@ -378,7 +378,7 @@ namespace lblxml
     if (done_ev->event_type() == event::collective) {
       reduce_t* done_reduce = static_cast<reduce_t*>(done_ev);
       const int* done_boxes = done_reduce->box_array();
-      box_to_domain_rank_map& next_team = next_reduce->get_team();
+      box_to_comm_rank_map& next_team = next_reduce->get_team();
       for (int i=0; i < done_reduce->nboxes(); ++i) {
         if (g_boxindex_to_rank[done_boxes[i]] == rank_ &&
             next_team.find(done_boxes[i]) != next_team.end()) {
@@ -548,9 +548,9 @@ namespace lblxml
       event* ev = g_events[*it];
       comm_t* comm = static_cast<comm_t*>(ev);
       int_container_t& team = comm->get_team();
-      int domain_rank=0;
+      int comm_rank=0;
       int_container_iter team_it, end = team.end();
-      for (it = team.begin(); team_it != end; ++team_it, ++domain_rank) {
+      for (it = team.begin(); team_it != end; ++team_it, ++comm_rank) {
         int boxnumber = *team_it;
         index_box_pair_t coll(ev->index(),*team_it);
         box_domains_[coll] = new box_domain(i,&team,&g_boxindex_to_rank);

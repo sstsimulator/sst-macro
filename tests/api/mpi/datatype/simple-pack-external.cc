@@ -1,8 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -14,13 +11,13 @@
 namespace simple_pack_external {
 static int verbose = 0;
 
-/* tests */
+/** tests */
 int builtin_float_test(void);
 int vector_of_vectors_test(void);
 int optimizable_vector_of_basics_test(void);
 int struct_of_basics_test(void);
 
-/* helper functions */
+/** helper functions */
 int parse_args(int argc, char **argv);
 
 int simple_pack_external(int argc, char **argv)
@@ -30,11 +27,11 @@ int simple_pack_external(int argc, char **argv)
     MTest_Init(&argc, &argv);
     parse_args(argc, argv);
 
-    /* To improve reporting of problems about operations, we
+    /** To improve reporting of problems about operations, we
        change the error handler to errors return */
     MPI_Comm_set_errhandler( MPI_COMM_WORLD, MPI_ERRORS_RETURN );
 
-    /* perform some tests */
+    /** perform some tests */
     err = builtin_float_test();
     if (err && verbose) fprintf(stderr, "%d errors in builtin float test.\n",
 				err);
@@ -60,7 +57,7 @@ int simple_pack_external(int argc, char **argv)
     return 0;
 }
 
-/* builtin_float_test()
+/** builtin_float_test()
  *
  * Tests functionality of get_envelope() and get_contents() on a MPI_FLOAT.
  *
@@ -80,11 +77,11 @@ int builtin_float_test(void)
     
     if (combiner != MPI_COMBINER_NAMED) errs++;
 
-    /* Note: it is erroneous to call MPI_Type_get_contents() on a basic. */
+    /** Note: it is erroneous to call MPI_Type_get_contents() on a basic. */
     return errs;
 }
 
-/* vector_of_vectors_test()
+/** vector_of_vectors_test()
  *
  * Builds a vector of a vector of ints.  Assuming an int array of size 9 
  * integers, and treating the array as a 3x3 2D array, this will grab the
@@ -104,7 +101,7 @@ int vector_of_vectors_test(void)
     int i, err, errs = 0;
     MPI_Aint sizeoftype, position;
 
-    /* set up type */
+    /** set up type */
     err = MPI_Type_vector(2,
 			  1,
 			  2,
@@ -205,7 +202,7 @@ int vector_of_vectors_test(void)
     return errs;
 }
 
-/* optimizable_vector_of_basics_test()
+/** optimizable_vector_of_basics_test()
  *
  * Builds a vector of ints.  Count is 10, blocksize is 2, stride is 2, so this
  * is equivalent to a contig of 20.
@@ -232,7 +229,7 @@ int optimizable_vector_of_basics_test(void)
 			     (int) sizeofint, 4);
     }
 
-    /* set up type */
+    /** set up type */
     err = MPI_Type_vector(10,
 			  2,
 			  2,
@@ -296,7 +293,7 @@ int optimizable_vector_of_basics_test(void)
     return errs;
 }
 
-/* struct_of_basics_test()
+/** struct_of_basics_test()
  *
  * Builds a struct of ints.  Count is 10, all blocksizes are 2, all
  * strides are 2*sizeofint, so this is equivalent to a contig of 20.
@@ -329,12 +326,12 @@ int struct_of_basics_test(void)
     for (i = 0; i < 10; i++) {
 	blocks[i] = 2;
 	indices[i] = 2 * i * sizeofint;
-	/* This will cause MPICH2 to consider this as a blockindex. We
+	/** This will cause MPICH2 to consider this as a blockindex. We
 	 * need different types here. */
 	types[i] = MPI_INT;
     }
 
-    /* set up type */
+    /** set up type */
     err = MPI_Type_struct(10,
 			  blocks,
 			  indices,

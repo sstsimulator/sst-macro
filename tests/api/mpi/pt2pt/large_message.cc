@@ -1,15 +1,12 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2010 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpitest.h"
 
 namespace large_message {
-/* tests send/recv of a message > 2GB. count=270M, type=long long 
+/** tests send/recv of a message > 2GB. count=270M, type=long long 
    run with 3 processes to exercise both shared memory and TCP in Nemesis tests*/
 
 int large_message(int argc, char *argv[]) 
@@ -23,7 +20,7 @@ int large_message(int argc, char *argv[])
 
   MTest_Init(&argc,&argv); 
 
-/* need large memory */
+/** need large memory */
   if (sizeof(void *) < 8) {
       MTest_Finalize(errs);
       MPI_Finalize();
@@ -50,18 +47,18 @@ int large_message(int argc, char *argv[])
 
   if (rank == 0) {
     for (i=0; i<cnt; i++) cols[i] = i;
-    /* printf("[%d] sending...\n",rank);*/
+    /** printf("[%d] sending...\n",rank);*/
     ierr = MPI_Send(cols,cnt,MPI_LONG_LONG_INT,1,0,MPI_COMM_WORLD);
     ierr = MPI_Send(cols,cnt,MPI_LONG_LONG_INT,2,0,MPI_COMM_WORLD);
   } else {
-      /* printf("[%d] receiving...\n",rank); */
+      /** printf("[%d] receiving...\n",rank); */
     for (i=0; i<cnt; i++) cols[i] = -1;
     ierr = MPI_Recv(cols,cnt,MPI_LONG_LONG_INT,0,0,MPI_COMM_WORLD,&status);
-    /* ierr = MPI_Get_count(&status,MPI_LONG_LONG_INT,&cnt);
+    /** ierr = MPI_Get_count(&status,MPI_LONG_LONG_INT,&cnt);
        Get_count still fails because status.count is not 64 bit */
     for (i=0; i<cnt; i++) {
         if (cols[i] != i) {
-            /*printf("Rank %d, cols[i]=%lld, should be %d\n", rank, cols[i], i);*/
+            /**printf("Rank %d, cols[i]=%lld, should be %d\n", rank, cols[i], i);*/
             errs++;
         }
     }

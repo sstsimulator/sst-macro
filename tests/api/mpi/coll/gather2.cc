@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 namespace gather2{
-/* Gather data from a vector to contiguous.  Use IN_PLACE */
+/** Gather data from a vector to contiguous.  Use IN_PLACE */
 
 int gather2( int argc, char **argv )
 {
@@ -20,7 +20,7 @@ int gather2( int argc, char **argv )
 
     while (MTestGetIntracommGeneral( &comm, minsize, 1 )) {
 	if (comm == MPI_COMM_NULL) continue;
-	/* Determine the sender and receiver */
+	/** Determine the sender and receiver */
 	MPI_Comm_rank( comm, &rank );
 	MPI_Comm_size( comm, &size );
 	
@@ -69,7 +69,7 @@ int gather2( int argc, char **argv )
 	MTestFreeComm( &comm );
     }
 
-    /* do a zero length gather */
+    /** do a zero length gather */
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );
     if ( rank == 0 ) {
 	MPI_Gather( MPI_IN_PLACE, -1, MPI_DATATYPE_NULL, NULL, 0, MPI_BYTE, 0,

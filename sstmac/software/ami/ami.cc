@@ -18,34 +18,41 @@ tostr(CAT cat)
       enumcase(QUERY);
       enumcase(HW);
   }
-  spkt_throw_printf(sprockit::illformed_error, "Invalid AMI_CAT %d received", cat);
+  spkt_throw_printf(sprockit::illformed_error,
+                    "Invalid AMI_CAT %d received", cat);
 }
 
 const char*
 tostr(COMM_FUNC func)
 {
   switch(func) {
-      enumcase(COMM_SEND);
-      enumcase(COMM_BCAST);
-      enumcase(COMM_BARRIER);
+    enumcase(COMM_SEND);
   }
-  spkt_throw_printf(sprockit::illformed_error, "Invalid AMI_COMM_FUNC %d received", func);
+  spkt_throw_printf(sprockit::illformed_error,
+                    "Invalid AMI_COMM_FUNC %d received", func);
+}
+
+const char*
+tostr(SERVICE_FUNC func)
+{
+  switch(func) {
+    enumcase(COMP_DISKACCESS);
+  }
+  spkt_throw_printf(sprockit::illformed_error,
+                    "Invalid AMI_COMP_FUNC %d received", func);
+  return 0;
 }
 
 const char*
 tostr(COMP_FUNC func)
 {
   switch(func) {
-      enumcase(COMP_TIME);
-      enumcase(COMP_INSTR);
-      enumcase(COMP_DISKACCESS);
-      enumcase(COMP_STOCH);
-      enumcase(COMP_EIGER);
-      enumcase(COMP_REGISTER_THREAD);
-      enumcase(GPU_MEMCPY);
-      enumcase(GPU_EX_ASYNC);
+    enumcase(COMP_TIME);
+    enumcase(COMP_INSTR);
+    enumcase(COMP_EIGER);
   }
-  spkt_throw_printf(sprockit::illformed_error, "Invalid AMI_COMP_FUNC %d received", func);
+  spkt_throw_printf(sprockit::illformed_error,
+                    "Invalid AMI_COMP_FUNC %d received", func);
   return 0;
 }
 

@@ -348,6 +348,11 @@ Table256::Table256()
   seeder_ = SimpleCombo::construct();
 }
 
+Table256::~Table256()
+{
+  delete seeder_;
+}
+
 void
 Table256::vec_reseed(const std::vector<rngint_t> &seeds)
 {
@@ -543,6 +548,11 @@ NormalDistribution::NormalDistribution(double mean, double stdev, double maxZ, r
     seed = time(NULL);
   }
   rand_ = SHR3::construct(seed);
+}
+
+NormalDistribution::~NormalDistribution()
+{
+  delete rand_;
 }
 
 double

@@ -46,7 +46,7 @@ const char* valid_keywords[] = {
 "testsuite_numtests" };
 sprockit::StaticKeywordRegister reg(3, valid_keywords);
 
-#define sstmac_app_name "apitest"
+#define sstmac_app_name apitest
 
 int
 USER_MAIN(int argc, char *argv[])

@@ -24,8 +24,8 @@ int main(int argc, char** argv)
   }
   
   for (int i=0; i < nPoints; ++i){
-    Simulation* sim = queue.waitForCompleted();
-    int idx; sim->getLabel(idx);
+    Simulation* sim = queue.waitForForked();
+    int idx = sim->label();
     results[idx] = sim->simulatedTime();
   }
 

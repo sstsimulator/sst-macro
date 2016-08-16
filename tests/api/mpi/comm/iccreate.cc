@@ -1,16 +1,12 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *
- *  (C) 2007 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
+
+
 #include <sstmac/replacements/mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpitest.h"
 
 namespace iccreate {
-/*
+/**
  * This program tests that MPI_Comm_create applies to intercommunicators;
  * this is an extension added in MPI-2
  */
@@ -45,7 +41,7 @@ int iccreate( int argc, char *argv[] )
 	MPI_Group_incl( oldgroup, nranks, ranks, &newgroup );
 	MPI_Comm_create( intercomm, newgroup, &newcomm );
 
-	/* Make sure that the new communicator has the appropriate pieces */
+	/** Make sure that the new communicator has the appropriate pieces */
 	if (newcomm != MPI_COMM_NULL) {
 	    int new_rsize, new_size, flag, commok = 1;
 
@@ -60,7 +56,7 @@ int iccreate( int argc, char *argv[] )
 
 	    MPI_Comm_remote_size( newcomm, &new_rsize );
 	    MPI_Comm_size( newcomm, &new_size );
-	    /* The new communicator has 1 process in each group */
+	    /** The new communicator has 1 process in each group */
 	    if (new_rsize != 1) {
 		errs++;
 		printf( "[%d] Remote size is %d, should be one\n", 
@@ -73,7 +69,7 @@ int iccreate( int argc, char *argv[] )
 			wrank, new_size );
 		commok = 0;
 	    }
-	    /* ... more to do */
+	    /** ... more to do */
 	    if (commok) {
 		errs += TestIntercomm( newcomm );
 	    }
@@ -83,7 +79,7 @@ int iccreate( int argc, char *argv[] )
 	    MPI_Comm_free( &newcomm );
 	}
 
-	/* Now, do a sort of dup, using the original group */
+	/** Now, do a sort of dup, using the original group */
 	MTestPrintfMsg( 1, "Creating a new intercomm (manual dup)\n" );
 	MPI_Comm_create( intercomm, oldgroup, &newcomm );
 	MPI_Comm_set_name( newcomm, (char*)"Dup of original" );
@@ -104,21 +100,21 @@ int iccreate( int argc, char *argv[] )
 	    }
 	}
 	else {
-	    /* Try to communication between each member of intercomm */
+	    /** Try to communication between each member of intercomm */
 	    errs += TestIntercomm( newcomm );
 	}
 
         if (newcomm != MPI_COMM_NULL) {
             MPI_Comm_free(&newcomm);
         }
-        /* test that an empty group in either side of the intercomm results in
+        /** test that an empty group in either side of the intercomm results in
          * MPI_COMM_NULL for all members of the comm */
         if (isLeft) {
-            /* left side reuses oldgroup, our local group in intercomm */
+            /** left side reuses oldgroup, our local group in intercomm */
             MPI_Comm_create(intercomm, oldgroup, &newcomm);
         }
         else {
-            /* right side passes MPI_GROUP_EMPTY */
+            /** right side passes MPI_GROUP_EMPTY */
             MPI_Comm_create(intercomm, MPI_GROUP_EMPTY, &newcomm);
         }
         if (newcomm != MPI_COMM_NULL) {
@@ -178,10 +174,10 @@ int TestIntercomm( MPI_Comm comm )
 	return errs;
     }
 
-    /* Each process sends a message containing its own rank and the
+    /** Each process sends a message containing its own rank and the
        rank of the destination with a nonblocking send.  Because we're using
        nonblocking sends, we need to use different buffers for each isend */
-    /* NOTE: the send buffer access restriction was relaxed in MPI-2.2, although
+    /** NOTE: the send buffer access restriction was relaxed in MPI-2.2, although
        it doesn't really hurt to keep separate buffers for our purposes */
     for (j=0; j<remote_size; j++) {
 	bufs[j]    = &bufmem[2*j];
