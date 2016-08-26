@@ -298,7 +298,7 @@ class CleanupFactory {
   typedef ::sprockit::Factory<__VA_ARGS__> FirstArgFactoryName(__VA_ARGS__);
 
 #define ImplementFactory(type_name) \
-  template<> const char* type_name##_factory::name_ = FirstArgStr(__VA_ARGS__); \
+  template<> const char* type_name##_factory::name_ = #type_name; \
   template<> std::map<std::string, type_name##_factory::builder_t*>* type_name##_factory::builder_map_ = 0; \
   template<> std::map<std::string, std::list<std::string>>* type_name##_factory::alias_map_ = 0; \
   namespace { static sprockit::CleanupFactory<type_name##_factory> cleaner; }
