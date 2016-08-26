@@ -63,7 +63,7 @@ class node_name_logger
 
 static node_name_logger* nodelog = 0;
 
-#define sstmac_app_name "mpi_print_nodes"
+#define sstmac_app_name mpi_print_nodes
 
 int USER_MAIN(int argc, char** argv)
 {

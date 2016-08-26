@@ -39,17 +39,18 @@ class service :
   incoming_event(event* ev) = 0;
 
  protected:
-  service();
+  service(const std::string& libname, software_id sid) :
+    library(libname, sid)
+  {}
+
+  service(const char* prefix, software_id sid) :
+    library(prefix, sid)
+  {}
 
   virtual
-  ~service();
+  ~service(){}
 
 
-};
-
-class service_factory :
-  public sprockit::SpktFactory<service>
-{
 };
 
 }

@@ -32,7 +32,9 @@ class gaussian_noise_model :
     double maxz,
     int seed);
 
-  gaussian_noise_model(){}
+  gaussian_noise_model() : rng_(nullptr) {}
+
+  ~gaussian_noise_model();
 
   std::string
   to_string() const {

@@ -40,11 +40,6 @@ sst_switch_interconnect::init_factory_params(sprockit::sim_parameters *params)
 {
 }
 #else
-
-macro_switch_interconnect::macro_switch_interconnect() 
-{
-}
-
 macro_switch_interconnect::~macro_switch_interconnect()
 {
   sprockit::delete_vals(switches_);
@@ -77,10 +72,11 @@ macro_switch_interconnect::write_graph_file(const std::string& graph_file)
 void
 macro_switch_interconnect::deadlock_check()
 {
-  switch_map::iterator it, end = switches_.end();
-  for (it=switches_.begin(); it != end; ++it){
-    network_switch* sw = it->second;
-    sw->deadlock_check();
+  for (auto& entry : switches_){
+    entry.second->deadlock_check();
+  }
+  for (auto& entry : netlinks_){
+    entry.second->deadlock_check();
   }
 }
 

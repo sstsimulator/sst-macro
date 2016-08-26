@@ -3,7 +3,7 @@
 #include <cstring>
 #include <algorithm>
 
-#define sstmac_app_name "lflr"
+#define sstmac_app_name lflr
 
 int main(int argc, char** argv)
 {

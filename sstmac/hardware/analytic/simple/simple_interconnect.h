@@ -11,6 +11,11 @@ class simple_interconnect :
 {
 
  public:
+  simple_interconnect(partition* part, parallel_runtime* rt) :
+    switch_interconnect(part, rt)
+  {
+  }
+
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
 

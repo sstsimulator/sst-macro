@@ -1,9 +1,56 @@
 #include <sstmac/libraries/uq/uq.h>
 #include <sstmac/main/driver.h>
 #include <sprockit/errors.h>
+#include <sprockit/debug.h>
 #include <cstring>
+#include <vector>
+#include <sstmac/software/launch/app_launch.h>
 
 using namespace sstmac;
+
+MakeDebugSlot(uq);
+MakeDebugSlot(uq_sanity);
+
+extern "C" int
+sstmac_uq_int_param(void* queue, const char* param)
+{
+  SimulationQueue* q = (SimulationQueue*) queue;
+  return q->template_params()->get_int_param(param);
+}
+
+extern "C" int
+sstmac_uq_double_param(void* queue, const char* param)
+{
+  SimulationQueue* q = (SimulationQueue*) queue;
+  return q->template_params()->get_double_param(param);
+}
+
+extern "C" int
+sstmac_uq_max_nproc(void* queue)
+{
+  SimulationQueue* q = (SimulationQueue*) queue;
+  return q->maxParallelWorkers();
+}
+
+extern "C" int
+sstmac_uq_sim_nproc(void* queue)
+{
+  SimulationQueue* q = (SimulationQueue*) queue;
+  sprockit::sim_parameters* src_params = q->template_params();
+  sprockit::sim_parameters* src_app_params = src_params->get_optional_namespace("app1");
+  sprockit::sim_parameters params;
+  src_app_params->combine_into(&params);
+  if (src_params->has_param("launch_app1_cmd")){
+    params["launch_cmd"] = src_params->get_param("launch_app1_cmd");
+  } 
+  if (src_params->has_param("launch_app1_size")){
+    params["size"] = src_params->get_param("launch_app1_size");
+  }
+  int nproc, procs_per_node;
+  std::vector<int> affinities;
+  sstmac::sw::app_launch::parse_launch_cmd(&params, nproc, procs_per_node, affinities);
+  return nproc;
+}
 
 extern "C" void*
 sstmac_uq_init(int argc, char** argv, int* workerID)
@@ -51,21 +98,24 @@ tmpl_allocate_values(int nrows, int ncols)
 }
 
 double**
-allocate_values(int nrows, int ncols)
+allocate_values(void* queue, int nrows, int ncols)
 {
-  return tmpl_allocate_values<double>(nrows, ncols);
+  SimulationQueue* q = (SimulationQueue*) queue;
+  return q->allocateParams(nrows, ncols);
 }
 
 double**
-allocate_results(int nrows, int ncols)
+allocate_results(void* queue, int nrows, int ncols)
 {
-  return tmpl_allocate_values<double>(nrows, ncols);
+  SimulationQueue* q = (SimulationQueue*) queue;
+  return q->allocateResults(nrows, ncols);
 }
 
 uq_param_t**
-allocate_params(int nrows, int ncols)
+allocate_params(void* queue, int nrows, int ncols)
 {
-  return tmpl_allocate_values<uq_param_t>(nrows, ncols);
+  SimulationQueue* q = (SimulationQueue*) queue;
+  return q->allocateParamStructs(nrows, ncols);
 }
 
 void
@@ -97,6 +147,14 @@ wait_sims(Simulation** sims, int nsims, double** results, int nresults, uq_spawn
       spkt_abort_printf("got wrong number of results for sim %d: expected %d, got %d",
         i, nresults, sims[i]->numResults());
     }
+
+    double avg = 0;
+    for (int j=0; j < nresults; ++j){
+      avg += results[i][j];
+    }
+    avg /= nresults;
+    debug_printf(sprockit::dbg::uq_sanity,
+      "Job %d: %12.8f", i, avg);
     delete sims[i];
   }
 }
@@ -136,7 +194,7 @@ sstmac_uq_run_units(void* queue,
   const char* param_units[],
   double* results[], uq_spawn_type_t ty)
 {
-  uq_param_t** params = allocate_params(njobs, nparams);
+  uq_param_t** params = allocate_params(queue, njobs, nparams);
   for (int j=0; j < njobs; ++j){
     for (int p=0; p < nparams; ++p){
       params[j][p].value = param_values[j][p];
@@ -146,7 +204,6 @@ sstmac_uq_run_units(void* queue,
   }
   sstmac_uq_run(queue, njobs, nparams, nresults, max_nthread,
     param_names, params, results, ty);
-  free_params(params);
 }
 
 static Simulation*
@@ -154,6 +211,7 @@ send_scan_point(SimulationQueue* q,
   sprockit::sim_parameters& params,
   char* bufferPtr,
   int nparams,
+  double* resultPtr,
   int nresults,
   const char* param_names[],
   uq_param_t* param_vals)
@@ -177,8 +235,15 @@ send_scan_point(SimulationQueue* q,
     total_size += name_len + val_size;
   }
 
-  Simulation* sim = q->sendScanPoint(bufferPtr, total_size, nresults);
+  Simulation* sim = q->sendScanPoint(total_size, bufferPtr, nresults, resultPtr);
   return sim;
+}
+
+extern "C" void
+sstmac_uq_stop(void* queue)
+{
+  SimulationQueue* q = (SimulationQueue*) queue;
+  q->teardown();
 }
 
 extern "C" void
@@ -189,20 +254,24 @@ sstmac_uq_run(void* queue,
 {
   SimulationQueue* q = (SimulationQueue*) queue;
   if (max_nthread <= 0) max_nthread = q->maxParallelWorkers();
-  Simulation** sims = new Simulation*[max_nthread];
 
-  sprockit::sim_parameters params;
-
+  Simulation** sims = q->allocateSims(max_nthread);
+  char* bufferPtr = 0;
   int num_running = 0;
   int result_offset = 0;
   int last_job = njobs - 1;
-  char* bufferPtr = 0;
   int entrySize = 64;
   int totalParamBufferSize = njobs*nparams*entrySize;
   int paramBufferSize = nparams*entrySize;
+
   if (spawn_ty == MPIScan){
-    bufferPtr = new char[totalParamBufferSize];
+    bufferPtr = q->allocateTmpBuffer(totalParamBufferSize);
   }
+
+  q->buildUp();
+
+  sprockit::sim_parameters params;
+
 
   for (int j=0; j < njobs; ++j){
     uq_param_t* param_vals = param_values[j];
@@ -211,11 +280,11 @@ sstmac_uq_run(void* queue,
     }
 
     if (spawn_ty == Fork){
-      sims[num_running++] = q->fork(params);
+      sims[num_running++] = q->fork(params, nresults, results[j]);
     }
     else if (spawn_ty == MPIScan){
       sims[num_running++] = send_scan_point(q, params, bufferPtr,
-                                nparams, nresults, param_names, param_values[j]);
+                                nparams, results[j], nresults, param_names, param_values[j]);
       bufferPtr += paramBufferSize;
     } else {
       spkt_throw_printf(sprockit::value_error,
@@ -224,15 +293,12 @@ sstmac_uq_run(void* queue,
 
     if (num_running == max_nthread || j == last_job){
       wait_sims(sims, num_running, results+result_offset, nresults, spawn_ty);
-      printf("Finished through simulation point %d\n", j);
+      debug_printf(sprockit::dbg::uq,
+                   "Finished through simulation point %d", j);
       result_offset += num_running;
       num_running = 0;
     }
   }
-
-  if (spawn_ty == MPIScan) q->teardown();
-
-  delete[] sims;
 }
 
 

@@ -24,6 +24,9 @@ class hostname_allocation : public node_allocator
 {
 
  public:
+  hostname_allocation(parallel_runtime* rt) :
+    node_allocator(rt){}
+
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
 

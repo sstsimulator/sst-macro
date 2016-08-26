@@ -11,7 +11,7 @@
 
 // hdtorus.cc: Implementation of a high dimensional torus network.
 //
-// Author: Ali Pinar <apinar@sandia.gov>
+// Author: Jeremiah Wilke <jjwilke@sandia.gov>
 //
 
 #include <sstmac/hardware/topology/hdtorus.h>

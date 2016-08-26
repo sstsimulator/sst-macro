@@ -17,13 +17,12 @@
 #include <sstmac/software/launch/node_allocator.h>
 #include <sprockit/errors.h>
 
-ImplementFactory(sstmac::sw::node_allocator);
-
 RegisterDebugSlot(allocation);
+
+ImplementFactory(sstmac::sw::node_allocator);
 
 namespace sstmac {
 namespace sw {
-
 
 node_allocator::~node_allocator() throw ()
 {

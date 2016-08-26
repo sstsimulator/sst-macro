@@ -16,8 +16,9 @@ class sumi_thread :
   virtual void run() = 0;
 
  public:
+  sumi_thread(sw::software_id sid);
 
-  sumi_thread();
+  virtual ~sumi_thread(){}
 
   void start();
 

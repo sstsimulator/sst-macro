@@ -1,0 +1,41 @@
+
+digraph { 
+
+nic0,nic1,nic2,nic4,nic5,nic6,nic7,
+mpi0,mpi1,mpi2,mpi3,mpi4,mpi5,mpi7,
+node0,node1,node2,node3,node6,node7,
+thr13,thr14,thr15,thr16
+[style=invis];
+
+thr10 [style=filled,fillcolor="lightblue",label="App Source\nMPI_Send(...)"];
+thr11 [style=filled,fillcolor="lightblue",label="mpi_api::send(...):\nm = new mpi_message(...);\los->execute_kernel(COMM_SEND,m);\lblock();\l"];
+thr12 [style=filled,fillcolor="lightblue",label="os::execute_kernel(COMM_FUNC f, event* ev):\l  network_message* netmsg = dynamic_cast<>(ev);\l node_->send_to_nic(netmsg);\l"]
+nic3  [label="nic::send(network_message* msg):\l  list<event*> pkts = packetize(msg);\l  for (pkt : pkts)\l  schedule(arrive,router,pkt);}\l  schedule(arrive,node,ack);\l"]
+node4 [label="node::handle(event* ev):\nos->handle_event(ev);"]
+node5 [label="os::handle_event(event* ev):\nlibrary* lib = libs[ev->lib_name()];\llib->incoming_event(ev);\l"]
+mpi6  [label="sumi_server::incoming_event(event* ev):\nmpi_message* msg = dynamic_cast(ev);\lif(msg->is_ack()){\l  mpi_api* api = local_procs[msg->sender()];\l  api->incoming_ack(msg);\l  api->unblock();\l}\l"]
+thr17 [style=filled,fillcolor="lightblue",label=" -> mpi_api::send(...)"];
+
+
+
+
+edge[style=invis];
+node0->node1->node2->node3->node4->node5->node6->node7;
+nic0->nic1->nic2->nic3->nic4->nic5->nic6->nic7;
+thr10->thr11->thr12->thr13->thr14->thr15->thr16->thr17;
+mpi0->mpi1->mpi2->mpi3->mpi4->mpi5->mpi6->mpi7;
+
+
+edge[style=solid];
+thr10->thr11 [label="Redirected Function Call\nos::current_thread()->get_api<mpi_api>()->send(...)"];
+thr11->thr12 [label="Function\nCall"];
+thr12->nic3 [label="Schedule + \nContext Switch"];
+nic3->node4 [label="Schedule"];
+node4->node5 [label="Schedule"];
+node5->mpi6 [label="Function\nCall"];
+mpi6->thr17 [label="Context Switch"];
+
+#mpi6->thr17 [label="Function\nCall"];
+
+}
+

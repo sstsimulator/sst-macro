@@ -14,13 +14,20 @@ noise_model::init_factory_params(sprockit::sim_parameters *params)
 {
 }
 
+gaussian_noise_model::~gaussian_noise_model()
+{
+  if (rng_) delete rng_;
+}
+
 double
 gaussian_noise_model::value()
 {
   return rng_->value();
 }
 
-gaussian_noise_model::gaussian_noise_model(double mean, double stdev, double maxz, int seed)
+gaussian_noise_model::gaussian_noise_model(double mean, double stdev,
+                                           double maxz, int seed)
+  : rng_(nullptr)
 {
   rng_ = new RNG::NormalDistribution(mean, stdev, maxz, seed);
 }

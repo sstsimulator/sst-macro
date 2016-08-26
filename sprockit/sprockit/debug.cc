@@ -49,6 +49,7 @@ debug::delete_statics()
 {
   free_static_ptr(debug_ints_);
   free_static_ptr(docstrings_);
+  if (prefix_fxn) delete prefix_fxn;
 }
 
 void
@@ -57,11 +58,11 @@ debug::turn_off(){
 }
 
 void
-debug::print_debug_string(const std::string &str)
+debug::print_debug_string(const std::string &str, std::ostream& os)
 {
   if (prefix_fxn)
-    std::cout << prefix_fxn->str();
-  std::cout << str << std::endl;
+    os << prefix_fxn->str();
+  os << str << std::endl;
 }
 
 std::string
@@ -133,7 +134,9 @@ debug::turn_on(const std::string& str){
 }
 
 void
-debug::register_debug_slot(const std::string& str, debug_int* dint_ptr, const std::string& docstring){
+debug::register_debug_slot(const std::string& str,
+                           debug_int* dint_ptr,
+                           const std::string& docstring){
   if (!debug_ints_){
     debug_ints_ = new std::map<std::string, debug_int*>;
     docstrings_ = new std::map<std::string, std::string>;

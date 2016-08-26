@@ -40,6 +40,9 @@ class multithreaded_event_container :
   public clock_cycle_event_map
 {
  public:
+  multithreaded_event_container(parallel_runtime* rt) :
+    clock_cycle_event_map(rt){}
+
   ~multithreaded_event_container() throw () {}
 
   virtual void

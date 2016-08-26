@@ -1,0 +1,18 @@
+Commit b7ace3fadce629e83138f2b4def31ccb3b890507 is the clean Lulesh
+2.0.3 download.  You can diff off that version to see *all* changes
+made in the skeletonization process.
+
+With no LULESH_SST_* macros enabled, the modified version of Lulesh
+should reduce to the original.
+
+The macro LULESH_SST_MODS can be enabled to implement basic changes
+to Lulesh that are required for an apples-to-apples comparison with
+the SST model.
+
+The macro LULESH_SST_SIM, when paired with LULESH_SST_MODS, can be
+enabled to replace the real Lulesh computation with an SST simulation
+that counts flops.  This mode does not support OpenMP.
+
+Skeletonization of the alternative data layout, lulesh_tuple.h, is
+incomplete.
+

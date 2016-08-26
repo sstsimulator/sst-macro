@@ -9,6 +9,7 @@
 #include <sprockit/output.h>
 #include <sprockit/sim_parameters.h>
 #include <sumi/message.h>
+#include <sumi/transport.h>
 #include <sstmac/common/runtime.h>
 
 using namespace sprockit::dbg;
@@ -17,14 +18,27 @@ namespace sstmac {
 
 #define print_extra_stuff 0
 
-sumi_api::sumi_api()
+sumi_api::sumi_api(const char *name, sw::software_id sid) :
+  api(name, sid),
+  process_manager(sid),
+  queue_(nullptr)
 {
+  rank_ = sid.task_;
+  server_libname_ = sprockit::printf("sumi_server_%d", int(sid.app_));
+  sw::thread* thr = sw::operating_system::current_thread();
+  sw::app* my_app = safe_cast(sw::app, thr);
+  my_app->compute(timestamp(1e-6));
+}
+
+sumi_api::~sumi_api()
+{
+  if (queue_) delete queue_;
 }
 
 void
 sumi_api::init()
 {
-  rank_mapper_ = runtime::launcher()->task_mapper(sid_.app_);
+  rank_mapper_ = runtime::launcher()->task_mapper(sid().app_);
   nproc_ = rank_mapper_->nproc();
   loc_ = os_->event_location();
 
@@ -33,12 +47,14 @@ sumi_api::init()
 
   // only do one server per app per node
   if (server_lib == 0) {
-    server = new sumi_server(sid_.app_);
+    server = new sumi_server(server_libname_, sid().app_);
     register_lib(server);
     server->start();
   }
   else {
+    //add me to the ref count
     server = safe_cast(sumi_server, server_lib);
+    register_lib(server);
   }
 
   server->register_proc(rank_, this);
@@ -60,20 +76,6 @@ sumi_api::finalize()
 }
 
 void
-sumi_api::init_param1(const sstmac::sw::software_id &sid)
-{
-  sid_ = sid;
-  rank_ = sid.task_;
-  libname_ = sprockit::printf("sumi_api_%d_%d",
-                       int(sid.app_), int(sid.task_));
-  server_libname_ = sprockit::printf("sumi_server_%d", int(sid_.app_));
-  process_manager::init_param1(sid);
-  sw::thread* thr = sw::operating_system::current_thread();
-  sw::app* my_app = safe_cast(sw::app, thr);
-  my_app->compute(timestamp(1e-6));
-}
-
-void
 sumi_api::init_factory_params(sprockit::sim_parameters *params)
 {
   api::init_factory_params(params);
@@ -85,10 +87,9 @@ sumi_api::transport_send(
   const sumi::message_ptr &msg,
   int sendType,
   int dst,
-  bool needs_ack,
-  void* buffer)
+  bool needs_ack)
 {
-  sstmac::sw::app_id aid = sid_.app_;
+  sstmac::sw::app_id aid = sid().app_;
   sstmac::hw::network_message::type_t ty = (sstmac::hw::network_message::type_t) sendType;
   transport_message* tmsg = new transport_message(aid, msg, byte_length);
   tmsg->hw::network_message::set_type(ty);
@@ -97,9 +98,7 @@ sumi_api::transport_send(
   tmsg->set_needs_ack(needs_ack);
   tmsg->set_src(rank_);
   tmsg->set_dest(dst);
-  tmsg->set_buffer(buffer);
-
-  sw::library::os_->execute_kernel(ami::COMM_SEND, tmsg);
+  sw::library::os_->execute(ami::COMM_SEND, tmsg);
 }
 
 sumi::message_ptr
@@ -114,6 +113,7 @@ sumi_api::poll_until_notification()
   while (1) {
     transport_message* msg = queue_->poll_until_message();
     sumi::message_ptr notification = handle(msg);
+    delete msg;
     if (notification){
       return notification;
     }
@@ -127,6 +127,7 @@ sumi_api::poll_until_notification(timestamp timeout)
     transport_message* msg = queue_->poll_until_message(timeout);
     if (msg){
       sumi::message_ptr notification = handle(msg);
+      delete msg;
       if (notification){
         return notification;
       }
@@ -143,16 +144,19 @@ sumi_api::incoming_message(transport_message* msg)
   queue_->put_message(msg);
 }
 
-sumi_server::sumi_server(int appid)
-  : appid_(appid)
+sumi_server::sumi_server(const std::string& libname, int appid)
+  : appid_(appid),
+    service(libname, sstmac::sw::software_id(appid, -1))
 {
-  libname_ = sprockit::printf("sumi_server_%d", appid);
 }
 
 void
 sumi_server::incoming_event(event* ev)
 {
  transport_message* smsg = safe_cast(transport_message, ev);
+ debug_printf(sprockit::dbg::sumi,
+              "sumi_server %d: incoming message %s",
+              os_->addr(), smsg->payload()->to_string().c_str());
  try {
   get_proc(smsg->dest())->incoming_message(smsg);
  } catch (sprockit::value_error& e) {
@@ -197,6 +201,10 @@ sumi_queue::sumi_queue(sstmac::sw::operating_system* os)
 
 sumi_queue::sumi_queue() :
   os_(sstmac::sw::operating_system::current_os())
+{
+}
+
+sumi_queue::~sumi_queue()
 {
 }
 

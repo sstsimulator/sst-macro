@@ -9,12 +9,11 @@
  *  SST/macroscale directory.
  */
 
-#define sstmac_app_name "sstmac_mpi_testall"
+#define sstmac_app_name sstmac_mpi_testall
 
 #include <sstmac/skeleton.h>
 #include <sstmac/compute.h>
 #include <sstmac/replacements/mpi.h>
-#include <sstmac/common/messages/value_payload.h>
 #include <sprockit/sim_parameters.h>
 #include <math.h>
 
@@ -1001,7 +1000,7 @@ test_wait()
   int sender(5);
 
   if (rank == 0) {
-    MPI_Request reqs[size - 1];
+    MPI_Request* reqs = new MPI_Request[size - 1];
 
     for (int i = 1; i < size; i++) {
       MPI_Request req;
@@ -1014,8 +1013,8 @@ test_wait()
     MPI_Status* stat = new MPI_Status[size - 1];
     MPI_Waitall(size - 1, reqs, stat);
 
-    //free(reqs);
-
+    delete[] stat;
+    delete[] reqs;
   }
   else {
     MPI_Send(NULL, count, MPI_DOUBLE, int(0), tag, MPI_COMM_WORLD);
@@ -1024,7 +1023,7 @@ test_wait()
   MPI_Barrier(MPI_COMM_WORLD);
 
   if (rank == 0) {
-    MPI_Request reqs[size - 1];
+    MPI_Request* reqs = new MPI_Request[size - 1];
 
     for (int i = 1; i < size; i++) {
       MPI_Irecv(NULL, count, MPI_DOUBLE, int(i), tag, MPI_COMM_WORLD,
@@ -1041,7 +1040,7 @@ test_wait()
                      sender - 1, index);
     }
 
-    //free(reqs);
+    delete[] reqs;
 
   }
   else if (rank == sender) {
@@ -1055,7 +1054,7 @@ test_wait()
   if (rank == 0) {
     sstmac_sleep(1); //lag me, so the others have a chance to send
 
-    MPI_Request reqs[size - 1];
+    MPI_Request* reqs = new MPI_Request[size - 1];
 
     for (int i = 1; i < size; i++) {
       MPI_Request req;
@@ -1079,6 +1078,10 @@ test_wait()
       failure_printf("waitsome expected n=%d, got n=%d",
                      nexpected, nrecved);
     }
+
+    delete[] reqs;
+    delete[] stat;
+    delete[] index;
   }
   else if (rank % 2 == 0) {
     MPI_Send(NULL, count, MPI_DOUBLE, int(0), tag2, MPI_COMM_WORLD);

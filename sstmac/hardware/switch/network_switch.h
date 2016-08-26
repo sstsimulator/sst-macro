@@ -58,11 +58,6 @@ class network_switch :
 
   virtual ~network_switch();
 
-  static inline int
-  packet_length_bytes() {
-    return packet_length_bytes_;
-  }
-
   topology*
   topol() const {
     return top_;
@@ -163,8 +158,6 @@ class network_switch :
   switch_id my_addr_;
   router* router_;
   topology* top_;
-
-  static int packet_length_bytes_;
 
 };
 

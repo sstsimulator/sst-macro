@@ -11,7 +11,7 @@
 
 // fattree.h: Interface for fat tree networks.
 //
-// Author: Curtis Janssen <cljanss@ca.sandia.gov>
+// Author: Jeremiah Wilke <jjwilke@sandia.gov>
 
 #ifndef SSTMAC_HARDWARE_NETWORK_TOPOLOGY_FATTREE_H_INCLUDED
 #define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_FATTREE_H_INCLUDED

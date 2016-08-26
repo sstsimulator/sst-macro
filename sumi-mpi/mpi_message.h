@@ -20,7 +20,6 @@
 #include <sumi-mpi/sstmac_mpi.h>
 #include <sstmac/software/process/task_id.h>
 #include <sstmac/software/process/app_id.h>
-#include <sstmac/common/messages/payload.h>
 
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sumi-mpi/mpi_protocol/mpi_protocol_fwd.h>
@@ -28,27 +27,12 @@
 
 namespace sumi {
 
-
-struct mpi_buffer {
-
-  mpi_buffer() : data(0), eager(false) {}
-
-  ~mpi_buffer(){
-    if (eager && data){
-      delete[] data;
-    }
-  }
-
-  char* data;
-  bool eager;
-};
-
 /**
  * A specialization of networkdata that contains envelope information
  * relevant to MPI messaging.
  */
 class mpi_message :
-  public sumi::rdma_message,
+  public sumi::message,
   public serializable_type<mpi_message>
 {
   ImplementSerializableDefaultConstructor(mpi_message)
@@ -207,11 +191,6 @@ class mpi_message :
     recompute_bytes();
   }
 
-  void*&
-  eager_buffer(){
-    return local_buffer().ptr;
-  }
-
   void
   build_status(MPI_Status* stat) const;
 
@@ -225,9 +204,18 @@ class mpi_message :
     return ignore_seqnum_;
   }
 
+  virtual void
+  move_remote_to_local();
+
+  virtual void
+  move_local_to_remote();
+
  protected:
   void
   clone_into(mpi_message* cln) const;
+
+  virtual void
+  buffer_send();
 
  protected:
   int src_rank_;

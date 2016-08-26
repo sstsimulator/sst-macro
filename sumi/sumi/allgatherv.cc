@@ -1,7 +1,7 @@
 #include <sumi/allgatherv.h>
 #include <sumi/partner_timeout.h>
 #include <sumi/transport.h>
-#include <sumi/domain.h>
+#include <sumi/communicator.h>
 #include <sprockit/output.h>
 #include <cstring>
 
@@ -55,7 +55,7 @@ bruck_allgatherv_actor::init_buffers(void* dst, void* src)
 void
 bruck_allgatherv_actor::finalize_buffers()
 {
-  long buffer_size = nelems_ * type_size_ * dom_->nproc();
+  long buffer_size = nelems_ * type_size_ * comm_->nproc();
   my_api_->unmake_public_buffer(send_buffer_, buffer_size);
 }
 
@@ -104,16 +104,20 @@ bruck_allgatherv_actor::init_dag()
   //and so on...
   nproc = dense_nproc_;
 
+  //as with the allgather, it makes absolutely no sense to run this collective on
+  //unpacked data - everyone should immediately pack their data and then run the collective
+  //on packed data instead
+
 
   int partner_gap = 1;
-  action *prev_send, *prev_recv;
+  action *prev_send = 0, *prev_recv = 0;
   int nelems_recvd = recv_counts_[dense_me_];
   for (int i=0; i < num_rounds; ++i){
     int send_partner = (dense_me_ + nproc - partner_gap) % nproc;
     int recv_partner = (dense_me_ + partner_gap) % nproc;
 
-    action* send_ac = new send_action(i, send_partner);
-    action* recv_ac = new recv_action(i, recv_partner);
+    action* send_ac = new send_action(i, send_partner, send_action::in_place);
+    action* recv_ac = new recv_action(i, recv_partner, recv_action::in_place);
 
     send_ac->offset = 0;
     recv_ac->offset = nelems_recvd;
@@ -123,15 +127,11 @@ bruck_allgatherv_actor::init_dag()
     partner_gap *= 2;
     nelems_recvd += recv_ac->nelems;
 
-    if (i == 0){
-      add_initial_action(send_ac);
-      add_initial_action(recv_ac);
-    } else {
-      add_dependency(prev_send, send_ac);
-      add_dependency(prev_recv, send_ac);
-      add_dependency(prev_send, recv_ac);
-      add_dependency(prev_recv, recv_ac);
-    }
+
+    add_dependency(prev_send, send_ac);
+    add_dependency(prev_recv, send_ac);
+    add_dependency(prev_send, recv_ac);
+    add_dependency(prev_recv, recv_ac);
 
     prev_send = send_ac;
     prev_recv = recv_ac;
@@ -141,13 +141,13 @@ bruck_allgatherv_actor::init_dag()
     int nelems_extra_round = total_nelems_ - nelems_recvd;
     int send_partner = (dense_me_ + nproc - partner_gap) % nproc;
     int recv_partner = (dense_me_ + partner_gap) % nproc;
-    action* send_ac = new send_action(num_rounds,send_partner);
-    action* recv_ac = new recv_action(num_rounds,recv_partner);
+    action* send_ac = new send_action(num_rounds,send_partner,send_action::in_place);
     send_ac->offset = 0;
-    recv_ac->offset = nelems_recvd;
     //nelems_to_recv gives me the total number of elements the partner has
     //he needs the remainder to get up to total_nelems
     send_ac->nelems = total_nelems_ - nelems_to_recv(send_partner, partner_gap);
+    action* recv_ac = new recv_action(num_rounds,recv_partner,recv_action::in_place);
+    recv_ac->offset = nelems_recvd;
     recv_ac->nelems = nelems_extra_round;
 
     add_dependency(prev_send, send_ac);

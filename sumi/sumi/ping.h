@@ -121,6 +121,10 @@ class ping_monitor :
     public activity_monitor
 {
  public:
+  ping_monitor(transport* tport) : activity_monitor(tport)
+  {
+  }
+
   std::string
   to_string() const {
     return "interval monitor";

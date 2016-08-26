@@ -26,6 +26,7 @@ class threading_pth : public threading_interface
   threadcontext_t context_;
 
  public:
+  virtual ~threading_pth() {}
 
   virtual
   threading_interface* copy() {

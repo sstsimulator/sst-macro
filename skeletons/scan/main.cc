@@ -1,6 +1,6 @@
 #include <mpi.h>
 
-#define sstmac_app_name "test"
+#define sstmac_app_name test
 
 int main(int argc, char** argv)
 {

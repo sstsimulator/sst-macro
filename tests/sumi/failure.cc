@@ -10,7 +10,7 @@
 #include <sumi/thread_safe_set.h>
 #include <sumi/transport.h>
 #include <sstmac/skeleton.h>
-#define sstmac_app_name "user_app_cxx"
+#define sstmac_app_name user_app_cxx
 using namespace sstmac;
 using namespace sstmac::sw;
 using namespace sstmac::hw;
@@ -113,7 +113,7 @@ try_main(int argc, char **argv)
   return 0;
 }
 
-#define sstmac_app_name "user_app_cxx"
+#define sstmac_app_name user_app_cxx
 
 int
 main(int argc, char** argv)

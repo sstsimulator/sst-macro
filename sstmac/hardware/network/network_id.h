@@ -8,7 +8,7 @@
 namespace sstmac {
 namespace hw {
 
-typedef unique_msg_id network_id;
+typedef unique_event_id network_id;
 
 }
 }

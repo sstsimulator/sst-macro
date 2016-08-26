@@ -13,50 +13,68 @@
 #include <sumi-mpi/mpi_comm/keyval.h>
 #include <sprockit/debug.h>
 #include <sprockit/errors.h>
+#include <sprockit/statics.h>
+
+static sprockit::need_delete_statics<sumi::mpi_comm> cleanup_comm;
 
 namespace sumi {
-
 
 //
 // NULL communicator.
 //
-mpi_comm* mpi_comm::comm_null;
+mpi_comm* mpi_comm::comm_null = nullptr;
 
 mpi_comm::mpi_comm() :
-  group_(0),
+  group_(nullptr),
   next_collective_tag_(0),
   id_(MPI_COMM_NULL),
   rank_(-1),
-  domain(-1)
+  del_grp_(false),
+  communicator(-1),
+  topotype_(TOPO_NONE)
 {
-  topotype_ = TOPO_NONE;
+}
+
+mpi_comm::~mpi_comm()
+{
+  if (del_grp_) delete group_;
 }
 
 mpi_comm::mpi_comm(
   MPI_Comm id, //const appid &aid,
   int rank, mpi_group* peers,
-  app_id aid) :
-  domain(rank),
+  app_id aid,
+  bool del_grp) :
+  sumi::communicator(rank),
   group_(peers),
   next_collective_tag_(MPI_COMM_WORLD + 100),
-  aid_(aid), id_(id), rank_(rank)
+  aid_(aid),
+  id_(id),
+  rank_(rank),
+  del_grp_(del_grp),
+  topotype_(TOPO_NONE)
 {
   if (peers->size() == 0) {
-    spkt_throw_printf(sprockit::value_error, "trying to build communicator of size 0");
+    spkt_throw_printf(sprockit::value_error,
+         "trying to build communicator of size 0");
   }
-
-  topotype_ = TOPO_NONE;
 
   if (!comm_null) {
     comm_null = new mpi_comm;
   }
 }
 
+void
+mpi_comm::delete_statics()
+{
+  if (comm_null) delete comm_null;
+}
+
 int
-mpi_comm::global_to_domain_rank(int global_rank) const
+mpi_comm::global_to_comm_rank(int global_rank) const
 {
   spkt_throw(sprockit::unimplemented_error,
-    "mpi_comm::global_to_domain_rank");
+    "mpi_comm::global_to_comm_rank");
 }
 
 void

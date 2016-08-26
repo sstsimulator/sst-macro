@@ -21,9 +21,15 @@
 namespace sstmac {
 namespace hw {
 
-class switch_interconnect_base : public interconnect_base
+class switch_interconnect_base :
+  public interconnect_base
 {
  protected:
+  switch_interconnect_base(partition* part, parallel_runtime* rt) :
+    interconnect_base(part, rt)
+  {
+  }
+
   inline timestamp send_delay(int num_hops, int num_bytes) const {
     double bw_term = num_bytes / hop_bw_;
     timestamp delay = hop_latency_ * num_hops + timestamp(bw_term) + 2*injection_latency_;
@@ -46,8 +52,12 @@ class sst_switch_interconnect :
   public switch_interconnect_base
 {
  public:
+  sst_switch_interconnect(partition* part, parallel_runtime* rt) :
+    switch_interconnect_base(part, rt){}
+
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
+
   event_loc_id
   event_location() const {
     return event_loc_id::null;
@@ -61,7 +71,10 @@ class macro_switch_interconnect :
   typedef spkt_unordered_map<switch_id, network_switch*> switch_map;
 
  public:
-  macro_switch_interconnect();
+  macro_switch_interconnect(partition* part, parallel_runtime* rt) :
+    switch_interconnect_base(part, rt)
+  {
+  }
 
   virtual void
   init_factory_params(sprockit::sim_parameters* params);

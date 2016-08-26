@@ -30,6 +30,8 @@ class sumi_queue
 
   sumi_queue();
 
+  ~sumi_queue();
+
   transport_message*
   poll_until_message();
 
@@ -57,9 +59,8 @@ class sumi_api :
   public sstmac::sw::api,
   public sstmac::sw::process_manager
 {
-
  public:
-  sumi_api();
+  sumi_api(const char* name, sstmac::sw::software_id sid);
 
   virtual void
   init();
@@ -67,10 +68,7 @@ class sumi_api :
   virtual void
   finalize();
 
-  virtual ~sumi_api(){}
-
-  virtual void
-  init_param1(const sstmac::sw::software_id& sid);
+  virtual ~sumi_api();
 
   virtual void
   init_os(sstmac::sw::operating_system* os);
@@ -96,8 +94,7 @@ class sumi_api :
     const sumi::message_ptr& msg,
     int ty,
     int dst,
-    bool needs_ack,
-    void* buffer = 0);
+    bool needs_ack);
   
   bool
   blocked() const {
@@ -106,8 +103,6 @@ class sumi_api :
 
  private:
   std::string server_libname_;
-
-  sstmac::sw::software_id sid_;
 
   sstmac::sw::app_launch* rank_mapper_;
 
@@ -132,7 +127,7 @@ class sumi_server :
 {
 
  public:
-  sumi_server(int appid);
+  sumi_server(const std::string& libname, int appid);
 
   void
   register_proc(int rank, sumi_api* proc);

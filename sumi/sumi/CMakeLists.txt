@@ -28,7 +28,7 @@ collective_message_fwd.h
 comm_functions.h
 dense_rank_map.h
 domain.h
-domain_fwd.h
+communicator_fwd.h
 dynamic_tree_vote.h
 lockable.h
 message.h

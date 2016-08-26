@@ -84,6 +84,16 @@ class mpi_type
 
   ~mpi_type();
 
+  bool
+  builtin() const {
+    return builtin_;
+  }
+
+  void
+  set_builtin(bool flag){
+    builtin_ = flag;
+  }
+
   TYPE_TYPE
   type() const {
     return type_;
@@ -268,6 +278,8 @@ class mpi_type
   pairdata* pdata_;
   vecdata* vdata_;
   inddata* idata_;
+
+  bool builtin_;
 
   int size_; //this is the packed size !!!
   size_t extent_; //holds the extent, as defined by the MPI standard

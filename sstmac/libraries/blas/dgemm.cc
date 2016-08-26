@@ -67,21 +67,18 @@ default_dgemm::op_3d(int mm, int nn, int kk)
     nblocks=npartitions*npartitions;
   }
 
+  basic_compute_event* ev = new basic_compute_event;
+  basic_instructions_st& st = ev->data();
+
   // a single block costs..
   long nops = long(m) * long(n) * long(k);
   // assume we are do a smart Strassen or something - gets better with size
   double exp = 2.807 / 3.0; // log2(7) / log2(8)
   nops = pow(nops, exp);
-  long nflops = nops / long(pipeline_);
-  long loop_ops = nops / long(loop_unroll_) / long(pipeline_);
-
-  long total_bytes = Csize + Asize*npartitions + Bsize*npartitions;
-
-  compute_event* msg = new compute_event;
-  msg->set_event_value(compute_event::flop, nflops);
-  msg->set_event_value(compute_event::intop, loop_ops);
-  msg->set_event_value(compute_event::mem_sequential, total_bytes);
-  return msg;
+  st.flops = nops / long(pipeline_);
+  st.intops = nops / long(loop_unroll_) / long(pipeline_);
+  st.mem_sequential = Csize + Asize*npartitions + Bsize*npartitions;
+  return ev;
 }
 
 }

@@ -7,57 +7,13 @@
 #include <sstmac/common/sstmac_config.h>
 #include <list>
 #include <iostream>
+#include <sstmac/libraries/uq/uq.h>
 
 #ifdef SSTMAC_MPI_DRIVER
 #include <mpi.h>
 #endif
 
 namespace sstmac {
-
-template <class T>
-class Labeler {
- public:
-  static int assign_label(char* buffer, const T& t){
-    T* tPtr = reinterpret_cast<T*>(buffer);
-    *tPtr = t;
-    return sizeof(T);
-  }
-
-  static int extract_label(char* buffer, T& t){
-    T* tPtr = reinterpret_cast<T*>(buffer);
-    t = *tPtr;
-    return sizeof(T);
-  }
-};
-
-template <>
-class Labeler<const char*> {
- public:
-  static int assign_label(char* buffer, const char* msg){
-   const char** tPtr = reinterpret_cast<const char**>(buffer);
-   *tPtr = msg;
-   return sizeof(const char*);
-  }
-
-  static int extract_label(char* buffer, const char*& msg){
-   const char** tPtr = reinterpret_cast<const char**>(buffer);
-   msg = *tPtr;
-   return sizeof(const char*);
-  }
-};
-
-template <class T>
-int
-append_label(char* buffer, const T& t){
-  return Labeler<T>::assign_label(buffer, t);
-}
-
-template <class T>
-int
-extract_label(char* buffer, T& t){
-  return Labeler<T>::extract_label(buffer, t);
-}
-
 
 typedef int pipe_t[2];
 
@@ -68,15 +24,12 @@ class Simulation
  public:
   Simulation() : 
     complete_(false),
-    results_(0)
+    results_(nullptr),
+    allocated_results_(false)
   {
   }
 
-  Simulation(int nresults) :
-    complete_(false),
-    results_(new double[nresults])
-  {
-  }
+  ~Simulation();
 
   double
   wallTime() const {
@@ -104,8 +57,23 @@ class Simulation
 
   void
   setResults(double* results, int numResults){
+    if (allocated_results_)
+      delete[] results_;
+
     results_ = results;
     stats_.numResults = numResults;
+    allocated_results_ = false;
+  }
+
+  void
+  allocateResults(int nresults){
+    if (allocated_results_ && stats_.numResults >= nresults){
+      //do nothing - good already
+    } else {
+      allocated_results_ = true;
+      results_ = new double[nresults];
+    }
+    stats_.numResults = nresults;
   }
 
   void
@@ -178,6 +146,7 @@ class Simulation
   double* results_;
   bool complete_;
   int idx_;
+  bool allocated_results_;
 
 
  public:
@@ -212,9 +181,13 @@ class SimulationQueue
  public:
   SimulationQueue();
 
+  ~SimulationQueue();
+
   Simulation*
-  fork(sprockit::sim_parameters& params){
-    return fork(&params);
+  fork(sprockit::sim_parameters& params, 
+    int nresults = 0, 
+    double* resultPtr = nullptr){
+    return fork(&params, nresults, resultPtr);
   }
 
   bool
@@ -235,12 +208,18 @@ class SimulationQueue
 
   void teardown();
 
+  void buildUp(){
+    built_up_ = true;
+  }
+
   void init(int argc, char** argv);
 
   void finalize();
 
   Simulation*
-  fork(sprockit::sim_parameters* params);
+  fork(sprockit::sim_parameters* params,
+    int nresults = 0, 
+    double* resultPtr = nullptr);
 
   Simulation*
   waitForForked();
@@ -251,11 +230,22 @@ class SimulationQueue
   void
   run(sprockit::sim_parameters* params, sim_stats& stats);
 
+  static double*
+  allocateResults(int nresults);
+
   static void
-  publishResults(double* results, int nresults);
+  publishResults(){}
+
+  static void
+  delete_statics();
 
   Simulation*
-  sendScanPoint(char* bufferPtr, int nparams, int totalSize);
+  sendScanPoint(int bufferSize, char* bufferPtr, int nresults, double* resultPtr = nullptr);
+
+  sprockit::sim_parameters*
+  template_params() {
+    return &template_params_;
+  }
 
   void
   rerun(sprockit::sim_parameters* params, sim_stats& stats);
@@ -268,13 +258,42 @@ class SimulationQueue
     return me_;
   }
 
+  Simulation**
+  allocateSims(int max_nthread);
+
+  char*
+  allocateTmpBuffer(size_t buf_size);
+
+  double**
+  allocateResults(int njobs, int nresults);
+
+  double**
+  allocateParams(int njobs, int nparams);
+
+  uq_param_t**
+  allocateParamStructs(int njobs, int nparams);
+
+
  private:
+  bool built_up_;
   std::list<Simulation*> pending_;
   parallel_runtime* rt_;
   sprockit::sim_parameters template_params_;
   opts template_opts_;
   static double* results_;
   static int num_results_;
+  Simulation** sims_;
+  int nsims_;
+  char* tmp_buffer_;
+  size_t tmp_buf_size_;
+
+  std::pair<int,int> result_buf_size_;
+  std::pair<int,int> param_buf_size_;
+  std::pair<int,int> struct_buf_size_;
+
+  double** tmp_results_;
+  double** tmp_params_;
+  uq_param_t** tmp_structs_;
 
  private:
   int nproc_;

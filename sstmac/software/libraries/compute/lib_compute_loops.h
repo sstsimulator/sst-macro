@@ -27,12 +27,9 @@ class lib_compute_loops :
 
  public:
   virtual
-  ~lib_compute_loops() {
-  }
+  ~lib_compute_loops() {}
 
   lib_compute_loops(software_id id);
-
-  lib_compute_loops(const std::string& id);
 
   template<typename Type>
   void
@@ -254,12 +251,6 @@ class lib_compute_loops :
   static bool do_loops_;
 
  protected:
-  virtual bool
-  supported() const {
-    return lib_compute_inst::supported()
-           && lib_compute_memmove::supported();
-  }
-
   void consume_params(sprockit::sim_parameters *params);
 
   void

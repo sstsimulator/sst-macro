@@ -103,15 +103,17 @@ class packet_flow_memory_packetizer : public packet_flow_packetizer
 
 };
 
-/**
-  @class train_memorymodel
-  A memory model compatible with the train message framework
-*/
+
 class packet_flow_memory_model :
   public memory_model,
   public packetizer_callback
 {
  public:
+  packet_flow_memory_model(node* nd) :
+    memory_model(nd)
+  {
+  }
+
   virtual ~packet_flow_memory_model();
 
   void
@@ -131,7 +133,7 @@ class packet_flow_memory_model :
   void notify(int vn, message* msg);
 
   virtual void
-  access(long bytes, double max_bw);
+  access(long bytes, double max_bw, callback* cb);
 
   double
   max_single_bw() const {
@@ -142,9 +144,8 @@ class packet_flow_memory_model :
   int allocate_channel();
 
  private:
-  //static int mtu_;
   double max_single_bw_;
-  std::map<message*, sw::key*> pending_requests_;
+  std::map<message*, callback*> pending_requests_;
   packet_flow_memory_packetizer* mem_packetizer_;
   std::list<int> channels_available_;
   int nchannels_;

@@ -19,6 +19,7 @@ job_launcher::handle(event *ev)
 {
   job_launch_event* lev = safe_cast(job_launch_event, ev);
   handle_new_launch_request(lev->appman());
+  delete lev;
 }
 
 void

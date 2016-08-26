@@ -22,8 +22,12 @@ class fat_tree_router :
   public structured_router
 {
  public:
-  virtual
-  ~fat_tree_router() {
+  virtual ~fat_tree_router();
+
+  fat_tree_router() :
+    structured_router(routing::minimal),
+    rng_(nullptr)
+  {
   }
 
   virtual void

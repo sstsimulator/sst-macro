@@ -33,7 +33,7 @@ class sstmac_global_builtin_arr : public sstmac_global
 
   explicit
   sstmac_global_builtin_arr() :
-    init_(0) {
+    init_(nullptr) {
   }
 
   explicit
@@ -49,7 +49,11 @@ class sstmac_global_builtin_arr : public sstmac_global
 
   virtual
   ~sstmac_global_builtin_arr() {
-
+    for (auto& pair : vals_){
+      T* t = pair.second;
+      delete t;
+    }
+    if (init_) delete[] init_;
   }
 
   void
@@ -222,21 +226,6 @@ class sstmac_global_builtin_arr : public sstmac_global
     T* myval = get_val();
     T* otherval = (T) b;
     return myval < otherval;
-  }
-
-  void
-  delete_vals() {
-    if (init_) {
-      delete init_;
-      init_ = 0;
-    }
-    typedef typename spkt_unordered_map<long, T>::iterator myiter;
-    myiter it;
-    for (it = vals_.begin(); it != vals_.end(); ++it)
-      if (it->second) {
-        delete it->second;
-      }
-    vals_.clear();
   }
 
   const_iterator

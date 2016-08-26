@@ -25,23 +25,14 @@ class lib_compute_memmove :
   static key::category key_category;
 
   virtual
-  ~lib_compute_memmove() {
-  }
+  ~lib_compute_memmove() {}
 
   lib_compute_memmove(software_id id);
 
-  lib_compute_memmove(const std::string& libname);
+  lib_compute_memmove(const char* prefix, software_id id);
 
   virtual void
   unregister_all_libs();
-
-  static std::string
-  static_name(const std::string& n) {
-    return "computelibmemmove" + n;
-  }
-
-  virtual bool
-  supported() const;
 
   void
   consume_params(sprockit::sim_parameters* params);
@@ -54,7 +45,6 @@ class lib_compute_memmove :
 
   void
   read(long bytes);
-
 
   void
   write(long bytes);

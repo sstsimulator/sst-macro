@@ -1,12 +1,10 @@
 #include <sstmac/libraries/blas/blas_api.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/process/api.h>
 #include <sstmac/software/libraries/compute/lib_compute_inst.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
 
 #define enumcase(x) case x: return #x;
 
-ImplementAPI(sstmac::sw, blas_api, "blas");
 RegisterDebugSlot(blas);
 
 namespace sstmac {
@@ -17,12 +15,13 @@ blas_kernel* blas_api::dgemv_kernel_;
 blas_kernel* blas_api::daxpy_kernel_;
 blas_kernel* blas_api::ddot_kernel_;
 
-SpktRegister("blas", api, blas_api, "Create bindings for BLAS");
+RegisterAPI("blas", blas_api);
 
-
-blas_api::blas_api()
-  : api(key::general)
+blas_api::blas_api(software_id sid)
+  : api("blas", sid, key::general)
 {
+  std::string libname = sprockit::printf("blas-compute%d", sid.to_string().c_str());
+  lib_compute_ = new lib_compute_inst(libname, sid);
 }
 
 blas_api::~blas_api()
@@ -91,17 +90,6 @@ blas_api::daxpy(int n)
   compute_event* msg = daxpy_kernel_->op_1d(n);
   lib_compute_->compute_inst(msg);
   delete msg;
-}
-
-void
-blas_api::init_param1(const software_id &sid)
-{
-  api::init_param1(sid);
-  id_ = sid;
-  libname_ = "libblas-" + sid.to_string();
-
-  std::string comp_lib_name = sprockit::printf("%s-lib-compute", libname_.c_str());
-  lib_compute_ = new lib_compute_inst(comp_lib_name);
 }
 
 compute_event*

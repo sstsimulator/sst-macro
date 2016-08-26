@@ -9,6 +9,7 @@
 namespace sstmac {
 
 SpktRegister("histogram", stat_collector, stat_histogram);
+SpktRegister("time_histogram", stat_collector, stat_time_histogram);
 
 stat_histogram::stat_histogram() :
     bin_size_(0),
@@ -107,7 +108,7 @@ stat_histogram::clone_into(stat_histogram* hist) const {
 }
 
 void
-stat_histogram::collect(double value, int count)
+stat_histogram::collect(double value, int64_t count)
 {
   value = is_log_ ? log10(value) : value;
   long bin = value / bin_size_;
@@ -131,6 +132,12 @@ stat_histogram::init_factory_params(sprockit::sim_parameters *params)
 void
 stat_histogram::simulation_finished(timestamp end)
 {
+}
+
+void
+stat_time_histogram::record(timestamp t, int64_t num)
+{
+  stat_histogram::collect(t.sec(), num);
 }
 
 

@@ -18,9 +18,9 @@ namespace hw {
 SpktRegister("packet_flow", memory_model, packet_flow_memory_model);
 
 packet_flow_memory_packetizer::packet_flow_memory_packetizer() :
-  arb_(0),
-  bw_noise_(0),
-  interval_noise_(0),
+  arb_(nullptr),
+  bw_noise_(nullptr),
+  interval_noise_(nullptr),
   num_noisy_intervals_(0)
 {
 }
@@ -50,6 +50,9 @@ packet_flow_memory_packetizer::finalize_init()
 packet_flow_memory_packetizer::~packet_flow_memory_packetizer()
 {
   if (arb_) delete arb_;
+  if (pkt_allocator_) delete pkt_allocator_;
+  if (bw_noise_) delete bw_noise_;
+  if (interval_noise_) delete interval_noise_;
 }
 
 void
@@ -88,16 +91,16 @@ packet_flow_memory_model::set_event_parent(event_scheduler* m)
 }
 
 void
-packet_flow_memory_model::access(long bytes, double max_bw)
+packet_flow_memory_model::access(
+  long bytes, double max_bw,
+  callback* cb)
 {
-  sw::key* k = sw::key::construct();
-  memory_message* msg = new memory_message(bytes, parent_node_->allocate_unique_id(), max_bw);
-  pending_requests_[msg] = k;
-
+  memory_message* msg = new memory_message(bytes,
+                   parent_node_->allocate_unique_id(), max_bw);
+  pending_requests_[msg] = cb;
   int channel = allocate_channel();
+  debug("starting access %lu on vn %d", msg->unique_id(), channel);
   mem_packetizer_->start(channel, msg);
-  parent_node_->os()->block(k);
-
 }
 
 void
@@ -105,11 +108,12 @@ packet_flow_memory_model::notify(int vn, message* msg)
 {
   debug("finished access %lu on vn %d", msg->unique_id(), vn);
 
-  sw::key* k = pending_requests_[msg];
+  callback* cb = pending_requests_[msg];
   pending_requests_.erase(msg);
-  parent_node_->os()->unblock(k);
-  delete k;
   channels_available_.push_front(vn);
+  //happening now
+  delete msg;
+  parent_->schedule_now(cb);
 }
 
 int
@@ -168,7 +172,7 @@ packet_flow_memory_packetizer::handle_payload(int vn, packet_flow_payload* pkt)
     pkt->to_string().c_str(), vn, st.tail_leaves.sec());
 
   send_self_event_queue(st.tail_leaves,
-    new_event(this, &packetizer::packetArrived, vn, pkt));
+    new_callback(this, &packetizer::packetArrived, vn, pkt));
 
   //might need to send some credits back
   if (!pkt->is_tail()){

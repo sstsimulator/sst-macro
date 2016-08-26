@@ -132,12 +132,6 @@ class interconnect :
   virtual void
   kill_node(node_id nid, timestamp t) = 0;
 
-  virtual void
-  init_param1(partition* part) = 0;
-
-  virtual void
-  init_param2(parallel_runtime* rt) = 0;
-
   static interconnect*
   static_interconnect(sprockit::sim_parameters* params);
 
@@ -165,6 +159,8 @@ class sst_interconnect : public interconnect
 {
 
  public:
+  sst_interconnect(partition* part, parallel_runtime* rt){}
+
   event_loc_id
   event_location() const {
     return event_loc_id::null;
@@ -179,11 +175,6 @@ class sst_interconnect : public interconnect
   virtual void
   kill_node(node_id nid, timestamp t);
 
-  void
-  init_param1(partition* part){};
-
-  void
-  init_param2(parallel_runtime* rt){};
 };
 typedef sst_interconnect interconnect_base;
 #else
@@ -210,21 +201,14 @@ class macro_interconnect : public interconnect
   void
   kill_node(node_id nid, timestamp t);
 
-  void
-  init_param1(partition* part) {
-    partition_ = part;
-  }
-
-  void
-  init_param2(parallel_runtime* rt) {
-    rt_ = rt;
-  }
-
   virtual void
   handle(event* ev);
 
  protected:
-  macro_interconnect();
+  macro_interconnect(partition* part, parallel_runtime* rt) :
+    partition_(part), rt_(rt)
+  {
+  }
 
  protected:
   partition* partition_;

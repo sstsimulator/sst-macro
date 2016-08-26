@@ -10,7 +10,7 @@
 #include <sumi/dense_rank_map.h>
 #include <sumi/transport.h>
 #include <sumi/thread_safe_set.h>
-#define sstmac_app_name "user_app_cxx"
+#define sstmac_app_name user_app_cxx
 using namespace sstmac;
 using namespace sstmac::sw;
 using namespace sstmac::hw;
@@ -18,7 +18,7 @@ using namespace sumi;
 
 
 void
-run_test(domain* dom, int todie, int nproc_live, int context, int tag)
+run_test(communicator* dom, int todie, int nproc_live, int context, int tag)
 {
 }
 
@@ -35,12 +35,12 @@ main(int argc, char **argv)
   int stop = start + nsubrange;
 
   if (rank >= start && rank < stop){
-    domain* dom = new subrange_domain(rank, start, nsubrange);
+    communicator* dom = new subrange_communicator(rank, start, nsubrange);
     //test_allgather(dom, 0);
     //test_allreduce(dom, 1);
   }
 
-  domain* dom = new rotate_domain(rank, nproc, 3);
+  communicator* dom = new rotate_communicator(rank, nproc, 3);
   //test_allgather(dom, 2);
   //test_allreduce(dom, 3);
 

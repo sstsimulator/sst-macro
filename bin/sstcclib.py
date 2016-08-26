@@ -7,10 +7,14 @@ sstmac_libs = [
 '-lsstmac',
 ]
 
+
+
 from sstccvars import sstmac_default_ldflags, sstmac_extra_ldflags, sstmac_cppflags
 from sstccvars import prefix, exec_prefix, includedir, cc, cxx, cxxflags, cflags
 from sstccvars import includedir
 from sstccvars import sst_core
+from sstccvars import so_flags
+
 
 
 sstmac_ldflags = []
@@ -33,6 +37,8 @@ import sys
 argify = lambda x: "'%s'" % x
 sysargs = sys.argv[1:]
 args = " ".join(map(argify,sysargs))
+if sst_core:
+  args += " -DSSTMAC_EXTERNAL_SKELETON"
 
 so_sysargs = sysargs[:]
 exe_target = None
@@ -40,10 +46,9 @@ for idx in range(len(so_sysargs)):
   entry = so_sysargs[idx]
   if entry == "-o":
     exe_target = so_sysargs[idx+1]
-    newTarget = "lib%s.so" % exe_target
-    so_sysargs[idx+1] = newTarget
     break
 so_args = " ".join(map(argify, so_sysargs))
+so_args += " " + so_flags
 
 
 src_files = False
@@ -66,6 +71,14 @@ if os.environ.has_key("SSTMAC_VERBOSE"):
     verbose = verbose or flag
 
 def run(typ, extralibs="", include_main=True, make_library=False, redefine_symbols=True):
+    import os
+    if sys.argv[1] == "--version" or sys.argv[1] == "-V":
+      import inspect, os
+      print os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+      cmd = "%s %s" % (cxx, sys.argv[1])
+      os.system(cmd)
+      sys.exit()
+
     compiler_flags = ""
     compiler = ""
     cmd = ""
@@ -126,19 +139,20 @@ def run(typ, extralibs="", include_main=True, make_library=False, redefine_symbo
     elif obj_files:
         global verbose
         global exe_target
-        if sst_core:
-          verbose = True
+        make_library = False
+        if exe_target.endswith("dylib") or exe_target.endswith("so") or exe_target.endswith(".a"):
           make_library = True
-          ldflags=ldflags.replace("-lsstmac","")
+
+        if sst_core:
+          if not make_library:
+            sys.exit("SST core requires all external elements to be .so files\n")
+          verbose = True
 
         if make_library:
           if sst_core:
-            exe_target="lib%s.so" % exe_target
-          os.system("touch %s" % exe_target)
-          os.system("chmod +x %s" % exe_target)
+            ldflags=ldflags.replace("-lsstmac","")
           cmd_arr = [
             ld,
-            "-shared",
             so_args, 
             ldflags,
             ldpath_maker

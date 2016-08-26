@@ -51,6 +51,8 @@ namespace test_structs
 
     std::cout << "Passed\n";
 
+    delete (st*) g;
+
     MPI_Finalize();
     return 0;
   }

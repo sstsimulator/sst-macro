@@ -20,6 +20,7 @@
 
 namespace sstmac {
 
+
 /**
  * A type of logger that collects some kind of statistic
  * and outputs to a file during or at the end of a simulation.
@@ -97,6 +98,13 @@ class stat_collector : virtual public sprockit::factory_type
     return fileroot_;
   }
 
+  static stat_collector*
+  optional_build(sprockit::sim_parameters* params,
+                const std::string& ns,
+                const std::string& deflt,
+                const char* suffix);
+
+
  protected:
   stat_collector() :
     registered_(false),
@@ -121,7 +129,27 @@ class stat_collector : virtual public sprockit::factory_type
   int id_;
   std::string fileroot_;
 
+ private:
+
 };
+
+template <class T>
+T*
+optional_stats(sprockit::sim_parameters* params,
+              const std::string& ns,
+              const std::string& deflt,
+              const char* suffix = 0){
+  stat_collector* coll = stat_collector::optional_build(params,ns,deflt,suffix);
+  if (coll){
+    T* t = dynamic_cast<T*>(coll);
+    if (!t){
+      spkt_throw(sprockit::value_error,
+                 "failed casting stats objects");
+    }
+    return t;
+  }
+  else return nullptr;
+}
 
 DeclareFactory(stat_collector);
 

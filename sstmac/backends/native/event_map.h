@@ -33,6 +33,8 @@ class event_map :
 {
 
  public:
+  event_map(parallel_runtime* rt) : event_container(rt){}
+
   ~event_map() throw ();
 
   void

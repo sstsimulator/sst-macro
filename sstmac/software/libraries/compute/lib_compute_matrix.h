@@ -25,8 +25,7 @@ class lib_compute_matrix :
 
  public:
   lib_compute_matrix(software_id id) :
-    lib_compute_memmove(id) {
-    libname_ = "computelibmatrix" + id.to_string();
+    lib_compute_memmove("computelibmatrix", id) {
   }
 
   virtual
@@ -44,13 +43,9 @@ class lib_compute_matrix :
  protected:
   void
   double_compute(long ndata_read, long working_set_size_read,
-                 long ndata_write, long working_set_size_write, long nadd, long nmult,
+                 long ndata_write, long working_set_size_write,
+                 long nadd, long nmult,
                  long nmultadd, long nthread);
-
-  virtual bool
-  supported() const {
-    return lib_compute_inst::supported() && lib_compute_memmove::supported();
-  }
 
  protected:
   bool doing_memory_;

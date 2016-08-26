@@ -1,12 +1,12 @@
 #include <sumi/dense_rank_map.h>
-#include <sumi/domain.h>
+#include <sumi/communicator.h>
 #include <sprockit/errors.h>
 #include <algorithm>
 
 namespace sumi {
 
 dense_rank_map::dense_rank_map(const thread_safe_set<int>& failed,
-  domain* dom) :
+  communicator* dom) :
   num_failed_ranks_(failed.size()),
   failed_ranks_(0)
 {
@@ -27,7 +27,7 @@ dense_rank_map::~dense_rank_map()
 }
 
 void
-dense_rank_map::init(const thread_safe_set<int>& failed, domain* dom)
+dense_rank_map::init(const thread_safe_set<int>& failed, communicator* dom)
 {
   if (failed_ranks_){ //clear out old data
     delete[] failed_ranks_;
@@ -43,8 +43,8 @@ dense_rank_map::init(const thread_safe_set<int>& failed, domain* dom)
   thread_safe_set<int>::const_iterator it, end = failed.start_iteration();
   int idx = 0;
   for (it=failed.begin(); it != end; ++it){
-    int domain_rank = dom ? dom->global_to_domain_rank(*it) : *it;
-    failed_ranks_[idx++] = domain_rank;
+    int comm_rank = dom ? dom->global_to_comm_rank(*it) : *it;
+    failed_ranks_[idx++] = comm_rank;
   }
   failed.end_iteration();
 

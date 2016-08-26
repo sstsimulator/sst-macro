@@ -1,7 +1,7 @@
 #include <sumi/alltoall.h>
 #include <sumi/partner_timeout.h>
 #include <sumi/transport.h>
-#include <sumi/domain.h>
+#include <sumi/communicator.h>
 #include <sprockit/output.h>
 #include <cstring>
 
@@ -49,7 +49,7 @@ void
 bruck_alltoall_actor::finalize_buffers()
 {
   if (send_buffer_.ptr){
-    int buffer_size = nelems_ * type_size_ * dom_->nproc();
+    int buffer_size = nelems_ * type_size_ * comm_->nproc();
     int tmp_buffer_size = nelems_ * type_size_ * midpoint_;
     my_api_->unmake_public_buffer(result_buffer_, buffer_size);
     my_api_->free_public_buffer(recv_buffer_, tmp_buffer_size);
@@ -107,6 +107,9 @@ bruck_alltoall_actor::init_dag()
   action* prev_shuffle = 0;
   if (nprocs_extra_round) ++num_rounds;
 
+  //similar to the allgather - makes no sense to run this on unpacked ata
+  //first thing everyone should do is pack all their data
+
   for (int round=0; round < num_rounds; ++round){
     int up_partner = (me + partnerGap) % nproc;
     int down_partner = (me - partnerGap + nproc) % nproc;
@@ -123,8 +126,9 @@ bruck_alltoall_actor::init_dag()
 
     action* send_shuffle = new shuffle_action(round, SEND_SHUFFLE);
     action* recv_shuffle = new shuffle_action(round, RECV_SHUFFLE);
-    action* send = new send_action(round, up_partner);
-    action* recv = new recv_action(round, down_partner);
+    action* send = new send_action(round, up_partner, send_action::temp_send);
+    //always recv into a temp buf - and leave it packed, do not unpack
+    action* recv = new recv_action(round, down_partner, recv_action::packed_temp_buf);
 
     int nelemsRound = numSendBlocks * nelems_;
 
@@ -133,19 +137,14 @@ bruck_alltoall_actor::init_dag()
 
     recv->offset = 0;
     recv->nelems = nelemsRound;
-    recv->recv_type = action::temp;
 
     send_shuffle->offset = partnerGap;
     recv_shuffle->offset = partnerGap;
     send_shuffle->nelems = nelemsRound;
     recv_shuffle->nelems = nelemsRound;
 
-    if (prev_shuffle){
-      add_dependency(prev_shuffle, send_shuffle);
-      add_dependency(prev_shuffle, send_shuffle);
-    } else {
-      add_initial_action(send_shuffle);
-    }
+    add_dependency(prev_shuffle, send_shuffle);
+    add_dependency(prev_shuffle, send_shuffle);
 
     add_dependency(send_shuffle, send);
     add_dependency(send_shuffle, recv);

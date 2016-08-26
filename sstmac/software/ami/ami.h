@@ -32,23 +32,25 @@ namespace ami {
 
   enum COMM_FUNC {
     COMM_SEND = 10101, //pretty much have to implement this one
-    COMM_BCAST,
-    COMM_BARRIER
   };
 
+  /** Functions that block and must complete before returning */
   enum COMP_FUNC {
     COMP_TIME = 67, //the basic compute-for-some-time
     COMP_INSTR,
-    COMP_EIGER,
-    COMP_DISKACCESS,
-    COMP_STOCH,
-    COMP_REGISTER_THREAD,
-    GPU_MEMCPY,
-    GPU_EX_ASYNC
+    COMP_EIGER
+  };
+
+  /** Functions that do not block and should return asynchronously */
+  enum SERVICE_FUNC {
+    COMP_DISKACCESS
   };
 
   const char*
   tostr(COMP_FUNC func);
+
+  const char*
+  tostr(SERVICE_FUNC func);
 
   const char*
   tostr(COMM_FUNC func);

@@ -11,9 +11,8 @@ namespace sstmac {
 
 bool runtime::do_deadlock_check_ = false;
 std::list<deadlock_check*> runtime::deadlock_checks_;
-sw::job_launcher* runtime::launcher_ = 0;
-hw::topology* runtime::topology_ = 0;
-static sprockit::need_delete_statics<runtime> del_statics;
+sw::job_launcher* runtime::launcher_ = nullptr;
+hw::topology* runtime::topology_ = nullptr;
 
 void
 runtime::check_deadlock()
@@ -36,6 +35,13 @@ runtime::current_node()
 void
 runtime::delete_statics()
 {
+  //not owned by runtime - do not delete
+  //if (topology_) delete topology_;
+  //if (launcher_) delete launcher_;
+  for (deadlock_check* chk: deadlock_checks_){
+    delete chk;
+  }
+  deadlock_checks_.clear();
 }
 
 node_id

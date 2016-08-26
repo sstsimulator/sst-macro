@@ -1,7 +1,7 @@
 #include <sumi-mpi/mpi_api.h>
+#include <sstmac/software/process/operating_system.h>
 
 namespace sumi {
-
 
 int
 mpi_api::group_incl(int *ranks, int num_ranks, MPI_Group oldgrp, MPI_Group *newgrp)

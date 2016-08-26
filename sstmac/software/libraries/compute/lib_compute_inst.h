@@ -30,7 +30,7 @@ class lib_compute_inst :
  public:
   lib_compute_inst(software_id id);
 
-  lib_compute_inst(const std::string& id);
+  lib_compute_inst(const std::string& libname, software_id id);
 
   virtual
   ~lib_compute_inst() { }
@@ -48,9 +48,6 @@ class lib_compute_inst :
     uint32_t flops_per_loop,
     uint32_t intops_per_loop,
     uint32_t bytes_per_loop);
-
-  virtual bool
-  supported() const;
 
   virtual void
   consume_params(sprockit::sim_parameters* params);

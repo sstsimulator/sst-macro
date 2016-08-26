@@ -1,3 +1,5 @@
+#ifndef sstmac_libraries_uq_uq_h
+#define sstmac_libraries_uq_uq_h
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,14 +32,14 @@ typedef struct
  @param njobs
  @param nresults
 */
-double** allocate_results(int njobs, int nresults);
+double** allocate_results(void* queue, int njobs, int nresults);
 
 /**
  Allocate a 2D double array
  @param njobs
  @param nparams
 */
-double** allocate_values(int njobs, int nparams);
+double** allocate_values(void* queue, int njobs, int nparams);
 
 /**
  Allocate a 2D array of param structs
@@ -45,6 +47,14 @@ double** allocate_values(int njobs, int nparams);
  @param nparams
 */
 uq_param_t** allocate_params(int njobs, int nparams);
+
+int sstmac_uq_int_param(void* queue, const char* param);
+
+int sstmac_uq_double_param(void* queue, const char* param);
+
+int sstmac_uq_sim_nproc(void* queue);
+
+int sstmac_uq_max_nproc(void* queue);
 
 /**
  Free a 2D array allocated by allocate_results function
@@ -75,6 +85,7 @@ void free_params(uq_param_t** params);
 */
 void* sstmac_uq_init(int argc, char** argv, int* workerID);
 
+void sstmac_uq_stop(void* queue);
 
 void sstmac_uq_busy_loop(void* queue);
 
@@ -133,3 +144,4 @@ void sstmac_uq_finalize(void* queue);
 }
 #endif
 
+#endif

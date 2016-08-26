@@ -21,9 +21,10 @@
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/sst_core/connectable_wrapper.h>
 #include <sstmac/sst_core/integrated_component.h>
+#else
+ImplementFactory(sstmac::hw::network_switch);
 #endif
 
-ImplementFactory(sstmac::hw::network_switch)
 RegisterDebugSlot(network_switch)
 
 namespace sstmac {
@@ -31,8 +32,6 @@ namespace sstmac {
 sprockit::StaticNamespaceRegister switch_ns("switch");
 
 namespace hw {
-
-int network_switch::packet_length_bytes_ = 0;
 
 network_switch::~network_switch()
 {
@@ -126,18 +125,6 @@ network_switch::init_factory_params(sprockit::sim_parameters* params)
   router_->set_switch(this);
 
   STATIC_INIT_TOPOLOGY(params)
-
-  /**
-   sstkeyword {
-   docstring=The actual physical packet size.ENDL
-   This is used primarily by adaptive routing schemesENDL
-   in determining queue length.;
-   }
-   */
-  packet_length_bytes_ = params->get_optional_byte_length_param(
-                           "packet_length", 100);
-
-
 }
 
 

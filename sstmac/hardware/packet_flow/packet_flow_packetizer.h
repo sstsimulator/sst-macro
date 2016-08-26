@@ -44,7 +44,7 @@ class packet_flow_nic_packetizer :
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
 
-  virtual ~packet_flow_nic_packetizer() throw ();
+  virtual ~packet_flow_nic_packetizer();
 
   void setNotify(event_handler *handler);
 

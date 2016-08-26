@@ -16,8 +16,12 @@ class sumi_transport :
   public sstmac::sumi_api,
   public transport
 {
- public:
-  sumi_transport();
+  ImplementAPI(sumi_transport)
+ public:  
+  sumi_transport(sstmac::sw::software_id sid) :
+    sumi_api("sumi", sid)
+  {
+  }
 
   virtual void
   init();
@@ -67,6 +71,8 @@ class sumi_transport :
   }
 
  protected:
+  sumi_transport(const char* name, sstmac::sw::software_id sid);
+
   void
   do_smsg_send(int dst, const message::ptr &msg);
 

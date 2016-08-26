@@ -40,6 +40,11 @@ class app_launch :
 {
 
  public:
+  app_launch(app_id aid, parallel_runtime* rt) :
+    aid_(aid), rt_(rt)
+  {
+  }
+
   virtual ~app_launch();
 
   int
@@ -55,11 +60,6 @@ class app_launch :
   const std::list<int>&
   rank_assignment(node_id nid) const {
     return node_to_rank_indexing_[nid];
-  }
-
-  virtual void
-  init_param1(sw::app_id aid) {
-    aid_ = aid;
   }
 
   app*
@@ -80,11 +80,6 @@ class app_launch :
   std::vector<int>
   core_affinities() const {
     return core_affinities_;
-  }
-
-  virtual void
-  init_param2(parallel_runtime* rt){
-    rt_ = rt;
   }
 
   virtual void
@@ -165,7 +160,7 @@ class app_launch :
 
 };
 
-DeclareFactory2InitParams(app_launch, sw::app_id, parallel_runtime*);
+DeclareFactory(app_launch, sw::app_id, parallel_runtime*);
 
 }
 }

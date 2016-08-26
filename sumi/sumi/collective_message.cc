@@ -30,7 +30,6 @@ collective_work_message::serialize_order(sumi::serializer &ser)
 {
   message::serialize_order(ser);
   ser & action_;
-  ser & nelems_;
   ser & tag_;
   ser & type_;
   ser & round_;
@@ -39,27 +38,14 @@ collective_work_message::serialize_order(sumi::serializer &ser)
   ser & failed_procs_;
 }
 
-void
-collective_eager_message::serialize_order(sumi::serializer &ser)
-{
-  collective_work_message::serialize_order(ser);
-  ser & sumi::array(buffer_, num_bytes_);
-}
-
-void
-collective_rdma_message::serialize_order(sumi::serializer &ser)
-{
-  collective_work_message::serialize_order(ser);
-  ser & local_buffer_;
-  ser & remote_buffer_;
-}
-
 std::string
 collective_work_message::to_string() const
 {
-  return sprockit::printf("message %p for collective %s event %s recver=%d(%d) sender=%d(%d), nelems=%d round=%d",
+  return sprockit::printf(
+    "message %p for collective %s event %s "
+    "recver=%d(%d) sender=%d(%d) nbytes=%d round=%d tag=%d",
     this, collective::tostr(type_), message::tostr(message::payload_type_),
-    dense_recver_, recver(), dense_sender_, sender(), nelems_, round_);
+    dense_recver_, recver(), dense_sender_, sender(), num_bytes_, round_, tag_);
 }
 
 void
@@ -74,7 +60,6 @@ void
 collective_work_message::clone_into(collective_work_message* cln) const
 {
   message::clone_into(cln);
-  cln->nelems_ = nelems_;
   cln->tag_ = tag_;
   cln->type_ = type_;
   cln->round_ = round_;

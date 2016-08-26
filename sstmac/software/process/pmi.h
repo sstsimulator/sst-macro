@@ -17,8 +17,7 @@ namespace sw {
 class process_manager  {
 
  public:
-  virtual void
-  init_param1(const software_id& sid);
+  process_manager(software_id sid);
 
   virtual void
   init_os(operating_system* os);

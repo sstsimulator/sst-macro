@@ -30,7 +30,6 @@ libsstmac_sw_la_SOURCES = \
   process/graphviz.cc \
   process/ftq.cc \
   process/operating_system.cc \
-  process/api.cc \
   process/thread.cc \
   process/app.cc \
   process/time.cc \
@@ -48,9 +47,7 @@ libsstmac_sw_la_SOURCES = \
   libraries/compute/lib_compute_time.cc \
   libraries/compute/lib_sleep.cc \
   libraries/compute/lib_compute_loops.cc \
-  libraries/compute/sstmac_compute.cc \
   libraries/unblock_event.cc \
-  libraries/service.cc \
   launch/app_launch.cc \
   launch/node_allocator.cc \
   launch/cart_allocation.cc \
@@ -90,7 +87,6 @@ nobase_library_include_HEADERS = \
   process/ftq_fwd.h \
   process/app.h \
   process/app_fwd.h \
-  process/api.h \
   process/app_id.h \
   process/key.h \
   process/key_fwd.h \
@@ -99,6 +95,7 @@ nobase_library_include_HEADERS = \
   process/software_id.h \
   process/task_id.h \
   process/time.h \
+  process/perf_counter.h \
   process/thread_data.h \
   process/thread.h \
   process/thread_fwd.h \
@@ -130,7 +127,6 @@ nobase_library_include_HEADERS = \
   libraries/compute/lib_sleep.h \
   libraries/compute/lib_sleep_fwd.h \
   libraries/compute/lib_compute_loops.h \
-  libraries/compute/sstmac_compute.h \
   libraries/library.h \
   libraries/library_fwd.h \
   libraries/unblock_event.h \

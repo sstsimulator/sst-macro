@@ -40,6 +40,7 @@ packet_flow_param_expander::expand(sprockit::sim_parameters* params)
 
   mem_params->add_param_override("mtu", mem_packet_size);
   switch_params->add_param_override("mtu", net_packet_size);
+  nic_params->add_param_override("mtu", net_packet_size);
 
   if (amm_type == "amm1"){
     expand_amm1_memory(params, mem_params);
@@ -92,16 +93,19 @@ packet_flow_param_expander::expand_amm1_network(sprockit::sim_parameters* params
 {
 
 
+  //JJW - no, don't do this
+  //The link banwidthds will get multiplied during the connect
   //if redundant links, appropriately multiply the bandwidth
-  double bw_multiplier = network_bandwidth_multiplier(params);
-  double link_bw = switch_params->get_bandwidth_param("link_bandwidth");
-  if (bw_multiplier > 1.0001){
-    link_bw *= bw_multiplier;
-    switch_params->add_param_override("link_bandwidth", link_bw);
-  }
+  //double bw_multiplier = network_bandwidth_multiplier(params);
+  //double link_bw = switch_params->get_bandwidth_param("link_bandwidth");
+  //if (bw_multiplier > 1.0001){
+  //  link_bw *= bw_multiplier;
+  //  switch_params->add_param_override("link_bandwidth", link_bw);
+  //}
 
   //make the xbar much faster than links
   if (set_xbar){
+    double link_bw = switch_params->get_bandwidth_param("link_bandwidth");
     double xbar_bw = link_bw * buffer_depth_;
     switch_params->add_param_override("crossbar_bandwidth", xbar_bw);
   }
@@ -109,17 +113,23 @@ packet_flow_param_expander::expand_amm1_network(sprockit::sim_parameters* params
 
   int size_multiplier = switch_buffer_multiplier(params);
   int buffer_size = buffer_depth_ * packet_size * size_multiplier;
-  switch_params->add_param_override("input_buffer_size", buffer_size);
-  switch_params->add_param_override("output_buffer_size", buffer_size);
+  if (!switch_params->has_param("input_buffer_size")){
+    switch_params->add_param_override("input_buffer_size", buffer_size);
+  }
+  if (!switch_params->has_param("output_buffer_size")){
+    switch_params->add_param_override("output_buffer_size", buffer_size);
+  }
+
+
 
   if (!switch_params->has_param("ejection_bandwidth")){
     sprockit::sim_parameters* nic_params = params->get_namespace("nic");
     if (nic_params->has_param("ejection_bandwidth")){
       switch_params->add_param_override("ejection_bandwidth",
-                                nic_params->get_bandwidth_param("ejection_bandwidth"));
+                                nic_params->get_param("ejection_bandwidth"));
     } else {
       switch_params->add_param_override("ejection_bandwidth",
-                                nic_params->get_bandwidth_param("injection_bandwidth"));
+                                nic_params->get_param("injection_bandwidth"));
     }
   }
 
@@ -206,7 +216,7 @@ packet_flow_param_expander::expand_amm4_nic(sprockit::sim_parameters* params,
 {
   expand_amm1_nic(params, nic_params);
   sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
-  int red = top_params->get_optional_int_param("redundant", 1);
+  int red = top_params->get_optional_int_param("injection_redundant", 1);
   int radix = params->get_optional_int_param("netlink_radix", 1);
   //the netlink block combines all the paths together
   netlink_params->add_param_override("ninject", red);

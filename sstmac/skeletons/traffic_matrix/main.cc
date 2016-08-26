@@ -3,6 +3,8 @@
 #include <sstmac/common/sstmac_env.h>
 #include <sstmac/main/driver.h>
 #include <sstmac/software/process/app.h>
+#include <sstmac/software/process/operating_system.h>
+#include <sstmac/libraries/sumi/sumi_transport.h>
 #include <sumi/sumi/transport.h>
 #include <sstmac/skeleton.h>
 
@@ -72,7 +74,7 @@ class config_message :
 };
 
 class rdma_message :
-  public sumi::rdma_message,
+  public sumi::message,
   public sumi::serializable_type<rdma_message>
 {
  ImplementSerializable(rdma_message)
@@ -84,7 +86,7 @@ class rdma_message :
   rdma_message(){} //need for serialization
 
   rdma_message(int iter, int num_bytes) :
-   sumi::rdma_message(num_bytes),
+   sumi::message(num_bytes),
    iter_(iter)
   {
   }
@@ -94,7 +96,7 @@ class rdma_message :
     ser & iter_;
     ser & start_;
     ser & finish_;
-    sumi::rdma_message::serialize_order(ser);
+    sumi::message::serialize_order(ser);
   }
 
   sumi::message*
@@ -141,8 +143,8 @@ progress_loop(sumi::transport* tport, double timeout,
       msg->set_finish(now);
       done.push_back(msg);
       debug_printf(sprockit::dbg::traffic_matrix,
-        "Rank %d got incoming message at t=%10.6e of type %s",
-        tport->rank(), now, sumi::message::tostr(msg->payload_type()));
+        "Rank %d got incoming message at t=%10.6e of type %s from %d",
+        tport->rank(), now, sumi::message::tostr(msg->payload_type()), msg->sender());
     } else {
       debug_printf(sprockit::dbg::traffic_matrix,
         "Rank %d timed out in progress loop at t=%10.6e",
@@ -172,7 +174,7 @@ void do_all_sends(
     msg->local_buffer() = send_chunks[i];
     msg->remote_buffer() = recv_chunks[i];
     debug_printf(sprockit::dbg::traffic_matrix,
-      "Putting from %d to %d on iteration %d chunk of size %d: %p -> %p",
+      "Rank %d putting to %d on iteration %d chunk of size %d: %p -> %p",
       tport->rank(), send_partners[i], 
       iteration, chunk_size,
       ((void*)send_chunks[i]), ((void*)recv_chunks[i]));
@@ -206,15 +208,11 @@ quiesce(sumi::transport* tport,
   }
 }
 
-#define sstmac_app_name "traffic_matrix"
+#define sstmac_app_name traffic_matrix
 
 int USER_MAIN(int argc, char** argv)
 {
-  sprockit::sim_parameters init_params;
-  init_params["ping_timeout"] = "100ms";
-  init_params["transport"] = model;
-  init_params["eager_cutoff"] = "512";
-  sumi::transport* tport = sumi::transport_factory::get_param("transport", &init_params);
+  sumi::transport* tport = sstmac::sw::operating_system::current_thread()->get_api<sumi::sumi_transport>();
 
   tport->init();
 
@@ -278,8 +276,8 @@ int USER_MAIN(int argc, char** argv)
     rank_to_send_partner_index[send_partners[i]] = i;
   }
 
-  sumi::public_buffer send_buf = tport->allocate_public_buffer(window_bytes);
-  sumi::public_buffer recv_buf = tport->allocate_public_buffer(window_bytes);
+  sumi::public_buffer send_buf;// = tport->allocate_public_buffer(window_bytes);
+  sumi::public_buffer recv_buf;// = tport->allocate_public_buffer(window_bytes);
   int chunk_size = window_bytes / mixing;
   for (int i=0; i < npartners; ++i){
     send_chunks[i] = send_buf;
@@ -337,7 +335,7 @@ int USER_MAIN(int argc, char** argv)
 
   int nresults = nproc*num_iterations*npartners;
   if (num_done == nproc){
-    double* resultsArr = new double[nresults];
+    double* resultsArr = sstmac::SimulationQueue::allocateResults(nresults);
     int result_idx = 0;
     for (int p=0; p < nproc; ++p){
       for (int i=0; i < num_iterations; ++i){
@@ -355,7 +353,7 @@ int USER_MAIN(int argc, char** argv)
        }
      }
    }
-   sstmac::SimulationQueue::publishResults(resultsArr, nresults);
+   sstmac::SimulationQueue::publishResults();
    num_done = 0;
  }
  tport->finalize();

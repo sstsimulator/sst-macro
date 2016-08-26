@@ -3,22 +3,21 @@
 #include <sst/core/event.h>
 #endif
 #include <sstmac/libraries/sumi/sumi_transport.h>
-#include <sstmac/software/process/api.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/common/event_callback.h>
 #include <sstmac/libraries/sumi/message.h>
 #include <sumi/message.h>
 
-ImplementAPI(sumi, sumi_transport, "sumi");
+
 
 using namespace sprockit::dbg;
 
 namespace sumi {
 
-SpktRegister("sst", transport, sumi_transport,
-            "Create a SUMI transport suitable for SST/macro");
+RegisterAPI("sumi_transport", sumi_transport);
 
-sumi_transport::sumi_transport()
+sumi_transport::sumi_transport(const char* name, sstmac::sw::software_id sid) :
+  sumi_api(name, sid)
 {
 }
 
@@ -48,19 +47,17 @@ sumi_transport::handle(sstmac::transport_message* smsg)
     break;
    case sstmac::hw::network_message::payload:
    {
-    if (smsg->buffer() && my_msg->payload_type() == message::eager_payload){
-      my_msg->eager_buffer() = smsg->buffer();
-    }
+    //no work to do - just receive the buffer
     transport::handle(my_msg);
     break;
    }
    case sstmac::hw::network_message::rdma_get_payload:
-    smsg->complete_transfer(my_msg->local_buffer());
+    my_msg->move_remote_to_local();
     if (my_msg->needs_recv_ack()) //only if I requested to be notified
       transport::handle(my_msg);
     break;
    case sstmac::hw::network_message::rdma_put_payload:
-    smsg->complete_transfer(my_msg->remote_buffer());
+    my_msg->move_local_to_remote();
     if (my_msg->needs_recv_ack()) //only if I requested to be notified
       transport::handle(my_msg);
     break;
@@ -110,6 +107,7 @@ sumi_transport::finalize()
   stop_heartbeat();
   //sstmac_usleep(heartbeat_interval_*1e6);
   delete monitor_;
+  monitor_ = nullptr;
 
 }
 
@@ -129,12 +127,6 @@ sumi_transport::go_revive()
 void
 sumi_transport::init_factory_params(sprockit::sim_parameters* params)
 {
-  //have to init this as an api, too
-  sstmac::sw::thread* thr = sstmac::sw::thread::current();
-  sstmac::sw::app_id aid = thr->aid();
-  sstmac::sw::task_id tid = thr->tid();
-  sstmac::sw::software_id sid(aid, tid);
-  init_param1(sid);
   sstmac::sumi_api::init_factory_params(params);
   transport::init_factory_params(params);
 }
@@ -151,7 +143,7 @@ sumi_transport::do_smsg_send(int dst, const message::ptr &msg)
 {
   transport_send(msg->byte_length(), msg,
     sstmac::hw::network_message::payload,
-    dst, msg->needs_send_ack(), msg->eager_buffer());
+    dst, msg->needs_send_ack());
 }
 
 double
@@ -163,7 +155,7 @@ sumi_transport::wall_time() const
 void
 sumi_transport::do_send_ping_request(int dst)
 {
-  rdma_message::ptr msg = new rdma_message;
+  message::ptr msg = new message;
   msg->set_class_type(message::ping);
   //here, a simple rdma get
   rdma_get(dst, msg);
@@ -174,7 +166,7 @@ sumi_transport::do_rdma_get(int dst, const message::ptr& msg)
 {
   transport_send(msg->byte_length(), msg,
     sstmac::hw::network_message::rdma_get_request,
-    dst, msg->needs_send_ack(), msg->remote_buffer());
+    dst, msg->needs_send_ack());
 }
 
 void
@@ -182,7 +174,7 @@ sumi_transport::do_rdma_put(int dst, const message::ptr& msg)
 {
   transport_send(msg->byte_length(), msg,
     sstmac::hw::network_message::rdma_put_payload,
-    dst, msg->needs_send_ack(), msg->local_buffer());
+    dst, msg->needs_send_ack());
 }
 
 void
@@ -190,7 +182,7 @@ sumi_transport::do_nvram_get(int dst, const message::ptr& msg)
 {
   transport_send(msg->byte_length(), msg,
     sstmac::hw::network_message::nvram_get_request,
-    dst, msg->needs_send_ack(), msg->remote_buffer());
+    dst, msg->needs_send_ack());
 }
 
 message::ptr
@@ -268,13 +260,15 @@ sumi_transport::do_send_terminate(int dst)
 void
 sumi_transport::schedule_next_heartbeat()
 {
-  schedule_delay(heartbeat_interval_, new_event(loc_, this, &sumi_transport::next_heartbeat));
+  schedule_delay(heartbeat_interval_,
+         new_callback(loc_, this, &sumi_transport::next_heartbeat));
 }
 
 void
 sumi_transport::delayed_transport_handle(const sumi::message::ptr &msg)
 {
-  sstmac::event_queue_entry* done_ev = sstmac::new_event(loc_, this, &transport::handle, msg);
+  sstmac::callback* done_ev = sstmac::new_callback(
+        loc_, this, &transport::handle, msg);
   schedule_delay(sstmac::timestamp(1e-9), done_ev);
 }
 
@@ -282,7 +276,8 @@ void
 sumi_transport::schedule_ping_timeout(sumi::pinger* pnger, double to)
 {
   sstmac::timestamp next_ping_time = api::now() + to;
-  sstmac::event_queue_entry* cb_event = sstmac::new_event(loc_, this, &sumi_transport::ping_timeout, pnger);
+  sstmac::callback* cb_event = sstmac::new_callback(
+        loc_, this, &sumi_transport::ping_timeout, pnger);
   api::schedule(next_ping_time, cb_event);
 }
 

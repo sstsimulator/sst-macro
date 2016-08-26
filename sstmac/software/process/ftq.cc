@@ -21,6 +21,7 @@ ftq_calendar::ftq_calendar() :
 ftq_calendar::~ftq_calendar()
 {
   sprockit::delete_vals(calendars_);
+  calendars_.clear();
 }
 
 void
@@ -206,8 +207,7 @@ app_ftq_calendar::app_ftq_calendar(int aid,
     max_epoch_(0),
     max_epoch_allocated_(0),
     num_ticks_epoch_(nticks_epoch),
-    appname_(appname),
-    buffers_(0)
+    appname_(appname)
 {
   int num_categories = key::num_categories();
   totals_ = new long long[num_categories];

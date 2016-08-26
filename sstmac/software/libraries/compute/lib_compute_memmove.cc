@@ -23,17 +23,15 @@ namespace sw {
 key::category lib_compute_memmove::key_category("Memory");
 
 lib_compute_memmove::lib_compute_memmove(software_id id) :
-  lib_compute_inst(id)
+  lib_compute_memmove("libmemmove", id)
 {
-  libname_ = static_name(id.to_string());
   key_cat_ = key_category;
   init();
 }
 
-lib_compute_memmove::lib_compute_memmove(const std::string& libname) :
-  lib_compute_inst(libname)
+lib_compute_memmove::lib_compute_memmove(const char* prefix, software_id sid) :
+  lib_compute_inst(prefix, sid)
 {
-  libname_ = static_name(libname);
   key_cat_ = key_category;
   init();
 }
@@ -93,12 +91,6 @@ lib_compute_memmove::consume_params(sprockit::sim_parameters* params)
     }
   */
   access_width_bytes_ = params->get_optional_int_param("lib_compute_access_width", 64) / 8;
-}
-
-bool
-lib_compute_memmove::supported() const
-{
-  return os_->kernel_supported(ami::COMP_INSTR);
 }
 
 }

@@ -1,5 +1,5 @@
 #include <sumi/scatterv.h>
-#include <sumi/domain.h>
+#include <sumi/communicator.h>
 #include <sumi/transport.h>
 
 namespace sumi {
@@ -9,7 +9,7 @@ btree_scatterv_actor::init_tree()
 {
   log2nproc_ = 0;
   midpoint_ = 1;
-  int nproc = dom_->nproc();
+  int nproc = comm_->nproc();
   while (midpoint_ < nproc){
     midpoint_ *= 2;
     log2nproc_++;
@@ -25,8 +25,8 @@ btree_scatterv_actor::init_buffers(void *dst, void *src)
   if (!dst)
     return;
 
-  int me = dom_->my_domain_rank();
-  int nproc = dom_->nproc();
+  int me = comm_->my_comm_rank();
+  int nproc = comm_->nproc();
   int result_size = nelems_ * type_size_;
   int max_recv_buf_size = midpoint_*nelems_*type_size_;
   if (me == root_){
@@ -68,8 +68,8 @@ btree_scatterv_actor::buffer_action(void *dst_buffer, void *msg_buffer, action *
 void
 btree_scatterv_actor::init_dag()
 {
-  int me = dom_->my_domain_rank();
-  int nproc = dom_->nproc();
+  int me = comm_->my_comm_rank();
+  int nproc = comm_->nproc();
   int round = 0;
 
 }

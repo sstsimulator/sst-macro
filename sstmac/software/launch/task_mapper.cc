@@ -13,8 +13,9 @@
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/software/launch/task_mapper.h>
 
-ImplementFactory(sstmac::sw::task_mapper);
 RegisterDebugSlot(indexing);
+
+ImplementFactory(sstmac::sw::task_mapper);
 
 namespace sstmac {
 namespace sw {

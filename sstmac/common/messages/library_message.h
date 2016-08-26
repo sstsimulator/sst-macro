@@ -5,23 +5,23 @@
 
 namespace sstmac {
 
+/**
+ * @brief The library_interface class provides a castable type that
+ * stores a library id (std::string) for mapping events to the
+ * correct library in sstmac::sw::operating_system.
+ */
 class library_interface
 {
 
  public:
   /**
-   * Library name getter
-   * @return Name of deliver-to library
+   * @return Node-unique name of library to deliver event to
    */
   std::string
   lib_name() const {
     return lib_name_;
   }
 
-  /**
-   * Library name setter
-   * @param s Name of deliver-to library
-   */
   void
   set_lib_name(const std::string& name) {
     lib_name_ = name;

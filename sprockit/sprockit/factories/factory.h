@@ -16,7 +16,8 @@
 #include <iostream>
 #include <sprockit/errors.h>
 #include <sprockit/statics.h>
-#include <sprockit/sim_parameters_fwd.h>
+#include <sprockit/sim_parameters.h>
+#include <sprockit/basic_string_tokenizer.h>
 #include <sprockit/spkt_config.h>
 #include <map>
 
@@ -26,7 +27,8 @@ class factory_type  {
 
  public:
   virtual void
-  init_factory_params(sim_parameters* params);
+  init_factory_params(sim_parameters* params){
+  }
 
   virtual void
   finalize_init() {
@@ -34,208 +36,153 @@ class factory_type  {
 
 };
 
-class SpktDesc_base
+template <class T, typename... Args>
+class SpktBuilder
 {
  public:
-  virtual factory_type*
-  build() = 0;
-
-  virtual void
-  clear();
+  virtual T*
+  build(const Args&... args) = 0;
 
 };
 
-class SpktFactory_base
+template<class Child, class Factory>
+class SpktBuilderImpl
 {
- public:
-  static void
-  add_to_map(const std::string& namestr, SpktDesc_base* desc,
-             std::map<std::string, SpktDesc_base*>* descr_map,
-             std::map<std::string, std::list<std::string> >* alias_map);
-
-  static std::string
-  value(const std::string& key, sim_parameters* params);
-
-  static std::string
-  value(const std::string& key, const std::string& defval, sim_parameters* params);
-
-  static bool
-  exists(const std::string& key, sim_parameters* params);
-
 };
 
-template<class T>
-class SpktFactoryTemplateBase : public SpktFactory_base
+template<class T, typename... Args>
+class Factory
 {
- protected:
-  typedef std::map<std::string, SpktDesc_base*> descr_map;
-  static descr_map* object_map_;
+
+ public:
+  typedef SpktBuilder<T,Args...> builder_t;
+  typedef T element_type;
+
+  typedef std::map<std::string, builder_t*> builder_map;
+  static builder_map* builder_map_;
   typedef std::map<std::string, std::list<std::string> > alias_map;
   static alias_map* alias_map_;
   static const char* name_;
 
- public:
   static void
-  register_name(const std::string& name, SpktDesc_base* descr) {
-    if (!object_map_) {
-      object_map_ = new descr_map;
+  register_alias(const std::string& oldname, const std::string& newname){
+    if (!builder_map_) {
+      builder_map_ = new builder_map;
     }
     if (!alias_map_){
       alias_map_ = new alias_map;
     }
-    add_to_map(name, descr, object_map_, alias_map_);
-  }
 
-  static void
-  delete_statics(){
-    delete object_map_;
-  }
-
-  static void
-  validate_map(const std::string& valname) {
-    if (!object_map_) {
-      spkt_throw_printf(illformed_error,
-                       "could not find name %s for factory %s. no classes are registered",
-                       valname.c_str(),
-                       name_);
-    }
-  }
-};
-
-template <class T>
-void
-factory_init(T* t,
-             sim_parameters* params)
-{
-  t->init_factory_params(params);
-  t->finalize_init();
-}
-
-/**
-  When initializing, you must initialized object members first.
-  Then go ahead and initialized factory values from the parameters.
-*/
-template <class T, class A>
-void
-factory_init(T* t,
-             sim_parameters* params, const A& a)
-{
-  t->init_param1(a);
-  t->init_factory_params(params);
-  t->finalize_init();
-}
-
-template <class T, class A, class B>
-void
-factory_init(T* t,
-             sim_parameters* params, const A& a, const B& b)
-{
-  t->init_param1(a);
-  t->init_param2(b);
-  t->init_factory_params(params);
-  t->finalize_init();
-}
-
-template <class T, class A, class B, class C>
-void
-factory_init(T* t,
-             sim_parameters* params, const A& a, const B& b, const C& c)
-{
-  t->init_param1(a);
-  t->init_param2(b);
-  t->init_param3(c);
-  t->init_factory_params(params);
-  t->finalize_init();
-}
-
-template<class T>
-class SpktFactory : public SpktFactoryTemplateBase<T>
-{
-
- public:
-  typedef SpktFactoryTemplateBase<T> parent;
-  typedef T element_type;
-  using SpktFactoryTemplateBase<T>::object_map_;
-  using SpktFactoryTemplateBase<T>::alias_map_;
-  using SpktFactoryTemplateBase<T>::name_;
-
-  static void
-  register_alias(const std::string& oldname, const std::string& newname){
-    if (!object_map_) {
-      object_map_ = new typename parent::descr_map;
-    }
-    if (!alias_map_){
-      alias_map_ = new typename parent::alias_map;
-    }
-
-    SpktDesc_base* base = (*object_map_)[oldname];
+    builder_t* base = (*builder_map_)[oldname];
     if (!base){
       (*alias_map_)[oldname].push_back(newname);
     } else {
-      (*object_map_)[newname] = base;
+      (*builder_map_)[newname] = base;
     }
-
   }
+
+  static void
+  clean_up(){
+    //do not iterate the builder map and delete entry
+    //each builder_t is a static objec that gets cleaned up automatically
+
+    if (builder_map_) delete builder_map_;
+    if (alias_map_) delete alias_map_;
+
+    builder_map_ = 0;
+    alias_map_ = 0;
+  }
+
+  static void
+  register_name(const std::string& name, builder_t* descr) {
+    if (!builder_map_) {
+      builder_map_ = new builder_map;
+    }
+    if (!alias_map_){
+      alias_map_ = new alias_map;
+    }
+    add_to_map(name, descr, builder_map_, alias_map_);
+  }
+
+  static void
+  add_to_map(const std::string& namestr, builder_t* desc,
+            std::map<std::string, builder_t*>* descr_map,
+            std::map<std::string, std::list<std::string> >* alias_map)
+  {
+    std::string space = "|";
+    std::deque<std::string> tok;
+    pst::BasicStringTokenizer::tokenize(namestr, tok, space);
+
+    std::deque<std::string>::iterator it, end = tok.end();
+
+    for (it = tok.begin(); it != end; it++) {
+      std::string temp = *it;
+
+      temp = trim_str(temp);
+
+      std::map<std::string, std::list<std::string> >::iterator it = alias_map->find(temp);
+      if (it != alias_map->end()){
+        std::list<std::string>& alias_list = it->second;
+        std::list<std::string>::iterator ait, end = alias_list.end();
+        for (ait=alias_list.begin(); ait != end; ++ait){
+          (*builder_map_)[*ait] = desc;
+        }
+      }
+
+      (*builder_map_)[temp] = desc;
+    }
+  }
+
 
  protected:
   static T*
-  _get_value(const std::string& valname) {
-    parent::validate_map(valname);
+  _get_value(const std::string& valname,
+             sprockit::sim_parameters* params,
+             const Args&... args) {
+    if (!builder_map_) {
+      spkt_throw_printf(illformed_error,
+           "could not find name %s for factory %s. no classes are registered",
+           valname.c_str(),
+           name_);
+    }
 
-    std::map<std::string, SpktDesc_base*>::const_iterator it =
-      object_map_->find(valname), end = object_map_->end();
+    auto it = builder_map_->find(valname), end = builder_map_->end();
 
     if (it == end) {
       std::cerr << "Valid factories are:" << std::endl;
-      for (it = object_map_->begin(); it != end; ++it) {
+      for (it = builder_map_->begin(); it != end; ++it) {
         std::cerr << it->first << std::endl;
       }
       spkt_throw_printf(value_error, "could not find name %s for factory %s",
                        valname.c_str(), name_);
     }
 
-    SpktDesc_base* descr = it->second;
+    builder_t* descr = it->second;
     if (!descr) {
       spkt_throw_printf(value_error,
                        "initialized name %s with null descr for factory %s",
                        valname.c_str(), name_);
     }
 
-    factory_type* p = descr->build();
-#if SPKT_ENABLE_PARAM_RECORDING
-    p->recorder()->record_factory_init(parent::name_, valname.c_str());
-#endif
-    T* cast = dynamic_cast<T*>(p);
-    return cast;
-  }
-
-  static T*
-  _get_param(const std::string& param_name,
-             sim_parameters* params) {
-    T* rv = _get_value(parent::value(param_name, params));
-    return rv;
-
-  }
-
-  static T*
-  _get_optional_param(const std::string& param_name,
-                      const std::string& defval, sim_parameters* params) {
-    T* rv = _get_value(parent::value(param_name, defval, params));
-    return rv;
+    T* p = descr->build(args...);
+    p->init_factory_params(params);
+    p->finalize_init();
+    return p;
   }
 
  public:
   static T*
-  get_value(const std::string& valname, sim_parameters* params) {
-    T* p = _get_value(valname);
-    factory_init(p, params);
-    return p;
+  get_value(const std::string& valname,
+            sim_parameters* params,
+            const Args&... args) {
+    return _get_value(valname, params, args...);
   }
 
   static T*
   get_extra_param(const std::string& param_name,
-                  sim_parameters* params) {
-    if (parent::exists(param_name, params)) {
+                  sim_parameters* params,
+                  const Args&... args) {
+    if (params->has_param(param_name)) {
       return get_param(param_name,params);
     }
     else {
@@ -245,165 +192,36 @@ class SpktFactory : public SpktFactoryTemplateBase<T>
 
   static T*
   get_param(const std::string& param_name,
-            sim_parameters* params) {
-    T* p = _get_param(param_name, params);
-    factory_init(p, params);
-    return p;
+            sim_parameters* params,
+            const Args&... args) {
+    return _get_value(params->get_param(param_name),
+                      params, args...);
   }
 
   static T*
   get_optional_param(const std::string& param_name,
                      const std::string& defval,
-                     sim_parameters* params) {
-    T* p = _get_optional_param(param_name, defval, params);
-    factory_init(p, params);
-    return p;
+                     sim_parameters* params,
+                     const Args&... args) {
+    return _get_value(params->get_optional_param(param_name, defval),
+                      params, args...);
   }
 
 };
 
-
-template<class T, class U>
-class SpktFactory1InitParam : public SpktFactory<T>
+template<class Child, typename Parent, typename... Args>
+class SpktBuilderImpl<Child, Factory<Parent, Args...> > :
+  public SpktBuilder<Parent, Args...>
 {
  public:
-  typedef SpktFactory<T> parent;
-  using parent::get_value;
-  using parent::get_param;
-
- public:
-  static T*
-  get_value(const std::string& valname, sim_parameters* params,
-            const U& param1) {
-    T* p = parent::_get_value(valname);
-    factory_init(p, params, param1);
-    return p;
+  SpktBuilderImpl(const char *name){
+    Factory<Parent, Args...>::register_name(name, this);
   }
 
-  static T*
-  get_param(const std::string& param_name,
-            sim_parameters* params, const U& param1) {
-    T* p = parent::_get_param(param_name, params);
-    factory_init(p, params, param1);
-    return p;
+  Parent*
+  build(const Args&... args) {
+    return new Child(args...);
   }
-
-  static T*
-  get_extra_param(const std::string& param_name,
-                  sim_parameters* params,
-                  const U& param1) {
-    if (parent::exists(param_name, params)) {
-      return get_param(param_name,params,param1);
-    }
-    else {
-      return 0;
-    }
-  }
-
-  static T*
-  get_optional_param(const std::string& param_name,
-                     const std::string& defval, sim_parameters* params,
-                     const U& param1) {
-    T* p = parent::_get_optional_param(param_name, defval, params);
-    factory_init(p, params, param1);
-    return p;
-  }
-};
-
-template<class T, class U, class V>
-class SpktFactory2InitParams : public SpktFactory<T>
-{
- public:
-  typedef SpktFactory<T> parent;
-  using parent::get_value;
-  using parent::get_param;
-
- public:
-  static T*
-  get_value(const std::string& valname, sim_parameters* params,
-            const U& param1, const V& param2) {
-    T* p = parent::_get_value(valname);
-    factory_init(p, params, param1, param2);
-    return p;
-  }
-
-  static T*
-  get_extra_param(const std::string& param_name,
-                  sim_parameters* params,
-                  const U& param1, const V& param2) {
-    if (parent::exists(param_name, params)) {
-      return get_param(param_name,params,param1,param2);
-    }
-    else {
-      return 0;
-    }
-  }
-
-  static T*
-  get_param(const std::string& param_name,
-            sim_parameters* params, const U& param1, const V& param2) {
-    T* p = parent::_get_param(param_name, params);
-    factory_init(p, params, param1, param2);
-    return p;
-  }
-
-  static T*
-  get_optional_param(const std::string& param_name,
-                     const std::string& defval, sim_parameters* params,
-                     const U& param1, const V& param2) {
-    T* p = parent::_get_optional_param(param_name, defval, params);
-    factory_init(p, params, param1, param2);
-    return p;
-  }
-};
-
-template<class T, class U, class V, class W>
-class SpktFactory3InitParams : public SpktFactory<T>
-{
- public:
-  typedef SpktFactory<T> parent;
-  using parent::get_value;
-  using parent::get_param;
-
- public:
-  static T*
-  get_value(const std::string& valname, sim_parameters* params,
-            const U& param1, const V& param2, const W& param3) {
-    T* p = parent::_get_value(valname);
-    factory_init(p, params, param1, param2, param3);
-    return p;
-  }
-
-  static T*
-  get_param(const std::string& param_name,
-            sim_parameters* params, const U& param1, const V& param2,
-            const W& param3) {
-    T* p = parent::_get_param(param_name, params);
-    factory_init(p, params, param1, param2, param3);
-    return p;
-  }
-
-  static T*
-  get_optional_param(const std::string& param_name,
-                     const std::string& defval, sim_parameters* params,
-                     const U& param1, const V& param2, const W& param3) {
-    T* p = parent::_get_optional_param(param_name, defval, params);
-    factory_init(p, params, param1, param2, param3);
-    return p;
-  }
-
-  static T*
-  get_extra_param(const std::string& param_name,
-                  sim_parameters* params,
-                  const U& param1, const V& param2, const W& param3) {
-    if (parent::exists(param_name, params)) {
-      return get_param(param_name,params,param1,param2,param3);
-    }
-    else {
-      return 0;
-    }
-  }
-
 
 };
 
@@ -463,58 +281,45 @@ class template_factory2 : public factory2<T>
   std::string param_name_;
 };
 
-template<class Parent, class Child>
-class SpktFactory_desc : public SpktDesc_base
-{
-
+template <class Factory>
+class CleanupFactory {
  public:
-  SpktFactory_desc(const char* name) {
-    std::string n(name);
-    /** This should only ever be declared within
-     the static initialization routine. There is therefore
-     nothing unsafe about passing "this" out.  This object
-     will be persisent throughout the entire simulation */
-    SpktFactory<Parent>::register_name(n, this);
+  ~CleanupFactory(){
+    Factory::clean_up();
   }
-
-  factory_type*
-  build() {
-    return new Child;
-  }
-
 };
 
 }
 
-#define DeclareFactory(type_name) \
-    typedef ::sprockit::SpktFactory<type_name> type_name##_factory;
+#define FirstArgStr(X, ...) #X
+#define FirstArgFactoryName(X, ...) X##_factory
 
-#define DeclareFactory1Param(type_name, param1_name) \
-    typedef ::sprockit::SpktFactory1Param<type_name, param1_name> type_name##_factory;
-
-#define DeclareFactory1InitParam(type_name, param1_name) \
-    typedef ::sprockit::SpktFactory1InitParam<type_name, param1_name> type_name##_factory;
-
-#define DeclareFactory2InitParams(type_name, param1_name, param2_name) \
-    typedef ::sprockit::SpktFactory2InitParams<type_name, param1_name, param2_name> type_name##_factory;
-
-#define DeclareFactory3InitParams(type_name, param1_name, param2_name, param3_name) \
-    typedef ::sprockit::SpktFactory3InitParams<type_name, param1_name, param2_name, param3_name> type_name##_factory;
+#define DeclareFactory(...) \
+  typedef ::sprockit::Factory<__VA_ARGS__> FirstArgFactoryName(__VA_ARGS__);
 
 #define ImplementFactory(type_name) \
-    namespace sprockit { \
-    template<> const char* ::sprockit::SpktFactoryTemplateBase<type_name>::name_ = #type_name; \
-    template<> std::map<std::string, SpktDesc_base*>* SpktFactoryTemplateBase<type_name>::object_map_ = 0; \
-    template<> std::map<std::string, std::list<std::string>>* SpktFactoryTemplateBase<type_name>::alias_map_ = 0; \
-    static need_delete_statics<SpktFactory< type_name > > factory_del_statics; \
-    }
+  template<> const char* type_name##_factory::name_ = #type_name; \
+  template<> std::map<std::string, type_name##_factory::builder_t*>* type_name##_factory::builder_map_ = 0; \
+  template<> std::map<std::string, std::list<std::string>>* type_name##_factory::alias_map_ = 0; \
+  namespace { static sprockit::CleanupFactory<type_name##_factory> cleaner; }
 
-#define SpktTemplateRegister(cls_str, parent_cls, child_cls, unique_name) \
-    static ::sprockit::SpktFactory_desc<parent_cls,child_cls> unique_name##_cd(cls_str)
+
+
+#define SpktTemplateRegister(cls_str, parent_cls, child_cls, unique_name, ...) \
+    static ::sprockit::SpktBuilderImpl<child_cls, parent_cls##_factory> unique_name##_cd(cls_str)
 
 #define SpktRegister(cls_str, parent_cls, child_cls, ...) \
-  SpktTemplateRegister(cls_str, parent_cls, child_cls, child_cls)
+  static ::sprockit::SpktBuilderImpl<child_cls,parent_cls##_factory> child_cls##_cd(cls_str)
 
+
+#define DeclareFactory1InitParam(type_name, param1_name) \
+  DeclareFactory(type_name, param1_name);
+
+#define DeclareFactory2InitParams(type_name, param1_name, param2_name) \
+  DeclareFactory(type_name, param1_name, param2_name);
+
+#define DeclareFactory3InitParams(type_name, param1_name, param2_name, param3_name) \
+  DeclareFactory(type_name, param1_name, param2_name, param3_name);
 
 #endif
 

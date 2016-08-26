@@ -38,12 +38,6 @@ SpktRegister("packet_flow", netlink, packet_flow_netlink,
 
 const int packet_flow_netlink::really_big_buffer = 1<<30;
 
-packet_flow_nic::packet_flow_nic() :
-  packetizer_(0),
-  injection_credits_(0)
-{
-}
-
 void
 packet_flow_nic::init_factory_params(sprockit::sim_parameters *params)
 {
@@ -129,7 +123,7 @@ packet_flow_nic::do_send(network_message* payload)
 {
   nic_debug("packet flow: sending %s", payload->to_string().c_str());
   int vn = 0; //we only ever use one virtual network
-  schedule_delay(inj_lat_, new_event(packetizer_, &packetizer::start, vn, payload));
+  schedule_delay(inj_lat_, new_callback(packetizer_, &packetizer::start, vn, payload));
 }
 
 void
@@ -173,6 +167,12 @@ void
 packet_flow_netlink::init_factory_params(sprockit::sim_parameters *params)
 {
   netlink::init_factory_params(params);
+}
+
+void
+packet_flow_netlink::deadlock_check()
+{
+  block_->deadlock_check();
 }
 
 void
@@ -242,6 +242,11 @@ packet_flow_netlink::init()
   block_ = new packet_flow_crossbar(timestamp(0), timestamp(0), num_vc, really_big_buffer, "netlink");
   block_->set_event_location(id_);
   block_->configure_basic_ports(num_inject_ + num_eject_);
+}
+
+packet_flow_netlink::~packet_flow_netlink()
+{
+  if (block_) delete block_;
 }
 
 }
