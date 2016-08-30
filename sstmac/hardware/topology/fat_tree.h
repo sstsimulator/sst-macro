@@ -31,9 +31,6 @@ class abstract_fat_tree :
    down_dimension = 0
   } dimension_t;
 
-  std::string
-  name() const;
-
   int
   l() const {
     return l_;
@@ -136,19 +133,19 @@ class fat_tree :
     int dim,
     const coordinates &src,
     const coordinates &dst,
-    geometry_routable::path& path) const;
+    structured_routable::path& path) const;
 
   void
   minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    geometry_routable::path& path) const;
+    structured_routable::path& path) const;
 
   void
   minimal_route_to_coords(
     const coordinates &src_coords,
     const coordinates &dest_coords,
-    geometry_routable::path& path) const;
+    structured_routable::path& path) const;
 
   int
   minimal_distance(
@@ -188,11 +185,6 @@ class simple_fat_tree : public abstract_fat_tree
   virtual void
   connect_objects(internal_connectable_map& switches);
 
-  std::string
-  default_router() const {
-    return "minimal";
-  }
-
   int
   num_switches() const {
     return num_switches_;
@@ -216,7 +208,7 @@ class simple_fat_tree : public abstract_fat_tree
   minimal_route_to_coords(
     const coordinates &src_coords,
     const coordinates &dest_coords,
-    geometry_routable::path &path) const;
+    structured_routable::path &path) const;
 
   switch_id
   switch_number(const coordinates &coords) const;
@@ -228,7 +220,7 @@ class simple_fat_tree : public abstract_fat_tree
   productive_path(int dim,
     const coordinates &src,
     const coordinates &dst,
-    geometry_routable::path &path) const;
+    structured_routable::path &path) const;
 
   void
   compute_switch_coords(switch_id swid, coordinates &coords) const;
@@ -243,7 +235,7 @@ class simple_fat_tree : public abstract_fat_tree
   minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    geometry_routable::path& path) const;
+    structured_routable::path& path) const;
 
   int
   level(switch_id sid) const;

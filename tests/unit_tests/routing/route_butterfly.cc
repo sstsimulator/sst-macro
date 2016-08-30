@@ -29,13 +29,13 @@ void test_butterfly(UnitTest& unit)
 
         node_id dst = bfly->node_addr(get_vector(1,0,0,1));
 
-        geometry_routable::path_set paths;
+        structured_routable::path_set paths;
         router->productive_paths_to_node(node_id(dst), paths);
         //this should tell me that the productive ports are -X, -Y, -Z
         assertEqual(unit, "num productive ports", paths.size(), 1);
 
         if (paths.size() > 0)
-            assertEqual(unit, "productive port 0", paths[0].outport, router->convert_to_port(0, 1));
+            assertEqual(unit, "productive port 0", paths[0].outport, top->convert_to_port(0, 1));
     }
 
     {
@@ -46,13 +46,13 @@ void test_butterfly(UnitTest& unit)
 
         node_id dst = bfly->node_addr(get_vector(3,2,0,1));
 
-        geometry_routable::path_set paths;
+        structured_routable::path_set paths;
         router->productive_paths_to_node(node_id(dst), paths);
 
         assertEqual(unit, "num productive ports", paths.size(), 1);
 
         if (paths.size() > 0)
-            assertEqual(unit, "productive port 0", paths[0].outport, router->convert_to_port(butterfly::up_dimension, 3));
+            assertEqual(unit, "productive port 0", paths[0].outport, top->convert_to_port(butterfly::up_dimension, 3));
     }
 
     /** test some distances */

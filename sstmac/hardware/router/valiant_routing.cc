@@ -12,10 +12,10 @@ SpktRegister("valiant", router, valiant_router,
 
 valiant_router::next_action_t
 valiant_router::initial_step(
-  geometry_routable* rtbl,
+  structured_routable* rtbl,
   packet* pkt)
 {
-  geometry_routable::path unused_path;
+  structured_routable::path unused_path;
   int dir = 0;
   structured_topology* regtop = regtop_;
   switch_id ej_addr = regtop->endpoint_to_ejection_switch(pkt->toaddr(), dir);
@@ -42,7 +42,7 @@ valiant_router::finalize_init()
 
 valiant_router::next_action_t
 valiant_router::intermediate_step(
-  geometry_routable* rtbl,
+  structured_routable* rtbl,
   packet* pkt)
 {
   if (rtbl->dest_switch() == addr()) {
@@ -65,11 +65,11 @@ valiant_router::intermediate_step(
 valiant_router::next_action_t
 valiant_router::next_routing_stage(packet* pkt)
 {
-  geometry_routable* rtbl = pkt->interface<geometry_routable>();
-  if (rtbl->current_path().metadata_bit(geometry_routable::final_stage)) {
+  structured_routable* rtbl = pkt->interface<structured_routable>();
+  if (rtbl->current_path().metadata_bit(structured_routable::final_stage)) {
     return final_node;
   }
-  else if (rtbl->current_path().metadata_bit(geometry_routable::valiant_stage)) {
+  else if (rtbl->current_path().metadata_bit(structured_routable::valiant_stage)) {
     return intermediate_step(rtbl, pkt);
   }
   else {
@@ -78,23 +78,23 @@ valiant_router::next_routing_stage(packet* pkt)
 }
 
 void
-valiant_router::configure_final_path(geometry_routable::path& path)
+valiant_router::configure_final_path(structured_routable::path& path)
 {
   path.vc = second_stage_vc(path.vc);
-  path.set_metadata_bit(geometry_routable::final_stage);
+  path.set_metadata_bit(structured_routable::final_stage);
 }
 
 void
-valiant_router::configure_intermediate_path(geometry_routable::path& path)
+valiant_router::configure_intermediate_path(structured_routable::path& path)
 {
   path.vc = first_stage_vc(path.vc);
-  path.set_metadata_bit(geometry_routable::valiant_stage);
+  path.set_metadata_bit(structured_routable::valiant_stage);
 }
 
 void
 valiant_router::route_valiant(packet* pkt)
 {
-  geometry_routable* rtbl = pkt->interface<geometry_routable>();
+  structured_routable* rtbl = pkt->interface<structured_routable>();
   next_action_t ac = next_routing_stage(pkt);
   switch (ac){
     case minimal:
@@ -117,7 +117,7 @@ valiant_router::route_valiant(packet* pkt)
 void
 valiant_router::route(packet* pkt)
 {
-  geometry_routable* rtbl = pkt->interface<geometry_routable>();
+  structured_routable* rtbl = pkt->interface<structured_routable>();
   routing::algorithm_t algo = routing::valiant;
   switch(algo){
     case routing::minimal:
@@ -134,9 +134,9 @@ valiant_router::route(packet* pkt)
 }
 
 void
-valiant_router::route(packet* pkt, geometry_routable::path_set& paths)
+valiant_router::route(packet* pkt, structured_routable::path_set& paths)
 {
-  geometry_routable* rtbl = pkt->interface<geometry_routable>();
+  structured_routable* rtbl = pkt->interface<structured_routable>();
   next_action_t ac = next_routing_stage(pkt);
   switch(ac){
     case intermediate_switch:

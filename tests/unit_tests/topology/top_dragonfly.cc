@@ -180,7 +180,7 @@ test_dragonfly_v2(UnitTest& unit)
 
     {
     network_switch* sw = switches[switch_id(7)];
-    long port; geometry_routable::path path;
+    long port; structured_routable::path path;
     dfly->minimal_route_to_node(switch_id(7), node_id(4), path);
     //assertEqual(unit, "route dragonfly dim", path.dim, (int) dragonfly::x_dimension);
     //assertEqual(unit, "route dragonfly dir", path.dir, 2);
@@ -191,7 +191,7 @@ test_dragonfly_v2(UnitTest& unit)
 
     {
     network_switch* sw = switches[switch_id(6)];
-    geometry_routable::path path;
+    structured_routable::path path;
     dfly->minimal_route_to_node(switch_id(6), node_id(4), path);
     //assertEqual(unit, "route dragonfly dim", path.dim, (int) dragonfly::y_dimension);
     //assertEqual(unit, "route dragonfly dir", path.dir, 0);
@@ -201,7 +201,7 @@ test_dragonfly_v2(UnitTest& unit)
 
     {
     network_switch* sw = switches[switch_id(29)];
-    geometry_routable::path path;
+    structured_routable::path path;
     dfly->minimal_route_to_node(switch_id(29), node_id(4), path);
     //assertEqual(unit, "route dragonfly dim", path.dim, (int) dragonfly::g_dimension);
     //assertEqual(unit, "route dragonfly dir", path.dir, 0);
@@ -211,7 +211,7 @@ test_dragonfly_v2(UnitTest& unit)
 
     {
     network_switch* sw = switches[switch_id(30)];
-    geometry_routable::path path;
+    structured_routable::path path;
     dfly->minimal_route_to_node(switch_id(30), node_id(4), path);
     //assertEqual(unit, "route dragonfly dim", path.dim, (int) dragonfly::x_dimension);
     //assertEqual(unit, "route dragonfly dir", path.dir, 3);

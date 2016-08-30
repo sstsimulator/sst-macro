@@ -26,12 +26,12 @@ void test_fbfly(UnitTest& unit)
 
         node_id dst = bfly->node_addr(get_vector(3,2,1));
 
-        geometry_routable::path_set paths;
+        structured_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         assertEqual(unit, "num productive ports", paths.size(), 1);
 
         if (paths.size() > 0)
-            assertEqual(unit, "productive port 0", paths[0].outport, router->convert_to_port(flattened_butterfly::up_dimension, 6));
+            assertEqual(unit, "productive port 0", paths[0].outport, top->convert_to_port(flattened_butterfly::up_dimension, 6));
     }
 
     {
@@ -42,14 +42,14 @@ void test_fbfly(UnitTest& unit)
 
         node_id dst = bfly->node_addr(get_vector(2,2,1));
 
-        geometry_routable::path_set paths;
+        structured_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         assertEqual(unit, "num productive ports", paths.size(), 2);
 
         if (paths.size() > 0)
-            assertEqual(unit, "productive port 0", paths[0].outport, router->convert_to_port(flattened_butterfly::down_dimension, 2));
+            assertEqual(unit, "productive port 0", paths[0].outport, top->convert_to_port(flattened_butterfly::down_dimension, 2));
         if (paths.size() > 1)
-            assertEqual(unit, "productive port 1", paths[1].outport, router->convert_to_port(flattened_butterfly::up_dimension, 6));
+            assertEqual(unit, "productive port 1", paths[1].outport, top->convert_to_port(flattened_butterfly::up_dimension, 6));
     }
 
     {

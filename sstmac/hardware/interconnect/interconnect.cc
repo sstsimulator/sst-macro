@@ -151,7 +151,7 @@ macro_interconnect::init_factory_params(sprockit::sim_parameters* params)
 
   sprockit::sim_parameters* node_params = params->get_namespace("node");
   sprockit::factory<connectable>* node_builder
-    = new sprockit::template_factory<connectable, node_factory>(node_params->get_param("model"));
+      = new sprockit::template_factory<connectable, node_factory>(node_params->get_optional_param("model", "simple"));
   topology_->build_endpoint_connectables(nodes, node_builder, partition_, rt_->me(), node_params);
   delete node_builder;
 

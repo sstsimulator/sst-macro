@@ -7,7 +7,7 @@
 namespace sstmac {
 namespace hw {
 
-class geometry_routable
+class structured_routable
 {
  public:
   typedef enum {
@@ -138,9 +138,9 @@ class geometry_routable
   }
 
  protected:
-  geometry_routable() {}
+  structured_routable() {}
 
-  geometry_routable(node_id toaddr, node_id fromaddr);
+  structured_routable(node_id toaddr, node_id fromaddr);
 
  private:
   node_id toaddr_;
@@ -158,11 +158,11 @@ class geometry_routable
 
 START_SERIALIZATION_NAMESPACE
 template <>
-class serialize<sstmac::hw::geometry_routable::path>
+class serialize<sstmac::hw::structured_routable::path>
 {
  public:
   void
-  operator()(sstmac::hw::geometry_routable::path& info, serializer& ser){
+  operator()(sstmac::hw::structured_routable::path& info, serializer& ser){
     ser.primitive(info);
   }
 };

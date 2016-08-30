@@ -18,13 +18,8 @@ class tiled_torus :
   minimal_routes_to_coords(
     const coordinates &src_coords,
     const coordinates &dest_coords,
-    geometry_routable::path& current,
-    geometry_routable::path_set &paths) const;
-
-  std::string
-  default_router() const {
-    return "minimal_multipath";
-  }
+    structured_routable::path& current,
+    structured_routable::path_set &paths) const;
 
   switch_id
   endpoint_to_injection_switch(
@@ -37,7 +32,7 @@ class tiled_torus :
   void
   eject_paths_on_switch(
       node_id dest_addr, switch_id sw_addr,
-      geometry_routable::path_set &paths) const;
+      structured_routable::path_set &paths) const;
 
  protected:
   virtual void

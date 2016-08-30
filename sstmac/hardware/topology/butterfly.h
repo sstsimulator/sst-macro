@@ -21,6 +21,10 @@
 namespace sstmac {
 namespace hw {
 
+/**
+ * @brief The abstract_butterfly class
+ * Encapsulates operations common to both butterfly and flattened_butterfly
+ */
 class abstract_butterfly :
   public structured_topology
 {
@@ -36,26 +40,41 @@ class abstract_butterfly :
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
 
-  virtual long
-  num_stages() const {
-    return nfly_;
-  }
-
+  /**
+   * @brief kary
+   * @return The branching degree of the butterfly
+   */
   int
   kary() const {
     return kary_;
   }
 
+  /**
+   * @brief nfly
+   * @return The number of stages in the butterfly
+   */
   int
   nfly() const {
     return nfly_;
   }
 
+  /**
+   * @brief num_switches_per_col
+   * The butterfly is physically laid out as a 2D-graid of cols and rows
+   * @return The number of switches in a column of the 2D physical layout
+   */
   int
   num_switches_per_col() const {
     return nswitches_per_col_;
   }
 
+  /**
+   * @brief num_switches_per_col
+   * The butterfly is physically laid out as a 2D-graid of cols and rows.
+   * A butterfly is an indirect network. Only the first column of switches
+   * are actually connected to compute nodes.
+   * @return The number of switches in a column of the 2D physical layout
+   */
   virtual int
   num_leaf_switches() const {
     return nswitches_per_col_;
@@ -71,7 +90,7 @@ class abstract_butterfly :
     int dim,
     const coordinates& src,
     const coordinates& dst,
-    geometry_routable::path& path) const;
+    structured_routable::path& path) const;
 
   void
   configure_vc_routing(std::map<routing::algorithm_t, int> &m) const;
@@ -90,7 +109,11 @@ class abstract_butterfly :
 
 };
 
-
+/**
+ * @brief The butterfly class
+ * Encapsulates a butterfly topology as described in "High Performance Datacenter Networks"
+ * by Abts and Kim
+ */
 class butterfly :
   public abstract_butterfly
 {
@@ -106,11 +129,6 @@ class butterfly :
 
   virtual ~butterfly() {}
 
-  int
-  last_col_index_start() const {
-    return last_col_index_start_;
-  }
-
   virtual int
   num_switches() const {
     return nswitches_per_col_ * nfly_;
@@ -120,7 +138,7 @@ class butterfly :
   minimal_route_to_coords(
     const coordinates &src_coords,
     const coordinates &dest_coords,
-    geometry_routable::path& path) const;
+    structured_routable::path& path) const;
 
   int
   minimal_distance(
@@ -141,11 +159,6 @@ class butterfly :
   virtual int
   convert_to_port(int dim, int dir) const;
 
-  std::string
-  default_router() const {
-    return "minimal";
-  }
-
   /**
     Each level in a kary-nfly counts
     as a dimension.
@@ -162,15 +175,20 @@ class butterfly :
 
   void
   productive_paths(
-    geometry_routable::path_set &paths,
+    structured_routable::path_set &paths,
     const coordinates &current,
     const coordinates &dst);
 
- protected:
+ private:
   virtual void
   compute_switch_coords(switch_id uid, coordinates& coords) const;
 
- protected:
+  int
+  last_col_index_start() const {
+    return last_col_index_start_;
+  }
+
+ private:
   long last_col_index_start_;
 
 };

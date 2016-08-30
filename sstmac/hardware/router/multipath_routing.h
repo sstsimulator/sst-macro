@@ -15,13 +15,13 @@ class multipath_router :
  public:
   virtual void
   route(packet* pkt){
-    geometry_routable::path_set paths;
+    structured_routable::path_set paths;
     ParentRouter::route(pkt, paths);
     int path_id = paths[0].geometric_id;
     int next_index = geom_paths_[path_id].next_index();
     debug_printf(sprockit::dbg::router,
       "multipath routing: using index %d", next_index);
-    pkt->interface<geometry_routable>()->assign_path(paths[next_index]);
+    pkt->interface<structured_routable>()->assign_path(paths[next_index]);
   }
 
   virtual void
@@ -45,7 +45,7 @@ class multipath_router :
 
 
  private:
-  std::vector<router::geometric_path> geom_paths_;
+  std::vector<router::structured_path> geom_paths_;
   cartesian_topology* top_;
 
 };

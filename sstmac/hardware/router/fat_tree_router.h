@@ -18,6 +18,11 @@
 namespace sstmac {
 namespace hw {
 
+/**
+ * @brief The fat_tree_router class
+ * Router encapsulating the special routing computations that must occur on
+ * a fat tree topology.
+ */
 class fat_tree_router :
   public structured_router
 {
@@ -33,22 +38,8 @@ class fat_tree_router :
   virtual void
   finalize_init();
 
-  virtual int
-  choose_up_path();
-
-  virtual int
-  number_paths(message* msg) const;
-
-  virtual void
-  path_is_good(node_id goingto, int fromport, int toport) {
-  }
-
   void
-  productive_paths_to_switch(switch_id dst, geometry_routable::path_set &paths);
-
-  virtual void
-  path_teardown(int fromport, int toport) {
-  }
+  productive_paths_to_switch(switch_id dst, structured_routable::path_set &paths);
 
   void
   init_factory_params(sprockit::sim_parameters *params);
@@ -64,21 +55,37 @@ class fat_tree_router :
   void
   route(packet* pkt);
 
- protected:
-  bool
-  is_top_level() const {
-    return myL_ == l_ - 1;
-  }
-
+ private:
+  /**
+   * @brief build_rng
+   * Build the random number generator for selecting paths
+   */
   void
   build_rng();
 
   void
   minimal_route_to_switch(
     switch_id sw_addr,
-    geometry_routable::path& path);
+    structured_routable::path& path);
 
- protected:
+  /**
+   * @brief choose_up_path
+   * @return The selected path from the redundant (equivalent) set of minimal paths
+   */
+  int
+  choose_up_minimal_path();
+
+  /**
+   * @brief number_paths
+   * @param pkt The packet being routed by the fat-tree
+   * @return The number of equivalent paths the packet can traverse
+   *    on a minimal path to its destination switch.
+   */
+  int
+  number_minimal_paths(packet* pkt) const;
+
+
+ private:
   int l_;
   int k_;
 

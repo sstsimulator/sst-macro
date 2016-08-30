@@ -89,7 +89,7 @@ naddr(long nid)
 
 class routable_packet_flow :
  public packet_flow_payload,
- public geometry_routable
+ public structured_routable
 {
   NotSerializable(routable_packet_flow)
 
@@ -99,28 +99,28 @@ class routable_packet_flow :
      int num_bytes,
      long offset) :
     packet_flow_payload(parent, num_bytes, offset),
-    geometry_routable(parent->toaddr(), parent->fromaddr())
+    structured_routable(parent->toaddr(), parent->fromaddr())
   {
   }
 
   node_id
   toaddr() const {
-   return geometry_routable::toaddr();
+   return structured_routable::toaddr();
   }
 
   node_id
   fromaddr() const {
-    return geometry_routable::fromaddr();
+    return structured_routable::fromaddr();
   }
 
   int
   next_port() const {
-    return geometry_routable::port();
+    return structured_routable::port();
   }
 
   int
   next_vc() const {
-    return geometry_routable::vc();
+    return structured_routable::vc();
   }
 
 };

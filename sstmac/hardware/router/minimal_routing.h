@@ -6,6 +6,10 @@
 namespace sstmac {
 namespace hw {
 
+/**
+ * @brief The minimal_router class
+ * Router that performs
+ */
 class minimal_router :
   public structured_router
 {
@@ -35,7 +39,7 @@ class minimal_router :
     structured_router(algo){}
 
   virtual void
-  route(packet* pkt, geometry_routable::path_set& paths);
+  route(packet* pkt, structured_routable::path_set& paths);
 
 };
 

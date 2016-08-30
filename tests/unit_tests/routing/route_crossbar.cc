@@ -26,14 +26,14 @@ void test_crossbar(UnitTest& unit)
 
         node_id dst = xbar->node_addr(get_vector(2,2));
 
-        geometry_routable::path_set paths;
+        structured_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         //this should tell me that the productive ports are -X, -Y, -Z
         assertEqual(unit, "num productive ports", paths.size(), 1);
 
 
         if (paths.size() > 0)
-            assertEqual(unit, "productive port 0", paths[0].outport, router->convert_to_port(0, 2));
+            assertEqual(unit, "productive port 0", paths[0].outport, top->convert_to_port(0, 2));
 
     }
 
@@ -45,7 +45,7 @@ void test_crossbar(UnitTest& unit)
 
         node_id dst = xbar->node_addr(get_vector(3,2));
 
-        geometry_routable::path_set paths;
+        structured_routable::path_set paths;
         bool eject = router->productive_paths_to_node(node_id(dst), paths);
         // should only have the ejection port
         assertEqual(unit, "num productive ports", paths.size(), 1);

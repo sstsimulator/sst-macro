@@ -69,17 +69,6 @@ class topology :
 
   /**** BEGIN PURE VIRTUAL INTERFACE *****/
   /**
-     Each topology has a default router type.
-     While the user can specify a router type
-     in the input file, it is not necessary.
-     This automatically fills in the keyword
-     with a sensible default for each topology.
-     @return The string keyword for the topology's default router
-  */
-  virtual std::string
-  default_router() const  = 0;
-
-  /**
    * Given a switch address, return number of nodes connected to it
    */
   virtual int
@@ -222,7 +211,7 @@ class topology :
   minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    geometry_routable::path& path) const = 0;
+    structured_routable::path& path) const = 0;
 
   /**
      Given a traffic pattern (e.g. bit-complement),
@@ -425,7 +414,7 @@ class topology :
   minimal_route_to_node(
     switch_id current_sw_addr,
     node_id dest_node_addr,
-    geometry_routable::path& path) const;
+    structured_routable::path& path) const;
 
   /**
      Informs topology that a new routing stage has begun, allowing any
@@ -433,7 +422,7 @@ class topology :
      @param rinfo Routing info object
   */
   virtual void
-  new_routing_stage(geometry_routable* rtbl) { }
+  new_routing_stage(structured_routable* rtbl) { }
 
   int
   num_nodes_per_netlink() const {

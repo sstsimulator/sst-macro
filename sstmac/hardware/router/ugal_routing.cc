@@ -31,7 +31,7 @@ ugal_router::route(packet* pkt)
 {
   //routing_info& rinfo = pkt->interface<routable>()->rinfo();
   routing::algorithm_t algo = routing::ugal;
-  geometry_routable* rtbl = pkt->interface<geometry_routable>();
+  structured_routable* rtbl = pkt->interface<structured_routable>();
   switch(algo){
     case routing::minimal:
       minimal_route_to_node(pkt->toaddr(), rtbl->current_path());
@@ -50,10 +50,10 @@ ugal_router::route(packet* pkt)
 
 valiant_router::next_action_t
 ugal_router::initial_step(
-  geometry_routable* rtbl,
+  structured_routable* rtbl,
   packet* pkt)
 {
-  geometry_routable::path& path = rtbl->current_path();
+  structured_routable::path& path = rtbl->current_path();
   structured_topology* regtop = safe_cast(structured_topology, topol());
   int pathDir;
   switch_id ej_addr = regtop->endpoint_to_ejection_switch(pkt->toaddr(), pathDir);
@@ -84,11 +84,11 @@ ugal_router::initial_step(
 
   // Since min_path might really be used as a path, it needs to be a copy of
   // path so that the routing function will have correct metadata to work with.
-  geometry_routable::path min_path = path;
+  structured_routable::path min_path = path;
 
   // Conversely, val_path is never used as a real path since
   // intermediate_step() recomputes the path.
-  geometry_routable::path val_path;
+  structured_routable::path val_path;
 
   regtop->minimal_route_to_coords(src, dst, min_path);
   regtop->minimal_route_to_coords(src, inter, val_path);
@@ -117,7 +117,7 @@ ugal_router::initial_step(
       "UGAL valiant routing to switch %ld, port %d",
       long(inter_addr), val_path.outport);
     rtbl->set_dest_switch(inter_addr);
-    rtbl->current_path().set_metadata_bit(geometry_routable::valiant_stage);
+    rtbl->current_path().set_metadata_bit(structured_routable::valiant_stage);
 
     // Let topology know we're switching to a new routing stage,
     // metadata may need to be modified.

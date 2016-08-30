@@ -10,8 +10,8 @@ SpktRegister("min_ad", router, minimal_adaptive_router,
 void
 minimal_adaptive_router::route(packet* pkt)
 {
-  geometry_routable* rt = pkt->interface<geometry_routable>();
-  geometry_routable::path_set paths;
+  structured_routable* rt = pkt->interface<structured_routable>();
+  structured_routable::path_set paths;
   bool eject  = productive_paths_to_node(pkt->toaddr(), paths);
   if (eject) {
     rt->assign_path(paths[0]);
@@ -19,7 +19,7 @@ minimal_adaptive_router::route(packet* pkt)
   }
   //loop through the ports and find the least-congested
   int min_queue_length = netsw_->queue_length(paths[0].outport);
-  geometry_routable::path& min_path = paths[0];
+  structured_routable::path& min_path = paths[0];
   debug_printf(sprockit::dbg::router,
     "Routing %p from %ld to %ld: path 0 port=%d queue=%d",
     pkt,

@@ -46,12 +46,29 @@ class router :
   public sprockit::factory_type
 {
  public:
-  struct geometric_path {
+  /**
+   * @brief The structured_path struct Identifies a (structurally) unique
+   * path in the topology. For example, there might be multiple links on a
+   * router than connect to the +X router in a torus. However,
+   * these links are all considered to be ``structurally'' equivalent.
+   */
+  struct structured_path {
+    /**
+     * @brief redundancy How many redundant physical links compose the single structural link
+     */
     int redundancy;
+
+    /**
+     * @brief path_counter The index of the last redundant path taken
+     */
     int path_counter;
 
-    geometric_path() : path_counter(0) {}
+    structured_path() : path_counter(0) {}
 
+    /**
+     * @brief next_index
+     * @return The next redundant path that should be taken based on the previously taken paths
+     */
     int next_index() {
       int ret = path_counter;
       path_counter = (path_counter + 1) % redundancy;
@@ -73,11 +90,13 @@ class router :
   virtual void
   finalize_init();
 
+  /**
+   * @brief route Makes a routing decision for the packet.
+   * All routing decisions should be stored on the packet object itself.
+   * @param pkt
+   */
   virtual void
   route(packet* pkt) = 0;
-
-  int
-  convert_to_port(int dim, int dir);
 
   /**
     Compute the minimal path to a node.
@@ -87,12 +106,13 @@ class router :
     The router needs to update its round-robin index
     when computing a path - hence no constness.
     @param node_addr The node routing to
-    @param path [inout] The path to route along
+    @param path [inout] The path to route along. This might
+      contain information about previous steps take along the path.
   */
   virtual void
   minimal_route_to_node(
     node_id node_addr,
-    geometry_routable::path& path);
+    structured_routable::path& path);
 
   /**
     Compute the minimal path to a switch.
@@ -107,7 +127,7 @@ class router :
   virtual void
   minimal_route_to_switch(
     switch_id sw_addr,
-    geometry_routable::path& path);
+    structured_routable::path& path);
 
   virtual void
   init_stats(event_manager* m){}
@@ -126,18 +146,28 @@ class router :
   bool
   productive_paths_to_node(
     node_id dst,
-    geometry_routable::path_set& paths);
+    structured_routable::path_set& paths);
 
+  /**
+   * @brief productive_paths_to_switch  Get the set of all paths
+   * that corresponding to ``productive'' steps towards a destination switch
+   * @param dst   The ID for the destination switch
+   * @param paths [inout] The set of productive paths that move closer to the destination switch
+   */
   virtual void
   productive_paths_to_switch(
     switch_id dst,
-    geometry_routable::path_set& paths) = 0;
+    structured_routable::path_set& paths) = 0;
 
   network_switch*
   get_switch() const {
     return netsw_;
   }
 
+  /**
+   * @brief addr
+   * @return
+   */
   switch_id
   addr() const {
     return my_addr_;
@@ -153,6 +183,11 @@ class router :
     top_ = top;
   }
 
+  /**
+   * @brief max_num_vc
+   * @return The maximum number of virtual channels the router must maintain
+   *         to implement all possible routing algorithms
+   */
   int
   max_num_vc() const {
     return max_num_vc_;

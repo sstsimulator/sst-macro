@@ -101,7 +101,7 @@ packet_flow_nic_packetizer::init_factory_params(sprockit::sim_parameters *params
   ej_buffer_ = new packet_flow_eject_buffer(inj_lat, small_latency, buffer_size_, ej_arb);
 
   pkt_allocator_ = packet_allocator_factory
-      ::get_optional_param("packet_allocator", "geometry_routable", params);
+      ::get_optional_param("packet_allocator", "structured_routable", params);
 }
 
 void

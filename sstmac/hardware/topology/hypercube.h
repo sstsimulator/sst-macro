@@ -38,16 +38,13 @@ class hypercube :
     int dim,
     const coordinates& src,
     const coordinates& dst,
-    geometry_routable::path& path) const;
-
-  std::string
-  name() const;
+    structured_routable::path& path) const;
 
   void
   minimal_route_to_coords(
     const coordinates &src_coords,
     const coordinates &dest_coords,
-    geometry_routable::path& path) const;
+    structured_routable::path& path) const;
 
   virtual void
   connect_objects(internal_connectable_map& switches);

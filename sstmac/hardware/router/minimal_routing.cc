@@ -13,7 +13,7 @@ SpktRegister("minimal", router, minimal_router,
 void
 minimal_router::route(packet* pkt)
 {
-  geometry_routable* rt = pkt->interface<geometry_routable>();
+  structured_routable* rt = pkt->interface<structured_routable>();
   minimal_route_to_node(rt->toaddr(),
     rt->current_path());
   int outport = rt->port();
@@ -37,9 +37,9 @@ minimal_router::set_topology(topology *top)
 }
 
 void
-minimal_router::route(packet* pkt, geometry_routable::path_set &paths)
+minimal_router::route(packet* pkt, structured_routable::path_set &paths)
 {
-  geometry_routable* rt = pkt->interface<geometry_routable>();
+  structured_routable* rt = pkt->interface<structured_routable>();
   minimal_routes_to_node(rt->toaddr(), rt->current_path(), paths);
 }
 

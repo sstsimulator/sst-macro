@@ -14,17 +14,10 @@ structured_router::set_topology(topology* top)
 }
 
 void
-structured_router::finalize_init()
-{
-  //nps_ = regtop_->endpoints_per_switch(me_);
-  router::finalize_init();
-}
-
-void
 structured_router::minimal_routes_to_node(
   node_id dest_node_addr,
-  geometry_routable::path& path,
-  geometry_routable::path_set& paths)
+  structured_routable::path& path,
+  structured_routable::path_set& paths)
 {
   netlink_id endpoint_id(dest_node_addr / top_->num_nodes_per_netlink());
 
@@ -45,7 +38,7 @@ structured_router::minimal_routes_to_node(
 void
 structured_router::minimal_route_to_node(
   node_id dest_node_addr,
-  geometry_routable::path& path)
+  structured_routable::path& path)
 {
   netlink_id endpoint_id(dest_node_addr / top_->num_nodes_per_netlink());
   switch_id ej_addr = regtop_->endpoint_to_ejection_switch(endpoint_id, path.outport);
@@ -62,7 +55,7 @@ structured_router::minimal_route_to_node(
 void
 structured_router::minimal_route_to_switch(
   switch_id dest_sw_addr,
-  geometry_routable::path& path)
+  structured_routable::path& path)
 {
   regtop_->minimal_route_to_switch(
     my_addr_,
@@ -74,7 +67,7 @@ structured_router::minimal_route_to_switch(
 void
 structured_router::productive_paths_to_switch(
   switch_id dst,
-  geometry_routable::path_set& paths)
+  structured_routable::path_set& paths)
 {
   coordinates my_coords = regtop_->switch_coords(my_addr_);
   coordinates dst_coords = regtop_->switch_coords(dst);

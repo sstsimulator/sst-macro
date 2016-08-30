@@ -31,12 +31,12 @@ test_dragonfly_v1(UnitTest& unit)
 
         node_id dst = dfly->node_addr(get_vector(3,2,1,0));
 
-        geometry_routable::path_set paths;
+        structured_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         assertEqual(unit, "num productive ports", paths.size(), 1);
 
         if (paths.size() > 0)
-            assertEqual(unit, "productive port 0", paths[0].outport, router->convert_to_port(1, 2));
+            assertEqual(unit, "productive port 0", paths[0].outport, top->convert_to_port(1, 2));
     }
 
     {
@@ -47,14 +47,14 @@ test_dragonfly_v1(UnitTest& unit)
 
         node_id dst = dfly->node_addr(get_vector(0,2,1,0));
 
-        geometry_routable::path_set paths;
+        structured_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         assertEqual(unit, "num productive ports", paths.size(), 2);
 
         if (paths.size() > 0)
-            assertEqual(unit, "productive port 0", paths[0].outport, router->convert_to_port(0, 0));
+            assertEqual(unit, "productive port 0", paths[0].outport, top->convert_to_port(0, 0));
         if (paths.size() > 1)
-            assertEqual(unit, "productive port 1", paths[1].outport, router->convert_to_port(1, 2));
+            assertEqual(unit, "productive port 1", paths[1].outport, top->convert_to_port(1, 2));
     }
 
     {
@@ -65,16 +65,16 @@ test_dragonfly_v1(UnitTest& unit)
 
         node_id dst = dfly->node_addr(get_vector(0,2,0,0));
 
-        geometry_routable::path_set paths;
+        structured_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         assertEqual(unit, "num productive ports", paths.size(), 3);
 
         if (paths.size() > 0)
-            assertEqual(unit, "productive port 0", paths[0].outport, router->convert_to_port(0, 0));
+            assertEqual(unit, "productive port 0", paths[0].outport, top->convert_to_port(0, 0));
         if (paths.size() > 1)
-            assertEqual(unit, "productive port 1", paths[1].outport, router->convert_to_port(1, 2));
+            assertEqual(unit, "productive port 1", paths[1].outport, top->convert_to_port(1, 2));
         if (paths.size() > 2)
-            assertEqual(unit, "productive port 2", paths[2].outport, router->convert_to_port(2, 0));
+            assertEqual(unit, "productive port 2", paths[2].outport, top->convert_to_port(2, 0));
     }
 
     {
@@ -131,12 +131,12 @@ test_dragonfly_v2(UnitTest& unit)
 
         node_id dst = dfly->node_addr(get_vector(3,2,1,0));
 
-        geometry_routable::path_set paths;
+        structured_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         assertEqual(unit, "num productive ports", paths.size(), 1);
 
         if (paths.size() > 0)
-            assertEqual(unit, "productive port 0", paths[0].outport, router->convert_to_port(1, 2));
+            assertEqual(unit, "productive port 0", paths[0].outport, top->convert_to_port(1, 2));
     }
 
     {
@@ -147,14 +147,14 @@ test_dragonfly_v2(UnitTest& unit)
 
         node_id dst = dfly->node_addr(get_vector(0,2,1,0));
 
-        geometry_routable::path_set paths;
+        structured_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         assertEqual(unit, "num productive ports", paths.size(), 2);
 
         if (paths.size() > 0)
-            assertEqual(unit, "productive port 0", paths[0].outport, router->convert_to_port(0, 0));
+            assertEqual(unit, "productive port 0", paths[0].outport, top->convert_to_port(0, 0));
         if (paths.size() > 1)
-            assertEqual(unit, "productive port 1", paths[1].outport, router->convert_to_port(1, 2));
+            assertEqual(unit, "productive port 1", paths[1].outport, top->convert_to_port(1, 2));
     }
 
     {
@@ -165,16 +165,16 @@ test_dragonfly_v2(UnitTest& unit)
 
         node_id dst = dfly->node_addr(get_vector(0,2,0,0));
 
-        geometry_routable::path_set paths;
+        structured_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         assertEqual(unit, "num productive ports", paths.size(), 3);
 
         if (paths.size() > 0)
-            assertEqual(unit, "productive port 0", paths[0].outport, router->convert_to_port(0, 0));
+            assertEqual(unit, "productive port 0", paths[0].outport, top->convert_to_port(0, 0));
         if (paths.size() > 1)
-            assertEqual(unit, "productive port 1", paths[1].outport, router->convert_to_port(1, 2));
+            assertEqual(unit, "productive port 1", paths[1].outport, top->convert_to_port(1, 2));
         if (paths.size() > 2)
-            assertEqual(unit, "productive port 2", paths[2].outport, router->convert_to_port(2, 0));
+            assertEqual(unit, "productive port 2", paths[2].outport, top->convert_to_port(2, 0));
     }
 
     {
@@ -185,16 +185,16 @@ test_dragonfly_v2(UnitTest& unit)
 
         node_id dst = dfly->node_addr(get_vector(0,2,5,0));
 
-        geometry_routable::path_set paths;
+        structured_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         assertEqual(unit, "num productive ports", paths.size(), 3);
 
         if (paths.size() > 0)
-            assertEqual(unit, "productive port 0", paths[0].outport, router->convert_to_port(0, 0));
+            assertEqual(unit, "productive port 0", paths[0].outport, top->convert_to_port(0, 0));
         if (paths.size() > 1)
-            assertEqual(unit, "productive port 1", paths[1].outport, router->convert_to_port(1, 2));
+            assertEqual(unit, "productive port 1", paths[1].outport, top->convert_to_port(1, 2));
         if (paths.size() > 2)
-            assertEqual(unit, "productive port 2", paths[2].outport, router->convert_to_port(0, 0));
+            assertEqual(unit, "productive port 2", paths[2].outport, top->convert_to_port(0, 0));
     }
 
     {

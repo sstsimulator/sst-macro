@@ -40,25 +40,11 @@ hypercube::init_factory_params(sprockit::sim_parameters* params)
   eject_geometric_id_ = max_ports_intra_network_;
 }
 
-/// Returns a descriptive name of the graph.
-std::string
-hypercube::name() const
-{
-  int64_t dsize = dimensions_.size();
-  std::ostringstream ostr;
-  ostr << "hypercube(";
-  for (int i = 0; i < dsize; i++) {
-    ostr << dimensions_[i] << ",";
-  }
-  ostr << ")";
-  return ostr.str();
-}
-
 void
 hypercube::minimal_route_to_coords(
   const coordinates &src_coords,
   const coordinates &dest_coords,
-  geometry_routable::path& path) const
+  structured_routable::path& path) const
 {
   for (int i=0; i < src_coords.size(); ++i) {
     if (src_coords[i] != dest_coords[i]) {
@@ -141,7 +127,7 @@ hypercube::productive_path(
   int dim,
   const coordinates &src,
   const coordinates &dst,
-  geometry_routable::path& path) const
+  structured_routable::path& path) const
 {
   path.outport = dim_to_outport_[dim] + dst[dim];
   path.vc = 0;

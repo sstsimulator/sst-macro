@@ -33,6 +33,11 @@ DeclareDebugSlot(network_switch)
 namespace sstmac {
 namespace hw {
 
+/**
+ * @brief The network_switch class
+ * A class encapsulating a network switch that packets must traverse on the network.
+ * The network switch performs both routing computations and congestion modeling.
+ */
 class network_switch :
   public connectable_component,
   public sprockit::factory_type
@@ -68,6 +73,10 @@ class network_switch :
     return my_addr_;
   }
 
+  /**
+   * @brief rter
+   * @return The router used for performing routing computations
+   */
   router*
   rter() const {
     return router_;
@@ -87,6 +96,16 @@ class network_switch :
   virtual void
   set_topology(topology* top);
 
+  /**
+   * @brief queue_length
+   * Compute the number of packets waiting on the switch. The queue length
+   * is a multiple of the ``system'' packet size, which can be different from the
+   * packet size used by SST/macro congestion models. For example,
+   * the packet size of the system beings simulated might be 100B, but SST/macro
+   * might be doing congestion computations on units of 1024B.
+   * @param port The port to check the queue length of
+   * @return The queue length as an integer number of packets waiting
+   */
   virtual int
   queue_length(int port) const = 0;
 
@@ -110,6 +129,11 @@ class network_switch :
   virtual timestamp
   hop_latency() const = 0;
 
+  /**
+   * @brief lookahead For parallel simulations, returns the maximum PDES lookahead possible
+   * between two network switches. This is usually (but not always) the sames as the hop latency
+   * @return The PDES lookahead
+   */
   virtual timestamp
   lookahead() const = 0;
 
@@ -119,6 +143,17 @@ class network_switch :
   virtual double
   hop_bandwidth() const = 0;
 
+  /**
+   * @brief connect
+   * @param src_outport The port that packets will exit on the source
+   * @param dst_inport  The port that packets will enter on the destination
+   * @param ty          The type of connection (usually just output or input)
+   *                    An output connection is a data link that carries payload
+   *                    from src to dst. An input connection is a control link that
+   *                    usually just carries credit/arbitration info from dst to src.
+   * @param mod         The dst (if output link) or src (if input link)
+   * @param cfg         An special configure options for the link
+   */
   void
   connect(
     int src_outport,

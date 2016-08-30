@@ -32,7 +32,7 @@ abstract_butterfly::productive_path(
   int dim,
   const coordinates &src,
   const coordinates &dst,
-  geometry_routable::path& path) const
+  structured_routable::path& path) const
 {
   spkt_throw(sprockit::unimplemented_error,
     "butterfly::productive_path: should never be called");
@@ -197,7 +197,7 @@ void
 butterfly::minimal_route_to_coords(
   const coordinates &src_coords,
   const coordinates &dest_coords,
-  geometry_routable::path& path) const
+  structured_routable::path& path) const
 {
   //we have to route our current level
   int current_dim = src_coords[nfly_ - 1];
@@ -211,7 +211,7 @@ butterfly::minimal_route_to_coords(
 
 void
 butterfly::productive_paths(
-  geometry_routable::path_set &paths,
+  structured_routable::path_set &paths,
   const coordinates &current,
   const coordinates &dst)
 {
