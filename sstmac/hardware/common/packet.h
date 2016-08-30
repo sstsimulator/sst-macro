@@ -86,16 +86,6 @@ class packet :
 
   double cumulative_delay_us_;
 
-  template <class T>
-  T&
-  get_field(int name){
-    uint64_t* ptr = &fields_[name];
-    return *reinterpret_cast<T*>(ptr);
-  }
-
- private:
-  std::map<int, uint64_t> fields_;
-
 };
 
 

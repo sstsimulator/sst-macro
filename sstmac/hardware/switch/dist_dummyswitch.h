@@ -21,6 +21,12 @@
 namespace sstmac {
 namespace hw {
 
+/**
+ * @brief The dist_dummy_switch class
+ * Encapsulates a switch that is a placeholder used in parallel simulation.
+ * A link between a real switch and a dummy switch represents a link between
+ * switches on different MPI ranks.
+ */
 class dist_dummy_switch : public network_switch
 {
  public:

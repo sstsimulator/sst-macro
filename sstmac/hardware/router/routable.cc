@@ -7,13 +7,13 @@
 namespace sstmac {
 namespace hw {
 
-geometry_routable::geometry_routable(node_id toaddr, node_id fromaddr)
+structured_routable::structured_routable(node_id toaddr, node_id fromaddr)
   : toaddr_(toaddr), fromaddr_(fromaddr)
 {
 }
 
 void
-geometry_routable::serialize_order(serializer& ser)
+structured_routable::serialize_order(serializer& ser)
 {
   ser & toaddr_;
   ser & fromaddr_;

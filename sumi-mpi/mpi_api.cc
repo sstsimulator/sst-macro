@@ -260,6 +260,7 @@ mpi_api::do_finalize()
 double
 mpi_api::wtime()
 {
+  start_mpi_call("MPI_Wtime");
   return os_->now().sec();
 }
 

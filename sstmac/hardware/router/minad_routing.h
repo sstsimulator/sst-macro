@@ -6,6 +6,13 @@
 namespace sstmac {
 namespace hw {
 
+/**
+ * @brief The minimal_adaptive_router class
+ * Performs some amount of adaptive routing, choosing between
+ * the least congested of all possible minimal paths.
+ * Router always takes a minimal path and is not able
+ * to discover ``better'' non-minimal paths.
+ */
 class minimal_adaptive_router :
   public minimal_router
 {

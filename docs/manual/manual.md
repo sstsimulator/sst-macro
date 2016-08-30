@@ -761,7 +761,7 @@ Let us go back to the simple send/recv skeleton and actually look at the code. T
 #include <stdio.h>
 #include <mpi.h>
 
-#define sstmac_app_name "simple_test"
+#define sstmac_app_name simple_test
 
 int main(int argc, char **argv) { int message_size = 128; int me, nproc; int tag = 0; int dst = 1; int src = 0; MPI_Status stat;
 
@@ -1818,7 +1818,7 @@ router = ugal
 There are three parts to successfully taking a C++ code and turning it into a running application.
 
 -   Redirected linkage: Rather than linking to MPI, pThreads, or other parallel libraries (or even calling `hostname`), these functions must be redirected to SST-macro rather than actually executing.
-If you compiled with the `--enable-replacement-headers` flag, you get all redirected linkage for free by using
+You get all redirected linkage for free by using
 the SST compiler wrappers `sst++` and `sstcc` installed in the `bin` folder.
 -   Skeletonization: While SST-macro can run in emulation mode, executing your entire application exactly, this is not scalable.  To simulate at scale (i.e. 100K or more MPI ranks) you must strip down or "skeletonize" the application to the minimal amount of computation.  The energy and time cost of expensive compute kernels are then simulated via models rather than explicitly executed.
 -   Process encapsulation: Each virtual process being simulated is not an actual physical process. It is instead modeled as a lightweight user-space thread.  This means each virtual process has its own stack and register variables, but that is it.

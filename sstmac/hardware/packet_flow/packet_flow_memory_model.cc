@@ -36,7 +36,7 @@ packet_flow_memory_packetizer::init_factory_params(sprockit::sim_parameters *par
   latency_ = params->get_time_param("latency");
   arb_ = packet_flow_bandwidth_arbitrator_factory::get_value("cut_through", params);
   pkt_allocator_ = packet_allocator_factory
-      ::get_optional_param("packet_allocator", "geometry_routable", params);
+      ::get_optional_param("packet_allocator", "structured_routable", params);
 }
 
 void

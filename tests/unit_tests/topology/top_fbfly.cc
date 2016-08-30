@@ -55,7 +55,7 @@ void test_fbfly(UnitTest& unit)
 
     {
     network_switch* sw = switches[switch_id(7)];
-    geometry_routable::path path;
+    structured_routable::path path;
     bfly->minimal_route_to_node(switch_id(7), node_id(4), path);
     //assertEqual(unit, "route fbfly dim", path.dim, (int)flattened_butterfly::down_dimension);
     //assertEqual(unit, "route fbfly dir", path.dir, 0);
@@ -65,7 +65,7 @@ void test_fbfly(UnitTest& unit)
 
     {
     network_switch* sw = switches[switch_id(3)];
-    geometry_routable::path path;
+    structured_routable::path path;
     bfly->minimal_route_to_node(switch_id(3), node_id(4), path);
     //assertEqual(unit, "route fbfly dim", path.dim, (int)flattened_butterfly::down_dimension);
     //assertEqual(unit, "route fbfly dir", path.dir, 5);

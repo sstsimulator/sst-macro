@@ -8,10 +8,6 @@
  *  For more information, see the LICENSE file in the top
  *  SST/macroscale directory.
  */
-
-// crossbar.h: Interface for crossbar networks.
-//
-// Author: Curtis Janssen <cljanss@ca.sandia.gov>
 #ifndef SSTMAC_HARDWARE_NETWORK_TOPOLOGY_CROSSBAR_H_INCLUDED
 #define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_CROSSBAR_H_INCLUDED
 
@@ -43,9 +39,6 @@ class crossbar : public structured_topology
     return 1;
   }
 
-  std::string
-  name() const;
-
   int
   ndimensions() const {
     return 1;
@@ -71,13 +64,13 @@ class crossbar : public structured_topology
   minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    geometry_routable::path& path) const;
+    structured_routable::path& path) const;
 
   void
   minimal_route_to_coords(
     const coordinates &src_coords,
     const coordinates &dest_coords,
-    geometry_routable::path& path) const;
+    structured_routable::path& path) const;
 
   int
   minimal_distance(
@@ -90,7 +83,7 @@ class crossbar : public structured_topology
     int dim,
     const coordinates& src,
     const coordinates& dst,
-    geometry_routable::path& path) const;
+    structured_routable::path& path) const;
 
   virtual int
   convert_to_port(int dim, int dir) const;

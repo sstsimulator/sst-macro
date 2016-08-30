@@ -136,7 +136,7 @@ test_fattree2(UnitTest& unit)
     network_switch* sw = switches[switch_id(7)];
     router* router = sw->rter();
 
-    geometry_routable::path path;
+    structured_routable::path path;
     packet_flow_payload* packet = msg(22);
     int port;
     router->route(packet);
@@ -164,7 +164,7 @@ test_fattree2(UnitTest& unit)
     network_switch* sw = switches[switch_id(26)];
     router* router = sw->rter();
 
-    geometry_routable::path path;
+    structured_routable::path path;
     packet_flow_payload* packet = msg(4);
     int port;
     router->route(packet);
@@ -201,7 +201,7 @@ test_fattree2(UnitTest& unit)
     {
     network_switch* sw = switches[switch_id(65)];
     router* rter = sw->rter();
-    geometry_routable::path path;
+    structured_routable::path path;
     packet_flow_payload* packet = msg(4);
     int port;
     rter->route(packet);

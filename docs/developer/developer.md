@@ -1,8 +1,10 @@
+
+
 # SST/macro 6.0: Developer's Reference
 
-![](figures/sstlogo.png)
+![](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/sstlogo.png)
 
-**
+
 
 
 
@@ -124,6 +126,8 @@ To improve performance, custom memory allocation strategies can be employed in C
 
 
 
+
+
 ## Chapter 2: SProCKit<a name="chapter:sprockit"></a>
 
 SST-macro is largely built on the Sandia Productivity C++ Toolkit (SProCKit), which is included in the SST-macro distribution. Projects developed within the simulator using SProCKit can easily move to running the application on real machines while still using the SProCKit infrastructure. One of the major contributions is reference counted pointer types. The parameter files and input deck are also part of SProCKit.
@@ -134,7 +138,7 @@ The goal of the SProCKit debug framework is to be both lightweight and flexible.
 
 ````
 debug_printf(sprockit::dbg::mpi,
-  "I am MPI rank 
+  "I am MPI rank %d of %d",
   rank, nproc);
 ````
 
@@ -151,7 +155,7 @@ Multiple debug flags can be specified via OR statements to activate a print stat
 ````
 using namespace sprockit;
 debug_printf(dbg::mpi | dbg::job_launch,
-  "I am MPI rank 
+  "I am MPI rank %d of %d",
   rank, nproc);
 ````
 
@@ -540,7 +544,7 @@ The macro, `spkt_throw_printf`, takes two mandatory arguments: the exception typ
 An arbitrary number of arguments can be given, that get passed a `printf` invocation, e.g.
 
 ````
-spkt_throw_printf(value_error, "invalid number of carats
+spkt_throw_printf(value_error, "invalid number of carats %d", num_carats_);
 ````
 
 ### Section 3.2: Factory Types<a name="sec:factory"></a>
@@ -769,7 +773,7 @@ if (sword_hand_ == "left"){
   }
   else if (sword_hand_ != "right"){
       spkt_throw_printf(value_error,
-          "Invalid hand specified: 
+          "Invalid hand specified: %s",
           sword_hand_.c_str());
   }
   actor::init_factory_params(params);
@@ -793,6 +797,8 @@ Another example `guest.h` and `guest.cc` in the code folder shows the implementa
 #### 3.2.4: External Linkage<a name="subsec:linkage"></a>
 
 If you glance at the Makefile, you will see how and why the executable is created. A compiler wrapper `sst++` points the makefile to the SST-macro libraries, including a library `libsstmac_main` that actually implements the `main` routine and the SST-macro driver. By creating another executable, arbitrary code can be linked together with the core SST-macro framework. The same SST-macro driver is invoked in the external executable as would be invoked by the default main executable.
+
+
 
 
 
@@ -904,6 +910,8 @@ For generic events, one must ensure the event is scheduled to the same node and 
 \subsection{Event Heap/Map} The major distinction between different event containers is the data structured used. The simplest data structure is an event heap or ordered event map. The event manager needs to always be processing the minimum event time, which maps naturally onto a min-heap structure. Insertion and removal are therefore log(N) operations where N is the number of currently scheduled events. For most cases, the number and length of events is such that the min-heap is fine.
 
 \section{Event Schedulers} The simulation is partitioned into objects that are capable of scheduling events. `event_scheduler` objects are also `event_handler` objects, although their handle methods might never be used. Common examples of `event_scheduler` objects are nodes, NICs, memory systems, or the operating system. In serial runs, an event scheduler is essentially just a wrapper for the `event_manager` and the class is not strictly necessary. In parallel simulation, though, the simulation must be partitioned into different scheduling units. Scheduling units are then distributed amongst the parallel processes. The `event_scheduler` is therefore the basic unit of parallelism. Additionally, when simulating failures (in either serial or parallel), certain devices must be deactivated such as a node or network switch going down. This basically amounts to canceling all events associated with a given `event_scheduler`. The `event_scheduler` is therefore primarily a means of structuring the computation.
+
+
 
 
 
@@ -1307,13 +1315,13 @@ xpress_ring::connect_objects(connectable_map& objects)
   for (int i=0; i < ring_size_; ++i) {
     connectable* center_obj = objects[switch_id(i)];
 
-switch_id up_idx((i + 1) connectable* up_partner = find_object(objects, cloner, up_idx); center_obj->connect(up_port, down_port, connectable::network_link, up_partner);
+switch_id up_idx((i + 1) % ring_size_); connectable* up_partner = find_object(objects, cloner, up_idx); center_obj->connect(up_port, down_port, connectable::network_link, up_partner);
 
-switch_id down_idx((i + ring_size_ - 1) connectable* down_partner = find_object(objects, cloner, down_idx); center_obj->connect_mod_at_port(down_port, up_port, connectable::network_link, down_partner);
+switch_id down_idx((i + ring_size_ - 1) % ring_size_); connectable* down_partner = find_object(objects, cloner, down_idx); center_obj->connect_mod_at_port(down_port, up_port, connectable::network_link, down_partner);
 
-switch_id jump_up_idx((i + jump_size_) connectable* jump_up_partner = find_object(objects, cloner, jump_up_idx); center_obj->connect(jump_up_port, jump_down_port, connectable::network_link, jump_up_partner);
+switch_id jump_up_idx((i + jump_size_) % ring_size_); connectable* jump_up_partner = find_object(objects, cloner, jump_up_idx); center_obj->connect(jump_up_port, jump_down_port, connectable::network_link, jump_up_partner);
 
-switch_id jump_down_idx((i + ring_size_ - jump_size_) 
+switch_id jump_down_idx((i + ring_size_ - jump_size_) % ring_size_);
     connectable* jump_down_partner = find_object(objects, cloner,
                                          jump_down_idx);
     center_obj->connect(jump_down_port, jump_up_port, connectable::network_link,
@@ -1331,7 +1339,7 @@ int
 xpress_ring::num_hops(int total_distance) const
 {
   int num_jumps = total_distance / jump_size_;
-  int num_steps = total_distance 
+  int num_steps = total_distance % jump_size_;
   int half_jump = jump_size_ / 2;
   if (num_steps > half_jump) {
     //take an extra jump

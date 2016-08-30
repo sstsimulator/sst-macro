@@ -127,7 +127,7 @@ void test_torus(UnitTest& unit)
 
 
     {
-        geometry_routable::path path;
+        structured_routable::path path;
         torus->minimal_route_to_coords(
             get_vector(0,0,0),
             get_vector(0,0,4),
@@ -160,7 +160,7 @@ void test_torus(UnitTest& unit)
     }
 
     {
-        geometry_routable::path path;
+        structured_routable::path path;
         torus->minimal_route_to_coords(
             get_vector(0,0,0),
             get_vector(0,4,0),

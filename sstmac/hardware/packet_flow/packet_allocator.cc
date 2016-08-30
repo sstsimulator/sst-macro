@@ -9,58 +9,63 @@ ImplementFactory(sstmac::hw::packet_allocator);
 namespace sstmac {
 namespace hw {
 
-class geometry_routable_packet_flow :
+/**
+ * @brief The structured_routable_packet_flow class
+ * The default packet flow class.  A geometry-routable packet
+ * is compatible with the
+ */
+class structured_routable_packet_flow :
  public packet_flow_payload,
- public geometry_routable
+ public structured_routable
 {
-  NotSerializable(geometry_routable_packet_flow)
+  NotSerializable(structured_routable_packet_flow)
 
   public:
-   geometry_routable_packet_flow(
+   structured_routable_packet_flow(
      message* parent,
      int num_bytes,
      long offset) :
     packet_flow_payload(parent, num_bytes, offset),
-    geometry_routable(parent->toaddr(), parent->fromaddr())
+    structured_routable(parent->toaddr(), parent->fromaddr())
   {
   }
 
   node_id
   toaddr() const {
-   return geometry_routable::toaddr();
+   return structured_routable::toaddr();
   }
 
   node_id
   fromaddr() const {
-    return geometry_routable::fromaddr();
+    return structured_routable::fromaddr();
   }
 
   int
   next_port() const {
-    return geometry_routable::port();
+    return structured_routable::port();
   }
 
   int
   next_vc() const {
-    return geometry_routable::vc();
+    return structured_routable::vc();
   }
 
 };
 
-class geometry_routable_packet_allocator :
+class structured_routable_packet_allocator :
  public packet_allocator
 {
  public:
   virtual packet_flow_payload*
   new_packet(int bytes, long byte_offset, message *msg){
-    return new geometry_routable_packet_flow(msg, bytes, byte_offset);
+    return new structured_routable_packet_flow(msg, bytes, byte_offset);
   }
 
   virtual void
   init_factory_params(sprockit::sim_parameters *params){}
 };
 
-SpktRegister("geometry_routable", packet_allocator, geometry_routable_packet_allocator);
+SpktRegister("structured_routable", packet_allocator, structured_routable_packet_allocator);
 
 }
 }

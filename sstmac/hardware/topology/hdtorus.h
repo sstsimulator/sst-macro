@@ -46,41 +46,12 @@ class hdtorus :
   void
   init_factory_params(sprockit::sim_parameters* params);
 
-  int
-  shortest_distance(int dim, int src, int dst) const;
-
-  int
-  distance(int dim, int dir, int src, int dst) const;
-
-  void
-  down_path(
-    int dim,
-    const coordinates& src,
-    const coordinates& dst,
-    geometry_routable::path& path) const;
-
-  void
-  up_path(
-    int dim,
-    const coordinates& src,
-    const coordinates& dst,
-    geometry_routable::path& path) const;
-
-  bool
-  shortest_path_positive(
-    int dim,
-    const coordinates& src,
-    const coordinates& dst) const;
-
   virtual void
   productive_path(
     int dim,
     const coordinates& src,
     const coordinates& dst,
-    geometry_routable::path& path) const;
-
-  void
-  pick_vc(geometry_routable::path& path) const;
+    structured_routable::path& path) const;
 
   switch_id
   switch_number(const coordinates& v) const;
@@ -89,9 +60,6 @@ class hdtorus :
   diameter() const {
     return diameter_;
   }
-
-  std::string
-  name() const;
 
   /// Returns the vector giving each dimension of the torus.
   const std::vector<int> &
@@ -124,7 +92,7 @@ class hdtorus :
   minimal_route_to_coords(
     const coordinates &src_coords,
     const coordinates &dest_coords,
-    geometry_routable::path& path) const;
+    structured_routable::path& path) const;
 
   virtual void
   connect_objects(internal_connectable_map& switches);
@@ -146,7 +114,7 @@ class hdtorus :
   void
   configure_vc_routing(std::map<routing::algorithm_t, int> &m) const;
 
- protected:
+ private:
   virtual void
   compute_switch_coords(switch_id uid, coordinates& coords) const;
 
@@ -174,14 +142,43 @@ class hdtorus :
     int port,
     std::vector<node_id>& partners) const;
 
- protected:
+  void
+  pick_vc(structured_routable::path& path) const;
+
+  void
+  down_path(
+    int dim,
+    const coordinates& src,
+    const coordinates& dst,
+    structured_routable::path& path) const;
+
+  void
+  up_path(
+    int dim,
+    const coordinates& src,
+    const coordinates& dst,
+    structured_routable::path& path) const;
+
+  int
+  shortest_distance(int dim, int src, int dst) const;
+
+  int
+  distance(int dim, int dir, int src, int dst) const;
+
+  bool
+  shortest_path_positive(
+    int dim,
+    const coordinates& src,
+    const coordinates& dst) const;
+
+ private:
   virtual void
   connect_dim(int dim,
     connectable* center,
     connectable* plus,
     connectable* minus);
 
- protected:
+ protected: //must be visible to hypercube
   int diameter_;
   long num_switches_;
   std::vector<int> dimensions_;

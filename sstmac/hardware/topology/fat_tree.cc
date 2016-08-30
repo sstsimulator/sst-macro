@@ -26,14 +26,6 @@ SpktRegister("fattree | ftree", topology, fat_tree,
 
 SpktRegister("simple_fattree", topology, simple_fat_tree);
 
-std::string
-abstract_fat_tree::name() const
-{
-  std::ostringstream ostr;
-  ostr << "FatTree(" << l_ << "," << k_ << ")";
-  return ostr.str();
-}
-
 void
 abstract_fat_tree::init_factory_params(sprockit::sim_parameters *params)
 {
@@ -51,13 +43,12 @@ abstract_fat_tree::init_factory_params(sprockit::sim_parameters *params)
   rtr_params->add_param_override("num_levels", l_);
 
   /**
-   sstkeyword = {
-     gui=4 2;
-     docstring=Vector of size 2.  The first parameter gives the number of levels (L) in the fat tree.
+     The first parameter gives the number of levels (L) in the fat tree.
      The second parameter gives the radix (K) of the fat tree.  The number of leaf switches
      is K^(L-1).  If L=3 and K=4, e.g., you have the following fat tree
-     1 -> 4 -> 16 switches at the bottom.
-   }
+     1 -> 4 -> 16 switches at the top.
+     The number of nodes is K^L (if concentration parameter is not given).
+     This gives 64 nodes for L=3, K=4.
    */
   toplevel_ = l_ - 1;
   numleafswitches_ = pow(k_, l_ - 1);
@@ -67,7 +58,7 @@ void
 fat_tree::minimal_route_to_switch(
   switch_id current_sw_addr,
   switch_id dest_sw_addr,
-  geometry_routable::path& path) const
+  structured_routable::path& path) const
 {
   spkt_throw_printf(sprockit::unimplemented_error, "fattree::minimal_route_to_switch");
 }
@@ -111,7 +102,7 @@ fat_tree::productive_path(
   int dim,
   const coordinates &src,
   const coordinates &dst,
-  geometry_routable::path& path) const
+  structured_routable::path& path) const
 {
   spkt_throw_printf(
     sprockit::illformed_error,
@@ -225,7 +216,7 @@ void
 fat_tree::minimal_route_to_coords(
   const coordinates &src_coords,
   const coordinates &dest_coords,
-  geometry_routable::path& path) const
+  structured_routable::path& path) const
 {
   spkt_throw_printf(sprockit::unimplemented_error, "fattree::minimal_route_to_coords");
 }
@@ -516,7 +507,7 @@ void
 simple_fat_tree::minimal_route_to_switch(
   switch_id current_sw_addr,
   switch_id dest_sw_addr,
-  geometry_routable::path &path) const
+  structured_routable::path &path) const
 {
   int src_level = level(current_sw_addr);
   int dst_level = level(dest_sw_addr);
@@ -600,7 +591,7 @@ void
 simple_fat_tree::productive_path(int dim,
   const coordinates &src,
   const coordinates &dst,
-  geometry_routable::path &path) const
+  structured_routable::path &path) const
 {
   spkt_throw(sprockit::unimplemented_error,
      "simple_fat_tree should never route through productive_path function");
@@ -616,7 +607,7 @@ void
 simple_fat_tree::minimal_route_to_coords(
   const coordinates &src_coords,
   const coordinates &dest_coords,
-  geometry_routable::path &path) const
+  structured_routable::path &path) const
 {
   spkt_throw(sprockit::unimplemented_error,
      "simple_fat_tree should never route with coords");

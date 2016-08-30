@@ -91,20 +91,6 @@ hdtorus::neighbor_at_port(switch_id sid, int port)
   return my_coords;
 }
 
-/// Returns a descriptive name of the graph.
-std::string
-hdtorus::name() const
-{
-  int64_t dsize = dimensions_.size();
-  std::ostringstream ostr;
-  ostr << "hdtorus(";
-  for (int i = 0; i < dsize; i++) {
-    ostr << dimensions_[i] << ",";
-  }
-  ostr << ")";
-  return ostr.str();
-}
-
 void
 hdtorus::compute_switch_coords(switch_id uid, coordinates& coords) const
 {
@@ -190,9 +176,9 @@ hdtorus::shortest_path_positive(
 }
 
 void
-hdtorus::pick_vc(geometry_routable::path& path) const
+hdtorus::pick_vc(structured_routable::path& path) const
 {
-  if (path.metadata_bit(geometry_routable::crossed_timeline)){
+  if (path.metadata_bit(structured_routable::crossed_timeline)){
     path.vc = 1;
   } else {
     path.vc = 0;
@@ -204,7 +190,7 @@ hdtorus::up_path(
   int dim,
   const coordinates &src_coords,
   const coordinates &dst_coords,
-  geometry_routable::path& path) const
+  structured_routable::path& path) const
 {
   //shorter to go up
   //path.dir = pos;
@@ -214,13 +200,13 @@ hdtorus::up_path(
   bool wrapped = src_coords[dim] == (dimensions_[dim]-1);
 
   if (wrapped){
-    path.set_metadata_bit(geometry_routable::crossed_timeline);
+    path.set_metadata_bit(structured_routable::crossed_timeline);
   }
 
   pick_vc(path);
 
   if (reset_dim){
-    path.unset_metadata_bit(geometry_routable::crossed_timeline); //we reached this dim
+    path.unset_metadata_bit(structured_routable::crossed_timeline); //we reached this dim
   }
 
 }
@@ -230,7 +216,7 @@ hdtorus::down_path(
   int dim,
   const coordinates &src_coords,
   const coordinates &dst_coords,
-  geometry_routable::path& path) const
+  structured_routable::path& path) const
 {
   //shorter to go down
   //path.dir = neg;
@@ -239,13 +225,13 @@ hdtorus::down_path(
   bool reset_dim = src_coords[dim] == ((dst_coords[dim] + 1) % dimensions_[dim]);
   bool wrapped = src_coords[dim] == 0;
   if (wrapped){
-    path.set_metadata_bit(geometry_routable::crossed_timeline);
+    path.set_metadata_bit(structured_routable::crossed_timeline);
   }
 
   pick_vc(path);
 
   if (reset_dim){
-    path.unset_metadata_bit(geometry_routable::crossed_timeline);
+    path.unset_metadata_bit(structured_routable::crossed_timeline);
   }
 }
 
@@ -255,7 +241,7 @@ hdtorus::productive_path(
   int dim,
   const coordinates &src_coords,
   const coordinates &dst_coords,
-  geometry_routable::path& path) const
+  structured_routable::path& path) const
 {
   int up_distance, down_distance;
 
@@ -284,7 +270,7 @@ void
 hdtorus::minimal_route_to_coords(
   const coordinates &src_coords,
   const coordinates &dest_coords,
-  geometry_routable::path& path) const
+  structured_routable::path& path) const
 {
   //deadlock rules require + dir first
   for (int i=0; i < src_coords.size(); ++i) {

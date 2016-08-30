@@ -29,18 +29,18 @@ void test_torus(UnitTest& unit)
 
         node_id dst = torus->node_addr(get_vector(1,1,1,0));
 
-        geometry_routable::path_set paths;
+        structured_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         //this should tell me that the productive ports are -X, -Y, -Z
         assertEqual(unit, "num productive ports", paths.size(), 3);
 
 
         if (paths.size() > 0)
-            assertEqual(unit, "productive port 0", paths[0].outport, router->convert_to_port(0, hdtorus::neg));
+            assertEqual(unit, "productive port 0", paths[0].outport, top->convert_to_port(0, hdtorus::neg));
         if (paths.size() > 1)
-            assertEqual(unit, "productive port 1", paths[1].outport, router->convert_to_port(1, hdtorus::neg));
+            assertEqual(unit, "productive port 1", paths[1].outport, top->convert_to_port(1, hdtorus::neg));
         if (paths.size() > 2)
-            assertEqual(unit, "productive port 2", paths[2].outport, router->convert_to_port(2, hdtorus::neg));
+            assertEqual(unit, "productive port 2", paths[2].outport, top->convert_to_port(2, hdtorus::neg));
     }
 
 
@@ -52,14 +52,14 @@ void test_torus(UnitTest& unit)
 
         node_id dst = torus->node_addr(get_vector(3,2,0,1));
 
-        geometry_routable::path_set paths;
+        structured_routable::path_set paths;
         router->productive_paths_to_node(dst, paths);
         //this should tell me that the productive ports are -X, -Y, -Z
         assertEqual(unit, "num productive ports", paths.size(), 1);
 
 
         if (paths.size() > 0)
-            assertEqual(unit, "productive port 0", paths[0].outport, router->convert_to_port(2, hdtorus::pos));
+            assertEqual(unit, "productive port 0", paths[0].outport, top->convert_to_port(2, hdtorus::pos));
     }
 
     {
