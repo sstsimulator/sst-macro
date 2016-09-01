@@ -195,13 +195,13 @@ class mpi_message :
   build_status(MPI_Status* stat) const;
 
   void
-  set_ignore_seqnum(bool flag){
-    ignore_seqnum_ = flag;
+  set_in_flight(bool flag){
+    in_flight_ = flag;
   }
 
   bool
-  ignore_seqnum() const {
-    return ignore_seqnum_;
+  in_flight() const {
+    return in_flight_;
   }
 
   virtual void
@@ -229,7 +229,7 @@ class mpi_message :
   mpi_message::id msgid_;
   content_type_t content_type_;
   int protocol_;
-  bool ignore_seqnum_;
+  bool in_flight_;
 
 };
 

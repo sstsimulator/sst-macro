@@ -2,7 +2,12 @@
 #define SSTMAC_MPI_INTEGERS_H
 
 #include <sumi-mpi/mpi_types.h>
+
+#ifdef __cplusplus
 #include <cstdint>
+#else
+#include <stdint.h>
+#endif
 
 typedef uint32_t MPI_Request;
 typedef long MPI_Op;

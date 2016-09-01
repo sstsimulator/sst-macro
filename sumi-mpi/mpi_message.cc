@@ -41,7 +41,7 @@ mpi_message::mpi_message(int src, int dst, int count,
   tag_(tag), commid_(commid),
   seqnum_(seqnum), msgid_(msgid),
   content_type_(null_content),
-  ignore_seqnum_(false),
+  in_flight_(false),
   protocol_(protocol->get_prot_id())
 {
 }
@@ -89,7 +89,7 @@ mpi_message::serialize_order(serializer& ser)
   ser & (seqnum_);
   ser & (msgid_);
   ser & (content_type_);
-  ser & (ignore_seqnum_);
+  ser & (in_flight_);
   ser & (protocol_);
 }
 
@@ -107,7 +107,7 @@ mpi_message::clone_into(mpi_message* cln) const
   cln->dst_rank_ = dst_rank_;
   cln->content_type_ = content_type_;
   cln->protocol_ = protocol_;
-  cln->ignore_seqnum_ = ignore_seqnum_;
+  cln->in_flight_ = in_flight_;
 }
 
 void
@@ -175,6 +175,8 @@ mpi_message::to_string() const
 {
   std::stringstream ss;
   ss << "mpimessage("
+     << (void*) local_buffer_.ptr
+     << "," << (void*) remote_buffer_.ptr
      << ", count=" << count_
      << ", type=" << type_
      << ", src=" << src_rank_
@@ -182,7 +184,7 @@ mpi_message::to_string() const
      << ", tag=" << tag_
      << ", commid" << commid_;
 
-  if (ignore_seqnum_) {
+  if (in_flight_) {
     ss << ", seq=(ignored)" << seqnum_;
   }
   else {

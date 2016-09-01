@@ -71,7 +71,9 @@
 /* Topology types */
 typedef enum MPIR_Topo_type { MPI_GRAPH=1, MPI_CART=2, MPI_DIST_GRAPH=3 } MPIR_Topo_type;
 
-#define MPI_BOTTOM      (void *)0
+//offset everything by 8
+//the null pointer is reserved specially for indicating a no-op
+#define MPI_BOTTOM      (void *)8
 
 
 /* Permanent key values */

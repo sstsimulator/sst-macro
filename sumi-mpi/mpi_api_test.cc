@@ -1,4 +1,5 @@
 #include <sumi-mpi/mpi_api.h>
+#include <sumi-mpi/mpi_queue/mpi_queue.h>
 #include <sstmac/software/process/operating_system.h>
 
 namespace sumi {
@@ -22,6 +23,9 @@ mpi_api::test(MPI_Request *request, MPI_Status *status)
     *request = MPI_REQUEST_NULL;
     return true;
   } else {
+    if (test_delay_us_){
+      queue_->forward_progress(test_delay_us_*1e-6);
+    }
     return false;
   }
 }
@@ -41,11 +45,11 @@ mpi_api::test(MPI_Request *request, int *flag, MPI_Status *status)
 int
 mpi_api::testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Status array_of_statuses[])
 {
-  *flag = 0;
+  *flag = 1;
   bool ignore_status = array_of_statuses == MPI_STATUSES_IGNORE;
   for (int i=0; i < count; ++i){
     MPI_Status* stat = ignore_status ? MPI_STATUS_IGNORE : &array_of_statuses[i];
-    if (test(&array_of_requests[i], stat)){
+    if (!test(&array_of_requests[i], stat)){
       *flag = 0;
     }
   }
@@ -55,6 +59,10 @@ mpi_api::testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Stat
 int
 mpi_api::testany(int count, MPI_Request array_of_requests[], int *indx, int *flag, MPI_Status *status)
 {
+  if (count == 0){
+    *flag = 1;
+    return MPI_SUCCESS;
+  }
   *flag = 0;
   *indx = MPI_UNDEFINED;
   for (int i=0; i < count; ++i){

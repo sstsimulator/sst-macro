@@ -12,14 +12,21 @@
 #ifndef SSTMAC_SOFTWARE_LIBRARIES_MPI_MPISTATUS_H_INCLUDED
 #define SSTMAC_SOFTWARE_LIBRARIES_MPI_MPISTATUS_H_INCLUDED
 
-struct MPI_Status
-{
+#ifdef __cplusplus
+struct MPI_Status {
+#else
+typedef struct {
+#endif
   int MPI_SOURCE;
   int MPI_TAG;
   int MPI_ERROR;
   int count;
   int bytes_received;
+#ifdef __cplusplus
 };
+#else
+} MPI_Status;
+#endif
 
 #endif
 

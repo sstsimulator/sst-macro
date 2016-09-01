@@ -1,0 +1,34 @@
+#! /usr/bin/env python
+
+import sys
+import os
+from sstccvars import so_flags,cxx,sstmac_cppflags,includedir,prefix,cxxflags
+
+if not len(sys.argv) == 2:
+  sys.exit("Need a single argument: the name of the skeleton given by the sstmac_app_name macro")
+
+app_name = sys.argv[1]
+
+text = """
+#include <sstmac/util.h>
+
+typedef int (*main_fxn)(int,char**);
+int user_skeleton_main_init_fxn(const char*,main_fxn);
+
+extern "C" int %s(int argc, char** argv);
+
+static int dont_ignore_this = user_skeleton_main_init_fxn("%s", %s);
+""" % (app_name, app_name, app_name)
+
+fname = ".skeleton.tmp.cpp"
+open(fname, "w").write(text)
+
+cppflags = " ".join(sstmac_cppflags).replace("${includedir}", includedir).replace("${prefix}", prefix)
+
+cmd = "%s %s %s %s -o libskeleton.so %s" % (cxx, cppflags, cxxflags, so_flags, fname)
+
+print cmd
+os.system(cmd)
+
+
+

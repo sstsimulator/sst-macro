@@ -14,6 +14,7 @@ include $(top_srcdir)/Makefile.common
 dist_bin_SCRIPTS = aprun \
 fix_style \
 readsymbols \
+sstmain \
 sst++ \
 dsst++ \
 sstcc \

@@ -25,4 +25,19 @@ mpi_api::group_incl(int *ranks, int num_ranks, MPI_Group oldgrp, MPI_Group *newg
   return MPI_SUCCESS;
 }
 
+int
+mpi_api::group_free(MPI_Group *grp)
+{
+  auto iter = grp_map_.find(*grp);
+  if (iter == grp_map_.end()){
+    spkt_throw(sprockit::value_error,
+               "Invalid MPI_Group %d passed to group free",
+               *grp);
+  }
+  delete iter->second;
+  grp_map_.erase(iter);
+  *grp = MPI_GROUP_NULL;
+  return MPI_SUCCESS;
+}
+
 }

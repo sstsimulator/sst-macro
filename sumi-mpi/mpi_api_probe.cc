@@ -38,7 +38,13 @@ mpi_api::iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *statu
   if (found){
     *flag = 1;
   } else {
-    *flag = 0;
+    if (iprobe_delay_us_){
+      queue_->forward_progress(1e-6*iprobe_delay_us_);
+      found = queue_->iprobe(commPtr, source, tag, status);
+    }
+
+    if (found) *flag = 1;
+    else       *flag = 0;
   }
 
   return MPI_SUCCESS;

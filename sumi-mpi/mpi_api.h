@@ -238,6 +238,8 @@ class mpi_api :
              MPI_Group oldgrp,
              MPI_Group* newgrp);
 
+  int group_free(MPI_Group* grp);
+
   /* Basic point-to-point operations. */
   int sendrecv(const void* sendbuf, int sendcount,
         MPI_Datatype sendtype, int dest, int sendtag,
@@ -611,11 +613,6 @@ class mpi_api :
 
   int get_count(const MPI_Status* status, MPI_Datatype datatype, int* count);
 
-  int get_address(void* location, MPI_Aint* addr){
-    *addr = (MPI_Aint) location;
-    return MPI_SUCCESS;
-  }
-
   int
   type_dup(MPI_Datatype intype, MPI_Datatype* outtype);
 
@@ -921,6 +918,9 @@ class mpi_api :
 
   /// The builder for mpi communicators.
   mpi_comm_factory* comm_factory_;
+
+  int iprobe_delay_us_;
+  int test_delay_us_;
 
   /// The state of this object (initialized or not).
   enum {

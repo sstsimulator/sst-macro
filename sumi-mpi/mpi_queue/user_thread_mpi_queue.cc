@@ -10,6 +10,19 @@
 
 namespace sumi {
 
+void
+mpi_queue::handle_poll_msg(const sumi::message::ptr& msg)
+{
+  if (msg->class_type() == message::collective_done){
+    handle_collective_done(msg);
+  } else {
+    mpi_message::ptr mpimsg = ptr_safe_cast(mpi_message, msg);
+    mpi_queue_debug("continuing progress loop on incoming msg %s",
+                    mpimsg->to_string().c_str());
+    incoming_progress_loop_message(mpimsg);
+  }
+}
+
 timestamp
 mpi_queue::progress_loop(mpi_request* req)
 {
@@ -23,14 +36,7 @@ mpi_queue::progress_loop(mpi_request* req)
   while (!req->is_complete()) {
     mpi_queue_debug("blocking on progress loop");
     sumi::message::ptr msg = api_->blocking_poll();
-    if (msg->class_type() == message::collective_done){
-      handle_collective_done(msg);
-    } else {
-      mpi_message::ptr mpimsg = ptr_safe_cast(mpi_message, msg);
-      mpi_queue_debug("continuing progress loop on incoming msg %s",
-                      mpimsg->to_string().c_str());
-      incoming_progress_loop_message(mpimsg);
-    }
+    handle_poll_msg(msg);
   }
   mpi_queue_debug("finishing progress loop");
 
@@ -71,16 +77,17 @@ mpi_queue::start_progress_loop(const std::vector<mpi_request*>& req)
   while (!at_least_one_complete(req)) {
     mpi_queue_debug("blocking on progress loop");
     sumi::message::ptr msg = api_->blocking_poll();
-    if (msg->class_type() == message::collective_done){
-      handle_collective_done(ptr_safe_cast(collective_done_message, msg));
-    } else {
-      mpi_message::ptr mpimsg = ptr_safe_cast(mpi_message, msg);
-      mpi_queue_debug("continuing progress loop on incoming msg %s",
-                      mpimsg->to_string().c_str());
-      incoming_progress_loop_message(mpimsg);
-    }
+    handle_poll_msg(msg);
   }
   mpi_queue_debug("finishing progress loop");
+}
+
+void
+mpi_queue::forward_progress(double timeout)
+{
+  mpi_queue_debug("starting forward progress");
+  sumi::message::ptr msg = api_->blocking_poll(1e-3);
+  if (msg) handle_poll_msg(msg);
 }
 
 void

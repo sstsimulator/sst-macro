@@ -284,9 +284,14 @@ mpi_queue::recv(mpi_request* key, int count,
 
   mpi_message::ptr mess = find_matching_recv(req);
   if (mess) {
-    //if eager protocol, race condition
-    if (mess->is_payload()) {
-      user_lib_mem_->copy(mess->payload_bytes());
+    if (mess->in_flight()){
+      //this is awkward - I match this pending message
+      //but I can't do anything to complete it
+      //the message has already been processed (hence the seq ignore)
+      in_flight_messages_.push_back(req);
+    }
+    else if (mess->is_payload()) {
+      //user_lib_mem_->copy(mess->payload_bytes());
       mess->protocol()->incoming_payload(this, mess, req);
     }
     else {
@@ -473,7 +478,7 @@ mpi_queue::incoming_new_message(const mpi_message::ptr& message)
       held_[tid].erase(held_[tid].begin(), it);
     }
   }
-  else if (message->ignore_seqnum()) {
+  else if (message->in_flight()) {
     mpi_queue_debug("got RDMA message and ignoring seqnum");
     handle_new_message(message);
   }
