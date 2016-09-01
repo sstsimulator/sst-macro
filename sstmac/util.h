@@ -1,9 +1,7 @@
 #ifndef sstmac_UTIL_H
 #define sstmac_UTIL_H
 
-#ifndef __cplusplus
-#error All codes must be compiled as C++ to work - cannot use a C-compiler
-#else
+#ifdef __cplusplus
 #include <sprockit/spkt_string.h>
 #include <sprockit/errors.h>
 #include <sprockit/debug.h>
@@ -23,6 +21,8 @@ using sprockit::range_error;
 using sprockit::spkt_error;
 
 extern "C" double sstmac_now();
+#else
+double sstmac_now();
 #endif
 
 #endif

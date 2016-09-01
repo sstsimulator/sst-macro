@@ -86,7 +86,6 @@ mpi_api::mpi_api(sstmac::sw::software_id sid) :
 {
 }
 
-
 void
 mpi_api::init_factory_params(sprockit::sim_parameters* params)
 {
@@ -102,6 +101,12 @@ mpi_api::init_factory_params(sprockit::sim_parameters* params)
   queue_->init_sid(sid());
   queue_->init_factory_params(queue_params);
   queue_->set_api(this);
+
+  double probe_delay_s = params->get_optional_time_param("iprobe_delay", 0);
+  iprobe_delay_us_ = probe_delay_s * 1e6;
+
+  double test_delay_s = params->get_optional_time_param("test_delay", 0);
+  test_delay_us_ = test_delay_s * 1e6;
 }
 
 void

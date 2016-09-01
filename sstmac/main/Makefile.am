@@ -18,7 +18,7 @@ library_include_HEADERS = \
     driver.h
 
 noinst_LTLIBRARIES = libsstmac_driver.la 
-lib_LTLIBRARIES = libsstmac_c_user_main.la libsstmac_main.la
+lib_LTLIBRARIES = libsstmac_main.la
 
 
 if REPO_BUILD
@@ -38,10 +38,4 @@ libsstmac_driver_la_SOURCES = \
     valid_keywords.cc \
     params.cc \
     parseopts.cc
-
-libsstmac_c_user_main_la_SOURCES = init_c_user_main.cc
-
-
-
-
 

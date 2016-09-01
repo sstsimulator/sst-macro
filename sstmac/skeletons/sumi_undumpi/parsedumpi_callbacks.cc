@@ -2531,7 +2531,7 @@ on_MPI_Finalize(const dumpi_finalize *prm, uint16_t thread,
       "on_MPI_Finalize: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
-  cb->getmpi()->finalize();
+  cb->getmpi()->do_finalize();
   cb->end_mpi(cpu, wall, perf);
   return 1;
 }

@@ -56,15 +56,18 @@ bool
 mpi_queue_recv_request::matches(const mpi_message::ptr& msg)
 {
   bool count_equals = true; //count_ == msg->count();
-  //JJW
-  //this should be a comparison of comm IDs only
-  //apparently you can free the communicator and then still complete ops on it
   bool comm_equals = comm_ == msg->comm();
   bool seq_equals = ((seqnum_ == seqnum_unassigned) ? true : seqnum_ ==
                      msg->seqnum());
   bool src_equals = source_ == msg->src_rank() || source_ == MPI_ANY_SOURCE;
   bool tag_equals = tag_ == msg->tag() || tag_ == MPI_ANY_TAG;
-  return comm_equals && seq_equals && src_equals && tag_equals && count_equals;
+  bool match = comm_equals && seq_equals && src_equals && tag_equals && count_equals;
+
+  if (match && count_ < msg->count()){
+    std::cerr << "bad mpi - bad count" << std::endl;
+    abort();
+  }
+  return match;
 }
 
 }

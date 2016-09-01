@@ -42,6 +42,7 @@ libsstmac_mpi_la_SOURCES = \
   mpi_protocol/eager0.cc \
   mpi_protocol/rendezvous_rdma.cc \
   mpi_types/mpi_type.cc \
+  sstmac_mpi.cc \
   mpi_api.cc \
   mpi_api_collectives.cc \
   mpi_api_comm.cc \

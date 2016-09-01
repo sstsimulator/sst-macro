@@ -149,6 +149,8 @@ class mpi_queue
   void
   finish_progress_loop(const std::vector<mpi_request*>& req);
 
+  void forward_progress(double timeout);
+
   void
   buffer_unexpected(const mpi_message::ptr& msg);
 
@@ -182,8 +184,9 @@ class mpi_queue
 
   typedef std::list<mpi_queue_probe_request*> probelist_t;
 
-
  private:
+  void handle_poll_msg(const sumi::message::ptr& msg);
+
   void
   handle_collective_done(const sumi::message::ptr& msg);
 
@@ -252,6 +255,8 @@ class mpi_queue
   pending_message_t pending_message_;
 
   pending_message_t waiting_message_;
+
+  pending_message_t in_flight_messages_;
 
   /// Inbound messages waiting for a matching receive request.
   need_recv_t need_recv_;

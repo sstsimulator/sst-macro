@@ -34,7 +34,7 @@ bruck_allgatherv_actor::init_buffers(void* dst, void* src)
   }
 
   bool in_place = dst == src;
-  if (src){
+  if (dst){ //src can be null
     //put everything into the dst buffer to begin
     if (in_place){
       if (dense_me_ != 0){

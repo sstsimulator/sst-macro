@@ -61,19 +61,24 @@ eager1::incoming_header(mpi_queue* queue,
     //we can post an RDMA get request direct to the buffer
     //make sure to put the request back in, but alert it
     //that it should expect a data payload next time
+    req->set_seqnum(msg->seqnum()); //set seqnum to avoid accidental matches
     queue->waiting_message_.push_front(req);
     req->set_seqnum(msg->seqnum()); //associate the messages
     msg->local_buffer().ptr = req->buffer_;
   }
   else {
     msg->set_protocol(mpi_protocol::eager1_doublecpy_protocol);
+    //this has to go in now
+    //the need recv buffer has to push back messages in the order they are received
+    //in order to preserve message order semantics
+    queue->need_recv_.push_back(msg);
   }
   queue->notify_probes(msg);
 
   // this has already been received by mpi in sequence
   // make sure mpi still handles this since it won't match
   // the current sequence number
-  msg->set_ignore_seqnum(true);
+  msg->set_in_flight(true);
   msg->set_content_type(mpi_message::data);
   // generate an ack ONLY on the recv end
   queue->post_rdma(msg, false, true);
@@ -92,8 +97,8 @@ void
 eager1_doublecpy::incoming_payload(mpi_queue *queue,
                          const mpi_message::ptr &msg)
 {
-  mpi_queue_recv_request* req = queue->pop_pending_request(msg, true);
-  //guaranteed that req is posted before payload arrives
+  mpi_queue_recv_request* req = queue->pop_matching_request(queue->in_flight_messages_, msg);
+  //guaranteed that msg arrived before recv was posted
   incoming_payload(queue, msg, req);
 }
 
@@ -119,6 +124,7 @@ eager1_doublecpy::incoming_payload(mpi_queue* queue,
   SSTMACBacktrace("MPI Eager 1 Protocol: Handle RDMA Payload");
   //We did not RDMA get directly into the buffer
   //finish the transfer
+  msg->set_in_flight(false);
   if (req){
     if (req->buffer_){
       msg->local_buffer().ptr = req->buffer_;
