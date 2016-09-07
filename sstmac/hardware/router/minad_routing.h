@@ -18,8 +18,8 @@ class minimal_adaptive_router :
 {
 
  public:
-  minimal_adaptive_router() :
-    minimal_router(routing::minimal_adaptive){}
+  minimal_adaptive_router(topology* top, network_switch* netsw) :
+    minimal_router(top, netsw, routing::minimal_adaptive){}
 
   virtual std::string
   to_string() const {

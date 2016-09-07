@@ -60,7 +60,7 @@ recv_cq::recv(uint64_t unique_id, int bytes, message* orig)
 message*
 recv_cq::recv(packet* pkt)
 {
-  return recv(pkt->unique_id(), pkt->byte_length(), pkt->orig());
+  return recv(pkt->flow_id(), pkt->byte_length(), pkt->orig());
 }
 
 }

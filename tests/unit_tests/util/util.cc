@@ -162,7 +162,6 @@ init_switches(switch_interconnect::switch_map &switches,
       network_switch* sw = network_switch_factory::get_param(
             "model", &params);
       switches[switch_id(i)] = sw;
-      sw->set_topology(top);
     }
     //don't need a clone factory
     top->connect_topology(switches);

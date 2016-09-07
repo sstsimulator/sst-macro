@@ -72,8 +72,9 @@ congestion_spyplot::~congestion_spyplot()
 void
 congestion_spyplot::collect_final_event(packet_flow_payload *pkt)
 {
-  long delay_ns = pkt->delay_us() * 1e3; //go to ns
-  congestion_spyplot_->add(pkt->fromaddr(), pkt->toaddr(), delay_ns);
+  spkt_throw_printf(sprockit::unimplemented_error, "congestion_spyplot");
+  //long delay_ns = pkt->delay_us() * 1e3; //go to ns
+  //congestion_spyplot_->add(pkt->fromaddr(), pkt->toaddr(), delay_ns);
 }
 
 void
@@ -82,6 +83,7 @@ congestion_spyplot::collect_single_event(const packet_stats_st &st)
   double delay = congestion_delay_us(st);
   collect(delay, st.pkt);
 }
+
 void
 congestion_spyplot::collect(double congestion_delay_us,
   packet_flow_payload* pkt)
@@ -123,7 +125,8 @@ delay_histogram::collect_single_event(const packet_stats_st& st)
 void
 delay_histogram::collect_final_event(packet_flow_payload* pkt)
 {
-  congestion_hist_->collect(pkt->delay_us()*1e-6); //convert to seconds
+  spkt_throw_printf(sprockit::unimplemented_error, "delay_histogram");
+  //congestion_hist_->collect(pkt->delay_us()*1e-6); //convert to seconds
 }
 
 void
@@ -137,7 +140,8 @@ packet_delay_stats::collect(
   double congestion_delay_us,
   packet_flow_payload* pkt)
 {
-  pkt->add_delay_us(congestion_delay_us);
+  spkt_throw_printf(sprockit::unimplemented_error, "packet_delay_stats");
+  //pkt->add_delay_us(congestion_delay_us);
 }
 
 void
@@ -178,7 +182,6 @@ bytes_sent_collector::init_factory_params(sprockit::sim_parameters* params)
       "packet flow bytes sent stats must be bytes_sent, %s given",
       byte_params->get_param("type").c_str());
   }
-  bytes_sent_->set_topology(sstmac::runtime::current_topology());
 }
 
 void
@@ -323,6 +326,7 @@ stat_bytes_sent::aggregation::entry::serialize_order(serializer& ser)
 void
 stat_bytes_sent::init_factory_params(sprockit::sim_parameters *params)
 {
+  top_ = sstmac::hw::topology::static_topology(params);
   stat_collector::init_factory_params(params);
 }
 

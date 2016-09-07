@@ -46,7 +46,7 @@ packet_flow_payload::to_string() const
   }
 
   return sprockit::printf("flow %16lu, %5lu:%5lu bw=%8.4e %d->%d %s",
-                   uint64_t(unique_id()),
+                   uint64_t(flow_id()),
                    byte_offset_,
                    byte_offset_ + num_bytes_, bw_,
                    int(fromaddr()), int(toaddr()),

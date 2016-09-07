@@ -34,23 +34,17 @@ app_launch::~app_launch()
 }
 
 void
-app_launch::set_topology(hw::topology *top)
-{
-  top_ = top;
-  indexer_->set_topology(top_);
-  allocator_->set_topology(top_);
-}
-
-void
 app_launch::init_factory_params(sprockit::sim_parameters* params)
 {
   appname_ = params->get_param("name");
+
+  top_ = sstmac::hw::topology::static_topology(params);
 
   if (params->has_param("core_affinities")) {
     params->get_vector_param("core_affinities", core_affinities_);
   }
 
-  start_ = params->get_optional_time_param("start", 0);
+  time_ = params->get_optional_time_param("start", 0);
 
   app_template_ = sw::app_factory::get_value(appname_, params);
 
@@ -66,36 +60,25 @@ app_launch::init_factory_params(sprockit::sim_parameters* params)
   }
 
   allocator_ = sw::node_allocator_factory::get_optional_param("launch_allocation",
-               "first_available", params, rt_);
+               "first_available", params);
 
   indexer_ = sw::task_mapper_factory::get_optional_param("launch_indexing",
-               "block", params, rt_);
-
-  STATIC_INIT_TOPOLOGY(params)
+               "block", params);
 }
 
 app_launch*
 app_launch::static_app_launch(int aid, sprockit::sim_parameters* params)
 {
   static thread_lock lock;
-  static job_launcher* launcher = 0;
 
   lock.lock();
-
-  if (!launcher){
-    launcher = job_launcher_factory::get_value("default", params);
-    sstmac::runtime::set_job_launcher(launcher);
-  }
-
   if (!static_app_launches_[aid]){
     std::string app_namespace = sprockit::printf("app%d", aid);
-    sprockit::sim_parameters* top_params = params->top_parent();
-    if (top_params->has_namespace(app_namespace)){
-      sprockit::sim_parameters* app_params = params->top_parent()->get_namespace(app_namespace);
+    if (params->has_namespace(app_namespace)){
+      sprockit::sim_parameters* app_params = params->get_namespace(app_namespace);
       app_launch* mgr = app_launch_factory::get_optional_param(
-            "launch_type", "default", app_params, app_id(aid), 0/*no parallel runtime*/);
+            "launch_type", "default", app_params, app_id(aid));
       static_app_launches_[aid] = mgr;
-      launcher->handle_new_launch_request(mgr);
     }
   }
   lock.unlock();
@@ -136,6 +119,8 @@ app_launch::index_allocation(const ordered_node_set &allocation)
     node_id nid = rank_to_node_indexing_[i];
     node_to_rank_indexing_[nid].push_back(i);
   }
+
+  indexed_ = true;
 }
 
 void

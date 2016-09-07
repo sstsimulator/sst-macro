@@ -17,8 +17,8 @@ class ugal_router :
 {
 
  public:
-  ugal_router() :
-    valiant_router(routing::ugal){}
+  ugal_router(topology* top, network_switch* netsw) :
+    valiant_router(top, netsw, routing::ugal){}
 
   virtual void
   init_factory_params(sprockit::sim_parameters* params);

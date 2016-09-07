@@ -201,13 +201,13 @@ param_assign::setByteLength(long x, const char* units)
 }
 
 sim_parameters::sim_parameters() :
-  parent_(0)
+  parent_(nullptr)
 {
 }
 
 sim_parameters::sim_parameters(const key_value_map& p) :
   params_(p),
-  parent_(0),
+  parent_(nullptr),
   namespace_("global")
 {
 }
@@ -234,7 +234,12 @@ sim_parameters::~sim_parameters()
 bool
 sim_parameters::has_namespace(const std::string &ns) const
 {
-  return local_has_namespace(ns);
+  bool found = local_has_namespace(ns);
+  if (!found && parent_){
+    return parent_->has_namespace(ns);
+  } else {
+    return found;
+  }
 }
 
 sim_parameters*
@@ -243,10 +248,14 @@ sim_parameters::get_namespace(const std::string &ns)
   KeywordRegistration::validate_namespace(ns);
   std::map<std::string, sim_parameters*>::const_iterator it = subspaces_.find(ns);
   if (it == subspaces_.end()){
-    pretty_print_params();
-    spkt_throw_printf(input_error,
+    if (parent_){
+      return parent_->get_namespace(ns);
+    } else {
+      pretty_print_params();
+      spkt_throw_printf(input_error,
         "cannot enter namespace %s, does not exist inside namespace %s",
         ns.c_str(), namespace_.c_str());
+    }
   }
   return it->second;
 }
@@ -1031,15 +1040,6 @@ sim_parameters::get_scoped_param(const std::string& key, bool throw_on_error)
     throw_key_error(key);
   }
   return ret;
-}
-
-sim_parameters*
-sim_parameters::top_parent() 
-{
-  if (parent_){
-    return parent_->top_parent();
-  }
-  return this;
 }
 
 bool

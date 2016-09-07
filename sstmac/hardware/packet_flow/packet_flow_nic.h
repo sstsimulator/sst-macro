@@ -22,9 +22,8 @@ class packet_flow_nic :
 {
 
  public:
-  packet_flow_nic(sprockit::factory_type* interconn) :
-    nic(interconn),
-    packetizer_(0),
+  packet_flow_nic() :
+    packetizer_(nullptr),
     injection_credits_(0)
   {
   }

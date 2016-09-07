@@ -13,6 +13,19 @@ class multipath_router :
   public ParentRouter
 {
  public:
+  multipath_router(topology* top, network_switch* netsw) :
+    ParentRouter(top, netsw)
+  {
+    std::vector<int> reds;
+    top_ = safe_cast(cartesian_topology, top);
+    top_->configure_geometric_paths(reds);
+    int npaths = reds.size();
+    geom_paths_.resize(npaths);
+    for (int i=0; i < npaths; ++i){
+      geom_paths_[i].redundancy = reds[i];
+    }
+  }
+
   virtual void
   route(packet* pkt){
     structured_routable::path_set paths;
@@ -25,24 +38,9 @@ class multipath_router :
   }
 
   virtual void
-  set_topology(topology* top){
-    std::vector<int> reds;
-    ParentRouter::set_topology(top);
-    top_ = safe_cast(cartesian_topology, top);
-    top_->configure_geometric_paths(reds);
-    int npaths = reds.size();
-    geom_paths_.resize(npaths);
-    for (int i=0; i < npaths; ++i){
-      geom_paths_[i].redundancy = reds[i];
-    }
-  }
-
-  virtual void
   init_factory_params(sprockit::sim_parameters* params){
     ParentRouter::init_factory_params(params);
   }
-
-
 
  private:
   std::vector<router::structured_path> geom_paths_;

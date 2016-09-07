@@ -99,14 +99,14 @@ packet_flow_memory_model::access(
                    parent_node_->allocate_unique_id(), max_bw);
   pending_requests_[msg] = cb;
   int channel = allocate_channel();
-  debug("starting access %lu on vn %d", msg->unique_id(), channel);
+  debug("starting access %lu on vn %d", msg->flow_id(), channel);
   mem_packetizer_->start(channel, msg);
 }
 
 void
 packet_flow_memory_model::notify(int vn, message* msg)
 {
-  debug("finished access %lu on vn %d", msg->unique_id(), vn);
+  debug("finished access %lu on vn %d", msg->flow_id(), vn);
 
   callback* cb = pending_requests_[msg];
   pending_requests_.erase(msg);

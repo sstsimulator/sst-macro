@@ -12,8 +12,7 @@ packet::packet(
   long byte_offset) :
  num_bytes_(num_bytes),
  byte_offset_(byte_offset),
- cumulative_delay_us_(0),
- unique_id_(orig->unique_id()),
+ flow_id_(orig->flow_id()),
  orig_(0)
 {
 #if SSTMAC_SANITY_CHECK
@@ -44,8 +43,7 @@ packet::serialize_order(serializer& ser)
   ser & orig_;
   ser & num_bytes_;
   ser & byte_offset_;
-  ser & unique_id_;
-  ser & cumulative_delay_us_;
+  ser & flow_id_;
 }
 
 }

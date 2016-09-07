@@ -83,7 +83,6 @@ manager::manager() :
 void
 manager::init_factory_params(sprockit::sim_parameters* params)
 {
-  build_apps(params);
 }
 
 int
@@ -149,47 +148,11 @@ manager::compute_max_nproc(sprockit::sim_parameters* params)
   return max_nproc;
 }
 
-void
-manager::build_apps(sprockit::sim_parameters *params)
-{
-  int appnum = 1;
-  bool found_app = true;
-  while (found_app || appnum < 10) {
-    std::string app_namespace = sprockit::printf("app%d", appnum);
-    found_app = params->has_namespace(app_namespace);
-    if (found_app){
-      sprockit::sim_parameters* app_params
-          = params->get_namespace(app_namespace);
-      build_app(appnum, app_params);
-    }
-    ++appnum;
-  }
-}
-
-void
-manager::build_app(int appnum,
- sprockit::sim_parameters* params)
-{
-  sstmac::sw::app_id aid(appnum);
-  app_launch* appman = app_launch_factory::get_optional_param(
-        "launch_type", "default", params, aid, rt_);
-  appman->set_topology(interconnect_->topol());
-
-  app_managers_[appnum] = appman;
-}
-
 manager::~manager() throw ()
 {
   if (sprockit::debug::prefix_fxn) 
     delete sprockit::debug::prefix_fxn;
   sprockit::debug::prefix_fxn = 0;
-
-  if (interconnect_) delete interconnect_;
-
-  std::map<int, app_launch*>::iterator it, end = app_managers_.end();
-  for (it=app_managers_.begin(); it != end; ++it){
-    delete it->second;
-  }
 }
 
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -197,10 +160,9 @@ void
 sst_manager::init_factory_params(sprockit::sim_parameters* params)
 {
   //these are not used
-  parallel_runtime* rt = 0;
-  partition* part = 0;
-  const char* ic_param = params->has_param("network_name") ? "network_name" : "interconnect";
-  interconnect_ = interconnect_factory::get_param(ic_param, params, part, rt);
+  parallel_runtime* rt = nullptr;
+  partition* part = nullptr;
+  interconnect_ = hw::interconnect::static_interconnect(params, part, rt);
 }
 #else
 void
@@ -220,21 +182,10 @@ macro_manager::init_factory_params(sprockit::sim_parameters* params)
     sprockit::debug::turn_off();
   }
 
-  /** sstkeyword {
-        docstring = Specify the general type of network congestion model that will be used
-                    for the interconnect;
-        gui = train;
-  } */
-  const char* ic_param = params->has_param("network_name") ? "network_name" : "interconnect";
-  interconnect_ = interconnect_factory::get_param(ic_param, params, event_manager_->topology_partition(), rt_);
+  interconnect_ = hw::interconnect::static_interconnect(params);
 
   event_manager_->set_interconnect(interconnect_);
   interconnect_->set_event_manager(event_manager_);
-
-  launcher_ = job_launcher_factory::get_optional_param("job_launcher", "default", params);
-  launcher_->set_interconnect(interconnect_);
-
-  sstmac::runtime::set_job_launcher(launcher_);
 
   logger::timer_ = event_manager_;
 
@@ -245,7 +196,10 @@ macro_manager::init_factory_params(sprockit::sim_parameters* params)
 void
 macro_manager::start()
 {
-  launch_apps();
+  const interconnect::node_map& nodes = interconnect_->nodes();
+  for (auto& pair : nodes){
+    node* nd = pair.second;
+  }
 }
 
 //
@@ -282,7 +236,6 @@ macro_manager::stop()
 
 macro_manager::macro_manager(parallel_runtime* rt) :
   running_(false),
-  launcher_(nullptr),
   event_manager_(nullptr)
 {
   rt_ = rt;
@@ -297,25 +250,6 @@ macro_manager::finish()
   logger::timer_ = 0;
 }
 
-void
-macro_manager::launch_app(int appnum, timestamp start, sw::app_launch* appman)
-{
-  sw::job_launch_event* ev = new sw::job_launch_event(appman);
-  event_manager_->schedule(start, appnum,
-                new handler_event_queue_entry(ev, launcher_, event_loc_id::null));
-}
-
-void
-macro_manager::launch_apps()
-{
-  std::map<int, app_launch*>::iterator it, end = app_managers_.end();
-  for (it=app_managers_.begin(); it != end; ++it){
-    int appnum = it->first;
-    app_launch* appman = it->second;
-    launch_app(appnum, appman->start(), appman);
-  }
-}
-
 //
 // Goodbye.
 //
@@ -325,7 +259,6 @@ macro_manager::~macro_manager() throw ()
     cerrn << "FATAL:  manager going out of scope while still running.\n";
     abort();
   }
-  if (launcher_) delete launcher_;
   if (event_manager_) delete event_manager_;
 }
 #endif

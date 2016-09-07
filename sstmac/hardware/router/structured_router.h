@@ -24,22 +24,6 @@ class structured_router
  public:
   virtual ~structured_router(){}
 
-  /**
-   * @brief set_topology Set the topology to be used for route computations.
-   * This should always call the parent router::set_topology function.
-   * @param top
-   */
-  virtual void
-  set_topology(topology* top);
-
-  /**
-   * @brief set_switch Set the parent switch using this router
-   * to perform route computations
-   * @param sw
-   */
-  virtual void
-  set_switch(network_switch* sw);
-
   void
   minimal_route_to_node(
     node_id node_addr,
@@ -71,8 +55,7 @@ class structured_router
     structured_routable::path_set& paths);
 
  protected:
-  structured_router(routing::algorithm_t algo) :
-    router(algo){}
+  structured_router(topology* top, network_switch* netsw, routing::algorithm_t algo);
 
   structured_topology* regtop_;
 

@@ -371,7 +371,10 @@ class sim_parameters  {
   sim_parameters*
   get_optional_namespace(const std::string& ns);
 
-  typedef std::set<int>::const_iterator id_iterator;
+  void
+  set_namespace(const std::string& ns, sim_parameters* params){
+    subspaces_[ns] = params;
+  }
 
   bool
   has_namespace(const std::string& ns) const;
@@ -399,8 +402,6 @@ class sim_parameters  {
 
   param_assign
   operator[](const std::string& key);
-
-  sim_parameters* top_parent();
 
   key_value_map::iterator begin() { return params_.begin(); }
   key_value_map::const_iterator begin() const { return params_.begin(); }

@@ -34,26 +34,6 @@ DeclareDebugSlot(interconnect)
 #define interconn_debug(...) \
   debug_printf(sprockit::dbg::interconnect, __VA_ARGS__)
 
-#if SSTMAC_INTEGRATED_SST_CORE
-#define SSTMAC_SET_TOPOLOGY(obj, top) //no op
-#define STATIC_INIT_TOPOLOGY(params) \
-{ \
-  sstmac::hw::topology* top = sstmac::hw::topology::static_topology(params); \
-  set_topology(top); \
-} \
-
-#define STATIC_INIT_INTERCONNECT(params) \
-{ \
-  sstmac::hw::interconnect* top = sstmac::hw::interconnect::static_interconnect(params); \
-  set_interconnect(top); \
-}
-
-#else
-#define SSTMAC_SET_TOPOLOGY(obj, top) obj->set_topology(top);
-#define STATIC_INIT_TOPOLOGY(params) //no op
-#define STATIC_INIT_INTERCONNECT(params)
-#endif
-
 namespace sstmac {
 namespace hw {
 
@@ -135,6 +115,12 @@ class interconnect :
   static interconnect*
   static_interconnect(sprockit::sim_parameters* params);
 
+  static void
+  clear_static_interconnect(){
+    if (static_interconnect_) delete static_interconnect_;
+    static_interconnect_ = nullptr;
+  }
+
   virtual void
   deadlock_check(){}
 
@@ -149,8 +135,6 @@ class interconnect :
 
  private:
   static interconnect* static_interconnect_;
-
-  void set_topology(topology* params);
 
 };
 

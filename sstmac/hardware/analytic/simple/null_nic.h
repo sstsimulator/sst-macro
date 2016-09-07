@@ -14,9 +14,6 @@ class null_nic :
 {
 
  public:
-  null_nic(sprockit::factory_type* interconn) :
-    simple_nic(interconn) {}
-
   virtual ~null_nic() throw () {}
 
   std::string

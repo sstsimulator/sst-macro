@@ -63,7 +63,7 @@ topology*
 topology::static_topology(sprockit::sim_parameters* params)
 {
   if (!static_topology_){
-    sprockit::sim_parameters* top_params = params->top_parent()->get_namespace("topology");
+    sprockit::sim_parameters* top_params = params->get_namespace("topology");
     static_topology_ = topology_factory::get_param("name", top_params);
   }
   return static_topology_;

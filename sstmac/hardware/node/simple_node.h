@@ -41,7 +41,6 @@ class simple_node :
   virtual void
   finalize_init();
 
-
   void
   init_factory_params(sprockit::sim_parameters* params);
 

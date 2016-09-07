@@ -6,11 +6,10 @@
 namespace sstmac {
 namespace hw {
 
-void
-structured_router::set_topology(topology* top)
+structured_router::structured_router(topology* top, network_switch* netsw, routing::algorithm_t algo) :
+  router(top, netsw, algo)
 {
   regtop_ = safe_cast(structured_topology, top);
-  router::set_topology(top);  
 }
 
 void
@@ -72,12 +71,6 @@ structured_router::productive_paths_to_switch(
   coordinates my_coords = regtop_->switch_coords(my_addr_);
   coordinates dst_coords = regtop_->switch_coords(dst);
   regtop_->productive_paths(paths, my_coords, dst_coords);
-}
-
-void
-structured_router::set_switch(network_switch* sw)
-{
-  router::set_switch(sw);
 }
 
 }

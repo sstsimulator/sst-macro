@@ -11,9 +11,6 @@ class coordinate_allocation :
   public node_allocator
 {
  public:
-  coordinate_allocation(parallel_runtime* rt) :
-    node_allocator(rt){}
-
   virtual void
   init_factory_params(sprockit::sim_parameters* params);
 

@@ -24,7 +24,7 @@ packet_flow_crossbar::packet_flow_crossbar(
   int buffer_size,
   packet_flow_bandwidth_arbitrator* arb) :
   packet_flow_NtoM_queue(send_lat, credit_lat, out_bw, num_vc, buffer_size, arb),
-  name_(0)
+  name_(nullptr)
 {
 }
 
@@ -66,7 +66,7 @@ packet_flow_NtoM_queue::packet_flow_NtoM_queue(
   int buffer_size) :
   num_vc_(num_vc),
   buffer_size_(buffer_size),
-  arb_tmpl_(0),
+  arb_tmpl_(nullptr),
   packet_flow_sender(send_lat, credit_lat)
 {
 }

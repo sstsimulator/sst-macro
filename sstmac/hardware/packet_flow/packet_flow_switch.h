@@ -162,21 +162,15 @@ class packet_flow_switch :
   virtual void
   set_event_manager(event_manager* m);
 
-  void
-  set_topology(topology *top);
-
   virtual std::string
   to_string() const;
 
- protected:
+ private:
   virtual void
   connect_injector(int src_outport, int dst_inport, event_handler* nic);
 
   virtual void
   connect_ejector(int src_outport, int dst_inport, event_handler* nic);
-
- protected:
-  sprockit::sim_parameters* params_;
 
   std::vector<packet_flow_sender*> out_buffers_;
 

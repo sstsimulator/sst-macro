@@ -79,32 +79,6 @@ class member_fxn_handler_impl :
 
 };
 
-#if 0
-template <class Cls, typename Fxn>
-class member_fxn_handler_impl<Cls,Fxn> :
-  public member_fxn_handler
-{
- public:
-  virtual ~member_fxn_handler_impl(){}
-
-  void
-  handle(event* ev) {
-    (obj_->*fxn_)(ev);
-  }
-
-  member_fxn_handler_impl(event_loc_id id, Cls* obj, Fxn fxn) :
-    obj_(obj),
-    fxn_(fxn),
-    member_fxn_handler(id)
-  {
-  }
-
- private:
-  Fxn fxn_;
-  Cls* obj_;
-};
-#endif
-
 template<class Cls, typename Fxn, class ...Args>
 event_handler*
 new_handler(Cls* cls, Fxn fxn, const Args&... args)

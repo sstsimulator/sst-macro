@@ -149,7 +149,7 @@ void
 metis_partition::init_factory_params(sprockit::sim_parameters* params)
 {
   if (me_ == 0){
-    fake_ic_ = hw::interconnect_factory::get_param("network_name", params, NULL, NULL);
+    fake_ic_ = hw::interconnect_factory::get_param("network_name", params, nullptr, nullptr);
   }
 }
 

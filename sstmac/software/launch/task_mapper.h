@@ -41,11 +41,6 @@ class task_mapper :
   }
 
   virtual void
-  set_topology(hw::topology* top){
-    topology_ = top;
-  }
-
-  virtual void
   init_factory_params(sprockit::sim_parameters *params);
 
   virtual
@@ -70,8 +65,8 @@ class task_mapper :
     int nproc) = 0;
 
  protected:
-  task_mapper(parallel_runtime* rt) :
-    rt_(rt), topology_(0) {}
+  task_mapper() :
+    rt_(nullptr), topology_(nullptr) {}
 
   int
   validate_nproc(int ppn, int num_nodes, int nproc, const char* name) const;
@@ -82,7 +77,7 @@ class task_mapper :
 
 };
 
-DeclareFactory(task_mapper, parallel_runtime*);
+DeclareFactory(task_mapper);
 
 }
 } // end of namespace sstmac

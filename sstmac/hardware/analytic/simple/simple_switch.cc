@@ -41,14 +41,10 @@ simple_switch::init_factory_params(sprockit::sim_parameters* params)
   inj_lat_ = params->get_optional_time_param("injection_latency", 0);
 
   inv_min_bw_ = std::max(inverse_bw_, inj_bw_inverse_);
-}
 
-void
-simple_switch::set_topology(topology* top)
-{
-  network_switch::set_topology(top);
+  topology* top = topology::static_topology(params);
   //validate this...
-  std::vector<node_id> nodes = top_->nodes_connected_to_injection_switch(my_addr_);
+  std::vector<node_id> nodes = top->nodes_connected_to_injection_switch(my_addr_);
   if (nodes.size() == 0){
     my_start_ = my_end_ = node_id(-1);
     return;
@@ -63,6 +59,8 @@ simple_switch::set_topology(topology* top)
     }
   }
   my_end_ = node_id(nid);
+
+  top_ = topology::static_topology(params);
 }
 
 void

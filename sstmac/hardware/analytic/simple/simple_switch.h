@@ -24,9 +24,6 @@ class simple_switch :
     return 0;
   }
 
-  void
-  set_topology(topology* top);
-
   virtual void
   connect_output(int src_outport,
     int dst_inport,
@@ -109,6 +106,8 @@ class simple_switch :
   double inv_min_bw_;
 
   timestamp hop_latency_;
+
+  topology* top_;
 
   spkt_unordered_map<node_id, network_switch*> neighbors_;
 

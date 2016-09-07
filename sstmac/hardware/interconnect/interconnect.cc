@@ -10,6 +10,7 @@
  */
 
 #include <sstmac/hardware/interconnect/interconnect.h>
+#include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/nic/netlink.h>
@@ -18,6 +19,7 @@
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/packet_flow/packet_flow.h>
 #include <sstmac/backends/common/parallel_runtime.h>
+#include <sstmac/backends/common/sim_partition.h>
 #include <sstmac/common/runtime.h>
 #include <sstmac/common/event_manager.h>
 #include <sprockit/keyword_registration.h>
@@ -25,6 +27,7 @@
 #include <sprockit/delete.h>
 #include <sprockit/output.h>
 #include <sprockit/sim_parameters.h>
+#include <sprockit/util.h>
 
 ImplementFactory(sstmac::hw::interconnect)
 RegisterDebugSlot(interconnect);
@@ -70,24 +73,28 @@ interconnect::num_nodes() const
 void
 interconnect::init_factory_params(sprockit::sim_parameters *params)
 {
-  STATIC_INIT_TOPOLOGY(params)
+  topology_ = topology::static_topology(params);
 }
+
 
 interconnect*
 interconnect::static_interconnect(sprockit::sim_parameters* params)
 {
+  static thread_lock init_lock;
+  init_lock.lock();
   if (!static_interconnect_){
-    sprockit::sim_parameters* ic_params = params->top_parent()->get_namespace("interconnect");
-    static_interconnect_ = interconnect_factory::get_optional_param("name", "sst", ic_params,
-      0/*no partition*/, 0/*no parallel runtime*/);
+    sprockit::sim_parameters* ic_params = params;
+    if (params->has_namespace("interconnect")){
+      ic_params = params->get_namespace("interconnect");
+    }
+    const char* ic_param = ic_params->has_param("network_name") ? "network_name" : "interconnect";
+    parallel_runtime* rt = parallel_runtime::static_runtime(params);
+    partition* part = rt ? rt->topology_partition() : nullptr;
+    static_interconnect_ = interconnect_factory::get_optional_param(ic_param, "sst", ic_params,
+      part, rt);
   }
+  init_lock.unlock();
   return static_interconnect_;
-}
-
-void
-interconnect::set_topology(topology* top)
-{
-  topology_ = top;
 }
 
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -145,45 +152,43 @@ macro_interconnect::init_factory_params(sprockit::sim_parameters* params)
 
   runtime::set_topology(topology_);
 
-  endpoint_map nodes;
-  endpoint_map nics;
   endpoint_map netlinks;
 
+  sprockit::sim_parameters* netlink_params = nullptr;
+  if (params->has_namespace("netlink")) netlink_params = params->get_namespace("netlink");
+  int netlink_conc = topology_->num_nodes_per_netlink();
+
   sprockit::sim_parameters* node_params = params->get_namespace("node");
-  sprockit::factory<connectable>* node_builder
-      = new sprockit::template_factory<connectable, node_factory>(node_params->get_optional_param("model", "simple"));
-  topology_->build_endpoint_connectables(nodes, node_builder, partition_, rt_->me(), node_params);
-  delete node_builder;
 
-  int nic_conc = 1;
-  sprockit::sim_parameters* nic_params = params->get_namespace("nic");
-  sprockit::factory2<connectable>* nic_builder
-    = new sprockit::template_factory2<connectable, nic_factory>(nic_params->get_param("model"));
-  topology_->build_interface_connectables(nic_conc, nics, nic_builder, partition_, rt_->me(), nic_params, this);
-  delete nic_builder;
+  structured_topology* top = safe_cast(structured_topology, topology_);
 
-  if (params->has_namespace("netlink")){
-    int netlink_conc = topology_->num_nodes_per_netlink();
-    sprockit::sim_parameters* netlink_params = params->get_namespace("netlink");
-    sprockit::factory2<connectable>* netlink_builder
-      = new sprockit::template_factory2<connectable, netlink_factory>(netlink_params->get_param("model"));
-    topology_->build_interface_connectables(netlink_conc, netlinks, netlink_builder,
-                  partition_, rt_->me(), netlink_params, this);
-    delete netlink_builder;
+  int num_switches = topology_->num_switches();
+  int my_rank = rt_->me();
+  for (int i=0; i < num_switches; ++i){
+    if (partition_->lpid_for_switch(switch_id(i)) == my_rank){
+      std::vector<node_id> nodes = top->nodes_connected_to_switch(switch_id(i));
+      for (int n=0; n < nodes.size(); ++n){
+        node_id nid = nodes[n];
+        node_params->add_param_override("id", int(nid));
+        node* nd = node_factory::get_optional_param("model", "simple", node_params);
+        nd->get_nic()->set_interconnect(this);
+        nodes_[nid] = nd;
+        nics_[nid] = nd->get_nic();
+
+        int interf_id = nid / netlink_conc;
+        int interf_offset = nid % netlink_conc;
+        node_id my_id = node_id(interf_id);
+        if (netlink_params && interf_offset == 0){
+          top_debug("Adding NIC %d connected to switch %d on rank %d",
+            int(my_id), i, my_rank);
+          params->add_param_override("id", int(my_id));
+          netlink* nlink = netlink_factory::get_param("model", netlink_params, this);
+          netlinks_[my_id] = nlink;
+        }
+      }
+    }
   }
 
-  copy_map(nodes, nodes_);
-  copy_map(nics, nics_);
-  copy_map(netlinks, netlinks_);
-
-  node_map::iterator it, end = nodes_.end();
-  for (it=nodes_.begin(); it != end; ++it){
-    node_id nid = it->first;
-    node* nd = it->second;
-    nic* nc = nics_[nid];
-    nd->set_nic(nc);
-    nc->set_node(nd);
-  }
 
   int failure_num = 1;
   while(1){

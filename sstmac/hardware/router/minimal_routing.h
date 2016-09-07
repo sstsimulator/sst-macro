@@ -15,8 +15,7 @@ class minimal_router :
 {
 
  public:
-  minimal_router() :
-    structured_router(routing::minimal){}
+  minimal_router(topology* top, network_switch* netsw, routing::algorithm_t algo = routing::minimal);
 
   virtual ~minimal_router() {}
 
@@ -31,13 +30,7 @@ class minimal_router :
   virtual void
   finalize_init();
 
-  virtual void
-  set_topology(topology *top);
-
  protected:
-  minimal_router(routing::algorithm_t algo) :
-    structured_router(algo){}
-
   virtual void
   route(packet* pkt, structured_routable::path_set& paths);
 

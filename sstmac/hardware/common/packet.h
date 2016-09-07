@@ -34,18 +34,8 @@ class packet :
   }
 
   uint64_t
-  unique_id() const {
-    return unique_id_;
-  }
-
-  void
-  add_delay_us(double delay_us){
-    cumulative_delay_us_ += delay_us;
-  }
-
-  double
-  delay_us() const {
-    return cumulative_delay_us_;
+  flow_id() const {
+    return flow_id_;
   }
 
   virtual void
@@ -68,7 +58,7 @@ class packet :
   }
 
  protected:
-  packet() : orig_(0) {}
+  packet() : orig_(nullptr) {}
 
   packet(
     message* orig,
@@ -82,9 +72,7 @@ class packet :
 
   long byte_offset_;
 
-  uint64_t unique_id_;
-
-  double cumulative_delay_us_;
+  uint64_t flow_id_;
 
 };
 

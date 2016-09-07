@@ -41,7 +41,7 @@ class packet_flow_sender :
 
   void
   handle_payload(packet_flow_payload* pkt) {
-    pkt->set_arrival(now().sec());
+    pkt->set_arrival(now());
     do_handle_payload(pkt);
   }
 

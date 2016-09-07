@@ -140,7 +140,9 @@ class parallel_runtime :
   }
 
   partition*
-  topology_partition() const;
+  topology_partition() const {
+    return part_;
+  }
 
   virtual void
   wait_merge_array(int tag) = 0;
@@ -153,6 +155,15 @@ class parallel_runtime :
 
   void
   free_recv_buffers(const std::vector<void*>& buffers);
+
+  static parallel_runtime*
+  static_runtime(sprockit::sim_parameters* params);
+
+  static void
+  clear_static_runtime(){
+    if (static_runtime_) delete static_runtime_;
+    static_runtime_ = nullptr;
+  }
 
  protected:
   parallel_runtime();
@@ -173,6 +184,7 @@ class parallel_runtime :
    std::vector<std::vector<void*> > send_buffers_;
    int buf_size_;
    partition* part_;
+   static parallel_runtime* static_runtime_;
 
 };
 

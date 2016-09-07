@@ -40,8 +40,7 @@ network_switch::~network_switch()
 
 #if !SSTMAC_INTEGRATED_SST_CORE
 network_switch::network_switch() :
-  router_(0),
-  top_(0)
+  router_(nullptr)
 {
 }
 #endif
@@ -51,8 +50,7 @@ network_switch::network_switch(
     SST::ComponentId_t id,
     SST::Params& params
 ) : connectable_component(id, params),
-  router_(0),
-  top_(0)
+  router_(nullptr)
 {
 }
 
@@ -94,18 +92,6 @@ network_switch::setup()
 }
 #endif
 
-int
-network_switch::eject_port(node_id addr)
-{
-  return top_->endpoint_to_ejection_port(addr);
-}
-
-int
-network_switch::inject_port(node_id addr)
-{
-  return top_->endpoint_to_injection_port(addr);
-}
-
 void
 network_switch::set_event_manager(event_manager* m)
 {
@@ -121,19 +107,8 @@ network_switch::init_factory_params(sprockit::sim_parameters* params)
   my_addr_ = switch_id(params->get_int_param("id"));
   init_loc_id(event_loc_id(my_addr_));
 
-  router_ = router_factory::get_optional_param("router", "minimal", params);
-  router_->set_switch(this);
-
-  STATIC_INIT_TOPOLOGY(params)
-}
-
-
-void
-network_switch::set_topology(topology *top)
-{
-  top_ = top;
-  router_->set_topology(top);
-  router_->init_vc();
+  top_ = topology::static_topology(params);
+  router_ = router_factory::get_optional_param("router", "minimal", params, top_, this);
 }
 
 void

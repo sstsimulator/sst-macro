@@ -130,14 +130,7 @@ packet_flow_switch::~packet_flow_switch()
 void
 packet_flow_switch::init_factory_params(sprockit::sim_parameters *params)
 {
-  params_ = params;
   packet_flow_abstract_switch::init_factory_params(params);
-}
-
-void
-packet_flow_switch::set_topology(topology *top)
-{
-  network_switch::set_topology(top);
 }
 
 void
@@ -175,7 +168,7 @@ packet_flow_switch::crossbar(config* cfg)
               router_->max_num_vc(),
               xbar_input_buffer_num_bytes,
               link_arbitrator_template->clone(-1/*fake bw*/));
-    xbar_->configure_basic_ports(topol()->max_num_ports());
+    xbar_->configure_basic_ports(top_->max_num_ports());
     xbar_->set_event_location(my_addr_);
     xbar_->set_stat_collector(xbar_stats_);
   }

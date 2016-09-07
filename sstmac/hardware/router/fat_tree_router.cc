@@ -25,6 +25,15 @@ namespace hw {
 
 SpktRegister("fattree | ftree", router, fat_tree_router);
 
+fat_tree_router::fat_tree_router(topology *top, network_switch *netsw) :
+  structured_router(top, netsw, routing::minimal),
+  rng_(nullptr)
+{
+  fat_tree* ft = safe_cast(fat_tree, top);
+  k_ = ft->k();
+  l_ = ft->l();
+}
+
 void
 fat_tree_router::build_rng()
 {
@@ -47,28 +56,11 @@ fat_tree_router::~fat_tree_router()
 }
 
 void
-fat_tree_router::set_topology(topology *top)
-{
-  structured_router::set_topology(top);
-
-  fat_tree* ft = safe_cast(fat_tree, top);
-  if (ft->k() != k_ || ft->l() != l_){
-    spkt_throw_printf(sprockit::value_error,
-                      "fat tree router configuration (k=%d,l=%d) does not match"
-                      " topology configuration (k=%d,l=%d)",
-                      k_, l_, ft->k(), ft->l());
-  }
-}
-
-void
 fat_tree_router::init_factory_params(sprockit::sim_parameters *params)
 {
   structured_router::init_factory_params(params);
   seed_ = params->get_optional_long_param("router_seed", -1);
   build_rng();
-
-  k_ = params->get_int_param("radix");
-  l_ = params->get_int_param("num_levels");
 }
 
 void

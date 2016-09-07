@@ -109,9 +109,7 @@ init()
     fake_build = atoi(env_str);
   }
 
-
-  parallel_runtime* rt = parallel_runtime_factory::get_param("runtime", &cmdline_params);
-
+  parallel_runtime* rt = parallel_runtime::static_runtime(&cmdline_params);
   return rt;
 #endif
 }

@@ -25,15 +25,6 @@ class timed_interface
     return time_;
   }
 
-  /**
-   * Time setter
-   * @param t time value
-   */
-  void
-  set_time(const timestamp& t) {
-    time_ = t;
-  }
-
   void
   serialize_order(serializer& ser);
 

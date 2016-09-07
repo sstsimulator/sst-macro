@@ -26,7 +26,7 @@ class memory_message : public message
     return bytes_;
   }
 
-  uint64_t unique_id() const {
+  uint64_t flow_id() const {
     return id_;
   }
 

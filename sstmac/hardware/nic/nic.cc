@@ -43,7 +43,7 @@ namespace hw {
 
 static sprockit::need_delete_statics<nic> del_statics;
 
-nic::nic(sprockit::factory_type *interconn) :
+nic::nic() :
   spy_num_messages_(nullptr),
   spy_bytes_(nullptr),
   hist_msg_size_(nullptr),
@@ -53,7 +53,6 @@ nic::nic(sprockit::factory_type *interconn) :
   parent_(nullptr),
   mtl_handler_(nullptr)
 {
-  if (interconn) interconn_ = safe_cast(interconnect, interconn);
 }
 
 nic::~nic()
@@ -225,7 +224,7 @@ nic::record_message(network_message* netmsg)
       netmsg->byte_length(),
       network_message::tostr(netmsg->type()),
       int(netmsg->toaddr()),
-      netmsg->unique_id(), netmsg->to_string().c_str());
+      netmsg->flow_id(), netmsg->to_string().c_str());
 
   if (netmsg->type() == network_message::null_netmsg_type){
     //assume this is a simple payload

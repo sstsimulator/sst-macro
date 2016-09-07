@@ -7,49 +7,49 @@ using namespace sstmac; using namespace sstmac::hw;
 
 void test_crossbar(UnitTest& unit)
 {
-    sprockit::sim_parameters params;
-    sstmac::env::params = &params;
-    params["geometry"] = "10";
-    params["concentration"] = "3";
-    topology* top = topology_factory::get_value("crossbar", &params);
-    structured_topology* xbar = test_cast(structured_topology, top);
-    assertTrue(unit, "crossbar cast topology", bool(xbar) );
+  sprockit::sim_parameters params;
+  sstmac::env::params = &params;
+  params["geometry"] = "10";
+  params["concentration"] = "3";
+  topology* top = topology_factory::get_value("crossbar", &params);
+  structured_topology* xbar = test_cast(structured_topology, top);
+  assertTrue(unit, "crossbar cast topology", bool(xbar) );
+  topology::set_static_topology(top);
+  switch_interconnect::switch_map switches;
+  init_switches(switches, params, top);
 
-    switch_interconnect::switch_map switches;
-    init_switches(switches, params, top);
+  {
+      coordinates coords = get_vector(3);
+      switch_id swid = xbar->switch_number(coords);
+      network_switch* sw = switches[swid];
+      router* router = sw->rter();
 
-    {
-        coordinates coords = get_vector(3);
-        switch_id swid = xbar->switch_number(coords);
-        network_switch* sw = switches[swid];
-        router* router = sw->rter();
+      node_id dst = xbar->node_addr(get_vector(2,2));
 
-        node_id dst = xbar->node_addr(get_vector(2,2));
-
-        structured_routable::path_set paths;
-        router->productive_paths_to_node(dst, paths);
-        //this should tell me that the productive ports are -X, -Y, -Z
-        assertEqual(unit, "num productive ports", paths.size(), 1);
+      structured_routable::path_set paths;
+      router->productive_paths_to_node(dst, paths);
+      //this should tell me that the productive ports are -X, -Y, -Z
+      assertEqual(unit, "num productive ports", paths.size(), 1);
 
 
-        if (paths.size() > 0)
-            assertEqual(unit, "productive port 0", paths[0].outport, top->convert_to_port(0, 2));
+      if (paths.size() > 0)
+          assertEqual(unit, "productive port 0", paths[0].outport, top->convert_to_port(0, 2));
 
-    }
+  }
 
-    {
-        coordinates coords = get_vector(3);
-        switch_id swid = xbar->switch_number(coords);
-        network_switch* sw = switches[swid];
-        router* router = sw->rter();
+  {
+      coordinates coords = get_vector(3);
+      switch_id swid = xbar->switch_number(coords);
+      network_switch* sw = switches[swid];
+      router* router = sw->rter();
 
-        node_id dst = xbar->node_addr(get_vector(3,2));
+      node_id dst = xbar->node_addr(get_vector(3,2));
 
-        structured_routable::path_set paths;
-        bool eject = router->productive_paths_to_node(node_id(dst), paths);
-        // should only have the ejection port
-        assertEqual(unit, "num productive ports", paths.size(), 1);
-        assertTrue(unit, "is eject port", eject);
-    }
+      structured_routable::path_set paths;
+      bool eject = router->productive_paths_to_node(node_id(dst), paths);
+      // should only have the ejection port
+      assertEqual(unit, "num productive ports", paths.size(), 1);
+      assertTrue(unit, "is eject port", eject);
+  }
 
 }

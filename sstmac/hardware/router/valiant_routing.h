@@ -14,8 +14,8 @@ namespace hw {
 class valiant_router : public minimal_router
 {
  public:
-  valiant_router() :
-    minimal_router(routing::valiant){}
+  valiant_router(topology* top, network_switch* netsw, routing::algorithm_t algo = routing::valiant) :
+    minimal_router(top, netsw, algo){}
 
   virtual
   ~valiant_router() { }
@@ -65,9 +65,6 @@ class valiant_router : public minimal_router
   }
 
  protected:
-  valiant_router(routing::algorithm_t algo) :
-    minimal_router(algo){}
-
   typedef enum {
     minimal,
     intermediate_switch,

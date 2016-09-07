@@ -30,12 +30,6 @@ router::~router()
 }
 
 void
-router::set_switch(network_switch* netsw)
-{
-  netsw_ = netsw;
-}
-
-void
 router::finalize_init()
 {
 }
@@ -52,12 +46,6 @@ router::init_vc()
                       routing::tostr(algo_));
   }
   max_num_vc_ = iter->second;
-}
-
-router::router(routing::algorithm_t max_algo) :
-  max_num_vc_(0),
-  algo_(max_algo)
-{
 }
 
 bool

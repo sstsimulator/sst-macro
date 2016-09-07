@@ -132,11 +132,6 @@ class router :
   virtual void
   init_stats(event_manager* m){}
 
-  void init_vc();
-
-  virtual void
-  set_switch(network_switch* sw);
-
   /**
    @return Whether we are ejecting
    @param dst The destination node
@@ -178,11 +173,6 @@ class router :
     return top_;
   }
 
-  virtual void
-  set_topology(topology* top) {
-    top_ = top;
-  }
-
   /**
    * @brief max_num_vc
    * @return The maximum number of virtual channels the router must maintain
@@ -194,10 +184,17 @@ class router :
   }
 
  protected:
-  router(routing::algorithm_t algo);
+  router(topology* top, network_switch* sw, routing::algorithm_t algo) :
+    top_(top), netsw_(sw), algo_(algo), max_num_vc_(0)
+  {
+    init_vc();
+  }
 
   routing::algorithm_t
   str_to_algo(const std::string& str);
+
+ private:
+  void init_vc();
 
  protected:
   switch_id my_addr_;
@@ -219,7 +216,7 @@ class router :
 
 };
 
-DeclareFactory(router);
+DeclareFactory(router, topology*, network_switch*);
 
 
 

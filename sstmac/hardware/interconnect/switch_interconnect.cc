@@ -87,6 +87,8 @@ macro_switch_interconnect::init_factory_params(sprockit::sim_parameters* params)
   interconnect_base::init_factory_params(params);
   runtime::set_topology(topology_);
 
+  sstmac::hw::topology* top = sstmac::hw::topology::static_topology(params);
+
   internal_map switches;
   sprockit::sim_parameters* switch_params = params->get_namespace("switch");
   sprockit::factory<connectable>* switch_builder
@@ -101,8 +103,6 @@ macro_switch_interconnect::init_factory_params(sprockit::sim_parameters* params)
     if (sw->ipc_handler()){
       switch_id sid = it->first;
       it->second = new dist_dummy_switch(sid);
-    } else {
-      sw->set_topology(topology_);
     }
   }
   delete dummy;

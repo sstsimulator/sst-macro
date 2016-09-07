@@ -78,15 +78,8 @@ void
 dumpi_task_mapper::init_factory_params(sprockit::sim_parameters *params)
 {
   task_mapper::init_factory_params(params);
-
   metaname_ = params->get_param("launch_dumpi_metaname");
-}
-
-void
-dumpi_task_mapper::set_topology(hw::topology *top)
-{
-  task_mapper::set_topology(top);
-  regtop_ = safe_cast(hw::structured_topology, top);
+  regtop_ = safe_cast(hw::structured_topology, topology_);
 }
 
 void

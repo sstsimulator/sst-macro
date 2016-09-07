@@ -22,7 +22,8 @@
 #include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/launch/launcher.h>
 #include <sstmac/software/launch/launch_event.h>
-
+#include <sstmac/software/launch/job_launcher.h>
+#include <sstmac/common/event_callback.h>
 #include <sstmac/common/runtime.h>
 #include <sprockit/keyword_registration.h>
 #include <sprockit/sim_parameters.h>
@@ -40,6 +41,8 @@ RegisterNamespaces("os", "memory", "proc");
 
 namespace sstmac {
 namespace hw {
+
+std::list<sw::app_launch*> node::launchers_;
 
 using namespace sstmac::sw;
 
@@ -91,10 +94,10 @@ node::init(unsigned int phase)
 }
 #else
 node::node() :
-  os_(0),
-  nic_(0),
-  mem_model_(0),
-  proc_(0)
+  os_(nullptr),
+  nic_(nullptr),
+  mem_model_(nullptr),
+  proc_(nullptr)
 {
 }
 #endif
@@ -128,6 +131,8 @@ node::execute(ami::SERVICE_FUNC func, event* data)
 void
 node::init_factory_params(sprockit::sim_parameters *params)
 {
+  params_ = params;
+
   sprockit::sim_parameters* os_params = params->get_optional_namespace("os");
   os_ = sw::operating_system::construct(os_params);
 
@@ -136,13 +141,11 @@ node::init_factory_params(sprockit::sim_parameters *params)
 
   next_outgoing_id_.set_src_node(my_addr_);
 
-#if SSTMAC_INTEGRATED_SST_CORE
   build_launchers(params);
   sprockit::sim_parameters* nic_params = params->get_namespace("nic");
-  interconnect* null_ic = 0;
-  nic_ = nic_factory::get_param("model", nic_params, null_ic);
+  nic_params->add_param_override("id", int(my_addr_));
+  nic_ = nic_factory::get_param("model", nic_params);
   nic_->set_node(this);
-#endif
 
   sprockit::sim_parameters* mem_params = params->get_optional_namespace("memory");
   mem_model_ = memory_model_factory::get_optional_param("model", "simple", mem_params, this);
@@ -164,19 +167,14 @@ node::init_factory_params(sprockit::sim_parameters *params)
 void
 node::build_launchers(sprockit::sim_parameters* params)
 {
+  if (!launchers_.empty()) return;
+
   bool keep_going = true;
   int aid = 1;
   while (keep_going || aid < 10){
     app_launch* appman = app_launch::static_app_launch(aid, params);
     if (appman){
-      const std::list<int>& my_ranks = appman->rank_assignment(my_addr_);
-      std::list<int>::const_iterator it, end = my_ranks.end();
-      for (it=my_ranks.begin(); it != end; ++it){
-        int rank = *it;
-        sw::launch_event* lev = new launch_event(appman->app_template(), aid,
-                                        rank, appman->core_affinities());
-        launchers_.push_back(lev);
-      }
+      launchers_.push_back(appman);
       keep_going = true;
     } else {
       keep_going = false;
@@ -201,11 +199,28 @@ node::to_string() const
 }
 
 void
+node::job_launch(app_launch* appman)
+{
+  job_launcher* launcher = job_launcher::static_job_launcher(params_);
+  launcher->handle_new_launch_request(appman, this);
+}
+
+void
+node::schedule_launches()
+{
+  for (app_launch* appman : launchers_){
+    schedule(appman->time(), new_callback(this, &node::job_launch, appman));
+  }
+}
+
+
+void
 node::set_event_manager(event_manager* m)
 {
 #if !SSTMAC_INTEGRATED_SST_CORE
   //this only happens without integrated core
   event_scheduler::set_event_manager(m);
+  schedule_launches();
 #endif
   os_->set_event_parent(this);
   mem_model_->set_event_parent(this);
@@ -252,13 +267,7 @@ node::send_to_nic(network_message* netmsg)
 void
 node::launch()
 {
-  std::list<sw::launch_event*>::iterator it, end = launchers_.end();
-  for (it=launchers_.begin(); it != end; ++it){
-    sw::launch_event* lev = *it;
-    node_debug("launching task %d on node %d",
-      int(lev->tid()), int(addr()));
-    os_->handle_event(lev);
-  }
+  schedule_launches();
 }
 #else
 void

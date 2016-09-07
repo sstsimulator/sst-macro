@@ -175,14 +175,16 @@ class node :
   */
   void send_to_nic(network_message* netmsg);
 
+  void job_launch(sw::app_launch* appman);
+
+  void schedule_launches();
+
  protected:
   node();
 
   void connect_nic();
 
  protected:
-  sw::app_launch* env_;
-
   sw::operating_system* os_;
 
   node_id my_addr_;
@@ -201,8 +203,9 @@ class node :
   void build_launchers(sprockit::sim_parameters* params);
 
  private:
-  std::list<sw::launch_event*> launchers_;
+  static std::list<sw::app_launch*> launchers_;
   unique_event_id next_outgoing_id_;
+  sprockit::sim_parameters* params_;
 
 #if !SSTMAC_INTEGRATED_SST_CORE
  public:

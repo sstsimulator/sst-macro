@@ -63,11 +63,6 @@ class network_switch :
 
   virtual ~network_switch();
 
-  topology*
-  topol() const {
-    return top_;
-  }
-
   switch_id
   addr() const {
     return my_addr_;
@@ -93,9 +88,6 @@ class network_switch :
   virtual std::vector<switch_id>
   connected_switches() const = 0;
 
-  virtual void
-  set_topology(topology* top);
-
   /**
    * @brief queue_length
    * Compute the number of packets waiting on the switch. The queue length
@@ -108,20 +100,6 @@ class network_switch :
    */
   virtual int
   queue_length(int port) const = 0;
-
-  /**
-    @param addr The destination node addr to eject to
-    @return The ejection port the node is connected on
-  */
-  int
-  eject_port(node_id addr);
-
-  /**
-    @param addr The source node addr to ack to
-    @return The injection port the node is connected on
-  */
-  int
-  inject_port(node_id addr);
 
   /**
    @return The total hop latency to transit from input of one switch to the next (with zero congestion)

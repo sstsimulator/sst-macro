@@ -152,7 +152,7 @@ class packet_flow_payload :
   }
 
   void
-  set_arrival(double time) {
+  set_arrival(timestamp time) {
     arrival_ = time;
   }
 

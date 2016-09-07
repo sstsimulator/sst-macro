@@ -137,9 +137,13 @@ class nic :
   virtual void
   set_event_parent(event_scheduler* m);
 
+  void
+  set_interconnect(interconnect* ic){
+    interconn_ = ic;
+  }
 
  protected:
-  nic(sprockit::factory_type* interconn);
+  nic();
 
   /**
     Start the message sending and inject it into the network
@@ -198,7 +202,7 @@ class nic :
 
 };
 
-DeclareFactory1InitParam(nic, sprockit::factory_type*/*interconnect*/);
+DeclareFactory(nic);
 
 }
 } // end of namespace sstmac.

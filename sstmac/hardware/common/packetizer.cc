@@ -68,7 +68,7 @@ packetizer::bytesArrived(int vn, uint64_t unique_id, int bytes, message *parent)
 void
 packetizer::packetArrived(int vn, packet* pkt)
 {
-  bytesArrived(vn, pkt->unique_id(), pkt->byte_length(), pkt->orig());
+  bytesArrived(vn, pkt->flow_id(), pkt->byte_length(), pkt->orig());
   delete pkt;
 }
 

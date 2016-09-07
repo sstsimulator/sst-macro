@@ -443,26 +443,19 @@ class topology :
     sprockit::sim_parameters *params,
     connectable* dummy) = 0;
 
-  virtual void
-  build_endpoint_connectables(
-    end_point_connectable_map& connectables,
-    sprockit::factory<connectable>* factory,
-    partition *part,
-    int my_rank,
-    sprockit::sim_parameters *params) = 0;
-
-  virtual void
-  build_interface_connectables(
-    int conc,
-    end_point_connectable_map& connectables,
-    sprockit::factory2<connectable>* nic_factory,
-    partition *part,
-    int my_rank,
-    sprockit::sim_parameters* params,
-    sprockit::factory_type* interconnect) = 0;
-
   static topology*
   static_topology(sprockit::sim_parameters* params);
+
+  static void
+  set_static_topology(topology* top){
+    static_topology_ = top;
+  }
+
+  static void
+  clear_static_topology(){
+    if (static_topology_) delete static_topology_;
+    static_topology_ = nullptr;
+  }
 
  protected:
   topology();

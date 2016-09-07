@@ -60,13 +60,6 @@ class manager : public sprockit::factory_type {
     return interconnect_;
   }
 
-  void
-  build_apps(sprockit::sim_parameters* params);
-
-  void
-  build_app(int appnum,
-   sprockit::sim_parameters* params);
-
   static int
   compute_max_nproc(sprockit::sim_parameters *params);
 
@@ -76,8 +69,6 @@ class manager : public sprockit::factory_type {
  protected:
   /// Next parallel process id.
   sstmac::sw::app_id next_ppid_;
-
-  std::map<int, sw::app_launch*> app_managers_;
 
   sstmac::hw::interconnect* interconnect_;
   parallel_runtime* rt_;
@@ -111,12 +102,6 @@ class macro_manager : public manager
   void finish();
 
  private:
-  void
-  launch_app(int appnum, timestamp start, sw::app_launch* appman);
-
-  void
-  launch_apps();
-
   void start();
 
   void stop();
@@ -127,8 +112,6 @@ class macro_manager : public manager
 
   /// Monitor whether the simulator is currently running.
   bool running_;
-
-  sw::job_launcher* launcher_;
 
 
 };

@@ -12,12 +12,7 @@ RegisterDebugSlot(parallel);
 namespace sstmac {
 
 const int parallel_runtime::global_root = -1;
-
-partition*
-parallel_runtime::topology_partition() const
-{
-  return part_;
-}
+parallel_runtime* parallel_runtime::static_runtime_ = nullptr;
 
 void
 parallel_runtime::finalize_init()
@@ -120,6 +115,22 @@ parallel_runtime::init_partition_params(sprockit::sim_parameters *params)
   //out with the old, in with the new
   if (part_) delete part_;
   part_ = partition_factory::get_optional_param("partition", SSTMAC_DEFAULT_PARTITION_STRING, params, this);
+#endif
+}
+
+parallel_runtime*
+parallel_runtime::static_runtime(sprockit::sim_parameters* params)
+{
+#if SSTMAC_INTEGRATED_SST_CORE
+  return nullptr;
+#else
+  static thread_lock rt_lock;
+  rt_lock.lock();
+  if (!static_runtime_){
+    static_runtime_ = parallel_runtime_factory::get_param("runtime", params);
+  }
+  rt_lock.unlock();
+  return static_runtime_;
 #endif
 }
 

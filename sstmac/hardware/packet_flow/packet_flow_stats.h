@@ -87,6 +87,7 @@ class congestion_spyplot :
   stat_spyplot* congestion_spyplot_;
 };
 
+
 class delay_histogram :
   virtual public packet_sent_stats
 {
@@ -194,11 +195,6 @@ class stat_bytes_sent :
   void
   record(int port, long bytes){
     port_map_[port] += bytes;
-  }
-
-  void
-  set_topology(topology* top){
-    top_ = top;
   }
 
   void

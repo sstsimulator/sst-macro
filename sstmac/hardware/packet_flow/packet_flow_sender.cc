@@ -66,6 +66,7 @@ packet_flow_sender::send(
   st.pkt = pkt;
   st.src_outport = src.src_outport;
   st.dst_inport = dest.dst_inport;
+
   if (arb) {
     arb->arbitrate(st);
   } else {

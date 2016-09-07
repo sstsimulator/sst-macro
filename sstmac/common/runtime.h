@@ -64,6 +64,9 @@ class runtime
   }
 
   static void
+  clear_statics();
+
+  static void
   delete_statics();
 
   static node_id
