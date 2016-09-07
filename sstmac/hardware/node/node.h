@@ -205,7 +205,9 @@ class node :
  private:
   static std::list<sw::app_launch*> launchers_;
   unique_event_id next_outgoing_id_;
+#if !SSTMAC_INTEGRATED_SST_CORE
   sprockit::sim_parameters* params_;
+#endif
 
 #if !SSTMAC_INTEGRATED_SST_CORE
  public:

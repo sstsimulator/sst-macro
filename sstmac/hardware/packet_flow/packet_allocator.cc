@@ -60,9 +60,6 @@ class structured_routable_packet_allocator :
  public:
   virtual packet_flow_payload*
   new_packet(int bytes, long byte_offset, message *msg){
-    network_message* netmsg;
-    netmsg->aid();
-
     return new structured_routable_packet_flow(msg, bytes, byte_offset);
   }
 

@@ -162,7 +162,7 @@ sst_manager::init_factory_params(sprockit::sim_parameters* params)
   //these are not used
   parallel_runtime* rt = nullptr;
   partition* part = nullptr;
-  interconnect_ = hw::interconnect::static_interconnect(params, part, rt);
+  interconnect_ = hw::interconnect::static_interconnect(params);
 }
 #else
 void

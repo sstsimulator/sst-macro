@@ -88,8 +88,8 @@ class SimpleNetworkPacket : public SST::Event
   NotSerializable(SimpleNetworkPacket)
 
  public:
-  SimpleNetworkPacket(uint64_t id) : unique_id(id) {}
-  uint64_t unique_id;
+  SimpleNetworkPacket(uint64_t id) : flow_id(id) {}
+  uint64_t flow_id;
 };
 
 class SimpleNetworkPacketizer :

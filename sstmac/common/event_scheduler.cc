@@ -156,6 +156,12 @@ event_scheduler::schedule(timestamp t,
 }
 
 void
+event_scheduler::schedule(timestamp t, event_queue_entry *ev)
+{
+  send_self_event_queue(t, ev);
+}
+
+void
 event_scheduler::schedule_delay(
   timestamp delay,
   event_handler* handler,

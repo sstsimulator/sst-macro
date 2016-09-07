@@ -109,16 +109,16 @@ SimpleNetworkPacketizer::recvNotify(int vn)
 {
   SST::Interfaces::SimpleNetwork::Request* req = m_linkControl->recv(vn);
   message* m = 0;
-  uint64_t unique_id;
+  uint64_t flow_id;
   if (req->tail){
     m = static_cast<message*>(req->takePayload());
-    unique_id = m->unique_id();
+    flow_id = m->flow_id();
   } else {
     SimpleNetworkPacket* p = static_cast<SimpleNetworkPacket*>(req->takePayload());
-    unique_id = p->unique_id;
+    flow_id = p->flow_id;
     delete p;
   }
-  bytesArrived(vn, unique_id, req->size_in_bits/8, m);
+  bytesArrived(vn, flow_id, req->size_in_bits/8, m);
   delete req;
   return true;
 }
@@ -134,7 +134,7 @@ SimpleNetworkPacketizer::inject(int vn, long bytes, long byte_offset, message* p
   if (tail){
     ev_payload = payload;
   } else {
-    ev_payload = new SimpleNetworkPacket(payload->unique_id());
+    ev_payload = new SimpleNetworkPacket(payload->flow_id());
   }
   SST::Interfaces::SimpleNetwork::Request* req =
         new SST::Interfaces::SimpleNetwork::Request(dst, src, bytes*8, head, tail, ev_payload);
