@@ -18,8 +18,9 @@ class sumi_transport :
 {
   ImplementAPI(sumi_transport)
  public:  
-  sumi_transport(sstmac::sw::software_id sid) :
-    sumi_api("sumi", sid)
+  sumi_transport(sprockit::sim_parameters* params, sstmac::sw::software_id sid,
+                 sstmac::sw::operating_system* os) :
+    sumi_api(params, "sumi", sid, os)
   {
   }
 
@@ -28,12 +29,6 @@ class sumi_transport :
 
   virtual void
   finalize();
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  void
-  finalize_init();
 
   virtual ~sumi_transport(){}
 
@@ -71,7 +66,9 @@ class sumi_transport :
   }
 
  protected:
-  sumi_transport(const char* name, sstmac::sw::software_id sid);
+  sumi_transport(sprockit::sim_parameters* params,
+                 const char* name, sstmac::sw::software_id sid,
+                 sstmac::sw::operating_system* os);
 
   void
   do_smsg_send(int dst, const message::ptr &msg);

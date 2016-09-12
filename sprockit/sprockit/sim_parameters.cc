@@ -56,8 +56,8 @@ get_quantity_with_units(const char* value, const char* key)
   while (*end==' ') ++end;
   int size = (int)((size_t)end - (size_t)begin);
   if (begin == end || size != ::strlen(value)) {
-    spkt_throw_printf(input_error,
-        "sim_parameters::get_quantity: param %s with value %s is not formatted as a double with units (Hz,GB/s,ns,KB)",
+    spkt_abort_printf("sim_parameters::get_quantity: param %s with value %s"
+        " is not formatted as a double with units (Hz,GB/s,ns,KB)",
         key, value);
   }
   return ret;
@@ -252,8 +252,7 @@ sim_parameters::get_namespace(const std::string &ns)
       return parent_->get_namespace(ns);
     } else {
       pretty_print_params();
-      spkt_throw_printf(input_error,
-        "cannot enter namespace %s, does not exist inside namespace %s",
+      spkt_abort_printf("cannot enter namespace %s, does not exist inside namespace %s",
         ns.c_str(), namespace_.c_str());
     }
   }
@@ -928,7 +927,7 @@ sim_parameters::parse_stream(std::istream& in,
       //empty
     }
     else {
-      spkt_throw_printf(input_error, "invalid input file line of size %d:\n%s---", line.size(), line.c_str());
+      spkt_abort_printf("invalid input file line of size %d:\n%s---", line.size(), line.c_str());
     }
   }
 }
@@ -985,7 +984,7 @@ sim_parameters::throw_key_error(const std::string& key) const
 {
   std::cerr << "Parameters given in namespace: " << std::endl;
   print_params(std::cerr);
-  spkt_throw_printf(sprockit::value_error,
+  spkt_abort_printf(
            "sim_parameters: could not find parameter %s in namespace %s",
           key.c_str(), namespace_.c_str());
 }
@@ -1070,8 +1069,7 @@ sim_parameters::do_add_param(
   if (val.c_str()[0] == '$'){
     std::map<std::string, std::string>::const_iterator it = variables_.find(val.substr(1));
     if (it == variables_.end()){
-      spkt_throw_printf(input_error,
-        "unknown variable name %s", val.c_str());
+      spkt_abort_printf("unknown variable name %s", val.c_str());
     }
     do_add_param(key, it->second,
       fail_on_existing, override_existing, mark_as_read);
@@ -1088,8 +1086,7 @@ sim_parameters::do_add_param(
 
   if (it != params_.end()){
     if (fail_on_existing){
-      spkt_throw_printf(sprockit::value_error,
-      "sim_parameters::add_param - key already in params: %s", key.c_str());
+      spkt_abort_printf("sim_parameters::add_param - key already in params: %s", key.c_str());
     } else if (override_existing){
       parameter_entry& entry = it->second;
       entry.value = val;

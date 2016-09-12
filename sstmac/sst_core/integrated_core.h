@@ -16,20 +16,6 @@
 
 namespace sstmac {
 
-inline sprockit::sim_parameters*
-make_sim_params_from_params(
-    const SST::Params& map
-)
-{
-  sprockit::sim_parameters* rv = new sprockit::sim_parameters;
-  std::set<std::string> key_names = map.getKeys();
-  for(auto&& key : key_names) {
-    rv->parse_keyval(
-        key, map.find_string(key), false, true, false);
-  }
-  return rv;
-}
-
 template <typename Mapping>
 sprockit::sim_parameters*
 make_sim_params_from_mapping(

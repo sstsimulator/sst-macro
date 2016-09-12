@@ -93,10 +93,8 @@ lib_compute_loops*
 app::compute_loops_lib()
 {
   if(!compute_loops_) {
-    compute_loops_ = new lib_compute_loops(id_);
-    register_lib(compute_loops_);
+    compute_loops_ = new lib_compute_loops(params_, id_, os_);
   }
-
   return compute_loops_;
 }
 
@@ -125,8 +123,7 @@ void
 app::sleep(timestamp time)
 {
   if (!sleep_lib_) {
-    sleep_lib_ = new lib_sleep(id_);
-    register_lib(sleep_lib_);
+    sleep_lib_ = new lib_sleep(params_, id_, os_);
   }
   sleep_lib_->sleep(time);
 }
@@ -135,8 +132,7 @@ void
 app::compute(timestamp time)
 {
   if (!compute_time_) {
-    compute_time_ = new lib_compute_time(id_);
-    register_lib(compute_time_);
+    compute_time_ = new lib_compute_time(params_, id_, os_);
   }
   compute_time_->compute(time);
 }
@@ -145,8 +141,7 @@ void
 app::compute_inst(compute_event* cmsg)
 {
   if (!compute_inst_) {
-    compute_inst_ = new lib_compute_inst(id_);
-    register_lib(compute_inst_);
+    compute_inst_ = new lib_compute_inst(params_, id_, os_);
   }
   compute_inst_->compute_inst(cmsg);
 }
@@ -158,8 +153,7 @@ app::compute_loop(uint64_t num_loops,
   int bytes_per_loop)
 {
   if (!compute_inst_){
-    compute_inst_ = new lib_compute_inst(id_);
-    register_lib(compute_inst_);
+    compute_inst_ = new lib_compute_inst(params_, id_, os_);
   }
   compute_inst_->compute_loop(num_loops, nflops_per_loop, nintops_per_loop, bytes_per_loop);
 }
@@ -168,8 +162,7 @@ void
 app::compute_detailed(long flops, long nintops, long bytes)
 {
   if (!compute_inst_){
-    compute_inst_ = new lib_compute_inst(id_);
-    register_lib(compute_inst_);
+    compute_inst_ = new lib_compute_inst(params_, id_, os_);
   }
   compute_inst_->compute_detailed(flops, nintops, bytes);
 }
@@ -201,8 +194,7 @@ app::get_params()
 void
 app::init_mem_lib()
 {
-  compute_mem_move_ = new lib_compute_memmove(id_);
-  register_lib(compute_mem_move_);
+  compute_mem_move_ = new lib_compute_memmove(params_, id_, os_);
 }
 
 void
@@ -224,8 +216,7 @@ app::_get_api(const char* name)
     sprockit::sim_parameters* app_params = params_;
     if (new_params)
       app_params = params_->get_namespace(name);
-    api* new_api = api_factory::get_value(name, app_params, id_);
-    register_lib(new_api);
+    api* new_api = api_factory::get_value(name, app_params, id_, os_);
     apis_[name] = new_api;
     return new_api;
   }

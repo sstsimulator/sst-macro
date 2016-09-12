@@ -20,7 +20,7 @@ test_dragonfly_v1(UnitTest& unit)
   structured_topology* dfly = test_cast(structured_topology, top);
   assertTrue(unit, "dragonfly cast topology", bool(dfly) );
   topology::set_static_topology(top);
-  switch_interconnect::switch_map switches;
+  interconnect::switch_map switches;
   init_switches(switches, params, top);
 
   {
@@ -120,7 +120,7 @@ test_dragonfly_v2(UnitTest& unit)
   structured_topology* dfly = test_cast(structured_topology, top);
   assertTrue(unit, "dragonfly cast topology", bool(dfly) );
   topology::set_static_topology(top);
-  switch_interconnect::switch_map switches;
+  interconnect::switch_map switches;
   init_switches(switches, params, top);
 
   {

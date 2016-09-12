@@ -10,16 +10,21 @@
 namespace sstmac {
 namespace hw {
 
-SpktRegister("nullnic | null", nic, null_nic,
-            "Implements a nic which immediately injects messages with no memory reads or latency");
+SpktRegister("null", nic, null_nic,
+ "Implements a nic which immediately injects messages with no memory reads or latency");
 
 
-void
-null_nic::init_factory_params(sprockit::sim_parameters* params)
+null_nic::null_nic(sprockit::sim_parameters *params, node *parent)
+  : simple_nic(override_params(params), parent)
+{
+}
+
+sprockit::sim_parameters*
+null_nic::override_params(sprockit::sim_parameters* params)
 {
   params->add_param_override("injection_latency", "0us");
   params->add_param_override("injection_bandwidth", "100000GB/s");
-  simple_nic::init_factory_params(params);
+  return params;
 }
 
 }

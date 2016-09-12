@@ -141,7 +141,7 @@ new_packet(message *msg, int bytes, int byte_offset)
 }
 
 void
-init_switches(switch_interconnect::switch_map &switches,
+init_switches(interconnect::switch_map &switches,
               sprockit::sim_parameters& params,
               topology* top)
 {
@@ -160,7 +160,7 @@ init_switches(switch_interconnect::switch_map &switches,
     {
       params.add_param_override("id", i);
       network_switch* sw = network_switch_factory::get_param(
-            "model", &params);
+            "model", &params, i, nullptr);
       switches[switch_id(i)] = sw;
     }
     //don't need a clone factory

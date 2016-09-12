@@ -32,47 +32,15 @@ SpktRegister("packet_flow", network_switch, packet_flow_switch);
 
 ImplementIntegratedComponent(packet_flow_switch);
 
-template <class T>
-void
-set_ev_parent(T& themap, event_scheduler* m)
-{
-  typename T::iterator it, end = themap.end();
-  for (it=themap.begin(); it != end; ++it) {
-    it->second->set_event_parent(m);
-  }
-}
 
-template <class T>
-void
-vec_set_ev_parent(std::vector<T*>& themap, event_scheduler* m)
-{
-  for (int i=0; i < themap.size(); ++i){
-    T* t = themap[i];
-    if (t) t->set_event_parent(m);
-  }
-}
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-packet_flow_abstract_switch::packet_flow_abstract_switch() :
+packet_flow_abstract_switch::packet_flow_abstract_switch(
+  sprockit::sim_parameters *params, uint64_t id, event_manager *mgr) :
   buf_stats_(nullptr),
   xbar_stats_(nullptr),
-  link_arbitrator_template(nullptr)
+  link_arbitrator_template(nullptr),
+  network_switch(params, id, mgr)
 {
-}
-#endif
-
-
-packet_flow_abstract_switch::~packet_flow_abstract_switch()
-{
-  if (buf_stats_) delete buf_stats_;
-  if (xbar_stats_) delete xbar_stats_;
-  if (link_arbitrator_template) delete link_arbitrator_template;
-}
-
-void
-packet_flow_abstract_switch::init_factory_params(sprockit::sim_parameters *params)
-{
-  network_switch::init_factory_params(params);
   packet_size_ = params->get_optional_byte_length_param("mtu", 4096);
   link_bw = params->get_bandwidth_param("link_bandwidth");
   hop_lat = params->get_time_param("hop_latency");
@@ -92,28 +60,31 @@ packet_flow_abstract_switch::init_factory_params(sprockit::sim_parameters *param
 
   sprockit::sim_parameters* xbar_params = params->get_optional_namespace("xbar");
 
-  xbar_stats_ = packet_sent_stats_factory::get_optional_param("stats", "null", xbar_params);
+  xbar_stats_ = packet_sent_stats_factory::get_optional_param("stats", "null",
+                                             xbar_params, this);
 
   sprockit::sim_parameters* buf_params = params->get_optional_namespace("output_buffer");
-  buf_stats_ = packet_sent_stats_factory::get_optional_param("stats", "null", buf_params);
+  buf_stats_ = packet_sent_stats_factory::get_optional_param("stats", "null",
+                                             buf_params, this);
 }
 
-#if SSTMAC_INTEGRATED_SST_CORE
+
+
+packet_flow_abstract_switch::~packet_flow_abstract_switch()
+{
+  if (buf_stats_) delete buf_stats_;
+  if (xbar_stats_) delete xbar_stats_;
+  if (link_arbitrator_template) delete link_arbitrator_template;
+}
+
 packet_flow_switch::packet_flow_switch(
-  SST::ComponentId_t id,
-  SST::Params& params
-) : packet_flow_abstract_switch(id, params),
+  sprockit::sim_parameters* params,
+  uint64_t id,
+  event_manager* mgr)
+: packet_flow_abstract_switch(params, id, mgr),
   xbar_(nullptr)
 {
-  init_factory_params(SSTIntegratedComponent::params_);
-  init_sst_params(params);
 }
-#else
-packet_flow_switch::packet_flow_switch() :
- xbar_(nullptr)
-{
-}
-#endif
 
 packet_flow_switch::~packet_flow_switch()
 {
@@ -124,13 +95,6 @@ packet_flow_switch::~packet_flow_switch()
     packet_flow_sender* buf = out_buffers_[i];
     if (buf) delete buf;
   }
-}
-
-
-void
-packet_flow_switch::init_factory_params(sprockit::sim_parameters *params)
-{
-  packet_flow_abstract_switch::init_factory_params(params);
 }
 
 void
@@ -162,6 +126,7 @@ packet_flow_switch::crossbar(config* cfg)
       "Switch %d: creating crossbar with bandwidth %12.8e",
       int(my_addr_), xbar_bw);
     xbar_ = new packet_flow_crossbar(
+              this,
               timestamp(0), //assume zero-time send
               hop_lat, //delayed credits
               bw,
@@ -220,6 +185,7 @@ packet_flow_switch::output_buffer(int port, config* cfg)
 
     packet_flow_network_buffer* out_buffer
       = new packet_flow_network_buffer(
+                  this,
                   hop_lat,
                   timestamp(0), //assume credit latency to xbar is free
                   src_buffer_size,
@@ -315,22 +281,6 @@ void
 packet_flow_switch::deadlock_check(event *ev)
 {
   xbar_->deadlock_check(ev);
-}
-
-void
-packet_flow_switch::set_event_manager(event_manager* m)
-{
-  network_switch::set_event_manager(m);
-  if (!xbar_){
-    spkt_throw(sprockit::value_error,
-       "crossbar uninitialized on switch");
-  }
-
-  xbar_stats_->set_event_manager(m);
-  buf_stats_->set_event_manager(m);
-
-  vec_set_ev_parent(out_buffers_, this);
-  xbar_->set_event_parent(this);
 }
 
 int

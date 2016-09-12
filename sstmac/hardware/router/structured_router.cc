@@ -6,8 +6,10 @@
 namespace sstmac {
 namespace hw {
 
-structured_router::structured_router(topology* top, network_switch* netsw, routing::algorithm_t algo) :
-  router(top, netsw, algo)
+structured_router::structured_router(sprockit::sim_parameters* params, topology* top,
+                                     network_switch* netsw,
+                                     routing::algorithm_t algo) :
+  router(params, top, netsw, algo)
 {
   regtop_ = safe_cast(structured_topology, top);
 }

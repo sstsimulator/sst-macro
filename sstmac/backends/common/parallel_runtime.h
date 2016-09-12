@@ -18,7 +18,6 @@ DeclareDebugSlot(parallel);
 namespace sstmac {
 
 class parallel_runtime :
-  public sprockit::factory_type,
   public lockable
 {
  public:
@@ -30,9 +29,6 @@ class parallel_runtime :
   };
 
   static const int global_root;
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
 
   virtual void
   finalize_init();
@@ -166,7 +162,7 @@ class parallel_runtime :
   }
 
  protected:
-  parallel_runtime();
+  parallel_runtime(sprockit::sim_parameters* params);
 
   virtual void
   do_send_message(int lp, void* buffer, int size) = 0;

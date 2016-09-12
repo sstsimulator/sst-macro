@@ -41,49 +41,16 @@ namespace sstmac {
 namespace hw {
 
 class node :
-  public sprockit::factory_type,
   public failable,
   public connectable_component
 {
 
  public:
-#if SSTMAC_INTEGRATED_SST_CORE
-  node(
-    SST::ComponentId_t id,
-    SST::Params& params
-  );
-
   void setup();
 
   void init(unsigned int phase);
-#endif
-  virtual void
-  set_event_manager(event_manager* man);
-
 
   virtual ~node();
-  /**
-   Standard factory type initializer. Perform extra initialization work
-   after all parameters have been read in.
-   */
-  virtual void
-  finalize_init();
-
-  /**
-   Standard factory type initializer. Read in all parameters.
-   @params The parameter object
-   */
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  /**
-   Initializer used in stand-alone core.
-   @param n  The network interface object
-  */
-  void
-  set_nic(nic* n){
-    nic_ = n;
-  }
 
   void
   connect(int src_outport, int dst_inport,
@@ -180,7 +147,9 @@ class node :
   void schedule_launches();
 
  protected:
-  node();
+  node(sprockit::sim_parameters* params,
+    uint64_t id,
+    event_manager* mgr);
 
   void connect_nic();
 
@@ -194,8 +163,6 @@ class node :
   processor* proc_;
 
   nic* nic_;
-
-  int ncores_;
   
   int nsocket_;
 
@@ -203,22 +170,14 @@ class node :
   void build_launchers(sprockit::sim_parameters* params);
 
  private:
+  sw::launcher* launcher_;
   static std::list<sw::app_launch*> launchers_;
   unique_event_id next_outgoing_id_;
-#if !SSTMAC_INTEGRATED_SST_CORE
   sprockit::sim_parameters* params_;
-#endif
-
-#if !SSTMAC_INTEGRATED_SST_CORE
- public:
-  void launch(timestamp start, sw::launch_event* msg);
-#else
-  void launch();
-#endif
 
 };
 
-DeclareFactory(node);
+DeclareFactory(node,uint64_t,event_manager*);
 
 }
 } // end of namespace sstmac

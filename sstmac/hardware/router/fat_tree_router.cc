@@ -25,13 +25,30 @@ namespace hw {
 
 SpktRegister("fattree | ftree", router, fat_tree_router);
 
-fat_tree_router::fat_tree_router(topology *top, network_switch *netsw) :
-  structured_router(top, netsw, routing::minimal),
+fat_tree_router::fat_tree_router(sprockit::sim_parameters* params, topology *top,
+                                 network_switch *netsw) :
+  structured_router(params, top, netsw, routing::minimal),
   rng_(nullptr)
 {
   fat_tree* ft = safe_cast(fat_tree, top);
   k_ = ft->k();
   l_ = ft->l();
+  seed_ = params->get_optional_long_param("router_seed", -1);
+  build_rng();
+
+  int switchesperlevel = pow(k_, l_ - 1);
+  myL_ = my_addr_ / switchesperlevel;
+
+  num_leaf_switches_reachable_ = pow(k_, myL_);
+  num_leaf_switches_per_path_ = num_leaf_switches_reachable_ / k_;
+  int level_relative_id = my_addr_ - myL_ * switchesperlevel;
+
+  int my_leaf_group = level_relative_id / num_leaf_switches_reachable_;
+  min_reachable_leaf_id_ = my_leaf_group * num_leaf_switches_reachable_;
+  max_reachable_leaf_id_ = min_reachable_leaf_id_ + num_leaf_switches_reachable_;
+
+  numpicked_ = 0;
+  numpicktop_ = 0;
 }
 
 void
@@ -53,14 +70,6 @@ fat_tree_router::~fat_tree_router()
 {
   printf("deleteing fat tree router\n");
   if (rng_) delete rng_;
-}
-
-void
-fat_tree_router::init_factory_params(sprockit::sim_parameters *params)
-{
-  structured_router::init_factory_params(params);
-  seed_ = params->get_optional_long_param("router_seed", -1);
-  build_rng();
 }
 
 void
@@ -133,26 +142,6 @@ fat_tree_router::choose_up_minimal_path()
   int ret = numpicked_;
   numpicked_ = (numpicked_ + 1) % k_;
   return ret;
-}
-
-void
-fat_tree_router::finalize_init()
-{
-  int switchesperlevel = pow(k_, l_ - 1);
-  myL_ = my_addr_ / switchesperlevel;
-
-  num_leaf_switches_reachable_ = pow(k_, myL_);
-  num_leaf_switches_per_path_ = num_leaf_switches_reachable_ / k_;
-  int level_relative_id = my_addr_ - myL_ * switchesperlevel;
-
-  int my_leaf_group = level_relative_id / num_leaf_switches_reachable_;
-  min_reachable_leaf_id_ = my_leaf_group * num_leaf_switches_reachable_;
-  max_reachable_leaf_id_ = min_reachable_leaf_id_ + num_leaf_switches_reachable_;
-
-  numpicked_ = 0;
-  numpicktop_ = 0;
-
-  structured_router::finalize_init();
 }
 
 int

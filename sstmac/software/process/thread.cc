@@ -104,16 +104,6 @@ thread::init_thread(int physical_thread_id, threading_interface* threadcopy, voi
 
   state_ = INITIALIZED;
 
-  //there were libs that wanted to be registered
-  if (!pending_libs_.empty()) {
-    std::list<library*>::iterator it;
-    for (it = pending_libs_.begin(); it != pending_libs_.end(); it++) {
-      os_->register_lib(this, *it);
-    }
-  }
-
-  pending_libs_.clear();
-
   context_ = threadcopy->copy();
 
   threadinfo* info = new threadinfo();
@@ -153,8 +143,6 @@ thread::kill()
   state_ = DONE;
 
   clear_subthread_from_parent_app();
-
-  unregister_all_libs();
 
   // This is a little bit weird - kill is happening on a non-DES thread stack
   os_->complete_thread(true);
@@ -330,27 +318,10 @@ thread::collect_backtrace(int nfxn)
 }
 
 void
-thread::register_lib(library* lib)
-{
-  if (is_initialized()) {
-    os_->register_lib(this, lib);
-  }
-  else {
-    pending_libs_.push_back(lib);
-  }
-}
-
-void
 thread::spawn(thread* thr)
 {
   thr->parent_app_ = parent_app();
   os_->start_thread(thr);
-}
-
-void
-thread::unregister_all_libs()
-{
-  os_->unregister_all_libs(this);
 }
 
 timestamp

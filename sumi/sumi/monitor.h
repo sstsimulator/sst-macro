@@ -39,8 +39,7 @@ class function_set {
   std::list<timeout_function*> listeners_;
 };
 
-class activity_monitor :
-  public sprockit::factory_type
+class activity_monitor
 {
  public:
   activity_monitor(transport* t) : api_(t){}

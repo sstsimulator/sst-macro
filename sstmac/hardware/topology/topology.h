@@ -45,8 +45,7 @@ namespace hw {
     }
   }
 
-class topology :
-  virtual public sprockit::factory_type
+class topology
 {
  public:
   static const int eject;

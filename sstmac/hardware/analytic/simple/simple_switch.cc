@@ -28,10 +28,9 @@ namespace hw {
 SpktRegister("simple", network_switch, simple_switch);
 #endif
 
-void
-simple_switch::init_factory_params(sprockit::sim_parameters* params)
+simple_switch::simple_switch(sprockit::sim_parameters *params, uint64_t id, event_manager *mgr) :
+  network_switch(params, id, mgr)
 {
-  network_switch::init_factory_params(params);
   double net_bw = params->get_bandwidth_param("bandwidth");
   inverse_bw_ = 1.0/net_bw;
   hop_latency_ = params->get_time_param("hop_latency");
@@ -61,20 +60,19 @@ simple_switch::init_factory_params(sprockit::sim_parameters* params)
   my_end_ = node_id(nid);
 
   top_ = topology::static_topology(params);
-}
 
-void
-simple_switch::finalize_init()
-{
-  network_switch::finalize_init();
+#if !SSTMAC_INTEGRATED_SST_CORE
+  int numsw = top_->num_switches();
+  if (mgr->nworker() != numsw){
+    spkt_abort_printf("simple_switch:: topology has %d switches"
+        " but we are running with %d SST/macro workers (nproc*nthread)\n"
+        "the number of SST/macro workers should match the number of switches",
+        numsw, mgr->nworker());
+  }
+#endif
 }
 
 simple_switch::~simple_switch()
-{
-}
-
-void
-simple_switch::initialize()
 {
 }
 
@@ -184,20 +182,7 @@ simple_switch::send_to_switch(timestamp delay, node_id dst, message* msg)
   schedule_delay(delay, neighbors_[dst], msg);
 }
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-void
-simple_switch::set_event_manager(event_manager* m)
-{
-  network_switch::set_event_manager(m);
-  int numsw = top_->num_switches();
-  if (m->nworker() != numsw){
-    spkt_throw_printf(sprockit::value_error,
-        "simple_switch:: topology has %d switches, but we are running with %d SST/macro workers (nproc*nthread)\n"
-        "the number of SST/macro workers should match the number of switches",
-        numsw, m->nworker());
-  }
-}
-#endif
+
 
 }
 }

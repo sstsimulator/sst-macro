@@ -32,7 +32,7 @@ namespace native {
  * All time progression is handled by this object
  * and messages between nodes are managed here as well.
  */
-class manager : public sprockit::factory_type {
+class manager {
 
  public:
   manager();

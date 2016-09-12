@@ -2,6 +2,7 @@
 #define CONNECTION_H
 
 #include <sstmac/common/event_scheduler.h>
+#include <sprockit/sim_parameters_fwd.h>
 
 #define connectable_type_invalid(ty) \
    spkt_throw_printf(sprockit::value_error, "invalid connectable type %s", connectable::str(ty))
@@ -79,23 +80,21 @@ class connectable_component :
   public connectable
 {
  protected:
-#if SSTMAC_INTEGRATED_SST_CORE
-  connectable_component(SST::ComponentId_t id,
-    SST::Params& params) : event_scheduler(id, params)
+  connectable_component(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr)
+    : event_scheduler(params, id, mgr)
   {
   }
-#endif
 };
 
 class connectable_subcomponent :
   public event_subscheduler,
   public connectable
 {
-#if SSTMAC_INTEGRATED_SST_CORE
- public:
-  virtual void
-  init_sst_params(SST::Params& params, SST::Component* parent){}
-#endif
+protected:
+ connectable_subcomponent(event_scheduler* parent)
+   : event_subscheduler(parent)
+ {
+ }
 };
 
 }

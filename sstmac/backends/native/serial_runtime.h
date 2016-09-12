@@ -10,7 +10,7 @@ class serial_runtime :
   public parallel_runtime
 {
  public:
-  serial_runtime();
+  serial_runtime(sprockit::sim_parameters* params);
 
   std::string
   to_string() const {

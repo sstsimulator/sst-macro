@@ -26,7 +26,7 @@ class launcher :
 {
 
  public:
-  launcher();
+  launcher(operating_system* os);
 
   virtual std::string
   to_string() const {

@@ -28,22 +28,17 @@ double lib_compute_loops::mem_line_ratio_ = -1;
 double lib_compute_loops::flop_line_ratio_ = -1;
 bool lib_compute_loops::do_loops_ = true;
 
-lib_compute_loops::lib_compute_loops(software_id id) :
-  lib_compute_memmove("lib_compute_loops", id)
+lib_compute_loops::lib_compute_loops(sprockit::sim_parameters* params, software_id id,
+                                     operating_system* os) :
+  lib_compute_memmove(params, "lib_compute_loops", id, os)
 {
   key_cat_ = lib_compute::key_category;
-}
-
-void
-lib_compute_loops::consume_params(sprockit::sim_parameters* params)
-{
   mem_line_ratio_ = params->get_optional_double_param(
                         "lib_compute_loops_mem_ratio", 0.8);
   flop_line_ratio_ = params->get_optional_double_param(
                          "lib_compute_loops_flop_ratio", 0.8);
   do_loops_ = params->get_optional_bool_param(
                   "lib_compute_loops_enable", true);
-  lib_compute_memmove::consume_params(params);
 }
 
 void

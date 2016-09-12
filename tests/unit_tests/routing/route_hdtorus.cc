@@ -16,7 +16,7 @@ void test_torus(UnitTest& unit)
   topology* top = topology_factory::get_value("hdtorus", &params);
   structured_topology* torus = test_cast(structured_topology, top);
   topology::set_static_topology(top);
-  switch_interconnect::switch_map switches;
+  interconnect::switch_map switches;
   init_switches(switches, params, top);
 
   assertTrue(unit, "torus cast topology", bool(torus) );

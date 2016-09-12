@@ -39,12 +39,12 @@ class service :
   incoming_event(event* ev) = 0;
 
  protected:
-  service(const std::string& libname, software_id sid) :
-    library(libname, sid)
+  service(const std::string& libname, software_id sid, operating_system* os) :
+    library(libname, sid, os)
   {}
 
-  service(const char* prefix, software_id sid) :
-    library(prefix, sid)
+  service(const char* prefix, software_id sid, operating_system* os) :
+    library(prefix, sid, os)
   {}
 
   virtual

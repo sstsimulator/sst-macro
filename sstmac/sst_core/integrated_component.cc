@@ -110,6 +110,7 @@ connection_details::parse_type_id(const std::string& str, endpoint_t& ep, int& i
 void
 parse_port_name(const std::string& port_name, connection_details* rv)
 {
+  std::cout << "port name: " << port_name << std::endl;
   // Replace _ with space except within ( ) so we can use an instream to read the tokens
   std::string split = "";
   int in_parens = 0;

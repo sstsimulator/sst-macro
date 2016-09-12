@@ -14,22 +14,25 @@ namespace hw {
 
 #if !SSTMAC_INTEGRATED_SST_CORE
 SpktRegister("simple", interconnect, simple_interconnect,
-            "Models the network interconnect via a simple analytic function of latency/bandwidth");
+     "Models the network interconnect via a simple analytic function of latency/bandwidth");
 #endif
 
-void
-simple_interconnect::init_factory_params(sprockit::sim_parameters* params)
+simple_interconnect::simple_interconnect(sprockit::sim_parameters* params, event_manager* mgr,
+                    partition* part, parallel_runtime* rt) :
+  interconnect(override_params(params), mgr, part, rt)
 {
-  params->add_param_override("switch.model", "simple");
 
-  switch_interconnect::init_factory_params(params);
-
-#if SSTMAC_INTEGRATED_SST_CORE
   double bw = params->get_bandwidth_param("bandwidth");
   inverse_bw_ = 1.0 / bw;
   hop_latency_ = params->get_time_param("hop_latency");
   inj_latency_ = params->get_time_param("injection_latency");
-#endif
+}
+
+sprockit::sim_parameters*
+simple_interconnect::override_params(sprockit::sim_parameters* params)
+{
+  params->add_param_override("switch.model", "simple");
+  return params;
 }
 
 }

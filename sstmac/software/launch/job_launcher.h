@@ -25,8 +25,7 @@ namespace sw {
  * allocation/indexing. In most cases, the job_launcher will honor exactly each applications's request
  * unless there is a conflict - in which case the job_launcher must arbitrate conflicting requests.
  */
-class job_launcher :
-  public sprockit::factory_type
+class job_launcher
 {
  public:
   node_id
@@ -34,9 +33,6 @@ class job_launcher :
 
   app_launch*
   task_mapper(app_id aid) const;
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params);
 
   /**
    * @brief handle_new_launch_request As if a new job had been submitted with qsub or salloc.
@@ -49,7 +45,7 @@ class job_launcher :
   handle_new_launch_request(app_launch* appman, hw::node* target) = 0;
 
   static job_launcher*
-  static_job_launcher(sprockit::sim_parameters* params);
+  static_job_launcher(sprockit::sim_parameters* params, event_manager* mgr);
 
   static void
   clear_static_job_launcher(){
@@ -60,6 +56,8 @@ class job_launcher :
   virtual ~job_launcher(){}
 
  protected:
+  job_launcher(sprockit::sim_parameters* params, event_manager* mgr);
+
   void
   satisfy_launch_request(app_launch* appman, hw::node* nd);
 
@@ -73,12 +71,17 @@ class job_launcher :
 
 };
 
-DeclareFactory(job_launcher);
+DeclareFactory(job_launcher, event_manager*);
 
 class default_job_launcher :
   public job_launcher
 {
  public:
+  default_job_launcher(sprockit::sim_parameters* params, event_manager* mgr) :
+    job_launcher(params, mgr)
+  {
+  }
+
   std::string
   to_string() const {
     return "default job launcher";

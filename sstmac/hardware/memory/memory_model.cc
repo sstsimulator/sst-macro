@@ -23,7 +23,8 @@ namespace hw {
 
 static sprockit::need_delete_statics<memory_model> need_del;
 
-memory_model::memory_model(node* parent_node)
+memory_model::memory_model(sprockit::sim_parameters* params, node* parent_node) :
+  event_subscheduler(parent_node)
 {
   parent_node_ = parent_node;
   nodeid_ = parent_node->addr();
@@ -38,11 +39,6 @@ memory_model::addr() const {
 
 void
 memory_model::delete_statics()
-{
-}
-
-void
-memory_model::init_factory_params(sprockit::sim_parameters *params)
 {
 }
 

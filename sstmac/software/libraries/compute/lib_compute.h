@@ -17,13 +17,17 @@ class lib_compute :
   static key::category key_category;
   
  protected:
-  lib_compute(const std::string& libname, software_id sid)
-    : library(libname, sid) {
+  lib_compute(sprockit::sim_parameters* params,
+              const std::string& libname, software_id sid,
+              operating_system* os)
+    : library(libname, sid, os) {
     key_cat_ = lib_compute::key_category;
   }
 
-  lib_compute(const char* name, software_id sid)
-    : library(name, sid)
+  lib_compute(sprockit::sim_parameters* params,
+              const char* name, software_id sid,
+              operating_system* os)
+    : library(name, sid, os)
   {
      key_cat_ = lib_compute::key_category;
   }

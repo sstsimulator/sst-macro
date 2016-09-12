@@ -58,13 +58,16 @@ class structured_routable_packet_allocator :
  public packet_allocator
 {
  public:
+  structured_routable_packet_allocator(sprockit::sim_parameters* params)
+    : packet_allocator(params)
+  {
+  }
+
   virtual packet_flow_payload*
   new_packet(int bytes, long byte_offset, message *msg){
     return new structured_routable_packet_flow(msg, bytes, byte_offset);
   }
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params){}
 };
 
 

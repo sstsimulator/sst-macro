@@ -6,7 +6,7 @@
 // TODO get unit tests working with @integrated_core
 
 #include <sstmac/hardware/switch/network_switch.h>
-#include <sstmac/hardware/interconnect/switch_interconnect.h>
+#include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/router/routable.h>
 #include <sstmac/hardware/topology/topology.h>
@@ -67,7 +67,7 @@ get_vector(int a, int b, int c, int d, int e, int f);
 sstmac::hw::coordinates
 get_vector(int a, int b, int c, int d, int e, int f, int g);
 
-void init_switches(sstmac::hw::switch_interconnect::switch_map& switches,
+void init_switches(sstmac::hw::interconnect::switch_map& switches,
                    sprockit::sim_parameters& params,
                    sstmac::hw::topology* top);
 

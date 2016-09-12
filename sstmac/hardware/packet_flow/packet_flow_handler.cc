@@ -4,10 +4,6 @@
 namespace sstmac {
 namespace hw {
 
-packet_flow_handler::packet_flow_handler()
-{
-}
-
 void
 packet_flow_handler::handle(event* ev)
 {

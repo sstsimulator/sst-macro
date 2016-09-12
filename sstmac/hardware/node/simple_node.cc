@@ -41,39 +41,10 @@ simple_node::~simple_node()
 {
 }
 
-void
-simple_node::init_factory_params(sprockit::sim_parameters *params)
+simple_node::simple_node(sprockit::sim_parameters *params, uint64_t id, event_manager *mgr)
+  : node(params, id, mgr)
 {
-  node::init_factory_params(params);
 }
-
-void
-simple_node::finalize_init()
-{
-  node::finalize_init();
-}
-
-#if SSTMAC_INTEGRATED_SST_CORE
-simple_node::simple_node(
-  SST::ComponentId_t id,
-  SST::Params& params) : node(id, params)
-{
-  init_factory_params(params_);
-  init_sst_params(params);
-}
-
-void
-simple_node::init_sst_params(SST::Params &params)
-{
-  nic_->init_sst_params(params, this);
-}
-#else
-void
-simple_node::set_event_manager(event_manager* m)
-{
-  node::set_event_manager(m);
-}
-#endif
 
 void
 simple_node::execute(ami::COMP_FUNC func,

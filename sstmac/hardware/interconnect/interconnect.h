@@ -20,6 +20,7 @@
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/hardware/nic/nic_fwd.h>
 #include <sstmac/hardware/nic/netlink_fwd.h>
+#include <sstmac/hardware/switch/network_switch_fwd.h>
 
 #include <sstmac/backends/common/sim_partition_fwd.h>
 
@@ -40,35 +41,60 @@ namespace hw {
 /**
  * Base class for network congestion models.
  */
-class interconnect :
-  public sprockit::factory_type
+class interconnect
 {
+public:
+  static interconnect*
+  static_interconnect(sprockit::sim_parameters* params, event_manager* mgr);
 
+  static void
+  clear_static_interconnect(){
+    if (static_interconnect_) delete static_interconnect_;
+    static_interconnect_ = nullptr;
+  }
+
+protected:
+ interconnect(sprockit::sim_parameters* params, event_manager* mgr,
+                    partition* part, parallel_runtime* rt);
+
+protected:
+ topology* topology_;
+
+private:
+ static interconnect* static_interconnect_;
+
+#if !SSTMAC_INTEGRATED_SST_CORE
  public:
+  typedef spkt_unordered_map<switch_id, network_switch*> switch_map;
   typedef spkt_unordered_map<switch_id, connectable*> internal_map;
   typedef spkt_unordered_map<node_id, connectable*> endpoint_map;
   typedef spkt_unordered_map<node_id, node*> node_map;
   typedef spkt_unordered_map<node_id, nic*> nic_map;
 
-  virtual std::string
+  std::string
   to_string() const {
     return "interconnect";
   }
 
   virtual ~interconnect();
 
-  virtual int
-  num_nodes() const;
+  int
+  num_nodes() const {
+    return nodes_.size();
+  }
 
-  virtual topology*
+  topology*
   topol() const {
     return topology_;
   }
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
 
-#if !SSTMAC_INTEGRATED_SST_CORE
+  inline timestamp send_delay(int num_hops, int num_bytes) const {
+    double bw_term = num_bytes / hop_bw_;
+    timestamp delay = hop_latency_ * num_hops + timestamp(bw_term) + 2*injection_latency_;
+    return delay;
+  }
+
   /**
     Do not actually inject the message into the network
     or do any congestion modeling. Just immediately
@@ -76,12 +102,7 @@ class interconnect :
     computed delay.
     @param msg The message to send to the destination
   */
-  virtual void
-  immediate_send(event_scheduler* src, message* msg, timestamp start) const = 0;
-
-  virtual void
-  set_event_manager(event_manager* mgr){};
-#endif
+  void immediate_send(event_scheduler* src, message* msg, timestamp start) const;
 
   /**
    * @brief Return the node corresponding to given ID.
@@ -106,95 +127,61 @@ class interconnect :
     return nodes_;
   }
 
-  virtual void
-  kill_node(node_id nid) = 0;
+  void
+  kill_node(node_id nid);
 
-  virtual void
-  kill_node(node_id nid, timestamp t) = 0;
+  void
+  kill_node(node_id nid, timestamp t);
 
-  static interconnect*
-  static_interconnect(sprockit::sim_parameters* params);
+  void
+  deadlock_check();
 
-  static void
-  clear_static_interconnect(){
-    if (static_interconnect_) delete static_interconnect_;
-    static_interconnect_ = nullptr;
+  void handle(event* ev);
+
+  network_switch*
+  switch_at(switch_id id) const
+  {
+    switch_map::const_iterator it = switches_.find(id);
+    if (it == switches_.end()){
+      return 0;
+    }
+    return it->second;
   }
 
-  virtual void
-  deadlock_check(){}
+  const switch_map&
+  switches() const {
+    return switches_;
+  }
 
- protected:
-  interconnect();
+  void
+  write_graph_file(const std::string& graph_file);
 
- protected:
-  topology* topology_;
+  int
+  thread_for_switch(switch_id sid) const;
 
+  timestamp
+  hop_latency() const {
+    return hop_latency_;
+  }
+
+  timestamp
+  lookahead() const {
+    return lookahead_;
+  }
+
+ private:
+  switch_map switches_;
   node_map nodes_;
   nic_map nics_;
 
- private:
-  static interconnect* static_interconnect_;
+  double hop_bw_;
 
-};
+  timestamp hop_latency_;
 
-#if SSTMAC_INTEGRATED_SST_CORE
-class sst_interconnect : public interconnect
-{
+  timestamp injection_latency_;
 
- public:
-  sst_interconnect(partition* part, parallel_runtime* rt){}
+  timestamp lookahead_;
 
-  event_loc_id
-  event_location() const {
-    return event_loc_id::null;
-  }
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
-  kill_node(node_id nid);
-
-  virtual void
-  kill_node(node_id nid, timestamp t);
-
-};
-typedef sst_interconnect interconnect_base;
-#else
-class macro_interconnect : public interconnect
-{
- public:
-  virtual ~macro_interconnect();
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params);
-
-  virtual void
-  set_event_manager(event_manager* m);
-
-  void
-  set_node_event_manager(node* the_node, event_manager* m);
-
-  void
-  set_event_manager_common(event_manager* m);
-
-  void
-  kill_node(node_id nid);
-
-  void
-  kill_node(node_id nid, timestamp t);
-
-  virtual void
-  handle(event* ev);
-
- protected:
-  macro_interconnect(partition* part, parallel_runtime* rt) :
-    partition_(part), rt_(rt)
-  {
-  }
-
- protected:
   partition* partition_;
   parallel_runtime* rt_;
 
@@ -203,11 +190,10 @@ class macro_interconnect : public interconnect
 
   typedef std::pair<timestamp, node_id> node_fail_event;
   std::list<node_fail_event> failures_to_schedule_;
-};
-typedef macro_interconnect interconnect_base;
 #endif
+};
 
-DeclareFactory2InitParams(interconnect, partition*, parallel_runtime*);
+DeclareFactory3InitParams(interconnect, event_manager*, partition*, parallel_runtime*);
 
 }
 } // end of namespace sstmac

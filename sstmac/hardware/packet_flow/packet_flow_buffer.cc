@@ -9,10 +9,11 @@ namespace sstmac {
 namespace hw {
 
 packet_flow_buffer::packet_flow_buffer(
+  event_scheduler* parent,
   const timestamp& send_lat,
   const timestamp& credit_lat,
   packet_flow_bandwidth_arbitrator* arb)
-  : packet_flow_sender(send_lat, credit_lat),
+  : packet_flow_sender(parent, send_lat, credit_lat),
   bytes_delayed_(0),
   arb_(arb)
 {
@@ -49,13 +50,14 @@ packet_flow_buffer::set_output(int this_outport, int dst_inport,
 }
 
 packet_flow_network_buffer::packet_flow_network_buffer(
+  event_scheduler* parent,
   const timestamp& send_lat,
   const timestamp& credit_lat,
   int max_num_bytes,
   int num_vc,
   int packet_size,
   packet_flow_bandwidth_arbitrator* arb)
-  : packet_flow_finite_buffer(send_lat, credit_lat, max_num_bytes, arb),
+  : packet_flow_finite_buffer(parent, send_lat, credit_lat, max_num_bytes, arb),
     num_vc_(num_vc),
     queues_(num_vc),
     credits_(num_vc, 0),
@@ -308,11 +310,12 @@ packet_flow_infinite_buffer::num_initial_credits() const
 }
 
 packet_flow_eject_buffer::packet_flow_eject_buffer(
+  event_scheduler* parent,
   const timestamp& send_lat,
   const timestamp& credit_lat,
   int max_num_bytes,
   packet_flow_bandwidth_arbitrator* arb)
-  : packet_flow_finite_buffer(send_lat, credit_lat, max_num_bytes, arb)
+  : packet_flow_finite_buffer(parent, send_lat, credit_lat, max_num_bytes, arb)
 {
 }
 
@@ -349,10 +352,11 @@ packet_flow_eject_buffer::init_credits(int port, int num_credits)
 }
 
 packet_flow_injection_buffer::packet_flow_injection_buffer(
+  event_scheduler* parent,
   const timestamp& out_lat,
   packet_flow_bandwidth_arbitrator* arb,
   int packet_size)
-  : packet_flow_infinite_buffer(out_lat, arb),
+  : packet_flow_infinite_buffer(parent, out_lat, arb),
     credits_(0),
     packet_size_(packet_size)
 {

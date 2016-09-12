@@ -39,8 +39,7 @@ namespace hw {
  * The network switch performs both routing computations and congestion modeling.
  */
 class network_switch :
-  public connectable_component,
-  public sprockit::factory_type
+  public connectable_component
 {
  public:
   std::string
@@ -48,18 +47,13 @@ class network_switch :
     return "network switch";
   }
 
-#if SSTMAC_INTEGRATED_SST_CORE
   network_switch(
-      SST::ComponentId_t id,
-      SST::Params& params
-  );
+    sprockit::sim_parameters* params,
+    uint64_t id,
+    event_manager* mgr);
 
   virtual void
   init(unsigned int phase);
-
-  virtual void
-  setup();
-#endif
 
   virtual ~network_switch();
 
@@ -76,9 +70,6 @@ class network_switch :
   rter() const {
     return router_;
   }
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
 
   virtual void
   initialize() {
@@ -140,12 +131,6 @@ class network_switch :
     connectable* mod,
     config* cfg);
 
-  virtual void
-  set_event_manager(event_manager* m);
-#if !SSTMAC_INTEGRATED_SST_CORE
-  protected:
-  network_switch();
-#endif
  protected:
   virtual void
   connect_injector(int src_outport, int dst_inport, event_handler* nic) = 0;
@@ -174,9 +159,8 @@ class network_switch :
 
 };
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-DeclareFactory(network_switch);
-#endif
+
+DeclareFactory(network_switch,uint64_t,event_manager*);
 
 
 }

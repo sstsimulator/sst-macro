@@ -46,68 +46,92 @@ std::list<sw::app_launch*> node::launchers_;
 
 using namespace sstmac::sw;
 
-#if SSTMAC_INTEGRATED_SST_CORE
-node::node(
-  SST::ComponentId_t id,
-  SST::Params& params
-) : connectable_component(id, params)
+node::node(sprockit::sim_parameters* params,
+  uint64_t id, event_manager* mgr)
+  : connectable_component(params, id, mgr),
+    params_(params)
 {
+  my_addr_ = node_id(params->get_int_param("id"));
+  init_loc_id(event_loc_id(my_addr_));
+
+  next_outgoing_id_.set_src_node(my_addr_);
+
+  build_launchers(params);
+  sprockit::sim_parameters* nic_params = params->get_namespace("nic");
+  nic_params->add_param_override("id", int(my_addr_));
+  nic_ = nic_factory::get_param("model", nic_params, this);
+  nic_->set_node(this);
+
+  sprockit::sim_parameters* mem_params = params->get_optional_namespace("memory");
+  mem_model_ = memory_model_factory::get_optional_param("model", "simple", mem_params, this);
+
+  sprockit::sim_parameters* proc_params = params->get_optional_namespace("proc");
+  proc_ = processor_factory::get_optional_param("processor", "instruction",
+          proc_params,
+          mem_model_, this);
+
+  nsocket_ = params->get_optional_int_param("nsockets", 1);
+
+  sprockit::sim_parameters* os_params = params->get_optional_namespace("os");
+  os_ = new sw::operating_system(os_params, this);
+
+  launcher_ = new launcher(os_);
+
+  schedule_launches();
 }
 
 void
 node::connect_nic()
 {
+#if SSTMAC_INTEGRATED_SST_CORE
   for(auto&& pair : link_map_->getLinkMap()) {
     const std::string& port_name = pair.first;
     SST::Link* link = pair.second;
-    connection_details dets; parse_port_name(port_name, &dets);
-    if (dets.src_type == connection_details::node){
-      //outgoing from me, make the link
-      nic_debug("connecting to port %s", port_name.c_str());
-      integrated_connectable_wrapper* next = new integrated_connectable_wrapper(link);
-      nic_->connect(dets.src_port, 
-            dets.dst_port,
-            dets.type, next,
-            &dets.cfg);
-    } else { //I'm the receiving end
-      configureLink(port_name, new SST::Event::Handler<nic>(nic_, &nic::handle_event));
+    if (port_name == "rtr"){
+      //connecting to Merlin or other router
+      //configureLink(port_name, new SST::Event::Handler<nic>(nic_, &nic::handle_event));
+    } else {
+      connection_details dets; parse_port_name(port_name, &dets);
+      if (dets.src_type == connection_details::node){
+        //outgoing from me, make the link
+        nic_debug("connecting to port %s", port_name.c_str());
+        integrated_connectable_wrapper* next = new integrated_connectable_wrapper(link);
+        nic_->connect(dets.src_port,
+              dets.dst_port,
+              dets.type, next,
+              &dets.cfg);
+      } else { //I'm the receiving end
+        configureLink(port_name, new SST::Event::Handler<nic>(nic_, &nic::handle_event));
+      }
     }
   }
+#endif
 }
 
 void
 node::setup()
 {
+#if SSTMAC_INTEGRATED_SST_CORE
   event_scheduler::setup();
-  launch();
+  schedule_launches();
+#endif
 }
 
 void
 node::init(unsigned int phase)
 {
+#if SSTMAC_INTEGRATED_SST_CORE
   event_scheduler::init(phase);
   if (phase == 0){ 
-    set_event_manager(this);
     connect_nic();
     configure_self_link();
   }
-}
-#else
-node::node() :
-  os_(nullptr),
-  nic_(nullptr),
-  mem_model_(nullptr),
-  proc_(nullptr)
-{
-}
 #endif
+}
 
 node::~node()
 {
-  if (os_){
-    os_->unregister_all_libs(this);
-    delete os_;
-  }
+  if (os_) delete os_;
   if (mem_model_) delete mem_model_;
   if (proc_) delete proc_;
   //JJW 03/09/2015 - node does not own NIC
@@ -129,42 +153,6 @@ node::execute(ami::SERVICE_FUNC func, event* data)
 }
 
 void
-node::init_factory_params(sprockit::sim_parameters *params)
-{
-  params_ = params;
-
-  sprockit::sim_parameters* os_params = params->get_optional_namespace("os");
-  os_ = sw::operating_system::construct(os_params);
-
-  my_addr_ = node_id(params->get_int_param("id"));
-  init_loc_id(event_loc_id(my_addr_));
-
-  next_outgoing_id_.set_src_node(my_addr_);
-
-  build_launchers(params);
-  sprockit::sim_parameters* nic_params = params->get_namespace("nic");
-  nic_params->add_param_override("id", int(my_addr_));
-  nic_ = nic_factory::get_param("model", nic_params);
-  nic_->set_node(this);
-
-  sprockit::sim_parameters* mem_params = params->get_optional_namespace("memory");
-  mem_model_ = memory_model_factory::get_optional_param("model", "simple", mem_params, this);
-
-  sprockit::sim_parameters* proc_params = params->get_optional_namespace("proc");
-  proc_ = processor_factory::get_optional_param("processor", "instruction",
-          proc_params,
-          mem_model_, this);
-
-  ncores_ = params->get_int_param("ncores");
-
-  nsocket_ = params->get_optional_int_param("nsockets", 1);
-
-#if SSTMAC_INTEGRATED_SST_CORE
-  finalize_init();
-#endif
-}
-
-void
 node::build_launchers(sprockit::sim_parameters* params)
 {
   if (!launchers_.empty()) return;
@@ -183,15 +171,6 @@ node::build_launchers(sprockit::sim_parameters* params)
   }
 }
 
-void
-node::finalize_init()
-{
-  os_->set_node(this);
-  os_->set_addr(my_addr_);
-  os_->set_ncores(ncores_, nsocket_);
-  os_->register_lib(this, new launcher);
-}
-
 std::string
 node::to_string() const
 {
@@ -201,7 +180,7 @@ node::to_string() const
 void
 node::job_launch(app_launch* appman)
 {
-  job_launcher* launcher = job_launcher::static_job_launcher(params_);
+  job_launcher* launcher = job_launcher::static_job_launcher(params_, event_mgr());
   launcher->handle_new_launch_request(appman, this);
 }
 
@@ -211,20 +190,6 @@ node::schedule_launches()
   for (app_launch* appman : launchers_){
     schedule(appman->time(), new_callback(this, &node::job_launch, appman));
   }
-}
-
-
-void
-node::set_event_manager(event_manager* m)
-{
-#if !SSTMAC_INTEGRATED_SST_CORE
-  //this only happens without integrated core
-  event_scheduler::set_event_manager(m);
-  schedule_launches();
-#endif
-  os_->set_event_parent(this);
-  mem_model_->set_event_parent(this);
-  nic_->set_event_parent(this);
 }
 
 void
@@ -262,20 +227,6 @@ node::send_to_nic(network_message* netmsg)
     nic_->internode_send(netmsg);
   }
 }
-
-#if SSTMAC_INTEGRATED_SST_CORE
-void
-node::launch()
-{
-  schedule_launches();
-}
-#else
-void
-node::launch(timestamp start, launch_event* ev)
-{
-  schedule(start, new handler_event_queue_entry(ev, this, this->event_location()));
-}
-#endif
 
 }
 } // end of namespace sstmac

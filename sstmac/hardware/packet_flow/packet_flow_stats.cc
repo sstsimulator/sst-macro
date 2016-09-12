@@ -31,8 +31,7 @@ congestion_delay_us(const packet_stats_st& st)
   return congestion_delay_us;
 }
 
-void
-packet_sent_stats::init_factory_params(sprockit::sim_parameters* params)
+packet_sent_stats::packet_sent_stats(sprockit::sim_parameters *params, event_scheduler *parent)
 {
   id_ = params->get_int_param("id");
 }
@@ -51,8 +50,8 @@ packet_sent_stats::collect_single_event(const packet_stats_st &st)
              "stats object does not support collecting single events");
 }
 
-void
-congestion_spyplot::init_factory_params(sprockit::sim_parameters* params)
+congestion_spyplot::congestion_spyplot(sprockit::sim_parameters* params, event_scheduler* parent)
+  : packet_sent_stats(params, parent)
 {
   sprockit::sim_parameters* congestion_params = params->get_namespace("congestion_spyplot");
   congestion_spyplot_ = test_cast(stat_spyplot,
@@ -62,6 +61,7 @@ congestion_spyplot::init_factory_params(sprockit::sim_parameters* params)
       "packet flow congestion stats must be spyplot or spyplot_png, %s given",
       congestion_params->get_param("type").c_str());
   }
+  parent->register_stat(congestion_spyplot_);
 }
 
 congestion_spyplot::~congestion_spyplot()
@@ -91,14 +91,8 @@ congestion_spyplot::collect(double congestion_delay_us,
   congestion_spyplot_->add(pkt->fromaddr(), pkt->toaddr(), congestion_delay_us);
 }
 
-void
-congestion_spyplot::set_event_manager(event_manager *ev_mgr)
-{
-  ev_mgr->register_stat(congestion_spyplot_);
-}
-
-void
-delay_histogram::init_factory_params(sprockit::sim_parameters* params)
+delay_histogram::delay_histogram(sprockit::sim_parameters *params, event_scheduler *parent) :
+  packet_sent_stats(params, parent)
 {
   sprockit::sim_parameters* hist_params = params->get_namespace("delay_histogram");
   congestion_hist_ = test_cast(stat_histogram,
@@ -108,6 +102,7 @@ delay_histogram::init_factory_params(sprockit::sim_parameters* params)
       "congestion delay stats must be histogram, %s given",
       hist_params->get_param("type").c_str());
   }
+  parent->register_stat(congestion_hist_);
 }
 
 delay_histogram::~delay_histogram()
@@ -130,12 +125,6 @@ delay_histogram::collect_final_event(packet_flow_payload* pkt)
 }
 
 void
-delay_histogram::set_event_manager(event_manager *ev_mgr)
-{
-  ev_mgr->register_stat(congestion_hist_);
-}
-
-void
 packet_delay_stats::collect(
   double congestion_delay_us,
   packet_flow_payload* pkt)
@@ -151,10 +140,12 @@ packet_delay_stats::collect_single_event(const packet_stats_st& st)
   collect(delay, st.pkt);
 }
 
-void
-spyplot_and_delay_stats::init_factory_params(sprockit::sim_parameters *params)
+spyplot_and_delay_stats::spyplot_and_delay_stats(sprockit::sim_parameters *params,
+                                                 event_scheduler *parent) :
+  congestion_spyplot(params, parent),
+  packet_delay_stats(params, parent),
+  packet_sent_stats(params, parent)
 {
-  congestion_spyplot::init_factory_params(params);
 }
 
 void
@@ -170,10 +161,10 @@ bytes_sent_collector::~bytes_sent_collector()
   if (bytes_sent_) delete bytes_sent_;
 }
 
-void
-bytes_sent_collector::init_factory_params(sprockit::sim_parameters* params)
+bytes_sent_collector::bytes_sent_collector(sprockit::sim_parameters *params,
+                                           event_scheduler *parent) :
+  packet_sent_stats(params, parent)
 {
-  packet_sent_stats::init_factory_params(params);
   sprockit::sim_parameters* byte_params = params->get_namespace("bytes_sent");
   bytes_sent_ = test_cast(stat_bytes_sent,
                  stat_collector_factory::get_optional_param("type", "bytes_sent", byte_params));
@@ -182,6 +173,7 @@ bytes_sent_collector::init_factory_params(sprockit::sim_parameters* params)
       "packet flow bytes sent stats must be bytes_sent, %s given",
       byte_params->get_param("type").c_str());
   }
+  parent->register_stat(bytes_sent_);
 }
 
 void
@@ -190,36 +182,25 @@ bytes_sent_collector::collect_single_event(const packet_stats_st& st)
   bytes_sent_->record(st.pkt->next_port(), st.pkt->byte_length());
 }
 
-void
-bytes_sent_collector::set_event_manager(event_manager *ev_mgr)
-{
-  ev_mgr->register_stat(bytes_sent_);
-}
-
 byte_hop_collector::~byte_hop_collector()
 {
   delete byte_hops_;
 }
 
-void
-byte_hop_collector::init_factory_params(sprockit::sim_parameters* params)
+byte_hop_collector::byte_hop_collector(sprockit::sim_parameters *params, event_scheduler *parent)
+  : packet_sent_stats(params, parent)
 {
   sprockit::sim_parameters* traffic_params = params->get_namespace("byte_hops");
   byte_hops_ = test_cast(stat_global_int,
      stat_collector_factory::get_optional_param("type", "global_int", traffic_params));
   byte_hops_->set_label("Byte Hops");
+  parent->register_stat(byte_hops_);
 }
 
 void
 byte_hop_collector::collect_single_event(const packet_stats_st& st)
 {
   byte_hops_->collect(st.pkt->byte_length());
-}
-
-void
-byte_hop_collector::set_event_manager(event_manager *ev_mgr)
-{
-  ev_mgr->register_stat(byte_hops_);
 }
 
 void

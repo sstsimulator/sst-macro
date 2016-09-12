@@ -71,7 +71,9 @@ sstmac_mpi()
 //
 // Build a new mpiapi.
 //
-mpi_api::mpi_api(sstmac::sw::software_id sid) :
+mpi_api::mpi_api(sprockit::sim_parameters* params,
+                 sstmac::sw::software_id sid,
+                 sstmac::sw::operating_system* os) :
   status_(is_fresh),
   next_type_id_(0),
   next_op_id_(first_custom_op_id),
@@ -82,25 +84,10 @@ mpi_api::mpi_api(sstmac::sw::software_id sid) :
   worldcomm_(nullptr),
   selfcomm_(nullptr),
   rank_(sid.task_),
-  sumi_transport("mpi", sid)
+  sumi_transport(params, "mpi", sid, os)
 {
-}
-
-void
-mpi_api::init_factory_params(sprockit::sim_parameters* params)
-{
-  sumi_transport::init_factory_params(params);
   sprockit::sim_parameters* queue_params = params->get_optional_namespace("queue");
-  /**
-    sstkeyword {
-        docstring=Whether MPI runs as an asynchronous progress thread [service] or
-        blocks the application [user] thread.;
-    }
-  */
-  queue_ = new mpi_queue;
-  queue_->init_sid(sid());
-  queue_->init_factory_params(queue_params);
-  queue_->set_api(this);
+  queue_ = new mpi_queue(queue_params, sid, this);
 
   double probe_delay_s = params->get_optional_time_param("iprobe_delay", 0);
   iprobe_delay_us_ = probe_delay_s * 1e6;
@@ -108,19 +95,6 @@ mpi_api::init_factory_params(sprockit::sim_parameters* params)
   double test_delay_s = params->get_optional_time_param("test_delay", 0);
   test_delay_us_ = test_delay_s * 1e6;
 }
-
-void
-mpi_api::finalize_init()
-{
-}
-
-void
-mpi_api::init_os(operating_system* os)
-{
-  api::init_os(os);
-  process_manager::init_os(os);
-}
-
 
 void
 mpi_api::delete_statics()
@@ -205,11 +179,6 @@ mpi_api::do_init(int* argc, char*** argv)
   commit_builtin_types();
 
   queue_->init_os(os_);
-
-  sstmac::hw::node* mynode = os_->node();
-#if !SSTMAC_INTEGRATED_SST_CORE
-  queue_->set_event_manager(mynode->event_mgr());
-#endif
 
   status_ = is_initialized;
 

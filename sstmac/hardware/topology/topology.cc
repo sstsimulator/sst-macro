@@ -24,7 +24,7 @@ topology::topology() :
   max_ports_intra_network_(-1),
   max_ports_injection_(-1),
   endpoints_per_switch_(-1),
-  rng_(0)
+  rng_(nullptr)
 {
 }
 

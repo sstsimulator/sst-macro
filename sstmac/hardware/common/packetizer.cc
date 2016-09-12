@@ -6,6 +6,15 @@ ImplementFactory(sstmac::hw::packetizer)
 namespace sstmac {
 namespace hw {
 
+packetizer::packetizer(sprockit::sim_parameters* params,
+           event_scheduler* parent,
+           packetizer_callback* handler) :
+  notifier_(handler),
+  event_subscheduler(parent)
+{
+  packet_size_ = params->get_optional_byte_length_param("mtu", 4096);
+}
+
 packetizer::~packetizer()
 {
   //do not delete - notifiers are owned by the person that passes them in
@@ -27,12 +36,6 @@ packetizer::start(int vn, message *msg)
   pending_[vn].push_back(next);
 
   sendWhatYouCan(vn);
-}
-
-void
-packetizer::init_factory_params(sprockit::sim_parameters *params)
-{
-  packet_size_ = params->get_optional_byte_length_param("mtu", 4096);
 }
 
 void
@@ -73,6 +76,12 @@ packetizer::packetArrived(int vn, packet* pkt)
 }
 
 #if SSTMAC_INTEGRATED_SST_CORE
+void
+SimpleNetworkPacketizer::init_factory_params(sprockit::sim_parameters *params)
+{
+
+}
+
 void
 SimpleNetworkPacketizer::init_sst_params(SST::Params& params, SST::Component* parent)
 {

@@ -38,25 +38,22 @@ network_switch::~network_switch()
   if (router_) delete router_;
 }
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-network_switch::network_switch() :
-  router_(nullptr)
-{
-}
-#endif
 
-#if SSTMAC_INTEGRATED_SST_CORE
-network_switch::network_switch(
-    SST::ComponentId_t id,
-    SST::Params& params
-) : connectable_component(id, params),
+network_switch::network_switch(sprockit::sim_parameters *params, uint64_t id, event_manager *mgr)
+ : connectable_component(params, id, mgr),
   router_(nullptr)
 {
+  my_addr_ = switch_id(params->get_int_param("id"));
+  init_loc_id(event_loc_id(my_addr_));
+
+  top_ = topology::static_topology(params);
+  router_ = router_factory::get_optional_param("router", "minimal", params, top_, this);
 }
 
 void
 network_switch::init(unsigned int phase)
 {
+#if SSTMAC_INTEGRATED_SST_CORE
   event_scheduler::init(phase);
   if (phase == 0){
     for(auto&& pair : link_map_->getLinkMap()) {
@@ -80,36 +77,11 @@ network_switch::init(unsigned int phase)
       }
     }
     initialize();
-    set_event_manager(this);
   }
   configure_self_link();
-}
-
-void
-network_switch::setup()
-{
-  event_scheduler::setup();
-}
 #endif
-
-void
-network_switch::set_event_manager(event_manager* m)
-{
-#if !SSTMAC_INTEGRATED_SST_CORE
-  router_->init_stats(m);
-#endif
-  event_scheduler::set_event_manager(m);
 }
 
-void
-network_switch::init_factory_params(sprockit::sim_parameters* params)
-{
-  my_addr_ = switch_id(params->get_int_param("id"));
-  init_loc_id(event_loc_id(my_addr_));
-
-  top_ = topology::static_topology(params);
-  router_ = router_factory::get_optional_param("router", "minimal", params, top_, this);
-}
 
 void
 network_switch::connect(

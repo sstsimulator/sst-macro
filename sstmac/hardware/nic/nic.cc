@@ -43,7 +43,7 @@ namespace hw {
 
 static sprockit::need_delete_statics<nic> del_statics;
 
-nic::nic() :
+nic::nic(sprockit::sim_parameters* params, node* parent) :
   spy_num_messages_(nullptr),
   spy_bytes_(nullptr),
   hist_msg_size_(nullptr),
@@ -51,8 +51,27 @@ nic::nic() :
   global_bytes_sent_(nullptr),
   interconn_(nullptr),
   parent_(nullptr),
-  mtl_handler_(nullptr)
+  mtl_handler_(nullptr),
+  connectable_subcomponent(parent)
 {
+  my_addr_ = node_id(params->get_int_param("id"));
+  init_loc_id(event_loc_id(my_addr_));
+
+  mtl_handler_ = new_handler(this, &nic::mtl_handle);
+
+  negligible_size_ = params->get_optional_int_param("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
+
+  spy_num_messages_ = optional_stats<stat_spyplot>(parent,
+        params, "traffic_matrix", "spyplot", "num_messages");
+  spy_bytes_ = optional_stats<stat_spyplot>(parent,
+        params, "traffic_matrix", "spyplot", "bytes");
+  local_bytes_sent_ = optional_stats<stat_local_int>(parent,
+        params, "local_bytes_sent", "local_int");
+  global_bytes_sent_ = optional_stats<stat_global_int>(parent,
+        params, "global_bytes_sent", "global_int");
+  //global_bytes_sent_->set_label("NIC Total Bytes Sent");
+  hist_msg_size_ = optional_stats<stat_histogram>(parent,
+        params, "message_size_histogram", "histogram");
 }
 
 nic::~nic()
@@ -69,45 +88,6 @@ void
 nic::mtl_handle(event *ev)
 {
   recv_message(static_cast<message*>(ev));
-}
-
-void
-nic::init_factory_params(sprockit::sim_parameters *params)
-{
-  my_addr_ = node_id(params->get_int_param("id"));
-  init_loc_id(event_loc_id(my_addr_));
-
-  mtl_handler_ = new_handler(this, &nic::mtl_handle);
-
-  negligible_size_ = params->get_optional_int_param("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
-
-  spy_num_messages_ = optional_stats<stat_spyplot>(
-        params, "traffic_matrix", "spyplot", "num_messages");
-  spy_bytes_ = optional_stats<stat_spyplot>(
-        params, "traffic_matrix", "spyplot", "bytes");
-
-  if (params->has_namespace("local_bytes_sent")) {
-    sprockit::sim_parameters* traffic_params = params->get_namespace("local_bytes_sent");
-    local_bytes_sent_ = test_cast(stat_local_int, stat_collector_factory::get_optional_param("type", "local_int", traffic_params));
-    local_bytes_sent_->set_id(my_addr_);
-  }
-
-  if (params->has_namespace("global_bytes_sent")) {
-    sprockit::sim_parameters* traffic_params = params->get_namespace("global_bytes_sent");
-    global_bytes_sent_ = test_cast(stat_global_int, stat_collector_factory::get_optional_param("type", "global_int", traffic_params));
-    global_bytes_sent_->set_label("NIC Total Bytes Sent");
-  }
-
-  if (params->has_namespace("message_size_histogram")){
-    sprockit::sim_parameters* size_params = params->get_namespace("message_size_histogram");
-    hist_msg_size_ = test_cast(stat_histogram, stat_collector_factory::get_optional_param("type", "histogram", size_params));
-
-    if (!hist_msg_size_){
-      spkt_throw_printf(sprockit::value_error,
-        "NIC message size tracker must be histogram, %s given",
-        size_params->get_param("type").c_str());
-    }
-  }
 }
 
 void
@@ -269,11 +249,6 @@ nic::internode_send(network_message* netmsg)
 }
 
 void
-nic::finalize_init()
-{
-}
-
-void
 nic::send_to_node(network_message* payload)
 {
   schedule_now(parent_, payload);
@@ -288,20 +263,6 @@ nic::send_to_interconn(network_message* netmsg)
 #else
   safe_cast(interconnect, interconn_)->immediate_send(parent(), netmsg, now());
 #endif
-}
-
-void
-nic::set_event_parent(event_scheduler* m)
-{
-  connectable_subcomponent::set_event_parent(m);
-#if !SSTMAC_INTEGRATED_SST_CORE
-  if (spy_num_messages_) m->register_stat(spy_num_messages_);
-  if (spy_bytes_) m->register_stat(spy_bytes_);
-  if (hist_msg_size_) m->register_stat(hist_msg_size_);
-  if (local_bytes_sent_) m->register_stat(local_bytes_sent_);
-  if (global_bytes_sent_) m->register_stat(global_bytes_sent_);
-#endif
-
 }
 
 }

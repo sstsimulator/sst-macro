@@ -18,6 +18,9 @@
 #include <stdio.h>
 #include <stddef.h>
 
+static char py_sstmacro[] = {
+#include "sstmacro.inc"
+    0x00};
 
 using namespace sstmac;
 using namespace SST;
@@ -116,10 +119,9 @@ static PyMethodDef sst_macro_integrated_methods[] = {
 
 static void* gen_sst_macro_integrated_pymodule(void)
 {
-  PyObject* module = Py_InitModule("sst.macro", sst_macro_integrated_methods);
-
+  PyObject *code = Py_CompileString(py_sstmacro, "sstmacro", Py_file_input);
+  PyObject* module = PyImport_ExecCodeModule("sst.macro", code);
   init_python_topology(module);
-
   sstmac::connectable_proxy_component::sst = PyImport_ImportModule("sst");
   return module;
 }

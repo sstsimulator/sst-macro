@@ -21,9 +21,9 @@
 namespace sstmac {
 namespace sw {
 
-launcher::launcher() :
+launcher::launcher(operating_system* os) :
   is_completed_(false),
-  service(std::string("launcher"), software_id(0,0))
+  service(std::string("launcher"), software_id(0,0), os)
 {
 }
 

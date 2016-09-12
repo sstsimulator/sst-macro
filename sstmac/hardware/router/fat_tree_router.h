@@ -29,16 +29,10 @@ class fat_tree_router :
  public:
   virtual ~fat_tree_router();
 
-  fat_tree_router(topology* top, network_switch* netsw);
-
-  virtual void
-  finalize_init();
+  fat_tree_router(sprockit::sim_parameters* params, topology* top, network_switch* netsw);
 
   void
   productive_paths_to_switch(switch_id dst, structured_routable::path_set &paths);
-
-  void
-  init_factory_params(sprockit::sim_parameters *params);
 
   virtual std::string
   to_string() const {

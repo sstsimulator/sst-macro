@@ -23,25 +23,12 @@
 
 namespace sprockit {
 
-class factory_type  {
-
- public:
-  virtual void
-  init_factory_params(sim_parameters* params){
-  }
-
-  virtual void
-  finalize_init() {
-  }
-
-};
-
 template <class T, typename... Args>
 class SpktBuilder
 {
  public:
   virtual T*
-  build(const Args&... args) = 0;
+  build(sprockit::sim_parameters* params, const Args&... args) = 0;
 
 };
 
@@ -49,6 +36,92 @@ template<class Child, class Factory>
 class SpktBuilderImpl
 {
 };
+
+#include <type_traits>
+
+
+template <class> struct wrap { typedef void type; };
+
+template<typename T, class Enable=void>
+struct call_finalize_init : public std::false_type {
+public:
+  void operator()(T* t){
+  }
+};
+
+template<typename T>
+struct call_finalize_init<T,
+  typename wrap<
+    decltype(std::declval<T>().finalize_init())
+   >::type
+> : public std::true_type
+{
+public:
+  void operator()(T* t){
+    t->finalize_init();
+  }
+};
+
+template<typename T, class Enable=void>
+struct call_init_factory_params : public std::false_type {
+public:
+  void operator()(T* t, sprockit::sim_parameters* params){
+  }
+};
+
+template<typename T>
+struct call_init_factory_params<T,
+  typename wrap<
+    decltype(std::declval<T>()
+       .init_factory_params(static_cast<sprockit::sim_parameters*>(nullptr)))
+   >::type
+> : public std::true_type
+{
+public:
+  void operator()(T* t, sprockit::sim_parameters* params){
+    t->init_factory_params(params);
+  }
+};
+
+template <class T, class... Args>
+struct constructible_from
+{
+  template <class C>
+  static C arg();
+
+  template <typename U>
+  static std::true_type test(U*,decltype(U(arg<Args>()...))* = nullptr);
+  static std::false_type test(...);
+
+  typedef decltype(test(static_cast<T*>(nullptr))) type;
+};
+
+template <typename T, typename Enable, typename... Args>
+struct call_constructor_impl {
+};
+
+template <typename T, typename... Args>
+struct call_constructor_impl<T,
+    typename std::enable_if<constructible_from<T,Args...>::type::value>::type,
+    Args...>
+{
+  T* operator()(sprockit::sim_parameters* params, const Args&... args){
+    return new T(args...);
+  }
+};
+
+template <typename T, typename... Args>
+struct call_constructor_impl<T,
+    typename std::enable_if<!constructible_from<T,Args...>::type::value>::type,
+    Args...>
+{
+  T* operator()(sprockit::sim_parameters* params, const Args&... args){
+    return new T(params, args...);
+  }
+};
+
+template <typename T, typename... Args>
+class call_constructor : public call_constructor_impl<T, void, Args...> {};
 
 template<class T, typename... Args>
 class Factory
@@ -164,9 +237,9 @@ class Factory
                        valname.c_str(), name_);
     }
 
-    T* p = descr->build(args...);
-    p->init_factory_params(params);
-    p->finalize_init();
+    T* p = descr->build(params, args...);
+    call_init_factory_params<T>()(p, params);
+    call_finalize_init<T>()(p);
     return p;
   }
 
@@ -219,8 +292,8 @@ class SpktBuilderImpl<Child, Factory<Parent, Args...> > :
   }
 
   Parent*
-  build(const Args&... args) {
-    return new Child(args...);
+  build(sprockit::sim_parameters* params, const Args&... args) {
+    return call_constructor<Child,Args...>()(params, args...);
   }
 
 };
@@ -253,33 +326,6 @@ class template_factory : public factory<T>
   std::string param_name_;
 };
 
-template <class T>
-class factory2
-{
- public:
-  virtual ~factory2(){}
-
-  virtual T* build(sim_parameters* params, sprockit::factory_type* ft) = 0;
-};
-
-template <class T, class Factory>
-class template_factory2 : public factory2<T>
-{
- public:
-  template_factory2(const std::string& param_name)
-    : param_name_(param_name)
-  {
-  }
-
-  T* build(sim_parameters* params, sprockit::factory_type* ft){
-    typedef typename Factory::element_type F;
-    F* f = Factory::get_value(param_name_, params, ft);
-    return f;
-  }
-
- private:
-  std::string param_name_;
-};
 
 template <class Factory>
 class CleanupFactory {

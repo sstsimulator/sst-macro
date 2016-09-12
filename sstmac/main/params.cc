@@ -119,7 +119,6 @@ param_remap remap_list[] = {
   pr("stack_size", "node.os.stack_size"),
   pr("stack_chunk_size", "node.os.stack_chunk_size"),
   pr("stack_protect", "node.os.stack_protect"),
-  pr("startup_libs", "node.os.startup_libs"),
   pr("injection_latency", "nic.injection_latency"),
   pr("injection_bandwidth", "nic.injection_bandwidth"),
   pr("__is_in_micro_mode", "__is_in_micro_mode"),

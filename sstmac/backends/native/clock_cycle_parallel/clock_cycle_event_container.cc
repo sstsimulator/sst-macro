@@ -6,7 +6,7 @@
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/hardware/nic/nic.h>
-#include <sstmac/hardware/interconnect/switch_interconnect.h>
+#include <sstmac/hardware/interconnect/interconnect.h>
 #include <sprockit/util.h>
 #include <limits>
 
@@ -252,8 +252,6 @@ clock_cycle_event_map::set_interconnect(hw::interconnect* interconn)
     lookahead_ = timestamp(1e5);
   }
   else {
-    interconn_ = safe_cast(hw::switch_interconnect, interconn,
-                "parallel DES only compatible with switch interconnect");
     lookahead_ = interconn_->lookahead();
   }
   next_time_horizon_ = lookahead_;

@@ -14,6 +14,8 @@ class null_nic :
 {
 
  public:
+  null_nic(sprockit::sim_parameters* params, node* parent);
+
   virtual ~null_nic() throw () {}
 
   std::string
@@ -21,8 +23,9 @@ class null_nic :
     return sprockit::printf("Null NIC(%d)", int(my_addr_));
   }
 
-  void
-  init_factory_params(sprockit::sim_parameters* params);
+ private:
+  sprockit::sim_parameters*
+  override_params(sprockit::sim_parameters* params);
 
 };
 

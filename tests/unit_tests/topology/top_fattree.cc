@@ -70,7 +70,7 @@ test_fattree2(UnitTest& unit)
     structured_topology* ftree = test_cast(structured_topology, top);
     assertTrue(unit, "fat tree cast topology", bool(ftree) );
 
-    switch_interconnect::switch_map switches;
+    interconnect::switch_map switches;
     init_switches(switches, params, top);
 
     {

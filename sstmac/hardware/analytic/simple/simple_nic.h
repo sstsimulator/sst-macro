@@ -29,17 +29,10 @@ class simple_nic :
   public nic
 {
  public:
-  simple_nic() :
-    next_free_(0) {}
+  simple_nic(sprockit::sim_parameters* params, node* parent);
 
   /// Goodbye.
   virtual ~simple_nic() {}
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params);
-
-  virtual void
-  finalize_init();
 
   void handle(event *ev);
 

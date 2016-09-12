@@ -76,7 +76,7 @@ class clock_cycle_event_map :
   timestamp no_events_left_time_;
   std::vector<void*> all_incoming_;
   std::vector<std::vector<void*> > thread_incoming_;
-  hw::switch_interconnect* interconn_;
+  hw::interconnect* interconn_;
   int epoch_;
 
 #if SSTMAC_DEBUG_THREAD_EVENTS

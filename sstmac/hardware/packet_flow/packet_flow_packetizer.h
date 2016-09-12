@@ -18,6 +18,10 @@ class packet_flow_packetizer :
  public:
   void handle(event *ev);
 
+ protected:
+  packet_flow_packetizer(sprockit::sim_parameters* params,
+           event_scheduler* parent, packetizer_callback* cb);
+
  private:
   virtual void recv_credit(packet_flow_credit* ev) = 0;
 
@@ -34,15 +38,13 @@ class packet_flow_nic_packetizer :
 {
 
  public:
-  packet_flow_nic_packetizer();
+  packet_flow_nic_packetizer(sprockit::sim_parameters* params,
+                             event_scheduler* parent, packetizer_callback* cb);
 
   std::string
   to_string() const {
     return sprockit::printf("packet_flow_nic_packetizer");
   }
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
 
   virtual ~packet_flow_nic_packetizer();
 
@@ -65,12 +67,6 @@ class packet_flow_nic_packetizer :
 
   void
   set_input(int port, connectable* input);
-
-  virtual void
-  set_event_parent(event_scheduler* m);
-
-  virtual void
-  finalize_init();
 
   void
   set_acker(event_handler* handler);
@@ -107,6 +103,13 @@ class packet_flow_nic_packetizer :
 class packet_flow_cut_through_packetizer : public packet_flow_nic_packetizer
 {
  public:
+  packet_flow_cut_through_packetizer(sprockit::sim_parameters* params,
+                                     event_scheduler* parent,
+                                     packetizer_callback* cb) :
+    packet_flow_nic_packetizer(params, parent, cb)
+  {
+  }
+
   void recv_packet(packet_flow_payload* pkt);
 
 };
@@ -114,6 +117,13 @@ class packet_flow_cut_through_packetizer : public packet_flow_nic_packetizer
 class packet_flow_simple_packetizer : public packet_flow_nic_packetizer
 {
  public:
+  packet_flow_simple_packetizer(sprockit::sim_parameters* params,
+                                     event_scheduler* parent,
+                                     packetizer_callback* cb) :
+    packet_flow_nic_packetizer(params, parent, cb)
+  {
+  }
+
   void recv_packet(packet_flow_payload* pkt);
 
 };

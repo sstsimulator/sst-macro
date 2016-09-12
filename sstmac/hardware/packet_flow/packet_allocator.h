@@ -14,9 +14,11 @@ namespace hw {
  * Default packet allocator adds the bare minimum needed for congestion modeling.
  * Non-default packet allocators can add extra fields to the packets to track more statistics.
  */
-class packet_allocator : public sprockit::factory_type
+class packet_allocator
 {
  public:
+  packet_allocator(sprockit::sim_parameters* params){}
+
   /**
    * @brief new_packet Allocates a new packet corresponding to a subset
    *  of a flow (message)

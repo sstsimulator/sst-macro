@@ -17,49 +17,54 @@ namespace hw {
 
 
 packet_flow_crossbar::packet_flow_crossbar(
+  event_scheduler* parent,
   timestamp send_lat,
   timestamp credit_lat,
   double out_bw,
   int num_vc,
   int buffer_size,
   packet_flow_bandwidth_arbitrator* arb) :
-  packet_flow_NtoM_queue(send_lat, credit_lat, out_bw, num_vc, buffer_size, arb),
+  packet_flow_NtoM_queue(parent, send_lat, credit_lat, out_bw, num_vc, buffer_size, arb),
   name_(nullptr)
 {
 }
 
 packet_flow_crossbar::packet_flow_crossbar(
+  event_scheduler* parent,
   timestamp send_lat,
   timestamp credit_lat,
   int num_vc,
   int buffer_size,
   const char* name) :
-  packet_flow_NtoM_queue(send_lat, credit_lat, num_vc, buffer_size),
+  packet_flow_NtoM_queue(parent, send_lat, credit_lat, num_vc, buffer_size),
   name_(name)
 {
 }
 
 packet_flow_demuxer::packet_flow_demuxer(
+  event_scheduler* parent,
   timestamp send_lat,
   timestamp credit_lat,
   int num_vc,
   int buffer_size) :
-  packet_flow_NtoM_queue(send_lat, credit_lat, num_vc, buffer_size)
+  packet_flow_NtoM_queue(parent, send_lat, credit_lat, num_vc, buffer_size)
 {
 }
 
 packet_flow_muxer::packet_flow_muxer(
+  event_scheduler* parent,
   timestamp send_lat,
   timestamp credit_lat,
   double out_bw,
   int num_vc,
   int buffer_size,
   packet_flow_bandwidth_arbitrator *arb) :
-  packet_flow_NtoM_queue(send_lat, credit_lat, out_bw, num_vc, buffer_size, arb)
+  packet_flow_NtoM_queue(parent, send_lat, credit_lat, out_bw, num_vc, buffer_size, arb)
 {
 }
 
 packet_flow_NtoM_queue::packet_flow_NtoM_queue(
+  event_scheduler* parent,
   timestamp send_lat,
   timestamp credit_lat,
   int num_vc,
@@ -67,18 +72,19 @@ packet_flow_NtoM_queue::packet_flow_NtoM_queue(
   num_vc_(num_vc),
   buffer_size_(buffer_size),
   arb_tmpl_(nullptr),
-  packet_flow_sender(send_lat, credit_lat)
+  packet_flow_sender(parent, send_lat, credit_lat)
 {
 }
 
 packet_flow_NtoM_queue::packet_flow_NtoM_queue(
+  event_scheduler* parent,
   timestamp send_lat,
   timestamp credit_lat,
   double out_bw,
   int num_vc,
   int buffer_size,
   packet_flow_bandwidth_arbitrator* arb) :
-  packet_flow_sender(send_lat, credit_lat),
+  packet_flow_sender(parent, send_lat, credit_lat),
   num_vc_(num_vc),
   buffer_size_(buffer_size),
   arb_tmpl_(arb),

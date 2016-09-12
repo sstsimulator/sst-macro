@@ -25,14 +25,19 @@ namespace sw {
 static const char* deprecated[] = { "lib_compute_unroll_loops" };
 static sprockit::StaticKeywordRegister deprecated_keys(1, deprecated);
 
-lib_compute_inst::lib_compute_inst(const std::string& libname, software_id id)
-  : lib_compute(libname, id)
+lib_compute_inst::lib_compute_inst(sprockit::sim_parameters* params,
+                                   const std::string& libname, software_id id,
+                                   operating_system* os)
+  : lib_compute(params, libname, id, os)
 {
+  init(params);
 }
 
-lib_compute_inst::lib_compute_inst(software_id sid) :
-  lib_compute("computelibinstr%s", sid)
+lib_compute_inst::lib_compute_inst(sprockit::sim_parameters* params,
+                                   software_id sid, operating_system* os) :
+  lib_compute(params, "computelibinstr%s", sid, os)
 {
+  init(params);
 }
 
 void
@@ -67,7 +72,7 @@ lib_compute_inst::compute_loop(uint64_t num_loops,
 }
 
 void
-lib_compute_inst::consume_params(sprockit::sim_parameters* params)
+lib_compute_inst::init(sprockit::sim_parameters* params)
 {
   if (params->has_param("lib_compute_unroll_loops")){
     double loop_unroll = params->deprecated_double_param("lib_compute_unroll_loops");

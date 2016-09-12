@@ -182,10 +182,9 @@ macro_manager::init_factory_params(sprockit::sim_parameters* params)
     sprockit::debug::turn_off();
   }
 
-  interconnect_ = hw::interconnect::static_interconnect(params);
+  interconnect_ = hw::interconnect::static_interconnect(params, event_manager_);
 
   event_manager_->set_interconnect(interconnect_);
-  interconnect_->set_event_manager(event_manager_);
 
   logger::timer_ = event_manager_;
 

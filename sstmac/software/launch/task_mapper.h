@@ -30,8 +30,7 @@ namespace sw {
  * Base class for strategies regarding how to sequentially number nodes
  * in a parallel simulation.
  */
-class task_mapper :
-  public sprockit::factory_type
+class task_mapper
 {
 
  public:

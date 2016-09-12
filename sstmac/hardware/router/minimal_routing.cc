@@ -26,8 +26,9 @@ minimal_router::route(packet* pkt)
      outport);
 }
 
-minimal_router::minimal_router(topology* top, network_switch* netsw, routing::algorithm_t algo) :
-  structured_router(top, netsw, algo)
+minimal_router::minimal_router(sprockit::sim_parameters* params, topology* top,
+                               network_switch* netsw, routing::algorithm_t algo) :
+  structured_router(params, top, netsw, algo)
 {
   fat_tree* ft = test_cast(fat_tree, top);
   if (ft){
@@ -41,13 +42,6 @@ minimal_router::route(packet* pkt, structured_routable::path_set &paths)
 {
   structured_routable* rt = pkt->interface<structured_routable>();
   minimal_routes_to_node(rt->toaddr(), rt->current_path(), paths);
-}
-
-void
-minimal_router::finalize_init()
-{
-  structured_router::finalize_init();
-  max_num_vc_ = num_vc_lookup_[routing::minimal];
 }
 
 }

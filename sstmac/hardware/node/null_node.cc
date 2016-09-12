@@ -29,31 +29,29 @@ namespace sstmac {
 namespace hw {
 
 #if !SSTMAC_INTEGRATED_SST_CORE
-SpktRegister("null | nullnode", node, null_node,
+SpktRegister("null", node, null_node,
             "Node which implements interface, but does no compute modeling");
 #endif
 
 using namespace sstmac::sw;
 
+null_node::null_node(sprockit::sim_parameters *params, uint64_t id,
+                     event_manager* mgr) :
+  simple_node(override_params(params), id, mgr)
+{
+}
+
 null_node::~null_node()
 {
 }
 
-void
-null_node::null_warning(sprockit::sim_parameters* params)
+sprockit::sim_parameters*
+null_node::override_params(sprockit::sim_parameters *params)
 {
-  //this function should really only ever be invoked once for the template node
-  //should be safe to print warnings here
-}
-
-void
-null_node::init_factory_params(sprockit::sim_parameters *params)
-{
-  null_warning(params);
   params->add_param_override("compute_scheduler", "null");
   params->add_param_override("memory.model", "null");
   params->add_param_override("proc.frequency", "100MHz");
-  simple_node::init_factory_params(params);
+  return params;
 }
 
 }

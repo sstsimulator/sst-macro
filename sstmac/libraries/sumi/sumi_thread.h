@@ -11,8 +11,6 @@ class sumi_thread :
  private:
   static uint64_t num_threads_;
 
-  sstmac::sw::lib_compute_time* compute_;
-
   virtual void run() = 0;
 
  public:

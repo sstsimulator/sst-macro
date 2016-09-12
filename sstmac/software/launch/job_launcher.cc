@@ -18,19 +18,19 @@ SpktRegister("default", job_launcher, default_job_launcher);
 job_launcher* job_launcher::static_launcher_ = nullptr;
 
 job_launcher*
-job_launcher::static_job_launcher(sprockit::sim_parameters* params)
+job_launcher::static_job_launcher(sprockit::sim_parameters* params, event_manager* mgr)
 {
   if (!static_launcher_){
-    static_launcher_ = job_launcher_factory::get_optional_param("job_launcher", "default", params);
+    static_launcher_ = job_launcher_factory::get_optional_param("job_launcher", "default",
+                                                                params, mgr);
     runtime::set_job_launcher(static_launcher_);
   }
   return static_launcher_;
 }
 
-void
-job_launcher::init_factory_params(sprockit::sim_parameters* params)
+job_launcher::job_launcher(sprockit::sim_parameters* params, event_manager* mgr)
 {
-  interconnect_ = sstmac::hw::interconnect::static_interconnect(params);
+  interconnect_ = sstmac::hw::interconnect::static_interconnect(params, mgr);
   int num_nodes = interconnect_->num_nodes();
   for (int i=0; i < num_nodes; ++i){
     available_.insert(i);

@@ -18,8 +18,8 @@ class minimal_adaptive_router :
 {
 
  public:
-  minimal_adaptive_router(topology* top, network_switch* netsw) :
-    minimal_router(top, netsw, routing::minimal_adaptive){}
+  minimal_adaptive_router(sprockit::sim_parameters* params,
+                          topology* top, network_switch* netsw);
 
   virtual std::string
   to_string() const {
@@ -28,9 +28,6 @@ class minimal_adaptive_router :
 
   virtual void
   route(packet* pkt);
-
-  virtual void
-  finalize_init();
 
 };
 

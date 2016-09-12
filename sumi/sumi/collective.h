@@ -132,8 +132,7 @@ class collective
 };
 
 class dag_collective :
-  public collective,
-  public sprockit::factory_type
+  public collective
 {
  public:
   void

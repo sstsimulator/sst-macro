@@ -30,10 +30,10 @@ namespace hw {
 class dist_dummy_switch : public network_switch
 {
  public:
-  dist_dummy_switch(switch_id sid)
+  dist_dummy_switch(sprockit::sim_parameters* params, uint64_t sid, event_manager* mgr)
+    : network_switch(params, sid, mgr)
   {
-    my_addr_ = sid;
-    init_loc_id(event_loc_id(sid));
+    init_loc_id(event_loc_id(my_addr_));
   }
 
   std::string

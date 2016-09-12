@@ -15,7 +15,8 @@ class minimal_router :
 {
 
  public:
-  minimal_router(topology* top, network_switch* netsw, routing::algorithm_t algo = routing::minimal);
+  minimal_router(sprockit::sim_parameters* params, topology* top,
+                 network_switch* netsw, routing::algorithm_t algo = routing::minimal);
 
   virtual ~minimal_router() {}
 
@@ -26,9 +27,6 @@ class minimal_router :
   to_string() const {
     return "minimal router";
   }
-
-  virtual void
-  finalize_init();
 
  protected:
   virtual void

@@ -44,8 +44,7 @@ namespace sstmac {
  * in the right order.
  */
 
-class event_manager :
-  public sprockit::factory_type
+class event_manager
 {
   friend class event_scheduler;
   friend class native::manager;

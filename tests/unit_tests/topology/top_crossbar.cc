@@ -15,7 +15,7 @@ void test_crossbar(UnitTest& unit)
   structured_topology* xbar = test_cast(structured_topology, top);
   assertTrue(unit, "crossbar cast topology", bool(xbar) );
   topology::set_static_topology(top);
-  switch_interconnect::switch_map switches;
+  interconnect::switch_map switches;
   init_switches(switches, params, top);
 
   {

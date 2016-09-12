@@ -64,10 +64,9 @@ class mpi_api :
   static key::category poll_key_category;
   static key::category memcpy_key_category;
 
-  mpi_api(sstmac::sw::software_id sid);
-
-  virtual void
-  finalize_init();
+  mpi_api(sprockit::sim_parameters* params,
+          sstmac::sw::software_id sid,
+          sstmac::sw::operating_system* os);
 
   static void
   delete_statics();
@@ -75,12 +74,6 @@ class mpi_api :
  public:
   virtual
   ~mpi_api();
-
-  void
-  init_os(operating_system* os);
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
 
   void
   incoming_event(sstmac::event *ev){

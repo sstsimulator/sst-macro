@@ -33,7 +33,7 @@ namespace sw {
  * Strategy type for assigning processes to nodes in a parallel run.
  *
  */
-class node_allocator : public sprockit::factory_type
+class node_allocator
 {
  public:
   virtual void

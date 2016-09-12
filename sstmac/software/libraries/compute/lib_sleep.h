@@ -28,7 +28,8 @@ class lib_sleep : public library
   virtual
   ~lib_sleep() {}
 
-  lib_sleep(software_id id);
+  lib_sleep(sprockit::sim_parameters* params, software_id id,
+            operating_system* os);
 
   virtual void
   incoming_event(event *ev){

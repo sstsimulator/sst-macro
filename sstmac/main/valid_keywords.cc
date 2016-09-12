@@ -328,7 +328,6 @@ namespace sstmac {
   "stack_protect",  
   "event_trace_start",  
   "event_trace_stop",  
-  "os_startup_libs",  
   "cart_launch_sizes",  
   "cart_launch_offsets",  
   "launch_coordinate_file",  

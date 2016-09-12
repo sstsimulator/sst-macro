@@ -24,8 +24,7 @@
 namespace sstmac {
 namespace sw {
 
-class app_launch :
-  public sprockit::factory_type
+class app_launch
 {
 
  public:

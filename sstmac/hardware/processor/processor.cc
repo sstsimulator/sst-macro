@@ -46,6 +46,7 @@ processor::init_factory_params(sprockit::sim_parameters *params)
   } */
   freq_ = params->get_freq_param("frequency");
   mem_freq_ = freq_;
+  ncores_ = params->get_int_param("ncores");
 }
 
 void

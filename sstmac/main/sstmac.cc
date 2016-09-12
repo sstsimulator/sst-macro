@@ -294,16 +294,16 @@ try_main(sprockit::sim_parameters* params,
   bool parallel = rt && rt->nproc() > 1;
   sstmac::init_params(rt, oo, params, parallel);
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-  if (rt->me() == 0){
-    cerr0 << std::string(argv[0]) << "\n" << oo << std::endl;
-  }
-#endif
-
   //do some cleanup and processing of params
   sstmac::remap_params(params);
   if (params_only)
     return;
+
+#if !SSTMAC_INTEGRATED_SST_CORE
+    if (rt && rt->me() == 0){
+      cerr0 << std::string(argv[0]) << "\n" << oo << std::endl;
+    }
+#endif
 
   sstmac::run(oo, rt, params, stats);
 

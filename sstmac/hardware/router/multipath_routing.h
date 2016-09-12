@@ -13,8 +13,8 @@ class multipath_router :
   public ParentRouter
 {
  public:
-  multipath_router(topology* top, network_switch* netsw) :
-    ParentRouter(top, netsw)
+  multipath_router(sprockit::sim_parameters* params, topology* top, network_switch* netsw) :
+    ParentRouter(params, top, netsw)
   {
     std::vector<int> reds;
     top_ = safe_cast(cartesian_topology, top);
@@ -35,11 +35,6 @@ class multipath_router :
     debug_printf(sprockit::dbg::router,
       "multipath routing: using index %d", next_index);
     pkt->interface<structured_routable>()->assign_path(paths[next_index]);
-  }
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params){
-    ParentRouter::init_factory_params(params);
   }
 
  private:

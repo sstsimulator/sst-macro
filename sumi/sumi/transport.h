@@ -25,8 +25,7 @@ DeclareDebugSlot(sumi);
 
 namespace sumi {
 
-class transport :
-  virtual public sprockit::factory_type
+class transport
 {
 
  public:

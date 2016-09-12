@@ -72,11 +72,11 @@ class packet_flow_sender :
   }
 
  protected:
-  packet_flow_sender(
+  packet_flow_sender(event_scheduler* parent,
     const timestamp& send_lat,
     const timestamp& credit_lat);
 
-  packet_flow_sender();
+  packet_flow_sender(event_scheduler* parent);
 
   void
   send_credit(const packet_flow_input& src,

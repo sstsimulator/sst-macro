@@ -55,7 +55,8 @@ class structured_router
     structured_routable::path_set& paths);
 
  protected:
-  structured_router(topology* top, network_switch* netsw, routing::algorithm_t algo);
+  structured_router(sprockit::sim_parameters* params, topology* top,
+                    network_switch* netsw, routing::algorithm_t algo);
 
   structured_topology* regtop_;
 

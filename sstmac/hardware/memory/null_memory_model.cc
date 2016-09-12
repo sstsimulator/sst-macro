@@ -14,12 +14,6 @@ null_memory_model::~null_memory_model()
 }
 
 void
-null_memory_model::init_factory_params(sprockit::sim_parameters *params)
-{
-  memory_model::init_factory_params(params);
-}
-
-void
 null_memory_model::access(long bytes, double max_bw,
                           callback* cb)
 {
