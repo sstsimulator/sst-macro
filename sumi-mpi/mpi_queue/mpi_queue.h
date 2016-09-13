@@ -64,16 +64,13 @@ class mpi_queue
   friend class mpi_queue_recv_request;
 
  public:
-  mpi_queue(sprockit::sim_parameters* params, sstmac::sw::software_id, mpi_api* api);
+  mpi_queue(sprockit::sim_parameters* params, sstmac::sw::software_id sid, mpi_api* api);
 
   /// Goodbye.
   ~mpi_queue() throw ();
 
   static void
   delete_statics();
-
-  void
-  unregister_all_libs();
 
   void
   send(mpi_request* key, int count, MPI_Datatype type,
@@ -94,20 +91,6 @@ class mpi_queue
 
   void
   incoming_progress_loop_message(const mpi_message::ptr& message);
-
-  void
-  init_sid(const software_id& id){
-    taskid_ = id.task_;
-    appid_ = id.app_;
-  }
-
-  void
-  init_os(operating_system* os);
-
-  void
-  set_api(mpi_api* api){
-    api_ = api;
-  }
 
   mpi_protocol*
   protocol(long bytes) const;

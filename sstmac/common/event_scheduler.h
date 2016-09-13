@@ -21,21 +21,23 @@
 #include <sprockit/sim_parameters_fwd.h>
 
 #if SSTMAC_INTEGRATED_SST_CORE
+#include <sst/core/params.h>
+
 namespace sstmac {
 sprockit::sim_parameters*
-make_spkt_params_from_sst_params(const SST::Params& map);
+make_spkt_params_from_sst_params(SST::Params& map);
 }
 
 #include <sstmac/sst_core/integrated_component.h>
 #include <sst/core/link.h>
-#  define DeclareIntegratedComponent(comp, docstring) \
+#define DeclareSSTComponent(comp) \
   SST::Component* \
   create_##comp(SST::ComponentId_t id, SST::Params& params); \
   extern const SST::ElementInfoComponent comp##_element_info;
-#  define ImplementIntegratedComponent(comp) \
+#define ImplementSSTComponent(str, parent, comp, docstring) \
   SST::Component* \
   create_##comp(SST::ComponentId_t id, SST::Params& params) { \
-    return new comp(id, sstmac::make_spkt_params_from_sst_params(params)); \
+    return new comp(sstmac::make_spkt_params_from_sst_params(params), id, nullptr); \
   } \
   const SST::ElementInfoComponent comp##_element_info = { \
       #comp, \
@@ -44,8 +46,9 @@ make_spkt_params_from_sst_params(const SST::Params& map);
       create_##comp, NULL, NULL, COMPONENT_CATEGORY_SYSTEM \
   };
 #else
-#  define DeclareIntegratedComponent(comp)
-#  define ImplementIntegratedComponent(comp)
+#  define DeclareSSTComponent(comp)
+#  define ImplementSSTComponent(str, parent, comp, docstring) \
+  SpktRegister(str, parent, comp, docstring)
 #include <sstmac/common/event_manager.h>
 #endif
 
@@ -137,17 +140,26 @@ class event_scheduler :
   void
   register_stat(stat_collector* coll);
 
+  event_manager*
+  event_mgr() const {
+    return eventman_;
+  }
+
+ private:
+  event_manager* eventman_;
+
  protected:
   event_scheduler(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr) :
 #if SSTMAC_INTEGRATED_SST_CORE
-   SSTIntegratedComponent(id, params)
+   SSTIntegratedComponent(params, id){}
 #else
     seqnum_(0),
     eventman_(mgr)
-#endif
   {
     init_thread_id(mgr->thread_id());
   }
+#endif
+
 
  private:
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -161,14 +173,8 @@ class event_scheduler :
  private:
   void
   schedule(SST::Time_t delay, event_handler* handler, event* ev);
-
 #else
  public:
-  event_manager*
-  event_mgr() const {
-    return eventman_;
-  }
-
   /**
    * get the current time
    * @return a timestamp
@@ -193,7 +199,6 @@ class event_scheduler :
 
  private:
   uint32_t seqnum_;
-  event_manager* eventman_;
 #endif
 
 };

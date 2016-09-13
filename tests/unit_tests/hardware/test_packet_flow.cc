@@ -40,8 +40,7 @@ test_arbitrator(UnitTest& unit)
 
   parallel_runtime* rt = new native::serial_runtime(&params);
 
-  native::event_map* ev_mgr = new native::event_map(rt);
-  ev_mgr->init_factory_params(&params);
+  native::event_map* ev_mgr = new native::event_map(&params, rt);
 
   packet_flow_bandwidth_arbitrator* arb
       = new packet_flow_cut_through_arbitrator();

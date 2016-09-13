@@ -76,34 +76,35 @@ packetizer::packetArrived(int vn, packet* pkt)
 }
 
 #if SSTMAC_INTEGRATED_SST_CORE
-void
-SimpleNetworkPacketizer::init_factory_params(sprockit::sim_parameters *params)
+SimpleNetworkPacketizer::SimpleNetworkPacketizer(sprockit::sim_parameters *params,
+                                                 event_scheduler* parent,
+                                                 packetizer_callback *handler) :
+  packetizer(params, parent, handler)
 {
-
-}
-
-void
-SimpleNetworkPacketizer::init_sst_params(SST::Params& params, SST::Component* parent)
-{
+  SST::Params& sst_params = *params->extra_data<SST::Params>();
   m_linkControl = (SST::Interfaces::SimpleNetwork*)parent->loadSubComponent(
-                  params.find_string("module"), parent, params);
+                  sst_params.find_string("module"), parent, sst_params);
 
-
-
-  SST::UnitAlgebra link_bw(params.find_string("injection_bandwidth"));
-  SST::UnitAlgebra injection_buffer_size(params.find_string("injection_credits"));
+  SST::UnitAlgebra link_bw(sst_params.find_string("injection_bandwidth"));
+  SST::UnitAlgebra injection_buffer_size(sst_params.find_string("injection_credits"));
   SST::UnitAlgebra big_buffer("1GB");
-  m_linkControl->initialize(params.find_string("rtrPortName","rtr"),
+  m_linkControl->initialize(sst_params.find_string("rtrPortName","rtr"),
                               link_bw, 1, injection_buffer_size, big_buffer);
 
-  m_recvNotifyFunctor =
-      new SST::Interfaces::SimpleNetwork::Handler<SimpleNetworkPacketizer>(this,&SimpleNetworkPacketizer::recvNotify );
+  m_recvNotifyFunctor = new SST::Interfaces::SimpleNetwork::Handler<SimpleNetworkPacketizer>
+      (this,&SimpleNetworkPacketizer::recvNotify );
 
-  m_sendNotifyFunctor =
-      new SST::Interfaces::SimpleNetwork::Handler<SimpleNetworkPacketizer>(this,&SimpleNetworkPacketizer::sendNotify );
+  m_sendNotifyFunctor = new SST::Interfaces::SimpleNetwork::Handler<SimpleNetworkPacketizer>
+      (this,&SimpleNetworkPacketizer::sendNotify );
 
   m_linkControl->setNotifyOnReceive( m_recvNotifyFunctor );
   m_linkControl->setNotifyOnSend( m_sendNotifyFunctor );
+}
+
+bool
+SimpleNetworkPacketizer::spaceToSend(int vn, int num_bits) const
+{
+  return m_linkControl->spaceToSend(vn, num_bits);
 }
 
 bool

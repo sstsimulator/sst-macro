@@ -19,7 +19,8 @@ RegisterAPI("sumi_transport", sumi_transport);
 sumi_transport::sumi_transport(sprockit::sim_parameters* params,
     const char* name, sstmac::sw::software_id sid,
     sstmac::sw::operating_system* os) :
-  sumi_api(params, name, sid, os)
+  sumi_api(params, name, sid, os),
+  transport(params)
 {
 }
 

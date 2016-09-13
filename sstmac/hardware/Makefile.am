@@ -18,12 +18,11 @@ libsstmac_hw_la_LDFLAGS =
 library_includedir=$(includedir)/sstmac/hardware
 
 nobase_library_include_HEADERS = \
-  analytic/simple/null_nic.h \
-  analytic/simple/simple_nic.h \
-  analytic/simple/simple_interconnect.h \
-  analytic/simple/simple_switch.h \
-  analytic/simple/simple_topology.h \
-  analytic/simple/simple_param_expander.h \
+  simple/null_nic.h \
+  simple/simple_nic.h \
+  simple/simple_switch.h \
+  simple/simple_topology.h \
+  simple/simple_param_expander.h \
   processor/processor.h \
   processor/processor_fwd.h \
   processor/instruction_processor.h \
@@ -73,8 +72,6 @@ nobase_library_include_HEADERS = \
   network/network_message_fwd.h \
   interconnect/interconnect.h \
   interconnect/interconnect_fwd.h \
-  interconnect/switch_interconnect.h \
-  interconnect/switch_interconnect_fwd.h \
   switch/network_switch.h \
   switch/network_switch_fwd.h \
   switch/dist_dummyswitch.h \
@@ -111,12 +108,11 @@ nobase_library_include_HEADERS = \
   router/fat_tree_router.h 
 
 libsstmac_hw_la_SOURCES =  \
-  analytic/simple/null_nic.cc \
-  analytic/simple/simple_nic.cc \
-  analytic/simple/simple_interconnect.cc \
-  analytic/simple/simple_switch.cc \
-  analytic/simple/simple_param_expander.cc \
-  analytic/simple/simple_topology.cc \
+  simple/null_nic.cc \
+  simple/simple_nic.cc \
+  simple/simple_switch.cc \
+  simple/simple_param_expander.cc \
+  simple/simple_topology.cc \
   processor/processor.cc \
   processor/simple_processor.cc \
   processor/instruction_processor.cc \
@@ -149,7 +145,6 @@ libsstmac_hw_la_SOURCES =  \
   packet_flow/packet_flow_memory_model.cc \
   network/network_message.cc \
   interconnect/interconnect.cc \
-  interconnect/switch_interconnect.cc \
   switch/network_switch.cc \
   switch/dist_dummyswitch.cc \
   topology/butterfly.cc \

@@ -21,18 +21,18 @@
 namespace sstmac {
 namespace sw {
 
-launcher::launcher(operating_system* os) :
+app_launcher::app_launcher(operating_system* os) :
   is_completed_(false),
   service(std::string("launcher"), software_id(0,0), os)
 {
 }
 
-launcher::~launcher() throw()
+app_launcher::~app_launcher() throw()
 {
 }
 
 void
-launcher::incoming_event(event* ev)
+app_launcher::incoming_event(event* ev)
 {
   launch_event* lev = safe_cast(launch_event, ev);
 
@@ -50,7 +50,7 @@ launcher::incoming_event(event* ev)
 }
 
 void
-launcher::start()
+app_launcher::start()
 {
   service::start();
   if (!os_) {

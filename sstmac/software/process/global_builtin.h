@@ -14,6 +14,7 @@
 
 #include <sstmac/software/process/global_base.h>
 #include <sprockit/errors.h>
+#include <iostream>
 
 namespace sstmac {
 namespace sw {

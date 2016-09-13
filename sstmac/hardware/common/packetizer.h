@@ -88,11 +88,13 @@ class SimpleNetworkPacketizer :
   public packetizer
 {
  public:
+  SimpleNetworkPacketizer(sprockit::sim_parameters* params,
+                      event_scheduler* parent,
+                      packetizer_callback* handler);
+
   bool spaceToSend(int vn, int num_bits) const;
 
   void inject(int vn, long bytes, long byte_offset, message *payload);
-
-  virtual void init_sst_params(SST::Params &params, SST::Component *parent);
 
   bool recvNotify(int vn);
 

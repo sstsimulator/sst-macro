@@ -43,6 +43,8 @@ namespace hw {
 
 //static sprockit::need_delete_statics<interconnect> del_statics;
 
+SpktRegister("switch | simple", interconnect, interconnect);
+
 interconnect* interconnect::static_interconnect_ = 0;
 
 #if !SPKT_DISABLE_REGEX
@@ -50,25 +52,11 @@ sprockit::StaticKeywordRegisterRegexp node_failure_ids_keyword("node_failure_\\d
 sprockit::StaticKeywordRegisterRegexp node_failure_time_keyword("node_failure_\\d+_time");
 #endif
 
-#if SSTMAC_INTEGRATED_SST_CORE
-SpktRegister("sst", interconnect, sst_interconnect,
-            "Skeleton sst interconnect to make things work");
-#endif
 
-
-interconnect::~interconnect() 
-{
-  delete topology_;
-  sprockit::delete_vals(netlinks_);
-  sprockit::delete_vals(nodes_);
-  sprockit::delete_vals(nics_);
-}
 
 interconnect*
 interconnect::static_interconnect(sprockit::sim_parameters* params, event_manager* mgr)
 {
-  static thread_lock init_lock;
-  init_lock.lock();
   if (!static_interconnect_){
     sprockit::sim_parameters* ic_params = params;
     if (params->has_namespace("interconnect")){
@@ -77,23 +65,33 @@ interconnect::static_interconnect(sprockit::sim_parameters* params, event_manage
     const char* ic_param = ic_params->has_param("network_name") ? "network_name" : "interconnect";
     parallel_runtime* rt = parallel_runtime::static_runtime(params);
     partition* part = rt ? rt->topology_partition() : nullptr;
-    static_interconnect_ = interconnect_factory::get_optional_param(ic_param, "sst", ic_params,
+    static_interconnect_ = interconnect_factory::get_optional_param(ic_param, "switch", ic_params,
       mgr, part, rt);
   }
-  init_lock.unlock();
   return static_interconnect_;
 }
 
-interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
-                           partition *part, parallel_runtime *rt) :
-  partition_(part),
-  rt_(rt)
+#if !SSTMAC_INTEGRATED_SST_CORE
+interconnect::~interconnect()
 {
-  int my_rank = rt_->me();
-  topology_ = topology::static_topology(params);
+  sprockit::delete_vals(netlinks_);
+  sprockit::delete_vals(nodes_);
+  sprockit::delete_vals(nics_);
+}
+#endif
 
+interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
+                           partition *part, parallel_runtime *rt)
+{
+  if (!static_interconnect_) static_interconnect_ = this;
+  topology_ = topology::static_topology(params);
+  num_nodes_ = topology_->num_nodes();
   runtime::set_topology(topology_);
 
+#if !SSTMAC_INTEGRATED_SST_CORE
+  partition_ = part;
+  rt_ = rt;
+  int my_rank = rt_->me();
   sprockit::sim_parameters* netlink_params = nullptr;
   if (params->has_namespace("netlink")) netlink_params = params->get_namespace("netlink");
   int netlink_conc = topology_->num_nodes_per_netlink();
@@ -111,9 +109,12 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
         node_params->add_param_override("id", int(nid));
         node* nd = node_factory::get_optional_param("model", "simple", node_params,
                                                     nid, mgr);
-        nd->get_nic()->set_interconnect(this);
         nodes_[nid] = nd;
         nics_[nid] = nd->get_nic();
+        nd->get_nic()->set_interconnect(this);
+
+        nd->init(0); //emulate SST core
+        nd->setup();
 
         int interf_id = nid / netlink_conc;
         int interf_offset = nid % netlink_conc;
@@ -175,15 +176,14 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
 
   topology_->connect_topology(switches_);
 
-  network_switch* switch_tmpl = 0;
-  { switch_map::const_iterator it, end = switches_.end();
-  for (it=switches_.begin(); it != end; ++it){
-    network_switch* thesw = it->second;
-    if (!thesw->ipc_handler()){
-      switch_tmpl = thesw;
-      break;
+  network_switch* switch_tmpl = nullptr;
+  for (auto& pair : switches_){
+    network_switch* netsw = pair.second;
+    if (!netsw->ipc_handler()){
+      netsw->initialize();
+      switch_tmpl = netsw;
     }
-  } }
+  }
 
   if (!nics_.empty()){
     nic* nic_tmpl = nics_.begin()->second;
@@ -214,8 +214,10 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
     failures_to_schedule_.push_back(node_fail_event(fail_time, node_id(node_to_fail)));
     ++failure_num;
   }
+#endif
 }
 
+#if !SSTMAC_INTEGRATED_SST_CORE
 void
 interconnect::handle(event* ev)
 {
@@ -284,6 +286,7 @@ interconnect::thread_for_switch(switch_id sid) const
   network_switch* sw = this->switch_at(sid);
   return sw->thread_id();
 }
+#endif
 
 }
 }

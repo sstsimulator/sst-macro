@@ -13,7 +13,6 @@
 #define SIMPLE_NIC_H
 
 #include <sstmac/hardware/nic/nic.h>
-#include <sstmac/hardware/analytic/simple/simple_interconnect.h>
 
 #if !SSTMAC_INTEGRATED_SST_CORE
 

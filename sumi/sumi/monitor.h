@@ -53,6 +53,9 @@ class activity_monitor
   cancel_ping(int dst, timeout_function* func) = 0;
 
   virtual void
+  init_factory_params(sprockit::sim_parameters* params){}
+
+  virtual void
   message_received(const message::ptr& msg) = 0;
 
   virtual void

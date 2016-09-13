@@ -27,21 +27,16 @@
 namespace sstmac {
 namespace hw {
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-SpktRegister("simple | simplenode", node, simple_node,
-            "Simple node which implements basic OS/compute scheduling functionality");
-#endif
-
-ImplementIntegratedComponent(simple_node);
-
-using namespace sstmac::sw;
+ImplementSSTComponent("simple", node, simple_node,
+  "A basic endpoint node running SST/macro software stacks");
 
 
 simple_node::~simple_node()
 {
 }
 
-simple_node::simple_node(sprockit::sim_parameters *params, uint64_t id, event_manager *mgr)
+simple_node::simple_node(sprockit::sim_parameters *params, uint64_t id,
+                         event_manager *mgr)
   : node(params, id, mgr)
 {
 }
@@ -58,7 +53,7 @@ simple_node::execute(ami::COMP_FUNC func,
       proc_->compute(data, cb);
       break;
     case sstmac::ami::COMP_TIME: {
-      sw::timed_compute_event* ev = safe_cast(timed_compute_event, data);
+      sw::timed_compute_event* ev = safe_cast(sw::timed_compute_event, data);
       schedule_delay(ev->data(), cb);
       break;
     }

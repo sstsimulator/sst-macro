@@ -32,10 +32,6 @@ namespace native {
  */
 class event_container : public event_manager
 {
- private:
-  bool event_rate_reporting_;
-  int event_rate_window_;
-
  public:
   /// Goodbye.
   virtual
@@ -46,11 +42,8 @@ class event_container : public event_manager
   virtual void
   run();
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
  protected:
-  event_container(parallel_runtime* rt);
+  event_container(sprockit::sim_parameters* params, parallel_runtime* rt);
 
   virtual void
   do_next_event();

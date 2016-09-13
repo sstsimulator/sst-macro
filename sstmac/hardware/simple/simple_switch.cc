@@ -13,7 +13,7 @@
  */
 
 #include <sstmac/hardware/switch/network_switch.h>
-#include <sstmac/hardware/analytic/simple/simple_switch.h>
+#include <sstmac/hardware/simple/simple_switch.h>
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/switch/dist_dummyswitch.h>
 #include <sstmac/hardware/topology/topology.h>

@@ -115,7 +115,7 @@ topology::random_number(uint32_t max, uint32_t attempt) const
 #endif
   if (debug_seed_){
     std::vector<RNG::rngint_t> seeds(2);
-    uint32_t time = event_manager::global ? event_manager::global->now().msec() : 42;
+    uint32_t time = 42;
     seeds[1] = seed_ * (time+31) << (attempt + 5);
     seeds[0] = (time+5)*7 + seeds[0]*attempt*42 + 3;
     rng_->vec_reseed(seeds);

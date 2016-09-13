@@ -35,30 +35,7 @@ namespace native {
 class manager {
 
  public:
-  manager();
-
-  virtual std::string
-  to_string() const {
-    return "manager";
-  }
-
-  /// Goodbye.
-  virtual ~manager() throw ();
-
-  void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual timestamp
-  run(timestamp until) = 0;
-
-  virtual void stop() = 0;
-
-  virtual void finish() = 0;
-
-  sstmac::hw::interconnect*
-  interconn() const {
-    return interconnect_;
-  }
+  manager(sprockit::sim_parameters* params, parallel_runtime* rt);
 
   static int
   compute_max_nproc(sprockit::sim_parameters *params);
@@ -66,56 +43,34 @@ class manager {
   static int
   compute_max_nproc_for_app(sprockit::sim_parameters* app_params);
 
- protected:
-  /// Next parallel process id.
-  sstmac::sw::app_id next_ppid_;
+#if !SSTMAC_INTEGRATED_SST_CORE
+  ~manager() throw ();
 
-  sstmac::hw::interconnect* interconnect_;
-  parallel_runtime* rt_;
+  timestamp
+  run(timestamp until);
 
-};
-
-#if SSTMAC_INTEGRATED_SST_CORE
-class sst_manager : public manager
-{
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params);
-};
-#else
-class macro_manager : public manager
-{
- public:
-  macro_manager(parallel_runtime* rt);
-
-  virtual ~macro_manager() throw();
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params);
-
-  /**
-   * @brief run
-   * @param until The time to run until. Negative value indicates run until no more events
-   * @return The time of the last event
-   */
-  timestamp run(timestamp until = timestamp(-1));
+  void stop();
 
   void finish();
+
+  sstmac::hw::interconnect*
+  interconn() const {
+    return interconnect_;
+  }
 
  private:
   void start();
 
-  void stop();
-
- private:
-  /// The event manager.
   event_manager* event_manager_;
 
-  /// Monitor whether the simulator is currently running.
   bool running_;
 
+  sstmac::sw::app_id next_ppid_;
 
-};
+  sstmac::hw::interconnect* interconnect_;
+  parallel_runtime* rt_;
 #endif
+};
 
 }
 } // end of namespace sstmac.

@@ -43,7 +43,7 @@ namespace hw {
  */
 class interconnect
 {
-public:
+ public:
   static interconnect*
   static_interconnect(sprockit::sim_parameters* params, event_manager* mgr);
 
@@ -53,15 +53,22 @@ public:
     static_interconnect_ = nullptr;
   }
 
-protected:
- interconnect(sprockit::sim_parameters* params, event_manager* mgr,
+  interconnect(sprockit::sim_parameters* params, event_manager* mgr,
                     partition* part, parallel_runtime* rt);
 
-protected:
- topology* topology_;
+  int
+  num_nodes() const {
+    return num_nodes_;
+  }
+
+ protected:
+  topology* topology_;
+  int num_nodes_;
 
 private:
  static interconnect* static_interconnect_;
+
+ interconnect(){}
 
 #if !SSTMAC_INTEGRATED_SST_CORE
  public:
@@ -77,11 +84,6 @@ private:
   }
 
   virtual ~interconnect();
-
-  int
-  num_nodes() const {
-    return nodes_.size();
-  }
 
   topology*
   topol() const {

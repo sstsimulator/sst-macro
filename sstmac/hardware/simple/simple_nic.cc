@@ -1,9 +1,10 @@
-#include <sstmac/hardware/analytic/simple/simple_nic.h>
+#include <sstmac/hardware/simple/simple_nic.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/common/event_handler.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
+#include <sstmac/hardware/interconnect/interconnect.h>
 
 #if !SSTMAC_INTEGRATED_SST_CORE
 

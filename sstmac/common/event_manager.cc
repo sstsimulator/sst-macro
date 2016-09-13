@@ -49,10 +49,20 @@ class stop_event : public event_queue_entry
 
 };
 
-std::vector<pthread_t> event_manager::pthreads_;
-std::vector<pthread_attr_t> event_manager::pthread_attrs_;
-event_manager* event_manager::global = 0;
 
+event_manager* event_manager::global = nullptr;
+
+event_manager::event_manager(sprockit::sim_parameters *params, parallel_runtime *rt) :
+  rt_(rt),
+  finish_on_stop_(true),
+  stopped_(true),
+  thread_id_(0),
+  nthread_(1),
+  me_(0),
+  nproc_(1),
+  complete_(false)
+{
+}
 
 event_manager*
 event_manager::ev_man_for_thread(int thread_id) const
@@ -60,21 +70,6 @@ event_manager::ev_man_for_thread(int thread_id) const
   //kind of annoying I have to const cast this
   //this is a truly const function, though
   return const_cast<event_manager*>(this);
-}
-
-int
-event_manager::current_thread_id()
-{
-  if (pthreads_.size() <= 1){
-    return 0;
-  }
-
-  for (int i=1; i < pthreads_.size(); ++i){
-    if (pthread_equal(pthread_self(), pthreads_[i])){
-      return i;
-    }
-  }
-  return 0;
 }
 
 void
@@ -112,29 +107,6 @@ partition*
 event_manager::topology_partition() const
 {
   return rt_->topology_partition();
-}
-
-parallel_runtime*
-event_manager::runtime() const
-{
-  return rt_;
-}
-
-void
-event_manager::set_interconnect(hw::interconnect* interconn)
-{
-}
-
-event_manager::~event_manager()
-{
-}
-
-void
-event_manager::init_factory_params(sprockit::sim_parameters* params)
-{
-  nproc_ = rt_->nproc();
-  me_ = rt_->me();
-  nthread_ = rt_->nthread();
 }
 
 void

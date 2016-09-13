@@ -20,7 +20,6 @@
 #include <math.h>
 #include <signal.h>
 #include <sstmac/common/sstmac_env.h>
-#include <sstmac/common/logger.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/runtime.h>
 #include <sstmac/common/messages/sst_message.h>
@@ -204,8 +203,7 @@ run_params(parallel_runtime* rt,
   params->parse_keyval("topology.nworkers", nworkers, false, true, true);
   rt->init_partition_params(params);
 
-  native::manager* mgr = new native::macro_manager(rt);
-  mgr->init_factory_params(params);
+  native::manager* mgr = new native::manager(params, rt);
 
   double start = sstmac_wall_time();
   timestamp stop_time = params->get_optional_time_param("stop_time", -1.);
@@ -263,10 +261,6 @@ run(opts& oo,
 
   sstmac::env::params = params;
   sstmac::env::rt = rt;
-
-  if (oo.debug != "") {
-    logger::set_user_param(oo.debug);
-  }
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   run_params(rt, params, stats);

@@ -20,7 +20,8 @@ class sumi_transport :
  public:  
   sumi_transport(sprockit::sim_parameters* params, sstmac::sw::software_id sid,
                  sstmac::sw::operating_system* os) :
-    sumi_api(params, "sumi", sid, os)
+    sumi_api(params, "sumi", sid, os),
+    transport(params)
   {
   }
 

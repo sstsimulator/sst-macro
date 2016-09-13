@@ -178,8 +178,6 @@ mpi_api::do_init(int* argc, char*** argv)
   /** Make sure all the default types are known */
   commit_builtin_types();
 
-  queue_->init_os(os_);
-
   status_ = is_initialized;
 
   barrier(MPI_COMM_WORLD);
@@ -217,8 +215,6 @@ mpi_api::do_finalize()
       sid().to_string().c_str(),
       os_->now().sec());
   }
-
-  queue_->unregister_all_libs();
 
   delete comm_factory_;
   comm_factory_ = 0;

@@ -10,7 +10,7 @@
  */
 
 
-#include <sstmac/hardware/analytic/simple/simple_topology.h>
+#include <sstmac/hardware/simple/simple_topology.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 #include <stdio.h>

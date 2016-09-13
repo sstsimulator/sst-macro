@@ -49,18 +49,16 @@ using namespace sstmac::sw;
 node::node(sprockit::sim_parameters* params,
   uint64_t id, event_manager* mgr)
   : connectable_component(params, id, mgr),
-    params_(params)
+  params_(params)
 {
   my_addr_ = node_id(params->get_int_param("id"));
   init_loc_id(event_loc_id(my_addr_));
 
   next_outgoing_id_.set_src_node(my_addr_);
 
-  build_launchers(params);
   sprockit::sim_parameters* nic_params = params->get_namespace("nic");
   nic_params->add_param_override("id", int(my_addr_));
   nic_ = nic_factory::get_param("model", nic_params, this);
-  nic_->set_node(this);
 
   sprockit::sim_parameters* mem_params = params->get_optional_namespace("memory");
   mem_model_ = memory_model_factory::get_optional_param("model", "simple", mem_params, this);
@@ -75,9 +73,8 @@ node::node(sprockit::sim_parameters* params,
   sprockit::sim_parameters* os_params = params->get_optional_namespace("os");
   os_ = new sw::operating_system(os_params, this);
 
-  launcher_ = new launcher(os_);
-
-  schedule_launches();
+  app_launcher_ = new app_launcher(os_);
+  job_launcher_ = job_launcher::static_job_launcher(params, event_mgr());
 }
 
 void
@@ -111,9 +108,9 @@ node::connect_nic()
 void
 node::setup()
 {
+  schedule_launches();
 #if SSTMAC_INTEGRATED_SST_CORE
   event_scheduler::setup();
-  schedule_launches();
 #endif
 }
 
@@ -127,6 +124,7 @@ node::init(unsigned int phase)
     configure_self_link();
   }
 #endif
+  build_launchers(params_);
 }
 
 node::~node()
@@ -180,8 +178,7 @@ node::to_string() const
 void
 node::job_launch(app_launch* appman)
 {
-  job_launcher* launcher = job_launcher::static_job_launcher(params_, event_mgr());
-  launcher->handle_new_launch_request(appman, this);
+  job_launcher_->handle_new_launch_request(appman, this);
 }
 
 void

@@ -26,12 +26,8 @@ RegisterNamespaces("congestion_stats");
 namespace sstmac {
 namespace hw {
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-SpktRegister("packet_flow", network_switch, packet_flow_switch);
-#endif
-
-ImplementIntegratedComponent(packet_flow_switch);
-
+ImplementSSTComponent("packet_flow", network_switch, packet_flow_switch,
+  "A network switch implementing the packet flow congestion model");
 
 
 packet_flow_abstract_switch::packet_flow_abstract_switch(

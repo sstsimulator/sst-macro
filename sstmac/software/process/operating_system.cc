@@ -44,6 +44,7 @@
 #endif
 
 #include <sstmac/hardware/node/node.h>
+#include <sstmac/hardware/processor/processor.h>
 #include <sstmac/hardware/network/network_message.h>
 
 #include <sprockit/errors.h>
@@ -81,15 +82,15 @@ operating_system::os_thread_context operating_system::os_thread_context_;
 
 operating_system::operating_system(sprockit::sim_parameters* params, hw::node* parent) :
   current_thread_id_(thread::main_thread),
+  my_addr_(parent->addr()),
+  node_(parent),
   next_msg_id_(0),
   des_context_(nullptr),
   ftq_trace_(nullptr),
-  params_(nullptr),
   compute_sched_(nullptr),
-  event_subscheduler(parent)
+  event_subscheduler(parent),
+  params_(params)
 {
-  params_ = params;
-
   compute_sched_ = compute_scheduler_factory::get_optional_param(
                      "compute_scheduler", "simple", params, this);
 
@@ -152,6 +153,8 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
     }
   }
 #endif
+
+  compute_sched_->configure(node_->proc()->ncores(), node_->nsocket());
 }
 
 operating_system::~operating_system()
@@ -302,12 +305,6 @@ operating_system::local_shutdown()
   for (api* lib : services_){
     lib->finalize();
   }
-}
-
-void
-operating_system::set_ncores(int ncores, int nsocket)
-{
-  compute_sched_->configure(ncores, nsocket);
 }
 
 void

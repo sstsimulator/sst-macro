@@ -18,11 +18,9 @@ static uint64_t num_events = 0;
 //
 // Hello.
 //
-event_container::event_container(parallel_runtime* rt) :
+event_container::event_container(sprockit::sim_parameters* params, parallel_runtime* rt) :
   running_(false),
-  event_rate_reporting_(false),
-  event_rate_window_(0),
-  event_manager(rt)
+  event_manager(params, rt)
 {
   set_now(timestamp(0));
 }
@@ -40,30 +38,6 @@ event_container::do_next_event()
   ev->execute();
   delete ev;
 }
-
-void
-event_container::init_factory_params(sprockit::sim_parameters* params)
-{
-  /**
-    sstkeyword {
-      docstring=Enables event rate reporting.ENDL
-      If set to true, the number of events completed per time window will be printed.
-      This can only be enabled if sanity check is enabled by configure.;
-    }
-  */
-  event_rate_reporting_ =
-      params->get_optional_bool_param("sanity_check_event_rate_reporting",false);
-  /**
-    sstkeyword {
-      docstring=Sets the time window for event rate reporting (in seconds).ENDL
-      The default is 60 seconds.;
-    }
-  */
-  event_rate_window_ =
-      params->get_optional_int_param("sanity_check_event_rate_window", 60);
-  event_manager::init_factory_params(params);
-} 
-
 
 #if DEBUG_DETERMINISM
 extern std::map<event_loc_id,std::ofstream*> outs;

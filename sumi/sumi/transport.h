@@ -59,9 +59,6 @@ class transport
   virtual void
   finalize();
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
   void
   deadlock_check();
 
@@ -649,7 +646,7 @@ class transport
 
   
  protected:
-  transport();
+  transport(sprockit::sim_parameters* params);
   
   void
   validate_api();

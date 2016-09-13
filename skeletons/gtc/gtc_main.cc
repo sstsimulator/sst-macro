@@ -28,8 +28,7 @@ namespace gtc
   gtc_main::consume_params(sprockit::sim_parameters* params)
   {
 #ifdef _USE_LOOPS
-      libloops_ = new sstmac::sw::lib_compute_loops(sid());
-      register_lib(libloops_);
+      libloops_ = new sstmac::sw::lib_compute_loops(params, sid(), os_);
 #endif
       /**
           sstobject {

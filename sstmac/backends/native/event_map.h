@@ -33,7 +33,10 @@ class event_map :
 {
 
  public:
-  event_map(parallel_runtime* rt) : event_container(rt){}
+  event_map(sprockit::sim_parameters* params, parallel_runtime* rt) :
+    event_container(params, rt)
+  {
+  }
 
   ~event_map() throw ();
 

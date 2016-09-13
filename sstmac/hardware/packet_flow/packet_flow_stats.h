@@ -126,6 +126,9 @@ class null_stats : public packet_sent_stats
   virtual void
   collect_single_event(const packet_stats_st &st){}
 
+  virtual void
+  collect_final_event(packet_flow_payload *pkt){}
+
 };
 
 class byte_hop_collector :

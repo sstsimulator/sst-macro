@@ -5,7 +5,7 @@
 #if !SSTMAC_INTEGRATED_SST_CORE
 
 #include <sstmac/backends/native/event_map.h>
-#include <sstmac/hardware/interconnect/switch_interconnect_fwd.h>
+#include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/backends/common/parallel_runtime.h>
 
 DeclareDebugSlot(event_manager_time_vote);
@@ -17,8 +17,7 @@ class clock_cycle_event_map :
   public event_map
 {
  public:
-  clock_cycle_event_map(parallel_runtime* rt) :
-    event_map(rt){}
+  clock_cycle_event_map(sprockit::sim_parameters* params, parallel_runtime* rt);
 
   typedef enum {
     vote_max,
@@ -26,12 +25,6 @@ class clock_cycle_event_map :
   } vote_type_t;
 
   virtual ~clock_cycle_event_map() throw() {}
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
-  finalize_init();
 
   virtual void
   run();

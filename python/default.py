@@ -1,2 +1,2 @@
-import sstmacro
-sstmacro.setupDeprecated()
+from sst.macro import *
+setupDeprecated()

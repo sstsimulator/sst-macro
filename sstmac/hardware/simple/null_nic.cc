@@ -1,4 +1,4 @@
-#include <sstmac/hardware/analytic/simple/null_nic.h>
+#include <sstmac/hardware/simple/null_nic.h>
 #include <sstmac/hardware/common/packet.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/hardware/network/network_message.h>

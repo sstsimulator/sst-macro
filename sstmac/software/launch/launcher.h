@@ -21,12 +21,12 @@ namespace sw {
 /**
  * A launcher that can be cooperatively scheduled by a very naive scheduler.
  */
-class launcher :
+class app_launcher :
   public service
 {
 
  public:
-  launcher(operating_system* os);
+  app_launcher(operating_system* os);
 
   virtual std::string
   to_string() const {
@@ -34,7 +34,7 @@ class launcher :
   }
 
   /// Hasta la vista.
-  virtual ~launcher() throw ();
+  virtual ~app_launcher() throw ();
 
   virtual void
   incoming_event(event* ev);

@@ -24,10 +24,9 @@ SpktRegister("calendar", event_manager, event_calendar,
   "Implements the event queue as an O(1) event calendar. Provides faster scheduling if many, many events");
 
 
-void
-event_calendar::init_factory_params(sprockit::sim_parameters* params)
+event_calendar::event_calendar(sprockit::sim_parameters* params, parallel_runtime* rt)
+  : event_manager(params, rt)
 {
-  event_container::init_factory_params(params);
   //go max 1000
   timestamp max_time = params->get_optional_time_param("event_calendar_max_time", 1000);
   timestamp epoch_time = params->get_optional_time_param("event_calendar_epoch_length", 0.01);

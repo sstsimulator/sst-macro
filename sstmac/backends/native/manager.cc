@@ -21,7 +21,6 @@
 #include <sstmac/backends/native/clock_cycle_parallel/clock_cycle_event_container.h>
 
 #include <sstmac/common/runtime.h>
-#include <sstmac/common/logger.h>
 
 #include <sstmac/dumpi_util/dumpi_meta.h>
 
@@ -66,24 +65,6 @@ class timestamp_prefix_fxn :
  private:
   event_manager* mgr_;
 };
-
-//
-// Default constructor.
-//
-manager::manager() :
-  next_ppid_(0),
-  interconnect_(nullptr),
-  rt_(nullptr)
-{
-}
-
-//
-// Define a network.
-//
-void
-manager::init_factory_params(sprockit::sim_parameters* params)
-{
-}
 
 int
 manager::compute_max_nproc_for_app(sprockit::sim_parameters* app_params)
@@ -148,25 +129,16 @@ manager::compute_max_nproc(sprockit::sim_parameters* params)
   return max_nproc;
 }
 
-manager::~manager() throw ()
-{
-  if (sprockit::debug::prefix_fxn) 
-    delete sprockit::debug::prefix_fxn;
-  sprockit::debug::prefix_fxn = 0;
-}
-
 #if SSTMAC_INTEGRATED_SST_CORE
-void
-sst_manager::init_factory_params(sprockit::sim_parameters* params)
-{
-  //these are not used
-  parallel_runtime* rt = nullptr;
-  partition* part = nullptr;
-  interconnect_ = hw::interconnect::static_interconnect(params);
-}
+manager::manager(sprockit::sim_parameters* params, parallel_runtime* rt){}
 #else
-void
-macro_manager::init_factory_params(sprockit::sim_parameters* params)
+//
+// Default constructor.
+//
+manager::manager(sprockit::sim_parameters* params, parallel_runtime* rt) :
+  next_ppid_(0),
+  interconnect_(nullptr),
+  rt_(rt)
 {
   event_manager_ = event_manager_factory::get_optional_param(
                        "event_manager", SSTMAC_DEFAULT_EVENT_MANAGER_STRING, params, rt_);
@@ -185,15 +157,22 @@ macro_manager::init_factory_params(sprockit::sim_parameters* params)
   interconnect_ = hw::interconnect::static_interconnect(params, event_manager_);
 
   event_manager_->set_interconnect(interconnect_);
+}
 
-  logger::timer_ = event_manager_;
-
-  //this should definitely be called last
-  manager::init_factory_params(params);
+manager::~manager() throw ()
+{
+  if (sprockit::debug::prefix_fxn) 
+    delete sprockit::debug::prefix_fxn;
+  sprockit::debug::prefix_fxn = 0;
+  if (this->running_){
+    cerrn << "FATAL:  manager going out of scope while still running.\n";
+    abort();
+  }
+  if (event_manager_) delete event_manager_;
 }
 
 void
-macro_manager::start()
+manager::start()
 {
   const interconnect::node_map& nodes = interconnect_->nodes();
   for (auto& pair : nodes){
@@ -201,11 +180,8 @@ macro_manager::start()
   }
 }
 
-//
-// Start the simulation.
-//
 timestamp
-macro_manager::run(timestamp until)
+manager::run(timestamp until)
 {
   start();
 
@@ -226,40 +202,22 @@ macro_manager::run(timestamp until)
 }
 
 void
-macro_manager::stop()
+manager::stop()
 {
-  event_manager::global = 0;
-
+  event_manager::global = nullptr;
   runtime::finish();
 }
 
-macro_manager::macro_manager(parallel_runtime* rt) :
-  running_(false),
-  event_manager_(nullptr)
-{
-  rt_ = rt;
-}
 
 void
-macro_manager::finish()
+manager::finish()
 {
   //interconnect_->deadlock_check();
   event_manager_->finish_stats();
-  event_manager::global = 0;
-  logger::timer_ = 0;
+  event_manager::global = nullptr;
 }
 
-//
-// Goodbye.
-//
-macro_manager::~macro_manager() throw ()
-{
-  if (this->running_) {
-    cerrn << "FATAL:  manager going out of scope while still running.\n";
-    abort();
-  }
-  if (event_manager_) delete event_manager_;
-}
+
 #endif
 
 }

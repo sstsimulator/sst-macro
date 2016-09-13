@@ -4,13 +4,9 @@
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/thread.h>
-#include <sstmac/common/logger.h>
 #include <sstmac/common/runtime.h>
 #include <sstmac/software/process/backtrace.h>
-
 #include <sumi-mpi/mpi_api.h>
-
-#include <sstmac/replacements/mpi.h>
 #include <sstmac/skeleton.h>
 
 #define sstmac_app_name mpi_ping_all

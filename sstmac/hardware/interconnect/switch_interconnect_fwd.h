@@ -1,5 +1,0 @@
-#ifndef Switch_INTERCONNECT_FWD_H
-#define Switch_INTERCONNECT_FWD_H
-
-#endif // INTERCONNECT_FWD_H
-

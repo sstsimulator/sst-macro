@@ -12,7 +12,7 @@
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/router/router.h>
-#include <sstmac/hardware/interconnect/switch_interconnect.h>
+#include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>

@@ -120,11 +120,6 @@ class nic :
   virtual double
   injection_bandwidth() const = 0;
 
-  void
-  set_interconnect(interconnect* ic){
-    interconn_ = ic;
-  }
-
  protected:
   nic(sprockit::sim_parameters* params, node* parent);
 
@@ -163,7 +158,6 @@ class nic :
 
   int negligible_size_;
 
-  interconnect* interconn_;
   node* parent_;
 
  private:
@@ -187,6 +181,16 @@ class nic :
   send_to_interconn(network_message* netmsg);
 
   void record_message(network_message* msg);
+
+#if !SSTMAC_INTEGRATED_SST_CORE
+ public:
+  void set_interconnect(interconnect* ic){
+    interconn_ = ic;
+  }
+
+ protected:
+  interconnect* interconn_;
+#endif
 
 };
 

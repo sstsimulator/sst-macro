@@ -12,7 +12,7 @@
 #include <sstmac/backends/common/sim_partition.h>
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sstmac/hardware/topology/topology.h>
-#include <sstmac/hardware/interconnect/switch_interconnect.h>
+#include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/topology/index_subset.h>
 
 #include <sprockit/fileio.h>

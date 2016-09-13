@@ -49,8 +49,7 @@ nic::nic(sprockit::sim_parameters* params, node* parent) :
   hist_msg_size_(nullptr),
   local_bytes_sent_(nullptr),
   global_bytes_sent_(nullptr),
-  interconn_(nullptr),
-  parent_(nullptr),
+  parent_(parent),
   mtl_handler_(nullptr),
   connectable_subcomponent(parent)
 {
@@ -261,7 +260,7 @@ nic::send_to_interconn(network_message* netmsg)
   spkt_throw(sprockit::unimplemented_error,
        "nic::send_to_interconn: integrated core");
 #else
-  safe_cast(interconnect, interconn_)->immediate_send(parent(), netmsg, now());
+  interconn_->immediate_send(parent(), netmsg, now());
 #endif
 }
 

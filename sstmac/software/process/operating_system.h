@@ -190,15 +190,6 @@ class operating_system :
 
   library*
   lib(const std::string& name) const;
-  
-  /**
-   * @brief set_ncores
-   * Configure the number of available cores for the compute scheduler
-   * @param ncores  The number of cores PER socket
-   * @param nsocket The number of sockets/dies
-   */
-  void
-  set_ncores(int ncores, int nsocket);
 
   void
   add_application(app* a);
@@ -244,12 +235,6 @@ class operating_system :
   node_id
   addr() const {
     return my_addr_;
-  }
-
-  void
-  set_addr(node_id addr) {
-    my_addr_ = addr;
-    init_loc_id(event_loc_id(addr));
   }
 
   void

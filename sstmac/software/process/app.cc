@@ -14,7 +14,6 @@
 #include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/sstmac_env.h>
-#include <sstmac/common/logger.h>
 #include <sstmac/dumpi_util/dumpi_meta.h>
 #include <sprockit/statics.h>
 #include <sprockit/delete.h>
@@ -228,7 +227,6 @@ app::_get_api(const char* name)
 void
 app::run()
 {
-  logger::check_user_params();
   skeleton_main();
 }
 

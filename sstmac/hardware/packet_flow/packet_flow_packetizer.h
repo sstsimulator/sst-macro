@@ -20,7 +20,8 @@ class packet_flow_packetizer :
 
  protected:
   packet_flow_packetizer(sprockit::sim_parameters* params,
-           event_scheduler* parent, packetizer_callback* cb);
+           event_scheduler* parent, packetizer_callback* cb)
+    : packetizer(params, parent, cb){}
 
  private:
   virtual void recv_credit(packet_flow_credit* ev) = 0;

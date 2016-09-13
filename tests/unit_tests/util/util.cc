@@ -1,7 +1,7 @@
 #include <sstmac/common/sstmac_config.h>
 #if !SSTMAC_INTEGRATED_SST_CORE
 #include <tests/unit_tests/util/util.h>
-#include <sstmac/hardware/interconnect/switch_interconnect.h>
+#include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/router/router.h>
 #include <sstmac/hardware/packet_flow/packet_flow_switch.h>
 #include <sprockit/util.h>
@@ -145,26 +145,27 @@ init_switches(interconnect::switch_map &switches,
               sprockit::sim_parameters& params,
               topology* top)
 {
-    params["link_bandwidth"] = "1.0GB/s";
-    params["crossbar_bandwidth"] = "1.0GB/s";
-    params["hop_latency"] = "100ns";
-    params["injection_bandwidth"] = "1.0GB/s";
-    params["model"] = "packet_flow";
-    params["mtu"] = "8192";
-    params["output_buffer_size"] = "16KB";
-    params["input_buffer_size"] = "16KB";
-    int num_switches = top->num_switches();
+  null_event_manager mgr(&params, nullptr);
+  params["link_bandwidth"] = "1.0GB/s";
+  params["crossbar_bandwidth"] = "1.0GB/s";
+  params["hop_latency"] = "100ns";
+  params["injection_bandwidth"] = "1.0GB/s";
+  params["model"] = "packet_flow";
+  params["mtu"] = "8192";
+  params["output_buffer_size"] = "16KB";
+  params["input_buffer_size"] = "16KB";
+  int num_switches = top->num_switches();
 
-    // create all the switches
-    for (int i=0; i < num_switches; i++)
-    {
-      params.add_param_override("id", i);
-      network_switch* sw = network_switch_factory::get_param(
-            "model", &params, i, nullptr);
-      switches[switch_id(i)] = sw;
-    }
-    //don't need a clone factory
-    top->connect_topology(switches);
+  // create all the switches
+  for (int i=0; i < num_switches; i++)
+  {
+    params.add_param_override("id", i);
+    network_switch* sw = network_switch_factory::get_param(
+          "model", &params, i, &mgr);
+    switches[switch_id(i)] = sw;
+  }
+  //don't need a clone factory
+  top->connect_topology(switches);
 }
 
 

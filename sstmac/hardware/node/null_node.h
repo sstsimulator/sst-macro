@@ -13,7 +13,8 @@ class null_node :
   public simple_node
 {
  public:
-  null_node(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr);
+  null_node(sprockit::sim_parameters* params, uint64_t id,
+            event_manager* mgr);
 
   virtual ~null_node();
 

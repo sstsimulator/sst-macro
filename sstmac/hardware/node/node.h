@@ -19,10 +19,12 @@
 #include <sstmac/hardware/common/unique_id.h>
 #include <sstmac/hardware/common/failable.h>
 
+#include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/hardware/network/network_message_fwd.h>
 #include <sstmac/software/launch/app_launch_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
+#include <sstmac/software/launch/job_launcher_fwd.h>
 #include <sstmac/software/launch/launcher_fwd.h>
 #include <sstmac/software/launch/launch_event_fwd.h>
 #include <sstmac/software/libraries/service_fwd.h>
@@ -65,6 +67,11 @@ class node :
     return mem_model_;
   }
 
+  processor*
+  proc() const {
+    return proc_;
+  }
+
   /**
    @return  A handler wrapper for scheduling events to the NIC
   */
@@ -93,6 +100,11 @@ class node :
   node_id
   addr() const {
     return my_addr_;
+  }
+
+  int
+  nsocket() const {
+    return nsocket_;
   }
 
   /**
@@ -170,7 +182,8 @@ class node :
   void build_launchers(sprockit::sim_parameters* params);
 
  private:
-  sw::launcher* launcher_;
+  sw::app_launcher* app_launcher_;
+  sw::job_launcher* job_launcher_;
   static std::list<sw::app_launch*> launchers_;
   unique_event_id next_outgoing_id_;
   sprockit::sim_parameters* params_;

@@ -20,7 +20,6 @@
 #include <math.h>
 #include <signal.h>
 #include <sstmac/common/sstmac_env.h>
-#include <sstmac/common/logger.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sstmac/backends/native/manager.h>

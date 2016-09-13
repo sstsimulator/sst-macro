@@ -32,6 +32,7 @@ class multithreaded_subcontainer :
   void run();
 
   multithreaded_subcontainer(
+    sprockit::sim_parameters* params,
     parallel_runtime* rt,
     int thread_id,
     multithreaded_event_container* parent);
