@@ -132,7 +132,7 @@ class network_message :
   }
 
   uint64_t
-  unique_id() const {
+  flow_id() const {
     return uint64_t(net_id_);
   }
 

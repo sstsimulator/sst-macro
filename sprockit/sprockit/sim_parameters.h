@@ -12,6 +12,7 @@
 #ifndef SPROCKIT_COMMON_SIM_PARAMETERS_H_INCLUDED
 #define SPROCKIT_COMMON_SIM_PARAMETERS_H_INCLUDED
 
+#include <sprockit/spkt_config.h>
 #include <sprockit/debug.h>
 #include <sprockit/unordered.h>
 
@@ -371,7 +372,10 @@ class sim_parameters  {
   sim_parameters*
   get_optional_namespace(const std::string& ns);
 
-  typedef std::set<int>::const_iterator id_iterator;
+  void
+  set_namespace(const std::string& ns, sim_parameters* params){
+    subspaces_[ns] = params;
+  }
 
   bool
   has_namespace(const std::string& ns) const;
@@ -397,10 +401,23 @@ class sim_parameters  {
     bool override_existing,
     bool mark_as_read);
 
+  /**
+   * This is a dirty hack to store non-sprockit parameter objects
+   * on this parameter object
+   */
+  void
+  append_extra_data(void* data) {
+    extra_data_ = data;
+  }
+
+  template <class T>
+  T*
+  extra_data() const {
+    return static_cast<T*>(extra_data_);
+  }
+
   param_assign
   operator[](const std::string& key);
-
-  sim_parameters* top_parent();
 
   key_value_map::iterator begin() { return params_.begin(); }
   key_value_map::const_iterator begin() const { return params_.begin(); }
@@ -421,11 +438,15 @@ class sim_parameters  {
 
   sim_parameters* parent_;
 
+  void* extra_data_;
+
   static sim_parameters* empty_ns_params_;
 
   std::string namespace_;
 
   key_value_map params_;
+
+  uint64_t current_id_;
 
   void
   throw_key_error(const std::string& key) const;
@@ -470,6 +491,9 @@ class sim_parameters  {
 
   bool
   get_scoped_param(std::string& inout, const std::string& key);
+
+
+
 
 };
 

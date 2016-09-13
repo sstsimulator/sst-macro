@@ -13,7 +13,7 @@
  */
 
 #include <sstmac/hardware/switch/network_switch.h>
-#include <sstmac/hardware/analytic/simple/simple_switch.h>
+#include <sstmac/hardware/simple/simple_switch.h>
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/switch/dist_dummyswitch.h>
 #include <sstmac/hardware/topology/topology.h>
@@ -28,10 +28,9 @@ namespace hw {
 SpktRegister("simple", network_switch, simple_switch);
 #endif
 
-void
-simple_switch::init_factory_params(sprockit::sim_parameters* params)
+simple_switch::simple_switch(sprockit::sim_parameters *params, uint64_t id, event_manager *mgr) :
+  network_switch(params, id, mgr)
 {
-  network_switch::init_factory_params(params);
   double net_bw = params->get_bandwidth_param("bandwidth");
   inverse_bw_ = 1.0/net_bw;
   hop_latency_ = params->get_time_param("hop_latency");
@@ -41,14 +40,10 @@ simple_switch::init_factory_params(sprockit::sim_parameters* params)
   inj_lat_ = params->get_optional_time_param("injection_latency", 0);
 
   inv_min_bw_ = std::max(inverse_bw_, inj_bw_inverse_);
-}
 
-void
-simple_switch::set_topology(topology* top)
-{
-  network_switch::set_topology(top);
+  topology* top = topology::static_topology(params);
   //validate this...
-  std::vector<node_id> nodes = top_->nodes_connected_to_injection_switch(my_addr_);
+  std::vector<node_id> nodes = top->nodes_connected_to_injection_switch(my_addr_);
   if (nodes.size() == 0){
     my_start_ = my_end_ = node_id(-1);
     return;
@@ -63,20 +58,21 @@ simple_switch::set_topology(topology* top)
     }
   }
   my_end_ = node_id(nid);
-}
 
-void
-simple_switch::finalize_init()
-{
-  network_switch::finalize_init();
+  top_ = topology::static_topology(params);
+
+#if !SSTMAC_INTEGRATED_SST_CORE
+  int numsw = top_->num_switches();
+  if (mgr->nworker() != numsw){
+    spkt_abort_printf("simple_switch:: topology has %d switches"
+        " but we are running with %d SST/macro workers (nproc*nthread)\n"
+        "the number of SST/macro workers should match the number of switches",
+        numsw, mgr->nworker());
+  }
+#endif
 }
 
 simple_switch::~simple_switch()
-{
-}
-
-void
-simple_switch::initialize()
 {
 }
 
@@ -186,20 +182,7 @@ simple_switch::send_to_switch(timestamp delay, node_id dst, message* msg)
   schedule_delay(delay, neighbors_[dst], msg);
 }
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-void
-simple_switch::set_event_manager(event_manager* m)
-{
-  network_switch::set_event_manager(m);
-  int numsw = top_->num_switches();
-  if (m->nworker() != numsw){
-    spkt_throw_printf(sprockit::value_error,
-        "simple_switch:: topology has %d switches, but we are running with %d SST/macro workers (nproc*nthread)\n"
-        "the number of SST/macro workers should match the number of switches",
-        numsw, m->nworker());
-  }
-}
-#endif
+
 
 }
 }

@@ -16,7 +16,7 @@ class packet_flow_NtoM_queue :
  public:
   virtual ~packet_flow_NtoM_queue();
 
-  packet_flow_NtoM_queue(
+  packet_flow_NtoM_queue(event_scheduler* parent,
     timestamp send_lat,
     timestamp credit_lat,
     double out_bw,
@@ -24,7 +24,7 @@ class packet_flow_NtoM_queue :
     int buffer_size,
     packet_flow_bandwidth_arbitrator* arb);
 
-  packet_flow_NtoM_queue(
+  packet_flow_NtoM_queue(event_scheduler* parent,
     timestamp send_lat,
     timestamp credit_lat,
     int num_vc,
@@ -184,7 +184,7 @@ class packet_flow_demuxer :
     return "packet_flow_demuxer";
   }
 
-  packet_flow_demuxer(
+  packet_flow_demuxer(event_scheduler* parent,
     timestamp send_lat,
     timestamp credit_lat,
     int num_vc,
@@ -201,7 +201,7 @@ class packet_flow_muxer :
   public packet_flow_NtoM_queue
 {
  public:
-  packet_flow_muxer(
+  packet_flow_muxer(event_scheduler* parent,
     timestamp send_lat,
     timestamp credit_lat,
     double out_bw,
@@ -220,7 +220,7 @@ class packet_flow_crossbar :
   public packet_flow_NtoM_queue
 {
  public:
-  packet_flow_crossbar(
+  packet_flow_crossbar(event_scheduler* parent,
     timestamp send_lat,
     timestamp credit_lat,
     double out_bw,
@@ -228,7 +228,7 @@ class packet_flow_crossbar :
     int buffer_size,
     packet_flow_bandwidth_arbitrator* arb);
 
-  packet_flow_crossbar(
+  packet_flow_crossbar(event_scheduler* parent,
     timestamp send_lat,
     timestamp credit_lat,
     int num_vc,

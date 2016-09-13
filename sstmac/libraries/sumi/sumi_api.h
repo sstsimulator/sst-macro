@@ -60,7 +60,8 @@ class sumi_api :
   public sstmac::sw::process_manager
 {
  public:
-  sumi_api(const char* name, sstmac::sw::software_id sid);
+  sumi_api(sprockit::sim_parameters* params, const char* name,
+           sstmac::sw::software_id sid, sstmac::sw::operating_system* os);
 
   virtual void
   init();
@@ -69,12 +70,6 @@ class sumi_api :
   finalize();
 
   virtual ~sumi_api();
-
-  virtual void
-  init_os(sstmac::sw::operating_system* os);
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
 
   sumi::message_ptr
   poll_until_notification();
@@ -127,7 +122,8 @@ class sumi_server :
 {
 
  public:
-  sumi_server(const std::string& libname, int appid);
+  sumi_server(const std::string& libname, int appid,
+              sstmac::sw::operating_system* os);
 
   void
   register_proc(int rank, sumi_api* proc);

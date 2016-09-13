@@ -31,8 +31,7 @@ class event_calendar :
 {
 
  public:
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
+  event_calendar(sprockit::sim_parameters* params, parallel_runtime* rt);
 
   ~event_calendar() throw ();
 

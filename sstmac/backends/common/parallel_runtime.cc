@@ -12,12 +12,7 @@ RegisterDebugSlot(parallel);
 namespace sstmac {
 
 const int parallel_runtime::global_root = -1;
-
-partition*
-parallel_runtime::topology_partition() const
-{
-  return part_;
-}
+parallel_runtime* parallel_runtime::static_runtime_ = nullptr;
 
 void
 parallel_runtime::finalize_init()
@@ -94,11 +89,6 @@ parallel_runtime::bcast_file_stream(const std::string &fname)
 }
 
 void
-parallel_runtime::init_factory_params(sprockit::sim_parameters* params)
-{
-}
-
-void
 parallel_runtime::init_partition_params(sprockit::sim_parameters *params)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -123,6 +113,22 @@ parallel_runtime::init_partition_params(sprockit::sim_parameters *params)
 #endif
 }
 
+parallel_runtime*
+parallel_runtime::static_runtime(sprockit::sim_parameters* params)
+{
+#if SSTMAC_INTEGRATED_SST_CORE
+  return nullptr;
+#else
+  static thread_lock rt_lock;
+  rt_lock.lock();
+  if (!static_runtime_){
+    static_runtime_ = parallel_runtime_factory::get_param("runtime", params);
+  }
+  rt_lock.unlock();
+  return static_runtime_;
+#endif
+}
+
 void
 parallel_runtime::init_runtime_params(sprockit::sim_parameters *params)
 {
@@ -137,7 +143,7 @@ parallel_runtime::init_runtime_params(sprockit::sim_parameters *params)
   recv_buffer_pool_.init(buf_size_, num_bufs_window);
 }
 
-parallel_runtime::parallel_runtime()
+parallel_runtime::parallel_runtime(sprockit::sim_parameters* params)
   : part_(nullptr)
 {
 }

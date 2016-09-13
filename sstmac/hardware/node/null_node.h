@@ -13,22 +13,13 @@ class null_node :
   public simple_node
 {
  public:
-#if SSTMAC_INTEGRATED_SST_CORE
-  null_node(
-    SST::ComponentId_t id,
-    SST::Params& params
-  ) : simple_node(id, params)
-  { }
-#endif
+  null_node(sprockit::sim_parameters* params, uint64_t id,
+            event_manager* mgr);
 
   virtual ~null_node();
 
-  void
-  init_factory_params(sprockit::sim_parameters *params);
-
- protected:
-  void
-  null_warning(sprockit::sim_parameters* params);
+ private:
+  sprockit::sim_parameters* override_params(sprockit::sim_parameters* params);
 
 
 };

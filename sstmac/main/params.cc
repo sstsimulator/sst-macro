@@ -10,7 +10,6 @@
 #include <math.h>
 #include <signal.h>
 #include <sstmac/common/sstmac_env.h>
-#include <sstmac/common/logger.h>
 #include <sstmac/common/cartgrid.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/software/process/app.h>
@@ -55,6 +54,7 @@ param_remap remap_list[] = {
   pr("topology_redundant", "topology.redundant"),
   pr("topology_group_connections", "topology.group_connections"),
   pr("switch_geometry", "switch.geometry"),
+  pr("switch_name", "switch.model"),
   pr("memory_latency", "node.memory.latency"),
   pr("memory_bandwidth", "node.memory.bandwidth"),
   pr("node_name", "node.model"),
@@ -119,7 +119,6 @@ param_remap remap_list[] = {
   pr("stack_size", "node.os.stack_size"),
   pr("stack_chunk_size", "node.os.stack_chunk_size"),
   pr("stack_protect", "node.os.stack_protect"),
-  pr("startup_libs", "node.os.startup_libs"),
   pr("injection_latency", "nic.injection_latency"),
   pr("injection_bandwidth", "nic.injection_bandwidth"),
   pr("__is_in_micro_mode", "__is_in_micro_mode"),
@@ -197,12 +196,6 @@ remap_params(sprockit::sim_parameters* params, bool verbose)
 
   int timescale = params->get_optional_int_param("timestamp_resolution", 1);
   timestamp::init_stamps(timescale);
-
-  if (params->has_param("logger_params")) {
-    std::string log_params = params->get_param("logger_params");
-    logger::set_user_param(log_params);
-  }
-
 }
 
 }

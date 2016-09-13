@@ -39,8 +39,7 @@ class function_set {
   std::list<timeout_function*> listeners_;
 };
 
-class activity_monitor :
-  public sprockit::factory_type
+class activity_monitor
 {
  public:
   activity_monitor(transport* t) : api_(t){}
@@ -52,6 +51,9 @@ class activity_monitor :
 
   virtual void
   cancel_ping(int dst, timeout_function* func) = 0;
+
+  virtual void
+  init_factory_params(sprockit::sim_parameters* params){}
 
   virtual void
   message_received(const message::ptr& msg) = 0;

@@ -58,26 +58,28 @@ class Timer
 };
 
 class api :
-  public library,
-  virtual public sprockit::factory_type
+  public library
 {
  public:
-  api(const char* name,
+  api(sprockit::sim_parameters* params,
+      const char* name,
       software_id sid,
+      operating_system* os,
       const key::category& ty) :
-    api(name, sid)
+    api(params, name, sid, os)
   {
     key_cat_ = ty;
   }
 
-  virtual void finalize_init(){}
-
-  api(const char* name,
-      software_id sid) :
-    library(name, sid),
+  api(sprockit::sim_parameters* params,
+      const char* name,
+      software_id sid,
+      operating_system* os) :
+    library(name, sid, os),
     startcount_(0),
     endcount_(0)
   {
+    init(params);
   }
 
   virtual
@@ -93,9 +95,6 @@ class api :
   virtual void
   finalize(){}
 
-  virtual void
-  init_os(operating_system* os);
-
   timestamp
   now() const;
 
@@ -104,9 +103,6 @@ class api :
 
   void
   schedule_delay(timestamp t, event_queue_entry* ev);
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params);
 
   //these can be used for direct execution compute modeling
   virtual void
@@ -122,6 +118,8 @@ class api :
   long endcount_;
   lib_compute_time* compute_;
 
+ private:
+  void init(sprockit::sim_parameters *params);
 };
 
 void api_lock();
@@ -135,7 +133,7 @@ void api_unlock();
   SpktRegister(name, sstmac::sw::api, child_cls); \
   const char* child_cls::api_name = name
 
-DeclareFactory(api,software_id);
+DeclareFactory(api,software_id,operating_system*);
 
 }
 }

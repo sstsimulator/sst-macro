@@ -15,6 +15,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstmac/common/timestamp.h>
+#include <sstmac/common/event_scheduler_fwd.h>
 #include <sstmac/backends/common/parallel_runtime_fwd.h>
 #include <sprockit/factories/factory.h>
 
@@ -28,7 +29,7 @@ namespace sstmac {
  * because no merging of stat objects takes place, which means
  * you'll get one file for each stat object.
  */
-class stat_collector : virtual public sprockit::factory_type
+class stat_collector
 {
 
  public:
@@ -133,12 +134,15 @@ class stat_collector : virtual public sprockit::factory_type
 
 };
 
+void register_optional_stat(event_scheduler* parent, stat_collector* coll);
+
 template <class T>
 T*
-optional_stats(sprockit::sim_parameters* params,
+optional_stats(event_scheduler* parent,
+              sprockit::sim_parameters* params,
               const std::string& ns,
               const std::string& deflt,
-              const char* suffix = 0){
+              const char* suffix = nullptr){
   stat_collector* coll = stat_collector::optional_build(params,ns,deflt,suffix);
   if (coll){
     T* t = dynamic_cast<T*>(coll);
@@ -146,6 +150,7 @@ optional_stats(sprockit::sim_parameters* params,
       spkt_throw(sprockit::value_error,
                  "failed casting stats objects");
     }
+    register_optional_stat(parent, t);
     return t;
   }
   else return nullptr;

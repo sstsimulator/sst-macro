@@ -18,9 +18,11 @@ namespace sstmac {
 
 #define print_extra_stuff 0
 
-sumi_api::sumi_api(const char *name, sw::software_id sid) :
-  api(name, sid),
-  process_manager(sid),
+sumi_api::sumi_api(sprockit::sim_parameters* params, const char *name,
+                   sw::software_id sid,
+                   sw::operating_system* os) :
+  api(params, name, sid, os),
+  process_manager(sid, os),
   queue_(nullptr)
 {
   rank_ = sid.task_;
@@ -47,14 +49,12 @@ sumi_api::init()
 
   // only do one server per app per node
   if (server_lib == 0) {
-    server = new sumi_server(server_libname_, sid().app_);
-    register_lib(server);
+    server = new sumi_server(server_libname_, sid().app_, os_);
     server->start();
   }
   else {
     //add me to the ref count
     server = safe_cast(sumi_server, server_lib);
-    register_lib(server);
   }
 
   server->register_proc(rank_, this);
@@ -63,22 +63,8 @@ sumi_api::init()
 }
 
 void
-sumi_api::init_os(sw::operating_system* os)
-{
-  process_manager::init_os(os);
-  api::init_os(os);
-}
-
-void
 sumi_api::finalize()
 {
-  unregister_all_libs();
-}
-
-void
-sumi_api::init_factory_params(sprockit::sim_parameters *params)
-{
-  api::init_factory_params(params);
 }
 
 void
@@ -144,9 +130,10 @@ sumi_api::incoming_message(transport_message* msg)
   queue_->put_message(msg);
 }
 
-sumi_server::sumi_server(const std::string& libname, int appid)
+sumi_server::sumi_server(const std::string& libname, int appid,
+                         sstmac::sw::operating_system* os)
   : appid_(appid),
-    service(libname, sstmac::sw::software_id(appid, -1))
+    service(libname, sstmac::sw::software_id(appid, -1), os)
 {
 }
 

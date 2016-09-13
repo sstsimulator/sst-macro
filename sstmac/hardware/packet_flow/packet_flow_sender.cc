@@ -12,9 +12,11 @@ namespace sstmac {
 namespace hw {
 
 packet_flow_sender::packet_flow_sender(
+  event_scheduler* parent,
   const timestamp& send_lat,
   const timestamp& credit_lat)
-  : send_lat_(send_lat),
+  : packet_flow_handler(parent),
+    send_lat_(send_lat),
     credit_lat_(credit_lat),
     acker_(nullptr),
     stat_collector_(nullptr),
@@ -22,7 +24,8 @@ packet_flow_sender::packet_flow_sender(
 {
 }
 
-packet_flow_sender::packet_flow_sender() :
+packet_flow_sender::packet_flow_sender(event_scheduler* parent) :
+  packet_flow_handler(parent),
   acker_(nullptr),
   stat_collector_(nullptr),
   update_vc_(true)
@@ -66,6 +69,7 @@ packet_flow_sender::send(
   st.pkt = pkt;
   st.src_outport = src.src_outport;
   st.dst_inport = dest.dst_inport;
+
   if (arb) {
     arb->arbitrate(st);
   } else {

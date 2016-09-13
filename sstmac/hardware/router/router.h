@@ -42,8 +42,7 @@ namespace hw {
   a 'component' in the network - those are switches.  Switch and router
   are not synonymous in SST/macro.  All switches have routers.
 */
-class router :
-  public sprockit::factory_type
+class router
 {
  public:
   /**
@@ -84,12 +83,6 @@ class router :
 
   virtual ~router();
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
-  finalize_init();
-
   /**
    * @brief route Makes a routing decision for the packet.
    * All routing decisions should be stored on the packet object itself.
@@ -128,14 +121,6 @@ class router :
   minimal_route_to_switch(
     switch_id sw_addr,
     structured_routable::path& path);
-
-  virtual void
-  init_stats(event_manager* m){}
-
-  void init_vc();
-
-  virtual void
-  set_switch(network_switch* sw);
 
   /**
    @return Whether we are ejecting
@@ -178,11 +163,6 @@ class router :
     return top_;
   }
 
-  virtual void
-  set_topology(topology* top) {
-    top_ = top;
-  }
-
   /**
    * @brief max_num_vc
    * @return The maximum number of virtual channels the router must maintain
@@ -194,10 +174,14 @@ class router :
   }
 
  protected:
-  router(routing::algorithm_t algo);
+  router(sprockit::sim_parameters* params,
+         topology* top, network_switch* sw, routing::algorithm_t algo);
 
   routing::algorithm_t
   str_to_algo(const std::string& str);
+
+ private:
+  void init_vc();
 
  protected:
   switch_id my_addr_;
@@ -219,7 +203,7 @@ class router :
 
 };
 
-DeclareFactory(router);
+DeclareFactory(router, topology*, network_switch*);
 
 
 

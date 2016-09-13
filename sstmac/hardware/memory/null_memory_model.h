@@ -10,15 +10,12 @@ class null_memory_model :
   public memory_model
 {
  public:
-  null_memory_model(node* nd) :
-    memory_model(nd)
+  null_memory_model(sprockit::sim_parameters* params, node* nd) :
+    memory_model(params, nd)
   {
   }
 
   virtual ~null_memory_model();
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
 
   virtual void
   access(long bytes, double max_bw, callback* cb);

@@ -27,18 +27,14 @@ namespace sstmac {
 namespace hw {
 
 class memory_model :
-  public event_subscheduler,
-  public sprockit::factory_type
+  public event_subscheduler
 {
 
  public:
-  memory_model(node* node);
+  memory_model(sprockit::sim_parameters* params, node* node);
 
   static void
   delete_statics();
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
 
   virtual ~memory_model();
 

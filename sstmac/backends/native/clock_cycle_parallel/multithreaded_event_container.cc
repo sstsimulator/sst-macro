@@ -97,8 +97,9 @@ print_backtrace(int sig)
   exit(1);
 }
 
-void
-multithreaded_event_container::init_factory_params(sprockit::sim_parameters* params)
+multithreaded_event_container::multithreaded_event_container(
+  sprockit::sim_parameters* params, parallel_runtime* rt) :
+  clock_cycle_event_map(params, rt)
 {
   //set the signal handler
   signal(SIGSEGV, print_backtrace);
@@ -111,7 +112,6 @@ multithreaded_event_container::init_factory_params(sprockit::sim_parameters* par
   send_recv_functor_.parent = this;
   vote_functor_.parent = this;
 
-  clock_cycle_event_map::init_factory_params(params);
   int nthread_ = nthread();
   me_ = rt_->me();
   nproc_ = rt_->nproc();
@@ -125,8 +125,7 @@ multithreaded_event_container::init_factory_params(sprockit::sim_parameters* par
 
   subthreads_.resize(nthread_);
   for (int i=1; i < nthread_; ++i){
-    multithreaded_subcontainer* ev_man = new multithreaded_subcontainer(rt_, i, this);
-    ev_man->finalize_init();
+    multithreaded_subcontainer* ev_man = new multithreaded_subcontainer(params, rt_, i, this);
     subthreads_[i] = ev_man;
   }
 
@@ -143,12 +142,6 @@ multithreaded_event_container::init_factory_params(sprockit::sim_parameters* par
     }
   }
 
-}
-
-void
-multithreaded_event_container::finalize_init()
-{
-  clock_cycle_event_map::finalize_init();
 }
 
 void

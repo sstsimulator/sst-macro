@@ -30,19 +30,13 @@ namespace sw {
  * Base class for strategies regarding how to sequentially number nodes
  * in a parallel simulation.
  */
-class task_mapper :
-  public sprockit::factory_type
+class task_mapper
 {
 
  public:
   virtual std::string
   to_string() const {
     return "task mapper";
-  }
-
-  virtual void
-  set_topology(hw::topology* top){
-    topology_ = top;
   }
 
   virtual void
@@ -70,8 +64,8 @@ class task_mapper :
     int nproc) = 0;
 
  protected:
-  task_mapper(parallel_runtime* rt) :
-    rt_(rt), topology_(0) {}
+  task_mapper() :
+    rt_(nullptr), topology_(nullptr) {}
 
   int
   validate_nproc(int ppn, int num_nodes, int nproc, const char* name) const;
@@ -82,7 +76,7 @@ class task_mapper :
 
 };
 
-DeclareFactory(task_mapper, parallel_runtime*);
+DeclareFactory(task_mapper);
 
 }
 } // end of namespace sstmac

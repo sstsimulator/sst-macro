@@ -10,6 +10,7 @@
  */
 
 #include <sstmac/common/stats/stat_collector.h>
+#include <sstmac/common/event_scheduler.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/errors.h>
 
@@ -71,6 +72,12 @@ stat_collector::optional_build(sprockit::sim_parameters* params,
   } else {
     return nullptr;
   }
+}
+
+void
+register_optional_stat(event_scheduler *parent, stat_collector *coll)
+{
+  parent->register_stat(coll);
 }
 
 

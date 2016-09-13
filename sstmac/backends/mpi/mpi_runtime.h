@@ -23,6 +23,11 @@ class mpi_runtime :
 {
 
  public:
+  mpi_runtime(sprockit::sim_parameters* params) :
+    parallel_runtime(params)
+  {
+  }
+
   std::string
   to_string() const {
     return "mpi runtime";

@@ -39,8 +39,7 @@ namespace hw {
  * The network switch performs both routing computations and congestion modeling.
  */
 class network_switch :
-  public connectable_component,
-  public sprockit::factory_type
+  public connectable_component
 {
  public:
   std::string
@@ -48,25 +47,15 @@ class network_switch :
     return "network switch";
   }
 
-#if SSTMAC_INTEGRATED_SST_CORE
   network_switch(
-      SST::ComponentId_t id,
-      SST::Params& params
-  );
+    sprockit::sim_parameters* params,
+    uint64_t id,
+    event_manager* mgr);
 
   virtual void
   init(unsigned int phase);
 
-  virtual void
-  setup();
-#endif
-
   virtual ~network_switch();
-
-  topology*
-  topol() const {
-    return top_;
-  }
 
   switch_id
   addr() const {
@@ -83,18 +72,12 @@ class network_switch :
   }
 
   virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
   initialize() {
     //nothing to do by default
   }
 
   virtual std::vector<switch_id>
   connected_switches() const = 0;
-
-  virtual void
-  set_topology(topology* top);
 
   /**
    * @brief queue_length
@@ -108,20 +91,6 @@ class network_switch :
    */
   virtual int
   queue_length(int port) const = 0;
-
-  /**
-    @param addr The destination node addr to eject to
-    @return The ejection port the node is connected on
-  */
-  int
-  eject_port(node_id addr);
-
-  /**
-    @param addr The source node addr to ack to
-    @return The injection port the node is connected on
-  */
-  int
-  inject_port(node_id addr);
 
   /**
    @return The total hop latency to transit from input of one switch to the next (with zero congestion)
@@ -162,12 +131,6 @@ class network_switch :
     connectable* mod,
     config* cfg);
 
-  virtual void
-  set_event_manager(event_manager* m);
-#if !SSTMAC_INTEGRATED_SST_CORE
-  protected:
-  network_switch();
-#endif
  protected:
   virtual void
   connect_injector(int src_outport, int dst_inport, event_handler* nic) = 0;
@@ -196,9 +159,8 @@ class network_switch :
 
 };
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-DeclareFactory(network_switch);
-#endif
+
+DeclareFactory(network_switch,uint64_t,event_manager*);
 
 
 }

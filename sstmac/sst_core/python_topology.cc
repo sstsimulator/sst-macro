@@ -202,12 +202,7 @@ topoInit(TopologyPy_t* self, PyObject* args, PyObject* kwargs)
 
   sprockit::sim_parameters* sim_params = make_sim_params_from_mapping(*self->params);
 
-  // an ugly workaround to avoid changing the STATIC_INIT_TOPOLOGY macro
-  // JJW 12/09/2015 That is ugly - but it works
-  auto set_topology = [&](sstmac::hw::topology* topo) {
-    self->macro_topology = topo;
-  };
-  STATIC_INIT_TOPOLOGY(sim_params);
+  self->macro_topology = hw::topology::static_topology(sim_params);
 
   delete sim_params;
 

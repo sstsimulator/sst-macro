@@ -57,7 +57,8 @@
 
 namespace sstmac {
 
-// lightweight layer in between integrated components and SST core, useful for common helper functions, etc
+// lightweight layer in between integrated components and SST core
+// useful for common helper functions
 class SSTIntegratedComponent
   : public SST::Component
 {
@@ -74,24 +75,15 @@ class SSTIntegratedComponent
   handle_self_link(SST::Event* ev);
 
  protected:
-  SSTIntegratedComponent(
-    SST::ComponentId_t id,
-    SST::Params& params);
+  SSTIntegratedComponent(sprockit::sim_parameters* params, uint64_t id);
 
   void configure_self_link();
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params) = 0;
-
-  virtual void
-  init_sst_params(SST::Params& params);
 
   SST::SimTime_t
   extra_delay(timestamp t) const;
 
   SST::LinkMap* link_map_;
   SST::Link* self_link_;
-  sprockit::sim_parameters* params_;
   static SST::TimeConverter* time_converter_;
 
 };

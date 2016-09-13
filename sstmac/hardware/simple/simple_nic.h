@@ -13,7 +13,6 @@
 #define SIMPLE_NIC_H
 
 #include <sstmac/hardware/nic/nic.h>
-#include <sstmac/hardware/analytic/simple/simple_interconnect.h>
 
 #if !SSTMAC_INTEGRATED_SST_CORE
 
@@ -29,17 +28,10 @@ class simple_nic :
   public nic
 {
  public:
-  simple_nic(sprockit::factory_type* interconn) :
-    nic(interconn), next_free_(0) {}
+  simple_nic(sprockit::sim_parameters* params, node* parent);
 
   /// Goodbye.
   virtual ~simple_nic() {}
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params);
-
-  virtual void
-  finalize_init();
 
   void handle(event *ev);
 

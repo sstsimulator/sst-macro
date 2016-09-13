@@ -43,12 +43,17 @@ class packet_flow_buffer :
    * @param credit_lat
    * @param arb An arbitrator with outgoing bw already initialized
    */
-  packet_flow_buffer(
+  packet_flow_buffer(event_scheduler* parent,
     const timestamp& send_lat,
     const timestamp& credit_lat,
     packet_flow_bandwidth_arbitrator* arb);
 
-  packet_flow_buffer() : bytes_delayed_(0), arb_(0) {}
+  packet_flow_buffer(event_scheduler* parent) :
+    packet_flow_sender(parent),
+    bytes_delayed_(0),
+    arb_(nullptr)
+  {
+  }
 
   std::string
   buffer_string(const char* name) const;
@@ -86,17 +91,20 @@ class packet_flow_finite_buffer :
  protected:
   long size_bytes_;
 
-  packet_flow_finite_buffer(
+  packet_flow_finite_buffer(event_scheduler* parent,
     const timestamp& send_lat,
     const timestamp& credit_lat,
     int max_num_bytes,
     packet_flow_bandwidth_arbitrator* arb) :
       size_bytes_(max_num_bytes),
-      packet_flow_buffer(send_lat, credit_lat, arb)
+      packet_flow_buffer(parent, send_lat, credit_lat, arb)
   {
   }
 
-  packet_flow_finite_buffer(){}
+  packet_flow_finite_buffer(event_scheduler* parent) :
+    packet_flow_buffer(parent)
+  {
+  }
 
 };
 
@@ -104,14 +112,17 @@ class packet_flow_infinite_buffer :
   public packet_flow_buffer
 {
  protected:
-  packet_flow_infinite_buffer(
-    const timestamp& send_lat,
-    packet_flow_bandwidth_arbitrator* arb):
-   packet_flow_buffer(send_lat, timestamp(0), arb)
+  packet_flow_infinite_buffer(event_scheduler* parent,
+   const timestamp& send_lat,
+   packet_flow_bandwidth_arbitrator* arb):
+   packet_flow_buffer(parent, send_lat, timestamp(0), arb)
   {
   }
 
-  packet_flow_infinite_buffer(){}
+  packet_flow_infinite_buffer(event_scheduler* parent) :
+    packet_flow_buffer(parent)
+  {
+  }
 
   virtual ~packet_flow_infinite_buffer(){}
 
@@ -127,9 +138,12 @@ class packet_flow_network_buffer :
   public packet_flow_finite_buffer
 {
  public:
-  packet_flow_network_buffer() {}
+  packet_flow_network_buffer(event_scheduler* parent) :
+    packet_flow_finite_buffer(parent)
+  {
+  }
 
-  packet_flow_network_buffer(
+  packet_flow_network_buffer(event_scheduler* parent,
     const timestamp& send_lat,
     const timestamp& credit_lat,
     int max_num_bytes,
@@ -180,13 +194,16 @@ class packet_flow_eject_buffer :
   public packet_flow_finite_buffer
 {
  public:
-  packet_flow_eject_buffer(
+  packet_flow_eject_buffer(event_scheduler* parent,
     const timestamp& send_lat,
     const timestamp& credit_lat,
     int max_num_bytes,
     packet_flow_bandwidth_arbitrator* arb);
 
-  packet_flow_eject_buffer() {}
+  packet_flow_eject_buffer(event_scheduler* parent) :
+    packet_flow_finite_buffer(parent)
+  {
+  }
 
   void
   handle_credit(packet_flow_credit* msg);
@@ -211,7 +228,7 @@ class packet_flow_injection_buffer :
   public packet_flow_infinite_buffer
 {
  public:
-  packet_flow_injection_buffer(
+  packet_flow_injection_buffer(event_scheduler* parent,
     const timestamp& out_lat,
     packet_flow_bandwidth_arbitrator* arb,
     int packet_size);
@@ -243,7 +260,10 @@ class packet_flow_injection_buffer :
 
   long credits_;
 
-  packet_flow_injection_buffer() {}
+  packet_flow_injection_buffer(event_scheduler* parent) :
+    packet_flow_infinite_buffer(parent)
+  {
+  }
 
 };
 

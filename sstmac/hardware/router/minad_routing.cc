@@ -7,6 +7,13 @@ namespace hw {
 SpktRegister("min_ad", router, minimal_adaptive_router,
             "a routing algorithm for minimal adaptive routing on regular topologies");
 
+
+minimal_adaptive_router::minimal_adaptive_router(sprockit::sim_parameters* params,
+                        topology* top, network_switch* netsw) :
+  minimal_router(params, top, netsw, routing::minimal_adaptive)
+{
+}
+
 void
 minimal_adaptive_router::route(packet* pkt)
 {
@@ -41,13 +48,6 @@ minimal_adaptive_router::route(packet* pkt)
   debug_printf(sprockit::dbg::router,
     "  chose %d", min_path.outport);
   rt->assign_path(min_path);
-}
-
-void
-minimal_adaptive_router::finalize_init()
-{
-  router::finalize_init();
-  max_num_vc_ = num_vc_lookup_[routing::minimal];
 }
 
 }

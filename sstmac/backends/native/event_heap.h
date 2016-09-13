@@ -34,7 +34,10 @@ class event_heap :
 {
 
  public:
-  event_heap(parallel_runtime* rt) : event_container(rt){}
+  event_heap(sprockit::sim_parameters* params, parallel_runtime* rt) :
+    event_container(params, rt)
+  {
+  }
 
   ~event_heap() throw ();
 

@@ -42,19 +42,19 @@ namespace sumi {
 
 const int options::initial_context = -2;
 
-collective_algorithm_selector* transport::allgather_selector_ = 0;
-collective_algorithm_selector* transport::alltoall_selector_ = 0;
-collective_algorithm_selector* transport::alltoallv_selector_ = 0;
-collective_algorithm_selector* transport::allreduce_selector_ = 0;
-collective_algorithm_selector* transport::allgatherv_selector_ = 0;
-collective_algorithm_selector* transport::bcast_selector_ = 0;
-collective_algorithm_selector* transport::gather_selector_ = 0;
-collective_algorithm_selector* transport::gatherv_selector_ = 0;
-collective_algorithm_selector* transport::reduce_selector_ = 0;
-collective_algorithm_selector* transport::scatter_selector_ = 0;
-collective_algorithm_selector* transport::scatterv_selector_ = 0;
+collective_algorithm_selector* transport::allgather_selector_ = nullptr;
+collective_algorithm_selector* transport::alltoall_selector_ = nullptr;
+collective_algorithm_selector* transport::alltoallv_selector_ = nullptr;
+collective_algorithm_selector* transport::allreduce_selector_ = nullptr;
+collective_algorithm_selector* transport::allgatherv_selector_ = nullptr;
+collective_algorithm_selector* transport::bcast_selector_ = nullptr;
+collective_algorithm_selector* transport::gather_selector_ = nullptr;
+collective_algorithm_selector* transport::gatherv_selector_ = nullptr;
+collective_algorithm_selector* transport::reduce_selector_ = nullptr;
+collective_algorithm_selector* transport::scatter_selector_ = nullptr;
+collective_algorithm_selector* transport::scatterv_selector_ = nullptr;
 
-transport::transport() :
+transport::transport(sprockit::sim_parameters* params) :
   inited_(false),
   finalized_(false),
   eager_cutoff_(512),
@@ -75,6 +75,14 @@ transport::transport() :
   heartbeat_tag_start_ = 1e9;
   heartbeat_tag_stop_ = heartbeat_tag_start_ + 10000;
   heartbeat_tag_ = heartbeat_tag_start_;
+
+  monitor_ = activity_monitor_factory::get_optional_param("activity_monitor", "ping",
+                                        params, this);
+
+  eager_cutoff_ = params->get_optional_int_param("eager_cutoff", 512);
+  use_put_protocol_ = params->get_optional_bool_param("use_put_protocol", false);
+
+  lazy_watch_ = params->get_optional_bool_param("lazy_watch", true);
 }
 
 void
@@ -464,18 +472,6 @@ transport::~transport()
 {
   if (monitor_) delete monitor_;
   if (global_domain_) delete global_domain_;
-}
-
-void
-transport::init_factory_params(sprockit::sim_parameters* params)
-{
-  monitor_ = activity_monitor_factory::get_optional_param("activity_monitor", "ping",
-                                        params, this);
-
-  eager_cutoff_ = params->get_optional_int_param("eager_cutoff", 512);
-  use_put_protocol_ = params->get_optional_bool_param("use_put_protocol", false);
-
-  lazy_watch_ = params->get_optional_bool_param("lazy_watch", true);
 }
 
 void

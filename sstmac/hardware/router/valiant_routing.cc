@@ -10,6 +10,12 @@ SpktRegister("valiant", router, valiant_router,
             "router implementing valiant routing");
 
 
+valiant_router::valiant_router(sprockit::sim_parameters* params, topology *top,
+                               network_switch *netsw, routing::algorithm_t algo)
+  : minimal_router(params, top, netsw, algo)
+{
+}
+
 valiant_router::next_action_t
 valiant_router::initial_step(
   structured_routable* rtbl,
@@ -31,13 +37,6 @@ valiant_router::initial_step(
       regtop_->label(rtbl->dest_switch()).c_str(),
       pkt->to_string().c_str());
   return intermediate_step(rtbl, pkt);
-}
-
-void
-valiant_router::finalize_init()
-{
-  structured_router::finalize_init();
-  max_num_vc_ = num_vc_lookup_[routing::valiant];
 }
 
 valiant_router::next_action_t

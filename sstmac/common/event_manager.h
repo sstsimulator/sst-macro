@@ -44,12 +44,10 @@ namespace sstmac {
  * in the right order.
  */
 
-class event_manager :
-  public sprockit::factory_type
+class event_manager
 {
   friend class event_scheduler;
   friend class native::manager;
-  friend class native::macro_manager;
 
  public:
   virtual std::string
@@ -62,13 +60,10 @@ class event_manager :
     return complete_;
   }
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
   static event_manager* global;
 
   /// Goodbye.
-  virtual ~event_manager();
+  virtual ~event_manager(){}
 
   /// Clear all events and set time back to a zero of your choice.
   /// This call shall not be permitted while the event manager is running.
@@ -109,13 +104,12 @@ class event_manager :
   topology_partition() const;
 
   parallel_runtime*
-  runtime() const;
+  runtime() const {
+    return rt_;
+  }
 
   void
   finish_stats();
-
-  virtual void
-  finish_stats(stat_collector* main, const std::string& name, timestamp end);
 
   void
   stop() {
@@ -185,30 +179,21 @@ class event_manager :
   ev_man_for_thread(int thread_id) const;
 
   virtual void
-  set_interconnect(hw::interconnect* interconn);
-
-  static int
-  current_thread_id();
+  set_interconnect(hw::interconnect* interconn){}
 
   virtual void
   schedule_stop(timestamp until);
 
  protected:
-  event_manager(parallel_runtime* rt) :
-    rt_(rt),
-    finish_on_stop_(true),
-    stopped_(true),
-    thread_id_(0),
-    nthread_(1),
-    me_(0),
-    nproc_(1),
-    complete_(false)
-  {}
+  event_manager(sprockit::sim_parameters* params, parallel_runtime* rt);
 
   void
   set_now(const timestamp &ts);
 
- protected:
+  virtual void
+  finish_stats(stat_collector* main, const std::string& name, timestamp end);
+
+protected:
   bool complete_;
   bool stopped_;
   bool finish_on_stop_;
@@ -221,8 +206,8 @@ class event_manager :
 
   int nthread_;
 
-  static std::vector<pthread_t> pthreads_;
-  static std::vector<pthread_attr_t> pthread_attrs_;
+  std::vector<pthread_t> pthreads_;
+  std::vector<pthread_attr_t> pthread_attrs_;
 
  private:
   struct stats_entry {
@@ -231,7 +216,7 @@ class event_manager :
     bool dump_main;
     stat_collector* main_collector;
     std::list<stat_collector*> collectors;
-    stats_entry() : main_collector(0) {}
+    stats_entry() : main_collector(nullptr) {}
   };
   std::map<std::string, stats_entry> stats_;
 
@@ -240,6 +225,24 @@ class event_manager :
  private:
   virtual void
   schedule(timestamp start_time, uint32_t seqnum, event_queue_entry* event_queue_entry) = 0;
+
+};
+
+class null_event_manager : public event_manager
+{
+ public:
+  null_event_manager(sprockit::sim_parameters* params, parallel_runtime* rt) :
+    event_manager(params, rt)
+  {
+  }
+
+  void schedule(timestamp start_time, uint32_t seqnum, event_queue_entry *event_queue_entry){}
+  void cancel_all_messages(event_loc_id canceled_loc){}
+  void clear(timestamp time){}
+  void run(){}
+  bool empty() const {
+    return true;
+  }
 
 };
 

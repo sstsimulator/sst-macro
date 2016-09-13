@@ -52,6 +52,8 @@ class operating_system :
   friend class thread;
 
  public:
+  operating_system(sprockit::sim_parameters* params, hw::node* parent);
+
   struct os_thread_context {
     thread* current_thread;
     std::list<thread*> to_delete;
@@ -62,9 +64,6 @@ class operating_system :
   };
 
   virtual ~operating_system();
-
-  static operating_system*
-  construct(sprockit::sim_parameters* params);
 
   static inline os_thread_context&
   static_os_thread_context() {
@@ -78,12 +77,6 @@ class operating_system :
     return os_thread_context_;
   #endif
   }
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
-  finalize_init();
 
   static void
   delete_statics();
@@ -195,20 +188,8 @@ class operating_system :
   void
   complete_thread(bool succ);
 
-  void
-  register_lib(void* owner, library* lib);
-
-  void
-  unregister_all_libs(void* owner);
-
   library*
   lib(const std::string& name) const;
-  
-  void
-  set_ncores(int ncores, int nsocket);
-
-  void
-  set_event_parent(event_scheduler* man);
 
   void
   add_application(app* a);
@@ -257,12 +238,6 @@ class operating_system :
   }
 
   void
-  set_addr(node_id addr) {
-    my_addr_ = addr;
-    init_loc_id(event_loc_id(addr));
-  }
-
-  void
   start_api_call();
 
   void
@@ -296,8 +271,6 @@ class operating_system :
   void kill_node();
 
  private:
-  operating_system();
-
   void
   add_thread(thread* t);
 
@@ -307,11 +280,11 @@ class operating_system :
   void
   init_threading();
 
-  void
-  init_services();
-
   os_thread_context&
   current_os_thread_context();
+
+
+  friend class library;
 
   void
   register_lib(library* lib);
@@ -332,8 +305,6 @@ class operating_system :
   node_id my_addr_;
 
   std::list<thread*> threads_;
-
-  std::vector<std::string> startup_libs_;
 
   std::list<api*> services_;
 
@@ -358,8 +329,6 @@ class operating_system :
   static graph_viz* call_graph_;
 
   ftq_calendar* ftq_trace_;
-
-  event_trace* event_trace_;
 
 #if SSTMAC_USE_MULTITHREAD
   static std::vector<operating_system::os_thread_context> os_thread_contexts_;

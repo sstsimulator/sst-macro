@@ -17,10 +17,7 @@ namespace sw {
 class process_manager  {
 
  public:
-  process_manager(software_id sid);
-
-  virtual void
-  init_os(operating_system* os);
+  process_manager(software_id sid, operating_system* os);
 
   virtual ~process_manager();
 

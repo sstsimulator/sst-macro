@@ -27,10 +27,9 @@ namespace hw {
 SpktRegister("packet_flow_tiled", network_switch, packet_flow_tiled_switch);
 #endif
 
-void
-packet_flow_tiled_switch::init_factory_params(sprockit::sim_parameters *params)
+packet_flow_tiled_switch::packet_flow_tiled_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr)
+  : packet_flow_abstract_switch(params, id, mgr)
 {
-  packet_flow_abstract_switch::init_factory_params(params);
   row_buffer_num_bytes = params->get_byte_length_param("row_buffer_size");
   nrows_ = params->get_int_param("nrows");
   ncols_ = params->get_int_param("ncols");
@@ -89,7 +88,7 @@ packet_flow_tiled_switch::init_components()
   for (int r=0; r < nrows_; ++r){
     for (int c=0; c < ncols_; ++c){
       int tile = row_col_to_tile(r, c);
-      packet_flow_crossbar* xbar = new packet_flow_crossbar(
+      packet_flow_crossbar* xbar = new packet_flow_crossbar(this,
         timestamp(0), //just assume no latency in crossbar
         timestamp(0), //just assume no latency in crossbar
         xbar_bw,
@@ -102,7 +101,7 @@ packet_flow_tiled_switch::init_components()
       xbar->configure_div_ports(xbar_mapper, ntiles-1);
       xbar->set_update_vc(false);
 
-      packet_flow_muxer* muxer = new packet_flow_muxer(
+      packet_flow_muxer* muxer = new packet_flow_muxer(this,
         hop_lat, //put all the latency in the send
         timestamp(0), //assume zero latency credits
         link_bw,
@@ -114,7 +113,7 @@ packet_flow_tiled_switch::init_components()
       muxer->set_event_location(my_addr_);
       muxer->configure_offset_ports(muxer_offset, muxer_max_port);
 
-      packet_flow_demuxer* dm = new packet_flow_demuxer(
+      packet_flow_demuxer* dm = new packet_flow_demuxer(this,
         timestamp(0), //assume zero latency send
         hop_lat, //credit latency
         router_->max_num_vc(),
@@ -256,18 +255,6 @@ packet_flow_tiled_switch::connected_switches() const
 {
   spkt_throw_printf(sprockit::unimplemented_error,
     "packet_flow_tiled_switch::connected_switches");
-}
-
-void
-packet_flow_tiled_switch::set_event_manager(event_manager* m)
-{
-  network_switch::set_event_manager(m);
-  int ntiles = nrows_ * ncols_;
-  for (int i=0; i < ntiles; ++i){
-    xbar_tiles_[i]->set_event_parent(this);
-    row_input_demuxers_[i]->set_event_parent(this);
-    col_output_muxers_[i]->set_event_parent(this);
-  }
 }
 
 int

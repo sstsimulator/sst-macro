@@ -10,20 +10,11 @@ namespace hw {
 SpktRegister("ugal", router, ugal_router,
             "router implementing ugal congestion-aware routing");
 
-
-void
-ugal_router::init_factory_params(sprockit::sim_parameters *params)
+ugal_router::ugal_router(sprockit::sim_parameters *params, topology *top, network_switch *netsw)
+  :  valiant_router(params, top, netsw, routing::ugal)
 {
   val_threshold_ = params->get_optional_int_param("ugal_threshold", 0);
   val_preference_factor_ = params->get_optional_int_param("valiant_preference_factor",1);
-  valiant_router::init_factory_params(params);
-}
-
-void
-ugal_router::finalize_init()
-{
-  valiant_router::finalize_init();
-  max_num_vc_ = num_vc_lookup_[routing::ugal];
 }
 
 void

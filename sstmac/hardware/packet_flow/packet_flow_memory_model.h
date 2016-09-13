@@ -26,7 +26,7 @@ class memory_message : public message
     return bytes_;
   }
 
-  uint64_t unique_id() const {
+  uint64_t flow_id() const {
     return id_;
   }
 
@@ -58,7 +58,8 @@ class memory_message : public message
 class packet_flow_memory_packetizer : public packet_flow_packetizer
 {
  public:
-  packet_flow_memory_packetizer();
+  packet_flow_memory_packetizer(sprockit::sim_parameters* params,
+                          event_scheduler* parent, packetizer_callback* cb);
   
   ~packet_flow_memory_packetizer();
 
@@ -72,11 +73,6 @@ class packet_flow_memory_packetizer : public packet_flow_packetizer
 
   void
   recv_packet(packet_flow_payload* pkt){}
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  void finalize_init();
 
   void inject(int vn, long bytes, long byte_offset, message *payload);
 
@@ -109,21 +105,9 @@ class packet_flow_memory_model :
   public packetizer_callback
 {
  public:
-  packet_flow_memory_model(node* nd) :
-    memory_model(nd)
-  {
-  }
+  packet_flow_memory_model(sprockit::sim_parameters* params, node* nd);
 
   virtual ~packet_flow_memory_model();
-
-  void
-  set_event_parent(event_scheduler* m);
-
-  virtual void
-  finalize_init();
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
 
   void
   schedule(timestamp t, event_handler *handler, message*msg){

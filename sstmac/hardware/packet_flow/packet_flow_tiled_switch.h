@@ -20,15 +20,10 @@ class packet_flow_tiled_switch :
 {
 
  public:
-#if !SSTMAC_INTEGRATED_SST_CORE
-  packet_flow_tiled_switch(){}
-#endif
+  packet_flow_tiled_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr);
 
   virtual void
   initialize();
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
 
   int
   queue_length(int port) const;
@@ -66,9 +61,6 @@ class packet_flow_tiled_switch :
    */
   void
   add_ejector(node_id addr, event_handler* link);
-
-  virtual void
-  set_event_manager(event_manager* m);
 
   virtual std::string
   to_string() const;

@@ -6,8 +6,7 @@
 
 namespace sstmac {
 
-class param_expander :
-  public sprockit::factory_type
+class param_expander
 {
  public:
   virtual ~param_expander(){}

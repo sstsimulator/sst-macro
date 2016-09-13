@@ -241,9 +241,6 @@ class thread
   }
 
   void
-  register_lib(library* lib);
-
-  void
   set_affinity(int core){
     zero_affinity();
     add_affinity(core);
@@ -324,9 +321,6 @@ class thread
   virtual api*
   _get_api(const char* name);
 
-  void
-  unregister_all_libs();
-  
  private:
   /// Run routine that defines the initial context for this task.
   /// This routine calls the virtual thread::run method.
@@ -384,8 +378,6 @@ class thread
   /// This key gets used by the compute scheduler to delay this thread
   /// 
   key* schedule_key_;
-
-  std::list<library*> pending_libs_;
   
   uint64_t cpumask_;
   

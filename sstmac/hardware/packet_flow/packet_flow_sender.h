@@ -41,7 +41,7 @@ class packet_flow_sender :
 
   void
   handle_payload(packet_flow_payload* pkt) {
-    pkt->set_arrival(now().sec());
+    pkt->set_arrival(now());
     do_handle_payload(pkt);
   }
 
@@ -72,11 +72,11 @@ class packet_flow_sender :
   }
 
  protected:
-  packet_flow_sender(
+  packet_flow_sender(event_scheduler* parent,
     const timestamp& send_lat,
     const timestamp& credit_lat);
 
-  packet_flow_sender();
+  packet_flow_sender(event_scheduler* parent);
 
   void
   send_credit(const packet_flow_input& src,

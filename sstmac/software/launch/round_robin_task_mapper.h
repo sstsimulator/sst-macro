@@ -24,9 +24,6 @@ class round_robin_task_mapper : public task_mapper
 {
 
  public:
-  round_robin_task_mapper(parallel_runtime* rt) :
-    task_mapper(rt){}
-
   virtual
   ~round_robin_task_mapper() throw ();
 

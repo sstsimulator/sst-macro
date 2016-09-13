@@ -23,7 +23,6 @@ class packetizer_callback
 };
 
 class packetizer :
-  public sprockit::factory_type,
   public event_subscheduler
 {
 
@@ -43,15 +42,6 @@ class packetizer :
   int packetSize() const {
     return packet_size_;
   }
-
-#if SSTMAC_INTEGRATED_SST_CORE
- public:
-  virtual void
-  init_sst_params(SST::Params& params, SST::Component* parent){}
-#endif
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params);
 
  private:
   virtual void inject(int vn, long bytes, long byte_offset, message* payload) = 0;
@@ -74,13 +64,15 @@ class packetizer :
   packetizer_callback* notifier_;
 
  protected:
-  packetizer() : notifier_(nullptr){}
+  packetizer(sprockit::sim_parameters* params,
+             event_scheduler* parent,
+             packetizer_callback* handler);
 
   void bytesArrived(int vn, uint64_t unique_id, int bytes, message* parent);
 
 };
 
-DeclareFactory(packetizer)
+DeclareFactory(packetizer, event_scheduler*, packetizer_callback*)
 
 #if SSTMAC_INTEGRATED_SST_CORE
 class SimpleNetworkPacket : public SST::Event
@@ -88,19 +80,21 @@ class SimpleNetworkPacket : public SST::Event
   NotSerializable(SimpleNetworkPacket)
 
  public:
-  SimpleNetworkPacket(uint64_t id) : unique_id(id) {}
-  uint64_t unique_id;
+  SimpleNetworkPacket(uint64_t id) : flow_id(id) {}
+  uint64_t flow_id;
 };
 
 class SimpleNetworkPacketizer :
   public packetizer
 {
  public:
+  SimpleNetworkPacketizer(sprockit::sim_parameters* params,
+                      event_scheduler* parent,
+                      packetizer_callback* handler);
+
   bool spaceToSend(int vn, int num_bits) const;
 
   void inject(int vn, long bytes, long byte_offset, message *payload);
-
-  virtual void init_sst_params(SST::Params &params, SST::Component *parent);
 
   bool recvNotify(int vn);
 

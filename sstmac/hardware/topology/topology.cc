@@ -24,7 +24,7 @@ topology::topology() :
   max_ports_intra_network_(-1),
   max_ports_injection_(-1),
   endpoints_per_switch_(-1),
-  rng_(0)
+  rng_(nullptr)
 {
 }
 
@@ -63,7 +63,7 @@ topology*
 topology::static_topology(sprockit::sim_parameters* params)
 {
   if (!static_topology_){
-    sprockit::sim_parameters* top_params = params->top_parent()->get_namespace("topology");
+    sprockit::sim_parameters* top_params = params->get_namespace("topology");
     static_topology_ = topology_factory::get_param("name", top_params);
   }
   return static_topology_;
@@ -115,7 +115,7 @@ topology::random_number(uint32_t max, uint32_t attempt) const
 #endif
   if (debug_seed_){
     std::vector<RNG::rngint_t> seeds(2);
-    uint32_t time = event_manager::global ? event_manager::global->now().msec() : 42;
+    uint32_t time = 42;
     seeds[1] = seed_ * (time+31) << (attempt + 5);
     seeds[0] = (time+5)*7 + seeds[0]*attempt*42 + 3;
     rng_->vec_reseed(seeds);

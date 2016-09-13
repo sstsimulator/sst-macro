@@ -22,23 +22,21 @@ namespace sw {
 
 key::category lib_compute_memmove::key_category("Memory");
 
-lib_compute_memmove::lib_compute_memmove(software_id id) :
-  lib_compute_memmove("libmemmove", id)
+lib_compute_memmove::lib_compute_memmove(sprockit::sim_parameters* params,
+                                         software_id id, operating_system* os) :
+  lib_compute_memmove(params, "libmemmove", id, os)
 {
   key_cat_ = key_category;
-  init();
 }
 
-lib_compute_memmove::lib_compute_memmove(const char* prefix, software_id sid) :
-  lib_compute_inst(prefix, sid)
+lib_compute_memmove::lib_compute_memmove(sprockit::sim_parameters* params,
+                                         const char* prefix, software_id sid,
+                                         operating_system* os) :
+  lib_compute_inst(params, prefix, sid, os)
 {
   key_cat_ = key_category;
-  init();
-}
 
-void
-lib_compute_memmove::init()
-{
+  access_width_bytes_ = params->get_optional_int_param("lib_compute_access_width", 64) / 8;
 }
 
 void
@@ -51,12 +49,6 @@ lib_compute_memmove::do_access(long bytes)
   int nflops = 0;
   int nintops = 1; //memmove instruction
   compute_loop(num_loops, nflops, nintops, access_width_bytes_);
-}
-
-void
-lib_compute_memmove::unregister_all_libs()
-{
-  library::unregister_all_libs();
 }
 
 void
@@ -80,18 +72,6 @@ lib_compute_memmove::copy(long bytes)
   do_access(bytes);
 }
 
-void
-lib_compute_memmove::consume_params(sprockit::sim_parameters* params)
-{
-  lib_compute_inst::consume_params(params);
-
-  /**
-    sstkeyword {
-      docstring=The width in bits (32, 64, 128) read by each memory instruction.;
-    }
-  */
-  access_width_bytes_ = params->get_optional_int_param("lib_compute_access_width", 64) / 8;
-}
 
 }
 } //end of namespace sstmac

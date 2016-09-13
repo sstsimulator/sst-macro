@@ -22,25 +22,12 @@ class packet_flow_nic :
 {
 
  public:
-  packet_flow_nic(sprockit::factory_type* interconn) :
-    nic(interconn),
-    packetizer_(0),
-    injection_credits_(0)
-  {
-  }
+  packet_flow_nic(sprockit::sim_parameters* params, node* parent);
 
   std::string
   to_string() const {
     return sprockit::printf("packet flow nic(%d)", int(addr()));
   }
-
-#if SSTMAC_INTEGRATED_SST_CORE
-  virtual void
-  init_sst_params(SST::Params &params, SST::Component* parent);
-#endif
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
 
   virtual ~packet_flow_nic() throw ();
 
@@ -57,9 +44,6 @@ class packet_flow_nic :
     connection_type_t ty,
     connectable* mod,
     config* cfg);
-
-  virtual void
-  set_event_parent(event_scheduler* m);
 
   timestamp
   injection_latency() const {
@@ -90,13 +74,7 @@ class packet_flow_netlink :
   public packet_flow_component
 {
  public:
-  packet_flow_netlink(sprockit::factory_type* interconn) :
-    netlink(interconn),
-    block_(nullptr),
-    tile_rotater_(0),
-    inited_(false)
-  {
-  }
+  packet_flow_netlink(sprockit::sim_parameters* params, node* parent);
 
   virtual ~packet_flow_netlink();
 
@@ -104,9 +82,6 @@ class packet_flow_netlink :
   to_string() const {
     return "packet flow netlink";
   }
-
-  void
-  init_factory_params(sprockit::sim_parameters *params);
 
   void
   connect(
@@ -120,14 +95,10 @@ class packet_flow_netlink :
   deadlock_check();
 
   void
-  set_event_parent(event_scheduler* m);
-
-  void
   handle(event* ev);
 
   event_handler*
   ejector() {
-    init();
     return block_;
   }
 
@@ -138,12 +109,8 @@ class packet_flow_netlink :
 
   event_handler*
   injector() {
-    init();
     return block_;
   }
-
- private:
-  void init();
 
  private:
   static const int really_big_buffer;

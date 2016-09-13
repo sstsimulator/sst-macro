@@ -3,8 +3,7 @@
 namespace sstmac {
 namespace tutorial {
 
-class actor :
-  public sprockit::factory_type
+class actor
 {
 
  public:

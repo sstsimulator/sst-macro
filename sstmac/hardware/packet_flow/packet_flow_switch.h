@@ -16,9 +16,6 @@ class packet_flow_abstract_switch :
 {
  public:
   virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
   initialize() = 0;
 
   timestamp
@@ -50,18 +47,10 @@ class packet_flow_abstract_switch :
   }
 
  protected:
-#if SSTMAC_INTEGRATED_SST_CORE
   packet_flow_abstract_switch(
-    SST::ComponentId_t id,
-    SST::Params& params
-  ) : network_switch(id, params),
-    buf_stats_(nullptr),
-    xbar_stats_(nullptr),
-    link_arbitrator_template(nullptr)
-  { }
-#else
-  packet_flow_abstract_switch();
-#endif
+    sprockit::sim_parameters* params,
+    uint64_t id,
+    event_manager* mgr);
 
   virtual ~packet_flow_abstract_switch();
 
@@ -97,16 +86,7 @@ class packet_flow_switch :
 {
 
  public:
-#if !SSTMAC_INTEGRATED_SST_CORE
-  packet_flow_switch();
-#endif
-
-#if SSTMAC_INTEGRATED_SST_CORE
-  packet_flow_switch(
-    SST::ComponentId_t id,
-    SST::Params& params
-  );
-#endif
+  packet_flow_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr);
 
   virtual ~packet_flow_switch();
 
@@ -115,9 +95,6 @@ class packet_flow_switch :
 
   packet_flow_crossbar*
   crossbar(config* cfg);
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
 
   int
   queue_length(int port) const;
@@ -159,24 +136,15 @@ class packet_flow_switch :
   void
   add_ejector(node_id addr, event_handler* link);
 
-  virtual void
-  set_event_manager(event_manager* m);
-
-  void
-  set_topology(topology *top);
-
   virtual std::string
   to_string() const;
 
- protected:
+ private:
   virtual void
   connect_injector(int src_outport, int dst_inport, event_handler* nic);
 
   virtual void
   connect_ejector(int src_outport, int dst_inport, event_handler* nic);
-
- protected:
-  sprockit::sim_parameters* params_;
 
   std::vector<packet_flow_sender*> out_buffers_;
 
@@ -204,7 +172,7 @@ class packet_flow_switch :
 
 };
 
-DeclareIntegratedComponent(packet_flow_switch);
+DeclareSSTComponent(packet_flow_switch);
 
 }
 }

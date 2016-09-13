@@ -12,6 +12,7 @@
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/software/launch/task_mapper.h>
+#include <sstmac/backends/common/parallel_runtime.h>
 
 RegisterDebugSlot(indexing);
 
@@ -27,7 +28,8 @@ task_mapper::~task_mapper() throw()
 void
 task_mapper::init_factory_params(sprockit::sim_parameters *params)
 {
-  STATIC_INIT_TOPOLOGY(params)
+  rt_ = parallel_runtime::static_runtime(params);
+  topology_ = sstmac::hw::topology::static_topology(params);
 }
 
 int

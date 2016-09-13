@@ -6,6 +6,15 @@ ImplementFactory(sstmac::hw::packetizer)
 namespace sstmac {
 namespace hw {
 
+packetizer::packetizer(sprockit::sim_parameters* params,
+           event_scheduler* parent,
+           packetizer_callback* handler) :
+  notifier_(handler),
+  event_subscheduler(parent)
+{
+  packet_size_ = params->get_optional_byte_length_param("mtu", 4096);
+}
+
 packetizer::~packetizer()
 {
   //do not delete - notifiers are owned by the person that passes them in
@@ -27,12 +36,6 @@ packetizer::start(int vn, message *msg)
   pending_[vn].push_back(next);
 
   sendWhatYouCan(vn);
-}
-
-void
-packetizer::init_factory_params(sprockit::sim_parameters *params)
-{
-  packet_size_ = params->get_optional_byte_length_param("mtu", 4096);
 }
 
 void
@@ -68,33 +71,40 @@ packetizer::bytesArrived(int vn, uint64_t unique_id, int bytes, message *parent)
 void
 packetizer::packetArrived(int vn, packet* pkt)
 {
-  bytesArrived(vn, pkt->unique_id(), pkt->byte_length(), pkt->orig());
+  bytesArrived(vn, pkt->flow_id(), pkt->byte_length(), pkt->orig());
   delete pkt;
 }
 
 #if SSTMAC_INTEGRATED_SST_CORE
-void
-SimpleNetworkPacketizer::init_sst_params(SST::Params& params, SST::Component* parent)
+SimpleNetworkPacketizer::SimpleNetworkPacketizer(sprockit::sim_parameters *params,
+                                                 event_scheduler* parent,
+                                                 packetizer_callback *handler) :
+  packetizer(params, parent, handler)
 {
+  SST::Params& sst_params = *params->extra_data<SST::Params>();
   m_linkControl = (SST::Interfaces::SimpleNetwork*)parent->loadSubComponent(
-                  params.find_string("module"), parent, params);
+                  sst_params.find_string("module"), parent, sst_params);
 
-
-
-  SST::UnitAlgebra link_bw(params.find_string("injection_bandwidth"));
-  SST::UnitAlgebra injection_buffer_size(params.find_string("injection_credits"));
+  SST::UnitAlgebra link_bw(sst_params.find_string("injection_bandwidth"));
+  SST::UnitAlgebra injection_buffer_size(sst_params.find_string("injection_credits"));
   SST::UnitAlgebra big_buffer("1GB");
-  m_linkControl->initialize(params.find_string("rtrPortName","rtr"),
+  m_linkControl->initialize(sst_params.find_string("rtrPortName","rtr"),
                               link_bw, 1, injection_buffer_size, big_buffer);
 
-  m_recvNotifyFunctor =
-      new SST::Interfaces::SimpleNetwork::Handler<SimpleNetworkPacketizer>(this,&SimpleNetworkPacketizer::recvNotify );
+  m_recvNotifyFunctor = new SST::Interfaces::SimpleNetwork::Handler<SimpleNetworkPacketizer>
+      (this,&SimpleNetworkPacketizer::recvNotify );
 
-  m_sendNotifyFunctor =
-      new SST::Interfaces::SimpleNetwork::Handler<SimpleNetworkPacketizer>(this,&SimpleNetworkPacketizer::sendNotify );
+  m_sendNotifyFunctor = new SST::Interfaces::SimpleNetwork::Handler<SimpleNetworkPacketizer>
+      (this,&SimpleNetworkPacketizer::sendNotify );
 
   m_linkControl->setNotifyOnReceive( m_recvNotifyFunctor );
   m_linkControl->setNotifyOnSend( m_sendNotifyFunctor );
+}
+
+bool
+SimpleNetworkPacketizer::spaceToSend(int vn, int num_bits) const
+{
+  return m_linkControl->spaceToSend(vn, num_bits);
 }
 
 bool
@@ -109,16 +119,16 @@ SimpleNetworkPacketizer::recvNotify(int vn)
 {
   SST::Interfaces::SimpleNetwork::Request* req = m_linkControl->recv(vn);
   message* m = 0;
-  uint64_t unique_id;
+  uint64_t flow_id;
   if (req->tail){
     m = static_cast<message*>(req->takePayload());
-    unique_id = m->unique_id();
+    flow_id = m->flow_id();
   } else {
     SimpleNetworkPacket* p = static_cast<SimpleNetworkPacket*>(req->takePayload());
-    unique_id = p->unique_id;
+    flow_id = p->flow_id;
     delete p;
   }
-  bytesArrived(vn, unique_id, req->size_in_bits/8, m);
+  bytesArrived(vn, flow_id, req->size_in_bits/8, m);
   delete req;
   return true;
 }
@@ -134,7 +144,7 @@ SimpleNetworkPacketizer::inject(int vn, long bytes, long byte_offset, message* p
   if (tail){
     ev_payload = payload;
   } else {
-    ev_payload = new SimpleNetworkPacket(payload->unique_id());
+    ev_payload = new SimpleNetworkPacket(payload->flow_id());
   }
   SST::Interfaces::SimpleNetwork::Request* req =
         new SST::Interfaces::SimpleNetwork::Request(dst, src, bytes*8, head, tail, ev_payload);

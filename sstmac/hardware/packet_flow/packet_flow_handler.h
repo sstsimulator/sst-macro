@@ -32,7 +32,10 @@ class packet_flow_handler :
 {
 
  public:
-  packet_flow_handler();
+  packet_flow_handler(event_scheduler* parent) :
+    event_subscheduler(parent)
+  {
+  }
 
   virtual std::string
   to_string() const {

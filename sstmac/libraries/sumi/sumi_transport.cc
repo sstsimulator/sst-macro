@@ -16,8 +16,11 @@ namespace sumi {
 
 RegisterAPI("sumi_transport", sumi_transport);
 
-sumi_transport::sumi_transport(const char* name, sstmac::sw::software_id sid) :
-  sumi_api(name, sid)
+sumi_transport::sumi_transport(sprockit::sim_parameters* params,
+    const char* name, sstmac::sw::software_id sid,
+    sstmac::sw::operating_system* os) :
+  sumi_api(params, name, sid, os),
+  transport(params)
 {
 }
 
@@ -122,20 +125,6 @@ sumi_transport::go_revive()
 {
   spkt_throw(sprockit::illformed_error,
     "SST cannot revive a dead process currently");
-}
-
-void
-sumi_transport::init_factory_params(sprockit::sim_parameters* params)
-{
-  sstmac::sumi_api::init_factory_params(params);
-  transport::init_factory_params(params);
-}
-
-void
-sumi_transport::finalize_init()
-{
-  sstmac::sw::thread::current()->register_lib(this);
-  sstmac::sumi_api::finalize_init();
 }
 
 void

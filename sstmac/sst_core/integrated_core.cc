@@ -10,20 +10,53 @@
 #include <sstmac/hardware/packet_flow/packet_flow_switch.h>
 #include <sstmac/hardware/node/simple_node.h>
 
+#include <vector>
+
 #include <sprockit/util.h>
 #include <sprockit/unordered.h>
 #include <sprockit/debug.h>
 #include <sprockit/output.h>
 
+#include <Python.h>
+
 #include <stdio.h>
 #include <stddef.h>
 
+static char py_sstmacro[] = {
+#include "sstmacro.inc"
+    0x00};
 
 using namespace sstmac;
 using namespace SST;
 
 void init_python_topology(PyObject* module);
 
+
+PyObject*
+py_array_from_int_vector(const std::vector<int>& vec)
+{
+  PyObject* pVec = PyTuple_New(vec.size());
+  for (int i = 0; i < vec.size(); ++i) {
+       PyObject* pValue = PyInt_FromLong(vec[i]);
+       if (!pValue) {
+         spkt_abort_printf("cannot convert array value for building PyTuple");
+       }
+       PyTuple_SetItem(pVec, i, pValue);
+  }
+  return pVec;
+}
+
+void
+int_vector_from_py_array(PyObject* tuple, std::vector<int>& vec)
+{
+  Py_ssize_t size = PyTuple_Size(tuple);
+  vec.resize(size);
+  for (int i=0; i < size; ++i){
+    PyObject* obj = PyTuple_GetItem(tuple,i);
+    int item  = PyInt_AsLong(obj);
+    vec[i] = item;
+  }
+}
 
 PyObject*
 set_debug_flags(PyObject* self, PyObject* args)
@@ -116,10 +149,10 @@ static PyMethodDef sst_macro_integrated_methods[] = {
 
 static void* gen_sst_macro_integrated_pymodule(void)
 {
-  PyObject* module = Py_InitModule("sst.macro", sst_macro_integrated_methods);
-
-  init_python_topology(module);
-
+  PyObject* tmpModule = Py_InitModule("sstmac", sst_macro_integrated_methods);
+  PyObject *code = Py_CompileString(py_sstmacro, "sstmacro", Py_file_input);
+  PyObject* module = PyImport_ExecCodeModule("sst.macro", code);
+  init_python_topology(tmpModule);
   sstmac::connectable_proxy_component::sst = PyImport_ImportModule("sst");
   return module;
 }

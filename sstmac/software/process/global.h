@@ -15,7 +15,6 @@
 #include <sstream>
 
 #include <sprockit/unordered.h>
-#include <sstmac/common/logger.h>
 #include <sstmac/software/process/global_builtin.h>
 #include <sstmac/software/process/global_builtin_array.h>
 #include <sstmac/software/process/global_ptr.h>

@@ -14,8 +14,8 @@ namespace sw {
 process_manager::app_to_proc_to_node_map process_manager::node_map_;
 process_manager::app_to_node_to_proc_map process_manager::proc_map_;
 
-process_manager::process_manager(software_id sid) :
-  sid_(sid)
+process_manager::process_manager(software_id sid, operating_system* os) :
+  sid_(sid), my_os_(os)
 {
   node_id addr = runtime::node_for_task(sid.app_, sid.task_);
   static thread_lock lock;
@@ -46,12 +46,6 @@ process_manager::kill_process()
 {
   spkt_throw(sprockit::unimplemented_error,
     "process_manager::kill_process");
-}
-
-void
-process_manager::init_os(operating_system* os)
-{
-  my_os_ = os;
 }
 
 int

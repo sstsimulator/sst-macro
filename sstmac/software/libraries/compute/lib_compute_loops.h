@@ -24,12 +24,11 @@ class lib_compute_loops :
   // ------- constructor / boost stuff -------------//
 
  public:
-
- public:
   virtual
   ~lib_compute_loops() {}
 
-  lib_compute_loops(software_id id);
+  lib_compute_loops(sprockit::sim_parameters* params, software_id id,
+                    operating_system* os);
 
   template<typename Type>
   void
@@ -251,8 +250,6 @@ class lib_compute_loops :
   static bool do_loops_;
 
  protected:
-  void consume_params(sprockit::sim_parameters *params);
-
   void
   compute_loop_work(long long loop, double numlines);
 

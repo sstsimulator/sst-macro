@@ -14,8 +14,9 @@ namespace hw {
 class valiant_router : public minimal_router
 {
  public:
-  valiant_router() :
-    minimal_router(routing::valiant){}
+  valiant_router(sprockit::sim_parameters* params,
+                 topology* top, network_switch* netsw,
+                 routing::algorithm_t algo = routing::valiant);
 
   virtual
   ~valiant_router() { }
@@ -30,9 +31,6 @@ class valiant_router : public minimal_router
   to_string() const {
     return "valiant";
   }
-
-  virtual void
-  finalize_init();
 
   /**
     The topology object specifies a virtual channel based purely on geometry.
@@ -65,9 +63,6 @@ class valiant_router : public minimal_router
   }
 
  protected:
-  valiant_router(routing::algorithm_t algo) :
-    minimal_router(algo){}
-
   typedef enum {
     minimal,
     intermediate_switch,

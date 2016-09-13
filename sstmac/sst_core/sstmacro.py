@@ -1,6 +1,7 @@
 # Load module function in Python is changed
 # to look for a libmacro.so in LD_LIBRARY_PATH
 import sst.macro
+import sstmac
 
 def addNew(prefix, kw, newDict, oldDict):
   name = "%s.%s" % (prefix, kw)
@@ -46,7 +47,7 @@ def redoSubParams(theDict):
   return newDict
 
 def setupSimulation(node=None,switch=None,topology=None,debug=[]):
-  sst.macro.init()
+  sstmac.init()
 
   if not node: raise Exception("Need Node params")
   if not switch: raise Exception("Need Switch params")
@@ -59,8 +60,8 @@ def setupSimulation(node=None,switch=None,topology=None,debug=[]):
   swParams = redoSubParams(switch)
   topParams = redoSubParams(topology)
 
-  top = sst.macro.Topology(topParams)
-  if debug: sst.macro.debug(debug)
+  top = sstmac.Topology(topParams)
+  if debug: sstmac.debug(debug)
 
   for id in range(top.num_switches()):
     name = "switch%d" % id
@@ -81,8 +82,8 @@ def setupSimulation(node=None,switch=None,topology=None,debug=[]):
 
 def setupDeprecated():
   import sys
-  sst.macro.init()
-  params = sst.macro.readParams(sys.argv)
+  sstmac.init()
+  params = sstmac.readParams(sys.argv)
 
 
   nodeParams = params["node"]

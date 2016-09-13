@@ -21,9 +21,6 @@ namespace sw {
 class node_id_task_mapper : public task_mapper
 {
  public:
-  node_id_task_mapper(parallel_runtime* rt) :
-    task_mapper(rt){}
-
   virtual ~node_id_task_mapper() throw() {}
 
   virtual void

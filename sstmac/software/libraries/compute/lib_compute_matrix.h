@@ -24,8 +24,9 @@ class lib_compute_matrix :
   // ------- constructor / boost stuff -------------//
 
  public:
-  lib_compute_matrix(software_id id) :
-    lib_compute_memmove("computelibmatrix", id) {
+  lib_compute_matrix(sprockit::sim_parameters* params, software_id id,
+                     operating_system* os) :
+    lib_compute_memmove(params, "computelibmatrix", id, os) {
   }
 
   virtual

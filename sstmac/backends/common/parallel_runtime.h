@@ -18,7 +18,6 @@ DeclareDebugSlot(parallel);
 namespace sstmac {
 
 class parallel_runtime :
-  public sprockit::factory_type,
   public lockable
 {
  public:
@@ -30,9 +29,6 @@ class parallel_runtime :
   };
 
   static const int global_root;
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
 
   virtual void
   finalize_init();
@@ -140,7 +136,9 @@ class parallel_runtime :
   }
 
   partition*
-  topology_partition() const;
+  topology_partition() const {
+    return part_;
+  }
 
   virtual void
   wait_merge_array(int tag) = 0;
@@ -154,8 +152,17 @@ class parallel_runtime :
   void
   free_recv_buffers(const std::vector<void*>& buffers);
 
+  static parallel_runtime*
+  static_runtime(sprockit::sim_parameters* params);
+
+  static void
+  clear_static_runtime(){
+    if (static_runtime_) delete static_runtime_;
+    static_runtime_ = nullptr;
+  }
+
  protected:
-  parallel_runtime();
+  parallel_runtime(sprockit::sim_parameters* params);
 
   virtual void
   do_send_message(int lp, void* buffer, int size) = 0;
@@ -173,6 +180,7 @@ class parallel_runtime :
    std::vector<std::vector<void*> > send_buffers_;
    int buf_size_;
    partition* part_;
+   static parallel_runtime* static_runtime_;
 
 };
 

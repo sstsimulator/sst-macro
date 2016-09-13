@@ -19,17 +19,15 @@ SSTIntegratedComponent::handle_event(SST::Event* ev)
 }
 
 SSTIntegratedComponent::SSTIntegratedComponent(
-    SST::ComponentId_t id,
-    SST::Params& params
-) : SST::Component(id),
-  self_link_(0)
+  sprockit::sim_parameters* params,
+  uint64_t id) :
+  SST::Component(SST::ComponentId_t(id)),
+  self_link_(nullptr)
 {
   sprockit::output::init_out0(&std::cout);
   sprockit::output::init_err0(&std::cerr);
   sprockit::output::init_outn(&std::cout);
   sprockit::output::init_errn(&std::cerr);
-
-  params_ = make_sim_params_from_params(params);
 
   link_map_ = SST::Simulation::getSimulation()->getComponentLinkMap(id);
   if (!time_converter_){
@@ -37,10 +35,6 @@ SSTIntegratedComponent::SSTIntegratedComponent(
   }
 }
 
-void
-SSTIntegratedComponent::init_sst_params(SST::Params &params)
-{
-}
 
 void
 SSTIntegratedComponent::configure_self_link()

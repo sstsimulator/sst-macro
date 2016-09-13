@@ -25,18 +25,32 @@ RegisterNamespaces("router");
 namespace sstmac {
 namespace hw {
 
+router::router(sprockit::sim_parameters* params,
+  topology *top, network_switch *sw, routing::algorithm_t algo)
+ : top_(top), netsw_(sw), algo_(algo), max_num_vc_(0)
+{
+  init_vc();
+  my_addr_ = switch_id(params->get_int_param("id"));
+  /**
+    sstkeyword {
+      docstring=Enables hop count reporting.ENDL
+      If set to true, warnings will be provided each time a hop count increases by a given number.
+      This can only be enabled if sanity check is enabled by configure.;
+    }
+  */
+  hop_count_reporting_ =
+      params->get_optional_bool_param("sanity_check_hop_count_reporting",false);
+  /**
+    sstkeyword {
+      docstring=Sets the count delta for hop count reporting.ENDL
+      The default is 100 hops (which may be entirely inapporpriate for some topologies).;
+    }
+  */
+  hop_count_delta_ =
+      params->get_optional_int_param("sanity_check_hop_count_delta", 100);
+}
+
 router::~router()
-{
-}
-
-void
-router::set_switch(network_switch* netsw)
-{
-  netsw_ = netsw;
-}
-
-void
-router::finalize_init()
 {
 }
 
@@ -52,12 +66,6 @@ router::init_vc()
                       routing::tostr(algo_));
   }
   max_num_vc_ = iter->second;
-}
-
-router::router(routing::algorithm_t max_algo) :
-  max_num_vc_(0),
-  algo_(max_algo)
-{
 }
 
 bool
@@ -116,29 +124,6 @@ router::str_to_algo(const std::string &str)
                      "invalid routing algorithm %s",
                      str.c_str());
   }
-}
-
-void
-router::init_factory_params(sprockit::sim_parameters* params)
-{
-  my_addr_ = switch_id(params->get_int_param("id"));
-  /**
-    sstkeyword {
-      docstring=Enables hop count reporting.ENDL
-      If set to true, warnings will be provided each time a hop count increases by a given number.
-      This can only be enabled if sanity check is enabled by configure.;
-    }
-  */
-  hop_count_reporting_ =
-      params->get_optional_bool_param("sanity_check_hop_count_reporting",false);
-  /**
-    sstkeyword {
-      docstring=Sets the count delta for hop count reporting.ENDL
-      The default is 100 hops (which may be entirely inapporpriate for some topologies).;
-    }
-  */
-  hop_count_delta_ =
-      params->get_optional_int_param("sanity_check_hop_count_delta", 100);
 }
 
 }

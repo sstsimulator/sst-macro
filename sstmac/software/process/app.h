@@ -52,9 +52,7 @@ typedef std::map<long, mutex_t*> condition_t;
  * Messaging models are supported through an api class,
  * which are stored by the app
  */
-class app :
-  public thread,
-  public sprockit::factory_type
+class app : public thread
 {
  public:
   typedef void (*destructor_fxn)(void*);

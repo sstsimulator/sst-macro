@@ -10,7 +10,7 @@ void
 Kernel_GetPersonality(_BGP_Personality_t *p, int size)
 {
   sstmac::node_id nid = sstmac::runtime::current_node();
-  sstmac::hw::topology* top = sstmac::runtime::current_topology();
+  sstmac::hw::topology* top = sstmac::hw::topology::static_topology(nullptr);
 
   sstmac::hw::hdtorus* torus = test_cast(sstmac::hw::hdtorus, top);
   if (!torus || torus->ndimensions() != 3){

@@ -11,8 +11,7 @@
 namespace sstmac {
 namespace hw {
 
-class packet_flow_bandwidth_arbitrator :
-  public sprockit::factory_type
+class packet_flow_bandwidth_arbitrator
 {
 
  public:

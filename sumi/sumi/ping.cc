@@ -221,7 +221,6 @@ void
 ping_monitor::init_factory_params(sprockit::sim_parameters* params)
 {
   timeout_ = params->get_optional_time_param("ping_timeout", 1e-3);
-  activity_monitor::init_factory_params(params);
 }
 
 void

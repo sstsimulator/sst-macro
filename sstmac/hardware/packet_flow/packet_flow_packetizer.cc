@@ -35,44 +35,25 @@ namespace hw {
 SpktRegister("cut_through | null", packetizer, packet_flow_cut_through_packetizer);
 SpktRegister("simple", packetizer, packet_flow_simple_packetizer);
 
-packet_flow_nic_packetizer::packet_flow_nic_packetizer() :
+packet_flow_nic_packetizer::packet_flow_nic_packetizer(sprockit::sim_parameters* params,
+                                                       event_scheduler* parent,
+                                                       packetizer_callback* cb) :
  inj_buffer_(nullptr),
  ej_buffer_(nullptr),
  stat_collector_(nullptr),
  buf_stats_(nullptr),
- pkt_allocator_(nullptr)
+ pkt_allocator_(nullptr),
+ packet_flow_packetizer(params, parent, cb)
 {
-}
-
-packet_flow_nic_packetizer::~packet_flow_nic_packetizer()
-{
-  if (inj_buffer_) delete inj_buffer_;
-  if (ej_buffer_) delete ej_buffer_;
-  if (stat_collector_) delete stat_collector_;
-  if (buf_stats_) delete buf_stats_;
-  if (pkt_allocator_) delete pkt_allocator_;
-}
-
-void
-packet_flow_nic_packetizer::set_event_parent(event_scheduler *m)
-{
-  packetizer::set_event_parent(m);
-  inj_buffer_->set_event_parent(m);
-  ej_buffer_->set_event_parent(m);
-}
-
-void
-packet_flow_nic_packetizer::init_factory_params(sprockit::sim_parameters *params)
-{
-  packet_flow_packetizer::init_factory_params(params);
-
   my_addr_ = node_id(params->get_int_param("id"));
   init_loc_id(event_loc_id(my_addr_));
 
-  stat_collector_ = packet_sent_stats_factory::get_optional_param("stats", "null", params);
+  stat_collector_ = packet_sent_stats_factory::
+                        get_optional_param("stats", "null", params, parent);
 
   sprockit::sim_parameters* buf_params = params->get_optional_namespace("buffer");
-  buf_stats_ = packet_sent_stats_factory::get_optional_param("stats", "null", buf_params);
+  buf_stats_ = packet_sent_stats_factory::
+                get_optional_param("stats", "null", buf_params, parent);
 
   inj_bw_ = params->get_bandwidth_param("injection_bandwidth");
   if (params->has_param("ejection_bandwidth")){
@@ -90,7 +71,7 @@ packet_flow_nic_packetizer::init_factory_params(sprockit::sim_parameters *params
       packet_flow_bandwidth_arbitrator_factory::get_optional_param(
         "arbitrator", "cut_through", params);
   inj_arb->set_outgoing_bw(inj_bw_);
-  inj_buffer_ = new packet_flow_injection_buffer(small_latency, inj_arb, packetSize());
+  inj_buffer_ = new packet_flow_injection_buffer(parent, small_latency, inj_arb, packetSize());
 
   //total hack for now, assume that the buffer has a delayed send, but ultra-fast credit latency
   packet_flow_bandwidth_arbitrator* ej_arb =
@@ -98,27 +79,30 @@ packet_flow_nic_packetizer::init_factory_params(sprockit::sim_parameters *params
         "arbitrator", "cut_through", params);
   ej_arb->set_outgoing_bw(ej_bw_);
   timestamp inj_lat = params->get_time_param("injection_latency");
-  ej_buffer_ = new packet_flow_eject_buffer(inj_lat, small_latency, buffer_size_, ej_arb);
+  ej_buffer_ = new packet_flow_eject_buffer(parent, inj_lat, small_latency, buffer_size_, ej_arb);
 
   pkt_allocator_ = packet_allocator_factory
       ::get_optional_param("packet_allocator", "structured_routable", params);
+
+  inj_buffer_->set_event_location(my_addr_);
+  ej_buffer_->set_event_location(my_addr_);
+
+  inj_buffer_->set_stat_collector(buf_stats_);
+}
+
+packet_flow_nic_packetizer::~packet_flow_nic_packetizer()
+{
+  if (inj_buffer_) delete inj_buffer_;
+  if (ej_buffer_) delete ej_buffer_;
+  if (stat_collector_) delete stat_collector_;
+  if (buf_stats_) delete buf_stats_;
+  if (pkt_allocator_) delete pkt_allocator_;
 }
 
 void
 packet_flow_nic_packetizer::set_acker(event_handler *handler)
 {
   inj_buffer_->set_acker(handler);
-}
-
-void
-packet_flow_nic_packetizer::finalize_init()
-{
-  inj_buffer_->set_event_location(my_addr_);
-  ej_buffer_->set_event_location(my_addr_);
-
-  inj_buffer_->set_stat_collector(buf_stats_);
-
-  packetizer::finalize_init();
 }
 
 void

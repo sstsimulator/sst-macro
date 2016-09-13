@@ -22,22 +22,23 @@
 #include <sstmac/sst_core/connectable_wrapper.h>
 #endif
 
-
 #define test_schedule(x) \
   if (dynamic_cast<integrated_connectable_wrapper*>(x)) abort()
 
 namespace sstmac {
 
 #if SSTMAC_INTEGRATED_SST_CORE
-event_scheduler* event_scheduler::global = 0;
-#else
-event_scheduler::event_scheduler() :
-#ifdef INTEGRATED_SST_CORE_CHECK
- correctly_scheduled_(false)
-#else
- seqnum_(0)
-#endif
+sprockit::sim_parameters*
+make_spkt_params_from_sst_params(SST::Params& map)
 {
+  sprockit::sim_parameters* rv = new sprockit::sim_parameters;
+  std::set<std::string> key_names = map.getKeys();
+  for(auto&& key : key_names) {
+    rv->parse_keyval(
+        key, map.find_string(key), false, true, false);
+  }
+  rv->append_extra_data(&map);
+  return rv;
 }
 #endif
 
@@ -156,6 +157,12 @@ event_scheduler::schedule(timestamp t,
 }
 
 void
+event_scheduler::schedule(timestamp t, event_queue_entry *ev)
+{
+  send_self_event_queue(t, ev);
+}
+
+void
 event_scheduler::schedule_delay(
   timestamp delay,
   event_handler* handler,
@@ -171,13 +178,6 @@ event_scheduler::schedule_delay(timestamp delay, event_queue_entry *ev)
 }
 
 #else
-void
-event_scheduler::set_event_manager(event_manager* mgr)
-{
-  eventman_ = mgr;
-  init_thread_id(mgr->thread_id());
-}
-
 void
 event_scheduler::schedule_now(event_handler *handler, event* ev)
 {

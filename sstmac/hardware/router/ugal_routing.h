@@ -17,11 +17,7 @@ class ugal_router :
 {
 
  public:
-  ugal_router() :
-    valiant_router(routing::ugal){}
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
+  ugal_router(sprockit::sim_parameters* params, topology* top, network_switch* netsw);
 
   std::string
   to_string() const {
@@ -29,9 +25,6 @@ class ugal_router :
   }
 
   void route(packet* pkt);
-
-  virtual void
-  finalize_init();
 
  protected:
   next_action_t initial_step(

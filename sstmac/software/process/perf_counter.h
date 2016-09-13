@@ -13,8 +13,7 @@ class perf_counter
   virtual ~perf_counter() = default;
 };
 
-class perf_counter_model :
- public sprockit::factory_type
+class perf_counter_model
 {
  public:
   virtual ~perf_counter_model(){}

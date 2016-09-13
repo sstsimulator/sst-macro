@@ -2,6 +2,7 @@
 #include <sstmac/hardware/packet_flow/packet_flow.h>
 #include <sstmac/hardware/router/routable.h>
 #include <sprockit/sim_parameters.h>
+#include <sstmac/hardware/network/network_message.h>
 
 
 ImplementFactory(sstmac::hw::packet_allocator);
@@ -50,20 +51,27 @@ class structured_routable_packet_flow :
     return structured_routable::vc();
   }
 
+ private:
 };
 
 class structured_routable_packet_allocator :
  public packet_allocator
 {
  public:
+  structured_routable_packet_allocator(sprockit::sim_parameters* params)
+    : packet_allocator(params)
+  {
+  }
+
   virtual packet_flow_payload*
   new_packet(int bytes, long byte_offset, message *msg){
     return new structured_routable_packet_flow(msg, bytes, byte_offset);
   }
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params){}
 };
+
+
+
 
 SpktRegister("structured_routable", packet_allocator, structured_routable_packet_allocator);
 

@@ -27,15 +27,11 @@ class lib_compute_memmove :
   virtual
   ~lib_compute_memmove() {}
 
-  lib_compute_memmove(software_id id);
+  lib_compute_memmove(sprockit::sim_parameters* params, software_id id,
+                      operating_system* os);
 
-  lib_compute_memmove(const char* prefix, software_id id);
-
-  virtual void
-  unregister_all_libs();
-
-  void
-  consume_params(sprockit::sim_parameters* params);
+  lib_compute_memmove(sprockit::sim_parameters* params, const char* prefix, software_id id,
+                      operating_system* os);
 
   void
   incoming_event(event *ev){
@@ -55,8 +51,6 @@ class lib_compute_memmove :
  protected:
   static const long unlimited_page_size = -1;
   static const long default_page_size = unlimited_page_size;
-
-  void init();
 
   void
   do_access(long bytes);

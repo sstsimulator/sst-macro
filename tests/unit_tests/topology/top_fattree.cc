@@ -9,53 +9,53 @@ using namespace sstmac::hw;
 void
 test_fattree4(UnitTest& unit)
 {
-    sprockit::sim_parameters params;
-    sstmac::env::params = &params;
-    params["geometry"] = "3 4";
-    topology* top = topology_factory::get_value("fattree", &params);
-    structured_topology* ftree = test_cast(structured_topology, top);
-    assertTrue(unit, "fat tree cast topology", bool(ftree) );
+  sprockit::sim_parameters params;
+  sstmac::env::params = &params;
+  params["geometry"] = "3 4";
+  topology* top = topology_factory::get_value("fattree", &params);
+  structured_topology* ftree = test_cast(structured_topology, top);
+  assertTrue(unit, "fat tree cast topology", bool(ftree) );
+  topology::set_static_topology(top);
+  /**
+      Bottom Up
+      Level 0: 0-15
+      Level 1: 16-31
+      Level 2: 32-39
+      OR
+      Top Down
+      Level 0: 32-39
+      Level 1: 16-31
+      Level 2: 0-15
+  */
 
-    /**
-        Bottom Up
-        Level 0: 0-15
-        Level 1: 16-31
-        Level 2: 32-39
-        OR
-        Top Down
-        Level 0: 32-39
-        Level 1: 16-31
-        Level 2: 0-15
-    */
+  {
+      long nids[] = {0, 13, 19, 37};
+      for (int i=0; i < 4; ++i){
+          switch_id nid(nids[i]);
+          //make sure the functions work back and forth
+          coordinates coords = ftree->switch_coords(nid);
+          switch_id test_id = ftree->switch_number(coords);
+          coordinates test_coords = ftree->switch_coords(test_id);
+          assertEqual(unit, "ftree switch id", test_id, nid);
+          assertEqual(unit, "ftree coords", test_coords, coords);
+      }
+  }
 
-    {
-        long nids[] = {0, 13, 19, 37};
-        for (int i=0; i < 4; ++i){
-            switch_id nid(nids[i]);
-            //make sure the functions work back and forth
-            coordinates coords = ftree->switch_coords(nid);
-            switch_id test_id = ftree->switch_number(coords);
-            coordinates test_coords = ftree->switch_coords(test_id);
-            assertEqual(unit, "ftree switch id", test_id, nid);
-            assertEqual(unit, "ftree coords", test_coords, coords);
-        }
-    }
+  //lets test some coordinates for switches
+  {
+      coordinates coords = ftree->switch_coords(switch_id(36));
+      assertEqual(unit, "fat tree coord check", coords, 0, 4);
+  }
 
-    //lets test some coordinates for switches
-    {
-        coordinates coords = ftree->switch_coords(switch_id(36));
-        assertEqual(unit, "fat tree coord check", coords, 0, 4);
-    }
+  {
+      coordinates coords = ftree->switch_coords(switch_id(21));
+      assertEqual(unit, "fat tree coord check", coords, 1, 1, 1);
+  }
 
-    {
-        coordinates coords = ftree->switch_coords(switch_id(21));
-        assertEqual(unit, "fat tree coord check", coords, 1, 1, 1);
-    }
-
-    {
-        coordinates coords = ftree->switch_coords(switch_id(13));
-        assertEqual(unit, "fat tree coord check", coords, 2, 3, 1, 0);
-    }
+  {
+      coordinates coords = ftree->switch_coords(switch_id(13));
+      assertEqual(unit, "fat tree coord check", coords, 2, 3, 1, 0);
+  }
 }
 
 
@@ -70,7 +70,7 @@ test_fattree2(UnitTest& unit)
     structured_topology* ftree = test_cast(structured_topology, top);
     assertTrue(unit, "fat tree cast topology", bool(ftree) );
 
-    switch_interconnect::switch_map switches;
+    interconnect::switch_map switches;
     init_switches(switches, params, top);
 
     {

@@ -12,8 +12,7 @@ DeclareDebugSlot(blas);
 namespace sstmac {
 namespace sw {
 
-class blas_kernel :
-  public sprockit::factory_type
+class blas_kernel
 {
  public:
   virtual std::string
@@ -38,18 +37,11 @@ class blas_api :
   ImplementAPI(blas_api)
 
  public:
-  blas_api(software_id sid);
+  blas_api(sprockit::sim_parameters* params,
+           software_id sid,
+           operating_system* os);
 
   virtual ~blas_api();
-
-  virtual void
-  init_os(operating_system* os);
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
-  finalize_init();
 
   /**
    A(m,n) * B(n,k) = C(m,k)

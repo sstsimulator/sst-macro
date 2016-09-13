@@ -21,30 +21,39 @@
 #include <sprockit/sim_parameters_fwd.h>
 
 #if SSTMAC_INTEGRATED_SST_CORE
+#include <sst/core/params.h>
+
+namespace sstmac {
+sprockit::sim_parameters*
+make_spkt_params_from_sst_params(SST::Params& map);
+}
+
 #include <sstmac/sst_core/integrated_component.h>
 #include <sst/core/link.h>
-#  define DeclareIntegratedComponent(comp) \
+#define DeclareSSTComponent(comp) \
   SST::Component* \
   create_##comp(SST::ComponentId_t id, SST::Params& params); \
   extern const SST::ElementInfoComponent comp##_element_info;
-#  define ImplementIntegratedComponent(comp) \
+#define ImplementSSTComponent(str, parent, comp, docstring) \
   SST::Component* \
   create_##comp(SST::ComponentId_t id, SST::Params& params) { \
-    return new comp(id, params); \
+    return new comp(sstmac::make_spkt_params_from_sst_params(params), id, nullptr); \
   } \
   const SST::ElementInfoComponent comp##_element_info = { \
       #comp, \
-      "undocumented (for now) SST/macro integrated component.", \
+      docstring, \
       NULL, \
       create_##comp, NULL, NULL, COMPONENT_CATEGORY_SYSTEM \
   };
 #else
-#  define DeclareIntegratedComponent(comp)
-#  define ImplementIntegratedComponent(comp)
+#  define DeclareSSTComponent(comp)
+#  define ImplementSSTComponent(str, parent, comp, docstring) \
+  SpktRegister(str, parent, comp, docstring)
 #include <sstmac/common/event_manager.h>
 #endif
 
 namespace sstmac {
+
 
 /**
  * The interface for something that can schedule messages
@@ -131,56 +140,41 @@ class event_scheduler :
   void
   register_stat(stat_collector* coll);
 
-#ifdef INTEGRATED_SST_CORE_CHECK
- public:
-  void
-  set_correctly_scheduled(bool flag) {
-    correctly_scheduled_ = flag;
+  event_manager*
+  event_mgr() const {
+    return eventman_;
   }
+
+ private:
+  event_manager* eventman_;
+
  protected:
-  bool correctly_scheduled_;
+  event_scheduler(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr) :
+#if SSTMAC_INTEGRATED_SST_CORE
+   SSTIntegratedComponent(params, id){}
+#else
+    seqnum_(0),
+    eventman_(mgr)
+  {
+    init_thread_id(mgr->thread_id());
+  }
 #endif
 
 
+ private:
 #if SSTMAC_INTEGRATED_SST_CORE
  public:
-  event_scheduler(
-    SST::ComponentId_t id,
-    SST::Params& params) : SSTIntegratedComponent(id, params)
-  {
-    global = this;
-  }
-
-  virtual void
-  set_event_manager(event_manager* mgr){}
-
   timestamp
   now() const;
 
   virtual void
   init(unsigned int phase);
 
-  static event_scheduler* global;
-
  private:
   void
   schedule(SST::Time_t delay, event_handler* handler, event* ev);
-
 #else
  public:
-  /**
-   * Set the eventmanager for this scheduler.  Unfortunately,
-   * this always has to be called after an event_scheduler is constructed.
-   * @param m the simulation eventmanager
-   */
-  virtual void
-  set_event_manager(event_manager* m);
-
-  event_manager*
-  event_mgr() const {
-    return eventman_;
-  }
-
   /**
    * get the current time
    * @return a timestamp
@@ -195,10 +189,6 @@ class event_scheduler :
     return eventman_->nthread();
   }
 
- protected:
-  event_scheduler();
-
-  uint32_t seqnum_;
 
  private:
   void sanity_check(timestamp t);
@@ -208,7 +198,7 @@ class event_scheduler :
     timestamp t, event_queue_entry* ev);
 
  private:
-  event_manager* eventman_;
+  uint32_t seqnum_;
 #endif
 
 };
@@ -217,7 +207,12 @@ class event_subscheduler :
   public event_handler
 {
  public:
-  event_subscheduler() : parent_(0){}
+  event_subscheduler(event_scheduler* parent) : parent_(parent)
+  {
+    init_thread_id(parent_->thread_id());
+    init_loc_id(parent_->event_location());
+  }
+
   /**
    * get the current time
    * @return a timestamp
@@ -279,24 +274,12 @@ class event_subscheduler :
   void
   send_now_self_event_queue(event_queue_entry* ev);
 
-  /**
-   * Set the eventmanager for this scheduler.  Unfortunately,
-   * this always has to be called after an event_scheduler is constructed.
-   * @param m the simulation eventmanager
-  */
-  virtual void
-  set_event_parent(event_scheduler* m){
-    parent_ = m;
-    init_thread_id(parent_->thread_id());
-    init_loc_id(parent_->event_location());
-  }
-
   event_scheduler*
   parent() const {
     return parent_;
   }
 
- protected:
+ private:
   event_scheduler* parent_;
  };
 

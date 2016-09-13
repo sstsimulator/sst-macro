@@ -33,14 +33,9 @@ namespace sw {
  * Strategy type for assigning processes to nodes in a parallel run.
  *
  */
-class node_allocator : public sprockit::factory_type
+class node_allocator
 {
  public:
-  void
-  set_topology(hw::topology* top) {
-    topology_ = top;
-  }
-
   virtual void
   init_factory_params(sprockit::sim_parameters *params);
 
@@ -64,8 +59,8 @@ class node_allocator : public sprockit::factory_type
    ordered_node_set& allocation) const = 0;
 
  protected:
-  node_allocator(parallel_runtime* rt) :
-    rt_(rt), topology_(0) {}
+  node_allocator() :
+    topology_(nullptr), rt_(nullptr) {}
 
  protected:
   hw::topology* topology_;
@@ -74,7 +69,7 @@ class node_allocator : public sprockit::factory_type
 };
 
 
-DeclareFactory(node_allocator, parallel_runtime*);
+DeclareFactory(node_allocator);
 
 }
 } // end of namespace sstmac

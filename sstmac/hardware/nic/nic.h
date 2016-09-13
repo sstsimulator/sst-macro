@@ -43,7 +43,6 @@ namespace hw {
  * the process (ppid) involved.
  */
 class nic :
-  public sprockit::factory_type,
   public failable,
   public connectable_subcomponent
 {
@@ -51,18 +50,12 @@ class nic :
  public:
   void handle_event(SST::Event* ev);
 #endif
+
  public:
   virtual std::string
   to_string() const = 0;
 
   virtual ~nic();
-
-  /**
-   * Initialize all member variables from the parameters object
-   * @param params
-   */
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
 
   /**
    * @return A unique ID for the NIC positions. Opaque typedef to an int.
@@ -87,13 +80,6 @@ class nic :
    */
   static void
   delete_statics();
-
-  /**
-   * A final initialization function called for the object after all parameters have been read.
-   * Guarantees initialization of all subclass variables.
-   */
-  virtual void
-  finalize_init();
 
   virtual void
   handle(event *ev) = 0;
@@ -134,12 +120,13 @@ class nic :
   virtual double
   injection_bandwidth() const = 0;
 
-  virtual void
-  set_event_parent(event_scheduler* m);
-
-
  protected:
-  nic(sprockit::factory_type* interconn);
+  nic(sprockit::sim_parameters* params, node* parent);
+
+  node*
+  parent() const {
+    return parent_;
+  }
 
   /**
     Start the message sending and inject it into the network
@@ -171,7 +158,6 @@ class nic :
 
   int negligible_size_;
 
-  interconnect* interconn_;
   node* parent_;
 
  private:
@@ -196,9 +182,19 @@ class nic :
 
   void record_message(network_message* msg);
 
+#if !SSTMAC_INTEGRATED_SST_CORE
+ public:
+  void set_interconnect(interconnect* ic){
+    interconn_ = ic;
+  }
+
+ protected:
+  interconnect* interconn_;
+#endif
+
 };
 
-DeclareFactory1InitParam(nic, sprockit::factory_type*/*interconnect*/);
+DeclareFactory(nic,node*);
 
 }
 } // end of namespace sstmac.

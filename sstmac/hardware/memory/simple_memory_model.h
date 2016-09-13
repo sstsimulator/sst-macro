@@ -20,16 +20,7 @@ namespace hw {
 class simple_memory_model : public memory_model
 {
  public:
-  simple_memory_model(node* nd) :
-    memory_model(nd)
-  {
-  }
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
-  finalize_init();
+  simple_memory_model(sprockit::sim_parameters* params, node* nd);
 
   virtual ~simple_memory_model();
 

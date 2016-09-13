@@ -16,16 +16,12 @@ class simple_switch :
 {
 
  public:
-  virtual void
-  initialize();
+  simple_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr);
 
   int
   queue_length(int port) const {
     return 0;
   }
-
-  void
-  set_topology(topology* top);
 
   virtual void
   connect_output(int src_outport,
@@ -48,11 +44,6 @@ class simple_switch :
    */
   virtual void
   handle(event* ev);
-
-#if !SSTMAC_INTEGRATED_SST_CORE
-  virtual void
-  set_event_manager(event_manager* m);
-#endif
 
   virtual std::string
   to_string() const {
@@ -80,12 +71,6 @@ class simple_switch :
     return 1.0/inverse_bw_;
   }
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
-  finalize_init();
-
  protected:
   virtual void
   connect_injector(int src_outport, int dst_inport, event_handler* nic);
@@ -109,6 +94,8 @@ class simple_switch :
   double inv_min_bw_;
 
   timestamp hop_latency_;
+
+  topology* top_;
 
   spkt_unordered_map<node_id, network_switch*> neighbors_;
 

@@ -42,12 +42,12 @@ static_get_api(const char *name)
 }
 
 void
-api::init_factory_params(sprockit::sim_parameters* params)
+api::init(sprockit::sim_parameters* params)
 {
   hostcompute_ = params->get_optional_bool_param("host_compute_modeling", false);
   if (hostcompute_) {
     timer_ = new Timer();
-    compute_ = new lib_compute_time("api-hostcompute", sid());
+    compute_ = new lib_compute_time(params, "api-hostcompute", sid(), os_);
   }
 }
 
@@ -71,16 +71,6 @@ api::end_api_call()
   if (hostcompute_) {
     timer_->tic();
     endcount_++;
-  }
-}
-
-void
-api::init_os(operating_system* os)
-{
-  library::init_os(os);
-
-  if (hostcompute_) {
-    register_lib(compute_);
   }
 }
 

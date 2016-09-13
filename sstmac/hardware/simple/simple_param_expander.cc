@@ -1,4 +1,4 @@
-#include <sstmac/hardware/analytic/simple/simple_param_expander.h>
+#include <sstmac/hardware/simple/simple_param_expander.h>
 #include <sstmac/common/timestamp.h>
 #include <sprockit/sim_parameters.h>
 

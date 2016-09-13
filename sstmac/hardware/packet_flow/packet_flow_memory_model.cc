@@ -17,31 +17,27 @@ namespace hw {
 
 SpktRegister("packet_flow", memory_model, packet_flow_memory_model);
 
-packet_flow_memory_packetizer::packet_flow_memory_packetizer() :
+packet_flow_memory_packetizer::packet_flow_memory_packetizer(
+  sprockit::sim_parameters* params,
+  event_scheduler* parent,
+  packetizer_callback* cb) :
   arb_(nullptr),
   bw_noise_(nullptr),
   interval_noise_(nullptr),
-  num_noisy_intervals_(0)
-{
-}
-
-void
-packet_flow_memory_packetizer::init_factory_params(sprockit::sim_parameters *params)
+  num_noisy_intervals_(0),
+  packet_flow_packetizer(params, parent, cb)
 {
   if (!params->has_param("mtu"))
     params->add_param("mtu", "100GB");
-  packet_flow_packetizer::init_factory_params(params);
+
   max_single_bw_ = params->get_bandwidth_param("max_single_bandwidth");
   max_bw_ = params->get_bandwidth_param("total_bandwidth");
   latency_ = params->get_time_param("latency");
   arb_ = packet_flow_bandwidth_arbitrator_factory::get_value("cut_through", params);
   pkt_allocator_ = packet_allocator_factory
       ::get_optional_param("packet_allocator", "structured_routable", params);
-}
 
-void
-packet_flow_memory_packetizer::finalize_init()
-{
+
   //in and out ar the same
   arb_->set_outgoing_bw(max_bw_);
   init_noise_model();
@@ -55,39 +51,22 @@ packet_flow_memory_packetizer::~packet_flow_memory_packetizer()
   if (interval_noise_) delete interval_noise_;
 }
 
-void
-packet_flow_memory_model::init_factory_params(sprockit::sim_parameters *params)
+packet_flow_memory_model::packet_flow_memory_model(sprockit::sim_parameters *params, node *nd) :
+  memory_model(params, nd)
 {
   nchannels_ = 4;
   for (int i=0; i < nchannels_; ++i){
     channels_available_.push_back(i);
   }
 
-  memory_model::init_factory_params(params);
   max_single_bw_ = params->get_bandwidth_param("max_single_bandwidth");
-  mem_packetizer_ = new packet_flow_memory_packetizer;
-  mem_packetizer_->init_factory_params(params);
-  mem_packetizer_->finalize_init();
-
+  mem_packetizer_ = new packet_flow_memory_packetizer(params, nd, this);
   mem_packetizer_->setNotify(this);
 }
 
 packet_flow_memory_model::~packet_flow_memory_model()
 {
   if (mem_packetizer_) delete mem_packetizer_;
-}
-
-void
-packet_flow_memory_model::finalize_init()
-{
-  memory_model::finalize_init();
-}
-
-void
-packet_flow_memory_model::set_event_parent(event_scheduler* m)
-{
-  memory_model::set_event_parent(m);
-  mem_packetizer_->set_event_parent(m);
 }
 
 void
@@ -99,21 +78,21 @@ packet_flow_memory_model::access(
                    parent_node_->allocate_unique_id(), max_bw);
   pending_requests_[msg] = cb;
   int channel = allocate_channel();
-  debug("starting access %lu on vn %d", msg->unique_id(), channel);
+  debug("starting access %lu on vn %d", msg->flow_id(), channel);
   mem_packetizer_->start(channel, msg);
 }
 
 void
 packet_flow_memory_model::notify(int vn, message* msg)
 {
-  debug("finished access %lu on vn %d", msg->unique_id(), vn);
+  debug("finished access %lu on vn %d", msg->flow_id(), vn);
 
   callback* cb = pending_requests_[msg];
   pending_requests_.erase(msg);
   channels_available_.push_front(vn);
   //happening now
   delete msg;
-  parent_->schedule_now(cb);
+  parent()->schedule_now(cb);
 }
 
 int

@@ -6,7 +6,7 @@
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/hardware/nic/nic.h>
-#include <sstmac/hardware/interconnect/switch_interconnect.h>
+#include <sstmac/hardware/interconnect/interconnect.h>
 #include <sprockit/util.h>
 #include <limits>
 
@@ -26,16 +26,11 @@ namespace native {
 SpktRegister("clock_cycle_parallel", event_manager, clock_cycle_event_map,
     "Implements a parallel event queue with synchronization on regular clock cycles");
 
-void
-clock_cycle_event_map::init_factory_params(sprockit::sim_parameters* params)
+clock_cycle_event_map::clock_cycle_event_map(
+  sprockit::sim_parameters* params, parallel_runtime* rt) :
+  event_map(params, rt),
+  epoch_(0)
 {
-  event_container::init_factory_params(params);
-}
-
-void
-clock_cycle_event_map::finalize_init()
-{
-  epoch_ = 0;
   int64_t max_ticks = std::numeric_limits<int64_t>::max() - 100;
   no_events_left_time_ = timestamp(max_ticks, timestamp::exact);
   thread_incoming_.resize(nthread());
@@ -252,8 +247,6 @@ clock_cycle_event_map::set_interconnect(hw::interconnect* interconn)
     lookahead_ = timestamp(1e5);
   }
   else {
-    interconn_ = safe_cast(hw::switch_interconnect, interconn,
-                "parallel DES only compatible with switch interconnect");
     lookahead_ = interconn_->lookahead();
   }
   next_time_horizon_ = lookahead_;

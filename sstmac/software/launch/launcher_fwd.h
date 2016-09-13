@@ -4,7 +4,7 @@
 namespace sstmac {
 namespace sw {
 
-class launcher;
+class app_launcher;
 
 }
 }

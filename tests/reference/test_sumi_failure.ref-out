@@ -1,4 +1,3 @@
-scheduling failure at timestamp(2 secs) on node 1
 Rank 11 maps to dense rank 11
 Rank 10 passed allgather
 Rank 4 passed allgather

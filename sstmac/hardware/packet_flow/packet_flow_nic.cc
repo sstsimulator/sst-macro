@@ -38,13 +38,15 @@ SpktRegister("packet_flow", netlink, packet_flow_netlink,
 
 const int packet_flow_netlink::really_big_buffer = 1<<30;
 
-void
-packet_flow_nic::init_factory_params(sprockit::sim_parameters *params)
+packet_flow_nic::packet_flow_nic(sprockit::sim_parameters* params, node* parent) :
+  nic(params, parent),
+  packetizer_(nullptr),
+  injection_credits_(0)
 {
-  nic::init_factory_params(params);
   inj_lat_ = params->get_time_param("injection_latency");
   std::string default_arb = params->get_optional_param("arbitrator", "cut_through");
-  packetizer_ = packetizer_factory::get_optional_param("packetizer", default_arb, params);
+  packetizer_ = packetizer_factory::get_optional_param("packetizer", default_arb,
+                                                       params, parent, this);
   packetizer_->setNotify(this);
 
   packet_flow_nic_packetizer* packer = test_cast(packet_flow_nic_packetizer, packetizer_);
@@ -54,15 +56,6 @@ packet_flow_nic::init_factory_params(sprockit::sim_parameters *params)
   injection_credits_ = params->get_byte_length_param("injection_credits");
 #endif
 }
-
-#if SSTMAC_INTEGRATED_SST_CORE
-void
-packet_flow_nic::init_sst_params(SST::Params &params, SST::Component* parent)
-{
-  packetizer_->init_sst_params(params, parent);
-}
-
-#endif
 
 //
 // Goodbye.
@@ -127,19 +120,10 @@ packet_flow_nic::do_send(network_message* payload)
 }
 
 void
-packet_flow_nic::set_event_parent(event_scheduler* m)
-{
-  nic::set_event_parent(m);
-  packetizer_->set_event_parent(m);
-}
-
-void
 packet_flow_netlink::connect(int src_outport, int dst_inport,
   connection_type_t ty, connectable *mod,
   connectable::config* cfg)
 {
-  init();
-
   event_handler* conn = safe_cast(event_handler, mod);
 
   switch(ty)
@@ -163,23 +147,23 @@ packet_flow_netlink::connect(int src_outport, int dst_inport,
 
 }
 
-void
-packet_flow_netlink::init_factory_params(sprockit::sim_parameters *params)
+packet_flow_netlink::packet_flow_netlink(sprockit::sim_parameters *params, node *parent)
+  : netlink(params, parent),
+  block_(nullptr),
+  tile_rotater_(0)
 {
-  netlink::init_factory_params(params);
+  int really_big_buffer = 1<<30;
+  int num_vc = 1;
+  block_ = new packet_flow_crossbar(parent, timestamp(0), timestamp(0),
+                                    num_vc, really_big_buffer, "netlink");
+  block_->set_event_location(id_);
+  block_->configure_basic_ports(num_inject_ + num_eject_);
 }
 
 void
 packet_flow_netlink::deadlock_check()
 {
   block_->deadlock_check();
-}
-
-void
-packet_flow_netlink::set_event_parent(event_scheduler* m)
-{
-  block_->set_event_parent(m);
-  netlink::set_event_parent(m);
 }
 
 void
@@ -229,19 +213,6 @@ packet_flow_netlink::handle(event* ev)
       break;
     }
   }
-}
-
-void
-packet_flow_netlink::init()
-{
-  if (inited_) return;
-
-  inited_ = true;
-  int really_big_buffer = 1<<30;
-  int num_vc = 1;
-  block_ = new packet_flow_crossbar(timestamp(0), timestamp(0), num_vc, really_big_buffer, "netlink");
-  block_->set_event_location(id_);
-  block_->configure_basic_ports(num_inject_ + num_eject_);
 }
 
 packet_flow_netlink::~packet_flow_netlink()

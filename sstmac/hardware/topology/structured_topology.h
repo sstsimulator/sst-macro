@@ -70,24 +70,6 @@ class structured_topology : public topology
     sprockit::sim_parameters *params,
     connectable* dummy);
 
-  virtual void
-  build_endpoint_connectables(
-    end_point_connectable_map& connectables,
-    sprockit::factory<connectable>* factory,
-    partition *part,
-    int my_rank,
-    sprockit::sim_parameters *params);
-
-  virtual void
-  build_interface_connectables(
-    int conc,
-    end_point_connectable_map& connectables,
-    sprockit::factory2<connectable>* nic_factory,
-    partition *part,
-    int my_rank,
-    sprockit::sim_parameters* params,
-    sprockit::factory_type* interconnect);
-
   /**
     Workhorse function for implementing #minimal_route_to_switch
     and #minimal_route_to_node.
@@ -304,12 +286,12 @@ class structured_topology : public topology
     node_id src_node,
     std::vector<node_id>& partners) const;
 
+  virtual std::vector<node_id>
+  nodes_connected_to_switch(switch_id swaddr) const;
+
  protected:
   void
   configure_injection_geometry(std::vector<int>& redundancies);
-
-  virtual std::vector<node_id>
-  nodes_connected_to_switch(switch_id swaddr) const;
 
   structured_topology();
 

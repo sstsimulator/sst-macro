@@ -38,7 +38,7 @@ transport_message::to_string() const
     message_str = "null payload";
   }
   return sprockit::printf("sumi transport message %lu carrying %s",
-    unique_id(), message_str.c_str());
+    flow_id(), message_str.c_str());
 }
 
 void

@@ -26,20 +26,13 @@ simple_memory_model::~simple_memory_model()
   if (link_) delete link_;
 }
 
-void
-simple_memory_model::init_factory_params(sprockit::sim_parameters* params)
+simple_memory_model::simple_memory_model(sprockit::sim_parameters* params, node* nd)
+  : memory_model(params, nd)
 {
-  memory_model::init_factory_params(params);
   /** sstkeyword { gui=100ns; } */
   lat_ = params->get_time_param("latency");
   /** sstkeyword { gui=4GB/s; } */
   bw_ = params->get_bandwidth_param("bandwidth");
-}
-
-void
-simple_memory_model::finalize_init()
-{
-  memory_model::finalize_init();
   link_ = new link(bw_, lat_);
 }
 

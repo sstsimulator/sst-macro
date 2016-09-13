@@ -20,8 +20,8 @@ namespace sw {
 
 key::category lib_sleep::key_category("Sleep");
 
-lib_sleep::lib_sleep(software_id id)
-  : library("sleeplib", id)
+lib_sleep::lib_sleep(sprockit::sim_parameters* params, software_id id, operating_system* os)
+  : library("sleeplib", id, os)
 {
   key_cat_ = lib_sleep::key_category;
 }

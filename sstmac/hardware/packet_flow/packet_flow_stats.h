@@ -28,8 +28,7 @@ struct packet_stats_st
   int dst_inport;
 };
 
-class packet_sent_stats :
-  public sprockit::factory_type
+class packet_sent_stats
 {
  public:
   virtual ~packet_sent_stats(){}
@@ -40,12 +39,6 @@ class packet_sent_stats :
   virtual void
   collect_final_event(packet_flow_payload* pkt);
 
-  virtual void
-  set_event_manager(event_manager* ev_mgr) = 0;
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params);
-
   /**
    * @brief id
    * Either a node or switch id, depending on the device
@@ -55,17 +48,22 @@ class packet_sent_stats :
     return id_;
   }
 
+ protected:
+  packet_sent_stats(sprockit::sim_parameters* params, event_scheduler* parent);
+
  private:
   int id_;
 
 };
 
-DeclareFactory(packet_sent_stats)
+DeclareFactory(packet_sent_stats, event_scheduler*)
 
 class congestion_spyplot :
  virtual public packet_sent_stats
 {
  public:
+  congestion_spyplot(sprockit::sim_parameters* params, event_scheduler* parent);
+
   virtual ~congestion_spyplot();
 
   virtual void
@@ -74,12 +72,6 @@ class congestion_spyplot :
   virtual void
   collect_final_event(packet_flow_payload* pkt);
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
-  set_event_manager(event_manager* ev_mgr);
-
  protected:
   void collect(double delay_us, packet_flow_payload* pkt);
 
@@ -87,10 +79,13 @@ class congestion_spyplot :
   stat_spyplot* congestion_spyplot_;
 };
 
+
 class delay_histogram :
   virtual public packet_sent_stats
 {
  public:
+  delay_histogram(sprockit::sim_parameters* params, event_scheduler* parent);
+
   virtual ~delay_histogram();
 
   virtual void
@@ -98,12 +93,6 @@ class delay_histogram :
 
   virtual void
   collect_single_event(const packet_stats_st& st);
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
-  set_event_manager(event_manager* ev_mgr);
 
  private:
   stat_histogram* congestion_hist_;
@@ -113,11 +102,13 @@ class packet_delay_stats :
  virtual public packet_sent_stats
 {
  public:
-  virtual void
-  collect_single_event(const packet_stats_st& st);
+  packet_delay_stats(sprockit::sim_parameters* params, event_scheduler* parent) :
+    packet_sent_stats(params, parent)
+  {
+  }
 
   virtual void
-  set_event_manager(event_manager *ev_mgr){}
+  collect_single_event(const packet_stats_st &st);
 
  protected:
   void collect(double delay_us, packet_flow_payload* pkt);
@@ -127,14 +118,16 @@ class packet_delay_stats :
 class null_stats : public packet_sent_stats
 {
  public:
+  null_stats(sprockit::sim_parameters* params, event_scheduler* parent) :
+    packet_sent_stats(params, parent)
+  {
+  }
+
   virtual void
   collect_single_event(const packet_stats_st &st){}
 
   virtual void
   collect_final_event(packet_flow_payload *pkt){}
-
-  virtual void
-  set_event_manager(event_manager* ev_mgr){}
 
 };
 
@@ -142,19 +135,12 @@ class byte_hop_collector :
  virtual public packet_sent_stats
 {
  public:
-  byte_hop_collector() :
-    byte_hops_(nullptr){}
+  byte_hop_collector(sprockit::sim_parameters* params, event_scheduler* parent);
 
   virtual ~byte_hop_collector();
 
   virtual void
   collect_single_event(const packet_stats_st& st);
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
-  set_event_manager(event_manager* ev_mgr);
 
  private:
   stat_global_int* byte_hops_;
@@ -165,16 +151,11 @@ class spyplot_and_delay_stats :
   public packet_delay_stats
 {
  public:
+  spyplot_and_delay_stats(sprockit::sim_parameters* params, event_scheduler* parent);
+
   virtual void
   collect_single_event(const packet_stats_st& st);
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
-  set_event_manager(event_manager *ev_mgr){
-    congestion_spyplot::set_event_manager(ev_mgr);
-  }
 };
 
 class stat_bytes_sent :
@@ -194,11 +175,6 @@ class stat_bytes_sent :
   void
   record(int port, long bytes){
     port_map_[port] += bytes;
-  }
-
-  void
-  set_topology(topology* top){
-    top_ = top;
   }
 
   void
@@ -328,21 +304,12 @@ class bytes_sent_collector :
  virtual public packet_sent_stats
 {
  public:
-  bytes_sent_collector() :
-    bytes_sent_(nullptr)
-  {
-  }
+  bytes_sent_collector(sprockit::sim_parameters* params, event_scheduler* parent);
 
   virtual ~bytes_sent_collector();
 
   virtual void
   collect_single_event(const packet_stats_st &st);
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
-  set_event_manager(event_manager* ev_mgr);
 
  private:
   stat_bytes_sent* bytes_sent_;

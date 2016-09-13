@@ -38,15 +38,12 @@ test_arbitrator(UnitTest& unit)
 {
   sprockit::sim_parameters params;
 
-  parallel_runtime* rt = new native::serial_runtime;
-  rt->init_factory_params(&params);
+  parallel_runtime* rt = new native::serial_runtime(&params);
 
-  native::event_map* ev_mgr = new native::event_map(rt);
-  ev_mgr->init_factory_params(&params);
+  native::event_map* ev_mgr = new native::event_map(&params, rt);
 
   packet_flow_bandwidth_arbitrator* arb
-      = new packet_flow_cut_through_arbitrator;
-  arb->init_factory_params(&params);
+      = new packet_flow_cut_through_arbitrator();
 
   arb->set_outgoing_bw(link_bw);
 
@@ -80,7 +77,6 @@ test_arbitrator(UnitTest& unit)
 
   //start over
   arb = new packet_flow_cut_through_arbitrator;
-  arb->init_factory_params(&params);
 
   arb->set_outgoing_bw(link_bw);
   //only use half the bw
@@ -103,7 +99,6 @@ test_arbitrator(UnitTest& unit)
 
   //start over
   arb = new packet_flow_cut_through_arbitrator;
-  arb->init_factory_params(&params);
   arb->set_outgoing_bw(link_bw);
 
   //only use half the bw
@@ -123,7 +118,6 @@ test_arbitrator(UnitTest& unit)
 
   //start over
   arb = new packet_flow_cut_through_arbitrator;
-  arb->init_factory_params(&params);
   arb->set_outgoing_bw(link_bw);
 
   //only use half the bw
@@ -144,7 +138,6 @@ test_arbitrator(UnitTest& unit)
 
   //start over
   arb = new packet_flow_cut_through_arbitrator;
-  arb->init_factory_params(&params);
   arb->set_outgoing_bw(link_bw);
 
   //send a bunch of slow messages to create many epochs
@@ -177,7 +170,6 @@ test_arbitrator(UnitTest& unit)
 
   //start over
   arb = new packet_flow_cut_through_arbitrator;
-  arb->init_factory_params(&params);
   arb->set_outgoing_bw(link_bw);
   test_msg->set_bw(link_bw);
   test_msg->set_arrival(0);
@@ -194,7 +186,6 @@ test_arbitrator(UnitTest& unit)
 
   //start over
   arb = new packet_flow_cut_through_arbitrator;
-  arb->init_factory_params(&params);
   arb->set_outgoing_bw(link_bw);
   test_msg->set_bw(link_bw);
   test_msg->set_arrival(0);

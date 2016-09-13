@@ -1,9 +1,10 @@
-#include <sstmac/hardware/analytic/simple/simple_nic.h>
+#include <sstmac/hardware/simple/simple_nic.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/common/event_handler.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
+#include <sstmac/hardware/interconnect/interconnect.h>
 
 #if !SSTMAC_INTEGRATED_SST_CORE
 
@@ -13,10 +14,10 @@ namespace hw {
 SpktRegister("simple", nic, simple_nic,
             "implements a nic that models messages via a simple latency/bandwidth injection delay");
 
-void
-simple_nic::init_factory_params(sprockit::sim_parameters *params)
+simple_nic::simple_nic(sprockit::sim_parameters* params, node* parent) :
+  next_free_(0),
+  nic(params, parent)
 {
-  nic::init_factory_params(params);
   double inj_bw = params->get_bandwidth_param("injection_bandwidth");
   inj_bw_inverse_ = 1.0/inj_bw;
   inj_lat_ = params->get_time_param("injection_latency");
@@ -54,11 +55,6 @@ simple_nic::connect(
   connection_type_t ty,
   connectable* mod,
   config* cfg)
-{
-}
-
-void
-simple_nic::finalize_init()
 {
 }
 
