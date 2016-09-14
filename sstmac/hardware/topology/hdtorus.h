@@ -95,7 +95,7 @@ class hdtorus :
     structured_routable::path& path) const;
 
   virtual void
-  connect_objects(internal_connectable_map& switches);
+  connect_objects(sprockit::sim_parameters* params, internal_connectable_map& switches);
 
   virtual int
   convert_to_port(int dim, int dir) const;
@@ -173,7 +173,9 @@ class hdtorus :
 
  private:
   virtual void
-  connect_dim(int dim,
+  connect_dim(
+    sprockit::sim_parameters* params,
+    int dim,
     connectable* center,
     connectable* plus,
     connectable* minus);

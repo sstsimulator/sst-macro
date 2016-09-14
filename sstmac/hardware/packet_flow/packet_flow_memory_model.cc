@@ -37,9 +37,6 @@ packet_flow_memory_packetizer::packet_flow_memory_packetizer(
   pkt_allocator_ = packet_allocator_factory
       ::get_optional_param("packet_allocator", "structured_routable", params);
 
-
-  //in and out ar the same
-  arb_->set_outgoing_bw(max_bw_);
   init_noise_model();
 }
 

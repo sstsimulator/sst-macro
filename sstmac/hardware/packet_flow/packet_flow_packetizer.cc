@@ -55,31 +55,18 @@ packet_flow_nic_packetizer::packet_flow_nic_packetizer(sprockit::sim_parameters*
   buf_stats_ = packet_sent_stats_factory::
                 get_optional_param("stats", "null", buf_params, parent);
 
-  inj_bw_ = params->get_bandwidth_param("injection_bandwidth");
-  if (params->has_param("ejection_bandwidth")){
-    ej_bw_ = params->get_bandwidth_param("ejection_bandwidth");
-  } else {
-    ej_bw_ = inj_bw_;
-  }
+  sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
+  sprockit::sim_parameters* inj_params = params->get_namespace("injection");
+  //do not put any latency on eject buffer
+  ej_params->add_param_override("send_latency", "0ns");
+  ej_params->add_param_override("credit_latency", "0ns");
+  ej_params->add_param_override("credits", 1<<30);
 
-  buffer_size_ = params->get_optional_byte_length_param("eject_buffer_size", 1<<30);
+  inj_params->add_param_override("send_latency", inj_params->get_time_param("latency"));
+  inj_params->add_param_override("credit_latency", "0ns");
 
-  int one_vc = 1;
-  //total hack for now, assume that the buffer itself has a low latency link to the switch
-  timestamp small_latency(10e-9);
-  packet_flow_bandwidth_arbitrator* inj_arb =
-      packet_flow_bandwidth_arbitrator_factory::get_optional_param(
-        "arbitrator", "cut_through", params);
-  inj_arb->set_outgoing_bw(inj_bw_);
-  inj_buffer_ = new packet_flow_injection_buffer(parent, small_latency, inj_arb, packetSize());
-
-  //total hack for now, assume that the buffer has a delayed send, but ultra-fast credit latency
-  packet_flow_bandwidth_arbitrator* ej_arb =
-      packet_flow_bandwidth_arbitrator_factory::get_optional_param(
-        "arbitrator", "cut_through", params);
-  ej_arb->set_outgoing_bw(ej_bw_);
-  timestamp inj_lat = params->get_time_param("injection_latency");
-  ej_buffer_ = new packet_flow_eject_buffer(parent, inj_lat, small_latency, buffer_size_, ej_arb);
+  inj_buffer_ = new packet_flow_injection_buffer(inj_params, parent);
+  ej_buffer_ = new packet_flow_eject_buffer(ej_params, parent);
 
   pkt_allocator_ = packet_allocator_factory
       ::get_optional_param("packet_allocator", "structured_routable", params);
@@ -145,20 +132,21 @@ packet_flow_nic_packetizer::recv_packet_common(packet_flow_payload* pkt)
 }
 
 void
-packet_flow_nic_packetizer::set_output(int inj_port, connectable* sw, int credits)
+packet_flow_nic_packetizer::set_output(sprockit::sim_parameters* params,
+                                       int inj_port, connectable* sw)
 {
   event_handler* handler = safe_cast(event_handler, sw);
-  inj_buffer_->set_output(0, inj_port, handler);
-  inj_buffer_->init_credits(0, credits);
+  inj_buffer_->set_output(params, 0, inj_port, handler);
 }
 
 void
-packet_flow_nic_packetizer::set_input(int ej_port, connectable* sw)
+packet_flow_nic_packetizer::set_input(sprockit::sim_parameters* params,
+                                      int ej_port, connectable* sw)
 {
   event_handler* handler = safe_cast(event_handler, sw);
   int only_port = 0;
-  ej_buffer_->set_output(only_port, only_port, this);
-  ej_buffer_->set_input(only_port, ej_port, handler);
+  ej_buffer_->set_output(params, only_port, only_port, this);
+  ej_buffer_->set_input(params, only_port, ej_port, handler);
 }
 
 void

@@ -165,7 +165,7 @@ init_switches(interconnect::switch_map &switches,
     switches[switch_id(i)] = sw;
   }
   //don't need a clone factory
-  top->connect_topology(switches);
+  top->connect_topology(&params, switches);
 }
 
 

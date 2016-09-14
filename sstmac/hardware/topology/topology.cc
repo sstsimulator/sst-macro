@@ -161,17 +161,26 @@ topology::random_intermediate_switch(switch_id current, switch_id dest)
 }
 
 void
+topology::configure_injection_params(
+  sprockit::sim_parameters* nic_params,
+  sprockit::sim_parameters* switch_params)
+{
+}
+
+void
 topology::connect_end_point_objects(
+  sprockit::sim_parameters* switch_params,
+  sprockit::sim_parameters* node_params,
   internal_connectable_map& internal,
   end_point_connectable_map& end_points)
 {
-  end_point_connectable_map::iterator it, end = end_points.end();
-  int the_only_port = 0;
-  connectable::config cfg;
-  cfg.ty = connectable::BasicConnection;
-  for (it = end_points.begin(); it != end; it++) {
-    connectable* node = it->second;
-    node_id nodeaddr = it->first;
+  sprockit::sim_parameters* nic_params = node_params->get_namespace("nic");
+  sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
+  sprockit::sim_parameters* ej_params = switch_params->get_namespace("ejection");
+
+  for (auto& pair : end_points) {
+    connectable* node = pair.second;
+    node_id nodeaddr = pair.first;
 
     //map to topology-specific port
     int num_ports;
@@ -184,8 +193,8 @@ topology::connect_end_point_objects(
       int switch_port = ports[i];
       top_debug("connecting switch %d to injector %d on ports %d:%d",
           int(injaddr), int(nodeaddr), switch_port, injector_port);
-      injsw->connect(injector_port, switch_port, connectable::input, node, &cfg);
-      node->connect(injector_port, switch_port, connectable::output, injsw, &cfg);
+      injsw->connect(ej_params, injector_port, switch_port, connectable::input, node);
+      node->connect(inj_params, injector_port, switch_port, connectable::output, injsw);
     }
 
     switch_id ejaddr = endpoint_to_ejection_switch(nodeaddr, ports, num_ports);
@@ -196,11 +205,19 @@ topology::connect_end_point_objects(
       int switch_port = ports[i];
       top_debug("connecting switch %d to ejector %d on ports %d:%d",
           int(ejaddr), int(nodeaddr), switch_port, ejector_port);
-      ejsw->connect(switch_port, ejector_port, connectable::output, node, &cfg);
-      node->connect(switch_port, ejector_port, connectable::input, ejsw, &cfg);
+      ejsw->connect(ej_params, switch_port, ejector_port,
+                    connectable::output, node);
+      node->connect(inj_params, switch_port, ejector_port,
+                    connectable::input, ejsw);
     }
 
   }
+}
+
+sprockit::sim_parameters*
+topology::get_port_params(sprockit::sim_parameters *params, int port)
+{
+  return params->get_namespace(sprockit::printf("port%d", port));
 }
 
 void

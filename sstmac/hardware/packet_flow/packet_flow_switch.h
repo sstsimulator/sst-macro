@@ -11,31 +11,9 @@ namespace sstmac {
 namespace hw {
 
 class packet_flow_abstract_switch :
-  public network_switch,
-  public packet_flow_component
+  public network_switch
 {
  public:
-  virtual void
-  initialize() = 0;
-
-  timestamp
-  hop_latency() const {
-    return hop_lat;
-  }
-
-  timestamp
-  lookahead() const {
-    return hop_lat;
-  }
-
-  virtual int
-  initial_credits() const = 0;
-
-  double
-  hop_bandwidth() const {
-    return link_bw;
-  }
-
   packet_sent_stats*
   xbar_stats() const {
     return xbar_stats_;
@@ -53,24 +31,6 @@ class packet_flow_abstract_switch :
     event_manager* mgr);
 
   virtual ~packet_flow_abstract_switch();
-
-  int packet_size_;
-
-  double link_bw;
-
-  double ej_bw;
-
-  int xbar_output_buffer_num_bytes;
-
-  int xbar_input_buffer_num_bytes;
-
-  double xbar_bw;
-
-  int row_buffer_num_bytes;
-
-  timestamp hop_lat;
-
-  packet_flow_bandwidth_arbitrator* link_arbitrator_template;
 
   packet_sent_stats* xbar_stats_;
   packet_sent_stats* buf_stats_;
@@ -90,41 +50,30 @@ class packet_flow_switch :
 
   virtual ~packet_flow_switch();
 
-  virtual void
-  initialize();
-
-  packet_flow_crossbar*
-  crossbar(config* cfg);
-
   int
-  queue_length(int port) const;
-
-  int
-  initial_credits() const {
-    return xbar_input_buffer_num_bytes;
-  }
+  queue_length(int port) const override;
 
   virtual void
   connect(
+    sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
     connection_type_t ty,
-    connectable* mod,
-    config* cfg);
+    connectable* mod) override;
 
   std::vector<switch_id>
-  connected_switches() const;
+  connected_switches() const override;
 
   /**
    Cast message and pass to #send
    @param msg Incoming message (should cast to packet_train)
    */
   void
-  handle(event* ev);
+  handle(event* ev) override;
 
-  void deadlock_check();
+  void deadlock_check() override;
 
-  void deadlock_check(event* ev);
+  void deadlock_check(event* ev) override;
 
   /**
    Set the link to use when ejecting packets at their endpoint.  A packet_flow_switch
@@ -137,14 +86,16 @@ class packet_flow_switch :
   add_ejector(node_id addr, event_handler* link);
 
   virtual std::string
-  to_string() const;
+  to_string() const override;
 
  private:
   virtual void
-  connect_injector(int src_outport, int dst_inport, event_handler* nic);
+  connect_injector(sprockit::sim_parameters* params, int src_outport, int dst_inport,
+                   event_handler* nic) override;
 
   virtual void
-  connect_ejector(int src_outport, int dst_inport, event_handler* nic);
+  connect_ejector(sprockit::sim_parameters* params, int src_outport, int dst_inport,
+                  event_handler* nic) override;
 
   std::vector<packet_flow_sender*> out_buffers_;
 
@@ -153,22 +104,22 @@ class packet_flow_switch :
  private:
   void
   connect_output(
+    sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    connectable* mod,
-    config* cfg);
+    connectable* mod) override;
 
   void
   connect_input(
+    sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    connectable* mod,
-    config* cfg);
+    connectable* mod) override;
 
   void resize_buffers();
 
   packet_flow_sender*
-  output_buffer(int port, config* cfg);
+  output_buffer(sprockit::sim_parameters* params, int port);
 
 };
 

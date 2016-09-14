@@ -104,8 +104,10 @@ crossbar::minimal_distance(const coordinates &src_coords,
 }
 
 void
-crossbar::connect_objects(internal_connectable_map& objects)
+crossbar::connect_objects(sprockit::sim_parameters* params, internal_connectable_map& objects)
 {
+  spkt_throw(sprockit::unimplemented_error, "connect_objects");
+#if 0
   connectable::config cfg;
   cfg.ty = connectable::BasicConnection;
   for (int i = 0; i < objects.size(); i++) {
@@ -130,6 +132,7 @@ crossbar::connect_objects(internal_connectable_map& objects)
       }
     }
   }
+#endif
 }
 
 }

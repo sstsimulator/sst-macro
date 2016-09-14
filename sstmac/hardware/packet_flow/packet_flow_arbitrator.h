@@ -27,12 +27,6 @@ class packet_flow_bandwidth_arbitrator
 
   virtual ~packet_flow_bandwidth_arbitrator(){}
 
-  virtual void
-  set_outgoing_bw(double out_bw) {
-    out_bw_ = out_bw;
-    inv_out_bw_ = 1.0 / out_bw;
-  }
-
   double outgoing_bw() const {
     return out_bw_;
   }
@@ -56,14 +50,11 @@ class packet_flow_bandwidth_arbitrator
   partition(noise_model* noise,
     int num_intervals);
 
-  virtual packet_flow_bandwidth_arbitrator*
-  clone(double bw) const = 0;
-
   virtual int
   bytes_sending(timestamp now) const = 0;
 
  protected:
-  packet_flow_bandwidth_arbitrator();
+  packet_flow_bandwidth_arbitrator(sprockit::sim_parameters* params);
 
  protected:
   double out_bw_;
@@ -75,25 +66,18 @@ class packet_flow_null_arbitrator :
   public packet_flow_bandwidth_arbitrator
 {
  public:
-  packet_flow_null_arbitrator();
+  packet_flow_null_arbitrator(sprockit::sim_parameters* params);
 
   virtual void
-  arbitrate(packet_stats_st& st);
-
-  virtual packet_flow_bandwidth_arbitrator*
-  clone(double bw) const {
-    packet_flow_null_arbitrator* arb = new packet_flow_null_arbitrator;
-    arb->set_outgoing_bw(bw);
-    return arb;
-  }
+  arbitrate(packet_stats_st& st) override;
 
   std::string
-  to_string() const {
+  to_string() const override {
     return "packet_flow null arbitrator";
   }
 
   int
-  bytes_sending(timestamp now) const;
+  bytes_sending(timestamp now) const override;
 
 };
 
@@ -102,17 +86,10 @@ class packet_flow_simple_arbitrator :
   public packet_flow_bandwidth_arbitrator
 {
  public:
-  packet_flow_simple_arbitrator();
+  packet_flow_simple_arbitrator(sprockit::sim_parameters* params);
 
   virtual void
   arbitrate(packet_stats_st& st);
-
-  virtual packet_flow_bandwidth_arbitrator*
-  clone(double bw) const {
-    packet_flow_simple_arbitrator* arb = new packet_flow_simple_arbitrator;
-    arb->set_outgoing_bw(bw);
-    return arb;
-  }
 
   std::string
   to_string() const {
@@ -134,26 +111,15 @@ class packet_flow_cut_through_arbitrator :
   typedef double bw_t;
 
  public:
-  packet_flow_cut_through_arbitrator();
+  packet_flow_cut_through_arbitrator(sprockit::sim_parameters* params);
 
   ~packet_flow_cut_through_arbitrator();
 
   virtual void
   arbitrate(packet_stats_st& st);
 
-  virtual void
-  set_outgoing_bw(bw_t bw);
-
   int
   bytes_sending(timestamp now) const;
-
-  packet_flow_bandwidth_arbitrator*
-  clone(double bw) const {
-    packet_flow_bandwidth_arbitrator* new_arb =
-      new packet_flow_cut_through_arbitrator;
-    new_arb->set_outgoing_bw(bw);
-    return new_arb;
-  }
 
   std::string
   to_string() const {

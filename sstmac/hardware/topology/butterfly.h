@@ -149,7 +149,8 @@ class butterfly :
   switch_number(const coordinates &coords) const;
 
   virtual void
-  connect_objects(internal_connectable_map& switches);
+  connect_objects(sprockit::sim_parameters* params,
+                  internal_connectable_map& switches);
 
   switch_id
   endpoint_to_ejection_switch(

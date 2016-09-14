@@ -67,11 +67,11 @@ class connectable
    */
   virtual void
   connect(
+    sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
     connection_type_t ty,
-    connectable* mod,
-    config* cfg) = 0;
+    connectable* mod) = 0;
 
 };
 

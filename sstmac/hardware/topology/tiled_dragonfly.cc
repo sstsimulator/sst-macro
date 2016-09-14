@@ -78,13 +78,16 @@ tiled_dragonfly::init_factory_params(sprockit::sim_parameters* params)
 }
 
 void
-tiled_dragonfly::connect_objects(internal_connectable_map& objects)
+tiled_dragonfly::connect_objects(sprockit::sim_parameters* params, internal_connectable_map& objects)
 {
+  spkt_throw(sprockit::unimplemented_error, "connect_objects");
+ #if 0
   read_intragroup_connections();
   read_intergroup_connections();
   make_intragroup_connections(objects);
   make_intergroup_connections(objects);
   make_geomid();
+#endif
 }
 
 void
@@ -377,6 +380,7 @@ tiled_dragonfly::read_intergroup_connections()
 void
 tiled_dragonfly::make_intragroup_connections(internal_connectable_map& objects)
 {
+#if 0
   connectable::config cfg;
   cfg.ty = connectable::BasicConnection;
   for (int g=0; g<numG(); ++g) {
@@ -448,11 +452,13 @@ tiled_dragonfly::make_intragroup_connections(internal_connectable_map& objects)
                                objects[src_id], &cfg);
     }
   }
+#endif
 }
 
 void
 tiled_dragonfly::make_intergroup_connections(internal_connectable_map& objects)
 {
+#if 0
   connectable::config cfg;
   cfg.ty = connectable::BasicConnection;
   for( std::list<connection>::iterator it=intergrp_conns_.begin();
@@ -510,6 +516,7 @@ tiled_dragonfly::make_intergroup_connections(internal_connectable_map& objects)
                              connectable::input,
                              objects[src_id], &cfg);
   }
+#endif
 }
 
 void

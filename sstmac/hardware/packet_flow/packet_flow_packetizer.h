@@ -64,18 +64,15 @@ class packet_flow_nic_packetizer :
    @param sw The switch that injects/ejects
    */
   void
-  set_output(int port, connectable* output, int credits);
+  set_output(sprockit::sim_parameters* params,
+             int port, connectable* output);
 
   void
-  set_input(int port, connectable* input);
+  set_input(sprockit::sim_parameters* params,
+            int port, connectable* input);
 
   void
   set_acker(event_handler* handler);
-
-  double
-  injection_bandwidth() const {
-    return inj_bw_;
-  }
 
  protected:
   void
@@ -85,9 +82,6 @@ class packet_flow_nic_packetizer :
   recv_credit(packet_flow_credit* credit);
 
  protected:
-  double inj_bw_;
-  double ej_bw_;
-  int buffer_size_;
   packet_flow_injection_buffer* inj_buffer_;
   packet_flow_eject_buffer* ej_buffer_;
 

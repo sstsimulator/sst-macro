@@ -167,28 +167,24 @@ simple_topology::nodes_connected_to_switch(switch_id swaddr) const
 }
 
 void
-simple_topology::connect_objects(internal_connectable_map& objects)
+simple_topology::connect_objects(sprockit::sim_parameters* params,
+                                 internal_connectable_map& objects)
 {
   top_debug("simple topology: connecting %d switches", int(objects.size()));
   internal_connectable_map::iterator ait, aend = objects.end();
   int ignore_port = 0;
-  connectable::config cfg;
-  cfg.link_weight = 1.0;
-  cfg.red = 1;
-  for (ait =  objects.begin(); ait != aend; ++ait) {
-    switch_id a(ait->first);
-    internal_connectable_map::iterator bit, bend = objects.end();
-    for (bit = objects.begin(); bit != bend; ++bit) {
-      switch_id b(bit->first);
-      if (a != b){
-        objects[a]->connect(
-        ignore_port, ignore_port,
-        connectable::output,
-        objects[b], &cfg);
+  for (auto& src : objects) {
+    for (auto& dst : objects) {
+      if (src.first != dst.first){
+        src.second->connect(
+          params,
+          ignore_port,
+          ignore_port,
+          connectable::output,
+          dst.second);
       }
     }
   }
-
 }
 
 void

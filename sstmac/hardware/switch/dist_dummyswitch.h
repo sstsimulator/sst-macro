@@ -37,10 +37,10 @@ class dist_dummy_switch : public network_switch
   }
 
   std::string
-  to_string() const;
+  to_string() const override ;
 
   bool
-  ipc_handler() const {
+  ipc_handler() const override {
     return true;
   }
 
@@ -49,57 +49,51 @@ class dist_dummy_switch : public network_switch
   }
 
   virtual void
-  handle(event* ev);
+  handle(event* ev) override;
 
   virtual void
   connect(
+    sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
     connection_type_t ty,
-    connectable* mod) 
+    connectable* mod) override
   { //no op 
   }
 
   virtual void
   connect_input(
+    sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    connectable* comp,
-    config* cfg);
+    connectable* comp) override;
 
   virtual void
   connect_output(
+    sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    connectable* comp,
-    config* cfg);
+    connectable* comp) override;
 
   std::vector<switch_id>
-  connected_switches() const {
+  connected_switches() const override {
     spkt_throw(sprockit::unimplemented_error,
               "dist_dummyswitch::connected_switches: should not be called on dummy switch");
   }
 
-  double
-  hop_bandwidth() const;
-
-  timestamp
-  hop_latency() const;
-
-  timestamp
-  lookahead() const;
-
   int
-  queue_length(int port) const {
+  queue_length(int port) const override {
     return 0;
   }
 
  protected:
   virtual void
-  connect_ejector(int src_outport, int dst_inport, event_handler* nic);
+  connect_ejector(sprockit::sim_parameters* params,
+                  int src_outport, int dst_inport, event_handler* nic) override;
 
   virtual void
-  connect_injector(int src_outport, int dst_inport, event_handler* nic);
+  connect_injector(sprockit::sim_parameters* params,
+                   int src_outport, int dst_inport, event_handler* nic) override;
 
 
 };

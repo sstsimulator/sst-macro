@@ -59,7 +59,8 @@ class structured_topology : public topology
    * @throws value_error If invalid switchid is passed to cloner
    */
   virtual void
-  connect_objects(internal_connectable_map& objects) = 0;
+  connect_objects(sprockit::sim_parameters* params,
+                  internal_connectable_map& objects) = 0;
 
   virtual void
   build_internal_connectables(

@@ -66,7 +66,7 @@ class tiled_dragonfly : public dragonfly
   init_factory_params(sprockit::sim_parameters* params);
 
   void
-  connect_objects(internal_connectable_map& switches);
+  connect_objects(sprockit::sim_parameters* params, internal_connectable_map& switches);
 
   void
   configure_geometric_paths(std::vector<int> &redundancies);

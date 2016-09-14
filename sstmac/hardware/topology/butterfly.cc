@@ -105,8 +105,10 @@ butterfly::init_factory_params(sprockit::sim_parameters* params)
 }
 
 void
-butterfly::connect_objects(internal_connectable_map& objects)
+butterfly::connect_objects(sprockit::sim_parameters* params, internal_connectable_map& objects)
 {
+  spkt_throw(sprockit::unimplemented_error, "connect_objects");
+#if 0
   /**
     In 4-ary 3-fly, we have 16 switches per col
     with 3 columns or stages.  Thus we can label
@@ -190,7 +192,7 @@ butterfly::connect_objects(internal_connectable_map& objects)
     connection_stride /= kary_;
     block_size /= kary_;
   }
-
+#endif
 }
 
 void

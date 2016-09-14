@@ -63,7 +63,7 @@ class flattened_butterfly :
                    const coordinates &dest_coords) const;
 
   virtual void
-  connect_objects(internal_connectable_map& switches);
+  connect_objects(sprockit::sim_parameters* params, internal_connectable_map& switches);
 
   virtual int
   convert_to_port(int dim, int dir) const;

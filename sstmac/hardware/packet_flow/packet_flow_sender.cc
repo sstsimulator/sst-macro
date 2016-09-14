@@ -7,29 +7,21 @@
 #include <sprockit/util.h>
 
 MakeDebugSlot(packet_flow_timeline)
+ImplementFactory(sstmac::hw::packet_flow_sender);
 
 namespace sstmac {
 namespace hw {
 
 packet_flow_sender::packet_flow_sender(
-  event_scheduler* parent,
-  const timestamp& send_lat,
-  const timestamp& credit_lat)
-  : packet_flow_handler(parent),
-    send_lat_(send_lat),
-    credit_lat_(credit_lat),
-    acker_(nullptr),
-    stat_collector_(nullptr),
-    update_vc_(true)
-{
-}
-
-packet_flow_sender::packet_flow_sender(event_scheduler* parent) :
+  sprockit::sim_parameters* params,
+  event_scheduler* parent) :
   packet_flow_handler(parent),
   acker_(nullptr),
   stat_collector_(nullptr),
   update_vc_(true)
 {
+  send_lat_ = params->get_time_param("send_latency");
+  credit_lat_ = params->get_time_param("credit_latency");
 }
 
 void
@@ -100,7 +92,8 @@ packet_flow_sender::send(
   }
 
   packet_flow_debug(
-    "On %s:%p, sending to port:%d vc:%d {%s} to handler %s:%p on inport %d at head_leaves=%9.5e tail_leaves=%9.5e",
+    "On %s:%p, sending to port:%d vc:%d {%s} to handler %s:%p on "
+    "inport %d at head_leaves=%9.5e tail_leaves=%9.5e",
     to_string().c_str(), this,
     pkt->next_port(), pkt->next_vc(),
     pkt->to_string().c_str(),

@@ -55,9 +55,8 @@ class node :
   virtual ~node();
 
   void
-  connect(int src_outport, int dst_inport,
-    connection_type_t ty, connectable *mod,
-    config *cfg);
+  connect(sprockit::sim_parameters* params, int src_outport, int dst_inport,
+    connection_type_t ty, connectable *mod) override;
 
   /**
    @return  The object encapsulating the memory model
@@ -92,7 +91,7 @@ class node :
    @return  A unique string description of the node
   */
   virtual std::string
-  to_string() const;
+  to_string() const override;
 
   /**
    @return  A unique integer identifier
@@ -146,7 +145,7 @@ class node :
                  event* data);
 
   virtual void
-  handle(event* ev);
+  handle(event* ev) override;
 
   /**
    Push a network message (operation at the MTL layer) onto the NIC

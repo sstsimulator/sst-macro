@@ -97,7 +97,10 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   int netlink_conc = topology_->num_nodes_per_netlink();
 
   sprockit::sim_parameters* node_params = params->get_namespace("node");
-
+  sprockit::sim_parameters* nic_params = node_params->get_namespace("nic");
+  sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
+  sprockit::sim_parameters* switch_params = params->get_namespace("switch");
+  sprockit::sim_parameters* ej_params = switch_params->get_namespace("ejection");
   structured_topology* top = safe_cast(structured_topology, topology_);
 
   int num_switches = topology_->num_switches();
@@ -130,7 +133,7 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
     }
   }
 
-  sprockit::sim_parameters* switch_params = params->get_namespace("switch");
+
   for (int i=0; i < num_switches; ++i){
     switch_id sid(i);
     top_debug("Switch %d belongs to rank %d for building NICs: my_rank=%d",
@@ -144,13 +147,13 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
     }
   }
 
-  int the_only_port = 0;
-  connectable::config nic_cfg;
-  nic_cfg.link_weight = 1.0;
-  nic_cfg.red = 1;
+
+
   if (!netlinks_.empty()){
+#if 0
+    int the_only_port = 0;
     //we connect to netlinks, not nics
-    topology_->connect_end_points(switches_, netlinks_);
+    topology_->connect_end_points(node_params, switch_params, switches_, netlinks_);
     int netlinks_per_node = topology_->num_nodes_per_netlink();
     node_map::iterator it, end = nodes_.end();
     for (it = nodes_.begin(); it != end; it++) {
@@ -170,36 +173,27 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
       nlnk->connect(inj_port, the_only_port, connectable::output, the_nic, &nic_cfg);
       the_nic->connect(inj_port, the_only_port, connectable::input, nlnk, &nic_cfg);
     }
+#endif
   } else {
-    topology_->connect_end_points(switches_, nics_);
+    topology_->connect_end_points(switch_params, node_params, switches_, nics_);
   }
 
-  topology_->connect_topology(switches_);
+
+  topology_->connect_topology(switch_params, switches_);
 
   network_switch* switch_tmpl = nullptr;
   for (auto& pair : switches_){
     network_switch* netsw = pair.second;
     if (!netsw->ipc_handler()){
-      netsw->initialize();
       switch_tmpl = netsw;
     }
   }
 
-  if (!nics_.empty()){
-    nic* nic_tmpl = nics_.begin()->second;
-    injection_latency_ = nic_tmpl->injection_latency();
-  } else {
-    cerrn << "WARNING: rank was assigned no nodes" << std::endl;
-  }
-
-  if (switch_tmpl){
-    hop_latency_ = switch_tmpl->hop_latency();
-    lookahead_ = switch_tmpl->lookahead();
-    hop_bw_ = switch_tmpl->hop_bandwidth();
-  } else {
-    //don't even need to assign these values - will never be used
-    cerrn << "WARNING: rank was assigned no switches" << std::endl;
-  }
+  sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
+  hop_latency_ = link_params->get_time_param("latency");
+  hop_bw_ = link_params->get_bandwidth_param("bandwidth");
+  lookahead_ = hop_latency_;
+  injection_latency_ = inj_params->get_time_param("latency");
 
   int failure_num = 1;
   while(1){

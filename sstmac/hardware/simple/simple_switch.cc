@@ -31,13 +31,18 @@ SpktRegister("simple", network_switch, simple_switch);
 simple_switch::simple_switch(sprockit::sim_parameters *params, uint64_t id, event_manager *mgr) :
   network_switch(params, id, mgr)
 {
-  double net_bw = params->get_bandwidth_param("bandwidth");
-  inverse_bw_ = 1.0/net_bw;
-  hop_latency_ = params->get_time_param("hop_latency");
+  sprockit::sim_parameters* link_params = params->get_namespace("link");
+  sprockit::sim_parameters* ej_params = params->get_namespace("ejection");
 
-  double inj_bw = params->get_optional_bandwidth_param("injection_bandwidth", net_bw);
+  double net_bw = link_params->get_bandwidth_param("bandwidth");
+  inverse_bw_ = 1.0/net_bw;
+  hop_latency_ = link_params->get_time_param("latency");
+
+
+
+  double inj_bw = ej_params->get_optional_bandwidth_param("bandwidth", net_bw);
   inj_bw_inverse_ = 1.0/inj_bw;
-  inj_lat_ = params->get_optional_time_param("injection_latency", 0);
+  inj_lat_ = ej_params->get_optional_time_param("latency", 0);
 
   inv_min_bw_ = std::max(inverse_bw_, inj_bw_inverse_);
 
@@ -89,33 +94,35 @@ simple_switch::add_switch(connectable* mod)
 
 void
 simple_switch::connect_input(
+  sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
-  connectable *mod,
-  config *cfg)
+  connectable *mod)
 {
   add_switch(mod);
 }
 
 void
 simple_switch::connect_output(
+  sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
-  connectable *mod,
-  config *cfg)
+  connectable *mod)
 {
   add_switch(mod);
 }
 
 void
-simple_switch::connect_injector(int src_outport, int dst_inport, event_handler* inj)
+simple_switch::connect_injector(sprockit::sim_parameters* params,
+    int src_outport, int dst_inport, event_handler* inj)
 {
   nic* theNic = safe_cast(nic, inj);
   nics_[theNic->addr()] = theNic;
 }
 
 void
-simple_switch::connect_ejector(int src_outport, int dst_inport, event_handler* ej)
+simple_switch::connect_ejector(sprockit::sim_parameters* params,
+    int src_outport, int dst_inport, event_handler* ej)
 {
   nic* theNic = safe_cast(nic, ej);
   nics_[theNic->addr()] = theNic;
@@ -133,13 +140,6 @@ simple_switch::connected_switches() const
     ret[idx] = netsw->addr();
   }
   return ret;
-}
-
-timestamp
-simple_switch::lookahead() const
-{
-  //there could be zero hops - so we can't add anything here
-  return 2*inj_lat_;
 }
 
 void

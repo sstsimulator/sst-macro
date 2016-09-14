@@ -169,20 +169,14 @@ class sim_parameters  {
                bool override_existing = true,
                bool mark_as_read = true);
 
-  void
-  print_params(std::ostream& os, bool pretty_print, std::list<std::string>& namespaces) const;
+  std::string
+  print_scoped_params(std::ostream& os) const;
 
   void
-  print_params(std::ostream& os = std::cerr) const {
-    std::list<std::string> ns;
-    print_params(os, false, ns);
-  }
+  print_local_params(std::ostream& os, const std::string& prefix) const;
 
   void
-  pretty_print_params(std::ostream& os = std::cerr) const {
-    std::list<std::string> ns;
-    print_params(os, true, ns);
-  }
+  print_params(std::ostream& os = std::cerr, const std::string& prefix = "") const;
 
   bool
   print_unread_params(std::ostream& os = std::cerr) const;

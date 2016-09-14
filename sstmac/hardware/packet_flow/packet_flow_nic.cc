@@ -40,21 +40,16 @@ const int packet_flow_netlink::really_big_buffer = 1<<30;
 
 packet_flow_nic::packet_flow_nic(sprockit::sim_parameters* params, node* parent) :
   nic(params, parent),
-  packetizer_(nullptr),
-  injection_credits_(0)
+  packetizer_(nullptr)
 {
-  inj_lat_ = params->get_time_param("injection_latency");
-  std::string default_arb = params->get_optional_param("arbitrator", "cut_through");
-  packetizer_ = packetizer_factory::get_optional_param("packetizer", default_arb,
-                                                       params, parent, this);
+  sprockit::sim_parameters* inj_params = params->get_namespace("injection");
+
+  packetizer_ = packetizer_factory::get_optional_param("packetizer", "cut_through",
+                                                       inj_params, parent, this);
   packetizer_->setNotify(this);
 
   packet_flow_nic_packetizer* packer = test_cast(packet_flow_nic_packetizer, packetizer_);
   if (packer) packer->set_acker(mtl_handler());
-
-#if SSTMAC_INTEGRATED_SST_CORE
-  injection_credits_ = params->get_byte_length_param("injection_credits");
-#endif
 }
 
 //
@@ -65,20 +60,13 @@ packet_flow_nic::~packet_flow_nic() throw ()
   if (packetizer_) delete packetizer_;
 }
 
-double
-packet_flow_nic::injection_bandwidth() const
-{
-  packet_flow_nic_packetizer* packer = safe_cast(packet_flow_nic_packetizer, packetizer_);
-  return packer->injection_bandwidth();
-}
-
 void
 packet_flow_nic::connect(
+  sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
   connection_type_t ty,
-  connectable* mod,
-  config* cfg)
+  connectable* mod)
 {
   packet_flow_nic_packetizer* packer = safe_cast(packet_flow_nic_packetizer, packetizer_);
   switch(ty) {
@@ -87,11 +75,7 @@ packet_flow_nic::connect(
         spkt_throw(sprockit::illformed_error,
             "packet_flow_nic::connect: injection outport not zero");
       }
-    #if !SSTMAC_INTEGRATED_SST_CORE
-      packet_flow_component* comp = safe_cast(packet_flow_component, mod);
-      injection_credits_ = comp->initial_credits();
-    #endif
-      packer->set_output(dst_inport, mod, injection_credits_);
+      packer->set_output(params, dst_inport, mod);
       break;
     }
     case connectable::input: {
@@ -99,7 +83,7 @@ packet_flow_nic::connect(
         spkt_throw(sprockit::illformed_error,
             "packet_flow_nic::connect: ejection outport not zero");
       }
-      packer->set_input(src_outport, mod);
+      packer->set_input(params, src_outport, mod);
       break;
     }
   }
@@ -116,13 +100,15 @@ packet_flow_nic::do_send(network_message* payload)
 {
   nic_debug("packet flow: sending %s", payload->to_string().c_str());
   int vn = 0; //we only ever use one virtual network
-  schedule_delay(inj_lat_, new_callback(packetizer_, &packetizer::start, vn, payload));
+  packetizer_->start(vn, payload);
+  //schedule_delay(inj_lat_, new_callback(packetizer_, &packetizer::start, vn, payload));
 }
 
 void
-packet_flow_netlink::connect(int src_outport, int dst_inport,
-  connection_type_t ty, connectable *mod,
-  connectable::config* cfg)
+packet_flow_netlink::connect(
+  sprockit::sim_parameters* params,
+  int src_outport, int dst_inport,
+  connection_type_t ty, connectable *mod)
 {
   event_handler* conn = safe_cast(event_handler, mod);
 
@@ -130,17 +116,12 @@ packet_flow_netlink::connect(int src_outport, int dst_inport,
   {
   case connectable::input:
   {
-    block_->set_input(dst_inport, src_outport, conn);
+    block_->set_input(params, dst_inport, src_outport, conn);
     break;
   }
   case connectable::output:
   {
-    block_->set_output(src_outport, dst_inport, conn);
-    packet_flow_component* comp = safe_cast(packet_flow_component, mod);
-    debug_printf(sprockit::dbg::packet_flow_config | sprockit::dbg::packet_flow,
-      "%s initializing with %d credits on port %d",
-       block_->to_string().c_str(), comp->initial_credits(), src_outport);
-    block_->init_credits(src_outport, comp->initial_credits());
+    block_->set_output(params, src_outport, dst_inport, conn);
     break;
   }
   }
@@ -152,10 +133,7 @@ packet_flow_netlink::packet_flow_netlink(sprockit::sim_parameters *params, node 
   block_(nullptr),
   tile_rotater_(0)
 {
-  int really_big_buffer = 1<<30;
-  int num_vc = 1;
-  block_ = new packet_flow_crossbar(parent, timestamp(0), timestamp(0),
-                                    num_vc, really_big_buffer, "netlink");
+  block_ = new packet_flow_crossbar(params, parent);
   block_->set_event_location(id_);
   block_->configure_basic_ports(num_inject_ + num_eject_);
 }

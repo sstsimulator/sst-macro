@@ -13,7 +13,6 @@ test_dragonfly_traffic(UnitTest& unit)
   sstmac::env::params = &params;
   params["geometry"] = "4 6 8";
   params["concentration"] = "1";
-  params["optical_link_weight"] = "2.0";
   params["group_connections"] = "4";
   params["seed"] = "14";
   topology* top = topology_factory::get_value("dragonfly", &params);
@@ -85,7 +84,6 @@ test_dragonfly_v1(UnitTest& unit)
   sstmac::env::params = &params;
   params["geometry"] = "4 4 4";
   params["concentration"] = "2";
-  params["optical_link_weight"] = "2.0";
   params["group_connections"] = "4";
   params["seed"] = "14";
   topology* top = topology_factory::get_value("dragonfly", &params);
@@ -154,7 +152,6 @@ test_dragonfly_v2(UnitTest& unit)
   sstmac::env::params = &params;
   params["geometry"] = "4 4 8";
   params["concentration"] = "2";
-  params["optical_link_weight"] = "2.0";
   params["group_connections"] = "3";
   params["seed"] = "14";
   topology* top = topology_factory::get_value("dragonfly", &params);

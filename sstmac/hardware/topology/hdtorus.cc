@@ -314,10 +314,63 @@ hdtorus::minimal_distance(
 }
 
 void
-hdtorus::connect_objects(internal_connectable_map& objects)
+hdtorus::connect_dim(
+  sprockit::sim_parameters* params,
+  int dim,
+  connectable* center,
+  connectable* plus_partner,
+  connectable* minus_partner)
+{
+  int pos_outport = convert_to_port(dim, pos);
+  int neg_outport = convert_to_port(dim, neg);
+
+  sprockit::sim_parameters* pos_params = get_port_params(params, pos_outport);
+  sprockit::sim_parameters* neg_params = get_port_params(params, neg_outport);
+
+  center->connect(
+    pos_params,
+    pos_outport, neg_outport,
+    connectable::output,
+    plus_partner);
+  plus_partner->connect(
+    neg_params,
+    pos_outport, neg_outport,
+    connectable::input,
+    center);
+
+  center->connect(
+    neg_params,
+    neg_outport, pos_outport,
+    connectable::output,
+    minus_partner);
+  minus_partner->connect(
+    pos_params,
+    neg_outport, pos_outport,
+    connectable::input,
+    center);
+}
+
+void
+hdtorus::connect_objects(sprockit::sim_parameters* params,
+                         internal_connectable_map& objects)
 {
   top_debug("hdtorus: connecting %d switches",
     int(objects.size()));
+
+  sprockit::sim_parameters* link_params = params->get_namespace("link");
+  std::string arb = link_params->get_optional_param("arbitrator", "cut_through");
+  double bw = link_params->get_bandwidth_param("bandwidth");
+  timestamp lat = link_params->get_time_param("latency");
+  int bufsize = params->get_byte_length_param("buffer_size");
+  int ndims = dimensions_.size();
+  for (int i=0; i < ndims; ++i){
+    double port_bw = bw * red_[i];
+    int credits = bufsize * red_[i];
+    for (int dir=0; dir < 2; ++dir){
+      int port = convert_to_port(i, dir);
+      setup_port_params(port, credits, port_bw, lat, arb, params);
+    }
+  }
 
   internal_connectable_map::iterator it;
   for (it =  objects.begin(); it !=  objects.end(); ++it) {
@@ -384,7 +437,7 @@ hdtorus::connect_objects(internal_connectable_map& objects)
 
 
 
-      connect_dim(z, objects[me], dest1, dest2);
+      connect_dim(params, z, objects[me], dest1, dest2);
 
     }
 
@@ -418,37 +471,6 @@ hdtorus::configure_vc_routing(std::map<routing::algorithm_t, int>& m) const
   m[routing::minimal_adaptive] = 2;
   m[routing::valiant] = 4;
   m[routing::ugal] = 6;
-}
-
-void
-hdtorus::connect_dim(
-  int dim,
-  connectable* center,
-  connectable* plus_partner,
-  connectable* minus_partner)
-{
-  connectable::config cfg;
-  cfg.ty = connectable::RedundantConnection;
-  cfg.red = red_[dim];
-  int pos_outport = convert_to_port(dim, pos);
-  int neg_outport = convert_to_port(dim, neg);
-  center->connect(
-    pos_outport, neg_outport,
-    connectable::output,
-    plus_partner, &cfg);
-  plus_partner->connect(
-    pos_outport, neg_outport,
-    connectable::input,
-    center, &cfg);
-
-  center->connect(
-    neg_outport, pos_outport,
-    connectable::output,
-    minus_partner, &cfg);
-  minus_partner->connect(
-    neg_outport, pos_outport,
-    connectable::input,
-    center, &cfg);
 }
 
 void

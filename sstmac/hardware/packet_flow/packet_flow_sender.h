@@ -26,18 +26,14 @@ class packet_flow_sender :
   }
 
   virtual void
-  set_input(int my_inport, int dst_outport,
-            event_handler* input) = 0;
+  set_input(sprockit::sim_parameters* params,
+     int my_inport, int dst_outport,
+     event_handler* input) = 0;
 
   virtual void
-  set_output(int my_outport, int dst_inport,
-             event_handler* output) = 0;
-
-  virtual void
-  init_credits(int port, int num_credits) = 0;
-
-  virtual int
-  num_initial_credits() const = 0;
+  set_output(sprockit::sim_parameters* params,
+    int my_outport, int dst_inport,
+    event_handler* output) = 0;
 
   void
   handle_payload(packet_flow_payload* pkt) {
@@ -72,11 +68,8 @@ class packet_flow_sender :
   }
 
  protected:
-  packet_flow_sender(event_scheduler* parent,
-    const timestamp& send_lat,
-    const timestamp& credit_lat);
-
-  packet_flow_sender(event_scheduler* parent);
+  packet_flow_sender(sprockit::sim_parameters* params,
+                     event_scheduler* parent);
 
   void
   send_credit(const packet_flow_input& src,
@@ -105,6 +98,7 @@ class packet_flow_sender :
 
 };
 
+DeclareFactory(packet_flow_sender, event_scheduler*)
 
 }
 }

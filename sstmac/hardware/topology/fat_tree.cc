@@ -137,8 +137,10 @@ fat_tree::downColumnConnection(int k, int myColumn, int downPort, int myBranchSi
 }
 
 void
-fat_tree::connect_objects(internal_connectable_map& objects)
+fat_tree::connect_objects(sprockit::sim_parameters* params, internal_connectable_map& objects)
 {
+  spkt_throw(sprockit::unimplemented_error, "connect_objects");
+#if 0
   connectable::config cfg;
   cfg.ty = connectable::BasicConnection;
 
@@ -163,22 +165,26 @@ fat_tree::connect_objects(internal_connectable_map& objects)
         connectable* upper_switch = objects[switch_id(upper_id)];
 
         lower_switch->connect(
+          params,
           up_port, //up is out and down is in... got it!??!
           down_port,
           connectable::output,
           upper_switch, &cfg);
         upper_switch->connect(
+          params,
           up_port,
           down_port,
           connectable::input,
           lower_switch, &cfg);
 
         upper_switch->connect(
+          params,
           down_port, //down is out and up is in... got it?!?
           up_port,
           connectable::output,
           lower_switch, &cfg);
         lower_switch->connect(
+          params,
           down_port,
           up_port,
           connectable::input,
@@ -187,6 +193,7 @@ fat_tree::connect_objects(internal_connectable_map& objects)
     }
     branchSize *= k_;
   }
+#endif
 }
 
 void
@@ -421,8 +428,11 @@ simple_fat_tree::init_factory_params(sprockit::sim_parameters *params)
 }
 
 void
-simple_fat_tree::connect_objects(internal_connectable_map &switches)
+simple_fat_tree::connect_objects(sprockit::sim_parameters* params,
+                                 internal_connectable_map &switches)
 {
+  spkt_throw(sprockit::unimplemented_error, "connect_objects");
+#if 0
   int nswitches = numleafswitches_;
   connectable::config cfg;
   cfg.ty = connectable::WeightedConnection;
@@ -489,6 +499,7 @@ simple_fat_tree::connect_objects(internal_connectable_map &switches)
     nswitches /= k_;
     bw_multiplier *= k_;
   }
+#endif
 }
 
 int

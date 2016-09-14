@@ -8,25 +8,22 @@
 namespace sstmac {
 namespace hw {
 
-packet_flow_buffer::packet_flow_buffer(
-  event_scheduler* parent,
-  const timestamp& send_lat,
-  const timestamp& credit_lat,
-  packet_flow_bandwidth_arbitrator* arb)
-  : packet_flow_sender(parent, send_lat, credit_lat),
-  bytes_delayed_(0),
-  arb_(arb)
+packet_flow_buffer::
+packet_flow_buffer(sprockit::sim_parameters* params, event_scheduler* parent) :
+  packet_flow_sender(params, parent),
+  bytes_delayed_(0)
 {
 }
 
 packet_flow_buffer::~packet_flow_buffer()
 {
-  if (arb_) delete arb_;
 }
 
 void
-packet_flow_finite_buffer::set_input(int this_inport, int src_outport,
-                              event_handler* input)
+packet_flow_finite_buffer::set_input(
+  sprockit::sim_parameters* params,
+  int this_inport, int src_outport,
+  event_handler* input)
 {
   debug_printf(sprockit::dbg::packet_flow_config,
     "On %s:%d setting input %s:%d",
@@ -37,7 +34,8 @@ packet_flow_finite_buffer::set_input(int this_inport, int src_outport,
 }
 
 void
-packet_flow_buffer::set_output(int this_outport, int dst_inport,
+packet_flow_buffer::set_output(sprockit::sim_parameters* params,
+                               int this_outport, int dst_inport,
                                event_handler* output)
 {
   debug_printf(sprockit::dbg::packet_flow_config,
@@ -50,28 +48,21 @@ packet_flow_buffer::set_output(int this_outport, int dst_inport,
 }
 
 packet_flow_network_buffer::packet_flow_network_buffer(
-  event_scheduler* parent,
-  const timestamp& send_lat,
-  const timestamp& credit_lat,
-  int max_num_bytes,
-  int num_vc,
-  int packet_size,
-  packet_flow_bandwidth_arbitrator* arb)
-  : packet_flow_finite_buffer(parent, send_lat, credit_lat, max_num_bytes, arb),
-    num_vc_(num_vc),
-    queues_(num_vc),
-    credits_(num_vc, 0),
-    packet_size_(packet_size)
+  sprockit::sim_parameters* params,
+  event_scheduler* parent)
+  : packet_flow_finite_buffer(params, parent),
+    num_vc_(params->get_int_param("num_vc")),
+    queues_(num_vc_),
+    credits_(num_vc_, 0),
+    packet_size_(params->get_byte_length_param("mtu"))
 {
-}
-
-void
-packet_flow_network_buffer::init_credits(int port, int num_credits)
-{
-  long num_credits_per_vc = num_credits / num_vc_;
+  int credits = params->get_byte_length_param("credits");
+  long num_credits_per_vc = credits / num_vc_;
   for (int i=0; i < num_vc_; ++i) {
     credits_[i] = num_credits_per_vc;
   }
+  arb_ = packet_flow_bandwidth_arbitrator_factory::
+          get_param("arbitrator", params);
 }
 
 void
@@ -290,6 +281,11 @@ packet_flow_network_buffer::queue_length() const
   return std::max(0L, total_bytes_pending);
 }
 
+packet_flow_network_buffer::~packet_flow_network_buffer()
+{
+  if (arb_) delete arb_;
+}
+
 std::string
 packet_flow_buffer::buffer_string(const char* name) const
 {
@@ -302,27 +298,11 @@ packet_flow_buffer::buffer_string(const char* name) const
   return sprockit::printf("%s %d", name, id);
 }
 
-int
-packet_flow_infinite_buffer::num_initial_credits() const
-{
-  spkt_throw_printf(sprockit::value_error,
-    "packet_flow_infinite_buffer::num_initial_credits: should never be called");
-}
-
-packet_flow_eject_buffer::packet_flow_eject_buffer(
-  event_scheduler* parent,
-  const timestamp& send_lat,
-  const timestamp& credit_lat,
-  int max_num_bytes,
-  packet_flow_bandwidth_arbitrator* arb)
-  : packet_flow_finite_buffer(parent, send_lat, credit_lat, max_num_bytes, arb)
-{
-}
 
 void
-packet_flow_eject_buffer::return_credit(packet* msg)
+packet_flow_eject_buffer::return_credit(packet* pkt)
 {
-  send_credit(input_, safe_cast(packet_flow_payload, msg), now());
+  send_credit(input_, safe_cast(packet_flow_payload, pkt), now());
 }
 
 void
@@ -332,9 +312,8 @@ packet_flow_eject_buffer::do_handle_payload(packet_flow_payload* pkt)
     "On %s, handling {%s}",
     to_string().c_str(),
     pkt->to_string().c_str());
-  int one_vc = 0;
-  int one_outport = 0;
-  send(arb_, pkt, input_, output_);
+  return_credit(pkt);
+  output_.handler->handle(pkt);
 }
 
 void
@@ -344,31 +323,14 @@ packet_flow_eject_buffer::handle_credit(packet_flow_credit* pkt)
                    "packet_flow_eject_buffer::handle_credit: should not handle credits");
 }
 
-void
-packet_flow_eject_buffer::init_credits(int port, int num_credits)
+packet_flow_injection_buffer::
+packet_flow_injection_buffer(sprockit::sim_parameters* params, event_scheduler* parent) :
+  packet_flow_infinite_buffer(params, parent)
 {
-  spkt_throw_printf(sprockit::illformed_error,
-                   "packet_flow_eject_buffer::init_credits: should not handle credits");
-}
-
-packet_flow_injection_buffer::packet_flow_injection_buffer(
-  event_scheduler* parent,
-  const timestamp& out_lat,
-  packet_flow_bandwidth_arbitrator* arb,
-  int packet_size)
-  : packet_flow_infinite_buffer(parent, out_lat, arb),
-    credits_(0),
-    packet_size_(packet_size)
-{
-}
-
-void
-packet_flow_injection_buffer::init_credits(int port, int num_credits)
-{
-  debug_printf(sprockit::dbg::packet_flow | sprockit::dbg::packet_flow_config,
-    "On %s, initializing with %d credits",
-     to_string().c_str(), num_credits);
-  credits_ = num_credits;
+  packet_size_ = params->get_byte_length_param("mtu");
+  credits_ = params->get_byte_length_param("credits");
+  arb_ = packet_flow_bandwidth_arbitrator_factory::
+          get_param("arbitrator", params);
 }
 
 void
@@ -397,6 +359,11 @@ packet_flow_injection_buffer::do_handle_payload(packet_flow_payload* pkt)
   credits_ -= pkt->byte_length();
   //we only get here if we cleared the credits
   send(arb_, pkt, input_, output_);
+}
+
+packet_flow_injection_buffer::~packet_flow_injection_buffer()
+{
+  if (arb_) delete arb_;
 }
 
 #if PRINT_FINISH_DETAILS

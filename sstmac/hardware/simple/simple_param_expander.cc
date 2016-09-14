@@ -63,10 +63,11 @@ simple_param_expander::expand_amm1_network(
   sprockit::sim_parameters* params,
   sprockit::sim_parameters* switch_params)
 {
-  double link_bw = switch_params->get_bandwidth_param("link_bandwidth");
+  sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
+  double link_bw = link_params->get_bandwidth_param("bandwidth");
   double gbs = link_bw *param_expander::network_bandwidth_multiplier(params) / 1e9;
   std::string net_bw_str = sprockit::printf("%12.8fGB/s", gbs);
-  switch_params->add_param_override("bandwidth", net_bw_str);
+  link_params->add_param_override("bandwidth", net_bw_str);
 }
 
 void
@@ -75,11 +76,6 @@ simple_param_expander::expand_amm1_nic(
  sprockit::sim_parameters* nic_params,
  sprockit::sim_parameters* switch_params)
 {
-  //nothing to do here
-  std::string inj_bw_str = nic_params->get_param("injection_bandwidth");
-  std::string inj_lat_str = nic_params->get_param("injection_latency");
-  switch_params->add_param_override("injection_bandwidth", inj_bw_str);
-  switch_params->add_param_override("injection_latency", inj_lat_str);
 }
 
 void
@@ -97,14 +93,17 @@ simple_param_expander::expand_amm3_network(
   sprockit::sim_parameters* switch_params)
 {
   expand_amm1_network(params, switch_params);
-  double link_bw = switch_params->get_bandwidth_param("link_bandwidth");
+
+  sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
+  sprockit::sim_parameters* xbar_params = switch_params->get_namespace("xbar");
+  double link_bw = link_params->get_bandwidth_param("bandwidth");
   double sw_multiplier = param_expander::switch_bandwidth_multiplier(params);
-  double sw_bw = switch_params->get_bandwidth_param("crossbar_bandwidth") * sw_multiplier;
+  double sw_bw = xbar_params->get_bandwidth_param("bandwidth") * sw_multiplier;
   //the network bandwidth is the min of link/sw bandwidth
   double net_bw = std::min(link_bw, sw_bw);
   double gbs = net_bw / 1e9;
   std::string net_bw_str = sprockit::printf("%12.8fGB/s", gbs);
-  switch_params->add_param_override("bandwidth", net_bw_str);
+  link_params->add_param_override("bandwidth", net_bw_str);
 }
 
 void

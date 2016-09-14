@@ -388,12 +388,33 @@ dragonfly::minimal_distance(
   return path_length;
 }
 
+void
+dragonfly::setup_port_params(sprockit::sim_parameters* params, int dim, int dimsize)
+{
+  sprockit::sim_parameters* link_params = params->get_namespace("link");
+  std::string arb = link_params->get_optional_param("arbitrator", "cut_through");
+  double bw = link_params->get_bandwidth_param("bandwidth");
+  timestamp lat = link_params->get_time_param("latency");
+  int bufsize = params->get_byte_length_param("buffer_size");
+
+  double port_bw = bw * red_[dim];
+  int credits = bufsize * red_[dim];
+
+  for (int i=0; i < dimsize; ++i){
+    int port = convert_to_port(dim, i);
+    cartesian_topology::setup_port_params(port, credits, port_bw, lat, arb, params);
+  }
+}
+
 /// coordinates go x,y - group
 void
-dragonfly::connect_objects(internal_connectable_map& objects)
+dragonfly::connect_objects(sprockit::sim_parameters* params, internal_connectable_map& objects)
 {
-  connectable::config cfg;
-  cfg.ty = connectable::RedundantConnection;
+  setup_port_params(params, x_dimension, x_);
+  setup_port_params(params, y_dimension, y_);
+  setup_port_params(params, g_dimension, g_);
+
+
   for (long i = 0; i < objects.size(); i++) {
     std::vector<int> connected;
     std::vector<int> connected_red;
@@ -435,18 +456,21 @@ dragonfly::connect_objects(internal_connectable_map& objects)
             int(them), set_string(x, myy, myg).c_str(),
             outport, inport);
 
-        cfg.red = red_[x_dimension];
+        sprockit::sim_parameters* port_params = get_port_params(params, outport);
+
         objects[me]->connect(
+          port_params,
           outport,
           inport,
           connectable::output,
-          objects[them], &cfg);
+          objects[them]);
 
         objects[them]->connect(
+          port_params,
           outport,
           inport,
           connectable::input,
-          objects[me], &cfg);
+          objects[me]);
 
         if (outputgraph_) {
           connected.push_back(them);
@@ -468,18 +492,21 @@ dragonfly::connect_objects(internal_connectable_map& objects)
             int(them), set_string(myx, y, myg).c_str(),
             outport, inport);
 
-        cfg.red = red_[y_dimension];
+        sprockit::sim_parameters* port_params = get_port_params(params, outport);
+
         objects[me]->connect(
+          port_params,
           outport,
           inport,
           connectable::output,
-          objects[them], &cfg);
+          objects[them]);
 
         objects[them]->connect(
+          port_params,
           outport,
           inport,
           connectable::input,
-          objects[me], &cfg);
+          objects[me]);
 
         if (outputgraph_) {
           connected.push_back(them);
@@ -502,18 +529,21 @@ dragonfly::connect_objects(internal_connectable_map& objects)
         int(them), set_string(myx, myy, dstg).c_str(),
         outport, inport);
 
-      cfg.red = red_[g_dimension];
+      sprockit::sim_parameters* port_params = get_port_params(params, outport);
+
       objects[me]->connect(
+          port_params,
           outport,
           inport,
           connectable::output,
-          objects[them], &cfg);
+          objects[them]);
 
       objects[them]->connect(
+          port_params,
           outport,
           inport,
           connectable::input,
-          objects[me], &cfg);
+          objects[me]);
 
     }
 

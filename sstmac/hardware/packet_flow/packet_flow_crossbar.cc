@@ -15,81 +15,44 @@ RegisterNamespaces("bytes_sent");
 namespace sstmac {
 namespace hw {
 
-
 packet_flow_crossbar::packet_flow_crossbar(
-  event_scheduler* parent,
-  timestamp send_lat,
-  timestamp credit_lat,
-  double out_bw,
-  int num_vc,
-  int buffer_size,
-  packet_flow_bandwidth_arbitrator* arb) :
-  packet_flow_NtoM_queue(parent, send_lat, credit_lat, out_bw, num_vc, buffer_size, arb),
-  name_(nullptr)
+  sprockit::sim_parameters* params,
+  event_scheduler* parent) :
+  packet_flow_NtoM_queue(params, parent)
 {
-}
-
-packet_flow_crossbar::packet_flow_crossbar(
-  event_scheduler* parent,
-  timestamp send_lat,
-  timestamp credit_lat,
-  int num_vc,
-  int buffer_size,
-  const char* name) :
-  packet_flow_NtoM_queue(parent, send_lat, credit_lat, num_vc, buffer_size),
-  name_(name)
-{
+  arb_ = packet_flow_bandwidth_arbitrator_factory::get_param("arbitrator",
+                                                            params);
 }
 
 packet_flow_demuxer::packet_flow_demuxer(
-  event_scheduler* parent,
-  timestamp send_lat,
-  timestamp credit_lat,
-  int num_vc,
-  int buffer_size) :
-  packet_flow_NtoM_queue(parent, send_lat, credit_lat, num_vc, buffer_size)
+  sprockit::sim_parameters* params,
+  event_scheduler* parent) :
+  packet_flow_NtoM_queue(params, parent)
 {
 }
 
 packet_flow_muxer::packet_flow_muxer(
-  event_scheduler* parent,
-  timestamp send_lat,
-  timestamp credit_lat,
-  double out_bw,
-  int num_vc,
-  int buffer_size,
-  packet_flow_bandwidth_arbitrator *arb) :
-  packet_flow_NtoM_queue(parent, send_lat, credit_lat, out_bw, num_vc, buffer_size, arb)
+  sprockit::sim_parameters* params,
+  event_scheduler* parent) :
+  packet_flow_NtoM_queue(params, parent)
 {
+  arb_ = packet_flow_bandwidth_arbitrator_factory::get_param("arbitrator",
+                                                            params);
 }
 
-packet_flow_NtoM_queue::packet_flow_NtoM_queue(
-  event_scheduler* parent,
-  timestamp send_lat,
-  timestamp credit_lat,
-  int num_vc,
-  int buffer_size) :
-  num_vc_(num_vc),
-  buffer_size_(buffer_size),
-  arb_tmpl_(nullptr),
-  packet_flow_sender(parent, send_lat, credit_lat)
+packet_flow_bandwidth_arbitrator*
+packet_flow_demuxer::get_arbitrator(sprockit::sim_parameters *params) const
 {
+  return packet_flow_bandwidth_arbitrator_factory::get_param("arbitrator", params);
 }
 
-packet_flow_NtoM_queue::packet_flow_NtoM_queue(
-  event_scheduler* parent,
-  timestamp send_lat,
-  timestamp credit_lat,
-  double out_bw,
-  int num_vc,
-  int buffer_size,
-  packet_flow_bandwidth_arbitrator* arb) :
-  packet_flow_sender(parent, send_lat, credit_lat),
-  num_vc_(num_vc),
-  buffer_size_(buffer_size),
-  arb_tmpl_(arb),
-  out_bw_(out_bw)
+packet_flow_NtoM_queue::
+packet_flow_NtoM_queue(sprockit::sim_parameters* params,
+                       event_scheduler* parent)
+  : packet_flow_sender(params, parent)
 {
+  num_vc_ = params->get_int_param("num_vc");
+
 }
 
 packet_flow_NtoM_queue::~packet_flow_NtoM_queue()
@@ -99,7 +62,6 @@ packet_flow_NtoM_queue::~packet_flow_NtoM_queue()
     packet_flow_bandwidth_arbitrator* arb = port_arbitrators_[i];
     if (arb) delete arb;
   }
-  delete arb_tmpl_;
 }
 
 void
@@ -200,12 +162,12 @@ packet_flow_NtoM_queue::output_handler(packet_flow_payload* pkt)
   if (!handler)
     return nullptr;
 
-  packet_flow_tiled_switch* sw = test_cast(packet_flow_tiled_switch, handler);
-  if (sw){
-    return sw->demuxer(pkt->next_port());
-  } else {
+  //packet_flow_tiled_switch* sw = test_cast(packet_flow_tiled_switch, handler);
+  //if (sw){
+  //  return sw->demuxer(pkt->next_port());
+  //} else {
     return handler;
-  }
+  //}
 }
 
 std::string
@@ -218,7 +180,6 @@ void
 packet_flow_NtoM_queue::send_payload(packet_flow_payload* pkt)
 {
   int loc_port = local_port(pkt->next_port());
-  packet_flow_bandwidth_arbitrator* arb = port_arbitrators_[loc_port];
   packet_flow_debug(
     "On %s:%p mapped port:%d vc:%d to local port %d handling {%s} going to %s:%p",
      to_string().c_str(), this,
@@ -227,6 +188,7 @@ packet_flow_NtoM_queue::send_payload(packet_flow_payload* pkt)
      pkt->to_string().c_str(),
      output_name(pkt).c_str(),
      output_handler(pkt));
+  packet_flow_bandwidth_arbitrator* arb = port_arbitrators_[loc_port];
   send(arb, pkt, inputs_[pkt->inport()], outputs_[loc_port]);
 }
 
@@ -295,20 +257,6 @@ packet_flow_NtoM_queue::handle_routed_payload(packet_flow_payload* pkt)
 }
 
 void
-packet_flow_NtoM_queue::init_credits(int port, int num_credits)
-{
-  int num_credits_per_vc = num_credits / num_vc_;
-  for (int i=0; i < num_vc_; ++i) {
-    debug_printf(sprockit::dbg::packet_flow_config,
-      "On %s:%p, initing %d credits on port:%d vc:%d",
-      to_string().c_str(), this,
-      num_credits_per_vc,
-      port, i);
-    credit(port, i) = num_credits_per_vc;
-  }
-}
-
-void
 packet_flow_NtoM_queue::resize(int num_ports)
 {
   port_arbitrators_.resize(num_ports);
@@ -367,8 +315,10 @@ packet_flow_NtoM_queue::configure_mod_ports(int mod)
 }
 
 void
-packet_flow_NtoM_queue::set_input(int my_inport, int src_outport,
-                                event_handler* input)
+packet_flow_NtoM_queue::set_input(
+  sprockit::sim_parameters* port_params,
+  int my_inport, int src_outport,
+  event_handler* input)
 {
   debug_printf(sprockit::dbg::packet_flow_config | sprockit::dbg::packet_flow,
     "On %s:%d setting input %s:%d",
@@ -382,8 +332,10 @@ packet_flow_NtoM_queue::set_input(int my_inport, int src_outport,
 }
 
 void
-packet_flow_NtoM_queue::set_output(int my_outport, int dst_inport,
-                                 event_handler* output)
+packet_flow_NtoM_queue::set_output(
+  sprockit::sim_parameters* port_params,
+  int my_outport, int dst_inport,
+  event_handler* output)
 {
   int loc_port = local_port(my_outport);
   debug_printf(sprockit::dbg::packet_flow_config | sprockit::dbg::packet_flow,
@@ -398,9 +350,18 @@ packet_flow_NtoM_queue::set_output(int my_outport, int dst_inport,
   out.handler = output;
 
   outputs_[loc_port] = out;
-  //credits_[loc_port] = std::vector<long>(num_vc_, 0L);
-  //queues_[loc_port] = std::vector<payload_queue>(num_vc_);
-  port_arbitrators_[loc_port] = arb_tmpl_ ? arb_tmpl_->clone(out_bw_) : 0;
+  port_arbitrators_[loc_port] = get_arbitrator(port_params);
+
+  int num_credits = port_params->get_byte_length_param("credits");
+  int num_credits_per_vc = num_credits / num_vc_;
+  for (int i=0; i < num_vc_; ++i) {
+    debug_printf(sprockit::dbg::packet_flow_config,
+      "On %s:%p, initing %d credits on port:%d vc:%d",
+      to_string().c_str(), this,
+      num_credits_per_vc,
+      my_outport, i);
+    credit(my_outport, i) = num_credits_per_vc;
+  }
 }
 
 #if PRINT_FINISH_DETAILS

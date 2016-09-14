@@ -59,13 +59,16 @@ validate_bw(double test_bw)
   }
 }
 
-packet_flow_bandwidth_arbitrator::packet_flow_bandwidth_arbitrator() :
-  out_bw_(-1), inv_out_bw_(-1)
+packet_flow_bandwidth_arbitrator::
+packet_flow_bandwidth_arbitrator(sprockit::sim_parameters* params)
 {
+  out_bw_ = params->get_bandwidth_param("bandwidth");
+  inv_out_bw_ = 1.0 / out_bw_;
 }
 
-packet_flow_simple_arbitrator::packet_flow_simple_arbitrator() :
-  next_free_(0)
+packet_flow_simple_arbitrator::packet_flow_simple_arbitrator(sprockit::sim_parameters* params) :
+  next_free_(0),
+  packet_flow_bandwidth_arbitrator(params)
 {
 }
 
@@ -109,7 +112,8 @@ packet_flow_simple_arbitrator::bytes_sending(timestamp now) const
   return bytes_sending;
 }
 
-packet_flow_null_arbitrator::packet_flow_null_arbitrator()
+packet_flow_null_arbitrator::packet_flow_null_arbitrator(sprockit::sim_parameters* params) :
+  packet_flow_bandwidth_arbitrator(params)
 {
 }
 
@@ -132,27 +136,23 @@ packet_flow_null_arbitrator::bytes_sending(timestamp now) const
   return 0;
 }
 
-packet_flow_cut_through_arbitrator::packet_flow_cut_through_arbitrator()
-  : head_(0)
+packet_flow_cut_through_arbitrator::
+packet_flow_cut_through_arbitrator(sprockit::sim_parameters* params)
+  : head_(nullptr),
+    packet_flow_bandwidth_arbitrator(params)
 {
   timestamp sec(1.0);
   timestamp tick(1, timestamp::exact);
   bw_sec_to_tick_conversion_ = tick.sec();
   bw_tick_to_sec_conversion_ = sec.ticks_int64();
-}
 
-
-void
-packet_flow_cut_through_arbitrator::set_outgoing_bw(double out_bw)
-{
-  pflow_arb_debug_printf_l0("initializing cut through arbitrator with bw=%8.4e", out_bw);
-  packet_flow_bandwidth_arbitrator::set_outgoing_bw(out_bw);
   head_ = new bandwidth_epoch;
-  head_->bw_available = out_bw * bw_sec_to_tick_conversion_;
+  head_->bw_available = out_bw_ * bw_sec_to_tick_conversion_;
   head_->start = 0;
   //just set to super long
   head_->length = std::numeric_limits<uint64_t>::max();
 }
+
 
 packet_flow_cut_through_arbitrator::~packet_flow_cut_through_arbitrator()
 {

@@ -37,6 +37,12 @@ class cartesian_topology :
   virtual void
   init_factory_params(sprockit::sim_parameters *params);
 
+  void
+  setup_port_params(int port, int credits,
+                    double bw, timestamp lat,
+                    const std::string& arb,
+                    sprockit::sim_parameters* params);
+
   /**
    * The number of redundant links (ports) comprising a geometric
    * or structure direction in the topology

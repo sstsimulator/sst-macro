@@ -72,8 +72,10 @@ hypercube::minimal_distance(
 }
 
 void
-hypercube::connect_objects(internal_connectable_map& objects)
+hypercube::connect_objects(sprockit::sim_parameters* params, internal_connectable_map& objects)
 {
+  spkt_throw(sprockit::unimplemented_error, "connect_objects");
+#if 0
   connectable::config cfg;
   cfg.ty = connectable::RedundantConnection;
   top_debug("hypercube: connecting %d switches",
@@ -120,6 +122,7 @@ hypercube::connect_objects(internal_connectable_map& objects)
       }
     }
   }
+#endif
 }
 
 void

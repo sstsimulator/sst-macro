@@ -23,8 +23,10 @@ namespace hw {
 SpktRegister("fbfly | flattenedbfly | flattenedbutterfly", topology,
             flattened_butterfly);
 void
-flattened_butterfly::connect_objects(internal_connectable_map& objects)
+flattened_butterfly::connect_objects(sprockit::sim_parameters* params, internal_connectable_map& objects)
 {
+  spkt_throw(sprockit::unimplemented_error, "connect_objects");
+#if 0
   connectable::config cfg;
   cfg.ty = connectable::BasicConnection;
   /**
@@ -136,7 +138,7 @@ flattened_butterfly::connect_objects(internal_connectable_map& objects)
     connection_stride /= kary_;
     block_size /= kary_;
   }
-
+#endif
 }
 
 int

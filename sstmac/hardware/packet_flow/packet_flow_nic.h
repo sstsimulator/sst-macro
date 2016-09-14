@@ -17,7 +17,6 @@ namespace hw {
  */
 class packet_flow_nic :
   public nic,
-  public packet_flow_component,
   public packetizer_callback
 {
 
@@ -25,53 +24,37 @@ class packet_flow_nic :
   packet_flow_nic(sprockit::sim_parameters* params, node* parent);
 
   std::string
-  to_string() const {
+  to_string() const override {
     return sprockit::printf("packet flow nic(%d)", int(addr()));
   }
 
   virtual ~packet_flow_nic() throw ();
 
-  void handle(event *ev);
+  void handle(event *ev) override;
 
-  void notify(int vn, message* msg){
+  void notify(int vn, message* msg) override {
     recv_message(msg);
   }
 
   virtual void
   connect(
+    sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
     connection_type_t ty,
-    connectable* mod,
-    config* cfg);
-
-  timestamp
-  injection_latency() const {
-    return inj_lat_;
-  }
-
-  double
-  injection_bandwidth() const;
-
-  int
-  initial_credits() const {
-    return injection_credits_;
-  }
+    connectable* mod) override;
 
  protected:
   virtual void
-  do_send(network_message* payload);
+  do_send(network_message* payload) override;
 
  protected:
   packetizer* packetizer_;
-  timestamp inj_lat_;
-  int injection_credits_;
 
 };
 
 class packet_flow_netlink :
-  public netlink,
-  public packet_flow_component
+  public netlink
 {
  public:
   packet_flow_netlink(sprockit::sim_parameters* params, node* parent);
@@ -79,38 +62,23 @@ class packet_flow_netlink :
   virtual ~packet_flow_netlink();
 
   std::string
-  to_string() const {
+  to_string() const override {
     return "packet flow netlink";
   }
 
   void
   connect(
+    sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
     connection_type_t ty,
-    connectable *mod,
-    config* cfg);
+    connectable *mod) override;
 
   void
-  deadlock_check();
+  deadlock_check() override;
 
   void
-  handle(event* ev);
-
-  event_handler*
-  ejector() {
-    return block_;
-  }
-
-  int
-  initial_credits() const {
-    return really_big_buffer;
-  }
-
-  event_handler*
-  injector() {
-    return block_;
-  }
+  handle(event* ev) override;
 
  private:
   static const int really_big_buffer;

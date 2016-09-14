@@ -14,12 +14,6 @@ DeclareDebugSlot(packet_flow_config)
 namespace sstmac {
 namespace hw {
 
-class packet_flow_component
-{
- public:
-  virtual int initial_credits() const = 0;
-};
-
 class packet_flow_interface
 {
  public:

@@ -37,15 +37,13 @@ void
 test_arbitrator(UnitTest& unit)
 {
   sprockit::sim_parameters params;
-
+  params["bandwidth"] = 1e9;
   parallel_runtime* rt = new native::serial_runtime(&params);
 
   native::event_map* ev_mgr = new native::event_map(&params, rt);
 
   packet_flow_bandwidth_arbitrator* arb
-      = new packet_flow_cut_through_arbitrator();
-
-  arb->set_outgoing_bw(link_bw);
+      = new packet_flow_cut_through_arbitrator(&params);
 
 
   message* parent = new test_message(num_packets_in_parent * packet_size);
@@ -76,9 +74,8 @@ test_arbitrator(UnitTest& unit)
   double delta = fabs(test_msg->bw() - link_bw);
 
   //start over
-  arb = new packet_flow_cut_through_arbitrator;
+  arb = new packet_flow_cut_through_arbitrator(&params);
 
-  arb->set_outgoing_bw(link_bw);
   //only use half the bw
   test_msg->set_bw(0.5*link_bw);
   test_msg->set_arrival(0);
@@ -98,9 +95,7 @@ test_arbitrator(UnitTest& unit)
 
 
   //start over
-  arb = new packet_flow_cut_through_arbitrator;
-  arb->set_outgoing_bw(link_bw);
-
+  arb = new packet_flow_cut_through_arbitrator(&params);
   //only use half the bw
   test_msg->set_bw(0.5*link_bw);
   test_msg->set_arrival(0);
@@ -117,8 +112,7 @@ test_arbitrator(UnitTest& unit)
 
 
   //start over
-  arb = new packet_flow_cut_through_arbitrator;
-  arb->set_outgoing_bw(link_bw);
+  arb = new packet_flow_cut_through_arbitrator(&params);
 
   //only use half the bw
   test_msg->set_bw(0.5*link_bw);
@@ -137,8 +131,7 @@ test_arbitrator(UnitTest& unit)
   assertEqual(unit, "bandwidth", test_msg->bw(), (1./1.5)*link_bw);
 
   //start over
-  arb = new packet_flow_cut_through_arbitrator;
-  arb->set_outgoing_bw(link_bw);
+  arb = new packet_flow_cut_through_arbitrator(&params);
 
   //send a bunch of slow messages to create many epochs
   test_msg->set_bw(0.25*link_bw);
@@ -169,8 +162,7 @@ test_arbitrator(UnitTest& unit)
   assertEqual(unit, "bandwidth", test_msg4->bw(), bw);
 
   //start over
-  arb = new packet_flow_cut_through_arbitrator;
-  arb->set_outgoing_bw(link_bw);
+  arb = new packet_flow_cut_through_arbitrator(&params);
   test_msg->set_bw(link_bw);
   test_msg->set_arrival(0);
   arb->arbitrate(st);
@@ -185,8 +177,7 @@ test_arbitrator(UnitTest& unit)
   assertEqual(unit, "bandwidth", test_msg->bw(), link_bw);
 
   //start over
-  arb = new packet_flow_cut_through_arbitrator;
-  arb->set_outgoing_bw(link_bw);
+  arb = new packet_flow_cut_through_arbitrator(&params);
   test_msg->set_bw(link_bw);
   test_msg->set_arrival(0);
   arb->arbitrate(st);

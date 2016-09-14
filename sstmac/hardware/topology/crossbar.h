@@ -55,7 +55,7 @@ class crossbar : public structured_topology
   }
 
   virtual void
-  connect_objects(internal_connectable_map& switches);
+  connect_objects(sprockit::sim_parameters* params, internal_connectable_map& switches);
 
   void
   configure_vc_routing(std::map<routing::algorithm_t, int> &m) const;

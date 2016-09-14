@@ -47,7 +47,7 @@ class hypercube :
     structured_routable::path& path) const;
 
   virtual void
-  connect_objects(internal_connectable_map& switches);
+  connect_objects(sprockit::sim_parameters* params, internal_connectable_map& switches);
 
   virtual int
   convert_to_port(int dim, int dir) const;

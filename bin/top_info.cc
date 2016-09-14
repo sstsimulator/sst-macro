@@ -92,7 +92,7 @@ try_top_info_main(int argc, char **argv)
   //set the global parameters object
   sprockit::sprockit_init_cxx_heap(params);
 
-  params->pretty_print_params();
+  params->print_params();
 
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
   hw::topology* thetop = hw::topology_factory::get_param("name", top_params);

@@ -17,8 +17,9 @@ class packet_flow_buffer :
   virtual ~packet_flow_buffer();
 
   virtual void
-  set_output(int this_outport, int dst_inport,
-    event_handler* output);
+  set_output(sprockit::sim_parameters* params,
+    int this_outport, int dst_inport,
+    event_handler* output) override;
 
   virtual int
   queue_length() const {
@@ -35,31 +36,13 @@ class packet_flow_buffer :
     return input_.handler->event_location();
   }
 
-
-
  protected:
-  /**
-   * @param send_lat
-   * @param credit_lat
-   * @param arb An arbitrator with outgoing bw already initialized
-   */
-  packet_flow_buffer(event_scheduler* parent,
-    const timestamp& send_lat,
-    const timestamp& credit_lat,
-    packet_flow_bandwidth_arbitrator* arb);
-
-  packet_flow_buffer(event_scheduler* parent) :
-    packet_flow_sender(parent),
-    bytes_delayed_(0),
-    arb_(nullptr)
-  {
-  }
+  packet_flow_buffer(sprockit::sim_parameters* params, event_scheduler* parent);
 
   std::string
   buffer_string(const char* name) const;
 
  protected:
-  packet_flow_bandwidth_arbitrator* arb_;
   packet_flow_input input_;
   packet_flow_output output_;
   long bytes_delayed_;
@@ -75,34 +58,13 @@ class packet_flow_finite_buffer :
   virtual ~packet_flow_finite_buffer(){}
 
   virtual void
-  set_input(int this_inport, int src_outport,
-            event_handler* input);
+  set_input(sprockit::sim_parameters* params,
+            int this_inport, int src_outport,
+            event_handler* input) override;
 
-  long
-  size_bytes() const {
-    return size_bytes_;
-  }
-
-  int
-  num_initial_credits() const {
-    return size_bytes_;
-  }
-
- protected:
-  long size_bytes_;
-
-  packet_flow_finite_buffer(event_scheduler* parent,
-    const timestamp& send_lat,
-    const timestamp& credit_lat,
-    int max_num_bytes,
-    packet_flow_bandwidth_arbitrator* arb) :
-      size_bytes_(max_num_bytes),
-      packet_flow_buffer(parent, send_lat, credit_lat, arb)
-  {
-  }
-
-  packet_flow_finite_buffer(event_scheduler* parent) :
-    packet_flow_buffer(parent)
+  packet_flow_finite_buffer(sprockit::sim_parameters* params,
+                            event_scheduler* parent) :
+    packet_flow_buffer(params, parent)
   {
   }
 
@@ -112,25 +74,17 @@ class packet_flow_infinite_buffer :
   public packet_flow_buffer
 {
  protected:
-  packet_flow_infinite_buffer(event_scheduler* parent,
-   const timestamp& send_lat,
-   packet_flow_bandwidth_arbitrator* arb):
-   packet_flow_buffer(parent, send_lat, timestamp(0), arb)
-  {
-  }
-
-  packet_flow_infinite_buffer(event_scheduler* parent) :
-    packet_flow_buffer(parent)
+  packet_flow_infinite_buffer(sprockit::sim_parameters* params,
+                              event_scheduler* parent) :
+   packet_flow_buffer(params, parent)
   {
   }
 
   virtual ~packet_flow_infinite_buffer(){}
 
   void //no-op, I don't need to send credits to an input, I'm infinite
-  set_input(int my_inport, int dst_outport, event_handler *input){}
-
-  int
-  num_initial_credits() const;
+  set_input(sprockit::sim_parameters* params, int my_inport, int dst_outport,
+            event_handler *input) override {}
 
 };
 
@@ -138,41 +92,28 @@ class packet_flow_network_buffer :
   public packet_flow_finite_buffer
 {
  public:
-  packet_flow_network_buffer(event_scheduler* parent) :
-    packet_flow_finite_buffer(parent)
-  {
-  }
+  packet_flow_network_buffer(sprockit::sim_parameters* params,
+                             event_scheduler* parent);
 
-  packet_flow_network_buffer(event_scheduler* parent,
-    const timestamp& send_lat,
-    const timestamp& credit_lat,
-    int max_num_bytes,
-    int num_vc,
-    int packet_size,
-    packet_flow_bandwidth_arbitrator* arb);
-
-  virtual ~packet_flow_network_buffer(){}
+  virtual ~packet_flow_network_buffer();
 
   int
-  queue_length() const;
+  queue_length() const override;
 
   void
-  init_credits(int port, int num_credits);
+  handle_credit(packet_flow_credit* msg) override;
 
   void
-  handle_credit(packet_flow_credit* msg);
-
-  void
-  do_handle_payload(packet_flow_payload* pkt);
+  do_handle_payload(packet_flow_payload* pkt) override;
 
   std::string
-  packet_flow_name() const {
+  packet_flow_name() const override {
     return "network buffer";
   }
 
-  void deadlock_check();
+  void deadlock_check() override;
 
-  void deadlock_check(event* ev);
+  void deadlock_check(event* ev) override;
 
  protected:
   int num_vc_;
@@ -183,6 +124,7 @@ class packet_flow_network_buffer :
   void build_blocked_messages();
 
  private:
+  packet_flow_bandwidth_arbitrator* arb_;
   std::set<int> deadlocked_channels_;
   std::map<int, std::list<packet_flow_payload*> > blocked_messages_;
   bool queue_depth_reporting_;
@@ -194,33 +136,25 @@ class packet_flow_eject_buffer :
   public packet_flow_finite_buffer
 {
  public:
-  packet_flow_eject_buffer(event_scheduler* parent,
-    const timestamp& send_lat,
-    const timestamp& credit_lat,
-    int max_num_bytes,
-    packet_flow_bandwidth_arbitrator* arb);
-
-  packet_flow_eject_buffer(event_scheduler* parent) :
-    packet_flow_finite_buffer(parent)
+  packet_flow_eject_buffer(sprockit::sim_parameters* params,
+                           event_scheduler* parent) :
+    packet_flow_finite_buffer(params, parent)
   {
   }
 
   void
-  handle_credit(packet_flow_credit* msg);
+  handle_credit(packet_flow_credit* msg) override;
 
   void
   return_credit(packet* msg);
 
   void
-  do_handle_payload(packet_flow_payload* pkt);
+  do_handle_payload(packet_flow_payload* pkt) override;
 
   std::string
-  packet_flow_name() const {
+  packet_flow_name() const override {
     return "eject buffer";
   }
-
-  void
-  init_credits(int port, int num_credits);
 
 };
 
@@ -228,16 +162,13 @@ class packet_flow_injection_buffer :
   public packet_flow_infinite_buffer
 {
  public:
-  packet_flow_injection_buffer(event_scheduler* parent,
-    const timestamp& out_lat,
-    packet_flow_bandwidth_arbitrator* arb,
-    int packet_size);
+  packet_flow_injection_buffer(sprockit::sim_parameters* params,
+                               event_scheduler* parent);
+
+  ~packet_flow_injection_buffer();
 
   int
-  queue_length() const;
-
-  void
-  init_credits(int port, int num_credits);
+  queue_length() const override;
 
   bool
   space_to_send(int bytes) const {
@@ -245,25 +176,20 @@ class packet_flow_injection_buffer :
   }
 
   void
-  handle_credit(packet_flow_credit* msg);
+  handle_credit(packet_flow_credit* msg) override;
 
   void
-  do_handle_payload(packet_flow_payload* pkt);
+  do_handle_payload(packet_flow_payload* pkt) override;
 
   std::string
-  packet_flow_name() const {
+  packet_flow_name() const override {
     return "inject buffer";
   }
 
  protected:
   int packet_size_;
-
+  packet_flow_bandwidth_arbitrator* arb_;
   long credits_;
-
-  packet_flow_injection_buffer(event_scheduler* parent) :
-    packet_flow_infinite_buffer(parent)
-  {
-  }
 
 };
 

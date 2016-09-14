@@ -44,9 +44,11 @@ class packetizer :
   }
 
  private:
-  virtual void inject(int vn, long bytes, long byte_offset, message* payload) = 0;
+  virtual void
+  inject(int vn, long bytes, long byte_offset, message* payload) = 0;
 
-  virtual bool spaceToSend(int vn, int num_bits) const = 0;
+  virtual bool
+  spaceToSend(int vn, int num_bits) const = 0;
 
  private:
   recv_cq completion_queue_;

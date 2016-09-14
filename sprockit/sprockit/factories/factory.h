@@ -213,7 +213,7 @@ class Factory
              sprockit::sim_parameters* params,
              const Args&... args) {
     if (!builder_map_) {
-      spkt_throw_printf(illformed_error,
+      spkt_abort_printf(
            "could not find name %s for factory %s. no classes are registered",
            valname.c_str(),
            name_);
@@ -226,14 +226,13 @@ class Factory
       for (it = builder_map_->begin(); it != end; ++it) {
         std::cerr << it->first << std::endl;
       }
-      spkt_throw_printf(value_error, "could not find name %s for factory %s",
+      spkt_abort_printf("could not find name %s for factory %s",
                        valname.c_str(), name_);
     }
 
     builder_t* descr = it->second;
     if (!descr) {
-      spkt_throw_printf(value_error,
-                       "initialized name %s with null descr for factory %s",
+      spkt_abort_printf("initialized name %s with null descr for factory %s",
                        valname.c_str(), name_);
     }
 

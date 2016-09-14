@@ -16,19 +16,8 @@ class packet_flow_NtoM_queue :
  public:
   virtual ~packet_flow_NtoM_queue();
 
-  packet_flow_NtoM_queue(event_scheduler* parent,
-    timestamp send_lat,
-    timestamp credit_lat,
-    double out_bw,
-    int num_vc,
-    int buffer_size,
-    packet_flow_bandwidth_arbitrator* arb);
-
-  packet_flow_NtoM_queue(event_scheduler* parent,
-    timestamp send_lat,
-    timestamp credit_lat,
-    int num_vc,
-    int buffer_size);
+  packet_flow_NtoM_queue(sprockit::sim_parameters* params,
+                         event_scheduler* parent);
 
   int
   thread_id() const {
@@ -36,34 +25,23 @@ class packet_flow_NtoM_queue :
   }
 
   virtual void
-  do_handle_payload(packet_flow_payload* pkt){
+  do_handle_payload(packet_flow_payload* pkt) override {
     handle_routed_payload(pkt);
   }
 
   void
-  set_input(int my_inport, int src_outport, event_handler* input);
+  set_input(sprockit::sim_parameters* params,
+            int my_inport, int src_outport, event_handler* input) override;
 
   void
-  set_output(int my_outport, int dst_inport, event_handler* output);
+  set_output(sprockit::sim_parameters* params,
+             int my_outport, int dst_inport, event_handler* output) override;
 
   virtual void
-  handle_credit(packet_flow_credit* msg);
+  handle_credit(packet_flow_credit* msg) override;
 
   virtual void
   start_message(message* msg);
-
-  void
-  init_credits(int port, int num_credits);
-
-  int
-  num_initial_credits() const {
-    return buffer_size_;
-  }
-
-  int
-  buffer_size() const {
-    return buffer_size_;
-  }
 
   void
   configure_mod_ports(int mod);
@@ -91,29 +69,18 @@ class packet_flow_NtoM_queue :
     return local_port(port) * num_vc_ + vc;
   }
 
-  packet_flow_bandwidth_arbitrator*&
-  port_arbitrator(int port){
-    return port_arbitrators_[local_port(port)];
-  }
+  void
+  deadlock_check() override;
 
   void
-  deadlock_check();
-
-  void
-  deadlock_check(event* ev);
+  deadlock_check(event* ev) override;
 
  protected:
-  struct request {
-    int port;
-    int num_bytes;
-  };
-
-  typedef std::list<request> buffer_request_list;
-
-  typedef spkt_unordered_map<int, buffer_request_list> xbar_request_map;
-
   void
   handle_routed_payload(packet_flow_payload* pkt);
+
+  virtual packet_flow_bandwidth_arbitrator*
+  get_arbitrator(sprockit::sim_parameters* params) const = 0;
 
  protected:
   typedef spkt_unordered_map<int, packet_flow_input> input_map;
@@ -121,8 +88,6 @@ class packet_flow_NtoM_queue :
   typedef std::vector<packet_flow_output> output_map;
   typedef std::vector<int> credit_map;
   typedef std::vector<payload_queue> queue_map;
-
-  packet_flow_bandwidth_arbitrator* arb_tmpl_;
 
   std::vector<packet_flow_bandwidth_arbitrator*> port_arbitrators_;
 
@@ -135,12 +100,9 @@ class packet_flow_NtoM_queue :
   queue_map queues_;
 
   int num_vc_;
-  int buffer_size_;
   int port_offset_;
   int port_div_;
   int port_mod_;
-
-  double out_bw_;
 
   std::map<int, std::set<int> > deadlocked_channels_;
 
@@ -180,20 +142,21 @@ class packet_flow_demuxer :
 {
  public:
   virtual std::string
-  to_string() const {
+  to_string() const override {
     return "packet_flow_demuxer";
   }
 
-  packet_flow_demuxer(event_scheduler* parent,
-    timestamp send_lat,
-    timestamp credit_lat,
-    int num_vc,
-    int buffer_size);
+  packet_flow_demuxer(sprockit::sim_parameters* params,
+                      event_scheduler* parent);
 
   std::string
-  packet_flow_name() const {
+  packet_flow_name() const override {
     return "demuxer";
   }
+
+  packet_flow_bandwidth_arbitrator*
+  get_arbitrator(sprockit::sim_parameters *params) const override;
+
 };
 
 
@@ -201,18 +164,21 @@ class packet_flow_muxer :
   public packet_flow_NtoM_queue
 {
  public:
-  packet_flow_muxer(event_scheduler* parent,
-    timestamp send_lat,
-    timestamp credit_lat,
-    double out_bw,
-    int num_vc,
-    int buffer_size,
-    packet_flow_bandwidth_arbitrator* arb);
+  packet_flow_muxer(sprockit::sim_parameters* params,
+                    event_scheduler* parent);
 
   std::string
-  packet_flow_name() const {
+  packet_flow_name() const override {
     return "muxer";
   }
+
+  packet_flow_bandwidth_arbitrator*
+  get_arbitrator(sprockit::sim_parameters *params) const override {
+    return arb_;
+  }
+
+ private:
+  packet_flow_bandwidth_arbitrator* arb_;
 
 };
 
@@ -220,29 +186,21 @@ class packet_flow_crossbar :
   public packet_flow_NtoM_queue
 {
  public:
-  packet_flow_crossbar(event_scheduler* parent,
-    timestamp send_lat,
-    timestamp credit_lat,
-    double out_bw,
-    int num_vc,
-    int buffer_size,
-    packet_flow_bandwidth_arbitrator* arb);
-
-  packet_flow_crossbar(event_scheduler* parent,
-    timestamp send_lat,
-    timestamp credit_lat,
-    int num_vc,
-    int buffer_size,
-    const char* name = 0);
+  packet_flow_crossbar(sprockit::sim_parameters* params,
+                       event_scheduler* parent);
 
   std::string
-  packet_flow_name() const {
-    if (name_) return name_;
-    else return "crossbar";
+  packet_flow_name() const override {
+    return "crossbar";
+  }
+
+  packet_flow_bandwidth_arbitrator*
+  get_arbitrator(sprockit::sim_parameters *params) const override {
+    return arb_;
   }
 
  private:
-  const char* name_;
+  packet_flow_bandwidth_arbitrator* arb_;
 
 };
 

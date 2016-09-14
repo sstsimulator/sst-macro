@@ -107,7 +107,7 @@ class dragonfly : public cartesian_topology
   }
 
   virtual void
-  connect_objects(internal_connectable_map& switches);
+  connect_objects(sprockit::sim_parameters* params, internal_connectable_map& switches);
 
   virtual int
   diameter() const {
@@ -205,6 +205,10 @@ class dragonfly : public cartesian_topology
   int g_;
   int group_con_;
   bool true_random_intermediate_;
+
+  void
+  setup_port_params(sprockit::sim_parameters* params,
+                    int dim, int dimsize);
 
   static std::string
   set_string(int x, int y, int g)

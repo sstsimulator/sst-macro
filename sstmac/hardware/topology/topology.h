@@ -104,11 +104,15 @@ class topology
    * @throws value_error If invalid switchid is passed to cloner
    */
   virtual void
-  connect_objects(internal_connectable_map& objects) = 0;
+  connect_objects(sprockit::sim_parameters* params,
+                  internal_connectable_map& objects) = 0;
 
   virtual void
-  connect_end_point_objects(internal_connectable_map& internal,
-                            end_point_connectable_map& end_points);
+  connect_end_point_objects(
+    sprockit::sim_parameters* switch_params,
+    sprockit::sim_parameters* node_params,
+    internal_connectable_map& internal,
+    end_point_connectable_map& end_points);
 
   /**
      For a given node, determine the injection switch
@@ -264,12 +268,16 @@ class topology
   */
   template <class MapTypeInternal, class MapTypeEndPoint>
   void
-  connect_end_points(MapTypeInternal& internal_nodes, MapTypeEndPoint& end_points) {
+  connect_end_points(
+   sprockit::sim_parameters* switch_params,
+   sprockit::sim_parameters* node_params,
+   MapTypeInternal& internal_nodes,
+   MapTypeEndPoint& end_points) {
     internal_connectable_map internal_clone_map;
     end_point_connectable_map end_clone_map;
     copy_map(internal_nodes, internal_clone_map);
     copy_map(end_points, end_clone_map);
-    connect_end_point_objects(internal_clone_map, end_clone_map);
+    connect_end_point_objects(switch_params, node_params, internal_clone_map, end_clone_map);
   }
 
   /**
@@ -280,12 +288,12 @@ class topology
   */
   template <class MapType>
   void
-  connect_topology(MapType& objects) {
+  connect_topology(sprockit::sim_parameters* switch_params, MapType& objects) {
     typedef typename MapType::mapped_type cls_type;
     typedef typename MapType::value_type val_type;
     internal_connectable_map clone_map;
     copy_map(objects, clone_map);
-    connect_objects(clone_map);
+    connect_objects(switch_params, clone_map);
   }
 
   virtual coordinates
@@ -461,8 +469,16 @@ class topology
 
   uint32_t random_number(uint32_t max, uint32_t attempt) const;
 
- protected:
+  sprockit::sim_parameters*
+  get_port_params(sprockit::sim_parameters* params, int port);
 
+ private:
+  void
+  configure_injection_params(
+    sprockit::sim_parameters* nic_params,
+    sprockit::sim_parameters* switch_params);
+
+ protected:
   /**
     Nodes per switch.  The number of nodes connected to a leaf switch.
     In many topologies, there is a 1-1 correspondence. For others,

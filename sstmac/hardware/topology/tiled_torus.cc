@@ -69,11 +69,15 @@ tiled_torus::port(int replica, int dim, int dir)
 }
 
 void
-tiled_torus::connect_dim(int dim,
+tiled_torus::connect_dim(
+  sprockit::sim_parameters* params,
+  int dim,
   connectable *center,
   connectable *plus,
   connectable *minus)
 {
+  spkt_throw(sprockit::unimplemented_error, "connect_objects");
+#if 0
   //times 2 for +/-1
   int nreplica = red_[dim];
   int outport, inport;
@@ -90,6 +94,7 @@ tiled_torus::connect_dim(int dim,
     center->connect(outport, inport, connectable::output, minus, &cfg);
     minus->connect(outport, inport, connectable::input, center, &cfg);
   }
+#endif
 }
 
 switch_id

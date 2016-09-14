@@ -104,7 +104,7 @@ class fat_tree :
   init_factory_params(sprockit::sim_parameters* params);
 
   virtual void
-  connect_objects(internal_connectable_map& switches);
+  connect_objects(sprockit::sim_parameters* params, internal_connectable_map& switches);
 
   virtual int
   convert_to_port(int dim, int dir) const;
@@ -183,7 +183,8 @@ class simple_fat_tree : public abstract_fat_tree
   init_factory_params(sprockit::sim_parameters* params);
 
   virtual void
-  connect_objects(internal_connectable_map& switches);
+  connect_objects(sprockit::sim_parameters* params,
+                  internal_connectable_map& switches);
 
   int
   num_switches() const {

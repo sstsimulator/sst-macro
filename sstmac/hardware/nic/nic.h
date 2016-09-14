@@ -110,16 +110,6 @@ class nic :
   void
   intranode_send(network_message* payload);
 
-  /**
-   * @return The injection latency for moving a packet from the NIC to the
-   *          first network router (or netlink block, etc)
-   */
-  virtual timestamp
-  injection_latency() const = 0;
-
-  virtual double
-  injection_bandwidth() const = 0;
-
  protected:
   nic(sprockit::sim_parameters* params, node* parent);
 

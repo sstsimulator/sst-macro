@@ -20,6 +20,8 @@
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 
+#if 0
+
 namespace sstmac {
 namespace hw {
 
@@ -27,12 +29,14 @@ namespace hw {
 SpktRegister("packet_flow_tiled", network_switch, packet_flow_tiled_switch);
 #endif
 
-packet_flow_tiled_switch::packet_flow_tiled_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr)
+packet_flow_tiled_switch::packet_flow_tiled_switch(sprockit::sim_parameters* params,
+                                                   uint64_t id, event_manager* mgr)
   : packet_flow_abstract_switch(params, id, mgr)
 {
-  row_buffer_num_bytes = params->get_byte_length_param("row_buffer_size");
+  //row_buffer_num_bytes = params->get_byte_length_param("row_buffer_size");
   nrows_ = params->get_int_param("nrows");
   ncols_ = params->get_int_param("ncols");
+  init_components(params);
 }
 
 packet_flow_tiled_switch::~packet_flow_tiled_switch()
@@ -69,8 +73,10 @@ packet_flow_tiled_switch::deadlock_check()
 }
 
 void
-packet_flow_tiled_switch::init_components()
+packet_flow_tiled_switch::init_components(sprockit::sim_parameters* params)
 {
+  spkt_throw(sprockit::unimplemented_error, "init_components");
+#if 0
   if (!xbar_tiles_.empty())
     return;
 
@@ -130,11 +136,7 @@ packet_flow_tiled_switch::init_components()
       xbar_tiles_[tile] = xbar;
     }
   }
-}
 
-void
-packet_flow_tiled_switch::initialize()
-{
   //this is a bit confusing - the demuxer could actually send to ANY output tile
   //rather than require the demuxer to internally do routing logic,
   //we just configure it with mappings for all NxM outputs
@@ -172,82 +174,85 @@ packet_flow_tiled_switch::initialize()
       }
     }
   }
+#endif
 }
 
 void
-packet_flow_tiled_switch::connect_output(int src_outport, int dst_inport, connectable *mod, config *cfg)
+packet_flow_tiled_switch::connect_output(sprockit::sim_parameters* params,
+                                         int src_outport, int dst_inport,
+                                         connectable *mod)
 {
-  connect_output(src_outport, dst_inport, safe_cast(event_handler, mod), cfg);
+  connect_output(params, src_outport, dst_inport,
+                 safe_cast(event_handler, mod));
 }
 
 void
 packet_flow_tiled_switch::connect_output(
+  sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
-  event_handler *mod,
-  config* cfg)
+  event_handler *mod)
 {
   packet_flow_sender* muxer = col_output_muxers_[src_outport];
-  muxer->set_output(src_outport, dst_inport, mod);
-  muxer->init_credits(src_outport, row_buffer_num_bytes);
+  muxer->set_output(params, src_outport, dst_inport, mod);
 }
 
 void
-packet_flow_tiled_switch::connect_input(int src_outport, int dst_inport, connectable *mod, config *cfg)
+packet_flow_tiled_switch::connect_input(sprockit::sim_parameters* params,
+                                        int src_outport, int dst_inport,
+                                        connectable *mod)
 {
-  connect_input(src_outport, dst_inport, safe_cast(event_handler, mod), cfg);
+  connect_input(params, src_outport, dst_inport, safe_cast(event_handler, mod));
 }
 
 void
 packet_flow_tiled_switch::connect_input(
+  sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
-  event_handler *mod,
-  config* cfg)
+  event_handler *mod)
 {
   packet_flow_sender* demuxer = row_input_demuxers_[dst_inport];
-  demuxer->set_input(dst_inport, src_outport, mod);
+  demuxer->set_input(params, dst_inport, src_outport, mod);
 }
 
 void
 packet_flow_tiled_switch::connect(
+  sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
   connection_type_t ty,
-  connectable* mod,
-  config* cfg)
+  connectable* mod)
 {
-  init_components();
   event_handler* ev = safe_cast(event_handler, mod);
   switch(ty) {
     case output:
-      connect_output(src_outport, dst_inport, ev, cfg);
+      connect_output(params, src_outport, dst_inport, ev);
       break;
     case input:
-      connect_input(src_outport, dst_inport, ev, cfg);
+      connect_input(params, src_outport, dst_inport, ev);
       break;
   }
 }
 
 void
-packet_flow_tiled_switch::connect_injector(int src_outport, int dst_inport, event_handler* handler)
+packet_flow_tiled_switch::connect_injector(sprockit::sim_parameters* params,
+                      int src_outport, int dst_inport, event_handler* handler)
 {
-  init_components();
   packet_flow_sender* demuxer = row_input_demuxers_[dst_inport];
-  demuxer->set_input(dst_inport, src_outport, handler);
+  demuxer->set_input(params, dst_inport, src_outport, handler);
 }
 
 void
-packet_flow_tiled_switch::connect_ejector(int src_outport, int dst_inport, event_handler* handler)
+packet_flow_tiled_switch::connect_ejector(sprockit::sim_parameters* params,
+                                          int src_outport, int dst_inport,
+                                          event_handler* handler)
 {
   debug_printf(sprockit::dbg::packet_flow_config,
     "Switch %d: connecting to endpoint on outport %d, inport %d",
     int(my_addr_), src_outport, dst_inport);
-  init_components();
-  packet_flow_component* comp = safe_cast(packet_flow_component, handler);
   packet_flow_sender* muxer = col_output_muxers_[src_outport];
-  muxer->set_output(src_outport, dst_inport, handler);
-  muxer->init_credits(src_outport, comp->initial_credits());
+  muxer->set_output(params, src_outport, dst_inport, handler);
 }
 
 std::vector<switch_id>
@@ -305,5 +310,6 @@ packet_flow_tiled_switch::to_string() const
 }
 }
 
+#endif
 
 

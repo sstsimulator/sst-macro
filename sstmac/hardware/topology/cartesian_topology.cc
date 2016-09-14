@@ -50,5 +50,24 @@ cartesian_topology::minimal_routes_to_switch(switch_id current_sw_addr,
   minimal_routes_to_coords(src, dst, current_path, paths);
 }
 
+void
+cartesian_topology::setup_port_params(int port, int credits,
+                                      double bw, timestamp lat,
+                                      const std::string& arb,
+                                      sprockit::sim_parameters* params)
+{
+  std::string port_name = sprockit::printf("port%d", port);
+  sprockit::sim_parameters* port_params = params->get_optional_namespace(port_name);
+  //for max lookahead, no credit latency
+  //put all of the credits on sending, none on credits
+  (*port_params)["arbitrator"] = arb;
+  (*port_params)["bandwidth"].setBandwidth(bw/1e9, "GB/s");
+  (*port_params)["credits"].setByteLength(credits, "B");
+  //for output links, put all the latency on the send
+  //none of the latency on the credits
+  (*port_params)["send_latency"].setTime(lat.nsec(), "ns");
+  (*port_params)["credit_latency"].setTime(0, "ns");
+}
+
   }
 }

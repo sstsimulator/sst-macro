@@ -33,29 +33,19 @@ class simple_nic :
   /// Goodbye.
   virtual ~simple_nic() {}
 
-  void handle(event *ev);
+  void handle(event *ev) override;
 
   virtual void
   connect(
+    sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
     connection_type_t ty,
-    connectable* mod,
-    config* cfg);
+    connectable* mod) override;
 
   virtual std::string
-  to_string() const {
+  to_string() const override {
     return "simple nic";
-  }
-
-  timestamp
-  injection_latency() const {
-    return inj_lat_;
-  }
-
-  double
-  injection_bandwidth() const {
-    return 1.0/inj_bw_inverse_;
   }
 
  protected:
@@ -64,7 +54,7 @@ class simple_nic :
     @param payload The network message to send
   */
   virtual void
-  do_send(network_message* msg);
+  do_send(network_message* msg) override;
 
  protected:
   double inj_bw_inverse_;

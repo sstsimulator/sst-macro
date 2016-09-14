@@ -7,6 +7,8 @@
 #include <sstmac/hardware/packet_flow/packet_flow_arbitrator.h>
 #include <sstmac/hardware/packet_flow/packet_flow_stats_fwd.h>
 
+#if 0
+
 namespace sstmac {
 namespace hw {
 
@@ -22,35 +24,35 @@ class packet_flow_tiled_switch :
  public:
   packet_flow_tiled_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr);
 
-  virtual void
-  initialize();
-
   int
-  queue_length(int port) const;
+  queue_length(int port) const override;
 
   virtual void
-  connect(
+  connect(sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
     connection_type_t ty,
-    connectable* mod,
-    config* cfg);
+    connectable* mod) override;
 
   virtual void
-  connect_output(int src_outport, int dst_inport, connectable* mod, config *cfg);
+  connect_output(sprockit::sim_parameters* params,
+                 int src_outport, int dst_inport,
+                 connectable* mod) override;
 
   virtual void
-  connect_input(int src_outport, int dst_inport, connectable* mod, config *cfg);
+  connect_input(sprockit::sim_parameters* params,
+                int src_outport, int dst_inport,
+                connectable* mod) override;
 
   std::vector<switch_id>
-  connected_switches() const;
+  connected_switches() const override;
 
   /**
    Cast message and pass to #send
    @param msg Incoming message (should cast to packet_train)
    */
   void
-  handle(event* ev);
+  handle(event* ev) override;
 
   /**
    Set the link to use when ejecting packets at their endpoint.  A packet_flow_switch
@@ -63,12 +65,7 @@ class packet_flow_tiled_switch :
   add_ejector(node_id addr, event_handler* link);
 
   virtual std::string
-  to_string() const;
-
-  int
-  initial_credits() const {
-    return row_buffer_num_bytes;
-  }
+  to_string() const override;
 
   virtual
   ~packet_flow_tiled_switch();
@@ -79,14 +76,18 @@ class packet_flow_tiled_switch :
   }
 
   void
-  deadlock_check();
+  deadlock_check() override;
 
  protected:
   virtual void
-  connect_injector(int src_outport, int dst_inport, event_handler* nic);
+  connect_injector(sprockit::sim_parameters* params,
+                   int src_outport, int dst_inport,
+                   event_handler* nic) override;
 
   virtual void
-  connect_ejector(int src_outport, int dst_inport, event_handler* nic);
+  connect_ejector(sprockit::sim_parameters* params,
+                  int src_outport, int dst_inport,
+                  event_handler* nic) override;
 
  protected:
   std::vector<packet_flow_demuxer*> row_input_demuxers_;
@@ -108,25 +109,27 @@ class packet_flow_tiled_switch :
 
   void resize_buffers();
 
-  void init_components();
+  void init_components(sprockit::sim_parameters* params);
 
   void
   connect_output(
+    sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* mod,
-    config* cfg);
+    event_handler* mod);
 
   void
   connect_input(
+    sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* mod,
-    config* cfg);
+    event_handler* mod);
 
 };
 
 }
 }
+
+#endif
 
 #endif // PACKET_FLOW_TILED_SWITCH_H

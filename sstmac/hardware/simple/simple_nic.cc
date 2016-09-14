@@ -18,9 +18,10 @@ simple_nic::simple_nic(sprockit::sim_parameters* params, node* parent) :
   next_free_(0),
   nic(params, parent)
 {
-  double inj_bw = params->get_bandwidth_param("injection_bandwidth");
+  sprockit::sim_parameters* inj_params = params->get_namespace("injection");
+  double inj_bw = inj_params->get_bandwidth_param("bandwidth");
   inj_bw_inverse_ = 1.0/inj_bw;
-  inj_lat_ = params->get_time_param("injection_latency");
+  inj_lat_ = inj_params->get_time_param("latency");
 }
 
 void
@@ -50,11 +51,11 @@ simple_nic::handle(event *ev)
 
 void
 simple_nic::connect(
+  sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
   connection_type_t ty,
-  connectable* mod,
-  config* cfg)
+  connectable* mod)
 {
 }
 
