@@ -186,6 +186,14 @@ class simple_fat_tree : public abstract_fat_tree
   connect_objects(sprockit::sim_parameters* params,
                   internal_connectable_map& switches);
 
+  void
+  build_internal_connectables(
+    internal_connectable_map &connectables,
+    connectable_factory factory,
+    connectable_factory dummy_factory,
+    sstmac::partition *part, int my_rank,
+    sprockit::sim_parameters *params);
+
   int
   num_switches() const {
     return num_switches_;

@@ -14,6 +14,7 @@
 #include <sstream>
 #include <sstmac/hardware/topology/fat_tree.h>
 #include <sstmac/hardware/router/router.h>
+#include <sstmac/backends/common/sim_partition.h>
 #include <sprockit/sim_parameters.h>
 
 #include <math.h>
@@ -139,11 +140,7 @@ fat_tree::downColumnConnection(int k, int myColumn, int downPort, int myBranchSi
 void
 fat_tree::connect_objects(sprockit::sim_parameters* params, internal_connectable_map& objects)
 {
-  spkt_throw(sprockit::unimplemented_error, "connect_objects");
-#if 0
-  connectable::config cfg;
-  cfg.ty = connectable::BasicConnection;
-
+  sprockit::sim_parameters* link_params = params->get_namespace("link");
   int branchSize = 1;
   int maxLevel = l_ - 2;
   for (int row=0; row <= maxLevel; ++row){
@@ -165,35 +162,34 @@ fat_tree::connect_objects(sprockit::sim_parameters* params, internal_connectable
         connectable* upper_switch = objects[switch_id(upper_id)];
 
         lower_switch->connect(
-          params,
+          link_params,
           up_port, //up is out and down is in... got it!??!
           down_port,
           connectable::output,
-          upper_switch, &cfg);
+          upper_switch);
         upper_switch->connect(
-          params,
+          link_params,
           up_port,
           down_port,
           connectable::input,
-          lower_switch, &cfg);
+          lower_switch);
 
         upper_switch->connect(
-          params,
+          link_params,
           down_port, //down is out and up is in... got it?!?
           up_port,
           connectable::output,
-          lower_switch, &cfg);
+          lower_switch);
         lower_switch->connect(
-          params,
+          link_params,
           down_port,
           up_port,
           connectable::input,
-          upper_switch, &cfg);
+          upper_switch);
       }
     }
     branchSize *= k_;
   }
-#endif
 }
 
 void
@@ -427,16 +423,50 @@ simple_fat_tree::init_factory_params(sprockit::sim_parameters *params)
   structured_topology::init_factory_params(params);
 }
 
+
+void
+simple_fat_tree::build_internal_connectables(
+  internal_connectable_map &connectables,
+  connectable_factory factory,
+  connectable_factory dummy_factory,
+  sstmac::partition *part, int my_rank,
+  sprockit::sim_parameters *params)
+{
+  int nswitches = numleafswitches_;
+  int bw_multiplier = 1;
+  sprockit::sim_parameters* xbar_params = params->get_namespace("xbar");
+  double bw = xbar_params->get_bandwidth_param("bandwidth");
+  for (int l=0; l < l_; ++l){
+    int down_offset = level_offsets_[l];
+    double tapering = tapering_[l];
+    for (int s=0; s < nswitches; ++s){
+      int down_id = down_offset + s;
+      top_debug("Adding fat tree switch %d with multiplier %d", down_id, bw_multiplier);
+      double xbar_bw = bw * bw_multiplier * tapering;
+      (*xbar_params)["bandwidth"].setBandwidth(xbar_bw/1e9, "GB/s");
+      if (part->lpid_for_switch(down_id) == my_rank){
+        params->add_param_override("id", down_id);
+        connectables[down_id] = factory(params, down_id);
+      } else {
+        connectables[down_id] = dummy_factory(params, down_id);
+      }
+    }
+    nswitches /= k_;
+    bw_multiplier *= k_;
+  }
+}
+
 void
 simple_fat_tree::connect_objects(sprockit::sim_parameters* params,
                                  internal_connectable_map &switches)
 {
-  spkt_throw(sprockit::unimplemented_error, "connect_objects");
-#if 0
+  sprockit::sim_parameters* link_params = params->get_namespace("link");
+  sprockit::sim_parameters* xbar_params = params->get_namespace("xbar");
+  int buffer_size = xbar_params->get_int_param("buffer_size");
+  double bw = link_params->get_bandwidth_param("bandwidth");
+
   int nswitches = numleafswitches_;
-  connectable::config cfg;
-  cfg.ty = connectable::WeightedConnection;
-  double bw_multiplier = 1.0;
+  int bw_multiplier = 1;
   int stopLevel = l_ - 1;
   for (int l=0; l < stopLevel; ++l){
     int down_offset = level_offsets_[l];
@@ -447,8 +477,6 @@ simple_fat_tree::connect_objects(sprockit::sim_parameters* params,
       int up_id = up_offset + s/k_;
       connectable* down_switch = switches[switch_id(down_id)];
       connectable* up_switch = switches[switch_id(up_id)];
-      cfg.link_weight = bw_multiplier * tapering;
-      cfg.xbar_weight = bw_multiplier;
 
       int down_switch_outport = k_;
       int down_switch_inport = down_switch_outport;
@@ -461,19 +489,26 @@ simple_fat_tree::connect_objects(sprockit::sim_parameters* params,
        up_id, s/k_, up_switch_inport,
        l, l+1, bw_multiplier, tapering);
 
-      cfg.src_buffer_weight = bw_multiplier;
-      cfg.dst_buffer_weight = bw_multiplier*k_;
+
+      sprockit::sim_parameters* port_params = setup_port_params(down_switch_outport,
+                                                  buffer_size*bw_multiplier,
+                                                  bw*bw_multiplier*tapering,
+                                                  link_params,
+                                                  params);
+
       down_switch->connect(
+        port_params,
         down_switch_outport,
         up_switch_inport,
         connectable::output,
-        up_switch, &cfg);
-      cfg.xbar_weight = bw_multiplier*k_;
+        up_switch);
+
       up_switch->connect(
+         port_params,
         down_switch_outport,
         up_switch_inport,
         connectable::input,
-        down_switch, &cfg);
+        down_switch);
 
       top_debug(
        "Connecting %d(%d):%d->%d(%d):%d between levels %d,%d with multiplier=%d, tapering=%12.8f",
@@ -481,25 +516,30 @@ simple_fat_tree::connect_objects(sprockit::sim_parameters* params,
        down_id, s, down_switch_inport,
        l, l+1, bw_multiplier, tapering);
 
-      cfg.src_buffer_weight = bw_multiplier*k_;
-      cfg.dst_buffer_weight = bw_multiplier;
+      port_params = setup_port_params(up_switch_outport,
+                                      buffer_size*bw_multiplier,
+                                      bw*bw_multiplier*tapering,
+                                      link_params,
+                                      params);
+
       up_switch->connect(
+        port_params,
         up_switch_outport,
         down_switch_inport,
         connectable::output,
-        down_switch, &cfg);
-      cfg.xbar_weight = bw_multiplier;
+        down_switch);
+
       down_switch->connect(
+        port_params,
         up_switch_outport,
         down_switch_inport,
         connectable::input,
-        up_switch, &cfg);
-
+        up_switch);
     }
     nswitches /= k_;
     bw_multiplier *= k_;
   }
-#endif
+
 }
 
 int

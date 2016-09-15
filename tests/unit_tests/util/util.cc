@@ -146,14 +146,20 @@ init_switches(interconnect::switch_map &switches,
               topology* top)
 {
   null_event_manager mgr(&params, nullptr);
-  params["link_bandwidth"] = "1.0GB/s";
-  params["crossbar_bandwidth"] = "1.0GB/s";
-  params["hop_latency"] = "100ns";
-  params["injection_bandwidth"] = "1.0GB/s";
+  params["arbitrator"] = "cut_through";
+  params["link.bandwidth"] = "1.0GB/s";
+  params["link.credits"] = "64KB";
+  params["xbar.bandwidth"] = "1.0GB/s";
+  params["xbar.credit_latency"] = "100ns";
+  params["xbar.send_latency"] = "0ns";
+  params["link.credit_latency"] = "0ns";
+  params["link.send_latency"] = "100ns";
+  params["ejection.bandwidth"] = "1.0GB/s";
+  params["ejection.send_latency"] = "1us";
+  params["ejection.credit_latency"] = "0ns";
   params["model"] = "packet_flow";
   params["mtu"] = "8192";
-  params["output_buffer_size"] = "16KB";
-  params["input_buffer_size"] = "16KB";
+  params["buffer_size"] = "16KB";
   int num_switches = top->num_switches();
 
   // create all the switches

@@ -74,17 +74,26 @@ hypercube::minimal_distance(
 void
 hypercube::connect_objects(sprockit::sim_parameters* params, internal_connectable_map& objects)
 {
-  spkt_throw(sprockit::unimplemented_error, "connect_objects");
-#if 0
-  connectable::config cfg;
-  cfg.ty = connectable::RedundantConnection;
+
+  sprockit::sim_parameters* link_params = params->get_namespace("link");
+  double bw = link_params->get_bandwidth_param("bandwidth");
+  int bufsize = params->get_byte_length_param("buffer_size");
+  for (int dim=0; dim < dimensions_.size(); ++dim){
+    double port_bw = bw * red_[dim];
+    int credits = bufsize * red_[dim];
+    for (int dir=0; dir < dimensions_[dir]; ++dir){
+      int port = convert_to_port(dim, dir);
+      cartesian_topology::setup_port_params(port, credits, port_bw, link_params, params);
+    }
+  }
+
   top_debug("hypercube: connecting %d switches",
     int(objects.size()));
 
-  internal_connectable_map::iterator it;
-  for (it = objects.begin(); it != objects.end(); ++it) {
-    switch_id me(it->first);
-    coordinates coords = switch_coords(me);
+  for (auto& pair : objects) {
+    switch_id myid(pair.first);
+    connectable* me = pair.second;
+    coordinates coords = switch_coords(myid);
 
     //loop every dimension and connect to all "neighbors"
     for (int dim=0; dim < dimensions_.size(); ++dim) {
@@ -92,7 +101,6 @@ hypercube::connect_objects(sprockit::sim_parameters* params, internal_connectabl
       switch_id my_id = switch_number(coords);
       int dimsize = dimensions_[dim];
       int my_idx = coords[dim];
-      cfg.red = red_[dim];
       int inport = convert_to_port(dim, my_idx);
       for (int dir=0; dir < dimsize; ++dir) {
         if (dir != my_idx) {
@@ -105,24 +113,27 @@ hypercube::connect_objects(sprockit::sim_parameters* params, internal_connectabl
               dim, dir);
 
           int outport = convert_to_port(dim, dir);
+          sprockit::sim_parameters* port_params = get_port_params(link_params, outport);
 
-          objects[me]->connect(
+          me->connect(
+            port_params,
             outport,
             inport,
             connectable::output,
-            neighbor_sw, &cfg);
+            neighbor_sw);
 
           neighbor_sw->connect(
+            port_params,
             outport,
             inport,
             connectable::input,
-            objects[me], &cfg);
+            me);
 
         }
       }
     }
   }
-#endif
+
 }
 
 void

@@ -243,17 +243,28 @@ sim_parameters::has_namespace(const std::string &ns) const
 }
 
 sim_parameters*
-sim_parameters::get_namespace(const std::string &ns) 
+sim_parameters::get_namespace(const std::string& ns)
+{
+  sprockit::sim_parameters* params = _get_namespace(ns);
+  if (!params){
+    print_scopes(std::cerr);
+    spkt_abort_printf("cannot enter namespace %s, does not exist inside namespace %s",
+      ns.c_str(), namespace_.c_str());
+  }
+  return params;
+}
+
+sim_parameters*
+sim_parameters::_get_namespace(const std::string &ns)
 {
   KeywordRegistration::validate_namespace(ns);
   std::map<std::string, sim_parameters*>::const_iterator it = subspaces_.find(ns);
   if (it == subspaces_.end()){
     if (parent_){
-      return parent_->get_namespace(ns);
+      return parent_->_get_namespace(ns);
     } else {
-      print_params();
-      spkt_abort_printf("cannot enter namespace %s, does not exist inside namespace %s",
-        ns.c_str(), namespace_.c_str());
+      return nullptr;
+
     }
   }
   return it->second;
@@ -1056,7 +1067,9 @@ sim_parameters::do_add_param(
 param_assign
 sim_parameters::operator[](const std::string& key)
 {
-  return param_assign(params_[key].value, key);
+  std::string final_key;
+  sim_parameters* scope = get_scope_and_key(key, final_key);
+  return param_assign(scope->params_[final_key].value, key);
 }
 
 void
@@ -1117,6 +1130,17 @@ sim_parameters::print_local_params(std::ostream& os, const std::string& prefix) 
     }
     os << " = " << pair.second.value << "\n";
   }
+}
+
+std::string
+sim_parameters::print_scopes(std::ostream& os)
+{
+  std::string prefix = "";
+  if (parent_){
+    prefix = parent_->print_scopes(os);
+  }
+  os << prefix << "namespace " << namespace_ << "\n";
+  return prefix + "  ";
 }
 
 std::string

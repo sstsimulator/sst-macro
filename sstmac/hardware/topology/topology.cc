@@ -168,6 +168,27 @@ topology::configure_injection_params(
 }
 
 void
+topology::build_internal_connectables(internal_connectable_map &connectables,
+  connectable_factory factory,
+  connectable_factory dummy_factory,
+  partition *part, int my_rank,
+  sprockit::sim_parameters *params)
+{
+  int n_switches = num_switches();
+  for (int i=0; i < n_switches; ++i){
+    switch_id sid(i);
+    top_debug("Switch %d belongs to rank %d for building NICs: my_rank=%d",
+      i, part->lpid_for_switch(sid), my_rank);
+    if (part->lpid_for_switch(sid) == my_rank){
+      params->add_param_override("id", i);
+      connectables[sid] = factory(params, i);
+    } else {
+      connectables[sid] = dummy_factory(params, i);
+    }
+  }
+}
+
+void
 topology::connect_end_point_objects(
   sprockit::sim_parameters* switch_params,
   sprockit::sim_parameters* node_params,
@@ -212,6 +233,23 @@ topology::connect_end_point_objects(
     }
 
   }
+}
+
+sprockit::sim_parameters*
+topology::setup_port_params(int port, int credits, double bw,
+                            sprockit::sim_parameters* link_params,
+                            sprockit::sim_parameters* params)
+{
+  std::string port_name = sprockit::printf("port%d", port);
+  sprockit::sim_parameters* port_params = params->get_optional_namespace(port_name);
+  //for max lookahead, no credit latency
+  //put all of the credits on sending, none on credits
+  (*port_params)["bandwidth"].setBandwidth(bw/1e9, "GB/s");
+  (*port_params)["credits"].setByteLength(credits, "B");
+  port_params->add_param_override("send_latency", link_params->get_param("send_latency"));
+  port_params->add_param_override("credit_latency", link_params->get_param("credit_latency"));
+  port_params->add_param_override("arbitrator", link_params->get_param("arbitrator"));
+  return port_params;
 }
 
 sprockit::sim_parameters*

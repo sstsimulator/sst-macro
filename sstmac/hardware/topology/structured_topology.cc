@@ -202,29 +202,6 @@ structured_topology::minimal_route_to_switch(
 }
 
 void
-structured_topology::build_internal_connectables(
-  internal_connectable_map& connectables,
-  sprockit::factory<connectable>* factory,
-  partition *part,
-  int my_rank,
-  sprockit::sim_parameters *params,
-  connectable* dummy)
-{
-  int nswitches = num_switches();
-  for (int i=0; i < nswitches; ++i){
-    switch_id sid(i);
-    top_debug("Switch %d belongs to rank %d for building NICs: my_rank=%d",
-      i, part->lpid_for_switch(sid), my_rank);
-    if (part->lpid_for_switch(sid) == my_rank){
-      params->add_param_override("id", i);
-      connectables[sid] = factory->build(params);
-    } else {
-      connectables[sid] = dummy;
-    }
-  }
-}
-
-void
 structured_topology::init_factory_params(sprockit::sim_parameters* params)
 {
   injection_redundancy_ = params->get_optional_int_param("injection_redundant", 1);

@@ -34,6 +34,10 @@ packet_flow_param_expander::expand(sprockit::sim_parameters* params)
   buffer_depth_ = params->get_optional_int_param("network_buffer_depth", 8);
   //by default, quite coarse-grained
 
+  if (!params->has_param("arbitrator")){
+    params->add_param("arbitrator", "cut_through");
+  }
+
 
   int packet_size = params->get_optional_int_param("accuracy_parameter", 4096);
   int net_packet_size = params->get_optional_int_param("network_accuracy_parameter", packet_size);
@@ -112,6 +116,15 @@ packet_flow_param_expander::expand_amm1_network(sprockit::sim_parameters* params
   sprockit::sim_parameters* nic_params = params->get_namespace("nic");
   sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
 
+  std::string hop_lat;
+  if (link_params->has_param("send_latency")){
+    hop_lat = link_params->get_param("send_latency");
+  } else {
+    hop_lat = link_params->get_param("latency");
+    switch_params->add_param_override("send_latency", hop_lat);
+  }
+  switch_params->add_param_override("credit_latency", "0ns");
+
   //make the xbar much faster than links
   if (set_xbar){
     double link_bw = link_params->get_bandwidth_param("bandwidth");
@@ -119,8 +132,13 @@ packet_flow_param_expander::expand_amm1_network(sprockit::sim_parameters* params
     xbar_params->add_param_override("bandwidth", xbar_bw);
   }
   xbar_params->add_param_override("send_latency", "0ns");
-  xbar_params->add_param_override("credit_latency", link_params->get_param("latency"));
+  xbar_params->add_param_override("credit_latency", hop_lat);
   xbar_params->add_param_override("arbitrator", "null");
+
+
+
+  int buffer_size = xbar_params->get_int_param("buffer_size");
+  link_params->add_param_override("credits", buffer_size);
 
   (*ej_params)["credits"].setByteLength(100, "GB");
   if (!ej_params->has_param("arbitrator")){

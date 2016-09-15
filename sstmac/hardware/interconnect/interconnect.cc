@@ -132,22 +132,19 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
       }
     }
   }
-
-
-  for (int i=0; i < num_switches; ++i){
-    switch_id sid(i);
-    top_debug("Switch %d belongs to rank %d for building NICs: my_rank=%d",
-      i, part->lpid_for_switch(sid), my_rank);
-    if (part->lpid_for_switch(sid) == my_rank){
-      params->add_param_override("id", i);
-      switches_[sid] = network_switch_factory::get_param("model", switch_params,
-                                                         sid, mgr);
-    } else {
-      switches_[sid] = new dist_dummy_switch(params, sid, mgr);
-    }
-  }
-
-
+  topology::connectable_factory factory =
+      [&](sprockit::sim_parameters* params, uint64_t id) -> connectable* {
+      return network_switch_factory::get_param("model", params, id, mgr);
+  };
+  topology::connectable_factory dummy_factory =
+      [&](sprockit::sim_parameters* params, uint64_t id) -> connectable* {
+      return new dist_dummy_switch(params, id, mgr);
+  };
+  spkt_unordered_map<switch_id, connectable*> connectables;
+  topology_->build_internal_connectables(connectables, factory, dummy_factory,
+                                         partition_,
+                                         my_rank, switch_params);
+  copy_map(connectables, switches_);
 
   if (!netlinks_.empty()){
 #if 0
@@ -190,7 +187,11 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   }
 
   sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
-  hop_latency_ = link_params->get_time_param("latency");
+  if (link_params->has_param("send_latency")){
+    hop_latency_ = link_params->get_time_param("send_latency");
+  } else {
+    hop_latency_ = link_params->get_time_param("latency");
+  }
   hop_bw_ = link_params->get_bandwidth_param("bandwidth");
   lookahead_ = hop_latency_;
   injection_latency_ = inj_params->get_time_param("latency");

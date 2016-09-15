@@ -358,9 +358,7 @@ hdtorus::connect_objects(sprockit::sim_parameters* params,
     int(objects.size()));
 
   sprockit::sim_parameters* link_params = params->get_namespace("link");
-  std::string arb = link_params->get_optional_param("arbitrator", "cut_through");
   double bw = link_params->get_bandwidth_param("bandwidth");
-  timestamp lat = link_params->get_time_param("latency");
   int bufsize = params->get_byte_length_param("buffer_size");
   int ndims = dimensions_.size();
   for (int i=0; i < ndims; ++i){
@@ -368,7 +366,7 @@ hdtorus::connect_objects(sprockit::sim_parameters* params,
     int credits = bufsize * red_[i];
     for (int dir=0; dir < 2; ++dir){
       int port = convert_to_port(i, dir);
-      setup_port_params(port, credits, port_bw, lat, arb, params);
+      setup_port_params(port, credits, port_bw, link_params, params);
     }
   }
 

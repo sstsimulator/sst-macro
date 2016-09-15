@@ -64,6 +64,7 @@ param_remap remap_list[] = {
   pr("node_memory_model", "node.memory.model"),
   pr("node_frequency", "node.proc.frequency"),
   pr("network_bandwidth_link", "switch.link.bandwidth"),
+  pr("network_link_bandwidth", "switch.link.bandwidth"),
   pr("network_bandwidth", "switch.link.bandwidth", false),
   pr("network_bandwidth", "switch.xbar.bandwidth"),
   pr("network_switch_bandwidth", "switch.xbar.bandwidth"),
@@ -153,9 +154,16 @@ remap_deprecated_params(sprockit::sim_parameters* params)
 }
 
 void
+remap_latency_params(sprockit::sim_parameters* params)
+{
+
+}
+
+void
 remap_params(sprockit::sim_parameters* params, bool verbose)
 {
   remap_deprecated_params(params);
+  remap_latency_params(params);
 
   int max_nproc = native::manager::compute_max_nproc(params);
   if (max_nproc == 0){

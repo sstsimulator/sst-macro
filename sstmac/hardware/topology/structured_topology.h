@@ -62,15 +62,6 @@ class structured_topology : public topology
   connect_objects(sprockit::sim_parameters* params,
                   internal_connectable_map& objects) = 0;
 
-  virtual void
-  build_internal_connectables(
-    internal_connectable_map& connectables,
-    sprockit::factory<connectable>* factory,
-    partition *part,
-    int my_rank,
-    sprockit::sim_parameters *params,
-    connectable* dummy);
-
   /**
     Workhorse function for implementing #minimal_route_to_switch
     and #minimal_route_to_node.

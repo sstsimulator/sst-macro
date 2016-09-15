@@ -297,34 +297,6 @@ class SpktBuilderImpl<Child, Factory<Parent, Args...> > :
 
 };
 
-template <class T>
-class factory
-{
- public:
-  virtual T* build(sim_parameters* params) = 0;
-
-  virtual ~factory(){}
-};
-
-template <class T, class Factory>
-class template_factory : public factory<T>
-{
- public:
-  template_factory(const std::string& param_name)
-    : param_name_(param_name)
-  {
-  }
-
-  T* build(sim_parameters* params){
-    typedef typename Factory::element_type F;
-    F* f = Factory::get_value(param_name_, params);
-    return f;
-  }
-
- private:
-  std::string param_name_;
-};
-
 
 template <class Factory>
 class CleanupFactory {

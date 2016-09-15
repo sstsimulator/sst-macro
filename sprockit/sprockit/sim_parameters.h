@@ -172,6 +172,9 @@ class sim_parameters  {
   std::string
   print_scoped_params(std::ostream& os) const;
 
+  std::string
+  print_scopes(std::ostream& os);
+
   void
   print_local_params(std::ostream& os, const std::string& prefix) const;
 
@@ -441,6 +444,8 @@ class sim_parameters  {
   key_value_map params_;
 
   uint64_t current_id_;
+
+  sim_parameters* _get_namespace(const std::string &ns);
 
   void
   throw_key_error(const std::string& key) const;

@@ -441,14 +441,16 @@ class topology
     return netlink_endpoints_;
   }
 
+  typedef  std::function<connectable*(sprockit::sim_parameters*,uint64_t)> connectable_factory;
+
   virtual void
   build_internal_connectables(
     internal_connectable_map& connectables,
-    sprockit::factory<connectable>* factory,
+    connectable_factory factory,
+    connectable_factory dummy_factory,
     partition *part,
     int my_rank,
-    sprockit::sim_parameters *params,
-    connectable* dummy) = 0;
+    sprockit::sim_parameters *params);
 
   static topology*
   static_topology(sprockit::sim_parameters* params);
@@ -471,6 +473,11 @@ class topology
 
   sprockit::sim_parameters*
   get_port_params(sprockit::sim_parameters* params, int port);
+
+  sprockit::sim_parameters*
+  setup_port_params(int port, int credits, double bw,
+                    sprockit::sim_parameters* link_params,
+                    sprockit::sim_parameters* params);
 
  private:
   void

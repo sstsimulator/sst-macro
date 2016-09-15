@@ -23,12 +23,11 @@ namespace hw {
 SpktRegister("fbfly | flattenedbfly | flattenedbutterfly", topology,
             flattened_butterfly);
 void
-flattened_butterfly::connect_objects(sprockit::sim_parameters* params, internal_connectable_map& objects)
+flattened_butterfly::connect_objects(sprockit::sim_parameters* params,
+                                     internal_connectable_map& objects)
 {
-  spkt_throw(sprockit::unimplemented_error, "connect_objects");
-#if 0
-  connectable::config cfg;
-  cfg.ty = connectable::BasicConnection;
+  sprockit::sim_parameters* link_params = params->get_namespace("link");
+
   /**
     In 4-ary 3-fly, we have 16 switches per col
     with 3 columns or stages.  Thus we can label
@@ -110,27 +109,31 @@ flattened_butterfly::connect_objects(sprockit::sim_parameters* params, internal_
         int down_port = convert_to_port(down_dimension, offset);
 
         my_sw->connect(
+          link_params,
           up_port, //up is out, down is in - got it?
           down_port,
           connectable::output,
-          partner_sw, &cfg);
+          partner_sw);
         partner_sw->connect(
+          link_params,
           up_port,
           down_port,
           connectable::input,
-          my_sw, &cfg);
+          my_sw);
 
         //printf("Connecting %ld:%d->%ld\n", up_group_partner, port, my_switch_index);
         partner_sw->connect(
+          link_params,
           down_port,
           up_port,
           connectable::output,
-          my_sw, &cfg);
+          my_sw);
         my_sw->connect(
+          link_params,
           down_port,
           up_port,
           connectable::input,
-          partner_sw, &cfg);
+          partner_sw);
       }
     }
 
@@ -138,7 +141,7 @@ flattened_butterfly::connect_objects(sprockit::sim_parameters* params, internal_
     connection_stride /= kary_;
     block_size /= kary_;
   }
-#endif
+
 }
 
 int
