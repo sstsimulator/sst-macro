@@ -6,6 +6,6 @@ Average time stats for application app1:
       MPI Memcpy:       0.00000000 s
         MPI Poll:       0.00000000 s
           Memory:       0.00000000 s
-          Server:       0.00841612 s
+          Server:       0.00841132 s
            Sleep:       0.00000000 s
 Estimated total runtime of     5.00 seconds

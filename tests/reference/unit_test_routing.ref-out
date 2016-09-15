@@ -45,32 +45,32 @@ SUCCESS: productive port 0 route_fbfly.cc:50
 SUCCESS: productive port 1 route_fbfly.cc:52
 SUCCESS: min distance route_fbfly.cc:59
 SUCCESS: min distance route_fbfly.cc:66
-SUCCESS: dragonfly cast topology route_dragonfly.cc:21
-SUCCESS: num productive ports route_dragonfly.cc:36
-SUCCESS: productive port 0 route_dragonfly.cc:39
-SUCCESS: num productive ports route_dragonfly.cc:52
-SUCCESS: productive port 0 route_dragonfly.cc:55
-SUCCESS: productive port 1 route_dragonfly.cc:57
-SUCCESS: num productive ports route_dragonfly.cc:70
-SUCCESS: productive port 0 route_dragonfly.cc:73
-SUCCESS: productive port 1 route_dragonfly.cc:75
-SUCCESS: productive port 2 route_dragonfly.cc:77
-SUCCESS: min distance route_dragonfly.cc:85
-SUCCESS: min distance route_dragonfly.cc:93
-SUCCESS: min distance route_dragonfly.cc:101
-SUCCESS: dragonfly cast topology route_dragonfly.cc:121
-SUCCESS: num productive ports route_dragonfly.cc:136
-SUCCESS: productive port 0 route_dragonfly.cc:139
-SUCCESS: num productive ports route_dragonfly.cc:152
-SUCCESS: productive port 0 route_dragonfly.cc:155
-SUCCESS: productive port 1 route_dragonfly.cc:157
-SUCCESS: num productive ports route_dragonfly.cc:170
-SUCCESS: productive port 0 route_dragonfly.cc:173
-SUCCESS: productive port 1 route_dragonfly.cc:175
-SUCCESS: productive port 2 route_dragonfly.cc:177
-SUCCESS: num productive ports route_dragonfly.cc:190
-SUCCESS: productive port 0 route_dragonfly.cc:193
-SUCCESS: productive port 1 route_dragonfly.cc:195
-SUCCESS: productive port 2 route_dragonfly.cc:197
-SUCCESS: min distance route_dragonfly.cc:205
-SUCCESS: min distance route_dragonfly.cc:214
+SUCCESS: dragonfly cast topology route_dragonfly.cc:20
+SUCCESS: num productive ports route_dragonfly.cc:35
+SUCCESS: productive port 0 route_dragonfly.cc:38
+SUCCESS: num productive ports route_dragonfly.cc:51
+SUCCESS: productive port 0 route_dragonfly.cc:54
+SUCCESS: productive port 1 route_dragonfly.cc:56
+SUCCESS: num productive ports route_dragonfly.cc:69
+SUCCESS: productive port 0 route_dragonfly.cc:72
+SUCCESS: productive port 1 route_dragonfly.cc:74
+SUCCESS: productive port 2 route_dragonfly.cc:76
+SUCCESS: min distance route_dragonfly.cc:84
+SUCCESS: min distance route_dragonfly.cc:92
+SUCCESS: min distance route_dragonfly.cc:100
+SUCCESS: dragonfly cast topology route_dragonfly.cc:119
+SUCCESS: num productive ports route_dragonfly.cc:134
+SUCCESS: productive port 0 route_dragonfly.cc:137
+SUCCESS: num productive ports route_dragonfly.cc:150
+SUCCESS: productive port 0 route_dragonfly.cc:153
+SUCCESS: productive port 1 route_dragonfly.cc:155
+SUCCESS: num productive ports route_dragonfly.cc:168
+SUCCESS: productive port 0 route_dragonfly.cc:171
+SUCCESS: productive port 1 route_dragonfly.cc:173
+SUCCESS: productive port 2 route_dragonfly.cc:175
+SUCCESS: num productive ports route_dragonfly.cc:188
+SUCCESS: productive port 0 route_dragonfly.cc:191
+SUCCESS: productive port 1 route_dragonfly.cc:193
+SUCCESS: productive port 2 route_dragonfly.cc:195
+SUCCESS: min distance route_dragonfly.cc:203
+SUCCESS: min distance route_dragonfly.cc:212

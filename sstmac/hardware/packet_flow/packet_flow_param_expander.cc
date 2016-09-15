@@ -45,7 +45,7 @@ packet_flow_param_expander::expand(sprockit::sim_parameters* params)
 
   int size_multiplier = switch_buffer_multiplier(params);
   int buffer_size = buffer_depth_ * packet_size * size_multiplier;
-  buffer_size = switch_params->get_optional_int_param("buffer_size", buffer_size);
+  buffer_size = switch_params->get_optional_byte_length_param("buffer_size", buffer_size);
   switch_params->add_param_override("buffer_size", buffer_size);
 
   mem_params->add_param_override("mtu", mem_packet_size);

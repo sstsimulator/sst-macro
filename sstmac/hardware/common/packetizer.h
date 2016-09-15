@@ -11,6 +11,8 @@
 #include <sst/core/interfaces/simpleNetwork.h>
 #endif
 
+DeclareDebugSlot(packetizer)
+
 namespace sstmac {
 namespace hw {
 

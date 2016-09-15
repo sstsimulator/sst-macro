@@ -81,7 +81,7 @@ hypercube::connect_objects(sprockit::sim_parameters* params, internal_connectabl
   for (int dim=0; dim < dimensions_.size(); ++dim){
     double port_bw = bw * red_[dim];
     int credits = bufsize * red_[dim];
-    for (int dir=0; dir < dimensions_[dir]; ++dir){
+    for (int dir=0; dir < dimensions_[dim]; ++dir){
       int port = convert_to_port(dim, dir);
       cartesian_topology::setup_port_params(port, credits, port_bw, link_params, params);
     }

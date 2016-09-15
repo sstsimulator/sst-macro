@@ -36,14 +36,7 @@ packet_flow_muxer::packet_flow_muxer(
   event_scheduler* parent) :
   packet_flow_NtoM_queue(params, parent)
 {
-  arb_ = packet_flow_bandwidth_arbitrator_factory::get_param("arbitrator",
-                                                            params);
-}
 
-packet_flow_bandwidth_arbitrator*
-packet_flow_demuxer::get_arbitrator(sprockit::sim_parameters *params) const
-{
-  return packet_flow_bandwidth_arbitrator_factory::get_param("arbitrator", params);
 }
 
 packet_flow_NtoM_queue::
@@ -52,16 +45,12 @@ packet_flow_NtoM_queue(sprockit::sim_parameters* params,
   : packet_flow_sender(params, parent)
 {
   num_vc_ = params->get_int_param("num_vc");
-
+  arb_ = packet_flow_bandwidth_arbitrator_factory::get_param("arbitrator", params);
 }
 
 packet_flow_NtoM_queue::~packet_flow_NtoM_queue()
 {
-  int narbs = port_arbitrators_.size();
-  for (int i=0; i < narbs; ++i){
-    packet_flow_bandwidth_arbitrator* arb = port_arbitrators_[i];
-    if (arb) delete arb;
-  }
+  if (arb_) delete arb_;
 }
 
 void
@@ -188,8 +177,7 @@ packet_flow_NtoM_queue::send_payload(packet_flow_payload* pkt)
      pkt->to_string().c_str(),
      output_name(pkt).c_str(),
      output_handler(pkt));
-  packet_flow_bandwidth_arbitrator* arb = port_arbitrators_[loc_port];
-  send(arb, pkt, inputs_[pkt->inport()], outputs_[loc_port]);
+  send(arb_, pkt, inputs_[pkt->inport()], outputs_[loc_port]);
 }
 
 void
@@ -259,7 +247,6 @@ packet_flow_NtoM_queue::handle_routed_payload(packet_flow_payload* pkt)
 void
 packet_flow_NtoM_queue::resize(int num_ports)
 {
-  port_arbitrators_.resize(num_ports);
   outputs_.resize(num_ports);
   queues_.resize(num_ports*num_vc_);
   credits_.resize(num_ports*num_vc_);
@@ -350,7 +337,6 @@ packet_flow_NtoM_queue::set_output(
   out.handler = output;
 
   outputs_[loc_port] = out;
-  port_arbitrators_[loc_port] = get_arbitrator(port_params);
 
   int num_credits = port_params->get_byte_length_param("credits");
   int num_credits_per_vc = num_credits / num_vc_;

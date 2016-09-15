@@ -3,6 +3,10 @@
 
 ImplementFactory(sstmac::hw::packetizer)
 
+RegisterDebugSlot(packetizer);
+
+#define pkt_debug(...) debug_printf(sprockit::dbg::packetizer, "packetizer " __VA_ARGS__)
+
 namespace sstmac {
 namespace hw {
 
@@ -24,6 +28,8 @@ packetizer::~packetizer()
 void
 packetizer::start(int vn, message *msg)
 {
+  pkt_debug("starting on vn %d message %s", vn, msg->to_string().c_str());
+
   pending_send next;
   next.bytes_left = msg->byte_length();
   if (next.bytes_left == 0){
@@ -47,9 +53,11 @@ packetizer::sendWhatYouCan(int vn)
     long num_bytes = std::min(next.bytes_left, long(packet_size_));
 
     if (!spaceToSend(vn, num_bytes*8)){
+      pkt_debug("no space to send %d bytes on vn %d", num_bytes, vn);
       return;
     }
 
+    pkt_debug("injecting %d bytes on vn %d", num_bytes, vn);
     inject(vn, num_bytes, next.offset, next.msg);
 
     next.offset += num_bytes;

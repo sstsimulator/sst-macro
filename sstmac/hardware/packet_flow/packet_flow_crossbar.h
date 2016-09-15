@@ -79,9 +79,6 @@ class packet_flow_NtoM_queue :
   void
   handle_routed_payload(packet_flow_payload* pkt);
 
-  virtual packet_flow_bandwidth_arbitrator*
-  get_arbitrator(sprockit::sim_parameters* params) const = 0;
-
  protected:
   typedef spkt_unordered_map<int, packet_flow_input> input_map;
 
@@ -89,7 +86,7 @@ class packet_flow_NtoM_queue :
   typedef std::vector<int> credit_map;
   typedef std::vector<payload_queue> queue_map;
 
-  std::vector<packet_flow_bandwidth_arbitrator*> port_arbitrators_;
+  packet_flow_bandwidth_arbitrator* arb_;
 
   input_map inputs_;
   //indexed by slot number = (port,vc)
@@ -154,8 +151,6 @@ class packet_flow_demuxer :
     return "demuxer";
   }
 
-  packet_flow_bandwidth_arbitrator*
-  get_arbitrator(sprockit::sim_parameters *params) const override;
 
 };
 
@@ -172,14 +167,6 @@ class packet_flow_muxer :
     return "muxer";
   }
 
-  packet_flow_bandwidth_arbitrator*
-  get_arbitrator(sprockit::sim_parameters *params) const override {
-    return arb_;
-  }
-
- private:
-  packet_flow_bandwidth_arbitrator* arb_;
-
 };
 
 class packet_flow_crossbar :
@@ -193,14 +180,6 @@ class packet_flow_crossbar :
   packet_flow_name() const override {
     return "crossbar";
   }
-
-  packet_flow_bandwidth_arbitrator*
-  get_arbitrator(sprockit::sim_parameters *params) const override {
-    return arb_;
-  }
-
- private:
-  packet_flow_bandwidth_arbitrator* arb_;
 
 };
 
