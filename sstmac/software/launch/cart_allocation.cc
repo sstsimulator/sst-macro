@@ -56,7 +56,7 @@ cart_allocation::init_factory_params(sprockit::sim_parameters* params)
 
 void
 cart_allocation::insert(
-  hw::structured_topology* regtop,
+  hw::cartesian_topology* regtop,
   const std::vector<int>& coords,
   const ordered_node_set& available,
   ordered_node_set& allocation) const
@@ -71,7 +71,7 @@ cart_allocation::insert(
 
 void
 cart_allocation::allocate_dim(
-  hw::structured_topology* regtop,
+  hw::cartesian_topology* regtop,
   int dim,
   std::vector<int>& vec,
   const ordered_node_set& available,

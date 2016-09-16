@@ -22,6 +22,7 @@
 namespace sstmac {
 namespace hw {
 
+#if 0
 /**
  * @brief The flattened_butterfly class
  * Encapsulates a flattened butterfly topology as described in
@@ -82,6 +83,7 @@ class flattened_butterfly :
   compute_switch_coords(switch_id uid, coordinates& coords) const;
 
 };
+#endif
 
 }
 } //end of namespace sstmac

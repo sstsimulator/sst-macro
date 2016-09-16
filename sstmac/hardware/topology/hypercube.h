@@ -32,29 +32,23 @@ class hypercube :
 
   virtual ~hypercube() {}
 
-  virtual void
-  productive_path(
-    int dim,
-    const coordinates& src,
-    const coordinates& dst,
-    structured_routable::path& path) const;
-
   void
-  minimal_route_to_coords(
-    const coordinates &src_coords,
-    const coordinates &dest_coords,
+  minimal_route_to_switch(
+    switch_id src,
+    switch_id dst,
     structured_routable::path& path) const;
 
   virtual void
-  connect_objects(sprockit::sim_parameters* params, internal_connectable_map& switches);
+  connect_objects(sprockit::sim_parameters* params,
+                  internal_connectable_map& switches);
 
-  virtual int
-  convert_to_port(int dim, int dir) const;
+  inline int
+  convert_to_port(int dim, int dir) const {
+    return dim_to_outport_[dim] + dir;
+  }
 
   int
-  minimal_distance(
-    const coordinates& src_coords,
-    const coordinates& dest_coords) const;
+  minimal_distance(switch_id src, switch_id dst) const;
 
  protected:
   int radix_;

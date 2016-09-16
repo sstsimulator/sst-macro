@@ -213,7 +213,7 @@ class stat_bytes_sent :
   collect_buffer_at_root(char* buffer, int buffer_size);
 
   void
-  output_switch(int sid, std::fstream& data_str, structured_topology* top);
+  output_switch(int sid, std::fstream& data_str);
 
   struct global_gather_stats_t {
     int buffer_size;

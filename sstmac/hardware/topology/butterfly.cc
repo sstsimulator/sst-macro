@@ -10,44 +10,21 @@ namespace hw {
 
 SpktRegister("butterfly | bfly", topology, butterfly);
 
+
+
 void
-abstract_butterfly::compute_switch_coords(switch_id uid,
-    coordinates& coords) const
+butterfly::minimal_route_to_switch(switch_id src,
+                                    switch_id dst,
+                                    structured_routable::path &path) const
 {
+  int col = src / nswitches_per_col_;
   long group_size = nswitches_per_col_;
-  long next_group_size = group_size / kary_;
-  for (int l=0; l < (nfly_ - 1); ++l) {
-    //figure out the group offset
-    long group_relative_row = uid % group_size;
-    long group_number = group_relative_row / next_group_size;
-    coords[l] = group_number;
-
-    group_size = next_group_size;
-    next_group_size /= kary_;
+  for (int l=0; l <= col; ++l){
+    group_size /= kary_;
   }
-}
-
-void
-abstract_butterfly::productive_path(
-  int dim,
-  const coordinates &src,
-  const coordinates &dst,
-  structured_routable::path& path) const
-{
-  spkt_throw(sprockit::unimplemented_error,
-    "butterfly::productive_path: should never be called");
-}
-
-switch_id
-abstract_butterfly::switch_number(const coordinates& coords) const
-{
-  long index_multiplier = nswitches_per_col_ / kary_;
-  long nid = 0;
-  for (int l=0; l < (nfly_ - 1); ++l) {
-    nid += coords[l] * index_multiplier;
-    index_multiplier /= kary_;
-  }
-  return switch_id(nid);
+  long group_relative_row = dst % group_size;
+  path.outport = group_relative_row / group_size / kary_;
+  path.vc = 0;
 }
 
 abstract_butterfly::abstract_butterfly(sprockit::sim_parameters* params,
@@ -83,16 +60,6 @@ abstract_butterfly::configure_vc_routing(std::map<routing::algorithm_t, int> &m)
   m[routing::minimal_adaptive] = 1;
   m[routing::valiant] = 2;
   m[routing::ugal] = 3;
-}
-
-void
-butterfly::compute_switch_coords(switch_id uid, coordinates& coords) const
-{
-  abstract_butterfly::compute_switch_coords(uid, coords);
-
-  //figure out which column
-  int col = uid / nswitches_per_col_;
-  coords[nfly_-1] = col;
 }
 
 butterfly::butterfly(sprockit::sim_parameters* params) :
@@ -175,7 +142,7 @@ butterfly::connect_objects(sprockit::sim_parameters* params, internal_connectabl
         //printf("Connecting %ld:%ld->%ld\n", my_switch_index, c, up_group_partner);
         switch_id up_group_partner_addr(up_group_partner);
         connectable* partner_sw = objects[up_group_partner_addr];
-        int outport = convert_to_port(up_dimension, c);
+        int outport = c;
         my_sw->connect_output(
           link_params,
           outport,
@@ -196,48 +163,10 @@ butterfly::connect_objects(sprockit::sim_parameters* params, internal_connectabl
   }
 }
 
-void
-butterfly::minimal_route_to_coords(
-  const coordinates &src_coords,
-  const coordinates &dest_coords,
-  structured_routable::path& path) const
-{
-  //we have to route our current level
-  int current_dim = src_coords[nfly_ - 1];
-  //path.dim = up_dimension;
-  //path.dir = dest_coords[current_dim];
-  int dim = up_dimension;
-  int dir = dest_coords[current_dim];
-  path.outport = convert_to_port(dim, dir);
-  path.vc = 0;
-}
-
-void
-butterfly::productive_paths(
-  structured_routable::path_set &paths,
-  const coordinates &current,
-  const coordinates &dst)
-{
-  paths.resize(1);
-  minimal_route_to_coords(current, dst, paths[0]);
-}
-
 int
-butterfly::minimal_distance(const coordinates &src_coords,
-                            const coordinates &dest_coords) const
+butterfly::minimal_distance(switch_id src, switch_id dst) const
 {
-  int eject_dim = nfly_ - 1;
-  int lastidx = eject_dim;
-  int current_dim = src_coords[lastidx];
-  int dest_dim = dest_coords[lastidx];
-  if (dest_dim != eject_dim) {
-    spkt_throw_printf(sprockit::value_error,
-                     "invalid butterfly destination coordinates: %s -> %s",
-                      src_coords.to_string().c_str(),
-                      dest_coords.to_string().c_str());
-  }
-  //this many hops remaining
-  return (eject_dim - current_dim);
+  spkt_throw(sprockit::unimplemented_error, "butterfly::minimal_distance");
 }
 
 switch_id
@@ -250,15 +179,6 @@ butterfly::endpoint_to_ejection_switch(node_id addr, int& switch_port) const
   return switch_id(ej_idx);
 }
 
-switch_id
-butterfly::switch_number(const coordinates &coords) const
-{
-  //get the row number
-  long row_id = abstract_butterfly::switch_number(coords);
-  long col_id = coords[nfly_-1];
-  long nid = col_id * nswitches_per_col_ + row_id;
-  return switch_id(nid);
-}
 
 void
 butterfly::nodes_connected_to_ejection_switch(switch_id swaddr,
@@ -283,12 +203,6 @@ butterfly::nodes_connected_to_injection_switch(switch_id swaddr,
   else {
     return topology::nodes_connected_to_injection_switch(swaddr, nodes);
   }
-}
-
-int
-butterfly::convert_to_port(int dim, int dir) const
-{
-  return dir;
 }
 
 }

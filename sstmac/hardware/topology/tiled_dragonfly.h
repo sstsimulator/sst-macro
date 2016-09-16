@@ -18,6 +18,8 @@
 namespace sstmac {
 namespace hw {
 
+#if 0
+
 class tiled_dragonfly : public dragonfly
 {
   private:
@@ -186,6 +188,8 @@ class tiled_dragonfly : public dragonfly
   }
 
 };
+
+#endif
 
 }
 } //end of namespace sstmac

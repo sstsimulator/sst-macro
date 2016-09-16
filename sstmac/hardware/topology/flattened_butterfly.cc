@@ -17,6 +17,8 @@
 #include <sstream>
 #include <sprockit/factories/factory.h>
 
+#if 0
+
 namespace sstmac {
 namespace hw {
 
@@ -167,7 +169,9 @@ flattened_butterfly::convert_to_port(int dim, int dir) const
 }
 
 void
-flattened_butterfly::productive_path(int i, const coordinates &src_coords, const coordinates &dest_coords, structured_routable::path &path) const
+flattened_butterfly::productive_path(int i,
+                                     const coordinates &src_coords,
+                                     const coordinates &dest_coords, structured_routable::path &path) const
 {
   // this is the port that leads to the correct coordinate
   int dir = i * kary_ + dest_coords[i];
@@ -225,5 +229,5 @@ flattened_butterfly::flattened_butterfly(sprockit::sim_parameters *params) :
 }
 } //end of namespace sstmac
 
-
+#endif
 

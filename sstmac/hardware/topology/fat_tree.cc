@@ -69,15 +69,6 @@ abstract_fat_tree::abstract_fat_tree(sprockit::sim_parameters *params,
 }
 
 void
-fat_tree::minimal_route_to_switch(
-  switch_id current_sw_addr,
-  switch_id dest_sw_addr,
-  structured_routable::path& path) const
-{
-  spkt_throw_printf(sprockit::unimplemented_error, "fattree::minimal_route_to_switch");
-}
-
-void
 abstract_fat_tree::nodes_connected_to_injection_switch(switch_id swaddr,
                                                        std::vector<node_id>& nodes) const
 {
@@ -102,19 +93,6 @@ fat_tree::fat_tree(sprockit::sim_parameters* params) :
 {
   max_ports_intra_network_ = 2*k_;
   eject_geometric_id_ = max_ports_intra_network_;
-}
-
-void
-fat_tree::productive_path(
-  int dim,
-  const coordinates &src,
-  const coordinates &dst,
-  structured_routable::path& path) const
-{
-  spkt_throw_printf(
-    sprockit::illformed_error,
-    "fattree::get_productive_dir should never be called."
-    "productive outports are determined differently from other topologies");
 }
 
 int
@@ -143,6 +121,7 @@ fat_tree::downColumnConnection(int k, int myColumn, int downPort, int myBranchSi
   return myVirtualBranch*k + downPort*lowerBranchSize + lowerReplicaID;
 }
 
+
 void
 fat_tree::connect_objects(sprockit::sim_parameters* params, internal_connectable_map& objects)
 {
@@ -159,34 +138,34 @@ fat_tree::connect_objects(sprockit::sim_parameters* params, internal_connectable
         int upColumn = upColumnConnection(k_, col, k, branchSize);
         int upper_id = switch_at_row_col(row+1,upColumn);
 
-        int up_port = convert_to_port(up_dimension, k);
-        int down_port = convert_to_port(down_dimension, myBranch % k_);
+        int upPort = up_port(k);
+        int downPort = down_port(myBranch % k_);
 
         top_debug("fattree: connecting up=(%d,%d:%d) to down=(%d,%d:%d)",
-                row, col, up_port, row+1, upColumn, down_port);
+                row, col, upPort, row+1, upColumn, downPort);
 
         connectable* upper_switch = objects[switch_id(upper_id)];
 
         lower_switch->connect_output(
           link_params,
-          up_port, //up is out and down is in... got it!??!
-          down_port,
+          upPort, //up is out and down is in... got it!??!
+          downPort,
           upper_switch);
         upper_switch->connect_input(
           link_params,
-          up_port,
-          down_port,
+          upPort,
+          downPort,
           lower_switch);
 
         upper_switch->connect_output(
           link_params,
-          down_port, //down is out and up is in... got it?!?
-          up_port,
+          downPort, //down is out and up is in... got it?!?
+          upPort,
           lower_switch);
         lower_switch->connect_input(
           link_params,
-          down_port,
-          up_port,
+          downPort,
+          upPort,
           upper_switch);
       }
     }
@@ -200,76 +179,26 @@ fat_tree::configure_vc_routing(std::map<routing::algorithm_t, int> &m) const
   m[routing::minimal] = 2; //up and down
 }
 
-switch_id
-fat_tree::switch_number(const coordinates &coords) const
-{
-  int row = coords[0];
-  int col = coords[1];
-  return row*numleafswitches_ + col;
-}
-
 void
-fat_tree::compute_switch_coords(switch_id uid, coordinates& coords) const
-{
-  int row = uid / numleafswitches_;
-  int col = uid % numleafswitches_;
-  coords[0] = row;
-  coords[1] = col;
-}
-
-void
-fat_tree::minimal_route_to_coords(
-  const coordinates &src_coords,
-  const coordinates &dest_coords,
+fat_tree::minimal_route_to_switch(
+  switch_id current_sw_addr,
+  switch_id dest_sw_addr,
   structured_routable::path& path) const
 {
-  spkt_throw_printf(sprockit::unimplemented_error, "fattree::minimal_route_to_coords");
-}
-
-coordinates
-fat_tree::neighbor_at_port(switch_id sid, int port)
-{
-  coordinates my_coords = switch_coords(sid);
-  if (is_injection_port(port)){
-    return my_coords;
-  }
-
-  int row = my_coords[0];
-  int col = my_coords[1];
-  int dir = port % k_;
-  int dim = port / k_;
-
-  int branchSize = 1;
-  for (int l=0; l < row; ++l){
-    branchSize *= k_;
-  }
-
-  if (dim == up_dimension){
-    my_coords[0] = row+1;
-    my_coords[1] = upColumnConnection(k_, col, port, branchSize);
-  } else {
-    my_coords[0] = row-1;
-    my_coords[1] = downColumnConnection(k_, col, port, branchSize);
-  }
-  return my_coords;
+  spkt_throw_printf(sprockit::unimplemented_error, "fattree::minimal_route_to_switch");
 }
 
 int
-fat_tree::convert_to_port(int dim, int dir) const
+fat_tree::minimal_distance(switch_id src,
+                           switch_id dst) const
 {
-  return (dim * k_ + dir);
-}
+  int srcRow = src / numleafswitches_;
+  int srcCol = src % numleafswitches_;
+  int dstRow = dst / numleafswitches_;
+  int dstCol = dst % numleafswitches_;
 
-int
-fat_tree::minimal_distance(const coordinates &src_coords,
-                           const coordinates &dest_coords) const
-{
-  int srcRow = src_coords[0];
-  int dstRow = dest_coords[0];
   int startRow = std::min(srcRow, dstRow);
   int branchSize = pow(k_, startRow);
-  int srcCol = src_coords[1];
-  int dstCol = dest_coords[1];
   int srcBranch = srcCol / branchSize;
   int dstBranch = dstCol / branchSize;
   int stopRow = startRow;
@@ -372,20 +301,15 @@ simple_fat_tree::num_hops(int srcLevel, int srcOffset, int dstLevel, int dstOffs
 }
 
 int
-simple_fat_tree::num_hops_to_node(node_id src, node_id dst) const
-{
-  int src_sw = src / endpoints_per_switch_;
-  int dst_sw = dst / endpoints_per_switch_;
-  return num_hops(0, src_sw, 0, dst_sw);
-}
-
-int
 simple_fat_tree::minimal_distance(
-  const coordinates &src_coords,
-  const coordinates &dest_coords) const
+  switch_id src,
+  switch_id dst) const
 {
-  abort();
-  return num_hops(src_coords[0], src_coords[1], dest_coords[0], dest_coords[1]);
+  int srcLevel = level(src);
+  int dstLevel = level(dst);
+  int srcOffset = src - level_offsets_[srcLevel];
+  int dstOffset = dst - level_offsets_[dstLevel];
+  return num_hops(srcLevel, srcOffset, dstLevel, dstOffset);
 }
 
 simple_fat_tree::simple_fat_tree(sprockit::sim_parameters *params) :
@@ -595,78 +519,11 @@ simple_fat_tree::minimal_route_to_switch(
 }
 
 void
-simple_fat_tree::compute_switch_coords(switch_id swid, coordinates &coords) const
-{
-  int srcLevel = level(swid);
-  int srcOffset = swid - level_offsets_[srcLevel];
-  coords.resize(2);
-  coords[0] = srcLevel;
-  coords[1] = srcOffset;
-}
-
-coordinates
-simple_fat_tree::neighbor_at_port(switch_id sid, int port)
-{
-  coordinates coords(2);
-  int srcLevel = level(sid);
-  int srcOffset = sid - level_offsets_[srcLevel];
-  if (port == k_){
-    //going up
-    coords[0] = srcLevel + 1;
-    int dstOffset = srcOffset / k_;
-    coords[1] = dstOffset;
-  } else {
-    //going down
-    coords[0] = srcLevel - 1;
-    int dstOffset = srcOffset * k_;
-    coords[1] = dstOffset;
-  }
-  return coords;
-}
-
-int
-simple_fat_tree::convert_to_port(int dim, int dir) const
-{
-  if (dim == up_dimension){
-    return k_;
-  } else {
-    return dir;
-  }
-}
-
-void
-simple_fat_tree::productive_path(int dim,
-  const coordinates &src,
-  const coordinates &dst,
-  structured_routable::path &path) const
-{
-  spkt_throw(sprockit::unimplemented_error,
-     "simple_fat_tree should never route through productive_path function");
-}
-
-void
 simple_fat_tree::configure_vc_routing(std::map<routing::algorithm_t, int> &m) const
 {
   m[routing::minimal] = 2; //up and down
 }
 
-void
-simple_fat_tree::minimal_route_to_coords(
-  const coordinates &src_coords,
-  const coordinates &dest_coords,
-  structured_routable::path &path) const
-{
-  spkt_throw(sprockit::unimplemented_error,
-     "simple_fat_tree should never route with coords");
-}
-
-switch_id
-simple_fat_tree::switch_number(const coordinates &coords) const
-{
-  int level = coords[0];
-  int offset = coords[1];
-  return switch_id(level_offsets_[level] + offset);
-}
 
 }
 } //end of namespace sstmac

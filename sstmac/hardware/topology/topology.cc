@@ -37,7 +37,7 @@ topology::topology(sprockit::sim_parameters* params,
   eject_geometric_id_ = max_ports_intra_network_ + max_ports_injection_;
 
   sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
-  num_nodes_per_netlink_ = netlink_params->get_optional_int_param("radix", 1);
+  num_nodes_per_endpoint_ = netlink_params->get_optional_int_param("radix", 1);
 
   std::vector<RNG::rngint_t> seeds(2);
   seeds[0] = 42;
@@ -57,13 +57,6 @@ topology::topology(sprockit::sim_parameters* params,
 topology::~topology()
 {
   if (rng_) delete rng_;
-}
-
-coordinates
-topology::switch_coords(switch_id swid) const
-{
-  spkt_throw(sprockit::unimplemented_error,
-    "topology::switch_coords: current topology does not implement coordinate system");
 }
 
 topology*
@@ -271,7 +264,7 @@ topology::configure_vc_routing(std::map<routing::algorithm_t, int> &m) const
 std::string
 topology::endpoint_label(node_id nid) const
 {
-  netlink_id netid(nid / num_nodes_per_netlink_);
+  netlink_id netid(nid / num_nodes_per_endpoint_);
   return label(netid);
 }
 

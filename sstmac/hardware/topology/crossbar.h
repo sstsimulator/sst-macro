@@ -39,22 +39,17 @@ class crossbar : public structured_topology
   }
 
   int
-  ndimensions() const {
-    return 1;
-  }
-
-  int
-  ncoords() const {
-    return 1;
-  }
-
-  int
   num_leaf_switches() const {
     return size_;
   }
 
+  int minimal_distance(switch_id src, switch_id dst) const {
+    return 1;
+  }
+
   virtual void
-  connect_objects(sprockit::sim_parameters* params, internal_connectable_map& switches);
+  connect_objects(sprockit::sim_parameters* params,
+                  internal_connectable_map& switches);
 
   void
   configure_vc_routing(std::map<routing::algorithm_t, int> &m) const;
@@ -65,41 +60,10 @@ class crossbar : public structured_topology
     switch_id dest_sw_addr,
     structured_routable::path& path) const;
 
-  void
-  minimal_route_to_coords(
-    const coordinates &src_coords,
-    const coordinates &dest_coords,
-    structured_routable::path& path) const;
-
-  int
-  minimal_distance(
-    const coordinates& src_coords,
-    const coordinates& dest_coords
-  ) const;
-
-  virtual void
-  productive_path(
-    int dim,
-    const coordinates& src,
-    const coordinates& dst,
-    structured_routable::path& path) const;
-
-  virtual int
-  convert_to_port(int dim, int dir) const;
-
-  switch_id
-  switch_number(const coordinates& coords) const {
-    return switch_id(coords[0]);
-  }
-
   virtual int
   num_switches() const {
     return size_;
   }
-
- protected:
-  virtual void
-  compute_switch_coords(switch_id uid, coordinates& coords) const;
 
  private:
   long size_;

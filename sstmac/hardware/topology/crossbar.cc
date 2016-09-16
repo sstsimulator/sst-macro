@@ -43,64 +43,12 @@ crossbar::configure_vc_routing(std::map<routing::algorithm_t, int> &m) const
 }
 
 void
-crossbar::compute_switch_coords(switch_id uid, coordinates &coords) const
+crossbar::minimal_route_to_switch(switch_id current_sw_addr,
+                                  switch_id dest_sw_addr,
+                                  structured_routable::path &path) const
 {
-  coords[0] = uid;
-}
-
-void
-crossbar::productive_path(
-  int dim,
-  const coordinates &src,
-  const coordinates &dst,
-  structured_routable::path& path) const
-{
-#if SSTMAC_SANITY_CHECK
-  if (dim == topology::eject) {
-    spkt_throw(sprockit::value_error,
-              "crossbar::get_productive_path: not compatible with eject dimension");
-  }
-  else if (dim != 0) {
-    spkt_throw_printf(sprockit::value_error,
-                     "crossbar::get_productive_path: received non-zero dimension %d", dim);
-  }
-#endif
-  path.vc = 0;
-  path.outport = dst[0];
-}
-
-int
-crossbar::convert_to_port(int dim, int dir) const
-{
-  return dir;
-}
-
-void
-crossbar::minimal_route_to_coords(
-  const coordinates &src_coords,
-  const coordinates &dest_coords,
-  structured_routable::path& path) const
-{
-  path.vc = 0;
-  path.outport = dest_coords[0];
-}
-
-void
-crossbar::minimal_route_to_switch(
-  switch_id current_sw_addr,
-  switch_id dest_sw_addr,
-  structured_routable::path& path) const
-{
-  //current switch actually doesn't matter
   path.vc = 0;
   path.outport = dest_sw_addr;
-}
-
-int
-crossbar::minimal_distance(const coordinates &src_coords,
-                           const coordinates &dest_coords) const
-{
-  return 1;
 }
 
 void
@@ -113,8 +61,8 @@ crossbar::connect_objects(sprockit::sim_parameters* params, internal_connectable
     for (int j = 0; j < objects.size(); j++) {
       switch_id them(j);
       if (i != j) {
-        int outport = convert_to_port(0, j);
-        int inport = convert_to_port(0, i);
+        int outport = j;
+        int inport = i;
 
         objects[me]->connect_output(
           link_params,

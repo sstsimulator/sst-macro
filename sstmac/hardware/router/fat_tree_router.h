@@ -13,6 +13,7 @@
 #define SSTMAC_HARDWARE_NETWORK_SWTICHES_ROUTING_FATTREEROUTER_H_INCLUDED
 
 #include <sstmac/hardware/router/structured_router.h>
+#include <sstmac/hardware/topology/fat_tree.h>
 #include <sstmac/common/rng.h>
 
 namespace sstmac {
@@ -88,6 +89,8 @@ class fat_tree_router :
   long min_reachable_leaf_id_;
   long max_reachable_leaf_id_;
   long seed_;
+
+  fat_tree* ftree_;
 
 
   int numpicked_;

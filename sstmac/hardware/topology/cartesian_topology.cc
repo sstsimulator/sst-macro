@@ -33,15 +33,46 @@ cartesian_topology::cartesian_topology(sprockit::sim_parameters *params,
   }
 }
 
-void
-cartesian_topology::minimal_routes_to_switch(switch_id current_sw_addr,
-                                             switch_id dest_sw_addr,
-                                             structured_routable::path& current_path,
-                                             structured_routable::path_set& paths) const
+coordinates
+cartesian_topology::node_coords(node_id uid) const
 {
-  coordinates src = switch_coords(current_sw_addr);
-  coordinates dst = switch_coords(dest_sw_addr);
-  minimal_routes_to_coords(src, dst, current_path, paths);
+  if (concentration_ == 1) {
+    return switch_coords((switch_id)uid);
+  }
+  else {
+    switch_id swid(uid / concentration_);
+    int lastidx = uid % concentration_;
+    coordinates coords = switch_coords(swid);
+    coords.push_back(lastidx);
+    return coords;
+  }
+}
+
+node_id
+cartesian_topology::node_addr(const coordinates& coords) const
+{
+
+  int offset = 0;
+  if (coords.size() > ndimensions()) {
+    //there is no "extra" switch index
+    offset = coords[ndimensions() - 1];
+  }
+
+  int swid = switch_addr(coords);
+  node_id nid = swid * concentration_ + offset;
+  return nid;
+}
+
+std::string
+cartesian_topology::label(node_id nid) const
+{
+  return node_coords(nid).to_string();
+}
+
+std::string
+cartesian_topology::label(switch_id sid) const
+{
+  return switch_coords(sid).to_string();
 }
 
   }

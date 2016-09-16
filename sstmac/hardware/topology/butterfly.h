@@ -82,13 +82,6 @@ class abstract_butterfly :
     return nfly_ + 1;
   }
 
-  virtual void
-  productive_path(
-    int dim,
-    const coordinates& src,
-    const coordinates& dst,
-    structured_routable::path& path) const;
-
   void
   configure_vc_routing(std::map<routing::algorithm_t, int> &m) const;
 
@@ -96,12 +89,6 @@ class abstract_butterfly :
   abstract_butterfly(sprockit::sim_parameters* params,
                      InitMaxPortsIntra i1,
                      InitGeomEjectID i2);
-
-  void
-  compute_switch_coords(switch_id uid, coordinates& coords) const;
-
-  switch_id
-  switch_number(const coordinates &coords) const;
 
  protected:
   int kary_;
@@ -127,50 +114,33 @@ class butterfly :
   butterfly(sprockit::sim_parameters* params);
 
   virtual std::string
-  to_string() const {
+  to_string() const override {
     return "butterfly";
   }
 
   virtual ~butterfly() {}
 
   virtual int
-  num_switches() const {
+  num_switches() const override {
     return nswitches_per_col_ * nfly_;
   }
 
-  void
-  minimal_route_to_coords(
-    const coordinates &src_coords,
-    const coordinates &dest_coords,
-    structured_routable::path& path) const;
-
   int
-  minimal_distance(
-    const coordinates& src_coords,
-    const coordinates& dest_coords) const;
+  minimal_distance(switch_id src, switch_id dst) const override;
 
-  switch_id
-  switch_number(const coordinates &coords) const;
+  void
+  minimal_route_to_switch(switch_id current_sw_addr,
+                          switch_id dest_sw_addr,
+                          structured_routable::path &path) const override;
 
   virtual void
   connect_objects(sprockit::sim_parameters* params,
-                  internal_connectable_map& switches);
+                  internal_connectable_map& switches) override;
 
   switch_id
   endpoint_to_ejection_switch(
     node_id nodeaddr,
-    int &switch_port) const;
-
-  virtual int
-  convert_to_port(int dim, int dir) const;
-
-  /**
-    Each level in a kary-nfly counts
-    as a dimension.
-  */
-  int ndimensions() const {
-    return nfly_;
-  }
+    int &switch_port) const override;
 
   void
   nodes_connected_to_injection_switch(switch_id swaddr,
@@ -180,16 +150,7 @@ class butterfly :
   nodes_connected_to_ejection_switch(switch_id swaddr,
                                      std::vector<node_id>& nodes) const override;
 
-  void
-  productive_paths(
-    structured_routable::path_set &paths,
-    const coordinates &current,
-    const coordinates &dst);
-
  private:
-  virtual void
-  compute_switch_coords(switch_id uid, coordinates& coords) const;
-
   int
   last_col_index_start() const {
     return last_col_index_start_;

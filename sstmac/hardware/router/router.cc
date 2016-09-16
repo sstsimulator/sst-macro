@@ -73,7 +73,7 @@ router::productive_paths_to_node(node_id dst,
                                  structured_routable::path_set &paths)
 {
   int ej_port;
-  switch_id ej_addr = top_->endpoint_to_ejection_switch(dst, ej_port);
+  switch_id ej_addr = top_->node_to_ejection_switch(dst, ej_port);
   if (ej_addr == my_addr_) {
     paths.resize(1);
     paths[0].outport = ej_port;

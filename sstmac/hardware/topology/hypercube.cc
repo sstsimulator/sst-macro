@@ -40,32 +40,40 @@ hypercube::hypercube(sprockit::sim_parameters* params) :
 }
 
 void
-hypercube::minimal_route_to_coords(
-  const coordinates &src_coords,
-  const coordinates &dest_coords,
+hypercube::minimal_route_to_switch(
+  switch_id src,
+  switch_id dst,
   structured_routable::path& path) const
 {
-  for (int i=0; i < src_coords.size(); ++i) {
-    if (src_coords[i] != dest_coords[i]) {
-      int dim = i;
-      int dir = dest_coords[i];
+  int ndim = dimensions_.size();
+  int div = 1;
+  for (int i=0; i < ndim; ++i){
+    int srcX = (src / div) % dimensions_[i];
+    int dstX = (dst / div) % dimensions_[i];
+    if (srcX != dstX){
       path.vc = 0;
-      path.outport = convert_to_port(dim, dir);
+      path.outport = convert_to_port(i, dstX);
       return;
     }
+    div *= dimensions_[i];
   }
 }
 
 int
 hypercube::minimal_distance(
-  const coordinates &src_coords,
-  const coordinates &dest_coords) const
+  switch_id src,
+  switch_id dst) const
 {
   int dist = 0;
-  for (int i=0; i < src_coords.size(); ++i) {
-    if (src_coords[i], dest_coords[i]) {
+  int div = 1;
+  int ndim = dimensions_.size();
+  for (int i=0; i < ndim; ++i){
+    int srcX = (src / div) % dimensions_[i];
+    int dstX = (dst / div) % dimensions_[i];
+    if (srcX != dstX){
       ++dist;
     }
+    div *= dimensions_[i];
   }
   return dist;
 }
@@ -97,14 +105,14 @@ hypercube::connect_objects(sprockit::sim_parameters* params, internal_connectabl
     //loop every dimension and connect to all "neighbors"
     for (int dim=0; dim < dimensions_.size(); ++dim) {
       coordinates neighbor_coords = coords;
-      switch_id my_id = switch_number(coords);
+      switch_id my_id = switch_addr(coords);
       int dimsize = dimensions_[dim];
       int my_idx = coords[dim];
       int inport = convert_to_port(dim, my_idx);
       for (int dir=0; dir < dimsize; ++dir) {
         if (dir != my_idx) {
           neighbor_coords[dim] = dir;
-          switch_id neighbor_id = switch_number(neighbor_coords);
+          switch_id neighbor_id = switch_addr(neighbor_coords);
           connectable* neighbor_sw = objects[neighbor_id];
           top_debug("hypercube connecting %s(%d) to %s(%d) at dim=%d,dir=%d",
               stl_string(coords).c_str(), int(my_id),
@@ -130,25 +138,8 @@ hypercube::connect_objects(sprockit::sim_parameters* params, internal_connectabl
       }
     }
   }
-
 }
 
-void
-hypercube::productive_path(
-  int dim,
-  const coordinates &src,
-  const coordinates &dst,
-  structured_routable::path& path) const
-{
-  path.outport = dim_to_outport_[dim] + dst[dim];
-  path.vc = 0;
-}
-
-int
-hypercube::convert_to_port(int dim, int dir) const
-{
-  return dim_to_outport_[dim] + dir;
-}
 
 }
 } //end of namespace sstmac

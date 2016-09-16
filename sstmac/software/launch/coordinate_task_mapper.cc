@@ -17,7 +17,7 @@
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/launch/launcher.h>
-#include <sstmac/hardware/topology/structured_topology.h>
+#include <sstmac/hardware/topology/cartesian_topology.h>
 #include <sstmac/common/runtime.h>
 #include <sprockit/fileio.h>
 #include <sprockit/errors.h>
@@ -46,7 +46,7 @@ coordinate_task_mapper::map_ranks(
   std::vector<node_id> &result,
   int nproc)
 {
-  hw::structured_topology* regtop = safe_cast(hw::structured_topology, topology_);
+  hw::cartesian_topology* regtop = safe_cast(hw::cartesian_topology, topology_);
 
   std::vector<hw::coordinates> node_list;
   coordinate_allocation::read_coordinate_file(rt_, listfile_, node_list);

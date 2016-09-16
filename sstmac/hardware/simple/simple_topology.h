@@ -29,8 +29,7 @@ namespace hw {
  * Implements a high dimensional torus network.
  */
 
-class simple_topology :
-  public structured_topology
+class simple_topology : public topology
 {
 
  public:
@@ -57,50 +56,28 @@ class simple_topology :
   }
 
   int
-  ndimensions() const;
-
-  int
   num_switches() const override {
     return num_switches_;
   }
 
-  void
-  compute_switch_coords(switch_id swid, coordinates &coords) const override;
-
-  int
-  convert_to_port(int dim, int dir) const override;
 
   void
   connect_objects(sprockit::sim_parameters* params,
                   internal_connectable_map& objects) override;
 
-  coordinates
-  node_coords(node_id uid) const override;
+  int
+  minimal_distance(switch_id src, switch_id dst) const override;
 
   void
-  minimal_route_to_coords(
-    const coordinates& src_coords,
-    const coordinates& dest_coords,
+  minimal_route_to_switch(
+    switch_id src,
+    switch_id dst,
     structured_routable::path& path) const override;
-
-  int
-  minimal_distance(
-    const coordinates& src_coords,
-    const coordinates& dest_coords) const override;
-
-  virtual int
-  num_hops_to_node(node_id src, node_id dst) const override;
-
-  virtual int
-  diameter() const override;
 
   void
   configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override {
     topology::configure_vc_routing(m);
   }
-
-  switch_id
-  switch_number(const coordinates& coords) const override;
 
   virtual void
   nodes_connected_to_injection_switch(switch_id swaddr,
@@ -110,18 +87,14 @@ class simple_topology :
   nodes_connected_to_ejection_switch(switch_id swaddr,
                                       std::vector<node_id>& nodes) const override;
 
-  virtual switch_id
+  switch_id
   endpoint_to_ejection_switch(node_id nodeaddr, int &switch_port) const override;
 
-  virtual switch_id
+  switch_id
   endpoint_to_injection_switch(node_id nodeaddr, int &switch_port) const override;
 
-  virtual void
-  productive_path(
-    int dim,
-    const coordinates& src,
-    const coordinates& dst,
-    structured_routable::path& path) const override;
+  switch_id
+  node_to_ejection_switch(node_id addr, int &port) const override;
 
  protected:
   int num_switches_;

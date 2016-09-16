@@ -58,9 +58,6 @@ class dragonfly : public cartesian_topology
 
   virtual ~dragonfly() {}
 
-  void
-  init_common_params(sprockit::sim_parameters* params);
-
   int
   ndimensions() const {
     return 3;
@@ -86,14 +83,40 @@ class dragonfly : public cartesian_topology
     return group_con_;
   }
 
-  void
-  get_coords(long uid, int &x, int &y, int &g) const;
+  inline void
+  get_coords(switch_id sid, int& x, int& y, int& g) const {
+    x = computeX(sid);
+    y = computeY(sid);
+    g = computeG(sid);
+  }
 
-  long
-  get_uid(int x, int y, int g) const;
+  int get_uid(int x, int y, int g) const {
+    return g * (x_ * y_) + y * (x_) + x;
+  }
 
-  switch_id
-  switch_number(const coordinates &coords) const;
+  inline int x_port(int x) const {
+    return x;
+  }
+
+  inline int y_port(int y) const {
+    return x_ + y;
+  }
+
+  inline int g_port(int g) const {
+    return x_ + y_ + g;
+  }
+
+  inline int computeX(switch_id sid) const {
+    return sid % x_;
+  }
+
+  inline int computeY(switch_id sid) const {
+    return (sid / x_) % y_;
+  }
+
+  inline int computeG(switch_id sid) const {
+    return (sid / (x_*y_));
+  }
 
   virtual int
   num_switches() const {
@@ -106,63 +129,28 @@ class dragonfly : public cartesian_topology
   }
 
   virtual void
-  connect_objects(sprockit::sim_parameters* params, internal_connectable_map& switches);
+  connect_objects(sprockit::sim_parameters* params,
+                  internal_connectable_map& switches);
+
+  void minimal_route_to_switch(
+      switch_id current_sw_addr,
+      switch_id dest_sw_addr,
+      structured_routable::path &path) const;
+
+  int
+  minimal_distance(switch_id src, switch_id dst) const;
 
   virtual int
   diameter() const {
     return 5;
   }
 
-  coordinates
-  neighbor_at_port(switch_id sid, int port);
-
   virtual switch_id
   random_intermediate_switch(switch_id current_sw,
                              switch_id dest_sw = switch_id(-1));
 
-  virtual int
-  convert_to_port(int dim, int dir) const;
-
   void
   configure_vc_routing(std::map<routing::algorithm_t, int> &m) const;
-
-  virtual void
-  productive_path(
-    int dim,
-    const coordinates& src,
-    const coordinates& dst,
-    structured_routable::path& path) const;
-
-  void
-  minimal_route_to_coords(
-    const coordinates &src_coords,
-    const coordinates &dest_coords,
-    structured_routable::path& path) const;
-
-  int
-  minimal_distance(
-    const coordinates& src_coords,
-    const coordinates& dest_coords) const;
-
-  void
-  nearest_neighbor_partners(
-    const coordinates& src_sw_coords, int port,
-    std::vector<node_id>& partners) const;
-
-  void
-  bit_complement_partners(
-    const coordinates &src_sw_coords, int port,
-    std::vector<node_id>& partners) const;
-
-  void
-  tornado_send_partners(
-    const coordinates &src_sw_coords, int port,
-    std::vector<node_id>& partners) const;
-
-  void
-  tornado_recv_partners(
-    const coordinates &src_sw_coords, int port,
-    std::vector<node_id>& partners) const;
 
   virtual void
   new_routing_stage(structured_routable* rtbl);
@@ -170,33 +158,28 @@ class dragonfly : public cartesian_topology
   virtual void
   configure_geometric_paths(std::vector<int> &redundancies);
 
+  coordinates
+  switch_coords(switch_id) const;
+
+  switch_id
+  switch_addr(const coordinates &coords) const;
+
  protected:
-  void
-  minimal_route_to_group(int myX, int myY, int myG, int& dim, int& dir, int dstg) const;
-
   virtual void
-  find_path_to_group(int myX, int myY, int myG, int& dsty, int& dstx, int dstg) const;
+  find_path_to_group(int myX, int myY, int myG, int dstG,
+                     int& dstX, int& dstY,
+                     structured_routable::path& path) const;
 
-  int
-  minimal_route_to_X(int hisx) const;
+  bool
+  find_y_path_to_group(int myX, int myG, int dstG, int& dstY,
+                       structured_routable::path& path) const;
 
-  int
-  minimal_route_to_Y(int hisy) const;
-
-  virtual void
-  compute_switch_coords(switch_id uid, coordinates& coords) const;
-
-  int
-  find_y_path_to_group(int myX, int myG, int dstg) const;
-
-  int
-  find_x_path_to_group(int myY, int myG, int dstg) const;
+  bool
+  find_x_path_to_group(int myY, int myG, int dstG, int& dstX,
+                       structured_routable::path& path) const;
 
   virtual bool
-  xy_connected_to_group(int myX, int myY, int myG, int dstg) const;
-
-  int
-  xyg_dir_to_group(int myX, int myY, int myG, int dir) const;
+  xy_connected_to_group(int myX, int myY, int myG, int dstG) const;
 
  protected:
   int x_;
@@ -214,6 +197,17 @@ class dragonfly : public cartesian_topology
   {
     return sprockit::printf("{ %d %d %d }", x, y, g);
   }
+
+ private:
+  int convert_to_port(int dim, int dir) const {
+    if      (dim == x_dimension) return x_port(dir);
+    else if (dim == y_dimension) return y_port(dir);
+    else if (dim == g_dimension) return g_port(dir);
+    else return -1;
+  }
+
+  int
+  xyg_dir_to_group(int myX, int myY, int myG, int dir) const;
 
 };
 

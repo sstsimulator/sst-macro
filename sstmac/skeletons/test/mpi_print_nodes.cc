@@ -2,7 +2,7 @@
 #include <sstmac/software/process/app.h>
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/topology/topology.h>
-#include <sstmac/hardware/topology/structured_topology.h>
+#include <sstmac/hardware/topology/cartesian_topology.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/common/runtime.h>
 #include <sstmac/common/event_manager.h>
@@ -77,7 +77,7 @@ int USER_MAIN(int argc, char** argv)
 
   //hw::interconnect* interconn = safe_cast(hw::interconnect, sstmac_runtime::current_node()->interconn());
   node_id addr = operating_system::current_node_id();
-  hw::structured_topology* top = safe_cast(hw::structured_topology, hw::topology::global());
+  hw::cartesian_topology* top = test_cast(hw::cartesian_topology, hw::topology::global());
   std::string label;
   if (top){
     label = top->node_coords(addr).to_string();

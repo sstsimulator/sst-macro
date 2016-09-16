@@ -20,6 +20,8 @@
 
 using namespace sprockit;
 
+#if 0
+
 namespace sstmac {
 namespace hw {
 
@@ -267,8 +269,8 @@ tiled_dragonfly::eject_paths_on_switch(
 
 void
 tiled_dragonfly::minimal_route_to_coords(
-  const coordinates &current_coords,
-  const coordinates &dest_coords,
+  switch_id src,
+  switch_id dst,
   structured_routable::path& path) const
 {
   spkt_throw(sprockit::unimplemented_error, "tiled_dragonfly::minimal_route_to_coords");
@@ -567,4 +569,4 @@ tiled_dragonfly::make_geomid()
 } } //end of namespace sstmac
 
 
-
+#endif

@@ -26,12 +26,17 @@ class cartesian_topology :
   virtual void
   configure_geometric_paths(std::vector<int>& redundancies) = 0;
 
-  virtual void
-  minimal_routes_to_switch(
-    switch_id current_sw_addr,
-    switch_id dest_sw_addr,
-    structured_routable::path &current_path,
-    structured_routable::path_set &paths) const override;
+  node_id
+  node_addr(const coordinates& coords) const;
+
+  virtual switch_id
+  switch_addr(const coordinates& coords) const = 0;
+
+  coordinates
+  node_coords(node_id nid) const;
+
+  virtual coordinates
+  switch_coords(switch_id) const = 0;
 
   int
   ndimensions() const {
@@ -42,6 +47,12 @@ class cartesian_topology :
   cart_topology() const override {
     return const_cast<cartesian_topology*>(this);
   }
+
+  std::string
+  label(switch_id sid) const override;
+
+  std::string
+  label(node_id nid) const override;
 
  protected:
   cartesian_topology(sprockit::sim_parameters* params,

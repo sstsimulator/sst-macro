@@ -204,7 +204,7 @@ byte_hop_collector::collect_single_event(const packet_stats_st& st)
 }
 
 void
-stat_bytes_sent::output_switch(int sid, std::fstream& data_str, structured_topology* top)
+stat_bytes_sent::output_switch(int sid, std::fstream& data_str)
 {
   port_map& pmap = global_aggregation_[sid];
   port_map::iterator it, end = pmap.end();
@@ -213,9 +213,8 @@ stat_bytes_sent::output_switch(int sid, std::fstream& data_str, structured_topol
     int port = it->first;
     long bytes = it->second;
     total += bytes;
-    coordinates neighbor_coords = top->neighbor_at_port(switch_id(sid), port);
-    data_str << sprockit::printf("\t%3d %12ld: %s\n",
-      port, bytes, neighbor_coords.to_string().c_str());
+    //coordinates neighbor_coords = top->neighbor_at_port(switch_id(sid), port);
+    data_str << sprockit::printf("\t%3d %12ld\n", port, bytes);
   }
 }
 
@@ -236,16 +235,14 @@ stat_bytes_sent::dump_local_data()
 void
 stat_bytes_sent::dump_global_data()
 {
-  structured_topology* regtop = safe_cast(structured_topology, top_,
-    "bytes sent stats only compatible with structured topology");
   int num_switches = top_->num_switches();
   std::string data_file = fileroot_ + ".dat";
   std::fstream data_str;
   check_open(data_str, data_file);
   for (int i=0; i < num_switches; ++i){
-    data_str << sprockit::printf("Switch %d: %15s\n", i,
-        regtop->switch_coords(switch_id(i)).to_string().c_str());
-    output_switch(i, data_str, regtop);
+    data_str << sprockit::printf("%s\n", i,
+                    top_->label(switch_id(i)).c_str());
+    output_switch(i, data_str);
   }
   data_str.close();
 }

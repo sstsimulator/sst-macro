@@ -53,64 +53,30 @@ hdtorus::hdtorus(sprockit::sim_parameters* params) :
   eject_geometric_id_ = max_ports_intra_network_;
 }
 
-coordinates
-hdtorus::neighbor_at_port(switch_id sid, int port)
-{
-  coordinates my_coords = switch_coords(sid);
-  if (port < 0){
-    return my_coords;
-  }
-
-  int dir = port % 2;
-  int dim = port / 2;
-
-  int adder = 1;
-  if (dir == 1) //negative
-    adder = -1;
-
-  my_coords[dim] += adder;
-  if (my_coords[dim] < 0)
-    my_coords[dim] = dimensions_[dim];
-  return my_coords;
-}
-
 void
-hdtorus::compute_switch_coords(switch_id uid, coordinates& coords) const
+hdtorus::minimal_route_to_switch(
+  switch_id src,
+  switch_id dst,
+  structured_routable::path& path) const
 {
-  long div = 1;
+  int div = 1;
   int ndim = dimensions_.size();
-  for (int i = 0; i < ndim; i++) {
-    coords[i] = (uid / div) % dimensions_[i];
-    div *= dimensions_[i];
-  }
-}
-
-switch_id
-hdtorus::switch_number(const coordinates& coords) const
-{
-  long ret = 0;
-  long mult = 1;
-  for (int i = 0; i < (int) dimensions_.size(); i++) {
-    if (coords[i] >= dimensions_[i]) {
-      spkt_throw_printf(sprockit::illformed_error,
-                       "hdtorus::get_switch_id: dimension %d coordinate %d exceeds maximum %d\n"
-                       "check that topology_geometry matches map file",
-                       i, coords[i], dimensions_[i] - 1);
+  for (int i=0; i < ndim; ++i){
+    int srcX = (src / div) % dimensions_[i];
+    int dstX = (dst / div) % dimensions_[i];
+    if (srcX != dstX){
+      if (shortest_path_positive(i, srcX, dstX)){
+        top_debug("hdtorus routing up on dim %d for switch %d to %d on port %d",
+                  i, src, dst, path.outport);
+        up_path(i, srcX, dstX, path);
+      } else {
+        down_path(i, srcX, dstX, path);
+        top_debug("hdtorus routing down on dim %d for switch %d to %d on port %d",
+                  i, src, dst, path.outport);
+      }
+      return;
     }
-    ret += coords[i] * mult;
-    mult *= dimensions_[i];
-  }
-  return switch_id(ret);
-}
-
-int
-hdtorus::distance(int dim, int dir, int src, int dst) const
-{
-  if (dir == pos) {
-    return ((dst - src) + dimensions_[dim]) % dimensions_[dim];
-  }
-  else {
-    return ((src - dst) + dimensions_[dim]) % dimensions_[dim];
+    div *= dimensions_[i];
   }
 }
 
@@ -137,15 +103,28 @@ hdtorus::shortest_distance(int dim, int src, int dst) const
   }
 }
 
+int
+hdtorus::minimal_distance(
+  switch_id src,
+  switch_id dst) const
+{
+  int div = 1;
+  int ndim = dimensions_.size();
+  int dist = 0;
+  for (int i=0; i < ndim; ++i){
+    int srcX = (src / div) % dimensions_[i];
+    int dstX = (dst / div) % dimensions_[i];
+    dist = shortest_distance(i, srcX, dstX);
+    div *= dimensions_[i];
+  }
+  return dist;
+}
+
 bool
 hdtorus::shortest_path_positive(
-  int dim,
-  const coordinates &src_coords,
-  const coordinates &dst_coords) const
+  int dim, int src, int dst) const
 {
   int up_distance, down_distance;
-  int src = src_coords[dim];
-  int dst = dst_coords[dim];
   if (dst > src) {
     up_distance = dst - src;
     down_distance = src + (dimensions_[dim] - dst);
@@ -159,142 +138,48 @@ hdtorus::shortest_path_positive(
 }
 
 void
-hdtorus::pick_vc(structured_routable::path& path) const
+hdtorus::torus_path(bool reset_dim, bool wrapped, int dim, int dir,
+                    structured_routable::path& path) const
 {
+  if (wrapped){
+    path.set_metadata_bit(structured_routable::crossed_timeline);
+  }
+
   if (path.metadata_bit(structured_routable::crossed_timeline)){
     path.vc = 1;
   } else {
     path.vc = 0;
   }
-}
-
-void
-hdtorus::up_path(
-  int dim,
-  const coordinates &src_coords,
-  const coordinates &dst_coords,
-  structured_routable::path& path) const
-{
-  //shorter to go up
-  //path.dir = pos;
-  path.outport = convert_to_port(dim, pos);
-
-  bool reset_dim = ((src_coords[dim] + 1) % dimensions_[dim]) == dst_coords[dim];
-  bool wrapped = src_coords[dim] == (dimensions_[dim]-1);
-
-  if (wrapped){
-    path.set_metadata_bit(structured_routable::crossed_timeline);
-  }
-
-  pick_vc(path);
+  path.outport = convert_to_port(dim, dir);
 
   if (reset_dim){
     path.unset_metadata_bit(structured_routable::crossed_timeline); //we reached this dim
   }
+}
 
+void
+hdtorus::up_path(
+  int dim, int srcX, int dstX,
+  structured_routable::path& path) const
+{
+
+  bool reset_dim = (srcX + 1) % dimensions_[dim] == dstX;
+  bool wrapped = srcX == (dimensions_[dim]-1);
+
+  torus_path(reset_dim, wrapped, dim, pos, path);
 }
 
 void
 hdtorus::down_path(
-  int dim,
-  const coordinates &src_coords,
-  const coordinates &dst_coords,
+  int dim, int src, int dst,
   structured_routable::path& path) const
 {
-  //shorter to go down
-  //path.dir = neg;
-  path.outport = convert_to_port(dim, neg);
+  bool reset_dim = src == ((dst + 1) % dimensions_[dim]);
+  bool wrapped = src == 0;
 
-  bool reset_dim = src_coords[dim] == ((dst_coords[dim] + 1) % dimensions_[dim]);
-  bool wrapped = src_coords[dim] == 0;
-  if (wrapped){
-    path.set_metadata_bit(structured_routable::crossed_timeline);
-  }
-
-  pick_vc(path);
-
-  if (reset_dim){
-    path.unset_metadata_bit(structured_routable::crossed_timeline);
-  }
+  torus_path(reset_dim, wrapped, dim, neg, path);
 }
 
-
-void
-hdtorus::productive_path(
-  int dim,
-  const coordinates &src_coords,
-  const coordinates &dst_coords,
-  structured_routable::path& path) const
-{
-  int up_distance, down_distance;
-
-  int src = src_coords[dim];
-  int dst = dst_coords[dim];
-  if (dst > src) {
-    up_distance = dst - src;
-    down_distance = src + (dimensions_[dim] - dst);
-  }
-  else {
-    up_distance = dst + (dimensions_[dim] - src);
-    down_distance = src - dst;
-  }
-
-
-  if (shortest_path_positive(dim, src_coords, dst_coords)){
-    up_path(dim, src_coords, dst_coords, path);
-  }
-  else {
-    down_path(dim, src_coords, dst_coords, path);
-  }
-
-}
-
-void
-hdtorus::minimal_route_to_coords(
-  const coordinates &src_coords,
-  const coordinates &dest_coords,
-  structured_routable::path& path) const
-{
-  //deadlock rules require + dir first
-  for (int i=0; i < src_coords.size(); ++i) {
-    if (src_coords[i] != dest_coords[i] && 
-      shortest_path_positive(i, src_coords, dest_coords)) {
-        up_path(i, src_coords, dest_coords, path);
-        return;
-    }
-  }
-
-  for (int i=0; i < src_coords.size(); ++i) {
-    if (src_coords[i] != dest_coords[i]){
-      //must be down
-      down_path(i, src_coords, dest_coords, path);
-      return;
-    }
-  }
-
-}
-
-int
-hdtorus::minimal_distance(
-  const coordinates &src_coords,
-  const coordinates &dest_coords) const
-{
-#if SSTMAC_SANITY_CHECK
-  if (src_coords.size() < dimensions_.size()) {
-    spkt_throw_printf(sprockit::illformed_error,
-                     "hdtorus::minimal_distance: source coordinates too small");
-  }
-  if (dest_coords.size() < dimensions_.size()) {
-    spkt_throw_printf(sprockit::illformed_error,
-                     "hdtorus::minimal_distance: dest coordinates too small");
-  }
-#endif
-  int dist = 0;
-  for (int i=0; i < dimensions_.size(); ++i) {
-    dist += shortest_distance(i, src_coords[i], dest_coords[i]);
-  }
-  return dist;
-}
 
 void
 hdtorus::connect_dim(
@@ -384,8 +269,8 @@ hdtorus::connect_objects(sprockit::sim_parameters* params,
         connect1[z]++;
         connect2[z]--;
       }
-      switch_id addr1 = switch_number(connect1);
-      switch_id addr2 = switch_number(connect2);
+      switch_id addr1 = switch_addr(connect1);
+      switch_id addr2 = switch_addr(connect2);
 
       connectable* dest1 = NULL, *dest2 = NULL;
 
@@ -441,85 +326,31 @@ hdtorus::configure_geometric_paths(std::vector<int>& redundancies)
   configure_injection_geometry(redundancies);
 }
 
-int
-hdtorus::convert_to_port(int dim, int dir) const
+coordinates
+hdtorus::switch_coords(switch_id uid) const
 {
-  return 2*dim + dir;
-}
-
-void
-hdtorus::nearest_neighbor_partners(
-  const coordinates &src_sw_coords,
-  int port,
-  std::vector<node_id>& partners) const
-{
+  int div = 1;
   int ndim = dimensions_.size();
-  partners.resize(ndim * 2);
-  coordinates tmp_coords(src_sw_coords);
-  int idx = 0;
-  for (int i=0; i < ndim; ++i) {
-    int dim_size = dimensions_[i];
-
-    //plus partner
-    tmp_coords[i] = (src_sw_coords[i] + 1) % dim_size;
-    partners[idx++] = node_addr(tmp_coords, port);
-
-    //minus partner
-    tmp_coords[i] = (src_sw_coords[i] + dim_size - 1) % dim_size;
-    partners[idx++] = node_addr(tmp_coords, port);
-
-    //reset coords
-    tmp_coords[i] = src_sw_coords[i];
+  coordinates coords(ndim);
+  for (int i = 0; i < ndim; i++) {
+    coords[i] = (uid / div) % dimensions_[i];
+    div *= dimensions_[i];
   }
+  return coords;
 }
 
-void
-hdtorus::tornado_recv_partners(
-  const coordinates &src_sw_coords,
-  int port,
-  std::vector<node_id>& partners) const
+switch_id
+hdtorus::switch_addr(const coordinates& coords) const
 {
-  int ndim = dimensions_.size();
-  partners.resize(1);
-  coordinates tmp_coords(src_sw_coords);
-  for (int i=0; i < ndim; ++i) {
-    int dim_size = dimensions_[i];
-    tmp_coords[i] = (src_sw_coords[i] - (dim_size - 1)/2 + dim_size) % dim_size;
+  int ret = 0;
+  int mult = 1;
+  for (int i = 0; i < (int) dimensions_.size(); i++) {
+    ret += coords[i] * mult;
+    mult *= dimensions_[i];
   }
-  partners[0] = node_addr(tmp_coords, port);
+  return switch_id(ret);
 }
 
-void
-hdtorus::tornado_send_partners(
-  const coordinates &src_sw_coords,
-  int port,
-  std::vector<node_id>& partners) const
-{
-  int ndim = dimensions_.size();
-  partners.resize(1);
-  coordinates tmp_coords(src_sw_coords);
-  for (int i=0; i < ndim; ++i) {
-    int dim_size = dimensions_[i];
-    tmp_coords[i] = (src_sw_coords[i] + (dim_size - 1)/2) % dim_size;
-  }
-  partners[0] = node_addr(tmp_coords, port);
-}
-
-void
-hdtorus::bit_complement_partners(
-  const coordinates &src_sw_coords,
-  int port,
-  std::vector<node_id>& partners) const
-{
-  int ndim = dimensions_.size();
-  partners.resize(1);
-  coordinates tmp_coords(src_sw_coords);
-  for (int i=0; i < ndim; ++i) {
-    int dim_size = dimensions_[i];
-    tmp_coords[i] = dim_size - src_sw_coords[i] - 1;
-  }
-  partners[0] = node_addr(tmp_coords, port);
-}
 
 }
 } //end of namespace sstmac

@@ -148,8 +148,12 @@ class topology
      @param switch_port [inout] The port on the switch the node ejects on
      @return The switch that ejects into the node
   */
-  virtual int
-  endpoint_to_injection_port(node_id nodeaddr) const = 0;
+  int
+  endpoint_to_injection_port(node_id nodeaddr) const {
+    int port;
+    switch_id sid = endpoint_to_injection_switch(nodeaddr, port);
+    return port;
+  }
 
   /**
      For a given node, determine the ejection switch
@@ -159,8 +163,54 @@ class topology
      @param switch_port [inout] The port on the switch the node ejects on
      @return The switch that ejects into the node
   */
+  int
+  endpoint_to_ejection_port(node_id nodeaddr) const {
+    int port;
+    switch_id sid = endpoint_to_ejection_switch(nodeaddr, port);
+    return port;
+  }
+
+  virtual void
+  minimal_routes_to_switch(
+    switch_id current_sw_addr,
+    switch_id dest_sw_addr,
+    structured_routable::path& current_path,
+    structured_routable::path_set& paths) const {
+    paths.resize(1);
+    minimal_route_to_switch(current_sw_addr, dest_sw_addr, paths[0]);
+  }
+
+  /**
+    The function accepts either source or node coordinates.
+    This gives the minimal distance counting the number of hops between switches.
+    If node coordinates are given, the last coordinate is just ignored.
+    @param src_coords. The source coordinates. This can be either switch or node coordinates.
+    @param dest_coords. The destination coordinates. This can be either switch or node coordinates.
+    @return The number of hops to final destination
+  */
   virtual int
-  endpoint_to_ejection_port(node_id nodeaddr) const = 0;
+  minimal_distance(switch_id src, switch_id dst) const = 0;
+
+  /**
+     Figure out how many hops we have to go from a source node
+     to a destination node
+     @param src The source node address
+     @param dst The destination node address
+     @return The number of hops to destination
+  */
+  int
+  num_hops_to_endpoint(node_id src, node_id dst) const {
+    switch_id start = endpoint_to_injection_switch(src);
+    switch_id stop = endpoint_to_ejection_switch(dst);
+    return minimal_distance(start, stop);
+  }
+
+  int
+  num_hops_to_node(node_id src, node_id dst) const {
+    node_id src_ep = src / num_nodes_per_endpoint_;
+    node_id dst_ep = dst / num_nodes_per_endpoint_;
+    return num_hops_to_endpoint(src_ep, dst_ep);
+  }
 
   /**
      For a given input switch, return all nodes connected to it.
@@ -188,19 +238,6 @@ class topology
     int noccupied);
 
   /**
-     @param dim The dimension (e.g. x, y, or z) that should be routed on next.
-     Integer value has different meaning depending on type of
-     router (torus/dragonfly/etc)
-     @param dir The direction (e.g. +/-) that should be routed on.
-     Integer value has different physical meaning depending on type
-     of router (torus/dragonly/etc)
-     @return The port number on a switch that the message should be routed through
-     for a given dim/dir
-  */
-  virtual int
-  convert_to_port(int dim, int dir) const = 0;
-
-  /**
      Given the current location and a destination,
      compute the minimal path to the destination.
      The path generally consists of a dimension,
@@ -218,48 +255,11 @@ class topology
     switch_id dest_sw_addr,
     structured_routable::path& path) const = 0;
 
-  /**
-     Given a traffic pattern (e.g. bit-complement),
-     return the partner nodes a given source node needs to
-     send messages to for the given traffic pattern
-     @param ty The desired traffic pattern
-     @param src_node The source node that sends messages
-     @param partners [inout] The list of partner nodes to send to
-  */
-  virtual void
-  send_partners(
-    traffic_pattern::type_t ty,
-    node_id src_node,
-    std::vector<node_id>& partners) const = 0;
-
   static topology*
   global() {
     return main_top_;
   }
 
-  /**
-     Given a traffic pattern (e.g. bit-complement),
-     return the partner nodes a given destination node needs to
-     receive messages to for the given traffic pattern
-     @param ty The desired traffic pattern
-     @param src_node The source node that sends messages
-     @param partners [inout] The list of partner nodes to send to
-  */
-  virtual void
-  recv_partners(
-    traffic_pattern::type_t ty,
-    node_id src_node,
-    std::vector<node_id>& partners) const = 0;
-
-  /**
-     Figure out how many hops we have to go from a source node
-     to a destination node
-     @param src The source node address
-     @param dst The destination node address
-     @return The number of hops to destination
-  */
-  virtual int
-  num_hops_to_node(node_id src, node_id dst) const = 0;
   /**** END PURE VIRTUAL INTERFACE *****/
 
   /**
@@ -298,9 +298,6 @@ class topology
     connect_objects(switch_params, clone_map);
   }
 
-  virtual coordinates
-  switch_coords(switch_id swid) const;
-
   /**
      Get a random switch from the topoology.
      This is most often used in things like valiant routing.
@@ -333,11 +330,8 @@ class topology
     return endpoint_to_injection_switch(nodeaddr, ports[0]);
   }
 
-  switch_id
-  node_to_ejection_switch(node_id addr) const {
-    node_id netid(addr / num_nodes_per_netlink_);
-    return endpoint_to_ejection_switch(netid);
-  }
+  virtual switch_id
+  node_to_ejection_switch(node_id addr, int& port) const = 0;
 
   /**
      For a given node, determine the ejection switch
@@ -432,7 +426,7 @@ class topology
 
   int
   num_nodes_per_netlink() const {
-    return num_nodes_per_netlink_;
+    return num_nodes_per_endpoint_;
   }
 
   typedef  std::function<connectable*(sprockit::sim_parameters*,uint64_t)> connectable_factory;
@@ -503,7 +497,7 @@ class topology
 
   std::string name_;
 
-  int num_nodes_per_netlink_;
+  int num_nodes_per_endpoint_;
 
   int max_ports_intra_network_;
 

@@ -51,34 +51,6 @@ dragonfly::dragonfly(sprockit::sim_parameters* params) :
   eject_geometric_id_ = max_ports_intra_network_;
 }
 
-
-void
-dragonfly::productive_path(
-  int dim,
-  const coordinates &src,
-  const coordinates &dst,
-  structured_routable::path& path) const
-{
-  //if we crossed a global link in the past, set to 1
-  path.vc = path.metadata_bit(structured_routable::crossed_timeline) ? 1 : 0;
-  int nextDim, nextDir;
-  if (dim == g_dimension){
-    int myX = src[x_dimension];
-    int myY = src[y_dimension];
-    int myG = src[g_dimension];
-    int dstg = dst[g_dimension];
-    minimal_route_to_group(myX, myY, myG, nextDim, nextDir, dstg);
-    if  (nextDim == g_dimension){
-        path.set_metadata_bit(structured_routable::crossed_timeline);
-    }
-  }
-  else {
-    nextDim = dim;;
-    nextDir = dst[dim];
-  }
-  path.outport = convert_to_port(nextDim, nextDir);
-}
-
 void
 dragonfly::configure_geometric_paths(std::vector<int> &redundancies)
 {
@@ -98,72 +70,6 @@ dragonfly::configure_geometric_paths(std::vector<int> &redundancies)
   configure_injection_geometry(redundancies);
 }
 
-void
-dragonfly::get_coords(long uid, int &x, int &y, int &g) const
-{
-  x = uid % x_;
-  y = (uid / x_) % y_;
-  g = uid / (x_ * y_);
-}
-
-long
-dragonfly::get_uid(int x, int y, int g) const
-{
-  return g * (x_ * y_) + y * (x_) + x;
-}
-
-void
-dragonfly::compute_switch_coords(switch_id uid, coordinates& coords) const
-{
-  coords.resize(3);
-  get_coords(uid, coords[0], coords[1], coords[2]);
-}
-
-coordinates
-dragonfly::neighbor_at_port(switch_id sid, int port)
-{
-  coordinates coords;
-  compute_switch_coords(sid, coords);
-
-  if (port >= (x_ + y_)){ //g
-    if (port >= (x_ + y_ + g_)){ // eject
-      return coords;
-    }
-    int dir = port - (x_ + y_);
-    coords[g_dimension] = dir;
-    //JJW 07/24/2016 - don't know where this got inserted
-    //the port-dir-G connection is basic addition
-    //xyg_dir_to_group(coords[x_dimension], coords[y_dimension],
-    //                    coords[g_dimension], dir);
-  }
-  else if (port >= x_) //y
-    coords[y_dimension] = port - x_;
-  else //x
-    coords[x_dimension] = port;
-  return coords;
-}
-
-int
-dragonfly::convert_to_port(int dim, int dir) const
-{
-  if (dim == x_dimension) {
-    return dir;
-  }
-  else if (dim == y_dimension) {
-    return x_ + dir;
-  }
-  else {
-    return x_ + y_ + dir;
-  }
-}
-
-switch_id
-dragonfly::switch_number(const coordinates &coords) const
-{
-  long uid = get_uid(coords[0], coords[1], coords[2]);
-  return switch_id(uid);
-}
-
 switch_id
 dragonfly::random_intermediate_switch(switch_id current_sw, switch_id dest_sw)
 {
@@ -175,17 +81,18 @@ dragonfly::random_intermediate_switch(switch_id current_sw, switch_id dest_sw)
     get_coords(current_sw, srcX, srcY, srcG);
     get_coords(dest_sw, dstX, dstY, dstG);
 
+    hisX = random_number(x_, attempt);
+    hisY = random_number(y_, attempt);
     if(!true_random_intermediate_ && dstG == srcG) {
       // already on the correct group
       hisG = srcG;
-      hisX = random_number(x_, attempt);
-      hisY = random_number(y_, attempt);
+
     }
     else {
       //randomly select a group
       hisG = random_number(g_, attempt);
       //now figure out which x,y,g fills the path
-      find_path_to_group(srcX, srcY, srcG, hisX, hisY, hisG);
+      //find_path_to_group(srcX, srcY, srcG, hisX, hisY, hisG);
     }
 
     nid = get_uid(hisX, hisY, hisG);
@@ -211,174 +118,129 @@ dragonfly::xy_connected_to_group(int myX, int myY, int myG, int dstg) const
   return false;
 }
 
-int
-dragonfly::find_y_path_to_group(int myX, int myG, int dstg) const
+bool
+dragonfly::find_y_path_to_group(int myX, int myG, int dstG, int& dstY,
+                                structured_routable::path& path) const
 {
   int ystart = random_number(y_,0);
   for (int yy = 0; yy < y_; ++yy) {
-    int dsty = (ystart + yy) % y_;
-    if (xy_connected_to_group(myX, dsty, myG, dstg)) {
-      return dsty;
+    dstY = (ystart + yy) % y_;
+    if (xy_connected_to_group(myX, dstY, myG, dstG)) {
+      path.outport = y_port(dstY);
+      return true;
     }
   }
-  return -1;
+  return false;
 }
 
-int
-dragonfly::find_x_path_to_group(int myY, int myG, int dstg) const
+bool
+dragonfly::find_x_path_to_group(int myY, int myG, int dstG, int& dstX,
+                                structured_routable::path& path) const
 {
   int xstart = random_number(x_,0);
   for (int xx = 0; xx < x_; ++xx) {
-    int dstx = (xstart + xx) % x_;
-    if (xy_connected_to_group(dstx, myY, myG, dstg)) {
-      return dstx;
+    dstX = (xstart + xx) % x_;
+    if (xy_connected_to_group(dstX, myY, myG, dstG)) {
+      path.outport = x_port(dstX);
+      return true;
     }
   }
-  return -1;
+  return false;
 }
 
 void
 dragonfly::find_path_to_group(int myX, int myY, int myG,
-                              int& dstx, int& dsty, int dstg) const
+                              int dstG, int& dstX, int& dstY,
+                              structured_routable::path& path) const
 {
   //see if we can go directly to the group
-  if (xy_connected_to_group(myX, myY, myG, dstg)){
-    dstx = myX;
-    dsty = myY;
+  if (xy_connected_to_group(myX, myY, myG, dstG)){
+    path.outport = g_port(dstG);
+    dstX = myX;
+    dstY = myY;
+    path.set_metadata_bit(structured_routable::crossed_timeline);
     return;
   }
 
-  int x_or_y = 0; 
-  //try to find x,y path first
-  int x_first = 0;
-  if (x_or_y == x_first) {
-    dstx = find_x_path_to_group(myY, myG, dstg);
-    if (dstx >= 0) {
-      dsty = myY;
-      return;
-    }
+  if (find_x_path_to_group(myY, myG, dstG, dstX, path)){
+    dstY = myY;
+    return;
   }
-  else {
-    dsty = find_y_path_to_group(myX, myG, dstg);
-    if (dsty >= 0) {
-      dstx = myX;
-      return;
-    }
+
+  if (find_y_path_to_group(myX, myG, dstG, dstY, path)){
+    dstX = myX;
+    return;
   }
 
   //both x and y need to change
   int xstart = 0; 
   for (int xx = 0; xx < x_; ++xx) {
-    dstx = (xstart + xx) % x_;
-    dsty = find_y_path_to_group(dstx, myG, dstg);
-    if (dsty >= 0) {
-      return;  //path found
+    dstX = (xstart + xx) % x_;
+    if (find_y_path_to_group(dstX, myG, dstG, dstY, path)){
+      return;
     }
   }
 
   spkt_throw_printf(sprockit::value_error,
     "dragonfly::route: unable to find path from group %d to group %d",
-    myG, dstg);
+    myG, dstG);
 }
+
 
 void
-dragonfly::minimal_route_to_group(int myX, int myY, int myG,
-     int& dim, int& dir, int dstg) const
+dragonfly::minimal_route_to_switch(
+    switch_id src,
+    switch_id dst,
+    structured_routable::path &path) const
 {
-  int dsty, dstx;
-  find_path_to_group(myX, myY, myG, dstx, dsty, dstg);
-
-  debug_printf(sprockit::dbg::router,
-    "Minimal route to group from src (%d,%d,%d) goes through (%d,%d,%d)",
-    myX, myY, myG, dstx, dsty, dstg);
-    
-
-  if (dstx != myX) {
-    dim = dragonfly::x_dimension;
-    dir = dstx;
+  path.vc = path.metadata_bit(structured_routable::crossed_timeline) ? 1 : 0;
+  int srcX, srcY, srcG; get_coords(src, srcX, srcY, srcG);
+  int dstX, dstY, dstG; get_coords(dst, dstX, dstY, dstG);
+  int interX, interY;
+  if (srcG != dstG){
+    find_path_to_group(srcX, srcY, srcG, dstG, interX, interY, path);
+    top_debug("dragonfly routing from (%d,%d,%d) to (%d,%d,%d) through "
+              "gateway (%d,%d,%d) on port %d",
+              srcX, srcY, srcG, dstX, dstY, dstG,
+              interX, interY, srcG, path.outport);
   }
-  else if (dsty != myY) {
-    dim = dragonfly::y_dimension;
-    dir = dsty;
-  }
-  else {
-    dim = dragonfly::g_dimension;
-    dir = dstg;
+  else if (srcX != dstX){
+    top_debug("dragonfly routing X from (%d,%d,%d) to (%d,%d,%d) on port %d",
+              srcX, srcY, srcG, dstX, dstY, dstG, path.outport);
+    path.outport = x_port(dstX);
+  } else if (srcY != dstY){
+    top_debug("dragonfly routing Y from (%d,%d,%d) to (%d,%d,%d) on port %d",
+              srcX, srcY, srcG, dstX, dstY, dstG, path.outport);
+    path.outport = y_port(dstY);
   }
 }
 
 int
-dragonfly::minimal_route_to_X(int hisx) const
+dragonfly::minimal_distance(switch_id src, switch_id dst) const
 {
-  return hisx;
+  int dist = 0;
+  int srcX, srcY, srcG; get_coords(src, srcX, srcY, srcG);
+  int dstX, dstY, dstG; get_coords(dst, dstX, dstY, dstG);
+  if (srcG == dstG){
+    if (srcX != dstX) ++dist;
+    if (srcY != dstY) ++dist;
+    return dist;
+  }
+
+  structured_routable::path path;
+  int interX;
+  int interY;
+  find_path_to_group(srcX, srcY, srcG, dstG, interX, interY, path);
+  dist = 1; //group hop
+  if (srcX != interX) ++dist;
+  if (srcY != interY) ++dist;
+  if (dstX != interX) ++dist;
+  if (dstY != interY) ++dist;
+  return dist;
 }
 
-int
-dragonfly::minimal_route_to_Y(int hisy) const
-{
-  return hisy;
-}
 
-void
-dragonfly::minimal_route_to_coords(
-  const coordinates &current_coords,
-  const coordinates &dest_coords,
-  structured_routable::path& path) const
-{
-  debug_printf(sprockit::dbg::router,
-    "Finding dragonfly minimal route from %s to %s",
-    current_coords.to_string().c_str(),
-    dest_coords.to_string().c_str());
 
-  if (current_coords[g_dimension] != dest_coords[g_dimension]){
-    productive_path(g_dimension, current_coords, dest_coords, path);
-  }
-  else if (current_coords[x_dimension] != dest_coords[x_dimension]){
-    productive_path(x_dimension, current_coords, dest_coords, path);
-  }
-  else if (current_coords[y_dimension] != dest_coords[y_dimension]){
-    productive_path(y_dimension, current_coords, dest_coords, path);
-  }
-}
-
-int
-dragonfly::minimal_distance(
-  const coordinates &current_coords,
-  const coordinates &dest_coords) const
-{
-  int dstx, dsty;
-  if (current_coords[2] == dest_coords[2]) {
-    int path_length = 0;
-    if (dest_coords[0] != current_coords[0]) {
-      ++path_length;
-    }
-    if (dest_coords[1] != current_coords[1]) {
-      ++path_length;
-    }
-    //same group, all that matters is x,y difference
-    return path_length;
-  }
-
-  find_path_to_group(current_coords[0], current_coords[1], current_coords[2],
-                     dstx, dsty, dest_coords[2]);
-
-  int path_length = 1; //group jump
-  //we might need x,y jump before group jump
-  if (dstx != current_coords[0]) {
-    ++path_length;
-  }
-  if (dsty != current_coords[1]) {
-    ++path_length;
-  }
-  //we might need x,y jump after group jump
-  if (dstx != dest_coords[0]) {
-    ++path_length;
-  }
-  if (dsty != dest_coords[1]) {
-    ++path_length;
-  }
-  return path_length;
-}
 
 void
 dragonfly::setup_port_params(sprockit::sim_parameters* params, int dim, int dimsize)
@@ -439,8 +301,8 @@ dragonfly::connect_objects(sprockit::sim_parameters* params, internal_connectabl
             get_uid(x, myy, myg), long(them));
         }
 
-        int outport = convert_to_port(x_dimension, x);
-        int inport = convert_to_port(x_dimension, myx);
+        int outport = x_port(x);
+        int inport = x_port(myx);
 
         top_debug("node %d,%s connecting to node %d,%s on ports %d:%d",
             int(me), set_string(myx, myy, myg).c_str(),
@@ -469,8 +331,8 @@ dragonfly::connect_objects(sprockit::sim_parameters* params, internal_connectabl
 
         switch_id them(get_uid(myx, y, myg));
 
-        int outport = convert_to_port(y_dimension, y);
-        int inport = convert_to_port(y_dimension, myy);
+        int outport = y_port(y);
+        int inport = y_port(myy);
 
         top_debug("node %d,%s connecting to node %d,%s on ports %d:%d",
             int(me), set_string(myx, myy, myg).c_str(),
@@ -496,12 +358,13 @@ dragonfly::connect_objects(sprockit::sim_parameters* params, internal_connectabl
 
     for (int g=0; g < group_con_; ++g){
       int dstg = xyg_dir_to_group(myx,myy,myg,g);
+      if (dstg == myg) continue;
 
       long uid = get_uid(myx, myy, dstg);
       switch_id them(uid);
 
-      int outport = convert_to_port(g_dimension, dstg);
-      int inport = convert_to_port(g_dimension, myg);
+      int outport = g_port(dstg);
+      int inport = g_port(myg);
 
       top_debug("node %d,%s connecting to node %d,%s on ports %d:%d",
         int(me), set_string(myx, myy, myg).c_str(),
@@ -536,101 +399,6 @@ dragonfly::configure_vc_routing(std::map<routing::algorithm_t, int>& m) const
   m[routing::ugal] = 6;
 }
 
-void
-dragonfly::nearest_neighbor_partners(const coordinates &src_sw_coords,
-    int port, std::vector<node_id>& partners) const
-{
-  //+X,-X,+Y,-Z and group connections
-  partners.clear();
-  partners.resize(4 + group_con_);
-  int idx = 0;
-  long nid;
-  coordinates tmp_coords(src_sw_coords);
-
-  //get the plus,minus 1 in the x-direction
-  tmp_coords[x_dimension] = (src_sw_coords[x_dimension] + 1) % x_;
-  partners[idx++] = node_addr(tmp_coords, port);
-
-  tmp_coords[x_dimension] = (src_sw_coords[x_dimension] - 1 + x_) % x_;
-  partners[idx++] = node_addr(tmp_coords, port);
-
-  //reset coords
-  tmp_coords[x_dimension] = src_sw_coords[x_dimension];
-
-  tmp_coords[y_dimension] = (src_sw_coords[y_dimension] + 1) % y_;
-  partners[idx++] = node_addr(tmp_coords, port);
-
-  tmp_coords[y_dimension] = (src_sw_coords[y_dimension] - 1 + y_) % y_;
-  partners[idx++] = node_addr(tmp_coords, port);
-
-  //reset coords
-  tmp_coords[y_dimension] = src_sw_coords[y_dimension];
-
-  //now we have to figure out our group connections
-  for (int g = 0; g < group_con_; g++) {
-    int gid = xyg_dir_to_group(src_sw_coords[x_dimension],
-                               src_sw_coords[y_dimension],
-                               src_sw_coords[g_dimension], g);
-    if (gid == src_sw_coords[g_dimension]) {
-      continue;
-    }
-
-    tmp_coords[g_dimension] = gid;
-    partners[idx++] = node_addr(tmp_coords, port);
-  }
-  partners.resize(idx);
-}
-
-void
-dragonfly::tornado_recv_partners(
-  const coordinates &src_sw_coords,
-  int port,
-  std::vector<node_id>& partners) const
-{
-  partners.resize(1);
-  coordinates tmp_coords(src_sw_coords);
-  tmp_coords[x_dimension]
-    = (src_sw_coords[x_dimension] - (x_ - 1) / 2 + x_) % x_;
-  tmp_coords[y_dimension]
-    = (src_sw_coords[y_dimension] - (y_ - 1) / 2 + y_) % y_;
-  tmp_coords[g_dimension]
-    = (src_sw_coords[g_dimension] - (g_ - 1) / 2 + g_) % g_;
-
-  partners[0] = node_addr(tmp_coords, port);
-}
-
-void
-dragonfly::tornado_send_partners(
-  const coordinates &src_sw_coords,
-  int port,
-  std::vector<node_id>& partners) const
-{
-  partners.resize(1);
-  coordinates tmp_coords(src_sw_coords);
-  tmp_coords[x_dimension] = (src_sw_coords[x_dimension] + (x_ - 1) / 2)
-                            % x_;
-  tmp_coords[y_dimension] = (src_sw_coords[y_dimension] + (y_ - 1) / 2)
-                            % y_;
-  tmp_coords[g_dimension] = (src_sw_coords[g_dimension] + (g_ - 1) / 2)
-                            % g_;
-
-  partners[0] = node_addr(tmp_coords, port);
-}
-
-void
-dragonfly::bit_complement_partners(
-  const coordinates &src_sw_coords,
-  int port,
-  std::vector<node_id>& partners) const
-{
-  partners.resize(1);
-  coordinates tmp_coords(src_sw_coords);
-  tmp_coords[x_dimension] = x_ - src_sw_coords[x_dimension] - 1;
-  tmp_coords[y_dimension] = y_ - src_sw_coords[y_dimension] - 1;
-  tmp_coords[g_dimension] = g_ - src_sw_coords[g_dimension] - 1;
-
-  partners[0] = node_addr(tmp_coords, port);
-}
 
 void
 dragonfly::new_routing_stage(structured_routable* rtbl)
@@ -646,6 +414,21 @@ dragonfly::xyg_dir_to_group(int myX, int myY, int myG, int dir) const
   int gset = myid % g_;
   return (myG + gset + gspace * dir) % g_;
 }
+
+coordinates
+dragonfly::switch_coords(switch_id uid) const
+{
+  coordinates coords(3);
+  get_coords(uid, coords[0], coords[1], coords[2]);
+  return coords;
+}
+
+switch_id
+dragonfly::switch_addr(const coordinates &coords) const
+{
+  return get_uid(coords[0], coords[1], coords[2]);
+}
+
 
 }
 } //end of namespace sstmac

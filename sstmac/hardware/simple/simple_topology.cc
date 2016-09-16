@@ -40,34 +40,27 @@ simple_topology::endpoint_to_injection_switch(node_id nodeaddr, int &switch_port
   }
 }
 
-simple_topology::~simple_topology()
-{
-  if (actual_topology_) delete actual_topology_;
-}
-
 switch_id
 simple_topology::endpoint_to_ejection_switch(node_id nodeaddr, int &switch_port) const
 {
   return endpoint_to_injection_switch(nodeaddr, switch_port);
 }
 
-int
-simple_topology::ndimensions() const
+simple_topology::~simple_topology()
 {
-  return safe_cast(structured_topology, actual_topology_)->ndimensions();
+  if (actual_topology_) delete actual_topology_;
 }
 
-coordinates
-simple_topology::node_coords(node_id uid) const
+switch_id
+simple_topology::node_to_ejection_switch(node_id nodeaddr, int &switch_port) const
 {
-  auto t = safe_cast(structured_topology, actual_topology_);
-  return t->node_coords(uid);
+  return endpoint_to_injection_switch(nodeaddr, switch_port);
 }
 
 simple_topology::simple_topology(sprockit::sim_parameters* params) :
-  structured_topology(params,
-                      InitMaxPortsIntra::I_Remembered,
-                      InitGeomEjectID::I_Remembered)
+  topology(params,
+          InitMaxPortsIntra::I_Remembered,
+          InitGeomEjectID::I_Remembered)
 {
   actual_topology_ = topology_factory::get_param("actual_name", params);
   num_nodes_ = actual_topology_->num_nodes();
@@ -90,56 +83,19 @@ simple_topology::cart_topology() const
 }
 
 int
-simple_topology::diameter() const
+simple_topology::minimal_distance(switch_id src, switch_id dst) const
 {
-  structured_topology* stop = safe_cast(structured_topology, actual_topology_);
-  return stop->diameter();
-}
-
-int
-simple_topology::num_hops_to_node(node_id src, node_id dst) const
-{
-  return actual_topology_->num_hops_to_node(src, dst);
-}
-
-int
-simple_topology::convert_to_port(int dim, int dir) const
-{
-  spkt_throw(sprockit::unimplemented_error,
-    "simple_topology::convert_to_port: should never be called");
+  return actual_topology_->minimal_distance(src, dst);
 }
 
 void
-simple_topology::compute_switch_coords(switch_id uid, coordinates& coords) const
-{
-  spkt_throw(sprockit::unimplemented_error,
-    "simple_topology::compute_switch_coords: should never be called");
-}
-
-switch_id
-simple_topology::switch_number(const coordinates& coords) const
-{
-  spkt_throw(sprockit::unimplemented_error,
-    "simple_topology::switch_number: should never be called");
-}
-
-void
-simple_topology::minimal_route_to_coords(
-  const coordinates &src_coords,
-  const coordinates &dest_coords,
+simple_topology::minimal_route_to_switch(
+  switch_id src,
+  switch_id dst,
   structured_routable::path& path) const
 {
   spkt_throw(sprockit::unimplemented_error,
     "simple_topology::minimal_route_to_coords: should never be called");
-}
-
-int
-simple_topology::minimal_distance(
-  const coordinates &src_coords,
-  const coordinates &dest_coords) const
-{
-  spkt_throw(sprockit::unimplemented_error,
-    "simple_topology::minimal_distance: should never be called");
 }
 
 void
@@ -195,18 +151,6 @@ simple_topology::connect_objects(sprockit::sim_parameters* params,
     }
   }
 }
-
-void
-simple_topology::productive_path(
-  int dim,
-  const coordinates &src_coords,
-  const coordinates &dst_coords,
-  structured_routable::path& path) const
-{
-  spkt_throw(sprockit::unimplemented_error,
-    "simple_topology::productive_path: should never be called");
-}
-
 
 }
 } //end of namespace sstmac

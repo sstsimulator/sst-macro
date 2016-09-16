@@ -104,34 +104,27 @@ class fat_tree :
     return "fat tree topology";
   }
 
+  inline int up_port(int dir) const {
+    return  k_ + dir;
+  }
+
+  inline int down_port(int dir) const {
+    return dir;
+  }
+
   virtual ~fat_tree() {}
 
   virtual void
-  connect_objects(sprockit::sim_parameters* params, internal_connectable_map& switches);
-
-  virtual int
-  convert_to_port(int dim, int dir) const;
+  connect_objects(sprockit::sim_parameters* params,
+                  internal_connectable_map& switches);
 
   virtual int
   num_switches() const {
     return numleafswitches_ * l_;
   }
 
-  coordinates
-  neighbor_at_port(switch_id sid, int port);
-
   void
   configure_vc_routing(std::map<routing::algorithm_t, int> &m) const;
-
-  switch_id
-  switch_number(const coordinates &coords) const;
-
-  void
-  productive_path(
-    int dim,
-    const coordinates &src,
-    const coordinates &dst,
-    structured_routable::path& path) const;
 
   void
   minimal_route_to_switch(
@@ -139,16 +132,10 @@ class fat_tree :
     switch_id dest_sw_addr,
     structured_routable::path& path) const;
 
-  void
-  minimal_route_to_coords(
-    const coordinates &src_coords,
-    const coordinates &dest_coords,
-    structured_routable::path& path) const;
-
   int
   minimal_distance(
-    const coordinates& src_coords,
-    const coordinates& dest_coords) const;
+    switch_id src,
+    switch_id dest) const;
 
   int
   switch_at_row_col(int row, int col) const {
@@ -160,10 +147,6 @@ class fat_tree :
 
   static int
   downColumnConnection(int k, int myColumn, int downPort, int columnSize);
-
- protected:
-  virtual void
-  compute_switch_coords(switch_id uid, coordinates& coords) const;
 
 };
 
@@ -210,29 +193,9 @@ class simple_fat_tree : public abstract_fat_tree
     int nthread,
     int noccupied);
 
-  void
-  minimal_route_to_coords(
-    const coordinates &src_coords,
-    const coordinates &dest_coords,
-    structured_routable::path &path) const;
-
-  switch_id
-  switch_number(const coordinates &coords) const;
-
   int
-  minimal_distance(const coordinates &src_coords, const coordinates &dest_coords) const;
-
-  void
-  productive_path(int dim,
-    const coordinates &src,
-    const coordinates &dst,
-    structured_routable::path &path) const;
-
-  void
-  compute_switch_coords(switch_id swid, coordinates &coords) const;
-
-  coordinates
-  neighbor_at_port(switch_id sid, int port);
+  minimal_distance(switch_id src,
+                   switch_id dest) const;
 
   void
   configure_vc_routing(std::map<routing::algorithm_t, int> &m) const;
@@ -248,8 +211,6 @@ class simple_fat_tree : public abstract_fat_tree
 
  private:
   int num_hops(int srcLevel, int srcOffset, int dstLevel, int dstOffset) const;
-
-  int num_hops_to_node(node_id src, node_id dst) const;
 
  protected:
   std::vector<int> level_offsets_;

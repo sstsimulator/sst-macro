@@ -13,7 +13,7 @@
 #include <sstmac/software/launch/node_allocator.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
-#include <sstmac/hardware/topology/topology.h>
+#include <sstmac/hardware/topology/cartesian_topology.h>
 #include <sprockit/keyword_registration.h>
 #include <sprockit/util.h>
 #include <sprockit/fileio.h>
@@ -122,7 +122,8 @@ hostname_allocation::read_map_file(
 
 void
 hostname_allocation::allocate(int nnode_requested,
- const ordered_node_set& available, ordered_node_set &allocation) const
+ const ordered_node_set& available,
+ ordered_node_set &allocation) const
 {
   std::map<std::string, std::vector<int> > hostmap;
   read_map_file(rt_, "hostname_allocation::allocate", mapfile_, hostmap);
@@ -131,12 +132,11 @@ hostname_allocation::allocate(int nnode_requested,
     spkt_throw_printf(sprockit::value_error, "hostname_allocation::allocate: null topology");
   }
 
-  hw::structured_topology* regtop = safe_cast(hw::structured_topology, topology_);
+  hw::cartesian_topology* regtop = safe_cast(hw::cartesian_topology, topology_);
   std::map<std::string, std::vector<int> >::iterator it, end = hostmap.end();
 
   for (it = hostmap.begin(); it != end; it++) {
     std::vector<int> coords = it->second;
-
     // find node index for this vertex
     node_id nid = regtop->node_addr(coords);
     hostnamemap_[it->first] = nid;

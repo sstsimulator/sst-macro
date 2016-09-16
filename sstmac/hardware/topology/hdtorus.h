@@ -44,16 +44,6 @@ class hdtorus :
 
   virtual ~hdtorus() {}
 
-  virtual void
-  productive_path(
-    int dim,
-    const coordinates& src,
-    const coordinates& dst,
-    structured_routable::path& path) const;
-
-  switch_id
-  switch_number(const coordinates& v) const;
-
   int
   diameter() const {
     return diameter_;
@@ -82,87 +72,55 @@ class hdtorus :
   configure_geometric_paths(std::vector<int> &redundancies);
 
   void
-  minimal_route_to_coords(
-    const coordinates &src_coords,
-    const coordinates &dest_coords,
+  minimal_route_to_switch(
+    switch_id sid,
+    switch_id dst,
     structured_routable::path& path) const;
 
   virtual void
-  connect_objects(sprockit::sim_parameters* params, internal_connectable_map& switches);
-
-  virtual int
-  convert_to_port(int dim, int dir) const;
+  connect_objects(sprockit::sim_parameters* params,
+                  internal_connectable_map& switches);
 
   int
   minimal_distance(
-    const coordinates& src_coords,
-    const coordinates& dest_coords) const;
-
-  void
-  partners(
-    traffic_pattern::type_t ty,
-    const coordinates &src_sw_coords,
-    std::list<node_id>& partners) const;
+    switch_id sid,
+    switch_id dst) const;
 
   void
   configure_vc_routing(std::map<routing::algorithm_t, int> &m) const;
 
+  coordinates
+  switch_coords(switch_id) const;
+
+  switch_id
+  switch_addr(const coordinates &coords) const;
+
  private:
-  virtual void
-  compute_switch_coords(switch_id uid, coordinates& coords) const;
+  inline int
+  convert_to_port(int dim, int dir) const {
+    return 2*dim + dir;
+  }
 
   void
-  nearest_neighbor_partners(
-    const coordinates& src_sw_coords,
-    int port,
-    std::vector<node_id>& partners) const;
-
-  void
-  bit_complement_partners(
-    const coordinates &src_sw_coords,
-    int port,
-    std::vector<node_id>& partners) const;
-
-  void
-  tornado_send_partners(
-    const coordinates &src_sw_coords,
-    int port,
-    std::vector<node_id>& partners) const;
-
-  void
-  tornado_recv_partners(
-    const coordinates &src_sw_coords,
-    int port,
-    std::vector<node_id>& partners) const;
-
-  void
-  pick_vc(structured_routable::path& path) const;
+  torus_path(bool reset_dim, bool wrapped, int dim, int dir,
+             structured_routable::path& path) const;
 
   void
   down_path(
-    int dim,
-    const coordinates& src,
-    const coordinates& dst,
+    int dim, int src, int dst,
     structured_routable::path& path) const;
 
   void
   up_path(
-    int dim,
-    const coordinates& src,
-    const coordinates& dst,
+    int dim, int src, int dst,
     structured_routable::path& path) const;
 
   int
   shortest_distance(int dim, int src, int dst) const;
 
-  int
-  distance(int dim, int dir, int src, int dst) const;
-
   bool
   shortest_path_positive(
-    int dim,
-    const coordinates& src,
-    const coordinates& dst) const;
+    int dim, int src, int dst) const;
 
  private:
   virtual void

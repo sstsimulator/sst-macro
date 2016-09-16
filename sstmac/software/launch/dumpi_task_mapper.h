@@ -12,7 +12,7 @@
 #ifndef SSTMAC_SOFTWARE_SERVICES_LAUNCH_INDEXING_FROMFILEINDEXER_H_INCLUDED
 #define SSTMAC_SOFTWARE_SERVICES_LAUNCH_INDEXING_FROMFILEINDEXER_H_INCLUDED
 
-#include <sstmac/hardware/topology/structured_topology.h>
+#include <sstmac/hardware/topology/cartesian_topology.h>
 #include <sstmac/software/launch/task_mapper.h>
 
 namespace sstmac {
@@ -43,7 +43,7 @@ class dumpi_task_mapper : public task_mapper
  protected:
   std::string metaname_;
 
-  hw::structured_topology* regtop_;
+  hw::cartesian_topology* regtop_;
 
 };
 
