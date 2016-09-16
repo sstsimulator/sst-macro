@@ -36,11 +36,17 @@ class simple_nic :
   void handle(event *ev) override;
 
   virtual void
-  connect(
+  connect_output(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    connection_type_t ty,
+    connectable* mod) override;
+
+  virtual void
+  connect_input(
+    sprockit::sim_parameters* params,
+    int src_outport,
+    int dst_inport,
     connectable* mod) override;
 
   virtual std::string

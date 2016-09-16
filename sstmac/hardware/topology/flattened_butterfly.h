@@ -32,15 +32,14 @@ class flattened_butterfly :
 {
 
  public:
+  flattened_butterfly(sprockit::sim_parameters *params);
+
   virtual std::string
   to_string() const {
     return "flattened butterfly topology";
   }
 
   virtual ~flattened_butterfly() {}
-
-  void
-  init_factory_params(sprockit::sim_parameters *params);
 
   int
   num_switches() const {

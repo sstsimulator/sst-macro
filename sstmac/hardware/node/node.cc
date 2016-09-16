@@ -137,9 +137,18 @@ node::~node()
 }
 
 void
-node::connect(sprockit::sim_parameters* params,
+node::connect_output(sprockit::sim_parameters* params,
   int src_outport, int dst_inport,
-  connection_type_t ty, connectable *mod)
+  connectable *mod)
+{
+  spkt_throw(sprockit::unimplemented_error,
+    "node::connect: should never be called");
+}
+
+void
+node::connect_input(sprockit::sim_parameters* params,
+  int src_outport, int dst_inport,
+  connectable *mod)
 {
   spkt_throw(sprockit::unimplemented_error,
     "node::connect: should never be called");

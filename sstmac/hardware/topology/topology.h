@@ -20,6 +20,7 @@
 #include <sstmac/hardware/router/router_fwd.h>
 #include <sstmac/hardware/common/connection.h>
 #include <sstmac/backends/common/sim_partition_fwd.h>
+#include <sstmac/hardware/topology/topology_fwd.h>
 #include <sprockit/sim_parameters_fwd.h>
 #include <sprockit/debug.h>
 #include <sprockit/factories/factory.h>
@@ -57,25 +58,21 @@ class topology
  public:
   virtual ~topology();
 
+  /**** BEGIN PURE VIRTUAL INTERFACE *****/
   virtual std::string
   to_string() const = 0;
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
-  finalize_init();
-
-  /**** BEGIN PURE VIRTUAL INTERFACE *****/
   /**
    * Given a switch address, return number of nodes connected to it
    */
-  virtual int
-  endpoints_per_switch(switch_id addr) const = 0;
+  int
+  endpoints_per_switch() {
+    return endpoints_per_switch_;
+  }
 
   int
-  concentration(switch_id addr) const {
-    return num_nodes_per_netlink_ * endpoints_per_switch(addr);
+  concentration() const {
+    return concentration_;
   }
 
   /**
@@ -88,13 +85,17 @@ class topology
   num_switches() const = 0;
 
   virtual int
-  num_endpoints() const = 0;
+  num_leaf_switches() const = 0;
 
-  /**
-     @return The total number of nodes
-  */
-  virtual int
-  num_nodes() const = 0;
+  int
+  num_nodes() const {
+    return concentration_ * num_leaf_switches();
+  }
+
+  int
+  num_endpoints() const {
+    return endpoints_per_switch_ * num_leaf_switches();
+  }
 
   /**
    * @brief Given a set of connectables, connect them appropriately
@@ -109,8 +110,8 @@ class topology
 
   virtual void
   connect_end_point_objects(
-    sprockit::sim_parameters* switch_params,
-    sprockit::sim_parameters* node_params,
+    sprockit::sim_parameters* ej_params,
+    sprockit::sim_parameters* inj_params,
     internal_connectable_map& internal,
     end_point_connectable_map& end_points);
 
@@ -168,11 +169,12 @@ class topology
      @throw value_error If invalid switch id is given
      @return The nodes connected to switch
   */
-  virtual std::vector<node_id>
-  nodes_connected_to_injection_switch(switch_id swid) const = 0;
+  virtual void
+  nodes_connected_to_injection_switch(switch_id swid, std::vector<node_id>& nodes) const;
 
-  virtual std::vector<node_id>
-  nodes_connected_to_ejection_switch(switch_id swid) const = 0;
+  virtual void
+  nodes_connected_to_ejection_switch(switch_id swid, std::vector<node_id>& nodes) const;
+
 
   virtual void
   create_partition(
@@ -269,15 +271,15 @@ class topology
   template <class MapTypeInternal, class MapTypeEndPoint>
   void
   connect_end_points(
-   sprockit::sim_parameters* switch_params,
-   sprockit::sim_parameters* node_params,
+   sprockit::sim_parameters* ej_params,
+   sprockit::sim_parameters* inj_params,
    MapTypeInternal& internal_nodes,
    MapTypeEndPoint& end_points) {
     internal_connectable_map internal_clone_map;
     end_point_connectable_map end_clone_map;
     copy_map(internal_nodes, internal_clone_map);
     copy_map(end_points, end_clone_map);
-    connect_end_point_objects(switch_params, node_params, internal_clone_map, end_clone_map);
+    connect_end_point_objects(ej_params, inj_params, internal_clone_map, end_clone_map);
   }
 
   /**
@@ -387,9 +389,6 @@ class topology
     return max_ports_intra_network() + ith;
   }
 
-  virtual void
-  sanity_check();
-
   virtual std::string
   label(node_id nid) const;
 
@@ -436,11 +435,6 @@ class topology
     return num_nodes_per_netlink_;
   }
 
-  bool
-  netlink_endpoints() const {
-    return netlink_endpoints_;
-  }
-
   typedef  std::function<connectable*(sprockit::sim_parameters*,uint64_t)> connectable_factory;
 
   virtual void
@@ -460,6 +454,9 @@ class topology
     static_topology_ = top;
   }
 
+  virtual cartesian_topology*
+  cart_topology() const;
+
   static void
   clear_static_topology(){
     if (static_topology_) delete static_topology_;
@@ -467,7 +464,16 @@ class topology
   }
 
  protected:
-  topology();
+  enum class InitMaxPortsIntra {
+    I_Remembered
+  };
+  enum class InitGeomEjectID {
+    I_Remembered
+  };
+
+  topology(sprockit::sim_parameters* params,
+           InitMaxPortsIntra i1,
+           InitGeomEjectID i2);
 
   uint32_t random_number(uint32_t max, uint32_t attempt) const;
 
@@ -479,12 +485,6 @@ class topology
                     sprockit::sim_parameters* link_params,
                     sprockit::sim_parameters* params);
 
- private:
-  void
-  configure_injection_params(
-    sprockit::sim_parameters* nic_params,
-    sprockit::sim_parameters* switch_params);
-
  protected:
   /**
     Nodes per switch.  The number of nodes connected to a leaf switch.
@@ -493,9 +493,7 @@ class topology
   */
   int endpoints_per_switch_;
 
-  bool netlink_endpoints_;
-
-  bool outputgraph_;
+  int concentration_;
 
   RNG::rngint_t seed_;
 
@@ -510,6 +508,10 @@ class topology
   int max_ports_intra_network_;
 
   int max_ports_injection_;
+
+  int eject_geometric_id_;
+
+  int injection_redundancy_;
 
   static topology* main_top_;
 

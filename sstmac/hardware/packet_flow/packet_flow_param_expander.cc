@@ -23,6 +23,8 @@ packet_flow_param_expander::expand(sprockit::sim_parameters* params)
   sprockit::sim_parameters* switch_params = params->get_optional_namespace("switch");
   sprockit::sim_parameters* top_params = params->get_optional_namespace("topology");
   sprockit::sim_parameters* proc_params = node_params->get_optional_namespace("proc");
+  sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
+
 
   nic_params->add_param_override("model", "packet_flow");
   params->add_param_override("interconnect", "switch");
@@ -56,25 +58,24 @@ packet_flow_param_expander::expand(sprockit::sim_parameters* params)
     expand_amm1_memory(params, mem_params);
     expand_amm1_network(params, switch_params, true/*set xbar*/);
     expand_amm1_nic(params, nic_params);
-    top_params->add_param_override("netlink_endpoints", "false");
+    netlink_params->add_param_override("radix", "1");
   }
   else if (amm_type == "amm2"){
     expand_amm2_memory(params, mem_params);
     expand_amm1_network(params, switch_params, true/*set xbar*/);
     expand_amm1_nic(params, nic_params);
-    top_params->add_param_override("netlink_endpoints", "false");
+    netlink_params->add_param_override("radix", "1");
   }
   else if (amm_type == "amm3"){
     expand_amm2_memory(params, mem_params);
     expand_amm3_network(params, switch_params);
     expand_amm1_nic(params, nic_params);
-    top_params->add_param_override("netlink_endpoints", "false");
+    netlink_params->add_param_override("radix", "1");
   }
   else if (amm_type == "amm4"){
     expand_amm2_memory(params, mem_params);
     expand_amm4_network(params, top_params, switch_params);
     expand_amm4_nic(params, top_params, nic_params);
-    top_params->add_param_override("netlink_endpoints", "true");
   }
   else {
     spkt_throw_printf(sprockit::input_error, "invalid hardware model %s given",

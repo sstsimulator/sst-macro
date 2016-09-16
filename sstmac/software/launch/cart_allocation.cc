@@ -1,6 +1,6 @@
 #include <sstmac/software/launch/cart_allocation.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
-#include <sstmac/hardware/topology/topology.h>
+#include <sstmac/hardware/topology/cartesian_topology.h>
 #include <sstmac/common/cartgrid.h>
 
 #include <sprockit/errors.h>
@@ -96,12 +96,11 @@ cart_allocation::allocate(
   const ordered_node_set& available,
   ordered_node_set& allocation) const
 {
-  hw::structured_topology* regtop =
-      safe_cast(hw::structured_topology, topology_);
+  hw::cartesian_topology* regtop = topology_->cart_topology();
 
   int ndims = regtop->ndimensions();
   //add extra dimension for concentration
-  if (regtop->concentration(switch_id(0))) ++ndims;
+  if (regtop->concentration() > 1) ++ndims;
   if (sizes_.size() != ndims){
     spkt_throw_printf(sprockit::value_error,
        "topology ndims does not match cart_allocation: %d != %d",

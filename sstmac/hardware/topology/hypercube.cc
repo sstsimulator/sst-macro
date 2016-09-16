@@ -25,10 +25,9 @@ namespace hw {
 SpktRegister("hypercube", topology, hypercube,
             "hypercube implements a high-dimension torus with an arbitrary number of dimensions");
 
-void
-hypercube::init_factory_params(sprockit::sim_parameters* params)
+hypercube::hypercube(sprockit::sim_parameters* params) :
+  hdtorus(params)
 {
-  hdtorus::init_factory_params(params);
   ndim_ = dimensions_.size();
   dim_to_outport_.resize(ndim_);
   int offset = 0;
@@ -115,18 +114,16 @@ hypercube::connect_objects(sprockit::sim_parameters* params, internal_connectabl
           int outport = convert_to_port(dim, dir);
           sprockit::sim_parameters* port_params = get_port_params(link_params, outport);
 
-          me->connect(
+          me->connect_output(
             port_params,
             outport,
             inport,
-            connectable::output,
             neighbor_sw);
 
-          neighbor_sw->connect(
+          neighbor_sw->connect_input(
             port_params,
             outport,
             inport,
-            connectable::input,
             me);
 
         }

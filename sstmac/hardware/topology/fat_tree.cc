@@ -27,18 +27,22 @@ SpktRegister("fattree | ftree", topology, fat_tree,
 
 SpktRegister("simple_fattree", topology, simple_fat_tree);
 
-void
-abstract_fat_tree::init_factory_params(sprockit::sim_parameters *params)
+sprockit::sim_parameters*
+abstract_fat_tree::override_params(sprockit::sim_parameters* params)
 {
   std::vector<int> args;
   params->get_vector_param("geometry", args);
   if (args.size() != 2) {
     spkt_throw_printf(sprockit::input_error,
-                     "fat_tree::init_factory_params: geometry needs 2 parameters, got %d",
+                     "fat_tree::override_params: geometry needs 2 parameters, got %d",
                      args.size());
   }
   l_ = args[0];
   k_ = args[1];
+  if (!params->has_param("concentration")){
+    params->add_param_override("concentration", k_);
+  }
+
   sprockit::sim_parameters* rtr_params = params->get_optional_namespace("router");
   rtr_params->add_param_override("radix", k_);
   rtr_params->add_param_override("num_levels", l_);
@@ -53,6 +57,15 @@ abstract_fat_tree::init_factory_params(sprockit::sim_parameters *params)
    */
   toplevel_ = l_ - 1;
   numleafswitches_ = pow(k_, l_ - 1);
+
+  return params;
+}
+
+abstract_fat_tree::abstract_fat_tree(sprockit::sim_parameters *params,
+                                     InitMaxPortsIntra i1,
+                                     InitGeomEjectID i2) :
+  structured_topology(override_params(params), i1, i2)
+{
 }
 
 void
@@ -64,38 +77,31 @@ fat_tree::minimal_route_to_switch(
   spkt_throw_printf(sprockit::unimplemented_error, "fattree::minimal_route_to_switch");
 }
 
-std::vector<node_id>
-abstract_fat_tree::nodes_connected_to_injection_switch(switch_id swaddr) const
-{
-  return nodes_connected_to_switch(swaddr);
-}
-
-std::vector<node_id>
-abstract_fat_tree::nodes_connected_to_ejection_switch(switch_id swaddr) const
-{
-  return nodes_connected_to_switch(swaddr);
-}
-
-
-std::vector<node_id>
-abstract_fat_tree::nodes_connected_to_switch(switch_id swaddr) const
+void
+abstract_fat_tree::nodes_connected_to_injection_switch(switch_id swaddr,
+                                                       std::vector<node_id>& nodes) const
 {
   if (swaddr >= numleafswitches_){
-    return std::vector<node_id>();
+    nodes.resize(0);
   } else {
-    return structured_topology::nodes_connected_to_switch(swaddr);
+    topology::nodes_connected_to_injection_switch(swaddr, nodes);
   }
 }
 
 void
-fat_tree::init_factory_params(sprockit::sim_parameters* params)
+abstract_fat_tree::nodes_connected_to_ejection_switch(switch_id swaddr,
+                                                      std::vector<node_id>& nodes) const
 {
-  abstract_fat_tree::init_factory_params(params);
+  nodes_connected_to_injection_switch(swaddr, nodes);
+}
 
-  max_ports_injection_ = endpoints_per_switch_ = params->get_optional_int_param("concentration", k_);
+fat_tree::fat_tree(sprockit::sim_parameters* params) :
+  abstract_fat_tree(params,
+                    InitMaxPortsIntra::I_Remembered,
+                    InitGeomEjectID::I_Remembered)
+{
   max_ports_intra_network_ = 2*k_;
   eject_geometric_id_ = max_ports_intra_network_;
-  structured_topology::init_factory_params(params);
 }
 
 void
@@ -161,30 +167,26 @@ fat_tree::connect_objects(sprockit::sim_parameters* params, internal_connectable
 
         connectable* upper_switch = objects[switch_id(upper_id)];
 
-        lower_switch->connect(
+        lower_switch->connect_output(
           link_params,
           up_port, //up is out and down is in... got it!??!
           down_port,
-          connectable::output,
           upper_switch);
-        upper_switch->connect(
+        upper_switch->connect_input(
           link_params,
           up_port,
           down_port,
-          connectable::input,
           lower_switch);
 
-        upper_switch->connect(
+        upper_switch->connect_output(
           link_params,
           down_port, //down is out and up is in... got it?!?
           up_port,
-          connectable::output,
           lower_switch);
-        lower_switch->connect(
+        lower_switch->connect_input(
           link_params,
           down_port,
           up_port,
-          connectable::input,
           upper_switch);
       }
     }
@@ -386,10 +388,11 @@ simple_fat_tree::minimal_distance(
   return num_hops(src_coords[0], src_coords[1], dest_coords[0], dest_coords[1]);
 }
 
-void
-simple_fat_tree::init_factory_params(sprockit::sim_parameters *params)
+simple_fat_tree::simple_fat_tree(sprockit::sim_parameters *params) :
+  abstract_fat_tree(params,
+                    InitMaxPortsIntra::I_Remembered,
+                    InitGeomEjectID::I_Remembered)
 {
-  abstract_fat_tree::init_factory_params(params);
   int nswitches = numleafswitches_;
   int offset = 0;
   int level = 0;
@@ -405,8 +408,8 @@ simple_fat_tree::init_factory_params(sprockit::sim_parameters *params)
   }
   top_debug("fat_tree: computed %d total switches on %d levels",
             num_switches_, l_);
-  max_ports_injection_ = endpoints_per_switch_ = params->get_optional_int_param("concentration", k_);
   max_ports_intra_network_ = k_ + 1;
+  eject_geometric_id_ = max_ports_intra_network_;
 
   if (params->has_param("tapering")){
     params->get_vector_param("tapering", tapering_);
@@ -419,10 +422,7 @@ simple_fat_tree::init_factory_params(sprockit::sim_parameters *params)
       "fat_tree::tapering array of size %d is not of correct size %d",
       tapering_.size(), toplevel_);
   }
-
-  structured_topology::init_factory_params(params);
 }
-
 
 void
 simple_fat_tree::build_internal_connectables(
@@ -496,18 +496,16 @@ simple_fat_tree::connect_objects(sprockit::sim_parameters* params,
                                                   link_params,
                                                   params);
 
-      down_switch->connect(
+      down_switch->connect_output(
         port_params,
         down_switch_outport,
         up_switch_inport,
-        connectable::output,
         up_switch);
 
-      up_switch->connect(
+      up_switch->connect_input(
          port_params,
         down_switch_outport,
         up_switch_inport,
-        connectable::input,
         down_switch);
 
       top_debug(
@@ -522,18 +520,16 @@ simple_fat_tree::connect_objects(sprockit::sim_parameters* params,
                                       link_params,
                                       params);
 
-      up_switch->connect(
+      up_switch->connect_output(
         port_params,
         up_switch_outport,
         down_switch_inport,
-        connectable::output,
         down_switch);
 
-      down_switch->connect(
+      down_switch->connect_input(
         port_params,
         up_switch_outport,
         down_switch_inport,
-        connectable::input,
         up_switch);
     }
     nswitches /= k_;

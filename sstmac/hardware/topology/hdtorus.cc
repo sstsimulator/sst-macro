@@ -37,26 +37,11 @@ equals(const std::vector<int>& coords, int x, int y, int z)
   return coords[0] == x && coords[1] == y && coords[2] == z;
 }
 
-void
-hdtorus::init_factory_params(sprockit::sim_parameters* params)
+hdtorus::hdtorus(sprockit::sim_parameters* params) :
+  cartesian_topology(params,
+                     InitMaxPortsIntra::I_Remembered,
+                     InitGeomEjectID::I_Remembered)
 {
-  /**
-     sstkeyword {
-     gui=10 5 10;
-     docstring=The number of switches in each dimension of the torus.ENDL
-     An arbitrary number of dimensions can be used.ENDL
-     The total number of switches is:ENDL
-     N_Switches=N_X*N_Y*...*N_Z.ENDL
-     The total number of compute nodes is:ENDL
-     N_Comp_Nodes=N_Switches*N_Nodes_Per_switch;
-     }
-  */
-  params->get_vector_param("geometry", dimensions_);
-
-  if (dimensions_.size() == 0) {
-    spkt_throw_printf(sprockit::value_error, "empty topology vector for hdtorus");
-  }
-
   num_switches_ = 1;
   diameter_ = 0;
   for (int i = 0; i < (int) dimensions_.size(); i++) {
@@ -64,10 +49,8 @@ hdtorus::init_factory_params(sprockit::sim_parameters* params)
     diameter_ += dimensions_[i] / 2;
   }
 
-  max_ports_injection_ = endpoints_per_switch_ = params->get_optional_int_param("concentration", 1);
   max_ports_intra_network_ = 2 * dimensions_.size();
   eject_geometric_id_ = max_ports_intra_network_;
-  cartesian_topology::init_factory_params(params);
 }
 
 coordinates
@@ -327,26 +310,22 @@ hdtorus::connect_dim(
   sprockit::sim_parameters* pos_params = get_port_params(params, pos_outport);
   sprockit::sim_parameters* neg_params = get_port_params(params, neg_outport);
 
-  center->connect(
+  center->connect_output(
     pos_params,
     pos_outport, neg_outport,
-    connectable::output,
     plus_partner);
-  plus_partner->connect(
+  plus_partner->connect_input(
     neg_params,
     pos_outport, neg_outport,
-    connectable::input,
     center);
 
-  center->connect(
+  center->connect_output(
     neg_params,
     neg_outport, pos_outport,
-    connectable::output,
     minus_partner);
-  minus_partner->connect(
+  minus_partner->connect_input(
     pos_params,
     neg_outport, pos_outport,
-    connectable::input,
     center);
 }
 
@@ -416,12 +395,7 @@ hdtorus::connect_objects(sprockit::sim_parameters* params,
       dest1 = objects[addr1];
       dest2 = objects[addr2];
 
-      if (outputgraph_) {
-        connected.push_back(addr1);
-        connected.push_back(addr2);
-        connected_red.push_back(red_[z]);
-        connected_red.push_back(red_[z]);
-      }
+
 
       top_debug("switch %d,%s for dim %d connecting in the pos dir to %d,%s : %s",
          int(me), stl_string(coords).c_str(), z,
@@ -436,27 +410,6 @@ hdtorus::connect_objects(sprockit::sim_parameters* params,
 
 
       connect_dim(params, z, objects[me], dest1, dest2);
-
-    }
-
-    if (outputgraph_) {
-      for (int k = 0; k < endpoints_per_switch_; k++) {
-        cout0 << (me * endpoints_per_switch_ + k);
-        for (int l = 0; l < (int) connected.size(); l++) {
-          for (int m = 0; m < endpoints_per_switch_; m++) {
-            cout0 << " " << (connected[l] * endpoints_per_switch_ + m) << ":"
-                      << connected_red[l];
-
-          }
-        }
-        for (int m = 0; m < endpoints_per_switch_; m++) {
-          if (m != k) {
-            cout0 << " " << (me * endpoints_per_switch_ + m) << ":"
-                      << 100000;
-          }
-        }
-        cout0 << "\n";
-      }
 
     }
   }

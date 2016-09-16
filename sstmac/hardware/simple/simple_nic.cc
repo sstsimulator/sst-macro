@@ -50,13 +50,22 @@ simple_nic::handle(event *ev)
 }
 
 void
-simple_nic::connect(
+simple_nic::connect_output(
   sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
-  connection_type_t ty,
   connectable* mod)
 {
+}
+
+void
+simple_nic::connect_input(
+  sprockit::sim_parameters* params,
+  int src_outport,
+  int dst_inport,
+  connectable* mod)
+{
+  //nothing needed
 }
 
 void

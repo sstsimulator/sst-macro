@@ -34,105 +34,94 @@ class simple_topology :
 {
 
  public:
+  typedef enum {
+    injection,
+    network
+  } port;
+
   virtual std::string
-  to_string() const {
+  to_string() const override {
     return "simple topology";
   }
 
   virtual ~simple_topology();
 
-  simple_topology() :
-    actual_topology_(nullptr)
-  {
-  }
+  simple_topology(sprockit::sim_parameters* params);
 
-  void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
-  finalize_init();
+  cartesian_topology*
+  cart_topology() const override;
 
   int
-  num_leaf_switches() const {
+  num_leaf_switches() const override {
     return num_switches_;
   }
 
   int
-  num_switches() const {
+  ndimensions() const;
+
+  int
+  num_switches() const override {
     return num_switches_;
   }
 
-  int
-  num_endpoints() const {
-    return num_nodes_;
-  }
-
-  int
-  num_nodes() const {
-    return num_nodes_;
-  }
-
   void
-  compute_switch_coords(switch_id swid, coordinates &coords) const;
+  compute_switch_coords(switch_id swid, coordinates &coords) const override;
 
   int
-  convert_to_port(int dim, int dir) const;
+  convert_to_port(int dim, int dir) const override;
 
   void
   connect_objects(sprockit::sim_parameters* params,
-                  internal_connectable_map& objects);
+                  internal_connectable_map& objects) override;
 
   coordinates
-  node_coords(node_id uid) const;
+  node_coords(node_id uid) const override;
 
   void
   minimal_route_to_coords(
     const coordinates& src_coords,
     const coordinates& dest_coords,
-    structured_routable::path& path) const;
+    structured_routable::path& path) const override;
 
   int
   minimal_distance(
     const coordinates& src_coords,
-    const coordinates& dest_coords) const;
+    const coordinates& dest_coords) const override;
 
   virtual int
-  num_hops_to_node(node_id src, node_id dst) const;
+  num_hops_to_node(node_id src, node_id dst) const override;
 
   virtual int
-  ndimensions() const;
-
-  virtual int
-  diameter() const;
-
-  virtual int
-  radix() const {
-    return num_switches_ - 1;
-  }
+  diameter() const override;
 
   void
-  configure_vc_routing(std::map<routing::algorithm_t, int> &m) const {
+  configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override {
     topology::configure_vc_routing(m);
   }
 
   switch_id
-  switch_number(const coordinates& coords) const;
+  switch_number(const coordinates& coords) const override;
 
-  virtual std::vector<node_id>
-  nodes_connected_to_switch(switch_id swaddr) const;
+  virtual void
+  nodes_connected_to_injection_switch(switch_id swaddr,
+                                      std::vector<node_id>& nodes) const override;
+
+  virtual void
+  nodes_connected_to_ejection_switch(switch_id swaddr,
+                                      std::vector<node_id>& nodes) const override;
 
   virtual switch_id
-  endpoint_to_ejection_switch(node_id nodeaddr, int &switch_port) const;
+  endpoint_to_ejection_switch(node_id nodeaddr, int &switch_port) const override;
 
   virtual switch_id
-  endpoint_to_injection_switch(node_id nodeaddr, int &switch_port) const;
+  endpoint_to_injection_switch(node_id nodeaddr, int &switch_port) const override;
 
   virtual void
   productive_path(
     int dim,
     const coordinates& src,
     const coordinates& dst,
-    structured_routable::path& path) const;
+    structured_routable::path& path) const override;
 
  protected:
   int num_switches_;

@@ -19,18 +19,6 @@ namespace sstmac {
 namespace hw {
 
 void
-dist_dummy_switch::connect_ejector(sprockit::sim_parameters* params,
-                                   int src_outport, int dst_inport, event_handler* nic)
-{
-}
-
-void
-dist_dummy_switch::connect_injector(sprockit::sim_parameters* params,
-                                    int src_outport, int dst_inport, event_handler* nic)
-{
-}
-
-void
 dist_dummy_switch::connect_input(
   sprockit::sim_parameters* params,
   int src_outport,

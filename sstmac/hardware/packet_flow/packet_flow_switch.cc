@@ -129,40 +129,6 @@ packet_flow_switch::connect_input(
                    safe_cast(event_handler, mod));
 }
 
-void
-packet_flow_switch::connect(
-  sprockit::sim_parameters* params,
-  int src_outport,
-  int dst_inport,
-  connection_type_t ty,
-  connectable* mod)
-{
-  switch(ty) {
-    case output:
-      connect_output(params, src_outport, dst_inport, mod);
-      break;
-    case input:
-      connect_input(params, src_outport, dst_inport, mod);
-      break;
-  }
-}
-
-void
-packet_flow_switch::connect_injector(sprockit::sim_parameters* params,
-                                     int src_outport, int dst_inport, event_handler* nic)
-{
-  connectable* inp = safe_cast(connectable, nic);
-  connect_input(params, src_outport, dst_inport, inp);
-}
-
-void
-packet_flow_switch::connect_ejector(sprockit::sim_parameters* params,
-                                    int src_outport, int dst_inport, event_handler* nic)
-{
-  connectable* inp = safe_cast(connectable, nic);
-  connect_output(params, src_outport, dst_inport, inp);
-}
-
 std::vector<switch_id>
 packet_flow_switch::connected_switches() const
 {

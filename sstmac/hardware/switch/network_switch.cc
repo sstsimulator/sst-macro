@@ -83,39 +83,6 @@ network_switch::init(unsigned int phase)
 }
 
 
-void
-network_switch::connect(
-  sprockit::sim_parameters* params,
-  int src_outport,
-  int dst_inport,
-  connection_type_t ty,
-  connectable* mod)
-{
- switch (ty) {
-   case input: {
-      if (top_->is_injection_port(dst_inport)){
-        connect_injector(params, src_outport, dst_inport, safe_cast(event_handler, mod));
-      } else {
-        connect_input(params, src_outport, dst_inport, mod);
-      }
-      break;
-    }
-    case output: {
-      if (top_->is_injection_port(src_outport)){
-        connect_ejector(params, src_outport, dst_inport, safe_cast(event_handler, mod));
-      } else {
-        connect_output(params, src_outport, dst_inport, mod);
-      }
-      //here my outport is zero
-      break;
-    }
-    default:
-      connectable_type_invalid(ty);
-   }
-}
-
-
-
 }
 }
 

@@ -11,8 +11,7 @@ class tiled_torus :
   public hdtorus
 {
  public:
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params) override;
+  tiled_torus(sprockit::sim_parameters *params);
 
   virtual void
   minimal_routes_to_coords(

@@ -92,8 +92,7 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   partition_ = part;
   rt_ = rt;
   int my_rank = rt_->me();
-  sprockit::sim_parameters* netlink_params = nullptr;
-  if (params->has_namespace("netlink")) netlink_params = params->get_namespace("netlink");
+  sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
   int netlink_conc = topology_->num_nodes_per_netlink();
 
   sprockit::sim_parameters* node_params = params->get_namespace("node");
@@ -106,7 +105,8 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   int num_switches = topology_->num_switches();
   for (int i=0; i < num_switches; ++i){
     if (partition_->lpid_for_switch(switch_id(i)) == my_rank){
-      std::vector<node_id> nodes = top->nodes_connected_to_switch(switch_id(i));
+      std::vector<node_id> nodes;
+      top->nodes_connected_to_injection_switch(switch_id(i), nodes);
       for (int n=0; n < nodes.size(); ++n){
         node_id nid = nodes[n];
         node_params->add_param_override("id", int(nid));
@@ -122,7 +122,7 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
         int interf_id = nid / netlink_conc;
         int interf_offset = nid % netlink_conc;
         node_id my_id = node_id(interf_id);
-        if (netlink_params && interf_offset == 0){
+        if (netlink_conc > 1 && interf_offset == 0){
           top_debug("Adding NIC %d connected to switch %d on rank %d",
             int(my_id), i, my_rank);
           params->add_param_override("id", int(my_id));
@@ -147,10 +147,11 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   copy_map(connectables, switches_);
 
   if (!netlinks_.empty()){
-#if 0
+    sprockit::sim_parameters* nlink_inj_params = netlink_params->get_namespace("injection");
+    sprockit::sim_parameters* nlink_ej_params = netlink_params->get_namespace("ejection");
     int the_only_port = 0;
     //we connect to netlinks, not nics
-    topology_->connect_end_points(node_params, switch_params, switches_, netlinks_);
+    topology_->connect_end_points(ej_params, nlink_inj_params, switches_, netlinks_);
     int netlinks_per_node = topology_->num_nodes_per_netlink();
     node_map::iterator it, end = nodes_.end();
     for (it = nodes_.begin(); it != end; it++) {
@@ -164,15 +165,22 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
       top_debug("Connecting NIC %d to netlink %d on ports %d:%d",
              int(nid), int(netid), the_only_port, inj_port);
       //injection ports have to be offset
-      nlnk->connect(the_only_port, inj_port, connectable::input, the_nic, &nic_cfg);
-      the_nic->connect(the_only_port, inj_port, connectable::output, nlnk, &nic_cfg);
+      nlnk->connect_input(nlink_inj_params,
+                    the_only_port, inj_port,
+                    the_nic);
+      the_nic->connect_output(inj_params,
+                       the_only_port, inj_port,
+                       nlnk);
 
-      nlnk->connect(inj_port, the_only_port, connectable::output, the_nic, &nic_cfg);
-      the_nic->connect(inj_port, the_only_port, connectable::input, nlnk, &nic_cfg);
+      nlnk->connect_output(nlink_inj_params,
+                    inj_port, the_only_port,
+                    the_nic);
+      the_nic->connect_input(inj_params,
+                       inj_port, the_only_port,
+                       nlnk);
     }
-#endif
   } else {
-    topology_->connect_end_points(switch_params, node_params, switches_, nics_);
+    topology_->connect_end_points(ej_params, inj_params, switches_, nics_);
   }
 
 

@@ -87,51 +87,6 @@ class network_switch :
   virtual int
   queue_length(int port) const = 0;
 
-  /**
-   * @brief connect
-   * @param src_outport The port that packets will exit on the source
-   * @param dst_inport  The port that packets will enter on the destination
-   * @param ty          The type of connection (usually just output or input)
-   *                    An output connection is a data link that carries payload
-   *                    from src to dst. An input connection is a control link that
-   *                    usually just carries credit/arbitration info from dst to src.
-   * @param mod         The dst (if output link) or src (if input link)
-   * @param cfg         An special configure options for the link
-   */
-  void
-  connect(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    connection_type_t ty,
-    connectable* mod) override;
-
- protected:
-  virtual void
-  connect_injector(
-    sprockit::sim_parameters* params,
-    int src_outport, int dst_inport,
-    event_handler* nic) = 0;
-
-  virtual void
-  connect_ejector(
-    sprockit::sim_parameters* params,
-    int src_outport, int dst_inport,
-    event_handler* nic) = 0;
-
-  virtual void
-  connect_output(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    connectable* mod) = 0;
-
-  virtual void
-  connect_input(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    connectable* mod) = 0;
 
  protected:
   switch_id my_addr_;

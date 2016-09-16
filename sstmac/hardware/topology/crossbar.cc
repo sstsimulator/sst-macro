@@ -21,16 +21,16 @@ namespace hw {
 
 SpktRegister("crossbar | xbar", topology, crossbar);
 
-void
-crossbar::init_factory_params(sprockit::sim_parameters* params)
+crossbar::crossbar(sprockit::sim_parameters* params) :
+  structured_topology(params,
+                      InitMaxPortsIntra::I_Remembered,
+                      InitGeomEjectID::I_Remembered)
 {
   std::vector<int> args;
   params->get_vector_param("geometry", args);
   size_ = args[0];
-  max_ports_injection_ = endpoints_per_switch_ = params->get_optional_int_param("concentration", 1);
   max_ports_intra_network_ = num_switches();
   eject_geometric_id_ = max_ports_intra_network_;
-  structured_topology::init_factory_params(params);
 }
 
 void
@@ -116,17 +116,15 @@ crossbar::connect_objects(sprockit::sim_parameters* params, internal_connectable
         int outport = convert_to_port(0, j);
         int inport = convert_to_port(0, i);
 
-        objects[me]->connect(
+        objects[me]->connect_output(
           link_params,
           outport,
           inport,
-          connectable::output,
           objects[them]);
 
-        objects[them]->connect(
+        objects[them]->connect_input(
           link_params,
           outport, inport,
-          connectable::input,
           objects[me]);
       }
     }

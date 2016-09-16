@@ -100,13 +100,6 @@ class structured_topology : public topology
     const coordinates& src_coords,
     const coordinates& dest_coords) const = 0;
 
-  /**
-      The number of distinct 'dimensions'
-      in the topology.  This can correspond directly to standard
-      X,Y,Z dimensions or the the number of levels in a fat tree.
-      The keyword topology_redundant vector should have this many
-      entries.
-  */
   virtual int
   ndimensions() const = 0;
 
@@ -131,27 +124,6 @@ class structured_topology : public topology
     const coordinates& dst,
     structured_routable::path& path) const = 0;
   /**** END PURE VIRTUAL INTERFACE *****/
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  /**
-   * Given a switch address, return number of nodes connected to it
-   */
-  virtual int
-  endpoints_per_switch(switch_id addr) const {
-    return endpoints_per_switch_;
-  }
-
-  virtual int
-  num_nodes() const {
-    return endpoints_per_switch_ * num_leaf_switches() * num_nodes_per_netlink_;
-  }
-
-  virtual int
-  num_endpoints() const {
-    return endpoints_per_switch_ * num_leaf_switches();
-  }
 
   /**
     Compute coordinates (e.g. X,Y,Z for 3D torus)
@@ -196,9 +168,6 @@ class structured_topology : public topology
   endpoint_to_switch_port(node_id nid) const {
     return nid % endpoints_per_switch_;
   }
-
-  void
-  finalize_init();
 
   virtual void
   productive_paths(
@@ -247,16 +216,6 @@ class structured_topology : public topology
   virtual int
   num_hops_to_node(node_id src, node_id dst) const;
 
-  virtual std::vector<node_id>
-  nodes_connected_to_injection_switch(switch_id swaddr) const {
-    return nodes_connected_to_switch(swaddr);
-  }
-
-  virtual std::vector<node_id>
-  nodes_connected_to_ejection_switch(switch_id swid) const {
-    return nodes_connected_to_switch(swid);
-  }
-
   virtual coordinates
   neighbor_at_port(switch_id sid, int port);
 
@@ -278,14 +237,13 @@ class structured_topology : public topology
     node_id src_node,
     std::vector<node_id>& partners) const;
 
-  virtual std::vector<node_id>
-  nodes_connected_to_switch(switch_id swaddr) const;
-
  protected:
   void
   configure_injection_geometry(std::vector<int>& redundancies);
 
-  structured_topology();
+  structured_topology(sprockit::sim_parameters* params,
+                      InitMaxPortsIntra i1,
+                      InitGeomEjectID i2);
 
   /**
     Compute coordinates (e.g. X,Y,Z for 3D torus)
@@ -327,9 +285,7 @@ class structured_topology : public topology
     std::vector<node_id>& partners) const;
 
  protected:
-  int eject_geometric_id_;
-  int injection_redundancy_;
-  bool outputgraph_;
+
 
 };
 }

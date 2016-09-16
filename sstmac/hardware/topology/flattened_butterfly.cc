@@ -108,31 +108,27 @@ flattened_butterfly::connect_objects(sprockit::sim_parameters* params,
         offset = l * kary_ + my_intra_group_index;
         int down_port = convert_to_port(down_dimension, offset);
 
-        my_sw->connect(
+        my_sw->connect_output(
           link_params,
           up_port, //up is out, down is in - got it?
           down_port,
-          connectable::output,
           partner_sw);
-        partner_sw->connect(
+        partner_sw->connect_input(
           link_params,
           up_port,
           down_port,
-          connectable::input,
           my_sw);
 
         //printf("Connecting %ld:%d->%ld\n", up_group_partner, port, my_switch_index);
-        partner_sw->connect(
+        partner_sw->connect_output(
           link_params,
           down_port,
           up_port,
-          connectable::output,
           my_sw);
-        my_sw->connect(
+        my_sw->connect_input(
           link_params,
           down_port,
           up_port,
-          connectable::input,
           partner_sw);
       }
     }
@@ -214,10 +210,11 @@ flattened_butterfly::switch_number(const coordinates &coords) const
   return abstract_butterfly::switch_number(coords);
 }
 
-void
-flattened_butterfly::init_factory_params(sprockit::sim_parameters *params)
+flattened_butterfly::flattened_butterfly(sprockit::sim_parameters *params) :
+  abstract_butterfly(params,
+                     InitMaxPortsIntra::I_Remembered,
+                     InitGeomEjectID::I_Remembered)
 {
-  abstract_butterfly::init_factory_params(params);
   int nstages = nfly_ - 1;
   int up_radix = kary_ * nstages;
   int down_radix = up_radix;

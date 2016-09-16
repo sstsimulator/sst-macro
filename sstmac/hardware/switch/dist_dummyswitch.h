@@ -52,16 +52,6 @@ class dist_dummy_switch : public network_switch
   handle(event* ev) override;
 
   virtual void
-  connect(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    connection_type_t ty,
-    connectable* mod) override
-  { //no op 
-  }
-
-  virtual void
   connect_input(
     sprockit::sim_parameters* params,
     int src_outport,
@@ -85,15 +75,6 @@ class dist_dummy_switch : public network_switch
   queue_length(int port) const override {
     return 0;
   }
-
- protected:
-  virtual void
-  connect_ejector(sprockit::sim_parameters* params,
-                  int src_outport, int dst_inport, event_handler* nic) override;
-
-  virtual void
-  connect_injector(sprockit::sim_parameters* params,
-                   int src_outport, int dst_inport, event_handler* nic) override;
 
 
 };

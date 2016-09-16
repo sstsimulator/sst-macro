@@ -11,6 +11,7 @@
 
 
 #include <sstmac/hardware/simple/simple_topology.h>
+#include <sstmac/hardware/topology/cartesian_topology.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 #include <stdio.h>
@@ -29,12 +30,12 @@ simple_topology::endpoint_to_injection_switch(node_id nodeaddr, int &switch_port
   if (nodeaddr >= first_cutoff){
     int offsetaddr = nodeaddr - first_cutoff;
     int id = (offsetaddr / endpoints_per_switch_) + num_switches_with_extra_node_;
-    switch_port = nodeaddr % endpoints_per_switch_;
+    switch_port = injection;
     return switch_id(id);
   }
   else {
     int id = nodeaddr / (endpoints_per_switch_+1);
-    switch_port = nodeaddr % (endpoints_per_switch_+1);
+    switch_port = injection;
     return switch_id(id);
   }
 }
@@ -50,6 +51,12 @@ simple_topology::endpoint_to_ejection_switch(node_id nodeaddr, int &switch_port)
   return endpoint_to_injection_switch(nodeaddr, switch_port);
 }
 
+int
+simple_topology::ndimensions() const
+{
+  return safe_cast(structured_topology, actual_topology_)->ndimensions();
+}
+
 coordinates
 simple_topology::node_coords(node_id uid) const
 {
@@ -57,24 +64,29 @@ simple_topology::node_coords(node_id uid) const
   return t->node_coords(uid);
 }
 
-void
-simple_topology::init_factory_params(sprockit::sim_parameters* params)
+simple_topology::simple_topology(sprockit::sim_parameters* params) :
+  structured_topology(params,
+                      InitMaxPortsIntra::I_Remembered,
+                      InitGeomEjectID::I_Remembered)
 {
   actual_topology_ = topology_factory::get_param("actual_name", params);
   num_nodes_ = actual_topology_->num_nodes();
   num_switches_ = params->get_int_param("nworkers");
 
+  concentration_ = num_nodes_ / num_switches_;
+  if (num_nodes_ % num_switches_) ++concentration_;
+
+  max_ports_intra_network_ = num_switches_;
+  eject_geometric_id_ = max_ports_intra_network_;
+
   endpoints_per_switch_ = num_nodes_ / num_switches_;
   num_switches_with_extra_node_ = num_nodes_ % num_switches_;
-
-  structured_topology::init_factory_params(params);
 }
 
-int
-simple_topology::ndimensions() const
+cartesian_topology*
+simple_topology::cart_topology() const
 {
-  structured_topology* stop = safe_cast(structured_topology, actual_topology_);
-  return stop->ndimensions();
+  return safe_cast(cartesian_topology, const_cast<simple_topology*>(this));
 }
 
 int
@@ -88,11 +100,6 @@ int
 simple_topology::num_hops_to_node(node_id src, node_id dst) const
 {
   return actual_topology_->num_hops_to_node(src, dst);
-}
-
-void
-simple_topology::finalize_init()
-{
 }
 
 int
@@ -135,8 +142,9 @@ simple_topology::minimal_distance(
     "simple_topology::minimal_distance: should never be called");
 }
 
-std::vector<node_id>
-simple_topology::nodes_connected_to_switch(switch_id swaddr) const
+void
+simple_topology::nodes_connected_to_injection_switch(switch_id swaddr,
+                                           std::vector<node_id>& nodes) const
 {
   if (swaddr >= num_switches_){
     spkt_throw_printf(sprockit::value_error,
@@ -156,14 +164,18 @@ simple_topology::nodes_connected_to_switch(switch_id swaddr) const
   }
 
   int addr_range = addr_end - addr_start;
-  std::vector<node_id> nids;
-  nids.resize(addr_range);
+  nodes.resize(addr_range);
   for (int i=0; i < addr_range; ++i){
     node_id nid(i + addr_start);
-    nids[i] = nid;
+    nodes[i] = nid;
   }
+}
 
-  return nids;
+void
+simple_topology::nodes_connected_to_ejection_switch(switch_id swaddr,
+                                                    std::vector<node_id>& nodes) const
+{
+  nodes_connected_to_injection_switch(swaddr, nodes);
 }
 
 void
@@ -171,16 +183,13 @@ simple_topology::connect_objects(sprockit::sim_parameters* params,
                                  internal_connectable_map& objects)
 {
   top_debug("simple topology: connecting %d switches", int(objects.size()));
-  internal_connectable_map::iterator ait, aend = objects.end();
-  int ignore_port = 0;
   for (auto& src : objects) {
     for (auto& dst : objects) {
       if (src.first != dst.first){
-        src.second->connect(
+        src.second->connect_output(
           params,
-          ignore_port,
-          ignore_port,
-          connectable::output,
+          network,
+          network,
           dst.second);
       }
     }

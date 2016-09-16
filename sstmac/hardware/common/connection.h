@@ -21,56 +21,18 @@ class connectable
 
   static const int any_port = -1;
 
-  typedef enum {
-    RedundantConnection=0, /*!< The connection has extra redundant links */
-    WeightedConnection=1, /*!< The connection is weighted. Weighting applies
-                               to bandwidths and buffer sizes */
-    FixedBandwidthConnection=2, /*!< The connection has a fixed bandwidth */
-    FixedConnection=3, /*!< The connection has a fixex bandwidth and latency */
-    BasicConnection=4 /*!< The connection has no special properties
-                           Use only the defauly properties */
-  } config_type_t;
-
-  struct config {
-    config_type_t ty;
-    double src_buffer_weight;
-    double dst_buffer_weight;
-    double xbar_weight;
-    double link_weight;
-    int red;
-    double bw;
-    timestamp latency;
-    config() : xbar_weight(1.0){}
-  };
-
-  typedef enum {
-    output,
-    input
-  } connection_type_t;
-
-
-  static const char*
-  str(connection_type_t ty) {
-    switch (ty) {
-      connect_str_case(output);
-      connect_str_case(input);
-    }
-  }
-
-  /**
-   * @brief connect
-   * @param src_outport The outgoing port at the source
-   * @param dst_inport The incoming port at the destination
-   * @param ty    Whether we are configuring the input or output direction
-   * @param mod   The device currently being connected
-   * @param cfg   A struct with various special configuration options
-   */
   virtual void
-  connect(
+  connect_output(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    connection_type_t ty,
+    connectable* mod) = 0;
+
+  virtual void
+  connect_input(
+    sprockit::sim_parameters* params,
+    int src_outport,
+    int dst_inport,
     connectable* mod) = 0;
 
 };

@@ -50,30 +50,30 @@ abstract_butterfly::switch_number(const coordinates& coords) const
   return switch_id(nid);
 }
 
-void
-abstract_butterfly::init_factory_params(sprockit::sim_parameters* params)
+abstract_butterfly::abstract_butterfly(sprockit::sim_parameters* params,
+                                       InitMaxPortsIntra i1,
+                                       InitGeomEjectID i2)
+  : structured_topology(override_params(params), i1, i2)
 {
-  /**
-   sstkeyword {
-   gui=4 3;
-   docstring=Specify the geometry of the butterfly network.ENDL
-   Should be a vector of size 2 for K-ary N-fly.ENDL
-   First index, K, is the radix of the butterfly.ENDL
-   Second index, N, is the number of stages.ENDL
-   Network will have K^(N-1) leaf switches and K^N network endpoints.;
-   }
-   */
-  std::vector<int> args;
-  params->get_vector_param("geometry", args);
-  kary_ = args[0];
-  nfly_ = args[1];
-  max_ports_injection_ = endpoints_per_switch_ = params->get_optional_int_param("concentration", kary_);
+}
+
+sprockit::sim_parameters*
+abstract_butterfly::override_params(sprockit::sim_parameters* params)
+{
   //a 4-ary 3-fly has three levels of router
   //assume for simplicity nps = kary
   //we have 4^3 = 64 nodes
   //we need 4^(3-1) = 16 switches per level to support 64 nodes
+
+  std::vector<int> args;
+  params->get_vector_param("geometry", args);
+  kary_ = args[0];
+  nfly_ = args[1];
+  if (!params->has_param("concentration")){
+    params->add_param_override("concentration", kary_);
+  }
   nswitches_per_col_ = pow(kary_, nfly_ - 1);
-  structured_topology::init_factory_params(params);
+  return params;
 }
 
 void
@@ -95,10 +95,11 @@ butterfly::compute_switch_coords(switch_id uid, coordinates& coords) const
   coords[nfly_-1] = col;
 }
 
-void
-butterfly::init_factory_params(sprockit::sim_parameters* params)
+butterfly::butterfly(sprockit::sim_parameters* params) :
+  abstract_butterfly(params,
+                     InitMaxPortsIntra::I_Remembered,
+                     InitGeomEjectID::I_Remembered)
 {
-  abstract_butterfly::init_factory_params(params);
   last_col_index_start_ = nswitches_per_col_ * (nfly_ - 1);
   max_ports_intra_network_ = kary_;
   eject_geometric_id_ = max_ports_intra_network_;
@@ -175,18 +176,16 @@ butterfly::connect_objects(sprockit::sim_parameters* params, internal_connectabl
         switch_id up_group_partner_addr(up_group_partner);
         connectable* partner_sw = objects[up_group_partner_addr];
         int outport = convert_to_port(up_dimension, c);
-        my_sw->connect(
+        my_sw->connect_output(
           link_params,
           outport,
           inport,
-          connectable::output,
           partner_sw);
 
-        partner_sw->connect(
+        partner_sw->connect_input(
           link_params,
           outport,
           inport,
-          connectable::input,
           my_sw);
       }
     }
@@ -261,26 +260,28 @@ butterfly::switch_number(const coordinates &coords) const
   return switch_id(nid);
 }
 
-std::vector<node_id>
-butterfly::nodes_connected_to_ejection_switch(switch_id swaddr) const
+void
+butterfly::nodes_connected_to_ejection_switch(switch_id swaddr,
+                                              std::vector<node_id>& nodes) const
 {
   int last_row_offset = nswitches_per_col_ * (nfly_ - 1);
   if (swaddr >= last_row_offset) {
     switch_id sid_offset(swaddr - last_row_offset);
-    return structured_topology::nodes_connected_to_switch(sid_offset);
+    return topology::nodes_connected_to_injection_switch(sid_offset, nodes);
   } else {
-    return std::vector<node_id>();
+    nodes.resize(0);
   }
 }
 
-std::vector<node_id>
-butterfly::nodes_connected_to_injection_switch(switch_id swaddr) const
+void
+butterfly::nodes_connected_to_injection_switch(switch_id swaddr,
+                                               std::vector<node_id>& nodes) const
 {
   if (swaddr >= nswitches_per_col_) {
-    return std::vector<node_id>();
+    nodes.resize(0);
   }
   else {
-    return structured_topology::nodes_connected_to_switch(swaddr);
+    return topology::nodes_connected_to_injection_switch(swaddr, nodes);
   }
 }
 

@@ -67,11 +67,6 @@ class fake_topology :
   }
 
   int
-  radix() const {
-    return 0;
-  }
-
-  int
   ndimensions() const {
     return 0;
   }
@@ -99,11 +94,6 @@ class fake_topology :
 
   int
   num_leaf_switches() const {
-    return 0;
-  }
-
-  int
-  num_nodes() const {
     return 0;
   }
 

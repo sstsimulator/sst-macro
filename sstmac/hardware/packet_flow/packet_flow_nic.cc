@@ -61,32 +61,25 @@ packet_flow_nic::~packet_flow_nic() throw ()
 }
 
 void
-packet_flow_nic::connect(
+packet_flow_nic::connect_output(
   sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
-  connection_type_t ty,
   connectable* mod)
 {
   packet_flow_nic_packetizer* packer = safe_cast(packet_flow_nic_packetizer, packetizer_);
-  switch(ty) {
-    case connectable::output: {
-      if (src_outport != 0){
-        spkt_throw(sprockit::illformed_error,
-            "packet_flow_nic::connect: injection outport not zero");
-      }
-      packer->set_output(params, dst_inport, mod);
-      break;
-    }
-    case connectable::input: {
-      if (dst_inport != 0){
-        spkt_throw(sprockit::illformed_error,
-            "packet_flow_nic::connect: ejection outport not zero");
-      }
-      packer->set_input(params, src_outport, mod);
-      break;
-    }
-  }
+  packer->set_output(params, dst_inport, mod);
+}
+
+void
+packet_flow_nic::connect_input(
+  sprockit::sim_parameters* params,
+  int src_outport,
+  int dst_inport,
+  connectable* mod)
+{
+  packet_flow_nic_packetizer* packer = safe_cast(packet_flow_nic_packetizer, packetizer_);
+  packer->set_input(params, src_outport, mod);
 }
 
 void
@@ -105,27 +98,23 @@ packet_flow_nic::do_send(network_message* payload)
 }
 
 void
-packet_flow_netlink::connect(
+packet_flow_netlink::connect_output(
   sprockit::sim_parameters* params,
   int src_outport, int dst_inport,
-  connection_type_t ty, connectable *mod)
+  connectable *mod)
 {
   event_handler* conn = safe_cast(event_handler, mod);
+  block_->set_output(params, src_outport, dst_inport, conn);
+}
 
-  switch(ty)
-  {
-  case connectable::input:
-  {
-    block_->set_input(params, dst_inport, src_outport, conn);
-    break;
-  }
-  case connectable::output:
-  {
-    block_->set_output(params, src_outport, dst_inport, conn);
-    break;
-  }
-  }
-
+void
+packet_flow_netlink::connect_input(
+  sprockit::sim_parameters* params,
+  int src_outport, int dst_inport,
+  connectable *mod)
+{
+  event_handler* conn = safe_cast(event_handler, mod);
+  block_->set_input(params, dst_inport, src_outport, conn);
 }
 
 packet_flow_netlink::packet_flow_netlink(sprockit::sim_parameters *params, node *parent)

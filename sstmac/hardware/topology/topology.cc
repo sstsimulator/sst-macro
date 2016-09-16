@@ -20,12 +20,38 @@ topology* topology::static_topology_ = 0;
 topology* topology::main_top_ = 0;
 const int topology::eject = -1;
 
-topology::topology() :
+topology::topology(sprockit::sim_parameters* params,
+                   InitMaxPortsIntra i1,
+                   InitGeomEjectID i2) :
   max_ports_intra_network_(-1),
+  eject_geometric_id_(-1),
   max_ports_injection_(-1),
   endpoints_per_switch_(-1),
   rng_(nullptr)
 {
+  concentration_ = params->get_optional_int_param("concentration",1);
+  endpoints_per_switch_ = concentration_;
+
+  injection_redundancy_ = params->get_optional_int_param("injection_redundant", 1);
+  max_ports_injection_ = endpoints_per_switch_;
+  eject_geometric_id_ = max_ports_intra_network_ + max_ports_injection_;
+
+  sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
+  num_nodes_per_netlink_ = netlink_params->get_optional_int_param("radix", 1);
+
+  std::vector<RNG::rngint_t> seeds(2);
+  seeds[0] = 42;
+  if (params->has_param("seed")) {
+    seed_ = params->get_long_param("seed");
+    seeds[1] = seed_;
+    debug_seed_ = true;
+  } else {
+    seeds[1] = time(NULL);
+    debug_seed_ = false;
+  }
+  rng_ = RNG::MWC::construct(seeds);
+
+  main_top_ = this;
 }
 
 topology::~topology()
@@ -40,25 +66,6 @@ topology::switch_coords(switch_id swid) const
     "topology::switch_coords: current topology does not implement coordinate system");
 }
 
-void
-topology::sanity_check()
-{
-  if (max_ports_intra_network_ < 0){
-    spkt_throw_printf(sprockit::value_error,
-      "topology::max_radix_ uninitialized");
-  }
-  if (max_ports_injection_ < 0){
-    spkt_throw_printf(sprockit::value_error,
-      "topology::max_nps_ uninitialized");
-  }
-}
-
-void
-topology::finalize_init()
-{
-  sanity_check();
-}
-
 topology*
 topology::static_topology(sprockit::sim_parameters* params)
 {
@@ -67,43 +74,6 @@ topology::static_topology(sprockit::sim_parameters* params)
     static_topology_ = topology_factory::get_param("name", top_params);
   }
   return static_topology_;
-}
-
-void
-topology::init_factory_params(sprockit::sim_parameters* params)
-{
-  outputgraph_ = params->get_optional_bool_param("output_graph", false);
-
-  netlink_endpoints_ = params->get_optional_bool_param("netlink_endpoints", false);
-  num_nodes_per_netlink_ = params->get_optional_int_param("netlink_radix", 1);
-
-  if (netlink_endpoints_){
-    endpoints_per_switch_ /= num_nodes_per_netlink_;
-  } else {
-    num_nodes_per_netlink_ = 1;
-  }
-
-  /**
-    sstkeyword {
-      gui = 42;
-      docstring = In some cases, walking the topology requires a random decision.ENDL
-      The seed for all the random decisions can be explicitly set for debugging.;
-      extra = true;
-    }
-  */
-  std::vector<RNG::rngint_t> seeds(2);
-  seeds[0] = 42;
-  if (params->has_param("seed")) {
-    seed_ = params->get_long_param("seed");
-    seeds[1] = seed_;
-    debug_seed_ = true;
-  } else {
-    seeds[1] = time(NULL);
-    debug_seed_ = false;
-  }
-  rng_ = RNG::MWC::construct(seeds);
-
-  main_top_ = this;
 }
 
 uint32_t
@@ -161,10 +131,23 @@ topology::random_intermediate_switch(switch_id current, switch_id dest)
 }
 
 void
-topology::configure_injection_params(
-  sprockit::sim_parameters* nic_params,
-  sprockit::sim_parameters* switch_params)
+topology::nodes_connected_to_ejection_switch(switch_id swaddr,
+                                   std::vector<node_id>& nodes) const
 {
+  nodes.resize(concentration_);
+  for (int i = 0; i < concentration_; i++) {
+    nodes[i] = netlink_id(swaddr*concentration_ + i);
+  }
+}
+
+void
+topology::nodes_connected_to_injection_switch(switch_id swaddr,
+                                   std::vector<node_id>& nodes) const
+{
+  nodes.resize(concentration_);
+  for (int i = 0; i < concentration_; i++) {
+    nodes[i] = netlink_id(swaddr*concentration_ + i);
+  }
 }
 
 void
@@ -190,14 +173,12 @@ topology::build_internal_connectables(internal_connectable_map &connectables,
 
 void
 topology::connect_end_point_objects(
-  sprockit::sim_parameters* switch_params,
-  sprockit::sim_parameters* node_params,
+  sprockit::sim_parameters* ej_params,
+  sprockit::sim_parameters* inj_params,
   internal_connectable_map& internal,
   end_point_connectable_map& end_points)
 {
-  sprockit::sim_parameters* nic_params = node_params->get_namespace("nic");
-  sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
-  sprockit::sim_parameters* ej_params = switch_params->get_namespace("ejection");
+
 
   for (auto& pair : end_points) {
     connectable* node = pair.second;
@@ -214,8 +195,8 @@ topology::connect_end_point_objects(
       int switch_port = ports[i];
       top_debug("connecting switch %d to injector %d on ports %d:%d",
           int(injaddr), int(nodeaddr), switch_port, injector_port);
-      injsw->connect(ej_params, injector_port, switch_port, connectable::input, node);
-      node->connect(inj_params, injector_port, switch_port, connectable::output, injsw);
+      injsw->connect_input(ej_params, injector_port, switch_port, node);
+      node->connect_output(inj_params, injector_port, switch_port, injsw);
     }
 
     switch_id ejaddr = endpoint_to_ejection_switch(nodeaddr, ports, num_ports);
@@ -226,10 +207,8 @@ topology::connect_end_point_objects(
       int switch_port = ports[i];
       top_debug("connecting switch %d to ejector %d on ports %d:%d",
           int(ejaddr), int(nodeaddr), switch_port, ejector_port);
-      ejsw->connect(ej_params, switch_port, ejector_port,
-                    connectable::output, node);
-      node->connect(inj_params, switch_port, ejector_port,
-                    connectable::input, ejsw);
+      ejsw->connect_output(ej_params, switch_port, ejector_port, node);
+      node->connect_input(inj_params, switch_port, ejector_port, ejsw);
     }
 
   }
@@ -272,6 +251,12 @@ topology::create_partition(
   spkt_throw_printf(sprockit::unimplemented_error,
     "topology::partition: not valid for %s",
     to_string().c_str());
+}
+
+cartesian_topology*
+topology::cart_topology() const
+{
+  spkt_throw(sprockit::value_error, "topology is not a cartesian topology");
 }
 
 void

@@ -37,11 +37,17 @@ class packet_flow_nic :
   }
 
   virtual void
-  connect(
+  connect_output(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    connection_type_t ty,
+    connectable* mod) override;
+
+  virtual void
+  connect_input(
+    sprockit::sim_parameters* params,
+    int src_outport,
+    int dst_inport,
     connectable* mod) override;
 
  protected:
@@ -66,13 +72,19 @@ class packet_flow_netlink :
     return "packet flow netlink";
   }
 
-  void
-  connect(
+  virtual void
+  connect_output(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    connection_type_t ty,
-    connectable *mod) override;
+    connectable* mod) override;
+
+  virtual void
+  connect_input(
+    sprockit::sim_parameters* params,
+    int src_outport,
+    int dst_inport,
+    connectable* mod) override;
 
   void
   deadlock_check() override;

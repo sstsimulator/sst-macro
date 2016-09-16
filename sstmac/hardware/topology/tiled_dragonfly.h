@@ -54,7 +54,6 @@ class tiled_dragonfly : public dragonfly
   int n_tiles_;
 
  public:
-
   virtual std::string
   to_string() const {
     return "tiled_dragonfly";
@@ -62,8 +61,7 @@ class tiled_dragonfly : public dragonfly
 
   virtual ~tiled_dragonfly() {}
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
+  tiled_dragonfly(sprockit::sim_parameters* params);
 
   void
   connect_objects(sprockit::sim_parameters* params, internal_connectable_map& switches);
@@ -129,10 +127,12 @@ class tiled_dragonfly : public dragonfly
   read_intergroup_connections();
 
   void
-  make_intragroup_connections(internal_connectable_map& objects);
+  make_intragroup_connections(sprockit::sim_parameters* params,
+                              internal_connectable_map& objects);
 
   void
-  make_intergroup_connections(internal_connectable_map &objects);
+  make_intergroup_connections(sprockit::sim_parameters* params,
+                              internal_connectable_map &objects);
 
   void
   make_geomid();

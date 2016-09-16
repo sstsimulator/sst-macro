@@ -4,39 +4,33 @@
 namespace sstmac {
   namespace hw {
 
-
-void
-cartesian_topology::init_factory_params(sprockit::sim_parameters *params)
+cartesian_topology::cartesian_topology(sprockit::sim_parameters *params,
+                                       InitMaxPortsIntra i1,
+                                       InitGeomEjectID i2) :
+  structured_topology(params, i1, i2)
 {
-  /**
-  sstkeyword { gui=1 1 1;
-      docstring=The number of redundant physical links that make up
-                each link[edge] in the topology. These vector dimensions
-                should exactly match those in topology_geometry.
-                The total available bandwidth in each topology link is:ENDL
-                BW=Redundant*Link_BW;
-   }
-  */
-  std::string red_param = params->get_optional_param("redundant", "");
-  if (red_param.size() > 0) {
+  params->get_vector_param("geometry", dimensions_);
+  if (dimensions_.size() == 0) {
+    spkt_throw_printf(sprockit::value_error, "empty topology vector for hdtorus");
+  }
+
+  if (params->has_param("redundant")) {
     params->get_vector_param("redundant", red_);
-    if (red_.size() != ndimensions()) {
+    if (red_.size() != dimensions_.size()) {
       spkt_throw_printf(sprockit::input_error,
-                       "topology::init: wrong number of dimensions in topology_redundant=%s, "
+                       "topology::init: wrong number of dimensions in topology_redundant, "
                        "should be %d, got %d\n",
-                       red_param.c_str(),
-                       ndimensions(),
+                       dimensions_.size(),
                        red_.size());
     }
   }
   else {
-    int ndim = ndimensions();
+    int ndim = dimensions_.size();
     red_.resize(ndim);
     for (int i = 0; i < ndim; i++) {
       red_[i] = 1;
     }
   }
-  structured_topology::init_factory_params(params);
 }
 
 void

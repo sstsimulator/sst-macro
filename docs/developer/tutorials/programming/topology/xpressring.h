@@ -105,11 +105,6 @@ class xpress_ring :
     const coordinates& dst,
     structured_routable::path& path) const;
 
-  virtual int
-  radix() const {
-    return 4;
-  }
-
   virtual long
   num_switches() const {
     return ring_size_;

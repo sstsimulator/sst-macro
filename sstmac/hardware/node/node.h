@@ -55,8 +55,15 @@ class node :
   virtual ~node();
 
   void
-  connect(sprockit::sim_parameters* params, int src_outport, int dst_inport,
-    connection_type_t ty, connectable *mod) override;
+  connect_output(sprockit::sim_parameters* params,
+                 int src_outport, int dst_inport,
+                 connectable *mod) override;
+
+  void
+  connect_input(sprockit::sim_parameters* params,
+                 int src_outport, int dst_inport,
+                 connectable *mod) override;
+
 
   /**
    @return  The object encapsulating the memory model

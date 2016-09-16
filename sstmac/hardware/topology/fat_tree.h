@@ -41,9 +41,6 @@ class abstract_fat_tree :
     return k_;
   }
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
   virtual int
   ndimensions() const {
     //fat-tree is indexed by row and column
@@ -60,28 +57,35 @@ class abstract_fat_tree :
   }
 
   int
-  diameter() const {
+  diameter() const override {
     return (l_ + 1) * 2;
   }
 
   virtual int
-  num_leaf_switches() const {
+  num_leaf_switches() const override {
     return numleafswitches_;
   }
 
-  std::vector<node_id>
-  nodes_connected_to_injection_switch(switch_id swaddr) const;
+  void
+  nodes_connected_to_injection_switch(switch_id swaddr,
+                            std::vector<node_id>& nodes) const override;
 
-  std::vector<node_id>
-  nodes_connected_to_ejection_switch(switch_id swaddr) const;
+  void
+  nodes_connected_to_ejection_switch(switch_id swaddr,
+                            std::vector<node_id>& nodes) const override;
 
  protected:
-  std::vector<node_id>
-  nodes_connected_to_switch(switch_id swaddr) const;
+  abstract_fat_tree(sprockit::sim_parameters* params,
+                    InitMaxPortsIntra i1,
+                    InitGeomEjectID i2);
 
  protected:
   int l_, k_, numleafswitches_;
   int toplevel_;
+
+ private:
+  sprockit::sim_parameters*
+  override_params(sprockit::sim_parameters* params);
 };
 
 /**
@@ -93,15 +97,14 @@ class fat_tree :
 {
 
  public:
+  fat_tree(sprockit::sim_parameters* params);
+
   virtual std::string
   to_string() const {
     return "fat tree topology";
   }
 
   virtual ~fat_tree() {}
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
 
   virtual void
   connect_objects(sprockit::sim_parameters* params, internal_connectable_map& switches);
@@ -112,11 +115,6 @@ class fat_tree :
   virtual int
   num_switches() const {
     return numleafswitches_ * l_;
-  }
-
-  std::string
-  default_router() const {
-    return "fattree";
   }
 
   coordinates
@@ -172,15 +170,14 @@ class fat_tree :
 class simple_fat_tree : public abstract_fat_tree
 {
  public:
+  simple_fat_tree(sprockit::sim_parameters* params);
+
   virtual std::string
   to_string() const {
     return "simple fat tree topology";
   }
 
   virtual ~simple_fat_tree() {}
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
 
   virtual void
   connect_objects(sprockit::sim_parameters* params,

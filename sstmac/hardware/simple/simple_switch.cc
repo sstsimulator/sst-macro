@@ -20,6 +20,7 @@
 #include <sstmac/common/event_manager.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
+#include <sstmac/hardware/simple/simple_topology.h>
 
 namespace sstmac {
 namespace hw {
@@ -48,7 +49,8 @@ simple_switch::simple_switch(sprockit::sim_parameters *params, uint64_t id, even
 
   topology* top = topology::static_topology(params);
   //validate this...
-  std::vector<node_id> nodes = top->nodes_connected_to_injection_switch(my_addr_);
+  std::vector<node_id> nodes;
+  top->nodes_connected_to_injection_switch(my_addr_, nodes);
   if (nodes.size() == 0){
     my_start_ = my_end_ = node_id(-1);
     return;
@@ -85,7 +87,8 @@ void
 simple_switch::add_switch(connectable* mod)
 {
   network_switch* netsw = safe_cast(network_switch, mod);
-  std::vector<node_id> allnodes = top_->nodes_connected_to_injection_switch(netsw->addr());
+  std::vector<node_id> allnodes;
+  top_->nodes_connected_to_injection_switch(netsw->addr(), allnodes);
   for (int i=0; i < allnodes.size(); ++i){
     node_id nid = allnodes[i];
     neighbors_[nid] = netsw;
@@ -93,39 +96,26 @@ simple_switch::add_switch(connectable* mod)
 }
 
 void
-simple_switch::connect_input(
-  sprockit::sim_parameters* params,
-  int src_outport,
-  int dst_inport,
-  connectable *mod)
-{
-  add_switch(mod);
-}
-
-void
 simple_switch::connect_output(
   sprockit::sim_parameters* params,
-  int src_outport,
-  int dst_inport,
-  connectable *mod)
+  int src_outport, int dst_inport,
+  connectable* conn)
 {
-  add_switch(mod);
+  if (src_outport == simple_topology::injection){
+    nic* theNic = safe_cast(nic, conn);
+    nics_[theNic->addr()] = theNic;
+  } else {
+    add_switch(conn);
+  }
 }
 
 void
-simple_switch::connect_injector(sprockit::sim_parameters* params,
-    int src_outport, int dst_inport, event_handler* inj)
+simple_switch::connect_input(
+  sprockit::sim_parameters* params,
+  int src_outport, int dst_inport,
+  connectable* conn)
 {
-  nic* theNic = safe_cast(nic, inj);
-  nics_[theNic->addr()] = theNic;
-}
-
-void
-simple_switch::connect_ejector(sprockit::sim_parameters* params,
-    int src_outport, int dst_inport, event_handler* ej)
-{
-  nic* theNic = safe_cast(nic, ej);
-  nics_[theNic->addr()] = theNic;
+  connect_output(params, src_outport, dst_inport, conn);
 }
 
 std::vector<switch_id>

@@ -54,11 +54,17 @@ class packet_flow_switch :
   queue_length(int port) const override;
 
   virtual void
-  connect(
+  connect_output(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    connection_type_t ty,
+    connectable* mod) override;
+
+  virtual void
+  connect_input(
+    sprockit::sim_parameters* params,
+    int src_outport,
+    int dst_inport,
     connectable* mod) override;
 
   std::vector<switch_id>
@@ -89,33 +95,11 @@ class packet_flow_switch :
   to_string() const override;
 
  private:
-  virtual void
-  connect_injector(sprockit::sim_parameters* params, int src_outport, int dst_inport,
-                   event_handler* nic) override;
-
-  virtual void
-  connect_ejector(sprockit::sim_parameters* params, int src_outport, int dst_inport,
-                  event_handler* nic) override;
-
   std::vector<packet_flow_sender*> out_buffers_;
 
   packet_flow_crossbar* xbar_;
 
  private:
-  void
-  connect_output(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    connectable* mod) override;
-
-  void
-  connect_input(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    connectable* mod) override;
-
   void resize_buffers();
 
   packet_flow_sender*

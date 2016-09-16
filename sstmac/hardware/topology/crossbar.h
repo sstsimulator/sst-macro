@@ -31,8 +31,7 @@ class crossbar : public structured_topology
 
   virtual ~crossbar() {}
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
+  crossbar(sprockit::sim_parameters* params);
 
   int
   diameter() const {

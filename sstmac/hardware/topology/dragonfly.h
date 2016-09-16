@@ -21,6 +21,8 @@ class dragonfly : public cartesian_topology
 {
 
  public:
+  dragonfly(sprockit::sim_parameters* params);
+
   typedef enum {
     x_dimension = 0,
     y_dimension = 1,
@@ -55,9 +57,6 @@ class dragonfly : public cartesian_topology
   }
 
   virtual ~dragonfly() {}
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
 
   void
   init_common_params(sprockit::sim_parameters* params);

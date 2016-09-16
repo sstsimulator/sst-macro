@@ -25,12 +25,9 @@ namespace hw {
 
 SpktRegister("tiled_dragonfly | tiled_dfly", topology, tiled_dragonfly);
 
-void
-tiled_dragonfly::init_factory_params(sprockit::sim_parameters* params)
+tiled_dragonfly::tiled_dragonfly(sprockit::sim_parameters* params) :
+  dragonfly(params)
 {
-  // order of initialization is intentional
-  dragonfly::init_common_params(params);
-
   // get connection filenames
   intragroup_file_ = params->get_optional_param("intragroup_connection_file",
                                                 "intragroup.txt");
@@ -69,8 +66,6 @@ tiled_dragonfly::init_factory_params(sprockit::sim_parameters* params)
   for(int i=0; i < nswitches; ++i)
     intergrp_conn_map_.push_back(new coormap_xy_map_t);
   switch_to_connected_groups_.resize(nswitches);
-  // order of initializaiton is intentional
-  cartesian_topology::init_factory_params(params);
 
   // check that parents didn't overwrite max_ports_injection_ incorrectly
   if (max_ports_injection_ != injection_ports_.size())
@@ -78,16 +73,15 @@ tiled_dragonfly::init_factory_params(sprockit::sim_parameters* params)
 }
 
 void
-tiled_dragonfly::connect_objects(sprockit::sim_parameters* params, internal_connectable_map& objects)
+tiled_dragonfly::connect_objects(sprockit::sim_parameters* params,
+                                 internal_connectable_map& objects)
 {
-  spkt_throw(sprockit::unimplemented_error, "connect_objects");
- #if 0
+  sprockit::sim_parameters* link_params = params->get_namespace("link");
   read_intragroup_connections();
   read_intergroup_connections();
-  make_intragroup_connections(objects);
-  make_intergroup_connections(objects);
+  make_intragroup_connections(link_params, objects);
+  make_intergroup_connections(link_params, objects);
   make_geomid();
-#endif
 }
 
 void
@@ -378,11 +372,9 @@ tiled_dragonfly::read_intergroup_connections()
 
 
 void
-tiled_dragonfly::make_intragroup_connections(internal_connectable_map& objects)
+tiled_dragonfly::make_intragroup_connections(sprockit::sim_parameters* params,
+                                             internal_connectable_map& objects)
 {
-#if 0
-  connectable::config cfg;
-  cfg.ty = connectable::BasicConnection;
   for (int g=0; g<numG(); ++g) {
     for( std::list<connection>::iterator it=intragrp_conns_.begin();
          it!=intragrp_conns_.end(); ++it ) {
@@ -444,23 +436,18 @@ tiled_dragonfly::make_intragroup_connections(internal_connectable_map& objects)
             std::pair<int,int>(outport,inport));
       }
 
-      objects[src_id]->connect(outport,inport,
-                               connectable::output,
-                               objects[dst_id], &cfg);
-      objects[dst_id]->connect(outport,inport,
-                               connectable::input,
-                               objects[src_id], &cfg);
+      objects[src_id]->connect_output(params,outport,inport,
+                               objects[dst_id]);
+      objects[dst_id]->connect_input(params,outport,inport,
+                               objects[src_id]);
     }
   }
-#endif
 }
 
 void
-tiled_dragonfly::make_intergroup_connections(internal_connectable_map& objects)
+tiled_dragonfly::make_intergroup_connections(sprockit::sim_parameters* params,
+                                             internal_connectable_map& objects)
 {
-#if 0
-  connectable::config cfg;
-  cfg.ty = connectable::BasicConnection;
   for( std::list<connection>::iterator it=intergrp_conns_.begin();
        it!=intergrp_conns_.end(); ++it ) {
 
@@ -509,14 +496,11 @@ tiled_dragonfly::make_intergroup_connections(internal_connectable_map& objects)
     intergrp_conn_map_[src_id]->at(dst_id)->push_back(
           std::pair<int,int>(outport,inport));
 
-    objects[src_id]->connect(outport,inport,
-                             connectable::output,
-                             objects[dst_id], &cfg);
-    objects[dst_id]->connect(outport,inport,
-                             connectable::input,
-                             objects[src_id], &cfg);
+    objects[src_id]->connect_output(params,outport,inport,
+                             objects[dst_id]);
+    objects[dst_id]->connect_input(params,outport,inport,
+                             objects[src_id]);
   }
-#endif
 }
 
 void

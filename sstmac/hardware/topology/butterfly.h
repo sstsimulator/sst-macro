@@ -37,9 +37,6 @@ class abstract_butterfly :
  public:
   virtual ~abstract_butterfly() {}
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
   /**
    * @brief kary
    * @return The branching degree of the butterfly
@@ -96,6 +93,10 @@ class abstract_butterfly :
   configure_vc_routing(std::map<routing::algorithm_t, int> &m) const;
 
  protected:
+  abstract_butterfly(sprockit::sim_parameters* params,
+                     InitMaxPortsIntra i1,
+                     InitGeomEjectID i2);
+
   void
   compute_switch_coords(switch_id uid, coordinates& coords) const;
 
@@ -106,6 +107,10 @@ class abstract_butterfly :
   int kary_;
   int nfly_;
   long nswitches_per_col_;
+
+ private:
+  sprockit::sim_parameters*
+  override_params(sprockit::sim_parameters* params);
 
 };
 
@@ -119,13 +124,12 @@ class butterfly :
 {
 
  public:
+  butterfly(sprockit::sim_parameters* params);
+
   virtual std::string
   to_string() const {
     return "butterfly";
   }
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
 
   virtual ~butterfly() {}
 
@@ -168,11 +172,13 @@ class butterfly :
     return nfly_;
   }
 
-  std::vector<node_id>
-  nodes_connected_to_injection_switch(switch_id swaddr) const;
+  void
+  nodes_connected_to_injection_switch(switch_id swaddr,
+                                      std::vector<node_id>& nodes) const override;
 
-  std::vector<node_id>
-  nodes_connected_to_ejection_switch(switch_id swaddr) const;
+  void
+  nodes_connected_to_ejection_switch(switch_id swaddr,
+                                     std::vector<node_id>& nodes) const override;
 
   void
   productive_paths(

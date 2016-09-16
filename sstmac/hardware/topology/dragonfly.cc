@@ -24,24 +24,14 @@ SpktRegister("dragonfly | dfly", topology, dragonfly);
 
 static const double PI = 3.141592653589793238462;
 
-void
-dragonfly::init_factory_params(sprockit::sim_parameters* params)
+dragonfly::dragonfly(sprockit::sim_parameters* params) :
+  cartesian_topology(params,
+                     InitMaxPortsIntra::I_Remembered,
+                     InitGeomEjectID::I_Remembered)
 {
-  init_common_params(params);
-  max_ports_intra_network_ = x_ + y_ + g_;
-  eject_geometric_id_ = max_ports_intra_network_;
-  max_ports_injection_ = endpoints_per_switch_;
-  cartesian_topology::init_factory_params(params);
-}
-
-void
-dragonfly::init_common_params(sprockit::sim_parameters* params)
-{
-  std::vector<int> args;
-  params->get_vector_param("geometry", args);
-  x_ = args[0];
-  y_ = args[1];
-  g_ = args[2];
+  x_ = dimensions_[0];
+  y_ = dimensions_[1];
+  g_ = dimensions_[2];
 
   group_con_ = params->get_int_param("group_connections");
   true_random_intermediate_ =
@@ -50,15 +40,17 @@ dragonfly::init_common_params(sprockit::sim_parameters* params)
 
   //can never have more group connections than groups
   if (group_con_ >= g_){
-    cerr0 << sprockit::printf("WARNING: requested %d group connections, but max allowable is %d for %d groups - resetting value\n",
+    cerr0 << sprockit::printf("WARNING: requested %d group connections, "
+                        "but max allowable is %d for %d groups - resetting value\n",
                         group_con_, g_-1, g_);
     group_con_ = g_ - 1;
   }
 
   endpoints_per_switch_ = params->get_optional_int_param("concentration", 1);
-
-  neighbor_at_port(0, 14);
+  max_ports_intra_network_ = x_ + y_ + g_;
+  eject_geometric_id_ = max_ports_intra_network_;
 }
+
 
 void
 dragonfly::productive_path(
@@ -457,24 +449,18 @@ dragonfly::connect_objects(sprockit::sim_parameters* params, internal_connectabl
 
         sprockit::sim_parameters* port_params = get_port_params(params, outport);
 
-        objects[me]->connect(
+        objects[me]->connect_output(
           port_params,
           outport,
           inport,
-          connectable::output,
           objects[them]);
 
-        objects[them]->connect(
+        objects[them]->connect_input(
           port_params,
           outport,
           inport,
-          connectable::input,
           objects[me]);
 
-        if (outputgraph_) {
-          connected.push_back(them);
-          connected_red.push_back(red_[0]);
-        }
       }
     }
 
@@ -493,24 +479,18 @@ dragonfly::connect_objects(sprockit::sim_parameters* params, internal_connectabl
 
         sprockit::sim_parameters* port_params = get_port_params(params, outport);
 
-        objects[me]->connect(
+        objects[me]->connect_output(
           port_params,
           outport,
           inport,
-          connectable::output,
           objects[them]);
 
-        objects[them]->connect(
+        objects[them]->connect_input(
           port_params,
           outport,
           inport,
-          connectable::input,
           objects[me]);
 
-        if (outputgraph_) {
-          connected.push_back(them);
-          connected_red.push_back(red_[1]);
-        }
       }
     }
 
@@ -530,41 +510,20 @@ dragonfly::connect_objects(sprockit::sim_parameters* params, internal_connectabl
 
       sprockit::sim_parameters* port_params = get_port_params(params, outport);
 
-      objects[me]->connect(
+      objects[me]->connect_output(
           port_params,
           outport,
           inport,
-          connectable::output,
           objects[them]);
 
-      objects[them]->connect(
+      objects[them]->connect_input(
           port_params,
           outport,
           inport,
-          connectable::input,
           objects[me]);
 
     }
 
-    if (outputgraph_) {
-      for (int k = 0; k < endpoints_per_switch_; k++) {
-        cout0 << (i * endpoints_per_switch_ + k);
-        for (int l = 0; l < connected.size(); l++) {
-          for (int m = 0; m < endpoints_per_switch_; m++) {
-            cout0 << " " << (connected[l] * endpoints_per_switch_ + m) << ":"
-                      << connected_red[l];
-
-          }
-        }
-
-        for (int m = 0; m < endpoints_per_switch_; m++) {
-          if (m != k) {
-            cout0 << " " << (i * endpoints_per_switch_ + m) << ":" << 100;
-          }
-        }
-        cout0 << "\n";
-      } //end k loop
-    } //end outputgraph if
   } //end objects loop
 }
 

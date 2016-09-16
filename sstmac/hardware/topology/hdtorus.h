@@ -29,8 +29,9 @@ namespace hw {
 class hdtorus :
   public cartesian_topology
 {
-
  public:
+  hdtorus(sprockit::sim_parameters* params);
+
   typedef enum {
     pos = 0,
     neg = 1
@@ -42,9 +43,6 @@ class hdtorus :
   }
 
   virtual ~hdtorus() {}
-
-  void
-  init_factory_params(sprockit::sim_parameters* params);
 
   virtual void
   productive_path(
@@ -82,11 +80,6 @@ class hdtorus :
 
   void
   configure_geometric_paths(std::vector<int> &redundancies);
-
-  virtual int
-  ndimensions() const {
-    return dimensions_.size();
-  }
 
   void
   minimal_route_to_coords(
@@ -183,7 +176,6 @@ class hdtorus :
  protected: //must be visible to hypercube
   int diameter_;
   long num_switches_;
-  std::vector<int> dimensions_;
 
 };
 

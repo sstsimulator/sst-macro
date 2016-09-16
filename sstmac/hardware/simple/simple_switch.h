@@ -61,14 +61,6 @@ class simple_switch :
   }
 
  protected:
-  virtual void
-  connect_injector(sprockit::sim_parameters* params,
-                   int src_outport, int dst_inport, event_handler* nic) override;
-
-  virtual void
-  connect_ejector(sprockit::sim_parameters* params,
-                  int src_outport, int dst_inport, event_handler* nic) override;
-
   void
   add_switch(connectable* sw);
 

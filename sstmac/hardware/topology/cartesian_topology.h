@@ -31,17 +31,30 @@ class cartesian_topology :
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
     structured_routable::path &current_path,
-    structured_routable::path_set &paths) const;
+    structured_routable::path_set &paths) const override;
+
+  int
+  ndimensions() const {
+    return dimensions_.size();
+  }
+
+  cartesian_topology*
+  cart_topology() const override {
+    return const_cast<cartesian_topology*>(this);
+  }
 
  protected:
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params);
+  cartesian_topology(sprockit::sim_parameters* params,
+                     InitMaxPortsIntra i1,
+                     InitGeomEjectID i2);
 
   /**
    * The number of redundant links (ports) comprising a geometric
    * or structure direction in the topology
    */
   std::vector<int> red_;
+  std::vector<int> dimensions_;
+
 };
 
 }

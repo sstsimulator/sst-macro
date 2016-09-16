@@ -7,10 +7,9 @@ namespace hw {
 
 SpktRegister("tiled_torus | tiled_hdtorus", topology, tiled_torus);
 
-void
-tiled_torus::init_factory_params(sprockit::sim_parameters *params)
+tiled_torus::tiled_torus(sprockit::sim_parameters *params) :
+  hdtorus(params)
 {
-  hdtorus::init_factory_params(params);
   ntiles_row_ = params->get_int_param("tiles_per_row");
   ntiles_col_ = params->get_int_param("tiles_per_col");
 
@@ -29,7 +28,6 @@ tiled_torus::init_factory_params(sprockit::sim_parameters *params)
   }
 
   eject_geometric_id_ = 2*ndims;
-
   //allocate the last row to injection/ejection
 }
 
@@ -76,25 +74,25 @@ tiled_torus::connect_dim(
   connectable *plus,
   connectable *minus)
 {
-  spkt_throw(sprockit::unimplemented_error, "connect_objects");
-#if 0
+  sprockit::sim_parameters* link_params = params->get_namespace("link");
+
+
   //times 2 for +/-1
   int nreplica = red_[dim];
   int outport, inport;
-  connectable::config cfg;
-  cfg.ty = connectable::BasicConnection;
+
   for (int r=0; r < nreplica; ++r){
     outport = inport = port(r, dim, hdtorus::pos);
     top_debug("\tconnecting + replica %d on port %d", r, outport);
-    center->connect(outport, inport, connectable::output, plus, &cfg);
-    plus->connect(outport, inport, connectable::input, center, &cfg);
+    center->connect_output(link_params, outport, inport, plus);
+    plus->connect_input(link_params, outport, inport, center);
 
     outport = inport = port(r, dim, hdtorus::neg);
     top_debug("\tconnecting + replica %d on port %d", r, outport);
-    center->connect(outport, inport, connectable::output, minus, &cfg);
-    minus->connect(outport, inport, connectable::input, center, &cfg);
+    center->connect_output(link_params, outport, inport, minus);
+    minus->connect_input(link_params, outport, inport, center);
   }
-#endif
+
 }
 
 switch_id

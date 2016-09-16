@@ -9,8 +9,10 @@ namespace sstmac {
 namespace hw {
 
 
-structured_topology::structured_topology()
-  : eject_geometric_id_(-1)
+structured_topology::structured_topology(sprockit::sim_parameters* params,
+                                         InitMaxPortsIntra i1,
+                                         InitGeomEjectID i2) :
+  topology(params,i1,i2)
 {
 }
 
@@ -47,16 +49,15 @@ structured_topology::endpoint_coords(node_id nid) const
 coordinates
 structured_topology::node_coords(node_id uid) const
 {
-  int nps = endpoints_per_switch_ * num_nodes_per_netlink_;
-  if (nps == 1) {
+  if (concentration_ == 1) {
     coordinates coords(ndimensions());
     switch_id swid((long) uid);
     compute_switch_coords(swid, coords);
     return coords;
   }
   else {
-    switch_id swid(uid / nps);
-    int lastidx = uid % nps;
+    switch_id swid(uid / concentration_);
+    int lastidx = uid % concentration_;
     //extra one for switch coordinates
     int ndim = ndimensions();
     coordinates coords(ndim + 1);
@@ -146,27 +147,6 @@ structured_topology::endpoint_to_ejection_port(node_id addr) const
   return node_id % endpoints_per_switch_ + max_ports_intra_network_;
 }
 
-
-std::vector<node_id>
-structured_topology::nodes_connected_to_switch(switch_id swaddr) const
-{
-  std::vector<node_id> ret;
-  for (int i = 0; i < endpoints_per_switch_; i++) {
-    netlink_id netid(swaddr * endpoints_per_switch_ + i);
-    for (int j=0; j < num_nodes_per_netlink_; ++j){
-      node_id nid(netid * num_nodes_per_netlink_ + j);
-      ret.push_back(nid);
-    }
-  }
-  return ret;
-}
-
-void
-structured_topology::finalize_init()
-{
-  topology::finalize_init();
-}
-
 void
 structured_topology::productive_paths(
   structured_routable::path_set &paths,
@@ -199,22 +179,6 @@ structured_topology::minimal_route_to_switch(
   coordinates src_coords = switch_coords(current_sw_addr);
   coordinates dest_coords = switch_coords(dest_sw_addr);
   minimal_route_to_coords(src_coords, dest_coords, path);
-}
-
-void
-structured_topology::init_factory_params(sprockit::sim_parameters* params)
-{
-  injection_redundancy_ = params->get_optional_int_param("injection_redundant", 1);
-
-  if (endpoints_per_switch_ < 0){
-    spkt_throw(sprockit::value_error, "structured_topology::nps_ not initialized");
-  }
-
-  topology::init_factory_params(params);
-
-  max_ports_injection_ = injection_redundancy_ * endpoints_per_switch_;
-
-  outputgraph_ = false;
 }
 
 coordinates

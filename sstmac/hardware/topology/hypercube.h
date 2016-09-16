@@ -23,15 +23,14 @@ class hypercube :
   public hdtorus
 {
  public:
+  hypercube(sprockit::sim_parameters* params);
+
   virtual std::string
   to_string() const {
     return "hdtorus topology";
   }
 
   virtual ~hypercube() {}
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
 
   virtual void
   productive_path(
