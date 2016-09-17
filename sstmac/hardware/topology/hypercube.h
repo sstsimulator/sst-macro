@@ -26,7 +26,7 @@ class hypercube :
   hypercube(sprockit::sim_parameters* params);
 
   virtual std::string
-  to_string() const {
+  to_string() const override {
     return "hdtorus topology";
   }
 
@@ -36,11 +36,11 @@ class hypercube :
   minimal_route_to_switch(
     switch_id src,
     switch_id dst,
-    routable::path& path) const;
+    routable::path& path) const override;
 
   virtual void
   connect_objects(sprockit::sim_parameters* params,
-                  internal_connectable_map& switches);
+                  internal_connectable_map& switches) override;
 
   inline int
   convert_to_port(int dim, int dir) const {
@@ -48,7 +48,7 @@ class hypercube :
   }
 
   int
-  minimal_distance(switch_id src, switch_id dst) const;
+  minimal_distance(switch_id src, switch_id dst) const override;
 
  protected:
   int radix_;

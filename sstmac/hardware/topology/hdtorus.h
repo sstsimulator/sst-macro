@@ -38,14 +38,14 @@ class hdtorus :
   } direction_t;
 
   virtual std::string
-  to_string() const {
+  to_string() const override {
     return "hdtorus";
   }
 
   virtual ~hdtorus() {}
 
   int
-  diameter() const {
+  diameter() const override {
     return diameter_;
   }
 
@@ -59,12 +59,12 @@ class hdtorus :
   neighbor_at_port(switch_id sid, int port);
 
   virtual int
-  num_switches() const {
+  num_switches() const override {
     return num_switches_;
   }
 
   virtual int
-  num_leaf_switches() const {
+  num_leaf_switches() const override {
     return num_switches();
   }
 
@@ -72,25 +72,25 @@ class hdtorus :
   minimal_route_to_switch(
     switch_id sid,
     switch_id dst,
-    routable::path& path) const;
+    routable::path& path) const override;
 
   virtual void
   connect_objects(sprockit::sim_parameters* params,
-                  internal_connectable_map& switches);
+                  internal_connectable_map& switches) override;
 
   int
   minimal_distance(
     switch_id sid,
-    switch_id dst) const;
+    switch_id dst) const override;
 
   void
-  configure_vc_routing(std::map<routing::algorithm_t, int> &m) const;
+  configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
 
   coordinates
-  switch_coords(switch_id) const;
+  switch_coords(switch_id) const override;
 
   switch_id
-  switch_addr(const coordinates &coords) const;
+  switch_addr(const coordinates &coords) const override;
 
 
  protected:

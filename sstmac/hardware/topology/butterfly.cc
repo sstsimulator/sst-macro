@@ -187,7 +187,7 @@ butterfly::nodes_connected_to_ejection_switch(switch_id swaddr,
   int last_row_offset = nswitches_per_col_ * (nfly_ - 1);
   if (swaddr >= last_row_offset) {
     switch_id sid_offset(swaddr - last_row_offset);
-    return topology::nodes_connected_to_injection_switch(sid_offset, nodes);
+    return structured_topology::nodes_connected_to_injection_switch(sid_offset, nodes);
   } else {
     nodes.resize(0);
   }
@@ -201,7 +201,7 @@ butterfly::nodes_connected_to_injection_switch(switch_id swaddr,
     nodes.resize(0);
   }
   else {
-    return topology::nodes_connected_to_injection_switch(swaddr, nodes);
+    return structured_topology::nodes_connected_to_injection_switch(swaddr, nodes);
   }
 }
 

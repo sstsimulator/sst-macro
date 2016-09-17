@@ -75,7 +75,7 @@ abstract_fat_tree::nodes_connected_to_injection_switch(switch_id swaddr,
   if (swaddr >= numleafswitches_){
     nodes.resize(0);
   } else {
-    topology::nodes_connected_to_injection_switch(swaddr, nodes);
+    structured_topology::nodes_connected_to_injection_switch(swaddr, nodes);
   }
 }
 

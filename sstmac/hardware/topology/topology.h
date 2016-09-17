@@ -62,18 +62,6 @@ class topology
   virtual std::string
   to_string() const = 0;
 
-  /**
-   * Given a switch address, return number of nodes connected to it
-   */
-  int
-  endpoints_per_switch() {
-    return endpoints_per_switch_;
-  }
-
-  int
-  concentration() const {
-    return concentration_;
-  }
 
   /**
      For indirect networks, this includes all switches -
@@ -87,15 +75,11 @@ class topology
   virtual int
   num_leaf_switches() const = 0;
 
-  int
-  num_nodes() const {
-    return concentration_ * num_leaf_switches();
-  }
+  virtual int
+  num_nodes() const = 0;
 
-  int
-  num_endpoints() const {
-    return endpoints_per_switch_ * num_leaf_switches();
-  }
+  virtual int
+  num_endpoints() const = 0;
 
   /**
    * @brief Given a set of connectables, connect them appropriately
@@ -206,26 +190,8 @@ class topology
   virtual int
   minimal_distance(switch_id src, switch_id dst) const = 0;
 
-  /**
-     Figure out how many hops we have to go from a source node
-     to a destination node
-     @param src The source node address
-     @param dst The destination node address
-     @return The number of hops to destination
-  */
-  int
-  num_hops_to_endpoint(node_id src, node_id dst) const {
-    switch_id start = endpoint_to_injection_switch(src);
-    switch_id stop = endpoint_to_ejection_switch(dst);
-    return minimal_distance(start, stop);
-  }
-
-  int
-  num_hops_to_node(node_id src, node_id dst) const {
-    node_id src_ep = src / num_nodes_per_endpoint_;
-    node_id dst_ep = dst / num_nodes_per_endpoint_;
-    return num_hops_to_endpoint(src_ep, dst_ep);
-  }
+  virtual int
+  num_hops_to_node(node_id src, node_id dst) const = 0;
 
   /**
      For a given input switch, return all nodes connected to it.
@@ -235,11 +201,13 @@ class topology
      @return The nodes connected to switch
   */
   virtual void
-  nodes_connected_to_injection_switch(switch_id swid, std::vector<node_id>& nodes) const;
+  nodes_connected_to_injection_switch(switch_id swid, std::vector<node_id>& nodes) const = 0;
 
   virtual void
-  nodes_connected_to_ejection_switch(switch_id swid, std::vector<node_id>& nodes) const;
+  nodes_connected_to_ejection_switch(switch_id swid, std::vector<node_id>& nodes) const = 0;
 
+  virtual bool
+  node_to_netlink(node_id nid, node_id& net_id, int& offset) const = 0;
 
   virtual void
   create_partition(
@@ -339,35 +307,8 @@ class topology
     return endpoint_to_ejection_switch(nodeaddr, ports[0]);
   }
 
-  int
-  max_num_ports() const {
-    return max_ports_injection_ + max_ports_intra_network_;
-  }
-
-  int
-  max_ports_injection() const {
-    return max_ports_injection_;
-  }
-
-  int
-  max_ports_intra_network() const {
-    return max_ports_intra_network_;
-  }
-
-  bool
-  is_injection_port(int port) const {
-    return port >= max_ports_intra_network_;
-  }
-
-  /**
-   * @brief Return the port number for the ith injection/ejection node
-   * @param ith The injection/ejection index
-   * @return
-   */
-  int
-  eject_port(int ith) const {
-    return max_ports_intra_network() + ith;
-  }
+  virtual int
+  max_num_ports() const = 0;
 
   virtual std::string
   label(node_id nid) const;
@@ -378,30 +319,6 @@ class topology
   std::string
   label(event_loc_id id) const;
 
-  std::string
-  endpoint_label(node_id nid) const;
-
-  /**
-     Given the current location and a destination,
-     compute the minimal path to the destination.
-     In most cases, this function first computes
-     the destination switch attached to the node
-     and then calls #minimal_route_to_switch.
-     The path generally consists of a dimension,
-     a direction or branch along that dimension,
-     a port number for that dim/dir combination,
-     and a virtual channel along the dim/dir
-     appropriate for avoiding deadlock.
-     @param current_sw_addr The addr of the current switch
-     @param dest_sw_addr The addr of the destination switch
-     @param path [inout] A complete path descriptor to the destination node
-  */
-  virtual void
-  minimal_route_to_node(
-    switch_id current_sw_addr,
-    node_id dest_node_addr,
-    routable::path& path) const;
-
   /**
      Informs topology that a new routing stage has begun, allowing any
      topology specific state to be modified.
@@ -409,11 +326,6 @@ class topology
   */
   virtual void
   new_routing_stage(routable* rtbl) { }
-
-  int
-  num_nodes_per_netlink() const {
-    return num_nodes_per_endpoint_;
-  }
 
   typedef  std::function<connectable*(sprockit::sim_parameters*,uint64_t)> connectable_factory;
 
@@ -444,16 +356,7 @@ class topology
   }
 
  protected:
-  enum class InitMaxPortsIntra {
-    I_Remembered
-  };
-  enum class InitGeomEjectID {
-    I_Remembered
-  };
-
-  topology(sprockit::sim_parameters* params,
-           InitMaxPortsIntra i1,
-           InitGeomEjectID i2);
+  topology(sprockit::sim_parameters* params);
 
   uint32_t random_number(uint32_t max, uint32_t attempt) const;
 
@@ -466,15 +369,6 @@ class topology
                     sprockit::sim_parameters* params);
 
  protected:
-  /**
-    Nodes per switch.  The number of nodes connected to a leaf switch.
-    In many topologies, there is a 1-1 correspondence. For others,
-    you might have many compute nodes connected to a single injection/ejection switch.
-  */
-  int endpoints_per_switch_;
-
-  int concentration_;
-
   RNG::rngint_t seed_;
 
   bool debug_seed_;
@@ -482,16 +376,6 @@ class topology
   RNG::MWC* rng_;
 
   std::string name_;
-
-  int num_nodes_per_endpoint_;
-
-  int max_ports_intra_network_;
-
-  int max_ports_injection_;
-
-  int eject_geometric_id_;
-
-  int injection_redundancy_;
 
   static topology* main_top_;
 

@@ -24,8 +24,8 @@ namespace hw {
 class crossbar : public structured_topology
 {
  public:
-  virtual std::string
-  to_string() const {
+  std::string
+  to_string() const override {
     return "crossbar topology";
   }
 
@@ -34,34 +34,34 @@ class crossbar : public structured_topology
   crossbar(sprockit::sim_parameters* params);
 
   int
-  diameter() const {
+  diameter() const override {
     return 1;
   }
 
   int
-  num_leaf_switches() const {
+  num_leaf_switches() const override {
     return size_;
   }
 
-  int minimal_distance(switch_id src, switch_id dst) const {
+  int minimal_distance(switch_id src, switch_id dst) const override {
     return 1;
   }
 
   virtual void
   connect_objects(sprockit::sim_parameters* params,
-                  internal_connectable_map& switches);
+                  internal_connectable_map& switches) override;
 
   void
-  configure_vc_routing(std::map<routing::algorithm_t, int> &m) const;
+  configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
 
   void
   minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    routable::path& path) const;
+    routable::path& path) const override;
 
   virtual int
-  num_switches() const {
+  num_switches() const override {
     return size_;
   }
 

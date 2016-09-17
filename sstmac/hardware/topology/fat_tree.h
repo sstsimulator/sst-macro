@@ -156,7 +156,7 @@ class simple_fat_tree : public abstract_fat_tree
   simple_fat_tree(sprockit::sim_parameters* params);
 
   virtual std::string
-  to_string() const {
+  to_string() const override {
     return "simple fat tree topology";
   }
 
@@ -164,7 +164,7 @@ class simple_fat_tree : public abstract_fat_tree
 
   virtual void
   connect_objects(sprockit::sim_parameters* params,
-                  internal_connectable_map& switches);
+                  internal_connectable_map& switches) override;
 
   void
   build_internal_connectables(
@@ -172,10 +172,10 @@ class simple_fat_tree : public abstract_fat_tree
     connectable_factory factory,
     connectable_factory dummy_factory,
     sstmac::partition *part, int my_rank,
-    sprockit::sim_parameters *params);
+    sprockit::sim_parameters *params) override;
 
   int
-  num_switches() const {
+  num_switches() const override {
     return num_switches_;
   }
 
@@ -195,16 +195,16 @@ class simple_fat_tree : public abstract_fat_tree
 
   int
   minimal_distance(switch_id src,
-                   switch_id dest) const;
+                   switch_id dest) const override;
 
   void
-  configure_vc_routing(std::map<routing::algorithm_t, int> &m) const;
+  configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
 
   void
   minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    routable::path& path) const;
+    routable::path& path) const override;
 
   int
   level(switch_id sid) const;

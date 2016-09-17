@@ -35,8 +35,14 @@ also has a well-defined coordinate system, but is slightly less intuitive.
 */
 class structured_topology : public topology
 {
-
  public:
+  enum class InitMaxPortsIntra {
+    I_Remembered
+  };
+  enum class InitGeomEjectID {
+    I_Remembered
+  };
+
   virtual ~structured_topology() {}
 
   /**** BEGIN PURE VIRTUAL INTERFACE *****/
@@ -49,18 +55,57 @@ class structured_topology : public topology
     @return The number of leaf switches directly connected to compute nodes
   */
   virtual int
-  num_leaf_switches() const = 0;
+  num_leaf_switches() const override = 0;
+
+  int
+  max_num_ports() const override {
+    return max_ports_injection_ + max_ports_intra_network_;
+  }
+
+  bool
+  node_to_netlink(node_id nid, node_id& net_id, int& offset) const override {
+    net_id = nid / num_nodes_per_endpoint_;
+    offset = nid % num_nodes_per_endpoint_;
+    return num_nodes_per_endpoint_ > 1;
+  }
+
+  virtual void
+  nodes_connected_to_injection_switch(switch_id swid,
+                                      std::vector<node_id>& nodes) const override;
+
+  virtual void
+  nodes_connected_to_ejection_switch(switch_id swid,
+                                     std::vector<node_id>& nodes) const override;
 
   /**
-   * @brief Given a set of connectables, connect them appropriately
-   * @param objects The set of objects to connect
-   * @param cloner   If in parallel mode, not all objects may exist.
-   *                 The factory creates missing objects.
-   * @throws value_error If invalid switchid is passed to cloner
+   * Given a switch address, return number of nodes connected to it
    */
-  virtual void
-  connect_objects(sprockit::sim_parameters* params,
-                  internal_connectable_map& objects) = 0;
+  int
+  endpoints_per_switch() {
+    return endpoints_per_switch_;
+  }
+
+  int
+  concentration() const {
+    return concentration_;
+  }
+
+  int
+  num_nodes() const override {
+    return concentration_ * num_leaf_switches();
+  }
+
+  int
+  num_endpoints() const override {
+    return endpoints_per_switch_ * num_leaf_switches();
+  }
+
+  int
+  num_hops_to_node(node_id src, node_id dst) const override {
+    switch_id src_sw = src / concentration_;
+    switch_id dst_sw = dst / concentration_;
+    return minimal_distance(src_sw, dst_sw);
+  }
 
   virtual int
   diameter() const = 0;
@@ -85,20 +130,20 @@ class structured_topology : public topology
   }
 
   virtual switch_id
-  endpoint_to_injection_switch(node_id nodeaddr, int &switch_port) const {
+  endpoint_to_injection_switch(node_id nodeaddr, int &switch_port) const override {
     switch_id sid = nodeaddr / endpoints_per_switch_;
     switch_port = nodeaddr % endpoints_per_switch_ + max_ports_intra_network_;
     return sid;
   }
 
   switch_id
-  node_to_ejection_switch(node_id addr, int& port) const {
+  node_to_ejection_switch(node_id addr, int& port) const override {
     node_id netid(addr / num_nodes_per_endpoint_);
     return endpoint_to_ejection_switch(netid, port);
   }
 
   virtual switch_id
-  endpoint_to_ejection_switch(node_id nodeaddr, int &switch_port) const {
+  endpoint_to_ejection_switch(node_id nodeaddr, int &switch_port) const override {
     return endpoint_to_injection_switch(nodeaddr, switch_port);
   }
 
@@ -110,7 +155,25 @@ class structured_topology : public topology
                       InitMaxPortsIntra i1,
                       InitGeomEjectID i2);
 
+ protected:
+  /**
+    Nodes per switch.  The number of nodes connected to a leaf switch.
+    In many topologies, there is a 1-1 correspondence. For others,
+    you might have many compute nodes connected to a single injection/ejection switch.
+  */
+  int endpoints_per_switch_;
 
+  int concentration_;
+
+  int num_nodes_per_endpoint_;
+
+  int max_ports_intra_network_;
+
+  int max_ports_injection_;
+
+  int eject_geometric_id_;
+
+  int injection_redundancy_;
 };
 
 }

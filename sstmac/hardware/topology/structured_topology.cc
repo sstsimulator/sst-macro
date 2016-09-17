@@ -12,8 +12,20 @@ namespace hw {
 structured_topology::structured_topology(sprockit::sim_parameters* params,
                                          InitMaxPortsIntra i1,
                                          InitGeomEjectID i2) :
-  topology(params,i1,i2)
+  topology(params),
+  max_ports_intra_network_(-1),
+  eject_geometric_id_(-1),
+  max_ports_injection_(-1),
+  endpoints_per_switch_(-1)
 {
+  concentration_ = params->get_optional_int_param("concentration",1);
+  endpoints_per_switch_ = concentration_;
+
+  injection_redundancy_ = params->get_optional_int_param("injection_redundant", 1);
+  max_ports_injection_ = endpoints_per_switch_;
+
+  sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
+  num_nodes_per_endpoint_ = netlink_params->get_optional_int_param("radix", 1);
 }
 
 void
@@ -35,6 +47,26 @@ structured_topology::configure_injection_geometry(std::vector<int>& redundancies
 {
   for (int i=0; i < endpoints_per_switch_; ++i){
     redundancies[i+eject_geometric_id_] = injection_redundancy_;
+  }
+}
+
+void
+structured_topology::nodes_connected_to_ejection_switch(switch_id swaddr,
+                                   std::vector<node_id>& nodes) const
+{
+  nodes.resize(concentration_);
+  for (int i = 0; i < concentration_; i++) {
+    nodes[i] = netlink_id(swaddr*concentration_ + i);
+  }
+}
+
+void
+structured_topology::nodes_connected_to_injection_switch(switch_id swaddr,
+                                   std::vector<node_id>& nodes) const
+{
+  nodes.resize(concentration_);
+  for (int i = 0; i < concentration_; i++) {
+    nodes[i] = netlink_id(swaddr*concentration_ + i);
   }
 }
 

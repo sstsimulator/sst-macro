@@ -19,25 +19,9 @@ topology* topology::static_topology_ = 0;
 topology* topology::main_top_ = 0;
 const int topology::eject = -1;
 
-topology::topology(sprockit::sim_parameters* params,
-                   InitMaxPortsIntra i1,
-                   InitGeomEjectID i2) :
-  max_ports_intra_network_(-1),
-  eject_geometric_id_(-1),
-  max_ports_injection_(-1),
-  endpoints_per_switch_(-1),
+topology::topology(sprockit::sim_parameters* params) :
   rng_(nullptr)
 {
-  concentration_ = params->get_optional_int_param("concentration",1);
-  endpoints_per_switch_ = concentration_;
-
-  injection_redundancy_ = params->get_optional_int_param("injection_redundant", 1);
-  max_ports_injection_ = endpoints_per_switch_;
-  eject_geometric_id_ = max_ports_intra_network_ + max_ports_injection_;
-
-  sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
-  num_nodes_per_endpoint_ = netlink_params->get_optional_int_param("radix", 1);
-
   std::vector<RNG::rngint_t> seeds(2);
   seeds[0] = 42;
   if (params->has_param("seed")) {
@@ -89,24 +73,6 @@ topology::random_number(uint32_t max, uint32_t attempt) const
   return result;
 }
 
-void
-topology::minimal_route_to_node(
-  switch_id current_sw_addr,
-  node_id dest_node_addr,
-  routable::path& path) const
-{
-  abort();
-  int dir;
-  switch_id ej_addr = endpoint_to_ejection_switch(dest_node_addr, dir);
-  if (ej_addr == current_sw_addr) {
-    path.outport = eject_port(dir);
-    path.vc = 0;
-  }
-  else {
-    minimal_route_to_switch(current_sw_addr, ej_addr, path);
-  }
-}
-
 switch_id
 topology::random_intermediate_switch(switch_id current, switch_id dest)
 {
@@ -120,26 +86,6 @@ topology::random_intermediate_switch(switch_id current, switch_id dest)
   }
   lock.unlock();
   return switch_id(nid);
-}
-
-void
-topology::nodes_connected_to_ejection_switch(switch_id swaddr,
-                                   std::vector<node_id>& nodes) const
-{
-  nodes.resize(concentration_);
-  for (int i = 0; i < concentration_; i++) {
-    nodes[i] = netlink_id(swaddr*concentration_ + i);
-  }
-}
-
-void
-topology::nodes_connected_to_injection_switch(switch_id swaddr,
-                                   std::vector<node_id>& nodes) const
-{
-  nodes.resize(concentration_);
-  for (int i = 0; i < concentration_; i++) {
-    nodes[i] = netlink_id(swaddr*concentration_ + i);
-  }
 }
 
 void
@@ -258,13 +204,6 @@ topology::configure_vc_routing(std::map<routing::algorithm_t, int> &m) const
   m[routing::minimal_adaptive] = 1;
   m[routing::valiant] = 1;
   m[routing::ugal] = 1;
-}
-
-std::string
-topology::endpoint_label(node_id nid) const
-{
-  netlink_id netid(nid / num_nodes_per_endpoint_);
-  return label(netid);
 }
 
 std::string
