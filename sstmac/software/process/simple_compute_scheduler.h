@@ -9,8 +9,9 @@ namespace sw {
 class simple_compute_scheduler : public compute_scheduler
 {
  public:
-  simple_compute_scheduler(operating_system* os)
-    : ncore_active_(0), compute_scheduler(os)
+  simple_compute_scheduler(sprockit::sim_parameters*params,
+                           operating_system* os)
+    : ncore_active_(0), compute_scheduler(params, os)
   {}
   
   void reserve_core(thread* thr);

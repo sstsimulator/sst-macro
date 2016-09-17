@@ -74,10 +74,9 @@ dumpi_task_mapper::node_id_from_coordinates(int ncoord, int *coords)
   return regtop_->node_addr(coord_vec);
 }
 
-void
-dumpi_task_mapper::init_factory_params(sprockit::sim_parameters *params)
+dumpi_task_mapper::dumpi_task_mapper(sprockit::sim_parameters *params) :
+  task_mapper(params)
 {
-  task_mapper::init_factory_params(params);
   metaname_ = params->get_param("launch_dumpi_metaname");
   regtop_ = safe_cast(hw::cartesian_topology, topology_);
 }

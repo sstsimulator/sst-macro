@@ -25,11 +25,8 @@ class instruction_processor :
   public simple_processor
 {
  public:
-  instruction_processor(memory_model* mem, node* nd) :
-    simple_processor(mem, nd),
-    noise_model_(nullptr)
-  {
-  }
+  instruction_processor(sprockit::sim_parameters* params,
+                        memory_model* mem, node* nd);
 
   virtual std::string
   to_string() const {
@@ -37,12 +34,6 @@ class instruction_processor :
   }
 
   virtual ~instruction_processor();
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
-  finalize_init();
 
   virtual void
   compute(event* ev, callback* cb);

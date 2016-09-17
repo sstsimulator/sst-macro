@@ -28,7 +28,7 @@ namespace sw {
 class compute_scheduler
 {
  public:
-  compute_scheduler(sw::operating_system* os) :
+  compute_scheduler(sprockit::sim_parameters* params, sw::operating_system* os) :
     os_(os)
   {
   }
@@ -40,8 +40,6 @@ class compute_scheduler
 
   virtual ~compute_scheduler() {}
 
-  void
-  init_factory_params(sprockit::sim_parameters* params);
 
   int
   ncores() const {
@@ -52,9 +50,6 @@ class compute_scheduler
   nsocket() const {
     return nsocket_;
   }
-
-  virtual void
-  finalize_init();
 
   virtual void
   reserve_core(thread* thr) = 0;

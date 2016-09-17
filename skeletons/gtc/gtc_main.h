@@ -51,7 +51,10 @@ namespace gtc
     std::map<std::string,double> param_map_;
 
   public:
-    gtc_main() {}
+    gtc_main(sprockit::sim_parameters* params) :
+      sstmac::sw::app(params)
+    {
+    }
 
     /// Goodbye.
     virtual
@@ -61,9 +64,9 @@ namespace gtc
 
     /// Get a copy.
     virtual sstmac::sw::app*
-    clone_type() const
+    clone_type(sprockit::sim_parameters* params) const
     {
-      return new gtc_main;
+      return new gtc_main(params);
     }
 
     /// Go.

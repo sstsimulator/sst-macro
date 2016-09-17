@@ -25,12 +25,6 @@ SpktRegister("simple", processor, simple_processor,
             "Basic processor that only does timed_message computes");
 
 void
-simple_processor::finalize_init()
-{
-  processor::finalize_init();
-}
-
-void
 simple_processor::compute(event* ev, callback* cb)
 {
   sw::timed_compute_event* tev = safe_cast(sw::timed_compute_event, ev);

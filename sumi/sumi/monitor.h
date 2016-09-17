@@ -42,7 +42,8 @@ class function_set {
 class activity_monitor
 {
  public:
-  activity_monitor(transport* t) : api_(t){}
+  activity_monitor(sprockit::sim_parameters* params,
+                   transport* t) : api_(t){}
 
   virtual ~activity_monitor(){}
 
@@ -51,9 +52,6 @@ class activity_monitor
 
   virtual void
   cancel_ping(int dst, timeout_function* func) = 0;
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params){}
 
   virtual void
   message_received(const message::ptr& msg) = 0;

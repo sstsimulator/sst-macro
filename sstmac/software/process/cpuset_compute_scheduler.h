@@ -9,9 +9,10 @@ namespace sw {
 class cpuset_compute_scheduler : public compute_scheduler
 {
  public:  
-  cpuset_compute_scheduler(sw::operating_system* os) :
+  cpuset_compute_scheduler(sprockit::sim_parameters* params,
+                           operating_system* os) :
     available_cores_(0),
-    compute_scheduler(os)
+    compute_scheduler(params, os)
   {
   }
 

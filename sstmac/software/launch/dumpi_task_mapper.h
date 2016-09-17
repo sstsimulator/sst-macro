@@ -23,8 +23,7 @@ class dumpi_task_mapper : public task_mapper
 {
 
  public:
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params);
+  dumpi_task_mapper(sprockit::sim_parameters *params);
 
   virtual ~dumpi_task_mapper() throw() {}
 

@@ -24,6 +24,11 @@ class round_robin_task_mapper : public task_mapper
 {
 
  public:
+  round_robin_task_mapper(sprockit::sim_parameters* params) :
+    task_mapper(params)
+  {
+  }
+
   virtual
   ~round_robin_task_mapper() throw ();
 

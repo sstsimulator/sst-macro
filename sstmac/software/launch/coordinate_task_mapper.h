@@ -25,6 +25,8 @@ class coordinate_task_mapper : public task_mapper
 {
 
  public:
+  coordinate_task_mapper(sprockit::sim_parameters* params);
+
   virtual ~coordinate_task_mapper() throw() {}
 
   void
@@ -33,9 +35,6 @@ class coordinate_task_mapper : public task_mapper
         int ppn,
         std::vector<node_id> &result,
         int nproc);
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params);
 
  protected:
   std::string listfile_;

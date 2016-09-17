@@ -39,9 +39,6 @@ class task_mapper
     return "task mapper";
   }
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params);
-
   virtual
   ~task_mapper() throw ();
 
@@ -64,8 +61,7 @@ class task_mapper
     int nproc) = 0;
 
  protected:
-  task_mapper() :
-    rt_(nullptr), topology_(nullptr) {}
+  task_mapper(sprockit::sim_parameters* params);
 
   int
   validate_nproc(int ppn, int num_nodes, int nproc, const char* name) const;

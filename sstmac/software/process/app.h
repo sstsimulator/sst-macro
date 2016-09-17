@@ -128,7 +128,7 @@ class app : public thread
   consume_params(sprockit::sim_parameters* params) = 0;
 
   virtual app*
-  clone_type() const = 0;
+  clone_type(sprockit::sim_parameters* params) const = 0;
 
   app*
   clone(software_id newid);
@@ -140,9 +140,6 @@ class app : public thread
   skeleton_main() = 0;
 
   virtual void run();
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params);
 
   sprockit::sim_parameters*
   params() const {
@@ -216,7 +213,7 @@ class app : public thread
  protected:
   friend class thread;
 
-  app();
+  app(sprockit::sim_parameters *params);
 
   api*
   _get_api(const char* name);
@@ -262,8 +259,8 @@ class user_app_cxx_full_main : public app
   delete_statics();
 
   app*
-  clone_type() const {
-    return new user_app_cxx_full_main;
+  clone_type(sprockit::sim_parameters* params) const {
+    return new user_app_cxx_full_main(params);
   }
 
   struct argv_entry {
@@ -271,6 +268,11 @@ class user_app_cxx_full_main : public app
     int argc;
     argv_entry() : argv(0), argc(0) {}
   };
+
+  user_app_cxx_full_main(sprockit::sim_parameters* params) :
+    app(params)
+  {
+  }
 
  private:
   void init_argv(argv_entry& entry);
@@ -291,8 +293,13 @@ class user_app_cxx_empty_main : public app
   consume_params(sprockit::sim_parameters *params);
 
   app*
-  clone_type() const {
-    return new user_app_cxx_empty_main;
+  clone_type(sprockit::sim_parameters* params) const {
+    return new user_app_cxx_empty_main(params);
+  }
+
+  user_app_cxx_empty_main(sprockit::sim_parameters* params) :
+    app(params)
+  {
   }
 
   void skeleton_main();

@@ -127,7 +127,7 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
 #if SSTMAC_USE_MULTITHREAD
   if (mprot){
     spkt_throw(sprockit::value_error,
-        "operating_system::init_factory_params: cannot use stack protect in multithreaded mode");
+        "operating_system:: cannot use stack protect in multithreaded mode");
   }
 
   if (os_thread_contexts_.size() == 0){

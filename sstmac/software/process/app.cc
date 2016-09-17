@@ -46,20 +46,13 @@ app::allocate_tls_key(destructor_fxn fxn)
   return next;
 }
 
-void
-app::init_factory_params(sprockit::sim_parameters *params)
-{
-  params_ = params;
-  consume_params(params);
-}
-
-app::app() :
+app::app(sprockit::sim_parameters *params) :
   compute_inst_(nullptr),
   compute_time_(nullptr),
   compute_mem_move_(nullptr),
   compute_loops_(nullptr),
   sleep_lib_(nullptr),
-  params_(nullptr),
+  params_(params),
   next_tls_key_(0),
   next_condition_(0),
   next_mutex_(0)
@@ -69,8 +62,7 @@ app::app() :
 app*
 app::clone(software_id newid)
 {
-  app* cln = clone_type();
-  cln->params_ = params_;
+  app* cln = clone_type(params_);
   cln->set_sid(newid);
   cln->id_ = newid;
   cln->consume_params(params_);

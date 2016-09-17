@@ -21,10 +21,9 @@ namespace sw {
 SpktRegister("random", task_mapper, random_task_mapper,
             "randomly assigns tasks to nodes");
 
-void
-random_task_mapper::init_factory_params(sprockit::sim_parameters *params)
+random_task_mapper::random_task_mapper(sprockit::sim_parameters *params) :
+  task_mapper(params)
 {
-  task_mapper::init_factory_params(params);
   if(params->has_param("random_indexer_seed")) {
     long seed = params->get_long_param("random_indexer_seed");
     rng_ = RNG::SimpleCombo::construct(seed);

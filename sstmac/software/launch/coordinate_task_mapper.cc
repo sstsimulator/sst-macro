@@ -31,10 +31,9 @@ SpktRegister("coordinate", task_mapper, coordinate_task_mapper,
             "assigns tasks to nodes based on hostname map of topology and hostname list in file");
 
 
-void
-coordinate_task_mapper::init_factory_params(sprockit::sim_parameters *params)
+coordinate_task_mapper::coordinate_task_mapper(sprockit::sim_parameters *params) :
+  task_mapper(params)
 {
-  task_mapper::init_factory_params(params);
   listfile_ = params->get_param("launch_coordinate_file");
 }
 

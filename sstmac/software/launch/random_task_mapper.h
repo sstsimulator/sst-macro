@@ -25,8 +25,7 @@ class random_task_mapper : public task_mapper
 {
 
  public:
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params);
+  random_task_mapper(sprockit::sim_parameters* params);
 
   virtual
   ~random_task_mapper() throw ();

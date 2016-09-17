@@ -24,6 +24,11 @@ class block_task_mapper : public task_mapper
 {
 
  public:
+  block_task_mapper(sprockit::sim_parameters* params) :
+    task_mapper(params)
+  {
+  }
+
   virtual
   ~block_task_mapper() throw ();
 

@@ -21,8 +21,7 @@ namespace sw {
 class hostname_task_mapper : public task_mapper
 {
  public:
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params);
+  hostname_task_mapper(sprockit::sim_parameters *params);
 
   virtual ~hostname_task_mapper() throw() {}
 

@@ -121,17 +121,13 @@ class ping_monitor :
     public activity_monitor
 {
  public:
-  ping_monitor(transport* tport) : activity_monitor(tport)
-  {
-  }
+  ping_monitor(sprockit::sim_parameters* params,
+               transport* tport);
 
   std::string
   to_string() const {
     return "interval monitor";
   }
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
 
   void
   ping(int dst, timeout_function* func);

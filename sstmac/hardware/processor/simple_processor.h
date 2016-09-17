@@ -27,14 +27,12 @@ class simple_processor :
   public processor
 {
  public:
-  simple_processor(memory_model* mem, node* nd) :
-    processor(mem, nd) {}
+  simple_processor(sprockit::sim_parameters* params,
+                   memory_model* mem, node* nd) :
+    processor(params, mem, nd) {}
 
   /// Goodbye.
   virtual ~simple_processor() {}
-
-  virtual void
-  finalize_init();
 
   void
   compute(event* ev, callback* cb);

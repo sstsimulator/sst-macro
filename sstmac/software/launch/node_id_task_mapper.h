@@ -21,10 +21,9 @@ namespace sw {
 class node_id_task_mapper : public task_mapper
 {
  public:
-  virtual ~node_id_task_mapper() throw() {}
+  node_id_task_mapper(sprockit::sim_parameters* params);
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
+  virtual ~node_id_task_mapper() throw() {}
 
   void map_ranks(const app_id& aid,
                 const ordered_node_set& nodes,

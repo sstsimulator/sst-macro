@@ -30,11 +30,9 @@ namespace sw {
 SpktRegister("node_id", task_mapper, node_id_task_mapper,
             "assigns tasks to nodes based on list of nodes ids in file");
 
-
-void
-node_id_task_mapper::init_factory_params(sprockit::sim_parameters* params)
+node_id_task_mapper::node_id_task_mapper(sprockit::sim_parameters* params) :
+  task_mapper(params)
 {
-  task_mapper::init_factory_params(params);
   if (params->has_param("launch_node_id_file")){
     listfile_ = params->get_param("launch_node_id_file" );
   } else {
