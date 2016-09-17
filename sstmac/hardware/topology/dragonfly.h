@@ -135,7 +135,7 @@ class dragonfly : public cartesian_topology
   void minimal_route_to_switch(
       switch_id current_sw_addr,
       switch_id dest_sw_addr,
-      structured_routable::path &path) const;
+      routable::path &path) const;
 
   int
   minimal_distance(switch_id src, switch_id dst) const;
@@ -153,7 +153,7 @@ class dragonfly : public cartesian_topology
   configure_vc_routing(std::map<routing::algorithm_t, int> &m) const;
 
   virtual void
-  new_routing_stage(structured_routable* rtbl);
+  new_routing_stage(routable* rtbl);
 
   virtual void
   configure_geometric_paths(std::vector<int> &redundancies);
@@ -168,15 +168,15 @@ class dragonfly : public cartesian_topology
   virtual void
   find_path_to_group(int myX, int myY, int myG, int dstG,
                      int& dstX, int& dstY,
-                     structured_routable::path& path) const;
+                     routable::path& path) const;
 
   bool
   find_y_path_to_group(int myX, int myG, int dstG, int& dstY,
-                       structured_routable::path& path) const;
+                       routable::path& path) const;
 
   bool
   find_x_path_to_group(int myY, int myG, int dstG, int& dstX,
-                       structured_routable::path& path) const;
+                       routable::path& path) const;
 
   virtual bool
   xy_connected_to_group(int myX, int myY, int myG, int dstG) const;

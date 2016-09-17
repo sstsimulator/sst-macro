@@ -64,11 +64,12 @@ class interconnect
  protected:
   topology* topology_;
   int num_nodes_;
+  int num_switches_;
 
-private:
- static interconnect* static_interconnect_;
+ private:
+  static interconnect* static_interconnect_;
 
- interconnect(){}
+  interconnect(){}
 
 #if !SSTMAC_INTEGRATED_SST_CORE
  public:
@@ -141,22 +142,12 @@ private:
   void handle(event* ev);
 
   network_switch*
-  switch_at(switch_id id) const
-  {
-    switch_map::const_iterator it = switches_.find(id);
-    if (it == switches_.end()){
-      return 0;
-    }
-    return it->second;
-  }
+  switch_at(switch_id id) const;
 
   const switch_map&
   switches() const {
     return switches_;
   }
-
-  void
-  write_graph_file(const std::string& graph_file);
 
   int
   thread_for_switch(switch_id sid) const;
@@ -171,10 +162,20 @@ private:
     return lookahead_;
   }
 
+  bool
+  local_speedy_node(node_id nid) const {
+    return node_to_speedy_switch_[nid] == local_speedy_switch_;
+  }
+
  private:
   switch_map switches_;
+  //a set of switches that transfer messages quickly
+  switch_map speedy_overlay_switches_;
   node_map nodes_;
   nic_map nics_;
+
+  switch_id local_speedy_switch_;
+  std::vector<switch_id> node_to_speedy_switch_;
 
   double hop_bw_;
 
@@ -183,6 +184,9 @@ private:
   timestamp injection_latency_;
 
   timestamp lookahead_;
+
+  int num_speedy_switches_with_extra_node_;
+  int num_nodes_per_speedy_switch_;
 
   partition* partition_;
   parallel_runtime* rt_;

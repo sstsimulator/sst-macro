@@ -45,7 +45,7 @@ crossbar::configure_vc_routing(std::map<routing::algorithm_t, int> &m) const
 void
 crossbar::minimal_route_to_switch(switch_id current_sw_addr,
                                   switch_id dest_sw_addr,
-                                  structured_routable::path &path) const
+                                  routable::path &path) const
 {
   path.vc = 0;
   path.outport = dest_sw_addr;

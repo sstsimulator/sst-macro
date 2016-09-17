@@ -17,13 +17,66 @@
 #include <sstream>
 #include <sprockit/factories/factory.h>
 
-#if 0
+
 
 namespace sstmac {
 namespace hw {
 
 SpktRegister("fbfly | flattenedbfly | flattenedbutterfly", topology,
             flattened_butterfly);
+
+flattened_butterfly::flattened_butterfly(sprockit::sim_parameters *params) :
+  abstract_butterfly(params,
+                     InitMaxPortsIntra::I_Remembered,
+                     InitGeomEjectID::I_Remembered)
+{
+  int nstages = nfly_ - 1;
+  int up_radix = kary_ * nstages;
+  int down_radix = up_radix;
+  max_ports_intra_network_ = up_radix + down_radix;
+  eject_geometric_id_ = max_ports_intra_network_;
+}
+
+void
+flattened_butterfly::minimal_route_to_switch(switch_id src,
+                                             switch_id dst,
+                                             routable::path &path) const
+{
+  int group_size = nswitches_per_col_;
+  int next_group_size = group_size / kary_;
+  path.vc = 0; //no matter what
+  for (int l=0; l < (nfly_ - 1); ++l) {
+    int srcX = (src % group_size) / next_group_size;
+    int dstX = (dst % group_size) / next_group_size;
+
+    if (srcX != dstX){
+      int dim = srcX < dstX ? up_dimension : down_dimension;
+      path.outport = convert_to_port(dim, l*kary_ + dstX);
+      return;
+    }
+    group_size = next_group_size;
+    next_group_size /= kary_;
+  }
+}
+
+int
+flattened_butterfly::minimal_distance(switch_id src, switch_id dst) const
+{
+  int group_size = nswitches_per_col_;
+  int next_group_size = group_size / kary_;
+  int dist = 0;
+  for (int l=0; l < (nfly_ - 1); ++l) {
+    int srcX = (src % group_size) / next_group_size;
+    int dstX = (dst % group_size) / next_group_size;
+
+    if (srcX != dstX) ++dist;
+
+    group_size = next_group_size;
+    next_group_size /= kary_;
+  }
+  return dist;
+}
+
 void
 flattened_butterfly::connect_objects(sprockit::sim_parameters* params,
                                      internal_connectable_map& objects)
@@ -143,19 +196,6 @@ flattened_butterfly::connect_objects(sprockit::sim_parameters* params,
 }
 
 int
-flattened_butterfly::minimal_distance(const coordinates &current_coords,
-                                      const coordinates &dest_coords) const
-{
-  int dist = 0;
-  for (int i=0; i < current_coords.size(); ++i) {
-    if (current_coords[i] != dest_coords[i]) {
-      ++dist;
-    }
-  }
-  return dist;
-}
-
-int
 flattened_butterfly::convert_to_port(int dim, int dir) const
 {
   int ndim = nfly_ - 1;
@@ -166,6 +206,20 @@ flattened_butterfly::convert_to_port(int dim, int dir) const
   else {
     return dir + nconnections_per_dim;
   }
+}
+
+#if 0
+int
+flattened_butterfly::minimal_distance(const coordinates &current_coords,
+                                      const coordinates &dest_coords) const
+{
+  int dist = 0;
+  for (int i=0; i < current_coords.size(); ++i) {
+    if (current_coords[i] != dest_coords[i]) {
+      ++dist;
+    }
+  }
+  return dist;
 }
 
 void
@@ -225,9 +279,10 @@ flattened_butterfly::flattened_butterfly(sprockit::sim_parameters *params) :
   max_ports_intra_network_ = up_radix + down_radix;
   eject_geometric_id_ = max_ports_intra_network_;
 }
+#endif
 
 }
 } //end of namespace sstmac
 
-#endif
+
 

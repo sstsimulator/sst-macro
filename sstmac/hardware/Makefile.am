@@ -21,7 +21,6 @@ nobase_library_include_HEADERS = \
   simple/null_nic.h \
   simple/simple_nic.h \
   simple/simple_switch.h \
-  simple/simple_topology.h \
   simple/simple_param_expander.h \
   processor/processor.h \
   processor/processor_fwd.h \
@@ -82,6 +81,7 @@ nobase_library_include_HEADERS = \
   topology/fat_tree.h \
   topology/flattened_butterfly.h \
   topology/hdtorus.h \
+  topology/multipath_topology.h \
   topology/tiled_torus.h \
   topology/hypercube.h \
   topology/topology.h \
@@ -98,11 +98,9 @@ nobase_library_include_HEADERS = \
   router/router_fwd.h \
   router/routable.h \
   router/routable_fwd.h \
-  router/minad_routing.h \
   router/routing_enum.h \
   router/minimal_routing.h \
   router/multipath_routing.h \
-  router/structured_router.h \
   router/ugal_routing.h \
   router/valiant_routing.h \
   router/fat_tree_router.h 
@@ -112,7 +110,6 @@ libsstmac_hw_la_SOURCES =  \
   simple/simple_nic.cc \
   simple/simple_switch.cc \
   simple/simple_param_expander.cc \
-  simple/simple_topology.cc \
   processor/processor.cc \
   processor/simple_processor.cc \
   processor/instruction_processor.cc \
@@ -159,10 +156,8 @@ libsstmac_hw_la_SOURCES =  \
   topology/tiled_dragonfly.cc \
   topology/traffic/traffic.cc \
   router/router.cc \
-  router/structured_router.cc \
   router/routable.cc \
   router/fat_tree_router.cc \
-  router/minad_routing.cc \
   router/minimal_routing.cc \
   router/multipath_routing.cc \
   router/ugal_routing.cc \

@@ -58,7 +58,7 @@ class crossbar : public structured_topology
   minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    structured_routable::path& path) const;
+    routable::path& path) const;
 
   virtual int
   num_switches() const {

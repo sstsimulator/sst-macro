@@ -55,7 +55,7 @@ cartesian_topology::node_addr(const coordinates& coords) const
   int offset = 0;
   if (coords.size() > ndimensions()) {
     //there is no "extra" switch index
-    offset = coords[ndimensions() - 1];
+    offset = coords[ndimensions()];
   }
 
   int swid = switch_addr(coords);

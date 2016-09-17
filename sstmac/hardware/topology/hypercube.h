@@ -36,7 +36,7 @@ class hypercube :
   minimal_route_to_switch(
     switch_id src,
     switch_id dst,
-    structured_routable::path& path) const;
+    routable::path& path) const;
 
   virtual void
   connect_objects(sprockit::sim_parameters* params,

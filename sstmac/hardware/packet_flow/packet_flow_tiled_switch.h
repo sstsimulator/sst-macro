@@ -44,9 +44,6 @@ class packet_flow_tiled_switch :
                 int src_outport, int dst_inport,
                 connectable* mod) override;
 
-  std::vector<switch_id>
-  connected_switches() const override;
-
   /**
    Cast message and pass to #send
    @param msg Incoming message (should cast to packet_train)

@@ -170,12 +170,27 @@ class topology
     return port;
   }
 
+  switch_id
+  endpoint_to_ejection_switch(node_id nodeaddr) const {
+    int ignore;
+    return endpoint_to_ejection_switch(nodeaddr, ignore);
+  }
+
+  switch_id
+  endpoint_to_injection_switch(node_id nodeaddr) const {
+    int ignore;
+    return endpoint_to_injection_switch(nodeaddr, ignore);
+  }
+
+  virtual switch_id
+  node_to_ejection_switch(node_id addr, int& port) const = 0;
+
   virtual void
   minimal_routes_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    structured_routable::path& current_path,
-    structured_routable::path_set& paths) const {
+    routable::path& current_path,
+    routable::path_set& paths) const {
     paths.resize(1);
     minimal_route_to_switch(current_sw_addr, dest_sw_addr, paths[0]);
   }
@@ -253,7 +268,7 @@ class topology
   minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    structured_routable::path& path) const = 0;
+    routable::path& path) const = 0;
 
   static topology*
   global() {
@@ -310,40 +325,11 @@ class topology
   random_intermediate_switch(switch_id current_sw, 
                              switch_id dest_sw = switch_id(-1));
 
-  /**
-     For a given node, determine the injection switch
-     All messages from this node inject into the network
-     through this switch
-     @param nodeaddr The node to inject to
-     @return The switch that injects from the node
-  */
-  switch_id
-  endpoint_to_injection_switch(node_id nodeaddr) const {
-    int ignore;
-    return endpoint_to_injection_switch(nodeaddr, ignore);
-  }
-
   virtual switch_id
   endpoint_to_injection_switch(
         node_id nodeaddr, int ports[], int& num_ports) const {
     num_ports = 1;
     return endpoint_to_injection_switch(nodeaddr, ports[0]);
-  }
-
-  virtual switch_id
-  node_to_ejection_switch(node_id addr, int& port) const = 0;
-
-  /**
-     For a given node, determine the ejection switch
-     All messages to this node eject into the network
-     through this switch
-     @param nodeaddr The node to eject from
-     @return The switch that ejects into the node
-  */
-  switch_id
-  endpoint_to_ejection_switch(node_id nodeaddr) const {
-    int ignore;
-    return endpoint_to_ejection_switch(nodeaddr, ignore);
   }
 
   virtual switch_id
@@ -414,7 +400,7 @@ class topology
   minimal_route_to_node(
     switch_id current_sw_addr,
     node_id dest_node_addr,
-    structured_routable::path& path) const;
+    routable::path& path) const;
 
   /**
      Informs topology that a new routing stage has begun, allowing any
@@ -422,7 +408,7 @@ class topology
      @param rinfo Routing info object
   */
   virtual void
-  new_routing_stage(structured_routable* rtbl) { }
+  new_routing_stage(routable* rtbl) { }
 
   int
   num_nodes_per_netlink() const {

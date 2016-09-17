@@ -1,5 +1,4 @@
 #include <sstmac/hardware/topology/topology.h>
-#include <sstmac/hardware/router/structured_router.h>
 #include <sstmac/backends/common/sim_partition.h>
 #include <sstmac/common/thread_lock.h>
 #include <sstmac/common/event_scheduler.h>
@@ -94,7 +93,7 @@ void
 topology::minimal_route_to_node(
   switch_id current_sw_addr,
   node_id dest_node_addr,
-  structured_routable::path& path) const
+  routable::path& path) const
 {
   abort();
   int dir;
@@ -271,13 +270,13 @@ topology::endpoint_label(node_id nid) const
 std::string
 topology::label(node_id nid) const
 {
-  return sprockit::printf("node(%d)", int(nid));
+  return sprockit::printf("%d", int(nid));
 }
 
 std::string
 topology::label(switch_id sid) const
 {
-  return sprockit::printf("switch(%d)", int(sid));
+  return sprockit::printf("%d", int(sid));
 }
 
 std::string

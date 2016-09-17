@@ -62,17 +62,10 @@ class network_switch :
     return my_addr_;
   }
 
-  /**
-   * @brief rter
-   * @return The router used for performing routing computations
-   */
-  router*
-  rter() const {
-    return router_;
+  virtual void
+  compatibility_check() const {
+    //by default, nothing
   }
-
-  virtual std::vector<switch_id>
-  connected_switches() const = 0;
 
   /**
    * @brief queue_length
@@ -90,7 +83,6 @@ class network_switch :
 
  protected:
   switch_id my_addr_;
-  router* router_;
   topology* top_;
 
 };

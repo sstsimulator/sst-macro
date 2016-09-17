@@ -73,7 +73,7 @@ void init_switches(sstmac::hw::interconnect::switch_map& switches,
 
 
 void _assert_dim_dir(UnitTest& unit, const char* descr, const char* file, int line,
-                    sstmac::hw::network_switch* sw, const sstmac::hw::structured_routable::path& path,
+                    sstmac::hw::network_switch* sw, const sstmac::hw::routable::path& path,
                     long outport_sw_id);
 
 #define assert_dim_dir(unit, descr, ...) \

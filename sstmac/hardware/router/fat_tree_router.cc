@@ -27,7 +27,7 @@ SpktRegister("fattree | ftree", router, fat_tree_router);
 
 fat_tree_router::fat_tree_router(sprockit::sim_parameters* params, topology *top,
                                  network_switch *netsw) :
-  structured_router(params, top, netsw, routing::minimal),
+  router(params, top, netsw, routing::minimal),
   rng_(nullptr)
 {
   ftree_ = safe_cast(fat_tree, top);
@@ -72,13 +72,7 @@ fat_tree_router::~fat_tree_router()
   if (rng_) delete rng_;
 }
 
-void
-fat_tree_router::route(packet* pkt)
-{
-  minimal_route_to_node(pkt->toaddr(),
-    pkt->interface<structured_routable>()->current_path());
-}
-
+#if 0
 void
 fat_tree_router::productive_paths_to_switch(
   switch_id dst, structured_routable::path_set &paths)
@@ -103,11 +97,12 @@ fat_tree_router::productive_paths_to_switch(
     }
   }
 }
+#endif
 
 void
-fat_tree_router::minimal_route_to_switch(
+fat_tree_router::route_to_switch(
   switch_id ej_addr,
-  structured_routable::path& path)
+  routable::path& path)
 {
   int pathDir;
   int ej_id = ej_addr;

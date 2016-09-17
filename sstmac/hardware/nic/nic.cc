@@ -240,7 +240,7 @@ nic::internode_send(network_message* netmsg)
   nic_debug("internode send payload %p:%s",
     netmsg, netmsg->to_string().c_str());
   if (negligible_size(netmsg->byte_length())){
-    send_to_interconn(netmsg);
+    schedule_now(speedy_switch_, netmsg);
     ack_send(netmsg);
   } else {
     do_send(netmsg);
@@ -251,17 +251,6 @@ void
 nic::send_to_node(network_message* payload)
 {
   schedule_now(parent_, payload);
-}
-
-void
-nic::send_to_interconn(network_message* netmsg)
-{
-#if SSTMAC_INTEGRATED_SST_CORE
-  spkt_throw(sprockit::unimplemented_error,
-       "nic::send_to_interconn: integrated core");
-#else
-  interconn_->immediate_send(parent(), netmsg, now());
-#endif
 }
 
 }

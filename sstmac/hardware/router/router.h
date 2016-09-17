@@ -45,43 +45,8 @@ namespace hw {
 class router
 {
  public:
-  /**
-   * @brief The structured_path struct Identifies a (structurally) unique
-   * path in the topology. For example, there might be multiple links on a
-   * router than connect to the +X router in a torus. However,
-   * these links are all considered to be ``structurally'' equivalent.
-   */
-  struct structured_path {
-    /**
-     * @brief redundancy How many redundant physical links compose the single structural link
-     */
-    int redundancy;
-
-    /**
-     * @brief path_counter The index of the last redundant path taken
-     */
-    int path_counter;
-
-    structured_path() : path_counter(0) {}
-
-    /**
-     * @brief next_index
-     * @return The next redundant path that should be taken based on the previously taken paths
-     */
-    int next_index() {
-      int ret = path_counter;
-      path_counter = (path_counter + 1) % redundancy;
-      return ret;
-    }
-  };
-
- public:
   virtual std::string
-  to_string() const {
-    return "router";
-  }
-
-  virtual ~router();
+  to_string() const = 0;
 
   /**
    * @brief route Makes a routing decision for the packet.
@@ -89,60 +54,17 @@ class router
    * @param pkt
    */
   virtual void
-  route(packet* pkt) = 0;
+  route(packet* pkt);
 
-  /**
-    Compute the minimal path to a node.
-    This method can not be const.  For some cases,
-    there are multiple minimal paths that rotate
-    in a round-robin fasion to spread load (fat-tree, fbfly).
-    The router needs to update its round-robin index
-    when computing a path - hence no constness.
-    @param node_addr The node routing to
-    @param path [inout] The path to route along. This might
-      contain information about previous steps take along the path.
-  */
+ private:
   virtual void
-  minimal_route_to_node(
-    node_id node_addr,
-    structured_routable::path& path);
+  route_to_switch(switch_id sid, routable::path& path) = 0;
 
-  /**
-    Compute the minimal path to a switch.
-    This method can not be const.  For some cases,
-    there are multiple minimal paths that rotate
-    in a round-robin fasion to spread load (fat-tree, fbfly).
-    The router needs to update its round-robin index
-    when computing a path - hence no constness.
-    @param sw_addr The switch routing to
-    @param path [inout] The path to route along
-  */
+ public:
+  virtual ~router();
+
   virtual void
-  minimal_route_to_switch(
-    switch_id sw_addr,
-    structured_routable::path& path);
-
-  /**
-   @return Whether we are ejecting
-   @param dst The destination node
-   @param ports The ports that make progress towards the final destination.
-                If ejecting, this contains only the ejection port.
-  */
-  bool
-  productive_paths_to_node(
-    node_id dst,
-    structured_routable::path_set& paths);
-
-  /**
-   * @brief productive_paths_to_switch  Get the set of all paths
-   * that corresponding to ``productive'' steps towards a destination switch
-   * @param dst   The ID for the destination switch
-   * @param paths [inout] The set of productive paths that move closer to the destination switch
-   */
-  virtual void
-  productive_paths_to_switch(
-    switch_id dst,
-    structured_routable::path_set& paths) = 0;
+  compatibility_check() const;
 
   network_switch*
   get_switch() const {
@@ -180,7 +102,14 @@ class router
   routing::algorithm_t
   str_to_algo(const std::string& str);
 
- private:
+  switch_id
+  find_ejection_site(node_id toaddr, routable::path& path) const;
+
+  inline static void
+  configure_ejection_path(routable::path& path) {
+    path.vc = 0;
+  }
+
   void init_vc();
 
  protected:
@@ -189,10 +118,6 @@ class router
   topology* top_;
 
   network_switch* netsw_;
-
-  bool hop_count_reporting_;
-
-  int hop_count_delta_;
 
   int max_num_vc_;
 

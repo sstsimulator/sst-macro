@@ -15,17 +15,6 @@ class cartesian_topology :
   public structured_topology
 {
  public:
-  /**
-   * @brief configure_geometric_paths
-   * For all possible geometric or structure paths, compute
-   * their redundances in terms of number of ports that go
-   * in the same geometric or structural direction, e.g.
-   * might be 3 ports that all go +X on a router
-   * @param [inout] redundancies
-   */
-  virtual void
-  configure_geometric_paths(std::vector<int>& redundancies) = 0;
-
   node_id
   node_addr(const coordinates& coords) const;
 

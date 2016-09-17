@@ -13,5 +13,6 @@ void test_crossbar(UnitTest& unit)
   params["geometry"] = "10";
   params["concentration"] = "3";
   params["name"] = "crossbar";
+  params["router"] = "minimal";
   test_topology(params);
 }

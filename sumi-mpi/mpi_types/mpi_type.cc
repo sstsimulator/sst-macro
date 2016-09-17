@@ -149,7 +149,7 @@ void
 mpi_type::init_vector(const std::string &labelit, mpi_type* base,
                    int count, int block, MPI_Aint byte_stride)
 {
-  if (base->id == -1){
+  if (base->id == MPI_Datatype(-1)){
     spkt_throw_printf(sprockit::value_error,
         "mpi_type::init_vector: unitialized base type %s",
         base->label.c_str());

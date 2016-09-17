@@ -18,7 +18,6 @@
 #include <sstmac/hardware/common/connection.h>
 #include <sstmac/hardware/common/packet_fwd.h>
 #include <sstmac/hardware/network/network_message_fwd.h>
-#include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/common/stats/stat_spyplot_fwd.h>
 #include <sstmac/common/stats/stat_histogram_fwd.h>
 #include <sstmac/common/stats/stat_local_int_fwd.h>
@@ -72,6 +71,11 @@ class nic :
   virtual void
   set_node(node* nd){
     parent_ = nd;
+  }
+
+  void
+  set_speedy_switch(event_handler* handler){
+    speedy_switch_ = handler;
   }
 
   /**
@@ -150,6 +154,8 @@ class nic :
 
   node* parent_;
 
+  event_handler* speedy_switch_;
+
  private:
   stat_spyplot* spy_num_messages_;
   stat_spyplot* spy_bytes_;
@@ -167,20 +173,8 @@ class nic :
   void
   ack_send(network_message* payload);
 
-  void
-  send_to_interconn(network_message* netmsg);
-
   void record_message(network_message* msg);
 
-#if !SSTMAC_INTEGRATED_SST_CORE
- public:
-  void set_interconnect(interconnect* ic){
-    interconn_ = ic;
-  }
-
- protected:
-  interconnect* interconn_;
-#endif
 
 };
 

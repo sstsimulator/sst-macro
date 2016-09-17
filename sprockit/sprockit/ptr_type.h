@@ -70,8 +70,7 @@ __safe_ptr_cast__(const char* objname,
 {
   sprockit::refcount_ptr<Out> out = dynamic_cast<Out*>(in.get());
   if (!out) {
-    spkt_throw_printf(value_error,
-                     "%s: failed to cast to %s at %s:%d - %s",
+    spkt_abort_printf("%s: failed to cast to %s at %s:%d - %s",
                      error_msg, objname, file, line,
                      (in ? "wrong type" : "null object"));
   }

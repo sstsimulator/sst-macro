@@ -32,13 +32,13 @@ simple_nic::do_send(network_message* msg)
   timestamp start_send = now_ > next_free_ ? now_ : next_free_;
   timestamp time_to_inject = inj_lat_ + timestamp(inj_bw_inverse_ * num_bytes);
   //leave the injection latency term to the interconnect
-  send_to_injector(start_send, msg);
+  schedule_now(speedy_switch_, msg);
 
   next_free_ = start_send + time_to_inject;
   if (msg->needs_ack()) {
     //do whatever you need to do so that this msg decouples all pointers
     network_message* acker = msg->clone_injection_ack();
-    send_to_node(next_free_, acker);
+    schedule(next_free_, parent_, acker); //send to node
   }
 }
 
@@ -66,17 +66,6 @@ simple_nic::connect_input(
   connectable* mod)
 {
   //nothing needed
-}
-
-void
-simple_nic::send_to_injector(timestamp t, network_message* msg)
-{
-  interconn_->immediate_send(parent(), msg, t);
-}
-
-void
-simple_nic::send_to_node(timestamp t, network_message* msg){
-  schedule(t, parent_, msg);
 }
 
 }

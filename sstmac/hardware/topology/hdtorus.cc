@@ -57,7 +57,7 @@ void
 hdtorus::minimal_route_to_switch(
   switch_id src,
   switch_id dst,
-  structured_routable::path& path) const
+  routable::path& path) const
 {
   int div = 1;
   int ndim = dimensions_.size();
@@ -117,6 +117,7 @@ hdtorus::minimal_distance(
     dist = shortest_distance(i, srcX, dstX);
     div *= dimensions_[i];
   }
+
   return dist;
 }
 
@@ -139,13 +140,13 @@ hdtorus::shortest_path_positive(
 
 void
 hdtorus::torus_path(bool reset_dim, bool wrapped, int dim, int dir,
-                    structured_routable::path& path) const
+                    routable::path& path) const
 {
   if (wrapped){
-    path.set_metadata_bit(structured_routable::crossed_timeline);
+    path.set_metadata_bit(routable::crossed_timeline);
   }
 
-  if (path.metadata_bit(structured_routable::crossed_timeline)){
+  if (path.metadata_bit(routable::crossed_timeline)){
     path.vc = 1;
   } else {
     path.vc = 0;
@@ -153,14 +154,14 @@ hdtorus::torus_path(bool reset_dim, bool wrapped, int dim, int dir,
   path.outport = convert_to_port(dim, dir);
 
   if (reset_dim){
-    path.unset_metadata_bit(structured_routable::crossed_timeline); //we reached this dim
+    path.unset_metadata_bit(routable::crossed_timeline); //we reached this dim
   }
 }
 
 void
 hdtorus::up_path(
   int dim, int srcX, int dstX,
-  structured_routable::path& path) const
+  routable::path& path) const
 {
 
   bool reset_dim = (srcX + 1) % dimensions_[dim] == dstX;
@@ -172,7 +173,7 @@ hdtorus::up_path(
 void
 hdtorus::down_path(
   int dim, int src, int dst,
-  structured_routable::path& path) const
+  routable::path& path) const
 {
   bool reset_dim = src == ((dst + 1) % dimensions_[dim]);
   bool wrapped = src == 0;
@@ -307,23 +308,6 @@ hdtorus::configure_vc_routing(std::map<routing::algorithm_t, int>& m) const
   m[routing::minimal_adaptive] = 2;
   m[routing::valiant] = 4;
   m[routing::ugal] = 6;
-}
-
-void
-hdtorus::configure_geometric_paths(std::vector<int>& redundancies)
-{
-  int ndims = dimensions_.size();
-  int ngeom_paths = ndims * 2 + endpoints_per_switch_; //2 for +/-
-  redundancies.resize(ngeom_paths);
-  for (int d=0; d < ndims; ++d){
-    int pos_path = convert_to_port(d,pos);
-    redundancies[pos_path] = red_[d];
-
-    int neg_path = convert_to_port(d,neg);
-    redundancies[neg_path] = red_[d];
-  }
-
-  configure_injection_geometry(redundancies);
 }
 
 coordinates

@@ -69,10 +69,6 @@ class simple_nic :
 
   timestamp next_free_;
 
- private:
-  void send_to_injector(timestamp arrival, network_message* netmsg);
-  void send_to_node(timestamp arrival, network_message* netmsg);
-
 };
 
 }

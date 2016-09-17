@@ -12,5 +12,6 @@ void test_butterfly(UnitTest& unit)
   sstmac::env::params = &params;
   params["geometry"] = "4 3";
   params["name"] = "crossbar";
+  params["router"] = "minimal";
   test_topology(params);
 }

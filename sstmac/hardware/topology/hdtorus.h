@@ -69,13 +69,10 @@ class hdtorus :
   }
 
   void
-  configure_geometric_paths(std::vector<int> &redundancies);
-
-  void
   minimal_route_to_switch(
     switch_id sid,
     switch_id dst,
-    structured_routable::path& path) const;
+    routable::path& path) const;
 
   virtual void
   connect_objects(sprockit::sim_parameters* params,
@@ -95,25 +92,27 @@ class hdtorus :
   switch_id
   switch_addr(const coordinates &coords) const;
 
- private:
+
+ protected:
   inline int
   convert_to_port(int dim, int dir) const {
     return 2*dim + dir;
   }
 
+ private:
   void
   torus_path(bool reset_dim, bool wrapped, int dim, int dir,
-             structured_routable::path& path) const;
+             routable::path& path) const;
 
   void
   down_path(
     int dim, int src, int dst,
-    structured_routable::path& path) const;
+    routable::path& path) const;
 
   void
   up_path(
     int dim, int src, int dst,
-    structured_routable::path& path) const;
+    routable::path& path) const;
 
   int
   shortest_distance(int dim, int src, int dst) const;

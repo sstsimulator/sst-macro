@@ -72,13 +72,13 @@ class structured_topology : public topology
   endpoint_eject_paths_on_switch(
     node_id dest_addr,
     switch_id sw_addr,
-    structured_routable::path_set& paths) const;
+    routable::path_set& paths) const;
 
   void
   node_eject_paths_on_switch(
       node_id dest_addr,
       switch_id sw_addr,
-      structured_routable::path_set& paths) const {
+      routable::path_set& paths) const {
     endpoint_eject_paths_on_switch(
           dest_addr / num_nodes_per_endpoint_,
           sw_addr, paths);

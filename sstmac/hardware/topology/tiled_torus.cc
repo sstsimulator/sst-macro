@@ -15,6 +15,8 @@ tiled_torus::tiled_torus(sprockit::sim_parameters *params) :
 
   int ntiles = ntiles_col_ * ntiles_row_;
 
+  first_simple_torus_eject_port_ = max_ports_intra_network_;
+
   max_ports_intra_network_ = ntiles - max_ports_injection_;
 
   int ndims = red_.size();
@@ -32,33 +34,67 @@ tiled_torus::tiled_torus(sprockit::sim_parameters *params) :
 }
 
 void
-tiled_torus::minimal_routes_to_switch(
-  switch_id src,
-  switch_id dst,
-  structured_routable::path& current,
-  structured_routable::path_set &paths) const
+tiled_torus::get_redundant_paths(
+  routable::path& current,
+  routable::path_set &paths) const
 {
-  hdtorus::minimal_route_to_switch(src, dst, current);
-  int dim = current.outport / 2; //2 for +/-
-  int dir = current.outport % 2;
-  int red = red_[dim];
-  paths.resize(red);
-  int port_offset = tile_offsets_[dim] + red * dir;
+  if (current.outport < first_simple_torus_eject_port_){
+    //intranetwork routing
+    int dim = current.outport / 2; //2 for +/-
+    int dir = current.outport % 2;
+    int red = red_[dim];
+    paths.resize(red);
+    int port_offset = tile_offsets_[dim] + red * dir;
 
-  //outport identifies a unique path
-  for (int r=0; r < red; ++r){
-    paths[r] = current;
-    paths[r].geometric_id = current.outport;
-    paths[r].outport = port_offset + r;
+    //outport identifies a unique path
+    for (int r=0; r < red; ++r){
+      paths[r] = current;
+      paths[r].geometric_id = current.outport;
+      paths[r].outport = port_offset + r;
+    }
+  } else {
+    //ejection routing
+    int offset = current.outport - first_simple_torus_eject_port_;
+    int port = max_ports_intra_network_ + offset*injection_redundancy_;
+    int num_ports = injection_redundancy_;
+    for (int i=0; i < num_ports; ++i, ++port){
+      paths[i].outport = port;
+    }
   }
 }
 
-int
-tiled_torus::port(int replica, int dim, int dir)
+switch_id
+tiled_torus::endpoint_to_injection_switch(node_id nodeaddr, int ports[], int &num_ports) const
 {
-  int offset = tile_offsets_[dim];
-  //offset for dim, each replica has +/- for *2
-  return offset + red_[dim] * dir + replica;
+  int port;
+  switch_id sid = hdtorus::endpoint_to_injection_switch(nodeaddr, port);
+  //ejection routing
+  int offset = port - first_simple_torus_eject_port_;
+  port = max_ports_intra_network_ + offset*injection_redundancy_;
+  num_ports = injection_redundancy_;
+  for (int i=0; i < num_ports; ++i, ++port){
+    ports[i] = port;
+  }
+  return sid;
+}
+
+void
+tiled_torus::configure_geometric_paths(std::vector<int>& redundancies) const
+{
+  int ndims = dimensions_.size();
+  int ngeom_paths = ndims * 2 + endpoints_per_switch_; //2 for +/-
+  redundancies.resize(ngeom_paths);
+  for (int d=0; d < ndims; ++d){
+    int pos_path = hdtorus::convert_to_port(d,pos);
+    redundancies[pos_path] = red_[d];
+
+    int neg_path = hdtorus::convert_to_port(d,neg);
+    redundancies[neg_path] = red_[d];
+  }
+
+  for (int i=0; i < endpoints_per_switch_; ++i){
+    redundancies[i+eject_geometric_id_] = injection_redundancy_;
+  }
 }
 
 void
@@ -86,47 +122,6 @@ tiled_torus::connect_dim(
     top_debug("\tconnecting + replica %d on port %d", r, outport);
     center->connect_output(link_params, outport, inport, minus);
     minus->connect_input(link_params, outport, inport, center);
-  }
-
-}
-
-switch_id
-tiled_torus::endpoint_to_ejection_switch(
-    node_id nodeaddr, int ports[], int &num_ports) const
-{
-  return endpoint_to_injection_switch(nodeaddr, ports, num_ports);
-}
-
-switch_id
-tiled_torus::endpoint_to_injection_switch(
-    node_id nodeaddr, int ports[], int &num_ports) const
-{
-  int port;
-  //this computes the port assuming one injection path
-  switch_id sid = hdtorus::endpoint_to_injection_switch(nodeaddr, port);
-  int offset = port - max_ports_intra_network_;
-
-  port = max_ports_intra_network_ + offset*injection_redundancy_;
-  num_ports = injection_redundancy_;
-  for (int i=0; i < num_ports; ++i, ++port){
-    top_debug("switch %d sending back injection port %d:%d to node %d",
-       int(sid), i, port, int(nodeaddr));
-    ports[i] = port;
-  }
-  return sid;
-}
-
-void
-tiled_torus::endpoint_eject_paths_on_switch(
-  node_id ep_addr, switch_id sw_addr,
-  structured_routable::path_set &paths) const
-{
-  int node_offset = ep_addr % endpoints_per_switch_;
-  int port = max_ports_intra_network_ + node_offset*injection_redundancy_;
-  for (int i=0; i < injection_redundancy_; ++i, ++port){
-    paths[i].outport = port;
-    paths[i].vc = 0;
-    paths[i].geometric_id = 2*dimensions_.size() + node_offset;
   }
 }
 

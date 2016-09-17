@@ -34,6 +34,7 @@ packet_flow_abstract_switch::packet_flow_abstract_switch(
   sprockit::sim_parameters *params, uint64_t id, event_manager *mgr) :
   buf_stats_(nullptr),
   xbar_stats_(nullptr),
+  router_(nullptr),
   network_switch(params, id, mgr)
 {
   sprockit::sim_parameters* xbar_params = params->get_optional_namespace("xbar");
@@ -44,6 +45,8 @@ packet_flow_abstract_switch::packet_flow_abstract_switch(
   sprockit::sim_parameters* buf_params = params->get_optional_namespace("output_buffer");
   buf_stats_ = packet_sent_stats_factory::get_optional_param("stats", "null",
                                              buf_params, this);
+
+  router_ = router_factory::get_param("router", params, top_, this);
 }
 
 
@@ -52,6 +55,7 @@ packet_flow_abstract_switch::~packet_flow_abstract_switch()
 {
   if (buf_stats_) delete buf_stats_;
   if (xbar_stats_) delete xbar_stats_;
+  if (router_) delete router_;
 }
 
 packet_flow_switch::packet_flow_switch(
@@ -129,17 +133,10 @@ packet_flow_switch::connect_input(
                    safe_cast(event_handler, mod));
 }
 
-std::vector<switch_id>
-packet_flow_switch::connected_switches() const
+void
+packet_flow_switch::compatibility_check() const
 {
-  std::vector<switch_id> ret;
-  ret.reserve(out_buffers_.size());
-  int idx = 0;
-  for (int b=0; b < out_buffers_.size(); ++b){
-    packet_flow_buffer* buf = test_cast(packet_flow_buffer, out_buffers_[b]);
-    if (buf) ret[idx++] = buf->output_location().convert_to_switch_id();
-  }
-  return ret;
+  router_->compatibility_check();
 }
 
 void

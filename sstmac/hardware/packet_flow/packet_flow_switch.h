@@ -34,6 +34,7 @@ class packet_flow_abstract_switch :
 
   packet_sent_stats* xbar_stats_;
   packet_sent_stats* buf_stats_;
+  router* router_;
 };
 
 /**
@@ -67,9 +68,6 @@ class packet_flow_switch :
     int dst_inport,
     connectable* mod) override;
 
-  std::vector<switch_id>
-  connected_switches() const override;
-
   /**
    Cast message and pass to #send
    @param msg Incoming message (should cast to packet_train)
@@ -80,6 +78,9 @@ class packet_flow_switch :
   void deadlock_check() override;
 
   void deadlock_check(event* ev) override;
+
+  virtual void
+  compatibility_check() const override;
 
   /**
    Set the link to use when ejecting packets at their endpoint.  A packet_flow_switch

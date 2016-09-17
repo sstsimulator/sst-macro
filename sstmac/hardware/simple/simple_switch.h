@@ -6,6 +6,7 @@
 #include <sstmac/common/messages/sst_message_fwd.h>
 #include <sstmac/hardware/nic/nic_fwd.h>
 #include <sstmac/hardware/switch/network_switch.h>
+#include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sprockit/unordered.h>
 
 namespace sstmac {
@@ -17,28 +18,6 @@ class simple_switch :
 
  public:
   simple_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr);
-
-  int
-  queue_length(int port) const override {
-    return 0;
-  }
-
-  virtual void
-  connect_output(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    connectable *mod) override;
-
-  virtual void
-  connect_input(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    connectable *mod) override;
-
-  std::vector<switch_id>
-  connected_switches() const override;
 
   /**
    Cast message and pass to #send
@@ -52,22 +31,28 @@ class simple_switch :
     return "simple switch";
   }
 
+  int queue_length(int port) const override {
+    return 0;
+  }
+
   virtual
   ~simple_switch();
 
-  double
-  inverse_bw() const {
-    return inverse_bw_;
-  }
-
- protected:
   void
-  add_switch(connectable* sw);
+  add_switch(event_handler* netsw, node_id nid);
 
- protected:
-  node_id my_start_;
-  node_id my_end_;
+  void
+  add_nic(event_handler* theNic, node_id nid);
 
+  void connect_output(sprockit::sim_parameters *params,
+                      int src_outport, int dst_inport,
+                      connectable *mod) override;
+
+  void connect_input(sprockit::sim_parameters *params,
+                     int src_outport, int dst_inport,
+                     connectable *mod) override;
+
+ private:
   double inj_bw_inverse_;
 
   timestamp inj_lat_;
@@ -78,16 +63,10 @@ class simple_switch :
 
   timestamp hop_latency_;
 
-  topology* top_;
+  interconnect* interconn_;
 
-  spkt_unordered_map<node_id, network_switch*> neighbors_;
-
-  spkt_unordered_map<node_id, nic*> nics_;
-
-
- private:
-  void send_to_nic(timestamp delay, node_id dst, message* msg);
-  void send_to_switch(timestamp delay, node_id dst, message* msg);
+  std::vector<event_handler*> neighbors_;
+  std::vector<event_handler*> nics_;
 
 };
 

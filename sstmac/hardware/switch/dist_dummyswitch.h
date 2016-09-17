@@ -65,12 +65,6 @@ class dist_dummy_switch : public network_switch
     int dst_inport,
     connectable* comp) override;
 
-  std::vector<switch_id>
-  connected_switches() const override {
-    spkt_throw(sprockit::unimplemented_error,
-              "dist_dummyswitch::connected_switches: should not be called on dummy switch");
-  }
-
   int
   queue_length(int port) const override {
     return 0;

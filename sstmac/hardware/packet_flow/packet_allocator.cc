@@ -17,7 +17,7 @@ namespace hw {
  */
 class structured_routable_packet_flow :
  public packet_flow_payload,
- public structured_routable
+ public routable
 {
   NotSerializable(structured_routable_packet_flow)
 
@@ -27,28 +27,28 @@ class structured_routable_packet_flow :
      int num_bytes,
      long offset) :
     packet_flow_payload(parent, num_bytes, offset),
-    structured_routable(parent->toaddr(), parent->fromaddr())
+    routable(parent->toaddr(), parent->fromaddr())
   {
   }
 
   node_id
   toaddr() const {
-   return structured_routable::toaddr();
+   return routable::toaddr();
   }
 
   node_id
   fromaddr() const {
-    return structured_routable::fromaddr();
+    return routable::fromaddr();
   }
 
   int
   next_port() const {
-    return structured_routable::port();
+    return routable::port();
   }
 
   int
   next_vc() const {
-    return structured_routable::vc();
+    return routable::vc();
   }
 
  private:

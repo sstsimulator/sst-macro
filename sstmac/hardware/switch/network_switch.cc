@@ -35,19 +35,16 @@ namespace hw {
 
 network_switch::~network_switch()
 {
-  if (router_) delete router_;
 }
 
 
 network_switch::network_switch(sprockit::sim_parameters *params, uint64_t id, event_manager *mgr)
- : connectable_component(params, id, mgr),
-  router_(nullptr)
+ : connectable_component(params, id, mgr)
 {
   my_addr_ = switch_id(params->get_int_param("id"));
   init_loc_id(event_loc_id(my_addr_));
 
   top_ = topology::static_topology(params);
-  router_ = router_factory::get_optional_param("router", "minimal", params, top_, this);
 }
 
 void

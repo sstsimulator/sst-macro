@@ -32,8 +32,7 @@ __safe_cast__(const char* objname,
 {
   Out* out = dynamic_cast<Out*>(in);
   if (!out) {
-    spkt_throw_printf(value_error,
-                     "%s: failed to cast object at %s:%d",
+    spkt_abort_printf("%s: failed to cast object at %s:%d",
                      error_msg, file, line);
   }
   return out;

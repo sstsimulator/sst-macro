@@ -120,7 +120,7 @@ dragonfly::xy_connected_to_group(int myX, int myY, int myG, int dstg) const
 
 bool
 dragonfly::find_y_path_to_group(int myX, int myG, int dstG, int& dstY,
-                                structured_routable::path& path) const
+                                routable::path& path) const
 {
   int ystart = random_number(y_,0);
   for (int yy = 0; yy < y_; ++yy) {
@@ -135,7 +135,7 @@ dragonfly::find_y_path_to_group(int myX, int myG, int dstG, int& dstY,
 
 bool
 dragonfly::find_x_path_to_group(int myY, int myG, int dstG, int& dstX,
-                                structured_routable::path& path) const
+                                routable::path& path) const
 {
   int xstart = random_number(x_,0);
   for (int xx = 0; xx < x_; ++xx) {
@@ -151,14 +151,14 @@ dragonfly::find_x_path_to_group(int myY, int myG, int dstG, int& dstX,
 void
 dragonfly::find_path_to_group(int myX, int myY, int myG,
                               int dstG, int& dstX, int& dstY,
-                              structured_routable::path& path) const
+                              routable::path& path) const
 {
   //see if we can go directly to the group
   if (xy_connected_to_group(myX, myY, myG, dstG)){
     path.outport = g_port(dstG);
     dstX = myX;
     dstY = myY;
-    path.set_metadata_bit(structured_routable::crossed_timeline);
+    path.set_metadata_bit(routable::crossed_timeline);
     return;
   }
 
@@ -191,9 +191,9 @@ void
 dragonfly::minimal_route_to_switch(
     switch_id src,
     switch_id dst,
-    structured_routable::path &path) const
+    routable::path &path) const
 {
-  path.vc = path.metadata_bit(structured_routable::crossed_timeline) ? 1 : 0;
+  path.vc = path.metadata_bit(routable::crossed_timeline) ? 1 : 0;
   int srcX, srcY, srcG; get_coords(src, srcX, srcY, srcG);
   int dstX, dstY, dstG; get_coords(dst, dstX, dstY, dstG);
   int interX, interY;
@@ -224,18 +224,18 @@ dragonfly::minimal_distance(switch_id src, switch_id dst) const
   if (srcG == dstG){
     if (srcX != dstX) ++dist;
     if (srcY != dstY) ++dist;
-    return dist;
   }
-
-  structured_routable::path path;
-  int interX;
-  int interY;
-  find_path_to_group(srcX, srcY, srcG, dstG, interX, interY, path);
-  dist = 1; //group hop
-  if (srcX != interX) ++dist;
-  if (srcY != interY) ++dist;
-  if (dstX != interX) ++dist;
-  if (dstY != interY) ++dist;
+  else {
+    routable::path path;
+    int interX;
+    int interY;
+    find_path_to_group(srcX, srcY, srcG, dstG, interX, interY, path);
+    dist = 1; //group hop
+    if (srcX != interX) ++dist;
+    if (srcY != interY) ++dist;
+    if (dstX != interX) ++dist;
+    if (dstY != interY) ++dist;
+  }
   return dist;
 }
 
@@ -401,9 +401,9 @@ dragonfly::configure_vc_routing(std::map<routing::algorithm_t, int>& m) const
 
 
 void
-dragonfly::new_routing_stage(structured_routable* rtbl)
+dragonfly::new_routing_stage(routable* rtbl)
 {
-  rtbl->current_path().unset_metadata_bit(structured_routable::crossed_timeline);
+  rtbl->current_path().unset_metadata_bit(routable::crossed_timeline);
 }
 
 int

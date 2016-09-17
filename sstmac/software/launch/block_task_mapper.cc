@@ -38,7 +38,7 @@ block_task_mapper::map_ranks(
   std::vector<node_id> &result,
   int nproc)
 {
-  nproc = validate_nproc(ppn, nodes.size(), nproc, "blockindexing");
+  nproc = validate_nproc(ppn, nodes.size(), nproc, "block mapper");
 
   result.clear();
   ordered_node_set::const_iterator it, end = nodes.end();

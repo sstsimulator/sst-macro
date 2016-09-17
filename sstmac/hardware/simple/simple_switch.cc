@@ -17,17 +17,17 @@
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/switch/dist_dummyswitch.h>
 #include <sstmac/hardware/topology/topology.h>
+#include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/common/event_manager.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
-#include <sstmac/hardware/simple/simple_topology.h>
+
 
 namespace sstmac {
 namespace hw {
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-SpktRegister("simple", network_switch, simple_switch);
-#endif
+ImplementSSTComponent("simple", network_switch, simple_switch,
+  "A switch that implements no congestion modeling");
 
 simple_switch::simple_switch(sprockit::sim_parameters *params, uint64_t id, event_manager *mgr) :
   network_switch(params, id, mgr)
@@ -37,46 +37,28 @@ simple_switch::simple_switch(sprockit::sim_parameters *params, uint64_t id, even
 
   double net_bw = link_params->get_bandwidth_param("bandwidth");
   inverse_bw_ = 1.0/net_bw;
-  hop_latency_ = link_params->get_time_param("latency");
-
+  if (link_params->has_param("send_latency")){
+    hop_latency_ = link_params->get_time_param("send_latency");
+  } else {
+    hop_latency_ = link_params->get_time_param("latency");
+  }
 
 
   double inj_bw = ej_params->get_optional_bandwidth_param("bandwidth", net_bw);
   inj_bw_inverse_ = 1.0/inj_bw;
-  inj_lat_ = ej_params->get_optional_time_param("latency", 0);
+  if (ej_params->has_param("send_latency")){
+    inj_lat_ = ej_params->get_time_param("send_latency");
+  } else {
+    inj_lat_ = ej_params->get_time_param("latency");
+  }
+
 
   inv_min_bw_ = std::max(inverse_bw_, inj_bw_inverse_);
 
-  topology* top = topology::static_topology(params);
-  //validate this...
-  std::vector<node_id> nodes;
-  top->nodes_connected_to_injection_switch(my_addr_, nodes);
-  if (nodes.size() == 0){
-    my_start_ = my_end_ = node_id(-1);
-    return;
-  }
-  my_start_ = nodes[0];
-  int size = nodes.size();
-  int nid = my_start_ + 1;
-  for (int i=1; i < size; ++i, ++nid){
-    if (nodes[i] != nid){
-      spkt_throw(sprockit::illformed_error,
-        "simple switch has invalid node connections - parallel runs here should use block indexing only");
-    }
-  }
-  my_end_ = node_id(nid);
+  interconn_ = interconnect::static_interconnect(params, mgr);
 
-  top_ = topology::static_topology(params);
-
-#if !SSTMAC_INTEGRATED_SST_CORE
-  int numsw = top_->num_switches();
-  if (mgr->nworker() != numsw){
-    spkt_abort_printf("simple_switch:: topology has %d switches"
-        " but we are running with %d SST/macro workers (nproc*nthread)\n"
-        "the number of SST/macro workers should match the number of switches",
-        numsw, mgr->nworker());
-  }
-#endif
+  nics_.resize(top_->num_nodes());
+  neighbors_.resize(top_->num_nodes());
 }
 
 simple_switch::~simple_switch()
@@ -84,52 +66,33 @@ simple_switch::~simple_switch()
 }
 
 void
-simple_switch::add_switch(connectable* mod)
+simple_switch::add_switch(event_handler* netsw, node_id nid)
 {
-  network_switch* netsw = safe_cast(network_switch, mod);
-  std::vector<node_id> allnodes;
-  top_->nodes_connected_to_injection_switch(netsw->addr(), allnodes);
-  for (int i=0; i < allnodes.size(); ++i){
-    node_id nid = allnodes[i];
-    neighbors_[nid] = netsw;
-  }
+  neighbors_[nid] = netsw;
 }
 
 void
-simple_switch::connect_output(
-  sprockit::sim_parameters* params,
-  int src_outport, int dst_inport,
-  connectable* conn)
+simple_switch::add_nic(event_handler* theNic, node_id nid)
 {
-  if (src_outport == simple_topology::injection){
-    nic* theNic = safe_cast(nic, conn);
-    nics_[theNic->addr()] = theNic;
-  } else {
-    add_switch(conn);
-  }
+  nics_[nid] = theNic;
 }
 
 void
-simple_switch::connect_input(
-  sprockit::sim_parameters* params,
-  int src_outport, int dst_inport,
-  connectable* conn)
+simple_switch::connect_output(sprockit::sim_parameters *params,
+                              int src_outport, int dst_inport,
+                              connectable *mod)
 {
-  connect_output(params, src_outport, dst_inport, conn);
+  spkt_throw_printf(sprockit::unimplemented_error,
+                    "simple_switch::connect: should not be called");
 }
 
-std::vector<switch_id>
-simple_switch::connected_switches() const
+void
+simple_switch::connect_input(sprockit::sim_parameters *params,
+                              int src_outport, int dst_inport,
+                              connectable *mod)
 {
-  std::vector<switch_id> ret;
-  ret.resize(neighbors_.size());
-  spkt_unordered_map<node_id, network_switch*>::const_iterator it, end = neighbors_.end();
-  int idx = 0;
-  for (it=neighbors_.begin(); it != end; ++it, ++idx){
-    network_switch* netsw = it->second;
-    ret[idx] = netsw->addr();
-  }
-  return ret;
+  spkt_throw_printf(sprockit::unimplemented_error,
+                    "simple_switch::connect: should not be called");
 }
 
 void
@@ -139,37 +102,29 @@ simple_switch::handle(event* ev)
   message* msg = safe_cast(message, ev);
   node_id dst = msg->toaddr();
   node_id src = msg->fromaddr();
+
+  bool local_dst = interconn_->local_speedy_node(dst);
+  bool local_src = interconn_->local_speedy_node(src);
+
   timestamp delay;
-  if (dst >= my_start_ && dst < my_end_){
+  if (local_dst){
     delay = timestamp(inv_min_bw_ * msg->byte_length()); //bw term
-    if (1){//src >= my_start_ && src < my_end_){
-      //from local to local
+    if (local_src){ //need to accumulate all the delay here
+      //local staying local
       int num_hops = top_->num_hops_to_node(src, dst);
       delay += num_hops * hop_latency_ + 2*inj_lat_; //factor of 2 for in-out
-    } //else no delay - remote to local
-    send_to_nic(delay, dst, msg);
-  }
-  else { 
-    //form local going remote
+    } else; //remote coming local
+    schedule_delay(delay, nics_[dst], msg);
+  } else {
+    //local going remote - just accumulate latency delay
     int num_hops = top_->num_hops_to_node(src, dst);
     delay = num_hops * hop_latency_ + 2*inj_lat_; //factor of 2 for in-out
-    send_to_switch(delay, dst, msg);
+    schedule_delay(delay, neighbors_[dst], msg);
   }
+
   debug_printf(sprockit::dbg::network_switch,
     "switch %d handling message from %d to %d - delay=%10.6e ms\n%s\n",
     int(my_addr_), int(src), int(dst), delay.msec(), msg->to_string().c_str());
-}
-
-void
-simple_switch::send_to_nic(timestamp delay, node_id dst, message* msg)
-{
-  schedule_delay(delay, nics_[dst], msg);
-}
-
-void
-simple_switch::send_to_switch(timestamp delay, node_id dst, message* msg)
-{
-  schedule_delay(delay, neighbors_[dst], msg);
 }
 
 

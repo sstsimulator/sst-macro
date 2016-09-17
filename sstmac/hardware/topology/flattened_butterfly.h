@@ -22,7 +22,6 @@
 namespace sstmac {
 namespace hw {
 
-#if 0
 /**
  * @brief The flattened_butterfly class
  * Encapsulates a flattened butterfly topology as described in
@@ -35,55 +34,33 @@ class flattened_butterfly :
  public:
   flattened_butterfly(sprockit::sim_parameters *params);
 
-  virtual std::string
-  to_string() const {
-    return "flattened butterfly topology";
+  std::string
+  to_string() const override {
+    return "flattened butterfly";
   }
 
   virtual ~flattened_butterfly() {}
 
   int
-  num_switches() const {
+  num_switches() const override {
     return nswitches_per_col_;
   }
 
-  int
-  ndimensions() const {
-    return nfly_ - 1;
-  }
-
-  void
-  minimal_route_to_coords(
-    const coordinates &src_coords,
-    const coordinates &dest_coords,
-    structured_routable::path& path) const;
-
-  int
-  minimal_distance(const coordinates &src_coords,
-                   const coordinates &dest_coords) const;
-
   virtual void
-  connect_objects(sprockit::sim_parameters* params, internal_connectable_map& switches);
+  connect_objects(sprockit::sim_parameters* params,
+                  internal_connectable_map& switches) override;
 
-  virtual int
-  convert_to_port(int dim, int dir) const;
+  void minimal_route_to_switch(switch_id src,
+                          switch_id dst,
+                          routable::path &path) const override;
 
-  switch_id
-  switch_number(const coordinates &coords) const;
+  int minimal_distance(switch_id src, switch_id dst) const override;
 
-  virtual void
-  productive_path(
-    int dim,
-    const coordinates& src,
-    const coordinates& dst,
-    structured_routable::path& path) const;
+ private:
+  int convert_to_port(int dim, int dir) const;
 
- protected:
-  virtual void
-  compute_switch_coords(switch_id uid, coordinates& coords) const;
 
 };
-#endif
 
 }
 } //end of namespace sstmac

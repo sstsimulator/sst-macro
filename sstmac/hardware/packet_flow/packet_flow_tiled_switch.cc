@@ -255,13 +255,6 @@ packet_flow_tiled_switch::connect_ejector(sprockit::sim_parameters* params,
   muxer->set_output(params, src_outport, dst_inport, handler);
 }
 
-std::vector<switch_id>
-packet_flow_tiled_switch::connected_switches() const
-{
-  spkt_throw_printf(sprockit::unimplemented_error,
-    "packet_flow_tiled_switch::connected_switches");
-}
-
 int
 packet_flow_tiled_switch::queue_length(int port) const
 {

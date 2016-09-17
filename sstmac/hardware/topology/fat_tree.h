@@ -130,7 +130,7 @@ class fat_tree :
   minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    structured_routable::path& path) const;
+    routable::path& path) const;
 
   int
   minimal_distance(
@@ -204,7 +204,7 @@ class simple_fat_tree : public abstract_fat_tree
   minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    structured_routable::path& path) const;
+    routable::path& path) const;
 
   int
   level(switch_id sid) const;

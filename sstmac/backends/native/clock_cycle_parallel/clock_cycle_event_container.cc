@@ -56,25 +56,12 @@ clock_cycle_event_map::schedule_incoming(const std::vector<void*>& buffers)
     ser & time;
     ser & msg;
     event_handler* dst_handler;
-    if (dst.is_switch_id()){
-      switch_id sid = dst.convert_to_switch_id();
-      event_debug("epoch %d: scheduling incoming event at %12.8e to switch %d",
-        epoch_, time.sec(), int(sid));
-      dst_handler = interconn_->switch_at(sid);
-    } else {
-      node_id nid = dst.convert_to_node_id();
-      event_debug("epoch %d: scheduling incoming event at %12.8e to node %d",
-        epoch_, time.sec(), int(nid));
-      sstmac::hw::node* dst_node = interconn_->node_at(nid);
-#if SSTMAC_SANITY_CHECK
-      if (!dst_node){
-        spkt_throw_printf(sprockit::value_error,
-          "could not find node %d scheduling ipc message %s",
-          int(msg->toaddr()), msg->to_string().c_str());
-      }
-#endif
-      dst_handler = dst_node->get_nic();
-    }
+
+    switch_id sid = dst.convert_to_switch_id();
+    event_debug("epoch %d: scheduling incoming event at %12.8e to switch %d",
+      epoch_, time.sec(), int(sid));
+    dst_handler = interconn_->switch_at(sid);
+
     schedule(time, seqnum, new handler_event_queue_entry(msg, dst_handler, src));
   }
 

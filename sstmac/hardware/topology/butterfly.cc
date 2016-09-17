@@ -15,7 +15,7 @@ SpktRegister("butterfly | bfly", topology, butterfly);
 void
 butterfly::minimal_route_to_switch(switch_id src,
                                     switch_id dst,
-                                    structured_routable::path &path) const
+                                    routable::path &path) const
 {
   int col = src / nswitches_per_col_;
   long group_size = nswitches_per_col_;

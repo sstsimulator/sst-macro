@@ -150,14 +150,14 @@ packet_flow_netlink::handle(event* ev)
     }
     case packet_flow_interface::payload: {
       packet_flow_payload* payload = static_cast<packet_flow_payload*>(ev);
-      structured_routable* rtbl = payload->interface<structured_routable>();
+      routable* rtbl = payload->interface<routable>();
       debug_printf(sprockit::dbg::packet_flow,
            "netlink %d:%p handling payload %s",
             //topology::global()->label(event_location()).c_str(),
             int(id_), this, payload->to_string().c_str());
       node_id toaddr = payload->toaddr();
       netlink_id dst_netid(toaddr / num_eject_);
-      structured_routable::path& p = rtbl->current_path();
+      routable::path& p = rtbl->current_path();
       if (dst_netid == id_){
         //stays local - goes to a node
         int node_offset = toaddr % num_eject_;

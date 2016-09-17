@@ -24,11 +24,9 @@ class ugal_router :
     return "ugal";
   }
 
-  void route(packet* pkt);
-
  protected:
   next_action_t initial_step(
-    structured_routable* rtbl,
+    routable* rtbl,
     packet* pkt);
 
   /**

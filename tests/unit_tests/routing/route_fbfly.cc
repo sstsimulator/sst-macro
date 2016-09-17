@@ -14,6 +14,7 @@ void test_fbfly(UnitTest& unit)
   sprockit::sim_parameters params;
   params["geometry"] = "4 3";
   params["name"] = "fbfly";
+  params["router"] = "minimal";
   test_topology(params);
 }
 
