@@ -1,7 +1,6 @@
 #include <tests/unit_tests/util/util.h>
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/hardware/router/router.h>
-#include <sstmac/hardware/topology/flattened_butterfly.h>
 #include <sprockit/util.h>
 
 using namespace sstmac;
@@ -15,6 +14,6 @@ void test_fbfly(UnitTest& unit)
   params["geometry"] = "4 3";
   params["name"] = "fbfly";
   params["router"] = "minimal";
-  test_topology(params);
+  //test_topology(params);
 }
 

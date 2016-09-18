@@ -100,7 +100,7 @@ class fat_tree :
   fat_tree(sprockit::sim_parameters* params);
 
   virtual std::string
-  to_string() const {
+  to_string() const override {
     return "fat tree topology";
   }
 
@@ -114,32 +114,57 @@ class fat_tree :
 
   virtual ~fat_tree() {}
 
-  virtual void
-  connect_objects(sprockit::sim_parameters* params,
-                  internal_connectable_map& switches);
+  bool
+  uniform_network_ports() const override {
+    return true;
+  }
+
+  bool
+  uniform_switches_non_uniform_network_ports() const override {
+    return true;
+  }
+
+  bool
+  uniform_switches() const override {
+    return true;
+  }
+
+  void
+  connected_outports(switch_id src, std::vector<connection>& conns) const override;
+
+  void
+  configure_individual_port_params(switch_id src,
+      sprockit::sim_parameters *switch_params) const override;
+
 
   virtual int
-  num_switches() const {
+  num_switches() const override {
     return numleafswitches_ * l_;
   }
 
   void
-  configure_vc_routing(std::map<routing::algorithm_t, int> &m) const;
+  configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
 
   void
   minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    routable::path& path) const;
+    routable::path& path) const override;
 
   int
   minimal_distance(
     switch_id src,
-    switch_id dest) const;
+    switch_id dest) const override;
 
   int
   switch_at_row_col(int row, int col) const {
     return row * numleafswitches_ + col;
+  }
+
+  void
+  compute_row_col(switch_id sid, int& row, int& col) const {
+    row = sid / numleafswitches_;
+    col = sid % numleafswitches_;
   }
 
   static int
@@ -162,17 +187,31 @@ class simple_fat_tree : public abstract_fat_tree
 
   virtual ~simple_fat_tree() {}
 
-  virtual void
-  connect_objects(sprockit::sim_parameters* params,
-                  internal_connectable_map& switches) override;
+  bool
+  uniform_network_ports() const override {
+    return false;
+  }
+
+  bool
+  uniform_switches_non_uniform_network_ports() const override {
+    return false;
+  }
+
+  bool
+  uniform_switches() const override {
+    return false;
+  }
 
   void
-  build_internal_connectables(
-    internal_connectable_map &connectables,
-    connectable_factory factory,
-    connectable_factory dummy_factory,
-    sstmac::partition *part, int my_rank,
-    sprockit::sim_parameters *params) override;
+  connected_outports(switch_id src, std::vector<connection>& conns) const override;
+
+  void
+  configure_nonuniform_switch_params(switch_id src,
+        sprockit::sim_parameters* switch_params) const override;
+
+  void
+  configure_individual_port_params(switch_id src,
+      sprockit::sim_parameters *switch_params) const override;
 
   int
   num_switches() const override {
@@ -183,7 +222,7 @@ class simple_fat_tree : public abstract_fat_tree
   convert_to_port(int dim, int dir) const;
 
   virtual void
-  partition(
+  create_partition(
     int* switches_per_lp,
     int *switch_to_lp,
     int *switch_to_thread,
@@ -191,7 +230,7 @@ class simple_fat_tree : public abstract_fat_tree
     int me,
     int nproc,
     int nthread,
-    int noccupied);
+    int noccupied) const override;
 
   int
   minimal_distance(switch_id src,

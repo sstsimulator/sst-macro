@@ -34,22 +34,17 @@ DeclareDebugSlot(topology)
 namespace sstmac {
 namespace hw {
 
-  template <class InputMap, class OutputMap>
-  void
-  copy_map(InputMap& input, OutputMap& output){
-    typedef typename InputMap::mapped_type input_cls_type;
-    typedef typename OutputMap::mapped_type output_cls_type;
-
-    typename InputMap::iterator it, end = input.end();
-    for (it = input.begin(); it != end; ++it) {
-      output[it->first] = dynamic_cast<output_cls_type>(it->second);
-    }
-  }
-
 class topology
 {
  public:
   static const int eject;
+
+  struct connection {
+    switch_id src;
+    switch_id dst;
+    int src_outport;
+    int dst_inport;
+  };
 
  public:
   typedef spkt_unordered_map<switch_id, connectable*> internal_connectable_map;
@@ -62,6 +57,29 @@ class topology
   virtual std::string
   to_string() const = 0;
 
+
+  /**
+   * @brief Whether all netwokr ports are uniform
+   * @return
+   */
+  virtual bool
+  uniform_network_ports() const = 0;
+
+  virtual bool
+  uniform_switches_non_uniform_network_ports() const = 0;
+
+  /**
+   * @brief connected_outports
+   * @param src   Get the source switch in the connection
+   * @param conns The set of output connections with dst switch_id
+   *              and the port numbers for each connection
+   */
+  virtual void
+  connected_outports(switch_id src, std::vector<topology::connection>& conns) const = 0;
+
+  virtual void
+  configure_individual_port_params(switch_id src,
+          sprockit::sim_parameters* switch_params) const = 0;
 
   /**
      For indirect networks, this includes all switches -
@@ -81,23 +99,8 @@ class topology
   virtual int
   num_endpoints() const = 0;
 
-  /**
-   * @brief Given a set of connectables, connect them appropriately
-   * @param objects The set of objects to connect
-   * @param cloner   If in parallel mode, not all objects may exist.
-   *                 The factory creates missing objects.
-   * @throws value_error If invalid switchid is passed to cloner
-   */
-  virtual void
-  connect_objects(sprockit::sim_parameters* params,
-                  internal_connectable_map& objects) = 0;
-
-  virtual void
-  connect_end_point_objects(
-    sprockit::sim_parameters* ej_params,
-    sprockit::sim_parameters* inj_params,
-    internal_connectable_map& internal,
-    end_point_connectable_map& end_points);
+  virtual bool
+  uniform_switches() const = 0;
 
   /**
      For a given node, determine the injection switch
@@ -218,7 +221,7 @@ class topology
     int me,
     int nproc,
     int nthread,
-    int noccupied);
+    int noccupied) const;
 
   /**
      Given the current location and a destination,
@@ -246,42 +249,6 @@ class topology
   /**** END PURE VIRTUAL INTERFACE *****/
 
   /**
-   Template utility function for allowing any specific map type
-   to be connected.  This creates an equivalent map of connectables that
-   then calls the actual #connect_objects function
-   @param objects A map of connectable* types (map might hold more specific type like networkswitch)
-  */
-  template <class MapTypeInternal, class MapTypeEndPoint>
-  void
-  connect_end_points(
-   sprockit::sim_parameters* ej_params,
-   sprockit::sim_parameters* inj_params,
-   MapTypeInternal& internal_nodes,
-   MapTypeEndPoint& end_points) {
-    internal_connectable_map internal_clone_map;
-    end_point_connectable_map end_clone_map;
-    copy_map(internal_nodes, internal_clone_map);
-    copy_map(end_points, end_clone_map);
-    connect_end_point_objects(ej_params, inj_params, internal_clone_map, end_clone_map);
-  }
-
-  /**
-   Template utility function for allowing any specific map type
-   to be connected.  This creates an equivalent map of connectables that
-   then calls the actual #connect_objects function
-   @param objects A map of connectable* types (map might hold more specific type like networkswitch)
-  */
-  template <class MapType>
-  void
-  connect_topology(sprockit::sim_parameters* switch_params, MapType& objects) {
-    typedef typename MapType::mapped_type cls_type;
-    typedef typename MapType::value_type val_type;
-    internal_connectable_map clone_map;
-    copy_map(objects, clone_map);
-    connect_objects(switch_params, clone_map);
-  }
-
-  /**
      Get a random switch from the topoology.
      This is most often used in things like valiant routing.
      The input parameter avoids accidentally returning
@@ -307,6 +274,19 @@ class topology
     return endpoint_to_ejection_switch(nodeaddr, ports[0]);
   }
 
+  /**
+   * @brief configure_switch_params By default, almost all topologies
+   *        have uniform switch parameters.
+   * @param src
+   * @param switch_params In/out parameter. Input is default set of params.
+   *        Output is non-default unique params.
+   */
+  virtual void
+  configure_nonuniform_switch_params(switch_id src,
+        sprockit::sim_parameters* switch_params) const
+  {
+  }
+
   virtual int
   max_num_ports() const = 0;
 
@@ -327,17 +307,6 @@ class topology
   virtual void
   new_routing_stage(routable* rtbl) { }
 
-  typedef  std::function<connectable*(sprockit::sim_parameters*,uint64_t)> connectable_factory;
-
-  virtual void
-  build_internal_connectables(
-    internal_connectable_map& connectables,
-    connectable_factory factory,
-    connectable_factory dummy_factory,
-    partition *part,
-    int my_rank,
-    sprockit::sim_parameters *params);
-
   static topology*
   static_topology(sprockit::sim_parameters* params);
 
@@ -355,18 +324,21 @@ class topology
     static_topology_ = nullptr;
   }
 
+  static sprockit::sim_parameters*
+  get_port_params(sprockit::sim_parameters* params, int port);
+
  protected:
   topology(sprockit::sim_parameters* params);
 
   uint32_t random_number(uint32_t max, uint32_t attempt) const;
 
-  sprockit::sim_parameters*
-  get_port_params(sprockit::sim_parameters* params, int port);
-
-  sprockit::sim_parameters*
+  static sprockit::sim_parameters*
   setup_port_params(int port, int credits, double bw,
                     sprockit::sim_parameters* link_params,
                     sprockit::sim_parameters* params);
+
+  void configure_individual_port_params(int port_offset, int nports,
+           sprockit::sim_parameters* params) const;
 
  protected:
   RNG::rngint_t seed_;

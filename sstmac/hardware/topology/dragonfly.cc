@@ -243,7 +243,7 @@ dragonfly::minimal_distance(switch_id src, switch_id dst) const
 
 
 void
-dragonfly::setup_port_params(sprockit::sim_parameters* params, int dim, int dimsize)
+dragonfly::setup_port_params(sprockit::sim_parameters* params, int dim, int dimsize) const
 {
   sprockit::sim_parameters* link_params = params->get_namespace("link");
   double bw = link_params->get_bandwidth_param("bandwidth");
@@ -259,135 +259,66 @@ dragonfly::setup_port_params(sprockit::sim_parameters* params, int dim, int dims
   }
 }
 
-/// coordinates go x,y - group
 void
-dragonfly::connect_objects(sprockit::sim_parameters* params, internal_connectable_map& objects)
+dragonfly::connected_outports(switch_id src, std::vector<connection>& conns) const
 {
-  setup_port_params(params, x_dimension, x_);
-  setup_port_params(params, y_dimension, y_);
-  setup_port_params(params, g_dimension, g_);
+  int max_num_conns = (x_ - 1) + (y_ - 1) + group_con_;
+  conns.resize(max_num_conns);
 
+  int myx;
+  int myy;
+  int myg;
+  get_coords(src, myx, myy, myg);
 
-  for (long i = 0; i < objects.size(); i++) {
-    std::vector<int> connected;
-    std::vector<int> connected_red;
+  int cidx = 0;
 
-    switch_id me(i);
-    int myx;
-    int myy;
-    int myg;
-    get_coords(i, myx, myy, myg);
-
-    internal_connectable_map::iterator itme = objects.find(me);
-
-    if (itme == objects.end()) {
-      spkt_throw_printf(
-        sprockit::spkt_error,
-        "dragon::connect_switches(): can't find switch when connecting:   uid=%d  addr=%ld",
-        get_uid(myx, myy, myg), long(me));
+  for (int x = 0; x < x_; x++) {
+    if (x != myx) {
+      switch_id dst(get_uid(x, myy, myg));
+      connection& conn = conns[cidx];
+      conn.src = src;
+      conn.dst = dst;
+      conn.src_outport = x_port(x);
+      conn.dst_inport = x_port(myx);
+      ++cidx;
     }
+  }
 
-    for (int x = 0; x < x_; x++) {
-      if (x != myx) {
-
-        switch_id them(get_uid(x, myy, myg));
-
-        internal_connectable_map::iterator it1 = objects.find(them);
-
-        if (it1 == objects.end()) {
-          spkt_throw_printf(
-            sprockit::spkt_error,
-            "dragon::connect_train_tracks(): can't find switch 1 when connecting:   uid=%d  addr=%ld",
-            get_uid(x, myy, myg), long(them));
-        }
-
-        int outport = x_port(x);
-        int inport = x_port(myx);
-
-        top_debug("node %d,%s connecting to node %d,%s on ports %d:%d",
-            int(me), set_string(myx, myy, myg).c_str(),
-            int(them), set_string(x, myy, myg).c_str(),
-            outport, inport);
-
-        sprockit::sim_parameters* port_params = get_port_params(params, outport);
-
-        objects[me]->connect_output(
-          port_params,
-          outport,
-          inport,
-          objects[them]);
-
-        objects[them]->connect_input(
-          port_params,
-          outport,
-          inport,
-          objects[me]);
-
-      }
+  for (int y = 0; y < y_; y++) {
+    if (y != myy) {
+      switch_id dst(get_uid(myx, y, myg));
+      connection& conn = conns[cidx];
+      conn.src = src;
+      conn.dst = dst;
+      conn.src_outport = y_port(y);
+      conn.dst_inport = y_port(myy);
+      ++cidx;
     }
+  }
 
-    for (int y = 0; y < y_; y++) {
-      if (y != myy) {
+  for (int g=0; g < group_con_; ++g){
+    int dstg = xyg_dir_to_group(myx,myy,myg,g);
+    if (dstg == myg) continue;
 
-        switch_id them(get_uid(myx, y, myg));
+    switch_id dst(get_uid(myx, myy, dstg));
+    connection& conn = conns[cidx];
+    conn.src = src;
+    conn.dst = dst;
+    conn.src_outport = g_port(dstg);
+    conn.dst_inport = g_port(myg);
+    ++cidx;
+  }
 
-        int outport = y_port(y);
-        int inport = y_port(myy);
+  conns.resize(cidx);
+}
 
-        top_debug("node %d,%s connecting to node %d,%s on ports %d:%d",
-            int(me), set_string(myx, myy, myg).c_str(),
-            int(them), set_string(myx, y, myg).c_str(),
-            outport, inport);
-
-        sprockit::sim_parameters* port_params = get_port_params(params, outport);
-
-        objects[me]->connect_output(
-          port_params,
-          outport,
-          inport,
-          objects[them]);
-
-        objects[them]->connect_input(
-          port_params,
-          outport,
-          inport,
-          objects[me]);
-
-      }
-    }
-
-    for (int g=0; g < group_con_; ++g){
-      int dstg = xyg_dir_to_group(myx,myy,myg,g);
-      if (dstg == myg) continue;
-
-      long uid = get_uid(myx, myy, dstg);
-      switch_id them(uid);
-
-      int outport = g_port(dstg);
-      int inport = g_port(myg);
-
-      top_debug("node %d,%s connecting to node %d,%s on ports %d:%d",
-        int(me), set_string(myx, myy, myg).c_str(),
-        int(them), set_string(myx, myy, dstg).c_str(),
-        outport, inport);
-
-      sprockit::sim_parameters* port_params = get_port_params(params, outport);
-
-      objects[me]->connect_output(
-          port_params,
-          outport,
-          inport,
-          objects[them]);
-
-      objects[them]->connect_input(
-          port_params,
-          outport,
-          inport,
-          objects[me]);
-
-    }
-
-  } //end objects loop
+void
+dragonfly::configure_individual_port_params(switch_id src,
+                                            sprockit::sim_parameters *switch_params) const
+{
+  setup_port_params(switch_params, x_dimension, x_);
+  setup_port_params(switch_params, y_dimension, y_);
+  setup_port_params(switch_params, g_dimension, g_);
 }
 
 void

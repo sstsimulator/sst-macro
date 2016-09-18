@@ -52,31 +52,26 @@ crossbar::minimal_route_to_switch(switch_id current_sw_addr,
 }
 
 void
-crossbar::connect_objects(sprockit::sim_parameters* params, internal_connectable_map& objects)
+crossbar::connected_outports(switch_id src, std::vector<connection>& conns) const
 {
-  sprockit::sim_parameters* link_params = params->get_namespace("link");
-  for (int i = 0; i < objects.size(); i++) {
-    switch_id me(i);
+  int n_switches = num_switches();
+  conns.resize(n_switches - 1);
+  int cidx = 0;
+  for (int i=0; i < n_switches; ++i){
+    if (i == src) continue;
 
-    for (int j = 0; j < objects.size(); j++) {
-      switch_id them(j);
-      if (i != j) {
-        int outport = j;
-        int inport = i;
-
-        objects[me]->connect_output(
-          link_params,
-          outport,
-          inport,
-          objects[them]);
-
-        objects[them]->connect_input(
-          link_params,
-          outport, inport,
-          objects[me]);
-      }
-    }
+    conns[cidx].src = src;
+    conns[cidx].dst = i;
+    conns[cidx].src_outport = i;
+    conns[cidx].dst_inport = src;
+    ++cidx;
   }
+}
+
+void
+crossbar::configure_individual_port_params(switch_id src, sprockit::sim_parameters *switch_params) const
+{
+  topology::configure_individual_port_params(0, num_switches(), switch_params);
 }
 
 }

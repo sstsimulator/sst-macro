@@ -22,7 +22,6 @@ CORETESTS+= \
   test_core_apps_ping_all_fattree2 \
   test_core_apps_ping_all_fattree4 \
   test_core_apps_ping_all_crossbar \
-  test_core_apps_ping_all_fbfly \
   test_core_apps_ping_all_crossbar_valiant 
 
 test_core_apps_mpi_%.$(CHKSUF): $(CORE_TEST_DEPS)

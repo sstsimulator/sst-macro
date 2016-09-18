@@ -73,11 +73,11 @@ class interconnect
 
 #if !SSTMAC_INTEGRATED_SST_CORE
  public:
-  typedef spkt_unordered_map<switch_id, network_switch*> switch_map;
-  typedef spkt_unordered_map<switch_id, connectable*> internal_map;
-  typedef spkt_unordered_map<node_id, connectable*> endpoint_map;
-  typedef spkt_unordered_map<node_id, node*> node_map;
-  typedef spkt_unordered_map<node_id, nic*> nic_map;
+  typedef std::vector<network_switch*> switch_map;
+  typedef std::vector<connectable*> internal_map;
+  typedef std::vector<connectable*> endpoint_map;
+  typedef std::vector<node*> node_map;
+  typedef std::vector<nic*> nic_map;
 
   std::string
   to_string() const {
@@ -91,21 +91,11 @@ class interconnect
     return topology_;
   }
 
-
   inline timestamp send_delay(int num_hops, int num_bytes) const {
     double bw_term = num_bytes / hop_bw_;
     timestamp delay = hop_latency_ * num_hops + timestamp(bw_term) + 2*injection_latency_;
     return delay;
   }
-
-  /**
-    Do not actually inject the message into the network
-    or do any congestion modeling. Just immediately
-    schedule the message at its destination after some
-    computed delay.
-    @param msg The message to send to the destination
-  */
-  void immediate_send(event_scheduler* src, message* msg, timestamp start) const;
 
   /**
    * @brief Return the node corresponding to given ID.
@@ -117,12 +107,13 @@ class interconnect
    */
   node*
   node_at(node_id nid) const {
-    node_map::const_iterator it = nodes_.find(nid);
-    if (it == nodes_.end()){
-      return 0;
-    } else {
-      return it->second;
-    }
+    return nodes_[nid];
+  }
+
+
+  network_switch*
+  switch_at(switch_id id) const {
+    return switches_[id];
   }
 
   const node_map&
@@ -140,9 +131,6 @@ class interconnect
   deadlock_check();
 
   void handle(event* ev);
-
-  network_switch*
-  switch_at(switch_id id) const;
 
   const switch_map&
   switches() const {
@@ -168,6 +156,19 @@ class interconnect
   }
 
  private:
+  void connect_switches(sprockit::sim_parameters* switch_params);
+
+  void build_endpoints(sprockit::sim_parameters* node_params,
+                    sprockit::sim_parameters* nic_params,
+                    sprockit::sim_parameters* netlink_params,
+                    event_manager* mgr);
+
+  void build_switches(sprockit::sim_parameters* switch_params,
+                      event_manager* mgr);
+
+  void connect_endpoints(sprockit::sim_parameters* inj_params,
+                  sprockit::sim_parameters* ej_params);
+
   switch_map switches_;
   //a set of switches that transfer messages quickly
   switch_map speedy_overlay_switches_;
@@ -191,7 +192,7 @@ class interconnect
   partition* partition_;
   parallel_runtime* rt_;
 
-  typedef spkt_unordered_map<netlink_id, netlink*> netlink_map;
+  typedef std::vector<netlink*> netlink_map;
   netlink_map netlinks_;
 
   typedef std::pair<timestamp, node_id> node_fail_event;

@@ -47,9 +47,28 @@ class crossbar : public structured_topology
     return 1;
   }
 
-  virtual void
-  connect_objects(sprockit::sim_parameters* params,
-                  internal_connectable_map& switches) override;
+  bool
+  uniform_network_ports() const override {
+    return true;
+  }
+
+  bool
+  uniform_switches_non_uniform_network_ports() const override {
+    return true;
+  }
+
+  bool
+  uniform_switches() const override {
+    return true;
+  }
+
+  void
+  configure_individual_port_params(switch_id src,
+        sprockit::sim_parameters *switch_params) const override;
+
+  void
+  connected_outports(switch_id src,
+       std::vector<connection>& conns) const override;
 
   void
   configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;

@@ -162,6 +162,8 @@ init_switches(interconnect::switch_map &switches,
   params["buffer_size"] = "16KB";
   int num_switches = top->num_switches();
 
+  switches.resize(num_switches);
+
   // create all the switches
   for (int i=0; i < num_switches; i++)
   {
@@ -170,8 +172,7 @@ init_switches(interconnect::switch_map &switches,
           "model", &params, i, &mgr);
     switches[switch_id(i)] = sw;
   }
-  //don't need a clone factory
-  top->connect_topology(&params, switches);
+  //top->connect_topology(&params, switches);
 }
 
 

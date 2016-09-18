@@ -38,9 +38,22 @@ class hypercube :
     switch_id dst,
     routable::path& path) const override;
 
-  virtual void
-  connect_objects(sprockit::sim_parameters* params,
-                  internal_connectable_map& switches) override;
+  bool
+  uniform_network_ports() const override {
+    return false;
+  }
+
+  bool
+  uniform_switches_non_uniform_network_ports() const override {
+    return true;
+  }
+
+  void
+  connected_outports(switch_id src, std::vector<connection>& conns) const override;
+
+  void
+  configure_individual_port_params(switch_id src,
+           sprockit::sim_parameters *switch_params) const override;
 
   inline int
   convert_to_port(int dim, int dir) const {

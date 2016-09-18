@@ -56,6 +56,28 @@ class dragonfly : public cartesian_topology
     }
   }
 
+  bool
+  uniform_network_ports() const override {
+    return false;
+  }
+
+  bool
+  uniform_switches_non_uniform_network_ports() const override {
+    return true;
+  }
+
+  bool
+  uniform_switches() const override {
+    return true;
+  }
+
+  void
+  connected_outports(switch_id src, std::vector<connection>& conns) const override;
+
+  void
+  configure_individual_port_params(switch_id src,
+        sprockit::sim_parameters *switch_params) const override;
+
   virtual ~dragonfly() {}
 
   int
@@ -128,10 +150,6 @@ class dragonfly : public cartesian_topology
     return x_ * y_ * g_;
   }
 
-  virtual void
-  connect_objects(sprockit::sim_parameters* params,
-                  internal_connectable_map& switches) override;
-
   void minimal_route_to_switch(
       switch_id current_sw_addr,
       switch_id dest_sw_addr,
@@ -190,7 +208,7 @@ class dragonfly : public cartesian_topology
 
   void
   setup_port_params(sprockit::sim_parameters* params,
-                    int dim, int dimsize);
+                    int dim, int dimsize) const;
 
   static std::string
   set_string(int x, int y, int g)

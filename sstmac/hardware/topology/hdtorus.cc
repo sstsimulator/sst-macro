@@ -181,123 +181,63 @@ hdtorus::down_path(
   torus_path(reset_dim, wrapped, dim, neg, path);
 }
 
-
 void
-hdtorus::connect_dim(
-  sprockit::sim_parameters* params,
-  int dim,
-  connectable* center,
-  connectable* plus_partner,
-  connectable* minus_partner)
+hdtorus::configure_individual_port_params(switch_id src,
+                                          sprockit::sim_parameters *switch_params) const
 {
-  int pos_outport = convert_to_port(dim, pos);
-  int neg_outport = convert_to_port(dim, neg);
-
-  sprockit::sim_parameters* pos_params = get_port_params(params, pos_outport);
-  sprockit::sim_parameters* neg_params = get_port_params(params, neg_outport);
-
-  center->connect_output(
-    pos_params,
-    pos_outport, neg_outport,
-    plus_partner);
-  plus_partner->connect_input(
-    neg_params,
-    pos_outport, neg_outport,
-    center);
-
-  center->connect_output(
-    neg_params,
-    neg_outport, pos_outport,
-    minus_partner);
-  minus_partner->connect_input(
-    pos_params,
-    neg_outport, pos_outport,
-    center);
-}
-
-void
-hdtorus::connect_objects(sprockit::sim_parameters* params,
-                         internal_connectable_map& objects)
-{
-  top_debug("hdtorus: connecting %d switches",
-    int(objects.size()));
-
-  sprockit::sim_parameters* link_params = params->get_namespace("link");
+  sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
   double bw = link_params->get_bandwidth_param("bandwidth");
-  int bufsize = params->get_byte_length_param("buffer_size");
+  int bufsize = switch_params->get_byte_length_param("buffer_size");
   int ndims = dimensions_.size();
   for (int i=0; i < ndims; ++i){
     double port_bw = bw * red_[i];
     int credits = bufsize * red_[i];
     for (int dir=0; dir < 2; ++dir){
       int port = convert_to_port(i, dir);
-      setup_port_params(port, credits, port_bw, link_params, params);
+      setup_port_params(port, credits, port_bw, link_params, switch_params);
     }
   }
+}
 
-  internal_connectable_map::iterator it;
-  for (it =  objects.begin(); it !=  objects.end(); ++it) {
-    switch_id me(it->first);
-    coordinates coords = switch_coords(me);
+void
+hdtorus::connected_outports(switch_id src, std::vector<connection>& conns) const
+{
+  int ndims = dimensions_.size();
+  int dim_stride = 1;
+  conns.resize(ndims * 2); //+/-1 for each direction
 
-    top_debug("hdtorus: connecting switch %d,%s",
-        int(me), stl_string(coords).c_str());
-
-    std::vector<int> connected;
-    std::vector<int> connected_red;
-
-    for (int z = 0; z < (int) dimensions_.size(); z++) {
-      int num_this_dim = dimensions_[z];
-      if (num_this_dim == 1){
-        continue; //no connections to be done
-      }
-
-      coordinates connect1 = coords;
-      coordinates connect2 = coords;
-      bool wrap_pos = false;
-      bool wrap_neg = false;
-      if (coords[z] == 0) {
-        connect1[z]++;
-        connect2[z] = dimensions_[z] - 1;
-        wrap_neg = true;
-      }
-      else if (coords[z] == (dimensions_[z] - 1)) {
-        connect1[z] = 0;
-        connect2[z]--;
-        wrap_pos = true;
-      }
-      else {
-        connect1[z]++;
-        connect2[z]--;
-      }
-      switch_id addr1 = switch_addr(connect1);
-      switch_id addr2 = switch_addr(connect2);
-
-      connectable* dest1 = NULL, *dest2 = NULL;
-
-      /** We use a special lookup function rather than directly
-          getting from the map.  The object might not exist
-          due to parallel partitioning */
-      dest1 = objects[addr1];
-      dest2 = objects[addr2];
-
-
-
-      top_debug("switch %d,%s for dim %d connecting in the pos dir to %d,%s : %s",
-         int(me), stl_string(coords).c_str(), z,
-         int(addr1), stl_string(connect1).c_str(),
-         dest1->to_string().c_str());
-
-      top_debug("switch %d,%s for dim %d connecting in the neg dir to %d,%s : %s",
-         int(me), stl_string(coords).c_str(), z,
-         int(addr2), stl_string(connect2).c_str(),
-         dest2->to_string().c_str());
-
-
-
-      connect_dim(params, z, objects[me], dest1, dest2);
-
+  int cidx = 0;
+  for (int i=0; i < ndims; ++i){
+    int plus_jump = 1;
+    int minus_jump = -1;
+    int srcX = (src / dim_stride) % dimensions_[i];
+    int last_row = dimensions_[i] - 1;
+    if (srcX == last_row){
+      //wrap around
+      plus_jump = -last_row;
+    } else if (srcX == 0){
+      minus_jump = last_row;
     }
+
+    switch_id plus_partner = src + plus_jump * dim_stride;
+    int plus_port = convert_to_port(i, pos);
+
+    switch_id minus_partner = src + minus_jump * dim_stride;
+    int minus_port = convert_to_port(i, neg);
+
+    conns[cidx].src = src;
+    conns[cidx].dst = plus_partner;
+    conns[cidx].src_outport = plus_port;
+    conns[cidx].dst_inport = minus_port;
+    ++cidx;
+
+    conns[cidx].src = src;
+    conns[cidx].dst = minus_partner;
+    conns[cidx].src_outport = minus_port;
+    conns[cidx].dst_inport = plus_port;
+    ++cidx;
+
+    dim_stride *= dimensions_[i];
   }
 }
 

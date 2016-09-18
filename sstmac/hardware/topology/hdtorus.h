@@ -63,6 +63,28 @@ class hdtorus :
     return num_switches_;
   }
 
+  bool
+  uniform_network_ports() const override {
+    return false;
+  }
+
+  bool
+  uniform_switches() const override {
+    return true;
+  }
+
+  bool
+  uniform_switches_non_uniform_network_ports() const override {
+    return true;
+  }
+
+  void
+  connected_outports(switch_id src, std::vector<connection>& conns) const override;
+
+  void
+  configure_individual_port_params(switch_id src,
+            sprockit::sim_parameters *switch_params) const override;
+
   virtual int
   num_leaf_switches() const override {
     return num_switches();
@@ -73,10 +95,6 @@ class hdtorus :
     switch_id sid,
     switch_id dst,
     routable::path& path) const override;
-
-  virtual void
-  connect_objects(sprockit::sim_parameters* params,
-                  internal_connectable_map& switches) override;
 
   int
   minimal_distance(
@@ -120,15 +138,6 @@ class hdtorus :
   bool
   shortest_path_positive(
     int dim, int src, int dst) const;
-
- private:
-  virtual void
-  connect_dim(
-    sprockit::sim_parameters* params,
-    int dim,
-    connectable* center,
-    connectable* plus,
-    connectable* minus);
 
  protected: //must be visible to hypercube
   int diameter_;

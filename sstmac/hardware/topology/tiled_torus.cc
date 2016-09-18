@@ -79,6 +79,13 @@ tiled_torus::endpoint_to_injection_switch(node_id nodeaddr, int ports[], int &nu
 }
 
 void
+tiled_torus::configure_individual_port_params(switch_id src,
+                                       sprockit::sim_parameters *switch_params) const
+{
+  topology::configure_individual_port_params(0, max_ports_intra_network_, switch_params);
+}
+
+void
 tiled_torus::configure_geometric_paths(std::vector<int>& redundancies) const
 {
   int ndims = dimensions_.size();
@@ -98,31 +105,50 @@ tiled_torus::configure_geometric_paths(std::vector<int>& redundancies) const
 }
 
 void
-tiled_torus::connect_dim(
-  sprockit::sim_parameters* params,
-  int dim,
-  connectable *center,
-  connectable *plus,
-  connectable *minus)
+tiled_torus::connected_outports(switch_id src, std::vector<connection>& conns) const
 {
-  sprockit::sim_parameters* link_params = params->get_namespace("link");
+  conns.resize(max_ports_intra_network_ + max_ports_injection_);
+  int cidx = 0;
+  int ndims = dimensions_.size();
+  int dim_stride = 1;
+  for (int i=0; i < ndims; ++i){
+    int plus_jump = 1;
+    int minus_jump = -1;
+    int srcX = (src / dim_stride) % dimensions_[i];
+    int last_row = dimensions_[i] - 1;
+    if (srcX == last_row){
+      //wrap around
+      plus_jump = -last_row;
+    } else if (srcX == 0){
+      minus_jump = last_row;
+    }
 
+    switch_id plus_partner = src + plus_jump * dim_stride;
 
-  //times 2 for +/-1
-  int nreplica = red_[dim];
-  int outport, inport;
+    switch_id minus_partner = src + minus_jump * dim_stride;
 
-  for (int r=0; r < nreplica; ++r){
-    outport = inport = port(r, dim, hdtorus::pos);
-    top_debug("\tconnecting + replica %d on port %d", r, outport);
-    center->connect_output(link_params, outport, inport, plus);
-    plus->connect_input(link_params, outport, inport, center);
+    int nreplica = red_[i];
+    int outport, inport;
+    for (int r=0; r < nreplica; ++r){
+      outport = inport = port(r, i, hdtorus::pos);
+      connection& conn = conns[cidx];
+      conn.src = src;
+      conn.dst = plus_partner;
+      conn.src_outport = outport;
+      conn.dst_inport = inport;
+      ++cidx;
 
-    outport = inport = port(r, dim, hdtorus::neg);
-    top_debug("\tconnecting + replica %d on port %d", r, outport);
-    center->connect_output(link_params, outport, inport, minus);
-    minus->connect_input(link_params, outport, inport, center);
+      outport = inport = port(r, i, hdtorus::neg);
+      conn = conns[cidx];
+      conn.src = src;
+      conn.dst = minus_partner;
+      conn.src_outport = outport;
+      conn.dst_inport = inport;
+      ++cidx;
+    }
+    dim_stride *= dimensions_[i];
   }
+  conns.resize(cidx);
 }
 
 }

@@ -75,25 +75,11 @@ interconnect::static_interconnect(sprockit::sim_parameters* params, event_manage
 #if !SSTMAC_INTEGRATED_SST_CORE
 interconnect::~interconnect()
 {
-  sprockit::delete_vals(netlinks_);
-  sprockit::delete_vals(nodes_);
-  sprockit::delete_vals(nics_);
+  sprockit::delete_vector(netlinks_);
+  sprockit::delete_vector(nodes_);
+  sprockit::delete_vector(nics_);
 }
 #endif
-
-network_switch*
-interconnect::switch_at(switch_id id) const
-{
-  if (id >= num_switches_){
-    int speedy_id = id - num_switches_;
-    return speedy_overlay_switches_.at(speedy_id);
-  }
-  auto iter = switches_.find(id);
-  if (iter == switches_.end()){
-    return nullptr;
-  }
-  return iter->second;
-}
 
 interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
                            partition *part, parallel_runtime *rt)
@@ -112,11 +98,10 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
   sprockit::sim_parameters* nlink_inj_params =
       netlink_params->get_optional_namespace("injection");
-  sprockit::sim_parameters* nlink_ej_params =
-      netlink_params->get_optional_namespace("ejection");
   num_speedy_switches_with_extra_node_ = num_nodes_ % nproc;
   num_nodes_per_speedy_switch_ = num_nodes_ / nproc;
   node_to_speedy_switch_.resize(num_nodes_);
+  speedy_overlay_switches_.resize(nproc);
 
   sprockit::sim_parameters* node_params = params->get_namespace("node");
   sprockit::sim_parameters* nic_params = node_params->get_namespace("nic");
@@ -124,6 +109,13 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   sprockit::sim_parameters* switch_params = params->get_namespace("switch");
   sprockit::sim_parameters* ej_params = switch_params->get_namespace("ejection");
   topology* top = topology_;
+
+  bool simple_model = switch_params->get_param("model") == "simple";
+
+  switches_.resize(num_switches_);
+  nodes_.resize(num_nodes_);
+  nics_.resize(num_nodes_);
+  netlinks_.resize(num_nodes_);
 
   local_speedy_switch_ = my_rank;
   simple_switch* local_speedy_switch;
@@ -137,96 +129,15 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
     }
   }
 
-  for (int i=0; i < num_switches_; ++i){
-    switch_id sid(i);
-    int target_rank = partition_->lpid_for_switch(sid);
-    std::vector<node_id> nodes;
-    top->nodes_connected_to_injection_switch(sid, nodes);
-    if (target_rank == my_rank){
-      for (int n=0; n < nodes.size(); ++n){
-        node_id nid = nodes[n];
-        node_to_speedy_switch_[nid] = switch_id(target_rank);
-        if (my_rank == target_rank){
-          //local node - actually build it
-          node_params->add_param_override("id", int(nid));
-          node* nd = node_factory::get_optional_param("model", "simple", node_params,
-                                                      nid, mgr);
-          nic* the_nic = nd->get_nic();
-          nodes_[nid] = nd;
-          nics_[nid] = the_nic;
-
-          the_nic->set_speedy_switch(local_speedy_switch);
-          local_speedy_switch->add_nic(the_nic->mtl_handler(), nid);
-
-          nd->init(0); //emulate SST core
-          nd->setup();
-
-          node_id netlink_id;
-          int netlink_offset;
-          bool has_netlink = top->node_to_netlink(nid, netlink_id, netlink_offset);
-          if (has_netlink && netlink_offset == 0){
-            top_debug("Adding netlink %d connected to switch %d on rank %d",
-              int(netlink_id), i, my_rank);
-            params->add_param_override("id", int(netlink_id));
-            netlink* nlink = netlink_factory::get_param("model", netlink_params, nd);
-            netlinks_[netlink_id] = nlink;
-
-            int the_only_port = 0;
-            int inj_port = nlink->node_port(netlink_offset);
-            nlink->connect_input(nlink_inj_params,
-                          the_only_port, inj_port,
-                          the_nic);
-            the_nic->connect_output(inj_params,
-                             the_only_port, inj_port,
-                             nlink);
-
-            nlink->connect_output(nlink_inj_params,
-                          inj_port, the_only_port,
-                          the_nic);
-            the_nic->connect_input(inj_params,
-                             inj_port, the_only_port,
-                             nlink);
-          }
-        } else {
-          local_speedy_switch->add_switch(speedy_overlay_switches_[target_rank], nid);
-        }
-      }
-    }
-  }
-
-  bool simple_model = switch_params->get_param("model") == "simple";
+  build_endpoints(node_params, nic_params,netlink_params, mgr);
   if (!simple_model){
-    topology::connectable_factory factory =
-        [&](sprockit::sim_parameters* params, uint64_t id) -> connectable* {
-        params->add_param_override("id", int(id));
-        return network_switch_factory::get_param("model", params, id, mgr);
-    };
-    topology::connectable_factory dummy_factory =
-        [&](sprockit::sim_parameters* params, uint64_t id) -> connectable* {
-        params->add_param_override("id", int(id));
-        return new dist_dummy_switch(params, id, mgr);
-    };
-    spkt_unordered_map<switch_id, connectable*> connectables;
-    topology_->build_internal_connectables(connectables, factory, dummy_factory,
-                                           partition_,
-                                           my_rank, switch_params);
-    copy_map(connectables, switches_);
-
-
+    build_switches(switch_params, mgr);
+    connect_switches(switch_params);
     if (netlinks_.empty()){
-      topology_->connect_end_points(ej_params, inj_params, switches_, nics_);
+      connect_endpoints(inj_params, ej_params);
     } else {
-      topology_->connect_end_points(ej_params, nlink_inj_params, switches_, netlinks_);
+      connect_endpoints(nlink_inj_params, ej_params);
     }
-
-    for (auto& pair : switches_){
-      network_switch* netsw = pair.second;
-      if (!netsw->ipc_handler()){
-        netsw->compatibility_check();
-        break;
-      }
-    }
-    topology_->connect_topology(switch_params, switches_);
   }
 
   sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
@@ -263,34 +174,218 @@ interconnect::handle(event* ev)
 }
 
 void
-interconnect::deadlock_check()
+interconnect::connect_endpoints(sprockit::sim_parameters* inj_params,
+                                sprockit::sim_parameters* ej_params)
 {
-  for (auto& entry : switches_){
-    entry.second->deadlock_check();
-  }
-  for (auto& entry : netlinks_){
-    entry.second->deadlock_check();
+  int num_nodes = topology_->num_nodes();
+  for (int i=0; i < num_nodes; ++i){
+    node_id netlink_id;
+    node_id ep_id(i);
+    int netlink_offset;
+    connectable* ep = nullptr;
+    bool has_netlink = topology_->node_to_netlink(i, netlink_id, netlink_offset);
+    if (has_netlink) {
+      if (netlink_offset == 0){
+        ep = netlinks_[netlink_id];
+        ep_id = netlink_id;
+      }
+    } else {
+      ep_id = i;
+      ep = nics_[i];
+    }
+    if (!ep) continue; //no connection required
+
+    //map to topology-specific port
+    int num_ports;
+    int ports[32];
+    node_id nodeaddr(i);
+    switch_id injaddr = topology_->endpoint_to_injection_switch(nodeaddr, ports, num_ports);
+    connectable* injsw = switches_[injaddr];
+
+    for (int i=0; i < num_ports; ++i){
+      int injector_port = i;
+      int switch_port = ports[i];
+      interconn_debug("connecting switch %d to injector %d on ports %d:%d",
+          int(injaddr), int(nodeaddr), switch_port, injector_port);
+      injsw->connect_input(ej_params, injector_port, switch_port, ep);
+      ep->connect_output(inj_params, injector_port, switch_port, injsw);
+    }
+
+    switch_id ejaddr = topology_->endpoint_to_ejection_switch(nodeaddr, ports, num_ports);
+    connectable* ejsw = switches_[ejaddr];
+
+    for (int i=0; i < num_ports; ++i){
+      int ejector_port = i;
+      int switch_port = ports[i];
+      interconn_debug("connecting switch %d to ejector %d on ports %d:%d",
+          int(ejaddr), int(nodeaddr), switch_port, ejector_port);
+      ejsw->connect_output(ej_params, switch_port, ejector_port, ep);
+      ep->connect_input(inj_params, switch_port, ejector_port, ejsw);
+    }
   }
 }
 
 void
-interconnect::immediate_send(event_scheduler* src, message* msg, timestamp start) const
+interconnect::build_endpoints(sprockit::sim_parameters* node_params,
+                  sprockit::sim_parameters* nic_params,
+                  sprockit::sim_parameters* netlink_params,
+                  event_manager* mgr)
 {
-  node* dst_node = node_at(msg->toaddr());
-  int num_hops = topology_->num_hops_to_node(msg->fromaddr(), msg->toaddr());
-  timestamp arrival = send_delay(num_hops, msg->byte_length()) + start;
-  //double bw_term = msg->byte_length() / hop_bw_;
-  //timestamp arrival = src->now() + hop_latency_ * num_hops + timestamp(bw_term) + 2*injection_latency_;
+  sprockit::sim_parameters* nlink_inj_params =
+      netlink_params->get_optional_namespace("injection");
+  sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
 
-  interconn_debug("immediate_send send from %d to %d to arrive at %es:\t\n%s\n\tnhops=%d bandwidth=%e hop_latency=%es inj_latency=%es",
-    int(msg->fromaddr()), int(msg->toaddr()), arrival.sec(),
-    msg->to_string().c_str(),
-    num_hops, hop_bw_, hop_latency_.sec(), injection_latency_.sec());
+  int my_rank = rt_->me();
+  simple_switch* local_speedy_switch = safe_cast(simple_switch,
+                                         speedy_overlay_switches_[my_rank]);
 
-  if (dst_node){ //local operation
-    src->schedule(arrival, dst_node->get_nic()->mtl_handler(), msg);
-  } else {
-    src->ipc_schedule(arrival, dst_node, msg);
+  for (int i=0; i < num_switches_; ++i){
+    switch_id sid(i);
+    int target_rank = partition_->lpid_for_switch(sid);
+    std::vector<node_id> nodes;
+    topology_->nodes_connected_to_injection_switch(sid, nodes);
+    if (target_rank == my_rank){
+      for (int n=0; n < nodes.size(); ++n){
+        node_id nid = nodes[n];
+        node_to_speedy_switch_[nid] = switch_id(target_rank);
+        if (my_rank == target_rank){
+          //local node - actually build it
+          node_params->add_param_override("id", int(nid));
+          node* nd = node_factory::get_optional_param("model", "simple", node_params,
+                                                      nid, mgr);
+          nic* the_nic = nd->get_nic();
+          nodes_[nid] = nd;
+          nics_[nid] = the_nic;
+
+          the_nic->set_speedy_switch(local_speedy_switch);
+          local_speedy_switch->add_nic(the_nic->mtl_handler(), nid);
+
+          nd->init(0); //emulate SST core
+          nd->setup();
+
+          node_id netlink_id;
+          int netlink_offset;
+          bool has_netlink = topology_->node_to_netlink(nid, netlink_id, netlink_offset);
+          if (has_netlink && netlink_offset == 0){
+            interconn_debug("Adding netlink %d connected to switch %d on rank %d",
+              int(netlink_id), i, my_rank);
+            netlink_params->add_param_override("id", int(netlink_id));
+            netlink* nlink = netlink_factory::get_param("model", netlink_params, nd);
+            netlinks_[netlink_id] = nlink;
+
+            int the_only_port = 0;
+            int inj_port = nlink->node_port(netlink_offset);
+            nlink->connect_input(nlink_inj_params,
+                          the_only_port, inj_port,
+                          the_nic);
+            the_nic->connect_output(inj_params,
+                             the_only_port, inj_port,
+                             nlink);
+
+            nlink->connect_output(nlink_inj_params,
+                          inj_port, the_only_port,
+                          the_nic);
+            the_nic->connect_input(inj_params,
+                             inj_port, the_only_port,
+                             nlink);
+          }
+        } else {
+          local_speedy_switch->add_switch(speedy_overlay_switches_[target_rank], nid);
+        }
+      }
+    }
+  }
+}
+
+void
+interconnect::build_switches(sprockit::sim_parameters* switch_params,
+                             event_manager* mgr)
+{
+  bool simple_model = switch_params->get_param("model") == "simple";
+  if (simple_model) return; //nothing to do
+
+  int my_rank = rt_->me();
+  bool all_switches_same = topology_->uniform_switches();
+  for (int i=0; i < num_switches_; ++i){
+    switch_params->add_param_override("id", i);
+    if (partition_->lpid_for_switch(i) == my_rank){
+      if (!all_switches_same)
+        topology_->configure_nonuniform_switch_params(i, switch_params);
+      switches_[i] = network_switch_factory::get_param("model",
+                      switch_params, i, mgr);
+    } else {
+      switches_[i] = new dist_dummy_switch(switch_params, i, mgr);
+    }
+  }
+
+  for (network_switch* netsw : switches_){
+    if (!netsw->ipc_handler()){
+      netsw->compatibility_check();
+      break;
+    }
+  }
+}
+
+void
+interconnect::connect_switches(sprockit::sim_parameters* switch_params)
+{
+  bool simple_model = switch_params->get_param("model") == "simple";
+  if (simple_model) return; //nothing to do
+
+  std::vector<topology::connection> outports(64); //allocate 64 spaces optimistically
+
+  //might be super uniform in which all ports are the same
+  bool all_ports_same = topology_->uniform_network_ports();
+  //or it might be mostly uniform in which all the switches are the same
+  //even if the individual ports on each switch are different
+  bool all_switches_same = topology_->uniform_switches_non_uniform_network_ports();
+
+  sprockit::sim_parameters* port_params;
+  if (all_ports_same){
+    port_params = switch_params->get_namespace("link");
+  } else if (all_switches_same){
+    topology_->configure_individual_port_params(switch_id(0), switch_params);
+  }
+
+  for (int i=0; i < num_switches_; ++i){
+    switch_id src(i);
+    topology_->connected_outports(src, outports);
+    network_switch* src_sw = switches_[src];
+    if (!all_switches_same) topology_->configure_individual_port_params(src, switch_params);
+    for (topology::connection& conn : outports){
+      if (!all_ports_same){
+        port_params = topology::get_port_params(switch_params, conn.src_outport);
+      }
+
+      network_switch* dst_sw = switches_[conn.dst];
+
+      interconn_debug("%s connecting to %s on ports %d:%d",
+                topology_->label(src).c_str(),
+                topology_->label(conn.dst).c_str(),
+                conn.src_outport, conn.dst_inport);
+
+      src_sw->connect_output(port_params,
+                             conn.src_outport,
+                             conn.dst_inport,
+                             dst_sw);
+      dst_sw->connect_input(port_params,
+                            conn.src_outport,
+                            conn.dst_inport,
+                            src_sw);
+    }
+  }
+
+}
+
+void
+interconnect::deadlock_check()
+{
+  for (network_switch* netsw : switches_){
+    if (netsw && !netsw->ipc_handler())
+      netsw->deadlock_check();
+  }
+  for (netlink* nlink : netlinks_){
+    if (nlink) nlink->deadlock_check();
   }
 }
 

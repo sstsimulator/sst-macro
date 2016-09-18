@@ -34,6 +34,15 @@ delete_vals_arrs(const MapType& ctr){
   }
 }
 
+template <class VectorType>
+void
+delete_vector(const VectorType& v){
+  for (auto ptr : v){
+    if (ptr) delete ptr;
+  }
+}
+
+
 template <class MapType>
 void
 delete_vals(const MapType& ctr){

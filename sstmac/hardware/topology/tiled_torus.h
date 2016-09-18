@@ -26,13 +26,23 @@ class tiled_torus :
   endpoint_to_injection_switch(
         node_id nodeaddr, int ports[], int& num_ports) const override;
 
- protected:
-  virtual void
-  connect_dim(sprockit::sim_parameters* params,
-    int dim,
-    connectable *center,
-    connectable *plus,
-    connectable *minus) override;
+  bool
+  uniform_network_ports() const override {
+    return true;
+  }
+
+  bool
+  uniform_switches_non_uniform_network_ports() const override {
+    return true;
+  }
+
+  void
+  connected_outports(switch_id src,
+           std::vector<connection>& conns) const override;
+
+  void
+  configure_individual_port_params(switch_id src,
+            sprockit::sim_parameters *switch_params) const override;
 
  private:
   inline int port(int replica, int dim, int dir) const {

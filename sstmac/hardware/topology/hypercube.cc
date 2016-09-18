@@ -79,66 +79,57 @@ hypercube::minimal_distance(
 }
 
 void
-hypercube::connect_objects(sprockit::sim_parameters* params, internal_connectable_map& objects)
+hypercube::configure_individual_port_params(switch_id src,
+                                          sprockit::sim_parameters *switch_params) const
 {
-
-  sprockit::sim_parameters* link_params = params->get_namespace("link");
+  sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
   double bw = link_params->get_bandwidth_param("bandwidth");
-  int bufsize = params->get_byte_length_param("buffer_size");
+  int bufsize = switch_params->get_byte_length_param("buffer_size");
   for (int dim=0; dim < dimensions_.size(); ++dim){
     double port_bw = bw * red_[dim];
     int credits = bufsize * red_[dim];
     for (int dir=0; dir < dimensions_[dim]; ++dir){
       int port = convert_to_port(dim, dir);
-      cartesian_topology::setup_port_params(port, credits, port_bw, link_params, params);
-    }
-  }
-
-  top_debug("hypercube: connecting %d switches",
-    int(objects.size()));
-
-  for (auto& pair : objects) {
-    switch_id myid(pair.first);
-    connectable* me = pair.second;
-    coordinates coords = switch_coords(myid);
-
-    //loop every dimension and connect to all "neighbors"
-    for (int dim=0; dim < dimensions_.size(); ++dim) {
-      coordinates neighbor_coords = coords;
-      switch_id my_id = switch_addr(coords);
-      int dimsize = dimensions_[dim];
-      int my_idx = coords[dim];
-      int inport = convert_to_port(dim, my_idx);
-      for (int dir=0; dir < dimsize; ++dir) {
-        if (dir != my_idx) {
-          neighbor_coords[dim] = dir;
-          switch_id neighbor_id = switch_addr(neighbor_coords);
-          connectable* neighbor_sw = objects[neighbor_id];
-          top_debug("hypercube connecting %s(%d) to %s(%d) at dim=%d,dir=%d",
-              stl_string(coords).c_str(), int(my_id),
-              stl_string(neighbor_coords).c_str(), int(neighbor_id),
-              dim, dir);
-
-          int outport = convert_to_port(dim, dir);
-          sprockit::sim_parameters* port_params = get_port_params(link_params, outport);
-
-          me->connect_output(
-            port_params,
-            outport,
-            inport,
-            neighbor_sw);
-
-          neighbor_sw->connect_input(
-            port_params,
-            outport,
-            inport,
-            me);
-
-        }
-      }
+      setup_port_params(port, credits, port_bw, link_params, switch_params);
     }
   }
 }
+
+void
+hypercube::connected_outports(switch_id src, std::vector<connection>& conns) const
+{
+  int nconns = 0;
+  for (int dim=0; dim < dimensions_.size(); ++dim){
+    nconns += dimensions_[dim] - 1;
+  }
+  conns.resize(nconns);
+
+  //loop every dimension and connect to all "neighbors"
+  int dim_stride = 1;
+  int cidx = 0;
+  for (int dim=0; dim < dimensions_.size(); ++dim) {
+    int dimsize = dimensions_[dim];
+    int srcX = (src / dim_stride) % dimensions_[dim];
+    for (int dstX=0; dstX < dimsize; ++dstX) {
+      if (dstX == srcX) continue;
+
+      switch_id dst = src + (dstX - srcX) * dim_stride;
+
+      int outport = convert_to_port(dim, dstX);
+      int inport = convert_to_port(dim, srcX);
+
+      connection& conn = conns[cidx];
+      conn.src = src;
+      conn.dst = dst;
+      conn.src_outport = outport;
+      conn.dst_inport = inport;
+      ++cidx;
+    }
+
+    dim_stride *= dimensions_[dim];
+  }
+}
+
 
 
 }

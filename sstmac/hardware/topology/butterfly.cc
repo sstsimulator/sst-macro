@@ -73,9 +73,8 @@ butterfly::butterfly(sprockit::sim_parameters* params) :
 }
 
 void
-butterfly::connect_objects(sprockit::sim_parameters* params, internal_connectable_map& objects)
+butterfly::connected_outports(switch_id src, std::vector<connection>& conns) const
 {
-
   /**
     In 4-ary 3-fly, we have 16 switches per col
     with 3 columns or stages.  Thus we can label
@@ -109,58 +108,50 @@ butterfly::connect_objects(sprockit::sim_parameters* params, internal_connectabl
     4 groups of size 4.
   */
 
+  int cidx = 0;
   long connection_stride = nswitches_per_col_ / kary_;
   long block_size = nswitches_per_col_;
-  long group_size = kary_;
-
-  sprockit::sim_parameters* link_params = params->get_namespace("link");
-
-
+  conns.resize(kary_);
   for (int l=0; l < (nfly_-1); ++l) {
-    long col_start_index = l * nswitches_per_col_;
-    for (long i=0; i < nswitches_per_col_; ++i) {
-      long my_switch_index = col_start_index + i;
-      switch_id my_addr(my_switch_index);
-      connectable* my_sw = objects[my_addr];
+    int col_start_index = l * nswitches_per_col_;
+    int col_stop_index = col_start_index + nswitches_per_col_;
+    if (src >= col_start_index && src < col_stop_index){
+      int i = src - col_start_index; //my offset in col
 
-      long my_block = i / block_size;
-      long my_intra_block_index = i % block_size;
-      long my_block_index_start = my_block * block_size;
+      int my_block = i / block_size;
+      int my_intra_block_index = i % block_size;
+      int my_block_index_start = my_block * block_size;
 
-      long my_group_offset = my_intra_block_index % connection_stride;
-      long my_group_index_start = my_block_index_start + my_group_offset;
-      long my_index_in_my_group = (my_switch_index - my_group_index_start) / connection_stride;
+      int my_group_offset = my_intra_block_index % connection_stride;
+      int my_group_index_start = my_block_index_start + my_group_offset;
+      int my_index_in_my_group = (src - my_group_index_start) / connection_stride;
 
-      //make sure to include column offset
-      long up_group_partner = my_group_index_start + col_start_index +
+
+      int dst = my_group_index_start + col_start_index +
                               nswitches_per_col_;
-      long num_connections = kary_;
 
       int inport = my_index_in_my_group;
-      for (long c=0; c < num_connections;
-           ++c, up_group_partner += connection_stride) {
-        //printf("Connecting %ld:%ld->%ld\n", my_switch_index, c, up_group_partner);
-        switch_id up_group_partner_addr(up_group_partner);
-        connectable* partner_sw = objects[up_group_partner_addr];
-        int outport = c;
-        my_sw->connect_output(
-          link_params,
-          outport,
-          inport,
-          partner_sw);
-
-        partner_sw->connect_input(
-          link_params,
-          outport,
-          inport,
-          my_sw);
+      for (int c=0; c < kary_; ++c, dst += connection_stride) {
+        connection& conn = conns[cidx];
+        conn.src = src;
+        conn.dst = dst;
+        conn.src_outport = c;
+        conn.dst_inport = inport;
+        ++cidx;
       }
+      break; //we are done
     }
-
-    //the next set of connections is more compact - lower the stride
     connection_stride /= kary_;
     block_size /= kary_;
   }
+}
+
+void
+butterfly::configure_individual_port_params(switch_id src,
+                      sprockit::sim_parameters *switch_params) const
+{
+  topology::configure_individual_port_params(0, max_ports_intra_network_,
+                                             switch_params);
 }
 
 int

@@ -133,9 +133,27 @@ class butterfly :
                           switch_id dest_sw_addr,
                           routable::path &path) const override;
 
-  virtual void
-  connect_objects(sprockit::sim_parameters* params,
-                  internal_connectable_map& switches) override;
+  bool
+  uniform_switches() const override {
+    return true;
+  }
+
+  bool
+  uniform_network_ports() const override {
+    return true;
+  }
+
+  bool
+  uniform_switches_non_uniform_network_ports() const override {
+    return true;
+  }
+
+  void
+  connected_outports(switch_id src, std::vector<connection>& conns) const override;
+
+  void
+  configure_individual_port_params(switch_id src,
+                        sprockit::sim_parameters *switch_params) const override;
 
   switch_id
   endpoint_to_ejection_switch(

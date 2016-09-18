@@ -123,54 +123,62 @@ fat_tree::downColumnConnection(int k, int myColumn, int downPort, int myBranchSi
 
 
 void
-fat_tree::connect_objects(sprockit::sim_parameters* params, internal_connectable_map& objects)
+fat_tree::connected_outports(switch_id src, std::vector<connection>& conns) const
 {
-  sprockit::sim_parameters* link_params = params->get_namespace("link");
   int branchSize = 1;
-  int maxLevel = l_ - 2;
-  for (int row=0; row <= maxLevel; ++row){
-    int nColumns = numleafswitches_;
-    for (int col=0; col < nColumns; ++col){
-      int lower_id = switch_at_row_col(row, col);
-      connectable* lower_switch = objects[switch_id(lower_id)];
-      int myBranch = col / branchSize;
-      for (int k=0; k < k_; ++k){
-        int upColumn = upColumnConnection(k_, col, k, branchSize);
-        int upper_id = switch_at_row_col(row+1,upColumn);
-
-        int upPort = up_port(k);
-        int downPort = down_port(myBranch % k_);
-
-        top_debug("fattree: connecting up=(%d,%d:%d) to down=(%d,%d:%d)",
-                row, col, upPort, row+1, upColumn, downPort);
-
-        connectable* upper_switch = objects[switch_id(upper_id)];
-
-        lower_switch->connect_output(
-          link_params,
-          upPort, //up is out and down is in... got it!??!
-          downPort,
-          upper_switch);
-        upper_switch->connect_input(
-          link_params,
-          upPort,
-          downPort,
-          lower_switch);
-
-        upper_switch->connect_output(
-          link_params,
-          downPort, //down is out and up is in... got it?!?
-          upPort,
-          lower_switch);
-        lower_switch->connect_input(
-          link_params,
-          downPort,
-          upPort,
-          upper_switch);
-      }
-    }
+  conns.resize(2*k_);
+  int myRow, myCol;
+  compute_row_col(src, myRow, myCol);
+  for (int row=0; row < myRow; ++row){
     branchSize *= k_;
   }
+  int myBranch = myCol / branchSize;
+  int cidx = 0;
+  if (myRow < toplevel_){
+    for (int k=0; k < k_; ++k){
+      int upColumn = upColumnConnection(k_, myCol, k, branchSize);
+      switch_id upDst = switch_at_row_col(myRow+1,upColumn);
+      int upPort = up_port(k);
+      int downPort = down_port(myBranch % k_);
+
+      connection& conn = conns[cidx];
+      conn.src = src;
+      conn.dst = upDst;
+      conn.src_outport = upPort;
+      conn.dst_inport = downPort;
+      ++cidx;
+    }
+  }
+
+  if (myRow > 0){
+    branchSize /= k_;
+    for (int col=0; col < numleafswitches_; ++col){
+      for (int k=0; k < k_; ++k){
+        int upColumn = upColumnConnection(k_, col, k, branchSize);
+        if (upColumn == myCol){
+          int branch = col / branchSize;
+          switch_id downDst = switch_at_row_col(myRow-1, col);
+          int upPort = up_port(k);
+          int downPort = down_port(branch % k_);
+          connection& conn = conns[cidx];
+          conn.src = src;
+          conn.dst = downDst;
+          conn.src_outport = downPort;
+          conn.dst_inport = upPort;
+          ++cidx;
+        }
+      }
+    }
+  }
+
+  conns.resize(cidx);
+}
+
+void
+fat_tree::configure_individual_port_params(switch_id src,
+                                 sprockit::sim_parameters *switch_params) const
+{
+  topology::configure_individual_port_params(0, 2*k_, switch_params);
 }
 
 void
@@ -215,7 +223,7 @@ fat_tree::minimal_distance(switch_id src,
 }
 
 void
-simple_fat_tree::partition(
+simple_fat_tree::create_partition(
   int* switches_per_lp,
   int *switch_to_lp,
   int *switch_to_thread,
@@ -223,7 +231,7 @@ simple_fat_tree::partition(
   int me,
   int nproc,
   int nthread,
-  int noccupied)
+  int noccupied) const
 {
   int nworkers = nproc * nthread;
 
@@ -349,117 +357,103 @@ simple_fat_tree::simple_fat_tree(sprockit::sim_parameters *params) :
 }
 
 void
-simple_fat_tree::build_internal_connectables(
-  internal_connectable_map &connectables,
-  connectable_factory factory,
-  connectable_factory dummy_factory,
-  sstmac::partition *part, int my_rank,
-  sprockit::sim_parameters *params)
+simple_fat_tree::configure_individual_port_params(switch_id src,
+                                  sprockit::sim_parameters *switch_params) const
 {
-  int nswitches = numleafswitches_;
+  sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
+  int buffer_size = switch_params->get_int_param("buffer_size");
+  double bw = link_params->get_bandwidth_param("bandwidth");
+  int myLevel = level(src);
   int bw_multiplier = 1;
-  sprockit::sim_parameters* xbar_params = params->get_namespace("xbar");
-  double bw = xbar_params->get_bandwidth_param("bandwidth");
-  for (int l=0; l < l_; ++l){
-    int down_offset = level_offsets_[l];
-    double tapering = tapering_[l];
-    for (int s=0; s < nswitches; ++s){
-      int down_id = down_offset + s;
-      top_debug("Adding fat tree switch %d with multiplier %d", down_id, bw_multiplier);
-      double xbar_bw = bw * bw_multiplier * tapering;
-      (*xbar_params)["bandwidth"].setBandwidth(xbar_bw/1e9, "GB/s");
-      if (part->lpid_for_switch(down_id) == my_rank){
-        params->add_param_override("id", down_id);
-        connectables[down_id] = factory(params, down_id);
-      } else {
-        connectables[down_id] = dummy_factory(params, down_id);
-      }
-    }
-    nswitches /= k_;
+  for (int l=0; l < myLevel; ++l){
     bw_multiplier *= k_;
+  }
+
+  if (myLevel > 0){
+    double tapering = tapering_[myLevel];
+    for (int s=0; s < k_; ++s){
+      int outport = s;
+      setup_port_params(outport,
+                        buffer_size*bw_multiplier*tapering,
+                        bw*bw_multiplier*tapering,
+                        link_params, switch_params);
+    }
+  }
+
+  if (myLevel < toplevel_){
+    //bring things up one level
+    double tapering = tapering_[myLevel + 1];
+    bw_multiplier *= k_;
+    int outport = k_;
+    setup_port_params(outport,
+                      buffer_size*bw_multiplier*tapering,
+                      bw*bw_multiplier*tapering,
+                      link_params, switch_params);
   }
 }
 
 void
-simple_fat_tree::connect_objects(sprockit::sim_parameters* params,
-                                 internal_connectable_map &switches)
+simple_fat_tree::configure_nonuniform_switch_params(switch_id src,
+                           sprockit::sim_parameters *switch_params) const
 {
-  sprockit::sim_parameters* link_params = params->get_namespace("link");
-  sprockit::sim_parameters* xbar_params = params->get_namespace("xbar");
-  int buffer_size = xbar_params->get_int_param("buffer_size");
-  double bw = link_params->get_bandwidth_param("bandwidth");
+  int myLevel = level(src);
+  int multiplier = 1;
+  for (int l=0; l < myLevel; ++l){
+    multiplier *= k_;
+  }
+  sprockit::sim_parameters* xbar_params = switch_params->get_namespace("xbar");
+  double bw = xbar_params->get_bandwidth_param("bandwidth");
+  double xbar_bw = bw * multiplier;
+  (*xbar_params)["bandwidth"].setBandwidth(xbar_bw/1e9, "GB/s");
+}
+
+void
+simple_fat_tree::connected_outports(switch_id src, std::vector<connection>& conns) const
+{
+  int myRow = level(src);
+
+  conns.resize(k_+1);
 
   int nswitches = numleafswitches_;
-  int bw_multiplier = 1;
   int stopLevel = l_ - 1;
+  int cidx = 0;
   for (int l=0; l < stopLevel; ++l){
-    int down_offset = level_offsets_[l];
-    int up_offset = level_offsets_[l+1];
-    double tapering = tapering_[l];
-    for (int s=0; s < nswitches; ++s){
-      int down_id = down_offset + s;
-      int up_id = up_offset + s/k_;
-      connectable* down_switch = switches[switch_id(down_id)];
-      connectable* up_switch = switches[switch_id(up_id)];
-
+    if (myRow == l){
+      int down_offset = level_offsets_[l];
+      int up_offset = level_offsets_[l+1];
+      int myCol = src - down_offset;
+      int upDst = up_offset + myCol / k_;
       int down_switch_outport = k_;
-      int down_switch_inport = down_switch_outport;
-      int up_switch_outport = s % k_;
-      int up_switch_inport = up_switch_outport;
+      int up_switch_inport = myCol % k_;
 
-      top_debug(
-       "Connecting %d(%d):%d->%d(%d):%d between levels %d,%d with multiplier=%d, tapering=%12.8f",
-       down_id, s, down_switch_outport,
-       up_id, s/k_, up_switch_inport,
-       l, l+1, bw_multiplier, tapering);
-
-
-      sprockit::sim_parameters* port_params = setup_port_params(down_switch_outport,
-                                                  buffer_size*bw_multiplier,
-                                                  bw*bw_multiplier*tapering,
-                                                  link_params,
-                                                  params);
-
-      down_switch->connect_output(
-        port_params,
-        down_switch_outport,
-        up_switch_inport,
-        up_switch);
-
-      up_switch->connect_input(
-         port_params,
-        down_switch_outport,
-        up_switch_inport,
-        down_switch);
-
-      top_debug(
-       "Connecting %d(%d):%d->%d(%d):%d between levels %d,%d with multiplier=%d, tapering=%12.8f",
-       up_id, s/k_, up_switch_outport,
-       down_id, s, down_switch_inport,
-       l, l+1, bw_multiplier, tapering);
-
-      port_params = setup_port_params(up_switch_outport,
-                                      buffer_size*bw_multiplier,
-                                      bw*bw_multiplier*tapering,
-                                      link_params,
-                                      params);
-
-      up_switch->connect_output(
-        port_params,
-        up_switch_outport,
-        down_switch_inport,
-        down_switch);
-
-      down_switch->connect_input(
-        port_params,
-        up_switch_outport,
-        down_switch_inport,
-        up_switch);
+      connection& conn = conns[cidx];
+      conn.src = src;
+      conn.dst = upDst;
+      conn.src_outport = down_switch_outport;
+      conn.dst_inport = up_switch_inport;
+      ++cidx;
+    } else if (myRow == (l+1)){
+      int down_offset = level_offsets_[l];
+      int up_offset = level_offsets_[l+1];
+      for (int s=0; s < nswitches;  ++s){
+        int up_id = up_offset + s/k_;
+        int down_id = down_offset + s;
+        if (up_id == src){
+          int down_switch_inport = k_;
+          int up_switch_outport = s % k_;
+          connection& conn = conns[cidx];
+          conn.src = src;
+          conn.dst = down_id;
+          conn.src_outport = up_switch_outport;
+          conn.dst_inport = down_switch_inport;
+          ++cidx;
+        }
+      }
     }
     nswitches /= k_;
-    bw_multiplier *= k_;
   }
 
+  conns.resize(cidx);
 }
 
 int
