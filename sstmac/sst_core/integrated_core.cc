@@ -4,7 +4,6 @@
 
 #include <sst/core/element.h>
 #include <sstmac/sst_core/integrated_core.h>
-#include <sstmac/sst_core/connectable_wrapper.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/packet_flow/packet_flow_nic.h>
 #include <sstmac/hardware/packet_flow/packet_flow_switch.h>
@@ -29,8 +28,33 @@ static char py_sstmacro[] = {
 using namespace sstmac;
 using namespace SST;
 
-void init_python_topology(PyObject* module);
 
+static sstmac::hw::topology* main_topology;
+
+namespace sstmac {
+
+PyObject*
+py_get_int_tuple(int num, int* indices)
+{
+  PyObject* tuple = PyTuple_New(num);
+  for (int i=0; i < num; ++i){
+    PyObject* idx = PyInt_FromLong(indices[i]);
+    PyTuple_SetItem(tuple, i, idx);
+  }
+  return tuple;
+}
+
+void
+int_vector_from_py_array(PyObject* tuple, std::vector<int>& vec)
+{
+  Py_ssize_t size = PyTuple_Size(tuple);
+  vec.resize(size);
+  for (int i=0; i < size; ++i){
+    PyObject* obj = PyTuple_GetItem(tuple,i);
+    int item  = PyInt_AsLong(obj);
+    vec[i] = item;
+  }
+}
 
 PyObject*
 py_array_from_int_vector(const std::vector<int>& vec)
@@ -47,42 +71,36 @@ py_array_from_int_vector(const std::vector<int>& vec)
 }
 
 void
-int_vector_from_py_array(PyObject* tuple, std::vector<int>& vec)
+py_extract_params(PyObject* dict, sprockit::sim_parameters* params)
 {
-  Py_ssize_t size = PyTuple_Size(tuple);
-  vec.resize(size);
-  for (int i=0; i < size; ++i){
-    PyObject* obj = PyTuple_GetItem(tuple,i);
-    int item  = PyInt_AsLong(obj);
-    vec[i] = item;
+  PyObject* items = PyMapping_Items(dict);
+  Py_ssize_t n_items = PySequence_Size(items);
+  for(Py_ssize_t i = 0; i < n_items; ++i) {
+    PyObject* pair = PySequence_GetItem(items, i);
+    PyObject* key = PySequence_GetItem(pair, 0);
+    PyObject* val = PySequence_GetItem(pair, 1);
+    PyObject* key_str_obj = PyObject_Str(key);
+    const char* key_c_str = PyString_AsString(key_str_obj);
+    if (PyMapping_Check(val)){
+      sprockit::sim_parameters* sub_params =
+          params->get_optional_namespace(key_c_str);
+      sstmac::py_extract_params(val, sub_params);
+    } else {
+      PyObject* val_str_obj = PyObject_Str(val);
+      const char* val_c_str = PyString_AsString(val_str_obj);
+      params->add_param_override(key_c_str, val_c_str);
+      Py_DECREF(val_str_obj);
+    }
+    Py_DECREF(key_str_obj);
+    Py_DECREF(val);
+    Py_DECREF(key);
+    Py_DECREF(pair);
   }
+  Py_DECREF(items);
 }
 
-PyObject*
-set_debug_flags(PyObject* self, PyObject* args)
-{
-  PyObject* flags = PyTuple_GetItem(args, 0);
-  Py_ssize_t size = PyTuple_Size(flags);
-  for (int i=0; i < size; ++i){
-    PyObject* obj = PyTuple_GetItem(flags,i);
-    const char* str = PyString_AsString(obj);
-    sprockit::debug::turn_on(str);
-  }
-  Py_RETURN_NONE;
-}
-
-PyObject*
-init(PyObject* self, PyObject* args)
-{
-  sprockit::output::init_out0(&std::cout);
-  sprockit::output::init_err0(&std::cerr);
-  sprockit::output::init_outn(&std::cout);
-  sprockit::output::init_errn(&std::cerr);
-  Py_RETURN_NONE;
-}
-
-static void
-add_params(PyObject* dict, sprockit::sim_parameters* params)
+void
+py_add_params(PyObject* dict, sprockit::sim_parameters* params)
 {
   sprockit::sim_parameters::key_value_map::iterator it, end = params->end();
   for (it=params->begin(); it != end; ++it){
@@ -94,8 +112,8 @@ add_params(PyObject* dict, sprockit::sim_parameters* params)
   }
 }
 
-static void
-add_sub_params(PyObject* dict, sprockit::sim_parameters* params)
+void
+py_add_sub_params(PyObject* dict, sprockit::sim_parameters* params)
 {
   sprockit::sim_parameters::namespace_iterator it, end = params->ns_end();
   for (it=params->ns_begin(); it != end; ++it){
@@ -103,9 +121,33 @@ add_sub_params(PyObject* dict, sprockit::sim_parameters* params)
     PyObject* subdict = PyDict_New();
     const char* key = it->first.c_str();
     PyDict_SetItemString(dict, key, subdict);
-    add_params(subdict, subparams);
-    add_sub_params(subdict, subparams);
+    sstmac::py_add_params(subdict, subparams);
+    sstmac::py_add_sub_params(subdict, subparams);
   }
+}
+
+PyObject*
+py_dict_from_params(sprockit::sim_parameters* params)
+{
+  PyObject* dict = PyDict_New();
+  sstmac::py_add_params(dict, params);
+  sstmac::py_add_sub_params(dict, params);
+  return dict;
+}
+
+}
+
+static PyObject*
+set_debug_flags(PyObject* self, PyObject* args)
+{
+  PyObject* flags = PyTuple_GetItem(args, 0);
+  Py_ssize_t size = PyTuple_Size(flags);
+  for (int i=0; i < size; ++i){
+    PyObject* obj = PyTuple_GetItem(flags,i);
+    const char* str = PyString_AsString(obj);
+    sprockit::debug::turn_on(str);
+  }
+  Py_RETURN_NONE;
 }
 
 static PyObject*
@@ -124,14 +166,13 @@ read_params(PyObject* self, PyObject* args)
   sstmac::try_main(&params, argc, argv, true/*only params*/);
 
   PyObject* dict = PyDict_New();
-  add_params(dict, &params);
-  add_sub_params(dict, &params);
+  sstmac::py_add_params(dict, &params);
+  sstmac::py_add_sub_params(dict, &params);
 
   delete[] argv;
 
   return dict;
 }
-
 
 static const ElementInfoComponent macro_components[] = {
     sstmac::hw::packet_flow_switch_element_info,
@@ -141,10 +182,9 @@ static const ElementInfoComponent macro_components[] = {
 
 
 static PyMethodDef sst_macro_integrated_methods[] = {
-    { "readParams", read_params, METH_VARARGS, "parse command line options and read parameters" },
-    { "debug", set_debug_flags, METH_VARARGS, "set debug flags" },
-    { "init", init, METH_VARARGS, "initialize the macro environment" },
-    { NULL, NULL, 0, NULL }
+  { "readParams", read_params, METH_VARARGS, "parse command line options and read parameters" },
+  { "debug", set_debug_flags, METH_VARARGS, "set debug flags" },
+  { NULL, NULL, 0, NULL }
 };
 
 static void* gen_sst_macro_integrated_pymodule(void)
@@ -152,8 +192,11 @@ static void* gen_sst_macro_integrated_pymodule(void)
   PyObject* tmpModule = Py_InitModule("sstmac", sst_macro_integrated_methods);
   PyObject *code = Py_CompileString(py_sstmacro, "sstmacro", Py_file_input);
   PyObject* module = PyImport_ExecCodeModule("sst.macro", code);
-  init_python_topology(tmpModule);
-  sstmac::connectable_proxy_component::sst = PyImport_ImportModule("sst");
+  sstmac::py_init_system(module);
+  sprockit::output::init_out0(&std::cout);
+  sprockit::output::init_err0(&std::cerr);
+  sprockit::output::init_outn(&std::cout);
+  sprockit::output::init_errn(&std::cerr);
   return module;
 }
 

@@ -162,11 +162,11 @@ class butterfly :
 
   void
   nodes_connected_to_injection_switch(switch_id swaddr,
-                                      std::vector<node_id>& nodes) const override;
+                                      std::vector<injection_port>& nodes) const override;
 
   void
   nodes_connected_to_ejection_switch(switch_id swaddr,
-                                     std::vector<node_id>& nodes) const override;
+                                     std::vector<injection_port>& nodes) const override;
 
  private:
   int

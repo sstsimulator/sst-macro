@@ -50,6 +50,10 @@ packet_flow_nic::packet_flow_nic(sprockit::sim_parameters* params, node* parent)
 
   packet_flow_nic_packetizer* packer = test_cast(packet_flow_nic_packetizer, packetizer_);
   if (packer) packer->set_acker(mtl_handler());
+
+  //make port 0 a copy of the injection params
+  sprockit::sim_parameters* port0_params = params->get_optional_namespace("port0");
+  inj_params->combine_into(port0_params);
 }
 
 //

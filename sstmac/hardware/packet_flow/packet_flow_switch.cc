@@ -47,6 +47,14 @@ packet_flow_abstract_switch::packet_flow_abstract_switch(
                                              buf_params, this);
 
   router_ = router_factory::get_param("router", params, top_, this);
+
+  sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
+  std::vector<topology::injection_port> conns;
+  top_->nodes_connected_to_ejection_switch(my_addr_, conns);
+  for (topology::injection_port& conn : conns){
+    sprockit::sim_parameters* port_params = topology::get_port_params(params, conn.port);
+    ej_params->combine_into(port_params);
+  }
 }
 
 

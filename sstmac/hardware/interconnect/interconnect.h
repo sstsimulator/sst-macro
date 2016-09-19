@@ -71,7 +71,12 @@ class interconnect
 
   interconnect(){}
 
-#if !SSTMAC_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
+ public:
+  bool local_speedy_node(node_id nid) const {
+    return true;
+  }
+#else
  public:
   typedef std::vector<network_switch*> switch_map;
   typedef std::vector<connectable*> internal_map;

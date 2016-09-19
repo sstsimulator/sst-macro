@@ -169,8 +169,6 @@ class node :
     uint64_t id,
     event_manager* mgr);
 
-  void connect_nic();
-
  protected:
   sw::operating_system* os_;
 
@@ -193,6 +191,11 @@ class node :
   static std::list<sw::app_launch*> launchers_;
   unique_event_id next_outgoing_id_;
   sprockit::sim_parameters* params_;
+
+#if SSTMAC_INTEGRATED_SST_CORE
+  SST::Event::HandlerBase*
+  handler(int port) const override;
+#endif
 
 };
 

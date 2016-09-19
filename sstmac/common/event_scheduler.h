@@ -37,10 +37,14 @@ make_spkt_params_from_sst_params(SST::Params& map);
 #define ImplementSSTComponent(str, parent, comp, docstring) \
   SST::Component* \
   create_##comp(SST::ComponentId_t id, SST::Params& params) { \
-    return new comp(sstmac::make_spkt_params_from_sst_params(params), id, nullptr); \
+    sprockit::sim_parameters* macParams = \
+      sstmac::make_spkt_params_from_sst_params(params); \
+    sstmac::SSTIntegratedComponent* created = new comp(macParams, id, nullptr); \
+    created->init_links(macParams); \
+    return created; \
   } \
   const SST::ElementInfoComponent comp##_element_info = { \
-      #comp, \
+      str "_" #parent, \
       docstring, \
       NULL, \
       create_##comp, NULL, NULL, COMPONENT_CATEGORY_SYSTEM \

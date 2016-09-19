@@ -8,32 +8,6 @@
 
 namespace sstmac {
 
-class connection_details
-{
-  public:
-    typedef enum {
-      node,
-      sw
-    } endpoint_t;
-
-    hw::connectable::connection_type_t type;
-    int src_id;
-    int dst_id;
-    int src_port;
-    int dst_port;
-    endpoint_t src_type;
-    endpoint_t dst_type;
-    hw::connectable::config cfg;
-
-    void parse_type_id(const std::string& str, endpoint_t& ep, int& id);
-    void parse_src(const std::string& str);
-    void parse_dst(const std::string& str);
-
-};
-
-void
-parse_port_name(const std::string& port_name, connection_details* dets);
-
 class integrated_connectable_wrapper
   : public hw::connectable,
     public event_handler
@@ -53,12 +27,19 @@ class integrated_connectable_wrapper
         "integrated_connectable_wrapper::handle: should never be called");
     }
 
-    void connect(
+    virtual void
+    connect_output(
+      sprockit::sim_parameters* params,
       int src_outport,
       int dst_inport,
-      connection_type_t ty,
-      connectable *mod,
-      config *cfg);
+      connectable* mod);
+
+    virtual void
+    connect_input(
+      sprockit::sim_parameters* params,
+      int src_outport,
+      int dst_inport,
+      connectable* mod);
 
     event_loc_id
     event_location() const {
@@ -72,51 +53,6 @@ class integrated_connectable_wrapper
 
   private:
     SST::Link* link_;
-};
-
-class connectable_proxy_component
-  : public hw::connectable
-{
-  public:
-
-    static PyObject* sst;
-    typedef spkt_unordered_map<switch_id, connectable_proxy_component*> switch_map;
-    static switch_map registered_switches;
-    typedef spkt_unordered_map<endpoint_id, connectable_proxy_component*> endpoint_map;
-    static endpoint_map registered_endpoints;
-
-    std::string to_string() const
-    {
-      return "connectable_proxy";
-    }
-
-    typedef enum {
-      Switch,
-      Endpoint,
-      Other
-    } component_category_t;
-
-    event_loc_id
-    event_location() const
-    {
-      return event_loc_id::null;
-    }
-
-    void
-    connect(
-      int src_outport,
-      int dst_inport,
-      connection_type_t ty,
-      connectable* other,
-      config* cfg);
-
-    ~connectable_proxy_component();
-
-    PyObject* component_proxy;
-    std::string component_name;
-    std::string hop_latency;
-    std::string injection_latency;
-    component_category_t category;
 };
 
 }

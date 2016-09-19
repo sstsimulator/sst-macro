@@ -16,18 +16,21 @@
 
 namespace sstmac {
 
-template <typename Mapping>
-sprockit::sim_parameters*
-make_sim_params_from_mapping(
-    Mapping&& map
-)
-{
-  sprockit::sim_parameters* rv = new sprockit::sim_parameters;
-  for(auto&& pair : map) {
-    rv->parse_keyval(pair.first, pair.second, false, true, false);
-  }
-  return rv;
-}
+void py_init_system(PyObject*  module);
+
+void py_extract_params(PyObject* dict, sprockit::sim_parameters* params);
+
+PyObject* py_get_int_tuple(int num, int* indices);
+
+void int_vector_from_py_array(PyObject* tuple, std::vector<int>& vec);
+
+PyObject* py_array_from_int_vector(const std::vector<int>& vec);
+
+void py_add_params(PyObject* dict, sprockit::sim_parameters* params);
+
+void py_add_sub_params(PyObject* dict, sprockit::sim_parameters* params);
+
+PyObject* py_dict_from_params(sprockit::sim_parameters* params);
 
 } // end namespace sstmac
 

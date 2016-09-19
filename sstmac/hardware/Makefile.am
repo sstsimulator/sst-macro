@@ -41,6 +41,7 @@ nobase_library_include_HEADERS = \
   node/null_node.h \
   node/simple_node.h \
   common/connection.h \
+  common/connection_fwd.h \
   common/failable.h \
   common/fail_event.h \
   common/packet.h \

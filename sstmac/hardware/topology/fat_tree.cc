@@ -70,7 +70,7 @@ abstract_fat_tree::abstract_fat_tree(sprockit::sim_parameters *params,
 
 void
 abstract_fat_tree::nodes_connected_to_injection_switch(switch_id swaddr,
-                                                       std::vector<node_id>& nodes) const
+                                                       std::vector<injection_port>& nodes) const
 {
   if (swaddr >= numleafswitches_){
     nodes.resize(0);
@@ -81,7 +81,7 @@ abstract_fat_tree::nodes_connected_to_injection_switch(switch_id swaddr,
 
 void
 abstract_fat_tree::nodes_connected_to_ejection_switch(switch_id swaddr,
-                                                      std::vector<node_id>& nodes) const
+                                                      std::vector<injection_port>& nodes) const
 {
   nodes_connected_to_injection_switch(swaddr, nodes);
 }

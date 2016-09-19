@@ -15,21 +15,6 @@ const int parallel_runtime::global_root = -1;
 parallel_runtime* parallel_runtime::static_runtime_ = nullptr;
 
 void
-parallel_runtime::finalize_init()
-{
-  if (me_ == 0){
-    sprockit::output::init_out0(&std::cout);
-    sprockit::output::init_err0(&std::cerr);
-  }
-  else {
-    sprockit::output::init_out0(new std::ofstream("/dev/null"));
-    sprockit::output::init_err0(new std::ofstream("/dev/null"));
-  }
-  sprockit::output::init_outn(&std::cout);
-  sprockit::output::init_errn(&std::cerr);
-}
-
-void
 parallel_runtime::bcast_string(std::string& str, int root)
 {
   if (nproc_ == 1)
@@ -131,9 +116,22 @@ parallel_runtime::init_runtime_params(sprockit::sim_parameters *params)
   recv_buffer_pool_.init(buf_size_, num_bufs_window);
 }
 
-parallel_runtime::parallel_runtime(sprockit::sim_parameters* params)
-  : part_(nullptr)
+parallel_runtime::parallel_runtime(sprockit::sim_parameters* params,
+                                   int me, int nproc)
+  : part_(nullptr),
+    me_(me),
+    nproc_(nproc)
 {
+  if (me_ == 0){
+    sprockit::output::init_out0(&std::cout);
+    sprockit::output::init_err0(&std::cerr);
+  }
+  else {
+    sprockit::output::init_out0(new std::ofstream("/dev/null"));
+    sprockit::output::init_err0(new std::ofstream("/dev/null"));
+  }
+  sprockit::output::init_outn(&std::cout);
+  sprockit::output::init_errn(&std::cerr);
 }
 
 parallel_runtime::~parallel_runtime()

@@ -173,7 +173,7 @@ butterfly::endpoint_to_ejection_switch(node_id addr, int& switch_port) const
 
 void
 butterfly::nodes_connected_to_ejection_switch(switch_id swaddr,
-                                              std::vector<node_id>& nodes) const
+                                              std::vector<injection_port>& nodes) const
 {
   int last_row_offset = nswitches_per_col_ * (nfly_ - 1);
   if (swaddr >= last_row_offset) {
@@ -186,7 +186,7 @@ butterfly::nodes_connected_to_ejection_switch(switch_id swaddr,
 
 void
 butterfly::nodes_connected_to_injection_switch(switch_id swaddr,
-                                               std::vector<node_id>& nodes) const
+                                               std::vector<injection_port>& nodes) const
 {
   if (swaddr >= nswitches_per_col_) {
     nodes.resize(0);

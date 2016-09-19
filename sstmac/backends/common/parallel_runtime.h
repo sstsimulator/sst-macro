@@ -30,9 +30,6 @@ class parallel_runtime :
 
   static const int global_root;
 
-  virtual void
-  finalize_init();
-
   virtual int64_t
   allreduce_min(int64_t mintime) = 0;
 
@@ -162,7 +159,8 @@ class parallel_runtime :
   }
 
  protected:
-  parallel_runtime(sprockit::sim_parameters* params);
+  parallel_runtime(sprockit::sim_parameters* params,
+                   int me, int nproc);
 
   virtual void
   do_send_message(int lp, void* buffer, int size) = 0;

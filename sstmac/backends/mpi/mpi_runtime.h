@@ -23,10 +23,7 @@ class mpi_runtime :
 {
 
  public:
-  mpi_runtime(sprockit::sim_parameters* params) :
-    parallel_runtime(params)
-  {
-  }
+  mpi_runtime(sprockit::sim_parameters* params);
 
   std::string
   to_string() const {
@@ -35,9 +32,6 @@ class mpi_runtime :
 
   void
   bcast(void *buffer, int bytes, int root);
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
 
   int64_t
   allreduce_min(int64_t mintime);
@@ -91,9 +85,6 @@ class mpi_runtime :
   void
   do_reduce(void* data, int nelems, MPI_Datatype ty, MPI_Op op, int root);
 
-  virtual void
-  finalize_init();
-
   void
   do_merge_array(int tag);
 
@@ -105,7 +96,11 @@ class mpi_runtime :
 
   void finalize();
 
- protected:
+ private:
+  int init_rank(sprockit::sim_parameters* params);
+  int init_size(sprockit::sim_parameters* params);
+
+ private:
    MPI_Request* requests_;
 
    struct merge_request {
@@ -123,7 +118,6 @@ class mpi_runtime :
    int total_num_sent_;
    int epoch_;
 
- private:
    bool finalize_needed_;
 
 };

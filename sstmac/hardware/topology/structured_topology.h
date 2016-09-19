@@ -71,11 +71,11 @@ class structured_topology : public topology
 
   virtual void
   nodes_connected_to_injection_switch(switch_id swid,
-                                      std::vector<node_id>& nodes) const override;
+                                      std::vector<injection_port>& nodes) const override;
 
   virtual void
   nodes_connected_to_ejection_switch(switch_id swid,
-                                     std::vector<node_id>& nodes) const override;
+                                     std::vector<injection_port>& nodes) const override;
 
   /**
    * Given a switch address, return number of nodes connected to it

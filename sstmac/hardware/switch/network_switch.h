@@ -85,6 +85,12 @@ class network_switch :
   switch_id my_addr_;
   topology* top_;
 
+ private:
+#if SSTMAC_INTEGRATED_SST_CORE
+  SST::Event::HandlerBase*
+  handler(int port) const override;
+#endif
+
 };
 
 

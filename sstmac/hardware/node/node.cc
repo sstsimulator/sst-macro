@@ -78,34 +78,6 @@ node::node(sprockit::sim_parameters* params,
 }
 
 void
-node::connect_nic()
-{
-#if SSTMAC_INTEGRATED_SST_CORE
-  for(auto&& pair : link_map_->getLinkMap()) {
-    const std::string& port_name = pair.first;
-    SST::Link* link = pair.second;
-    if (port_name == "rtr"){
-      //connecting to Merlin or other router
-      //configureLink(port_name, new SST::Event::Handler<nic>(nic_, &nic::handle_event));
-    } else {
-      connection_details dets; parse_port_name(port_name, &dets);
-      if (dets.src_type == connection_details::node){
-        //outgoing from me, make the link
-        nic_debug("connecting to port %s", port_name.c_str());
-        integrated_connectable_wrapper* next = new integrated_connectable_wrapper(link);
-        nic_->connect(dets.src_port,
-              dets.dst_port,
-              dets.type, next,
-              &dets.cfg);
-      } else { //I'm the receiving end
-        configureLink(port_name, new SST::Event::Handler<nic>(nic_, &nic::handle_event));
-      }
-    }
-  }
-#endif
-}
-
-void
 node::setup()
 {
   schedule_launches();
@@ -119,12 +91,10 @@ node::init(unsigned int phase)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   event_scheduler::init(phase);
-  if (phase == 0){ 
-    connect_nic();
-    configure_self_link();
-  }
 #endif
-  build_launchers(params_);
+  if (phase == 0){
+    build_launchers(params_);
+  }
 }
 
 node::~node()
@@ -141,8 +111,8 @@ node::connect_output(sprockit::sim_parameters* params,
   int src_outport, int dst_inport,
   connectable *mod)
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "node::connect: should never be called");
+  //forward connection to nic
+  nic_->connect_output(params, src_outport, dst_inport, mod);
 }
 
 void
@@ -150,8 +120,8 @@ node::connect_input(sprockit::sim_parameters* params,
   int src_outport, int dst_inport,
   connectable *mod)
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "node::connect: should never be called");
+  //forward connection to nic
+  nic_->connect_input(params, src_outport, dst_inport, mod);
 }
 
 void
@@ -235,6 +205,14 @@ node::send_to_nic(network_message* netmsg)
     nic_->internode_send(netmsg);
   }
 }
+
+#if SSTMAC_INTEGRATED_SST_CORE
+SST::Event::HandlerBase*
+node::handler(int port) const
+{
+  return new SST::Event::Handler<nic>(nic_, &nic::handle_event);
+}
+#endif
 
 }
 } // end of namespace sstmac

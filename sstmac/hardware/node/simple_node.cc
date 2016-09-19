@@ -35,7 +35,8 @@ simple_node::~simple_node()
 {
 }
 
-simple_node::simple_node(sprockit::sim_parameters *params, uint64_t id,
+simple_node::simple_node(sprockit::sim_parameters *params,
+                         uint64_t id,
                          event_manager *mgr)
   : node(params, id, mgr)
 {

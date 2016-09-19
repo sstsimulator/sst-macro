@@ -106,6 +106,7 @@ class packet_flow_switch :
   packet_flow_sender*
   output_buffer(sprockit::sim_parameters* params, int port);
 
+
 };
 
 DeclareSSTComponent(packet_flow_switch);

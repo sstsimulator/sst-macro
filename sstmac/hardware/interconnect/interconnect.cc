@@ -242,11 +242,11 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
   for (int i=0; i < num_switches_; ++i){
     switch_id sid(i);
     int target_rank = partition_->lpid_for_switch(sid);
-    std::vector<node_id> nodes;
+    std::vector<topology::injection_port> nodes;
     topology_->nodes_connected_to_injection_switch(sid, nodes);
     if (target_rank == my_rank){
       for (int n=0; n < nodes.size(); ++n){
-        node_id nid = nodes[n];
+        node_id nid = nodes[n].nid;
         node_to_speedy_switch_[nid] = switch_id(target_rank);
         if (my_rank == target_rank){
           //local node - actually build it

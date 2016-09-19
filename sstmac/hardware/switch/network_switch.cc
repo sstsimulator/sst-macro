@@ -51,33 +51,22 @@ void
 network_switch::init(unsigned int phase)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  event_scheduler::init(phase);
   if (phase == 0){
-    for(auto&& pair : link_map_->getLinkMap()) {
-      const std::string& port_name = pair.first;
-      SST::Link* link = pair.second;
-      connection_details dets;
-      parse_port_name(port_name, &dets);
-      if (dets.src_type == connection_details::sw && dets.src_id == my_addr_){ 
-        //create the link
-        integrated_connectable_wrapper* next = new integrated_connectable_wrapper(link);
-        connect(
-            dets.src_port, 
-            dets.dst_port,
-            dets.type,
-            next,
-            &dets.cfg);
-      } else { //somebody is injecting to me
-        configureLink(port_name,
-         new SST::Event::Handler<SSTIntegratedComponent>(
-              this, &SSTIntegratedComponent::handle_event));
-      }
-    }
-    initialize();
+    event_scheduler::init(phase);
   }
-  configure_self_link();
 #endif
 }
+
+
+#if SSTMAC_INTEGRATED_SST_CORE
+SST::Event::HandlerBase*
+network_switch::handler(int port) const
+{
+  return new SST::Event::Handler<SSTIntegratedComponent>(
+           const_cast<network_switch*>(this),
+           &SSTIntegratedComponent::handle_event);
+}
+#endif
 
 
 }

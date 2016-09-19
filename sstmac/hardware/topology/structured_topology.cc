@@ -52,21 +52,20 @@ structured_topology::configure_injection_geometry(std::vector<int>& redundancies
 
 void
 structured_topology::nodes_connected_to_ejection_switch(switch_id swaddr,
-                                   std::vector<node_id>& nodes) const
+                                   std::vector<injection_port>& nodes) const
 {
-  nodes.resize(concentration_);
-  for (int i = 0; i < concentration_; i++) {
-    nodes[i] = netlink_id(swaddr*concentration_ + i);
-  }
+  nodes_connected_to_injection_switch(swaddr, nodes);
 }
 
 void
 structured_topology::nodes_connected_to_injection_switch(switch_id swaddr,
-                                   std::vector<node_id>& nodes) const
+                                   std::vector<injection_port>& nodes) const
 {
   nodes.resize(concentration_);
   for (int i = 0; i < concentration_; i++) {
-    nodes[i] = netlink_id(swaddr*concentration_ + i);
+    injection_port& port = nodes[i];
+    port.nid = swaddr*concentration_ + i;
+    port.port = i + max_ports_intra_network_;
   }
 }
 

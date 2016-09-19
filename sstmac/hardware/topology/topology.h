@@ -196,6 +196,11 @@ class topology
   virtual int
   num_hops_to_node(node_id src, node_id dst) const = 0;
 
+  struct injection_port {
+    node_id nid;
+    int port;
+  };
+
   /**
      For a given input switch, return all nodes connected to it.
      This return vector might be empty if the
@@ -204,10 +209,10 @@ class topology
      @return The nodes connected to switch
   */
   virtual void
-  nodes_connected_to_injection_switch(switch_id swid, std::vector<node_id>& nodes) const = 0;
+  nodes_connected_to_injection_switch(switch_id swid, std::vector<injection_port>& nodes) const = 0;
 
   virtual void
-  nodes_connected_to_ejection_switch(switch_id swid, std::vector<node_id>& nodes) const = 0;
+  nodes_connected_to_ejection_switch(switch_id swid, std::vector<injection_port>& nodes) const = 0;
 
   virtual bool
   node_to_netlink(node_id nid, node_id& net_id, int& offset) const = 0;
