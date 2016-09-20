@@ -11,51 +11,49 @@ class stat_local_int :
   public stat_collector
 {
  public:
-  stat_local_int();
+  stat_local_int(sprockit::sim_parameters* params);
+
+  std::string
+  to_string() const override {
+    return "stat local int";
+  }
 
   void
   collect(int value);
 
   void
-  simulation_finished(timestamp end);
+  simulation_finished(timestamp end) override;
 
   void
-  dump_local_data();
+  dump_local_data() override;
 
   void
-  dump_global_data();
+  dump_global_data() override;
 
   void
-  global_reduce(parallel_runtime *rt);
+  global_reduce(parallel_runtime *rt) override;
 
   void
-  clear();
+  clear() override;
 
   void
-  reduce(stat_collector *coll);
-
-  void
-  init_factory_params(sprockit::sim_parameters *params);
+  reduce(stat_collector *coll) override;
 
   stat_local_int*
-  clone_me(int id) const {
-    stat_local_int* cln = new stat_local_int;
-    clone_into(cln);
+  clone_me(int id) const  {
+    stat_local_int* cln = new stat_local_int(params_);
     cln->set_id(id);
     return cln;
   }
 
   stat_collector*
-  clone() const {
+  clone() const override {
     return clone_me(-1);
   }
 
  protected:
   void
   dump(const std::string& froot);
-
-  void
-  clone_into(stat_local_int* cln) const;
 
  protected:
   int size_;

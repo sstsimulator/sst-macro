@@ -34,7 +34,7 @@ DeclareDebugSlot(topology)
 namespace sstmac {
 namespace hw {
 
-class topology
+class topology : public sprockit::printable
 {
  public:
   static const int eject;
@@ -46,6 +46,8 @@ class topology
     int dst_inport;
   };
 
+  static const int speedy_port = 1000000;
+
  public:
   typedef spkt_unordered_map<switch_id, connectable*> internal_connectable_map;
   typedef spkt_unordered_map<node_id, connectable*> end_point_connectable_map;
@@ -54,10 +56,6 @@ class topology
   virtual ~topology();
 
   /**** BEGIN PURE VIRTUAL INTERFACE *****/
-  virtual std::string
-  to_string() const = 0;
-
-
   /**
    * @brief Whether all netwokr ports are uniform
    * @return

@@ -12,11 +12,6 @@ class serial_runtime :
  public:
   serial_runtime(sprockit::sim_parameters* params);
 
-  std::string
-  to_string() const {
-    return "serial runtime";
-  }
-
   virtual int64_t
   allreduce_min(int64_t mintime);
 

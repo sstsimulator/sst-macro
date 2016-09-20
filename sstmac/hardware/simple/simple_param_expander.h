@@ -11,11 +11,6 @@ class simple_param_expander :
   public param_expander
 {
   public:
-    std::string
-    to_string() const {
-      return "simple param expander";
-    }
-
     virtual void
     expand(sprockit::sim_parameters* params);
 

@@ -50,11 +50,6 @@ class event_manager
   friend class native::manager;
 
  public:
-  virtual std::string
-  to_string() const {
-    return "event manager";
-  }
-
   bool
   is_complete() {
     return complete_;

@@ -43,11 +43,9 @@ packet_flow_nic_packetizer::packet_flow_nic_packetizer(sprockit::sim_parameters*
  stat_collector_(nullptr),
  buf_stats_(nullptr),
  pkt_allocator_(nullptr),
+ payload_handler_(nullptr),
  packet_flow_packetizer(params, parent, cb)
 {
-  my_addr_ = node_id(params->get_int_param("id"));
-  init_loc_id(event_loc_id(my_addr_));
-
   stat_collector_ = packet_sent_stats_factory::
                         get_optional_param("stats", "null", params, parent);
 
@@ -71,10 +69,9 @@ packet_flow_nic_packetizer::packet_flow_nic_packetizer(sprockit::sim_parameters*
   pkt_allocator_ = packet_allocator_factory
       ::get_optional_param("packet_allocator", "structured_routable", params);
 
-  inj_buffer_->set_event_location(my_addr_);
-  ej_buffer_->set_event_location(my_addr_);
-
   inj_buffer_->set_stat_collector(buf_stats_);
+
+  payload_handler_ = new_handler(this, &packet_flow_nic_packetizer::recv_packet);
 }
 
 packet_flow_nic_packetizer::~packet_flow_nic_packetizer()
@@ -84,6 +81,7 @@ packet_flow_nic_packetizer::~packet_flow_nic_packetizer()
   if (stat_collector_) delete stat_collector_;
   if (buf_stats_) delete buf_stats_;
   if (pkt_allocator_) delete pkt_allocator_;
+  if (payload_handler_) delete payload_handler_;
 }
 
 void
@@ -93,19 +91,9 @@ packet_flow_nic_packetizer::set_acker(event_handler *handler)
 }
 
 void
-packet_flow_packetizer::handle(event *ev)
+packet_flow_nic_packetizer::recv_credit(event* ev)
 {
-  if (ev->is_credit()){
-    recv_credit(static_cast<packet_flow_credit*>(ev));
-  } else {
-    recv_packet(static_cast<packet_flow_payload*>(ev));
-  }
-}
-
-void
-packet_flow_nic_packetizer::recv_credit(packet_flow_credit* credit)
-{
-  inj_buffer_->handle_credit(credit);
+  inj_buffer_->handle_credit(ev);
   int vn = 0;
   sendWhatYouCan(vn);
 }
@@ -133,33 +121,33 @@ packet_flow_nic_packetizer::recv_packet_common(packet_flow_payload* pkt)
 
 void
 packet_flow_nic_packetizer::set_output(sprockit::sim_parameters* params,
-                                       int inj_port, connectable* sw)
+                                       int inj_port, event_handler* handler)
 {
-  event_handler* handler = safe_cast(event_handler, sw);
   inj_buffer_->set_output(params, 0, inj_port, handler);
 }
 
 void
 packet_flow_nic_packetizer::set_input(sprockit::sim_parameters* params,
-                                      int ej_port, connectable* sw)
+                                      int ej_port, event_handler* handler)
 {
-  event_handler* handler = safe_cast(event_handler, sw);
   int only_port = 0;
-  ej_buffer_->set_output(params, only_port, only_port, this);
+  ej_buffer_->set_output(params, only_port, only_port, payload_handler_);
   ej_buffer_->set_input(params, only_port, ej_port, handler);
 }
 
 void
-packet_flow_simple_packetizer::recv_packet(packet_flow_payload *pkt)
+packet_flow_simple_packetizer::recv_packet(event* ev)
 {
+  packet_flow_payload* pkt = static_cast<packet_flow_payload*>(ev);
   recv_packet_common(pkt);
   int vn = 0;
   packetArrived(vn, pkt);
 }
 
 void
-packet_flow_cut_through_packetizer::recv_packet(packet_flow_payload *pkt)
+packet_flow_cut_through_packetizer::recv_packet(event* ev)
 {
+  packet_flow_payload* pkt = static_cast<packet_flow_payload*>(ev);
   int vn = 0;
   recv_packet_common(pkt);
   timestamp delay(pkt->num_bytes() / pkt->bw());

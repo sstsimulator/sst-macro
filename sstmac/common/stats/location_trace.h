@@ -11,8 +11,13 @@ class location_trace :
 {
 
  public:
+  location_trace(sprockit::sim_parameters* params) :
+    stat_collector(params)
+  {
+  }
+
   std::string
-  to_string() const {
+  to_string() const override {
     return "location trace";
   }
 
@@ -30,36 +35,35 @@ class location_trace :
        event_loc_id& runner);
 
   void
-  dump_local_data();
+  dump_local_data() override;
 
   void
-  dump_global_data();
+  dump_global_data() override;
 
   void
-  global_reduce(parallel_runtime *rt);
+  global_reduce(parallel_runtime *rt) override;
 
   void
-  simulation_finished(timestamp end){}
+  simulation_finished(timestamp end) override {}
 
   location_trace*
   clone_me(int id) const {
-    location_trace* cln = new location_trace;
+    location_trace* cln = new location_trace(params_);
     cln->set_id(id);
     return cln;
   }
 
   stat_collector*
-  clone() const {
+  clone() const override {
     return clone_me(-1);
   }
 
   void
-  reduce(stat_collector* coll);
+  reduce(stat_collector* coll) override;
 
-  void clear();
+  void clear() override;
 
   virtual ~location_trace() {}
-
 
  private:
   struct event {

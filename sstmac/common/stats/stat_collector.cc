@@ -23,12 +23,6 @@ stat_collector::~stat_collector()
   // TODO Auto-generated destructor stub
 }
 
-void
-stat_collector::add_suffix(const std::string& suffix)
-{
-  fileroot_ = fileroot_ + "." + suffix;
-}
-
 bool
 stat_collector::check_open(std::fstream& myfile, const std::string& fname, std::ios::openmode ios_flags)
 {
@@ -43,17 +37,16 @@ stat_collector::check_open(std::fstream& myfile, const std::string& fname, std::
   return true;
 }
 
-void
-stat_collector::init_factory_params(sprockit::sim_parameters* params)
+stat_collector::stat_collector(sprockit::sim_parameters* params) :
+  registered_(false),
+  id_(-1),
+  params_(params)
 {
   fileroot_ = params->get_param("fileroot");
+  if (params->has_param("suffix")){
+    fileroot_ = fileroot_ + "." + params->get_param("suffix");
+  }
   id_ = params->get_optional_int_param("id", -1);
-}
-
-void
-stat_collector::clone_into(stat_collector *cln) const
-{
-  cln->fileroot_ = fileroot_;
 }
 
 stat_collector*
@@ -64,10 +57,14 @@ stat_collector::optional_build(sprockit::sim_parameters* params,
 {
   if (params->has_namespace(ns)){
     sprockit::sim_parameters* ns_params = params->get_namespace(ns);
+    if (suffix){
+      ns_params = ns_params->get_optional_namespace(suffix);
+      ns_params->add_param_override("suffix", suffix);
+    }
+
     stat_collector* stats = stat_collector_factory::get_optional_param(
           "type", deflt, ns_params);
 
-    if (suffix) stats->add_suffix(suffix);
     return stats;
   } else {
     return nullptr;

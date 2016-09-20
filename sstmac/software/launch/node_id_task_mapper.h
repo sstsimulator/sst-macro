@@ -23,13 +23,18 @@ class node_id_task_mapper : public task_mapper
  public:
   node_id_task_mapper(sprockit::sim_parameters* params);
 
+  std::string
+  to_string() const override {
+    return "node id task mapper";
+  }
+
   virtual ~node_id_task_mapper() throw() {}
 
   void map_ranks(const app_id& aid,
                 const ordered_node_set& nodes,
                 int ppn,
                 std::vector<node_id>& result,
-                int nproc);
+                int nproc) override;
 
  protected:
   std::string listfile_;

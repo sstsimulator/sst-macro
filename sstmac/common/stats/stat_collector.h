@@ -18,6 +18,7 @@
 #include <sstmac/common/event_scheduler_fwd.h>
 #include <sstmac/backends/common/parallel_runtime_fwd.h>
 #include <sprockit/factories/factory.h>
+#include <sprockit/printable.h>
 
 namespace sstmac {
 
@@ -29,7 +30,7 @@ namespace sstmac {
  * because no merging of stat objects takes place, which means
  * you'll get one file for each stat object.
  */
-class stat_collector
+class stat_collector : public sprockit::printable
 {
 
  public:
@@ -63,14 +64,6 @@ class stat_collector
   virtual stat_collector*
   clone() const = 0;
 
-  virtual std::string
-  to_string() const {
-    return "stat_collector";
-  }
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params);
-
   bool
   registered() const {
     return registered_;
@@ -91,9 +84,6 @@ class stat_collector
     registered_ = reg;
   }
 
-  void
-  add_suffix(const std::string& suffix);
-
   std::string
   fileroot() const {
     return fileroot_;
@@ -107,14 +97,7 @@ class stat_collector
 
 
  protected:
-  stat_collector() :
-    registered_(false),
-    id_(-1)
-  {
-  }
-
-  void
-  clone_into(stat_collector* cln) const ;
+  stat_collector(sprockit::sim_parameters* params);
 
   /**
    * Check to see if the file is open.  If not, try and open it and set
@@ -129,6 +112,7 @@ class stat_collector
   bool registered_;
   int id_;
   std::string fileroot_;
+  sprockit::sim_parameters* params_;
 
  private:
 

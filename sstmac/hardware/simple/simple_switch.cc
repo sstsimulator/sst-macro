@@ -59,10 +59,27 @@ simple_switch::simple_switch(sprockit::sim_parameters *params, uint64_t id, even
 
   nics_.resize(top_->num_nodes());
   neighbors_.resize(top_->num_nodes());
+#if !SSTMAC_INTEGRATED_SST_CORE
+  mtl_handler_ = new_link_handler(this, &simple_switch::handle);
+#endif
 }
 
 simple_switch::~simple_switch()
 {
+#if !SSTMAC_INTEGRATED_SST_CORE
+  delete mtl_handler_;
+#endif
+}
+
+link_handler*
+simple_switch::payload_handler(int port) const
+{
+#if SSTMAC_INTEGRATED_SST_CORE
+  return new_link_handler(const_cast<simple_switch*>(this),
+                          &simple_switch::handle);
+#else
+  return mtl_handler_;
+#endif
 }
 
 void
@@ -80,7 +97,7 @@ simple_switch::add_nic(event_handler* theNic, node_id nid)
 void
 simple_switch::connect_output(sprockit::sim_parameters *params,
                               int src_outport, int dst_inport,
-                              connectable *mod)
+                              event_handler *mod)
 {
   spkt_throw_printf(sprockit::unimplemented_error,
                     "simple_switch::connect: should not be called");
@@ -89,7 +106,7 @@ simple_switch::connect_output(sprockit::sim_parameters *params,
 void
 simple_switch::connect_input(sprockit::sim_parameters *params,
                               int src_outport, int dst_inport,
-                              connectable *mod)
+                              event_handler *mod)
 {
   spkt_throw_printf(sprockit::unimplemented_error,
                     "simple_switch::connect: should not be called");

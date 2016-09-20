@@ -26,7 +26,7 @@ class mpi_runtime :
   mpi_runtime(sprockit::sim_parameters* params);
 
   std::string
-  to_string() const {
+  to_string() const override {
     return "mpi runtime";
   }
 

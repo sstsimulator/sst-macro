@@ -2,6 +2,7 @@
 #define CONNECTION_H
 
 #include <sstmac/common/event_scheduler.h>
+#include <sstmac/common/event_callback.h>
 #include <sprockit/sim_parameters_fwd.h>
 
 #define connectable_type_invalid(ty) \
@@ -11,6 +12,7 @@
 
 namespace sstmac {
 namespace hw {
+
 
 
 class connectable
@@ -26,14 +28,20 @@ class connectable
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    connectable* mod) = 0;
+    event_handler* handler) = 0;
 
   virtual void
   connect_input(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    connectable* mod) = 0;
+    event_handler* handler) = 0;
+
+  virtual link_handler*
+  ack_handler(int port) const = 0;
+
+  virtual link_handler*
+  payload_handler(int port) const = 0;
 
 };
 
@@ -42,10 +50,15 @@ class connectable_component :
   public connectable
 {
  protected:
-  connectable_component(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr)
-    : event_scheduler(params, id, mgr)
+  connectable_component(sprockit::sim_parameters* params,
+                        uint64_t cid,
+                        event_loc_id id,
+                        event_manager* mgr,
+                        event_handler* self)
+    : event_scheduler(params, cid, id, mgr, self)
   {
   }
+
 };
 
 class connectable_subcomponent :
@@ -53,14 +66,14 @@ class connectable_subcomponent :
   public connectable
 {
 protected:
- connectable_subcomponent(event_scheduler* parent)
-   : event_subscheduler(parent)
+ connectable_subcomponent(event_scheduler* parent,
+                          event_handler* self)
+   : event_subscheduler(parent, self)
  {
  }
 };
 
 }
-
 }
 
 #endif // CONNECTION_H

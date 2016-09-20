@@ -71,11 +71,6 @@ class task_ftq_calendar :
 
   void collect(int event_typeid, long ticks_begin, long ticks);
 
-  virtual std::string
-  to_string() const {
-    return "TaskFTQCalendar";
-  }
-
   void dump(std::ofstream& os);
 
  protected:
@@ -111,11 +106,6 @@ class app_ftq_calendar :
     @param num_ticks The duration of the event
   */
   void collect(int event_typeid, int tid, long ticks_begin, long num_ticks);
-
-  virtual std::string
-  to_string() const {
-    return "AppFTQCalendar";
-  }
 
   void
   reduce(app_ftq_calendar* cal);
@@ -155,7 +145,7 @@ class ftq_calendar :
   public stat_collector
 {
  public:
-  ftq_calendar();
+  ftq_calendar(sprockit::sim_parameters* params);
 
   void init(long nticks_per_epoch);
 
@@ -171,42 +161,34 @@ class ftq_calendar :
 
   void register_app(int aid, const std::string& appname);
 
-  void simulation_finished(timestamp end);
+  void simulation_finished(timestamp end) override;
 
-  void dump_local_data();
+  void dump_local_data() override;
 
-  void dump_global_data();
+  void dump_global_data() override;
 
-  void clear();
+  void clear() override;
 
-  void reduce(stat_collector* coll);
+  void reduce(stat_collector* coll) override;
 
-  void global_reduce(parallel_runtime *rt);
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
+  void global_reduce(parallel_runtime *rt) override;
 
   ftq_calendar*
   clone_me(int id) const {
-    ftq_calendar* cln = new ftq_calendar;
-    clone_into(cln);
+    ftq_calendar* cln = new ftq_calendar(params_);
     cln->set_id(id);
     return cln;
   }
 
   stat_collector*
-  clone() const {
+  clone() const override {
     return clone_me(-1);
   }
 
-  virtual std::string
-  to_string() const {
+  std::string
+  to_string() const override {
     return "FTQCalendar";
   }
-
- protected:
-  void
-  clone_into(ftq_calendar* cln) const;
 
  private:
   static spkt_unordered_map<int, app_ftq_calendar*> calendars_;

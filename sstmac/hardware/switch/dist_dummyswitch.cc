@@ -23,7 +23,7 @@ dist_dummy_switch::connect_input(
   sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
-  connectable* comp)
+  event_handler* comp)
 {
 }
 
@@ -32,7 +32,7 @@ dist_dummy_switch::connect_output(
   sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
-  connectable* comp)
+  event_handler* comp)
 {
 }
 

@@ -11,7 +11,7 @@ class null_scheduler :
 {
  public:
   std::string
-  to_string() const {
+  to_string() const override {
     return "null scheduler";
   }
 

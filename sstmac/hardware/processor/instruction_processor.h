@@ -28,15 +28,10 @@ class instruction_processor :
   instruction_processor(sprockit::sim_parameters* params,
                         memory_model* mem, node* nd);
 
-  virtual std::string
-  to_string() const {
-    return "instruction processor";
-  }
-
   virtual ~instruction_processor();
 
   virtual void
-  compute(event* ev, callback* cb);
+  compute(event* ev, callback* cb) override;
 
  protected:
   void

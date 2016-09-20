@@ -64,9 +64,7 @@ class sstmac_global_builtin : public sstmac_global
                      "copy constructor should never be called for primitive global");
   }
 
-  virtual
   ~sstmac_global_builtin() {
-
   }
 
   void
@@ -77,7 +75,7 @@ class sstmac_global_builtin : public sstmac_global
     }
   }
 
-  virtual T&
+  T&
   get_val() const {
     process_context ptxt = current_context();
     val_map& vals = const_cast<val_map&> (vals_);
@@ -99,7 +97,7 @@ class sstmac_global_builtin : public sstmac_global
     return const_cast<T&> (init_);
   }
 
-  virtual std::string
+  std::string
   to_string() const {
     std::stringstream ss;
     ss << get_val();

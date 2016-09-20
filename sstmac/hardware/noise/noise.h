@@ -35,11 +35,6 @@ class gaussian_noise_model :
 
   ~gaussian_noise_model();
 
-  std::string
-  to_string() const {
-    return "gaussian noise model";
-  }
-
   double value();
 
  protected:

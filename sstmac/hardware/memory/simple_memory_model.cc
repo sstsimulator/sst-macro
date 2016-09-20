@@ -27,7 +27,7 @@ simple_memory_model::~simple_memory_model()
 }
 
 simple_memory_model::simple_memory_model(sprockit::sim_parameters* params, node* nd)
-  : memory_model(params, nd)
+  : memory_model(params, nd, nullptr) //no self events
 {
   /** sstkeyword { gui=100ns; } */
   lat_ = params->get_time_param("latency");

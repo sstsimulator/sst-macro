@@ -33,26 +33,34 @@ class simple_nic :
   /// Goodbye.
   virtual ~simple_nic() {}
 
-  void handle(event *ev) override;
+  void handle(event *ev);
 
   virtual void
   connect_output(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    connectable* mod) override;
+    event_handler* handler) override;
 
   virtual void
   connect_input(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    connectable* mod) override;
+    event_handler* handler) override;
 
   virtual std::string
   to_string() const override {
     return "simple nic";
   }
+
+  link_handler*
+  ack_handler(int port) const override {
+    return nullptr; //should never handle acks
+  }
+
+  link_handler*
+  payload_handler(int port) const override;
 
  protected:
   /**
@@ -68,6 +76,10 @@ class simple_nic :
   timestamp inj_lat_;
 
   timestamp next_free_;
+
+#if !SSTMAC_INTEGRATED_SST_CORE
+  link_handler* payload_handler_;
+#endif
 
 };
 

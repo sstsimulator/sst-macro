@@ -27,11 +27,6 @@ class unblock_event : public event_queue_entry
  public:
   unblock_event(operating_system* os, key* k);
 
-  std::string
-  to_string() const {
-    return "unblock event";
-  }
-
   virtual void execute();
 
  protected:
@@ -45,11 +40,6 @@ class timeout_event : public event_queue_entry
 
  public:
   timeout_event(operating_system* os, key* k);
-
-  std::string
-  to_string() const {
-    return "timeout event";
-  }
 
   virtual void execute();
 

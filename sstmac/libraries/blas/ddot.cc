@@ -16,12 +16,12 @@ class default_ddot :
   }
 
   std::string
-  to_string() const {
+  to_string() const override {
     return "default ddot";
   }
 
   compute_event*
-  op_1d(int n);
+  op_1d(int n) override;
 
  protected:
   double loop_unroll_;

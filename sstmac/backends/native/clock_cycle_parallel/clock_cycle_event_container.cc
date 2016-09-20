@@ -60,7 +60,9 @@ clock_cycle_event_map::schedule_incoming(const std::vector<void*>& buffers)
     switch_id sid = dst.convert_to_switch_id();
     event_debug("epoch %d: scheduling incoming event at %12.8e to switch %d",
       epoch_, time.sec(), int(sid));
-    dst_handler = interconn_->switch_at(sid);
+
+    spkt_throw(sprockit::unimplemented_error, "parallel runs");
+    dst_handler = nullptr; interconn_->switch_at(sid);
 
     schedule(time, seqnum, new handler_event_queue_entry(msg, dst_handler, src));
   }

@@ -42,15 +42,6 @@ class launch_event :
   {
   }
 
-  /**
-   * Stringifier
-   * @return String description
-   */
-  virtual std::string
-  to_string() const {
-    return "launch event";
-  }
-
   task_id
   tid() const {
     return tid_;

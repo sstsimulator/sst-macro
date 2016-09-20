@@ -22,7 +22,7 @@ class xpress_ring :
   virtual ~xpress_ring() {}
 
   virtual std::string
-  to_string() const {
+  to_string() const override {
     return "xpress ring topology";
   }
 

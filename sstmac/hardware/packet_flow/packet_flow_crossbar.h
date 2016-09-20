@@ -24,10 +24,14 @@ class packet_flow_NtoM_queue :
     return event_subscheduler::thread_id();
   }
 
-  virtual void
-  do_handle_payload(packet_flow_payload* pkt) override {
-    handle_routed_payload(pkt);
-  }
+  void
+  handle_payload(event* ev) override;
+
+  void
+  handle_credit(event* ev) override;
+
+  event_handler*
+  credit_handler();
 
   void
   set_input(sprockit::sim_parameters* params,
@@ -36,9 +40,6 @@ class packet_flow_NtoM_queue :
   void
   set_output(sprockit::sim_parameters* params,
              int my_outport, int dst_inport, event_handler* output) override;
-
-  virtual void
-  handle_credit(packet_flow_credit* msg) override;
 
   virtual void
   start_message(message* msg);
@@ -76,10 +77,6 @@ class packet_flow_NtoM_queue :
   deadlock_check(event* ev) override;
 
  protected:
-  void
-  handle_routed_payload(packet_flow_payload* pkt);
-
- protected:
   typedef spkt_unordered_map<int, packet_flow_input> input_map;
 
   typedef std::vector<packet_flow_output> output_map;
@@ -100,6 +97,8 @@ class packet_flow_NtoM_queue :
   int port_offset_;
   int port_div_;
   int port_mod_;
+
+  event_handler* credit_handler_;
 
   std::map<int, std::set<int> > deadlocked_channels_;
 
@@ -138,11 +137,6 @@ class packet_flow_demuxer :
   public packet_flow_NtoM_queue
 {
  public:
-  virtual std::string
-  to_string() const override {
-    return "packet_flow_demuxer";
-  }
-
   packet_flow_demuxer(sprockit::sim_parameters* params,
                       event_scheduler* parent);
 

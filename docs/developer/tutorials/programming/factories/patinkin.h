@@ -9,7 +9,7 @@ class mandy_patinkin :
 
  public:
   std::string
-  to_string() const {
+  to_string() const override {
     return "inigo montoya";
   }
 

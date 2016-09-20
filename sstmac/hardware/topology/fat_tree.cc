@@ -405,6 +405,8 @@ simple_fat_tree::configure_nonuniform_switch_params(switch_id src,
   double bw = xbar_params->get_bandwidth_param("bandwidth");
   double xbar_bw = bw * multiplier;
   (*xbar_params)["bandwidth"].setBandwidth(xbar_bw/1e9, "GB/s");
+
+  configure_individual_port_params(src, switch_params);
 }
 
 void

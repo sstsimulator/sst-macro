@@ -54,7 +54,8 @@ packet_flow_network_buffer::packet_flow_network_buffer(
     num_vc_(params->get_int_param("num_vc")),
     queues_(num_vc_),
     credits_(num_vc_, 0),
-    packet_size_(params->get_byte_length_param("mtu"))
+    packet_size_(params->get_byte_length_param("mtu")),
+    payload_handler_(nullptr)
 {
   int credits = params->get_byte_length_param("credits");
   long num_credits_per_vc = credits / num_vc_;
@@ -66,9 +67,10 @@ packet_flow_network_buffer::packet_flow_network_buffer(
 }
 
 void
-packet_flow_network_buffer::handle_credit(packet_flow_credit* msg)
+packet_flow_network_buffer::handle_credit(event* ev)
 {
-  int vc = msg->vc();
+  packet_flow_credit* credit = static_cast<packet_flow_credit*>(ev);
+  int vc = credit->vc();
 #if SSTMAC_SANITY_CHECK
   if (vc >= credits_.size()) {
     spkt_throw_printf(sprockit::value_error,
@@ -78,15 +80,15 @@ packet_flow_network_buffer::handle_credit(packet_flow_credit* msg)
   }
 #endif
   int& num_credits = credits_[vc];
-  num_credits += msg->num_credits();
+  num_credits += credit->num_credits();
   //we've cleared out some of the delay
-  bytes_delayed_ -= msg->num_credits();
+  bytes_delayed_ -= credit->num_credits();
 
   packet_flow_debug(
     "On %s with %d credits, handling {%s} for vc:%d -> byte delay now %d",
      to_string().c_str(),
      num_credits,
-     msg->to_string().c_str(),
+     credit->to_string().c_str(),
      vc,
      bytes_delayed_);
 
@@ -101,12 +103,23 @@ packet_flow_network_buffer::handle_credit(packet_flow_credit* msg)
     payload = queues_[vc].pop(num_credits);
   }
 
-  delete msg;
+  delete credit;
+}
+
+event_handler*
+packet_flow_network_buffer::payload_handler()
+{
+  if (!payload_handler_){
+    payload_handler_ = new_handler(this, &packet_flow_network_buffer::handle_payload);
+  }
+  return payload_handler_;
 }
 
 void
-packet_flow_network_buffer::do_handle_payload(packet_flow_payload* pkt)
+packet_flow_network_buffer::handle_payload(event* ev)
 {
+  auto pkt = static_cast<packet_flow_payload*>(ev);
+  pkt->set_arrival(now());
   int dst_vc = pkt->vc();
 #if SSTMAC_SANITY_CHECK
   //vc default to uninit instead of zero to make sure routers set VC
@@ -284,6 +297,7 @@ packet_flow_network_buffer::queue_length() const
 packet_flow_network_buffer::~packet_flow_network_buffer()
 {
   if (arb_) delete arb_;
+  if (payload_handler_) delete payload_handler_;
 }
 
 std::string
@@ -306,8 +320,10 @@ packet_flow_eject_buffer::return_credit(packet* pkt)
 }
 
 void
-packet_flow_eject_buffer::do_handle_payload(packet_flow_payload* pkt)
+packet_flow_eject_buffer::handle_payload(event* ev)
 {
+  auto pkt = static_cast<packet_flow_payload*>(ev);
+  pkt->set_arrival(now());
   debug_printf(sprockit::dbg::packet_flow,
     "On %s, handling {%s}",
     to_string().c_str(),
@@ -317,7 +333,7 @@ packet_flow_eject_buffer::do_handle_payload(packet_flow_payload* pkt)
 }
 
 void
-packet_flow_eject_buffer::handle_credit(packet_flow_credit* pkt)
+packet_flow_eject_buffer::handle_credit(event* ev)
 {
   spkt_throw_printf(sprockit::illformed_error,
                    "packet_flow_eject_buffer::handle_credit: should not handle credits");
@@ -334,28 +350,30 @@ packet_flow_injection_buffer(sprockit::sim_parameters* params, event_scheduler* 
 }
 
 void
-packet_flow_injection_buffer::handle_credit(packet_flow_credit* msg)
+packet_flow_injection_buffer::handle_credit(event* ev)
 {
+  packet_flow_credit* credit = static_cast<packet_flow_credit*>(ev);
   debug_printf(sprockit::dbg::packet_flow,
     "On %s with %d credits, handling {%s} -> byte delay now %d",
      to_string().c_str(),
      credits_,
-     msg->to_string().c_str(),
+     credit->to_string().c_str(),
      bytes_delayed_);
 
-  credits_ += msg->num_credits();
+  credits_ += credit->num_credits();
   //we've cleared out some of the delay
-  bytes_delayed_ -= msg->num_credits();
+  bytes_delayed_ -= credit->num_credits();
 
-  delete msg;
+  delete credit;
   //send_what_you_can();
-
   //delete msg;
 }
 
 void
-packet_flow_injection_buffer::do_handle_payload(packet_flow_payload* pkt)
+packet_flow_injection_buffer::handle_payload(event* ev)
 {
+  auto pkt = static_cast<packet_flow_payload*>(ev);
+  pkt->set_arrival(now());
   credits_ -= pkt->byte_length();
   //we only get here if we cleared the credits
   send(arb_, pkt, input_, output_);

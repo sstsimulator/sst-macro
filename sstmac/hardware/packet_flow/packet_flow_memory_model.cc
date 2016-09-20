@@ -38,6 +38,8 @@ packet_flow_memory_packetizer::packet_flow_memory_packetizer(
       ::get_optional_param("packet_allocator", "structured_routable", params);
 
   init_noise_model();
+
+  self_credit_handler_ = new_handler(this, &packet_flow_memory_packetizer::recv_credit);
 }
 
 packet_flow_memory_packetizer::~packet_flow_memory_packetizer()
@@ -49,7 +51,7 @@ packet_flow_memory_packetizer::~packet_flow_memory_packetizer()
 }
 
 packet_flow_memory_model::packet_flow_memory_model(sprockit::sim_parameters *params, node *nd) :
-  memory_model(params, nd)
+  memory_model(params, nd, nullptr)
 {
   nchannels_ = 4;
   for (int i=0; i < nchannels_; ++i){
@@ -155,16 +157,17 @@ packet_flow_memory_packetizer::handle_payload(int vn, packet_flow_payload* pkt)
     int ignore_vc = -1;
     packet_flow_credit* credit = new packet_flow_credit(vn, ignore_vc, pkt->num_bytes());
     //here we do not optimistically send credits = only when the packet leaves
-    send_self_event(st.tail_leaves, credit);
+    schedule(st.tail_leaves, self_credit_handler_, credit);
   }
 }
 
 void
-packet_flow_memory_packetizer::recv_credit(packet_flow_credit* msg)
+packet_flow_memory_packetizer::recv_credit(event* ev)
 {
-  debug("got credit %s on vn %d", msg->to_string().c_str(), msg->port());
+  packet_flow_credit* credit = static_cast<packet_flow_credit*>(ev);
+  debug("got credit %s on vn %d", credit->to_string().c_str(), credit->port());
 
-  int channel = msg->port();
+  int channel = credit->port();
   sendWhatYouCan(channel);
 }
 

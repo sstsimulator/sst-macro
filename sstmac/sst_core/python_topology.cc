@@ -224,9 +224,7 @@ sys_init(SystemPy_t* self, PyObject* args, PyObject* kwargs)
   self->macro_topology = sstmac::hw::topology::static_topology(self->params);
 
   sprockit::sim_parameters* switch_params = self->params->get_namespace("switch");
-  if (self->macro_topology->uniform_switches_non_uniform_network_ports()){
-    self->macro_topology->configure_individual_port_params(sstmac::switch_id(0), switch_params);
-  }
+  self->macro_topology->configure_individual_port_params(sstmac::switch_id(0), switch_params);
 
   return 0;
 }

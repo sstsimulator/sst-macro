@@ -20,14 +20,14 @@ class ugal_router :
   ugal_router(sprockit::sim_parameters* params, topology* top, network_switch* netsw);
 
   std::string
-  to_string() const {
+  to_string() const override {
     return "ugal";
   }
 
  protected:
   next_action_t initial_step(
     routable* rtbl,
-    packet* pkt);
+    packet* pkt) override;
 
   /**
     The topology object specifies a virtual channel based purely on geometry.
@@ -40,7 +40,7 @@ class ugal_router :
     @return The second stage virtual channel
   */
   virtual int
-  first_stage_vc(int topology_vc) {
+  first_stage_vc(int topology_vc) override {
     return 3 * topology_vc;
   }
 
@@ -55,7 +55,7 @@ class ugal_router :
     @return The second stage virtual channel
   */
   virtual int
-  second_stage_vc(int topology_vc) {
+  second_stage_vc(int topology_vc) override {
     return 3 * topology_vc + 1;
   }
 

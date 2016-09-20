@@ -30,12 +30,10 @@ namespace sw {
 SpktRegister("dumpi", node_allocator, dumpi_allocation,
             "Allocate nodes directly from the trace files themselves");
 
-void
-dumpi_allocation::init_factory_params(sprockit::sim_parameters* params)
+dumpi_allocation::dumpi_allocation(sprockit::sim_parameters* params)
+ : node_allocator(params)
 {
-  node_allocator::init_factory_params(params);
   metafile_ = params->get_param("launch_dumpi_metaname");
-
 }
 
 void

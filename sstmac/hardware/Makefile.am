@@ -43,7 +43,6 @@ nobase_library_include_HEADERS = \
   common/connection.h \
   common/connection_fwd.h \
   common/failable.h \
-  common/fail_event.h \
   common/packet.h \
   common/packetizer.h \
   common/packet_fwd.h \
@@ -60,7 +59,6 @@ nobase_library_include_HEADERS = \
   packet_flow/packet_flow_arbitrator.h \
   packet_flow/packet_flow_buffer.h \
   packet_flow/packet_flow_crossbar.h \
-  packet_flow/packet_flow_handler.h \
   packet_flow/packet_flow_nic.h \
   packet_flow/packet_flow_packetizer.h \
   packet_flow/packet_flow_sender.h \
@@ -132,7 +130,6 @@ libsstmac_hw_la_SOURCES =  \
   packet_flow/packet_flow_arbitrator.cc \
   packet_flow/packet_flow_buffer.cc \
   packet_flow/packet_flow_crossbar.cc \
-  packet_flow/packet_flow_handler.cc \
   packet_flow/packet_flow_nic.cc \
   packet_flow/packet_flow_packetizer.cc \
   packet_flow/packet_flow_param_expander.cc \

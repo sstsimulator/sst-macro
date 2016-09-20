@@ -45,14 +45,10 @@ class nic :
   public failable,
   public connectable_subcomponent
 {
-#if SSTMAC_INTEGRATED_SST_CORE
- public:
-  void handle_event(SST::Event* ev);
-#endif
 
  public:
   virtual std::string
-  to_string() const = 0;
+  to_string() const override = 0;
 
   virtual ~nic();
 
@@ -73,6 +69,13 @@ class nic :
     parent_ = nd;
   }
 
+  event_handler*
+  mtl_handler() const {
+    return event_mtl_handler_;
+  }
+
+  void mtl_handle(event* ev);
+
   void
   set_speedy_switch(event_handler* handler){
     speedy_switch_ = handler;
@@ -84,17 +87,6 @@ class nic :
    */
   static void
   delete_statics();
-
-  virtual void
-  handle(event *ev) = 0;
-
-  void
-  mtl_handle(event* ev);
-
-  event_handler*
-  mtl_handler() const {
-    return mtl_handler_;
-  }
 
   /**
     Perform the set of operations standard to all NICs.
@@ -155,6 +147,11 @@ class nic :
   node* parent_;
 
   event_handler* speedy_switch_;
+  event_handler* event_mtl_handler_;
+
+#if !SSTMAC_INTEGRATED_SST_CORE
+  link_handler* link_mtl_handler_;
+#endif
 
  private:
   stat_spyplot* spy_num_messages_;
@@ -162,7 +159,6 @@ class nic :
   stat_histogram* hist_msg_size_;
   stat_local_int* local_bytes_sent_;
   stat_global_int* global_bytes_sent_;
-  event_handler* mtl_handler_;
 
  private:
   /**

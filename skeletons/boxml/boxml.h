@@ -283,7 +283,7 @@ namespace lblxml
     consume_params(sprockit::sim_parameters* params);
 
     std::string
-    to_string() const
+    to_string() const override
     {
       return "boxml";
     }

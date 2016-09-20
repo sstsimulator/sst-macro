@@ -15,7 +15,6 @@
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/processor/processor.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/launch/machine_descriptor.h>
 #include <sstmac/software/launch/launcher.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
 

@@ -64,7 +64,7 @@ class config_message :
   }
 
   virtual void
-  serialize_order(sumi::serializer &ser){
+  serialize_order(sumi::serializer &ser) override {
     ser & recv_buf_;
     sumi::message::serialize_order(ser);
   }
@@ -92,7 +92,7 @@ class rdma_message :
   }
 
   virtual void
-  serialize_order(sumi::serializer& ser){
+  serialize_order(sumi::serializer& ser) override {
     ser & iter_;
     ser & start_;
     ser & finish_;
@@ -100,7 +100,7 @@ class rdma_message :
   }
 
   sumi::message*
-  clone() const {
+  clone() const override {
     rdma_message* cln = new rdma_message(iter_, num_bytes_);
     cln->set_start(start_);
     cln->set_finish(finish_);

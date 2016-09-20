@@ -30,8 +30,6 @@ class packet_flow_nic :
 
   virtual ~packet_flow_nic() throw ();
 
-  void handle(event *ev) override;
-
   void notify(int vn, message* msg) override {
     recv_message(msg);
   }
@@ -41,22 +39,31 @@ class packet_flow_nic :
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    connectable* mod) override;
+    event_handler* mod) override;
 
   virtual void
   connect_input(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    connectable* mod) override;
+    event_handler* mod) override;
+
+  link_handler*
+  ack_handler(int port) const override;
+
+  link_handler*
+  payload_handler(int port) const override;
 
  protected:
   virtual void
   do_send(network_message* payload) override;
 
  protected:
-  packetizer* packetizer_;
-
+  packet_flow_nic_packetizer* packetizer_;
+#if !SSTMAC_INTEGRATED_SST_CORE
+  link_handler* payload_handler_;
+  link_handler* ack_handler_;
+#endif
 };
 
 class packet_flow_netlink :
@@ -72,31 +79,42 @@ class packet_flow_netlink :
     return "packet flow netlink";
   }
 
+  void handle_credit(event* ev);
+
+  void handle_payload(event* ev);
+
+  link_handler*
+  payload_handler(int port) const override;
+
+  link_handler*
+  ack_handler(int port) const override;
+
   virtual void
   connect_output(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    connectable* mod) override;
+    event_handler* mod) override;
 
   virtual void
   connect_input(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    connectable* mod) override;
+    event_handler* mod) override;
 
   void
   deadlock_check() override;
-
-  void
-  handle(event* ev) override;
 
  private:
   static const int really_big_buffer;
   packet_flow_crossbar* block_;
   int tile_rotater_;
   bool inited_;
+#if !SSTMAC_INTEGRATED_SST_CORE
+  link_handler* payload_handler_;
+  link_handler* ack_handler_;
+#endif
 };
 
 }

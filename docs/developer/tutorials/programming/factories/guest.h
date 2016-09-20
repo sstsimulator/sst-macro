@@ -9,7 +9,7 @@ class christopher_guest :
 
  public:
   std::string
-  to_string() const {
+  to_string() const override {
     return "count rugen";
   }
 

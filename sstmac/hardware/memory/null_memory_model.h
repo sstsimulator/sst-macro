@@ -11,8 +11,13 @@ class null_memory_model :
 {
  public:
   null_memory_model(sprockit::sim_parameters* params, node* nd) :
-    memory_model(params, nd)
+    memory_model(params, nd, nullptr)
   {
+  }
+
+  std::string
+  to_string() const {
+    return "null memory model";
   }
 
   virtual ~null_memory_model();

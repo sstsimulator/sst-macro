@@ -22,26 +22,26 @@ class memory_message : public message
   {
   }
 
-  long byte_length() const {
+  long byte_length() const override {
     return bytes_;
   }
 
-  uint64_t flow_id() const {
+  uint64_t flow_id() const override {
     return id_;
   }
 
   std::string
-  to_string() const {
+  to_string() const override {
     return "memory message";
   }
 
   node_id
-  toaddr() const {
+  toaddr() const override {
     return node_id();
   }
 
   node_id
-  fromaddr() const {
+  fromaddr() const override {
     return node_id();
   }
 
@@ -59,7 +59,8 @@ class packet_flow_memory_packetizer : public packet_flow_packetizer
 {
  public:
   packet_flow_memory_packetizer(sprockit::sim_parameters* params,
-                          event_scheduler* parent, packetizer_callback* cb);
+                          event_scheduler* parent,
+                          packetizer_callback* cb);
   
   ~packet_flow_memory_packetizer();
 
@@ -69,10 +70,10 @@ class packet_flow_memory_packetizer : public packet_flow_packetizer
   }
 
   void
-  recv_credit(packet_flow_credit* credit);
+  recv_credit(event* ev);
 
   void
-  recv_packet(packet_flow_payload* pkt){}
+  recv_packet(event* ev){}
 
   void inject(int vn, long bytes, long byte_offset, message *payload);
 
@@ -96,6 +97,7 @@ class packet_flow_memory_packetizer : public packet_flow_packetizer
   noise_model* interval_noise_;
   int num_noisy_intervals_;
   packet_allocator* pkt_allocator_;
+  event_handler* self_credit_handler_;
 
 };
 
@@ -108,6 +110,11 @@ class packet_flow_memory_model :
   packet_flow_memory_model(sprockit::sim_parameters* params, node* nd);
 
   virtual ~packet_flow_memory_model();
+
+  std::string
+  to_string() const {
+    return "packet flow memory model";
+  }
 
   void
   schedule(timestamp t, event_handler *handler, message*msg){

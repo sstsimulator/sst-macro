@@ -10,9 +10,10 @@ namespace sstmac {
 
 SpktRegister("local_int", stat_collector, stat_local_int);
 
-stat_local_int::stat_local_int() :
+stat_local_int::stat_local_int(sprockit::sim_parameters* params) :
     size_(0),
-    value_(0)
+    value_(0),
+    stat_collector(params)
 {
 }
 
@@ -69,17 +70,6 @@ void
 stat_local_int::collect(int value)
 {
   value_ += value;
-}
-
-void
-stat_local_int::clone_into(stat_local_int* vec) const {
-  stat_collector::clone_into(vec);
-}
-
-void
-stat_local_int::init_factory_params(sprockit::sim_parameters *params)
-{
-  stat_collector::init_factory_params(params);
 }
 
 void

@@ -29,13 +29,18 @@ class block_task_mapper : public task_mapper
   {
   }
 
+  std::string
+  to_string() const override {
+    return "block task mapper";
+  }
+
   virtual
   ~block_task_mapper() throw ();
 
   virtual void
   map_ranks(const app_id& aid,
      const ordered_node_set& nodes, int ppn,
-     std::vector<node_id> &result, int nproc);
+     std::vector<node_id> &result, int nproc) override;
 
 };
 

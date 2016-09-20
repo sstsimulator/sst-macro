@@ -3,6 +3,7 @@
 
 #include <sprockit/util.h>
 #include <sprockit/ptr_type.h>
+#include <sprockit/printable.h>
 #include <sumi/serialization.h>
 #include <sumi/config.h>
 
@@ -24,6 +25,7 @@ namespace sumi {
 
 class message :
   public sprockit::ptr_type,
+  public sprockit::printable,
   public sumi::serializable,
   public sumi::serializable_type<message>
 {
@@ -31,7 +33,7 @@ class message :
 
  public:
   virtual std::string
-  to_string() const;
+  to_string() const override;
 
   typedef enum {
     header,
@@ -102,7 +104,7 @@ class message :
   is_nic_ack() const;
 
   virtual void
-  serialize_order(sumi::serializer &ser);
+  serialize_order(sumi::serializer &ser) override;
 
   void
   set_payload_type(payload_type_t ty) {

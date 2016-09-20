@@ -17,20 +17,20 @@ class direct_alltoallv_actor :
     send_counts_(send_counts), recv_counts_(recv_counts) {}
 
   std::string
-  to_string() const {
+  to_string() const override {
     return "bruck all-to-allv actor";
   }
 
  protected:
-  void finalize();
+  void finalize() override;
 
-  void finalize_buffers();
+  void finalize_buffers() override;
 
-  void init_buffers(void *dst, void *src);
+  void init_buffers(void *dst, void *src) override;
 
-  void init_dag();
+  void init_dag() override;
 
-  void buffer_action(void *dst_buffer, void *msg_buffer, action* ac);
+  void buffer_action(void *dst_buffer, void *msg_buffer, action* ac) override;
 
  private:
   void add_action(
@@ -52,25 +52,25 @@ class direct_alltoallv_collective :
 
  public:
   std::string
-  to_string() const {
+  to_string() const override {
     return "all-to-all";
   }
 
   dag_collective_actor*
-  new_actor() const {
+  new_actor() const override {
     return new direct_alltoallv_actor(send_counts_, recv_counts_);
   }
 
   dag_collective*
-  clone() const {
+  clone() const override {
     return new direct_alltoallv_collective;
   }
 
-  void init_send_counts(int* nelems){
+  void init_send_counts(int* nelems) override {
     send_counts_ = nelems;
   }
 
-  void init_recv_counts(int* nelems){
+  void init_recv_counts(int* nelems) override {
     recv_counts_ = nelems;
   }
 

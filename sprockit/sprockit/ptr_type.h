@@ -53,13 +53,6 @@ class ptr_type
 
 };
 
-class printable_ptr_type : public ptr_type
-{
- public:
-  virtual std::string
-  to_string() const = 0;
-};
-
 template <class Out, class In>
 sprockit::refcount_ptr<Out>
 __safe_ptr_cast__(const char* objname,

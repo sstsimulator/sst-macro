@@ -14,7 +14,6 @@
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/nic/netlink.h>
-#include <sstmac/hardware/common/fail_event.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/packet_flow/packet_flow.h>
@@ -149,20 +148,6 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   hop_bw_ = link_params->get_bandwidth_param("bandwidth");
   lookahead_ = hop_latency_;
   injection_latency_ = inj_params->get_time_param("latency");
-
-  int failure_num = 1;
-  while(1){
-    std::string next_param_name = sprockit::printf("node_failure_%d_id", failure_num);
-    if (!params->has_param(next_param_name)){
-      break;
-    }
-
-    int node_to_fail = params->get_int_param(next_param_name);
-    next_param_name = sprockit::printf("node_failure_%d_time", failure_num);
-    timestamp fail_time = params->get_time_param(next_param_name);
-    failures_to_schedule_.push_back(node_fail_event(fail_time, node_id(node_to_fail)));
-    ++failure_num;
-  }
 #endif
 }
 
@@ -200,27 +185,31 @@ interconnect::connect_endpoints(sprockit::sim_parameters* inj_params,
     int ports[32];
     node_id nodeaddr(i);
     switch_id injaddr = topology_->endpoint_to_injection_switch(nodeaddr, ports, num_ports);
-    connectable* injsw = switches_[injaddr];
+    network_switch* injsw = switches_[injaddr];
 
     for (int i=0; i < num_ports; ++i){
       int injector_port = i;
       int switch_port = ports[i];
       interconn_debug("connecting switch %d to injector %d on ports %d:%d",
           int(injaddr), int(nodeaddr), switch_port, injector_port);
-      injsw->connect_input(ej_params, injector_port, switch_port, ep);
-      ep->connect_output(inj_params, injector_port, switch_port, injsw);
+      injsw->connect_input(ej_params, injector_port, switch_port,
+                           ep->ack_handler(injector_port));
+      ep->connect_output(inj_params, injector_port, switch_port,
+                         injsw->payload_handler(switch_port));
     }
 
     switch_id ejaddr = topology_->endpoint_to_ejection_switch(nodeaddr, ports, num_ports);
-    connectable* ejsw = switches_[ejaddr];
+    network_switch* ejsw = switches_[ejaddr];
 
     for (int i=0; i < num_ports; ++i){
       int ejector_port = i;
       int switch_port = ports[i];
       interconn_debug("connecting switch %d to ejector %d on ports %d:%d",
           int(ejaddr), int(nodeaddr), switch_port, ejector_port);
-      ejsw->connect_output(ej_params, switch_port, ejector_port, ep);
-      ep->connect_input(inj_params, switch_port, ejector_port, ejsw);
+      ejsw->connect_output(ej_params, switch_port, ejector_port,
+                           ep->payload_handler(ejector_port));
+      ep->connect_input(inj_params, switch_port, ejector_port,
+                        ejsw->ack_handler(switch_port));
     }
   }
 }
@@ -247,6 +236,7 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
     if (target_rank == my_rank){
       for (int n=0; n < nodes.size(); ++n){
         node_id nid = nodes[n].nid;
+        int port = nodes[n].port;
         node_to_speedy_switch_[nid] = switch_id(target_rank);
         if (my_rank == target_rank){
           //local node - actually build it
@@ -257,7 +247,7 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
           nodes_[nid] = nd;
           nics_[nid] = the_nic;
 
-          the_nic->set_speedy_switch(local_speedy_switch);
+          the_nic->set_speedy_switch(local_speedy_switch->payload_handler(port));
           local_speedy_switch->add_nic(the_nic->mtl_handler(), nid);
 
           nd->init(0); //emulate SST core
@@ -277,20 +267,22 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
             int inj_port = nlink->node_port(netlink_offset);
             nlink->connect_input(nlink_inj_params,
                           the_only_port, inj_port,
-                          the_nic);
+                          the_nic->ack_handler(the_only_port));
             the_nic->connect_output(inj_params,
                              the_only_port, inj_port,
-                             nlink);
+                             nlink->payload_handler(inj_port));
 
             nlink->connect_output(nlink_inj_params,
                           inj_port, the_only_port,
-                          the_nic);
+                          the_nic->payload_handler(the_only_port));
             the_nic->connect_input(inj_params,
                              inj_port, the_only_port,
-                             nlink);
+                             nlink->ack_handler(inj_port));
           }
         } else {
-          local_speedy_switch->add_switch(speedy_overlay_switches_[target_rank], nid);
+          local_speedy_switch->add_switch(
+                speedy_overlay_switches_[target_rank]->payload_handler(port),
+                nid);
         }
       }
     }
@@ -319,10 +311,7 @@ interconnect::build_switches(sprockit::sim_parameters* switch_params,
   }
 
   for (network_switch* netsw : switches_){
-    if (!netsw->ipc_handler()){
-      netsw->compatibility_check();
-      break;
-    }
+    netsw->compatibility_check();
   }
 }
 
@@ -367,11 +356,11 @@ interconnect::connect_switches(sprockit::sim_parameters* switch_params)
       src_sw->connect_output(port_params,
                              conn.src_outport,
                              conn.dst_inport,
-                             dst_sw);
+                             dst_sw->payload_handler(conn.dst_inport));
       dst_sw->connect_input(port_params,
                             conn.src_outport,
                             conn.dst_inport,
-                            src_sw);
+                            src_sw->ack_handler(conn.src_outport));
     }
   }
 
@@ -381,7 +370,7 @@ void
 interconnect::deadlock_check()
 {
   for (network_switch* netsw : switches_){
-    if (netsw && !netsw->ipc_handler())
+    if (netsw)
       netsw->deadlock_check();
   }
   for (netlink* nlink : netlinks_){

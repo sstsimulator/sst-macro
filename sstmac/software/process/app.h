@@ -29,11 +29,6 @@ namespace sw {
 
 class mutex_t  {
  public:
-  std::string
-  to_string() const {
-    return "sstmac mutex";
-  }
-
   /** Blocking keys for those threads waiting on the mutex */
   std::list<key*> waiters;
   std::list<key*> conditionals;

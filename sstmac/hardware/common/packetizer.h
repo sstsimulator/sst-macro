@@ -45,6 +45,9 @@ class packetizer :
     return packet_size_;
   }
 
+  virtual void recv_packet(event* ev) = 0;
+  virtual void recv_credit(event* ev) = 0;
+
  private:
   virtual void
   inject(int vn, long bytes, long byte_offset, message* payload) = 0;

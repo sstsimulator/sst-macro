@@ -17,11 +17,6 @@ namespace sumi {
 class pinger
 {
  public:
-  std::string
-  to_string() const {
-    return "sumi::pinger";
-  }
-
   ~pinger();
 
   pinger(transport* api, int dst, double timeout);
@@ -123,11 +118,6 @@ class ping_monitor :
  public:
   ping_monitor(sprockit::sim_parameters* params,
                transport* tport);
-
-  std::string
-  to_string() const {
-    return "interval monitor";
-  }
 
   void
   ping(int dst, timeout_function* func);

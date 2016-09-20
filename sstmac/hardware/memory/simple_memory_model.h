@@ -24,11 +24,16 @@ class simple_memory_model : public memory_model
 
   virtual ~simple_memory_model();
 
+  std::string
+  to_string() const override {
+    return "simple memory model";
+  }
+
   virtual void
-  access(long bytes, double max_bw, callback* cb);
+  access(long bytes, double max_bw, callback* cb) override;
 
   double
-  max_single_bw() const {
+  max_single_bw() const override {
     return bw_;
   }
 
@@ -40,11 +45,6 @@ class simple_memory_model : public memory_model
     }
 
     virtual ~link() { }
-
-    virtual std::string
-    to_string() const {
-      return "memorymodel::link";
-    }
 
     virtual timestamp
     new_access(timestamp now, long size, double max_bw);

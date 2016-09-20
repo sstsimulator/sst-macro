@@ -13,9 +13,11 @@ const long app_ftq_calendar::allocation_num_epochs = 10000;
 
 SpktRegister("ftq", stat_collector, ftq_calendar);
 
-ftq_calendar::ftq_calendar() :
-  num_ticks_epoch_(0)
+ftq_calendar::ftq_calendar(sprockit::sim_parameters* params) :
+  num_ticks_epoch_(0),
+  stat_collector(params)
 {
+  num_ticks_epoch_ = timestamp(params->get_time_param("epoch")).ticks_int64();
 }
 
 ftq_calendar::~ftq_calendar()
@@ -40,13 +42,6 @@ ftq_calendar::register_app(int aid, const std::string& appname)
     cal = new app_ftq_calendar(aid, appname, num_ticks_epoch_);
   }
   lock.unlock();
-}
-
-void
-ftq_calendar::init_factory_params(sprockit::sim_parameters *params)
-{
-  stat_collector::init_factory_params(params);
-  num_ticks_epoch_ = timestamp(params->get_time_param("epoch")).ticks_int64();
 }
 
 void
@@ -148,13 +143,6 @@ ftq_calendar::reduce(stat_collector* coll)
     calendars_[appnum]->reduce(it->second);
   }
   */
-}
-
-void
-ftq_calendar::clone_into(ftq_calendar *cln) const
-{
-  cln->num_ticks_epoch_ = num_ticks_epoch_;
-  stat_collector::clone_into(cln);
 }
 
 void

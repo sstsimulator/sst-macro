@@ -19,7 +19,7 @@ class null_nic :
   virtual ~null_nic() throw () {}
 
   std::string
-  to_string() const {
+  to_string() const override {
     return sprockit::printf("Null NIC(%d)", int(my_addr_));
   }
 

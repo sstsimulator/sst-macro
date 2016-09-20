@@ -39,7 +39,7 @@ mostly used for debugging purposes.
 \begin{CppCode}
  public:
   std::string
-  to_string() const {
+  to_string() const override {
     return "message class";
    }
 \end{CppCode}
@@ -170,7 +170,7 @@ The \inlinecode{ptr_type} class requires we add a \inlinecode{to_string} functio
 
 \begin{CppCode}
 std::string
-to_string() const {
+to_string() const override {
   return "diamond";
 }
 \end{CppCode}

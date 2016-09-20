@@ -84,12 +84,7 @@ class interconnect
   typedef std::vector<node*> node_map;
   typedef std::vector<nic*> nic_map;
 
-  std::string
-  to_string() const {
-    return "interconnect";
-  }
-
-  virtual ~interconnect();
+  ~interconnect();
 
   topology*
   topol() const {
@@ -199,9 +194,6 @@ class interconnect
 
   typedef std::vector<netlink*> netlink_map;
   netlink_map netlinks_;
-
-  typedef std::pair<timestamp, node_id> node_fail_event;
-  std::list<node_fail_event> failures_to_schedule_;
 #endif
 };
 

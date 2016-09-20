@@ -16,7 +16,6 @@
 #include <sstmac/hardware/memory/memory_model.h>
 #include <sstmac/hardware/processor/processor.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
-#include <sstmac/hardware/common/fail_event.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/launch/app_launch.h>
@@ -48,12 +47,13 @@ using namespace sstmac::sw;
 
 node::node(sprockit::sim_parameters* params,
   uint64_t id, event_manager* mgr)
-  : connectable_component(params, id, mgr),
+  : connectable_component(params, id,
+  event_loc_id(node_id(params->get_int_param("id"))),
+  mgr,
+  new_handler(this, &node::handle)),
   params_(params)
 {
-  my_addr_ = node_id(params->get_int_param("id"));
-  init_loc_id(event_loc_id(my_addr_));
-
+  my_addr_ = event_location().convert_to_node_id();
   next_outgoing_id_.set_src_node(my_addr_);
 
   sprockit::sim_parameters* nic_params = params->get_namespace("nic");
@@ -75,6 +75,18 @@ node::node(sprockit::sim_parameters* params,
 
   app_launcher_ = new app_launcher(os_);
   job_launcher_ = job_launcher::static_job_launcher(params, event_mgr());
+}
+
+link_handler*
+node::ack_handler(int port) const
+{
+  return nic_->ack_handler(port);
+}
+
+link_handler*
+node::payload_handler(int port) const
+{
+  return nic_->payload_handler(port);
 }
 
 void
@@ -109,7 +121,7 @@ node::~node()
 void
 node::connect_output(sprockit::sim_parameters* params,
   int src_outport, int dst_inport,
-  connectable *mod)
+  event_handler* mod)
 {
   //forward connection to nic
   nic_->connect_output(params, src_outport, dst_inport, mod);
@@ -118,7 +130,7 @@ node::connect_output(sprockit::sim_parameters* params,
 void
 node::connect_input(sprockit::sim_parameters* params,
   int src_outport, int dst_inport,
-  connectable *mod)
+  event_handler* mod)
 {
   //forward connection to nic
   nic_->connect_input(params, src_outport, dst_inport, mod);
@@ -175,11 +187,9 @@ node::handle(event* ev)
 {
   if (failed()){
     //do nothing - I failed
-  }
-  else if (ev->is_failure()){
-    fail_stop();
   } else {
-    node_debug("forwarding event %s to OS", ev->to_string().c_str());
+    node_debug("forwarding event %s to OS",
+               sprockit::to_string(ev).c_str());
     os_->handle_event(ev);
   }
 }
@@ -205,14 +215,6 @@ node::send_to_nic(network_message* netmsg)
     nic_->internode_send(netmsg);
   }
 }
-
-#if SSTMAC_INTEGRATED_SST_CORE
-SST::Event::HandlerBase*
-node::handler(int port) const
-{
-  return new SST::Event::Handler<nic>(nic_, &nic::handle_event);
-}
-#endif
 
 }
 } // end of namespace sstmac

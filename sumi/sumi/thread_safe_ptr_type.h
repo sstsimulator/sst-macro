@@ -57,7 +57,7 @@ class printable_thread_safe_ptr_type : public thread_safe_ptr_type
 {
  public:
   virtual std::string
-  to_string() const = 0;
+  to_string() const override = 0;
 };
 
 template <class Out, class In>

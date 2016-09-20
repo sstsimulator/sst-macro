@@ -148,7 +148,7 @@ sumi_server::incoming_event(event* ev)
   get_proc(smsg->dest())->incoming_message(smsg);
  } catch (sprockit::value_error& e) {
    cerrn << "sumi_server::handle: failed handling "
-     << ev->to_string() << std::endl;
+         << sprockit::to_string(ev) << std::endl;
    throw e;
  }
 

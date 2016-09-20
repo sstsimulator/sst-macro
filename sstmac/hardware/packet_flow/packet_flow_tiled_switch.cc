@@ -295,7 +295,7 @@ packet_flow_tiled_switch::handle(event* ev)
 }
 
 std::string
-packet_flow_tiled_switch::to_string() const
+packet_flow_tiled_switch::to_string() const override
 {
   return sprockit::printf("packet_flow switch %d", int(my_addr_));
 }

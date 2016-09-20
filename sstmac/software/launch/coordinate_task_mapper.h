@@ -27,6 +27,11 @@ class coordinate_task_mapper : public task_mapper
  public:
   coordinate_task_mapper(sprockit::sim_parameters* params);
 
+  std::string
+  to_string() const override {
+    return "coordinate task mapper";
+  }
+
   virtual ~coordinate_task_mapper() throw() {}
 
   void
@@ -34,7 +39,7 @@ class coordinate_task_mapper : public task_mapper
         const ordered_node_set& nodes,
         int ppn,
         std::vector<node_id> &result,
-        int nproc);
+        int nproc) override;
 
  protected:
   std::string listfile_;

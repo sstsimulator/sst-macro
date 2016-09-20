@@ -69,22 +69,10 @@ mpi_queue::mpi_queue(sprockit::sim_parameters* params,
   post_header_delay_ = params->get_optional_time_param("post_header_delay", 0);
   poll_delay_ = params->get_optional_time_param("poll_delay", 0);
 
-  if (params->has_namespace("traffic_matrix")){
-    sprockit::sim_parameters* tparams = params->get_namespace("traffic_matrix");
-    spy_bytes_ = test_cast(sstmac::stat_spyplot,
-      sstmac::stat_collector_factory::get_optional_param("type", "spyplot", tparams));
-    spy_num_messages_ = test_cast(sstmac::stat_spyplot,
-      sstmac::stat_collector_factory::get_optional_param("type", "spyplot", tparams));
-    if (!spy_bytes_){
-      spkt_throw(sprockit::value_error,
-        "MPI spyplot specified as %s, must be spyplot or spyplot_png",
-        params->get_param("type").c_str());
-    }
-    spy_bytes_->add_suffix("bytes");
-    spy_num_messages_->add_suffix("num_messages");
-    os_->node()->register_stat(spy_bytes_);
-    os_->node()->register_stat(spy_num_messages_);
-  }
+  spy_num_messages_ = sstmac::optional_stats<sstmac::stat_spyplot>(os_->node(),
+        params, "traffic_matrix", "spyplot", "num_messages");
+  spy_bytes_ = sstmac::optional_stats<sstmac::stat_spyplot>(os_->node(),
+        params, "traffic_matrix", "spyplot", "bytes");
 
   user_lib_mem_ = new sstmac::sw::lib_compute_memmove(params, "mpi_queue-user-lib-mem", sid, os_);
 

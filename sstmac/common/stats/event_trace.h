@@ -22,12 +22,15 @@ class event_trace :
 {
 
  public:
-  event_trace() :
-    start_(-1), stop_(-1) {
+  event_trace(sprockit::sim_parameters* params);
+
+  std::string
+  to_string() const override {
+    return "event trace";
   }
 
   virtual void
-  simulation_finished(timestamp end);
+  simulation_finished(timestamp end) override;
 
   void
   collect(int key_typeid,
@@ -39,43 +42,35 @@ class event_trace :
           long num_ticks);
 
   void
-  reduce(stat_collector *coll);
+  reduce(stat_collector *coll) override;
 
   void
-  dump_local_data();
+  dump_local_data() override;
 
   void
-  dump_global_data();
+  dump_global_data() override;
 
   void
-  global_reduce(parallel_runtime *rt);
+  global_reduce(parallel_runtime *rt) override;
 
   void
-  init_factory_params(sprockit::sim_parameters *params);
-
-  void
-  clear();
+  clear() override;
 
   virtual
   ~event_trace() {
   }
 
   stat_collector*
-  clone() const {
+  clone() const override {
     return clone_me(-1);
   }
 
   event_trace*
   clone_me(int id) const {
-    event_trace* cln = new event_trace;
+    event_trace* cln = new event_trace(params_);
     cln->set_id(id);
-    clone_into(cln);
     return cln;
   }
-
- protected:
-  void
-  clone_into(event_trace *cln) const;
 
  protected:
   long start_;

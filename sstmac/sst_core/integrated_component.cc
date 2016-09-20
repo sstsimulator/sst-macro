@@ -13,12 +13,6 @@ namespace sstmac {
 
 SST::TimeConverter* SSTIntegratedComponent::time_converter_ = 0;
 
-void
-SSTIntegratedComponent::handle_event(SST::Event* ev)
-{
-  handle(static_cast<sstmac::event*>(ev));
-}
-
 SSTIntegratedComponent::SSTIntegratedComponent(
   sprockit::sim_parameters* params,
   uint64_t id) :
@@ -51,10 +45,10 @@ SSTIntegratedComponent::init_links(sprockit::sim_parameters *params)
     integrated_connectable_wrapper* wrapper = new integrated_connectable_wrapper(link);
     if (port_type == "input"){
       connect_input(port_params, src_outport, dst_inport, wrapper);
-      configureLink(pair.first, handler(dst_inport));
+      configureLink(pair.first, payload_handler(dst_inport));
     } else if (port_type == "output"){
       connect_output(port_params, src_outport, dst_inport, wrapper);
-      configureLink(pair.first, handler(dst_inport));
+      configureLink(pair.first, ack_handler(src_outport));
     }
   }
 }
@@ -64,7 +58,8 @@ void
 SSTIntegratedComponent::configure_self_link()
 {
   self_link_ = configureSelfLink("self", time_converter_, 
-    new SST::Event::Handler<SSTIntegratedComponent>(this, &SSTIntegratedComponent::handle_self_link));
+    new SST::Event::Handler<SSTIntegratedComponent>(this,
+                 &SSTIntegratedComponent::handle_self_link));
 }
 
 void

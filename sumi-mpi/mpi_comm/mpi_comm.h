@@ -88,7 +88,7 @@ class mpi_comm : public communicator
   MPI_Comm id_;
   int rank_;
 
-  virtual std::string
+  std::string
   to_string() const;
 
   /// The rank of this peer in the communicator.

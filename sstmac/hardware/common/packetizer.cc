@@ -12,9 +12,9 @@ namespace hw {
 
 packetizer::packetizer(sprockit::sim_parameters* params,
            event_scheduler* parent,
-           packetizer_callback* handler) :
-  notifier_(handler),
-  event_subscheduler(parent)
+           packetizer_callback* cb) :
+  notifier_(cb),
+  event_subscheduler(parent, nullptr) //no self events
 {
   packet_size_ = params->get_optional_byte_length_param("mtu", 4096);
 }

@@ -36,11 +36,6 @@ class partition
 {
 
  public:
-  virtual std::string
-  to_string() const {
-    return "partition";
-  }
-
   virtual ~partition();
 
   hw::index_subset*

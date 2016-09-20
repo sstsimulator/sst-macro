@@ -1,6 +1,7 @@
 #include <sstmac/hardware/packet_flow/packet_flow_sender.h>
 #include <sstmac/hardware/router/valiant_routing.h>
 #include <sstmac/hardware/network/network_message.h>
+#include <sstmac/hardware/topology/topology.h>
 #include <sstmac/common/stats/stat_spyplot.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/output.h>
@@ -12,10 +13,40 @@ ImplementFactory(sstmac::hw::packet_flow_sender);
 namespace sstmac {
 namespace hw {
 
+packet_flow_payload*
+payload_queue::front()
+{
+  if (queue.empty()){
+    return NULL;
+  }
+
+  return queue.front();
+}
+
+void
+payload_queue::push_back(packet_flow_payload *payload)
+{
+  queue.push_back(payload);
+}
+
+packet_flow_payload*
+payload_queue::pop(int num_credits)
+{
+  auto it = queue.begin(), end = queue.end();
+  for (; it != end; ++it){
+    packet_flow_payload* pkt = *it;
+    if (pkt->num_bytes() <= num_credits){
+      queue.erase(it);
+      return pkt;
+    }
+  }
+  return nullptr;
+}
+
 packet_flow_sender::packet_flow_sender(
   sprockit::sim_parameters* params,
   event_scheduler* parent) :
-  packet_flow_handler(parent),
+  event_subscheduler(parent, nullptr), //no self handlers
   acker_(nullptr),
   stat_collector_(nullptr),
   update_vc_(true)
@@ -47,6 +78,19 @@ packet_flow_sender::send_credit(
       credit);
   schedule(credit_arrival, src.handler, credit);
 }
+
+/**
+void
+packet_flow_sender::handle(event* ev)
+{
+  packet_flow_credit* credit = test_cast(packet_flow_credit, ev);
+  if (credit){
+    handle_credit(credit);
+  } else {
+    handle_payload(static_cast<packet_flow_payload*>(ev));
+  }
+}
+*/
 
 void
 packet_flow_sender::send(
@@ -114,10 +158,6 @@ packet_flow_sender::send(
 std::string
 packet_flow_sender::to_string() const
 {
-  if (event_location() == event_loc_id::uninitialized){
-    cerrn << "to_string failed for sender of type " << packet_flow_name() << std::endl;
-    abort();
-  }
   return packet_flow_name() + topology::global()->label(event_location());
 }
 

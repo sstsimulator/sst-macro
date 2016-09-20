@@ -60,11 +60,6 @@ class parsedumpi : public sstmac::sw::app
   virtual void
   skeleton_main();
 
-  virtual std::string
-  to_string() const {
-    return "parsedumpi";
-  }
-
  private:
   /// The fileroot we plan to parse.
   std::string fileroot_;

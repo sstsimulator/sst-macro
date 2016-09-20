@@ -172,11 +172,6 @@ class delete_thread_event :
   {
   }
 
-  std::string
-  to_string() const {
-    return "delete thread event";
-  }
-
   void
   execute(){
     thr_->cleanup();

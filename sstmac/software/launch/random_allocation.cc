@@ -14,10 +14,9 @@ random_allocation::~random_allocation() throw ()
 {
 }
 
-void
-random_allocation::init_factory_params(sprockit::sim_parameters *params)
+random_allocation::random_allocation(sprockit::sim_parameters *params) :
+  node_allocator(params)
 {
-  node_allocator::init_factory_params(params);
   int seed = params->get_optional_int_param("random_allocation_seed", -1);
   if (seed == -1){
     seed = time(NULL);

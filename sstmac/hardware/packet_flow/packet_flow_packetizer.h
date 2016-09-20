@@ -16,18 +16,16 @@ class packet_flow_packetizer :
   public packetizer
 {
  public:
-  void handle(event *ev);
+  virtual void recv_credit(event* ev) = 0;
+
+  virtual void recv_packet(event* ev) = 0;
 
  protected:
   packet_flow_packetizer(sprockit::sim_parameters* params,
            event_scheduler* parent, packetizer_callback* cb)
-    : packetizer(params, parent, cb){}
-
- private:
-  virtual void recv_credit(packet_flow_credit* ev) = 0;
-
-  virtual void recv_packet(packet_flow_payload* ev) = 0;
-
+    : packetizer(params, parent, cb)
+  {
+  }
 };
 
 /**
@@ -42,22 +40,15 @@ class packet_flow_nic_packetizer :
   packet_flow_nic_packetizer(sprockit::sim_parameters* params,
                              event_scheduler* parent, packetizer_callback* cb);
 
-  std::string
-  to_string() const {
-    return sprockit::printf("packet_flow_nic_packetizer");
-  }
-
   virtual ~packet_flow_nic_packetizer();
-
-  void setNotify(event_handler *handler);
 
   /**
    * We assume the injection buffer has infinite occupancy
    */
   bool
-  spaceToSend(int vn, int num_bits) const;
+  spaceToSend(int vn, int num_bits) const override;
 
-  void inject(int vn, long bytes, long byte_offset, message *payload);
+  void inject(int vn, long bytes, long byte_offset, message *payload) override;
 
   /**
    Set up the injection/ejection links to the switch the NIC is connected to
@@ -65,25 +56,27 @@ class packet_flow_nic_packetizer :
    */
   void
   set_output(sprockit::sim_parameters* params,
-             int port, connectable* output);
+             int port, event_handler* output);
 
   void
   set_input(sprockit::sim_parameters* params,
-            int port, connectable* input);
+            int port, event_handler* input);
 
   void
   set_acker(event_handler* handler);
+
+  void
+  recv_credit(event* credit) override;
 
  protected:
   void
   recv_packet_common(packet_flow_payload* pkt);
 
-  virtual void
-  recv_credit(packet_flow_credit* credit);
-
  protected:
   packet_flow_injection_buffer* inj_buffer_;
   packet_flow_eject_buffer* ej_buffer_;
+
+  event_handler* payload_handler_;
 
   recv_cq completion_queue_;
 
@@ -105,7 +98,7 @@ class packet_flow_cut_through_packetizer : public packet_flow_nic_packetizer
   {
   }
 
-  void recv_packet(packet_flow_payload* pkt);
+  void recv_packet(event* pkt) override;
 
 };
 
@@ -119,7 +112,7 @@ class packet_flow_simple_packetizer : public packet_flow_nic_packetizer
   {
   }
 
-  void recv_packet(packet_flow_payload* pkt);
+  void recv_packet(event* pkt) override;
 
 };
 

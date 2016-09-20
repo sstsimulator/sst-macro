@@ -54,6 +54,7 @@
 #include <sst/core/element.h>
 #include <sstmac/common/sst_event_fwd.h>
 #include <sstmac/common/timestamp.h>
+#include <sstmac/common/event_handler_fwd.h>
 #include <sstmac/hardware/common/connection_fwd.h>
 
 namespace sstmac {
@@ -64,24 +65,27 @@ class SSTIntegratedComponent
   : public SST::Component
 {
  public:
-  void handle_event(SST::Event* ev);
-
-  virtual void
-  handle(event* ev) = 0;
+  //void handle_event(SST::Event* ev);
 
   virtual void
   connect_output(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    hw::connectable* mod) = 0;
+    event_handler* mod) = 0;
+
+  virtual SST::Event::HandlerBase*
+  payload_handler(int port) const = 0;
+
+  virtual SST::Event::HandlerBase*
+  ack_handler(int port) const = 0;
 
   virtual void
   connect_input(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    hw::connectable* mod) = 0;
+    event_handler* mod) = 0;
 
   virtual void
   init(unsigned int phase);
@@ -96,8 +100,6 @@ class SSTIntegratedComponent
   SSTIntegratedComponent(sprockit::sim_parameters* params, uint64_t id);
 
   void configure_self_link();
-
-  virtual SST::Event::HandlerBase* handler(int port) const = 0;
 
   SST::SimTime_t
   extra_delay(timestamp t) const;

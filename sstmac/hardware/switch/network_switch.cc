@@ -39,11 +39,11 @@ network_switch::~network_switch()
 
 
 network_switch::network_switch(sprockit::sim_parameters *params, uint64_t id, event_manager *mgr)
- : connectable_component(params, id, mgr)
+ : connectable_component(params, id,
+                         event_loc_id(switch_id(params->get_int_param("id"))),
+                         mgr, nullptr) //no self messages for a switch
 {
-  my_addr_ = switch_id(params->get_int_param("id"));
-  init_loc_id(event_loc_id(my_addr_));
-
+  my_addr_ = event_location().convert_to_switch_id();
   top_ = topology::static_topology(params);
 }
 
@@ -57,16 +57,6 @@ network_switch::init(unsigned int phase)
 #endif
 }
 
-
-#if SSTMAC_INTEGRATED_SST_CORE
-SST::Event::HandlerBase*
-network_switch::handler(int port) const
-{
-  return new SST::Event::Handler<SSTIntegratedComponent>(
-           const_cast<network_switch*>(this),
-           &SSTIntegratedComponent::handle_event);
-}
-#endif
 
 
 }

@@ -19,6 +19,15 @@ stat_spyplot::add_one(int source, int dest)
   add(source, dest, 1);
 }
 
+stat_spyplot_png::stat_spyplot_png(sprockit::sim_parameters* params) :
+  stat_spyplot(params),
+  fill_(false),
+  normalization_(-1)
+{
+  normalization_ = params->get_optional_long_param("normalization", -1);
+  fill_ = params->get_optional_bool_param("fill", false);
+}
+
 void
 stat_spyplot_png::add(int source, int dest, long num)
 {
@@ -51,6 +60,7 @@ stat_spyplot::reduce(stat_collector* coll)
       int dest = lit->first;
       long count = lit->second;
       my_map[dest] += count;
+      max_dest_ = std::max(max_dest_, dest);
     }
   }
 }
@@ -153,13 +163,6 @@ stat_spyplot::dump_to_file(const std::string& froot)
 void
 stat_spyplot::simulation_finished(timestamp end)
 {
-}
-
-void
-stat_spyplot::clone_into(stat_spyplot *cln) const
-{
-  cln->max_dest_ = max_dest_;
-  stat_collector::clone_into(cln);
 }
 
 /**
@@ -356,22 +359,6 @@ stat_spyplot_png::dump_to_file(const std::string& froot)
       cerr0 << "stat_spyplot_png: PNG encoder error " << error << ": "
             << lodepng_error_text(error) << std::endl;
     }
-}
-
-void
-stat_spyplot_png::init_factory_params(sprockit::sim_parameters *params)
-{
-  stat_spyplot::init_factory_params(params);
-  normalization_ = params->get_optional_long_param("normalization", -1);
-  fill_ = params->get_optional_bool_param("fill", false);
-}
-
-void
-stat_spyplot_png::clone_into(stat_spyplot_png *cln) const
-{
-  cln->normalization_ = normalization_;
-  cln->fill_ = fill_;
-  stat_spyplot::clone_into(cln);
 }
 
 } //end namespace

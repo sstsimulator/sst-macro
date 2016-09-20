@@ -197,7 +197,7 @@ class A : public Base,
 {
   ImplementSerializable(A)
  public:
-  std::string name() const { return "A"; }
+  std::string name() const override { return "A"; }
 };
 
 class B : public Base,
@@ -205,7 +205,7 @@ class B : public Base,
 {
   ImplementSerializable(B)
  public:
-  std::string name() const { return "B"; }
+  std::string name() const override { return "B"; }
 };
 
 void

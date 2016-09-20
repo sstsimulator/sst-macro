@@ -16,20 +16,12 @@ namespace hw {
 
 const double packet_flow_payload::uninitialized_bw = -1;
 
-void
-packet_flow_interface::serialize_order(serializer& ser)
-{
-  ser & type_;
-  ser & vc_;
-}
-
 packet_flow_payload::packet_flow_payload(
   message* parent,
   int num_bytes,
   long offset) :
   packet(parent, num_bytes, offset),
   //routable(parent->toaddr(), parent->fromaddr()),
-  packet_flow_interface(payload),
   bw_(uninitialized_bw),
   max_in_bw_(1.0)
 {
@@ -56,7 +48,6 @@ packet_flow_payload::to_string() const
 void
 packet_flow_payload::serialize_order(serializer& ser)
 {
-  packet_flow_interface::serialize_order(ser);
   //routable::serialize_order(ser);
   packet::serialize_order(ser);
   ser & inport_;
@@ -75,7 +66,6 @@ void
 packet_flow_credit::serialize_order(serializer& ser)
 {
   event::serialize_order(ser);
-  packet_flow_interface::serialize_order(ser);
   ser & num_credits_;
   ser & port_;
 }

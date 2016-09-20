@@ -80,7 +80,14 @@ class Interconnect:
       linkParams = switchParams["link"]
       connections = self.system.switchConnections(i)
       srcSwitch, params = self.switches[i]
-      lat = linkParams["latency"]
+      lat = None
+      if linkParams.has_key("latency"):
+        lat = linkParams["latency"]
+      elif linkParams.has_key("send_latency"):
+        lat = linkParams["send_latency"]
+      else:
+        sys.exit("need link latency in parameters")
+        
       for src, dst, src_outport, dst_inport in connections:
         linkName = "network%d:%d->%d:%d" % (src,src_outport,dst,dst_inport)
         link = sst.Link(linkName)

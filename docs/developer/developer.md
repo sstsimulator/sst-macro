@@ -371,7 +371,7 @@ After declaring public typedefs, the public function interface can be declared. 
 ````
 public:
   std::string
-  to_string() const {
+  to_string() const override {
     return "message class";
    }
 ````
@@ -491,7 +491,7 @@ The `ptr_type` class requires we add a `to_string` function
 
 ````
 std::string
-to_string() const {
+to_string() const override {
   return "diamond";
 }
 ````

@@ -23,13 +23,15 @@ namespace hw {
 
 static sprockit::need_delete_statics<memory_model> need_del;
 
-memory_model::memory_model(sprockit::sim_parameters* params, node* parent_node) :
-  event_subscheduler(parent_node)
+memory_model::memory_model(sprockit::sim_parameters* params,
+                           node* parent_node,
+                           event_handler* self) :
+  event_subscheduler(parent_node, self),
+  done_(nullptr)
 {
   parent_node_ = parent_node;
   nodeid_ = parent_node->addr();
-  done_ = parent_node_;
-  init_loc_id(event_loc_id(nodeid_));
+  done_ = new_handler(parent_node, &node::handle);
 }
 
 node_id
@@ -44,6 +46,7 @@ memory_model::delete_statics()
 
 memory_model::~memory_model()
 {
+  if (done_) delete done_;
 }
 
 }

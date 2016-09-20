@@ -33,11 +33,6 @@ class compute_scheduler
   {
   }
 
-  virtual std::string
-  to_string() const {
-    return "compute_scheduler";
-  }
-
   virtual ~compute_scheduler() {}
 
 

@@ -42,15 +42,26 @@ packet_flow_muxer::packet_flow_muxer(
 packet_flow_NtoM_queue::
 packet_flow_NtoM_queue(sprockit::sim_parameters* params,
                        event_scheduler* parent)
-  : packet_flow_sender(params, parent)
+  : packet_flow_sender(params, parent),
+    credit_handler_(nullptr)
 {
   num_vc_ = params->get_int_param("num_vc");
   arb_ = packet_flow_bandwidth_arbitrator_factory::get_param("arbitrator", params);
 }
 
+event_handler*
+packet_flow_NtoM_queue::credit_handler()
+{
+  if (!credit_handler_){
+    credit_handler_ = new_handler(this, &packet_flow_NtoM_queue::handle_credit);
+  }
+  return credit_handler_;
+}
+
 packet_flow_NtoM_queue::~packet_flow_NtoM_queue()
 {
   if (arb_) delete arb_;
+  if (credit_handler_) delete credit_handler_;
 }
 
 void
@@ -181,8 +192,9 @@ packet_flow_NtoM_queue::send_payload(packet_flow_payload* pkt)
 }
 
 void
-packet_flow_NtoM_queue::handle_credit(packet_flow_credit* pkt)
+packet_flow_NtoM_queue::handle_credit(event* ev)
 {
+  packet_flow_credit* pkt = static_cast<packet_flow_credit*>(ev);
   int outport = pkt->port();
   int vc = pkt->vc();
   int channel = outport * num_vc_ + vc;
@@ -208,8 +220,11 @@ packet_flow_NtoM_queue::handle_credit(packet_flow_credit* pkt)
 }
 
 void
-packet_flow_NtoM_queue::handle_routed_payload(packet_flow_payload* pkt)
+packet_flow_NtoM_queue::handle_payload(event* ev)
 {
+  auto pkt = static_cast<packet_flow_payload*>(ev);
+  pkt->set_arrival(now());
+
   int dst_vc = update_vc_ ? pkt->next_vc() : pkt->vc();
   int dst_port = pkt->next_port();
 

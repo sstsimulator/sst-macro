@@ -219,13 +219,6 @@ stat_bytes_sent::output_switch(int sid, std::fstream& data_str)
 }
 
 void
-stat_bytes_sent::clone_into(stat_bytes_sent* cln) const
-{
-  cln->top_ = top_;
-  stat_collector::clone_into(cln);
-}
-
-void
 stat_bytes_sent::dump_local_data()
 {
   spkt_throw(sprockit::unimplemented_error,
@@ -300,11 +293,12 @@ stat_bytes_sent::aggregation::entry::serialize_order(serializer& ser)
   ser & sid;
 }
 
-void
-stat_bytes_sent::init_factory_params(sprockit::sim_parameters *params)
+stat_bytes_sent::stat_bytes_sent(sprockit::sim_parameters* params) :
+    top_(nullptr),
+    local_aggregation_(nullptr),
+    stat_collector(params)
 {
   top_ = sstmac::hw::topology::static_topology(params);
-  stat_collector::init_factory_params(params);
 }
 
 stat_bytes_sent::~stat_bytes_sent()

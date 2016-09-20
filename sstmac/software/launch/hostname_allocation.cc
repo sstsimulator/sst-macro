@@ -34,10 +34,9 @@ hostname_allocation::nodemap_t hostname_allocation::hostnamemap_;
 
 std::map<long, std::string> hostname_allocation::nodenum_to_host_map_;
 
-void
-hostname_allocation::init_factory_params(sprockit::sim_parameters* params)
+hostname_allocation::hostname_allocation(sprockit::sim_parameters* params) :
+  node_allocator(params)
 {
-  node_allocator::init_factory_params(params);
   if (params->has_param("launch_dumpi_mapname")) {
     mapfile_ = params->deprecated_param("launch_dumpi_mapname");
   }

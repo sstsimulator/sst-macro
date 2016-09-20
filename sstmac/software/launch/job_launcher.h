@@ -82,11 +82,6 @@ class default_job_launcher :
   {
   }
 
-  std::string
-  to_string() const {
-    return "default job launcher";
-  }
-
  protected:
   void handle_new_launch_request(app_launch* appman, hw::node* nd);
 

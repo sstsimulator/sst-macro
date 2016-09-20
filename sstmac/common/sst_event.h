@@ -25,49 +25,25 @@
 
 namespace sstmac {
 
-class event :
+
 #if SSTMAC_INTEGRATED_SST_CORE
-  public SST::Event
+typedef SST::Event event;
 #else
-  public sprockit::serializable
-#endif
+class event :
+ public sprockit::serializable
 {
  public:
-  virtual std::string
-  to_string() const = 0;
-
   void
   serialize_order(serializer& ser){}
-
-  /** convenience methods */
-  virtual bool
-  is_packet() const {
-    return false;
-  }
-
-  virtual bool
-  is_credit() const {
-    return false;
-  }
 
   virtual bool
   is_failure() const {
     return false;
   }
-
-  template <class T>
-  T*
-  interface(){
-    T* t = dynamic_cast<T*>(this);
-    return t;
-  }
-
 };
-
-class event_queue_entry
-#if SSTMAC_INTEGRATED_SST_CORE
-  : public SST::Event
 #endif
+
+class event_queue_entry : public event
 {
   NotSerializable(event_queue_entry)
  public:
@@ -75,9 +51,6 @@ class event_queue_entry
 
   virtual void
   execute() = 0;
-
-  virtual std::string
-  to_string() const = 0;
 
 #if SSTMAC_INTEGRATED_SST_CORE
   event_queue_entry(event_loc_id dst,
@@ -148,9 +121,6 @@ class handler_event_queue_entry :
   handler_event_queue_entry(event* ev,
     event_handler* hand,
     event_loc_id src_loc);
-
-  virtual std::string
-  to_string() const;
 
   void
   execute();

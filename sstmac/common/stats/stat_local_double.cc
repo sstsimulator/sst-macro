@@ -10,9 +10,10 @@ namespace sstmac {
 
 SpktRegister("local_double", stat_collector, stat_local_double);
 
-stat_local_double::stat_local_double() :
+stat_local_double::stat_local_double(sprockit::sim_parameters* params) :
     size_(0),
-    value_(0)
+    value_(0),
+    stat_collector(params)
 {
 }
 
@@ -71,18 +72,6 @@ void
 stat_local_double::collect(double value)
 {
   value_ += value;
-}
-
-void
-stat_local_double::clone_into(stat_local_double* vec) const {
-  //std::cerr << "cloning stat " << vec << " with id " << vec->id() << "\n";
-  stat_collector::clone_into(vec);
-}
-
-void
-stat_local_double::init_factory_params(sprockit::sim_parameters *params)
-{
-  stat_collector::init_factory_params(params);
 }
 
 void

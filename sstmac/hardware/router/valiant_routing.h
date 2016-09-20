@@ -22,10 +22,10 @@ class valiant_router : public minimal_router
   ~valiant_router() { }
 
   virtual void
-  route(packet* pkt);
+  route(packet* pkt) override;
 
   virtual std::string
-  to_string() const {
+  to_string() const override {
     return "valiant";
   }
 

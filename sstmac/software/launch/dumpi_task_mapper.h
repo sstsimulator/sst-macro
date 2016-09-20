@@ -25,13 +25,18 @@ class dumpi_task_mapper : public task_mapper
  public:
   dumpi_task_mapper(sprockit::sim_parameters *params);
 
+  std::string
+  to_string() const override {
+    return "dumpi task mapper";
+  }
+
   virtual ~dumpi_task_mapper() throw() {}
 
   void map_ranks(const app_id& aid,
                 const ordered_node_set& nodes,
                 int ppn,
                 std::vector<node_id> &result,
-                int nproc);
+                int nproc) override;
  protected:
   node_id
   node_id_from_hostname(const std::string& hostname);

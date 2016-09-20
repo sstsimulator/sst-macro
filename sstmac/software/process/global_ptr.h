@@ -54,11 +54,10 @@ class sstmac_global_builtin<T*> : public sstmac_global
     init_(init) {
   }
 
-  virtual
   ~sstmac_global_builtin() {
   }
 
-  virtual T*&
+  T*&
   get_val(int n = 0) const {
 
     process_context ptxt = current_context();
@@ -76,7 +75,7 @@ class sstmac_global_builtin<T*> : public sstmac_global
     return const_cast<T*&> (init_);
   }
 
-  virtual std::string
+  std::string
   to_string() const {
     std::stringstream ss;
     ss << get_val();

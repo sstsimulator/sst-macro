@@ -10,13 +10,8 @@ class packet_flow_param_expander :
   public param_expander
 {
   public:
-    std::string
-    to_string() const {
-      return "packet flow param expander";
-    }
-
     virtual void
-    expand(sprockit::sim_parameters* params);
+    expand(sprockit::sim_parameters* params) override;
 
   private:
     void expand_amm1_nic(sprockit::sim_parameters* params,
@@ -44,7 +39,7 @@ class packet_flow_param_expander :
                              sprockit::sim_parameters* nic_params);
 
   private:
-    double switch_bandwidth_multiplier(sprockit::sim_parameters *params) const {
+    double switch_bandwidth_multiplier(sprockit::sim_parameters *params) const override {
       if (tiled_switch_){
         return 1.0;
       } else {
@@ -52,7 +47,7 @@ class packet_flow_param_expander :
       }
     }
 
-    int switch_buffer_multiplier(sprockit::sim_parameters *params) const {
+    int switch_buffer_multiplier(sprockit::sim_parameters *params) const override {
       if (tiled_switch_){
         return 1;
       } else {
@@ -60,7 +55,7 @@ class packet_flow_param_expander :
       }
     }
 
-    double network_bandwidth_multiplier(sprockit::sim_parameters *params) const {
+    double network_bandwidth_multiplier(sprockit::sim_parameters *params) const override {
       if (tiled_switch_){
         return 1.0;
       } else {

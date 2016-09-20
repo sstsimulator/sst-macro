@@ -22,7 +22,7 @@ class fake_topology :
 {
  public:
   virtual std::string
-  to_string() const {
+  to_string() const override {
     return "fake topology";
   }
 

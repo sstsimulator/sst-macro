@@ -38,15 +38,8 @@ simple_nic::do_send(network_message* msg)
   if (msg->needs_ack()) {
     //do whatever you need to do so that this msg decouples all pointers
     network_message* acker = msg->clone_injection_ack();
-    schedule(next_free_, parent_, acker); //send to node
+    schedule(next_free_, parent_->self_handler(), acker); //send to node
   }
-}
-
-void
-simple_nic::handle(event *ev)
-{
-  spkt_throw_printf(sprockit::value_error,
-    "simple_nic::handle: should never be called - should be routed directly to MTL handler");
 }
 
 void
@@ -54,7 +47,7 @@ simple_nic::connect_output(
   sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
-  connectable* mod)
+  event_handler* mod)
 {
 }
 
@@ -63,9 +56,19 @@ simple_nic::connect_input(
   sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
-  connectable* mod)
+  event_handler* mod)
 {
   //nothing needed
+}
+
+link_handler*
+simple_nic::payload_handler(int port) const
+{
+#if SSTMAC_INTEGRATED_SST_CORE
+  return new_link_handler(parent_, &node::handle);
+#else
+  return mtl_handler();
+#endif
 }
 
 }

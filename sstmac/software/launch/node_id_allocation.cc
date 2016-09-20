@@ -10,10 +10,9 @@ namespace sw {
 
 SpktRegister("node_id", node_allocator, node_id_allocation);
 
-void
-node_id_allocation::init_factory_params(sprockit::sim_parameters* params)
+node_id_allocation::node_id_allocation(sprockit::sim_parameters* params) :
+  node_allocator(params)
 {
-  node_allocator::init_factory_params(params);
   if (params->has_param("launch_node_id_file")){
     coord_file_ = params->get_param("launch_node_id_file");
   } else {

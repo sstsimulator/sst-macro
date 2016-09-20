@@ -20,6 +20,7 @@
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
+#include <sstmac/hardware/topology/topology.h>
 
 RegisterNamespaces("congestion_stats");
 
@@ -76,15 +77,21 @@ packet_flow_switch::packet_flow_switch(
   sprockit::sim_parameters* xbar_params = params->get_namespace("xbar");
   xbar_params->add_param_override("num_vc", router_->max_num_vc());
   xbar_ = new packet_flow_crossbar(xbar_params, this);
-  xbar_->set_event_location(my_addr_);
   xbar_->set_stat_collector(xbar_stats_);
   xbar_->configure_basic_ports(top_->max_num_ports());
+#if !SSTMAC_INTEGRATED_SST_CORE
+  payload_handler_ = new_link_handler(this, &packet_flow_switch::handle_payload);
+  ack_handler_ = new_link_handler(this, &packet_flow_switch::handle_credit);
+#endif
 }
 
 packet_flow_switch::~packet_flow_switch()
 {
   if (xbar_) delete xbar_;
- 
+#if !SSTMAC_INTEGRATED_SST_CORE
+  if (ack_handler_) delete ack_handler_;
+  if (payload_handler_) delete payload_handler_;
+#endif
   int nbuffers = out_buffers_.size();
   for (int i=0; i < nbuffers; ++i){
     packet_flow_sender* buf = out_buffers_[i];
@@ -106,13 +113,13 @@ packet_flow_switch::output_buffer(sprockit::sim_parameters* params,
     packet_flow_network_buffer* out_buffer = new packet_flow_network_buffer(params, this);
 
     out_buffer->set_stat_collector(buf_stats_);
-    out_buffer->set_event_location(my_addr_);
     out_buffers_[src_outport] = out_buffer;
 
     int buffer_inport = 0;
-    xbar_->set_output(params, src_outport, buffer_inport, out_buffer);
-    out_buffer->set_input(params, buffer_inport, src_outport, xbar_);
-    out_buffer->set_event_location(my_addr_);
+    xbar_->set_output(params, src_outport, buffer_inport,
+                      out_buffer->payload_handler());
+    out_buffer->set_input(params, buffer_inport,
+                          src_outport, xbar_->credit_handler());
   }
   return out_buffers_[src_outport];
 }
@@ -122,12 +129,12 @@ packet_flow_switch::connect_output(
   sprockit::sim_parameters* port_params,
   int src_outport,
   int dst_inport,
-  connectable* mod)
+  event_handler* mod)
 {
 
   //create an output buffer for the port
   packet_flow_sender* out_buffer = output_buffer(port_params, src_outport);
-  out_buffer->set_output(port_params, src_outport, dst_inport, safe_cast(event_handler, mod));
+  out_buffer->set_output(port_params, src_outport, dst_inport, mod);
 }
 
 void
@@ -135,10 +142,9 @@ packet_flow_switch::connect_input(
   sprockit::sim_parameters* port_params,
   int src_outport,
   int dst_inport,
-  connectable* mod)
+  event_handler* mod)
 {
-  xbar_->set_input(port_params, dst_inport, src_outport,
-                   safe_cast(event_handler, mod));
+  xbar_->set_input(port_params, dst_inport, src_outport, mod);
 }
 
 void
@@ -167,30 +173,46 @@ packet_flow_switch::queue_length(int port) const
 }
 
 void
-packet_flow_switch::handle(event* ev)
+packet_flow_switch::handle_credit(event *ev)
 {
-  //this should only happen in parallel mode...
-  //this means we are getting a message that has crossed the parallel boundary
-  packet_flow_interface* fpack = interface_cast(packet_flow_interface, ev);
-  switch (fpack->type()) {
-    case packet_flow_interface::credit: {
-      packet_flow_credit* credit = static_cast<packet_flow_credit*>(fpack);
-      out_buffers_[credit->port()]->handle_credit(credit);
-      break;
-    }
-    case packet_flow_interface::payload: {
-      packet_flow_payload* payload = static_cast<packet_flow_payload*>(fpack);
-      router_->route(payload);
-      xbar_->handle_payload(payload);
-      break;
-    }
-  }
+  packet_flow_credit* credit = static_cast<packet_flow_credit*>(ev);
+  out_buffers_[credit->port()]->handle_credit(credit);
+}
+
+void
+packet_flow_switch::handle_payload(event *ev)
+{
+  packet_flow_payload* payload = static_cast<packet_flow_payload*>(ev);
+  router_->route(payload);
+  xbar_->handle_payload(payload);
 }
 
 std::string
 packet_flow_switch::to_string() const
 {
   return sprockit::printf("packet flow switch %d", int(my_addr_));
+}
+
+link_handler*
+packet_flow_switch::ack_handler(int port) const
+{
+#if SSTMAC_INTEGRATED_SST_CORE
+  return new_link_handler(const_cast<packet_flow_switch*>(this),
+                          &packet_flow_switch::handle_credit);
+#else
+  return ack_handler_;
+#endif
+}
+
+link_handler*
+packet_flow_switch::payload_handler(int port) const
+{
+#if SSTMAC_INTEGRATED_SST_CORE
+  return new_link_handler(const_cast<packet_flow_switch*>(this),
+                          &packet_flow_switch::handle_payload);
+#else
+  return payload_handler_;
+#endif
 }
 
 }

@@ -31,7 +31,9 @@ class memory_model :
 {
 
  public:
-  memory_model(sprockit::sim_parameters* params, node* node);
+  memory_model(sprockit::sim_parameters* params,
+               node* node,
+               event_handler* self);
 
   static void
   delete_statics();
@@ -43,9 +45,7 @@ class memory_model :
          callback* cb) = 0;
 
   virtual std::string
-  to_string() const {
-    return "memory model";
-  }
+  to_string() const = 0;
 
   virtual double
   max_single_bw() const = 0;

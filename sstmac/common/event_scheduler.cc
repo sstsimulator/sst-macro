@@ -43,14 +43,6 @@ make_spkt_params_from_sst_params(SST::Params& map)
 #endif
 
 void
-event_scheduler::handle(event* ev)
-{
-  spkt_throw_printf(sprockit::unimplemented_error,
-    "event scheduler %s should never handle messages",
-    to_string().c_str());
-}
-
-void
 event_scheduler::cancel_all_messages()
 {
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -61,18 +53,28 @@ event_scheduler::cancel_all_messages()
 #endif
 }
 
+void
+event_scheduler::init(unsigned int phase)
+{
+#if SSTMAC_INTEGRATED_SST_CORE
+  SSTIntegratedComponent::init(phase);
+#endif
+}
+
+void
+event_scheduler::setup()
+{
+#if SSTMAC_INTEGRATED_SST_CORE
+  SSTIntegratedComponent::setup();
+#endif
+}
+
 #if SSTMAC_INTEGRATED_SST_CORE
 timestamp
 event_scheduler::now() const
 {
   SST::Time_t nowTicks = getCurrentSimTime(time_converter_);
   return timestamp(nowTicks, timestamp::exact);
-}
-
-void
-event_scheduler::init(unsigned int phase)
-{
-  SSTIntegratedComponent::init(phase);
 }
 
 void
@@ -141,7 +143,8 @@ event_scheduler::schedule(SST::Time_t delay, event_handler* handler, event* ev)
     }
     case event_handler::link_handler:
     {
-      integrated_connectable_wrapper* wrapper = static_cast<integrated_connectable_wrapper*>(handler);
+      integrated_connectable_wrapper* wrapper
+          = static_cast<integrated_connectable_wrapper*>(handler);
       wrapper->link()->send(delay, time_converter_, ev);
       break;
     }
@@ -188,19 +191,19 @@ event_scheduler::schedule_now(event_handler *handler, event* ev)
 void
 event_scheduler::send_self_event(timestamp arrival, event* ev)
 {
-  schedule(arrival, this, ev);
+  schedule(arrival, self_handler_, ev);
 }
 
 void
 event_scheduler::send_delayed_self_event(timestamp delay, event* ev)
 {
-  schedule_delay(delay, this, ev);
+  schedule_delay(delay, self_handler_, ev);
 }
 
 void
 event_scheduler::send_now_self_event(event* ev)
 {
-  schedule_now(this, ev);
+  schedule_now(self_handler_, ev);
 }
 
 void
@@ -288,7 +291,7 @@ event_scheduler::multithread_schedule(int src_thread, int dst_thread,
 {
   debug_printf(sprockit::dbg::event_manager,
       "On %s, scheduling event at t=%12.8e srcthread=%d dstthread=%d",
-      to_string().c_str(), t.sec(), src_thread, dst_thread);
+      sprockit::to_string(this).c_str(), t.sec(), src_thread, dst_thread);
   if (dst_thread != event_handler::null_threadid
      && dst_thread != src_thread){
     ev->set_time(t);
@@ -323,14 +326,6 @@ event_scheduler::schedule(timestamp t,
 #endif
 
 void
-event_subscheduler::handle(event* ev)
-{
-  spkt_throw_printf(sprockit::unimplemented_error,
-    "event scheduler %s should never handle messages",
-    to_string().c_str());
-}
-
-void
 event_subscheduler::schedule(timestamp t,
                           event_handler* handler,
                           event* ev)
@@ -359,19 +354,19 @@ event_subscheduler::schedule_now(event_handler *handler, event* ev)
 void
 event_subscheduler::send_self_event(timestamp arrival, event* ev)
 {
-  parent_->schedule(arrival, this, ev);
+  parent_->schedule(arrival, self_handler_, ev);
 }
 
 void
 event_subscheduler::send_delayed_self_event(timestamp delay, event* ev)
 {
-  parent_->schedule_delay(delay, this, ev);
+  parent_->schedule_delay(delay, self_handler_, ev);
 }
 
 void
 event_subscheduler::send_now_self_event(event* ev)
 {
-  parent_->schedule_now(this, ev);
+  parent_->schedule_now(self_handler_, ev);
 }
 
 void

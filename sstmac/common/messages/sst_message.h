@@ -21,7 +21,9 @@
 
 namespace sstmac {
 
-class flow : public event
+class flow :
+  public event,
+  public sprockit::printable
 {
  public:
   virtual uint64_t

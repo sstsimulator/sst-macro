@@ -15,6 +15,7 @@
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/stats/location_trace.h>
 #include <sstmac/common/event_handler.h>
+#include <sstmac/common/event_callback.h>
 #include <sstmac/common/sst_event_fwd.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/event_manager_fwd.h>
@@ -49,38 +50,49 @@ make_spkt_params_from_sst_params(SST::Params& map);
       NULL, \
       create_##comp, NULL, NULL, COMPONENT_CATEGORY_SYSTEM \
   };
+namespace sstmac {
+typedef SST::Event::HandlerBase link_handler;
+
+template <class T, class Fxn>
+SST::Event::HandlerBase*
+new_link_handler(T* t, Fxn f){
+  return new SST::Event::Handler<T>(t, f);
+}
+
+}
 #else
 #  define DeclareSSTComponent(comp)
 #  define ImplementSSTComponent(str, parent, comp, docstring) \
   SpktRegister(str, parent, comp, docstring)
+namespace sstmac {
+typedef event_handler link_handler;
+
+template <class T, class Fxn>
+event_handler*
+new_link_handler(T* t, Fxn f){
+  return new_handler(t,f);
+}
+
+}
 #include <sstmac/common/event_manager.h>
 #endif
 
 namespace sstmac {
 
-
 /**
  * The interface for something that can schedule messages
  */
 class event_scheduler :
+  public locatable
 #if SSTMAC_INTEGRATED_SST_CORE
-  public SSTIntegratedComponent,
+  , public SSTIntegratedComponent
 #endif
-  public event_handler
 {
 
  public:
   virtual
   ~event_scheduler() {
   }
-
-  virtual std::string
-  to_string() const {
-    return "event scheduler";
-  }
-
-  virtual void
-  handle(event* ev);
 
   void
   cancel_all_messages();
@@ -95,6 +107,16 @@ class event_scheduler :
   ipc_schedule(timestamp t,
     event_handler* handler,
     event* ev);
+
+  virtual void
+  deadlock_check() {}
+
+  virtual void
+  deadlock_check(event* ev) {}
+
+  virtual void setup(); //needed for SST core compatibility
+
+  virtual void init(unsigned int phase); //needed for SST core compatibility
 
   /**
    * Add an event to the event queue, where msg will get delivered to handler at time t.
@@ -149,30 +171,38 @@ class event_scheduler :
     return eventman_;
   }
 
+  event_handler*
+  self_handler() const {
+    return self_handler_;
+  }
+
  private:
   event_manager* eventman_;
+  event_handler* self_handler_;
 
  protected:
-  event_scheduler(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr) :
+  event_scheduler(sprockit::sim_parameters* params,
+                  uint64_t cid,
+                  event_loc_id id,
+                  event_manager* mgr,
+                  event_handler* self) :
 #if SSTMAC_INTEGRATED_SST_CORE
-   SSTIntegratedComponent(params, id){}
+    SSTIntegratedComponent(params, cid),
+    locatable(id, locatable::null_threadid),
 #else
+    locatable(id, mgr->thread_id()),
     seqnum_(0),
-    eventman_(mgr)
-  {
-    init_thread_id(mgr->thread_id());
-  }
+    eventman_(mgr),
 #endif
-
+    self_handler_(self)
+  {
+  }
 
  private:
 #if SSTMAC_INTEGRATED_SST_CORE
  public:
   timestamp
   now() const;
-
-  virtual void
-  init(unsigned int phase);
 
  private:
   void
@@ -208,15 +238,9 @@ class event_scheduler :
 };
 
 class event_subscheduler :
-  public event_handler
+  public locatable
 {
  public:
-  event_subscheduler(event_scheduler* parent) : parent_(parent)
-  {
-    init_thread_id(parent_->thread_id());
-    init_loc_id(parent_->event_location());
-  }
-
   /**
    * get the current time
    * @return a timestamp
@@ -224,14 +248,6 @@ class event_subscheduler :
   timestamp now() const {
     return parent_->now();
   }
-
-  virtual std::string
-  to_string() const {
-    return "event subscheduler";
-  }
-
-  virtual void
-  handle(event* ev);
 
   /**
    * Add an event to the event queue, where msg will get delivered to handler at time t.
@@ -278,13 +294,35 @@ class event_subscheduler :
   void
   send_now_self_event_queue(event_queue_entry* ev);
 
+  virtual void
+  deadlock_check() {}
+
+  virtual void
+  deadlock_check(event* ev) {}
+
   event_scheduler*
   parent() const {
     return parent_;
   }
 
+ protected:
+  event_subscheduler(event_scheduler* parent,
+                     event_handler* self) :
+    parent_(parent),
+    self_handler_(self),
+#if SSTMAC_INTEGRATED_SST_CORE
+    locatable(parent->event_location(),
+              locatable::null_threadid)
+#else
+    locatable(parent->event_location(),
+              parent->thread_id())
+#endif
+  {
+  }
+
  private:
   event_scheduler* parent_;
+  event_handler* self_handler_;
  };
 
 

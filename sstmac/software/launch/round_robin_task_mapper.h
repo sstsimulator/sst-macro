@@ -29,6 +29,11 @@ class round_robin_task_mapper : public task_mapper
   {
   }
 
+  std::string
+  to_string() const override {
+    return "round robin task mapper";
+  }
+
   virtual
   ~round_robin_task_mapper() throw ();
 
@@ -38,7 +43,7 @@ class round_robin_task_mapper : public task_mapper
     const ordered_node_set& nodes,
     int ppn,
     std::vector<node_id> &result,
-    int nproc);
+    int nproc) override;
 
 };
 

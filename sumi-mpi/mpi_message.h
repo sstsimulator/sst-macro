@@ -61,7 +61,7 @@ class mpi_message :
   mpi_message(){}
 
   virtual std::string
-  to_string() const;
+  to_string() const override;
 
   static const char*
   str(content_type_t content_type);
@@ -70,14 +70,14 @@ class mpi_message :
   virtual ~mpi_message() throw ();
 
   virtual sumi::message*
-  clone() const;
+  clone() const override;
 
   /**
    * Serialize this message during parallel simulation.
    * @param ser The serializer to use
    */
   virtual void
-  serialize_order(serializer& ser);
+  serialize_order(serializer& ser) override;
 
   long
   payload_bytes() const {
@@ -205,17 +205,17 @@ class mpi_message :
   }
 
   virtual void
-  move_remote_to_local();
+  move_remote_to_local() override;
 
   virtual void
-  move_local_to_remote();
+  move_local_to_remote() override;
 
  protected:
   void
   clone_into(mpi_message* cln) const;
 
   virtual void
-  buffer_send();
+  buffer_send() override;
 
  protected:
   int src_rank_;

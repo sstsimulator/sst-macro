@@ -50,13 +50,11 @@ nic::nic(sprockit::sim_parameters* params, node* parent) :
   local_bytes_sent_(nullptr),
   global_bytes_sent_(nullptr),
   parent_(parent),
-  mtl_handler_(nullptr),
-  connectable_subcomponent(parent)
+  event_mtl_handler_(nullptr),
+  my_addr_(parent->addr()),
+  connectable_subcomponent(parent, nullptr) //no self events with NIC
 {
-  my_addr_ = node_id(params->get_int_param("id"));
-  init_loc_id(event_loc_id(my_addr_));
-
-  mtl_handler_ = new_handler(this, &nic::mtl_handle);
+  event_mtl_handler_ = new_handler(this, &nic::mtl_handle);
 
   negligible_size_ = params->get_optional_int_param("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
 
@@ -71,16 +69,23 @@ nic::nic(sprockit::sim_parameters* params, node* parent) :
   //global_bytes_sent_->set_label("NIC Total Bytes Sent");
   hist_msg_size_ = optional_stats<stat_histogram>(parent,
         params, "message_size_histogram", "histogram");
+
+#if !SSTMAC_INTEGRATED_SST_CORE
+  link_mtl_handler_ = new_link_handler(this, &nic::mtl_handle);
+#endif
 }
 
 nic::~nic()
 {
-  if (mtl_handler_) delete mtl_handler_;
+  if (event_mtl_handler_) delete event_mtl_handler_;
   if (spy_bytes_) delete spy_bytes_;
   if (spy_num_messages_) delete spy_num_messages_;
   if (local_bytes_sent_) delete local_bytes_sent_;
   if (global_bytes_sent_) delete global_bytes_sent_;
   if (hist_msg_size_) delete hist_msg_size_;
+#if !SSTMAC_INTEGRATED_SST_CORE
+  delete link_mtl_handler_;
+#endif
 }
 
 void
@@ -186,14 +191,6 @@ nic::intranode_send(network_message* payload)
   ack_send(payload);
 }
 
-#if SSTMAC_INTEGRATED_SST_CORE
-void
-nic::handle_event(SST::Event *ev)
-{
-  handle(static_cast<event*>(ev));
-}
-#endif
-
 void
 nic::record_message(network_message* netmsg)
 {
@@ -250,7 +247,7 @@ nic::internode_send(network_message* netmsg)
 void
 nic::send_to_node(network_message* payload)
 {
-  schedule_now(parent_, payload);
+  schedule_now(parent_->self_handler(), payload);
 }
 
 }

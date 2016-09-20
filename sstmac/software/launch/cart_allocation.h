@@ -24,11 +24,15 @@ class cart_allocation :
 {
 
  public:
-  void
-  init_factory_params(sprockit::sim_parameters* params);
+  cart_allocation(sprockit::sim_parameters* params);
 
   virtual
   ~cart_allocation() throw () {}
+
+  std::string
+  to_string() const override {
+    return "cart allocation";
+  }
 
   /**
    * @brief allocate
@@ -40,7 +44,7 @@ class cart_allocation :
   void
   allocate(int nnode,
    const ordered_node_set& available,
-   ordered_node_set& allocation) const;
+   ordered_node_set& allocation) const override;
 
  private:
   /**

@@ -32,7 +32,7 @@ event_container::do_next_event()
   event_queue_entry* ev = pop_next_event();
   set_now(ev->time());
   debug_printf(sprockit::dbg::all_events,
-    "running event %s", ev->to_string().c_str());
+    "running event %s", sprockit::to_string(ev).c_str());
 
 
   ev->execute();
@@ -128,7 +128,7 @@ event_container::schedule(timestamp start_time, uint32_t seqnum, event_queue_ent
 
   debug_printf(sprockit::dbg::all_events,
     "adding event to run at %10.5e: %s",
-    start_time.sec(), ev->to_string().c_str());
+    start_time.sec(), sprockit::to_string(ev).c_str());
   add_event(ev);
 }
 

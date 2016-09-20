@@ -88,7 +88,8 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
   des_context_(nullptr),
   ftq_trace_(nullptr),
   compute_sched_(nullptr),
-  event_subscheduler(parent),
+  event_subscheduler(parent,
+       new_handler(this, &operating_system::handle_event)),
   params_(params)
 {
   compute_sched_ = compute_scheduler_factory::get_optional_param(
@@ -820,7 +821,7 @@ operating_system::start_api_call()
   perf_counter_model* mdl = ctxt.current_thread->perf_ctr_model();
   compute_event* ev = mdl->get_next_event();
   os_debug("starting api call with event %s",
-           ev ? ev->to_string().c_str() : "null");
+           ev ? sprockit::to_string(ev).c_str() : "null");
   if (ev){
     execute(ami::COMP_INSTR, ev);
   }
@@ -851,7 +852,7 @@ operating_system::handle_event(event* ev)
   if (!libmsg) {
     spkt_throw_printf(sprockit::illformed_error,
       "operating_system::handle_event: got event %s instead of library event",
-      ev->to_string().c_str());
+      sprockit::to_string(ev).c_str());
   }
 
   std::string libn = libmsg->lib_name();
@@ -869,17 +870,17 @@ operating_system::handle_event(event* ev)
       spkt_throw_printf(sprockit::os_error,
                      "operating_system::handle_event: can't find library %s on os %d for event %s",
                      libmsg->lib_name().c_str(), int(addr()),
-                     ev->to_string().c_str());
+                     sprockit::to_string(ev).c_str());
     } else {
       debug_printf(sprockit::dbg::dropped_events | sprockit::dbg::os,
                    "OS %d for library %s dropping event %s",
-                   addr(), libn.c_str(), ev->to_string().c_str());
+                   addr(), libn.c_str(), sprockit::to_string(ev).c_str());
       //drop the event
     }
   }
   else {
     os_debug("delivering message to lib %s: %s",
-        libn.c_str(), ev->to_string().c_str());
+        libn.c_str(), sprockit::to_string(ev).c_str());
     it->second->incoming_event(ev);
   }
 }

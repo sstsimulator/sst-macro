@@ -35,12 +35,7 @@ class simple_processor :
   virtual ~simple_processor() {}
 
   void
-  compute(event* ev, callback* cb);
-
-  virtual std::string
-  to_string() const {
-    return "simple_processor";
-  }
+  compute(event* ev, callback* cb) override;
 
 };
 

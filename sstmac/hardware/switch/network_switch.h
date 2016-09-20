@@ -42,11 +42,6 @@ class network_switch :
   public connectable_component
 {
  public:
-  std::string
-  to_string() const override {
-    return "network switch";
-  }
-
   network_switch(
     sprockit::sim_parameters* params,
     uint64_t id,
@@ -84,12 +79,6 @@ class network_switch :
  protected:
   switch_id my_addr_;
   topology* top_;
-
- private:
-#if SSTMAC_INTEGRATED_SST_CORE
-  SST::Event::HandlerBase*
-  handler(int port) const override;
-#endif
 
 };
 

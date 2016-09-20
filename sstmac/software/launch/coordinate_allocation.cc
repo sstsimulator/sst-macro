@@ -15,10 +15,9 @@ namespace sw {
 
 SpktRegister("coordinate", node_allocator, coordinate_allocation);
 
-void
-coordinate_allocation::init_factory_params(sprockit::sim_parameters* params)
+coordinate_allocation::coordinate_allocation(sprockit::sim_parameters* params) :
+  node_allocator(params)
 {
-  node_allocator::init_factory_params(params);
   coord_file_ = params->get_param("launch_coordinate_file");
 }
 

@@ -38,7 +38,7 @@ namespace gtc
     }
 
     virtual std::string
-    to_string() const
+    to_string() const override
     {
       return "gtc_module";
     }
@@ -68,7 +68,7 @@ namespace gtc
     }
 
     virtual std::string
-    to_string() const
+    to_string() const override
     {
       return "gtc::config_parameters";
     }
@@ -210,7 +210,7 @@ namespace gtc
     }
 
     virtual std::string
-    to_string() const
+    to_string() const override
     {
       return "gtc::particle_decomp";
     }
@@ -242,7 +242,7 @@ namespace gtc
     }
 
     virtual std::string
-    to_string() const
+    to_string() const override
     {
       return "gtc::field_array";
     }

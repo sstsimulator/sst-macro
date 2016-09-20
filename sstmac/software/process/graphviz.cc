@@ -136,10 +136,6 @@ graph_viz::simulation_finished(timestamp t)
 {
 }
 
-graph_viz::graph_viz()
-{
-}
-
 void
 graph_viz::add_call(
   int ncalls,

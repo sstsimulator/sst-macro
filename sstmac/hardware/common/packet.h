@@ -9,7 +9,8 @@ namespace sstmac {
 namespace hw {
 
 class packet :
-  public event
+  public event,
+  public sprockit::printable
 {
 
  public:
@@ -55,6 +56,13 @@ class packet :
   long
   byte_offset() const {
     return byte_offset_;
+  }
+
+  template <class T>
+  T*
+  interface(){
+    T* t = dynamic_cast<T*>(this);
+    return t;
   }
 
  protected:

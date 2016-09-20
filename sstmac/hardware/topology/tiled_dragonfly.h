@@ -57,7 +57,7 @@ class tiled_dragonfly : public dragonfly
 
  public:
   virtual std::string
-  to_string() const {
+  to_string() const override {
     return "tiled_dragonfly";
   }
 

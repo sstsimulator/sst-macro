@@ -164,10 +164,11 @@ class stat_bytes_sent :
   FRIEND_SERIALIZATION;
 
  public:
-  stat_bytes_sent() :
-      top_(0),
-      local_aggregation_(nullptr)
-  {
+  stat_bytes_sent(sprockit::sim_parameters* params);
+
+  std::string
+  to_string() const override {
+    return "stat bytes sent";
   }
 
   virtual ~stat_bytes_sent();
@@ -178,32 +179,28 @@ class stat_bytes_sent :
   }
 
   void
-  init_factory_params(sprockit::sim_parameters *params);
+  simulation_finished(timestamp end) override;
 
   void
-  simulation_finished(timestamp end);
+  dump_local_data() override;
 
   void
-  dump_local_data();
+  dump_global_data() override;
 
   void
-  dump_global_data();
+  global_reduce(parallel_runtime *rt) override;
 
   void
-  global_reduce(parallel_runtime *rt);
-
-  void
-  reduce(stat_collector *coll);
+  reduce(stat_collector *coll) override;
 
   stat_collector*
-  clone() const {
-    stat_bytes_sent* cln = new stat_bytes_sent;
-    clone_into(cln);
+  clone() const override {
+    stat_bytes_sent* cln = new stat_bytes_sent(params_);
     return cln;
   }
 
   void
-  clear(){}
+  clear() override {}
 
  private:
   void
@@ -225,9 +222,6 @@ class stat_bytes_sent :
   void
   global_reduce_root(parallel_runtime* rt, global_gather_stats_t* stats, char* my_buffer, int my_buffer_size);
 
- protected:
-  void
-  clone_into(stat_bytes_sent* cln) const;
 
  private:
   topology* top_;

@@ -1,7 +1,6 @@
-#ifndef BUFFER_H
-#define BUFFER_H
+#ifndef packet_flow_BUFFER_H
+#define packet_flow_BUFFER_H
 
-#include <sstmac/hardware/packet_flow/packet_flow_handler.h>
 #include <sstmac/hardware/packet_flow/packet_flow_crossbar.h>
 #include <sstmac/hardware/packet_flow/packet_flow_sender.h>
 
@@ -101,15 +100,18 @@ class packet_flow_network_buffer :
   queue_length() const override;
 
   void
-  handle_credit(packet_flow_credit* msg) override;
+  handle_credit(event* ev) override;
 
   void
-  do_handle_payload(packet_flow_payload* pkt) override;
+  handle_payload(event* ev) override;
 
   std::string
   packet_flow_name() const override {
     return "network buffer";
   }
+
+  event_handler*
+  payload_handler();
 
   void deadlock_check() override;
 
@@ -130,6 +132,7 @@ class packet_flow_network_buffer :
   bool queue_depth_reporting_;
   int queue_depth_delta_;
   int packet_size_;
+  event_handler* payload_handler_;
 };
 
 class packet_flow_eject_buffer :
@@ -143,13 +146,13 @@ class packet_flow_eject_buffer :
   }
 
   void
-  handle_credit(packet_flow_credit* msg) override;
+  handle_credit(event* ev) override;
+
+  void
+  handle_payload(event* ev) override;
 
   void
   return_credit(packet* msg);
-
-  void
-  do_handle_payload(packet_flow_payload* pkt) override;
 
   std::string
   packet_flow_name() const override {
@@ -176,10 +179,10 @@ class packet_flow_injection_buffer :
   }
 
   void
-  handle_credit(packet_flow_credit* msg) override;
+  handle_credit(event* ev) override;
 
   void
-  do_handle_payload(packet_flow_payload* pkt) override;
+  handle_payload(event* ev) override;
 
   std::string
   packet_flow_name() const override {

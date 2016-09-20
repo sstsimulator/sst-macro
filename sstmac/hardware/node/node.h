@@ -48,22 +48,28 @@ class node :
 {
 
  public:
-  void setup();
+  void setup() override;
 
-  void init(unsigned int phase);
+  void init(unsigned int phase) override;
 
   virtual ~node();
 
   void
   connect_output(sprockit::sim_parameters* params,
                  int src_outport, int dst_inport,
-                 connectable *mod) override;
+                 event_handler* handler) override;
 
   void
   connect_input(sprockit::sim_parameters* params,
                  int src_outport, int dst_inport,
-                 connectable *mod) override;
+                 event_handler* handler) override;
 
+
+  link_handler*
+  payload_handler(int port) const override;
+
+  link_handler*
+  ack_handler(int port) const override;
 
   /**
    @return  The object encapsulating the memory model
@@ -151,8 +157,7 @@ class node :
   execute(ami::SERVICE_FUNC func,
                  event* data);
 
-  virtual void
-  handle(event* ev) override;
+  void handle(event* ev);
 
   /**
    Push a network message (operation at the MTL layer) onto the NIC
@@ -191,11 +196,6 @@ class node :
   static std::list<sw::app_launch*> launchers_;
   unique_event_id next_outgoing_id_;
   sprockit::sim_parameters* params_;
-
-#if SSTMAC_INTEGRATED_SST_CORE
-  SST::Event::HandlerBase*
-  handler(int port) const override;
-#endif
 
 };
 

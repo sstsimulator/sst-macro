@@ -19,14 +19,10 @@ class simple_switch :
  public:
   simple_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr);
 
-  /**
-   Cast message and pass to #send
-   @param msg Incoming message (should cast to packet_train)
-   */
-  virtual void
-  handle(event* ev) override;
+  void
+  handle(event* ev);
 
-  virtual std::string
+  std::string
   to_string() const override {
     return "simple switch";
   }
@@ -46,11 +42,19 @@ class simple_switch :
 
   void connect_output(sprockit::sim_parameters *params,
                       int src_outport, int dst_inport,
-                      connectable *mod) override;
+                      event_handler* handler) override;
 
   void connect_input(sprockit::sim_parameters *params,
                      int src_outport, int dst_inport,
-                     connectable *mod) override;
+                     event_handler* handler) override;
+
+  link_handler*
+  payload_handler(int port) const override;
+
+  link_handler*
+  ack_handler(int port) const override {
+    return nullptr;
+  }
 
  private:
   double inj_bw_inverse_;
@@ -67,6 +71,10 @@ class simple_switch :
 
   std::vector<event_handler*> neighbors_;
   std::vector<event_handler*> nics_;
+
+#if !SSTMAC_INTEGRATED_SST_CORE
+  link_handler* mtl_handler_;
+#endif
 
 };
 

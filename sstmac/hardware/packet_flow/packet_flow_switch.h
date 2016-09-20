@@ -59,21 +59,24 @@ class packet_flow_switch :
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    connectable* mod) override;
+    event_handler* mod) override;
 
   virtual void
   connect_input(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    connectable* mod) override;
+    event_handler* mod) override;
 
-  /**
-   Cast message and pass to #send
-   @param msg Incoming message (should cast to packet_train)
-   */
-  void
-  handle(event* ev) override;
+  link_handler*
+  ack_handler(int port) const override;
+
+  link_handler*
+  payload_handler(int port) const override;
+
+  void handle_credit(event* ev);
+
+  void handle_payload(event* ev);
 
   void deadlock_check() override;
 
@@ -99,6 +102,11 @@ class packet_flow_switch :
   std::vector<packet_flow_sender*> out_buffers_;
 
   packet_flow_crossbar* xbar_;
+
+#if !SSTMAC_INTEGRATED_SST_CORE
+  link_handler* ack_handler_;
+  link_handler* payload_handler_;
+#endif
 
  private:
   void resize_buffers();

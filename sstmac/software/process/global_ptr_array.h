@@ -63,7 +63,7 @@ class sstmac_global_builtin_arr<T*, N> : public sstmac_global
   ~sstmac_global_builtin_arr() {
   }
 
-  virtual T*&
+  T*&
   get_val(int n = 0) const {
     if (n >= N) {
       spkt_throw_printf(
@@ -86,7 +86,7 @@ class sstmac_global_builtin_arr<T*, N> : public sstmac_global
     return const_cast<T*&> (init_);
   }
 
-  virtual std::string
+  std::string
   to_string() const {
     std::stringstream ss;
     ss << get_val();

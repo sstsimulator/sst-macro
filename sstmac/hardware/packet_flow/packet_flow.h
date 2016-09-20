@@ -14,58 +14,6 @@ DeclareDebugSlot(packet_flow_config)
 namespace sstmac {
 namespace hw {
 
-class packet_flow_interface
-{
- public:
-  typedef enum {
-    credit,
-    payload
-  } type_t;
-
- public:
-  type_t
-  type() const {
-    return type_;
-  }
-
-  int
-  vc() const {
-    return vc_;
-  }
-
-  void
-  set_vc(int vc) {
-    vc_ = vc;
-  }
-
-  void
-  serialize_order(serializer& ser);
-
-  static const long infinity = -1;
-
-  static const int unassigned_vc = -1;
-
- protected:
-  packet_flow_interface(int vc, type_t ty)
-    : vc_(vc), type_(ty)
-  {
-  }
-
-  packet_flow_interface(type_t ty) :
-    type_(ty), vc_(unassigned_vc)
-  {
-  }
-
-  packet_flow_interface()
-    : vc_(unassigned_vc) {
-  }
-
- protected:
-  int vc_;
-  type_t type_;
-
-};
-
 /**
  @class packet_flow
  Encapsulates a group of machine packets traveling together on the
@@ -73,7 +21,6 @@ class packet_flow_interface
  a larger message.
  */
 class packet_flow_payload :
-  public packet_flow_interface,
   public packet
   //public serializable_type<packet_flow_payload>
 {
@@ -91,11 +38,6 @@ class packet_flow_payload :
   packet_flow_payload(){} //for serialization
 
   virtual ~packet_flow_payload() {}
-
-  type_t
-  type() const {
-    return payload;
-  }
 
   /**
     Needed because of routable_message ambiguity.
@@ -203,10 +145,10 @@ class packet_flow_payload :
   }
 
   std::string
-  to_string() const;
+  to_string() const override;
 
   void
-  serialize_order(serializer& ser);
+  serialize_order(serializer& ser) override;
 
  protected:
   int inport_;
@@ -217,11 +159,13 @@ class packet_flow_payload :
 
   timestamp arrival_;
 
+  int vc_;
+
 };
 
 class packet_flow_credit :
   public event,
-  public packet_flow_interface,
+  public sprockit::printable,
   public serializable_type<packet_flow_credit>
 {
 
@@ -237,12 +181,13 @@ class packet_flow_credit :
     long num_credits)
     : port_(port),
       num_credits_(num_credits),
-      packet_flow_interface(vc, credit) {
+      vc_(vc)
+  {
   }
 
-  type_t
-  type() const {
-    return credit;
+  int
+  vc() const {
+    return vc_;
   }
 
   int
@@ -266,14 +211,15 @@ class packet_flow_credit :
   }
 
   std::string
-  to_string() const;
+  to_string() const override;
 
   void
-  serialize_order(serializer& ser);
+  serialize_order(serializer& ser) override;
 
  protected:
   int num_credits_;
   int port_;
+  int vc_;
 
 
 };

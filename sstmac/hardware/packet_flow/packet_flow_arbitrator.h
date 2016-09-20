@@ -89,15 +89,15 @@ class packet_flow_simple_arbitrator :
   packet_flow_simple_arbitrator(sprockit::sim_parameters* params);
 
   virtual void
-  arbitrate(packet_stats_st& st);
+  arbitrate(packet_stats_st& st) override;
 
   std::string
-  to_string() const {
+  to_string() const override {
     return "packet_flow simple arbitrator";
   }
 
   int
-  bytes_sending(timestamp now) const;
+  bytes_sending(timestamp now) const override;
 
  protected:
   timestamp next_free_;
@@ -116,22 +116,22 @@ class packet_flow_cut_through_arbitrator :
   ~packet_flow_cut_through_arbitrator();
 
   virtual void
-  arbitrate(packet_stats_st& st);
+  arbitrate(packet_stats_st& st) override;
 
   int
-  bytes_sending(timestamp now) const;
+  bytes_sending(timestamp now) const override;
 
   std::string
-  to_string() const {
+  to_string() const override {
     return "cut through arbitrator";
   }
 
   void
   partition(noise_model* model,
-    int num_intervals);
+    int num_intervals) override;
 
   void
-  init_noise_model(noise_model* noise);
+  init_noise_model(noise_model* noise) override;
 
  private:
   void clean_up(ticks_t now);

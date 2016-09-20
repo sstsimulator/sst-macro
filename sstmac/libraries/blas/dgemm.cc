@@ -20,12 +20,12 @@ class default_dgemm :
   }
 
   std::string
-  to_string() const {
+  to_string() const override {
     return "default dgemm";
   }
 
   compute_event*
-  op_3d(int m, int k, int n);
+  op_3d(int m, int k, int n) override;
 
  protected:
   double loop_unroll_;

@@ -26,10 +26,10 @@
 namespace sstmac {
 namespace sw {
 
-class library  {
+class library {
   
  public:
-  virtual std::string
+  std::string
   to_string() const {
     return libname_;
   }

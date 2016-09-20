@@ -32,18 +32,13 @@ class mpi_queue_recv_request  {
   friend class eager1_singlecpy;
 
  public:
-  virtual std::string
-  to_string() const {
-    return "mpi queue recv request";
-  }
-
   /// Hello.
   mpi_queue_recv_request(mpi_request* key, mpi_queue* queue, int count,
                MPI_Datatype type, int source, int tag,
                MPI_Comm comm, void* buffer);
 
   /// Goodbye.
-  virtual ~mpi_queue_recv_request();
+  ~mpi_queue_recv_request();
 
   /// Do we match the given message?
   bool matches(const mpi_message::ptr& msg);

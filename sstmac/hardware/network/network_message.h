@@ -53,7 +53,7 @@ class network_message :
   network_message(); //for serialization
 
   virtual std::string
-  to_string() const {
+  to_string() const override {
     return "network message";
   }
 
@@ -82,7 +82,7 @@ class network_message :
   is_nic_ack() const;
 
   node_id
-  toaddr() const {
+  toaddr() const override {
     return toaddr_;
   }
 
@@ -90,7 +90,7 @@ class network_message :
   put_on_wire();
 
   node_id
-  fromaddr() const {
+  fromaddr() const override {
     return fromaddr_;
   }
 
@@ -116,7 +116,7 @@ class network_message :
   }
 
   virtual void
-  serialize_order(serializer& ser);
+  serialize_order(serializer& ser) override;
 
   void
   convert_to_ack();
@@ -132,7 +132,7 @@ class network_message :
   }
 
   uint64_t
-  flow_id() const {
+  flow_id() const override {
     return uint64_t(net_id_);
   }
 
@@ -165,7 +165,7 @@ class network_message :
   reverse();
 
   long
-  byte_length() const;
+  byte_length() const override;
 
   node_id toaddr_;
 

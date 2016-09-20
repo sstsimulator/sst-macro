@@ -23,6 +23,7 @@
 #include <sprockit/debug.h>
 #include <sprockit/sim_parameters_fwd.h>
 #include <sprockit/unordered.h>
+#include <sprockit/printable.h>
 
 DeclareDebugSlot(allocation);
 
@@ -33,17 +34,10 @@ namespace sw {
  * Strategy type for assigning processes to nodes in a parallel run.
  *
  */
-class node_allocator
+class node_allocator :
+  public sprockit::printable
 {
  public:
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params);
-
-  virtual std::string
-  to_string() const {
-    return "allocation strategy";
-  }
-
   virtual
   ~node_allocator() throw ();
 
@@ -59,8 +53,7 @@ class node_allocator
    ordered_node_set& allocation) const = 0;
 
  protected:
-  node_allocator() :
-    topology_(nullptr), rt_(nullptr) {}
+  node_allocator(sprockit::sim_parameters* params);
 
  protected:
   hw::topology* topology_;
