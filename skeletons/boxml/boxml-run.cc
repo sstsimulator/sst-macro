@@ -1,7 +1,6 @@
 #include "boxml.h"
 #include <algorithm>
 #include <ctime>
-#include <sst/sumi_api.h>
 #include <sstmac/common/stats/stat_histogram.h>
 #include <sstmac/common/stats/stat_local_double.h>
 

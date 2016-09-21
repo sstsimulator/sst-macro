@@ -4,14 +4,17 @@
 #include <vector>
 #include <string>
 #include <sstmac/common/sstmac_config.h>
-#include <sprockit/serializable.h>
-#include <sprockit/serialize.h>
-#include <sprockit/serialize_serializable.h>
+#include <sstmac/common/serializable.h>
 #include <sprockit/unordered.h>
 
 #ifdef SSTMAC_HAVE_BOOST
   #include <boost/algorithm/string.hpp>
 #endif
+
+DeclareSerializable(lblxml::box);
+DeclareSerializable(lblxml::comp);
+DeclareSerializable(lblxml::comm);
+DeclareSerializable(lblxml::reduce);
 
 static std::set<int> empty_set;
 
@@ -38,7 +41,8 @@ namespace lblxml
   }
 #endif
 
-  class element : public sprockit::serializable
+  class element : 
+    public sstmac::serializable
   {
   public: 
     element() : index_(-1), id_("null")
@@ -63,7 +67,7 @@ namespace lblxml
     { std::cout << "index: " << index_ << " id: " << id_ << "\n"; }
 
     virtual void
-    serialize_order(sprockit::serializer &ser){
+    serialize_order(sstmac::serializer &ser){
       ser & index_;
       ser & id_;
     }
@@ -75,7 +79,7 @@ namespace lblxml
 
   class box :
     public element,
-    public sprockit::serializable_type<box>
+    public sstmac::serializable_type<box>
   {
     ImplementSerializableDefaultConstructor(box)
 
@@ -103,7 +107,7 @@ namespace lblxml
     }
 
     virtual void
-    serialize_order(sprockit::serializer &ser){
+    serialize_order(sstmac::serializer &ser){
       ser & loc_;
       element::serialize_order(ser);
     }
@@ -139,7 +143,7 @@ namespace lblxml
     }
 
     virtual void
-    serialize_order(sprockit::serializer &ser){
+    serialize_order(sstmac::serializer &ser){
       ser & dep_;
       ser & event_type_;
       element::serialize_order(ser);
@@ -208,7 +212,7 @@ namespace lblxml
     }
 
     virtual void
-    serialize_order(sprockit::serializer &ser){
+    serialize_order(sstmac::serializer &ser){
       //don't serialize the listeners - these get computed later
       event::serialize_order(ser);
     }
@@ -219,7 +223,7 @@ namespace lblxml
 
   class comp :
     public simple_event,
-    public sprockit::serializable_type<comp>
+    public sstmac::serializable_type<comp>
   {
     ImplementSerializableDefaultConstructor(comp)
   public:
@@ -260,7 +264,7 @@ namespace lblxml
     }
 
     virtual void
-    serialize_order(sprockit::serializer &ser){
+    serialize_order(sstmac::serializer &ser){
       ser & type_;
       ser & size_;
       ser & time_;
@@ -279,7 +283,7 @@ namespace lblxml
 
   class comm :
     public simple_event,
-    public sprockit::serializable_type<comm>
+    public sstmac::serializable_type<comm>
   {
     ImplementSerializableDefaultConstructor(comm)
   public:
@@ -319,7 +323,7 @@ namespace lblxml
     int size() { return size_; }
 
     virtual void
-    serialize_order(sprockit::serializer &ser){
+    serialize_order(sstmac::serializer &ser){
       ser & type_;
       ser & from_;
       ser & to_;
@@ -336,10 +340,16 @@ namespace lblxml
 
   class reduce :
     public event,
-    public sprockit::serializable_type<reduce>
+    public sstmac::serializable_type<reduce>
   {
     ImplementSerializable(reduce)
    public:
+    reduce()
+      : event(), size_(0), box_array_(0)
+    {
+      event_type_ = collective;
+    }
+
     reduce(int index, const std::string& id, const std::string& dep, int size)
       : event(index, id, dep), size_(size), box_array_(0)
     {
@@ -427,7 +437,7 @@ namespace lblxml
     }
 
     virtual void
-    serialize_order(sprockit::serializer &ser){
+    serialize_order(sstmac::serializer &ser){
       ser & size_;
       ser & team_map_;
       //don't do listeners, computed later

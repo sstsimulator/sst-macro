@@ -15,10 +15,9 @@ DeclareSerializable(lblxml::reduce);
 DeclareSerializable(lblxml::comm);
 DeclareSerializable(lblxml::comp);
 
-
 namespace lblxml
 {
-  SpktRegisterApp("boxml", boxml);
+  SpktRegister("boxml", sstmac::sw::app, boxml, "amr simulator");
 
   bool boxml::have_data_ = false;
   bool boxml::have_input_bin_ = false;
@@ -252,7 +251,7 @@ namespace lblxml
 
     comm_init();
 
-    tport_ = sumi_api();
+    tport_ = sumi::sumi_api();
     runtime::add_deadlock_check(
       new_deadlock_check(tport_, &sumi::transport::deadlock_check));
 

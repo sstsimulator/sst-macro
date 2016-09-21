@@ -1,5 +1,9 @@
 #include <sstmac/common/sim_thread_lock.h>
 
+#include <vector>
+#include <stdio.h>
+#include <stdint.h>
+
 class lock_array
 {
  public:

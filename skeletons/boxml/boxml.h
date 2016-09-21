@@ -2,8 +2,8 @@
 #define BOXML_H_INCLUDED
 
 #include <sstmacro.h>
-#include <sst/sumi_api.h>
-#include <sumi/transport.h>
+#include <sstmac/libraries/sumi/sumi.h>
+#include <sstmac/software/process/app.h>
 #include <sstmac/software/process/key.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/software/process/operating_system.h>
@@ -49,7 +49,7 @@ namespace lblxml
   typedef std::deque<int> da_list_t;
   typedef std::vector<da_list_t> rank_to_da_list_t;
 
-  class pt2pt_message : public sumi::rdma_message
+  class pt2pt_message : public sumi::message
   {
   private:
     int event_index_;
@@ -57,7 +57,7 @@ namespace lblxml
     typedef sprockit::refcount_ptr<pt2pt_message> ptr;
 
     pt2pt_message(int index, long num_bytes) : event_index_(index),
-      sumi::rdma_message(num_bytes)
+      sumi::message(num_bytes)
     { }
 
     ~pt2pt_message() { }
@@ -74,13 +74,11 @@ namespace lblxml
 
   public:
 
-    box_domain() { }
+    box_domain() : communicator(-1) { }
 
     box_domain (int comm_rank, int nboxes, const int* boxes, const int* map) :
-      map_(map), boxes_(boxes), size_(nboxes)
-    {
-      my_comm_rank_ = comm_rank;
-    }
+      map_(map), boxes_(boxes), size_(nboxes), communicator( comm_rank )
+    { }
 
     ~box_domain() { }
 
@@ -89,7 +87,7 @@ namespace lblxml
 
     int
     my_box_number() const {
-      return boxes_[my_comm_rank_];
+      return boxes_[my_comm_rank()];
     }
 
     int
@@ -164,7 +162,7 @@ namespace lblxml
 
   extern std::map<int,sstmac::timestamp> g_message_begin_;
 
-  class boxml : virtual public sstmac::sw::mpi_app
+  class boxml : public sstmac::sw::app
   {
   public:
     static sstmac::sim_thread_lock* event_lock;
@@ -275,7 +273,7 @@ namespace lblxml
     boxml() : barrier_tag_(-1), hist_eff_bw_(0), idle_time_(0) {}
 
     app*
-    clone_type() {
+    clone_type() const {
       return new boxml;
     }
 
