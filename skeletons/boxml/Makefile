@@ -48,5 +48,3 @@ $(LIBTARGET): $(OBJ)
 
 clean: 
 	rm -f $(TARGET) $(OBJ) 
-
-

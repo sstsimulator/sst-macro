@@ -1,4 +1,7 @@
 #include <sstmac/common/sim_thread_lock.h>
+#include <vector>
+#include <stdint.h>
+#include <stdio.h>
 
 #include <vector>
 #include <stdio.h>

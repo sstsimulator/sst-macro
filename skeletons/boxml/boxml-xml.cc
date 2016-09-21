@@ -102,7 +102,7 @@ erase_all(std::string& str, const char* delim){
         printf("Processing event %d\n", eventnum);
         fflush(stdout);
       }
-      eventnum++;
+      ++eventnum;
       (*fp)(e2,debug_);
       e2 = e2->NextSiblingElement( level2.c_str() );
     }
@@ -125,7 +125,8 @@ erase_all(std::string& str, const char* delim){
     int from = get_index( element->Attribute("from") );
     int to = get_index( element->Attribute("to") );
     int size = element->IntAttribute("size");
-    comm* ev = new comm(index, eventid, dep, "uninitialized", from, to, size );
+    int epoch = element->IntAttribute("epoch");
+    comm* ev = new comm(index, eventid, dep, epoch, "uninitialized", from, to, size );
     if (index >= g_events.size()){
       spkt_throw_printf(sprockit::value_error,
         "event id %d is greater than max %d - check XML file for largest event id",
@@ -141,7 +142,8 @@ erase_all(std::string& str, const char* delim){
     string dep = element->Attribute("dep");
     //string type = element->Attribute("type");
     int size = element->IntAttribute("size");
-    reduce* commev = new reduce(index, eventid, dep, size);
+    int epoch = element->IntAttribute("epoch");
+    reduce* commev = new reduce(index, eventid, dep, epoch, size);
     if (index >= g_events.size()){
       spkt_throw_printf(sprockit::value_error,
         "event id %d is greater than max %d - check XML file for largest event id",
@@ -160,7 +162,8 @@ erase_all(std::string& str, const char* delim){
     string dep = element->Attribute("dep");
     int at = get_index( element->Attribute("at") );
     double time = element->DoubleAttribute("time");
-    comp* ev = new comp(index, eventid, dep, "uninitialized", -1, time, at );
+    int epoch = element->IntAttribute("epoch");
+    comp* ev = new comp(index, eventid, dep, epoch, "uninitialized", -1, time, at );
     if (index >= g_events.size()){
       spkt_throw_printf(sprockit::value_error,
         "event id %d is greater than max %d - check XML file for largest event id",

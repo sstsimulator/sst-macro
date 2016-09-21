@@ -20,7 +20,7 @@ static std::set<int> empty_set;
 
 namespace lblxml
 {
-  typedef spkt_unordered_map<int,int> box_to_comm_rank_map;
+  typedef spkt_unordered_map<int,int> box_to_domain_rank_map;
   typedef spkt_unordered_map<int,std::set<int> > box_to_listener_map;
   typedef spkt_unordered_set<int> int_container_t;
   typedef spkt_unordered_set<int>::iterator int_container_iter;
@@ -100,6 +100,9 @@ namespace lblxml
     int loc()
     { return loc_; }
 
+    void change_loc(int newl)
+    { loc_ = newl; }
+
     virtual void print()
     {
       std::cout << "box: " << "loc: " << loc_ << " ";
@@ -124,8 +127,8 @@ namespace lblxml
     event() : event_type_(none)
     { }
 
-    event(int index, const std::string& id, const std::string& dep) :
-      element(index,id), event_type_(none)
+    event(int index, const std::string& id, const std::string& dep, int epoch) :
+      element(index,id), event_type_(none), epoch_(epoch)
     {
       std::vector<std::string> splitvec;
       split_string(splitvec, dep, ",");
@@ -172,6 +175,8 @@ namespace lblxml
 
     int_container_t& get_dep() { return dep_; }
 
+    int epoch() { return epoch_; }
+
     virtual void print()
     {
       int_container_iter dep_it = dep_.begin();
@@ -185,6 +190,7 @@ namespace lblxml
 
   private:
     int_container_t dep_;
+    int epoch_;
 
   protected:
     event_type_t event_type_;
@@ -193,7 +199,9 @@ namespace lblxml
   class simple_event : public event
   {
    public:
-    simple_event(int index, const std::string& id, const std::string& dep) : event(index, id, dep)
+    simple_event(int index, const std::string& id, const std::string& dep,
+                 int epoch)
+      : event(index, id, dep, epoch)
     {
     }
 
@@ -230,9 +238,9 @@ namespace lblxml
     comp() : type_(uninitialized), size_(-1), time_(-1), at_(-1)
     { event_type_ = computation; }
 
-    comp(int index, std::string id, std::string dep, std::string type,
+    comp(int index, std::string id, std::string dep, int epoch, std::string type,
          int size, double time, int at) :
-      simple_event(index, id, dep), size_(size), time_(time), at_(at)
+      simple_event(index, id, dep, epoch), size_(size), time_(time), at_(at)
     {
       if(type == "averageAndReflux")
         type_ = averageAndReflux;
@@ -296,9 +304,10 @@ namespace lblxml
       to_(copy.to_), size_(copy.size_)
     { event_type_ = pt2pt; }
 
-    comm(int index, const std::string& id, const std::string& dep, const std::string& type,
+    comm(int index, const std::string& id, const std::string& dep,
+         int epoch, const std::string& type,
          int from, int to, int size) :
-      simple_event(index, id, dep), from_(from), to_(to), size_(size)
+      simple_event(index, id, dep, epoch), from_(from), to_(to), size_(size)
     {
       event_type_ = pt2pt;
       if( type == "copy")
@@ -350,8 +359,9 @@ namespace lblxml
       event_type_ = collective;
     }
 
-    reduce(int index, const std::string& id, const std::string& dep, int size)
-      : event(index, id, dep), size_(size), box_array_(0)
+    reduce(int index, const std::string& id, const std::string& dep,
+           int epoch, int size)
+      : event(index, id, dep, epoch), size_(size), box_array_(0)
     {
       event_type_ = collective;
     }
@@ -374,8 +384,8 @@ namespace lblxml
       for(int i=0; i<splitvec.size(); ++i) {
         std::string id = splitvec[i];
         int box_number = get_index(id);
-        int comm_rank = i;
-        team_map_[box_number] = comm_rank;
+        int domain_rank = i;
+        team_map_[box_number] = domain_rank;
       }
     }
 
@@ -384,13 +394,13 @@ namespace lblxml
       return box_array_.data();
     }
 
-    box_to_comm_rank_map& get_team()
+    box_to_domain_rank_map& get_team()
     {
       return team_map_;
     }
 
-    int comm_rank(int box_number) const {
-      box_to_comm_rank_map::const_iterator it = team_map_.find(box_number);
+    int domain_rank(int box_number) const {
+      box_to_domain_rank_map::const_iterator it = team_map_.find(box_number);
       if (it == team_map_.end()){
         spkt_throw_printf(sprockit::value_error,
           "invalid box number %d to allreduce id %d", box_number, index());
@@ -405,11 +415,11 @@ namespace lblxml
     void
     compute_box_array() {
       box_array_.resize(team_map_.size());
-      box_to_comm_rank_map::iterator it, end = team_map_.end();
+      box_to_domain_rank_map::iterator it, end = team_map_.end();
       for (it=team_map_.begin(); it != end; ++it){
-        int comm_rank = it->second;
+        int domain_rank = it->second;
         int box_number = it->first;
-        box_array_[comm_rank] = box_number;
+        box_array_[domain_rank] = box_number;
       }
     }
 
@@ -446,7 +456,7 @@ namespace lblxml
 
    private:
     int size_;
-    box_to_comm_rank_map team_map_;
+    box_to_domain_rank_map team_map_;
     box_to_listener_map listener_map_;
     std::vector<int> box_array_;
 
