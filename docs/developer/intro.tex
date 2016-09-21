@@ -23,7 +23,7 @@ handle(event* ev){
 ...
 }
 \end{CppCode}
-The prototype therefore accepts \emph{any} event type. The class \inlinecode{message} is a special type of event that refers specifically to a message (e.g. MPI message) carrying a data payload.
+The prototype therefore accepts \emph{any} event type. The class \inlinecode{message} is a special type of event that refers specifically to a message (e.g. MPI message, flow in the context of TCP/IP) carrying a complete block of data or file.
 Misusing types in SST/macro is \emph{not} a compile-time error.
 The onus of correct event types falls on runtime assertions.
 All event types may not be valid for a given module.

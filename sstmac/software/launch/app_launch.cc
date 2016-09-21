@@ -33,8 +33,9 @@ app_launch::~app_launch()
   delete indexer_;
 }
 
-void
-app_launch::init_factory_params(sprockit::sim_parameters* params)
+app_launch::app_launch(sprockit::sim_parameters* params, app_id aid) :
+  aid_(aid),
+  indexed_(false)
 {
   appname_ = params->get_param("name");
 

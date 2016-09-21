@@ -1,5 +1,6 @@
-TARGET := runsendrecv
-SRC := $(shell ls *.cc) 
+#TARGET := runsendrecv
+TARGET := libsendrecv.so
+SRC := main.cc
 
 CXX :=    sst++
 CC :=     sstcc

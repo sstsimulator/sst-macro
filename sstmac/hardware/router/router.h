@@ -42,12 +42,9 @@ namespace hw {
   a 'component' in the network - those are switches.  Switch and router
   are not synonymous in SST/macro.  All switches have routers.
 */
-class router
+class router : public sprockit::printable
 {
  public:
-  virtual std::string
-  to_string() const = 0;
-
   /**
    * @brief route Makes a routing decision for the packet.
    * All routing decisions should be stored on the packet object itself.
@@ -56,11 +53,9 @@ class router
   virtual void
   route(packet* pkt);
 
- private:
   virtual void
   route_to_switch(switch_id sid, routable::path& path) = 0;
 
- public:
   virtual ~router();
 
   virtual void

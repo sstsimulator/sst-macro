@@ -13,7 +13,7 @@ packet::packet(
  num_bytes_(num_bytes),
  byte_offset_(byte_offset),
  flow_id_(orig->flow_id()),
- orig_(0)
+ orig_(nullptr)
 {
 #if SSTMAC_SANITY_CHECK
   hw::unique_msg_id null_msg_id;

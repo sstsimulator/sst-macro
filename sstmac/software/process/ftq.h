@@ -22,7 +22,9 @@ namespace sw {
 
 class ftq_epoch
 {
- protected:
+ private:
+  friend class app_ftq_calendar;
+
   long long* totals_;
 
  public:
@@ -49,42 +51,7 @@ class ftq_epoch
 
 };
 
-struct event_node {
-  int event_typeid;
-
-  long ticks_begin;
-
-  long ticks_end;
-
-  event_node* next;
-
-};
-
-class task_ftq_calendar :
-  public ftq_epoch
-{
- public:
-
-  task_ftq_calendar();
-
-  virtual ~task_ftq_calendar();
-
-  void collect(int event_typeid, long ticks_begin, long ticks);
-
-  void dump(std::ofstream& os);
-
- protected:
-  event_node* head_;
-
-  event_node* tail_;
-
-  long max_tick_;
-
-
-};
-
-class app_ftq_calendar :
-  public task_ftq_calendar
+class app_ftq_calendar
 {
 
  public:
@@ -114,12 +81,13 @@ class app_ftq_calendar :
   global_reduce(parallel_runtime* rt);
 
  private:
-  spkt_unordered_map<int, task_ftq_calendar*> calendars_;
-  spkt_unordered_map<int, ftq_epoch*> thread_epochs_;
-
   std::vector<ftq_epoch> epochs_;
 
+  ftq_epoch aggregate_;
+
   std::list<long long*> buffers_;
+
+  void dump(std::ofstream& os);
 
   int aid_;
 

@@ -23,12 +23,22 @@ class connectable
 {
  public:
   virtual void
-  connect(
+  connect_output(
+    sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    connection_type_t ty,
     connectable* mod,
-    config* cfg) = 0;
+    event_handler* handler) = 0;
+
+  virtual void
+  connect_input(
+    sprockit::sim_parameters* params,
+    int src_outport,
+    int dst_inport,
+    connectable* mod,
+    event_handler* handler) = 0;
+
+
 };
 \end{CppCode}
 
@@ -40,19 +50,16 @@ The function is called twice for each side of the connection. If we have a sourc
 \begin{CppCode}
 connectable* src = ...
 connectable* dst = ...
-connectable::config cfg = ...
-src->connect(inport, outport, Output, dst, &cfg);
-dst->connect(inport, outport, Input, src, &cfg);
+sprockit::sim_parameters* params = ...
+src->connect_output(params, inport, outport, Output, dst);
+dst->connect_input(params, inport, outport, Input, src);
 \end{CppCode}
-
-The ``direction'' of the link as input or output is identified by \inlinecode{connection_type_t}.
-
 
 A certain style and set of rules is recommended for all connectables.
 If these rules are ignored, setting up connections can quicky become confusing and produce difficult to maintain code.
 The first and most important rule is that \inlinecode{connectables} never make their own connections.
 Some ``meta''-object should create connections between objects.
-In general, this work is left to a \inlinecode{topology} object.
+In general, this work is left to a \inlinecode{interconnect} object.
 An object should never be responsible for knowing about the ``world'' outside itself.
 A topology or interconnect tells the object to make a connection rather than the object deciding to make the connection itself.
 This will be illustrated below in \ref{sec:topology}.
@@ -64,8 +71,8 @@ If you need a bidirectional link (A $\rightarrow$ B, B $\rightarrow$ A),
 two separate function calls should be made
 
 \begin{CppCode}
-A->connect(B);
-B->connect(A);
+A->connect_output(B);
+B->connect_input(A);
 \end{CppCode}
 
 rather than having, e.g. A create a bidirectional link.
@@ -89,48 +96,49 @@ To illustrate, here is the code for the interconnect that creates the node objec
 The interconnect is itself a factory object, configured from a parameter file.
 
 \begin{CppCode}
-void
-interconnect::init_factory_params(sprockit::sim_parameters* params)
+interconnect::interconnect(sprockit::sim_parameters* params, event_manager* mgr, partition* part, parallel_runtime* rt)
 {
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
   topology_ = topology_factory::get_param("name", top_params);
+  num_nodes_ = topology_->num_nodes();
+  num_switches_ = topology_->num_switches();
   
-  endpoint_map nodes;
+  switches_.resize(num_switches_);
+  nodes_.resize(num_nodes_);
+
   sprockit::sim_parameters* node_params = params->get_namespace("node");
-  sprockit::factory<connectable>* node_builder
-    = new sprockit::template_factory<connectable, node_factory>(node_params->get_param("model"));
-  topology_->build_endpoint_connectables(nodes, node_builder, partition_, rt_->me(), node_params);
+  sprockit::sim_parameters* switch_params = params->get_namespace("switch");
+  
+  sprockit::sim_parameters* nic_params = node_params->get_namespace("nic");
+  sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
+  sprockit::sim_parameters* ej_params = switch_params->get_namespace("ejection"); 
+  
+  build_endpoints(node_params, nic_params, mgr);
+  build_switches(switch_params, mgr);
+  connect_endpoints(inj_params, ej_params);
+  connect_switches(switch_params); 
 }
 \end{CppCode}
 
-The interconnect creates a topology and factory builder for the nodes.
-Note here the use of parameter namespaces to isolate parameters.
-This continues for the NIC and switches.
+For full details of the functions that build/connect endpoints and switches, consult the source code.
+In general, the \inlinecode{interconnect} object uses the connectable interface to setup all the connections.
+It uses the topology interface to determine which connections are required, e.g.
 
 \begin{CppCode}
-  endpoint_map nics;
-  sprockit::sim_parameters* nic_params = params->get_namespace("nic");
-  sprockit::factory2<connectable>* nic_builder
-    = new sprockit::template_factory2<connectable, nic_factory>(nic_params->get_param("model"));
-  topology_->build_interface_connectables(1, nics, nic_builder, partition_, rt_->me(), nic_pa
+switch_id src = ...
+std::vector<topology::connection> outports;
+topology_->connected_outports(src, outports);
+for (auto& conn : outports){
+  network_switch* dst_sw = switches_[conn.dst];
+  src_sw->connect_output(params, conn.src_outport, conn.dst_inport,
+  					 dst_sw->payload_handler(conn.dst_inport));
+  dst_sw->connect_input(params, conn.src_outport, conn.dst_inport,
+  				       src_sw->ack_handler(conn.src_outport));
+}
 \end{CppCode}
-
-\begin{CppCode}
-  internal_map switches;
-  sprockit::sim_parameters* switch_params = params->get_namespace("switch");
-  sprockit::factory<connectable>* switch_builder
-    = new sprockit::template_factory<connectable, network_switch_factory>(switch_params->get_param("model"));
-  network_switch* dummy = new dist_dummy_switch(switch_id());
-  topology_->build_internal_connectables(switches, switch_builder, partition_, rt_->me(), switch_params, dummy);
-\end{CppCode}
-Some special parameters (dummy switches) are important for MPI parallel simulations,
-but these can be ignored for now.
-
-Once these components are constructed, the topology connects them.
-\begin{CppCode}
-  topology_->connect_end_points(switches_, nics_);
-  topology_->connect_topology(switches_);
-\end{CppCode}
+The \inlinecode{connected_outports} function takes a given source switch and returns all the connections that the
+switch is supposed to make.  Each switch must provide \inlinecode{payload_handler} and \inlinecode{ack_handler} functions to return
+the \inlinecode{event_handler} that should receive either new packets (payload) or credits (ack) for the connections.
 
 \section{Node}\label{sec:node}
 Although the \nodecls can be implemented as a very complex model, it fundamentally only requires a single set of functions to meet the public interface.
@@ -138,44 +146,17 @@ The \nodecls must provide \inlinecode{execute_kernel} functions that are invoked
 The prototypes for these are:
 
 \begin{CppCode}
-  virtual void
-  execute_kernel(ami::COMP_FUNC func, event* data);
+virtual void
+execute(ami::COMP_FUNC func, event* data);
 
-  virtual void
-  execute_kernel(ami::COMM_FUNC func, event* data);
+virtual void
+execute(ami::SERVICE_FUNC func, event* data);
 \end{CppCode}	
 
 By default, the abstract \nodecls class throws an \inlinecode{sprockit::unimplemented_error}. These functions are not pure virtual.
 A node is only required to implement those functions that it needs to do.
 The various function parameters are enums for the different operations a node may perform:
-computation or communication.
-The distinction between computation and hardware is subtle.
-Hardware operations are things like interrupts, device resets, device failures.
-They are not necessarily ``kernels'' in the standard parlance.
-
-To illustrate a single example, we show the code that handles the function call
-
-\begin{CppCode}
-node->execute_kernel(ami::AMI_COMM_SEND, msg);
-\end{CppCode}
-
-leads to
-
-\begin{CppCode}
-  switch (func) {
-    case sstmac::sw::ami::AMI_COMM_SEND: 
-    {
-      network_message* netmsg = ptr_safe_cast(network_message, data);
-      netmsg->set_fromaddr(my_id_);
-      if (netmsg->toaddr() == nodeid_) {
-      	/* Intranode send */
-      }
-      else {
-        nic_->send(netmsg);
-      }
-    }  
-\end{CppCode}
-All dynamic casts are routed through a special macro \inlinecode{safe_cast} for most types or \inlinecode{ptr_safe_cast} for smart pointer types.
+computation or communication. Computation functions are those that require compute resources. Service functions are special functions that run in the background and ``lightweight'' such that any modeling of processor allocation should be avoided. Service functions are run ``for free'' with no compute 
 
 \section{Network Interface (NIC)}\label{sec:nic}
 The network interface can implement many services, but the basic public interface requires the NIC to do three things:
@@ -196,14 +177,26 @@ A non-virtual, top-level \inlinecode{send} function performs operations standard
 Once these operations are complete, the NIC invokes \inlinecode{do_send} to perform model-specific send operations.
 The NIC should only ever send \inlinecode{network_message} types.
 
-For the bare-bones class \inlinecode{null_nic}, the function is
+For the bare-bones class \inlinecode{simple_nic}, the function is
 
 \begin{CppCode}
-  injector_->handle(msg);
-  if (msg->get_needs_ack()) {
-    sst_message* acker = msg->clone_ack();
-    schedule(now(), parent_node_, acker);
+void
+simple_nic::do_send(network_message* msg)
+{
+  long num_bytes = msg->byte_length();
+  timestamp now_ = now();
+  timestamp start_send = now_ > next_free_ ? now_ : next_free_;
+  timestamp time_to_inject = inj_lat_ + timestamp(inj_bw_inverse_ * num_bytes);
+  //leave the injection latency term to the interconnect
+  schedule_now(injection_switch_, msg);
+
+  next_free_ = start_send + time_to_inject;
+  if (msg->needs_ack()) {
+    //do whatever you need to do so that this msg decouples all pointers
+    network_message* acker = msg->clone_injection_ack();
+    schedule(next_free_, parent_->self_handler(), acker); //send to node
   }
+}
 \end{CppCode}
 After injecting, the NIC creates an ACK and delivers the notification to the \nodecls.
 In general, all arriving messages or ACKs should be delivered to the node.
@@ -253,22 +246,23 @@ The internal details can essentially be arbitrary.
 However, the basic scheme for most switches follows the code below for the \inlinecode{packet_flow} model.
 
 \begin{CppCode}
-  packet_flow_interface* fpack = interface_cast(packet_flow_interface, ev);
-  switch (fpack->type()) {
-    case packet_flow_interface::credit: {
-      packet_flow_credit* credit = static_cast<packet_flow_credit*>(fpack);
-      out_buffers_[credit->port()]->handle_credit(credit);
-      break;
-    }
-    case packet_flow_interface::payload: {
-      packet_flow_payload* payload = static_cast<packet_flow_payload*>(fpack);
-      router_->route(payload);
-      xbar_->handle_payload(payload);
-      break;
-    }
-  }
+void
+packet_flow_switch::handle_credit(event *ev)
+{
+  packet_flow_credit* credit = static_cast<packet_flow_credit*>(ev);
+  out_buffers_[credit->port()]->handle_credit(credit);
+}
+
+void
+packet_flow_switch::handle_payload(event *ev)
+{
+  packet_flow_payload* payload = static_cast<packet_flow_payload*>(ev);
+  router_->route(payload);
+  xbar_->handle_payload(payload);
+}
 \end{CppCode}
-The arriving event is determined to either be a new packet or a credit.
+The arriving event is sent to either a credit handler or a payload handler,
+which is configured during simulation setup.
 If a packet, the router object selects the next destination (port).
 The packet is then passed to the crossbar for arbitration.
 
@@ -289,45 +283,80 @@ The most important functions in the \topcls class are
 \begin{CppCode}
 class topology
 {
+virtual bool
+uniform_network_ports() const = 0;
 
-  virtual std::vector<node_id>
-  get_nodes_connected_to_switch(switch_id swid) const = 0;
+virtual bool
+uniform_switches_non_uniform_network_ports() const = 0;
 
-  virtual long
-  num_switches() const = 0;
+virtual bool
+uniform_switches() const = 0;
 
-  virtual long
-  num_nodes() const = 0;
+virtual void
+connected_outports(switch_id src, std::vector<topology::connection>& conns) const = 0;
 
-  virtual void
-  connect_objects(connectable_map& objects) = 0;
+virtual void
+configure_individual_port_params(switch_id src,
+      sprockit::sim_parameters* switch_params) const = 0;
 
-  virtual switch_id
-  node_to_injection_switch(node_id nodeaddr, int& switch_port) const = 0;
+virtual int
+num_switches() const = 0;
 
-  virtual switch_id
-  node_to_ejection_switch(node_id nodeaddr, int& switch_port) const = 0;
+virtual int
+num_leaf_switches() const = 0;
 
-  virtual void
-  minimal_route_to_switch(
-    switch_id current_sw_addr,
-    switch_id dest_sw_addr,
-    routable::path& path) const = 0;
+virtual int
+num_nodes() const = 0;
 
-  virtual int
-  num_hops_to_node(node_id src, node_id dst) const = 0;
+virtual int
+num_endpoints() const = 0;
 
+virtual int
+max_num_ports() const = 0;
 
+virtual switch_id
+endpoint_to_injection_switch(node_id nodeaddr, int& switch_port) const = 0;
+
+virtual switch_id
+endpoint_to_ejection_switch(node_id nodeaddr, int& switch_port) const = 0;
+
+virtual void
+configure_vc_routing(std::map<routing::algorithm_t, int>& m) const = 0;
+
+virtual switch_id
+node_to_ejection_switch(node_id addr, int& port) const = 0;
+
+virtual int
+minimal_distance(switch_id src, switch_id dst) const = 0;
+
+virtual int
+num_hops_to_node(node_id src, node_id dst) const = 0;
+
+virtual void
+nodes_connected_to_injection_switch(switch_id swid,
+                      std::vector<injection_port>& nodes) const = 0;
+
+virtual void
+nodes_connected_to_ejection_switch(switch_id swid,
+                      std::vector<injection_port>& nodes) const = 0;
+
+virtual void
+minimal_route_to_switch(
+switch_id current_sw_addr,
+switch_id dest_sw_addr,
+routable::path& path) const = 0;
+
+virtual bool
+node_to_netlink(node_id nid, node_id& net_id, int& offset) const = 0;
 \end{CppCode}
 
 These functions are documented in the \inlineshell{topology.h} header file.
 The first few functions just give the number of switches, number of nodes, and finally which nodes are connected to a given switch.
-The most critical function for a topology is the \inlinecode{connect_objects} function that takes a list of objects and actually forms the links between them.
 Each compute node will be connected to an injector switch and an ejector switch (often the same switch).
 The topology must provide a mapping between a node and its ejection and injection points.
 Additionally, the topology must indicate a port number or offset for the injection in case the switch has many nodes injecting to it.
 The most important thing to distinguish here are \nodeid and \switchid types.
-These are typedefs that distinguish between a switch or internal object in the topology and a node or network endpoint.
+These are typedefs that distinguish between a switch in the topology and a node or network endpoint.
 
 Besides just forming the connections, a topology is responsible for routing.
 Given a source switch and the final destination, a topology must fill out path information.
@@ -350,52 +379,6 @@ The switch is not able to determine for itself which outport to route along.
 The topology tells the switch which port it needs and the switch determines what sort of congestion delay to expect on that port.
 This division of labor is complicated a bit by adaptive routing, but remains essentially the same.  More details are given later.
 
-\subsection{Structured Topology}\label{subsec:structuredTopology}
-
-The structured topology assumes a regular, ordered connecting of nodes like a torus.
-It is synonymous with any topology that can be mapped onto a coordinate system.
-This is true even of tree structures for which the coordinates define which branch/leaf.
-The structured topology introduces a few extra virtual functions:
-
-\begin{CppCode}
-class structured_topology :
-  public topology
-{
-  ....
-  virtual int
-  ndimensions() const = 0;	
-
-  virtual void
-  compute_switch_coords(switch_id swid, coordinates& coords) const = 0;
-
-  virtual void
-  minimal_route_to_coords(
-    const coordinates& src_coords,
-    const coordinates& dest_coords,
-    routable::path& path) const = 0;
-
-  virtual int
-  minimal_distance(
-    const coordinates& src_coords,
-    const coordinates& dest_coords) const = 0;
-
-  virtual void
-  get_productive_path(
-    int dim,
-    const coordinates& src,
-    const coordinates& dst,
-    routable::path& path) const = 0;
-  ...
-};
-\end{CppCode}
-The structured topology must have a well-defined number of dimensions, such as a 3D-torus or the number of levels in a tree.
-The topology must also be able to map any \switchid to a unique set of coordinates.
-Given two input sets of input coordinates, it should be able to perform the routing operation or compute the minimal distance between two points.
-Finally, for adaptive routing purposes, the topology should map routing requests to the correct path.
-For example, if I want to move in the X dimension in a 3D-torus, what path (port) is needed to make a productive step?
-It can be that any step along that dimension is unproductive - you've already arrived.
-The behavior is then undefined.
-
 \section{Router}\label{sec:router}
 The router has a simple public interface
 
@@ -404,17 +387,10 @@ class router
 {
 ...
   virtual void
-  route(packet* pkt) = 0;
+  route(packet* pkt);
 
   virtual void
-  minimal_route_to_node(
-    node_id node_addr,
-    routable::path& path) = 0;
-    
-  virtual void
-  minimal_route_to_switch(
-    switch_id sw_addr,
-    routable::path& path) = 0;
+  route_to_switch(switch_id sid, routable::path& path) = 0;
 ...
 };
 \end{CppCode}
@@ -425,21 +401,10 @@ However, the router should query the topology object for any path-specific infor
 
 \begin{CppCode}
 void
-structured_router::minimal_route_to_node(
-  node_id dest_node_addr,
-  routable::path& path)
+minimal_router::route_to_switch(switch_id sid, routable::path& path)
 {
-  netlink_id endpoint_id(dest_node_addr / top_->num_nodes_per_netlink());
-  //Query the topology for path info
-  switch_id ej_addr = regtop_->endpoint_to_ejection_switch(endpoint_id, path.outport);
-  if (ej_addr == my_addr_) {
-    path.vc = 0;
-  }
-  else {
-    minimal_route_to_switch(ej_addr, path);
-  }
+  top_->minimal_route_to_switch(my_addr_, sid, path);
 }
-...
 \end{CppCode}
 
 For adaptive routing, a bit more work is done.

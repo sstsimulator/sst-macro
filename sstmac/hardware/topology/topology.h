@@ -57,14 +57,28 @@ class topology : public sprockit::printable
 
   /**** BEGIN PURE VIRTUAL INTERFACE *****/
   /**
-   * @brief Whether all netwokr ports are uniform
+   * @brief Whether all network ports are uniform on all switches,
+   *        having exactly the same latency/bandwidth parameters
    * @return
    */
   virtual bool
   uniform_network_ports() const = 0;
 
+  /**
+   * @brief Whether all switches are the same, albeit with each port on the switch
+   *        having slightly different latency/bandwidth configurations
+   * @return
+   */
   virtual bool
   uniform_switches_non_uniform_network_ports() const = 0;
+
+  /**
+   * @brief Whether all switches are the same and all ports on those switches
+   *        have exactly the same configuration
+   * @return
+   */
+  virtual bool
+  uniform_switches() const = 0;
 
   /**
    * @brief connected_outports
@@ -75,6 +89,12 @@ class topology : public sprockit::printable
   virtual void
   connected_outports(switch_id src, std::vector<topology::connection>& conns) const = 0;
 
+  /**
+   * @brief configure_individual_port_params.  The port-specific parameters
+   *        will be stored in new namespaces "portX" where X is the port number
+   * @param src
+   * @param [inout] switch_params
+   */
   virtual void
   configure_individual_port_params(switch_id src,
           sprockit::sim_parameters* switch_params) const = 0;
@@ -88,17 +108,33 @@ class topology : public sprockit::printable
   virtual int
   num_switches() const = 0;
 
+  /**
+     For direct networks, this includes all switches.
+     For indirect networks, this includes only those switches
+     connected to endpoint nodes
+     @return The number of switches connected to endpoint nodes
+  */
   virtual int
   num_leaf_switches() const = 0;
 
   virtual int
   num_nodes() const = 0;
 
+  /**
+   * @brief num_endpoints To be distinguished slightly from nodes.
+   * Multiple nodes can be grouped together with a netlink.  The netlink
+   * is then the network endpoint that injects to the switch topology
+   * @return
+   */
   virtual int
   num_endpoints() const = 0;
 
-  virtual bool
-  uniform_switches() const = 0;
+  /**
+   * @brief Return the maximum number of ports on any switch in the network
+   * @return
+   */
+  virtual int
+  max_num_ports() const = 0;
 
   /**
      For a given node, determine the injection switch
@@ -122,8 +158,92 @@ class topology : public sprockit::printable
   virtual switch_id
   endpoint_to_ejection_switch(node_id nodeaddr, int& switch_port) const = 0;
 
+  /**
+   * @brief configure_vc_routing  Configure the number of virtual channels
+   *        required for all supported routing algorithms
+   * @param [inout] m
+   */
   virtual void
   configure_vc_routing(std::map<routing::algorithm_t, int>& m) const = 0;
+
+  /**
+   * @brief node_to_ejection_switch Given a destination node,
+   *        figure out which switch has an ejection connection to it
+   * @param addr
+   * @param port  The port number on the switch that leads to ejection
+   *              to the particular node
+   * @return
+   */
+  virtual switch_id
+  node_to_ejection_switch(node_id addr, int& port) const = 0;
+
+  /**
+    This gives the minimal distance counting the number of hops between switches.
+    @param src. The source switch.
+    @param dest. The destination switch.
+    @return The number of hops to final destination
+  */
+  virtual int
+  minimal_distance(switch_id src, switch_id dst) const = 0;
+
+
+  /**
+    This gives the minimal distance counting the number of hops between switches.
+    @param src. The source node.
+    @param dest. The destination node.
+    @return The number of hops to final destination
+  */
+  virtual int
+  num_hops_to_node(node_id src, node_id dst) const = 0;
+
+  struct injection_port {
+    node_id nid;
+    int port;
+  };
+
+  /**
+     For a given input switch, return all nodes connected to it.
+     This return vector might be empty if the
+     switch is an internal switch not connected to any nodes
+     @return The nodes connected to switch for injection
+  */
+  virtual void
+  nodes_connected_to_injection_switch(switch_id swid,
+                          std::vector<injection_port>& nodes) const = 0;
+
+  /**
+     For a given input switch, return all nodes connected to it.
+     This return vector might be empty if the
+     switch is an internal switch not connected to any nodes
+     @return The nodes connected to switch for ejection
+  */
+  virtual void
+  nodes_connected_to_ejection_switch(switch_id swid,
+                          std::vector<injection_port>& nodes) const = 0;
+
+  /**
+     Given the current location and a destination,
+     compute the minimal path to the destination.
+     The path generally consists of a dimension,
+     a direction or branch along that dimension,
+     a port number for that dim/dir combination,
+     and a virtual channel along the dim/dir
+     appropriate for avoiding deadlock.
+     @param current_sw_addr The addr of the current switch
+     @param dest_sw_addr The addr of the destination switch
+     @param path [inout] A complete path descriptor to the destination switch
+  */
+  virtual void
+  minimal_route_to_switch(
+    switch_id current_sw_addr,
+    switch_id dest_sw_addr,
+    routable::path& path) const = 0;
+
+  virtual bool
+  node_to_netlink(node_id nid, node_id& net_id, int& offset) const = 0;
+
+
+  /**** END PURE VIRTUAL INTERFACE *****/
 
   /**
      For a given node, determine the ejection switch
@@ -167,9 +287,6 @@ class topology : public sprockit::printable
     return endpoint_to_injection_switch(nodeaddr, ignore);
   }
 
-  virtual switch_id
-  node_to_ejection_switch(node_id addr, int& port) const = 0;
-
   virtual void
   minimal_routes_to_switch(
     switch_id current_sw_addr,
@@ -179,41 +296,6 @@ class topology : public sprockit::printable
     paths.resize(1);
     minimal_route_to_switch(current_sw_addr, dest_sw_addr, paths[0]);
   }
-
-  /**
-    The function accepts either source or node coordinates.
-    This gives the minimal distance counting the number of hops between switches.
-    If node coordinates are given, the last coordinate is just ignored.
-    @param src_coords. The source coordinates. This can be either switch or node coordinates.
-    @param dest_coords. The destination coordinates. This can be either switch or node coordinates.
-    @return The number of hops to final destination
-  */
-  virtual int
-  minimal_distance(switch_id src, switch_id dst) const = 0;
-
-  virtual int
-  num_hops_to_node(node_id src, node_id dst) const = 0;
-
-  struct injection_port {
-    node_id nid;
-    int port;
-  };
-
-  /**
-     For a given input switch, return all nodes connected to it.
-     This return vector might be empty if the
-     switch is an internal switch not connected to any nodes
-     @throw value_error If invalid switch id is given
-     @return The nodes connected to switch
-  */
-  virtual void
-  nodes_connected_to_injection_switch(switch_id swid, std::vector<injection_port>& nodes) const = 0;
-
-  virtual void
-  nodes_connected_to_ejection_switch(switch_id swid, std::vector<injection_port>& nodes) const = 0;
-
-  virtual bool
-  node_to_netlink(node_id nid, node_id& net_id, int& offset) const = 0;
 
   virtual void
   create_partition(
@@ -226,30 +308,11 @@ class topology : public sprockit::printable
     int nthread,
     int noccupied) const;
 
-  /**
-     Given the current location and a destination,
-     compute the minimal path to the destination.
-     The path generally consists of a dimension,
-     a direction or branch along that dimension,
-     a port number for that dim/dir combination,
-     and a virtual channel along the dim/dir
-     appropriate for avoiding deadlock.
-     @param current_sw_addr The addr of the current switch
-     @param dest_sw_addr The addr of the destination switch
-     @param path [inout] A complete path descriptor to the destination switch
-  */
-  virtual void
-  minimal_route_to_switch(
-    switch_id current_sw_addr,
-    switch_id dest_sw_addr,
-    routable::path& path) const = 0;
 
   static topology*
   global() {
     return main_top_;
   }
-
-  /**** END PURE VIRTUAL INTERFACE *****/
 
   /**
      Get a random switch from the topoology.
@@ -289,9 +352,6 @@ class topology : public sprockit::printable
         sprockit::sim_parameters* switch_params) const
   {
   }
-
-  virtual int
-  max_num_ports() const = 0;
 
   virtual std::string
   label(node_id nid) const;

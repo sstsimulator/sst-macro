@@ -32,26 +32,25 @@ class structured_routable_packet_flow :
   }
 
   node_id
-  toaddr() const {
+  toaddr() const override {
    return routable::toaddr();
   }
 
   node_id
-  fromaddr() const {
+  fromaddr() const override {
     return routable::fromaddr();
   }
 
   int
-  next_port() const {
+  next_port() const override {
     return routable::port();
   }
 
   int
-  next_vc() const {
+  next_vc() const override {
     return routable::vc();
   }
 
- private:
 };
 
 class structured_routable_packet_allocator :

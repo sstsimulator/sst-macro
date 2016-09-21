@@ -7,7 +7,7 @@ class fake_transport : public transport
 {
 
  public:
-  fake_transport(){}
+  fake_transport(sprockit::sim_parameters* params);
 
   message::ptr
   block_until_message();
@@ -36,9 +36,6 @@ class fake_transport : public transport
   wall_time() const {
     return 0;
   }
-
-  void
-  init_factory_params(sprockit::sim_parameters *params);
 
   message::ptr
   pop_rdma_get(){

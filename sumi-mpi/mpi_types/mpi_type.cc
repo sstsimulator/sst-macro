@@ -28,9 +28,9 @@ mpi_type::mpi_type() :
   contiguous_(true),
   type_(NONE),
   size_(-1),
-  pdata_(0),
-  idata_(0),
-  vdata_(0),
+  pdata_(nullptr),
+  idata_(nullptr),
+  vdata_(nullptr),
   builtin_(false)
 {
 }

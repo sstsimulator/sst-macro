@@ -1,3 +1,3 @@
-#include <sstmac/libraries/sumi/sumi_api.h>
+#include <sstmac/libraries/sumi/sumi.h>
 
 

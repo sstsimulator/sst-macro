@@ -66,11 +66,6 @@ class fake_topology :
     return 0;
   }
 
-  int
-  ndimensions() const {
-    return 0;
-  }
-
   virtual int
   diameter() const {
     spkt_throw(sprockit::unimplemented_error,

@@ -131,7 +131,7 @@ mpi_runtime::init_rank(sprockit::sim_parameters* params)
     int rc = MPI_Init(&argc, &argv);
     if (rc != MPI_SUCCESS){
       spkt_abort(sprockit::illformed_error,
-        "mpi_runtime::init_factory_params: could not MPI_Init");
+        "mpi_runtime::init_rank: could not MPI_Init");
     }
   }
   MPI_Comm_rank(MPI_COMM_WORLD, &me_);
@@ -151,7 +151,7 @@ mpi_runtime::init_rank(sprockit::sim_parameters* params)
     int rc = MPI_Init(&argc, &argv);
     if (rc != MPI_SUCCESS){
       spkt_abort(sprockit::illformed_error,
-        "mpi_runtime::init_factory_params: could not MPI_Init");
+        "mpi_runtime::init_rank: could not MPI_Init");
     }
   }
   MPI_Comm_size(MPI_COMM_WORLD, &nproc_);

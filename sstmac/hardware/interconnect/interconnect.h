@@ -173,7 +173,6 @@ class interconnect
   //a set of switches that transfer messages quickly
   switch_map speedy_overlay_switches_;
   node_map nodes_;
-  nic_map nics_;
 
   switch_id local_speedy_switch_;
   std::vector<switch_id> node_to_speedy_switch_;

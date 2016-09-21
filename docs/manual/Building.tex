@@ -96,7 +96,7 @@ Once \sstmacro is extracted to a directory, we recommend the following as a base
 sst-macro> ./bootstrap.sh
 sst-macro> mkdir build
 sst-macro> cd build
-sst-macro/build> ../configure --prefix=/path-to-install --with-sst=$PATH_TO_SST_CORE CC=$MPICC CXX=$MPICXX
+sst-macro/build> ../configure --prefix=/path-to-install --with-sst-core=$PATH_TO_SST_CORE CC=$MPICC CXX=$MPICXX
 \end{ShellCmd}
 \inlinecode{PATH_TO_SST_CORE} should be the prefix install directory used when installing the core.  The MPI compilers should be the same compilers used for building Boost and SST core.
 
@@ -198,12 +198,11 @@ This will clear all the erroneous linker flags.  The compilation/linkage should 
 all necessary flags are set by the wrappers. 
 \end{itemize}
 
-\section{Running an Application}
+\section{Running an Application}\label{sec:building:running}
 \subsection{SST Python Scripts}
 Full details on building SST Python scripts can be found at \url{http://sst-simulator.org}.  To preserve the old parameter format in the near-term, SST/macro provides the \inlineshell{pysstmac} script:
 
 \begin{ViFile}
-export PYTHONPATH=$PYTHONPATH:$SSTMAC_PREFIX/include/python:$SSTMAC_PREFIX/lib
 export SST_LIB_PATH=$SST_LIB_PATH:$SSTMAC_PREFIX/lib
 
 options="$@"
@@ -214,12 +213,17 @@ The script configures the necessary paths and then launches with a Python script
 Assuming the path is configured properly, users can run
 
 \begin{ShellCmd}
-pysstmac -f parameters.ini
+>pysstmac -f parameters.ini
 \end{ShellCmd}
-with a properly formatted parameter file. If running in standalone mode, the command would be similarly (but different)
+with a properly formatted parameter file. If running in standalone mode, the command would be similarly (but different).
+
+\begin{ViFile}
+from sst.macro import *
+setupDeprecated()
+\end{ViFile}
 
 \begin{ShellCmd}
-sstmac -f parameters.ini
+>sstmac -f parameters.ini
 \end{ShellCmd}
 since there is no Python setup involved.
 
@@ -228,11 +232,11 @@ since there is no Python setup involved.
 
 To demonstrate how an external skeleton application is run in \sstmacro, we'll use a very simple send-recv program located in \inlineshell{skeletons/sendrecv}.
 We will take a closer look at the actual code in Section \ref{sec:tutorial:basicmpi}.
-After \sstmacro has been installed and your PATH variable set correctly, run: 
+After \sstmacro has been installed and your PATH variable set correctly, for standalone core users can run:
 
 \begin{ShellCmd}
 sst-macro> cd skeletons/sendrecv
-sst-macro/skeleton/sendrecv> make
+sst-macro/skeletons/sendrecv> make
 sst-macro/skeleton/sendrecv> ./runsstmac -f parameters.ini
 \end{ShellCmd}
 
@@ -241,7 +245,12 @@ You should see some output that tells you 1) the estimated total (simulated) run
 Both of these numbers should be small since it's a trivial program. 
 
 This is how simulations generally work in \sstmacro: you build skeleton code and link it with the simulator to produce a binary.  
-Then you run that binary and pass it a parameter file which describes the machine model to use.
+Then you run that binary and pass it a parameter file which describes the machine model to use.  For running on the main SST core, a few extra flags are required.  Rather than generating a standalone executable, the compiler wrapper generates a shared library. Users can always write their own Python scripts, which will be required for more advanced usage. However, users can also just use the \inlineshell{pysstmac} script.
+
+\begin{ShellCmd}
+>sst-macro/skeletons/sendrecv> pysstmac librunsstmac.so -f parameters.ini
+\end{ShellCmd}
+Any extra shared libraries can be given as the first few parameters and these will automatically be imported.
 
 \subsection{Makefiles}
 \label{subsec:tutorial:makefiles}

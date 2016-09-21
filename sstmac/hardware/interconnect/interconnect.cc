@@ -76,7 +76,6 @@ interconnect::~interconnect()
 {
   sprockit::delete_vector(netlinks_);
   sprockit::delete_vector(nodes_);
-  sprockit::delete_vector(nics_);
 }
 #endif
 
@@ -113,7 +112,6 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
 
   switches_.resize(num_switches_);
   nodes_.resize(num_nodes_);
-  nics_.resize(num_nodes_);
   netlinks_.resize(num_nodes_);
 
   local_speedy_switch_ = my_rank;
@@ -176,7 +174,7 @@ interconnect::connect_endpoints(sprockit::sim_parameters* inj_params,
       }
     } else {
       ep_id = i;
-      ep = nics_[i];
+      ep = nodes_[i]->get_nic();
     }
     if (!ep) continue; //no connection required
 
@@ -245,7 +243,6 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
                                                       nid, mgr);
           nic* the_nic = nd->get_nic();
           nodes_[nid] = nd;
-          nics_[nid] = the_nic;
 
           the_nic->set_speedy_switch(local_speedy_switch->payload_handler(port));
           local_speedy_switch->add_nic(the_nic->mtl_handler(), nid);

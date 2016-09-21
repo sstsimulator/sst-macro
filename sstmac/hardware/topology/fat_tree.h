@@ -41,12 +41,6 @@ class abstract_fat_tree :
     return k_;
   }
 
-  virtual int
-  ndimensions() const {
-    //fat-tree is indexed by row and column
-    return 2;
-  }
-
   static int
   pow(int a, int exp){
     int res = 1;

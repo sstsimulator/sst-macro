@@ -48,10 +48,9 @@ We got some functions for free by inheriting from \inlinecode{structured_topolog
 We start with
 
 \begin{CppCode}
-void
-xpress_ring::init_factory_params(sprockit::sim_parameters* params)
+xpress_ring::xpress_ring(sprockit::sim_parameters* params) :
+  structured_topology(params)
 {
-  structured_topology::init_factory_params(params);
   ring_size_ = params->get_int_param("xpress_ring_size");
   jump_size_ = params->get_int_param("xpress_jump_size");
 }

@@ -77,7 +77,7 @@ handle(event* ev){
 ...
 }
 ````
-The prototype therefore accepts any event type. The class `message` is a special type of event that refers specifically to a message (e.g. MPI message) carrying a data payload.
+The prototype therefore accepts any event type. The class `message` is a special type of event that refers specifically to a message (e.g. MPI message, flow in the context of TCP/IP) carrying a complete block of data or file.
 Misusing types in SST/macro is not a compile-time error.
 The onus of correct event types falls on runtime assertions.
 All event types may not be valid for a given module.
@@ -190,8 +190,8 @@ std::string str = "hello";
 We can serialize them to a buffer
 
 ````
-spkt_serializer ser;
-ser.set_mode(spkt_serializer::PACK);
+sstmac::serializer ser;
+ser.set_mode(sstmac::serializer::PACK);
 ser.init(new char[512]);
 ser & pt;
 ser & niter;
@@ -204,8 +204,8 @@ To reverse the process for a buffer received over MPI, the code would be
 ````
 char* buf = new char[512];
 MPI_Recv(buf, ...)
-spkt_serializer;
-ser.set_mode(spkt_serializer::UNPACK);
+sstmac::serializer;
+ser.set_mode(sstmac::serializer::UNPACK);
 ser.init(buf);
 ser & pt;
 ser & niter;
@@ -217,9 +217,9 @@ Thus the code for serializing is exactly the same as deserializing. The only cha
 The above code assumes a known buffer size (or buffer of sufficient size). To serialize unknown sizes, the serializer can also compute the total size first.
 
 ````
-spkt_serializer ser;
+sstmac::serializer ser;
 ser.reset();
-ser.set_mode(spkt_serializer::SIZER);
+ser.set_mode(sstmac::serializer::SIZER);
 ser & pt;
 ser & niter;
 ser & str;
@@ -234,13 +234,13 @@ The above code only applies to plain-old dataypes and strings. The serializer al
 ````
 namespace my_ns {
 class my_object : 
-  public serializable,
-  public serializable_type<my_object>
+  public sstmac::serializable,
+  public sstmac::serializable_type<my_object>
 {
  ImplementSerializable(my_object)
  ...
  void
- serialize_order(spkt_serializer& ser);
+ serialize_order(sstmac::serializer& ser);
  ...
 };
 }
@@ -265,7 +265,7 @@ All that remains now is defining the `serialize_order` in the source file
 
 ````
 void
-my_object::serialize_order(spkt_serializer& ser)
+my_object::serialize_order(sstmac::serializer& ser)
 {
   ser & my_int_;
   set << my_double_;
@@ -277,22 +277,22 @@ For inheritance, only the top-level parent class needs to inherit from `serializ
 
 ````
 class parent_object : 
-  public serializable
+  public sstmac::serializable
 {
 ...
   void
-  serialize_order(spkt_serializer& set);
+  serialize_order(sstmac::serializer& set);
 ...
 };
 
 class my_object :
   public parent_object,
-  public serializable_type<my_object>
+  public sstmac::serializable_type<my_object>
 {
  ImplementSerializable(my_object)
  ...
  void
- serialize_order(spkt_serializer& ser);
+ serialize_order(sstmac::serializer& ser);
  ...
 };
 ````
@@ -304,7 +304,7 @@ In the source file, we would have
 
 ````
 void
-my_object::serializer_order(spkt_serializer& ser)
+my_object::serializer_order(sstmac::serializer& ser)
 {
   parent_object::serialize_order(ser);
   ...
@@ -344,7 +344,7 @@ Now, any keywords matching the regular expression will be considered valid.
 
 #### 3.1.1: Basic Class<a name="subsec:basicClass"></a>
 
-Most classes are manually managed, being explicitly deleted.  Whenever possible, smart pointers should be avoided since they create thread-safety headaches. Classes in SST-macro can inherit from the top-level class `ptr_type`, which exists in `namespace sprockit`. The examples here can be found in the code repository in `tutorials/programming/basic`.
+Most classes are manually managed, being explicitly deleted.  Whenever possible, smart pointers should be avoided since they create thread-safety headaches. For cases where manual deletion is cumbersome, classes in SST-macro can inherit from the top-level class `ptr_type`, which exists in `namespace sprockit`. The examples here can be found in the code repository in `tutorials/programming/basic`.
 
 To begin, you just need to include the appropriate header file, declare the namespace desired, and start the class declaration (see `illustration.h`).
 
@@ -627,8 +627,7 @@ To declare a new factory type, you must include the factory header file and inhe
 
 namespace sstmac { namespace tutorial {
 
-class actor :
-    public sprockit::factory_type
+class actor
 {
 ````
 
@@ -636,24 +635,16 @@ We now define the public interface for the actor class
 
 ````
 public:
-  virtual void
-  act() = 0;
+  actor(sprockit::sim_parameters* params);
+
+virtual void act() = 0;
 
 virtual ~actor(){}
 ````
 Again, we must have a public, virtual destructor.
 Each instance of the actor class must implement the `act` method.
 
-For factory types, each class must implement
-
-````
-virtual void
-init_factory_params(sprockit::sim_parameters* params);
-````
-In general, constructors for factory types do no work.
-Reading parameters and initializing values happens entirely in this function.
-
-The parent class has a single member variable
+For factory types, each class must take a parameter object in the constructor. The parent class has a single member variable
 
 ````
 protected:
@@ -673,23 +664,13 @@ Moving to the `actor.cc` file, we see the implementation
 namespace sstmac {
     namespace tutorial {
 
-void
-actor::init_factory_params(sprockit::sim_parameters* params)
+actor::actor(sprockit::sim_parameters* params)
 {
   biggest_fan_ = params->get_param("biggest_fan");
 }
 ````
 We initialize the member variable from the parameter object. 
 For cloning, we have instead
-
-````
-void
-actor::clone_into(actor* cln) const
-{
-  cln->biggest_fan_ = biggest_fan_;
-}
-````
-which initializes from the existing object being cloned.
 
 We additionally need a macro
 
@@ -711,39 +692,27 @@ namespace sstmac { namespace tutorial {
 class mandy_patinkin :
     public actor
 {
+ public:
+  mandy_patinkin(sprockit::sim_parameters* params);
 ````
 
 We have a single member variable
-
 ````
-protected:
+private:
   std::string sword_hand_;
 ````
 
-This is a complete type that can be instantiated.
-
-To create the class we will need the functions
+This is a complete type that can be instantiated. 
+To create the class we will need the constructor:
 ````
-virtual void
-init_factory_params(sprockit::sim_parameters* params);
-
-virtual actor*
-clone() const;
+mandy_patinkin(sprockit::sim_parameters* params);
 ````
 
 And finally, to satisfy the `actor` public interface, we need
 
 ````
 virtual void
-act();
-````
-
-For doing the clone work, we need a protected helper function
-
-````
-protected:
-  void
-  clone_into(mandy_patinkin* cln) const;
+act() override;
 ````
 
 Moving to the implementation, we must first register the new type using the macro
@@ -760,11 +729,11 @@ The second argument is the parent, base class.
 The third argument is the specific child type.
 Finally, a documentation string should be given with a brief description.
 Whatever string value is registered here will be used in the input file to create the type.
-We can now implement the functions
+We can now implement the constructor:
 
 ````
-void
-mandy_patinkin::init_factory_params(sprockit::sim_parameters* params)
+mandy_patinkin::mandy_patinkin(sprockit::sim_parameters* params) :
+  actor(params)
 {
   sword_hand_ = params->get_param("sword_hand");
 
@@ -772,14 +741,12 @@ if (sword_hand_ == "left"){
     spkt_throw(value_error, "I am not left handed!");
   }
   else if (sword_hand_ != "right"){
-      spkt_throw_printf(value_error,
+      spkt_abort_printf(value_error,
           "Invalid hand specified: %s",
           sword_hand_.c_str());
   }
-  actor::init_factory_params(params);
 }
 ````
-We are safe to throw exceptions here since we are not in the constructor.
 The child class must invoke the parent class method. 
 Finally, we specify the acting behavior
 
@@ -1218,8 +1185,7 @@ The behavior is then undefined.
 The router has a simple public interface
 
 ````
-class router :
-  public sprockit::factory_type
+class router
 {
 ...
   virtual void
@@ -1586,7 +1552,7 @@ class nic
   ...
   stat_histogram* hist_msg_size_;
   ...
-  nic() : hist_msg_size_(0)
+  nic() : hist_msg_size_(nullptr)
   ...
 ````
 
