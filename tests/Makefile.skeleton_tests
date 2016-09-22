@@ -13,11 +13,8 @@ SKELETONCASES= \
   miniFE \
   lflr \
   multiapp \
-  sendrecv
-
-if EXTERNAL_BOOST
-  SKELETONCASES += boxml
-endif
+  sendrecv \
+  boxml
 
 SKELETONTESTS = $(SKELETONCASES:%=test_skeleton_%)
 
@@ -34,6 +31,13 @@ skeletons:
 $(SKELETONCASES): skeletons
 	cd skeletons/$@; PATH=$(bindir):$$PATH \
           SKELETON_DEFINES=$(SKELETON_DEFINES) $(MAKE)
+
+test_skeleton_boxml.$(CHKSUF): boxml
+	$(top_srcdir)/bin/runtest 2 $(top_srcdir) $@ text=finalized \
+    ./skeletons/boxml/runboxml \
+    -f $(top_srcdir)/skeletons/boxml/example/parameters.ini \
+    -p boxml_boxfile=$(top_srcdir)/skeletons/boxml/example/ks.4.new.boxes.xml \
+    -p boxml_eventfiles=$(top_srcdir)/skeletons/boxml/example/test-mlmg-4-4.xml 
 
 test_skeleton_%.$(CHKSUF): % 
 	$(top_srcdir)/bin/runtest 3 $(top_srcdir) $@ notime \
