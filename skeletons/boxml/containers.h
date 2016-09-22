@@ -3,13 +3,10 @@
 
 #include <vector>
 #include <string>
+#include <regex>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/serializable.h>
 #include <sprockit/unordered.h>
-
-#ifdef SSTMAC_HAVE_BOOST
-  #include <boost/algorithm/string.hpp>
-#endif
 
 DeclareSerializable(lblxml::box);
 DeclareSerializable(lblxml::comp);
@@ -29,17 +26,15 @@ namespace lblxml
 
   int get_index(const char* cstr);
 
-#ifdef SSTMAC_HAVE_BOOST
-  inline void
-  split_string(std::vector<std::string>& result, const std::string& input, const char* delim){
-      boost::split( result, input, boost::is_any_of(delim) );
+  static
+  std::vector<std::string>
+  split(const std::string& input, const std::string& delim) {
+    std::regex re(delim);
+    std::sregex_token_iterator
+        first{input.begin(), input.end(), re, -1},
+        last;
+    return {first, last};
   }
-#else
-  void
-  split_string(std::vector<std::string>& result, const std::string& input, const char* delim){
-#error Not yet implemented
-  }
-#endif
 
   class element : 
     public sstmac::serializable
@@ -130,8 +125,7 @@ namespace lblxml
     event(int index, const std::string& id, const std::string& dep, int epoch) :
       element(index,id), event_type_(none), epoch_(epoch)
     {
-      std::vector<std::string> splitvec;
-      split_string(splitvec, dep, ",");
+      std::vector<std::string> splitvec(split(dep, ","));
       if(splitvec.size() == 1 && splitvec[0].length() == 0)
         return;
 
@@ -376,8 +370,7 @@ namespace lblxml
 
     void add_team(const std::string& teamstr)
     {
-      std::vector<std::string> splitvec;
-      split_string(splitvec, teamstr, ",");
+      std::vector<std::string> splitvec(split(teamstr, ","));
       if(splitvec.size() == 1 && splitvec[0].length() == 0)
         return;
 

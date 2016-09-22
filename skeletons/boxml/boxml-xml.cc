@@ -6,17 +6,10 @@ using namespace tinyxml2;
 
 namespace lblxml
 {
-#ifdef SSTMAC_HAVE_BOOST
-void
-erase_all(std::string& str, const char* delim){
-  boost::erase_all(str, delim);
-}
-#else
-void
-erase_all(std::string& str, const char* delim){
-#error Not yet implemented
-}
-#endif
+  void
+  erase_all(std::string& str, const char delim){
+    str.erase(std::remove(str.begin(), str.end(), delim), str.end());
+  }
 
   void read_box(XMLElement* element, int debug);
   void read_comm_event(XMLElement* element, int debug);
@@ -25,8 +18,8 @@ erase_all(std::string& str, const char* delim){
   void populate_listeners();
 
   int get_index(string& id) {
-    erase_all(id, "B");
-    erase_all(id, "e");
+    erase_all(id, 'B');
+    erase_all(id, 'e');
     return atoi( id.c_str() );
   }
 
