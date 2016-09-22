@@ -3,7 +3,8 @@
 
 #include <vector>
 #include <string>
-#include <regex>
+#include <stdio.h>
+//#include <regex>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/serializable.h>
 #include <sprockit/unordered.h>
@@ -26,15 +27,34 @@ namespace lblxml
 
   int get_index(const char* cstr);
 
+  // not fully supported by compilers
+  //static
+  //std::vector<std::string>
+  //split(const std::string& input, const std::string& delim) {
+  //  std::regex re(delim);
+  //  std::sregex_token_iterator
+  //      first{input.begin(), input.end(), re, -1},
+  //      last;
+  //  return {first, last};
+  //}
+
   static
-  std::vector<std::string>
-  split(const std::string& input, const std::string& delim) {
-    std::regex re(delim);
-    std::sregex_token_iterator
-        first{input.begin(), input.end(), re, -1},
-        last;
-    return {first, last};
+  void
+  split(std::string& input, 
+        const char* delim, 
+        std::vector<std::string>& output)
+  {
+    char *token;
+    char cstr[input.length()+1];
+    std::strcpy (cstr, input.c_str());
+    token = strtok(cstr,delim);
+    while( token != NULL ) 
+    {
+       output.push_back(token);
+       token = strtok(NULL, delim);
+    }
   }
+  
 
   class element : 
     public sstmac::serializable
@@ -122,10 +142,11 @@ namespace lblxml
     event() : event_type_(none)
     { }
 
-    event(int index, const std::string& id, const std::string& dep, int epoch) :
+    event(int index, const std::string& id, std::string& dep, int epoch) :
       element(index,id), event_type_(none), epoch_(epoch)
     {
-      std::vector<std::string> splitvec(split(dep, ","));
+      std::vector<std::string> splitvec;
+      split(dep, ",", splitvec);
       if(splitvec.size() == 1 && splitvec[0].length() == 0)
         return;
 
@@ -193,7 +214,7 @@ namespace lblxml
   class simple_event : public event
   {
    public:
-    simple_event(int index, const std::string& id, const std::string& dep,
+    simple_event(int index, const std::string& id, std::string& dep,
                  int epoch)
       : event(index, id, dep, epoch)
     {
@@ -298,7 +319,7 @@ namespace lblxml
       to_(copy.to_), size_(copy.size_)
     { event_type_ = pt2pt; }
 
-    comm(int index, const std::string& id, const std::string& dep,
+    comm(int index, const std::string& id, std::string& dep,
          int epoch, const std::string& type,
          int from, int to, int size) :
       simple_event(index, id, dep, epoch), from_(from), to_(to), size_(size)
@@ -353,7 +374,7 @@ namespace lblxml
       event_type_ = collective;
     }
 
-    reduce(int index, const std::string& id, const std::string& dep,
+    reduce(int index, const std::string& id, std::string& dep,
            int epoch, int size)
       : event(index, id, dep, epoch), size_(size), box_array_(0)
     {
@@ -370,7 +391,11 @@ namespace lblxml
 
     void add_team(const std::string& teamstr)
     {
-      std::vector<std::string> splitvec(split(teamstr, ","));
+      char cstr[teamstr.length()+1];
+      std::strcpy (cstr, teamstr.c_str());
+      std::vector<std::string> splitvec;
+      std::string str(cstr);
+      split(str, ",", splitvec);
       if(splitvec.size() == 1 && splitvec[0].length() == 0)
         return;
 
