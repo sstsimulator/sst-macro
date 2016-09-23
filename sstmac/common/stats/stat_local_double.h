@@ -19,9 +19,6 @@ class stat_local_double :
   }
 
   void
-  collect(double value);
-
-  void
   simulation_finished(timestamp end) override;
 
   void
