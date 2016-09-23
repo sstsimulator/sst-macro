@@ -32,7 +32,7 @@ class dumpi_task_mapper : public task_mapper
 
   virtual ~dumpi_task_mapper() throw() {}
 
-  void map_ranks(const app_id& aid,
+  void map_ranks(app_id aid,
                 const ordered_node_set& nodes,
                 int ppn,
                 std::vector<node_id> &result,

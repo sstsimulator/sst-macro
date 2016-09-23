@@ -46,11 +46,11 @@ packet_flow_nic_packetizer::packet_flow_nic_packetizer(sprockit::sim_parameters*
  payload_handler_(nullptr),
  packet_flow_packetizer(params, parent, cb)
 {
-  stat_collector_ = packet_sent_stats_factory::
+  stat_collector_ = packet_stats_callback_factory::
                         get_optional_param("stats", "null", params, parent);
 
   sprockit::sim_parameters* buf_params = params->get_optional_namespace("buffer");
-  buf_stats_ = packet_sent_stats_factory::
+  buf_stats_ = packet_stats_callback_factory::
                 get_optional_param("stats", "null", buf_params, parent);
 
   sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");

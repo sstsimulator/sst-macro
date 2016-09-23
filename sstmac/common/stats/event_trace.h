@@ -61,15 +61,8 @@ class event_trace :
   }
 
   stat_collector*
-  clone() const override {
-    return clone_me(-1);
-  }
-
-  event_trace*
-  clone_me(int id) const {
-    event_trace* cln = new event_trace(params_);
-    cln->set_id(id);
-    return cln;
+  do_clone(sprockit::sim_parameters* params) const override {
+    return new event_trace(params);
   }
 
  protected:

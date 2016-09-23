@@ -54,7 +54,7 @@ test_arbitrator(UnitTest& unit)
   packet_flow_payload* test_msg2 = new_packet(parent, 2*packet_size, 0);
   packet_flow_payload* test_msg4 = new_packet(parent, 4*packet_size, 0);
 
-  packet_stats_st st;
+  pkt_arbitration_t st;
   st.now = timestamp(0);
   arb->arbitrate(st);
   assertEqual(unit, "start time", st.head_leaves, timestamp(0));

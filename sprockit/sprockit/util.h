@@ -54,17 +54,6 @@ __safe_cast__(const char* objname,
 #define interface_cast(type,obj) \
     dynamic_cast<type*>(obj)
 
-template <class maptype, class keytype>
-const typename maptype::mapped_type&
-mapget(const maptype& mapobj, const keytype& keyobj, const char* errormsg)
-{
-  typename maptype::const_iterator it = mapobj.find(keyobj);
-  if (it == mapobj.end()) {
-    spkt_throw_printf(value_error, "could not find entry in map: %s", errormsg);
-  }
-  return it->second;
-}
-
 
 // Splat a tuple into a function call
 //   Most of the time, you should just use std::bind for this sort of thing,

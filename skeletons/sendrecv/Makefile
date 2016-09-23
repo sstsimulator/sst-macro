@@ -1,5 +1,4 @@
-#TARGET := runsendrecv
-TARGET := libsendrecv.so
+TARGET := runsendrecv
 SRC := main.cc
 
 CXX :=    sst++

@@ -50,31 +50,70 @@ stat_collector::stat_collector(sprockit::sim_parameters* params) :
 }
 
 stat_collector*
+stat_collector::required_build(sprockit::sim_parameters* params,
+                      const std::string& ns,
+                      const std::string& deflt,
+                      const char* suffix)
+{
+  stat_collector* coll = optional_build(params, ns, deflt, suffix);
+  if (!coll){
+    stats_error(params, ns, deflt);
+  }
+  return coll;
+}
+
+void
+stat_collector::stats_error(sprockit::sim_parameters *params,
+                            const std::string &ns,
+                            const std::string &deflt)
+{
+  if (params->has_param("type")){
+    const char* ns_str = ns.size() ?  " in namespace " : "";
+    spkt_abort_printf("Received invalid stats type %s%s%s- "
+                      " a valid value would have been %s",
+                      params->get_param("type").c_str(),
+                      ns_str, ns.c_str());
+  } else {
+    spkt_abort_printf("Received invalid default stats type %s",
+                      deflt.c_str());
+  }
+}
+
+stat_collector*
 stat_collector::optional_build(sprockit::sim_parameters* params,
                       const std::string& ns,
                       const std::string& deflt,
                       const char* suffix)
 {
-  if (params->has_namespace(ns)){
-    sprockit::sim_parameters* ns_params = params->get_namespace(ns);
-    if (suffix){
-      ns_params = ns_params->get_optional_namespace(suffix);
-      ns_params->add_param_override("suffix", suffix);
+  if (ns.size()){
+    if (params->has_namespace(ns)){
+      params = params->get_namespace(ns);
+    } else {
+      return nullptr;
     }
-
-    stat_collector* stats = stat_collector_factory::get_optional_param(
-          "type", deflt, ns_params);
-
-    return stats;
-  } else {
-    return nullptr;
   }
+
+  if (suffix){
+    params = params->get_optional_namespace(suffix);
+    params->add_param_override("suffix", suffix);
+  }
+
+  stat_collector* stats = stat_collector_factory::get_optional_param(
+        "type", deflt, params);
+
+  return stats;
 }
 
 void
-register_optional_stat(event_scheduler *parent, stat_collector *coll)
+stat_collector::register_optional_stat(event_scheduler *parent, stat_collector *coll)
 {
   parent->register_stat(coll);
+}
+
+stat_value_base::stat_value_base(sprockit::sim_parameters *params) :
+  stat_collector(params)
+{
+  id_ = params->get_int_param("id");
 }
 
 

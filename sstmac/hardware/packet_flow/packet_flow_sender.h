@@ -78,7 +78,7 @@ class packet_flow_sender :
   virtual void handle_payload(event* ev) = 0;
 
   void
-  set_stat_collector(packet_sent_stats* c){
+  set_stat_collector(packet_stats_callback* c){
     stat_collector_ = c;
   }
 
@@ -109,7 +109,7 @@ class packet_flow_sender :
        const packet_flow_output& dest);
 
  protected:
-  packet_sent_stats* stat_collector_;
+  packet_stats_callback* stat_collector_;
 
   event_handler* acker_;
 

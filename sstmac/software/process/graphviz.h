@@ -55,19 +55,12 @@ class graph_viz :
 
   void dump_global_data() override;
 
-  graph_viz*
-  clone_me(int id) const {
-    graph_viz* cln = new graph_viz(params_);
-    cln->set_id(id);
-    return cln;
-  }
-
   void
   global_reduce(parallel_runtime *rt) override;
 
   stat_collector*
-  clone() const override {
-    return clone_me(-1);
+  do_clone(sprockit::sim_parameters* params) const override {
+    return new graph_viz(params);
   }
 
   static void** allocate_trace();

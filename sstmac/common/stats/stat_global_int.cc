@@ -11,8 +11,7 @@ namespace sstmac {
 SpktRegister("global_int", stat_collector, stat_global_int);
 
 stat_global_int::stat_global_int(sprockit::sim_parameters* params) :
-    value_(0),
-    stat_collector(params)
+    stat_value<int>(params)
 {
 }
 
@@ -59,12 +58,6 @@ stat_global_int::dump_local_data()
 void
 stat_global_int::clear()
 {
-}
-
-void
-stat_global_int::collect(int value)
-{
-  value_ += value;
 }
 
 void

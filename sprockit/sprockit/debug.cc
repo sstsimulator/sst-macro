@@ -153,11 +153,9 @@ normalize_string(const std::string& thestr,
   std::deque<std::string> tok;
   std::string space = " ";
   pst::BasicStringTokenizer::tokenize(thestr, tok, space);
-  std::deque<std::string>::const_iterator it, end = tok.end();
   os << indent;
   int line_length = 0;
-  for (it = tok.begin(); it != end; ++it) {
-    const std::string& next = *it;
+  for (auto& next : tok){
     if (line_length == 0){
         os << next;
         line_length += next.size();

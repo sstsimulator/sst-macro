@@ -6,31 +6,24 @@ namespace sprockit {
 template <class Container>
 void
 delete_all(const Container& ctr){
-  typedef typename Container::value_type T;
-  typename Container::const_iterator it, end = ctr.end();
-  for (it=ctr.begin(); it != end; ++it){
-    delete *it;
+  for (auto& item : ctr){
+    delete item;
   }
 }
 
 template <class Container>
 void
 delete_arrs(const Container& ctr){
-  typedef typename Container::value_type T;
-  typename Container::const_iterator it, end = ctr.end();
-  for (it=ctr.begin(); it != end; ++it){
-    delete[] *it;
+  for (auto& item : ctr){
+    delete[] item;
   }
 }
 
 template <class MapType>
 void
 delete_vals_arrs(const MapType& ctr){
-  typedef typename MapType::key_type T;
-  typedef typename MapType::mapped_type Val;
-  typename MapType::const_iterator it, end = ctr.end();
-  for (it=ctr.begin(); it != end; ++it){
-    delete[] it->second;
+  for (auto& pair : ctr){
+    delete[] pair.second;
   }
 }
 
@@ -46,34 +39,25 @@ delete_vector(const VectorType& v){
 template <class MapType>
 void
 delete_vals(const MapType& ctr){
-  typedef typename MapType::key_type T;
-  typedef typename MapType::mapped_type Val;
-  typename MapType::const_iterator it, end = ctr.end();
-  for (it=ctr.begin(); it != end; ++it){
-    delete it->second;
+  for (auto& pair : ctr){
+    delete pair.second;
   }
 }
 
 template <class MapType>
 void
 delete_keys(const MapType& ctr){
-  typedef typename MapType::key_type T;
-  typedef typename MapType::mapped_type Val;
-  typename MapType::const_iterator it, end = ctr.end();
-  for (it=ctr.begin(); it != end; ++it){
-    delete it->first;
+  for (auto& pair : ctr){
+    delete pair.first;
   }
 }
 
 template <class MapType>
 void
 delete_keys_and_vals(const MapType& ctr){
-  typedef typename MapType::key_type T;
-  typedef typename MapType::mapped_type Val;
-  typename MapType::const_iterator it, end = ctr.end();
-  for (it=ctr.begin(); it != end; ++it){
-    delete it->first;
-    delete it->second;
+  for (auto& pair : ctr){
+    delete pair.first;
+    delete pair.second;
   }
 }
 

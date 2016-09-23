@@ -36,7 +36,7 @@ hostname_task_mapper::hostname_task_mapper(sprockit::sim_parameters *params) :
 
 void
 hostname_task_mapper::map_ranks(
-  const app_id& aid,
+  app_id aid,
   const ordered_node_set& nodes,
   int ppn,
   std::vector<node_id> &result,
@@ -55,17 +55,16 @@ hostname_task_mapper::map_ranks(
 
     sstr << hostname << "\n";
 
-    hostname_allocation::nodemap_t::const_iterator
-        nid_it = hostname_allocation::hostnamemap_.find(hostname),
-    end = hostname_allocation::hostnamemap_.end();
+
+    auto nid_it = hostname_allocation::hostnamemap_.find(hostname);
+    auto end = hostname_allocation::hostnamemap_.end();
 
     if (nid_it == end) {
       std::stringstream sstr;
       sstr << hostname << " from file " << listfile_ <<
            " does not exist in node map.";
 
-      hostname_allocation::nodemap_t::const_iterator
-      it = hostname_allocation::hostnamemap_.begin();
+      auto it = hostname_allocation::hostnamemap_.begin();
 
       if (it == end) {
         sstr << " No hostnames are registered with hostname_allocation."

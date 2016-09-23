@@ -142,9 +142,8 @@ stat_spyplot::dump_to_file(const std::string& froot)
 
     nodes.sort();
 
-    std::list<long>::const_iterator it = nodes.begin(), end = nodes.end();
-    for (; it != end; ++it) {
-      long_map& submap = vals_[*it];
+    for (long nid : nodes) {
+      long_map& submap = vals_[nid];
       std::list<long>::const_iterator it2 = nodes.begin(), end2 = nodes.end();
       long datapoint = submap[*it2];
       myfile << datapoint;

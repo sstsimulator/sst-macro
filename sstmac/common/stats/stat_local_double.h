@@ -8,7 +8,7 @@ namespace sstmac
 {
 
 class stat_local_double :
-  public stat_collector
+  public stat_value<double>
 {
  public:
   stat_local_double(sprockit::sim_parameters* params);
@@ -39,16 +39,9 @@ class stat_local_double :
   void
   reduce(stat_collector *coll) override;
 
-  stat_local_double*
-  clone_me(int id) const {
-    stat_local_double* cln = new stat_local_double(params_);
-    cln->set_id(id);
-    return cln;
-  }
-
   stat_collector*
-  clone() const override {
-    return clone_me(-1);
+  do_clone(sprockit::sim_parameters* params) const override {
+    return new stat_local_double(params);
   }
 
  protected:
@@ -56,8 +49,6 @@ class stat_local_double :
   dump(const std::string& froot);
 
  protected:
-  int size_;
-  double value_;
   std::vector<double> values_;
 };
 

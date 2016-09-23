@@ -39,7 +39,7 @@ coordinate_task_mapper::coordinate_task_mapper(sprockit::sim_parameters *params)
 
 void
 coordinate_task_mapper::map_ranks(
-  const app_id& aid,
+  app_id aid,
   const ordered_node_set& nodes,
   int ppn,
   std::vector<node_id> &result,

@@ -40,11 +40,11 @@ packet_flow_abstract_switch::packet_flow_abstract_switch(
 {
   sprockit::sim_parameters* xbar_params = params->get_optional_namespace("xbar");
 
-  xbar_stats_ = packet_sent_stats_factory::get_optional_param("stats", "null",
+  xbar_stats_ = packet_stats_callback_factory::get_optional_param("stats", "null",
                                              xbar_params, this);
 
   sprockit::sim_parameters* buf_params = params->get_optional_namespace("output_buffer");
-  buf_stats_ = packet_sent_stats_factory::get_optional_param("stats", "null",
+  buf_stats_ = packet_stats_callback_factory::get_optional_param("stats", "null",
                                              buf_params, this);
 
   router_ = router_factory::get_param("router", params, top_, this);

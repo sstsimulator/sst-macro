@@ -47,8 +47,6 @@ class sstmac_global_builtin_arr<T*, N> : public sstmac_global
   }
 
  public:
-  typedef typename val_map::const_iterator const_iterator;
-
   explicit
   sstmac_global_builtin_arr() :
     init_(NULL) {

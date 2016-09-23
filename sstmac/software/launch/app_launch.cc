@@ -264,9 +264,7 @@ app_launch::parse_aprun(
     std::deque<std::string> tok;
     std::string space = ",";
     pst::BasicStringTokenizer::tokenize(tosep, tok, space);
-    std::deque<std::string>::const_iterator it, end = tok.end();
-    for (it = tok.begin(); it != end; ++it) {
-      std::string core = *it;
+    for (auto& core : tok){
       core_affinities.push_back(atoi(core.c_str()));
     }
   }

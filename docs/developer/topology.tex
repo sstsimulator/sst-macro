@@ -8,8 +8,37 @@
 \chapter{Hardware Models}
 \label{chapter:hardware}
 
+\section{Overview}
+To better understand how hardware models are put together for simulating interconnects, we should try to understand the basic flow of event in SST/macro involved in sending a message between two network endpoints.  We have already seen in skeleton applications in previous sections how an application-level call to a function like \inlinecode{MPI_Send} is mapping to an operating system function and finally a hardware-level injection of the message flow.  Overall, the following steps are required:
+
+\begin{enumerate}
+\item Start message flow with app-level function call
+\item Push message onto NIC for send
+\item NIC packetizes message and pushes packets on injection switch
+\item Packets are routed and traverse the network
+\item Packets arrive at destination NIC and are reassembled (potentially out-of-order)
+\item Message flow is pushed up network software stack
+\end{enumerate}
+
+Through the network, packets must move through buffers (waiting for credits) and arbitrate for bandwidth through the switch crossbar and then through the ser/des link on the switch output buffers.  The control-flow diagram for transporting a flow from one endpoint to another via packets is shown in Figure \ref{fig:controlFlow}
+
+\begin{figure}
+\includegraphics[width=0.8\textwidth]{figures/DecisionFlow}
+\caption{Decision diagram showing the various control flow operations that occur as a message is transport across the network via individual packet operations.}
+\label{fig:controlFlow}
+\end{figure}
+
+We can dive in deeper to the operations that occur on an individual component, mostly important the crossbar on the network switch. Figure \ref{fig:xbarFlow} shows code and program flow for a packet arriving at a network switch.  The packet is routed (virtual function, configurable via input file parameters), credits are allocated to the packet, and finally the packet is arbitrated across the crossbar. After arbitration, a statistics callback can be invoked to collect any performance metrics of interest (congestion, traffic, idle time).
+
+\begin{figure}
+\includegraphics[width=0.9\textwidth]{figures/RoutingFlow}
+\caption{Code flow for routing, arbitration, and stats collections of packets traversing the crossbar on the network switch.}
+\label{fig:xbarFlow}
+\end{figure}
+
 \section{Connectables}
 \label{sec:connectables}
+With a basic overview of how the simulation proceeds, we can now look at the actual SST/macro class types.
 While in common usage, \sstmacro follows a well-defined machine model (see below),
 it generally allows any set of components to be connected. 
 As discussed in Chapter \ref{chapter:des}, the simulation proceeds by having event components exchange messages,
@@ -371,7 +400,6 @@ struct path {
 \end{CppCode}
 
 The most important information is the outport, telling a switch which port to route along to arrive at the destination.
-More detail can be given with dimension and direction for some topologies (i.e. +X or -X in a torus).
 For congestion models with channel dependencies, the virtual channel must also be given to avoid deadlock.
 In general, network switches and other devices should be completely topology-agnostic.
 The switch is responsible for modeling congestion within itself - crossbar arbitration, credits, outport multiplexing.

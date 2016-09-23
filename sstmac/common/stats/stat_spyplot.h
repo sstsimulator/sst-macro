@@ -65,16 +65,9 @@ class stat_spyplot :
   virtual void
   add(int source, int dest, long num);
 
-  virtual stat_spyplot*
-  clone_me(int id) const {
-    stat_spyplot* cln = new stat_spyplot(params_);
-    cln->set_id(id);
-    return cln;
-  }
-
   virtual stat_collector*
-  clone() const override {
-    return clone_me(-1);
+  do_clone(sprockit::sim_parameters* params) const override {
+    return new stat_spyplot(params);
   }
 
   stat_spyplot(sprockit::sim_parameters* params) :
@@ -119,16 +112,9 @@ class stat_spyplot_png : public stat_spyplot
   ~stat_spyplot_png() {
   }
 
-  stat_spyplot*
-  clone_me(int id) const override {
-    stat_spyplot_png* cln = new stat_spyplot_png(params_);
-    cln->set_id(id);
-    return cln;
-  }
-
   stat_collector*
-  clone() const override {
-    return clone_me(-1);
+  do_clone(sprockit::sim_parameters* params) const override {
+    return new stat_spyplot_png(params);
   }
 
  private:

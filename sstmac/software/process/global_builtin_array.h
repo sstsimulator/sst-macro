@@ -28,7 +28,6 @@ class sstmac_global_builtin_arr : public sstmac_global
   T* init_;
 
  public:
-  typedef typename val_map::const_iterator const_iterator;
   typedef T static_arr[N];
 
   explicit
@@ -57,9 +56,8 @@ class sstmac_global_builtin_arr : public sstmac_global
 
   void
   print_all() const {
-    typename val_map::const_iterator it = vals_.begin();
-    for (; it != vals_.end(); ++it) {
-      std::cout << it->second << std::endl;
+    for (auto& pair : vals_){
+      std::cout << pair.second << std::endl;
     }
   }
 
@@ -227,11 +225,12 @@ class sstmac_global_builtin_arr : public sstmac_global
     return myval < otherval;
   }
 
-  const_iterator
+  typename val_map::const_iterator
   begin() const {
     return vals_[0].begin();
   }
-  const_iterator
+
+  typename val_map::const_iterator
   end() const {
     return vals_[0].end();
   }

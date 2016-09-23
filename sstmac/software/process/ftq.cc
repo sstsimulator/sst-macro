@@ -178,8 +178,7 @@ ftq_calendar::collect(int event_typeid, int aid, int tid, long ticks_begin,
 app_ftq_calendar*
 ftq_calendar::get_calendar(int aid) const
 {
-  spkt_unordered_map<int, app_ftq_calendar*>::const_iterator it =
-    calendars_.find(aid);
+  auto it = calendars_.find(aid);
   if (it == calendars_.end()) {
     spkt_throw_printf(sprockit::value_error, "no FTQ calendar found for app %d", aid);
   }

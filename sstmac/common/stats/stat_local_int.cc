@@ -11,9 +11,7 @@ namespace sstmac {
 SpktRegister("local_int", stat_collector, stat_local_int);
 
 stat_local_int::stat_local_int(sprockit::sim_parameters* params) :
-    size_(0),
-    value_(0),
-    stat_collector(params)
+  stat_value<int>(params)
 {
 }
 
@@ -29,9 +27,8 @@ void
 stat_local_int::reduce(stat_collector *coll)
 {
   stat_local_int* other = safe_cast(stat_local_int, coll);
-  if ((other->id_ + 1) > size_) {
-    size_ = other->id_ + 1;
-    values_.resize(size_);
+  if ((other->id_ + 1) > values_.size()) {
+    values_.resize(other->id_ + 1);
   }
   values_[other->id_] = other->value_;
 }
@@ -64,12 +61,6 @@ stat_local_int::dump_local_data()
 void
 stat_local_int::clear()
 {
-}
-
-void
-stat_local_int::collect(int value)
-{
-  value_ += value;
 }
 
 void

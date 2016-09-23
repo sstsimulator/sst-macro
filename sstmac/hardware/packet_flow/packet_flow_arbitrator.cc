@@ -89,7 +89,7 @@ packet_flow_bandwidth_arbitrator::init_noise_model(noise_model* noise)
 }
 
 void
-packet_flow_simple_arbitrator::arbitrate(packet_stats_st &st)
+packet_flow_simple_arbitrator::arbitrate(pkt_arbitration_t &st)
 {
   timestamp start_send = next_free_ < st.now ? st.now : next_free_;
   timestamp ser_delay(st.pkt->num_bytes() * inv_out_bw_);
@@ -118,7 +118,7 @@ packet_flow_null_arbitrator::packet_flow_null_arbitrator(sprockit::sim_parameter
 }
 
 void
-packet_flow_null_arbitrator::arbitrate(packet_stats_st &st)
+packet_flow_null_arbitrator::arbitrate(pkt_arbitration_t &st)
 {
   st.pkt->set_max_bw(out_bw_);
   timestamp ser_delay(st.pkt->num_bytes() / st.pkt->bw());
@@ -250,7 +250,7 @@ packet_flow_cut_through_arbitrator::clean_up(ticks_t now)
 }
 
 void
-packet_flow_cut_through_arbitrator::arbitrate(packet_stats_st &st)
+packet_flow_cut_through_arbitrator::arbitrate(pkt_arbitration_t &st)
 {
   do_arbitrate(st);
   st.head_leaves.correct_round_off(st.now);
@@ -261,7 +261,7 @@ packet_flow_cut_through_arbitrator::arbitrate(packet_stats_st &st)
 }
 
 void
-packet_flow_cut_through_arbitrator::do_arbitrate(packet_stats_st &st)
+packet_flow_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
 {
   packet_flow_payload* payload = st.pkt;
   payload->init_bw(out_bw_);

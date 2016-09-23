@@ -141,16 +141,9 @@ class ftq_calendar :
 
   void global_reduce(parallel_runtime *rt) override;
 
-  ftq_calendar*
-  clone_me(int id) const {
-    ftq_calendar* cln = new ftq_calendar(params_);
-    cln->set_id(id);
-    return cln;
-  }
-
   stat_collector*
-  clone() const override {
-    return clone_me(-1);
+  do_clone(sprockit::sim_parameters* params) const override {
+    return new ftq_calendar(params);
   }
 
   std::string

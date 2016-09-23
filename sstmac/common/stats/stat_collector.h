@@ -61,9 +61,6 @@ class stat_collector : public sprockit::printable
   virtual void
   clear() = 0;
 
-  virtual stat_collector*
-  clone() const = 0;
-
   bool
   registered() const {
     return registered_;
@@ -89,12 +86,53 @@ class stat_collector : public sprockit::printable
     return fileroot_;
   }
 
+  stat_collector*
+  clone() const {
+    return do_clone(params_);
+  }
+
+  /**
+   * @brief optional_build Build a stats object with all paramters
+   *                configured in a particular namespace with the exact type
+   *                of stats object determined by the parameter ''type''
+   * @param params  The parameters for building the stats object
+   * @param ns      The parameter namespace
+   * @param deflt   The default parameter value to use if ''type'' is not specified
+   * @param suffix  An optional suffix to apply if the multiple stats objects
+   *                are configured in the same namespace
+   * @return        The corresponding stat_collector object otherwise
+   *                a nullptr if no parameters exist in the given namespace
+   */
   static stat_collector*
   optional_build(sprockit::sim_parameters* params,
                 const std::string& ns,
                 const std::string& deflt,
                 const char* suffix);
+  /**
+   * @brief optional_build Build a stats object with all paramters
+   *                configured in a particular namespace with the exact type
+   *                of stats object determined by the parameter ''type''
+   * @param params  The parameters for building the stats object
+   * @param ns      The parameter namespace
+   * @param deflt   The default parameter value to use if ''type'' is not specified
+   * @param suffix  An optional suffix to apply if the multiple stats objects
+   *                are configured in the same namespace
+   * @return        The corresponding stat_collector object, otherwise abort
+   *                if no parameters exist in the given namespace
+   */
+  static stat_collector*
+  required_build(sprockit::sim_parameters* params,
+                const std::string& ns,
+                const std::string& deflt,
+                const char* suffix);
 
+  static void
+  stats_error(sprockit::sim_parameters* params,
+             const std::string& ns,
+             const std::string& deflt);
+
+  static void
+  register_optional_stat(event_scheduler* parent, stat_collector* coll);
 
  protected:
   stat_collector(sprockit::sim_parameters* params);
@@ -106,20 +144,79 @@ class stat_collector : public sprockit::printable
    * @return
    */
   static bool
-  check_open(std::fstream& myfile, const std::string& fname, std::ios::openmode flags = std::ios::out);
+  check_open(std::fstream& myfile, const std::string& fname,
+             std::ios::openmode flags = std::ios::out);
+
+  virtual stat_collector*
+  do_clone(sprockit::sim_parameters* params) const = 0;
 
  protected:
-  bool registered_;
   int id_;
   std::string fileroot_;
-  sprockit::sim_parameters* params_;
 
  private:
+  sprockit::sim_parameters* params_;
+  bool registered_;
 
 };
 
-void register_optional_stat(event_scheduler* parent, stat_collector* coll);
+class stat_value_base : public stat_collector
+{
+ public:
+  void
+  set_label(std::string label) {
+    label_ = label;
+  }
 
+ protected:
+  stat_value_base(sprockit::sim_parameters* params);
+
+  int id_;
+
+  std::string label_;
+
+};
+
+template <class T>
+class stat_value : public stat_value_base
+{
+ public:
+  void collect(const T& val){
+    value_ += val;
+  }
+
+ protected:
+  stat_value(sprockit::sim_parameters* params) :
+    stat_value_base(params)
+  {
+  }
+
+  T value_;
+};
+
+
+/**
+ * See documentation for stat_collector::required_build
+ */
+template <class T>
+T*
+required_stats(event_scheduler* parent,
+              sprockit::sim_parameters* params,
+              const std::string& ns,
+              const std::string& deflt,
+              const char* suffix = nullptr){
+  stat_collector* coll = stat_collector::required_build(params,ns,deflt,suffix);
+  T* t = dynamic_cast<T*>(coll);
+  if (!t){
+    stat_collector::stats_error(params, ns, deflt);
+  }
+  stat_collector::register_optional_stat(parent, t);
+  return t;
+}
+
+/**
+ * See documentation for stat_collector::optional_build
+ */
 template <class T>
 T*
 optional_stats(event_scheduler* parent,
@@ -131,10 +228,9 @@ optional_stats(event_scheduler* parent,
   if (coll){
     T* t = dynamic_cast<T*>(coll);
     if (!t){
-      spkt_throw(sprockit::value_error,
-                 "failed casting stats objects");
+      stat_collector::stats_error(params, ns, deflt);
     }
-    register_optional_stat(parent, t);
+    stat_collector::register_optional_stat(parent, t);
     return t;
   }
   else return nullptr;

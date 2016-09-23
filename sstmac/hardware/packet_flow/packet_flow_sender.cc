@@ -99,7 +99,7 @@ packet_flow_sender::send(
   const packet_flow_input& src,
   const packet_flow_output& dest)
 {
-  packet_stats_st st;
+  pkt_arbitration_t st;
   st.incoming_bw = pkt->bw();
   st.now = now();
   st.pkt = pkt;

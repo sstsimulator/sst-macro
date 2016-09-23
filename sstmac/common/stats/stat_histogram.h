@@ -42,16 +42,9 @@ class stat_histogram :
   void
   reduce(stat_collector *coll) override;
 
-  stat_histogram*
-  clone_me(int id) const {
-    stat_histogram* cln = new stat_histogram(params_);
-    cln->set_id(id);
-    return cln;
-  }
-
   stat_collector*
-  clone() const override {
-    return clone_me(-1);
+  do_clone(sprockit::sim_parameters* params) const override {
+    return new stat_histogram(params);
   }
 
  protected:

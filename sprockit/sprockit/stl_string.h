@@ -11,10 +11,9 @@ template <class Container>
 std::string
 one_dim_string(const Container& c, const char* open, const char* close){
   std::stringstream sstr;
-  typename Container::const_iterator it, end = c.end();
   sstr << open;
-  for (it=c.begin(); it != end; ++it){
-    sstr << " " << *it;
+  for (auto& item : c){
+    sstr << " " << item;
   }
   sstr << " " << close;
   return sstr.str();

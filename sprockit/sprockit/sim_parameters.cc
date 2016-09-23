@@ -224,9 +224,8 @@ sim_parameters::sim_parameters(const std::string& filename) :
 sim_parameters::~sim_parameters()
 {
   params_.clear();
-  std::map<std::string, sim_parameters*>::const_iterator it, end = subspaces_.end();
-  for (it=subspaces_.begin(); it != end; ++it){
-    sim_parameters* subspace = it->second;
+  for (auto& pair : subspaces_){
+    sim_parameters* subspace = pair.second;
     delete subspace;
   }
 }
@@ -258,7 +257,7 @@ sim_parameters*
 sim_parameters::_get_namespace(const std::string &ns)
 {
   KeywordRegistration::validate_namespace(ns);
-  std::map<std::string, sim_parameters*>::const_iterator it = subspaces_.find(ns);
+  auto it = subspaces_.find(ns);
   if (it == subspaces_.end()){
     if (parent_){
       return parent_->_get_namespace(ns);
@@ -310,11 +309,9 @@ sim_parameters::get_vector_param(const std::string& key,
   std::string space = " ";
   std::string param_value_str = get_param(key);
   pst::BasicStringTokenizer::tokenize(param_value_str, tok, space);
-  std::deque<std::string>::const_iterator it, end = tok.end();
-  for (it = tok.begin(); it != end; ++it) {
-    std::string core = *it;
-    if (core.size() > 0) {
-      vals.push_back(core);
+  for (auto& item : tok){
+    if (item.size() > 0) {
+      vals.push_back(item);
     }
   }
 }
@@ -923,21 +920,19 @@ bool
 sim_parameters::print_unread_params(std::ostream &os) const
 {
   bool have_unread = false;
-  key_value_map::const_iterator it, end = params_.end();
-  {for (it=params_.begin(); it != end; ++it){
-    const parameter_entry& entry = it->second;
+  for (auto& pair : params_){
+    const parameter_entry& entry = pair.second;
     if (!entry.read){
       os << sprockit::printf("Unused in namespace %30s: %s = %s\n",
-               namespace_.c_str(), it->first.c_str(), entry.value.c_str());
+               namespace_.c_str(), pair.first.c_str(), entry.value.c_str());
       have_unread = true;
     }
-  }}
+  }
 
-  {std::map<std::string, sim_parameters*>::const_iterator it, end = subspaces_.end();
-  for (it=subspaces_.begin(); it != end; ++it){
-    sim_parameters* params = it->second;
+  for (auto& pair : subspaces_){
+    sim_parameters* params = pair.second;
     have_unread = have_unread || params->print_unread_params(os);
-  }}
+  }
 
   return have_unread;
 }
@@ -955,7 +950,7 @@ bool
 sim_parameters::get_scoped_param(std::string& inout,
                           const std::string& key)
 {
-  key_value_map::iterator it = params_.find(key);
+  auto it = params_.find(key);
   if (it == params_.end()){
     return false;
   }
@@ -1029,7 +1024,7 @@ sim_parameters::do_add_param(
   bool mark_as_read)
 {
   if (val.c_str()[0] == '$'){
-    std::map<std::string, std::string>::const_iterator it = variables_.find(val.substr(1));
+    auto it = variables_.find(val.substr(1));
     if (it == variables_.end()){
       spkt_abort_printf("unknown variable name %s", val.c_str());
     }

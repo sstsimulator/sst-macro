@@ -14,12 +14,12 @@ class packet_flow_abstract_switch :
   public network_switch
 {
  public:
-  packet_sent_stats*
+  packet_stats_callback*
   xbar_stats() const {
     return xbar_stats_;
   }
 
-  packet_sent_stats*
+  packet_stats_callback*
   buf_stats() const {
     return buf_stats_;
   }
@@ -32,8 +32,8 @@ class packet_flow_abstract_switch :
 
   virtual ~packet_flow_abstract_switch();
 
-  packet_sent_stats* xbar_stats_;
-  packet_sent_stats* buf_stats_;
+  packet_stats_callback* xbar_stats_;
+  packet_stats_callback* buf_stats_;
   router* router_;
 };
 

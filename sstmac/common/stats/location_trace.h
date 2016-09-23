@@ -46,16 +46,9 @@ class location_trace :
   void
   simulation_finished(timestamp end) override {}
 
-  location_trace*
-  clone_me(int id) const {
-    location_trace* cln = new location_trace(params_);
-    cln->set_id(id);
-    return cln;
-  }
-
   stat_collector*
-  clone() const override {
-    return clone_me(-1);
+  do_clone(sprockit::sim_parameters* params) const override {
+    return new location_trace(params);
   }
 
   void

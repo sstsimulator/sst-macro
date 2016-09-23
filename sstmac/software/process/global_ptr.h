@@ -42,8 +42,6 @@ class sstmac_global_builtin<T*> : public sstmac_global
   }
 
  public:
-  typedef typename val_map::const_iterator const_iterator;
-
   explicit
   sstmac_global_builtin() :
     init_(NULL) {
@@ -63,7 +61,7 @@ class sstmac_global_builtin<T*> : public sstmac_global
     process_context ptxt = current_context();
     val_map& vals = const_cast<val_map&> (vals_);
     if (ptxt != process_context::none) {
-      typename val_map::iterator it = vals.find(ptxt);
+      auto it = vals.find(ptxt);
       if (it == vals.end()) {
         T*& ret = vals[ptxt] = init_;
         return ret;
@@ -198,11 +196,12 @@ class sstmac_global_builtin<T*> : public sstmac_global
     return arr[idx];
   }
 
-  const_iterator
+  typename val_map::const_iterator
   begin() const {
     return vals_.begin();
   }
-  const_iterator
+
+  typename val_map::const_iterator
   end() const {
     return vals_.end();
   }

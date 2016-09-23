@@ -15,10 +15,9 @@
 namespace sstmac {
 namespace hw {
 
-struct packet_stats_st
+struct pkt_arbitration_t
 {
   double incoming_bw;
-  double outgoing_bw;
   timestamp now;
   timestamp head_leaves;
   timestamp tail_leaves;
@@ -28,14 +27,32 @@ struct packet_stats_st
   int dst_inport;
 };
 
-class packet_sent_stats
+/**
+ * @brief The packet_stats_callback class is an optional callback
+ * that can be registered with packet_flow_sender objects or packetizer
+ * objects to log events ocurring on particular packets
+ */
+class packet_stats_callback
 {
  public:
-  virtual ~packet_sent_stats(){}
+  virtual ~packet_stats_callback(){}
 
+  /**
+   * @brief collect_single_event Collect stats associated with a single
+   *            packet aribtration event. This is invokved by packet_flow_sender
+   *            objects.
+   * @param st All the details of the last arbitration of a given packet
+   */
   virtual void
-  collect_single_event(const packet_stats_st& st);
+  collect_single_event(const pkt_arbitration_t& st);
 
+  /**
+   * @brief collect_final_event Collects stats associated with flow-level
+   *          packet event. This is attached to packetizer objecs the end
+   *          of the flow (usually on a NIC) to log any important stats
+   *          attached to a packet at the end of the path
+   * @param pkt
+   */
   virtual void
   collect_final_event(packet_flow_payload* pkt);
 
@@ -49,17 +66,18 @@ class packet_sent_stats
   }
 
  protected:
-  packet_sent_stats(sprockit::sim_parameters* params, event_scheduler* parent);
+  packet_stats_callback(sprockit::sim_parameters* params,
+                        event_scheduler* parent);
 
  private:
   int id_;
 
 };
 
-DeclareFactory(packet_sent_stats, event_scheduler*)
+DeclareFactory(packet_stats_callback, event_scheduler*)
 
 class congestion_spyplot :
- virtual public packet_sent_stats
+ virtual public packet_stats_callback
 {
  public:
   congestion_spyplot(sprockit::sim_parameters* params, event_scheduler* parent);
@@ -67,7 +85,7 @@ class congestion_spyplot :
   virtual ~congestion_spyplot();
 
   virtual void
-  collect_single_event(const packet_stats_st& st);
+  collect_single_event(const pkt_arbitration_t& st);
 
   virtual void
   collect_final_event(packet_flow_payload* pkt);
@@ -81,7 +99,7 @@ class congestion_spyplot :
 
 
 class delay_histogram :
-  virtual public packet_sent_stats
+  virtual public packet_stats_callback
 {
  public:
   delay_histogram(sprockit::sim_parameters* params, event_scheduler* parent);
@@ -92,39 +110,39 @@ class delay_histogram :
   collect_final_event(packet_flow_payload* pkt);
 
   virtual void
-  collect_single_event(const packet_stats_st& st);
+  collect_single_event(const pkt_arbitration_t& st);
 
  private:
   stat_histogram* congestion_hist_;
 };
 
 class packet_delay_stats :
- virtual public packet_sent_stats
+ virtual public packet_stats_callback
 {
  public:
   packet_delay_stats(sprockit::sim_parameters* params, event_scheduler* parent) :
-    packet_sent_stats(params, parent)
+    packet_stats_callback(params, parent)
   {
   }
 
   virtual void
-  collect_single_event(const packet_stats_st &st);
+  collect_single_event(const pkt_arbitration_t &st);
 
  protected:
   void collect(double delay_us, packet_flow_payload* pkt);
 
 };
 
-class null_stats : public packet_sent_stats
+class null_stats : public packet_stats_callback
 {
  public:
   null_stats(sprockit::sim_parameters* params, event_scheduler* parent) :
-    packet_sent_stats(params, parent)
+    packet_stats_callback(params, parent)
   {
   }
 
   virtual void
-  collect_single_event(const packet_stats_st &st){}
+  collect_single_event(const pkt_arbitration_t &st){}
 
   virtual void
   collect_final_event(packet_flow_payload *pkt){}
@@ -132,7 +150,7 @@ class null_stats : public packet_sent_stats
 };
 
 class byte_hop_collector :
- virtual public packet_sent_stats
+ virtual public packet_stats_callback
 {
  public:
   byte_hop_collector(sprockit::sim_parameters* params, event_scheduler* parent);
@@ -140,7 +158,7 @@ class byte_hop_collector :
   virtual ~byte_hop_collector();
 
   virtual void
-  collect_single_event(const packet_stats_st& st);
+  collect_single_event(const pkt_arbitration_t& st);
 
  private:
   stat_global_int* byte_hops_;
@@ -154,7 +172,7 @@ class spyplot_and_delay_stats :
   spyplot_and_delay_stats(sprockit::sim_parameters* params, event_scheduler* parent);
 
   virtual void
-  collect_single_event(const packet_stats_st& st);
+  collect_single_event(const pkt_arbitration_t& st);
 
 };
 
@@ -194,9 +212,8 @@ class stat_bytes_sent :
   reduce(stat_collector *coll) override;
 
   stat_collector*
-  clone() const override {
-    stat_bytes_sent* cln = new stat_bytes_sent(params_);
-    return cln;
+  do_clone(sprockit::sim_parameters* params) const override {
+    return new stat_bytes_sent(params);
   }
 
   void
@@ -295,7 +312,7 @@ class stat_bytes_sent :
 };
 
 class bytes_sent_collector :
- virtual public packet_sent_stats
+ virtual public packet_stats_callback
 {
  public:
   bytes_sent_collector(sprockit::sim_parameters* params, event_scheduler* parent);
@@ -303,7 +320,7 @@ class bytes_sent_collector :
   virtual ~bytes_sent_collector();
 
   virtual void
-  collect_single_event(const packet_stats_st &st);
+  collect_single_event(const pkt_arbitration_t &st);
 
  private:
   stat_bytes_sent* bytes_sent_;

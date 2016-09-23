@@ -74,7 +74,7 @@ node::node(sprockit::sim_parameters* params,
   os_ = new sw::operating_system(os_params, this);
 
   app_launcher_ = new app_launcher(os_);
-  job_launcher_ = job_launcher::static_job_launcher(params, event_mgr());
+  job_launcher_ = job_launcher::static_job_launcher(params, mgr);
 }
 
 link_handler*

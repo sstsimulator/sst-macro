@@ -20,7 +20,7 @@ class packet_flow_bandwidth_arbitrator
       @return The time at which the packet can be forwarded to the next switch/node/etc.
   */
   virtual void
-  arbitrate(packet_stats_st& st) = 0;
+  arbitrate(pkt_arbitration_t& st) = 0;
 
   virtual std::string
   to_string() const = 0;
@@ -69,7 +69,7 @@ class packet_flow_null_arbitrator :
   packet_flow_null_arbitrator(sprockit::sim_parameters* params);
 
   virtual void
-  arbitrate(packet_stats_st& st) override;
+  arbitrate(pkt_arbitration_t& st) override;
 
   std::string
   to_string() const override {
@@ -89,7 +89,7 @@ class packet_flow_simple_arbitrator :
   packet_flow_simple_arbitrator(sprockit::sim_parameters* params);
 
   virtual void
-  arbitrate(packet_stats_st& st) override;
+  arbitrate(pkt_arbitration_t& st) override;
 
   std::string
   to_string() const override {
@@ -116,7 +116,7 @@ class packet_flow_cut_through_arbitrator :
   ~packet_flow_cut_through_arbitrator();
 
   virtual void
-  arbitrate(packet_stats_st& st) override;
+  arbitrate(pkt_arbitration_t& st) override;
 
   int
   bytes_sending(timestamp now) const override;
@@ -137,7 +137,7 @@ class packet_flow_cut_through_arbitrator :
   void clean_up(ticks_t now);
 
   void
-  do_arbitrate(packet_stats_st& st);
+  do_arbitrate(pkt_arbitration_t& st);
 
   struct bandwidth_epoch {
     bw_t bw_available; //bandwidth is bytes per timestamp tick

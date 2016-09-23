@@ -95,29 +95,13 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
   compute_sched_ = compute_scheduler_factory::get_optional_param(
                      "compute_scheduler", "simple", params, this);
 
-  if (params->has_namespace("call_graph") && !call_graph_){
-    sprockit::sim_parameters* the_params = params->get_namespace("call_graph");
-    call_graph_ = test_cast(graph_viz, stat_collector_factory::get_optional_param("type", "graph_viz", the_params));
-    if (!call_graph_){
-      spkt_throw_printf(
-        sprockit::value_error,
-        "invalid call graph type %s, must be graph_viz",
-        the_params->get_param("type").c_str());
-    }
-    parent->register_stat(call_graph_);
+  if (!call_graph_){ //not yet build
+    call_graph_ = optional_stats<graph_viz>(parent,
+          params, "call_graph", "call_graph");
   }
 
-  if (params->has_namespace("ftq")){
-    sprockit::sim_parameters* the_params = params->get_namespace("ftq");
-    ftq_trace_ = test_cast(ftq_calendar, stat_collector_factory::get_optional_param("type", "ftq", the_params));
-    if (!ftq_trace_){
-      spkt_throw_printf(
-        sprockit::value_error,
-        "invalid ftq type %s, must be ftq",
-        the_params->get_param("type").c_str());
-    }
-    parent->register_stat(ftq_trace_);
-  }
+  ftq_trace_ = optional_stats<ftq_calendar>(parent,
+        params, "ftq", "ftq");
 
   stacksize_ = params->get_optional_byte_length_param("stack_size", 1 << 17);
   bool mprot = params->get_optional_bool_param("stack_protect", false);
@@ -505,11 +489,9 @@ operating_system::switch_to_thread(thread_data_t tothread)
 void
 operating_system::print_libs(std::ostream &os) const
 {
-  spkt_unordered_map<std::string, library*>::const_iterator it =
-    libs_.begin(), end = libs_.end();
   os << "available libraries: \n";
-  for (; it != end; ++it) {
-    os << it->first << "\n";
+  for (auto& pair : libs_){
+    os << pair.first << "\n";
   }
 }
 
@@ -720,10 +702,9 @@ operating_system::kill_node()
 library*
 operating_system::lib(const std::string& name) const
 {
-  spkt_unordered_map<std::string, library*>::const_iterator
-    it = libs_.find(name);
+  auto it = libs_.find(name);
   if (it == libs_.end()) {
-    return 0;
+    return nullptr;
   }
   else {
     return it->second;
@@ -856,16 +837,13 @@ operating_system::handle_event(event* ev)
   }
 
   std::string libn = libmsg->lib_name();
-  spkt_unordered_map<std::string, library*>::const_iterator
-    it = libs_.find(libn);
+  auto it = libs_.find(libn);
 
   if (it == libs_.end()) {
     if (deleted_libs_.find(libn) == deleted_libs_.end()){
       cerrn << "Valid libraries on " << this << ":\n";
-      spkt_unordered_map<std::string, library*>::const_iterator it,
-          end = libs_.end();
-      for  (it = libs_.begin(); it != end; ++it) {
-        cerrn << it->first << std::endl;
+      for  (auto& pair : libs_){
+        cerrn << pair.first << std::endl;
       }
       spkt_throw_printf(sprockit::os_error,
                      "operating_system::handle_event: can't find library %s on os %d for event %s",

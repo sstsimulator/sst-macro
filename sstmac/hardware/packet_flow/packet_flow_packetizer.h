@@ -82,8 +82,8 @@ class packet_flow_nic_packetizer :
 
   node_id my_addr_;
 
-  packet_sent_stats* stat_collector_;
-  packet_sent_stats* buf_stats_;
+  packet_stats_callback* stat_collector_;
+  packet_stats_callback* buf_stats_;
   packet_allocator* pkt_allocator_;
 
 };

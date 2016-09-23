@@ -158,8 +158,7 @@ sumi_server::incoming_event(event* ev)
 sumi_api*
 sumi_server::get_proc(int rank) const
 {
-  spkt_unordered_map<int, sumi_api*>::const_iterator
-  it = procs_.find(rank);
+  auto it = procs_.find(rank);
   if (it == procs_.end()) {
     it = procs_.begin();
     cerrn << "Valid ranks for server are:\n";

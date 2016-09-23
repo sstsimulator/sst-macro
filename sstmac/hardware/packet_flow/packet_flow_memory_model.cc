@@ -141,7 +141,7 @@ packet_flow_memory_packetizer::handle_payload(int vn, packet_flow_payload* pkt)
   //set the bandwidth to the max single bw
   pkt->init_bw(max_single_bw_);
   pkt->set_arrival(now().sec());
-  packet_stats_st st;
+  pkt_arbitration_t st;
   st.pkt = pkt;
   st.now = now();
   arb_->arbitrate(st);

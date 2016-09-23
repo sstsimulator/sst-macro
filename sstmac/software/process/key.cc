@@ -62,8 +62,7 @@ key::allocate_category_id(const std::string &name)
 int
 key::event_typeid(const std::string& name)
 {
-  spkt_unordered_map<std::string,int>
-    ::const_iterator it, end = category_name_to_id_->find(name);
+  auto it = category_name_to_id_->find(name);
   if (it == category_name_to_id_->end()){
     spkt_throw_printf(sprockit::value_error,
       "key::event_typeid: unknown event name %s",
