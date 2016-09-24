@@ -73,7 +73,7 @@ event_scheduler::setup()
 timestamp
 event_scheduler::now() const
 {
-  SST::Time_t nowTicks = getCurrentSimTime(time_converter_);
+  SST::SimTime_t nowTicks = getCurrentSimTime(time_converter_);
   return timestamp(nowTicks, timestamp::exact);
 }
 
@@ -81,7 +81,7 @@ void
 event_scheduler::schedule_now(event_handler* handler, event* ev)
 {
   //this better be a zero latency link
-  schedule(SST::Time_t(0), handler, ev);
+  schedule(SST::SimTime_t(0), handler, ev);
 }
 
 void
@@ -93,14 +93,14 @@ event_scheduler::schedule_now(event_queue_entry* ev)
 void
 event_scheduler::send_self_event(timestamp arrival, event* ev)
 {
-  SST::Time_t delay = extra_delay(arrival);
+  SST::SimTime_t delay = extra_delay(arrival);
   self_link_->send(delay, time_converter_, ev);
 }
 
 void
 event_scheduler::send_delayed_self_event(timestamp delay, event* ev)
 {
-  SST::Time_t sst_delay = delay.ticks_int64();
+  SST::SimTime_t sst_delay = delay.ticks_int64();
   self_link_->send(sst_delay, time_converter_, ev);
 }
 
@@ -113,14 +113,14 @@ event_scheduler::send_now_self_event(event* ev)
 void
 event_scheduler::send_self_event_queue(timestamp arrival, event_queue_entry* ev)
 {
-  SST::Time_t delay = extra_delay(arrival);
+  SST::SimTime_t delay = extra_delay(arrival);
   self_link_->send(delay, time_converter_, ev);
 }
 
 void
 event_scheduler::send_delayed_self_event_queue(timestamp delay, event_queue_entry* ev)
 {
-  SST::Time_t sst_delay = delay.ticks_int64();
+  SST::SimTime_t sst_delay = delay.ticks_int64();
   self_link_->send(sst_delay, time_converter_, ev);
 }
 
@@ -131,7 +131,7 @@ event_scheduler::send_now_self_event_queue(event_queue_entry* ev)
 }
 
 void
-event_scheduler::schedule(SST::Time_t delay, event_handler* handler, event* ev)
+event_scheduler::schedule(SST::SimTime_t delay, event_handler* handler, event* ev)
 {
   fflush(stdout);
   switch(handler->type()){
@@ -171,13 +171,13 @@ event_scheduler::schedule_delay(
   event_handler* handler,
   event* ev)
 {
-  schedule(SST::Time_t(delay.ticks_int64()), handler, ev);
+  schedule(SST::SimTime_t(delay.ticks_int64()), handler, ev);
 }
 
 void
 event_scheduler::schedule_delay(timestamp delay, event_queue_entry *ev)
 {
-  self_link_->send(SST::Time_t(delay.ticks_int64()), time_converter_, ev);
+  self_link_->send(SST::SimTime_t(delay.ticks_int64()), time_converter_, ev);
 }
 
 #else

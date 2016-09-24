@@ -206,7 +206,7 @@ class event_scheduler :
 
  private:
   void
-  schedule(SST::Time_t delay, event_handler* handler, event* ev);
+  schedule(SST::SimTime_t delay, event_handler* handler, event* ev);
 #else
  public:
   /**
