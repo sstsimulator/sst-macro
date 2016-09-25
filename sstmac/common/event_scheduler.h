@@ -23,47 +23,17 @@
 
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sst/core/params.h>
-
-namespace sstmac {
-sprockit::sim_parameters*
-make_spkt_params_from_sst_params(SST::Params& map);
-}
-
-#include <sstmac/sst_core/integrated_component.h>
 #include <sst/core/link.h>
-#define DeclareSSTComponent(comp) \
-  SST::Component* \
-  create_##comp(SST::ComponentId_t id, SST::Params& params); \
-  extern const SST::ElementInfoComponent comp##_element_info;
-#define ImplementSSTComponent(str, parent, comp, docstring) \
-  SST::Component* \
-  create_##comp(SST::ComponentId_t id, SST::Params& params) { \
-    sprockit::sim_parameters* macParams = \
-      sstmac::make_spkt_params_from_sst_params(params); \
-    sstmac::SSTIntegratedComponent* created = new comp(macParams, id, nullptr); \
-    created->init_links(macParams); \
-    return created; \
-  } \
-  const SST::ElementInfoComponent comp##_element_info = { \
-      str "_" #parent, \
-      docstring, \
-      NULL, \
-      create_##comp, NULL, NULL, COMPONENT_CATEGORY_SYSTEM \
-  };
+#include <sstmac/sst_core/integrated_component.h>
+#define ImplementSSTComponent(str, parent, comp, docstring)
+
 namespace sstmac {
 typedef SST::Event::HandlerBase link_handler;
-
-template <class T, class Fxn>
-SST::Event::HandlerBase*
-new_link_handler(T* t, Fxn f){
-  return new SST::Event::Handler<T>(t, f);
-}
-
 }
 #else
-#  define DeclareSSTComponent(comp)
-#  define ImplementSSTComponent(str, parent, comp, docstring) \
+#define ImplementSSTComponent(str, parent, comp, docstring) \
   SpktRegister(str, parent, comp, docstring)
+
 namespace sstmac {
 typedef event_handler link_handler;
 
@@ -163,6 +133,34 @@ class event_scheduler :
   void
   send_now_self_event_queue(event_queue_entry* ev);
 
+  /**
+   * @brief send_to_link  The message should arrive now
+   * @param lnk
+   * @param ev
+   */
+  void
+  send_to_link(event_handler* lnk, event* ev);
+
+  /**
+   * @brief send_to_link  The arrival time will be enter + lat
+   * @param enter        The time the enters the link
+   * @param lat
+   * @param lnk
+   * @param ev
+   */
+  void
+  send_to_link(timestamp enter, timestamp lat,
+               event_handler* lnk, event* ev);
+
+  void
+  send_delayed_to_link(timestamp extra_delay, timestamp lat,
+               event_handler* lnk, event* ev);
+
+
+  void
+  send_delayed_to_link(timestamp extra_delay,
+               event_handler* lnk, event* ev);
+
   void
   register_stat(stat_collector* coll);
 
@@ -198,12 +196,7 @@ class event_scheduler :
   {
   }
 
- private:
 #if SSTMAC_INTEGRATED_SST_CORE
- public:
-  timestamp
-  now() const;
-
  private:
   void
   schedule(SST::SimTime_t delay, event_handler* handler, event* ev);
@@ -293,6 +286,35 @@ class event_subscheduler :
 
   void
   send_now_self_event_queue(event_queue_entry* ev);
+
+  /**
+   * @brief send_to_link  The arrival time will be enter + lat
+   * @param enter        The time the enters the link
+   * @param lat
+   * @param lnk
+   * @param ev
+   */
+  void
+  send_to_link(timestamp enter, timestamp lat,
+               event_handler* lnk, event* ev);
+
+
+  void
+  send_delayed_to_link(timestamp extra_delay,
+               event_handler* link,
+               event* ev);
+
+  /**
+   * @brief send_to_link  The message should arrive now
+   * @param lnk
+   * @param ev
+   */
+  void
+  send_to_link(event_handler* lnk, event* ev);
+
+  void
+  send_delayed_to_link(timestamp extra_delay, timestamp lat,
+               event_handler* link, event* ev);
 
   virtual void
   deadlock_check() {}

@@ -38,10 +38,22 @@ sys_get_switch_connections(SystemPy_t* self, PyObject* idx);
 static PyObject*
 sys_get_ejection_connections(SystemPy_t* self, PyObject* idx);
 
+static PyObject*
+sys_node_to_logp_switch(SystemPy_t* self, PyObject* idx);
+
+static PyObject*
+sys_is_logp(SystemPy_t* self, PyObject* null);
+
 static int
 sys_init(SystemPy_t* self, PyObject* args, PyObject* kwargs);
 
 static PyMethodDef system_methods[] = {
+  { "nodeToLogPSwitch",
+    (PyCFunction)sys_node_to_logp_switch, METH_O,
+      "map a node id to its corresponding LogP switch" },
+  { "isLogP",
+    (PyCFunction)sys_is_logp, METH_NOARGS,
+      "return whether to do simple LogP build" },
   { "injectionConnections",
     (PyCFunction)sys_get_injection_connections, METH_O,
       "get the switch id and ports for injecting to a given node" },
@@ -186,6 +198,14 @@ sys_get_switch_connections(SystemPy_t* self, PyObject* idx)
 }
 
 static PyObject*
+sys_node_to_logp_switch(SystemPy_t* self, PyObject* idx)
+{
+  int nid = PyInt_AsLong(idx);
+  int sid = self->macro_topology->node_to_logp_switch(nid);
+  return PyInt_FromLong(sid);
+}
+
+static PyObject*
 sys_get_ejection_connections(SystemPy_t* self, PyObject* nodeIdx)
 {
   int nid = PyInt_AsLong(nodeIdx);
@@ -199,6 +219,21 @@ sys_get_ejection_connections(SystemPy_t* self, PyObject* nodeIdx)
   PyTuple_SetItem(tuple, 0, swIdx);
   PyTuple_SetItem(tuple, 1, intTuple);
   return tuple;
+}
+
+static bool is_logp(SystemPy_t* self)
+{
+  sprockit::sim_parameters* switch_params = self->params->get_namespace("switch");
+  std::string model = switch_params->get_param("model");
+  return model == "logP";
+}
+
+static PyObject*
+sys_is_logp(SystemPy_t *self, PyObject *null)
+{
+  bool test = is_logp(self);
+  PyObject* theBool = PyBool_FromLong(test);
+  return theBool;
 }
 
 static int
@@ -224,7 +259,11 @@ sys_init(SystemPy_t* self, PyObject* args, PyObject* kwargs)
   self->macro_topology = sstmac::hw::topology::static_topology(self->params);
 
   sprockit::sim_parameters* switch_params = self->params->get_namespace("switch");
-  self->macro_topology->configure_individual_port_params(sstmac::switch_id(0), switch_params);
+  if (is_logp(self)){
+    //I guess we don't do anything?
+  } else {
+    self->macro_topology->configure_individual_port_params(sstmac::switch_id(0), switch_params);
+  }
 
   return 0;
 }

@@ -19,6 +19,27 @@ topology* topology::static_topology_ = 0;
 topology* topology::main_top_ = 0;
 const int topology::eject = -1;
 
+#if SSTMAC_INTEGRATED_SST_CORE
+int topology::nproc = 0;
+
+switch_id
+topology::node_to_logp_switch(node_id nid) const
+{
+  int n_nodes = num_nodes();
+  int endpoints_per_switch = n_nodes / nproc;
+  int epPlusOne = endpoints_per_switch + 1;
+  int num_procs_with_extra_node = n_nodes % nproc;
+
+  int div_cutoff = num_procs_with_extra_node * epPlusOne;
+  if (nid >= div_cutoff){
+    int offset = nid - div_cutoff;
+    return offset / endpoints_per_switch;
+  } else {
+    return nid / epPlusOne;
+  }
+}
+#endif
+
 topology::topology(sprockit::sim_parameters* params) :
   rng_(nullptr)
 {
@@ -131,7 +152,6 @@ void
 topology::configure_individual_port_params(int port_start, int nports,
                                            sprockit::sim_parameters *switch_params) const
 {
-  int credits = switch_params->get_byte_length_param("buffer_size");
   sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
   for (int i=0; i < nports; ++i){
     int port = port_start + i;

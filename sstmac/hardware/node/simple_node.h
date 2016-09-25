@@ -40,7 +40,6 @@ class simple_node :
 
 };
 
-DeclareSSTComponent(simple_node);
 
 }
 } // end of namespace sstmac

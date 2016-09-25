@@ -1032,11 +1032,11 @@ A non-virtual, top-level `send` function performs operations standard to all NIC
 Once these operations are complete, the NIC invokes `do_send` to perform model-specific send operations.
 The NIC should only ever send `network_message` types.
 
-For the bare-bones class `simple_nic`, the function is
+For the bare-bones class `logp_nic`, the function is
 
 ````
 void
-simple_nic::do_send(network_message* msg)
+logp_nic::do_send(network_message* msg)
 {
   long num_bytes = msg->byte_length();
   timestamp now_ = now();

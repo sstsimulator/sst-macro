@@ -20,14 +20,6 @@ cart_allocation::cart_allocation(sprockit::sim_parameters* params) :
   node_allocator(params)
 {
   if (params->has_param("cart_launch_sizes")){
-    /**
-      sstkeyword {
-          gui=4 4 4;
-          docstring=The span of the allocation in each dimension.ENDL
-          An allocation [4,4,4] would allocated 64 nodes in a cube of torus.ENDL
-          This number of sizes should match the dimensionality of the torus.;
-      }
-    */
     params->get_vector_param("cart_launch_sizes", sizes_);
     auto_allocate_ = false;
   } else {
@@ -36,14 +28,6 @@ cart_allocation::cart_allocation(sprockit::sim_parameters* params) :
   }
 
   if (params->has_param("cart_launch_offsets")){
-    /**
-      sstkeyword {
-          gui=0 0 0;
-          docstring=The offset of the allocation in each dimension.ENDL
-          Nonzero values shift the allocation along a given dimension.ENDL
-          This number of offsets should match the dimensionality of the torus.;
-      }
-    */
     params->get_vector_param("cart_launch_offsets", offsets_);
     if (sizes_.size() != offsets_.size()) {
       spkt_throw_printf(sprockit::value_error,

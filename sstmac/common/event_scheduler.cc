@@ -27,20 +27,6 @@
 
 namespace sstmac {
 
-#if SSTMAC_INTEGRATED_SST_CORE
-sprockit::sim_parameters*
-make_spkt_params_from_sst_params(SST::Params& map)
-{
-  sprockit::sim_parameters* rv = new sprockit::sim_parameters;
-  std::set<std::string> key_names = map.getKeys();
-  for(auto&& key : key_names) {
-    rv->parse_keyval(
-        key, map.find_string(key), false, true, false);
-  }
-  rv->append_extra_data(&map);
-  return rv;
-}
-#endif
 
 void
 event_scheduler::cancel_all_messages()
@@ -70,12 +56,6 @@ event_scheduler::setup()
 }
 
 #if SSTMAC_INTEGRATED_SST_CORE
-timestamp
-event_scheduler::now() const
-{
-  SST::SimTime_t nowTicks = getCurrentSimTime(time_converter_);
-  return timestamp(nowTicks, timestamp::exact);
-}
 
 void
 event_scheduler::schedule_now(event_handler* handler, event* ev)
@@ -133,21 +113,63 @@ event_scheduler::send_now_self_event_queue(event_queue_entry* ev)
 void
 event_scheduler::schedule(SST::SimTime_t delay, event_handler* handler, event* ev)
 {
-  fflush(stdout);
-  switch(handler->type()){
-    case event_handler::self_handler:
-    {
-      event_queue_entry* evq = new handler_event_queue_entry(ev, handler, event_location());
-      self_link_->send(delay, time_converter_, evq);
-      break;
-    }
-    case event_handler::link_handler:
-    {
-      integrated_connectable_wrapper* wrapper
-          = static_cast<integrated_connectable_wrapper*>(handler);
-      wrapper->link()->send(delay, time_converter_, ev);
-      break;
-    }
+  event_queue_entry* evq = new handler_event_queue_entry(ev, handler, event_location());
+  if (handler->link()) abort();
+  self_link_->send(delay, time_converter_, evq);
+}
+
+void
+event_scheduler::send_to_link(event_handler* handler, event *ev)
+{
+  SST::Link* link = handler->link();
+  if (link){
+    //we ignore the latency here
+    link->send(0, time_converter_, ev);
+  } else {
+    //oh - there is no link, you lied to me
+    self_link_->send(ev);
+  }
+}
+
+void
+event_scheduler::send_to_link(timestamp enter, timestamp lat,
+                              event_handler* handler, event *ev)
+{
+  SST::Link* link = handler->link();
+  if (link){
+    //we ignore the latency here
+    link->send(extra_delay(enter), time_converter_, ev);
+  } else {
+    //oh - there is no link, you lied to me
+    schedule(enter + lat, handler, ev);
+  }
+}
+
+void
+event_scheduler::send_delayed_to_link(timestamp extra_delay, timestamp lat,
+                              event_handler* handler, event *ev)
+{
+  SST::Link* link = handler->link();
+  if (link){
+    //we ignore the latency here
+    link->send(SST::SimTime_t(extra_delay.ticks_int64()), time_converter_, ev);
+  } else {
+    //oh - there is no link, you lied to me
+    schedule_delay(extra_delay + lat, handler, ev);
+  }
+}
+
+void
+event_scheduler::send_delayed_to_link(timestamp extra_delay,
+                              event_handler* handler, event *ev)
+{
+  SST::Link* link = handler->link();
+  if (link){
+    //we ignore the latency here
+    link->send(SST::SimTime_t(extra_delay.ticks_int64()), time_converter_, ev);
+  } else {
+    //oh - there is no link, you lied to me
+    schedule_delay(extra_delay, handler, ev);
   }
 }
 
@@ -181,6 +203,36 @@ event_scheduler::schedule_delay(timestamp delay, event_queue_entry *ev)
 }
 
 #else
+void
+event_scheduler::send_to_link(timestamp enter, timestamp lat,
+                              event_handler* handler, event *ev)
+{
+  timestamp arrival = enter + lat;
+  schedule(arrival, handler, ev);
+}
+
+void
+event_scheduler::send_to_link(event_handler *lnk, event *ev)
+{
+  schedule_now(lnk, ev);
+}
+
+void
+event_scheduler::send_delayed_to_link(timestamp extra_delay, timestamp lat,
+                              event_handler* handler, event *ev)
+{
+  timestamp arrival = now() + extra_delay + lat;
+  schedule(arrival, handler, ev);
+}
+
+void
+event_scheduler::send_delayed_to_link(timestamp extra_delay,
+                              event_handler* handler, event *ev)
+{
+  timestamp arrival = now() + extra_delay;
+  schedule(arrival, handler, ev);
+}
+
 void
 event_scheduler::schedule_now(event_handler *handler, event* ev)
 {
@@ -367,6 +419,31 @@ void
 event_subscheduler::send_now_self_event(event* ev)
 {
   parent_->schedule_now(self_handler_, ev);
+}
+
+void
+event_subscheduler::send_to_link(event_handler *lnk, event *ev)
+{
+  parent_->send_to_link(lnk, ev);
+}
+
+void
+event_subscheduler::send_to_link(timestamp enter, timestamp lat, event_handler *lnk, event *ev)
+{
+  parent_->send_to_link(enter, lat, lnk, ev);
+}
+
+void
+event_subscheduler::send_delayed_to_link(timestamp extra_delay, event_handler *link, event *ev)
+{
+  parent_->send_delayed_to_link(extra_delay, link, ev);
+}
+
+void
+event_subscheduler::send_delayed_to_link(timestamp extra_delay, timestamp lat,
+                                         event_handler *link, event *ev)
+{
+  parent_->send_delayed_to_link(extra_delay, lat, link, ev);
 }
 
 void

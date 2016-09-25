@@ -206,11 +206,11 @@ A non-virtual, top-level \inlinecode{send} function performs operations standard
 Once these operations are complete, the NIC invokes \inlinecode{do_send} to perform model-specific send operations.
 The NIC should only ever send \inlinecode{network_message} types.
 
-For the bare-bones class \inlinecode{simple_nic}, the function is
+For the bare-bones class \inlinecode{logp_nic}, the function is
 
 \begin{CppCode}
 void
-simple_nic::do_send(network_message* msg)
+logp_nic::do_send(network_message* msg)
 {
   long num_bytes = msg->byte_length();
   timestamp now_ = now();

@@ -117,8 +117,6 @@ class packet_flow_switch :
 
 };
 
-DeclareSSTComponent(packet_flow_switch);
-
 }
 }
 

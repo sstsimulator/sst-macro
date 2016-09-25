@@ -15,7 +15,7 @@ class integrated_connectable_wrapper :
     std::string to_string() const override { return "integrated_connectable_wrapper"; }
 
     integrated_connectable_wrapper(SST::Link* link) :
-        event_handler(link_handler, event_loc_id::null),
+        event_handler(event_loc_id::null),
         link_(link)
     {
     }
@@ -27,7 +27,7 @@ class integrated_connectable_wrapper :
     }
 
     SST::Link*
-    link() const {
+    link() const override {
       return link_;
     }
 

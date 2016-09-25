@@ -280,13 +280,14 @@ class Factory
       for (it = builder_map_->begin(); it != end; ++it) {
         std::cerr << it->first << std::endl;
       }
+      params->print_scoped_params(std::cerr);
       spkt_abort_printf("could not find name %s for factory %s",
                        valname.c_str(), name_);
     }
 
     builder_t* builder = it->second;
     if (!builder) {
-      spkt_abort_printf("initialized name %s with null descr for factory %s",
+      spkt_abort_printf("initialized name %s with null builder for factory %s",
                        valname.c_str(), name_);
     }
 

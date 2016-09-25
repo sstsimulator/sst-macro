@@ -59,24 +59,28 @@ void
 packet_flow_sender::send_credit(
   const packet_flow_input& src,
   packet_flow_payload* payload,
-  timestamp credit_leaves)
+  timestamp credits_ready)
 {
   int src_vc = payload->vc(); //we have not updated to the new virtual channel
   packet_flow_credit* credit = new packet_flow_credit(src.src_outport,
                                    src_vc, payload->num_bytes());
   //there is a certain minimum latency on credits
-  timestamp min_arrival = now() + credit_lat_;
+  timestamp min_credit_departure = credits_ready - send_lat_;
   //assume for now the packet flow sender is smart enough to pipeline credits efficiently
-  timestamp credit_arrival = min_arrival > credit_leaves ? min_arrival : credit_leaves;
+  timestamp now_ = now();
+  timestamp credit_departure = min_credit_departure > now_ ? min_credit_departure : now_;
   packet_flow_debug(
       "On %s:%p on inport %d, crediting %s:%p port:%d vc:%d {%s} at [%9.5e] after latency %9.5e with %p",
       to_string().c_str(), this, payload->inport(),
       src.handler->to_string().c_str(), src.handler,
       src.src_outport, src_vc,
       payload->to_string().c_str(),
-      credit_arrival.sec(), credit_lat_.sec(),
+      credit_departure.sec(), credit_lat_.sec(),
       credit);
-  schedule(credit_arrival, src.handler, credit);
+  //
+  send_to_link(credit_departure,
+               credit_lat_,
+               src.handler, credit);
 }
 
 /**
@@ -151,8 +155,7 @@ packet_flow_sender::send(
   //weird hack to update vc from routing
   if (update_vc_) pkt->update_vc();
 
-  timestamp arrival = st.head_leaves + send_lat_;
-  schedule(arrival, dest.handler, pkt);
+  send_to_link(st.head_leaves, send_lat_, dest.handler, pkt);
 }
 
 std::string

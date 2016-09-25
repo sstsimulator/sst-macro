@@ -343,17 +343,24 @@ sim_parameters::get_optional_param(const std::string &key, const std::string &de
 sim_parameters*
 sim_parameters::get_optional_namespace(const std::string& ns)
 {
-  sim_parameters*& params = subspaces_[ns];
-  if (params == 0){
-   params = new sim_parameters;
-   if (namespace_ == "global"){
-     params->set_namespace(ns);
-   } else {
-     params->set_namespace(sprockit::printf("%s.%s",
-                  namespace_.c_str(), ns.c_str()));
-   }
-   params->set_parent(this);
+  //if the namespace does not exist locally, see if parent has it
+  sim_parameters* params = _get_namespace(ns);
+
+  //a bit dangerous, but, that's the fault of the person who made the input file
+  //you might think you are operating on a private namespace
+  //but in fact are operating on a shared namespace
+  if (params) return params;
+
+  //need to make a new one
+  params = new sim_parameters;
+  if (namespace_ == "global"){
+   params->set_namespace(ns);
+  } else {
+   params->set_namespace(sprockit::printf("%s.%s",
+                namespace_.c_str(), ns.c_str()));
   }
+  params->set_parent(this);
+  subspaces_[ns] = params;
   return params;
 }
 

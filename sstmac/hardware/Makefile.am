@@ -18,10 +18,10 @@ libsstmac_hw_la_LDFLAGS =
 library_includedir=$(includedir)/sstmac/hardware
 
 nobase_library_include_HEADERS = \
-  simple/null_nic.h \
-  simple/simple_nic.h \
-  simple/simple_switch.h \
-  simple/simple_param_expander.h \
+  logp/logp_nic.h \
+  logp/logp_switch.h \
+  logp/logp_param_expander.h \
+  logp/logp_memory_model.h \
   processor/processor.h \
   processor/processor_fwd.h \
   processor/instruction_processor.h \
@@ -29,8 +29,6 @@ nobase_library_include_HEADERS = \
   memory/memory_id.h \
   memory/memory_model.h \
   memory/memory_model_fwd.h \
-  memory/simple_memory_model.h \
-  memory/null_memory_model.h \
   nic/nic_fwd.h \
   nic/nic.h \
   nic/netlink.h \
@@ -38,7 +36,6 @@ nobase_library_include_HEADERS = \
   noise/noise.h \
   node/node.h \
   node/node_fwd.h \
-  node/null_node.h \
   node/simple_node.h \
   common/connection.h \
   common/connection_fwd.h \
@@ -104,10 +101,10 @@ nobase_library_include_HEADERS = \
   router/fat_tree_router.h 
 
 libsstmac_hw_la_SOURCES =  \
-  simple/null_nic.cc \
-  simple/simple_nic.cc \
-  simple/simple_switch.cc \
-  simple/simple_param_expander.cc \
+  logp/logp_nic.cc \
+  logp/logp_switch.cc \
+  logp/logp_param_expander.cc \
+  logp/logp_memory_model.cc \
   processor/processor.cc \
   processor/simple_processor.cc \
   processor/instruction_processor.cc \
@@ -116,13 +113,10 @@ libsstmac_hw_la_SOURCES =  \
   common/param_expander.cc \
   common/recv_cq.cc \
   memory/memory_model.cc \
-  memory/simple_memory_model.cc \
-  memory/null_memory_model.cc \
   nic/netlink.cc \
   nic/nic.cc \
   noise/noise.cc \
   node/node.cc \
-  node/null_node.cc \
   node/simple_node.cc \
   packet_flow/packet_flow.cc \
   packet_flow/packet_allocator.cc \

@@ -61,6 +61,9 @@ class interconnect
     return num_nodes_;
   }
 
+  switch_id
+  node_to_logp_switch(node_id nid) const;
+
  protected:
   topology* topology_;
   int num_nodes_;
@@ -73,7 +76,7 @@ class interconnect
 
 #if SSTMAC_INTEGRATED_SST_CORE
  public:
-  bool local_speedy_node(node_id nid) const {
+  bool local_logp_node(node_id nid) const {
     return true;
   }
 #else
@@ -150,11 +153,6 @@ class interconnect
     return lookahead_;
   }
 
-  bool
-  local_speedy_node(node_id nid) const {
-    return node_to_speedy_switch_[nid] == local_speedy_switch_;
-  }
-
  private:
   void connect_switches(sprockit::sim_parameters* switch_params);
 
@@ -171,11 +169,11 @@ class interconnect
 
   switch_map switches_;
   //a set of switches that transfer messages quickly
-  switch_map speedy_overlay_switches_;
+  switch_map logp_overlay_switches_;
   node_map nodes_;
 
-  switch_id local_speedy_switch_;
-  std::vector<switch_id> node_to_speedy_switch_;
+  switch_id local_logp_switch_;
+  std::vector<switch_id> node_to_logp_switch_;
 
   double hop_bw_;
 

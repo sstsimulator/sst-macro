@@ -15,7 +15,12 @@
 #include <sstmac/common/node_address.h>
 #include <sstmac/common/event_location.h>
 #include <sstmac/common/sst_event_fwd.h>
+#include <sstmac/common/event_handler_fwd.h>
 #include <sprockit/printable.h>
+
+#if SSTMAC_INTEGRATED_SST_CORE
+#include <sst/core/link.h>
+#endif
 
 namespace sstmac {
 
@@ -62,38 +67,20 @@ class event_handler :
  public:
   static const int null_lpid = -1;
 
+protected:
+ event_handler(event_loc_id id) :
+   locatable(id)
+ {
+ }
+
 #if SSTMAC_INTEGRATED_SST_CORE
  public:
-  typedef enum {
-    self_handler,
-    link_handler
-  } type_t;
-
-  type_t type() const {
-    return type_;
+  virtual SST::Link*
+  link() const {
+    return nullptr;
   }
-
- protected:
-  event_handler(event_loc_id id) :
-    type_(self_handler),
-    locatable(id)
-  {
-  }
-
-  event_handler(type_t ty, event_loc_id id) :
-    type_(ty), locatable(id)
-  {
-  }
-
- private:
-  type_t type_;
 #else
  protected:
-  event_handler(event_loc_id id) :
-    locatable(id)
-  {
-  }
-
   event_handler(event_loc_id id, int thread_id) :
     locatable(id, thread_id)
   {

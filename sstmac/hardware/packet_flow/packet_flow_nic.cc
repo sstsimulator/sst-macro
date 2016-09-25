@@ -79,15 +79,15 @@ link_handler*
 packet_flow_nic::payload_handler(int port) const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  if (port == topology::speedy_port){
-    return new_link_handler(const_cast<packet_flow_nic*>(this),
-                            &nic::mtl_handle);
+  if (port == nic::LogP){
+    return new SST::Event::Handler<packet_flow_nic>(
+          const_cast<packet_flow_nic*>(this), &nic::mtl_handle);
   } else {
-    return new_link_handler(packetizer_,
-                &packet_flow_nic_packetizer::recv_packet);
+    return new SST::Event::Handler<packet_flow_nic_packetizer>(
+          packetizer_, &packet_flow_nic_packetizer::recv_packet);
   }
 #else
-  if (port == topology::speedy_port){
+  if (port == nic::LogP){
     return link_mtl_handler_;
   } else {
     return payload_handler_;
@@ -99,8 +99,8 @@ link_handler*
 packet_flow_nic::ack_handler(int port) const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  return new_link_handler(packetizer_,
-                 &packet_flow_nic_packetizer::recv_credit);
+  return new SST::Event::Handler<packet_flow_nic_packetizer>(
+        packetizer_, &packet_flow_nic_packetizer::recv_credit);
 #else
   return ack_handler_;
 #endif
@@ -113,8 +113,14 @@ packet_flow_nic::connect_output(
   int dst_inport,
   event_handler* mod)
 {
-  packet_flow_nic_packetizer* packer = safe_cast(packet_flow_nic_packetizer, packetizer_);
-  packer->set_output(params, dst_inport, mod);
+  if (src_outport == Injection){
+    packet_flow_nic_packetizer* packer = safe_cast(packet_flow_nic_packetizer, packetizer_);
+    packer->set_output(params, dst_inport, mod);
+  } else if (src_outport == LogP){
+    logp_switch_ = mod;
+  } else {
+    spkt_abort_printf("Invalid switch port %d in packet_flow_nic::connect_output", src_outport);
+  }
 }
 
 void
@@ -182,8 +188,8 @@ link_handler*
 packet_flow_netlink::payload_handler(int port) const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  return new_link_handler(const_cast<packet_flow_netlink*>(this),
-             &packet_flow_netlink::handle_payload);
+  return new SST::Event::Handler<packet_flow_netlink>(
+       const_cast<packet_flow_netlink*>(this), &packet_flow_netlink::handle_payload);
 #else
   return payload_handler_;
 #endif
@@ -193,8 +199,8 @@ link_handler*
 packet_flow_netlink::ack_handler(int port) const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  return new_link_handler(const_cast<packet_flow_netlink*>(this),
-             &packet_flow_netlink::handle_credit);
+  return new SST::Event::Handler<packet_flow_netlink>(
+     const_cast<packet_flow_netlink*>(this), &packet_flow_netlink::handle_credit);
 #else
   return payload_handler_;
 #endif

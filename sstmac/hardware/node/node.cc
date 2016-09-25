@@ -61,7 +61,7 @@ node::node(sprockit::sim_parameters* params,
   nic_ = nic_factory::get_param("model", nic_params, this);
 
   sprockit::sim_parameters* mem_params = params->get_optional_namespace("memory");
-  mem_model_ = memory_model_factory::get_optional_param("model", "simple", mem_params, this);
+  mem_model_ = memory_model_factory::get_optional_param("model", "logP", mem_params, this);
 
   sprockit::sim_parameters* proc_params = params->get_optional_namespace("proc");
   proc_ = processor_factory::get_optional_param("processor", "instruction",

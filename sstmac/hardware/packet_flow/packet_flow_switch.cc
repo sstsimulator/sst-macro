@@ -131,7 +131,6 @@ packet_flow_switch::connect_output(
   int dst_inport,
   event_handler* mod)
 {
-
   //create an output buffer for the port
   packet_flow_sender* out_buffer = output_buffer(port_params, src_outport);
   out_buffer->set_output(port_params, src_outport, dst_inport, mod);
@@ -197,7 +196,7 @@ link_handler*
 packet_flow_switch::ack_handler(int port) const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  return new_link_handler(const_cast<packet_flow_switch*>(this),
+  return new SST::Event::Handler<packet_flow_switch>(const_cast<packet_flow_switch*>(this),
                           &packet_flow_switch::handle_credit);
 #else
   return ack_handler_;
@@ -208,7 +207,7 @@ link_handler*
 packet_flow_switch::payload_handler(int port) const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  return new_link_handler(const_cast<packet_flow_switch*>(this),
+  return new SST::Event::Handler<packet_flow_switch>(const_cast<packet_flow_switch*>(this),
                           &packet_flow_switch::handle_payload);
 #else
   return payload_handler_;

@@ -19,7 +19,7 @@
 #include <sstmac/hardware/packet_flow/packet_flow.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/switch/dist_dummyswitch.h>
-#include <sstmac/hardware/simple/simple_switch.h>
+#include <sstmac/hardware/logp/logp_switch.h>
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sstmac/backends/common/sim_partition.h>
 #include <sstmac/common/runtime.h>
@@ -98,8 +98,8 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
       netlink_params->get_optional_namespace("injection");
   num_speedy_switches_with_extra_node_ = num_nodes_ % nproc;
   num_nodes_per_speedy_switch_ = num_nodes_ / nproc;
-  node_to_speedy_switch_.resize(num_nodes_);
-  speedy_overlay_switches_.resize(nproc);
+  node_to_logp_switch_.resize(num_nodes_);
+  logp_overlay_switches_.resize(nproc);
 
   sprockit::sim_parameters* node_params = params->get_namespace("node");
   sprockit::sim_parameters* nic_params = node_params->get_namespace("nic");
@@ -108,26 +108,30 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   sprockit::sim_parameters* ej_params = switch_params->get_namespace("ejection");
   topology* top = topology_;
 
-  bool simple_model = switch_params->get_param("model") == "simple";
+  switch_params->add_param_override("id", 0);
+  network_switch* tmpl_switch = network_switch_factory::get_param("model", switch_params, 0, mgr);
+  logp_switch* logp_tester = test_cast(logp_switch, tmpl_switch);
+  bool logp_model = logp_tester;
+  delete logp_tester;
 
   switches_.resize(num_switches_);
   nodes_.resize(num_nodes_);
   netlinks_.resize(num_nodes_);
 
-  local_speedy_switch_ = my_rank;
-  simple_switch* local_speedy_switch;
+  local_logp_switch_ = my_rank;
+  logp_switch* local_logp_switch;
   for (int i=0; i < nproc; ++i){
     switch_id sid(i);
     switch_params->add_param_override("id", int(sid));
     if (i == my_rank){
-      speedy_overlay_switches_[sid] = local_speedy_switch = new simple_switch(switch_params, sid, mgr);
+      logp_overlay_switches_[sid] = local_logp_switch = new logp_switch(switch_params, sid, mgr);
     } else {
-      speedy_overlay_switches_[sid] = new dist_dummy_switch(switch_params, sid, mgr);
+      logp_overlay_switches_[sid] = new dist_dummy_switch(switch_params, sid, mgr);
     }
   }
 
   build_endpoints(node_params, nic_params,netlink_params, mgr);
-  if (!simple_model){
+  if (!logp_model){
     build_switches(switch_params, mgr);
     connect_switches(switch_params);
     if (netlinks_.empty()){
@@ -146,6 +150,19 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   hop_bw_ = link_params->get_bandwidth_param("bandwidth");
   lookahead_ = hop_latency_;
   injection_latency_ = inj_params->get_time_param("latency");
+#endif
+}
+
+switch_id
+interconnect::node_to_logp_switch(node_id nid) const
+{
+#if SSTMAC_INTEGRATED_SST_CORE
+  return topology_->node_to_logp_switch(nid);
+#else
+  int ignore;
+  switch_id real_sw_id = topology_->node_to_injection_switch(nid, ignore);
+  int target_rank = partition_->lpid_for_switch(real_sw_id);
+  return target_rank;
 #endif
 }
 
@@ -223,8 +240,8 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
   sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
 
   int my_rank = rt_->me();
-  simple_switch* local_speedy_switch = safe_cast(simple_switch,
-                                         speedy_overlay_switches_[my_rank]);
+  logp_switch* local_logp_switch = safe_cast(logp_switch,
+                                         logp_overlay_switches_[my_rank]);
 
   for (int i=0; i < num_switches_; ++i){
     switch_id sid(i);
@@ -235,7 +252,6 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
       for (int n=0; n < nodes.size(); ++n){
         node_id nid = nodes[n].nid;
         int port = nodes[n].port;
-        node_to_speedy_switch_[nid] = switch_id(target_rank);
         if (my_rank == target_rank){
           //local node - actually build it
           node_params->add_param_override("id", int(nid));
@@ -244,8 +260,15 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
           nic* the_nic = nd->get_nic();
           nodes_[nid] = nd;
 
-          the_nic->set_speedy_switch(local_speedy_switch->payload_handler(port));
-          local_speedy_switch->add_nic(the_nic->mtl_handler(), nid);
+          the_nic->connect_output(
+                inj_params,
+                nic::LogP,
+                0, //does not matter
+                local_logp_switch->payload_handler(port));
+          local_logp_switch->connect_output(inj_params,
+                                      nid, //the outport is he node
+                                      logp_switch::Node, //signal node connection
+                                      the_nic->mtl_handler());
 
           nd->init(0); //emulate SST core
           nd->setup();
@@ -260,26 +283,27 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
             netlink* nlink = netlink_factory::get_param("model", netlink_params, nd);
             netlinks_[netlink_id] = nlink;
 
-            int the_only_port = 0;
             int inj_port = nlink->node_port(netlink_offset);
             nlink->connect_input(nlink_inj_params,
-                          the_only_port, inj_port,
-                          the_nic->ack_handler(the_only_port));
+                          nic::Injection, inj_port,
+                          the_nic->ack_handler(nic::Injection));
             the_nic->connect_output(inj_params,
-                             the_only_port, inj_port,
+                             nic::Injection, inj_port,
                              nlink->payload_handler(inj_port));
 
             nlink->connect_output(nlink_inj_params,
-                          inj_port, the_only_port,
-                          the_nic->payload_handler(the_only_port));
+                          inj_port, nic::Injection,
+                          the_nic->payload_handler(nic::Injection));
             the_nic->connect_input(inj_params,
-                             inj_port, the_only_port,
+                             inj_port, nic::Injection,
                              nlink->ack_handler(inj_port));
           }
         } else {
-          local_speedy_switch->add_switch(
-                speedy_overlay_switches_[target_rank]->payload_handler(port),
-                nid);
+          local_logp_switch->connect_output(
+            inj_params,
+            target_rank,
+            logp_switch::Switch,
+            logp_overlay_switches_[target_rank]->payload_handler(port));
         }
       }
     }

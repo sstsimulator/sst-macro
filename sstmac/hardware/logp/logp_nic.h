@@ -14,24 +14,22 @@
 
 #include <sstmac/hardware/nic/nic.h>
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-
 namespace sstmac {
 namespace hw {
 
 /**
- * A networkinterface is a delegate between a node and a server module.
- * This object helps ornament network operations with information about
- * the process (ppid) involved.
+ * @brief Implements a NIC that does very basic congestion modeling
+ *        using the LogGP model.  See "LogGP in Theory and Practice"
+ *        by Hoefler and Schneider.
  */
-class simple_nic :
+class logp_nic :
   public nic
 {
  public:
-  simple_nic(sprockit::sim_parameters* params, node* parent);
+  logp_nic(sprockit::sim_parameters* params, node* parent);
 
   /// Goodbye.
-  virtual ~simple_nic() {}
+  virtual ~logp_nic() {}
 
   void handle(event *ev);
 
@@ -85,8 +83,6 @@ class simple_nic :
 
 }
 } // end of namespace sstmac.
-
-#endif
 
 #endif // SIMPLE_NIC_H
 

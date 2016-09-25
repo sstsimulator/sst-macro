@@ -177,6 +177,9 @@ class topology : public sprockit::printable
   virtual switch_id
   node_to_ejection_switch(node_id addr, int& port) const = 0;
 
+  virtual switch_id
+  node_to_injection_switch(node_id addr, int& port) const = 0;
+
   /**
     This gives the minimal distance counting the number of hops between switches.
     @param src. The source switch.
@@ -307,6 +310,13 @@ class topology : public sprockit::printable
     int nproc,
     int nthread,
     int noccupied) const;
+
+#if SSTMAC_INTEGRATED_SST_CORE
+  switch_id
+  node_to_logp_switch(node_id nid) const;
+
+  static int nproc;
+#endif
 
 
   static topology*

@@ -13,7 +13,7 @@
  */
 
 #include <sstmac/hardware/switch/network_switch.h>
-#include <sstmac/hardware/simple/simple_switch.h>
+#include <sstmac/hardware/logp/logp_switch.h>
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/switch/dist_dummyswitch.h>
 #include <sstmac/hardware/topology/topology.h>
@@ -26,10 +26,10 @@
 namespace sstmac {
 namespace hw {
 
-ImplementSSTComponent("simple", network_switch, simple_switch,
+ImplementSSTComponent("logP", network_switch, logp_switch,
   "A switch that implements no congestion modeling");
 
-simple_switch::simple_switch(sprockit::sim_parameters *params, uint64_t id, event_manager *mgr) :
+logp_switch::logp_switch(sprockit::sim_parameters *params, uint64_t id, event_manager *mgr) :
   network_switch(params, id, mgr)
 {
   sprockit::sim_parameters* link_params = params->get_namespace("link");
@@ -51,20 +51,20 @@ simple_switch::simple_switch(sprockit::sim_parameters *params, uint64_t id, even
   } else {
     inj_lat_ = ej_params->get_time_param("latency");
   }
-
+  dbl_inj_lat_ = 2*inj_lat_;
 
   inv_min_bw_ = std::max(inverse_bw_, inj_bw_inverse_);
 
   interconn_ = interconnect::static_interconnect(params, mgr);
 
   nics_.resize(top_->num_nodes());
-  neighbors_.resize(top_->num_nodes());
+  neighbors_.reserve(1000); //nproc - just reserve a large block for now
 #if !SSTMAC_INTEGRATED_SST_CORE
-  mtl_handler_ = new_link_handler(this, &simple_switch::handle);
+  mtl_handler_ = new_link_handler(this, &logp_switch::handle);
 #endif
 }
 
-simple_switch::~simple_switch()
+logp_switch::~logp_switch()
 {
 #if !SSTMAC_INTEGRATED_SST_CORE
   delete mtl_handler_;
@@ -72,76 +72,75 @@ simple_switch::~simple_switch()
 }
 
 link_handler*
-simple_switch::payload_handler(int port) const
+logp_switch::payload_handler(int port) const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  return new_link_handler(const_cast<simple_switch*>(this),
-                          &simple_switch::handle);
+  return new SST::Event::Handler<logp_switch>(
+        const_cast<logp_switch*>(this), &logp_switch::handle);
 #else
   return mtl_handler_;
 #endif
 }
 
 void
-simple_switch::add_switch(event_handler* netsw, node_id nid)
-{
-  neighbors_[nid] = netsw;
-}
-
-void
-simple_switch::add_nic(event_handler* theNic, node_id nid)
-{
-  nics_[nid] = theNic;
-}
-
-void
-simple_switch::connect_output(sprockit::sim_parameters *params,
+logp_switch::connect_output(sprockit::sim_parameters *params,
                               int src_outport, int dst_inport,
                               event_handler *mod)
 {
-  spkt_throw_printf(sprockit::unimplemented_error,
-                    "simple_switch::connect: should not be called");
+  if (dst_inport == Node){
+    node_id nid = src_outport;
+    switch_debug("Connecting LogP to NIC %d", nid);
+    nics_[nid] = mod;
+  } else if (dst_inport == Switch){
+    switch_id sid = src_outport;
+    switch_debug("Connecting to LogP switch %d", sid);
+    if (sid >= neighbors_.size()){
+      neighbors_.resize(sid+1);
+    }
+    neighbors_[sid] = mod;
+  } else {
+    spkt_abort_printf("Invalid inport %d in logp_switch::connect_output", dst_inport);
+  }
 }
 
 void
-simple_switch::connect_input(sprockit::sim_parameters *params,
+logp_switch::connect_input(sprockit::sim_parameters *params,
                               int src_outport, int dst_inport,
                               event_handler *mod)
 {
-  spkt_throw_printf(sprockit::unimplemented_error,
-                    "simple_switch::connect: should not be called");
+  //no-op
 }
 
 void
-simple_switch::handle(event* ev)
+logp_switch::handle(event* ev)
 {
   //this should only handle messages
   message* msg = safe_cast(message, ev);
   node_id dst = msg->toaddr();
   node_id src = msg->fromaddr();
 
-  bool local_dst = interconn_->local_speedy_node(dst);
-  bool local_src = interconn_->local_speedy_node(src);
+  bool local_dst = nics_[dst];
+  bool local_src = nics_[src];
 
-  timestamp delay;
+  switch_debug("handling message %d(%d)->%d(%d): %s",
+               src, local_src, dst, local_dst, msg->to_string().c_str());
+
   if (local_dst){
-    delay = timestamp(inv_min_bw_ * msg->byte_length()); //bw term
+    timestamp extra_delay(inv_min_bw_ * msg->byte_length()); //bw term
     if (local_src){ //need to accumulate all the delay here
       //local staying local
       int num_hops = top_->num_hops_to_node(src, dst);
-      delay += num_hops * hop_latency_ + 2*inj_lat_; //factor of 2 for in-out
+      extra_delay += num_hops * hop_latency_ + dbl_inj_lat_; //factor of 2 for in-out
     } else; //remote coming local
-    schedule_delay(delay, nics_[dst], msg);
+    send_delayed_to_link(extra_delay, nics_[dst], msg);
   } else {
     //local going remote - just accumulate latency delay
     int num_hops = top_->num_hops_to_node(src, dst);
-    delay = num_hops * hop_latency_ + 2*inj_lat_; //factor of 2 for in-out
-    schedule_delay(delay, neighbors_[dst], msg);
-  }
+    timestamp extra_delay = num_hops * hop_latency_; //factor of 2 for in-out
 
-  debug_printf(sprockit::dbg::network_switch,
-    "switch %d handling message from %d to %d - delay=%10.6e ms\n%s\n",
-    int(my_addr_), int(src), int(dst), delay.msec(), msg->to_string().c_str());
+    int dst_switch = interconn_->node_to_logp_switch(dst);
+    send_delayed_to_link(extra_delay, dbl_inj_lat_, neighbors_[dst_switch], msg);
+  }
 }
 
 

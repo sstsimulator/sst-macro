@@ -29,6 +29,9 @@
 #include <vector>
 
 DeclareDebugSlot(network_switch)
+#define switch_debug(...) \
+  debug_printf(sprockit::dbg::network_switch, "Switch %d: %s", \
+    int(addr()), sprockit::printf(__VA_ARGS__).c_str())
 
 namespace sstmac {
 namespace hw {

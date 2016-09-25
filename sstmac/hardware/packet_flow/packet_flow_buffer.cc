@@ -347,6 +347,10 @@ packet_flow_injection_buffer(sprockit::sim_parameters* params, event_scheduler* 
   credits_ = params->get_byte_length_param("credits");
   arb_ = packet_flow_bandwidth_arbitrator_factory::
           get_param("arbitrator", params);
+  if (send_lat_.ticks_int64() == 0){
+    params->print_scoped_params(std::cerr);
+    spkt_abort_printf("Injection buffer incorrectly initialized with zero latency - must be nonzero");
+  }
 }
 
 void

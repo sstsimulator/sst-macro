@@ -12,12 +12,22 @@
 namespace sstmac {
 namespace hw {
 
-class simple_switch :
+/**
+ * @brief Implements a switch that does very basic congestion modeling
+ *        using the LogGP model.  See "LogGP in Theory and Practice"
+ *        by Hoefler and Schneider.
+ */
+class logp_switch :
   public network_switch
 {
 
  public:
-  simple_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr);
+  typedef enum {
+    Node,
+    Switch
+  } Port;
+
+  logp_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr);
 
   void
   handle(event* ev);
@@ -31,14 +41,7 @@ class simple_switch :
     return 0;
   }
 
-  virtual
-  ~simple_switch();
-
-  void
-  add_switch(event_handler* netsw, node_id nid);
-
-  void
-  add_nic(event_handler* theNic, node_id nid);
+  virtual ~logp_switch();
 
   void connect_output(sprockit::sim_parameters *params,
                       int src_outport, int dst_inport,
@@ -61,6 +64,8 @@ class simple_switch :
 
   timestamp inj_lat_;
 
+  timestamp dbl_inj_lat_;
+
   double inverse_bw_;
 
   double inv_min_bw_;
@@ -80,5 +85,6 @@ class simple_switch :
 
 }
 }
+
 
 #endif // SIMPLE_SWITCH_H

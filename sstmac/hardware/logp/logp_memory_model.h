@@ -17,19 +17,23 @@
 namespace sstmac {
 namespace hw {
 
-class simple_memory_model : public memory_model
+/**
+ * @brief The logp_memory_model class implements memory operations using
+ *        a very basic LogGP model for simulating delays.
+ */
+class logp_memory_model : public memory_model
 {
  public:
-  simple_memory_model(sprockit::sim_parameters* params, node* nd);
+  logp_memory_model(sprockit::sim_parameters* params, node* nd);
 
-  virtual ~simple_memory_model();
+  virtual ~logp_memory_model();
 
   std::string
   to_string() const override {
-    return "simple memory model";
+    return "logGP memory model";
   }
 
-  virtual void
+  void
   access(long bytes, double max_bw, callback* cb) override;
 
   double
@@ -44,13 +48,10 @@ class simple_memory_model : public memory_model
       bw_(bw), lat_(lat), last_access_(0) {
     }
 
-    virtual ~link() { }
+    ~link() { }
 
-    virtual timestamp
+    timestamp
     new_access(timestamp now, long size, double max_bw);
-
-    virtual void
-    access_done();
 
    protected:
     double bw_;

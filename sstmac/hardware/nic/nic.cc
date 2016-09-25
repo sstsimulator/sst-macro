@@ -31,12 +31,7 @@ RegisterDebugSlot(nic);
 RegisterNamespaces("nic", "message_sizes", "traffic_matrix",
                    "message_size_histogram");
 
-
-#if SSTMAC_INTEGRATED_SST_CORE
-#define DEFAULT_NEGLIGIBLE_SIZE 0
-#else
 #define DEFAULT_NEGLIGIBLE_SIZE 256
-#endif
 
 namespace sstmac {
 namespace hw {
@@ -237,7 +232,7 @@ nic::internode_send(network_message* netmsg)
   nic_debug("internode send payload %p:%s",
     netmsg, netmsg->to_string().c_str());
   if (negligible_size(netmsg->byte_length())){
-    schedule_now(speedy_switch_, netmsg);
+    send_to_link(logp_switch_, netmsg);
     ack_send(netmsg);
   } else {
     do_send(netmsg);

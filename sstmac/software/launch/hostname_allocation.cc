@@ -41,15 +41,6 @@ hostname_allocation::hostname_allocation(sprockit::sim_parameters* params) :
     mapfile_ = params->deprecated_param("launch_dumpi_mapname");
   }
   else {
-    /** sstkeyword {
-            gui=path_to_file;
-            docstring=A file containing a map of hostnames for allocation.ENDL
-            The first line of the hostname file has two integers - the number of hostnames ENDL
-            and the number of coordinates in the topology, respectively.ENDL
-            The subsequent lines are the hostnames followed by the coordinates of that host.ENDL
-            DEPRECATED: launch_dumpi_mapname used to be the name of this parameter.;
-        }
-    */
     mapfile_ = params->get_param("launch_hostname_map");
   }
 }

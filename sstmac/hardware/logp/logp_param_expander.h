@@ -7,7 +7,7 @@
 namespace sstmac {
 namespace hw {
 
-class simple_param_expander :
+class logp_param_expander :
   public param_expander
 {
   public:

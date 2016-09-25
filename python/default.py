@@ -2,6 +2,8 @@ from sst.macro import *
 import sys
 import os
 
+
+
 isSoFile = True
 idx = 1
 while isSoFile:
@@ -20,3 +22,4 @@ while isSoFile:
   idx += 1
 
 setupDeprecated()
+

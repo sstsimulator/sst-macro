@@ -9,7 +9,7 @@
  *  SST/macroscale directory.
  */
 
-#include <sstmac/hardware/memory/simple_memory_model.h>
+#include <sstmac/hardware/logp/logp_memory_model.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
 #include <sprockit/sim_parameters.h>
@@ -18,26 +18,25 @@
 namespace sstmac {
 namespace hw {
 
-SpktRegister("simple",memory_model,simple_memory_model,
+SpktRegister("logP",memory_model,logp_memory_model,
             "Implements a simple memory model that is just a single link");
 
-simple_memory_model::~simple_memory_model()
+logp_memory_model::~logp_memory_model()
 {
   if (link_) delete link_;
 }
 
-simple_memory_model::simple_memory_model(sprockit::sim_parameters* params, node* nd)
+logp_memory_model::logp_memory_model(sprockit::sim_parameters* params, node* nd)
   : memory_model(params, nd, nullptr) //no self events
 {
-  /** sstkeyword { gui=100ns; } */
+
   lat_ = params->get_time_param("latency");
-  /** sstkeyword { gui=4GB/s; } */
   bw_ = params->get_bandwidth_param("bandwidth");
   link_ = new link(bw_, lat_);
 }
 
 void
-simple_memory_model::access(long bytes,
+logp_memory_model::access(long bytes,
                             double max_bw,
                             callback* cb)
 {
@@ -45,11 +44,10 @@ simple_memory_model::access(long bytes,
 
   timestamp delta_t = link_->new_access(now(), bytes, max_bw);
   parent_node_->schedule_delay(delta_t, cb);
-  link_->access_done();
 }
 
 timestamp
-simple_memory_model::link::new_access(timestamp now, long size, double max_bw)
+logp_memory_model::link::new_access(timestamp now, long size, double max_bw)
 {
   max_bw = std::min(max_bw, bw_);
   timestamp n(std::max(now.sec(), last_access_.sec()));
@@ -59,10 +57,6 @@ simple_memory_model::link::new_access(timestamp now, long size, double max_bw)
   return delta;
 }
 
-void
-simple_memory_model::link::access_done()
-{
-}
 
 
 }

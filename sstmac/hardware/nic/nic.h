@@ -47,6 +47,11 @@ class nic :
 {
 
  public:
+  typedef enum {
+    Injection,
+    LogP
+  } Port;
+
   virtual std::string
   to_string() const override = 0;
 
@@ -75,11 +80,6 @@ class nic :
   }
 
   void mtl_handle(event* ev);
-
-  void
-  set_speedy_switch(event_handler* handler){
-    speedy_switch_ = handler;
-  }
 
   /**
    * Delete all static variables associated with this class.
@@ -146,7 +146,7 @@ class nic :
 
   node* parent_;
 
-  event_handler* speedy_switch_;
+  event_handler* logp_switch_;
   event_handler* event_mtl_handler_;
 
 #if !SSTMAC_INTEGRATED_SST_CORE

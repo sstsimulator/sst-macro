@@ -60,7 +60,7 @@ packet_flow_nic_packetizer::packet_flow_nic_packetizer(sprockit::sim_parameters*
   ej_params->add_param_override("credit_latency", "0ns");
   ej_params->add_param_override("credits", 1<<30);
 
-  inj_params->add_param_override("send_latency", inj_params->get_time_param("latency"));
+  inj_params->add_param_override("send_latency", inj_params->get_param("latency"));
   inj_params->add_param_override("credit_latency", "0ns");
 
   inj_buffer_ = new packet_flow_injection_buffer(inj_params, parent);

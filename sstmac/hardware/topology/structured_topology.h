@@ -142,6 +142,12 @@ class structured_topology : public topology
     return endpoint_to_ejection_switch(netid, port);
   }
 
+  switch_id
+  node_to_injection_switch(node_id addr, int& port) const override {
+    node_id netid(addr / num_nodes_per_endpoint_);
+    return endpoint_to_injection_switch(netid, port);
+  }
+
   virtual switch_id
   endpoint_to_ejection_switch(node_id nodeaddr, int &switch_port) const override {
     return endpoint_to_injection_switch(nodeaddr, switch_port);

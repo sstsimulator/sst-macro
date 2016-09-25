@@ -87,6 +87,8 @@ class SSTIntegratedComponent
     int dst_inport,
     event_handler* mod) = 0;
 
+  timestamp now() const;
+
   virtual void
   init(unsigned int phase);
 
@@ -107,6 +109,8 @@ class SSTIntegratedComponent
   SST::LinkMap* link_map_;
   SST::Link* self_link_;
   static SST::TimeConverter* time_converter_;
+
+
 
 };
 

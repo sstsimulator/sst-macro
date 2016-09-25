@@ -30,6 +30,13 @@ SSTIntegratedComponent::SSTIntegratedComponent(
   }
 }
 
+timestamp
+SSTIntegratedComponent::now() const
+{
+  SST::SimTime_t nowTicks = getCurrentSimTime(time_converter_);
+  return timestamp(nowTicks, timestamp::exact);
+}
+
 void
 SSTIntegratedComponent::init_links(sprockit::sim_parameters *params)
 {
@@ -49,6 +56,10 @@ SSTIntegratedComponent::init_links(sprockit::sim_parameters *params)
     } else if (port_type == "output"){
       connect_output(port_params, src_outport, dst_inport, wrapper);
       configureLink(pair.first, ack_handler(src_outport));
+    } else if (port_type == "in-out"){
+      //no ack handlers - just setting up output handlers
+      connect_output(port_params, src_outport, dst_inport, wrapper);
+      configureLink(pair.first, payload_handler(src_outport));
     }
   }
 }

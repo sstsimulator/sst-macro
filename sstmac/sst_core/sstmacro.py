@@ -2,7 +2,8 @@
 # to look for a libmacro.so in LD_LIBRARY_PATH
 import sst
 import sst.macro
-import sstmac
+
+smallLatency = "1ps"
 
 def addNew(prefix, kw, newDict, oldDict):
   name = "%s.%s" % (prefix, kw)
@@ -53,13 +54,13 @@ class Interconnect:
     self.system = sst.macro.System(params)
     self.num_nodes = self.system.numNodes()
     self.num_switches = self.system.numSwitches()
-    self.switches = {}
-    self.nodes = {}
+    self.switches = [0]*self.num_switches
+    self.nodes = [0]*self.num_nodes
 
   def buildSwitches(self):
     for i in range(self.num_switches):
       switchParams = self.system.switchParams(i)
-      compName = switchParams["model"] + "_network_switch"
+      compName = switchParams["model"] + "_switch"
       switch = sst.Component("Switch %d" % i, "macro.%s" % compName)
       switch.addParams(macroToCoreParams(switchParams))
       switch.addParam("id", i)
@@ -74,20 +75,22 @@ class Interconnect:
       node.addParam("id", i)
       self.nodes[i] = node
 
+  def latency(self, params):
+    if params.has_key("latency"):
+      return params["latency"]
+    elif params.has_key("send_latency"):
+      return params["send_latency"]
+    else:
+      sys.exit("need link latency in parameters")
+    
+
   def connectSwitches(self):
     switchParams = self.params["switch"]
     for i in range(self.num_switches):
       linkParams = switchParams["link"]
       connections = self.system.switchConnections(i)
       srcSwitch, params = self.switches[i]
-      lat = None
-      if linkParams.has_key("latency"):
-        lat = linkParams["latency"]
-      elif linkParams.has_key("send_latency"):
-        lat = linkParams["send_latency"]
-      else:
-        sys.exit("need link latency in parameters")
-        
+      lat = self.latency(linkParams)
       for src, dst, src_outport, dst_inport in connections:
         linkName = "network%d:%d->%d:%d" % (src,src_outport,dst,dst_inport)
         link = sst.Link(linkName)
@@ -104,34 +107,89 @@ class Interconnect:
       dstSwitch, params = self.switches[injSwitch]
       node = self.nodes[i]
       for port in connections:
-        linkName = "injection%d:%d->%d:%d" % (i,0,injSwitch,port)
+        linkName = "injection%d:%d->%d:%d" % (i,sst.macro.NICMainInjectionPort,injSwitch,port)
         link = sst.Link(linkName)
-        portName = "output %d %d" % (0, port) #0 is only outport on NIC
+        portName = "output %d %d" % (sst.macro.NICMainInjectionPort, port) 
         node.addLink(link, portName, lat)
-        portName = "input %d %d" % (0, port)
-        dstSwitch.addLink(link, portName, "1ns") #no latency to return credits
+        portName = "input %d %d" % (sst.macro.NICMainInjectionPort, port)
+        dstSwitch.addLink(link, portName, smallLatency) #no latency to return credits
 
       ejSwitch,connections = self.system.ejectionConnections(i)
       srcSwitch, params = self.switches[ejSwitch]
       for port in connections:
-        linkName = "ejection%d:%d->%d:%d" % (injSwitch,port,i,0)
+        linkName = "ejection%d:%d->%d:%d" % (injSwitch,port,i,sst.macro.NICMainInjectionPort)
         link = sst.Link(linkName)
-        portName = "input %d %d" % (port, 0)
-        node.addLink(link, portName, "1ns") #no latency to return credits
-        portName = "output %d %d" % (port, 0) #0 is only inport on NIC
+        portName = "input %d %d" % (port, sst.macro.NICMainInjectionPort)
+        node.addLink(link, portName, smallLatency) #no latency to return credits
+        portName = "output %d %d" % (port, sst.macro.NICMainInjectionPort) 
         srcSwitch.addLink(link, portName, lat)
-  
-  def build(self):
+
+  def buildLogPNetwork(self):
+    import re
+    nproc = sst.getMPIRankCount() * sst.getThreadCount()
+    switchParams = self.params["switch"]
+    linkParams = switchParams["link"]
+    ejParams = switchParams["ejection"]
+    lat = self.latency(ejParams)
+    #gotta multiply the lat by 2
+    match = re.compile("(\d+[.]?\d*)(.*)").search(lat)
+    if not match:
+      sys.exit("improperly formatted latency %s" % lat)
+    num, units = match.groups()
+    num = eval(num) * 2
+    lat = "%8.4f%s" % (num,units.strip())
+    switches = []
+    for i in range(nproc):
+      switch = sst.Component("LogP %d" % i, "macro.logp_switch")
+      switch.addParams(macroToCoreParams(switchParams))
+      switch.addParam("id", i)
+      switches.append(switch)
+
+    for i in range(nproc):
+      sw_i = switches[i]
+      for j in range(nproc):
+        sw_j = switches[j]
+        if i==j: continue
+
+        linkName = "logPnetwork%d->%d" % (i,j)
+        link = sst.Link(linkName)
+        portName = "in-out %d %d" % (j, sst.macro.SwitchLogPNetworkPort)
+        sw_i.addLink(link, portName, lat)
+        portName = "in-out %d %d" % (i, sst.macro.SwitchLogPNetworkPort)
+        sw_j.addLink(link, portName, lat)
+
+    for i in range(self.num_nodes):
+      injSW = self.system.nodeToLogPSwitch(i)
+      node = self.nodes[i]
+      sw = switches[injSW]
+      linkName = "logPinjection%d->%d" % (i, injSW)
+      link = sst.Link(linkName)
+      portName = "in-out %d %d" % (sst.macro.NICLogPInjectionPort, sst.macro.SwitchLogPInjectionPort)
+      node.addLink(link, portName, smallLatency) #put no latency here
+      portName = "in-out %d %d" % (i, sst.macro.SwitchLogPInjectionPort)
+      sw.addLink(link, portName, smallLatency)
+
+
+  def buildFull(self):
     self.buildSwitches()
     self.buildEndpoints()
     self.connectSwitches()
     self.connectEndpoints()
-    
+    self.buildLogPNetwork()
+
+  def buildLogP(self):
+    self.buildEndpoints()
+    self.buildLogPNetwork()
+  
+  def build(self):
+    if self.system.isLogP():
+      self.buildLogP()
+    else:
+      self.buildFull()
 
 def readCmdLineParams():
-  import sstmac
   import sys
-  return sstmac.readParams(sys.argv)
+  return sst.macro.readParams(sys.argv)
 
 def setupDeprecated():
   import sys

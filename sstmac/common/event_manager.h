@@ -188,7 +188,7 @@ class event_manager
   virtual void
   finish_stats(stat_collector* main, const std::string& name, timestamp end);
 
-protected:
+ protected:
   bool complete_;
   bool stopped_;
   bool finish_on_stop_;

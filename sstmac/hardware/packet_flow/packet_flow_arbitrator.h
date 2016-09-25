@@ -11,6 +11,11 @@
 namespace sstmac {
 namespace hw {
 
+/**
+ * @brief The packet_flow_bandwidth_arbitrator class  This arbitrates the available bandwidth
+ *        amongst incoming packets. This can either occur on discrete packets or it can
+ *        attempt to simulate flits.
+ */
 class packet_flow_bandwidth_arbitrator
 {
 
@@ -62,6 +67,10 @@ class packet_flow_bandwidth_arbitrator
 
 };
 
+/**
+ * @brief The packet_flow_null_arbitrator class  The performs no congestion modeling.
+ *        This assumes packets can always receive full bandwidth regardless of traffic.
+ */
 class packet_flow_null_arbitrator :
   public packet_flow_bandwidth_arbitrator
 {
@@ -81,7 +90,12 @@ class packet_flow_null_arbitrator :
 
 };
 
-
+/**
+ * @brief The packet_flow_simple_arbitrator class Implements a store-and-forward arbitration scheme.
+ * The entire packet has to arrive before it can be arbitrated.  Links/crossbars never interleave
+ * flits from different packets in this scheme.  For larger packet sizes, this can lead to
+ * unrealistic delays since packets cannot pipeline across network stages.
+ */
 class packet_flow_simple_arbitrator :
   public packet_flow_bandwidth_arbitrator
 {
@@ -104,6 +118,12 @@ class packet_flow_simple_arbitrator :
 
 };
 
+/**
+ * @brief The packet_flow_simple_arbitrator class Implements a store-and-forward arbitration scheme.
+ * The entire packet has to arrive before it can be arbitrated.  Links/crossbars never interleave
+ * flits from different packets in this scheme.  For larger packet sizes, this can lead to
+ * unrealistic delays since packets cannot pipeline across network stages.
+ */
 class packet_flow_cut_through_arbitrator :
   public packet_flow_bandwidth_arbitrator
 {

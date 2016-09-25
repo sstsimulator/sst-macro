@@ -1,14 +1,14 @@
-#include <sstmac/hardware/simple/simple_param_expander.h>
+#include <sstmac/hardware/logp/logp_param_expander.h>
 #include <sstmac/common/timestamp.h>
 #include <sprockit/sim_parameters.h>
 
 namespace sstmac {
 namespace hw {
 
-SpktRegister("simple", sstmac::param_expander, simple_param_expander);
+SpktRegister("logP | simple", sstmac::param_expander, logp_param_expander);
 
 void
-simple_param_expander::expand(sprockit::sim_parameters* params)
+logp_param_expander::expand(sprockit::sim_parameters* params)
 {
   sprockit::sim_parameters* nic_params = params->get_optional_namespace("nic");
   sprockit::sim_parameters* node_params = params->get_optional_namespace("node");
@@ -17,9 +17,9 @@ simple_param_expander::expand(sprockit::sim_parameters* params)
   sprockit::sim_parameters* top_params = params->get_optional_namespace("topology");
   sprockit::sim_parameters* proc_params = node_params->get_optional_namespace("proc");
 
-  nic_params->add_param_override("model", "simple");
+  nic_params->add_param_override("model", "logP");
   params->add_param_override("interconnect", "simple");
-  switch_params->add_param_override("model", "simple");
+  switch_params->add_param_override("model", "logP");
   mem_params->add_param_override("model", "packet_flow");
 
   std::string amm_type = params->get_param("amm_model");
@@ -48,7 +48,7 @@ simple_param_expander::expand(sprockit::sim_parameters* params)
 }
 
 void
-simple_param_expander::expand_amm1_memory(
+logp_param_expander::expand_amm1_memory(
   sprockit::sim_parameters* params,
   sprockit::sim_parameters* mem_params)
 {
@@ -59,7 +59,7 @@ simple_param_expander::expand_amm1_memory(
 }
 
 void
-simple_param_expander::expand_amm1_network(
+logp_param_expander::expand_amm1_network(
   sprockit::sim_parameters* params,
   sprockit::sim_parameters* switch_params)
 {
@@ -71,7 +71,7 @@ simple_param_expander::expand_amm1_network(
 }
 
 void
-simple_param_expander::expand_amm1_nic(
+logp_param_expander::expand_amm1_nic(
  sprockit::sim_parameters* params,
  sprockit::sim_parameters* nic_params,
  sprockit::sim_parameters* switch_params)
@@ -79,7 +79,7 @@ simple_param_expander::expand_amm1_nic(
 }
 
 void
-simple_param_expander::expand_amm2_memory(
+logp_param_expander::expand_amm2_memory(
  sprockit::sim_parameters* params,
  sprockit::sim_parameters* mem_params)
 {
@@ -88,7 +88,7 @@ simple_param_expander::expand_amm2_memory(
 }
 
 void
-simple_param_expander::expand_amm3_network(
+logp_param_expander::expand_amm3_network(
   sprockit::sim_parameters* params,
   sprockit::sim_parameters* switch_params)
 {
@@ -107,7 +107,7 @@ simple_param_expander::expand_amm3_network(
 }
 
 void
-simple_param_expander::expand_amm4_nic(
+logp_param_expander::expand_amm4_nic(
   sprockit::sim_parameters* params,
   sprockit::sim_parameters* nic_params,
   sprockit::sim_parameters* switch_params)
