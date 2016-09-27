@@ -15,8 +15,8 @@ RegisterDebugSlot(topology,
 namespace sstmac {
 namespace hw {
 
-topology* topology::static_topology_ = 0;
-topology* topology::main_top_ = 0;
+topology* topology::static_topology_ = nullptr;
+topology* topology::main_top_ = nullptr;
 const int topology::eject = -1;
 
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -197,6 +197,142 @@ topology::label(event_loc_id id) const
     return label(id.convert_to_switch_id());
   }
 }
+
+#ifdef SSTMAC_INTEGRATED_SST_CORE
+class merlin_topology : public topology {
+ public:
+  merlin_topology(sprockit::sim_parameters* params) 
+    : topology(params)
+  {
+    num_nodes_ = params->get_int_param("num_nodes");
+    num_switches_ = params->get_int_param("num_switches");
+  }
+
+  std::string
+  to_string() const override {
+    return "merlin topology";
+  }
+
+  int 
+  num_switches() const override {
+    return num_switches_;
+  }
+
+  int
+  num_nodes() const override {
+    return num_nodes_;
+  }
+
+  bool
+  uniform_network_ports() const override {
+    spkt_abort_printf("merlin topology functions should never be called");
+  }
+
+  bool
+  uniform_switches_non_uniform_network_ports() const override {
+    spkt_abort_printf("merlin topology functions should never be called");
+  }
+
+  bool
+  uniform_switches() const override {
+    spkt_abort_printf("merlin topology functions should never be called");
+  }
+
+  void
+  connected_outports(switch_id src, std::vector<topology::connection>& conns) const override {
+    spkt_abort_printf("merlin topology functions should never be called");
+  }
+
+  void
+  configure_individual_port_params(switch_id src,
+          sprockit::sim_parameters* switch_params) const override {
+    spkt_abort_printf("merlin topology functions should never be called");
+  }
+
+  int
+  num_leaf_switches() const override {
+    spkt_abort_printf("merlin topology functions should never be called");
+  }
+
+
+  int
+  num_endpoints() const override {
+    spkt_abort_printf("merlin topology functions should never be called");
+  }
+
+  int
+  max_num_ports() const override {
+    spkt_abort_printf("merlin topology functions should never be called");
+  }
+
+  switch_id
+  endpoint_to_injection_switch(node_id nodeaddr, int& switch_port) const override {
+    spkt_abort_printf("merlin topology functions should never be called");
+  }
+
+  switch_id
+  endpoint_to_ejection_switch(node_id nodeaddr, int& switch_port) const override {
+    spkt_abort_printf("merlin topology functions should never be called");
+  }
+
+  void
+  configure_vc_routing(std::map<routing::algorithm_t, int>& m) const override {
+    spkt_abort_printf("merlin topology functions should never be called");
+  }
+
+  switch_id
+  node_to_ejection_switch(node_id addr, int& port) const override {
+    spkt_abort_printf("merlin topology functions should never be called");
+  }
+
+  switch_id
+  node_to_injection_switch(node_id addr, int& port) const override {
+    spkt_abort_printf("merlin topology functions should never be called");
+  }
+
+  int
+  minimal_distance(switch_id src, switch_id dst) const override {
+    spkt_abort_printf("merlin topology functions should never be called");
+  }
+
+  int
+  num_hops_to_node(node_id src, node_id dst) const override {
+    spkt_abort_printf("merlin topology functions should never be called");
+  }
+
+  void
+  nodes_connected_to_injection_switch(switch_id swid,
+                          std::vector<injection_port>& nodes) const override {
+    spkt_abort_printf("merlin topology functions should never be called");
+  }
+
+  void
+  nodes_connected_to_ejection_switch(switch_id swid,
+                          std::vector<injection_port>& nodes) const override {
+    spkt_abort_printf("merlin topology functions should never be called");
+  }
+
+  void
+  minimal_route_to_switch(
+    switch_id current_sw_addr,
+    switch_id dest_sw_addr,
+    routable::path& path) const override {
+    spkt_abort_printf("merlin topology functions should never be called");
+  }
+
+  bool
+  node_to_netlink(node_id nid, node_id& net_id, int& offset) const override {
+    spkt_abort_printf("merlin topology functions should never be called");
+  }
+
+ private:
+  int num_nodes_;
+  int num_switches_;
+};
+
+SpktRegister("merlin", topology, merlin_topology);
+
+#endif
 
 }
 }

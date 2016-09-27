@@ -28,6 +28,10 @@ class packet_flow_nic :
     return sprockit::printf("packet flow nic(%d)", int(addr()));
   }
 
+  void init(unsigned int phase) override;
+
+  void setup() override;
+
   virtual ~packet_flow_nic() throw ();
 
   void notify(int vn, message* msg) override {
@@ -59,7 +63,7 @@ class packet_flow_nic :
   do_send(network_message* payload) override;
 
  protected:
-  packet_flow_nic_packetizer* packetizer_;
+  packetizer* packetizer_;
 #if !SSTMAC_INTEGRATED_SST_CORE
   link_handler* payload_handler_;
   link_handler* ack_handler_;

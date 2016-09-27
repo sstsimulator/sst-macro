@@ -25,7 +25,7 @@ packet_flow_memory_packetizer::packet_flow_memory_packetizer(
   bw_noise_(nullptr),
   interval_noise_(nullptr),
   num_noisy_intervals_(0),
-  packet_flow_packetizer(params, parent, cb)
+  packetizer(params, parent, cb)
 {
   if (!params->has_param("mtu"))
     params->add_param("mtu", "100GB");
@@ -40,6 +40,18 @@ packet_flow_memory_packetizer::packet_flow_memory_packetizer(
   init_noise_model();
 
   self_credit_handler_ = new_handler(this, &packet_flow_memory_packetizer::recv_credit);
+}
+
+link_handler*
+packet_flow_memory_packetizer::new_ack_handler() const
+{
+  spkt_abort_printf("packet_flow_memory_packetizer::new_ack_handler: not used");
+}
+
+link_handler*
+packet_flow_memory_packetizer::new_payload_handler() const
+{
+  spkt_abort_printf("packet_flow_memory_packetizer::new_payload_handler: not used");
 }
 
 packet_flow_memory_packetizer::~packet_flow_memory_packetizer()
@@ -60,7 +72,7 @@ packet_flow_memory_model::packet_flow_memory_model(sprockit::sim_parameters *par
 
   max_single_bw_ = params->get_bandwidth_param("max_single_bandwidth");
   mem_packetizer_ = new packet_flow_memory_packetizer(params, nd, this);
-  mem_packetizer_->setNotify(this);
+  mem_packetizer_->setArrivalNotify(this);
 }
 
 packet_flow_memory_model::~packet_flow_memory_model()

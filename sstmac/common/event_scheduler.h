@@ -242,6 +242,10 @@ class event_subscheduler :
     return parent_->now();
   }
 
+  virtual void setup(); //needed for SST core compatibility
+
+  virtual void init(unsigned int phase); //needed for SST core compatibility
+
   /**
    * Add an event to the event queue, where msg will get delivered to handler at time t.
    * @param t Time at which the event should happen

@@ -55,7 +55,7 @@ class memory_message : public message
   double max_bw_;
 };
 
-class packet_flow_memory_packetizer : public packet_flow_packetizer
+class packet_flow_memory_packetizer : public packetizer
 {
  public:
   packet_flow_memory_packetizer(sprockit::sim_parameters* params,
@@ -69,11 +69,11 @@ class packet_flow_memory_packetizer : public packet_flow_packetizer
     return "packet flow memory model";
   }
 
-  void
-  recv_credit(event* ev);
+  link_handler* new_ack_handler() const override;
+  link_handler* new_payload_handler() const override;
 
   void
-  recv_packet(event* ev){}
+  recv_credit(event* ev);
 
   void inject(int vn, long bytes, long byte_offset, message *payload);
 

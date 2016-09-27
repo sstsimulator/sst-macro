@@ -40,7 +40,7 @@ make_spkt_params_from_sst_params(SST::Params& map)
   std::set<std::string> key_names = map.getKeys();
   for(auto&& key : key_names) {
     rv->parse_keyval(
-        key, map.find_string(key), false, true, false);
+        key, map.find<std::string>(key), false, true, false);
   }
   rv->append_extra_data(&map);
   return rv;
@@ -85,6 +85,7 @@ static const ElementInfoPort ports[] = {
  {"input %(out)d %(in)d",  "Will receive new payloads here",      NULL},
  {"output %(out)d %(in)d", "Will receive new acks(credits) here", NULL},
  {"in-out %(out)d %(in)d", "Will send/recv payloads here",       NULL},
+ {"rtr", "Special link to Merlin router", NULL},
  {NULL, NULL, NULL}
 };
 
@@ -225,10 +226,9 @@ py_dict_from_params(sprockit::sim_parameters* params)
 static PyObject*
 set_debug_flags(PyObject* self, PyObject* args)
 {
-  PyObject* flags = PyTuple_GetItem(args, 0);
-  Py_ssize_t size = PyTuple_Size(flags);
+  Py_ssize_t size = PyTuple_Size(args);
   for (int i=0; i < size; ++i){
-    PyObject* obj = PyTuple_GetItem(flags,i);
+    PyObject* obj = PyTuple_GetItem(args,i);
     const char* str = PyString_AsString(obj);
     sprockit::debug::turn_on(str);
   }

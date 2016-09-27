@@ -44,7 +44,7 @@ packet_flow_nic_packetizer::packet_flow_nic_packetizer(sprockit::sim_parameters*
  buf_stats_(nullptr),
  pkt_allocator_(nullptr),
  payload_handler_(nullptr),
- packet_flow_packetizer(params, parent, cb)
+ packetizer(params, parent, cb)
 {
   stat_collector_ = packet_stats_callback_factory::
                         get_optional_param("stats", "null", params, parent);
@@ -84,10 +84,30 @@ packet_flow_nic_packetizer::~packet_flow_nic_packetizer()
   if (payload_handler_) delete payload_handler_;
 }
 
-void
-packet_flow_nic_packetizer::set_acker(event_handler *handler)
+link_handler*
+packet_flow_nic_packetizer::new_ack_handler() const
 {
-  inj_buffer_->set_acker(handler);
+#if SSTMAC_INTEGRATED_SST_CORE
+  return new SST::Event::Handler<packet_flow_nic_packetizer>(
+           const_cast<packet_flow_nic_packetizer*>(this),
+           &packet_flow_nic_packetizer::recv_credit);
+#else
+  return new_link_handler(const_cast<packet_flow_nic_packetizer*>(this),
+                         &packet_flow_nic_packetizer::recv_credit);
+#endif
+}
+
+link_handler*
+packet_flow_nic_packetizer::new_payload_handler() const
+{
+#if SSTMAC_INTEGRATED_SST_CORE
+  return new SST::Event::Handler<packet_flow_nic_packetizer>(
+        const_cast<packet_flow_nic_packetizer*>(this),
+        &packet_flow_nic_packetizer::recv_packet);
+#else
+  return new_link_handler(const_cast<packet_flow_nic_packetizer*>(this),
+                           &packet_flow_nic_packetizer::recv_packet);
+#endif
 }
 
 void

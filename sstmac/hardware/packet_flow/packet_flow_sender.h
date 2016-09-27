@@ -58,11 +58,6 @@ class packet_flow_sender :
  public:
   virtual ~packet_flow_sender() {}
 
-  void
-  set_acker(event_handler* acker) {
-    acker_ = acker;
-  }
-
   virtual void
   set_input(sprockit::sim_parameters* params,
      int my_inport, int dst_outport,
@@ -110,8 +105,6 @@ class packet_flow_sender :
 
  protected:
   packet_stats_callback* stat_collector_;
-
-  event_handler* acker_;
 
   timestamp send_lat_;
 

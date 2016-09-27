@@ -54,6 +54,16 @@ class message :
   virtual node_id
   fromaddr() const = 0;
 
+  virtual bool
+  needs_ack() const {
+    return false;
+  }
+
+  virtual message*
+  clone_ack() const {
+    return nullptr;
+  }
+
 };
 
 

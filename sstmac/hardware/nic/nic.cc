@@ -45,6 +45,7 @@ nic::nic(sprockit::sim_parameters* params, node* parent) :
   local_bytes_sent_(nullptr),
   global_bytes_sent_(nullptr),
   parent_(parent),
+  logp_switch_(nullptr),
   event_mtl_handler_(nullptr),
   my_addr_(parent->addr()),
   connectable_subcomponent(parent, nullptr) //no self events with NIC
@@ -231,7 +232,8 @@ nic::internode_send(network_message* netmsg)
   record_message(netmsg);
   nic_debug("internode send payload %p:%s",
     netmsg, netmsg->to_string().c_str());
-  if (negligible_size(netmsg->byte_length())){
+  //we might not have a logp overlay network
+  if (logp_switch_ && negligible_size(netmsg->byte_length())){
     send_to_link(logp_switch_, netmsg);
     ack_send(netmsg);
   } else {

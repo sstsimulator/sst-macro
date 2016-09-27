@@ -201,12 +201,14 @@ param_assign::setByteLength(long x, const char* units)
 }
 
 sim_parameters::sim_parameters() :
-  parent_(nullptr)
+  parent_(nullptr),
+  extra_data_(nullptr)
 {
 }
 
 sim_parameters::sim_parameters(const key_value_map& p) :
   params_(p),
+  extra_data_(nullptr),
   parent_(nullptr),
   namespace_("global")
 {
@@ -214,6 +216,7 @@ sim_parameters::sim_parameters(const key_value_map& p) :
 
 sim_parameters::sim_parameters(const std::string& filename) :
   parent_(nullptr),
+  extra_data_(nullptr),
   namespace_("global")
 {
   //don't fail, but don't overwrite anything
@@ -405,6 +408,18 @@ sim_parameters::get_time_param(const std::string& key)
 {
   return get_time_from_str(get_param(key).c_str(), key.c_str());
 
+}
+
+void*
+sim_parameters::_extra_data() const
+{
+  if (extra_data_){
+    return extra_data_;
+  } else if (parent_){
+    return parent_->_extra_data();
+  } else {
+    spkt_abort_printf("sim_parameters has no extra data to fetch");
+  }
 }
 
 double

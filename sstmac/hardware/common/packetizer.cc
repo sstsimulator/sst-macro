@@ -16,7 +16,9 @@ packetizer::packetizer(sprockit::sim_parameters* params,
   notifier_(cb),
   event_subscheduler(parent, nullptr) //no self events
 {
-  packet_size_ = params->get_optional_byte_length_param("mtu", 4096);
+  packet_size_ = params->get_byte_length_param("mtu");
+  double bw = params->get_bandwidth_param("bandwidth");
+  inv_bw_ = 1.0 / bw;
 }
 
 packetizer::~packetizer()
@@ -50,20 +52,26 @@ packetizer::sendWhatYouCan(int vn)
   std::list<pending_send>& pending = pending_[vn];
   while (!pending.empty()){
     pending_send& next = pending.front();
-    long num_bytes = std::min(next.bytes_left, long(packet_size_));
+    long initial_offset = next.offset;
+    while (next.bytes_left){
+      long num_bytes = std::min(next.bytes_left, long(packet_size_));
+      if (!spaceToSend(vn, num_bytes*8)){
+        pkt_debug("no space to send %d bytes on vn %d", num_bytes, vn);
+        return;
+      }
+      pkt_debug("injecting %d bytes on vn %d", num_bytes, vn);
+      inject(vn, num_bytes, next.offset, next.msg);
 
-    if (!spaceToSend(vn, num_bytes*8)){
-      pkt_debug("no space to send %d bytes on vn %d", num_bytes, vn);
-      return;
+      next.offset += num_bytes;
+      next.bytes_left -= num_bytes;
     }
-
-    pkt_debug("injecting %d bytes on vn %d", num_bytes, vn);
-    inject(vn, num_bytes, next.offset, next.msg);
-
-    next.offset += num_bytes;
-    next.bytes_left -= num_bytes;
-    if (next.bytes_left == 0)
-      pending.pop_front();
+    long bytes_sent = next.offset - initial_offset;
+    if (next.msg->needs_ack()){
+      timestamp time_to_send(bytes_sent * inv_bw_);
+      schedule_delay(time_to_send, acker_, next.msg->clone_ack());
+    }
+    //the entire packet sent
+    pending.pop_front();
   }
 }
 
@@ -84,46 +92,99 @@ packetizer::packetArrived(int vn, packet* pkt)
 }
 
 #if SSTMAC_INTEGRATED_SST_CORE
-SimpleNetworkPacketizer::SimpleNetworkPacketizer(sprockit::sim_parameters *params,
-                                                 event_scheduler* parent,
-                                                 packetizer_callback *handler) :
+class SimpleNetworkPacket : public SST::Event
+{
+  NotSerializable(SimpleNetworkPacket)
+
+ public:
+  SimpleNetworkPacket(uint64_t id) : flow_id(id) {}
+  uint64_t flow_id;
+};
+
+class merlin_packetizer :
+  public packetizer
+{
+ public:
+  merlin_packetizer(sprockit::sim_parameters* params,
+                      event_scheduler* parent,
+                      packetizer_callback* handler);
+
+  bool spaceToSend(int vn, int num_bits) const;
+
+  void inject(int vn, long bytes, long byte_offset, message *payload);
+
+  bool recvNotify(int vn);
+
+  bool sendNotify(int vn);
+
+  void init(unsigned int phase){
+    m_linkControl->init(phase);
+  }
+
+  void setup(){
+    m_linkControl->setup();
+  }
+
+  link_handler*
+  new_ack_handler() const{
+    spkt_abort_printf("merlin_packetizier::new_ack_handler: never used");
+  }
+
+  link_handler*
+  new_payload_handler() const{
+    spkt_abort_printf("merlin_packetizier::new_payload_handler: never used");
+  }
+
+ private:
+  SST::Interfaces::SimpleNetwork* m_linkControl;
+  SST::Interfaces::SimpleNetwork::HandlerBase* m_recvNotifyFunctor;
+  SST::Interfaces::SimpleNetwork::HandlerBase* m_sendNotifyFunctor;
+
+};
+
+merlin_packetizer::merlin_packetizer(sprockit::sim_parameters *params,
+                                     event_scheduler* parent,
+                                     packetizer_callback *handler) :
   packetizer(params, parent, handler)
 {
   SST::Params& sst_params = *params->extra_data<SST::Params>();
   m_linkControl = (SST::Interfaces::SimpleNetwork*)parent->loadSubComponent(
-                  sst_params.find_string("module"), parent, sst_params);
+                  params->get_optional_param("linkControl", "merlin.linkcontrol"),
+                  parent, sst_params);
 
-  SST::UnitAlgebra link_bw(sst_params.find_string("injection_bandwidth"));
-  SST::UnitAlgebra injection_buffer_size(sst_params.find_string("injection_credits"));
+  SST::UnitAlgebra link_bw(params->get_param("bandwidth"));
+  SST::UnitAlgebra injection_buffer_size(params->get_param("credits"));
+
   SST::UnitAlgebra big_buffer("1GB");
-  m_linkControl->initialize(sst_params.find_string("rtrPortName","rtr"),
-                              link_bw, 1, injection_buffer_size, big_buffer);
+  m_linkControl->initialize(params->get_optional_param("rtrPortName","rtr"),
+                            link_bw, 1, big_buffer, injection_buffer_size);
 
-  m_recvNotifyFunctor = new SST::Interfaces::SimpleNetwork::Handler<SimpleNetworkPacketizer>
-      (this,&SimpleNetworkPacketizer::recvNotify );
+  m_recvNotifyFunctor = new SST::Interfaces::SimpleNetwork::Handler<merlin_packetizer>
+      (this,&merlin_packetizer::recvNotify );
 
-  m_sendNotifyFunctor = new SST::Interfaces::SimpleNetwork::Handler<SimpleNetworkPacketizer>
-      (this,&SimpleNetworkPacketizer::sendNotify );
+  m_sendNotifyFunctor = new SST::Interfaces::SimpleNetwork::Handler<merlin_packetizer>
+      (this,&merlin_packetizer::sendNotify );
 
   m_linkControl->setNotifyOnReceive( m_recvNotifyFunctor );
   m_linkControl->setNotifyOnSend( m_sendNotifyFunctor );
 }
 
 bool
-SimpleNetworkPacketizer::spaceToSend(int vn, int num_bits) const
+merlin_packetizer::spaceToSend(int vn, int num_bits) const
 {
-  return m_linkControl->spaceToSend(vn, num_bits);
+  bool res = m_linkControl->spaceToSend(vn, num_bits);
+  return res;
 }
 
 bool
-SimpleNetworkPacketizer::sendNotify(int vn)
+merlin_packetizer::sendNotify(int vn)
 {
   sendWhatYouCan(vn);
   return true;
 }
 
 bool
-SimpleNetworkPacketizer::recvNotify(int vn)
+merlin_packetizer::recvNotify(int vn)
 {
   SST::Interfaces::SimpleNetwork::Request* req = m_linkControl->recv(vn);
   message* m = 0;
@@ -142,7 +203,7 @@ SimpleNetworkPacketizer::recvNotify(int vn)
 }
 
 void
-SimpleNetworkPacketizer::inject(int vn, long bytes, long byte_offset, message* payload)
+merlin_packetizer::inject(int vn, long bytes, long byte_offset, message* payload)
 {
   SST::Interfaces::SimpleNetwork::nid_t dst = payload->toaddr();
   SST::Interfaces::SimpleNetwork::nid_t src = payload->toaddr();
@@ -156,8 +217,12 @@ SimpleNetworkPacketizer::inject(int vn, long bytes, long byte_offset, message* p
   }
   SST::Interfaces::SimpleNetwork::Request* req =
         new SST::Interfaces::SimpleNetwork::Request(dst, src, bytes*8, head, tail, ev_payload);
+  pkt_debug("merling injecting %d bytes at offset %d on vn %d for message %s",
+            bytes, byte_offset, vn, payload->to_string().c_str());
   m_linkControl->send(req, vn);
 }
+
+SpktRegister("merlin", packetizer, merlin_packetizer);
 #endif
 
 

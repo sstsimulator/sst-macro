@@ -410,7 +410,8 @@ class sim_parameters  {
   template <class T>
   T*
   extra_data() const {
-    return static_cast<T*>(extra_data_);
+    void* ptr = _extra_data();
+    return static_cast<T*>(ptr);
   }
 
   param_assign
@@ -435,6 +436,7 @@ class sim_parameters  {
 
   sim_parameters* parent_;
 
+  void* _extra_data() const;
   void* extra_data_;
 
   static sim_parameters* empty_ns_params_;

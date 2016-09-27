@@ -75,6 +75,11 @@ class network_message :
     return cln;
   }
 
+  message*
+  clone_ack() const override {
+    return clone_injection_ack();
+  }
+
   virtual void
   nic_reverse(type_t newtype);
 
@@ -110,7 +115,7 @@ class network_message :
   }
 
   virtual bool
-  needs_ack() const {
+  needs_ack() const override {
     //only paylods get acked
     return needs_ack_ && type_ >= payload;
   }

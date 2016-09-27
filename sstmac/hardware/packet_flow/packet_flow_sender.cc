@@ -47,7 +47,6 @@ packet_flow_sender::packet_flow_sender(
   sprockit::sim_parameters* params,
   event_scheduler* parent) :
   event_subscheduler(parent, nullptr), //no self handlers
-  acker_(nullptr),
   stat_collector_(nullptr),
   update_vc_(true)
 {
@@ -129,14 +128,6 @@ packet_flow_sender::send(
 
   if (src.handler) {
     send_credit(src, pkt, st.credit_leaves);
-  }
-
-  if (acker_ && pkt->is_tail()) {
-    network_message* netmsg = test_cast(network_message, pkt->orig());
-    if (netmsg && netmsg->needs_ack()) {
-      network_message* ack = netmsg->clone_injection_ack();
-      schedule(st.tail_leaves, acker_, ack);
-    }
   }
 
   packet_flow_debug(

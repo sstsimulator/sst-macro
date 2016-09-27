@@ -53,6 +53,15 @@ node::node(sprockit::sim_parameters* params,
   new_handler(this, &node::handle)),
   params_(params)
 {
+  /**
+  printf("Made node %d with the following links\n", id);
+  SST::LinkMap* lmap = this->getSimulation()->getComponentInfo(id)->getLinkMap();
+  for (auto& pair : lmap->getLinkMap()){
+    SST::Link* l = pair.second;
+    std::cout << l->getId() << " : " << pair.first << std::endl;
+  }
+  */
+
   my_addr_ = event_location().convert_to_node_id();
   next_outgoing_id_.set_src_node(my_addr_);
 
@@ -104,6 +113,7 @@ node::init(unsigned int phase)
 #if SSTMAC_INTEGRATED_SST_CORE
   event_scheduler::init(phase);
 #endif
+  nic_->init(phase);
   if (phase == 0){
     build_launchers(params_);
   }

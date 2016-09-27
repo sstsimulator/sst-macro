@@ -60,6 +60,8 @@ SSTIntegratedComponent::init_links(sprockit::sim_parameters *params)
       //no ack handlers - just setting up output handlers
       connect_output(port_params, src_outport, dst_inport, wrapper);
       configureLink(pair.first, payload_handler(src_outport));
+    } else {
+      //other special type of link I don't need to process
     }
   }
 }

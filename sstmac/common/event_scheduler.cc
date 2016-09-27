@@ -378,6 +378,18 @@ event_scheduler::schedule(timestamp t,
 #endif
 
 void
+event_subscheduler::init(unsigned int phase)
+{
+  //do nothing
+}
+
+void
+event_subscheduler::setup()
+{
+  //do nothing
+}
+
+void
 event_subscheduler::schedule(timestamp t,
                           event_handler* handler,
                           event* ev)

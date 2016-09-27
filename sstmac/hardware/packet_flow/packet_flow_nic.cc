@@ -44,23 +44,32 @@ packet_flow_nic::packet_flow_nic(sprockit::sim_parameters* params, node* parent)
 {
   sprockit::sim_parameters* inj_params = params->get_namespace("injection");
 
-  packetizer_ = safe_cast(packet_flow_nic_packetizer,
-       packetizer_factory::get_optional_param("packetizer", "cut_through",
-                                              inj_params, parent, this));
-  packetizer_->setNotify(this);
-  packetizer_->set_acker(mtl_handler());
+
+  packetizer_ = packetizer_factory::get_optional_param("packetizer", "cut_through",
+                                              inj_params, parent, this);
+  packetizer_->setArrivalNotify(this);
+  packetizer_->setInjectionAcker(mtl_handler());
 
   //make port 0 a copy of the injection params
   sprockit::sim_parameters* port0_params = params->get_optional_namespace("port0");
   inj_params->combine_into(port0_params);
 
 #if !SSTMAC_INTEGRATED_SST_CORE
-  ack_handler_ = new_link_handler(packetizer_,
-                             &packet_flow_nic_packetizer::recv_credit);
-
-  payload_handler_ = new_link_handler(packetizer_,
-                             &packet_flow_nic_packetizer::recv_packet);
+  ack_handler_ = packetizer_->new_ack_handler();
+  payload_handler_ = packetizer_->new_payload_handler();
 #endif
+}
+
+void
+packet_flow_nic::init(unsigned int phase)
+{
+  packetizer_->init(phase);
+}
+
+void
+packet_flow_nic::setup()
+{
+  packetizer_->setup();
 }
 
 //
@@ -83,8 +92,7 @@ packet_flow_nic::payload_handler(int port) const
     return new SST::Event::Handler<packet_flow_nic>(
           const_cast<packet_flow_nic*>(this), &nic::mtl_handle);
   } else {
-    return new SST::Event::Handler<packet_flow_nic_packetizer>(
-          packetizer_, &packet_flow_nic_packetizer::recv_packet);
+    return packetizer_->new_payload_handler();
   }
 #else
   if (port == nic::LogP){
@@ -99,8 +107,7 @@ link_handler*
 packet_flow_nic::ack_handler(int port) const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  return new SST::Event::Handler<packet_flow_nic_packetizer>(
-        packetizer_, &packet_flow_nic_packetizer::recv_credit);
+  return packetizer_->new_ack_handler();
 #else
   return ack_handler_;
 #endif

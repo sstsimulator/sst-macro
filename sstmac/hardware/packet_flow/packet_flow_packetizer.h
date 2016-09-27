@@ -12,28 +12,12 @@
 namespace sstmac {
 namespace hw {
 
-class packet_flow_packetizer :
-  public packetizer
-{
- public:
-  virtual void recv_credit(event* ev) = 0;
-
-  virtual void recv_packet(event* ev) = 0;
-
- protected:
-  packet_flow_packetizer(sprockit::sim_parameters* params,
-           event_scheduler* parent, packetizer_callback* cb)
-    : packetizer(params, parent, cb)
-  {
-  }
-};
-
 /**
  @class packet_flow_nic
  Network interface compatible with sending packet trains
  */
 class packet_flow_nic_packetizer :
-  public packet_flow_packetizer
+  public packetizer
 {
 
  public:
@@ -62,11 +46,15 @@ class packet_flow_nic_packetizer :
   set_input(sprockit::sim_parameters* params,
             int port, event_handler* input);
 
-  void
-  set_acker(event_handler* handler);
+  void recv_credit(event* credit);
 
-  void
-  recv_credit(event* credit) override;
+  virtual void recv_packet(event* ev) = 0;
+
+  link_handler*
+  new_payload_handler() const override;
+
+  link_handler*
+  new_ack_handler() const override;
 
  protected:
   void
