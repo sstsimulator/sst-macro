@@ -20,7 +20,7 @@ logp_param_expander::expand(sprockit::sim_parameters* params)
   nic_params->add_param_override("model", "logP");
   params->add_param_override("interconnect", "simple");
   switch_params->add_param_override("model", "logP");
-  mem_params->add_param_override("model", "packet_flow");
+  mem_params->add_param_override("model", "pisces");
 
   int packet_size = params->get_optional_int_param("accurary_parameter", 4096);
   int mem_packet_size = params->get_optional_int_param("memory_accuracy_parameter", packet_size);

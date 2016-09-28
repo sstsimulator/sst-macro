@@ -1,11 +1,11 @@
-#ifndef PACKET_FLOW_STATS_H
-#define PACKET_FLOW_STATS_H
+#ifndef pisces_STATS_H
+#define pisces_STATS_H
 
 #include <sstmac/common/stats/stat_collector.h>
 #include <sstmac/common/serializable.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/hardware/topology/structured_topology_fwd.h>
-#include <sstmac/hardware/packet_flow/packet_flow.h>
+#include <sstmac/hardware/pisces/pisces.h>
 #include <sstmac/common/stats/stat_spyplot_fwd.h>
 #include <sstmac/common/stats/stat_global_int_fwd.h>
 #include <sstmac/common/stats/stat_histogram_fwd.h>
@@ -22,14 +22,14 @@ struct pkt_arbitration_t
   timestamp head_leaves;
   timestamp tail_leaves;
   timestamp credit_leaves;
-  packet_flow_payload* pkt;
+  pisces_payload* pkt;
   int src_outport;
   int dst_inport;
 };
 
 /**
  * @brief The packet_stats_callback class is an optional callback
- * that can be registered with packet_flow_sender objects or packetizer
+ * that can be registered with pisces_sender objects or packetizer
  * objects to log events ocurring on particular packets
  */
 class packet_stats_callback
@@ -39,7 +39,7 @@ class packet_stats_callback
 
   /**
    * @brief collect_single_event Collect stats associated with a single
-   *            packet aribtration event. This is invokved by packet_flow_sender
+   *            packet aribtration event. This is invokved by pisces_sender
    *            objects.
    * @param st All the details of the last arbitration of a given packet
    */
@@ -54,7 +54,7 @@ class packet_stats_callback
    * @param pkt
    */
   virtual void
-  collect_final_event(packet_flow_payload* pkt);
+  collect_final_event(pisces_payload* pkt);
 
   /**
    * @brief id
@@ -88,10 +88,10 @@ class congestion_spyplot :
   collect_single_event(const pkt_arbitration_t& st);
 
   virtual void
-  collect_final_event(packet_flow_payload* pkt);
+  collect_final_event(pisces_payload* pkt);
 
  protected:
-  void collect(double delay_us, packet_flow_payload* pkt);
+  void collect(double delay_us, pisces_payload* pkt);
 
  private:
   stat_spyplot* congestion_spyplot_;
@@ -107,7 +107,7 @@ class delay_histogram :
   virtual ~delay_histogram();
 
   virtual void
-  collect_final_event(packet_flow_payload* pkt);
+  collect_final_event(pisces_payload* pkt);
 
   virtual void
   collect_single_event(const pkt_arbitration_t& st);
@@ -129,7 +129,7 @@ class packet_delay_stats :
   collect_single_event(const pkt_arbitration_t &st);
 
  protected:
-  void collect(double delay_us, packet_flow_payload* pkt);
+  void collect(double delay_us, pisces_payload* pkt);
 
 };
 
@@ -145,7 +145,7 @@ class null_stats : public packet_stats_callback
   collect_single_event(const pkt_arbitration_t &st){}
 
   virtual void
-  collect_final_event(packet_flow_payload *pkt){}
+  collect_final_event(pisces_payload *pkt){}
 
 };
 
@@ -340,4 +340,4 @@ class serialize<sstmac::hw::stat_bytes_sent::aggregation::entry> {
 SER_NAMESPACE_CLOSE
 
 
-#endif // PACKET_FLOW_STATS_H
+#endif // pisces_STATS_H

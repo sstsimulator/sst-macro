@@ -16,7 +16,7 @@
 #include <sstmac/hardware/nic/netlink.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/topology/topology.h>
-#include <sstmac/hardware/packet_flow/packet_flow.h>
+#include <sstmac/hardware/pisces/pisces.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/switch/dist_dummyswitch.h>
 #include <sstmac/hardware/logp/logp_switch.h>

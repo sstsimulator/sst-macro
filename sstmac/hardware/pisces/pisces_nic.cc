@@ -12,7 +12,7 @@
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/router/routable.h>
-#include <sstmac/hardware/packet_flow/packet_flow_nic.h>
+#include <sstmac/hardware/pisces/pisces_nic.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/event_manager.h>
@@ -30,15 +30,15 @@ RegisterNamespaces("congestion_delays", "congestion_matrix");
 namespace sstmac {
 namespace hw {
 
-SpktRegister("packet_flow", nic, packet_flow_nic,
+SpktRegister("pisces | pisces", nic, pisces_nic,
             "implements a nic that models messages as a packet flow");
 
-SpktRegister("packet_flow", netlink, packet_flow_netlink,
+SpktRegister("pisces | pisces", netlink, pisces_netlink,
             "implements a netlink that models messages as a packet flow");
 
-const int packet_flow_netlink::really_big_buffer = 1<<30;
+const int pisces_netlink::really_big_buffer = 1<<30;
 
-packet_flow_nic::packet_flow_nic(sprockit::sim_parameters* params, node* parent) :
+pisces_nic::pisces_nic(sprockit::sim_parameters* params, node* parent) :
   nic(params, parent),
   packetizer_(nullptr)
 {
@@ -61,13 +61,13 @@ packet_flow_nic::packet_flow_nic(sprockit::sim_parameters* params, node* parent)
 }
 
 void
-packet_flow_nic::init(unsigned int phase)
+pisces_nic::init(unsigned int phase)
 {
   packetizer_->init(phase);
 }
 
 void
-packet_flow_nic::setup()
+pisces_nic::setup()
 {
   packetizer_->setup();
 }
@@ -75,7 +75,7 @@ packet_flow_nic::setup()
 //
 // Goodbye.
 //
-packet_flow_nic::~packet_flow_nic() throw ()
+pisces_nic::~pisces_nic() throw ()
 {
   if (packetizer_) delete packetizer_;
 #if !SSTMAC_INTEGRATED_SST_CORE
@@ -85,12 +85,12 @@ packet_flow_nic::~packet_flow_nic() throw ()
 }
 
 link_handler*
-packet_flow_nic::payload_handler(int port) const
+pisces_nic::payload_handler(int port) const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   if (port == nic::LogP){
-    return new SST::Event::Handler<packet_flow_nic>(
-          const_cast<packet_flow_nic*>(this), &nic::mtl_handle);
+    return new SST::Event::Handler<pisces_nic>(
+          const_cast<pisces_nic*>(this), &nic::mtl_handle);
   } else {
     return packetizer_->new_payload_handler();
   }
@@ -104,7 +104,7 @@ packet_flow_nic::payload_handler(int port) const
 }
 
 link_handler*
-packet_flow_nic::ack_handler(int port) const
+pisces_nic::ack_handler(int port) const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   return packetizer_->new_ack_handler();
@@ -114,36 +114,36 @@ packet_flow_nic::ack_handler(int port) const
 }
 
 void
-packet_flow_nic::connect_output(
+pisces_nic::connect_output(
   sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
   event_handler* mod)
 {
   if (src_outport == Injection){
-    packet_flow_nic_packetizer* packer = safe_cast(packet_flow_nic_packetizer, packetizer_);
+    pisces_packetizer* packer = safe_cast(pisces_packetizer, packetizer_);
     packer->set_output(params, dst_inport, mod);
   } else if (src_outport == LogP){
     logp_switch_ = mod;
   } else {
-    spkt_abort_printf("Invalid switch port %d in packet_flow_nic::connect_output", src_outport);
+    spkt_abort_printf("Invalid switch port %d in pisces_nic::connect_output", src_outport);
   }
 }
 
 void
-packet_flow_nic::connect_input(
+pisces_nic::connect_input(
   sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
   event_handler* mod)
 {
   if (!mod) abort();
-  packet_flow_nic_packetizer* packer = safe_cast(packet_flow_nic_packetizer, packetizer_);
+  pisces_packetizer* packer = safe_cast(pisces_packetizer, packetizer_);
   packer->set_input(params, src_outport, mod);
 }
 
 void
-packet_flow_nic::do_send(network_message* payload)
+pisces_nic::do_send(network_message* payload)
 {
   nic_debug("packet flow: sending %s", payload->to_string().c_str());
   int vn = 0; //we only ever use one virtual network
@@ -152,7 +152,7 @@ packet_flow_nic::do_send(network_message* payload)
 }
 
 void
-packet_flow_netlink::connect_output(
+pisces_netlink::connect_output(
   sprockit::sim_parameters* params,
   int src_outport, int dst_inport,
   event_handler *mod)
@@ -161,7 +161,7 @@ packet_flow_netlink::connect_output(
 }
 
 void
-packet_flow_netlink::connect_input(
+pisces_netlink::connect_input(
   sprockit::sim_parameters* params,
   int src_outport, int dst_inport,
   event_handler* mod)
@@ -169,55 +169,55 @@ packet_flow_netlink::connect_input(
   block_->set_input(params, dst_inport, src_outport, mod);
 }
 
-packet_flow_netlink::packet_flow_netlink(sprockit::sim_parameters *params, node *parent)
+pisces_netlink::pisces_netlink(sprockit::sim_parameters *params, node *parent)
   : netlink(params, parent),
   block_(nullptr),
   tile_rotater_(0)
 {
-  block_ = new packet_flow_crossbar(params, parent);
+  block_ = new pisces_crossbar(params, parent);
   block_->configure_basic_ports(num_inject_ + num_eject_);
 #if !SSTMAC_INTEGRATED_SST_CORE
   ack_handler_ = new_link_handler(this,
-                             &packet_flow_netlink::handle_credit);
+                             &pisces_netlink::handle_credit);
 
   payload_handler_ = new_link_handler(this,
-                             &packet_flow_netlink::handle_payload);
+                             &pisces_netlink::handle_payload);
 #endif
 }
 
 void
-packet_flow_netlink::deadlock_check()
+pisces_netlink::deadlock_check()
 {
   block_->deadlock_check();
 }
 
 link_handler*
-packet_flow_netlink::payload_handler(int port) const
+pisces_netlink::payload_handler(int port) const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  return new SST::Event::Handler<packet_flow_netlink>(
-       const_cast<packet_flow_netlink*>(this), &packet_flow_netlink::handle_payload);
+  return new SST::Event::Handler<pisces_netlink>(
+       const_cast<pisces_netlink*>(this), &pisces_netlink::handle_payload);
 #else
   return payload_handler_;
 #endif
 }
 
 link_handler*
-packet_flow_netlink::ack_handler(int port) const
+pisces_netlink::ack_handler(int port) const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  return new SST::Event::Handler<packet_flow_netlink>(
-     const_cast<packet_flow_netlink*>(this), &packet_flow_netlink::handle_credit);
+  return new SST::Event::Handler<pisces_netlink>(
+     const_cast<pisces_netlink*>(this), &pisces_netlink::handle_credit);
 #else
   return payload_handler_;
 #endif
 }
 
 void
-packet_flow_netlink::handle_credit(event* ev)
+pisces_netlink::handle_credit(event* ev)
 {
-  packet_flow_credit* credit = static_cast<packet_flow_credit*>(ev);
-  debug_printf(sprockit::dbg::packet_flow,
+  pisces_credit* credit = static_cast<pisces_credit*>(ev);
+  debug_printf(sprockit::dbg::pisces,
      "netlink %s:%p handling credit %s",
      topology::global()->label(event_location()).c_str(),
      this,
@@ -226,11 +226,11 @@ packet_flow_netlink::handle_credit(event* ev)
 }
 
 void
-packet_flow_netlink::handle_payload(event* ev)
+pisces_netlink::handle_payload(event* ev)
 {
-  packet_flow_payload* payload = static_cast<packet_flow_payload*>(ev);
+  pisces_payload* payload = static_cast<pisces_payload*>(ev);
   routable* rtbl = payload->interface<routable>();
-  debug_printf(sprockit::dbg::packet_flow,
+  debug_printf(sprockit::dbg::pisces,
        "netlink %d:%p handling payload %s",
         //topology::global()->label(event_location()).c_str(),
         int(id_), this, payload->to_string().c_str());
@@ -243,14 +243,14 @@ packet_flow_netlink::handle_payload(event* ev)
     p.outport = netlink::node_port(node_offset);
     p.vc = 0;
     p.geometric_id = 0;
-    debug_printf(sprockit::dbg::packet_flow,
+    debug_printf(sprockit::dbg::pisces,
      "netlink %d ejecting %s to node %d at offset %d to port %d\n",
         int(id_), sprockit::to_string(ev).c_str(), int(toaddr), node_offset, p.outport);
   } else {
     //goes to switch
     p.outport = netlink::switch_port(tile_rotater_);
     p.vc = 0;
-    debug_printf(sprockit::dbg::packet_flow,
+    debug_printf(sprockit::dbg::pisces,
      "netlink %d injecting msg %s to switch %d on redundant path %d of %d to port %d\n",
         int(id_), sprockit::to_string(ev).c_str(),
         int(toaddr), tile_rotater_, num_inject_, p.outport);
@@ -259,7 +259,7 @@ packet_flow_netlink::handle_payload(event* ev)
   block_->handle_payload(payload);
 }
 
-packet_flow_netlink::~packet_flow_netlink()
+pisces_netlink::~pisces_netlink()
 {
   if (block_) delete block_;
 #if !SSTMAC_INTEGRATED_SST_CORE

@@ -1,5 +1,5 @@
-#include <sstmac/hardware/packet_flow/packet_flow_memory_model.h>
-#include <sstmac/hardware/packet_flow/packet_allocator.h>
+#include <sstmac/hardware/pisces/pisces_memory_model.h>
+#include <sstmac/hardware/pisces/packet_allocator.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/software/process/operating_system.h>
@@ -8,16 +8,16 @@
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 
-MakeDebugSlot(packet_flow_memory)
+MakeDebugSlot(pisces_memory)
 
-#define debug(...) debug_printf(sprockit::dbg::packet_flow_memory, __VA_ARGS__)
+#define debug(...) debug_printf(sprockit::dbg::pisces_memory, __VA_ARGS__)
 
 namespace sstmac {
 namespace hw {
 
-SpktRegister("packet_flow", memory_model, packet_flow_memory_model);
+SpktRegister("pisces | pisces", memory_model, pisces_memory_model);
 
-packet_flow_memory_packetizer::packet_flow_memory_packetizer(
+pisces_memory_packetizer::pisces_memory_packetizer(
   sprockit::sim_parameters* params,
   event_scheduler* parent,
   packetizer_callback* cb) :
@@ -33,28 +33,28 @@ packet_flow_memory_packetizer::packet_flow_memory_packetizer(
   max_single_bw_ = params->get_bandwidth_param("max_single_bandwidth");
   max_bw_ = params->get_bandwidth_param("total_bandwidth");
   latency_ = params->get_time_param("latency");
-  arb_ = packet_flow_bandwidth_arbitrator_factory::get_value("cut_through", params);
+  arb_ = pisces_bandwidth_arbitrator_factory::get_value("cut_through", params);
   pkt_allocator_ = packet_allocator_factory
-      ::get_optional_param("packet_allocator", "structured_routable", params);
+      ::get_optional_param("packet_allocator", "pisces", params);
 
   init_noise_model();
 
-  self_credit_handler_ = new_handler(this, &packet_flow_memory_packetizer::recv_credit);
+  self_credit_handler_ = new_handler(this, &pisces_memory_packetizer::recv_credit);
 }
 
 link_handler*
-packet_flow_memory_packetizer::new_ack_handler() const
+pisces_memory_packetizer::new_ack_handler() const
 {
-  spkt_abort_printf("packet_flow_memory_packetizer::new_ack_handler: not used");
+  spkt_abort_printf("pisces_memory_packetizer::new_ack_handler: not used");
 }
 
 link_handler*
-packet_flow_memory_packetizer::new_payload_handler() const
+pisces_memory_packetizer::new_payload_handler() const
 {
-  spkt_abort_printf("packet_flow_memory_packetizer::new_payload_handler: not used");
+  spkt_abort_printf("pisces_memory_packetizer::new_payload_handler: not used");
 }
 
-packet_flow_memory_packetizer::~packet_flow_memory_packetizer()
+pisces_memory_packetizer::~pisces_memory_packetizer()
 {
   if (arb_) delete arb_;
   if (pkt_allocator_) delete pkt_allocator_;
@@ -62,7 +62,7 @@ packet_flow_memory_packetizer::~packet_flow_memory_packetizer()
   if (interval_noise_) delete interval_noise_;
 }
 
-packet_flow_memory_model::packet_flow_memory_model(sprockit::sim_parameters *params, node *nd) :
+pisces_memory_model::pisces_memory_model(sprockit::sim_parameters *params, node *nd) :
   memory_model(params, nd, nullptr)
 {
   nchannels_ = 4;
@@ -71,17 +71,17 @@ packet_flow_memory_model::packet_flow_memory_model(sprockit::sim_parameters *par
   }
 
   max_single_bw_ = params->get_bandwidth_param("max_single_bandwidth");
-  mem_packetizer_ = new packet_flow_memory_packetizer(params, nd, this);
+  mem_packetizer_ = new pisces_memory_packetizer(params, nd, this);
   mem_packetizer_->setArrivalNotify(this);
 }
 
-packet_flow_memory_model::~packet_flow_memory_model()
+pisces_memory_model::~pisces_memory_model()
 {
   if (mem_packetizer_) delete mem_packetizer_;
 }
 
 void
-packet_flow_memory_model::access(
+pisces_memory_model::access(
   long bytes, double max_bw,
   callback* cb)
 {
@@ -94,7 +94,7 @@ packet_flow_memory_model::access(
 }
 
 void
-packet_flow_memory_model::notify(int vn, message* msg)
+pisces_memory_model::notify(int vn, message* msg)
 {
   debug("finished access %lu on vn %d", msg->flow_id(), vn);
 
@@ -107,7 +107,7 @@ packet_flow_memory_model::notify(int vn, message* msg)
 }
 
 int
-packet_flow_memory_model::allocate_channel()
+pisces_memory_model::allocate_channel()
 {
   if (channels_available_.empty()){
     //double size of pending
@@ -123,7 +123,7 @@ packet_flow_memory_model::allocate_channel()
 }
 
 void
-packet_flow_memory_packetizer::init_noise_model()
+pisces_memory_packetizer::init_noise_model()
 {
   if (bw_noise_){
     arb_->partition(interval_noise_, num_noisy_intervals_);
@@ -132,9 +132,11 @@ packet_flow_memory_packetizer::init_noise_model()
 }
 
 void
-packet_flow_memory_packetizer::inject(int vn, long bytes, long byte_offset, message* msg)
+pisces_memory_packetizer::inject(int vn, long bytes, long byte_offset, message* msg)
 {
-  packet_flow_payload* payload = pkt_allocator_->new_packet(bytes, byte_offset, msg);
+  pisces_payload* payload = pkt_allocator_->new_packet(bytes, byte_offset,
+                                                       msg->toaddr(), msg->fromaddr(),
+                                                       msg->flow_id(), msg);
 
   payload->set_inport(vn);
   memory_message* orig = safe_cast(memory_message, msg);
@@ -148,7 +150,7 @@ packet_flow_memory_packetizer::inject(int vn, long bytes, long byte_offset, mess
 }
 
 void
-packet_flow_memory_packetizer::handle_payload(int vn, packet_flow_payload* pkt)
+pisces_memory_packetizer::handle_payload(int vn, pisces_payload* pkt)
 {
   //set the bandwidth to the max single bw
   pkt->init_bw(max_single_bw_);
@@ -167,16 +169,16 @@ packet_flow_memory_packetizer::handle_payload(int vn, packet_flow_payload* pkt)
   //might need to send some credits back
   if (!pkt->is_tail()){
     int ignore_vc = -1;
-    packet_flow_credit* credit = new packet_flow_credit(vn, ignore_vc, pkt->num_bytes());
+    pisces_credit* credit = new pisces_credit(vn, ignore_vc, pkt->num_bytes());
     //here we do not optimistically send credits = only when the packet leaves
     schedule(st.tail_leaves, self_credit_handler_, credit);
   }
 }
 
 void
-packet_flow_memory_packetizer::recv_credit(event* ev)
+pisces_memory_packetizer::recv_credit(event* ev)
 {
-  packet_flow_credit* credit = static_cast<packet_flow_credit*>(ev);
+  pisces_credit* credit = static_cast<pisces_credit*>(ev);
   debug("got credit %s on vn %d", credit->to_string().c_str(), credit->port());
 
   int channel = credit->port();

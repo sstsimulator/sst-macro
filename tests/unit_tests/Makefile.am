@@ -17,7 +17,7 @@ if !INTEGRATED_SST_CORE
 SUBDIRS = util
 
 check_PROGRAMS = \
- test_packet_flow \
+ test_pisces \
  test_serializable \
  test_unit_test \
  test_routing 
@@ -34,7 +34,7 @@ test_routing_SOURCES = \
 test_serializable_SOURCES = \
     test_serializable.cc 
 
-test_packet_flow_SOURCES = \
+test_pisces_SOURCES = \
     hardware/test_packet_flow.cc
 
 test_unit_test_SOURCES = \
@@ -50,7 +50,7 @@ if EXTERNAL_BOOST
   TEST_LDFLAGS += $(BOOST_LDFLAGS)
 endif
 
-test_packet_flow_LDADD = $(TEST_LDFLAGS) 
+test_pisces_LDADD = $(TEST_LDFLAGS) 
 test_routing_LDADD = $(TEST_LDFLAGS)
 test_serializable_LDADD = $(TEST_LDFLAGS)
 test_unit_test_LDADD = $(TEST_LDFLAGS)

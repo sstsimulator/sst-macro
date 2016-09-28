@@ -1,8 +1,8 @@
 #ifndef PACKETFLOW_CROSSBAR_H
 #define PACKETFLOW_CROSSBAR_H
 
-#include <sstmac/hardware/packet_flow/packet_flow_sender.h>
-#include <sstmac/hardware/packet_flow/packet_flow_stats_fwd.h>
+#include <sstmac/hardware/pisces/pisces_sender.h>
+#include <sstmac/hardware/pisces/pisces_stats_fwd.h>
 #include <sstmac/common/stats/stat_global_int_fwd.h>
 #include <sstmac/hardware/router/router.h>
 #include <sprockit/keyword_registration.h>
@@ -10,13 +10,13 @@
 namespace sstmac {
 namespace hw {
 
-class packet_flow_NtoM_queue :
-  public packet_flow_sender
+class pisces_NtoM_queue :
+  public pisces_sender
 {
  public:
-  virtual ~packet_flow_NtoM_queue();
+  virtual ~pisces_NtoM_queue();
 
-  packet_flow_NtoM_queue(sprockit::sim_parameters* params,
+  pisces_NtoM_queue(sprockit::sim_parameters* params,
                          event_scheduler* parent);
 
   int
@@ -77,13 +77,13 @@ class packet_flow_NtoM_queue :
   deadlock_check(event* ev) override;
 
  protected:
-  typedef spkt_unordered_map<int, packet_flow_input> input_map;
+  typedef spkt_unordered_map<int, pisces_input> input_map;
 
-  typedef std::vector<packet_flow_output> output_map;
+  typedef std::vector<pisces_output> output_map;
   typedef std::vector<int> credit_map;
   typedef std::vector<payload_queue> queue_map;
 
-  packet_flow_bandwidth_arbitrator* arb_;
+  pisces_bandwidth_arbitrator* arb_;
 
   input_map inputs_;
   //indexed by slot number = (port,vc)
@@ -102,11 +102,11 @@ class packet_flow_NtoM_queue :
 
   std::map<int, std::set<int> > deadlocked_channels_;
 
-  std::map<int, std::map<int, std::list<packet_flow_payload*> > > blocked_messages_;
+  std::map<int, std::map<int, std::list<pisces_payload*> > > blocked_messages_;
 
  protected:
   void
-  send_payload(packet_flow_payload* pkt);
+  send_payload(pisces_payload* pkt);
 
   void
   build_blocked_messages();
@@ -123,25 +123,25 @@ class packet_flow_NtoM_queue :
   }
 
   std::string
-  input_name(packet_flow_payload* pkt);
+  input_name(pisces_payload* pkt);
 
   std::string
-  output_name(packet_flow_payload* pkt);
+  output_name(pisces_payload* pkt);
 
   event_handler*
-  output_handler(packet_flow_payload* pkt);
+  output_handler(pisces_payload* pkt);
 
 };
 
-class packet_flow_demuxer :
-  public packet_flow_NtoM_queue
+class pisces_demuxer :
+  public pisces_NtoM_queue
 {
  public:
-  packet_flow_demuxer(sprockit::sim_parameters* params,
+  pisces_demuxer(sprockit::sim_parameters* params,
                       event_scheduler* parent);
 
   std::string
-  packet_flow_name() const override {
+  pisces_name() const override {
     return "demuxer";
   }
 
@@ -149,29 +149,29 @@ class packet_flow_demuxer :
 };
 
 
-class packet_flow_muxer :
-  public packet_flow_NtoM_queue
+class pisces_muxer :
+  public pisces_NtoM_queue
 {
  public:
-  packet_flow_muxer(sprockit::sim_parameters* params,
+  pisces_muxer(sprockit::sim_parameters* params,
                     event_scheduler* parent);
 
   std::string
-  packet_flow_name() const override {
+  pisces_name() const override {
     return "muxer";
   }
 
 };
 
-class packet_flow_crossbar :
-  public packet_flow_NtoM_queue
+class pisces_crossbar :
+  public pisces_NtoM_queue
 {
  public:
-  packet_flow_crossbar(sprockit::sim_parameters* params,
+  pisces_crossbar(sprockit::sim_parameters* params,
                        event_scheduler* parent);
 
   std::string
-  packet_flow_name() const override {
+  pisces_name() const override {
     return "crossbar";
   }
 

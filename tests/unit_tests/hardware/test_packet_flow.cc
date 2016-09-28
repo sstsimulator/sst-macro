@@ -1,7 +1,7 @@
 #include <sstmac/backends/native/event_map.h>
 #include <sstmac/backends/native/serial_runtime.h>
-#include <sstmac/hardware/packet_flow/packet_flow.h>
-#include <sstmac/hardware/packet_flow/packet_flow_arbitrator.h>
+#include <sstmac/hardware/pisces/pisces.h>
+#include <sstmac/hardware/pisces/pisces_arbitrator.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/software/process/task_id.h>
 #include <sstmac/util.h>
@@ -42,17 +42,17 @@ test_arbitrator(UnitTest& unit)
 
   native::event_map* ev_mgr = new native::event_map(&params, rt);
 
-  packet_flow_bandwidth_arbitrator* arb
-      = new packet_flow_cut_through_arbitrator(&params);
+  pisces_bandwidth_arbitrator* arb
+      = new pisces_cut_through_arbitrator(&params);
 
 
   message* parent = new test_message(num_packets_in_parent * packet_size);
-  packet_flow_payload* test_msg = new_packet(parent, packet_size, 0);
+  pisces_payload* test_msg = new_packet(parent, packet_size, 0);
   test_msg->set_bw(link_bw);
 
-  packet_flow_payload* test_msg0 = new_packet(parent, 0*packet_size, 0);
-  packet_flow_payload* test_msg2 = new_packet(parent, 2*packet_size, 0);
-  packet_flow_payload* test_msg4 = new_packet(parent, 4*packet_size, 0);
+  pisces_payload* test_msg0 = new_packet(parent, 0*packet_size, 0);
+  pisces_payload* test_msg2 = new_packet(parent, 2*packet_size, 0);
+  pisces_payload* test_msg4 = new_packet(parent, 4*packet_size, 0);
 
   pkt_arbitration_t st;
   st.now = timestamp(0);
@@ -74,7 +74,7 @@ test_arbitrator(UnitTest& unit)
   double delta = fabs(test_msg->bw() - link_bw);
 
   //start over
-  arb = new packet_flow_cut_through_arbitrator(&params);
+  arb = new pisces_cut_through_arbitrator(&params);
 
   //only use half the bw
   test_msg->set_bw(0.5*link_bw);
@@ -95,7 +95,7 @@ test_arbitrator(UnitTest& unit)
 
 
   //start over
-  arb = new packet_flow_cut_through_arbitrator(&params);
+  arb = new pisces_cut_through_arbitrator(&params);
   //only use half the bw
   test_msg->set_bw(0.5*link_bw);
   test_msg->set_arrival(0);
@@ -112,7 +112,7 @@ test_arbitrator(UnitTest& unit)
 
 
   //start over
-  arb = new packet_flow_cut_through_arbitrator(&params);
+  arb = new pisces_cut_through_arbitrator(&params);
 
   //only use half the bw
   test_msg->set_bw(0.5*link_bw);
@@ -131,7 +131,7 @@ test_arbitrator(UnitTest& unit)
   assertEqual(unit, "bandwidth", test_msg->bw(), (1./1.5)*link_bw);
 
   //start over
-  arb = new packet_flow_cut_through_arbitrator(&params);
+  arb = new pisces_cut_through_arbitrator(&params);
 
   //send a bunch of slow messages to create many epochs
   test_msg->set_bw(0.25*link_bw);
@@ -162,7 +162,7 @@ test_arbitrator(UnitTest& unit)
   assertEqual(unit, "bandwidth", test_msg4->bw(), bw);
 
   //start over
-  arb = new packet_flow_cut_through_arbitrator(&params);
+  arb = new pisces_cut_through_arbitrator(&params);
   test_msg->set_bw(link_bw);
   test_msg->set_arrival(0);
   arb->arbitrate(st);
@@ -177,7 +177,7 @@ test_arbitrator(UnitTest& unit)
   assertEqual(unit, "bandwidth", test_msg->bw(), link_bw);
 
   //start over
-  arb = new packet_flow_cut_through_arbitrator(&params);
+  arb = new pisces_cut_through_arbitrator(&params);
   test_msg->set_bw(link_bw);
   test_msg->set_arrival(0);
   arb->arbitrate(st);
@@ -206,8 +206,6 @@ main(int argc, char** argv)
 {
     //relax the cutoff
     TestEquals<double>::cutoff = 1e-10;
-
-    //logger::set_user_param("<debug> packet_flow");
 
     UnitTest unit;
     test_arbitrator(unit);

@@ -1,26 +1,27 @@
-#include <sstmac/hardware/packet_flow/packet_flow.h>
+#include <sstmac/hardware/pisces/pisces.h>
 #include <sstmac/hardware/router/routable.h>
 
-RegisterDebugSlot(packet_flow,
-    "print all the details of the packet_flow model including crossbar arbitration"
+RegisterDebugSlot(pisces,
+    "print all the details of the pisces model including crossbar arbitration"
     ", buffer occupancies, and queue depths. This can be a LOT of information. User beware")
 
-RegisterDebugSlot(packet_flow_queue,
+RegisterDebugSlot(pisces_queue,
     "print all the details of queue lengths in the packet flow model");
 
-RegisterDebugSlot(packet_flow_config,
+RegisterDebugSlot(pisces_config,
     "print all the details of the initial configuration of packet flow connections/credits/buffers/vcs");
 
 namespace sstmac {
 namespace hw {
 
-const double packet_flow_payload::uninitialized_bw = -1;
+const double pisces_payload::uninitialized_bw = -1;
 
-packet_flow_payload::packet_flow_payload(
-  message* parent,
+pisces_payload::pisces_payload(
+  serializable* msg,
+  uint64_t flow_id,
   int num_bytes,
   long offset) :
-  packet(parent, num_bytes, offset),
+  packet(msg, flow_id, num_bytes, offset),
   //routable(parent->toaddr(), parent->fromaddr()),
   bw_(uninitialized_bw),
   max_in_bw_(1.0)
@@ -28,25 +29,17 @@ packet_flow_payload::packet_flow_payload(
 }
 
 std::string
-packet_flow_payload::to_string() const
+pisces_payload::to_string() const
 {
-  std::string orig_str;
-  if (orig_){
-    orig_str = sprockit::printf(" %d payload bytes", orig_->byte_length());
-  } else {
-    orig_str = "null payload";
-  }
-
-  return sprockit::printf("flow %16lu, %5lu:%5lu bw=%8.4e %d->%d %s",
+  return sprockit::printf("flow %16lu, %5lu:%5lu bw=%8.4e %d->%d",
                    uint64_t(flow_id()),
                    byte_offset_,
                    byte_offset_ + num_bytes_, bw_,
-                   int(fromaddr()), int(toaddr()),
-                   bw_, orig_str.c_str());
+                   int(fromaddr()), int(toaddr()), bw_);
 }
 
 void
-packet_flow_payload::serialize_order(serializer& ser)
+pisces_payload::serialize_order(serializer& ser)
 {
   //routable::serialize_order(ser);
   packet::serialize_order(ser);
@@ -57,13 +50,13 @@ packet_flow_payload::serialize_order(serializer& ser)
 }
 
 std::string
-packet_flow_credit::to_string() const
+pisces_credit::to_string() const
 {
   return sprockit::printf("credits, num=%d", num_credits_);
 }
 
 void
-packet_flow_credit::serialize_order(serializer& ser)
+pisces_credit::serialize_order(serializer& ser)
 {
   event::serialize_order(ser);
   ser & num_credits_;

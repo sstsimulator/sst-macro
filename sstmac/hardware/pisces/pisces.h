@@ -7,37 +7,38 @@
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
 
-DeclareDebugSlot(packet_flow)
-DeclareDebugSlot(packet_flow_queue)
-DeclareDebugSlot(packet_flow_config)
+DeclareDebugSlot(pisces)
+DeclareDebugSlot(pisces_queue)
+DeclareDebugSlot(pisces_config)
 
 namespace sstmac {
 namespace hw {
 
 /**
- @class packet_flow
+ @class pisces
  Encapsulates a group of machine packets traveling together on the
  same path between endpoints.  This is usually one fraction of
  a larger message.
  */
-class packet_flow_payload :
+class pisces_payload :
   public packet
-  //public serializable_type<packet_flow_payload>
+  //public serializable_type<pisces_payload>
 {
  public:
   static const double uninitialized_bw;
 
-  //ImplementSerializable(packet_flow_payload)
+  //ImplementSerializable(pisces_payload)
 
  public:
-  packet_flow_payload(
-    message* parent,
+  pisces_payload(
+    serializable* msg,
+    uint64_t payload,
     int num_bytes,
     long offset);
 
-  packet_flow_payload(){} //for serialization
+  pisces_payload(){} //for serialization
 
-  virtual ~packet_flow_payload() {}
+  virtual ~pisces_payload() {}
 
   /**
     Needed because of routable_message ambiguity.
@@ -64,16 +65,7 @@ class packet_flow_payload :
   }
 
   /**
-   @return The total number of bytes in the complete message
-   summed over all trains
-   */
-  long
-  num_bytes_total() const {
-    return orig_->byte_length();
-  }
-
-  /**
-   @return The number of bytes in this packet_flow, NOT
+   @return The number of bytes in this pisces, NOT
    the total number of bytes in the parent message.
    See #num_bytes_total
    */
@@ -163,19 +155,19 @@ class packet_flow_payload :
 
 };
 
-class packet_flow_credit :
+class pisces_credit :
   public event,
   public sprockit::printable,
-  public serializable_type<packet_flow_credit>
+  public serializable_type<pisces_credit>
 {
 
  public:
-  ImplementSerializable(packet_flow_credit)
+  ImplementSerializable(pisces_credit)
 
  public:
-  packet_flow_credit(){} //for serialization
+  pisces_credit(){} //for serialization
 
-  packet_flow_credit(
+  pisces_credit(
     int port,
     int vc,
     long num_credits)

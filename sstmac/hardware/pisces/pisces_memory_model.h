@@ -1,11 +1,11 @@
-#ifndef PACKET_FLOW_MEMORY_MODEL_H
-#define PACKET_FLOW_MEMORY_MODEL_H
+#ifndef pisces_MEMORY_MODEL_H
+#define pisces_MEMORY_MODEL_H
 
 #include <sstmac/hardware/memory/memory_model.h>
 #include <sstmac/software/libraries/compute/compute_event_fwd.h>
-#include <sstmac/hardware/packet_flow/packet_flow_arbitrator.h>
-#include <sstmac/hardware/packet_flow/packet_flow_sender.h>
-#include <sstmac/hardware/packet_flow/packet_flow_packetizer.h>
+#include <sstmac/hardware/pisces/pisces_arbitrator.h>
+#include <sstmac/hardware/pisces/pisces_sender.h>
+#include <sstmac/hardware/pisces/pisces_packetizer.h>
 
 namespace sstmac {
 namespace hw {
@@ -55,17 +55,17 @@ class memory_message : public message
   double max_bw_;
 };
 
-class packet_flow_memory_packetizer : public packetizer
+class pisces_memory_packetizer : public packetizer
 {
  public:
-  packet_flow_memory_packetizer(sprockit::sim_parameters* params,
+  pisces_memory_packetizer(sprockit::sim_parameters* params,
                           event_scheduler* parent,
                           packetizer_callback* cb);
   
-  ~packet_flow_memory_packetizer();
+  ~pisces_memory_packetizer();
 
   std::string
-  packet_flow_name() const {
+  pisces_name() const {
     return "packet flow memory model";
   }
 
@@ -75,15 +75,15 @@ class packet_flow_memory_packetizer : public packetizer
   void
   recv_credit(event* ev);
 
-  void inject(int vn, long bytes, long byte_offset, message *payload);
+  void inject(int vn, long bytes, long byte_offset, message *payload) override;
 
-  bool spaceToSend(int vn, int num_bits) const {
+  bool spaceToSend(int vn, int num_bits) override {
     return true;
   }
 
  private:
   void
-  handle_payload(int vn, packet_flow_payload* pkt);
+  handle_payload(int vn, pisces_payload* pkt);
 
   void
   init_noise_model();
@@ -92,7 +92,7 @@ class packet_flow_memory_packetizer : public packetizer
   double max_bw_;
   double max_single_bw_;
   timestamp latency_;
-  packet_flow_bandwidth_arbitrator* arb_;
+  pisces_bandwidth_arbitrator* arb_;
   noise_model* bw_noise_;
   noise_model* interval_noise_;
   int num_noisy_intervals_;
@@ -102,14 +102,14 @@ class packet_flow_memory_packetizer : public packetizer
 };
 
 
-class packet_flow_memory_model :
+class pisces_memory_model :
   public memory_model,
   public packetizer_callback
 {
  public:
-  packet_flow_memory_model(sprockit::sim_parameters* params, node* nd);
+  pisces_memory_model(sprockit::sim_parameters* params, node* nd);
 
-  virtual ~packet_flow_memory_model();
+  virtual ~pisces_memory_model();
 
   std::string
   to_string() const {
@@ -137,7 +137,7 @@ class packet_flow_memory_model :
  private:
   double max_single_bw_;
   std::map<message*, callback*> pending_requests_;
-  packet_flow_memory_packetizer* mem_packetizer_;
+  pisces_memory_packetizer* mem_packetizer_;
   std::list<int> channels_available_;
   int nchannels_;
 
@@ -147,4 +147,4 @@ class packet_flow_memory_model :
 } /* namespace sstmac */
 
 
-#endif // PACKET_FLOW_MEMORY_MODEL_H
+#endif // pisces_MEMORY_MODEL_H

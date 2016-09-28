@@ -5,8 +5,8 @@
 #include <sst/core/element.h>
 #include <sstmac/sst_core/integrated_core.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
-#include <sstmac/hardware/packet_flow/packet_flow_nic.h>
-#include <sstmac/hardware/packet_flow/packet_flow_switch.h>
+#include <sstmac/hardware/pisces/pisces_nic.h>
+#include <sstmac/hardware/pisces/pisces_switch.h>
 #include <sstmac/hardware/logp/logp_switch.h>
 #include <sstmac/hardware/node/simple_node.h>
 #include <sstmac/hardware/topology/topology.h>
@@ -89,10 +89,10 @@ static const ElementInfoPort ports[] = {
  {NULL, NULL, NULL}
 };
 
-const static SST::ElementInfoComponent packet_flow_switch_element_info = {
-  "packet_flow_switch",
+const static SST::ElementInfoComponent pisces_switch_element_info = {
+  "pisces_switch",
   "A network switch implementing a packet-flow congestion model",
-  NULL, create<hw::packet_flow_switch>,
+  NULL, create<hw::pisces_switch>,
   NULL,
   ports,
   COMPONENT_CATEGORY_NETWORK
@@ -260,7 +260,7 @@ read_params(PyObject* self, PyObject* args)
 }
 
 static const ElementInfoComponent macro_components[] = {
-    packet_flow_switch_element_info,
+    pisces_switch_element_info,
     simple_node_element_info,
     logp_switch_element_info,
     {NULL, NULL, NULL, NULL}

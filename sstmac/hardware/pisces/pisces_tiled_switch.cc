@@ -9,9 +9,9 @@
  *  SST/macroscale directory.
  */
 
-#include <sstmac/hardware/packet_flow/packet_flow_tiled_switch.h>
-#include <sstmac/hardware/packet_flow/packet_flow_stats.h>
-#include <sstmac/hardware/packet_flow/packet_flow_nic.h>
+#include <sstmac/hardware/pisces/pisces_tiled_switch.h>
+#include <sstmac/hardware/pisces/pisces_stats.h>
+#include <sstmac/hardware/pisces/pisces_nic.h>
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/switch/dist_dummyswitch.h>
 #include <sstmac/common/event_manager.h>
@@ -26,12 +26,12 @@ namespace sstmac {
 namespace hw {
 
 #if !SSTMAC_INTEGRATED_SST_CORE
-SpktRegister("packet_flow_tiled", network_switch, packet_flow_tiled_switch);
+SpktRegister("pisces_tiled | pisces_tiled", network_switch, pisces_tiled_switch);
 #endif
 
-packet_flow_tiled_switch::packet_flow_tiled_switch(sprockit::sim_parameters* params,
+pisces_tiled_switch::pisces_tiled_switch(sprockit::sim_parameters* params,
                                                    uint64_t id, event_manager* mgr)
-  : packet_flow_abstract_switch(params, id, mgr)
+  : pisces_abstract_switch(params, id, mgr)
 {
   //row_buffer_num_bytes = params->get_byte_length_param("row_buffer_size");
   nrows_ = params->get_int_param("nrows");
@@ -39,41 +39,41 @@ packet_flow_tiled_switch::packet_flow_tiled_switch(sprockit::sim_parameters* par
   init_components(params);
 }
 
-packet_flow_tiled_switch::~packet_flow_tiled_switch()
+pisces_tiled_switch::~pisces_tiled_switch()
 {
-  for (packet_flow_demuxer* dm : row_input_demuxers_){
+  for (pisces_demuxer* dm : row_input_demuxers_){
     if (dm) delete dm;
   }
-  for (packet_flow_crossbar* xbar : xbar_tiles_){
+  for (pisces_crossbar* xbar : xbar_tiles_){
     if (xbar) delete xbar;
   }
-  for (packet_flow_muxer* mux : col_output_muxers_){
+  for (pisces_muxer* mux : col_output_muxers_){
     if (mux) delete mux;
   }
 }
 
 int
-packet_flow_tiled_switch::row_col_to_tile(int row, int col){
+pisces_tiled_switch::row_col_to_tile(int row, int col){
   return row*ncols_ + col;
 }
 
 void
-packet_flow_tiled_switch::tile_to_row_col(int tile, int& row, int& col){
+pisces_tiled_switch::tile_to_row_col(int tile, int& row, int& col){
   row = tile / ncols_;
   col = tile % ncols_;
 }
 
 void
-packet_flow_tiled_switch::deadlock_check()
+pisces_tiled_switch::deadlock_check()
 {
   for (int i=0; i < col_output_muxers_.size(); ++i){
-    packet_flow_muxer* muxer = col_output_muxers_[i];
+    pisces_muxer* muxer = col_output_muxers_[i];
     muxer->deadlock_check();
   }
 }
 
 void
-packet_flow_tiled_switch::init_components(sprockit::sim_parameters* params)
+pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
 {
   spkt_throw(sprockit::unimplemented_error, "init_components");
 #if 0
@@ -94,7 +94,7 @@ packet_flow_tiled_switch::init_components(sprockit::sim_parameters* params)
   for (int r=0; r < nrows_; ++r){
     for (int c=0; c < ncols_; ++c){
       int tile = row_col_to_tile(r, c);
-      packet_flow_crossbar* xbar = new packet_flow_crossbar(this,
+      pisces_crossbar* xbar = new pisces_crossbar(this,
         timestamp(0), //just assume no latency in crossbar
         timestamp(0), //just assume no latency in crossbar
         xbar_bw,
@@ -107,7 +107,7 @@ packet_flow_tiled_switch::init_components(sprockit::sim_parameters* params)
       xbar->configure_div_ports(xbar_mapper, ntiles-1);
       xbar->set_update_vc(false);
 
-      packet_flow_muxer* muxer = new packet_flow_muxer(this,
+      pisces_muxer* muxer = new pisces_muxer(this,
         hop_lat, //put all the latency in the send
         timestamp(0), //assume zero latency credits
         link_bw,
@@ -119,7 +119,7 @@ packet_flow_tiled_switch::init_components(sprockit::sim_parameters* params)
       muxer->set_event_location(my_addr_);
       muxer->configure_offset_ports(muxer_offset, muxer_max_port);
 
-      packet_flow_demuxer* dm = new packet_flow_demuxer(this,
+      pisces_demuxer* dm = new pisces_demuxer(this,
         timestamp(0), //assume zero latency send
         hop_lat, //credit latency
         router_->max_num_vc(),
@@ -143,12 +143,12 @@ packet_flow_tiled_switch::init_components(sprockit::sim_parameters* params)
   for (int row_dm=0; row_dm < nrows_; ++row_dm){
     for (int col_dm=0; col_dm < ncols_; ++col_dm){
       int tile_dm = row_col_to_tile(row_dm, col_dm);
-      packet_flow_sender* demuxer = row_input_demuxers_[tile_dm];
+      pisces_sender* demuxer = row_input_demuxers_[tile_dm];
       //demuxer is connected to all xbars in the row
       for (int col_out=0; col_out < ncols_; ++col_out){
         //we must traverse the xbar at (row_dm, col_out)
         int tile_xbar = row_col_to_tile(row_dm, col_out);
-        packet_flow_sender* xbar = xbar_tiles_[tile_xbar];
+        pisces_sender* xbar = xbar_tiles_[tile_xbar];
         //label unique input ports on the xbar by column
         demuxer->set_output(col_out, col_dm, xbar);
         demuxer->init_credits(col_out, xbar->num_initial_credits());
@@ -162,11 +162,11 @@ packet_flow_tiled_switch::init_components(sprockit::sim_parameters* params)
     //wire up the crossbars to inputs and outputs
     for (int cx=0; cx < ncols_; ++cx){
       int tile_xbar = row_col_to_tile(rx, cx);
-      packet_flow_crossbar* xbar = xbar_tiles_[tile_xbar];
+      pisces_crossbar* xbar = xbar_tiles_[tile_xbar];
       //connect current xbar to all the output muxers in the same col
       for (int rm=0; rm < nrows_; ++rm){
         int tile_muxer = row_col_to_tile(rm, cx);
-        packet_flow_muxer* muxer = col_output_muxers_[tile_muxer];
+        pisces_muxer* muxer = col_output_muxers_[tile_muxer];
         //use zero-based input ports corresponding to row number for the muxer
         xbar->set_output(tile_muxer, rx, muxer);
         xbar->init_credits(tile_muxer, muxer->num_initial_credits());
@@ -178,7 +178,7 @@ packet_flow_tiled_switch::init_components(sprockit::sim_parameters* params)
 }
 
 void
-packet_flow_tiled_switch::connect_output(sprockit::sim_parameters* params,
+pisces_tiled_switch::connect_output(sprockit::sim_parameters* params,
                                          int src_outport, int dst_inport,
                                          connectable *mod)
 {
@@ -187,18 +187,18 @@ packet_flow_tiled_switch::connect_output(sprockit::sim_parameters* params,
 }
 
 void
-packet_flow_tiled_switch::connect_output(
+pisces_tiled_switch::connect_output(
   sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
   event_handler *mod)
 {
-  packet_flow_sender* muxer = col_output_muxers_[src_outport];
+  pisces_sender* muxer = col_output_muxers_[src_outport];
   muxer->set_output(params, src_outport, dst_inport, mod);
 }
 
 void
-packet_flow_tiled_switch::connect_input(sprockit::sim_parameters* params,
+pisces_tiled_switch::connect_input(sprockit::sim_parameters* params,
                                         int src_outport, int dst_inport,
                                         connectable *mod)
 {
@@ -206,18 +206,18 @@ packet_flow_tiled_switch::connect_input(sprockit::sim_parameters* params,
 }
 
 void
-packet_flow_tiled_switch::connect_input(
+pisces_tiled_switch::connect_input(
   sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
   event_handler *mod)
 {
-  packet_flow_sender* demuxer = row_input_demuxers_[dst_inport];
+  pisces_sender* demuxer = row_input_demuxers_[dst_inport];
   demuxer->set_input(params, dst_inport, src_outport, mod);
 }
 
 void
-packet_flow_tiled_switch::connect(
+pisces_tiled_switch::connect(
   sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
@@ -236,55 +236,55 @@ packet_flow_tiled_switch::connect(
 }
 
 void
-packet_flow_tiled_switch::connect_injector(sprockit::sim_parameters* params,
+pisces_tiled_switch::connect_injector(sprockit::sim_parameters* params,
                       int src_outport, int dst_inport, event_handler* handler)
 {
-  packet_flow_sender* demuxer = row_input_demuxers_[dst_inport];
+  pisces_sender* demuxer = row_input_demuxers_[dst_inport];
   demuxer->set_input(params, dst_inport, src_outport, handler);
 }
 
 void
-packet_flow_tiled_switch::connect_ejector(sprockit::sim_parameters* params,
+pisces_tiled_switch::connect_ejector(sprockit::sim_parameters* params,
                                           int src_outport, int dst_inport,
                                           event_handler* handler)
 {
-  debug_printf(sprockit::dbg::packet_flow_config,
+  debug_printf(sprockit::dbg::pisces_config,
     "Switch %d: connecting to endpoint on outport %d, inport %d",
     int(my_addr_), src_outport, dst_inport);
-  packet_flow_sender* muxer = col_output_muxers_[src_outport];
+  pisces_sender* muxer = col_output_muxers_[src_outport];
   muxer->set_output(params, src_outport, dst_inport, handler);
 }
 
 int
-packet_flow_tiled_switch::queue_length(int port) const
+pisces_tiled_switch::queue_length(int port) const
 {
   spkt_throw_printf(sprockit::unimplemented_error,
-    "packet_flow_tiled_switch::queue_length");
+    "pisces_tiled_switch::queue_length");
 }
 
 void
-packet_flow_tiled_switch::handle(event* ev)
+pisces_tiled_switch::handle(event* ev)
 {
   //this should only happen in parallel mode...
   //this means we are getting a message that has crossed the parallel boundary
-  packet_flow_interface* fmsg = interface_cast(packet_flow_interface, ev);
+  pisces_interface* fmsg = interface_cast(pisces_interface, ev);
   switch (fmsg->type()) {
-    case packet_flow_interface::credit: {
-      packet_flow_credit* credit = static_cast<packet_flow_credit*>(ev);
-      packet_flow_muxer* recver = col_output_muxers_[credit->port()];
+    case pisces_interface::credit: {
+      pisces_credit* credit = static_cast<pisces_credit*>(ev);
+      pisces_muxer* recver = col_output_muxers_[credit->port()];
       recver->handle_credit(credit);
       break;
     }
-    case packet_flow_interface::payload: {
-      packet_flow_payload* payload = static_cast<packet_flow_payload*>(ev);
+    case pisces_interface::payload: {
+      pisces_payload* payload = static_cast<pisces_payload*>(ev);
       //routable* rtbl = payload->interface<routable>();
-      debug_printf(sprockit::dbg::packet_flow,
+      debug_printf(sprockit::dbg::pisces,
          "tiled switch %d: incoming payload %s",
           int(my_addr_), payload->to_string().c_str());
-      packet_flow_demuxer* demuxer = row_input_demuxers_[payload->inport()];
+      pisces_demuxer* demuxer = row_input_demuxers_[payload->inport()];
       //now figure out the new port I am routing to
       router_->route(payload);
-      debug_printf(sprockit::dbg::packet_flow,
+      debug_printf(sprockit::dbg::pisces,
          "tiled switch %d: routed payload %s to outport %d",
           int(my_addr_), payload->to_string().c_str(),
           payload->next_port());
@@ -295,9 +295,9 @@ packet_flow_tiled_switch::handle(event* ev)
 }
 
 std::string
-packet_flow_tiled_switch::to_string() const override
+pisces_tiled_switch::to_string() const override
 {
-  return sprockit::printf("packet_flow switch %d", int(my_addr_));
+  return sprockit::printf("pisces switch %d", int(my_addr_));
 }
 
 }

@@ -1,19 +1,19 @@
-#ifndef packet_flow_BUFFER_H
-#define packet_flow_BUFFER_H
+#ifndef pisces_BUFFER_H
+#define pisces_BUFFER_H
 
-#include <sstmac/hardware/packet_flow/packet_flow_crossbar.h>
-#include <sstmac/hardware/packet_flow/packet_flow_sender.h>
+#include <sstmac/hardware/pisces/pisces_crossbar.h>
+#include <sstmac/hardware/pisces/pisces_sender.h>
 
 namespace sstmac {
 namespace hw {
 
 
-class packet_flow_buffer :
-  public packet_flow_sender
+class pisces_buffer :
+  public pisces_sender
 {
 
  public:
-  virtual ~packet_flow_buffer();
+  virtual ~pisces_buffer();
 
   virtual void
   set_output(sprockit::sim_parameters* params,
@@ -36,50 +36,50 @@ class packet_flow_buffer :
   }
 
  protected:
-  packet_flow_buffer(sprockit::sim_parameters* params, event_scheduler* parent);
+  pisces_buffer(sprockit::sim_parameters* params, event_scheduler* parent);
 
   std::string
   buffer_string(const char* name) const;
 
  protected:
-  packet_flow_input input_;
-  packet_flow_output output_;
+  pisces_input input_;
+  pisces_output output_;
   long bytes_delayed_;
 
   static const int my_outport = 0;
   static const int my_inport = 0;
 };
 
-class packet_flow_finite_buffer :
-  public packet_flow_buffer
+class pisces_finite_buffer :
+  public pisces_buffer
 {
  public:
-  virtual ~packet_flow_finite_buffer(){}
+  virtual ~pisces_finite_buffer(){}
 
   virtual void
   set_input(sprockit::sim_parameters* params,
             int this_inport, int src_outport,
             event_handler* input) override;
 
-  packet_flow_finite_buffer(sprockit::sim_parameters* params,
+  pisces_finite_buffer(sprockit::sim_parameters* params,
                             event_scheduler* parent) :
-    packet_flow_buffer(params, parent)
+    pisces_buffer(params, parent)
   {
   }
 
 };
 
-class packet_flow_infinite_buffer :
-  public packet_flow_buffer
+class pisces_infinite_buffer :
+  public pisces_buffer
 {
  protected:
-  packet_flow_infinite_buffer(sprockit::sim_parameters* params,
+  pisces_infinite_buffer(sprockit::sim_parameters* params,
                               event_scheduler* parent) :
-   packet_flow_buffer(params, parent)
+   pisces_buffer(params, parent)
   {
   }
 
-  virtual ~packet_flow_infinite_buffer(){}
+  virtual ~pisces_infinite_buffer(){}
 
   void //no-op, I don't need to send credits to an input, I'm infinite
   set_input(sprockit::sim_parameters* params, int my_inport, int dst_outport,
@@ -87,14 +87,14 @@ class packet_flow_infinite_buffer :
 
 };
 
-class packet_flow_network_buffer :
-  public packet_flow_finite_buffer
+class pisces_network_buffer :
+  public pisces_finite_buffer
 {
  public:
-  packet_flow_network_buffer(sprockit::sim_parameters* params,
+  pisces_network_buffer(sprockit::sim_parameters* params,
                              event_scheduler* parent);
 
-  virtual ~packet_flow_network_buffer();
+  virtual ~pisces_network_buffer();
 
   int
   queue_length() const override;
@@ -106,7 +106,7 @@ class packet_flow_network_buffer :
   handle_payload(event* ev) override;
 
   std::string
-  packet_flow_name() const override {
+  pisces_name() const override {
     return "network buffer";
   }
 
@@ -126,22 +126,22 @@ class packet_flow_network_buffer :
   void build_blocked_messages();
 
  private:
-  packet_flow_bandwidth_arbitrator* arb_;
+  pisces_bandwidth_arbitrator* arb_;
   std::set<int> deadlocked_channels_;
-  std::map<int, std::list<packet_flow_payload*> > blocked_messages_;
+  std::map<int, std::list<pisces_payload*> > blocked_messages_;
   bool queue_depth_reporting_;
   int queue_depth_delta_;
   int packet_size_;
   event_handler* payload_handler_;
 };
 
-class packet_flow_eject_buffer :
-  public packet_flow_finite_buffer
+class pisces_eject_buffer :
+  public pisces_finite_buffer
 {
  public:
-  packet_flow_eject_buffer(sprockit::sim_parameters* params,
+  pisces_eject_buffer(sprockit::sim_parameters* params,
                            event_scheduler* parent) :
-    packet_flow_finite_buffer(params, parent)
+    pisces_finite_buffer(params, parent)
   {
   }
 
@@ -155,20 +155,20 @@ class packet_flow_eject_buffer :
   return_credit(packet* msg);
 
   std::string
-  packet_flow_name() const override {
+  pisces_name() const override {
     return "eject buffer";
   }
 
 };
 
-class packet_flow_injection_buffer :
-  public packet_flow_infinite_buffer
+class pisces_injection_buffer :
+  public pisces_infinite_buffer
 {
  public:
-  packet_flow_injection_buffer(sprockit::sim_parameters* params,
+  pisces_injection_buffer(sprockit::sim_parameters* params,
                                event_scheduler* parent);
 
-  ~packet_flow_injection_buffer();
+  ~pisces_injection_buffer();
 
   int
   queue_length() const override;
@@ -185,13 +185,13 @@ class packet_flow_injection_buffer :
   handle_payload(event* ev) override;
 
   std::string
-  packet_flow_name() const override {
+  pisces_name() const override {
     return "inject buffer";
   }
 
  protected:
   int packet_size_;
-  packet_flow_bandwidth_arbitrator* arb_;
+  pisces_bandwidth_arbitrator* arb_;
   long credits_;
 
 };

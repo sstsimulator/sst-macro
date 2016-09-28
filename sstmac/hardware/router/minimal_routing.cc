@@ -1,8 +1,8 @@
 #include <sstmac/hardware/router/minimal_routing.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/topology/fat_tree.h>
-#include <sstmac/hardware/packet_flow/packet_flow_switch.h>
-#include <sstmac/hardware/packet_flow/packet_flow_stats.h>
+#include <sstmac/hardware/pisces/pisces_switch.h>
+#include <sstmac/hardware/pisces/pisces_stats.h>
 #include <sprockit/util.h>
 
 namespace sstmac {

@@ -1,6 +1,6 @@
-#include <sstmac/hardware/packet_flow/packet_flow_crossbar.h>
-#include <sstmac/hardware/packet_flow/packet_flow_stats.h>
-#include <sstmac/hardware/packet_flow/packet_flow_tiled_switch.h>
+#include <sstmac/hardware/pisces/pisces_crossbar.h>
+#include <sstmac/hardware/pisces/pisces_stats.h>
+#include <sstmac/hardware/pisces/pisces_tiled_switch.h>
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/common/stats/stat_global_int.h>
 #include <sstmac/common/event_callback.h>
@@ -15,64 +15,64 @@ RegisterNamespaces("bytes_sent");
 namespace sstmac {
 namespace hw {
 
-packet_flow_crossbar::packet_flow_crossbar(
+pisces_crossbar::pisces_crossbar(
   sprockit::sim_parameters* params,
   event_scheduler* parent) :
-  packet_flow_NtoM_queue(params, parent)
+  pisces_NtoM_queue(params, parent)
 {
-  arb_ = packet_flow_bandwidth_arbitrator_factory::get_param("arbitrator",
+  arb_ = pisces_bandwidth_arbitrator_factory::get_param("arbitrator",
                                                             params);
 }
 
-packet_flow_demuxer::packet_flow_demuxer(
+pisces_demuxer::pisces_demuxer(
   sprockit::sim_parameters* params,
   event_scheduler* parent) :
-  packet_flow_NtoM_queue(params, parent)
+  pisces_NtoM_queue(params, parent)
 {
 }
 
-packet_flow_muxer::packet_flow_muxer(
+pisces_muxer::pisces_muxer(
   sprockit::sim_parameters* params,
   event_scheduler* parent) :
-  packet_flow_NtoM_queue(params, parent)
+  pisces_NtoM_queue(params, parent)
 {
 
 }
 
-packet_flow_NtoM_queue::
-packet_flow_NtoM_queue(sprockit::sim_parameters* params,
+pisces_NtoM_queue::
+pisces_NtoM_queue(sprockit::sim_parameters* params,
                        event_scheduler* parent)
-  : packet_flow_sender(params, parent),
+  : pisces_sender(params, parent),
     credit_handler_(nullptr)
 {
   num_vc_ = params->get_int_param("num_vc");
-  arb_ = packet_flow_bandwidth_arbitrator_factory::get_param("arbitrator", params);
+  arb_ = pisces_bandwidth_arbitrator_factory::get_param("arbitrator", params);
 }
 
 event_handler*
-packet_flow_NtoM_queue::credit_handler()
+pisces_NtoM_queue::credit_handler()
 {
   if (!credit_handler_){
-    credit_handler_ = new_handler(this, &packet_flow_NtoM_queue::handle_credit);
+    credit_handler_ = new_handler(this, &pisces_NtoM_queue::handle_credit);
   }
   return credit_handler_;
 }
 
-packet_flow_NtoM_queue::~packet_flow_NtoM_queue()
+pisces_NtoM_queue::~pisces_NtoM_queue()
 {
   if (arb_) delete arb_;
   if (credit_handler_) delete credit_handler_;
 }
 
 void
-packet_flow_NtoM_queue::deadlock_check()
+pisces_NtoM_queue::deadlock_check()
 {
   for (int i=0; i < queues_.size(); ++i){
     payload_queue& queue = queues_[i];
-    packet_flow_payload* pkt = queue.front();
+    pisces_payload* pkt = queue.front();
     while (pkt){
       deadlocked_channels_[pkt->next_port()].insert(pkt->next_vc());
-      packet_flow_output& poutput = outputs_[local_port(pkt->next_port())];
+      pisces_output& poutput = outputs_[local_port(pkt->next_port())];
       event_handler* output = output_handler(pkt);
       if (output){
         pkt->set_inport(poutput.dst_inport);
@@ -93,12 +93,12 @@ packet_flow_NtoM_queue::deadlock_check()
 }
 
 void
-packet_flow_NtoM_queue::build_blocked_messages()
+pisces_NtoM_queue::build_blocked_messages()
 {
   //std::cerr << "\tbuild blocked messages on " << to_string() << std::endl;
   for (int i=0; i < queues_.size(); ++i){
     payload_queue& queue = queues_[i];
-    packet_flow_payload* pkt = queue.pop(1000000);
+    pisces_payload* pkt = queue.pop(1000000);
     while (pkt){
       blocked_messages_[pkt->inport()][pkt->vc()].push_back(pkt);
       //std::cerr << "\t\t" << "into port=" << msg->inport() << " vc=" << msg->vc()
@@ -109,13 +109,13 @@ packet_flow_NtoM_queue::build_blocked_messages()
 }
 
 void
-packet_flow_NtoM_queue::deadlock_check(event* ev)
+pisces_NtoM_queue::deadlock_check(event* ev)
 {
   if (blocked_messages_.empty()){
     build_blocked_messages();
   }
 
-  packet_flow_payload* payload = safe_cast(packet_flow_payload, ev);
+  pisces_payload* payload = safe_cast(pisces_payload, ev);
   int outport = payload->next_port();
   int inport = payload->inport();
   int vc = update_vc_ ? payload->next_vc() : payload->vc();
@@ -127,14 +127,14 @@ packet_flow_NtoM_queue::deadlock_check(event* ev)
 
   deadlocked_channels_[outport].insert(vc);
 
-  std::list<packet_flow_payload*>& blocked = blocked_messages_[inport][vc];
+  std::list<pisces_payload*>& blocked = blocked_messages_[inport][vc];
   if (blocked.empty()){
     spkt_throw_printf(sprockit::value_error,
       "channel is NOT blocked on deadlock check on outport=%d inport=%d vc=%d",
       outport, inport, vc);
   } else {
-    packet_flow_payload* next = blocked.front();
-    packet_flow_output& poutput = outputs_[local_port(outport)];
+    pisces_payload* next = blocked.front();
+    pisces_output& poutput = outputs_[local_port(outport)];
     event_handler* output = output_handler(next);
     next->set_inport(poutput.dst_inport);
     std::cerr << to_string() << " going to " << output->to_string() 
@@ -148,21 +148,21 @@ packet_flow_NtoM_queue::deadlock_check(event* ev)
 }
 
 std::string
-packet_flow_NtoM_queue::input_name(packet_flow_payload* pkt)
+pisces_NtoM_queue::input_name(pisces_payload* pkt)
 {
   event_handler* handler = inputs_[pkt->inport()].handler;
   return handler->to_string();
 }
 
 event_handler*
-packet_flow_NtoM_queue::output_handler(packet_flow_payload* pkt)
+pisces_NtoM_queue::output_handler(pisces_payload* pkt)
 {
   int loc_port = local_port(pkt->next_port());
   event_handler* handler = outputs_[loc_port].handler;
   if (!handler)
     return nullptr;
 
-  //packet_flow_tiled_switch* sw = test_cast(packet_flow_tiled_switch, handler);
+  //pisces_tiled_switch* sw = test_cast(pisces_tiled_switch, handler);
   //if (sw){
   //  return sw->demuxer(pkt->next_port());
   //} else {
@@ -171,16 +171,16 @@ packet_flow_NtoM_queue::output_handler(packet_flow_payload* pkt)
 }
 
 std::string
-packet_flow_NtoM_queue::output_name(packet_flow_payload* pkt)
+pisces_NtoM_queue::output_name(pisces_payload* pkt)
 {
   return output_handler(pkt)->to_string();
 }
 
 void
-packet_flow_NtoM_queue::send_payload(packet_flow_payload* pkt)
+pisces_NtoM_queue::send_payload(pisces_payload* pkt)
 {
   int loc_port = local_port(pkt->next_port());
-  packet_flow_debug(
+  pisces_debug(
     "On %s:%p mapped port:%d vc:%d to local port %d handling {%s} going to %s:%p",
      to_string().c_str(), this,
      pkt->next_port(), pkt->next_vc(),
@@ -192,16 +192,16 @@ packet_flow_NtoM_queue::send_payload(packet_flow_payload* pkt)
 }
 
 void
-packet_flow_NtoM_queue::handle_credit(event* ev)
+pisces_NtoM_queue::handle_credit(event* ev)
 {
-  packet_flow_credit* pkt = static_cast<packet_flow_credit*>(ev);
+  pisces_credit* pkt = static_cast<pisces_credit*>(ev);
   int outport = pkt->port();
   int vc = pkt->vc();
   int channel = outport * num_vc_ + vc;
 
   int& num_credits = credit(outport, vc);
 
-  packet_flow_debug(
+  pisces_debug(
     "On %s:%p with %d credits, handling credit {%s} for port:%d vc:%d channel:%d",
      to_string().c_str(), this,
      num_credits,
@@ -210,7 +210,7 @@ packet_flow_NtoM_queue::handle_credit(event* ev)
 
   num_credits += pkt->num_credits();
 
-  packet_flow_payload* payload = queue(outport, vc).pop(num_credits);
+  pisces_payload* payload = queue(outport, vc).pop(num_credits);
   if (payload) {
     num_credits -= payload->num_bytes();
     send_payload(payload);
@@ -220,16 +220,16 @@ packet_flow_NtoM_queue::handle_credit(event* ev)
 }
 
 void
-packet_flow_NtoM_queue::handle_payload(event* ev)
+pisces_NtoM_queue::handle_payload(event* ev)
 {
-  auto pkt = static_cast<packet_flow_payload*>(ev);
+  auto pkt = static_cast<pisces_payload*>(ev);
   pkt->set_arrival(now());
 
   int dst_vc = update_vc_ ? pkt->next_vc() : pkt->vc();
   int dst_port = pkt->next_port();
 
   int& num_credits = credit(dst_port, dst_vc);
-   packet_flow_debug(
+   pisces_debug(
     "On %s:%p with %d credits, handling {%s} for port:%d vc:%d -> local port %d going to",// %s:%p",
      to_string().c_str(), this,
      num_credits,
@@ -250,7 +250,7 @@ packet_flow_NtoM_queue::handle_payload(event* ev)
     send_payload(pkt);
   }
   else {
-    packet_flow_debug(
+    pisces_debug(
       "On %s:%p, pushing back on queue %d=(%d,%d) for nq=%d nvc=%d mapper=(%d,%d,%d)",
       to_string().c_str(), this,
       local_slot(dst_port, dst_vc), dst_port, dst_vc, queues_.size(), num_vc_,
@@ -260,7 +260,7 @@ packet_flow_NtoM_queue::handle_payload(event* ev)
 }
 
 void
-packet_flow_NtoM_queue::resize(int num_ports)
+pisces_NtoM_queue::resize(int num_ports)
 {
   outputs_.resize(num_ports);
   queues_.resize(num_ports*num_vc_);
@@ -268,7 +268,7 @@ packet_flow_NtoM_queue::resize(int num_ports)
 }
 
 void
-packet_flow_NtoM_queue::configure_basic_ports(int num_ports)
+pisces_NtoM_queue::configure_basic_ports(int num_ports)
 {
   port_offset_ = 0;
   port_mod_ = 0;
@@ -277,9 +277,9 @@ packet_flow_NtoM_queue::configure_basic_ports(int num_ports)
 }
 
 void
-packet_flow_NtoM_queue::configure_div_ports(int div, int max_port)
+pisces_NtoM_queue::configure_div_ports(int div, int max_port)
 {
-  debug_printf(sprockit::dbg::packet_flow_config | sprockit::dbg::packet_flow,
+  debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
     "On %s configured for div local ports: div=%d,max=%d",
     to_string().c_str(), div, max_port);
 
@@ -291,9 +291,9 @@ packet_flow_NtoM_queue::configure_div_ports(int div, int max_port)
 }
 
 void
-packet_flow_NtoM_queue::configure_offset_ports(int offset, int max_port)
+pisces_NtoM_queue::configure_offset_ports(int offset, int max_port)
 {
-  debug_printf(sprockit::dbg::packet_flow_config | sprockit::dbg::packet_flow,
+  debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
     "On %s configured for offset local ports: offset=%d,max=%d",
     to_string().c_str(), offset, max_port);
 
@@ -304,9 +304,9 @@ packet_flow_NtoM_queue::configure_offset_ports(int offset, int max_port)
 }
 
 void
-packet_flow_NtoM_queue::configure_mod_ports(int mod)
+pisces_NtoM_queue::configure_mod_ports(int mod)
 {
-  debug_printf(sprockit::dbg::packet_flow_config | sprockit::dbg::packet_flow,
+  debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
     "On %s configured for modulo local ports: m=%d",
     to_string().c_str(), mod);
 
@@ -317,37 +317,37 @@ packet_flow_NtoM_queue::configure_mod_ports(int mod)
 }
 
 void
-packet_flow_NtoM_queue::set_input(
+pisces_NtoM_queue::set_input(
   sprockit::sim_parameters* port_params,
   int my_inport, int src_outport,
   event_handler* input)
 {
-  debug_printf(sprockit::dbg::packet_flow_config | sprockit::dbg::packet_flow,
+  debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
     "On %s:%d setting input %s:%d",
     to_string().c_str(), my_inport,
     input->to_string().c_str(), src_outport);
 
-  packet_flow_input inp;
+  pisces_input inp;
   inp.src_outport = src_outport;
   inp.handler = input;
   inputs_[my_inport] = inp;
 }
 
 void
-packet_flow_NtoM_queue::set_output(
+pisces_NtoM_queue::set_output(
   sprockit::sim_parameters* port_params,
   int my_outport, int dst_inport,
   event_handler* output)
 {
   int loc_port = local_port(my_outport);
-  debug_printf(sprockit::dbg::packet_flow_config | sprockit::dbg::packet_flow,
+  debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
     "On %s:%d setting output %s:%d -> local port %d, mapper=(%d,%d,%d) of %d",
     to_string().c_str(), my_outport,
     output->to_string().c_str(), dst_inport,
     loc_port, port_offset_, port_div_, port_mod_,
     outputs_.size());
 
-  packet_flow_output out;
+  pisces_output out;
   out.dst_inport = dst_inport;
   out.handler = output;
 
@@ -356,7 +356,7 @@ packet_flow_NtoM_queue::set_output(
   int num_credits = port_params->get_byte_length_param("credits");
   int num_credits_per_vc = num_credits / num_vc_;
   for (int i=0; i < num_vc_; ++i) {
-    debug_printf(sprockit::dbg::packet_flow_config,
+    debug_printf(sprockit::dbg::pisces_config,
       "On %s:%p, initing %d credits on port:%d vc:%d",
       to_string().c_str(), this,
       num_credits_per_vc,
@@ -367,7 +367,7 @@ packet_flow_NtoM_queue::set_output(
 
 #if PRINT_FINISH_DETAILS
 void
-print_msg(const std::string& prefix, switch_id addr, packet_flow_payload* pkt)
+print_msg(const std::string& prefix, switch_id addr, pisces_payload* pkt)
 {
   structured_topology* top = safe_cast(structured_topology, sstmac_runtime::current_topology());
   coordinates src_coords = top->get_node_coords(msg->fromaddr());
@@ -386,10 +386,10 @@ print_msg(const std::string& prefix, switch_id addr, packet_flow_payload* pkt)
 #endif
 
 void
-packet_flow_NtoM_queue::start_message(message* msg)
+pisces_NtoM_queue::start_message(message* msg)
 {
   spkt_throw(sprockit::illformed_error,
-    "packet_flow_NtoM_queue:: should never start a flow");
+    "pisces_NtoM_queue:: should never start a flow");
 }
 
 #if PRINT_FINISH_DETAILS
@@ -405,7 +405,7 @@ packet_flow_NtoM_queue::start_message(message* msg)
         payload_queue& que = vec[i];
         payload_queue::iterator pit, pend = que.end();
         for (pit = que.begin(); pit != pend; ++pit){
-            packet_flow_payload* pkt = *pit;
+            pisces_payload* pkt = *pit;
             print_msg("\t\t\tPending: ", router_->get_addr(), msg);
         }
     }

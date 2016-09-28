@@ -36,7 +36,7 @@ packetizer::start(int vn, message *msg)
   next.bytes_left = msg->byte_length();
   if (next.bytes_left == 0){
     spkt_throw_printf(sprockit::value_error,
-        "packet_flow_injection_buffer::start: starting message with zero length: %s",
+        "pisces_injection_buffer::start: starting message with zero length: %s",
         msg->to_string().c_str());
   }
   next.offset = 0;
@@ -87,7 +87,8 @@ packetizer::bytesArrived(int vn, uint64_t unique_id, int bytes, message *parent)
 void
 packetizer::packetArrived(int vn, packet* pkt)
 {
-  bytesArrived(vn, pkt->flow_id(), pkt->byte_length(), pkt->orig());
+  message* payload = dynamic_cast<message*>(pkt->orig());
+  bytesArrived(vn, pkt->flow_id(), pkt->byte_length(), payload);
   delete pkt;
 }
 
@@ -109,13 +110,18 @@ class merlin_packetizer :
                       event_scheduler* parent,
                       packetizer_callback* handler);
 
-  bool spaceToSend(int vn, int num_bits) const;
+  bool spaceToSend(int vn, int num_bits){
+    return m_linkControl->spaceToSend(vn, num_bits);
+  }
 
   void inject(int vn, long bytes, long byte_offset, message *payload);
 
   bool recvNotify(int vn);
 
-  bool sendNotify(int vn);
+  bool sendNotify(int vn){
+    sendWhatYouCan(vn);
+    return true;
+  }
 
   void init(unsigned int phase){
     m_linkControl->init(phase);
@@ -167,20 +173,6 @@ merlin_packetizer::merlin_packetizer(sprockit::sim_parameters *params,
 
   m_linkControl->setNotifyOnReceive( m_recvNotifyFunctor );
   m_linkControl->setNotifyOnSend( m_sendNotifyFunctor );
-}
-
-bool
-merlin_packetizer::spaceToSend(int vn, int num_bits) const
-{
-  bool res = m_linkControl->spaceToSend(vn, num_bits);
-  return res;
-}
-
-bool
-merlin_packetizer::sendNotify(int vn)
-{
-  sendWhatYouCan(vn);
-  return true;
 }
 
 bool

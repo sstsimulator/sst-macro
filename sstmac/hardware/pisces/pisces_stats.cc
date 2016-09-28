@@ -1,4 +1,4 @@
-#include <sstmac/hardware/packet_flow/packet_flow_stats.h>
+#include <sstmac/hardware/pisces/pisces_stats.h>
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sstmac/common/stats/stat_spyplot.h>
@@ -37,7 +37,7 @@ packet_stats_callback::packet_stats_callback(sprockit::sim_parameters *params, e
 }
 
 void
-packet_stats_callback::collect_final_event(packet_flow_payload *pkt)
+packet_stats_callback::collect_final_event(pisces_payload *pkt)
 {
   spkt_throw(sprockit::value_error,
              "stats object does not support collecting final events");
@@ -63,7 +63,7 @@ congestion_spyplot::~congestion_spyplot()
 }
 
 void
-congestion_spyplot::collect_final_event(packet_flow_payload *pkt)
+congestion_spyplot::collect_final_event(pisces_payload *pkt)
 {
   spkt_throw_printf(sprockit::unimplemented_error, "congestion_spyplot");
   //long delay_ns = pkt->delay_us() * 1e3; //go to ns
@@ -79,7 +79,7 @@ congestion_spyplot::collect_single_event(const pkt_arbitration_t &st)
 
 void
 congestion_spyplot::collect(double congestion_delay_us,
-  packet_flow_payload* pkt)
+  pisces_payload* pkt)
 {
   congestion_spyplot_->add(pkt->fromaddr(), pkt->toaddr(), congestion_delay_us);
 }
@@ -104,7 +104,7 @@ delay_histogram::collect_single_event(const pkt_arbitration_t& st)
 }
 
 void
-delay_histogram::collect_final_event(packet_flow_payload* pkt)
+delay_histogram::collect_final_event(pisces_payload* pkt)
 {
   spkt_throw_printf(sprockit::unimplemented_error, "delay_histogram");
   //congestion_hist_->collect(pkt->delay_us()*1e-6); //convert to seconds
@@ -113,7 +113,7 @@ delay_histogram::collect_final_event(packet_flow_payload* pkt)
 void
 packet_delay_stats::collect(
   double congestion_delay_us,
-  packet_flow_payload* pkt)
+  pisces_payload* pkt)
 {
   spkt_throw_printf(sprockit::unimplemented_error, "packet_delay_stats");
   //pkt->add_delay_us(congestion_delay_us);

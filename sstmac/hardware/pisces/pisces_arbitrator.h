@@ -1,22 +1,22 @@
 #ifndef PACKETFLOW_ARBITRATOR_H
 #define PACKETFLOW_ARBITRATOR_H
 
-#include <sstmac/hardware/packet_flow/packet_flow.h>
+#include <sstmac/hardware/pisces/pisces.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/common/timestamp.h>
 #include <sprockit/factories/factory.h>
 #include <sstmac/hardware/noise/noise.h>
-#include <sstmac/hardware/packet_flow/packet_flow_stats.h>
+#include <sstmac/hardware/pisces/pisces_stats.h>
 
 namespace sstmac {
 namespace hw {
 
 /**
- * @brief The packet_flow_bandwidth_arbitrator class  This arbitrates the available bandwidth
+ * @brief The pisces_bandwidth_arbitrator class  This arbitrates the available bandwidth
  *        amongst incoming packets. This can either occur on discrete packets or it can
  *        attempt to simulate flits.
  */
-class packet_flow_bandwidth_arbitrator
+class pisces_bandwidth_arbitrator
 {
 
  public:
@@ -30,7 +30,7 @@ class packet_flow_bandwidth_arbitrator
   virtual std::string
   to_string() const = 0;
 
-  virtual ~packet_flow_bandwidth_arbitrator(){}
+  virtual ~pisces_bandwidth_arbitrator(){}
 
   double outgoing_bw() const {
     return out_bw_;
@@ -59,7 +59,7 @@ class packet_flow_bandwidth_arbitrator
   bytes_sending(timestamp now) const = 0;
 
  protected:
-  packet_flow_bandwidth_arbitrator(sprockit::sim_parameters* params);
+  pisces_bandwidth_arbitrator(sprockit::sim_parameters* params);
 
  protected:
   double out_bw_;
@@ -68,21 +68,21 @@ class packet_flow_bandwidth_arbitrator
 };
 
 /**
- * @brief The packet_flow_null_arbitrator class  The performs no congestion modeling.
+ * @brief The pisces_null_arbitrator class  The performs no congestion modeling.
  *        This assumes packets can always receive full bandwidth regardless of traffic.
  */
-class packet_flow_null_arbitrator :
-  public packet_flow_bandwidth_arbitrator
+class pisces_null_arbitrator :
+  public pisces_bandwidth_arbitrator
 {
  public:
-  packet_flow_null_arbitrator(sprockit::sim_parameters* params);
+  pisces_null_arbitrator(sprockit::sim_parameters* params);
 
   virtual void
   arbitrate(pkt_arbitration_t& st) override;
 
   std::string
   to_string() const override {
-    return "packet_flow null arbitrator";
+    return "pisces null arbitrator";
   }
 
   int
@@ -91,23 +91,23 @@ class packet_flow_null_arbitrator :
 };
 
 /**
- * @brief The packet_flow_simple_arbitrator class Implements a store-and-forward arbitration scheme.
+ * @brief The pisces_simple_arbitrator class Implements a store-and-forward arbitration scheme.
  * The entire packet has to arrive before it can be arbitrated.  Links/crossbars never interleave
  * flits from different packets in this scheme.  For larger packet sizes, this can lead to
  * unrealistic delays since packets cannot pipeline across network stages.
  */
-class packet_flow_simple_arbitrator :
-  public packet_flow_bandwidth_arbitrator
+class pisces_simple_arbitrator :
+  public pisces_bandwidth_arbitrator
 {
  public:
-  packet_flow_simple_arbitrator(sprockit::sim_parameters* params);
+  pisces_simple_arbitrator(sprockit::sim_parameters* params);
 
   virtual void
   arbitrate(pkt_arbitration_t& st) override;
 
   std::string
   to_string() const override {
-    return "packet_flow simple arbitrator";
+    return "pisces simple arbitrator";
   }
 
   int
@@ -119,21 +119,21 @@ class packet_flow_simple_arbitrator :
 };
 
 /**
- * @brief The packet_flow_simple_arbitrator class Implements a store-and-forward arbitration scheme.
+ * @brief The pisces_simple_arbitrator class Implements a store-and-forward arbitration scheme.
  * The entire packet has to arrive before it can be arbitrated.  Links/crossbars never interleave
  * flits from different packets in this scheme.  For larger packet sizes, this can lead to
  * unrealistic delays since packets cannot pipeline across network stages.
  */
-class packet_flow_cut_through_arbitrator :
-  public packet_flow_bandwidth_arbitrator
+class pisces_cut_through_arbitrator :
+  public pisces_bandwidth_arbitrator
 {
   typedef uint64_t ticks_t;
   typedef double bw_t;
 
  public:
-  packet_flow_cut_through_arbitrator(sprockit::sim_parameters* params);
+  pisces_cut_through_arbitrator(sprockit::sim_parameters* params);
 
-  ~packet_flow_cut_through_arbitrator();
+  ~pisces_cut_through_arbitrator();
 
   virtual void
   arbitrate(pkt_arbitration_t& st) override;
@@ -185,7 +185,7 @@ class packet_flow_cut_through_arbitrator :
 
 };
 
-DeclareFactory(packet_flow_bandwidth_arbitrator);
+DeclareFactory(pisces_bandwidth_arbitrator);
 
 }
 }

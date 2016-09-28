@@ -50,7 +50,7 @@ def run(model, **kwargs):
   if model == "amm1":
     args.append('-p congestion_model=simple')
   else:
-    args.append('-p congestion_model=packet_flow')
+    args.append('-p congestion_model=pisces')
   args.append('-p amm_model=%s' % model)
   args = " ".join(args)
   cmd  = "./runtraffic %s >& %s.out" % (args, model)

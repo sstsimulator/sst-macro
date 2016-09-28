@@ -3,7 +3,7 @@
 #include <tests/unit_tests/util/util.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/router/router.h>
-#include <sstmac/hardware/packet_flow/packet_flow_switch.h>
+#include <sstmac/hardware/pisces/pisces_switch.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 
@@ -87,18 +87,18 @@ naddr(long nid)
   return sstmac::node_id(nid);
 }
 
-class routable_packet_flow :
- public packet_flow_payload,
+class routable_pisces :
+ public pisces_payload,
  public routable
 {
-  NotSerializable(routable_packet_flow)
+  NotSerializable(routable_pisces)
 
   public:
-   routable_packet_flow(
+   routable_pisces(
      message* parent,
      int num_bytes,
      long offset) :
-    packet_flow_payload(parent, num_bytes, offset),
+    pisces_payload(parent, parent->flow_id(), num_bytes, offset),
     routable(parent->toaddr(), parent->fromaddr())
   {
   }
@@ -125,19 +125,19 @@ class routable_packet_flow :
 
 };
 
-packet_flow_payload*
+pisces_payload*
 msg(long nid)
 {
   network_message* new_msg = new network_message;
   new_msg->set_toaddr(naddr(nid));
   new_msg->set_net_id(hw::network_id(0,0));
-  return new routable_packet_flow(new_msg, 0, 0);
+  return new routable_pisces(new_msg, 0, 0);
 }
 
-packet_flow_payload*
+pisces_payload*
 new_packet(message *msg, int bytes, int byte_offset)
 {
-  return new routable_packet_flow(msg, bytes, byte_offset);
+  return new routable_pisces(msg, bytes, byte_offset);
 }
 
 void
@@ -157,7 +157,7 @@ init_switches(interconnect::switch_map &switches,
   params["ejection.bandwidth"] = "1.0GB/s";
   params["ejection.send_latency"] = "1us";
   params["ejection.credit_latency"] = "0ns";
-  params["model"] = "packet_flow";
+  params["model"] = "pisces";
   params["mtu"] = "8192";
   params["buffer_size"] = "16KB";
   int num_switches = top->num_switches();

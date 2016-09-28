@@ -1,11 +1,11 @@
-#ifndef PACKET_FLOW_TILED_SWITCH_H
-#define PACKET_FLOW_TILED_SWITCH_H
+#ifndef pisces_TILED_SWITCH_H
+#define pisces_TILED_SWITCH_H
 
-#include <sstmac/hardware/packet_flow/packet_flow_switch.h>
-#include <sstmac/hardware/packet_flow/packet_flow_buffer.h>
-#include <sstmac/hardware/packet_flow/packet_flow_crossbar.h>
-#include <sstmac/hardware/packet_flow/packet_flow_arbitrator.h>
-#include <sstmac/hardware/packet_flow/packet_flow_stats_fwd.h>
+#include <sstmac/hardware/pisces/pisces_switch.h>
+#include <sstmac/hardware/pisces/pisces_buffer.h>
+#include <sstmac/hardware/pisces/pisces_crossbar.h>
+#include <sstmac/hardware/pisces/pisces_arbitrator.h>
+#include <sstmac/hardware/pisces/pisces_stats_fwd.h>
 
 #if 0
 
@@ -13,16 +13,16 @@ namespace sstmac {
 namespace hw {
 
 /**
- @class packet_flow_switch
+ @class pisces_switch
  A switch in the network that arbitrates/routes packet_trains
  to the next link in the network
  */
-class packet_flow_tiled_switch :
-  public packet_flow_abstract_switch
+class pisces_tiled_switch :
+  public pisces_abstract_switch
 {
 
  public:
-  packet_flow_tiled_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr);
+  pisces_tiled_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr);
 
   int
   queue_length(int port) const override;
@@ -52,7 +52,7 @@ class packet_flow_tiled_switch :
   handle(event* ev) override;
 
   /**
-   Set the link to use when ejecting packets at their endpoint.  A packet_flow_switch
+   Set the link to use when ejecting packets at their endpoint.  A pisces_switch
    can have any number of ejectors, corresponding to the number of nodes
    per switch.
    @param addr The compute node address of the endpoint to eject to
@@ -65,7 +65,7 @@ class packet_flow_tiled_switch :
   to_string() const override;
 
   virtual
-  ~packet_flow_tiled_switch();
+  ~pisces_tiled_switch();
 
   event_handler*
   demuxer(int port) const {
@@ -87,11 +87,11 @@ class packet_flow_tiled_switch :
                   event_handler* nic) override;
 
  protected:
-  std::vector<packet_flow_demuxer*> row_input_demuxers_;
+  std::vector<pisces_demuxer*> row_input_demuxers_;
 
-  std::vector<packet_flow_crossbar*> xbar_tiles_;
+  std::vector<pisces_crossbar*> xbar_tiles_;
 
-  std::vector<packet_flow_muxer*> col_output_muxers_;
+  std::vector<pisces_muxer*> col_output_muxers_;
 
   int nrows_;
 
@@ -129,4 +129,4 @@ class packet_flow_tiled_switch :
 
 #endif
 
-#endif // PACKET_FLOW_TILED_SWITCH_H
+#endif // pisces_TILED_SWITCH_H

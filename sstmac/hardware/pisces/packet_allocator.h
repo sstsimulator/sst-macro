@@ -2,8 +2,10 @@
 #define PACKET_ALLOCATOR_H
 
 #include <sprockit/factories/factory.h>
-#include <sstmac/hardware/packet_flow/packet_flow_fwd.h>
+#include <sstmac/hardware/pisces/pisces_fwd.h>
 #include <sstmac/common/messages/sst_message_fwd.h>
+#include <sstmac/common/serializable.h>
+#include <sstmac/common/node_address.h>
 
 namespace sstmac {
 namespace hw {
@@ -25,10 +27,12 @@ class packet_allocator
    * @param bytes       Number of bytes in the packet
    * @param byte_offset The offset within the message (flow) the packet begins at
    * @param msg         The message being packetized
-   * @return  A packet compatible with packet_flow model
+   * @return  A packet compatible with pisces model
    */
-  virtual packet_flow_payload*
-  new_packet(int bytes, long byte_offset, message* msg) = 0;
+  virtual pisces_payload*
+  new_packet(int bytes, long byte_offset,
+             node_id toaddr, node_id fromaddr,
+             uint64_t flow_id, serializable* msg) = 0;
 
   virtual ~packet_allocator(){}
 

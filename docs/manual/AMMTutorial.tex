@@ -11,13 +11,13 @@ Each input file requires the usual set of software parameters given in \ref{sec:
 For hardware parameters, two initial parameters are required and one is optional.
 
 \begin{ViFile}
-congestion_model = packet_flow
+congestion_model = pisces
 amm_model = amm1
 accuracy_parameter = 1024
 \end{ViFile} 
 
 Here we indicate the congestion model to be used (the packet-flow) and the overall machine model (abstract machine model \#1).
-Currently valid values for the congestion model are \inlinefile{packet_flow} (most accurate, slowest) and \inlinefile{simple} (least accurate, fastest),
+Currently valid values for the congestion model are \inlinefile{pisces} (most accurate, slowest) and \inlinefile{simple} (least accurate, fastest),
 but more congestion models should be supported in future versions.
 Currently valid values for the abstract machine model are \inlinefile{amm1}, \inlinefile{amm2}, \inlinefile{amm3}, see details below. 
 Another model, \inlinefile{amm4}, that adds extra detail to the NIC is pending and should be available soon.

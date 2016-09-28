@@ -1083,20 +1083,20 @@ This function is intended to be called from an application user-space thread. As
 
 
 
-Unlike the other classes above, a network switch is not required to implement any specific functions. It is only required to be an `event_handler`, providing the usual `handle(event* ev)`. The internal details can essentially be arbitrary. However, the basic scheme for most switches follows the code below for the `packet_flow` model.
+Unlike the other classes above, a network switch is not required to implement any specific functions. It is only required to be an `event_handler`, providing the usual `handle(event* ev)`. The internal details can essentially be arbitrary. However, the basic scheme for most switches follows the code below for the `pisces` model.
 
 ````
 void
-packet_flow_switch::handle_credit(event *ev)
+pisces_switch::handle_credit(event *ev)
 {
-  packet_flow_credit* credit = static_cast<packet_flow_credit*>(ev);
+  pisces_credit* credit = static_cast<pisces_credit*>(ev);
   out_buffers_[credit->port()]->handle_credit(credit);
 }
 
 void
-packet_flow_switch::handle_payload(event *ev)
+pisces_switch::handle_payload(event *ev)
 {
-  packet_flow_payload* payload = static_cast<packet_flow_payload*>(ev);
+  pisces_payload* payload = static_cast<pisces_payload*>(ev);
   router_->route(payload);
   xbar_->handle_payload(payload);
 }

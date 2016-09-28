@@ -14,13 +14,13 @@ class packet :
 {
 
  public:
-  message*
+  serializable*
   orig() const {
     return orig_;
   }
 
   virtual std::string
-  to_string() const {
+  to_string() const override {
     return "packet";
   }
 
@@ -68,13 +68,13 @@ class packet :
  protected:
   packet() : orig_(nullptr) {}
 
-  packet(
-    message* orig,
+  packet(serializable* orig,
+    uint64_t flow_id,
     long num_bytes,
     long byte_offset);
 
  protected:
-  message* orig_;
+  serializable* orig_;
 
   int num_bytes_;
 

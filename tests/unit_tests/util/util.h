@@ -10,7 +10,7 @@
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/router/routable.h>
 #include <sstmac/hardware/topology/topology.h>
-#include <sstmac/hardware/packet_flow/packet_flow.h>
+#include <sstmac/hardware/pisces/pisces.h>
 #include <sprockit/test/test.h>
 #include <sprockit/sim_parameters.h>
 #include <sstmac/util.h>
@@ -40,10 +40,10 @@ class ClassOutput<sstmac::hw::coordinates>
 sstmac::node_id
 naddr(long nid);
 
-sstmac::hw::packet_flow_payload*
+sstmac::hw::pisces_payload*
 msg(long nid);
 
-sstmac::hw::packet_flow_payload*
+sstmac::hw::pisces_payload*
 new_packet(sstmac::message* msg, int bytes, int byte_offset);
 
 sstmac::hw::coordinates

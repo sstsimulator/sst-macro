@@ -1,4 +1,4 @@
-#include <sstmac/hardware/packet_flow/packet_flow_buffer.h>
+#include <sstmac/hardware/pisces/pisces_buffer.h>
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/common/runtime.h>
 #include <sprockit/util.h>
@@ -8,24 +8,24 @@
 namespace sstmac {
 namespace hw {
 
-packet_flow_buffer::
-packet_flow_buffer(sprockit::sim_parameters* params, event_scheduler* parent) :
-  packet_flow_sender(params, parent),
+pisces_buffer::
+pisces_buffer(sprockit::sim_parameters* params, event_scheduler* parent) :
+  pisces_sender(params, parent),
   bytes_delayed_(0)
 {
 }
 
-packet_flow_buffer::~packet_flow_buffer()
+pisces_buffer::~pisces_buffer()
 {
 }
 
 void
-packet_flow_finite_buffer::set_input(
+pisces_finite_buffer::set_input(
   sprockit::sim_parameters* params,
   int this_inport, int src_outport,
   event_handler* input)
 {
-  debug_printf(sprockit::dbg::packet_flow_config,
+  debug_printf(sprockit::dbg::pisces_config,
     "On %s:%d setting input %s:%d",
     to_string().c_str(), this_inport,
     input->to_string().c_str(), src_outport);
@@ -34,11 +34,11 @@ packet_flow_finite_buffer::set_input(
 }
 
 void
-packet_flow_buffer::set_output(sprockit::sim_parameters* params,
+pisces_buffer::set_output(sprockit::sim_parameters* params,
                                int this_outport, int dst_inport,
                                event_handler* output)
 {
-  debug_printf(sprockit::dbg::packet_flow_config,
+  debug_printf(sprockit::dbg::pisces_config,
   "On %s:%d setting output %s:%d",
   to_string().c_str(), this_outport,
   output->to_string().c_str(), dst_inport);
@@ -47,10 +47,10 @@ packet_flow_buffer::set_output(sprockit::sim_parameters* params,
   output_.dst_inport = dst_inport;
 }
 
-packet_flow_network_buffer::packet_flow_network_buffer(
+pisces_network_buffer::pisces_network_buffer(
   sprockit::sim_parameters* params,
   event_scheduler* parent)
-  : packet_flow_finite_buffer(params, parent),
+  : pisces_finite_buffer(params, parent),
     num_vc_(params->get_int_param("num_vc")),
     queues_(num_vc_),
     credits_(num_vc_, 0),
@@ -62,19 +62,19 @@ packet_flow_network_buffer::packet_flow_network_buffer(
   for (int i=0; i < num_vc_; ++i) {
     credits_[i] = num_credits_per_vc;
   }
-  arb_ = packet_flow_bandwidth_arbitrator_factory::
+  arb_ = pisces_bandwidth_arbitrator_factory::
           get_param("arbitrator", params);
 }
 
 void
-packet_flow_network_buffer::handle_credit(event* ev)
+pisces_network_buffer::handle_credit(event* ev)
 {
-  packet_flow_credit* credit = static_cast<packet_flow_credit*>(ev);
+  pisces_credit* credit = static_cast<pisces_credit*>(ev);
   int vc = credit->vc();
 #if SSTMAC_SANITY_CHECK
   if (vc >= credits_.size()) {
     spkt_throw_printf(sprockit::value_error,
-                     "packet_flow_buffer::handle_credit: on %s, port %d, invalid vc %d",
+                     "pisces_buffer::handle_credit: on %s, port %d, invalid vc %d",
                      to_string().c_str(),
                      msg->port(), vc);
   }
@@ -84,7 +84,7 @@ packet_flow_network_buffer::handle_credit(event* ev)
   //we've cleared out some of the delay
   bytes_delayed_ -= credit->num_credits();
 
-  packet_flow_debug(
+  pisces_debug(
     "On %s with %d credits, handling {%s} for vc:%d -> byte delay now %d",
      to_string().c_str(),
      num_credits,
@@ -93,7 +93,7 @@ packet_flow_network_buffer::handle_credit(event* ev)
      bytes_delayed_);
 
   /** while we have sendable payloads, do it */
-  packet_flow_payload* payload = queues_[vc].pop(num_credits);
+  pisces_payload* payload = queues_[vc].pop(num_credits);
   while (payload) {
     num_credits -= payload->num_bytes();
     //this actually doesn't create any new delay
@@ -107,18 +107,18 @@ packet_flow_network_buffer::handle_credit(event* ev)
 }
 
 event_handler*
-packet_flow_network_buffer::payload_handler()
+pisces_network_buffer::payload_handler()
 {
   if (!payload_handler_){
-    payload_handler_ = new_handler(this, &packet_flow_network_buffer::handle_payload);
+    payload_handler_ = new_handler(this, &pisces_network_buffer::handle_payload);
   }
   return payload_handler_;
 }
 
 void
-packet_flow_network_buffer::handle_payload(event* ev)
+pisces_network_buffer::handle_payload(event* ev)
 {
-  auto pkt = static_cast<packet_flow_payload*>(ev);
+  auto pkt = static_cast<pisces_payload*>(ev);
   pkt->set_arrival(now());
   int dst_vc = pkt->vc();
 #if SSTMAC_SANITY_CHECK
@@ -129,7 +129,7 @@ packet_flow_network_buffer::handle_payload(event* ev)
 #if SSTMAC_SANITY_CHECK
   if (dst_vc >= credits_.size()) {
     spkt_throw_printf(sprockit::value_error,
-                     "packet_flow_buffer::handle_payload: on %s, port %d, invalid vc %d",
+                     "pisces_buffer::handle_payload: on %s, port %d, invalid vc %d",
                      to_string().c_str(),
                      msg->port(),
                      dst_vc);
@@ -137,7 +137,7 @@ packet_flow_network_buffer::handle_payload(event* ev)
 #endif
   int& num_credits = credits_[dst_vc];
 
-  packet_flow_debug(
+  pisces_debug(
     "On %s with %d credits, handling {%s} for vc:%d",
     to_string().c_str(),
     num_credits,
@@ -167,11 +167,11 @@ packet_flow_network_buffer::handle_payload(event* ev)
 }
 
 void
-packet_flow_network_buffer::deadlock_check()
+pisces_network_buffer::deadlock_check()
 {
   for (int i=0; i < queues_.size(); ++i){
     payload_queue& queue = queues_[i];
-    packet_flow_payload* pkt = queue.front();
+    pisces_payload* pkt = queue.front();
     if (pkt){
       int vc = pkt->next_vc();
       deadlocked_channels_.insert(vc);
@@ -189,12 +189,12 @@ packet_flow_network_buffer::deadlock_check()
 }
 
 void
-packet_flow_network_buffer::build_blocked_messages()
+pisces_network_buffer::build_blocked_messages()
 {
   //std::cerr << "\tbuild blocked messages on " << to_string() << std::endl;
   for (int i=0; i < queues_.size(); ++i){
     payload_queue& queue = queues_[i];
-    packet_flow_payload* pkt = queue.pop(1000000);
+    pisces_payload* pkt = queue.pop(1000000);
     while (pkt){
       blocked_messages_[pkt->vc()].push_back(pkt);
       //std::cerr << "\t\t" << "into port=" << msg->inport() << " vc=" << msg->vc()
@@ -205,13 +205,13 @@ packet_flow_network_buffer::build_blocked_messages()
 }
 
 void
-packet_flow_network_buffer::deadlock_check(event* ev)
+pisces_network_buffer::deadlock_check(event* ev)
 {
   if (blocked_messages_.empty()){
     build_blocked_messages();
   }
 
-  packet_flow_payload* payload = safe_cast(packet_flow_payload, ev);
+  pisces_payload* payload = safe_cast(pisces_payload, ev);
   int outport = payload->next_port();
   int inport = payload->inport();
   int vc = update_vc_ ? payload->next_vc() : payload->vc();
@@ -222,13 +222,13 @@ packet_flow_network_buffer::deadlock_check(event* ev)
 
   deadlocked_channels_.insert(vc);
 
-  std::list<packet_flow_payload*>& blocked = blocked_messages_[vc];
+  std::list<pisces_payload*>& blocked = blocked_messages_[vc];
   if (blocked.empty()){
     spkt_throw_printf(sprockit::value_error,
       "channel is NOT blocked on deadlock check on outport=%d inport=%d vc=%d",
       outport, inport, vc);
   } else {
-    packet_flow_payload* next = blocked.front();
+    pisces_payload* next = blocked.front();
     next->set_inport(output_.dst_inport);
     std::cerr << to_string() << " going to "
       << output_.handler->to_string()
@@ -243,7 +243,7 @@ packet_flow_network_buffer::deadlock_check(event* ev)
 
 #if PRINT_FINISH_DETAILS
 extern void
-print_msg(const std::string& prefix, switch_id addr, packet_flow_payload* pkt);
+print_msg(const std::string& prefix, switch_id addr, pisces_payload* pkt);
 #endif
 
 
@@ -268,7 +268,7 @@ print_msg(const std::string& prefix, switch_id addr, packet_flow_payload* pkt);
         payload_queue& que = queues_[i];
         payload_queue::iterator pit, pend = que.end();
         for (pit = que.begin(); pit != pend; ++pit){
-            packet_flow_payload* pkt = *pit;
+            pisces_payload* pkt = *pit;
             print_msg("\t\t\tPending: ", addr, msg);
         }
     }
@@ -280,12 +280,12 @@ print_msg(const std::string& prefix, switch_id addr, packet_flow_payload* pkt);
 #endif
 
 int
-packet_flow_network_buffer::queue_length() const
+pisces_network_buffer::queue_length() const
 {
   long bytes_sending = arb_->bytes_sending(now());
   long total_bytes_pending = bytes_sending + bytes_delayed_;
   long queue_length = total_bytes_pending / packet_size_;
-  debug_printf(sprockit::dbg::packet_flow | sprockit::dbg::packet_flow_queue,
+  debug_printf(sprockit::dbg::pisces | sprockit::dbg::pisces_queue,
     "On %s, %d bytes delayed, %d bytes sending, %d total pending, %d packets in queue",
      to_string().c_str(),
      bytes_delayed_,
@@ -294,14 +294,14 @@ packet_flow_network_buffer::queue_length() const
   return std::max(0L, total_bytes_pending);
 }
 
-packet_flow_network_buffer::~packet_flow_network_buffer()
+pisces_network_buffer::~pisces_network_buffer()
 {
   if (arb_) delete arb_;
   if (payload_handler_) delete payload_handler_;
 }
 
 std::string
-packet_flow_buffer::buffer_string(const char* name) const
+pisces_buffer::buffer_string(const char* name) const
 {
   int id;
   if (event_location().is_switch_id()){
@@ -314,17 +314,17 @@ packet_flow_buffer::buffer_string(const char* name) const
 
 
 void
-packet_flow_eject_buffer::return_credit(packet* pkt)
+pisces_eject_buffer::return_credit(packet* pkt)
 {
-  send_credit(input_, safe_cast(packet_flow_payload, pkt), now());
+  send_credit(input_, safe_cast(pisces_payload, pkt), now());
 }
 
 void
-packet_flow_eject_buffer::handle_payload(event* ev)
+pisces_eject_buffer::handle_payload(event* ev)
 {
-  auto pkt = static_cast<packet_flow_payload*>(ev);
+  auto pkt = static_cast<pisces_payload*>(ev);
   pkt->set_arrival(now());
-  debug_printf(sprockit::dbg::packet_flow,
+  debug_printf(sprockit::dbg::pisces,
     "On %s, handling {%s}",
     to_string().c_str(),
     pkt->to_string().c_str());
@@ -333,19 +333,19 @@ packet_flow_eject_buffer::handle_payload(event* ev)
 }
 
 void
-packet_flow_eject_buffer::handle_credit(event* ev)
+pisces_eject_buffer::handle_credit(event* ev)
 {
   spkt_throw_printf(sprockit::illformed_error,
-                   "packet_flow_eject_buffer::handle_credit: should not handle credits");
+                   "pisces_eject_buffer::handle_credit: should not handle credits");
 }
 
-packet_flow_injection_buffer::
-packet_flow_injection_buffer(sprockit::sim_parameters* params, event_scheduler* parent) :
-  packet_flow_infinite_buffer(params, parent)
+pisces_injection_buffer::
+pisces_injection_buffer(sprockit::sim_parameters* params, event_scheduler* parent) :
+  pisces_infinite_buffer(params, parent)
 {
   packet_size_ = params->get_byte_length_param("mtu");
   credits_ = params->get_byte_length_param("credits");
-  arb_ = packet_flow_bandwidth_arbitrator_factory::
+  arb_ = pisces_bandwidth_arbitrator_factory::
           get_param("arbitrator", params);
   if (send_lat_.ticks_int64() == 0){
     params->print_scoped_params(std::cerr);
@@ -354,10 +354,10 @@ packet_flow_injection_buffer(sprockit::sim_parameters* params, event_scheduler* 
 }
 
 void
-packet_flow_injection_buffer::handle_credit(event* ev)
+pisces_injection_buffer::handle_credit(event* ev)
 {
-  packet_flow_credit* credit = static_cast<packet_flow_credit*>(ev);
-  debug_printf(sprockit::dbg::packet_flow,
+  pisces_credit* credit = static_cast<pisces_credit*>(ev);
+  debug_printf(sprockit::dbg::pisces,
     "On %s with %d credits, handling {%s} -> byte delay now %d",
      to_string().c_str(),
      credits_,
@@ -374,23 +374,23 @@ packet_flow_injection_buffer::handle_credit(event* ev)
 }
 
 void
-packet_flow_injection_buffer::handle_payload(event* ev)
+pisces_injection_buffer::handle_payload(event* ev)
 {
-  auto pkt = static_cast<packet_flow_payload*>(ev);
+  auto pkt = static_cast<pisces_payload*>(ev);
   pkt->set_arrival(now());
   credits_ -= pkt->byte_length();
   //we only get here if we cleared the credits
   send(arb_, pkt, input_, output_);
 }
 
-packet_flow_injection_buffer::~packet_flow_injection_buffer()
+pisces_injection_buffer::~pisces_injection_buffer()
 {
   if (arb_) delete arb_;
 }
 
 #if PRINT_FINISH_DETAILS
 extern void
-print_msg(const std::string& prefix, switch_id addr, packet_flow_payload* pkt);
+print_msg(const std::string& prefix, switch_id addr, pisces_payload* pkt);
 #endif
 
 #if PRINT_FINISH_DETAILS
@@ -414,7 +414,7 @@ print_msg(const std::string& prefix, switch_id addr, packet_flow_payload* pkt);
         payload_queue& que = queues_[i];
         payload_queue::iterator pit, pend = que.end();
         for (pit = que.begin(); pit != pend; ++pit){
-            packet_flow_payload* pkt = *pit;
+            pisces_payload* pkt = *pit;
             print_msg("\t\t\tPending: ", addr, msg);
         }
     }
@@ -426,12 +426,12 @@ print_msg(const std::string& prefix, switch_id addr, packet_flow_payload* pkt);
 #endif
 
 int
-packet_flow_injection_buffer::queue_length() const
+pisces_injection_buffer::queue_length() const
 {
   long bytes_sending = arb_->bytes_sending(now());
   long total_bytes_pending = bytes_sending + bytes_delayed_;
   long queue_length = total_bytes_pending / packet_size_;
-  debug_printf(sprockit::dbg::packet_flow,
+  debug_printf(sprockit::dbg::pisces,
     "On %s, %d bytes delayed, %d total pending, %d packets in queue\n",
      to_string().c_str(),
      bytes_delayed_,

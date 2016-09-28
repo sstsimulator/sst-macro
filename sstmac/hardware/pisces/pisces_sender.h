@@ -3,60 +3,60 @@
 
 #include <sprockit/util.h>
 #include <sstmac/common/stats/stat_spyplot_fwd.h>
-#include <sstmac/hardware/packet_flow/packet_flow.h>
-#include <sstmac/hardware/packet_flow/packet_flow_arbitrator.h>
-#include <sstmac/hardware/packet_flow/packet_flow_stats.h>
+#include <sstmac/hardware/pisces/pisces.h>
+#include <sstmac/hardware/pisces/pisces_arbitrator.h>
+#include <sstmac/hardware/pisces/pisces_stats.h>
 #include <sstmac/common/event_scheduler.h>
 
-#define packet_flow_debug(...) \
-  debug_printf(sprockit::dbg::packet_flow, __VA_ARGS__)
+#define pisces_debug(...) \
+  debug_printf(sprockit::dbg::pisces, __VA_ARGS__)
 
 namespace sstmac {
 namespace hw {
 
 struct payload_queue {
 
-  std::list<packet_flow_payload*> queue;
+  std::list<pisces_payload*> queue;
 
-  typedef std::list<packet_flow_payload*>::iterator iterator;
+  typedef std::list<pisces_payload*>::iterator iterator;
 
-  packet_flow_payload*
+  pisces_payload*
   pop(int num_credits);
 
-  packet_flow_payload*
+  pisces_payload*
   front();
 
   void
-  push_back(packet_flow_payload* payload);
+  push_back(pisces_payload* payload);
 
 };
 
-struct packet_flow_input {
+struct pisces_input {
   int src_outport;
   event_handler* handler;
-  packet_flow_input() :
+  pisces_input() :
     src_outport(-1),
     handler(0)
   {
   }
 };
 
-struct packet_flow_output {
+struct pisces_output {
   int dst_inport;
   event_handler* handler;
-  packet_flow_output() :
+  pisces_output() :
     dst_inport(-1),
     handler(0)
   {
   }
 };
 
-class packet_flow_sender :
+class pisces_sender :
   public sprockit::printable,
   public event_subscheduler
 {
  public:
-  virtual ~packet_flow_sender() {}
+  virtual ~pisces_sender() {}
 
   virtual void
   set_input(sprockit::sim_parameters* params,
@@ -78,7 +78,7 @@ class packet_flow_sender :
   }
 
   virtual std::string
-  packet_flow_name() const = 0;
+  pisces_name() const = 0;
 
   std::string
   to_string() const override;
@@ -89,19 +89,19 @@ class packet_flow_sender :
   }
 
  protected:
-  packet_flow_sender(sprockit::sim_parameters* params,
+  pisces_sender(sprockit::sim_parameters* params,
                      event_scheduler* parent);
 
   void
-  send_credit(const packet_flow_input& src,
-    packet_flow_payload* payload,
+  send_credit(const pisces_input& src,
+    pisces_payload* payload,
     timestamp packet_tail_leaves);
 
   void
-  send(packet_flow_bandwidth_arbitrator* arb,
-       packet_flow_payload* pkt,
-       const packet_flow_input& src,
-       const packet_flow_output& dest);
+  send(pisces_bandwidth_arbitrator* arb,
+       pisces_payload* pkt,
+       const pisces_input& src,
+       const pisces_output& dest);
 
  protected:
   packet_stats_callback* stat_collector_;
@@ -114,7 +114,7 @@ class packet_flow_sender :
 
 };
 
-DeclareFactory(packet_flow_sender, event_scheduler*)
+DeclareFactory(pisces_sender, event_scheduler*)
 
 }
 }

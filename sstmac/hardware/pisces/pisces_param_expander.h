@@ -1,12 +1,12 @@
-#ifndef PACKET_FLOW_PARAM_EXPANDER_H
-#define PACKET_FLOW_PARAM_EXPANDER_H
+#ifndef pisces_PARAM_EXPANDER_H
+#define pisces_PARAM_EXPANDER_H
 
 #include <sstmac/hardware/common/param_expander.h>
 
 namespace sstmac {
 namespace hw {
 
-class packet_flow_param_expander :
+class pisces_param_expander :
   public param_expander
 {
   public:
@@ -72,4 +72,4 @@ class packet_flow_param_expander :
 }
 }
 
-#endif // PACKET_FLOW_PARAM_EXPANDER_H
+#endif // pisces_PARAM_EXPANDER_H

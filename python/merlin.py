@@ -39,7 +39,7 @@ procParams = {
 }
 
 nicParams = {
-  "model" : "packet_flow",
+  "model" : "pisces",
   "mtu" : mtu,
   "arbitrator" : arb,
   "packetizer" : "merlin",

@@ -1,14 +1,14 @@
-#include <sstmac/hardware/packet_flow/packet_flow_param_expander.h>
+#include <sstmac/hardware/pisces/pisces_param_expander.h>
 #include <sstmac/common/timestamp.h>
 #include <sprockit/sim_parameters.h>
 
 namespace sstmac {
 namespace hw {
 
-SpktRegister("packet_flow", sstmac::param_expander, packet_flow_param_expander);
+SpktRegister("pisces | pisces", sstmac::param_expander, pisces_param_expander);
 
 void
-packet_flow_param_expander::expand(sprockit::sim_parameters* params)
+pisces_param_expander::expand(sprockit::sim_parameters* params)
 {
   std::string amm_type = params->get_param("amm_model");
   if (amm_type == "amm4"){
@@ -26,11 +26,11 @@ packet_flow_param_expander::expand(sprockit::sim_parameters* params)
   sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
 
 
-  nic_params->add_param_override("model", "packet_flow");
+  nic_params->add_param_override("model", "pisces");
   params->add_param_override("interconnect", "switch");
-  switch_params->add_param_override("model", "packet_flow");
+  switch_params->add_param_override("model", "pisces");
   if (!mem_params->has_scoped_param("model")){
-      mem_params->add_param_override("model", "packet_flow");
+      mem_params->add_param_override("model", "pisces");
   }
 
   buffer_depth_ = params->get_optional_int_param("network_buffer_depth", 8);
@@ -85,8 +85,8 @@ packet_flow_param_expander::expand(sprockit::sim_parameters* params)
 }
 
 void
-packet_flow_param_expander::expand_amm1_memory(sprockit::sim_parameters* params,
-                                               sprockit::sim_parameters* mem_params)
+pisces_param_expander::expand_amm1_memory(sprockit::sim_parameters* params,
+                                          sprockit::sim_parameters* mem_params)
 {
   if (mem_params->get_scoped_param("model") != "null"){
     mem_params->add_param_override("total_bandwidth", mem_params->get_param("bandwidth"));
@@ -95,7 +95,7 @@ packet_flow_param_expander::expand_amm1_memory(sprockit::sim_parameters* params,
 }
 
 void
-packet_flow_param_expander::expand_amm1_network(sprockit::sim_parameters* params,
+pisces_param_expander::expand_amm1_network(sprockit::sim_parameters* params,
                                                 sprockit::sim_parameters* switch_params,
                                                 bool set_xbar)
 {
@@ -150,7 +150,7 @@ packet_flow_param_expander::expand_amm1_network(sprockit::sim_parameters* params
 }
 
 void
-packet_flow_param_expander::expand_amm1_nic(sprockit::sim_parameters* params,
+pisces_param_expander::expand_amm1_nic(sprockit::sim_parameters* params,
                                             sprockit::sim_parameters* nic_params)
 {
   sprockit::sim_parameters* switch_params = params->get_namespace("switch");
@@ -166,7 +166,7 @@ packet_flow_param_expander::expand_amm1_nic(sprockit::sim_parameters* params,
 }
 
 void
-packet_flow_param_expander::expand_amm2_memory(sprockit::sim_parameters* params,
+pisces_param_expander::expand_amm2_memory(sprockit::sim_parameters* params,
                                                sprockit::sim_parameters* mem_params)
 {
   expand_amm1_memory(params, mem_params);
@@ -177,7 +177,7 @@ packet_flow_param_expander::expand_amm2_memory(sprockit::sim_parameters* params,
 }
 
 void
-packet_flow_param_expander::expand_amm3_network(sprockit::sim_parameters* params,
+pisces_param_expander::expand_amm3_network(sprockit::sim_parameters* params,
                                                 sprockit::sim_parameters* switch_params)
 {
   expand_amm1_network(params, switch_params, false);
@@ -191,7 +191,7 @@ packet_flow_param_expander::expand_amm3_network(sprockit::sim_parameters* params
 }
 
 void
-packet_flow_param_expander::expand_amm4_network(sprockit::sim_parameters* params,
+pisces_param_expander::expand_amm4_network(sprockit::sim_parameters* params,
   sprockit::sim_parameters* top_params,
   sprockit::sim_parameters* switch_params)
 {
@@ -210,7 +210,7 @@ packet_flow_param_expander::expand_amm4_network(sprockit::sim_parameters* params
   top_params->add_param_override("tiles_per_col", ncols);
   top_params->add_param_override("name", newtop);
 
-  switch_params->add_param_override("model", "packet_flow_tiled");
+  switch_params->add_param_override("model", "pisces_tiled");
 
   if (switch_params->has_param("router")){
     std::string router = switch_params->get_param("router");
@@ -232,7 +232,7 @@ packet_flow_param_expander::expand_amm4_network(sprockit::sim_parameters* params
 }
 
 void
-packet_flow_param_expander::expand_amm4_nic(sprockit::sim_parameters* params,
+pisces_param_expander::expand_amm4_nic(sprockit::sim_parameters* params,
                                             sprockit::sim_parameters* top_params,
                                             sprockit::sim_parameters* nic_params)
 {
@@ -243,7 +243,7 @@ packet_flow_param_expander::expand_amm4_nic(sprockit::sim_parameters* params,
   //the netlink block combines all the paths together
   netlink_params->add_param_override("ninject", red);
   netlink_params->add_param_override("neject", radix);
-  netlink_params->add_param_override("model", "packet_flow");
+  netlink_params->add_param_override("model", "pisces");
   top_params->add_param_override("netlink_radix", radix);
 }
 

@@ -1,29 +1,29 @@
-#include <sstmac/hardware/packet_flow/packet_flow_arbitrator.h>
+#include <sstmac/hardware/pisces/pisces_arbitrator.h>
 
 #include <math.h>
 
-ImplementFactory(sstmac::hw::packet_flow_bandwidth_arbitrator);
+ImplementFactory(sstmac::hw::pisces_bandwidth_arbitrator);
 
 #define one_indent "  "
 #define two_indent "    "
 
 #define pflow_arb_debug_printf_l0(format_str, ...) \
-  debug_printf(sprockit::dbg::packet_flow,  \
+  debug_printf(sprockit::dbg::pisces,  \
     " [arbitrator] " format_str , \
     __VA_ARGS__)
 
 #define pflow_arb_debug_printf_l1(format_str, ...) \
-  debug_printf(sprockit::dbg::packet_flow,  \
+  debug_printf(sprockit::dbg::pisces,  \
     one_indent " [arbitrator] " format_str , \
     __VA_ARGS__)
 
 #define pflow_arb_debug_printf_l2(format_str, ...) \
-  debug_printf(sprockit::dbg::packet_flow,  \
+  debug_printf(sprockit::dbg::pisces,  \
     two_indent " [arbitrator] " format_str , \
     __VA_ARGS__)
 
 #define pflow_arb_debug_print_l2(format_str) \
-  debug_printf(sprockit::dbg::packet_flow,  \
+  debug_printf(sprockit::dbg::pisces,  \
     two_indent " [arbitrator] " format_str "%s", "")
 
 //#define pflow_arb_debug_printf_l0(format_str, ...) 
@@ -34,17 +34,17 @@ ImplementFactory(sstmac::hw::packet_flow_bandwidth_arbitrator);
 namespace sstmac {
 namespace hw {
 
-SpktRegister("null", packet_flow_bandwidth_arbitrator,
-            packet_flow_null_arbitrator,
+SpktRegister("null", pisces_bandwidth_arbitrator,
+            pisces_null_arbitrator,
             "Simple bandwidth arbitrator that models zero congestion on a link.");
 
-SpktRegister("simple", packet_flow_bandwidth_arbitrator,
-            packet_flow_simple_arbitrator,
+SpktRegister("simple", pisces_bandwidth_arbitrator,
+            pisces_simple_arbitrator,
             "Simple bandwidth arbitrator that only ever gives exclusive access to a link."
             "This corresponds to store-and-forward, which can be inaccurate for large packet sizes");
 
-SpktRegister("cut_through", packet_flow_bandwidth_arbitrator,
-            packet_flow_cut_through_arbitrator,
+SpktRegister("cut_through", pisces_bandwidth_arbitrator,
+            pisces_cut_through_arbitrator,
             "Bandwidth arbitrator that forwards packets as soon as they arrive and enough credits are received"
             "This is a much better approximation to wormhole or virtual cut_through routing");
 
@@ -59,21 +59,21 @@ validate_bw(double test_bw)
   }
 }
 
-packet_flow_bandwidth_arbitrator::
-packet_flow_bandwidth_arbitrator(sprockit::sim_parameters* params)
+pisces_bandwidth_arbitrator::
+pisces_bandwidth_arbitrator(sprockit::sim_parameters* params)
 {
   out_bw_ = params->get_bandwidth_param("bandwidth");
   inv_out_bw_ = 1.0 / out_bw_;
 }
 
-packet_flow_simple_arbitrator::packet_flow_simple_arbitrator(sprockit::sim_parameters* params) :
+pisces_simple_arbitrator::pisces_simple_arbitrator(sprockit::sim_parameters* params) :
   next_free_(0),
-  packet_flow_bandwidth_arbitrator(params)
+  pisces_bandwidth_arbitrator(params)
 {
 }
 
 void
-packet_flow_bandwidth_arbitrator::partition(noise_model* noise, int num_intervals)
+pisces_bandwidth_arbitrator::partition(noise_model* noise, int num_intervals)
 {
   spkt_throw_printf(sprockit::input_error,
     "%s is not compatible with partitioning",
@@ -81,7 +81,7 @@ packet_flow_bandwidth_arbitrator::partition(noise_model* noise, int num_interval
 }
 
 void
-packet_flow_bandwidth_arbitrator::init_noise_model(noise_model* noise)
+pisces_bandwidth_arbitrator::init_noise_model(noise_model* noise)
 {
   spkt_throw_printf(sprockit::input_error,
     "%s is not compatible with noise models",
@@ -89,7 +89,7 @@ packet_flow_bandwidth_arbitrator::init_noise_model(noise_model* noise)
 }
 
 void
-packet_flow_simple_arbitrator::arbitrate(pkt_arbitration_t &st)
+pisces_simple_arbitrator::arbitrate(pkt_arbitration_t &st)
 {
   timestamp start_send = next_free_ < st.now ? st.now : next_free_;
   timestamp ser_delay(st.pkt->num_bytes() * inv_out_bw_);
@@ -105,20 +105,20 @@ packet_flow_simple_arbitrator::arbitrate(pkt_arbitration_t &st)
 }
 
 int
-packet_flow_simple_arbitrator::bytes_sending(timestamp now) const
+pisces_simple_arbitrator::bytes_sending(timestamp now) const
 {
   double send_delay = next_free_ > now ? (next_free_ - now).sec() : 0;
   int bytes_sending = send_delay * out_bw_;
   return bytes_sending;
 }
 
-packet_flow_null_arbitrator::packet_flow_null_arbitrator(sprockit::sim_parameters* params) :
-  packet_flow_bandwidth_arbitrator(params)
+pisces_null_arbitrator::pisces_null_arbitrator(sprockit::sim_parameters* params) :
+  pisces_bandwidth_arbitrator(params)
 {
 }
 
 void
-packet_flow_null_arbitrator::arbitrate(pkt_arbitration_t &st)
+pisces_null_arbitrator::arbitrate(pkt_arbitration_t &st)
 {
   st.pkt->set_max_bw(out_bw_);
   timestamp ser_delay(st.pkt->num_bytes() / st.pkt->bw());
@@ -131,15 +131,15 @@ packet_flow_null_arbitrator::arbitrate(pkt_arbitration_t &st)
 }
 
 int
-packet_flow_null_arbitrator::bytes_sending(timestamp now) const
+pisces_null_arbitrator::bytes_sending(timestamp now) const
 {
   return 0;
 }
 
-packet_flow_cut_through_arbitrator::
-packet_flow_cut_through_arbitrator(sprockit::sim_parameters* params)
+pisces_cut_through_arbitrator::
+pisces_cut_through_arbitrator(sprockit::sim_parameters* params)
   : head_(nullptr),
-    packet_flow_bandwidth_arbitrator(params)
+    pisces_bandwidth_arbitrator(params)
 {
   timestamp sec(1.0);
   timestamp tick(1, timestamp::exact);
@@ -154,7 +154,7 @@ packet_flow_cut_through_arbitrator(sprockit::sim_parameters* params)
 }
 
 
-packet_flow_cut_through_arbitrator::~packet_flow_cut_through_arbitrator()
+pisces_cut_through_arbitrator::~pisces_cut_through_arbitrator()
 {
   bandwidth_epoch* next = head_;
   while (next){
@@ -165,7 +165,7 @@ packet_flow_cut_through_arbitrator::~packet_flow_cut_through_arbitrator()
 }
 
 int
-packet_flow_cut_through_arbitrator::bytes_sending(timestamp now) const
+pisces_cut_through_arbitrator::bytes_sending(timestamp now) const
 {
   double next_free =
     head_->start; //just assume that at head_->start link is fully available
@@ -176,7 +176,7 @@ packet_flow_cut_through_arbitrator::bytes_sending(timestamp now) const
 }
 
 void
-packet_flow_cut_through_arbitrator::partition(noise_model* noise, int num_intervals)
+pisces_cut_through_arbitrator::partition(noise_model* noise, int num_intervals)
 {
   //find the tail
   bandwidth_epoch* tail = head_;
@@ -191,7 +191,7 @@ packet_flow_cut_through_arbitrator::partition(noise_model* noise, int num_interv
 }
 
 void
-packet_flow_cut_through_arbitrator::init_noise_model(noise_model* noise)
+pisces_cut_through_arbitrator::init_noise_model(noise_model* noise)
 {
   bandwidth_epoch* next = head_;
   while (next){
@@ -201,7 +201,7 @@ packet_flow_cut_through_arbitrator::init_noise_model(noise_model* noise)
 }
 
 void
-packet_flow_cut_through_arbitrator::bandwidth_epoch::split(ticks_t delta_t)
+pisces_cut_through_arbitrator::bandwidth_epoch::split(ticks_t delta_t)
 {
   bandwidth_epoch* new_epoch = new bandwidth_epoch;
   new_epoch->bw_available = this->bw_available;
@@ -213,7 +213,7 @@ packet_flow_cut_through_arbitrator::bandwidth_epoch::split(ticks_t delta_t)
 }
 
 void
-packet_flow_cut_through_arbitrator::bandwidth_epoch::truncate_after(ticks_t delta_t)
+pisces_cut_through_arbitrator::bandwidth_epoch::truncate_after(ticks_t delta_t)
 {
   ticks_t finish = start + length;
   start += delta_t;
@@ -222,7 +222,7 @@ packet_flow_cut_through_arbitrator::bandwidth_epoch::truncate_after(ticks_t delt
 }
 
 void
-packet_flow_cut_through_arbitrator::clean_up(ticks_t now)
+pisces_cut_through_arbitrator::clean_up(ticks_t now)
 {
   bandwidth_epoch* epoch = head_;
   while (1) {
@@ -250,7 +250,7 @@ packet_flow_cut_through_arbitrator::clean_up(ticks_t now)
 }
 
 void
-packet_flow_cut_through_arbitrator::arbitrate(pkt_arbitration_t &st)
+pisces_cut_through_arbitrator::arbitrate(pkt_arbitration_t &st)
 {
   do_arbitrate(st);
   st.head_leaves.correct_round_off(st.now);
@@ -261,9 +261,9 @@ packet_flow_cut_through_arbitrator::arbitrate(pkt_arbitration_t &st)
 }
 
 void
-packet_flow_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
+pisces_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
 {
-  packet_flow_payload* payload = st.pkt;
+  pisces_payload* payload = st.pkt;
   payload->init_bw(out_bw_);
   double payload_bw = payload->bw() * bw_sec_to_tick_conversion_;
 #if SSTMAC_SANITY_CHECK
@@ -436,7 +436,7 @@ packet_flow_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
           //something freaked out numerically
           //time_to_send should never equal the length of the big long, last epoch
           spkt_throw_printf(sprockit::illformed_error,
-                           "Time to send packet_flow is way too long:\n"
+                           "Time to send pisces is way too long:\n"
                            "send_all_time=%20.16e\n"
                            "time_to_intersect=%20.16e\n"
                            "epoch_length=%20.16e\n"

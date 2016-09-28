@@ -2,15 +2,15 @@
 #define PACKETFLOW_SWITCH_H
 
 #include <sstmac/hardware/switch/network_switch.h>
-#include <sstmac/hardware/packet_flow/packet_flow_buffer.h>
-#include <sstmac/hardware/packet_flow/packet_flow_crossbar.h>
-#include <sstmac/hardware/packet_flow/packet_flow_arbitrator.h>
-#include <sstmac/hardware/packet_flow/packet_flow_stats_fwd.h>
+#include <sstmac/hardware/pisces/pisces_buffer.h>
+#include <sstmac/hardware/pisces/pisces_crossbar.h>
+#include <sstmac/hardware/pisces/pisces_arbitrator.h>
+#include <sstmac/hardware/pisces/pisces_stats_fwd.h>
 
 namespace sstmac {
 namespace hw {
 
-class packet_flow_abstract_switch :
+class pisces_abstract_switch :
   public network_switch
 {
  public:
@@ -25,12 +25,12 @@ class packet_flow_abstract_switch :
   }
 
  protected:
-  packet_flow_abstract_switch(
+  pisces_abstract_switch(
     sprockit::sim_parameters* params,
     uint64_t id,
     event_manager* mgr);
 
-  virtual ~packet_flow_abstract_switch();
+  virtual ~pisces_abstract_switch();
 
   packet_stats_callback* xbar_stats_;
   packet_stats_callback* buf_stats_;
@@ -38,18 +38,18 @@ class packet_flow_abstract_switch :
 };
 
 /**
- @class packet_flow_switch
+ @class pisces_switch
  A switch in the network that arbitrates/routes packet_trains
  to the next link in the network
  */
-class packet_flow_switch :
-  public packet_flow_abstract_switch
+class pisces_switch :
+  public pisces_abstract_switch
 {
 
  public:
-  packet_flow_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr);
+  pisces_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr);
 
-  virtual ~packet_flow_switch();
+  virtual ~pisces_switch();
 
   int
   queue_length(int port) const override;
@@ -86,7 +86,7 @@ class packet_flow_switch :
   compatibility_check() const override;
 
   /**
-   Set the link to use when ejecting packets at their endpoint.  A packet_flow_switch
+   Set the link to use when ejecting packets at their endpoint.  A pisces_switch
    can have any number of ejectors, corresponding to the number of nodes
    per switch.
    @param addr The compute node address of the endpoint to eject to
@@ -99,9 +99,9 @@ class packet_flow_switch :
   to_string() const override;
 
  private:
-  std::vector<packet_flow_sender*> out_buffers_;
+  std::vector<pisces_sender*> out_buffers_;
 
-  packet_flow_crossbar* xbar_;
+  pisces_crossbar* xbar_;
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   link_handler* ack_handler_;
@@ -111,7 +111,7 @@ class packet_flow_switch :
  private:
   void resize_buffers();
 
-  packet_flow_sender*
+  pisces_sender*
   output_buffer(sprockit::sim_parameters* params, int port);
 
 

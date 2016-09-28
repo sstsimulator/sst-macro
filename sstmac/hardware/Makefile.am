@@ -46,22 +46,22 @@ nobase_library_include_HEADERS = \
   common/param_expander.h \
   common/recv_cq.h \
   common/unique_id.h \
-  packet_flow/packet_allocator.h \
-  packet_flow/packet_allocator_fwd.h \
-  packet_flow/packet_flow.h \
-  packet_flow/packet_flow_fwd.h \
-  packet_flow/packet_flow_stats.h \
-  packet_flow/packet_flow_stats_fwd.h \
-  packet_flow/packet_flow_param_expander.h \
-  packet_flow/packet_flow_arbitrator.h \
-  packet_flow/packet_flow_buffer.h \
-  packet_flow/packet_flow_crossbar.h \
-  packet_flow/packet_flow_nic.h \
-  packet_flow/packet_flow_packetizer.h \
-  packet_flow/packet_flow_sender.h \
-  packet_flow/packet_flow_switch.h \
-  packet_flow/packet_flow_tiled_switch.h \
-  packet_flow/packet_flow_memory_model.h \
+  pisces/packet_allocator.h \
+  pisces/packet_allocator_fwd.h \
+  pisces/pisces.h \
+  pisces/pisces_fwd.h \
+  pisces/pisces_stats.h \
+  pisces/pisces_stats_fwd.h \
+  pisces/pisces_param_expander.h \
+  pisces/pisces_arbitrator.h \
+  pisces/pisces_buffer.h \
+  pisces/pisces_crossbar.h \
+  pisces/pisces_nic.h \
+  pisces/pisces_packetizer.h \
+  pisces/pisces_sender.h \
+  pisces/pisces_switch.h \
+  pisces/pisces_tiled_switch.h \
+  pisces/pisces_memory_model.h \
   network/network_id.h \
   network/network_message.h \
   network/network_message_fwd.h \
@@ -118,19 +118,19 @@ libsstmac_hw_la_SOURCES =  \
   noise/noise.cc \
   node/node.cc \
   node/simple_node.cc \
-  packet_flow/packet_flow.cc \
-  packet_flow/packet_allocator.cc \
-  packet_flow/packet_flow_stats.cc \
-  packet_flow/packet_flow_arbitrator.cc \
-  packet_flow/packet_flow_buffer.cc \
-  packet_flow/packet_flow_crossbar.cc \
-  packet_flow/packet_flow_nic.cc \
-  packet_flow/packet_flow_packetizer.cc \
-  packet_flow/packet_flow_param_expander.cc \
-  packet_flow/packet_flow_sender.cc \
-  packet_flow/packet_flow_switch.cc \
-  packet_flow/packet_flow_tiled_switch.cc \
-  packet_flow/packet_flow_memory_model.cc \
+  pisces/pisces.cc \
+  pisces/packet_allocator.cc \
+  pisces/pisces_stats.cc \
+  pisces/pisces_arbitrator.cc \
+  pisces/pisces_buffer.cc \
+  pisces/pisces_crossbar.cc \
+  pisces/pisces_nic.cc \
+  pisces/pisces_packetizer.cc \
+  pisces/pisces_param_expander.cc \
+  pisces/pisces_sender.cc \
+  pisces/pisces_switch.cc \
+  pisces/pisces_tiled_switch.cc \
+  pisces/pisces_memory_model.cc \
   network/network_message.cc \
   interconnect/interconnect.cc \
   switch/network_switch.cc \
