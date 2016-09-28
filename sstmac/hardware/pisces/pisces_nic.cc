@@ -46,7 +46,7 @@ pisces_nic::pisces_nic(sprockit::sim_parameters* params, node* parent) :
 
 
   packetizer_ = packetizer_factory::get_optional_param("packetizer", "cut_through",
-                                              inj_params, parent, this);
+                                              inj_params, parent);
   packetizer_->setArrivalNotify(this);
   packetizer_->setInjectionAcker(mtl_handler());
 

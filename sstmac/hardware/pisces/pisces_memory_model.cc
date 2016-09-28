@@ -19,13 +19,12 @@ SpktRegister("pisces | pisces", memory_model, pisces_memory_model);
 
 pisces_memory_packetizer::pisces_memory_packetizer(
   sprockit::sim_parameters* params,
-  event_scheduler* parent,
-  packetizer_callback* cb) :
+  event_scheduler* parent) :
   arb_(nullptr),
   bw_noise_(nullptr),
   interval_noise_(nullptr),
   num_noisy_intervals_(0),
-  packetizer(params, parent, cb)
+  packetizer(params, parent)
 {
   if (!params->has_param("mtu"))
     params->add_param("mtu", "100GB");
@@ -71,7 +70,7 @@ pisces_memory_model::pisces_memory_model(sprockit::sim_parameters *params, node 
   }
 
   max_single_bw_ = params->get_bandwidth_param("max_single_bandwidth");
-  mem_packetizer_ = new pisces_memory_packetizer(params, nd, this);
+  mem_packetizer_ = new pisces_memory_packetizer(params, nd);
   mem_packetizer_->setArrivalNotify(this);
 }
 

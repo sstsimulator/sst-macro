@@ -29,7 +29,7 @@ class pisces_packetizer :
 
  public:
   pisces_packetizer(sprockit::sim_parameters* params,
-                             event_scheduler* parent, packetizer_callback* cb);
+                    event_scheduler* parent);
 
   virtual ~pisces_packetizer();
 
@@ -71,6 +71,9 @@ class pisces_packetizer :
   void
   recv_packet_common(pisces_payload* pkt);
 
+ private:
+  void init(sprockit::sim_parameters* params, event_scheduler* parent);
+
  protected:
   pisces_injection_buffer* inj_buffer_;
   pisces_eject_buffer* ej_buffer_;
@@ -87,6 +90,8 @@ class pisces_packetizer :
 
 #if SSTMAC_INTEGRATED_SST_CORE
  public:
+  void init_links(sprockit::sim_parameters* parmas);
+
   bool send(Request *req, int vn) override;
 
   Request* recv(int vn) override;
@@ -97,7 +102,7 @@ class pisces_packetizer :
                   const SST::UnitAlgebra &link_bw,
                   int vns,
                   const SST::UnitAlgebra &in_buf_size,
-                  const SST::UnitAlgebra &out_buf_size);
+                  const SST::UnitAlgebra &out_buf_size) override;
 
   void setNotifyOnSend(HandlerBase* functor) override {
     send_functor_ = functor;
@@ -107,7 +112,7 @@ class pisces_packetizer :
     recv_functor_ = functor;
   }
 
-  bool isNetworkInitialized() const {
+  bool isNetworkInitialized() const override {
     return initialized_;
   }
 
@@ -128,11 +133,38 @@ class pisces_packetizer :
   virtual Request*
   recvInitData() override;
 
+ protected:
+  pisces_packetizer(sprockit::sim_parameters *params, SST::Component* comp);
+
  private:
+  class sst_component_wrapper : public event_scheduler
+  {
+   public:
+    sst_component_wrapper(sprockit::sim_parameters* params,
+                          event_loc_id loc_id,
+                          SST::Component* comp) :
+      event_scheduler(params, comp->getId(), loc_id, nullptr, nullptr)
+    {
+      self_link_ = comp->configureSelfLink("self", time_converter_,
+                      new SST::Event::Handler<SSTIntegratedComponent>(this,
+                        &SSTIntegratedComponent::handle_self_link));
+    }
+    void connect_output(sprockit::sim_parameters *params, int src_outport, int dst_inport, event_handler *mod);
+    void connect_input(sprockit::sim_parameters *params, int src_outport, int dst_inport, event_handler *mod);
+    link_handler* payload_handler(int port) const {
+      return nullptr;
+    }
+    link_handler* ack_handler(int port) const {
+      return nullptr;
+    }
+  };
+
+  sst_component_wrapper* wrapper_;
   SST::UnitAlgebra sst_link_bw_;
   HandlerBase* send_functor_;
   HandlerBase* recv_functor_;
   bool initialized_;
+
 #endif
 
 };
@@ -141,13 +173,19 @@ class pisces_cut_through_packetizer : public pisces_packetizer
 {
  public:
   pisces_cut_through_packetizer(sprockit::sim_parameters* params,
-                                     event_scheduler* parent,
-                                     packetizer_callback* cb) :
-    pisces_packetizer(params, parent, cb)
+                                event_scheduler* parent) :
+    pisces_packetizer(params, parent)
   {
   }
 
   void recv_packet(event* pkt) override;
+
+#if SSTMAC_INTEGRATED_SST_CORE
+  pisces_cut_through_packetizer(sprockit::sim_parameters *params, SST::Component* comp) :
+    pisces_packetizer(params, comp)
+  {
+  }
+#endif
 
 };
 
@@ -155,9 +193,8 @@ class pisces_simple_packetizer : public pisces_packetizer
 {
  public:
   pisces_simple_packetizer(sprockit::sim_parameters* params,
-                                     event_scheduler* parent,
-                                     packetizer_callback* cb) :
-    pisces_packetizer(params, parent, cb)
+                           event_scheduler* parent) :
+    pisces_packetizer(params, parent)
   {
   }
 

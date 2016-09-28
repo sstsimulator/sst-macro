@@ -36,19 +36,25 @@ SpktRegister("cut_through | null", packetizer, pisces_cut_through_packetizer);
 SpktRegister("simple", packetizer, pisces_simple_packetizer);
 
 pisces_packetizer::pisces_packetizer(sprockit::sim_parameters* params,
-                                     event_scheduler* parent,
-                                     packetizer_callback* cb) :
+                                     event_scheduler* parent) :
  inj_buffer_(nullptr),
  ej_buffer_(nullptr),
  stat_collector_(nullptr),
  buf_stats_(nullptr),
  pkt_allocator_(nullptr),
  payload_handler_(nullptr),
- packetizer(params, parent, cb)
+ packetizer(params, parent)
 #if SSTMAC_INTEGRATED_SST_CORE
  ,SimpleNetwork(dynamic_cast<SST::Component*>(parent))
- ,initialized_(false)
+ ,initialized_(false),
+ wrapper_(nullptr)
 #endif
+{
+  init(params, parent);
+}
+
+void
+pisces_packetizer::init(sprockit::sim_parameters* params, event_scheduler* parent)
 {
   stat_collector_ = packet_stats_callback_factory::
                         get_optional_param("stats", "null", params, parent);
@@ -197,6 +203,35 @@ pisces_cut_through_packetizer::recv_packet(event* ev)
 }
 
 #if SSTMAC_INTEGRATED_SST_CORE
+void
+pisces_packetizer::sst_component_wrapper::connect_output(
+    sprockit::sim_parameters *params, int src_outport, int dst_inport, event_handler *mod)
+{
+  spkt_abort_printf("component wrapper should never connect to event handler");
+}
+
+void
+pisces_packetizer::sst_component_wrapper::connect_input(
+    sprockit::sim_parameters *params, int src_outport, int dst_inport, event_handler *mod)
+{
+  spkt_abort_printf("component wrapper should never connect to event handler");
+}
+
+
+pisces_packetizer::pisces_packetizer(sprockit::sim_parameters *params, SST::Component *comp) :
+  wrapper_(new sst_component_wrapper(params, event_loc_id::null, comp)),
+  packetizer(params, wrapper_),
+  SST::Interfaces::SimpleNetwork(comp)
+{
+  init(params, wrapper_);
+}
+
+void
+pisces_packetizer::init_links(sprockit::sim_parameters *params)
+{
+
+}
+
 bool
 pisces_packetizer::send(Request *req, int vn)
 {

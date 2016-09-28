@@ -59,8 +59,7 @@ class pisces_memory_packetizer : public packetizer
 {
  public:
   pisces_memory_packetizer(sprockit::sim_parameters* params,
-                          event_scheduler* parent,
-                          packetizer_callback* cb);
+                          event_scheduler* parent);
   
   ~pisces_memory_packetizer();
 

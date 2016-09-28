@@ -64,10 +64,10 @@ class timestamp_prefix_fxn :
 
 template <class T>
 SST::Component*
-create(SST::ComponentId_t id, SST::Params& params){
+create_component(SST::ComponentId_t id, SST::Params& params){
   sprockit::sim_parameters* macParams =
     make_spkt_params_from_sst_params(params);
-  sstmac::SSTIntegratedComponent* created = new T(macParams, id, nullptr);
+  T* created = new T(macParams, id, nullptr);
 
   if (!checked_prefix_fxn){
     if (sprockit::debug::slot_active(sprockit::dbg::timestamp)){
@@ -81,6 +81,16 @@ create(SST::ComponentId_t id, SST::Params& params){
   return created;
 }
 
+template <class T>
+SST::SubComponent*
+create_subcomponent(SST::Component* parent, SST::Params& params){
+  sprockit::sim_parameters* macParams =
+    make_spkt_params_from_sst_params(params);
+  T* created = new T(macParams, parent);
+  created->init_links(macParams);
+  return created;
+}
+
 static const ElementInfoPort ports[] = {
  {"input %(out)d %(in)d",  "Will receive new payloads here",      NULL},
  {"output %(out)d %(in)d", "Will receive new acks(credits) here", NULL},
@@ -89,10 +99,23 @@ static const ElementInfoPort ports[] = {
  {NULL, NULL, NULL}
 };
 
+static const ElementInfoSubComponent subcomponents[] = {
+  { "pisces",
+    "Link Control module for building Pisces NICs",
+    NULL,
+    create_subcomponent<hw::pisces_cut_through_packetizer>,
+    NULL,
+    NULL,
+    "SST::Interfaces::SimpleNetwork"
+  },
+  { NULL, NULL, NULL, NULL, NULL, NULL }
+};
+
 const static SST::ElementInfoComponent pisces_switch_element_info = {
   "pisces_switch",
   "A network switch implementing a packet-flow congestion model",
-  NULL, create<hw::pisces_switch>,
+  NULL,
+  create_component<hw::pisces_switch>,
   NULL,
   ports,
   COMPONENT_CATEGORY_NETWORK
@@ -101,7 +124,8 @@ const static SST::ElementInfoComponent pisces_switch_element_info = {
 const static SST::ElementInfoComponent logp_switch_element_info = {
   "logp_switch",
   "A network switch implementing a LogP congestion model",
-  NULL, create<hw::logp_switch>,
+  NULL,
+  create_component<hw::logp_switch>,
   NULL,
   ports,
   COMPONENT_CATEGORY_NETWORK
@@ -110,7 +134,8 @@ const static SST::ElementInfoComponent logp_switch_element_info = {
 const static SST::ElementInfoComponent simple_node_element_info = {
   "simple_node",
   "A node with basic OS and basic compute functionality",
-  NULL, create<hw::simple_node>,
+  NULL,
+  create_component<hw::simple_node>,
   NULL,
   ports,
   COMPONENT_CATEGORY_PROCESSOR
@@ -340,9 +365,10 @@ ElementLibraryInfo macro_eli = {
     NULL,                              // Events
     NULL,                              // Introspectors
     NULL,                              // Modules
+    subcomponents,
     NULL,                              // Partitioners
-    NULL,                              // Generators
-    gen_sst_macro_integrated_pymodule  // Python Module Generator
+    gen_sst_macro_integrated_pymodule,  // Python Module Generator
+    NULL
 };
 
 

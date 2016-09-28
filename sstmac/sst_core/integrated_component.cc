@@ -11,7 +11,7 @@
 
 namespace sstmac {
 
-SST::TimeConverter* SSTIntegratedComponent::time_converter_ = 0;
+SST::TimeConverter* SSTIntegratedComponent::time_converter_ = nullptr;
 
 SSTIntegratedComponent::SSTIntegratedComponent(
   sprockit::sim_parameters* params,

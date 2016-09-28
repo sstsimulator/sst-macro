@@ -79,14 +79,13 @@ class packetizer :
 
  protected:
   packetizer(sprockit::sim_parameters* params,
-             event_scheduler* parent,
-             packetizer_callback* handler);
+             event_scheduler* parent);
 
   void bytesArrived(int vn, uint64_t unique_id, int bytes, message* parent);
 
 };
 
-DeclareFactory(packetizer, event_scheduler*, packetizer_callback*)
+DeclareFactory(packetizer, event_scheduler*)
 
 
 

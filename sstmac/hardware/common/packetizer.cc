@@ -10,11 +10,9 @@ RegisterDebugSlot(packetizer);
 namespace sstmac {
 namespace hw {
 
-packetizer::packetizer(sprockit::sim_parameters* params,
-           event_scheduler* parent,
-           packetizer_callback* cb) :
-  notifier_(cb),
-  event_subscheduler(parent, nullptr) //no self events
+packetizer::packetizer(sprockit::sim_parameters* params, event_scheduler* parent) :
+  event_subscheduler(parent, nullptr), //no self events
+  notifier_(nullptr)
 {
   packet_size_ = params->get_byte_length_param("mtu");
   double bw = params->get_bandwidth_param("bandwidth");
@@ -107,8 +105,7 @@ class merlin_packetizer :
 {
  public:
   merlin_packetizer(sprockit::sim_parameters* params,
-                      event_scheduler* parent,
-                      packetizer_callback* handler);
+                      event_scheduler* parent);
 
   bool spaceToSend(int vn, int num_bits){
     return m_linkControl->spaceToSend(vn, num_bits);
@@ -149,9 +146,8 @@ class merlin_packetizer :
 };
 
 merlin_packetizer::merlin_packetizer(sprockit::sim_parameters *params,
-                                     event_scheduler* parent,
-                                     packetizer_callback *handler) :
-  packetizer(params, parent, handler)
+                                     event_scheduler* parent) :
+  packetizer(params, parent)
 {
   SST::Params& sst_params = *params->extra_data<SST::Params>();
   m_linkControl = (SST::Interfaces::SimpleNetwork*)parent->loadSubComponent(

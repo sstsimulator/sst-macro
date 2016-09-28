@@ -40,7 +40,7 @@ class packet :
   }
 
   virtual void
-  serialize_order(serializer& ser);
+  serialize_order(serializer& ser) override;
 
   virtual bool
   is_packet() const {
