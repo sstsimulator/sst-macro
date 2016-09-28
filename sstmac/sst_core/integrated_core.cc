@@ -67,8 +67,8 @@ SST::Component*
 create_component(SST::ComponentId_t id, SST::Params& params){
   sprockit::sim_parameters* macParams =
     make_spkt_params_from_sst_params(params);
-  T* created = new T(macParams, id, nullptr);
 
+  T* created = new T(macParams, id, nullptr);
   if (!checked_prefix_fxn){
     if (sprockit::debug::slot_active(sprockit::dbg::timestamp)){
       sprockit::debug_prefix_fxn* fxn = new timestamp_prefix_fxn(created);

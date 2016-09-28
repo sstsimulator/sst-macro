@@ -57,6 +57,20 @@ class Interconnect:
     self.switches = [0]*self.num_switches
     self.nodes = [0]*self.num_nodes
 
+  def numNodes(self):
+    return self.num_nodes
+
+  def numSwitches(self): 
+    return self.num_switches
+
+  def defaultEpFxn(self, nodeID):
+      nodeParams = self.params["node"]
+      compName = nodeParams["model"] + "_node"
+      node = sst.Component("Node %d" % nodeID, "macro.%s" % compName)
+      node.addParams(macroToCoreParams(nodeParams))
+      node.addParam("id", nodeID)
+      return node
+
   def buildSwitches(self):
     for i in range(self.num_switches):
       switchParams = self.system.switchParams(i)
@@ -66,14 +80,9 @@ class Interconnect:
       switch.addParam("id", i)
       self.switches[i] = (switch, switchParams)
 
-  def buildEndpoints(self):
-    nodeParams = self.params["node"]
-    compName = nodeParams["model"] + "_node"
+  def buildEndpoints(self, epFxn):
     for i in range(self.num_nodes):
-      node = sst.Component("Node %d" % i, "macro.%s" % compName)
-      node.addParams(macroToCoreParams(nodeParams))
-      node.addParam("id", i)
-      self.nodes[i] = node
+      self.nodes[i] = epFxn(i)
 
   def latency(self, params):
     if params.has_key("latency"):
@@ -101,16 +110,21 @@ class Interconnect:
         dstSwitch.addLink(link, portName, lat)
 
   def connectEndpoints(self):
-    lat = self.params["node"]["nic"]["injection"]["latency"]
+    lat = ""
+    if self.params.has_key("injection_latency"):
+      lat = self.params["injection_latency"]
+    else:
+      lat = self.params["node"]["nic"]["injection"]["latency"]
+
     for i in range(self.num_nodes):
       injSwitch,connections = self.system.injectionConnections(i)
       dstSwitch, params = self.switches[injSwitch]
-      node = self.nodes[i]
+      ep = self.nodes[i]
       for port in connections:
         linkName = "injection%d:%d->%d:%d" % (i,sst.macro.NICMainInjectionPort,injSwitch,port)
         link = sst.Link(linkName)
         portName = "output %d %d" % (sst.macro.NICMainInjectionPort, port) 
-        node.addLink(link, portName, lat)
+        ep.addLink(link, portName, lat)
         portName = "input %d %d" % (sst.macro.NICMainInjectionPort, port)
         dstSwitch.addLink(link, portName, smallLatency) #no latency to return credits
 
@@ -120,7 +134,7 @@ class Interconnect:
         linkName = "ejection%d:%d->%d:%d" % (injSwitch,port,i,sst.macro.NICMainInjectionPort)
         link = sst.Link(linkName)
         portName = "input %d %d" % (port, sst.macro.NICMainInjectionPort)
-        node.addLink(link, portName, smallLatency) #no latency to return credits
+        ep.addLink(link, portName, smallLatency)
         portName = "output %d %d" % (port, sst.macro.NICMainInjectionPort) 
         srcSwitch.addLink(link, portName, lat)
 
@@ -160,32 +174,34 @@ class Interconnect:
 
     for i in range(self.num_nodes):
       injSW = self.system.nodeToLogPSwitch(i)
-      node = self.nodes[i]
+      ep = self.nodes[i]
       sw = switches[injSW]
       linkName = "logPinjection%d->%d" % (i, injSW)
       link = sst.Link(linkName)
       portName = "in-out %d %d" % (sst.macro.NICLogPInjectionPort, sst.macro.SwitchLogPInjectionPort)
-      node.addLink(link, portName, smallLatency) #put no latency here
+      ep.addLink(link, portName, smallLatency) #put no latency here
       portName = "in-out %d %d" % (i, sst.macro.SwitchLogPInjectionPort)
       sw.addLink(link, portName, smallLatency)
 
 
-  def buildFull(self):
+  def buildFull(self, epFxn):
     self.buildSwitches()
-    self.buildEndpoints()
+    self.buildEndpoints(epFxn)
     self.connectSwitches()
     self.connectEndpoints()
     self.buildLogPNetwork()
 
-  def buildLogP(self):
-    self.buildEndpoints()
+  def buildLogP(self, epFxn):
+    self.buildEndpoints(epFxn)
     self.buildLogPNetwork()
   
-  def build(self):
+  def build(self, epFxn=None):
+    if epFxn == None:
+      epFxn = self.defaultEpFxn
     if self.system.isLogP():
-      self.buildLogP()
+      self.buildLogP(epFxn)
     else:
-      self.buildFull()
+      self.buildFull(epFxn)
 
 def readCmdLineParams():
   import sys

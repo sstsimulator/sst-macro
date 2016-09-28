@@ -64,14 +64,19 @@ pisces_packetizer::init(sprockit::sim_parameters* params, event_scheduler* paren
                 get_optional_param("stats", "null", buf_params, parent);
 
   sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
-  sprockit::sim_parameters* inj_params = params->get_namespace("injection");
+  sprockit::sim_parameters* inj_params = params->get_optional_namespace("injection");
   //do not put any latency on eject buffer
   ej_params->add_param_override("send_latency", "0ns");
   ej_params->add_param_override("credit_latency", "0ns");
   ej_params->add_param_override("credits", 1<<30);
 
-  inj_params->add_param_override("send_latency", inj_params->get_param("latency"));
-  inj_params->add_param_override("credit_latency", "0ns");
+  if (!inj_params->has_param("send_latency)")){
+    inj_params->add_param_override("send_latency", inj_params->get_param("latency"));
+  }
+  if (!inj_params->has_param("credit_latency")){
+    inj_params->add_param_override("credit_latency", "0ns");
+  }
+
 
   inj_buffer_ = new pisces_injection_buffer(inj_params, parent);
   ej_buffer_ = new pisces_eject_buffer(ej_params, parent);
@@ -219,8 +224,7 @@ pisces_packetizer::sst_component_wrapper::connect_input(
 
 
 pisces_packetizer::pisces_packetizer(sprockit::sim_parameters *params, SST::Component *comp) :
-  wrapper_(new sst_component_wrapper(params, event_loc_id::null, comp)),
-  packetizer(params, wrapper_),
+  packetizer(params, init_wrapper(params, comp)),
   SST::Interfaces::SimpleNetwork(comp)
 {
   init(params, wrapper_);

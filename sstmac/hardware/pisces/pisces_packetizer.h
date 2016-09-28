@@ -159,6 +159,12 @@ class pisces_packetizer :
     }
   };
 
+  event_scheduler*
+  init_wrapper(sprockit::sim_parameters* params, SST::Component* comp){
+    wrapper_ = new sst_component_wrapper(params, event_loc_id::null, comp);
+    return wrapper_;
+  }
+
   sst_component_wrapper* wrapper_;
   SST::UnitAlgebra sst_link_bw_;
   HandlerBase* send_functor_;
