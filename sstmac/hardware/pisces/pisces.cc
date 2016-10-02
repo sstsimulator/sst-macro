@@ -18,24 +18,12 @@ const double pisces_payload::uninitialized_bw = -1;
 
 pisces_payload::pisces_payload(
   serializable* msg,
-  uint64_t flow_id,
   int num_bytes,
-  long offset) :
-  packet(msg, flow_id, num_bytes, offset),
-  //routable(parent->toaddr(), parent->fromaddr()),
+  bool is_tail) :
+  packet(msg, num_bytes, is_tail),
   bw_(uninitialized_bw),
   max_in_bw_(1.0)
 {
-}
-
-std::string
-pisces_payload::to_string() const
-{
-  return sprockit::printf("flow %16lu, %5lu:%5lu bw=%8.4e %d->%d",
-                   uint64_t(flow_id()),
-                   byte_offset_,
-                   byte_offset_ + num_bytes_, bw_,
-                   int(fromaddr()), int(toaddr()), bw_);
 }
 
 void
@@ -47,6 +35,16 @@ pisces_payload::serialize_order(serializer& ser)
   ser & bw_;
   ser & max_in_bw_;
   ser & arrival_;
+}
+
+std::string
+pisces_default_packet::to_string() const
+{
+  return sprockit::printf("flow %16lu%s, %d bytes bw=%8.4e %d->%d",
+                   uint64_t(flow_id()),
+                   is_tail_ ? " tail" : "",
+                   num_bytes_, bw_,
+                   int(fromaddr()), int(toaddr()), bw_);
 }
 
 std::string

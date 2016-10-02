@@ -768,7 +768,7 @@ If you glance at the Makefile, you will see how and why the executable is create
 
 
 
-\newcommand{`event_handler`}{`event_handler`\xspace} \newcommand{`event_scheduler`}{`event_scheduler`\xspace} \newcommand{`event_manager`}{`event_manager`\xspace}
+\newcommand{`event_handler`}{`event_handler`\xspace} \newcommaevent_componentuler`}{`event_scheduler`\xspace} \newcommand{`event_manager`}{`event_manager`\xspace}
 
 ## Chapter 4: Discrete Event Simulation<a name="chapter:des"></a>
 
@@ -993,7 +993,7 @@ for (auto& conn : outports){
   src_sw->connect_output(params, conn.src_outport, conn.dst_inport,
   					 dst_sw->payload_handler(conn.dst_inport));
   dst_sw->connect_input(params, conn.src_outport, conn.dst_inport,
-  				       src_sw->ack_handler(conn.src_outport));
+  				       src_sw->credit_handler(conn.src_outport));
 }
 ````
 The `connected_outports` function takes a given source switch and returns all the connections that the

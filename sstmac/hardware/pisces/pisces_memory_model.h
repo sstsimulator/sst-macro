@@ -64,11 +64,11 @@ class pisces_memory_packetizer : public packetizer
   ~pisces_memory_packetizer();
 
   std::string
-  pisces_name() const {
-    return "packet flow memory model";
+  to_string() const override {
+    return "pisces memory packetizer";
   }
 
-  link_handler* new_ack_handler() const override;
+  link_handler* new_credit_handler() const override;
   link_handler* new_payload_handler() const override;
 
   void

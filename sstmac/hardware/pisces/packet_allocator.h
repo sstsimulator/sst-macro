@@ -30,9 +30,9 @@ class packet_allocator
    * @return  A packet compatible with pisces model
    */
   virtual pisces_payload*
-  new_packet(int bytes, long byte_offset,
+  new_packet(int bytes, uint64_t flow_id, bool is_tail,
              node_id toaddr, node_id fromaddr,
-             uint64_t flow_id, serializable* msg) = 0;
+             serializable* msg) = 0;
 
   virtual ~packet_allocator(){}
 

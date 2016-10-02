@@ -26,17 +26,12 @@ class packet :
 
   bool
   is_tail() const {
-    return orig_;
+    return is_tail_;
   }
 
   int
   byte_length() const {
     return num_bytes_;
-  }
-
-  uint64_t
-  flow_id() const {
-    return flow_id_;
   }
 
   virtual void
@@ -53,10 +48,8 @@ class packet :
   virtual node_id
   fromaddr() const = 0;
 
-  long
-  byte_offset() const {
-    return byte_offset_;
-  }
+  virtual uint64_t
+  flow_id() const = 0;
 
   template <class T>
   T*
@@ -68,19 +61,16 @@ class packet :
  protected:
   packet() : orig_(nullptr) {}
 
-  packet(serializable* orig,
-    uint64_t flow_id,
-    long num_bytes,
-    long byte_offset);
+  packet(serializable* payload,
+    int num_bytes,
+    bool is_tail);
 
  protected:
   serializable* orig_;
 
   int num_bytes_;
 
-  long byte_offset_;
-
-  uint64_t flow_id_;
+  bool is_tail_;
 
 };
 

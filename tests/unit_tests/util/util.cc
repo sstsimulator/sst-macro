@@ -97,10 +97,15 @@ class routable_pisces :
    routable_pisces(
      message* parent,
      int num_bytes,
-     long offset) :
-    pisces_payload(parent, parent->flow_id(), num_bytes, offset),
+     bool is_tail) :
+    pisces_payload(parent, num_bytes, is_tail),
     routable(parent->toaddr(), parent->fromaddr())
   {
+  }
+
+  uint64_t
+  flow_id() const override {
+    return 0;
   }
 
   node_id
@@ -130,7 +135,7 @@ msg(long nid)
 {
   network_message* new_msg = new network_message;
   new_msg->set_toaddr(naddr(nid));
-  new_msg->set_net_id(hw::network_id(0,0));
+  new_msg->set_flow_id(hw::network_id(0,0));
   return new routable_pisces(new_msg, 0, 0);
 }
 

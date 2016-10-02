@@ -69,7 +69,7 @@ class pisces_switch :
     event_handler* mod) override;
 
   link_handler*
-  ack_handler(int port) const override;
+  credit_handler(int port) const override;
 
   link_handler*
   payload_handler(int port) const override;

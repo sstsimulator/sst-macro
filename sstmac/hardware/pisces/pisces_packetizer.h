@@ -22,9 +22,6 @@ namespace hw {
  */
 class pisces_packetizer :
   public packetizer
-#if SSTMAC_INTEGRATED_SST_CORE
- ,public SST::Interfaces::SimpleNetwork
-#endif
 {
 
  public:
@@ -37,9 +34,6 @@ class pisces_packetizer :
 
   void setup() override;
 
-  /**
-   * We assume the injection buffer has infinite occupancy
-   */
   bool
   spaceToSend(int vn, int num_bits) override;
 
@@ -65,7 +59,7 @@ class pisces_packetizer :
   new_payload_handler() const override;
 
   link_handler*
-  new_ack_handler() const override;
+  new_credit_handler() const override;
 
  protected:
   void
@@ -88,90 +82,6 @@ class pisces_packetizer :
   packet_stats_callback* buf_stats_;
   packet_allocator* pkt_allocator_;
 
-#if SSTMAC_INTEGRATED_SST_CORE
- public:
-  void init_links(sprockit::sim_parameters* parmas);
-
-  bool send(Request *req, int vn) override;
-
-  Request* recv(int vn) override;
-
-  bool requestToReceive(int vn) override;
-
-  bool initialize(const std::string &portName,
-                  const SST::UnitAlgebra &link_bw,
-                  int vns,
-                  const SST::UnitAlgebra &in_buf_size,
-                  const SST::UnitAlgebra &out_buf_size) override;
-
-  void setNotifyOnSend(HandlerBase* functor) override {
-    send_functor_ = functor;
-  }
-
-  void setNotifyOnReceive(HandlerBase* functor) override {
-    recv_functor_ = functor;
-  }
-
-  bool isNetworkInitialized() const override {
-    return initialized_;
-  }
-
-  nid_t
-  getEndpointID() const override {
-    return my_addr_;
-  }
-
-  const SST::UnitAlgebra& getLinkBW() const override {
-    return sst_link_bw_;
-  }
-
-  using SST::Interfaces::SimpleNetwork::Request;
-
-  virtual void
-  sendInitData(Request* req) override;
-
-  virtual Request*
-  recvInitData() override;
-
- protected:
-  pisces_packetizer(sprockit::sim_parameters *params, SST::Component* comp);
-
- private:
-  class sst_component_wrapper : public event_scheduler
-  {
-   public:
-    sst_component_wrapper(sprockit::sim_parameters* params,
-                          event_loc_id loc_id,
-                          SST::Component* comp) :
-      event_scheduler(params, comp->getId(), loc_id, nullptr, nullptr)
-    {
-      self_link_ = comp->configureSelfLink("self", time_converter_,
-                      new SST::Event::Handler<SSTIntegratedComponent>(this,
-                        &SSTIntegratedComponent::handle_self_link));
-    }
-    void connect_output(sprockit::sim_parameters *params, int src_outport, int dst_inport, event_handler *mod);
-    void connect_input(sprockit::sim_parameters *params, int src_outport, int dst_inport, event_handler *mod);
-    link_handler* payload_handler(int port) const {
-      return nullptr;
-    }
-    link_handler* ack_handler(int port) const {
-      return nullptr;
-    }
-  };
-
-  event_scheduler*
-  init_wrapper(sprockit::sim_parameters* params, SST::Component* comp){
-    wrapper_ = new sst_component_wrapper(params, event_loc_id::null, comp);
-    return wrapper_;
-  }
-
-  sst_component_wrapper* wrapper_;
-  SST::UnitAlgebra sst_link_bw_;
-  HandlerBase* send_functor_;
-  HandlerBase* recv_functor_;
-  bool initialized_;
-
-#endif
 
 };
 
@@ -186,12 +96,10 @@ class pisces_cut_through_packetizer : public pisces_packetizer
 
   void recv_packet(event* pkt) override;
 
-#if SSTMAC_INTEGRATED_SST_CORE
-  pisces_cut_through_packetizer(sprockit::sim_parameters *params, SST::Component* comp) :
-    pisces_packetizer(params, comp)
-  {
+  std::string
+  to_string() const override {
+    return "cut through packetizer";
   }
-#endif
 
 };
 
@@ -204,9 +112,100 @@ class pisces_simple_packetizer : public pisces_packetizer
   {
   }
 
+  std::string
+  to_string() const override {
+    return "simple packetizer";
+  }
+
   void recv_packet(event* pkt) override;
 
 };
+
+#if SSTMAC_INTEGRATED_SST_CORE
+class pisces_simple_network :
+  public SST::Interfaces::SimpleNetwork,
+  public event_scheduler
+{
+ public:
+  pisces_simple_network(sprockit::sim_parameters *params, SST::Component* comp);
+
+  std::string
+  to_string() const override {
+    return "PISCES simple network";
+  }
+
+  void init_links(sprockit::sim_parameters* parmas);
+
+  /**
+   * @brief packet_arrived Callback when packets arrive off the network
+   * @param ev
+   */
+  void packet_arrived(event* ev);
+
+  void init(unsigned int phase) override;
+
+  bool send(Request *req, int vn) override;
+
+  Request* recv(int vn) override;
+
+  bool requestToReceive(int vn) override;
+
+  bool initialize(const std::string &portName,
+                 const SST::UnitAlgebra &link_bw,
+                 int vns,
+                 const SST::UnitAlgebra &in_buf_size,
+                 const SST::UnitAlgebra &out_buf_size) override;
+
+  void setNotifyOnSend(HandlerBase* functor) override {
+   send_functor_ = functor;
+  }
+
+  void setNotifyOnReceive(HandlerBase* functor) override {
+   recv_functor_ = functor;
+  }
+
+  bool isNetworkInitialized() const override {
+   return initialized_;
+  }
+
+  nid_t
+  getEndpointID() const override {
+   return nid_;
+  }
+
+  const SST::UnitAlgebra& getLinkBW() const override {
+   return sst_link_bw_;
+  }
+
+  bool
+  spaceToSend(int vn, int num_bits) override;
+
+  using SST::Interfaces::SimpleNetwork::Request;
+
+  virtual void
+  sendInitData(Request* req) override;
+
+  virtual Request*
+  recvInitData() override;
+
+ private:
+  event_loc_id init_loc(sprockit::sim_parameters* params);
+
+  nid_t nid_;
+
+  std::list<Request*> vn_reqs_[2];
+
+  pisces_injection_buffer* inj_buffer_;
+  pisces_eject_buffer* ej_buffer_;
+  SST::Link* logp_link_;
+
+  SST::UnitAlgebra sst_link_bw_;
+  HandlerBase* send_functor_;
+  HandlerBase* recv_functor_;
+  bool initialized_;
+
+};
+#endif
 
 }
 } // end of namespace sstmac

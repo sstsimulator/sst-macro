@@ -88,8 +88,7 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
   des_context_(nullptr),
   ftq_trace_(nullptr),
   compute_sched_(nullptr),
-  event_subscheduler(parent,
-       new_handler(this, &operating_system::handle_event)),
+  event_subcomponent(parent),
   params_(params)
 {
   compute_sched_ = compute_scheduler_factory::get_optional_param(
@@ -245,7 +244,7 @@ operating_system::init_threading()
 #if SSTMAC_INTEGRATED_SST_CORE
     int nthr = 1;
 #else
-    int nthr = parent()->event_mgr()->nthread();
+    int nthr = event_mgr()->nthread();
 #endif
     des_context_ = new threading_pthread(thread_id(), nthr);
 

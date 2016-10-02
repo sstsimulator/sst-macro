@@ -27,13 +27,12 @@ namespace sstmac {
 namespace hw {
 
 class memory_model :
-  public event_subscheduler
+  public event_subcomponent
 {
 
  public:
   memory_model(sprockit::sim_parameters* params,
-               node* node,
-               event_handler* self);
+               node* node);
 
   static void
   delete_statics();

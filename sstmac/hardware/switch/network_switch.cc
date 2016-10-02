@@ -21,10 +21,9 @@
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/sst_core/connectable_wrapper.h>
 #include <sstmac/sst_core/integrated_component.h>
-#else
-ImplementFactory(sstmac::hw::network_switch);
 #endif
 
+ImplementFactory(sstmac::hw::network_switch);
 RegisterDebugSlot(network_switch)
 
 namespace sstmac {
@@ -41,7 +40,7 @@ network_switch::~network_switch()
 network_switch::network_switch(sprockit::sim_parameters *params, uint64_t id, event_manager *mgr)
  : connectable_component(params, id,
                          event_loc_id(switch_id(params->get_int_param("id"))),
-                         mgr, nullptr) //no self messages for a switch
+                         mgr) //no self messages for a switch
 {
   my_addr_ = event_location().convert_to_switch_id();
   top_ = topology::static_topology(params);
@@ -52,7 +51,7 @@ network_switch::init(unsigned int phase)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   if (phase == 0){
-    event_scheduler::init(phase);
+    event_component::init(phase);
   }
 #endif
 }

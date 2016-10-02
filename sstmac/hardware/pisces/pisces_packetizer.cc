@@ -24,8 +24,11 @@
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
-
 #include <stddef.h>
+
+#if SSTMAC_INTEGRATED_SST_CORE
+#include <sstmac/sst_core/connectable_wrapper.h>
+#endif
 
 RegisterNamespaces("congestion_delays", "congestion_matrix");
 
@@ -44,11 +47,6 @@ pisces_packetizer::pisces_packetizer(sprockit::sim_parameters* params,
  pkt_allocator_(nullptr),
  payload_handler_(nullptr),
  packetizer(params, parent)
-#if SSTMAC_INTEGRATED_SST_CORE
- ,SimpleNetwork(dynamic_cast<SST::Component*>(parent))
- ,initialized_(false),
- wrapper_(nullptr)
-#endif
 {
   init(params, parent);
 }
@@ -110,14 +108,14 @@ pisces_packetizer::setup()
 }
 
 link_handler*
-pisces_packetizer::new_ack_handler() const
+pisces_packetizer::new_credit_handler() const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   return new SST::Event::Handler<pisces_packetizer>(
            const_cast<pisces_packetizer*>(this),
            &pisces_packetizer::recv_credit);
 #else
-  return new_link_handler(const_cast<pisces_packetizer*>(this),
+  return new_handler(const_cast<pisces_packetizer*>(this),
                          &pisces_packetizer::recv_credit);
 #endif
 }
@@ -130,7 +128,7 @@ pisces_packetizer::new_payload_handler() const
         const_cast<pisces_packetizer*>(this),
         &pisces_packetizer::recv_packet);
 #else
-  return new_link_handler(const_cast<pisces_packetizer*>(this),
+  return new_handler(const_cast<pisces_packetizer*>(this),
                            &pisces_packetizer::recv_packet);
 #endif
 }
@@ -155,9 +153,9 @@ pisces_packetizer::inject(int vn, long bytes, long byte_offset, message* msg)
 {
   bool is_tail = (byte_offset + bytes) == msg->byte_length();
   //only carry the payload if you're the tail packet
-  pisces_payload* payload = pkt_allocator_->new_packet(bytes, byte_offset,
+  pisces_payload* payload = pkt_allocator_->new_packet(bytes, msg->flow_id(), is_tail,
                                                        msg->toaddr(), msg->fromaddr(),
-                                                       msg->flow_id(), is_tail ? msg : nullptr);
+                                                       is_tail ? msg : nullptr);
   inj_buffer_->handle_payload(payload);
 }
 
@@ -170,14 +168,14 @@ pisces_packetizer::recv_packet_common(pisces_payload* pkt)
 
 void
 pisces_packetizer::set_output(sprockit::sim_parameters* params,
-                                       int inj_port, event_handler* handler)
+                              int inj_port, event_handler* handler)
 {
   inj_buffer_->set_output(params, 0, inj_port, handler);
 }
 
 void
 pisces_packetizer::set_input(sprockit::sim_parameters* params,
-                                      int ej_port, event_handler* handler)
+                             int ej_port, event_handler* handler)
 {
   int only_port = 0;
   ej_buffer_->set_output(params, only_port, only_port, payload_handler_);
@@ -208,65 +206,169 @@ pisces_cut_through_packetizer::recv_packet(event* ev)
 }
 
 #if SSTMAC_INTEGRATED_SST_CORE
-void
-pisces_packetizer::sst_component_wrapper::connect_output(
-    sprockit::sim_parameters *params, int src_outport, int dst_inport, event_handler *mod)
+class simple_network_packet : public pisces_routable_packet
 {
-  spkt_abort_printf("component wrapper should never connect to event handler");
+  NotSerializable(simple_network_packet)
+
+ public:
+  simple_network_packet(
+    serializable* msg,
+    int num_bytes,
+    bool is_tail,
+    node_id toaddr,
+    node_id fromaddr,
+    int vn) :
+   pisces_routable_packet(msg, num_bytes, is_tail, toaddr, fromaddr),
+   vn_(vn)
+  {
+  }
+
+  uint64_t
+  flow_id() const override {
+    spkt_abort_printf("simple network does not use flow IDs");
+    return 0;
+  }
+
+  SST::Interfaces::SimpleNetwork::Request*
+  request() const {
+    return dynamic_cast<SST::Interfaces::SimpleNetwork::Request*>(orig_);
+  }
+
+  int vn() const {
+    return vn_;
+  }
+
+ private:
+  int vn_;
+
+};
+
+class simple_network_message : public network_message
+{
+ public:
+
+};
+
+pisces_simple_network::pisces_simple_network(sprockit::sim_parameters *params, SST::Component *comp) :
+  SST::Interfaces::SimpleNetwork(comp),
+  event_scheduler(comp, init_loc(params))
+{
+  //we need a self link
+  event_scheduler::init_self_link(comp);
+  sprockit::sim_parameters* inj_params = params->get_optional_namespace("injection");
+  inj_buffer_ = new pisces_injection_buffer(inj_params, this);
+  sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
+  ej_buffer_ = new pisces_eject_buffer(ej_params, this);
+
+  SST::LinkMap* link_map = SST::Simulation::getSimulation()->getComponentLinkMap(comp->getId());
+  for (auto& pair : link_map->getLinkMap()){
+    SST::Link* link = pair.second;
+    std::istringstream istr(pair.first);
+    std::string port_type;
+    int src_outport, dst_inport;
+    istr >> port_type;
+    istr >> src_outport;
+    istr >> dst_inport;
+    if (port_type == "input"){
+      integrated_connectable_wrapper* wrapper = new integrated_connectable_wrapper(link);
+      ej_buffer_->set_input(ej_params, dst_inport, src_outport, wrapper);
+      configureLink(pair.first,
+       new SST::Event::Handler<pisces_eject_buffer>(ej_buffer_, &pisces_eject_buffer::handle_payload));
+    } else if (port_type == "output"){
+      integrated_connectable_wrapper* wrapper = new integrated_connectable_wrapper(link);
+      inj_buffer_->set_output(inj_params, src_outport, dst_inport, wrapper);
+      configureLink(pair.first,
+       new SST::Event::Handler<pisces_injection_buffer>(inj_buffer_, &pisces_injection_buffer::handle_credit));
+    } else if (port_type == "in-out"){
+      logp_link_ = link;
+    }
+  }
 }
 
 void
-pisces_packetizer::sst_component_wrapper::connect_input(
-    sprockit::sim_parameters *params, int src_outport, int dst_inport, event_handler *mod)
+pisces_simple_network::init(unsigned int phase)
 {
-  spkt_abort_printf("component wrapper should never connect to event handler");
-}
-
-
-pisces_packetizer::pisces_packetizer(sprockit::sim_parameters *params, SST::Component *comp) :
-  packetizer(params, init_wrapper(params, comp)),
-  SST::Interfaces::SimpleNetwork(comp)
-{
-  init(params, wrapper_);
+  //TODO
 }
 
 void
-pisces_packetizer::init_links(sprockit::sim_parameters *params)
+pisces_simple_network::sendInitData(SST::Interfaces::SimpleNetwork::Request* req)
 {
+  spkt_abort_printf("pisces simple network cannot send init data");
+}
 
+SST::Interfaces::SimpleNetwork::Request*
+pisces_simple_network::recvInitData()
+{
+  spkt_abort_printf("pisces simple network cannot recv init data");
+  return nullptr;
+}
+
+event_loc_id
+pisces_simple_network::init_loc(sprockit::sim_parameters* params)
+{
+  nid_ = params->get_int_param("id");
+  return event_loc_id(node_id(nid_));
 }
 
 bool
-pisces_packetizer::send(Request *req, int vn)
+pisces_simple_network::send(Request *req, int vn)
 {
-  //pisces_payload* payload = pkt_allocator_
+  int bytes = req->size_in_bits / 8;
+  if (!inj_buffer_->space_to_send(bytes))
+    return false;
+
+  uint64_t ignore_flow_id = 0;
+
+  simple_network_packet* pkt = new simple_network_packet(req, bytes, req->tail,
+                                                    req->dest, nid_, vn);
+
+  if (vn == 0){
+    //primary payload network
+    inj_buffer_->handle_payload(pkt);
+  } else if (vn == 1){
+    //control network
+    logp_link_->send(pkt);
+  } else {
+    spkt_abort_printf("PISCES cannot handle vn's other than 0 and 1");
+  }
   return true;
 }
 
 void
-pisces_packetizer::sendInitData(SST::Interfaces::SimpleNetwork::Request* req)
+pisces_simple_network::packet_arrived(event* ev)
 {
+  simple_network_packet* pkt = safe_cast(simple_network_packet, ev);
+  vn_reqs_[pkt->vn()].push_back(pkt->request());
+  if (recv_functor_) {
+    bool keep = (*recv_functor_)(pkt->vn());
+    if (!keep) recv_functor_ = nullptr;
+  }
 }
 
 SST::Interfaces::SimpleNetwork::Request*
-pisces_packetizer::recvInitData()
+pisces_simple_network::recv(int vn)
 {
-}
-
-SST::Interfaces::SimpleNetwork::Request*
-pisces_packetizer::recv(int vn)
-{
-  return nullptr;
+  auto req = vn_reqs_[vn].front();
+  vn_reqs_[vn].pop_front();
+  return req;
 }
 
 bool
-pisces_packetizer::requestToReceive(int vn)
+pisces_simple_network::requestToReceive(int vn)
 {
-  return false;
+  return !vn_reqs_[vn].empty();
 }
 
 bool
-pisces_packetizer::initialize(const std::string &portName,
+pisces_simple_network::spaceToSend(int vn, int num_bits)
+{
+  int bytes = num_bits / 8;
+  return bytes;
+}
+
+bool
+pisces_simple_network::initialize(const std::string &portName,
                               const SST::UnitAlgebra &link_bw, int vns,
                               const SST::UnitAlgebra &in_buf_size,
                               const SST::UnitAlgebra &out_buf_size)

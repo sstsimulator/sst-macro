@@ -208,7 +208,7 @@ interconnect::connect_endpoints(sprockit::sim_parameters* inj_params,
       interconn_debug("connecting switch %d to injector %d on ports %d:%d",
           int(injaddr), int(nodeaddr), switch_port, injector_port);
       injsw->connect_input(ej_params, injector_port, switch_port,
-                           ep->ack_handler(injector_port));
+                           ep->credit_handler(injector_port));
       ep->connect_output(inj_params, injector_port, switch_port,
                          injsw->payload_handler(switch_port));
     }
@@ -224,7 +224,7 @@ interconnect::connect_endpoints(sprockit::sim_parameters* inj_params,
       ejsw->connect_output(ej_params, switch_port, ejector_port,
                            ep->payload_handler(ejector_port));
       ep->connect_input(inj_params, switch_port, ejector_port,
-                        ejsw->ack_handler(switch_port));
+                        ejsw->credit_handler(switch_port));
     }
   }
 }
@@ -286,7 +286,7 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
             int inj_port = nlink->node_port(netlink_offset);
             nlink->connect_input(nlink_inj_params,
                           nic::Injection, inj_port,
-                          the_nic->ack_handler(nic::Injection));
+                          the_nic->credit_handler(nic::Injection));
             the_nic->connect_output(inj_params,
                              nic::Injection, inj_port,
                              nlink->payload_handler(inj_port));
@@ -296,7 +296,7 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
                           the_nic->payload_handler(nic::Injection));
             the_nic->connect_input(inj_params,
                              inj_port, nic::Injection,
-                             nlink->ack_handler(inj_port));
+                             nlink->credit_handler(inj_port));
           }
         } else {
           local_logp_switch->connect_output(
@@ -381,7 +381,7 @@ interconnect::connect_switches(sprockit::sim_parameters* switch_params)
       dst_sw->connect_input(port_params,
                             conn.src_outport,
                             conn.dst_inport,
-                            src_sw->ack_handler(conn.src_outport));
+                            src_sw->credit_handler(conn.src_outport));
     }
   }
 

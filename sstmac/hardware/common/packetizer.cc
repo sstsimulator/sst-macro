@@ -1,5 +1,6 @@
 #include <sstmac/hardware/common/packetizer.h>
 #include <sprockit/sim_parameters.h>
+#include <sprockit/util.h>
 
 ImplementFactory(sstmac::hw::packetizer)
 
@@ -11,7 +12,7 @@ namespace sstmac {
 namespace hw {
 
 packetizer::packetizer(sprockit::sim_parameters* params, event_scheduler* parent) :
-  event_subscheduler(parent, nullptr), //no self events
+  event_subcomponent(parent), //no self events
   notifier_(nullptr)
 {
   packet_size_ = params->get_byte_length_param("mtu");
@@ -107,6 +108,11 @@ class merlin_packetizer :
   merlin_packetizer(sprockit::sim_parameters* params,
                       event_scheduler* parent);
 
+  std::string
+  to_string() const {
+    return "merling packetizer";
+  }
+
   bool spaceToSend(int vn, int num_bits){
     return m_linkControl->spaceToSend(vn, num_bits);
   }
@@ -129,7 +135,7 @@ class merlin_packetizer :
   }
 
   link_handler*
-  new_ack_handler() const{
+  new_credit_handler() const{
     spkt_abort_printf("merlin_packetizier::new_ack_handler: never used");
   }
 
@@ -149,10 +155,11 @@ merlin_packetizer::merlin_packetizer(sprockit::sim_parameters *params,
                                      event_scheduler* parent) :
   packetizer(params, parent)
 {
+  SST::Component* comp = safe_cast(SST::Component, parent);
   SST::Params& sst_params = *params->extra_data<SST::Params>();
-  m_linkControl = (SST::Interfaces::SimpleNetwork*)parent->loadSubComponent(
+  m_linkControl = (SST::Interfaces::SimpleNetwork*)comp->loadSubComponent(
                   params->get_optional_param("linkControl", "merlin.linkcontrol"),
-                  parent, sst_params);
+                  comp, sst_params);
 
   SST::UnitAlgebra link_bw(params->get_param("bandwidth"));
   SST::UnitAlgebra injection_buffer_size(params->get_param("credits"));

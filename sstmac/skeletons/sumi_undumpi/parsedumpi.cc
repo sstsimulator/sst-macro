@@ -98,7 +98,7 @@ void parsedumpi::skeleton_main()
   // TODO make this work with @integrated_core
   if (percent_terminate_ >= 0){
     //we must stop the event manager now
-    mpi()->os()->parent()->event_mgr()->stop();
+    mpi()->os()->event_mgr()->stop();
   }
 #endif
 

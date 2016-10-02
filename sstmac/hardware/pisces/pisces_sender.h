@@ -52,8 +52,7 @@ struct pisces_output {
 };
 
 class pisces_sender :
-  public sprockit::printable,
-  public event_subscheduler
+  public event_subcomponent
 {
  public:
   virtual ~pisces_sender() {}
@@ -114,7 +113,7 @@ class pisces_sender :
 
 };
 
-DeclareFactory(pisces_sender, event_scheduler*)
+DeclareFactory(pisces_sender, event_component*)
 
 }
 }

@@ -37,22 +37,22 @@ class transport_message :
 
   int
   dest() const {
-    return dest_task_;
+    return dest_;
   }
 
   void
   set_dest(int dest) {
-    dest_task_ = ::sstmac::sw::task_id(dest);
+    dest_ = dest;
   }
 
   int
   src() const {
-    return src_task_;
+    return src_;
   }
 
   void
   set_src(int src) {
-    src_task_ = ::sstmac::sw::task_id(src);
+    src_ = src;
   }
 
   virtual void
@@ -70,6 +70,8 @@ class transport_message :
 
  private:
   sumi::message_ptr payload_;
+  int dest_;
+  int src_;
 
 };
 

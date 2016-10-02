@@ -78,7 +78,7 @@ class SSTIntegratedComponent
   payload_handler(int port) const = 0;
 
   virtual SST::Event::HandlerBase*
-  ack_handler(int port) const = 0;
+  credit_handler(int port) const = 0;
 
   virtual void
   connect_input(
@@ -89,27 +89,13 @@ class SSTIntegratedComponent
 
   timestamp now() const;
 
-  virtual void
-  init(unsigned int phase);
-
-  void
-  handle_self_link(SST::Event* ev);
-
   void
   init_links(sprockit::sim_parameters* params);
 
  protected:
   SSTIntegratedComponent(sprockit::sim_parameters* params, uint64_t id);
 
-  void configure_self_link();
-
-  SST::SimTime_t
-  extra_delay(timestamp t) const;
-
   SST::LinkMap* link_map_;
-  SST::Link* self_link_;
-  static SST::TimeConverter* time_converter_;
-
 
 
 };

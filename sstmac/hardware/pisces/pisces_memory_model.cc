@@ -42,7 +42,7 @@ pisces_memory_packetizer::pisces_memory_packetizer(
 }
 
 link_handler*
-pisces_memory_packetizer::new_ack_handler() const
+pisces_memory_packetizer::new_credit_handler() const
 {
   spkt_abort_printf("pisces_memory_packetizer::new_ack_handler: not used");
 }
@@ -62,7 +62,7 @@ pisces_memory_packetizer::~pisces_memory_packetizer()
 }
 
 pisces_memory_model::pisces_memory_model(sprockit::sim_parameters *params, node *nd) :
-  memory_model(params, nd, nullptr)
+  memory_model(params, nd)
 {
   nchannels_ = 4;
   for (int i=0; i < nchannels_; ++i){
@@ -102,7 +102,7 @@ pisces_memory_model::notify(int vn, message* msg)
   channels_available_.push_front(vn);
   //happening now
   delete msg;
-  parent()->schedule_now(cb);
+  schedule_now(cb);
 }
 
 int
@@ -133,9 +133,10 @@ pisces_memory_packetizer::init_noise_model()
 void
 pisces_memory_packetizer::inject(int vn, long bytes, long byte_offset, message* msg)
 {
-  pisces_payload* payload = pkt_allocator_->new_packet(bytes, byte_offset,
+  bool is_tail = (bytes + byte_offset) == msg->byte_length();
+  pisces_payload* payload = pkt_allocator_->new_packet(bytes, msg->flow_id(), is_tail,
                                                        msg->toaddr(), msg->fromaddr(),
-                                                       msg->flow_id(), msg);
+                                                       msg);
 
   payload->set_inport(vn);
   memory_message* orig = safe_cast(memory_message, msg);

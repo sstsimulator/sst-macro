@@ -49,8 +49,7 @@ node::node(sprockit::sim_parameters* params,
   uint64_t id, event_manager* mgr)
   : connectable_component(params, id,
   event_loc_id(node_id(params->get_int_param("id"))),
-  mgr,
-  new_handler(this, &node::handle)),
+  mgr),
   params_(params)
 {
   /**
@@ -87,9 +86,9 @@ node::node(sprockit::sim_parameters* params,
 }
 
 link_handler*
-node::ack_handler(int port) const
+node::credit_handler(int port) const
 {
-  return nic_->ack_handler(port);
+  return nic_->credit_handler(port);
 }
 
 link_handler*
@@ -103,7 +102,7 @@ node::setup()
 {
   schedule_launches();
 #if SSTMAC_INTEGRATED_SST_CORE
-  event_scheduler::setup();
+  event_component::setup();
 #endif
 }
 
@@ -111,7 +110,7 @@ void
 node::init(unsigned int phase)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  event_scheduler::init(phase);
+  event_component::init(phase);
 #endif
   nic_->init(phase);
   if (phase == 0){
@@ -216,7 +215,7 @@ void
 node::send_to_nic(network_message* netmsg)
 {
   node_debug("sending to %d", int(netmsg->toaddr()));
-  netmsg->set_net_id(allocate_unique_id());
+  netmsg->set_flow_id(allocate_unique_id());
   netmsg->put_on_wire();
 
   if (netmsg->toaddr() == my_addr_){

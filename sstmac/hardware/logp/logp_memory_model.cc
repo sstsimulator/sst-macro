@@ -27,7 +27,7 @@ logp_memory_model::~logp_memory_model()
 }
 
 logp_memory_model::logp_memory_model(sprockit::sim_parameters* params, node* nd)
-  : memory_model(params, nd, nullptr) //no self events
+  : memory_model(params, nd) //no self events
 {
 
   lat_ = params->get_time_param("latency");

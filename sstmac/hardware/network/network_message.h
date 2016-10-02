@@ -44,8 +44,6 @@ class network_message :
     sw::app_id aid,
     node_id toaddr,
     node_id fromaddr,
-    sw::task_id src,
-    sw::task_id dst,
     long payload_bytes);
 
   network_message(sw::app_id aid, long payload_bytes);
@@ -127,33 +125,18 @@ class network_message :
   convert_to_ack();
 
   void
-  set_net_id(const network_id& id) {
-    net_id_ = id;
-  }
-
-  network_id
-  net_id() const {
-    return net_id_;
+  set_flow_id(uint64_t id) {
+    flow_id_ = id;
   }
 
   uint64_t
   flow_id() const override {
-    return uint64_t(net_id_);
-  }
-
-  sw::task_id
-  source_task() const {
-    return src_task_;
+    return flow_id_;
   }
 
   sw::app_id
   aid() const {
     return aid_;
-  }
-
-  sw::task_id
-  dest_task() const {
-    return dest_task_;
   }
 
   type_t
@@ -181,15 +164,11 @@ class network_message :
   clone_into(network_message* cln) const;
 
  protected:
-  network_id net_id_;
+  uint64_t flow_id_;
 
   sw::app_id aid_;
 
   bool needs_ack_;
-
-  sw::task_id src_task_;
-
-  sw::task_id dest_task_;
 
   long bytes_;
 

@@ -21,7 +21,7 @@ class pisces_NtoM_queue :
 
   int
   thread_id() const {
-    return event_subscheduler::thread_id();
+    return event_subcomponent::thread_id();
   }
 
   void

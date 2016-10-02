@@ -16,6 +16,7 @@ logp_nic::logp_nic(sprockit::sim_parameters* params, node* parent) :
   next_free_(0),
   nic(params, parent)
 {
+  ack_handler_ = new_handler(parent, &node::handle);
   sprockit::sim_parameters* inj_params = params->get_namespace("injection");
   double inj_bw = inj_params->get_bandwidth_param("bandwidth");
   inj_bw_inverse_ = 1.0/inj_bw;
@@ -40,7 +41,7 @@ logp_nic::do_send(network_message* msg)
   if (msg->needs_ack()){
     //do whatever you need to do so that this msg decouples all pointers
     network_message* acker = msg->clone_injection_ack();
-    schedule(next_free_, parent_->self_handler(), acker); //send to node
+    schedule(next_free_, ack_handler_, acker); //send to node
   }
 }
 

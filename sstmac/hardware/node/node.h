@@ -69,7 +69,7 @@ class node :
   payload_handler(int port) const override;
 
   link_handler*
-  ack_handler(int port) const override;
+  credit_handler(int port) const override;
 
   /**
    @return  The object encapsulating the memory model

@@ -31,7 +31,7 @@ congestion_delay_us(const pkt_arbitration_t& st)
   return congestion_delay_us;
 }
 
-packet_stats_callback::packet_stats_callback(sprockit::sim_parameters *params, event_scheduler *parent)
+packet_stats_callback::packet_stats_callback(sprockit::sim_parameters *params, event_scheduler* parent)
 {
   id_ = params->get_int_param("id");
 }
@@ -84,7 +84,7 @@ congestion_spyplot::collect(double congestion_delay_us,
   congestion_spyplot_->add(pkt->fromaddr(), pkt->toaddr(), congestion_delay_us);
 }
 
-delay_histogram::delay_histogram(sprockit::sim_parameters *params, event_scheduler *parent) :
+delay_histogram::delay_histogram(sprockit::sim_parameters *params, event_scheduler* parent) :
   packet_stats_callback(params, parent)
 {
   congestion_hist_ = required_stats<stat_histogram>(parent, params,
@@ -127,7 +127,7 @@ packet_delay_stats::collect_single_event(const pkt_arbitration_t& st)
 }
 
 spyplot_and_delay_stats::spyplot_and_delay_stats(sprockit::sim_parameters *params,
-                                                 event_scheduler *parent) :
+                                                 event_scheduler* parent) :
   congestion_spyplot(params, parent),
   packet_delay_stats(params, parent),
   packet_stats_callback(params, parent)
@@ -148,7 +148,7 @@ bytes_sent_collector::~bytes_sent_collector()
 }
 
 bytes_sent_collector::bytes_sent_collector(sprockit::sim_parameters *params,
-                                           event_scheduler *parent) :
+                                           event_scheduler* parent) :
   packet_stats_callback(params, parent)
 {
   bytes_sent_ = required_stats<stat_bytes_sent>(parent, params,
@@ -166,7 +166,7 @@ byte_hop_collector::~byte_hop_collector()
   delete byte_hops_;
 }
 
-byte_hop_collector::byte_hop_collector(sprockit::sim_parameters *params, event_scheduler *parent)
+byte_hop_collector::byte_hop_collector(sprockit::sim_parameters *params, event_scheduler* parent)
   : packet_stats_callback(params, parent)
 {
   byte_hops_ = required_stats<stat_global_int>(parent, params,

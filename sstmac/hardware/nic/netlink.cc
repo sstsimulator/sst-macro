@@ -11,7 +11,7 @@ namespace sstmac {
 namespace hw {
 
 netlink::netlink(sprockit::sim_parameters* params, node *parent) :
-  event_subscheduler(parent, nullptr) //no self events
+  event_subcomponent(parent) //no self events
 {
   id_ = netlink_id(params->get_int_param("id"));
   num_eject_ = params->get_int_param("neject");

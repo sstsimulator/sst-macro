@@ -53,7 +53,7 @@ class logp_nic :
   }
 
   link_handler*
-  ack_handler(int port) const override {
+  credit_handler(int port) const override {
     return nullptr; //should never handle acks
   }
 
@@ -74,6 +74,8 @@ class logp_nic :
   timestamp inj_lat_;
 
   timestamp next_free_;
+
+  event_handler* ack_handler_;
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   link_handler* payload_handler_;

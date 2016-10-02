@@ -47,7 +47,7 @@ class dist_dummy_switch :
   }
 
   link_handler*
-  ack_handler(int port) const override {
+  credit_handler(int port) const override {
     return const_cast<dist_dummy_switch*>(this);
   }
 

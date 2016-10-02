@@ -46,7 +46,7 @@ namespace sstmac {
 namespace sw {
 
 class operating_system :
-  public event_subscheduler
+  public event_subcomponent
 {
   friend class service;
   friend class thread;
@@ -64,6 +64,11 @@ class operating_system :
   };
 
   virtual ~operating_system();
+
+  std::string
+  to_string() const {
+    return "operating system";
+  }
 
   static inline os_thread_context&
   static_os_thread_context() {

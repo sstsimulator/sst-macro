@@ -48,9 +48,10 @@ nic::nic(sprockit::sim_parameters* params, node* parent) :
   logp_switch_(nullptr),
   event_mtl_handler_(nullptr),
   my_addr_(parent->addr()),
-  connectable_subcomponent(parent, nullptr) //no self events with NIC
+  connectable_subcomponent(parent) //no self events with NIC
 {
   event_mtl_handler_ = new_handler(this, &nic::mtl_handle);
+  node_handler_ = new_handler(parent, &node::handle);
 
   negligible_size_ = params->get_optional_int_param("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
 
@@ -67,7 +68,7 @@ nic::nic(sprockit::sim_parameters* params, node* parent) :
         params, "message_size_histogram", "histogram");
 
 #if !SSTMAC_INTEGRATED_SST_CORE
-  link_mtl_handler_ = new_link_handler(this, &nic::mtl_handle);
+  link_mtl_handler_ = new_handler(this, &nic::mtl_handle);
 #endif
 }
 
@@ -109,7 +110,7 @@ nic::recv_message(message* msg)
 
   nic_debug("handling message %s:%lu of type %s from node %d while running",
     netmsg->to_string().c_str(),
-    uint64_t(netmsg->net_id()),
+    netmsg->flow_id(),
     network_message::tostr(netmsg->type()),
     int(netmsg->fromaddr()));
 
@@ -192,7 +193,7 @@ nic::record_message(network_message* netmsg)
 {
   nic_debug("sending message %lu of size %ld of type %s to node %d: "
       "netid=%lu for %s",
-      uint64_t(netmsg->net_id()),
+      netmsg->flow_id(),
       netmsg->byte_length(),
       network_message::tostr(netmsg->type()),
       int(netmsg->toaddr()),
@@ -244,7 +245,7 @@ nic::internode_send(network_message* netmsg)
 void
 nic::send_to_node(network_message* payload)
 {
-  schedule_now(parent_->self_handler(), payload);
+  schedule_now(node_handler_, payload);
 }
 
 }

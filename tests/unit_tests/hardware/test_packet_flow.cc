@@ -21,7 +21,7 @@ class test_message :
 
     public:
         test_message(int num_bytes) :
-            network_message(app_id(0), naddr(0), naddr(1), task_id(), task_id(), num_bytes)
+            network_message(app_id(0), naddr(0), naddr(1), num_bytes)
         {
         }
 

@@ -26,9 +26,8 @@
 namespace sstmac {
 namespace hw {
 
-ImplementSSTComponent("simple", node, simple_node,
+SpktRegister("simple", node, simple_node,
   "A basic endpoint node running SST/macro software stacks");
-
 
 simple_node::~simple_node()
 {

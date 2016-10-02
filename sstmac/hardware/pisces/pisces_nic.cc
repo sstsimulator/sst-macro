@@ -55,7 +55,7 @@ pisces_nic::pisces_nic(sprockit::sim_parameters* params, node* parent) :
   inj_params->combine_into(port0_params);
 
 #if !SSTMAC_INTEGRATED_SST_CORE
-  ack_handler_ = packetizer_->new_ack_handler();
+  ack_handler_ = packetizer_->new_credit_handler();
   payload_handler_ = packetizer_->new_payload_handler();
 #endif
 }
@@ -104,10 +104,10 @@ pisces_nic::payload_handler(int port) const
 }
 
 link_handler*
-pisces_nic::ack_handler(int port) const
+pisces_nic::credit_handler(int port) const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  return packetizer_->new_ack_handler();
+  return packetizer_->new_credit_handler();
 #else
   return ack_handler_;
 #endif
@@ -177,10 +177,10 @@ pisces_netlink::pisces_netlink(sprockit::sim_parameters *params, node *parent)
   block_ = new pisces_crossbar(params, parent);
   block_->configure_basic_ports(num_inject_ + num_eject_);
 #if !SSTMAC_INTEGRATED_SST_CORE
-  ack_handler_ = new_link_handler(this,
+  ack_handler_ = new_handler(this,
                              &pisces_netlink::handle_credit);
 
-  payload_handler_ = new_link_handler(this,
+  payload_handler_ = new_handler(this,
                              &pisces_netlink::handle_payload);
 #endif
 }
@@ -203,7 +203,7 @@ pisces_netlink::payload_handler(int port) const
 }
 
 link_handler*
-pisces_netlink::ack_handler(int port) const
+pisces_netlink::credit_handler(int port) const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   return new SST::Event::Handler<pisces_netlink>(

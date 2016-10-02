@@ -25,7 +25,7 @@ class packetizer_callback
 };
 
 class packetizer :
-  public event_subscheduler
+  public event_subcomponent
 {
 
  public:
@@ -50,7 +50,7 @@ class packetizer :
   }
 
   virtual link_handler* new_payload_handler() const = 0;
-  virtual link_handler* new_ack_handler() const = 0;
+  virtual link_handler* new_credit_handler() const = 0;
 
  private:
   virtual void
@@ -85,7 +85,7 @@ class packetizer :
 
 };
 
-DeclareFactory(packetizer, event_scheduler*)
+DeclareFactory(packetizer, event_component*)
 
 
 

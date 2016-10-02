@@ -75,6 +75,8 @@ transport_message::clone_into(transport_message* cln) const
 {
   //the payload is actually immutable now - so this is safe
   cln->payload_ = payload_->clone();
+  cln->src_ = src_;
+  cln->dest_ = dest_;
   network_message::clone_into(cln);
   library_interface::clone_into(cln);
 }
@@ -84,6 +86,10 @@ transport_message::reverse()
 {
   //payload_->reverse();
   network_message::reverse();
+  int src = src_;
+  int dst = dest_;
+  src_ = dst;
+  dest_ = src;
 }  
   
 }

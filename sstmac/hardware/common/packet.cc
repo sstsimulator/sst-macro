@@ -8,12 +8,10 @@ namespace hw {
 
 packet::packet(
   serializable* orig,
-  uint64_t flow_id,
-  long num_bytes,
-  long byte_offset) :
+  int num_bytes,
+  bool is_tail) :
  num_bytes_(num_bytes),
- byte_offset_(byte_offset),
- flow_id_(flow_id),
+ is_tail_(is_tail),
  orig_(orig)
 {
 }
@@ -24,8 +22,7 @@ packet::serialize_order(serializer& ser)
   event::serialize_order(ser);
   ser & orig_;
   ser & num_bytes_;
-  ser & byte_offset_;
-  ser & flow_id_;
+  ser & is_tail_;
 }
 
 }

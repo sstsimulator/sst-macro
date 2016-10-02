@@ -24,9 +24,8 @@ namespace hw {
 static sprockit::need_delete_statics<memory_model> need_del;
 
 memory_model::memory_model(sprockit::sim_parameters* params,
-                           node* parent_node,
-                           event_handler* self) :
-  event_subscheduler(parent_node, self),
+                           node* parent_node) :
+  event_subcomponent(parent_node),
   done_(nullptr)
 {
   parent_node_ = parent_node;

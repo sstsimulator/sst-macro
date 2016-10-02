@@ -103,7 +103,7 @@ static const ElementInfoSubComponent subcomponents[] = {
   { "pisces",
     "Link Control module for building Pisces NICs",
     NULL,
-    create_subcomponent<hw::pisces_cut_through_packetizer>,
+    create_subcomponent<hw::pisces_simple_network>,
     NULL,
     NULL,
     "SST::Interfaces::SimpleNetwork"

@@ -27,9 +27,8 @@ RegisterNamespaces("congestion_stats");
 namespace sstmac {
 namespace hw {
 
-ImplementSSTComponent("pisces", network_switch, pisces_switch,
+SpktRegister("pisces", network_switch, pisces_switch,
   "A network switch implementing the packet flow congestion model");
-
 
 pisces_abstract_switch::pisces_abstract_switch(
   sprockit::sim_parameters *params, uint64_t id, event_manager *mgr) :
@@ -90,8 +89,8 @@ pisces_switch::pisces_switch(
   xbar_->set_stat_collector(xbar_stats_);
   xbar_->configure_basic_ports(top_->max_num_ports());
 #if !SSTMAC_INTEGRATED_SST_CORE
-  payload_handler_ = new_link_handler(this, &pisces_switch::handle_payload);
-  ack_handler_ = new_link_handler(this, &pisces_switch::handle_credit);
+  payload_handler_ = new_handler(this, &pisces_switch::handle_payload);
+  ack_handler_ = new_handler(this, &pisces_switch::handle_credit);
 #endif
 }
 
@@ -203,7 +202,7 @@ pisces_switch::to_string() const
 }
 
 link_handler*
-pisces_switch::ack_handler(int port) const
+pisces_switch::credit_handler(int port) const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   return new SST::Event::Handler<pisces_switch>(const_cast<pisces_switch*>(this),

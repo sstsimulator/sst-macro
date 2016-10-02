@@ -38,7 +38,7 @@ class connectable
     event_handler* handler) = 0;
 
   virtual link_handler*
-  ack_handler(int port) const = 0;
+  credit_handler(int port) const = 0;
 
   virtual link_handler*
   payload_handler(int port) const = 0;
@@ -46,29 +46,27 @@ class connectable
 };
 
 class connectable_component :
-  public event_scheduler,
+  public event_component,
   public connectable
 {
  protected:
   connectable_component(sprockit::sim_parameters* params,
                         uint64_t cid,
                         event_loc_id id,
-                        event_manager* mgr,
-                        event_handler* self)
-    : event_scheduler(params, cid, id, mgr, self)
+                        event_manager* mgr)
+    : event_component(params, cid, id, mgr)
   {
   }
 
 };
 
 class connectable_subcomponent :
-  public event_subscheduler,
+  public event_subcomponent,
   public connectable
 {
 protected:
- connectable_subcomponent(event_scheduler* parent,
-                          event_handler* self)
-   : event_subscheduler(parent, self)
+ connectable_subcomponent(event_scheduler* parent)
+   : event_subcomponent(parent)
  {
  }
 };

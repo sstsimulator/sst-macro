@@ -46,7 +46,7 @@ payload_queue::pop(int num_credits)
 pisces_sender::pisces_sender(
   sprockit::sim_parameters* params,
   event_scheduler* parent) :
-  event_subscheduler(parent, nullptr), //no self handlers
+  event_subcomponent(parent), //no self handlers
   stat_collector_(nullptr),
   update_vc_(true)
 {

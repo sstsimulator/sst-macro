@@ -23,13 +23,10 @@ network_message::network_message(sw::app_id aid, long payload_bytes) :
 network_message::network_message(
   sw::app_id aid,
   node_id to, node_id from,
-  sw::task_id src, sw::task_id dst,
   long bytes)
   : needs_ack_(true),
     toaddr_(to),
     fromaddr_(from),
-    src_task_(src),
-    dest_task_(dst),
     bytes_(bytes),
     type_(null_netmsg_type),
     aid_(aid)
@@ -81,11 +78,6 @@ network_message::reverse()
   node_id src = toaddr_;
   toaddr_ = dst;
   fromaddr_ = src;
-
-  sw::task_id srcid = src_task_;
-  sw::task_id dstid = dest_task_;
-  src_task_ = dstid;
-  dest_task_ = srcid;
 }
 
 const char*
@@ -130,9 +122,7 @@ network_message::serialize_order(serializer& ser)
   ser & needs_ack_;
   ser & toaddr_;
   ser & fromaddr_;
-  ser & src_task_;
-  ser & dest_task_;
-  ser & net_id_;
+  ser & flow_id_;
   ser & bytes_;
   ser & type_;
   message::serialize_order(ser);
@@ -192,9 +182,7 @@ network_message::clone_into(network_message* cln) const
   cln->needs_ack_ = needs_ack_;
   cln->toaddr_ = toaddr_;
   cln->fromaddr_ = fromaddr_;
-  cln->src_task_ = src_task_;
-  cln->dest_task_ = dest_task_;
-  cln->net_id_ = net_id_;
+  cln->flow_id_ = flow_id_;
   cln->bytes_ = bytes_;
   cln->type_ = type_;
 }

@@ -46,6 +46,8 @@ namespace sstmac {
 
 class event_manager
 {
+  friend class event_component;
+  friend class event_subcomponent;
   friend class event_scheduler;
   friend class native::manager;
 

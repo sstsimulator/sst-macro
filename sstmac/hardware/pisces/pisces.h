@@ -4,6 +4,7 @@
 #include <sstmac/hardware/common/packet.h>
 #include <sstmac/common/messages/sst_message.h>
 #include <sstmac/hardware/router/routing_enum.h>
+#include <sstmac/hardware/router/routable.h>
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
 
@@ -32,9 +33,8 @@ class pisces_payload :
  public:
   pisces_payload(
     serializable* msg,
-    uint64_t payload,
     int num_bytes,
-    long offset);
+    bool is_tail);
 
   pisces_payload(){} //for serialization
 
@@ -136,9 +136,6 @@ class pisces_payload :
     return inport_;
   }
 
-  std::string
-  to_string() const override;
-
   void
   serialize_order(serializer& ser) override;
 
@@ -152,6 +149,81 @@ class pisces_payload :
   timestamp arrival_;
 
   int vc_;
+
+};
+
+/**
+ */
+class pisces_routable_packet :
+ public pisces_payload,
+ public routable
+{
+  public:
+   pisces_routable_packet(
+     serializable* msg,
+     int num_bytes,
+     bool is_tail,
+     node_id toaddr,
+     node_id fromaddr) :
+    pisces_payload(msg, num_bytes, is_tail),
+    routable(toaddr, fromaddr)
+  {
+  }
+
+  node_id
+  toaddr() const override {
+   return routable::toaddr();
+  }
+
+  node_id
+  fromaddr() const override {
+    return routable::fromaddr();
+  }
+
+  int
+  next_port() const override {
+    return routable::port();
+  }
+
+  int
+  next_vc() const override {
+    return routable::vc();
+  }
+
+};
+
+/**
+ * @brief The pisces_packet class
+ * The default packet flow class using the default routable constructs
+ */
+class pisces_default_packet :
+ public pisces_routable_packet
+{
+  NotSerializable(pisces_default_packet)
+
+  public:
+   pisces_default_packet(
+     serializable* msg,
+     uint64_t flow_id,
+     int num_bytes,
+     bool is_tail,
+     node_id toaddr,
+     node_id fromaddr) :
+    pisces_routable_packet(msg, num_bytes, is_tail, toaddr, fromaddr),
+    flow_id_(flow_id)
+  {
+  }
+
+  uint64_t
+  flow_id() const override {
+    return flow_id_;
+  }
+
+  std::string
+  to_string() const override;
+
+ private:
+  uint64_t flow_id_;
 
 };
 
