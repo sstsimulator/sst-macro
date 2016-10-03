@@ -158,3 +158,11 @@ libsstmac_hw_la_SOURCES =  \
 
 
 
+if INTEGRATED_SST_CORE
+libsstmac_hw_la_SOURCES +=  \
+  pisces/pisces_simple_network.cc
+
+nobase_library_include_HEADERS += \
+  pisces/pisces_simple_network.h
+endif
+

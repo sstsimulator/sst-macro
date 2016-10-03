@@ -20,7 +20,7 @@ pisces_buffer::~pisces_buffer()
 }
 
 void
-pisces_finite_buffer::set_input(
+pisces_buffer::set_input(
   sprockit::sim_parameters* params,
   int this_inport, int src_outport,
   event_handler* input)
@@ -50,7 +50,7 @@ pisces_buffer::set_output(sprockit::sim_parameters* params,
 pisces_network_buffer::pisces_network_buffer(
   sprockit::sim_parameters* params,
   event_scheduler* parent)
-  : pisces_finite_buffer(params, parent),
+  : pisces_buffer(params, parent),
     num_vc_(params->get_int_param("num_vc")),
     queues_(num_vc_),
     credits_(num_vc_, 0),
@@ -341,7 +341,7 @@ pisces_eject_buffer::handle_credit(event* ev)
 
 pisces_injection_buffer::
 pisces_injection_buffer(sprockit::sim_parameters* params, event_scheduler* parent) :
-  pisces_infinite_buffer(params, parent)
+  pisces_buffer(params, parent)
 {
   packet_size_ = params->get_byte_length_param("mtu");
   credits_ = params->get_byte_length_param("credits");

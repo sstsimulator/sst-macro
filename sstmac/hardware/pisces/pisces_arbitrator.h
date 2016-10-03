@@ -18,7 +18,6 @@ namespace hw {
  */
 class pisces_bandwidth_arbitrator
 {
-
  public:
   /**
       Assign bandwidth to payload.
@@ -26,6 +25,9 @@ class pisces_bandwidth_arbitrator
   */
   virtual void
   arbitrate(pkt_arbitration_t& st) = 0;
+
+  virtual timestamp
+  head_tail_delay(pisces_payload* pkt) = 0;
 
   virtual std::string
   to_string() const = 0;
@@ -85,6 +87,9 @@ class pisces_null_arbitrator :
     return "pisces null arbitrator";
   }
 
+  timestamp
+  head_tail_delay(pisces_payload *pkt) override;
+
   int
   bytes_sending(timestamp now) const override;
 
@@ -108,6 +113,12 @@ class pisces_simple_arbitrator :
   std::string
   to_string() const override {
     return "pisces simple arbitrator";
+  }
+
+  timestamp
+  head_tail_delay(pisces_payload *pkt) override {
+    //no delay
+    return timestamp(0,timestamp::exact);
   }
 
   int
@@ -152,6 +163,9 @@ class pisces_cut_through_arbitrator :
 
   void
   init_noise_model(noise_model* noise) override;
+
+  timestamp
+  head_tail_delay(pisces_payload *pkt) override;
 
  private:
   void clean_up(ticks_t now);

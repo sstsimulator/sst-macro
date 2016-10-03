@@ -71,6 +71,12 @@ class pisces_sender :
 
   virtual void handle_payload(event* ev) = 0;
 
+  static void
+  configure_credit_port_latency(sprockit::sim_parameters* params);
+
+  static void
+  configure_payload_port_latency(sprockit::sim_parameters* params);
+
   void
   set_stat_collector(packet_stats_callback* c){
     stat_collector_ = c;
@@ -91,7 +97,7 @@ class pisces_sender :
   pisces_sender(sprockit::sim_parameters* params,
                      event_scheduler* parent);
 
-  void
+  virtual void
   send_credit(const pisces_input& src,
     pisces_payload* payload,
     timestamp packet_tail_leaves);

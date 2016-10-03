@@ -7,6 +7,7 @@
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/pisces/pisces_nic.h>
 #include <sstmac/hardware/pisces/pisces_switch.h>
+#include <sstmac/hardware/pisces/pisces_simple_network.h>
 #include <sstmac/hardware/logp/logp_switch.h>
 #include <sstmac/hardware/node/simple_node.h>
 #include <sstmac/hardware/topology/topology.h>

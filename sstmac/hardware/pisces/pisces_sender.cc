@@ -55,6 +55,28 @@ pisces_sender::pisces_sender(
 }
 
 void
+pisces_sender::configure_payload_port_latency(sprockit::sim_parameters* params)
+{
+  if (!params->has_param("send_latency")){
+    params->add_param_override("send_latency", params->get_param("latency"));
+  }
+  if (!params->has_param("credit_latency")){
+    params->add_param_override("credit_latency", "0ns");
+  }
+}
+
+void
+pisces_sender::configure_credit_port_latency(sprockit::sim_parameters* params)
+{
+  if (!params->has_param("send_latency)")){
+    params->add_param_override("send_latency", "0ns");
+  }
+  if (!params->has_param("credit_latency")){
+    params->add_param_override("credit_latency", params->get_param("latency"));
+  }
+}
+
+void
 pisces_sender::send_credit(
   const pisces_input& src,
   pisces_payload* payload,

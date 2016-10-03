@@ -242,7 +242,7 @@ class pisces_credit :
   pisces_credit(
     int port,
     int vc,
-    long num_credits)
+    int num_credits)
     : port_(port),
       num_credits_(num_credits),
       vc_(vc)
@@ -259,17 +259,7 @@ class pisces_credit :
     return port_;
   }
 
-  virtual bool
-  is_credit() const {
-    return true;
-  }
-
-  virtual bool
-  is_chunk() const {
-    return true;
-  }
-
-  long
+  int
   num_credits() const {
     return num_credits_;
   }

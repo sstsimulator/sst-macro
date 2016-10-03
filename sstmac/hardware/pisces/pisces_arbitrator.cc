@@ -117,6 +117,13 @@ pisces_null_arbitrator::pisces_null_arbitrator(sprockit::sim_parameters* params)
 {
 }
 
+timestamp
+pisces_null_arbitrator::head_tail_delay(pisces_payload *pkt)
+{
+  timestamp ser_delay(pkt->num_bytes() / pkt->bw());
+  return ser_delay;
+}
+
 void
 pisces_null_arbitrator::arbitrate(pkt_arbitration_t &st)
 {
@@ -153,6 +160,13 @@ pisces_cut_through_arbitrator(sprockit::sim_parameters* params)
   head_->length = std::numeric_limits<uint64_t>::max();
 }
 
+
+timestamp
+pisces_cut_through_arbitrator::head_tail_delay(pisces_payload *pkt)
+{
+  timestamp ser_delay(pkt->num_bytes() / pkt->bw());
+  return ser_delay;
+}
 
 pisces_cut_through_arbitrator::~pisces_cut_through_arbitrator()
 {

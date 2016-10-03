@@ -41,14 +41,39 @@ class network_message :
 
  public:
   network_message(
-    sw::app_id aid,
-    node_id toaddr,
-    node_id fromaddr,
-    long payload_bytes);
+   sw::app_id aid,
+   node_id to,
+   node_id from,
+   long payload_bytes) :
+    needs_ack_(true),
+    toaddr_(to),
+    fromaddr_(from),
+    bytes_(payload_bytes),
+    type_(null_netmsg_type)
+  {
+  }
 
-  network_message(sw::app_id aid, long payload_bytes);
+  network_message(node_id toaddr, node_id fromaddr, int num_bytes) :
+    bytes_(num_bytes),
+    toaddr_(toaddr),
+    fromaddr_(fromaddr)
+  {
+  }
 
-  network_message(); //for serialization
+  network_message(sw::app_id aid, long payload_bytes) :
+   bytes_(payload_bytes),
+   needs_ack_(true),
+   type_(null_netmsg_type),
+   aid_(aid)
+  {
+  }
+
+  network_message() //for serialization
+   : needs_ack_(true),
+    type_(null_netmsg_type),
+    bytes_(0)
+  {
+  }
 
   virtual std::string
   to_string() const override {

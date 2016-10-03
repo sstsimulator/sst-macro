@@ -55,12 +55,9 @@ pisces_abstract_switch::pisces_abstract_switch(
     //never be limited by credits
     ej_params->add_param_override("credits", "1GB");
   }
-  if (!ej_params->has_param("send_latency")){
-    ej_params->add_param_override("send_latency", ej_params->get_param("latency"));
-  }
-  if (!ej_params->has_param("credit_latency")){
-    ej_params->add_param_override("credit_latency", "1ns");
-  }
+
+  pisces_sender::configure_payload_port_latency(ej_params);
+
   for (topology::injection_port& conn : conns){
     sprockit::sim_parameters* port_params = topology::get_port_params(params, conn.port);
     ej_params->combine_into(port_params);

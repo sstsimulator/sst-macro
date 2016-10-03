@@ -5,34 +5,6 @@
 namespace sstmac {
 namespace hw {
 
-network_message::network_message()
-  : needs_ack_(true),
-    type_(null_netmsg_type),
-    bytes_(0)
-{
-}
-
-network_message::network_message(sw::app_id aid, long payload_bytes) :
-  bytes_(payload_bytes),
-  needs_ack_(true),
-  type_(null_netmsg_type),
-  aid_(aid)
-{
-}
-
-network_message::network_message(
-  sw::app_id aid,
-  node_id to, node_id from,
-  long bytes)
-  : needs_ack_(true),
-    toaddr_(to),
-    fromaddr_(from),
-    bytes_(bytes),
-    type_(null_netmsg_type),
-    aid_(aid)
-{
-}
-
 bool
 network_message::is_nic_ack() const
 {

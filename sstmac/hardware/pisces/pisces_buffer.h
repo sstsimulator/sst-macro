@@ -20,6 +20,12 @@ class pisces_buffer :
     int this_outport, int dst_inport,
     event_handler* output) override;
 
+  virtual void
+  set_input(
+    sprockit::sim_parameters* params,
+    int this_inport, int src_outport,
+    event_handler* input) override;
+
   virtual int
   queue_length() const {
     return 0;
@@ -50,45 +56,8 @@ class pisces_buffer :
   static const int my_inport = 0;
 };
 
-class pisces_finite_buffer :
-  public pisces_buffer
-{
- public:
-  virtual ~pisces_finite_buffer(){}
-
-  virtual void
-  set_input(sprockit::sim_parameters* params,
-            int this_inport, int src_outport,
-            event_handler* input) override;
-
-  pisces_finite_buffer(sprockit::sim_parameters* params,
-                            event_scheduler* parent) :
-    pisces_buffer(params, parent)
-  {
-  }
-
-};
-
-class pisces_infinite_buffer :
-  public pisces_buffer
-{
- protected:
-  pisces_infinite_buffer(sprockit::sim_parameters* params,
-                              event_scheduler* parent) :
-   pisces_buffer(params, parent)
-  {
-  }
-
-  virtual ~pisces_infinite_buffer(){}
-
-  void //no-op, I don't need to send credits to an input, I'm infinite
-  set_input(sprockit::sim_parameters* params, int my_inport, int dst_outport,
-            event_handler *input) override {}
-
-};
-
 class pisces_network_buffer :
-  public pisces_finite_buffer
+  public pisces_buffer
 {
  public:
   pisces_network_buffer(sprockit::sim_parameters* params,
@@ -129,19 +98,17 @@ class pisces_network_buffer :
   pisces_bandwidth_arbitrator* arb_;
   std::set<int> deadlocked_channels_;
   std::map<int, std::list<pisces_payload*> > blocked_messages_;
-  bool queue_depth_reporting_;
-  int queue_depth_delta_;
   int packet_size_;
   event_handler* payload_handler_;
 };
 
 class pisces_eject_buffer :
-  public pisces_finite_buffer
+  public pisces_buffer
 {
  public:
   pisces_eject_buffer(sprockit::sim_parameters* params,
                            event_scheduler* parent) :
-    pisces_finite_buffer(params, parent)
+    pisces_buffer(params, parent)
   {
   }
 
@@ -162,7 +129,7 @@ class pisces_eject_buffer :
 };
 
 class pisces_injection_buffer :
-  public pisces_infinite_buffer
+  public pisces_buffer
 {
  public:
   pisces_injection_buffer(sprockit::sim_parameters* params,

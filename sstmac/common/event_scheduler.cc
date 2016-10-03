@@ -120,6 +120,7 @@ event_scheduler::init_self_link(SST::Component* comp)
   self_link_ = comp->configureSelfLink("self", time_converter_,
     new SST::Event::Handler<event_scheduler>(this,
                  &event_scheduler::handle_self_event));
+  comp_ = comp;
 }
 
 void
@@ -213,16 +214,16 @@ event_component::event_component(sprockit::sim_parameters* params,
                event_loc_id id,
                event_manager* mgr) :
  SSTIntegratedComponent(params, cid),
- event_scheduler(this, id)
+ event_scheduler(id)
 {
   event_scheduler::init_self_link(this);
 }
 
 
 event_subcomponent::event_subcomponent(event_scheduler* parent) :
- event_scheduler(safe_cast(SST::Component, parent), parent->event_location())
+ event_scheduler(parent->event_location())
 {
-  event_scheduler::init_self_link(parent->self_link());
+  event_scheduler::init_self_link(parent->comp(), parent->self_link());
 }
 #else
 void

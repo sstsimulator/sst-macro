@@ -131,16 +131,17 @@ class event_scheduler :
   handle_self_event(SST::Event* ev);
 
  protected:
-  event_scheduler(SST::Component* comp, event_loc_id loc) :
+  event_scheduler(event_loc_id loc) :
    self_link_(nullptr),
-   comp_(comp),
+   comp_(nullptr),
    locatable(loc, locatable::null_threadid)
   {
   }
 
   void init_self_link(SST::Component* comp);
 
-  void init_self_link(SST::Link* self_link){
+  void init_self_link(SST::Component* comp, SST::Link* self_link){
+    comp_ = comp;
     self_link_ = self_link;
   }
 
