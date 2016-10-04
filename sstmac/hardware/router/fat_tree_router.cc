@@ -27,12 +27,12 @@ SpktRegister("fattree | ftree", router, fat_tree_router);
 
 fat_tree_router::fat_tree_router(sprockit::sim_parameters* params, topology *top,
                                  network_switch *netsw) :
-  structured_router(params, top, netsw, routing::minimal),
+  router(params, top, netsw, routing::minimal),
   rng_(nullptr)
 {
-  fat_tree* ft = safe_cast(fat_tree, top);
-  k_ = ft->k();
-  l_ = ft->l();
+  ftree_ = safe_cast(fat_tree, top);
+  k_ = ftree_->k();
+  l_ = ftree_->l();
   seed_ = params->get_optional_long_param("router_seed", -1);
   build_rng();
 
@@ -72,13 +72,7 @@ fat_tree_router::~fat_tree_router()
   if (rng_) delete rng_;
 }
 
-void
-fat_tree_router::route(packet* pkt)
-{
-  minimal_route_to_node(pkt->toaddr(),
-    pkt->interface<structured_routable>()->current_path());
-}
-
+#if 0
 void
 fat_tree_router::productive_paths_to_switch(
   switch_id dst, structured_routable::path_set &paths)
@@ -99,41 +93,35 @@ fat_tree_router::productive_paths_to_switch(
       //paths[i].dim = fat_tree::up_dimension;
       //paths[i].dir = i;
       paths[i].vc = 0;
-      paths[i].outport = top_->convert_to_port(fat_tree::up_dimension, i);
+      paths[i].outport = ftree_->up_port(i);
     }
   }
 }
+#endif
 
 void
-fat_tree_router::minimal_route_to_switch(
+fat_tree_router::route_to_switch(
   switch_id ej_addr,
-  structured_routable::path& path)
+  routable::path& path)
 {
-
-  rter_debug("routing from switch %d:%s -> %d:%s on fat tree router",
-    int(my_addr_), top_->switch_coords(my_addr_).to_string().c_str(),
-    int(ej_addr), top_->switch_coords(ej_addr).to_string().c_str());
-
-  int pathDim, pathDir;
+  int pathDir;
   int ej_id = ej_addr;
-
   int myAddr = my_addr_;
   if (ej_id >= min_reachable_leaf_id_ && ej_id < max_reachable_leaf_id_) {
-    pathDim = fat_tree::down_dimension;
     path.vc = 1;
     long relative_ej_id = ej_id - min_reachable_leaf_id_;
     pathDir = relative_ej_id / num_leaf_switches_per_path_;
     ftree_rter_debug("routing down with dir %d: eject-id=%ld rel-eject-id=%ld",
         pathDir, ej_id, relative_ej_id);
+    path.outport = ftree_->down_port(pathDir);
   }
   else {
     //route up
-    pathDim = fat_tree::up_dimension;
     pathDir = choose_up_minimal_path();
+    path.outport = ftree_->up_port(pathDir);
     path.vc = 0;
     ftree_rter_debug("routing up with dir %d", pathDir);
   }
-  path.outport = regtop_->convert_to_port(pathDim, pathDir);
 }
 
 int

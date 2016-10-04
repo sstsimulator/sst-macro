@@ -35,7 +35,11 @@ class parsedumpi : public sstmac::sw::app
   friend class parsedumpi_callbacks;
 
  public:
-  parsedumpi() : mpi_(0) {}
+  parsedumpi(sprockit::sim_parameters* params) :
+    mpi_(nullptr),
+    sstmac::sw::app(params)
+  {
+  }
 
   /// Wait!  That's not good news at all!
   virtual
@@ -43,8 +47,8 @@ class parsedumpi : public sstmac::sw::app
 
   /// IT'S AN ADDAMS!
   app*
-  clone_type() const {
-    return new parsedumpi;
+  clone_type(sprockit::sim_parameters* params) const {
+    return new parsedumpi(params);
   }
 
   mpi_api* mpi();
@@ -55,11 +59,6 @@ class parsedumpi : public sstmac::sw::app
   /// Parse the tracefile.
   virtual void
   skeleton_main();
-
-  virtual std::string
-  to_string() const {
-    return "parsedumpi";
-  }
 
  private:
   /// The fileroot we plan to parse.

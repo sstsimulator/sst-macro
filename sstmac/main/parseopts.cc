@@ -14,9 +14,8 @@ activate_debugs(const std::string& debug_list)
   std::deque<std::string> tok;
   std::string space = ",";
   pst::BasicStringTokenizer::tokenize(debug_list, tok, space);
-  std::deque<std::string>::const_iterator it, end = tok.end();
-  for (it = tok.begin(); it != end; ++it) {
-    sprockit::debug::turn_on(*it);
+  for (auto& item : tok){
+    sprockit::debug::turn_on(item);
   }
 }
 

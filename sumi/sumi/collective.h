@@ -41,6 +41,9 @@ class collective
     heartbeat
   } type_t;
 
+  virtual std::string
+  to_string() const = 0;
+
   virtual ~collective();
 
   /**

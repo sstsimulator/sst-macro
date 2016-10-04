@@ -4,6 +4,7 @@
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/software/launch/coordinate_allocation.h>
 #include <sstmac/backends/common/parallel_runtime.h>
+#include <sstmac/hardware/topology/cartesian_topology.h>
 #include <sprockit/fileio.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
@@ -14,10 +15,9 @@ namespace sw {
 
 SpktRegister("coordinate", node_allocator, coordinate_allocation);
 
-void
-coordinate_allocation::init_factory_params(sprockit::sim_parameters* params)
+coordinate_allocation::coordinate_allocation(sprockit::sim_parameters* params) :
+  node_allocator(params)
 {
-  node_allocator::init_factory_params(params);
   coord_file_ = params->get_param("launch_coordinate_file");
 }
 
@@ -57,12 +57,11 @@ coordinate_allocation::allocate(
   std::vector<hw::coordinates> node_list;
   read_coordinate_file(rt_, coord_file_, node_list);
 
-  hw::structured_topology* regtop
-      = safe_cast(hw::structured_topology, topology_);
+  hw::cartesian_topology* regtop = topology_->cart_topology();
 
   int num_coords = node_list[0].size();
   int top_ndim = regtop->ndimensions();
-  int nps = regtop->concentration(switch_id(0));
+  int nps = regtop->concentration();
   if (nps > 1) ++top_ndim;
   if (top_ndim != num_coords){
     spkt_throw_printf(sprockit::value_error,

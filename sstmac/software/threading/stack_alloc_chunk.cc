@@ -27,7 +27,7 @@ namespace sw {
 //
 stack_alloc::chunk::chunk(size_t stacksize, size_t suggested_chunk_size,
                           bool use_mprot) :
-  addr_(0), 
+  addr_(nullptr),
   size_(suggested_chunk_size),
   stacksize_(stacksize), 
   use_mprot_(use_mprot), 

@@ -83,7 +83,7 @@ class compute_event_impl :
 
  public:
   bool
-  is_timed_compute() const {
+  is_timed_compute() const override {
     return std::is_same<T,timestamp>::value;
   }
 

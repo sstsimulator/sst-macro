@@ -148,7 +148,7 @@ sumi_server::incoming_event(event* ev)
   get_proc(smsg->dest())->incoming_message(smsg);
  } catch (sprockit::value_error& e) {
    cerrn << "sumi_server::handle: failed handling "
-     << ev->to_string() << std::endl;
+         << sprockit::to_string(ev) << std::endl;
    throw e;
  }
 
@@ -158,8 +158,7 @@ sumi_server::incoming_event(event* ev)
 sumi_api*
 sumi_server::get_proc(int rank) const
 {
-  spkt_unordered_map<int, sumi_api*>::const_iterator
-  it = procs_.find(rank);
+  auto it = procs_.find(rank);
   if (it == procs_.end()) {
     it = procs_.begin();
     cerrn << "Valid ranks for server are:\n";

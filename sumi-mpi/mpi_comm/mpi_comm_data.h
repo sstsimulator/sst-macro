@@ -24,7 +24,7 @@ class mpi_comm_data  {
  public:
 
   virtual std::string
-  to_string() const {
+  to_string() const override {
     return "mpi comm data";
   }
 };

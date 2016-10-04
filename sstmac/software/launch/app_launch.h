@@ -28,11 +28,7 @@ class app_launch
 {
 
  public:
-  app_launch(app_id aid) :
-    aid_(aid),
-    indexed_(false)
-  {
-  }
+  app_launch(sprockit::sim_parameters* params, app_id aid);
 
   virtual ~app_launch();
 
@@ -70,9 +66,6 @@ class app_launch
   core_affinities() const {
     return core_affinities_;
   }
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
 
   hw::topology*
   topol() const {

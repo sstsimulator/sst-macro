@@ -20,7 +20,12 @@ int main(int argc, char** argv)
 
   MPI_Barrier(MPI_COMM_WORLD);
 
+  if (rank == 0){
+    printf("Rank 0 finished at t=%8.4f ms\n", MPI_Wtime()*1e3);
+  }
+
   MPI_Finalize();
+
   return 0;
 }
 

@@ -6,8 +6,8 @@ namespace tutorial {
 SpktRegister("patinkin", actor, mandy_patinkin,
             "He's on one of those shows now... NCIS? CSI?");
 
-void
-mandy_patinkin::init_factory_params(sprockit::sim_parameters* params)
+mandy_patinkin::mandy_patinkin(sprockit::sim_parameters* params)
+ : actor(params)
 {
   sword_hand_ = params->get_param("sword_hand");
 
@@ -20,8 +20,6 @@ mandy_patinkin::init_factory_params(sprockit::sim_parameters* params)
                      "Invalid hand specified: %s",
                      sword_hand_.c_str());
   }
-
-  actor::init_factory_params(params);
 }
 
 void

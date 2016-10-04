@@ -22,7 +22,7 @@ class illustration :
   /** Public functions and constructors */
  public:
   std::string
-  to_string() const {
+  to_string() const override {
     return "message class";
   }
 

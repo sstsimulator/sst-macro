@@ -11,6 +11,8 @@
 #include <sst/core/interfaces/simpleNetwork.h>
 #endif
 
+DeclareDebugSlot(packetizer)
+
 namespace sstmac {
 namespace hw {
 
@@ -23,7 +25,7 @@ class packetizer_callback
 };
 
 class packetizer :
-  public event_subscheduler
+  public event_subcomponent
 {
 
  public:
@@ -35,18 +37,27 @@ class packetizer :
 
   void sendWhatYouCan(int vn);
 
-  void setNotify(packetizer_callback* handler){
+  void setArrivalNotify(packetizer_callback* handler){
     notifier_ = handler;
+  }
+
+  void setInjectionAcker(event_handler* handler){
+    acker_ = handler;
   }
 
   int packetSize() const {
     return packet_size_;
   }
 
- private:
-  virtual void inject(int vn, long bytes, long byte_offset, message* payload) = 0;
+  virtual link_handler* new_payload_handler() const = 0;
+  virtual link_handler* new_credit_handler() const = 0;
 
-  virtual bool spaceToSend(int vn, int num_bits) const = 0;
+ private:
+  virtual void
+  inject(int vn, long bytes, long byte_offset, message* payload) = 0;
+
+  virtual bool
+  spaceToSend(int vn, int num_bits) = 0;
 
  private:
   recv_cq completion_queue_;
@@ -61,52 +72,22 @@ class packetizer :
 
   int packet_size_;
 
+  double inv_bw_;
+
   packetizer_callback* notifier_;
+  event_handler* acker_;
 
  protected:
   packetizer(sprockit::sim_parameters* params,
-             event_scheduler* parent,
-             packetizer_callback* handler);
+             event_scheduler* parent);
 
   void bytesArrived(int vn, uint64_t unique_id, int bytes, message* parent);
 
 };
 
-DeclareFactory(packetizer, event_scheduler*, packetizer_callback*)
+DeclareFactory(packetizer, event_component*)
 
-#if SSTMAC_INTEGRATED_SST_CORE
-class SimpleNetworkPacket : public SST::Event
-{
-  NotSerializable(SimpleNetworkPacket)
 
- public:
-  SimpleNetworkPacket(uint64_t id) : flow_id(id) {}
-  uint64_t flow_id;
-};
-
-class SimpleNetworkPacketizer :
-  public packetizer
-{
- public:
-  SimpleNetworkPacketizer(sprockit::sim_parameters* params,
-                      event_scheduler* parent,
-                      packetizer_callback* handler);
-
-  bool spaceToSend(int vn, int num_bits) const;
-
-  void inject(int vn, long bytes, long byte_offset, message *payload);
-
-  bool recvNotify(int vn);
-
-  bool sendNotify(int vn);
-
- private:
-  SST::Interfaces::SimpleNetwork* m_linkControl;
-  SST::Interfaces::SimpleNetwork::HandlerBase* m_recvNotifyFunctor;
-  SST::Interfaces::SimpleNetwork::HandlerBase* m_sendNotifyFunctor;
-
-};
-#endif
 
 }
 }

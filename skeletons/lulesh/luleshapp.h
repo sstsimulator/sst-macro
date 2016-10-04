@@ -45,11 +45,15 @@ namespace luleshmodel {
   bool usetopo_;
 
   public:
-    luleshapp(){}
+    luleshapp(sprockit::sim_parameters* params) :
+      sstmac::sw::app(params)
+    {
+    }
 
     /** Get a copy, launchers can use this to create app threads. */
-    sstmac::sw::app* clone_type() const {
-      return new luleshapp;
+    sstmac::sw::app*
+    clone_type(sprockit::sim_parameters* params) const {
+      return new luleshapp(params);
     }
 
     /** Destructor. */

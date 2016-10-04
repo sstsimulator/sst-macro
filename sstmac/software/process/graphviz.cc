@@ -79,10 +79,9 @@ graph_viz::trace::summary() const
   std::stringstream sstr;
   sstr << "fn=" << (const char*) fxn_ << "\n";
   sstr << 0 << " " << self_ << "\n";
-  std::map<void*, graphviz_call>::const_iterator it, end = calls_.end();
-  for (it = calls_.begin(); it != end; ++it) {
-    const char* fxn = (const char*) it->first;
-    const graphviz_call& call = it->second;
+  for (auto& pair : calls_) {
+    const char* fxn = (const char*) pair.first;
+    const graphviz_call& call = pair.second;
     sstr << "cfn=" << fxn << "\n";
     sstr << "calls=" << call.first << " " << 0 << "\n";
     sstr << 0 << " " << call.second << "\n";
@@ -123,9 +122,8 @@ graph_viz::dump_global_data()
 
   myfile << "events: Instructions\n\n";
 
-  std::map<void*,trace*>::const_iterator it, end = traces_.end();
-  for (it=traces_.begin(); it != end; ++it) {
-    myfile << it->second->summary();
+  for (auto& pair : traces_) {
+    myfile << pair.second->summary();
     myfile << "\n";
   }
   myfile.close();
@@ -133,10 +131,6 @@ graph_viz::dump_global_data()
 
 void
 graph_viz::simulation_finished(timestamp t)
-{
-}
-
-graph_viz::graph_viz()
 {
 }
 

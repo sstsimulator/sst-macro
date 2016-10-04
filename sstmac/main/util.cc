@@ -1,7 +1,7 @@
 #include <sstmac/util.h>
-#include <sstmac/skeleton.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/app.h>
+#include <sstmac/skeleton.h>
 
 extern "C" double
 sstmac_now(){

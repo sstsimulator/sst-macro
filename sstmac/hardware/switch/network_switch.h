@@ -29,6 +29,9 @@
 #include <vector>
 
 DeclareDebugSlot(network_switch)
+#define switch_debug(...) \
+  debug_printf(sprockit::dbg::network_switch, "Switch %d: %s", \
+    int(addr()), sprockit::printf(__VA_ARGS__).c_str())
 
 namespace sstmac {
 namespace hw {
@@ -42,11 +45,6 @@ class network_switch :
   public connectable_component
 {
  public:
-  std::string
-  to_string() const {
-    return "network switch";
-  }
-
   network_switch(
     sprockit::sim_parameters* params,
     uint64_t id,
@@ -62,22 +60,10 @@ class network_switch :
     return my_addr_;
   }
 
-  /**
-   * @brief rter
-   * @return The router used for performing routing computations
-   */
-  router*
-  rter() const {
-    return router_;
-  }
-
   virtual void
-  initialize() {
-    //nothing to do by default
+  compatibility_check() const {
+    //by default, nothing
   }
-
-  virtual std::vector<switch_id>
-  connected_switches() const = 0;
 
   /**
    * @brief queue_length
@@ -92,69 +78,9 @@ class network_switch :
   virtual int
   queue_length(int port) const = 0;
 
-  /**
-   @return The total hop latency to transit from input of one switch to the next (with zero congestion)
-  */
-  virtual timestamp
-  hop_latency() const = 0;
-
-  /**
-   * @brief lookahead For parallel simulations, returns the maximum PDES lookahead possible
-   * between two network switches. This is usually (but not always) the sames as the hop latency
-   * @return The PDES lookahead
-   */
-  virtual timestamp
-  lookahead() const = 0;
-
-  /**
-   @return The bandwidth observed hopping from switch to switch (with zero congestion)
-  */
-  virtual double
-  hop_bandwidth() const = 0;
-
-  /**
-   * @brief connect
-   * @param src_outport The port that packets will exit on the source
-   * @param dst_inport  The port that packets will enter on the destination
-   * @param ty          The type of connection (usually just output or input)
-   *                    An output connection is a data link that carries payload
-   *                    from src to dst. An input connection is a control link that
-   *                    usually just carries credit/arbitration info from dst to src.
-   * @param mod         The dst (if output link) or src (if input link)
-   * @param cfg         An special configure options for the link
-   */
-  void
-  connect(
-    int src_outport,
-    int dst_inport,
-    connection_type_t ty,
-    connectable* mod,
-    config* cfg);
-
- protected:
-  virtual void
-  connect_injector(int src_outport, int dst_inport, event_handler* nic) = 0;
-
-  virtual void
-  connect_ejector(int src_outport, int dst_inport, event_handler* nic) = 0;
-
-  virtual void
-  connect_output(
-    int src_outport,
-    int dst_inport,
-    connectable* mod,
-    config* cfg) = 0;
-
-  virtual void
-  connect_input(
-    int src_outport,
-    int dst_inport,
-    connectable* mod,
-    config* cfg) = 0;
 
  protected:
   switch_id my_addr_;
-  router* router_;
   topology* top_;
 
 };

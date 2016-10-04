@@ -13,7 +13,7 @@
 #define SSTMAC_SOFTWARE_SERVICES_LAUNCH_ALLOCATION_CARTALLOCATION_H_INCLUDED
 
 #include <vector>
-#include <sstmac/hardware/topology/structured_topology.h>
+#include <sstmac/hardware/topology/cartesian_topology.h>
 #include <sstmac/software/launch/node_allocator.h>
 
 namespace sstmac {
@@ -24,11 +24,15 @@ class cart_allocation :
 {
 
  public:
-  void
-  init_factory_params(sprockit::sim_parameters* params);
+  cart_allocation(sprockit::sim_parameters* params);
 
   virtual
   ~cart_allocation() throw () {}
+
+  std::string
+  to_string() const override {
+    return "cart allocation";
+  }
 
   /**
    * @brief allocate
@@ -40,7 +44,7 @@ class cart_allocation :
   void
   allocate(int nnode,
    const ordered_node_set& available,
-   ordered_node_set& allocation) const;
+   ordered_node_set& allocation) const override;
 
  private:
   /**
@@ -52,7 +56,7 @@ class cart_allocation :
    */
   void
   insert(
-    hw::structured_topology* regtop,
+    hw::cartesian_topology* regtop,
     const std::vector<int>& coords,
     const ordered_node_set& available,
     ordered_node_set& allocation) const;
@@ -68,7 +72,7 @@ class cart_allocation :
    */
   void
   allocate_dim(
-   hw::structured_topology* regtop,
+   hw::cartesian_topology* regtop,
    int dim,
    std::vector<int>& vec,
    const ordered_node_set& available,

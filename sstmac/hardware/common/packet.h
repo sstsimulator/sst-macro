@@ -9,23 +9,24 @@ namespace sstmac {
 namespace hw {
 
 class packet :
-  public event
+  public event,
+  public sprockit::printable
 {
 
  public:
-  message*
+  serializable*
   orig() const {
     return orig_;
   }
 
   virtual std::string
-  to_string() const {
+  to_string() const override {
     return "packet";
   }
 
   bool
   is_tail() const {
-    return orig_;
+    return is_tail_;
   }
 
   int
@@ -33,13 +34,8 @@ class packet :
     return num_bytes_;
   }
 
-  uint64_t
-  flow_id() const {
-    return flow_id_;
-  }
-
   virtual void
-  serialize_order(serializer& ser);
+  serialize_order(serializer& ser) override;
 
   virtual bool
   is_packet() const {
@@ -52,27 +48,29 @@ class packet :
   virtual node_id
   fromaddr() const = 0;
 
-  long
-  byte_offset() const {
-    return byte_offset_;
+  virtual uint64_t
+  flow_id() const = 0;
+
+  template <class T>
+  T*
+  interface(){
+    T* t = dynamic_cast<T*>(this);
+    return t;
   }
 
  protected:
   packet() : orig_(nullptr) {}
 
-  packet(
-    message* orig,
-    long num_bytes,
-    long byte_offset);
+  packet(serializable* payload,
+    int num_bytes,
+    bool is_tail);
 
  protected:
-  message* orig_;
+  serializable* orig_;
 
   int num_bytes_;
 
-  long byte_offset_;
-
-  uint64_t flow_id_;
+  bool is_tail_;
 
 };
 

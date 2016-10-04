@@ -51,7 +51,10 @@ namespace gtc
     std::map<std::string,double> param_map_;
 
   public:
-    gtc_main() {}
+    gtc_main(sprockit::sim_parameters* params) :
+      sstmac::sw::app(params)
+    {
+    }
 
     /// Goodbye.
     virtual
@@ -61,23 +64,17 @@ namespace gtc
 
     /// Get a copy.
     virtual sstmac::sw::app*
-    clone_type() const
+    clone_type(sprockit::sim_parameters* params) const override
     {
-      return new gtc_main;
+      return new gtc_main(params);
     }
 
     /// Go.
     void
-    skeleton_main();
+    skeleton_main() override;
 
     virtual void
-    consume_params(sprockit::sim_parameters* params);
-
-    virtual std::string
-    to_string() const
-    {
-      return "gtc_main";
-    }
+    consume_params(sprockit::sim_parameters* params) override;
 
     // -------------- GTC Functions
   private:
@@ -138,7 +135,7 @@ namespace gtc
     modulo(double num, double by){
       int div = num / by;
       double temp = by * div;
-      double ret = abs(num - temp);
+      double ret = std::abs(num - temp);
       if(sign(1, num) != sign(1, by)){
           ret--;
       }

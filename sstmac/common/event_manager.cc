@@ -33,11 +33,6 @@ class stop_event : public event_queue_entry
     man_->stop();
   }
 
-  std::string
-  to_string() const {
-    return "stop event";
-  }
-
   stop_event(event_manager* man) :
     man_(man),
     event_queue_entry(event_loc_id::null, event_loc_id::null)
@@ -80,8 +75,7 @@ event_manager::ipc_schedule(timestamp t,
   event* ev)
 {
   spkt_throw_printf(sprockit::unimplemented_error,
-   "%s::ipc_schedule: not valid for chosen event manager",
-   to_string().c_str());
+    "%s::ipc_schedule: not valid for chosen event manager");
 }
 
 void
@@ -99,8 +93,7 @@ event_manager::multithread_schedule(
     event_queue_entry* ev)
 {
   spkt_throw_printf(sprockit::unimplemented_error,
-    "%s::multithread_schedule: not valid for chosen event manager",
-    to_string().c_str());
+    "%s::multithread_schedule: not valid for chosen event manager");
 }
 
 partition*

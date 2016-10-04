@@ -25,7 +25,7 @@ class transport_message :
      long byte_length);
 
   virtual void
-  serialize_order(serializer& ser);
+  serialize_order(serializer& ser) override;
 
   sumi::message_ptr
   payload() const {
@@ -33,43 +33,45 @@ class transport_message :
   }
 
   std::string
-  to_string() const;
+  to_string() const override;
 
   int
   dest() const {
-    return dest_task_;
+    return dest_;
   }
 
   void
   set_dest(int dest) {
-    dest_task_ = ::sstmac::sw::task_id(dest);
+    dest_ = dest;
   }
 
   int
   src() const {
-    return src_task_;
+    return src_;
   }
 
   void
   set_src(int src) {
-    src_task_ = ::sstmac::sw::task_id(src);
+    src_ = src;
   }
 
   virtual void
-  put_on_wire();
+  put_on_wire() override;
 
   ::sstmac::hw::network_message*
-  clone_injection_ack() const;
+  clone_injection_ack() const override;
 
  protected:
   void
   clone_into(transport_message* cln) const;
 
   void
-  reverse();
+  reverse() override;
 
  private:
   sumi::message_ptr payload_;
+  int dest_;
+  int src_;
 
 };
 

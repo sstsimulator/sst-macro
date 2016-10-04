@@ -36,11 +36,6 @@ class partition
 {
 
  public:
-  virtual std::string
-  to_string() const {
-    return "partition";
-  }
-
   virtual ~partition();
 
   hw::index_subset*
@@ -97,6 +92,9 @@ class partition
 
   virtual int
   thread_for_local_switch(int local_idx) const;
+
+  virtual void
+  finalize_init(){}
 
  protected:
   partition(sprockit::sim_parameters* params, parallel_runtime* rt);

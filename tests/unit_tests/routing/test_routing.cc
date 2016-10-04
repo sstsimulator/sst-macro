@@ -11,6 +11,17 @@ void test_dragonfly_v1(UnitTest& unit);
 void test_dragonfly_v2(UnitTest& unit);
 
 using namespace sstmac;
+using namespace sstmac::hw;
+
+void
+test_topology(sprockit::sim_parameters& params)
+{
+  topology* top = topology_factory::get_param("name", &params);
+  topology::set_static_topology(top);
+  interconnect::switch_map switches;
+  init_switches(switches, params, top);
+  sstmac::env::params = &params;
+}
 
 int main(int argc, char** argv)
 {

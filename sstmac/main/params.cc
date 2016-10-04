@@ -45,8 +45,6 @@ param_remap remap_list[] = {
   pr("topology_name", "topology.name"),
   pr("topology_geometry", "topology.geometry"),
   pr("network_nodes_per_switch", "topology.concentration"),
-  pr("optical_link_weight", "topology.optical_link_weight"),
-  pr("global_link_weight", "topology.global_link_weight"),
   pr("topology_true_random_intermediate", "topology.true_random_intermediate"),
   pr("topology_redundant", "topology.redundant"),
   pr("topology_output_graph", "topology.output_graph"),
@@ -65,36 +63,35 @@ param_remap remap_list[] = {
   pr("nic_name", "nic.model"),
   pr("node_memory_model", "node.memory.model"),
   pr("node_frequency", "node.proc.frequency"),
-  pr("network_bandwidth_link", "switch.link_bandwidth"),
-  pr("network_bandwidth", "switch.link_bandwidth", false),
-  pr("network_bandwidth", "switch.bandwidth"),
-  pr("network_switch_bandwidth", "switch.crossbar_bandwidth"),
-  pr("network_latency", "switch.hop_latency"),
-  pr("network_hop_latency", "switch.hop_latency"),
+  pr("network_bandwidth_link", "switch.link.bandwidth"),
+  pr("network_link_bandwidth", "switch.link.bandwidth"),
+  pr("network_bandwidth", "switch.link.bandwidth", false),
+  pr("network_bandwidth", "switch.xbar.bandwidth"),
+  pr("network_switch_bandwidth", "switch.xbar.bandwidth"),
+  pr("network_latency", "switch.link.latency"),
+  pr("network_hop_latency", "switch.link.latency"),
   pr("network_switch_type", "switch.model"),
-  pr("packet_flow_memory_bandwidth", "node.memory.total_bandwidth"),
-  pr("packet_flow_memory_single_bandwidth", "node.memory.max_single_bandwidth"),
-  pr("packet_flow_memory_latency", "node.memory.latency"),
-  pr("packet_flow_memory_arbitrator", "node.memory.arbitrator"),
-  pr("packet_flow_memory_mtu", "node.memory.mtu"),
-  pr("packet_flow_injection_bandwidth", "switch.ejection_bandwidth", false),
-  pr("packet_flow_injection_bandwidth", "nic.injection_bandwidth"),
-  pr("packet_flow_injection_latency", "nic.injection_latency"),
-  pr("packet_flow_eject_buffer_size", "nic.eject_buffer_size"),
-  pr("packet_flow_network_link_bandwidth", "switch.link_bandwidth"),
-  pr("packet_flow_network_hop_latency", "switch.hop_latency"),
-  pr("packet_flow_switch_output_buffer_size", "switch.output_buffer_size"),
-  pr("packet_flow_switch_crossbar_bandwidth", "switch.crossbar_bandwidth"),
-  pr("packet_flow_switch_crossbar_latency", "switch.crossbar_latency"),
-  pr("packet_flow_switch_input_buffer_size", "switch.input_buffer_size", false),
-#if SSTMAC_INTEGRATED_SST_CORE
-  pr("packet_flow_switch_input_buffer_size", "nic.injection_credits"),
-#endif
-  pr("packet_flow_arbitrator", "nic.arbitrator", false),
-  pr("packet_flow_arbitrator", "switch.arbitrator"),
-  pr("packet_flow_mtu", "switch.mtu", false),
-  pr("packet_flow_mtu", "nic.mtu"),
-  pr("packet_flow_negligible_size", "switch.negligible_size"),
+  pr("pisces_memory_bandwidth", "node.memory.total_bandwidth"),
+  pr("pisces_memory_single_bandwidth", "node.memory.max_single_bandwidth"),
+  pr("pisces_memory_latency", "node.memory.latency"),
+  pr("pisces_memory_arbitrator", "node.memory.arbitrator"),
+  pr("pisces_memory_mtu", "node.memory.mtu"),
+  pr("pisces_injection_bandwidth", "switch.ejection_bandwidth", false),
+  pr("pisces_injection_bandwidth", "nic.injection.bandwidth"),
+  pr("pisces_injection_latency", "nic.injection.latency"),
+  pr("pisces_eject_buffer_size", "nic.eject_buffer_size"),
+  pr("pisces_network_link_bandwidth", "switch.link.bandwidth"),
+  pr("pisces_network_hop_latency", "switch.link.latency"),
+  pr("pisces_switch_output_buffer_size", "switch.output_buffer_size"),
+  pr("pisces_switch_crossbar_bandwidth", "switch.xbar.bandwidth"),
+  pr("pisces_switch_crossbar_latency", "switch.xbar.latency"),
+  pr("pisces_switch_input_buffer_size", "switch.input_buffer_size", false),
+  pr("pisces_switch_input_buffer_size", "nic.injection.credits"),
+  pr("pisces_arbitrator", "nic.arbitrator", false),
+  pr("pisces_arbitrator", "switch.arbitrator"),
+  pr("pisces_mtu", "switch.mtu", false),
+  pr("pisces_mtu", "nic.mtu"),
+  pr("pisces_negligible_size", "switch.negligible_size"),
   pr("router", "switch.router"),
   pr("sanity_check_queue_depth_reporting", "switch.sanity_check_queue_depth_reporting"),
   pr("sanity_check_queue_depth_delta", "switch.sanity_check_queue_depth_delta"),
@@ -119,9 +116,12 @@ param_remap remap_list[] = {
   pr("stack_size", "node.os.stack_size"),
   pr("stack_chunk_size", "node.os.stack_chunk_size"),
   pr("stack_protect", "node.os.stack_protect"),
-  pr("injection_latency", "nic.injection_latency"),
-  pr("injection_bandwidth", "nic.injection_bandwidth"),
-  pr("__is_in_micro_mode", "__is_in_micro_mode"),
+  pr("injection_redundant", "nic.injection.redundant", false),
+  pr("injection_redundant", "switch.ejection.redundant", false),
+  pr("injection_latency", "nic.injection.latency", false),
+  pr("injection_bandwidth", "nic.injection.bandwidth", false),
+  pr("injection_latency", "switch.ejection.latency"),
+  pr("injection_bandwidth", "switch.ejection.bandwidth"),
   pr("intragroup_connection_file", "topology.intragroup_connection_file", false),
   pr("intergroup_connection_file", "topology.intergroup_connection_file"),
   pr("launch_app1", "app1.name"),
@@ -154,13 +154,20 @@ remap_deprecated_params(sprockit::sim_parameters* params)
 }
 
 void
+remap_latency_params(sprockit::sim_parameters* params)
+{
+
+}
+
+void
 remap_params(sprockit::sim_parameters* params, bool verbose)
 {
   remap_deprecated_params(params);
+  remap_latency_params(params);
 
   int max_nproc = native::manager::compute_max_nproc(params);
   if (max_nproc == 0){
-    params->pretty_print_params(std::cerr);
+    params->print_params(std::cerr);
     spkt_throw(sprockit::value_error,
                "computed max nproc=0 from parameters - need app1.launch_cmd or app1.size");
   }

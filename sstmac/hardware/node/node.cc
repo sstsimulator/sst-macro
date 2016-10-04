@@ -16,7 +16,6 @@
 #include <sstmac/hardware/memory/memory_model.h>
 #include <sstmac/hardware/processor/processor.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
-#include <sstmac/hardware/common/fail_event.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/launch/app_launch.h>
@@ -48,12 +47,21 @@ using namespace sstmac::sw;
 
 node::node(sprockit::sim_parameters* params,
   uint64_t id, event_manager* mgr)
-  : connectable_component(params, id, mgr),
+  : connectable_component(params, id,
+  event_loc_id(node_id(params->get_int_param("id"))),
+  mgr),
   params_(params)
 {
-  my_addr_ = node_id(params->get_int_param("id"));
-  init_loc_id(event_loc_id(my_addr_));
+  /**
+  printf("Made node %d with the following links\n", id);
+  SST::LinkMap* lmap = this->getSimulation()->getComponentInfo(id)->getLinkMap();
+  for (auto& pair : lmap->getLinkMap()){
+    SST::Link* l = pair.second;
+    std::cout << l->getId() << " : " << pair.first << std::endl;
+  }
+  */
 
+  my_addr_ = event_location().convert_to_node_id();
   next_outgoing_id_.set_src_node(my_addr_);
 
   sprockit::sim_parameters* nic_params = params->get_namespace("nic");
@@ -61,7 +69,7 @@ node::node(sprockit::sim_parameters* params,
   nic_ = nic_factory::get_param("model", nic_params, this);
 
   sprockit::sim_parameters* mem_params = params->get_optional_namespace("memory");
-  mem_model_ = memory_model_factory::get_optional_param("model", "simple", mem_params, this);
+  mem_model_ = memory_model_factory::get_optional_param("model", "logP", mem_params, this);
 
   sprockit::sim_parameters* proc_params = params->get_optional_namespace("proc");
   proc_ = processor_factory::get_optional_param("processor", "instruction",
@@ -74,35 +82,19 @@ node::node(sprockit::sim_parameters* params,
   os_ = new sw::operating_system(os_params, this);
 
   app_launcher_ = new app_launcher(os_);
-  job_launcher_ = job_launcher::static_job_launcher(params, event_mgr());
+  job_launcher_ = job_launcher::static_job_launcher(params, mgr);
 }
 
-void
-node::connect_nic()
+link_handler*
+node::credit_handler(int port) const
 {
-#if SSTMAC_INTEGRATED_SST_CORE
-  for(auto&& pair : link_map_->getLinkMap()) {
-    const std::string& port_name = pair.first;
-    SST::Link* link = pair.second;
-    if (port_name == "rtr"){
-      //connecting to Merlin or other router
-      //configureLink(port_name, new SST::Event::Handler<nic>(nic_, &nic::handle_event));
-    } else {
-      connection_details dets; parse_port_name(port_name, &dets);
-      if (dets.src_type == connection_details::node){
-        //outgoing from me, make the link
-        nic_debug("connecting to port %s", port_name.c_str());
-        integrated_connectable_wrapper* next = new integrated_connectable_wrapper(link);
-        nic_->connect(dets.src_port,
-              dets.dst_port,
-              dets.type, next,
-              &dets.cfg);
-      } else { //I'm the receiving end
-        configureLink(port_name, new SST::Event::Handler<nic>(nic_, &nic::handle_event));
-      }
-    }
-  }
-#endif
+  return nic_->credit_handler(port);
+}
+
+link_handler*
+node::payload_handler(int port) const
+{
+  return nic_->payload_handler(port);
 }
 
 void
@@ -110,7 +102,7 @@ node::setup()
 {
   schedule_launches();
 #if SSTMAC_INTEGRATED_SST_CORE
-  event_scheduler::setup();
+  event_component::setup();
 #endif
 }
 
@@ -118,13 +110,12 @@ void
 node::init(unsigned int phase)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  event_scheduler::init(phase);
-  if (phase == 0){ 
-    connect_nic();
-    configure_self_link();
-  }
+  event_component::init(phase);
 #endif
-  build_launchers(params_);
+  nic_->init(phase);
+  if (phase == 0){
+    build_launchers(params_);
+  }
 }
 
 node::~node()
@@ -137,10 +128,21 @@ node::~node()
 }
 
 void
-node::connect(int src_outport, int dst_inport, connection_type_t ty, connectable *mod, config *cfg)
+node::connect_output(sprockit::sim_parameters* params,
+  int src_outport, int dst_inport,
+  event_handler* mod)
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "node::connect: should never be called");
+  //forward connection to nic
+  nic_->connect_output(params, src_outport, dst_inport, mod);
+}
+
+void
+node::connect_input(sprockit::sim_parameters* params,
+  int src_outport, int dst_inport,
+  event_handler* mod)
+{
+  //forward connection to nic
+  nic_->connect_input(params, src_outport, dst_inport, mod);
 }
 
 void
@@ -194,11 +196,9 @@ node::handle(event* ev)
 {
   if (failed()){
     //do nothing - I failed
-  }
-  else if (ev->is_failure()){
-    fail_stop();
   } else {
-    node_debug("forwarding event %s to OS", ev->to_string().c_str());
+    node_debug("forwarding event %s to OS",
+               sprockit::to_string(ev).c_str());
     os_->handle_event(ev);
   }
 }
@@ -215,7 +215,7 @@ void
 node::send_to_nic(network_message* netmsg)
 {
   node_debug("sending to %d", int(netmsg->toaddr()));
-  netmsg->set_net_id(allocate_unique_id());
+  netmsg->set_flow_id(allocate_unique_id());
   netmsg->put_on_wire();
 
   if (netmsg->toaddr() == my_addr_){

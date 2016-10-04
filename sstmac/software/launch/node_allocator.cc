@@ -29,13 +29,11 @@ node_allocator::~node_allocator() throw ()
 {
 }
 
-void
-node_allocator::init_factory_params(sprockit::sim_parameters *params)
+node_allocator::node_allocator(sprockit::sim_parameters* params)
 {
   rt_ = parallel_runtime::static_runtime(params);
   topology_ = sstmac::hw::topology::static_topology(params);
 }
-
 
 }
 } //end of namespace sstmac

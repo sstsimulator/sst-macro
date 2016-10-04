@@ -10,9 +10,8 @@ namespace sstmac {
 
 SpktRegister("local_double", stat_collector, stat_local_double);
 
-stat_local_double::stat_local_double() :
-    size_(0),
-    value_(0)
+stat_local_double::stat_local_double(sprockit::sim_parameters* params) :
+    stat_value<double>(params)
 {
 }
 
@@ -30,9 +29,8 @@ stat_local_double::reduce(stat_collector *coll)
   stat_local_double* other = safe_cast(stat_local_double, coll);
   //std::cerr << "id: " << other->id_ << "\n";
   //if (other->id_ < 0) return;
-  if ((other->id_ + 1) > size_) {
-    size_ = other->id_ + 1;
-    values_.resize(size_);
+  if ((other->id_ + 1) > values_.size()) {
+    values_.resize(other->id_ + 1);
   }
   values_[other->id_] = other->value_;
 }
@@ -65,24 +63,6 @@ stat_local_double::dump_local_data()
 void
 stat_local_double::clear()
 {
-}
-
-void
-stat_local_double::collect(double value)
-{
-  value_ += value;
-}
-
-void
-stat_local_double::clone_into(stat_local_double* vec) const {
-  //std::cerr << "cloning stat " << vec << " with id " << vec->id() << "\n";
-  stat_collector::clone_into(vec);
-}
-
-void
-stat_local_double::init_factory_params(sprockit::sim_parameters *params)
-{
-  stat_collector::init_factory_params(params);
 }
 
 void

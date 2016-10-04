@@ -15,6 +15,7 @@
 #include <exception>
 #include <stdlib.h>
 #include <sprockit/spkt_string.h>
+#include <iostream>
 
 namespace sprockit {
 

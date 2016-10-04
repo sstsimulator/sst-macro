@@ -31,12 +31,7 @@ RegisterDebugSlot(nic);
 RegisterNamespaces("nic", "message_sizes", "traffic_matrix",
                    "message_size_histogram");
 
-
-#if SSTMAC_INTEGRATED_SST_CORE
-#define DEFAULT_NEGLIGIBLE_SIZE 0
-#else
 #define DEFAULT_NEGLIGIBLE_SIZE 256
-#endif
 
 namespace sstmac {
 namespace hw {
@@ -50,13 +45,13 @@ nic::nic(sprockit::sim_parameters* params, node* parent) :
   local_bytes_sent_(nullptr),
   global_bytes_sent_(nullptr),
   parent_(parent),
-  mtl_handler_(nullptr),
-  connectable_subcomponent(parent)
+  logp_switch_(nullptr),
+  event_mtl_handler_(nullptr),
+  my_addr_(parent->addr()),
+  connectable_subcomponent(parent) //no self events with NIC
 {
-  my_addr_ = node_id(params->get_int_param("id"));
-  init_loc_id(event_loc_id(my_addr_));
-
-  mtl_handler_ = new_handler(this, &nic::mtl_handle);
+  event_mtl_handler_ = new_handler(this, &nic::mtl_handle);
+  node_handler_ = new_handler(parent, &node::handle);
 
   negligible_size_ = params->get_optional_int_param("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
 
@@ -71,16 +66,23 @@ nic::nic(sprockit::sim_parameters* params, node* parent) :
   //global_bytes_sent_->set_label("NIC Total Bytes Sent");
   hist_msg_size_ = optional_stats<stat_histogram>(parent,
         params, "message_size_histogram", "histogram");
+
+#if !SSTMAC_INTEGRATED_SST_CORE
+  link_mtl_handler_ = new_handler(this, &nic::mtl_handle);
+#endif
 }
 
 nic::~nic()
 {
-  if (mtl_handler_) delete mtl_handler_;
+  if (event_mtl_handler_) delete event_mtl_handler_;
   if (spy_bytes_) delete spy_bytes_;
   if (spy_num_messages_) delete spy_num_messages_;
   if (local_bytes_sent_) delete local_bytes_sent_;
   if (global_bytes_sent_) delete global_bytes_sent_;
   if (hist_msg_size_) delete hist_msg_size_;
+#if !SSTMAC_INTEGRATED_SST_CORE
+  delete link_mtl_handler_;
+#endif
 }
 
 void
@@ -108,7 +110,7 @@ nic::recv_message(message* msg)
 
   nic_debug("handling message %s:%lu of type %s from node %d while running",
     netmsg->to_string().c_str(),
-    uint64_t(netmsg->net_id()),
+    netmsg->flow_id(),
     network_message::tostr(netmsg->type()),
     int(netmsg->fromaddr()));
 
@@ -186,20 +188,12 @@ nic::intranode_send(network_message* payload)
   ack_send(payload);
 }
 
-#if SSTMAC_INTEGRATED_SST_CORE
-void
-nic::handle_event(SST::Event *ev)
-{
-  handle(static_cast<event*>(ev));
-}
-#endif
-
 void
 nic::record_message(network_message* netmsg)
 {
   nic_debug("sending message %lu of size %ld of type %s to node %d: "
       "netid=%lu for %s",
-      uint64_t(netmsg->net_id()),
+      netmsg->flow_id(),
       netmsg->byte_length(),
       network_message::tostr(netmsg->type()),
       int(netmsg->toaddr()),
@@ -239,8 +233,9 @@ nic::internode_send(network_message* netmsg)
   record_message(netmsg);
   nic_debug("internode send payload %p:%s",
     netmsg, netmsg->to_string().c_str());
-  if (negligible_size(netmsg->byte_length())){
-    send_to_interconn(netmsg);
+  //we might not have a logp overlay network
+  if (logp_switch_ && negligible_size(netmsg->byte_length())){
+    send_to_link(logp_switch_, netmsg);
     ack_send(netmsg);
   } else {
     do_send(netmsg);
@@ -250,18 +245,7 @@ nic::internode_send(network_message* netmsg)
 void
 nic::send_to_node(network_message* payload)
 {
-  schedule_now(parent_, payload);
-}
-
-void
-nic::send_to_interconn(network_message* netmsg)
-{
-#if SSTMAC_INTEGRATED_SST_CORE
-  spkt_throw(sprockit::unimplemented_error,
-       "nic::send_to_interconn: integrated core");
-#else
-  interconn_->immediate_send(parent(), netmsg, now());
-#endif
+  schedule_now(node_handler_, payload);
 }
 
 }

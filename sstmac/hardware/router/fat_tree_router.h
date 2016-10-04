@@ -12,7 +12,8 @@
 #ifndef SSTMAC_HARDWARE_NETWORK_SWTICHES_ROUTING_FATTREEROUTER_H_INCLUDED
 #define SSTMAC_HARDWARE_NETWORK_SWTICHES_ROUTING_FATTREEROUTER_H_INCLUDED
 
-#include <sstmac/hardware/router/structured_router.h>
+#include <sstmac/hardware/router/router.h>
+#include <sstmac/hardware/topology/fat_tree.h>
 #include <sstmac/common/rng.h>
 
 namespace sstmac {
@@ -24,23 +25,20 @@ namespace hw {
  * a fat tree topology.
  */
 class fat_tree_router :
-  public structured_router
+  public router
 {
  public:
   virtual ~fat_tree_router();
 
   fat_tree_router(sprockit::sim_parameters* params, topology* top, network_switch* netsw);
 
-  void
-  productive_paths_to_switch(switch_id dst, structured_routable::path_set &paths);
+  //void
+  //productive_paths_to_switch(switch_id dst, structured_routable::path_set &paths);
 
   virtual std::string
-  to_string() const {
-    return "fattreerouter";
+  to_string() const override {
+    return "fat tree router";
   }
-
-  void
-  route(packet* pkt);
 
  private:
   /**
@@ -51,9 +49,9 @@ class fat_tree_router :
   build_rng();
 
   void
-  minimal_route_to_switch(
+  route_to_switch(
     switch_id sw_addr,
-    structured_routable::path& path);
+    routable::path& path) override;
 
   /**
    * @brief choose_up_path
@@ -88,6 +86,8 @@ class fat_tree_router :
   long min_reachable_leaf_id_;
   long max_reachable_leaf_id_;
   long seed_;
+
+  fat_tree* ftree_;
 
 
   int numpicked_;

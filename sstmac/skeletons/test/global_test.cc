@@ -9,7 +9,6 @@
  *  SST/macroscale directory.
  */
 
-#include <sstmac/skeleton.h>
 #include <sstmac/compute.h>
 #include <sstmac/util.h>
 #include <sstmac/replacements/mpi.h>

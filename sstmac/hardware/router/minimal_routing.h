@@ -1,7 +1,7 @@
 #ifndef sstmac_hardware_network_topology_routing_BASIC_ROUTING_H
 #define sstmac_hardware_network_topology_routing_BASIC_ROUTING_H
 
-#include <sstmac/hardware/router/structured_router.h>
+#include <sstmac/hardware/router/router.h>
 
 namespace sstmac {
 namespace hw {
@@ -11,7 +11,7 @@ namespace hw {
  * Router that performs
  */
 class minimal_router :
-  public structured_router
+  public router
 {
 
  public:
@@ -20,17 +20,13 @@ class minimal_router :
 
   virtual ~minimal_router() {}
 
-  virtual void
-  route(packet* pkt);
-
   std::string
-  to_string() const {
+  to_string() const override {
     return "minimal router";
   }
 
  protected:
-  virtual void
-  route(packet* pkt, structured_routable::path_set& paths);
+  void route_to_switch(switch_id sid, routable::path &path) override;
 
 };
 

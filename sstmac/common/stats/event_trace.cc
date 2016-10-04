@@ -52,18 +52,9 @@ event_trace::global_reduce(parallel_runtime *rt)
   spkt_throw(sprockit::unimplemented_error, "event_trace::global_reduce");
 }
 
-void
-event_trace::clone_into(event_trace *cln) const
+event_trace::event_trace(sprockit::sim_parameters *params) :
+  stat_collector(params)
 {
-  cln->start_ = start_;
-  cln->stop_ = stop_;
-  stat_collector::clone_into(cln);
-}
-
-void
-event_trace::init_factory_params(sprockit::sim_parameters *params)
-{
-  stat_collector::init_factory_params(params);
   start_ = params->get_optional_time_param("start", 0);
   stop_ = params->get_optional_time_param("stop", 1e15);
 }

@@ -290,6 +290,7 @@ try_main(sprockit::sim_parameters* params,
 
   //do some cleanup and processing of params
   sstmac::remap_params(params);
+
   if (params_only)
     return;
 

@@ -39,14 +39,15 @@
          - [2.1.5: Known Issues](#subsec:build:issues)
       - [Section 2.2: Building DUMPI](#sec:building:dumpi)
          - [2.2.1: Known Issues](#subsubsec:building:dumpi:issues)
-         - [2.2.2: Building Skeleton Applications](#sec:tutorial:runapp)
-         - [2.2.3: Makefiles](#subsec:tutorial:makefiles)
-         - [2.2.4: Command-line arguments](#subsec:tutorial:cmdline)
-      - [Section 2.3: Parallel Simulations in Standalone Mode](#sec:PDES)
-         - [2.3.1: Distributed Memory Parallel](#subsec:mpiparallel)
-         - [2.3.2: Shared Memory Parallel](#subsec:parallelopt)
-         - [2.3.3: Warnings for Parallel Simulation](#subsec:parallelwarn)
-      - [Section 2.4: Debug Output](#sec:dbgoutput)
+      - [Section 2.3: Running an Application](#sec:building:running)
+         - [2.3.1: Building Skeleton Applications](#sec:tutorial:runapp)
+         - [2.3.2: Makefiles](#subsec:tutorial:makefiles)
+         - [2.3.3: Command-line arguments](#subsec:tutorial:cmdline)
+      - [Section 2.4: Parallel Simulations in Standalone Mode](#sec:PDES)
+         - [2.4.1: Distributed Memory Parallel](#subsec:mpiparallel)
+         - [2.4.2: Shared Memory Parallel](#subsec:parallelopt)
+         - [2.4.3: Warnings for Parallel Simulation](#subsec:parallelwarn)
+      - [Section 2.5: Debug Output](#sec:dbgoutput)
    - [Chapter 3: Basic Tutorials](#chapter:tutorials)
       - [Section 3.1: SST/macro Parameter files](#sec:parameters)
       - [Section 3.2: Abstract Machine Models](#sec:amm)
@@ -298,7 +299,7 @@ Once SST-macro is extracted to a directory, we recommend the following as a base
 sst-macro> ./bootstrap.sh
 sst-macro> mkdir build
 sst-macro> cd build
-sst-macro/build> ../configure --prefix=/path-to-install --with-sst=$PATH_TO_SST_CORE CC=$MPICC CXX=$MPICXX
+sst-macro/build> ../configure --prefix=/path-to-install --with-sst-core=$PATH_TO_SST_CORE CC=$MPICC CXX=$MPICXX
 ````
 `PATH_TO_SST_CORE` should be the prefix install directory used when installing the core.  The MPI compilers should be the same compilers used for building Boost and SST core.
 
@@ -386,10 +387,11 @@ the libtool script.  Search for predeps/postdeps and set the values to empty.
 This will clear all the erroneous linker flags.  The compilation/linkage should still work since 
 all necessary flags are set by the wrappers.
 
-\section{Running an Application} \subsection{SST Python Scripts} Full details on building SST Python scripts can be found at http://sst-simulator.org.  To preserve the old parameter format in the near-term, SST/macro provides the `pysstmac` script:
+### Section 2.3: Running an Application<a name="sec:building:running"></a>
+
+\subsection{SST Python Scripts} Full details on building SST Python scripts can be found at http://sst-simulator.org.  To preserve the old parameter format in the near-term, SST/macro provides the `pysstmac` script:
 
 ````
-export PYTHONPATH=$PYTHONPATH:$SSTMAC_PREFIX/include/python:$SSTMAC_PREFIX/lib
 export SST_LIB_PATH=$SST_LIB_PATH:$SSTMAC_PREFIX/lib
 
 options="$@"
@@ -399,32 +401,42 @@ $SST_PREFIX/bin/sst $SSTMAC_PREFIX/include/python/default.py --model-options="$o
 The script configures the necessary paths and then launches with a Python script `default.py`.  Interested users can look at the details of the Python file to understand how SST/macro converts parameter files into a Python config graph compatible with SST core. Assuming the path is configured properly, users can run
 
 ````
-pysstmac -f parameters.ini
+>pysstmac -f parameters.ini
 ````
-with a properly formatted parameter file. If running in standalone mode, the command would be similarly (but different)
+with a properly formatted parameter file. If running in standalone mode, the command would be similarly (but different).
 
 ````
-sstmac -f parameters.ini
+from sst.macro import *
+setupDeprecated()
+````
+
+````
+>sstmac -f parameters.ini
 ````
 since there is no Python setup involved.
 
-#### 2.2.2: Building Skeleton Applications<a name="sec:tutorial:runapp"></a>
+#### 2.3.1: Building Skeleton Applications<a name="sec:tutorial:runapp"></a>
 
 
 
-To demonstrate how an external skeleton application is run in SST-macro, we'll use a very simple send-recv program located in `skeletons/sendrecv`. We will take a closer look at the actual code in Section [3.3](#sec:tutorial:basicmpi). After SST-macro has been installed and your PATH variable set correctly, run:
+To demonstrate how an external skeleton application is run in SST-macro, we'll use a very simple send-recv program located in `skeletons/sendrecv`. We will take a closer look at the actual code in Section [3.3](#sec:tutorial:basicmpi). After SST-macro has been installed and your PATH variable set correctly, for standalone core users can run:
 
 ````
 sst-macro> cd skeletons/sendrecv
-sst-macro/skeleton/sendrecv> make
+sst-macro/skeletons/sendrecv> make
 sst-macro/skeleton/sendrecv> ./runsstmac -f parameters.ini
 ````
 
 You should see some output that tells you 1) the estimated total (simulated) runtime of the simulation, and 2) the wall-time that it took for the simulation to run. Both of these numbers should be small since it's a trivial program.
 
-This is how simulations generally work in SST-macro: you build skeleton code and link it with the simulator to produce a binary. Then you run that binary and pass it a parameter file which describes the machine model to use.
+This is how simulations generally work in SST-macro: you build skeleton code and link it with the simulator to produce a binary. Then you run that binary and pass it a parameter file which describes the machine model to use.  For running on the main SST core, a few extra flags are required.  Rather than generating a standalone executable, the compiler wrapper generates a shared library. Users can always write their own Python scripts, which will be required for more advanced usage. However, users can also just use the `pysstmac` script.
 
-#### 2.2.3: Makefiles<a name="subsec:tutorial:makefiles"></a>
+````
+>sst-macro/skeletons/sendrecv> pysstmac librunsstmac.so -f parameters.ini
+````
+Any extra shared libraries can be given as the first few parameters and these will automatically be imported.
+
+#### 2.3.2: Makefiles<a name="subsec:tutorial:makefiles"></a>
 
 
 
@@ -445,7 +457,7 @@ LDFLAGS :=  -Wl,-rpath,$(PREFIX)/lib
 ````
 The SST compiler wrappers `sst++` and `sstcc` automagically configure and map the code for simulation.  More details are given in Section [5.2](#sec:skel:linkage).  If using external skeleton applications, the default Python script for SST/macro will not work and a small modification will be required.
 
-#### 2.2.4: Command-line arguments<a name="subsec:tutorial:cmdline"></a>
+#### 2.3.3: Command-line arguments<a name="subsec:tutorial:cmdline"></a>
 
 
 
@@ -456,18 +468,18 @@ There are only a few basic command-line arguments you'll ever need to use with S
 This can be relative to the current directory, an absolute path, or the name of a pre-set file that is in sstmacro/configurations 
 (which installs to /path-to-install/include/configurations, and gets searched along with current directory).
 -   --dumpi: If you are in a folder with all the DUMPI traces, you can invoke the main `sstmac` executable with this option.  This replays the trace in a special debug mode for quickly validating the correctness of a trace.
--   -d [debug flags]: A list of debug flags to activate as a comma-separated list (no spaces) - see Section [2.4](#sec:dbgoutput)
+-   -d [debug flags]: A list of debug flags to activate as a comma-separated list (no spaces) - see Section [2.5](#sec:dbgoutput)
 -   -p [parameter]=[value]: Setting a parameter value (overrides what is in the parameter file)
 -   -t [value]: Stop the simulation at simulated time [value]
--   -c: If multithreaded, give a comma-separated list (no spaces) of the core affinities to use - see Section [2.3.2](#subsec:parallelopt)
+-   -c: If multithreaded, give a comma-separated list (no spaces) of the core affinities to use - see Section [2.4.2](#subsec:parallelopt)
 
-### Section 2.3: Parallel Simulations in Standalone Mode<a name="sec:PDES"></a>
+### Section 2.4: Parallel Simulations in Standalone Mode<a name="sec:PDES"></a>
 
 
 
 SST-macro supports running parallel discrete event simulation (PDES) in distributed memory (MPI), threaded shared memory (pthreads) and hybrid (MPI+pthreads) modes.  Running these in standalone mode is generally discouraged as parallel simulations should use the unified SST core.
 
-#### 2.3.1: Distributed Memory Parallel<a name="subsec:mpiparallel"></a>
+#### 2.4.1: Distributed Memory Parallel<a name="subsec:mpiparallel"></a>
 
 In order to run distributed memory parallel, you must configure the simulator with the `--enable-mpiparallel` flag. Configure will check for MPI and ensure that you're using the standard MPI compilers.  Your configure should look something like:
 
@@ -493,7 +505,7 @@ mysim$ mpiexec -n 4 sstmac -f parameters.ini
 
 Even if you compile for MPI parallelism, the code can still be run in serial with the same configuration options. SST-macro will notice the total number of ranks is 1 and ignore any parallel options. When launched with multiple MPI ranks, SST-macro will automatically figure out how many partitions (MPI processes) you are using, partition the network topology into contiguous blocks, and start running in parallel.
 
-#### 2.3.2: Shared Memory Parallel<a name="subsec:parallelopt"></a>
+#### 2.4.2: Shared Memory Parallel<a name="subsec:parallelopt"></a>
 
 In order to run shared memory parallel, you must configure the simulator with the `--enable-multithread` flag. Partitioning for threads is currently always done using block partitioning and there is no need to set an input parameter. Including the integer parameter `sst_nthread` specifies the number of threads to be used (per rank in MPI+pthreads mode) in the simulation. The following configuration options may provide better threaded performance.
 
@@ -506,7 +518,7 @@ For a threaded only simulation `cpu_affinity = 4` would pin the main process to 
 The affinities can also be specified on the command line using the `-c` option.
 Job launchers may in some cases provide duplicate functionality and either method can be used.
 
-#### 2.3.3: Warnings for Parallel Simulation<a name="subsec:parallelwarn"></a>
+#### 2.4.3: Warnings for Parallel Simulation<a name="subsec:parallelwarn"></a>
 
 
 
@@ -520,7 +532,7 @@ While the PDES implementation should be stable, it's best to treat it as Beta++ 
 
 Parallel simulation speedups are likely to be modest for small runs. Speeds are best with serious congestion or heavy interconnect traffic. Weak scaling is usually achievable with 100-500 simulated MPI ranks per logical process. Even without speedup, parallel simulation can certainly be useful in overcoming memory constraints, expanding the maximum memory footprint.
 
-### Section 2.4: Debug Output<a name="sec:dbgoutput"></a>
+### Section 2.5: Debug Output<a name="sec:dbgoutput"></a>
 
 SST-macro defines a set of debug flags that can be specified in the parameter file to control debug output printed by the simulator. To list the set of all valid flags with documentation, the user can run
 
@@ -657,12 +669,12 @@ sendrecv_message_size = 128
 The preferred mode for usage of SST-macro will be through specifying parameters for well-defined abstract machine models. This represents an intermediate-level mode that should cover the vast majority of use cases. The highly configurable, detailed parameter files will remain valid but will represent advanced usage mode for corner cases. The primary advantage of the abstract machine models is a uniform set of parameters regardless of the underlying congestion model or accuracy level (e.g. packet, flow, train, packet-flow, LogGOPSim). Each input file requires the usual set of software parameters given in [3.1](#sec:parameters). For hardware parameters, two initial parameters are required and one is optional.
 
 ````
-congestion_model = packet_flow
+congestion_model = pisces
 amm_model = amm1
 accuracy_parameter = 1024
 ````
 
-Here we indicate the congestion model to be used (the packet-flow) and the overall machine model (abstract machine model \#1). Currently valid values for the congestion model are `packet_flow` (most accurate, slowest) and `simple` (least accurate, fastest), but more congestion models should be supported in future versions. Currently valid values for the abstract machine model are `amm1`, `amm2`, `amm3`, see details below. Another model, `amm4`, that adds extra detail to the NIC is pending and should be available soon. The details of individual abstract machine models are given in the following sections. The optional accuracy parameter is less well-defined and the exact meaning varies considerably between congestion models. In general, the accuracy parameter represents how coarse-grained the simulation is in bytes. It basically corresponds to a packet-size. How many bytes are modeled moving through the machine separately at a time? If the parameter is set to 8 bytes, e.g., that basically means we are doing flit-level modeling. If the parameter is set to 8192 bytes, e.g. that means we are doing very coarse-grained modeling which only really affects large messages. If the parameter is set to 100-1000 bytes, e.g., that means we are doing more fine-grained modeling on real packet sizes, but we are ignoring flit-level details.
+Here we indicate the congestion model to be used (the packet-flow) and the overall machine model (abstract machine model \#1). Currently valid values for the congestion model are `pisces` (most accurate, slowest) and `simple` (least accurate, fastest), but more congestion models should be supported in future versions. Currently valid values for the abstract machine model are `amm1`, `amm2`, `amm3`, see details below. Another model, `amm4`, that adds extra detail to the NIC is pending and should be available soon. The details of individual abstract machine models are given in the following sections. The optional accuracy parameter is less well-defined and the exact meaning varies considerably between congestion models. In general, the accuracy parameter represents how coarse-grained the simulation is in bytes. It basically corresponds to a packet-size. How many bytes are modeled moving through the machine separately at a time? If the parameter is set to 8 bytes, e.g., that basically means we are doing flit-level modeling. If the parameter is set to 8192 bytes, e.g. that means we are doing very coarse-grained modeling which only really affects large messages. If the parameter is set to 100-1000 bytes, e.g., that means we are doing more fine-grained modeling on real packet sizes, but we are ignoring flit-level details.
 
 \subsection{Common Parameters} The following parameters define the CPU and compute power of the node (independent of memory subsystem). They are universal and are valid for all abstract machine models.
 
@@ -1828,22 +1840,11 @@ Virtual processes share the same address space and the same global variables.  S
 
 Because of the way libraries are import in the SST core, using external skeleton apps is more complicated than previously.  Steps are being taken to re-automate this process, which will hopefully be available in the next subversion. For running the standalone version, this is essentially automatic  if using the SST compiler wrappers.  The compiler wrappers produce a new executable incorporating your new skeleton.
 
-The wrinkle is external skeletons apps is changing the application's entry point, i.e. `main`. The SST/macro framework has already taken the \texttt{main} function, and consequently the user application becomes a sub-routine within the simulation environment. As introduced in Section~[3.3](#sec:tutorial:basicmpi), one needs to change the entry function from \texttt{main} to \texttt{user\_skeleton\_main}, which has the same function signature as the \texttt{main} function.  This refactoring happens automatically in the SST compiler wrappers.
-
-If you need to use more than one application in the simulator at a time, you need multiple application entry points. It is no longer possible to do automatic refactoring.  You must explicitly use the macro `sstmac_register_app` and change the name of your `main`.  Thus, a code might look like
-
-````
-sstmac_register_app(my_app);
-
-int my_app_main(int argc, char** argv)
-{
-...
-````
-where the refactored `main` function matches the name of the declared application.
+The wrinkle is external skeletons apps is changing the application's entry point, i.e. `main`. The SST/macro framework has already taken the \texttt{main} function, and consequently the user application becomes a sub-routine within the simulation environment. As introduced in Section~[3.3](#sec:tutorial:basicmpi), one needs redirect \texttt{main} to a different symbol by defining the macro `sstmac_app_name` at the top of the file containing `main`. This refactoring happens automatically in the SST compiler wrappers.
 
 #### 5.2.1: Loading external skeletons with the integrated core<a name="subsec:linkageCore"></a>
 
-While the main `libmacro.so` provides the bulk of SST/macro functionality, users may wish to compile and run external skeletons.  This gets a bit confusing with SST core since you have an external skeleton for an external element.  Follow the instructions on http://sst-simulator.org. You must create an element info struct name `X_eli` for X your library name.  You can still use the `sst++` compiler wrappers for building, but you must now manually create a `libX.so` from the compiled object files.  The `sstmacro.py` script installed must also be edited.  The top lines was previously
+While the main `libmacro.so` provides the bulk of SST/macro functionality, users may wish to compile and run external skeletons.  This gets a bit confusing with SST core since you have an external skeleton for an external element.  One can do this manually following the instructions on http://sst-simulator.org. You must create an element info struct name `X_eli` for X your library name.  You can still use the `sst++` compiler wrappers for building, but you must now manually create a `libX.so` from the compiled object files.  The `default.py` script used by `pysstmac` must also be edited.  The top lines was previously
 
 ````
 import sst.macro
@@ -1854,6 +1855,12 @@ This only loads the main components, not the external skeleton. You must add
 import sst.X
 ````
 where X is the name of your skeleton. This causes the core to also load the shared library corresponding to your external skeleton app.
+If using the SST compiler wrappers, the ELI block and .so file will actually be generated automatically.  As shown in Section [2.3](#sec:building:running),
+the generate shared library files can be added as the first parameters to the `pysstmac` script.
+
+````
+>sst-macro/skeletons/sendrecv> pysstmac librunsstmac.so -f parameters.ini
+````
 
 \section{Skeletonization}
 

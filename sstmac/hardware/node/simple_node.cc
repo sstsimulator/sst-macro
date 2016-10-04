@@ -15,7 +15,6 @@
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/processor/processor.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/launch/machine_descriptor.h>
 #include <sstmac/software/launch/launcher.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
 
@@ -27,15 +26,15 @@
 namespace sstmac {
 namespace hw {
 
-ImplementSSTComponent("simple", node, simple_node,
+SpktRegister("simple", node, simple_node,
   "A basic endpoint node running SST/macro software stacks");
-
 
 simple_node::~simple_node()
 {
 }
 
-simple_node::simple_node(sprockit::sim_parameters *params, uint64_t id,
+simple_node::simple_node(sprockit::sim_parameters *params,
+                         uint64_t id,
                          event_manager *mgr)
   : node(params, id, mgr)
 {

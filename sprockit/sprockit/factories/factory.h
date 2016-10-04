@@ -23,6 +23,9 @@
 
 namespace sprockit {
 
+/**
+ *  Object that will actually build classes from the given list of arguments
+ */
 template <class T, typename... Args>
 class SpktBuilder
 {
@@ -32,6 +35,11 @@ class SpktBuilder
 
 };
 
+/**
+ *  For partial template specialization.  The Factory object is
+ *  never directly specified and will be determined automatically from
+ *  a child class type and the top-level parent type (see below)
+ */
 template<class Child, class Factory>
 class SpktBuilderImpl
 {
@@ -42,10 +50,18 @@ class SpktBuilderImpl
 
 template <class> struct wrap { typedef void type; };
 
+/**
+ * @class call_finalize_init
+ * finalize_init is not a required method for any of the classes.
+ * This uses SFINAE tricks to call finalize_init on classes that implement
+ * the method or avoid calling it on classes that don't implement it
+ */
 template<typename T, class Enable=void>
 struct call_finalize_init : public std::false_type {
 public:
   void operator()(T* t){
+    //if we compile here, class T does not have a finalize_init
+    //do nothing
   }
 };
 
@@ -58,31 +74,17 @@ struct call_finalize_init<T,
 {
 public:
   void operator()(T* t){
+    //if we compile here, class T does have a finalize_init
+    //call that function
     t->finalize_init();
   }
 };
 
-template<typename T, class Enable=void>
-struct call_init_factory_params : public std::false_type {
-public:
-  void operator()(T* t, sprockit::sim_parameters* params){
-  }
-};
-
-template<typename T>
-struct call_init_factory_params<T,
-  typename wrap<
-    decltype(std::declval<T>()
-       .init_factory_params(static_cast<sprockit::sim_parameters*>(nullptr)))
-   >::type
-> : public std::true_type
-{
-public:
-  void operator()(T* t, sprockit::sim_parameters* params){
-    t->init_factory_params(params);
-  }
-};
-
+/**
+ *  Class used to query what type of constructor the class has
+ *  Mainly used for determining if the class takes a sim_parameters
+ *  as the first argument to the constructor
+ */
 template <class T, class... Args>
 struct constructible_from
 {
@@ -91,6 +93,7 @@ struct constructible_from
 
   template <typename U>
   static std::true_type test(U*,decltype(U(arg<Args>()...))* = nullptr);
+
   static std::false_type test(...);
 
   typedef decltype(test(static_cast<T*>(nullptr))) type;
@@ -100,6 +103,11 @@ template <typename T, typename Enable, typename... Args>
 struct call_constructor_impl {
 };
 
+/**
+ *  Class used to call particular constructors.  This will get invoked via SFINAE
+ *  if the class T does not take a params object as the first parameter in the
+ *  constructor
+ */
 template <typename T, typename... Args>
 struct call_constructor_impl<T,
     typename std::enable_if<constructible_from<T,Args...>::type::value>::type,
@@ -110,6 +118,11 @@ struct call_constructor_impl<T,
   }
 };
 
+/**
+ *  Class used to call particular constructors.  This will get invoked via SFINAE
+ *  if the class T takes a params object as the first parameter in the
+ *  constructor
+ */
 template <typename T, typename... Args>
 struct call_constructor_impl<T,
     typename std::enable_if<!constructible_from<T,Args...>::type::value>::type,
@@ -120,9 +133,18 @@ struct call_constructor_impl<T,
   }
 };
 
+
 template <typename T, typename... Args>
 class call_constructor : public call_constructor_impl<T, void, Args...> {};
 
+
+/**
+ * @class Factory
+ * Object that provides static methods for mapping string names
+ * to particular subclasses of T.  The constructor for each subclass U of T
+ * must be either U(Args) or it must be U(params,Args) where params is a
+ * sim_parameters object
+ */
 template<class T, typename... Args>
 class Factory
 {
@@ -133,10 +155,19 @@ class Factory
 
   typedef std::map<std::string, builder_t*> builder_map;
   static builder_map* builder_map_;
+
   typedef std::map<std::string, std::list<std::string> > alias_map;
   static alias_map* alias_map_;
+
   static const char* name_;
 
+  /**
+   * @brief register_alias Explicitly register an alias name for a
+   * factory based on a previous
+   * @param oldname The name currently registered or that will be registered
+   *                depending on static init order
+   * @param newname The new name that can be used for accessing child type
+   */
   static void
   register_alias(const std::string& oldname, const std::string& newname){
     if (!builder_map_) {
@@ -166,22 +197,38 @@ class Factory
     alias_map_ = 0;
   }
 
+  /**
+   * @brief register_name
+   * @param name  The string name that will map to the given type
+   * @param builder The builder object whose virtual functio returns
+   *                the correct child type
+   */
   static void
-  register_name(const std::string& name, builder_t* descr) {
+  register_name(const std::string& name, builder_t* builder) {
     if (!builder_map_) {
       builder_map_ = new builder_map;
     }
     if (!alias_map_){
       alias_map_ = new alias_map;
     }
-    add_to_map(name, descr, builder_map_, alias_map_);
+    add_to_map(name, builder, builder_map_, alias_map_);
   }
 
+ private:
+  /**
+   * @brief add_to_map
+   * @param namestr
+   * @param desc
+   * @param descr_map
+   * @param alias_map
+   */
   static void
   add_to_map(const std::string& namestr, builder_t* desc,
-            std::map<std::string, builder_t*>* descr_map,
+            std::map<std::string, builder_t*>* builder_map,
             std::map<std::string, std::list<std::string> >* alias_map)
   {
+    // The namestr can be a | separate list of valid names, e.g.
+    // "torus | hdtorus" to allow either name to map to the correct type
     std::string space = "|";
     std::deque<std::string> tok;
     pst::BasicStringTokenizer::tokenize(namestr, tok, space);
@@ -207,13 +254,20 @@ class Factory
   }
 
 
- protected:
+  /**
+   * @brief _get_value  Helper function that builds the correct child type
+   *                    from the corresponding string name
+   * @param valname     The string name mapping to a particular child type
+   * @param params      The parameters potentially used in the constructor
+   * @param args        The required arguments for the constructor
+   * @return  A constructed child class corresponding to a given string name
+   */
   static T*
   _get_value(const std::string& valname,
              sprockit::sim_parameters* params,
              const Args&... args) {
     if (!builder_map_) {
-      spkt_throw_printf(illformed_error,
+      spkt_abort_printf(
            "could not find name %s for factory %s. no classes are registered",
            valname.c_str(),
            name_);
@@ -226,24 +280,31 @@ class Factory
       for (it = builder_map_->begin(); it != end; ++it) {
         std::cerr << it->first << std::endl;
       }
-      spkt_throw_printf(value_error, "could not find name %s for factory %s",
+      params->print_scoped_params(std::cerr);
+      spkt_abort_printf("could not find name %s for factory %s",
                        valname.c_str(), name_);
     }
 
-    builder_t* descr = it->second;
-    if (!descr) {
-      spkt_throw_printf(value_error,
-                       "initialized name %s with null descr for factory %s",
+    builder_t* builder = it->second;
+    if (!builder) {
+      spkt_abort_printf("initialized name %s with null builder for factory %s",
                        valname.c_str(), name_);
     }
 
-    T* p = descr->build(params, args...);
-    call_init_factory_params<T>()(p, params);
+    T* p = builder->build(params, args...);
     call_finalize_init<T>()(p);
     return p;
   }
 
  public:
+  /**
+   * @brief get_value Return a constructed child class corresponding
+   *                  to a given string name
+   * @param valname   The string name mapping to a particular child type
+   * @param params    The parameters potentially used in the constructor
+   * @param args      The required arguments for the constructor
+   * @return  A constructed child class corresponding to a given string name
+   */
   static T*
   get_value(const std::string& valname,
             sim_parameters* params,
@@ -251,18 +312,16 @@ class Factory
     return _get_value(valname, params, args...);
   }
 
-  static T*
-  get_extra_param(const std::string& param_name,
-                  sim_parameters* params,
-                  const Args&... args) {
-    if (params->has_param(param_name)) {
-      return get_param(param_name,params);
-    }
-    else {
-      return 0;
-    }
-  }
-
+  /**
+   * @brief get_param Return a constructed child class corresponding
+   *                  to a given string name. The string name is not given directly,
+   *                  instead being found by params->get_param(param_name)
+   * @param param_name   The name of the parameter such that params->get_param(param_name)
+   *                     returns the string that will map to the child class
+   * @param params    The parameters potentially used in the constructor
+   * @param args      The required arguments for the constructor
+   * @return  A constructed child class corresponding to a given string name
+   */
   static T*
   get_param(const std::string& param_name,
             sim_parameters* params,
@@ -271,6 +330,41 @@ class Factory
                       params, args...);
   }
 
+  /**
+   * @brief get_extra param Return a constructed child class corresponding
+   *          to a given string name. The string name is not given directly,
+   *          instead being found by params->get_param(param_name).  If no parameter
+   *          corresponding to param_name exists, return a nullptr
+   * @param param_name   The name of the parameter such that params->get_param(param_name)
+   *                     returns the string that will map to the child class
+   * @param params    The parameters potentially used in the constructor
+   * @param args      The required arguments for the constructor
+   * @return  A constructed child class corresponding to a given string name
+   */
+  static T*
+  get_extra_param(const std::string& param_name,
+                  sim_parameters* params,
+                  const Args&... args) {
+    if (params->has_param(param_name)) {
+      return get_param(param_name,params);
+    }
+    else {
+      return nullptr;
+    }
+  }
+
+  /**
+   * @brief get_extra param Return a constructed child class corresponding
+   *          to a given string name. The string name is not given directly,
+   *          instead being found by params->get_param(param_name).  If no parameter
+   *          corresponding to param_name exists, return get_value(defval)
+   * @param param_name   The name of the parameter such that params->get_param(param_name)
+   *                     returns the string that will map to the child class
+   * @param defval    The default value to use in case the parameter has not been specified
+   * @param params    The parameters potentially used in the constructor
+   * @param args      The required arguments for the constructor
+   * @return  A constructed child class corresponding to a given string name
+   */
   static T*
   get_optional_param(const std::string& param_name,
                      const std::string& defval,
@@ -298,34 +392,6 @@ class SpktBuilderImpl<Child, Factory<Parent, Args...> > :
 
 };
 
-template <class T>
-class factory
-{
- public:
-  virtual T* build(sim_parameters* params) = 0;
-
-  virtual ~factory(){}
-};
-
-template <class T, class Factory>
-class template_factory : public factory<T>
-{
- public:
-  template_factory(const std::string& param_name)
-    : param_name_(param_name)
-  {
-  }
-
-  T* build(sim_parameters* params){
-    typedef typename Factory::element_type F;
-    F* f = Factory::get_value(param_name_, params);
-    return f;
-  }
-
- private:
-  std::string param_name_;
-};
-
 
 template <class Factory>
 class CleanupFactory {
@@ -345,8 +411,8 @@ class CleanupFactory {
 
 #define ImplementFactory(type_name) \
   template<> const char* type_name##_factory::name_ = #type_name; \
-  template<> std::map<std::string, type_name##_factory::builder_t*>* type_name##_factory::builder_map_ = 0; \
-  template<> std::map<std::string, std::list<std::string>>* type_name##_factory::alias_map_ = 0; \
+  template<> std::map<std::string, type_name##_factory::builder_t*>* type_name##_factory::builder_map_ = nullptr; \
+  template<> std::map<std::string, std::list<std::string>>* type_name##_factory::alias_map_ = nullptr; \
   namespace { static sprockit::CleanupFactory<type_name##_factory> cleaner; }
 
 

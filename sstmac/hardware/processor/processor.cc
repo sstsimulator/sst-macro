@@ -31,19 +31,9 @@ processor::~processor()
 {
 }
 
-void
-processor::finalize_init()
+processor::processor(sprockit::sim_parameters* params, memory_model* mem, node* nd) :
+  mem_(mem), node_(nd)
 {
-}
-
-void
-processor::init_factory_params(sprockit::sim_parameters *params)
-{
-  /** sstkeyword {
-        gui=2.1GHz;
-        docstring=The clock cycle frequency for the node.ENDL
-        For simple models, synonymous with flop frequency.;
-  } */
   freq_ = params->get_freq_param("frequency");
   mem_freq_ = freq_;
   ncores_ = params->get_int_param("ncores");

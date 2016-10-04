@@ -27,79 +27,61 @@ namespace hw {
  * A link between a real switch and a dummy switch represents a link between
  * switches on different MPI ranks.
  */
-class dist_dummy_switch : public network_switch
+class dist_dummy_switch :
+  public network_switch,
+  public event_handler
 {
  public:
   dist_dummy_switch(sprockit::sim_parameters* params, uint64_t sid, event_manager* mgr)
-    : network_switch(params, sid, mgr)
+    : network_switch(params, sid, mgr),
+      event_handler(event_loc_id(switch_id(sid)))
   {
-    init_loc_id(event_loc_id(my_addr_));
   }
 
   std::string
-  to_string() const;
+  to_string() const override;
 
   bool
-  ipc_handler() const {
+  ipc_handler() const override {
     return true;
   }
+
+  link_handler*
+  credit_handler(int port) const override {
+    return const_cast<dist_dummy_switch*>(this);
+  }
+
+  void compatibility_check() const override {}
+
+  link_handler*
+  payload_handler(int port) const override {
+    return const_cast<dist_dummy_switch*>(this);
+  }
+
+  void handle(event *ev) override;
 
   virtual
   ~dist_dummy_switch() {
   }
 
   virtual void
-  handle(event* ev);
-
-  virtual void
-  connect(
-    int src_outport,
-    int dst_inport,
-    connection_type_t ty,
-    connectable* mod) 
-  { //no op 
-  }
-
-  virtual void
   connect_input(
+    sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    connectable* comp,
-    config* cfg);
+    event_handler* handler) override;
 
   virtual void
   connect_output(
+    sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    connectable* comp,
-    config* cfg);
-
-  std::vector<switch_id>
-  connected_switches() const {
-    spkt_throw(sprockit::unimplemented_error,
-              "dist_dummyswitch::connected_switches: should not be called on dummy switch");
-  }
-
-  double
-  hop_bandwidth() const;
-
-  timestamp
-  hop_latency() const;
-
-  timestamp
-  lookahead() const;
+    event_handler* handler) override;
 
   int
-  queue_length(int port) const {
+  queue_length(int port) const override {
     return 0;
   }
-
- protected:
-  virtual void
-  connect_ejector(int src_outport, int dst_inport, event_handler* nic);
-
-  virtual void
-  connect_injector(int src_outport, int dst_inport, event_handler* nic);
 
 
 };

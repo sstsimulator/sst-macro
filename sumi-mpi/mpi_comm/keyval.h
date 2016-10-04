@@ -28,11 +28,6 @@ class keyval  {
   ~keyval() {
   }
 
-  virtual std::string
-  to_string() const {
-    return "keyval";
-  }
-
   int
   key() const {
     return key_;

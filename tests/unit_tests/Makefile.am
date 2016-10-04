@@ -17,14 +17,10 @@ if !INTEGRATED_SST_CORE
 SUBDIRS = util
 
 check_PROGRAMS = \
- test_packet_flow \
+ test_pisces \
  test_serializable \
  test_unit_test \
- test_routing \
- test_topology
-
-EXTRA_DIST = \
-    topology/test_topology.h 
+ test_routing 
 
 test_routing_SOURCES = \
     routing/test_routing.cc \
@@ -38,17 +34,8 @@ test_routing_SOURCES = \
 test_serializable_SOURCES = \
     test_serializable.cc 
 
-test_packet_flow_SOURCES = \
+test_pisces_SOURCES = \
     hardware/test_packet_flow.cc
-
-test_topology_SOURCES = \
-    topology/test_topology.cc \
-    topology/top_crossbar.cc \
-    topology/top_butterfly.cc \
-    topology/top_dragonfly.cc \
-    topology/top_fattree.cc \
-    topology/top_fbfly.cc \
-    topology/top_hdtorus.cc
 
 test_unit_test_SOURCES = \
     test_unit_test.cc 
@@ -63,10 +50,9 @@ if EXTERNAL_BOOST
   TEST_LDFLAGS += $(BOOST_LDFLAGS)
 endif
 
-test_packet_flow_LDADD = $(TEST_LDFLAGS) 
+test_pisces_LDADD = $(TEST_LDFLAGS) 
 test_routing_LDADD = $(TEST_LDFLAGS)
 test_serializable_LDADD = $(TEST_LDFLAGS)
 test_unit_test_LDADD = $(TEST_LDFLAGS)
-test_topology_LDADD = $(TEST_LDFLAGS)
 
 endif

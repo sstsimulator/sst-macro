@@ -101,12 +101,12 @@ handler_event_queue_entry::execute()
 
 \subsection{Arbitrary Events}
 In some cases, it can be inconvenient (and inefficient) to require every event to be funneled through an \evhandler type.
-A generic macro for creating events from any class member function is provided in the file \inlineshell{event_callback.h}.
+A generic macro for creating event queue entries from any class member function is provided in the file \inlineshell{event_callback.h}.
 For example, the MPI server creates an event
 
 \begin{CppCode}
 mpi_queue_recv_request* req = next_request();
-event* ev = new_event(this, &mpi_queue::start_recv, req);
+event_callback* ev = new_event(this, &mpi_queue::start_recv, req);
 \end{CppCode}
 The new event macro takes as first argument an object and second argument a member function pointer to be invoked when the event is run.
 The remaining arguments are an arbitrary-length list of parameters of any type - they don't need to be messages. 
@@ -130,7 +130,6 @@ The event would also need to be dynamic cast to the correct type.
 By creating event functors, the message can be immediately directed to the correct type and correct action.
 
 For generic events, one must ensure the event is scheduled to the same node and does not cross any network boundaries.
-Generic events are not compatible with parallel simulation.
 The event created must be run on the same logical process.
 
 \subsection{Event Heap/Map}
@@ -142,15 +141,15 @@ For most cases, the number and length of events is such that the min-heap is fin
 
 \section{Event Schedulers}
 The simulation is partitioned into objects that are capable of scheduling events.
-\evscheduler objects are also \evhandler objects, although their handle methods might never be used.
 Common examples of \evscheduler objects are nodes, NICs, memory systems, or the operating system.
 In serial runs, an event scheduler is essentially just a wrapper for the \evmgr and the class is not strictly necessary.
+There are two types of event scheduler: \inlinecode{event_component} and \inlinecode{event_subcomponent}.
 In parallel simulation, though, the simulation must be partitioned into different scheduling units.
 Scheduling units are then distributed amongst the parallel processes.
-The \evscheduler is therefore the basic unit of parallelism.
-Additionally, when simulating failures (in either serial or parallel), certain devices must be deactivated such as a node or network switch going down.
-This basically amounts to canceling all events associated with a given \evscheduler.
-The \evscheduler is therefore primarily a means of structuring the computation.
+Components are the basic unit.  Currently only nodes and network switches are components.
+All other devices (NIC, memory, OS) are subcomponents that must be linked to a parent component.
+Even though components and subcomponents can both schedule events (both inherit from \evscheduler),
+all subcomponents must belong to a component.  A subcomponent cannot be separated from its parent component during parallel simulation.
 
 
 

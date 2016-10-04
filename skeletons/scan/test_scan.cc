@@ -12,7 +12,7 @@ int main(int argc, char** argv)
   int nPoints = sizeof(bandwidths) / sizeof(double);
 
   sprockit::sim_parameters params;
-  params["congestion_model"] = "packet_flow";
+  params["congestion_model"] = "pisces";
   params["amm_model"] = "amm3";
   params["sleep_time"] = 0;
   params["message_size"].setByteLength(16, "KB");

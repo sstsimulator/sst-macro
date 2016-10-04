@@ -7,7 +7,7 @@
 namespace sstmac {
 namespace hw {
 
-class structured_routable
+class routable
 {
  public:
   typedef enum {
@@ -104,11 +104,6 @@ class structured_routable
   }
 
   void
-  assign_path(const path& pth) {
-    path_ = pth;
-  }
-
-  void
   check_vc() {
     if (path_.vc == routing::uninitialized)
       path_.vc = 0;
@@ -138,9 +133,9 @@ class structured_routable
   }
 
  protected:
-  structured_routable() {}
+  routable() {}
 
-  structured_routable(node_id toaddr, node_id fromaddr);
+  routable(node_id toaddr, node_id fromaddr);
 
  private:
   node_id toaddr_;
@@ -158,11 +153,11 @@ class structured_routable
 
 START_SERIALIZATION_NAMESPACE
 template <>
-class serialize<sstmac::hw::structured_routable::path>
+class serialize<sstmac::hw::routable::path>
 {
  public:
   void
-  operator()(sstmac::hw::structured_routable::path& info, serializer& ser){
+  operator()(sstmac::hw::routable::path& info, serializer& ser){
     ser.primitive(info);
   }
 };

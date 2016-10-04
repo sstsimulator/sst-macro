@@ -88,35 +88,19 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
   des_context_(nullptr),
   ftq_trace_(nullptr),
   compute_sched_(nullptr),
-  event_subscheduler(parent),
+  event_subcomponent(parent),
   params_(params)
 {
   compute_sched_ = compute_scheduler_factory::get_optional_param(
                      "compute_scheduler", "simple", params, this);
 
-  if (params->has_namespace("call_graph") && !call_graph_){
-    sprockit::sim_parameters* the_params = params->get_namespace("call_graph");
-    call_graph_ = test_cast(graph_viz, stat_collector_factory::get_optional_param("type", "graph_viz", the_params));
-    if (!call_graph_){
-      spkt_throw_printf(
-        sprockit::value_error,
-        "invalid call graph type %s, must be graph_viz",
-        the_params->get_param("type").c_str());
-    }
-    parent->register_stat(call_graph_);
+  if (!call_graph_){ //not yet build
+    call_graph_ = optional_stats<graph_viz>(parent,
+          params, "call_graph", "call_graph");
   }
 
-  if (params->has_namespace("ftq")){
-    sprockit::sim_parameters* the_params = params->get_namespace("ftq");
-    ftq_trace_ = test_cast(ftq_calendar, stat_collector_factory::get_optional_param("type", "ftq", the_params));
-    if (!ftq_trace_){
-      spkt_throw_printf(
-        sprockit::value_error,
-        "invalid ftq type %s, must be ftq",
-        the_params->get_param("type").c_str());
-    }
-    parent->register_stat(ftq_trace_);
-  }
+  ftq_trace_ = optional_stats<ftq_calendar>(parent,
+        params, "ftq", "ftq");
 
   stacksize_ = params->get_optional_byte_length_param("stack_size", 1 << 17);
   bool mprot = params->get_optional_bool_param("stack_protect", false);
@@ -127,7 +111,7 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
 #if SSTMAC_USE_MULTITHREAD
   if (mprot){
     spkt_throw(sprockit::value_error,
-        "operating_system::init_factory_params: cannot use stack protect in multithreaded mode");
+        "operating_system:: cannot use stack protect in multithreaded mode");
   }
 
   if (os_thread_contexts_.size() == 0){
@@ -260,7 +244,7 @@ operating_system::init_threading()
 #if SSTMAC_INTEGRATED_SST_CORE
     int nthr = 1;
 #else
-    int nthr = parent()->event_mgr()->nthread();
+    int nthr = event_mgr()->nthread();
 #endif
     des_context_ = new threading_pthread(thread_id(), nthr);
 
@@ -504,11 +488,9 @@ operating_system::switch_to_thread(thread_data_t tothread)
 void
 operating_system::print_libs(std::ostream &os) const
 {
-  spkt_unordered_map<std::string, library*>::const_iterator it =
-    libs_.begin(), end = libs_.end();
   os << "available libraries: \n";
-  for (; it != end; ++it) {
-    os << it->first << "\n";
+  for (auto& pair : libs_){
+    os << pair.first << "\n";
   }
 }
 
@@ -719,10 +701,9 @@ operating_system::kill_node()
 library*
 operating_system::lib(const std::string& name) const
 {
-  spkt_unordered_map<std::string, library*>::const_iterator
-    it = libs_.find(name);
+  auto it = libs_.find(name);
   if (it == libs_.end()) {
-    return 0;
+    return nullptr;
   }
   else {
     return it->second;
@@ -820,7 +801,7 @@ operating_system::start_api_call()
   perf_counter_model* mdl = ctxt.current_thread->perf_ctr_model();
   compute_event* ev = mdl->get_next_event();
   os_debug("starting api call with event %s",
-           ev ? ev->to_string().c_str() : "null");
+           ev ? sprockit::to_string(ev).c_str() : "null");
   if (ev){
     execute(ami::COMP_INSTR, ev);
   }
@@ -851,35 +832,32 @@ operating_system::handle_event(event* ev)
   if (!libmsg) {
     spkt_throw_printf(sprockit::illformed_error,
       "operating_system::handle_event: got event %s instead of library event",
-      ev->to_string().c_str());
+      sprockit::to_string(ev).c_str());
   }
 
   std::string libn = libmsg->lib_name();
-  spkt_unordered_map<std::string, library*>::const_iterator
-    it = libs_.find(libn);
+  auto it = libs_.find(libn);
 
   if (it == libs_.end()) {
     if (deleted_libs_.find(libn) == deleted_libs_.end()){
       cerrn << "Valid libraries on " << this << ":\n";
-      spkt_unordered_map<std::string, library*>::const_iterator it,
-          end = libs_.end();
-      for  (it = libs_.begin(); it != end; ++it) {
-        cerrn << it->first << std::endl;
+      for  (auto& pair : libs_){
+        cerrn << pair.first << std::endl;
       }
       spkt_throw_printf(sprockit::os_error,
                      "operating_system::handle_event: can't find library %s on os %d for event %s",
                      libmsg->lib_name().c_str(), int(addr()),
-                     ev->to_string().c_str());
+                     sprockit::to_string(ev).c_str());
     } else {
       debug_printf(sprockit::dbg::dropped_events | sprockit::dbg::os,
                    "OS %d for library %s dropping event %s",
-                   addr(), libn.c_str(), ev->to_string().c_str());
+                   addr(), libn.c_str(), sprockit::to_string(ev).c_str());
       //drop the event
     }
   }
   else {
     os_debug("delivering message to lib %s: %s",
-        libn.c_str(), ev->to_string().c_str());
+        libn.c_str(), sprockit::to_string(ev).c_str());
     it->second->incoming_event(ev);
   }
 }

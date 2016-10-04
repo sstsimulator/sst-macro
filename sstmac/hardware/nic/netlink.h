@@ -12,7 +12,7 @@ namespace hw {
 
 class netlink :
   public connectable,
-  public event_subscheduler
+  public event_subcomponent
 {
  public:
   virtual ~netlink(){}

@@ -6,15 +6,14 @@ namespace tutorial {
 SpktRegister("guest", actor, christopher_guest,
             "Renowned writer, actor, improvisor of Spinal Tap fame");
 
-void
-christopher_guest::init_factory_params(sprockit::sim_parameters* params)
+christopher_guest::christopher_guest(sprockit::sim_parameters* params) :
+  actor(params)
 {
   num_fingers_ = params->get_int_param("num_fingers");
   if (num_fingers_ != 6) {
     spkt_throw_printf(sprockit::value_error,
                      "invalid number of fingers %d - must be 6");
   }
-  actor::init_factory_params(params);
 }
 
 void

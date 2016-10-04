@@ -34,14 +34,10 @@ class member_fxn_handler :
  public:
   virtual ~member_fxn_handler(){}
 
-  virtual std::string
-  to_string() const {
-    return "member fxn handler";
-  }
  protected:
-  member_fxn_handler(event_loc_id id)
+  member_fxn_handler(event_loc_id id) :
+    event_handler(id)
   {
-    init_loc_id(id);
   }
 };
 
@@ -53,8 +49,13 @@ class member_fxn_handler_impl :
  public:
   virtual ~member_fxn_handler_impl(){}
 
+  std::string
+  to_string() const override {
+    return sprockit::to_string(obj_);
+  }
+
   void
-  handle(event* ev) {
+  handle(event* ev) override {
     dispatch(ev, typename gens<sizeof...(Args)>::type());
   }
 
@@ -99,11 +100,6 @@ class member_fxn_callback :
   void
   execute() {
     dispatch(typename gens<sizeof...(Args)>::type());
-  }
-
-  virtual std::string
-  to_string() const {
-    return "member fxn callback";
   }
 
   member_fxn_callback(event_loc_id id, Cls* obj, Fxn fxn, const Args&... args) :

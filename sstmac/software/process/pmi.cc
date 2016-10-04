@@ -51,9 +51,7 @@ process_manager::kill_process()
 int
 process_manager::get_partner(node_id addr) const
 {
-  app_to_node_to_proc_map::const_iterator it1 =
-    proc_map_.find(sid_.app_);
-
+  auto it1 = proc_map_.find(sid_.app_);
   if (it1 == proc_map_.end()) {
     spkt_throw_printf(sprockit::value_error,
                      "process_manager::get_partner: "
@@ -63,9 +61,7 @@ process_manager::get_partner(node_id addr) const
   }
 
   const node_to_proc_map& node_map = it1->second;
-  node_to_proc_map::const_iterator it2 =
-    node_map.find(addr);
-
+  auto it2 = node_map.find(addr);
   if (it2 == node_map.end()) {
     spkt_throw_printf(sprockit::value_error,
                      "process_manager::get_partner: "

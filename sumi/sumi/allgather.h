@@ -15,18 +15,18 @@ class bruck_allgather_actor :
 
  public:
   std::string
-  to_string() const {
+  to_string() const override {
     return "bruck allgather actor";
   }
 
  protected:
-  void finalize();
+  void finalize() override;
 
-  void finalize_buffers();
-  void init_buffers(void *dst, void *src);
-  void init_dag();
+  void finalize_buffers() override;
+  void init_buffers(void *dst, void *src) override;
+  void init_dag() override;
 
-  void buffer_action(void *dst_buffer, void *msg_buffer, action* ac);
+  void buffer_action(void *dst_buffer, void *msg_buffer, action* ac) override;
 
 
 };
@@ -37,17 +37,17 @@ class bruck_allgather_collective :
 
  public:
   std::string
-  to_string() const {
+  to_string() const override {
     return "bruck allgather";
   }
 
   dag_collective_actor*
-  new_actor() const {
+  new_actor() const override {
     return new bruck_allgather_actor;
   }
 
   dag_collective*
-  clone() const {
+  clone() const override {
     return new bruck_allgather_collective;
   }
 

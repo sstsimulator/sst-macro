@@ -12,7 +12,7 @@
 #ifndef SSTMAC_SOFTWARE_SERVICES_LAUNCH_INDEXING_FROMFILEINDEXER_H_INCLUDED
 #define SSTMAC_SOFTWARE_SERVICES_LAUNCH_INDEXING_FROMFILEINDEXER_H_INCLUDED
 
-#include <sstmac/hardware/topology/structured_topology.h>
+#include <sstmac/hardware/topology/cartesian_topology.h>
 #include <sstmac/software/launch/task_mapper.h>
 
 namespace sstmac {
@@ -23,16 +23,20 @@ class dumpi_task_mapper : public task_mapper
 {
 
  public:
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params);
+  dumpi_task_mapper(sprockit::sim_parameters *params);
+
+  std::string
+  to_string() const override {
+    return "dumpi task mapper";
+  }
 
   virtual ~dumpi_task_mapper() throw() {}
 
-  void map_ranks(const app_id& aid,
+  void map_ranks(app_id aid,
                 const ordered_node_set& nodes,
                 int ppn,
                 std::vector<node_id> &result,
-                int nproc);
+                int nproc) override;
  protected:
   node_id
   node_id_from_hostname(const std::string& hostname);
@@ -43,7 +47,7 @@ class dumpi_task_mapper : public task_mapper
  protected:
   std::string metaname_;
 
-  hw::structured_topology* regtop_;
+  hw::cartesian_topology* regtop_;
 
 };
 

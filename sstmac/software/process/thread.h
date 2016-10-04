@@ -57,11 +57,6 @@ class thread
     DONE=6
   };
 
-  virtual std::string
-  to_string() const {
-    return "thread";
-  }
-
   void
   set_api(thread* thr) {
     thr->apis_ = apis_;

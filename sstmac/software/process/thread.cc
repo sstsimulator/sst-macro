@@ -172,11 +172,6 @@ class delete_thread_event :
   {
   }
 
-  std::string
-  to_string() const {
-    return "delete thread event";
-  }
-
   void
   execute(){
     thr_->cleanup();
@@ -285,9 +280,9 @@ thread::init_id()
 void*
 thread::get_tls_value(long thekey) const
 {
-  std::map<long,void*>::const_iterator it = tls_values_.find(thekey);
+  auto it = tls_values_.find(thekey);
   if (it == tls_values_.end())
-    return NULL;
+    return nullptr;
   return it->second;
 }
 

@@ -7,10 +7,8 @@ namespace native {
 SpktRegister("serial", parallel_runtime, serial_runtime);
 
 serial_runtime::serial_runtime(sprockit::sim_parameters* params)
-  : parallel_runtime(params)
+  : parallel_runtime(params, 0, 1)
 {
-  nproc_ = 1;
-  me_ = 0;
 }
 
 int64_t

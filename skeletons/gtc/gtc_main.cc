@@ -99,9 +99,9 @@ namespace gtc
 
     // primary ion thermal gyroradius in equilibrium unit, vthermal=sqrt(T/m)
     gtcparams_->gyroradius_ = 102.0 * sqrt(
-        gtcparams_->aion_ * gtcparams_->temperature_) / (abs(gtcparams_->qion_)
+        gtcparams_->aion_ * gtcparams_->temperature_) / (std::abs(gtcparams_->qion_)
         * gtcparams_->b0_) / ulength;
-    double tstep = gtcparams_->tstep_ * gtcparams_->aion_ / (abs(
+    double tstep = gtcparams_->tstep_ * gtcparams_->aion_ / (std::abs(
         gtcparams_->qion_) * gtcparams_->gyroradius_ * gtcparams_->kappati_);
 
     // basic ion-ion collision time, Braginskii definition

@@ -120,11 +120,6 @@ class mersenne_twister : public UniformInteger
   mersenne_twister(uint64_t seed);
 
  public:
-  virtual std::string
-  to_string() const {
-    return "mersennetwister";
-  }
-
   /// Create a new twister.
   static mersenne_twister* construct(uint64_t seed);
 
@@ -132,14 +127,14 @@ class mersenne_twister : public UniformInteger
   virtual ~mersenne_twister();
 
   /// Get a value in the interval [0,numeric_limits<rngint_t>::max()]
-  virtual rngint_t value();
+  virtual rngint_t value() override;
 
   /// Reseed the generator.  This is an expensive operation.
-  virtual void vec_reseed(const std::vector<rngint_t> &seeds);
+  virtual void vec_reseed(const std::vector<rngint_t> &seeds) override;
 
   /// The number of seeds employed by this generator.
   /// The generator will accept any value up to state_vector_length_.
-  virtual int nseed() {
+  virtual int nseed() override {
     return state_vector_length_;
   }
 };

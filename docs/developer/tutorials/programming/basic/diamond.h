@@ -21,7 +21,7 @@ class diamond :
 
   /** Fill out ptr_type virtual interface */
   std::string
-  to_string() const {
+  to_string() const override {
     return "diamond";
   }
 

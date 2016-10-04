@@ -8,6 +8,8 @@
 typedef int (*main_fxn)(int,char**);
 typedef int (*empty_main_fxn)();
 
+#define main USER_MAIN
+
 #if SSTMAC_INTEGRATED_SST_CORE && defined(SSTMAC_EXTERNAL_SKELETON)
 #include <Python.h>
 #define sst_eli_block(app) \
@@ -16,14 +18,17 @@ typedef int (*empty_main_fxn)();
   }; \
   static inline void* gen_sst_macro_integrated_pymodule(void) \
   { \
-    PyObject* module = Py_InitModule("sst." #app, sst_macro_null_methods); \
+    PyObject* module = Py_InitModule("sst." SST_APP_NAME_QUOTED, sst_macro_null_methods); \
     return module; \
   } \
+  static const SST::ElementInfoComponent macro_components[] = { \
+      {NULL, NULL, NULL, NULL} \
+  }; \
   extern "C" { \
   SST::ElementLibraryInfo ELI_NAME(app) = { \
-      "macro", \
+      SST_APP_NAME_QUOTED, \
       "SST Macroscale skeleton app", \
-      NULL, \
+      macro_components, \
       NULL, \
       NULL, \
       NULL, \

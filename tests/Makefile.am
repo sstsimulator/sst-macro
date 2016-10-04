@@ -66,12 +66,12 @@ endif
 CORETESTS=
 
 include Makefile.shared_core_tests
+include Makefile.config_tests
 include Makefile.api_tests
 if !INTEGRATED_SST_CORE
 include Makefile.check_programs
 include Makefile.single_tests
 include Makefile.stats_tests
-include Makefile.config_tests
 include Makefile.unit_tests
 include Makefile.alloc_tests
 include Makefile.external_tests

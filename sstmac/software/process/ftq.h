@@ -22,7 +22,9 @@ namespace sw {
 
 class ftq_epoch
 {
- protected:
+ private:
+  friend class app_ftq_calendar;
+
   long long* totals_;
 
  public:
@@ -49,47 +51,7 @@ class ftq_epoch
 
 };
 
-struct event_node {
-  int event_typeid;
-
-  long ticks_begin;
-
-  long ticks_end;
-
-  event_node* next;
-
-};
-
-class task_ftq_calendar :
-  public ftq_epoch
-{
- public:
-
-  task_ftq_calendar();
-
-  virtual ~task_ftq_calendar();
-
-  void collect(int event_typeid, long ticks_begin, long ticks);
-
-  virtual std::string
-  to_string() const {
-    return "TaskFTQCalendar";
-  }
-
-  void dump(std::ofstream& os);
-
- protected:
-  event_node* head_;
-
-  event_node* tail_;
-
-  long max_tick_;
-
-
-};
-
-class app_ftq_calendar :
-  public task_ftq_calendar
+class app_ftq_calendar
 {
 
  public:
@@ -112,11 +74,6 @@ class app_ftq_calendar :
   */
   void collect(int event_typeid, int tid, long ticks_begin, long num_ticks);
 
-  virtual std::string
-  to_string() const {
-    return "AppFTQCalendar";
-  }
-
   void
   reduce(app_ftq_calendar* cal);
 
@@ -124,12 +81,13 @@ class app_ftq_calendar :
   global_reduce(parallel_runtime* rt);
 
  private:
-  spkt_unordered_map<int, task_ftq_calendar*> calendars_;
-  spkt_unordered_map<int, ftq_epoch*> thread_epochs_;
-
   std::vector<ftq_epoch> epochs_;
 
+  ftq_epoch aggregate_;
+
   std::list<long long*> buffers_;
+
+  void dump(std::ofstream& os);
 
   int aid_;
 
@@ -155,7 +113,7 @@ class ftq_calendar :
   public stat_collector
 {
  public:
-  ftq_calendar();
+  ftq_calendar(sprockit::sim_parameters* params);
 
   void init(long nticks_per_epoch);
 
@@ -171,42 +129,27 @@ class ftq_calendar :
 
   void register_app(int aid, const std::string& appname);
 
-  void simulation_finished(timestamp end);
+  void simulation_finished(timestamp end) override;
 
-  void dump_local_data();
+  void dump_local_data() override;
 
-  void dump_global_data();
+  void dump_global_data() override;
 
-  void clear();
+  void clear() override;
 
-  void reduce(stat_collector* coll);
+  void reduce(stat_collector* coll) override;
 
-  void global_reduce(parallel_runtime *rt);
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  ftq_calendar*
-  clone_me(int id) const {
-    ftq_calendar* cln = new ftq_calendar;
-    clone_into(cln);
-    cln->set_id(id);
-    return cln;
-  }
+  void global_reduce(parallel_runtime *rt) override;
 
   stat_collector*
-  clone() const {
-    return clone_me(-1);
+  do_clone(sprockit::sim_parameters* params) const override {
+    return new ftq_calendar(params);
   }
 
-  virtual std::string
-  to_string() const {
+  std::string
+  to_string() const override {
     return "FTQCalendar";
   }
-
- protected:
-  void
-  clone_into(ftq_calendar* cln) const;
 
  private:
   static spkt_unordered_map<int, app_ftq_calendar*> calendars_;

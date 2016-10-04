@@ -12,45 +12,40 @@ class serial_runtime :
  public:
   serial_runtime(sprockit::sim_parameters* params);
 
-  std::string
-  to_string() const {
-    return "serial runtime";
-  }
+  virtual int64_t
+  allreduce_min(int64_t mintime) override;
 
   virtual int64_t
-  allreduce_min(int64_t mintime);
-
-  virtual int64_t
-  allreduce_max(int64_t maxtime);
+  allreduce_max(int64_t maxtime) override;
 
   virtual void
-  global_sum(long *data, int nelems, int root);
+  global_sum(long *data, int nelems, int root) override;
 
   virtual void
-  global_sum(long long *data, int nelems, int root);
+  global_sum(long long *data, int nelems, int root) override;
 
   virtual void
-  global_max(int *data, int nelems, int root);
+  global_max(int *data, int nelems, int root) override;
 
   virtual void
-  global_max(long *data, int nelems, int root);
+  global_max(long *data, int nelems, int root) override;
 
   virtual void
-  gather(void *send_buffer, int num_bytes, void *recv_buffer, int root);
+  gather(void *send_buffer, int num_bytes, void *recv_buffer, int root) override;
 
   virtual void
-  allgather(void *send_buffer, int num_bytes, void *recv_buffer);
+  allgather(void *send_buffer, int num_bytes, void *recv_buffer) override;
 
   virtual void
-  send(int dst, void *buffer, int buffer_size);
+  send(int dst, void *buffer, int buffer_size) override;
 
   virtual void
-  recv(int src, void *buffer, int buffer_size);
+  recv(int src, void *buffer, int buffer_size) override;
 
   virtual void
-  bcast(void* buffer, int bytes, int root);
+  bcast(void* buffer, int bytes, int root) override;
 
-  void finalize(){}
+  void finalize() override {}
 
   /**
    @param pool A buffer cache corresponding to a pool of free buffers

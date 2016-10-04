@@ -11,7 +11,6 @@
 
 #define sstmac_app_name sstmac_mpi_testall
 
-#include <sstmac/skeleton.h>
 #include <sstmac/compute.h>
 #include <sstmac/replacements/mpi.h>
 #include <sprockit/sim_parameters.h>

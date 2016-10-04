@@ -174,10 +174,6 @@ manager::~manager() throw ()
 void
 manager::start()
 {
-  const interconnect::node_map& nodes = interconnect_->nodes();
-  for (auto& pair : nodes){
-    node* nd = pair.second;
-  }
 }
 
 timestamp

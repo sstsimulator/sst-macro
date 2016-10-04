@@ -144,6 +144,13 @@ pinger::start()
   schedule_next();
 }
 
+
+ping_monitor::ping_monitor(sprockit::sim_parameters* params, transport* tport) :
+  activity_monitor(params, tport)
+{
+  timeout_ = params->get_optional_time_param("ping_timeout", 1e-3);
+}
+
 void
 ping_monitor::renew_pings(double wtime)
 {
@@ -215,12 +222,6 @@ ping_monitor::message_received(const message::ptr& msg)
       pingers_.erase(ping_partner);
     }
   }
-}
-
-void
-ping_monitor::init_factory_params(sprockit::sim_parameters* params)
-{
-  timeout_ = params->get_optional_time_param("ping_timeout", 1e-3);
 }
 
 void

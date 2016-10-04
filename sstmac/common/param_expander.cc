@@ -5,9 +5,4 @@ ImplementFactory(sstmac::param_expander)
 
 namespace sstmac {
 
-void
-param_expander::finalize_init()
-{
-}
-
 }

@@ -21,11 +21,6 @@ class sumi_queue
 {
 
  public:
-  std::string
-  to_string() const {
-    return "SUMI message queue";
-  }
-
   sumi_queue(sstmac::sw::operating_system* os);
 
   sumi_queue();

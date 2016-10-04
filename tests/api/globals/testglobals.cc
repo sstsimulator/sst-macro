@@ -8,11 +8,7 @@
  *  For more information, see the LICENSE file in the top
  *  SST/macroscale directory.
  */
-#include <sstmac/util.h>
-#include <sstmac/skeleton.h>
-#include <sprockit/keyword_registration.h>
 
-using namespace sstmac;
 
 enum TEST_MODE
 {
@@ -32,6 +28,12 @@ enum TEST_MODE
 #include "tests/test_functions.cc"
 #include "tests/test_arrays.cc"
 #include "tests/test_structs.cc"
+
+#include <sstmac/util.h>
+#include <sstmac/skeleton.h>
+#include <sprockit/keyword_registration.h>
+
+using namespace sstmac;
 
 int testmode_ = -1;
 bool justprint = false;

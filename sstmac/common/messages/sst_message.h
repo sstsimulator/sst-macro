@@ -21,7 +21,9 @@
 
 namespace sstmac {
 
-class flow : public event
+class flow :
+  public event,
+  public sprockit::printable
 {
  public:
   virtual uint64_t
@@ -51,6 +53,16 @@ class message :
 
   virtual node_id
   fromaddr() const = 0;
+
+  virtual bool
+  needs_ack() const {
+    return false;
+  }
+
+  virtual message*
+  clone_ack() const {
+    return nullptr;
+  }
 
 };
 

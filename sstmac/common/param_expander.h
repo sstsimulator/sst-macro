@@ -14,9 +14,6 @@ class param_expander
   virtual void
   expand(sprockit::sim_parameters* params) = 0;
 
-  virtual void
-  finalize_init();
-
 };
 
 DeclareFactory(param_expander);

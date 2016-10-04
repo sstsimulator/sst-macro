@@ -28,19 +28,14 @@ class app_launcher :
  public:
   app_launcher(operating_system* os);
 
-  virtual std::string
-  to_string() const {
-    return "launcher";
-  }
-
   /// Hasta la vista.
   virtual ~app_launcher() throw ();
 
   virtual void
-  incoming_event(event* ev);
+  incoming_event(event* ev) override;
 
   virtual void
-  start();
+  start() override;
 
  protected:
   bool is_completed_;

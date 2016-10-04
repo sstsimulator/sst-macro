@@ -16,12 +16,12 @@ class default_dgemv :
   }
 
   std::string
-  to_string() const {
+  to_string() const override {
     return "default dgemv";
   }
 
   compute_event*
-  op_2d(int m, int n);
+  op_2d(int m, int n) override;
 
  protected:
   double loop_unroll_;

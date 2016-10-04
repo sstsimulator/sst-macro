@@ -25,7 +25,7 @@ class nic
   ...
   stat_histogram* hist_msg_size_;
   ...
-  nic() : hist_msg_size_(0)
+  nic() : hist_msg_size_(nullptr)
   ...
 \end{CppCode}
 
@@ -38,57 +38,23 @@ For histogram, we declare in \inlinecode{stat_histogram.cc}
 SpktRegister("histogram", stat_collector, stat_histogram);
 \end{CppCode}
 
-Inside the \inlinecode{init_factory_params} function for \inlinecode{nic}, we check if the histogram stats should be activated
+Inside the constructor for \inlinecode{nic}, we check if the histogram stats should be activated.
+Although this can be done manually, a special template function is provided for simplicity.
 
 
 \begin{CppCode}
-if (params->has_namespace("message_sizes")){
-  params->enter_namespace("message_sizes");
-  stat_collector* hist = stat_collector_factory::get_optional_param("type", "histogram", params);
-  hist_msg_size_ = test_cast(stat_histogram, hist);
-  params->exit_namespace("message_sizes");
-}
+hist_msg_size_ = optional_stats<stat_histogram>(parent,
+        params, "message_size_histogram", "histogram");
 \end{CppCode}
+This returns a nullptr if the params does not have a namespace ``message\_size\_histogram.''  Otherwise it builds a stats object corresponding to the registered factory type ``histogram.'' By returning a nullptr, the SST component can check if the stats are active.  If stats are required, the same function prototype can be used with \inlinecode{required_stats} which then aborts if the correct parameters are not found. 
 
-It is possible that you create your own customized histogram object.
-However, here we default to the histogram provided by \sstmacro.
 The histogram constructor initializes a few parameters internally.
 
 \begin{CppCode}
 bin_size_ = params->get_quantity("bin_size");
 is_log_ = params->get_optional_bool_param("logarithmic", false);
-fileroot_ = params->get_param("fileroot");
 \end{CppCode}
-
 defining how large histogram bins are, whether the scale is logarithmic, and finally defining a file root for dumping results later.
-
-This only defines a template histogram object, though.
-Recall from earlier sections, almost everything in \sstmacro builds a template object and then clones copies of it to fill out the machine.
-
-\begin{CppCode}
-void
-nic::clone_into(nic* nic) const
-{
-  if (hist_msg_size_){
-    nic->hist_msg_size_ = hist_msg_size_->clone_me(parent_->id());
-  }
-\end{CppCode}
-If we have built a histogram object, create a copy of it but assign it a unique ID.
-This unique ID is important for the runtime to distinguish a stat collector object for node 0 from that for node 1, node 2, etc.
-
-When the simulation begins, every component gets assigned an \inlinecode{event_manager}.
-At this time, an object must register all statistics with the runtime
-
-\begin{CppCode}
-void
-nic::set_event_manager(event_manager* m)
-{
-  if (hist_msg_size_) m->register_stat(hist_msg_size_);
-\end{CppCode}
-
-At this point, the stats object is completely configured.
-The stats object copy has been assigned a unique ID and registered with the SST runtime.
-Each individual NIC can now start (thread-safely) collecting stats.
 Internally in the event manager, all objects with the same file root are grouped together.
 Thus the \inlineshell{fileroot} parameter is critical for defining unique groups of stats object.
 This is important during simulation post-processing when the event manager wants to aggregate results from each individual node.

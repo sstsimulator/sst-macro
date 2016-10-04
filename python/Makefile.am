@@ -12,6 +12,13 @@
 include $(top_srcdir)/Makefile.common
 
 python_includedir=$(includedir)/python
+EXTRA_DIST= \
+  env.sh \
+  merlin.py \
+  emberMacro.py \
+  emberLoadInfo.py \
+  emberDefaultParams.py 
+
 nobase_python_include_HEADERS = \
     default.py 
 

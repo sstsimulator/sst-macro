@@ -25,8 +25,8 @@ task_mapper::~task_mapper() throw()
 {
 }
 
-void
-task_mapper::init_factory_params(sprockit::sim_parameters *params)
+task_mapper::task_mapper(sprockit::sim_parameters* params) :
+  rt_(nullptr), topology_(nullptr)
 {
   rt_ = parallel_runtime::static_runtime(params);
   topology_ = sstmac::hw::topology::static_topology(params);

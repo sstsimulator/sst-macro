@@ -32,9 +32,8 @@ SpktFileIO::open_file(std::ifstream& in, const std::string& filename)
     return;
   }
 
-  std::list<std::string>::const_iterator it, end = file_paths_.end();
-  for (it=file_paths_.begin(); it != end; ++it) {
-    std::string fullpath = (*it) + "/" + filename;
+  for (auto& str : file_paths_) {
+    std::string fullpath = str + "/" + filename;
     in.open(fullpath.c_str());
     if (in.is_open()) {
       return;
@@ -47,9 +46,8 @@ SpktFileIO::not_found(const std::string& filename)
 {
   std::stringstream ss;
   ss << "File not found: " << filename << ".  Search path is: \n";
-  std::list<std::string>::const_iterator it, end = file_paths_.end();
-  for (it=file_paths_.begin(); it != end; ++it) {
-    ss << *it << "\n";
+  for (auto& str : file_paths_) {
+    ss << str << "\n";
   }
 
   spkt_throw(io_error, ss.str());

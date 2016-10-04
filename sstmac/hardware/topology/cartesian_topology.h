@@ -15,33 +15,46 @@ class cartesian_topology :
   public structured_topology
 {
  public:
-  /**
-   * @brief configure_geometric_paths
-   * For all possible geometric or structure paths, compute
-   * their redundances in terms of number of ports that go
-   * in the same geometric or structural direction, e.g.
-   * might be 3 ports that all go +X on a router
-   * @param [inout] redundancies
-   */
-  virtual void
-  configure_geometric_paths(std::vector<int>& redundancies) = 0;
+  node_id
+  node_addr(const coordinates& coords) const;
 
-  virtual void
-  minimal_routes_to_switch(
-    switch_id current_sw_addr,
-    switch_id dest_sw_addr,
-    structured_routable::path &current_path,
-    structured_routable::path_set &paths) const;
+  virtual switch_id
+  switch_addr(const coordinates& coords) const = 0;
+
+  coordinates
+  node_coords(node_id nid) const;
+
+  virtual coordinates
+  switch_coords(switch_id) const = 0;
+
+  int
+  ndimensions() const {
+    return dimensions_.size();
+  }
+
+  cartesian_topology*
+  cart_topology() const override {
+    return const_cast<cartesian_topology*>(this);
+  }
+
+  std::string
+  label(switch_id sid) const override;
+
+  std::string
+  label(node_id nid) const override;
 
  protected:
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params);
+  cartesian_topology(sprockit::sim_parameters* params,
+                     InitMaxPortsIntra i1,
+                     InitGeomEjectID i2);
 
   /**
    * The number of redundant links (ports) comprising a geometric
    * or structure direction in the topology
    */
   std::vector<int> red_;
+  std::vector<int> dimensions_;
+
 };
 
 }

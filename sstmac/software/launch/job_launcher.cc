@@ -66,12 +66,7 @@ void
 job_launcher::satisfy_launch_request(app_launch* appman, hw::node* nd)
 {
   apps_launched_[appman->aid()] = appman;
-
-
-  const std::list<int>& my_ranks = appman->rank_assignment(nd->addr());
-  std::list<int>::const_iterator it, end = my_ranks.end();
-  for (it=my_ranks.begin(); it != end; ++it){
-    int rank = *it;
+  for (int rank : appman->rank_assignment(nd->addr())){
     sw::launch_event* lev = new launch_event(appman->app_template(), appman->aid(),
                                     rank, appman->core_affinities());
     nd->handle(lev);

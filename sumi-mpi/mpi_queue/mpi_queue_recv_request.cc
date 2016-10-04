@@ -37,7 +37,7 @@ mpi_queue_recv_request::~mpi_queue_recv_request()
 template <class T>
 class delete_this {
  public:
-  delete_this() : t_(0) {}
+  delete_this() : t_(nullptr) {}
   ~delete_this(){ if (t_) delete t_; }
   void operator=(T* t){
     t_ = t;

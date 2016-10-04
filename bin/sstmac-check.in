@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 
-export PYTHONPATH=$PYTHONPATH:@abs_top_srcdir@/python
-export SST_LIB_PATH=$SST_LIB_PATH:@abs_top_builddir@/sstmac/install/.libs
+export PYTHONPATH=@abs_top_srcdir@/python:$PYTHONPATH
+export SST_LIB_PATH=@abs_top_builddir@/sstmac/install/.libs:$SST_LIB_PATH
 
 options="$@"
 @sst_prefix@/bin/sst @abs_top_srcdir@/python/default.py --model-options="$options"

@@ -35,12 +35,6 @@ class processor
  public:
   virtual ~processor();
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
-  finalize_init();
-
   static void
   delete_statics();
 
@@ -52,8 +46,7 @@ class processor
   }
 
  protected:
-  processor(memory_model* mem, node* nd) :
-    mem_(mem), node_(nd) {}
+  processor(sprockit::sim_parameters* params, memory_model* mem, node* nd);
 
  protected:
   double freq_;

@@ -44,7 +44,7 @@ class dynamic_tree_vote_message :
   tostr(type_t);
 
   virtual void
-  serialize_order(sumi::serializer &ser);
+  serialize_order(sumi::serializer &ser) override;
 
   dynamic_tree_vote_message(int vote, type_t ty, int tag, int virtual_src, int virtual_dst) :
     //0 = buffer
@@ -82,7 +82,7 @@ class dynamic_tree_vote_actor :
   tostr(stage_t stage);
 
   std::string
-  to_string() const {
+  to_string() const override {
     return "vote actor";
   }
 
@@ -120,13 +120,13 @@ class dynamic_tree_vote_actor :
   void down_partner_failed(int rank);
 
   void
-  dense_partner_ping_failed(int virtual_rank);
+  dense_partner_ping_failed(int virtual_rank) override;
 
   virtual bool
-  check_neighbor(int phys_rank);
+  check_neighbor(int phys_rank) override;
 
   virtual void
-  stop_check_neighbor(int phys_rank);
+  stop_check_neighbor(int phys_rank) override;
 
   void
   send_down_votes();
@@ -284,18 +284,18 @@ class dynamic_tree_vote_collective :
 
  public:
   std::string
-  to_string() const {
+  to_string() const override {
     return "sumi persistent resilient vote collective";
   }
 
   void
-  recv(int target, const collective_work_message::ptr& msg);
+  recv(int target, const collective_work_message::ptr& msg) override;
 
   void
-  start();
+  start() override;
 
   bool
-  persistent() const {
+  persistent() const override {
     return true;
   }
 

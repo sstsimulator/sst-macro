@@ -37,11 +37,6 @@ namespace gtc
     {
     }
 
-    virtual std::string
-    to_string() const
-    {
-      return "gtc_module";
-    }
   };
 
   /**
@@ -65,12 +60,6 @@ namespace gtc
     virtual
     ~config_parameters()
     {
-    }
-
-    virtual std::string
-    to_string() const
-    {
-      return "gtc::config_parameters";
     }
 
     // ---- control params ----
@@ -209,12 +198,6 @@ namespace gtc
     {
     }
 
-    virtual std::string
-    to_string() const
-    {
-      return "gtc::particle_decomp";
-    }
-
     void
     setup(const config_parameters::ptr& params);
   };
@@ -239,12 +222,6 @@ namespace gtc
     virtual
     ~field_array()
     {
-    }
-
-    virtual std::string
-    to_string() const
-    {
-      return "gtc::field_array";
     }
 
     void

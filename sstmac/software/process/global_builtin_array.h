@@ -28,7 +28,6 @@ class sstmac_global_builtin_arr : public sstmac_global
   T* init_;
 
  public:
-  typedef typename val_map::const_iterator const_iterator;
   typedef T static_arr[N];
 
   explicit
@@ -47,7 +46,6 @@ class sstmac_global_builtin_arr : public sstmac_global
                      "copy constructor should never be called for primitive global");
   }
 
-  virtual
   ~sstmac_global_builtin_arr() {
     for (auto& pair : vals_){
       T* t = pair.second;
@@ -58,13 +56,12 @@ class sstmac_global_builtin_arr : public sstmac_global
 
   void
   print_all() const {
-    typename val_map::const_iterator it = vals_.begin();
-    for (; it != vals_.end(); ++it) {
-      std::cout << it->second << std::endl;
+    for (auto& pair : vals_){
+      std::cout << pair.second << std::endl;
     }
   }
 
-  virtual T*
+  T*
   get_val() const {
     process_context ptxt = current_context();
     val_map& vals = const_cast<val_map&> (vals_);
@@ -87,7 +84,7 @@ class sstmac_global_builtin_arr : public sstmac_global
                      "getting static array value with no process context");
   }
 
-  virtual std::string
+  std::string
   to_string() const {
     std::stringstream ss;
     ss << get_val();
@@ -228,11 +225,12 @@ class sstmac_global_builtin_arr : public sstmac_global
     return myval < otherval;
   }
 
-  const_iterator
+  typename val_map::const_iterator
   begin() const {
     return vals_[0].begin();
   }
-  const_iterator
+
+  typename val_map::const_iterator
   end() const {
     return vals_[0].end();
   }

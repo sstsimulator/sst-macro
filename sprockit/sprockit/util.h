@@ -32,8 +32,7 @@ __safe_cast__(const char* objname,
 {
   Out* out = dynamic_cast<Out*>(in);
   if (!out) {
-    spkt_throw_printf(value_error,
-                     "%s: failed to cast object at %s:%d",
+    spkt_abort_printf("%s: failed to cast object at %s:%d",
                      error_msg, file, line);
   }
   return out;
@@ -54,17 +53,6 @@ __safe_cast__(const char* objname,
 
 #define interface_cast(type,obj) \
     dynamic_cast<type*>(obj)
-
-template <class maptype, class keytype>
-const typename maptype::mapped_type&
-mapget(const maptype& mapobj, const keytype& keyobj, const char* errormsg)
-{
-  typename maptype::const_iterator it = mapobj.find(keyobj);
-  if (it == mapobj.end()) {
-    spkt_throw_printf(value_error, "could not find entry in map: %s", errormsg);
-  }
-  return it->second;
-}
 
 
 // Splat a tuple into a function call

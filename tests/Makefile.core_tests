@@ -4,9 +4,6 @@
 
 
 CORETESTS+= \
-  test_core_apps_ping_all_torus_simple \
-  test_core_apps_ping_all_simple_fattree \
-  test_core_apps_ping_all_dragonfly_simple \
   test_core_apps_stop_time \
   test_sumi_failure \
   test_sumi_collective 

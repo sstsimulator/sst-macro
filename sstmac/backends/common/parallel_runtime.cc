@@ -15,21 +15,6 @@ const int parallel_runtime::global_root = -1;
 parallel_runtime* parallel_runtime::static_runtime_ = nullptr;
 
 void
-parallel_runtime::finalize_init()
-{
-  if (me_ == 0){
-    sprockit::output::init_out0(&std::cout);
-    sprockit::output::init_err0(&std::cerr);
-  }
-  else {
-    sprockit::output::init_out0(new std::ofstream("/dev/null"));
-    sprockit::output::init_err0(new std::ofstream("/dev/null"));
-  }
-  sprockit::output::init_outn(&std::cout);
-  sprockit::output::init_errn(&std::cerr);
-}
-
-void
 parallel_runtime::bcast_string(std::string& str, int root)
 {
   if (nproc_ == 1)
@@ -95,18 +80,6 @@ parallel_runtime::init_partition_params(sprockit::sim_parameters *params)
   spkt_throw(sprockit::unimplemented_error,
     "parallel_runtime::init_partition_params: should not be used with integrated core");
 #else
-  std::string netname = params->get_param("interconnect");
-  if (netname == "simple"){
-    sprockit::sim_parameters* subspace = params->get_namespace("topology");
-    std::string topology_name = subspace->get_param("name");
-    if(topology_name != "simple") {
-      subspace->add_param_override("actual_name", topology_name);
-      subspace->add_param_override("name", "simple");
-    }
-    else if (!subspace->has_param("actual_name")) {
-      spkt_throw(sprockit::input_error, "must give actual topology other than \"simple\"");
-    }
-  }
   //out with the old, in with the new
   if (part_) delete part_;
   part_ = partition_factory::get_optional_param("partition", SSTMAC_DEFAULT_PARTITION_STRING, params, this);
@@ -143,9 +116,22 @@ parallel_runtime::init_runtime_params(sprockit::sim_parameters *params)
   recv_buffer_pool_.init(buf_size_, num_bufs_window);
 }
 
-parallel_runtime::parallel_runtime(sprockit::sim_parameters* params)
-  : part_(nullptr)
+parallel_runtime::parallel_runtime(sprockit::sim_parameters* params,
+                                   int me, int nproc)
+  : part_(nullptr),
+    me_(me),
+    nproc_(nproc)
 {
+  if (me_ == 0){
+    sprockit::output::init_out0(&std::cout);
+    sprockit::output::init_err0(&std::cerr);
+  }
+  else {
+    sprockit::output::init_out0(new std::ofstream("/dev/null"));
+    sprockit::output::init_err0(new std::ofstream("/dev/null"));
+  }
+  sprockit::output::init_outn(&std::cout);
+  sprockit::output::init_errn(&std::cerr);
 }
 
 parallel_runtime::~parallel_runtime()

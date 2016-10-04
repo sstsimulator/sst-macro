@@ -21,10 +21,9 @@
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/sst_core/connectable_wrapper.h>
 #include <sstmac/sst_core/integrated_component.h>
-#else
-ImplementFactory(sstmac::hw::network_switch);
 #endif
 
+ImplementFactory(sstmac::hw::network_switch);
 RegisterDebugSlot(network_switch)
 
 namespace sstmac {
@@ -35,83 +34,26 @@ namespace hw {
 
 network_switch::~network_switch()
 {
-  if (router_) delete router_;
 }
 
 
 network_switch::network_switch(sprockit::sim_parameters *params, uint64_t id, event_manager *mgr)
- : connectable_component(params, id, mgr),
-  router_(nullptr)
+ : connectable_component(params, id,
+                         event_loc_id(switch_id(params->get_int_param("id"))),
+                         mgr) //no self messages for a switch
 {
-  my_addr_ = switch_id(params->get_int_param("id"));
-  init_loc_id(event_loc_id(my_addr_));
-
+  my_addr_ = event_location().convert_to_switch_id();
   top_ = topology::static_topology(params);
-  router_ = router_factory::get_optional_param("router", "minimal", params, top_, this);
 }
 
 void
 network_switch::init(unsigned int phase)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  event_scheduler::init(phase);
   if (phase == 0){
-    for(auto&& pair : link_map_->getLinkMap()) {
-      const std::string& port_name = pair.first;
-      SST::Link* link = pair.second;
-      connection_details dets;
-      parse_port_name(port_name, &dets);
-      if (dets.src_type == connection_details::sw && dets.src_id == my_addr_){ 
-        //create the link
-        integrated_connectable_wrapper* next = new integrated_connectable_wrapper(link);
-        connect(
-            dets.src_port, 
-            dets.dst_port,
-            dets.type,
-            next,
-            &dets.cfg);
-      } else { //somebody is injecting to me
-        configureLink(port_name,
-         new SST::Event::Handler<SSTIntegratedComponent>(
-              this, &SSTIntegratedComponent::handle_event));
-      }
-    }
-    initialize();
+    event_component::init(phase);
   }
-  configure_self_link();
 #endif
-}
-
-
-void
-network_switch::connect(
-  int src_outport,
-  int dst_inport,
-  connection_type_t ty,
-  connectable* mod,
-  connectable::config* cfg)
-{
- switch (ty) {
-   case input: {
-      if (top_->is_injection_port(dst_inport)){
-        connect_injector(src_outport, dst_inport, safe_cast(event_handler, mod));
-      } else {
-        connect_input(src_outport, dst_inport, mod, cfg);
-      }
-      break;
-    }
-    case output: {
-      if (top_->is_injection_port(src_outport)){
-        connect_ejector(src_outport, dst_inport, safe_cast(event_handler, mod));
-      } else {
-        connect_output(src_outport, dst_inport, mod, cfg);
-      }
-      //here my outport is zero
-      break;
-    }
-    default:
-      connectable_type_invalid(ty);
-   }
 }
 
 

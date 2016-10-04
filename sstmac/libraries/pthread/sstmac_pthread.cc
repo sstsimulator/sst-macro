@@ -281,31 +281,25 @@ SSTMAC_pthread_mutex_unlock(sstmac_pthread_mutex_t * mutex)
 
 class unblock_event : public event_queue_entry
 {
-  public:
+ public:
+  unblock_event(mutex_t* mut, operating_system* os)
+    : mutex_(mut),
+    os_(os),
+    event_queue_entry(os->event_location(), os->event_location())
+  {
+  }
 
-    std::string
-    to_string() const {
-      return "unblock event";
-    }
+  void
+  execute(){
+    key* blocker = mutex_->waiters.front();
+    mutex_->waiters.pop_front();
+    os_->unblock(blocker);
+  }
 
-    unblock_event(mutex_t* mut, operating_system* os)
-      : mutex_(mut),
-      os_(os),
-      event_queue_entry(os->event_location(), os->event_location())
-    {
-    }
+ protected:
+  mutex_t* mutex_;
 
-    void
-    execute(){
-      key* blocker = mutex_->waiters.front();
-      mutex_->waiters.pop_front();
-      os_->unblock(blocker);
-    }
-
-  protected:
-    mutex_t* mutex_;
-
-    operating_system* os_;
+  operating_system* os_;
 
 };
 

@@ -8,16 +8,15 @@ class christopher_guest :
 {
 
  public:
+  christopher_guest(sprockit::sim_parameters* params);
+
   std::string
-  to_string() const {
+  to_string() const override {
     return "count rugen";
   }
 
   virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
-  act();
+  act() override;
 
  protected:
   int num_fingers_;

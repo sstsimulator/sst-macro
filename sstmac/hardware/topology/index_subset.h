@@ -11,11 +11,6 @@ class index_subset  {
   typedef std::vector<int>::iterator iterator;
 
  public:
-  std::string
-  to_string() const {
-    return "index_subset";
-  }
-
   iterator
   begin() {
     return subset_.begin();

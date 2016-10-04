@@ -46,15 +46,12 @@ namespace sstmac {
 
 class event_manager
 {
+  friend class event_component;
+  friend class event_subcomponent;
   friend class event_scheduler;
   friend class native::manager;
 
  public:
-  virtual std::string
-  to_string() const {
-    return "event manager";
-  }
-
   bool
   is_complete() {
     return complete_;
@@ -193,7 +190,7 @@ class event_manager
   virtual void
   finish_stats(stat_collector* main, const std::string& name, timestamp end);
 
-protected:
+ protected:
   bool complete_;
   bool stopped_;
   bool finish_on_stop_;

@@ -961,7 +961,7 @@ transport::failed_ranks(int context) const
     return empty_set;
   }
 
-  vote_map::const_iterator it = votes_done_.find(context);
+  auto it = votes_done_.find(context);
   if (it == votes_done_.end()){
     spkt_throw_printf(sprockit::value_error,
         "sumi_api::failed_rank: unknown or uncommitted context %d on rank %d",

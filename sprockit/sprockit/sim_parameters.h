@@ -169,20 +169,17 @@ class sim_parameters  {
                bool override_existing = true,
                bool mark_as_read = true);
 
-  void
-  print_params(std::ostream& os, bool pretty_print, std::list<std::string>& namespaces) const;
+  std::string
+  print_scoped_params(std::ostream& os) const;
+
+  std::string
+  print_scopes(std::ostream& os);
 
   void
-  print_params(std::ostream& os = std::cerr) const {
-    std::list<std::string> ns;
-    print_params(os, false, ns);
-  }
+  print_local_params(std::ostream& os, const std::string& prefix) const;
 
   void
-  pretty_print_params(std::ostream& os = std::cerr) const {
-    std::list<std::string> ns;
-    print_params(os, true, ns);
-  }
+  print_params(std::ostream& os = std::cerr, const std::string& prefix = "") const;
 
   bool
   print_unread_params(std::ostream& os = std::cerr) const;
@@ -413,7 +410,8 @@ class sim_parameters  {
   template <class T>
   T*
   extra_data() const {
-    return static_cast<T*>(extra_data_);
+    void* ptr = _extra_data();
+    return static_cast<T*>(ptr);
   }
 
   param_assign
@@ -438,6 +436,7 @@ class sim_parameters  {
 
   sim_parameters* parent_;
 
+  void* _extra_data() const;
   void* extra_data_;
 
   static sim_parameters* empty_ns_params_;
@@ -447,6 +446,8 @@ class sim_parameters  {
   key_value_map params_;
 
   uint64_t current_id_;
+
+  sim_parameters* _get_namespace(const std::string &ns);
 
   void
   throw_key_error(const std::string& key) const;

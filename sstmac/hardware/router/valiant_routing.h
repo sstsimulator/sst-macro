@@ -22,13 +22,10 @@ class valiant_router : public minimal_router
   ~valiant_router() { }
 
   virtual void
-  route(packet* pkt);
-
-  virtual void
-  route(packet* pkt, structured_routable::path_set& paths);
+  route(packet* pkt) override;
 
   virtual std::string
-  to_string() const {
+  to_string() const override {
     return "valiant";
   }
 
@@ -64,6 +61,7 @@ class valiant_router : public minimal_router
 
  protected:
   typedef enum {
+    eject,
     minimal,
     intermediate_switch,
     final_node
@@ -78,14 +76,14 @@ class valiant_router : public minimal_router
    * reached or not.
    */
   next_action_t
-  intermediate_step(structured_routable* rtbl,
+  intermediate_step(routable* rtbl,
                     packet* pkt);
 
   /**
    Different for pure valiant and UGAL.
    */
   virtual next_action_t
-  initial_step(structured_routable* rtbl,
+  initial_step(routable* rtbl,
                packet* pkt);
 
   /**
@@ -107,7 +105,7 @@ class valiant_router : public minimal_router
    * @param path
    */
   void
-  configure_intermediate_path(structured_routable::path& path);
+  configure_intermediate_path(routable::path& path);
 
   /**
    * @brief configure_final_path
@@ -116,7 +114,7 @@ class valiant_router : public minimal_router
    * @param path
    */
   void
-  configure_final_path(structured_routable::path& path);
+  configure_final_path(routable::path& path);
 
   /**
    * @brief route_valiant

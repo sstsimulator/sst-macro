@@ -13,11 +13,6 @@ namespace sumi {
 class timeout_function
 {
  public:
-  virtual std::string
-  to_string() const {
-    return "timeout function";
-  }
-
   virtual void
   time_out(int partner) = 0;
 

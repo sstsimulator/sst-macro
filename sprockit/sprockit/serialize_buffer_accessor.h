@@ -67,8 +67,8 @@ class ser_buffer_accessor {
 
  protected:
   ser_buffer_accessor() :
-    bufstart_(0),
-    bufptr_(0),
+    bufstart_(nullptr),
+    bufptr_(nullptr),
     size_(0)
   {
   }

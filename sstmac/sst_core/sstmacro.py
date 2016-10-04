@@ -1,7 +1,9 @@
 # Load module function in Python is changed
 # to look for a libmacro.so in LD_LIBRARY_PATH
+import sst
 import sst.macro
-import sstmac
+
+smallLatency = "1ps"
 
 def addNew(prefix, kw, newDict, oldDict):
   name = "%s.%s" % (prefix, kw)
@@ -38,7 +40,7 @@ def redoSubParams_impl(nsArr, theDict, allParams):
       newParam = ".".join(paramArr)
       allParams.append((newParam, val))
 
-def redoSubParams(theDict):
+def macroToCoreParams(theDict):
   allParams = []
   redoSubParams_impl([], theDict, allParams)
   newDict = {}
@@ -46,45 +48,168 @@ def redoSubParams(theDict):
     newDict[key] = val
   return newDict
 
-def setupSimulation(node=None,switch=None,topology=None,debug=[]):
-  sstmac.init()
+class Interconnect:
+  def __init__(self, params):
+    self.params = params
+    self.system = sst.macro.System(params)
+    self.num_nodes = self.system.numNodes()
+    self.num_switches = self.system.numSwitches()
+    self.switches = [0]*self.num_switches
+    self.nodes = [0]*self.num_nodes
 
-  if not node: raise Exception("Need Node params")
-  if not switch: raise Exception("Need Switch params")
-  if not topology: raise Exception("Need Topology params")
+  def numNodes(self):
+    return self.num_nodes
 
-  hopLat = switch["hop_latency"]
-  injLat = node["nic"]["injection_latency"]
+  def numSwitches(self): 
+    return self.num_switches
 
-  nodeParams = redoSubParams(node)
-  swParams = redoSubParams(switch)
-  topParams = redoSubParams(topology)
+  def defaultEpFxn(self, nodeID):
+      nodeParams = self.params["node"]
+      compName = nodeParams["model"] + "_node"
+      node = sst.Component("Node %d" % nodeID, "macro.%s" % compName)
+      node.addParams(macroToCoreParams(nodeParams))
+      node.addParam("id", nodeID)
+      return node
 
-  top = sstmac.Topology(topParams)
-  if debug: sstmac.debug(debug)
+  def buildSwitches(self):
+    for i in range(self.num_switches):
+      switchParams = self.system.switchParams(i)
+      compName = switchParams["model"] + "_switch"
+      switch = sst.Component("Switch %d" % i, "macro.%s" % compName)
+      switch.addParams(macroToCoreParams(switchParams))
+      switch.addParam("id", i)
+      self.switches[i] = (switch, switchParams)
 
-  for id in range(top.num_switches()):
-    name = "switch%d" % id
-    sw = sst.Component(name, "macro.packet_flow_switch")
-    sw.addParams(swParams)
-    sw.addParam("id", id)
-    top.register_switch(sw)
+  def buildEndpoints(self, epFxn):
+    for i in range(self.num_nodes):
+      self.nodes[i] = epFxn(i)
 
-  for id in range(top.num_nodes()):
-    name = "node%d" % id
-    node = sst.Component(name, "macro.simple_node")
-    node.addParam("id", id)
-    node.addParams(nodeParams)
-    top.register_endpoint(node)
+  def latency(self, params):
+    if params.has_key("latency"):
+      return params["latency"]
+    elif params.has_key("send_latency"):
+      return params["send_latency"]
+    else:
+      sys.exit("need link latency in parameters")
     
-  top.connect_switches(hop_latency=hopLat)
-  top.connect_endpoints(injection_latency=injLat)
+
+  def connectSwitches(self):
+    switchParams = self.params["switch"]
+    for i in range(self.num_switches):
+      linkParams = switchParams["link"]
+      connections = self.system.switchConnections(i)
+      srcSwitch, params = self.switches[i]
+      lat = self.latency(linkParams)
+      for src, dst, src_outport, dst_inport in connections:
+        linkName = "network%d:%d->%d:%d" % (src,src_outport,dst,dst_inport)
+        link = sst.Link(linkName)
+        dstSwitch, dstParams = self.switches[dst]
+        portName = "output %d %d" % (src_outport, dst_inport)
+        srcSwitch.addLink(link, portName, lat)
+        portName = "input %d %d" % (src_outport, dst_inport)
+        dstSwitch.addLink(link, portName, lat)
+
+  def connectEndpoints(self):
+    lat = ""
+    if self.params.has_key("injection_latency"):
+      lat = self.params["injection_latency"]
+    else:
+      lat = self.params["node"]["nic"]["injection"]["latency"]
+
+    for i in range(self.num_nodes):
+      injSwitch,connections = self.system.injectionConnections(i)
+      dstSwitch, params = self.switches[injSwitch]
+      ep = self.nodes[i]
+      for port in connections:
+        linkName = "injection%d:%d->%d:%d" % (i,sst.macro.NICMainInjectionPort,injSwitch,port)
+        link = sst.Link(linkName)
+        portName = "output %d %d" % (sst.macro.NICMainInjectionPort, port) 
+        ep.addLink(link, portName, lat)
+        portName = "input %d %d" % (sst.macro.NICMainInjectionPort, port)
+        dstSwitch.addLink(link, portName, smallLatency) #no latency to return credits
+
+      ejSwitch,connections = self.system.ejectionConnections(i)
+      srcSwitch, params = self.switches[ejSwitch]
+      for port in connections:
+        linkName = "ejection%d:%d->%d:%d" % (injSwitch,port,i,sst.macro.NICMainInjectionPort)
+        link = sst.Link(linkName)
+        portName = "input %d %d" % (port, sst.macro.NICMainInjectionPort)
+        ep.addLink(link, portName, smallLatency)
+        portName = "output %d %d" % (port, sst.macro.NICMainInjectionPort) 
+        srcSwitch.addLink(link, portName, lat)
+
+  def buildLogPNetwork(self):
+    import re
+    nproc = sst.getMPIRankCount() * sst.getThreadCount()
+    switchParams = self.params["switch"]
+    linkParams = switchParams["link"]
+    ejParams = switchParams["ejection"]
+    lat = self.latency(ejParams)
+    #gotta multiply the lat by 2
+    match = re.compile("(\d+[.]?\d*)(.*)").search(lat)
+    if not match:
+      sys.exit("improperly formatted latency %s" % lat)
+    num, units = match.groups()
+    num = eval(num) * 2
+    lat = "%8.4f%s" % (num,units.strip())
+    switches = []
+    for i in range(nproc):
+      switch = sst.Component("LogP %d" % i, "macro.logp_switch")
+      switch.addParams(macroToCoreParams(switchParams))
+      switch.addParam("id", i)
+      switches.append(switch)
+
+    for i in range(nproc):
+      sw_i = switches[i]
+      for j in range(nproc):
+        sw_j = switches[j]
+        if i==j: continue
+
+        linkName = "logPnetwork%d->%d" % (i,j)
+        link = sst.Link(linkName)
+        portName = "in-out %d %d" % (j, sst.macro.SwitchLogPNetworkPort)
+        sw_i.addLink(link, portName, lat)
+        portName = "in-out %d %d" % (i, sst.macro.SwitchLogPNetworkPort)
+        sw_j.addLink(link, portName, lat)
+
+    for i in range(self.num_nodes):
+      injSW = self.system.nodeToLogPSwitch(i)
+      ep = self.nodes[i]
+      sw = switches[injSW]
+      linkName = "logPinjection%d->%d" % (i, injSW)
+      link = sst.Link(linkName)
+      portName = "in-out %d %d" % (sst.macro.NICLogPInjectionPort, sst.macro.SwitchLogPInjectionPort)
+      ep.addLink(link, portName, smallLatency) #put no latency here
+      portName = "in-out %d %d" % (i, sst.macro.SwitchLogPInjectionPort)
+      sw.addLink(link, portName, smallLatency)
+
+
+  def buildFull(self, epFxn):
+    self.buildSwitches()
+    self.buildEndpoints(epFxn)
+    self.connectSwitches()
+    self.connectEndpoints()
+    self.buildLogPNetwork()
+
+  def buildLogP(self, epFxn):
+    self.buildEndpoints(epFxn)
+    self.buildLogPNetwork()
+  
+  def build(self, epFxn=None):
+    if epFxn == None:
+      epFxn = self.defaultEpFxn
+    if self.system.isLogP():
+      self.buildLogP(epFxn)
+    else:
+      self.buildFull(epFxn)
+
+def readCmdLineParams():
+  import sys
+  return sst.macro.readParams(sys.argv)
 
 def setupDeprecated():
   import sys
-  sstmac.init()
-  params = sstmac.readParams(sys.argv)
-
+  params = readCmdLineParams()
 
   nodeParams = params["node"]
 
@@ -114,21 +239,22 @@ def setupDeprecated():
         exec(cmd)
       del params[ns]
 
-  known_ns = "node","topology","nic","switch"
-  for param in params:
-    #anything remaining ... just treat as an application parameter for now
-    val = params[param]
-    if not param in known_ns:
-      appParams[param] = val
-
   icParams = {}
   icParams["topology"] = params["topology"]
   nodeParams["interconnect"] = icParams
   nodeParams["nic"] = params["nic"]
   del params["nic"]
 
-  setupSimulation(
-    topology=params["topology"],
-    node=params["node"],
-    switch=params["switch"])
+  #move every param in the global namespace 
+  #into the individal namespaces
+  for ns in "node", "switch":
+    nsParams = params[ns]
+    for key in params:
+      val = params[key]
+      if isinstance(val, str):
+        if not nsParams.has_key(key):
+          nsParams[key] = val
+
+  ic = Interconnect(params)
+  ic.build()
 

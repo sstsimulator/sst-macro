@@ -50,8 +50,8 @@ class lib_compute_inst :
     uint32_t intops_per_loop,
     uint32_t bytes_per_loop);
 
-  void
-  incoming_event(event *ev){
+  virtual void
+  incoming_event(event *ev) override {
     library::incoming_event(ev);
   }
 

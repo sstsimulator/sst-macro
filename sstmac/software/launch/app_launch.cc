@@ -1,6 +1,6 @@
 #include <sstmac/common/runtime.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
-#include <sstmac/hardware/topology/structured_topology.h>
+#include <sstmac/hardware/topology/cartesian_topology.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/launch/job_launcher.h>
@@ -33,8 +33,9 @@ app_launch::~app_launch()
   delete indexer_;
 }
 
-void
-app_launch::init_factory_params(sprockit::sim_parameters* params)
+app_launch::app_launch(sprockit::sim_parameters* params, app_id aid) :
+  aid_(aid),
+  indexed_(false)
 {
   appname_ = params->get_param("name");
 
@@ -97,19 +98,22 @@ app_launch::index_allocation(const ordered_node_set &allocation)
                 rank_to_node_indexing_.size());
     int num_nodes = rank_to_node_indexing_.size();
 
-    hw::structured_topology* regtop =
-        safe_cast(hw::structured_topology, top_);
+    hw::cartesian_topology* regtop =
+        test_cast(hw::cartesian_topology, top_);
 
-    for (int i=0; i < num_nodes; ++i){
-      node_id nid = rank_to_node_indexing_[i];
-      if (top_){
-        hw::coordinates coords = regtop->node_coords(nid);
-        cout0 << sprockit::printf("Rank %d -> nid%d %s\n",
-            i, int(nid), stl_string(coords).c_str());
-      } else {
-         cout0 << sprockit::printf("Rank %d -> nid%d\n", i, int(nid));
+    if (regtop){
+      for (int i=0; i < num_nodes; ++i){
+        node_id nid = rank_to_node_indexing_[i];
+        if (top_){
+          hw::coordinates coords = regtop->node_coords(nid);
+          cout0 << sprockit::printf("Rank %d -> nid%d %s\n",
+              i, int(nid), stl_string(coords).c_str());
+        } else {
+           cout0 << sprockit::printf("Rank %d -> nid%d\n", i, int(nid));
+        }
       }
     }
+
   }
 
   int num_nodes = top_->num_nodes();
@@ -260,9 +264,7 @@ app_launch::parse_aprun(
     std::deque<std::string> tok;
     std::string space = ",";
     pst::BasicStringTokenizer::tokenize(tosep, tok, space);
-    std::deque<std::string>::const_iterator it, end = tok.end();
-    for (it = tok.begin(); it != end; ++it) {
-      std::string core = *it;
+    for (auto& core : tok){
       core_affinities.push_back(atoi(core.c_str()));
     }
   }

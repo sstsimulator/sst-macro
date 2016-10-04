@@ -25,19 +25,23 @@ class random_task_mapper : public task_mapper
 {
 
  public:
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params);
+  random_task_mapper(sprockit::sim_parameters* params);
+
+  std::string
+  to_string() const override {
+    return "random task mapper";
+  }
 
   virtual
   ~random_task_mapper() throw ();
 
   virtual void
   map_ranks(
-    const app_id& aid,
+    app_id aid,
     const ordered_node_set& nodes,
     int ppn,
     std::vector<node_id> &result,
-    int nproc);
+    int nproc) override;
 
  protected:
   RNG::UniformInteger* rng_;

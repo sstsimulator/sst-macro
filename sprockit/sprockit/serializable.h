@@ -32,11 +32,11 @@ namespace sprockit {
       #obj); \
   } \
   virtual void \
-  serialize_order(sprockit::serializer& sst){ \
+  serialize_order(sprockit::serializer& sst) override { \
     throw_exc(); \
   } \
   virtual uint32_t \
-  cls_id() const { \
+  cls_id() const override { \
     throw_exc(); \
     return -1; \
   } \
@@ -46,7 +46,7 @@ namespace sprockit {
     return 0; \
   } \
   virtual const char* \
-  cls_name() const { \
+  cls_name() const override { \
     throw_exc(); \
     return ""; \
   } \
@@ -58,11 +58,11 @@ namespace sprockit {
 #define ImplementSerializableDefaultConstructor(obj) \
  public: \
   virtual const char* \
-  cls_name() const { \
+  cls_name() const override { \
     return #obj; \
   } \
   virtual uint32_t \
-  cls_id() const { \
+  cls_id() const override { \
     return ::sprockit::serializable_builder_impl< obj >::static_cls_id(); \
   } \
   static obj* \
@@ -70,7 +70,7 @@ namespace sprockit {
     return new obj; \
   } \
   virtual obj* \
-  you_forgot_to_add_ImplementSerializable_to_this_class() { \
+  you_forgot_to_add_ImplementSerializable_to_this_class() override { \
     return 0; \
   } \
 

@@ -42,8 +42,7 @@ bool
 KeywordRegistration::is_valid_namespace(const std::string& ns)
 {
   init();
-  spkt_unordered_set<std::string>::const_iterator
-    it = valid_namespaces_->find(ns);
+  auto it = valid_namespaces_->find(ns);
   if (it != valid_namespaces_->end()) {
     return true;
   }
@@ -64,16 +63,13 @@ bool
 KeywordRegistration::is_valid_keyword(const std::string &name)
 {
   init();
-  spkt_unordered_set<std::string>::const_iterator
-    it = valid_keywords_->find(name);
+  auto it = valid_keywords_->find(name);
   if (it != valid_keywords_->end()) {
     return true;
   }
 
 #if !SPKT_DISABLE_REGEXP
-  std::list<std::string>::const_iterator rit, rend = regexps_->end();
-  for (rit=regexps_->begin(); rit != rend; ++rit){
-    const std::string& re = *rit;
+  for (auto& re : *regexps_){
     if (has_regexp_match(re, name)){
       return true;
     }

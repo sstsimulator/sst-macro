@@ -14,19 +14,19 @@ class btree_gather_actor :
 
  public:
   std::string
-  to_string() const {
+  to_string() const override {
     return "btree gather actor";
   }
 
   btree_gather_actor(int root) : root_(root) {}
 
  protected:
-  void finalize_buffers();
-  void init_buffers(void *dst, void *src);
-  void init_dag();
-  void init_tree();
-  void start_shuffle(action *ac);
-  void buffer_action(void *dst_buffer, void *msg_buffer, action* ac);
+  void finalize_buffers() override;
+  void init_buffers(void *dst, void *src) override;
+  void init_dag() override;
+  void init_tree() override;
+  void start_shuffle(action *ac) override;
+  void buffer_action(void *dst_buffer, void *msg_buffer, action* ac) override;
 
  private:
   int root_;
@@ -45,21 +45,21 @@ class btree_gather :
   btree_gather() : root_(-1){}
 
   std::string
-  to_string() const {
+  to_string() const override {
     return "btree gather";
   }
 
   dag_collective_actor*
-  new_actor() const {
+  new_actor() const override {
     return new btree_gather_actor(root_);
   }
 
   dag_collective*
-  clone() const {
+  clone() const override {
     return new btree_gather(root_);
   }
 
-  void init_root(int root){
+  void init_root(int root) override{
     root_ = root;
   }
 

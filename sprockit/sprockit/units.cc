@@ -11,6 +11,7 @@
 
 #include <sprockit/output.h>
 #include <sprockit/units.h>
+#include <sprockit/errors.h>
 #include <cstdlib>
 #include <errno.h>
 
@@ -408,8 +409,9 @@ get_timestamp(const char *value, bool &errorflag, bool print_errors)
       if (print_errors) cerr0 << "Invalid time units: " << units << "\n";
       return -1;
     }
+  } else {
+    spkt_abort_printf("invalid time value %s - times must have units", value);
   }
-
   val *= multiplier;
 
   return val*1e-12; //convert psec to sec

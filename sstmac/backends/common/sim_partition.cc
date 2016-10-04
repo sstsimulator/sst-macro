@@ -241,12 +241,11 @@ metis_partition::read_partition(const std::string &partfilename, int nproc)
     hw::index_subset* subset = new hw::index_subset;
     std::vector<int>& subset_nodes = subset->data();
     subset_nodes.resize(num_nodes_lp);
-    std::list<int>::const_iterator it, end = node_list.end();
     int idx = 0;
-    for (it = node_list.begin(); it != end; ++it, ++idx){
-      int swid = *it;
+    for (int swid : node_list){
       switch_to_lpid_[swid] = lp;
       subset_nodes[idx] = swid;
+      ++idx;
     }
     subsets_[lp] = subset;
     num_switches_per_lp_[lp] = num_nodes_lp;

@@ -48,16 +48,28 @@ class node :
 {
 
  public:
-  void setup();
+  void setup() override;
 
-  void init(unsigned int phase);
+  void init(unsigned int phase) override;
 
   virtual ~node();
 
   void
-  connect(int src_outport, int dst_inport,
-    connection_type_t ty, connectable *mod,
-    config *cfg);
+  connect_output(sprockit::sim_parameters* params,
+                 int src_outport, int dst_inport,
+                 event_handler* handler) override;
+
+  void
+  connect_input(sprockit::sim_parameters* params,
+                 int src_outport, int dst_inport,
+                 event_handler* handler) override;
+
+
+  link_handler*
+  payload_handler(int port) const override;
+
+  link_handler*
+  credit_handler(int port) const override;
 
   /**
    @return  The object encapsulating the memory model
@@ -92,7 +104,7 @@ class node :
    @return  A unique string description of the node
   */
   virtual std::string
-  to_string() const;
+  to_string() const override;
 
   /**
    @return  A unique integer identifier
@@ -145,8 +157,7 @@ class node :
   execute(ami::SERVICE_FUNC func,
                  event* data);
 
-  virtual void
-  handle(event* ev);
+  void handle(event* ev);
 
   /**
    Push a network message (operation at the MTL layer) onto the NIC
@@ -162,8 +173,6 @@ class node :
   node(sprockit::sim_parameters* params,
     uint64_t id,
     event_manager* mgr);
-
-  void connect_nic();
 
  protected:
   sw::operating_system* os_;

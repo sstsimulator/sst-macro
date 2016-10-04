@@ -597,12 +597,6 @@ NormalDistribution::value()
   return X;
 }
 
-std::string
-NormalDistribution::to_string() const
-{
-  return "normal distribution";
-}
-
 
 double
 ExponentialDistribution::value()
@@ -611,12 +605,6 @@ ExponentialDistribution::value()
   double U = (double) microparts / (double) ONE_MILLION;
   double x = -log(U) / lambda_;
   return x;
-}
-
-std::string
-ExponentialDistribution::to_string() const
-{
-  return "exponential distribution";
 }
 
 }

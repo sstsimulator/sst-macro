@@ -30,30 +30,30 @@ class stat_spyplot :
 {
  public:
   virtual std::string
-  to_string() const {
+  to_string() const override {
     return "stat_spyplot";
   }
 
   virtual void
-  simulation_finished(timestamp end);
+  simulation_finished(timestamp end) override;
 
   virtual void
   dump_to_file(const std::string& froot);
 
   virtual void
-  dump_local_data();
+  dump_local_data() override;
 
   virtual void
-  dump_global_data();
+  dump_global_data() override;
 
   virtual void
-  reduce(stat_collector *coll);
+  reduce(stat_collector *coll) override;
 
   virtual void
-  global_reduce(parallel_runtime *rt);
+  global_reduce(parallel_runtime *rt) override;
 
   virtual void
-  clear();
+  clear() override;
 
   virtual
   ~stat_spyplot() {
@@ -65,24 +65,16 @@ class stat_spyplot :
   virtual void
   add(int source, int dest, long num);
 
-  virtual stat_spyplot*
-  clone_me(int id) const {
-    stat_spyplot* cln = new stat_spyplot;
-    clone_into(cln);
-    cln->set_id(id);
-    return cln;
-  }
-
   virtual stat_collector*
-  clone() const {
-    return clone_me(-1);
+  do_clone(sprockit::sim_parameters* params) const override {
+    return new stat_spyplot(params);
   }
 
-  stat_spyplot() : max_dest_(0) {}
-
- protected:
-  void
-  clone_into(stat_spyplot* cln) const;
+  stat_spyplot(sprockit::sim_parameters* params) :
+    max_dest_(0),
+    stat_collector(params)
+  {
+  }
 
  protected:
   typedef spkt_unordered_map<int, long> long_map;
@@ -98,52 +90,34 @@ class stat_spyplot :
 class stat_spyplot_png : public stat_spyplot
 {
  public:
-  stat_spyplot_png() :
-    fill_(false),
-    normalization_(-1) {
-  }
+  stat_spyplot_png(sprockit::sim_parameters* params);
 
-  virtual std::string
-  to_string() const {
+  std::string
+  to_string() const override {
     return "stat_spyplot_png";
   }
 
   virtual void
-  add(int source, int dest, long num);
+  add(int source, int dest, long num) override;
 
   virtual void
-  dump_to_file(const std::string& froot);
+  dump_to_file(const std::string& froot) override;
 
   void
   set_normalization(long max) {
     normalization_ = max;
   }
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params);
-
   virtual
   ~stat_spyplot_png() {
   }
 
-  stat_spyplot*
-  clone_me(int id) const {
-    stat_spyplot_png* cln = new stat_spyplot_png;
-    clone_into(cln);
-    cln->set_id(id);
-    return cln;
-  }
-
   stat_collector*
-  clone() const {
-    return clone_me(-1);
+  do_clone(sprockit::sim_parameters* params) const override {
+    return new stat_spyplot_png(params);
   }
 
- protected:
-  void
-  clone_into(stat_spyplot_png* cln) const;
-
- protected:
+ private:
   long normalization_;
   bool fill_;
 
