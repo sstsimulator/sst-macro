@@ -3,6 +3,7 @@
 #include <sstmac/main/sstmac.h>
 
 #include <sst/core/element.h>
+#include <sstmac/common/event_scheduler.h>
 #include <sstmac/sst_core/integrated_core.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/pisces/pisces_nic.h>
@@ -51,7 +52,7 @@ class timestamp_prefix_fxn :
   public sprockit::debug_prefix_fxn
 {
  public:
-  timestamp_prefix_fxn(sstmac::SSTIntegratedComponent* mgr) : mgr_(mgr){}
+  timestamp_prefix_fxn(sstmac::event_scheduler* mgr) : mgr_(mgr){}
 
   std::string
   str() {
@@ -60,7 +61,7 @@ class timestamp_prefix_fxn :
   }
 
  private:
-  SSTIntegratedComponent* mgr_;
+  event_scheduler* mgr_;
 };
 
 template <class T>
@@ -145,7 +146,7 @@ const static SST::ElementInfoComponent simple_node_element_info = {
 namespace sstmac {
 
 PyObject*
-py_get_int_tuple(int num, int* indices)
+py_get_int_tuple(int num, const int* indices)
 {
   PyObject* tuple = PyTuple_New(num);
   for (int i=0; i < num; ++i){
@@ -165,20 +166,6 @@ int_vector_from_py_array(PyObject* tuple, std::vector<int>& vec)
     int item  = PyInt_AsLong(obj);
     vec[i] = item;
   }
-}
-
-PyObject*
-py_array_from_int_vector(const std::vector<int>& vec)
-{
-  PyObject* pVec = PyTuple_New(vec.size());
-  for (int i = 0; i < vec.size(); ++i) {
-       PyObject* pValue = PyInt_FromLong(vec[i]);
-       if (!pValue) {
-         spkt_abort_printf("cannot convert array value for building PyTuple");
-       }
-       PyTuple_SetItem(pVec, i, pValue);
-  }
-  return pVec;
 }
 
 void

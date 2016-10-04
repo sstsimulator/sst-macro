@@ -309,7 +309,7 @@ Changing the values produces a different class type and different behavior.
 Thus we can manage polymorphic types by changing the input file.
 
 \subsection{Base Class}\label{subsec:baseClass}
-To declare a new factory type, you must include the factory header file and inherit from the base class \inlinecode{factory_type}.
+To declare a new factory type, you must include the factory header file
 
 \begin{CppCode}
 #include <sprockit/factories/factory.h>
@@ -362,10 +362,7 @@ actor::actor(sprockit::sim_parameters* params)
   biggest_fan_ = params->get_param("biggest_fan");
 }
 \end{CppCode}
-We initialize the member variable from the parameter object. 
-For cloning, we have instead
-
-We additionally need a macro
+We initialize the member variable from the parameter object.  We additionally need a macro
 
 \begin{CppCode}
 ImplementFactory(sstmac::tutorial::actor);

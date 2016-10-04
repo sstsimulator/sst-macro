@@ -48,7 +48,7 @@ pisces_simple_network::init_links(sprockit::sim_parameters* params)
        new SST::Event::Handler<pisces_simple_network>(this, &pisces_simple_network::packet_head_arrived));
       credit_link_ = link;
     } else if (port_type == "output"){
-      integrated_connectable_wrapper* wrapper = new integrated_connectable_wrapper(link);
+      link_wrapper* wrapper = new link_wrapper(link);
       inj_buffer_->set_output(inj_params, src_outport, dst_inport, wrapper);
       configureLink(pair.first,
        new SST::Event::Handler<pisces_injection_buffer>(inj_buffer_, &pisces_injection_buffer::handle_credit));
@@ -58,12 +58,6 @@ pisces_simple_network::init_links(sprockit::sim_parameters* params)
         new SST::Event::Handler<pisces_simple_network>(this, &pisces_simple_network::ctrl_msg_arrived));
     }
   }
-}
-
-void
-pisces_simple_network::init(unsigned int phase)
-{
-  //TODO
 }
 
 void

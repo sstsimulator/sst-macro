@@ -83,7 +83,7 @@ static PyTypeObject SystemType = {
     PyObject_HEAD_INIT(NULL)
     0,                         /* ob_size */
     "sst.macro.Topology",      /* tp_name */
-    sizeof(SystemPy_t),      /* tp_basicsize */
+    sizeof(SystemPy_t),        /* tp_basicsize */
     0,                         /* tp_itemsize */
     (destructor)sys_dealloc,   /* tp_dealloc */
     0,                         /* tp_print */

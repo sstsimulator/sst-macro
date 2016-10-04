@@ -24,7 +24,7 @@
 #endif
 
 #define test_schedule(x) \
-  if (dynamic_cast<integrated_connectable_wrapper*>(x)) abort()
+  if (dynamic_cast<link_wrapper*>(x)) abort()
 
 namespace sstmac {
 

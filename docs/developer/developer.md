@@ -68,7 +68,7 @@ SST/macro (Structural Simulation Toolkit for Macroscale) is a discrete event sim
 
 ### Section 1.2: Polymorphism and Modularity<a name="sec:polymorphism"></a>
 
-The simulation progresses with different modules (classes) exchanging messages. In general, when module 1 sendings a message to module 2, module 1 only sees an abstract interface for module 2. The polymorphic type of module 2 can vary freely to employ different physics or congestions models without affecting the implementation of module 1. Polymorphism, while greatly simplifying modularity and interchangeability, does have some consequences. The "workhorse" of SST/macro is the base `event` and `message` classes. To increase polymorphism and flexibility, every SST/macro module that receives messages does so via the generic function
+The simulation progresses with different modules (classes) exchanging messages. In general, when module 1 sendings a message to module 2, module 1 only sees an abstract interface for module 2. The polymorphic type of module 2 can vary freely to employ different physics or congestions models without affecting the implementation of module 1. Polymorphism, while greatly simplifying modularity and interchangeability, does have some consequences. The "workhorse" of SST/macro is the base `event` and `message` classes. To increase polymorphism and flexibility, every SST/macro module that receives events does so via the generic function
 
 ````
 void
@@ -80,7 +80,7 @@ The prototype therefore accepts any event type. The class `message` is a special
 Misusing types in SST/macro is not a compile-time error.
 The onus of correct event types falls on runtime assertions.
 All event types may not be valid for a given module.
-A module for the memory subsystem should throw an error if the developer accidentally passes it a event intended for the OS or the NIC.
+A module for the memory subsystem should throw an error if the developer accidentally passes it an event intended for the OS or the NIC.
 Efforts are being made to convert runtime errors into compile-time errors.
 In many cases, though, this cannot be avoided.
 The other consequence is that a lot of dynamic casts appear in the code.
@@ -619,7 +619,7 @@ Changing the values produces a different class type and different behavior. Thus
 
 #### 3.2.2: Base Class<a name="subsec:baseClass"></a>
 
-To declare a new factory type, you must include the factory header file and inherit from the base class `factory_type`.
+To declare a new factory type, you must include the factory header file
 
 ````
 #include <sprockit/factories/factory.h>
@@ -668,10 +668,7 @@ actor::actor(sprockit::sim_parameters* params)
   biggest_fan_ = params->get_param("biggest_fan");
 }
 ````
-We initialize the member variable from the parameter object. 
-For cloning, we have instead
-
-We additionally need a macro
+We initialize the member variable from the parameter object.  We additionally need a macro
 
 ````
 ImplementFactory(sstmac::tutorial::actor);
@@ -768,7 +765,7 @@ If you glance at the Makefile, you will see how and why the executable is create
 
 
 
-\newcommand{`event_handler`}{`event_handler`\xspace} \newcommaevent_componentuler`}{`event_scheduler`\xspace} \newcommand{`event_manager`}{`event_manager`\xspace}
+\newcommand{`event_handler`}{`event_handler`\xspace} \newcommand{`event_scheduler`}{`event_scheduler`\xspace} \newcommand{`event_manager`}{`event_manager`\xspace}
 
 ## Chapter 4: Discrete Event Simulation<a name="chapter:des"></a>
 
@@ -844,11 +841,11 @@ handler_event_queue_entry::execute()
 }
 ````
 
-\subsection{Arbitrary Events} In some cases, it can be inconvenient (and inefficient) to require every event to be funneled through an `event_handler` type. A generic macro for creating events from any class member function is provided in the file `event_callback.h`. For example, the MPI server creates an event
+\subsection{Arbitrary Events} In some cases, it can be inconvenient (and inefficient) to require every event to be funneled through an `event_handler` type. A generic macro for creating event queue entries from any class member function is provided in the file `event_callback.h`. For example, the MPI server creates an event
 
 ````
 mpi_queue_recv_request* req = next_request();
-event* ev = new_event(this, &mpi_queue::start_recv, req);
+event_callback* ev = new_event(this, &mpi_queue::start_recv, req);
 ````
 The new event macro takes as first argument an object and second argument a member function pointer to be invoked when the event is run.
 The remaining arguments are an arbitrary-length list of parameters of any type - they don't need to be messages. 
@@ -871,11 +868,11 @@ If every event went to a single `handle` method, the handle method would need ei
 The event would also need to be dynamic cast to the correct type.
 By creating event functors, the message can be immediately directed to the correct type and correct action.
 
-For generic events, one must ensure the event is scheduled to the same node and does not cross any network boundaries. Generic events are not compatible with parallel simulation. The event created must be run on the same logical process.
+For generic events, one must ensure the event is scheduled to the same node and does not cross any network boundaries. The event created must be run on the same logical process.
 
 \subsection{Event Heap/Map} The major distinction between different event containers is the data structured used. The simplest data structure is an event heap or ordered event map. The event manager needs to always be processing the minimum event time, which maps naturally onto a min-heap structure. Insertion and removal are therefore log(N) operations where N is the number of currently scheduled events. For most cases, the number and length of events is such that the min-heap is fine.
 
-\section{Event Schedulers} The simulation is partitioned into objects that are capable of scheduling events. `event_scheduler` objects are also `event_handler` objects, although their handle methods might never be used. Common examples of `event_scheduler` objects are nodes, NICs, memory systems, or the operating system. In serial runs, an event scheduler is essentially just a wrapper for the `event_manager` and the class is not strictly necessary. In parallel simulation, though, the simulation must be partitioned into different scheduling units. Scheduling units are then distributed amongst the parallel processes. The `event_scheduler` is therefore the basic unit of parallelism. Additionally, when simulating failures (in either serial or parallel), certain devices must be deactivated such as a node or network switch going down. This basically amounts to canceling all events associated with a given `event_scheduler`. The `event_scheduler` is therefore primarily a means of structuring the computation.
+\section{Event Schedulers} The simulation is partitioned into objects that are capable of scheduling events. Common examples of `event_scheduler` objects are nodes, NICs, memory systems, or the operating system. In serial runs, an event scheduler is essentially just a wrapper for the `event_manager` and the class is not strictly necessary. There are two types of event scheduler: `event_component` and `event_subcomponent`. In parallel simulation, though, the simulation must be partitioned into different scheduling units. Scheduling units are then distributed amongst the parallel processes. Components are the basic unit.  Currently only nodes and network switches are components. All other devices (NIC, memory, OS) are subcomponents that must be linked to a parent component. Even though components and subcomponents can both schedule events (both inherit from `event_scheduler`), all subcomponents must belong to a component.  A subcomponent cannot be separated from its parent component during parallel simulation.
 
 
 

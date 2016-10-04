@@ -8,13 +8,21 @@
 
 namespace sstmac {
 
-class integrated_connectable_wrapper :
+/**
+ * @brief The link_wrapper class  SST/macro is built almost entirely around event handlers.
+ * In the integrated core, Links serve the purpose of event handlers.
+ * This wraps an SST link inside an event handler to preserve the sst/macro API.
+ */
+class link_wrapper :
     public event_handler
 {
   public:
-    std::string to_string() const override { return "integrated_connectable_wrapper"; }
+    std::string
+    to_string() const override {
+      return "link_wrapper";
+    }
 
-    integrated_connectable_wrapper(SST::Link* link) :
+    link_wrapper(SST::Link* link) :
         event_handler(event_loc_id::null),
         link_(link)
     {
@@ -23,7 +31,7 @@ class integrated_connectable_wrapper :
     void
     handle(event* ev) override {
       spkt_throw(sprockit::unimplemented_error,
-        "integrated_connectable_wrapper::handle: should never be called");
+        "link_wrapper::handle: should never be called");
     }
 
     SST::Link*

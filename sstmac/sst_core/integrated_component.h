@@ -59,27 +59,23 @@
 
 namespace sstmac {
 
-// lightweight layer in between integrated components and SST core
-// useful for common helper functions
+/**
+ * @brief The SSTIntegratedComponent class  Provides common functionality
+ * for converting an sst/macro standalone event_component into a
+ * a SST::Component compatible with integration
+ */
 class SSTIntegratedComponent
   : public SST::Component
 {
  public:
-  //void handle_event(SST::Event* ev);
-
-  virtual void
-  connect_output(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    event_handler* mod) = 0;
-
-  virtual SST::Event::HandlerBase*
-  payload_handler(int port) const = 0;
-
-  virtual SST::Event::HandlerBase*
-  credit_handler(int port) const = 0;
-
+  /**
+   * @brief connect_input All of these classes should implement the
+   *        connectable interface
+   * @param params
+   * @param src_outport
+   * @param dst_inport
+   * @param mod
+   */
   virtual void
   connect_input(
     sprockit::sim_parameters* params,
@@ -87,7 +83,36 @@ class SSTIntegratedComponent
     int dst_inport,
     event_handler* mod) = 0;
 
-  timestamp now() const;
+  /**
+   * @brief connect_output  All of these classes should implement
+   *                        the connectable interface
+   * @param params
+   * @param src_outport
+   * @param dst_inport
+   * @param mod
+   */
+  virtual void
+  connect_output(
+    sprockit::sim_parameters* params,
+    int src_outport,
+    int dst_inport,
+    event_handler* mod) = 0;
+
+  /**
+   * @brief payload_handler
+   * @param port
+   * @return The handler that will receive payloads from an SST link
+   */
+  virtual SST::Event::HandlerBase*
+  payload_handler(int port) const = 0;
+
+  /**
+   * @brief credit_handler
+   * @param port
+   * @return The handler that will receive credits from an SST link
+   */
+  virtual SST::Event::HandlerBase*
+  credit_handler(int port) const = 0;
 
   void
   init_links(sprockit::sim_parameters* params);

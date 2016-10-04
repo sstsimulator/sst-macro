@@ -14,8 +14,7 @@ namespace sstmac {
 namespace hw {
 
 /**
- @class pisces_nic
- Network interface compatible with sending packet trains
+ @class pisces_packetizer
  */
 class pisces_packetizer :
   public packetizer
@@ -50,6 +49,11 @@ class pisces_packetizer :
 
   void recv_credit(event* credit);
 
+  /**
+   * @brief recv_packet Receive new packet arriving from network.
+   *  Assemble packet into corresponding message (flow)
+   * @param ev
+   */
   virtual void recv_packet(event* ev) = 0;
 
   link_handler*
@@ -82,6 +86,10 @@ class pisces_packetizer :
 
 };
 
+/**
+ * @brief The pisces_cut_through_packetizer class
+ * See #pisces_cut_through_bandwidth_arbitrator.
+ */
 class pisces_cut_through_packetizer : public pisces_packetizer
 {
  public:
@@ -91,6 +99,11 @@ class pisces_cut_through_packetizer : public pisces_packetizer
   {
   }
 
+  /**
+   * @brief recv_packet Invoked when head flit arrives for packet.
+   *  Cut-through delays must be added before packet can be processed.
+   * @param pkt
+   */
   void recv_packet(event* pkt) override;
 
   std::string
@@ -100,6 +113,9 @@ class pisces_cut_through_packetizer : public pisces_packetizer
 
 };
 
+/**
+ * @brief The pisces_simple_packetizer class
+ */
 class pisces_simple_packetizer : public pisces_packetizer
 {
  public:
@@ -114,6 +130,11 @@ class pisces_simple_packetizer : public pisces_packetizer
     return "simple packetizer";
   }
 
+  /**
+   * @brief recv_packet Invoked when tail flit arrives for packet.
+   *  No extra delays must be processed for packet
+   * @param pkt
+   */
   void recv_packet(event* pkt) override;
 
 };
