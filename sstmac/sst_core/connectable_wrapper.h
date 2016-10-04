@@ -23,7 +23,7 @@ class link_wrapper :
     }
 
     link_wrapper(SST::Link* link) :
-        event_handler(event_loc_id::null),
+        event_handler(device_id::null),
         link_(link)
     {
     }

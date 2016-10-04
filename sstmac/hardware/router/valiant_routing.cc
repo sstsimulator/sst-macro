@@ -23,7 +23,7 @@ valiant_router::initial_step(
 {
   routable::path unused_path;
   int dir = 0;
-  switch_id ej_addr = top_->endpoint_to_ejection_switch(pkt->toaddr(), dir);
+  switch_id ej_addr = top_->netlink_to_ejection_switch(pkt->toaddr(), dir);
   if (ej_addr == my_addr_){
     return final_node;
   }
@@ -32,8 +32,8 @@ valiant_router::initial_step(
   rtbl->set_dest_switch(middle_switch);
   debug_printf(sprockit::dbg::router,
     "Router %s selected random intermediate switch %s for message %s",
-      top_->label(my_addr_).c_str(),
-      top_->label(rtbl->dest_switch()).c_str(),
+      top_->switch_label(my_addr_).c_str(),
+      top_->switch_label(rtbl->dest_switch()).c_str(),
       pkt->to_string().c_str());
   return intermediate_step(rtbl, pkt);
 }
@@ -50,7 +50,7 @@ valiant_router::intermediate_step(
     top->new_routing_stage(rtbl);
     debug_printf(sprockit::dbg::router,
       "Router %s is intermediate valiant destination for message %s",
-        top_->label(my_addr_).c_str(),
+        top_->switch_label(my_addr_).c_str(),
         pkt->to_string().c_str());
     rtbl->current_path().clear_metadata();
     return final_node; //not to switch

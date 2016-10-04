@@ -39,10 +39,10 @@ network_switch::~network_switch()
 
 network_switch::network_switch(sprockit::sim_parameters *params, uint64_t id, event_manager *mgr)
  : connectable_component(params, id,
-                         event_loc_id(switch_id(params->get_int_param("id"))),
+                         device_id(params->get_int_param("id"), device_id::router),
                          mgr) //no self messages for a switch
 {
-  my_addr_ = event_location().convert_to_switch_id();
+  my_addr_ = event_location().id();
   top_ = topology::static_topology(params);
 }
 

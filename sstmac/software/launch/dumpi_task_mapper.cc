@@ -81,7 +81,6 @@ dumpi_task_mapper::dumpi_task_mapper(sprockit::sim_parameters *params) :
 
 void
 dumpi_task_mapper::map_ranks(
-  app_id aid,
   const ordered_node_set& nodes,
   int ppn,
   std::vector<node_id> &result,

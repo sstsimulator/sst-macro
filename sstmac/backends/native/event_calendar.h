@@ -39,7 +39,7 @@ class event_calendar :
   clear(timestamp zero_time = timestamp(0));
 
   void
-  cancel_all_messages(event_loc_id mod);
+  cancel_all_messages(device_id mod);
 
   bool
   empty() const {

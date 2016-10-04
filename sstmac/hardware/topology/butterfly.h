@@ -156,7 +156,7 @@ class butterfly :
                         sprockit::sim_parameters *switch_params) const override;
 
   switch_id
-  endpoint_to_ejection_switch(
+  netlink_to_ejection_switch(
     node_id nodeaddr,
     int &switch_port) const override;
 

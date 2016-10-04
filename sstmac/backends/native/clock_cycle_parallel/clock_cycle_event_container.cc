@@ -43,8 +43,8 @@ clock_cycle_event_map::schedule_incoming(const std::vector<void*>& buffers)
   int num_bufs = buffers.size();
   int buf_size = rt_->ser_buf_size();
   for (int i=0; i < num_bufs; ++i){
-    event_loc_id dst;
-    event_loc_id src;
+    device_id dst;
+    device_id src;
     uint32_t seqnum;
     timestamp time;
     message* msg;
@@ -57,7 +57,7 @@ clock_cycle_event_map::schedule_incoming(const std::vector<void*>& buffers)
     ser & msg;
     event_handler* dst_handler;
 
-    switch_id sid = dst.convert_to_switch_id();
+    switch_id sid = dst.id();
     event_debug("epoch %d: scheduling incoming event at %12.8e to switch %d",
       epoch_, time.sec(), int(sid));
 
@@ -145,7 +145,7 @@ clock_cycle_event_map::next_event_time() const
 }
 
 #if DEBUG_DETERMINISM
-std::map<event_loc_id,std::ofstream*> outs;
+std::map<device_id,std::ofstream*> outs;
 #endif
 
 void
@@ -243,16 +243,16 @@ clock_cycle_event_map::set_interconnect(hw::interconnect* interconn)
 
 void
 clock_cycle_event_map::ipc_schedule(timestamp t,
-  event_loc_id dst,
-  event_loc_id src,
+  device_id dst,
+  device_id src,
   uint32_t seqnum,
   event* ev)
 {
   event_debug("epoch %d: scheduling outgoing event at t=%12.8e to location %d",
-    epoch_, t.sec(), int(dst.convert_to_switch_id()));
+    epoch_, t.sec(), dst.id());
 
   rt_->send_event(thread_id_, t,
-    dst.convert_to_switch_id(),
+    dst.id(),
     src,
     seqnum,
     ev);

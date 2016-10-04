@@ -42,7 +42,6 @@ node_id_task_mapper::node_id_task_mapper(sprockit::sim_parameters* params) :
 
 void
 node_id_task_mapper::map_ranks(
-  app_id aid,
   const ordered_node_set& nodes,
   int ppn,
   std::vector<node_id> &result,

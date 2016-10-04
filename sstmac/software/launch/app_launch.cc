@@ -15,30 +15,15 @@
 #include <unistd.h>
 #include <getopt.h>
 
-ImplementFactory(sstmac::sw::app_launch)
-
-RegisterNamespaces("app_launch");
 
 namespace sstmac {
 namespace sw {
 
 std::map<int, app_launch*> app_launch::static_app_launches_;
 
-SpktRegister("default", app_launch, app_launch);
-
-app_launch::~app_launch()
-{
-  delete app_template_;
-  delete allocator_;
-  delete indexer_;
-}
-
-app_launch::app_launch(sprockit::sim_parameters* params, app_id aid) :
-  aid_(aid),
+software_launch::software_launch(sprockit::sim_parameters *params) :
   indexed_(false)
 {
-  appname_ = params->get_param("name");
-
   top_ = sstmac::hw::topology::static_topology(params);
 
   if (params->has_param("core_affinities")) {
@@ -46,8 +31,6 @@ app_launch::app_launch(sprockit::sim_parameters* params, app_id aid) :
   }
 
   time_ = params->get_optional_time_param("start", 0);
-
-  app_template_ = sw::app_factory::get_value(appname_, params);
 
   if (params->has_param("launch_cmd")){
     parse_launch_cmd(params);
@@ -67,6 +50,25 @@ app_launch::app_launch(sprockit::sim_parameters* params, app_id aid) :
                "block", params);
 }
 
+software_launch::~software_launch()
+{
+  delete allocator_;
+  delete indexer_;
+}
+
+app_launch::~app_launch()
+{
+  delete app_template_;
+}
+
+app_launch::app_launch(sprockit::sim_parameters* params, app_id aid) :
+  software_launch(params),
+  aid_(aid)
+{
+  appname_ = params->get_param("name");
+  app_template_ = sw::app_factory::get_value(appname_, params);
+}
+
 app_launch*
 app_launch::static_app_launch(int aid, sprockit::sim_parameters* params)
 {
@@ -77,8 +79,7 @@ app_launch::static_app_launch(int aid, sprockit::sim_parameters* params)
     std::string app_namespace = sprockit::printf("app%d", aid);
     if (params->has_namespace(app_namespace)){
       sprockit::sim_parameters* app_params = params->get_namespace(app_namespace);
-      app_launch* mgr = app_launch_factory::get_optional_param(
-            "launch_type", "default", app_params, app_id(aid));
+      app_launch* mgr = new app_launch(app_params, app_id(aid));
       static_app_launches_[aid] = mgr;
     }
   }
@@ -87,9 +88,9 @@ app_launch::static_app_launch(int aid, sprockit::sim_parameters* params)
 }
 
 void
-app_launch::index_allocation(const ordered_node_set &allocation)
+software_launch::index_allocation(const ordered_node_set &allocation)
 {
-  indexer_->map_ranks(aid_, allocation,
+  indexer_->map_ranks(allocation,
                procs_per_node_, rank_to_node_indexing_,
                nproc_);
 
@@ -128,7 +129,7 @@ app_launch::index_allocation(const ordered_node_set &allocation)
 }
 
 void
-app_launch::request_allocation(
+software_launch::request_allocation(
   const sw::ordered_node_set& available,
   sw::ordered_node_set& allocation)
 {
@@ -141,7 +142,7 @@ app_launch::request_allocation(
 }
 
 void
-app_launch::parse_launch_cmd(
+software_launch::parse_launch_cmd(
   sprockit::sim_parameters* params,
   int& nproc,
   int& procs_per_node,
@@ -185,13 +186,13 @@ app_launch::parse_launch_cmd(
 }
 
 void
-app_launch::parse_launch_cmd(sprockit::sim_parameters* params)
+software_launch::parse_launch_cmd(sprockit::sim_parameters* params)
 {
   parse_launch_cmd(params, nproc_, procs_per_node_, core_affinities_);
 }
 
 void
-app_launch::parse_aprun(
+software_launch::parse_aprun(
   const std::string &cmd,
   int &nproc, int &nproc_per_node,
   std::vector<int>& core_affinities)

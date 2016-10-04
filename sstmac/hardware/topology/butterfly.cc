@@ -161,12 +161,12 @@ butterfly::minimal_distance(switch_id src, switch_id dst) const
 }
 
 switch_id
-butterfly::endpoint_to_ejection_switch(node_id addr, int& switch_port) const
+butterfly::netlink_to_ejection_switch(node_id addr, int& switch_port) const
 {
   long node_idx = addr;
   //we inject on the first row - eject on the last row
-  long ej_idx = node_idx / endpoints_per_switch_ + last_col_index_start_;
-  switch_port = node_idx % endpoints_per_switch_;
+  long ej_idx = node_idx / netlinks_per_switch_ + last_col_index_start_;
+  switch_port = node_idx % netlinks_per_switch_;
   return switch_id(ej_idx);
 }
 

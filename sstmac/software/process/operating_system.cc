@@ -685,7 +685,6 @@ operating_system::unregister_lib(library* lib)
                  "OS %d will now drop events for %s",
                  addr(), lib->lib_name().c_str());
     libs_.erase(lib->lib_name());
-    deleted_libs_.insert(lib->lib_name());
     delete lib;
   } else {
     --refcount;
@@ -839,6 +838,16 @@ operating_system::handle_event(event* ev)
   auto it = libs_.find(libn);
 
   if (it == libs_.end()) {
+    //event arrived for library that doesn't exist yet
+    sprockit::sim_parameters* lib_params = params_->get_optional_namespace(libn);
+    software_id sid(0,0); //service
+    library* lib = library_factory::get_extra_value(libn, lib_params, sid, this);
+    if (lib){
+      lib->incoming_event(ev);
+    } else {
+      //this does not correspond to any buildable library - drop the event
+    }
+    /**
     if (deleted_libs_.find(libn) == deleted_libs_.end()){
       cerrn << "Valid libraries on " << this << ":\n";
       for  (auto& pair : libs_){
@@ -854,6 +863,7 @@ operating_system::handle_event(event* ev)
                    addr(), libn.c_str(), sprockit::to_string(ev).c_str());
       //drop the event
     }
+    */
   }
   else {
     os_debug("delivering message to lib %s: %s",

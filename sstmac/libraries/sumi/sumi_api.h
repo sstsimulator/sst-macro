@@ -103,7 +103,7 @@ class sumi_api :
   sumi_queue* queue_;
   
  protected:
-  event_loc_id loc_;
+  device_id loc_;
 
   int rank_;
 

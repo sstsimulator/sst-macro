@@ -64,13 +64,13 @@ cartesian_topology::node_addr(const coordinates& coords) const
 }
 
 std::string
-cartesian_topology::label(node_id nid) const
+cartesian_topology::node_label(node_id nid) const
 {
   return node_coords(nid).to_string();
 }
 
 std::string
-cartesian_topology::label(switch_id sid) const
+cartesian_topology::switch_label(switch_id sid) const
 {
   return switch_coords(sid).to_string();
 }

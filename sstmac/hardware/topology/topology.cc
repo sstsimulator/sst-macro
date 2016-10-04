@@ -26,14 +26,14 @@ switch_id
 topology::node_to_logp_switch(node_id nid) const
 {
   int n_nodes = num_nodes();
-  int endpoints_per_switch = n_nodes / nproc;
-  int epPlusOne = endpoints_per_switch + 1;
+  int netlinks_per_switch = n_nodes / nproc;
+  int epPlusOne = netlinks_per_switch + 1;
   int num_procs_with_extra_node = n_nodes % nproc;
 
   int div_cutoff = num_procs_with_extra_node * epPlusOne;
   if (nid >= div_cutoff){
     int offset = nid - div_cutoff;
-    return offset / endpoints_per_switch;
+    return offset / netlinks_per_switch;
   } else {
     return nid / epPlusOne;
   }
@@ -176,29 +176,29 @@ topology::configure_vc_routing(std::map<routing::algorithm_t, int> &m) const
 }
 
 std::string
-topology::label(node_id nid) const
+topology::node_label(node_id nid) const
 {
-  return sprockit::printf("%d", int(nid));
+  return sprockit::printf("%d", nid);
+}
+
+
+std::string
+topology::switch_label(switch_id sid) const
+{
+  return sprockit::printf("%d", sid);
 }
 
 std::string
-topology::label(switch_id sid) const
-{
-  return sprockit::printf("%d", int(sid));
-}
-
-std::string
-topology::label(event_loc_id id) const
+topology::label(device_id id) const
 {
   if (id.is_node_id()){
-    return label(id.convert_to_node_id());
+    return node_label(id.id());
+  } else {
+    return switch_label(id.id());
   }
-  else {
-    return label(id.convert_to_switch_id());
-  }
+
 }
 
-#ifdef SSTMAC_INTEGRATED_SST_CORE
 class merlin_topology : public topology {
  public:
   merlin_topology(sprockit::sim_parameters* params) 
@@ -256,7 +256,7 @@ class merlin_topology : public topology {
 
 
   int
-  num_endpoints() const override {
+  num_netlinks() const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
@@ -266,12 +266,12 @@ class merlin_topology : public topology {
   }
 
   switch_id
-  endpoint_to_injection_switch(node_id nodeaddr, int& switch_port) const override {
+  netlink_to_injection_switch(node_id nodeaddr, int& switch_port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
   switch_id
-  endpoint_to_ejection_switch(node_id nodeaddr, int& switch_port) const override {
+  netlink_to_ejection_switch(node_id nodeaddr, int& switch_port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
@@ -312,6 +312,37 @@ class merlin_topology : public topology {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
+  switch_id
+  max_switch_id() const override {
+    spkt_abort_printf("merlin topology functions should never be called");
+  }
+
+  bool
+  switch_id_slot_filled(switch_id sid) const override{
+    spkt_abort_printf("merlin topology functions should never be called");
+  }
+
+  netlink_id
+  max_netlink_id() const override {
+    spkt_abort_printf("merlin topology functions should never be called");
+  }
+
+  bool
+  netlink_id_slot_filled(netlink_id sid) const override{
+    spkt_abort_printf("merlin topology functions should never be called");
+  }
+
+
+  node_id
+  max_node_id() const override {
+    spkt_abort_printf("merlin topology functions should never be called");
+  }
+
+  bool
+  node_id_slot_filled(node_id nid) const override{
+    spkt_abort_printf("merlin topology functions should never be called");
+  }
+
   void
   minimal_route_to_switch(
     switch_id current_sw_addr,
@@ -331,8 +362,6 @@ class merlin_topology : public topology {
 };
 
 SpktRegister("merlin", topology, merlin_topology);
-
-#endif
 
 }
 }

@@ -35,7 +35,7 @@ class member_fxn_handler :
   virtual ~member_fxn_handler(){}
 
  protected:
-  member_fxn_handler(event_loc_id id) :
+  member_fxn_handler(device_id id) :
     event_handler(id)
   {
   }
@@ -59,7 +59,7 @@ class member_fxn_handler_impl :
     dispatch(ev, typename gens<sizeof...(Args)>::type());
   }
 
-  member_fxn_handler_impl(event_loc_id id, Cls* obj, Fxn fxn, const Args&... args) :
+  member_fxn_handler_impl(device_id id, Cls* obj, Fxn fxn, const Args&... args) :
     params_(args...),
     obj_(obj),
     fxn_(fxn),
@@ -102,7 +102,7 @@ class member_fxn_callback :
     dispatch(typename gens<sizeof...(Args)>::type());
   }
 
-  member_fxn_callback(event_loc_id id, Cls* obj, Fxn fxn, const Args&... args) :
+  member_fxn_callback(device_id id, Cls* obj, Fxn fxn, const Args&... args) :
     callback(id),
     params_(args...),
     obj_(obj),
@@ -133,7 +133,7 @@ new_callback(Cls* cls, Fxn fxn, const Args&... args)
 
 template<class Cls, typename Fxn, class ...Args>
 callback*
-new_callback(event_loc_id id, Cls* cls, Fxn fxn, const Args&... args)
+new_callback(device_id id, Cls* cls, Fxn fxn, const Args&... args)
 {
   return new member_fxn_callback<Cls, Fxn, Args...>(
         id, cls, fxn, args...);

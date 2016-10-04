@@ -40,7 +40,7 @@ event_container::do_next_event()
 }
 
 #if DEBUG_DETERMINISM
-extern std::map<event_loc_id,std::ofstream*> outs;
+extern std::map<device_id,std::ofstream*> outs;
 #endif
  
 //
@@ -100,7 +100,7 @@ event_container::run()
   }
 
 #if DEBUG_DETERMINISM
-  std::map<event_loc_id,std::ofstream*>::iterator it, end = outs.end();
+  std::map<device_id,std::ofstream*>::iterator it, end = outs.end();
   for (it=outs.begin(); it != end; ++it){
     it->second->close();
   }

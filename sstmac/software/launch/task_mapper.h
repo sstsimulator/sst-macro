@@ -50,7 +50,6 @@ class task_mapper : public sprockit::printable
   */
   virtual void
   map_ranks(
-    app_id aid,
     const ordered_node_set& allocation,
     int ppn,
     std::vector<node_id>& result,

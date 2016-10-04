@@ -60,7 +60,7 @@ event_heap::clear(timestamp zero_time)
 }
 
 void
-event_heap::cancel_all_messages(event_loc_id canceled_loc)
+event_heap::cancel_all_messages(device_id canceled_loc)
 {
   queue_t temp;
   while (!queue_.empty()) {

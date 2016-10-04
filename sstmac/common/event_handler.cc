@@ -14,8 +14,5 @@
 
 namespace sstmac {
 
-event_loc_id event_loc_id::null = event_loc_id(switch_id(std::numeric_limits<int32_t>::max()));
-event_loc_id event_loc_id::uninitialized = event_loc_id(switch_id(std::numeric_limits<int32_t>::max()-1));
-
 } // end of namespace sstmac
 

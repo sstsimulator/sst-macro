@@ -30,8 +30,7 @@ class hostname_task_mapper : public task_mapper
 
   virtual ~hostname_task_mapper() throw() {}
 
-  void map_ranks(app_id aid,
-                const ordered_node_set& nodes,
+  void map_ranks(const ordered_node_set& nodes,
                 int ppn,
                 std::vector<node_id> &result,
                 int nproc) override;

@@ -89,11 +89,11 @@ class tiled_dragonfly : public dragonfly
   xy_connected_to_group(int myX, int myY, int myG,
                         int dstg) const;
   switch_id
-  endpoint_to_injection_switch(
+  netlink_to_injection_switch(
       node_id nodeaddr, int ports[], int &num_ports) const;
 
   switch_id
-  endpoint_to_ejection_switch(
+  netlink_to_ejection_switch(
       node_id nodeaddr, int ports[], int &num_ports) const;
 
   virtual void
