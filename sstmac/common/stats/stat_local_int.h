@@ -19,9 +19,6 @@ class stat_local_int :
   }
 
   void
-  collect(int value);
-
-  void
   simulation_finished(timestamp end) override;
 
   void

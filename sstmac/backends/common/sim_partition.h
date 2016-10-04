@@ -93,6 +93,9 @@ class partition
   virtual int
   thread_for_local_switch(int local_idx) const;
 
+  virtual void
+  finalize_init(){}
+
  protected:
   partition(sprockit::sim_parameters* params, parallel_runtime* rt);
 
