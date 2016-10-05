@@ -119,7 +119,7 @@ mpi_runtime::mpi_runtime(sprockit::sim_parameters* params) :
 }
 
 int
-mpi_runtime::init_rank(sprockit::sim_parameters* params)
+mpi_runtime::init_size(sprockit::sim_parameters* params)
 {
   int inited;
   MPI_Initialized(&inited);
@@ -130,12 +130,11 @@ mpi_runtime::init_rank(sprockit::sim_parameters* params)
     char** argv = 0;
     int rc = MPI_Init(&argc, &argv);
     if (rc != MPI_SUCCESS){
-      spkt_abort(sprockit::illformed_error,
-        "mpi_runtime::init_rank: could not MPI_Init");
+      spkt_abort_printf("mpi_runtime::init_rank: could not MPI_Init");
     }
   }
-  MPI_Comm_rank(MPI_COMM_WORLD, &me_);
-  return me_;
+  MPI_Comm_size(MPI_COMM_WORLD, &nproc_);
+  return nproc_;
 }
 
 int
@@ -150,12 +149,11 @@ mpi_runtime::init_rank(sprockit::sim_parameters* params)
     char** argv = 0;
     int rc = MPI_Init(&argc, &argv);
     if (rc != MPI_SUCCESS){
-      spkt_abort(sprockit::illformed_error,
-        "mpi_runtime::init_rank: could not MPI_Init");
+      spkt_abort_printf("mpi_runtime::init_rank: could not MPI_Init");
     }
   }
-  MPI_Comm_size(MPI_COMM_WORLD, &nproc_);
-  return nproc_;
+  MPI_Comm_rank(MPI_COMM_WORLD, &me_);
+  return me_;
 }
 
 void
