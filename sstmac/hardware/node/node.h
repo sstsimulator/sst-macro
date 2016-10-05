@@ -193,7 +193,7 @@ class node :
  private:
   sw::app_launcher* app_launcher_;
   sw::job_launcher* job_launcher_;
-  static std::list<sw::app_launch*> app_aunchers_;
+  static std::list<sw::app_launch*> app_launchers_;
   unique_event_id next_outgoing_id_;
   sprockit::sim_parameters* params_;
 

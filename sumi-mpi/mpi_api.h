@@ -75,11 +75,6 @@ class mpi_api :
   virtual
   ~mpi_api();
 
-  void
-  incoming_event(sstmac::event *ev){
-    library::incoming_event(ev);
-  }
-
   mpi_queue*
   queue() {
     return queue_;

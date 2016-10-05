@@ -675,6 +675,15 @@ operating_system::register_lib(library* lib)
 }
 
 void
+operating_system::swap_lib_name(const std::string &oldName, const std::string &newName)
+{
+  auto iter = libs_.find(oldName);
+  library* lib = iter->second;
+  libs_.erase(iter);
+  libs_[newName] = lib;
+}
+
+void
 operating_system::unregister_lib(library* lib)
 {
   os_debug("unregistering lib %s", lib->lib_name().c_str());
@@ -845,18 +854,17 @@ operating_system::handle_event(event* ev)
     if (lib){
       lib->incoming_event(ev);
     } else {
-      //this does not correspond to any buildable library - drop the event
-    }
-    /**
-    if (deleted_libs_.find(libn) == deleted_libs_.end()){
       cerrn << "Valid libraries on " << this << ":\n";
       for  (auto& pair : libs_){
         cerrn << pair.first << std::endl;
       }
-      spkt_throw_printf(sprockit::os_error,
-                     "operating_system::handle_event: can't find library %s on os %d for event %s",
+      spkt_abort_printf("operating_system::handle_event: can't find library %s on os %d for event %s",
                      libmsg->lib_name().c_str(), int(addr()),
                      sprockit::to_string(ev).c_str());
+    }
+    /**
+    if (deleted_libs_.find(libn) == deleted_libs_.end()){
+
     } else {
       debug_printf(sprockit::dbg::dropped_events | sprockit::dbg::os,
                    "OS %d for library %s dropping event %s",

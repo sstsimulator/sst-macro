@@ -84,10 +84,32 @@ sumi_transport::sumi_transport(sprockit::sim_parameters* params,
   queue_(nullptr)
 {
   rank_ = sid.task_;
-  server_libname_ = sprockit::printf("sumi_server_%d", int(sid.app_));
+  if (params->has_param("service_name")){
+    //we don't need an extra server
+    server_libname_ = params->get_param("service_name");
+    os->swap_lib_name(library::lib_name(), server_libname_);
+  } else {
+    server_libname_ = sprockit::printf("%s_sumi_server_%d", name, sid.app_);
+    library* server_lib = os_->lib(server_libname_);
+    sumi_server* server;
+    // only do one server per app per node
+    if (server_lib == nullptr) {
+      server = new sumi_server(server_libname_, sid.app_, os_);
+      server->start();
+    }
+    else {
+      //add me to the ref count
+      std::cout << server_lib->to_string() << std::endl;
+      server = safe_cast(sumi_server, server_lib);
+    }
+    server->register_proc(rank_, this);
+  }
+
   sw::thread* thr = sw::operating_system::current_thread();
   sw::app* my_app = safe_cast(sw::app, thr);
   my_app->compute(timestamp(1e-6));
+
+
 }
 
 sumi_transport::~sumi_transport()
@@ -96,19 +118,27 @@ sumi_transport::~sumi_transport()
 }
 
 void
+sumi_transport::incoming_event(event *ev)
+{
+  transport_message* smsg = safe_cast(transport_message, ev);
+  incoming_message(smsg);
+}
+
+void
 sumi_transport::client_server_send(
   const std::string& server_name,
-  node_id dst,
+  int dst_task,
+  node_id dst_node,
   const sumi::message::ptr& msg)
 {
   sstmac::sw::app_id aid = sid().app_;
   hw::network_message::type_t ty = hw::network_message::payload;
-  transport_message* tmsg = new transport_message(aid, msg, msg->byte_length());
+  transport_message* tmsg = new transport_message(server_name, aid, msg, msg->byte_length());
   tmsg->hw::network_message::set_type(ty);
-  tmsg->set_lib_name(server_name);
-  tmsg->toaddr_ = dst;
+  tmsg->toaddr_ = dst_node;
+  tmsg->set_src(-1);
   tmsg->set_needs_ack(false);
-  tmsg->set_dest(dst);
+  tmsg->set_dest(dst_task);
   sw::library::os_->execute(ami::COMM_SEND, tmsg);
 }
 
@@ -185,21 +215,6 @@ sumi_transport::init()
   nproc_ = rank_mapper_->nproc();
   loc_ = os_->event_location();
 
-  library* server_lib = os_->lib(server_libname_);
-  sumi_server* server;
-
-  // only do one server per app per node
-  if (server_lib == 0) {
-    server = new sumi_server(server_libname_, sid().app_, os_);
-    server->start();
-  }
-  else {
-    //add me to the ref count
-    server = safe_cast(sumi_server, server_lib);
-  }
-
-  server->register_proc(rank_, this);
-
   queue_ = new sumi_queue(os_);
 
   transport::init();
@@ -227,9 +242,11 @@ sumi_transport::send(
 {
   sstmac::sw::app_id aid = sid().app_;
   sstmac::hw::network_message::type_t ty = (sstmac::hw::network_message::type_t) sendType;
-  transport_message* tmsg = new transport_message(aid, msg, byte_length);
+  transport_message* tmsg = new transport_message(
+        server_libname_,
+        rank_mapper_->node_assignment(dst),
+        msg, byte_length);
   tmsg->hw::network_message::set_type(ty);
-  tmsg->set_lib_name(server_libname_);
   tmsg->toaddr_ = rank_mapper_->node_assignment(sw::task_id(dst));
   tmsg->set_needs_ack(needs_ack);
   tmsg->set_src(rank_);

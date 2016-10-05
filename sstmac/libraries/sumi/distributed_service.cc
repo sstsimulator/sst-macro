@@ -11,8 +11,10 @@ distributed_service::skeleton_main()
   sumi_transport* tport = get_api<sumi_transport>();
   tport->init();
   tport->barrier(0);
+  tport->collective_block(sumi::collective::barrier, 0);
   run(tport);
   tport->barrier(1);
+  tport->collective_block(sumi::collective::barrier, 1);
   tport->finalize();
 }
 

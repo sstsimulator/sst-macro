@@ -20,9 +20,16 @@ class transport_message :
  public:
   transport_message(){} //needed for serialization
 
-  transport_message(sw::app_id aid,
+  transport_message(
+     const std::string& libname,
+     sw::app_id aid,
      const sumi::message_ptr& msg,
-     long byte_length);
+     long byte_length)
+   : library_interface(libname),
+      network_message(aid, byte_length),
+      payload_(msg)
+  {
+  }
 
   virtual void
   serialize_order(serializer& ser) override;

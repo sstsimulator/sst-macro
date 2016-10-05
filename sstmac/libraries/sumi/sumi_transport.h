@@ -73,20 +73,23 @@ class sumi_transport :
   }
 
   virtual void
-  init();
+  init() override;
 
   virtual void
-  finalize();
+  finalize() override;
 
   virtual ~sumi_transport();
 
-  virtual sumi::message_ptr
+  sumi::message_ptr
   handle(sstmac::transport_message* msg);
+
+  void incoming_event(event *ev) override;
 
   void
   client_server_send(
     const std::string& server_name,
-    node_id dest,
+    int dest_rank,
+    node_id dest_node,
     const sumi::message::ptr& msg);
 
   /**
@@ -97,27 +100,22 @@ class sumi_transport :
    * @return
    */
   sumi::collective_done_message::ptr
-  collective_block(sumi::collective::type_t ty, int tag);
+  collective_block(sumi::collective::type_t ty, int tag) override;
 
   void
-  cq_notify();
+  cq_notify() override;
 
   double
-  wall_time() const;
+  wall_time() const override;
 
   sumi::message::ptr
-  block_until_message();
+  block_until_message() override;
 
   sumi::message::ptr
-  block_until_message(double timeout);
+  block_until_message(double timeout) override;
 
   void
   ping_timeout(sumi::pinger* pnger);
-
-  void
-  incoming_event(sstmac::event *ev){
-    library::incoming_event(ev);
-  }
 
   void
   send(
@@ -138,37 +136,37 @@ class sumi_transport :
   }
 
   void
-  do_smsg_send(int dst, const sumi::message::ptr &msg);
+  do_smsg_send(int dst, const sumi::message::ptr &msg) override;
 
   void
-  do_rdma_put(int dst, const sumi::message::ptr& msg);
+  do_rdma_put(int dst, const sumi::message::ptr& msg) override;
 
   void
-  do_rdma_get(int src, const sumi::message::ptr& msg);
+  do_rdma_get(int src, const sumi::message::ptr& msg) override;
 
   void
-  do_nvram_get(int src, const sumi::message::ptr& msg);
+  do_nvram_get(int src, const sumi::message::ptr& msg) override;
 
   void
-  do_send_terminate(int dst);
+  do_send_terminate(int dst) override;
 
   void
-  do_send_ping_request(int dst);
+  do_send_ping_request(int dst) override;
 
   void
-  delayed_transport_handle(const sumi::message::ptr& msg);
+  delayed_transport_handle(const sumi::message::ptr& msg) override;
 
   void
-  schedule_ping_timeout(sumi::pinger* pnger, double to);
+  schedule_ping_timeout(sumi::pinger* pnger, double to) override;
 
   void
-  schedule_next_heartbeat();
+  schedule_next_heartbeat() override;
 
   void
-  go_die();
+  go_die() override;
 
   void
-  go_revive();
+  go_revive() override;
 
  protected:
   sumi_transport(sprockit::sim_parameters* params,

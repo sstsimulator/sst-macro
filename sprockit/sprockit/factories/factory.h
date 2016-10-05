@@ -357,6 +357,9 @@ class Factory
   get_extra_value(const std::string& param_value,
                   sim_parameters* params,
                   const Args&... args){
+    if (!builder_map_)
+      return nullptr;
+
     auto it = builder_map_->find(param_value);
     if (it == builder_map_->end()){
       return nullptr;
