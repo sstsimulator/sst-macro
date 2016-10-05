@@ -19,7 +19,7 @@
 namespace sstmac {
 namespace sw {
 
-std::map<int, app_launch*> app_launch::static_app_launches_;
+std::map<std::string, app_launch*> app_launch::static_app_launches_;
 
 software_launch::software_launch(sprockit::sim_parameters *params) :
   indexed_(false)
@@ -58,33 +58,48 @@ software_launch::~software_launch()
 
 app_launch::~app_launch()
 {
-  delete app_template_;
 }
 
 app_launch::app_launch(sprockit::sim_parameters* params, app_id aid) :
   software_launch(params),
-  aid_(aid)
+  aid_(aid),
+  app_name_(params->get_param("name")),
+  app_params_(params)
 {
-  appname_ = params->get_param("name");
-  app_template_ = sw::app_factory::get_value(appname_, params);
+}
+
+app_launch*
+app_launch::static_app_launch(int aid, const std::string& name, sprockit::sim_parameters* params)
+{
+  static thread_lock lock;
+  lock.lock();
+  if (!static_app_launches_[name]){
+    if (params->has_namespace(name)){
+      sprockit::sim_parameters* app_params = params->get_namespace(name);
+      app_launch* mgr = new app_launch(app_params, app_id(aid));
+      static_app_launches_[name] = mgr;
+    }
+  }
+  app_launch* l = static_app_launches_[name];
+  lock.unlock();
+  return l;
 }
 
 app_launch*
 app_launch::static_app_launch(int aid, sprockit::sim_parameters* params)
 {
-  static thread_lock lock;
+  std::string app_namespace = sprockit::printf("app%d", aid);
+  return static_app_launch(aid, app_namespace, params);
+}
 
-  lock.lock();
-  if (!static_app_launches_[aid]){
-    std::string app_namespace = sprockit::printf("app%d", aid);
-    if (params->has_namespace(app_namespace)){
-      sprockit::sim_parameters* app_params = params->get_namespace(app_namespace);
-      app_launch* mgr = new app_launch(app_params, app_id(aid));
-      static_app_launches_[aid] = mgr;
-    }
+const std::vector<node_id>&
+app_launch::nodes(const std::string &name)
+{
+  app_launch* l = static_app_launches_[name];
+  if (!l){
+    spkt_abort_printf("No application %s found in launcher", name.c_str());
   }
-  lock.unlock();
-  return static_app_launches_[aid];
+  return l->node_assignments();
 }
 
 void

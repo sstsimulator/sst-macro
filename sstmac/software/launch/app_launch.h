@@ -42,6 +42,11 @@ class software_launch
     return rank_to_node_indexing_[rank];
   }
 
+  const std::vector<node_id>&
+  node_assignments() const {
+    return rank_to_node_indexing_;
+  }
+
   const std::list<int>&
   rank_assignment(node_id nid) const {
     return node_to_rank_indexing_[nid];
@@ -130,15 +135,31 @@ class app_launch : public software_launch
 
   virtual ~app_launch();
 
-  app*
-  app_template() const {
-    return app_template_;
+  std::string
+  app_name() const {
+    return app_name_;
+  }
+
+  sprockit::sim_parameters*
+  app_params() const {
+    return app_params_;
   }
 
   app_id
   aid() const {
     return aid_;
   }
+
+  /**
+   * @brief nodes
+   * @param name The name and corresponding namespace (usually app1) for the application
+   * @return The list of nodes assigned to each rank in the application launch
+   */
+  static const std::vector<node_id>&
+  nodes(const std::string& name);
+
+  static app_launch*
+  static_app_launch(int aid, const std::string& name, sprockit::sim_parameters* params);
 
   static app_launch*
   static_app_launch(int aid, sprockit::sim_parameters* params);
@@ -152,13 +173,13 @@ class app_launch : public software_launch
   }
 
  private:
-  sw::app* app_template_;
-
   sw::app_id aid_;
 
-  std::string appname_;
+  std::string app_name_;
 
-  static std::map<int, app_launch*> static_app_launches_;
+  sprockit::sim_parameters* app_params_;
+
+  static std::map<std::string, app_launch*> static_app_launches_;
 
 };
 

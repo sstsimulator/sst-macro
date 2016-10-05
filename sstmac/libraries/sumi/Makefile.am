@@ -21,20 +21,19 @@ libsstmac_sumi_la_LDFLAGS =
 
 
 libsstmac_sumi_la_SOURCES = \
+  distributed_service.cc \
   sumi.cc \
   message.cc \
-  sumi_api.cc \
   sumi_thread.cc \
   sumi_transport.cc
 
 library_includedir=$(includedir)/sstmac/libraries/sumi
 
 nobase_library_include_HEADERS = \
+  distributed_service.h \
   sumi.h \
   message.h \
   message_fwd.h \
-  sumi_api.h \
-  sumi_api_fwd.h \
   sumi_thread.h \
   sumi_transport.h
 

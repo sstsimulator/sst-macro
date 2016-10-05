@@ -1,4 +1,3 @@
-#include <sstmac/libraries/sumi/sumi_api.h>
 #include <sstmac/libraries/sumi/sumi_transport.h>
 #include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/process/app.h>

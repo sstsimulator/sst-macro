@@ -48,12 +48,6 @@ namespace lblxml
   }
 
   void
-  boxml::consume_params(sprockit::sim_parameters* params)
-  {
-    params_ = params;
-  }
-
-  void
   boxml::process_params()
   {
     if (eventfiles_.empty())

@@ -61,21 +61,6 @@ class app : public thread
   static sprockit::sim_parameters*
   get_params();
 
-  software_id
-  sid() const {
-   return id_;
-  }
-
-  int
-  appnum() const {
-    return id_.app_;
-  }
-
-  int
-  tasknum() const {
-    return id_.task_;
-  }
-
   app*
   parent_app() const {
     return const_cast<app*>(this);
@@ -118,15 +103,6 @@ class app : public thread
 
   /// Goodbye.
   virtual ~app();
-
-  virtual void
-  consume_params(sprockit::sim_parameters* params) = 0;
-
-  virtual app*
-  clone_type(sprockit::sim_parameters* params) const = 0;
-
-  app*
-  clone(software_id newid);
 
   //called when killing the app, in case you want to check or clean anything up before destructor
   virtual void kill();
@@ -208,7 +184,7 @@ class app : public thread
  protected:
   friend class thread;
 
-  app(sprockit::sim_parameters *params);
+  app(sprockit::sim_parameters *params, software_id sid);
 
   api*
   _get_api(const char* name);
@@ -216,7 +192,6 @@ class app : public thread
   virtual void init_mem_lib();
 
   sprockit::sim_parameters* params_;
-  software_id id_;
 
  private:
   lib_compute_inst* compute_inst_;
@@ -242,32 +217,21 @@ class app : public thread
 class user_app_cxx_full_main : public app
 {
  public:
+  user_app_cxx_full_main(sprockit::sim_parameters* params, software_id sid);
+
   static void
   register_main_fxn(const char* name, app::main_fxn fxn);
 
   void skeleton_main();
 
-  virtual void
-  consume_params(sprockit::sim_parameters *params);
-
   static void
   delete_statics();
-
-  app*
-  clone_type(sprockit::sim_parameters* params) const {
-    return new user_app_cxx_full_main(params);
-  }
 
   struct argv_entry {
     char** argv;
     int argc;
     argv_entry() : argv(0), argc(0) {}
   };
-
-  user_app_cxx_full_main(sprockit::sim_parameters* params) :
-    app(params)
-  {
-  }
 
  private:
   void init_argv(argv_entry& entry);
@@ -281,21 +245,10 @@ class user_app_cxx_full_main : public app
 class user_app_cxx_empty_main : public app
 {
  public:
+  user_app_cxx_empty_main(sprockit::sim_parameters* params, software_id sid);
+
   static void
   register_main_fxn(const char* name, app::empty_main_fxn fxn);
-
-  virtual void
-  consume_params(sprockit::sim_parameters *params);
-
-  app*
-  clone_type(sprockit::sim_parameters* params) const {
-    return new user_app_cxx_empty_main(params);
-  }
-
-  user_app_cxx_empty_main(sprockit::sim_parameters* params) :
-    app(params)
-  {
-  }
 
   void skeleton_main();
 
@@ -308,7 +261,7 @@ class user_app_cxx_empty_main : public app
 /** utility function for computing stuff */
 void compute_time(double tsec);
 
-DeclareFactory(app)
+DeclareFactory(app, software_id)
 
 }
 } // end of namespace sstmac.

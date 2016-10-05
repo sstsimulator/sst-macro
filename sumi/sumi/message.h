@@ -53,6 +53,7 @@ class message :
  typedef enum {
     terminate,
     pt2pt,
+    bcast,
     unexpected,
     collective,
     collective_done,
@@ -251,7 +252,34 @@ class message :
   sumi::public_buffer local_buffer_;
   sumi::public_buffer remote_buffer_;
 
+};
 
+class system_bcast_message : public message
+{
+ public:
+  typedef sprockit::refcount_ptr<system_bcast_message> ptr;
+
+  typedef enum {
+    shutdown
+  } action_t;
+
+  system_bcast_message(action_t action, int root) :
+    action_(action),
+    root_(root)
+  {
+  }
+
+  int root() const {
+    return root_;
+  }
+
+  action_t action() const {
+    return action_;
+  }
+
+ private:
+  int root_;
+  action_t action_;
 };
 
 }

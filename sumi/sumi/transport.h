@@ -415,6 +415,8 @@ class transport
   void
   bcast(int root, void* buf, int nelems, int type_size, int tag, bool fault_aware, int context=options::initial_context, communicator* dom=0);
   
+  void system_bcast(const message::ptr& msg);
+
   int 
   rank() const {
     return rank_;

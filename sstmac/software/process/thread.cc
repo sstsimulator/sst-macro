@@ -237,7 +237,7 @@ thread::run_routine(void* threadptr)
 
 key::category schedule_delay("CPU_Sched Delay");
 
-thread::thread() :
+thread::thread(sprockit::sim_parameters* params, software_id sid) :
   state_(PENDING),
   isInit(false),
   backtrace_(nullptr),
@@ -251,15 +251,12 @@ thread::thread() :
   cpumask_(0),
   pthread_map_(nullptr),
   parent_app_(nullptr),
-  perf_model_(nullptr)
+  perf_model_(nullptr),
+  sid_(sid)
 {
   //make all cores possible active
   cpumask_ = ~(cpumask_);
-}
 
-void
-thread::init_perf_model_params(sprockit::sim_parameters *params)
-{
   perf_model_ = perf_counter_model_factory
                   ::get_optional_param("perf_model", "null", params);
 }

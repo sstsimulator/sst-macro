@@ -20,6 +20,7 @@ libsstmac_skeletons_la_LDFLAGS =
 
 libsstmac_skeletons_la_SOURCES = \
   traffic_matrix/main.cc \
+  test/service_test.cc \
   test/app_hello_world.cc \
   test/mpi_coverage_test.cc \
   test/mpi_ping_all.cc \

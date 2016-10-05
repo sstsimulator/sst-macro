@@ -212,7 +212,8 @@ quiesce(sumi::transport* tport,
 
 int USER_MAIN(int argc, char** argv)
 {
-  sumi::transport* tport = sstmac::sw::operating_system::current_thread()->get_api<sumi::sumi_transport>();
+  sstmac::sumi_transport* tport = sstmac::sw::operating_system::current_thread()
+      ->get_api<sstmac::sumi_transport>();
 
   tport->init();
 
