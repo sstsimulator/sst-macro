@@ -51,7 +51,7 @@ namespace gtc
     std::map<std::string,double> param_map_;
 
   public:
-    gtc_main(sprockit::sim_parameters* params, software_id sid);
+    gtc_main(sprockit::sim_parameters* params, sstmac::sw::software_id sid);
 
     /// Goodbye.
     virtual
