@@ -30,34 +30,32 @@ SpktRegister("simple_fattree", topology, simple_fat_tree);
 sprockit::sim_parameters*
 abstract_fat_tree::override_params(sprockit::sim_parameters* params)
 {
-  std::vector<int> args;
-  params->get_vector_param("geometry", args);
-  if (args.size() != 2) {
-    spkt_throw_printf(sprockit::input_error,
-                     "fat_tree::override_params: geometry needs 2 parameters, got %d",
-                     args.size());
-  }
-  l_ = args[0];
-  k_ = args[1];
-  if (!params->has_param("concentration")){
-    params->add_param_override("concentration", k_);
-  }
+  if (params->has_param("num_leaf_switches")){
+    numleafswitches_ = params->get_int_param("num_leaf_switches");
+    k_ = params->get_int_param("k");
+    l_ = 1;
+    int switches_on_level = numleafswitches_;
+    do {
+      switches_on_level /= k_;
+      ++l_;
+    } while (switches_on_level > 1);
+  } else {
+    std::vector<int> args;
+    params->get_vector_param("geometry", args);
+    if (args.size() != 2) {
+      spkt_throw_printf(sprockit::input_error,
+                       "fat_tree::init_factory_params: geometry needs 2 parameters, got %d",
+                       args.size());
+    }
+    l_ = args[0];
+    k_ = args[1];
+    sprockit::sim_parameters* rtr_params = params->get_optional_namespace("router");
+    rtr_params->add_param_override("radix", k_);
+    rtr_params->add_param_override("num_levels", l_);
 
-  sprockit::sim_parameters* rtr_params = params->get_optional_namespace("router");
-  rtr_params->add_param_override("radix", k_);
-  rtr_params->add_param_override("num_levels", l_);
-
-  /**
-     The first parameter gives the number of levels (L) in the fat tree.
-     The second parameter gives the radix (K) of the fat tree.  The number of leaf switches
-     is K^(L-1).  If L=3 and K=4, e.g., you have the following fat tree
-     1 -> 4 -> 16 switches at the top.
-     The number of nodes is K^L (if concentration parameter is not given).
-     This gives 64 nodes for L=3, K=4.
-   */
+    numleafswitches_ = pow(k_, l_ - 1);
+  }
   toplevel_ = l_ - 1;
-  numleafswitches_ = pow(k_, l_ - 1);
-
   return params;
 }
 
@@ -325,24 +323,32 @@ simple_fat_tree::simple_fat_tree(sprockit::sim_parameters *params) :
                     InitMaxPortsIntra::I_Remembered,
                     InitGeomEjectID::I_Remembered)
 {
-  int nswitches = numleafswitches_;
+  int nswitches = numleafswitches_ * k_;
   int offset = 0;
   int level = 0;
   level_offsets_.resize(l_);
+  level_sizes_.resize(l_);
   num_switches_ = 0;
-  while (nswitches >= 1){
+  do {
+    nswitches /= k_;
+    nswitches = std::max(1,nswitches); //no fewer than 1
     level_offsets_[level] = offset;
-    top_debug("fat_tree: setting level offset %d to %d", level, offset);
+    level_sizes_[level] = nswitches;
+    top_debug("fat_tree: setting level %d to %d<->%d", level, offset, offset + nswitches);
     offset += nswitches;
     num_switches_ += nswitches;
-    nswitches /= k_;
     level++;
-  }
+  } while (nswitches > 1); //until we have coalesced into a single switch
   top_debug("fat_tree: computed %d total switches on %d levels",
             num_switches_, l_);
   max_ports_intra_network_ = k_ + 1;
   eject_geometric_id_ = max_ports_intra_network_;
 
+  /**
+    The tapering array specifies the tapering for the up links for a given row
+    and the corresponding xbar bandwidths for the given row. In general, makes
+    most sense for initial tapering value to be 1.0 - but could be different.
+  */
   if (params->has_param("tapering")){
     params->get_vector_param("tapering", tapering_);
   } else {
@@ -364,31 +370,44 @@ simple_fat_tree::configure_individual_port_params(switch_id src,
   int buffer_size = switch_params->get_int_param("buffer_size");
   double bw = link_params->get_bandwidth_param("bandwidth");
   int myLevel = level(src);
-  int bw_multiplier = 1;
+  int up_link_bw_multiplier = 1;
+  int kRatio;
   for (int l=0; l < myLevel; ++l){
-    bw_multiplier *= k_;
+    kRatio = level_sizes_[l] / level_sizes_[l+1];
+    up_link_bw_multiplier *= kRatio;
   }
-
-  if (myLevel > 0){
-    double tapering = tapering_[myLevel];
-    for (int s=0; s < k_; ++s){
-      int outport = s;
-      setup_port_params(outport,
-                        buffer_size*bw_multiplier*tapering,
-                        bw*bw_multiplier*tapering,
-                        link_params, switch_params);
-    }
-  }
+  //the down links have less bandwidth than the uplinks
+  int down_link_bw_multiplier = up_link_bw_multiplier / kRatio;
 
   if (myLevel < toplevel_){
-    //bring things up one level
-    double tapering = tapering_[myLevel + 1];
-    bw_multiplier *= k_;
+    //I have an up connection that needs to be tapered
+    double tapering = tapering_[myLevel];
+    //the tapering array specifies the tapering factor
+    //for the up links of a given row
+    //tapering[1] = 0.25 means that row 1's uplinks (and xbar) have 0.25x
+    //the bandwidth of a full fat-tree
+    int taperedBufSize = buffer_size*up_link_bw_multiplier*tapering;
+    double taperedBw = bw*up_link_bw_multiplier*tapering;
     int outport = k_;
     setup_port_params(outport,
-                      buffer_size*bw_multiplier*tapering,
-                      bw*bw_multiplier*tapering,
+                      taperedBufSize,
+                      taperedBw,
                       link_params, switch_params);
+  }
+
+  if (myLevel > 0){ // I have down connections that need to be tapered
+    //my down links match the tapering of the uplinks from the row below
+    double tapering = tapering_[myLevel - 1];
+    int taperedBufSize = buffer_size*down_link_bw_multiplier*tapering;
+    double taperedBw = bw*down_link_bw_multiplier*tapering;
+    for (int s=0; s < k_; ++s){
+      //all of my up links are tapered
+      int outport = s;
+      setup_port_params(outport,
+                        taperedBufSize,
+                        taperedBw,
+                        link_params, switch_params);
+    }
   }
 }
 
@@ -399,13 +418,16 @@ simple_fat_tree::configure_nonuniform_switch_params(switch_id src,
   int myLevel = level(src);
   int multiplier = 1;
   for (int l=0; l < myLevel; ++l){
-    multiplier *= k_;
+    int kRatio = level_sizes_[l] / level_sizes_[l+1];
+    multiplier *= kRatio;
   }
   sprockit::sim_parameters* xbar_params = switch_params->get_namespace("xbar");
   double bw = xbar_params->get_bandwidth_param("bandwidth");
-  double xbar_bw = bw * multiplier;
+  //we are overwriting params - we have to make sure that the original baseline bandwidth is preserved
+  double baseline_bw = xbar_params->get_optional_bandwidth_param("baseline_bandwidth", bw);
+  double xbar_bw = baseline_bw * multiplier * tapering_[myLevel];
   (*xbar_params)["bandwidth"].setBandwidth(xbar_bw/1e9, "GB/s");
-
+  (*xbar_params)["baseline_bandwidth"].setBandwidth(baseline_bw/1e9, "GB/s");
   configure_individual_port_params(src, switch_params);
 }
 
@@ -413,46 +435,41 @@ void
 simple_fat_tree::connected_outports(switch_id src, std::vector<connection>& conns) const
 {
   int myRow = level(src);
-
   conns.resize(k_+1);
-
-  int nswitches = numleafswitches_;
-  int stopLevel = l_ - 1;
   int cidx = 0;
-  for (int l=0; l < stopLevel; ++l){
-    if (myRow == l){
-      int down_offset = level_offsets_[l];
-      int up_offset = level_offsets_[l+1];
-      int myCol = src - down_offset;
-      int upDst = up_offset + myCol / k_;
-      int down_switch_outport = k_;
-      int up_switch_inport = myCol % k_;
+  if (myRow < toplevel_){
+    int kRatio = level_sizes_[myRow] / level_sizes_[myRow+1];
+    //I have up connections
+    int myCol = src - level_offsets_[myRow];
+    int upDst = level_offsets_[myRow+1] + myCol / kRatio;
+    int down_switch_outport = k_;
+    int up_switch_inport = myCol % k_;
 
+    connection& conn = conns[cidx];
+    conn.src = src;
+    conn.dst = upDst;
+    conn.src_outport = down_switch_outport;
+    conn.dst_inport = up_switch_inport;
+    ++cidx;
+  }
+
+  if (myRow > 0){
+    //I have down connections
+    int kRatio = level_sizes_[myRow-1] / level_sizes_[myRow];
+    int myCol = src - level_offsets_[myRow];
+    //the offset of switches on row below that start connecting
+    int offset = kRatio * myCol + level_offsets_[myRow-1];
+    for (int i=0; i < kRatio; ++i){ //number of switches that connect to me
+      switch_id downDst = i + offset;
+      int up_switch_outport = i;
+      int down_switch_inport = k_;
       connection& conn = conns[cidx];
       conn.src = src;
-      conn.dst = upDst;
-      conn.src_outport = down_switch_outport;
-      conn.dst_inport = up_switch_inport;
+      conn.dst = downDst;
+      conn.src_outport = up_switch_outport;
+      conn.dst_inport = down_switch_inport;
       ++cidx;
-    } else if (myRow == (l+1)){
-      int down_offset = level_offsets_[l];
-      int up_offset = level_offsets_[l+1];
-      for (int s=0; s < nswitches;  ++s){
-        int up_id = up_offset + s/k_;
-        int down_id = down_offset + s;
-        if (up_id == src){
-          int down_switch_inport = k_;
-          int up_switch_outport = s % k_;
-          connection& conn = conns[cidx];
-          conn.src = src;
-          conn.dst = down_id;
-          conn.src_outport = up_switch_outport;
-          conn.dst_inport = down_switch_inport;
-          ++cidx;
-        }
-      }
     }
-    nswitches /= k_;
   }
 
   conns.resize(cidx);

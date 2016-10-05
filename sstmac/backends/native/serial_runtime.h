@@ -63,20 +63,20 @@ class serial_runtime :
   send_event(timestamp t, topology_id tid, event* ev);
 
   virtual void
-  wait_merge_array(int tag);
+  wait_merge_array(int tag) override;
 
   virtual void
-  declare_merge_array(void* buffer, int size, int tag);
+  declare_merge_array(void* buffer, int size, int tag) override;
 
   virtual bool
-  release_merge_array(int tag);
+  release_merge_array(int tag) override;
 
  protected:
   virtual void
-  do_send_message(int lp, void* buffer, int size);
+  do_send_message(int lp, void* buffer, int size) override;
 
   virtual void
-  do_send_recv_messages(std::vector<void*>& buffers);
+  do_send_recv_messages(std::vector<void*>& buffers) override;
 
   std::map<int, int> merge_refcounts_;
 

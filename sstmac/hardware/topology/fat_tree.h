@@ -247,6 +247,7 @@ class simple_fat_tree : public abstract_fat_tree
 
  protected:
   std::vector<int> level_offsets_;
+  std::vector<int> level_sizes_;
 
   int num_switches_;
 
