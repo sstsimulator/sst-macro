@@ -248,6 +248,7 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
     int target_rank = partition_->lpid_for_switch(sid);
     std::vector<topology::injection_port> nodes;
     topology_->nodes_connected_to_injection_switch(sid, nodes);
+    interconn_debug("switch %d maps to target rank %d", i, target_rank);
     if (target_rank == my_rank){
       for (int n=0; n < nodes.size(); ++n){
         node_id nid = nodes[n].nid;

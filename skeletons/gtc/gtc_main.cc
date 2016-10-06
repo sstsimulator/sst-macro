@@ -28,7 +28,7 @@ namespace gtc
     app(params, sid)
   {
 #ifdef _USE_LOOPS
-      libloops_ = new sstmac::sw::lib_compute_loops(params, sid(), os_);
+      libloops_ = new sstmac::sw::lib_compute_loops(params, sid, os_);
 #endif
       /**
           sstobject {

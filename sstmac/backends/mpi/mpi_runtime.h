@@ -25,43 +25,38 @@ class mpi_runtime :
  public:
   mpi_runtime(sprockit::sim_parameters* params);
 
-  std::string
-  to_string() const override {
-    return "mpi runtime";
-  }
-
   void
-  bcast(void *buffer, int bytes, int root);
+  bcast(void *buffer, int bytes, int root) override;
 
   int64_t
-  allreduce_min(int64_t mintime);
+  allreduce_min(int64_t mintime) override;
 
   int64_t
-  allreduce_max(int64_t maxtime);
+  allreduce_max(int64_t maxtime) override;
 
   void
-  global_sum(long long *data, int nelems, int root);
+  global_sum(long long *data, int nelems, int root) override;
 
   void
-  global_sum(long *data, int nelems, int root);
+  global_sum(long *data, int nelems, int root) override;
 
   void
-  global_max(long *data, int nelems, int root);
+  global_max(long *data, int nelems, int root) override;
 
   void
-  global_max(int *data, int nelems, int root);
+  global_max(int *data, int nelems, int root) override;
 
   void
-  send(int dst, void *buffer, int buffer_size);
+  send(int dst, void *buffer, int buffer_size) override;
 
   void
-  recv(int src, void *buffer, int buffer_size);
+  recv(int src, void *buffer, int buffer_size) override;
 
   void
-  gather(void *send_buffer, int num_bytes, void *recv_buffer, int root);
+  gather(void *send_buffer, int num_bytes, void *recv_buffer, int root) override;
 
   void
-  allgather(void *send_buffer, int num_bytes, void *recv_buffer);
+  allgather(void *send_buffer, int num_bytes, void *recv_buffer) override;
 
   void
   wait_merge_array(int tag);
@@ -73,7 +68,7 @@ class mpi_runtime :
   release_merge_array(int tag);
 
   void
-  init_runtime_params(sprockit::sim_parameters* params);
+  init_runtime_params(sprockit::sim_parameters* params) override;
 
  protected:
   void
