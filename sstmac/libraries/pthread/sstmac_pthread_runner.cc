@@ -17,10 +17,10 @@ namespace sw {
 
 pthread_runner::pthread_runner(software_id id, app* parent,
                                start_fxn start_routine, void* arg)
-  : start_routine_(start_routine),
+  : thread(parent->params(), id),
+    start_routine_(start_routine),
     arg_(arg)
 {
-  set_sid(id);
   parent_app_ = parent;
   parent_app_->add_subthread(this);
   parent->set_api(this);

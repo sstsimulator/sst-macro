@@ -53,14 +53,14 @@ class event_queue_entry : public event
   execute() = 0;
 
 #if SSTMAC_INTEGRATED_SST_CORE
-  event_queue_entry(event_loc_id dst,
-    event_loc_id src) 
+  event_queue_entry(device_id dst,
+    device_id src) 
   {
     //simply ignore parameters - not needed
   }
 #else
-  event_queue_entry(event_loc_id dst,
-    event_loc_id src) :
+  event_queue_entry(device_id dst,
+    device_id src) :
     dst_loc_(dst),
     src_loc_(src),
     seqnum_(0)
@@ -87,12 +87,12 @@ class event_queue_entry : public event
     return seqnum_;
   }
 
-  event_loc_id
+  device_id
   event_location() const {
     return dst_loc_;
   }
 
-  event_loc_id
+  device_id
   src_location() const {
     return src_loc_;
   }
@@ -103,8 +103,8 @@ class event_queue_entry : public event
 
  protected:
   timestamp time_;
-  event_loc_id dst_loc_;
-  event_loc_id src_loc_;
+  device_id dst_loc_;
+  device_id src_loc_;
   /** A unique sequence number from the source */
   uint32_t seqnum_;
 #endif
@@ -120,7 +120,7 @@ class handler_event_queue_entry :
 
   handler_event_queue_entry(event* ev,
     event_handler* hand,
-    event_loc_id src_loc);
+    device_id src_loc);
 
   void
   execute();
@@ -136,7 +136,7 @@ class callback :
   public event_queue_entry
 {
  protected:
-  callback(event_loc_id local) :
+  callback(device_id local) :
     event_queue_entry(local, local)
   {
   }

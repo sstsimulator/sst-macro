@@ -83,8 +83,7 @@ mpi_api::mpi_api(sprockit::sim_parameters* params,
   comm_factory_(nullptr),
   worldcomm_(nullptr),
   selfcomm_(nullptr),
-  rank_(sid.task_),
-  sumi_transport(params, "mpi", sid, os)
+  sstmac::sumi_transport(params, "mpi", sid, os)
 {
   sprockit::sim_parameters* queue_params = params->get_optional_namespace("queue");
   queue_ = new mpi_queue(queue_params, sid, this);
@@ -165,7 +164,9 @@ mpi_api::do_init(int* argc, char*** argv)
   }
 
   comm_factory_ = new mpi_comm_factory(sid().app_, this);
-  comm_factory_->init(rank_, transport::nproc_);
+  comm_factory_->init(rank_, nproc_);
+
+  //printf("Initialized %p with %p\n", this, comm_factory_);
 
   worldcomm_ = comm_factory_->world();
   selfcomm_ = comm_factory_->self();
@@ -217,7 +218,7 @@ mpi_api::do_finalize()
   }
 
   delete comm_factory_;
-  comm_factory_ = 0;
+  comm_factory_ = nullptr;
 
   transport::finalize();
 

@@ -300,19 +300,6 @@ pisces_network_buffer::~pisces_network_buffer()
   if (payload_handler_) delete payload_handler_;
 }
 
-std::string
-pisces_buffer::buffer_string(const char* name) const
-{
-  int id;
-  if (event_location().is_switch_id()){
-    id = event_location().convert_to_switch_id();
-  } else {
-    id = event_location().convert_to_node_id();
-  }
-  return sprockit::printf("%s %d", name, id);
-}
-
-
 void
 pisces_eject_buffer::return_credit(packet* pkt)
 {

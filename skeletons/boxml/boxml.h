@@ -306,19 +306,11 @@ namespace lblxml
     virtual
     ~boxml() throw () {}
 
-    boxml(sprockit::sim_parameters* params) : 
+    boxml(sprockit::sim_parameters* params, sstmac::sw::software_id sid) :
       params_(params), barrier_tag_(0), hist_eff_bw_(0), idle_time_(0),
       ncomm_(0), ncomp_(0), current_epoch_(1),
-      current_epoch_events_done_(0), sstmac::sw::app(params)
+      current_epoch_events_done_(0), sstmac::sw::app(params, sid)
     {}
-
-    app*
-    clone_type(sprockit::sim_parameters* params) const {
-      return new boxml(params);
-    }
-
-    void
-    consume_params(sprockit::sim_parameters* params);
 
     /// Go.
     void

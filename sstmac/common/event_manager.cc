@@ -35,7 +35,7 @@ class stop_event : public event_queue_entry
 
   stop_event(event_manager* man) :
     man_(man),
-    event_queue_entry(event_loc_id::null, event_loc_id::null)
+    event_queue_entry(device_id(), device_id())
   {
   }
 
@@ -69,8 +69,8 @@ event_manager::ev_man_for_thread(int thread_id) const
 
 void
 event_manager::ipc_schedule(timestamp t,
-  event_loc_id dst,
-  event_loc_id src,
+  device_id dst,
+  device_id src,
   uint32_t seqnum,
   event* ev)
 {

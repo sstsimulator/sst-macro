@@ -23,16 +23,16 @@ class location_trace :
 
   void
   collect(timestamp created,
-          event_loc_id creator,
+          device_id creator,
           timestamp scheduled,
-          event_loc_id runner);
+          device_id runner);
 
   bool
   read(std::istream& myfile,
        timestamp& created,
-       event_loc_id& creator,
+       device_id& creator,
        timestamp& scheduled,
-       event_loc_id& runner);
+       device_id& runner);
 
   void
   dump_local_data() override;
@@ -61,9 +61,9 @@ class location_trace :
  private:
   struct event {
     timestamp created;
-    event_loc_id creator;
+    device_id creator;
     timestamp scheduled;
-    event_loc_id runner;
+    device_id runner;
   };
 
   std::list<event> local_events_;

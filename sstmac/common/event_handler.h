@@ -34,26 +34,26 @@ class locatable
     return thread_id_;
   }
 
-  event_loc_id
+  device_id
   event_location() const {
     return loc_id_;
   }
 
  protected:
-  locatable(event_loc_id id) :
+  locatable(device_id id) :
     loc_id_(id),
     thread_id_(null_threadid)
   {
   }
 
-  locatable(event_loc_id id, int thread_id) :
+  locatable(device_id id, int thread_id) :
     loc_id_(id),
     thread_id_(thread_id)
   {
   }
 
  private:
-  event_loc_id loc_id_;
+  device_id loc_id_;
   int thread_id_;
 };
 
@@ -68,7 +68,7 @@ class event_handler :
   static const int null_lpid = -1;
 
 protected:
- event_handler(event_loc_id id) :
+ event_handler(device_id id) :
    locatable(id)
  {
  }
@@ -81,7 +81,7 @@ protected:
   }
 #else
  protected:
-  event_handler(event_loc_id id, int thread_id) :
+  event_handler(device_id id, int thread_id) :
     locatable(id, thread_id)
   {
   }

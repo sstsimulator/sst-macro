@@ -44,7 +44,7 @@ class event_map :
   clear(timestamp zero_time = timestamp(0));
 
   void
-  cancel_all_messages(event_loc_id mod);
+  cancel_all_messages(device_id mod);
 
   bool
   empty() const {
@@ -66,14 +66,13 @@ class event_map :
       bool neq = lhs->time() != rhs->time();
       if (neq) return lhs->time() < rhs->time();
 
-      neq = lhs->src_location() != rhs->src_location();
-      if (neq) return lhs->src_location() < rhs->src_location();
-
-#if SSTMAC_SANITY_CHECK
-      assert(lhs->seqnum() != rhs->seqnum());
-#endif
-      return lhs->seqnum() < rhs->seqnum();
+      if (lhs->src_location() == rhs->src_location()){
+        return lhs->seqnum() < rhs->seqnum();
+      } else {
+        return lhs->src_location() < rhs->src_location();
+      }
     }
+
   };
   typedef std::set<event_queue_entry*, event_compare> queue_t;
   queue_t queue_;

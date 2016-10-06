@@ -46,7 +46,8 @@ app::allocate_tls_key(destructor_fxn fxn)
   return next;
 }
 
-app::app(sprockit::sim_parameters *params) :
+app::app(sprockit::sim_parameters *params, software_id sid) :
+  thread(params, sid),
   compute_inst_(nullptr),
   compute_time_(nullptr),
   compute_mem_move_(nullptr),
@@ -57,16 +58,6 @@ app::app(sprockit::sim_parameters *params) :
   next_condition_(0),
   next_mutex_(0)
 {
-}
-
-app*
-app::clone(software_id newid)
-{
-  app* cln = clone_type(params_);
-  cln->set_sid(newid);
-  cln->id_ = newid;
-  cln->consume_params(params_);
-  return cln;
 }
 
 app::~app()
@@ -84,7 +75,7 @@ lib_compute_loops*
 app::compute_loops_lib()
 {
   if(!compute_loops_) {
-    compute_loops_ = new lib_compute_loops(params_, id_, os_);
+    compute_loops_ = new lib_compute_loops(params_, sid_, os_);
   }
   return compute_loops_;
 }
@@ -114,7 +105,7 @@ void
 app::sleep(timestamp time)
 {
   if (!sleep_lib_) {
-    sleep_lib_ = new lib_sleep(params_, id_, os_);
+    sleep_lib_ = new lib_sleep(params_, sid_, os_);
   }
   sleep_lib_->sleep(time);
 }
@@ -123,7 +114,7 @@ void
 app::compute(timestamp time)
 {
   if (!compute_time_) {
-    compute_time_ = new lib_compute_time(params_, id_, os_);
+    compute_time_ = new lib_compute_time(params_, sid_, os_);
   }
   compute_time_->compute(time);
 }
@@ -132,7 +123,7 @@ void
 app::compute_inst(compute_event* cmsg)
 {
   if (!compute_inst_) {
-    compute_inst_ = new lib_compute_inst(params_, id_, os_);
+    compute_inst_ = new lib_compute_inst(params_, sid_, os_);
   }
   compute_inst_->compute_inst(cmsg);
 }
@@ -144,7 +135,7 @@ app::compute_loop(uint64_t num_loops,
   int bytes_per_loop)
 {
   if (!compute_inst_){
-    compute_inst_ = new lib_compute_inst(params_, id_, os_);
+    compute_inst_ = new lib_compute_inst(params_, sid_, os_);
   }
   compute_inst_->compute_loop(num_loops, nflops_per_loop, nintops_per_loop, bytes_per_loop);
 }
@@ -153,7 +144,7 @@ void
 app::compute_detailed(long flops, long nintops, long bytes)
 {
   if (!compute_inst_){
-    compute_inst_ = new lib_compute_inst(params_, id_, os_);
+    compute_inst_ = new lib_compute_inst(params_, sid_, os_);
   }
   compute_inst_->compute_detailed(flops, nintops, bytes);
 }
@@ -185,7 +176,7 @@ app::get_params()
 void
 app::init_mem_lib()
 {
-  compute_mem_move_ = new lib_compute_memmove(params_, id_, os_);
+  compute_mem_move_ = new lib_compute_memmove(params_, sid_, os_);
 }
 
 void
@@ -207,7 +198,7 @@ app::_get_api(const char* name)
     sprockit::sim_parameters* app_params = params_;
     if (new_params)
       app_params = params_->get_namespace(name);
-    api* new_api = api_factory::get_value(name, app_params, id_, os_);
+    api* new_api = api_factory::get_value(name, app_params, sid_, os_);
     apis_[name] = new_api;
     return new_api;
   }
@@ -342,8 +333,8 @@ user_app_cxx_full_main::delete_statics()
   main_fxns_ = nullptr;
 }
 
-void
-user_app_cxx_full_main::consume_params(sprockit::sim_parameters *params)
+user_app_cxx_full_main::user_app_cxx_full_main(sprockit::sim_parameters *params, software_id sid) :
+  app(params, sid)
 {
   if (!main_fxns_) main_fxns_ = new std::map<std::string, main_fxn>;
 
@@ -393,16 +384,15 @@ user_app_cxx_full_main::init_argv(argv_entry& entry)
 void
 user_app_cxx_full_main::skeleton_main()
 {
-  argv_entry& entry = argv_map_[id_.app_];
+  argv_entry& entry = argv_map_[sid_.app_];
   if (entry.argv == 0){
     init_argv(entry);
   }
   (*fxn_)(entry.argc, entry.argv);
 }
 
-
-void
-user_app_cxx_empty_main::consume_params(sprockit::sim_parameters *params)
+user_app_cxx_empty_main::user_app_cxx_empty_main(sprockit::sim_parameters *params, software_id sid) :
+  app(params, sid)
 {
   if (!empty_main_fxns_)
     empty_main_fxns_ = new std::map<std::string, empty_main_fxn>;

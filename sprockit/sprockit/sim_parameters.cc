@@ -305,6 +305,14 @@ sim_parameters::add_param_override(const std::string &key, int val)
 }
 
 void
+sim_parameters::get_optional_vector_param(const std::string &key, std::vector<std::string>& vals)
+{
+  if (has_param(key)){
+    get_vector_param(key, vals);
+  }
+}
+
+void
 sim_parameters::get_vector_param(const std::string& key,
                                  std::vector<std::string>& vals)
 {

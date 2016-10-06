@@ -675,6 +675,15 @@ operating_system::register_lib(library* lib)
 }
 
 void
+operating_system::swap_lib_name(const std::string &oldName, const std::string &newName)
+{
+  auto iter = libs_.find(oldName);
+  library* lib = iter->second;
+  libs_.erase(iter);
+  libs_[newName] = lib;
+}
+
+void
 operating_system::unregister_lib(library* lib)
 {
   os_debug("unregistering lib %s", lib->lib_name().c_str());
@@ -685,7 +694,6 @@ operating_system::unregister_lib(library* lib)
                  "OS %d will now drop events for %s",
                  addr(), lib->lib_name().c_str());
     libs_.erase(lib->lib_name());
-    deleted_libs_.insert(lib->lib_name());
     delete lib;
   } else {
     --refcount;
@@ -839,21 +847,31 @@ operating_system::handle_event(event* ev)
   auto it = libs_.find(libn);
 
   if (it == libs_.end()) {
-    if (deleted_libs_.find(libn) == deleted_libs_.end()){
+    //event arrived for library that doesn't exist yet
+    sprockit::sim_parameters* lib_params = params_->get_optional_namespace(libn);
+    software_id sid(0,0); //service
+    library* lib = library_factory::get_extra_value(libn, lib_params, sid, this);
+    if (lib){
+      lib->incoming_event(ev);
+    } else {
       cerrn << "Valid libraries on " << this << ":\n";
       for  (auto& pair : libs_){
         cerrn << pair.first << std::endl;
       }
-      spkt_throw_printf(sprockit::os_error,
-                     "operating_system::handle_event: can't find library %s on os %d for event %s",
+      spkt_abort_printf("operating_system::handle_event: can't find library %s on os %d for event %s",
                      libmsg->lib_name().c_str(), int(addr()),
                      sprockit::to_string(ev).c_str());
+    }
+    /**
+    if (deleted_libs_.find(libn) == deleted_libs_.end()){
+
     } else {
       debug_printf(sprockit::dbg::dropped_events | sprockit::dbg::os,
                    "OS %d for library %s dropping event %s",
                    addr(), libn.c_str(), sprockit::to_string(ev).c_str());
       //drop the event
     }
+    */
   }
   else {
     os_debug("delivering message to lib %s: %s",

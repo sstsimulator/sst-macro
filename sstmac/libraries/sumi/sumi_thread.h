@@ -14,7 +14,7 @@ class sumi_thread :
   virtual void run() = 0;
 
  public:
-  sumi_thread(sw::software_id sid);
+  sumi_thread(sprockit::sim_parameters* params, sw::software_id sid);
 
   virtual ~sumi_thread(){}
 

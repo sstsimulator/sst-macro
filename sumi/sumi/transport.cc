@@ -319,6 +319,11 @@ transport::handle(const message::ptr& msg)
 
   switch (msg->class_type())
   {
+  case message::bcast:
+    //root initiated global broadcast of some metadata
+    system_bcast(msg);
+    operation_done(msg);
+    break;
   case message::terminate:
   case message::collective_done:
   case message::pt2pt: {
@@ -373,6 +378,43 @@ transport::handle(const message::ptr& msg)
         msg->class_type());
   }
   }
+}
+
+void
+transport::system_bcast(const message::ptr& msg)
+{
+  auto bmsg = ptr_safe_cast(system_bcast_message, msg);
+  int root = bmsg->root();
+  int my_effective_rank = (rank_ - root + nproc_) % nproc_;
+
+  /**
+   0->1
+   0->2
+   1->3
+   0->4
+   1->5
+   2->6
+   3->7
+   ... and so on
+  */
+
+  int partner_gap = 1;
+  int rank_check = rank_;
+  while (rank_check > 0){
+    partner_gap *= 2;
+    rank_check /= 2;
+  }
+
+  int effective_target = my_effective_rank + partner_gap;
+  while (effective_target < nproc_){
+    int target = (effective_target + root) % nproc_;
+    message::ptr next_msg = new system_bcast_message(bmsg->action(), bmsg->root());
+    send_header(target, next_msg);
+    printf("Rank %d:%d sending system bcast to %d:%d\n",
+           rank_, my_effective_rank, target, effective_target);
+    partner_gap *= 2;
+  }
+
 }
 
 void

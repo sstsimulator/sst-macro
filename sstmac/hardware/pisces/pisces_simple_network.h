@@ -188,7 +188,7 @@ class pisces_simple_network :
   recvInitData() override;
 
  private:
-  event_loc_id init_loc(sprockit::sim_parameters* params);
+  device_id init_loc(sprockit::sim_parameters* params);
 
   bool send_pisces_network(Request* req, int vn);
 

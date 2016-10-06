@@ -105,9 +105,6 @@ class thread
     return state_;
   }
 
-  virtual void
-  init_perf_model_params(sprockit::sim_parameters* params);
-
   app_id aid() const {
     return sid_.app_;
   }
@@ -116,9 +113,9 @@ class thread
     return sid_.task_;
   }
 
-  void
-  set_sid(software_id sid){
-    sid_ = sid;
+  software_id
+  sid() const {
+    return sid_;
   }
 
   void
@@ -309,7 +306,7 @@ class thread
   now();
 
  protected:
-  thread();
+  thread(sprockit::sim_parameters* params, software_id sid);
 
   friend api* static_get_api(const char *name);
 
@@ -344,6 +341,8 @@ class thread
 
   process_context p_txt_;
 
+  software_id sid_;
+
  private:
   bool isInit;
 
@@ -361,8 +360,6 @@ class thread
   void* stack_;
   /// The stacksize.
   size_t stacksize_;
-
-  software_id sid_;
   
   long thread_id_;
 

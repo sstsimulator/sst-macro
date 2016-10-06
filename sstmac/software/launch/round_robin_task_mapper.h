@@ -39,7 +39,6 @@ class round_robin_task_mapper : public task_mapper
 
   virtual void
   map_ranks(
-    app_id aid,
     const ordered_node_set& nodes,
     int ppn,
     std::vector<node_id> &result,

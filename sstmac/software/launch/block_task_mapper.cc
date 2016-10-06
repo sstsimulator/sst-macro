@@ -32,7 +32,6 @@ block_task_mapper::~block_task_mapper() throw()
 
 void
 block_task_mapper::map_ranks(
-  app_id aid,
   const ordered_node_set& nodes,
   int ppn,
   std::vector<node_id> &result,

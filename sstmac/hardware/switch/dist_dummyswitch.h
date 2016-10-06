@@ -34,7 +34,7 @@ class dist_dummy_switch :
  public:
   dist_dummy_switch(sprockit::sim_parameters* params, uint64_t sid, event_manager* mgr)
     : network_switch(params, sid, mgr),
-      event_handler(event_loc_id(switch_id(sid)))
+      event_handler(device_id(sid, device_id::router))
   {
   }
 

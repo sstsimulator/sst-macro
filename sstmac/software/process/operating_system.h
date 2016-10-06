@@ -148,6 +148,9 @@ class operating_system :
   execute_kernel(ami::COMM_FUNC func,
                  message* data);
 
+  void
+  swap_lib_name(const std::string& oldName, const std::string& newName);
+
   /**
    * @brief execute Execute a communication function.
    * This function takes place in "kernel" land
@@ -305,7 +308,6 @@ class operating_system :
   spkt_unordered_map<std::string, library*> libs_;
   spkt_unordered_map<library*, int> lib_refcounts_;
   spkt_unordered_map<void*, std::list<library*> > libs_by_owner_;
-  spkt_unordered_set<std::string> deleted_libs_;
 
   node_id my_addr_;
 

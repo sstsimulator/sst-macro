@@ -1,4 +1,3 @@
-#include <sstmac/libraries/sumi/sumi_api.h>
 #include <sstmac/libraries/sumi/sumi_transport.h>
 #include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/process/app.h>
@@ -15,10 +14,10 @@ static sumi_transport*
 current_transport()
 {
   thread* t = thread::current();
-  return t->get_api<sumi_transport> ();
+  return t->get_api<sumi_transport>();
 }
 
-transport*
+sumi_transport*
 sumi_api()
 {
   return current_transport();

@@ -353,6 +353,21 @@ class Factory
     }
   }
 
+  static T*
+  get_extra_value(const std::string& param_value,
+                  sim_parameters* params,
+                  const Args&... args){
+    if (!builder_map_)
+      return nullptr;
+
+    auto it = builder_map_->find(param_value);
+    if (it == builder_map_->end()){
+      return nullptr;
+    } else {
+      return _get_value(param_value, params, args...);
+    }
+  }
+
   /**
    * @brief get_extra param Return a constructed child class corresponding
    *          to a given string name. The string name is not given directly,

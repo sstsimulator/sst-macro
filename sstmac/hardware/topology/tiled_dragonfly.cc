@@ -89,7 +89,7 @@ tiled_dragonfly::connect_objects(sprockit::sim_parameters* params,
 void
 tiled_dragonfly::configure_geometric_paths(std::vector<int> &redundancies)
 {
-  int npaths = x_ + y_ + group_con_ - 2 + endpoints_per_switch_;
+  int npaths = x_ + y_ + group_con_ - 2 + netlinks_per_switch_;
   redundancies.resize(npaths);
   //do x paths, then y paths, then g paths
   int path = 0;
@@ -233,12 +233,12 @@ tiled_dragonfly::xy_connected_to_group(int myX, int myY, int myG, int dstg) cons
 }
 
 switch_id
-tiled_dragonfly::endpoint_to_injection_switch(
+tiled_dragonfly::netlink_to_injection_switch(
     node_id nodeaddr, int ports[], int &num_ports) const
 {
   num_ports = injection_redundancy_;
-  long net_id = nodeaddr / endpoints_per_switch_;
-  int local_endpoint_id = nodeaddr % endpoints_per_switch_;
+  long net_id = nodeaddr / netlinks_per_switch_;
+  int local_endpoint_id = nodeaddr % netlinks_per_switch_;
   int first_index = local_endpoint_id * injection_redundancy_;
   int i=first_index;
   for (int pi=0; pi < injection_redundancy_; ++i,++pi)
@@ -247,10 +247,10 @@ tiled_dragonfly::endpoint_to_injection_switch(
 }
 
 switch_id
-tiled_dragonfly::endpoint_to_ejection_switch(
+tiled_dragonfly::netlink_to_ejection_switch(
     node_id nodeaddr, int ports[], int &num_ports) const
 {
-  return endpoint_to_injection_switch(nodeaddr,ports,num_ports);
+  return netlink_to_injection_switch(nodeaddr,ports,num_ports);
 }
 
 void
@@ -258,7 +258,7 @@ tiled_dragonfly::eject_paths_on_switch(
    node_id dest_addr, switch_id sw_addr, structured_routable::path_set &paths) const
 {
   paths.resize(injection_redundancy_);
-  int node_offset = dest_addr % endpoints_per_switch_;
+  int node_offset = dest_addr % netlinks_per_switch_;
   int index = node_offset * injection_redundancy_;
   for (int i=0; i < injection_redundancy_; ++i, ++index){
     paths[i].outport = injection_ports_[index];

@@ -1133,9 +1133,9 @@ virtual int num_endpoints() const = 0;
 
 virtual int max_num_ports() const = 0;
 
-virtual switch_id endpoint_to_injection_switch(node_id nodeaddr, int& switch_port) const = 0;
+virtual switch_id netlink_to_injection_switch(node_id nodeaddr, int& switch_port) const = 0;
 
-virtual switch_id endpoint_to_ejection_switch(node_id nodeaddr, int& switch_port) const = 0;
+virtual switch_id netlink_to_ejection_switch(node_id nodeaddr, int& switch_port) const = 0;
 
 virtual void configure_vc_routing(std::map<routing::algorithm_t, int>& m) const = 0;
 

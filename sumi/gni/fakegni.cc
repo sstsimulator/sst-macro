@@ -36,12 +36,12 @@ GNI_CdmDestroy(gni_cdm_handle_t cdm_hndl)
 
 extern "C" gni_return_t
 GNI_CdmGetNicAddress(
-  uint32_t event_loc_id,
+  uint32_t device_id,
   uint32_t *address,
   uint32_t *cpu_id
 )
 {
-  current_gni()->gni_cdm_get_nic_address(event_loc_id,address,cpu_id);
+  current_gni()->gni_cdm_get_nic_address(device_id,address,cpu_id);
   return GNI_RC_SUCCESS;
 }
 
@@ -49,12 +49,12 @@ GNI_CdmGetNicAddress(
 extern "C" gni_return_t
 GNI_CdmAttach(
   gni_cdm_handle_t cdm_hndl,
-  uint32_t event_loc_id,
+  uint32_t device_id,
   uint32_t *local_addr,
   gni_nic_handle_t *nic_hndl
 )
 {
-  current_gni()->gni_cdm_attach(cdm_hndl,event_loc_id,local_addr,nic_hndl);
+  current_gni()->gni_cdm_attach(cdm_hndl,device_id,local_addr,nic_hndl);
   return GNI_RC_SUCCESS;
 }
 

@@ -39,7 +39,6 @@ random_task_mapper::~random_task_mapper() throw ()
 
 void
 random_task_mapper::map_ranks(
-  app_id aid,
   const ordered_node_set& nodes,
   int ppn,
   std::vector<node_id> &result,
