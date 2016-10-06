@@ -611,14 +611,17 @@ sim_parameters::get_bool_param(const std::string &key)
 void
 sim_parameters::get_vector_param(const std::string& key, std::vector<double>& vals)
 {
-  bool errorflag = false;
+  std::deque<std::string> tok;
+  std::string space = " ";
   std::string param_value_str = get_param(key);
-  std::stringstream sstr(param_value_str);
-  vals.reserve(10); //optimistically assume not that big
-  while (sstr && sstr.tellg() != -1){
-    double val;
-    sstr >> val;
-    vals.push_back(val);
+  pst::BasicStringTokenizer::tokenize(param_value_str, tok, space);
+  for (auto& item : tok){
+    if (item.size() > 0) {
+      std::stringstream sstr(item);
+      double val;
+      sstr >> val;
+      vals.push_back(val);
+    }
   }
 }
 

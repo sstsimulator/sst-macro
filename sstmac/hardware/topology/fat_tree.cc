@@ -16,6 +16,7 @@
 #include <sstmac/hardware/router/router.h>
 #include <sstmac/backends/common/sim_partition.h>
 #include <sprockit/sim_parameters.h>
+#include <sprockit/stl_string.h>
 
 #include <math.h>
 
