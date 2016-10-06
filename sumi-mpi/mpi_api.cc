@@ -166,6 +166,8 @@ mpi_api::do_init(int* argc, char*** argv)
   comm_factory_ = new mpi_comm_factory(sid().app_, this);
   comm_factory_->init(rank_, nproc_);
 
+  //printf("Initialized %p with %p\n", this, comm_factory_);
+
   worldcomm_ = comm_factory_->world();
   selfcomm_ = comm_factory_->self();
   comm_map_[MPI_COMM_WORLD] = worldcomm_;
@@ -216,7 +218,7 @@ mpi_api::do_finalize()
   }
 
   delete comm_factory_;
-  comm_factory_ = 0;
+  comm_factory_ = nullptr;
 
   transport::finalize();
 

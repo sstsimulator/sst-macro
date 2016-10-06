@@ -77,7 +77,7 @@ device_id
 pisces_simple_network::init_loc(sprockit::sim_parameters* params)
 {
   nid_ = params->get_int_param("id");
-  return device_id(node_id(nid_));
+  return device_id(nid_, device_id::node);
 }
 
 bool
