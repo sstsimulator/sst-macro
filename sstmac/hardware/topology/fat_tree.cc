@@ -376,8 +376,6 @@ simple_fat_tree::configure_individual_port_params(switch_id src,
     kRatio = level_sizes_[l] / level_sizes_[l+1];
     up_link_bw_multiplier *= kRatio;
   }
-  //the down links have less bandwidth than the uplinks
-  int down_link_bw_multiplier = up_link_bw_multiplier / kRatio;
 
   if (myLevel < toplevel_){
     //I have an up connection that needs to be tapered
@@ -395,7 +393,11 @@ simple_fat_tree::configure_individual_port_params(switch_id src,
                       link_params, switch_params);
   }
 
-  if (myLevel > 0){ // I have down connections that need to be tapered
+  if (myLevel > 0){ 
+    //the down links have less bandwidth than the uplinks
+    int down_link_bw_multiplier = up_link_bw_multiplier / kRatio;
+
+    // I have down connections that need to be tapered
     //my down links match the tapering of the uplinks from the row below
     double tapering = tapering_[myLevel - 1];
     int taperedBufSize = buffer_size*down_link_bw_multiplier*tapering;
