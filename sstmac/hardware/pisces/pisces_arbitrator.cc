@@ -63,6 +63,10 @@ pisces_bandwidth_arbitrator::
 pisces_bandwidth_arbitrator(sprockit::sim_parameters* params)
 {
   out_bw_ = params->get_bandwidth_param("bandwidth");
+  if (out_bw_ < 1){
+    spkt_abort_printf("Got erroneously low bandwidth %f in arbitrator from param %s", 
+      out_bw_, params->get_param("bandwidth").c_str());
+  }
   inv_out_bw_ = 1.0 / out_bw_;
 }
 

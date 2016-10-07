@@ -424,11 +424,21 @@ simple_fat_tree::configure_nonuniform_switch_params(switch_id src,
     int kRatio = level_sizes_[l] / level_sizes_[l+1];
     multiplier *= kRatio;
   }
+  double tapering = 1.0;
+  if (myLevel == toplevel_){
+    double lastRowBwUp = tapering_[myLevel-1];
+    double lastRowBwDown = myLevel >=2 ? tapering_[myLevel-2] : 1.0;
+    double upFraction = lastRowBwUp / (lastRowBwUp + lastRowBwDown);
+    double tapering = lastRowBwUp * upFraction;
+  } else {
+    tapering = tapering_[myLevel];
+  }
+
   sprockit::sim_parameters* xbar_params = switch_params->get_namespace("xbar");
   double bw = xbar_params->get_bandwidth_param("bandwidth");
   //we are overwriting params - we have to make sure that the original baseline bandwidth is preserved
   double baseline_bw = xbar_params->get_optional_bandwidth_param("baseline_bandwidth", bw);
-  double xbar_bw = baseline_bw * multiplier * tapering_[myLevel];
+  double xbar_bw = baseline_bw * multiplier * tapering;
   (*xbar_params)["bandwidth"].setBandwidth(xbar_bw/1e9, "GB/s");
   (*xbar_params)["baseline_bandwidth"].setBandwidth(baseline_bw/1e9, "GB/s");
   configure_individual_port_params(src, switch_params);
