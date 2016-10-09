@@ -33,9 +33,10 @@ class mpi_queue_recv_request  {
 
  public:
   /// Hello.
-  mpi_queue_recv_request(mpi_request* key, mpi_queue* queue, int count,
-               MPI_Datatype type, int source, int tag,
-               MPI_Comm comm, void* buffer);
+  mpi_queue_recv_request(mpi_request* key, mpi_queue* queue,
+                         int count,
+                         MPI_Datatype type, int source, int tag,
+                         MPI_Comm comm, void* buffer);
 
   /// Goodbye.
   ~mpi_queue_recv_request();
@@ -66,8 +67,6 @@ class mpi_queue_recv_request  {
   int seqnum_;
 
   void* buffer_;
-
-  static const int seqnum_unassigned = -1;
 
   /// The parameters I will not be matching on, but are good error checks.
   int count_;

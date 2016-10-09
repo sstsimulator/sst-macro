@@ -45,9 +45,7 @@ void
 mpi_protocol::handle_nic_ack(mpi_queue* queue,
                              const mpi_message::ptr& msg)
 {
-  if (msg->count() >= 0) {
-    queue->complete_nic_ack(msg);
-  }
+  queue->complete_nic_ack(msg);
 }
 
 void
