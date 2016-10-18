@@ -87,9 +87,16 @@ class sumi_transport :
 
   void
   client_server_send(
-    const std::string& server_name,
     int dest_rank,
     node_id dest_node,
+    int dest_app,
+    const sumi::message::ptr& msg);
+
+  void
+  client_server_rdma_put(
+    int dest_rank,
+    node_id dest_node,
+    int dest_app,
     const sumi::message::ptr& msg);
 
   /**
@@ -117,9 +124,17 @@ class sumi_transport :
   void
   ping_timeout(sumi::pinger* pnger);
 
+  /**
+   * @brief send Intra-app. Send within the same process launch (i.e. intra-comm MPI_COMM_WORLD). This contrasts
+   *  with client_server_send which exchanges messages between different apps
+   * @param byte_length
+   * @param msg
+   * @param ty
+   * @param dst
+   * @param needs_ack
+   */
   void
-  send(
-    long byte_length,
+  send(long byte_length,
     const sumi::message_ptr& msg,
     int ty,
     int dst,
@@ -127,6 +142,13 @@ class sumi_transport :
 
   void incoming_message(transport_message* msg){
     queue_->put_message(msg);
+  }
+
+  void shutdown_server(int dest_rank, node_id dest_node, int dest_app);
+
+  std::string
+  server_libname() const {
+    return server_libname_;
   }
 
  private:
@@ -170,11 +192,34 @@ class sumi_transport :
 
  protected:
   sumi_transport(sprockit::sim_parameters* params,
-                 const char* name,
+                 const char* prefix,
+                 sstmac::sw::software_id sid,
+                 sstmac::sw::operating_system* os);
+
+  /**
+   * @brief sumi_transport Ctor with strict library name. We do not create a server here.
+   * Since this has been explicitly named, messages will be directly to a named library.
+   * @param params
+   * @param libname
+   * @param sid
+   * @param os
+   */
+  sumi_transport(sprockit::sim_parameters* params,
+                 const std::string& libname,
                  sstmac::sw::software_id sid,
                  sstmac::sw::operating_system* os);
 
  private:
+  void send(long byte_length,
+    int dest_rank,
+    node_id dest_node,
+    int dest_app,
+    const sumi::message::ptr& msg,
+    bool needs_ack,
+    int ty);
+
+  void ctor_common(sstmac::sw::software_id sid);
+
   std::string server_libname_;
 
   sstmac::sw::app_launch* rank_mapper_;

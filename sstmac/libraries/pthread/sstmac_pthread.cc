@@ -54,11 +54,10 @@ SSTMAC_pthread_create(sstmac_pthread_t* pthread,
   software_id newid(parent_app->aid(), parent_app->tid(), unknown_thrid);
   pthread_runner* tr = new pthread_runner(newid,
                            parent_app,
-                           start_routine, arg);
+                           start_routine, arg, os);
 
   parent_app->add_subthread(tr);
   *pthread = tr->thread_id();
-
 
   if (attr){
     tr->set_cpumask(attr->cpumask);

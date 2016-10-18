@@ -46,8 +46,9 @@ app::allocate_tls_key(destructor_fxn fxn)
   return next;
 }
 
-app::app(sprockit::sim_parameters *params, software_id sid) :
-  thread(params, sid),
+app::app(sprockit::sim_parameters *params, software_id sid,
+         operating_system* os) :
+  thread(params, sid, os),
   compute_inst_(nullptr),
   compute_time_(nullptr),
   compute_mem_move_(nullptr),
@@ -333,8 +334,9 @@ user_app_cxx_full_main::delete_statics()
   main_fxns_ = nullptr;
 }
 
-user_app_cxx_full_main::user_app_cxx_full_main(sprockit::sim_parameters *params, software_id sid) :
-  app(params, sid)
+user_app_cxx_full_main::user_app_cxx_full_main(sprockit::sim_parameters *params, software_id sid,
+                                               operating_system* os) :
+  app(params, sid, os)
 {
   if (!main_fxns_) main_fxns_ = new std::map<std::string, main_fxn>;
 
@@ -391,8 +393,9 @@ user_app_cxx_full_main::skeleton_main()
   (*fxn_)(entry.argc, entry.argv);
 }
 
-user_app_cxx_empty_main::user_app_cxx_empty_main(sprockit::sim_parameters *params, software_id sid) :
-  app(params, sid)
+user_app_cxx_empty_main::user_app_cxx_empty_main(sprockit::sim_parameters *params, software_id sid,
+                                                 operating_system* os) :
+  app(params, sid, os)
 {
   if (!empty_main_fxns_)
     empty_main_fxns_ = new std::map<std::string, empty_main_fxn>;

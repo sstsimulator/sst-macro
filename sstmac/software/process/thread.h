@@ -192,12 +192,15 @@ class thread
     backtrace_ = bt;
   }
 
+  device_id
+  event_location() const;
+
   void collect_backtrace(int nfxn);
 
   void
   init_thread(int phyiscal_thread_id,
     threading_interface* tocopy, void *stack, int stacksize,
-    operating_system* os, threading_interface *yield_to);
+    threading_interface *yield_to);
 
   /// Derived types need to override this method.
   virtual void
@@ -306,7 +309,7 @@ class thread
   now();
 
  protected:
-  thread(sprockit::sim_parameters* params, software_id sid);
+  thread(sprockit::sim_parameters* params, software_id sid, operating_system* os);
 
   friend api* static_get_api(const char *name);
 

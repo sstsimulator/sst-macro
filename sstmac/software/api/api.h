@@ -62,24 +62,32 @@ class api :
 {
  public:
   api(sprockit::sim_parameters* params,
-      const char* name,
+      const char* prefix,
       software_id sid,
       operating_system* os,
       const key::category& ty) :
-    api(params, name, sid, os)
+    api(params, prefix, sid, os)
   {
     key_cat_ = ty;
   }
 
-  api(sprockit::sim_parameters* params,
-      const char* name,
+  api(sprockit::sim_parameters *params,
+      const std::string& libname,
       software_id sid,
-      operating_system* os) :
-    library(name, sid, os),
+      operating_system *os) :
+    library(libname, sid, os),
     startcount_(0),
     endcount_(0)
   {
     init(params);
+  }
+
+  api(sprockit::sim_parameters* params,
+      const char* prefix,
+      software_id sid,
+      operating_system* os) :
+    api(params, standard_lib_name(prefix, sid), sid, os)
+  {
   }
 
   virtual

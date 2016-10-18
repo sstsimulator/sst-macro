@@ -169,8 +169,10 @@ node::build_launchers(sprockit::sim_parameters* params)
   params->get_optional_vector_param("services", services_to_launch);
   for (std::string& str : services_to_launch){
     sprockit::sim_parameters* srv_params = params->get_namespace(str);
-    srv_params->add_param("service_name", str);
-    srv_params->add_param_override("name", str);
+    //setup the name for app factory
+    srv_params->add_param_override("name", "distributed_service");
+    //setup the name for distributed service
+    srv_params->add_param_override("libname", str);
     app_launch* appman = app_launch::static_app_launch(aid, str, srv_params);
     node_debug("adding distributed service %s", str.c_str());
     app_launchers_.push_back(appman);

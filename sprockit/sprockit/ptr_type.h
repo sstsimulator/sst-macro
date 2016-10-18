@@ -20,6 +20,7 @@ class simple_ptr_type;
 #include <sprockit/errors.h>
 #include <sprockit/refcount_ptr.h>
 #include <sprockit/spkt_config.h>
+#include <sprockit/printable.h>
 #include <typeinfo>
 
 namespace sprockit {
@@ -65,7 +66,7 @@ __safe_ptr_cast__(const char* objname,
   if (!out) {
     spkt_abort_printf("%s: failed to cast to %s at %s:%d - %s",
                      error_msg, objname, file, line,
-                     (in ? "wrong type" : "null object"));
+                     sprockit::to_string(in.get()).c_str());
   }
   return out;
 }

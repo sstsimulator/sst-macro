@@ -148,9 +148,6 @@ class operating_system :
   execute_kernel(ami::COMM_FUNC func,
                  message* data);
 
-  void
-  swap_lib_name(const std::string& oldName, const std::string& newName);
-
   /**
    * @brief execute Execute a communication function.
    * This function takes place in "kernel" land

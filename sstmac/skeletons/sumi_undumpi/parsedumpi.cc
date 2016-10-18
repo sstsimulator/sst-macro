@@ -34,8 +34,9 @@ SpktRegister("parsedumpi", sstmac::sw::app, parsedumpi,
 using namespace sstmac::hw;
 
 
-parsedumpi::parsedumpi(sprockit::sim_parameters* params, software_id sid) :
-  app(params, sid),
+parsedumpi::parsedumpi(sprockit::sim_parameters* params, software_id sid,
+                       sstmac::sw::operating_system* os) :
+  app(params, sid, os),
   mpi_(nullptr)
 {
   fileroot_ = params->reread_param("launch_dumpi_metaname");

@@ -2,26 +2,44 @@
 #include <sstmac/libraries/sumi/sumi_transport.h>
 #include <sumi/transport.h>
 
-namespace sstmac
+ImplementFactory(sstmac::distributed_service)
+MakeDebugSlot(distributed_service)
+
+#define debug(...) debug_printf(sprockit::dbg::distributed_service, __VA_ARGS__)
+
+namespace sstmac {
+
+SpktRegister("distributed_service", sw::app, distributed_service_app);
+
+distributed_service_app::distributed_service_app(sprockit::sim_parameters* params,
+                    sw::software_id sid,
+                    sw::operating_system* os) :
+  app(params, sid, os)
 {
+  libname_ = params->get_param("libname");
+}
 
 void
-distributed_service::skeleton_main()
+distributed_service_app::skeleton_main()
 {
-  sumi_transport* tport = get_api<sumi_transport>();
-  tport->init();
-  tport->barrier(0);
-  tport->collective_block(sumi::collective::barrier, 0);
-  run(tport);
-  tport->barrier(1);
-  tport->collective_block(sumi::collective::barrier, 1);
-  tport->finalize();
+  //need to pass libname twice - once for the factory, once for OS registration
+  distributed_service* srv = distributed_service_factory::get_value(libname_, params_, libname_, sid(), os_);
+  srv->init();
+  debug("initialized distributed service %s on rank %d", libname_.c_str(), srv->rank());
+  srv->barrier(0);
+  srv->collective_block(sumi::collective::barrier, 0);
+  debug("running distributed service %s on rank %d", libname_.c_str(), srv->rank());
+  srv->run();
+  srv->barrier(1);
+  srv->collective_block(sumi::collective::barrier, 1);
+  debug("finalizing distributed service %s on rank %d", libname_.c_str(), srv->rank());
+  srv->finalize();
 }
 
 sumi::message::ptr
-distributed_service::busy_loop(sumi::transport* tport)
+distributed_service::busy_loop()
 {
-  sumi::message::ptr msg = tport->blocking_poll();
+  sumi::message::ptr msg = blocking_poll();
   switch (msg->class_type()){
     case sumi::message::bcast:
     {

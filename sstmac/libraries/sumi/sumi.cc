@@ -1,6 +1,7 @@
 #include <sstmac/libraries/sumi/sumi_transport.h>
 #include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/process/app.h>
+#include <sstmac/software/process/operating_system.h>
 #include <sprockit/util.h>
 
 using namespace sstmac;
@@ -221,7 +222,7 @@ comm_poll()
 double
 wall_time()
 {
-  return current_transport()->wall_time();
+  return operating_system::current_os()->now().sec();
 }
 
 int

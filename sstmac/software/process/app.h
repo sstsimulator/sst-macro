@@ -62,7 +62,7 @@ class app : public thread
   get_params();
 
   app*
-  parent_app() const {
+  parent_app() const override {
     return const_cast<app*>(this);
   }
 
@@ -105,12 +105,12 @@ class app : public thread
   virtual ~app();
 
   //called when killing the app, in case you want to check or clean anything up before destructor
-  virtual void kill();
+  virtual void kill() override;
 
   virtual void
   skeleton_main() = 0;
 
-  virtual void run();
+  void run() override;
 
   sprockit::sim_parameters*
   params() const {
@@ -179,17 +179,18 @@ class app : public thread
   bool erase_mutex(int id);
 
   virtual void
-  clear_subthread_from_parent_app();
+  clear_subthread_from_parent_app() override;
 
  protected:
   friend class thread;
 
-  app(sprockit::sim_parameters *params, software_id sid);
+  app(sprockit::sim_parameters *params, software_id sid,
+      operating_system* os);
 
   api*
-  _get_api(const char* name);
+  _get_api(const char* name) override;
 
-  virtual void init_mem_lib();
+  void init_mem_lib();
 
   sprockit::sim_parameters* params_;
 
@@ -217,12 +218,13 @@ class app : public thread
 class user_app_cxx_full_main : public app
 {
  public:
-  user_app_cxx_full_main(sprockit::sim_parameters* params, software_id sid);
+  user_app_cxx_full_main(sprockit::sim_parameters* params, software_id sid,
+                         operating_system* os);
 
   static void
   register_main_fxn(const char* name, app::main_fxn fxn);
 
-  void skeleton_main();
+  void skeleton_main() override;
 
   static void
   delete_statics();
@@ -245,12 +247,13 @@ class user_app_cxx_full_main : public app
 class user_app_cxx_empty_main : public app
 {
  public:
-  user_app_cxx_empty_main(sprockit::sim_parameters* params, software_id sid);
+  user_app_cxx_empty_main(sprockit::sim_parameters* params, software_id sid,
+                          operating_system* os);
 
   static void
   register_main_fxn(const char* name, app::empty_main_fxn fxn);
 
-  void skeleton_main();
+  void skeleton_main() override;
 
  private:
   static std::map<std::string, app::empty_main_fxn>* empty_main_fxns_;
@@ -261,7 +264,7 @@ class user_app_cxx_empty_main : public app
 /** utility function for computing stuff */
 void compute_time(double tsec);
 
-DeclareFactory(app, software_id)
+DeclareFactory(app, software_id, operating_system*)
 
 }
 } // end of namespace sstmac.

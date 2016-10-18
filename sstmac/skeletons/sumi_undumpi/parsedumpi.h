@@ -35,7 +35,8 @@ class parsedumpi : public sstmac::sw::app
   friend class parsedumpi_callbacks;
 
  public:
-  parsedumpi(sprockit::sim_parameters* params, sstmac::sw::software_id sid);
+  parsedumpi(sprockit::sim_parameters* params, sstmac::sw::software_id sid,
+             sstmac::sw::operating_system* os);
 
   /// Wait!  That's not good news at all!
   virtual

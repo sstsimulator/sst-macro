@@ -142,18 +142,18 @@ transport::init()
 {
   //THIS SHOULD ONLY BE CALLED AFTER RANK and NPROC are known
   inited_ = true;
-  global_domain_ = new global_communicator(this);
   const char* nspare_str = getenv("SUMI_NUM_SPARES");
   if (nspare_str){
     int nspares = atoi(nspare_str);
     init_spares(nspares);
   }
+
+  global_domain_ = new global_communicator(this);
 }
 
 void
 transport::init_spares(int nspares)
 {
-
 }
 
 void
@@ -413,6 +413,7 @@ transport::system_bcast(const message::ptr& msg)
     printf("Rank %d:%d sending system bcast to %d:%d\n",
            rank_, my_effective_rank, target, effective_target);
     partner_gap *= 2;
+    effective_target = my_effective_rank + partner_gap;
   }
 
 }
