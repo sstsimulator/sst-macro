@@ -15,7 +15,10 @@ sstmac_cppflags = [
 "-I${includedir}/sstmac",
 "-I${includedir}",
 "-I${includedir}/sstmac/software/libraries",
-"-I${includedir}/sstmac/tools"
+"-I${includedir}/sstmac/tools",
+"-I${includedir}/sumi",
+"-DSSTMAC=1",
+"-I${includedir}/sstmac/replacements",
 ]
 
 sst_core="@SST_CPPFLAGS@"

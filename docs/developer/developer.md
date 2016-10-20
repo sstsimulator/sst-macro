@@ -817,7 +817,7 @@ In general, objects have two "directions" for the action - send or receive.
 A NIC could "handle" a packet by injecting it into the network or "handle" a message by reporting up the network stack the message has arrived.
 In most cases, the handled message must therefore carry with it some notion of directionality or final destination.
 An event handler will therefore either process the message and delete the message, or, if that handler is not the final destination, forward it along.
-Some event handlers will only ever receive, such as a handler representing a blocking $MPI_Recv$ call.
+Some event handlers will only ever receive, such as a handler representing a blocking `MPI_Recv` call.
 Some event handlers will always receive and then send, such as network switches who are always intermediate steps between the start and endpoints of a network message.
 
 In most cases, events are created by calling the function
@@ -841,7 +841,42 @@ handler_event_queue_entry::execute()
 }
 ````
 
-\subsection{Arbitrary Events} In some cases, it can be inconvenient (and inefficient) to require every event to be funneled through an `event_handler` type. A generic macro for creating event queue entries from any class member function is provided in the file `event_callback.h`. For example, the MPI server creates an event
+Objects can inherit from `event_handler` to create new event handlers. Alternatively (and probably the most common usage in the SST/macro core) is on-the-fly creation of event handlers through C++ templates. The interface does not actually require using C++ templates. The function `new_handler` defined in `event_callback.h` has the prototype:
+
+````
+template<class Cls, typename Fxn, class... Args>
+event_handler*
+new_handler(Cls* cls, Fxn fxn, const Args&... args);
+````
+
+Here `Fxn` is a member function pointer. When an `event* ev` is scheduled to the event handler, the member function pointer gets invoked:
+
+````
+(cls->*fxn)(ev, args...);
+````
+
+For example, given a class `actor` with the member function `act`
+
+````
+void
+actor::actor(event* ev, int ev_id){...}
+````
+we can create an event handler
+
+````
+actor* a = ....;
+event_handler* handler = new_handler(a, &actor::act, 42);
+...
+event* ev = ....;
+schedule(time, handler, ev);
+````
+When the time arrives for the event, the member function will be invoked
+
+````
+a->act(ev, 42);
+````
+
+\subsection{Arbitrary Events} In some cases, it can be inconvenient (and inefficient) to require every event to be funneled through an `event_handler` type. A generic macro for creating event queue entries from any class member function is provided in the file `event_callback.h` similar to the creation of C++ template event handlers above. For example, the MPI server creates an event
 
 ````
 mpi_queue_recv_request* req = next_request();

@@ -161,12 +161,11 @@ sumi_transport::handle(sstmac::transport_message* smsg)
   if (!smsg){
     //this is sloppy - but oh well
     //a null message is sent to me to signal that I have stuff waiting in my completion queue
-    bool empty;
     debug_printf(sprockit::dbg::sumi, "Rank %d got cq notification", rank_);
-    sumi::message::ptr next = completion_queue_.pop_front_and_return(empty);
+    sumi::message::ptr next;
+    bool empty = completion_queue_.pop_front_and_return(next);
     if (empty){
-      spkt_throw(sprockit::value_error,
-        "received null message, but completion queue is empty");
+      spkt_abort_printf("sumi transport received null message, but completion queue is empty");
     }
     return next;
   }
@@ -219,8 +218,8 @@ sumi_transport::handle(sstmac::transport_message* smsg)
     break; //do nothing
   }
 
-  bool empty;
-  sumi::message::ptr msg = completion_queue_.pop_front_and_return(empty);
+  sumi::message::ptr msg;
+  bool empty = completion_queue_.pop_front_and_return(msg);
   return msg;  // will return message::ptr() if empty
 }
 

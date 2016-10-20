@@ -161,6 +161,15 @@ class transport
   blocking_poll();
 
   /**
+   Check if a message has been received. Return immediately even if empty queue.
+   Message returned is removed from the internal queue.
+   Successive calls to the function do NOT return the same message.
+   @return    The next message to be received, null if no messages
+  */
+  message::ptr
+  poll(bool blocking);
+
+  /**
    Block until a message is received.
    Returns immediately if message already waiting.
    Message returned is removed from the internal queue.

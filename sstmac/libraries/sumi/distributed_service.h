@@ -17,7 +17,8 @@ class distributed_service :
                       const std::string& libname,
                       sw::software_id sid,
                       sw::operating_system* os) :
-    sumi_transport(params, libname, sid, os)
+    sumi_transport(params, libname, sid, os),
+    terminated_(false)
   {
   }
 
@@ -26,7 +27,13 @@ class distributed_service :
   virtual void run() = 0;
 
  protected:
-  sumi::message_ptr busy_loop();
+  sumi::message_ptr poll_for_message(bool blocking);
+
+  bool terminated() const {
+    return terminated_;
+  }
+
+  bool terminated_;
 
 };
 

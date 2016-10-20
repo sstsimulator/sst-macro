@@ -43,14 +43,13 @@ class service_test_message : public sumi::message
 void
 test_service::run()
 {
-  sumi::message::ptr msg;
-  //now go into polling loop
-  msg = busy_loop();
-  while (msg) {
-    service_test_message::ptr smsg = ptr_safe_cast(service_test_message, msg);
-    printf("Service node %d sleeping for %8.4es\n", rank(), smsg->workload.sec());
-    os_->sleep(smsg->workload);
-    msg = busy_loop();
+  while (!terminated()) {
+    sumi::message::ptr msg = poll_for_message(true);
+    if (msg){
+      service_test_message::ptr smsg = ptr_safe_cast(service_test_message, msg);
+      printf("Service node %d sleeping for %8.4es\n", rank(), smsg->workload.sec());
+      os_->sleep(smsg->workload);
+    }
   }
 }
 
@@ -84,7 +83,8 @@ int USER_MAIN(int argc, char** argv)
     service_test_message* msg = new service_test_message(task_length);
     tport->client_server_send(partner, srv->node_assignment(partner), srv->aid(), msg);
   }
-
+  //send a shutdown request to server 0 - make rank 0 in charge
+  if (tport->rank() == 0) tport->shutdown_server(0, srv->node_assignment(0), srv->aid());
   tport->finalize();
   return 0;
 }
