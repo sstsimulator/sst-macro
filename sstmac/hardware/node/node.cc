@@ -41,27 +41,18 @@ RegisterNamespaces("os", "memory", "proc");
 namespace sstmac {
 namespace hw {
 
-std::list<sw::app_launch*> node::launchers_;
+std::list<sw::app_launch*> node::app_launchers_;
 
 using namespace sstmac::sw;
 
 node::node(sprockit::sim_parameters* params,
   uint64_t id, event_manager* mgr)
   : connectable_component(params, id,
-  event_loc_id(node_id(params->get_int_param("id"))),
-  mgr),
+    device_id(params->get_int_param("id"), device_id::node),
+    mgr),
   params_(params)
 {
-  /**
-  printf("Made node %d with the following links\n", id);
-  SST::LinkMap* lmap = this->getSimulation()->getComponentInfo(id)->getLinkMap();
-  for (auto& pair : lmap->getLinkMap()){
-    SST::Link* l = pair.second;
-    std::cout << l->getId() << " : " << pair.first << std::endl;
-  }
-  */
-
-  my_addr_ = event_location().convert_to_node_id();
+  my_addr_ = event_location().id();
   next_outgoing_id_.set_src_node(my_addr_);
 
   sprockit::sim_parameters* nic_params = params->get_namespace("nic");
@@ -120,11 +111,12 @@ node::init(unsigned int phase)
 
 node::~node()
 {
-  if (os_) delete os_;
+  if (app_launcher_) delete app_launcher_;
   if (mem_model_) delete mem_model_;
   if (proc_) delete proc_;
-  //JJW 03/09/2015 - node does not own NIC
-  //if (nic_) delete nic_;
+  /** JJW Delete this last since destructor may unregister libs from OS */
+  if (os_) delete os_;
+  if (nic_) delete nic_;
 }
 
 void
@@ -155,18 +147,36 @@ node::execute(ami::SERVICE_FUNC func, event* data)
 void
 node::build_launchers(sprockit::sim_parameters* params)
 {
-  if (!launchers_.empty()) return;
+  if (!app_launchers_.empty()) return;
 
   bool keep_going = true;
   int aid = 1;
+  int last_used_aid = 0;
   while (keep_going || aid < 10){
     app_launch* appman = app_launch::static_app_launch(aid, params);
     if (appman){
-      launchers_.push_back(appman);
+      app_launchers_.push_back(appman);
       keep_going = true;
+      last_used_aid = aid;
     } else {
       keep_going = false;
     }
+    ++aid;
+  }
+
+  aid = last_used_aid+1;
+
+  std::vector<std::string> services_to_launch;
+  params->get_optional_vector_param("services", services_to_launch);
+  for (std::string& str : services_to_launch){
+    sprockit::sim_parameters* srv_params = params->get_namespace(str);
+    //setup the name for app factory
+    srv_params->add_param_override("name", "distributed_service");
+    //setup the name for distributed service
+    srv_params->add_param_override("libname", str);
+    app_launch* appman = app_launch::static_app_launch(aid, str, srv_params);
+    node_debug("adding distributed service %s", str.c_str());
+    app_launchers_.push_back(appman);
     ++aid;
   }
 }
@@ -186,7 +196,7 @@ node::job_launch(app_launch* appman)
 void
 node::schedule_launches()
 {
-  for (app_launch* appman : launchers_){
+  for (app_launch* appman : app_launchers_){
     schedule(appman->time(), new_callback(this, &node::job_launch, appman));
   }
 }

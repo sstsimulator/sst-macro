@@ -57,11 +57,6 @@ class thread
     DONE=6
   };
 
-  void
-  set_api(thread* thr) {
-    thr->apis_ = apis_;
-  }
-
   static thread*
   current();
 
@@ -105,9 +100,6 @@ class thread
     return state_;
   }
 
-  virtual void
-  init_perf_model_params(sprockit::sim_parameters* params);
-
   app_id aid() const {
     return sid_.app_;
   }
@@ -116,9 +108,9 @@ class thread
     return sid_.task_;
   }
 
-  void
-  set_sid(software_id sid){
-    sid_ = sid;
+  software_id
+  sid() const {
+    return sid_;
   }
 
   void
@@ -195,12 +187,15 @@ class thread
     backtrace_ = bt;
   }
 
+  device_id
+  event_location() const;
+
   void collect_backtrace(int nfxn);
 
   void
   init_thread(int phyiscal_thread_id,
     threading_interface* tocopy, void *stack, int stacksize,
-    operating_system* os, threading_interface *yield_to);
+    threading_interface *yield_to);
 
   /// Derived types need to override this method.
   virtual void
@@ -309,7 +304,7 @@ class thread
   now();
 
  protected:
-  thread();
+  thread(sprockit::sim_parameters* params, software_id sid, operating_system* os);
 
   friend api* static_get_api(const char *name);
 
@@ -330,8 +325,6 @@ class thread
   void cleanup();
 
  protected:
-  spkt_unordered_map<std::string, api*> apis_;
-
   /// Monitor state for deadlock detection.
   state state_;
 
@@ -343,6 +336,8 @@ class thread
   app* parent_app_; // who created this one. null if launch/os.
 
   process_context p_txt_;
+
+  software_id sid_;
 
  private:
   bool isInit;
@@ -361,8 +356,6 @@ class thread
   void* stack_;
   /// The stacksize.
   size_t stacksize_;
-
-  software_id sid_;
   
   long thread_id_;
 

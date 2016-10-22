@@ -95,7 +95,7 @@ class event_manager
     bool dump_main = true);
 
   virtual void
-  cancel_all_messages(event_loc_id canceled_loc) = 0;
+  cancel_all_messages(device_id canceled_loc) = 0;
 
   partition*
   topology_partition() const;
@@ -145,8 +145,8 @@ class event_manager
   virtual void
   ipc_schedule(
     timestamp t,
-    event_loc_id dst,
-    event_loc_id src,
+    device_id dst,
+    device_id src,
     uint32_t seqnum,
     event* ev);
 
@@ -234,7 +234,7 @@ class null_event_manager : public event_manager
   }
 
   void schedule(timestamp start_time, uint32_t seqnum, event_queue_entry *event_queue_entry){}
-  void cancel_all_messages(event_loc_id canceled_loc){}
+  void cancel_all_messages(device_id canceled_loc){}
   void clear(timestamp time){}
   void run(){}
   bool empty() const {

@@ -37,8 +37,8 @@ class clock_cycle_event_map :
 
   virtual void
   ipc_schedule(timestamp t,
-    event_loc_id dst,
-    event_loc_id src,
+    device_id dst,
+    device_id src,
     uint32_t seqnum,
     event* ev);
 

@@ -67,8 +67,8 @@ job_launcher::satisfy_launch_request(app_launch* appman, hw::node* nd)
 {
   apps_launched_[appman->aid()] = appman;
   for (int rank : appman->rank_assignment(nd->addr())){
-    sw::launch_event* lev = new launch_event(appman->app_template(), appman->aid(),
-                                    rank, appman->core_affinities());
+    sw::launch_event* lev = new launch_event(appman->app_name(), appman->aid(),
+                                    rank, appman->app_params(), appman->core_affinities());
     nd->handle(lev);
   }
 }

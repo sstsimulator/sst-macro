@@ -64,9 +64,9 @@ class structured_topology : public topology
 
   bool
   node_to_netlink(node_id nid, node_id& net_id, int& offset) const override {
-    net_id = nid / num_nodes_per_endpoint_;
-    offset = nid % num_nodes_per_endpoint_;
-    return num_nodes_per_endpoint_ > 1;
+    net_id = nid / num_nodes_per_netlink_;
+    offset = nid % num_nodes_per_netlink_;
+    return num_nodes_per_netlink_ > 1;
   }
 
   virtual void
@@ -81,8 +81,8 @@ class structured_topology : public topology
    * Given a switch address, return number of nodes connected to it
    */
   int
-  endpoints_per_switch() {
-    return endpoints_per_switch_;
+  netlinks_per_switch() {
+    return netlinks_per_switch_;
   }
 
   int
@@ -96,8 +96,8 @@ class structured_topology : public topology
   }
 
   int
-  num_endpoints() const override {
-    return endpoints_per_switch_ * num_leaf_switches();
+  num_netlinks() const override {
+    return netlinks_per_switch_ * num_leaf_switches();
   }
 
   int
@@ -105,6 +105,36 @@ class structured_topology : public topology
     switch_id src_sw = src / concentration_;
     switch_id dst_sw = dst / concentration_;
     return minimal_distance(src_sw, dst_sw);
+  }
+
+  switch_id
+  max_switch_id() const override {
+    return num_switches();
+  }
+
+  bool
+  switch_id_slot_filled(switch_id sid) const override{
+    return true;
+  }
+
+  netlink_id
+  max_netlink_id() const override {
+    return num_switches();
+  }
+
+  bool
+  netlink_id_slot_filled(netlink_id sid) const override{
+    return true;
+  }
+
+  node_id
+  max_node_id() const override {
+    return num_nodes();
+  }
+
+  bool
+  node_id_slot_filled(node_id nid) const override{
+    return true;
   }
 
   virtual int
@@ -125,32 +155,32 @@ class structured_topology : public topology
       switch_id sw_addr,
       routable::path_set& paths) const {
     endpoint_eject_paths_on_switch(
-          dest_addr / num_nodes_per_endpoint_,
+          dest_addr / num_nodes_per_netlink_,
           sw_addr, paths);
   }
 
   virtual switch_id
-  endpoint_to_injection_switch(node_id nodeaddr, int &switch_port) const override {
-    switch_id sid = nodeaddr / endpoints_per_switch_;
-    switch_port = nodeaddr % endpoints_per_switch_ + max_ports_intra_network_;
+  netlink_to_injection_switch(netlink_id nodeaddr, int &switch_port) const override {
+    switch_id sid = nodeaddr / netlinks_per_switch_;
+    switch_port = nodeaddr % netlinks_per_switch_ + max_ports_intra_network_;
     return sid;
   }
 
   switch_id
   node_to_ejection_switch(node_id addr, int& port) const override {
-    node_id netid(addr / num_nodes_per_endpoint_);
-    return endpoint_to_ejection_switch(netid, port);
+    node_id netid(addr / num_nodes_per_netlink_);
+    return netlink_to_ejection_switch(netid, port);
   }
 
   switch_id
   node_to_injection_switch(node_id addr, int& port) const override {
-    node_id netid(addr / num_nodes_per_endpoint_);
-    return endpoint_to_injection_switch(netid, port);
+    node_id netid(addr / num_nodes_per_netlink_);
+    return netlink_to_injection_switch(netid, port);
   }
 
   virtual switch_id
-  endpoint_to_ejection_switch(node_id nodeaddr, int &switch_port) const override {
-    return endpoint_to_injection_switch(nodeaddr, switch_port);
+  netlink_to_ejection_switch(node_id nodeaddr, int &switch_port) const override {
+    return netlink_to_injection_switch(nodeaddr, switch_port);
   }
 
  protected:
@@ -167,11 +197,11 @@ class structured_topology : public topology
     In many topologies, there is a 1-1 correspondence. For others,
     you might have many compute nodes connected to a single injection/ejection switch.
   */
-  int endpoints_per_switch_;
+  int netlinks_per_switch_;
 
   int concentration_;
 
-  int num_nodes_per_endpoint_;
+  int num_nodes_per_netlink_;
 
   int max_ports_intra_network_;
 

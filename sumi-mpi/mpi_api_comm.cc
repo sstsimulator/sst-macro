@@ -14,6 +14,7 @@ mpi_api::comm_dup(MPI_Comm input, MPI_Comm *output)
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Comm_dup(%s) start",
                 comm_str(input).c_str()); 
   mpi_comm* inputPtr = get_comm(input);
+  //printf("using %p with %p\n", this, comm_factory_);
   mpi_comm* outputPtr = comm_factory_->comm_dup(inputPtr);
   *output = add_comm_ptr(outputPtr);
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Comm_dup(%s,*%s) finish",

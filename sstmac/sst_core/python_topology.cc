@@ -153,7 +153,7 @@ sys_get_injection_connections(SystemPy_t* self, PyObject* nodeIdx)
   int ports[32];
   int num_ports;
   sstmac::switch_id sid = self->macro_topology
-      ->endpoint_to_injection_switch(nid, ports, num_ports);
+      ->netlink_to_injection_switch(nid, ports, num_ports);
   PyObject* intTuple = sstmac::py_get_int_tuple(num_ports, ports);
   PyObject* tuple = PyTuple_New(2);
   PyObject* swIdx = PyInt_FromLong(sid);
@@ -212,7 +212,7 @@ sys_get_ejection_connections(SystemPy_t* self, PyObject* nodeIdx)
   int ports[32];
   int num_ports;
   sstmac::switch_id sid = self->macro_topology
-      ->endpoint_to_ejection_switch(nid, ports, num_ports);
+      ->netlink_to_ejection_switch(nid, ports, num_ports);
   PyObject* intTuple = sstmac::py_get_int_tuple(num_ports, ports);
   PyObject* tuple = PyTuple_New(2);
   PyObject* swIdx = PyInt_FromLong(sid);

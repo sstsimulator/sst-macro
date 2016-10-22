@@ -665,7 +665,7 @@ operating_system::register_lib(library* lib)
               "operating_system: trying to register a lib with no name");
   }
 #endif
-  os_debug("registering lib %s", lib->lib_name().c_str());
+  os_debug("registering lib %s:%p", lib->lib_name().c_str(), lib);
   int& refcount = lib_refcounts_[lib];
   ++refcount;
   libs_[lib->lib_name()] = lib;
@@ -685,8 +685,7 @@ operating_system::unregister_lib(library* lib)
                  "OS %d will now drop events for %s",
                  addr(), lib->lib_name().c_str());
     libs_.erase(lib->lib_name());
-    deleted_libs_.insert(lib->lib_name());
-    delete lib;
+    //delete lib;
   } else {
     --refcount;
   }
@@ -777,7 +776,7 @@ operating_system::add_thread(thread* t)
     des_context_,
     stackalloc_.alloc(),
     stackalloc_.stacksize(),
-    this, NULL);
+    NULL);
 
   threads_.push_back(t);
 }
@@ -835,30 +834,42 @@ operating_system::handle_event(event* ev)
       sprockit::to_string(ev).c_str());
   }
 
-  std::string libn = libmsg->lib_name();
-  auto it = libs_.find(libn);
+  auto it = libs_.find(libmsg->lib_name());
 
   if (it == libs_.end()) {
-    if (deleted_libs_.find(libn) == deleted_libs_.end()){
-      cerrn << "Valid libraries on " << this << ":\n";
+    //event arrived for library that doesn't exist yet
+    sprockit::sim_parameters* lib_params = params_->get_optional_namespace(libmsg->lib_name());
+    software_id sid(0,0); //service
+    library* lib = library_factory::get_extra_value(libmsg->lib_name(), lib_params, sid, this);
+    if (lib){
+      os_debug("delivering message to newly created lib %s:%p\n%s",
+          libmsg->lib_name().c_str(), sprockit::to_string(ev).c_str());
+      lib->incoming_event(ev);
+    } else {
+      cerrn << "Valid libraries on OS " << addr() << ":\n";
       for  (auto& pair : libs_){
         cerrn << pair.first << std::endl;
       }
-      spkt_throw_printf(sprockit::os_error,
-                     "operating_system::handle_event: can't find library %s on os %d for event %s",
+      spkt_abort_printf("operating_system::handle_event: can't find library %s on os %d for event %s",
                      libmsg->lib_name().c_str(), int(addr()),
                      sprockit::to_string(ev).c_str());
+    }
+    /**
+    if (deleted_libs_.find(libn) == deleted_libs_.end()){
+
     } else {
       debug_printf(sprockit::dbg::dropped_events | sprockit::dbg::os,
                    "OS %d for library %s dropping event %s",
                    addr(), libn.c_str(), sprockit::to_string(ev).c_str());
       //drop the event
     }
+    */
   }
   else {
-    os_debug("delivering message to lib %s: %s",
-        libn.c_str(), sprockit::to_string(ev).c_str());
-    it->second->incoming_event(ev);
+    library* lib = it->second;
+    os_debug("delivering message to lib %s:%p\n%s",
+        libmsg->lib_name().c_str(), lib, sprockit::to_string(ev).c_str());
+    lib->incoming_event(ev);
   }
 }
 

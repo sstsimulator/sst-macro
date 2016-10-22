@@ -64,10 +64,10 @@ tiled_torus::get_redundant_paths(
 }
 
 switch_id
-tiled_torus::endpoint_to_injection_switch(node_id nodeaddr, int ports[], int &num_ports) const
+tiled_torus::netlink_to_injection_switch(node_id nodeaddr, int ports[], int &num_ports) const
 {
   int port;
-  switch_id sid = hdtorus::endpoint_to_injection_switch(nodeaddr, port);
+  switch_id sid = hdtorus::netlink_to_injection_switch(nodeaddr, port);
   //ejection routing
   int offset = port - first_simple_torus_eject_port_;
   port = max_ports_intra_network_ + offset*injection_redundancy_;
@@ -89,7 +89,7 @@ void
 tiled_torus::configure_geometric_paths(std::vector<int>& redundancies) const
 {
   int ndims = dimensions_.size();
-  int ngeom_paths = ndims * 2 + endpoints_per_switch_; //2 for +/-
+  int ngeom_paths = ndims * 2 + netlinks_per_switch_; //2 for +/-
   redundancies.resize(ngeom_paths);
   for (int d=0; d < ndims; ++d){
     int pos_path = hdtorus::convert_to_port(d,pos);
@@ -99,7 +99,7 @@ tiled_torus::configure_geometric_paths(std::vector<int>& redundancies) const
     redundancies[neg_path] = red_[d];
   }
 
-  for (int i=0; i < endpoints_per_switch_; ++i){
+  for (int i=0; i < netlinks_per_switch_; ++i){
     redundancies[i+eject_geometric_id_] = injection_redundancy_;
   }
 }

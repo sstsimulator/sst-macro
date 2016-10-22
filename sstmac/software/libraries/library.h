@@ -52,20 +52,55 @@ class library {
     return sid_;
   }
 
+  int
+  aid() const {
+    return sid_.app_;
+  }
+
+  node_id
+  addr() const {
+    return addr_;
+  }
+
+  device_id
+  event_location() const;
+
   virtual ~library();
 
  protected:
   library(const std::string& libname, software_id sid, operating_system* os);
 
   library(const char* prefix, software_id sid, operating_system* os) :
-    library(sprockit::printf("%s%s", prefix, sid.to_string().c_str()), sid, os)
+    library(standard_lib_name(prefix, sid), sid, os)
   {
+  }
+
+  static std::string
+  standard_lib_name(const char* prefix, software_id sid){
+    return standard_lib_name(prefix, sid.app_, sid.task_);
+  }
+
+  static std::string
+  standard_lib_name(const char* prefix, app_id aid, task_id tid){
+    std::string app_prefix = standard_app_prefix(prefix, aid);
+    return standard_app_lib_name(app_prefix.c_str(), tid);
+  }
+
+  static std::string
+  standard_app_lib_name(const char* prefix, task_id tid){
+    return sprockit::printf("%s-%d", prefix, tid);
+  }
+
+  static std::string
+  standard_app_prefix(const char* prefix, app_id aid){
+    return sprockit::printf("%s-%d", prefix, aid);
   }
 
  protected:
   operating_system* os_;
   key::category key_cat_;
   software_id sid_;
+  node_id addr_;
 
  private:
   std::string libname_;

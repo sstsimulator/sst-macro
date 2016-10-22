@@ -68,7 +68,6 @@ fat_tree_router::build_rng()
 
 fat_tree_router::~fat_tree_router()
 {
-  printf("deleteing fat tree router\n");
   if (rng_) delete rng_;
 }
 
@@ -135,7 +134,7 @@ fat_tree_router::choose_up_minimal_path()
 int
 fat_tree_router::number_minimal_paths(packet* pkt) const
 {
-  switch_id ej_addr = top_->endpoint_to_ejection_switch(pkt->toaddr());
+  switch_id ej_addr = top_->netlink_to_ejection_switch(pkt->toaddr());
   long ej_id = ej_addr;
   if (ej_addr == my_addr_) {
     return 1;

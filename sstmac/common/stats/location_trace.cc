@@ -11,9 +11,9 @@ SpktRegister("location_trace", stat_collector, location_trace);
 void
 location_trace::collect(
   timestamp created,
-  event_loc_id creator,
+  device_id creator,
   timestamp scheduled,
-  event_loc_id runner)
+  device_id runner)
 {
   event ev;
   ev.created = created;
@@ -81,9 +81,9 @@ bool
 location_trace::read(
   std::istream& myfile,
   timestamp &created,
-  event_loc_id &creator,
+  device_id &creator,
   timestamp &scheduled,
-  event_loc_id &runner)
+  device_id &runner)
 {
   if (myfile.eof()) {
     return false;

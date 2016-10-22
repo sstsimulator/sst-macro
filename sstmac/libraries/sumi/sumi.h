@@ -8,6 +8,7 @@
 #include <sumi/timeout.h>
 #include <sumi/communicator.h>
 #include <sumi/thread_safe_set.h>
+#include <sstmac/libraries/sumi/sumi_transport.h>
 
 #define main USER_MAIN
 
@@ -198,7 +199,7 @@ comm_partner(long node_id);
 double
 wall_time();
 
-transport*
+sstmac::sumi_transport*
 sumi_api();
 
 }

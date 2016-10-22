@@ -38,10 +38,10 @@ class cartesian_topology :
   }
 
   std::string
-  label(switch_id sid) const override;
+  node_label(node_id nid) const override;
 
   std::string
-  label(node_id nid) const override;
+  switch_label(switch_id sid) const override;
 
  protected:
   cartesian_topology(sprockit::sim_parameters* params,

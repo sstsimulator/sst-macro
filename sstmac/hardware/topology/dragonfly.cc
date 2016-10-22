@@ -46,7 +46,7 @@ dragonfly::dragonfly(sprockit::sim_parameters* params) :
     group_con_ = g_ - 1;
   }
 
-  endpoints_per_switch_ = params->get_optional_int_param("concentration", 1);
+  netlinks_per_switch_ = params->get_optional_int_param("concentration", 1);
   max_ports_intra_network_ = x_ + y_ + g_;
   eject_geometric_id_ = max_ports_intra_network_;
 }
@@ -54,7 +54,7 @@ dragonfly::dragonfly(sprockit::sim_parameters* params) :
 void
 dragonfly::configure_geometric_paths(std::vector<int> &redundancies)
 {
-  int npaths = x_ + y_ + group_con_ + endpoints_per_switch_;
+  int npaths = x_ + y_ + group_con_ + netlinks_per_switch_;
   redundancies.resize(npaths);
   //do x paths, then y paths, then g paths
   int path = 0;

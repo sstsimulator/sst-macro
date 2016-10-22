@@ -35,26 +35,14 @@ class parsedumpi : public sstmac::sw::app
   friend class parsedumpi_callbacks;
 
  public:
-  parsedumpi(sprockit::sim_parameters* params) :
-    mpi_(nullptr),
-    sstmac::sw::app(params)
-  {
-  }
+  parsedumpi(sprockit::sim_parameters* params, sstmac::sw::software_id sid,
+             sstmac::sw::operating_system* os);
 
   /// Wait!  That's not good news at all!
   virtual
   ~parsedumpi() throw ();
 
-  /// IT'S AN ADDAMS!
-  app*
-  clone_type(sprockit::sim_parameters* params) const {
-    return new parsedumpi(params);
-  }
-
   mpi_api* mpi();
-
-  virtual void
-  consume_params(sprockit::sim_parameters* params);
 
   /// Parse the tracefile.
   virtual void

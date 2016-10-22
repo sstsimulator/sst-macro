@@ -51,7 +51,7 @@ using sstmac::sw::software_id;
 using sstmac::sw::operating_system;
 
 class mpi_api :
-  public sumi_transport
+  public sstmac::sumi_transport
 {
   ImplementAPI(mpi_api)
 
@@ -74,11 +74,6 @@ class mpi_api :
  public:
   virtual
   ~mpi_api();
-
-  void
-  incoming_event(sstmac::event *ev){
-    library::incoming_event(ev);
-  }
 
   mpi_queue*
   queue() {
@@ -900,9 +895,6 @@ class mpi_api :
  private:
   /// The MPI server.
   mpi_queue* queue_;
-
-  //// My MPI index in the world.
-  int rank_;
 
   MPI_Datatype next_type_id_;
 

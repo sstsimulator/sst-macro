@@ -51,10 +51,8 @@ namespace gtc
     std::map<std::string,double> param_map_;
 
   public:
-    gtc_main(sprockit::sim_parameters* params) :
-      sstmac::sw::app(params)
-    {
-    }
+    gtc_main(sprockit::sim_parameters* params, sstmac::sw::software_id sid,
+             sstmac::sw::operating_system* os);
 
     /// Goodbye.
     virtual
@@ -62,19 +60,9 @@ namespace gtc
     {
     }
 
-    /// Get a copy.
-    virtual sstmac::sw::app*
-    clone_type(sprockit::sim_parameters* params) const override
-    {
-      return new gtc_main(params);
-    }
-
     /// Go.
     void
     skeleton_main() override;
-
-    virtual void
-    consume_params(sprockit::sim_parameters* params) override;
 
     // -------------- GTC Functions
   private:

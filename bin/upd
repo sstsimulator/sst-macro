@@ -1,0 +1,15 @@
+#! /usr/bin/env python
+
+import os
+import ref
+
+def reref(fname):
+  path = "/Users/jjwilke/Programs/params-macro/tests/reference"
+  dst = os.path.join(path, fname.replace("tmp","ref"))
+  cmd = "cp %s %s" % (fname, dst)
+  print cmd
+  os.system(cmd)
+
+ref.check_files(reref)
+
+

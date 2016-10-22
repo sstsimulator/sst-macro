@@ -52,7 +52,7 @@ class connectable_component :
  protected:
   connectable_component(sprockit::sim_parameters* params,
                         uint64_t cid,
-                        event_loc_id id,
+                        device_id id,
                         event_manager* mgr)
     : event_component(params, cid, id, mgr)
   {

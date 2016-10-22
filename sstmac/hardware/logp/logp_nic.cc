@@ -23,6 +23,11 @@ logp_nic::logp_nic(sprockit::sim_parameters* params, node* parent) :
   inj_lat_ = inj_params->get_time_param("latency");
 }
 
+logp_nic::~logp_nic()
+{
+  if (ack_handler_) delete ack_handler_;
+}
+
 void
 logp_nic::do_send(network_message* msg)
 {

@@ -42,11 +42,11 @@ void
 event_map::add_event(event_queue_entry* ev)
 {
 #if SSTMAC_SANITY_CHECK
-  if (ev->event_location() == event_loc_id::uninitialized){
+  if (ev->event_location() == device_id::uninitialized){
     spkt_throw_printf(sprockit::value_error,
       "got uninitialized event location for %s",
       ev->to_string().c_str());
-  } else if (ev->src_location() == event_loc_id::uninitialized){
+  } else if (ev->src_location() == device_id::uninitialized){
     spkt_throw_printf(sprockit::value_error,
       "got uninitialized src location for %s",
       ev->to_string().c_str());
@@ -70,7 +70,7 @@ event_map::clear(timestamp zero_time)
 }
 
 void
-event_map::cancel_all_messages(event_loc_id canceled_loc)
+event_map::cancel_all_messages(device_id canceled_loc)
 {
   queue_t::iterator it = queue_.begin(), end = queue_.end();
   while (it != end){

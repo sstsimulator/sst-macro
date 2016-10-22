@@ -161,6 +161,15 @@ class transport
   blocking_poll();
 
   /**
+   Check if a message has been received. Return immediately even if empty queue.
+   Message returned is removed from the internal queue.
+   Successive calls to the function do NOT return the same message.
+   @return    The next message to be received, null if no messages
+  */
+  message::ptr
+  poll(bool blocking);
+
+  /**
    Block until a message is received.
    Returns immediately if message already waiting.
    Message returned is removed from the internal queue.
@@ -415,6 +424,8 @@ class transport
   void
   bcast(int root, void* buf, int nelems, int type_size, int tag, bool fault_aware, int context=options::initial_context, communicator* dom=0);
   
+  void system_bcast(const message::ptr& msg);
+
   int 
   rank() const {
     return rank_;

@@ -52,7 +52,7 @@ class event_heap :
   }
 
   void
-  cancel_all_messages(event_loc_id canceled_loc);
+  cancel_all_messages(device_id canceled_loc);
 
  protected:
   typedef std::priority_queue<event*,

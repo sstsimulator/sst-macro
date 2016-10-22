@@ -305,6 +305,14 @@ sim_parameters::add_param_override(const std::string &key, int val)
 }
 
 void
+sim_parameters::get_optional_vector_param(const std::string &key, std::vector<std::string>& vals)
+{
+  if (has_param(key)){
+    get_vector_param(key, vals);
+  }
+}
+
+void
 sim_parameters::get_vector_param(const std::string& key,
                                  std::vector<std::string>& vals)
 {
@@ -1040,6 +1048,25 @@ sim_parameters::has_param(const std::string& key) const
   }
 }
 
+std::string
+sim_parameters::get_variable(const std::string& str)
+{
+  auto it = variables_.find(str);
+  if (it == variables_.end()){
+    if (parent_){
+      return parent_->get_variable(str);
+    }
+    //nope, no parent - crash band burn
+    std::cerr << "Existing variables: " << std::endl;
+    for (auto& pair : variables_){
+      std::cerr << pair.first << " = " << pair.second << std::endl;
+    }
+    spkt_abort_printf("unknown variable name %s", str.c_str());
+  } else {
+    return it->second;
+  }
+}
+
 void
 sim_parameters::do_add_param(
   const std::string& key,
@@ -1049,11 +1076,8 @@ sim_parameters::do_add_param(
   bool mark_as_read)
 {
   if (val.c_str()[0] == '$'){
-    auto it = variables_.find(val.substr(1));
-    if (it == variables_.end()){
-      spkt_abort_printf("unknown variable name %s", val.c_str());
-    }
-    do_add_param(key, it->second,
+    std::string varval = get_variable(val.substr(1));
+    do_add_param(key, varval,
       fail_on_existing, override_existing, mark_as_read);
     return;
   }

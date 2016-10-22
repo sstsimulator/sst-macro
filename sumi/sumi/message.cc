@@ -94,6 +94,7 @@ message::tostr(class_t ty)
     enumcase(collective);
     enumcase(collective_done);
     enumcase(ping);
+    enumcase(bcast);
     enumcase(terminate);
     enumcase(no_class);
     enumcase(fake);

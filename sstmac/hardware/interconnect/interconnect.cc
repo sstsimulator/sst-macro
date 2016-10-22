@@ -76,6 +76,12 @@ interconnect::~interconnect()
 {
   sprockit::delete_vector(netlinks_);
   sprockit::delete_vector(nodes_);
+  for (network_switch* sw : logp_overlay_switches_){
+    if (sw) delete sw;
+  }
+  for (network_switch* sw : switches_){
+    delete sw;
+  }
 }
 #endif
 
@@ -108,14 +114,10 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   sprockit::sim_parameters* ej_params = switch_params->get_namespace("ejection");
   topology* top = topology_;
 
-  switch_params->add_param_override("id", 0);
-  network_switch* tmpl_switch = network_switch_factory::get_param("model", switch_params, 0, mgr);
-  logp_switch* logp_tester = test_cast(logp_switch, tmpl_switch);
-  bool logp_model = logp_tester;
-  delete logp_tester;
+  bool logp_model = switch_params->get_param("model") == "logP";
 
-  switches_.resize(num_switches_);
-  nodes_.resize(num_nodes_);
+  switches_.resize(top->max_switch_id());
+  nodes_.resize(top->max_node_id());
   netlinks_.resize(num_nodes_);
 
   local_logp_switch_ = my_rank;
@@ -199,7 +201,7 @@ interconnect::connect_endpoints(sprockit::sim_parameters* inj_params,
     int num_ports;
     int ports[32];
     node_id nodeaddr(i);
-    switch_id injaddr = topology_->endpoint_to_injection_switch(nodeaddr, ports, num_ports);
+    switch_id injaddr = topology_->netlink_to_injection_switch(nodeaddr, ports, num_ports);
     network_switch* injsw = switches_[injaddr];
 
     for (int i=0; i < num_ports; ++i){
@@ -213,7 +215,7 @@ interconnect::connect_endpoints(sprockit::sim_parameters* inj_params,
                          injsw->payload_handler(switch_port));
     }
 
-    switch_id ejaddr = topology_->endpoint_to_ejection_switch(nodeaddr, ports, num_ports);
+    switch_id ejaddr = topology_->netlink_to_ejection_switch(nodeaddr, ports, num_ports);
     network_switch* ejsw = switches_[ejaddr];
 
     for (int i=0; i < num_ports; ++i){
@@ -252,6 +254,9 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
     if (target_rank == my_rank){
       for (int n=0; n < nodes.size(); ++n){
         node_id nid = nodes[n].nid;
+        if (!topology_->node_id_slot_filled(nid))
+          continue;
+
         int port = nodes[n].port;
         if (my_rank == target_rank){
           //local node - actually build it
@@ -274,15 +279,18 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
           nd->init(0); //emulate SST core
           nd->setup();
 
-          node_id netlink_id;
+          netlink_id net_id;
           int netlink_offset;
-          bool has_netlink = topology_->node_to_netlink(nid, netlink_id, netlink_offset);
-          if (has_netlink && netlink_offset == 0){
+          bool has_netlink = topology_->node_to_netlink(nid, net_id, netlink_offset);
+          if (has_netlink){
             interconn_debug("Adding netlink %d connected to switch %d on rank %d",
-              int(netlink_id), i, my_rank);
-            netlink_params->add_param_override("id", int(netlink_id));
-            netlink* nlink = netlink_factory::get_param("model", netlink_params, nd);
-            netlinks_[netlink_id] = nlink;
+              int(net_id), i, my_rank);
+            netlink_params->add_param_override("id", int(net_id));
+            netlink* nlink = netlinks_[net_id];
+            if (!nlink){
+              nlink = netlink_factory::get_param("model", netlink_params, nd);
+              netlinks_[net_id] = nlink;
+            }
 
             int inj_port = nlink->node_port(netlink_offset);
             nlink->connect_input(nlink_inj_params,
@@ -320,8 +328,12 @@ interconnect::build_switches(sprockit::sim_parameters* switch_params,
 
   int my_rank = rt_->me();
   bool all_switches_same = topology_->uniform_switches();
-  for (int i=0; i < num_switches_; ++i){
-    switch_params->add_param_override("id", i);
+  switch_id num_switch_ids = topology_->max_switch_id();
+  for (switch_id i=0; i < num_switch_ids; ++i){
+    if (!topology_->switch_id_slot_filled(i))
+      continue; //don't build
+
+    switch_params->add_param_override("id", int(i));
     if (partition_->lpid_for_switch(i) == my_rank){
       if (!all_switches_same)
         topology_->configure_nonuniform_switch_params(i, switch_params);
@@ -371,8 +383,8 @@ interconnect::connect_switches(sprockit::sim_parameters* switch_params)
       network_switch* dst_sw = switches_[conn.dst];
 
       interconn_debug("%s connecting to %s on ports %d:%d",
-                topology_->label(src).c_str(),
-                topology_->label(conn.dst).c_str(),
+                topology_->switch_label(src).c_str(),
+                topology_->switch_label(conn.dst).c_str(),
                 conn.src_outport, conn.dst_inport);
 
       src_sw->connect_output(port_params,

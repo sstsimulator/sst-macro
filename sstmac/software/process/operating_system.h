@@ -305,7 +305,6 @@ class operating_system :
   spkt_unordered_map<std::string, library*> libs_;
   spkt_unordered_map<library*, int> lib_refcounts_;
   spkt_unordered_map<void*, std::list<library*> > libs_by_owner_;
-  spkt_unordered_set<std::string> deleted_libs_;
 
   node_id my_addr_;
 

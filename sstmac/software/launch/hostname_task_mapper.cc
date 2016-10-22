@@ -36,7 +36,6 @@ hostname_task_mapper::hostname_task_mapper(sprockit::sim_parameters *params) :
 
 void
 hostname_task_mapper::map_ranks(
-  app_id aid,
   const ordered_node_set& nodes,
   int ppn,
   std::vector<node_id> &result,

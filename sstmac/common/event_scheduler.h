@@ -131,7 +131,7 @@ class event_scheduler :
   handle_self_event(SST::Event* ev);
 
  protected:
-  event_scheduler(event_loc_id loc) :
+  event_scheduler(device_id loc) :
    self_link_(nullptr),
    comp_(nullptr),
    locatable(loc, locatable::null_threadid)
@@ -187,7 +187,7 @@ class event_scheduler :
     event* ev);
 
  protected:
-  event_scheduler(event_manager* mgr, uint32_t* seqnum, event_loc_id loc, int thread_id) :
+  event_scheduler(event_manager* mgr, uint32_t* seqnum, device_id loc, int thread_id) :
    eventman_(mgr), seqnum_(seqnum),
    locatable(loc, thread_id)
   {
@@ -239,13 +239,13 @@ class event_component :
  protected:
   event_component(sprockit::sim_parameters* params,
                  uint64_t cid,
-                 event_loc_id id,
+                 device_id id,
                  event_manager* mgr);
 #else
  protected:
   event_component(sprockit::sim_parameters* params,
                 uint64_t cid,
-                event_loc_id id,
+                device_id id,
                 event_manager* mgr) :
    event_scheduler(mgr, &seqnum_, id, mgr ? mgr->thread_id() : locatable::null_threadid),
    seqnum_(0)

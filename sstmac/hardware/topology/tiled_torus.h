@@ -23,7 +23,7 @@ class tiled_torus :
   configure_geometric_paths(std::vector<int>& redundancies) const override;
 
   switch_id
-  endpoint_to_injection_switch(
+  netlink_to_injection_switch(
         node_id nodeaddr, int ports[], int& num_ports) const override;
 
   bool

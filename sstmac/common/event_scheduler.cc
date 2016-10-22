@@ -211,7 +211,7 @@ event_scheduler::schedule_delay(timestamp delay, event_queue_entry *ev)
 
 event_component::event_component(sprockit::sim_parameters* params,
                uint64_t cid,
-               event_loc_id id,
+               device_id id,
                event_manager* mgr) :
  SSTIntegratedComponent(params, cid),
  event_scheduler(id)
@@ -344,7 +344,7 @@ event_scheduler::multithread_schedule(int src_thread, int dst_thread,
 {
   debug_printf(sprockit::dbg::event_manager,
       "At location %d, scheduling event at t=%12.8e srcthread=%d dstthread=%d",
-      event_location().location, t.sec(), src_thread, dst_thread);
+      event_location().id(), t.sec(), src_thread, dst_thread);
   if (dst_thread != event_handler::null_threadid
      && dst_thread != src_thread){
     ev->set_time(t);

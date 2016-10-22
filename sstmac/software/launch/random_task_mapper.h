@@ -36,9 +36,7 @@ class random_task_mapper : public task_mapper
   ~random_task_mapper() throw ();
 
   virtual void
-  map_ranks(
-    app_id aid,
-    const ordered_node_set& nodes,
+  map_ranks(const ordered_node_set& nodes,
     int ppn,
     std::vector<node_id> &result,
     int nproc) override;

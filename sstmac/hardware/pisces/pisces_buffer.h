@@ -31,21 +31,18 @@ class pisces_buffer :
     return 0;
   }
 
-  event_loc_id
+  device_id
   output_location() const {
     return output_.handler->event_location();
   }
 
-  event_loc_id
+  device_id
   input_location() const {
     return input_.handler->event_location();
   }
 
  protected:
   pisces_buffer(sprockit::sim_parameters* params, event_scheduler* parent);
-
-  std::string
-  buffer_string(const char* name) const;
 
  protected:
   pisces_input input_;

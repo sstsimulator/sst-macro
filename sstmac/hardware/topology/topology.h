@@ -117,8 +117,46 @@ class topology : public sprockit::printable
   virtual int
   num_leaf_switches() const = 0;
 
+  /**
+   * @brief max_switch_id Depending on the node indexing scheme, the maximum switch id
+   *  might be larger than the actual number of switches.
+   * @return The max switch id
+   */
+  virtual switch_id
+  max_switch_id() const = 0;
+
+  /**
+   * @brief swithc_id_slot_filled
+   * @param sid
+   * @return Whether a switch object should be built for a given switch_id
+   */
+  virtual bool
+  switch_id_slot_filled(switch_id sid) const = 0;
+
   virtual int
   num_nodes() const = 0;
+
+  /**
+   * @brief max_node_id Depending on the node indexing scheme, the maximum node id
+   *  might be larger than the actual number of nodes.
+   * @return The max node id
+   */
+  virtual node_id
+  max_node_id() const = 0;
+
+  /**
+   * @brief node_id_slot_filled
+   * @param nid
+   * @return Whether a node object should be built for a given node_id
+   */
+  virtual bool
+  node_id_slot_filled(node_id nid) const = 0;
+
+  virtual switch_id
+  max_netlink_id() const = 0;
+
+  virtual bool
+  netlink_id_slot_filled(node_id nid) const = 0;
 
   /**
    * @brief num_endpoints To be distinguished slightly from nodes.
@@ -127,7 +165,7 @@ class topology : public sprockit::printable
    * @return
    */
   virtual int
-  num_endpoints() const = 0;
+  num_netlinks() const = 0;
 
   /**
    * @brief Return the maximum number of ports on any switch in the network
@@ -145,7 +183,7 @@ class topology : public sprockit::printable
      @return The switch that injects from the node
   */
   virtual switch_id
-  endpoint_to_injection_switch(node_id nodeaddr, int& switch_port) const = 0;
+  netlink_to_injection_switch(netlink_id nodeaddr, int& switch_port) const = 0;
 
   /**
      For a given node, determine the ejection switch
@@ -156,7 +194,7 @@ class topology : public sprockit::printable
      @return The switch that ejects into the node
   */
   virtual switch_id
-  endpoint_to_ejection_switch(node_id nodeaddr, int& switch_port) const = 0;
+  netlink_to_ejection_switch(netlink_id nodeaddr, int& switch_port) const = 0;
 
   /**
    * @brief configure_vc_routing  Configure the number of virtual channels
@@ -259,7 +297,7 @@ class topology : public sprockit::printable
   int
   endpoint_to_injection_port(node_id nodeaddr) const {
     int port;
-    switch_id sid = endpoint_to_injection_switch(nodeaddr, port);
+    switch_id sid = netlink_to_injection_switch(nodeaddr, port);
     return port;
   }
 
@@ -272,22 +310,22 @@ class topology : public sprockit::printable
      @return The switch that ejects into the node
   */
   int
-  endpoint_to_ejection_port(node_id nodeaddr) const {
+  netlink_to_ejection_port(netlink_id nodeaddr) const {
     int port;
-    switch_id sid = endpoint_to_ejection_switch(nodeaddr, port);
+    switch_id sid = netlink_to_ejection_switch(nodeaddr, port);
     return port;
   }
 
   switch_id
-  endpoint_to_ejection_switch(node_id nodeaddr) const {
+  netlink_to_ejection_switch(netlink_id nodeaddr) const {
     int ignore;
-    return endpoint_to_ejection_switch(nodeaddr, ignore);
+    return netlink_to_ejection_switch(nodeaddr, ignore);
   }
 
   switch_id
-  endpoint_to_injection_switch(node_id nodeaddr) const {
+  netloink_to_injection_switch(netlink_id nodeaddr) const {
     int ignore;
-    return endpoint_to_injection_switch(nodeaddr, ignore);
+    return netlink_to_injection_switch(nodeaddr, ignore);
   }
 
   virtual void
@@ -337,17 +375,17 @@ class topology : public sprockit::printable
                              switch_id dest_sw = switch_id(-1));
 
   virtual switch_id
-  endpoint_to_injection_switch(
+  netlink_to_injection_switch(
         node_id nodeaddr, int ports[], int& num_ports) const {
     num_ports = 1;
-    return endpoint_to_injection_switch(nodeaddr, ports[0]);
+    return netlink_to_injection_switch(nodeaddr, ports[0]);
   }
 
   virtual switch_id
-  endpoint_to_ejection_switch(
+  netlink_to_ejection_switch(
         node_id nodeaddr, int ports[], int& num_ports) const {
     num_ports = 1;
-    return endpoint_to_ejection_switch(nodeaddr, ports[0]);
+    return netlink_to_ejection_switch(nodeaddr, ports[0]);
   }
 
   /**
@@ -363,14 +401,14 @@ class topology : public sprockit::printable
   {
   }
 
-  virtual std::string
-  label(node_id nid) const;
-
-  virtual std::string
-  label(switch_id sid) const;
-
   std::string
-  label(event_loc_id id) const;
+  label(device_id id) const;
+
+  virtual std::string
+  switch_label(switch_id sid) const;
+
+  virtual std::string
+  node_label(node_id nid) const;
 
   /**
      Informs topology that a new routing stage has begun, allowing any

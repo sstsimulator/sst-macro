@@ -1356,8 +1356,9 @@ namespace luleshmodel
   }
 
   // Overrides app::consum_params virtual function
-  void
-  luleshapp::consume_params(sprockit::sim_parameters* params)
+
+  luleshapp::luleshapp(sprockit::sim_parameters* params, software_id sid) :
+    app(params, sid)
   {
     usetopo_ = params->get_optional_bool_param("use_libtopomap", false);
     SPTL_INTEGRATE_STRESS_ELEMS = atof(

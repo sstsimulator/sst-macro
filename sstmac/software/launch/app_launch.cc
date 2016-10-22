@@ -15,30 +15,15 @@
 #include <unistd.h>
 #include <getopt.h>
 
-ImplementFactory(sstmac::sw::app_launch)
-
-RegisterNamespaces("app_launch");
 
 namespace sstmac {
 namespace sw {
 
-std::map<int, app_launch*> app_launch::static_app_launches_;
+std::map<std::string, app_launch*> app_launch::static_app_launches_;
 
-SpktRegister("default", app_launch, app_launch);
-
-app_launch::~app_launch()
-{
-  delete app_template_;
-  delete allocator_;
-  delete indexer_;
-}
-
-app_launch::app_launch(sprockit::sim_parameters* params, app_id aid) :
-  aid_(aid),
+software_launch::software_launch(sprockit::sim_parameters *params) :
   indexed_(false)
 {
-  appname_ = params->get_param("name");
-
   top_ = sstmac::hw::topology::static_topology(params);
 
   if (params->has_param("core_affinities")) {
@@ -46,8 +31,6 @@ app_launch::app_launch(sprockit::sim_parameters* params, app_id aid) :
   }
 
   time_ = params->get_optional_time_param("start", 0);
-
-  app_template_ = sw::app_factory::get_value(appname_, params);
 
   if (params->has_param("launch_cmd")){
     parse_launch_cmd(params);
@@ -67,29 +50,90 @@ app_launch::app_launch(sprockit::sim_parameters* params, app_id aid) :
                "block", params);
 }
 
+software_launch::~software_launch()
+{
+  delete allocator_;
+  delete indexer_;
+}
+
+app_launch::~app_launch()
+{
+}
+
+app_launch::app_launch(sprockit::sim_parameters* params, app_id aid) :
+  software_launch(params),
+  aid_(aid),
+  app_name_(params->get_param("name")),
+  app_params_(params)
+{
+}
+
+static thread_lock launch_lock;
+
+app_launch*
+app_launch::static_app_launch(const std::string& name)
+{
+  launch_lock.lock();
+  auto iter = static_app_launches_.find(name);
+  if (iter == static_app_launches_.end()){
+    spkt_abort_printf("cannot find app launch %s", name.c_str());
+  }
+  app_launch* l = iter->second;
+  launch_lock.unlock();
+  return l;
+}
+
+app_launch*
+app_launch::service_info(const std::string& name)
+{
+  app_launch* l = static_app_launch(name);
+  if (l->node_assignments().size() == 0){
+    spkt_abort_printf("Service %s has not yet launched. "
+                      "Start time for app should be delayed until service has launched",
+                      name.c_str());
+  }
+  return l;
+}
+
+app_launch*
+app_launch::static_app_launch(int aid, const std::string& name, sprockit::sim_parameters* params)
+{
+  launch_lock.lock();
+  if (!static_app_launches_[name]){
+    if (params->has_namespace(name)){
+      sprockit::sim_parameters* app_params = params->get_namespace(name);
+      app_launch* mgr = new app_launch(app_params, app_id(aid));
+      static_app_launches_[name] = mgr;
+    }
+  }
+  app_launch* l = static_app_launches_[name];
+  launch_lock.unlock();
+  return l;
+}
+
 app_launch*
 app_launch::static_app_launch(int aid, sprockit::sim_parameters* params)
 {
-  static thread_lock lock;
+  std::string app_namespace = sprockit::printf("app%d", aid);
+  return static_app_launch(aid, app_namespace, params);
+}
 
-  lock.lock();
-  if (!static_app_launches_[aid]){
-    std::string app_namespace = sprockit::printf("app%d", aid);
-    if (params->has_namespace(app_namespace)){
-      sprockit::sim_parameters* app_params = params->get_namespace(app_namespace);
-      app_launch* mgr = app_launch_factory::get_optional_param(
-            "launch_type", "default", app_params, app_id(aid));
-      static_app_launches_[aid] = mgr;
-    }
+const std::vector<node_id>&
+app_launch::nodes(const std::string &name)
+{
+  launch_lock.lock();
+  app_launch* l = static_app_launches_[name];
+  if (!l){
+    spkt_abort_printf("No application %s found in launcher", name.c_str());
   }
-  lock.unlock();
-  return static_app_launches_[aid];
+  launch_lock.unlock();
+  return l->node_assignments();
 }
 
 void
-app_launch::index_allocation(const ordered_node_set &allocation)
+software_launch::index_allocation(const ordered_node_set &allocation)
 {
-  indexer_->map_ranks(aid_, allocation,
+  indexer_->map_ranks(allocation,
                procs_per_node_, rank_to_node_indexing_,
                nproc_);
 
@@ -128,7 +172,7 @@ app_launch::index_allocation(const ordered_node_set &allocation)
 }
 
 void
-app_launch::request_allocation(
+software_launch::request_allocation(
   const sw::ordered_node_set& available,
   sw::ordered_node_set& allocation)
 {
@@ -141,7 +185,7 @@ app_launch::request_allocation(
 }
 
 void
-app_launch::parse_launch_cmd(
+software_launch::parse_launch_cmd(
   sprockit::sim_parameters* params,
   int& nproc,
   int& procs_per_node,
@@ -174,7 +218,7 @@ app_launch::parse_launch_cmd(
   else { //standard launch
     try {
       nproc = params->get_long_param("size");
-      procs_per_node = params->get_optional_long_param("ntask_per_node", 1);
+      procs_per_node = params->get_optional_long_param("concentration", 1);
     }
     catch (sprockit::input_error& e) {
       cerr0 << "Problem reading app size parameter in app_launch.\n"
@@ -185,13 +229,13 @@ app_launch::parse_launch_cmd(
 }
 
 void
-app_launch::parse_launch_cmd(sprockit::sim_parameters* params)
+software_launch::parse_launch_cmd(sprockit::sim_parameters* params)
 {
   parse_launch_cmd(params, nproc_, procs_per_node_, core_affinities_);
 }
 
 void
-app_launch::parse_aprun(
+software_launch::parse_aprun(
   const std::string &cmd,
   int &nproc, int &nproc_per_node,
   std::vector<int>& core_affinities)

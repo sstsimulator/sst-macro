@@ -142,8 +142,8 @@ parallel_runtime::~parallel_runtime()
 void
 parallel_runtime::send_event(int thread_id,
   timestamp t,
-  topology_id dst,
-  event_loc_id src,
+  switch_id dst,
+  device_id src,
   uint32_t seqnum,
   event* ev)
 {

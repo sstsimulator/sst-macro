@@ -142,18 +142,18 @@ transport::init()
 {
   //THIS SHOULD ONLY BE CALLED AFTER RANK and NPROC are known
   inited_ = true;
-  global_domain_ = new global_communicator(this);
   const char* nspare_str = getenv("SUMI_NUM_SPARES");
   if (nspare_str){
     int nspares = atoi(nspare_str);
     init_spares(nspares);
   }
+
+  global_domain_ = new global_communicator(this);
 }
 
 void
 transport::init_spares(int nspares)
 {
-
 }
 
 void
@@ -227,11 +227,11 @@ transport::blocking_poll(message::payload_type_t ty)
 }
 
 message::ptr
-transport::blocking_poll()
+transport::poll(bool blocking)
 {
-  bool empty;
-  message::ptr dmsg = completion_queue_.pop_front_and_return(empty);
-  if (empty){
+  message::ptr dmsg;
+  bool empty = completion_queue_.pop_front_and_return(dmsg);
+  if (empty && blocking){
     debug_printf(sprockit::dbg::sumi,
       "Rank %d blocking_poll: cq empty, blocking", rank_);
     return block_until_message();
@@ -244,10 +244,16 @@ transport::blocking_poll()
 }
 
 message::ptr
+transport::blocking_poll()
+{
+  return poll(true); //blocking
+}
+
+message::ptr
 transport::blocking_poll(double timeout)
 {
-  bool empty;
-  message::ptr dmsg = completion_queue_.pop_front_and_return(empty);
+  message::ptr dmsg;
+  bool empty = completion_queue_.pop_front_and_return(dmsg);
   if (empty){
     debug_printf(sprockit::dbg::sumi,
       "Rank %d blocking_poll: cq empty, blocking until timeout %8.4e",
@@ -319,6 +325,11 @@ transport::handle(const message::ptr& msg)
 
   switch (msg->class_type())
   {
+  case message::bcast:
+    //root initiated global broadcast of some metadata
+    system_bcast(msg);
+    operation_done(msg);
+    break;
   case message::terminate:
   case message::collective_done:
   case message::pt2pt: {
@@ -372,6 +383,41 @@ transport::handle(const message::ptr& msg)
         "transport::handle: got unknown message class %d",
         msg->class_type());
   }
+  }
+}
+
+void
+transport::system_bcast(const message::ptr& msg)
+{
+  auto bmsg = ptr_safe_cast(system_bcast_message, msg);
+  int root = bmsg->root();
+  int my_effective_rank = (rank_ - root + nproc_) % nproc_;
+
+  /**
+   0->1
+   0->2
+   1->3
+   0->4
+   1->5
+   2->6
+   3->7
+   ... and so on
+  */
+
+  int partner_gap = 1;
+  int rank_check = rank_;
+  while (rank_check > 0){
+    partner_gap *= 2;
+    rank_check /= 2;
+  }
+
+  int effective_target = my_effective_rank + partner_gap;
+  while (effective_target < nproc_){
+    int target = (effective_target + root) % nproc_;
+    message::ptr next_msg = new system_bcast_message(bmsg->action(), bmsg->root());
+    send_header(target, next_msg);
+    partner_gap *= 2;
+    effective_target = my_effective_rank + partner_gap;
   }
 }
 

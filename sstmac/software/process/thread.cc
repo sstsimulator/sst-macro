@@ -94,11 +94,10 @@ const task_id thread::main_thread_tid(-1);
 //
 void
 thread::init_thread(int physical_thread_id, threading_interface* threadcopy, void *stack,
-                    int stacksize, operating_system* os, threading_interface *yield_to)
+                    int stacksize, threading_interface *yield_to)
 {
   stack_ = stack;
   stacksize_ = stacksize;
-  os_ = os;
 
   init_id();
 
@@ -110,6 +109,12 @@ thread::init_thread(int physical_thread_id, threading_interface* threadcopy, voi
   info->thethread = this;
 
   context_->start_context(physical_thread_id, stack, stacksize, run_routine, info, yield_to);
+}
+
+device_id
+thread::event_location() const
+{
+  return os_->event_location();
 }
 
 thread*
@@ -237,7 +242,8 @@ thread::run_routine(void* threadptr)
 
 key::category schedule_delay("CPU_Sched Delay");
 
-thread::thread() :
+thread::thread(sprockit::sim_parameters* params, software_id sid, operating_system* os) :
+  os_(os),
   state_(PENDING),
   isInit(false),
   backtrace_(nullptr),
@@ -251,15 +257,12 @@ thread::thread() :
   cpumask_(0),
   pthread_map_(nullptr),
   parent_app_(nullptr),
-  perf_model_(nullptr)
+  perf_model_(nullptr),
+  sid_(sid)
 {
   //make all cores possible active
   cpumask_ = ~(cpumask_);
-}
 
-void
-thread::init_perf_model_params(sprockit::sim_parameters *params)
-{
   perf_model_ = perf_counter_model_factory
                   ::get_optional_param("perf_model", "null", params);
 }
@@ -335,11 +338,6 @@ thread::~thread()
   }
   if (schedule_key_) delete schedule_key_;
   if (perf_model_) delete perf_model_;
-
-  //all my apis should have been deleted
-  //since they are libraries
-  //i just need to clear the map
-  apis_.clear();
 }
 
 
