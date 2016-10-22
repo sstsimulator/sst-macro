@@ -338,11 +338,6 @@ thread::~thread()
   }
   if (schedule_key_) delete schedule_key_;
   if (perf_model_) delete perf_model_;
-
-  //all my apis should have been deleted
-  //since they are libraries
-  //i just need to clear the map
-  apis_.clear();
 }
 
 

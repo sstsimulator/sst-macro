@@ -171,8 +171,9 @@ SSTMAC_pthread_mutex_destroy(sstmac_pthread_mutex_t * mutex)
     return 0; //nothing to do here
 
 
-
-  bool found = current_thread()->parent_app()->erase_mutex(*mutex);
+  thread* thr = current_thread();
+  app* a = thr->parent_app();
+  bool found = a->erase_mutex(*mutex);
   if (found){
     return EINVAL;
   } else {

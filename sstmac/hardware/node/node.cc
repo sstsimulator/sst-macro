@@ -111,11 +111,12 @@ node::init(unsigned int phase)
 
 node::~node()
 {
-  if (os_) delete os_;
+  if (app_launcher_) delete app_launcher_;
   if (mem_model_) delete mem_model_;
   if (proc_) delete proc_;
-  //JJW 03/09/2015 - node does not own NIC
-  //if (nic_) delete nic_;
+  /** JJW Delete this last since destructor may unregister libs from OS */
+  if (os_) delete os_;
+  if (nic_) delete nic_;
 }
 
 void

@@ -212,6 +212,7 @@ class app : public thread
   std::map<int, condition_t> conditions_;
 
   std::map<int, destructor_fxn> tls_key_fxns_;
+  spkt_unordered_map<std::string, api*> apis_;
 
 };
 

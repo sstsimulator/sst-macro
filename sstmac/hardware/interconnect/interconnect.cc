@@ -76,6 +76,12 @@ interconnect::~interconnect()
 {
   sprockit::delete_vector(netlinks_);
   sprockit::delete_vector(nodes_);
+  for (network_switch* sw : logp_overlay_switches_){
+    if (sw) delete sw;
+  }
+  for (network_switch* sw : switches_){
+    delete sw;
+  }
 }
 #endif
 
@@ -108,11 +114,7 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   sprockit::sim_parameters* ej_params = switch_params->get_namespace("ejection");
   topology* top = topology_;
 
-  switch_params->add_param_override("id", 0);
-  network_switch* tmpl_switch = network_switch_factory::get_param("model", switch_params, 0, mgr);
-  logp_switch* logp_tester = test_cast(logp_switch, tmpl_switch);
-  bool logp_model = logp_tester;
-  delete logp_tester;
+  bool logp_model = switch_params->get_param("model") == "logP";
 
   switches_.resize(top->max_switch_id());
   nodes_.resize(top->max_node_id());

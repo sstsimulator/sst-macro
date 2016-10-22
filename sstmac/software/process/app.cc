@@ -65,11 +65,11 @@ app::~app()
 {
   /** These get deleted by unregister */
   //sprockit::delete_vals(apis_);
-  //if (compute_inst_) delete compute_inst_;
-  //if (compute_time_) delete compute_time_;
-  //if (compute_mem_move_) delete compute_mem_move_;
-  //if (compute_loops_) delete compute_loops_;
-  //if (sleep_lib_) delete sleep_lib_;
+  if (compute_inst_) delete compute_inst_;
+  if (compute_time_) delete compute_time_;
+  if (compute_mem_move_) delete compute_mem_move_;
+  if (compute_loops_) delete compute_loops_;
+  if (sleep_lib_) delete sleep_lib_;
 }
 
 lib_compute_loops*
@@ -212,6 +212,10 @@ void
 app::run()
 {
   skeleton_main();
+  for (auto& pair : apis_){
+    delete pair.second;
+  }
+  apis_.clear();
 }
 
 void

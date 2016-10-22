@@ -90,12 +90,7 @@ class api :
   {
   }
 
-  virtual
-  ~api() {
-    if (hostcompute_) {
-      delete timer_;
-    }
-  }
+  virtual ~api();
 
   virtual void
   init(){}

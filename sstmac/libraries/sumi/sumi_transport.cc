@@ -42,6 +42,18 @@ class sumi_server :
     slot = proc;
   }
 
+  bool
+  unregister_proc(int rank, sumi_transport* proc){
+    int app_id = proc->sid().app_;
+    auto iter = procs_.find(app_id);
+    auto& subMap = iter->second;
+    subMap.erase(rank);
+    if (subMap.empty()){
+      procs_.erase(iter);
+    }
+    return procs_.empty();
+  }
+
   void
   incoming_event(event *ev){
     transport_message* smsg = safe_cast(transport_message, ev);
@@ -115,6 +127,9 @@ sumi_transport::ctor_common(sstmac::sw::software_id sid)
 sumi_transport::~sumi_transport()
 {
   if (queue_) delete queue_;
+  sumi_server* server = safe_cast(sumi_server, os_->lib(server_libname_));
+  bool del = server->unregister_proc(rank_, this);
+  if (del) delete server;
 }
 
 void

@@ -57,11 +57,6 @@ class thread
     DONE=6
   };
 
-  void
-  set_api(thread* thr) {
-    thr->apis_ = apis_;
-  }
-
   static thread*
   current();
 
@@ -330,8 +325,6 @@ class thread
   void cleanup();
 
  protected:
-  spkt_unordered_map<std::string, api*> apis_;
-
   /// Monitor state for deadlock detection.
   state state_;
 

@@ -34,6 +34,7 @@ distributed_service_app::skeleton_main()
   srv->collective_block(sumi::collective::barrier, 1);
   debug("finalizing distributed service %s on rank %d", libname_.c_str(), srv->rank());
   srv->finalize();
+  delete srv;
 }
 
 sumi::message::ptr

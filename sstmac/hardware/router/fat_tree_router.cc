@@ -68,7 +68,6 @@ fat_tree_router::build_rng()
 
 fat_tree_router::~fat_tree_router()
 {
-  printf("deleteing fat tree router\n");
   if (rng_) delete rng_;
 }
 
