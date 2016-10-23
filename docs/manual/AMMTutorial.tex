@@ -6,7 +6,7 @@
 The preferred mode for usage of \sstmacro will be through specifying parameters for well-defined abstract machine models.
 This represents an intermediate-level mode that should cover the vast majority of use cases.
 The highly configurable, detailed parameter files will remain valid but will represent advanced usage mode for corner cases.
-The primary advantage of the abstract machine models is a uniform set of parameters regardless of the underlying congestion model or accuracy level (e.g. packet, flow, train, packet-flow, LogGOPSim).
+The primary advantage of the abstract machine models is a uniform set of parameters regardless of the underlying congestion model or accuracy level (Pisces or LogGOPSim).
 Each input file requires the usual set of software parameters given in \ref{sec:parameters}.
 For hardware parameters, two initial parameters are required and one is optional.
 
@@ -66,7 +66,7 @@ Once packets are injected, they traverse a series of network switches.
 The memory, injection, and network are all defined by a bandwidth/latency parameter pair.
 
 \begin{ViFile}
-network_bandwidth = 6GB/s
+network_link_bandwidth = 6GB/s
 network_hop_latency = 100ns
 injection_bandwidth = 10GB/s
 injection_latency = 1us
@@ -75,7 +75,30 @@ memory_latency = 15ns
 \end{ViFile}
 
 These are special parameters used by the AMM configurations.
-They can be by-passed by directly using fully namespaced parameters (not shown).
+They can be by-passed by directly using fully namespaced parameters:
+
+\begin{ViFile}
+switch {
+ link {
+   bandwidth = 6GB/s
+   latency = 100ns
+ }
+ ejection {
+  latency = 100ns
+  bandwidth = 10GB/s
+ }
+}
+nic {
+ injection {
+  latency = 1us
+  bandwidth = 10GB/s
+ }
+}
+memory {
+ bandwidth = 10GB/s
+ latency = 15ns
+}
+\end{ViFile}
 
 NOTE: there is no parameter \inlinefile{network_latency}.
 The parameter is \inlinefile{network_hop_latency}.

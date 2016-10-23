@@ -1,0 +1,245 @@
+%% !TEX root = manual.tex
+
+\newcommand{\openTable}{\begin{tabular}{| c | c | p{2cm} | p{2cm} | p{6.5cm} |}}
+
+\chapter{Detailed Parameter Listings}
+\label{chapter:parameters}
+The following chapter is organized by parameter namespaces.
+
+Tables in each namespace are organized as
+\def\arraystretch{1.5}%  1 is the default, change whatever you need
+
+\openTable
+\hline
+Name & Type & Required/ Optional & Allowed \newline Values & Description \\
+\hline
+\end{tabular}
+
+which lists the possible parameter names, allowed values, and brief descriptions.
+Where required, more detail descriptions of particular parameter values are shown.
+
+The allow parameter types are:
+
+\begin{tabular}{l | l}
+\hline
+int & Any integer \\
+\hline
+long & Any integer value, but guaranteed not to overflow for long integers \\
+\hline
+freq & Any valid float value followed by frequency units (Hz, MHz, GHz) \\
+\hline
+bandwidth & Any valid float value followed by bandwidth units (b/s, B/s, Mb/s, MB/s, etc) \\
+\hline
+byte length & Any positive integer followed by length units (B, KB, MB, GB,TB) \\
+\hline
+string & An arbitrary string \\
+\hline
+vector of X & A vector of type X with entries separated by spaces \\
+\hline
+\end{tabular}
+\section{Global namespace}
+\openTable
+\hline
+sst\_nthread & int & Optional, default 1 & Any positive integer & Specifying more threads than cores can lead to deadlock \\
+\hline
+serialization\_buffer\_size & byte length \\
+\hline
+mpi\_max\_num\_requests & int \\
+\hline
+cpu\_affinity & vector of int \\
+\hline
+\end{tabular}
+
+\section{Namespace ``topology''}
+\openTable
+\hline
+geometry & \\
+\hline
+name & \\
+\hline
+\end{tabular}
+
+\section{Namespace ``node''}
+\openTable
+\hline
+services & vector of strings \\
+\hline
+\end{tabular}
+\subsection{Namespace ``node.nic''}
+\openTable
+\hline
+negligible\_size & byte length \\
+\hline
+\end{tabular}
+\subsubsection{Namespace ``node.nic.traffic\_matrix''}
+\subsubsection{Namespace ``node.nic.local\_bytes\_sent''}
+\subsubsection{Namespace ``node.nic.global\_bytes\_sent''}
+\subsubsection{Namespace ``node.nic.message\_size\_histogram''}
+\subsubsection{Namespace ``node.nic.injection"}
+\openTable
+\hline
+arbitrator & string & \\
+\hline
+latency & time & \\
+\hline
+bandwidth & bandwidth & \\
+\hline
+send\_latency & time & \\
+\hline
+credit\_latency & time & \\
+\hline
+credits & byte length \\
+\hline
+\end{tabular}
+
+\subsection{Namespace ``node.netlink''}
+\subsubsection{Namespace ``node.netlink.injection"}
+\openTable
+\hline
+arbitrator & string & \\
+\hline
+latency & time & \\
+\hline
+bandwidth & bandwidth & \\
+\hline
+send\_latency & time & \\
+\hline
+credit\_latency & time & \\
+\hline
+credits & byte length \\
+\hline
+\end{tabular}
+
+\subsubsection{Namespace ``node.netlink.ejection"}
+\openTable
+\hline
+arbitrator & string & \\
+\hline
+latency & time & \\
+\hline
+bandwidth & bandwidth & \\
+\hline
+send\_latency & time & \\
+\hline
+credit\_latency & time & \\
+\hline
+credits & byte length \\
+\hline
+\end{tabular}
+
+\subsection{Namespace ``node.memory''}
+\openTable
+\hline
+arbitrator & string & \\
+\hline
+latency & time & \\
+\hline
+total\_bandwidth & bandwidth & \\
+\hline
+max\_single\_bandwidth & bandwidth & \\
+\hline
+\end{tabular}
+\subsection{Namespace ``node.os"}
+\openTable
+\end{tabular}
+\subsubsection{Namespace ``node.os.call\_graph"}
+\subsubsection{Namespace ``node.os.ftq"}
+\subsection{Namespace ``node.proc''}
+\openTable
+\hline
+ncores & int & Required & Any positive integer & The number of cores contained in a processor (socket). Total number of cores for a node is $ncores \times nsockets$. \\
+\hline
+frequency & freq & Required & & The baseline frequency of the node \\
+\hline
+parallelism & double \\
+\hline
+\end{tabular}
+
+\section{Namespace ``mpi"}
+\openTable
+\end{tabular}
+\subsection{Namespace ``mpi.queue''}
+\openTable
+\end{tabular}
+
+\section{Namespace ``switch''}
+\openTable
+\hline
+buffer\_size & byte length \\
+\hline
+\end{tabular}
+\subsection{Namespace ``switch.output\_buffer"}
+\subsection{Namespace ``switch.xbar"}
+\openTable
+\hline
+arbitrator & string & \\
+\hline
+latency & time & \\
+\hline
+bandwidth & bandwidth & \\
+\hline
+send\_latency & time & \\
+\hline
+credit\_latency & time & \\
+\hline
+num\_vc & int \\
+\hline
+credits & byte length \\
+\hline
+\end{tabular}
+\subsubsection{Namespace ``switch.xbar.delay\_histogram''}
+\subsubsection{Namespace ``switch.xbar.congestion\_spyplot''}
+\subsubsection{Namespace ``switch.xbar.bytes\_sent''}
+\subsubsection{Namespace ``switch.xbar.byte\_hops''}
+\subsection{Namespace ``switch.link''}
+\openTable
+\hline
+arbitrator & string & \\
+\hline
+latency & time & \\
+\hline
+bandwidth & bandwidth & \\
+\hline
+send\_latency & time & \\
+\hline
+credit\_latency & time & \\
+\hline
+credits & byte length \\
+\hline
+\end{tabular}
+\subsubsection{Namespace ``switch.link.delay\_histogram''}
+\subsubsection{Namespace ``switch.link.congestion\_spyplot''}
+\subsubsection{Namespace ``switch.link.bytes\_sent''}
+\subsubsection{Namespace ``switch.link.byte\_hops''}
+\subsection{Namespace ``switch.ejection''}
+\openTable
+\hline
+arbitrator & string & \\
+\hline
+latency & time & \\
+\hline
+bandwidth & bandwidth & \\
+\hline
+send\_latency & time & \\
+\hline
+credit\_latency & time & \\
+\hline
+credits & byte length \\
+\hline
+\end{tabular}
+
+\section{Namespace ``appN''}
+\openTable
+\hline
+launch\_cmd & \\
+\hline
+launch\_indexing & \\
+\hline
+launch\_allocation & \\
+\hline
+\end{tabular}
+\paragraph{aprun}
+\paragraph{srun}
+
+
+

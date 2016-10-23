@@ -55,6 +55,7 @@ param_remap remap_list[] = {
   pr("switch_name", "switch.model"),
   pr("memory_latency", "node.memory.latency"),
   pr("memory_bandwidth", "node.memory.bandwidth"),
+  pr("max_memory_bandwidth", "node.memory.max_single_bandwidth"),
   pr("node_name", "node.model"),
   pr("node_mem_latency", "node.memory.latency"),
   pr("node_mem_bandwidth", "node.memory.bandwidth"),

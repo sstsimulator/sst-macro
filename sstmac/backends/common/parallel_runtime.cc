@@ -109,7 +109,7 @@ parallel_runtime::init_runtime_params(sprockit::sim_parameters *params)
   //turn the number of procs and my rank into keywords
   nthread_ = params->get_optional_int_param("sst_nthread", 1);
 
-  buf_size_ = params->get_optional_int_param("serialization_buffer_size", 512);
+  buf_size_ = params->get_optional_byte_length_param("serialization_buffer_size", 512);
   int num_bufs_window = params->get_optional_int_param("serialization_num_bufs_allocation", 100);
   send_buffer_pools_.resize(nthread_, message_buffer_cache(buf_size_, num_bufs_window));
   send_buffers_.resize(nthread_);

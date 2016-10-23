@@ -10,8 +10,8 @@ SpktRegister("logP | simple", sstmac::param_expander, logp_param_expander);
 void
 logp_param_expander::expand(sprockit::sim_parameters* params)
 {
-  sprockit::sim_parameters* nic_params = params->get_optional_namespace("nic");
   sprockit::sim_parameters* node_params = params->get_optional_namespace("node");
+  sprockit::sim_parameters* nic_params = node_params->get_optional_namespace("nic");
   sprockit::sim_parameters* mem_params = node_params->get_optional_namespace("memory");
   sprockit::sim_parameters* switch_params = params->get_optional_namespace("switch");
   sprockit::sim_parameters* top_params = params->get_optional_namespace("topology");
@@ -90,7 +90,6 @@ logp_param_expander::expand_amm2_memory(
  sprockit::sim_parameters* mem_params)
 {
   expand_amm1_memory(params, mem_params);
-  mem_params->add_param_override("max_single_bandwidth", params->get_param("max_memory_bandwidth"));
 }
 
 void

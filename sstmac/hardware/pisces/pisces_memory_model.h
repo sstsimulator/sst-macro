@@ -80,6 +80,11 @@ class pisces_memory_packetizer : public packetizer
     return true;
   }
 
+  double
+  max_single_bw() const {
+    return max_single_bw_;
+  }
+
  private:
   void
   handle_payload(int vn, pisces_payload* pkt);
@@ -127,14 +132,13 @@ class pisces_memory_model :
 
   double
   max_single_bw() const {
-    return max_single_bw_;
+    return mem_packetizer_->max_single_bw();
   }
 
  private:
   int allocate_channel();
 
  private:
-  double max_single_bw_;
   std::map<message*, callback*> pending_requests_;
   pisces_memory_packetizer* mem_packetizer_;
   std::list<int> channels_available_;

@@ -352,6 +352,33 @@ sim_parameters::get_optional_param(const std::string &key, const std::string &de
 }
 
 sim_parameters*
+sim_parameters::get_optional_local_namespace(const std::string& ns)
+{
+  auto it = subspaces_.find(ns);
+  if (it == subspaces_.end()){
+    return build_local_namespace(ns);
+  } else {
+    return it->second;
+  }
+}
+
+sim_parameters*
+sim_parameters::build_local_namespace(const std::string& ns)
+{
+  //need to make a new one
+  sim_parameters* params = new sim_parameters;
+  if (namespace_ == "global"){
+   params->set_namespace(ns);
+  } else {
+   params->set_namespace(sprockit::printf("%s.%s",
+                namespace_.c_str(), ns.c_str()));
+  }
+  params->set_parent(this);
+  subspaces_[ns] = params;
+  return params;
+}
+
+sim_parameters*
 sim_parameters::get_optional_namespace(const std::string& ns)
 {
   //if the namespace does not exist locally, see if parent has it
@@ -362,17 +389,7 @@ sim_parameters::get_optional_namespace(const std::string& ns)
   //but in fact are operating on a shared namespace
   if (params) return params;
 
-  //need to make a new one
-  params = new sim_parameters;
-  if (namespace_ == "global"){
-   params->set_namespace(ns);
-  } else {
-   params->set_namespace(sprockit::printf("%s.%s",
-                namespace_.c_str(), ns.c_str()));
-  }
-  params->set_parent(this);
-  subspaces_[ns] = params;
-  return params;
+  return build_local_namespace(ns);
 }
 
 long
@@ -887,14 +904,28 @@ void
 sim_parameters::parse_stream(std::istream& in,
   bool fail_on_existing, bool override_existing)
 {
+  std::list<sim_parameters*> ns_queue;
+  ns_queue.push_back(this);
   std::string line;
   while (in.good()) {
     std::getline(in, line);
     line = trim_str(line);
+    sim_parameters* active_scope = ns_queue.back();
+    int last_idx = line.size() - 1;
 
     if (line[0] == '#') {
       //a comment
       continue;
+    }
+    else if (line[0] == '}'){
+      //ending a namespace
+      ns_queue.pop_back();
+    }
+    else if (line[last_idx] == '{'){ //opening a new namespace
+      std::string ns = line.substr(0, last_idx);
+      ns = trim_str(ns);
+      sim_parameters* scope = active_scope->get_optional_local_namespace(ns);
+      ns_queue.push_back(scope);
     }
     else if (line.find("set var ") != std::string::npos) {
       line = line.substr(8);
@@ -904,16 +935,16 @@ sim_parameters::parse_stream(std::istream& in,
     }
     else if (line.find("=") != std::string::npos) {
       //an assignment
-      parse_line(line, fail_on_existing, override_existing);
+      active_scope->parse_line(line, fail_on_existing, override_existing);
     }
     else if (line.find("include") != std::string::npos) {
       //an include line
       std::string included_file = trim_str(line.substr(7));
-      try_to_parse(included_file, fail_on_existing, override_existing);
+      active_scope->try_to_parse(included_file, fail_on_existing, override_existing);
     }
     else if (line.find("unset") != std::string::npos) {
       std::string key;
-      sim_parameters* scope = get_scope_and_key(trim_str(line.substr(5)), key);
+      sim_parameters* scope = active_scope->get_scope_and_key(trim_str(line.substr(5)), key);
       scope->remove_param(key);
     }
     else if (line.size() == 0) {

@@ -303,9 +303,6 @@ the standard MPI compilers.  Your configure should look something like:
 \begin{ShellCmd}
 sst-macro/build> ../configure --enable-mpiparallel CXX=mpicxx CC=mpicc ...
 \end{ShellCmd}
-
-\sstmacro can now run parallel jobs without any graph partitioning packages.
-In previous versions, \sstmacro required METIS for partitioning the workload amongst parallel processes.
 With the above options, you can just compile and go.
 %For some cases, you may wish to use METIS for a more intelligent partitioning of the nodes to improve parallel performance.
 %Make sure that you have installed \inlineshell{gpmetis} somewhere and the binary is in your PATH. 
@@ -316,7 +313,6 @@ Use your favorite MPI launcher to run, e.g. for OpenMPI
 \begin{ShellCmd}
 mysim> mpirun -n 4 sstmac -f parameters.ini
 \end{ShellCmd}
-
 or for MPICH
 
 \begin{ShellCmd}
@@ -351,8 +347,7 @@ Job launchers may in some cases provide duplicate functionality and either metho
 \item Watch your \inlineshell{LD_LIBRARY_PATH} if you have multiple different builds. If your paths get scrambled and the wrong libraries are being read, you will get bizarre, inscrutable errors.
 \item If the number of simulated processes specified by e.g. \inlinefile{aprun -n 100} does not match the number of nodes in the topology (i.e. you are not space-filling the whole simulated machine),
 parallel performance will suffer. \sstmacro partitions nodes, not processes.
-\item Furthermore, if you don't space-fill the simulated machine, you might even get weird errors. Some MPI ranks might have zero virtual processes, which leads to undefined behavior.
-\item If running an MPI program,  you should probably be safe and use the mpicheck debug flag (see below) to ensure the simulation runs to completion.
+\item If running an MPI program,  you should probably be safe and use the \inlineshell{mpi_check} debug flag (see below) to ensure the simulation runs to completion.
 The flag ensures \inlinecode{MPI_Finalize} is called and the simulation did not ``deadlock.''
 While the PDES implementation should be stable, it's best to treat it as Beta++ to ensure program correctness.
 \end{itemize}

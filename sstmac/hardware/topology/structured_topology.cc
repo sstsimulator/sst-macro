@@ -32,6 +32,7 @@ structured_topology::structured_topology(sprockit::sim_parameters* params,
     } else {
       num_nodes_per_netlink_ = 1;
     }
+    netlinks_per_switch_ /= num_nodes_per_netlink_;
   } else {
     num_nodes_per_netlink_ = 1;
   }
