@@ -1,17 +1,18 @@
 %% !TEX root = manual.tex
 
-\newcommand{\openTable}[1]{\begin{tabular}{| c | c | c | p{3cm} | p{#1} |}}
+\newcommand{\openTable}{\begin{tabular}{| p{5cm} | p{2cm} | p{3cm} | p{8cm} |}}
+\newcommand{\paramType}[1]{\newline (#1)}
+\hyphenpenalty=10000
+\pagestyle{empty}
 
 \chapter{Detailed Parameter Listings}
 \label{chapter:parameters}
-The following chapter is organized by parameter namespaces.
-
-Tables in each namespace are organized as
+The following chapter is organized by parameter namespaces. Tables in each namespace are organized as
 \def\arraystretch{1.5}%  1 is the default, change whatever you need
 
-\openTable{6.5cm}
+\openTable
 \hline
-Name & Type & Default if not given & Allowed \newline Values & Description \\
+Name (type) & Default if not given & Allowed \newline Values & Description \\
 \hline
 \end{tabular}
 
@@ -46,51 +47,51 @@ quantiy & A catch-all for a quantity with units. Any of frequency, bandwidth, by
 \hline
 \end{tabular}
 \section{Global namespace}
-\openTable{5cm}
+\openTable
 \hline
-sst\_nthread & int & 1 & Positive int & Only relevant for multi-threading. Specifying more threads than cores can lead to deadlock. \\
+sst\_nthread \paramType{int} & 1 & Positive int & Only relevant for multi-threading. Specifying more threads than cores can lead to deadlock. \\
 \hline
-timestamp\_resolution & time & 1ps & & Specifies the length of time occupied by 1 timestamp tick - the smallest resolvable time difference. Numerical stability depends on this parameter matching the time scales of the simulation. \\
+timestamp\_resolution \paramType{time} & 1ps & & Specifies the length of time occupied by 1 timestamp tick - the smallest resolvable time difference. Numerical stability depends on this parameter matching the time scales of the simulation. \\
 \hline
-serialization\_buffer\_size & byte length & 512B & & Size to allocate for buffers in a pool of serialization buffers. This should set be large enough to handle serialization of most messages, but not so large that significant space is wasted. \\
+serialization\_buffer\_size \paramType{byte length} & 512B & & Size to allocate for buffers in a pool of serialization buffers. This should set be large enough to handle serialization of most messages, but not so large that significant space is wasted. \\
 \hline
-cpu\_affinity & vector of int & No default & Invalid core IDs lead to undefined behavior & When in multi-threading, specifies the list of core IDs that threads will be pinned to. \\
+cpu\_affinity \paramType{vector of int} & No default & Invalid cpu IDs give undefined behavior & When in multi-threading, specifies the list of core IDs that threads will be pinned to. \\
 \hline
 \end{tabular}
 
 \section{Namespace ``topology''}
-\openTable{6cm}
+\openTable
 \hline
-geometry & vector of int & No default & See Topology section & Geometry configuration of the topology. For details of the keyword, users should refer to Section \ref{chapter:topologies} \\
+geometry \paramType{vector of int} & No default & See Topology section & Geometry configuration of the topology. For details of the keyword, users should refer to Section \ref{chapter:topologies} \\
 \hline
-name & string & No default & torus, dragonfly, fat\_tree, butterfly, crossbar, simple\_fat\_tree & The name of the topology to build. For details, see Section \ref{chapter:topologies} \\
+name \paramType{string} & No default & torus, dragonfly, fat\_tree, butterfly, crossbar, simple\_fat\_tree & The name of the topology to build. For details, see Section \ref{chapter:topologies} \\
 \hline 
-seed & long & No default & & If no value given, random numbers for topology will be generated from system time \\
+seed \paramType{long} & System time & & If no value given, random numbers for topology will be generated from system time \\
 \hline
-concentration & int & 1 & Positive int & The number of nodes per network switch. For indirect networks, this is the number of nodes per leaf switch. \\
+concentration \paramType{int} & 1 & Positive int & The number of nodes per network switch. For indirect networks, this is the number of nodes per leaf switch. \\
 \hline
-num\_leaf\_switches & int & No default & Positive int & Only relevant for fat trees. This is the number of switches at the lowest level of the tree that are connected to compute nodes. \\
+num\_leaf\_switches \paramType{int} & No default & Positive int & Only relevant for fat trees. This is the number of switches at the lowest level of the tree that are connected to compute nodes. \\
 \hline
-tapering & vector of double & No default & Values 0-1 & For tapering of a fat tree, this specifies a tapering fraction per level of the fat tree.  This specifies a bandwidth multiplier for each layer of switch-to-switch links. \\
+tapering \paramType{vector of double} & No default & Values 0-1 & For tapering of a fat tree, this specifies a tapering fraction per level of the fat tree.  This specifies a bandwidth multiplier for each layer of switch-to-switch links. \\
 \hline
-k & int & No default & int >= 2 & The branching fraction of a fat tree. k=2 is a binary tree. k=4 is a quad-tree. \\
+k \paramType{int} & No default & int >= 2 & The branching fraction of a fat tree. k=2 is a binary tree. k=4 is a quad-tree. \\
 \hline
-group\_connections & int & No default & Positive int & For dragonfly, the number of intergroup connections on each switch in a Dragonfly group \\
+group\_connections \paramType{int} & No default & Positive int & For dragonfly, the number of intergroup connections on each switch in a Dragonfly group \\
 \hline
-redundant & vector of int & vector of 1's & Positive ints & For Cartesian topologies (hypercube, dragonfly, torus) this specifies a bandwidth (redundancy) multiplier for network links in each dimension. \\
+redundant \paramType{vector of int} & vector of 1's & Positive ints & For Cartesian topologies (hypercube, dragonfly, torus) this specifies a bandwidth (redundancy) multiplier for network links in each dimension. \\
 \hline
 \end{tabular}
 
 \section{Namespace ``node''}
-\openTable{8cm}
+\openTable
 \hline
-services & vector of strings & Empty & Valid service names & For more details, see the section on distributed services in the developer's manual. Advanced feature. \\
+services \paramType{vector of strings} & Empty & Valid service names & For  details, see section on distributed services in developer's manual. Advanced feature. \\
 \hline
 \end{tabular}
 \subsection{Namespace ``node.nic''}
-\openTable{8cm}
+\openTable
 \hline
-negligible\_size & byte length & 256B & & Messages (flows) smaller than size will not go through detailed congestion modeling. They will go through a simple analytic model to compute the delay. \\
+negligible\_size \paramType{byte length} & 256B & & Messages (flows) smaller than size will not go through detailed congestion modeling. They will go through a simple analytic model to compute the delay. \\
 \hline
 \end{tabular}
 \subsubsection{Namespace ``node.nic.traffic\_matrix''}
@@ -105,10 +106,11 @@ negligible\_size & byte length & 256B & & Messages (flows) smaller than size wil
 \input{piscesSender}
 
 \subsection{Namespace ``node.netlink''}
-\openTable{6cm}
+\openTable
 \hline
-num\_inject & int \\
-num\_eject & int \\
+num\_inject \paramType{int} & & & \\
+\hline
+num\_eject \paramType{int} & & & \\
 \hline
 \end{tabular}
 \subsubsection{Namespace ``node.netlink.injection"}
@@ -118,156 +120,164 @@ num\_eject & int \\
 \input{piscesSender}
 
 \subsection{Namespace ``node.memory''}
-\openTable{6cm}
+\openTable
 \hline
-arbitrator & string & cut\_through & null, simple, cut\_through & The type of arbitrator. See arbitrator descriptions above. \\
+arbitrator (string) & cut\_through & null, simple, cut\_through & The type of arbitrator. See arbitrator descriptions above. \\
 \hline
-latency & time & No default & & The latency of single memory operation \\
+latency (time) & No default & & The latency of single memory operation \\
 \hline
-total\_bandwidth & bandwidth & No default &  & The total memory bandwidth possible across all memory controllers. \\
+total\_bandwidth & No default &  & The total memory bandwidth possible across all memory controllers. \\
 \hline
-max\_single\_bandwidth & bandwidth & Computed & & The maximum memory bandwidth of a single stream of requests. Essentially the bandwidth of a single memory controller. If not given, this defaults the value of total\_bandwidth. \\
+max\_single\_bandwidth & Computed & & The maximum memory bandwidth of a single stream of requests. Essentially the bandwidth of a single memory controller. If not given, this defaults the value of total\_bandwidth. \\
 \hline
 \end{tabular}
 \subsection{Namespace ``node.os"}
-\openTable{8cm}
+\openTable
 \hline
-stack\_size & byte length & 32KB & & The size of user-space thread stack to allocate for each virtual application \\
+stack\_size \paramType{byte length} & 32KB & & The size of user-space thread stack to allocate for each virtual application \\
 \hline
-stack\_protect & bool & false & & Whether to put special mprotect regions around the thread stacks to turn stack overflow errors into seg faults \\
+stack\_protect \paramType{bool} & false & & Whether to put special mprotect regions around the thread stacks to turn stack overflow errors into seg faults \\
 \hline
-stack\_chunk\_size & byte length & 1MB & & The size of memory to allocate at a time when allocating new thread stacks. Rather than allocating one thread stack at a time, multiple stacks are allocated and added to a pool as needed.  \\
+stack\_chunk\_size \paramType{byte length} & 1MB & & The size of memory to allocate at a time when allocating new thread stacks. Rather than allocating one thread stack at a time, multiple stacks are allocated and added to a pool as needed.  \\
 \hline
 \end{tabular}
 \subsubsection{Namespace ``node.os.call\_graph"}
-\openTable{8cm}
+\openTable
 \hline
 \input{filerootDescr} \\
 \hline
 \end{tabular}
 \subsubsection{Namespace ``node.os.ftq"}
-\openTable{8cm}
+\openTable
 \hline
 \input{filerootDescr} \\
 \hline 
-epoch & time & No default & & The length of simulation time to treat as a single interval. This is much like a histogram bin, except the bin is partitioned into multiple categories. If too small, not enough data will be collected per interval to give reasonable looking results. If too large, significant changes in system activity over time will not be resolved. \\
+epoch \paramType{time} & No default & & The length of simulation time to treat as a single interval. This is much like a histogram bin, except the bin is partitioned into multiple categories. If too small, not enough data will be collected per interval to give reasonable looking results. If too large, significant changes in system activity over time will not be resolved. \\
 \hline
 \end{tabular}
 \subsection{Namespace ``node.proc''}
-\openTable{8cm}
+\openTable
 \hline
-ncores & int & No default & Any positive integer & The number of cores contained in a processor (socket). Total number of cores for a node is $ncores \times nsockets$. \\
+ncores \paramType{int} & No default & Positive int & The number of cores contained in a processor (socket). Total number of cores for a node is $ncores \times nsockets$. \\
 \hline
-frequency & freq & No default & & The baseline frequency of the node \\
+frequency & No default & & The baseline frequency of the node \\
 \hline
 parallelism & double \\
 \hline
 \end{tabular}
 
 \section{Namespace ``mpi"}
-\openTable{8cm}
+\openTable
 \hline
-test\_delay & time & 0 \\
-iprobe\_delay & time & 0 \\
+test\_delay \paramType{time} & 0 & & The minimum time spent by MPI on each MPI\_Test call \\
+\hline
+iprobe\_delay \paramType{time} & 0 & & The minimum time spent by MPI on each MPI\_Iprobe call \\
 \hline
 \end{tabular}
 \subsection{Namespace ``mpi.queue''}
-\openTable{8cm}
+\openTable
 \hline
-max\_vshort\_msg\_size & byte length \\
+max\_vshort\_msg\_size \paramType{byte length} & 512B & & The maximum size to use the very short message protocol. Small messages are sent eagerly using special pre-allocated mailbox buffers. Sends complete immediately. \\
 \hline
-max\_eager\_msg\_size & byte length \\
+max\_eager\_msg\_size \paramType{byte length} & 8KB & & The maximum size to use the RDMA eager protocol. This also uses buffers to send message, but instead of using pre-allocated mailboxes, it coordinates an RDMA get. Sends complete immediately. \\
 \hline
-post\_rdma\_delay & time \\
+post\_rdma\_delay \paramType{time} & 0 & & The minimum time spent by MPI posting each RDMA operation \\
 \hline
-post\_header\_delay & time \\
+post\_header\_delay \paramType{time} & 0 & & The mimimum time spent by MPI sending headers into pre-allocated mailboxes \\
 \hline
-poll\_delay & time \\
+poll\_delay (time) & 0 & & The minimum time spent by MPI each time it polls for incoming messages \\
 \hline
 \end{tabular}
 
 \section{Namespace ``switch''}
-\openTable{8cm}
+\openTable
 \hline
-buffer\_size & byte length \\
+buffer\_size \paramType{byte length} & No default & & The size of input and output buffers on each switch. This determines the number of credits available to other components \\
 \hline
 \end{tabular}
 \subsection{Namespace ``switch.router''}
-\openTable{8cm}
+\openTable
 \hline
-ugal\_threshold & int \\
+ugal\_threshold \paramType{int} & 0 & & The minimum number of network hops required before UGAL is considered. All path lengths less than value automatically use minimal. \\
 \hline
 \end{tabular}
 \subsection{Namespace ``switch.output\_buffer"}
-\subsection{Namespace ``switch.xbar"}
-\openTable{8cm}
-\input{piscesSenderBlock}
+\openTable
+\hline
+\input{packetStatsDescr} \\
+\hline
 \end{tabular}
-\subsubsection{Namespace ``switch.xbar.delay\_histogram''}
-\input{histogramDescr}
-\subsubsection{Namespace ``switch.xbar.congestion\_spyplot''}
-\subsubsection{Namespace ``switch.xbar.bytes\_sent''}
-\subsubsection{Namespace ``switch.xbar.byte\_hops''}
-\subsection{Namespace ``switch.link''}
-\input{piscesSender}
 \subsubsection{Namespace ``switch.output\_buffer.delay\_histogram''}
 \input{histogramDescr}
 \subsubsection{Namespace ``switch.output\_buffer.congestion\_spyplot''}
+\input{spyplotDescr}
 \subsubsection{Namespace ``switch.output\_buffer.bytes\_sent''}
-\openTable{8cm}
-\hline
-\input{filerootDescr} \\
-\hline
-\end{tabular}
+\input{basicStatsDescr}
 \subsubsection{Namespace ``switch.output\_buffer.byte\_hops''}
-\openTable{8cm}
+\input{basicStatsDescr}
+
+\subsection{Namespace ``switch.xbar"}
+\openTable
 \hline
-\input{filerootDescr} \\
+\input{packetStatsDescr} \\
+\hline
+\input{piscesSenderBlock}
 \hline
 \end{tabular}
+
+\subsubsection{Namespace ``switch.xbar.delay\_histogram''}
+\input{histogramDescr}
+\subsubsection{Namespace ``switch.xbar.congestion\_spyplot''}
+\input{spyplotDescr}
+\subsubsection{Namespace ``switch.xbar.bytes\_sent''}
+\input{basicStatsDescr}
+\subsubsection{Namespace ``switch.xbar.byte\_hops''}
+\input{basicStatsDescr}
+\subsection{Namespace ``switch.link''}
+\input{piscesSender}
 \subsection{Namespace ``switch.ejection''}
 \input{piscesSender}
 
 \section{Namespace ``appN''}
 This is a series of namespaces \inlineshell{app1}, \inlineshell{app2}, and so on for each of the launched applications.
 
-\openTable{8cm}
+\openTable
 \hline
-name & string \\
+name \paramType{string} & No default & See starting in Section \ref{sec:tutorial:basicmpi} & The name of the application to launch \\
 \hline
-size & int \\
+size \paramType{int} & No default & Positive int & The number of procs (MPI ranks) to launch. If launch\_cmd given, this parameter is not required. \\
 \hline
-start & int \\
+start \paramType{int} & 0 & & The time at which a launch request for the application will be made \\
 \hline
-concentration & int & 1 \\
+concentration \paramType{int} & 1 & Positive int & The number of procs (MPI ranks) per compute node \\
 \hline
-core\_affinities & vector of int \\
+core\_affinities \paramType{vector of int} & Empty & & \\
 \hline
-launch\_cmd & string \\
+launch\_cmd \paramType{string} & No default & Valid aprun or srun & This uses a launch command as would be found with ALPS or SLURM launchers on real systems, e.g. aprun -n 4 -N 1 \\
 \hline
-launch\_indexing & string \\
+launch\_indexing \paramType{string} & block & block, random, cart, node\_id, coordinate & The indexing scheme for assign proc ID (MPI rank number) to compute nodes \\
 \hline
-launch\_node\_id\_mapper\_file & filepath \\
+launch\_node\_id\_mapper\_file (filepath) & No default & & If using Node ID indexing, the file containing the node ID index list \\
 \hline 
-random\_indexer\_seed & long \\
+random\_indexer\_seed \paramType{long} & System time & & The seed to use for a random allocation. If not specified, system time is used. \\
 \hline
-launch\_allocation & string & first\_available \\
+launch\_allocation \paramType{string} & first\_available & first\_available, random, cart, node\_id, coordinate & The scheme to use for allocating compute nodes to a given job. \\
 \hline
-random\_allocation\_seed & long \\
+random\_allocation\_seed \paramType{long} & System time & & For random allocation policy. If unspecified, system time is used as the seed.  \\
 \hline
-launch\_node\_id\_allcation\_file & filepath \\
+launch\_node\_id\_allocation\_file \paramType{filepath} & No default & & If using Node ID allocation, the file containing the list of node IDs to allocate for the job \\
 \hline
-launch\_dumpi\_metaname & filepath \\ 
+launch\_dumpi\_metaname \paramType{filepath} & No default & & If running DUMPI trace, the location of the metafile for configuring trace replay \\ 
 \hline
-launch\_coordinate\_file & filepath \\ 
+launch\_coordinate\_file \paramType{filepath} & No default & & If running using coordinate allocation or indexing, the path to the file containing the node coordinates of each proc (MPI rank) \\ 
 \hline
-cart\_launch\_sizes & vector of int \\
+cart\_launch\_sizes \paramType{vector of int} & No default & & Launch a contiguous block of nodes in a Cartesian topology. This gives the size of each dimension in the block. \\
 \hline 
-cart\_launch\_offsets & vector of int \\
+cart\_launch\_offsets \paramType{vector of int} & No default & & Launch a contiguous block nodes in a Cartesian topology. This gives the offset in each dimension where the block begins. \\
 \hline
-parsedumpi\_timescale & double \\
+parsedumpi\_timescale \paramType{double} & 1.0 & Positive float & If running DUMPI traces, scale compute times by the given value. Values less than 1.0 speed up computation. Values greater than 1.0 slow down computation. \\
 \hline
-parsedumpi\_terminate\_percent \\
+parsedumpi\_terminate\_percent \paramType{int} & 100 & 1-100 & Percent of trace. Can be used to terminate large traces early \\
 \hline
 \end{tabular}
 
