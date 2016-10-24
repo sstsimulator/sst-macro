@@ -85,15 +85,38 @@ redundant \paramType{vector of int} & vector of 1's & Positive ints & For Cartes
 \section{Namespace ``node''}
 \openTable
 \hline
+model \paramType{string} & simple & simple & The type of node model (level of detail) for node-level operations \\
+\hline
 services \paramType{vector of strings} & Empty & Valid service names & For  details, see section on distributed services in developer's manual. Advanced feature. \\
 \hline
 \end{tabular}
 \subsection{Namespace ``node.nic''}
 \openTable
 \hline
+model \paramType{string} & No default & pisces, logP & The type of NIC model (level of detail) for modeling injection of messages (flows) to/from the network. \\
+\hline
+packetizer \paramType{string} & cut\_through & merlin,simple,cut\_through & The type of packetizer for injecting flows into the network. Merlin is part of sst-elements. Simple and cut-through use PISCES \\
+\hline
+packet\_allocator \paramType{string} & pisces & pisces & The packet object used by the NIC. Certain type of statistics or congestion models may require custom packets with extra fields. \\
+\hline
 negligible\_size \paramType{byte length} & 256B & & Messages (flows) smaller than size will not go through detailed congestion modeling. They will go through a simple analytic model to compute the delay. \\
 \hline
 \end{tabular}
+\subsubsection{Namespace ``node.nic.buffer''}
+\openTable
+\hline
+stats \paramType{string} & null & 
+	delay\_histogram,
+  congestion\_spyplot,
+	null 
+ & The type of statistics to collect from packets leaving or arriving at the NIC.
+   Null indicates no statistics collected. For details on the other types of statistics, see Section \ref{sec:tutorials:packetStats} \\
+\hline
+\end{tabular}
+\subsubsection{Namespace ``node.buffer.delay\_histogram''}
+\input{histogramDescr}
+\subsubsection{Namespace ``node.buffer.congestion\_spyplot''}
+\input{spyplotDescr}
 \subsubsection{Namespace ``node.nic.traffic\_matrix''}
 \input{spyplotDescr}
 \subsubsection{Namespace ``node.nic.local\_bytes\_sent''}
@@ -105,26 +128,15 @@ negligible\_size \paramType{byte length} & 256B & & Messages (flows) smaller tha
 \subsubsection{Namespace ``node.nic.injection"}
 \input{piscesSender}
 
-\subsection{Namespace ``node.netlink''}
-\openTable
-\hline
-num\_inject \paramType{int} & & & \\
-\hline
-num\_eject \paramType{int} & & & \\
-\hline
-\end{tabular}
-\subsubsection{Namespace ``node.netlink.injection"}
-\input{piscesSender}
-
-\subsubsection{Namespace ``node.netlink.ejection"}
-\input{piscesSender}
 
 \subsection{Namespace ``node.memory''}
 \openTable
 \hline
-arbitrator (string) & cut\_through & null, simple, cut\_through & The type of arbitrator. See arbitrator descriptions above. \\
+model \paramType{string} & No default & logP, pisces & The type of memory model (level of detail) for modeling memory transactions. \\
 \hline
-latency (time) & No default & & The latency of single memory operation \\
+arbitrator \paramType{string} & cut\_through & null, simple, cut\_through & The type of arbitrator. See arbitrator descriptions above. \\
+\hline
+latency \paramType{time} & No default & & The latency of single memory operation \\
 \hline
 total\_bandwidth & No default &  & The total memory bandwidth possible across all memory controllers. \\
 \hline
@@ -133,6 +145,8 @@ max\_single\_bandwidth & Computed & & The maximum memory bandwidth of a single s
 \end{tabular}
 \subsection{Namespace ``node.os"}
 \openTable
+\hline
+compute\_scheduler \paramType{string} & simple & simple, cpuset & The level of detail for scheduling compute tasks to cores. Simple looks for any empty core. cpuset allows bitmasks to be set for defining core affinities. \\
 \hline
 stack\_size \paramType{byte length} & 32KB & & The size of user-space thread stack to allocate for each virtual application \\
 \hline
@@ -166,6 +180,21 @@ parallelism & double \\
 \hline
 \end{tabular}
 
+\section{Namespace ``netlink''}
+\openTable
+\hline
+model \paramType{string} & pisces & pisces & The type of netlink congestion model to use \\
+\hline
+concentration \paramType{int} & No default & Positive int & The number of nodes connected to a given netlink. The node concentration per switch must be greater than or equal to the node concentration per netlink. \\
+\hline
+num\_tiles \paramType{int} & 1 & Positive int & The number of router tiles the netlink connects to. Only relevant for tiled router models. Advanced usage. \\
+\hline
+\end{tabular}
+\subsection{Namespace ``netlink.injection"}
+\input{piscesSender}
+\subsection{Namespace ``netlink.ejection"}
+\input{piscesSender}
+
 \section{Namespace ``mpi"}
 \openTable
 \hline
@@ -192,11 +221,15 @@ poll\_delay (time) & 0 & & The minimum time spent by MPI each time it polls for 
 \section{Namespace ``switch''}
 \openTable
 \hline
+model \paramType{string} & No default & logP, pisces & The type of switch model (level of detail) for modeling network traffic. \\
+\hline
 buffer\_size \paramType{byte length} & No default & & The size of input and output buffers on each switch. This determines the number of credits available to other components \\
 \hline
 \end{tabular}
 \subsection{Namespace ``switch.router''}
 \openTable
+\hline
+name \paramType{string} & minimal & minimal, valiant, ugal, fat\_tree & The name of the routing algorithm to use for routing packets. \\
 \hline
 ugal\_threshold \paramType{int} & 0 & & The minimum number of network hops required before UGAL is considered. All path lengths less than value automatically use minimal. \\
 \hline
@@ -204,34 +237,33 @@ ugal\_threshold \paramType{int} & 0 & & The minimum number of network hops requi
 \subsection{Namespace ``switch.output\_buffer"}
 \openTable
 \hline
-\input{packetStatsDescr} \\
+stats \paramType{string} & null & 
+	delay\_histogram,
+  byte\_hops,
+	null 
+ & The type of statistics to collect from packets leaving or arriving at the switch output buffers.
+   Null indicates no statistics collected. For details on the other types of statistics, see Section \ref{sec:tutorials:packetStats} \\
 \hline
 \end{tabular}
 \subsubsection{Namespace ``switch.output\_buffer.delay\_histogram''}
 \input{histogramDescr}
-\subsubsection{Namespace ``switch.output\_buffer.congestion\_spyplot''}
-\input{spyplotDescr}
-\subsubsection{Namespace ``switch.output\_buffer.bytes\_sent''}
-\input{basicStatsDescr}
 \subsubsection{Namespace ``switch.output\_buffer.byte\_hops''}
 \input{basicStatsDescr}
 
 \subsection{Namespace ``switch.xbar"}
 \openTable
 \hline
-\input{packetStatsDescr} \\
+stats \paramType{string} & null & 
+	bytes\_sent,
+	null 
+ & The type of statistics to collect from packets leaving or arriving at the switch crossbar.
+   Null indicates no statistics collected. For details on the other types of statistics, see Section \ref{sec:tutorials:packetStats} \\
 \hline
 \input{piscesSenderBlock}
 \hline
 \end{tabular}
 
-\subsubsection{Namespace ``switch.xbar.delay\_histogram''}
-\input{histogramDescr}
-\subsubsection{Namespace ``switch.xbar.congestion\_spyplot''}
-\input{spyplotDescr}
 \subsubsection{Namespace ``switch.xbar.bytes\_sent''}
-\input{basicStatsDescr}
-\subsubsection{Namespace ``switch.xbar.byte\_hops''}
 \input{basicStatsDescr}
 \subsection{Namespace ``switch.link''}
 \input{piscesSender}
@@ -243,7 +275,7 @@ This is a series of namespaces \inlineshell{app1}, \inlineshell{app2}, and so on
 
 \openTable
 \hline
-name \paramType{string} & No default & See starting in Section \ref{sec:tutorial:basicmpi} & The name of the application to launch \\
+name \paramType{string} & No default & parsedumpi, cxx\_full\_main, cxx\_empty\_main & The name of the application to launch. Very few applications are built-in. Registration of external apps is shown starting in Section \ref{sec:tutorial:basicmpi}. \\
 \hline
 size \paramType{int} & No default & Positive int & The number of procs (MPI ranks) to launch. If launch\_cmd given, this parameter is not required. \\
 \hline

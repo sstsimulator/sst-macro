@@ -46,7 +46,8 @@ pisces_abstract_switch::pisces_abstract_switch(
   buf_stats_ = packet_stats_callback_factory::get_optional_param("stats", "null",
                                              buf_params, this);
 
-  router_ = router_factory::get_param("router", params, top_, this);
+  sprockit::sim_parameters* rtr_params = params->get_optional_namespace("router");
+  router_ = router_factory::get_param("name", rtr_params, top_, this);
 
   sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
   std::vector<topology::injection_port> conns;

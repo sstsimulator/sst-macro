@@ -13,7 +13,7 @@ test_fattree4(UnitTest& unit)
   params["geometry"] = "3 4";
   params["radix"] = "4";
   params["num_levels"] = "3";
-  params["router"] = "fattree";
+  params["router.name"] = "fattree";
   params["name"] = "fattree";
   test_topology(params);
 }
@@ -27,7 +27,7 @@ test_fattree2(UnitTest& unit)
   params["radix"] = "2";
   params["num_levels"] = "5";
   params["concentration"] = "2";
-  params["router"] = "fattree";
+  params["router.name"] = "fattree";
   params["name"] = "fattree";
   test_topology(params);
 }

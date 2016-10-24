@@ -175,7 +175,7 @@ pisces_netlink::pisces_netlink(sprockit::sim_parameters *params, node *parent)
   tile_rotater_(0)
 {
   block_ = new pisces_crossbar(params, parent);
-  block_->configure_basic_ports(num_inject_ + num_eject_);
+  block_->configure_basic_ports(num_tiles_ + conc_);
 #if !SSTMAC_INTEGRATED_SST_CORE
   ack_handler_ = new_handler(this,
                              &pisces_netlink::handle_credit);
@@ -235,11 +235,11 @@ pisces_netlink::handle_payload(event* ev)
         //topology::global()->label(event_location()).c_str(),
         int(id_), this, payload->to_string().c_str());
   node_id toaddr = payload->toaddr();
-  netlink_id dst_netid(toaddr / num_eject_);
+  netlink_id dst_netid(toaddr / conc_);
   routable::path& p = rtbl->current_path();
   if (dst_netid == id_){
     //stays local - goes to a node
-    int node_offset = toaddr % num_eject_;
+    int node_offset = toaddr % conc_;
     p.outport = netlink::node_port(node_offset);
     p.vc = 0;
     p.geometric_id = 0;
@@ -253,8 +253,8 @@ pisces_netlink::handle_payload(event* ev)
     debug_printf(sprockit::dbg::pisces,
      "netlink %d injecting msg %s to switch %d on redundant path %d of %d to port %d\n",
         int(id_), sprockit::to_string(ev).c_str(),
-        int(toaddr), tile_rotater_, num_inject_, p.outport);
-    tile_rotater_ = (tile_rotater_ + 1) % num_inject_;
+        int(toaddr), tile_rotater_, num_tiles_, p.outport);
+    tile_rotater_ = (tile_rotater_ + 1) % num_tiles_;
   }
   block_->handle_payload(payload);
 }

@@ -41,7 +41,6 @@ typedef param_remap pr;
 
 param_remap remap_list[] = {
   pr("network_name", "interconnect"),
-  pr("router", "switch.router"),
   pr("topology_name", "topology.name"),
   pr("topology_geometry", "topology.geometry"),
   pr("network_nodes_per_switch", "topology.concentration"),
@@ -64,6 +63,7 @@ param_remap remap_list[] = {
   pr("nic_name", "nic.model"),
   pr("node_memory_model", "node.memory.model"),
   pr("node_frequency", "node.proc.frequency"),
+  pr("router", "switch.router.name"),
   pr("network_bandwidth_link", "switch.link.bandwidth"),
   pr("network_link_bandwidth", "switch.link.bandwidth"),
   pr("network_bandwidth", "switch.link.bandwidth", false),
@@ -93,7 +93,6 @@ param_remap remap_list[] = {
   pr("pisces_mtu", "switch.mtu", false),
   pr("pisces_mtu", "nic.mtu"),
   pr("pisces_negligible_size", "switch.negligible_size"),
-  pr("router", "switch.router"),
   pr("sanity_check_queue_depth_reporting", "switch.sanity_check_queue_depth_reporting"),
   pr("sanity_check_queue_depth_delta", "switch.sanity_check_queue_depth_delta"),
   pr("node_preemption", "node.preemption"),
@@ -212,7 +211,7 @@ void
 resize_topology(int max_nproc, sprockit::sim_parameters *params, bool verbose)
 {
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
-  if (top_params->has_param("geometry") || top_params->get_param("name") != "hdtorus"){
+  if (top_params->has_param("geometry") || top_params->get_param("name") != "torus"){
     return; //don't need this
   }
 

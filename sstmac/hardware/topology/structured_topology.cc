@@ -25,13 +25,9 @@ structured_topology::structured_topology(sprockit::sim_parameters* params,
   max_ports_injection_ = netlinks_per_switch_;
 
   sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
-  if (netlink_params->has_scoped_param("connect")){ //only look in current namespace
-    bool build_netlinks = netlink_params->get_bool_param("connect");
-    if (build_netlinks){
-      num_nodes_per_netlink_ = netlink_params->get_optional_int_param("radix", 1);
-    } else {
-      num_nodes_per_netlink_ = 1;
-    }
+  std::string netlinkModel = netlink_params->get_optional_param("model", "null");
+  if (netlinkModel != "null"){
+    num_nodes_per_netlink_ = netlink_params->get_int_param("concentration");
     netlinks_per_switch_ /= num_nodes_per_netlink_;
   } else {
     num_nodes_per_netlink_ = 1;
