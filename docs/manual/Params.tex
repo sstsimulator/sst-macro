@@ -1,6 +1,6 @@
 %% !TEX root = manual.tex
 
-\newcommand{\openTable}{\begin{tabular}{| c | c | p{2cm} | p{2cm} | p{6.5cm} |}}
+\newcommand{\openTable}[1]{\begin{tabular}{| c | c | c | p{3cm} | p{#1} |}}
 
 \chapter{Detailed Parameter Listings}
 \label{chapter:parameters}
@@ -9,22 +9,26 @@ The following chapter is organized by parameter namespaces.
 Tables in each namespace are organized as
 \def\arraystretch{1.5}%  1 is the default, change whatever you need
 
-\openTable
+\openTable{6.5cm}
 \hline
-Name & Type & Required/ Optional & Allowed \newline Values & Description \\
+Name & Type & Default if not given & Allowed \newline Values & Description \\
 \hline
 \end{tabular}
 
 which lists the possible parameter names, allowed values, and brief descriptions.
-Where required, more detail descriptions of particular parameter values are shown.
+More detailed descriptions of particular parameter values are found in the documentation in previous chapters.
 
-The allow parameter types are:
+The allowed parameter types are:
 
-\begin{tabular}{l | l}
+\begin{tabular}{| l | l |}
 \hline
 int & Any integer \\
 \hline
 long & Any integer value, but guaranteed not to overflow for long integers \\
+\hline
+bool & Either ``true'' or ``false'' as lowercase string \\
+\hline
+time & Any valid float value followed by time units (s,ms,us,ns,ps) \\
 \hline
 freq & Any valid float value followed by frequency units (Hz, MHz, GHz) \\
 \hline
@@ -36,210 +40,236 @@ string & An arbitrary string \\
 \hline
 vector of X & A vector of type X with entries separated by spaces \\
 \hline
+filepath & A valid filepath to an \emph{existing} file, either absolute or relative \\
+\hline
+quantiy & A catch-all for a quantity with units. Any of frequency, bandwidth, byte length, or time can be given \\
+\hline
 \end{tabular}
 \section{Global namespace}
-\openTable
+\openTable{5cm}
 \hline
-sst\_nthread & int & Optional, default 1 & Any positive integer & Specifying more threads than cores can lead to deadlock \\
+sst\_nthread & int & 1 & Positive int & Only relevant for multi-threading. Specifying more threads than cores can lead to deadlock. \\
 \hline
-serialization\_buffer\_size & byte length \\
+timestamp\_resolution & time & 1ps & & Specifies the length of time occupied by 1 timestamp tick - the smallest resolvable time difference. Numerical stability depends on this parameter matching the time scales of the simulation. \\
 \hline
-mpi\_max\_num\_requests & int \\
+serialization\_buffer\_size & byte length & 512B & & Size to allocate for buffers in a pool of serialization buffers. This should set be large enough to handle serialization of most messages, but not so large that significant space is wasted. \\
 \hline
-cpu\_affinity & vector of int \\
+cpu\_affinity & vector of int & No default & Invalid core IDs lead to undefined behavior & When in multi-threading, specifies the list of core IDs that threads will be pinned to. \\
 \hline
 \end{tabular}
 
 \section{Namespace ``topology''}
-\openTable
+\openTable{6cm}
 \hline
-geometry & \\
+geometry & vector of int & No default & See Topology section & Geometry configuration of the topology. For details of the keyword, users should refer to Section \ref{chapter:topologies} \\
 \hline
-name & \\
+name & string & No default & torus, dragonfly, fat\_tree, butterfly, crossbar, simple\_fat\_tree & The name of the topology to build. For details, see Section \ref{chapter:topologies} \\
+\hline 
+seed & long & No default & & If no value given, random numbers for topology will be generated from system time \\
+\hline
+concentration & int & 1 & Positive int & The number of nodes per network switch. For indirect networks, this is the number of nodes per leaf switch. \\
+\hline
+num\_leaf\_switches & int & No default & Positive int & Only relevant for fat trees. This is the number of switches at the lowest level of the tree that are connected to compute nodes. \\
+\hline
+tapering & vector of double & No default & Values 0-1 & For tapering of a fat tree, this specifies a tapering fraction per level of the fat tree.  This specifies a bandwidth multiplier for each layer of switch-to-switch links. \\
+\hline
+k & int & No default & int >= 2 & The branching fraction of a fat tree. k=2 is a binary tree. k=4 is a quad-tree. \\
+\hline
+group\_connections & int & No default & Positive int & For dragonfly, the number of intergroup connections on each switch in a Dragonfly group \\
+\hline
+redundant & vector of int & vector of 1's & Positive ints & For Cartesian topologies (hypercube, dragonfly, torus) this specifies a bandwidth (redundancy) multiplier for network links in each dimension. \\
 \hline
 \end{tabular}
 
 \section{Namespace ``node''}
-\openTable
+\openTable{8cm}
 \hline
-services & vector of strings \\
+services & vector of strings & Empty & Valid service names & For more details, see the section on distributed services in the developer's manual. Advanced feature. \\
 \hline
 \end{tabular}
 \subsection{Namespace ``node.nic''}
-\openTable
+\openTable{8cm}
 \hline
-negligible\_size & byte length \\
+negligible\_size & byte length & 256B & & Messages (flows) smaller than size will not go through detailed congestion modeling. They will go through a simple analytic model to compute the delay. \\
 \hline
 \end{tabular}
 \subsubsection{Namespace ``node.nic.traffic\_matrix''}
+\input{spyplotDescr}
 \subsubsection{Namespace ``node.nic.local\_bytes\_sent''}
+\input{basicStatsDescr}
 \subsubsection{Namespace ``node.nic.global\_bytes\_sent''}
+\input{basicStatsDescr}
 \subsubsection{Namespace ``node.nic.message\_size\_histogram''}
+\input{histogramDescr}
 \subsubsection{Namespace ``node.nic.injection"}
-\openTable
-\hline
-arbitrator & string & \\
-\hline
-latency & time & \\
-\hline
-bandwidth & bandwidth & \\
-\hline
-send\_latency & time & \\
-\hline
-credit\_latency & time & \\
-\hline
-credits & byte length \\
-\hline
-\end{tabular}
+\input{piscesSender}
 
 \subsection{Namespace ``node.netlink''}
-\subsubsection{Namespace ``node.netlink.injection"}
-\openTable
+\openTable{6cm}
 \hline
-arbitrator & string & \\
-\hline
-latency & time & \\
-\hline
-bandwidth & bandwidth & \\
-\hline
-send\_latency & time & \\
-\hline
-credit\_latency & time & \\
-\hline
-credits & byte length \\
+num\_inject & int \\
+num\_eject & int \\
 \hline
 \end{tabular}
+\subsubsection{Namespace ``node.netlink.injection"}
+\input{piscesSender}
 
 \subsubsection{Namespace ``node.netlink.ejection"}
-\openTable
-\hline
-arbitrator & string & \\
-\hline
-latency & time & \\
-\hline
-bandwidth & bandwidth & \\
-\hline
-send\_latency & time & \\
-\hline
-credit\_latency & time & \\
-\hline
-credits & byte length \\
-\hline
-\end{tabular}
+\input{piscesSender}
 
 \subsection{Namespace ``node.memory''}
-\openTable
+\openTable{6cm}
 \hline
-arbitrator & string & \\
+arbitrator & string & cut\_through & null, simple, cut\_through & The type of arbitrator. See arbitrator descriptions above. \\
 \hline
-latency & time & \\
+latency & time & No default & & The latency of single memory operation \\
 \hline
-total\_bandwidth & bandwidth & \\
+total\_bandwidth & bandwidth & No default &  & The total memory bandwidth possible across all memory controllers. \\
 \hline
-max\_single\_bandwidth & bandwidth & \\
+max\_single\_bandwidth & bandwidth & Computed & & The maximum memory bandwidth of a single stream of requests. Essentially the bandwidth of a single memory controller. If not given, this defaults the value of total\_bandwidth. \\
 \hline
 \end{tabular}
 \subsection{Namespace ``node.os"}
-\openTable
+\openTable{8cm}
+\hline
+stack\_size & byte length & 32KB & & The size of user-space thread stack to allocate for each virtual application \\
+\hline
+stack\_protect & bool & false & & Whether to put special mprotect regions around the thread stacks to turn stack overflow errors into seg faults \\
+\hline
+stack\_chunk\_size & byte length & 1MB & & The size of memory to allocate at a time when allocating new thread stacks. Rather than allocating one thread stack at a time, multiple stacks are allocated and added to a pool as needed.  \\
+\hline
 \end{tabular}
 \subsubsection{Namespace ``node.os.call\_graph"}
+\openTable{8cm}
+\hline
+\input{filerootDescr} \\
+\hline
+\end{tabular}
 \subsubsection{Namespace ``node.os.ftq"}
+\openTable{8cm}
+\hline
+\input{filerootDescr} \\
+\hline 
+epoch & time & No default & & The length of simulation time to treat as a single interval. This is much like a histogram bin, except the bin is partitioned into multiple categories. If too small, not enough data will be collected per interval to give reasonable looking results. If too large, significant changes in system activity over time will not be resolved. \\
+\hline
+\end{tabular}
 \subsection{Namespace ``node.proc''}
-\openTable
+\openTable{8cm}
 \hline
-ncores & int & Required & Any positive integer & The number of cores contained in a processor (socket). Total number of cores for a node is $ncores \times nsockets$. \\
+ncores & int & No default & Any positive integer & The number of cores contained in a processor (socket). Total number of cores for a node is $ncores \times nsockets$. \\
 \hline
-frequency & freq & Required & & The baseline frequency of the node \\
+frequency & freq & No default & & The baseline frequency of the node \\
 \hline
 parallelism & double \\
 \hline
 \end{tabular}
 
 \section{Namespace ``mpi"}
-\openTable
+\openTable{8cm}
+\hline
+test\_delay & time & 0 \\
+iprobe\_delay & time & 0 \\
+\hline
 \end{tabular}
 \subsection{Namespace ``mpi.queue''}
-\openTable
+\openTable{8cm}
+\hline
+max\_vshort\_msg\_size & byte length \\
+\hline
+max\_eager\_msg\_size & byte length \\
+\hline
+post\_rdma\_delay & time \\
+\hline
+post\_header\_delay & time \\
+\hline
+poll\_delay & time \\
+\hline
 \end{tabular}
 
 \section{Namespace ``switch''}
-\openTable
+\openTable{8cm}
 \hline
 buffer\_size & byte length \\
 \hline
 \end{tabular}
-\subsection{Namespace ``switch.output\_buffer"}
-\subsection{Namespace ``switch.xbar"}
-\openTable
+\subsection{Namespace ``switch.router''}
+\openTable{8cm}
 \hline
-arbitrator & string & \\
-\hline
-latency & time & \\
-\hline
-bandwidth & bandwidth & \\
-\hline
-send\_latency & time & \\
-\hline
-credit\_latency & time & \\
-\hline
-num\_vc & int \\
-\hline
-credits & byte length \\
+ugal\_threshold & int \\
 \hline
 \end{tabular}
+\subsection{Namespace ``switch.output\_buffer"}
+\subsection{Namespace ``switch.xbar"}
+\openTable{8cm}
+\input{piscesSenderBlock}
+\end{tabular}
 \subsubsection{Namespace ``switch.xbar.delay\_histogram''}
+\input{histogramDescr}
 \subsubsection{Namespace ``switch.xbar.congestion\_spyplot''}
 \subsubsection{Namespace ``switch.xbar.bytes\_sent''}
 \subsubsection{Namespace ``switch.xbar.byte\_hops''}
 \subsection{Namespace ``switch.link''}
-\openTable
+\input{piscesSender}
+\subsubsection{Namespace ``switch.output\_buffer.delay\_histogram''}
+\input{histogramDescr}
+\subsubsection{Namespace ``switch.output\_buffer.congestion\_spyplot''}
+\subsubsection{Namespace ``switch.output\_buffer.bytes\_sent''}
+\openTable{8cm}
 \hline
-arbitrator & string & \\
-\hline
-latency & time & \\
-\hline
-bandwidth & bandwidth & \\
-\hline
-send\_latency & time & \\
-\hline
-credit\_latency & time & \\
-\hline
-credits & byte length \\
+\input{filerootDescr} \\
 \hline
 \end{tabular}
-\subsubsection{Namespace ``switch.link.delay\_histogram''}
-\subsubsection{Namespace ``switch.link.congestion\_spyplot''}
-\subsubsection{Namespace ``switch.link.bytes\_sent''}
-\subsubsection{Namespace ``switch.link.byte\_hops''}
+\subsubsection{Namespace ``switch.output\_buffer.byte\_hops''}
+\openTable{8cm}
+\hline
+\input{filerootDescr} \\
+\hline
+\end{tabular}
 \subsection{Namespace ``switch.ejection''}
-\openTable
-\hline
-arbitrator & string & \\
-\hline
-latency & time & \\
-\hline
-bandwidth & bandwidth & \\
-\hline
-send\_latency & time & \\
-\hline
-credit\_latency & time & \\
-\hline
-credits & byte length \\
-\hline
-\end{tabular}
+\input{piscesSender}
 
 \section{Namespace ``appN''}
-\openTable
+This is a series of namespaces \inlineshell{app1}, \inlineshell{app2}, and so on for each of the launched applications.
+
+\openTable{8cm}
 \hline
-launch\_cmd & \\
+name & string \\
 \hline
-launch\_indexing & \\
+size & int \\
 \hline
-launch\_allocation & \\
+start & int \\
+\hline
+concentration & int & 1 \\
+\hline
+core\_affinities & vector of int \\
+\hline
+launch\_cmd & string \\
+\hline
+launch\_indexing & string \\
+\hline
+launch\_node\_id\_mapper\_file & filepath \\
+\hline 
+random\_indexer\_seed & long \\
+\hline
+launch\_allocation & string & first\_available \\
+\hline
+random\_allocation\_seed & long \\
+\hline
+launch\_node\_id\_allcation\_file & filepath \\
+\hline
+launch\_dumpi\_metaname & filepath \\ 
+\hline
+launch\_coordinate\_file & filepath \\ 
+\hline
+cart\_launch\_sizes & vector of int \\
+\hline 
+cart\_launch\_offsets & vector of int \\
+\hline
+parsedumpi\_timescale & double \\
+\hline
+parsedumpi\_terminate\_percent \\
 \hline
 \end{tabular}
-\paragraph{aprun}
-\paragraph{srun}
 
 
 

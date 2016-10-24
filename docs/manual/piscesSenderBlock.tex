@@ -1,0 +1,16 @@
+arbitrator & string & cut\_through & null, simple, cut\_through & Determines the type of bandwidth arbitrator for PISCES congestion modeling. Null arbitrator computes simple delays assuming no congestion. Simple uses a basic store-and-forward mechanism that is cheaper to compute, but can have severe latency errors for large packets. Cut-through uses flow approximations to model pipelining of flits across routers and stages.  \\
+\hline
+latency & time & No default & & If given, this parameter overwrites the send and credit latency parameters. Depending on the type of component, the entire latency will be put on either the credits or the send latency.  For example, crossbars send to a local output buffer but send credits across a network link to a neighbor router. Thus the latency is assume to be entirely on credits with zero latency for forwarding to the local buffer. \\
+\hline
+bandwidth & bandwidth & No default & & The bandwidth of the arbitrator \\
+\hline
+send\_latency & time & No default & & The latency to send a packet to the next stage in the network. This can be omitted if the generic latency parameter is given (see above). \\
+\hline
+credit\_latency & time & No default & & The latency to send a credit to the previous network stage. This can be omitted if the generic latency parameter is given (see above). \\
+\hline
+num\_vc & int & Computed & Positive int & If not specified, the system will try to compute the correct number of virtual channels based on the topology and routing algorithm. If give and parameter is too small, the system can deadlock. If too large, buffer resources will be underutilized. \\
+\hline
+credits & byte length & No default & & The number of initial credits for the component. This corresponds to the size of an input buffer on another component. In many cases, if unspecified, SST/macro can compute this from other parameters and fill in the value. In some cases, it will be required. \\
+\hline
+mtu & byte length & 1024B & & The packet size. All messages (flows) will be broken into units of this size. \\
+
