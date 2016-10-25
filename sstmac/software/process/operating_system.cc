@@ -125,6 +125,7 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
 
   //we automatically initialize the first context
 #if SSTMAC_USE_MULTITHREAD
+  event_manager* man = parent->event_mgr();
   if (os_thread_contexts_.size() == 1){
     os_thread_contexts_.resize(man->nthread());
     os_thread_context& main_ctxt = os_thread_contexts_[0];

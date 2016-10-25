@@ -13,7 +13,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#ifdef SSTMAC_HAVE_MPI_H
+#if SSTMAC_MPI_DRIVER
 #include <mpi.h>
 #endif
 
