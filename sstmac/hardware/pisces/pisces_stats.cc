@@ -7,8 +7,13 @@
 #include <sstmac/common/runtime.h>
 #include <sstmac/common/event_manager.h>
 #include <sprockit/util.h>
+#include <cinttypes>
 
 ImplementFactory(sstmac::hw::packet_stats_callback);
+MakeDebugSlot(pisces_stats)
+
+#define debug(...) \
+  debug_printf(sprockit::dbg::pisces_stats, __VA_ARGS__)
 
 namespace sstmac {
 namespace hw {
@@ -16,19 +21,24 @@ namespace hw {
 SpktRegister("bytes_sent", stat_collector, stat_bytes_sent);
 SpktRegister("congestion_spyplot", packet_stats_callback, congestion_spyplot);
 SpktRegister("congestion_delay", packet_stats_callback, packet_delay_stats);
-SpktRegister("congestion", packet_stats_callback, spyplot_and_delay_stats);
 SpktRegister("bytes_sent", packet_stats_callback, bytes_sent_collector);
 SpktRegister("byte_hops", packet_stats_callback, byte_hop_collector);
 SpktRegister("delay_histogram", packet_stats_callback, delay_histogram);
+SpktRegister("multi", packet_stats_callback, multi_stats);
 SpktRegister("null", packet_stats_callback, null_stats);
 
 static inline double
-congestion_delay_us(const pkt_arbitration_t& st)
+congestion_delay(const pkt_arbitration_t& st)
 {
   timestamp delta_t = st.tail_leaves - st.pkt->arrival();
   double min_delta_t = st.pkt->byte_length() / st.incoming_bw;
-  double congestion_delay_us = std::max(0., 1e6*(delta_t.sec() - min_delta_t));
-  return congestion_delay_us;
+  double congestion_delay = std::max(0., delta_t.sec() - min_delta_t);
+  debug("Computed congestion delay of %12.6e for message with %ld "
+       "bytes delta_t %12.6e and incoming bandwidth of %12.6e with "
+       "min delta_t %12.6e",
+       congestion_delay, st.pkt->byte_length(),
+       delta_t, st.incoming_bw, min_delta_t);
+  return congestion_delay;
 }
 
 packet_stats_callback::packet_stats_callback(sprockit::sim_parameters *params, event_scheduler* parent)
@@ -54,7 +64,7 @@ congestion_spyplot::congestion_spyplot(sprockit::sim_parameters* params, event_s
   : packet_stats_callback(params, parent)
 {
   congestion_spyplot_ = required_stats<stat_spyplot>(parent, params,
-                                               "congestion_spyplot", "spyplot");
+                                               "congestion_spyplot", "ascii");
 }
 
 congestion_spyplot::~congestion_spyplot()
@@ -65,23 +75,22 @@ congestion_spyplot::~congestion_spyplot()
 void
 congestion_spyplot::collect_final_event(pisces_payload *pkt)
 {
-  spkt_throw_printf(sprockit::unimplemented_error, "congestion_spyplot");
-  //long delay_ns = pkt->delay_us() * 1e3; //go to ns
-  //congestion_spyplot_->add(pkt->fromaddr(), pkt->toaddr(), delay_ns);
+  auto dpkt = safe_cast(pisces_delay_stats_packet, pkt);
+  double delay_ns = dpkt->congestion_delay()*1e9;
+  congestion_spyplot_->add(pkt->fromaddr(), pkt->toaddr(), delay_ns);
 }
 
 void
 congestion_spyplot::collect_single_event(const pkt_arbitration_t &st)
 {
-  double delay = congestion_delay_us(st);
+  double delay = congestion_delay(st);
   collect(delay, st.pkt);
 }
 
 void
-congestion_spyplot::collect(double congestion_delay_us,
-  pisces_payload* pkt)
+congestion_spyplot::collect(double congestion_delay, pisces_payload* pkt)
 {
-  congestion_spyplot_->add(pkt->fromaddr(), pkt->toaddr(), congestion_delay_us);
+  congestion_spyplot_->add(pkt->fromaddr(), pkt->toaddr(), congestion_delay);
 }
 
 delay_histogram::delay_histogram(sprockit::sim_parameters *params, event_scheduler* parent) :
@@ -99,47 +108,54 @@ delay_histogram::~delay_histogram()
 void
 delay_histogram::collect_single_event(const pkt_arbitration_t& st)
 {
-  double delay_us = congestion_delay_us(st);
+  double delay_us = congestion_delay(st);
   congestion_hist_->collect(delay_us);
 }
 
 void
 delay_histogram::collect_final_event(pisces_payload* pkt)
 {
-  spkt_throw_printf(sprockit::unimplemented_error, "delay_histogram");
-  //congestion_hist_->collect(pkt->delay_us()*1e-6); //convert to seconds
+  auto dpkt = safe_cast(pisces_delay_stats_packet, pkt);
+  debug("Accumulating final delay of %12.6e for packet on flow %" PRIu64,
+        dpkt->congestion_delay(), dpkt->flow_id());
+  congestion_hist_->collect(dpkt->congestion_delay());
 }
 
-void
-packet_delay_stats::collect(
-  double congestion_delay_us,
-  pisces_payload* pkt)
-{
-  spkt_throw_printf(sprockit::unimplemented_error, "packet_delay_stats");
-  //pkt->add_delay_us(congestion_delay_us);
-}
 
 void
 packet_delay_stats::collect_single_event(const pkt_arbitration_t& st)
 {
-  double delay = congestion_delay_us(st);
-  collect(delay, st.pkt);
+  double delay = congestion_delay(st);
+  auto dpkt = safe_cast(pisces_delay_stats_packet, st.pkt);
+  dpkt->accumulate_delay(delay);
 }
 
-spyplot_and_delay_stats::spyplot_and_delay_stats(sprockit::sim_parameters *params,
-                                                 event_scheduler* parent) :
-  congestion_spyplot(params, parent),
-  packet_delay_stats(params, parent),
+multi_stats::multi_stats(sprockit::sim_parameters *params, event_scheduler *parent) :
   packet_stats_callback(params, parent)
 {
+  std::vector<std::string> stats_list;
+  params->get_vector_param("callbacks", stats_list);
+  cbacks_.reserve(stats_list.size());
+  for (const std::string& str : stats_list){
+    packet_stats_callback* cb = packet_stats_callback_factory::get_value(str, params, parent);
+    cbacks_.push_back(cb);
+  }
 }
 
 void
-spyplot_and_delay_stats::collect_single_event(const pkt_arbitration_t& st)
+multi_stats::collect_final_event(pisces_payload *pkt)
 {
-  double delay = congestion_delay_us(st);
-  congestion_spyplot::collect(delay, st.pkt);
-  packet_delay_stats::collect(delay, st.pkt);
+  for (auto cb : cbacks_){
+    cb->collect_final_event(pkt);
+  }
+}
+
+void
+multi_stats::collect_single_event(const pkt_arbitration_t &st)
+{
+  for (auto cb : cbacks_){
+    cb->collect_single_event(st);
+  }
 }
 
 bytes_sent_collector::~bytes_sent_collector()

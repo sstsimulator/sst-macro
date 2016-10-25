@@ -67,14 +67,16 @@ stat_collector::stats_error(sprockit::sim_parameters *params,
                             const std::string &ns,
                             const std::string &deflt)
 {
-  if (params->has_param("type")){
+  if (!params->has_namespace(ns)){
+    spkt_abort_printf("Could not locate stats namespace %s", ns.c_str());
+  } else if (params->has_param("type")){
     const char* ns_str = ns.size() ?  " in namespace " : "";
     spkt_abort_printf("Received invalid stats type %s%s%s- "
                       " a valid value would have been %s",
                       params->get_param("type").c_str(),
                       ns_str, ns.c_str());
   } else {
-    spkt_abort_printf("Received invalid default stats type %s",
+    spkt_abort_printf("Received invalid stats type %s",
                       deflt.c_str());
   }
 }

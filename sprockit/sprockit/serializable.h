@@ -49,11 +49,7 @@ namespace sprockit {
   cls_name() const override { \
     throw_exc(); \
     return ""; \
-  } \
-  virtual obj* \
-  you_forgot_to_add_ImplementSerializable_to_this_class() { \
-    return 0; \
-  } \
+  }
 
 #define ImplementSerializableDefaultConstructor(obj) \
  public: \
@@ -68,15 +64,11 @@ namespace sprockit {
   static obj* \
   construct_deserialize_stub() { \
     return new obj; \
-  } \
-  virtual obj* \
-  you_forgot_to_add_ImplementSerializable_to_this_class() override { \
-    return 0; \
-  } \
+  }
 
 #define ImplementSerializable(obj) \
  public: \
- ImplementSerializableDefaultConstructor(obj)
+  ImplementSerializableDefaultConstructor(obj)
 
 
 class serializable_builder

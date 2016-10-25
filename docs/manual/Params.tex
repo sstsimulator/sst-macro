@@ -95,27 +95,16 @@ services \paramType{vector of strings} & Empty & Valid service names & For  deta
 \hline
 model \paramType{string} & No default & pisces, logP & The type of NIC model (level of detail) for modeling injection of messages (flows) to/from the network. \\
 \hline
-packetizer \paramType{string} & cut\_through & merlin,simple,cut\_through & The type of packetizer for injecting flows into the network. Merlin is part of sst-elements. Simple and cut-through use PISCES \\
+packetizer \paramType{string} & cut\_through & merlin, simple, cut\_through & The type of packetizer for injecting flows into the network. Merlin is part of sst-elements. Simple and cut-through use PISCES \\
 \hline
 packet\_allocator \paramType{string} & pisces & pisces & The packet object used by the NIC. Certain type of statistics or congestion models may require custom packets with extra fields. \\
 \hline
 negligible\_size \paramType{byte length} & 256B & & Messages (flows) smaller than size will not go through detailed congestion modeling. They will go through a simple analytic model to compute the delay. \\
 \hline
 \end{tabular}
-\subsubsection{Namespace ``node.nic.buffer''}
-\openTable
-\hline
-stats \paramType{string} & null & 
-	delay\_histogram,
-  congestion\_spyplot,
-	null 
- & The type of statistics to collect from packets leaving or arriving at the NIC.
-   Null indicates no statistics collected. For details on the other types of statistics, see Section \ref{sec:tutorials:packetStats} \\
-\hline
-\end{tabular}
-\subsubsection{Namespace ``node.buffer.delay\_histogram''}
+\subsubsection{Namespace ``node.nic.delay\_histogram''}
 \input{histogramDescr}
-\subsubsection{Namespace ``node.buffer.congestion\_spyplot''}
+\subsubsection{Namespace ``node.nic.congestion\_spyplot''}
 \input{spyplotDescr}
 \subsubsection{Namespace ``node.nic.traffic\_matrix''}
 \input{spyplotDescr}
@@ -125,8 +114,37 @@ stats \paramType{string} & null &
 \input{basicStatsDescr}
 \subsubsection{Namespace ``node.nic.message\_size\_histogram''}
 \input{histogramDescr}
+\subsubsection{Namespace ``node.nic.ejection"}
+These parameters do not need to be specified, but can be given.
+Generally, the simulation assumes an infinite buffer size (unlimited memory) and no latency.
+All other parameters can be filled in from \inlinefile{node.nic.injection}.
+
+\openTable
+\hline
+stats \paramType{string} & null & 
+	delay\_histogram,
+  congestion\_spyplot,
+  multi,
+	null 
+ & The type of statistics to collect from packets leaving or arriving at the NIC.
+   Null indicates no statistics collected. For details on the other types of statistics, see Section \ref{sec:tutorials:packetStats} \\
+\hline
+callbacks \paramType{vector of string} & No default & Any valid stats name & If \inlinefile{stats} is set to \inlinefile{multi},then multiple different stats can be given here \\
+\hline
+\input{piscesSenderBlock} 
+\hline
+\end{tabular}
 \subsubsection{Namespace ``node.nic.injection"}
-\input{piscesSender}
+\openTable
+\hline
+stats \paramType{string} & null & 
+	delay\_histogram,
+	null 
+ & The type of statistics to collect from packets leaving or arriving at the NIC.
+   Null indicates no statistics collected. For details on the other types of statistics, see Section \ref{sec:tutorials:packetStats} \\
+\input{piscesSenderBlock} 
+\hline
+\end{tabular}
 
 
 \subsection{Namespace ``node.memory''}
@@ -176,14 +194,14 @@ ncores \paramType{int} & No default & Positive int & The number of cores contain
 \hline
 frequency & No default & & The baseline frequency of the node \\
 \hline
-parallelism & double \\
+parallelism \paramType{double} & 1.0 & Positive number & Fudge factor to account for superscalar processor. Number of flops per cycle performed by processor. \\
 \hline
 \end{tabular}
 
 \section{Namespace ``netlink''}
 \openTable
 \hline
-model \paramType{string} & pisces & pisces & The type of netlink congestion model to use \\
+model \paramType{string} & null & null, pisces & The type of netlink congestion model to use. If null, no netlink blocks will be used.  \\
 \hline
 concentration \paramType{int} & No default & Positive int & The number of nodes connected to a given netlink. The node concentration per switch must be greater than or equal to the node concentration per netlink. \\
 \hline
@@ -229,7 +247,7 @@ buffer\_size \paramType{byte length} & No default & & The size of input and outp
 \subsection{Namespace ``switch.router''}
 \openTable
 \hline
-name \paramType{string} & minimal & minimal, valiant, ugal, fat\_tree & The name of the routing algorithm to use for routing packets. \\
+name \paramType{string} & No default & minimal, valiant, ugal, fat\_tree & The name of the routing algorithm to use for routing packets. \\
 \hline
 ugal\_threshold \paramType{int} & 0 & & The minimum number of network hops required before UGAL is considered. All path lengths less than value automatically use minimal. \\
 \hline
@@ -268,6 +286,9 @@ stats \paramType{string} & null &
 \subsection{Namespace ``switch.link''}
 \input{piscesSender}
 \subsection{Namespace ``switch.ejection''}
+This namespace is not actually required. 
+If unspecified, all of the values here will be filled in from \inlinefile{nic.injection}.
+
 \input{piscesSender}
 
 \section{Namespace ``appN''}

@@ -200,17 +200,16 @@ class pisces_default_packet :
  public pisces_routable_packet
 {
   NotSerializable(pisces_default_packet)
-
-  public:
-   pisces_default_packet(
-     serializable* msg,
-     uint64_t flow_id,
-     int num_bytes,
-     bool is_tail,
-     node_id toaddr,
-     node_id fromaddr) :
-    pisces_routable_packet(msg, num_bytes, is_tail, toaddr, fromaddr),
-    flow_id_(flow_id)
+ public:
+  pisces_default_packet(
+   serializable* msg,
+   uint64_t flow_id,
+   int num_bytes,
+   bool is_tail,
+   node_id toaddr,
+   node_id fromaddr) :
+  pisces_routable_packet(msg, num_bytes, is_tail, toaddr, fromaddr),
+  flow_id_(flow_id)
   {
   }
 
@@ -224,6 +223,41 @@ class pisces_default_packet :
 
  private:
   uint64_t flow_id_;
+
+};
+
+class pisces_delay_stats_packet : public pisces_default_packet
+{
+  NotSerializable(pisces_delay_stats_packet)
+ public:
+  pisces_delay_stats_packet(
+   serializable* msg,
+   uint64_t flow_id,
+   int num_bytes,
+   bool is_tail,
+   node_id toaddr,
+   node_id fromaddr) :
+  pisces_default_packet(msg, flow_id, num_bytes, is_tail, toaddr, fromaddr),
+   congestion_delay_(0.)
+  {
+  }
+
+  /**
+   * @brief congestion_delay
+   * @return The congestion delay in seconds
+   */
+  double
+  congestion_delay() const {
+    return congestion_delay_;
+  }
+
+  void
+  accumulate_delay(double sec){
+   congestion_delay_ += sec;
+  }
+
+ private:
+  double congestion_delay_;
 
 };
 

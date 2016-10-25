@@ -128,9 +128,6 @@ class packet_delay_stats :
   virtual void
   collect_single_event(const pkt_arbitration_t &st);
 
- protected:
-  void collect(double delay_us, pisces_payload* pkt);
-
 };
 
 class null_stats : public packet_stats_callback
@@ -146,6 +143,19 @@ class null_stats : public packet_stats_callback
 
   virtual void
   collect_final_event(pisces_payload *pkt){}
+};
+
+class multi_stats : public packet_stats_callback
+{
+  public:
+   multi_stats(sprockit::sim_parameters* params, event_scheduler* parent);
+
+  void collect_single_event(const pkt_arbitration_t &st);
+
+  void collect_final_event(pisces_payload *pkt);
+
+ private:
+  std::vector<packet_stats_callback*> cbacks_;
 
 };
 
@@ -162,18 +172,6 @@ class byte_hop_collector :
 
  private:
   stat_global_int* byte_hops_;
-};
-
-class spyplot_and_delay_stats :
-  public congestion_spyplot,
-  public packet_delay_stats
-{
- public:
-  spyplot_and_delay_stats(sprockit::sim_parameters* params, event_scheduler* parent);
-
-  virtual void
-  collect_single_event(const pkt_arbitration_t& st);
-
 };
 
 class stat_bytes_sent :

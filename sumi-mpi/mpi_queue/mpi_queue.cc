@@ -70,9 +70,9 @@ mpi_queue::mpi_queue(sprockit::sim_parameters* params,
   poll_delay_ = params->get_optional_time_param("poll_delay", 0);
 
   spy_num_messages_ = sstmac::optional_stats<sstmac::stat_spyplot>(os_->node(),
-        params, "traffic_matrix", "spyplot", "num_messages");
+        params, "traffic_matrix", "ascii", "num_messages");
   spy_bytes_ = sstmac::optional_stats<sstmac::stat_spyplot>(os_->node(),
-        params, "traffic_matrix", "spyplot", "bytes");
+        params, "traffic_matrix", "ascii", "bytes");
 
   user_lib_mem_ = new sstmac::sw::lib_compute_memmove(params, "mpi_queue-user-lib-mem", sid, os_);
 
