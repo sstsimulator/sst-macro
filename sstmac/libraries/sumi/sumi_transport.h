@@ -3,12 +3,6 @@
 
 #include <sstmac/libraries/sumi/message_fwd.h>
 #include <sstmac/common/node_address.h>
-#include <sumi/monitor.h>
-#include <sumi/timeout.h>
-#include <sumi/message_fwd.h>
-#include <sumi/collective.h>
-#include <sumi/transport.h>
-#include <sumi/comm_functions.h>
 #include <sstmac/libraries/sumi/message_fwd.h>
 #include <sstmac/software/process/pmi.h>
 #include <sstmac/software/launch/app_launch.h>
@@ -16,6 +10,10 @@
 #include <sstmac/software/api/api.h>
 #include <sstmac/hardware/network/network_message_fwd.h>
 #include <sumi/message_fwd.h>
+#include <sumi/message_fwd.h>
+#include <sumi/collective.h>
+#include <sumi/comm_functions.h>
+#include <sumi/transport.h>
 
 /**
  * SUMI = Simulator unified messagine interface
