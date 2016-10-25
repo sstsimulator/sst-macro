@@ -417,7 +417,7 @@ tapered_fat_tree::connected_outports(switch_id src, std::vector<connection>& con
   int myRow = level(src);
   if (myRow == 2){
     //core switch
-    conns.resize(num_agg_switches_per_subtree_);
+    conns.resize(num_agg_subtrees_);
     int inport = up_port(1);
     for (int s=0; s < num_agg_subtrees_; ++s){
       connection& conn = conns[s];
