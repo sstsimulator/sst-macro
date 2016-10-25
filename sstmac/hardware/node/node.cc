@@ -111,11 +111,12 @@ node::init(unsigned int phase)
 
 node::~node()
 {
-  if (os_) delete os_;
+  if (app_launcher_) delete app_launcher_;
   if (mem_model_) delete mem_model_;
   if (proc_) delete proc_;
-  //JJW 03/09/2015 - node does not own NIC
-  //if (nic_) delete nic_;
+  /** JJW Delete this last since destructor may unregister libs from OS */
+  if (os_) delete os_;
+  if (nic_) delete nic_;
 }
 
 void
@@ -169,8 +170,10 @@ node::build_launchers(sprockit::sim_parameters* params)
   params->get_optional_vector_param("services", services_to_launch);
   for (std::string& str : services_to_launch){
     sprockit::sim_parameters* srv_params = params->get_namespace(str);
-    srv_params->add_param("service_name", str);
-    srv_params->add_param_override("name", str);
+    //setup the name for app factory
+    srv_params->add_param_override("name", "distributed_service");
+    //setup the name for distributed service
+    srv_params->add_param_override("libname", str);
     app_launch* appman = app_launch::static_app_launch(aid, str, srv_params);
     node_debug("adding distributed service %s", str.c_str());
     app_launchers_.push_back(appman);

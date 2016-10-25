@@ -31,6 +31,7 @@ nobase_nodist_library_include_HEADERS += \
   ios \
   ostream \
   istream \
+	condition_variable \
   list \
   map \
   memory \

@@ -37,7 +37,7 @@ app_launcher::incoming_event(event* ev)
   launch_event* lev = safe_cast(launch_event, ev);
 
   software_id sid(lev->aid(), lev->tid());
-  app* theapp = app_factory::get_value(lev->app_name(), lev->params(), sid);
+  app* theapp = app_factory::get_value(lev->app_name(), lev->params(), sid, os_);
   int intranode_rank = num_apps_launched_[lev->aid()]++;
   int core_affinity = lev->core_affinity(intranode_rank);
   theapp->set_affinity(core_affinity);

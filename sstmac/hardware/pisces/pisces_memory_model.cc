@@ -59,6 +59,7 @@ pisces_memory_packetizer::~pisces_memory_packetizer()
   if (pkt_allocator_) delete pkt_allocator_;
   if (bw_noise_) delete bw_noise_;
   if (interval_noise_) delete interval_noise_;
+  if (self_credit_handler_) delete self_credit_handler_;
 }
 
 pisces_memory_model::pisces_memory_model(sprockit::sim_parameters *params, node *nd) :

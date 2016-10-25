@@ -68,11 +68,37 @@ app_launch::app_launch(sprockit::sim_parameters* params, app_id aid) :
 {
 }
 
+static thread_lock launch_lock;
+
+app_launch*
+app_launch::static_app_launch(const std::string& name)
+{
+  launch_lock.lock();
+  auto iter = static_app_launches_.find(name);
+  if (iter == static_app_launches_.end()){
+    spkt_abort_printf("cannot find app launch %s", name.c_str());
+  }
+  app_launch* l = iter->second;
+  launch_lock.unlock();
+  return l;
+}
+
+app_launch*
+app_launch::service_info(const std::string& name)
+{
+  app_launch* l = static_app_launch(name);
+  if (l->node_assignments().size() == 0){
+    spkt_abort_printf("Service %s has not yet launched. "
+                      "Start time for app should be delayed until service has launched",
+                      name.c_str());
+  }
+  return l;
+}
+
 app_launch*
 app_launch::static_app_launch(int aid, const std::string& name, sprockit::sim_parameters* params)
 {
-  static thread_lock lock;
-  lock.lock();
+  launch_lock.lock();
   if (!static_app_launches_[name]){
     if (params->has_namespace(name)){
       sprockit::sim_parameters* app_params = params->get_namespace(name);
@@ -81,7 +107,7 @@ app_launch::static_app_launch(int aid, const std::string& name, sprockit::sim_pa
     }
   }
   app_launch* l = static_app_launches_[name];
-  lock.unlock();
+  launch_lock.unlock();
   return l;
 }
 
@@ -95,10 +121,12 @@ app_launch::static_app_launch(int aid, sprockit::sim_parameters* params)
 const std::vector<node_id>&
 app_launch::nodes(const std::string &name)
 {
+  launch_lock.lock();
   app_launch* l = static_app_launches_[name];
   if (!l){
     spkt_abort_printf("No application %s found in launcher", name.c_str());
   }
+  launch_lock.unlock();
   return l->node_assignments();
 }
 
@@ -190,7 +218,7 @@ software_launch::parse_launch_cmd(
   else { //standard launch
     try {
       nproc = params->get_long_param("size");
-      procs_per_node = params->get_optional_long_param("ntask_per_node", 1);
+      procs_per_node = params->get_optional_long_param("concentration", 1);
     }
     catch (sprockit::input_error& e) {
       cerr0 << "Problem reading app size parameter in app_launch.\n"

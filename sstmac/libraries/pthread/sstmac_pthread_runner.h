@@ -33,7 +33,8 @@ class pthread_runner : public thread
   clear_subthread_from_parent_app();
 
   pthread_runner(software_id id, app* parent,
-                 start_fxn start_routine, void* arg);
+                 start_fxn start_routine, void* arg,
+                 operating_system* os);
 
 };
 }

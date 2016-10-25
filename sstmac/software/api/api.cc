@@ -41,6 +41,13 @@ static_get_api(const char *name)
   return a;
 }
 
+api::~api()
+{
+  if (hostcompute_) {
+    delete timer_;
+  }
+}
+
 void
 api::init(sprockit::sim_parameters* params)
 {

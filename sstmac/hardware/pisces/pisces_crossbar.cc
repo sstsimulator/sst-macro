@@ -20,8 +20,6 @@ pisces_crossbar::pisces_crossbar(
   event_scheduler* parent) :
   pisces_NtoM_queue(params, parent)
 {
-  arb_ = pisces_bandwidth_arbitrator_factory::get_param("arbitrator",
-                                                            params);
 }
 
 pisces_demuxer::pisces_demuxer(

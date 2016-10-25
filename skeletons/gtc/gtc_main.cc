@@ -24,8 +24,9 @@ namespace gtc
   using namespace sstmac;
   using namespace sstmac::sw;
 
-  gtc_main::gtc_main(sprockit::sim_parameters* params, software_id sid) :
-    app(params, sid)
+  gtc_main::gtc_main(sprockit::sim_parameters* params, software_id sid,
+                     sstmac::sw::operating_system* os) :
+    app(params, sid, os)
   {
 #ifdef _USE_LOOPS
       libloops_ = new sstmac::sw::lib_compute_loops(params, sid, os_);

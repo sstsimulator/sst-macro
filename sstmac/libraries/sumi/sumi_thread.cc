@@ -6,10 +6,10 @@ namespace sstmac {
 
 uint64_t sumi_thread::num_threads_ = 0;
 
-sumi_thread::sumi_thread(sprockit::sim_parameters* params, sw::software_id sid) :
-  thread(params, sid)
+sumi_thread::sumi_thread(sprockit::sim_parameters* params, sw::software_id sid,
+                         sw::operating_system* os) :
+  thread(params, sid, os)
 {
-  std::string libname = sprockit::printf("sumi_compute_thread%lu", num_threads_);
 }
 
 void

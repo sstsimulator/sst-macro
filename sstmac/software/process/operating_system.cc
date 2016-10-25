@@ -125,6 +125,7 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
 
   //we automatically initialize the first context
 #if SSTMAC_USE_MULTITHREAD
+  event_manager* man = parent->event_mgr();
   if (os_thread_contexts_.size() == 1){
     os_thread_contexts_.resize(man->nthread());
     os_thread_context& main_ctxt = os_thread_contexts_[0];
@@ -665,22 +666,13 @@ operating_system::register_lib(library* lib)
               "operating_system: trying to register a lib with no name");
   }
 #endif
-  os_debug("registering lib %s", lib->lib_name().c_str());
+  os_debug("registering lib %s:%p", lib->lib_name().c_str(), lib);
   int& refcount = lib_refcounts_[lib];
   ++refcount;
   libs_[lib->lib_name()] = lib;
   debug_printf(sprockit::dbg::dropped_events,
                "OS %d should no longer drop events for %s",
                addr(), lib->lib_name().c_str());
-}
-
-void
-operating_system::swap_lib_name(const std::string &oldName, const std::string &newName)
-{
-  auto iter = libs_.find(oldName);
-  library* lib = iter->second;
-  libs_.erase(iter);
-  libs_[newName] = lib;
 }
 
 void
@@ -694,7 +686,7 @@ operating_system::unregister_lib(library* lib)
                  "OS %d will now drop events for %s",
                  addr(), lib->lib_name().c_str());
     libs_.erase(lib->lib_name());
-    delete lib;
+    //delete lib;
   } else {
     --refcount;
   }
@@ -785,7 +777,7 @@ operating_system::add_thread(thread* t)
     des_context_,
     stackalloc_.alloc(),
     stackalloc_.stacksize(),
-    this, NULL);
+    NULL);
 
   threads_.push_back(t);
 }
@@ -843,18 +835,19 @@ operating_system::handle_event(event* ev)
       sprockit::to_string(ev).c_str());
   }
 
-  std::string libn = libmsg->lib_name();
-  auto it = libs_.find(libn);
+  auto it = libs_.find(libmsg->lib_name());
 
   if (it == libs_.end()) {
     //event arrived for library that doesn't exist yet
-    sprockit::sim_parameters* lib_params = params_->get_optional_namespace(libn);
+    sprockit::sim_parameters* lib_params = params_->get_optional_namespace(libmsg->lib_name());
     software_id sid(0,0); //service
-    library* lib = library_factory::get_extra_value(libn, lib_params, sid, this);
+    library* lib = library_factory::get_extra_value(libmsg->lib_name(), lib_params, sid, this);
     if (lib){
+      os_debug("delivering message to newly created lib %s:%p\n%s",
+          libmsg->lib_name().c_str(), sprockit::to_string(ev).c_str());
       lib->incoming_event(ev);
     } else {
-      cerrn << "Valid libraries on " << this << ":\n";
+      cerrn << "Valid libraries on OS " << addr() << ":\n";
       for  (auto& pair : libs_){
         cerrn << pair.first << std::endl;
       }
@@ -874,9 +867,10 @@ operating_system::handle_event(event* ev)
     */
   }
   else {
-    os_debug("delivering message to lib %s: %s",
-        libn.c_str(), sprockit::to_string(ev).c_str());
-    it->second->incoming_event(ev);
+    library* lib = it->second;
+    os_debug("delivering message to lib %s:%p\n%s",
+        libmsg->lib_name().c_str(), lib, sprockit::to_string(ev).c_str());
+    lib->incoming_event(ev);
   }
 }
 

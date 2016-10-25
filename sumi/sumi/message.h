@@ -267,6 +267,7 @@ class system_bcast_message : public message
     action_(action),
     root_(root)
   {
+    class_ = bcast;
   }
 
   int root() const {

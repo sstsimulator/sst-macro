@@ -1,6 +1,10 @@
 #ifndef sumi_api_TRANSPORT_H
 #define sumi_api_TRANSPORT_H
 
+#include <sprockit/debug.h>
+#include <sprockit/factories/factory.h>
+#include <sprockit/unordered.h>
+#include <sprockit/util.h>
 #include <sumi/collective_message.h>
 #include <sumi/collective.h>
 #include <sumi/comm_functions.h>
@@ -12,10 +16,6 @@
 #include <sumi/thread_safe_list.h>
 #include <sumi/thread_safe_set.h>
 #include <sumi/thread_lock.h>
-#include <sprockit/debug.h>
-#include <sprockit/factories/factory.h>
-#include <sprockit/unordered.h>
-#include <sprockit/util.h>
 
 DeclareDebugSlot(sumi);
 
@@ -159,6 +159,15 @@ class transport
   */
   message::ptr
   blocking_poll();
+
+  /**
+   Check if a message has been received. Return immediately even if empty queue.
+   Message returned is removed from the internal queue.
+   Successive calls to the function do NOT return the same message.
+   @return    The next message to be received, null if no messages
+  */
+  message::ptr
+  poll(bool blocking);
 
   /**
    Block until a message is received.

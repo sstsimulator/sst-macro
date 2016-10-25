@@ -164,6 +164,12 @@ class app_launch : public software_launch
   static app_launch*
   static_app_launch(int aid, sprockit::sim_parameters* params);
 
+  static app_launch*
+  static_app_launch(const std::string& name);
+
+  static app_launch*
+  service_info(const std::string& name);
+
   static void
   clear_static_app_launch(){
     for (auto& pair : static_app_launches_){

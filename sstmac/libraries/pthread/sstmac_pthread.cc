@@ -54,11 +54,10 @@ SSTMAC_pthread_create(sstmac_pthread_t* pthread,
   software_id newid(parent_app->aid(), parent_app->tid(), unknown_thrid);
   pthread_runner* tr = new pthread_runner(newid,
                            parent_app,
-                           start_routine, arg);
+                           start_routine, arg, os);
 
   parent_app->add_subthread(tr);
   *pthread = tr->thread_id();
-
 
   if (attr){
     tr->set_cpumask(attr->cpumask);
@@ -172,8 +171,9 @@ SSTMAC_pthread_mutex_destroy(sstmac_pthread_mutex_t * mutex)
     return 0; //nothing to do here
 
 
-
-  bool found = current_thread()->parent_app()->erase_mutex(*mutex);
+  thread* thr = current_thread();
+  app* a = thr->parent_app();
+  bool found = a->erase_mutex(*mutex);
   if (found){
     return EINVAL;
   } else {

@@ -1,21 +1,25 @@
-#include <sstmac/libraries/sumi/distributed_service.h>
+#include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/launch/app_launch.h>
-#include <sumi/transport.h>
-#include <sstmac/libraries/sumi/sumi.h>
 #include <sstmac/skeleton.h>
 #include <sstmac/util.h>
+#include <sumi/transport.h>
+#include <sstmac/libraries/sumi/sumi.h>
+#include <sstmac/libraries/sumi/distributed_service.h>
 
 namespace sstmac {
 
 class test_service : public distributed_service
 {
  public:
-  test_service(sprockit::sim_parameters* params, sw::software_id sid) :
-    distributed_service(params, sid)
+  test_service(sprockit::sim_parameters* params,
+               const std::string& libname,
+               sw::software_id sid,
+               sw::operating_system* os) :
+    distributed_service(params, libname, sid, os)
   {
   }
 
-  void run(sumi::transport *tport);
+  void run() override;
 };
 
 class service_test_message : public sumi::message
@@ -24,7 +28,7 @@ class service_test_message : public sumi::message
   typedef sprockit::refcount_ptr<service_test_message> ptr;
 
   std::string
-  to_string() const {
+  to_string() const override {
     return "service test message";
   }
 
@@ -37,21 +41,19 @@ class service_test_message : public sumi::message
 };
 
 void
-test_service::run(sumi::transport *tport)
+test_service::run()
 {
-  sumi::message::ptr msg;
-  //now go into polling loop
-  msg = busy_loop(tport);
-  int rank = tport->rank();
-  while (msg) {
-    service_test_message::ptr smsg = ptr_safe_cast(service_test_message, msg);
-    printf("Service node %d sleeping for %8.4es\n", rank, smsg->workload.sec());
-    sleep(smsg->workload);
-    msg = busy_loop(tport);
+  while (!terminated()) {
+    sumi::message::ptr msg = poll_for_message(true);
+    if (msg){
+      service_test_message::ptr smsg = ptr_safe_cast(service_test_message, msg);
+      printf("Service node %d sleeping for %8.4es\n", rank(), smsg->workload.sec());
+      os_->sleep(smsg->workload);
+    }
   }
 }
 
-SpktRegister("test_service", sw::app, test_service);
+SpktRegister("test_service", distributed_service, test_service);
 
 } //end namespace sstmac
 
@@ -70,18 +72,19 @@ int USER_MAIN(int argc, char** argv)
   sumi_transport* tport = sumi::sumi_api();
   tport->init();
 
-  auto nodes = sstmac::sw::app_launch::nodes("test_service");
-  int num_service_nodes = nodes.size();
+  sstmac::sw::app_launch* srv = sstmac::sw::app_launch::service_info("test_service");
+  int num_service_nodes = srv->nproc();
   int me = tport->rank();
   int partner = me;
-  std::string target_service = "test_service";
   for (int i=0; i < num_messages; ++i){
     partner = ((partner + 5) * 7) % num_service_nodes;
-    printf("Client %d sending to service node %d at addr %d\n", me, partner, nodes[partner]);
+    printf("Client %d sending to service node %d at addr %d\n",
+           me, partner, srv->node_assignment(partner));
     service_test_message* msg = new service_test_message(task_length);
-    tport->client_server_send(target_service, partner, nodes[partner], msg);
+    tport->client_server_send(partner, srv->node_assignment(partner), srv->aid(), msg);
   }
-
+  //send a shutdown request to server 0 - make rank 0 in charge
+  if (tport->rank() == 0) tport->shutdown_server(0, srv->node_assignment(0), srv->aid());
   tport->finalize();
   return 0;
 }

@@ -21,16 +21,37 @@ class sumi_server :
 {
 
  public:
-  sumi_server(const std::string& libname, int appid,
-              sstmac::sw::operating_system* os)
-    : appid_(appid),
-      service(libname, sstmac::sw::software_id(appid, -1), os)
+  sumi_server(sumi_transport* tport)
+    : service(tport->server_libname(),
+       sstmac::sw::software_id(-1, -1), //belongs to no application
+       tport->os())
   {
   }
 
   void
   register_proc(int rank, sumi_transport* proc){
-    procs_[rank] = proc;
+    int app_id = proc->sid().app_;
+    debug_printf(sprockit::dbg::sumi,
+                 "sumi_server registering rank %d for app %d",
+                 rank, app_id);
+    sumi_transport*& slot = procs_[app_id][rank];
+    if (slot){
+      spkt_abort_printf("sumi_server: already registered rank %d for app %d on node %d",
+                        rank, app_id, os_->addr());
+    }
+    slot = proc;
+  }
+
+  bool
+  unregister_proc(int rank, sumi_transport* proc){
+    int app_id = proc->sid().app_;
+    auto iter = procs_.find(app_id);
+    auto& subMap = iter->second;
+    subMap.erase(rank);
+    if (subMap.empty()){
+      procs_.erase(iter);
+    }
+    return procs_.empty();
   }
 
   void
@@ -39,36 +60,16 @@ class sumi_server :
     debug_printf(sprockit::dbg::sumi,
                  "sumi_server %d: incoming message %s",
                  os_->addr(), smsg->payload()->to_string().c_str());
-    try {
-     get_proc(smsg->dest())->incoming_message(smsg);
-    } catch (sprockit::value_error& e) {
-      cerrn << "sumi_server::handle: failed handling "
-            << sprockit::to_string(ev) << std::endl;
-      throw e;
+    sumi_transport* tport = procs_[smsg->dest_app()][smsg->dest_rank()];
+    if (!tport){
+      spkt_abort_printf("sumi_server::get_proc: invalid app %d for rank %d for server on OS %d",
+                        smsg->dest_app(), smsg->dest_rank(), os_->addr());
     }
+    tport->incoming_message(smsg);
   }
 
  private:
-  int appid_;
-
-  spkt_unordered_map<int, sumi_transport*> procs_;
-
-  sumi_transport*
-  get_proc(int rank) const {
-    auto it = procs_.find(rank);
-    if (it == procs_.end()) {
-      it = procs_.begin();
-      cerrn << "Valid ranks for server are:\n";
-      while (it != procs_.end()) {
-        cerrn << it->first << std::endl;
-        ++it;
-      }
-
-      spkt_throw_printf(sprockit::value_error,
-         "sumi_server::get_proc: invalid rank %d for server", rank);
-    }
-    return it->second;
-  }
+  std::map<int, std::map<int, sumi_transport*> > procs_;
 
 };
 
@@ -76,70 +77,97 @@ class sumi_server :
 RegisterAPI("sumi_transport", sumi_transport);
 
 sumi_transport::sumi_transport(sprockit::sim_parameters* params,
-    const char* name, sstmac::sw::software_id sid,
+               const char* prefix,
+               sstmac::sw::software_id sid,
+               sstmac::sw::operating_system* os) :
+  sumi_transport(params, standard_lib_name(prefix, sid), sid, os)
+{
+}
+
+sumi_transport::sumi_transport(sprockit::sim_parameters* params,
+    const std::string& libname, sstmac::sw::software_id sid,
     sstmac::sw::operating_system* os) :
-  api(params, name, sid, os),
+  //the name of the transport itself should be mapped to a unique name
+  api(params, standard_lib_name(libname.c_str(), sid), sid, os),
+  //the server is what takes on the specified libname
+  server_libname_("sumi_server"),
   process_manager(sid, os),
   transport(params),
   queue_(nullptr)
 {
   rank_ = sid.task_;
-  if (params->has_param("service_name")){
-    //we don't need an extra server
-    server_libname_ = params->get_param("service_name");
-    os->swap_lib_name(library::lib_name(), server_libname_);
-  } else {
-    server_libname_ = sprockit::printf("%s_sumi_server_%d", name, sid.app_);
-    library* server_lib = os_->lib(server_libname_);
-    sumi_server* server;
-    // only do one server per app per node
-    if (server_lib == nullptr) {
-      server = new sumi_server(server_libname_, sid.app_, os_);
-      server->start();
-    }
-    else {
-      //add me to the ref count
-      std::cout << server_lib->to_string() << std::endl;
-      server = safe_cast(sumi_server, server_lib);
-    }
-    server->register_proc(rank_, this);
+  library* server_lib = os_->lib(server_libname_);
+  sumi_server* server;
+  // only do one server per app per node
+  if (server_lib == nullptr) {
+    server = new sumi_server(this);
+    server->start();
   }
+  else {
+    server = safe_cast(sumi_server, server_lib);
+  }
+  server->register_proc(rank_, this);
 
+  rank_mapper_ = runtime::launcher()->task_mapper(sid.app_);
+  nproc_ = rank_mapper_->nproc();
+  loc_ = os_->event_location();
+
+  queue_ = new sumi_queue(os_);
+}
+
+void
+sumi_transport::ctor_common(sstmac::sw::software_id sid)
+{
+  rank_ = sid.task_;
   sw::thread* thr = sw::operating_system::current_thread();
   sw::app* my_app = safe_cast(sw::app, thr);
   my_app->compute(timestamp(1e-6));
-
-
 }
 
 sumi_transport::~sumi_transport()
 {
   if (queue_) delete queue_;
+  sumi_server* server = safe_cast(sumi_server, os_->lib(server_libname_));
+  bool del = server->unregister_proc(rank_, this);
+  if (del) delete server;
 }
 
 void
 sumi_transport::incoming_event(event *ev)
 {
-  transport_message* smsg = safe_cast(transport_message, ev);
-  incoming_message(smsg);
+  spkt_abort_printf("sumi_transport::incoming_event: should not directly handle events");
+}
+
+void
+sumi_transport::shutdown_server(int dest_rank, node_id dest_node, int dest_app)
+{
+  sumi::message::ptr msg = new sumi::system_bcast_message(sumi::system_bcast_message::shutdown, dest_rank);
+  client_server_send(dest_rank, dest_node, dest_app, msg);
 }
 
 void
 sumi_transport::client_server_send(
-  const std::string& server_name,
   int dst_task,
   node_id dst_node,
+  int dst_app,
   const sumi::message::ptr& msg)
 {
-  sstmac::sw::app_id aid = sid().app_;
-  hw::network_message::type_t ty = hw::network_message::payload;
-  transport_message* tmsg = new transport_message(server_name, aid, msg, msg->byte_length());
-  tmsg->hw::network_message::set_type(ty);
-  tmsg->toaddr_ = dst_node;
-  tmsg->set_src(-1);
-  tmsg->set_needs_ack(false);
-  tmsg->set_dest(dst_task);
-  sw::library::os_->execute(ami::COMM_SEND, tmsg);
+  send(msg->byte_length(),
+       dst_task, dst_node, dst_app, msg, false/*no ack*/,
+       hw::network_message::payload);
+}
+
+void
+sumi_transport::client_server_rdma_put(
+  int dst_task,
+  node_id dst_node,
+  int dst_app,
+  const sumi::message::ptr& msg)
+{
+  msg->set_needs_recv_ack(true);
+  send(msg->byte_length(),
+       dst_task, dst_node, dst_app, msg, false,/*no ack*/
+       hw::network_message::rdma_put_payload);
 }
 
 sumi::message_ptr
@@ -148,17 +176,19 @@ sumi_transport::handle(sstmac::transport_message* smsg)
   if (!smsg){
     //this is sloppy - but oh well
     //a null message is sent to me to signal that I have stuff waiting in my completion queue
-    bool empty;
     debug_printf(sprockit::dbg::sumi, "Rank %d got cq notification", rank_);
-    sumi::message::ptr next = completion_queue_.pop_front_and_return(empty);
+    sumi::message::ptr next;
+    bool empty = completion_queue_.pop_front_and_return(next);
     if (empty){
-      spkt_throw(sprockit::value_error,
-        "received null message, but completion queue is empty");
+      spkt_abort_printf("sumi transport received null message, but completion queue is empty");
     }
     return next;
   }
 
   sumi::message::ptr my_msg = ptr_safe_cast(sumi::message, smsg->payload());
+  debug_printf(sprockit::dbg::sumi,
+     "sumi transport rank %d in app %d handling message of type %s: %s",
+     rank(), sid().app_, transport_message::tostr(smsg->type()), my_msg->to_string().c_str());
   switch (smsg->type())
   {
    //depending on the type, we might have to mutate the incoming message
@@ -203,20 +233,14 @@ sumi_transport::handle(sstmac::transport_message* smsg)
     break; //do nothing
   }
 
-  bool empty;
-  sumi::message::ptr msg = completion_queue_.pop_front_and_return(empty);
+  sumi::message::ptr msg;
+  bool empty = completion_queue_.pop_front_and_return(msg);
   return msg;  // will return message::ptr() if empty
 }
 
 void
 sumi_transport::init()
 {
-  rank_mapper_ = runtime::launcher()->task_mapper(sid().app_);
-  nproc_ = rank_mapper_->nproc();
-  loc_ = os_->event_location();
-
-  queue_ = new sumi_queue(os_);
-
   transport::init();
 }
 
@@ -237,20 +261,35 @@ sumi_transport::send(
   long byte_length,
   const sumi::message_ptr &msg,
   int sendType,
-  int dst,
+  int dst_rank,
   bool needs_ack)
 {
+  node_id dst_node = rank_mapper_->node_assignment(dst_rank);
+  send(byte_length, dst_rank, dst_node, sid().app_, msg, needs_ack, sendType);
+}
+
+void
+sumi_transport::send(
+  long byte_length,
+  int dst_task,
+  node_id dst_node,
+  int dst_app,
+  const sumi::message::ptr& msg,
+  bool needs_ack,
+  int ty)
+{
+   if (dst_app == -1) abort();
+   if (dst_task == -1) abort();
+
   sstmac::sw::app_id aid = sid().app_;
-  sstmac::hw::network_message::type_t ty = (sstmac::hw::network_message::type_t) sendType;
-  transport_message* tmsg = new transport_message(
-        server_libname_,
-        rank_mapper_->node_assignment(dst),
-        msg, byte_length);
-  tmsg->hw::network_message::set_type(ty);
-  tmsg->toaddr_ = rank_mapper_->node_assignment(sw::task_id(dst));
+  transport_message* tmsg = new transport_message(server_libname_, aid, msg, byte_length);
+  tmsg->hw::network_message::set_type((hw::network_message::type_t)ty);
+  tmsg->toaddr_ = dst_node;
   tmsg->set_needs_ack(needs_ack);
-  tmsg->set_src(rank_);
-  tmsg->set_dest(dst);
+  tmsg->set_src_rank(rank_);
+  tmsg->set_dest_rank(dst_task);
+  //send intra-app
+  tmsg->set_apps(sid().app_, dst_app);
   sw::library::os_->execute(ami::COMM_SEND, tmsg);
 }
 
@@ -319,6 +358,9 @@ sumi_transport::block_until_message()
 {
   while (1) {
     transport_message* msg = queue_->poll_until_message();
+    debug_printf(sprockit::dbg::sumi,
+                 "rank %d polling on queue %p returned msg %s",
+                 rank(), queue_, msg->to_string().c_str());
     sumi::message_ptr notification = handle(msg);
     delete msg;
     if (notification){
@@ -330,10 +372,12 @@ sumi_transport::block_until_message()
 sumi::message::ptr
 sumi_transport::block_until_message(double timeout)
 {
-  sstmac::timestamp to(timeout);
   while (1) {
     transport_message* msg = queue_->poll_until_message(timeout);
     if (msg){
+      debug_printf(sprockit::dbg::sumi,
+             "block_until_message on rank %d returned payload %s",
+             rank(), msg->payload()->to_string().c_str());
       sumi::message_ptr notification = handle(msg);
       delete msg;
       if (notification){
@@ -341,6 +385,9 @@ sumi_transport::block_until_message(double timeout)
       }
     } else {
       //I timed out
+      debug_printf(sprockit::dbg::sumi,
+             "block_until_message on rank %d timed out",
+             rank());
       return sumi::message_ptr();
     }
   }
@@ -455,6 +502,9 @@ sumi_queue::poll_until_message()
   if (pending_messages_.empty()) {
     sstmac::sw::key* blocker = sstmac::sw::key::construct(message_thread);
     blocked_keys_.push_back(blocker);
+    debug_printf(sprockit::dbg::sumi,
+                 "sumi queue %p has no pending messages - blocking poller %p",
+                 this, blocker);
     os_->block(blocker);
     delete blocker;
   }
@@ -504,8 +554,15 @@ sumi_queue::put_message(transport_message* msg)
 
   if (!blocked_keys_.empty()) {
     sstmac::sw::key* next_key = blocked_keys_.front();
+    debug_printf(sprockit::dbg::sumi,
+                 "sumi queue %p unblocking poller %p to handle message %s",
+                  this, next_key, msg->payload()->to_string().c_str());
     blocked_keys_.pop_front();
     os_->unblock(next_key);
+  } else {
+    debug_printf(sprockit::dbg::sumi,
+                 "sumi queue %p has no pollers to unblock for message %s",
+                  this, msg->payload()->to_string().c_str());
   }
 }
 

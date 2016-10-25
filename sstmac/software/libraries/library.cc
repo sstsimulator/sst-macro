@@ -19,9 +19,16 @@ namespace sstmac {
 namespace sw {
 
 library::library(const std::string& libname, software_id sid, operating_system* os) :
-  sid_(sid), libname_(libname), os_(os)
+  sid_(sid), libname_(libname), os_(os),
+  addr_(os->addr())
 {
   os_->register_lib(this);
+}
+
+device_id
+library::event_location() const
+{
+  return os_->event_location();
 }
 
 library::~library()

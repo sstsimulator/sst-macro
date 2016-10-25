@@ -46,8 +46,9 @@ app::allocate_tls_key(destructor_fxn fxn)
   return next;
 }
 
-app::app(sprockit::sim_parameters *params, software_id sid) :
-  thread(params, sid),
+app::app(sprockit::sim_parameters *params, software_id sid,
+         operating_system* os) :
+  thread(params, sid, os),
   compute_inst_(nullptr),
   compute_time_(nullptr),
   compute_mem_move_(nullptr),
@@ -64,11 +65,11 @@ app::~app()
 {
   /** These get deleted by unregister */
   //sprockit::delete_vals(apis_);
-  //if (compute_inst_) delete compute_inst_;
-  //if (compute_time_) delete compute_time_;
-  //if (compute_mem_move_) delete compute_mem_move_;
-  //if (compute_loops_) delete compute_loops_;
-  //if (sleep_lib_) delete sleep_lib_;
+  if (compute_inst_) delete compute_inst_;
+  if (compute_time_) delete compute_time_;
+  if (compute_mem_move_) delete compute_mem_move_;
+  if (compute_loops_) delete compute_loops_;
+  if (sleep_lib_) delete sleep_lib_;
 }
 
 lib_compute_loops*
@@ -211,6 +212,10 @@ void
 app::run()
 {
   skeleton_main();
+  for (auto& pair : apis_){
+    delete pair.second;
+  }
+  apis_.clear();
 }
 
 void
@@ -333,8 +338,9 @@ user_app_cxx_full_main::delete_statics()
   main_fxns_ = nullptr;
 }
 
-user_app_cxx_full_main::user_app_cxx_full_main(sprockit::sim_parameters *params, software_id sid) :
-  app(params, sid)
+user_app_cxx_full_main::user_app_cxx_full_main(sprockit::sim_parameters *params, software_id sid,
+                                               operating_system* os) :
+  app(params, sid, os)
 {
   if (!main_fxns_) main_fxns_ = new std::map<std::string, main_fxn>;
 
@@ -391,8 +397,9 @@ user_app_cxx_full_main::skeleton_main()
   (*fxn_)(entry.argc, entry.argv);
 }
 
-user_app_cxx_empty_main::user_app_cxx_empty_main(sprockit::sim_parameters *params, software_id sid) :
-  app(params, sid)
+user_app_cxx_empty_main::user_app_cxx_empty_main(sprockit::sim_parameters *params, software_id sid,
+                                                 operating_system* os) :
+  app(params, sid, os)
 {
   if (!empty_main_fxns_)
     empty_main_fxns_ = new std::map<std::string, empty_main_fxn>;

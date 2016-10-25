@@ -52,6 +52,19 @@ class library {
     return sid_;
   }
 
+  int
+  aid() const {
+    return sid_.app_;
+  }
+
+  node_id
+  addr() const {
+    return addr_;
+  }
+
+  device_id
+  event_location() const;
+
   virtual ~library();
 
  protected:
@@ -87,6 +100,7 @@ class library {
   operating_system* os_;
   key::category key_cat_;
   software_id sid_;
+  node_id addr_;
 
  private:
   std::string libname_;

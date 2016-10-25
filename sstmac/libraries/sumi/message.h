@@ -43,23 +43,39 @@ class transport_message :
   to_string() const override;
 
   int
-  dest() const {
+  dest_rank() const {
     return dest_;
   }
 
   void
-  set_dest(int dest) {
+  set_dest_rank(int dest) {
     dest_ = dest;
   }
 
   int
-  src() const {
+  src_rank() const {
     return src_;
   }
 
   void
-  set_src(int src) {
+  set_src_rank(int src) {
     src_ = src;
+  }
+
+  void
+  set_apps(int src, int dst){
+    src_app_ = src;
+    dest_app_ = dst;
+  }
+
+  int
+  src_app() const {
+    return src_app_;
+  }
+
+  int
+  dest_app() const {
+    return dest_app_;
   }
 
   virtual void
@@ -77,8 +93,11 @@ class transport_message :
 
  private:
   sumi::message_ptr payload_;
-  int dest_;
   int src_;
+  int dest_;
+  int src_app_;
+  int dest_app_;
+
 
 };
 

@@ -113,6 +113,9 @@ class sim_parameters  {
   remove_param(const std::string &key);
 
   std::string
+  get_variable(const std::string& str);
+
+  std::string
   get_param(const std::string& key, bool throw_on_error = true);
 
   std::string

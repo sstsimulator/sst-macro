@@ -74,6 +74,7 @@ nic::nic(sprockit::sim_parameters* params, node* parent) :
 
 nic::~nic()
 {
+  if (node_handler_) delete node_handler_;
   if (event_mtl_handler_) delete event_mtl_handler_;
   if (spy_bytes_) delete spy_bytes_;
   if (spy_num_messages_) delete spy_num_messages_;
