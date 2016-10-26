@@ -4,6 +4,7 @@
 #include <sprockit/serializer.h>
 #include <sprockit/serializable_type.h>
 #include <sprockit/debug.h>
+#include <type_traits>
 
 DeclareDebugSlot(serialize);
 
@@ -63,18 +64,6 @@ class serialize<serializable*> {
 
 };
 
-template < typename T, typename S >
-struct is_base_of // checks if T is a base of S
-{
-  typedef char yes[1];
-  typedef char no[2];
-
-  static yes& check(S*);
-  static no&  check(...);
-
-  static bool const value = sizeof(check(static_cast<T*>(0))) == sizeof(yes);
-};
-
 template <class T,bool flag>
 class serialize_ptr
 {
@@ -115,7 +104,7 @@ operator&(serializer& ser, void* v){
 template <class T>
 inline void
 operator&(serializer& ser, T*& t){
-  serialize_ptr<T,is_base_of<T,serializable>::value>()(ser, t);
+  serialize_ptr<T,std::is_base_of<serializable,T>::value>()(ser, t);
 }
 
 template <class T>

@@ -2,6 +2,7 @@
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/serializable.h>
+#include <sstmac/common/sst_event.h>
 #include <sprockit/output.h>
 #include <sprockit/fileio.h>
 #include <fstream>
@@ -142,7 +143,7 @@ parallel_runtime::~parallel_runtime()
 void
 parallel_runtime::send_event(int thread_id,
   timestamp t,
-  switch_id dst,
+  device_id dst,
   device_id src,
   uint32_t seqnum,
   event* ev)
@@ -151,6 +152,8 @@ parallel_runtime::send_event(int thread_id,
   spkt_throw_printf(sprockit::unimplemented_error,
       "parallel_runtime::send_event: should not be called on integrated core");
 #else
+  //event_debug("On rank %d, sending event from %d:%d to %d:%d\n",
+  //            me(), src.id(), src.type(), dst.id(), dst.type());
   sprockit::serializer ser;
   void* buffer = send_buffer_pools_[thread_id].pop();
   ser.start_packing((char*)buffer, buf_size_);
@@ -164,7 +167,18 @@ parallel_runtime::send_event(int thread_id,
         "parallel_runtime::send_message:: buffer overrun %d > %d: set param serialization_buffer_size larger",
         ser.packer().size(), buf_size_);
   }
-  int lp = part_->lpid_for_switch(dst);
+  int lp;
+  switch (dst.type()){
+    case device_id::router:
+      lp = part_->lpid_for_switch(dst.id());
+      break;
+    case device_id::logp_overlay:
+      lp = dst.id();
+      break;
+    default:
+      spkt_abort_printf("Invalid IPC handler of type %d", dst.type());
+  }
+
   send_buffers_[thread_id].push_back(buffer);
   lock();
   do_send_message(lp, buffer, ser.packer().size());

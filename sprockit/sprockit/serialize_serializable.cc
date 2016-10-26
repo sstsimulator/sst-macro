@@ -20,7 +20,7 @@ void
 pack_serializable(serializable* s, serializer& ser){
   if (s) {
     debug_printf(dbg::serialize,
-      "object with class id %ld: %s",
+      "packing object with class id %ld: %s",
       s->cls_id(), s->cls_name());
     long cls_id = s->cls_id();
     ser.pack(cls_id);

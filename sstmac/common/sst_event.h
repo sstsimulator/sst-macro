@@ -30,7 +30,7 @@ namespace sstmac {
 typedef SST::Event event;
 #else
 class event :
- public sprockit::serializable
+ public serializable
 {
  public:
   void

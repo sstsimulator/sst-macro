@@ -8,10 +8,11 @@ namespace sstmac {
 
 struct device_id {
   typedef enum {
-    node,
-    router,
-    netlink,
-    null
+    node=0,
+    router=1,
+    netlink=2,
+    logp_overlay=3,
+    null=4
   } type_t;
 
   explicit device_id(uint32_t id, type_t ty) :

@@ -10,11 +10,6 @@ using namespace sstmac;
 using namespace sstmac::sw;
 using namespace sumi;
 
-DeclareSerializable(lblxml::box);
-DeclareSerializable(lblxml::reduce);
-DeclareSerializable(lblxml::comm);
-DeclareSerializable(lblxml::comp);
-
 namespace lblxml
 {
   SpktRegister("boxml", sstmac::sw::app, boxml, "amr simulator");

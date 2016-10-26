@@ -87,6 +87,9 @@ class sim_parameters  {
     bool read;
   };
 
+  void
+  reproduce_params(std::ostream& os);
+
   typedef spkt_unordered_map<std::string, parameter_entry> key_value_map;
 
   sim_parameters();
@@ -105,7 +108,10 @@ class sim_parameters  {
    * @param bcaster
    */
   static void
-  parallel_build_params(sprockit::sim_parameters* params, int me, int nproc, const std::string& filename, param_bcaster* bcaster);
+  parallel_build_params(sprockit::sim_parameters* params,
+                        int me, int nproc,
+                        const std::string& filename,
+                        param_bcaster* bcaster);
 
   virtual ~sim_parameters();
 

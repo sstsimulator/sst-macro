@@ -9,6 +9,7 @@
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sprockit/util.h>
 #include <limits>
+#include <inttypes.h>
 
 #define event_debug(...) \
   debug_printf(sprockit::dbg::parallel, "Rank %d: %s", rt_->me(), sprockit::printf(__VA_ARGS__).c_str())
@@ -47,24 +48,39 @@ clock_cycle_event_map::schedule_incoming(const std::vector<void*>& buffers)
     device_id src;
     uint32_t seqnum;
     timestamp time;
-    message* msg;
+    event* ev;
     void* buffer = buffers[i];
     ser.start_unpacking((char*)buffer, buf_size);
     ser & dst;
     ser & src;
     ser & seqnum;
     ser & time;
-    ser & msg;
-    event_handler* dst_handler;
+    ser & ev;
+    event_handler* dst_handler = nullptr;
 
-    switch_id sid = dst.id();
-    event_debug("epoch %d: scheduling incoming event at %12.8e to switch %d",
-      epoch_, time.sec(), int(sid));
 
-    spkt_throw(sprockit::unimplemented_error, "parallel runs");
-    dst_handler = nullptr; interconn_->switch_at(sid);
 
-    schedule(time, seqnum, new handler_event_queue_entry(msg, dst_handler, src));
+    event_debug("epoch %d: scheduling incoming event of type %d at %12.8e to device %d: %s\n",
+      epoch_, dst.type(), time.sec(), dst.id(), sprockit::to_string(ev).c_str());
+    switch (dst.type()){
+      case device_id::node:
+        dst_handler = interconn_->node_at(dst.id())->get_nic()->payload_handler(hw::nic::LogP);
+        break;
+      case device_id::logp_overlay:
+        dst_handler = interconn_->logp_switch_at(dst.id())->payload_handler(0);
+        break;
+      case device_id::router:
+        dst_handler = interconn_->switch_at(dst.id())->payload_handler(0); //port 0 for now - hack - all the same
+        break;
+      default:
+        spkt_abort_printf("Invalid device type %d in parallel run", dst.type());
+        break;
+    }
+    if (dst_handler->ipc_handler()){
+      spkt_abort_printf("On rank %d, event going from %d:%d to %d:%d got scheduled to IPC handler",
+                        me(), src.id(), src.type(), dst.id(), dst.type());
+    }
+    schedule(time, seqnum, new handler_event_queue_entry(ev, dst_handler, src));
   }
 
   rt_->free_recv_buffers(buffers);
@@ -230,6 +246,7 @@ void
 clock_cycle_event_map::set_interconnect(hw::interconnect* interconn)
 {
   event_map::set_interconnect(interconn);
+  interconn_ = interconn;
   int nworkers = rt_->nproc() * rt_->nthread();
   if (nworkers == 1){
     //dont need the interconnect
@@ -248,11 +265,12 @@ clock_cycle_event_map::ipc_schedule(timestamp t,
   uint32_t seqnum,
   event* ev)
 {
-  event_debug("epoch %d: scheduling outgoing event at t=%12.8e to location %d",
-    epoch_, t.sec(), dst.id());
+  event_debug("epoch %d: scheduling outgoing event with cls id %" PRIu32 " at t=%12.8e to location %d of type %d\n%s\n",
+    epoch_, ev->cls_id(), t.sec(), dst.id(), dst.type(),
+    sprockit::to_string(ev).c_str());
 
   rt_->send_event(thread_id_, t,
-    dst.id(),
+    dst,
     src,
     seqnum,
     ev);

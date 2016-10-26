@@ -128,7 +128,7 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
     if (i == my_rank){
       logp_overlay_switches_[sid] = local_logp_switch = new logp_switch(switch_params, sid, mgr);
     } else {
-      logp_overlay_switches_[sid] = new dist_dummy_switch(switch_params, sid, mgr);
+      logp_overlay_switches_[sid] = new dist_dummy_switch(switch_params, sid, mgr, device_id::logp_overlay);
     }
   }
 
@@ -193,7 +193,8 @@ interconnect::connect_endpoints(sprockit::sim_parameters* inj_params,
       }
     } else {
       ep_id = i;
-      ep = nodes_[i]->get_nic();
+      node* nd = nodes_[i];
+      if (nd) ep = nd->get_nic();
     }
     if (!ep) continue; //no connection required
 
@@ -251,69 +252,67 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
     std::vector<topology::injection_port> nodes;
     topology_->nodes_connected_to_injection_switch(sid, nodes);
     interconn_debug("switch %d maps to target rank %d", i, target_rank);
-    if (target_rank == my_rank){
-      for (int n=0; n < nodes.size(); ++n){
-        node_id nid = nodes[n].nid;
-        if (!topology_->node_id_slot_filled(nid))
-          continue;
+    for (int n=0; n < nodes.size(); ++n){
+      node_id nid = nodes[n].nid;
+      if (!topology_->node_id_slot_filled(nid))
+        continue;
 
-        int port = nodes[n].port;
-        if (my_rank == target_rank){
-          //local node - actually build it
-          node_params->add_param_override("id", int(nid));
-          node* nd = node_factory::get_optional_param("model", "simple", node_params,
-                                                      nid, mgr);
-          nic* the_nic = nd->get_nic();
-          nodes_[nid] = nd;
+      int port = nodes[n].port;
+      if (my_rank == target_rank){
+        //local node - actually build it
+        node_params->add_param_override("id", int(nid));
+        node* nd = node_factory::get_optional_param("model", "simple", node_params,
+                                                    nid, mgr);
+        nic* the_nic = nd->get_nic();
+        nodes_[nid] = nd;
 
-          the_nic->connect_output(
-                inj_params,
-                nic::LogP,
-                0, //does not matter
-                local_logp_switch->payload_handler(port));
-          local_logp_switch->connect_output(inj_params,
-                                      nid, //the outport is he node
-                                      logp_switch::Node, //signal node connection
-                                      the_nic->mtl_handler());
+        the_nic->connect_output(
+              inj_params,
+              nic::LogP,
+              0, //does not matter
+              local_logp_switch->payload_handler(port));
+        local_logp_switch->connect_output(inj_params,
+                                    nid, //the outport is he node
+                                    logp_switch::Node, //signal node connection
+                                    the_nic->mtl_handler());
 
-          nd->init(0); //emulate SST core
-          nd->setup();
+        nd->init(0); //emulate SST core
+        nd->setup();
 
-          netlink_id net_id;
-          int netlink_offset;
-          bool has_netlink = topology_->node_to_netlink(nid, net_id, netlink_offset);
-          if (has_netlink){
-            interconn_debug("Adding netlink %d connected to switch %d on rank %d",
-              int(net_id), i, my_rank);
-            netlink_params->add_param_override("id", int(net_id));
-            netlink* nlink = netlinks_[net_id];
-            if (!nlink){
-              nlink = netlink_factory::get_param("model", netlink_params, nd);
-              netlinks_[net_id] = nlink;
-            }
-
-            int inj_port = nlink->node_port(netlink_offset);
-            nlink->connect_input(nlink_inj_params,
-                          nic::Injection, inj_port,
-                          the_nic->credit_handler(nic::Injection));
-            the_nic->connect_output(inj_params,
-                             nic::Injection, inj_port,
-                             nlink->payload_handler(inj_port));
-
-            nlink->connect_output(nlink_inj_params,
-                          inj_port, nic::Injection,
-                          the_nic->payload_handler(nic::Injection));
-            the_nic->connect_input(inj_params,
-                             inj_port, nic::Injection,
-                             nlink->credit_handler(inj_port));
+        netlink_id net_id;
+        int netlink_offset;
+        bool has_netlink = topology_->node_to_netlink(nid, net_id, netlink_offset);
+        if (has_netlink){
+          interconn_debug("Adding netlink %d connected to switch %d on rank %d",
+            int(net_id), i, my_rank);
+          netlink_params->add_param_override("id", int(net_id));
+          netlink* nlink = netlinks_[net_id];
+          if (!nlink){
+            nlink = netlink_factory::get_param("model", netlink_params, nd);
+            netlinks_[net_id] = nlink;
           }
-        } else {
-          local_logp_switch->connect_output(
-            inj_params,
-            target_rank,
-            logp_switch::Switch,
-            logp_overlay_switches_[target_rank]->payload_handler(port));
+
+          int inj_port = nlink->node_port(netlink_offset);
+          nlink->connect_input(nlink_inj_params,
+                        nic::Injection, inj_port,
+                        the_nic->credit_handler(nic::Injection));
+          the_nic->connect_output(inj_params,
+                           nic::Injection, inj_port,
+                           nlink->payload_handler(inj_port));
+
+          nlink->connect_output(nlink_inj_params,
+                        inj_port, nic::Injection,
+                        the_nic->payload_handler(nic::Injection));
+          the_nic->connect_input(inj_params,
+                           inj_port, nic::Injection,
+                           nlink->credit_handler(inj_port));
         }
+      } else {
+        local_logp_switch->connect_output(
+          inj_params,
+          target_rank,
+          logp_switch::Switch,
+          logp_overlay_switches_[target_rank]->payload_handler(port));
       }
     }
   }
@@ -340,7 +339,7 @@ interconnect::build_switches(sprockit::sim_parameters* switch_params,
       switches_[i] = network_switch_factory::get_param("model",
                       switch_params, i, mgr);
     } else {
-      switches_[i] = new dist_dummy_switch(switch_params, i, mgr);
+      switches_[i] = new dist_dummy_switch(switch_params, i, mgr, device_id::router);
     }
   }
 

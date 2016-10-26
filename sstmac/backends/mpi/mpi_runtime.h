@@ -59,23 +59,23 @@ class mpi_runtime :
   allgather(void *send_buffer, int num_bytes, void *recv_buffer) override;
 
   void
-  wait_merge_array(int tag);
+  wait_merge_array(int tag) override;
 
   void
-  declare_merge_array(void* buffer, int size, int tag);
+  declare_merge_array(void* buffer, int size, int tag) override;
 
   bool
-  release_merge_array(int tag);
+  release_merge_array(int tag) override;
 
   void
   init_runtime_params(sprockit::sim_parameters* params) override;
 
  protected:
   void
-  do_send_recv_messages(std::vector<void*>& buffers);
+  do_send_recv_messages(std::vector<void*>& buffers) override;
 
   void
-  do_send_message(int lp, void *buffer, int size);
+  do_send_message(int lp, void *buffer, int size) override;
 
   void
   do_reduce(void* data, int nelems, MPI_Datatype ty, MPI_Op op, int root);
@@ -89,7 +89,7 @@ class mpi_runtime :
   void
   reallocate_requests();
 
-  void finalize();
+  void finalize() override;
 
  private:
   int init_rank(sprockit::sim_parameters* params);
