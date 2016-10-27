@@ -321,11 +321,12 @@ tapered_fat_tree::tapered_fat_tree(sprockit::sim_parameters *params) :
   num_core_switches_ = params->get_int_param("num_core_switches");
   num_inj_switches_ = num_inj_switches_per_subtree_ * num_agg_subtrees_;
 
-  double numerator = num_inj_switches_per_subtree_ + num_agg_switches_per_subtree_;
-  double down_link_fraction = double(num_inj_switches_per_subtree_) / numerator;
-  double up_link_fraction = num_agg_switches_per_subtree_ / numerator;
+  //double numerator = num_inj_switches_per_subtree_ + num_agg_switches_per_subtree_;
+  //double down_link_fraction = double(num_inj_switches_per_subtree_) / numerator;
+  //double up_link_fraction = num_agg_switches_per_subtree_ / numerator;
 
-  agg_bw_multiplier_ = up_link_fraction * num_agg_switches_per_subtree_;
+  //agg_bw_multiplier_ = up_link_fraction * num_agg_switches_per_subtree_;
+  agg_bw_multiplier_ = num_agg_switches_per_subtree_;
 
   numleafswitches_ = num_inj_switches_per_subtree_ * num_agg_subtrees_;
 
