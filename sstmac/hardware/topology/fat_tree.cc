@@ -442,7 +442,7 @@ tapered_fat_tree::connected_outports(switch_id src, std::vector<connection>& con
     connection& upconn = conns[num_inj_switches_per_subtree_];
     upconn.src = src;
     upconn.dst = core_switch_id();
-    upconn.src_outport = num_inj_switches_per_subtree_;
+    upconn.src_outport = up_port(1);
     upconn.dst_inport = myTree;
   } else {
     //inj switch
