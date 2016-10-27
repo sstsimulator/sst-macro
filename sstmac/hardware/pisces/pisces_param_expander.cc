@@ -137,7 +137,7 @@ pisces_param_expander::expand_amm1_network(sprockit::sim_parameters* params,
 
 
 
-  int buffer_size = xbar_params->get_int_param("buffer_size");
+  int buffer_size = xbar_params->get_byte_length_param("buffer_size");
   link_params->add_param_override("credits", buffer_size);
 
   (*ej_params)["credits"].setByteLength(100, "GB");

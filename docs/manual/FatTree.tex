@@ -78,9 +78,9 @@ processes would be placed in order on 0,1,2,3.
 An alternative allocation/indexing scheme uses the Node ID allocator.
 
 \begin{ViFile}
-app1.launch_allocation = node_id
-app1.launch_indexing = node_id
-app1.launch_node_id_file = nodes.txt
+app1.allocation = node_id
+app1.indexing = node_id
+app1.node_id_file = nodes.txt
 \end{ViFile}
 Here \inlineshell{nodes.txt} would contain the number of nodes on the first line, followed by the list of Node IDs, in order, of where to place MPI ranks.
 For the file
@@ -103,10 +103,10 @@ app1.launch_cmd = aprun -n 4 -N 2
 We then need:
 
 \begin{ViFile}
-app1.launch_allocation = node_id
-app1.launch_indexing = node_id
-app1.launch_node_id_allocation_file = alloc.txt
-app1.launch_node_id_indexing_file = index.txt
+app1.allocation = node_id
+app1.indexing = node_id
+app1.node_id_allocation_file = alloc.txt
+app1.node_id_indexing_file = index.txt
 \end{ViFile}
 where the contents of \inlineshell{alloc.txt} are, e.g.
 

@@ -9,8 +9,8 @@ However, for consistency with previous versions, we also show the deprecated par
 
 \begin{ViFile}
 # Launch parameters
-app1.launch_indexing = block
-app1.launch_allocation = first_available
+app1.indexing = block
+app1.allocation = first_available
 app1.launch_cmd = aprun -n8 -N1
 app1.name = sstmac_mpi_testall
 app1.argv =
@@ -82,8 +82,8 @@ amm_model = amm1
 congestion_model = simple
 
 app1 {
- launch_indexing = block
- launch_allocation = first_available
+ indexing = block
+ allocation = first_available
  launch_cmd = aprun -n8 -N1
  name = sstmac_mpi_testall
  argv =
@@ -153,8 +153,8 @@ An alternative parameter file would be:
 \begin{ViFile}
 include machine.ini
 # Launch parameters
-app1.launch_indexing = block
-app1.launch_allocation = first_available
+app1.indexing = block
+app1.allocation = first_available
 app1.launch_cmd = aprun -n2 -N1
 app1.name = user_mpiapp_cxx
 app1.argv = 

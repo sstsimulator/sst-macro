@@ -19,7 +19,6 @@ distclean-local:
 libsstmac_common_la_SOURCES = \
   runtime.cc \
   cartgrid.cc \
-  event_handler.cc \
   event_scheduler.cc \
   mersenne_twister.cc \
   rng.cc \

@@ -39,7 +39,7 @@ parsedumpi::parsedumpi(sprockit::sim_parameters* params, software_id sid,
   app(params, sid, os),
   mpi_(nullptr)
 {
-  fileroot_ = params->reread_param("launch_dumpi_metaname");
+  fileroot_ = params->reread_param("dumpi_metaname");
 
   timescaling_ = params->get_optional_double_param("parsedumpi_timescale", 1);
 

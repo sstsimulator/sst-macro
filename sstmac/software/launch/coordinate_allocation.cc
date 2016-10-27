@@ -18,7 +18,7 @@ SpktRegister("coordinate", node_allocator, coordinate_allocation);
 coordinate_allocation::coordinate_allocation(sprockit::sim_parameters* params) :
   node_allocator(params)
 {
-  coord_file_ = params->get_param("launch_coordinate_file");
+  coord_file_ = params->get_param("coordinate_file");
 }
 
 void

@@ -16,16 +16,16 @@ For this, the input file would look like
 topology.name = torus
 topology.geometry = 4 4 4
 app1.launch_cmd = aprun -n 8
-app1.launch_indexing = block
-app1.launch_allocation = cartesian
-app1.launch_cart_sizes = 2 2 2
-app1.launch_cart_offsets = 0 0 0
+app1.indexing = block
+app1.allocation = cartesian
+app1.cart_sizes = 2 2 2
+app1.cart_offsets = 0 0 0
 \end{ViFile}
 
 This allocates a 3D torus of size 4x4x4.
 Suppose we want to allocate all 8 MPI ranks in a single octant?
 We can place them all in a 2x2x2 3D sub-torus by specifying the size of the sublock 
-(\inlineshell{launch_cart_sizes}) and which octant (\inlineshell{launch_cart_offsets}).
+(\inlineshell{cart_sizes}) and which octant (\inlineshell{cart_offsets}).
 This applies equally well to higher dimensional analogs.
 This is particularly useful for allocation on Blue Gene machines
 which always maintain contiguous allocations on a subset of nodes.
@@ -41,13 +41,13 @@ topology.name = torus
 topology.geometry = 4 4 4
 topology.concentration = 2
 app1.launch_cmd = aprun -n 8
-app1.launch_indexing = block
-app1.launch_allocation = cartesian
-app1.launch_cart_sizes = 2 2 1 2
-app1.launch_cart_offsets = 0 0 0 0
+app1.indexing = block
+app1.allocation = cartesian
+app1.cart_sizes = 2 2 1 2
+app1.cart_offsets = 0 0 0 0
 \end{ViFile}
 
 We allocate a set of switches across an XY plane (2 in X, 2 in Y, 1 in Z for a single plane).
-The last entry in \inlineshell{launch_cart_sizes} indicates that both nodes on each switch should be used.
+The last entry in \inlineshell{cart_sizes} indicates that both nodes on each switch should be used.
 
 

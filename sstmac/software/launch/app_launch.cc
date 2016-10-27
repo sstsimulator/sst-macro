@@ -34,8 +34,8 @@ software_launch::software_launch(sprockit::sim_parameters *params) :
 
   if (params->has_param("launch_cmd")){
     parse_launch_cmd(params);
-  } else if (params->has_param("launch_dumpi_metaname")){
-    std::string metafile = params->get_param("launch_dumpi_metaname");
+  } else if (params->has_param("dumpi_metaname")){
+    std::string metafile = params->get_param("dumpi_metaname");
     sw::dumpi_meta dm(metafile);
     nproc_ = dm.num_procs();
   } else {
@@ -43,11 +43,11 @@ software_launch::software_launch(sprockit::sim_parameters *params) :
     procs_per_node_ = params->get_optional_int_param("tasks_per_node", 1);
   }
 
-  allocator_ = sw::node_allocator_factory::get_optional_param("launch_allocation",
-               "first_available", params);
+  allocator_ = sw::node_allocator_factory
+                ::get_optional_param("allocation", "first_available", params);
 
-  indexer_ = sw::task_mapper_factory::get_optional_param("launch_indexing",
-               "block", params);
+  indexer_ = sw::task_mapper_factory
+                ::get_optional_param("indexing", "block", params);
 }
 
 software_launch::~software_launch()
