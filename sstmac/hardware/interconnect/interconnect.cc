@@ -415,6 +415,9 @@ interconnect::deadlock_check()
   for (netlink* nlink : netlinks_){
     if (nlink) nlink->deadlock_check();
   }
+  for (node* nd: nodes_){
+    if (nd) nd->deadlock_check();
+  }
 }
 
 int

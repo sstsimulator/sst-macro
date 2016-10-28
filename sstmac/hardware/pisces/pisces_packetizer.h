@@ -62,6 +62,8 @@ class pisces_packetizer :
   link_handler*
   new_credit_handler() const override;
 
+  void deadlock_check() override;
+
  protected:
   void
   recv_packet_common(pisces_payload* pkt);

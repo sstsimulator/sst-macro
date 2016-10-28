@@ -58,6 +58,9 @@ class pisces_nic :
   link_handler*
   payload_handler(int port) const override;
 
+  void
+  deadlock_check() override;
+
  protected:
   virtual void
   do_send(network_message* payload) override;
@@ -87,6 +90,8 @@ class pisces_netlink :
 
   void handle_payload(event* ev);
 
+  void deadlock_check() override;
+
   link_handler*
   payload_handler(int port) const override;
 
@@ -106,9 +111,6 @@ class pisces_netlink :
     int src_outport,
     int dst_inport,
     event_handler* mod) override;
-
-  void
-  deadlock_check() override;
 
  private:
   static const int really_big_buffer;

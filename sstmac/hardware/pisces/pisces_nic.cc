@@ -152,6 +152,12 @@ pisces_nic::do_send(network_message* payload)
 }
 
 void
+pisces_nic::deadlock_check()
+{
+  packetizer_->deadlock_check();
+}
+
+void
 pisces_netlink::connect_output(
   sprockit::sim_parameters* params,
   int src_outport, int dst_inport,
@@ -172,6 +178,7 @@ pisces_netlink::connect_input(
 {
   if (is_node_port(dst_inport)){
     inj_block_->set_input(params, dst_inport, src_outport, mod);
+    ej_block_->set_input(params, dst_inport, src_outport, mod);
   } else {
     ej_block_->set_input(params, dst_inport, src_outport, mod);
   }

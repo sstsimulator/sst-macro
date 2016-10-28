@@ -71,7 +71,8 @@ pisces_default_packet::to_string() const
 std::string
 pisces_credit::to_string() const
 {
-  return sprockit::printf("credits, num=%d", num_credits_);
+  return sprockit::printf("credits n=%d port=%d vc=%d",
+                          num_credits_, port_, vc_);
 }
 
 void

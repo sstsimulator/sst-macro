@@ -169,6 +169,8 @@ class node :
 
   void schedule_launches();
 
+  void deadlock_check() override;
+
  protected:
   node(sprockit::sim_parameters* params,
     uint64_t id,
