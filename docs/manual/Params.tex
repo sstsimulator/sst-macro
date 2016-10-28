@@ -46,7 +46,10 @@ filepath & A valid filepath to an \emph{existing} file, either absolute or relat
 quantiy & A catch-all for a quantity with units. Any of frequency, bandwidth, byte length, or time can be given \\
 \hline
 \end{tabular}
+
 \section{Global namespace}
+\label{sec:globalParams}
+
 \openTable
 \hline
 sst\_nthread \paramType{int} & 1 & Positive int & Only relevant for multi-threading. Specifying more threads than cores can lead to deadlock. \\
@@ -60,21 +63,32 @@ cpu\_affinity \paramType{vector of int} & No default & Invalid cpu IDs give unde
 \end{tabular}
 
 \section{Namespace ``topology''}
+\label{sec:topologyParams}
+
 \openTable
 \hline
 geometry \paramType{vector of int} & No default & See Topology section & Geometry configuration of the topology. For details of the keyword, users should refer to Section \ref{chapter:topologies} \\
 \hline
-name \paramType{string} & No default & torus, dragonfly, fat\_tree, butterfly, crossbar, simple\_fat\_tree & The name of the topology to build. For details, see Section \ref{chapter:topologies} \\
+name \paramType{string} & No default & torus, dragonfly, fat\_tree, butterfly, crossbar, tapered\_fat\_tree & The name of the topology to build. For details, see Section \ref{chapter:topologies} \\
 \hline 
 seed \paramType{long} & System time & & If no value given, random numbers for topology will be generated from system time \\
 \hline
 concentration \paramType{int} & 1 & Positive int & The number of nodes per network switch. For indirect networks, this is the number of nodes per leaf switch. \\
 \hline
-num\_leaf\_switches \paramType{int} & No default & Positive int & Only relevant for fat trees. This is the number of switches at the lowest level of the tree that are connected to compute nodes. \\
+num\_leaf\_switches \paramType{int} & No default & Positive int & Only relevant for fat trees. This is the number of switches at the lowest level of the tree that are connected to compute nodes. Depending on how the fat tree is specified, this number may not be required. \\
 \hline
-tapering \paramType{vector of double} & No default & Values 0-1 & For tapering of a fat tree, this specifies a tapering fraction per level of the fat tree.  This specifies a bandwidth multiplier for each layer of switch-to-switch links. \\
 \hline
 k \paramType{int} & No default & int >= 2 & The branching fraction of a fat tree. k=2 is a binary tree. k=4 is a quad-tree. \\
+\hline
+l \paramType{int} & No default & Positive int & The number of levels in a fat tree. \\
+\hline
+num\_inj\_switches\_per\_subtree & No default & Positive int & For a tapered tree, the number of injection switches, $N_{inj}$, within an aggregation tree that connect directly toc ompute nodes. \\
+\hline
+num\_agg\_switches\_per\_subtree & No default & Positive int & For a tapered tree, the number of aggregations witches per aggregation tree linking injection switches to the core. \\
+\hline
+num\_agg\_subtrees & No default & Positive int & For a tapered fat tree with 3 levels (injection, aggregation, core), this gives the number, $N_{agg}$, of aggregation subtrees. To find the total number, $N_{tot}$ of injection (leaf) switches, we have $N_{tot} = N_{agg} \times N_{inj}$. \\
+\hline
+num\_core\_switches & No default & Positive int & The total number of core switches in a tapered tree linking the individual aggregation trees. \\
 \hline
 group\_connections \paramType{int} & No default & Positive int & For dragonfly, the number of intergroup connections on each switch in a Dragonfly group \\
 \hline
@@ -83,6 +97,8 @@ redundant \paramType{vector of int} & vector of 1's & Positive ints & For Cartes
 \end{tabular}
 
 \section{Namespace ``node''}
+\label{sec:nodeParams}
+
 \openTable
 \hline
 model \paramType{string} & simple & simple & The type of node model (level of detail) for node-level operations \\
@@ -90,7 +106,10 @@ model \paramType{string} & simple & simple & The type of node model (level of de
 services \paramType{vector of strings} & Empty & Valid service names & For  details, see section on distributed services in developer's manual. Advanced feature. \\
 \hline
 \end{tabular}
+
 \subsection{Namespace ``node.nic''}
+\label{subsec:node:nic:Params}
+
 \openTable
 \hline
 model \paramType{string} & No default & pisces, logP & The type of NIC model (level of detail) for modeling injection of messages (flows) to/from the network. \\
@@ -102,19 +121,33 @@ packet\_allocator \paramType{string} & pisces & pisces & The packet object used 
 negligible\_size \paramType{byte length} & 256B & & Messages (flows) smaller than size will not go through detailed congestion modeling. They will go through a simple analytic model to compute the delay. \\
 \hline
 \end{tabular}
+
 \subsubsection{Namespace ``node.nic.delay\_histogram''}
+\label{subsubsec:node:nic:delayHistogram:Params}
 \input{histogramDescr}
+
 \subsubsection{Namespace ``node.nic.congestion\_spyplot''}
+\label{subsubsec:node:nic:congestionSpyplot:Params}
 \input{spyplotDescr}
+
 \subsubsection{Namespace ``node.nic.traffic\_matrix''}
+\label{subsubsec:node:nic:trafficMatrix:Params}
 \input{spyplotDescr}
+
 \subsubsection{Namespace ``node.nic.local\_bytes\_sent''}
+\label{subsubsec:node:nic:localSent:Params}
 \input{basicStatsDescr}
+
 \subsubsection{Namespace ``node.nic.global\_bytes\_sent''}
+\label{subsubsec:node:nic:globalSent:Params}
 \input{basicStatsDescr}
+
 \subsubsection{Namespace ``node.nic.message\_size\_histogram''}
+\label{subsubsec:node:nic:sizeHistogram:Params}
 \input{histogramDescr}
+
 \subsubsection{Namespace ``node.nic.ejection"}
+\label{subsubsec:node:nic:ejection:Params}
 These parameters do not need to be specified, but can be given.
 Generally, the simulation assumes an infinite buffer size (unlimited memory) and no latency.
 All other parameters can be filled in from \inlinefile{node.nic.injection}.
@@ -134,7 +167,10 @@ callbacks \paramType{vector of string} & No default & Any valid stats name & If 
 \input{piscesSenderBlock} 
 \hline
 \end{tabular}
+
 \subsubsection{Namespace ``node.nic.injection"}
+\label{subsubsec:node:nic:injection:Params}
+
 \openTable
 \hline
 stats \paramType{string} & null & 
@@ -148,6 +184,8 @@ stats \paramType{string} & null &
 
 
 \subsection{Namespace ``node.memory''}
+\label{subsec:node:memory:Params}
+
 \openTable
 \hline
 model \paramType{string} & No default & logP, pisces & The type of memory model (level of detail) for modeling memory transactions. \\
@@ -161,7 +199,10 @@ total\_bandwidth & No default &  & The total memory bandwidth possible across al
 max\_single\_bandwidth & Computed & & The maximum memory bandwidth of a single stream of requests. Essentially the bandwidth of a single memory controller. If not given, this defaults the value of total\_bandwidth. \\
 \hline
 \end{tabular}
+
 \subsection{Namespace ``node.os"}
+\label{subsec:node:os:Params}
+
 \openTable
 \hline
 compute\_scheduler \paramType{string} & simple & simple, cpuset & The level of detail for scheduling compute tasks to cores. Simple looks for any empty core. cpuset allows bitmasks to be set for defining core affinities. \\
@@ -173,13 +214,17 @@ stack\_protect \paramType{bool} & false & & Whether to put special mprotect regi
 stack\_chunk\_size \paramType{byte length} & 1MB & & The size of memory to allocate at a time when allocating new thread stacks. Rather than allocating one thread stack at a time, multiple stacks are allocated and added to a pool as needed.  \\
 \hline
 \end{tabular}
+
 \subsubsection{Namespace ``node.os.call\_graph"}
+\label{subsubsec:node:os:callGraph:Params}
 \openTable
 \hline
 \input{filerootDescr} \\
 \hline
 \end{tabular}
+
 \subsubsection{Namespace ``node.os.ftq"}
+\label{subsubsec:node:os:ftq:Params}
 \openTable
 \hline
 \input{filerootDescr} \\
@@ -187,7 +232,9 @@ stack\_chunk\_size \paramType{byte length} & 1MB & & The size of memory to alloc
 epoch \paramType{time} & No default & & The length of simulation time to treat as a single interval. This is much like a histogram bin, except the bin is partitioned into multiple categories. If too small, not enough data will be collected per interval to give reasonable looking results. If too large, significant changes in system activity over time will not be resolved. \\
 \hline
 \end{tabular}
+
 \subsection{Namespace ``node.proc''}
+\label{subsec:node:proc:Params}
 \openTable
 \hline
 ncores \paramType{int} & No default & Positive int & The number of cores contained in a processor (socket). Total number of cores for a node is $ncores \times nsockets$. \\
@@ -199,6 +246,8 @@ parallelism \paramType{double} & 1.0 & Positive number & Fudge factor to account
 \end{tabular}
 
 \section{Namespace ``netlink''}
+\label{sec:netlink:Params}
+
 \openTable
 \hline
 model \paramType{string} & null & null, pisces & The type of netlink congestion model to use. If null, no netlink blocks will be used.  \\
@@ -208,12 +257,18 @@ concentration \paramType{int} & No default & Positive int & The number of nodes 
 num\_tiles \paramType{int} & 1 & Positive int & The number of router tiles the netlink connects to. Only relevant for tiled router models. Advanced usage. \\
 \hline
 \end{tabular}
+
 \subsection{Namespace ``netlink.injection"}
+\label{subsec:netlink:injection:Params}
 \input{piscesSender}
+
 \subsection{Namespace ``netlink.ejection"}
+\label{subsec:netlink:ejection:Params}
 \input{piscesSender}
 
 \section{Namespace ``mpi"}
+\label{sec:mpi:Params}
+
 \openTable
 \hline
 test\_delay \paramType{time} & 0 & & The minimum time spent by MPI on each MPI\_Test call \\
@@ -221,7 +276,10 @@ test\_delay \paramType{time} & 0 & & The minimum time spent by MPI on each MPI\_
 iprobe\_delay \paramType{time} & 0 & & The minimum time spent by MPI on each MPI\_Iprobe call \\
 \hline
 \end{tabular}
+
 \subsection{Namespace ``mpi.queue''}
+\label{subsec:mpi:queue:Params}
+
 \openTable
 \hline
 max\_vshort\_msg\_size \paramType{byte length} & 512B & & The maximum size to use the very short message protocol. Small messages are sent eagerly using special pre-allocated mailbox buffers. Sends complete immediately. \\
@@ -237,6 +295,8 @@ poll\_delay (time) & 0 & & The minimum time spent by MPI each time it polls for 
 \end{tabular}
 
 \section{Namespace ``switch''}
+\label{subsec:switch:Params}
+
 \openTable
 \hline
 model \paramType{string} & No default & logP, pisces & The type of switch model (level of detail) for modeling network traffic. \\
@@ -244,7 +304,10 @@ model \paramType{string} & No default & logP, pisces & The type of switch model 
 buffer\_size \paramType{byte length} & No default & & The size of input and output buffers on each switch. This determines the number of credits available to other components \\
 \hline
 \end{tabular}
+
 \subsection{Namespace ``switch.router''}
+\label{subsec:switch:router:Params}
+
 \openTable
 \hline
 name \paramType{string} & No default & minimal, valiant, ugal, fat\_tree & The name of the routing algorithm to use for routing packets. \\
@@ -252,7 +315,10 @@ name \paramType{string} & No default & minimal, valiant, ugal, fat\_tree & The n
 ugal\_threshold \paramType{int} & 0 & & The minimum number of network hops required before UGAL is considered. All path lengths less than value automatically use minimal. \\
 \hline
 \end{tabular}
+
 \subsection{Namespace ``switch.output\_buffer"}
+\label{subsec:switch:outputBuffer:Params}
+
 \openTable
 \hline
 stats \paramType{string} & null & 
@@ -263,12 +329,18 @@ stats \paramType{string} & null &
    Null indicates no statistics collected. For details on the other types of statistics, see Section \ref{sec:tutorials:packetStats} \\
 \hline
 \end{tabular}
+
 \subsubsection{Namespace ``switch.output\_buffer.delay\_histogram''}
+\label{subsubsec:switch:outputBuffer:delayHistogram:Params}
 \input{histogramDescr}
+
 \subsubsection{Namespace ``switch.output\_buffer.byte\_hops''}
+\label{subsubsec:switch:outputBuffer:delayHistogram:Params}
 \input{basicStatsDescr}
 
 \subsection{Namespace ``switch.xbar"}
+\label{sec:switch:outputBuffer:delayHistogram:Params}
+
 \openTable
 \hline
 stats \paramType{string} & null & 
@@ -282,16 +354,22 @@ stats \paramType{string} & null &
 \end{tabular}
 
 \subsubsection{Namespace ``switch.xbar.bytes\_sent''}
+\label{subsubsec:switch:xbar:bytesSent:Params}
 \input{basicStatsDescr}
+
 \subsection{Namespace ``switch.link''}
+\label{subsec:switch:link:Params}
 \input{piscesSender}
+
 \subsection{Namespace ``switch.ejection''}
+\label{subsec:switch:ejection:Params}
 This namespace is not actually required. 
 If unspecified, all of the values here will be filled in from \inlinefile{nic.injection}.
 
 \input{piscesSender}
 
 \section{Namespace ``appN''}
+\label{sec:appN:Params}
 This is a series of namespaces \inlineshell{app1}, \inlineshell{app2}, and so on for each of the launched applications.
 
 \openTable

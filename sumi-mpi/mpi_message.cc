@@ -80,11 +80,12 @@ mpi_message::clone() const
 void
 mpi_message::serialize_order(serializer& ser)
 {
-  ser & type_;
-  ser & type_packed_size_;
-  ser & (count_);
+  message::serialize_order(ser);
   ser & (src_rank_);
   ser & (dst_rank_);
+  ser & (count_);
+  ser & type_;
+  ser & type_packed_size_;
   ser & (tag_);
   ser & (commid_);
   ser & (seqnum_);

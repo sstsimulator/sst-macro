@@ -216,6 +216,11 @@ def repl_code_block(match):
   repl = "````\n%s\n````" % newBlock
   return repl
 
+def repl_param_type(match):
+  old = match.groups()[0].strip()
+  new = "(%s)" % old
+  return new
+
 def return_self(match):
   return match.groups()[0]
 
@@ -237,6 +242,7 @@ repls = [
   (section_regexp("itemize")   , process_itemize),
   (section_regexp("center") , return_self),
   (paragraph_split_cleanup_regexp , "\n\n"),
+  (macro_regexp('paramType') , repl_param_type),
   (macro_regexp('title') , repl_title),
   (macro_regexp('input') , process_input),
   (macro_regexp('aside') , return_self),

@@ -14,6 +14,10 @@ transport_message::serialize_order(serializer& ser)
   sumi::message* msg = payload_.get();
   ser & msg;
   payload_ = msg;
+  ser & src_;
+  ser & dest_;
+  ser & src_app_;
+  ser & dest_app_;
 }
 
 std::string

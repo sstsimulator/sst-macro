@@ -37,6 +37,27 @@ pisces_payload::serialize_order(serializer& ser)
   ser & arrival_;
 }
 
+void
+pisces_routable_packet::serialize_order(serializer& ser)
+{
+  pisces_payload::serialize_order(ser);
+  routable::serialize_order(ser);
+}
+
+void
+pisces_default_packet::serialize_order(serializer& ser)
+{
+  pisces_routable_packet::serialize_order(ser);
+  ser & flow_id_;
+}
+
+void
+pisces_delay_stats_packet::serialize_order(serializer& ser)
+{
+  pisces_default_packet::serialize_order(ser);
+  ser & congestion_delay_;
+}
+
 std::string
 pisces_default_packet::to_string() const
 {
