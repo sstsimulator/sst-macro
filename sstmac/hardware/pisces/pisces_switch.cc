@@ -110,7 +110,9 @@ pisces_sender*
 pisces_switch::output_buffer(sprockit::sim_parameters* params,
                                   int src_outport)
 {
-  if (out_buffers_.empty()) out_buffers_.resize(top_->max_num_ports());
+  if (out_buffers_.empty()){
+    out_buffers_.resize(top_->max_num_ports());
+  }
   if (!out_buffers_[src_outport]){
     //debug_printf(sprockit::dbg::pisces | sprockit::dbg::pisces_config,
     //  "Switch %d: making buffer with bw=%10.6e on port=%d with buffer size %d going into buffer size %d",
