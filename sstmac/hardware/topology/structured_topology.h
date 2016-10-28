@@ -119,7 +119,11 @@ class structured_topology : public topology
 
   netlink_id
   max_netlink_id() const override {
-    return num_switches();
+    if (num_nodes_per_netlink_ > 1){
+      return num_nodes() / num_nodes_per_netlink_;
+    } else {
+      return 0;
+    }
   }
 
   bool
@@ -166,6 +170,11 @@ class structured_topology : public topology
     return sid;
   }
 
+  virtual switch_id
+  netlink_to_ejection_switch(node_id nodeaddr, int &switch_port) const override {
+    return netlink_to_injection_switch(nodeaddr, switch_port);
+  }
+
   switch_id
   node_to_ejection_switch(node_id addr, int& port) const override {
     node_id netid(addr / num_nodes_per_netlink_);
@@ -176,11 +185,6 @@ class structured_topology : public topology
   node_to_injection_switch(node_id addr, int& port) const override {
     node_id netid(addr / num_nodes_per_netlink_);
     return netlink_to_injection_switch(netid, port);
-  }
-
-  virtual switch_id
-  netlink_to_ejection_switch(node_id nodeaddr, int &switch_port) const override {
-    return netlink_to_injection_switch(nodeaddr, switch_port);
   }
 
  protected:

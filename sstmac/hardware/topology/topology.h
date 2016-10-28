@@ -375,6 +375,21 @@ class topology : public sprockit::printable
                              switch_id dest_sw = switch_id(-1));
 
   virtual switch_id
+  node_to_injection_switch(
+        node_id nodeaddr, int ports[], int& num_ports) const {
+    num_ports = 1;
+    return node_to_injection_switch(nodeaddr, ports[0]);
+  }
+
+  virtual switch_id
+  node_to_ejection_switch(
+        node_id nodeaddr, int ports[], int& num_ports) const {
+    num_ports = 1;
+    return node_to_ejection_switch(nodeaddr, ports[0]);
+  }
+
+
+  virtual switch_id
   netlink_to_injection_switch(
         node_id nodeaddr, int ports[], int& num_ports) const {
     num_ports = 1;

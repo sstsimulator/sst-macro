@@ -22,6 +22,11 @@ class netlink :
     return num_tiles_ + node_offset;
   }
 
+  bool
+  is_node_port(int port) const {
+    return port >= num_tiles_;
+  }
+
   int
   switch_port(int tile_offset) const {
     return tile_offset;

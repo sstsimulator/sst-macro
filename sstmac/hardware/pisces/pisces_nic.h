@@ -112,7 +112,8 @@ class pisces_netlink :
 
  private:
   static const int really_big_buffer;
-  pisces_crossbar* block_;
+  pisces_crossbar* inj_block_;
+  pisces_crossbar* ej_block_;
   int tile_rotater_;
   bool inited_;
 #if !SSTMAC_INTEGRATED_SST_CORE

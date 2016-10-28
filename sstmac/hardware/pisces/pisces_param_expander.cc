@@ -115,6 +115,7 @@ pisces_param_expander::expand_amm1_network(sprockit::sim_parameters* params,
   sprockit::sim_parameters* ej_params = switch_params->get_namespace("ejection");
   sprockit::sim_parameters* nic_params = params->get_namespace("nic");
   sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
+  sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
 
   std::string hop_lat;
   if (link_params->has_param("send_latency")){
@@ -136,8 +137,7 @@ pisces_param_expander::expand_amm1_network(sprockit::sim_parameters* params,
   xbar_params->add_param_override("arbitrator", "null");
 
 
-
-  int buffer_size = xbar_params->get_int_param("buffer_size");
+  int buffer_size = xbar_params->get_byte_length_param("buffer_size");
   link_params->add_param_override("credits", buffer_size);
 
   (*ej_params)["credits"].setByteLength(100, "GB");
@@ -146,6 +146,31 @@ pisces_param_expander::expand_amm1_network(sprockit::sim_parameters* params,
   }
   ej_params->add_param_override("send_latency", ej_params->get_param("latency"));
   ej_params->add_param_override("credit_latency", "0ns");
+
+  std::string net_model = netlink_params->get_optional_param("model", "null");
+  if (net_model != "null"){
+    sprockit::sim_parameters* inj_params = netlink_params->get_optional_namespace("injection");
+    sprockit::sim_parameters* ej_params = netlink_params->get_optional_namespace("ejection");
+    if (!inj_params->has_param("send_latency")){
+      inj_params->add_param_override("send_latency", inj_params->get_param("latency"));
+    }
+    if (!inj_params->has_param("credit_latency")){
+      inj_params->add_param_override("credit_latency", inj_params->get_param("latency"));
+    }
+    if (!ej_params->has_param("send_latency")){
+      ej_params->add_param_override("send_latency", ej_params->get_param("latency"));
+    }
+    if (!ej_params->has_param("credit_latency")){
+      ej_params->add_param_override("credit_latency", ej_params->get_param("latency"));
+    }
+    std::string inj_lat = inj_params->get_param("latency");
+    //expand netlink params
+    (*inj_params)["credits"].setByteLength(buffer_size, "B");
+    (*inj_params)["num_vc"] = 1;
+    (*ej_params)["credits"].setByteLength(100, "GB");
+    (*ej_params)["num_vc"] = 1;
+
+  }
 }
 
 void
