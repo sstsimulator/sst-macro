@@ -66,6 +66,18 @@ MakeDebugSlot(dropped_events)
     int(addr()), sprockit::printf(__VA_ARGS__).c_str())
 
 RegisterNamespaces("call_graph", "ftq");
+RegisterKeywords(
+"stack_size",
+"stack_chunk_size",
+"ftq",
+"ftq_trace",
+"ftq_epoch",
+"call_graph",
+"event_trace",
+"stack_protect",
+"event_trace_start",
+"event_trace_stop",
+);
 
 namespace sstmac {
 namespace sw {

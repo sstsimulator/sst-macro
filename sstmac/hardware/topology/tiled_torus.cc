@@ -1,6 +1,14 @@
 
 #include <sstmac/hardware/topology/tiled_torus.h>
 #include <sprockit/sim_parameters.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords(
+"tiles_per_row",
+"tiles_per_col",
+"tiles_per_inj",
+"injection_ports",
+);
 
 namespace sstmac {
 namespace hw {

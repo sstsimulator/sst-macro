@@ -22,6 +22,13 @@
 #include <iostream>
 
 RegisterNamespaces("noise");
+RegisterKeywords(
+  "processor",
+  "noise_model_seed",
+  "noise_model_mean",
+  "noise_model_stdev",
+  "noise_model_maxz",
+);
 
 namespace sstmac {
 namespace hw {

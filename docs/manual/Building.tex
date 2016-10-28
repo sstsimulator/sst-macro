@@ -296,12 +296,11 @@ This can be relative to the current directory, an absolute path, or the name of 
 
 \subsection{Distributed Memory Parallel}
 \label{subsec:mpiparallel}
-In order to run distributed memory parallel, you must configure the simulator with the \inlineshell{--enable-mpiparallel} flag.
-Configure will check for MPI and ensure that you're using
-the standard MPI compilers.  Your configure should look something like:
+Configure will automatically check for MPI.
+Your configure should look something like:
 
 \begin{ShellCmd}
-sst-macro/build> ../configure --enable-mpiparallel CXX=mpicxx CC=mpicc ...
+sst-macro/build> ../configure CXX=mpicxx CC=mpicc ...
 \end{ShellCmd}
 With the above options, you can just compile and go.
 %For some cases, you may wish to use METIS for a more intelligent partitioning of the nodes to improve parallel performance.

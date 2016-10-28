@@ -22,7 +22,25 @@
 #include <sprockit/keyword_registration.h>
 #include <sstmac/hardware/topology/topology.h>
 
-RegisterNamespaces("congestion_stats");
+RegisterNamespaces("switch", "router", "congestion_stats", "xbar", "link",
+                   "output_buffer");
+
+RegisterKeywords(
+"stats",
+"send_latency",
+"credit_latency",
+"credits",
+"num_vc",
+"pisces_arbitrator",
+"pisces_network_hop_latency",
+"pisces_network_link_bandwidth",
+"pisces_switch_crossbar_bandwidth",
+"network_switch_type",
+"network_link_bandwidth",
+"eject_buffer_size",
+"output_buffer_size",
+"input_buffer_size",
+);
 
 namespace sstmac {
 namespace hw {

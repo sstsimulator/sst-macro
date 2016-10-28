@@ -8,9 +8,14 @@
 #include <dlfcn.h>
 #include <signal.h>
 #include <iostream>
+#include <sprockit/keyword_registration.h>
 
 RegisterDebugSlot(multithread_event_manager);
 RegisterDebugSlot(cpu_affinity);
+
+RegisterKeywords(
+  "cpu_affinity",
+);
 
 namespace sstmac {
 namespace native {

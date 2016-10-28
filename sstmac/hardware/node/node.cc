@@ -37,6 +37,14 @@
 ImplementFactory(sstmac::hw::node);
 RegisterDebugSlot(node)
 RegisterNamespaces("os", "memory", "proc");
+RegisterKeywords(
+"libname",
+"ncores",
+"node_cores",
+"node_name",
+"node_memory_model",
+"node_model",
+);
 
 namespace sstmac {
 namespace hw {

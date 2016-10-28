@@ -8,6 +8,11 @@
 #include <sstmac/software/process/backtrace.h>
 #include <sumi-mpi/mpi_api.h>
 #include <sstmac/skeleton.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords("print_times",
+                 "message_size",
+                 "sleep_time");
 
 #define sstmac_app_name mpi_ping_all
 

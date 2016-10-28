@@ -19,6 +19,11 @@
 #include <sprockit/fileio.h>
 #include <sprockit/sim_parameters.h>
 
+RegisterKeywords(
+"dumpi_mapname",
+"launch_dumpi_mapname",
+);
+
 namespace sstmac {
 namespace sw {
 
@@ -26,9 +31,6 @@ SpktRegister("hostname",
             node_allocator,
             hostname_allocation,
             "Given a file containing one hostname/coordinate pair per line, return a node allocation with all hosts in the file");
-
-static const char* deprecated_keywords[] = { "dumpi_mapname" };
-static sprockit::StaticKeywordRegister deprecated(1, deprecated_keywords);
 
 hostname_allocation::nodemap_t hostname_allocation::hostnamemap_;
 

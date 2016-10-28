@@ -4,6 +4,11 @@
 #include <sstmac/software/launch/coordinate_allocation.h>
 #include <sprockit/fileio.h>
 #include <sprockit/sim_parameters.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords("launch_node_id_allocation_file",
+"node_id_allocation_file",
+"node_id_file");
 
 namespace sstmac {
 namespace sw {

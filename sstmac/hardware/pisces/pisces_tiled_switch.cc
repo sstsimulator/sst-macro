@@ -20,6 +20,16 @@
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 
+RegisterKeywords(
+"switch_geometry",
+"row_buffer_size",
+"nrows",
+"ncols",
+"ninject",
+"neject",
+"netlink_radix",
+);
+
 #if 0
 
 namespace sstmac {
