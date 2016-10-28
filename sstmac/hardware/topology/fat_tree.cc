@@ -27,6 +27,7 @@ RegisterKeywords(
 "num_core_switches",
 "num_agg_subtrees",
 "num_agg_switches_per_subtree",
+"radix",
 );
 
 namespace sstmac {

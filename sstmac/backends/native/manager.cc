@@ -40,15 +40,19 @@
 #include <iterator>
 #include <cstdlib>
 
+RegisterKeywords(
+"event_manager",
+"sst_rank",
+"sst_nproc",
+"nworkers",
+);
+
 
 namespace sstmac {
 namespace native {
 
 using namespace sstmac::sw;
 using namespace sstmac::hw;
-
-const char* keywords[] = { "sst_rank", "sst_nproc" };
-sprockit::StaticKeywordRegister reg_keywords(2, keywords);
 
 class timestamp_prefix_fxn :
   public sprockit::debug_prefix_fxn

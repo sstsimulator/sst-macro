@@ -24,6 +24,7 @@ RegisterKeywords(
 "network_switch_bandwidth",
 "network_negligible_size",
 "nic_negligible_size",
+"congestion_model",
 );
 
 ImplementFactory(sstmac::param_expander)

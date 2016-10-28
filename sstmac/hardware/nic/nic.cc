@@ -31,6 +31,11 @@ RegisterDebugSlot(nic);
 RegisterNamespaces("nic", "message_sizes", "traffic_matrix",
                    "message_size_histogram", "injection", "bytes");
 
+RegisterKeywords(
+"nic_name",
+"network_spyplot",
+);
+
 #define DEFAULT_NEGLIGIBLE_SIZE 256
 
 namespace sstmac {

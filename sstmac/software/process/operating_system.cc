@@ -77,6 +77,7 @@ RegisterKeywords(
 "stack_protect",
 "event_trace_start",
 "event_trace_stop",
+"compute_scheduler",
 );
 
 namespace sstmac {

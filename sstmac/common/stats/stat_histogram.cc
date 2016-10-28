@@ -5,6 +5,13 @@
 #include <sprockit/output.h>
 #include <sprockit/util.h>
 #include <math.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords(
+"bin_size",
+"num_bins",
+"logarithmic",
+);
 
 namespace sstmac {
 

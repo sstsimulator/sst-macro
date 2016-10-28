@@ -26,10 +26,10 @@
 ImplementFactory(sstmac::hw::network_switch);
 RegisterDebugSlot(network_switch)
 
+RegisterKeywords("switch_name");
+RegisterNamespaces("switch");
+
 namespace sstmac {
-
-sprockit::StaticNamespaceRegister switch_ns("switch");
-
 namespace hw {
 
 network_switch::~network_switch()

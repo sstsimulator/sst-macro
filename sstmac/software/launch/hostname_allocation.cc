@@ -22,6 +22,10 @@
 RegisterKeywords(
 "dumpi_mapname",
 "launch_dumpi_mapname",
+"launch_hostname_map",
+"hostname_map",
+"launch_hostname_list",
+"hostname_list",
 );
 
 namespace sstmac {

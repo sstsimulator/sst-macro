@@ -1,8 +1,13 @@
 #include <sstmac/software/launch/random_allocation.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sprockit/sim_parameters.h>
-
+#include <sprockit/keyword_registration.h>
 #include <algorithm>
+
+RegisterKeywords(
+"random_allocation_seed",
+"random_indexer_seed",
+);
 
 namespace sstmac {
 namespace sw {

@@ -63,6 +63,7 @@ param_remap remap_list[] = {
   pr("node_memory_model", "node.memory.model"),
   pr("node_frequency", "node.proc.frequency"),
   pr("router", "switch.router.name"),
+  pr("router_seed", "switch.router.seed"),
   pr("network_bandwidth_link", "switch.link.bandwidth"),
   pr("network_link_bandwidth", "switch.link.bandwidth"),
   pr("network_bandwidth", "switch.link.bandwidth", false),

@@ -23,11 +23,13 @@
 
 RegisterNamespaces("noise");
 RegisterKeywords(
-  "processor",
-  "noise_model_seed",
-  "noise_model_mean",
-  "noise_model_stdev",
-  "noise_model_maxz",
+"processor",
+"noise_model_seed",
+"noise_model_mean",
+"noise_model_stdev",
+"noise_model_maxz",
+"parallelism",
+"pipeline_speedup",
 );
 
 namespace sstmac {
