@@ -3,44 +3,147 @@
 \section{Network Model}
 \label{sec:tutorial:networkmodel}
 
-\subsection{Packet}
-\label{subsec:tutorial:packet}
-The packet model is the simplest and most intuitive of the congestion models for simulating network traffic.
-The physics correspond naturally to a real machine: messages are broken into small chunks (packets) and routed individually through the network.
-When two messages compete for the same channel (Figure \ref{fig:tutorial:congestion}A), arbitration occurs at regular intervals to select which packet has access.
-Packets that lose arbitration are delayed, leading to network congestion.
-In \sstmacro, the packet model is still \emph{coarse-grained}.
-In a real machine, packet sizes can be very small (100 B).
-Additionally, arbitration can happen on flits (flow control units), an even smaller unit than the packet.
-Flit-level arbitration or even 100B packet arbitration is far too fine-grained to do system-level simulation. 
-While packet size is tunable in \sstmacro, the simulator is designed for coarse-grained packet sizes of 1 KB to 8 KB.
-The same flow control (routing, arbitration, congestion avoidance) is performed on coarse-grained packets, but some accuracy is lost.
+Network models can be divided into several categories.  SST/macro supports analytic models, which estimate network delays via basic latency/bandwidth formulas, and packet models, which model step-by-step the transit of individuals through the interconnect.
+A third class of models (flow models), was previously supported but are now discontinued due to the much better scalability of packet models.
 
-The coarse-grained packet model has two main sources of error.  
-First, coarse-grained packets systematically overestimate (de)serialization latency.
-Before a packet can be forwarded to its next destination, it must be completely deserialized off the network link into a buffer.
-In a real machine, data can be forwarded on a flit-by-flit basis, efficiently pipelining packets.
-Flits that would send in a real system are artificially delayed until the rest of the coarse-grained packet arrives.
-Second, coarse-grained packets exclusively reserve network links for the entire length of the packet.
-In a real machine, two packets could multiplex across a link on a flit-by-flit basis.
+\subsection{Analytic Models: MACRELS}
+\label{subsec:tutorial:macrels}
 
-\begin{figure}[h]
+The analytic models in SST/macro are colloqiually referred to as MACRELS (MTL for AnalytiC REally Lightweight Simulation).
+The MTL (message transfer layer) moves entire network flows from point-to-point without packetizing them into smaller chunks.
+Thus an entire 1 MB MPI message is transported as a single chunk of data.  
+The majority of MACRELS models are based on the LogP set of approximations:
+
+\begin{equation}
+\Delta t = \alpha + \beta N
+\end{equation}
+where $\Delta t$ is the time delay, $\alpha$ is the minimum latency of the communication, $\beta$ is the inverse bandwidth (s/B), and N is the number of bytes.
+In abstract machine models, these methods are selected as:
+
+\begin{ViFile}
+congestion_model = logP
+\end{ViFile}
+
+\subsection{Packet Models: PISCES}
+\label{subsec:tutorial:pisces}
+
+PISCES (Packet-flow Interconnect Simulation for Congestion at Extreme Scale) breaks network flows (MPI messages) into individual packets and models each packet individually.
+In abstract machine models, PISCES can be selected as:
+
+\begin{ViFile}
+congestion_model = pisces
+\end{ViFile}
+In reality, packets are further subdivided into flits (flow-control units).
+Flit-level detail would be way too computationally intense for large-scale simulation.
+All routing decisions are made on packets as a while. 
+Two flits in the same packet cannot take different paths through the network.
+However, they may not travel together.
+PISCES provides two mechanisms for treating flit-level flow control.
+
+\subsubsection{PISCES simple model}
+\label{subsubsec:tutorial:simplePisces}
+In the simple model, each router uses a basic store-and-forward mechanism.
+Flits are not allowed to ``separate'' and always travel as a single unit.
+The entire packet has to be stored within a router before it can be forwarded to the next router.
+The simple model affects the arbitrator that decided when and how to transmit flits.
+To select a simple model:
+
+\begin{ViFile}
+arbitrator = simple
+\end{ViFile}
+The simple model is the least computationally expensive. 
+However, for large packet sizes, it can produce erroneously high latencies.
+To tune the packet size for abstract machine models, set:
+
+\begin{ViFile}
+accuracy_parameter = 1024B
+\end{ViFile}
+or equivalently 
+\begin{ViFile}
+mtu = 1024B
+\end{ViFile}
+which sets the packet size to 1024B. 
+For the simple model, packet sizes larger than 256-512B are not recommended.
+Packet sizes on production supercomputers are often small (96-128B).
+Small packet sizes with the simple model can be a good compromise for having more fine-grained routing but cheaper congestion modeling in the arbitrator.
+
+\subsubsection{PISCES cut-through model}
+\label{subsubsec:tutorial:cutThroughPisces}
+
+\begin{figure}
 \centering
-\includegraphics[width=0.5\textwidth]{figures/network/congestion.png}
-\caption{Schematic of two messages competing for same channel in the different \sstmacro congestion models. (A) Packet Model  (B) Flow Model (C) Packet-flow Model }
-\label{fig:tutorial:congestion}
+\includegraphics[width=0.6\textwidth]{figures/pisces}
+\caption{Timeline of four different packets passing through a PISCES cut-through bandwidth arbitrator. The incoming bandwidth (I) and outgoing bandwidth (O) are shown for each packet.  Time is the horizontal axis. Bandwidth consumed by a packet is shown by the vertical extent of each packet. The individual events are 1) First packet arrives 2) Second packet arrives with reduced bandwidth but no available bandwidth 3) First packet finishes. Second packet can begin sending. 4) Third packet arrives and begins sending with remaining bandwidth. 5) Fourth packet arrives, but no available bandwidth. 6) Second packet finishes. Third packet increases bandwidth. Fourth packet can begin sending. 7) Third packet finishes. Fourth packet increases bandwidth. 8) Fourth packet finishes.}
+\label{fig:pisces}
 \end{figure}
+
+In the cut-through model, routing decisions still occur at the packet-level.
+However, some attempt is made to account for pipelining of flits across different router stages.
+Somewhat similar to the LogP models used above, latency/bandwidth formulas are used to estimate packet delays.
+However, the cut-through model adds more details.
+It's requested as:
+
+\begin{ViFile}
+arbitrator = cut_through
+\end{ViFile}
+Figure \ref{fig:pisces} shows a timeline for the data being transmitted through a crossbar, SerDes, or other network component with a ``fixed bandwidth.'' 
+Each component is essentially a pipe with some flow bandwidth.
+The arbitrator divides its limited bandwidth amongst incoming packets.
+Packets fill the pipeline, consuming bandwidth.
+In contrast to the completely discrete simple model, packets can ``multiplex'' in the component sharing an arbitrary bandwidth partition.
+Modeling a packet delay starts with two input parameters and computes three output parameters.
+
+\begin{itemize}
+\item $A$: Packet head arrival (input)
+\item $I$: Packet incoming bandwidth (input)
+\item $H$: Packet head departure (output)
+\item $T$: Packet tail departure (output)
+\item $O$: Packet outgoing bandwidth (output)
+\end{itemize}
+
+In the simple model, a packet either consumes all the bandwidth or none of the bandwidth.
+To account for flit-level pipelining, the cut-through model allows packets to consume partial bandwidths.
+Consider an aribitrator that has a maximum bandwidth of 1.0.
+The first packet (purple, Figure \ref{fig:pisces}) arrives with a full incoming bandwidth of 1.0 and head arrival of t=0.0.
+It therefore consumes all the available bandwidth. 
+The head of the packet can actually leave immediately (as it must to properly pipeline or cut-through).
+The tail leaves after all bytes have sent at t=1.0.
+Thus for the first packet we have $H$=0.0, $T$=1.0, and $O$=1.0.
+
+The second packet (orange) arrives at t=0.5. 
+Upon arrival there is no bandwidth available as the first packet is consuming the maximum.
+Only after the first packet finishes can the second packet begin.
+The second packet arrives and leaves with a reduced bandwidth of 0.5. 
+Thus we have $H$=1.0, $T$=3.0, and $O$=0.5.
+
+The third packet (green) arrives at t=1.75.
+Upon arrival there is some bandwidth, but not enough to match the incoming bandwidth of 0.57.
+Thus the third packet is slowed initially.
+After the second packet finished, the third packet can send at increased bandwidth.
+The computation here is a bit more complicated.
+Packet 3 can actually consume MORE than 0.6 bandwidth units.
+Between steps 4 and 6, packet 3 has accumulated in a local buffer in the router.
+Thus even though the incoming bandwidth is only 0.6, there are several flits that are available to send immediately at full bandwidth waiting in the buffer.
+Thus results in an effective bandwidth of 0.75 for the remainder of the packet's time in the arbitrator.
+Thus we end up with $H$=1.75, $T$=3.5, and $O$=0.57.
+Even though the packet is initially delayed, the buffers compensate for the delay and allow the outgoing bandwidth to ``catch up'' with the incoming bandwidth.
+
+Finally, the fourth packet (blue) arrives at t=3.0. 
+There is some available bandwidth. After the third packet finishes, the fourth packet can now send at maximum.
+Because of the initial delay, the outgoing bandwidth is somewhat reduced.
+We have $H$=3.0, $T$=4.38, and $O$=0.73.
 
 \subsection{Flow}
 \label{subsec:tutorial:flow}
 The flow model, in simple cases, corrects the most severe problems of the packet model.
 Instead of discrete chunks, messages are modeled as fluid flows moving through the network (Figure \ref{fig:tutorial:congestion}B).
 Congestion is treated as a fluid dynamics problem, sharing bandwidth between competing flows.
+In contrast to LogP models, flow models can account fairly well for congestion.
 Without congestion, a flow only requires a FLOW START and FLOW STOP event to be modeled (see tutorial on discrete event simulation in \ref{sec:tutorial:des}).
 While the packet model would require many, many events to simulate a 1 MB message, the flow model might only require two.
 With congestion, flow update events must be scheduled whenever congestion changes on a network link.  
 For limited congestion, only a few update events must occur.
-The flow model also corrects the latency and multiplexing problems in the packet model, providing higher-accuracy for coarse-grained simulation.
+The flow model also corrects the latency and multiplexing problems in the PISCES simple model, providing higher-accuracy for coarse-grained simulation.
 
 The flow model starts to break down for large systems or under heavy congestion.
 In the packet model, all congestion events are ``local'' to a given router.  
@@ -49,25 +152,4 @@ In flow models, flow update events can be ``non-local,'' propagating across the 
 When congestion occurs, this ``ripple effect'' can cause the number of events to explode, overwhelming the simulator.
 For large systems or heavy congestion, the flow model is actually much slower than the packet model. Support for this model has been completely removed.
 
-%\sstmacro actually implements a modified ``fast-flower'' model that introduces new approximations to avoid the ripple effect.
-%With modest congestion, the approximations are still relatively accurate and should produce good results.
-%For more details on flow parameters, see the \inlineshell{hopper_flow.ini} file in the \inlineshell{configurations} folder in the \sstmacro source.
-%The flow model can also be explored via the GUI (see \ref{sec:basicgui}).
-
-\subsection{Packet-flow}
-\label{subsec:tutorial:train}
-Packet-flow is a hybrid-model of flow and packet, trying to correct the latency errors in the packet model while avoiding the ripple effect of the flow model.
-Much like packets, the packet-flow model begins by converting messages into many discrete chunks of fixed size.
-In contrast to the packet model, channel arbitration is not exclusive.  
-When multiple packets compete for a channel, each packet ``samples'' the current congestion (Figure \ref{fig:tutorial:congestion}C).
-Based on congestion, the packets estimates its bandwidth and latency.
-If low congestion is sampled, high-bandwidth is assigned (short packet in the figure).
-If high congestion is sampled, low-bandwidth is assigned (long packet in the figure).
-
-The packet-flow model corrects the two most important packet model errors.
-Once bandwidth has been assigned, the packet can immediately be forwarded to the next router, producing accurate latencies.
-The sampling procedure also allows two packets to multiplex across a channel.
-Because messages are broken into discrete chunks, the number of events per message is constant regardless of congestion, avoiding the ripple effect.
-
-For more details on packet-flow parameters, see the \inlineshell{hopper_amm.ini} files in the \inlineshell{configurations} folder in the \sstmacro source.
 
