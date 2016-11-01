@@ -41,12 +41,12 @@ DUMPI functions look like
 \begin{CppCode}
 int MPI_Send(...)
 {
-	/** Start profiling work */
-	...
-	int rc = PMPI_Send(...);
-	/** Finish profiling work */
-	...
-	return rc;
+  /** Start profiling work */
+  ...
+  int rc = PMPI_Send(...);
+  /** Finish profiling work */
+  ...
+  return rc;
 }
 \end{CppCode}
 collecting profile information and then directly calling the PMPI functions.
@@ -57,9 +57,9 @@ We examine DUMPI using a very basic example program.
 #include <mpi.h>
 int main(int argc, char** argv)
 {
-    MPI_Init(&argc, &argv);
-    MPI_Finalize();
-    return 0;
+  MPI_Init(&argc, &argv);
+  MPI_Finalize();
+  return 0;
 }
 \end{CppCode}
 After compiling the program named \inlineshell{test} with DUMPI, we run MPI in the standard way.

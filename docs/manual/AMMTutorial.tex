@@ -30,6 +30,7 @@ If the parameter is set to 8192 bytes, e.g. that means we are doing very coarse-
 If the parameter is set to 100-1000 bytes, e.g., that means we are doing more fine-grained modeling on real packet sizes, but we are ignoring flit-level details.
 
 \subsection{Common Parameters}
+\label{subsec:commonParams}
 The following parameters define the CPU and compute power of the node (independent of memory subsystem).
 They are universal and are valid for all abstract machine models.
 
@@ -115,6 +116,7 @@ However, it has a few deficiencies that can cause problems when there is serious
 More details (and their fixes) are given in the next abstract machine models. 	
 
 \subsection{AMM2}
+\label{subsec:amm2}
 
 \begin{figure}
 \begin{center}
@@ -124,7 +126,6 @@ More details (and their fixes) are given in the next abstract machine models.
 \label{fig:amm2}
 \end{figure}
 
-\label{subsec:ammTwo}
 A major deficiency of AMM1 is that it grants exclusive access to memory resources.
 Two CPUs or the NIC cannot be using the memory subsystem in parallel.
 This is particularly problematic for large memory transfers (1 MB or greater).

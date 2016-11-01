@@ -36,6 +36,8 @@ where now we have full connections within horizontal rows, horizontal columns, a
 Here each switch has radix 12 (3 connections in X, 4 connections in Y, 5 connections in Z). 
 
 \subsection{Allocation and indexing}
+\label{subsec:hypercube:allocation}
+
 A hypercube has the same coordinate system as a torus. For example, to create a very specific, irregular allocation on a hyerpcube:
 
 \begin{ViFile}
@@ -65,6 +67,8 @@ Each line then defines where MPI ranks 0-4 will be placed
 \end{figure}
 
 \subsection{Routing}
+\label{subsec:hypercube:routing}
+
 Hypercubes allow very path-diverse routing because of its extra connections.
 In the case of minimal routing (Figure \ref{fig:topologies:hypercubePath}), two different minimal paths from blue to red are shown.
 While dimension order routing would rigorously go X then Y, you can still route minimally over two paths either randomly selecting to balance load or routing based on congestion.

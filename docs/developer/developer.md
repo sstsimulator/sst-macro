@@ -1,3 +1,8 @@
+---
+title: Manual for SST-Macro 6.1.x
+published: true
+category: SSTDocumentation
+---
 
 
 # SST/macro 6.0: Developer's Reference
@@ -34,15 +39,21 @@
          - [3.2.3: Child Class](#subsec:childClass)
          - [3.2.4: External Linkage](#subsec:linkage)
    - [Chapter 4: Discrete Event Simulation](#chapter:des)
+      - [Section 4.1: Event Managers](#sec:eventManagers)
+         - [4.1.1: Event Handlers](#subsec:eventHandlers)
+         - [4.1.2: Event Heap/Map](#subsec:eventHeap)
+      - [Section 4.2: Event Schedulers](#sec:eventSchedulers)
    - [Chapter 5: Hardware Models](#chapter:hardware)
-      - [Section 5.1: Connectables](#sec:connectables)
-      - [Section 5.2: Interconnect](#sec:topInterconnect)
-      - [Section 5.3: Node](#sec:node)
-      - [Section 5.4: Network Interface (NIC)](#sec:nic)
-      - [Section 5.5: Memory Model](#sec:memModel)
-      - [Section 5.6: Network Switch](#sec:networkSwitch)
-      - [Section 5.7: Topology](#sec:topology)
-      - [Section 5.8: Router](#sec:router)
+      - [Section 5.1: Overview](#sec:topOverview)
+      - [Section 5.2: Connectables](#sec:connectables)
+      - [Section 5.3: Interconnect](#sec:topInterconnect)
+      - [Section 5.4: Node](#sec:node)
+      - [Section 5.5: Network Interface (NIC)](#sec:nic)
+      - [Section 5.6: Memory Model](#sec:memModel)
+      - [Section 5.7: Network Switch](#sec:networkSwitch)
+      - [Section 5.8: Topology](#sec:topology)
+         - [5.8.1: Basic Topology](#subsec:basicTopology)
+      - [Section 5.9: Router](#sec:router)
    - [Chapter 6: A Custom Object: Beginning To End](#chapter:custom)
    - [Chapter 7: How SST-macro Launches](#chapter:launching)
       - [Section 7.1: Configuration of Simulation](#sec:simConfig)
@@ -52,9 +63,10 @@
          - [7.2.3: Applications](#subsec:apps)
       - [Section 7.3: Running](#sec:running)
    - [Chapter 8: Statistics Collection](#chapter:stats)
-      - [Section 8.1: Dumping Data](#sec:dumping)
-      - [Section 8.2: Reduction and Aggregation](#sec:reduceStats)
-      - [Section 8.3: Storage Contraints](#sec:storageStats)
+      - [Section 8.1: Setting Up Objects](#sec:setupStats)
+      - [Section 8.2: Dumping Data](#sec:dumping)
+      - [Section 8.3: Reduction and Aggregation](#sec:reduceStats)
+      - [Section 8.4: Storage Contraints](#sec:storageStats)
 
 
 
@@ -95,7 +107,7 @@ While, SST/macro strives to be as modular as possible, allowing arbitrary memory
 Here is a selection of C++ rules we have tended to follow. Detailed more below, example scripts are included to reformat the code style however you may prefer for local editing. However, if committing changes to the repository, only use the default formatting in the example scripts.
 
 -   snake\_case is used for variable and class names.
--   We use ``one true brace`` style (OTBS) for source files.
+-   We use "one true brace`` style (OTBS) for source files.
 -   In header files, all functions are inline style with attached brackets.
 -   To keep code compact horizontally, indent is set to two spaces. Namespaces are not indented.
 -   Generally, all if-else and for-loops have brackets even if a single line.
@@ -122,8 +134,6 @@ Since we respect the sensitivity of code-style wars, we include scripts that dem
 ### Section 1.5: Memory Allocation<a name="sec:memalloc"></a>
 
 To improve performance, custom memory allocation strategies can be employed in C++. At present, a global custom `operator new` can be optionally activated which is optimized for large pages and memory pools. At present, no class-specific implementation of `operator new` is used. However, we may soon implement custom allocation techniques to improve things like cache/TLB efficiency. This is the only major change expected to SST/macro that would affect externally developed modules - and even here the expected modifications would be quite small. Because custom allocation schemes may be used, all externally developed code should use `operator new`, rather than not  `malloc` or `mmap`, unless allocating very large arrays.
-
-
 
 
 
@@ -245,7 +255,7 @@ class my_object :
 }
 ````
 The serialization interface requires two inheritances.
-The first inheritance from `serializable` is the one "visible" to the serializer.
+The first inheritance from `serializable` is the one ``visible" to the serializer.
 This inheritance forces the object to define a `serialize_order` function.
 The second inheritance is used in registering a type descriptor.
 The macro `ImplementSerializable` inside the class creates a set of necessary functions.
@@ -763,15 +773,15 @@ If you glance at the Makefile, you will see how and why the executable is create
 
 
 
-
-
 \newcommand{`event_handler`}{`event_handler`\xspace} \newcommand{`event_scheduler`}{`event_scheduler`\xspace} \newcommand{`event_manager`}{`event_manager`\xspace}
 
 ## Chapter 4: Discrete Event Simulation<a name="chapter:des"></a>
 
 There are abundant tutorials on discrete event simulation around the web. To understand the basic control flow of SST-macro simulations, you should consult Section 3.6, Discrete Event Simulation, in the user's manual. For here, it suffices to simply understand that objects schedule events to run at a specific time. When an event runs, it can create new events in the future. A simulation driver gradually progresses time, running events when their time stamp is reached. As discussed in the user's manual, we must be careful in the vocabulary. Simulation time or simulated time is the predicted time discrete events are happening in the simulated hardware. Wall time or {wall clock time} is the time SST-macro itself has been running. There are a variety of classes the cooperate in driving the simulation, which we now describe.
 
-\section{Event Managers} The driver for simulations is an event manager that provides the function
+### Section 4.1: Event Managers<a name="sec:eventManagers"></a>
+
+The driver for simulations is an event manager that provides the function
 
 ````
 virtual void
@@ -806,7 +816,9 @@ class event_queue_entry { public: virtual void execute() = 0;
 
 The execute function is invoked by the `event_manager` to run the underlying event. There are generally two basic event types in SST-macro, which we now introduce.
 
-\subsection{Event Handlers} In most cases, the event is represented as a message sent to an object called an `event_handler` at a specific simulation time. In handling the message, the event handlers change their internal state and may cause more events by scheduling new messages at other event handlers (or scheduling messages to itself) at a future time. The workhorses for SST-macro are therefore classes that inherit from `event_handler`. The only method that must be implemented is
+#### 4.1.1: Event Handlers<a name="subsec:eventHandlers"></a>
+
+In most cases, the event is represented as a message sent to an object called an `event_handler` at a specific simulation time. In handling the message, the event handlers change their internal state and may cause more events by scheduling new messages at other event handlers (or scheduling messages to itself) at a future time. The workhorses for SST-macro are therefore classes that inherit from `event_handler`. The only method that must be implemented is
 
 ````
 void
@@ -905,11 +917,13 @@ By creating event functors, the message can be immediately directed to the corre
 
 For generic events, one must ensure the event is scheduled to the same node and does not cross any network boundaries. The event created must be run on the same logical process.
 
-\subsection{Event Heap/Map} The major distinction between different event containers is the data structured used. The simplest data structure is an event heap or ordered event map. The event manager needs to always be processing the minimum event time, which maps naturally onto a min-heap structure. Insertion and removal are therefore log(N) operations where N is the number of currently scheduled events. For most cases, the number and length of events is such that the min-heap is fine.
+#### 4.1.2: Event Heap/Map<a name="subsec:eventHeap"></a>
 
-\section{Event Schedulers} The simulation is partitioned into objects that are capable of scheduling events. Common examples of `event_scheduler` objects are nodes, NICs, memory systems, or the operating system. In serial runs, an event scheduler is essentially just a wrapper for the `event_manager` and the class is not strictly necessary. There are two types of event scheduler: `event_component` and `event_subcomponent`. In parallel simulation, though, the simulation must be partitioned into different scheduling units. Scheduling units are then distributed amongst the parallel processes. Components are the basic unit.  Currently only nodes and network switches are components. All other devices (NIC, memory, OS) are subcomponents that must be linked to a parent component. Even though components and subcomponents can both schedule events (both inherit from `event_scheduler`), all subcomponents must belong to a component.  A subcomponent cannot be separated from its parent component during parallel simulation.
+The major distinction between different event containers is the data structured used. The simplest data structure is an event heap or ordered event map. The event manager needs to always be processing the minimum event time, which maps naturally onto a min-heap structure. Insertion and removal are therefore log(N) operations where N is the number of currently scheduled events. For most cases, the number and length of events is such that the min-heap is fine.
 
+### Section 4.2: Event Schedulers<a name="sec:eventSchedulers"></a>
 
+The simulation is partitioned into objects that are capable of scheduling events. Common examples of `event_scheduler` objects are nodes, NICs, memory systems, or the operating system. In serial runs, an event scheduler is essentially just a wrapper for the `event_manager` and the class is not strictly necessary. There are two types of event scheduler: `event_component` and `event_subcomponent`. In parallel simulation, though, the simulation must be partitioned into different scheduling units. Scheduling units are then distributed amongst the parallel processes. Components are the basic unit.  Currently only nodes and network switches are components. All other devices (NIC, memory, OS) are subcomponents that must be linked to a parent component. Even though components and subcomponents can both schedule events (both inherit from `event_scheduler`), all subcomponents must belong to a component.  A subcomponent cannot be separated from its parent component during parallel simulation.
 
 
 
@@ -921,7 +935,9 @@ For generic events, one must ensure the event is scheduled to the same node and 
 
 
 
-\section{Overview} To better understand how hardware models are put together for simulating interconnects, we should try to understand the basic flow of event in SST/macro involved in sending a message between two network endpoints.  We have already seen in skeleton applications in previous sections how an application-level call to a function like `MPI_Send` is mapping to an operating system function and finally a hardware-level injection of the message flow.  Overall, the following steps are required:
+### Section 5.1: Overview<a name="sec:topOverview"></a>
+
+To better understand how hardware models are put together for simulating interconnects, we should try to understand the basic flow of event in SST/macro involved in sending a message between two network endpoints.  We have already seen in skeleton applications in previous sections how an application-level call to a function like `MPI_Send` is mapping to an operating system function and finally a hardware-level injection of the message flow.  Overall, the following steps are required:
 
 \begin{enumerate} \item Start message flow with app-level function call \item Push message onto NIC for send \item NIC packetizes message and pushes packets on injection switch \item Packets are routed and traverse the network \item Packets arrive at destination NIC and are reassembled (potentially out-of-order) \item Message flow is pushed up network software stack \end{enumerate}
 
@@ -941,7 +957,7 @@ We can dive in deeper to the operations that occur on an individual component, m
 
 
 
-### Section 5.1: Connectables<a name="sec:connectables"></a>
+### Section 5.2: Connectables<a name="sec:connectables"></a>
 
 With a basic overview of how the simulation proceeds, we can now look at the actual SST/macro class types. While in common usage, SST-macro follows a well-defined machine model (see below), it generally allows any set of components to be connected. As discussed in Chapter [4](#chapter:des), the simulation proceeds by having event components exchange messages, each scheduled to arrive at a specific time. SST-macro provides a generic interface for any set of hardware components to be linked together. Any hardware component that connects to other components and exchanges messages must inherit from the `connectable` class. The `connectable` class presents a standard virtual interface
 
@@ -972,7 +988,7 @@ src->connect_output(params, inport, outport, Output, dst);
 dst->connect_input(params, inport, outport, Input, src);
 ````
 
-A certain style and set of rules is recommended for all connectables. If these rules are ignored, setting up connections can quicky become confusing and produce difficult to maintain code. The first and most important rule is that `connectables` never make their own connections. Some "meta"-object should create connections between objects. In general, this work is left to a `interconnect` object. An object should never be responsible for knowing about the "world" outside itself. A topology or interconnect tells the object to make a connection rather than the object deciding to make the connection itself. This will be illustrated below in [5.7](#sec:topology).
+A certain style and set of rules is recommended for all connectables. If these rules are ignored, setting up connections can quicky become confusing and produce difficult to maintain code. The first and most important rule is that `connectables` never make their own connections. Some "meta"-object should create connections between objects. In general, this work is left to a `interconnect` object. An object should never be responsible for knowing about the "world" outside itself. A topology or interconnect tells the object to make a connection rather than the object deciding to make the connection itself. This will be illustrated below in [5.8](#sec:topology).
 
 The second rule to follow is that a connect function should never call another connect function. In general, a single call to a connect function should create a single link. If connect functions start calling other connect functions, you can end up a with a recursive mess. If you need a bidirectional link (A $\rightarrow$ B, B $\rightarrow$ A), two separate function calls should be made
 
@@ -987,7 +1003,7 @@ The first two rules should be considered rigorous. A third recommended rule is t
 
 Combining the factory system for polymorphic types and the connectable system for building arbitrary machine links and topologies, SST-macro provides flexibility for building essentially any machine model you want. However, SST-macro provides a recommended machine structure to guide constructing machine models.
 
-### Section 5.2: Interconnect<a name="sec:topInterconnect"></a>
+### Section 5.3: Interconnect<a name="sec:topInterconnect"></a>
 
 For all standard runs, the entire hardware model is driven by the interconnect object. The interconnect creates nodes, creates network switches, chooses a topology, and connects all of the network endpoints together. In this regard, the interconnect also choose what types of components are being connected together. For example, if you were going to introduce some custom FPGA device that connects to the nodes to perform filesystem operations, the interconnect is responsible for creating it.
 
@@ -1032,7 +1048,7 @@ The `connected_outports` function takes a given source switch and returns all th
 switch is supposed to make.  Each switch must provide `payload_handler` and `ack_handler` functions to return
 the `event_handler` that should receive either new packets (payload) or credits (ack) for the connections.
 
-### Section 5.3: Node<a name="sec:node"></a>
+### Section 5.4: Node<a name="sec:node"></a>
 
 Although the \nodecls can be implemented as a very complex model, it fundamentally only requires a single set of functions to meet the public interface. The \nodecls must provide `execute_kernel` functions that are invoked by the `operating_system` or other other software objects. The prototypes for these are:
 
@@ -1046,7 +1062,7 @@ execute(ami::SERVICE_FUNC func, event* data);
 
 By default, the abstract \nodecls class throws an `sprockit::unimplemented_error`. These functions are not pure virtual. A node is only required to implement those functions that it needs to do. The various function parameters are enums for the different operations a node may perform: computation or communication. Computation functions are those that require compute resources. Service functions are special functions that run in the background and "lightweight" such that any modeling of processor allocation should be avoided. Service functions are run "for free" with no compute
 
-### Section 5.4: Network Interface (NIC)<a name="sec:nic"></a>
+### Section 5.5: Network Interface (NIC)<a name="sec:nic"></a>
 
 The network interface can implement many services, but the basic public interface requires the NIC to do three things:
 
@@ -1100,7 +1116,7 @@ mtl_handler() const {
 
 A special completion queue object tracks chunks and processes out-of-order arrivals, notifying the NIC when the entire message is done.
 
-### Section 5.5: Memory Model<a name="sec:memModel"></a>
+### Section 5.6: Memory Model<a name="sec:memModel"></a>
 
 As with the NIC and node, the memory model class can have a complex implementation under the hood, but it must funnel things through the a common function.
 
@@ -1111,7 +1127,7 @@ access(long bytes, double max_bw) = 0;
 
 This function is intended to be called from an application user-space thread. As such, it should block until complete. For more details on the use of user-space threading to model applications, see the User's manual.
 
-### Section 5.6: Network Switch<a name="sec:networkSwitch"></a>
+### Section 5.7: Network Switch<a name="sec:networkSwitch"></a>
 
 
 
@@ -1138,9 +1154,13 @@ which is configured during simulation setup.
 If a packet, the router object selects the next destination (port).
 The packet is then passed to the crossbar for arbitration.
 
-### Section 5.7: Topology<a name="sec:topology"></a>
+### Section 5.8: Topology<a name="sec:topology"></a>
 
-Of critical importance for the network modeling is the topology of the interconnect. Common examples are the torus, fat tree, or butterfly. To understand what these topologies are, there are many resources on the web. Regardless of the actual structure as a torus or tree, the topology should present a common interface to the interconnect and NIC for routing messages. Here we detail the public interface. \subsection{Basic Topology} Not all topologies are "regular" like a torus.  Ad hoc computer networks (like the internet) are ordered with IP addresses, but don't follow a regular geometric structure. The abstract topology base class is intended to cover both cases. Irregular or arbitrary topology connections are not fully supported yet.
+Of critical importance for the network modeling is the topology of the interconnect. Common examples are the torus, fat tree, or butterfly. To understand what these topologies are, there are many resources on the web. Regardless of the actual structure as a torus or tree, the topology should present a common interface to the interconnect and NIC for routing messages. Here we detail the public interface.
+
+#### 5.8.1: Basic Topology<a name="subsec:basicTopology"></a>
+
+Not all topologies are "regular" like a torus.  Ad hoc computer networks (like the internet) are ordered with IP addresses, but don't follow a regular geometric structure. The abstract topology base class is intended to cover both cases. Irregular or arbitrary topology connections are not fully supported yet.
 
 The most important functions in the \topcls class are
 
@@ -1205,7 +1225,7 @@ struct path {
 
 The most important information is the outport, telling a switch which port to route along to arrive at the destination. For congestion models with channel dependencies, the virtual channel must also be given to avoid deadlock. In general, network switches and other devices should be completely topology-agnostic. The switch is responsible for modeling congestion within itself - crossbar arbitration, credits, outport multiplexing. The switch is not able to determine for itself which outport to route along. The topology tells the switch which port it needs and the switch determines what sort of congestion delay to expect on that port. This division of labor is complicated a bit by adaptive routing, but remains essentially the same.  More details are given later.
 
-### Section 5.8: Router<a name="sec:router"></a>
+### Section 5.9: Router<a name="sec:router"></a>
 
 The router has a simple public interface
 
@@ -1501,7 +1521,7 @@ As of right now, the event manager is also responsible for partitioning the simu
 
 #### 7.2.2: Interconnect<a name="subsec:interconnect"></a>
 
-The interconnect is the workhorse for building all hardware components. After receiving the partition information from the `event_manager`, the interconnect creates all the nodes, switches, and NICs the current MPI rank is responsible for. In parallel runs, each MPI rank only gets assigned a unique, disjoint subset of the components. The interconnect then also creates all the connections between components that are linked based on the topology input (see Section [5.1](#sec:connectables)). For components that are not owned by the current MPI rank, the interconnect inserts a dummy handler that informs the `event_manager` that the message needs to be re-routed to another MPI rank.
+The interconnect is the workhorse for building all hardware components. After receiving the partition information from the `event_manager`, the interconnect creates all the nodes, switches, and NICs the current MPI rank is responsible for. In parallel runs, each MPI rank only gets assigned a unique, disjoint subset of the components. The interconnect then also creates all the connections between components that are linked based on the topology input (see Section [5.2](#sec:connectables)). For components that are not owned by the current MPI rank, the interconnect inserts a dummy handler that informs the `event_manager` that the message needs to be re-routed to another MPI rank.
 
 #### 7.2.3: Applications<a name="subsec:apps"></a>
 
@@ -1589,7 +1609,9 @@ Now that all hardware components have been created and all application objects h
 
 Statistics collection for tracking things like congestion or number of bytes sent is difficult to standardize. Stats collection must be specifically configured to different components (e.g. NIC, CPU, memory) and types of statistic (histogram, spyplot, timeline). The stats framework is therefore intended to be highly customizable based on the individual analysis being performed without too many constraints. There are a few universal features all stats objects must comply with. First, any object that collects stats must inherit from `stat_collector` contained in the header `sstmac/common/stats/stat_collector.h`. This defines a virtual interface that every stats object must comply with. Second, stats objects should not operate on any global or static data unless absolutely necessary for space constraints. This means if you have 100K nodes, e.g., each node should maintains its own histogram of message sizes. While some storage could be saved by aggregating results into a single object, in many cases the storage overhead is minimal. This is particularly important for thread safety that stats collection be done on independent, non-interfering objects. At the very end, the `stat_collector` interface defines hooks for aggregating results if you want, e.g., a global histogram for all nodes.
 
-\section{Setting Up Objects} We use the example here of a the network interface histogram declared in `nic.h`.
+### Section 8.1: Setting Up Objects<a name="sec:setupStats"></a>
+
+We use the example here of a the network interface histogram declared in `nic.h`.
 
 ````
 class nic 
@@ -1626,7 +1648,7 @@ Internally in the event manager, all objects with the same file root are grouped
 Thus the `fileroot` parameter is critical for defining unique groups of stats object.
 This is important during simulation post-processing when the event manager wants to aggregate results from each individual node.
 
-### Section 8.1: Dumping Data<a name="sec:dumping"></a>
+### Section 8.2: Dumping Data<a name="sec:dumping"></a>
 
 The first set of virtual functions that every stats object must provide are
 
@@ -1642,7 +1664,7 @@ dump_global_data() = 0;
 
 `simulation_finished` tells the stats object what the final time of the simulation is and allows any final post-processing to be done. This is particularly useful in time-dependent analyses.  In other cases like message size histograms, it is a no-op. After the stats object has been notified of the simulation finishing, at some point the event manager will instruct it that it is safe to dump its data. The next method, `dump_local_data`, dumps the data specific to a given node. A unique filename based on the ID provided above in the `clone_me` function is created to hold the output. The last method, `dump_global_data`, dumps aggregate data for all nodes. Here a unique filename based on the file root parameter is generated. For the default histogram, a data file and gnuplot script are created.
 
-### Section 8.2: Reduction and Aggregation<a name="sec:reduceStats"></a>
+### Section 8.3: Reduction and Aggregation<a name="sec:reduceStats"></a>
 
 Before the `dump_global_data` function can be called, an aggregation of results must be performed. Each stats object is therefore required to provide the functions
 
@@ -1700,7 +1722,7 @@ stat_histogram::global_reduce(parallel_runtime* rt)
 }
 ````
 
-### Section 8.3: Storage Contraints<a name="sec:storageStats"></a>
+### Section 8.4: Storage Contraints<a name="sec:storageStats"></a>
 
 In some cases, storage constraints prevent each node from having its own copy of the data. This is particularly important for the fixed-time quanta charts which generate several MB of data even in the reduced, aggregated form. In this case it is acceptable to operate on global or static data. However, as much as possible, you should maintain the illusion of each component having an individual copy. For example, a NIC should not declare
 
