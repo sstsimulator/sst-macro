@@ -5,6 +5,13 @@
 #include <sprockit/output.h>
 #include <sprockit/util.h>
 #include <math.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords(
+"bin_size",
+"num_bins",
+"logarithmic",
+);
 
 namespace sstmac {
 
@@ -111,6 +118,11 @@ stat_histogram::collect(double value, int64_t count)
   long bin = value / bin_size_;
   if (bin > max_bin_){
     max_bin_ = bin;
+    if (max_bin_ > 1e6){
+      spkt_abort_printf("Too many histogram bins. Collected value %12.6e is much larger"
+                        " than the bin size of %12.6e",
+                        value, bin_size_);
+    }
     counts_.resize(max_bin_+1);
   }
   counts_[bin] += count;

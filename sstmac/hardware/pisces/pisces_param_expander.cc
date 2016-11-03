@@ -1,6 +1,11 @@
 #include <sstmac/hardware/pisces/pisces_param_expander.h>
 #include <sstmac/common/timestamp.h>
 #include <sprockit/sim_parameters.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords(
+"buffer_size",
+);
 
 namespace sstmac {
 namespace hw {
@@ -17,8 +22,8 @@ pisces_param_expander::expand(sprockit::sim_parameters* params)
     tiled_switch_ = false;
   } 
 
-  sprockit::sim_parameters* nic_params = params->get_optional_namespace("nic");
   sprockit::sim_parameters* node_params = params->get_optional_namespace("node");
+  sprockit::sim_parameters* nic_params = node_params->get_optional_namespace("nic");
   sprockit::sim_parameters* mem_params = node_params->get_optional_namespace("memory");
   sprockit::sim_parameters* switch_params = params->get_optional_namespace("switch");
   sprockit::sim_parameters* top_params = params->get_optional_namespace("topology");
@@ -90,7 +95,6 @@ pisces_param_expander::expand_amm1_memory(sprockit::sim_parameters* params,
 {
   if (mem_params->get_scoped_param("model") != "null"){
     mem_params->add_param_override("total_bandwidth", mem_params->get_param("bandwidth"));
-    mem_params->add_param_override("max_single_bandwidth", mem_params->get_param("bandwidth"));
   }
 }
 
@@ -138,7 +142,7 @@ pisces_param_expander::expand_amm1_network(sprockit::sim_parameters* params,
 
 
 
-  int buffer_size = xbar_params->get_int_param("buffer_size");
+  int buffer_size = xbar_params->get_byte_length_param("buffer_size");
   link_params->add_param_override("credits", buffer_size);
 
   (*ej_params)["credits"].setByteLength(100, "GB");
@@ -167,12 +171,12 @@ pisces_param_expander::expand_amm1_nic(sprockit::sim_parameters* params,
 
 void
 pisces_param_expander::expand_amm2_memory(sprockit::sim_parameters* params,
-                                               sprockit::sim_parameters* mem_params)
+                                          sprockit::sim_parameters* mem_params)
 {
   expand_amm1_memory(params, mem_params);
   if (mem_params->get_scoped_param("model") != "null"){
-    mem_params->add_param_override("max_single_bandwidth",
-                                   params->get_param("max_memory_bandwidth"));
+    //mem_params->add_param_override("max_single_bandwidth",
+    //                               params->get_param("max_memory_bandwidth"));
   }
 }
 
@@ -238,13 +242,12 @@ pisces_param_expander::expand_amm4_nic(sprockit::sim_parameters* params,
 {
   expand_amm1_nic(params, nic_params);
   sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
+  int conc = netlink_params->get_int_param("concentration");
   int red = top_params->get_optional_int_param("injection_redundant", 1);
-  int radix = params->get_optional_int_param("netlink_radix", 1);
   //the netlink block combines all the paths together
   netlink_params->add_param_override("ninject", red);
-  netlink_params->add_param_override("neject", radix);
+  netlink_params->add_param_override("neject", conc);
   netlink_params->add_param_override("model", "pisces");
-  top_params->add_param_override("netlink_radix", radix);
 }
 
 }

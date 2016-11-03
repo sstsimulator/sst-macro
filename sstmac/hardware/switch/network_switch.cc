@@ -26,10 +26,10 @@
 ImplementFactory(sstmac::hw::network_switch);
 RegisterDebugSlot(network_switch)
 
+RegisterKeywords("switch_name");
+RegisterNamespaces("switch");
+
 namespace sstmac {
-
-sprockit::StaticNamespaceRegister switch_ns("switch");
-
 namespace hw {
 
 network_switch::~network_switch()
@@ -37,9 +37,10 @@ network_switch::~network_switch()
 }
 
 
-network_switch::network_switch(sprockit::sim_parameters *params, uint64_t id, event_manager *mgr)
+network_switch::network_switch(sprockit::sim_parameters *params, uint64_t id, event_manager *mgr,
+                               device_id::type_t ty)
  : connectable_component(params, id,
-                         device_id(params->get_int_param("id"), device_id::router),
+                         device_id(params->get_int_param("id"), ty),
                          mgr) //no self messages for a switch
 {
   my_addr_ = event_location().id();

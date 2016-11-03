@@ -2,8 +2,14 @@
 #include <sumi/transport.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
+#include <sprockit/keyword_registration.h>
 
 using namespace sprockit::dbg;
+
+RegisterKeywords(
+"ping_timeout",
+"activity_monitor",
+);
 
 namespace sumi
 {

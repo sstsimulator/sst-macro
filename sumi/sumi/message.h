@@ -26,10 +26,9 @@ namespace sumi {
 class message :
   public sprockit::ptr_type,
   public sprockit::printable,
-  public sumi::serializable,
-  public sumi::serializable_type<message>
+  public sumi::serializable
 {
- ImplementSerializableDefaultConstructor(message)
+ ImplementSerializable(message)
 
  public:
   virtual std::string
@@ -256,6 +255,7 @@ class message :
 
 class system_bcast_message : public message
 {
+  ImplementSerializable(system_bcast_message)
  public:
   typedef sprockit::refcount_ptr<system_bcast_message> ptr;
 
@@ -270,9 +270,14 @@ class system_bcast_message : public message
     class_ = bcast;
   }
 
+  system_bcast_message(){} //serialization
+
   int root() const {
     return root_;
   }
+
+  void
+  serialize_order(serializer& ser) override;
 
   action_t action() const {
     return action_;

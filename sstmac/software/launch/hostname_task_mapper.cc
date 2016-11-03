@@ -31,7 +31,7 @@ SpktRegister("hostname", task_mapper, hostname_task_mapper,
 hostname_task_mapper::hostname_task_mapper(sprockit::sim_parameters *params) :
   task_mapper(params)
 {
-  listfile_ = params->get_param("launch_hostname_list");
+  listfile_ = params->get_param("hostname_list");
 }
 
 void

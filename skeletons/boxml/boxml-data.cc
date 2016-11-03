@@ -70,7 +70,7 @@ namespace lblxml
   void boxml::read_binary() {
     bin_file_.seekg(0, bin_file_.end);
     long size = bin_file_.tellg();
-    printf("Reading all the data from a file of size %d\n", size);
+    printf("Reading all the data from a file of size %d\n", (int)size);
     bin_file_.seekg(0, bin_file_.beg);
     char* alldata = new char[size];
     bin_file_.read(alldata, size);
@@ -447,6 +447,8 @@ namespace lblxml
         case event::computation:
           distribute_comp(i, ev);
           break;
+        case event::none:
+          spkt_abort_printf("Invalid event: has none type");
       }
     }
   }
@@ -627,6 +629,8 @@ namespace lblxml
             release_event(frt);
           break;
         }
+        case event::none:
+          spkt_abort_printf("Invalid event: has none type");
       }
       listeners.erase(listeners.begin());
       if (!minimize_locks_)

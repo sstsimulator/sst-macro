@@ -16,8 +16,17 @@
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/common/sstmac_env.h>
 #include <sprockit/sim_parameters.h>
+#include <sprockit/keyword_registration.h>
 #include <stdint.h>
 #include <math.h>
+
+RegisterKeywords(
+"lib_compute_loop_overhead",
+"lib_compute_loops_enable",
+"lib_compute_loops_mem_ratio",
+"lib_compute_loops_flop_ratio",
+"lib_compute_access_width",
+);
 
 namespace sstmac {
 namespace sw {

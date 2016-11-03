@@ -46,7 +46,6 @@ dragonfly::dragonfly(sprockit::sim_parameters* params) :
     group_con_ = g_ - 1;
   }
 
-  netlinks_per_switch_ = params->get_optional_int_param("concentration", 1);
   max_ports_intra_network_ = x_ + y_ + g_;
   eject_geometric_id_ = max_ports_intra_network_;
 }

@@ -195,5 +195,12 @@ message::serialize_order(sumi::serializer &ser)
   }
 }
 
+void
+system_bcast_message::serialize_order(serializer& ser)
+{
+  ser & root_;
+  ser & action_;
+}
+
 }
 

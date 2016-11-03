@@ -7,6 +7,14 @@
 #include <sstmac/libraries/sumi/sumi_transport.h>
 #include <sumi/sumi/transport.h>
 #include <sstmac/skeleton.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords(
+"intensity",
+"mixing",
+"niterations",
+"scatter",
+);
 
 MakeDebugSlot(traffic_matrix)
 MakeDebugSlot(traffic_matrix_results)

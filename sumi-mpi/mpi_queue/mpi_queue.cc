@@ -33,7 +33,24 @@
 
 #include <stdint.h>
 
-RegisterNamespaces("traffic_matrix");
+RegisterNamespaces("traffic_matrix", "num_messages");
+RegisterKeywords(
+"mpi_delay",
+"mpi_implementation",
+"envelope",
+"smp_single_copy_size",
+"max_eager_msg_size",
+"max_vshort_msg_size",
+"mpi_spyplot",
+"mpi_queue_post_rdma_delay",
+"mpi_queue_post_header_delay",
+"mpi_queue_poll_delay",
+"post_rdma_delay",
+"post_header_delay",
+"poll_delay",
+"implementation",
+);
+
 DeclareDebugSlot(mpi_all_sends);
 RegisterDebugSlot(mpi_all_sends);
 
@@ -70,9 +87,9 @@ mpi_queue::mpi_queue(sprockit::sim_parameters* params,
   poll_delay_ = params->get_optional_time_param("poll_delay", 0);
 
   spy_num_messages_ = sstmac::optional_stats<sstmac::stat_spyplot>(os_->node(),
-        params, "traffic_matrix", "spyplot", "num_messages");
+        params, "traffic_matrix", "ascii", "num_messages");
   spy_bytes_ = sstmac::optional_stats<sstmac::stat_spyplot>(os_->node(),
-        params, "traffic_matrix", "spyplot", "bytes");
+        params, "traffic_matrix", "ascii", "bytes");
 
   user_lib_mem_ = new sstmac::sw::lib_compute_memmove(params, "mpi_queue-user-lib-mem", sid, os_);
 

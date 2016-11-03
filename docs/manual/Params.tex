@@ -1,0 +1,411 @@
+%% !TEX root = manual.tex
+
+\chapter{Detailed Parameter Listings}
+\label{chapter:parameters}
+The following chapter is organized by parameter namespaces. Tables in each namespace are organized as
+\def\arraystretch{1.5}%  1 is the default, change whatever you need
+
+\begin{tabular}{\tableConfig}
+\hline
+Name (type) & Default if not given & Allowed \newline Values & Description \\
+\hline
+\end{tabular}
+
+which lists the possible parameter names, allowed values, and brief descriptions.
+More detailed descriptions of particular parameter values are found in the documentation in previous chapters.
+
+The allowed parameter types are:
+
+\begin{tabular}{| l | l |}
+\hline
+int & Any integer \\
+\hline
+long & Any integer value, but guaranteed not to overflow for long integers \\
+\hline
+bool & Either ``true'' or ``false'' as lowercase string \\
+\hline
+time & Any valid float value followed by time units (s,ms,us,ns,ps) \\
+\hline
+freq & Any valid float value followed by frequency units (Hz, MHz, GHz) \\
+\hline
+bandwidth & Any valid float value followed by bandwidth units (b/s, B/s, Mb/s, MB/s, etc) \\
+\hline
+byte length & Any positive integer followed by length units (B, KB, MB, GB,TB) \\
+\hline
+string & An arbitrary string \\
+\hline
+vector of X & A vector of type X with entries separated by spaces \\
+\hline
+filepath & A valid filepath to an \emph{existing} file, either absolute or relative \\
+\hline
+quantiy & A catch-all for a quantity with units. Any of frequency, bandwidth, byte length, or time can be given \\
+\hline
+\end{tabular}
+
+\section{Global namespace}
+\label{sec:globalParams}
+
+\openTable
+\hline
+sst\_nthread \paramType{int} & 1 & Positive int & Only relevant for multi-threading. Specifying more threads than cores can lead to deadlock. \\
+\hline
+timestamp\_resolution \paramType{time} & 1ps & & Specifies the length of time occupied by 1 timestamp tick - the smallest resolvable time difference. Numerical stability depends on this parameter matching the time scales of the simulation. \\
+\hline
+serialization\_buffer\_size \paramType{byte length} & 512B & & Size to allocate for buffers in a pool of serialization buffers. This should set be large enough to handle serialization of most messages, but not so large that significant space is wasted. \\
+\hline
+cpu\_affinity \paramType{vector of int} & No default & Invalid cpu IDs give undefined behavior & When in multi-threading, specifies the list of core IDs that threads will be pinned to. \\
+\hline
+\end{tabular}
+
+\section{Namespace ``topology''}
+\label{sec:topologyParams}
+
+\openTable
+\hline
+geometry \paramType{vector of int} & No default & See Topology section & Geometry configuration of the topology. For details of the keyword, users should refer to Section \ref{chapter:topologies} \\
+\hline
+name \paramType{string} & No default & torus, dragonfly, fat\_tree, butterfly, crossbar, tapered\_fat\_tree & The name of the topology to build. For details, see Section \ref{chapter:topologies} \\
+\hline 
+seed \paramType{long} & System time & & If no value given, random numbers for topology will be generated from system time \\
+\hline
+concentration \paramType{int} & 1 & Positive int & The number of nodes per network switch. For indirect networks, this is the number of nodes per leaf switch. \\
+\hline
+num\_leaf\_switches \paramType{int} & No default & Positive int & Only relevant for fat trees. This is the number of switches at the lowest level of the tree that are connected to compute nodes. Depending on how the fat tree is specified, this number may not be required. \\
+\hline
+\hline
+k \paramType{int} & No default & int >= 2 & The branching fraction of a fat tree. k=2 is a binary tree. k=4 is a quad-tree. \\
+\hline
+l \paramType{int} & No default & Positive int & The number of levels in a fat tree. \\
+\hline
+num\_inj\_switches\_per\_subtree & No default & Positive int & For a tapered tree, the number of injection switches, $N_{inj}$, within an aggregation tree that connect directly toc ompute nodes. \\
+\hline
+num\_agg\_switches\_per\_subtree & No default & Positive int & For a tapered tree, the number of aggregations witches per aggregation tree linking injection switches to the core. \\
+\hline
+num\_agg\_subtrees & No default & Positive int & For a tapered fat tree with 3 levels (injection, aggregation, core), this gives the number, $N_{agg}$, of aggregation subtrees. To find the total number, $N_{tot}$ of injection (leaf) switches, we have $N_{tot} = N_{agg} \times N_{inj}$. \\
+\hline
+num\_core\_switches & No default & Positive int & The total number of core switches in a tapered tree linking the individual aggregation trees. \\
+\hline
+group\_connections \paramType{int} & No default & Positive int & For dragonfly, the number of intergroup connections on each switch in a Dragonfly group \\
+\hline
+redundant \paramType{vector of int} & vector of 1's & Positive ints & For Cartesian topologies (hypercube, dragonfly, torus) this specifies a bandwidth (redundancy) multiplier for network links in each dimension. \\
+\hline
+\end{tabular}
+
+\section{Namespace ``node''}
+\label{sec:nodeParams}
+
+\openTable
+\hline
+model \paramType{string} & simple & simple & The type of node model (level of detail) for node-level operations \\
+\hline
+services \paramType{vector of strings} & Empty & Valid service names & For  details, see section on distributed services in developer's manual. Advanced feature. \\
+\hline
+\end{tabular}
+
+\subsection{Namespace ``node.nic''}
+\label{subsec:node:nic:Params}
+
+\openTable
+\hline
+model \paramType{string} & No default & pisces, logP & The type of NIC model (level of detail) for modeling injection of messages (flows) to/from the network. \\
+\hline
+packetizer \paramType{string} & cut\_through & merlin, simple, cut\_through & The type of packetizer for injecting flows into the network. Merlin is part of sst-elements. Simple and cut-through use PISCES \\
+\hline
+packet\_allocator \paramType{string} & pisces & pisces & The packet object used by the NIC. Certain type of statistics or congestion models may require custom packets with extra fields. \\
+\hline
+negligible\_size \paramType{byte length} & 256B & & Messages (flows) smaller than size will not go through detailed congestion modeling. They will go through a simple analytic model to compute the delay. \\
+\hline
+\end{tabular}
+
+\subsubsection{Namespace ``node.nic.delay\_histogram''}
+\label{subsubsec:node:nic:delayHistogram:Params}
+\input{histogramDescr}
+
+\subsubsection{Namespace ``node.nic.congestion\_spyplot''}
+\label{subsubsec:node:nic:congestionSpyplot:Params}
+\input{spyplotDescr}
+
+\subsubsection{Namespace ``node.nic.traffic\_matrix''}
+\label{subsubsec:node:nic:trafficMatrix:Params}
+\input{spyplotDescr}
+
+\subsubsection{Namespace ``node.nic.local\_bytes\_sent''}
+\label{subsubsec:node:nic:localSent:Params}
+\input{basicStatsDescr}
+
+\subsubsection{Namespace ``node.nic.global\_bytes\_sent''}
+\label{subsubsec:node:nic:globalSent:Params}
+\input{basicStatsDescr}
+
+\subsubsection{Namespace ``node.nic.message\_size\_histogram''}
+\label{subsubsec:node:nic:sizeHistogram:Params}
+\input{histogramDescr}
+
+\subsubsection{Namespace ``node.nic.ejection"}
+\label{subsubsec:node:nic:ejection:Params}
+These parameters do not need to be specified, but can be given.
+Generally, the simulation assumes an infinite buffer size (unlimited memory) and no latency.
+All other parameters can be filled in from \inlinefile{node.nic.injection}.
+
+\openTable
+\hline
+stats \paramType{string} & null & 
+	delay\_histogram,
+  congestion\_spyplot,
+  multi,
+	null 
+ & The type of statistics to collect from packets leaving or arriving at the NIC.
+   Null indicates no statistics collected. For details on the other types of statistics, see Section \ref{sec:tutorials:packetStats} \\
+\hline
+callbacks \paramType{vector of string} & No default & Any valid stats name & If \inlinefile{stats} is set to \inlinefile{multi},then multiple different stats can be given here \\
+\hline
+\input{piscesSenderBlock} 
+\hline
+\end{tabular}
+
+\subsubsection{Namespace ``node.nic.injection"}
+\label{subsubsec:node:nic:injection:Params}
+
+\openTable
+\hline
+stats \paramType{string} & null & 
+	delay\_histogram,
+	null 
+ & The type of statistics to collect from packets leaving or arriving at the NIC.
+   Null indicates no statistics collected. For details on the other types of statistics, see Section \ref{sec:tutorials:packetStats} \\
+\input{piscesSenderBlock} 
+\hline
+\end{tabular}
+
+
+\subsection{Namespace ``node.memory''}
+\label{subsec:node:memory:Params}
+
+\openTable
+\hline
+model \paramType{string} & No default & logP, pisces & The type of memory model (level of detail) for modeling memory transactions. \\
+\hline
+arbitrator \paramType{string} & cut\_through & null, simple, cut\_through & The type of arbitrator. See arbitrator descriptions above. \\
+\hline
+latency \paramType{time} & No default & & The latency of single memory operation \\
+\hline
+total\_bandwidth & No default &  & The total memory bandwidth possible across all memory controllers. \\
+\hline
+max\_single\_bandwidth & Computed & & The maximum memory bandwidth of a single stream of requests. Essentially the bandwidth of a single memory controller. If not given, this defaults the value of total\_bandwidth. \\
+\hline
+\end{tabular}
+
+\subsection{Namespace ``node.os"}
+\label{subsec:node:os:Params}
+
+\openTable
+\hline
+compute\_scheduler \paramType{string} & simple & simple, cpuset & The level of detail for scheduling compute tasks to cores. Simple looks for any empty core. cpuset allows bitmasks to be set for defining core affinities. \\
+\hline
+stack\_size \paramType{byte length} & 32KB & & The size of user-space thread stack to allocate for each virtual application \\
+\hline
+stack\_protect \paramType{bool} & false & & Whether to put special mprotect regions around the thread stacks to turn stack overflow errors into seg faults \\
+\hline
+stack\_chunk\_size \paramType{byte length} & 1MB & & The size of memory to allocate at a time when allocating new thread stacks. Rather than allocating one thread stack at a time, multiple stacks are allocated and added to a pool as needed.  \\
+\hline
+\end{tabular}
+
+\subsubsection{Namespace ``node.os.call\_graph"}
+\label{subsubsec:node:os:callGraph:Params}
+\openTable
+\hline
+\input{filerootDescr} \\
+\hline
+\end{tabular}
+
+\subsubsection{Namespace ``node.os.ftq"}
+\label{subsubsec:node:os:ftq:Params}
+\openTable
+\hline
+\input{filerootDescr} \\
+\hline 
+epoch \paramType{time} & No default & & The length of simulation time to treat as a single interval. This is much like a histogram bin, except the bin is partitioned into multiple categories. If too small, not enough data will be collected per interval to give reasonable looking results. If too large, significant changes in system activity over time will not be resolved. \\
+\hline
+\end{tabular}
+
+\subsection{Namespace ``node.proc''}
+\label{subsec:node:proc:Params}
+\openTable
+\hline
+ncores \paramType{int} & No default & Positive int & The number of cores contained in a processor (socket). Total number of cores for a node is $ncores \times nsockets$. \\
+\hline
+frequency & No default & & The baseline frequency of the node \\
+\hline
+parallelism \paramType{double} & 1.0 & Positive number & Fudge factor to account for superscalar processor. Number of flops per cycle performed by processor. \\
+\hline
+\end{tabular}
+
+\section{Namespace ``netlink''}
+\label{sec:netlink:Params}
+
+\openTable
+\hline
+model \paramType{string} & null & null, pisces & The type of netlink congestion model to use. If null, no netlink blocks will be used.  \\
+\hline
+concentration \paramType{int} & No default & Positive int & The number of nodes connected to a given netlink. The node concentration per switch must be greater than or equal to the node concentration per netlink. \\
+\hline
+num\_tiles \paramType{int} & 1 & Positive int & The number of router tiles the netlink connects to. Only relevant for tiled router models. Advanced usage. \\
+\hline
+\end{tabular}
+
+\subsection{Namespace ``netlink.injection"}
+\label{subsec:netlink:injection:Params}
+\input{piscesSender}
+
+\subsection{Namespace ``netlink.ejection"}
+\label{subsec:netlink:ejection:Params}
+\input{piscesSender}
+
+\section{Namespace ``mpi"}
+\label{sec:mpi:Params}
+
+\openTable
+\hline
+test\_delay \paramType{time} & 0 & & The minimum time spent by MPI on each MPI\_Test call \\
+\hline
+iprobe\_delay \paramType{time} & 0 & & The minimum time spent by MPI on each MPI\_Iprobe call \\
+\hline
+\end{tabular}
+
+\subsection{Namespace ``mpi.queue''}
+\label{subsec:mpi:queue:Params}
+
+\openTable
+\hline
+max\_vshort\_msg\_size \paramType{byte length} & 512B & & The maximum size to use the very short message protocol. Small messages are sent eagerly using special pre-allocated mailbox buffers. Sends complete immediately. \\
+\hline
+max\_eager\_msg\_size \paramType{byte length} & 8KB & & The maximum size to use the RDMA eager protocol. This also uses buffers to send message, but instead of using pre-allocated mailboxes, it coordinates an RDMA get. Sends complete immediately. \\
+\hline
+post\_rdma\_delay \paramType{time} & 0 & & The minimum time spent by MPI posting each RDMA operation \\
+\hline
+post\_header\_delay \paramType{time} & 0 & & The mimimum time spent by MPI sending headers into pre-allocated mailboxes \\
+\hline
+poll\_delay (time) & 0 & & The minimum time spent by MPI each time it polls for incoming messages \\
+\hline
+\end{tabular}
+
+\section{Namespace ``switch''}
+\label{subsec:switch:Params}
+
+\openTable
+\hline
+model \paramType{string} & No default & logP, pisces & The type of switch model (level of detail) for modeling network traffic. \\
+\hline
+buffer\_size \paramType{byte length} & No default & & The size of input and output buffers on each switch. This determines the number of credits available to other components \\
+\hline
+\end{tabular}
+
+\subsection{Namespace ``switch.router''}
+\label{subsec:switch:router:Params}
+
+\openTable
+\hline
+name \paramType{string} & No default & minimal, valiant, ugal, fat\_tree & The name of the routing algorithm to use for routing packets. \\
+\hline
+ugal\_threshold \paramType{int} & 0 & & The minimum number of network hops required before UGAL is considered. All path lengths less than value automatically use minimal. \\
+\hline
+\end{tabular}
+
+\subsection{Namespace ``switch.output\_buffer"}
+\label{subsec:switch:outputBuffer:Params}
+
+\openTable
+\hline
+stats \paramType{string} & null & 
+	delay\_histogram,
+  byte\_hops,
+	null 
+ & The type of statistics to collect from packets leaving or arriving at the switch output buffers.
+   Null indicates no statistics collected. For details on the other types of statistics, see Section \ref{sec:tutorials:packetStats} \\
+\hline
+\end{tabular}
+
+\subsubsection{Namespace ``switch.output\_buffer.delay\_histogram''}
+\label{subsubsec:switch:outputBuffer:delayHistogram:Params}
+\input{histogramDescr}
+
+\subsubsection{Namespace ``switch.output\_buffer.byte\_hops''}
+\label{subsubsec:switch:outputBuffer:delayHistogram:Params}
+\input{basicStatsDescr}
+
+\subsection{Namespace ``switch.xbar"}
+\label{sec:switch:outputBuffer:delayHistogram:Params}
+
+\openTable
+\hline
+stats \paramType{string} & null & 
+	bytes\_sent,
+	null 
+ & The type of statistics to collect from packets leaving or arriving at the switch crossbar.
+   Null indicates no statistics collected. For details on the other types of statistics, see Section \ref{sec:tutorials:packetStats} \\
+\hline
+\input{piscesSenderBlock}
+\hline
+\end{tabular}
+
+\subsubsection{Namespace ``switch.xbar.bytes\_sent''}
+\label{subsubsec:switch:xbar:bytesSent:Params}
+\input{basicStatsDescr}
+
+\subsection{Namespace ``switch.link''}
+\label{subsec:switch:link:Params}
+\input{piscesSender}
+
+\subsection{Namespace ``switch.ejection''}
+\label{subsec:switch:ejection:Params}
+This namespace is not actually required. 
+If unspecified, all of the values here will be filled in from \inlinefile{nic.injection}.
+
+\input{piscesSender}
+
+\section{Namespace ``appN''}
+\label{sec:appN:Params}
+This is a series of namespaces \inlineshell{app1}, \inlineshell{app2}, and so on for each of the launched applications.
+
+\openTable
+\hline
+name \paramType{string} & No default & parsedumpi, cxx\_full\_main, cxx\_empty\_main & The name of the application to launch. Very few applications are built-in. Registration of external apps is shown starting in Section \ref{sec:tutorial:basicmpi}. \\
+\hline
+size \paramType{int} & No default & Positive int & The number of procs (MPI ranks) to launch. If launch\_cmd given, this parameter is not required. \\
+\hline
+start \paramType{int} & 0 & & The time at which a launch request for the application will be made \\
+\hline
+concentration \paramType{int} & 1 & Positive int & The number of procs (MPI ranks) per compute node \\
+\hline
+core\_affinities \paramType{vector of int} & Empty & & \\
+\hline
+launch\_cmd \paramType{string} & No default & Valid aprun or srun & This uses a launch command as would be found with ALPS or SLURM launchers on real systems, e.g. aprun -n 4 -N 1 \\
+\hline
+indexing \paramType{string} & block & block, random, cart, node\_id, coordinate & The indexing scheme for assign proc ID (MPI rank number) to compute nodes \\
+\hline
+node\_id\_mapper\_file (filepath) & No default & & If using Node ID indexing, the file containing the node ID index list \\
+\hline 
+random\_indexer\_seed \paramType{long} & System time & & The seed to use for a random allocation. If not specified, system time is used. \\
+\hline
+allocation \paramType{string} & first\_available & first\_available, random, cart, node\_id, coordinate & The scheme to use for allocating compute nodes to a given job. \\
+\hline
+random\_allocation\_seed \paramType{long} & System time & & For random allocation policy. If unspecified, system time is used as the seed.  \\
+\hline
+node\_id\_allocation\_file \paramType{filepath} & No default & & If using Node ID allocation, the file containing the list of node IDs to allocate for the job \\
+\hline
+dumpi\_metaname \paramType{filepath} & No default & & If running DUMPI trace, the location of the metafile for configuring trace replay \\ 
+\hline
+coordinate\_file \paramType{filepath} & No default & & If running using coordinate allocation or indexing, the path to the file containing the node coordinates of each proc (MPI rank) \\ 
+\hline
+cart\_sizes \paramType{vector of int} & No default & & Launch a contiguous block of nodes in a Cartesian topology. This gives the size of each dimension in the block. \\
+\hline 
+cart\_offsets \paramType{vector of int} & No default & & Launch a contiguous block nodes in a Cartesian topology. This gives the offset in each dimension where the block begins. \\
+\hline
+parsedumpi\_timescale \paramType{double} & 1.0 & Positive float & If running DUMPI traces, scale compute times by the given value. Values less than 1.0 speed up computation. Values greater than 1.0 slow down computation. \\
+\hline
+parsedumpi\_terminate\_percent \paramType{int} & 100 & 1-100 & Percent of trace. Can be used to terminate large traces early \\
+\hline
+\end{tabular}
+
+
+

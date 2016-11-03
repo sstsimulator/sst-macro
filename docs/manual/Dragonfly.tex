@@ -32,6 +32,8 @@ These demonstrate well-balanced ratios.
 In general, scaling out a dragonfly should not increase the size of a group, only the number of groups.
 
 \subsection{Allocation and indexing}
+\label{subsec:dragonfly:allocatoin}
+
 The dragonfly coordinate system is essentially the same as a 3D torus.  
 The group 2D hypercube layout defines $X$ and $Y$ coordinates.
 The group number defines a $Z$ or $G$ coordinate.
@@ -48,6 +50,8 @@ topology.group_connections = 10
 \end{ViFile}
 
 \subsection{Routing}
+\label{subsec:dragonfly:routing}
+
 It is important to understand the distinction between link bandwidth, channel bandwidth, and pin bandwidth.
 All topologies have the same pin bandwidth and channel bandwidth (assuming they use the same technology).
 Each router in a topology is constrained to have the same number of channels (called radix, usually about $k=64$).

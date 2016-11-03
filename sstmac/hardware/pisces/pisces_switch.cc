@@ -22,7 +22,25 @@
 #include <sprockit/keyword_registration.h>
 #include <sstmac/hardware/topology/topology.h>
 
-RegisterNamespaces("congestion_stats");
+RegisterNamespaces("switch", "router", "congestion_stats", "xbar", "link",
+                   "output_buffer");
+
+RegisterKeywords(
+"stats",
+"send_latency",
+"credit_latency",
+"credits",
+"num_vc",
+"pisces_arbitrator",
+"pisces_network_hop_latency",
+"pisces_network_link_bandwidth",
+"pisces_switch_crossbar_bandwidth",
+"network_switch_type",
+"network_link_bandwidth",
+"eject_buffer_size",
+"output_buffer_size",
+"input_buffer_size",
+);
 
 namespace sstmac {
 namespace hw {
@@ -46,7 +64,8 @@ pisces_abstract_switch::pisces_abstract_switch(
   buf_stats_ = packet_stats_callback_factory::get_optional_param("stats", "null",
                                              buf_params, this);
 
-  router_ = router_factory::get_param("router", params, top_, this);
+  sprockit::sim_parameters* rtr_params = params->get_optional_namespace("router");
+  router_ = router_factory::get_param("name", rtr_params, top_, this);
 
   sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
   std::vector<topology::injection_port> conns;

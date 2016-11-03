@@ -79,10 +79,9 @@ class pisces_packetizer :
 
   node_id my_addr_;
 
-  packet_stats_callback* stat_collector_;
-  packet_stats_callback* buf_stats_;
+  packet_stats_callback* inj_stats_;
+  packet_stats_callback* ej_stats_;
   packet_allocator* pkt_allocator_;
-
 
 };
 

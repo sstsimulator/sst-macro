@@ -6,6 +6,7 @@
 #include <sstmac/libraries/sumi/sumi_transport.h>
 #include <sumi/transport_fwd.h>
 #include <sumi/message_fwd.h>
+#include <sprockit/keyword_registration.h>
 
 namespace sstmac {
 
@@ -53,6 +54,10 @@ class distributed_service_app :
   std::string libname_;
 
 };
+
+#define ServiceRegister(str, name) \
+  RegisterNamespaces(str); \
+  SpktRegister(str, distributed_service, name)
 
 }
 

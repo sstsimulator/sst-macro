@@ -3,36 +3,130 @@
 \section{SST/macro Parameter files}
 \label{sec:parameters}
 A minimal parameter file setting up a 2D-torus topology is shown below. 
-The preferred (current) version uses namespaces (ns.param syntax).
-However, we also show the deprecated parameters used by previous versions.
+A detailed listing of parameter namespaces and keywords is given in Section \ref{chapter:parameters}.
+The preferred input files now use namespaces.
+However, for consistency with previous versions, we also show the deprecated parameters.
 
 \begin{ViFile}
 # Launch parameters
-app1.launch_indexing = block
-app1.launch_allocation = first_available
-app1.launch_cmd = aprun -n2 -N1
-app1.name = user_app_cxx
-app1.argv = 
+app1.indexing = block
+app1.allocation = first_available
+app1.launch_cmd = aprun -n8 -N1
+app1.name = sstmac_mpi_testall
+app1.argv =
 # Application parameters
 app1.sendrecv_message_size = 128
 # Network parameters
-interconnect = simple
-switch.bandwidth = 1.0GB/s
-switch.hop_latency = 100ns
-# Topology - Ring of 4 nodes
-topology.name = hdtorus
+amm_model = amm1
+congestion_model = simple
+switch.ejection.bandwidth = 1GB/s
+switch.ejection.latency = 100ns
+switch.link.bandwidth = 1.0GB/s
+switch.link.latency = 100ns
+# Topology - 4x4 Torus
+topology.name = torus
 topology.geometry = 4,4
 # Node parameters
 node.ncores = 1
-node.model = null
-node.memory.model = null
-nic.model = null
+node.model = simple
+node.memory.model = simple
+node.memory.bandwidth = 1GB/s
+node.memory.latency = 10ns
+node.proc.frequency = 1GHz
+nic.model = simple
+nic.injection.bandwidth = 1GB/s
+nic.injection.latency = 1us
 \end{ViFile}
 The input file follows a basic syntax of \inlinefile{parameter = value}.  
 Parameter names follow C++ variable rules (letters, numbers, underscore) while parameter values can contain spaces.  Trailing and leading whitespaces are stripped from parameters.
 Comments can be included on lines starting with \#.
 
-The input file is broken into sections via comments.  
+\subsection{Parameter Namespace Rules}
+\label{subsec:parameterNamespace}
+Periods denote nesting of parameter namespaces.
+The parameter \inlineshell{node.memory.model} will be nested in namespace \inlineshell{memory} inside namespace \inlineshell{node}.
+SST/macro generally requests variable values via the inner-most namespace only.
+This means rather than asking for variable \inlineshell{node::memory::model} it will actually look for variable \inlineshell{memory::model} starting with the most deeply nested namespace.
+This exactly follows C++ namespace rules.
+
+For example, consider the following:
+
+\begin{ViFile}
+memory.model = simple
+node.memory.model = pisces
+\end{ViFile}
+If I am building the node's memory system, the initialization will look for \inlineshell{memory::model} inside namespace \inlineshell{node} first, returning the value \inlineshell{pisces}.
+If node initialization had been unable to find the variable in the \inlineshell{node} namespace,
+it would have moved up and looked in the global namespace, returning the value \inlineshell{simple}.
+
+A new syntax supported in 6.1 more closely resembles C++ namespace declarations. 
+Namespaces can be scoped using brackets \{\}:
+
+\begin{ViFile}
+node {
+ model = simple
+ memory {
+   model = simple
+   bandwidth = 1GB/s
+   latency = 10ns
+ }
+}
+\end{ViFile}
+Any line containing a single string with an opening \{ starts a new namespace.
+A line containing only a closing \} ends the innermost namespace.
+The syntax is not as flexible as C++ since the opening \{ must appear on the same line as the namespace and the closing \} must be on a line of its own.
+
+Using the new syntax, the parameter file above now becomes:
+
+\begin{ViFile}
+amm_model = amm1
+congestion_model = simple
+
+app1 {
+ indexing = block
+ allocation = first_available
+ launch_cmd = aprun -n8 -N1
+ name = sstmac_mpi_testall
+ argv =
+ sendrecv_message_size = 128
+}
+
+switch {
+ ejection {
+  bandwidth = 1GB/s
+  latency = 100ns
+ }
+ link {
+  bandwidth = 1.0GB/s
+  latency = 100ns
+ }
+}
+
+topology {
+ name = torus
+ geometry = 4,4
+}
+
+node {
+ ncores = 1
+ model = simple
+ memory {
+  bandwidth = 1GB/s
+  latency = 10ns
+  model = simple
+ }
+ proc.frequency = 1GHz
+ nic {
+  injection.bandwidth = 1GB/s
+  injection.latency = 1us
+ }
+}
+\end{ViFile}
+Again, a detailed listing of parameter namespaces and keywords is given in Section \ref{chapter:parameters}.
+
+\subsection{Initial Example}
+\label{subsec:initialExample}
+Continuing with the example above, we see the input file is broken into sections via comments.  
 First, application launch parameters must be chosen determining what application will launch, 
 how nodes will be allocated, how ranks will be indexed, and finally what application will be run.  
 Additionally, you must specify how many processes to launch and how many to spawn per node.  
@@ -61,8 +155,8 @@ An alternative parameter file would be:
 \begin{ViFile}
 include machine.ini
 # Launch parameters
-app1.launch_indexing = block
-app1.launch_allocation = first_available
+app1.indexing = block
+app1.allocation = first_available
 app1.launch_cmd = aprun -n2 -N1
 app1.name = user_mpiapp_cxx
 app1.argv = 
@@ -88,7 +182,7 @@ network_name = simple
 network_bandwidth = 1.0GB/s
 network_hop_latency = 100ns
 # Topology - Ring of 4 nodes
-topology_name = hdtorus
+topology_name = torus
 topology_geometry = 4,4
 # Node parameters
 node_cores = 1

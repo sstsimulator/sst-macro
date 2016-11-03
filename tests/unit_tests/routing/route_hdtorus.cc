@@ -15,7 +15,7 @@ void test_torus(UnitTest& unit)
   params["redundant"] = "1 1 1";
   params["concentration"] = "2";
   params["name"] = "hdtorus";
-  params["router"] = "minimal";
+  params["router.name"] = "minimal";
   test_topology(params);
 }
 

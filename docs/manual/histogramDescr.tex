@@ -1,0 +1,11 @@
+\openTable
+\hline
+\input{filerootDescr} \\
+\hline
+bin\_size \paramType{quantity} & No default & Positive value & For the quantity being collected (bytes,time,etc), this determines how large a value range should be binned together. \\
+\hline
+num\_bins \paramType{int} & 20 & Positive int & Determines the number of initial bins to allocate. If number is too small, simulation will allocate more. This is just a guess for optimization. \\
+\hline
+logarithmic \paramType{bool} & false & & Whether to use a logarithmic axis for binning. \\
+\hline
+\end{tabular}

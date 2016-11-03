@@ -66,6 +66,7 @@ In SST, we define a 2D mesh coordinate system for the row (level) and column of 
 
 
 \subsection{Allocation and indexing}
+\label{subsec:fattree:allocation}
 The numbering of compute nodes is shown in Figure \ref{fig:topologies:fattreeids}.
 Consider the case
 
@@ -78,9 +79,9 @@ processes would be placed in order on 0,1,2,3.
 An alternative allocation/indexing scheme uses the Node ID allocator.
 
 \begin{ViFile}
-app1.launch_allocation = node_id
-app1.launch_indexing = node_id
-app1.launch_node_id_file = nodes.txt
+app1.allocation = node_id
+app1.indexing = node_id
+app1.node_id_file = nodes.txt
 \end{ViFile}
 Here \inlineshell{nodes.txt} would contain the number of nodes on the first line, followed by the list of Node IDs, in order, of where to place MPI ranks.
 For the file
@@ -103,10 +104,10 @@ app1.launch_cmd = aprun -n 4 -N 2
 We then need:
 
 \begin{ViFile}
-app1.launch_allocation = node_id
-app1.launch_indexing = node_id
-app1.launch_node_id_allocation_file = alloc.txt
-app1.launch_node_id_indexing_file = index.txt
+app1.allocation = node_id
+app1.indexing = node_id
+app1.node_id_allocation_file = alloc.txt
+app1.node_id_indexing_file = index.txt
 \end{ViFile}
 where the contents of \inlineshell{alloc.txt} are, e.g.
 
@@ -127,6 +128,8 @@ choosing nodes 0 and 1 in the allocation and then \inlineshell{index.txt} would 
 which round-robin assigns rank 0 to node, rank 1 to node 1, rank 2 to node 0, and so on.
 
 \subsection{Routing}
+\label{subsec:fattree:routing}
+
 Fat tree routing is actually straightforward, but can employ path diversity.
 Suppose you are routing from Node 0 to Node 2 (Figure \ref{fig:topologies:fattreeids}).
 At the first stage, you have no choice.

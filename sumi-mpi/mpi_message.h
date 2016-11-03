@@ -32,10 +32,9 @@ namespace sumi {
  * relevant to MPI messaging.
  */
 class mpi_message :
-  public sumi::message,
-  public serializable_type<mpi_message>
+  public sumi::message
 {
-  ImplementSerializableDefaultConstructor(mpi_message)
+  ImplementSerializable(mpi_message)
 
  public:
   typedef sprockit::refcount_ptr<mpi_message> ptr;

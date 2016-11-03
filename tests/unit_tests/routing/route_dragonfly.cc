@@ -15,7 +15,7 @@ test_dragonfly_v1(UnitTest& unit)
   params["concentration"] = "2";
   params["group_connections"] = "3";
   params["name"] = "dragonfly";
-  params["router"] = "minimal";
+  params["router.name"] = "minimal";
   test_topology(params);
 }
 
@@ -30,6 +30,6 @@ test_dragonfly_v2(UnitTest& unit)
   params["group_connections"] = "3";
   params["seed"] = "14";
   params["name"] = "dragonfly";
-  params["router"] = "minimal";
+  params["router.name"] = "minimal";
   test_topology(params);
 }

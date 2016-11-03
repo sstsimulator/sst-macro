@@ -19,7 +19,7 @@ class netlink :
 
   int
   node_port(int node_offset) const {
-    return num_inject_ + node_offset;
+    return num_tiles_ + node_offset;
   }
 
   int
@@ -30,8 +30,8 @@ class netlink :
  protected:
   netlink(sprockit::sim_parameters* params, node* parent);
 
-  int num_eject_;
-  int num_inject_;
+  int conc_;
+  int num_tiles_;
   netlink_id id_;
 
 };

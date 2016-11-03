@@ -18,6 +18,7 @@ routable::serialize_order(serializer& ser)
   ser & toaddr_;
   ser & fromaddr_;
   ser & path_;
+  ser & dest_switch_;
 }
 
 namespace routing {

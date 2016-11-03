@@ -10,8 +10,8 @@
 
 namespace sstmac {
 
-SpktRegister("spyplot", stat_collector, stat_spyplot);
-SpktRegister("spyplot_png", stat_collector, stat_spyplot_png);
+SpktRegister("ascii", stat_collector, stat_spyplot);
+SpktRegister("png", stat_collector, stat_spyplot_png);
 
 void
 stat_spyplot::add_one(int source, int dest)

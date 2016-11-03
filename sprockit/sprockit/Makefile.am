@@ -27,7 +27,6 @@ SOURCES = \
   statics.cc \
   output.cc \
   fileio.cc \
-  factories/factory.cc \
   spkt_string.cc \
   units.cc \
   driver_util.cc \

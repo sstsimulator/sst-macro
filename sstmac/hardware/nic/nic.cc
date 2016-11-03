@@ -29,7 +29,12 @@ ImplementFactory(sstmac::hw::nic);
 RegisterDebugSlot(nic);
 
 RegisterNamespaces("nic", "message_sizes", "traffic_matrix",
-                   "message_size_histogram");
+                   "message_size_histogram", "injection", "bytes");
+
+RegisterKeywords(
+"nic_name",
+"network_spyplot",
+);
 
 #define DEFAULT_NEGLIGIBLE_SIZE 256
 
@@ -56,9 +61,9 @@ nic::nic(sprockit::sim_parameters* params, node* parent) :
   negligible_size_ = params->get_optional_int_param("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
 
   spy_num_messages_ = optional_stats<stat_spyplot>(parent,
-        params, "traffic_matrix", "spyplot", "num_messages");
+        params, "traffic_matrix", "ascii", "num_messages");
   spy_bytes_ = optional_stats<stat_spyplot>(parent,
-        params, "traffic_matrix", "spyplot", "bytes");
+        params, "traffic_matrix", "ascii", "bytes");
   local_bytes_sent_ = optional_stats<stat_local_int>(parent,
         params, "local_bytes_sent", "local_int");
   global_bytes_sent_ = optional_stats<stat_global_int>(parent,

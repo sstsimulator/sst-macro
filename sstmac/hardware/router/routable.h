@@ -118,6 +118,7 @@ class routable
   port() const {
     return path_.outport;
   }
+
   void
   serialize_order(serializer& ser);
 

@@ -31,16 +31,6 @@ class abstract_fat_tree :
    down_dimension = 0
   } dimension_t;
 
-  int
-  l() const {
-    return l_;
-  }
-
-  int
-  k() const {
-    return k_;
-  }
-
   static int
   pow(int a, int exp){
     int res = 1;
@@ -48,11 +38,6 @@ class abstract_fat_tree :
       res *= a;
     }
     return res;
-  }
-
-  int
-  diameter() const override {
-    return (l_ + 1) * 2;
   }
 
   virtual int
@@ -74,8 +59,7 @@ class abstract_fat_tree :
                     InitGeomEjectID i2);
 
  protected:
-  int l_, k_, numleafswitches_;
-  int toplevel_;
+  int numleafswitches_;
 
  private:
   sprockit::sim_parameters*
@@ -111,6 +95,21 @@ class fat_tree :
   bool
   uniform_network_ports() const override {
     return true;
+  }
+
+  int
+  l() const {
+    return l_;
+  }
+
+  int
+  k() const {
+    return k_;
+  }
+
+  int
+  diameter() const override {
+    return (l_ + 1) * 2;
   }
 
   bool
@@ -167,19 +166,23 @@ class fat_tree :
   static int
   downColumnConnection(int k, int myColumn, int downPort, int columnSize);
 
+ private:
+  int toplevel_;
+  int k_;
+  int l_;
 };
 
-class simple_fat_tree : public abstract_fat_tree
+class tapered_fat_tree : public abstract_fat_tree
 {
  public:
-  simple_fat_tree(sprockit::sim_parameters* params);
+  tapered_fat_tree(sprockit::sim_parameters* params);
 
   virtual std::string
   to_string() const override {
     return "simple fat tree topology";
   }
 
-  virtual ~simple_fat_tree() {}
+  virtual ~tapered_fat_tree() {}
 
   bool
   uniform_network_ports() const override {
@@ -242,16 +245,49 @@ class simple_fat_tree : public abstract_fat_tree
   int
   level(switch_id sid) const;
 
+  inline int inj_sub_tree(switch_id sid) const {
+    return sid / num_inj_switches_per_subtree_;
+  }
+
+  inline int agg_sub_tree(switch_id sid) const {
+    return (sid - num_inj_switches_) / num_agg_switches_per_subtree_;
+  }
+
+  inline int sub_tree(switch_id sid) const {
+    if (sid > num_inj_switches_){
+      return agg_sub_tree(sid);
+    } else {
+      return inj_sub_tree(sid);
+    }
+  }
+
+  int up_port(int level) const {
+    if (level == 0){
+      //port is after all the compute nodes
+      return concentration();
+    } else if (level == 1){
+      //I have this many down ports - up port comes after
+      return num_inj_switches_per_subtree_;
+    } else {
+      spkt_abort_printf("invalid level %d - cannot go up on fat tree level %d", level, level);
+    }
+  }
+
+  int diameter() const override {
+    return 4;
+  }
+
  private:
-  int num_hops(int srcLevel, int srcOffset, int dstLevel, int dstOffset) const;
-
- protected:
-  std::vector<int> level_offsets_;
-
+  switch_id core_switch_id() const {
+    return num_inj_switches_ + num_agg_subtrees_;
+  }
+  int num_inj_switches_;
+  int num_agg_subtrees_;
+  int num_inj_switches_per_subtree_;
+  int num_agg_switches_per_subtree_;
+  int num_core_switches_;
   int num_switches_;
-
-  std::vector<double> tapering_;
-
+  double agg_bw_multiplier_;
 
 };
 

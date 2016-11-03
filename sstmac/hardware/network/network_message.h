@@ -11,10 +11,9 @@ namespace sstmac {
 namespace hw {
 
 class network_message :
-  public message,
-  public serializable_type<network_message>
+  public message
 {
-  ImplementSerializableDefaultConstructor(network_message)
+  ImplementSerializable(network_message)
 
  public:
   typedef enum {

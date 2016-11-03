@@ -9,11 +9,6 @@
 #include <sstmac/common/serializable.h>
 #include <sprockit/unordered.h>
 
-DeclareSerializable(lblxml::box);
-DeclareSerializable(lblxml::comp);
-DeclareSerializable(lblxml::comm);
-DeclareSerializable(lblxml::reduce);
-
 static std::set<int> empty_set;
 
 namespace lblxml
@@ -118,14 +113,14 @@ namespace lblxml
     void change_loc(int newl)
     { loc_ = newl; }
 
-    virtual void print()
+    virtual void print() override
     {
       std::cout << "box: " << "loc: " << loc_ << " ";
       element::print();
     }
 
     virtual void
-    serialize_order(sstmac::serializer &ser){
+    serialize_order(sstmac::serializer &ser) override {
       ser & loc_;
       element::serialize_order(ser);
     }
@@ -161,7 +156,7 @@ namespace lblxml
     }
 
     virtual void
-    serialize_order(sstmac::serializer &ser){
+    serialize_order(sstmac::serializer &ser) override {
       ser & dep_;
       ser & event_type_;
       element::serialize_order(ser);
@@ -192,7 +187,7 @@ namespace lblxml
 
     int epoch() { return epoch_; }
 
-    virtual void print()
+    virtual void print() override
     {
       int_container_iter dep_it = dep_.begin();
       if (dep_it == dep_.end() )
@@ -279,7 +274,7 @@ namespace lblxml
 
     double time() { return time_; }
 
-    virtual void print()
+    virtual void print() override
     {
       std::cout << "comp: type: " << type_ << " size: " << size_
                 << " time: " << time_ << " at: " << at_ << " ";
@@ -287,7 +282,7 @@ namespace lblxml
     }
 
     virtual void
-    serialize_order(sstmac::serializer &ser){
+    serialize_order(sstmac::serializer &ser) override {
       ser & type_;
       ser & size_;
       ser & time_;
@@ -347,7 +342,7 @@ namespace lblxml
     int size() { return size_; }
 
     virtual void
-    serialize_order(sstmac::serializer &ser){
+    serialize_order(sstmac::serializer &ser) override {
       ser & type_;
       ser & from_;
       ser & to_;
@@ -381,7 +376,7 @@ namespace lblxml
       event_type_ = collective;
     }
 
-    virtual void print()
+    virtual void print() override
     {
       std::cout << "allreduce: "
                 << " size: " << size_  << " "
@@ -465,7 +460,7 @@ namespace lblxml
     }
 
     virtual void
-    serialize_order(sstmac::serializer &ser){
+    serialize_order(sstmac::serializer &ser) override {
       ser & size_;
       ser & team_map_;
       //don't do listeners, computed later

@@ -107,7 +107,7 @@ class parallel_runtime :
   virtual void
   send_event(int thread_id,
     timestamp t,
-    switch_id tid,
+    device_id tid,
     device_id src,
     uint32_t seqnum,
     event* ev);

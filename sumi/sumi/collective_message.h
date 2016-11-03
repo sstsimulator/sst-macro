@@ -139,7 +139,7 @@ class collective_done_message :
 class collective_work_message :
   public message
 {
-
+  ImplementSerializable(collective_work_message)
  public:
   typedef sprockit::refcount_ptr<collective_work_message> ptr;
 

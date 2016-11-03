@@ -295,19 +295,15 @@ populate_length_names(std::map<std::string, int64_t> &value)
 }
 
 void
-populate_timestamp_names(std::map<std::string, int64_t> &value)
+populate_timestamp_names(std::map<std::string, double> &value)
 {
   // Accept ps, ns, us, ms, and s with various (lower-case) forms
   // Store time in picoseconds.
-  value["ps"] = value["psec"] = value["pseconds"] = value["picoseconds"] = 1;
-  value["ns"] = value["nsec"] = value["nseconds"] = value["nanoseconds"]
-                                = 1000;
-  value["us"] = value["usec"] = value["useconds"] = value["microseconds"]
-                                = 1000 * 1000;
-  value["ms"] = value["msec"] = value["mseconds"] = value["milliseconds"]
-                                = 1000LL * 1000LL * 1000LL;
-  value["s"] = value["sec"] = value["seconds"] = 1000LL * 1000LL * 1000LL
-                              * 1000LL;
+  value["ps"] = value["psec"] = value["pseconds"] = value["picoseconds"] = 1e-12;
+  value["ns"] = value["nsec"] = value["nseconds"] = value["nanoseconds"] = 1e-9;
+  value["us"] = value["usec"] = value["useconds"] = value["microseconds"] = 1e-6;
+  value["ms"] = value["msec"] = value["mseconds"] = value["milliseconds"] = 1e-3;
+  value["s"] = value["sec"] = value["seconds"] = 1;
 }
 
 long
@@ -365,13 +361,13 @@ byte_length(const char* value, bool& errorflag, bool print_errors)
 double
 get_timestamp(const char *value, bool &errorflag, bool print_errors)
 {
-  static std::map<std::string, int64_t> mulmap;
+  static std::map<std::string, double> mulmap;
   if (mulmap.empty()) {
     populate_timestamp_names(mulmap);
   }
 
   char *endptr = NULL;
-  int64_t multiplier = 1;
+  double multiplier = 1;
   double val = strtod(value, &endptr);
   errno = 0;
   errorflag = false;
@@ -409,12 +405,10 @@ get_timestamp(const char *value, bool &errorflag, bool print_errors)
       if (print_errors) cerr0 << "Invalid time units: " << units << "\n";
       return -1;
     }
-  } else {
-    spkt_abort_printf("invalid time value %s - times must have units", value);
   }
   val *= multiplier;
 
-  return val*1e-12; //convert psec to sec
+  return val; //return value in seconds
 }
 
 /// Get a frequency possibly suffixed with any of the identifiers

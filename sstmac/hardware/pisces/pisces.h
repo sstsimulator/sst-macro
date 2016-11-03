@@ -23,20 +23,15 @@ namespace hw {
  */
 class pisces_payload :
   public packet
-  //public serializable_type<pisces_payload>
 {
  public:
   static const double uninitialized_bw;
-
-  //ImplementSerializable(pisces_payload)
 
  public:
   pisces_payload(
     serializable* msg,
     int num_bytes,
     bool is_tail);
-
-  pisces_payload(){} //for serialization
 
   virtual ~pisces_payload() {}
 
@@ -140,6 +135,8 @@ class pisces_payload :
   serialize_order(serializer& ser) override;
 
  protected:
+  pisces_payload(){} //for serialization
+
   int inport_;
 
   double bw_;
@@ -190,6 +187,11 @@ class pisces_routable_packet :
     return routable::vc();
   }
 
+ protected:
+  void
+  serialize_order(serializer& ser) override;
+
+  pisces_routable_packet(){} //serialization
 };
 
 /**
@@ -199,31 +201,75 @@ class pisces_routable_packet :
 class pisces_default_packet :
  public pisces_routable_packet
 {
-  NotSerializable(pisces_default_packet)
-
-  public:
-   pisces_default_packet(
-     serializable* msg,
-     uint64_t flow_id,
-     int num_bytes,
-     bool is_tail,
-     node_id toaddr,
-     node_id fromaddr) :
-    pisces_routable_packet(msg, num_bytes, is_tail, toaddr, fromaddr),
-    flow_id_(flow_id)
+  ImplementSerializable(pisces_default_packet)
+ public:
+  pisces_default_packet(
+   serializable* msg,
+   uint64_t flow_id,
+   int num_bytes,
+   bool is_tail,
+   node_id toaddr,
+   node_id fromaddr) :
+  pisces_routable_packet(msg, num_bytes, is_tail, toaddr, fromaddr),
+  flow_id_(flow_id)
   {
   }
+
+  pisces_default_packet(){} //for serialization
 
   uint64_t
   flow_id() const override {
     return flow_id_;
   }
 
+  void
+  serialize_order(serializer& ser) override;
+
   std::string
   to_string() const override;
 
  private:
   uint64_t flow_id_;
+
+};
+
+class pisces_delay_stats_packet : public pisces_default_packet
+{
+  ImplementSerializable(pisces_delay_stats_packet)
+ public:
+  pisces_delay_stats_packet(
+   serializable* msg,
+   uint64_t flow_id,
+   int num_bytes,
+   bool is_tail,
+   node_id toaddr,
+   node_id fromaddr) :
+  pisces_default_packet(msg, flow_id, num_bytes, is_tail, toaddr, fromaddr),
+   congestion_delay_(0.)
+  {
+  }
+
+  pisces_delay_stats_packet(){} //for serialization
+
+  /**
+   * @brief congestion_delay
+   * @return The congestion delay in seconds
+   */
+  double
+  congestion_delay() const {
+    return congestion_delay_;
+  }
+
+  void
+  serialize_order(serializer& ser) override;
+
+  void
+  accumulate_delay(double sec){
+   congestion_delay_ += sec;
+  }
+
+ private:
+  double congestion_delay_;
 
 };
 

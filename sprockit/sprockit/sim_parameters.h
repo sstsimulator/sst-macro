@@ -87,6 +87,9 @@ class sim_parameters  {
     bool read;
   };
 
+  void
+  reproduce_params(std::ostream& os);
+
   typedef spkt_unordered_map<std::string, parameter_entry> key_value_map;
 
   sim_parameters();
@@ -105,7 +108,10 @@ class sim_parameters  {
    * @param bcaster
    */
   static void
-  parallel_build_params(sprockit::sim_parameters* params, int me, int nproc, const std::string& filename, param_bcaster* bcaster);
+  parallel_build_params(sprockit::sim_parameters* params,
+                        int me, int nproc,
+                        const std::string& filename,
+                        param_bcaster* bcaster);
 
   virtual ~sim_parameters();
 
@@ -120,6 +126,9 @@ class sim_parameters  {
 
   std::string
   get_scoped_param(const std::string& key, bool throw_on_error = true);
+
+  sim_parameters*
+  get_optional_local_namespace(const std::string& ns);
 
   std::string
   reread_param(const std::string& key) {
@@ -453,7 +462,16 @@ class sim_parameters  {
 
   uint64_t current_id_;
 
+  /**
+   * @brief _get_namespace Get a parameter namespace. If the namespace does not exist in the current scope locally,
+   *  search through any parent namespaces. This follow C++ scoping rules as if you had requested ns::variable.
+   * @param ns The namespace to get
+   * @return The set of all parameters in a given param namespace
+   */
   sim_parameters* _get_namespace(const std::string &ns);
+
+  sim_parameters*
+  build_local_namespace(const std::string& ns);
 
   void
   throw_key_error(const std::string& key) const;

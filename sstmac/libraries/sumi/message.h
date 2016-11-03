@@ -12,8 +12,7 @@ namespace sstmac {
 
 class transport_message :
   public ::sstmac::hw::network_message,
-  public ::sstmac::library_interface,
-  public serializable_type<transport_message>
+  public ::sstmac::library_interface
 {
    ImplementSerializable(transport_message)
 

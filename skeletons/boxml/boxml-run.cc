@@ -42,7 +42,7 @@ namespace lblxml
           if (synch_mode_ >= phase_asynch || epoch == current_epoch() ) {
             ++n_sent;
             if (debug_ > 0)
-              printf("rank %d sending message %d to rank\n",
+              printf("rank %d sending message %d to rank %d\n",
                      rank_, index, dest);
             g_message_begin_[index] = now();
             pt2pt_message::ptr mess = new pt2pt_message(index,count);
@@ -250,7 +250,7 @@ namespace lblxml
 
     if (debug_ > 0)
       printf("rank %d entering run loop with %d recvs\n",
-             rank_, g_rank_to_recvs[rank_].size());
+             rank_, (int)g_rank_to_recvs[rank_].size());
 
     // Loop until no events left
     int total_events = count_events();

@@ -15,26 +15,26 @@ Topologies are determined by two mandatory parameters.
 topology.name = torus
 topology.geometry = 4 4
 \end{ViFile}
-Here we choose a 2D-torus topology with extent 4 in both the $X$ and $Y$ dimensions for a total of 16 nodes (Figure \ref{fig:hdtorus:basic})
+Here we choose a 2D-torus topology with extent 4 in both the $X$ and $Y$ dimensions for a total of 16 nodes (Figure \ref{fig:torus:basic})
 The topology is laid out in a regular grid with network links connecting nearest neighbors.  
 Additionally, wrap-around links connect the nodes on each boundary.  
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.5\textwidth]{figures/tikz/torus/torus.png}
 \caption{4 x 4 2D Torus}
-\label{fig:hdtorus:basic}
+\label{fig:torus:basic}
 \end{figure}
 
 
 The figure is actually an oversimplification.  
 The \inlinefile{topology_geometry} parameter actually specifies the topology of the \emph{network switches}, not the compute nodes. 
 A torus is an example of a direct network in which each switch has one or more nodes ``directly'' connected to it.  
-A more accurate picture of the network is given in Figure \ref{fig:hdtorus:withnodes}.
+A more accurate picture of the network is given in Figure \ref{fig:torus:withnodes}.
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.4\textwidth]{figures/tikz/torus/withnodes.png}
 \caption{4 x 4 2D Torus of Network Switches with Compute Nodes}
-\label{fig:hdtorus:withnodes}
+\label{fig:torus:withnodes}
 \end{figure}
 While in many previous architectures there was generally a one-to-one correspondence between compute nodes and switches, more recent architectures have multiple compute nodes per switch (e.g. Cray Gemini with two nodes).  
 Multinode switches can be specified via

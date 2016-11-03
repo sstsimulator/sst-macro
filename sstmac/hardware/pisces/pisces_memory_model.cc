@@ -7,8 +7,18 @@
 #include <sstmac/common/event_callback.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
+#include <sprockit/keyword_registration.h>
 
 MakeDebugSlot(pisces_memory)
+RegisterKeywords(
+"total_bandwidth",
+"max_single_bandwidth",
+"pisces_memory_mtu",
+"pisces_memory_latency",
+"pisces_memory_bandwidth",
+"pisces_memory_single_bandwidth",
+"pisces_memory_arbitrator",
+);
 
 #define debug(...) debug_printf(sprockit::dbg::pisces_memory, __VA_ARGS__)
 
@@ -29,8 +39,8 @@ pisces_memory_packetizer::pisces_memory_packetizer(
   if (!params->has_param("mtu"))
     params->add_param("mtu", "100GB");
 
-  max_single_bw_ = params->get_bandwidth_param("max_single_bandwidth");
   max_bw_ = params->get_bandwidth_param("total_bandwidth");
+  max_single_bw_ = params->get_optional_bandwidth_param("max_single_bandwidth", max_bw_);
   latency_ = params->get_time_param("latency");
   arb_ = pisces_bandwidth_arbitrator_factory::get_value("cut_through", params);
   pkt_allocator_ = packet_allocator_factory
@@ -70,7 +80,6 @@ pisces_memory_model::pisces_memory_model(sprockit::sim_parameters *params, node 
     channels_available_.push_back(i);
   }
 
-  max_single_bw_ = params->get_bandwidth_param("max_single_bandwidth");
   mem_packetizer_ = new pisces_memory_packetizer(params, nd);
   mem_packetizer_->setArrivalNotify(this);
 }

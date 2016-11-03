@@ -4,6 +4,9 @@
 #include <sprockit/delete.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords("epoch");
 
 namespace sstmac {
 namespace sw {

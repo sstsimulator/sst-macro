@@ -23,7 +23,7 @@
 
 \usepackage{sstmacro}
 
-\usepackage[textwidth=6.5in]{geometry}
+\usepackage[textwidth=7.5in]{geometry}
 
 \definecolor{shadecolor}{rgb}{1,0.8,0.3}
 \definecolor{dkgreen}{rgb}{0,0.6,0}
@@ -50,8 +50,14 @@
 \newcommand{\startvi}{\begin{ViFile}}
 \newcommand{\stopvi}{\end{ViFile}}
 
+\newcommand{\tableConfig}{| p{5cm} | p{2cm} | p{3cm} | p{8cm} |}
+\newcommand{\openTable}{\begin{tabular}{\tableConfig}}
+\newcommand{\paramType}[1]{\newline (#1)}
+\hyphenpenalty=10000
+\pagestyle{empty}
 
-\title{SST/macro 6.0: User's Manual}
+
+\title{SST/macro 6.1: User's Manual}
 \titlepic{\includegraphics[width=0.3\textwidth]{figures/sstlogo.png}}
 \author{Sandia National Labs \\ Livermore, CA}
 
@@ -69,8 +75,7 @@
 \input{Tutorials}
 \input{Topology}
 \input{Skeletonization}
-%\input{UQ}
-%\input{Appendix}
+\input{Params}
 
 
 %%% End document
