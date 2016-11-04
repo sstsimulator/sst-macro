@@ -9,11 +9,6 @@
 #include <sstmac/common/serializable.h>
 #include <sprockit/unordered.h>
 
-DeclareSerializable(lblxml::box);
-DeclareSerializable(lblxml::comp);
-DeclareSerializable(lblxml::comm);
-DeclareSerializable(lblxml::reduce);
-
 static std::set<int> empty_set;
 
 namespace lblxml

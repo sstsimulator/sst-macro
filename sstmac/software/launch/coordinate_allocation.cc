@@ -9,6 +9,12 @@
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/stl_string.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords(
+"launch_coordinate_file",
+"coordinate_file",
+);
 
 namespace sstmac {
 namespace sw {
@@ -18,7 +24,7 @@ SpktRegister("coordinate", node_allocator, coordinate_allocation);
 coordinate_allocation::coordinate_allocation(sprockit::sim_parameters* params) :
   node_allocator(params)
 {
-  coord_file_ = params->get_param("launch_coordinate_file");
+  coord_file_ = params->get_param("coordinate_file");
 }
 
 void

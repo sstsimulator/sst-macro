@@ -1,16 +1,11 @@
 %% !TEX root = manual.tex
 
-\newcommand{\openTable}{\begin{tabular}{| p{5cm} | p{2cm} | p{3cm} | p{8cm} |}}
-\newcommand{\paramType}[1]{\newline (#1)}
-\hyphenpenalty=10000
-\pagestyle{empty}
-
 \chapter{Detailed Parameter Listings}
 \label{chapter:parameters}
 The following chapter is organized by parameter namespaces. Tables in each namespace are organized as
 \def\arraystretch{1.5}%  1 is the default, change whatever you need
 
-\openTable
+\begin{tabular}{\tableConfig}
 \hline
 Name (type) & Default if not given & Allowed \newline Values & Description \\
 \hline
@@ -386,25 +381,25 @@ core\_affinities \paramType{vector of int} & Empty & & \\
 \hline
 launch\_cmd \paramType{string} & No default & Valid aprun or srun & This uses a launch command as would be found with ALPS or SLURM launchers on real systems, e.g. aprun -n 4 -N 1 \\
 \hline
-launch\_indexing \paramType{string} & block & block, random, cart, node\_id, coordinate & The indexing scheme for assign proc ID (MPI rank number) to compute nodes \\
+indexing \paramType{string} & block & block, random, cart, node\_id, coordinate & The indexing scheme for assign proc ID (MPI rank number) to compute nodes \\
 \hline
-launch\_node\_id\_mapper\_file (filepath) & No default & & If using Node ID indexing, the file containing the node ID index list \\
+node\_id\_mapper\_file (filepath) & No default & & If using Node ID indexing, the file containing the node ID index list \\
 \hline 
 random\_indexer\_seed \paramType{long} & System time & & The seed to use for a random allocation. If not specified, system time is used. \\
 \hline
-launch\_allocation \paramType{string} & first\_available & first\_available, random, cart, node\_id, coordinate & The scheme to use for allocating compute nodes to a given job. \\
+allocation \paramType{string} & first\_available & first\_available, random, cart, node\_id, coordinate & The scheme to use for allocating compute nodes to a given job. \\
 \hline
 random\_allocation\_seed \paramType{long} & System time & & For random allocation policy. If unspecified, system time is used as the seed.  \\
 \hline
-launch\_node\_id\_allocation\_file \paramType{filepath} & No default & & If using Node ID allocation, the file containing the list of node IDs to allocate for the job \\
+node\_id\_allocation\_file \paramType{filepath} & No default & & If using Node ID allocation, the file containing the list of node IDs to allocate for the job \\
 \hline
-launch\_dumpi\_metaname \paramType{filepath} & No default & & If running DUMPI trace, the location of the metafile for configuring trace replay \\ 
+dumpi\_metaname \paramType{filepath} & No default & & If running DUMPI trace, the location of the metafile for configuring trace replay \\ 
 \hline
-launch\_coordinate\_file \paramType{filepath} & No default & & If running using coordinate allocation or indexing, the path to the file containing the node coordinates of each proc (MPI rank) \\ 
+coordinate\_file \paramType{filepath} & No default & & If running using coordinate allocation or indexing, the path to the file containing the node coordinates of each proc (MPI rank) \\ 
 \hline
-cart\_launch\_sizes \paramType{vector of int} & No default & & Launch a contiguous block of nodes in a Cartesian topology. This gives the size of each dimension in the block. \\
+cart\_sizes \paramType{vector of int} & No default & & Launch a contiguous block of nodes in a Cartesian topology. This gives the size of each dimension in the block. \\
 \hline 
-cart\_launch\_offsets \paramType{vector of int} & No default & & Launch a contiguous block nodes in a Cartesian topology. This gives the offset in each dimension where the block begins. \\
+cart\_offsets \paramType{vector of int} & No default & & Launch a contiguous block nodes in a Cartesian topology. This gives the offset in each dimension where the block begins. \\
 \hline
 parsedumpi\_timescale \paramType{double} & 1.0 & Positive float & If running DUMPI traces, scale compute times by the given value. Values less than 1.0 speed up computation. Values greater than 1.0 slow down computation. \\
 \hline

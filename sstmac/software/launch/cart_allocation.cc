@@ -9,6 +9,13 @@
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/stl_string.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords(
+"cart_launch_sizes",
+"cart_launch_offsets",
+"cart_sizes",
+"cart_offsets");
 
 namespace sstmac {
 namespace sw {
@@ -19,16 +26,16 @@ SpktRegister("cart | cartesian", node_allocator, cart_allocation,
 cart_allocation::cart_allocation(sprockit::sim_parameters* params) :
   node_allocator(params)
 {
-  if (params->has_param("cart_launch_sizes")){
-    params->get_vector_param("cart_launch_sizes", sizes_);
+  if (params->has_param("cart_sizes")){
+    params->get_vector_param("cart_sizes", sizes_);
     auto_allocate_ = false;
   } else {
     sizes_.resize(3, -1);
     auto_allocate_ = true;
   }
 
-  if (params->has_param("cart_launch_offsets")){
-    params->get_vector_param("cart_launch_offsets", offsets_);
+  if (params->has_param("cart_offsets")){
+    params->get_vector_param("cart_offsets", offsets_);
     if (sizes_.size() != offsets_.size()) {
       spkt_throw_printf(sprockit::value_error,
                      "cartesian allocator: offsets and sizes have different dimensions");

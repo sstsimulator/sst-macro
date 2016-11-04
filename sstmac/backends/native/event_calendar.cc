@@ -16,6 +16,13 @@
 #include <sprockit/sim_parameters.h>
 #include <sprockit/debug.h>
 #include <sprockit/errors.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords(
+"event_calendar_max_time",
+"event_calendar_epoch_length",
+"event_calendar_search_window",
+);
 
 namespace sstmac {
 namespace native {

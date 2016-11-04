@@ -2,6 +2,23 @@
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/libraries/compute/lib_compute_inst.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords(
+  "dgemm",
+  "dgemv",
+  "daxpy",
+  "ddot",
+  "daxpy_loop_unroll",
+  "daxpy_pipeline_efficiency",
+  "ddot_loop_unroll",
+  "ddot_pipeline_efficiency",
+  "dgemm_loop_unroll",
+  "dgemm_pipeline_efficiency",
+  "dgemm_cache_size",
+  "dgemv_loop_unroll",
+  "dgemv_pipeline_efficiency",
+);
 
 #define enumcase(x) case x: return #x;
 

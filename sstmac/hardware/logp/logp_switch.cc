@@ -26,11 +26,11 @@
 namespace sstmac {
 namespace hw {
 
-SpktRegister("logP", network_switch, logp_switch,
+SpktRegister("logP | simple | LogP | logp", network_switch, logp_switch,
   "A switch that implements no congestion modeling");
 
 logp_switch::logp_switch(sprockit::sim_parameters *params, uint64_t id, event_manager *mgr) :
-  network_switch(params, id, mgr)
+  network_switch(params, id, mgr, device_id::logp_overlay)
 {
   sprockit::sim_parameters* link_params = params->get_namespace("link");
   sprockit::sim_parameters* ej_params = params->get_namespace("ejection");
@@ -42,7 +42,6 @@ logp_switch::logp_switch(sprockit::sim_parameters *params, uint64_t id, event_ma
   } else {
     hop_latency_ = link_params->get_time_param("latency");
   }
-
 
   double inj_bw = ej_params->get_optional_bandwidth_param("bandwidth", net_bw);
   inj_bw_inverse_ = 1.0/inj_bw;

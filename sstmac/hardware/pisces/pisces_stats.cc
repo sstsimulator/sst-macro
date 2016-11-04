@@ -7,6 +7,7 @@
 #include <sstmac/common/runtime.h>
 #include <sstmac/common/event_manager.h>
 #include <sprockit/util.h>
+#include <sprockit/keyword_registration.h>
 #include <cinttypes>
 
 ImplementFactory(sstmac::hw::packet_stats_callback);
@@ -26,6 +27,9 @@ SpktRegister("byte_hops", packet_stats_callback, byte_hop_collector);
 SpktRegister("delay_histogram", packet_stats_callback, delay_histogram);
 SpktRegister("multi", packet_stats_callback, multi_stats);
 SpktRegister("null", packet_stats_callback, null_stats);
+
+RegisterNamespaces("bytes_sent", "congestion_spyplot", "congestion_delay",
+                   "bytes_sent", "byte_hops", "delay_histogram");
 
 static inline double
 congestion_delay(const pkt_arbitration_t& st)

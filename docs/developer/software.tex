@@ -308,6 +308,7 @@ This launches ten filesystem service nodes using a given node allocation strateg
 Some filesystem-specific parameters are given (in this case dealing with Reed-Solomon protection codes).
 
 \subsection{Coordinating servers and clients}
+\label{subsec:coordinatingServersClients}
 Slightly more complicated is the process of communicating between service and client applications.
 In many HPC simulations, the only thing being simulated is a single MPI application.
 The default \inlinecode{send} function in \inlinecode{sumi_transport} assumes messages are being sent \emph{within} a given application.

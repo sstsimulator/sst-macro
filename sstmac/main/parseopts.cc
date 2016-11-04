@@ -71,7 +71,7 @@ parse_opts(int argc, char **argv, opts &oo)
   bool errorflag = false;
   std::list<std::pair<std::string, std::string> > paramlist;
   oo.params = new sprockit::sim_parameters;
-
+  optind = 1;
   while ((ch = getopt_long(argc, argv, "Phad:f:t:p:m:n:u:i:c:", gopt, NULL))
          != -1) {
     switch (ch) {

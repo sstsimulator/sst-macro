@@ -1,7 +1,16 @@
 #include <sstmac/hardware/noise/noise.h>
 #include <sprockit/sim_parameters.h>
+#include <sprockit/keyword_registration.h>
 
 ImplementFactory(sstmac::hw::noise_model);
+
+
+RegisterKeywords(
+"mean",
+"seed",
+"stdev",
+"maxz",
+);
 
 namespace sstmac {
   namespace hw {

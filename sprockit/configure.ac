@@ -94,6 +94,7 @@ if test "X$enable_sst_subrepo" = "Xyes"; then
   CHECK_SST_CORE()
 else
   AM_CONDITIONAL(ENABLE_SST_SUBREPO, false)
+  AM_CONDITIONAL([INTEGRATED_SST_CORE], false)
 fi
 
 if test "X$have_integrated_core" = "Xno"; then

@@ -34,7 +34,7 @@ SpktRegister("coordinate", task_mapper, coordinate_task_mapper,
 coordinate_task_mapper::coordinate_task_mapper(sprockit::sim_parameters *params) :
   task_mapper(params)
 {
-  listfile_ = params->get_param("launch_coordinate_file");
+  listfile_ = params->get_param("coordinate_file");
 }
 
 void

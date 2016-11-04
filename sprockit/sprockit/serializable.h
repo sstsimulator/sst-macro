@@ -19,10 +19,6 @@
 
 namespace sprockit {
 
-#define ImplementVirtualSerializable(obj) \
-    protected: \
-        obj(cxn_flag_t flag){}
-
 #define NotSerializable(obj) \
  public: \
   static void \
@@ -163,8 +159,6 @@ template<class T> const uint32_t serializable_builder_impl<T>::cls_id_
 }
 
 #include <sprockit/serialize_serializable.h>
-
-#define DeclareSerializable(...)
 
 
 #endif

@@ -11,6 +11,8 @@
 #include <sstmac/hardware/topology/traffic/traffic.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/skeleton.h>
+#include <sprockit/keyword_registration.h>
+
 #define sstmac_app_name user_app_cxx
 using namespace sumi;
 using sstmac::timestamp;
@@ -19,6 +21,11 @@ using sstmac::node_id;
 using sstmac::env;
 using sstmac::hw::topology;
 
+RegisterKeywords(
+"traffic_pattern",
+"inject_time",
+"network_injector_capacity_bw"
+);
 
 //static long done = 0;
 

@@ -9,8 +9,8 @@ However, for consistency with previous versions, we also show the deprecated par
 
 \begin{ViFile}
 # Launch parameters
-app1.launch_indexing = block
-app1.launch_allocation = first_available
+app1.indexing = block
+app1.allocation = first_available
 app1.launch_cmd = aprun -n8 -N1
 app1.name = sstmac_mpi_testall
 app1.argv =
@@ -42,6 +42,7 @@ Parameter names follow C++ variable rules (letters, numbers, underscore) while p
 Comments can be included on lines starting with \#.
 
 \subsection{Parameter Namespace Rules}
+\label{subsec:parameterNamespace}
 Periods denote nesting of parameter namespaces.
 The parameter \inlineshell{node.memory.model} will be nested in namespace \inlineshell{memory} inside namespace \inlineshell{node}.
 SST/macro generally requests variable values via the inner-most namespace only.
@@ -82,8 +83,8 @@ amm_model = amm1
 congestion_model = simple
 
 app1 {
- launch_indexing = block
- launch_allocation = first_available
+ indexing = block
+ allocation = first_available
  launch_cmd = aprun -n8 -N1
  name = sstmac_mpi_testall
  argv =
@@ -124,6 +125,7 @@ node {
 Again, a detailed listing of parameter namespaces and keywords is given in Section \ref{chapter:parameters}.
 
 \subsection{Initial Example}
+\label{subsec:initialExample}
 Continuing with the example above, we see the input file is broken into sections via comments.  
 First, application launch parameters must be chosen determining what application will launch, 
 how nodes will be allocated, how ranks will be indexed, and finally what application will be run.  
@@ -153,8 +155,8 @@ An alternative parameter file would be:
 \begin{ViFile}
 include machine.ini
 # Launch parameters
-app1.launch_indexing = block
-app1.launch_allocation = first_available
+app1.indexing = block
+app1.allocation = first_available
 app1.launch_cmd = aprun -n2 -N1
 app1.name = user_mpiapp_cxx
 app1.argv = 

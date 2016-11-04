@@ -17,8 +17,18 @@
 #include <sstmac/backends/common/sim_partition.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/stl_string.h>
+#include <sprockit/keyword_registration.h>
 
 #include <math.h>
+
+RegisterKeywords(
+"num_levels",
+"num_inj_switches_per_subtree",
+"num_core_switches",
+"num_agg_subtrees",
+"num_agg_switches_per_subtree",
+"radix",
+);
 
 namespace sstmac {
 namespace hw {

@@ -40,15 +40,19 @@
 #include <iterator>
 #include <cstdlib>
 
+RegisterKeywords(
+"event_manager",
+"sst_rank",
+"sst_nproc",
+"nworkers",
+);
+
 
 namespace sstmac {
 namespace native {
 
 using namespace sstmac::sw;
 using namespace sstmac::hw;
-
-const char* keywords[] = { "sst_rank", "sst_nproc" };
-sprockit::StaticKeywordRegister reg_keywords(2, keywords);
 
 class timestamp_prefix_fxn :
   public sprockit::debug_prefix_fxn
@@ -71,7 +75,7 @@ manager::compute_max_nproc_for_app(sprockit::sim_parameters* app_params)
 {
   int max_nproc = 0;
   /** Do a bunch of dumpi stuff */
-  static const char* dmeta = "launch_dumpi_metaname";
+  static const char* dmeta = "dumpi_metaname";
   if (app_params->get_param("name") == "parsedumpi"
     && !app_params->has_param("launch_cmd"))
   {
@@ -90,7 +94,7 @@ manager::compute_max_nproc_for_app(sprockit::sim_parameters* app_params)
         app_params->add_param(dmeta, buf);
       } else {
         spkt_throw(sprockit::input_error,
-         "no dumpi file found in folder or specified with launch_dumpi_metaname");
+         "no dumpi file found in folder or specified with dumpi_metaname");
       }
       dumpi_meta_filename = buf;
     } else {

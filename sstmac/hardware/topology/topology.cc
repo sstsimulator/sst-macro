@@ -9,6 +9,22 @@
 ImplementFactory(sstmac::hw::topology);
 RegisterNamespaces("topology");
 
+RegisterKeywords(
+"topology_name",
+"topology_geometry",
+"topology_group_connections",
+"topology_true_random_intermediate",
+"topology_redundant",
+"topology_seed",
+"topology_output_graph",
+"geometry",
+"redundant",
+"seed",
+"group_connections",
+"concentration",
+"network_nodes_per_switch",
+);
+
 RegisterDebugSlot(topology,
     "debug all operations performed by topology objects such as connections in the network or routing computations");
 

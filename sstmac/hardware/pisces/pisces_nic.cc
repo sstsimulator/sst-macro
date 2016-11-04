@@ -27,6 +27,11 @@
 
 RegisterNamespaces("congestion_delays", "congestion_matrix");
 
+RegisterKeywords(
+"pisces_injection_latency",
+"pisces_injection_bandwidth",
+);
+
 namespace sstmac {
 namespace hw {
 

@@ -225,7 +225,7 @@ static bool is_logp(SystemPy_t* self)
 {
   sprockit::sim_parameters* switch_params = self->params->get_namespace("switch");
   std::string model = switch_params->get_param("model");
-  return model == "logP";
+  return model == "logP" || model == "LogP";
 }
 
 static PyObject*

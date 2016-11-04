@@ -367,15 +367,23 @@ sim_parameters::build_local_namespace(const std::string& ns)
 {
   //need to make a new one
   sim_parameters* params = new sim_parameters;
-  if (namespace_ == "global"){
-   params->set_namespace(ns);
-  } else {
-   params->set_namespace(sprockit::printf("%s.%s",
-                namespace_.c_str(), ns.c_str()));
-  }
+  params->set_namespace(ns);
   params->set_parent(this);
   subspaces_[ns] = params;
   return params;
+}
+
+void
+sim_parameters::reproduce_params(std::ostream& os)
+{
+  for (auto& pair : params_){
+    os << pair.first << " = " << pair.second.value << "\n";
+  }
+  for (auto& pair : subspaces_){
+    os << pair.first << " {\n";
+    pair.second->reproduce_params(os);
+    os << "}\n";
+  }
 }
 
 sim_parameters*
@@ -865,7 +873,10 @@ param_bcaster::bcast_string(std::string& str, int me, int root)
 }
 
 void
-sim_parameters::parallel_build_params(sprockit::sim_parameters* params, int me, int nproc, const std::string& filename, param_bcaster *bcaster)
+sim_parameters::parallel_build_params(sprockit::sim_parameters* params,
+                                      int me, int nproc,
+                                      const std::string& filename,
+                                      param_bcaster *bcaster)
 {
   bool fail_on_existing = false;
   bool overwrite_existing = true;
@@ -881,7 +892,7 @@ sim_parameters::parallel_build_params(sprockit::sim_parameters* params, int me, 
         //thus read in all possible params chasing down all include files
         //then build the full text of all params
         std::stringstream sstr;
-        params->print_params(sstr);
+        params->reproduce_params(sstr);
         std::string all_text = sstr.str();
         bcaster->bcast_string(all_text, me, root);
       }

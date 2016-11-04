@@ -33,7 +33,7 @@ SpktRegister("dumpi", node_allocator, dumpi_allocation,
 dumpi_allocation::dumpi_allocation(sprockit::sim_parameters* params)
  : node_allocator(params)
 {
-  metafile_ = params->get_param("launch_dumpi_metaname");
+  metafile_ = params->get_param("dumpi_metaname");
 }
 
 void
@@ -65,7 +65,7 @@ dumpi_allocation::allocate(
       spkt_throw_printf(sprockit::input_error,
                        "dumpi_allocation::allocate: trace file %s contains no mesh info. No mesh coordinates found.\n"
                        "To run the trace you will need to use launch_allocation = hostname.\n"
-                       "You will also need to give a launch_hostname_map file giving the machine topology.\n"
+                       "You will also need to give a hostname_map file giving the machine topology.\n"
                        "Alternatively, the trace file may just be corrupted.",
                        fname.c_str());
     }

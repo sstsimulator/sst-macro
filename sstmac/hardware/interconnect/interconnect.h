@@ -113,6 +113,10 @@ class interconnect
     return nodes_[nid];
   }
 
+  network_switch*
+  logp_switch_at(switch_id sid) const {
+    return logp_overlay_switches_[sid];
+  }
 
   network_switch*
   switch_at(switch_id id) const {

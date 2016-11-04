@@ -7,8 +7,18 @@
 #include <sstmac/common/event_callback.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
+#include <sprockit/keyword_registration.h>
 
 MakeDebugSlot(pisces_memory)
+RegisterKeywords(
+"total_bandwidth",
+"max_single_bandwidth",
+"pisces_memory_mtu",
+"pisces_memory_latency",
+"pisces_memory_bandwidth",
+"pisces_memory_single_bandwidth",
+"pisces_memory_arbitrator",
+);
 
 #define debug(...) debug_printf(sprockit::dbg::pisces_memory, __VA_ARGS__)
 

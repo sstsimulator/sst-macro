@@ -75,7 +75,7 @@ dumpi_task_mapper::node_id_from_coordinates(int ncoord, int *coords)
 dumpi_task_mapper::dumpi_task_mapper(sprockit::sim_parameters *params) :
   task_mapper(params)
 {
-  metaname_ = params->get_param("launch_dumpi_metaname");
+  metaname_ = params->get_param("dumpi_metaname");
   regtop_ = safe_cast(hw::cartesian_topology, topology_);
 }
 

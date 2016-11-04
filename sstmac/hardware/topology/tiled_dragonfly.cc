@@ -17,6 +17,12 @@
 #include <sprockit/sim_parameters.h>
 #include <sprockit/fileio.h>
 #include <sprockit/regexp.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords(
+"intragroup_connection_file",
+"intergroup_connection_file",
+);
 
 using namespace sprockit;
 

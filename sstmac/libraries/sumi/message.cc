@@ -2,6 +2,7 @@
 #include <sstmac/common/serializable.h>
 #include <sumi/message.h>
 #include <sprockit/util.h>
+#include <sprockit/printable.h>
 #include <iostream>
 
 namespace sstmac {
@@ -23,18 +24,8 @@ transport_message::serialize_order(serializer& ser)
 std::string
 transport_message::to_string() const
 {
-  std::string message_str;
-  sumi::message* smsg = ptr_test_cast(sumi::message, payload_);
-  sstmac::message* msg = ptr_test_cast(sstmac::message, payload_);
-  if (smsg){
-    message_str = smsg->to_string();
-  } else if (msg){
-    message_str = msg->to_string();
-  } else {
-    message_str = "null payload";
-  }
-  return sprockit::printf("sumi transport message %lu carrying %s",
-    flow_id(), message_str.c_str());
+  return sprockit::printf("sumi transport message %lu from %d:%d to %d:%d carrying %s",
+    flow_id(), src_, src_app_, dest_, dest_app_, sprockit::to_string(payload_.get()).c_str());
 }
 
 void

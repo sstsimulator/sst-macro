@@ -10,7 +10,7 @@ AC_ARG_ENABLE(regex,
   [
     enable_regexp=$enableval
   ], [
-    enable_regexp=no
+    enable_regexp=yes
   ]
 )
 if test "X$enable_regexp" = "Xyes"; then
@@ -24,6 +24,8 @@ else
     AM_CONDITIONAL(HAVE_REGEXP, false)
     AC_DEFINE_UNQUOTED([DISABLE_REGEXP], 1, [Do not compile support for regex])
 fi
+
+AC_MSG_CHECKING([Checking for regex])
 
 if test "X$enable_regexp" = "Xyes"; then
 HEADER="#include <iostream> 
@@ -64,6 +66,8 @@ If using GCC >= 4.9, be sure LD_LIBRARY_PATH is correct
 Use the flag --disable-regex to disable regex-dependent features
 Regex is required for input file proofreading, but sims will still run])]
 )
+else
+AC_MSG_RESULT([skipping regex])
 fi
 
 ])
