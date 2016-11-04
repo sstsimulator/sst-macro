@@ -188,16 +188,12 @@ node::to_string() const
 }
 
 void
-node::job_launch(app_launch* appman)
-{
-  job_launcher_->handle_new_launch_request(appman, this);
-}
-
-void
 node::schedule_launches()
 {
+  //only root node launches jobs
   for (app_launch* appman : app_launchers_){
-    schedule(appman->time(), new_callback(this, &node::job_launch, appman));
+    schedule(appman->time(), new_callback(job_launcher_,
+                &job_launcher::handle_new_launch_request, appman, this));
   }
 }
 

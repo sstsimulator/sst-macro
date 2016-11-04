@@ -11,6 +11,8 @@
 
 #include <sstmac/software/launch/launcher.h>
 #include <sstmac/software/launch/launch_event.h>
+#include <sstmac/software/launch/job_launcher.h>
+#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/app.h>
 #include <sprockit/sim_parameters.h>
@@ -35,14 +37,23 @@ void
 app_launcher::incoming_event(event* ev)
 {
   launch_event* lev = safe_cast(launch_event, ev);
-
-  software_id sid(lev->aid(), lev->tid());
-  app* theapp = app_factory::get_value(lev->app_name(), lev->params(), sid, os_);
-  int intranode_rank = num_apps_launched_[lev->aid()]++;
-  int core_affinity = lev->core_affinity(intranode_rank);
-  theapp->set_affinity(core_affinity);
-  os_->start_app(theapp);
-
+  app_launch* launch = job_launcher::app_launcher(lev->aid());
+  if (lev->type() == launch_event::Start){
+    software_id sid(lev->aid(), lev->tid());
+    app* theapp = app_factory::get_param("name", launch->app_params(),
+                                         sid, os_);
+    int intranode_rank = num_apps_launched_[lev->aid()]++;
+    int core_affinity = lev->core_affinity(intranode_rank);
+    theapp->set_affinity(core_affinity);
+    os_->start_app(theapp);
+  } else {
+    bool app_done = launch->proc_done();
+    if (app_done){
+      bool sim_done = job_launcher::static_app_done(lev->aid());
+      if (sim_done){
+      }
+    }
+  }
   delete lev;
 }
 
@@ -59,12 +70,7 @@ app_launcher::start()
 int
 launch_event::core_affinity(int intranode_rank) const
 {
-  if (core_affinities_.size() > 0) { //we are assigned
-    return core_affinities_[intranode_rank];
-  }
-  else {
-    return thread::no_core_affinity;
-  }
+  return thread::no_core_affinity;
 }
 
 

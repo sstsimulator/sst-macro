@@ -23,26 +23,31 @@ namespace sstmac {
 namespace sw {
 
 class launch_event :
-  public event,
+  public hw::network_message,
   public library_interface,
   public timed_interface
 {
   NotSerializable(launch_event)
 
+  typedef enum {
+    Start,
+    Stop
+  } type_t;
+
  public:
-  launch_event(const std::string& app_name,
-               app_id aid,
-               task_id tid,
-               sprockit::sim_parameters* params,
-               const std::vector<int>& core_affinities) :
+  launch_event(type_t ty,
+     app_id aid,
+     task_id tid,
+     node_id to,
+     node_id from) :
+    network_message(aid, to, from, 0),
     library_interface("launcher"),
     timed_interface(timestamp(0)),
     tid_(tid),
     aid_(aid),
-    app_name_(app_name),
-    params_(params),
-    core_affinities_(core_affinities)
+    ty_(ty)
   {
+    type_ = payload;
   }
 
   task_id
@@ -50,14 +55,9 @@ class launch_event :
     return tid_;
   }
 
-  sprockit::sim_parameters*
-  params() const {
-    return params_;
-  }
-
-  std::string
-  app_name() const {
-    return app_name_;
+  type_t
+  type() const {
+    return ty_;
   }
 
   app_id
@@ -69,11 +69,9 @@ class launch_event :
   core_affinity(int intranode_rank) const;
 
  protected:
+  type_t ty_;
   app_id aid_;
   task_id tid_;
-  std::string app_name_;
-  sprockit::sim_parameters* params_;
-  std::vector<int> core_affinities_;
 };
 
 }

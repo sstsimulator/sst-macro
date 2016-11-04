@@ -47,11 +47,41 @@ class job_launcher
   static job_launcher*
   static_job_launcher(sprockit::sim_parameters* params, event_manager* mgr);
 
+  static int
+  launch_root() {
+    return launch_root_;
+  }
+
   static void
   clear_static_job_launcher(){
     if (static_launcher_) delete static_launcher_;
     static_launcher_ = nullptr;
   }
+
+  device_id
+  event_location() const {
+    return device_id();
+  }
+
+  static app_launch*
+  app_launcher(int aid) {
+    return static_launcher_->apps_launched_[aid];
+  }
+
+  bool
+  app_done(app_id aid){
+    apps_finished_.insert(aid);
+    if (apps_launched_.find(aid) == apps_launched_.end()){
+      spkt_abort_printf("trying to finish invalid app id %d", aid);
+    }
+    return apps_launched_.size() == apps_finished_.size();
+  }
+
+  static bool
+  static_app_done(app_id aid){
+    return static_launcher_->app_done(aid);
+  }
+
 
   virtual ~job_launcher(){}
 
@@ -67,7 +97,10 @@ class job_launcher
   ordered_node_set available_;
 
   std::map<app_id, app_launch*> apps_launched_;
+  std::set<app_id> apps_finished_;
+
   static job_launcher* static_launcher_;
+  static int launch_root_;
 
 };
 

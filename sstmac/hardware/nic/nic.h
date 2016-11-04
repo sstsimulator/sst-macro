@@ -106,6 +106,9 @@ class nic :
   void
   intranode_send(network_message* payload);
 
+  void
+  send_to_logp_switch(network_message* netmsg);
+
  protected:
   nic(sprockit::sim_parameters* params, node* parent);
 

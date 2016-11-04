@@ -32,6 +32,7 @@ namespace ami {
 
   enum COMM_FUNC {
     COMM_SEND = 10101, //pretty much have to implement this one
+    COMM_PMI_SEND, //process-manager send
   };
 
   /** Functions that block and must complete before returning */

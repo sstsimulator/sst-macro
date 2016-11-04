@@ -244,6 +244,12 @@ nic::internode_send(network_message* netmsg)
 }
 
 void
+nic::send_to_logp_switch(network_message* netmsg)
+{
+  send_to_link(logp_switch_, netmsg);
+}
+
+void
 nic::send_to_node(network_message* payload)
 {
   schedule_now(node_handler_, payload);

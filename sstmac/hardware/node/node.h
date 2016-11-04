@@ -165,8 +165,6 @@ class node :
   */
   void send_to_nic(network_message* netmsg);
 
-  void job_launch(sw::app_launch* appman);
-
   void schedule_launches();
 
  protected:
