@@ -340,7 +340,10 @@ tapered_fat_tree::tapered_fat_tree(sprockit::sim_parameters *params) :
 
   numleafswitches_ = num_inj_switches_per_subtree_ * num_agg_subtrees_;
 
-  max_ports_intra_network_ = std::max(up_port(0), up_port(1));
+  int max_up_port = std::max(up_port(0), up_port(1));
+  int max_core_port = num_agg_subtrees_;
+  max_ports_intra_network_ = std::max(max_up_port, max_core_port);
+  
   eject_geometric_id_ = max_ports_intra_network_;
 
   num_switches_ = num_inj_switches_ + num_agg_subtrees_ + 1;
