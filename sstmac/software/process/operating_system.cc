@@ -377,6 +377,18 @@ operating_system::execute_kernel(ami::COMM_FUNC func,
 }
 
 void
+operating_system::decrement_app_refcount()
+{
+  node_->decrement_app_refcount();
+}
+
+void
+operating_system::increment_app_refcount()
+{
+  node_->increment_app_refcount();
+}
+
+void
 operating_system::simulation_done()
 {
   cxa_finalizing_ = true;

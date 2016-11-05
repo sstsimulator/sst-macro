@@ -27,14 +27,20 @@ class launch_event :
   public library_interface,
   public timed_interface
 {
-  NotSerializable(launch_event)
+  ImplementSerializable(launch_event)
 
+ public:
   typedef enum {
     Start,
     Stop
   } type_t;
 
- public:
+  std::string
+  to_string() const override {
+    return sprockit::printf("launch event app=%d task=%d node=%d",
+                            aid_, tid_, toaddr_);
+  }
+
   launch_event(type_t ty,
      app_id aid,
      task_id tid,
@@ -48,6 +54,18 @@ class launch_event :
     ty_(ty)
   {
     type_ = payload;
+  }
+
+  launch_event(){} //for serialization
+
+  void
+  serialize_order(serializer& ser) override {
+    timed_interface::serialize_order(ser);
+    library_interface::serialize_order(ser);
+    hw::network_message::serialize_order(ser);
+    ser & ty_;
+    ser & aid_;
+    ser & tid_;
   }
 
   task_id

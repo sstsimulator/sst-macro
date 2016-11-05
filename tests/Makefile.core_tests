@@ -4,6 +4,7 @@
 
 
 CORETESTS+= \
+  test_core_apps_ping_all_uneven_tree \
   test_core_apps_stop_time \
   test_core_apps_distributed_service \
   test_sumi_failure \

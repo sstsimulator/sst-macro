@@ -167,6 +167,10 @@ class node :
 
   void schedule_launches();
 
+  void increment_app_refcount();
+
+  void decrement_app_refcount();
+
  protected:
   node(sprockit::sim_parameters* params,
     uint64_t id,
@@ -189,6 +193,7 @@ class node :
   void build_launchers(sprockit::sim_parameters* params);
 
  private:
+  int app_refcount_;
   sw::app_launcher* app_launcher_;
   sw::job_launcher* job_launcher_;
   static std::list<sw::app_launch*> app_launchers_;

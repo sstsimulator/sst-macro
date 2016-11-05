@@ -22,9 +22,16 @@ const int topology::eject = -1;
 #if SSTMAC_INTEGRATED_SST_CORE
 int topology::nproc = 0;
 
+#include <mpi.h>
+
 switch_id
 topology::node_to_logp_switch(node_id nid) const
 {
+  int rank;
+  if (nproc == 0){
+    MPI_Comm_size(MPI_COMM_WORLD, &nproc);
+  }
+
   int n_nodes = num_nodes();
   int netlinks_per_switch = n_nodes / nproc;
   int epPlusOne = netlinks_per_switch + 1;

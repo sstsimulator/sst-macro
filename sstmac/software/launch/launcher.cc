@@ -45,12 +45,14 @@ app_launcher::incoming_event(event* ev)
     int intranode_rank = num_apps_launched_[lev->aid()]++;
     int core_affinity = lev->core_affinity(intranode_rank);
     theapp->set_affinity(core_affinity);
+    os_->increment_app_refcount();
     os_->start_app(theapp);
   } else {
     bool app_done = launch->proc_done();
     if (app_done){
       bool sim_done = job_launcher::static_app_done(lev->aid());
       if (sim_done){
+        os_->decrement_app_refcount();
       }
     }
   }

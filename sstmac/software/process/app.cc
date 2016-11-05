@@ -225,6 +225,8 @@ app::run()
                             aid(), tid(),
                             launch_root, os_->addr());
   os_->execute_kernel(ami::COMM_PMI_SEND, lev);
+
+  os_->decrement_app_refcount();
 }
 
 void
