@@ -9,6 +9,7 @@
 \label{chapter:hardware}
 
 \section{Overview}
+\label{sec:topOverview}
 To better understand how hardware models are put together for simulating interconnects, we should try to understand the basic flow of event in SST/macro involved in sending a message between two network endpoints.  We have already seen in skeleton applications in previous sections how an application-level call to a function like \inlinecode{MPI_Send} is mapping to an operating system function and finally a hardware-level injection of the message flow.  Overall, the following steps are required:
 
 \begin{enumerate}
@@ -302,7 +303,9 @@ Common examples are the torus, fat tree, or butterfly.
 To understand what these topologies are, there are many resources on the web.
 Regardless of the actual structure as a torus or tree, the topology should present a common interface to the interconnect and NIC for routing messages.
 Here we detail the public interface.
+
 \subsection{Basic Topology}
+\label{subsec:basicTopology}
 Not all topologies are ``regular'' like a torus.  Ad hoc computer networks (like the internet) are ordered with IP addresses, but don't follow a regular geometric structure.
 The abstract topology base class is intended to cover both cases.
 Irregular or arbitrary topology connections are not fully supported yet.

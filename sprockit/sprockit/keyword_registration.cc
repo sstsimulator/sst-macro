@@ -138,7 +138,9 @@ KeywordRegistration::validate_namespace(const std::string &ns)
   if (do_validation_){
     bool valid = is_valid_namespace(ns);
     if (!valid) {
-      spkt_throw_printf(input_error, "namespace %s is not valid", ns.c_str());
+      spkt_abort_printf("namespace %s is not valid - if this is not a type-o ensure that "
+                        "namespace was properly registered with RegisterNamespaces(...) macro",
+                        ns.c_str());
     }
   }
 }
@@ -157,7 +159,8 @@ KeywordRegistration::validate_keyword(const std::string &name,
                   << "You should remove it from parameter files as it may become an error in future versions.\n";
       }
       else {
-        spkt_throw_printf(value_error, "unknown keyword name %s with value %s",
+        spkt_abort_printf("unknown keyword name %s with value %s - if this is not a type-o ensure that "
+                          "keyword was properly registered with RegisterKeywords(...) macro",
                          name.c_str(), val.c_str());
       }
     }

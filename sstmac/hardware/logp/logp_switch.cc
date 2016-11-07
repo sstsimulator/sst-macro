@@ -26,7 +26,7 @@
 namespace sstmac {
 namespace hw {
 
-SpktRegister("logP", network_switch, logp_switch,
+SpktRegister("logP | simple | LogP | logp", network_switch, logp_switch,
   "A switch that implements no congestion modeling");
 
 logp_switch::logp_switch(sprockit::sim_parameters *params, uint64_t id, event_manager *mgr) :

@@ -5,7 +5,7 @@
 namespace sstmac {
 namespace hw {
 
-SpktRegister("logP | simple", sstmac::param_expander, logp_param_expander);
+SpktRegister("logP | simple | LogP | logp", sstmac::param_expander, logp_param_expander);
 
 void
 logp_param_expander::expand(sprockit::sim_parameters* params)

@@ -1,16 +1,11 @@
 %% !TEX root = manual.tex
 
-\newcommand{\openTable}{\begin{tabular}{| p{5cm} | p{2cm} | p{3cm} | p{8cm} |}}
-\newcommand{\paramType}[1]{\newline (#1)}
-\hyphenpenalty=10000
-\pagestyle{empty}
-
 \chapter{Detailed Parameter Listings}
 \label{chapter:parameters}
 The following chapter is organized by parameter namespaces. Tables in each namespace are organized as
 \def\arraystretch{1.5}%  1 is the default, change whatever you need
 
-\openTable
+\begin{tabular}{\tableConfig}
 \hline
 Name (type) & Default if not given & Allowed \newline Values & Description \\
 \hline

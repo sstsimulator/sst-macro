@@ -6,10 +6,14 @@ import re
 import os
 
 section_template = r'\\begin{%s}(.*?)\\end{%s}'
-input_regexp = r'\\input{(.*?)}'
 comment_regexp = re.compile(r'%(.*)')
 quotes_regexp = re.compile("``(.*?)''", re.DOTALL)
+newcommand_regexp = re.compile(r'\newcommand.*')
+arrayStretch_regexp = re.compile(r'\\def\\arraystre.*')
 #display_regexp = re.compile(r'\\\[(.*?)\\\]', re.DOTALL)
+
+tabular_regexp = re.compile(r'\\begin{tabular}{.*?}(.*?)\\end{tabular}', re.DOTALL)
+param_table_regexp = re.compile(r'\\openTable(.*?)\\end{tabular}',re.DOTALL)
 
 toc_lines = ["# Table of Contents"]
 
@@ -18,8 +22,7 @@ subsection = 0
 subsubsection = 0
 chapter = 0
 
-refs = {
-}
+refs = {}
 
 figureCount = 1
 
@@ -55,10 +58,59 @@ def repl_title(x):
 def repl_quotes(x):
   return '"%s"' % x.groups()[0]
 
+param_table_header = "| Name (type) | Default | Allowed | Description |"
+def repl_tabular(match, table_header=""):
+  text = match.groups()[0]
+  text = text.replace("\n"," ")
+  text = text.replace(r'\hline','')
+  text = text.replace(r'\newline','')
+  rows = text.split(r'\\')
+  row_arr = ["", table_header, ""]
+  table_sep = ""
+  num_entries = 0
+  for row in rows:
+    row = row.strip()
+    if not row:
+      continue
+    entries = row.split('&')
+    line_arr = []
+    num_entries = len(entries)
+    for e in entries:
+      line_arr.append(e.strip())
+      
+    row = "| %s |" % " | ".join(line_arr)
+    if not row_arr[1]: #no header
+      row_arr[1] = row
+    else:
+      row_arr.append(row)
+
+    
+  
+  sep_arr = []
+  for e in row_arr[1].split("|"):
+    sep_arr.append("-"*len(e))
+  table_sep = "|".join(sep_arr)
+  row_arr[2] = table_sep
+
+  if len(row_arr) == 3: #no rows except header
+    sep_arr = []
+    for e in row_arr[1].split("|"):
+      sep_arr.append(" "*len(e))
+    row = "|".join(sep_arr)
+    row_arr.append(row)
+
+  #sys.stderr.write("%s\n" % row_arr)
+  text = "\n".join(row_arr)
+  #sys.stderr.write("%s\n" % text)
+  return text
+  
+
 paragraph_split_cleanup_regexp = re.compile(r'\n[\t ]*\n')
 def process_paragraphs(text):
   par_arr = []
   for paragraph in text.split("\n\n"):
+    if "------------" in paragraph: #table - already processed
+      return text
     paragraph = paragraph.strip()
     if "```" in paragraph or "-  " in paragraph:
       par_arr.append(paragraph)
@@ -207,7 +259,7 @@ def process_ref(match):
 
 def process_input(match):
   fname = match.groups()[0] + ".tex"
-  text = doProcessFile(fname)
+  text = open(fname).read()
   return text
 
 def repl_code_block(match):
@@ -234,6 +286,8 @@ def return_bold(match):
   return "**%s**" % match.groups()[0]
 
 repls = [
+  (newcommand_regexp, ''),
+  (arrayStretch_regexp, ''),
   (quotes_regexp, repl_quotes),
   (section_regexp("CppCode")  , repl_code_block),
   (section_regexp("ShellCmd") , repl_code_block),
@@ -241,10 +295,11 @@ repls = [
   (section_regexp("figure")   , process_figure),
   (section_regexp("itemize")   , process_itemize),
   (section_regexp("center") , return_self),
-  (paragraph_split_cleanup_regexp , "\n\n"),
   (macro_regexp('paramType') , repl_param_type),
+  (paragraph_split_cleanup_regexp , "\n\n"),
+  (param_table_regexp , lambda x: repl_tabular(x, param_table_header)),
+  (tabular_regexp , lambda x: repl_tabular(x,"")),
   (macro_regexp('title') , repl_title),
-  (macro_regexp('input') , process_input),
   (macro_regexp('aside') , return_self),
   (macro_regexp('titlepic') , process_title_pic),
   (macro_regexp('inlineshell') , return_code),
@@ -255,6 +310,7 @@ repls = [
   (macro_regexp('textit') , return_self),
   (macro_regexp('author') , ""),
   (macro_regexp('url') , return_self),
+  (r'\centering' , ''),
   (r'\sstmacro' , 'SST-macro'),
   (r'\sprockit', 'SProCKit'),
   (r'\maketitle' , ''),
@@ -267,7 +323,10 @@ repls = [
 
 
 def processFile(f):
+  inp_regexp = macro_regexp('input')
   text = open(f).read()
+  while r'\input' in text:
+    text = inp_regexp.sub(process_input, text)
   lines = text.split("\n")
   newtext = ""
   newline = "\n"
@@ -315,6 +374,12 @@ while foundMatch:
 text = macro_regexp('ref').sub(process_ref, text)
 text = process_paragraphs(text)
 text = make_toc(text)
+header = """---
+title: Manual for SST-Macro 6.1.x
+published: true
+category: SSTDocumentation
+---"""
+print header
 print text
 
 

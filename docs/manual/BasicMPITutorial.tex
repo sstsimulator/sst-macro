@@ -48,20 +48,20 @@ This header provides the MPI API and configures MPI function calls to link to \s
 The code now proceeds:
 
 \begin{CppCode}
-    if (nproc != 2) {
-        fprintf(stderr, "sendrecv only runs with two processors\n");
-        abort();
-    }
-    if (me == 0) {
-        MPI_Send(NULL, message_size, MPI_INT, dst, tag, world);
-        printf("rank %i sending a message\n", me);
-    }
-    else {
-        MPI_Recv(NULL, message_size, MPI_INT, src, tag, world, &stat);
-        printf("rank %i receiving a message\n", me);
-    }
-    MPI_Finalize();
-    return 0;
+  if (nproc != 2) {
+    fprintf(stderr, "sendrecv only runs with two processors\n");
+      abort();
+  }
+  if (me == 0) {
+    MPI_Send(NULL, message_size, MPI_INT, dst, tag, world);
+    printf("rank %i sending a message\n", me);
+  }
+  else {
+    MPI_Recv(NULL, message_size, MPI_INT, src, tag, world, &stat);
+    printf("rank %i receiving a message\n", me);
+  }
+  MPI_Finalize();
+  return 0;
 }
 \end{CppCode}
 Here the code just checks the MPI rank and sends (rank 0) or receives (rank 1) a message.

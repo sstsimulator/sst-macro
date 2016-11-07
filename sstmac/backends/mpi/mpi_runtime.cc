@@ -12,6 +12,11 @@
 #include <sstmac/backends/mpi/mpi_runtime.h>
 #include <sstmac/common/thread_info.h>
 #include <cstring>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords(
+"mpi_max_num_requests",
+);
 
 #define mpi_debug(...) \
   debug_printf(sprockit::dbg::parallel, "Rank %d: %s", me_, sprockit::printf(__VA_ARGS__).c_str())

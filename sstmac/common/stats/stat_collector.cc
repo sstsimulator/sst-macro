@@ -13,8 +13,13 @@
 #include <sstmac/common/event_scheduler.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/errors.h>
+#include <sprockit/keyword_registration.h>
 
 ImplementFactory(sstmac::stat_collector);
+RegisterKeywords(
+"suffix",
+"fileroot",
+);
 
 namespace sstmac {
 

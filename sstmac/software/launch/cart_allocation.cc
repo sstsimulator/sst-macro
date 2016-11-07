@@ -9,6 +9,13 @@
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/stl_string.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords(
+"cart_launch_sizes",
+"cart_launch_offsets",
+"cart_sizes",
+"cart_offsets");
 
 namespace sstmac {
 namespace sw {

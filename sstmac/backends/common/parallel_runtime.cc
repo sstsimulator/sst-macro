@@ -6,9 +6,17 @@
 #include <sprockit/output.h>
 #include <sprockit/fileio.h>
 #include <fstream>
+#include <sprockit/keyword_registration.h>
 
 ImplementFactory(sstmac::parallel_runtime);
 RegisterDebugSlot(parallel);
+
+RegisterKeywords(
+"serialization_buffer_size",
+"serialization_num_bufs_allocation",
+"partition",
+"runtime",
+);
 
 namespace sstmac {
 

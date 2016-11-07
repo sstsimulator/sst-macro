@@ -9,7 +9,7 @@
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sprockit/util.h>
 #include <limits>
-#include <inttypes.h>
+#include <cinttypes>
 
 #define event_debug(...) \
   debug_printf(sprockit::dbg::parallel, "Rank %d: %s", rt_->me(), sprockit::printf(__VA_ARGS__).c_str())

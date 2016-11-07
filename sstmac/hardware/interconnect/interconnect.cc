@@ -34,11 +34,9 @@
 ImplementFactory(sstmac::hw::interconnect)
 RegisterDebugSlot(interconnect);
 RegisterNamespaces("interconnect");
+RegisterKeywords("network_name", "interconnect");
 
 namespace sstmac {
-
-sprockit::StaticNamespaceRegister node_ns_reg("node");
-
 namespace hw {
 
 //static sprockit::need_delete_statics<interconnect> del_statics;

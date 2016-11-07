@@ -33,7 +33,24 @@
 
 #include <stdint.h>
 
-RegisterNamespaces("traffic_matrix");
+RegisterNamespaces("traffic_matrix", "num_messages");
+RegisterKeywords(
+"mpi_delay",
+"mpi_implementation",
+"envelope",
+"smp_single_copy_size",
+"max_eager_msg_size",
+"max_vshort_msg_size",
+"mpi_spyplot",
+"mpi_queue_post_rdma_delay",
+"mpi_queue_post_header_delay",
+"mpi_queue_poll_delay",
+"post_rdma_delay",
+"post_header_delay",
+"poll_delay",
+"implementation",
+);
+
 DeclareDebugSlot(mpi_all_sends);
 RegisterDebugSlot(mpi_all_sends);
 

@@ -22,6 +22,10 @@ ImplementFactory(sstmac::hw::router);
 RegisterDebugSlot(router);
 RegisterDebugSlot(routing);
 RegisterNamespaces("router");
+RegisterKeywords(
+"router",
+"ugal_threshold",
+);
 
 namespace sstmac {
 namespace hw {

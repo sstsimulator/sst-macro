@@ -16,7 +16,9 @@
 #include <sstmac/common/sstmac_env.h>
 #include <sstmac/common/thread_lock.h>
 #include <sprockit/sim_parameters.h>
+#include <sprockit/keyword_registration.h>
 
+RegisterKeywords("host_compute_modeling");
 ImplementFactory(sstmac::sw::api)
 
 namespace sstmac {

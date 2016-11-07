@@ -9,6 +9,12 @@
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/stl_string.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords(
+"launch_coordinate_file",
+"coordinate_file",
+);
 
 namespace sstmac {
 namespace sw {
