@@ -23,6 +23,11 @@ namespace sumi {
 
 using sstmac::sw::key;
 
+class pt2pt_delay_histograms
+{
+
+};
+
 /**
  * Persistent send operations (send, bsend, rsend, ssend)
  */
@@ -178,13 +183,36 @@ class mpi_request  {
     return collective_op_;
   }
 
+  void
+  set_time_sent(double now){
+    time_sent_ = now;
+  }
+
+  void
+  set_time_arrived(double now){
+    time_arrived_ = now;
+  }
+
+  double
+  time_sent() const {
+    return time_sent_;
+  }
+
+  double
+  time_arrived() const {
+    return time_arrived_;
+  }
+
  protected:
   MPI_Status stat_;
   key* key_;
   bool complete_;
   bool cancelled_;
+  double time_sent_;
+  double time_arrived_;
   persistent_op* persistent_op_;
   collective_op_base* collective_op_;
+
 };
 
 }

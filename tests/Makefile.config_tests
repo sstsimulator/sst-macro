@@ -74,5 +74,10 @@ test_configs_%.$(CHKSUF): $(SSTMACEXEC)
     $(SSTMACEXEC) -f mpi_test_all.ini -i default.ini -i $*.ini \
     --no-wall-time
 
+test_mpi_stats_%.$(CHKSUF): $(SSTMACEXEC)
+	$(PYRUNTEST) 15 $(top_srcdir) $@ 't > 1 and t < 1.2' \
+    $(SSTMACEXEC) -f mpi_stats.ini -i default.ini -i $*.ini \
+    --no-wall-time
+
 
 #------------------------------------------------------------------------------------------#

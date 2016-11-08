@@ -22,6 +22,7 @@ RegisterKeywords(
 "eager_cutoff",
 "use_put_protocol",
 "algorithm",
+"comm_sync_stats",
 );
 
 
@@ -59,6 +60,58 @@ collective_algorithm_selector* transport::reduce_selector_ = nullptr;
 collective_algorithm_selector* transport::scatter_selector_ = nullptr;
 collective_algorithm_selector* transport::scatterv_selector_ = nullptr;
 
+void
+transport::comm_sync_stats::collect(const message::ptr &msg,
+                                    double now,
+                                    double start)
+{
+  collect(msg->time_sent(), msg->time_arrived(), now, start);
+}
+
+void
+transport::comm_sync_stats::collect(double time_sent,
+                                    double time_arrived,
+                                    double now,
+                                    double start)
+{
+  //the time spent waiting here even before the message is sent
+  double sync_start = std::max(start, last_done);
+  double sync_delay = std::max(0., time_sent - sync_start);
+  total_sync_delay += sync_delay;
+
+  //we have to select what time we consider "comm" to have started
+  double comm_start = std::max(last_done, time_sent);
+  //the time spent I spend waiting with the message in-transit
+  double comm_delay = std::max(0., time_arrived - comm_start);
+  total_comm_delay += comm_delay;
+
+  //the time between the message arriving and me actually processing it
+  double busy_start = std::max(time_arrived, last_done);
+  double busy_delay = now - busy_start;
+  total_busy_delay += busy_delay;
+
+  //printf("Computed: \n"
+  //       "out = (%e,%e,%e)\n"
+  //       "int = (%e,%e,%e,%e,%e)\n",
+  //       sync_delay, comm_delay, busy_delay,
+  //       time_sent, time_arrived, now, start, last_done);
+
+  last_done = now;
+}
+
+void
+transport::comm_sync_stats::print(int rank, std::ostream& os)
+{
+  os << sprockit::printf("Rank %5d comm sync stats\n"
+                         "  SYNC: %12.8es\n"
+                         "  COMM: %12.8es\n"
+                         "  BUSY: %12.8es\n",
+                         rank,
+                         total_sync_delay,
+                         total_comm_delay,
+                         total_busy_delay);
+}
+
 transport::transport(sprockit::sim_parameters* params) :
   inited_(false),
   finalized_(false),
@@ -75,7 +128,8 @@ transport::transport(sprockit::sim_parameters* params) :
   monitor_(nullptr),
   notify_cb_(nullptr),
   nspares_(0),
-  recovery_lock_(0)
+  recovery_lock_(0),
+  comm_sync_stats_(nullptr)
 {
   heartbeat_tag_start_ = 1e9;
   heartbeat_tag_stop_ = heartbeat_tag_start_ + 10000;
@@ -88,6 +142,11 @@ transport::transport(sprockit::sim_parameters* params) :
   use_put_protocol_ = params->get_optional_bool_param("use_put_protocol", false);
 
   lazy_watch_ = params->get_optional_bool_param("lazy_watch", true);
+
+  bool track_comm_stats = params->get_optional_bool_param("comm_sync_stats", false);
+  if (track_comm_stats){
+    comm_sync_stats_ = new comm_sync_stats;
+  }
 }
 
 void
@@ -189,6 +248,8 @@ transport::finalize()
     send_terminate(dst);
   }
   failed_ranks_.end_iteration();
+
+  if (comm_sync_stats_) comm_sync_stats_->print(rank_, std::cout);
 }
 
 void
@@ -523,6 +584,7 @@ transport::~transport()
 {
   if (monitor_) delete monitor_;
   if (global_domain_) delete global_domain_;
+  if (comm_sync_stats_) delete comm_sync_stats_;
 }
 
 void
@@ -1074,7 +1136,6 @@ transport::smsg_send(int dst, message::payload_type_t ev,
   configure_send(dst, ev, msg);
   msg->set_needs_send_ack(needs_ack);
 
-
   debug_printf(sprockit::dbg::sumi,
     "Rank %d SUMI sending short message to %d, ack %srequested ",
     rank_, dst,
@@ -1101,7 +1162,8 @@ transport::smsg_send(int dst, message::payload_type_t ev,
 }
 
 void
-transport::rdma_get(int src, const message::ptr &msg, bool needs_send_ack, bool needs_recv_ack)
+transport::rdma_get(int src, const message::ptr &msg,
+                    bool needs_send_ack, bool needs_recv_ack)
 {
 
   CHECK_IF_I_AM_DEAD(return);

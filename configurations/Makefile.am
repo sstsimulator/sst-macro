@@ -39,7 +39,9 @@ library_include_HEADERS = \
     deepthought.ini \
     parsedumpi.ini \
     mpi_test_all.ini \
-	simple_switch.ini \
+    mpi_coverage.ini \
+    mpi_stats.ini \
+	  simple_switch.ini \
     smp_pflow.ini \
     smp_launch.ini \
     smp_mpi_test.ini \

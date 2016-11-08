@@ -105,6 +105,11 @@ mpi_queue::delete_statics()
 {
 }
 
+double
+mpi_queue::now() const {
+  return os_->now().sec();
+}
+
 mpi_queue::~mpi_queue() throw ()
 {
   //receives can be posted, but not resolved
@@ -283,10 +288,9 @@ void
 mpi_queue::finalize_recv(const mpi_message::ptr& msg,
                          mpi_queue_recv_request* req)
 {
-  //spy_congestion_->add(msg->source(), taskid_, msg->get_delay().msec());
-  if (req->key_){
-    req->key_->complete(msg);
-  }
+  req->key_->complete(msg);
+  req->key_->set_time_sent(msg->time_sent());
+  req->key_->set_time_arrived(msg->time_arrived());
   delete req;
 }
 

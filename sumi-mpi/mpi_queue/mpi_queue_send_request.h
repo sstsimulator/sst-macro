@@ -42,6 +42,10 @@ class mpi_queue_send_request  {
 
   void wait_for_buffer();
 
+  mpi_request* req() const {
+    return key_;
+  }
+
  protected:
   /// The queue.
   mpi_queue* queue_;

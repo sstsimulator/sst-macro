@@ -13,10 +13,9 @@
   if (tag_ == 221) std::cout << sprockit::spkt_printf(__VA_ARGS__) << std::endl
 */
 
-RegisterDebugSlot(sumi_collective_buffer)
+RegisterDebugSlot(sumi_collective_buffer);
 
-namespace sumi
-{
+namespace sumi {
 
 using namespace sprockit::dbg;
 
@@ -297,6 +296,7 @@ dag_collective_actor::start()
 void
 dag_collective_actor::start_action(action* ac)
 {
+  ac->start = my_api_->wall_time();
   debug_printf(sumi_collective,
    "Rank %s starting action %s to partner %s on round %d offset %d -> id = %u: %d pending send headers, %d pending recv headers",
     rank_str().c_str(), action::tostr(ac->type),
@@ -413,6 +413,7 @@ dag_collective_actor::send_eager_message(action* ac)
 {
   collective_work_message::ptr msg = new_message(
         ac, collective_work_message::eager_payload);
+  msg->set_time_sent(my_api_->wall_time());
 
   debug_printf(sumi_collective | sumi_collective_sendrecv | sumi_failure,
    "Rank %s, collective %s(%p) sending eager message to %d on tag=%d "
@@ -434,7 +435,7 @@ dag_collective_actor::send_rdma_put_header(action* ac)
 {
   collective_work_message::ptr msg = new_message(
                         ac, collective_work_message::rdma_put_header);
-
+  msg->set_time_sent(my_api_->wall_time());
   debug_printf(sumi_collective | sumi_collective_sendrecv | sumi_failure,
    "Rank %s, collective %s(%p) sending put header %p to %s on round=%d tag=%d "
    "for buffer %p = %d + %p",
@@ -780,8 +781,7 @@ dag_collective_actor::erase_pending(uint32_t id, pending_msg_map& pending)
   }
 }
 
-
-void
+action*
 dag_collective_actor::comm_action_done(action::type_t ty, int round, int partner)
 {
   uint32_t id = action::message_id(ty, round, partner);
@@ -796,13 +796,18 @@ dag_collective_actor::comm_action_done(action::type_t ty, int round, int partner
      "invalid action %s for round %d, partner %d",
      action::tostr(ty), round, partner);
   }
-  comm_action_done(it->second);
+  action* ac = it->second;
+  comm_action_done(ac);
+  return ac;
 }
 
 void
 dag_collective_actor::data_sent(const collective_work_message::ptr& msg)
 {
-  comm_action_done(action::send, msg->round(), msg->dense_recver());
+  action* ac = comm_action_done(action::send, msg->round(), msg->dense_recver());
+  if (my_api_->sync_stats()){
+    my_api_->sync_stats()->collect(msg, my_api_->wall_time(), ac->start);
+  }
 }
 
 void
@@ -888,19 +893,24 @@ dag_collective_actor::data_recved(
   const collective_work_message::ptr& msg,
   void* recvd_buffer)
 {
-   debug_printf(sumi_collective | sumi_collective_round | sumi_collective_sendrecv,
-        "Rank %s collective %s(%p) finished recving for round=%d tag=%d buffer=%p msg=%p",
-        rank_str().c_str(), to_string().c_str(),
-        this, msg->round(), tag_,
-        (void*) recv_buffer_, msg.get());
+  debug_printf(sumi_collective | sumi_collective_round | sumi_collective_sendrecv,
+    "Rank %s collective %s(%p) finished recving for round=%d tag=%d buffer=%p msg=%p",
+    rank_str().c_str(), to_string().c_str(),
+    this, msg->round(), tag_,
+    (void*) recv_buffer_, msg.get());
 
   uint32_t id = action::message_id(action::recv, msg->round(), msg->dense_sender());
   action* ac = active_comms_[id];
-  if (ac == 0){
+  if (my_api_->sync_stats()){
+    my_api_->sync_stats()->collect(msg, my_api_->wall_time(), ac->start);
+  }
+
+  if (ac == nullptr){
     spkt_throw_printf(sprockit::value_error,
       "on %d, received data for unknown receive %u from %d on round %d",
       dense_me_, id, msg->dense_sender(), msg->round());
   }
+
   data_recved(ac, msg, recvd_buffer);
 }
 
@@ -1046,7 +1056,7 @@ dag_collective_actor::next_round_ready_to_get(
        ac->round, ac->offset, ac->nelems, type_size_,
        get_req->remote_buffer());
 
-
+    header->set_time_sent(my_api_->wall_time());
     my_api_->rdma_get(ac->phys_partner, header,
       true/*need a send ack*/,
       true/*need a local recv ack*/);

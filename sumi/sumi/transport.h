@@ -28,6 +28,31 @@ namespace sumi {
 class transport
 {
 
+  struct comm_sync_stats {
+    comm_sync_stats() :
+      total_sync_delay(0.),
+      total_comm_delay(0.),
+      total_busy_delay(0.),
+      last_done(0.)
+    {
+    }
+
+    void collect(const message::ptr& msg, double now, double start);
+
+    void collect(double time_sent, double time_arrived,
+                 double now, double start);
+
+    void print(int rank, std::ostream& os);
+
+    double total_sync_delay;
+    double total_comm_delay;
+    double total_busy_delay;
+
+   private:
+    double last_done;
+  };
+
+
  public:
   class notify_callback {
    public:
@@ -577,6 +602,11 @@ class transport
     notify_cb_ = 0;
   }
 
+  comm_sync_stats*
+  sync_stats() const {
+    return comm_sync_stats_;
+  }
+
  protected:
   void
   start_transaction(const message::ptr& msg);
@@ -757,6 +787,8 @@ class transport
   bool use_hardware_ack_;
 
   communicator* global_domain_;
+
+  comm_sync_stats* comm_sync_stats_;
 
   notify_callback* notify_cb_;
 

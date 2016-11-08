@@ -49,12 +49,12 @@ class mpi_queue_recv_request  {
     seqnum_ = seqnum;
   }
 
+  mpi_request* req() const {
+    return key_;
+  }
+
   bool
   is_cancelled() const;
-
- private:
-  void
-  finish_message(const mpi_message::ptr& mess);
 
  private:
   /// The queue to whom we belong.

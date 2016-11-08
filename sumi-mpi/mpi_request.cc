@@ -67,7 +67,9 @@ mpi_request::mpi_request(const key::category& cat) :
  complete_(false),
  cancelled_(false),
  persistent_op_(nullptr),
- collective_op_(nullptr)
+ collective_op_(nullptr),
+ time_sent_(-1),
+ time_arrived_(-1)
 {
 }
 
