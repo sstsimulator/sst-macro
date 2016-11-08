@@ -179,10 +179,17 @@ remap_params(sprockit::sim_parameters* params, bool verbose)
   resize_topology(max_nproc, params, verbose);
 
   //here is where we might need to build supplemental params
-  if (params->has_param("congestion_model")){
-    if (!params->has_param("amm_model")){
-      spkt_throw(sprockit::input_error, "require an abstract machine model via amm_model parameter");
-    }
+  bool has_cong_model = params->has_param("congestion_model");
+  bool has_amm_model = params->has_param("amm_model");
+  if (has_cong_model && !has_amm_model){
+    spkt_abort_printf("If specying congestion_model, must also specify amm_model");
+  }
+  if (has_amm_model && !has_cong_model){
+    spkt_abort_printf("If specifiyng amm_model, must also specify congestion_model");
+
+  }
+
+  if (has_cong_model && has_amm_model){
     sstmac::param_expander* hw_expander = sstmac::param_expander_factory::get_param("congestion_model", params);
     hw_expander->expand(params);
     delete hw_expander;

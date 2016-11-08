@@ -275,8 +275,7 @@ class pisces_delay_stats_packet : public pisces_default_packet
 
 class pisces_credit :
   public event,
-  public sprockit::printable,
-  public serializable_type<pisces_credit>
+  public sprockit::printable
 {
 
  public:

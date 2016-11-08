@@ -202,6 +202,7 @@ void
 pisces_switch::handle_credit(event *ev)
 {
   pisces_credit* credit = static_cast<pisces_credit*>(ev);
+  switch_debug("handling credit %s", credit->to_string().c_str());
   out_buffers_[credit->port()]->handle_credit(credit);
 }
 
@@ -209,6 +210,7 @@ void
 pisces_switch::handle_payload(event *ev)
 {
   pisces_payload* payload = static_cast<pisces_payload*>(ev);
+  switch_debug("handling payload %s", payload->to_string().c_str());
   router_->route(payload);
   xbar_->handle_payload(payload);
 }

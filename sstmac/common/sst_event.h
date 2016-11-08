@@ -35,11 +35,6 @@ class event :
  public:
   void
   serialize_order(serializer& ser){}
-
-  virtual bool
-  is_failure() const {
-    return false;
-  }
 };
 #endif
 

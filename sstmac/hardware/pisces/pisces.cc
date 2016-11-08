@@ -35,6 +35,7 @@ pisces_payload::serialize_order(serializer& ser)
   ser & bw_;
   ser & max_in_bw_;
   ser & arrival_;
+  ser & vc_;
 }
 
 void
@@ -81,6 +82,7 @@ pisces_credit::serialize_order(serializer& ser)
   event::serialize_order(ser);
   ser & num_credits_;
   ser & port_;
+  ser & vc_;
 }
 
 }
