@@ -521,7 +521,7 @@ class mpi_api :
 
   int
   ialltoall(int sendcount, MPI_Datatype sendtype,
-           int recvcount, MPI_Datatype recvtype,
+            int recvcount, MPI_Datatype recvtype,
             MPI_Comm comm, MPI_Request* req);
 
   int

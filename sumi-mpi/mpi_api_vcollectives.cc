@@ -3,7 +3,10 @@
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/software/process/operating_system.h>
 
-using namespace sumi;
+#undef start
+#define start(coll, name, ...) \
+  start_##coll(name, __VA_ARGS__); \
+  start_mpi_call(name)
 
 namespace sumi {
 
@@ -38,7 +41,6 @@ mpi_api::start_allgatherv(const char* name,
     void *recvbuf, const int *recvcounts, const int *displs,
     MPI_Datatype recvtype, MPI_Comm comm)
 {
-  start_mpi_call(name);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
     "%s(%d,%s,<...>,%s,%s)", name,
     sendcount, type_str(sendtype).c_str(),
@@ -57,8 +59,9 @@ mpi_api::allgatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                     void *recvbuf, const int *recvcounts, const int *displs,
                     MPI_Datatype recvtype, MPI_Comm comm)
 {
-  collective_op_base* op = start_allgatherv("MPI_Allgatherv", sendbuf, sendcount, sendtype,
-                                       recvbuf, recvcounts, displs, recvtype, comm);
+  collective_op_base* op = start(allgatherv,
+                              "MPI_Allgatherv", sendbuf, sendcount, sendtype,
+                              recvbuf, recvcounts, displs, recvtype, comm);
   wait_collective(op);
   delete op;
   return MPI_SUCCESS;
@@ -76,8 +79,9 @@ mpi_api::iallgatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                     void *recvbuf, const int *recvcounts, const int *displs,
                     MPI_Datatype recvtype, MPI_Comm comm, MPI_Request* req)
 {
-  collective_op_base* op = start_allgatherv("MPI_Iallgatherv", sendbuf, sendcount, sendtype,
-                                       recvbuf, recvcounts, displs, recvtype, comm);
+  collective_op_base* op = start(allgatherv,
+                             "MPI_Iallgatherv", sendbuf, sendcount, sendtype,
+                             recvbuf, recvcounts, displs, recvtype, comm);
   add_immediate_collective(op, req);
   return MPI_SUCCESS;
 }
@@ -107,7 +111,6 @@ mpi_api::start_alltoallv(const char* name, const void *sendbuf, const int *sendc
                    void *recvbuf, const int *recvcounts,
                    const int *rdispls, MPI_Datatype recvtype, MPI_Comm comm)
 {
-  start_mpi_call(name);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
     "%s(<...>,%s,<...>,%s,%s)", name,
     type_str(sendtype).c_str(), type_str(recvtype).c_str(), comm_str(comm).c_str());
@@ -142,8 +145,9 @@ mpi_api::alltoallv(const void *sendbuf, const int *sendcounts,
                    void *recvbuf, const int *recvcounts,
                    const int *rdispls, MPI_Datatype recvtype, MPI_Comm comm)
 {
-  collective_op_base* op = start_alltoallv("MPI_Alltoallv", sendbuf, sendcounts, sdispls, sendtype,
-                                recvbuf, recvcounts, rdispls, recvtype, comm);
+  collective_op_base* op = start(alltoallv,
+                             "MPI_Alltoallv", sendbuf, sendcounts, sdispls, sendtype,
+                             recvbuf, recvcounts, rdispls, recvtype, comm);
   wait_collective(op);
   delete op;
   return MPI_SUCCESS;
@@ -164,8 +168,9 @@ mpi_api::ialltoallv(const void *sendbuf, const int *sendcounts,
                    const int *rdispls, MPI_Datatype recvtype,
                    MPI_Comm comm, MPI_Request* req)
 {
-  collective_op_base* op = start_alltoallv("MPI_Ialltoallv", sendbuf, sendcounts, sdispls, sendtype,
-                                recvbuf, recvcounts, rdispls, recvtype, comm);
+  collective_op_base* op = start(alltoallv,
+                             "MPI_Ialltoallv", sendbuf, sendcounts, sdispls, sendtype,
+                             recvbuf, recvcounts, rdispls, recvtype, comm);
 
   add_immediate_collective(op, req);
   return MPI_SUCCESS;
@@ -197,7 +202,6 @@ mpi_api::start_gatherv(const char* name,
                  void *recvbuf, const int *recvcounts, const int *displs,
                  MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
-  start_mpi_call(name);
   mpi_api_debug(sprockit::dbg::mpi,
     "%s(%d,%s,<...>,%s,%d,%s)", name,
     sendcount, type_str(sendtype).c_str(),
@@ -243,9 +247,10 @@ mpi_api::gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                  void *recvbuf, const int *recvcounts, const int *displs,
                  MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
-  collective_op_base* op = start_gatherv("MPI_Gatherv", sendbuf, sendcount, sendtype,
-                                    recvbuf, recvcounts, displs, recvtype,
-                                    root, comm);
+  collective_op_base* op = start(gatherv,
+                        "MPI_Gatherv", sendbuf, sendcount, sendtype,
+                        recvbuf, recvcounts, displs, recvtype,
+                        root, comm);
   wait_collective(op);
   delete op;
   return MPI_SUCCESS;
@@ -264,9 +269,10 @@ mpi_api::igatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                  void *recvbuf, const int *recvcounts, const int *displs,
                  MPI_Datatype recvtype, int root, MPI_Comm comm, MPI_Request* req)
 {
-  collective_op_base* op = start_gatherv("MPI_Gatherv", sendbuf, sendcount, sendtype,
-                                    recvbuf, recvcounts, displs, recvtype,
-                                    root, comm);
+  collective_op_base* op = start(gatherv,
+                         "MPI_Gatherv", sendbuf, sendcount, sendtype,
+                         recvbuf, recvcounts, displs, recvtype,
+                         root, comm);
   add_immediate_collective(op, req);
   return MPI_SUCCESS;
 }
@@ -295,7 +301,6 @@ mpi_api::start_scatterv(const char* name,
    const void* sendbuf, const int* sendcounts, const int *displs, MPI_Datatype sendtype,
    void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
-  start_mpi_call(name);
   mpi_api_debug(sprockit::dbg::mpi,
     "%s(<...>,%s,%d,%s,%d,%s)", name,
     type_str(sendtype).c_str(),
@@ -338,8 +343,9 @@ int
 mpi_api::scatterv(const void* sendbuf, const int* sendcounts, const int *displs, MPI_Datatype sendtype,
                   void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
-  collective_op_base* op = start_scatterv("MPI_Scatterv", sendbuf, sendcounts, displs, sendtype,
-                                     recvbuf, recvcount, recvtype, root, comm);
+  collective_op_base* op = start(scatterv,
+                               "MPI_Scatterv", sendbuf, sendcounts, displs, sendtype,
+                               recvbuf, recvcount, recvtype, root, comm);
   wait_collective(op);
   delete op;
   return MPI_SUCCESS;
@@ -360,8 +366,9 @@ mpi_api::iscatterv(const void* sendbuf, const int* sendcounts, const int *displs
                   void *recvbuf, int recvcount, MPI_Datatype recvtype,
                   int root, MPI_Comm comm, MPI_Request* req)
 {
-  collective_op_base* op = start_scatterv("MPI_Iscatterv", sendbuf, sendcounts, displs, sendtype,
-                                     recvbuf, recvcount, recvtype, root, comm);
+  collective_op_base* op = start(scatterv,
+                          "MPI_Iscatterv", sendbuf, sendcounts, displs, sendtype,
+                          recvbuf, recvcount, recvtype, root, comm);
 
   add_immediate_collective(op, req);
   return MPI_SUCCESS;

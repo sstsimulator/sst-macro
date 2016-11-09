@@ -12,12 +12,9 @@
 library_includedir=$(includedir)/sstmac/configurations
 
 library_include_HEADERS = \
-    mpi.ini \
-    runtest.ini \
     debug.ini \
     pisces.ini \
     macrels.ini \
-    commodore64.ini \
     hopper_pflow.ini \
     small_torus.ini \
     small_torus_simple.ini \
@@ -45,7 +42,6 @@ library_include_HEADERS = \
     smp_pflow.ini \
     smp_launch.ini \
     smp_mpi_test.ini \
-    franklin_nodemap.txt \
     hopper_nodemap.txt \
     fullmap.txt \
     default.ini \
@@ -54,8 +50,5 @@ library_include_HEADERS = \
     exa1_simple.ini \
     exa2_pflow.ini \
     exa2_simple.ini \
-    exa_3dt.ini \
-    exa_7dt.ini \
-    exa_dfly.ini \
     exa_mini_top.ini
 

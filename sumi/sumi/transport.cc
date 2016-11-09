@@ -102,10 +102,7 @@ transport::comm_sync_stats::collect(double time_sent,
 void
 transport::comm_sync_stats::print(int rank, std::ostream& os)
 {
-  os << sprockit::printf("Rank %5d comm sync stats\n"
-                         "  SYNC: %12.8es\n"
-                         "  COMM: %12.8es\n"
-                         "  BUSY: %12.8es\n",
+  os << sprockit::printf("Rank %5d sync delays: %12.8e %12.8e %12.8e\n",
                          rank,
                          total_sync_delay,
                          total_comm_delay,

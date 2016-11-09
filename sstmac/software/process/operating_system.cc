@@ -107,7 +107,7 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
   compute_sched_ = compute_scheduler_factory::get_optional_param(
                      "compute_scheduler", "simple", params, this);
 
-  if (!call_graph_){ //not yet build
+  if (!call_graph_){ //not yet built
     call_graph_ = optional_stats<graph_viz>(parent,
           params, "call_graph", "call_graph");
   }
