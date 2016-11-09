@@ -23,6 +23,16 @@
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/common/runtime.h>
 #include <sprockit/sim_parameters.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords(
+"launch_node_id_file",
+"launch_node_id_mapper_file",
+"launch_node_id_indexing_file",
+"node_id_indexing_file",
+"node_id_file",
+"node_id_mapper_file",
+);
 
 namespace sstmac {
 namespace sw {

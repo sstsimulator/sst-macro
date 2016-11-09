@@ -1,9 +1,11 @@
 #include <sstmac/libraries/sumi/distributed_service.h>
 #include <sstmac/libraries/sumi/sumi_transport.h>
 #include <sumi/transport.h>
+#include <sprockit/keyword_registration.h>
 
 ImplementFactory(sstmac::distributed_service)
 MakeDebugSlot(distributed_service)
+RegisterKeywords("services");
 
 #define debug(...) debug_printf(sprockit::dbg::distributed_service, __VA_ARGS__)
 

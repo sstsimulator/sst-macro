@@ -17,9 +17,15 @@
 #include <sprockit/statics.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
+#include <sprockit/keyword_registration.h>
 
 ImplementFactory(sstmac::hw::processor);
 RegisterDebugSlot(processor);
+
+RegisterKeywords(
+"frequency",
+"ncores",
+);
 
 namespace sstmac {
 namespace hw {

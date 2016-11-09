@@ -8,6 +8,7 @@ Here we describe a few of the network statistics that can be collected and the b
 These statistics are usually collected on either the NIC, switch crossbar, or switch output buffers.
 
 \subsection{Message Size Histogram}
+\label{subsec:messageSizeHistogram}
 To active a message size histogram on the NIC to determine the distribution of message sizes, the parameter file should include, for example:
 
 \begin{ViFile}
@@ -32,6 +33,8 @@ An example generated for Nekbone with 1024 processors is in Figure \ref{fig:nekb
 \end{figure}
 
 \subsection{Congestion Delay Histogram}
+\label{subsec:congestionDelayHistogram}
+
 A more involved example looks at congestion delays in the application.
 We want to generate a histogram showing the aggregate delay (relative to zero-congestion baseline) that a packet experiences
 going from source to destination.
@@ -87,6 +90,8 @@ switch {
 \end{ViFile}
 
 \subsection{Congestion Spyplot and Multi-stats}
+\label{subsec:congestionSpyplot}
+
 Another way to look for congestion is to create a spyplot.
 Each row/column is a source/destination pair.
 In contrast to previous spyplots that show the amount of traffic,

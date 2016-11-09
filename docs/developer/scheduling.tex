@@ -18,6 +18,7 @@ As discussed in the user's manual, we must be careful in the vocabulary.
 There are a variety of classes the cooperate in driving the simulation, which we now describe.
 
 \section{Event Managers}
+\label{sec:eventManagers}
 The driver for simulations is an event manager that provides the function
 
 \begin{CppCode}
@@ -60,6 +61,7 @@ The execute function is invoked by the \evmgr to run the underlying event.
 There are generally two basic event types in \sstmacro, which we now introduce.
 
 \subsection{Event Handlers}
+\label{subsec:eventHandlers}
 In most cases, the event is represented as a message sent to an object called an \evhandler at a specific simulation time.
 In handling the message, the event handlers change their internal state and may cause more events
 by scheduling new messages at other event handlers (or scheduling messages to itself) at a future time.
@@ -172,6 +174,7 @@ For generic events, one must ensure the event is scheduled to the same node and 
 The event created must be run on the same logical process.
 
 \subsection{Event Heap/Map}
+\label{subsec:eventHeap}
 The major distinction between different event containers is the data structured used.
 The simplest data structure is an event heap or ordered event map.
 The event manager needs to always be processing the minimum event time, which maps naturally onto a min-heap structure.
@@ -179,6 +182,7 @@ Insertion and removal are therefore log(N) operations where N is the number of c
 For most cases, the number and length of events is such that the min-heap is fine.
 
 \section{Event Schedulers}
+\label{sec:eventSchedulers}
 The simulation is partitioned into objects that are capable of scheduling events.
 Common examples of \evscheduler objects are nodes, NICs, memory systems, or the operating system.
 In serial runs, an event scheduler is essentially just a wrapper for the \evmgr and the class is not strictly necessary.

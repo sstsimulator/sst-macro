@@ -20,11 +20,20 @@
 #include <sumi-mpi/mpi_api.h>
 #include <sprockit/errors.h>
 #include <sprockit/sim_parameters.h>
+#include <sprockit/keyword_registration.h>
 #include <stdio.h>
 #include <errno.h>
 #include <cstring>
 #include <fstream>
 #include <algorithm>
+
+RegisterKeywords(
+"parsedumpi_timescale",
+"parsedumpi_terminate_percent",
+"parsedumpi_print_progress",
+"launch_dumpi_metaname",
+"dumpi_metaname",
+);
 
 namespace sumi {
 

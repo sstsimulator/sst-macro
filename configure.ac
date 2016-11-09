@@ -268,7 +268,7 @@ echo "  ucontext         $enable_ucontext"
 
 dnl echo "SST/macro Native   $native_des"
 dnl echo "Python             $PYTHON"
-echo "MPI parallel PDES  $with_mpiparallel"
+echo "MPI PDES           $with_mpiparallel"
 echo "CFLAGS             $CFLAGS"
 echo "CXXFLAGS           $CXXFLAGS"
 echo "CPPFLAGS           $CPPFLAGS"

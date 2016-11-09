@@ -5,7 +5,7 @@
 
 ImplementFactory(sstmac::hw::netlink);
 
-RegisterNamespaces("netlink");
+RegisterNamespaces("netlink", "injection", "ejection");
 
 namespace sstmac {
 namespace hw {

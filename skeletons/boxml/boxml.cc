@@ -4,6 +4,42 @@
 #include <sstmac/common/sim_thread_lock.h>
 #include <sstmac/common/stats/stat_histogram.h>
 #include <sstmac/common/stats/stat_local_double.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords(
+"boxml_boxfile",
+"boxml_eventfiles",
+"boxml_boxfile",
+"boxml_message_factor",
+"boxml_compute_scale",
+"boxml_do_compute",
+"boxml_debug",
+"boxml_randomize_events",
+"boxml_detailed_progress",
+"boxml_events",
+"boxml_round_robin",
+"boxml_minimize_locks",
+"boxml_partitioning",
+"boxml_placement",
+"boxml_repartition_size",
+"boxml_vertex_scale",
+"boxml_rank_remap",
+"boxml_load_balance_tolerance",
+"boxml_fixed_vertex",
+"boxml_zero_edge_weight",
+"boxml_build_graph_only",
+"boxml_synchronization",
+"boxml_binary_file",
+"boxml_xml_only",
+"boxml_assignment",
+);
+
+RegisterNamespaces(
+"effective_bandwidths",
+"polling_time",
+"barrier_time",
+"compute_time",
+);
 
 using namespace std;
 using namespace sstmac;

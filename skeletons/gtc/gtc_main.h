@@ -14,6 +14,7 @@
 
 #include <sstmac/software/process/app.h>
 #include <mpi.h>
+#include <cmath>
 
 #include <gtc_modules.h>
 
@@ -123,7 +124,7 @@ namespace gtc
     modulo(double num, double by){
       int div = num / by;
       double temp = by * div;
-      double ret = std::abs(num - temp);
+      double ret = std::fabs(num - temp);
       if(sign(1, num) != sign(1, by)){
           ret--;
       }

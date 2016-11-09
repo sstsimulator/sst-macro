@@ -53,7 +53,7 @@ test_service::run()
   }
 }
 
-SpktRegister("test_service", distributed_service, test_service);
+ServiceRegister("test_service", test_service);
 
 } //end namespace sstmac
 

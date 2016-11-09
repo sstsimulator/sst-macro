@@ -17,12 +17,17 @@
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 
+RegisterKeywords(
+"lazy_watch",
+"eager_cutoff",
+"use_put_protocol",
+"algorithm",
+);
+
+
 RegisterDebugSlot(sumi);
 
 ImplementFactory(sumi::transport)
-
-
-RegisterKeywords("lazy_watch", "eager_cutoff", "use_put_protocol");
 
 #define START_PT2PT_FUNCTION(dst) \
   start_function(); \

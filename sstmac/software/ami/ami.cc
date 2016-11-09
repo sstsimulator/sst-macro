@@ -27,6 +27,7 @@ tostr(COMM_FUNC func)
 {
   switch(func) {
     enumcase(COMM_SEND);
+    enumcase(COMM_PMI_SEND);
   }
   spkt_throw_printf(sprockit::illformed_error,
                     "Invalid AMI_COMM_FUNC %d received", func);

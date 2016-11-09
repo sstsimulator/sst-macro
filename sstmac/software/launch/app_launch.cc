@@ -16,6 +16,16 @@
 #include <getopt.h>
 
 
+RegisterKeywords(
+"launch_cmd",
+"allocation",
+"indexing",
+"start",
+"size",
+"launch_allocation",
+"launch_indexing",
+);
+
 namespace sstmac {
 namespace sw {
 
