@@ -289,8 +289,10 @@ mpi_queue::finalize_recv(const mpi_message::ptr& msg,
                          mpi_queue_recv_request* req)
 {
   req->key_->complete(msg);
+#if SSTMAC_COMM_SYNC_STATS
   req->key_->set_time_sent(msg->time_sent());
   req->key_->set_time_arrived(msg->time_arrived());
+#endif
   delete req;
 }
 

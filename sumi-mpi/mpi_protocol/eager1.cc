@@ -21,7 +21,9 @@ eager1::send_header(mpi_queue* queue,
 {
   SSTMACBacktrace("MPI Eager 1 Protocol: Send RDMA Header");
   msg->set_content_type(mpi_message::header);
+#if SSTMAC_COMM_SYNC_STATS
   msg->set_time_sent(queue->now());
+#endif
   queue->user_lib_mem()->copy(msg->byte_length());
 
   queue->post_header(msg, false/*the send is "done" - no need to ack*/);

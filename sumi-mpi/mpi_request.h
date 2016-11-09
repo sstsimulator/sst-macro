@@ -17,6 +17,7 @@
 #include <sumi-mpi/mpi_status.h>
 #include <sumi-mpi/mpi_message.h>
 #include <sumi-mpi/mpi_comm/mpi_comm_fwd.h>
+#include <sstmac/common/sstmac_config.h>
 
 
 namespace sumi {
@@ -183,6 +184,17 @@ class mpi_request  {
     return collective_op_;
   }
 
+ private:
+  MPI_Status stat_;
+  key* key_;
+  bool complete_;
+  bool cancelled_;
+
+  persistent_op* persistent_op_;
+  collective_op_base* collective_op_;
+
+#if SSTMAC_COMM_SYNC_STATS
+ public:
   void
   set_time_sent(double now){
     time_sent_ = now;
@@ -203,15 +215,10 @@ class mpi_request  {
     return time_arrived_;
   }
 
- protected:
-  MPI_Status stat_;
-  key* key_;
-  bool complete_;
-  bool cancelled_;
+ private:
   double time_sent_;
   double time_arrived_;
-  persistent_op* persistent_op_;
-  collective_op_base* collective_op_;
+#endif
 
 };
 

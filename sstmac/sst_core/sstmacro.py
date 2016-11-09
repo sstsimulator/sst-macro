@@ -242,8 +242,11 @@ def setupDeprecated():
   icParams = {}
   icParams["topology"] = params["topology"]
   nodeParams["interconnect"] = icParams
-  nodeParams["nic"] = params["nic"]
-  del params["nic"]
+  if params.has_key("nic"):
+    if not nodeParams.has_key("nic"):
+      nodeParams["nic"] = {}
+    nodeParams["nic"].update(params["nic"])
+    del params["nic"]
 
   #move every param in the global namespace 
   #into the individal namespaces

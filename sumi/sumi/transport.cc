@@ -60,6 +60,7 @@ collective_algorithm_selector* transport::reduce_selector_ = nullptr;
 collective_algorithm_selector* transport::scatter_selector_ = nullptr;
 collective_algorithm_selector* transport::scatterv_selector_ = nullptr;
 
+#if SUMI_COMM_SYNC_STATS
 void
 transport::comm_sync_stats::collect(const message::ptr &msg,
                                     double now,
@@ -108,6 +109,7 @@ transport::comm_sync_stats::print(int rank, std::ostream& os)
                          total_comm_delay,
                          total_busy_delay);
 }
+#endif
 
 transport::transport(sprockit::sim_parameters* params) :
   inited_(false),
@@ -125,8 +127,7 @@ transport::transport(sprockit::sim_parameters* params) :
   monitor_(nullptr),
   notify_cb_(nullptr),
   nspares_(0),
-  recovery_lock_(0),
-  comm_sync_stats_(nullptr)
+  recovery_lock_(0)
 {
   heartbeat_tag_start_ = 1e9;
   heartbeat_tag_stop_ = heartbeat_tag_start_ + 10000;
@@ -140,10 +141,14 @@ transport::transport(sprockit::sim_parameters* params) :
 
   lazy_watch_ = params->get_optional_bool_param("lazy_watch", true);
 
+#if SUMI_COMM_SYNC_STATS
   bool track_comm_stats = params->get_optional_bool_param("comm_sync_stats", false);
   if (track_comm_stats){
     comm_sync_stats_ = new comm_sync_stats;
+  } else {
+    comm_sync_stats_ = nullptr;
   }
+#endif
 }
 
 void
@@ -246,7 +251,9 @@ transport::finalize()
   }
   failed_ranks_.end_iteration();
 
+#if SUMI_COMM_SYNC_STATS
   if (comm_sync_stats_) comm_sync_stats_->print(rank_, std::cout);
+#endif
 }
 
 void
@@ -581,7 +588,9 @@ transport::~transport()
 {
   if (monitor_) delete monitor_;
   if (global_domain_) delete global_domain_;
+#if SUMI_COMM_SYNC_STATS
   if (comm_sync_stats_) delete comm_sync_stats_;
+#endif
 }
 
 void

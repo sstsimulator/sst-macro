@@ -413,8 +413,9 @@ dag_collective_actor::send_eager_message(action* ac)
 {
   collective_work_message::ptr msg = new_message(
         ac, collective_work_message::eager_payload);
+#if SUMI_COMM_SYNC_STATS
   msg->set_time_sent(my_api_->wall_time());
-
+#endif
   debug_printf(sumi_collective | sumi_collective_sendrecv | sumi_failure,
    "Rank %s, collective %s(%p) sending eager message to %d on tag=%d "
    "for buffer %p = %d + %p",
@@ -435,7 +436,9 @@ dag_collective_actor::send_rdma_put_header(action* ac)
 {
   collective_work_message::ptr msg = new_message(
                         ac, collective_work_message::rdma_put_header);
+#if SUMI_COMM_SYNC_STATS
   msg->set_time_sent(my_api_->wall_time());
+#endif
   debug_printf(sumi_collective | sumi_collective_sendrecv | sumi_failure,
    "Rank %s, collective %s(%p) sending put header %p to %s on round=%d tag=%d "
    "for buffer %p = %d + %p",
@@ -805,9 +808,11 @@ void
 dag_collective_actor::data_sent(const collective_work_message::ptr& msg)
 {
   action* ac = comm_action_done(action::send, msg->round(), msg->dense_recver());
+#if SUMI_COMM_SYNC_STATS
   if (my_api_->sync_stats()){
     my_api_->sync_stats()->collect(msg, my_api_->wall_time(), ac->start);
   }
+#endif
 }
 
 void
@@ -901,10 +906,11 @@ dag_collective_actor::data_recved(
 
   uint32_t id = action::message_id(action::recv, msg->round(), msg->dense_sender());
   action* ac = active_comms_[id];
+#if SUMI_COMM_SYNC_STATS
   if (my_api_->sync_stats()){
     my_api_->sync_stats()->collect(msg, my_api_->wall_time(), ac->start);
   }
-
+#endif
   if (ac == nullptr){
     spkt_throw_printf(sprockit::value_error,
       "on %d, received data for unknown receive %u from %d on round %d",
@@ -1056,7 +1062,10 @@ dag_collective_actor::next_round_ready_to_get(
        ac->round, ac->offset, ac->nelems, type_size_,
        get_req->remote_buffer());
 
+#if SUMI_COMM_SYNC_STATS
     header->set_time_sent(my_api_->wall_time());
+#endif
+
     my_api_->rdma_get(ac->phys_partner, header,
       true/*need a send ack*/,
       true/*need a local recv ack*/);

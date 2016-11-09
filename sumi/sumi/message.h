@@ -6,6 +6,7 @@
 #include <sprockit/printable.h>
 #include <sumi/serialization.h>
 #include <sumi/config.h>
+#include <sumi/sumi_config.h>
 
 START_SERIALIZATION_NAMESPACE
 template <>
@@ -99,6 +100,10 @@ class message :
           long num_bytes,
           class_t cls,
           payload_type_t pty) :
+#if SUMI_COMM_SYNC_STATS
+    sent_(-1),
+    arrived_(-1),
+#endif
     sender_(sender),
     recver_(recver),
     num_bytes_(num_bytes),
@@ -106,9 +111,7 @@ class message :
     class_(cls),
     transaction_id_(-1),
     needs_send_ack_(false),
-    needs_recv_ack_(false),
-    sent_(-1),
-    arrived_(-1)
+    needs_recv_ack_(false)
   {
   }
 
@@ -245,6 +248,35 @@ class message :
    return local_buffer_.ptr;
   }
 
+ protected:
+  void
+  clone_into(message* cln) const;
+
+  static void
+  buffer_send(public_buffer& buf, long num_bytes);
+
+ protected:
+  long num_bytes_;
+  sumi::public_buffer local_buffer_;
+  sumi::public_buffer remote_buffer_;
+
+ private:
+  payload_type_t payload_type_;
+
+  class_t class_;
+
+  int sender_;
+
+  int recver_;
+
+  int transaction_id_;
+
+  bool needs_send_ack_;
+
+  bool needs_recv_ack_;
+
+#if SUMI_COMM_SYNC_STATS
+ public:
   double time_sent() const {
     return sent_;
   }
@@ -265,37 +297,11 @@ class message :
   set_time_arrived(double now){
     arrived_ = now;
   }
-
- protected:
-  void
-  clone_into(message* cln) const;
-
-  static void
-  buffer_send(public_buffer& buf, long num_bytes);
-
- protected:
-  long num_bytes_;
-  sumi::public_buffer local_buffer_;
-  sumi::public_buffer remote_buffer_;
-
  private:
   double sent_;
 
   double arrived_;
-
-  payload_type_t payload_type_;
-
-  class_t class_;
-
-  int sender_;
-
-  int recver_;
-
-  int transaction_id_;
-
-  bool needs_send_ack_;
-
-  bool needs_recv_ack_;
+#endif
 };
 
 class system_bcast_message : public message

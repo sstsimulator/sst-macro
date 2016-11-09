@@ -41,7 +41,9 @@ rendezvous_get::incoming_header(mpi_queue *queue,
                                 mpi_queue_recv_request *req)
 {
   SSTMACBacktrace("MPI Rendezvous Protocol: RDMA Handle Header");
+#if SSTMAC_COMM_SYNC_STATS
   msg->set_time_sent(queue->now());
+#endif
   if (req) {
     mpi_queue_action_debug(
       queue->api()->comm_world()->rank(),

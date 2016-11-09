@@ -73,8 +73,10 @@ mpi_queue_send_request::complete(const mpi_message::ptr& msg)
     queue_->api()->type_from_id(msg->type())->label.c_str(),
     seqnum_);
 
+#if SSTMAC_COMM_SYNC_STATS
   key_->set_time_arrived(queue_->now());
   key_->set_time_sent(msg->time_sent());
+#endif
 
   key_->complete();
 }

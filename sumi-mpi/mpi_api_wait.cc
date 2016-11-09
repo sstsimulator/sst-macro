@@ -40,12 +40,14 @@ void
 mpi_api::finalize_wait_request(mpi_request* reqPtr, MPI_Request* req,
                                MPI_Status* status, timestamp wait_start)
 {
+#if SSTMAC_COMM_SYNC_STATS
   if (sync_stats()){
     sync_stats()->collect(reqPtr->time_sent(),
                           reqPtr->time_arrived(),
                           now().sec(),
                           wait_start.sec());
   }
+#endif
   if (status != MPI_STATUS_IGNORE){
     *status = reqPtr->status();
   }

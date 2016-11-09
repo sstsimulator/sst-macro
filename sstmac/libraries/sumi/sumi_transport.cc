@@ -480,9 +480,11 @@ sumi_transport::ping_timeout(sumi::pinger* pnger)
 void
 sumi_transport::incoming_message(transport_message *msg)
 {
+#if SSTMAC_COMM_SYNC_STATS
   if (msg){
     msg->payload()->set_time_arrived(wall_time());
   }
+#endif
   queue_->put_message(msg);
 }
 
