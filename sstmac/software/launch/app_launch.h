@@ -103,6 +103,11 @@ class software_launch
     int& procs_per_node,
     std::vector<int>& affinities);
 
+  bool proc_done() {
+    ++num_finished_;
+    return num_finished_ == nproc_;
+  }
+
  private:
   sw::node_allocator* allocator_;
   sw::task_mapper* indexer_;
@@ -121,6 +126,8 @@ class software_launch
 
   int procs_per_node_;
 
+  int num_finished_;
+
   void parse_launch_cmd(sprockit::sim_parameters* params);
 
  private:
@@ -131,13 +138,15 @@ class software_launch
 class app_launch : public software_launch
 {
  public:
-  app_launch(sprockit::sim_parameters* params, app_id aid);
+  app_launch(sprockit::sim_parameters* params,
+             app_id aid,
+             const std::string& app_namespace);
 
   virtual ~app_launch();
 
-  std::string
-  app_name() const {
-    return app_name_;
+  const std::string&
+  app_namespace() const {
+    return app_namespace_;
   }
 
   sprockit::sim_parameters*
@@ -165,6 +174,9 @@ class app_launch : public software_launch
   static_app_launch(int aid, sprockit::sim_parameters* params);
 
   static app_launch*
+  static_app_launch(int aid);
+
+  static app_launch*
   static_app_launch(const std::string& name);
 
   static app_launch*
@@ -181,7 +193,7 @@ class app_launch : public software_launch
  private:
   sw::app_id aid_;
 
-  std::string app_name_;
+  std::string app_namespace_;
 
   sprockit::sim_parameters* app_params_;
 

@@ -98,7 +98,7 @@ def parseLine(line):
   if "WARNING:" in line or "Maximum bad" in line:
     return IGNORE, None
 
-  if "Event queue empty" in line:
+  if "Event queue empty" in line or "Simulation is complete, simu" in line:
     return CORE_TIME, None
 
   match = time_point_regexp.search(line)

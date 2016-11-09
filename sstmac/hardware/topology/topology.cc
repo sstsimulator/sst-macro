@@ -3,6 +3,7 @@
 #include <sstmac/common/thread_lock.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/common/event_manager.h>
+#include <sstmac/common/sstmac_config.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 
@@ -38,6 +39,10 @@ const int topology::eject = -1;
 #if SSTMAC_INTEGRATED_SST_CORE
 int topology::nproc = 0;
 
+#if SSTMAC_HAVE_MPI_H
+#include <mpi.h>
+#endif
+
 switch_id
 topology::node_to_logp_switch(node_id nid) const
 {
@@ -59,6 +64,13 @@ topology::node_to_logp_switch(node_id nid) const
 topology::topology(sprockit::sim_parameters* params) :
   rng_(nullptr)
 {
+#if SSTMAC_INTEGRATED_SST_CORE
+#if SSTMAC_HAVE_MPI_H
+  MPI_Comm_size(MPI_COMM_WORLD, &nproc);
+#else
+  nproc = 1;
+#endif
+#endif
   std::vector<RNG::rngint_t> seeds(2);
   seeds[0] = 42;
   if (params->has_param("seed")) {

@@ -24,8 +24,8 @@ transport_message::serialize_order(serializer& ser)
 std::string
 transport_message::to_string() const
 {
-  return sprockit::printf("sumi transport message %lu from %d:%d to %d:%d carrying %s",
-    flow_id(), src_, src_app_, dest_, dest_app_, sprockit::to_string(payload_.get()).c_str());
+  return sprockit::printf("sumi transport message %lu to node %d from %d:%d to %d:%d carrying %s",
+    flow_id(), toaddr_, src_, src_app_, dest_, dest_app_, sprockit::to_string(payload_.get()).c_str());
 }
 
 void

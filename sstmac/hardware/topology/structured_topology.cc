@@ -25,8 +25,8 @@ structured_topology::structured_topology(sprockit::sim_parameters* params,
   max_ports_injection_ = netlinks_per_switch_;
 
   sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
-  std::string netlinkModel = netlink_params->get_optional_param("model", "null");
-  if (netlinkModel != "null"){
+  if (netlink_params->has_scoped_param("model") &&
+      netlink_params->get_scoped_param("model") != "null"){
     num_nodes_per_netlink_ = netlink_params->get_int_param("concentration");
     netlinks_per_switch_ /= num_nodes_per_netlink_;
   } else {
