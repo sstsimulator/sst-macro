@@ -32,17 +32,16 @@ If the parameter is set to 100-1000 bytes, e.g., that means we are doing more fi
 \subsection{Common Parameters}
 \label{subsec:commonParams}
 The following parameters define the CPU and compute power of the node (independent of memory subsystem).
-They are universal and are valid for all abstract machine models.
+They are universal and are valid for all abstract machine models.  Using the preferred (current) namespace parameters:
 
-Using the preferred (current) namespace parameters:
 \begin{ViFile}
 node.model = simple
 node.frequency = 2.1ghz
 node.ncores = 24
 node.nsockets = 4
 \end{ViFile}
-
 or using the deprecated parameters:
+
 \begin{ViFile}
 node_name = simple
 node_frequency = 2.1ghz
@@ -74,7 +73,6 @@ injection_latency = 1us
 memory_bandwidth = 10GB/s
 memory_latency = 15ns
 \end{ViFile}
-
 These are special parameters used by the AMM configurations.
 They can be by-passed by directly using fully namespaced parameters:
 

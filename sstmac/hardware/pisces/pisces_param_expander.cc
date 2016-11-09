@@ -104,7 +104,6 @@ pisces_param_expander::expand_amm1_network(sprockit::sim_parameters* params,
                                            bool set_xbar)
 {
 
-
   //JJW - no, don't do this
   //The link bandwidths will get multiplied during the connect
   //if redundant links, appropriately multiply the bandwidth
@@ -143,12 +142,10 @@ pisces_param_expander::expand_amm1_network(sprockit::sim_parameters* params,
     if (xbar_lat.size() == 0){
       xbar_params->add_param_override("send_latency", "0ns");
     } else {
-      printf("setting xbar from latency %s\n", xbar_lat.c_str());
       xbar_params->add_param_override("send_latency", xbar_lat);
     }
-  } else {
-    printf("already had xbar %s\n", xbar_params->get_param("send_latency").c_str());
   }
+
   if (!xbar_params->has_param("credit_latency")){
     if (link_lat.size() == 0){
       spkt_abort_printf("must specify xbar credit latency or link latency");

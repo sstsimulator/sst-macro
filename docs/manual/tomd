@@ -5,6 +5,9 @@ import sys
 import re
 import os
 
+math_regexp = re.compile(r'\\\[(.*?)\\\]', re.DOTALL)
+inline_math_regexp = re.compile(r'\$(.*?)\$')
+
 section_template = r'\\begin{%s}(.*?)\\end{%s}'
 comment_regexp = re.compile(r'%(.*)')
 quotes_regexp = re.compile("``(.*?)''", re.DOTALL)
@@ -273,6 +276,24 @@ def repl_param_type(match):
   new = "(%s)" % old
   return new
 
+def clean_up_math(text):
+  def repl(match):
+    return "(%s)" % match.groups()[0]
+  regexp = re.compile("_{(.*?)}")
+  return regexp.sub(repl, text)
+
+def repl_inline_math(match):
+  text = match.groups()[0].strip()
+  if "SST" in text or "PATH" in text:
+    return "$%s$" % (text)
+  else:
+    return clean_up_math(text)
+
+def repl_math(match):
+  text = match.groups()[0].strip()
+  #sys.stderr.write("MATCH=%s\n" % text)
+  return "\n%s\n" % clean_up_math(text)
+
 def return_self(match):
   return match.groups()[0]
 
@@ -289,6 +310,13 @@ repls = [
   (newcommand_regexp, ''),
   (arrayStretch_regexp, ''),
   (quotes_regexp, repl_quotes),
+  (r'\nodecls','\inlinecode{node}'),
+  (r'\topcls','\inlinecode{topology}'),
+  (r'\switchid','\inlinecode{switch_id}'),
+  (r'\nodeid','\inlinecode{node_id}'),
+  (r'\evhandler','\inlinecode{event_handler'),
+  (r'\evscheduler','\inlinecode{event_scheduler}'),
+  (r'\evmgr','\inlinecode{event_manager}'),
   (section_regexp("CppCode")  , repl_code_block),
   (section_regexp("ShellCmd") , repl_code_block),
   (section_regexp("ViFile")   , repl_code_block),
@@ -299,6 +327,8 @@ repls = [
   (paragraph_split_cleanup_regexp , "\n\n"),
   (param_table_regexp , lambda x: repl_tabular(x, param_table_header)),
   (tabular_regexp , lambda x: repl_tabular(x,"")),
+  (math_regexp, repl_math),
+  (inline_math_regexp, repl_inline_math),
   (macro_regexp('title') , repl_title),
   (macro_regexp('aside') , return_self),
   (macro_regexp('titlepic') , process_title_pic),
@@ -310,6 +340,11 @@ repls = [
   (macro_regexp('textit') , return_self),
   (macro_regexp('author') , ""),
   (macro_regexp('url') , return_self),
+  (r'\times', 'X'),
+  (r'\Delta', '&Delta;'),
+  (r'\alpha', '&alpha;'),
+  (r'\beta', '&beta;'),
+  (r'\mu', '&mu;'),
   (r'\centering' , ''),
   (r'\sstmacro' , 'SST-macro'),
   (r'\sprockit', 'SProCKit'),
