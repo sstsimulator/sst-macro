@@ -212,6 +212,7 @@ def setupDeprecated():
   params = readCmdLineParams()
 
   nodeParams = params["node"]
+  swParams = params["switch"]
 
   builtinApps = [
     "apitest",
@@ -239,6 +240,13 @@ def setupDeprecated():
         exec(cmd)
       del params[ns]
 
+  debugList = []
+  if params.has_key("debug"):
+    debugList = params["debug"].strip().split()
+  for i in range(len(sys.argv)):
+    if sys.argv[i] == "-d" or sys.argv[i] == "--debug":
+      debugList.extend(sys.argv[i+1].split(","))
+
   icParams = {}
   icParams["topology"] = params["topology"]
   nodeParams["interconnect"] = icParams
@@ -247,6 +255,9 @@ def setupDeprecated():
       nodeParams["nic"] = {}
     nodeParams["nic"].update(params["nic"])
     del params["nic"]
+  if debugList:
+    nodeParams["debug"] = " ".join(debugList)
+  swParams["topology"] = params["topology"]
 
   #move every param in the global namespace 
   #into the individal namespaces

@@ -32,7 +32,8 @@ namespace sw {
 std::map<std::string, app_launch*> app_launch::static_app_launches_;
 
 software_launch::software_launch(sprockit::sim_parameters *params) :
-  indexed_(false)
+  indexed_(false),
+  num_finished_(0)
 {
   top_ = sstmac::hw::topology::static_topology(params);
 
@@ -70,10 +71,12 @@ app_launch::~app_launch()
 {
 }
 
-app_launch::app_launch(sprockit::sim_parameters* params, app_id aid) :
+app_launch::app_launch(sprockit::sim_parameters* params,
+                       app_id aid,
+                       const std::string& app_namespace) :
   software_launch(params),
   aid_(aid),
-  app_name_(params->get_param("name")),
+  app_namespace_(app_namespace),
   app_params_(params)
 {
 }
@@ -106,13 +109,14 @@ app_launch::service_info(const std::string& name)
 }
 
 app_launch*
-app_launch::static_app_launch(int aid, const std::string& name, sprockit::sim_parameters* params)
+app_launch::static_app_launch(int aid, const std::string& name,
+                              sprockit::sim_parameters* params)
 {
   launch_lock.lock();
   if (!static_app_launches_[name]){
     if (params->has_namespace(name)){
       sprockit::sim_parameters* app_params = params->get_namespace(name);
-      app_launch* mgr = new app_launch(app_params, app_id(aid));
+      app_launch* mgr = new app_launch(app_params, app_id(aid), name);
       static_app_launches_[name] = mgr;
     }
   }

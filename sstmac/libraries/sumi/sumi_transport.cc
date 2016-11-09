@@ -40,6 +40,17 @@ class sumi_server :
                         rank, app_id, os_->addr());
     }
     slot = proc;
+
+    auto iter = pending_.begin();
+    auto end = pending_.end();
+    while (iter != end){
+      auto tmp = iter++;
+      transport_message* msg = *tmp;
+      if (msg->dest_rank() == rank && msg->dest_app() == proc->sid().app_){
+        pending_.erase(tmp);
+        proc->incoming_message(msg);
+      }
+    }
   }
 
   bool
@@ -62,14 +73,15 @@ class sumi_server :
                  os_->addr(), smsg->payload()->to_string().c_str());
     sumi_transport* tport = procs_[smsg->dest_app()][smsg->dest_rank()];
     if (!tport){
-      spkt_abort_printf("sumi_server::get_proc: invalid app %d for rank %d for server on OS %d",
-                        smsg->dest_app(), smsg->dest_rank(), os_->addr());
+      pending_.push_back(smsg);
+    } else {
+      tport->incoming_message(smsg);
     }
-    tport->incoming_message(smsg);
   }
 
  private:
   std::map<int, std::map<int, sumi_transport*> > procs_;
+  std::list<transport_message*> pending_;
 
 };
 
@@ -106,13 +118,13 @@ sumi_transport::sumi_transport(sprockit::sim_parameters* params,
   else {
     server = safe_cast(sumi_server, server_lib);
   }
-  server->register_proc(rank_, this);
 
   rank_mapper_ = runtime::launcher()->task_mapper(sid.app_);
   nproc_ = rank_mapper_->nproc();
   loc_ = os_->event_location();
 
   queue_ = new sumi_queue(os_);
+  server->register_proc(rank_, this);
 }
 
 void
