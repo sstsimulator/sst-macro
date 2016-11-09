@@ -3,10 +3,6 @@
 AC_DEFUN([CHECK_MPI_PARALLEL], [
 
 
-AC_CHECK_HEADERS([mpi.h],
-  have_mpi_header=yes,
-  have_mpi_header=no
-)
 if test "X$have_mpi_header" = "Xyes"; then
   AC_CHECK_FUNCS([MPI_Init],
     AC_MSG_RESULT([yes])
