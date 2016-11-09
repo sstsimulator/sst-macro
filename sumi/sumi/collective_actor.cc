@@ -683,40 +683,35 @@ dag_collective_actor::deadlock_check() const
   std::cout << sprockit::printf("  deadlocked actor %d of %d on tag %d",
     dense_me_, dense_nproc_, tag_) << std::endl;
 
-  {std::list<action*>::const_iterator it, end = completed_actions_.end();
-  for (it=completed_actions_.begin(); it != end; ++it){
-    action* ac = *it;
+  for (action* ac : completed_actions_){
     std::cout << sprockit::printf("    Rank %s: completed action %s partner %d round %d",
                       rank_str().c_str(), action::tostr(ac->type), ac->partner, ac->round) << std::endl;
-  }}
+  }
 
-  {active_map::const_iterator it, end = active_comms_.end();
-  for (it=active_comms_.begin(); it != end; ++it){
-    action* ac = it->second;
+  for (auto& pair : active_comms_){
+    action* ac = pair.second;
     std::cout << sprockit::printf("    Rank %s: active %s",
                     rank_str().c_str(), ac->to_string().c_str()) << std::endl;
-  }}
+  }
 
-  {std::pair<pending_map::const_iterator, pending_map::const_iterator> range;
-  pending_map::const_iterator it, end = pending_comms_.end();
-  for (it=pending_comms_.begin(); it != end; ++it){
-    uint32_t id = it->first;
+  for (auto& pair  : pending_comms_){
+    uint32_t id = pair.first;
     action::type_t ty;
     int r, p;
     action::details(id, ty, r, p);
-    range = pending_comms_.equal_range(id);
+    auto range = pending_comms_.equal_range(id);
     if (range.first != range.second){
       std::cout << sprockit::printf("    Rank %s: waiting on action %s partner %d round %d",
                       rank_str().c_str(), action::tostr(ty), p, r) << std::endl;
     }
 
-    for (pending_map::const_iterator rit=range.first; rit != range.second; ++rit){
+    for (auto rit=range.first; rit != range.second; ++rit){
       action* ac = rit->second;
       std::cout << sprockit::printf("      Rank %s: pending %s partner %d round %d join counter %d",
                     rank_str().c_str(), action::tostr(ac->type), ac->partner, ac->round, ac->join_counter)
                 << std::endl;
     }
-  }}
+  }
 }
 
 void
@@ -1164,8 +1159,8 @@ dag_collective_actor::done_msg() const
   collective_done_message::ptr msg = new collective_done_message(tag_, type_, comm_);
   msg->set_comm_rank(comm_->my_comm_rank());
   msg->set_result(result_buffer_.ptr);
-  thread_safe_set<int>::const_iterator it, end = failed_ranks_.start_iteration();
-  for (it = failed_ranks_.begin(); it != end; ++it){
+  auto end = failed_ranks_.start_iteration();
+  for (auto it = failed_ranks_.begin(); it != end; ++it){
     msg->append_failed(global_rank(*it));
   }
   failed_ranks_.end_iteration();
@@ -1309,8 +1304,8 @@ collective_actor::failed_proc_string() const
 {
   std::stringstream sstr;
   sstr << "{";
-  thread_safe_set<int>::const_iterator it, end = failed_ranks_.start_iteration();
-  for (it = failed_ranks_.begin(); it != end; ++it){
+  auto end = failed_ranks_.start_iteration();
+  for (auto it = failed_ranks_.begin(); it != end; ++it){
     sstr << " " << *it;
   }
   failed_ranks_.end_iteration();

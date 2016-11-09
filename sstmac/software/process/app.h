@@ -29,11 +29,6 @@ namespace sw {
 
 class mutex_t  {
  public:
-  std::string
-  to_string() const {
-    return "sstmac mutex";
-  }
-
   /** Blocking keys for those threads waiting on the mutex */
   std::list<key*> waiters;
   std::list<key*> conditionals;
@@ -52,9 +47,7 @@ typedef std::map<long, mutex_t*> condition_t;
  * Messaging models are supported through an api class,
  * which are stored by the app
  */
-class app :
-  public thread,
-  public sprockit::factory_type
+class app : public thread
 {
  public:
   typedef void (*destructor_fxn)(void*);
@@ -68,23 +61,8 @@ class app :
   static sprockit::sim_parameters*
   get_params();
 
-  software_id
-  sid() const {
-   return id_;
-  }
-
-  int
-  appnum() const {
-    return id_.app_;
-  }
-
-  int
-  tasknum() const {
-    return id_.task_;
-  }
-
   app*
-  parent_app() const {
+  parent_app() const override {
     return const_cast<app*>(this);
   }
 
@@ -126,25 +104,13 @@ class app :
   /// Goodbye.
   virtual ~app();
 
-  virtual void
-  consume_params(sprockit::sim_parameters* params) = 0;
-
-  virtual app*
-  clone_type() const = 0;
-
-  app*
-  clone(software_id newid);
-
   //called when killing the app, in case you want to check or clean anything up before destructor
-  virtual void kill();
+  virtual void kill() override;
 
   virtual void
   skeleton_main() = 0;
 
-  virtual void run();
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params);
+  void run() override;
 
   sprockit::sim_parameters*
   params() const {
@@ -213,20 +179,20 @@ class app :
   bool erase_mutex(int id);
 
   virtual void
-  clear_subthread_from_parent_app();
+  clear_subthread_from_parent_app() override;
 
  protected:
   friend class thread;
 
-  app();
+  app(sprockit::sim_parameters *params, software_id sid,
+      operating_system* os);
 
   api*
-  _get_api(const char* name);
+  _get_api(const char* name) override;
 
-  virtual void init_mem_lib();
+  void init_mem_lib();
 
   sprockit::sim_parameters* params_;
-  software_id id_;
 
  private:
   lib_compute_inst* compute_inst_;
@@ -246,27 +212,23 @@ class app :
   std::map<int, condition_t> conditions_;
 
   std::map<int, destructor_fxn> tls_key_fxns_;
+  spkt_unordered_map<std::string, api*> apis_;
 
 };
 
 class user_app_cxx_full_main : public app
 {
  public:
+  user_app_cxx_full_main(sprockit::sim_parameters* params, software_id sid,
+                         operating_system* os);
+
   static void
   register_main_fxn(const char* name, app::main_fxn fxn);
 
-  void skeleton_main();
-
-  virtual void
-  consume_params(sprockit::sim_parameters *params);
+  void skeleton_main() override;
 
   static void
   delete_statics();
-
-  app*
-  clone_type() const {
-    return new user_app_cxx_full_main;
-  }
 
   struct argv_entry {
     char** argv;
@@ -286,18 +248,13 @@ class user_app_cxx_full_main : public app
 class user_app_cxx_empty_main : public app
 {
  public:
+  user_app_cxx_empty_main(sprockit::sim_parameters* params, software_id sid,
+                          operating_system* os);
+
   static void
   register_main_fxn(const char* name, app::empty_main_fxn fxn);
 
-  virtual void
-  consume_params(sprockit::sim_parameters *params);
-
-  app*
-  clone_type() const {
-    return new user_app_cxx_empty_main;
-  }
-
-  void skeleton_main();
+  void skeleton_main() override;
 
  private:
   static std::map<std::string, app::empty_main_fxn>* empty_main_fxns_;
@@ -308,7 +265,7 @@ class user_app_cxx_empty_main : public app
 /** utility function for computing stuff */
 void compute_time(double tsec);
 
-DeclareFactory(app)
+DeclareFactory(app, software_id, operating_system*)
 
 }
 } // end of namespace sstmac.

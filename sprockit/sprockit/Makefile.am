@@ -27,7 +27,6 @@ SOURCES = \
   statics.cc \
   output.cc \
   fileio.cc \
-  factories/factory.cc \
   spkt_string.cc \
   units.cc \
   driver_util.cc \
@@ -58,6 +57,7 @@ nobase_library_include_HEADERS = \
   sim_parameters_fwd.h \
   statics.h \
   spkt_string.h \
+  printable.h \
   stl_string.h \
   spkt_new.h \
   malloc.h \

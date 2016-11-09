@@ -33,14 +33,9 @@ class stop_event : public event_queue_entry
     man_->stop();
   }
 
-  std::string
-  to_string() const {
-    return "stop event";
-  }
-
   stop_event(event_manager* man) :
     man_(man),
-    event_queue_entry(event_loc_id::null, event_loc_id::null)
+    event_queue_entry(device_id(), device_id())
   {
   }
 
@@ -49,10 +44,20 @@ class stop_event : public event_queue_entry
 
 };
 
-std::vector<pthread_t> event_manager::pthreads_;
-std::vector<pthread_attr_t> event_manager::pthread_attrs_;
-event_manager* event_manager::global = 0;
 
+event_manager* event_manager::global = nullptr;
+
+event_manager::event_manager(sprockit::sim_parameters *params, parallel_runtime *rt) :
+  rt_(rt),
+  finish_on_stop_(true),
+  stopped_(true),
+  thread_id_(0),
+  nthread_(1),
+  me_(0),
+  nproc_(1),
+  complete_(false)
+{
+}
 
 event_manager*
 event_manager::ev_man_for_thread(int thread_id) const
@@ -62,31 +67,15 @@ event_manager::ev_man_for_thread(int thread_id) const
   return const_cast<event_manager*>(this);
 }
 
-int
-event_manager::current_thread_id()
-{
-  if (pthreads_.size() <= 1){
-    return 0;
-  }
-
-  for (int i=1; i < pthreads_.size(); ++i){
-    if (pthread_equal(pthread_self(), pthreads_[i])){
-      return i;
-    }
-  }
-  return 0;
-}
-
 void
 event_manager::ipc_schedule(timestamp t,
-  event_loc_id dst,
-  event_loc_id src,
+  device_id dst,
+  device_id src,
   uint32_t seqnum,
   event* ev)
 {
   spkt_throw_printf(sprockit::unimplemented_error,
-   "%s::ipc_schedule: not valid for chosen event manager",
-   to_string().c_str());
+    "%s::ipc_schedule: not valid for chosen event manager");
 }
 
 void
@@ -104,37 +93,13 @@ event_manager::multithread_schedule(
     event_queue_entry* ev)
 {
   spkt_throw_printf(sprockit::unimplemented_error,
-    "%s::multithread_schedule: not valid for chosen event manager",
-    to_string().c_str());
+    "%s::multithread_schedule: not valid for chosen event manager");
 }
 
 partition*
 event_manager::topology_partition() const
 {
   return rt_->topology_partition();
-}
-
-parallel_runtime*
-event_manager::runtime() const
-{
-  return rt_;
-}
-
-void
-event_manager::set_interconnect(hw::interconnect* interconn)
-{
-}
-
-event_manager::~event_manager()
-{
-}
-
-void
-event_manager::init_factory_params(sprockit::sim_parameters* params)
-{
-  nproc_ = rt_->nproc();
-  me_ = rt_->me();
-  nthread_ = rt_->nthread();
 }
 
 void

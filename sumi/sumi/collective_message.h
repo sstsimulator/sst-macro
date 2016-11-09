@@ -20,7 +20,7 @@ class collective_done_message :
 
  public:
   std::string
-  to_string() const {
+  to_string() const override {
     return "collective done message";
   }
 
@@ -109,7 +109,7 @@ class collective_done_message :
   }
 
   message*
-  clone() const;
+  clone() const override;
 
   int comm_rank() const {
     return comm_rank_;
@@ -139,7 +139,7 @@ class collective_done_message :
 class collective_work_message :
   public message
 {
-
+  ImplementSerializable(collective_work_message)
  public:
   typedef sprockit::refcount_ptr<collective_work_message> ptr;
 
@@ -195,13 +195,13 @@ class collective_work_message :
 
 
   virtual std::string
-  to_string() const;
+  to_string() const override;
 
   static const char*
   tostr(action_t action);
 
   virtual void
-  serialize_order(sumi::serializer& ser);
+  serialize_order(sumi::serializer& ser) override;
 
   action_t
   action() const {
@@ -234,7 +234,7 @@ class collective_work_message :
   }
 
   void
-  reverse();
+  reverse() override;
 
   collective::type_t
   type() const {
@@ -260,7 +260,7 @@ class collective_work_message :
   }
 
   message*
-  clone() const {
+  clone() const override {
     collective_work_message* cln = new collective_work_message;
     clone_into(cln);
     return cln;

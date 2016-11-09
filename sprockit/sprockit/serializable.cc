@@ -64,11 +64,9 @@ serializable_factory::delete_statics()
 serializable*
 serializable_factory::get_serializable(uint32_t cls_id)
 {
-  builder_map::const_iterator it
-    = builders_->find(cls_id);
+  auto it = builders_->find(cls_id);
   if (it == builders_->end()) {
-    spkt_throw_printf(value_error,
-                     "class id %ld is not a valid serializable id",
+    spkt_abort_printf("class id %ld is not a valid serializable id",
                      cls_id);
   }
   serializable_builder* builder = it->second;

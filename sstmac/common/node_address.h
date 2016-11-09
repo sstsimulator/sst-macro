@@ -16,13 +16,9 @@
 
 namespace sstmac {
 
-typedef uint32_t endpoint_id;
-typedef endpoint_id node_id;
-
-typedef int32_t topology_id;
-typedef topology_id switch_id;
-
-typedef endpoint_id netlink_id;
+typedef uint32_t switch_id;
+typedef uint32_t node_id;
+typedef uint32_t netlink_id;
 
 
 } // end namespace sstmac

@@ -23,11 +23,6 @@ class job_launch_event :
     return appman_;
   }
 
-  std::string
-  to_string() const {
-    return "job launch event";
-  }
-
  private:
   int appnum_;
   app_launch* appman_;

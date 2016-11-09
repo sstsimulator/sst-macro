@@ -17,7 +17,7 @@ class library_interface
   /**
    * @return Node-unique name of library to deliver event to
    */
-  std::string
+  const std::string&
   lib_name() const {
     return lib_name_;
   }

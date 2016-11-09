@@ -19,9 +19,7 @@ distclean-local:
 libsstmac_common_la_SOURCES = \
   runtime.cc \
   cartgrid.cc \
-  event_handler.cc \
   event_scheduler.cc \
-  logger.cc \
   mersenne_twister.cc \
   rng.cc \
   timestamp.cc \
@@ -58,7 +56,6 @@ nobase_library_include_HEADERS = \
   event_location.h \
   event_scheduler.h \
   event_scheduler_fwd.h \
-  logger.h \
   mersenne_twister.h \
   node_address.h \
   rng.h	\

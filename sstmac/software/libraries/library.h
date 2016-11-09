@@ -19,19 +19,17 @@
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/software/libraries/library_fwd.h>
 #include <sprockit/sim_parameters_fwd.h>
+#include <sprockit/factories/factory.h>
 #include <map>
 
 
 namespace sstmac {
 namespace sw {
 
-class library  {
+class library {
   
  public:
-  virtual void
-  unregister_all_libs();
-
-  virtual std::string
+  std::string
   to_string() const {
     return libname_;
   }
@@ -40,12 +38,6 @@ class library  {
   lib_name() const {
     return libname_;
   }
-
-  virtual void
-  init_os(operating_system* os);
-
-  virtual void
-  consume_params(sprockit::sim_parameters* params);
 
   virtual void
   incoming_event(event* ev) = 0;
@@ -60,30 +52,55 @@ class library  {
     return sid_;
   }
 
+  int
+  aid() const {
+    return sid_.app_;
+  }
+
+  node_id
+  addr() const {
+    return addr_;
+  }
+
+  device_id
+  event_location() const;
+
   virtual ~library();
 
  protected:
-  library(const std::string& libname, software_id sid) :
-    sid_(sid), libname_(libname), os_(0)
+  library(const std::string& libname, software_id sid, operating_system* os);
+
+  library(const char* prefix, software_id sid, operating_system* os) :
+    library(standard_lib_name(prefix, sid), sid, os)
   {
   }
 
-  library(const char* prefix, software_id sid) :
-    sid_(sid), libname_(sprockit::printf("%s%s", prefix, sid.to_string().c_str())), os_(0)
-  {
+  static std::string
+  standard_lib_name(const char* prefix, software_id sid){
+    return standard_lib_name(prefix, sid.app_, sid.task_);
   }
 
-  /**
-   * This function is provided so that libraries can instantiate, register, and use other libraries.
-   * @param lib the library to register
-   */
-  void
-  register_lib(library* lib);
+  static std::string
+  standard_lib_name(const char* prefix, app_id aid, task_id tid){
+    std::string app_prefix = standard_app_prefix(prefix, aid);
+    return standard_app_lib_name(app_prefix.c_str(), tid);
+  }
+
+  static std::string
+  standard_app_lib_name(const char* prefix, task_id tid){
+    return sprockit::printf("%s-%d", prefix, tid);
+  }
+
+  static std::string
+  standard_app_prefix(const char* prefix, app_id aid){
+    return sprockit::printf("%s-%d", prefix, aid);
+  }
 
  protected:
   operating_system* os_;
   key::category key_cat_;
   software_id sid_;
+  node_id addr_;
 
  private:
   std::string libname_;
@@ -94,13 +111,13 @@ class blocking_library :
   public library
 {
  protected:
-  blocking_library(const char* prefix, software_id sid) :
-    library(prefix, sid)
+  blocking_library(const char* prefix, software_id sid, operating_system* os) :
+    library(prefix, sid, os)
   {
   }
 
-  blocking_library(const std::string& libname, software_id sid) :
-    library(libname, sid)
+  blocking_library(const std::string& libname, software_id sid, operating_system* os) :
+    library(libname, sid, os)
   {
   }
 
@@ -114,6 +131,7 @@ class blocking_library :
 
 };
 
+DeclareFactory(library, software_id, operating_system*);
 
 }
 } //end of namespace sstmac

@@ -32,10 +32,9 @@ namespace sumi {
  * relevant to MPI messaging.
  */
 class mpi_message :
-  public sumi::message,
-  public serializable_type<mpi_message>
+  public sumi::message
 {
-  ImplementSerializableDefaultConstructor(mpi_message)
+  ImplementSerializable(mpi_message)
 
  public:
   typedef sprockit::refcount_ptr<mpi_message> ptr;
@@ -61,7 +60,7 @@ class mpi_message :
   mpi_message(){}
 
   virtual std::string
-  to_string() const;
+  to_string() const override;
 
   static const char*
   str(content_type_t content_type);
@@ -70,14 +69,14 @@ class mpi_message :
   virtual ~mpi_message() throw ();
 
   virtual sumi::message*
-  clone() const;
+  clone() const override;
 
   /**
    * Serialize this message during parallel simulation.
    * @param ser The serializer to use
    */
   virtual void
-  serialize_order(serializer& ser);
+  serialize_order(serializer& ser) override;
 
   long
   payload_bytes() const {
@@ -195,27 +194,27 @@ class mpi_message :
   build_status(MPI_Status* stat) const;
 
   void
-  set_ignore_seqnum(bool flag){
-    ignore_seqnum_ = flag;
+  set_in_flight(bool flag){
+    in_flight_ = flag;
   }
 
   bool
-  ignore_seqnum() const {
-    return ignore_seqnum_;
+  in_flight() const {
+    return in_flight_;
   }
 
   virtual void
-  move_remote_to_local();
+  move_remote_to_local() override;
 
   virtual void
-  move_local_to_remote();
+  move_local_to_remote() override;
 
  protected:
   void
   clone_into(mpi_message* cln) const;
 
   virtual void
-  buffer_send();
+  buffer_send() override;
 
  protected:
   int src_rank_;
@@ -229,7 +228,7 @@ class mpi_message :
   mpi_message::id msgid_;
   content_type_t content_type_;
   int protocol_;
-  bool ignore_seqnum_;
+  bool in_flight_;
 
 };
 

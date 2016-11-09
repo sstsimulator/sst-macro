@@ -20,11 +20,12 @@ namespace sw {
 class random_allocation : public node_allocator
 {
  public:
-  random_allocation(parallel_runtime* rt) :
-    node_allocator(rt){}
+  random_allocation(sprockit::sim_parameters *params);
 
-  void
-  init_factory_params(sprockit::sim_parameters *params);
+  std::string
+  to_string() const override {
+    return "random allocation";
+  }
 
   virtual
   ~random_allocation() throw ();
@@ -33,7 +34,7 @@ class random_allocation : public node_allocator
   allocate(
     int nnode_requested,
     const ordered_node_set& available,
-    ordered_node_set& allocation) const;
+    ordered_node_set& allocation) const override;
 
  protected:
   RNG::UniformInteger* rng_;

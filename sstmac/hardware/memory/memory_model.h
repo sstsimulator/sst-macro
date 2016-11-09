@@ -27,18 +27,15 @@ namespace sstmac {
 namespace hw {
 
 class memory_model :
-  public event_subscheduler,
-  public sprockit::factory_type
+  public event_subcomponent
 {
 
  public:
-  memory_model(node* node);
+  memory_model(sprockit::sim_parameters* params,
+               node* node);
 
   static void
   delete_statics();
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
 
   virtual ~memory_model();
 
@@ -47,9 +44,7 @@ class memory_model :
          callback* cb) = 0;
 
   virtual std::string
-  to_string() const {
-    return "memory model";
-  }
+  to_string() const = 0;
 
   virtual double
   max_single_bw() const = 0;

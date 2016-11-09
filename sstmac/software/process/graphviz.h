@@ -33,39 +33,34 @@ class graph_viz :
   public stat_collector
 {
  public:
-  graph_viz();
+  graph_viz(sprockit::sim_parameters* params) :
+    stat_collector(params)
+  {
+  }
 
   std::string
-  to_string() const {
+  to_string() const override {
     return "grahpviz";
   }
 
   virtual ~graph_viz();
 
-  void simulation_finished(timestamp end);
+  void simulation_finished(timestamp end) override;
 
-  void clear();
+  void clear() override;
 
-  void reduce(stat_collector *coll);
+  void reduce(stat_collector *coll) override;
 
-  void dump_local_data();
+  void dump_local_data() override;
 
-  void dump_global_data();
-
-  graph_viz*
-  clone_me(int id) const {
-    graph_viz* cln = new graph_viz;
-    clone_into(cln);
-    cln->set_id(id);
-    return cln;
-  }
+  void dump_global_data() override;
 
   void
-  global_reduce(parallel_runtime *rt);
+  global_reduce(parallel_runtime *rt) override;
 
   stat_collector*
-  clone() const {
-    return clone_me(-1);
+  do_clone(sprockit::sim_parameters* params) const override {
+    return new graph_viz(params);
   }
 
   static void** allocate_trace();
@@ -92,11 +87,6 @@ class graph_viz :
 
    public:
     trace(graph_viz* parent, void* fxn);
-
-    std::string
-    to_string() const {
-      return "graphviz trace";
-    }
 
     std::string
     summary() const;

@@ -37,6 +37,7 @@ if test "X$found_mpi" = "Xyes" -a "X$with_mpi_driver" = "Xno"; then
   AC_DEFINE_UNQUOTED([DEFAULT_PARTITION_STRING], "block", "Default to basic block partition")
   AC_DEFINE_UNQUOTED([DEFAULT_EVENT_MANAGER_STRING], "clock_cycle_parallel", "Default clock cycle parallelism")
   AM_CONDITIONAL([USE_MPIPARALLEL], true)
+  with_mpiparallel=true
 else
   AC_MSG_RESULT([no])
   AC_DEFINE_UNQUOTED([DEFAULT_ENV_STRING], "serial", "Default to mpi environment")
@@ -44,6 +45,7 @@ else
   AC_DEFINE_UNQUOTED([DEFAULT_PARTITION_STRING], "serial", "Default to basic block partition")
   AC_DEFINE_UNQUOTED([DEFAULT_EVENT_MANAGER_STRING], "map", "Default clock cycle parallelism")
   AM_CONDITIONAL([USE_MPIPARALLEL], false)
+  with_mpiparallel=false
 fi
 
 

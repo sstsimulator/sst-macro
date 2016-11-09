@@ -5,6 +5,8 @@
 
 The driver for most simulations is a skeleton application.
 Although this can be arbitrary source code, we will consider the example of an MPI application below.
+We will discuss distributed services in Section \ref{sec:distService} below, which is similar to an application.  In general, when we refer to applications we mean scientific codes or client codes that are doing ``domain-specific'' work.  These will be different from service applications like parallel file systems.
+
 We will be very specific with the use of the terms ``virtual'' and ``real'' or ``physical''.  
 Virtual refers to anything being modeled in the simulator. 
 Real or physical refers to actual processes running on a supercomputer.
@@ -252,6 +254,111 @@ Examples of services are MPI or filesystem services that sort messages arriving 
 If a service is ``heavy-weight'' and must model computational delays,
 it must run as a full thread with its own user-space thread stack.
 
+\section{Distributed Service}
+\label{sec:distService}
+In many cases, a service is just local to a node and is part of the operating system or a runtime library, such as a local filesystem or a server receiving incoming network messages.  In cases of something like a distributed file system like LUSTRE or distributed key-value store like Memcached, a service spans multiple nodes.  These services are much like skeleton applications in that they require a parallel launch with node allocation and rank indexing.
+
+To create a new distributed service, you have to inherit from \inlinecode{sstmac::distributed_service} in \\
+\inlineshell{sstmac/libraries/sumi/distributed_service.h}.  
+Distributed services require a network transport layer to communicate between service nodes.
+In contrast to other libraries and services that are found in \inlineshell{sstmac/software}, distributed services are linked to SUMI (SST unified message interface).
+A distributed service must implement the \inlinecode{void run()} virtual member function.
+In general, the \inlinecode{run} function will almost always perform something like:
+
+\begin{CppCode}
+void example_service::run()
+{
+ //some init
+ bool block  = true;
+ message::ptr msg = poll_for_message(block);
+ while (msg && !terminated()){
+   process(msg);
+   msg = poll_for_message(block);
+ }
+}
+\end{CppCode}
+The function \inlinecode{poll_for_message} goes into a network polling loop looking for incoming messages.
+Depending on the boolean parameter, the function will block until a message arrives or returns immediately if no message is available.
+The service may receive a terminate message.
+This gets processed automatically.
+Whether a shutdown message has been received can be queried for by the \inlinecode{terminated} function.
+
+Launching a distributed service is very similar to launching an application with a few subtle differences.
+The services to be launched are listed in the input file as:
+
+\begin{ViFile}
+services = insitu_viz filesystem
+\end{ViFile}
+As a space-separated list.
+This would launch services registered using the standard sprockit registration:
+
+\begin{CppCode}
+SpktRegister("filesystem", distributed_service, test_filesystem);
+\end{CppCode}
+The launch parameters and any service-specific parameters are done exactly as for applications, but go in a namespace corresponding to the service:
+
+\begin{ViFile}
+filesystem.launch_cmd = aprun -n 10 -N 1
+filesystem.allocation = first_available
+filesystem.reed_solomon_k = 5
+filesystem.reed_solomon_n = 7
+...
+\end{ViFile}
+This launches ten filesystem service nodes using a given node allocation strategy.
+Some filesystem-specific parameters are given (in this case dealing with Reed-Solomon protection codes).
+
+\subsection{Coordinating servers and clients}
+\label{subsec:coordinatingServersClients}
+Slightly more complicated is the process of communicating between service and client applications.
+In many HPC simulations, the only thing being simulated is a single MPI application.
+The default \inlinecode{send} function in \inlinecode{sumi_transport} assumes messages are being sent \emph{within} a given application.
+
+\begin{CppCode}
+void
+send_payload(int dst, 
+  const message::ptr& msg, 
+  bool needs_ack);
+\end{CppCode}
+The only thing that must be specified is a destination \emph{rank}, which is the virtual ID within a given session layer.
+The transport layer itself will map that to the correct physical node address and deliver the message.
+
+An alternative function exists for sending from client to server:
+
+\begin{CppCode}
+void client_server_send(
+  int dest_rank,
+  node_id dest_node,
+  app_id dest_app,
+  const sumi::message::ptr& msg);
+\end{CppCode}
+While a session rank must be given, a physical node ID and an application ID must be given.
+These can no longer be filled in automatically.
+
+For a client to get all of the information about a distributed service, a special object is supplied that can be fetched:
+
+\begin{CppCode}
+sstmac::sw::app_launch* srv = sstmac::sw::app_launch::service_info("filesystem");
+\end{CppCode}
+The object \inlinecode{srv} has functions that can be queried to figure out all the \inlinecode{client_server_send} parameters.  
+The parameter to the static \inlinecode{service_info} function is the service name given to \inlinecode{SpktRegister} and given in the input file.
+
+The same \inlinecode{client_server_send} function is used for both clients making requests to servers and servers returning responses to clients.
+In most cases, the clients will use \inlinecode{service_info} to ``discover'' the servers.
+In order to receive responses, the clients should send messages containing all the relevant info with rank, physical node ID, and app ID.
+
+Generally, an application knowns when it is done (e.g. reaches some convergence criterion). 
+A service does not usually have a clean termination condition since it never knows when more client requests may arrive.
+In this case, the function \inlinecode{shutdown_server} can be called by a client application.
+
+\begin{CppCode}
+void shutdown_server(
+  int dest_rank,
+  node_id dest_node,
+  app_id dest_app);
+\end{CppCode}
+
+A single shutdown message to any server is sufficient to bring down the entire service.
+The shutdown message will be automatically broadcast to all other nodes.
 
 %\section{Computation}
 

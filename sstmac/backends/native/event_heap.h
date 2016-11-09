@@ -34,7 +34,10 @@ class event_heap :
 {
 
  public:
-  event_heap(parallel_runtime* rt) : event_container(rt){}
+  event_heap(sprockit::sim_parameters* params, parallel_runtime* rt) :
+    event_container(params, rt)
+  {
+  }
 
   ~event_heap() throw ();
 
@@ -49,7 +52,7 @@ class event_heap :
   }
 
   void
-  cancel_all_messages(event_loc_id canceled_loc);
+  cancel_all_messages(device_id canceled_loc);
 
  protected:
   typedef std::priority_queue<event*,

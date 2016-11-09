@@ -13,16 +13,19 @@ class default_dgemm :
   public blas_kernel
 {
  public:
+  default_dgemm(sprockit::sim_parameters* params){
+    cache_size_bytes_ = params->get_optional_byte_length_param("dgemm_cache_size", 32000);
+    loop_unroll_ = params->get_optional_double_param("dgemm_loop_unroll", 4);
+    pipeline_ = params->get_optional_double_param("dgemm_pipeline_efficiency", 2);
+  }
+
   std::string
-  to_string() const {
+  to_string() const override {
     return "default dgemm";
   }
 
   compute_event*
-  op_3d(int m, int k, int n);
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
+  op_3d(int m, int k, int n) override;
 
  protected:
   double loop_unroll_;
@@ -31,14 +34,6 @@ class default_dgemm :
 
 };
 SpktRegister("default_dgemm", blas_kernel, default_dgemm);
-
-void
-default_dgemm::init_factory_params(sprockit::sim_parameters* params)
-{
-  cache_size_bytes_ = params->get_optional_byte_length_param("dgemm_cache_size", 32000);
-  loop_unroll_ = params->get_optional_double_param("dgemm_loop_unroll", 4);
-  pipeline_ = params->get_optional_double_param("dgemm_pipeline_efficiency", 2);
-}
 
 compute_event*
 default_dgemm::op_3d(int mm, int nn, int kk)

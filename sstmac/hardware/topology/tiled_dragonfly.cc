@@ -17,20 +17,25 @@
 #include <sprockit/sim_parameters.h>
 #include <sprockit/fileio.h>
 #include <sprockit/regexp.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords(
+"intragroup_connection_file",
+"intergroup_connection_file",
+);
 
 using namespace sprockit;
+
+#if 0
 
 namespace sstmac {
 namespace hw {
 
 SpktRegister("tiled_dragonfly | tiled_dfly", topology, tiled_dragonfly);
 
-void
-tiled_dragonfly::init_factory_params(sprockit::sim_parameters* params)
+tiled_dragonfly::tiled_dragonfly(sprockit::sim_parameters* params) :
+  dragonfly(params)
 {
-  // order of initialization is intentional
-  dragonfly::init_common_params(params);
-
   // get connection filenames
   intragroup_file_ = params->get_optional_param("intragroup_connection_file",
                                                 "intragroup.txt");
@@ -69,8 +74,6 @@ tiled_dragonfly::init_factory_params(sprockit::sim_parameters* params)
   for(int i=0; i < nswitches; ++i)
     intergrp_conn_map_.push_back(new coormap_xy_map_t);
   switch_to_connected_groups_.resize(nswitches);
-  // order of initializaiton is intentional
-  cartesian_topology::init_factory_params(params);
 
   // check that parents didn't overwrite max_ports_injection_ incorrectly
   if (max_ports_injection_ != injection_ports_.size())
@@ -78,19 +81,21 @@ tiled_dragonfly::init_factory_params(sprockit::sim_parameters* params)
 }
 
 void
-tiled_dragonfly::connect_objects(internal_connectable_map& objects)
+tiled_dragonfly::connect_objects(sprockit::sim_parameters* params,
+                                 internal_connectable_map& objects)
 {
+  sprockit::sim_parameters* link_params = params->get_namespace("link");
   read_intragroup_connections();
   read_intergroup_connections();
-  make_intragroup_connections(objects);
-  make_intergroup_connections(objects);
+  make_intragroup_connections(link_params, objects);
+  make_intergroup_connections(link_params, objects);
   make_geomid();
 }
 
 void
 tiled_dragonfly::configure_geometric_paths(std::vector<int> &redundancies)
 {
-  int npaths = x_ + y_ + group_con_ - 2 + endpoints_per_switch_;
+  int npaths = x_ + y_ + group_con_ - 2 + netlinks_per_switch_;
   redundancies.resize(npaths);
   //do x paths, then y paths, then g paths
   int path = 0;
@@ -109,8 +114,8 @@ tiled_dragonfly::configure_geometric_paths(std::vector<int> &redundancies)
 void
 tiled_dragonfly::minimal_routes_to_switch(switch_id current_sw_addr,
                                           switch_id dest_sw_addr,
-                                          geometry_routable::path &current_path,
-                                          geometry_routable::path_set &paths) const
+                                          structured_routable::path &current_path,
+                                          structured_routable::path_set &paths) const
 {
   coordinates src = switch_coords(current_sw_addr);
   coordinates dst = switch_coords(dest_sw_addr);
@@ -121,8 +126,8 @@ void
 tiled_dragonfly::minimal_routes_to_coords(
   const coordinates &src_coords,
   const coordinates &dest_coords,
-  geometry_routable::path &current_path,
-  geometry_routable::path_set &paths) const
+  structured_routable::path &current_path,
+  structured_routable::path_set &paths) const
 {
   top_debug("tiled dfly: minimal routes from %s to %s",
             set_string(src_coords[0], src_coords[1], src_coords[2]).c_str(),
@@ -133,7 +138,7 @@ tiled_dragonfly::minimal_routes_to_coords(
 
   //if we crossed a global link in the past, set to 1
   current_path.vc = current_path.metadata_bit(
-        geometry_routable::crossed_timeline) ? 1 : 0;
+        structured_routable::crossed_timeline) ? 1 : 0;
 
   xy_list_t* ports;
   coordinates dst(dest_coords);
@@ -211,8 +216,8 @@ tiled_dragonfly::minimal_routes_to_coords(
 
     // copy over virtual channel and related metadata
     paths[i].vc = current_path.vc;
-    if (current_path.metadata_bit(geometry_routable::crossed_timeline))
-      paths[i].set_metadata_bit(geometry_routable::crossed_timeline);
+    if (current_path.metadata_bit(structured_routable::crossed_timeline))
+      paths[i].set_metadata_bit(structured_routable::crossed_timeline);
 
     top_debug("minimal_routes_to_coords: outport: %d, geometric id: %d, vc: %d",
               paths[i].outport, paths[i].geometric_id, paths[i].vc);
@@ -234,12 +239,12 @@ tiled_dragonfly::xy_connected_to_group(int myX, int myY, int myG, int dstg) cons
 }
 
 switch_id
-tiled_dragonfly::endpoint_to_injection_switch(
+tiled_dragonfly::netlink_to_injection_switch(
     node_id nodeaddr, int ports[], int &num_ports) const
 {
   num_ports = injection_redundancy_;
-  long net_id = nodeaddr / endpoints_per_switch_;
-  int local_endpoint_id = nodeaddr % endpoints_per_switch_;
+  long net_id = nodeaddr / netlinks_per_switch_;
+  int local_endpoint_id = nodeaddr % netlinks_per_switch_;
   int first_index = local_endpoint_id * injection_redundancy_;
   int i=first_index;
   for (int pi=0; pi < injection_redundancy_; ++i,++pi)
@@ -248,18 +253,18 @@ tiled_dragonfly::endpoint_to_injection_switch(
 }
 
 switch_id
-tiled_dragonfly::endpoint_to_ejection_switch(
+tiled_dragonfly::netlink_to_ejection_switch(
     node_id nodeaddr, int ports[], int &num_ports) const
 {
-  return endpoint_to_injection_switch(nodeaddr,ports,num_ports);
+  return netlink_to_injection_switch(nodeaddr,ports,num_ports);
 }
 
 void
 tiled_dragonfly::eject_paths_on_switch(
-   node_id dest_addr, switch_id sw_addr, geometry_routable::path_set &paths) const
+   node_id dest_addr, switch_id sw_addr, structured_routable::path_set &paths) const
 {
   paths.resize(injection_redundancy_);
-  int node_offset = dest_addr % endpoints_per_switch_;
+  int node_offset = dest_addr % netlinks_per_switch_;
   int index = node_offset * injection_redundancy_;
   for (int i=0; i < injection_redundancy_; ++i, ++index){
     paths[i].outport = injection_ports_[index];
@@ -270,9 +275,9 @@ tiled_dragonfly::eject_paths_on_switch(
 
 void
 tiled_dragonfly::minimal_route_to_coords(
-  const coordinates &current_coords,
-  const coordinates &dest_coords,
-  geometry_routable::path& path) const
+  switch_id src,
+  switch_id dst,
+  structured_routable::path& path) const
 {
   spkt_throw(sprockit::unimplemented_error, "tiled_dragonfly::minimal_route_to_coords");
 }
@@ -375,10 +380,9 @@ tiled_dragonfly::read_intergroup_connections()
 
 
 void
-tiled_dragonfly::make_intragroup_connections(internal_connectable_map& objects)
+tiled_dragonfly::make_intragroup_connections(sprockit::sim_parameters* params,
+                                             internal_connectable_map& objects)
 {
-  connectable::config cfg;
-  cfg.ty = connectable::BasicConnection;
   for (int g=0; g<numG(); ++g) {
     for( std::list<connection>::iterator it=intragrp_conns_.begin();
          it!=intragrp_conns_.end(); ++it ) {
@@ -440,21 +444,18 @@ tiled_dragonfly::make_intragroup_connections(internal_connectable_map& objects)
             std::pair<int,int>(outport,inport));
       }
 
-      objects[src_id]->connect(outport,inport,
-                               connectable::output,
-                               objects[dst_id], &cfg);
-      objects[dst_id]->connect(outport,inport,
-                               connectable::input,
-                               objects[src_id], &cfg);
+      objects[src_id]->connect_output(params,outport,inport,
+                               objects[dst_id]);
+      objects[dst_id]->connect_input(params,outport,inport,
+                               objects[src_id]);
     }
   }
 }
 
 void
-tiled_dragonfly::make_intergroup_connections(internal_connectable_map& objects)
+tiled_dragonfly::make_intergroup_connections(sprockit::sim_parameters* params,
+                                             internal_connectable_map& objects)
 {
-  connectable::config cfg;
-  cfg.ty = connectable::BasicConnection;
   for( std::list<connection>::iterator it=intergrp_conns_.begin();
        it!=intergrp_conns_.end(); ++it ) {
 
@@ -503,12 +504,10 @@ tiled_dragonfly::make_intergroup_connections(internal_connectable_map& objects)
     intergrp_conn_map_[src_id]->at(dst_id)->push_back(
           std::pair<int,int>(outport,inport));
 
-    objects[src_id]->connect(outport,inport,
-                             connectable::output,
-                             objects[dst_id], &cfg);
-    objects[dst_id]->connect(outport,inport,
-                             connectable::input,
-                             objects[src_id], &cfg);
+    objects[src_id]->connect_output(params,outport,inport,
+                             objects[dst_id]);
+    objects[dst_id]->connect_input(params,outport,inport,
+                             objects[src_id]);
   }
 }
 
@@ -576,4 +575,4 @@ tiled_dragonfly::make_geomid()
 } } //end of namespace sstmac
 
 
-
+#endif

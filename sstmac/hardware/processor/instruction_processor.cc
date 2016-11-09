@@ -22,6 +22,15 @@
 #include <iostream>
 
 RegisterNamespaces("noise");
+RegisterKeywords(
+"processor",
+"noise_model_seed",
+"noise_model_mean",
+"noise_model_stdev",
+"noise_model_maxz",
+"parallelism",
+"pipeline_speedup",
+);
 
 namespace sstmac {
 namespace hw {
@@ -34,20 +43,12 @@ instruction_processor::~instruction_processor()
   if (noise_model_) delete noise_model_;
 }
 
-void
-instruction_processor::finalize_init()
+instruction_processor::
+instruction_processor(sprockit::sim_parameters* params,
+                      memory_model* mem, node* nd) :
+  simple_processor(params, mem, nd),
+  noise_model_(nullptr)
 {
-  simple_processor::finalize_init();
-
-  tflop_ = tintop_ = 1.0 / freq_;
-  tmemseq_ = tmemrnd_ = 1.0 / mem_freq_;
-  max_single_mem_bw_ = mem_->max_single_bw();
-}
-
-void
-instruction_processor::init_factory_params(sprockit::sim_parameters* params)
-{
-  simple_processor::init_factory_params(params);
   negligible_bytes_ = params->get_optional_byte_length_param(
         "negligible_compute_bytes", 64);
 
@@ -58,7 +59,11 @@ instruction_processor::init_factory_params(sprockit::sim_parameters* params)
     noise_model_ = noise_model_factory::get_param("model", noise_params);
   }
 
+  tflop_ = tintop_ = 1.0 / freq_;
+  tmemseq_ = tmemrnd_ = 1.0 / mem_freq_;
+  max_single_mem_bw_ = mem_->max_single_bw();
 }
+
 
 double
 instruction_processor::instruction_time(sw::basic_compute_event* cmsg)

@@ -14,28 +14,60 @@
 #include <sstream>
 #include <sstmac/hardware/topology/fat_tree.h>
 #include <sstmac/hardware/router/router.h>
+#include <sstmac/backends/common/sim_partition.h>
 #include <sprockit/sim_parameters.h>
+#include <sprockit/stl_string.h>
+#include <sprockit/keyword_registration.h>
 
 #include <math.h>
+
+RegisterKeywords(
+"num_levels",
+"num_inj_switches_per_subtree",
+"num_core_switches",
+"num_agg_subtrees",
+"num_agg_switches_per_subtree",
+"radix",
+);
 
 namespace sstmac {
 namespace hw {
 
-SpktRegister("fattree | ftree", topology, fat_tree,
+SpktRegister("fattree | fat_tree | ftree", topology, fat_tree,
   "Fat tree topology with L levels and radix K.  This fat tree is actually implemented with commodity switches. Each level of the fat tree has the same number of switches.  This is equivalent to archetypal fat tree with fatter links being replaced by MORE links.");
 
-SpktRegister("simple_fattree", topology, simple_fat_tree);
+SpktRegister("tapered_fat_tree | simple_fattree", topology, tapered_fat_tree);
 
-std::string
-abstract_fat_tree::name() const
+
+abstract_fat_tree::abstract_fat_tree(sprockit::sim_parameters *params,
+                                     InitMaxPortsIntra i1,
+                                     InitGeomEjectID i2) :
+  structured_topology(params, i1, i2)
 {
-  std::ostringstream ostr;
-  ostr << "FatTree(" << l_ << "," << k_ << ")";
-  return ostr.str();
 }
 
 void
-abstract_fat_tree::init_factory_params(sprockit::sim_parameters *params)
+abstract_fat_tree::nodes_connected_to_injection_switch(switch_id swaddr,
+                                                       std::vector<injection_port>& nodes) const
+{
+  if (swaddr >= numleafswitches_){
+    nodes.resize(0);
+  } else {
+    structured_topology::nodes_connected_to_injection_switch(swaddr, nodes);
+  }
+}
+
+void
+abstract_fat_tree::nodes_connected_to_ejection_switch(switch_id swaddr,
+                                                      std::vector<injection_port>& nodes) const
+{
+  nodes_connected_to_injection_switch(swaddr, nodes);
+}
+
+fat_tree::fat_tree(sprockit::sim_parameters* params) :
+  abstract_fat_tree(params,
+                    InitMaxPortsIntra::I_Remembered,
+                    InitGeomEjectID::I_Remembered)
 {
   std::vector<int> args;
   params->get_vector_param("geometry", args);
@@ -50,73 +82,11 @@ abstract_fat_tree::init_factory_params(sprockit::sim_parameters *params)
   rtr_params->add_param_override("radix", k_);
   rtr_params->add_param_override("num_levels", l_);
 
-  /**
-   sstkeyword = {
-     gui=4 2;
-     docstring=Vector of size 2.  The first parameter gives the number of levels (L) in the fat tree.
-     The second parameter gives the radix (K) of the fat tree.  The number of leaf switches
-     is K^(L-1).  If L=3 and K=4, e.g., you have the following fat tree
-     1 -> 4 -> 16 switches at the bottom.
-   }
-   */
-  toplevel_ = l_ - 1;
   numleafswitches_ = pow(k_, l_ - 1);
-}
+  toplevel_ = l_ - 1;
 
-void
-fat_tree::minimal_route_to_switch(
-  switch_id current_sw_addr,
-  switch_id dest_sw_addr,
-  geometry_routable::path& path) const
-{
-  spkt_throw_printf(sprockit::unimplemented_error, "fattree::minimal_route_to_switch");
-}
-
-std::vector<node_id>
-abstract_fat_tree::nodes_connected_to_injection_switch(switch_id swaddr) const
-{
-  return nodes_connected_to_switch(swaddr);
-}
-
-std::vector<node_id>
-abstract_fat_tree::nodes_connected_to_ejection_switch(switch_id swaddr) const
-{
-  return nodes_connected_to_switch(swaddr);
-}
-
-
-std::vector<node_id>
-abstract_fat_tree::nodes_connected_to_switch(switch_id swaddr) const
-{
-  if (swaddr >= numleafswitches_){
-    return std::vector<node_id>();
-  } else {
-    return structured_topology::nodes_connected_to_switch(swaddr);
-  }
-}
-
-void
-fat_tree::init_factory_params(sprockit::sim_parameters* params)
-{
-  abstract_fat_tree::init_factory_params(params);
-
-  max_ports_injection_ = endpoints_per_switch_ = params->get_optional_int_param("concentration", k_);
   max_ports_intra_network_ = 2*k_;
   eject_geometric_id_ = max_ports_intra_network_;
-  structured_topology::init_factory_params(params);
-}
-
-void
-fat_tree::productive_path(
-  int dim,
-  const coordinates &src,
-  const coordinates &dst,
-  geometry_routable::path& path) const
-{
-  spkt_throw_printf(
-    sprockit::illformed_error,
-    "fattree::get_productive_dir should never be called."
-    "productive outports are determined differently from other topologies");
 }
 
 int
@@ -145,57 +115,64 @@ fat_tree::downColumnConnection(int k, int myColumn, int downPort, int myBranchSi
   return myVirtualBranch*k + downPort*lowerBranchSize + lowerReplicaID;
 }
 
+
 void
-fat_tree::connect_objects(internal_connectable_map& objects)
+fat_tree::connected_outports(switch_id src, std::vector<connection>& conns) const
 {
-  connectable::config cfg;
-  cfg.ty = connectable::BasicConnection;
-
   int branchSize = 1;
-  int maxLevel = l_ - 2;
-  for (int row=0; row <= maxLevel; ++row){
-    int nColumns = numleafswitches_;
-    for (int col=0; col < nColumns; ++col){
-      int lower_id = switch_at_row_col(row, col);
-      connectable* lower_switch = objects[switch_id(lower_id)];
-      int myBranch = col / branchSize;
-      for (int k=0; k < k_; ++k){
-        int upColumn = upColumnConnection(k_, col, k, branchSize);
-        int upper_id = switch_at_row_col(row+1,upColumn);
-
-        int up_port = convert_to_port(up_dimension, k);
-        int down_port = convert_to_port(down_dimension, myBranch % k_);
-
-        top_debug("fattree: connecting up=(%d,%d:%d) to down=(%d,%d:%d)",
-                row, col, up_port, row+1, upColumn, down_port);
-
-        connectable* upper_switch = objects[switch_id(upper_id)];
-
-        lower_switch->connect(
-          up_port, //up is out and down is in... got it!??!
-          down_port,
-          connectable::output,
-          upper_switch, &cfg);
-        upper_switch->connect(
-          up_port,
-          down_port,
-          connectable::input,
-          lower_switch, &cfg);
-
-        upper_switch->connect(
-          down_port, //down is out and up is in... got it?!?
-          up_port,
-          connectable::output,
-          lower_switch, &cfg);
-        lower_switch->connect(
-          down_port,
-          up_port,
-          connectable::input,
-          upper_switch, &cfg);
-      }
-    }
+  conns.resize(2*k_);
+  int myRow, myCol;
+  compute_row_col(src, myRow, myCol);
+  for (int row=0; row < myRow; ++row){
     branchSize *= k_;
   }
+  int myBranch = myCol / branchSize;
+  int cidx = 0;
+  if (myRow < toplevel_){
+    for (int k=0; k < k_; ++k){
+      int upColumn = upColumnConnection(k_, myCol, k, branchSize);
+      switch_id upDst = switch_at_row_col(myRow+1,upColumn);
+      int upPort = up_port(k);
+      int downPort = down_port(myBranch % k_);
+
+      connection& conn = conns[cidx];
+      conn.src = src;
+      conn.dst = upDst;
+      conn.src_outport = upPort;
+      conn.dst_inport = downPort;
+      ++cidx;
+    }
+  }
+
+  if (myRow > 0){
+    branchSize /= k_;
+    for (int col=0; col < numleafswitches_; ++col){
+      for (int k=0; k < k_; ++k){
+        int upColumn = upColumnConnection(k_, col, k, branchSize);
+        if (upColumn == myCol){
+          int branch = col / branchSize;
+          switch_id downDst = switch_at_row_col(myRow-1, col);
+          int upPort = up_port(k);
+          int downPort = down_port(branch % k_);
+          connection& conn = conns[cidx];
+          conn.src = src;
+          conn.dst = downDst;
+          conn.src_outport = downPort;
+          conn.dst_inport = upPort;
+          ++cidx;
+        }
+      }
+    }
+  }
+
+  conns.resize(cidx);
+}
+
+void
+fat_tree::configure_individual_port_params(switch_id src,
+                                 sprockit::sim_parameters *switch_params) const
+{
+  topology::configure_individual_port_params(0, 2*k_, switch_params);
 }
 
 void
@@ -204,76 +181,26 @@ fat_tree::configure_vc_routing(std::map<routing::algorithm_t, int> &m) const
   m[routing::minimal] = 2; //up and down
 }
 
-switch_id
-fat_tree::switch_number(const coordinates &coords) const
-{
-  int row = coords[0];
-  int col = coords[1];
-  return row*numleafswitches_ + col;
-}
-
 void
-fat_tree::compute_switch_coords(switch_id uid, coordinates& coords) const
+fat_tree::minimal_route_to_switch(
+  switch_id current_sw_addr,
+  switch_id dest_sw_addr,
+  routable::path& path) const
 {
-  int row = uid / numleafswitches_;
-  int col = uid % numleafswitches_;
-  coords[0] = row;
-  coords[1] = col;
-}
-
-void
-fat_tree::minimal_route_to_coords(
-  const coordinates &src_coords,
-  const coordinates &dest_coords,
-  geometry_routable::path& path) const
-{
-  spkt_throw_printf(sprockit::unimplemented_error, "fattree::minimal_route_to_coords");
-}
-
-coordinates
-fat_tree::neighbor_at_port(switch_id sid, int port)
-{
-  coordinates my_coords = switch_coords(sid);
-  if (is_injection_port(port)){
-    return my_coords;
-  }
-
-  int row = my_coords[0];
-  int col = my_coords[1];
-  int dir = port % k_;
-  int dim = port / k_;
-
-  int branchSize = 1;
-  for (int l=0; l < row; ++l){
-    branchSize *= k_;
-  }
-
-  if (dim == up_dimension){
-    my_coords[0] = row+1;
-    my_coords[1] = upColumnConnection(k_, col, port, branchSize);
-  } else {
-    my_coords[0] = row-1;
-    my_coords[1] = downColumnConnection(k_, col, port, branchSize);
-  }
-  return my_coords;
+  spkt_throw_printf(sprockit::unimplemented_error, "fattree::minimal_route_to_switch");
 }
 
 int
-fat_tree::convert_to_port(int dim, int dir) const
+fat_tree::minimal_distance(switch_id src,
+                           switch_id dst) const
 {
-  return (dim * k_ + dir);
-}
+  int srcRow = src / numleafswitches_;
+  int srcCol = src % numleafswitches_;
+  int dstRow = dst / numleafswitches_;
+  int dstCol = dst % numleafswitches_;
 
-int
-fat_tree::minimal_distance(const coordinates &src_coords,
-                           const coordinates &dest_coords) const
-{
-  int srcRow = src_coords[0];
-  int dstRow = dest_coords[0];
   int startRow = std::min(srcRow, dstRow);
   int branchSize = pow(k_, startRow);
-  int srcCol = src_coords[1];
-  int dstCol = dest_coords[1];
   int srcBranch = srcCol / branchSize;
   int dstBranch = dstCol / branchSize;
   int stopRow = startRow;
@@ -290,7 +217,7 @@ fat_tree::minimal_distance(const coordinates &src_coords,
 }
 
 void
-simple_fat_tree::partition(
+tapered_fat_tree::create_partition(
   int* switches_per_lp,
   int *switch_to_lp,
   int *switch_to_thread,
@@ -298,8 +225,10 @@ simple_fat_tree::partition(
   int me,
   int nproc,
   int nthread,
-  int noccupied)
+  int noccupied) const
 {
+  spkt_throw_printf(sprockit::unimplemented_error, "simple_fat_tree::create_partition");
+/**
   int nworkers = nproc * nthread;
 
   //partition all the occupied switches
@@ -355,280 +284,256 @@ simple_fat_tree::partition(
   }
 
   local_num_switches  = localIdx;
+*/
 }
 
 int
-simple_fat_tree::num_hops(int srcLevel, int srcOffset, int dstLevel, int dstOffset) const
+tapered_fat_tree::minimal_distance(
+  switch_id src,
+  switch_id dst) const
 {
-  int distance = 0;
-  while (srcOffset != dstOffset){
-    if (srcLevel <= dstLevel){
-      srcOffset /= k_;
-      ++srcLevel;
+  if (src == dst) return 0;
+
+  int srcLevel = level(src);
+  int dstLevel = level(dst);
+  if (srcLevel == 2){
+    return srcLevel - dstLevel;
+  } else if (dstLevel == 2){
+    return dstLevel - srcLevel;
+  }
+
+
+  int srcTree = sub_tree(src);
+  int dstTree = sub_tree(dst);
+  if (srcTree == dstTree){
+    if (srcLevel == dstLevel){
+      //okay - a bit weird
+      //I have to hop up then hop down to get where I want
+      return 2;
     } else {
-      dstOffset /= k_;
-      ++dstLevel;
+      //I can hop directly up or down to desired location
+      return 1;
     }
-    ++distance;
-  }
-
-  return distance;
-}
-
-int
-simple_fat_tree::num_hops_to_node(node_id src, node_id dst) const
-{
-  int src_sw = src / endpoints_per_switch_;
-  int dst_sw = dst / endpoints_per_switch_;
-  return num_hops(0, src_sw, 0, dst_sw);
-}
-
-int
-simple_fat_tree::minimal_distance(
-  const coordinates &src_coords,
-  const coordinates &dest_coords) const
-{
-  abort();
-  return num_hops(src_coords[0], src_coords[1], dest_coords[0], dest_coords[1]);
-}
-
-void
-simple_fat_tree::init_factory_params(sprockit::sim_parameters *params)
-{
-  abstract_fat_tree::init_factory_params(params);
-  int nswitches = numleafswitches_;
-  int offset = 0;
-  int level = 0;
-  level_offsets_.resize(l_);
-  num_switches_ = 0;
-  while (nswitches >= 1){
-    level_offsets_[level] = offset;
-    top_debug("fat_tree: setting level offset %d to %d", level, offset);
-    offset += nswitches;
-    num_switches_ += nswitches;
-    nswitches /= k_;
-    level++;
-  }
-  top_debug("fat_tree: computed %d total switches on %d levels",
-            num_switches_, l_);
-  max_ports_injection_ = endpoints_per_switch_ = params->get_optional_int_param("concentration", k_);
-  max_ports_intra_network_ = k_ + 1;
-
-  if (params->has_param("tapering")){
-    params->get_vector_param("tapering", tapering_);
   } else {
-    tapering_.resize(toplevel_, 1.0);
+    //have to go to core
+    return (2-srcLevel) + (1-dstLevel);
   }
+}
 
-  if (tapering_.size() != toplevel_){
-    spkt_throw_printf(sprockit::value_error,
-      "fat_tree::tapering array of size %d is not of correct size %d",
-      tapering_.size(), toplevel_);
-  }
+tapered_fat_tree::tapered_fat_tree(sprockit::sim_parameters *params) :
+  abstract_fat_tree(params,
+                    InitMaxPortsIntra::I_Remembered,
+                    InitGeomEjectID::I_Remembered)
+{
+  num_inj_switches_per_subtree_ = params->get_int_param("num_inj_switches_per_subtree");
+  num_agg_switches_per_subtree_ = params->get_int_param("num_agg_switches_per_subtree");
+  num_agg_subtrees_ = params->get_int_param("num_agg_subtrees");
+  num_core_switches_ = params->get_int_param("num_core_switches");
+  num_inj_switches_ = num_inj_switches_per_subtree_ * num_agg_subtrees_;
 
-  structured_topology::init_factory_params(params);
+  double numerator = num_inj_switches_per_subtree_ + num_agg_switches_per_subtree_;
+  double down_link_fraction = double(num_inj_switches_per_subtree_) / numerator;
+  double up_link_fraction = num_agg_switches_per_subtree_ / numerator;
+
+  agg_bw_multiplier_ = up_link_fraction * num_agg_switches_per_subtree_;
+
+  numleafswitches_ = num_inj_switches_per_subtree_ * num_agg_subtrees_;
+
+  max_ports_intra_network_ = std::max(up_port(0), up_port(1));
+  eject_geometric_id_ = max_ports_intra_network_;
+
+  num_switches_ = num_inj_switches_ + num_agg_subtrees_ + 1;
 }
 
 void
-simple_fat_tree::connect_objects(internal_connectable_map &switches)
+tapered_fat_tree::configure_individual_port_params(switch_id src,
+                                  sprockit::sim_parameters *switch_params) const
 {
-  int nswitches = numleafswitches_;
-  connectable::config cfg;
-  cfg.ty = connectable::WeightedConnection;
-  double bw_multiplier = 1.0;
-  int stopLevel = l_ - 1;
-  for (int l=0; l < stopLevel; ++l){
-    int down_offset = level_offsets_[l];
-    int up_offset = level_offsets_[l+1];
-    double tapering = tapering_[l];
-    for (int s=0; s < nswitches; ++s){
-      int down_id = down_offset + s;
-      int up_id = up_offset + s/k_;
-      connectable* down_switch = switches[switch_id(down_id)];
-      connectable* up_switch = switches[switch_id(up_id)];
-      cfg.link_weight = bw_multiplier * tapering;
-      cfg.xbar_weight = bw_multiplier;
+  sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
+  int buffer_size = switch_params->get_int_param("buffer_size");
+  double bw = link_params->get_bandwidth_param("bandwidth");
+  int myLevel = level(src);
 
-      int down_switch_outport = k_;
-      int down_switch_inport = down_switch_outport;
-      int up_switch_outport = s % k_;
-      int up_switch_inport = up_switch_outport;
+  if (myLevel == 0){
+    //inj switch
+    int outport = up_port(0);
+    setup_port_params(outport,
+                      buffer_size,
+                      bw,
+                      link_params, switch_params);
+  } else if (myLevel == 1){
+    //I have up and down links
+    //My up link is tapered
+    int taperedBufSize = buffer_size*agg_bw_multiplier_;
+    double taperedBw = bw*agg_bw_multiplier_;
+    int outport = up_port(1);
+    setup_port_params(outport,
+                      taperedBufSize,
+                      taperedBw,
+                      link_params, switch_params);
 
-      top_debug(
-       "Connecting %d(%d):%d->%d(%d):%d between levels %d,%d with multiplier=%d, tapering=%12.8f",
-       down_id, s, down_switch_outport,
-       up_id, s/k_, up_switch_inport,
-       l, l+1, bw_multiplier, tapering);
-
-      cfg.src_buffer_weight = bw_multiplier;
-      cfg.dst_buffer_weight = bw_multiplier*k_;
-      down_switch->connect(
-        down_switch_outport,
-        up_switch_inport,
-        connectable::output,
-        up_switch, &cfg);
-      cfg.xbar_weight = bw_multiplier*k_;
-      up_switch->connect(
-        down_switch_outport,
-        up_switch_inport,
-        connectable::input,
-        down_switch, &cfg);
-
-      top_debug(
-       "Connecting %d(%d):%d->%d(%d):%d between levels %d,%d with multiplier=%d, tapering=%12.8f",
-       up_id, s/k_, up_switch_outport,
-       down_id, s, down_switch_inport,
-       l, l+1, bw_multiplier, tapering);
-
-      cfg.src_buffer_weight = bw_multiplier*k_;
-      cfg.dst_buffer_weight = bw_multiplier;
-      up_switch->connect(
-        up_switch_outport,
-        down_switch_inport,
-        connectable::output,
-        down_switch, &cfg);
-      cfg.xbar_weight = bw_multiplier;
-      down_switch->connect(
-        up_switch_outport,
-        down_switch_inport,
-        connectable::input,
-        up_switch, &cfg);
-
+    //My down links are not
+    for (int s=0; s < num_inj_switches_per_subtree_; s++){
+      int outport = s;
+      setup_port_params(outport,
+                        buffer_size,
+                        bw,
+                        link_params,
+                        switch_params);
     }
-    nswitches /= k_;
-    bw_multiplier *= k_;
+  } else {
+    //I have only down links
+    for (int s=0; s < num_agg_subtrees_; ++s){
+      int outport = s;
+      int taperedBufSize = buffer_size*agg_bw_multiplier_;
+      double taperedBw = bw*agg_bw_multiplier_;
+      setup_port_params(outport,
+                        taperedBufSize,
+                        taperedBw,
+                        link_params, switch_params);
+    }
+  }
+}
+
+void
+tapered_fat_tree::configure_nonuniform_switch_params(switch_id src,
+                           sprockit::sim_parameters *switch_params) const
+{
+  int myLevel = level(src);
+  double multiplier = 1.0;
+  if (myLevel == 0){
+    //okay - nothing doing - normal switches
+  } else if (myLevel == 1){
+    //this switch is modeling the functionaliy of X commodity switches
+    multiplier = num_agg_switches_per_subtree_;
+  } else {
+    //this switch is modeling the functionality of X commodity switches
+    multiplier = num_core_switches_;
+  }
+
+  sprockit::sim_parameters* xbar_params = switch_params->get_namespace("xbar");
+  double bw = xbar_params->get_bandwidth_param("bandwidth");
+  //we are overwriting params - we have to make sure that the original baseline bandwidth is preserved
+  double baseline_bw = xbar_params->get_optional_bandwidth_param("baseline_bandwidth", bw);
+  double xbar_bw = baseline_bw * multiplier;
+  (*xbar_params)["bandwidth"].setBandwidth(xbar_bw/1e9, "GB/s");
+  (*xbar_params)["baseline_bandwidth"].setBandwidth(baseline_bw/1e9, "GB/s");
+  configure_individual_port_params(src, switch_params);
+}
+
+void
+tapered_fat_tree::connected_outports(switch_id src, std::vector<connection>& conns) const
+{
+  int myRow = level(src);
+  if (myRow == 2){
+    //core switch
+    conns.resize(num_agg_subtrees_);
+    int inport = up_port(1);
+    for (int s=0; s < num_agg_subtrees_; ++s){
+      connection& conn = conns[s];
+      conn.src = src;
+      conn.dst = num_inj_switches_ + s;
+      conn.src_outport = s;
+      conn.dst_inport = inport;
+    }
+  } else if (myRow == 1){
+    //agg switch
+    int myTree = agg_sub_tree(src);
+    int myOffset = myTree * num_inj_switches_per_subtree_;
+    conns.resize(num_inj_switches_per_subtree_ + 1);
+    int inport = up_port(0);
+    for (int s=0; s < num_inj_switches_per_subtree_; ++s){
+      connection& conn = conns[s];
+      conn.src = src;
+      conn.dst = myOffset + s;
+      conn.src_outport = s;
+      conn.dst_inport = inport;
+    }
+    connection& upconn = conns[num_inj_switches_per_subtree_];
+    upconn.src = src;
+    upconn.dst = core_switch_id();
+    upconn.src_outport = num_inj_switches_per_subtree_;
+    upconn.dst_inport = myTree;
+  } else {
+    //inj switch
+    int myTree = inj_sub_tree(src);
+    int myOffset = src % num_inj_switches_per_subtree_;
+    conns.resize(1);
+    int outport = up_port(0);
+    connection& conn = conns[0];
+    conn.src = src;
+    conn.dst = num_inj_switches_ + myTree;
+    conn.src_outport = outport;
+    conn.dst_inport = myOffset;
   }
 }
 
 int
-simple_fat_tree::level(switch_id sid) const
+tapered_fat_tree::level(switch_id sid) const
 {
-  int level_stop = level_offsets_.size() - 1;
-  for (int i=0; i < level_stop; ++i){
-    if (sid >= level_offsets_[i] && sid < level_offsets_[i+1]){
-      return i;
-    }
+  if (sid == core_switch_id()){
+    return 2;
+  } else if (sid >= num_inj_switches_){
+    return 1;
+  } else {
+    return 0;
   }
-  return toplevel_;
 }
 
 void
-simple_fat_tree::minimal_route_to_switch(
+tapered_fat_tree::minimal_route_to_switch(
   switch_id current_sw_addr,
   switch_id dest_sw_addr,
-  geometry_routable::path &path) const
+  routable::path &path) const
 {
   int src_level = level(current_sw_addr);
   int dst_level = level(dest_sw_addr);
   //question is whether I go up or down
   if (dst_level >= src_level){ //definitely have to go up
-    path.outport = k_;
+    path.outport = up_port(src_level);
     path.vc = 0;
     top_debug("fat_tree: routing up to get to s=%d,l=%d from s=%d,l=%d",
             int(dest_sw_addr), dst_level,
             int(current_sw_addr), src_level);
-  } else {
-    //walk up from the destination switch - see if it hits the source
-    int dstLevelOffset = dest_sw_addr - level_offsets_[dst_level];
-    int dstLevelTmp = dst_level;
-    int downPort;
-    while (dstLevelTmp < src_level){
-      downPort = dstLevelOffset % k_;
-      dstLevelOffset /= k_;
-      dstLevelTmp++;
-    }
-    int parentAtSrcLevel = dstLevelOffset + level_offsets_[src_level];
-    if (parentAtSrcLevel == current_sw_addr){
-      top_debug("fat_tree: routing down to get to s=%d,l=%d from s=%d,l=%d on port %d",
+  } else if (src_level == 2){
+    //definitely have to go down
+    int dst_sub_tree = dst_level == 0 ? inj_sub_tree(dest_sw_addr) : agg_sub_tree(dest_sw_addr);
+    path.outport = dst_sub_tree;
+    path.vc = 0;
+    top_debug("fat_tree: routing down to get to s=%d,l=%d from s=%d,l=%d on port %d",
+            int(dest_sw_addr), dst_level,
+            int(current_sw_addr), src_level,
+            path.outport);
+  } else if (src_level == 1){
+    //going to level 0, but may have to go up or down to get there
+    int my_tree = agg_sub_tree(current_sw_addr);
+    int dst_tree = inj_sub_tree(dest_sw_addr);
+    if (dst_tree == my_tree){
+      //okay, great, I should have direct link
+      path.outport = dest_sw_addr % num_inj_switches_per_subtree_;
+      path.vc = 0;
+      top_debug("fat_tree: routing up to get to s=%d,l=%d from s=%d,l=%d hopping from tree %d to tree %d",
               int(dest_sw_addr), dst_level,
               int(current_sw_addr), src_level,
-              downPort);
-      //yep, we can hit the dest switch on the way down
-      path.outport = downPort;
-      path.vc = 1; //down, down
+              my_tree, dst_tree);
     } else {
-      top_debug("fat_tree: routing up to get to s=%d,l=%d from s=%d,l=%d",
-              int(dest_sw_addr), dst_level,
-              int(current_sw_addr), src_level);
-      path.outport = k_;
+      //nope, have to go to core to hope over to other tree
+      path.outport = up_port(src_level);
       path.vc = 0;
+      top_debug("fat_tree: routing down to get to s=%d,l=%d from s=%d,l=%d on port %d within tree %d",
+              int(dest_sw_addr), dst_level,
+              int(current_sw_addr), src_level,
+              path.outport, my_tree);
     }
   }
 }
 
 void
-simple_fat_tree::compute_switch_coords(switch_id swid, coordinates &coords) const
+tapered_fat_tree::configure_vc_routing(std::map<routing::algorithm_t, int> &m) const
 {
-  int srcLevel = level(swid);
-  int srcOffset = swid - level_offsets_[srcLevel];
-  coords.resize(2);
-  coords[0] = srcLevel;
-  coords[1] = srcOffset;
+  m[routing::minimal] = 1; //up and down
 }
 
-coordinates
-simple_fat_tree::neighbor_at_port(switch_id sid, int port)
-{
-  coordinates coords(2);
-  int srcLevel = level(sid);
-  int srcOffset = sid - level_offsets_[srcLevel];
-  if (port == k_){
-    //going up
-    coords[0] = srcLevel + 1;
-    int dstOffset = srcOffset / k_;
-    coords[1] = dstOffset;
-  } else {
-    //going down
-    coords[0] = srcLevel - 1;
-    int dstOffset = srcOffset * k_;
-    coords[1] = dstOffset;
-  }
-  return coords;
-}
-
-int
-simple_fat_tree::convert_to_port(int dim, int dir) const
-{
-  if (dim == up_dimension){
-    return k_;
-  } else {
-    return dir;
-  }
-}
-
-void
-simple_fat_tree::productive_path(int dim,
-  const coordinates &src,
-  const coordinates &dst,
-  geometry_routable::path &path) const
-{
-  spkt_throw(sprockit::unimplemented_error,
-     "simple_fat_tree should never route through productive_path function");
-}
-
-void
-simple_fat_tree::configure_vc_routing(std::map<routing::algorithm_t, int> &m) const
-{
-  m[routing::minimal] = 2; //up and down
-}
-
-void
-simple_fat_tree::minimal_route_to_coords(
-  const coordinates &src_coords,
-  const coordinates &dest_coords,
-  geometry_routable::path &path) const
-{
-  spkt_throw(sprockit::unimplemented_error,
-     "simple_fat_tree should never route with coords");
-}
-
-switch_id
-simple_fat_tree::switch_number(const coordinates &coords) const
-{
-  int level = coords[0];
-  int offset = coords[1];
-  return switch_id(level_offsets_[level] + offset);
-}
 
 }
 } //end of namespace sstmac

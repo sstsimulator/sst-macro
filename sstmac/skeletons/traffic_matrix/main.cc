@@ -7,6 +7,14 @@
 #include <sstmac/libraries/sumi/sumi_transport.h>
 #include <sumi/sumi/transport.h>
 #include <sstmac/skeleton.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords(
+"intensity",
+"mixing",
+"niterations",
+"scatter",
+);
 
 MakeDebugSlot(traffic_matrix)
 MakeDebugSlot(traffic_matrix_results)
@@ -64,7 +72,7 @@ class config_message :
   }
 
   virtual void
-  serialize_order(sumi::serializer &ser){
+  serialize_order(sumi::serializer &ser) override {
     ser & recv_buf_;
     sumi::message::serialize_order(ser);
   }
@@ -92,7 +100,7 @@ class rdma_message :
   }
 
   virtual void
-  serialize_order(sumi::serializer& ser){
+  serialize_order(sumi::serializer& ser) override {
     ser & iter_;
     ser & start_;
     ser & finish_;
@@ -100,7 +108,7 @@ class rdma_message :
   }
 
   sumi::message*
-  clone() const {
+  clone() const override {
     rdma_message* cln = new rdma_message(iter_, num_bytes_);
     cln->set_start(start_);
     cln->set_finish(finish_);
@@ -212,7 +220,8 @@ quiesce(sumi::transport* tport,
 
 int USER_MAIN(int argc, char** argv)
 {
-  sumi::transport* tport = sstmac::sw::operating_system::current_thread()->get_api<sumi::sumi_transport>();
+  sstmac::sumi_transport* tport = sstmac::sw::operating_system::current_thread()
+      ->get_api<sstmac::sumi_transport>();
 
   tport->init();
 

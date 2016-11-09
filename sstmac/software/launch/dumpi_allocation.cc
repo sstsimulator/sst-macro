@@ -12,7 +12,7 @@
 #include <sstmac/common/sstmac_config.h>
 
 #include <sstmac/hardware/interconnect/interconnect.h>
-#include <sstmac/hardware/topology/topology.h>
+#include <sstmac/hardware/topology/cartesian_topology.h>
 
 #include <sstmac/software/launch/dumpi_allocation.h>
 #include <sstmac/software/launch/node_allocator.h>
@@ -30,12 +30,10 @@ namespace sw {
 SpktRegister("dumpi", node_allocator, dumpi_allocation,
             "Allocate nodes directly from the trace files themselves");
 
-void
-dumpi_allocation::init_factory_params(sprockit::sim_parameters* params)
+dumpi_allocation::dumpi_allocation(sprockit::sim_parameters* params)
+ : node_allocator(params)
 {
-  node_allocator::init_factory_params(params);
-  metafile_ = params->get_param("launch_dumpi_metaname");
-
+  metafile_ = params->get_param("dumpi_metaname");
 }
 
 void
@@ -44,7 +42,7 @@ dumpi_allocation::allocate(
    const ordered_node_set& available,
    ordered_node_set& allocation) const
 {
-  hw::structured_topology* regtop = safe_cast(hw::structured_topology, topology_);
+  hw::cartesian_topology* regtop = safe_cast(hw::cartesian_topology, topology_);
 
   dumpi_meta* meta = new dumpi_meta(metafile_);
   int nrank = meta->num_procs();
@@ -67,7 +65,7 @@ dumpi_allocation::allocate(
       spkt_throw_printf(sprockit::input_error,
                        "dumpi_allocation::allocate: trace file %s contains no mesh info. No mesh coordinates found.\n"
                        "To run the trace you will need to use launch_allocation = hostname.\n"
-                       "You will also need to give a launch_hostname_map file giving the machine topology.\n"
+                       "You will also need to give a hostname_map file giving the machine topology.\n"
                        "Alternatively, the trace file may just be corrupted.",
                        fname.c_str());
     }

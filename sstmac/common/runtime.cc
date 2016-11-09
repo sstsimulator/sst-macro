@@ -6,6 +6,8 @@
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/software/launch/job_launcher.h>
+#include <sstmac/hardware/interconnect/interconnect.h>
+#include <sstmac/backends/common/parallel_runtime.h>
 
 namespace sstmac {
 
@@ -26,6 +28,15 @@ runtime::check_deadlock()
   }
 }
 
+void
+runtime::clear_statics()
+{
+  hw::interconnect::clear_static_interconnect();
+  //parallel_runtime::clear_static_runtime();
+  hw::topology::clear_static_topology();
+  sw::app_launch::clear_static_app_launch();
+}
+
 node_id
 runtime::current_node()
 {
@@ -42,6 +53,7 @@ runtime::delete_statics()
     delete chk;
   }
   deadlock_checks_.clear();
+  clear_statics();
 }
 
 node_id

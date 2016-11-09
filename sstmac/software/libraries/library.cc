@@ -13,48 +13,27 @@
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/sstmac_env.h>
 
+ImplementFactory(sstmac::sw::library);
+
 namespace sstmac {
 namespace sw {
 
+library::library(const std::string& libname, software_id sid, operating_system* os) :
+  sid_(sid), libname_(libname), os_(os),
+  addr_(os->addr())
+{
+  os_->register_lib(this);
+}
+
+device_id
+library::event_location() const
+{
+  return os_->event_location();
+}
+
 library::~library()
 {
-}
-
-void
-library::unregister_all_libs()
-{
-  os_->unregister_all_libs(this);
-}
-
-void
-library::register_lib(library* lib)
-{
-#if SSTMAC_SANITY_CHECK
-  if (!os_){
-    spkt_throw(sprockit::value_error,
-        "library::register_lib: os not initialized yet")
-  }
-#endif
-  os_->register_lib(this, lib);
-}
-
-void
-library::init_os(operating_system* os)
-{
-  os_ = os;
-
-#if SSTMAC_SANITY_CHECK
-  if (!os->params()){
-    spkt_throw(sprockit::null_error, "operating_system::params is null");
-  }
-#endif
-  consume_params(os->params());
-}
-
-void
-library::consume_params(sprockit::sim_parameters* params)
-{
-  //do nothing by default
+  os_->unregister_lib(this);
 }
 
 void

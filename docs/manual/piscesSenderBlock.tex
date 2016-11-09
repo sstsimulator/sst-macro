@@ -1,0 +1,16 @@
+arbitrator \paramType{string} & cut\_through & null, simple, cut\_through & Bandwidth arbitrator for PISCES congestion modeling. Null uses simple delays with no congestion. Simple uses store-and-forward that is cheap to compute, but can have severe latency errors for large packets. Cut-through approximates pipelining of flits across stages.  \\
+\hline
+latency \paramType{time} & No default & & If given, overwrites the send and credit latency parameters. Depending on component, the entire latency may be put on either the credits or the send. \\
+\hline
+bandwidth & No default & & The bandwidth of the arbitrator \\
+\hline
+send\_latency \paramType{time} & No default & & The latency to send a packet to the next stage in the network. This can be omitted if the generic latency parameter is given (see above). \\
+\hline
+credit\_latency \paramType{time} & No default & & The latency to send a credit to the previous network stage. This can be omitted if the generic latency parameter is given (see above). \\
+\hline
+num\_vc \paramType{int} & Computed & Positive int & If not specified, SST will estimate the number of virtual channels based on the topology and routing. If given and parameter is too small, the system can deadlock. If too large, buffer resources will be underutilized. \\
+\hline
+credits \paramType{byte length} & No default & & The number of initial credits for the component. Corresponds to an input buffer on another component. In many cases, SST/macro can compute this from other parameters and fill in the value. In some cases, it will be required. \\
+\hline
+mtu \paramType{byte length} & 1024B & & The packet size. All messages (flows) will be broken into units of this size. \\
+

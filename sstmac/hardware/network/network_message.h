@@ -11,10 +11,9 @@ namespace sstmac {
 namespace hw {
 
 class network_message :
-  public message,
-  public serializable_type<network_message>
+  public message
 {
-  ImplementSerializableDefaultConstructor(network_message)
+  ImplementSerializable(network_message)
 
  public:
   typedef enum {
@@ -41,19 +40,42 @@ class network_message :
 
  public:
   network_message(
-    sw::app_id aid,
-    node_id toaddr,
-    node_id fromaddr,
-    sw::task_id src,
-    sw::task_id dst,
-    long payload_bytes);
+   sw::app_id aid,
+   node_id to,
+   node_id from,
+   long payload_bytes) :
+    needs_ack_(true),
+    toaddr_(to),
+    fromaddr_(from),
+    bytes_(payload_bytes),
+    type_(null_netmsg_type)
+  {
+  }
 
-  network_message(sw::app_id aid, long payload_bytes);
+  network_message(node_id toaddr, node_id fromaddr, int num_bytes) :
+    bytes_(num_bytes),
+    toaddr_(toaddr),
+    fromaddr_(fromaddr)
+  {
+  }
 
-  network_message(); //for serialization
+  network_message(sw::app_id aid, long payload_bytes) :
+   bytes_(payload_bytes),
+   needs_ack_(true),
+   type_(null_netmsg_type),
+   aid_(aid)
+  {
+  }
+
+  network_message() //for serialization
+   : needs_ack_(true),
+    type_(null_netmsg_type),
+    bytes_(0)
+  {
+  }
 
   virtual std::string
-  to_string() const {
+  to_string() const override {
     return "network message";
   }
 
@@ -75,6 +97,11 @@ class network_message :
     return cln;
   }
 
+  message*
+  clone_ack() const override {
+    return clone_injection_ack();
+  }
+
   virtual void
   nic_reverse(type_t newtype);
 
@@ -82,7 +109,7 @@ class network_message :
   is_nic_ack() const;
 
   node_id
-  toaddr() const {
+  toaddr() const override {
     return toaddr_;
   }
 
@@ -90,7 +117,7 @@ class network_message :
   put_on_wire();
 
   node_id
-  fromaddr() const {
+  fromaddr() const override {
     return fromaddr_;
   }
 
@@ -110,45 +137,30 @@ class network_message :
   }
 
   virtual bool
-  needs_ack() const {
+  needs_ack() const override {
     //only paylods get acked
     return needs_ack_ && type_ >= payload;
   }
 
   virtual void
-  serialize_order(serializer& ser);
+  serialize_order(serializer& ser) override;
 
   void
   convert_to_ack();
 
   void
-  set_net_id(const network_id& id) {
-    net_id_ = id;
-  }
-
-  network_id
-  net_id() const {
-    return net_id_;
+  set_flow_id(uint64_t id) {
+    flow_id_ = id;
   }
 
   uint64_t
-  unique_id() const {
-    return uint64_t(net_id_);
-  }
-
-  sw::task_id
-  source_task() const {
-    return src_task_;
+  flow_id() const override {
+    return flow_id_;
   }
 
   sw::app_id
   aid() const {
     return aid_;
-  }
-
-  sw::task_id
-  dest_task() const {
-    return dest_task_;
   }
 
   type_t
@@ -165,7 +177,7 @@ class network_message :
   reverse();
 
   long
-  byte_length() const;
+  byte_length() const override;
 
   node_id toaddr_;
 
@@ -176,15 +188,11 @@ class network_message :
   clone_into(network_message* cln) const;
 
  protected:
-  network_id net_id_;
+  uint64_t flow_id_;
 
   sw::app_id aid_;
 
   bool needs_ack_;
-
-  sw::task_id src_task_;
-
-  sw::task_id dest_task_;
 
   long bytes_;
 

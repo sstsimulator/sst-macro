@@ -3,21 +3,17 @@
 
 #include <vector>
 #include <string>
+#include <stdio.h>
+//#include <regex>
 #include <sstmac/common/sstmac_config.h>
-#include <sprockit/serializable.h>
-#include <sprockit/serialize.h>
-#include <sprockit/serialize_serializable.h>
+#include <sstmac/common/serializable.h>
 #include <sprockit/unordered.h>
-
-#ifdef SSTMAC_HAVE_BOOST
-  #include <boost/algorithm/string.hpp>
-#endif
 
 static std::set<int> empty_set;
 
 namespace lblxml
 {
-  typedef spkt_unordered_map<int,int> box_to_comm_rank_map;
+  typedef spkt_unordered_map<int,int> box_to_domain_rank_map;
   typedef spkt_unordered_map<int,std::set<int> > box_to_listener_map;
   typedef spkt_unordered_set<int> int_container_t;
   typedef spkt_unordered_set<int>::iterator int_container_iter;
@@ -26,19 +22,37 @@ namespace lblxml
 
   int get_index(const char* cstr);
 
-#ifdef SSTMAC_HAVE_BOOST
-  inline void
-  split_string(std::vector<std::string>& result, const std::string& input, const char* delim){
-      boost::split( result, input, boost::is_any_of(delim) );
-  }
-#else
-  void
-  split_string(std::vector<std::string>& result, const std::string& input, const char* delim){
-#error Not yet implemented
-  }
-#endif
+  // not fully supported by compilers
+  //static
+  //std::vector<std::string>
+  //split(const std::string& input, const std::string& delim) {
+  //  std::regex re(delim);
+  //  std::sregex_token_iterator
+  //      first{input.begin(), input.end(), re, -1},
+  //      last;
+  //  return {first, last};
+  //}
 
-  class element : public sprockit::serializable
+  static
+  void
+  split(std::string& input, 
+        const char* delim, 
+        std::vector<std::string>& output)
+  {
+    char *token;
+    char cstr[input.length()+1];
+    std::strcpy (cstr, input.c_str());
+    token = strtok(cstr,delim);
+    while( token != NULL ) 
+    {
+       output.push_back(token);
+       token = strtok(NULL, delim);
+    }
+  }
+  
+
+  class element : 
+    public sstmac::serializable
   {
   public: 
     element() : index_(-1), id_("null")
@@ -63,7 +77,7 @@ namespace lblxml
     { std::cout << "index: " << index_ << " id: " << id_ << "\n"; }
 
     virtual void
-    serialize_order(sprockit::serializer &ser){
+    serialize_order(sstmac::serializer &ser){
       ser & index_;
       ser & id_;
     }
@@ -75,7 +89,7 @@ namespace lblxml
 
   class box :
     public element,
-    public sprockit::serializable_type<box>
+    public sstmac::serializable_type<box>
   {
     ImplementSerializableDefaultConstructor(box)
 
@@ -96,14 +110,17 @@ namespace lblxml
     int loc()
     { return loc_; }
 
-    virtual void print()
+    void change_loc(int newl)
+    { loc_ = newl; }
+
+    virtual void print() override
     {
       std::cout << "box: " << "loc: " << loc_ << " ";
       element::print();
     }
 
     virtual void
-    serialize_order(sprockit::serializer &ser){
+    serialize_order(sstmac::serializer &ser) override {
       ser & loc_;
       element::serialize_order(ser);
     }
@@ -120,11 +137,11 @@ namespace lblxml
     event() : event_type_(none)
     { }
 
-    event(int index, const std::string& id, const std::string& dep) :
-      element(index,id), event_type_(none)
+    event(int index, const std::string& id, std::string& dep, int epoch) :
+      element(index,id), event_type_(none), epoch_(epoch)
     {
       std::vector<std::string> splitvec;
-      split_string(splitvec, dep, ",");
+      split(dep, ",", splitvec);
       if(splitvec.size() == 1 && splitvec[0].length() == 0)
         return;
 
@@ -139,7 +156,7 @@ namespace lblxml
     }
 
     virtual void
-    serialize_order(sprockit::serializer &ser){
+    serialize_order(sstmac::serializer &ser) override {
       ser & dep_;
       ser & event_type_;
       element::serialize_order(ser);
@@ -168,7 +185,9 @@ namespace lblxml
 
     int_container_t& get_dep() { return dep_; }
 
-    virtual void print()
+    int epoch() { return epoch_; }
+
+    virtual void print() override
     {
       int_container_iter dep_it = dep_.begin();
       if (dep_it == dep_.end() )
@@ -181,6 +200,7 @@ namespace lblxml
 
   private:
     int_container_t dep_;
+    int epoch_;
 
   protected:
     event_type_t event_type_;
@@ -189,7 +209,9 @@ namespace lblxml
   class simple_event : public event
   {
    public:
-    simple_event(int index, const std::string& id, const std::string& dep) : event(index, id, dep)
+    simple_event(int index, const std::string& id, std::string& dep,
+                 int epoch)
+      : event(index, id, dep, epoch)
     {
     }
 
@@ -208,7 +230,7 @@ namespace lblxml
     }
 
     virtual void
-    serialize_order(sprockit::serializer &ser){
+    serialize_order(sstmac::serializer &ser){
       //don't serialize the listeners - these get computed later
       event::serialize_order(ser);
     }
@@ -219,16 +241,16 @@ namespace lblxml
 
   class comp :
     public simple_event,
-    public sprockit::serializable_type<comp>
+    public sstmac::serializable_type<comp>
   {
     ImplementSerializableDefaultConstructor(comp)
   public:
     comp() : type_(uninitialized), size_(-1), time_(-1), at_(-1)
     { event_type_ = computation; }
 
-    comp(int index, std::string id, std::string dep, std::string type,
+    comp(int index, std::string id, std::string dep, int epoch, std::string type,
          int size, double time, int at) :
-      simple_event(index, id, dep), size_(size), time_(time), at_(at)
+      simple_event(index, id, dep, epoch), size_(size), time_(time), at_(at)
     {
       if(type == "averageAndReflux")
         type_ = averageAndReflux;
@@ -252,7 +274,7 @@ namespace lblxml
 
     double time() { return time_; }
 
-    virtual void print()
+    virtual void print() override
     {
       std::cout << "comp: type: " << type_ << " size: " << size_
                 << " time: " << time_ << " at: " << at_ << " ";
@@ -260,7 +282,7 @@ namespace lblxml
     }
 
     virtual void
-    serialize_order(sprockit::serializer &ser){
+    serialize_order(sstmac::serializer &ser) override {
       ser & type_;
       ser & size_;
       ser & time_;
@@ -279,7 +301,7 @@ namespace lblxml
 
   class comm :
     public simple_event,
-    public sprockit::serializable_type<comm>
+    public sstmac::serializable_type<comm>
   {
     ImplementSerializableDefaultConstructor(comm)
   public:
@@ -292,9 +314,10 @@ namespace lblxml
       to_(copy.to_), size_(copy.size_)
     { event_type_ = pt2pt; }
 
-    comm(int index, const std::string& id, const std::string& dep, const std::string& type,
+    comm(int index, const std::string& id, std::string& dep,
+         int epoch, const std::string& type,
          int from, int to, int size) :
-      simple_event(index, id, dep), from_(from), to_(to), size_(size)
+      simple_event(index, id, dep, epoch), from_(from), to_(to), size_(size)
     {
       event_type_ = pt2pt;
       if( type == "copy")
@@ -319,7 +342,7 @@ namespace lblxml
     int size() { return size_; }
 
     virtual void
-    serialize_order(sprockit::serializer &ser){
+    serialize_order(sstmac::serializer &ser) override {
       ser & type_;
       ser & from_;
       ser & to_;
@@ -336,17 +359,24 @@ namespace lblxml
 
   class reduce :
     public event,
-    public sprockit::serializable_type<reduce>
+    public sstmac::serializable_type<reduce>
   {
     ImplementSerializable(reduce)
    public:
-    reduce(int index, const std::string& id, const std::string& dep, int size)
-      : event(index, id, dep), size_(size), box_array_(0)
+    reduce()
+      : event(), size_(0), box_array_(0)
     {
       event_type_ = collective;
     }
 
-    virtual void print()
+    reduce(int index, const std::string& id, std::string& dep,
+           int epoch, int size)
+      : event(index, id, dep, epoch), size_(size), box_array_(0)
+    {
+      event_type_ = collective;
+    }
+
+    virtual void print() override
     {
       std::cout << "allreduce: "
                 << " size: " << size_  << " "
@@ -356,16 +386,19 @@ namespace lblxml
 
     void add_team(const std::string& teamstr)
     {
+      char cstr[teamstr.length()+1];
+      std::strcpy (cstr, teamstr.c_str());
       std::vector<std::string> splitvec;
-      split_string(splitvec, teamstr, ",");
+      std::string str(cstr);
+      split(str, ",", splitvec);
       if(splitvec.size() == 1 && splitvec[0].length() == 0)
         return;
 
       for(int i=0; i<splitvec.size(); ++i) {
         std::string id = splitvec[i];
         int box_number = get_index(id);
-        int comm_rank = i;
-        team_map_[box_number] = comm_rank;
+        int domain_rank = i;
+        team_map_[box_number] = domain_rank;
       }
     }
 
@@ -374,13 +407,13 @@ namespace lblxml
       return box_array_.data();
     }
 
-    box_to_comm_rank_map& get_team()
+    box_to_domain_rank_map& get_team()
     {
       return team_map_;
     }
 
-    int comm_rank(int box_number) const {
-      box_to_comm_rank_map::const_iterator it = team_map_.find(box_number);
+    int domain_rank(int box_number) const {
+      box_to_domain_rank_map::const_iterator it = team_map_.find(box_number);
       if (it == team_map_.end()){
         spkt_throw_printf(sprockit::value_error,
           "invalid box number %d to allreduce id %d", box_number, index());
@@ -395,11 +428,11 @@ namespace lblxml
     void
     compute_box_array() {
       box_array_.resize(team_map_.size());
-      box_to_comm_rank_map::iterator it, end = team_map_.end();
+      box_to_domain_rank_map::iterator it, end = team_map_.end();
       for (it=team_map_.begin(); it != end; ++it){
-        int comm_rank = it->second;
+        int domain_rank = it->second;
         int box_number = it->first;
-        box_array_[comm_rank] = box_number;
+        box_array_[domain_rank] = box_number;
       }
     }
 
@@ -427,7 +460,7 @@ namespace lblxml
     }
 
     virtual void
-    serialize_order(sprockit::serializer &ser){
+    serialize_order(sstmac::serializer &ser) override {
       ser & size_;
       ser & team_map_;
       //don't do listeners, computed later
@@ -436,7 +469,7 @@ namespace lblxml
 
    private:
     int size_;
-    box_to_comm_rank_map team_map_;
+    box_to_domain_rank_map team_map_;
     box_to_listener_map listener_map_;
     std::vector<int> box_array_;
 

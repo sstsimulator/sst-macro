@@ -20,8 +20,15 @@ namespace sw {
 class first_available_allocation : public node_allocator
 {
  public:
-  first_available_allocation(parallel_runtime* rt) :
-    node_allocator(rt){}
+  first_available_allocation(sprockit::sim_parameters* params) :
+    node_allocator(params)
+  {
+  }
+
+  std::string
+  to_string() const override {
+    return "first available allocator";
+  }
 
   virtual
   ~first_available_allocation() throw ();
@@ -30,7 +37,7 @@ class first_available_allocation : public node_allocator
   allocate(
     int nnode_requested,
     const ordered_node_set& available,
-    ordered_node_set& allocation) const;
+    ordered_node_set& allocation) const override;
 
 };
 

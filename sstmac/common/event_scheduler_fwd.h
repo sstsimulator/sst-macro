@@ -3,6 +3,8 @@
 
 namespace sstmac {
 
+class event_component;
+class event_subcomponent;
 class event_scheduler;
 
 }

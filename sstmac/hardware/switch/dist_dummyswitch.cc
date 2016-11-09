@@ -19,30 +19,20 @@ namespace sstmac {
 namespace hw {
 
 void
-dist_dummy_switch::connect_ejector(int src_outport, int dst_inport, event_handler* nic)
-{
-}
-
-void
-dist_dummy_switch::connect_injector(int src_outport, int dst_inport, event_handler* nic)
-{
-}
-
-void
 dist_dummy_switch::connect_input(
+  sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
-  connectable* comp,
-  config* cfg)
+  event_handler* comp)
 {
 }
 
 void
 dist_dummy_switch::connect_output(
+  sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
-  connectable* comp,
-  config* cfg)
+  event_handler* comp)
 {
 }
 
@@ -51,30 +41,6 @@ dist_dummy_switch::handle(event* ev)
 {
   spkt_throw(sprockit::illformed_error,
     "dist_dummy_switch::handle: should never actually handle a message");
-}
-
-double
-dist_dummy_switch::hop_bandwidth() const
-{
-  spkt_throw_printf(sprockit::illformed_error,
-                   "dist_dummyswith::hop_bandwidth: should never be called");
-  return 0;
-}
-
-timestamp
-dist_dummy_switch::lookahead() const
-{
-  spkt_throw_printf(sprockit::illformed_error,
-                   "dist_dummyswith::lookahead: should never be called");
-  return timestamp(0);
-}
-
-timestamp
-dist_dummy_switch::hop_latency() const
-{
-  spkt_throw_printf(sprockit::illformed_error,
-                   "dist_dummyswith::hop_latency: should never be called");
-  return timestamp(0);
 }
 
 std::string

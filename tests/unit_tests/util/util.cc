@@ -1,9 +1,9 @@
 #include <sstmac/common/sstmac_config.h>
 #if !SSTMAC_INTEGRATED_SST_CORE
 #include <tests/unit_tests/util/util.h>
-#include <sstmac/hardware/interconnect/switch_interconnect.h>
+#include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/router/router.h>
-#include <sstmac/hardware/packet_flow/packet_flow_switch.h>
+#include <sstmac/hardware/pisces/pisces_switch.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 
@@ -87,85 +87,97 @@ naddr(long nid)
   return sstmac::node_id(nid);
 }
 
-class routable_packet_flow :
- public packet_flow_payload,
- public geometry_routable
+class routable_pisces :
+ public pisces_payload,
+ public routable
 {
-  NotSerializable(routable_packet_flow)
+  NotSerializable(routable_pisces)
 
   public:
-   routable_packet_flow(
+   routable_pisces(
      message* parent,
      int num_bytes,
-     long offset) :
-    packet_flow_payload(parent, num_bytes, offset),
-    geometry_routable(parent->toaddr(), parent->fromaddr())
+     bool is_tail) :
+    pisces_payload(parent, num_bytes, is_tail),
+    routable(parent->toaddr(), parent->fromaddr())
   {
   }
 
-  node_id
-  toaddr() const {
-   return geometry_routable::toaddr();
+  uint64_t
+  flow_id() const override {
+    return 0;
   }
 
   node_id
-  fromaddr() const {
-    return geometry_routable::fromaddr();
+  toaddr() const override {
+   return routable::toaddr();
+  }
+
+  node_id
+  fromaddr() const override {
+    return routable::fromaddr();
   }
 
   int
-  next_port() const {
-    return geometry_routable::port();
+  next_port() const override {
+    return routable::port();
   }
 
   int
-  next_vc() const {
-    return geometry_routable::vc();
+  next_vc() const override {
+    return routable::vc();
   }
 
 };
 
-packet_flow_payload*
+pisces_payload*
 msg(long nid)
 {
   network_message* new_msg = new network_message;
   new_msg->set_toaddr(naddr(nid));
-  new_msg->set_net_id(hw::network_id(0,0));
-  return new routable_packet_flow(new_msg, 0, 0);
+  new_msg->set_flow_id(hw::network_id(0,0));
+  return new routable_pisces(new_msg, 0, 0);
 }
 
-packet_flow_payload*
+pisces_payload*
 new_packet(message *msg, int bytes, int byte_offset)
 {
-  return new routable_packet_flow(msg, bytes, byte_offset);
+  return new routable_pisces(msg, bytes, byte_offset);
 }
 
 void
-init_switches(switch_interconnect::switch_map &switches,
+init_switches(interconnect::switch_map &switches,
               sprockit::sim_parameters& params,
               topology* top)
 {
-    params["link_bandwidth"] = "1.0GB/s";
-    params["crossbar_bandwidth"] = "1.0GB/s";
-    params["hop_latency"] = "100ns";
-    params["injection_bandwidth"] = "1.0GB/s";
-    params["model"] = "packet_flow";
-    params["mtu"] = "8192";
-    params["output_buffer_size"] = "16KB";
-    params["input_buffer_size"] = "16KB";
-    int num_switches = top->num_switches();
+  null_event_manager mgr(&params, nullptr);
+  params["arbitrator"] = "cut_through";
+  params["link.bandwidth"] = "1.0GB/s";
+  params["link.credits"] = "64KB";
+  params["xbar.bandwidth"] = "1.0GB/s";
+  params["xbar.credit_latency"] = "100ns";
+  params["xbar.send_latency"] = "0ns";
+  params["link.credit_latency"] = "0ns";
+  params["link.send_latency"] = "100ns";
+  params["ejection.bandwidth"] = "1.0GB/s";
+  params["ejection.send_latency"] = "1us";
+  params["ejection.credit_latency"] = "0ns";
+  params["model"] = "pisces";
+  params["mtu"] = "8192";
+  params["buffer_size"] = "16KB";
+  int num_switches = top->num_switches();
 
-    // create all the switches
-    for (int i=0; i < num_switches; i++)
-    {
-      params.add_param_override("id", i);
-      network_switch* sw = network_switch_factory::get_param(
-            "model", &params);
-      switches[switch_id(i)] = sw;
-      sw->set_topology(top);
-    }
-    //don't need a clone factory
-    top->connect_topology(switches);
+  switches.resize(num_switches);
+
+  // create all the switches
+  for (int i=0; i < num_switches; i++)
+  {
+    params.add_param_override("id", i);
+    network_switch* sw = network_switch_factory::get_param(
+          "model", &params, i, &mgr);
+    switches[switch_id(i)] = sw;
+  }
+  //top->connect_topology(&params, switches);
 }
 
 

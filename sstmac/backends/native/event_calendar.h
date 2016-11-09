@@ -31,8 +31,7 @@ class event_calendar :
 {
 
  public:
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
+  event_calendar(sprockit::sim_parameters* params, parallel_runtime* rt);
 
   ~event_calendar() throw ();
 
@@ -40,7 +39,7 @@ class event_calendar :
   clear(timestamp zero_time = timestamp(0));
 
   void
-  cancel_all_messages(event_loc_id mod);
+  cancel_all_messages(device_id mod);
 
   bool
   empty() const {

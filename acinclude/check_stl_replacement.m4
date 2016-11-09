@@ -18,6 +18,7 @@ AC_SUBST([STL_HEADER_OSTREAM_FULL_PATH], "`$srcdir/bin/get_include_path $CXX ost
 AC_SUBST([STL_HEADER_IOS_FULL_PATH], "`$srcdir/bin/get_include_path $CXX ios $CPPFLAGS $CXXFLAGS`")
 AC_SUBST([STL_HEADER_THREAD_FULL_PATH], "`$srcdir/bin/get_include_path $CXX thread $CPPFLAGS $CXXFLAGS`")
 AC_SUBST([STL_HEADER_MUTEX_FULL_PATH], "`$srcdir/bin/get_include_path $CXX mutex $CPPFLAGS $CXXFLAGS`")
+AC_SUBST([STL_HEADER_COND_VAR_FULL_PATH], "`$srcdir/bin/get_include_path $CXX condition_variable $CPPFLAGS $CXXFLAGS`")
 AC_SUBST([STL_HEADER_LIST_FULL_PATH], "`$srcdir/bin/get_include_path $CXX list $CPPFLAGS $CXXFLAGS`")
 AC_SUBST([STL_HEADER_MAP_FULL_PATH], "`$srcdir/bin/get_include_path $CXX map $CPPFLAGS $CXXFLAGS`")
 AC_SUBST([STL_HEADER_MEMORY_FULL_PATH], "`$srcdir/bin/get_include_path $CXX memory $CPPFLAGS $CXXFLAGS`")
@@ -42,6 +43,7 @@ AC_CONFIG_FILES([
   sstmac/replacements/map
   sstmac/replacements/memory
   sstmac/replacements/mutex
+  sstmac/replacements/condition_variable
   sstmac/replacements/thread
   sstmac/replacements/pthread.h
   sstmac/replacements/queue

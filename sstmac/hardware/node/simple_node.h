@@ -27,37 +27,19 @@ class simple_node :
   public node
 {
  public:
-#if SSTMAC_INTEGRATED_SST_CORE
-  simple_node(
-    SST::ComponentId_t id,
-    SST::Params& params);
-
-    virtual void
-    init_sst_params(SST::Params &params);
-#endif
+  simple_node(sprockit::sim_parameters* params,
+    uint64_t id, event_manager* mgr);
 
   virtual ~simple_node();
-
-  virtual void
-  finalize_init();
-
-
-  void
-  init_factory_params(sprockit::sim_parameters* params);
 
   virtual void
   execute(ami::COMP_FUNC func,
          event* data,
          callback* cb);
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-  virtual void
-  set_event_manager(event_manager* man);
-#endif
 
 };
 
-DeclareIntegratedComponent(simple_node);
 
 }
 } // end of namespace sstmac

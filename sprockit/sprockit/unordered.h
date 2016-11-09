@@ -5,7 +5,9 @@
 
 #include <sprockit/spkt_config.h>
 
-#if SPKT_HAVE_CPP11
+#if !SPKT_HAVE_CPP11
+#error Sprockit requires C++11
+#endif
 
 #include <unordered_map>
 template <typename... Args>
@@ -29,29 +31,6 @@ struct enum_hash
 
 template <typename Key, typename Value>
 using spkt_enum_map = std::unordered_map<Key, Value, sprockit::enum_hash>;
-
-#elif defined(SPKT_HAVE_BOOST)
-
-#include <boost/unordered_map.hpp>
-#define spkt_unordered_map boost::unordered_map
-
-#include <boost/unordered_set.hpp>
-#define spkt_unordered_set boost::unordered_set
-
-#elif SPKT_ENABLE_ORDERED_MAP
-
-#include <map>
-#define spkt_unordered_map std::map
-#define spkt_enum_map std::map
-#include <set>
-#define spkt_unordered_set std::set
-
-#else
-
-#error Configure error - must either have C++11, external boost, order enable ordered maps
-
-#endif
-
 
 
 #endif /* SPROCKIT_SPROCKIT_UNORDERED_H_ */

@@ -20,6 +20,7 @@ class simple_ptr_type;
 #include <sprockit/errors.h>
 #include <sprockit/refcount_ptr.h>
 #include <sprockit/spkt_config.h>
+#include <sprockit/printable.h>
 #include <typeinfo>
 
 namespace sprockit {
@@ -53,13 +54,6 @@ class ptr_type
 
 };
 
-class printable_ptr_type : public ptr_type
-{
- public:
-  virtual std::string
-  to_string() const = 0;
-};
-
 template <class Out, class In>
 sprockit::refcount_ptr<Out>
 __safe_ptr_cast__(const char* objname,
@@ -70,10 +64,9 @@ __safe_ptr_cast__(const char* objname,
 {
   sprockit::refcount_ptr<Out> out = dynamic_cast<Out*>(in.get());
   if (!out) {
-    spkt_throw_printf(value_error,
-                     "%s: failed to cast to %s at %s:%d - %s",
+    spkt_abort_printf("%s: failed to cast to %s at %s:%d - %s",
                      error_msg, objname, file, line,
-                     (in ? "wrong type" : "null object"));
+                     sprockit::to_string(in.get()).c_str());
   }
   return out;
 }

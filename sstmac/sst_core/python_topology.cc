@@ -2,80 +2,90 @@
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/sst_core/integrated_core.h>
-#include <sstmac/sst_core/connectable_wrapper.h>
 #include <sprockit/unordered.h>
-
-using namespace sstmac;
 
 extern "C" {
 
 typedef struct {
     PyObject_HEAD
     sstmac::hw::topology* macro_topology;
-    spkt_unordered_map<std::string, std::string>* params;
-} TopologyPy_t;
+    sprockit::sim_parameters* params;
+} SystemPy_t;
 
 } // end extern "C"
 
 static PyObject*
-topo_num_switches(TopologyPy_t* self, PyObject* args);
+sys_num_switches(SystemPy_t* self, PyObject* args);
 
 static PyObject*
-topo_num_nodes(TopologyPy_t* self, PyObject* args);
+sys_num_nodes(SystemPy_t* self, PyObject* args);
+
+static int
+sys_init(SystemPy_t* self, PyObject* args, PyObject* kwargs);
+
+static void
+sys_dealloc(SystemPy_t* self);
 
 static PyObject*
-topo_register_switch(TopologyPy_t* self, PyObject* args);
+sys_get_injection_connections(SystemPy_t* self, PyObject* idx);
 
 static PyObject*
-topo_register_endpoint(TopologyPy_t* self, PyObject* args);
+sys_get_switch_params(SystemPy_t* self, PyObject* idx);
 
-static int topoInit(TopologyPy_t* self, PyObject* args, PyObject* kwargs);
-static void topoDealloc(TopologyPy_t* self);
-static PyObject* topo_connect_switches(TopologyPy_t* self, PyObject* args, PyObject* kwargs);
-static PyObject* topo_connect_endpoints(TopologyPy_t* self, PyObject* args, PyObject* kwargs);
-static PyObject* topo_connect_node_to_nic(TopologyPy_t* self, PyObject* args, PyObject* kwargs);
+static PyObject*
+sys_get_switch_connections(SystemPy_t* self, PyObject* idx);
 
-static PyMethodDef topologyMethods[] = {
-    { "register_switch",
-      (PyCFunction)topo_register_switch, METH_VARARGS,
-      "register a switch to be included in the SST/macro topology"
-    },
-    { "register_endpoint",
-      (PyCFunction)topo_register_endpoint, METH_VARARGS,
-      "register an endpoint to be included in the SST/macro topology"
-    },
-    { "connect_switches",
-      (PyCFunction)topo_connect_switches, METH_VARARGS | METH_KEYWORDS,
-      "connect the registered switches to form this topology"
-    },
-    { "connect_endpoints",
-      (PyCFunction)topo_connect_endpoints, METH_VARARGS | METH_KEYWORDS,
-      "connect the registered endpoints to the correct switches necessary form this topology"
-    },
-    { "connect_node_to_nic",
-      (PyCFunction)topo_connect_node_to_nic, METH_VARARGS | METH_KEYWORDS,
-      "connect a node to its corresponding nic"
-    },
-    { "num_nodes",
-      (PyCFunction)topo_num_nodes, METH_VARARGS,
-      "return the number of nodes in the topology"
-    },
-    { "num_switches",
-      (PyCFunction)topo_num_switches, METH_VARARGS,
-      "return the number of switches in the topology"
-    },
-    { NULL, NULL, 0, NULL }
+static PyObject*
+sys_get_ejection_connections(SystemPy_t* self, PyObject* idx);
+
+static PyObject*
+sys_node_to_logp_switch(SystemPy_t* self, PyObject* idx);
+
+static PyObject*
+sys_is_logp(SystemPy_t* self, PyObject* null);
+
+static int
+sys_init(SystemPy_t* self, PyObject* args, PyObject* kwargs);
+
+static PyMethodDef system_methods[] = {
+  { "nodeToLogPSwitch",
+    (PyCFunction)sys_node_to_logp_switch, METH_O,
+      "map a node id to its corresponding LogP switch" },
+  { "isLogP",
+    (PyCFunction)sys_is_logp, METH_NOARGS,
+      "return whether to do simple LogP build" },
+  { "injectionConnections",
+    (PyCFunction)sys_get_injection_connections, METH_O,
+      "get the switch id and ports for injecting to a given node" },
+  { "ejectionConnections",
+    (PyCFunction)sys_get_ejection_connections, METH_O,
+    "get the switch id and ports for injecting to a given node" },
+  { "switchConnections",
+    (PyCFunction)sys_get_switch_connections, METH_O,
+      "get the switches and associated ports for a sw-sw connection"},
+  { "switchParams",
+    (PyCFunction)sys_get_switch_params, METH_O,
+    "get params unique to a given switch" },
+  { "numNodes",
+    (PyCFunction)sys_num_nodes, METH_NOARGS,
+    "return the number of nodes in the topology"
+  },
+  { "numSwitches",
+    (PyCFunction)sys_num_switches, METH_NOARGS,
+    "return the number of switches in the topology"
+  },
+  { NULL, NULL, 0, NULL }
 };
 
 
 
-static PyTypeObject TopologyType = {
+static PyTypeObject SystemType = {
     PyObject_HEAD_INIT(NULL)
     0,                         /* ob_size */
     "sst.macro.Topology",      /* tp_name */
-    sizeof(TopologyPy_t),      /* tp_basicsize */
+    sizeof(SystemPy_t),        /* tp_basicsize */
     0,                         /* tp_itemsize */
-    (destructor)topoDealloc,   /* tp_dealloc */
+    (destructor)sys_dealloc,   /* tp_dealloc */
     0,                         /* tp_print */
     0,                         /* tp_getattr */
     0,                         /* tp_setattr */
@@ -91,14 +101,14 @@ static PyTypeObject TopologyType = {
     0,                         /* tp_setattro */
     0,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT,        /* tp_flags */
-    "SST/macro topology",      /* tp_doc */
+    "SST/macro system",        /* tp_doc */
     0,                         /* tp_traverse */
     0,                         /* tp_clear */
     0,                         /* tp_richcompare */
     0,                         /* tp_weaklistoffset */
     0,                         /* tp_iter */
     0,                         /* tp_iternext */
-    topologyMethods,           /* tp_methods */
+    system_methods,               /* tp_methods */
     0,                         /* tp_members */
     0,                         /* tp_getset */
     0,                         /* tp_base */
@@ -106,17 +116,18 @@ static PyTypeObject TopologyType = {
     0,                         /* tp_descr_get */
     0,                         /* tp_descr_set */
     0,                         /* tp_dictoffset */
-    (initproc)topoInit,        /* tp_init */
+    (initproc)sys_init,        /* tp_init */
     0,                         /* tp_alloc */
     0,                         /* tp_new */
 };
 
-void
-init_python_topology(PyObject*  module)
+namespace sstmac {
+
+void py_init_system(PyObject*  module)
 {
   // Initialize our types
-  TopologyType.tp_new = PyType_GenericNew;
-  if ( ( PyType_Ready(&TopologyType) ) ) {
+  SystemType.tp_new = PyType_GenericNew;
+  if ( ( PyType_Ready(&SystemType) ) ) {
       abort();
       // TODO Figure out the right way to raise an error here
       // output->fatal(CALL_INFO, -1, "Error loading Python types.\n");
@@ -126,22 +137,109 @@ init_python_topology(PyObject*  module)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif
-    Py_INCREF(&TopologyType);
+    Py_INCREF(&SystemType);
 #if ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 #pragma GCC diagnostic pop
 #endif
-  PyModule_AddObject(module, "Topology", (PyObject*)&TopologyType);
+  PyModule_AddObject(module, "System", (PyObject*)&SystemType);
 }
 
+}
+
+static PyObject*
+sys_get_injection_connections(SystemPy_t* self, PyObject* nodeIdx)
+{
+  int nid = PyInt_AsLong(nodeIdx);
+  int ports[32];
+  int num_ports;
+  sstmac::switch_id sid = self->macro_topology
+      ->netlink_to_injection_switch(nid, ports, num_ports);
+  PyObject* intTuple = sstmac::py_get_int_tuple(num_ports, ports);
+  PyObject* tuple = PyTuple_New(2);
+  PyObject* swIdx = PyInt_FromLong(sid);
+  PyTuple_SetItem(tuple, 0, swIdx);
+  PyTuple_SetItem(tuple, 1, intTuple);
+  return tuple;
+}
+
+static PyObject*
+sys_get_switch_params(SystemPy_t* self, PyObject* idx)
+{
+  int swIdx = PyInt_AsLong(idx);
+  sprockit::sim_parameters* switch_params
+      = self->params->get_namespace("switch");
+  if (!self->macro_topology->uniform_switches()){
+    self->macro_topology->configure_nonuniform_switch_params(swIdx, switch_params);
+  }
+  return sstmac::py_dict_from_params(switch_params);
+}
+
+static PyObject*
+sys_get_switch_connections(SystemPy_t* self, PyObject* idx)
+{
+  int swIdx = PyInt_AsLong(idx);
+  std::vector<sstmac::hw::topology::connection> conns;
+  self->macro_topology->connected_outports(swIdx, conns);
+  PyObject* tuple = PyTuple_New(conns.size());
+  for (int i=0; i < conns.size(); ++i){
+    sstmac::hw::topology::connection& conn = conns[i];
+    PyObject* connTuple = PyTuple_New(4);
+    PyObject* srcIdx = PyInt_FromLong(conn.src);
+    PyTuple_SetItem(connTuple, 0, srcIdx);
+    PyObject* dstIdx = PyInt_FromLong(conn.dst);
+    PyTuple_SetItem(connTuple, 1, dstIdx);
+    PyObject* srcOutport = PyInt_FromLong(conn.src_outport);
+    PyTuple_SetItem(connTuple, 2, srcOutport);
+    PyObject* dstInport = PyInt_FromLong(conn.dst_inport);
+    PyTuple_SetItem(connTuple, 3, dstInport);
+    PyTuple_SetItem(tuple, i, connTuple);
+  }
+  return tuple;
+}
+
+static PyObject*
+sys_node_to_logp_switch(SystemPy_t* self, PyObject* idx)
+{
+  int nid = PyInt_AsLong(idx);
+  int sid = self->macro_topology->node_to_logp_switch(nid);
+  return PyInt_FromLong(sid);
+}
+
+static PyObject*
+sys_get_ejection_connections(SystemPy_t* self, PyObject* nodeIdx)
+{
+  int nid = PyInt_AsLong(nodeIdx);
+  int ports[32];
+  int num_ports;
+  sstmac::switch_id sid = self->macro_topology
+      ->netlink_to_ejection_switch(nid, ports, num_ports);
+  PyObject* intTuple = sstmac::py_get_int_tuple(num_ports, ports);
+  PyObject* tuple = PyTuple_New(2);
+  PyObject* swIdx = PyInt_FromLong(sid);
+  PyTuple_SetItem(tuple, 0, swIdx);
+  PyTuple_SetItem(tuple, 1, intTuple);
+  return tuple;
+}
+
+static bool is_logp(SystemPy_t* self)
+{
+  sprockit::sim_parameters* switch_params = self->params->get_namespace("switch");
+  std::string model = switch_params->get_param("model");
+  return model == "logP" || model == "LogP";
+}
+
+static PyObject*
+sys_is_logp(SystemPy_t *self, PyObject *null)
+{
+  bool test = is_logp(self);
+  PyObject* theBool = PyBool_FromLong(test);
+  return theBool;
+}
 
 static int
-topoInit(TopologyPy_t* self, PyObject* args, PyObject* kwargs)
+sys_init(SystemPy_t* self, PyObject* args, PyObject* kwargs)
 {
-  std::vector<PyObject*> items_lists_to_check;
-
-
-  spkt_unordered_map<std::string, std::string>* params_map =
-      new spkt_unordered_map<std::string, std::string>();
+  self->params = new sprockit::sim_parameters;
 
   PyObject* params_dict = NULL;
   PyArg_ParseTuple(args, "|O", &params_dict);
@@ -151,280 +249,40 @@ topoInit(TopologyPy_t* self, PyObject* args, PyObject* kwargs)
       std::cerr << "Positional argument to Topology constructor, if given, must be a mapping" << std::endl;
       return -1;
     }
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wwrite-strings"
-    PyObject* items = PyMapping_Items(params_dict);
-#pragma GCC diagnostic pop
-    items_lists_to_check.push_back(items);
-    // decref will happen later
   }
+  sstmac::py_extract_params(params_dict, self->params);
 
   if (PyMapping_Check(kwargs)){
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wwrite-strings"
-    PyObject* kwargs_items = PyMapping_Items(kwargs);
-#pragma GCC diagnostic pop
-    items_lists_to_check.push_back(kwargs_items);
-    // decref will happen later
+    sstmac::py_extract_params(kwargs, self->params);
   }
 
-  for(int ilist = 0; ilist < items_lists_to_check.size(); ++ilist) {
-    PyObject* items = items_lists_to_check[ilist];
+  self->macro_topology = sstmac::hw::topology::static_topology(self->params);
 
-    Py_ssize_t n_items = PySequence_Size(items);
-    for(Py_ssize_t i = 0; i < n_items; ++i) {
-      PyObject* pair = PySequence_GetItem(items, i);
-      PyObject* key = PySequence_GetItem(pair, 0);
-      PyObject* val = PySequence_GetItem(pair, 1);
-
-      PyObject* key_str_obj = PyObject_Str(key);
-      PyObject* val_str_obj = PyObject_Str(val);
-
-      const char* key_c_str = PyString_AsString(key_str_obj);
-      const char* val_c_str = PyString_AsString(val_str_obj);
-
-      //append topology namespace to all params
-      std::string ns_key_str = sprockit::printf("topology.%s", key_c_str);
-      (*params_map)[ns_key_str] = val_c_str;
-
-      Py_DECREF(val_str_obj);
-      Py_DECREF(key_str_obj);
-      Py_DECREF(val);
-      Py_DECREF(key);
-      Py_DECREF(pair);
-    }
-
-    Py_DECREF(items);
-
+  sprockit::sim_parameters* switch_params = self->params->get_namespace("switch");
+  if (is_logp(self)){
+    //I guess we don't do anything?
+  } else {
+    self->macro_topology->configure_individual_port_params(sstmac::switch_id(0), switch_params);
   }
-
-  self->params = params_map;
-
-  sprockit::sim_parameters* sim_params = make_sim_params_from_mapping(*self->params);
-
-  // an ugly workaround to avoid changing the STATIC_INIT_TOPOLOGY macro
-  // JJW 12/09/2015 That is ugly - but it works
-  auto set_topology = [&](sstmac::hw::topology* topo) {
-    self->macro_topology = topo;
-  };
-  STATIC_INIT_TOPOLOGY(sim_params);
-
-  delete sim_params;
 
   return 0;
-
 }
 
 static void
-topoDealloc(TopologyPy_t* self)
+sys_dealloc(SystemPy_t* self)
 {
   if(self->params) delete self->params;
   self->ob_type->tp_free((PyObject*)self);
 }
 
-namespace _impl {
-
-template <typename MapT, typename RegIdT>
-static void
-_topo_register(
-    TopologyPy_t* self, PyObject* args,
-    connectable_proxy_component::component_category_t cmp_cat,
-    MapT& reg_comps, RegIdT& id
-)
-{
-  PyObject* py_comp;
-  PyArg_ParseTuple(args, "O", &py_comp);
-
-  connectable_proxy_component* this_comp = new connectable_proxy_component;
-
-  // Make sure it doesn't get deleted, now that we're storing it
-  Py_INCREF(py_comp);
-  this_comp->component_proxy = py_comp;
-
-  // Add the topology parameters to the SST::Params
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wwrite-strings"
-  for(auto&& pair : *self->params) {
-    std::string top_key = "topology." + pair.first;
-    PyObject* discarded = PyObject_CallMethod(py_comp, "addParam", "ss",
-        top_key.c_str(), pair.second.c_str()
-    );
-    if(discarded) Py_DECREF(discarded);
-  }
-
-  {
-    PyObject* full_name = PyObject_CallMethod(py_comp, "getFullName", "");
-    const char* comp_name = PyString_AsString(full_name);
-    this_comp->component_name = std::string(comp_name);
-    if(full_name) Py_DECREF(full_name);
-  } // let comp_name go out of scope so we don't accidentally use it later
-#pragma GCC diagnostic pop
-
-  this_comp->category = cmp_cat;
-
-  reg_comps[id] = this_comp;
-
-}
-
-} // end namespace _impl
-
 static PyObject*
-topo_num_switches(TopologyPy_t* self, PyObject* args)
+sys_num_switches(SystemPy_t* self, PyObject* null)
 {
   return PyInt_FromLong(self->macro_topology->num_switches());
 }
 
 static PyObject*
-topo_num_nodes(TopologyPy_t* self, PyObject* args)
+sys_num_nodes(SystemPy_t* self, PyObject* null)
 {
   return PyInt_FromLong(self->macro_topology->num_nodes());
-}
-
-static PyObject*
-topo_register_switch(
-    TopologyPy_t* self, PyObject* args
-)
-{
-  static int current_switch_id = 0;
-  static connectable_proxy_component::switch_map& reg_switches =
-      connectable_proxy_component::registered_switches;
-  switch_id id(current_switch_id++);
-
-  _impl::_topo_register(
-      self, args, connectable_proxy_component::Switch,
-      reg_switches, id
-  );
-
-  Py_RETURN_NONE;
-}
-
-static PyObject*
-topo_register_endpoint(
-    TopologyPy_t* self, PyObject* args
-)
-{
-  static int current_endpoint_id = 0;
-  static connectable_proxy_component::endpoint_map& reg_endpoints =
-      connectable_proxy_component::registered_endpoints;
-  endpoint_id id(current_endpoint_id++);
-
-  _impl::_topo_register(
-      self, args, connectable_proxy_component::Endpoint,
-      reg_endpoints, id
-  );
-
-  Py_RETURN_NONE;
-}
-
-static PyObject*
-topo_connect_switches(
-    TopologyPy_t* self, PyObject* args, PyObject* kwargs
-)
-{
-  static connectable_proxy_component::switch_map& reg_switches =
-      connectable_proxy_component::registered_switches;
-
-  char* hop_latency;
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wwrite-strings"
-  char* keywords[] = { "hop_latency", NULL };
-  PyArg_ParseTupleAndKeywords(args, kwargs, "s", keywords,
-      &hop_latency
-  );
-#pragma GCC diagnostic pop
-
-  for(auto& pair : reg_switches) {
-    pair.second->hop_latency = hop_latency;
-  }
-
-  self->macro_topology->connect_topology(reg_switches);
-
-  Py_RETURN_NONE;
-
-}
-
-static PyObject*
-topo_connect_endpoints(
-    TopologyPy_t* self, PyObject* args, PyObject* kwargs
-)
-{
-  static connectable_proxy_component::switch_map& reg_switches =
-      connectable_proxy_component::registered_switches;
-  static connectable_proxy_component::endpoint_map& reg_endpoints =
-      connectable_proxy_component::registered_endpoints;
-
-  char* injection_latency;
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wwrite-strings"
-  char* keywords[] = { "injection_latency", NULL };
-  PyArg_ParseTupleAndKeywords(args, kwargs, "s", keywords,
-      &injection_latency
-  );
-#pragma GCC diagnostic pop
-
-  for(auto& pair : reg_endpoints) {
-    pair.second->injection_latency = injection_latency;
-  }
-  for(auto& pair : reg_switches) {
-    pair.second->injection_latency = injection_latency;
-  }
-
-  self->macro_topology->connect_end_points(reg_switches, reg_endpoints);
-
-  Py_RETURN_NONE;
-}
-
-static PyObject*
-topo_connect_node_to_nic(
-    TopologyPy_t* self, PyObject* args, PyObject* kwargs
-)
-{
-  PyObject* node;
-  PyObject* nic;
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wwrite-strings"
-  char* keywords[] = { "node", "nic", NULL };
-  PyArg_ParseTupleAndKeywords(args, kwargs, "OO", keywords,
-      &node, &nic
-  );
-
-  PyObject* node_name_obj = PyObject_CallMethod(node, "getFullName", "");
-  const char* node_name = PyString_AsString(node_name_obj);
-  PyObject* nic_name_obj = PyObject_CallMethod(nic, "getFullName", "");
-  const char* nic_name = PyString_AsString(nic_name_obj);
-#pragma GCC diagnostic pop
-
-
-  std::string link_name = sprockit::printf(
-      "__auto_link_node_(%s)_to_nic_(%s)",
-      node_name, nic_name
-  );
-  std::string port_name_prefix = sprockit::printf(
-      "__auto_port_nodetonic_(%s)_to_(%s)",
-      node_name, nic_name
-  );
-  std::string node_port_name = sprockit::printf("%s_node", port_name_prefix.c_str());
-  std::string nic_port_name = sprockit::printf("%s_nic", port_name_prefix.c_str());
-
-  // We DO actually want a 0 latency link between the node and the nic
-  std::string latency_str = "0 ms";
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wwrite-strings"
-  PyObject* link = PyObject_CallMethod(
-      connectable_proxy_component::sst, "Link", "s", link_name.c_str()
-  );
-  PyObject* __discarded_result = PyObject_CallMethod(link, "connect", "(Oss)(Oss)",
-      node, node_port_name.c_str(), latency_str.c_str(),
-      nic, nic_port_name.c_str(), latency_str.c_str()
-  );
-#pragma GCC diagnostic pop
-
-  Py_DECREF(__discarded_result);
-
-  Py_DECREF(link);
-  Py_DECREF(node_name_obj);
-  Py_DECREF(nic_name_obj);
-
-  Py_RETURN_NONE;
 }

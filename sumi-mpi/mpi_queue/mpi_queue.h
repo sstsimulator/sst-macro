@@ -22,6 +22,7 @@
 #include <sstmac/software/libraries/compute/lib_compute_time.h>
 
 #include <sstmac/common/event_handler.h>
+#include <sstmac/common/event_scheduler_fwd.h>
 
 #include <sprockit/factories/factory.h>
 
@@ -63,19 +64,13 @@ class mpi_queue
   friend class mpi_queue_recv_request;
 
  public:
-  mpi_queue();
-
-  void
-  init_factory_params(sprockit::sim_parameters* params);
+  mpi_queue(sprockit::sim_parameters* params, sstmac::sw::software_id sid, mpi_api* api);
 
   /// Goodbye.
   ~mpi_queue() throw ();
 
   static void
   delete_statics();
-
-  void
-  unregister_all_libs();
 
   void
   send(mpi_request* key, int count, MPI_Datatype type,
@@ -96,23 +91,6 @@ class mpi_queue
 
   void
   incoming_progress_loop_message(const mpi_message::ptr& message);
-
-  void
-  set_event_manager(event_manager* m);
-
-  void
-  init_sid(const software_id& id){
-    taskid_ = id.task_;
-    appid_ = id.app_;
-  }
-
-  void
-  init_os(operating_system* os);
-
-  void
-  set_api(mpi_api* api){
-    api_ = api;
-  }
 
   mpi_protocol*
   protocol(long bytes) const;
@@ -149,6 +127,8 @@ class mpi_queue
   void
   finish_progress_loop(const std::vector<mpi_request*>& req);
 
+  void forward_progress(double timeout);
+
   void
   buffer_unexpected(const mpi_message::ptr& msg);
 
@@ -182,8 +162,9 @@ class mpi_queue
 
   typedef std::list<mpi_queue_probe_request*> probelist_t;
 
-
  private:
+  void handle_poll_msg(const sumi::message::ptr& msg);
+
   void
   handle_collective_done(const sumi::message::ptr& msg);
 
@@ -252,6 +233,8 @@ class mpi_queue
   pending_message_t pending_message_;
 
   pending_message_t waiting_message_;
+
+  pending_message_t in_flight_messages_;
 
   /// Inbound messages waiting for a matching receive request.
   need_recv_t need_recv_;

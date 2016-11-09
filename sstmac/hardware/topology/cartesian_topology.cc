@@ -4,50 +4,75 @@
 namespace sstmac {
   namespace hw {
 
-
-void
-cartesian_topology::init_factory_params(sprockit::sim_parameters *params)
+cartesian_topology::cartesian_topology(sprockit::sim_parameters *params,
+                                       InitMaxPortsIntra i1,
+                                       InitGeomEjectID i2) :
+  structured_topology(params, i1, i2)
 {
-  /**
-  sstkeyword { gui=1 1 1;
-      docstring=The number of redundant physical links that make up
-                each link[edge] in the topology. These vector dimensions
-                should exactly match those in topology_geometry.
-                The total available bandwidth in each topology link is:ENDL
-                BW=Redundant*Link_BW;
-   }
-  */
-  std::string red_param = params->get_optional_param("redundant", "");
-  if (red_param.size() > 0) {
+  params->get_vector_param("geometry", dimensions_);
+  if (dimensions_.size() == 0) {
+    spkt_throw_printf(sprockit::value_error, "empty topology vector for hdtorus");
+  }
+
+  if (params->has_param("redundant")) {
     params->get_vector_param("redundant", red_);
-    if (red_.size() != ndimensions()) {
+    if (red_.size() != dimensions_.size()) {
       spkt_throw_printf(sprockit::input_error,
-                       "topology::init: wrong number of dimensions in topology_redundant=%s, "
+                       "topology::init: wrong number of dimensions in topology_redundant, "
                        "should be %d, got %d\n",
-                       red_param.c_str(),
-                       ndimensions(),
+                       dimensions_.size(),
                        red_.size());
     }
   }
   else {
-    int ndim = ndimensions();
+    int ndim = dimensions_.size();
     red_.resize(ndim);
     for (int i = 0; i < ndim; i++) {
       red_[i] = 1;
     }
   }
-  structured_topology::init_factory_params(params);
 }
 
-void
-cartesian_topology::minimal_routes_to_switch(switch_id current_sw_addr,
-                                             switch_id dest_sw_addr,
-                                             geometry_routable::path& current_path,
-                                             geometry_routable::path_set& paths) const
+coordinates
+cartesian_topology::node_coords(node_id uid) const
 {
-  coordinates src = switch_coords(current_sw_addr);
-  coordinates dst = switch_coords(dest_sw_addr);
-  minimal_routes_to_coords(src, dst, current_path, paths);
+  if (concentration_ == 1) {
+    return switch_coords((switch_id)uid);
+  }
+  else {
+    switch_id swid(uid / concentration_);
+    int lastidx = uid % concentration_;
+    coordinates coords = switch_coords(swid);
+    coords.push_back(lastidx);
+    return coords;
+  }
+}
+
+node_id
+cartesian_topology::node_addr(const coordinates& coords) const
+{
+
+  int offset = 0;
+  if (coords.size() > ndimensions()) {
+    //there is no "extra" switch index
+    offset = coords[ndimensions()];
+  }
+
+  int swid = switch_addr(coords);
+  node_id nid = swid * concentration_ + offset;
+  return nid;
+}
+
+std::string
+cartesian_topology::node_label(node_id nid) const
+{
+  return node_coords(nid).to_string();
+}
+
+std::string
+cartesian_topology::switch_label(switch_id sid) const
+{
+  return switch_coords(sid).to_string();
 }
 
   }

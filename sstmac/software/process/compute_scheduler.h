@@ -25,24 +25,16 @@ DeclareDebugSlot(compute_scheduler)
 namespace sstmac {
 namespace sw {
 
-class compute_scheduler :
-  public sprockit::factory_type
+class compute_scheduler
 {
  public:
-  compute_scheduler(sw::operating_system* os) :
+  compute_scheduler(sprockit::sim_parameters* params, sw::operating_system* os) :
     os_(os)
   {
   }
 
-  virtual std::string
-  to_string() const {
-    return "compute_scheduler";
-  }
-
   virtual ~compute_scheduler() {}
 
-  void
-  init_factory_params(sprockit::sim_parameters* params);
 
   int
   ncores() const {
@@ -55,14 +47,16 @@ class compute_scheduler :
   }
 
   virtual void
-  finalize_init();
-
-  virtual void
   reserve_core(thread* thr) = 0;
   
   virtual void
   release_core(thread* thr) = 0;
   
+  /**
+   * @brief configure
+   * @param ncore   The number of cores PER socket
+   * @param nsocket The number of sockets
+   */
   virtual void
   configure(int ncore, int nsocket);
 

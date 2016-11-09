@@ -158,8 +158,7 @@ nobase_library_include_HEADERS = \
   launch/launch_handler.h \
   launch/job_launch_event.h \
   launch/launch_event.h  \
-  launch/launch_event_fwd.h  \
-  launch/machine_descriptor.h 
+  launch/launch_event_fwd.h  
 
 if HAVE_UCONTEXT
   libsstmac_sw_la_SOURCES += \

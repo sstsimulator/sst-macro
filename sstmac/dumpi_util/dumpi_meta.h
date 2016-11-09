@@ -32,11 +32,6 @@ class dumpi_meta  {
   bool openfile();
   int getnumprocs();
 
-  virtual std::string
-  to_string() const {
-    return "dumpimeta";
-  }
-
   int num_procs() const {
     return numprocs_;
   }

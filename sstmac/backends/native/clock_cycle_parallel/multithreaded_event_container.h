@@ -40,16 +40,9 @@ class multithreaded_event_container :
   public clock_cycle_event_map
 {
  public:
-  multithreaded_event_container(parallel_runtime* rt) :
-    clock_cycle_event_map(rt){}
+  multithreaded_event_container(sprockit::sim_parameters* params, parallel_runtime* rt);
 
   ~multithreaded_event_container() throw () {}
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
-  finalize_init();
 
   virtual void
   run();

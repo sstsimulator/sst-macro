@@ -88,7 +88,7 @@ class mpi_comm : public communicator
   MPI_Comm id_;
   int rank_;
 
-  virtual std::string
+  std::string
   to_string() const;
 
   /// The rank of this peer in the communicator.
@@ -165,7 +165,7 @@ class mpi_comm : public communicator
 
   mpi_request*
   get_request(int tag) const {
-    std::map<int, mpi_request*>::const_iterator it = ireqs_.find(tag);
+    auto it = ireqs_.find(tag);
     if (it == ireqs_.end()){
       spkt_throw_printf(sprockit::value_error,
           "cannot find tag %d on comm %d for returning collective MPI_Request",

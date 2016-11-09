@@ -17,16 +17,6 @@
 
 namespace sstmac {
 
-std::string
-handler_event_queue_entry::to_string() const
-{
-  std::stringstream ss;
-  ss << "sst_event(handler=" << (handler_ ? handler_->to_string() : "null")
-     << ",  msg = " << (ev_to_deliver_ ? ev_to_deliver_->to_string()
-                        : "null") << ")";
-  return ss.str();
-}
-
 void
 handler_event_queue_entry::execute()
 {
@@ -35,7 +25,7 @@ handler_event_queue_entry::execute()
 
 handler_event_queue_entry::handler_event_queue_entry(event* ev,
                            event_handler* hand,
-                           event_loc_id src_loc) :
+                           device_id src_loc) :
   ev_to_deliver_(ev),
   handler_(hand),
   event_queue_entry(hand->event_location(), src_loc)

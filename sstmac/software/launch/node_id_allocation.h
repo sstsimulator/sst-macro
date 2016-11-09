@@ -12,18 +12,19 @@ class node_id_allocation :
 {
 
  public:
-  node_id_allocation(parallel_runtime* rt) :
-    node_allocator(rt){}
+  node_id_allocation(sprockit::sim_parameters* params);
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
+  std::string
+  to_string() const override {
+    return "node id allocation";
+  }
 
   virtual ~node_id_allocation() throw() {}
 
   virtual void
   allocate(int nnode_requested,
     const ordered_node_set& available,
-    ordered_node_set &allocation) const;
+    ordered_node_set &allocation) const override;
 
   static void
   read_coordinate_file(const std::string& file,

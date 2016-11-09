@@ -28,9 +28,10 @@ class lib_compute_inst :
   public lib_compute
 {
  public:
-  lib_compute_inst(software_id id);
+  lib_compute_inst(sprockit::sim_parameters* params, software_id id, operating_system* os);
 
-  lib_compute_inst(const std::string& libname, software_id id);
+  lib_compute_inst(sprockit::sim_parameters* params, const std::string& libname,
+                   software_id id, operating_system* os);
 
   virtual
   ~lib_compute_inst() { }
@@ -50,15 +51,15 @@ class lib_compute_inst :
     uint32_t bytes_per_loop);
 
   virtual void
-  consume_params(sprockit::sim_parameters* params);
-
-  void
-  incoming_event(event *ev){
+  incoming_event(event *ev) override {
     library::incoming_event(ev);
   }
 
  protected:
   double loop_overhead_;
+
+ private:
+  void init(sprockit::sim_parameters* params);
 
 };
 

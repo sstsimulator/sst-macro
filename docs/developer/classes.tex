@@ -7,7 +7,7 @@
 \subsection{Basic Class}\label{subsec:basicClass}
 Most classes are manually managed, being explicitly deleted.  Whenever possible,
 smart pointers should be avoided since they create thread-safety headaches.
-Classes in \sstmacro can inherit from the top-level class \inlinecode{ptr_type}, 
+For cases where manual deletion is cumbersome, classes in \sstmacro can inherit from the top-level class \inlinecode{ptr_type}, 
 which exists in \inlinecode{namespace sprockit}. 
 The examples here can be found in the code repository in \inlineshell{tutorials/programming/basic}.
 
@@ -39,7 +39,7 @@ mostly used for debugging purposes.
 \begin{CppCode}
  public:
   std::string
-  to_string() const {
+  to_string() const override {
     return "message class";
    }
 \end{CppCode}
@@ -170,7 +170,7 @@ The \inlinecode{ptr_type} class requires we add a \inlinecode{to_string} functio
 
 \begin{CppCode}
 std::string
-to_string() const {
+to_string() const override {
   return "diamond";
 }
 \end{CppCode}
@@ -309,7 +309,7 @@ Changing the values produces a different class type and different behavior.
 Thus we can manage polymorphic types by changing the input file.
 
 \subsection{Base Class}\label{subsec:baseClass}
-To declare a new factory type, you must include the factory header file and inherit from the base class \inlinecode{factory_type}.
+To declare a new factory type, you must include the factory header file
 
 \begin{CppCode}
 #include <sprockit/factories/factory.h>
@@ -317,8 +317,7 @@ To declare a new factory type, you must include the factory header file and inhe
 namespace sstmac {
     namespace tutorial {
 
-class actor :
-    public sprockit::factory_type
+class actor
 {
 \end{CppCode}
 
@@ -327,6 +326,8 @@ We now define the public interface for the actor class
 
 \begin{CppCode}
  public:
+  actor(sprockit::sim_parameters* params);
+  
   virtual void
   act() = 0;
 
@@ -335,16 +336,7 @@ We now define the public interface for the actor class
 Again, we must have a public, virtual destructor.
 Each instance of the actor class must implement the \inlinecode{act} method.
 
-For factory types, each class must implement
-
-\begin{CppCode}
-virtual void
-init_factory_params(sprockit::sim_parameters* params);
-\end{CppCode}
-In general, constructors for factory types do no work.
-Reading parameters and initializing values happens entirely in this function.
-
-
+For factory types, each class must take a parameter object in the constructor.
 The parent class has a single member variable
 
 \begin{CppCode}
@@ -365,25 +357,12 @@ Moving to the \inlineshell{actor.cc} file, we see the implementation
 namespace sstmac {
     namespace tutorial {
 
-void
-actor::init_factory_params(sprockit::sim_parameters* params)
+actor::actor(sprockit::sim_parameters* params)
 {
   biggest_fan_ = params->get_param("biggest_fan");
 }
 \end{CppCode}
-We initialize the member variable from the parameter object. 
-For cloning, we have instead
-
-\begin{CppCode}
-void
-actor::clone_into(actor* cln) const
-{
-  cln->biggest_fan_ = biggest_fan_;
-}
-\end{CppCode}
-which initializes from the existing object being cloned.
-
-We additionally need a macro
+We initialize the member variable from the parameter object.  We additionally need a macro
 
 \begin{CppCode}
 ImplementFactory(sstmac::tutorial::actor);
@@ -403,41 +382,27 @@ namespace sstmac {
 class mandy_patinkin :
     public actor
 {
+ public:
+  mandy_patinkin(sprockit::sim_parameters* params);
 \end{CppCode}
 
-
 We have a single member variable
-
 \begin{CppCode}
- protected:
+ private:
   std::string sword_hand_;
 \end{CppCode}
 
 This is a complete type that can be instantiated. 
-
-
-To create the class we will need the functions
+To create the class we will need the constructor:
 \begin{CppCode}
-virtual void
-init_factory_params(sprockit::sim_parameters* params);
-
-virtual actor*
-clone() const;
+mandy_patinkin(sprockit::sim_parameters* params);
 \end{CppCode}
 
 And finally, to satisfy the \inlinecode{actor} public interface, we need
 
 \begin{CppCode}
 virtual void
-act();
-\end{CppCode}
-
-For doing the clone work, we need a protected helper function
-
-\begin{CppCode}
- protected:
-  void
-  clone_into(mandy_patinkin* cln) const;
+act() override;
 \end{CppCode}
 
 Moving to the implementation, we must first register the new type using the macro
@@ -454,11 +419,11 @@ The second argument is the parent, base class.
 The third argument is the specific child type.
 Finally, a documentation string should be given with a brief description.
 Whatever string value is registered here will be used in the input file to create the type.
-We can now implement the functions
+We can now implement the constructor:
 
 \begin{CppCode}
-void
-mandy_patinkin::init_factory_params(sprockit::sim_parameters* params)
+mandy_patinkin::mandy_patinkin(sprockit::sim_parameters* params) :
+  actor(params)
 {
   sword_hand_ = params->get_param("sword_hand");
 
@@ -466,14 +431,12 @@ mandy_patinkin::init_factory_params(sprockit::sim_parameters* params)
     spkt_throw(value_error, "I am not left handed!");
   }
   else if (sword_hand_ != "right"){
-      spkt_throw_printf(value_error,
+      spkt_abort_printf(value_error,
           "Invalid hand specified: %s",
           sword_hand_.c_str());
   }
-  actor::init_factory_params(params);
 }
 \end{CppCode}
-We are safe to throw exceptions here since we are not in the constructor.
 The child class must invoke the parent class method. 
 Finally, we specify the acting behavior
 

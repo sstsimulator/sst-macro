@@ -18,7 +18,6 @@ library_include_HEADERS = \
     pisces.ini \
     macrels.ini \
     commodore64.ini \
-    franklin.ini \
     hopper_pflow.ini \
     small_torus.ini \
     small_torus_simple.ini \

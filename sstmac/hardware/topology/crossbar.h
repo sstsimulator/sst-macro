@@ -8,10 +8,6 @@
  *  For more information, see the LICENSE file in the top
  *  SST/macroscale directory.
  */
-
-// crossbar.h: Interface for crossbar networks.
-//
-// Author: Curtis Janssen <cljanss@ca.sandia.gov>
 #ifndef SSTMAC_HARDWARE_NETWORK_TOPOLOGY_CROSSBAR_H_INCLUDED
 #define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_CROSSBAR_H_INCLUDED
 
@@ -28,86 +24,65 @@ namespace hw {
 class crossbar : public structured_topology
 {
  public:
-  virtual std::string
-  to_string() const {
+  std::string
+  to_string() const override {
     return "crossbar topology";
   }
 
   virtual ~crossbar() {}
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
+  crossbar(sprockit::sim_parameters* params);
 
   int
-  diameter() const {
-    return 1;
-  }
-
-  std::string
-  name() const;
-
-  int
-  ndimensions() const {
+  diameter() const override {
     return 1;
   }
 
   int
-  ncoords() const {
-    return 1;
-  }
-
-  int
-  num_leaf_switches() const {
+  num_leaf_switches() const override {
     return size_;
   }
 
-  virtual void
-  connect_objects(internal_connectable_map& switches);
+  int minimal_distance(switch_id src, switch_id dst) const override {
+    return 1;
+  }
+
+  bool
+  uniform_network_ports() const override {
+    return true;
+  }
+
+  bool
+  uniform_switches_non_uniform_network_ports() const override {
+    return true;
+  }
+
+  bool
+  uniform_switches() const override {
+    return true;
+  }
 
   void
-  configure_vc_routing(std::map<routing::algorithm_t, int> &m) const;
+  configure_individual_port_params(switch_id src,
+        sprockit::sim_parameters *switch_params) const override;
+
+  void
+  connected_outports(switch_id src,
+       std::vector<connection>& conns) const override;
+
+  void
+  configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
 
   void
   minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    geometry_routable::path& path) const;
-
-  void
-  minimal_route_to_coords(
-    const coordinates &src_coords,
-    const coordinates &dest_coords,
-    geometry_routable::path& path) const;
-
-  int
-  minimal_distance(
-    const coordinates& src_coords,
-    const coordinates& dest_coords
-  ) const;
-
-  virtual void
-  productive_path(
-    int dim,
-    const coordinates& src,
-    const coordinates& dst,
-    geometry_routable::path& path) const;
+    routable::path& path) const override;
 
   virtual int
-  convert_to_port(int dim, int dir) const;
-
-  switch_id
-  switch_number(const coordinates& coords) const {
-    return switch_id(coords[0]);
-  }
-
-  virtual int
-  num_switches() const {
+  num_switches() const override {
     return size_;
   }
-
- protected:
-  virtual void
-  compute_switch_coords(switch_id uid, coordinates& coords) const;
 
  private:
   long size_;

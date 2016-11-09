@@ -32,25 +32,21 @@ block_task_mapper::~block_task_mapper() throw()
 
 void
 block_task_mapper::map_ranks(
-  const app_id& aid,
   const ordered_node_set& nodes,
   int ppn,
   std::vector<node_id> &result,
   int nproc)
 {
-  nproc = validate_nproc(ppn, nodes.size(), nproc, "blockindexing");
+  nproc = validate_nproc(ppn, nodes.size(), nproc, "block mapper");
 
   result.clear();
-  ordered_node_set::const_iterator it, end = nodes.end();
-  long i = 0;
 
+  int i = 0;
   int num_physical_nodes = nproc / ppn;
   if (nproc % ppn){
     ++num_physical_nodes;
   }
-  for(it = nodes.begin(); it != end && i < num_physical_nodes; ++it) {
-    node_id addr(*it);
-
+  for(node_id addr : nodes){
     debug_printf(sprockit::dbg::indexing,
         "block indexing: considering nodeaddr[%d]=%d",
         i, int(addr));

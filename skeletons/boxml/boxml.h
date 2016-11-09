@@ -2,8 +2,8 @@
 #define BOXML_H_INCLUDED
 
 #include <sstmacro.h>
-#include <sst/sumi_api.h>
-#include <sumi/transport.h>
+#include <sstmac/libraries/sumi/sumi.h>
+#include <sstmac/software/process/app.h>
 #include <sstmac/software/process/key.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/software/process/operating_system.h>
@@ -13,20 +13,37 @@
 #include <sstmac/common/stats/stat_local_double_fwd.h>
 #include <tinyxml2.h>
 #include <containers.h>
+#include <sprockit/unordered.h>
+#include <mpi.h>
+#include <sstmac/software/process/time.h>
+
 
 #include <algorithm>
 #include <ctime>
-
 #include <sys/time.h>
+#include <vector>
 #include <list>
 #include <deque>
 
-#include <sprockit/unordered.h>
+#ifdef BOXML_HAVE_METIS
+#include <metis.h>
+#endif
 
+#define BOXML_DEBUG_RANK 285
+#define BOXML_DEBUG_EPOCH 35
 
+struct epoch_check
+{
+  int* rank;
+  int* epoch;
+
+  void print_epoch() { printf("rank %d last epoch runnning is %d\n", *rank, *epoch); }
+};
 
 namespace lblxml
 {
+
+  class box_domain;
 
   // typedefs
   typedef int_container_t set_t;
@@ -40,7 +57,6 @@ namespace lblxml
   typedef std::vector<box*> box_map_t;
   typedef std::vector<box*> box_map_iter;
   typedef std::vector<event*> event_map_t;
-  //typedef std::vector<event*>::iterator event_map_iter;
   typedef std::vector<int> index_to_rank_t;
   typedef std::vector<set_t> rank_to_set_t;
   typedef std::vector<std::list<int> > rank_to_list_t;
@@ -48,8 +64,11 @@ namespace lblxml
   typedef std::vector<set_t>::iterator rank_to_set_iter;
   typedef std::deque<int> da_list_t;
   typedef std::vector<da_list_t> rank_to_da_list_t;
+  typedef std::pair<int,int> index_box_pair_t;
+  typedef std::map<index_box_pair_t,box_domain*> domain_map_t;
+  typedef std::queue<index_box_pair_t> allreduce_queue_t;
 
-  class pt2pt_message : public sumi::rdma_message
+  class pt2pt_message : public sumi::message
   {
   private:
     int event_index_;
@@ -57,7 +76,7 @@ namespace lblxml
     typedef sprockit::refcount_ptr<pt2pt_message> ptr;
 
     pt2pt_message(int index, long num_bytes) : event_index_(index),
-      sumi::rdma_message(num_bytes)
+      sumi::message(num_bytes)
     { }
 
     ~pt2pt_message() { }
@@ -74,13 +93,11 @@ namespace lblxml
 
   public:
 
-    box_domain() { }
+    box_domain() : communicator(-1) { }
 
     box_domain (int comm_rank, int nboxes, const int* boxes, const int* map) :
-      map_(map), boxes_(boxes), size_(nboxes)
-    {
-      my_comm_rank_ = comm_rank;
-    }
+      map_(map), boxes_(boxes), size_(nboxes), communicator( comm_rank )
+    { }
 
     ~box_domain() { }
 
@@ -89,7 +106,7 @@ namespace lblxml
 
     int
     my_box_number() const {
-      return boxes_[my_comm_rank_];
+      return boxes_[my_comm_rank()];
     }
 
     int
@@ -107,38 +124,6 @@ namespace lblxml
 
   };
 
-  typedef std::pair<int,int> index_box_pair_t;
-  typedef std::map<index_box_pair_t,box_domain*> domain_map_t;
-  typedef std::queue<index_box_pair_t> allreduce_queue_t;
-
-  //typedef std::list<int> list_t;
-  //typedef std::list<int>::iterator list_iter;
-  //typedef std::unordered_map<int,box_t> box_map_t;
-  //typedef std::unordered_map<int,box_t>::iterator box_map_iter;
-  //typedef std::unordered_map<int,comm_t> comm_map_t;
-  //typedef std::unordered_map<int,comm_t>::iterator comm_map_iter;
-  //typedef std::unordered_map<int,comp_t> comp_map_t;
-  //typedef std::unordered_map<int,comp_t>::iterator comp_map_iter;
-  //typedef std::unordered_map<int,int> index_to_rank_t;
-  //typedef std::unordered_map<int,int>::iterator index_to_rank_iter;
-  //typedef std::unordered_map<int,MPI_Request*> recv_req_map_t;
-  //typedef std::unordered_map<int,MPI_Request*>::iterator recv_req_map_iter;
-  //typedef std::unordered_map<int,list_t> rank_to_list_t;
-  //typedef std::unordered_map<int,list_t>::iterator rank_to_list_iter;
-  //typedef std::unordered_map<int,da_list_t> rank_to_da_list_t;
-  //typedef std::unordered_map<int,da_list_t>::iterator rank_to_da_list_iter;
-  //typedef std::unordered_map<int,MPI_Comm> mpi_comm_map_t;
-  //typedef std::unordered_map<int,comm_map_t> comm_maps_t;
-  //typedef std::unordered_map<int,comp_map_t> comp_maps_t;
-  //typedef std::unordered_map<int,comm_map_t> coll_maps_t;
-
-  //typedef std::map<int,MPI_Request*> recv_req_map_t;
-  //typedef std::map<int,MPI_Request*>::iterator recv_req_map_iter;
-  //typedef std::list<MPI_Request*> recv_req_list_t;
-  //typedef std::list<MPI_Request*>::iterator recv_req_list_iter;
-  //typedef std::set<MPI_Request*> recv_req_list_t;
-  //typedef std::set<MPI_Request*>::iterator recv_req_list_iter;
-
   // globals (that we really do want to be global)
   extern index_to_rank_t g_boxindex_to_rank; 
   extern box_map_t g_boxes;
@@ -151,38 +136,49 @@ namespace lblxml
   extern rank_to_da_list_t g_rank_to_valid_comps;
   extern std::map<int, std::vector<bool> > g_reduce_to_box_running;
   extern double g_total_idle_time;
+  extern double g_total_barrier_time;
+  extern double g_total_compute_time;
   extern int g_active_ranks;
-  //extern rank_to_da_list_t g_rank_to_valid_allreduces;
+  extern int g_ncomp_run;
+  extern int g_max_epoch_;
+  extern std::map<int, std::map<int,int> > g_rank_to_epoch_count;
+  extern std::map<int, std::map<int,int> > g_rank_to_epoch_done;
+  extern std::map<int, double> g_rank_to_comp_t;
+  extern std::map<int, double> g_rank_to_idle_t;
 
-  //extern comm_map_t g_comm_map;
-  //extern comm_map_t g_coll_map;
-  //extern comp_map_t g_comp_map;
-  //extern comm_maps_t g_send_maps;
-  //extern comm_maps_t g_recv_maps;
-  //extern comm_maps_t g_coll_maps;
-  //extern comp_maps_t g_comp_maps;
+#ifdef BOXML_HAVE_TEST
+  extern std::vector<Task*> g_task_map;
+#endif
 
   extern std::map<int,sstmac::timestamp> g_message_begin_;
 
-  class boxml : virtual public sstmac::sw::mpi_app
+  class boxml : public sstmac::sw::app
   {
   public:
     static sstmac::sim_thread_lock* event_lock;
+    epoch_check checker_;
 
   private:
 
-    int debug_, rank_, commsize_, message_factor_;
-    double compute_scale_;
-    std::string boxfile_, assignment_;
+    enum synch_mode {full_synch, rank_synch, phase_asynch, full_asynch};
+
+    int debug_, rank_, commsize_, message_factor_, repartition_size_, ncomp_,
+    current_epoch_, current_epoch_events_done_;
+    long vertex_scale_, fixed_vertex_;
+    double compute_scale_, load_balance_tolerance_;
+    std::string boxfile_, partitioning_, placement_;
     std::vector< std::string> eventfiles_;
-    bool do_compute_, randomize_events_, detailed_progress_, round_robin_, minimize_locks_;
+    bool do_compute_, randomize_events_, detailed_progress_, round_robin_,
+      ignore_epoch_, minimize_locks_, rank_remap_, zero_edge_weight_,
+      build_graph_only_, build_chart_;
+    synch_mode synch_mode_;
     static bool have_data_;
     int barrier_tag_;
     box_map_t my_boxes_;
     domain_map_t  box_domains_;
     /** stores allreduce by box number */
     allreduce_queue_t valid_allreduces_;
-    int nevents_;
+    int nevents_, ncomm_;
     static std::fstream bin_file_;
     static bool have_input_bin_;
     static bool have_output_bin_;
@@ -191,6 +187,10 @@ namespace lblxml
     sumi::transport* tport_;
     sstmac::stat_histogram* hist_eff_bw_;
     sstmac::stat_local_double* idle_time_;
+    sstmac::stat_local_double* barrier_time_;
+    sstmac::stat_local_double* compute_time_;
+    sprockit::sim_parameters* params_;
+    std::set<int> task_processed_;
 
     void
     init();
@@ -220,6 +220,22 @@ namespace lblxml
 
     void
     distribute_allreduce(int idx, event* ev);
+
+#ifdef BOXML_HAVE_TEST
+  public:
+    Task*
+    my_skeleton_main();
+
+  private:
+    Task*
+    get_task(int id);
+
+    void
+    add_comp_tasks(int id, int comp_id=-1);
+
+    Task*
+    build_task_graph();
+#endif
 
     void
     fake_barrier();
@@ -267,26 +283,35 @@ namespace lblxml
 
     void populate_listeners();
 
+    void process_params();
+
+    void get_params_standalone();
+
+    void add_event_to_epoch(int rank, int epoch);
+
+    void epoch_event_done(int epoch);
+    
+    int current_epoch();
+
+    void test_for_valid_epoch();
+
+    void barrier();
+
+#ifdef BOXML_HAVE_METIS
+    void partition_boxes();
+#endif
+
   public:
     /// Destructor.
     virtual
     ~boxml() throw () {}
 
-    boxml() : barrier_tag_(-1), hist_eff_bw_(0), idle_time_(0) {}
-
-    app*
-    clone_type() {
-      return new boxml;
-    }
-
-    void
-    consume_params(sprockit::sim_parameters* params);
-
-    std::string
-    to_string() const
-    {
-      return "boxml";
-    }
+    boxml(sprockit::sim_parameters* params, sstmac::sw::software_id sid,
+          sstmac::sw::operating_system* os) :
+      params_(params), barrier_tag_(0), hist_eff_bw_(0), idle_time_(0),
+      ncomm_(0), ncomp_(0), current_epoch_(1),
+      current_epoch_events_done_(0), sstmac::sw::app(params, sid, os)
+    {}
 
     /// Go.
     void
@@ -295,6 +320,12 @@ namespace lblxml
   };
 
 } // end of namespace lblxml
+
+static enum fxn_id {
+  my_sleep_id,
+} test_ids;
+
+void my_sleep(int time);
 
 static inline double
 get_real_time()

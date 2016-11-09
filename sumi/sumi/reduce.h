@@ -14,20 +14,20 @@ class wilke_reduce_actor :
 
  public:
   std::string
-  to_string() const {
+  to_string() const override {
     return "virtual reduce actor";
   }
 
   void
-  buffer_action(void *dst_buffer, void *msg_buffer, action* ac);
+  buffer_action(void *dst_buffer, void *msg_buffer, action* ac) override;
 
   wilke_reduce_actor(int root, reduce_fxn fxn);
 
  private:
   bool is_lower_partner(int virtual_me, int partner_gap);
-  void finalize_buffers();
-  void init_buffers(void *dst, void *src);
-  void init_dag();
+  void finalize_buffers() override;
+  void init_buffers(void *dst, void *src) override;
+  void init_dag() override;
 
  private:
   reduce_fxn fxn_;
@@ -45,7 +45,7 @@ class wilke_halving_reduce :
 {
  public:
   std::string
-  to_string() const {
+  to_string() const override {
     return "sumi allreduce";
   }
 
@@ -54,21 +54,21 @@ class wilke_halving_reduce :
   wilke_halving_reduce() : root_(-1) {}
 
   virtual void
-  init_reduce(reduce_fxn fxn){
+  init_reduce(reduce_fxn fxn) override{
     fxn_ = fxn;
   }
 
   dag_collective_actor*
-  new_actor() const {
+  new_actor() const override {
     return new wilke_reduce_actor(root_, fxn_);
   }
 
-  void init_root(int root){
+  void init_root(int root) override {
     root_ = root;
   }
 
   dag_collective*
-  clone() const {
+  clone() const override {
     return new wilke_halving_reduce(root_, fxn_);
   }
 

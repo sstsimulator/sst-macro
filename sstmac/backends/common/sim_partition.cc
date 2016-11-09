@@ -12,7 +12,7 @@
 #include <sstmac/backends/common/sim_partition.h>
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sstmac/hardware/topology/topology.h>
-#include <sstmac/hardware/interconnect/switch_interconnect.h>
+#include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/topology/index_subset.h>
 
 #include <sprockit/fileio.h>
@@ -36,7 +36,7 @@ SpktRegister("metis", partition, metis_partition);
 SpktRegister("topology", partition, topology_partition);
 SpktRegister("serial", partition, serial_partition);
 
-partition::partition(parallel_runtime* rt) : 
+partition::partition(sprockit::sim_parameters* params, parallel_runtime* rt) :
   rt_(rt),
   local_switches_(nullptr)
 {
@@ -116,8 +116,9 @@ serial_partition::~serial_partition()
   }
 }
 
-void
-serial_partition::init_factory_params(sprockit::sim_parameters* params)
+
+serial_partition::serial_partition(sprockit::sim_parameters* params, parallel_runtime* rt)
+ : partition(params, rt)
 {
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
   hw::topology* fake_top = hw::topology_factory::get_param("name", top_params);
@@ -136,26 +137,15 @@ serial_partition::init_factory_params(sprockit::sim_parameters* params)
   delete fake_top;
 }
 
-void
-serial_partition::finalize_init()
-{
-}
-
 metis_partition::~metis_partition()
 {
 }
 
-void
-metis_partition::init_factory_params(sprockit::sim_parameters* params)
+metis_partition::metis_partition(sprockit::sim_parameters* params, parallel_runtime* rt)
+  : partition(params, rt)
 {
-  if (me_ == 0){
-    fake_ic_ = hw::interconnect_factory::get_param("network_name", params, NULL, NULL);
-  }
-}
 
-void
-metis_partition::finalize_init()
-{
+
   spkt_throw(sprockit::unimplemented_error, "metis_partition::finalize_init");
   std::string graph_file = "partition.metis";
   std::string part_file = sprockit::printf("partition.metis.part.%d", nproc_);
@@ -164,8 +154,8 @@ metis_partition::finalize_init()
   // Read in partitions
   if (me_ == 0){
 #if !SSTMAC_INTEGRATED_SST_CORE
-    hw::switch_interconnect* fab = safe_cast(hw::switch_interconnect, fake_ic_);
-    fab->write_graph_file(graph_file);
+    //hw::switch_interconnect* fab = safe_cast(hw::switch_interconnect, fake_ic_);
+    //fab->write_graph_file(graph_file);
 #else
     assert(false); // not implemented
 #endif
@@ -251,12 +241,11 @@ metis_partition::read_partition(const std::string &partfilename, int nproc)
     hw::index_subset* subset = new hw::index_subset;
     std::vector<int>& subset_nodes = subset->data();
     subset_nodes.resize(num_nodes_lp);
-    std::list<int>::const_iterator it, end = node_list.end();
     int idx = 0;
-    for (it = node_list.begin(); it != end; ++it, ++idx){
-      int swid = *it;
+    for (int swid : node_list){
       switch_to_lpid_[swid] = lp;
       subset_nodes[idx] = swid;
+      ++idx;
     }
     subsets_[lp] = subset;
     num_switches_per_lp_[lp] = num_nodes_lp;
@@ -269,27 +258,21 @@ topology_partition::~topology_partition()
 {
 }
 
-void
-topology_partition::init_factory_params(sprockit::sim_parameters* params)
+topology_partition::topology_partition(sprockit::sim_parameters* params, parallel_runtime* rt)
+  : partition(params, rt)
 {
-  partition::init_factory_params(params);
-
   //this will need to be fixed later...
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
   fake_top_ = hw::topology_factory::get_param("name", top_params);
 
   noccupied_ = params->get_int_param("num_occupied");
-}
 
-void
-topology_partition::finalize_init()
-{
   num_switches_per_lp_ = new int[nproc_];
   num_switches_total_ = fake_top_->num_switches();
   switch_to_lpid_ = new int[num_switches_total_];
   local_switch_to_thread_ = new int[num_switches_total_];
   fake_top_->create_partition(num_switches_per_lp_, switch_to_lpid_,
-    local_switch_to_thread_, local_num_switches_, 
+    local_switch_to_thread_, local_num_switches_,
     me_, nproc_, nthread_, noccupied_);
   init_local_switches();
 }
@@ -298,28 +281,18 @@ block_partition::~block_partition()
 {
 }
 
-void
-block_partition::init_factory_params(sprockit::sim_parameters* params)
+block_partition::block_partition(sprockit::sim_parameters* params, parallel_runtime* rt)
+  : partition(params, rt)
 {
-  partition::init_factory_params(params);
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
   fake_top_ = hw::topology_factory::get_param("name", top_params);
   num_switches_total_ = fake_top_->num_switches();
-}
 
-void
-block_partition::finalize_init()
-{
   num_switches_total_ = fake_top_->num_switches();
   switch_to_lpid_ = new int[num_switches_total_];
   num_switches_per_lp_ = new int[nproc_];
   for(int i=0; i<nproc_; ++i) num_switches_per_lp_[i] = 0;
-
-  partition_switches();
-
-  init_local_switches();
 }
-
 
 void
 block_partition::partition_switches()
@@ -345,18 +318,20 @@ occupied_block_partition::~occupied_block_partition()
 }
 
 void
-occupied_block_partition::init_factory_params(sprockit::sim_parameters* params)
+block_partition::finalize_init()
 {
-  block_partition::init_factory_params(params);
+  partition_switches();
+  init_local_switches();
+}
+
+occupied_block_partition::occupied_block_partition(sprockit::sim_parameters* params,
+                                                   parallel_runtime* rt)
+  : block_partition(params, rt)
+{
   occupied_switches_ = params->get_int_param("occupied_switches");
   num_switches_total_ = fake_top_->num_switches();
   unoccupied_switches_ = num_switches_total_ - occupied_switches_;
-}
 
-void
-occupied_block_partition::finalize_init()
-{
-  block_partition::finalize_init();
   if( occupied_switches_ < nproc_ )
     spkt_throw_printf(sprockit::input_error,
       "number of logical processes exceeds number of full switches");

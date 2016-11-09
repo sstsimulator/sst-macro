@@ -3,8 +3,11 @@
 #include <sstmac/common/config.h>
 #include <sstmac/software/process/operating_system.h>
 
+#include <cstdlib>
+
 using namespace std;
 using namespace tinyxml2;
+using namespace sumi;
 
 #define sanity_index(i,v) \
   if (i >= v.size()){ \
@@ -16,8 +19,19 @@ using namespace tinyxml2;
 #undef sanity_index
 #define sanity_index(i,v)
 
+#ifdef BOXML_HAVE_METIS
+#include <aphid.h>
+#endif
+
 namespace lblxml
 {
+
+#ifdef BOXML_HAVE_METIS
+  bool compare(const pair<int, idx_t>&i, const pair<int, idx_t>&j)
+  {
+    return i.second > j.second;
+  }
+#endif
 
   int count_xml(tinyxml2::XMLDocument* doc,
                 const string& level1, const string& level2);
@@ -51,10 +65,12 @@ namespace lblxml
 #endif
   }
 
+
+
   void boxml::read_binary() {
     bin_file_.seekg(0, bin_file_.end);
     long size = bin_file_.tellg();
-    printf("Reading all the data from a file of size %d\n", size);
+    printf("Reading all the data from a file of size %d\n", (int)size);
     bin_file_.seekg(0, bin_file_.beg);
     char* alldata = new char[size];
     bin_file_.read(alldata, size);
@@ -76,6 +92,9 @@ namespace lblxml
     ser & n_events_nonnull;
 
     g_events.resize(n_events);
+#ifdef BOXML_HAVE_TEST
+    g_task_map.resize(n_events,NULL);
+#endif
     //events are not dense - so might be a lot of nulls
     for (int i=0; i < n_events_nonnull; ++i){
       event* ev;
@@ -197,6 +216,67 @@ namespace lblxml
       bin_file_.close();
     }
 
+    srand(0);
+    if (partitioning_ != "xml") {
+      if (partitioning_ == "sequential") {
+
+        int sloc = 0;
+        for (int i=0; i < g_boxes.size(); ++i) {
+          g_boxes[i]->change_loc(sloc);
+          ++sloc;
+          if (sloc == commsize_) sloc = 0;
+        }
+      }
+#ifdef BOXML_HAVE_METIS
+      else if (partitioning_ == "metis" || partitioning_ == "knapsack")  {
+        partition_boxes();
+      }
+#endif
+      else if (partitioning_ == "random") {
+        std::cerr << "partitioning boxes randomly\n";
+        std::vector<int> ids;
+        for (int i=0; i < g_boxes.size(); ++i)
+          ids.push_back(i);
+        std::random_shuffle(ids.begin(),ids.end());
+        int new_loc=0;
+        for (int i=0; i < g_boxes.size(); ++i) {
+          g_boxes[ids.back()]->change_loc(new_loc);
+          ids.pop_back();
+          ++new_loc;
+          if(new_loc == commsize_) new_loc = 0;
+        }
+      }
+      else {
+        spkt_throw_printf(sprockit::value_error,
+                          "invalid boxml_assignment value");
+      }
+    }
+
+    if (placement_ == "metis" || placement_ == "random") {
+      std::vector<int> placement_map;
+      placement_map.resize(commsize_);
+      if (placement_ == "metis") {
+#ifdef BOXML_HAVE_METIS
+        rank_placer::partitioner* part = new rank_placer::partitioner();
+        part->do_rank_placer(NULL,NULL,params_,&placement_map);
+#else
+        std::cerr << "metis not available!\n";
+        abort();
+#endif
+      }
+      else if (placement_ == "random") {
+        std::random_shuffle(placement_map.begin(),placement_map.end());
+      }
+      std::cerr << "placement (" << placement_map.size() << ")\n";
+      for (int i=0; i < placement_map.size(); ++i) {
+        std::cerr << placement_map[i] << "\n";
+      }
+      for (int i=0; i < g_boxes.size(); ++i) {
+        int loc = g_boxes[i]->loc();
+        g_boxes[i]->change_loc(placement_map[loc]);
+      }
+    }
+
     populate_listeners();
   }
 
@@ -257,7 +337,7 @@ namespace lblxml
       int rnk = g_boxes[i]->loc();
       if (debug_ > 1) rank_to_boxes[rnk].insert(ind);
       g_boxindex_to_rank[ind] = rnk;
-      if (rnk >= commsize_){
+      if (rnk >= commsize_ && partitioning_ != "metis"){
         spkt_throw_printf(sprockit::value_error,
           "box %d maps to rank %d, which is greater than given number of ranks %d - check launch_app params",
           ind, rnk, commsize_);
@@ -289,6 +369,12 @@ namespace lblxml
     if (to != from) {
       g_rank_to_sends[from].insert(i);
       g_rank_to_recvs[to].insert(i);
+      if (synch_mode_ < phase_asynch) {
+        add_event_to_epoch(to,comm->epoch());
+        add_event_to_epoch(from,comm->epoch());
+        if (debug_ > 0 && (to == BOXML_DEBUG_RANK || from == BOXML_DEBUG_RANK) && comm->epoch() == BOXML_DEBUG_EPOCH )
+          printf("rank %d added event %d to epoch %d\n", BOXML_DEBUG_RANK, i, BOXML_DEBUG_EPOCH);
+      }
       if (comm->n_dep() == 0) {
         g_rank_to_valid_sends[from].push_back(i);
       }
@@ -302,6 +388,11 @@ namespace lblxml
     sanity_index(at, g_rank_to_comps)
     sanity_index(at, g_rank_to_valid_comps)
     g_rank_to_comps[at].insert(i);
+    if (synch_mode_ < full_asynch) {
+      add_event_to_epoch(at,comp->epoch());
+      if (debug_ > 0 && at == BOXML_DEBUG_RANK && comp->epoch() == BOXML_DEBUG_EPOCH )
+          printf("rank %d added event %d to epoch %d\n", BOXML_DEBUG_RANK, i, BOXML_DEBUG_EPOCH);
+    }
     if (comp->n_dep() == 0) {
       g_rank_to_valid_comps[at].push_back(i);
     }
@@ -309,12 +400,17 @@ namespace lblxml
 
   void boxml::distribute_allreduce(int i, event* ev){
     reduce_t* comm = static_cast<reduce_t*>(ev);
-    box_to_comm_rank_map& team_map = comm->get_team();
-    box_to_comm_rank_map::iterator it, end = team_map.end();
+    box_to_domain_rank_map& team_map = comm->get_team();
+    box_to_domain_rank_map::iterator it, end = team_map.end();
     for (it=team_map.begin(); it != end; ++it){
       int box_number = it->first;
-      int team_rank = g_boxindex_to_rank[box_number];
-      g_rank_to_allreduces[team_rank].push_back(i);
+      int rank = g_boxindex_to_rank[box_number];
+      g_rank_to_allreduces[rank].push_back(i);
+      if (synch_mode_ < phase_asynch) {
+        add_event_to_epoch(rank,comm->epoch());
+        if (debug_ > 0 && rank == BOXML_DEBUG_RANK && comm->epoch() == BOXML_DEBUG_EPOCH )
+          printf("rank %d added event %d to epoch %d\n", BOXML_DEBUG_RANK, i, BOXML_DEBUG_EPOCH);
+      }
     }
     // assume there are no valid allReduces to start off
   }
@@ -351,6 +447,8 @@ namespace lblxml
         case event::computation:
           distribute_comp(i, ev);
           break;
+        case event::none:
+          spkt_abort_printf("Invalid event: has none type");
       }
     }
   }
@@ -369,6 +467,9 @@ namespace lblxml
     int next_event_id = next_ev->index();
     reduce_t* next_reduce = static_cast<reduce_t*>(next_ev);
     next_reduce->remove_dep(done_event_id);
+    if (debug_ > 1)
+      printf("rank %d reduce event %d to %d deps from %d\n", 
+             rank_, next_event_id, next_reduce->n_dep(), done_event_id);
     std::vector<int> check_boxes;
     std::vector<bool> check_valids;
 
@@ -378,7 +479,7 @@ namespace lblxml
     if (done_ev->event_type() == event::collective) {
       reduce_t* done_reduce = static_cast<reduce_t*>(done_ev);
       const int* done_boxes = done_reduce->box_array();
-      box_to_comm_rank_map& next_team = next_reduce->get_team();
+      box_to_domain_rank_map& next_team = next_reduce->get_team();
       for (int i=0; i < done_reduce->nboxes(); ++i) {
         if (g_boxindex_to_rank[done_boxes[i]] == rank_ &&
             next_team.find(done_boxes[i]) != next_team.end()) {
@@ -422,21 +523,14 @@ namespace lblxml
 
     for (int i=0; i < check_boxes.size(); ++i) {
       if (check_valids[i] == true) {
-        //printf("considering next_event %d at %d\n", next_event_id, check_boxes[i]);
         index_box_pair_t coll(next_event_id,check_boxes[i]);
-        // only fire off each all reduce once per box
-        //std::cout << "running? " << g_reduce_to_box_running[next_event_id][check_boxes[i]]
-        //          << std::endl;
         if (!g_reduce_to_box_running[next_event_id][check_boxes[i]]) {
-          //printf("running it (%d)!\n",next_event_id);
           g_reduce_to_box_running[next_event_id][check_boxes[i]] = true;
           valid_allreduces_.push(coll);
         }
-        else {
-          //printf("next event %d already running at %d\n", next_event_id, check_boxes[i]);
-        }
       }
     }
+
   }
 
   void
@@ -445,7 +539,6 @@ namespace lblxml
     event* done_ev = g_events[event_id];
     reduce_t* done_red = static_cast<reduce_t*>(done_ev);
     reduce_t::listener_iterator it, end = done_red->listener_end(box_number);
-    //printf("clearing deps for collective %d\n", event_id);
     for (it=done_red->listener_begin(box_number); it != end; ++it)
     {
       int next_event_id = *it;
@@ -456,22 +549,23 @@ namespace lblxml
       else
         next_ev = g_events[next_event_id];
 
-      //printf("clearing collective dep from event %d\n", next_event_id);
       if (next_ev->event_type() == event::computation) {
         comp_t* comp_ev = static_cast<comp_t*>(next_ev);
         comp_ev->remove_dep(event_id);
-        //printf("comp event %d now to %d deps from %d\n", comp_ev->index(), comp_ev->n_dep(), event_id);
+        if (debug_ > 1)
+          printf("rank %d event %d to %d deps from %d\n", 
+                 rank_, next_event_id, comp_ev->n_dep(), event_id);
         if (comp_ev->n_dep() == 0) {
-          //printf("collective_done pushing valid comp %d\n", next_event_id);
           g_rank_to_valid_comps[rank_].push_back(next_event_id);
         }
       }
       else if (next_ev->event_type() == event::pt2pt) {
         comm_t* comm_ev = static_cast<comm_t*>(next_ev);
         comm_ev->remove_dep(event_id);
-        //printf("comm event %d now to %d deps from %d\n", comm_ev->index(), comm_ev->n_dep(), event_id);
+        if (debug_ > 1)
+          printf("rank %d event %d to %d deps from %d\n",  
+                 rank_, next_event_id, comm_ev->n_dep(), event_id);
         if (comm_ev->n_dep() == 0) {
-          //printf("collective_done pushing valid comm %d\n", next_event_id);
           g_rank_to_valid_sends[rank_].push_back(next_event_id);
         }
       }
@@ -492,7 +586,6 @@ namespace lblxml
   {
     event* done_ev = g_events[index];
     simple_event* ev = static_cast<simple_event*>(done_ev);
-    //printf("clearing deps for event %d\n", index);
     int_container_t& listeners = ev->get_listeners();
     while (!listeners.empty()) {
       int frt = *(listeners.begin());
@@ -508,9 +601,10 @@ namespace lblxml
         {
           comp_t* comp = static_cast<comp_t*>(evl);
           comp->remove_dep(index);
-          //printf("event %d now to %d deps from %d\n", evl->index(), evl->n_dep(), index);
+          if (debug_ > 1)
+            printf("rank %d event %d to %d deps from %d\n", 
+                   rank_, comp->index(), comp->n_dep(), ev->index());
           if (comp->n_dep() == 0) {
-            //printf("simple_event_done pushing valid comp %d\n",comp->index());
             g_rank_to_valid_comps[rank_].push_back(comp->index());
           }
           break;
@@ -519,7 +613,9 @@ namespace lblxml
         {
           comm_t* comm = static_cast<comm_t*>(evl);
           comm->remove_dep(index);
-          //printf("event %d now to %d deps from %d\n", evl->index(), evl->n_dep(), index);
+          if (debug_ > 1)
+            printf("rank %d event %d to %d deps from %d\n", 
+                   rank_, comm->index(), comm->n_dep(), ev->index());
           if (comm->n_dep() == 0)
             g_rank_to_valid_sends[rank_].push_back(comm->index());
           break;
@@ -533,6 +629,8 @@ namespace lblxml
             release_event(frt);
           break;
         }
+        case event::none:
+          spkt_abort_printf("Invalid event: has none type");
       }
       listeners.erase(listeners.begin());
       if (!minimize_locks_)
@@ -540,23 +638,80 @@ namespace lblxml
     }
   }
 
-#if 0
   void
-  boxml::create_domains() {
-    for (list_iter it = g_rank_to_allreduces[rank_].begin();
-         it != g_rank_to_allreduces[rank_].end(); ++it) {
-      event* ev = g_events[*it];
-      comm_t* comm = static_cast<comm_t*>(ev);
-      int_container_t& team = comm->get_team();
-      int comm_rank=0;
-      int_container_iter team_it, end = team.end();
-      for (it = team.begin(); team_it != end; ++team_it, ++comm_rank) {
-        int boxnumber = *team_it;
-        index_box_pair_t coll(ev->index(),*team_it);
-        box_domains_[coll] = new box_domain(i,&team,&g_boxindex_to_rank);
-        ++i;
+  boxml::add_event_to_epoch(int rank, int epoch) {
+    g_max_epoch_ = std::max(epoch,g_max_epoch_);
+    if (g_rank_to_epoch_count.count(rank) != 0 &&
+        g_rank_to_epoch_count[rank].count(epoch) != 0)
+      ++g_rank_to_epoch_count[rank][epoch];
+    else
+      g_rank_to_epoch_count[rank][epoch] = 1;
+  }
+
+  void
+  boxml::epoch_event_done(int epoch) {
+    if (g_rank_to_epoch_done.count(rank_) != 0 &&
+        g_rank_to_epoch_done[rank_].count(epoch) != 0)
+      ++g_rank_to_epoch_done[rank_][epoch];
+    else
+      ++g_rank_to_epoch_done[rank_][epoch] = 1;
+    if (debug_ > 2)
+      printf("rank %d epoch %d counter incremented to %d of %d\n",
+             rank_, epoch, g_rank_to_epoch_done[rank_][epoch],
+             g_rank_to_epoch_count[rank_][epoch]);
+
+    if (g_rank_to_epoch_count[rank_][epoch] ==
+        g_rank_to_epoch_done[rank_][epoch]) {
+      if (synch_mode_ == full_synch) {
+        sstmac::timestamp start_bar = now();
+        comm_barrier(barrier_tag_);
+        comm_collective_block(sumi::collective::barrier, barrier_tag_);
+        sstmac::timestamp end_bar = now();
+        double bar_time = (end_bar - start_bar).sec();
+        g_total_barrier_time += bar_time;
+        ++barrier_tag_;
       }
+      ++current_epoch_;
+      if (debug_ > 2)
+        printf("rank %d advanced current epoch to %d\n",
+               rank_, current_epoch_);
     }
   }
-#endif
-}
+
+  int 
+  boxml::current_epoch() {
+    if (synch_mode_ == full_asynch)
+      return -1;
+    test_for_valid_epoch();
+    return current_epoch_;
+  }
+
+  void
+  boxml::test_for_valid_epoch() {
+    bool have_epoch_data = true;
+    if (g_rank_to_epoch_count.count(rank_) == 0)
+      have_epoch_data = false;
+    if (have_epoch_data == true)
+      if (g_rank_to_epoch_count[rank_].count(current_epoch_) == 0)
+        have_epoch_data = false;
+    if (have_epoch_data == false) {
+      if (debug_ > 2)
+        printf("rank %d no count found for epoch %d, advancing epoch\n", rank_, current_epoch_);
+      if (synch_mode_ == full_synch) {
+        comm_barrier(barrier_tag_);
+        sstmac::timestamp start_bar = now();
+        comm_collective_block(sumi::collective::barrier, barrier_tag_);
+        //printf("rank %d finished full_synch block\n", rank_);
+        sstmac::timestamp end_bar = now();
+        double bar_time = (end_bar - start_bar).sec();
+        g_total_barrier_time += bar_time;
+        ++barrier_tag_;
+      }
+      ++current_epoch_;
+      if (g_rank_to_epoch_count.count(rank_) == 1)
+        test_for_valid_epoch();
+    }
+  }
+  
+
+} // end namespace lblxml

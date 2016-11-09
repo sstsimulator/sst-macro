@@ -1,18 +1,22 @@
 #include <sstmac/hardware/noise/noise.h>
 #include <sprockit/sim_parameters.h>
+#include <sprockit/keyword_registration.h>
 
 ImplementFactory(sstmac::hw::noise_model);
+
+
+RegisterKeywords(
+"mean",
+"seed",
+"stdev",
+"maxz",
+);
 
 namespace sstmac {
   namespace hw {
 
 SpktRegister("gaussian", noise_model, gaussian_noise_model,
     "implements a normally distributed noise model with mean, stdev, and optional max parameter defining cutoff");
-
-void
-noise_model::init_factory_params(sprockit::sim_parameters *params)
-{
-}
 
 gaussian_noise_model::~gaussian_noise_model()
 {
@@ -32,8 +36,8 @@ gaussian_noise_model::gaussian_noise_model(double mean, double stdev,
   rng_ = new RNG::NormalDistribution(mean, stdev, maxz, seed);
 }
 
-void
-gaussian_noise_model::init_factory_params(sprockit::sim_parameters *params)
+gaussian_noise_model::gaussian_noise_model(sprockit::sim_parameters *params)
+  : noise_model(params)
 {
   double mean = params->get_quantity("mean");
   double stdev = params->get_quantity("stdev");

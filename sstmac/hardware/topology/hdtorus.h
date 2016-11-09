@@ -29,69 +29,25 @@ namespace hw {
 class hdtorus :
   public cartesian_topology
 {
-
  public:
+  hdtorus(sprockit::sim_parameters* params);
+
   typedef enum {
     pos = 0,
     neg = 1
   } direction_t;
 
   virtual std::string
-  to_string() const {
+  to_string() const override {
     return "hdtorus";
   }
 
   virtual ~hdtorus() {}
 
-  void
-  init_factory_params(sprockit::sim_parameters* params);
-
   int
-  shortest_distance(int dim, int src, int dst) const;
-
-  int
-  distance(int dim, int dir, int src, int dst) const;
-
-  void
-  down_path(
-    int dim,
-    const coordinates& src,
-    const coordinates& dst,
-    geometry_routable::path& path) const;
-
-  void
-  up_path(
-    int dim,
-    const coordinates& src,
-    const coordinates& dst,
-    geometry_routable::path& path) const;
-
-  bool
-  shortest_path_positive(
-    int dim,
-    const coordinates& src,
-    const coordinates& dst) const;
-
-  virtual void
-  productive_path(
-    int dim,
-    const coordinates& src,
-    const coordinates& dst,
-    geometry_routable::path& path) const;
-
-  void
-  pick_vc(geometry_routable::path& path) const;
-
-  switch_id
-  switch_number(const coordinates& v) const;
-
-  int
-  diameter() const {
+  diameter() const override {
     return diameter_;
   }
-
-  std::string
-  name() const;
 
   /// Returns the vector giving each dimension of the torus.
   const std::vector<int> &
@@ -103,88 +59,89 @@ class hdtorus :
   neighbor_at_port(switch_id sid, int port);
 
   virtual int
-  num_switches() const {
+  num_switches() const override {
     return num_switches_;
   }
 
+  bool
+  uniform_network_ports() const override {
+    return false;
+  }
+
+  bool
+  uniform_switches() const override {
+    return true;
+  }
+
+  bool
+  uniform_switches_non_uniform_network_ports() const override {
+    return true;
+  }
+
+  void
+  connected_outports(switch_id src, std::vector<connection>& conns) const override;
+
+  void
+  configure_individual_port_params(switch_id src,
+            sprockit::sim_parameters *switch_params) const override;
+
   virtual int
-  num_leaf_switches() const {
+  num_leaf_switches() const override {
     return num_switches();
   }
 
   void
-  configure_geometric_paths(std::vector<int> &redundancies);
-
-  virtual int
-  ndimensions() const {
-    return dimensions_.size();
-  }
-
-  void
-  minimal_route_to_coords(
-    const coordinates &src_coords,
-    const coordinates &dest_coords,
-    geometry_routable::path& path) const;
-
-  virtual void
-  connect_objects(internal_connectable_map& switches);
-
-  virtual int
-  convert_to_port(int dim, int dir) const;
+  minimal_route_to_switch(
+    switch_id sid,
+    switch_id dst,
+    routable::path& path) const override;
 
   int
   minimal_distance(
-    const coordinates& src_coords,
-    const coordinates& dest_coords) const;
+    switch_id sid,
+    switch_id dst) const override;
 
   void
-  partners(
-    traffic_pattern::type_t ty,
-    const coordinates &src_sw_coords,
-    std::list<node_id>& partners) const;
+  configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
 
-  void
-  configure_vc_routing(std::map<routing::algorithm_t, int> &m) const;
+  coordinates
+  switch_coords(switch_id) const override;
+
+  switch_id
+  switch_addr(const coordinates &coords) const override;
+
 
  protected:
-  virtual void
-  compute_switch_coords(switch_id uid, coordinates& coords) const;
+  inline int
+  convert_to_port(int dim, int dir) const {
+    return 2*dim + dir;
+  }
+
+ private:
+  void
+  torus_path(bool reset_dim, bool wrapped, int dim, int dir,
+             routable::path& path) const;
 
   void
-  nearest_neighbor_partners(
-    const coordinates& src_sw_coords,
-    int port,
-    std::vector<node_id>& partners) const;
+  down_path(
+    int dim, int src, int dst,
+    routable::path& path) const;
 
   void
-  bit_complement_partners(
-    const coordinates &src_sw_coords,
-    int port,
-    std::vector<node_id>& partners) const;
+  up_path(
+    int dim, int src, int dst,
+    routable::path& path) const;
 
-  void
-  tornado_send_partners(
-    const coordinates &src_sw_coords,
-    int port,
-    std::vector<node_id>& partners) const;
+  int
+  shortest_distance(int dim, int src, int dst) const;
 
-  void
-  tornado_recv_partners(
-    const coordinates &src_sw_coords,
-    int port,
-    std::vector<node_id>& partners) const;
+  bool
+  shortest_path_positive(
+    int dim, int src, int dst) const;
 
- protected:
-  virtual void
-  connect_dim(int dim,
-    connectable* center,
-    connectable* plus,
-    connectable* minus);
-
- protected:
+ protected: //must be visible to hypercube
   int diameter_;
   long num_switches_;
-  std::vector<int> dimensions_;
 
 };
 

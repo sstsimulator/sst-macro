@@ -32,16 +32,10 @@ namespace sstmac {
  * the parent_map_ member variable stores a flat map of switch to
  * partition.
  */
-class partition :
-  public sprockit::factory_type
+class partition
 {
 
  public:
-  virtual std::string
-  to_string() const {
-    return "partition";
-  }
-
   virtual ~partition();
 
   hw::index_subset*
@@ -99,8 +93,11 @@ class partition :
   virtual int
   thread_for_local_switch(int local_idx) const;
 
+  virtual void
+  finalize_init(){}
+
  protected:
-  partition(parallel_runtime* rt);
+  partition(sprockit::sim_parameters* params, parallel_runtime* rt);
 
   void init_local_switches();
 
@@ -136,15 +133,9 @@ class serial_partition :
   public partition
 {
  public:
-  serial_partition(parallel_runtime* rt) : partition(rt) {}
+  serial_partition(sprockit::sim_parameters* params, parallel_runtime* rt);
 
   virtual ~serial_partition();
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
-  finalize_init();
 
 };
 
@@ -153,15 +144,9 @@ class metis_partition :
   public partition
 {
  public:
-  metis_partition(parallel_runtime* rt) : partition(rt){}
+  metis_partition(sprockit::sim_parameters* params, parallel_runtime* rt);
 
   virtual ~metis_partition();
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
-  finalize_init();
 
  protected:
   void
@@ -176,15 +161,9 @@ class topology_partition :
   public partition
 {
  public:
-  topology_partition(parallel_runtime* rt) : partition(rt) {}
+  topology_partition(sprockit::sim_parameters* params, parallel_runtime* rt);
 
   virtual ~topology_partition();
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
-  finalize_init();
 
   virtual int
   thread_for_local_switch(int local_idx) const {
@@ -204,14 +183,11 @@ class block_partition :
   public partition
 {
  public:
-  block_partition(parallel_runtime* rt) : partition(rt) {}
+  block_partition(sprockit::sim_parameters* params, parallel_runtime* rt);
 
   virtual ~block_partition();
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
+  void
   finalize_init();
 
   virtual void
@@ -226,18 +202,12 @@ class occupied_block_partition :
   public block_partition
 {
  public:
-  occupied_block_partition(parallel_runtime* rt) : block_partition(rt){}
+  occupied_block_partition(sprockit::sim_parameters* params, parallel_runtime* rt);
 
   virtual ~occupied_block_partition();
 
   virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
   partition_switches();
-
-  virtual void
-  finalize_init();
 
   int
   thread_for_local_switch(int local_idx) const;

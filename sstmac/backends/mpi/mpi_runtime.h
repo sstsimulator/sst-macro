@@ -23,71 +23,62 @@ class mpi_runtime :
 {
 
  public:
-  std::string
-  to_string() const {
-    return "mpi runtime";
-  }
+  mpi_runtime(sprockit::sim_parameters* params);
 
   void
-  bcast(void *buffer, int bytes, int root);
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
+  bcast(void *buffer, int bytes, int root) override;
 
   int64_t
-  allreduce_min(int64_t mintime);
+  allreduce_min(int64_t mintime) override;
 
   int64_t
-  allreduce_max(int64_t maxtime);
+  allreduce_max(int64_t maxtime) override;
 
   void
-  global_sum(long long *data, int nelems, int root);
+  global_sum(long long *data, int nelems, int root) override;
 
   void
-  global_sum(long *data, int nelems, int root);
+  global_sum(long *data, int nelems, int root) override;
 
   void
-  global_max(long *data, int nelems, int root);
+  global_max(long *data, int nelems, int root) override;
 
   void
-  global_max(int *data, int nelems, int root);
+  global_max(int *data, int nelems, int root) override;
 
   void
-  send(int dst, void *buffer, int buffer_size);
+  send(int dst, void *buffer, int buffer_size) override;
 
   void
-  recv(int src, void *buffer, int buffer_size);
+  recv(int src, void *buffer, int buffer_size) override;
 
   void
-  gather(void *send_buffer, int num_bytes, void *recv_buffer, int root);
+  gather(void *send_buffer, int num_bytes, void *recv_buffer, int root) override;
 
   void
-  allgather(void *send_buffer, int num_bytes, void *recv_buffer);
+  allgather(void *send_buffer, int num_bytes, void *recv_buffer) override;
 
   void
-  wait_merge_array(int tag);
+  wait_merge_array(int tag) override;
 
   void
-  declare_merge_array(void* buffer, int size, int tag);
+  declare_merge_array(void* buffer, int size, int tag) override;
 
   bool
-  release_merge_array(int tag);
+  release_merge_array(int tag) override;
 
   void
-  init_runtime_params(sprockit::sim_parameters* params);
+  init_runtime_params(sprockit::sim_parameters* params) override;
 
  protected:
   void
-  do_send_recv_messages(std::vector<void*>& buffers);
+  do_send_recv_messages(std::vector<void*>& buffers) override;
 
   void
-  do_send_message(int lp, void *buffer, int size);
+  do_send_message(int lp, void *buffer, int size) override;
 
   void
   do_reduce(void* data, int nelems, MPI_Datatype ty, MPI_Op op, int root);
-
-  virtual void
-  finalize_init();
 
   void
   do_merge_array(int tag);
@@ -98,9 +89,13 @@ class mpi_runtime :
   void
   reallocate_requests();
 
-  void finalize();
+  void finalize() override;
 
- protected:
+ private:
+  int init_rank(sprockit::sim_parameters* params);
+  int init_size(sprockit::sim_parameters* params);
+
+ private:
    MPI_Request* requests_;
 
    struct merge_request {
@@ -118,7 +113,6 @@ class mpi_runtime :
    int total_num_sent_;
    int epoch_;
 
- private:
    bool finalize_needed_;
 
 };

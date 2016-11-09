@@ -29,86 +29,72 @@ ImplementFactory(sstmac::hw::nic);
 RegisterDebugSlot(nic);
 
 RegisterNamespaces("nic", "message_sizes", "traffic_matrix",
-                   "message_size_histogram");
+                   "message_size_histogram", "injection", "bytes");
 
+RegisterKeywords(
+"nic_name",
+"network_spyplot",
+);
 
-#if SSTMAC_INTEGRATED_SST_CORE
-#define DEFAULT_NEGLIGIBLE_SIZE 0
-#else
 #define DEFAULT_NEGLIGIBLE_SIZE 256
-#endif
 
 namespace sstmac {
 namespace hw {
 
 static sprockit::need_delete_statics<nic> del_statics;
 
-nic::nic(sprockit::factory_type *interconn) :
+nic::nic(sprockit::sim_parameters* params, node* parent) :
   spy_num_messages_(nullptr),
   spy_bytes_(nullptr),
   hist_msg_size_(nullptr),
   local_bytes_sent_(nullptr),
   global_bytes_sent_(nullptr),
-  interconn_(nullptr),
-  parent_(nullptr),
-  mtl_handler_(nullptr)
+  parent_(parent),
+  logp_switch_(nullptr),
+  event_mtl_handler_(nullptr),
+  my_addr_(parent->addr()),
+  connectable_subcomponent(parent) //no self events with NIC
 {
-  if (interconn) interconn_ = safe_cast(interconnect, interconn);
+  event_mtl_handler_ = new_handler(this, &nic::mtl_handle);
+  node_handler_ = new_handler(parent, &node::handle);
+
+  negligible_size_ = params->get_optional_int_param("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
+
+  spy_num_messages_ = optional_stats<stat_spyplot>(parent,
+        params, "traffic_matrix", "ascii", "num_messages");
+  spy_bytes_ = optional_stats<stat_spyplot>(parent,
+        params, "traffic_matrix", "ascii", "bytes");
+  local_bytes_sent_ = optional_stats<stat_local_int>(parent,
+        params, "local_bytes_sent", "local_int");
+  global_bytes_sent_ = optional_stats<stat_global_int>(parent,
+        params, "global_bytes_sent", "global_int");
+  //global_bytes_sent_->set_label("NIC Total Bytes Sent");
+  hist_msg_size_ = optional_stats<stat_histogram>(parent,
+        params, "message_size_histogram", "histogram");
+
+#if !SSTMAC_INTEGRATED_SST_CORE
+  link_mtl_handler_ = new_handler(this, &nic::mtl_handle);
+#endif
 }
 
 nic::~nic()
 {
-  if (mtl_handler_) delete mtl_handler_;
+  if (node_handler_) delete node_handler_;
+  if (event_mtl_handler_) delete event_mtl_handler_;
   if (spy_bytes_) delete spy_bytes_;
   if (spy_num_messages_) delete spy_num_messages_;
   if (local_bytes_sent_) delete local_bytes_sent_;
   if (global_bytes_sent_) delete global_bytes_sent_;
   if (hist_msg_size_) delete hist_msg_size_;
+#if !SSTMAC_INTEGRATED_SST_CORE
+  delete link_mtl_handler_;
+#endif
 }
 
 void
 nic::mtl_handle(event *ev)
 {
   recv_message(static_cast<message*>(ev));
-}
-
-void
-nic::init_factory_params(sprockit::sim_parameters *params)
-{
-  my_addr_ = node_id(params->get_int_param("id"));
-  init_loc_id(event_loc_id(my_addr_));
-
-  mtl_handler_ = new_handler(this, &nic::mtl_handle);
-
-  negligible_size_ = params->get_optional_int_param("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
-
-  spy_num_messages_ = optional_stats<stat_spyplot>(
-        params, "traffic_matrix", "spyplot", "num_messages");
-  spy_bytes_ = optional_stats<stat_spyplot>(
-        params, "traffic_matrix", "spyplot", "bytes");
-
-  if (params->has_namespace("local_bytes_sent")) {
-    sprockit::sim_parameters* traffic_params = params->get_namespace("local_bytes_sent");
-    local_bytes_sent_ = test_cast(stat_local_int, stat_collector_factory::get_optional_param("type", "local_int", traffic_params));
-    local_bytes_sent_->set_id(my_addr_);
-  }
-
-  if (params->has_namespace("global_bytes_sent")) {
-    sprockit::sim_parameters* traffic_params = params->get_namespace("global_bytes_sent");
-    global_bytes_sent_ = test_cast(stat_global_int, stat_collector_factory::get_optional_param("type", "global_int", traffic_params));
-    global_bytes_sent_->set_label("NIC Total Bytes Sent");
-  }
-
-  if (params->has_namespace("message_size_histogram")){
-    sprockit::sim_parameters* size_params = params->get_namespace("message_size_histogram");
-    hist_msg_size_ = test_cast(stat_histogram, stat_collector_factory::get_optional_param("type", "histogram", size_params));
-
-    if (!hist_msg_size_){
-      spkt_throw_printf(sprockit::value_error,
-        "NIC message size tracker must be histogram, %s given",
-        size_params->get_param("type").c_str());
-    }
-  }
 }
 
 void
@@ -130,7 +116,7 @@ nic::recv_message(message* msg)
 
   nic_debug("handling message %s:%lu of type %s from node %d while running",
     netmsg->to_string().c_str(),
-    uint64_t(netmsg->net_id()),
+    netmsg->flow_id(),
     network_message::tostr(netmsg->type()),
     int(netmsg->fromaddr()));
 
@@ -208,24 +194,16 @@ nic::intranode_send(network_message* payload)
   ack_send(payload);
 }
 
-#if SSTMAC_INTEGRATED_SST_CORE
-void
-nic::handle_event(SST::Event *ev)
-{
-  handle(static_cast<event*>(ev));
-}
-#endif
-
 void
 nic::record_message(network_message* netmsg)
 {
   nic_debug("sending message %lu of size %ld of type %s to node %d: "
       "netid=%lu for %s",
-      uint64_t(netmsg->net_id()),
+      netmsg->flow_id(),
       netmsg->byte_length(),
       network_message::tostr(netmsg->type()),
       int(netmsg->toaddr()),
-      netmsg->unique_id(), netmsg->to_string().c_str());
+      netmsg->flow_id(), netmsg->to_string().c_str());
 
   if (netmsg->type() == network_message::null_netmsg_type){
     //assume this is a simple payload
@@ -261,8 +239,9 @@ nic::internode_send(network_message* netmsg)
   record_message(netmsg);
   nic_debug("internode send payload %p:%s",
     netmsg, netmsg->to_string().c_str());
-  if (negligible_size(netmsg->byte_length())){
-    send_to_interconn(netmsg);
+  //we might not have a logp overlay network
+  if (logp_switch_ && negligible_size(netmsg->byte_length())){
+    send_to_link(logp_switch_, netmsg);
     ack_send(netmsg);
   } else {
     do_send(netmsg);
@@ -270,39 +249,9 @@ nic::internode_send(network_message* netmsg)
 }
 
 void
-nic::finalize_init()
-{
-}
-
-void
 nic::send_to_node(network_message* payload)
 {
-  schedule_now(parent_, payload);
-}
-
-void
-nic::send_to_interconn(network_message* netmsg)
-{
-#if SSTMAC_INTEGRATED_SST_CORE
-  spkt_throw(sprockit::unimplemented_error,
-       "nic::send_to_interconn: integrated core");
-#else
-  safe_cast(interconnect, interconn_)->immediate_send(parent(), netmsg, now());
-#endif
-}
-
-void
-nic::set_event_parent(event_scheduler* m)
-{
-  connectable_subcomponent::set_event_parent(m);
-#if !SSTMAC_INTEGRATED_SST_CORE
-  if (spy_num_messages_) m->register_stat(spy_num_messages_);
-  if (spy_bytes_) m->register_stat(spy_bytes_);
-  if (hist_msg_size_) m->register_stat(hist_msg_size_);
-  if (local_bytes_sent_) m->register_stat(local_bytes_sent_);
-  if (global_bytes_sent_) m->register_stat(global_bytes_sent_);
-#endif
-
+  schedule_now(node_handler_, payload);
 }
 
 }

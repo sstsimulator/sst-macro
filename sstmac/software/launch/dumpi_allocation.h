@@ -22,16 +22,17 @@ namespace sw {
 class dumpi_allocation : public node_allocator
 {
  public:
-  dumpi_allocation(parallel_runtime* rt) :
-    node_allocator(rt){}
+  dumpi_allocation(sprockit::sim_parameters* params);
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
+  std::string
+  to_string() const override {
+    return "dumpi allocation";
+  }
 
   virtual void
   allocate(int nnode_requested,
     const ordered_node_set& available,
-    ordered_node_set& allocation) const;
+    ordered_node_set& allocation) const override;
 
   virtual
   ~dumpi_allocation() throw () {

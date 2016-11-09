@@ -10,7 +10,6 @@
  */
 
 #include "gtc_main.h"
-#include <sstmac/common/messages/vector_payload.h>
 
 namespace gtc
 {

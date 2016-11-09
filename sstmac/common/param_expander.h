@@ -6,17 +6,13 @@
 
 namespace sstmac {
 
-class param_expander :
-  public sprockit::factory_type
+class param_expander
 {
  public:
   virtual ~param_expander(){}
 
   virtual void
   expand(sprockit::sim_parameters* params) = 0;
-
-  virtual void
-  finalize_init();
 
 };
 

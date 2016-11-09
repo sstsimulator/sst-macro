@@ -20,14 +20,13 @@
 #include <math.h>
 #include <signal.h>
 #include <sstmac/common/sstmac_env.h>
-#include <sstmac/common/logger.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sstmac/backends/native/manager.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/launch/app_launch.h>
 #include <sstmac/hardware/topology/topology.h>
-#include <sstmac/hardware/topology/structured_topology.h>
+#include <sstmac/hardware/topology/cartesian_topology.h>
 #include <sprockit/fileio.h>
 #include <sprockit/statics.h>
 #include <sprockit/sim_parameters.h>
@@ -93,42 +92,43 @@ try_top_info_main(int argc, char **argv)
   //set the global parameters object
   sprockit::sprockit_init_cxx_heap(params);
 
-  params->pretty_print_params();
+  params->print_params();
 
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
   hw::topology* thetop = hw::topology_factory::get_param("name", top_params);
-  hw::structured_topology* top = safe_cast(hw::structured_topology, thetop, "topology info only compatible swith structured topology types");
+  hw::cartesian_topology* top = test_cast(hw::cartesian_topology, thetop);
 
   std::cout << "Number of nodes:         " << top->num_nodes() << std::endl;
   std::cout << "Number of leaf switches: " << top->num_leaf_switches() << std::endl;
   std::cout << "Number of switches:      " << top->num_switches() << std::endl;
 
-  while (1){
-    std::string next;
-    std::cout << "Next input: ";
-    std::getline(std::cin, next);
-    next = sprockit::trim_str(next);
-    std::deque<std::string> tokens;
-    pst::BasicStringTokenizer::tokenize(next, tokens);
-    int nentry = tokens.size();
-    if (nentry == 1){
-      //this is a switch id - return coordinates
-      switch_id sid(atoi(tokens[0].c_str()));
-      hw::coordinates coords = top->switch_coords(sid);
-      std::cout << "Switch ID maps to coordinates " << coords.to_string() << std::endl;
-    } else if (nentry > 1){
-      //these are coordinates, return node id
-      hw::coordinates coords(nentry);
-      for (int i=0; i < nentry; ++i){
-        coords[i] = atoi(tokens[i].c_str());
+  if (top){
+    while (1){
+      std::string next;
+      std::cout << "Next input: ";
+      std::getline(std::cin, next);
+      next = sprockit::trim_str(next);
+      std::deque<std::string> tokens;
+      pst::BasicStringTokenizer::tokenize(next, tokens);
+      int nentry = tokens.size();
+      if (nentry == 1){
+        //this is a switch id - return coordinates
+        switch_id sid(atoi(tokens[0].c_str()));
+        hw::coordinates coords = top->switch_coords(sid);
+        std::cout << "Switch ID maps to coordinates " << coords.to_string() << std::endl;
+      } else if (nentry > 1){
+        //these are coordinates, return node id
+        hw::coordinates coords(nentry);
+        for (int i=0; i < nentry; ++i){
+          coords[i] = atoi(tokens[i].c_str());
+        }
+        switch_id nid = top->switch_addr(coords);
+        std::cout << "Coordinates map to switch ID " << nid << std::endl;
+      } else {
+        std::cerr << "Invalid input" << std::endl;
       }
-      switch_id nid = top->switch_number(coords);
-      std::cout << "Coordinates map to switch ID " << nid << std::endl;
-    } else {
-      std::cerr << "Invalid input" << std::endl;
     }
   }
-
 
 
   delete params;

@@ -6,59 +6,64 @@ namespace hw {
 SpktRegister("xpress", topology, xpress_ring,
             "A ring topology with express cables that make large jumps");
 
-void
-xpress_ring::init_factory_params(sprockit::sim_parameters* params)
+xpress_ring::xpress_ring(sprockit::sim_parameters* params)
+  : structured_topology(params, InitMaxPortsIntra::I_Remembered, InitGeomEjectID::I_Remembered)
 {
-  structured_topology::init_factory_params(params);
   ring_size_ = params->get_int_param("xpress_ring_size");
   jump_size_ = params->get_int_param("xpress_jump_size");
-}
-
-long
-xpress_ring::num_leaf_switches() const
-{
-  return ring_size_;
+  max_ports_intra_network_ = 4;
+  eject_geometric_id_ = max_ports_intra_network_;
 }
 
 void
-xpress_ring::connect_objects(internal_connectable_map& objects)
+xpress_ring::connected_outports(switch_id src,
+                            std::vector<connection>& conns) const
 {
-  for (int i=0; i < ring_size_; ++i) {
-    connectable* center_obj = objects[switch_id(i)];
+  conns.resize(4); //+1/-1 conns, +jump,-jump conns
+  conns[0].src = src;
+  conns[0].dst = (src+1) % ring_size_;
+  conns[0].src_outport = up_port;
+  conns[0].dst_inport = down_port;
 
-    switch_id up_idx((i + 1) % ring_size_);
-    connectable* up_partner = objects[up_idx];
-    center_obj->connect(up_port, connectable::network_link, up_partner);
+  conns[1].src = src;
+  conns[1].dst = (src+ring_size_ - 1) % ring_size_;
+  conns[1].src_outport = down_port;
+  conns[1].dst_inport = up_port;
 
-    switch_id down_idx((i + ring_size_ - 1) % ring_size_);
-    connectable* down_partner = objects[down_idx];
-    center_obj->connect(down_port, connectable::network_link,
-                                    down_partner);
+  conns[2].src = src;
+  conns[2].dst = (src+jump_size_) % ring_size_;
+  conns[2].src_outport = jump_up_port;
+  conns[2].dst_inport = jump_down_port;
 
-    switch_id jump_up_idx((i + jump_size_) % ring_size_);
-    connectable* jump_up_partner = objects[jump_up_idx];
-    center_obj->connect(jump_up_port, connectable::network_link,
-                                    jump_up_partner);
-
-    switch_id jump_down_idx((i + ring_size_ - jump_size_) % ring_size_);
-    connectable* jump_down_partner = objects[jump_down_idx];
-    center_obj->connect(jump_down_port, connectable::network_link,
-                                    jump_down_partner);
-  }
+  conns[3].src = src;
+  conns[3].dst = (src-jump_size_+ring_size_) % ring_size_;
+  conns[3].src_outport = jump_down_port;
+  conns[3].dst_inport = jump_up_port;
 }
 
 void
-xpress_ring::minimal_route_to_coords(
-  const coordinates& src_coords,
-  const coordinates& dest_coords,
-  geometry_routable::path& path) const
+xpress_ring::configure_individual_port_params(switch_id src, sprockit::sim_parameters *switch_params) const
 {
-  int src_pos = src_coords[0];
-  int dest_pos = dest_coords[0];
+  topology::configure_individual_port_params(0, 4, switch_params);
+}
 
+void
+xpress_ring::configure_vc_routing(std::map<routing::algorithm_t, int>& m) const 
+{
+  m[routing::minimal] = 1;
+  m[routing::valiant] = 2;
+  m[routing::ugal] = 3;
+}
+
+void
+xpress_ring::minimal_route_to_switch(
+  switch_id src,
+  switch_id dest,
+  routable::path& path) const
+{
   //can route up or down
-  int up_distance = abs(dest_pos - src_pos);
-  int down_distance = abs(src_pos + ring_size_ - dest_pos);
+  int up_distance = abs(dest - src);
+  int down_distance = abs(src + ring_size_ - dest);
 
   int xpress_cutoff = jump_size_ / 2;
 
@@ -100,73 +105,14 @@ xpress_ring::num_hops(int total_distance) const
 
 int
 xpress_ring::minimal_distance(
-  const coordinates& src_coords,
-  const coordinates& dest_coords) const
+  switch_id src,
+  switch_id dest) const
 {
-  int src_pos = src_coords[0];
-  int dest_pos = dest_coords[0];
-  int up_distance = abs(dest_pos - src_pos);
-  int down_distance = abs(src_pos + ring_size_ - dest_pos);
+  int up_distance = abs(dest - src);
+  int down_distance = abs(src + ring_size_ - dest);
 
   int total_distance = std::max(up_distance, down_distance);
   return num_hops(total_distance);
-}
-
-int
-xpress_ring::ndimensions() const
-{
-  return 1;
-}
-
-switch_id
-xpress_ring::switch_number(const coordinates& coords) const
-{
-  return switch_id(coords[0]);
-}
-
-void
-xpress_ring::productive_path(
-  int dim,
-  const coordinates& src,
-  const coordinates& dst,
-  geometry_routable::path& path) const
-{
-  minimal_route_to_coords(src, dst, path);
-}
-
-void
-xpress_ring::compute_switch_coords(switch_id swid, coordinates& coords) const
-{
-  coords[0] = int(swid);
-}
-
-int
-xpress_ring::convert_to_port(int dim, int dir) const
-{
-  switch(dim) {
-    case UP {
-      switch(dir) {
-        case step:
-          return up_port;
-        case jump:
-          return jump_up_port;
-      }
-    }
-    case DOWN {
-      switch(dir) {
-        case step:
-          return down_port;
-        case jump:
-          return jump_down_port;
-      }
-    }
-    default:
-      break;
-  }
-  spkt_throw_printf(sprockit::value_error,
-                   "Invalid dim=%d,dir=%d for xpress ring topology",
-                   dim, dir);
-  return -1;
 }
 
 int

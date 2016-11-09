@@ -1,7 +1,7 @@
 % !TEX root = manual.tex
 
 \chapter{Applications and Skeletonization}
-\label{sec:skeletonization}
+\label{chap:appsAndSkeletonization}
 
 \section{Basic Application porting}
 \label{sec:skel:basic}
@@ -22,24 +22,12 @@ Virtual processes share the same address space and the same global variables.  S
 Because of the way libraries are import in the SST core, using external skeleton apps is more complicated than previously.  Steps are being taken to re-automate this process, which will hopefully be available in the next subversion. For running the standalone version, this is essentially automatic  if using the SST compiler wrappers.  The compiler wrappers produce a new executable incorporating your new skeleton.
 
 The wrinkle is external skeletons apps is changing the application's entry point, i.e. \inlinecode{main}.
-The SST/macro framework has already taken the \texttt{main} function, and consequently the user application becomes a sub-routine within the simulation environment. As introduced in Section~\ref{sec:tutorial:basicmpi}, one needs to change the entry function from \texttt{main} to \texttt{user\_skeleton\_main}, which has the same function signature as the \texttt{main} function.  This refactoring happens automatically in the SST compiler wrappers. 
+The SST/macro framework has already taken the \texttt{main} function, and consequently the user application becomes a sub-routine within the simulation environment. As introduced in Section~\ref{sec:tutorial:basicmpi}, one needs redirect \texttt{main} to a different symbol by defining the macro \inlinecode{sstmac_app_name} at the top of the file containing \inlinecode{main}. This refactoring happens automatically in the SST compiler wrappers. 
 
-If you need to use more than one application in the simulator at a time, you need multiple application entry points.
-It is no longer possible to do automatic refactoring.  You must explicitly use the macro \inlinecode{sstmac_register_app}
-and change the name of your \inlinecode{main}.  Thus, a code might look like
-
-\begin{CppCode}
-sstmac_register_app(my_app);
-
-int my_app_main(int argc, char** argv)
-{
-...
-\end{CppCode}
-where the refactored \inlinecode{main} function matches the name of the declared application.
 
 \subsection{Loading external skeletons with the integrated core}\label{subsec:linkageCore}
 While the main \inlineshell{libmacro.so} provides the bulk of SST/macro functionality, 
-users may wish to compile and run external skeletons.  This gets a bit confusing with SST core since you have an external skeleton for an external element.  Follow the instructions on \url{http://sst-simulator.org}. You must create an element info struct name \inlinecode{X_eli} for X your library name.  You can still use the \inlineshell{sst++} compiler wrappers for building, but you must now manually create a \inlineshell{libX.so} from the compiled object files.  The \inlineshell{sstmacro.py} script installed must also be edited.  The top lines was previously
+users may wish to compile and run external skeletons.  This gets a bit confusing with SST core since you have an external skeleton for an external element.  One can do this manually following the instructions on \url{http://sst-simulator.org}. You must create an element info struct name \inlinecode{X_eli} for X your library name.  You can still use the \inlineshell{sst++} compiler wrappers for building, but you must now manually create a \inlineshell{libX.so} from the compiled object files.  The \inlineshell{default.py} script used by \inlineshell{pysstmac} must also be edited.  The top lines was previously
 
 \begin{ViFile}
 import sst.macro
@@ -50,8 +38,16 @@ This only loads the main components, not the external skeleton. You must add
 import sst.X
 \end{ViFile}
 where X is the name of your skeleton. This causes the core to also load the shared library corresponding to your external skeleton app.
+If using the SST compiler wrappers, the ELI block and .so file will actually be generated automatically.  As shown in Section \ref{sec:building:running},
+the generate shared library files can be added as the first parameters to the \inlineshell{pysstmac} script.
+
+\begin{ShellCmd}
+>sst-macro/skeletons/sendrecv> pysstmac librunsstmac.so -f parameters.ini
+\end{ShellCmd} 
+
 
 \section{Skeletonization}
+\label{sec:skeletonization}
 
 A program skeleton is a simplified program derived from a parent application. The purpose of a skeleton application is to retain the performance characteristics of interest. At the same time, program logic that is orthogonal to performance properties is removed.  The rest of this chapter will talk about skeletonizing an MPI program, but the concepts mostly apply regardless of what programming/communication model you're using. 
 
@@ -65,9 +61,10 @@ Skeletonization falls into three main categories:
 \item \textit{Communication buffers} - While you can pass in real buffers with data to \sstmacro MPI calls and they will work like normal, it is relatively expensive. If they're not needed, get rid of them.
 \end{itemize}
 
-A decent example of skeletonization is HPCCG\_full (the original code) and HPCCG\_skel (the skeleton) in sstmacro/skeletons.  
+A good example of skeletonization can be found in the lulesh2.0.3 example in the skeletons folder.
 
 \subsection{Basic compute modeling}
+\label{subsec:basicCompute}
 
 By default, even if you don't remove any computation, \textit{simulation time doesn't pass between MPI or other calls implemented by \sstmacro} unless you set
 
@@ -96,6 +93,8 @@ again usually parameterized by something like vector size.
 Using these two functions is the simplest and least flexible way of compute modeling.
 
 \subsection{Detailed compute modeling}
+\label{subsec:detailedCompute}
+
 The basic compute modeling is not very flexible.  
 In particular, simply computing based on time does not account for congestion delays introduced by things like memory contention.
 The highly recommended route is a more detailed compute model (but still very simple) that uses the operational intensity (essentially bytes/flops ratio) for a given compute kernel.
@@ -132,6 +131,7 @@ For more complicated kernels, performance metrics might be the only way.
 Further discussion and analysis of operational intensity and roofline models can be found in ``Roofline Model Toolkit: A Practical Tool for Architectural and Program Analysis'' by Yung Ju Lo et al.  The PDF is available at \url{http://www.dcs.warwick.ac.uk/~sdh/pmbs14/PMBS14/Workshop_Schedule.html}.
 
 \subsection{Skeletonization Issues}
+\label{subsec:skeletonIssues}
 
 The main issue that arises during skeletonization is data-dependent communication.  In many cases, it will seem like you can't remove computation or memory allocation because MPI calls depend somehow on that data.  The following are some examples of how we deal with those:
 
@@ -150,6 +150,7 @@ For applications with heavy dynamic data dependence, we have the following strat
 \end{itemize}
 
 \section{Process Encapsulation}
+\label{sec:processEncapsulation}
 
 As mentioned above, virtual processes are not real, physical processes inside the OS.
 They are explicitly managed user-space threads with a private stack, but without a private set of global variables.
@@ -161,6 +162,7 @@ there is so minor refactoring that needs to be done.
 
 \subsection{Manually refactoring global variables}
 \label{sec:skel:globals}
+
 \sstmacro provides a complete set of global variable replacements from 
 \inlinecode{\#include <sstmac/sstmac_global.h>}, which is automatically included the SST compiler wrappers.
 Then replace the variable type declaration with the ones that have a \inlinecode{global_} prefix in the header file.
@@ -175,6 +177,8 @@ If not explicitly cast, the \inlinecode{va_args} function will be misinterpreted
 This still follows the ``single-source'' principle since whether compiling for \sstmacro or a real machine, the code is still valid.
 
 \subsection{Automatically refactoring global variables}
+\label{subsec:autoRefactorGlobals}
+
 Tools are currently in use by developers to automatically refactor codes to use no global variables.
 This involves running the source code through a compiler tool chain that then creates a \inlinecode{struct}
 encapsulating all global variables into thread-specific classes.

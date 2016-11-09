@@ -14,6 +14,7 @@
 
 #include <sstmac/software/process/app.h>
 #include <mpi.h>
+#include <cmath>
 
 #include <gtc_modules.h>
 
@@ -51,7 +52,8 @@ namespace gtc
     std::map<std::string,double> param_map_;
 
   public:
-    gtc_main() {}
+    gtc_main(sprockit::sim_parameters* params, sstmac::sw::software_id sid,
+             sstmac::sw::operating_system* os);
 
     /// Goodbye.
     virtual
@@ -59,25 +61,9 @@ namespace gtc
     {
     }
 
-    /// Get a copy.
-    virtual sstmac::sw::app*
-    clone_type() const
-    {
-      return new gtc_main;
-    }
-
     /// Go.
     void
-    skeleton_main();
-
-    virtual void
-    consume_params(sprockit::sim_parameters* params);
-
-    virtual std::string
-    to_string() const
-    {
-      return "gtc_main";
-    }
+    skeleton_main() override;
 
     // -------------- GTC Functions
   private:
@@ -138,7 +124,7 @@ namespace gtc
     modulo(double num, double by){
       int div = num / by;
       double temp = by * div;
-      double ret = abs(num - temp);
+      double ret = std::fabs(num - temp);
       if(sign(1, num) != sign(1, by)){
           ret--;
       }

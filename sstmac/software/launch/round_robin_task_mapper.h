@@ -24,19 +24,25 @@ class round_robin_task_mapper : public task_mapper
 {
 
  public:
-  round_robin_task_mapper(parallel_runtime* rt) :
-    task_mapper(rt){}
+  round_robin_task_mapper(sprockit::sim_parameters* params) :
+    task_mapper(params)
+  {
+  }
+
+  std::string
+  to_string() const override {
+    return "round robin task mapper";
+  }
 
   virtual
   ~round_robin_task_mapper() throw ();
 
   virtual void
   map_ranks(
-    const app_id& aid,
     const ordered_node_set& nodes,
     int ppn,
     std::vector<node_id> &result,
-    int nproc);
+    int nproc) override;
 
 };
 

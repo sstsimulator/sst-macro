@@ -55,12 +55,11 @@ fake_transport::do_smsg_send(int dst, const message::ptr &msg)
   sends_.push_back(msg);
 }
 
-void
-fake_transport::init_factory_params(sprockit::sim_parameters *params)
+fake_transport::fake_transport(sprockit::sim_parameters *params) :
+  transport(params)
 {
   nproc_ = params->get_int_param("fake_transport_nproc");
   rank_ = params->get_int_param("fake_transport_rank");
-  transport::init_factory_params(params);
 }
 
 void

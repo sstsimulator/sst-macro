@@ -5,6 +5,7 @@ namespace sstmac {
 namespace hw {
 
 class network_switch;
+class logp_switch;
 
 }
 }

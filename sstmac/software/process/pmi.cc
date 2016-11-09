@@ -14,8 +14,8 @@ namespace sw {
 process_manager::app_to_proc_to_node_map process_manager::node_map_;
 process_manager::app_to_node_to_proc_map process_manager::proc_map_;
 
-process_manager::process_manager(software_id sid) :
-  sid_(sid)
+process_manager::process_manager(software_id sid, operating_system* os) :
+  sid_(sid), my_os_(os)
 {
   node_id addr = runtime::node_for_task(sid.app_, sid.task_);
   static thread_lock lock;
@@ -48,18 +48,10 @@ process_manager::kill_process()
     "process_manager::kill_process");
 }
 
-void
-process_manager::init_os(operating_system* os)
-{
-  my_os_ = os;
-}
-
 int
 process_manager::get_partner(node_id addr) const
 {
-  app_to_node_to_proc_map::const_iterator it1 =
-    proc_map_.find(sid_.app_);
-
+  auto it1 = proc_map_.find(sid_.app_);
   if (it1 == proc_map_.end()) {
     spkt_throw_printf(sprockit::value_error,
                      "process_manager::get_partner: "
@@ -69,9 +61,7 @@ process_manager::get_partner(node_id addr) const
   }
 
   const node_to_proc_map& node_map = it1->second;
-  node_to_proc_map::const_iterator it2 =
-    node_map.find(addr);
-
+  auto it2 = node_map.find(addr);
   if (it2 == node_map.end()) {
     spkt_throw_printf(sprockit::value_error,
                      "process_manager::get_partner: "

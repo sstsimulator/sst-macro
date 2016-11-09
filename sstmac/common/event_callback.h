@@ -34,14 +34,10 @@ class member_fxn_handler :
  public:
   virtual ~member_fxn_handler(){}
 
-  virtual std::string
-  to_string() const {
-    return "member fxn handler";
-  }
  protected:
-  member_fxn_handler(event_loc_id id)
+  member_fxn_handler(device_id id) :
+    event_handler(id)
   {
-    init_loc_id(id);
   }
 };
 
@@ -53,12 +49,17 @@ class member_fxn_handler_impl :
  public:
   virtual ~member_fxn_handler_impl(){}
 
+  std::string
+  to_string() const override {
+    return sprockit::to_string(obj_);
+  }
+
   void
-  handle(event* ev) {
+  handle(event* ev) override {
     dispatch(ev, typename gens<sizeof...(Args)>::type());
   }
 
-  member_fxn_handler_impl(event_loc_id id, Cls* obj, Fxn fxn, const Args&... args) :
+  member_fxn_handler_impl(device_id id, Cls* obj, Fxn fxn, const Args&... args) :
     params_(args...),
     obj_(obj),
     fxn_(fxn),
@@ -78,32 +79,6 @@ class member_fxn_handler_impl :
   Cls* obj_;
 
 };
-
-#if 0
-template <class Cls, typename Fxn>
-class member_fxn_handler_impl<Cls,Fxn> :
-  public member_fxn_handler
-{
- public:
-  virtual ~member_fxn_handler_impl(){}
-
-  void
-  handle(event* ev) {
-    (obj_->*fxn_)(ev);
-  }
-
-  member_fxn_handler_impl(event_loc_id id, Cls* obj, Fxn fxn) :
-    obj_(obj),
-    fxn_(fxn),
-    member_fxn_handler(id)
-  {
-  }
-
- private:
-  Fxn fxn_;
-  Cls* obj_;
-};
-#endif
 
 template<class Cls, typename Fxn, class ...Args>
 event_handler*
@@ -127,12 +102,7 @@ class member_fxn_callback :
     dispatch(typename gens<sizeof...(Args)>::type());
   }
 
-  virtual std::string
-  to_string() const {
-    return "member fxn callback";
-  }
-
-  member_fxn_callback(event_loc_id id, Cls* obj, Fxn fxn, const Args&... args) :
+  member_fxn_callback(device_id id, Cls* obj, Fxn fxn, const Args&... args) :
     callback(id),
     params_(args...),
     obj_(obj),
@@ -163,7 +133,7 @@ new_callback(Cls* cls, Fxn fxn, const Args&... args)
 
 template<class Cls, typename Fxn, class ...Args>
 callback*
-new_callback(event_loc_id id, Cls* cls, Fxn fxn, const Args&... args)
+new_callback(device_id id, Cls* cls, Fxn fxn, const Args&... args)
 {
   return new member_fxn_callback<Cls, Fxn, Args...>(
         id, cls, fxn, args...);

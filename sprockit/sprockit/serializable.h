@@ -19,10 +19,6 @@
 
 namespace sprockit {
 
-#define ImplementVirtualSerializable(obj) \
-    protected: \
-        obj(cxn_flag_t flag){}
-
 #define NotSerializable(obj) \
  public: \
   static void \
@@ -32,11 +28,11 @@ namespace sprockit {
       #obj); \
   } \
   virtual void \
-  serialize_order(sprockit::serializer& sst){ \
+  serialize_order(sprockit::serializer& sst) override { \
     throw_exc(); \
   } \
   virtual uint32_t \
-  cls_id() const { \
+  cls_id() const override { \
     throw_exc(); \
     return -1; \
   } \
@@ -46,37 +42,29 @@ namespace sprockit {
     return 0; \
   } \
   virtual const char* \
-  cls_name() const { \
+  cls_name() const override { \
     throw_exc(); \
     return ""; \
-  } \
-  virtual obj* \
-  you_forgot_to_add_ImplementSerializable_to_this_class() { \
-    return 0; \
-  } \
+  }
 
 #define ImplementSerializableDefaultConstructor(obj) \
  public: \
   virtual const char* \
-  cls_name() const { \
+  cls_name() const override { \
     return #obj; \
   } \
   virtual uint32_t \
-  cls_id() const { \
+  cls_id() const override { \
     return ::sprockit::serializable_builder_impl< obj >::static_cls_id(); \
   } \
   static obj* \
   construct_deserialize_stub() { \
     return new obj; \
-  } \
-  virtual obj* \
-  you_forgot_to_add_ImplementSerializable_to_this_class() { \
-    return 0; \
-  } \
+  }
 
 #define ImplementSerializable(obj) \
  public: \
- ImplementSerializableDefaultConstructor(obj)
+  ImplementSerializableDefaultConstructor(obj)
 
 
 class serializable_builder
@@ -171,8 +159,6 @@ template<class T> const uint32_t serializable_builder_impl<T>::cls_id_
 }
 
 #include <sprockit/serialize_serializable.h>
-
-#define DeclareSerializable(...)
 
 
 #endif

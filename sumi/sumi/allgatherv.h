@@ -14,20 +14,20 @@ class bruck_allgatherv_actor :
 
  public:
   std::string
-  to_string() const {
+  to_string() const override {
     return "bruck allgatherv actor";
   }
 
   bruck_allgatherv_actor(int* recv_counts);
 
  protected:
-  void finalize();
+  void finalize() override;
 
-  void finalize_buffers();
-  void init_buffers(void *dst, void *src);
-  void init_dag();
+  void finalize_buffers() override;
+  void init_buffers(void *dst, void *src) override;
+  void init_dag() override;
 
-  void buffer_action(void *dst_buffer, void *msg_buffer, action* ac);
+  void buffer_action(void *dst_buffer, void *msg_buffer, action* ac) override;
 
   int nelems_to_recv(int partner, int partner_gap);
 
@@ -44,21 +44,21 @@ class bruck_allgatherv_collective :
 
  public:
   std::string
-  to_string() const {
+  to_string() const override {
     return "bruck allgatherv";
   }
 
   dag_collective_actor*
-  new_actor() const {
+  new_actor() const override {
     return new bruck_allgatherv_actor(recv_counts_);
   }
 
   dag_collective*
-  clone() const {
+  clone() const override {
     return new bruck_allgatherv_collective;
   }
 
-  void init_recv_counts(int* counts){
+  void init_recv_counts(int* counts) override {
     recv_counts_ = counts;
   }
 

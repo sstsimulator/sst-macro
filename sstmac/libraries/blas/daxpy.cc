@@ -10,16 +10,18 @@ class default_daxpy :
   public blas_kernel
 {
  public:
+  default_daxpy(sprockit::sim_parameters* params){
+    loop_unroll_ = params->get_optional_double_param("daxpy_loop_unroll", 4);
+    pipeline_ = params->get_optional_double_param("daxpy_pipeline_efficiency", 2);
+  }
+
   std::string
-  to_string() const {
+  to_string() const override {
     return "default daxpy";
   }
 
   compute_event*
-  op_1d(int n);
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
+  op_1d(int n) override;
 
  protected:
   double loop_unroll_;
@@ -27,13 +29,6 @@ class default_daxpy :
 
 };
 SpktRegister("default_daxpy", blas_kernel, default_daxpy);
-
-void
-default_daxpy::init_factory_params(sprockit::sim_parameters* params)
-{
-  loop_unroll_ = params->get_optional_double_param("daxpy_loop_unroll", 4);
-  pipeline_ = params->get_optional_double_param("daxpy_pipeline_efficiency", 2);
-}
 
 compute_event*
 default_daxpy::op_1d(int n)

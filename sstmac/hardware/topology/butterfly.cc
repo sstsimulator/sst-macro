@@ -10,70 +10,47 @@ namespace hw {
 
 SpktRegister("butterfly | bfly", topology, butterfly);
 
+
+
 void
-abstract_butterfly::compute_switch_coords(switch_id uid,
-    coordinates& coords) const
+butterfly::minimal_route_to_switch(switch_id src,
+                                    switch_id dst,
+                                    routable::path &path) const
 {
+  int col = src / nswitches_per_col_;
   long group_size = nswitches_per_col_;
-  long next_group_size = group_size / kary_;
-  for (int l=0; l < (nfly_ - 1); ++l) {
-    //figure out the group offset
-    long group_relative_row = uid % group_size;
-    long group_number = group_relative_row / next_group_size;
-    coords[l] = group_number;
-
-    group_size = next_group_size;
-    next_group_size /= kary_;
+  for (int l=0; l <= col; ++l){
+    group_size /= kary_;
   }
+  long group_relative_row = dst % group_size;
+  path.outport = group_relative_row / group_size / kary_;
+  path.vc = 0;
 }
 
-void
-abstract_butterfly::productive_path(
-  int dim,
-  const coordinates &src,
-  const coordinates &dst,
-  geometry_routable::path& path) const
+abstract_butterfly::abstract_butterfly(sprockit::sim_parameters* params,
+                                       InitMaxPortsIntra i1,
+                                       InitGeomEjectID i2)
+  : structured_topology(override_params(params), i1, i2)
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "butterfly::productive_path: should never be called");
 }
 
-switch_id
-abstract_butterfly::switch_number(const coordinates& coords) const
+sprockit::sim_parameters*
+abstract_butterfly::override_params(sprockit::sim_parameters* params)
 {
-  long index_multiplier = nswitches_per_col_ / kary_;
-  long nid = 0;
-  for (int l=0; l < (nfly_ - 1); ++l) {
-    nid += coords[l] * index_multiplier;
-    index_multiplier /= kary_;
-  }
-  return switch_id(nid);
-}
-
-void
-abstract_butterfly::init_factory_params(sprockit::sim_parameters* params)
-{
-  /**
-   sstkeyword {
-   gui=4 3;
-   docstring=Specify the geometry of the butterfly network.ENDL
-   Should be a vector of size 2 for K-ary N-fly.ENDL
-   First index, K, is the radix of the butterfly.ENDL
-   Second index, N, is the number of stages.ENDL
-   Network will have K^(N-1) leaf switches and K^N network endpoints.;
-   }
-   */
-  std::vector<int> args;
-  params->get_vector_param("geometry", args);
-  kary_ = args[0];
-  nfly_ = args[1];
-  max_ports_injection_ = endpoints_per_switch_ = params->get_optional_int_param("concentration", kary_);
   //a 4-ary 3-fly has three levels of router
   //assume for simplicity nps = kary
   //we have 4^3 = 64 nodes
   //we need 4^(3-1) = 16 switches per level to support 64 nodes
+
+  std::vector<int> args;
+  params->get_vector_param("geometry", args);
+  kary_ = args[0];
+  nfly_ = args[1];
+  if (!params->has_param("concentration")){
+    params->add_param_override("concentration", kary_);
+  }
   nswitches_per_col_ = pow(kary_, nfly_ - 1);
-  structured_topology::init_factory_params(params);
+  return params;
 }
 
 void
@@ -85,27 +62,18 @@ abstract_butterfly::configure_vc_routing(std::map<routing::algorithm_t, int> &m)
   m[routing::ugal] = 3;
 }
 
-void
-butterfly::compute_switch_coords(switch_id uid, coordinates& coords) const
+butterfly::butterfly(sprockit::sim_parameters* params) :
+  abstract_butterfly(params,
+                     InitMaxPortsIntra::I_Remembered,
+                     InitGeomEjectID::I_Remembered)
 {
-  abstract_butterfly::compute_switch_coords(uid, coords);
-
-  //figure out which column
-  int col = uid / nswitches_per_col_;
-  coords[nfly_-1] = col;
-}
-
-void
-butterfly::init_factory_params(sprockit::sim_parameters* params)
-{
-  abstract_butterfly::init_factory_params(params);
   last_col_index_start_ = nswitches_per_col_ * (nfly_ - 1);
   max_ports_intra_network_ = kary_;
   eject_geometric_id_ = max_ports_intra_network_;
 }
 
 void
-butterfly::connect_objects(internal_connectable_map& objects)
+butterfly::connected_outports(switch_id src, std::vector<connection>& conns) const
 {
   /**
     In 4-ary 3-fly, we have 16 switches per col
@@ -140,150 +108,92 @@ butterfly::connect_objects(internal_connectable_map& objects)
     4 groups of size 4.
   */
 
+  int cidx = 0;
   long connection_stride = nswitches_per_col_ / kary_;
   long block_size = nswitches_per_col_;
-  long group_size = kary_;
-  connectable::config cfg;
-  cfg.ty = connectable::BasicConnection;
+  conns.resize(kary_);
   for (int l=0; l < (nfly_-1); ++l) {
-    long col_start_index = l * nswitches_per_col_;
-    for (long i=0; i < nswitches_per_col_; ++i) {
-      long my_switch_index = col_start_index + i;
-      switch_id my_addr(my_switch_index);
-      connectable* my_sw = objects[my_addr];
+    int col_start_index = l * nswitches_per_col_;
+    int col_stop_index = col_start_index + nswitches_per_col_;
+    if (src >= col_start_index && src < col_stop_index){
+      int i = src - col_start_index; //my offset in col
 
-      long my_block = i / block_size;
-      long my_intra_block_index = i % block_size;
-      long my_block_index_start = my_block * block_size;
+      int my_block = i / block_size;
+      int my_intra_block_index = i % block_size;
+      int my_block_index_start = my_block * block_size;
 
-      long my_group_offset = my_intra_block_index % connection_stride;
-      long my_group_index_start = my_block_index_start + my_group_offset;
-      long my_index_in_my_group = (my_switch_index - my_group_index_start) / connection_stride;
+      int my_group_offset = my_intra_block_index % connection_stride;
+      int my_group_index_start = my_block_index_start + my_group_offset;
+      int my_index_in_my_group = (src - my_group_index_start) / connection_stride;
 
-      //make sure to include column offset
-      long up_group_partner = my_group_index_start + col_start_index +
+
+      int dst = my_group_index_start + col_start_index +
                               nswitches_per_col_;
-      long num_connections = kary_;
 
       int inport = my_index_in_my_group;
-      for (long c=0; c < num_connections;
-           ++c, up_group_partner += connection_stride) {
-        //printf("Connecting %ld:%ld->%ld\n", my_switch_index, c, up_group_partner);
-        switch_id up_group_partner_addr(up_group_partner);
-        connectable* partner_sw = objects[up_group_partner_addr];
-        int outport = convert_to_port(up_dimension, c);
-        my_sw->connect(
-          outport,
-          inport,
-          connectable::output,
-          partner_sw, &cfg);
-
-        partner_sw->connect(
-          outport,
-          inport,
-          connectable::input,
-          my_sw, &cfg);
+      for (int c=0; c < kary_; ++c, dst += connection_stride) {
+        connection& conn = conns[cidx];
+        conn.src = src;
+        conn.dst = dst;
+        conn.src_outport = c;
+        conn.dst_inport = inport;
+        ++cidx;
       }
+      break; //we are done
     }
-
-    //the next set of connections is more compact - lower the stride
     connection_stride /= kary_;
     block_size /= kary_;
   }
-
 }
 
 void
-butterfly::minimal_route_to_coords(
-  const coordinates &src_coords,
-  const coordinates &dest_coords,
-  geometry_routable::path& path) const
+butterfly::configure_individual_port_params(switch_id src,
+                      sprockit::sim_parameters *switch_params) const
 {
-  //we have to route our current level
-  int current_dim = src_coords[nfly_ - 1];
-  //path.dim = up_dimension;
-  //path.dir = dest_coords[current_dim];
-  int dim = up_dimension;
-  int dir = dest_coords[current_dim];
-  path.outport = convert_to_port(dim, dir);
-  path.vc = 0;
-}
-
-void
-butterfly::productive_paths(
-  geometry_routable::path_set &paths,
-  const coordinates &current,
-  const coordinates &dst)
-{
-  paths.resize(1);
-  minimal_route_to_coords(current, dst, paths[0]);
+  topology::configure_individual_port_params(0, max_ports_intra_network_,
+                                             switch_params);
 }
 
 int
-butterfly::minimal_distance(const coordinates &src_coords,
-                            const coordinates &dest_coords) const
+butterfly::minimal_distance(switch_id src, switch_id dst) const
 {
-  int eject_dim = nfly_ - 1;
-  int lastidx = eject_dim;
-  int current_dim = src_coords[lastidx];
-  int dest_dim = dest_coords[lastidx];
-  if (dest_dim != eject_dim) {
-    spkt_throw_printf(sprockit::value_error,
-                     "invalid butterfly destination coordinates: %s -> %s",
-                      src_coords.to_string().c_str(),
-                      dest_coords.to_string().c_str());
-  }
-  //this many hops remaining
-  return (eject_dim - current_dim);
+  spkt_throw(sprockit::unimplemented_error, "butterfly::minimal_distance");
 }
 
 switch_id
-butterfly::endpoint_to_ejection_switch(node_id addr, int& switch_port) const
+butterfly::netlink_to_ejection_switch(node_id addr, int& switch_port) const
 {
   long node_idx = addr;
   //we inject on the first row - eject on the last row
-  long ej_idx = node_idx / endpoints_per_switch_ + last_col_index_start_;
-  switch_port = node_idx % endpoints_per_switch_;
+  long ej_idx = node_idx / netlinks_per_switch_ + last_col_index_start_;
+  switch_port = node_idx % netlinks_per_switch_;
   return switch_id(ej_idx);
 }
 
-switch_id
-butterfly::switch_number(const coordinates &coords) const
-{
-  //get the row number
-  long row_id = abstract_butterfly::switch_number(coords);
-  long col_id = coords[nfly_-1];
-  long nid = col_id * nswitches_per_col_ + row_id;
-  return switch_id(nid);
-}
 
-std::vector<node_id>
-butterfly::nodes_connected_to_ejection_switch(switch_id swaddr) const
+void
+butterfly::nodes_connected_to_ejection_switch(switch_id swaddr,
+                                              std::vector<injection_port>& nodes) const
 {
   int last_row_offset = nswitches_per_col_ * (nfly_ - 1);
   if (swaddr >= last_row_offset) {
     switch_id sid_offset(swaddr - last_row_offset);
-    return structured_topology::nodes_connected_to_switch(sid_offset);
+    return structured_topology::nodes_connected_to_injection_switch(sid_offset, nodes);
   } else {
-    return std::vector<node_id>();
+    nodes.resize(0);
   }
 }
 
-std::vector<node_id>
-butterfly::nodes_connected_to_injection_switch(switch_id swaddr) const
+void
+butterfly::nodes_connected_to_injection_switch(switch_id swaddr,
+                                               std::vector<injection_port>& nodes) const
 {
   if (swaddr >= nswitches_per_col_) {
-    return std::vector<node_id>();
+    nodes.resize(0);
   }
   else {
-    return structured_topology::nodes_connected_to_switch(swaddr);
+    return structured_topology::nodes_connected_to_injection_switch(swaddr, nodes);
   }
-}
-
-int
-butterfly::convert_to_port(int dim, int dir) const
-{
-  return dir;
 }
 
 }

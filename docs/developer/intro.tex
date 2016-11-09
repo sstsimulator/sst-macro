@@ -15,7 +15,7 @@ In general, when module 1 sendings a message to module 2, module 1 only sees an 
 The polymorphic type of module 2 can vary freely to employ different physics or congestions models without affecting the implementation of module 1. 
 Polymorphism, while greatly simplifying modularity and interchangeability, does have some consequences.
 The ``workhorse'' of SST/macro is the base \inlinecode{event} and \inlinecode{message} classes.
-To increase polymorphism and flexibility, every SST/macro module that receives messages does so via the generic function
+To increase polymorphism and flexibility, every SST/macro module that receives events does so via the generic function
 
 \begin{CppCode}
 void
@@ -23,11 +23,11 @@ handle(event* ev){
 ...
 }
 \end{CppCode}
-The prototype therefore accepts \emph{any} event type. The class \inlinecode{message} is a special type of event that refers specifically to a message (e.g. MPI message) carrying a data payload.
+The prototype therefore accepts \emph{any} event type. The class \inlinecode{message} is a special type of event that refers specifically to a message (e.g. MPI message, flow in the context of TCP/IP) carrying a complete block of data or file.
 Misusing types in SST/macro is \emph{not} a compile-time error.
 The onus of correct event types falls on runtime assertions.
 All event types may not be valid for a given module.
-A module for the memory subsystem should throw an error if the developer accidentally passes it a event intended for the OS or the NIC.
+A module for the memory subsystem should throw an error if the developer accidentally passes it an event intended for the OS or the NIC.
 Efforts are being made to convert runtime errors into compile-time errors.
 In many cases, though, this cannot be avoided.
 The other consequence is that a lot of dynamic casts appear in the code.

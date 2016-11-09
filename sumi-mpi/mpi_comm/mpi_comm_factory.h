@@ -27,16 +27,11 @@ namespace sumi {
 class mpi_comm_factory  {
 
  public:
-  virtual std::string
-  to_string() const {
-    return "mpicommfactory";
-  }
-
   /// Build comm_world using information retrieved from the environment.
   mpi_comm_factory(app_id aid, mpi_api* parent);
 
   /// Goodbye.
-  virtual ~mpi_comm_factory();
+  ~mpi_comm_factory();
 
   /// Initialize the object.
   void init(int rank, int nproc);

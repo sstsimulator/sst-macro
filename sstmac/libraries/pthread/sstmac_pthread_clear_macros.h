@@ -125,6 +125,11 @@
 #undef PTHREAD_COND_INITIALIZER
 #undef PTHREAD_MUTEX_INITIALIZER
 
+#ifdef SSTMAC_SAVE_ONCE_INIT
+#define PTHREAD_ONCE_INIT SSTMAC_SAVE_ONCE_INIT
+#undef SSTMAC_SAVE_ONCE_INIT
+#endif
+
 #undef pthread_t
 #undef pthread_attr_t
 #undef pthread_key_t

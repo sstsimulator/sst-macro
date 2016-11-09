@@ -2,6 +2,8 @@
 #define CONNECTION_H
 
 #include <sstmac/common/event_scheduler.h>
+#include <sstmac/common/event_callback.h>
+#include <sprockit/sim_parameters_fwd.h>
 
 #define connectable_type_invalid(ty) \
    spkt_throw_printf(sprockit::value_error, "invalid connectable type %s", connectable::str(ty))
@@ -12,6 +14,7 @@ namespace sstmac {
 namespace hw {
 
 
+
 class connectable
 {
  public:
@@ -20,86 +23,55 @@ class connectable
 
   static const int any_port = -1;
 
-  typedef enum {
-    RedundantConnection=0, /*!< The connection has extra redundant links */
-    WeightedConnection=1, /*!< The connection is weighted. Weighting applies
-                               to bandwidths and buffer sizes */
-    FixedBandwidthConnection=2, /*!< The connection has a fixed bandwidth */
-    FixedConnection=3, /*!< The connection has a fixex bandwidth and latency */
-    BasicConnection=4 /*!< The connection has no special properties
-                           Use only the defauly properties */
-  } config_type_t;
-
-  struct config {
-    config_type_t ty;
-    double src_buffer_weight;
-    double dst_buffer_weight;
-    double xbar_weight;
-    double link_weight;
-    int red;
-    double bw;
-    timestamp latency;
-    config() : xbar_weight(1.0){}
-  };
-
-  typedef enum {
-    output,
-    input
-  } connection_type_t;
-
-
-  static const char*
-  str(connection_type_t ty) {
-    switch (ty) {
-      connect_str_case(output);
-      connect_str_case(input);
-    }
-  }
-
-  /**
-   * @brief connect
-   * @param src_outport The outgoing port at the source
-   * @param dst_inport The incoming port at the destination
-   * @param ty    Whether we are configuring the input or output direction
-   * @param mod   The device currently being connected
-   * @param cfg   A struct with various special configuration options
-   */
   virtual void
-  connect(
+  connect_output(
+    sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    connection_type_t ty,
-    connectable* mod,
-    config* cfg) = 0;
+    event_handler* handler) = 0;
+
+  virtual void
+  connect_input(
+    sprockit::sim_parameters* params,
+    int src_outport,
+    int dst_inport,
+    event_handler* handler) = 0;
+
+  virtual link_handler*
+  credit_handler(int port) const = 0;
+
+  virtual link_handler*
+  payload_handler(int port) const = 0;
 
 };
 
 class connectable_component :
-  public event_scheduler,
+  public event_component,
   public connectable
 {
  protected:
-#if SSTMAC_INTEGRATED_SST_CORE
-  connectable_component(SST::ComponentId_t id,
-    SST::Params& params) : event_scheduler(id, params)
+  connectable_component(sprockit::sim_parameters* params,
+                        uint64_t cid,
+                        device_id id,
+                        event_manager* mgr)
+    : event_component(params, cid, id, mgr)
   {
   }
-#endif
+
 };
 
 class connectable_subcomponent :
-  public event_subscheduler,
+  public event_subcomponent,
   public connectable
 {
-#if SSTMAC_INTEGRATED_SST_CORE
- public:
-  virtual void
-  init_sst_params(SST::Params& params, SST::Component* parent){}
-#endif
+protected:
+ connectable_subcomponent(event_scheduler* parent)
+   : event_subcomponent(parent)
+ {
+ }
 };
 
 }
-
 }
 
 #endif // CONNECTION_H

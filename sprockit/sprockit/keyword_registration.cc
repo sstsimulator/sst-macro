@@ -42,8 +42,7 @@ bool
 KeywordRegistration::is_valid_namespace(const std::string& ns)
 {
   init();
-  spkt_unordered_set<std::string>::const_iterator
-    it = valid_namespaces_->find(ns);
+  auto it = valid_namespaces_->find(ns);
   if (it != valid_namespaces_->end()) {
     return true;
   }
@@ -64,16 +63,13 @@ bool
 KeywordRegistration::is_valid_keyword(const std::string &name)
 {
   init();
-  spkt_unordered_set<std::string>::const_iterator
-    it = valid_keywords_->find(name);
+  auto it = valid_keywords_->find(name);
   if (it != valid_keywords_->end()) {
     return true;
   }
 
 #if !SPKT_DISABLE_REGEXP
-  std::list<std::string>::const_iterator rit, rend = regexps_->end();
-  for (rit=regexps_->begin(); rit != rend; ++rit){
-    const std::string& re = *rit;
+  for (auto& re : *regexps_){
     if (has_regexp_match(re, name)){
       return true;
     }
@@ -142,7 +138,9 @@ KeywordRegistration::validate_namespace(const std::string &ns)
   if (do_validation_){
     bool valid = is_valid_namespace(ns);
     if (!valid) {
-      spkt_throw_printf(input_error, "namespace %s is not valid", ns.c_str());
+      spkt_abort_printf("namespace %s is not valid - if this is not a type-o ensure that "
+                        "namespace was properly registered with RegisterNamespaces(...) macro",
+                        ns.c_str());
     }
   }
 }
@@ -161,7 +159,8 @@ KeywordRegistration::validate_keyword(const std::string &name,
                   << "You should remove it from parameter files as it may become an error in future versions.\n";
       }
       else {
-        spkt_throw_printf(value_error, "unknown keyword name %s with value %s",
+        spkt_abort_printf("unknown keyword name %s with value %s - if this is not a type-o ensure that "
+                          "keyword was properly registered with RegisterKeywords(...) macro",
                          name.c_str(), val.c_str());
       }
     }

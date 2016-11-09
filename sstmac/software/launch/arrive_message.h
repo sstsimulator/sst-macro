@@ -28,7 +28,7 @@ class arrive_message : public launch_event
    * @return String description
    */
   virtual std::string
-  to_string() const {
+  to_string() const override {
     return "arrive_message";
   }
 

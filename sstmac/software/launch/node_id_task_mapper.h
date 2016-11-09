@@ -21,19 +21,19 @@ namespace sw {
 class node_id_task_mapper : public task_mapper
 {
  public:
-  node_id_task_mapper(parallel_runtime* rt) :
-    task_mapper(rt){}
+  node_id_task_mapper(sprockit::sim_parameters* params);
+
+  std::string
+  to_string() const override {
+    return "node id task mapper";
+  }
 
   virtual ~node_id_task_mapper() throw() {}
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  void map_ranks(const app_id& aid,
-                const ordered_node_set& nodes,
+  void map_ranks(const ordered_node_set& nodes,
                 int ppn,
                 std::vector<node_id>& result,
-                int nproc);
+                int nproc) override;
 
  protected:
   std::string listfile_;

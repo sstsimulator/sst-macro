@@ -12,6 +12,7 @@
 #include <sstmac/hardware/router/router.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/topology/topology.h>
+#include <sstmac/hardware/topology/multipath_topology.h>
 #include <sprockit/util.h>
 #include <sprockit/delete.h>
 #include <sprockit/sim_parameters.h>
@@ -21,28 +22,23 @@ ImplementFactory(sstmac::hw::router);
 RegisterDebugSlot(router);
 RegisterDebugSlot(routing);
 RegisterNamespaces("router");
+RegisterKeywords(
+"router",
+"ugal_threshold",
+);
 
 namespace sstmac {
 namespace hw {
 
+router::router(sprockit::sim_parameters* params,
+  topology *top, network_switch *sw, routing::algorithm_t algo)
+ : top_(top), netsw_(sw), algo_(algo), max_num_vc_(0)
+{
+  init_vc();
+  my_addr_ = switch_id(params->get_int_param("id"));
+}
+
 router::~router()
-{
-}
-
-int
-router::convert_to_port(int dim, int dir)
-{
-  return top_->convert_to_port(dim, dir);
-}
-
-void
-router::set_switch(network_switch* netsw)
-{
-  netsw_ = netsw;
-}
-
-void
-router::finalize_init()
 {
 }
 
@@ -60,45 +56,35 @@ router::init_vc()
   max_num_vc_ = iter->second;
 }
 
-router::router(routing::algorithm_t max_algo) :
-  max_num_vc_(0), algo_(max_algo)
+void
+router::compatibility_check() const
 {
+  multipath_topology* mtop = test_cast(multipath_topology, top_);
+  if (mtop){
+    spkt_abort_printf("chosen router model is not compatible with multipath topologies");
+  }
 }
 
-bool
-router::productive_paths_to_node(node_id dst,
-                                 geometry_routable::path_set &paths)
+switch_id
+router::find_ejection_site(node_id node_addr, routable::path &path) const
 {
-  int ej_port;
-  switch_id ej_addr = top_->endpoint_to_ejection_switch(dst, ej_port);
-  if (ej_addr == my_addr_) {
-    paths.resize(1);
-    paths[0].outport = ej_port;
-    //paths[0].dim = topology::eject;
-    //paths[0].dir = ej_port;
-    paths[0].vc = 0;
-    return true;
+  return top_->node_to_ejection_switch(node_addr, path.outport);
+}
+
+void
+router::route(packet *pkt)
+{
+  routable* rtbl = pkt->interface<routable>();
+  routable::path& path = rtbl->current_path();
+  switch_id sid = find_ejection_site(pkt->toaddr(), path);
+  if (sid == my_addr_){
+    rter_debug("Ejecting %s from switch %d", pkt->to_string().c_str(), sid);
+    configure_ejection_path(path);
   }
   else {
-    productive_paths_to_switch(ej_addr, paths);
-    return false;
+    rter_debug("Routing %s to switch %d", pkt->to_string().c_str(), sid);
+    route_to_switch(sid, path);
   }
-}
-
-void
-router::minimal_route_to_node(node_id node_addr, geometry_routable::path& path)
-{
-  spkt_throw(sprockit::unimplemented_error,
-            to_string(),
-            "::minimal_route_to_node: router does not implement path routing");
-}
-
-void
-router::minimal_route_to_switch(switch_id node_addr, geometry_routable::path& path)
-{
-  spkt_throw(sprockit::unimplemented_error,
-            to_string(),
-            "::minimal_route_to_switch: router does not implement path routing");
 }
 
 routing::algorithm_t
@@ -121,29 +107,6 @@ router::str_to_algo(const std::string &str)
                      "invalid routing algorithm %s",
                      str.c_str());
   }
-}
-
-void
-router::init_factory_params(sprockit::sim_parameters* params)
-{
-  my_addr_ = switch_id(params->get_int_param("id"));
-  /**
-    sstkeyword {
-      docstring=Enables hop count reporting.ENDL
-      If set to true, warnings will be provided each time a hop count increases by a given number.
-      This can only be enabled if sanity check is enabled by configure.;
-    }
-  */
-  hop_count_reporting_ =
-      params->get_optional_bool_param("sanity_check_hop_count_reporting",false);
-  /**
-    sstkeyword {
-      docstring=Sets the count delta for hop count reporting.ENDL
-      The default is 100 hops (which may be entirely inapporpriate for some topologies).;
-    }
-  */
-  hop_count_delta_ =
-      params->get_optional_int_param("sanity_check_hop_count_delta", 100);
 }
 
 }

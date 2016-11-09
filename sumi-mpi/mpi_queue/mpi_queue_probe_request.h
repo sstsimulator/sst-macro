@@ -24,11 +24,6 @@ namespace sumi {
 class mpi_queue_probe_request  {
 
  public:
-  virtual std::string
-  to_string() const {
-    return "mpi queue probe request";
-  }
-
   /// Hi there.
   mpi_queue_probe_request(mpi_request* key, MPI_Comm comm,
                 int source, int tag);

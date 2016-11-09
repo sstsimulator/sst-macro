@@ -56,8 +56,8 @@ get_quantity_with_units(const char* value, const char* key)
   while (*end==' ') ++end;
   int size = (int)((size_t)end - (size_t)begin);
   if (begin == end || size != ::strlen(value)) {
-    spkt_throw_printf(input_error,
-        "sim_parameters::get_quantity: param %s with value %s is not formatted as a double with units (Hz,GB/s,ns,KB)",
+    spkt_abort_printf("sim_parameters::get_quantity: param %s with value %s"
+        " is not formatted as a double with units (Hz,GB/s,ns,KB)",
         key, value);
   }
   return ret;
@@ -201,19 +201,22 @@ param_assign::setByteLength(long x, const char* units)
 }
 
 sim_parameters::sim_parameters() :
-  parent_(0)
+  parent_(nullptr),
+  extra_data_(nullptr)
 {
 }
 
 sim_parameters::sim_parameters(const key_value_map& p) :
   params_(p),
-  parent_(0),
+  extra_data_(nullptr),
+  parent_(nullptr),
   namespace_("global")
 {
 }
 
 sim_parameters::sim_parameters(const std::string& filename) :
-  parent_(0),
+  parent_(nullptr),
+  extra_data_(nullptr),
   namespace_("global")
 {
   //don't fail, but don't overwrite anything
@@ -224,9 +227,8 @@ sim_parameters::sim_parameters(const std::string& filename) :
 sim_parameters::~sim_parameters()
 {
   params_.clear();
-  std::map<std::string, sim_parameters*>::const_iterator it, end = subspaces_.end();
-  for (it=subspaces_.begin(); it != end; ++it){
-    sim_parameters* subspace = it->second;
+  for (auto& pair : subspaces_){
+    sim_parameters* subspace = pair.second;
     delete subspace;
   }
 }
@@ -234,19 +236,38 @@ sim_parameters::~sim_parameters()
 bool
 sim_parameters::has_namespace(const std::string &ns) const
 {
-  return local_has_namespace(ns);
+  bool found = local_has_namespace(ns);
+  if (!found && parent_){
+    return parent_->has_namespace(ns);
+  } else {
+    return found;
+  }
 }
 
 sim_parameters*
-sim_parameters::get_namespace(const std::string &ns) 
+sim_parameters::get_namespace(const std::string& ns)
+{
+  sprockit::sim_parameters* params = _get_namespace(ns);
+  if (!params){
+    print_scopes(std::cerr);
+    spkt_abort_printf("cannot enter namespace %s, does not exist inside namespace %s",
+      ns.c_str(), namespace_.c_str());
+  }
+  return params;
+}
+
+sim_parameters*
+sim_parameters::_get_namespace(const std::string &ns)
 {
   KeywordRegistration::validate_namespace(ns);
-  std::map<std::string, sim_parameters*>::const_iterator it = subspaces_.find(ns);
+  auto it = subspaces_.find(ns);
   if (it == subspaces_.end()){
-    pretty_print_params();
-    spkt_throw_printf(input_error,
-        "cannot enter namespace %s, does not exist inside namespace %s",
-        ns.c_str(), namespace_.c_str());
+    if (parent_){
+      return parent_->_get_namespace(ns);
+    } else {
+      return nullptr;
+
+    }
   }
   return it->second;
 }
@@ -284,6 +305,14 @@ sim_parameters::add_param_override(const std::string &key, int val)
 }
 
 void
+sim_parameters::get_optional_vector_param(const std::string &key, std::vector<std::string>& vals)
+{
+  if (has_param(key)){
+    get_vector_param(key, vals);
+  }
+}
+
+void
 sim_parameters::get_vector_param(const std::string& key,
                                  std::vector<std::string>& vals)
 {
@@ -291,11 +320,9 @@ sim_parameters::get_vector_param(const std::string& key,
   std::string space = " ";
   std::string param_value_str = get_param(key);
   pst::BasicStringTokenizer::tokenize(param_value_str, tok, space);
-  std::deque<std::string>::const_iterator it, end = tok.end();
-  for (it = tok.begin(); it != end; ++it) {
-    std::string core = *it;
-    if (core.size() > 0) {
-      vals.push_back(core);
+  for (auto& item : tok){
+    if (item.size() > 0) {
+      vals.push_back(item);
     }
   }
 }
@@ -325,20 +352,52 @@ sim_parameters::get_optional_param(const std::string &key, const std::string &de
 }
 
 sim_parameters*
+sim_parameters::get_optional_local_namespace(const std::string& ns)
+{
+  auto it = subspaces_.find(ns);
+  if (it == subspaces_.end()){
+    return build_local_namespace(ns);
+  } else {
+    return it->second;
+  }
+}
+
+sim_parameters*
+sim_parameters::build_local_namespace(const std::string& ns)
+{
+  //need to make a new one
+  sim_parameters* params = new sim_parameters;
+  params->set_namespace(ns);
+  params->set_parent(this);
+  subspaces_[ns] = params;
+  return params;
+}
+
+void
+sim_parameters::reproduce_params(std::ostream& os)
+{
+  for (auto& pair : params_){
+    os << pair.first << " = " << pair.second.value << "\n";
+  }
+  for (auto& pair : subspaces_){
+    os << pair.first << " {\n";
+    pair.second->reproduce_params(os);
+    os << "}\n";
+  }
+}
+
+sim_parameters*
 sim_parameters::get_optional_namespace(const std::string& ns)
 {
-  sim_parameters*& params = subspaces_[ns];
-  if (params == 0){
-   params = new sim_parameters;
-   if (namespace_ == "global"){
-     params->set_namespace(ns);
-   } else {
-     params->set_namespace(sprockit::printf("%s.%s",
-                  namespace_.c_str(), ns.c_str()));
-   }
-   params->set_parent(this);
-  }
-  return params;
+  //if the namespace does not exist locally, see if parent has it
+  sim_parameters* params = _get_namespace(ns);
+
+  //a bit dangerous, but, that's the fault of the person who made the input file
+  //you might think you are operating on a private namespace
+  //but in fact are operating on a shared namespace
+  if (params) return params;
+
+  return build_local_namespace(ns);
 }
 
 long
@@ -382,6 +441,18 @@ sim_parameters::get_time_param(const std::string& key)
 {
   return get_time_from_str(get_param(key).c_str(), key.c_str());
 
+}
+
+void*
+sim_parameters::_extra_data() const
+{
+  if (extra_data_){
+    return extra_data_;
+  } else if (parent_){
+    return parent_->_extra_data();
+  } else {
+    spkt_abort_printf("sim_parameters has no extra data to fetch");
+  }
 }
 
 double
@@ -573,14 +644,17 @@ sim_parameters::get_bool_param(const std::string &key)
 void
 sim_parameters::get_vector_param(const std::string& key, std::vector<double>& vals)
 {
-  bool errorflag = false;
+  std::deque<std::string> tok;
+  std::string space = " ";
   std::string param_value_str = get_param(key);
-  std::stringstream sstr(param_value_str);
-  vals.reserve(10); //optimistically assume not that big
-  while (sstr && sstr.tellg() != -1){
-    double val;
-    sstr >> val;
-    vals.push_back(val);
+  pst::BasicStringTokenizer::tokenize(param_value_str, tok, space);
+  for (auto& item : tok){
+    if (item.size() > 0) {
+      std::stringstream sstr(item);
+      double val;
+      sstr >> val;
+      vals.push_back(val);
+    }
   }
 }
 
@@ -705,54 +779,6 @@ sim_parameters::get_optional_bandwidth_param(const std::string &key, double def)
 }
 
 void
-sim_parameters::print_params(
-    const key_value_map &pmap,
-    std::ostream &os,
-    bool pretty_print,
-    std::list<std::string>& namespaces) const
-{
-  std::stringstream sstr;
-  if (pretty_print){ //just tab to the depth
-    std::stringstream sstr;
-    int depth = namespaces.size();
-    for (int i=0; i < depth; ++i){
-      sstr << "  ";
-    }
-  } else {
-    std::list<std::string>::iterator it, end = namespaces.end();
-    for (it=namespaces.begin(); it != end; ++it){
-      sstr << *it << ".";
-    }
-  }
-  std::string prefix = sstr.str();
-
-  key_value_map::const_iterator it, end = pmap.end();
-  for (it = pmap.begin() ; it != end; ++it) {
-    std::string key = it->first;
-    const parameter_entry& entry = it->second;
-    os << prefix << key;
-    if (pretty_print){
-      for (int i=key.size(); i < 25; ++i){
-        os << " ";
-      }
-    }
-    os << " = " << entry.value << "\n";
-  }
-
-  std::map<std::string, sim_parameters*>::const_iterator nsit, nsend = subspaces_.end();
-  for (nsit=subspaces_.begin(); nsit != nsend; ++nsit){
-    std::string ns = nsit->first;
-    sim_parameters* subspace = nsit->second;
-    namespaces.push_back(ns);
-    if (pretty_print){ //print the next namespace as a heading
-        os << prefix << subspace->namespace_ << "\n";
-    } //else explicitly print the full namespace with each param
-    subspace->print_params(os, pretty_print, namespaces);
-    namespaces.pop_back();
-  }
-}
-
-void
 sim_parameters::try_to_parse(
   const std::string& fname,
   bool fail_on_existing,
@@ -847,7 +873,10 @@ param_bcaster::bcast_string(std::string& str, int me, int root)
 }
 
 void
-sim_parameters::parallel_build_params(sprockit::sim_parameters* params, int me, int nproc, const std::string& filename, param_bcaster *bcaster)
+sim_parameters::parallel_build_params(sprockit::sim_parameters* params,
+                                      int me, int nproc,
+                                      const std::string& filename,
+                                      param_bcaster *bcaster)
 {
   bool fail_on_existing = false;
   bool overwrite_existing = true;
@@ -863,7 +892,7 @@ sim_parameters::parallel_build_params(sprockit::sim_parameters* params, int me, 
         //thus read in all possible params chasing down all include files
         //then build the full text of all params
         std::stringstream sstr;
-        params->print_params(sstr);
+        params->reproduce_params(sstr);
         std::string all_text = sstr.str();
         bcaster->bcast_string(all_text, me, root);
       }
@@ -886,14 +915,28 @@ void
 sim_parameters::parse_stream(std::istream& in,
   bool fail_on_existing, bool override_existing)
 {
+  std::list<sim_parameters*> ns_queue;
+  ns_queue.push_back(this);
   std::string line;
   while (in.good()) {
     std::getline(in, line);
     line = trim_str(line);
+    sim_parameters* active_scope = ns_queue.back();
+    int last_idx = line.size() - 1;
 
     if (line[0] == '#') {
       //a comment
       continue;
+    }
+    else if (line[0] == '}'){
+      //ending a namespace
+      ns_queue.pop_back();
+    }
+    else if (line[last_idx] == '{'){ //opening a new namespace
+      std::string ns = line.substr(0, last_idx);
+      ns = trim_str(ns);
+      sim_parameters* scope = active_scope->get_optional_local_namespace(ns);
+      ns_queue.push_back(scope);
     }
     else if (line.find("set var ") != std::string::npos) {
       line = line.substr(8);
@@ -903,23 +946,23 @@ sim_parameters::parse_stream(std::istream& in,
     }
     else if (line.find("=") != std::string::npos) {
       //an assignment
-      parse_line(line, fail_on_existing, override_existing);
+      active_scope->parse_line(line, fail_on_existing, override_existing);
     }
     else if (line.find("include") != std::string::npos) {
       //an include line
       std::string included_file = trim_str(line.substr(7));
-      try_to_parse(included_file, fail_on_existing, override_existing);
+      active_scope->try_to_parse(included_file, fail_on_existing, override_existing);
     }
     else if (line.find("unset") != std::string::npos) {
       std::string key;
-      sim_parameters* scope = get_scope_and_key(trim_str(line.substr(5)), key);
+      sim_parameters* scope = active_scope->get_scope_and_key(trim_str(line.substr(5)), key);
       scope->remove_param(key);
     }
     else if (line.size() == 0) {
       //empty
     }
     else {
-      spkt_throw_printf(input_error, "invalid input file line of size %d:\n%s---", line.size(), line.c_str());
+      spkt_abort_printf("invalid input file line of size %d:\n%s---", line.size(), line.c_str());
     }
   }
 }
@@ -952,21 +995,19 @@ bool
 sim_parameters::print_unread_params(std::ostream &os) const
 {
   bool have_unread = false;
-  key_value_map::const_iterator it, end = params_.end();
-  {for (it=params_.begin(); it != end; ++it){
-    const parameter_entry& entry = it->second;
+  for (auto& pair : params_){
+    const parameter_entry& entry = pair.second;
     if (!entry.read){
       os << sprockit::printf("Unused in namespace %30s: %s = %s\n",
-               namespace_.c_str(), it->first.c_str(), entry.value.c_str());
+               namespace_.c_str(), pair.first.c_str(), entry.value.c_str());
       have_unread = true;
     }
-  }}
+  }
 
-  {std::map<std::string, sim_parameters*>::const_iterator it, end = subspaces_.end();
-  for (it=subspaces_.begin(); it != end; ++it){
-    sim_parameters* params = it->second;
+  for (auto& pair : subspaces_){
+    sim_parameters* params = pair.second;
     have_unread = have_unread || params->print_unread_params(os);
-  }}
+  }
 
   return have_unread;
 }
@@ -974,9 +1015,8 @@ sim_parameters::print_unread_params(std::ostream &os) const
 void
 sim_parameters::throw_key_error(const std::string& key) const
 {
-  std::cerr << "Parameters given in namespace: " << std::endl;
-  print_params(std::cerr);
-  spkt_throw_printf(sprockit::value_error,
+  print_scoped_params(std::cerr);
+  spkt_abort_printf(
            "sim_parameters: could not find parameter %s in namespace %s",
           key.c_str(), namespace_.c_str());
 }
@@ -985,7 +1025,7 @@ bool
 sim_parameters::get_scoped_param(std::string& inout,
                           const std::string& key)
 {
-  key_value_map::iterator it = params_.find(key);
+  auto it = params_.find(key);
   if (it == params_.end()){
     return false;
   }
@@ -1033,15 +1073,6 @@ sim_parameters::get_scoped_param(const std::string& key, bool throw_on_error)
   return ret;
 }
 
-sim_parameters*
-sim_parameters::top_parent() 
-{
-  if (parent_){
-    return parent_->top_parent();
-  }
-  return this;
-}
-
 bool
 sim_parameters::has_scoped_param(const std::string& key) const
 {
@@ -1059,6 +1090,25 @@ sim_parameters::has_param(const std::string& key) const
   }
 }
 
+std::string
+sim_parameters::get_variable(const std::string& str)
+{
+  auto it = variables_.find(str);
+  if (it == variables_.end()){
+    if (parent_){
+      return parent_->get_variable(str);
+    }
+    //nope, no parent - crash band burn
+    std::cerr << "Existing variables: " << std::endl;
+    for (auto& pair : variables_){
+      std::cerr << pair.first << " = " << pair.second << std::endl;
+    }
+    spkt_abort_printf("unknown variable name %s", str.c_str());
+  } else {
+    return it->second;
+  }
+}
+
 void
 sim_parameters::do_add_param(
   const std::string& key,
@@ -1068,12 +1118,8 @@ sim_parameters::do_add_param(
   bool mark_as_read)
 {
   if (val.c_str()[0] == '$'){
-    std::map<std::string, std::string>::const_iterator it = variables_.find(val.substr(1));
-    if (it == variables_.end()){
-      spkt_throw_printf(input_error,
-        "unknown variable name %s", val.c_str());
-    }
-    do_add_param(key, it->second,
+    std::string varval = get_variable(val.substr(1));
+    do_add_param(key, varval,
       fail_on_existing, override_existing, mark_as_read);
     return;
   }
@@ -1088,8 +1134,7 @@ sim_parameters::do_add_param(
 
   if (it != params_.end()){
     if (fail_on_existing){
-      spkt_throw_printf(sprockit::value_error,
-      "sim_parameters::add_param - key already in params: %s", key.c_str());
+      spkt_abort_printf("sim_parameters::add_param - key already in params: %s", key.c_str());
     } else if (override_existing){
       parameter_entry& entry = it->second;
       entry.value = val;
@@ -1108,7 +1153,9 @@ sim_parameters::do_add_param(
 param_assign
 sim_parameters::operator[](const std::string& key)
 {
-  return param_assign(params_[key].value, key);
+  std::string final_key;
+  sim_parameters* scope = get_scope_and_key(key, final_key);
+  return param_assign(scope->params_[final_key].value, key);
 }
 
 void
@@ -1159,9 +1206,51 @@ sim_parameters::combine_into(sim_parameters* sp,
 }
 
 void
-sim_parameters::print_params(std::ostream &os, bool pretty_print, std::list<std::string>& namespaces) const
+sim_parameters::print_local_params(std::ostream& os, const std::string& prefix) const
 {
-  sim_parameters::print_params(params_, os, pretty_print, namespaces);
+  os << prefix << "Parameters in namespace " << namespace_ << " :\n";
+  for (auto& pair : params_) {
+    os << prefix << pair.first;
+    for (int i=pair.first.size(); i < 25; ++i){
+      os << " ";
+    }
+    os << " = " << pair.second.value << "\n";
+  }
+}
+
+std::string
+sim_parameters::print_scopes(std::ostream& os)
+{
+  std::string prefix = "";
+  if (parent_){
+    prefix = parent_->print_scopes(os);
+  }
+  os << prefix << "namespace " << namespace_ << "\n";
+  return prefix + "  ";
+}
+
+std::string
+sim_parameters::print_scoped_params(std::ostream& os) const
+{
+  std::string prefix = "";
+  if (parent_){
+    prefix = parent_->print_scoped_params(os);
+  }
+  std::string new_prefix = prefix + "  ";
+  print_local_params(os, prefix);
+  return new_prefix;
+}
+
+void
+sim_parameters::print_params(
+  std::ostream &os,
+  const std::string& prefix) const
+{
+  print_local_params(os, prefix);
+  std::string new_prefix = prefix + "  ";
+  for (auto& pair : subspaces_){
+    pair.second->print_params(os, new_prefix);
+  }
 }
 
 }

@@ -22,7 +22,7 @@ class fake_topology :
 {
  public:
   virtual std::string
-  to_string() const {
+  to_string() const override {
     return "fake topology";
   }
 
@@ -38,7 +38,7 @@ class fake_topology :
     int dim,
     const coordinates& src,
     const coordinates& dst,
-    geometry_routable::path& path) const {
+    routable::path& path) const {
   }
 
   int
@@ -55,7 +55,7 @@ class fake_topology :
   minimal_route_to_coords(
     const coordinates &current_coords,
     const coordinates &dest_coords,
-    geometry_routable::path& path) const {
+    routable::path& path) const {
     //do nothing
   }
 
@@ -63,16 +63,6 @@ class fake_topology :
   minimal_distance(
     const coordinates &current_coords,
     const coordinates &dest_coords) const {
-    return 0;
-  }
-
-  int
-  radix() const {
-    return 0;
-  }
-
-  int
-  ndimensions() const {
     return 0;
   }
 
@@ -99,11 +89,6 @@ class fake_topology :
 
   int
   num_leaf_switches() const {
-    return 0;
-  }
-
-  int
-  num_nodes() const {
     return 0;
   }
 

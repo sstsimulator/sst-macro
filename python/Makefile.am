@@ -12,13 +12,18 @@
 include $(top_srcdir)/Makefile.common
 
 python_includedir=$(includedir)/python
+EXTRA_DIST= \
+  env.sh \
+  merlin.py \
+  emberMacro.py \
+  emberLoadInfo.py \
+  emberDefaultParams.py 
+
 nobase_python_include_HEADERS = \
-    __init__.py \
-    default.py \
-    sstmacro.py
+    default.py 
 
 uninstall-local:
-	test -f $(includedir)/sstmac/pysst/__init__.pyc ; if [[ $$? -eq 0 ]] ; then rm $(includedir)/sstmac/pysst/*.pyc; fi
+	test -f $(includedir)/sstmac/pysst/default.pyc ; if [[ $$? -eq 0 ]] ; then rm $(includedir)/sstmac/pysst/*.pyc; fi
 
 
 

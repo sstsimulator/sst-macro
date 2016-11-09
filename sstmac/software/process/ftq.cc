@@ -4,6 +4,9 @@
 #include <sprockit/delete.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords("epoch");
 
 namespace sstmac {
 namespace sw {
@@ -13,9 +16,11 @@ const long app_ftq_calendar::allocation_num_epochs = 10000;
 
 SpktRegister("ftq", stat_collector, ftq_calendar);
 
-ftq_calendar::ftq_calendar() :
-  num_ticks_epoch_(0)
+ftq_calendar::ftq_calendar(sprockit::sim_parameters* params) :
+  num_ticks_epoch_(0),
+  stat_collector(params)
 {
+  num_ticks_epoch_ = timestamp(params->get_time_param("epoch")).ticks_int64();
 }
 
 ftq_calendar::~ftq_calendar()
@@ -40,13 +45,6 @@ ftq_calendar::register_app(int aid, const std::string& appname)
     cal = new app_ftq_calendar(aid, appname, num_ticks_epoch_);
   }
   lock.unlock();
-}
-
-void
-ftq_calendar::init_factory_params(sprockit::sim_parameters *params)
-{
-  stat_collector::init_factory_params(params);
-  num_ticks_epoch_ = timestamp(params->get_time_param("epoch")).ticks_int64();
 }
 
 void
@@ -77,7 +75,7 @@ app_ftq_calendar::global_reduce(parallel_runtime* rt)
   int root = 0;
   rt->global_sum(reduce_buffer, buffer_length, root);
 
-  rt->global_sum(totals_, num_keys, root);
+  rt->global_sum(aggregate_.totals_, num_keys, root);
 
   if (rt->me() != root){
     delete[] reduce_buffer;
@@ -151,13 +149,6 @@ ftq_calendar::reduce(stat_collector* coll)
 }
 
 void
-ftq_calendar::clone_into(ftq_calendar *cln) const
-{
-  cln->num_ticks_epoch_ = num_ticks_epoch_;
-  stat_collector::clone_into(cln);
-}
-
-void
 ftq_calendar::dump_local_data()
 {
 }
@@ -190,8 +181,7 @@ ftq_calendar::collect(int event_typeid, int aid, int tid, long ticks_begin,
 app_ftq_calendar*
 ftq_calendar::get_calendar(int aid) const
 {
-  spkt_unordered_map<int, app_ftq_calendar*>::const_iterator it =
-    calendars_.find(aid);
+  auto it = calendars_.find(aid);
   if (it == calendars_.end()) {
     spkt_throw_printf(sprockit::value_error, "no FTQ calendar found for app %d", aid);
   }
@@ -210,18 +200,16 @@ app_ftq_calendar::app_ftq_calendar(int aid,
     appname_(appname)
 {
   int num_categories = key::num_categories();
-  totals_ = new long long[num_categories];
+  aggregate_.totals_ = new long long[num_categories];
   for (int i=0; i < num_categories; ++i) {
-    totals_[i] = 0;
+    aggregate_.totals_[i] = 0;
   }
 }
 
 app_ftq_calendar::~app_ftq_calendar()
 {
-  sprockit::delete_vals(calendars_);
-  sprockit::delete_vals(thread_epochs_);
   sprockit::delete_all(buffers_);
-  delete[] totals_;
+  delete[] aggregate_.totals_;
 }
 
 void
@@ -248,7 +236,7 @@ app_ftq_calendar::collect(int event_typeid, int tid, long ticks_begin,
                           long num_ticks)
 {
   /** aggregate for all time intervals and all threads for given event type */
-  totals_[event_typeid] += num_ticks;
+  aggregate_.totals_[event_typeid] += num_ticks;
   long ticks_end = ticks_begin + num_ticks;
   long max_epoch = ticks_end / num_ticks_epoch_ +
                    1; //just always assume a remainder
@@ -345,7 +333,7 @@ app_ftq_calendar::dump(const std::string& fileroot)
   for (it=sorted_keys.begin(); it != end; ++it){
     int i = it->second;
     std::string name = it->first;
-    if (totals_[i] > 0) {
+    if (aggregate_.totals_[i] > 0) {
       out << sprockit::printf(" %12s", name.c_str());
       nonzero_categories[num_nonzero_cats] = i;
       ++num_nonzero_cats;
@@ -391,64 +379,14 @@ app_ftq_calendar::dump(const std::string& fileroot)
   for (it=sorted_keys.begin(); it != end; ++it){
     int idx = it->second;
     std::string name = it->first;
-    double av_per_app = (double) totals_[idx] / ntasks;
+    double av_per_app = (double) aggregate_.totals_[idx] / ntasks;
     double t_sec = av_per_app / (double) ticks_s;
     std::cout << sprockit::printf("%16s: %16.8f s\n", name.c_str(), t_sec);
   }
-
-}
-
-task_ftq_calendar::task_ftq_calendar()
-  : head_(0), tail_(0)
-{
-}
-
-void
-task_ftq_calendar::dump(std::ofstream &os)
-{
-}
-
-task_ftq_calendar::~task_ftq_calendar()
-{
-  event_node* current = head_;
-  while (current){
-    event_node* next = current->next;
-    delete current;
-    current = next;
-  }
-}
-
-void
-task_ftq_calendar::collect(int event_typeid, long ticks_begin, long ticks)
-{
-  if (tail_) {
-    if (tail_->event_typeid == event_typeid) {
-      //combine the two events
-      tail_->ticks_end = ticks_begin + ticks;
-    }
-    else {
-      event_node* node = new event_node;
-      node->ticks_begin = ticks_begin;
-      node->ticks_end = ticks_begin + ticks;
-      node->next = 0;
-      node->event_typeid = event_typeid;
-      tail_->next = node;
-      tail_ = node;
-    }
-  }
-  else {
-    event_node* node = new event_node;
-    node->ticks_begin = ticks_begin;
-    node->ticks_end = ticks_begin + ticks;
-    node->next = 0;
-    node->event_typeid = event_typeid;
-    tail_ = head_ = node;
-  }
-  max_tick_ = ticks_begin + ticks;
 }
 
 ftq_epoch::ftq_epoch()
-  : totals_(0)
+  : totals_(nullptr)
 {
 }
 

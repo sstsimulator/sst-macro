@@ -45,12 +45,7 @@ namespace luleshmodel {
   bool usetopo_;
 
   public:
-    luleshapp(){}
-
-    /** Get a copy, launchers can use this to create app threads. */
-    sstmac::sw::app* clone_type() const {
-      return new luleshapp;
-    }
+    luleshapp(sprockit::sim_parameters* params, sstmac::sw::software_id sid);
 
     /** Destructor. */
     virtual ~luleshapp() throw() {};

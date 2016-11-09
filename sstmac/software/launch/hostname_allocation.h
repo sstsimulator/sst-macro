@@ -24,11 +24,12 @@ class hostname_allocation : public node_allocator
 {
 
  public:
-  hostname_allocation(parallel_runtime* rt) :
-    node_allocator(rt){}
+  hostname_allocation(sprockit::sim_parameters* params);
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
+  std::string
+  to_string() const override {
+    return "hostname allocation";
+  }
 
   /**
    * This function reads in a map file for mapping host names to network coordinates.
@@ -45,7 +46,7 @@ class hostname_allocation : public node_allocator
   virtual void
   allocate(int nnode_requested,
     const ordered_node_set& available,
-    ordered_node_set &allocation) const;
+    ordered_node_set &allocation) const override;
 
   virtual
   ~hostname_allocation() throw () {

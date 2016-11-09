@@ -19,6 +19,7 @@
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
 #include <sstmac/common/stats/stat_spyplot.h>
 #include <sstmac/common/event_manager.h>
+#include <sstmac/hardware/node/node.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
@@ -32,7 +33,24 @@
 
 #include <stdint.h>
 
-RegisterNamespaces("traffic_matrix");
+RegisterNamespaces("traffic_matrix", "num_messages");
+RegisterKeywords(
+"mpi_delay",
+"mpi_implementation",
+"envelope",
+"smp_single_copy_size",
+"max_eager_msg_size",
+"max_vshort_msg_size",
+"mpi_spyplot",
+"mpi_queue_post_rdma_delay",
+"mpi_queue_post_header_delay",
+"mpi_queue_poll_delay",
+"post_rdma_delay",
+"post_header_delay",
+"poll_delay",
+"implementation",
+);
+
 DeclareDebugSlot(mpi_all_sends);
 RegisterDebugSlot(mpi_all_sends);
 
@@ -48,41 +66,34 @@ mpi_queue::sortbyseqnum::operator()(const mpi_message::ptr& a,
   return (a->seqnum() < b->seqnum());
 }
 
-void
-mpi_queue::set_event_manager(event_manager* m)
-{
-#if !SSTMAC_INTEGRATED_SST_CORE
-  if (spy_num_messages_) m->register_stat(spy_num_messages_);
-  if (spy_bytes_) m->register_stat(spy_bytes_);
-#endif
-}
-
-//
-// Hi there.
-//
-mpi_queue::mpi_queue() :
+mpi_queue::mpi_queue(sprockit::sim_parameters* params,
+                     sstmac::sw::software_id sid,
+                     mpi_api* api) :
   next_id_(0),
-  taskid_(0),
-  appid_(0),
-  user_lib_mem_(0),
-  user_lib_time_(0),
-  os_(0),
-  spy_num_messages_(0),
-  spy_bytes_(0)
+  taskid_(sid.task_),
+  appid_(sid.app_),
+  api_(api),
+  user_lib_mem_(nullptr),
+  user_lib_time_(nullptr),
+  os_(api->os()),
+  spy_num_messages_(nullptr),
+  spy_bytes_(nullptr)
 {
-}
+  max_vshort_msg_size_ = params->get_optional_byte_length_param("max_vshort_msg_size", 512);
+  max_eager_msg_size_ = params->get_optional_byte_length_param("max_eager_msg_size", 8192);
 
-void
-mpi_queue::init_os(operating_system* os){
-  os_ = os;
+  post_rdma_delay_ = params->get_optional_time_param("post_rdma_delay", 0);
+  post_header_delay_ = params->get_optional_time_param("post_header_delay", 0);
+  poll_delay_ = params->get_optional_time_param("poll_delay", 0);
 
-  sstmac::sw::software_id sid(appid_, taskid_);
+  spy_num_messages_ = sstmac::optional_stats<sstmac::stat_spyplot>(os_->node(),
+        params, "traffic_matrix", "ascii", "num_messages");
+  spy_bytes_ = sstmac::optional_stats<sstmac::stat_spyplot>(os_->node(),
+        params, "traffic_matrix", "ascii", "bytes");
 
-  user_lib_mem_ = new sstmac::sw::lib_compute_memmove("mpi_queue-user-lib-mem", sid);
-  os_->register_lib(this, user_lib_mem_);
+  user_lib_mem_ = new sstmac::sw::lib_compute_memmove(params, "mpi_queue-user-lib-mem", sid, os_);
 
-  user_lib_time_ = new sstmac::sw::lib_compute_time("mpi_queue-user-lib-time", sid);
-  os_->register_lib(this, user_lib_time_);
+  user_lib_time_ = new sstmac::sw::lib_compute_time(params, "mpi_queue-user-lib-time", sid, os_);
 
   mpi_queue_debug("init on node %d", int(operating_system::current_node_id()));
 
@@ -90,45 +101,10 @@ mpi_queue::init_os(operating_system* os){
 }
 
 void
-mpi_queue::init_factory_params(sprockit::sim_parameters* params)
-{
-  if (params->has_namespace("traffic_matrix")){
-    sprockit::sim_parameters* tparams = params->get_namespace("traffic_matrix");
-    spy_bytes_ = test_cast(sstmac::stat_spyplot,
-      sstmac::stat_collector_factory::get_optional_param("type", "spyplot", tparams));
-    spy_num_messages_ = test_cast(sstmac::stat_spyplot,
-      sstmac::stat_collector_factory::get_optional_param("type", "spyplot", tparams));
-    if (!spy_bytes_){
-      spkt_throw(sprockit::value_error,
-        "MPI spyplot specified as %s, must be spyplot or spyplot_png",
-        params->get_param("type").c_str());
-    }
-    spy_bytes_->add_suffix("bytes");
-    spy_num_messages_->add_suffix("num_messages");
-  }
-
-  max_vshort_msg_size_ = params->get_optional_byte_length_param("max_vshort_msg_size", 512);
-  max_eager_msg_size_ = params->get_optional_byte_length_param("max_eager_msg_size", 8192);
-
-  post_rdma_delay_ = params->get_optional_time_param("post_rdma_delay", 0);
-  post_header_delay_ = params->get_optional_time_param("post_header_delay", 0);
-  poll_delay_ = params->get_optional_time_param("poll_delay", 0);
-}
-
-void
-mpi_queue::unregister_all_libs()
-{
-  os_->unregister_all_libs(this);
-}
-
-void
 mpi_queue::delete_statics()
 {
 }
 
-//
-// Goodbye.
-//
 mpi_queue::~mpi_queue() throw ()
 {
   //receives can be posted, but not resolved
@@ -142,6 +118,9 @@ mpi_queue::~mpi_queue() throw ()
   for (auto& pair : recv_needs_payload_){
     delete pair.second;
   }
+
+  delete user_lib_mem_;
+  delete user_lib_time_;
 }
 
 mpi_message::ptr
@@ -284,9 +263,14 @@ mpi_queue::recv(mpi_request* key, int count,
 
   mpi_message::ptr mess = find_matching_recv(req);
   if (mess) {
-    //if eager protocol, race condition
-    if (mess->is_payload()) {
-      user_lib_mem_->copy(mess->payload_bytes());
+    if (mess->in_flight()){
+      //this is awkward - I match this pending message
+      //but I can't do anything to complete it
+      //the message has already been processed (hence the seq ignore)
+      in_flight_messages_.push_back(req);
+    }
+    else if (mess->is_payload()) {
+      //user_lib_mem_->copy(mess->payload_bytes());
       mess->protocol()->incoming_payload(this, mess, req);
     }
     else {
@@ -473,7 +457,7 @@ mpi_queue::incoming_new_message(const mpi_message::ptr& message)
       held_[tid].erase(held_[tid].begin(), it);
     }
   }
-  else if (message->ignore_seqnum()) {
+  else if (message->in_flight()) {
     mpi_queue_debug("got RDMA message and ignoring seqnum");
     handle_new_message(message);
   }

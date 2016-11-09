@@ -26,7 +26,6 @@ round_robin_task_mapper::~round_robin_task_mapper() throw ()
 
 void
 round_robin_task_mapper::map_ranks(
-  const app_id& aid,
   const ordered_node_set& nodes,
   int ppn,
   std::vector<node_id> &result,

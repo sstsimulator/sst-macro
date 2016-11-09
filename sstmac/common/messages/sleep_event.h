@@ -7,6 +7,7 @@ namespace sstmac {
 
 class sleep_event :
   public timed_interface,
+  public sprockit::printable,
   public event
 {
   NotSerializable(sleep_event)
@@ -17,7 +18,7 @@ class sleep_event :
   }
 
   std::string
-  to_string() const {
+  to_string() const override {
     return "sleep message";
   }
 

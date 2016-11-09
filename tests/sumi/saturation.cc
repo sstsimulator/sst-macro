@@ -11,6 +11,8 @@
 #include <sstmac/hardware/topology/traffic/traffic.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/skeleton.h>
+#include <sprockit/keyword_registration.h>
+
 #define sstmac_app_name user_app_cxx
 using namespace sumi;
 using sstmac::timestamp;
@@ -19,6 +21,11 @@ using sstmac::node_id;
 using sstmac::env;
 using sstmac::hw::topology;
 
+RegisterKeywords(
+"traffic_pattern",
+"inject_time",
+"network_injector_capacity_bw"
+);
 
 //static long done = 0;
 
@@ -157,8 +164,8 @@ main(int argc, char** argv)
 
   double offered_load_bw = 0;
 
-  if (params->has_param("packet_flow_injection_bandwidth")) {
-    offered_load_bw = params->get_bandwidth_param("packet_flow_injection_bandwidth");
+  if (params->has_param("pisces_injection_bandwidth")) {
+    offered_load_bw = params->get_bandwidth_param("pisces_injection_bandwidth");
   }
   else if (params->has_param("cycle_accurate_switch_bandwidth_n2r")) {
     offered_load_bw = params->get_bandwidth_param("cycle_accurate_switch_bandwidth_n2r");

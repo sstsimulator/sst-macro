@@ -20,11 +20,20 @@
 #include <sumi-mpi/mpi_api.h>
 #include <sprockit/errors.h>
 #include <sprockit/sim_parameters.h>
+#include <sprockit/keyword_registration.h>
 #include <stdio.h>
 #include <errno.h>
 #include <cstring>
 #include <fstream>
 #include <algorithm>
+
+RegisterKeywords(
+"parsedumpi_timescale",
+"parsedumpi_terminate_percent",
+"parsedumpi_print_progress",
+"launch_dumpi_metaname",
+"dumpi_metaname",
+);
 
 namespace sumi {
 
@@ -34,10 +43,12 @@ SpktRegister("parsedumpi", sstmac::sw::app, parsedumpi,
 using namespace sstmac::hw;
 
 
-void
-parsedumpi::consume_params(sprockit::sim_parameters* params)
+parsedumpi::parsedumpi(sprockit::sim_parameters* params, software_id sid,
+                       sstmac::sw::operating_system* os) :
+  app(params, sid, os),
+  mpi_(nullptr)
 {
-  fileroot_ = params->reread_param("launch_dumpi_metaname");
+  fileroot_ = params->reread_param("dumpi_metaname");
 
   timescaling_ = params->get_optional_double_param("parsedumpi_timescale", 1);
 
@@ -98,7 +109,7 @@ void parsedumpi::skeleton_main()
   // TODO make this work with @integrated_core
   if (percent_terminate_ >= 0){
     //we must stop the event manager now
-    mpi()->os()->parent()->event_mgr()->stop();
+    mpi()->os()->event_mgr()->stop();
   }
 #endif
 

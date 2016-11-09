@@ -28,9 +28,9 @@ mpi_type::mpi_type() :
   contiguous_(true),
   type_(NONE),
   size_(-1),
-  pdata_(0),
-  idata_(0),
-  vdata_(0),
+  pdata_(nullptr),
+  idata_(nullptr),
+  vdata_(nullptr),
   builtin_(false)
 {
 }
@@ -137,7 +137,7 @@ mpi_type::init_primitive(const std::string &labelit, mpi_type* b1,
 sumi::reduce_fxn
 mpi_type::op(MPI_Op theOp) const
 {
-  spkt_unordered_map<MPI_Op, sumi::reduce_fxn>::const_iterator it = fxns_.find(theOp);
+  auto it = fxns_.find(theOp);
   if (it == fxns_.end()){
     spkt_throw_printf(sprockit::value_error, "type %s has no operator %d",
            to_string().c_str(), theOp);
@@ -149,7 +149,7 @@ void
 mpi_type::init_vector(const std::string &labelit, mpi_type* base,
                    int count, int block, MPI_Aint byte_stride)
 {
-  if (base->id == -1){
+  if (base->id == MPI_Datatype(-1)){
     spkt_throw_printf(sprockit::value_error,
         "mpi_type::init_vector: unitialized base type %s",
         base->label.c_str());

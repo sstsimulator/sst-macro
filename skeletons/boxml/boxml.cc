@@ -4,21 +4,51 @@
 #include <sstmac/common/sim_thread_lock.h>
 #include <sstmac/common/stats/stat_histogram.h>
 #include <sstmac/common/stats/stat_local_double.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords(
+"boxml_boxfile",
+"boxml_eventfiles",
+"boxml_boxfile",
+"boxml_message_factor",
+"boxml_compute_scale",
+"boxml_do_compute",
+"boxml_debug",
+"boxml_randomize_events",
+"boxml_detailed_progress",
+"boxml_events",
+"boxml_round_robin",
+"boxml_minimize_locks",
+"boxml_partitioning",
+"boxml_placement",
+"boxml_repartition_size",
+"boxml_vertex_scale",
+"boxml_rank_remap",
+"boxml_load_balance_tolerance",
+"boxml_fixed_vertex",
+"boxml_zero_edge_weight",
+"boxml_build_graph_only",
+"boxml_synchronization",
+"boxml_binary_file",
+"boxml_xml_only",
+"boxml_assignment",
+);
+
+RegisterNamespaces(
+"effective_bandwidths",
+"polling_time",
+"barrier_time",
+"compute_time",
+);
 
 using namespace std;
 using namespace sstmac;
 using namespace sstmac::sw;
 using namespace sumi;
 
-DeclareSerializable(lblxml::box);
-DeclareSerializable(lblxml::reduce);
-DeclareSerializable(lblxml::comm);
-DeclareSerializable(lblxml::comp);
-
-
 namespace lblxml
 {
-  SpktRegisterApp("boxml", boxml);
+  SpktRegister("boxml", sstmac::sw::app, boxml, "amr simulator");
 
   bool boxml::have_data_ = false;
   bool boxml::have_input_bin_ = false;
@@ -41,36 +71,84 @@ namespace lblxml
   }
 
   void
-  boxml::consume_params(sprockit::sim_parameters* params)
+  boxml::get_params_standalone()
+  {
+    sprockit::sim_parameters* params = new sprockit::sim_parameters();
+    params->parse_file("./parameters.ini", false, true);
+    params_ = params;
+  }
+
+  void
+  boxml::process_params()
   {
     if (eventfiles_.empty())
-      params->get_vector_param ("boxml_eventfiles", eventfiles_);
+      params_->get_vector_param ("boxml_eventfiles", eventfiles_);
     boxfile_ =
-        params->get_param("boxml_boxfile");
-    assignment_ =
-        params->get_param("boxml_assignment");
+        params_->get_param("boxml_boxfile");
     message_factor_ =
-        params->get_int_param("boxml_message_factor");
+        params_->get_int_param("boxml_message_factor");
     compute_scale_ =
-        params->get_optional_double_param("boxml_compute_scale", 1.0);
+        params_->get_optional_double_param("boxml_compute_scale", 1.0);
     do_compute_ =
-        params->get_bool_param("boxml_do_compute");
+        params_->get_bool_param("boxml_do_compute");
     debug_ =
-        params->get_optional_int_param("boxml_debug",0);
+        params_->get_optional_int_param("boxml_debug",0);
     randomize_events_ =
-        params->get_bool_param("boxml_randomize_events");
+        params_->get_bool_param("boxml_randomize_events");
     detailed_progress_ =
-        params->get_optional_bool_param("boxml_detailed_progress",false);
+        params_->get_optional_bool_param("boxml_detailed_progress",false);
     nevents_ = 
-        params->get_int_param("boxml_events");
+        params_->get_int_param("boxml_events");
     round_robin_ =
-        params->get_optional_bool_param("boxml_round_robin",false);
+        params_->get_optional_bool_param("boxml_round_robin",false);
     minimize_locks_ = 
-        params->get_optional_bool_param("boxml_minimize_locks",false);    
+        params_->get_optional_bool_param("boxml_minimize_locks",false);
+    partitioning_ =
+        params_->get_optional_param("boxml_partitioning", "xml");
+    placement_ =
+        params_->get_optional_param("boxml_placement", "xml");
+    repartition_size_ =
+        params_->get_optional_int_param("boxml_repartition_size",-1);
+    vertex_scale_ =
+        params_->get_optional_long_param("boxml_vertex_scale",1000);
+    rank_remap_ =
+        params_->get_optional_bool_param("boxml_rank_remap",false);
+    load_balance_tolerance_ =
+        params_->get_optional_double_param("boxml_load_balance_tolerance",1.05);
+    fixed_vertex_ =
+        params_->get_optional_long_param("boxml_fixed_vertex",0);
+    zero_edge_weight_ =
+        params_->get_optional_bool_param("boxml_zero_edge_weight",false);
+    build_graph_only_ =
+        params_->get_optional_bool_param("boxml_build_graph_only",false);
+
+    if (params_->has_param("boxml_synchronization")) {
+      string mode =
+          params_->get_param("boxml_synchronization");
+      if (mode == "fully_synchronous")
+        synch_mode_ = full_synch;
+      else if (mode == "rank_synchronous")
+        synch_mode_ = rank_synch;
+      else if (mode == "phase_asynchronous")
+        synch_mode_ = phase_asynch;
+      else if (mode == "fully_asynchronous")
+        synch_mode_ = full_asynch;
+      else
+        spkt_throw_printf(sprockit::value_error,
+          "Unrecognized option for boxml_synchronization\n");
+    }
+    else
+      synch_mode_ = full_asynch;
+
+#ifndef BOXML_HAVE_METIS
+    if (partitioning_ == "metis" || placement_ == "metis")
+      spkt_throw_printf(sprockit::value_error,
+        "Not compiled with metis, can't repartition/place\n");
+#endif
 
     if (!checked_bin_){
-      if (params->has_param("boxml_binary_file")){
-        std::string bin_file = params->get_param("boxml_binary_file");
+      if (params_->has_param("boxml_binary_file")){
+        std::string bin_file = params_->get_param("boxml_binary_file");
         ifstream test(bin_file.c_str());
         if (test.good()){
           test.close();
@@ -84,10 +162,10 @@ namespace lblxml
       checked_bin_ = true;
     }
 
-    xml_read_only_ = params->get_optional_bool_param("boxml_xml_only", false);
+    xml_read_only_ = params_->get_optional_bool_param("boxml_xml_only", false);
 
-    if (params->has_namespace("effective_bandwidths")){
-      sprockit::sim_parameters* stat_params = params->get_namespace("effective_bandwidths");
+    if (params_->has_namespace("effective_bandwidths")){
+      sprockit::sim_parameters* stat_params = params_->get_namespace("effective_bandwidths");
       hist_eff_bw_ = test_cast(stat_histogram, stat_collector_factory::get_optional_param("type", "histogram", stat_params));
 
       if (!hist_eff_bw_)
@@ -98,13 +176,31 @@ namespace lblxml
         event_manager::global->register_stat(hist_eff_bw_);
     }
 
-    if (params->has_namespace("idle_times")) {
-      sprockit::sim_parameters* stat_params = params->get_namespace("idle_times");
+    if (params_->has_namespace("polling_time")) {
+      sprockit::sim_parameters* stat_params = params_->get_namespace("polling_time");
       idle_time_ = test_cast(stat_local_double, stat_collector_factory::get_optional_param("type", "local_double", stat_params));
 
       if (!idle_time_)
         spkt_throw_printf(sprockit::value_error,
           "Idle time tracker type must be stat_local_double, %s given",
+          stat_params->get_param("type").c_str());
+    }
+    if (params_->has_namespace("barrier_time")) {
+      sprockit::sim_parameters* stat_params = params_->get_namespace("barrier_time");
+      barrier_time_ = test_cast(stat_local_double, stat_collector_factory::get_optional_param("type", "local_double", stat_params));
+
+      if (!idle_time_)
+        spkt_throw_printf(sprockit::value_error,
+          "Barrier time tracker type must be stat_local_double, %s given",
+          stat_params->get_param("type").c_str());
+    }
+    if (params_->has_namespace("compute_time")) {
+      sprockit::sim_parameters* stat_params = params_->get_namespace("compute_time");
+      compute_time_ = test_cast(stat_local_double, stat_collector_factory::get_optional_param("type", "local_double", stat_params));
+
+      if (!idle_time_)
+        spkt_throw_printf(sprockit::value_error,
+          "Compute time tracker type must be stat_local_double, %s given",
           stat_params->get_param("type").c_str());
     }
 
@@ -122,35 +218,46 @@ namespace lblxml
   rank_to_da_list_t g_rank_to_valid_sends;
   rank_to_da_list_t g_rank_to_valid_comps;
   rank_to_da_list_t g_rank_to_valid_allreduces;
+  int g_ncomp_run = 0;
+  std::map<int, std::map<int,int> > g_rank_to_epoch_count;
+  std::map<int, std::map<int,int> > g_rank_to_epoch_done;
+#ifdef BOXML_HAVE_TEST
+  std::vector<Task*> g_task_map;
+#endif
 
   std::map<int, std::vector<bool> > g_reduce_to_box_running;
 
   std::map<int,sstmac::timestamp> g_message_begin_;
 
   double g_total_idle_time = 0;
+  double g_total_barrier_time = 0;
+  double g_total_compute_time = 0;
   int g_active_ranks = 0;
+  int g_max_epoch_ = 0;
 
-  /** TODO: don't think these are still used
-  comm_map_t g_comm_map;
-  comm_map_t g_coll_map;
-  comp_map_t g_comp_map;
-  comm_maps_t g_send_maps;
-  comm_maps_t g_recv_maps;
-  comm_maps_t g_coll_maps;
-  comp_maps_t g_comp_maps;
-  */
+#ifdef BOXML_HAVE_TEST
+  void
+  boxml::skeleton_main() {
+    my_skeleton_main();
+  }
 
+  Task*
+  boxml::my_skeleton_main()
+  {
+#else
   void
   boxml::skeleton_main()
   {
+#endif
 
     double start;
     double stop;
     double wall_time;
     static sim_thread_lock* lock = sim_thread_lock::construct();
 
-    init();
-
+    if (params_ == NULL)
+      get_params_standalone();
+    process_params();
 
     // first rank to reach this point does the setup
 #ifdef SSTMAC_USE_MULTITHREAD
@@ -161,13 +268,6 @@ namespace lblxml
       init_event_locks();
 #endif
       g_events.resize(nevents_, NULL);
-      g_rank_to_comps.resize(commsize_);
-      g_rank_to_sends.resize(commsize_);
-      g_rank_to_recvs.resize(commsize_);
-      g_rank_to_allreduces.resize(commsize_);
-      g_rank_to_valid_allreduces.resize(commsize_);
-      g_rank_to_valid_sends.resize(commsize_);
-      g_rank_to_valid_comps.resize(commsize_);
 
       start = get_real_time();
 
@@ -176,9 +276,27 @@ namespace lblxml
         read_binary();
       else
         read_files();
+
+#ifdef BOXML_HAVE_TEST
+      g_task_map.resize(nevents_, NULL);
+      if (build_graph_only_) {
+        return build_task_graph();
+      }
+#endif
+
+      have_data_ = true;
+
+      init();
+
+      g_rank_to_comps.resize(commsize_);
+      g_rank_to_sends.resize(commsize_);
+      g_rank_to_recvs.resize(commsize_);
+      g_rank_to_allreduces.resize(commsize_);
+      g_rank_to_valid_allreduces.resize(commsize_);
+      g_rank_to_valid_sends.resize(commsize_);
+      g_rank_to_valid_comps.resize(commsize_);
       distribute_boxes();
       distribute_events();
-      have_data_ = true;
 
       stop = get_real_time();
       wall_time = stop - start;
@@ -186,47 +304,45 @@ namespace lblxml
       cout << std::flush;
       cerr << std::flush;
     }
+    else init();
 #ifdef SSTMAC_USE_MULTITHREAD
     lock->unlock();
 #endif
 
     if (xml_read_only_) {
       std::cerr << "readonly exiting\n";
+#ifdef BOXML_HAVE_TEST
+      return NULL;
+#else
       return;
+#endif
     }
 
+    // set up deadlock checking
+    if (debug_ > 0) {
+      checker_.rank = &rank_;
+      checker_.epoch = &current_epoch_;
+      sstmac::runtime::add_deadlock_check( sstmac::new_deadlock_check(&checker_, &epoch_check::print_epoch));
+    }
     if (rank_ == 0) runtime::enter_deadlock_region();
-    comm_barrier(barrier_tag_); // can't go on before data is set up
-    comm_collective_block(sumi::collective::barrier, barrier_tag_);
-    ++barrier_tag_;
-
-    comm_barrier(barrier_tag_);
-    comm_collective_block(sumi::collective::barrier, barrier_tag_);
-    ++barrier_tag_;
+    barrier();
+    barrier();
     if (rank_ == 0) {
       std::cout << g_events.size() << " total events\n";
       start = get_real_time();
     }
-    comm_barrier(barrier_tag_);
-    comm_collective_block(sumi::collective::barrier, barrier_tag_);
-    ++barrier_tag_;
+    barrier();
 
     // the actual simulation happens here
     run_loop();
 
-    comm_barrier(barrier_tag_);
-    comm_collective_block(sumi::collective::barrier, barrier_tag_);
-    ++barrier_tag_;
-
+    barrier();
     if (rank_ == 0) {
       stop = get_real_time();
       wall_time = stop - start;
       cout << "boxml simulation ran for " << wall_time << " s\n";
     }
-
-    comm_barrier(barrier_tag_);
-    comm_collective_block(sumi::collective::barrier, barrier_tag_);
-    ++barrier_tag_;
+    barrier();
 
     runtime::exit_deadlock_region();
     finalize();
@@ -234,13 +350,20 @@ namespace lblxml
     if (rank_==0) {
       std::cout << "Rank 0 finalized" << std::endl;
       cout << g_active_ranks << " ranks were active\n";
-      std::cout << "total idle time: " << g_total_idle_time << "s\n";
+      std::cout << "total barrier time: " << g_total_barrier_time << "s\n"
+                << "total poll time:    " << g_total_idle_time << "s\n"
+                << "total compute time: " << g_total_compute_time << "s\n";
     }
 
     //at this point, no one should have any more events - delete stuff
     if (rank_ == 0){
       delete_globals();
     }
+
+#ifdef BOXML_HAVE_TEST
+      return NULL;
+#endif
+
   }
 
   void
@@ -252,7 +375,7 @@ namespace lblxml
 
     comm_init();
 
-    tport_ = sumi_api();
+    tport_ = sumi::sumi_api();
     runtime::add_deadlock_check(
       new_deadlock_check(tport_, &sumi::transport::deadlock_check));
 
@@ -272,7 +395,61 @@ namespace lblxml
   boxml::finalize()
   {
     comm_finalize();
-    if (debug_ > 0) cout << "past finalize " << now() << "\n";
+    if (debug_ > 0) cout << "rank " << rank_ << " past finalize " << now() << "\n";
+  }
+
+  void
+  boxml::barrier()
+  {
+    sstmac::timestamp start = now();
+    if (debug_ > 1) printf("rank %d starting barrier %d\n",rank_,barrier_tag_);
+    comm_barrier(barrier_tag_);
+    comm_collective_block(sumi::collective::barrier, barrier_tag_);
+    sstmac::timestamp end = now();
+    double time = (end - start).sec();
+    g_total_barrier_time += time;
+    ++barrier_tag_;
   }
 
 } // end of namespace sstmac.
+
+#ifdef BOXML_HAVE_TEST
+#include <chrono>
+#include <thread>
+
+void my_sleep(int time) {
+  ++lblxml::g_ncomp_run;
+  std::this_thread::sleep_for(std::chrono::milliseconds(time));
+}
+
+int
+boxml_standalone(int argc, char** argv)
+{
+  Scheduler* sch = new BasicScheduler;
+  sch->init(argc,argv);
+
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  RegisterTask(my_sleep,void,int);
+
+  Task* root;
+  if (sch->rank() == 0) {
+    lblxml::boxml* me = new lblxml::boxml();
+    root = me->my_skeleton_main();
+    std::cout << "Task graph complete, calling run on scheduler\n";
+    sch->run(root);
+  }
+  else {
+    sch->run(NULL);
+  }
+  sch->stop();
+
+  if (rank != 0)
+    std::cout << "rank " << rank << " ran " << lblxml::g_ncomp_run << " computes\n";
+  std::cout << "scheduler exiting normally\n";
+  sch->finalize();
+}
+
+RegisterTest("boxml",boxml_standalone);
+#endif

@@ -1,7 +1,11 @@
 #! /usr/bin/env bash
 
-export PYTHONPATH=$PYTHONPATH:@abs_top_srcdir@/python
-export SST_LIB_PATH=$SST_LIB_PATH:@abs_top_builddir@/sstmac/install/.libs
+export PYTHONPATH=@abs_top_srcdir@/python:$PYTHONPATH
+export SST_LIB_PATH=@abs_top_builddir@/sstmac/install/.libs
+export DYLD_LIBRARY_PATH=@abs_top_builddir@/sstmac/install/.libs:$DYLD_LIBRARY_PATH
+export DYLD_LIBRARY_PATH=@abs_top_builddir@/sst-dumpi/dumpi/libundumpi/.libs:$DYLD_LIBRARY_PATH
+export LD_LIBRARY_PATH=@abs_top_builddir@/sstmac/install/.libs:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=@abs_top_builddir@/sst-dumpi/dumpi/libundumpi/.libs:$LD_LIBRARY_PATH
 
 options="$@"
 @sst_prefix@/bin/sst @abs_top_srcdir@/python/default.py --model-options="$options"

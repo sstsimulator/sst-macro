@@ -1,41 +1,32 @@
 #ifndef sstmac_hardware_network_topology_routing_BASIC_ROUTING_H
 #define sstmac_hardware_network_topology_routing_BASIC_ROUTING_H
 
-#include <sstmac/hardware/router/structured_router.h>
+#include <sstmac/hardware/router/router.h>
 
 namespace sstmac {
 namespace hw {
 
+/**
+ * @brief The minimal_router class
+ * Router that performs
+ */
 class minimal_router :
-  public structured_router
+  public router
 {
 
  public:
-  minimal_router() :
-    structured_router(routing::minimal){}
+  minimal_router(sprockit::sim_parameters* params, topology* top,
+                 network_switch* netsw, routing::algorithm_t algo = routing::minimal);
 
   virtual ~minimal_router() {}
 
-  virtual void
-  route(packet* pkt);
-
   std::string
-  to_string() const {
+  to_string() const override {
     return "minimal router";
   }
 
-  virtual void
-  finalize_init();
-
-  virtual void
-  set_topology(topology *top);
-
  protected:
-  minimal_router(routing::algorithm_t algo) :
-    structured_router(algo){}
-
-  virtual void
-  route(packet* pkt, geometry_routable::path_set& paths);
+  void route_to_switch(switch_id sid, routable::path &path) override;
 
 };
 

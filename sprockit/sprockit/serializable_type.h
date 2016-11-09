@@ -28,8 +28,6 @@ class serializable
 template <class T>
 class serializable_type
 {
-  virtual T*
-  you_forgot_to_add_ImplementSerializable_to_this_class() = 0;
 };
 
 }

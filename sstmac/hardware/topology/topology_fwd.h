@@ -5,6 +5,7 @@ namespace sstmac {
 namespace hw {
 
 class topology;
+class cartesian_topology;
 
 class index_subset;
 

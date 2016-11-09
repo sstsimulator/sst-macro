@@ -7,13 +7,13 @@ dumpi_task_mapper: rank 4 is on hostname R00-M1-N01-J01.challenger at nid=1
 dumpi_task_mapper: rank 5 is on hostname R00-M1-N01-J01.challenger at nid=1
 dumpi_task_mapper: rank 6 is on hostname R00-M1-N01-J01.challenger at nid=1
 Allocated and indexed 7 nodes
-Rank 0 -> nid0 [ 0 0 0 0 ]
-Rank 1 -> nid0 [ 0 0 0 0 ]
-Rank 2 -> nid0 [ 0 0 0 0 ]
-Rank 3 -> nid0 [ 0 0 0 0 ]
-Rank 4 -> nid1 [ 0 0 0 1 ]
-Rank 5 -> nid1 [ 0 0 0 1 ]
-Rank 6 -> nid1 [ 0 0 0 1 ]
+Rank 0 -> nid0 [ 0 0 0 ]
+Rank 1 -> nid0 [ 0 0 0 ]
+Rank 2 -> nid0 [ 0 0 0 ]
+Rank 3 -> nid0 [ 0 0 0 ]
+Rank 4 -> nid1 [ 1 0 0 ]
+Rank 5 -> nid1 [ 1 0 0 ]
+Rank 6 -> nid1 [ 1 0 0 ]
 DUMPI trace   1 percent complete: testbgp-0000.bin
 DUMPI trace   2 percent complete: testbgp-0000.bin
 DUMPI trace   3 percent complete: testbgp-0000.bin
@@ -115,4 +115,4 @@ DUMPI trace  98 percent complete: testbgp-0000.bin
 DUMPI trace  99 percent complete: testbgp-0000.bin
 DUMPI trace 100 percent complete: testbgp-0000.bin
 Parsedumpi finalized on rank 0 - trace testbgp.meta successful!
-Estimated total runtime of           0.00886918 seconds
+Estimated total runtime of           0.00875220 seconds

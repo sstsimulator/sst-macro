@@ -272,6 +272,8 @@ class debug_register_slot {
 #define debug_printf(...) //eliminate completely
 #else
 //VA_ARGS[0] = format_str
+//This has to be a macro, not a function otherwise we lose the string literal
+//GCC then complains about format string vulnerabilities
 #define debug_printf(slot_bitmask, ...) \
   if (::sprockit::debug::slot_active(slot_bitmask)){ \
     ::sprockit::debug::print_debug_string(::sprockit::printf(__VA_ARGS__)); \

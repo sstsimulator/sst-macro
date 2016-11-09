@@ -18,6 +18,7 @@
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sprockit/debug.h>
 #include <sprockit/factories/factory.h>
+#include <sprockit/printable.h>
 #include <vector>
 #include <sstmac/software/launch/node_set.h>
 
@@ -30,24 +31,10 @@ namespace sw {
  * Base class for strategies regarding how to sequentially number nodes
  * in a parallel simulation.
  */
-class task_mapper :
-  public sprockit::factory_type
+class task_mapper : public sprockit::printable
 {
 
  public:
-  virtual std::string
-  to_string() const {
-    return "task mapper";
-  }
-
-  virtual void
-  set_topology(hw::topology* top){
-    topology_ = top;
-  }
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params);
-
   virtual
   ~task_mapper() throw ();
 
@@ -63,15 +50,13 @@ class task_mapper :
   */
   virtual void
   map_ranks(
-    const app_id& aid,
     const ordered_node_set& allocation,
     int ppn,
     std::vector<node_id>& result,
     int nproc) = 0;
 
  protected:
-  task_mapper(parallel_runtime* rt) :
-    rt_(rt), topology_(0) {}
+  task_mapper(sprockit::sim_parameters* params);
 
   int
   validate_nproc(int ppn, int num_nodes, int nproc, const char* name) const;
@@ -82,7 +67,7 @@ class task_mapper :
 
 };
 
-DeclareFactory(task_mapper, parallel_runtime*);
+DeclareFactory(task_mapper);
 
 }
 } // end of namespace sstmac

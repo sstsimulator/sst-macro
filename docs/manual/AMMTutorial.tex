@@ -6,18 +6,18 @@
 The preferred mode for usage of \sstmacro will be through specifying parameters for well-defined abstract machine models.
 This represents an intermediate-level mode that should cover the vast majority of use cases.
 The highly configurable, detailed parameter files will remain valid but will represent advanced usage mode for corner cases.
-The primary advantage of the abstract machine models is a uniform set of parameters regardless of the underlying congestion model or accuracy level (e.g. packet, flow, train, packet-flow, LogGOPSim).
+The primary advantage of the abstract machine models is a uniform set of parameters regardless of the underlying congestion model or accuracy level (Pisces or LogGOPSim).
 Each input file requires the usual set of software parameters given in \ref{sec:parameters}.
 For hardware parameters, two initial parameters are required and one is optional.
 
 \begin{ViFile}
-congestion_model = packet_flow
+congestion_model = pisces
 amm_model = amm1
 accuracy_parameter = 1024
 \end{ViFile} 
 
 Here we indicate the congestion model to be used (the packet-flow) and the overall machine model (abstract machine model \#1).
-Currently valid values for the congestion model are \inlinefile{packet_flow} (most accurate, slowest) and \inlinefile{simple} (least accurate, fastest),
+Currently valid values for the congestion model are \inlinefile{pisces} (most accurate, slowest) and \inlinefile{simple} (least accurate, fastest),
 but more congestion models should be supported in future versions.
 Currently valid values for the abstract machine model are \inlinefile{amm1}, \inlinefile{amm2}, \inlinefile{amm3}, see details below. 
 Another model, \inlinefile{amm4}, that adds extra detail to the NIC is pending and should be available soon.
@@ -30,6 +30,7 @@ If the parameter is set to 8192 bytes, e.g. that means we are doing very coarse-
 If the parameter is set to 100-1000 bytes, e.g., that means we are doing more fine-grained modeling on real packet sizes, but we are ignoring flit-level details.
 
 \subsection{Common Parameters}
+\label{subsec:commonParams}
 The following parameters define the CPU and compute power of the node (independent of memory subsystem).
 They are universal and are valid for all abstract machine models.
 
@@ -66,7 +67,7 @@ Once packets are injected, they traverse a series of network switches.
 The memory, injection, and network are all defined by a bandwidth/latency parameter pair.
 
 \begin{ViFile}
-network_bandwidth = 6GB/s
+network_link_bandwidth = 6GB/s
 network_hop_latency = 100ns
 injection_bandwidth = 10GB/s
 injection_latency = 1us
@@ -75,7 +76,30 @@ memory_latency = 15ns
 \end{ViFile}
 
 These are special parameters used by the AMM configurations.
-They can be by-passed by directly using fully namespaced parameters (not shown).
+They can be by-passed by directly using fully namespaced parameters:
+
+\begin{ViFile}
+switch {
+ link {
+   bandwidth = 6GB/s
+   latency = 100ns
+ }
+ ejection {
+  latency = 100ns
+  bandwidth = 10GB/s
+ }
+}
+nic {
+ injection {
+  latency = 1us
+  bandwidth = 10GB/s
+ }
+}
+memory {
+ bandwidth = 10GB/s
+ latency = 15ns
+}
+\end{ViFile}
 
 NOTE: there is no parameter \inlinefile{network_latency}.
 The parameter is \inlinefile{network_hop_latency}.
@@ -92,6 +116,7 @@ However, it has a few deficiencies that can cause problems when there is serious
 More details (and their fixes) are given in the next abstract machine models. 	
 
 \subsection{AMM2}
+\label{subsec:amm2}
 
 \begin{figure}
 \begin{center}
@@ -101,7 +126,6 @@ More details (and their fixes) are given in the next abstract machine models.
 \label{fig:amm2}
 \end{figure}
 
-\label{subsec:ammTwo}
 A major deficiency of AMM1 is that it grants exclusive access to memory resources.
 Two CPUs or the NIC cannot be using the memory subsystem in parallel.
 This is particularly problematic for large memory transfers (1 MB or greater).

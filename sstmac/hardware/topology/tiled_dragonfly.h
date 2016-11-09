@@ -18,6 +18,8 @@
 namespace sstmac {
 namespace hw {
 
+#if 0
+
 class tiled_dragonfly : public dragonfly
 {
   private:
@@ -54,19 +56,17 @@ class tiled_dragonfly : public dragonfly
   int n_tiles_;
 
  public:
-
   virtual std::string
-  to_string() const {
+  to_string() const override {
     return "tiled_dragonfly";
   }
 
   virtual ~tiled_dragonfly() {}
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
+  tiled_dragonfly(sprockit::sim_parameters* params);
 
   void
-  connect_objects(internal_connectable_map& switches);
+  connect_objects(sprockit::sim_parameters* params, internal_connectable_map& switches);
 
   void
   configure_geometric_paths(std::vector<int> &redundancies);
@@ -75,39 +75,39 @@ class tiled_dragonfly : public dragonfly
   minimal_routes_to_switch(
       switch_id current_sw_addr,
       switch_id dest_sw_addr,
-      geometry_routable::path &current_path,
-      geometry_routable::path_set &paths) const;
+      structured_routable::path &current_path,
+      structured_routable::path_set &paths) const;
 
   virtual void
   minimal_routes_to_coords(
       const coordinates &src_coords,
       const coordinates &dest_coords,
-      geometry_routable::path &current_path,
-      geometry_routable::path_set &paths) const;
+      structured_routable::path &current_path,
+      structured_routable::path_set &paths) const;
 
   virtual bool
   xy_connected_to_group(int myX, int myY, int myG,
                         int dstg) const;
   switch_id
-  endpoint_to_injection_switch(
+  netlink_to_injection_switch(
       node_id nodeaddr, int ports[], int &num_ports) const;
 
   switch_id
-  endpoint_to_ejection_switch(
+  netlink_to_ejection_switch(
       node_id nodeaddr, int ports[], int &num_ports) const;
 
   virtual void
   eject_paths_on_switch(
       node_id dest_addr,
       switch_id sw_addr,
-      geometry_routable::path_set &paths) const;
+      structured_routable::path_set &paths) const;
 
   // throw unimplemented exception on the following
   virtual void
   minimal_route_to_coords(
     const coordinates &current_coords,
     const coordinates &dest_coords,
-    geometry_routable::path& path) const;
+    structured_routable::path& path) const;
 
   virtual int
   port(int replica, int dim, int dir);
@@ -115,13 +115,8 @@ class tiled_dragonfly : public dragonfly
   virtual int
   convert_to_port(int dim, int dir) const;
 
-  std::string
-  default_router() const {
-    return "minimal_multipath";
-  }
 
  private:
-
   int xy_to_int(xy_t xy) const
   {
     return xy.second * tiles_x_ + xy.first;
@@ -134,10 +129,12 @@ class tiled_dragonfly : public dragonfly
   read_intergroup_connections();
 
   void
-  make_intragroup_connections(internal_connectable_map& objects);
+  make_intragroup_connections(sprockit::sim_parameters* params,
+                              internal_connectable_map& objects);
 
   void
-  make_intergroup_connections(internal_connectable_map &objects);
+  make_intergroup_connections(sprockit::sim_parameters* params,
+                              internal_connectable_map &objects);
 
   void
   make_geomid();
@@ -191,6 +188,8 @@ class tiled_dragonfly : public dragonfly
   }
 
 };
+
+#endif
 
 }
 } //end of namespace sstmac

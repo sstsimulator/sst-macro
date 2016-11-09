@@ -94,25 +94,14 @@ const task_id thread::main_thread_tid(-1);
 //
 void
 thread::init_thread(int physical_thread_id, threading_interface* threadcopy, void *stack,
-                    int stacksize, operating_system* os, threading_interface *yield_to)
+                    int stacksize, threading_interface *yield_to)
 {
   stack_ = stack;
   stacksize_ = stacksize;
-  os_ = os;
 
   init_id();
 
   state_ = INITIALIZED;
-
-  //there were libs that wanted to be registered
-  if (!pending_libs_.empty()) {
-    std::list<library*>::iterator it;
-    for (it = pending_libs_.begin(); it != pending_libs_.end(); it++) {
-      os_->register_lib(this, *it);
-    }
-  }
-
-  pending_libs_.clear();
 
   context_ = threadcopy->copy();
 
@@ -120,6 +109,12 @@ thread::init_thread(int physical_thread_id, threading_interface* threadcopy, voi
   info->thethread = this;
 
   context_->start_context(physical_thread_id, stack, stacksize, run_routine, info, yield_to);
+}
+
+device_id
+thread::event_location() const
+{
+  return os_->event_location();
 }
 
 thread*
@@ -154,8 +149,6 @@ thread::kill()
 
   clear_subthread_from_parent_app();
 
-  unregister_all_libs();
-
   // This is a little bit weird - kill is happening on a non-DES thread stack
   os_->complete_thread(true);
 
@@ -182,11 +175,6 @@ class delete_thread_event :
     thr_(thr),
     event_queue_entry(thr->os()->event_location(), thr->os()->event_location())
   {
-  }
-
-  std::string
-  to_string() const {
-    return "delete thread event";
   }
 
   void
@@ -254,7 +242,8 @@ thread::run_routine(void* threadptr)
 
 key::category schedule_delay("CPU_Sched Delay");
 
-thread::thread() :
+thread::thread(sprockit::sim_parameters* params, software_id sid, operating_system* os) :
+  os_(os),
   state_(PENDING),
   isInit(false),
   backtrace_(nullptr),
@@ -268,15 +257,12 @@ thread::thread() :
   cpumask_(0),
   pthread_map_(nullptr),
   parent_app_(nullptr),
-  perf_model_(nullptr)
+  perf_model_(nullptr),
+  sid_(sid)
 {
   //make all cores possible active
   cpumask_ = ~(cpumask_);
-}
 
-void
-thread::init_perf_model_params(sprockit::sim_parameters *params)
-{
   perf_model_ = perf_counter_model_factory
                   ::get_optional_param("perf_model", "null", params);
 }
@@ -297,9 +283,9 @@ thread::init_id()
 void*
 thread::get_tls_value(long thekey) const
 {
-  std::map<long,void*>::const_iterator it = tls_values_.find(thekey);
+  auto it = tls_values_.find(thekey);
   if (it == tls_values_.end())
-    return NULL;
+    return nullptr;
   return it->second;
 }
 
@@ -330,27 +316,10 @@ thread::collect_backtrace(int nfxn)
 }
 
 void
-thread::register_lib(library* lib)
-{
-  if (is_initialized()) {
-    os_->register_lib(this, lib);
-  }
-  else {
-    pending_libs_.push_back(lib);
-  }
-}
-
-void
 thread::spawn(thread* thr)
 {
   thr->parent_app_ = parent_app();
   os_->start_thread(thr);
-}
-
-void
-thread::unregister_all_libs()
-{
-  os_->unregister_all_libs(this);
 }
 
 timestamp
@@ -369,11 +338,6 @@ thread::~thread()
   }
   if (schedule_key_) delete schedule_key_;
   if (perf_model_) delete perf_model_;
-
-  //all my apis should have been deleted
-  //since they are libraries
-  //i just need to clear the map
-  apis_.clear();
 }
 
 

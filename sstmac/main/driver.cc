@@ -13,7 +13,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#ifdef SSTMAC_HAVE_MPI_H
+#if SSTMAC_MPI_DRIVER
 #include <mpi.h>
 #endif
 
@@ -378,7 +378,7 @@ SimulationQueue::init(int argc, char** argv)
   init_opts(template_opts_, argc, argv);
   init_params(rt_, template_opts_, &template_params_, true);
   if (sprockit::debug::slot_active(sprockit::dbg::driver)){
-    template_params_.pretty_print_params();
+    template_params_.print_params();
   }
 }
 

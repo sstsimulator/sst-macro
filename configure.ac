@@ -16,7 +16,7 @@ dnl
 
 # Version info, used both in library versioning and inside sstmacro.
 m4_define([SSTMAC_VERSION_TAG], 6)
-m4_define([SSTMAC_SUBVERSION_TAG], 0)
+m4_define([SSTMAC_SUBVERSION_TAG], 1)
 m4_define([SSTMAC_SUBSUBVERSION_TAG], 0)
 
 dnl Enable this for releases
@@ -268,7 +268,7 @@ echo "  ucontext         $enable_ucontext"
 
 dnl echo "SST/macro Native   $native_des"
 dnl echo "Python             $PYTHON"
-echo "MPI parallel PDES  $with_mpiparallel"
+echo "MPI PDES           $with_mpiparallel"
 echo "CFLAGS             $CFLAGS"
 echo "CXXFLAGS           $CXXFLAGS"
 echo "CPPFLAGS           $CPPFLAGS"

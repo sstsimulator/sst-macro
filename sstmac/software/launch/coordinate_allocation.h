@@ -11,18 +11,19 @@ class coordinate_allocation :
   public node_allocator
 {
  public:
-  coordinate_allocation(parallel_runtime* rt) :
-    node_allocator(rt){}
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
+  coordinate_allocation(sprockit::sim_parameters* params);
 
   virtual ~coordinate_allocation() throw() {}
+
+  std::string
+  to_string() const override {
+    return "coordinate allocation";
+  }
 
   virtual void
   allocate(int nnode_requested,
     const ordered_node_set& available,
-    ordered_node_set& allocation) const;
+    ordered_node_set& allocation) const override;
 
   static void
   read_coordinate_file(

@@ -20,6 +20,7 @@
 #include <sstmac/hardware/router/router_fwd.h>
 #include <sstmac/hardware/common/connection.h>
 #include <sstmac/backends/common/sim_partition_fwd.h>
+#include <sstmac/hardware/topology/topology_fwd.h>
 #include <sprockit/sim_parameters_fwd.h>
 #include <sprockit/debug.h>
 #include <sprockit/factories/factory.h>
@@ -33,23 +34,19 @@ DeclareDebugSlot(topology)
 namespace sstmac {
 namespace hw {
 
-  template <class InputMap, class OutputMap>
-  void
-  copy_map(InputMap& input, OutputMap& output){
-    typedef typename InputMap::mapped_type input_cls_type;
-    typedef typename OutputMap::mapped_type output_cls_type;
-
-    typename InputMap::iterator it, end = input.end();
-    for (it = input.begin(); it != end; ++it) {
-      output[it->first] = dynamic_cast<output_cls_type>(it->second);
-    }
-  }
-
-class topology :
-  virtual public sprockit::factory_type
+class topology : public sprockit::printable
 {
  public:
   static const int eject;
+
+  struct connection {
+    switch_id src;
+    switch_id dst;
+    int src_outport;
+    int dst_inport;
+  };
+
+  static const int speedy_port = 1000000;
 
  public:
   typedef spkt_unordered_map<switch_id, connectable*> internal_connectable_map;
@@ -58,37 +55,49 @@ class topology :
  public:
   virtual ~topology();
 
-  virtual std::string
-  to_string() const = 0;
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
-  finalize_init();
-
   /**** BEGIN PURE VIRTUAL INTERFACE *****/
   /**
-     Each topology has a default router type.
-     While the user can specify a router type
-     in the input file, it is not necessary.
-     This automatically fills in the keyword
-     with a sensible default for each topology.
-     @return The string keyword for the topology's default router
-  */
-  virtual std::string
-  default_router() const  = 0;
+   * @brief Whether all network ports are uniform on all switches,
+   *        having exactly the same latency/bandwidth parameters
+   * @return
+   */
+  virtual bool
+  uniform_network_ports() const = 0;
 
   /**
-   * Given a switch address, return number of nodes connected to it
+   * @brief Whether all switches are the same, albeit with each port on the switch
+   *        having slightly different latency/bandwidth configurations
+   * @return
    */
-  virtual int
-  endpoints_per_switch(switch_id addr) const = 0;
+  virtual bool
+  uniform_switches_non_uniform_network_ports() const = 0;
 
-  int
-  concentration(switch_id addr) const {
-    return num_nodes_per_netlink_ * endpoints_per_switch(addr);
-  }
+  /**
+   * @brief Whether all switches are the same and all ports on those switches
+   *        have exactly the same configuration
+   * @return
+   */
+  virtual bool
+  uniform_switches() const = 0;
+
+  /**
+   * @brief connected_outports
+   * @param src   Get the source switch in the connection
+   * @param conns The set of output connections with dst switch_id
+   *              and the port numbers for each connection
+   */
+  virtual void
+  connected_outports(switch_id src, std::vector<topology::connection>& conns) const = 0;
+
+  /**
+   * @brief configure_individual_port_params.  The port-specific parameters
+   *        will be stored in new namespaces "portX" where X is the port number
+   * @param src
+   * @param [inout] switch_params
+   */
+  virtual void
+  configure_individual_port_params(switch_id src,
+          sprockit::sim_parameters* switch_params) const = 0;
 
   /**
      For indirect networks, this includes all switches -
@@ -99,28 +108,71 @@ class topology :
   virtual int
   num_switches() const = 0;
 
+  /**
+     For direct networks, this includes all switches.
+     For indirect networks, this includes only those switches
+     connected to endpoint nodes
+     @return The number of switches connected to endpoint nodes
+  */
   virtual int
-  num_endpoints() const = 0;
+  num_leaf_switches() const = 0;
 
   /**
-     @return The total number of nodes
-  */
+   * @brief max_switch_id Depending on the node indexing scheme, the maximum switch id
+   *  might be larger than the actual number of switches.
+   * @return The max switch id
+   */
+  virtual switch_id
+  max_switch_id() const = 0;
+
+  /**
+   * @brief swithc_id_slot_filled
+   * @param sid
+   * @return Whether a switch object should be built for a given switch_id
+   */
+  virtual bool
+  switch_id_slot_filled(switch_id sid) const = 0;
+
   virtual int
   num_nodes() const = 0;
 
   /**
-   * @brief Given a set of connectables, connect them appropriately
-   * @param objects The set of objects to connect
-   * @param cloner   If in parallel mode, not all objects may exist.
-   *                 The factory creates missing objects.
-   * @throws value_error If invalid switchid is passed to cloner
+   * @brief max_node_id Depending on the node indexing scheme, the maximum node id
+   *  might be larger than the actual number of nodes.
+   * @return The max node id
    */
-  virtual void
-  connect_objects(internal_connectable_map& objects) = 0;
+  virtual node_id
+  max_node_id() const = 0;
 
-  virtual void
-  connect_end_point_objects(internal_connectable_map& internal,
-                            end_point_connectable_map& end_points);
+  /**
+   * @brief node_id_slot_filled
+   * @param nid
+   * @return Whether a node object should be built for a given node_id
+   */
+  virtual bool
+  node_id_slot_filled(node_id nid) const = 0;
+
+  virtual switch_id
+  max_netlink_id() const = 0;
+
+  virtual bool
+  netlink_id_slot_filled(node_id nid) const = 0;
+
+  /**
+   * @brief num_endpoints To be distinguished slightly from nodes.
+   * Multiple nodes can be grouped together with a netlink.  The netlink
+   * is then the network endpoint that injects to the switch topology
+   * @return
+   */
+  virtual int
+  num_netlinks() const = 0;
+
+  /**
+   * @brief Return the maximum number of ports on any switch in the network
+   * @return
+   */
+  virtual int
+  max_num_ports() const = 0;
 
   /**
      For a given node, determine the injection switch
@@ -131,7 +183,7 @@ class topology :
      @return The switch that injects from the node
   */
   virtual switch_id
-  endpoint_to_injection_switch(node_id nodeaddr, int& switch_port) const = 0;
+  netlink_to_injection_switch(netlink_id nodeaddr, int& switch_port) const = 0;
 
   /**
      For a given node, determine the ejection switch
@@ -142,69 +194,73 @@ class topology :
      @return The switch that ejects into the node
   */
   virtual switch_id
-  endpoint_to_ejection_switch(node_id nodeaddr, int& switch_port) const = 0;
+  netlink_to_ejection_switch(netlink_id nodeaddr, int& switch_port) const = 0;
 
+  /**
+   * @brief configure_vc_routing  Configure the number of virtual channels
+   *        required for all supported routing algorithms
+   * @param [inout] m
+   */
   virtual void
   configure_vc_routing(std::map<routing::algorithm_t, int>& m) const = 0;
 
   /**
-     For a given node, determine the ejection switch
-     All messages to this node eject into the network
-     through this switch
-     @param nodeaddr The node to eject from
-     @param switch_port [inout] The port on the switch the node ejects on
-     @return The switch that ejects into the node
-  */
-  virtual int
-  endpoint_to_injection_port(node_id nodeaddr) const = 0;
+   * @brief node_to_ejection_switch Given a destination node,
+   *        figure out which switch has an ejection connection to it
+   * @param addr
+   * @param port  The port number on the switch that leads to ejection
+   *              to the particular node
+   * @return
+   */
+  virtual switch_id
+  node_to_ejection_switch(node_id addr, int& port) const = 0;
+
+  virtual switch_id
+  node_to_injection_switch(node_id addr, int& port) const = 0;
 
   /**
-     For a given node, determine the ejection switch
-     All messages to this node eject into the network
-     through this switch
-     @param nodeaddr The node to eject from
-     @param switch_port [inout] The port on the switch the node ejects on
-     @return The switch that ejects into the node
+    This gives the minimal distance counting the number of hops between switches.
+    @param src. The source switch.
+    @param dest. The destination switch.
+    @return The number of hops to final destination
   */
   virtual int
-  endpoint_to_ejection_port(node_id nodeaddr) const = 0;
+  minimal_distance(switch_id src, switch_id dst) const = 0;
+
+
+  /**
+    This gives the minimal distance counting the number of hops between switches.
+    @param src. The source node.
+    @param dest. The destination node.
+    @return The number of hops to final destination
+  */
+  virtual int
+  num_hops_to_node(node_id src, node_id dst) const = 0;
+
+  struct injection_port {
+    node_id nid;
+    int port;
+  };
 
   /**
      For a given input switch, return all nodes connected to it.
      This return vector might be empty if the
      switch is an internal switch not connected to any nodes
-     @throw value_error If invalid switch id is given
-     @return The nodes connected to switch
+     @return The nodes connected to switch for injection
   */
-  virtual std::vector<node_id>
-  nodes_connected_to_injection_switch(switch_id swid) const = 0;
-
-  virtual std::vector<node_id>
-  nodes_connected_to_ejection_switch(switch_id swid) const = 0;
-
   virtual void
-  create_partition(
-    int* switches_per_lp,
-    int *switch_to_lp,
-    int *switch_to_thread,
-    int& local_num_switches,
-    int me,
-    int nproc,
-    int nthread,
-    int noccupied);
+  nodes_connected_to_injection_switch(switch_id swid,
+                          std::vector<injection_port>& nodes) const = 0;
 
   /**
-     @param dim The dimension (e.g. x, y, or z) that should be routed on next.
-     Integer value has different meaning depending on type of
-     router (torus/dragonfly/etc)
-     @param dir The direction (e.g. +/-) that should be routed on.
-     Integer value has different physical meaning depending on type
-     of router (torus/dragonly/etc)
-     @return The port number on a switch that the message should be routed through
-     for a given dim/dir
+     For a given input switch, return all nodes connected to it.
+     This return vector might be empty if the
+     switch is an internal switch not connected to any nodes
+     @return The nodes connected to switch for ejection
   */
-  virtual int
-  convert_to_port(int dim, int dir) const = 0;
+  virtual void
+  nodes_connected_to_ejection_switch(switch_id swid,
+                          std::vector<injection_port>& nodes) const = 0;
 
   /**
      Given the current location and a destination,
@@ -222,86 +278,89 @@ class topology :
   minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    geometry_routable::path& path) const = 0;
+    routable::path& path) const = 0;
+
+  virtual bool
+  node_to_netlink(node_id nid, node_id& net_id, int& offset) const = 0;
+
+
+  /**** END PURE VIRTUAL INTERFACE *****/
 
   /**
-     Given a traffic pattern (e.g. bit-complement),
-     return the partner nodes a given source node needs to
-     send messages to for the given traffic pattern
-     @param ty The desired traffic pattern
-     @param src_node The source node that sends messages
-     @param partners [inout] The list of partner nodes to send to
+     For a given node, determine the ejection switch
+     All messages to this node eject into the network
+     through this switch
+     @param nodeaddr The node to eject from
+     @param switch_port [inout] The port on the switch the node ejects on
+     @return The switch that ejects into the node
   */
+  int
+  endpoint_to_injection_port(node_id nodeaddr) const {
+    int port;
+    switch_id sid = netlink_to_injection_switch(nodeaddr, port);
+    return port;
+  }
+
+  /**
+     For a given node, determine the ejection switch
+     All messages to this node eject into the network
+     through this switch
+     @param nodeaddr The node to eject from
+     @param switch_port [inout] The port on the switch the node ejects on
+     @return The switch that ejects into the node
+  */
+  int
+  netlink_to_ejection_port(netlink_id nodeaddr) const {
+    int port;
+    switch_id sid = netlink_to_ejection_switch(nodeaddr, port);
+    return port;
+  }
+
+  switch_id
+  netlink_to_ejection_switch(netlink_id nodeaddr) const {
+    int ignore;
+    return netlink_to_ejection_switch(nodeaddr, ignore);
+  }
+
+  switch_id
+  netloink_to_injection_switch(netlink_id nodeaddr) const {
+    int ignore;
+    return netlink_to_injection_switch(nodeaddr, ignore);
+  }
+
   virtual void
-  send_partners(
-    traffic_pattern::type_t ty,
-    node_id src_node,
-    std::vector<node_id>& partners) const = 0;
+  minimal_routes_to_switch(
+    switch_id current_sw_addr,
+    switch_id dest_sw_addr,
+    routable::path& current_path,
+    routable::path_set& paths) const {
+    paths.resize(1);
+    minimal_route_to_switch(current_sw_addr, dest_sw_addr, paths[0]);
+  }
+
+  virtual void
+  create_partition(
+    int* switches_per_lp,
+    int *switch_to_lp,
+    int *switch_to_thread,
+    int& local_num_switches,
+    int me,
+    int nproc,
+    int nthread,
+    int noccupied) const;
+
+#if SSTMAC_INTEGRATED_SST_CORE
+  switch_id
+  node_to_logp_switch(node_id nid) const;
+
+  static int nproc;
+#endif
+
 
   static topology*
   global() {
     return main_top_;
   }
-
-  /**
-     Given a traffic pattern (e.g. bit-complement),
-     return the partner nodes a given destination node needs to
-     receive messages to for the given traffic pattern
-     @param ty The desired traffic pattern
-     @param src_node The source node that sends messages
-     @param partners [inout] The list of partner nodes to send to
-  */
-  virtual void
-  recv_partners(
-    traffic_pattern::type_t ty,
-    node_id src_node,
-    std::vector<node_id>& partners) const = 0;
-
-  /**
-     Figure out how many hops we have to go from a source node
-     to a destination node
-     @param src The source node address
-     @param dst The destination node address
-     @return The number of hops to destination
-  */
-  virtual int
-  num_hops_to_node(node_id src, node_id dst) const = 0;
-  /**** END PURE VIRTUAL INTERFACE *****/
-
-  /**
-   Template utility function for allowing any specific map type
-   to be connected.  This creates an equivalent map of connectables that
-   then calls the actual #connect_objects function
-   @param objects A map of connectable* types (map might hold more specific type like networkswitch)
-  */
-  template <class MapTypeInternal, class MapTypeEndPoint>
-  void
-  connect_end_points(MapTypeInternal& internal_nodes, MapTypeEndPoint& end_points) {
-    internal_connectable_map internal_clone_map;
-    end_point_connectable_map end_clone_map;
-    copy_map(internal_nodes, internal_clone_map);
-    copy_map(end_points, end_clone_map);
-    connect_end_point_objects(internal_clone_map, end_clone_map);
-  }
-
-  /**
-   Template utility function for allowing any specific map type
-   to be connected.  This creates an equivalent map of connectables that
-   then calls the actual #connect_objects function
-   @param objects A map of connectable* types (map might hold more specific type like networkswitch)
-  */
-  template <class MapType>
-  void
-  connect_topology(MapType& objects) {
-    typedef typename MapType::mapped_type cls_type;
-    typedef typename MapType::value_type val_type;
-    internal_connectable_map clone_map;
-    copy_map(objects, clone_map);
-    connect_objects(clone_map);
-  }
-
-  virtual coordinates
-  switch_coords(switch_id swid) const;
 
   /**
      Get a random switch from the topoology.
@@ -315,117 +374,41 @@ class topology :
   random_intermediate_switch(switch_id current_sw, 
                              switch_id dest_sw = switch_id(-1));
 
-  /**
-     For a given node, determine the injection switch
-     All messages from this node inject into the network
-     through this switch
-     @param nodeaddr The node to inject to
-     @return The switch that injects from the node
-  */
-  switch_id
-  endpoint_to_injection_switch(node_id nodeaddr) const {
-    int ignore;
-    return endpoint_to_injection_switch(nodeaddr, ignore);
+  virtual switch_id
+  netlink_to_injection_switch(
+        node_id nodeaddr, int ports[], int& num_ports) const {
+    num_ports = 1;
+    return netlink_to_injection_switch(nodeaddr, ports[0]);
   }
 
   virtual switch_id
-  endpoint_to_injection_switch(
+  netlink_to_ejection_switch(
         node_id nodeaddr, int ports[], int& num_ports) const {
     num_ports = 1;
-    return endpoint_to_injection_switch(nodeaddr, ports[0]);
-  }
-
-  switch_id
-  node_to_ejection_switch(node_id addr) const {
-    node_id netid(addr / num_nodes_per_netlink_);
-    return endpoint_to_ejection_switch(netid);
+    return netlink_to_ejection_switch(nodeaddr, ports[0]);
   }
 
   /**
-     For a given node, determine the ejection switch
-     All messages to this node eject into the network
-     through this switch
-     @param nodeaddr The node to eject from
-     @return The switch that ejects into the node
-  */
-  switch_id
-  endpoint_to_ejection_switch(node_id nodeaddr) const {
-    int ignore;
-    return endpoint_to_ejection_switch(nodeaddr, ignore);
-  }
-
-  virtual switch_id
-  endpoint_to_ejection_switch(
-        node_id nodeaddr, int ports[], int& num_ports) const {
-    num_ports = 1;
-    return endpoint_to_ejection_switch(nodeaddr, ports[0]);
-  }
-
-  int
-  max_num_ports() const {
-    return max_ports_injection_ + max_ports_intra_network_;
-  }
-
-  int
-  max_ports_injection() const {
-    return max_ports_injection_;
-  }
-
-  int
-  max_ports_intra_network() const {
-    return max_ports_intra_network_;
-  }
-
-  bool
-  is_injection_port(int port) const {
-    return port >= max_ports_intra_network_;
-  }
-
-  /**
-   * @brief Return the port number for the ith injection/ejection node
-   * @param ith The injection/ejection index
-   * @return
+   * @brief configure_switch_params By default, almost all topologies
+   *        have uniform switch parameters.
+   * @param src
+   * @param switch_params In/out parameter. Input is default set of params.
+   *        Output is non-default unique params.
    */
-  int
-  eject_port(int ith) const {
-    return max_ports_intra_network() + ith;
+  virtual void
+  configure_nonuniform_switch_params(switch_id src,
+        sprockit::sim_parameters* switch_params) const
+  {
   }
 
-  virtual void
-  sanity_check();
+  std::string
+  label(device_id id) const;
 
   virtual std::string
-  label(node_id nid) const;
+  switch_label(switch_id sid) const;
 
   virtual std::string
-  label(switch_id sid) const;
-
-  std::string
-  label(event_loc_id id) const;
-
-  std::string
-  endpoint_label(node_id nid) const;
-
-  /**
-     Given the current location and a destination,
-     compute the minimal path to the destination.
-     In most cases, this function first computes
-     the destination switch attached to the node
-     and then calls #minimal_route_to_switch.
-     The path generally consists of a dimension,
-     a direction or branch along that dimension,
-     a port number for that dim/dir combination,
-     and a virtual channel along the dim/dir
-     appropriate for avoiding deadlock.
-     @param current_sw_addr The addr of the current switch
-     @param dest_sw_addr The addr of the destination switch
-     @param path [inout] A complete path descriptor to the destination node
-  */
-  virtual void
-  minimal_route_to_node(
-    switch_id current_sw_addr,
-    node_id dest_node_addr,
-    geometry_routable::path& path) const;
+  node_label(node_id nid) const;
 
   /**
      Informs topology that a new routing stage has begun, allowing any
@@ -433,66 +416,42 @@ class topology :
      @param rinfo Routing info object
   */
   virtual void
-  new_routing_stage(geometry_routable* rtbl) { }
-
-  int
-  num_nodes_per_netlink() const {
-    return num_nodes_per_netlink_;
-  }
-
-  bool
-  netlink_endpoints() const {
-    return netlink_endpoints_;
-  }
-
-  virtual void
-  build_internal_connectables(
-    internal_connectable_map& connectables,
-    sprockit::factory<connectable>* factory,
-    partition *part,
-    int my_rank,
-    sprockit::sim_parameters *params,
-    connectable* dummy) = 0;
-
-  virtual void
-  build_endpoint_connectables(
-    end_point_connectable_map& connectables,
-    sprockit::factory<connectable>* factory,
-    partition *part,
-    int my_rank,
-    sprockit::sim_parameters *params) = 0;
-
-  virtual void
-  build_interface_connectables(
-    int conc,
-    end_point_connectable_map& connectables,
-    sprockit::factory2<connectable>* nic_factory,
-    partition *part,
-    int my_rank,
-    sprockit::sim_parameters* params,
-    sprockit::factory_type* interconnect) = 0;
+  new_routing_stage(routable* rtbl) { }
 
   static topology*
   static_topology(sprockit::sim_parameters* params);
 
+  static void
+  set_static_topology(topology* top){
+    static_topology_ = top;
+  }
+
+  virtual cartesian_topology*
+  cart_topology() const;
+
+  static void
+  clear_static_topology(){
+    if (static_topology_) delete static_topology_;
+    static_topology_ = nullptr;
+  }
+
+  static sprockit::sim_parameters*
+  get_port_params(sprockit::sim_parameters* params, int port);
+
  protected:
-  topology();
+  topology(sprockit::sim_parameters* params);
 
   uint32_t random_number(uint32_t max, uint32_t attempt) const;
 
+  static sprockit::sim_parameters*
+  setup_port_params(int port, int credits, double bw,
+                    sprockit::sim_parameters* link_params,
+                    sprockit::sim_parameters* params);
+
+  void configure_individual_port_params(int port_offset, int nports,
+           sprockit::sim_parameters* params) const;
+
  protected:
-
-  /**
-    Nodes per switch.  The number of nodes connected to a leaf switch.
-    In many topologies, there is a 1-1 correspondence. For others,
-    you might have many compute nodes connected to a single injection/ejection switch.
-  */
-  int endpoints_per_switch_;
-
-  bool netlink_endpoints_;
-
-  bool outputgraph_;
-
   RNG::rngint_t seed_;
 
   bool debug_seed_;
@@ -500,12 +459,6 @@ class topology :
   RNG::MWC* rng_;
 
   std::string name_;
-
-  int num_nodes_per_netlink_;
-
-  int max_ports_intra_network_;
-
-  int max_ports_injection_;
 
   static topology* main_top_;
 

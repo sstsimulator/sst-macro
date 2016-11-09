@@ -73,8 +73,8 @@ std::string str = "hello";
 We can serialize them to a buffer
 
 \begin{CppCode}
-spkt_serializer ser;
-ser.set_mode(spkt_serializer::PACK);
+sstmac::serializer ser;
+ser.set_mode(sstmac::serializer::PACK);
 ser.init(new char[512]);
 ser & pt;
 ser & niter;
@@ -87,8 +87,8 @@ To reverse the process for a buffer received over MPI, the code would be
 \begin{CppCode}
 char* buf = new char[512];
 MPI_Recv(buf, ...)
-spkt_serializer;
-ser.set_mode(spkt_serializer::UNPACK);
+sstmac::serializer;
+ser.set_mode(sstmac::serializer::UNPACK);
 ser.init(buf);
 ser & pt;
 ser & niter;
@@ -101,9 +101,9 @@ The above code assumes a known buffer size (or buffer of sufficient size).
 To serialize unknown sizes, the serializer can also compute the total size first.
 
 \begin{CppCode}
-spkt_serializer ser;
+sstmac::serializer ser;
 ser.reset();
-ser.set_mode(spkt_serializer::SIZER);
+ser.set_mode(sstmac::serializer::SIZER);
 ser & pt;
 ser & niter;
 ser & str;
@@ -121,13 +121,13 @@ To serialize custom objects, a C++ class must implement the serializable interfa
 \begin{CppCode}
 namespace my_ns {
 class my_object : 
-  public serializable,
-  public serializable_type<my_object>
+  public sstmac::serializable,
+  public sstmac::serializable_type<my_object>
 {
  ImplementSerializable(my_object)
  ...
  void
- serialize_order(spkt_serializer& ser);
+ serialize_order(sstmac::serializer& ser);
  ...
 };
 }
@@ -153,7 +153,7 @@ All that remains now is defining the \inlinecode{serialize_order} in the source 
 
 \begin{CppCode}
 void
-my_object::serialize_order(spkt_serializer& ser)
+my_object::serialize_order(sstmac::serializer& ser)
 {
   ser & my_int_;
   set << my_double_;
@@ -165,22 +165,22 @@ For inheritance, only the top-level parent class needs to inherit from \inlineco
 
 \begin{CppCode}
 class parent_object : 
-  public serializable
+  public sstmac::serializable
 {
 ...
   void
-  serialize_order(spkt_serializer& set);
+  serialize_order(sstmac::serializer& set);
 ...
 };
 
 class my_object :
   public parent_object,
-  public serializable_type<my_object>
+  public sstmac::serializable_type<my_object>
 {
  ImplementSerializable(my_object)
  ...
  void
- serialize_order(spkt_serializer& ser);
+ serialize_order(sstmac::serializer& ser);
  ...
 };
 \end{CppCode}
@@ -192,7 +192,7 @@ In the source file, we would have
 
 \begin{CppCode}
 void
-my_object::serializer_order(spkt_serializer& ser)
+my_object::serializer_order(sstmac::serializer& ser)
 {
   parent_object::serialize_order(ser);
   ...

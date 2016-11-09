@@ -6,30 +6,55 @@
 namespace sstmac {
 namespace hw {
 
+/**
+ * @brief The cartesian_topology class
+ * Encapsulates a topology like torus that can be naturally mapped onto
+ * an n-dimensional Cartesian (integer) coordinate system
+ */
 class cartesian_topology :
   public structured_topology
 {
  public:
-  const std::vector<int>&
-  red() const {
-    return red_;
+  node_id
+  node_addr(const coordinates& coords) const;
+
+  virtual switch_id
+  switch_addr(const coordinates& coords) const = 0;
+
+  coordinates
+  node_coords(node_id nid) const;
+
+  virtual coordinates
+  switch_coords(switch_id) const = 0;
+
+  int
+  ndimensions() const {
+    return dimensions_.size();
   }
 
-  virtual void
-  configure_geometric_paths(std::vector<int>& redundancies) = 0;
+  cartesian_topology*
+  cart_topology() const override {
+    return const_cast<cartesian_topology*>(this);
+  }
 
-  virtual void
-  minimal_routes_to_switch(
-    switch_id current_sw_addr,
-    switch_id dest_sw_addr,
-    geometry_routable::path &current_path,
-    geometry_routable::path_set &paths) const;
+  std::string
+  node_label(node_id nid) const override;
+
+  std::string
+  switch_label(switch_id sid) const override;
 
  protected:
-  virtual void
-  init_factory_params(sprockit::sim_parameters *params);
+  cartesian_topology(sprockit::sim_parameters* params,
+                     InitMaxPortsIntra i1,
+                     InitGeomEjectID i2);
 
+  /**
+   * The number of redundant links (ports) comprising a geometric
+   * or structure direction in the topology
+   */
   std::vector<int> red_;
+  std::vector<int> dimensions_;
+
 };
 
 }

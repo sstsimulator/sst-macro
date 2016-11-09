@@ -112,11 +112,6 @@ class MWC : public UniformInteger
   MWC();
 
  public:
-  virtual std::string
-  to_string() const {
-    return "MWC";
-  }
-
   static MWC*
   construct();
 
@@ -132,15 +127,14 @@ class MWC : public UniformInteger
   ~MWC();
 
   rngint_t
-  value() {
+  value() override {
     return (znew() + wnew());
   }
 
   void
-  vec_reseed(const std::vector<rngint_t> &seeds);
+  vec_reseed(const std::vector<rngint_t> &seeds) override;
 
-  int
-  nseed();
+  int nseed() override;
 };
 
 /** The 3-shift-register random number generator by George
@@ -166,11 +160,6 @@ class SHR3 : public UniformInteger
   SHR3();
 
  public:
-  virtual std::string
-  to_string() const {
-    return "SHR3";
-  }
-
   static SHR3*
   construct();
 
@@ -182,13 +171,12 @@ class SHR3 : public UniformInteger
 
   ~SHR3();
 
-  rngint_t value();
+  rngint_t value() override;
 
   void
-  vec_reseed(const std::vector<rngint_t> &seeds);
+  vec_reseed(const std::vector<rngint_t> &seeds) override;
 
-  int
-  nseed();
+  int nseed() override;
 };
 
 class ExponentialDistribution
@@ -207,9 +195,6 @@ class ExponentialDistribution
   }
 
   double value();
-
-  std::string
-  to_string() const;
 
 };
 
@@ -235,10 +220,6 @@ class NormalDistribution
   ~NormalDistribution();
 
   double value();
-
-  std::string
-  to_string() const;
-
 };
 
 /** The congruential random number generator by George Marsaglia
@@ -257,11 +238,6 @@ class CONG : public UniformInteger
   rngint_t jcong;
 
  public:
-  virtual std::string
-  to_string() const {
-    return "CONG";
-  }
-
   static CONG*
   construct();
 
@@ -274,15 +250,15 @@ class CONG : public UniformInteger
   ~CONG();
 
   rngint_t
-  value() {
+  value() override {
     return (jcong = 69069 * jcong + 1234567);
   }
 
   void
-  vec_reseed(const std::vector<rngint_t> &seeds);
+  vec_reseed(const std::vector<rngint_t> &seeds) override;
 
   int
-  nseed();
+  nseed() override;
 
  protected:
   CONG();
@@ -310,11 +286,6 @@ class SimpleCombo : public UniformInteger
   SHR3* shr3_;
 
  public:
-  virtual std::string
-  to_string() const {
-    return "SimpleCombo";
-  }
-
   static SimpleCombo*
   construct();
 
@@ -338,15 +309,15 @@ class SimpleCombo : public UniformInteger
   // value is written in this way to make it possible to inline
   // the MWC, CONG, and SHR3 value calls.
   rngint_t
-  value() {
+  value() override {
     return (mwc_->MWC::value() ^ cong_->CONG::value()) + shr3_->SHR3::value();
   }
 
   void
-  vec_reseed(const std::vector<rngint_t> &seeds);
+  vec_reseed(const std::vector<rngint_t> &seeds) override;
 
   int
-  nseed();
+  nseed() override;
 
  protected:
   SimpleCombo();
@@ -403,11 +374,6 @@ class LFIB4 : public Table256
   LFIB4();
 
  public:
-  virtual std::string
-  to_string() const {
-    return "LFIB4";
-  }
-
   static LFIB4*
   construct();
 
@@ -415,7 +381,7 @@ class LFIB4 : public Table256
   construct(const std::vector<rngint_t> &seeds);
 
   rngint_t
-  value() {
+  value() override {
     unsigned char i1, i2, i3, i4;
     i1 = c;
     i2 = c + 58;
@@ -424,13 +390,13 @@ class LFIB4 : public Table256
     return (t[i1] = t[i1] + t[i2] + t[i3] + t[i4]);
   }
 
-  ~LFIB4();
+  ~LFIB4() ;
 
   void
-  vec_reseed(const std::vector<rngint_t> &seeds);
+  vec_reseed(const std::vector<rngint_t> &seeds) override;
 
   int
-  nseed();
+  nseed() override;
 };
 
 /**
@@ -457,11 +423,6 @@ class SWB : public Table256
   SWB();
 
  public:
-  virtual std::string
-  to_string() const {
-    return "SWB";
-  }
-
   static SWB*
   construct();
 
@@ -469,15 +430,15 @@ class SWB : public Table256
   construct(const std::vector<rngint_t>&);
 
   rngint_t
-  value();
+  value() override;
 
   ~SWB();
 
   void
-  vec_reseed(const std::vector<rngint_t> &seeds);
+  vec_reseed(const std::vector<rngint_t> &seeds) override;
 
   int
-  nseed();
+  nseed() override;
 };
 
 /**
@@ -494,11 +455,6 @@ class SWB : public Table256
 class Combo : public UniformInteger
 {
  public:
-  virtual std::string
-  to_string() const {
-    return "Combo";
-  }
-
   static Combo*
   construct();
 
@@ -506,7 +462,7 @@ class Combo : public UniformInteger
   construct(const std::vector<rngint_t>&);
 
   rngint_t
-  value() {
+  value() override {
     rngint_t kresult = simplecombo_->SimpleCombo::value();
     rngint_t sresult = swb_->SWB::value();
     return kresult + sresult;
@@ -515,10 +471,10 @@ class Combo : public UniformInteger
   ~Combo();
 
   void
-  vec_reseed(const std::vector<rngint_t> &seeds);
+  vec_reseed(const std::vector<rngint_t> &seeds) override;
 
   int
-  nseed();
+  nseed() override;
 
  private:
   SWB* swb_;

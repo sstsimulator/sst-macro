@@ -13,11 +13,20 @@
 #include <sstmac/software/launch/node_allocator.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
-#include <sstmac/hardware/topology/topology.h>
+#include <sstmac/hardware/topology/cartesian_topology.h>
 #include <sprockit/keyword_registration.h>
 #include <sprockit/util.h>
 #include <sprockit/fileio.h>
 #include <sprockit/sim_parameters.h>
+
+RegisterKeywords(
+"dumpi_mapname",
+"launch_dumpi_mapname",
+"launch_hostname_map",
+"hostname_map",
+"launch_hostname_list",
+"hostname_list",
+);
 
 namespace sstmac {
 namespace sw {
@@ -27,31 +36,18 @@ SpktRegister("hostname",
             hostname_allocation,
             "Given a file containing one hostname/coordinate pair per line, return a node allocation with all hosts in the file");
 
-static const char* deprecated_keywords[] = { "launch_dumpi_mapname" };
-static sprockit::StaticKeywordRegister deprecated(1, deprecated_keywords);
-
 hostname_allocation::nodemap_t hostname_allocation::hostnamemap_;
 
 std::map<long, std::string> hostname_allocation::nodenum_to_host_map_;
 
-void
-hostname_allocation::init_factory_params(sprockit::sim_parameters* params)
+hostname_allocation::hostname_allocation(sprockit::sim_parameters* params) :
+  node_allocator(params)
 {
-  node_allocator::init_factory_params(params);
-  if (params->has_param("launch_dumpi_mapname")) {
-    mapfile_ = params->deprecated_param("launch_dumpi_mapname");
+  if (params->has_param("dumpi_mapname")) {
+    mapfile_ = params->deprecated_param("dumpi_mapname");
   }
   else {
-    /** sstkeyword {
-            gui=path_to_file;
-            docstring=A file containing a map of hostnames for allocation.ENDL
-            The first line of the hostname file has two integers - the number of hostnames ENDL
-            and the number of coordinates in the topology, respectively.ENDL
-            The subsequent lines are the hostnames followed by the coordinates of that host.ENDL
-            DEPRECATED: launch_dumpi_mapname used to be the name of this parameter.;
-        }
-    */
-    mapfile_ = params->get_param("launch_hostname_map");
+    mapfile_ = params->get_param("hostname_map");
   }
 }
 
@@ -122,7 +118,8 @@ hostname_allocation::read_map_file(
 
 void
 hostname_allocation::allocate(int nnode_requested,
- const ordered_node_set& available, ordered_node_set &allocation) const
+ const ordered_node_set& available,
+ ordered_node_set &allocation) const
 {
   std::map<std::string, std::vector<int> > hostmap;
   read_map_file(rt_, "hostname_allocation::allocate", mapfile_, hostmap);
@@ -131,12 +128,11 @@ hostname_allocation::allocate(int nnode_requested,
     spkt_throw_printf(sprockit::value_error, "hostname_allocation::allocate: null topology");
   }
 
-  hw::structured_topology* regtop = safe_cast(hw::structured_topology, topology_);
+  hw::cartesian_topology* regtop = safe_cast(hw::cartesian_topology, topology_);
   std::map<std::string, std::vector<int> >::iterator it, end = hostmap.end();
 
   for (it = hostmap.begin(); it != end; it++) {
     std::vector<int> coords = it->second;
-
     // find node index for this vertex
     node_id nid = regtop->node_addr(coords);
     hostnamemap_[it->first] = nid;

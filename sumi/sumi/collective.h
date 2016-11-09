@@ -41,6 +41,9 @@ class collective
     heartbeat
   } type_t;
 
+  virtual std::string
+  to_string() const = 0;
+
   virtual ~collective();
 
   /**
@@ -132,8 +135,7 @@ class collective
 };
 
 class dag_collective :
-  public collective,
-  public sprockit::factory_type
+  public collective
 {
  public:
   void

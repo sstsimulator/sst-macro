@@ -1,0 +1,9 @@
+\openTable
+\hline
+\input{filerootDescr} \\
+\hline 
+type \paramType{string} & ascii & ascii, png & Whether to generate a simple traffic matrix in an ASCII file or to generate a PNG image of the traffic pattern \\
+\hline
+normalization \paramType{long} & Ignored & Positive int & Determines a normalization value that will effect the color scales of an output PNG file. By default, if not specified, the spyplot will determine the largest value and normalize all values for the output PNG to be 0.0-1.0. Values larger than 1.0 will have the same color as 1.0. Useful for having two PNG files with different values have the same color scales. \\
+\hline
+\end{tabular}

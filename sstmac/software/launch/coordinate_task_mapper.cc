@@ -17,7 +17,7 @@
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/launch/launcher.h>
-#include <sstmac/hardware/topology/structured_topology.h>
+#include <sstmac/hardware/topology/cartesian_topology.h>
 #include <sstmac/common/runtime.h>
 #include <sprockit/fileio.h>
 #include <sprockit/errors.h>
@@ -31,22 +31,20 @@ SpktRegister("coordinate", task_mapper, coordinate_task_mapper,
             "assigns tasks to nodes based on hostname map of topology and hostname list in file");
 
 
-void
-coordinate_task_mapper::init_factory_params(sprockit::sim_parameters *params)
+coordinate_task_mapper::coordinate_task_mapper(sprockit::sim_parameters *params) :
+  task_mapper(params)
 {
-  task_mapper::init_factory_params(params);
-  listfile_ = params->get_param("launch_coordinate_file");
+  listfile_ = params->get_param("coordinate_file");
 }
 
 void
 coordinate_task_mapper::map_ranks(
-  const app_id& aid,
   const ordered_node_set& nodes,
   int ppn,
   std::vector<node_id> &result,
   int nproc)
 {
-  hw::structured_topology* regtop = safe_cast(hw::structured_topology, topology_);
+  hw::cartesian_topology* regtop = safe_cast(hw::cartesian_topology, topology_);
 
   std::vector<hw::coordinates> node_list;
   coordinate_allocation::read_coordinate_file(rt_, listfile_, node_list);

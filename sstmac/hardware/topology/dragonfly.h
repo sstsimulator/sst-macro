@@ -21,6 +21,8 @@ class dragonfly : public cartesian_topology
 {
 
  public:
+  dragonfly(sprockit::sim_parameters* params);
+
   typedef enum {
     x_dimension = 0,
     y_dimension = 1,
@@ -38,8 +40,8 @@ class dragonfly : public cartesian_topology
   } y_vc_t;
 
  public:
-  virtual std::string
-  to_string() const {
+  std::string
+  to_string() const override {
     return "dragonfly";
   }
 
@@ -54,13 +56,29 @@ class dragonfly : public cartesian_topology
     }
   }
 
-  virtual ~dragonfly() {}
+  bool
+  uniform_network_ports() const override {
+    return false;
+  }
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
+  bool
+  uniform_switches_non_uniform_network_ports() const override {
+    return true;
+  }
+
+  bool
+  uniform_switches() const override {
+    return true;
+  }
 
   void
-  init_common_params(sprockit::sim_parameters* params);
+  connected_outports(switch_id src, std::vector<connection>& conns) const override;
+
+  void
+  configure_individual_port_params(switch_id src,
+        sprockit::sim_parameters *switch_params) const override;
+
+  virtual ~dragonfly() {}
 
   int
   ndimensions() const {
@@ -87,117 +105,99 @@ class dragonfly : public cartesian_topology
     return group_con_;
   }
 
-  void
-  get_coords(long uid, int &x, int &y, int &g) const;
+  inline void
+  get_coords(switch_id sid, int& x, int& y, int& g) const {
+    x = computeX(sid);
+    y = computeY(sid);
+    g = computeG(sid);
+  }
 
-  long
-  get_uid(int x, int y, int g) const;
+  int get_uid(int x, int y, int g) const {
+    return g * (x_ * y_) + y * (x_) + x;
+  }
 
-  switch_id
-  switch_number(const coordinates &coords) const;
+  inline int x_port(int x) const {
+    return x;
+  }
+
+  inline int y_port(int y) const {
+    return x_ + y;
+  }
+
+  inline int g_port(int g) const {
+    return x_ + y_ + g;
+  }
+
+  inline int computeX(switch_id sid) const {
+    return sid % x_;
+  }
+
+  inline int computeY(switch_id sid) const {
+    return (sid / x_) % y_;
+  }
+
+  inline int computeG(switch_id sid) const {
+    return (sid / (x_*y_));
+  }
 
   virtual int
-  num_switches() const {
+  num_switches() const override {
     return x_ * y_ * g_;
   }
 
   int
-  num_leaf_switches() const {
+  num_leaf_switches() const override {
     return x_ * y_ * g_;
   }
 
-  virtual void
-  connect_objects(internal_connectable_map& switches);
+  void minimal_route_to_switch(
+      switch_id current_sw_addr,
+      switch_id dest_sw_addr,
+      routable::path &path) const override;
+
+  int
+  minimal_distance(switch_id src, switch_id dst) const override;
 
   virtual int
-  diameter() const {
+  diameter() const override {
     return 5;
   }
 
-  coordinates
-  neighbor_at_port(switch_id sid, int port);
-
   virtual switch_id
   random_intermediate_switch(switch_id current_sw,
-                             switch_id dest_sw = switch_id(-1));
-
-  virtual int
-  convert_to_port(int dim, int dir) const;
+                             switch_id dest_sw = switch_id(-1)) override;
 
   void
-  configure_vc_routing(std::map<routing::algorithm_t, int> &m) const;
+  configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
 
   virtual void
-  productive_path(
-    int dim,
-    const coordinates& src,
-    const coordinates& dst,
-    geometry_routable::path& path) const;
-
-  void
-  minimal_route_to_coords(
-    const coordinates &src_coords,
-    const coordinates &dest_coords,
-    geometry_routable::path& path) const;
-
-  int
-  minimal_distance(
-    const coordinates& src_coords,
-    const coordinates& dest_coords) const;
-
-  void
-  nearest_neighbor_partners(
-    const coordinates& src_sw_coords, int port,
-    std::vector<node_id>& partners) const;
-
-  void
-  bit_complement_partners(
-    const coordinates &src_sw_coords, int port,
-    std::vector<node_id>& partners) const;
-
-  void
-  tornado_send_partners(
-    const coordinates &src_sw_coords, int port,
-    std::vector<node_id>& partners) const;
-
-  void
-  tornado_recv_partners(
-    const coordinates &src_sw_coords, int port,
-    std::vector<node_id>& partners) const;
-
-  virtual void
-  new_routing_stage(geometry_routable* rtbl);
+  new_routing_stage(routable* rtbl) override;
 
   virtual void
   configure_geometric_paths(std::vector<int> &redundancies);
 
+  coordinates
+  switch_coords(switch_id) const override;
+
+  switch_id
+  switch_addr(const coordinates &coords) const override;
+
  protected:
-  void
-  minimal_route_to_group(int myX, int myY, int myG, int& dim, int& dir, int dstg) const;
-
   virtual void
-  find_path_to_group(int myX, int myY, int myG, int& dsty, int& dstx, int dstg) const;
+  find_path_to_group(int myX, int myY, int myG, int dstG,
+                     int& dstX, int& dstY,
+                     routable::path& path) const;
 
-  int
-  minimal_route_to_X(int hisx) const;
+  bool
+  find_y_path_to_group(int myX, int myG, int dstG, int& dstY,
+                       routable::path& path) const;
 
-  int
-  minimal_route_to_Y(int hisy) const;
-
-  virtual void
-  compute_switch_coords(switch_id uid, coordinates& coords) const;
-
-  int
-  find_y_path_to_group(int myX, int myG, int dstg) const;
-
-  int
-  find_x_path_to_group(int myY, int myG, int dstg) const;
+  bool
+  find_x_path_to_group(int myY, int myG, int dstG, int& dstX,
+                       routable::path& path) const;
 
   virtual bool
-  xy_connected_to_group(int myX, int myY, int myG, int dstg) const;
-
-  int
-  xyg_dir_to_group(int myX, int myY, int myG, int dir) const;
+  xy_connected_to_group(int myX, int myY, int myG, int dstG) const;
 
  protected:
   int x_;
@@ -206,11 +206,26 @@ class dragonfly : public cartesian_topology
   int group_con_;
   bool true_random_intermediate_;
 
+  void
+  setup_port_params(sprockit::sim_parameters* params,
+                    int dim, int dimsize) const;
+
   static std::string
   set_string(int x, int y, int g)
   {
     return sprockit::printf("{ %d %d %d }", x, y, g);
   }
+
+ private:
+  int convert_to_port(int dim, int dir) const {
+    if      (dim == x_dimension) return x_port(dir);
+    else if (dim == y_dimension) return y_port(dir);
+    else if (dim == g_dimension) return g_port(dir);
+    else return -1;
+  }
+
+  int
+  xyg_dir_to_group(int myX, int myY, int myG, int dir) const;
 
 };
 

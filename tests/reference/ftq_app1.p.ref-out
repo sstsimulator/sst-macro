@@ -22,5 +22,5 @@ set xlabel "Time(ms)" font "Arial,28" offset 0,-1
 set yrange [0.00000 : 100.000] noreverse nowriteback
 set boxwidth 1
 set xrange[0.0:51.0]
-plot 'ftq_app1.dat' using (100.*$2/$4) title column(2) lc 2 lw -1 lt -1, \
-   for [i=3:3] '' using (100.*column(i)/column(4)) title column(i) lc i lw -1 lt -1
+plot 'ftq_app1.dat' using (100.*$2/$5) title column(2) lc 2 lw -1 lt -1, \
+   for [i=3:4] '' using (100.*column(i)/column(5)) title column(i) lc i lw -1 lt -1

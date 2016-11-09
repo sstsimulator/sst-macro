@@ -10,16 +10,18 @@ class default_dgemv :
   public blas_kernel
 {
  public:
+  default_dgemv(sprockit::sim_parameters* params){
+    loop_unroll_ = params->get_optional_double_param("dgemv_loop_unroll", 4);
+    pipeline_ = params->get_optional_double_param("dgemv_pipeline_efficiency", 2);
+  }
+
   std::string
-  to_string() const {
+  to_string() const override {
     return "default dgemv";
   }
 
   compute_event*
-  op_2d(int m, int n);
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
+  op_2d(int m, int n) override;
 
  protected:
   double loop_unroll_;
@@ -27,13 +29,6 @@ class default_dgemv :
 
 };
 SpktRegister("default_dgemv", blas_kernel, default_dgemv);
-
-void
-default_dgemv::init_factory_params(sprockit::sim_parameters* params)
-{
-  loop_unroll_ = params->get_optional_double_param("dgemv_loop_unroll", 4);
-  pipeline_ = params->get_optional_double_param("dgemv_pipeline_efficiency", 2);
-}
 
 compute_event*
 default_dgemv::op_2d(int m, int n)

@@ -25,21 +25,11 @@ compute_scheduler::compute_scheduler()
 }
 
 void
-compute_scheduler::finalize_init()
-{
-}
-
-void
-compute_scheduler::init_factory_params(sprockit::sim_parameters *params)
-{
-}
-
-void
 compute_scheduler::configure(int ncores, int nsocket)
 {
-  ncores_ = ncores;
+  ncores_ = ncores * nsocket;
   nsocket_ = nsocket;
-  cores_per_socket_ = ncores_ / nsocket_;  
+  cores_per_socket_ = ncores;
 }
 
 } //end namespace hw

@@ -6,10 +6,9 @@ namespace native {
 
 SpktRegister("serial", parallel_runtime, serial_runtime);
 
-serial_runtime::serial_runtime()
+serial_runtime::serial_runtime(sprockit::sim_parameters* params)
+  : parallel_runtime(params, 0, 1)
 {
-  nproc_ = 1;
-  me_ = 0;
 }
 
 int64_t
@@ -94,7 +93,7 @@ serial_runtime::send_recv_messages(std::vector<incoming_msg>& incoming)
 }
 
 void
-serial_runtime::send_event(timestamp t, topology_id tid, event* ev)
+serial_runtime::send_event(timestamp t, switch_id tid, event* ev)
 {
   spkt_throw_printf(sprockit::illformed_error,
      "serial_runtime::send_message: should not be sending any messages");

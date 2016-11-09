@@ -29,141 +29,65 @@
 #include <vector>
 
 DeclareDebugSlot(network_switch)
+#define switch_debug(...) \
+  debug_printf(sprockit::dbg::network_switch, "Switch %d: %s", \
+    int(addr()), sprockit::printf(__VA_ARGS__).c_str())
 
 namespace sstmac {
 namespace hw {
 
+/**
+ * @brief The network_switch class
+ * A class encapsulating a network switch that packets must traverse on the network.
+ * The network switch performs both routing computations and congestion modeling.
+ */
 class network_switch :
-  public connectable_component,
-  public sprockit::factory_type
+  public connectable_component
 {
  public:
-  std::string
-  to_string() const {
-    return "network switch";
-  }
-
-#if SSTMAC_INTEGRATED_SST_CORE
-  network_switch(
-      SST::ComponentId_t id,
-      SST::Params& params
-  );
-
   virtual void
   init(unsigned int phase);
 
-  virtual void
-  setup();
-#endif
-
   virtual ~network_switch();
-
-  topology*
-  topol() const {
-    return top_;
-  }
 
   switch_id
   addr() const {
     return my_addr_;
   }
 
-  router*
-  rter() const {
-    return router_;
+  virtual void
+  compatibility_check() const {
+    //by default, nothing
   }
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
-  initialize() {
-    //nothing to do by default
-  }
-
-  virtual std::vector<switch_id>
-  connected_switches() const = 0;
-
-  virtual void
-  set_topology(topology* top);
-
+  /**
+   * @brief queue_length
+   * Compute the number of packets waiting on the switch. The queue length
+   * is a multiple of the ``system'' packet size, which can be different from the
+   * packet size used by SST/macro congestion models. For example,
+   * the packet size of the system beings simulated might be 100B, but SST/macro
+   * might be doing congestion computations on units of 1024B.
+   * @param port The port to check the queue length of
+   * @return The queue length as an integer number of packets waiting
+   */
   virtual int
   queue_length(int port) const = 0;
 
-  /**
-    @param addr The destination node addr to eject to
-    @return The ejection port the node is connected on
-  */
-  int
-  eject_port(node_id addr);
-
-  /**
-    @param addr The source node addr to ack to
-    @return The injection port the node is connected on
-  */
-  int
-  inject_port(node_id addr);
-
-  /**
-   @return The total hop latency to transit from input of one switch to the next (with zero congestion)
-  */
-  virtual timestamp
-  hop_latency() const = 0;
-
-  virtual timestamp
-  lookahead() const = 0;
-
-  /**
-   @return The bandwidth observed hopping from switch to switch (with zero congestion)
-  */
-  virtual double
-  hop_bandwidth() const = 0;
-
-  void
-  connect(
-    int src_outport,
-    int dst_inport,
-    connection_type_t ty,
-    connectable* mod,
-    config* cfg);
-
-  virtual void
-  set_event_manager(event_manager* m);
-#if !SSTMAC_INTEGRATED_SST_CORE
-  protected:
-  network_switch();
-#endif
- protected:
-  virtual void
-  connect_injector(int src_outport, int dst_inport, event_handler* nic) = 0;
-
-  virtual void
-  connect_ejector(int src_outport, int dst_inport, event_handler* nic) = 0;
-
-  virtual void
-  connect_output(
-    int src_outport,
-    int dst_inport,
-    connectable* mod,
-    config* cfg) = 0;
-
-  virtual void
-  connect_input(
-    int src_outport,
-    int dst_inport,
-    connectable* mod,
-    config* cfg) = 0;
 
  protected:
+  network_switch(
+    sprockit::sim_parameters* params,
+    uint64_t id,
+    event_manager* mgr,
+    device_id::type_t ty = device_id::router);
+
   switch_id my_addr_;
-  router* router_;
   topology* top_;
 
 };
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-DeclareFactory(network_switch);
-#endif
+
+DeclareFactory(network_switch,uint64_t,event_manager*);
 
 
 }

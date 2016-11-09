@@ -3,6 +3,7 @@
 
 #include <sprockit/util.h>
 #include <sprockit/ptr_type.h>
+#include <sprockit/printable.h>
 #include <sumi/serialization.h>
 #include <sumi/config.h>
 
@@ -24,14 +25,14 @@ namespace sumi {
 
 class message :
   public sprockit::ptr_type,
-  public sumi::serializable,
-  public sumi::serializable_type<message>
+  public sprockit::printable,
+  public sumi::serializable
 {
- ImplementSerializableDefaultConstructor(message)
+ ImplementSerializable(message)
 
  public:
   virtual std::string
-  to_string() const;
+  to_string() const override;
 
   typedef enum {
     header,
@@ -51,6 +52,7 @@ class message :
  typedef enum {
     terminate,
     pt2pt,
+    bcast,
     unexpected,
     collective,
     collective_done,
@@ -102,7 +104,7 @@ class message :
   is_nic_ack() const;
 
   virtual void
-  serialize_order(sumi::serializer &ser);
+  serialize_order(sumi::serializer &ser) override;
 
   void
   set_payload_type(payload_type_t ty) {
@@ -249,7 +251,41 @@ class message :
   sumi::public_buffer local_buffer_;
   sumi::public_buffer remote_buffer_;
 
+};
 
+class system_bcast_message : public message
+{
+  ImplementSerializable(system_bcast_message)
+ public:
+  typedef sprockit::refcount_ptr<system_bcast_message> ptr;
+
+  typedef enum {
+    shutdown
+  } action_t;
+
+  system_bcast_message(action_t action, int root) :
+    action_(action),
+    root_(root)
+  {
+    class_ = bcast;
+  }
+
+  system_bcast_message(){} //serialization
+
+  int root() const {
+    return root_;
+  }
+
+  void
+  serialize_order(serializer& ser) override;
+
+  action_t action() const {
+    return action_;
+  }
+
+ private:
+  int root_;
+  action_t action_;
 };
 
 }

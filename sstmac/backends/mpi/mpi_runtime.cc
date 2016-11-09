@@ -12,6 +12,11 @@
 #include <sstmac/backends/mpi/mpi_runtime.h>
 #include <sstmac/common/thread_info.h>
 #include <cstring>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords(
+"mpi_max_num_requests",
+);
 
 #define mpi_debug(...) \
   debug_printf(sprockit::dbg::parallel, "Rank %d: %s", me_, sprockit::printf(__VA_ARGS__).c_str())
@@ -102,32 +107,58 @@ mpi_runtime::init_runtime_params(sprockit::sim_parameters* params)
   parallel_runtime::init_runtime_params(params);
 }
 
-void
-mpi_runtime::init_factory_params(sprockit::sim_parameters* params)
+mpi_runtime::mpi_runtime(sprockit::sim_parameters* params) :
+  finalize_needed_(false),
+  parallel_runtime(params,
+  init_rank(params),
+  init_size(params))
 {
-  if(params->has_param("mpi_rank") and params->has_param("mpi_size")) {
-    // already initialized externally
-    me_ = params->get_int_param("mpi_rank");
-    nproc_ = params->get_int_param("mpi_size");
-    finalize_needed_ = false;
+  epoch_ = 0;
+  array_of_ones_ = new int[nproc_];
+  for (int i=0; i < nproc_; ++i){
+    array_of_ones_[i] = 1;
   }
-  else {
-    finalize_needed_ = true;
+
+  num_sent_ = new int[nproc_];
+  ::memset(num_sent_, 0, nproc_ * sizeof(int));
+}
+
+int
+mpi_runtime::init_size(sprockit::sim_parameters* params)
+{
+  int inited;
+  MPI_Initialized(&inited);
+  if (!inited){
     //nothing, fake it
+    finalize_needed_ = true;
     int argc = 1;
     char** argv = 0;
     int rc = MPI_Init(&argc, &argv);
-
     if (rc != MPI_SUCCESS){
-      spkt_throw(sprockit::illformed_error,
-        "mpi_runtime::init_factory_params: could not MPI_Init");
+      spkt_abort_printf("mpi_runtime::init_rank: could not MPI_Init");
     }
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &me_);
-    MPI_Comm_size(MPI_COMM_WORLD, &nproc_);
   }
+  MPI_Comm_size(MPI_COMM_WORLD, &nproc_);
+  return nproc_;
+}
 
-  parallel_runtime::init_factory_params(params);
+int
+mpi_runtime::init_rank(sprockit::sim_parameters* params)
+{
+  int inited;
+  MPI_Initialized(&inited);
+  if (!inited){
+    //nothing, fake it
+    finalize_needed_ = true;
+    int argc = 1;
+    char** argv = 0;
+    int rc = MPI_Init(&argc, &argv);
+    if (rc != MPI_SUCCESS){
+      spkt_abort_printf("mpi_runtime::init_rank: could not MPI_Init");
+    }
+  }
+  MPI_Comm_rank(MPI_COMM_WORLD, &me_);
+  return me_;
 }
 
 void
@@ -327,21 +358,6 @@ mpi_runtime::finalize()
   if(finalize_needed_) {
     MPI_Finalize();
   }
-}
-
-void
-mpi_runtime::finalize_init()
-{
-  epoch_ = 0;
-  array_of_ones_ = new int[nproc_];
-  for (int i=0; i < nproc_; ++i){
-    array_of_ones_[i] = 1;
-  }
-
-  num_sent_ = new int[nproc_];
-  ::memset(num_sent_, 0, nproc_ * sizeof(int));
-
-  parallel_runtime::finalize_init();
 }
 
 }

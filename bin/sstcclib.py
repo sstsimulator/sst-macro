@@ -17,6 +17,7 @@ from sstccvars import so_flags
 
 
 
+
 sstmac_ldflags = []
 sstmac_ldflags.extend(sstmac_default_ldflags)
 sstmac_ldflags.extend(sstmac_libs)
@@ -71,6 +72,7 @@ if os.environ.has_key("SSTMAC_VERBOSE"):
     verbose = verbose or flag
 
 def run(typ, extralibs="", include_main=True, make_library=False, redefine_symbols=True):
+    global ldflags
     import os
     if sys.argv[1] == "--version" or sys.argv[1] == "-V":
       import inspect, os
@@ -78,15 +80,19 @@ def run(typ, extralibs="", include_main=True, make_library=False, redefine_symbo
       cmd = "%s %s" % (cxx, sys.argv[1])
       os.system(cmd)
       sys.exit()
+    elif sys.argv[1] == "--flags":
+      sys.stderr.write("LDFLAGS=%s\n" % ldflags)
+      sys.stderr.write("CPPFLAGS=%s\n" % cppflags)
+      sys.stderr.write("CXXFLAGS=%s\n" % cxxflags)
+      sys.exit()
 
     compiler_flags = ""
     compiler = ""
     cmd = ""
     if include_main:
       extralibs += " -lsstmac_main"
-    global ldflags
     #always c++ no matter what for now
-    if 1: #typ.lower() == "c++":
+    if typ.lower() == "c++":
         compiler_flags = clean_flags(cxxflags)
         ldflags = "%s %s" % (compiler_flags, ldflags)
         compiler = cxx
@@ -95,6 +101,7 @@ def run(typ, extralibs="", include_main=True, make_library=False, redefine_symbo
         compiler_flags = clean_flags(cflags)
         compiler = cc
         ld = cxx #always use c++ for linking since we are bringing a bunch of sstmac C++ into the game
+    ldflags = "%s %s" % (compiler_flags, ldflags)
 
     extra_cppflags = []
     if redefine_symbols:

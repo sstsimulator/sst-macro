@@ -19,10 +19,12 @@
 #include <sstmac/hardware/common/unique_id.h>
 #include <sstmac/hardware/common/failable.h>
 
+#include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/hardware/network/network_message_fwd.h>
 #include <sstmac/software/launch/app_launch_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
+#include <sstmac/software/launch/job_launcher_fwd.h>
 #include <sstmac/software/launch/launcher_fwd.h>
 #include <sstmac/software/launch/launch_event_fwd.h>
 #include <sstmac/software/libraries/service_fwd.h>
@@ -41,54 +43,33 @@ namespace sstmac {
 namespace hw {
 
 class node :
-  public sprockit::factory_type,
   public failable,
   public connectable_component
 {
 
  public:
-#if SSTMAC_INTEGRATED_SST_CORE
-  node(
-    SST::ComponentId_t id,
-    SST::Params& params
-  );
+  void setup() override;
 
-  void setup();
-
-  void init(unsigned int phase);
-#endif
-  virtual void
-  set_event_manager(event_manager* man);
-
+  void init(unsigned int phase) override;
 
   virtual ~node();
-  /**
-   Standard factory type initializer. Perform extra initialization work
-   after all parameters have been read in.
-   */
-  virtual void
-  finalize_init();
-
-  /**
-   Standard factory type initializer. Read in all parameters.
-   @params The parameter object
-   */
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  /**
-   Initializer used in stand-alone core.
-   @param n  The network interface object
-  */
-  void
-  set_nic(nic* n){
-    nic_ = n;
-  }
 
   void
-  connect(int src_outport, int dst_inport,
-    connection_type_t ty, connectable *mod,
-    config *cfg);
+  connect_output(sprockit::sim_parameters* params,
+                 int src_outport, int dst_inport,
+                 event_handler* handler) override;
+
+  void
+  connect_input(sprockit::sim_parameters* params,
+                 int src_outport, int dst_inport,
+                 event_handler* handler) override;
+
+
+  link_handler*
+  payload_handler(int port) const override;
+
+  link_handler*
+  credit_handler(int port) const override;
 
   /**
    @return  The object encapsulating the memory model
@@ -96,6 +77,11 @@ class node :
   memory_model*
   mem() const {
     return mem_model_;
+  }
+
+  processor*
+  proc() const {
+    return proc_;
   }
 
   /**
@@ -118,7 +104,7 @@ class node :
    @return  A unique string description of the node
   */
   virtual std::string
-  to_string() const;
+  to_string() const override;
 
   /**
    @return  A unique integer identifier
@@ -126,6 +112,11 @@ class node :
   node_id
   addr() const {
     return my_addr_;
+  }
+
+  int
+  nsocket() const {
+    return nsocket_;
   }
 
   /**
@@ -166,8 +157,7 @@ class node :
   execute(ami::SERVICE_FUNC func,
                  event* data);
 
-  virtual void
-  handle(event* ev);
+  void handle(event* ev);
 
   /**
    Push a network message (operation at the MTL layer) onto the NIC
@@ -175,14 +165,16 @@ class node :
   */
   void send_to_nic(network_message* netmsg);
 
+  void job_launch(sw::app_launch* appman);
+
+  void schedule_launches();
+
  protected:
-  node();
-
-  void connect_nic();
+  node(sprockit::sim_parameters* params,
+    uint64_t id,
+    event_manager* mgr);
 
  protected:
-  sw::app_launch* env_;
-
   sw::operating_system* os_;
 
   node_id my_addr_;
@@ -192,8 +184,6 @@ class node :
   processor* proc_;
 
   nic* nic_;
-
-  int ncores_;
   
   int nsocket_;
 
@@ -201,19 +191,15 @@ class node :
   void build_launchers(sprockit::sim_parameters* params);
 
  private:
-  std::list<sw::launch_event*> launchers_;
+  sw::app_launcher* app_launcher_;
+  sw::job_launcher* job_launcher_;
+  static std::list<sw::app_launch*> app_launchers_;
   unique_event_id next_outgoing_id_;
-
-#if !SSTMAC_INTEGRATED_SST_CORE
- public:
-  void launch(timestamp start, sw::launch_event* msg);
-#else
-  void launch();
-#endif
+  sprockit::sim_parameters* params_;
 
 };
 
-DeclareFactory(node);
+DeclareFactory(node,uint64_t,event_manager*);
 
 }
 } // end of namespace sstmac

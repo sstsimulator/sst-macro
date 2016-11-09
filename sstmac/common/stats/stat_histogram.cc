@@ -5,17 +5,29 @@
 #include <sprockit/output.h>
 #include <sprockit/util.h>
 #include <math.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords(
+"bin_size",
+"num_bins",
+"logarithmic",
+);
 
 namespace sstmac {
 
 SpktRegister("histogram", stat_collector, stat_histogram);
 SpktRegister("time_histogram", stat_collector, stat_time_histogram);
 
-stat_histogram::stat_histogram() :
+stat_histogram::stat_histogram(sprockit::sim_parameters* params) :
     bin_size_(0),
     max_bin_(-1),
-    is_log_(false)
+    is_log_(false),
+  stat_collector(params)
 {
+  bin_size_ = params->get_quantity("bin_size");
+  int num_bins_guess = params->get_optional_int_param("num_bins", 20);
+  is_log_ = params->get_optional_bool_param("logarithmic", false);
+  counts_.reserve(num_bins_guess);
 }
 
 void
@@ -100,33 +112,20 @@ stat_histogram::collect(double value)
 }
 
 void
-stat_histogram::clone_into(stat_histogram* hist) const {
-  hist->bin_size_ = bin_size_;
-  hist->is_log_ = is_log_;
-  hist->counts_.reserve(counts_.size());
-  stat_collector::clone_into(hist);
-}
-
-void
 stat_histogram::collect(double value, int64_t count)
 {
   value = is_log_ ? log10(value) : value;
   long bin = value / bin_size_;
   if (bin > max_bin_){
     max_bin_ = bin;
+    if (max_bin_ > 1e6){
+      spkt_abort_printf("Too many histogram bins. Collected value %12.6e is much larger"
+                        " than the bin size of %12.6e",
+                        value, bin_size_);
+    }
     counts_.resize(max_bin_+1);
   }
   counts_[bin] += count;
-}
-
-void
-stat_histogram::init_factory_params(sprockit::sim_parameters *params)
-{
-  stat_collector::init_factory_params(params);
-  bin_size_ = params->get_quantity("bin_size");
-  int num_bins_guess = params->get_optional_int_param("num_bins", 20);
-  is_log_ = params->get_optional_bool_param("logarithmic", false);
-  counts_.reserve(num_bins_guess);
 }
 
 void

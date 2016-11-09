@@ -6,11 +6,11 @@
 // TODO get unit tests working with @integrated_core
 
 #include <sstmac/hardware/switch/network_switch.h>
-#include <sstmac/hardware/interconnect/switch_interconnect.h>
+#include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/router/routable.h>
 #include <sstmac/hardware/topology/topology.h>
-#include <sstmac/hardware/packet_flow/packet_flow.h>
+#include <sstmac/hardware/pisces/pisces.h>
 #include <sprockit/test/test.h>
 #include <sprockit/sim_parameters.h>
 #include <sstmac/util.h>
@@ -40,10 +40,10 @@ class ClassOutput<sstmac::hw::coordinates>
 sstmac::node_id
 naddr(long nid);
 
-sstmac::hw::packet_flow_payload*
+sstmac::hw::pisces_payload*
 msg(long nid);
 
-sstmac::hw::packet_flow_payload*
+sstmac::hw::pisces_payload*
 new_packet(sstmac::message* msg, int bytes, int byte_offset);
 
 sstmac::hw::coordinates
@@ -67,13 +67,13 @@ get_vector(int a, int b, int c, int d, int e, int f);
 sstmac::hw::coordinates
 get_vector(int a, int b, int c, int d, int e, int f, int g);
 
-void init_switches(sstmac::hw::switch_interconnect::switch_map& switches,
+void init_switches(sstmac::hw::interconnect::switch_map& switches,
                    sprockit::sim_parameters& params,
                    sstmac::hw::topology* top);
 
 
 void _assert_dim_dir(UnitTest& unit, const char* descr, const char* file, int line,
-                    sstmac::hw::network_switch* sw, const sstmac::hw::geometry_routable::path& path,
+                    sstmac::hw::network_switch* sw, const sstmac::hw::routable::path& path,
                     long outport_sw_id);
 
 #define assert_dim_dir(unit, descr, ...) \

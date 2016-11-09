@@ -2,6 +2,23 @@
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/libraries/compute/lib_compute_inst.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords(
+  "dgemm",
+  "dgemv",
+  "daxpy",
+  "ddot",
+  "daxpy_loop_unroll",
+  "daxpy_pipeline_efficiency",
+  "ddot_loop_unroll",
+  "ddot_pipeline_efficiency",
+  "dgemm_loop_unroll",
+  "dgemm_pipeline_efficiency",
+  "dgemm_cache_size",
+  "dgemv_loop_unroll",
+  "dgemv_pipeline_efficiency",
+);
 
 #define enumcase(x) case x: return #x;
 
@@ -17,27 +34,19 @@ blas_kernel* blas_api::ddot_kernel_;
 
 RegisterAPI("blas", blas_api);
 
-blas_api::blas_api(software_id sid)
-  : api("blas", sid, key::general)
+blas_api::blas_api(sprockit::sim_parameters* params,
+                   software_id sid,
+                   operating_system* os)
+  : api(params, "blas", sid, os, key::general)
 {
   std::string libname = sprockit::printf("blas-compute%d", sid.to_string().c_str());
-  lib_compute_ = new lib_compute_inst(libname, sid);
+  lib_compute_ = new lib_compute_inst(params, libname, sid, os);
+  if (!dgemm_kernel_){
+    init_kernels(params);
+  }
 }
 
 blas_api::~blas_api()
-{
-}
-
-void
-blas_api::init_os(operating_system* os)
-{
-  library::init_os(os);
-
-  os_->register_lib(this, lib_compute_);
-}
-
-void
-blas_api::finalize_init()
 {
 }
 
@@ -48,15 +57,6 @@ blas_api::init_kernels(sprockit::sim_parameters* params)
   dgemv_kernel_ = blas_kernel_factory::get_optional_param("dgemv", "default_dgemv", params);
   daxpy_kernel_ = blas_kernel_factory::get_optional_param("daxpy", "default_daxpy", params);
   ddot_kernel_ = blas_kernel_factory::get_optional_param("ddot", "default_ddot", params);
-}
-
-void
-blas_api::init_factory_params(sprockit::sim_parameters* params)
-{
-  api::init_factory_params(params);
-  if (!dgemm_kernel_){
-    init_kernels(params);
-  }
 }
 
 void

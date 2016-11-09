@@ -21,16 +21,16 @@ namespace hw {
 
 SpktRegister("crossbar | xbar", topology, crossbar);
 
-void
-crossbar::init_factory_params(sprockit::sim_parameters* params)
+crossbar::crossbar(sprockit::sim_parameters* params) :
+  structured_topology(params,
+                      InitMaxPortsIntra::I_Remembered,
+                      InitGeomEjectID::I_Remembered)
 {
   std::vector<int> args;
   params->get_vector_param("geometry", args);
   size_ = args[0];
-  max_ports_injection_ = endpoints_per_switch_ = params->get_optional_int_param("concentration", 1);
   max_ports_intra_network_ = num_switches();
   eject_geometric_id_ = max_ports_intra_network_;
-  structured_topology::init_factory_params(params);
 }
 
 void
@@ -43,101 +43,35 @@ crossbar::configure_vc_routing(std::map<routing::algorithm_t, int> &m) const
 }
 
 void
-crossbar::compute_switch_coords(switch_id uid, coordinates &coords) const
+crossbar::minimal_route_to_switch(switch_id current_sw_addr,
+                                  switch_id dest_sw_addr,
+                                  routable::path &path) const
 {
-  coords[0] = uid;
-}
-
-void
-crossbar::productive_path(
-  int dim,
-  const coordinates &src,
-  const coordinates &dst,
-  geometry_routable::path& path) const
-{
-#if SSTMAC_SANITY_CHECK
-  if (dim == topology::eject) {
-    spkt_throw(sprockit::value_error,
-              "crossbar::get_productive_path: not compatible with eject dimension");
-  }
-  else if (dim != 0) {
-    spkt_throw_printf(sprockit::value_error,
-                     "crossbar::get_productive_path: received non-zero dimension %d", dim);
-  }
-#endif
-  path.vc = 0;
-  path.outport = dst[0];
-}
-
-int
-crossbar::convert_to_port(int dim, int dir) const
-{
-  return dir;
-}
-
-std::string
-crossbar::name() const
-{
-  std::ostringstream ostr;
-  ostr << "crossbar(" << num_switches() << ")";
-  return ostr.str();
-}
-
-void
-crossbar::minimal_route_to_coords(
-  const coordinates &src_coords,
-  const coordinates &dest_coords,
-  geometry_routable::path& path) const
-{
-  path.vc = 0;
-  path.outport = dest_coords[0];
-}
-
-void
-crossbar::minimal_route_to_switch(
-  switch_id current_sw_addr,
-  switch_id dest_sw_addr,
-  geometry_routable::path& path) const
-{
-  //current switch actually doesn't matter
   path.vc = 0;
   path.outport = dest_sw_addr;
 }
 
-int
-crossbar::minimal_distance(const coordinates &src_coords,
-                           const coordinates &dest_coords) const
+void
+crossbar::connected_outports(switch_id src, std::vector<connection>& conns) const
 {
-  return 1;
+  int n_switches = num_switches();
+  conns.resize(n_switches - 1);
+  int cidx = 0;
+  for (int i=0; i < n_switches; ++i){
+    if (i == src) continue;
+
+    conns[cidx].src = src;
+    conns[cidx].dst = i;
+    conns[cidx].src_outport = i;
+    conns[cidx].dst_inport = src;
+    ++cidx;
+  }
 }
 
 void
-crossbar::connect_objects(internal_connectable_map& objects)
+crossbar::configure_individual_port_params(switch_id src, sprockit::sim_parameters *switch_params) const
 {
-  connectable::config cfg;
-  cfg.ty = connectable::BasicConnection;
-  for (int i = 0; i < objects.size(); i++) {
-    switch_id me(i);
-
-    for (int j = 0; j < objects.size(); j++) {
-      switch_id them(j);
-      if (i != j) {
-        int outport = convert_to_port(0, j);
-        int inport = convert_to_port(0, i);
-
-        objects[me]->connect(
-          outport,
-          inport,
-          connectable::output,
-          objects[them], &cfg);
-
-        objects[them]->connect(
-          outport, inport,
-          connectable::input,
-          objects[me], &cfg);
-      }
-    }
-  }
+  topology::configure_individual_port_params(0, num_switches(), switch_params);
 }
 
 }

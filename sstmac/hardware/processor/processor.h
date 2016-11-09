@@ -29,18 +29,11 @@ namespace hw {
 /**
  * An interface for processor models
  */
-class processor :
-  public sprockit::factory_type
+class processor
 {
 
  public:
   virtual ~processor();
-
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
-  finalize_init();
 
   static void
   delete_statics();
@@ -48,13 +41,17 @@ class processor :
   virtual void
   compute(event* cev, callback* cb) = 0;
 
+  int ncores() const {
+    return ncores_;
+  }
+
  protected:
-  processor(memory_model* mem, node* nd) :
-    mem_(mem), node_(nd) {}
+  processor(sprockit::sim_parameters* params, memory_model* mem, node* nd);
 
  protected:
   double freq_;
   double mem_freq_;
+  int ncores_;
 
   memory_model* mem_;
   node* node_;

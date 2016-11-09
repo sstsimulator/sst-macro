@@ -23,42 +23,45 @@ class hypercube :
   public hdtorus
 {
  public:
+  hypercube(sprockit::sim_parameters* params);
+
   virtual std::string
-  to_string() const {
+  to_string() const override {
     return "hdtorus topology";
   }
 
   virtual ~hypercube() {}
 
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
+  void
+  minimal_route_to_switch(
+    switch_id src,
+    switch_id dst,
+    routable::path& path) const override;
 
-  virtual void
-  productive_path(
-    int dim,
-    const coordinates& src,
-    const coordinates& dst,
-    geometry_routable::path& path) const;
+  bool
+  uniform_network_ports() const override {
+    return false;
+  }
 
-  std::string
-  name() const;
+  bool
+  uniform_switches_non_uniform_network_ports() const override {
+    return true;
+  }
 
   void
-  minimal_route_to_coords(
-    const coordinates &src_coords,
-    const coordinates &dest_coords,
-    geometry_routable::path& path) const;
+  connected_outports(switch_id src, std::vector<connection>& conns) const override;
 
-  virtual void
-  connect_objects(internal_connectable_map& switches);
+  void
+  configure_individual_port_params(switch_id src,
+           sprockit::sim_parameters *switch_params) const override;
 
-  virtual int
-  convert_to_port(int dim, int dir) const;
+  inline int
+  convert_to_port(int dim, int dir) const {
+    return dim_to_outport_[dim] + dir;
+  }
 
   int
-  minimal_distance(
-    const coordinates& src_coords,
-    const coordinates& dest_coords) const;
+  minimal_distance(switch_id src, switch_id dst) const override;
 
  protected:
   int radix_;

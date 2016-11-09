@@ -1,0 +1,36 @@
+Client 0 sending to service node 5 at addr 5
+Client 0 sending to service node 0 at addr 0
+Client 0 sending to service node 5 at addr 5
+Client 0 sending to service node 0 at addr 0
+Client 0 sending to service node 5 at addr 5
+Client 0 sending to service node 0 at addr 0
+Client 0 sending to service node 5 at addr 5
+Client 0 sending to service node 0 at addr 0
+Client 0 sending to service node 5 at addr 5
+Client 0 sending to service node 0 at addr 0
+Client 1 sending to service node 2 at addr 2
+Client 1 sending to service node 9 at addr 9
+Client 1 sending to service node 8 at addr 8
+Client 1 sending to service node 1 at addr 1
+Client 1 sending to service node 2 at addr 2
+Client 1 sending to service node 9 at addr 9
+Client 1 sending to service node 8 at addr 8
+Client 1 sending to service node 1 at addr 1
+Client 1 sending to service node 2 at addr 2
+Client 1 sending to service node 9 at addr 9
+Service node 1 sleeping for 1.0000e-03s
+Service node 2 sleeping for 1.0000e-03s
+Service node 5 sleeping for 1.0000e-03s
+Service node 8 sleeping for 1.0000e-03s
+Service node 9 sleeping for 1.0000e-03s
+Service node 1 sleeping for 1.0000e-03s
+Service node 2 sleeping for 1.0000e-03s
+Service node 5 sleeping for 1.0000e-03s
+Service node 8 sleeping for 1.0000e-03s
+Service node 9 sleeping for 1.0000e-03s
+Service node 2 sleeping for 1.0000e-03s
+Service node 5 sleeping for 1.0000e-03s
+Service node 9 sleeping for 1.0000e-03s
+Service node 5 sleeping for 1.0000e-03s
+Service node 5 sleeping for 1.0000e-03s
+Estimated total runtime of           0.00601016 seconds

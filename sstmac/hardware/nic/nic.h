@@ -18,7 +18,6 @@
 #include <sstmac/hardware/common/connection.h>
 #include <sstmac/hardware/common/packet_fwd.h>
 #include <sstmac/hardware/network/network_message_fwd.h>
-#include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/common/stats/stat_spyplot_fwd.h>
 #include <sstmac/common/stats/stat_histogram_fwd.h>
 #include <sstmac/common/stats/stat_local_int_fwd.h>
@@ -43,26 +42,20 @@ namespace hw {
  * the process (ppid) involved.
  */
 class nic :
-  public sprockit::factory_type,
   public failable,
   public connectable_subcomponent
 {
-#if SSTMAC_INTEGRATED_SST_CORE
+
  public:
-  void handle_event(SST::Event* ev);
-#endif
- public:
+  typedef enum {
+    Injection,
+    LogP
+  } Port;
+
   virtual std::string
-  to_string() const = 0;
+  to_string() const override = 0;
 
   virtual ~nic();
-
-  /**
-   * Initialize all member variables from the parameters object
-   * @param params
-   */
-  virtual void
-  init_factory_params(sprockit::sim_parameters* params);
 
   /**
    * @return A unique ID for the NIC positions. Opaque typedef to an int.
@@ -81,30 +74,19 @@ class nic :
     parent_ = nd;
   }
 
+  event_handler*
+  mtl_handler() const {
+    return event_mtl_handler_;
+  }
+
+  void mtl_handle(event* ev);
+
   /**
    * Delete all static variables associated with this class.
    * This should be registered with the runtime system via need_delete_statics
    */
   static void
   delete_statics();
-
-  /**
-   * A final initialization function called for the object after all parameters have been read.
-   * Guarantees initialization of all subclass variables.
-   */
-  virtual void
-  finalize_init();
-
-  virtual void
-  handle(event *ev) = 0;
-
-  void
-  mtl_handle(event* ev);
-
-  event_handler*
-  mtl_handler() const {
-    return mtl_handler_;
-  }
 
   /**
     Perform the set of operations standard to all NICs.
@@ -124,22 +106,13 @@ class nic :
   void
   intranode_send(network_message* payload);
 
-  /**
-   * @return The injection latency for moving a packet from the NIC to the
-   *          first network router (or netlink block, etc)
-   */
-  virtual timestamp
-  injection_latency() const = 0;
-
-  virtual double
-  injection_bandwidth() const = 0;
-
-  virtual void
-  set_event_parent(event_scheduler* m);
-
-
  protected:
-  nic(sprockit::factory_type* interconn);
+  nic(sprockit::sim_parameters* params, node* parent);
+
+  node*
+  parent() const {
+    return parent_;
+  }
 
   /**
     Start the message sending and inject it into the network
@@ -171,8 +144,16 @@ class nic :
 
   int negligible_size_;
 
-  interconnect* interconn_;
   node* parent_;
+
+  event_handler* logp_switch_;
+  event_handler* event_mtl_handler_;
+  event_handler* node_handler_;
+
+
+#if !SSTMAC_INTEGRATED_SST_CORE
+  link_handler* link_mtl_handler_;
+#endif
 
  private:
   stat_spyplot* spy_num_messages_;
@@ -180,7 +161,6 @@ class nic :
   stat_histogram* hist_msg_size_;
   stat_local_int* local_bytes_sent_;
   stat_global_int* global_bytes_sent_;
-  event_handler* mtl_handler_;
 
  private:
   /**
@@ -191,14 +171,12 @@ class nic :
   void
   ack_send(network_message* payload);
 
-  void
-  send_to_interconn(network_message* netmsg);
-
   void record_message(network_message* msg);
+
 
 };
 
-DeclareFactory1InitParam(nic, sprockit::factory_type*/*interconnect*/);
+DeclareFactory(nic,node*);
 
 }
 } // end of namespace sstmac.

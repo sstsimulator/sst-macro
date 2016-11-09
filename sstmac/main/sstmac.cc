@@ -20,7 +20,6 @@
 #include <math.h>
 #include <signal.h>
 #include <sstmac/common/sstmac_env.h>
-#include <sstmac/common/logger.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/runtime.h>
 #include <sstmac/common/messages/sst_message.h>
@@ -109,9 +108,7 @@ init()
     fake_build = atoi(env_str);
   }
 
-
-  parallel_runtime* rt = parallel_runtime_factory::get_param("runtime", &cmdline_params);
-
+  parallel_runtime* rt = parallel_runtime::static_runtime(&cmdline_params);
   return rt;
 #endif
 }
@@ -206,8 +203,7 @@ run_params(parallel_runtime* rt,
   params->parse_keyval("topology.nworkers", nworkers, false, true, true);
   rt->init_partition_params(params);
 
-  native::manager* mgr = new native::macro_manager(rt);
-  mgr->init_factory_params(params);
+  native::manager* mgr = new native::manager(params, rt);
 
   double start = sstmac_wall_time();
   timestamp stop_time = params->get_optional_time_param("stop_time", -1.);
@@ -266,10 +262,6 @@ run(opts& oo,
   sstmac::env::params = params;
   sstmac::env::rt = rt;
 
-  if (oo.debug != "") {
-    logger::set_user_param(oo.debug);
-  }
-
 #if !SSTMAC_INTEGRATED_SST_CORE
   run_params(rt, params, stats);
 #endif
@@ -296,16 +288,17 @@ try_main(sprockit::sim_parameters* params,
   bool parallel = rt && rt->nproc() > 1;
   sstmac::init_params(rt, oo, params, parallel);
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-  if (rt->me() == 0){
-    cerr0 << std::string(argv[0]) << "\n" << oo << std::endl;
-  }
-#endif
-
   //do some cleanup and processing of params
   sstmac::remap_params(params);
+
   if (params_only)
     return;
+
+#if !SSTMAC_INTEGRATED_SST_CORE
+    if (rt && rt->me() == 0){
+      cerr0 << std::string(argv[0]) << "\n" << oo << std::endl;
+    }
+#endif
 
   sstmac::run(oo, rt, params, stats);
 

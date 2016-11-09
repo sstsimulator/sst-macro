@@ -4,20 +4,24 @@
 #include <sstmac/software/launch/coordinate_allocation.h>
 #include <sprockit/fileio.h>
 #include <sprockit/sim_parameters.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords("launch_node_id_allocation_file",
+"node_id_allocation_file",
+"node_id_file");
 
 namespace sstmac {
 namespace sw {
 
 SpktRegister("node_id", node_allocator, node_id_allocation);
 
-void
-node_id_allocation::init_factory_params(sprockit::sim_parameters* params)
+node_id_allocation::node_id_allocation(sprockit::sim_parameters* params) :
+  node_allocator(params)
 {
-  node_allocator::init_factory_params(params);
-  if (params->has_param("launch_node_id_file")){
-    coord_file_ = params->get_param("launch_node_id_file");
+  if (params->has_param("node_id_file")){
+    coord_file_ = params->get_param("node_id_file");
   } else {
-    coord_file_ = params->get_param("launch_node_id_allocation_file");
+    coord_file_ = params->get_param("node_id_allocation_file");
   }
 }
 

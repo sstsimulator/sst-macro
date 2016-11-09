@@ -8,10 +8,11 @@ namespace sstmac {
 namespace native {
 
 multithreaded_subcontainer::multithreaded_subcontainer(
+  sprockit::sim_parameters* params,
   parallel_runtime* rt,
   int thread_id,
   multithreaded_event_container *parent) :
-  clock_cycle_event_map(rt),
+  clock_cycle_event_map(params, rt),
   parent_(parent)
 {
   thread_id_ = thread_id;

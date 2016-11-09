@@ -8,115 +8,39 @@
 
 namespace sstmac {
 
-class connection_details
-{
-  public:
-    typedef enum {
-      node,
-      sw
-    } endpoint_t;
-
-    hw::connectable::connection_type_t type;
-    int src_id;
-    int dst_id;
-    int src_port;
-    int dst_port;
-    endpoint_t src_type;
-    endpoint_t dst_type;
-    hw::connectable::config cfg;
-
-    void parse_type_id(const std::string& str, endpoint_t& ep, int& id);
-    void parse_src(const std::string& str);
-    void parse_dst(const std::string& str);
-
-};
-
-void
-parse_port_name(const std::string& port_name, connection_details* dets);
-
-class integrated_connectable_wrapper
-  : public hw::connectable,
+/**
+ * @brief The link_wrapper class  SST/macro is built almost entirely around event handlers.
+ * In the integrated core, Links serve the purpose of event handlers.
+ * This wraps an SST link inside an event handler to preserve the sst/macro API.
+ */
+class link_wrapper :
     public event_handler
 {
   public:
-    std::string to_string() const { return "integrated_connectable_wrapper"; }
+    std::string
+    to_string() const override {
+      return "link_wrapper";
+    }
 
-    integrated_connectable_wrapper(SST::Link* link) :
-        event_handler(link_handler),
+    link_wrapper(SST::Link* link) :
+        event_handler(device_id()),
         link_(link)
     {
     }
 
     void
-    handle(event* ev){
+    handle(event* ev) override {
       spkt_throw(sprockit::unimplemented_error,
-        "integrated_connectable_wrapper::handle: should never be called");
-    }
-
-    void connect(
-      int src_outport,
-      int dst_inport,
-      connection_type_t ty,
-      connectable *mod,
-      config *cfg);
-
-    event_loc_id
-    event_location() const {
-      return event_loc_id::null;
+        "link_wrapper::handle: should never be called");
     }
 
     SST::Link*
-    link() const {
+    link() const override {
       return link_;
     }
 
   private:
     SST::Link* link_;
-};
-
-class connectable_proxy_component
-  : public hw::connectable
-{
-  public:
-
-    static PyObject* sst;
-    typedef spkt_unordered_map<switch_id, connectable_proxy_component*> switch_map;
-    static switch_map registered_switches;
-    typedef spkt_unordered_map<endpoint_id, connectable_proxy_component*> endpoint_map;
-    static endpoint_map registered_endpoints;
-
-    std::string to_string() const
-    {
-      return "connectable_proxy";
-    }
-
-    typedef enum {
-      Switch,
-      Endpoint,
-      Other
-    } component_category_t;
-
-    event_loc_id
-    event_location() const
-    {
-      return event_loc_id::null;
-    }
-
-    void
-    connect(
-      int src_outport,
-      int dst_inport,
-      connection_type_t ty,
-      connectable* other,
-      config* cfg);
-
-    ~connectable_proxy_component();
-
-    PyObject* component_proxy;
-    std::string component_name;
-    std::string hop_latency;
-    std::string injection_latency;
-    component_category_t category;
 };
 
 }

@@ -18,6 +18,7 @@ As discussed in the user's manual, we must be careful in the vocabulary.
 There are a variety of classes the cooperate in driving the simulation, which we now describe.
 
 \section{Event Managers}
+\label{sec:eventManagers}
 The driver for simulations is an event manager that provides the function
 
 \begin{CppCode}
@@ -60,6 +61,7 @@ The execute function is invoked by the \evmgr to run the underlying event.
 There are generally two basic event types in \sstmacro, which we now introduce.
 
 \subsection{Event Handlers}
+\label{subsec:eventHandlers}
 In most cases, the event is represented as a message sent to an object called an \evhandler at a specific simulation time.
 In handling the message, the event handlers change their internal state and may cause more events
 by scheduling new messages at other event handlers (or scheduling messages to itself) at a future time.
@@ -75,7 +77,7 @@ In general, objects have two ``directions'' for the action - send or receive.
 A NIC could ``handle'' a packet by injecting it into the network or ``handle'' a message by reporting up the network stack the message has arrived.
 In most cases, the handled message must therefore carry with it some notion of directionality or final destination.
 An event handler will therefore either process the message and delete the message, or, if that handler is not the final destination, forward it along.
-Some event handlers will only ever receive, such as a handler representing a blocking $MPI_Recv$ call.
+Some event handlers will only ever receive, such as a handler representing a blocking \inlinecode{MPI_Recv} call.
 Some event handlers will always receive and then send, such as network switches who are always intermediate steps between the start and endpoints of a network message.
 
 In most cases, events are created by calling the function
@@ -99,14 +101,53 @@ handler_event_queue_entry::execute()
 }
 \end{CppCode}
 
+Objects can inherit from \inlinecode{event_handler} to create new event handlers.
+Alternatively (and probably the most common usage in the SST/macro core) is on-the-fly creation of event handlers through C++ templates.
+The interface does not actually require using C++ templates.
+The function \inlinecode{new_handler} defined in \inlineshell{event_callback.h} has the prototype:
+
+\begin{CppCode}
+template<class Cls, typename Fxn, class... Args>
+event_handler*
+new_handler(Cls* cls, Fxn fxn, const Args&... args);
+\end{CppCode}
+
+Here \inlinecode{Fxn} is a member function pointer.
+When an \inlinecode{event* ev} is scheduled to the event handler, the member function pointer gets invoked:
+
+\begin{CppCode}
+(cls->*fxn)(ev, args...);
+\end{CppCode}
+
+For example, given a class \inlinecode{actor} with the member function \inlinecode{act}
+
+\begin{CppCode}
+void
+actor::actor(event* ev, int ev_id){...}
+\end{CppCode}
+we can create an event handler
+
+\begin{CppCode}
+actor* a = ....;
+event_handler* handler = new_handler(a, &actor::act, 42);
+...
+event* ev = ....;
+schedule(time, handler, ev);
+\end{CppCode}
+When the time arrives for the event, the member function will be invoked
+
+\begin{CppCode}
+a->act(ev, 42);
+\end{CppCode}
+
 \subsection{Arbitrary Events}
 In some cases, it can be inconvenient (and inefficient) to require every event to be funneled through an \evhandler type.
-A generic macro for creating events from any class member function is provided in the file \inlineshell{event_callback.h}.
+A generic macro for creating event queue entries from any class member function is provided in the file \inlineshell{event_callback.h} similar to the creation of C++ template event handlers above.
 For example, the MPI server creates an event
 
 \begin{CppCode}
 mpi_queue_recv_request* req = next_request();
-event* ev = new_event(this, &mpi_queue::start_recv, req);
+event_callback* ev = new_event(this, &mpi_queue::start_recv, req);
 \end{CppCode}
 The new event macro takes as first argument an object and second argument a member function pointer to be invoked when the event is run.
 The remaining arguments are an arbitrary-length list of parameters of any type - they don't need to be messages. 
@@ -130,10 +171,10 @@ The event would also need to be dynamic cast to the correct type.
 By creating event functors, the message can be immediately directed to the correct type and correct action.
 
 For generic events, one must ensure the event is scheduled to the same node and does not cross any network boundaries.
-Generic events are not compatible with parallel simulation.
 The event created must be run on the same logical process.
 
 \subsection{Event Heap/Map}
+\label{subsec:eventHeap}
 The major distinction between different event containers is the data structured used.
 The simplest data structure is an event heap or ordered event map.
 The event manager needs to always be processing the minimum event time, which maps naturally onto a min-heap structure.
@@ -141,16 +182,17 @@ Insertion and removal are therefore log(N) operations where N is the number of c
 For most cases, the number and length of events is such that the min-heap is fine.
 
 \section{Event Schedulers}
+\label{sec:eventSchedulers}
 The simulation is partitioned into objects that are capable of scheduling events.
-\evscheduler objects are also \evhandler objects, although their handle methods might never be used.
 Common examples of \evscheduler objects are nodes, NICs, memory systems, or the operating system.
 In serial runs, an event scheduler is essentially just a wrapper for the \evmgr and the class is not strictly necessary.
+There are two types of event scheduler: \inlinecode{event_component} and \inlinecode{event_subcomponent}.
 In parallel simulation, though, the simulation must be partitioned into different scheduling units.
 Scheduling units are then distributed amongst the parallel processes.
-The \evscheduler is therefore the basic unit of parallelism.
-Additionally, when simulating failures (in either serial or parallel), certain devices must be deactivated such as a node or network switch going down.
-This basically amounts to canceling all events associated with a given \evscheduler.
-The \evscheduler is therefore primarily a means of structuring the computation.
+Components are the basic unit.  Currently only nodes and network switches are components.
+All other devices (NIC, memory, OS) are subcomponents that must be linked to a parent component.
+Even though components and subcomponents can both schedule events (both inherit from \evscheduler),
+all subcomponents must belong to a component.  A subcomponent cannot be separated from its parent component during parallel simulation.
 
 
 

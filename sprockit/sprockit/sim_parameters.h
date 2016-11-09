@@ -12,6 +12,7 @@
 #ifndef SPROCKIT_COMMON_SIM_PARAMETERS_H_INCLUDED
 #define SPROCKIT_COMMON_SIM_PARAMETERS_H_INCLUDED
 
+#include <sprockit/spkt_config.h>
 #include <sprockit/debug.h>
 #include <sprockit/unordered.h>
 
@@ -86,6 +87,9 @@ class sim_parameters  {
     bool read;
   };
 
+  void
+  reproduce_params(std::ostream& os);
+
   typedef spkt_unordered_map<std::string, parameter_entry> key_value_map;
 
   sim_parameters();
@@ -104,7 +108,10 @@ class sim_parameters  {
    * @param bcaster
    */
   static void
-  parallel_build_params(sprockit::sim_parameters* params, int me, int nproc, const std::string& filename, param_bcaster* bcaster);
+  parallel_build_params(sprockit::sim_parameters* params,
+                        int me, int nproc,
+                        const std::string& filename,
+                        param_bcaster* bcaster);
 
   virtual ~sim_parameters();
 
@@ -112,10 +119,16 @@ class sim_parameters  {
   remove_param(const std::string &key);
 
   std::string
+  get_variable(const std::string& str);
+
+  std::string
   get_param(const std::string& key, bool throw_on_error = true);
 
   std::string
   get_scoped_param(const std::string& key, bool throw_on_error = true);
+
+  sim_parameters*
+  get_optional_local_namespace(const std::string& ns);
 
   std::string
   reread_param(const std::string& key) {
@@ -168,20 +181,17 @@ class sim_parameters  {
                bool override_existing = true,
                bool mark_as_read = true);
 
-  void
-  print_params(std::ostream& os, bool pretty_print, std::list<std::string>& namespaces) const;
+  std::string
+  print_scoped_params(std::ostream& os) const;
+
+  std::string
+  print_scopes(std::ostream& os);
 
   void
-  print_params(std::ostream& os = std::cerr) const {
-    std::list<std::string> ns;
-    print_params(os, false, ns);
-  }
+  print_local_params(std::ostream& os, const std::string& prefix) const;
 
   void
-  pretty_print_params(std::ostream& os = std::cerr) const {
-    std::list<std::string> ns;
-    print_params(os, true, ns);
-  }
+  print_params(std::ostream& os = std::cerr, const std::string& prefix = "") const;
 
   bool
   print_unread_params(std::ostream& os = std::cerr) const;
@@ -365,13 +375,19 @@ class sim_parameters  {
   void
   get_vector_param(const std::string& key, std::vector<std::string>& vals);
 
+  void
+  get_optional_vector_param(const std::string& key, std::vector<std::string>& vals);
+
   sim_parameters*
   get_namespace(const std::string& ns);
 
   sim_parameters*
   get_optional_namespace(const std::string& ns);
 
-  typedef std::set<int>::const_iterator id_iterator;
+  void
+  set_namespace(const std::string& ns, sim_parameters* params){
+    subspaces_[ns] = params;
+  }
 
   bool
   has_namespace(const std::string& ns) const;
@@ -397,10 +413,24 @@ class sim_parameters  {
     bool override_existing,
     bool mark_as_read);
 
+  /**
+   * This is a dirty hack to store non-sprockit parameter objects
+   * on this parameter object
+   */
+  void
+  append_extra_data(void* data) {
+    extra_data_ = data;
+  }
+
+  template <class T>
+  T*
+  extra_data() const {
+    void* ptr = _extra_data();
+    return static_cast<T*>(ptr);
+  }
+
   param_assign
   operator[](const std::string& key);
-
-  sim_parameters* top_parent();
 
   key_value_map::iterator begin() { return params_.begin(); }
   key_value_map::const_iterator begin() const { return params_.begin(); }
@@ -421,11 +451,27 @@ class sim_parameters  {
 
   sim_parameters* parent_;
 
+  void* _extra_data() const;
+  void* extra_data_;
+
   static sim_parameters* empty_ns_params_;
 
   std::string namespace_;
 
   key_value_map params_;
+
+  uint64_t current_id_;
+
+  /**
+   * @brief _get_namespace Get a parameter namespace. If the namespace does not exist in the current scope locally,
+   *  search through any parent namespaces. This follow C++ scoping rules as if you had requested ns::variable.
+   * @param ns The namespace to get
+   * @return The set of all parameters in a given param namespace
+   */
+  sim_parameters* _get_namespace(const std::string &ns);
+
+  sim_parameters*
+  build_local_namespace(const std::string& ns);
 
   void
   throw_key_error(const std::string& key) const;
@@ -470,6 +516,9 @@ class sim_parameters  {
 
   bool
   get_scoped_param(std::string& inout, const std::string& key);
+
+
+
 
 };
 

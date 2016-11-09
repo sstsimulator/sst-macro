@@ -31,7 +31,7 @@ For the launch command \inlinefile{aprun -n 8 -N 2}, we must allocate 4 compute 
 Our first option is to specify the first available allocation scheme (Figure \ref{fig:allocation:first_available})
 
 \begin{ViFile}
-app1.launch_allocation = first_available
+app1.allocation = first_available
 \end{ViFile}
 \begin{figure}[h]
 \centering
@@ -46,9 +46,9 @@ In general, first available will give a contiguous allocation, but it won't nece
 To give more structure to the allocation, a Cartesian allocator can be used (Figure \ref{fig:allocation:cartesian}).
 
 \begin{ViFile}
-app1.launch_allocation = cartesian
-app1.cart_launch_sizes = 2 2
-app1.cart_launch_offsets = 0 0
+app1.allocation = cartesian
+app1.cart_sizes = 2 2
+app1.cart_offsets = 0 0
 \end{ViFile}
 \begin{figure}[h]
 \centering
@@ -60,7 +60,7 @@ Rather than just looping through the list of available nodes, we explicitly allo
 If testing how ``topology agnostic'' your application is, you can also choose a random allocation.
 
 \begin{ViFile}
-app1.launch_allocation = random
+app1.allocation = random
 \end{ViFile}
 \begin{figure}[h]
 \centering
@@ -83,7 +83,7 @@ indexing MPI ranks in the order received from the allocation list.
 If running multiple MPI ranks per node, block indexing tries to keep consecutive MPI ranks on the same node (Figure \ref{fig:indexing:block}).
 
 \begin{ViFile}
-app1.launch_indexing = block
+app1.indexing = block
 \end{ViFile}
 \begin{figure}[h]
 \centering
@@ -94,7 +94,7 @@ app1.launch_indexing = block
 In contrast, round-robin spreads out MPI ranks by assigning consecutive MPI ranks on different nodes (Figure \ref{fig:indexing:round_robin}).
 
 \begin{ViFile}
-app1.launch_indexing = round_robin
+app1.indexing = round_robin
 \end{ViFile}
 \begin{figure}[h]
 \centering
@@ -105,7 +105,7 @@ app1.launch_indexing = round_robin
 Finally, one may also choose
 
 \begin{ViFile}
-app1.launch_indexing = random
+app1.indexing = random
 \end{ViFile}
 Random allocation with random indexing is somewhat redundant.  
 Random allocation with block indexing is \emph{not} similar to Cartesian allocation with random indexing.

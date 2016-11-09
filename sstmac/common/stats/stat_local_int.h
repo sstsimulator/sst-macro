@@ -8,58 +8,44 @@ namespace sstmac
 {
 
 class stat_local_int :
-  public stat_collector
+  public stat_value<int>
 {
  public:
-  stat_local_int();
+  stat_local_int(sprockit::sim_parameters* params);
 
-  void
-  collect(int value);
-
-  void
-  simulation_finished(timestamp end);
-
-  void
-  dump_local_data();
-
-  void
-  dump_global_data();
-
-  void
-  global_reduce(parallel_runtime *rt);
-
-  void
-  clear();
-
-  void
-  reduce(stat_collector *coll);
-
-  void
-  init_factory_params(sprockit::sim_parameters *params);
-
-  stat_local_int*
-  clone_me(int id) const {
-    stat_local_int* cln = new stat_local_int;
-    clone_into(cln);
-    cln->set_id(id);
-    return cln;
+  std::string
+  to_string() const override {
+    return "stat local int";
   }
+
+  void
+  simulation_finished(timestamp end) override;
+
+  void
+  dump_local_data() override;
+
+  void
+  dump_global_data() override;
+
+  void
+  global_reduce(parallel_runtime *rt) override;
+
+  void
+  clear() override;
 
   stat_collector*
-  clone() const {
-    return clone_me(-1);
+  do_clone(sprockit::sim_parameters* params) const override {
+    return new stat_local_int(params);
   }
+
+  void
+  reduce(stat_collector *coll) override;
 
  protected:
   void
   dump(const std::string& froot);
 
-  void
-  clone_into(stat_local_int* cln) const;
-
  protected:
-  int size_;
-  int value_;
   std::vector<int> values_;
 };
 

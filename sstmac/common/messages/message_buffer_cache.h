@@ -10,11 +10,6 @@ class message_buffer_cache  {
  public:
 
  public:
-  std::string
-  to_string() const {
-    return "message buffer cache";
-  }
-
   void*
   pop();
 

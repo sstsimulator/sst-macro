@@ -110,28 +110,26 @@ class thread_safe_list :
     list_.push_back(t);
   }
 
-  T
-  pop_front_and_return_locked(bool &empty){
+  bool
+  pop_front_and_return_locked(T& ret){
     verify("pop_front_and_return_locked");
-    empty = list_.empty();
-    if (empty){
-      return T();
+    bool empty = list_.empty();
+    if (!empty){
+      ret = list_.front();
+      list_.pop_front();
     }
-    T ret = list_.front();
-    list_.pop_front();
-    return ret;
+    return empty;
   }
 
-  T
-  pop_back_and_return_locked(bool &empty){
+  bool
+  pop_back_and_return_locked(T& ret){
     verify("pop_back_and_return_locked");
-    empty = list_.empty();
-    if (empty){
-      return T();
+    bool empty = list_.empty();
+    if (!empty){
+      ret = list_.back();
+      list_.pop_back();
     }
-    T ret = list_.back();
-    list_.pop_back();
-    return ret;
+    return empty;
   }
 
   //
@@ -170,20 +168,20 @@ class thread_safe_list :
     unlock();
   }
 
-  T
-  pop_front_and_return(bool &empty){
+  bool
+  pop_front_and_return(T& ret){
     lock();
-    T ret = pop_front_and_return_locked(empty);
+    bool empty = pop_front_and_return_locked(ret);
     unlock();
-    return ret;
+    return empty;
   }
 
-  T
-  pop_back_and_return(bool &empty){
+  bool
+  pop_back_and_return(T& ret){
     lock();
-    T ret = pop_back_and_return_locked(empty);
+    bool empty = pop_back_and_return_locked(ret);
     unlock();
-    return ret;
+    return empty;
   }
 
   void

@@ -1,7 +1,10 @@
 
 #ifdef SSTMAC_PTHREAD_MACRO_H 
+
 //if sstmac pthread included, clear it
 #include <sstmac/libraries/pthread/sstmac_pthread_clear_macros.h>
 #define PTHREAD_MUTEX_INITIALIZER @PTHREAD_MACRO_DEF_MUTEX_INITIALIZER@
 #define PTHREAD_COND_INITIALIZER @PTHREAD_MACRO_DEF_COND_INITIALIZER@
+
+
 #endif

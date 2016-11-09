@@ -42,102 +42,34 @@ namespace hw {
   a 'component' in the network - those are switches.  Switch and router
   are not synonymous in SST/macro.  All switches have routers.
 */
-class router :
-  public sprockit::factory_type
+class router : public sprockit::printable
 {
  public:
-  struct geometric_path {
-    int redundancy;
-    int path_counter;
+  /**
+   * @brief route Makes a routing decision for the packet.
+   * All routing decisions should be stored on the packet object itself.
+   * @param pkt
+   */
+  virtual void
+  route(packet* pkt);
 
-    geometric_path() : path_counter(0) {}
-
-    int next_index() {
-      int ret = path_counter;
-      path_counter = (path_counter + 1) % redundancy;
-      return ret;
-    }
-  };
-
- public:
-  virtual std::string
-  to_string() const {
-    return "router";
-  }
+  virtual void
+  route_to_switch(switch_id sid, routable::path& path) = 0;
 
   virtual ~router();
 
   virtual void
-  init_factory_params(sprockit::sim_parameters* params);
-
-  virtual void
-  finalize_init();
-
-  virtual void
-  route(packet* pkt) = 0;
-
-  int
-  convert_to_port(int dim, int dir);
-
-  /**
-    Compute the minimal path to a node.
-    This method can not be const.  For some cases,
-    there are multiple minimal paths that rotate
-    in a round-robin fasion to spread load (fat-tree, fbfly).
-    The router needs to update its round-robin index
-    when computing a path - hence no constness.
-    @param node_addr The node routing to
-    @param path [inout] The path to route along
-  */
-  virtual void
-  minimal_route_to_node(
-    node_id node_addr,
-    geometry_routable::path& path);
-
-  /**
-    Compute the minimal path to a switch.
-    This method can not be const.  For some cases,
-    there are multiple minimal paths that rotate
-    in a round-robin fasion to spread load (fat-tree, fbfly).
-    The router needs to update its round-robin index
-    when computing a path - hence no constness.
-    @param sw_addr The switch routing to
-    @param path [inout] The path to route along
-  */
-  virtual void
-  minimal_route_to_switch(
-    switch_id sw_addr,
-    geometry_routable::path& path);
-
-  virtual void
-  init_stats(event_manager* m){}
-
-  void init_vc();
-
-  virtual void
-  set_switch(network_switch* sw);
-
-  /**
-   @return Whether we are ejecting
-   @param dst The destination node
-   @param ports The ports that make progress towards the final destination.
-                If ejecting, this contains only the ejection port.
-  */
-  bool
-  productive_paths_to_node(
-    node_id dst,
-    geometry_routable::path_set& paths);
-
-  virtual void
-  productive_paths_to_switch(
-    switch_id dst,
-    geometry_routable::path_set& paths) = 0;
+  compatibility_check() const;
 
   network_switch*
   get_switch() const {
     return netsw_;
   }
 
+  /**
+   * @brief addr
+   * @return
+   */
   switch_id
   addr() const {
     return my_addr_;
@@ -148,21 +80,32 @@ class router :
     return top_;
   }
 
-  virtual void
-  set_topology(topology* top) {
-    top_ = top;
-  }
-
+  /**
+   * @brief max_num_vc
+   * @return The maximum number of virtual channels the router must maintain
+   *         to implement all possible routing algorithms
+   */
   int
   max_num_vc() const {
     return max_num_vc_;
   }
 
  protected:
-  router(routing::algorithm_t algo);
+  router(sprockit::sim_parameters* params,
+         topology* top, network_switch* sw, routing::algorithm_t algo);
 
   routing::algorithm_t
   str_to_algo(const std::string& str);
+
+  switch_id
+  find_ejection_site(node_id toaddr, routable::path& path) const;
+
+  inline static void
+  configure_ejection_path(routable::path& path) {
+    path.vc = 0;
+  }
+
+  void init_vc();
 
  protected:
   switch_id my_addr_;
@@ -170,10 +113,6 @@ class router :
   topology* top_;
 
   network_switch* netsw_;
-
-  bool hop_count_reporting_;
-
-  int hop_count_delta_;
 
   int max_num_vc_;
 
@@ -184,7 +123,7 @@ class router :
 
 };
 
-DeclareFactory(router);
+DeclareFactory(router, topology*, network_switch*);
 
 
 

@@ -94,6 +94,7 @@ message::tostr(class_t ty)
     enumcase(collective);
     enumcase(collective_done);
     enumcase(ping);
+    enumcase(bcast);
     enumcase(terminate);
     enumcase(no_class);
     enumcase(fake);
@@ -192,6 +193,13 @@ message::serialize_order(sumi::serializer &ser)
     default:
       break;
   }
+}
+
+void
+system_bcast_message::serialize_order(serializer& ser)
+{
+  ser & root_;
+  ser & action_;
 }
 
 }

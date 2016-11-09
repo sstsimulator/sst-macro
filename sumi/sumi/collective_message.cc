@@ -35,7 +35,7 @@ collective_work_message::serialize_order(sumi::serializer &ser)
   ser & round_;
   ser & dense_sender_;
   ser & dense_recver_;
-  ser & failed_procs_;
+  //ser & failed_procs_;
 }
 
 std::string

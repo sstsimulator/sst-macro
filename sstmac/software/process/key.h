@@ -66,11 +66,6 @@ class key  {
   static category general;
 
  public:
-  virtual std::string
-  to_string() const {
-    return "key";
-  }
-
   static key*
   construct();
 
