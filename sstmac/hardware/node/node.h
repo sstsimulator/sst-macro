@@ -167,6 +167,8 @@ class node :
 
   void schedule_launches();
 
+  void deadlock_check() override;
+
   void increment_app_refcount();
 
   void decrement_app_refcount();

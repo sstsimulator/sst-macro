@@ -138,9 +138,7 @@ class sumi_transport :
     int dst,
     bool needs_ack);
 
-  void incoming_message(transport_message* msg){
-    queue_->put_message(msg);
-  }
+  void incoming_message(transport_message* msg);
 
   void shutdown_server(int dest_rank, node_id dest_node, int dest_app);
 

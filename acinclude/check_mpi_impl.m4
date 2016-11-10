@@ -3,8 +3,8 @@
 AC_DEFUN([CHECK_MPI_IMPLEMENTATION], [
 
 AC_ARG_ENABLE([large-mpi-payloads],
-  [AS_HELP_STRING([--enable-large-mpi-payloads],
-    [allow MPI to send large real payloads - otherwise all MPI messages must be null or fake buffers])],
+  [AS_HELP_STRING([--(dis|en)able-large-mpi-payloads],
+    [allow MPI to send large real payloads - otherwise all MPI messages must be null or fake buffers [default=yes]])],
   [allow_large_mpi_payloads=$enableval],
   [allow_large_mpi_payloads=yes])
 

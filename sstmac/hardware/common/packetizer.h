@@ -41,6 +41,8 @@ class packetizer :
     notifier_ = handler;
   }
 
+  void deadlock_check();
+
   void setInjectionAcker(event_handler* handler){
     acker_ = handler;
   }

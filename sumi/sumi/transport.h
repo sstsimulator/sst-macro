@@ -794,6 +794,42 @@ class transport
   static collective_algorithm_selector* scatter_selector_;
   static collective_algorithm_selector* scatterv_selector_;
 
+
+#if SUMI_COMM_SYNC_STATS
+ public:
+  struct comm_sync_stats {
+    comm_sync_stats() :
+      total_sync_delay(0.),
+      total_comm_delay(0.),
+      total_busy_delay(0.),
+      last_done(0.)
+    {
+    }
+
+    void collect(const message::ptr& msg, double now, double start);
+
+    void collect(double time_sent, double time_arrived,
+                 double now, double start);
+
+    void print(int rank, std::ostream& os);
+
+    double total_sync_delay;
+    double total_comm_delay;
+    double total_busy_delay;
+
+   private:
+    double last_done;
+  };
+
+  comm_sync_stats*
+  sync_stats() const {
+    return comm_sync_stats_;
+  }
+
+ private:
+  comm_sync_stats* comm_sync_stats_;
+#endif
+
 };
 
 DeclareFactory(transport);

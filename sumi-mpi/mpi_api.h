@@ -356,6 +356,11 @@ class mpi_api :
           MPI_Datatype recvtype, int root, MPI_Comm comm);
 
   int
+  allgather(int count, MPI_Datatype type, MPI_Comm comm){
+    return allgather(count, type, count, type, comm);
+  }
+
+  int
   allgather(int sendcount, MPI_Datatype sendtype,
             int recvcount, MPI_Datatype recvtype,
             MPI_Comm comm);
@@ -516,7 +521,7 @@ class mpi_api :
 
   int
   ialltoall(int sendcount, MPI_Datatype sendtype,
-           int recvcount, MPI_Datatype recvtype,
+            int recvcount, MPI_Datatype recvtype,
             MPI_Comm comm, MPI_Request* req);
 
   int
@@ -722,6 +727,10 @@ class mpi_api :
  private:
   int
   do_wait(MPI_Request *request, MPI_Status *status);
+
+  void
+  finalize_wait_request(mpi_request* reqPtr, MPI_Request* request,
+                        MPI_Status* status, sstmac::timestamp wait_start);
 
   int
   do_type_hvector(int count, int blocklength, MPI_Aint stride,

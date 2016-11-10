@@ -5,7 +5,7 @@ AH_TEMPLATE([DISABLE_REGEXP], ["Whether support for regex"])
 AC_ARG_ENABLE(regex,
   [AS_HELP_STRING(
     [--(dis|en)able-regex],
-    [Whether to use C++11/Boost regular expression support],
+    [Whether to use C++11/Boost regular expression support [default=yes]],
    )],
   [
     enable_regexp=$enableval

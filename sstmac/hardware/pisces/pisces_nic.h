@@ -58,6 +58,9 @@ class pisces_nic :
   link_handler*
   payload_handler(int port) const override;
 
+  void
+  deadlock_check() override;
+
  protected:
   virtual void
   do_send(network_message* payload) override;
@@ -87,6 +90,8 @@ class pisces_netlink :
 
   void handle_payload(event* ev);
 
+  void deadlock_check() override;
+
   link_handler*
   payload_handler(int port) const override;
 
@@ -107,12 +112,10 @@ class pisces_netlink :
     int dst_inport,
     event_handler* mod) override;
 
-  void
-  deadlock_check() override;
-
  private:
   static const int really_big_buffer;
-  pisces_crossbar* block_;
+  pisces_crossbar* inj_block_;
+  pisces_crossbar* ej_block_;
   int tile_rotater_;
   bool inited_;
 #if !SSTMAC_INTEGRATED_SST_CORE

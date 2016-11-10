@@ -37,6 +37,7 @@ struct action
   int offset;
   int nelems;
   uint32_t id;
+  double start;
 
   static const char*
   tostr(type_t ty){
@@ -457,7 +458,9 @@ class dag_collective_actor :
 
  protected:
   dag_collective_actor() :
-    slicer_(nullptr){}
+    slicer_(nullptr)
+  {
+  }
 
   void add_dependency(action* precursor, action* ac);
   void add_action(action* ac);
@@ -579,7 +582,7 @@ class dag_collective_actor :
 
   void clear_dependencies(action* ac);
 
-  void comm_action_done(action::type_t ty, int round, int partner);
+  action* comm_action_done(action::type_t ty, int round, int partner);
 
   void fail_actions(int dense_rank);
 

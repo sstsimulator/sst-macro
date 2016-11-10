@@ -95,6 +95,7 @@ Even though this class is not a complete type (pure virtual functions), we still
   typedef sprockit::refcount_ptr<const gem> const_ptr;
 \end{CppCode}
 We then define the abstract \inlinecode{gem} interface
+
 \begin{CppCode}
  public:
   virtual int
@@ -111,6 +112,7 @@ Many tutorials on the subtleties of virtual destructors can be found online.
 
 We can repeat the same process for a new abstract interface called \inlinecode{mineral}.
 Declare the class:
+
 \begin{CppCode}
 #include <sprockit/ptr_type.h>
 
@@ -122,12 +124,14 @@ class mineral :
 {
 \end{CppCode}
 Again, we use virtual inheritance. We declare public typedefs:
+
 \begin{CppCode}
  public:
   typedef sprockit::refcount_ptr<mineral> ptr;
   typedef sprockit::refcount_ptr<const mineral> const_ptr;
 \end{CppCode}
 We then define the abstract \inlinecode{mineral} interface:
+
 \begin{CppCode}
  public:
   virtual std::string
@@ -137,6 +141,7 @@ We then define the abstract \inlinecode{mineral} interface:
 \end{CppCode}
 
 Now we want to create a specific instance of a \inlinecode{gem} and \inlinecode{mineral}.
+
 \begin{CppCode}
 #include "gem.h"
 #include "mineral.h"
@@ -202,6 +207,7 @@ And the constructor
 \end{CppCode}
 
 Finally, we declare member variables
+
 \begin{CppCode}
  protected:
   int num_carats_;
@@ -387,6 +393,7 @@ class mandy_patinkin :
 \end{CppCode}
 
 We have a single member variable
+
 \begin{CppCode}
  private:
   std::string sword_hand_;
@@ -394,6 +401,7 @@ We have a single member variable
 
 This is a complete type that can be instantiated. 
 To create the class we will need the constructor:
+
 \begin{CppCode}
 mandy_patinkin(sprockit::sim_parameters* params);
 \end{CppCode}

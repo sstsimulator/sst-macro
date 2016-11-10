@@ -117,6 +117,12 @@ node::payload_handler(int port) const
 }
 
 void
+node::deadlock_check()
+{
+  nic_->deadlock_check();
+}
+
+void
 node::setup()
 {
   schedule_launches();

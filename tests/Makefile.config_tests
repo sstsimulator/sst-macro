@@ -17,14 +17,16 @@ CONFIGTESTS = \
   test_configs_hopper_amm2_simple \
   test_configs_hopper_amm3_simple \
   test_configs_deepthought \
-  test_configs_sequoia \
   test_configs_exa1_pflow \
   test_configs_exa1_simple \
   test_configs_exa2_pflow \
   test_configs_exa2_simple 
 
 
+
 if !INTEGRATED_SST_CORE
+CONFIGTESTS += test_configs_sequoia 
+
 COVERAGETESTS = \
   test_coverage_smp_pflow \
   test_coverage_simple_switch \
@@ -72,6 +74,11 @@ test_configs_hopper_amm4.$(CHKSUF): $(SSTMACEXEC)
 test_configs_%.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 15 $(top_srcdir) $@ 't > 1 and t < 1.2' \
     $(SSTMACEXEC) -f mpi_test_all.ini -i default.ini -i $*.ini \
+    --no-wall-time
+
+test_mpi_stats_%.$(CHKSUF): $(SSTMACEXEC)
+	$(PYRUNTEST) 15 $(top_srcdir) $@ 't > 1 and t < 1.2' \
+    $(SSTMACEXEC) -f mpi_stats.ini -i default.ini -i $*.ini \
     --no-wall-time
 
 

@@ -130,6 +130,7 @@ stat_histogram::reduce(stat_collector *coll)
 \end{CppCode}
 
 and for the global reduce
+
 \begin{CppCode}
 void
 stat_histogram::global_reduce(parallel_runtime* rt)
@@ -158,6 +159,7 @@ class nic {
  static ftq_calendar* ftq_;
 \end{CppCode}
 but instead
+
 \begin{CppCode}
 class nic {
  ...
@@ -165,6 +167,7 @@ class nic {
 \end{CppCode}
 
 Inside the \inlinecode{ftq_calendar} object you can then declare
+
 \begin{CppCode}
 class ftq_calendar {
  ...

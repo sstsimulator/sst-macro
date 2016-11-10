@@ -16,8 +16,7 @@ DeclareDebugSlot(sumi_collective_sendrecv)
 DeclareDebugSlot(sumi_collective_init)
 DeclareDebugSlot(sumi_collective_round)
 
-namespace sumi
-{
+namespace sumi {
 
 class collective
 {

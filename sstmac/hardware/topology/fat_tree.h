@@ -250,7 +250,7 @@ class tapered_fat_tree : public abstract_fat_tree
   }
 
   inline int agg_sub_tree(switch_id sid) const {
-    return (sid - num_inj_switches_) / num_agg_switches_per_subtree_;
+    return (sid - num_inj_switches_);
   }
 
   inline int sub_tree(switch_id sid) const {

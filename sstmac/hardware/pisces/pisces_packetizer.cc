@@ -126,6 +126,13 @@ pisces_packetizer::recv_credit(event* ev)
   sendWhatYouCan(vn);
 }
 
+void
+pisces_packetizer::deadlock_check()
+{
+  inj_buffer_->deadlock_check();
+  packetizer::deadlock_check();
+}
+
 bool
 pisces_packetizer::spaceToSend(int vn, int num_bits)
 {

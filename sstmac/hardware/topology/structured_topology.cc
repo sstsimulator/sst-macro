@@ -29,6 +29,9 @@ structured_topology::structured_topology(sprockit::sim_parameters* params,
       netlink_params->get_scoped_param("model") != "null"){
     num_nodes_per_netlink_ = netlink_params->get_int_param("concentration");
     netlinks_per_switch_ /= num_nodes_per_netlink_;
+    if (netlinks_per_switch_ == 0){
+      spkt_abort_printf("Error - netlink concentration cannot be higher than node concentration");
+    }
   } else {
     num_nodes_per_netlink_ = 1;
   }

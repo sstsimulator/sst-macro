@@ -7,128 +7,62 @@ calls=0 0
 0 400000000000000
 cfn=MPI_Init
 calls=80 0
-0 139100000
+0 71960000
 cfn=MPI_Finalize
 calls=0 0
-0 1544948017
+0 8559284000
 cfn=MPI_Isend
 calls=0 0
-0 0
-cfn=MPI_Irecv
-calls=0 0
-0 0
+0 37920000
 cfn=MPI_Waitall
 calls=0 0
-0 7515031743
+0 15786996000
 
 fn=Compute Instructions
-0 0
+0 37920000
 
 fn=memcopy
 0 0
 cfn=Compute Instructions
-calls=890 0
-0 0
+calls=6320 0
+0 37920000
 
 fn=Sleep
 0 400000000000000
 
 fn=MPI Queue Poll
-0 9199079760
-cfn=MPI Eager 0 Protocol: Handle Socket Header
-calls=0 0
-0 0
-cfn=MPI Eager 0 Protocol: Intranode Handle Header
-calls=0 0
-0 0
+0 15786996000
 
-fn=MPI Queue Buffer Unexpected Message
+fn=MPI Eager 1 Protocol: Send RDMA Header
 0 0
 cfn=memcopy
-calls=305 0
-0 0
-
-fn=MPI_buffered_recv
-0 0
-cfn=memcopy
-calls=425 0
-0 0
-cfn=MPI_buffered_recv
-calls=0 0
-0 0
-
-fn=MPI_buffered_send
-0 0
-cfn=memcopy
-calls=160 0
-0 0
-
-fn=MPI Eager 0 Protocol: Handle Socket Header
-0 0
-cfn=MPI Queue Buffer Unexpected Message
-calls=265 0
-0 0
-cfn=MPI_buffered_recv
-calls=125 0
-0 0
-
-fn=MPI Eager 0 Protocol: Intranode Send Header
-0 0
-cfn=MPI_buffered_send
-calls=160 0
-0 0
-
-fn=MPI Eager 0 Protocol: Intranode Handle Header
-0 0
-cfn=MPI Queue Buffer Unexpected Message
-calls=40 0
-0 0
-cfn=MPI_buffered_recv
-calls=120 0
-0 0
+calls=6320 0
+0 37920000
 
 fn=MPI_Init
 0 0
 cfn=MPI_Barrier
 calls=80 0
-0 139100000
+0 71960000
 
 fn=MPI_Finalize
 0 0
 cfn=MPI_Barrier
 calls=80 0
-0 1544948017
+0 8559284000
+
+fn=MPI_Barrier
+0 8631244000
 
 fn=MPI_Isend
 0 0
-cfn=MPI Eager 0 Protocol: Intranode Send Header
-calls=80 0
-0 0
-
-fn=MPI_Irecv
-0 0
-cfn=MPI_buffered_recv
-calls=40 0
-0 0
+cfn=MPI Eager 1 Protocol: Send RDMA Header
+calls=6320 0
+0 37920000
 
 fn=MPI_Waitall
 0 0
 cfn=MPI Queue Poll
 calls=80 0
-0 7515031743
-
-fn=MPI_Barrier
-0 0
-cfn=MPI Queue Poll
-calls=40 0
-0 1684048017
-cfn=MPI Eager 0 Protocol: Handle Socket Header
-calls=26 0
-0 0
-cfn=MPI Eager 0 Protocol: Intranode Send Header
-calls=80 0
-0 0
-cfn=MPI Eager 0 Protocol: Intranode Handle Header
-calls=14 0
-0 0
+0 15786996000
 

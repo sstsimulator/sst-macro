@@ -6,6 +6,7 @@
 #include <sprockit/printable.h>
 #include <sumi/serialization.h>
 #include <sumi/config.h>
+#include <sumi/sumi_config.h>
 
 START_SERIALIZATION_NAMESPACE
 template <>
@@ -77,12 +78,37 @@ class message :
   {
   }
 
-  message(int sender, int recver, long num_bytes) :
+  message(class_t cls) :
+    message(-1,-1,sizeof(message),cls,none)
+  {
+  }
+
+  message(long num_bytes, class_t cls) :
+    message(-1,-1,num_bytes,cls,none)
+  {
+  }
+
+  message(int sender,
+          int recver,
+          long num_bytes) :
+    message(sender, recver, num_bytes, pt2pt, none)
+  {
+  }
+
+  message(int sender,
+          int recver,
+          long num_bytes,
+          class_t cls,
+          payload_type_t pty) :
+#if SUMI_COMM_SYNC_STATS
+    sent_(-1),
+    arrived_(-1),
+#endif
     sender_(sender),
     recver_(recver),
     num_bytes_(num_bytes),
-    payload_type_(none),
-    class_(pt2pt),
+    payload_type_(pty),
+    class_(cls),
     transaction_id_(-1),
     needs_send_ack_(false),
     needs_recv_ack_(false)
@@ -214,6 +240,14 @@ class message :
   virtual void
   move_local_to_remote();
 
+  sumi::public_buffer& local_buffer() { return local_buffer_; }
+  sumi::public_buffer& remote_buffer() { return remote_buffer_; }
+
+  void*&
+  eager_buffer() {
+   return local_buffer_.ptr;
+  }
+
  protected:
   void
   clone_into(message* cln) const;
@@ -222,6 +256,11 @@ class message :
   buffer_send(public_buffer& buf, long num_bytes);
 
  protected:
+  long num_bytes_;
+  sumi::public_buffer local_buffer_;
+  sumi::public_buffer remote_buffer_;
+
+ private:
   payload_type_t payload_type_;
 
   class_t class_;
@@ -232,25 +271,37 @@ class message :
 
   int transaction_id_;
 
-  long num_bytes_;
-
   bool needs_send_ack_;
 
   bool needs_recv_ack_;
 
+#if SUMI_COMM_SYNC_STATS
  public:
-  sumi::public_buffer& local_buffer() { return local_buffer_; }
-  sumi::public_buffer& remote_buffer() { return remote_buffer_; }
-
-  void*&
-  eager_buffer() {
-   return local_buffer_.ptr;
+  double time_sent() const {
+    return sent_;
   }
 
- protected:
-  sumi::public_buffer local_buffer_;
-  sumi::public_buffer remote_buffer_;
+  double time_arrived() const {
+    return arrived_;
+  }
 
+  void
+  set_time_sent(double now){
+    if (sent_ < 0){
+      //if already set, don't overwrite
+      sent_ = now;
+    }
+  }
+
+  void
+  set_time_arrived(double now){
+    arrived_ = now;
+  }
+ private:
+  double sent_;
+
+  double arrived_;
+#endif
 };
 
 class system_bcast_message : public message
@@ -265,9 +316,9 @@ class system_bcast_message : public message
 
   system_bcast_message(action_t action, int root) :
     action_(action),
-    root_(root)
+    root_(root),
+    message(bcast)
   {
-    class_ = bcast;
   }
 
   system_bcast_message(){} //serialization

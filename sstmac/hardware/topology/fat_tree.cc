@@ -331,15 +331,19 @@ tapered_fat_tree::tapered_fat_tree(sprockit::sim_parameters *params) :
   num_core_switches_ = params->get_int_param("num_core_switches");
   num_inj_switches_ = num_inj_switches_per_subtree_ * num_agg_subtrees_;
 
-  double numerator = num_inj_switches_per_subtree_ + num_agg_switches_per_subtree_;
-  double down_link_fraction = double(num_inj_switches_per_subtree_) / numerator;
-  double up_link_fraction = num_agg_switches_per_subtree_ / numerator;
+  //double numerator = num_inj_switches_per_subtree_ + num_agg_switches_per_subtree_;
+  //double down_link_fraction = double(num_inj_switches_per_subtree_) / numerator;
+  //double up_link_fraction = num_agg_switches_per_subtree_ / numerator;
 
-  agg_bw_multiplier_ = up_link_fraction * num_agg_switches_per_subtree_;
+  //agg_bw_multiplier_ = up_link_fraction * num_agg_switches_per_subtree_;
+  agg_bw_multiplier_ = num_agg_switches_per_subtree_;
 
   numleafswitches_ = num_inj_switches_per_subtree_ * num_agg_subtrees_;
 
-  max_ports_intra_network_ = std::max(up_port(0), up_port(1));
+  int max_up_port = std::max(up_port(0), up_port(1));
+  int max_core_port = num_agg_subtrees_;
+  max_ports_intra_network_ = std::max(max_up_port, max_core_port);
+  
   eject_geometric_id_ = max_ports_intra_network_;
 
   num_switches_ = num_inj_switches_ + num_agg_subtrees_ + 1;
@@ -452,7 +456,7 @@ tapered_fat_tree::connected_outports(switch_id src, std::vector<connection>& con
     connection& upconn = conns[num_inj_switches_per_subtree_];
     upconn.src = src;
     upconn.dst = core_switch_id();
-    upconn.src_outport = num_inj_switches_per_subtree_;
+    upconn.src_outport = up_port(1);
     upconn.dst_inport = myTree;
   } else {
     //inj switch

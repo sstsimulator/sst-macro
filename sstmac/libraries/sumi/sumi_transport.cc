@@ -290,9 +290,6 @@ sumi_transport::send(
   bool needs_ack,
   int ty)
 {
-   if (dst_app == -1) abort();
-   if (dst_task == -1) abort();
-
   sstmac::sw::app_id aid = sid().app_;
   transport_message* tmsg = new transport_message(server_libname_, aid, msg, byte_length);
   tmsg->hw::network_message::set_type((hw::network_message::type_t)ty);
@@ -490,6 +487,17 @@ void
 sumi_transport::ping_timeout(sumi::pinger* pnger)
 {
   pnger->execute();
+}
+
+void
+sumi_transport::incoming_message(transport_message *msg)
+{
+#if SSTMAC_COMM_SYNC_STATS
+  if (msg){
+    msg->payload()->set_time_arrived(wall_time());
+  }
+#endif
+  queue_->put_message(msg);
 }
 
 sumi_queue::sumi_queue(sstmac::sw::operating_system* os)

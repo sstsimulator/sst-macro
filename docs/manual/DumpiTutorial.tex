@@ -20,7 +20,7 @@ dumpi/build> ../configure CC=mpicc CXX=mpicxx \
 	              --enable-libdumpi --prefix=$DUMPI_PATH
 \end{ShellCmd}
 The \inlineshell{--enable-libdumpi} flag is needed to configure the trace collection library.
-After compiling and installing, a \inlineshell{libdumpi.\$prefix} will be added to \inlineshell{\$DUMPI_PATH/lib}.
+After compiling and installing, a \inlineshell{libdumpi} will be added to \inlineshell{\$DUMPI_PATH/lib}.
 
 Collecting application traces requires only a trivial modification to the standard MPI build.
 Using the same compiler, simply add the DUMPI library path and library name to your project's \inlineshell{LDFLAGS}.
@@ -91,8 +91,8 @@ MPI_Init returning at walltime 8153.0493, cputime 0.0044 seconds in thread 0.
 MPI_Finalize entering at walltime 8153.0493, cputime 0.0045 seconds in thread 0.
 MPI_Finalize returning at walltime 8153.0498, cputime 0.0049 seconds in thread 0.
 \end{ViFile}
-
 The third file is just a small metadata file DUMPI used to configure trace replay.
+
 \begin{ViFile}
 hostname=deepthought.magrathea.gov
 numprocs=2

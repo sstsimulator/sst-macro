@@ -12,6 +12,7 @@
 include $(top_srcdir)/Makefile.common
 
 dist_bin_SCRIPTS = aprun \
+dumpibreakdown \
 fix_style \
 readsymbols \
 sstmain \

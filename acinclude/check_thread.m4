@@ -1,8 +1,8 @@
 
 AC_DEFUN([CHECK_THREAD_PARALLEL], [
 AC_ARG_ENABLE([multithread],
-  [AS_HELP_STRING([--enable-multithread],
-    [enable thread-parallel PDES simulation])],
+  [AS_HELP_STRING([--(dis|en)able-multithread],
+    [enable thread-parallel PDES simulation [default=no]])],
   [with_multithread=$enableval],
   [with_multithread=no])
 if test "X$with_multithread" = "Xyes"; then
@@ -13,8 +13,8 @@ else
 fi
 
 AC_ARG_ENABLE([spinlock],
-  [AS_HELP_STRING([--enable-spinlock],
-    [enable spin locks for more efficient thread barriers])],
+  [AS_HELP_STRING([--(dis|en)able-spinlock],
+    [enable spin locks for more efficient thread barriers [default=no]])],
   [with_spinlock=$enableval],
   [with_spinlock=no])
 if test "X$with_spinlock" = "Xyes"; then
@@ -50,8 +50,8 @@ AC_DEFINE(HAVE_PTHREAD_AFFINITY_NP, 1,
 )
 
 AC_ARG_ENABLE([cpu-affinity],
-  [AS_HELP_STRING([--enable-cpu-affinity],
-    [enable strict cpu affinity for multithreading])],
+  [AS_HELP_STRING([--(dis|en)able-cpu-affinity],
+    [enable strict cpu affinity for multithreading [default=no]])],
   [with_cpu_affinity=yes],
   [with_cpu_affinity=no])
 if test "X$with_cpu_affinity" = "Xyes"; then

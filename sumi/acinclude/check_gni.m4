@@ -5,7 +5,7 @@ AC_DEFUN([CHECK_GNI], [
 AC_ARG_ENABLE(gni,
   [AS_HELP_STRING(
     [--(dis|en)able-gni],
-    [Whether to cognile GNI transport conduits]
+    [Whether to cognile GNI transport conduits [default=no]]
     )],
   [
     enable_gni=$enableval

@@ -13,6 +13,9 @@ include $(top_srcdir)/Makefile.common
 
 # Files that should be distributed but are not built.
 EXTRA_DIST = LICENSE bootstrap.sh \
+  developer-sstmacro-6.1.pdf \
+  manual-sstmacro-6.1.pdf \
+  pdes-report-6.1.pdf \
   docs \
   skeletons
 

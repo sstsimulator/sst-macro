@@ -46,6 +46,16 @@ packetizer::start(int vn, message *msg)
 }
 
 void
+packetizer::deadlock_check()
+{
+  for (auto& pair : pending_){
+    for (pending_send& send : pair.second){
+      std::cerr << "Packetizer can't send " << send.msg->to_string() << std::endl;
+    }
+  }
+}
+
+void
 packetizer::sendWhatYouCan(int vn)
 {
   std::list<pending_send>& pending = pending_[vn];
