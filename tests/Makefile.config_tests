@@ -17,14 +17,16 @@ CONFIGTESTS = \
   test_configs_hopper_amm2_simple \
   test_configs_hopper_amm3_simple \
   test_configs_deepthought \
-  test_configs_sequoia \
   test_configs_exa1_pflow \
   test_configs_exa1_simple \
   test_configs_exa2_pflow \
   test_configs_exa2_simple 
 
 
+
 if !INTEGRATED_SST_CORE
+CONFIGTESTS += test_configs_sequoia 
+
 COVERAGETESTS = \
   test_coverage_smp_pflow \
   test_coverage_simple_switch \
