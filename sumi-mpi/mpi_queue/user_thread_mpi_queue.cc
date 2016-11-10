@@ -71,10 +71,10 @@ mpi_queue::handle_collective_done(const sumi::message::ptr& msg)
 }
 
 void
-mpi_queue::start_progress_loop(const std::vector<mpi_request*>& req)
+mpi_queue::start_progress_loop(const std::vector<mpi_request*>& reqs)
 {
   mpi_queue_debug("starting progress loop");
-  while (!at_least_one_complete(req)) {
+  while (!at_least_one_complete(reqs)) {
     mpi_queue_debug("blocking on progress loop");
     sumi::message::ptr msg = api_->blocking_poll();
     handle_poll_msg(msg);
@@ -86,7 +86,7 @@ void
 mpi_queue::forward_progress(double timeout)
 {
   mpi_queue_debug("starting forward progress");
-  sumi::message::ptr msg = api_->blocking_poll(1e-3);
+  sumi::message::ptr msg = api_->blocking_poll(timeout);
   if (msg) handle_poll_msg(msg);
 }
 
@@ -122,7 +122,6 @@ mpi_queue::post_header(const mpi_message::ptr& msg, bool needs_ack)
   msg->set_src_rank(comm->rank());
   api_->send_header(dst_world_rank, msg, needs_ack);
 }
-
 
 void
 mpi_queue::post_rdma(const mpi_message::ptr& msg,

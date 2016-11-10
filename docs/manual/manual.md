@@ -539,7 +539,7 @@ Full details on building SST Python scripts can be found at http://sst-simulator
 export SST_LIB_PATH=$SST_LIB_PATH:$SSTMAC_PREFIX/lib
 
 options="$@"
-$SST_PREFIX/bin/sst $SSTMAC_PREFIX/include/python/default.py --model-options="$options"
+$SST_PREFIX/bin/sst$SSTMAC_PREFIX/include/python/default.py --model-options="$options"
 ````
 
 The script configures the necessary paths and then launches with a Python script `default.py`.  Interested users can look at the details of the Python file to understand how SST/macro converts parameter files into a Python config graph compatible with SST core.
@@ -886,7 +886,7 @@ In the simplest possible case, the network is modeled via a simple latency/bandw
 For more complicated network models, many more than two parameters will be required. 
 See [3.4](#sec:tutorial:networkmodel) for a brief explanation of SST-macro network congestion models. 
 A topology is also needed for constructing the network.  
-In this case we choose a 2-D 4$\times$4 torus (16 switches).  The `topology_geometry` 
+In this case we choose a 2-D 4X4 torus (16 switches).  The `topology_geometry` 
 parameter takes an arbitrarily long list of numbers as the dimensions to the torus.
 
 Finally, we must construct a node model.  
@@ -977,17 +977,16 @@ If the parameter is set to 100-1000 bytes, e.g., that means we are doing more fi
 
 
 The following parameters define the CPU and compute power of the node (independent of memory subsystem).
-They are universal and are valid for all abstract machine models.
+They are universal and are valid for all abstract machine models.  Using the preferred (current) namespace parameters:
 
-Using the preferred (current) namespace parameters:
 ````
 node.model = simple
 node.frequency = 2.1ghz
 node.ncores = 24
 node.nsockets = 4
 ````
-
 or using the deprecated parameters:
+
 ````
 node_name = simple
 node_frequency = 2.1ghz
@@ -1019,7 +1018,6 @@ injection_latency = 1us
 memory_bandwidth = 10GB/s
 memory_latency = 15ns
 ````
-
 These are special parameters used by the AMM configurations.
 They can be by-passed by directly using fully namespaced parameters:
 
@@ -1051,9 +1049,9 @@ The parameter is `network_hop_latency`.
 This is the latency required for a single packet to traverse one switch and hop to the next one in the network.
 Thus, even in the most basic of network models, there is a still a notion of topology that affects the number of hops and therefore the latency.
 To compute the total network network latency as one would observe in an MPI ping-ping benchmark, one would compute
-\[
-lat = n_{hops} * lat_{hop} + 2*lat_{inj}
-\]
+
+lat = n(hops) * lat(hop) + 2*lat(inj)
+
 using the hop latency and the injection latency.
 
 This abstract machine model is a good place to start for getting a "lay of the land" for simulations - and the simplest to configure.
@@ -1137,11 +1135,12 @@ Excellent resources are "Principles and Practices of Interconnection Networks" b
 
 
 Topologies are determined by two mandatory parameters.
+
 ````
 topology.name = torus
 topology.geometry = 4 4
 ````
-Here we choose a 2D-torus topology with extent 4 in both the $X$ and $Y$ dimensions for a total of 16 nodes (Figure [5](#fig:torus:basic))
+Here we choose a 2D-torus topology with extent 4 in both the X and Y dimensions for a total of 16 nodes (Figure [5](#fig:torus:basic))
 The topology is laid out in a regular grid with network links connecting nearest neighbors.  
 Additionally, wrap-around links connect the nodes on each boundary.  
 
@@ -1172,7 +1171,7 @@ topology.concentration = 2
 ````
 which would now generate a torus topology with 16 switches and 32 compute nodes.
 
-Another subtle modification of torus (and other networks) can be controlled by giving the $X$, $Y$, and $Z$ directions different bandwidth.  
+Another subtle modification of torus (and other networks) can be controlled by giving the X, Y, and Z directions different bandwidth.  
 The above network could be modified as
 
 ````
@@ -1180,7 +1179,7 @@ topology.name = torus
 topology.geometry = 4 4
 topology.redundant = 2 1
 ````
-giving the the $X$-dimension twice the bandwidth of the $Y$-dimension.  
+giving the the X-dimension twice the bandwidth of the Y-dimension.  
 This pattern DOES exist in some interconnects as a load-balancing strategy.  
 A very subtle point arises here. Consider two different networks:
 
@@ -1210,7 +1209,7 @@ By default, SST-macro uses the simplest possible routing algorithm: dimension-or
 *Figure 7: Dimension-Order Minimal Routing on a 2D Torus*
 
 
-In going from source to destination, the message first travels along the $X$-dimension and then travels along the $Y$-dimension.
+In going from source to destination, the message first travels along the X-dimension and then travels along the Y-dimension.
 The above scheme is entirely static, making no adjustments to avoid congestion in the network.  
 SST-macro supports a variety of adaptive routing algorithms.  This can be specified:
 
@@ -1226,7 +1225,7 @@ There are now multiple valid paths between network endpoints, one of which is il
 
 
 At each network hop, the router chooses the productive path with least congestion.  
-In some cases, however, there is only one minimal path (node $(0,0)$ sending to $(2,0)$ with only $X$ different).
+In some cases, however, there is only one minimal path (node (0,0) sending to (2,0) with only X different).
 For these messages, minimal adaptive is exactly equivalent to dimension-order routing.  
 Other supported routing schemes are valiant and UGAL.  More routing schemes are scheduled to be added in future versions.  
 A full description of more complicated routing schemes will be given in its own chapter in future versions. 
@@ -1250,10 +1249,10 @@ The MTL (message transfer layer) moves entire network flows from point-to-point 
 Thus an entire 1 MB MPI message is transported as a single chunk of data.  
 The majority of MACRELS models are based on the LogP set of approximations:
 
-\[
-\Delta t = \alpha + \beta N
-\]
-where $\Delta t$ is the time delay, $\alpha$ is the minimum latency of the communication, $\beta$ is the inverse bandwidth (s/B), and N is the number of bytes.
+
+&Delta; t = &alpha; + &beta; N
+
+where &Delta; t is the time delay, &alpha; is the minimum latency of the communication, &beta; is the inverse bandwidth (s/B), and N is the number of bytes.
 In abstract machine models, these methods are selected as:
 
 ````
@@ -1297,6 +1296,7 @@ To tune the packet size for abstract machine models, set:
 accuracy_parameter = 1024B
 ````
 or equivalently 
+
 ````
 mtu = 1024B
 ````
@@ -1335,11 +1335,11 @@ In contrast to the completely discrete simple model, packets can "multiplex" in 
 Modeling a packet delay starts with two input parameters and computes three output parameters.
 
 
--   $A$: Packet head arrival (input)
--   $I$: Packet incoming bandwidth (input)
--   $H$: Packet head departure (output)
--   $T$: Packet tail departure (output)
--   $O$: Packet outgoing bandwidth (output)
+-   A: Packet head arrival (input)
+-   I: Packet incoming bandwidth (input)
+-   H: Packet head departure (output)
+-   T: Packet tail departure (output)
+-   O: Packet outgoing bandwidth (output)
 
 In the simple model, a packet either consumes all the bandwidth or none of the bandwidth.
 To account for flit-level pipelining, the cut-through model allows packets to consume partial bandwidths.
@@ -1348,13 +1348,13 @@ The first packet (purple, Figure [9](#fig:pisces)) arrives with a full incoming 
 It therefore consumes all the available bandwidth. 
 The head of the packet can actually leave immediately (as it must to properly pipeline or cut-through).
 The tail leaves after all bytes have sent at t=1.0.
-Thus for the first packet we have $H$=0.0, $T$=1.0, and $O$=1.0.
+Thus for the first packet we have H=0.0, T=1.0, and O=1.0.
 
 The second packet (orange) arrives at t=0.5. 
 Upon arrival there is no bandwidth available as the first packet is consuming the maximum.
 Only after the first packet finishes can the second packet begin.
 The second packet arrives and leaves with a reduced bandwidth of 0.5. 
-Thus we have $H$=1.0, $T$=3.0, and $O$=0.5.
+Thus we have H=1.0, T=3.0, and O=0.5.
 
 The third packet (green) arrives at t=1.75.
 Upon arrival there is some bandwidth, but not enough to match the incoming bandwidth of 0.57.
@@ -1365,13 +1365,13 @@ Packet 3 can actually consume MORE than 0.6 bandwidth units.
 Between steps 4 and 6, packet 3 has accumulated in a local buffer in the router.
 Thus even though the incoming bandwidth is only 0.6, there are several flits that are available to send immediately at full bandwidth waiting in the buffer.
 Thus results in an effective bandwidth of 0.75 for the remainder of the packet's time in the arbitrator.
-Thus we end up with $H$=1.75, $T$=3.5, and $O$=0.57.
+Thus we end up with H=1.75, T=3.5, and O=0.57.
 Even though the packet is initially delayed, the buffers compensate for the delay and allow the outgoing bandwidth to "catch up" with the incoming bandwidth.
 
 Finally, the fourth packet (blue) arrives at t=3.0. 
 There is some available bandwidth. After the third packet finishes, the fourth packet can now send at maximum.
 Because of the initial delay, the outgoing bandwidth is somewhat reduced.
-We have $H$=3.0, $T$=4.38, and $O$=0.73.
+We have H=3.0, T=4.38, and O=0.73.
 
 #### 3.4.3: Flow<a name="subsec:tutorial:flow"></a>
 
@@ -1659,8 +1659,8 @@ In the most common (and simplest) use case, all user-space threads are serialize
 The main simulation thread must manage all synchronizations, yielding execution to process threads at the appropriate times.
 The main simulation thread is usually abbreviated as the DES (discrete event simulation) thread.
 The simulation progresses by scheduling future events.  
-For example, if a message is estimated to take 5 $\mu$s to arrive,
-the simulator will schedule a MESSAGE ARRIVED event 5 $\mu$s ahead of the current time stamp.
+For example, if a message is estimated to take 5 &mu;s to arrive,
+the simulator will schedule a MESSAGE ARRIVED event 5 &mu;s ahead of the current time stamp.
 Every simulation starts by scheduling the same set of events: launch process 0, launch process 1, etc.
 
 
@@ -1670,15 +1670,15 @@ Every simulation starts by scheduling the same set of events: launch process 0, 
 
 
 
-The simulation begins at time $t=0\mu s$.  
+The simulation begins at time t=0&mu; s.  
 The simulation thread runs the first event, launching process 0.
 The context of process 0 is switched in, and SST-macro proceeds running code as if it were actually process 0.
 Process 0 starts a blocking send in Event 1.
 For process 0 to perform a send in the simulator, it must schedule the necessary events to simulate the send.
 Most users of SST-macro will never need to explicitly schedule events.
 Discrete event details are always hidden by the API and executed inside library functions.
-In this simple case, the simulator estimates the blocking send will take 1 $\mu$s.
-It therefore schedules a SEND DONE (Event 4) 1 $\mu$s into the future before blocking.
+In this simple case, the simulator estimates the blocking send will take 1 &mu;s.
+It therefore schedules a SEND DONE (Event 4) 1 &mu;s into the future before blocking.
 When process 0 blocks, it yields execution back to the main simulation.
 
 At this point, no time has yet progressed in the simulator.
@@ -1687,17 +1687,17 @@ Unlike the blocking send case, the blocking receive does not schedule any events
 It cannot know when the message will arrive and therefore blocks without scheduling a RECV DONE event.
 Process 1 just registers the receive and yields back to the DES thread.
 
-At this point, the simulator has no events left at t=0 $\mu$s and so it must progress its time stamp.
-The next event (Event 4) is SEND DONE at t=1 $\mu$s. The event does two things.
+At this point, the simulator has no events left at t=0 &mu;s and so it must progress its time stamp.
+The next event (Event 4) is SEND DONE at t=1 &mu;s. The event does two things.
 First, now that the message has been injected into the network, the simulator estimates when it will arrive at the NIC of process 1.
-In this case, it estimates 1 $\mu$s and therefore schedules a MESSAGE ARRIVED event in the future at t=2 $\mu$s (Event 7).
+In this case, it estimates 1 &mu;s and therefore schedules a MESSAGE ARRIVED event in the future at t=2 &mu;s (Event 7).
 Second, the DES thread unblocks process 0, resuming execution of its thread context.
 Process 0 now posts a blocking receive, waiting for process 1 to acknowledge receipt of its message.
 
-The simulator is now out of events at t=1 $\mu$s and therefore progresses its time stamp to t=2 $\mu$s.
+The simulator is now out of events at t=1 &mu;s and therefore progresses its time stamp to t=2 &mu;s.
 The message arrives (Event 7), allowing process 1 to complete its receive and unblock.
 The DES thread yields execution back to process 1, which now executes a blocking send to ack receipt of the message.
-It therefore schedules a SEND DONE event 1 $\mu$s in the future (Event 10) and blocks, yielding back to the DES thread.
+It therefore schedules a SEND DONE event 1 &mu;s in the future (Event 10) and blocks, yielding back to the DES thread.
 This flow of events continues until all the application threads have terminated.
 The DES thread will run out of events, bringing the simulation to an end. 
 
@@ -1727,7 +1727,7 @@ dumpi/build> ../configure CC=mpicc CXX=mpicxx \
 	              --enable-libdumpi --prefix=$DUMPI_PATH
 ````
 The `--enable-libdumpi` flag is needed to configure the trace collection library.
-After compiling and installing, a `libdumpi.\$prefix` will be added to `\$DUMPI_PATH/lib`.
+After compiling and installing, a `libdumpi` will be added to `\$DUMPI_PATH/lib`.
 
 Collecting application traces requires only a trivial modification to the standard MPI build.
 Using the same compiler, simply add the DUMPI library path and library name to your project's `LDFLAGS`.
@@ -1799,8 +1799,8 @@ MPI_Init returning at walltime 8153.0493, cputime 0.0044 seconds in thread 0.
 MPI_Finalize entering at walltime 8153.0493, cputime 0.0045 seconds in thread 0.
 MPI_Finalize returning at walltime 8153.0498, cputime 0.0049 seconds in thread 0.
 ````
-
 The third file is just a small metadata file DUMPI used to configure trace replay.
+
 ````
 hostname=deepthought.magrathea.gov
 numprocs=2
@@ -1942,7 +1942,7 @@ The MPI ranks are mapped to physical nodes entirely independent of the trace.
 Generating call graphs requires a special build of SST-macro.
 
 ````
-build$ ../configure --prefix=$INSTALL_PATH --enable-graphviz
+build> ../configure --prefix=$INSTALL_PATH --enable-graphviz
 ````
 The `--enable-graphviz` flag defines an instrumentation macro throughout the SST-macro code.
 This instrumentation must be compiled into SST-macro.
@@ -1999,7 +1999,7 @@ Here we see the function splits execution time between buffering messages (memcp
 
 
 Spyplots visualize communication matrices, showing either the number of messages or number of bytes sent between two network endpoints.
-They are essentially contour diagrams, where instead of a continuous function $F(x,y)$ we are plotting the communication matrix $M(i,j)$.
+They are essentially contour diagrams, where instead of a continuous function F(x,y) we are plotting the communication matrix M(i,j).
 An example spyplot is shown for a simple application that only executes an MPI\_Allreduce (Figure [19](#fig:spyplot)).
 Larger amounts of data (red) are sent to nearest neighbors while decreasing amounts (blue) are sent to MPI ranks further away.
 
@@ -2152,15 +2152,16 @@ nic {
 }
 ````
 The delay histogram goes in the ejection namespace since we want to measure packet congestion after it leaves the network.
-The histogram is not logarithmic and we want to bin files in units of 0.5$\mu$s.
+The histogram is not logarithmic and we want to bin files in units of 0.5&mu;s.
 After running, two files will be generated: a gnuplot script`delay.p` and a corresponding data file `delay.dat`.
 After running
+
 ````
 shell>gnuplot delay.p
 ````
 a PNG file `delay.png` is generated.
 The generated histogram is shown in Figure [22](#fig:nekboneDelayHistogram). 
-Delays, when occurring in this case, are usually on the order of a few $\mu$s.
+Delays, when occurring in this case, are usually on the order of a few &mu;s.
 
 
 ![Figure 22: Histogram of message sizes sent by Nekbone application](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/delayHistogramNekbone) 
@@ -2402,8 +2403,8 @@ app1.indexing = coordinate
 app1.allocation = coordinate
 app1.coordinate_file = coords.txt
 ````
-
 and then a coordinate file named `coords.txt`
+
 ````
 5 2
 0 0
@@ -2463,7 +2464,7 @@ topology.geometry = 4 2
 ````
 The first number, 4, indicates the number of levels in the fat tree.
 The second number, 2, indicates the radix or branching factor of the tree.
-The number of compute nodes in this topology is $2^4 = 16$.
+The number of compute nodes in this topology is 2^4 = 16.
 This is illustrated conceptually in Figure [28](#fig:topologies:abstractfattree).
 The color coding will become clear later.
 We note this is somewhat confusing since the fat tree appears to have 5 levels.
@@ -2483,7 +2484,7 @@ Higher radix fat trees can be specified, e.g.
 topology.name = fattree
 topology.geometry = 3 4
 ````
-which would have $4^3 = 64$ compute nodes.
+which would have 4^3 = 64 compute nodes.
 
 
 ![Figure 28: Abstract, conceptual picture of Fat Tree topology](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/fattree/abstract_fattree.png) 
@@ -2620,13 +2621,13 @@ Small groups are connected as a generalized hypercube with full connectivity wit
 Intergroup connections (global links) provide pathways for hopping between groups.
 A dragonfly is usually understood through three parameters:
 
--   $p$: number of nodes connected to each router
--   $a$: number of routers in a group
--   $h$: number of global links that each switch has
+-   p: number of nodes connected to each router
+-   a: number of routers in a group
+-   h: number of global links that each switch has
 
 For simplicity, only three example global links are show for clarity in the picture.
-For the Cray X630, $a = 96$, $h=10$, and $p=4$ so that each router is connected to many other ($h=10$) groups.
-The caveat is that in many implementations global links are grouped together for $h=2$ or $3$ fat global links.
+For the Cray X630, a = 96, h=10, and p=4 so that each router is connected to many other (h=10) groups.
+The caveat is that in many implementations global links are grouped together for h=2 or 3 fat global links.
 These demonstrate well-balanced ratios.
 In general, scaling out a dragonfly should not increase the size of a group, only the number of groups.
 
@@ -2635,16 +2636,17 @@ In general, scaling out a dragonfly should not increase the size of a group, onl
 
 
 The dragonfly coordinate system is essentially the same as a 3D torus.  
-The group 2D hypercube layout defines $X$ and $Y$ coordinates.
-The group number defines a $Z$ or $G$ coordinate.
+The group 2D hypercube layout defines X and Y coordinates.
+The group number defines a Z or G coordinate.
 Thus the topology in Figure [30](#fig:topologies:dragonfly) would be specified as
 
 ````
 topology.name = dragonfly
 topology.geometry = 3 3 3
 ````
-for groups of size $3 \times 3$ with a total of 3 groups.
-To complete the specification, the number of global links ($h$) for each router must be given
+for groups of size 3 X 3 with a total of 3 groups.
+To complete the specification, the number of global links (h) for each router must be given
+
 ````
 topology.group_connections = 10
 ````
@@ -2655,7 +2657,7 @@ topology.group_connections = 10
 
 It is important to understand the distinction between link bandwidth, channel bandwidth, and pin bandwidth.
 All topologies have the same pin bandwidth and channel bandwidth (assuming they use the same technology).
-Each router in a topology is constrained to have the same number of channels (called radix, usually about $k=64$).
+Each router in a topology is constrained to have the same number of channels (called radix, usually about k=64).
 The number of channels per link changes dramatically from topology to topology.
 Low radix topologies like 3D torus can allocate more channels per link, 
 giving higher bandwidth between adjacent routers.
@@ -2981,9 +2983,9 @@ The allowed parameter types are:
 | num\_leaf\_switches (int) | No default | Positive int | Only relevant for fat trees. This is the number of switches at the lowest level of the tree that are connected to compute nodes. Depending on how the fat tree is specified, this number may not be required. |
 | k (int) | No default | int >= 2 | The branching fraction of a fat tree. k=2 is a binary tree. k=4 is a quad-tree. |
 | l (int) | No default | Positive int | The number of levels in a fat tree. |
-| num\_inj\_switches\_per\_subtree | No default | Positive int | For a tapered tree, the number of injection switches, $N_{inj}$, within an aggregation tree that connect directly toc ompute nodes. |
+| num\_inj\_switches\_per\_subtree | No default | Positive int | For a tapered tree, the number of injection switches, N(inj), within an aggregation tree that connect directly toc ompute nodes. |
 | num\_agg\_switches\_per\_subtree | No default | Positive int | For a tapered tree, the number of aggregations witches per aggregation tree linking injection switches to the core. |
-| num\_agg\_subtrees | No default | Positive int | For a tapered fat tree with 3 levels (injection, aggregation, core), this gives the number, $N_{agg}$, of aggregation subtrees. To find the total number, $N_{tot}$ of injection (leaf) switches, we have $N_{tot} = N_{agg} \times N_{inj}$. |
+| num\_agg\_subtrees | No default | Positive int | For a tapered fat tree with 3 levels (injection, aggregation, core), this gives the number, N(agg), of aggregation subtrees. To find the total number, N(tot) of injection (leaf) switches, we have N(tot) = N(agg) X N(inj). |
 | num\_core\_switches | No default | Positive int | The total number of core switches in a tapered tree linking the individual aggregation trees. |
 | group\_connections (int) | No default | Positive int | For dragonfly, the number of intergroup connections on each switch in a Dragonfly group |
 | redundant (vector of int) | vector of 1's | Positive ints | For Cartesian topologies (hypercube, dragonfly, torus) this specifies a bandwidth (redundancy) multiplier for network links in each dimension. |
@@ -3161,7 +3163,7 @@ All other parameters can be filled in from `node.nic.injection`.
 
 | Name (type) | Default | Allowed | Description |
 |-------------|---------|---------|-------------|
-| ncores (int) | No default | Positive int | The number of cores contained in a processor (socket). Total number of cores for a node is $ncores \times nsockets$. |
+| ncores (int) | No default | Positive int | The number of cores contained in a processor (socket). Total number of cores for a node is ncores X nsockets. |
 | frequency | No default |  | The baseline frequency of the node |
 | parallelism (double) | 1.0 | Positive number | Fudge factor to account for superscalar processor. Number of flops per cycle performed by processor. |
 

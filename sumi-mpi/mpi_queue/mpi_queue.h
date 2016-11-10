@@ -100,6 +100,9 @@ class mpi_queue
     return api_;
   }
 
+  double
+  now() const;
+
   sstmac::sw::lib_compute_memmove*
   user_lib_mem() const {
     return user_lib_mem_;

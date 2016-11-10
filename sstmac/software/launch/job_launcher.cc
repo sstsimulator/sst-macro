@@ -1,4 +1,5 @@
 #include <sstmac/software/launch/job_launcher.h>
+#include <sstmac/software/process/operating_system.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/software/launch/launch_event.h>
@@ -16,6 +17,7 @@ namespace sw {
 SpktRegister("default", job_launcher, default_job_launcher);
 
 job_launcher* job_launcher::static_launcher_ = nullptr;
+int job_launcher::launch_root_ = 0;
 
 job_launcher*
 job_launcher::static_job_launcher(sprockit::sim_parameters* params, event_manager* mgr)
@@ -35,6 +37,7 @@ job_launcher::job_launcher(sprockit::sim_parameters* params, event_manager* mgr)
   for (int i=0; i < num_nodes; ++i){
     available_.insert(i);
   }
+  launch_root_ = params->get_optional_int_param("launch_root", 0);
 }
 
 app_launch*
@@ -66,10 +69,16 @@ void
 job_launcher::satisfy_launch_request(app_launch* appman, hw::node* nd)
 {
   apps_launched_[appman->aid()] = appman;
-  for (int rank : appman->rank_assignment(nd->addr())){
-    sw::launch_event* lev = new launch_event(appman->app_name(), appman->aid(),
-                                    rank, appman->app_params(), appman->core_affinities());
-    nd->handle(lev);
+  if (nd->addr() != launch_root_)
+    return;
+
+  auto nodes = appman->node_assignments();
+  int num_ranks = nodes.size();
+  for (int rank=0; rank < num_ranks; ++rank){
+    sw::launch_event* lev = new launch_event(launch_event::Start,
+                                    appman->aid(),
+                                    rank, nodes[rank], launch_root_);
+    nd->os()->execute_kernel(ami::COMM_PMI_SEND, lev);
   }
 }
 

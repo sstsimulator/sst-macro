@@ -5,7 +5,7 @@ AC_DEFUN([CHECK_SST], [
 AC_ARG_ENABLE(sst,
   [AS_HELP_STRING(
     [--(dis|en)able-sst],
-    [Whether to compile SST transport conduits]
+    [Whether to compile SST transport conduits [default=no]]
     )],
   [
     enable_sst=$enableval

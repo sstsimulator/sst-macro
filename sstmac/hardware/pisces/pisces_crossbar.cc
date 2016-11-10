@@ -249,8 +249,8 @@ pisces_NtoM_queue::handle_payload(event* ev)
   }
   else {
     pisces_debug(
-      "On %s:%p, pushing back on queue %d=(%d,%d) for nq=%d nvc=%d mapper=(%d,%d,%d)",
-      to_string().c_str(), this,
+      "On %s:%p, pushing back %s on queue %d=(%d,%d) for nq=%d nvc=%d mapper=(%d,%d,%d)",
+      to_string().c_str(), this, pkt->to_string().c_str(),
       local_slot(dst_port, dst_vc), dst_port, dst_vc, queues_.size(), num_vc_,
       port_offset_, port_div_, port_mod_);
     queue(dst_port, dst_vc).push_back(pkt);

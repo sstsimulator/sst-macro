@@ -1,9 +1,5 @@
 % !TEX root = developer.tex
 
-\newcommand{\nodecls}{\inlinecode{node}\xspace}
-\newcommand{\topcls}{\inlinecode{topology}\xspace}
-\newcommand{\switchid}{\inlinecode{switch_id}\xspace}
-\newcommand{\nodeid}{\inlinecode{node_id}\xspace}
 
 \chapter{Hardware Models}
 \label{chapter:hardware}
@@ -12,14 +8,14 @@
 \label{sec:topOverview}
 To better understand how hardware models are put together for simulating interconnects, we should try to understand the basic flow of event in SST/macro involved in sending a message between two network endpoints.  We have already seen in skeleton applications in previous sections how an application-level call to a function like \inlinecode{MPI_Send} is mapping to an operating system function and finally a hardware-level injection of the message flow.  Overall, the following steps are required:
 
-\begin{enumerate}
+\begin{itemize}
 \item Start message flow with app-level function call
 \item Push message onto NIC for send
 \item NIC packetizes message and pushes packets on injection switch
 \item Packets are routed and traverse the network
 \item Packets arrive at destination NIC and are reassembled (potentially out-of-order)
 \item Message flow is pushed up network software stack
-\end{enumerate}
+\end{itemize}
 
 Through the network, packets must move through buffers (waiting for credits) and arbitrate for bandwidth through the switch crossbar and then through the ser/des link on the switch output buffers.  The control-flow diagram for transporting a flow from one endpoint to another via packets is shown in Figure \ref{fig:controlFlow}
 

@@ -4,7 +4,7 @@ AC_DEFUN([CHECK_MPI_TIMELINE_STATS], [
 AC_ARG_ENABLE(mpi-timeline-stats,
   [AS_HELP_STRING(
     [--(dis|en)able-mpi-timeline-stats],
-    [Whether to log times of the send/recv of all mpi messages sent and print the log at the end of the run],
+    [Whether to log times of the send/recv of all mpi messages sent and print the log at the end of the run [default=no]],
     )],
   [
     enable_mpi_timeline=$enableval

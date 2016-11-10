@@ -63,6 +63,10 @@ collective_op::collective_op(int count, mpi_comm* cm) :
 }
 
 mpi_request::mpi_request(const key::category& cat) :
+#if SSTMAC_COMM_SYNC_STATS
+ time_sent_(-1),
+ time_arrived_(-1),
+#endif
  key_(key::construct(cat)),
  complete_(false),
  cancelled_(false),

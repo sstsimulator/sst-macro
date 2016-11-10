@@ -275,6 +275,10 @@ class operating_system :
 
   void kill_node();
 
+  void decrement_app_refcount();
+
+  void increment_app_refcount();
+
  private:
   void
   add_thread(thread* t);

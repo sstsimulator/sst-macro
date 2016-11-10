@@ -27,10 +27,9 @@ class collective_done_message :
   collective_done_message(int tag, collective::type_t ty,
                           communicator* dom) :
     tag_(tag), result_(0), vote_(0), type_(ty),
-    all_ranks_know_failure_(false), dom_(dom)
+    all_ranks_know_failure_(false), dom_(dom),
+    message(collective_done)
   {
-    class_ = collective_done;
-    payload_type_ = none;
   }
 
   int
@@ -164,7 +163,7 @@ class collective_work_message :
     size_t nbytes,
     int tag, int round,
     int src, int dst) :
-    message(nbytes),
+    message(nbytes, collective),
     tag_(tag),
     type_(type),
     round_(round),
@@ -172,7 +171,6 @@ class collective_work_message :
     dense_recver_(dst),
     action_(action)
   {
-    class_ = collective;
   }
 
   collective_work_message(
@@ -180,7 +178,7 @@ class collective_work_message :
     action_t action,
     int tag, int round,
     int src, int dst) :
-    message(),
+    message(collective),
     tag_(tag),
     type_(type),
     round_(round),
@@ -188,7 +186,6 @@ class collective_work_message :
     dense_recver_(dst),
     action_(action)
   {
-    class_ = collective;
   }
 
   collective_work_message(){} //for serialization

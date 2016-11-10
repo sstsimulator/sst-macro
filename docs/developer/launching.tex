@@ -5,21 +5,22 @@
 
 It is useful for an intuitive understanding of the code to walk through the steps starting from \inlinecode{main} and proceeding to the discrete event simulation actually launching. The code follows these basic steps:
 
-\begin{enumerate}
+\begin{itemize}
 \item Configuration of the simulation via environment variables, command line parameters, and the input file
 \item Building and configuration of simulator components
 \item Running of the actual simulation
-\end{enumerate}
+\end{itemize}
 
 We can walk through each of these steps in more detail.
 
 \section{Configuration of Simulation}\label{sec:simConfig}
 The configuration proceeds through the following basic steps:
-\begin{enumerate}
+\begin{itemize}
 \item Basic initialization of the \inlinecode{parallel_runtime} object from environment variables and command line parameters
 \item Processing and parallel broadcast of the input file parameters
 \item Creation of the simulation \inlinecode{manager} object
 \item Detailed configuration of the \inlinecode{manager} and \inlinecode{parallel_runtime} object
+\end{itemize}
 
 The first step in most programs is to initialize the parallel communication environment via calls to MPI\_Init or similar.
 Only rank 0 should read in the input file to minimize filesystem traffic in a parallel job.
@@ -165,4 +166,3 @@ It begins looping through all events in the queue ordered by timestamp and runs 
 As stated above, all events originate from application code.
 Thus, the first events to run are always the application launch events generated from the launch messages sent to the nodes generated the job launcher.
 
-\end{enumerate}

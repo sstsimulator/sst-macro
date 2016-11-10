@@ -68,7 +68,7 @@ AC_SUBST(BOOST_LDFLAGS)
 AC_ARG_ENABLE(sanity-check,
   [AS_HELP_STRING(
     [--(dis|en)able-sanity-check],
-    [Controls whether safe mode is run with sanity checks. If enabled, code may run much slower.],
+    [Controls whether safe mode is run with sanity checks. If enabled, code may run much slower [default=no]],
    )],
   [
     enable_sanity_check=$enableval
@@ -121,7 +121,7 @@ AH_TEMPLATE([ATOMIC_REFCOUNT], ["Whether refcounts need to be atomic operations 
 AC_ARG_ENABLE(atomic-refcount,
   [AS_HELP_STRING(
     [--(dis|en)able-atomic-refcount],
-    [Enables atomic increment/decrement of refcounted pointers]
+    [Enables atomic increment/decrement of refcounted pointers [default=no]]
    )],
   [
   enable_atomic_refcount=$enableval
@@ -134,28 +134,7 @@ if test "X$enable_atomic_refcount" = "Xyes"; then
     AC_DEFINE_UNQUOTED([ATOMIC_REFCOUNT], 1, [Use atomic refcount])
 fi
 
-AH_TEMPLATE([ENABLE_ORDERED_MAP], ["Whether ordered containers should be used instead of unordered ones"])
-AC_ARG_ENABLE(unordered-containers,
-  [AS_HELP_STRING(
-    [--(dis|en)able-unordered-containers],
-    [Whether to use C++11/Boost unordered containers],
-   )],
-  [
-    if test "X$enableval" = "Xno"; then
-      enable_ordered_map=yes
-    else
-      enable_ordered_map=no
-    fi
-  ], [
-    enable_ordered_map=no
-  ]
-)
-
-if test "X$enable_ordered_map" = "Xyes"; then
-    AC_DEFINE_UNQUOTED([ENABLE_ORDERED_MAP], 1, [Use C++98 ordered containers instead of unordered containers])
-else
-    AC_DEFINE_UNQUOTED([ENABLE_ORDERED_MAP], 0, [Do not use C++98 ordered containers instead of unordered containers])
-fi
+AC_DEFINE_UNQUOTED([ENABLE_ORDERED_MAP], 0, [Do not use C++98 ordered containers instead of unordered containers])
 
 
 AC_CONFIG_FILES([

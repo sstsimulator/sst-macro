@@ -40,9 +40,6 @@ SSTIntegratedComponent::init_links(sprockit::sim_parameters *params)
     sprockit::sim_parameters* port_params = hw::topology::get_port_params(params, src_outport);
     link_wrapper* wrapper = new link_wrapper(link);
 
-    printf("Component %d connecting handler on link %p:%s\n",
-           getId(), link, pair.first.c_str());
-
     if (port_type == "input"){
       //I will receive incoming payloads on this link
       configureLink(pair.first, payload_handler(dst_inport));

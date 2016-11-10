@@ -40,7 +40,7 @@ class stat_histogram :
   clear() override;
 
   void
-  reduce(stat_collector *coll) override;
+  reduce(stat_collector* coll) override;
 
   stat_collector*
   do_clone(sprockit::sim_parameters* params) const override {
@@ -72,7 +72,6 @@ class stat_time_histogram :
   }
 
   void record(timestamp t, int64_t num);
-
 };
 
 }

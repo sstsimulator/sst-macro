@@ -41,12 +41,15 @@ rendezvous_get::incoming_header(mpi_queue *queue,
                                 mpi_queue_recv_request *req)
 {
   SSTMACBacktrace("MPI Rendezvous Protocol: RDMA Handle Header");
+#if SSTMAC_COMM_SYNC_STATS
+  msg->set_time_sent(queue->now());
+#endif
   if (req) {
     mpi_queue_action_debug(
       queue->api()->comm_world()->rank(),
       "found matching request for %s",
       msg->to_string().c_str());
-    msg->set_needs_send_ack(false);
+    msg->set_needs_send_ack(false); //TODO do I need this?
     msg->set_content_type(mpi_message::data);
     msg->local_buffer().ptr = req->buffer_;
     queue->recv_needs_payload_[msg->unique_int()] = req;

@@ -190,9 +190,7 @@ void
 mpi_api::check_init()
 {
   if (status_ != is_initialized){
-    spkt_throw_printf(sprockit::value_error,
-      "MPI Rank %d calling functions before calling MPI_Init",
-      rank_);
+    spkt_abort_printf("MPI Rank %d calling functions before calling MPI_Init", rank_);
   }
 }
 
@@ -212,7 +210,7 @@ mpi_api::do_finalize()
     debug_printf(sprockit::dbg::mpi_check,
       "MPI application with ID %s passed barrier in finalize on Rank 0\n"
       "at simulation time %10.6e seconds. This generally validates the \n"
-      "simulation meaning everyhing has cleanly terminate\n",
+      "simulation meaning everyhing has cleanly terminated\n",
       sid().to_string().c_str(),
       os_->now().sec());
   }

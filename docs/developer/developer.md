@@ -428,6 +428,7 @@ public:
   typedef sprockit::refcount_ptr<const gem> const_ptr;
 ````
 We then define the abstract `gem` interface
+
 ````
 public:
   virtual int
@@ -442,8 +443,8 @@ Because of C++ destructors for abstract classes, you must define a virtual destr
 Without this, the memory management system will not work correctly.
 Many tutorials on the subtleties of virtual destructors can be found online.
 
-We can repeat the same process for a new abstract interface called `mineral`.
-Declare the class:
+We can repeat the same process for a new abstract interface called `mineral`. Declare the class:
+
 ````
 #include <sprockit/ptr_type.h>
 
@@ -454,12 +455,14 @@ class mineral :
 {
 ````
 Again, we use virtual inheritance. We declare public typedefs:
+
 ````
 public:
   typedef sprockit::refcount_ptr<mineral> ptr;
   typedef sprockit::refcount_ptr<const mineral> const_ptr;
 ````
 We then define the abstract `mineral` interface:
+
 ````
 public:
   virtual std::string
@@ -469,6 +472,7 @@ virtual ~mineral(){}
 ````
 
 Now we want to create a specific instance of a `gem` and `mineral`.
+
 ````
 #include "gem.h"
 #include "mineral.h"
@@ -532,6 +536,7 @@ diamond(num_carats)
 ````
 
 Finally, we declare member variables
+
 ````
 protected:
   int num_carats_;
@@ -703,13 +708,14 @@ class mandy_patinkin :
 ````
 
 We have a single member variable
+
 ````
 private:
   std::string sword_hand_;
 ````
 
-This is a complete type that can be instantiated. 
-To create the class we will need the constructor:
+This is a complete type that can be instantiated. To create the class we will need the constructor:
+
 ````
 mandy_patinkin(sprockit::sim_parameters* params);
 ````
@@ -773,7 +779,7 @@ If you glance at the Makefile, you will see how and why the executable is create
 
 
 
-\newcommand{`event_handler`}{`event_handler`\xspace} \newcommand{`event_scheduler`}{`event_scheduler`\xspace} \newcommand{`event_manager`}{`event_manager`\xspace}
+
 
 ## Chapter 4: Discrete Event Simulation<a name="chapter:des"></a>
 
@@ -818,7 +824,7 @@ The execute function is invoked by the `event_manager` to run the underlying eve
 
 #### 4.1.1: Event Handlers<a name="subsec:eventHandlers"></a>
 
-In most cases, the event is represented as a message sent to an object called an `event_handler` at a specific simulation time. In handling the message, the event handlers change their internal state and may cause more events by scheduling new messages at other event handlers (or scheduling messages to itself) at a future time. The workhorses for SST-macro are therefore classes that inherit from `event_handler`. The only method that must be implemented is
+In most cases, the event is represented as a message sent to an object called an `event_handler at a specific simulation time. In handling the message, the event handlers change their internal state and may cause more events by scheduling new messages at other event handlers (or scheduling messages to itself) at a future time. The workhorses for SST-macro are therefore classes that inherit from \inlinecode{event_handler. The only method that must be implemented is
 
 ````
 void
@@ -829,7 +835,7 @@ In general, objects have two "directions" for the action - send or receive.
 A NIC could "handle" a packet by injecting it into the network or "handle" a message by reporting up the network stack the message has arrived.
 In most cases, the handled message must therefore carry with it some notion of directionality or final destination.
 An event handler will therefore either process the message and delete the message, or, if that handler is not the final destination, forward it along.
-Some event handlers will only ever receive, such as a handler representing a blocking `MPI_Recv` call.
+Some event handlers will only ever receive, such as a handler representing a blocking \inlinecode{MPI_Recv` call.
 Some event handlers will always receive and then send, such as network switches who are always intermediate steps between the start and endpoints of a network message.
 
 In most cases, events are created by calling the function
@@ -888,7 +894,7 @@ When the time arrives for the event, the member function will be invoked
 a->act(ev, 42);
 ````
 
-\subsection{Arbitrary Events} In some cases, it can be inconvenient (and inefficient) to require every event to be funneled through an `event_handler` type. A generic macro for creating event queue entries from any class member function is provided in the file `event_callback.h` similar to the creation of C++ template event handlers above. For example, the MPI server creates an event
+\subsection{Arbitrary Events} In some cases, it can be inconvenient (and inefficient) to require every event to be funneled through an `event_handler type. A generic macro for creating event queue entries from any class member function is provided in the file `event_callback.h` similar to the creation of C++ template event handlers above. For example, the MPI server creates an event
 
 ````
 mpi_queue_recv_request* req = next_request();
@@ -904,14 +910,14 @@ void
 mpi_queue::start_recv(mpi_queue_recv_request* req)
 {
   ...
-}
+`
 ````
 takes a single `recv_request` object as input.
 This eases the programming burden in two ways.
-First, it avoids having to always create `event_handler` types.
-Without template events, you would have to create a new class the inherits from `event_handler` that performs a single, desired action.
-Second, it helps direct messages to the right place.  A single `event_handler` might process many different types of events or objects.
-If every event went to a single `handle` method, the handle method would need either a long if-else block or switch to sort messages.
+First, it avoids having to always create `event_handler types.
+Without template events, you would have to create a new class the inherits from \inlinecode{event_handler that performs a single, desired action.
+Second, it helps direct messages to the right place.  A single \inlinecode{event_handler might process many different types of events or objects.
+If every event went to a single \inlinecode{handle` method, the handle method would need either a long if-else block or switch to sort messages.
 The event would also need to be dynamic cast to the correct type.
 By creating event functors, the message can be immediately directed to the correct type and correct action.
 
@@ -929,7 +935,7 @@ The simulation is partitioned into objects that are capable of scheduling events
 
 
 
-\newcommand{\nodecls}{`node`\xspace} \newcommand{\topcls}{`topology`\xspace} \newcommand{\switchid}{`switch_id`\xspace} \newcommand{\nodeid}{`node_id`\xspace}
+
 
 ## Chapter 5: Hardware Models<a name="chapter:hardware"></a>
 
@@ -939,7 +945,12 @@ The simulation is partitioned into objects that are capable of scheduling events
 
 To better understand how hardware models are put together for simulating interconnects, we should try to understand the basic flow of event in SST/macro involved in sending a message between two network endpoints.  We have already seen in skeleton applications in previous sections how an application-level call to a function like `MPI_Send` is mapping to an operating system function and finally a hardware-level injection of the message flow.  Overall, the following steps are required:
 
-\begin{enumerate} \item Start message flow with app-level function call \item Push message onto NIC for send \item NIC packetizes message and pushes packets on injection switch \item Packets are routed and traverse the network \item Packets arrive at destination NIC and are reassembled (potentially out-of-order) \item Message flow is pushed up network software stack \end{enumerate}
+-   Start message flow with app-level function call
+-   Push message onto NIC for send
+-   NIC packetizes message and pushes packets on injection switch
+-   Packets are routed and traverse the network
+-   Packets arrive at destination NIC and are reassembled (potentially out-of-order)
+-   Message flow is pushed up network software stack
 
 Through the network, packets must move through buffers (waiting for credits) and arbitrate for bandwidth through the switch crossbar and then through the ser/des link on the switch output buffers.  The control-flow diagram for transporting a flow from one endpoint to another via packets is shown in Figure [1](#fig:controlFlow)
 
@@ -990,7 +1001,7 @@ dst->connect_input(params, inport, outport, Input, src);
 
 A certain style and set of rules is recommended for all connectables. If these rules are ignored, setting up connections can quicky become confusing and produce difficult to maintain code. The first and most important rule is that `connectables` never make their own connections. Some "meta"-object should create connections between objects. In general, this work is left to a `interconnect` object. An object should never be responsible for knowing about the "world" outside itself. A topology or interconnect tells the object to make a connection rather than the object deciding to make the connection itself. This will be illustrated below in [5.8](#sec:topology).
 
-The second rule to follow is that a connect function should never call another connect function. In general, a single call to a connect function should create a single link. If connect functions start calling other connect functions, you can end up a with a recursive mess. If you need a bidirectional link (A $\rightarrow$ B, B $\rightarrow$ A), two separate function calls should be made
+The second rule to follow is that a connect function should never call another connect function. In general, a single call to a connect function should create a single link. If connect functions start calling other connect functions, you can end up a with a recursive mess. If you need a bidirectional link (A \rightarrow B, B \rightarrow A), two separate function calls should be made
 
 ````
 A->connect_output(B);
@@ -1050,7 +1061,7 @@ the `event_handler` that should receive either new packets (payload) or credits 
 
 ### Section 5.4: Node<a name="sec:node"></a>
 
-Although the \nodecls can be implemented as a very complex model, it fundamentally only requires a single set of functions to meet the public interface. The \nodecls must provide `execute_kernel` functions that are invoked by the `operating_system` or other other software objects. The prototypes for these are:
+Although the `node` can be implemented as a very complex model, it fundamentally only requires a single set of functions to meet the public interface. The `node` must provide `execute_kernel` functions that are invoked by the `operating_system` or other other software objects. The prototypes for these are:
 
 ````
 virtual void
@@ -1060,7 +1071,7 @@ virtual void
 execute(ami::SERVICE_FUNC func, event* data);
 ````
 
-By default, the abstract \nodecls class throws an `sprockit::unimplemented_error`. These functions are not pure virtual. A node is only required to implement those functions that it needs to do. The various function parameters are enums for the different operations a node may perform: computation or communication. Computation functions are those that require compute resources. Service functions are special functions that run in the background and "lightweight" such that any modeling of processor allocation should be avoided. Service functions are run "for free" with no compute
+By default, the abstract `node` class throws an `sprockit::unimplemented_error`. These functions are not pure virtual. A node is only required to implement those functions that it needs to do. The various function parameters are enums for the different operations a node may perform: computation or communication. Computation functions are those that require compute resources. Service functions are special functions that run in the background and "lightweight" such that any modeling of processor allocation should be avoided. Service functions are run "for free" with no compute
 
 ### Section 5.5: Network Interface (NIC)<a name="sec:nic"></a>
 
@@ -1101,7 +1112,7 @@ next_free_ = start_send + time_to_inject;
   }
 }
 ````
-After injecting, the NIC creates an ACK and delivers the notification to the \nodecls.
+After injecting, the NIC creates an ACK and delivers the notification to the `node`.
 In general, all arriving messages or ACKs should be delivered to the node.
 The node is responsible for generating any software events in the OS.
 
@@ -1162,7 +1173,7 @@ Of critical importance for the network modeling is the topology of the interconn
 
 Not all topologies are "regular" like a torus.  Ad hoc computer networks (like the internet) are ordered with IP addresses, but don't follow a regular geometric structure. The abstract topology base class is intended to cover both cases. Irregular or arbitrary topology connections are not fully supported yet.
 
-The most important functions in the \topcls class are
+The most important functions in the `topology` class are
 
 ````
 class topology
@@ -1210,7 +1221,7 @@ virtual bool
 node_to_netlink(node_id nid, node_id& net_id, int& offset) const = 0;
 ````
 
-These functions are documented in the `topology.h` header file. The first few functions just give the number of switches, number of nodes, and finally which nodes are connected to a given switch. Each compute node will be connected to an injector switch and an ejector switch (often the same switch). The topology must provide a mapping between a node and its ejection and injection points. Additionally, the topology must indicate a port number or offset for the injection in case the switch has many nodes injecting to it. The most important thing to distinguish here are \nodeid and \switchid types. These are typedefs that distinguish between a switch in the topology and a node or network endpoint.
+These functions are documented in the `topology.h` header file. The first few functions just give the number of switches, number of nodes, and finally which nodes are connected to a given switch. Each compute node will be connected to an injector switch and an ejector switch (often the same switch). The topology must provide a mapping between a node and its ejection and injection points. Additionally, the topology must indicate a port number or offset for the injection in case the switch has many nodes injecting to it. The most important thing to distinguish here are `node_id` and `switch_id` types. These are typedefs that distinguish between a switch in the topology and a node or network endpoint.
 
 Besides just forming the connections, a topology is responsible for routing. Given a source switch and the final destination, a topology must fill out path information.
 
@@ -1272,6 +1283,7 @@ Suppose we have brilliant design for a new topology we want to test. We want to 
 We want to make an experimental topology in a ring. Rather than a simple ring with connections to nearest neighbors, though, we will have "express" connections that jump to switches far away.
 
 We begin with the standard typedefs.
+
 ````
 #include <sstmac/hardware/topology/structured_topology.h>
 
@@ -1324,7 +1336,7 @@ switch_id jump_down_idx((i + ring_size_ - jump_size_) % ring_size_);
   }
 }
 ````
-We loop through every switch in the ring and form $+/-$ connections to neighbors and $+/-$ connections to jump partners.
+We loop through every switch in the ring and form +/- connections to neighbors and +/- connections to jump partners.
 Each of the four connections get a different unique port number.  We must identify both the outport port for the sender and the input port for the receiver.
 
 To compute the distance between two switches
@@ -1353,6 +1365,7 @@ int total_distance = std::max(up_distance, down_distance);
 Essentially you compute the number of jumps to get close to the final destination and then the number of remaining single steps.
 
 For computing coordinates, the topology has dimension one.
+
 ````
 switch_id
 xpress_ring::get_switch_id(const coordinates& coords) const
@@ -1368,7 +1381,7 @@ xpress_ring::compute_switch_coords(switch_id swid, coordinates& coords) const
   coords[0] = int(swid);
 }
 ````
-Thus the coordinate vector is a single element with the \switchid.
+Thus the coordinate vector is a single element with the `switch_id`.
 
 The most complicated function is the routing function.
 
@@ -1491,13 +1504,20 @@ Thus, this communication pattern favors longer jump links.
 
 It is useful for an intuitive understanding of the code to walk through the steps starting from `main` and proceeding to the discrete event simulation actually launching. The code follows these basic steps:
 
-\begin{enumerate} \item Configuration of the simulation via environment variables, command line parameters, and the input file \item Building and configuration of simulator components \item Running of the actual simulation \end{enumerate}
+-   Configuration of the simulation via environment variables, command line parameters, and the input file
+-   Building and configuration of simulator components
+-   Running of the actual simulation
 
 We can walk through each of these steps in more detail.
 
 ### Section 7.1: Configuration of Simulation<a name="sec:simConfig"></a>
 
-The configuration proceeds through the following basic steps: \begin{enumerate} \item Basic initialization of the `parallel_runtime` object from environment variables and command line parameters \item Processing and parallel broadcast of the input file parameters \item Creation of the simulation `manager` object \item Detailed configuration of the `manager` and `parallel_runtime` object
+The configuration proceeds through the following basic steps:
+
+-   Basic initialization of the `parallel_runtime` object from environment variables and command line parameters
+-   Processing and parallel broadcast of the input file parameters
+-   Creation of the simulation `manager` object
+-   Detailed configuration of the `manager` and `parallel_runtime` object
 
 The first step in most programs is to initialize the parallel communication environment via calls to MPI\_Init or similar. Only rank 0 should read in the input file to minimize filesystem traffic in a parallel job. Rank 0 then broadcasts the parameters to all other ranks. We are thus left with the problem of wanting to tune initialization of the parallel environment via the input file, but the input file is not yet available. Thus, we have an initial bootstrap step where the all parameters affecting initialization of the parallel runtime must be given either via command line parameters or environment variables. These automatically get distributed to all processes via the job launcher. Most critically the environment variable `SSTMC_PARALLEL` takes on values of `serial` or `mpi`.
 
@@ -1598,8 +1618,6 @@ Every application gets assigned a `software_id`, which is a struct containing a 
 ### Section 7.3: Running<a name="sec:running"></a>
 
 Now that all hardware components have been created and all application objects have been assigned to physical nodes, the `event_manager` created above is started. It begins looping through all events in the queue ordered by timestamp and runs them. As stated above, all events originate from application code. Thus, the first events to run are always the application launch events generated from the launch messages sent to the nodes generated the job launcher.
-
-\end{enumerate}
 
 
 
@@ -1707,6 +1725,7 @@ stat_histogram::reduce(stat_collector *coll)
 ````
 
 and for the global reduce
+
 ````
 void
 stat_histogram::global_reduce(parallel_runtime* rt)
@@ -1732,6 +1751,7 @@ class nic {
  static ftq_calendar* ftq_;
 ````
 but instead
+
 ````
 class nic {
  ...
@@ -1739,6 +1759,7 @@ class nic {
 ````
 
 Inside the `ftq_calendar` object you can then declare
+
 ````
 class ftq_calendar {
  ...

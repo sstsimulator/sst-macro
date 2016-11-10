@@ -197,7 +197,8 @@ param_assign::setFrequency(double x, const char* units)
 const std::string&
 param_assign::setByteLength(long x, const char* units)
 {
-  return setValue(x, units);
+  param_ = sprockit::printf("%ld%s", x, units);
+  return param_;
 }
 
 sim_parameters::sim_parameters() :

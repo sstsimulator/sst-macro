@@ -4,7 +4,7 @@ AC_DEFUN([CHECK_DEBUG], [
 AC_ARG_ENABLE(sstmac-debug,
   [AS_HELP_STRING(
     [--(dis|en)able-sstmac-debug],
-    [Whether to allow debug printing in code. Disabling optimizes code slightly by removing many IF statements.]
+    [Whether to enable debug printing in code. Disabling optimizes code slightly by removing many if statements [default=yes]]
     )],
   [
     enable_sstmac_debug=$enableval
@@ -23,7 +23,7 @@ AH_TEMPLATE([SANITY_CHECK], [Define to compile all sanity checks])
 AC_ARG_ENABLE(sanity-check,
   [AS_HELP_STRING(
     [--(dis|en)able-sanity-check],
-    [Controls whether safe mode is run with sanity checks. If enabled, code may run much slower.],
+    [Controls whether safe mode is run with sanity checks. If enabled, code may run slower [default=no]],
    )],
   [
     enable_sanity_check=$enableval
@@ -40,7 +40,7 @@ fi
 AC_ARG_ENABLE(debug-swap,
   [AS_HELP_STRING(
     [--(dis|en)able-debug-swap],
-    [Whether or not to provide hooks for manual context switching in GDB]
+    [Whether or not to provide hooks for manual context switching in GDB [default=no]]
     )],
   [
     enable_debug_swap=$enableval

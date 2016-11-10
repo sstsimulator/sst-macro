@@ -3,10 +3,6 @@
 AC_DEFUN([CHECK_MPI_PARALLEL], [
 
 
-AC_CHECK_HEADERS([mpi.h],
-  have_mpi_header=yes,
-  have_mpi_header=no
-)
 if test "X$have_mpi_header" = "Xyes"; then
   AC_CHECK_FUNCS([MPI_Init],
     AC_MSG_RESULT([yes])
@@ -15,8 +11,8 @@ if test "X$have_mpi_header" = "Xyes"; then
 fi
 
 AC_ARG_ENABLE([mpi-driver],
-  [AS_HELP_STRING([--enable-mpi-driver],
-    [enable MPI parameter scan driver])],
+  [AS_HELP_STRING([--(dis|en)able-mpi-driver],
+    [enable MPI parameter scan driver [default=no]])],
   [with_mpi_driver=$enableval],
   [with_mpi_driver=no])
 
@@ -47,8 +43,6 @@ else
   AM_CONDITIONAL([USE_MPIPARALLEL], false)
   with_mpiparallel=false
 fi
-
-
 
 ])
 

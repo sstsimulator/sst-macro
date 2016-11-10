@@ -5,7 +5,7 @@ AC_DEFUN([CHECK_MPI], [
 AC_ARG_ENABLE(mpi,
   [AS_HELP_STRING(
     [--(dis|en)able-mpi],
-    [Whether to compile MPI transport conduits]
+    [Whether to compile MPI transport conduits [default=no]]
     )],
   [
     enable_mpi=$enableval

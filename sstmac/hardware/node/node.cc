@@ -62,8 +62,20 @@ node::node(sprockit::sim_parameters* params,
   : connectable_component(params, id,
     device_id(params->get_int_param("id"), device_id::node),
     mgr),
-  params_(params)
+  params_(params),
+  app_refcount_(0)
 {
+#if SSTMAC_INTEGRATED_SST_CORE
+  static bool init_debug = false;
+  if (!init_debug){
+    std::vector<std::string> debug_params;
+    params->get_optional_vector_param("debug", debug_params);
+    for (auto& str : debug_params){
+      sprockit::debug::turn_on(str);
+    }
+    init_debug = true;
+  }
+#endif
   my_addr_ = event_location().id();
   next_outgoing_id_.set_src_node(my_addr_);
 
@@ -86,6 +98,10 @@ node::node(sprockit::sim_parameters* params,
 
   app_launcher_ = new app_launcher(os_);
   job_launcher_ = job_launcher::static_job_launcher(params, mgr);
+
+  if (my_addr_ == job_launcher::launch_root()){
+    increment_app_refcount();
+  }
 }
 
 link_handler*
@@ -98,6 +114,12 @@ link_handler*
 node::payload_handler(int port) const
 {
   return nic_->payload_handler(port);
+}
+
+void
+node::deadlock_check()
+{
+  nic_->deadlock_check();
 }
 
 void
@@ -200,17 +222,35 @@ node::to_string() const
 }
 
 void
-node::job_launch(app_launch* appman)
-{
-  job_launcher_->handle_new_launch_request(appman, this);
-}
-
-void
 node::schedule_launches()
 {
   for (app_launch* appman : app_launchers_){
-    schedule(appman->time(), new_callback(this, &node::job_launch, appman));
+    schedule(appman->time(), new_callback(job_launcher_,
+                &job_launcher::handle_new_launch_request, appman, this));
   }
+}
+
+void
+node::increment_app_refcount()
+{
+#if SSTMAC_INTEGRATED_SST_CORE
+  if (app_refcount_ == 0){
+    primaryComponentDoNotEndSim();
+  }
+#endif
+  ++app_refcount_;
+}
+
+void
+node::decrement_app_refcount()
+{
+  app_refcount_--;
+
+#if SSTMAC_INTEGRATED_SST_CORE
+  if (app_refcount_ == 0){
+    primaryComponentOKToEndSim();
+  }
+#endif
 }
 
 void

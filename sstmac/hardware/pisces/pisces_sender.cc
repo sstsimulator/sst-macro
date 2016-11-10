@@ -68,7 +68,7 @@ pisces_sender::configure_payload_port_latency(sprockit::sim_parameters* params)
 void
 pisces_sender::configure_credit_port_latency(sprockit::sim_parameters* params)
 {
-  if (!params->has_param("send_latency)")){
+  if (!params->has_param("send_latency")){
     params->add_param_override("send_latency", "0ns");
   }
   if (!params->has_param("credit_latency")){

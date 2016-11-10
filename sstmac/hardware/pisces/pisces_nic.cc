@@ -157,12 +157,22 @@ pisces_nic::do_send(network_message* payload)
 }
 
 void
+pisces_nic::deadlock_check()
+{
+  packetizer_->deadlock_check();
+}
+
+void
 pisces_netlink::connect_output(
   sprockit::sim_parameters* params,
   int src_outport, int dst_inport,
   event_handler *mod)
 {
-  block_->set_output(params, src_outport, dst_inport, mod);
+  if (is_node_port(src_outport)){
+    ej_block_->set_output(params, src_outport, dst_inport, mod);
+  } else {
+    inj_block_->set_output(params, src_outport, dst_inport, mod);
+  }
 }
 
 void
@@ -171,16 +181,27 @@ pisces_netlink::connect_input(
   int src_outport, int dst_inport,
   event_handler* mod)
 {
-  block_->set_input(params, dst_inport, src_outport, mod);
+  if (is_node_port(dst_inport)){
+    inj_block_->set_input(params, dst_inport, src_outport, mod);
+    ej_block_->set_input(params, dst_inport, src_outport, mod);
+  } else {
+    ej_block_->set_input(params, dst_inport, src_outport, mod);
+  }
 }
 
 pisces_netlink::pisces_netlink(sprockit::sim_parameters *params, node *parent)
   : netlink(params, parent),
-  block_(nullptr),
+  inj_block_(nullptr),
+  ej_block_(nullptr),
   tile_rotater_(0)
 {
-  block_ = new pisces_crossbar(params, parent);
-  block_->configure_basic_ports(num_tiles_ + conc_);
+  sprockit::sim_parameters* inj_params = params->get_optional_namespace("injection");
+  inj_block_ = new pisces_crossbar(inj_params, parent);
+  inj_block_->configure_basic_ports(num_tiles_ + conc_);
+  sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
+  ej_block_ = new pisces_crossbar(ej_params, parent);
+  ej_block_->configure_offset_ports(num_tiles_, num_tiles_ + conc_);
+
 #if !SSTMAC_INTEGRATED_SST_CORE
   ack_handler_ = new_handler(this,
                              &pisces_netlink::handle_credit);
@@ -193,7 +214,8 @@ pisces_netlink::pisces_netlink(sprockit::sim_parameters *params, node *parent)
 void
 pisces_netlink::deadlock_check()
 {
-  block_->deadlock_check();
+  ej_block_->deadlock_check();
+  inj_block_->deadlock_check();
 }
 
 link_handler*
@@ -214,7 +236,7 @@ pisces_netlink::credit_handler(int port) const
   return new SST::Event::Handler<pisces_netlink>(
      const_cast<pisces_netlink*>(this), &pisces_netlink::handle_credit);
 #else
-  return payload_handler_;
+  return ack_handler_;
 #endif
 }
 
@@ -227,7 +249,11 @@ pisces_netlink::handle_credit(event* ev)
      topology::global()->label(event_location()).c_str(),
      this,
      credit->to_string().c_str());
-  block_->handle_credit(credit);
+  if (is_node_port(credit->port())){
+    ej_block_->handle_credit(credit);
+  } else {
+    inj_block_->handle_credit(credit);
+  }
 }
 
 void
@@ -249,24 +275,26 @@ pisces_netlink::handle_payload(event* ev)
     p.vc = 0;
     p.geometric_id = 0;
     debug_printf(sprockit::dbg::pisces,
-     "netlink %d ejecting %s to node %d at offset %d to port %d\n",
+     "netlink %d ejecting %s to node %d at offset %d to port %d",
         int(id_), sprockit::to_string(ev).c_str(), int(toaddr), node_offset, p.outport);
+    ej_block_->handle_payload(payload);
   } else {
     //goes to switch
     p.outport = netlink::switch_port(tile_rotater_);
     p.vc = 0;
     debug_printf(sprockit::dbg::pisces,
-     "netlink %d injecting msg %s to switch %d on redundant path %d of %d to port %d\n",
+     "netlink %d injecting msg %s to switch %d on redundant path %d of %d to port %d",
         int(id_), sprockit::to_string(ev).c_str(),
         int(toaddr), tile_rotater_, num_tiles_, p.outport);
     tile_rotater_ = (tile_rotater_ + 1) % num_tiles_;
+    inj_block_->handle_payload(payload);
   }
-  block_->handle_payload(payload);
 }
 
 pisces_netlink::~pisces_netlink()
 {
-  if (block_) delete block_;
+  if (ej_block_) delete ej_block_;
+  if (inj_block_) delete inj_block_;
 #if !SSTMAC_INTEGRATED_SST_CORE
   delete ack_handler_;
   delete payload_handler_;

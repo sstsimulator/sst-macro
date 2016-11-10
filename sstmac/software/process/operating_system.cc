@@ -34,10 +34,11 @@
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/key.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/process/compute_scheduler.h>
+#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/libraries/unblock_event.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
+#include <sstmac/hardware/nic/nic.h>
 
 #if SSTMAC_HAVE_UCONTEXT
 #include <sstmac/software/threading/threading_ucontext.h>
@@ -107,7 +108,7 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
   compute_sched_ = compute_scheduler_factory::get_optional_param(
                      "compute_scheduler", "simple", params, this);
 
-  if (!call_graph_){ //not yet build
+  if (!call_graph_){ //not yet built
     call_graph_ = optional_stats<graph_viz>(parent,
           params, "call_graph", "call_graph");
   }
@@ -379,7 +380,25 @@ operating_system::execute_kernel(ami::COMM_FUNC func,
     node_->send_to_nic(netmsg);
     break;
   }
+  case sstmac::ami::COMM_PMI_SEND: {
+    hw::network_message* netmsg = safe_cast(hw::network_message, data);
+    netmsg->set_fromaddr(my_addr_);
+    node_->get_nic()->send_to_logp_switch(netmsg);
+    break;
   }
+  }
+}
+
+void
+operating_system::decrement_app_refcount()
+{
+  node_->decrement_app_refcount();
+}
+
+void
+operating_system::increment_app_refcount()
+{
+  node_->increment_app_refcount();
 }
 
 void

@@ -125,6 +125,11 @@ CHECK_CLANG()
 
 CHECK_SST_CORE()
 
+AC_CHECK_HEADERS([mpi.h],
+  have_mpi_header=yes,
+  have_mpi_header=no
+)
+
 if test "X$have_integrated_core" = "Xyes"; then
 ac_configure_args="$ac_configure_args --with-cxxflags='$CXXFLAGS'"
 else
@@ -170,7 +175,7 @@ CHECK_MPI_TIMELINE_STATS()
 
 CHECK_THREAD_PARALLEL()
 
-CHECK_FORTRAN()
+#CHECK_FORTRAN()
 
 CHECK_BACKTRACE_VIZ()
 
@@ -178,6 +183,7 @@ CHECK_INTEGER_TYPES()
 
 CHECK_STL_REPLACEMENT_HEADERS()
 
+CHECK_COMM_SYNC_STATS()
 
 #-------------------------------------------------
 # Configure subdirs
