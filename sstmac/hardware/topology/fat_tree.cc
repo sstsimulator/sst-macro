@@ -356,6 +356,9 @@ tapered_fat_tree::configure_individual_port_params(switch_id src,
   sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
   int buffer_size = switch_params->get_int_param("buffer_size");
   double bw = link_params->get_bandwidth_param("bandwidth");
+  double taper = link_params->get_optional_double_param("core_taper",1.0);
+  int taperedBufSize = buffer_size * agg_bw_multiplier_ * taper;
+  double taperedBw = bw * agg_bw_multiplier_ * taper;
   int myLevel = level(src);
 
   if (myLevel == 0){
@@ -368,8 +371,6 @@ tapered_fat_tree::configure_individual_port_params(switch_id src,
   } else if (myLevel == 1){
     //I have up and down links
     //My up link is tapered
-    int taperedBufSize = buffer_size*agg_bw_multiplier_;
-    double taperedBw = bw*agg_bw_multiplier_;
     int outport = up_port(1);
     setup_port_params(outport,
                       taperedBufSize,
@@ -389,8 +390,6 @@ tapered_fat_tree::configure_individual_port_params(switch_id src,
     //I have only down links
     for (int s=0; s < num_agg_subtrees_; ++s){
       int outport = s;
-      int taperedBufSize = buffer_size*agg_bw_multiplier_;
-      double taperedBw = bw*agg_bw_multiplier_;
       setup_port_params(outport,
                         taperedBufSize,
                         taperedBw,
