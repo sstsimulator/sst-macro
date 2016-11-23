@@ -44,7 +44,6 @@ mpi_message::mpi_message(int src, int dst, int count,
   in_flight_(false),
   protocol_(protocol->get_prot_id())
 {
-  if (type_packed_size_ > 10000) abort();
 }
 
 void
