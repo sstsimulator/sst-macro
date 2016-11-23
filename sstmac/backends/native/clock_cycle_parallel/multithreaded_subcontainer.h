@@ -27,7 +27,7 @@ class multithreaded_subcontainer :
   receive_incoming_events();
 
   timestamp
-  vote_next_round(timestamp my_time);
+  vote_next_round(timestamp my_time, vote_type_t ty) override;
 
   void run();
 

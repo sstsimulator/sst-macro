@@ -13,16 +13,16 @@ DeclareDebugSlot(event_manager_time_vote);
 namespace sstmac {
 namespace native {
 
+enum class vote_type_t {
+  max,
+  min
+};
+
 class clock_cycle_event_map :
   public event_map
 {
  public:
   clock_cycle_event_map(sprockit::sim_parameters* params, parallel_runtime* rt);
-
-  typedef enum {
-    vote_max,
-    vote_min
-  } vote_type_t;
 
   virtual ~clock_cycle_event_map() throw() {}
 
@@ -58,7 +58,7 @@ class clock_cycle_event_map :
   vote_next_round(timestamp my_time, vote_type_t ty);
 
   int64_t
-  do_vote(int64_t time, vote_type_t ty = vote_min);
+  do_vote(int64_t time, vote_type_t ty = vote_type_t::min);
 
   virtual void
   receive_incoming_events();

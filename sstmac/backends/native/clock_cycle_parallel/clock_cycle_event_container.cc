@@ -117,10 +117,10 @@ int64_t
 clock_cycle_event_map::do_vote(int64_t my_time, vote_type_t ty)
 {
   switch (ty){
-    case vote_max:
+    case vote_type_t::max:
       return rt_->allreduce_max(my_time);
       break;
-    case vote_min:
+    case vote_type_t::min:
       return rt_->allreduce_min(my_time);
       break;
   }
@@ -131,8 +131,8 @@ clock_cycle_event_map::vote_next_round(timestamp time, vote_type_t ty)
 {
   int64_t vote_result = do_vote(time.ticks_int64(), ty);
   timestamp final_time(vote_result, timestamp::exact);
-  event_debug("epoch %d got time %12.8e",
-    epoch_, final_time.sec());
+  event_debug("epoch %d: got time %12.8e on thread %d",
+    epoch_, final_time.sec(), thread_id_);
   return final_time;
 }
 
@@ -144,7 +144,7 @@ clock_cycle_event_map::vote_to_terminate()
 
   receive_incoming_events();
   timestamp my_vote = (empty() || stopped_) ? no_events_left_time_ : next_event_time();
-  timestamp min_time = vote_next_round(my_vote, vote_min);
+  timestamp min_time = vote_next_round(my_vote, vote_type_t::min);
   ++epoch_;
   if (min_time == no_events_left_time_){
     return true; //done
@@ -157,7 +157,7 @@ clock_cycle_event_map::vote_to_terminate()
 timestamp
 clock_cycle_event_map::next_event_time() const
 {
-  return (*queue_.begin())->time();
+  return queue_.empty() ? no_events_left_time_ : (*queue_.begin())->time();
 }
 
 #if DEBUG_DETERMINISM
@@ -173,10 +173,10 @@ clock_cycle_event_map::do_next_event()
 
     ev_time = next_event_time();
 
-    event_debug("epoch %d: thread %d voting for min time %12.8e",
-        epoch_, ev_time.sec());
+    event_debug("epoch %d: voting NOT to terminate at time %12.8e on thread %d",
+                epoch_, ev_time.sec(), thread_id_);
 
-    timestamp min_time = vote_next_round(ev_time, vote_min);
+    timestamp min_time = vote_next_round(ev_time, vote_type_t::min);
     next_time_horizon_ = min_time + lookahead_;
 
     event_debug("epoch %d: next time horizon is %12.8e for lookahead %12.8e: next event at %12.8e %sready to proceed on thread %d",
@@ -219,7 +219,7 @@ void
 clock_cycle_event_map::run()
 {
   event_map::run();
-  timestamp global_max = vote_next_round(now(), vote_max);
+  timestamp global_max = vote_next_round(now(), vote_type_t::max);
   set_now(global_max);
 }
 

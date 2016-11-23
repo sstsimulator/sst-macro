@@ -6,9 +6,11 @@
 #include <sstmac/hardware/pisces/pisces_switch.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
+#include <sstmac/backends/native/serial_runtime.h>
 
 using namespace sstmac;
 using namespace sstmac::hw;
+using namespace sstmac::native;
 
 coordinates
 get_vector(int a){
@@ -150,7 +152,8 @@ init_switches(interconnect::switch_map &switches,
               sprockit::sim_parameters& params,
               topology* top)
 {
-  null_event_manager mgr(&params, nullptr);
+  serial_runtime rt(&params);
+  null_event_manager mgr(&params, &rt);
   params["arbitrator"] = "cut_through";
   params["link.bandwidth"] = "1.0GB/s";
   params["link.credits"] = "64KB";
