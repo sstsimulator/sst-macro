@@ -75,10 +75,10 @@ class multithreaded_event_container :
   send_recv_barrier(int thread_id);
 
   timestamp
-  time_vote_barrier(int thread_id, timestamp min_time);
+  time_vote_barrier(int thread_id, timestamp min_time, vote_type_t ty);
 
-  virtual timestamp
-  vote_next_round(timestamp my_time);
+  timestamp
+  vote_next_round(timestamp my_time, vote_type_t ty) override;
 
   event_manager*
   ev_man_for_thread(int thread_id) const;
@@ -116,6 +116,8 @@ class multithreaded_event_container :
   std::vector<int> cpu_affinity_;
   int me_;
   int nproc_;
+  std::vector<pthread_t> pthreads_;
+  std::vector<pthread_attr_t> pthread_attrs_;
 
 };
 

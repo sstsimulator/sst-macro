@@ -31,6 +31,7 @@ args = None
 verbose = 0
 debugger = None
 memcheck = None
+threads = None
 
 signalBitmask = (1<<7)-1
 rcBitmask = (1<<15)-1
@@ -51,8 +52,10 @@ if __name__ == "__main__":
   try: debugger = os.environ["DEBUGGER"]
   except: pass
 
-  try: 
-    memcheck = os.environ["MEMCHECK"]
+  try: memcheck = os.environ["MEMCHECK"]
+  except: pass
+
+  try: threads = int(os.environ["SST_NTHREADS"])
   except: pass
 
   timeout = int(sys.argv[1])
@@ -262,6 +265,7 @@ def handleTerminate(sig, frame):
 
 def runexe(exe, args, tmpFile):
   global memcheck
+  global threads
   errorFile = "%s.ERROR" % tmpFile
   cmd = "%s %s 1>> %s 2>> %s" % (exe, args, tmpFile, errorFile)
   if memcheck:
@@ -277,6 +281,8 @@ def runexe(exe, args, tmpFile):
     sys.argv.insert(EXE_START, "--leak-check=full")
     sys.argv.insert(EXE_START, memcheck)
     cmd = "%s --dsymutil=yes --leak-check=full %s" % (memcheck, cmd)
+  if threads:
+    cmd = "%s -p sst_nthread=%d -c 0" % (cmd, threads)
   out=open(tmpFile,"w")
   err=open(errorFile,"w")
   if verbose:

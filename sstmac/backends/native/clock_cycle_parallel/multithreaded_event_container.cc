@@ -183,7 +183,7 @@ multithreaded_event_container::run()
   int proc_per_node = cpu_affinity_.size();
   int task_affinity = cpu_affinity_[me_ % proc_per_node];
 
-  debug_printf(sprockit::dbg::event_manager | sprockit::dbg::cpu_affinity,
+  debug_printf(sprockit::dbg::parallel | sprockit::dbg::cpu_affinity,
                "PDES rank %i: setting user-specified task affinity %i",
                me_, task_affinity);
 
@@ -201,7 +201,7 @@ multithreaded_event_container::run()
     //pin the pthread to core base+i
     thread_affinity = task_affinity + i;
 
-    debug_printf(sprockit::dbg::event_manager | sprockit::dbg::cpu_affinity,
+    debug_printf(sprockit::dbg::parallel | sprockit::dbg::cpu_affinity,
                  "PDES rank %i: setting thread %i affinity %i",
                  me_, i, thread_affinity);
 
@@ -241,12 +241,12 @@ multithreaded_event_container::run()
 }
 
 timestamp
-multithreaded_event_container::time_vote_barrier(int thread_id, timestamp time)
+multithreaded_event_container::time_vote_barrier(int thread_id, timestamp time, vote_type_t ty)
 {
   int64_t ticks = time.ticks_int64();
   //std::cout << sprockit::printf("Thread %d epoch %d: voting for t=%lld\n",
   //  thread_id, epoch_, ticks);
-  int64_t final_vote = vote_barrier_.vote(thread_id, ticks, &vote_functor_);
+  int64_t final_vote = vote_barrier_.vote(thread_id, ticks, ty, &vote_functor_);
   timestamp newtime = timestamp(final_vote, timestamp::exact);
   //std::cout << sprockit::printf("Thread %d epoch %d: received t=%lld\n",
   //  thread_id, epoch_, newtime.ticks());
@@ -294,13 +294,13 @@ multithreaded_event_container::schedule_incoming(int thread_id, clock_cycle_even
 }
 
 timestamp
-multithreaded_event_container::vote_next_round(timestamp my_time)
+multithreaded_event_container::vote_next_round(timestamp my_time, vote_type_t ty)
 {
   debug_printf(sprockit::dbg::event_manager | sprockit::dbg::event_manager_time_vote | sprockit::dbg::parallel,
     "Rank %d thread barrier to start vote on thread %d, epoch %d\n",
     rt_->me(), thread_id(), epoch_);
 
-  return time_vote_barrier(thread_id_, my_time);
+  return time_vote_barrier(thread_id_, my_time, ty);
 }
 
 void
