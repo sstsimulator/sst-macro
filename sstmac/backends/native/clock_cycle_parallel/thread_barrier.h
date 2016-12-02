@@ -5,6 +5,7 @@
 #include <vector>
 #include <stdint.h>
 #include <sstmac/common/sstmac_config.h>
+#include <sstmac/backends/native/clock_cycle_parallel/clock_cycle_event_container.h>
 
 namespace sstmac {
 namespace native {
@@ -16,6 +17,7 @@ class thread_barrier_functor {
   execute(int64_t) = 0;
 
 };
+
 
 class thread_barrier {
 
@@ -34,13 +36,15 @@ class thread_barrier {
   start(int me, thread_barrier_functor* functor = 0);
 
   int64_t
-  vote(int me, int64_t vote, thread_barrier_functor* functor = 0);
+  vote(int me, int64_t vote, vote_type_t ty,
+       thread_barrier_functor* functor = 0);
 
   void init(int nthread);
 
  protected:
   int64_t
-  run(int me, int level, int nthread, int64_t vote, thread_barrier_functor* functor);
+  run(int me, int level, int nthread, int64_t vote, vote_type_t ty,
+      thread_barrier_functor* functor);
 
   void lock(lock_t* l);
 

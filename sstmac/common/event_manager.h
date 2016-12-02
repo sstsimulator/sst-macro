@@ -203,9 +203,6 @@ class event_manager
 
   int nthread_;
 
-  std::vector<pthread_t> pthreads_;
-  std::vector<pthread_attr_t> pthread_attrs_;
-
  private:
   struct stats_entry {
     bool reduce_all;

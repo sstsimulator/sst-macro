@@ -52,9 +52,9 @@ event_manager::event_manager(sprockit::sim_parameters *params, parallel_runtime 
   finish_on_stop_(true),
   stopped_(true),
   thread_id_(0),
-  nthread_(1),
-  me_(0),
-  nproc_(1),
+  nthread_(rt->nthread()),
+  me_(rt->me()),
+  nproc_(rt->nproc()),
   complete_(false)
 {
 }

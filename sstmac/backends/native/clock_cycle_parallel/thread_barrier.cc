@@ -26,8 +26,9 @@ thread_barrier::unlock(lock_t* l)
 }
 
 int64_t
-thread_barrier::run(int me, int level, int nthread, int64_t vote,
-    thread_barrier_functor* functor)
+thread_barrier::run(int me, int level, int nthread, 
+   int64_t vote, vote_type_t ty,
+   thread_barrier_functor* functor)
 {
   if (nthread==1){
     if (functor){
@@ -47,7 +48,7 @@ thread_barrier::run(int me, int level, int nthread, int64_t vote,
   if (role == 0){
     int partner = me + 1;
     if (partner >= nthread){
-      return run(next_me, next_level, next_nthread, vote, functor); //just go right on
+      return run(next_me, next_level, next_nthread, vote, ty, functor); //just go right on
     }
     else {
       barrier_state& pst = levels_[level][partner];
@@ -56,10 +57,18 @@ thread_barrier::run(int me, int level, int nthread, int64_t vote,
       lock_t* mylock = myst.out_lock;
       lock(plock); //make sure my partner is unlocked
       //my partner arrived at the barrier if I reach here
-      int64_t next_vote = std::min(myst.vote, pst.vote);
+      int64_t next_vote;
+      switch (ty){
+        case vote_type_t::min:
+         next_vote = std::min(myst.vote, pst.vote);
+         break;
+        case vote_type_t::max:
+         next_vote = std::max(myst.vote, pst.vote);
+         break;
+      }
       //std::cout << sprockit::printf("Merged votes %d=%ld and %d=%ld to %ld\n",
       //  me, vote, partner, pst.vote, next_vote);
-      myst.vote = run(next_me, next_level, next_nthread, next_vote, functor);
+      myst.vote = run(next_me, next_level, next_nthread, next_vote, ty, functor);
       //okay, I will now own a different lock
       //swap things for the next iteration
       myst.out_lock = plock;
@@ -88,16 +97,17 @@ thread_barrier::run(int me, int level, int nthread, int64_t vote,
 }
 
 int64_t
-thread_barrier::vote(int me, int64_t vote, thread_barrier_functor* functor)
+thread_barrier::vote(int me, int64_t vote, vote_type_t ty,
+          thread_barrier_functor* functor)
 {
-  return run(me, 0, nthread_, vote, functor);
+  return run(me, 0, nthread_, vote, ty, functor);
 }
 
 void
 thread_barrier::start(int me, thread_barrier_functor* functor)
 {
   //send a fake vote
-  run(me, 0, nthread_, 0, functor);
+  run(me, 0, nthread_, 0, vote_type_t::min, functor);
 }
 
 int
