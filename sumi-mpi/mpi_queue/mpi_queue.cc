@@ -628,10 +628,11 @@ mpi_queue::progress_loop(mpi_request* req)
     handle_poll_msg(msg);
   }
   sstmac::timestamp stop = os_->now();
-  std::cout << "finishing progress loop at " << stop << std::endl;
+#if SSTMAC_COMM_SYNC_STATS
   if (stop != wait_start && msg){
     api_->collect_sync_delays(wait_start.sec(), msg);
   }
+#endif
   mpi_queue_debug("finishing progress loop");
 
   return stop;

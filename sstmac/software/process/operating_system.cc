@@ -108,10 +108,16 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
   compute_sched_ = compute_scheduler_factory::get_optional_param(
                      "compute_scheduler", "simple", params, this);
 
+#if SSTMAC_HAVE_GRAPHVIZ
   if (!call_graph_){ //not yet built
     call_graph_ = optional_stats<graph_viz>(parent,
           params, "call_graph", "call_graph");
   }
+#else
+  if (params->has_namespace("call_graph")){
+    spkt_abort_printf("cannot activate call graph collection - need to configure with --enable-graphviz");
+  }
+#endif
 
   ftq_trace_ = optional_stats<ftq_calendar>(parent,
         params, "ftq", "ftq");

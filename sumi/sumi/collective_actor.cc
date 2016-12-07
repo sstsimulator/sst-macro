@@ -285,7 +285,9 @@ collective_actor::validate_pings_cleared()
 void
 dag_collective_actor::start()
 {
+#if SUMI_COMM_SYNC_STATS
   my_api_->start_collective_sync_delays();
+#endif
   while (!initial_actions_.empty()){
     auto iter = initial_actions_.begin();
     action* ac = *iter;

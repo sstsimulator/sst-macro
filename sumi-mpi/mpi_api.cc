@@ -512,6 +512,7 @@ mpi_api::error_string(int errorcode, char *str, int *resultlen)
   return MPI_SUCCESS;
 }
 
+#if SSTMAC_COMM_SYNC_STATS
 void
 mpi_api::start_collective_sync_delays()
 {
@@ -538,12 +539,14 @@ mpi_api::collect_sync_delays(double wait_start, const message::ptr &msg)
       sync_delay += msg->time_synced() - header_arrived;
     }
 
+    /**
     std::cout << msg->to_string() << std::endl;
     std::cout << sprockit::printf(
       "wait=%5.2e,last=%5.2e,sent=%5.2e,header=%5.2e,payload=%10.7e,sync=%10.7e,total=%10.7e\n",
            wait_start, last_collection_, msg->time_sent(),
            msg->time_header_arrived(), msg->time_payload_arrived(),
            msg->time_synced(), sync_delay);
+    */
 
     timestamp delay(sync_delay);
 
@@ -552,6 +555,7 @@ mpi_api::collect_sync_delays(double wait_start, const message::ptr &msg)
     last_collection_ = now().sec();
   }
 }
+#endif
 
 }
 

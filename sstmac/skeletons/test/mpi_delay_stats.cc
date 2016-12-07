@@ -39,7 +39,7 @@ int USER_MAIN(int argc, char** argv)
 
   int send_to = (me + 1) % nproc;
   int recv_from = (me - 1 + nproc) % nproc;
-  /**
+
   if (me % 2 == 0){
     //all even ranks create some delay
     sstmac_compute(sync_delay);
@@ -57,7 +57,6 @@ int USER_MAIN(int argc, char** argv)
     sstmac_compute(sync_delay);
     MPI_Recv(NULL, 100000, MPI_DOUBLE, recv_from, 42, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
   }
-  */
 
   MPI_Finalize();
   return 0;
