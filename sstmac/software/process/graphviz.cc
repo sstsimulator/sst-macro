@@ -49,27 +49,9 @@ graph_viz_increment_stack::~graph_viz_increment_stack()
 void
 graph_viz::trace::add_call(void* fxn, int ncalls, long count)
 {
-  static thread_lock lock;
-  lock.lock();
   graphviz_call& call = calls_[fxn];
   call.first += ncalls;
   call.second += count;
-  lock.unlock();
-}
-
-void
-graph_viz::trace::add_self(long count)
-{
-  self_ += count;
-}
-
-void
-graph_viz::global_reduce(parallel_runtime *rt)
-{
-  if (rt->nproc() > 1){
-    spkt_throw(sprockit::unimplemented_error, 
-      "graph_viz::global_reduce: graphviz not available in parallel");
-  }
 }
 
 std::string
@@ -88,16 +70,13 @@ graph_viz::trace::summary() const
   return sstr.str();
 }
 
-void*
-graph_viz::trace::fxn() const
+void
+graph_viz::global_reduce(parallel_runtime *rt)
 {
-  return fxn_;
-}
-
-graph_viz::trace::trace(graph_viz* parent, void* fxn)
-  : self_(0), fxn_(fxn), parent_(parent)
-{
-
+  if (rt->nproc() > 1){
+    spkt_throw(sprockit::unimplemented_error,
+      "graph_viz::global_reduce: graphviz not available in parallel");
+  }
 }
 
 graph_viz::trace*
@@ -126,6 +105,28 @@ graph_viz::dump_global_data()
     myfile << "\n";
   }
   myfile.close();
+
+  for (auto& pair : traces_){
+    trace* tr = pair.second;
+    const char* name = (const char*) pair.first;
+    int len = ::strlen(name);
+    std::cout << name;
+    for (int i=0; i < (50 - len); ++i){
+      std::cout << " ";
+    }
+    std::cout << tr->self_ << "\n";
+    for (auto& callpair : tr->calls_){
+      graphviz_call& call = callpair.second;
+      const char* name = (const char*)callpair.first;
+      std::cout << "     ";
+      int len = ::strlen(name);
+      std::cout << name;
+      for (int i=0; i < (45 - len); ++i){
+        std::cout << " ";
+      }
+      std::cout << call.second << "\n";
+    }
+  }
 }
 
 void
@@ -183,6 +184,32 @@ graph_viz::clear()
 }
 
 void
+graph_viz::add_self(void* fxn, long count)
+{
+  trace* tr = traces_[fxn];
+  if (!tr) {
+    tr = new trace(this, fxn);
+    traces_[fxn] = tr;
+  }
+  tr->add_self(count);
+}
+
+void
+graph_viz::reclassify_self(const char* _subfxn, long count, thread* thr)
+{
+  static thread_lock lock;
+  lock.lock();
+  void* subfxn = const_cast<char*>(_subfxn);
+  int stack_end = thr->last_backtrace_nfxn() - 1;
+  void* fxn = thr->backtrace()[stack_end];
+  trace* tr = traces_[fxn];
+  tr->substract_self(count);
+  add_call(1, count, fxn, subfxn);
+  add_self(subfxn, count);
+  lock.unlock();
+}
+
+void
 graph_viz::count_trace(long count, thread* thr)
 {
 #if !SSTMAC_HAVE_GRAPHVIZ
@@ -205,6 +232,10 @@ graph_viz::count_trace(long count, thread* thr)
      " - ensure that at least main exists with SSTMACBacktrace",
      thr->thread_id());
   }
+
+  static thread_lock lock;
+  lock.lock();
+
   int stack_end = nfxn_total - 1;
   int recollect_stop = std::min(stack_end,last_collect_nfxn);
   for (int i=0; i < recollect_stop; ++i) {
@@ -220,12 +251,8 @@ graph_viz::count_trace(long count, thread* thr)
   }
 
   void* fxn = stack[stack_end];
-  trace* tr = traces_[fxn];
-  if (!tr) {
-    tr = new trace(this, fxn);
-    traces_[fxn] = tr;
-  }
-  tr->add_self(count);
+  add_self(fxn, count);
+  lock.unlock();
 
   thr->collect_backtrace(nfxn_total);
 }

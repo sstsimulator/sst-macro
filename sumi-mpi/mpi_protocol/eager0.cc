@@ -46,10 +46,14 @@ eager0::incoming_payload(mpi_queue *queue,
       msg->move_local_to_remote();
     }
     queue->finalize_recv(msg, req);
+#if SSTMAC_COMM_SYNC_STATS
+    msg->set_time_synced(queue->now());
+#endif
   }
   else {
     queue->buffer_unexpected(msg);
   }
+
   queue->notify_probes(msg);
 
 }

@@ -193,33 +193,6 @@ class mpi_request  {
   persistent_op* persistent_op_;
   collective_op_base* collective_op_;
 
-#if SSTMAC_COMM_SYNC_STATS
- public:
-  void
-  set_time_sent(double now){
-    time_sent_ = now;
-  }
-
-  void
-  set_time_arrived(double now){
-    time_arrived_ = now;
-  }
-
-  double
-  time_sent() const {
-    return time_sent_;
-  }
-
-  double
-  time_arrived() const {
-    return time_arrived_;
-  }
-
- private:
-  double time_sent_;
-  double time_arrived_;
-#endif
-
 };
 
 }

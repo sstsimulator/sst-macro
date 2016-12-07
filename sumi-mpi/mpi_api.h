@@ -952,6 +952,16 @@ class mpi_api :
 
   spkt_unordered_map<int, keyval*> keyvals_;
 
+#if SSTMAC_COMM_SYNC_STATS
+ public:
+  void collect_sync_delays(double wait_start, const sumi::message_ptr& msg) override;
+
+  void start_collective_sync_delays() override;
+
+ private:
+  double last_collection_;
+#endif
+
 };
 
 mpi_api*

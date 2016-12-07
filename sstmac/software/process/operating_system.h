@@ -259,6 +259,11 @@ class operating_system :
   static thread*
   current_thread();
 
+  graph_viz*
+  call_graph() const {
+    return call_graph_;
+  }
+
   static void
   simulation_done();
 

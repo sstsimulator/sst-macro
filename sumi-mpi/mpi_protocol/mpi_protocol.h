@@ -108,9 +108,6 @@ class mpi_protocol : public sprockit::printable {
   virtual PROTOCOL_ID
   get_prot_id() const = 0;
 
-  virtual void
-  handle_nic_ack(mpi_queue* queue, const mpi_message::ptr& msg);
-
   virtual ~mpi_protocol(){}
 
   static mpi_protocol* eager0_protocol;

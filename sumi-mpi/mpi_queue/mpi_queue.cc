@@ -30,6 +30,7 @@
 
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/app_id.h>
+#include <sstmac/software/process/thread.h>
 
 #include <stdint.h>
 
@@ -271,7 +272,7 @@ mpi_queue::recv(mpi_request* key, int count,
     if (mess->in_flight()){
       //this is awkward - I match this pending message
       //but I can't do anything to complete it
-      //the message has already been processed (hence the seq ignore)
+      //the message has already been processed
       in_flight_messages_.push_back(req);
     }
     else if (mess->is_payload()) {
@@ -289,10 +290,6 @@ mpi_queue::finalize_recv(const mpi_message::ptr& msg,
                          mpi_queue_recv_request* req)
 {
   req->key_->complete(msg);
-#if SSTMAC_COMM_SYNC_STATS
-  req->key_->set_time_sent(msg->time_sent());
-  req->key_->set_time_arrived(msg->time_arrived());
-#endif
   delete req;
 }
 
@@ -578,7 +575,7 @@ mpi_queue::pop_waiting_request(const mpi_message::ptr& message)
 
 
 void
-mpi_queue::complete_nic_ack(const mpi_message::ptr& message)
+mpi_queue::handle_nic_ack(const mpi_message::ptr& message)
 {
   mpi_queue_debug("handle nic ack for message %s",
                   message->to_string().c_str());
@@ -600,10 +597,139 @@ mpi_queue::complete_nic_ack(const mpi_message::ptr& message)
 }
 
 void
-mpi_queue::handle_nic_ack(const mpi_message::ptr& message)
+mpi_queue::handle_poll_msg(const sumi::message::ptr& msg)
 {
-  mpi_protocol* prot = message->protocol();
-  prot->handle_nic_ack(this, message);
+  if (msg->class_type() == message::collective_done){
+    handle_collective_done(msg);
+  } else {
+    mpi_message::ptr mpimsg = ptr_safe_cast(mpi_message, msg);
+    mpi_queue_debug("continuing progress loop on incoming msg %s",
+                    mpimsg->to_string().c_str());
+    incoming_progress_loop_message(mpimsg);
+  }
+}
+
+timestamp
+mpi_queue::progress_loop(mpi_request* req)
+{
+  if (!req || req->is_complete()) {
+    return os_->now();
+  }
+
+  mpi_queue_debug("entering progress loop");
+
+  SSTMACBacktrace("MPI Queue Poll");
+  sstmac::timestamp wait_start = os_->now();
+  sumi::message_ptr msg;
+  std::cout << "starting progress loop at " << wait_start << std::endl;
+  while (!req->is_complete()) {
+    mpi_queue_debug("blocking on progress loop");
+    msg = api_->blocking_poll();
+    handle_poll_msg(msg);
+  }
+  sstmac::timestamp stop = os_->now();
+  std::cout << "finishing progress loop at " << stop << std::endl;
+  if (stop != wait_start && msg){
+    api_->collect_sync_delays(wait_start.sec(), msg);
+  }
+  mpi_queue_debug("finishing progress loop");
+
+  return stop;
+}
+
+bool
+mpi_queue::at_least_one_complete(const std::vector<mpi_request*>& req)
+{
+  mpi_queue_debug("checking if any of %d requests is done", (int)req.size());
+  for (int i=0; i < (int) req.size(); ++i) {
+    if (req[i] && req[i]->is_complete()) {
+      mpi_queue_debug("request is done");
+      //clear the key in case we have any timeout watchers
+      req[i]->get_key()->clear();
+      return true;
+    }
+  }
+  return false;
+}
+
+void
+mpi_queue::handle_collective_done(const sumi::message::ptr& msg)
+{
+  collective_done_message::ptr cmsg = ptr_safe_cast(collective_done_message, msg);
+  mpi_comm* comm = safe_cast(mpi_comm, cmsg->dom());
+  mpi_request* req = comm->get_request(cmsg->tag());
+  collective_op_base* op = req->collective_data();
+  api_->finish_collective(op);
+  req->complete();
+  delete op;
+}
+
+void
+mpi_queue::start_progress_loop(const std::vector<mpi_request*>& reqs)
+{
+  mpi_queue_debug("starting progress loop");
+  while (!at_least_one_complete(reqs)) {
+    mpi_queue_debug("blocking on progress loop");
+    sumi::message::ptr msg = api_->blocking_poll();
+    handle_poll_msg(msg);
+  }
+  mpi_queue_debug("finishing progress loop");
+}
+
+void
+mpi_queue::forward_progress(double timeout)
+{
+  mpi_queue_debug("starting forward progress");
+  sumi::message::ptr msg = api_->blocking_poll(timeout);
+  if (msg) handle_poll_msg(msg);
+}
+
+void
+mpi_queue::start_progress_loop(
+  const std::vector<mpi_request*>& req,
+  timestamp timeout)
+{
+  start_progress_loop(req);
+}
+
+void
+mpi_queue::finish_progress_loop(const std::vector<mpi_request*>& req)
+{
+}
+
+void
+mpi_queue::buffer_unexpected(const mpi_message::ptr& msg)
+{
+  SSTMACBacktrace("MPI Queue Buffer Unexpected Message");
+  user_lib_mem_->copy(msg->payload_bytes());
+}
+
+void
+mpi_queue::post_header(const mpi_message::ptr& msg, bool needs_ack)
+{
+  SSTMACBacktrace("MPI Queue Post Header");
+  if (post_header_delay_.ticks_int64()) {
+    user_lib_time_->compute(post_header_delay_);
+  }
+  mpi_comm* comm = api_->get_comm(msg->comm());
+  int dst_world_rank = comm->peer_task(msg->dst_rank());
+  msg->set_src_rank(comm->rank());
+  api_->send_header(dst_world_rank, msg, needs_ack);
+}
+
+void
+mpi_queue::post_rdma(const mpi_message::ptr& msg,
+  bool needs_send_ack,
+  bool needs_recv_ack)
+{
+  SSTMACBacktrace("MPI Queue Post RDMA Request");
+  if (post_rdma_delay_.ticks_int64()) {
+    user_lib_time_->compute(post_rdma_delay_);
+  }
+  //JJW cannot assume the comm is available for certain eager protocols
+  //mpi_comm* comm = api_->get_comm(msg->comm());
+  //int src_world_rank = comm->peer_task(msg->src_rank());
+  api_->rdma_get(msg->sender(), msg, needs_send_ack, needs_recv_ack);
 }
 
 }

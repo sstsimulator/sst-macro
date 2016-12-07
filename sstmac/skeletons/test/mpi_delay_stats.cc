@@ -36,28 +36,28 @@ int USER_MAIN(int argc, char** argv)
   }
   MPI_Allreduce(1000, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
-  if (me == 3){
-    sstmac_compute(sync_delay);
-  }
-  MPI_Allgather(100, MPI_INT, MPI_COMM_WORLD);
-
-  if (me % 2 == 0){
-    //all even ranks create some delay
-    sstmac_compute(sync_delay);
-  }
 
   int send_to = (me + 1) % nproc;
   int recv_from = (me - 1 + nproc) % nproc;
-  MPI_Request reqs[2];
-  MPI_Isend(NULL, 100, MPI_DOUBLE, send_to, 42, MPI_COMM_WORLD, &reqs[0]);
-  MPI_Irecv(NULL, 100, MPI_DOUBLE, recv_from, 42, MPI_COMM_WORLD, &reqs[1]);
-
-  if (me % 3 == 0){
-    //all 3-div ranks overlap some computation
+  /**
+  if (me % 2 == 0){
+    //all even ranks create some delay
     sstmac_compute(sync_delay);
+    MPI_Send(NULL, 100, MPI_DOUBLE, send_to, 42, MPI_COMM_WORLD);
+  } else {
+    MPI_Recv(NULL, 100, MPI_DOUBLE, recv_from, 42, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
   }
 
-  MPI_Waitall(2, reqs, MPI_STATUSES_IGNORE);
+
+
+  if (me % 2 == 0){
+    //all even ranks create some delay
+    MPI_Send(NULL, 100000, MPI_DOUBLE, send_to, 42, MPI_COMM_WORLD);
+  } else {
+    sstmac_compute(sync_delay);
+    MPI_Recv(NULL, 100000, MPI_DOUBLE, recv_from, 42, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+  }
+  */
 
   MPI_Finalize();
   return 0;

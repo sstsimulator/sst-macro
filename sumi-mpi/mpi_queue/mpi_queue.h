@@ -181,9 +181,6 @@ class mpi_queue
   handle_nic_ack(const mpi_message::ptr& message);
 
   void
-  complete_nic_ack(const mpi_message::ptr& message);
-
-  void
   handle_new_message(const mpi_message::ptr& message);
 
   void

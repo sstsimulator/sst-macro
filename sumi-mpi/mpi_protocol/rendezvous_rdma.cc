@@ -24,6 +24,9 @@ rendezvous_get::send_header(mpi_queue* queue,
 {
   SSTMACBacktrace("MPI Rendezvous Protocol: RDMA Send Header");
   msg->set_content_type(mpi_message::header);
+#if SSTMAC_COMM_SYNC_STATS
+  msg->set_time_sent(queue->now());
+#endif
   queue->post_header(msg, false); //don't need the nic ack
 }
 
@@ -41,10 +44,11 @@ rendezvous_get::incoming_header(mpi_queue *queue,
                                 mpi_queue_recv_request *req)
 {
   SSTMACBacktrace("MPI Rendezvous Protocol: RDMA Handle Header");
-#if SSTMAC_COMM_SYNC_STATS
-  msg->set_time_sent(queue->now());
-#endif
   if (req) {
+#if SSTMAC_COMM_SYNC_STATS
+    //this is a bit of a hack
+    msg->set_time_synced(queue->now());
+#endif
     mpi_queue_action_debug(
       queue->api()->comm_world()->rank(),
       "found matching request for %s",

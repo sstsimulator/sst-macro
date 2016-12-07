@@ -42,13 +42,6 @@ mpi_protocol::delete_statics()
 }
 
 void
-mpi_protocol::handle_nic_ack(mpi_queue* queue,
-                             const mpi_message::ptr& msg)
-{
-  queue->complete_nic_ack(msg);
-}
-
-void
 mpi_protocol::incoming_header(mpi_queue* queue,
   const mpi_message::ptr& msg)
 {

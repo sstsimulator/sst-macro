@@ -55,6 +55,16 @@ class graph_viz :
 
   void dump_global_data() override;
 
+  /**
+   * @brief reclassify_self For the very last function profiled,
+   *        change reclassify some self count to be treated as a
+   *        different sub-function.
+   * @param subfxn
+   * @param count
+   * @param thr
+   */
+  void reclassify_self(const char* subfxn, long count, thread* thr);
+
   void
   global_reduce(parallel_runtime *rt) override;
 
@@ -75,7 +85,7 @@ class graph_viz :
  private:
   typedef std::pair<long, long long> graphviz_call;
   class trace  {
-
+   friend class graph_viz;
    private:
     std::map<void*, graphviz_call> calls_;
 
@@ -86,20 +96,33 @@ class graph_viz :
     graph_viz* parent_;
 
    public:
-    trace(graph_viz* parent, void* fxn);
+    trace(graph_viz* parent, void* fxn) :
+      parent_(parent), fxn_(fxn), self_(0)
+    {
+    }
 
     std::string
     summary() const;
 
-    void* fxn() const;
+    void* fxn() const {
+      return fxn_;
+    }
 
     void add_call(void* fxn, int ncalls, long count);
 
-    void add_self(long count);
+    void add_self(long count) {
+      self_ += count;
+    }
+
+    void substract_self(long count) {
+      self_ -= count;
+    }
 
   };
 
   void add_call(int ncalls, long count, void* fxn, void* callfxn);
+
+  void add_self(void* fxn, long count);
 
   std::map<void*, trace*> traces_;
 

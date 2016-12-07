@@ -112,7 +112,9 @@ message::clone_into(message* cln) const
   cln->recver_ = recver_;
 #if SUMI_COMM_SYNC_STATS
   cln->sent_ = sent_;
-  cln->arrived_ = arrived_;
+  cln->header_arrived_ = header_arrived_;
+  cln->payload_arrived_ = payload_arrived_;
+  cln->synced_ = synced_;
 #endif
 }
 
@@ -173,7 +175,9 @@ message::serialize_order(sumi::serializer &ser)
 {
 #if SUMI_COMM_SYNC_STATS
   ser & sent_;
-  ser & arrived_;
+  ser & header_arrived_;
+  ser & payload_arrived_;
+  ser & synced_;
 #endif
   ser & sender_;
   ser & recver_;

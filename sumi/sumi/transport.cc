@@ -60,7 +60,7 @@ collective_algorithm_selector* transport::reduce_selector_ = nullptr;
 collective_algorithm_selector* transport::scatter_selector_ = nullptr;
 collective_algorithm_selector* transport::scatterv_selector_ = nullptr;
 
-#if SUMI_COMM_SYNC_STATS
+#if 0
 void
 transport::comm_sync_stats::collect(const message::ptr &msg,
                                     double now,
@@ -141,7 +141,7 @@ transport::transport(sprockit::sim_parameters* params) :
 
   lazy_watch_ = params->get_optional_bool_param("lazy_watch", true);
 
-#if SUMI_COMM_SYNC_STATS
+#if 0
   bool track_comm_stats = params->get_optional_bool_param("comm_sync_stats", false);
   if (track_comm_stats){
     comm_sync_stats_ = new comm_sync_stats;
@@ -251,7 +251,7 @@ transport::finalize()
   }
   failed_ranks_.end_iteration();
 
-#if SUMI_COMM_SYNC_STATS
+#if 0
   if (comm_sync_stats_) comm_sync_stats_->print(rank_, std::cout);
 #endif
 }
@@ -588,9 +588,6 @@ transport::~transport()
 {
   if (monitor_) delete monitor_;
   if (global_domain_) delete global_domain_;
-#if SUMI_COMM_SYNC_STATS
-  if (comm_sync_stats_) delete comm_sync_stats_;
-#endif
 }
 
 void
