@@ -830,6 +830,9 @@ dag_collective_actor::incoming_nack(action::type_t ty, const collective_work_mes
 void
 dag_collective_actor::data_recved(action* ac_, const collective_work_message::ptr &msg, void *recvd_buffer)
 {
+#if SUMI_COMM_SYNC_STATS
+  my_api_->collect_sync_delays(0,msg);
+#endif
   recv_action* ac = static_cast<recv_action*>(ac_);
   //we are allowed to have a null buffer
   //this just walks through the communication pattern
@@ -909,9 +912,6 @@ dag_collective_actor::data_recved(
 
   uint32_t id = action::message_id(action::recv, msg->round(), msg->dense_sender());
   action* ac = active_comms_[id];
-#if SUMI_COMM_SYNC_STATS
-  my_api_->collect_sync_delays(0,msg);
-#endif
   if (ac == nullptr){
     spkt_throw_printf(sprockit::value_error,
       "on %d, received data for unknown receive %u from %d on round %d",

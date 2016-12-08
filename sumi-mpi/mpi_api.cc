@@ -555,10 +555,10 @@ mpi_api::collect_sync_delays(double wait_start, const message::ptr &msg)
            msg->time_synced(), sync_delay);
     */
 
-    timestamp delay(sync_delay);
-
-    os_->call_graph()->reclassify_self("sync", delay.ticks_int64(),
-                                       os_->current_thread());
+    int64_t ticks = timestamp(sync_delay).ticks_int64();
+    if (ticks){
+      os_->call_graph()->reclassify_self("sync", ticks, os_->current_thread());
+    }
     last_collection_ = now().sec();
   }
 }
