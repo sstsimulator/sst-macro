@@ -184,7 +184,10 @@ mpi_api::do_init(int* argc, char*** argv)
 
   status_ = is_initialized;
 
-  barrier(MPI_COMM_WORLD);
+
+  collective_op_base* op = start_barrier("MPI_Init", MPI_COMM_WORLD);
+  wait_collective(op);
+  delete op;
 
   return MPI_SUCCESS;
 }
@@ -204,7 +207,11 @@ int
 mpi_api::do_finalize()
 {  
   start_mpi_call("MPI_Finalize");
-  barrier(MPI_COMM_WORLD);
+
+  collective_op_base* op = start_barrier("MPI_Finalize", MPI_COMM_WORLD);
+  wait_collective(op);
+  delete op;
+
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Finalize()");
 
   status_ = is_finalized;

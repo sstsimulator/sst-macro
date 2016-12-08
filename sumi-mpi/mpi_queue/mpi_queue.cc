@@ -618,10 +618,9 @@ mpi_queue::progress_loop(mpi_request* req)
 
   mpi_queue_debug("entering progress loop");
 
-  SSTMACBacktrace("MPI Queue Poll");
+  //SSTMACBacktrace("MPI Queue Poll");
   sstmac::timestamp wait_start = os_->now();
   sumi::message_ptr msg;
-  std::cout << "starting progress loop at " << wait_start << std::endl;
   while (!req->is_complete()) {
     mpi_queue_debug("blocking on progress loop");
     msg = api_->blocking_poll();

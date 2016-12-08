@@ -316,9 +316,9 @@ event_scheduler::schedule(timestamp t, event_queue_entry* ev)
 }
 
 void
-event_scheduler::register_stat(stat_collector *coll)
+event_scheduler::register_stat(stat_collector *coll, stat_descr_t* descr)
 {
-  eventman_->register_stat(coll);
+  eventman_->register_stat(coll, descr);
 }
 
 void

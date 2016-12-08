@@ -83,6 +83,8 @@ class graph_viz :
   delete_statics();
 
  private:
+  void dump_summary(std::ostream& os);
+
   typedef std::pair<long, long long> graphviz_call;
   class trace  {
    friend class graph_viz;

@@ -86,9 +86,43 @@ graph_viz::get_trace(void* fxn)
 }
 
 void
+graph_viz::dump_summary(std::ostream& os)
+{
+  for (auto& pair : traces_){
+    trace* tr = pair.second;
+    const char* name = (const char*) pair.first;
+    int len = ::strlen(name);
+    os << name;
+    for (int i=0; i < (50 - len); ++i){
+      os << " ";
+    }
+    uint64_t total = tr->self_;
+    for (auto& callpair : tr->calls_){
+      total += callpair.second.second;
+    }
+    os << sprockit::printf("%12lu %12lld\n", total, tr->self_);
+    for (auto& callpair : tr->calls_){
+      graphviz_call& call = callpair.second;
+      const char* name = (const char*)callpair.first;
+      os << "     ";
+      int len = ::strlen(name);
+      os << name;
+      for (int i=0; i < (45 - len); ++i){
+        os << " ";
+      }
+      os << call.second << "\n";
+    }
+  }
+}
+
+void
 graph_viz::dump_local_data()
 {
-  spkt_throw(sprockit::unimplemented_error, "graph_viz::dump_local_data");
+  char fname[128];
+  sprintf(fname, "%s.calls.%d.out", fileroot_.c_str(), id());
+  std::ofstream ofs(fname);
+  dump_summary(ofs);
+  ofs.close();
 }
 
 void
@@ -106,27 +140,8 @@ graph_viz::dump_global_data()
   }
   myfile.close();
 
-  for (auto& pair : traces_){
-    trace* tr = pair.second;
-    const char* name = (const char*) pair.first;
-    int len = ::strlen(name);
-    std::cout << name;
-    for (int i=0; i < (50 - len); ++i){
-      std::cout << " ";
-    }
-    std::cout << tr->self_ << "\n";
-    for (auto& callpair : tr->calls_){
-      graphviz_call& call = callpair.second;
-      const char* name = (const char*)callpair.first;
-      std::cout << "     ";
-      int len = ::strlen(name);
-      std::cout << name;
-      for (int i=0; i < (45 - len); ++i){
-        std::cout << " ";
-      }
-      std::cout << call.second << "\n";
-    }
-  }
+  dump_summary(std::cout);
+
 }
 
 void
@@ -176,6 +191,22 @@ graph_viz::delete_trace(void **tr)
 void
 graph_viz::reduce(stat_collector *coll)
 {
+  graph_viz* other = dynamic_cast<graph_viz*>(coll);
+  for (auto& trPair : other->traces_){
+    void* name = trPair.first;
+    trace* othTrace = trPair.second;
+    trace* myTrace = traces_[name];
+    if (myTrace == nullptr){
+      myTrace = new trace(this, name);
+      traces_[name] = myTrace;
+    }
+    myTrace->add_self(othTrace->self_);
+    for (auto& callPair : othTrace->calls_){
+      void* callName = callPair.first;
+      graphviz_call& call = callPair.second;
+      myTrace->add_call(callName, call.first, call.second);
+    }
+  }
 }
 
 void

@@ -22,6 +22,18 @@
 
 namespace sstmac {
 
+struct stat_descr_t {
+  bool dump_all;
+  bool reduce_all;
+  bool dump_main;
+  const char* suffix;
+
+  stat_descr_t() :
+    dump_all(false), reduce_all(true),
+    dump_main(true), suffix(nullptr)
+  {
+  }
+};
 
 /**
  * A type of logger that collects some kind of statistic
@@ -132,7 +144,7 @@ class stat_collector : public sprockit::printable
              const std::string& deflt);
 
   static void
-  register_optional_stat(event_scheduler* parent, stat_collector* coll);
+  register_optional_stat(event_scheduler* parent, stat_collector* coll, stat_descr_t* descr);
 
  protected:
   stat_collector(sprockit::sim_parameters* params);
@@ -204,14 +216,26 @@ required_stats(event_scheduler* parent,
               sprockit::sim_parameters* params,
               const std::string& ns,
               const std::string& deflt,
-              const char* suffix = nullptr){
-  stat_collector* coll = stat_collector::required_build(params,ns,deflt,suffix);
+              stat_descr_t* descr = nullptr){
+  stat_collector* coll = stat_collector::required_build(params,ns,deflt,descr ? descr->suffix : nullptr);
   T* t = dynamic_cast<T*>(coll);
   if (!t){
     stat_collector::stats_error(params, ns, deflt);
   }
-  stat_collector::register_optional_stat(parent, t);
+  stat_collector::register_optional_stat(parent, t, descr);
   return t;
+}
+
+template <class T>
+T*
+required_stats(event_scheduler* parent,
+              sprockit::sim_parameters* params,
+              const std::string& ns,
+              const std::string& deflt,
+              const char* suffix){
+  stat_descr_t descr;
+  descr.suffix = suffix;
+  return required_stats<T>(parent, params, ns, deflt, suffix);
 }
 
 /**
@@ -223,17 +247,31 @@ optional_stats(event_scheduler* parent,
               sprockit::sim_parameters* params,
               const std::string& ns,
               const std::string& deflt,
-              const char* suffix = nullptr){
-  stat_collector* coll = stat_collector::optional_build(params,ns,deflt,suffix);
+              stat_descr_t* descr = nullptr){
+
+  stat_collector* coll = stat_collector::optional_build(params,ns,deflt, descr ? descr->suffix : nullptr);
   if (coll){
     T* t = dynamic_cast<T*>(coll);
     if (!t){
       stat_collector::stats_error(params, ns, deflt);
     }
-    stat_collector::register_optional_stat(parent, t);
+    stat_collector::register_optional_stat(parent, t, descr);
     return t;
   }
   else return nullptr;
+}
+
+template <class T>
+T*
+optional_stats(event_scheduler* parent,
+              sprockit::sim_parameters* params,
+              const std::string& ns,
+              const std::string& deflt,
+              const char* suffix)
+{
+  stat_descr_t descr;
+  descr.suffix = suffix;
+  return optional_stats<T>(parent, params, ns, deflt, &descr);
 }
 
 DeclareFactory(stat_collector);

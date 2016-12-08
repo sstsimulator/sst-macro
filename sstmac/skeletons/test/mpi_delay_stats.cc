@@ -42,7 +42,7 @@ int USER_MAIN(int argc, char** argv)
 
   if (me % 2 == 0){
     //all even ranks create some delay
-    sstmac_compute(sync_delay);
+    sstmac_compute(0.5*sync_delay);
     MPI_Send(NULL, 100, MPI_DOUBLE, send_to, 42, MPI_COMM_WORLD);
   } else {
     MPI_Recv(NULL, 100, MPI_DOUBLE, recv_from, 42, MPI_COMM_WORLD, MPI_STATUS_IGNORE);

@@ -110,7 +110,7 @@ class event_scheduler :
                event_handler* lnk, event* ev);
 
   void
-  register_stat(stat_collector* coll);
+  register_stat(stat_collector* coll, stat_descr_t* descr);
 
 #if SSTMAC_INTEGRATED_SST_CORE
  public:

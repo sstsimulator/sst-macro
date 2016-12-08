@@ -86,7 +86,6 @@ namespace sw {
 
 static sprockit::need_delete_statics<operating_system> del_statics;
 size_t operating_system::stacksize_ = 0;
-graph_viz* operating_system::call_graph_ = nullptr;
 
 #if SSTMAC_USE_MULTITHREAD
 std::vector<operating_system::os_thread_context> operating_system::os_thread_contexts_;
@@ -109,10 +108,10 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
                      "compute_scheduler", "simple", params, this);
 
 #if SSTMAC_HAVE_GRAPHVIZ
-  if (!call_graph_){ //not yet built
-    call_graph_ = optional_stats<graph_viz>(parent,
-          params, "call_graph", "call_graph");
-  }
+  stat_descr_t stat_descr;
+  stat_descr.dump_all = true;
+  call_graph_ = optional_stats<graph_viz>(parent,
+          params, "call_graph", "call_graph", &stat_descr);
 #else
   if (params->has_namespace("call_graph")){
     spkt_abort_printf("cannot activate call graph collection - need to configure with --enable-graphviz");
