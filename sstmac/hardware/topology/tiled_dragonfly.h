@@ -18,8 +18,6 @@
 namespace sstmac {
 namespace hw {
 
-#if 0
-
 class tiled_dragonfly : public dragonfly
 {
   private:
@@ -65,8 +63,26 @@ class tiled_dragonfly : public dragonfly
 
   tiled_dragonfly(sprockit::sim_parameters* params);
 
+  bool
+  uniform_network_ports() const override {
+    return true;
+  }
+
+  bool
+  uniform_switches_non_uniform_network_ports() const override {
+    return false;
+  }
+
+  bool
+  uniform_switches() const override {
+    return true;
+  }
+
+//  void
+//  connect_objects(sprockit::sim_parameters* params, internal_connectable_map& switches);
+
   void
-  connect_objects(sprockit::sim_parameters* params, internal_connectable_map& switches);
+  connected_outports(switch_id src, std::vector<sstmac::hw::topology::connection>& conns) const override;
 
   void
   configure_geometric_paths(std::vector<int> &redundancies);
@@ -75,15 +91,15 @@ class tiled_dragonfly : public dragonfly
   minimal_routes_to_switch(
       switch_id current_sw_addr,
       switch_id dest_sw_addr,
-      structured_routable::path &current_path,
-      structured_routable::path_set &paths) const;
+      routable::path &current_path,
+      routable::path_set &paths) const;
 
   virtual void
   minimal_routes_to_coords(
       const coordinates &src_coords,
       const coordinates &dest_coords,
-      structured_routable::path &current_path,
-      structured_routable::path_set &paths) const;
+      routable::path &current_path,
+      routable::path_set &paths) const;
 
   virtual bool
   xy_connected_to_group(int myX, int myY, int myG,
@@ -100,14 +116,14 @@ class tiled_dragonfly : public dragonfly
   eject_paths_on_switch(
       node_id dest_addr,
       switch_id sw_addr,
-      structured_routable::path_set &paths) const;
+      routable::path_set &paths) const;
 
   // throw unimplemented exception on the following
   virtual void
   minimal_route_to_coords(
     const coordinates &current_coords,
     const coordinates &dest_coords,
-    structured_routable::path& path) const;
+    routable::path& path) const;
 
   virtual int
   port(int replica, int dim, int dir);
@@ -126,15 +142,13 @@ class tiled_dragonfly : public dragonfly
   read_intragroup_connections();
 
   void
-  read_intergroup_connections();
+  read_intergroup_connections(); 
 
   void
-  make_intragroup_connections(sprockit::sim_parameters* params,
-                              internal_connectable_map& objects);
+  intragroup_connections();
 
   void
-  make_intergroup_connections(sprockit::sim_parameters* params,
-                              internal_connectable_map &objects);
+  intergroup_connections();
 
   void
   make_geomid();
@@ -188,8 +202,6 @@ class tiled_dragonfly : public dragonfly
   }
 
 };
-
-#endif
 
 }
 } //end of namespace sstmac

@@ -12,6 +12,7 @@
 #include <sstmac/hardware/pisces/pisces_tiled_switch.h>
 #include <sstmac/hardware/pisces/pisces_stats.h>
 #include <sstmac/hardware/pisces/pisces_nic.h>
+#include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/switch/dist_dummyswitch.h>
 #include <sstmac/common/event_manager.h>
@@ -30,8 +31,6 @@ RegisterKeywords(
 "netlink_radix",
 );
 
-#if 0
-
 namespace sstmac {
 namespace hw {
 
@@ -43,9 +42,16 @@ pisces_tiled_switch::pisces_tiled_switch(sprockit::sim_parameters* params,
                                                    uint64_t id, event_manager* mgr)
   : pisces_abstract_switch(params, id, mgr)
 {
-  //row_buffer_num_bytes = params->get_byte_length_param("row_buffer_size");
+  //row_buffer_num_bytes_ = params->get_byte_length_param("row_buffer_size");
+
   nrows_ = params->get_int_param("nrows");
   ncols_ = params->get_int_param("ncols");
+
+//#if !SSTMAC_INTEGRATED_SST_CORE
+//  payload_handler_ = new_handler(this, &pisces_tiled_switch::handle_payload);
+//  ack_handler_ = new_handler(this, &pisces_tiled_switch::handle_credit);
+//#endif
+
   init_components(params);
 }
 
@@ -85,17 +91,22 @@ pisces_tiled_switch::deadlock_check()
 void
 pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
 {
-  spkt_throw(sprockit::unimplemented_error, "init_components");
-#if 0
   if (!xbar_tiles_.empty())
     return;
 
-  int min_buffer_size = xbar_input_buffer_num_bytes / router_->max_num_vc();
-  if (min_buffer_size < packet_size_){
-    spkt_throw(sprockit::value_error,
-               "chosen packet size of %d is bigger than chosen buffer size %d = %d over %d vcs",
-               packet_size_, min_buffer_size, xbar_input_buffer_num_bytes, router_->max_num_vc());
-  }
+  sprockit::sim_parameters* demuxer_params = params->get_namespace("input");
+
+  sprockit::sim_parameters* xbar_params = params->get_namespace("xbar");
+  xbar_params->add_param_override("num_vc", router_->max_num_vc());
+
+  sprockit::sim_parameters* muxer_params = params->get_namespace("link");
+
+  //int min_buffer_size = row_buffer_num_bytes_ / router_->max_num_vc();
+  //if (min_buffer_size < packet_size_){
+  //  spkt_throw(sprockit::value_error,
+  //             "chosen packet size of %d is bigger than chosen buffer size %d = %d over %d vcs",
+  //             packet_size_, min_buffer_size, row_buffer_num_bytes_, router_->max_num_vc());
+  //}
 
   int ntiles = nrows_ * ncols_;
   row_input_demuxers_.resize(ntiles);
@@ -104,40 +115,49 @@ pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
   for (int r=0; r < nrows_; ++r){
     for (int c=0; c < ncols_; ++c){
       int tile = row_col_to_tile(r, c);
-      pisces_crossbar* xbar = new pisces_crossbar(this,
-        timestamp(0), //just assume no latency in crossbar
-        timestamp(0), //just assume no latency in crossbar
-        xbar_bw,
-        router_->max_num_vc(),
-        xbar_input_buffer_num_bytes,
-        link_arbitrator_template->clone(-1));
+
+//      pisces_crossbar* xbar = new pisces_crossbar(this,
+//        timestamp(0), //just assume no latency in crossbar
+//        timestamp(0), //just assume no latency in crossbar
+//        xbar_bw,
+//        router_->max_num_vc(),
+//        xbar_input_buffer_num_bytes,
+//        link_arbitrator_template->clone(-1));
+
+      pisces_crossbar* xbar = new pisces_crossbar(xbar_params, this);
+      xbar->set_stat_collector(xbar_stats_);
+      hw::structured_topology* s_top = safe_cast(hw::structured_topology, top_);
+      xbar->configure_basic_ports(s_top->max_num_ports());
+
       //we can route to a destination port that differs from the local port
       int xbar_mapper = ncols_; //map port by dividing by ncols
-      xbar->set_event_location(my_addr_);
+      //xbar->set_event_location(my_addr_);
       xbar->configure_div_ports(xbar_mapper, ntiles-1);
       xbar->set_update_vc(false);
 
-      pisces_muxer* muxer = new pisces_muxer(this,
-        hop_lat, //put all the latency in the send
-        timestamp(0), //assume zero latency credits
-        link_bw,
-        router_->max_num_vc(),
-        xbar_output_buffer_num_bytes,
-        link_arbitrator_template->clone(-1));
+//      pisces_muxer* muxer = new pisces_muxer(this,
+//        hop_lat, //put all the latency in the send
+//        timestamp(0), //assume zero latency credits
+//        link_bw,
+//        router_->max_num_vc(),
+//        xbar_output_buffer_num_bytes,
+//        link_arbitrator_template->clone(-1));
+      pisces_muxer* muxer = new pisces_muxer(muxer_params, this);
       int muxer_offset = tile;
       int muxer_max_port = tile;
-      muxer->set_event_location(my_addr_);
+      //muxer->set_event_location(my_addr_);
       muxer->configure_offset_ports(muxer_offset, muxer_max_port);
 
-      pisces_demuxer* dm = new pisces_demuxer(this,
-        timestamp(0), //assume zero latency send
-        hop_lat, //credit latency
-        router_->max_num_vc(),
-        row_buffer_num_bytes);
+//      pisces_demuxer* dm = new pisces_demuxer(this,
+//        timestamp(0), //assume zero latency send
+//        hop_lat, //credit latency
+//        router_->max_num_vc(),
+//        row_buffer_num_bytes_);
+      pisces_demuxer* dm = new pisces_demuxer(demuxer_params, this);
       //routed port numbers are 0-48, e.g. for a 6x8
       //we route locally to a given column number
       int dm_mod = ncols_;
-      dm->set_event_location(my_addr_);
+      //dm->set_event_location(my_addr_);
       dm->configure_mod_ports(dm_mod);
       dm->set_update_vc(false);
 
@@ -153,16 +173,15 @@ pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
   for (int row_dm=0; row_dm < nrows_; ++row_dm){
     for (int col_dm=0; col_dm < ncols_; ++col_dm){
       int tile_dm = row_col_to_tile(row_dm, col_dm);
-      pisces_sender* demuxer = row_input_demuxers_[tile_dm];
+      pisces_demuxer* demuxer = row_input_demuxers_[tile_dm];
       //demuxer is connected to all xbars in the row
       for (int col_out=0; col_out < ncols_; ++col_out){
         //we must traverse the xbar at (row_dm, col_out)
         int tile_xbar = row_col_to_tile(row_dm, col_out);
-        pisces_sender* xbar = xbar_tiles_[tile_xbar];
+        pisces_crossbar* xbar = xbar_tiles_[tile_xbar];
         //label unique input ports on the xbar by column
-        demuxer->set_output(col_out, col_dm, xbar);
-        demuxer->init_credits(col_out, xbar->num_initial_credits());
-        xbar->set_input(col_dm, col_out, demuxer);
+        demuxer->set_output(demuxer_params,col_out,col_dm,xbar->payload_handler());
+        xbar->set_input(xbar_params, col_dm, col_out, demuxer->credit_handler());
       }
     }
   }
@@ -178,22 +197,11 @@ pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
         int tile_muxer = row_col_to_tile(rm, cx);
         pisces_muxer* muxer = col_output_muxers_[tile_muxer];
         //use zero-based input ports corresponding to row number for the muxer
-        xbar->set_output(tile_muxer, rx, muxer);
-        xbar->init_credits(tile_muxer, muxer->num_initial_credits());
-        muxer->set_input(rx, tile_muxer, xbar);
+        xbar->set_output(xbar_params, tile_muxer, rx, muxer->payload_handler());
+        muxer->set_input(muxer_params, rx, tile_muxer, xbar->credit_handler());
       }
     }
   }
-#endif
-}
-
-void
-pisces_tiled_switch::connect_output(sprockit::sim_parameters* params,
-                                         int src_outport, int dst_inport,
-                                         connectable *mod)
-{
-  connect_output(params, src_outport, dst_inport,
-                 safe_cast(event_handler, mod));
 }
 
 void
@@ -208,14 +216,6 @@ pisces_tiled_switch::connect_output(
 }
 
 void
-pisces_tiled_switch::connect_input(sprockit::sim_parameters* params,
-                                        int src_outport, int dst_inport,
-                                        connectable *mod)
-{
-  connect_input(params, src_outport, dst_inport, safe_cast(event_handler, mod));
-}
-
-void
 pisces_tiled_switch::connect_input(
   sprockit::sim_parameters* params,
   int src_outport,
@@ -226,6 +226,7 @@ pisces_tiled_switch::connect_input(
   demuxer->set_input(params, dst_inport, src_outport, mod);
 }
 
+#if 0
 void
 pisces_tiled_switch::connect(
   sprockit::sim_parameters* params,
@@ -264,6 +265,7 @@ pisces_tiled_switch::connect_ejector(sprockit::sim_parameters* params,
   pisces_sender* muxer = col_output_muxers_[src_outport];
   muxer->set_output(params, src_outport, dst_inport, handler);
 }
+#endif
 
 int
 pisces_tiled_switch::queue_length(int port) const
@@ -272,6 +274,7 @@ pisces_tiled_switch::queue_length(int port) const
     "pisces_tiled_switch::queue_length");
 }
 
+#if 0
 void
 pisces_tiled_switch::handle(event* ev)
 {
@@ -303,16 +306,64 @@ pisces_tiled_switch::handle(event* ev)
     }
   }
 }
+#endif
+
+void
+pisces_tiled_switch::handle_credit(event *ev)
+{
+  pisces_credit* credit = static_cast<pisces_credit*>(ev);
+  pisces_muxer* recver = col_output_muxers_[credit->port()];
+  recver->handle_credit(credit);
+}
+
+void
+pisces_tiled_switch::handle_payload(event *ev)
+{
+  pisces_payload* payload = static_cast<pisces_payload*>(ev);
+  //routable* rtbl = payload->interface<routable>();
+  debug_printf(sprockit::dbg::pisces,
+               "tiled switch %d: incoming payload %s",
+               int(my_addr_), payload->to_string().c_str());
+  pisces_demuxer* demuxer = row_input_demuxers_[payload->inport()];
+  //now figure out the new port I am routing to
+  router_->route(payload);
+  debug_printf(sprockit::dbg::pisces,
+               "tiled switch %d: routed payload %s to outport %d",
+               int(my_addr_), payload->to_string().c_str(),
+               payload->next_port());
+  demuxer->handle_payload(payload);
+}
 
 std::string
-pisces_tiled_switch::to_string() const override
+pisces_tiled_switch::to_string() const
 {
-  return sprockit::printf("pisces switch %d", int(my_addr_));
+  return sprockit::printf("pisces tiled switch %d", int(my_addr_));
 }
 
-}
-}
-
+link_handler*
+pisces_tiled_switch::credit_handler(int port) const
+{
+#if SSTMAC_INTEGRATED_SST_CORE
+  return new SST::Event::Handler<pisces_switch>(const_cast<pisces_switch*>(this),
+                          &pisces_tiled_switch::handle_credit);
+#else
+  return ack_handler_;
 #endif
+}
+
+link_handler*
+pisces_tiled_switch::payload_handler(int port) const
+{
+#if SSTMAC_INTEGRATED_SST_CORE
+  return new SST::Event::Handler<pisces_switch>(const_cast<pisces_switch*>(this),
+                          &pisces_tiled_switch::handle_payload);
+#else
+  return payload_handler_;
+#endif
+}
+
+}
+
+}
 
 

@@ -56,6 +56,15 @@ pisces_NtoM_queue::credit_handler()
   return credit_handler_;
 }
 
+event_handler*
+pisces_NtoM_queue::payload_handler()
+{
+  if (!payload_handler_){
+    payload_handler_ = new_handler(this, &pisces_NtoM_queue::handle_payload);
+  }
+  return payload_handler_;
+}
+
 pisces_NtoM_queue::~pisces_NtoM_queue()
 {
   if (arb_) delete arb_;

@@ -9,9 +9,8 @@ CORETESTS+= \
   test_core_apps_stop_time \
   test_core_apps_distributed_service \
   test_sumi_failure \
-  test_sumi_collective 
-
-#  test_core_apps_ping_all_tiled_dfly \
+  test_sumi_collective \
+  test_core_apps_ping_all_tiled_dfly
 #  test_core_apps_ping_all_butterfly 
 
 if HAVE_EVENT_CALENDAR

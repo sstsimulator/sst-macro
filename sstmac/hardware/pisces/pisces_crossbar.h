@@ -33,6 +33,9 @@ class pisces_NtoM_queue :
   event_handler*
   credit_handler();
 
+  event_handler*
+  payload_handler();
+
   void
   set_input(sprockit::sim_parameters* params,
             int my_inport, int src_outport, event_handler* input) override;
@@ -99,6 +102,7 @@ class pisces_NtoM_queue :
   int port_mod_;
 
   event_handler* credit_handler_;
+  event_handler* payload_handler_;
 
   std::map<int, std::set<int> > deadlocked_channels_;
 
