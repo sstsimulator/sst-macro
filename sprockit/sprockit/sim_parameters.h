@@ -154,6 +154,26 @@ class sim_parameters  {
   std::string
   deprecated_param(const std::string& key);
 
+
+  /**
+   * @brief get_either_or_param Return a parameter which can have one of two names.
+   *        If both names are found, results in error.
+   * @param key1
+   * @param key2
+   * @return The parameter value for key1 or key2
+   */
+  std::string
+  get_either_or_param(const std::string& key1, const std::string& key2);
+
+  int
+  get_either_or_int_param(const std::string& key1, const std::string& key2);
+
+  double
+  get_either_or_time_param(const std::string& key1, const std::string& key2);
+
+  double
+  get_either_or_bandwidth_param(const std::string& key1, const std::string& key2);
+
   void
   add_param(const std::string& key, const std::string& val);
 
@@ -448,6 +468,18 @@ class sim_parameters  {
  private:
   std::map<std::string, sim_parameters*> subspaces_;
   std::map<std::string, std::string> variables_;
+
+  /**
+   * @brief check_either_or Determine whether the parameters are valid for either/or
+   *        parameters. If both keys are given or neither are given, abort.
+   *        There should only be a single key specified.
+   * @param key1
+   * @param key2
+   * @return True if key1 is available, False if key2 is available.
+   */
+  bool check_either_or(const std::string& key1,
+                       const std::string& key2);
+
 
   sim_parameters* parent_;
 
