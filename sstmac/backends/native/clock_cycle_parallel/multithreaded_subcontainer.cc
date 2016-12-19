@@ -33,24 +33,16 @@ multithreaded_subcontainer::receive_incoming_events()
 void
 multithreaded_subcontainer::run()
 {
-  pthread_t self = pthread_self();
-  //thread_info::register_kernel_space_virtual_thread(thread_id(), &self, NULL);
-
-  if (!pthread_equal(pthread_self(), pthreads_[thread_id()])){
-    std::cerr << "pthreads not equal" << std::endl;
-    abort();
-  }
-
   clock_cycle_event_map::run();
 }
 
 timestamp
-multithreaded_subcontainer::vote_next_round(timestamp my_time)
+multithreaded_subcontainer::vote_next_round(timestamp my_time, vote_type_t ty)
 {
   debug_printf(sprockit::dbg::event_manager | sprockit::dbg::event_manager_time_vote,
     "Rank %d thread barrier to start vote on thread %d, epoch %d\n",
     rt_->me(), thread_id(), epoch_);
-  return parent_->time_vote_barrier(thread_id_, my_time);
+  return parent_->time_vote_barrier(thread_id_, my_time, ty);
 }
 
 void

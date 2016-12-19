@@ -45,17 +45,17 @@ class multithreaded_event_container :
   ~multithreaded_event_container() throw () {}
 
   virtual void
-  run();
+  run() override;
 
   virtual void
-  schedule_stop(timestamp until);
+  schedule_stop(timestamp until) override;
 
   void
   multithread_schedule(
     int srcthread,
     int dstthread,
     uint32_t seqnum,
-    event_queue_entry* ev);
+    event_queue_entry* ev) override;
 
   std::list<event_queue_entry*>&
   pending_events(int srcthread, int dstthread) {
@@ -63,10 +63,10 @@ class multithreaded_event_container :
   }
 
   virtual void
-  set_interconnect(hw::interconnect* interconn);
+  set_interconnect(hw::interconnect* interconn) override;
 
   virtual void
-  receive_incoming_events();
+  receive_incoming_events() override;
 
   void
   schedule_incoming(int thread_id, clock_cycle_event_map* mgr);
@@ -75,16 +75,16 @@ class multithreaded_event_container :
   send_recv_barrier(int thread_id);
 
   timestamp
-  time_vote_barrier(int thread_id, timestamp min_time);
+  time_vote_barrier(int thread_id, timestamp min_time, vote_type_t ty);
 
-  virtual timestamp
-  vote_next_round(timestamp my_time);
+  timestamp
+  vote_next_round(timestamp my_time, vote_type_t ty) override;
 
   event_manager*
-  ev_man_for_thread(int thread_id) const;
+  ev_man_for_thread(int thread_id) const override;
 
   virtual void
-  finish_stats(stat_collector *main, const std::string &name, timestamp end);
+  finish_stats(stat_collector *main, const std::string &name, timestamp end) override;
 
  protected:
   struct vote_thread_functor : public thread_barrier_functor {
@@ -116,6 +116,8 @@ class multithreaded_event_container :
   std::vector<int> cpu_affinity_;
   int me_;
   int nproc_;
+  std::vector<pthread_t> pthreads_;
+  std::vector<pthread_attr_t> pthread_attrs_;
 
 };
 
