@@ -21,15 +21,15 @@ class multithreaded_subcontainer :
     int srcthread,
     int dstthread,
     uint32_t seqnum,
-    event_queue_entry* ev);
+    event_queue_entry* ev) override;
 
   void
-  receive_incoming_events();
+  receive_incoming_events() override;
 
   timestamp
   vote_next_round(timestamp my_time, vote_type_t ty) override;
 
-  void run();
+  void run() override;
 
   multithreaded_subcontainer(
     sprockit::sim_parameters* params,

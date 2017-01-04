@@ -340,6 +340,66 @@ sim_parameters::deprecated_optional_param(const std::string &key, const std::str
   return get_optional_param(key, def);
 }
 
+bool
+sim_parameters::check_either_or(const std::string &key1, const std::string &key2)
+{
+  bool has_key1 = has_param(key1);
+  bool has_key2 = has_param(key2);
+  if (has_key1 && has_key2){
+    print_scoped_params(std::cerr);
+    spkt_abort_printf("Specified both %s and %s in namespace %s - need one or the other",
+                      key1.c_str(), key2.c_str(), namespace_.c_str());
+  } else if (!has_key1 && !has_key2){
+    print_scoped_params(std::cerr);
+    spkt_abort_printf("Specified neither %s and %s in namespace %s - need one or the other",
+                      key1.c_str(), key2.c_str(), namespace_.c_str());
+  }
+  return has_key1;
+}
+
+std::string
+sim_parameters::get_either_or_param(const std::string& key1, const std::string& key2)
+{
+  if (check_either_or(key1,key2)){
+    return get_param(key1);
+  } else {
+    return get_param(key2);
+  }
+}
+
+int
+sim_parameters::get_either_or_int_param(const std::string& key1,
+                                        const std::string& key2)
+{
+  if (check_either_or(key1,key2)){
+    return get_int_param(key1);
+  } else {
+    return get_int_param(key2);
+  }
+}
+
+double
+sim_parameters::get_either_or_bandwidth_param(const std::string& key1,
+                                              const std::string& key2)
+{
+  if (check_either_or(key1,key2)){
+    return get_bandwidth_param(key1);
+  } else {
+    return get_bandwidth_param(key2);
+  }
+}
+
+double
+sim_parameters::get_either_or_time_param(const std::string& key1,
+                                         const std::string& key2)
+{
+  if (check_either_or(key1,key2)){
+    return get_time_param(key1);
+  } else {
+    return get_time_param(key2);
+  }
+}
+
 std::string
 sim_parameters::get_optional_param(const std::string &key, const std::string &def)
 {

@@ -122,8 +122,8 @@ pisces_param_expander::expand_amm1_network(sprockit::sim_parameters* params,
   sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
   sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
 
-  std::string link_lat = link_params->get_optional_param("latency","");
-  std::string xbar_lat = xbar_params->get_optional_param("latency","");
+  std::string link_lat = link_params->get_either_or_param("send_latency","latency");
+  std::string xbar_lat = xbar_params->get_optional_param("latency", "0ns");
   if (!link_params->has_param("send_latency")){
     if (link_lat.size() == 0){
       spkt_abort_printf("must specify latency or send_latency for link");
@@ -131,25 +131,14 @@ pisces_param_expander::expand_amm1_network(sprockit::sim_parameters* params,
     link_params->add_param_override("send_latency", link_lat);
   }
   if (!link_params->has_param("credit_latency")){
-    if (xbar_lat.size() == 0){
-      link_params->add_param_override("credit_latency", "0ns");
-    } else {
-      link_params->add_param_override("credit_latency", xbar_lat);
-    }
+    link_params->add_param_override("credit_latency", "0ns");
   }
 
   if (!xbar_params->has_param("send_latency")){
-    if (xbar_lat.size() == 0){
-      xbar_params->add_param_override("send_latency", "0ns");
-    } else {
-      xbar_params->add_param_override("send_latency", xbar_lat);
-    }
+    xbar_params->add_param_override("send_latency", xbar_lat);
   }
 
   if (!xbar_params->has_param("credit_latency")){
-    if (link_lat.size() == 0){
-      spkt_abort_printf("must specify xbar credit latency or link latency");
-    }
     xbar_params->add_param_override("credit_latency", link_lat);
   }
 
@@ -158,8 +147,9 @@ pisces_param_expander::expand_amm1_network(sprockit::sim_parameters* params,
     double link_bw = link_params->get_bandwidth_param("bandwidth");
     double xbar_bw = link_bw * buffer_depth_;
     xbar_params->add_param_override("bandwidth", xbar_bw);
+    xbar_params->add_param_override("arbitrator", "null");
   }
-  xbar_params->add_param_override("arbitrator", "null");
+
 
 
   int buffer_size = xbar_params->get_byte_length_param("buffer_size");
@@ -167,8 +157,7 @@ pisces_param_expander::expand_amm1_network(sprockit::sim_parameters* params,
 
   if (!ej_params->has_param("send_latency")){
     if (!ej_params->has_param("latency")){
-      ej_params->add_param_override("send_latency",
-                                    link_params->get_param("send_latency"));
+      ej_params->add_param_override("send_latency", link_lat);
     } else {
       ej_params->add_param_override("send_latency",
                                     ej_params->get_param("latency"));
@@ -183,7 +172,8 @@ pisces_param_expander::expand_amm1_network(sprockit::sim_parameters* params,
   if (!ej_params->has_param("arbitrator")){
     ej_params->add_param("arbitrator", "cut_through");
   }
-  ej_params->add_param_override("credit_latency", "0ns");
+  if (!ej_params->has_param("credit_latency"))
+    ej_params->add_param_override("credit_latency", "0ns");
 
 
   std::string net_model = netlink_params->get_optional_param("model", "null");
