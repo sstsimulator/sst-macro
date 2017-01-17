@@ -387,6 +387,7 @@ parsedumpi_callbacks::get_mpitype(dumpi_datatype id)
     if(id < datatype_sizes_.count) {
       int size = datatype_sizes_.size[id];
       mpitype_[id] = mpi_type::builtins[size].id;
+      printf("Remapped dumpi type %d to builtin of size %d\n", id, size);
     }
     else {
       cerrn << sprockit::printf("Warning: no match for datatype id %d - assuming double\n", int(id));

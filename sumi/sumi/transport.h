@@ -151,23 +151,13 @@ class transport
   nvram_get(int src, const message::ptr& msg);
   
   /**
-   Block until a message is received.
-   Returns immediately if message already waiting.
-   Message returned is removed from the internal queue.
-   Successive calls to the function do NOT return the same message.
-   @return    The next message to be received
-  */
-  message::ptr
-  blocking_poll();
-
-  /**
    Check if a message has been received. Return immediately even if empty queue.
    Message returned is removed from the internal queue.
    Successive calls to the function do NOT return the same message.
    @return    The next message to be received, null if no messages
   */
   message::ptr
-  poll(bool blocking);
+  poll(bool blocking, double timeout = -1);
 
   /**
    Block until a message is received.
@@ -178,7 +168,7 @@ class transport
    @return          The next message to be received. Message is NULL on timeout
   */
   message::ptr
-  blocking_poll(double timeout);
+  blocking_poll(double timeout = -1);
 
   template <class T>
   typename T::ptr
@@ -208,12 +198,9 @@ class transport
 
   message::ptr
   blocking_poll(message::payload_type_t);
-  
-  virtual message::ptr
-  block_until_message() = 0;
 
   virtual message::ptr
-  block_until_message(double timeout) = 0;
+  poll_pending_messages(bool blocking, double timeout) = 0;
 
   bool
   use_eager_protocol(long byte_length) const {

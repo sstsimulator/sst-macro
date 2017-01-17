@@ -25,6 +25,7 @@ libsstmac_skeletons_la_SOURCES = \
   test/mpi_coverage_test.cc \
   test/mpi_ping_all.cc \
   test/mpi_delay_stats.cc \
+  test/mpi_isend_progress.cc \
   test/global_test.cc \
   sumi_undumpi/parsedumpi.cc \
   sumi_undumpi/parsedumpi_callbacks.cc \

@@ -14,6 +14,8 @@
 
 using namespace sprockit::dbg;
 
+static sstmac::sw::key::category message_thread("Server");
+
 namespace sstmac {
 
 class sumi_server :
@@ -105,7 +107,7 @@ sumi_transport::sumi_transport(sprockit::sim_parameters* params,
   server_libname_("sumi_server"),
   process_manager(sid, os),
   transport(params),
-  queue_(nullptr)
+  user_lib_time_(nullptr)
 {
   rank_ = sid.task_;
   library* server_lib = os_->lib(server_libname_);
@@ -119,11 +121,15 @@ sumi_transport::sumi_transport(sprockit::sim_parameters* params,
     server = safe_cast(sumi_server, server_lib);
   }
 
+  post_rdma_delay_ = params->get_optional_time_param("post_rdma_delay", 0);
+  post_header_delay_ = params->get_optional_time_param("post_header_delay", 0);
+  poll_delay_ = params->get_optional_time_param("poll_delay", 0);
+  user_lib_time_ = new sstmac::sw::lib_compute_time(params, "sumi-user-lib-time", sid, os);
+
   rank_mapper_ = runtime::launcher()->task_mapper(sid.app_);
   nproc_ = rank_mapper_->nproc();
   loc_ = os_->event_location();
 
-  queue_ = new sumi_queue(os_);
   server->register_proc(rank_, this);
 }
 
@@ -138,7 +144,7 @@ sumi_transport::ctor_common(sstmac::sw::software_id sid)
 
 sumi_transport::~sumi_transport()
 {
-  if (queue_) delete queue_;
+  delete user_lib_time_;
   sumi_server* server = safe_cast(sumi_server, os_->lib(server_libname_));
   bool del = server->unregister_proc(rank_, this);
   if (del) delete server;
@@ -303,6 +309,12 @@ sumi_transport::send(
 }
 
 void
+sumi_transport::compute(timestamp t)
+{
+  user_lib_time_->compute(t);
+}
+
+void
 sumi_transport::go_die()
 {
   kill_node();
@@ -318,6 +330,9 @@ sumi_transport::go_revive()
 void
 sumi_transport::do_smsg_send(int dst, const sumi::message::ptr &msg)
 {
+  if (post_header_delay_.ticks_int64()) {
+    user_lib_time_->compute(post_header_delay_);
+  }
   send(msg->byte_length(), msg,
     sstmac::hw::network_message::payload,
     dst, msg->needs_send_ack());
@@ -341,6 +356,9 @@ sumi_transport::do_send_ping_request(int dst)
 void
 sumi_transport::do_rdma_get(int dst, const sumi::message::ptr& msg)
 {
+  if (post_rdma_delay_.ticks_int64()) {
+    user_lib_time_->compute(post_rdma_delay_);
+  }
   send(msg->byte_length(), msg,
     sstmac::hw::network_message::rdma_get_request,
     dst, msg->needs_send_ack());
@@ -349,6 +367,9 @@ sumi_transport::do_rdma_get(int dst, const sumi::message::ptr& msg)
 void
 sumi_transport::do_rdma_put(int dst, const sumi::message::ptr& msg)
 {
+  if (post_rdma_delay_.ticks_int64()) {
+    user_lib_time_->compute(post_rdma_delay_);
+  }
   send(msg->byte_length(), msg,
     sstmac::hw::network_message::rdma_put_payload,
     dst, msg->needs_send_ack());
@@ -363,41 +384,56 @@ sumi_transport::do_nvram_get(int dst, const sumi::message::ptr& msg)
 }
 
 sumi::message::ptr
-sumi_transport::block_until_message()
+sumi_transport::poll_pending_messages(bool blocking, double timeout)
 {
   while (1) {
-    transport_message* msg = queue_->poll_until_message();
+    if (poll_delay_.ticks_int64()) {
+      user_lib_time_->compute(poll_delay_);
+    }
+
+    if (pending_messages_.empty() && blocking) {
+      sstmac::sw::key* blocker = sstmac::sw::key::construct(message_thread);
+      if (timeout > 0.){
+        os_->schedule_timeout(sstmac::timestamp(timeout), blocker);
+      }
+      blocked_keys_.push_back(blocker);
+      debug_printf(sprockit::dbg::sumi,
+                   "sumi queue %p has no pending messages - blocking poller %p",
+                   this, blocker);
+      os_->block(blocker);
+      if (timeout <= 0){
+        if (pending_messages_.empty()){
+          spkt_abort_printf("SUMI transport rank %d unblocked with no messages and no timeout", 
+            rank_, timeout);
+        } 
+        delete blocker;
+      } else {
+        if (pending_messages_.empty()){
+          //timed out, erase blocker from list
+          auto iter = blocked_keys_.begin();
+          while (*iter != blocker) ++iter;
+          if (iter == blocked_keys_.end()){
+            spkt_abort_printf("Rank %d time out has no key", rank_);
+          }
+          blocked_keys_.erase(iter);
+          return sumi::message::ptr();
+        }
+      } 
+    } else if (pending_messages_.empty()){
+      return sumi::message::ptr();
+    }
+
+    //we have been unblocked because a message has arrived
+    transport_message* msg = pending_messages_.front();
+    pending_messages_.pop_front();
+
     debug_printf(sprockit::dbg::sumi,
-                 "rank %d polling on queue %p returned msg %s",
-                 rank(), queue_, msg->to_string().c_str());
+                 "rank %d polling on %p returned msg %s",
+                 rank(), msg->to_string().c_str());
     sumi::message_ptr notification = handle(msg);
     delete msg;
     if (notification){
       return notification;
-    }
-  }
-}
-
-sumi::message::ptr
-sumi_transport::block_until_message(double timeout)
-{
-  while (1) {
-    transport_message* msg = queue_->poll_until_message(timeout);
-    if (msg){
-      debug_printf(sprockit::dbg::sumi,
-             "block_until_message on rank %d returned payload %s",
-             rank(), msg->payload()->to_string().c_str());
-      sumi::message_ptr notification = handle(msg);
-      delete msg;
-      if (notification){
-        return notification;
-      }
-    } else {
-      //I timed out
-      debug_printf(sprockit::dbg::sumi,
-             "block_until_message on rank %d timed out",
-             rank());
-      return sumi::message_ptr();
     }
   }
 }
@@ -407,7 +443,7 @@ sumi_transport::cq_notify()
 {
   debug_printf(sprockit::dbg::sumi, "Rank %d starting cq notification", rank_);
   //a null message indicates a cq notification
-  if (blocked()){
+  if (!blocked_keys_.empty()){
     debug_printf(sprockit::dbg::sumi, "Rank %d generating cq notification", rank_);
     incoming_message(nullptr);
   }
@@ -435,7 +471,7 @@ sumi_transport::collective_block(sumi::collective::type_t ty, int tag)
   }
 
   completion_queue_.end_iteration();
-  sumi::message::ptr msg = block_until_message();
+  sumi::message::ptr msg = poll_pending_messages(true); //block
 
   if (msg->class_type() == sumi::message::collective_done){
     //this is a collective done message
@@ -497,79 +533,6 @@ sumi_transport::incoming_message(transport_message *msg)
     msg->payload()->set_time_arrived(wall_time());
   }
 #endif
-  queue_->put_message(msg);
-}
-
-sumi_queue::sumi_queue(sstmac::sw::operating_system* os)
-  : os_(os)
-{
-}
-
-sumi_queue::sumi_queue() :
-  os_(sstmac::sw::operating_system::current_os())
-{
-}
-
-sumi_queue::~sumi_queue()
-{
-}
-
-static sstmac::sw::key::category message_thread("Server");
-
-transport_message*
-sumi_queue::poll_until_message()
-{
-  if (pending_messages_.empty()) {
-    sstmac::sw::key* blocker = sstmac::sw::key::construct(message_thread);
-    blocked_keys_.push_back(blocker);
-    debug_printf(sprockit::dbg::sumi,
-                 "sumi queue %p has no pending messages - blocking poller %p",
-                 this, blocker);
-    os_->block(blocker);
-    delete blocker;
-  }
-
-  //we have been unblocked
-  transport_message* msg = pending_messages_.front();
-  pending_messages_.pop_front();
-  return msg;
-}
-
-transport_message*
-sumi_queue::poll_until_message(timestamp timeout)
-{
-  sstmac::sw::key* blocker = 0;
-  if (pending_messages_.empty()){
-    blocker = sstmac::sw::key::construct(message_thread);
-    blocked_keys_.push_back(blocker);
-    os_->schedule_timeout(timeout, blocker);
-    os_->block(blocker);
-    //do not delete - the timeout event will do that
-  }
-
-  if (pending_messages_.empty()){
-    //timed-out
-    //the timed-out blocker is still active in the blocked list - remove it
-    std::list<sstmac::sw::key*>::iterator it, end = blocked_keys_.end();
-    for (it=blocked_keys_.begin(); it != end; ++it){
-        sstmac::sw::key* test = *it;
-        if (test == blocker){
-          blocked_keys_.erase(it);
-          break;
-        }
-    }
-    return NULL;
-  } else {
-    //we have been unblocked
-    transport_message* msg = pending_messages_.front();
-    pending_messages_.pop_front();
-    return msg;
-  }
-}
-
-void
-sumi_queue::put_message(transport_message* msg)
-{
   pending_messages_.push_back(msg);
 
   if (!blocked_keys_.empty()) {
@@ -588,3 +551,4 @@ sumi_queue::put_message(transport_message* msg)
 
 
 }
+

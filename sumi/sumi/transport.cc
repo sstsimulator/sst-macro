@@ -250,10 +250,6 @@ transport::finalize()
     send_terminate(dst);
   }
   failed_ranks_.end_iteration();
-
-#if 0
-  if (comm_sync_stats_) comm_sync_stats_->print(rank_, std::cout);
-#endif
 }
 
 void
@@ -297,45 +293,24 @@ transport::blocking_poll(message::payload_type_t ty)
 }
 
 message::ptr
-transport::poll(bool blocking)
-{
-  message::ptr dmsg;
-  bool empty = completion_queue_.pop_front_and_return(dmsg);
-  if (empty && blocking){
-    debug_printf(sprockit::dbg::sumi,
-      "Rank %d blocking_poll: cq empty, blocking", rank_);
-    return block_until_message();
-  }
-  else {
-    debug_printf(sprockit::dbg::sumi,
-      "Rank %d blocking_poll: cq entry, not blocking", rank_);
-    return dmsg;
-  }
-}
-
-message::ptr
-transport::blocking_poll()
-{
-  return poll(true); //blocking
-}
-
-message::ptr
-transport::blocking_poll(double timeout)
+transport::poll(bool blocking, double timeout)
 {
   message::ptr dmsg;
   bool empty = completion_queue_.pop_front_and_return(dmsg);
   if (empty){
     debug_printf(sprockit::dbg::sumi,
-      "Rank %d blocking_poll: cq empty, blocking until timeout %8.4e",
-      rank_, timeout);
-    return block_until_message(timeout);
+      "Rank %d blocking_poll: cq empty, blocking", rank_);
+    return poll_pending_messages(blocking, timeout);
   } else {
-    debug_printf(sprockit::dbg::sumi,
-      "Rank %d blocking_poll: cq entry, not blocking", rank_);
     return dmsg;
   }
 }
 
+message::ptr
+transport::blocking_poll(double timeout)
+{
+  return poll(true, timeout); //blocking
+}
 
 void
 transport::send(int dst, const message::ptr &msg)
@@ -1149,18 +1124,20 @@ transport::smsg_send(int dst, message::payload_type_t ev,
     debug_printf(sprockit::dbg::sumi,
       "Rank %d SUMI sending self message", rank_);
 
-    delayed_transport_handle(msg);
+    handle(msg);
     if (needs_ack){
       message::ptr ack = msg->clone();
       msg->set_payload_type(message::eager_payload_ack);
-      delayed_transport_handle(ack);
+      handle(ack);
     }
 
   }
   else {
     do_smsg_send(dst, msg);
   }
-
+#if SUMI_COMM_SYNC_STATS
+  msg->set_time_sent(wall_time());
+#endif
   END_PT2PT_FUNCTION();
 }
 
@@ -1168,7 +1145,6 @@ void
 transport::rdma_get(int src, const message::ptr &msg,
                     bool needs_send_ack, bool needs_recv_ack)
 {
-
   CHECK_IF_I_AM_DEAD(return);
   START_PT2PT_FUNCTION(src);
 

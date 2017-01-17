@@ -86,8 +86,6 @@ parse_opts(int argc, char **argv, opts &oo)
         break;
       case 'a': {
         oo.configfile = "debug.ini";
-        oo.params->add_param_override("app1.name", "user_app_cxx");
-        oo.params->add_param_override("app1.launch_cmd", "aprun -n 1");
         break;
       }
       case 'n' : {

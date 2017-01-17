@@ -55,6 +55,8 @@ RegisterKeywords(
 DeclareDebugSlot(mpi_all_sends);
 RegisterDebugSlot(mpi_all_sends);
 
+static bool lookahead_progress_ = false;
+
 
 namespace sumi {
 
@@ -75,17 +77,12 @@ mpi_queue::mpi_queue(sprockit::sim_parameters* params,
   appid_(sid.app_),
   api_(api),
   user_lib_mem_(nullptr),
-  user_lib_time_(nullptr),
   os_(api->os()),
   spy_num_messages_(nullptr),
   spy_bytes_(nullptr)
 {
   max_vshort_msg_size_ = params->get_optional_byte_length_param("max_vshort_msg_size", 512);
   max_eager_msg_size_ = params->get_optional_byte_length_param("max_eager_msg_size", 8192);
-
-  post_rdma_delay_ = params->get_optional_time_param("post_rdma_delay", 0);
-  post_header_delay_ = params->get_optional_time_param("post_header_delay", 0);
-  poll_delay_ = params->get_optional_time_param("poll_delay", 0);
 
   spy_num_messages_ = sstmac::optional_stats<sstmac::stat_spyplot>(os_->node(),
         params, "traffic_matrix", "ascii", "num_messages");
@@ -94,11 +91,18 @@ mpi_queue::mpi_queue(sprockit::sim_parameters* params,
 
   user_lib_mem_ = new sstmac::sw::lib_compute_memmove(params, "mpi_queue-user-lib-mem", sid, os_);
 
-  user_lib_time_ = new sstmac::sw::lib_compute_time(params, "mpi_queue-user-lib-time", sid, os_);
+  lookahead_progress_ = params->get_optional_bool_param("lookahead_progress", false);
 
   mpi_queue_debug("init on node %d", int(operating_system::current_node_id()));
 
   next_id_ = uint64_t(taskid_) << 32;
+
+  if (!mpi_protocol::eager0_protocol){
+    mpi_protocol::eager0_protocol = new eager0(params);
+    mpi_protocol::eager1_singlecpy_protocol = new eager1_singlecpy(params);
+    mpi_protocol::eager1_doublecpy_protocol = new eager1_doublecpy(params);
+    mpi_protocol::rendezvous_protocol = new rendezvous_get(params);
+  }
 }
 
 void
@@ -126,7 +130,6 @@ mpi_queue::~mpi_queue() throw ()
   }
 
   delete user_lib_mem_;
-  delete user_lib_time_;
 }
 
 mpi_message::ptr
@@ -199,10 +202,7 @@ mpi_queue::send(mpi_request *key, int count, MPI_Datatype type,
 #endif
 
   //either return the original buffer or create a new one for eager
-  if (buffer){
-    mess->protocol()->configure_send_buffer(mess, buffer);
-  }
-
+  mess->protocol()->configure_send_buffer(this, mess, buffer);
   mess->protocol()->send_header(this, mess);
 }
 
@@ -411,8 +411,8 @@ mpi_queue::incoming_completion_ack(const mpi_message::ptr& message)
     send_needs_completion_ack_.find(message->unique_int());
   if (it == send_needs_completion_ack_.end()) {
     spkt_throw_printf(sprockit::illformed_error,
-                     "mpi_queue[%d]::incoming_message: completion ack with no match on %s",
-                     taskid_, message->to_string().c_str());
+       "mpi_queue[%d]::incoming_message: completion ack with no match on %s",
+       taskid_, message->to_string().c_str());
   }
 
   mpi_queue_send_request* req = it->second;
@@ -609,6 +609,16 @@ mpi_queue::handle_poll_msg(const sumi::message::ptr& msg)
   }
 }
 
+void
+mpi_queue::nonblocking_progress()
+{
+  sumi::message::ptr msg = api_->poll(false); //do not block
+  while (msg){
+    handle_poll_msg(msg);
+    msg = api_->poll(false);
+  }
+}
+
 timestamp
 mpi_queue::progress_loop(mpi_request* req)
 {
@@ -708,9 +718,6 @@ void
 mpi_queue::post_header(const mpi_message::ptr& msg, bool needs_ack)
 {
   SSTMACBacktrace("MPI Queue Post Header");
-  if (post_header_delay_.ticks_int64()) {
-    user_lib_time_->compute(post_header_delay_);
-  }
   mpi_comm* comm = api_->get_comm(msg->comm());
   int dst_world_rank = comm->peer_task(msg->dst_rank());
   msg->set_src_rank(comm->rank());
@@ -723,9 +730,6 @@ mpi_queue::post_rdma(const mpi_message::ptr& msg,
   bool needs_recv_ack)
 {
   SSTMACBacktrace("MPI Queue Post RDMA Request");
-  if (post_rdma_delay_.ticks_int64()) {
-    user_lib_time_->compute(post_rdma_delay_);
-  }
   //JJW cannot assume the comm is available for certain eager protocols
   //mpi_comm* comm = api_->get_comm(msg->comm());
   //int src_world_rank = comm->peer_task(msg->src_rank());

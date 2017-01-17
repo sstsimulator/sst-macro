@@ -4,10 +4,10 @@
 namespace sumi {
 
 
-mpi_protocol* mpi_protocol::eager0_protocol = new eager0;
-mpi_protocol* mpi_protocol::eager1_singlecpy_protocol = new eager1_singlecpy;
-mpi_protocol* mpi_protocol::eager1_doublecpy_protocol = new eager1_doublecpy;
-mpi_protocol* mpi_protocol::rendezvous_protocol = new rendezvous_get;
+mpi_protocol* mpi_protocol::eager0_protocol = nullptr;
+mpi_protocol* mpi_protocol::eager1_singlecpy_protocol = nullptr;
+mpi_protocol* mpi_protocol::eager1_doublecpy_protocol = nullptr;
+mpi_protocol* mpi_protocol::rendezvous_protocol = nullptr;
 
 static sprockit::need_delete_statics<mpi_protocol> del_statics;
 

@@ -1,32 +1,40 @@
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
 #include <sumi-mpi/mpi_queue/mpi_queue_recv_request.h>
-#include <sstmac/software/process/backtrace.h>
 #include <sumi-mpi/mpi_api.h>
 #include <sumi-mpi/mpi_debug.h>
+#include <sstmac/software/process/backtrace.h>
+#include <sprockit/sim_parameters.h>
 
 namespace sumi {
 
+rendezvous_protocol::rendezvous_protocol(sprockit::sim_parameters* params)
+{
+  rdma_pin_delay_ = params->get_optional_time_param("rdma_pin_delay", 0);
+  software_ack_ = params->get_optional_bool_param("software_ack", true);
+}
 
 rendezvous_get::~rendezvous_get()
 {
 }
 
 void
-rendezvous_get::configure_send_buffer(const mpi_message::ptr& msg, void *buffer)
+rendezvous_get::configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& msg, void *buffer)
 {
-  msg->remote_buffer().ptr = buffer;
+  if (rdma_pin_delay_.ticks_int64()){
+    queue->api()->compute(rdma_pin_delay_); 
+  }
+  if (buffer){
+    msg->remote_buffer().ptr = buffer;
+  }
 }
 
 void
 rendezvous_get::send_header(mpi_queue* queue,
-                             const mpi_message::ptr& msg)
+                            const mpi_message::ptr& msg)
 {
   SSTMACBacktrace("MPI Rendezvous Protocol: RDMA Send Header");
   msg->set_content_type(mpi_message::header);
-#if SSTMAC_COMM_SYNC_STATS
-  msg->set_time_sent(queue->now());
-#endif
   queue->post_header(msg, false); //don't need the nic ack
 }
 
@@ -58,7 +66,9 @@ rendezvous_get::incoming_header(mpi_queue *queue,
     msg->local_buffer().ptr = req->buffer_;
     queue->recv_needs_payload_[msg->unique_int()] = req;
     //generate both a send and recv ack
-    queue->post_rdma(msg, true, true);
+    //but the send ack might be hardware or software level
+    bool hardware_send_ack = !software_ack_;
+    queue->post_rdma(msg, hardware_send_ack, true);
   } else {
     mpi_queue_action_debug(
       queue->api()->comm_world()->rank(),
@@ -73,6 +83,9 @@ rendezvous_get::incoming_payload(mpi_queue* queue,
                                 const mpi_message::ptr& msg)
 {
   SSTMACBacktrace("MPI Rendezvous Protocol: RDMA Handle Payload");
+  if (rdma_pin_delay_.ticks_int64()){
+    queue->api()->compute(rdma_pin_delay_);
+  }
 
   mpi_queue::pending_req_map::iterator it = queue->recv_needs_payload_.find(
         msg->unique_int());
@@ -99,6 +112,9 @@ rendezvous_get::incoming_payload(mpi_queue* queue,
   mpi_queue_recv_request* recver = it->second;
   queue->recv_needs_payload_.erase(it);
   queue->finalize_recv(msg, recver);
+  if (software_ack_){
+    queue->send_completion_ack(msg);
+  }
 }
 
 }
