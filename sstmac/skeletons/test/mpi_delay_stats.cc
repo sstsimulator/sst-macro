@@ -18,6 +18,11 @@ RegisterKeywords("sync_delay");
 int USER_MAIN(int argc, char** argv)
 {
   SSTMACBacktrace("main");
+
+  //make sure everyone gets here at exatly the same time
+  double now = MPI_Wtime();
+  sstmac_compute(5e-5 - now);
+
   MPI_Init(&argc, &argv);
 
   int me, nproc;
@@ -28,13 +33,9 @@ int USER_MAIN(int argc, char** argv)
     spkt_abort_printf("Test must run with at least 8 ranks");
   }
 
-  double sync_delay = get_params()->get_time_param("sync_delay");
-
-
-  if (me == 6){
-    sstmac_compute(sync_delay);
-  }
-  MPI_Allreduce(1000, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  double send_delay = get_params()->get_time_param("send_delay");
+  double recv_delay = get_params()->get_time_param("recv_delay");
+  int send_size = get_params()->get_byte_length_param("message_size");
 
 
   int send_to = (me + 1) % nproc;
@@ -42,20 +43,11 @@ int USER_MAIN(int argc, char** argv)
 
   if (me % 2 == 0){
     //all even ranks create some delay
-    sstmac_compute(0.5*sync_delay);
-    MPI_Send(NULL, 100, MPI_DOUBLE, send_to, 42, MPI_COMM_WORLD);
+    sstmac_compute(send_delay);
+    MPI_Send(NULL, send_size, MPI_BYTE, send_to, 42, MPI_COMM_WORLD);
   } else {
-    MPI_Recv(NULL, 100, MPI_DOUBLE, recv_from, 42, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-  }
-
-
-
-  if (me % 2 == 0){
-    //all even ranks create some delay
-    MPI_Send(NULL, 100000, MPI_DOUBLE, send_to, 42, MPI_COMM_WORLD);
-  } else {
-    sstmac_compute(sync_delay);
-    MPI_Recv(NULL, 100000, MPI_DOUBLE, recv_from, 42, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    sstmac_compute(recv_delay);
+    MPI_Recv(NULL, send_size, MPI_BYTE, recv_from, 42, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
   }
 
   MPI_Finalize();

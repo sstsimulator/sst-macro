@@ -901,6 +901,13 @@ class mpi_api :
 
   void check_init();
 
+  int do_irecv(void *buf, int count, MPI_Datatype datatype, int source,
+            int tag, MPI_Comm comm, MPI_Request *request);
+
+  int do_isend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+            MPI_Comm comm, MPI_Request *request);
+
+
  private:
   /// The MPI server.
   mpi_queue* queue_;
