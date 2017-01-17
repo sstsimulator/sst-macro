@@ -329,16 +329,6 @@ class topology : public sprockit::printable
   }
 
   virtual void
-  minimal_routes_to_switch(
-    switch_id current_sw_addr,
-    switch_id dest_sw_addr,
-    routable::path& current_path,
-    routable::path_set& paths) const {
-    paths.resize(1);
-    minimal_route_to_switch(current_sw_addr, dest_sw_addr, paths[0]);
-  }
-
-  virtual void
   create_partition(
     int* switches_per_lp,
     int *switch_to_lp,

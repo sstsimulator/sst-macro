@@ -302,7 +302,6 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
           the_nic->connect_output(inj_params,
                            nic::Injection, inj_port,
                            nlink->payload_handler(inj_port));
-
           nlink->connect_output(nlink_ej_params,
                         inj_port, nic::Injection,
                         the_nic->payload_handler(nic::Injection));

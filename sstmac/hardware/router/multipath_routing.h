@@ -64,13 +64,14 @@ class multipath_router :
   }
 
   virtual void
-  route(packet* pkt){
+  route(packet* pkt) override {
     routable::path_set paths;
     ParentRouter::route(pkt);
     routable::path& path = pkt->interface<routable>()->current_path();
-    top_->get_redundant_paths(path, paths);
+    path.geometric_id = path.outport;
+    top_->get_redundant_paths(path, paths, this->addr());
 
-    int path_id = paths[0].geometric_id;
+    int path_id = path.geometric_id;
     int next_index = geom_paths_[path_id].next_index();
     debug_printf(sprockit::dbg::router,
       "multipath routing: using index %d", next_index);

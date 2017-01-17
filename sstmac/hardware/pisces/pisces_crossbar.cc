@@ -41,7 +41,8 @@ pisces_NtoM_queue::
 pisces_NtoM_queue(sprockit::sim_parameters* params,
                        event_scheduler* parent)
   : pisces_sender(params, parent),
-    credit_handler_(nullptr)
+    credit_handler_(nullptr),
+    payload_handler_(nullptr)
 {
   num_vc_ = params->get_int_param("num_vc");
   arb_ = pisces_bandwidth_arbitrator_factory::get_param("arbitrator", params);
@@ -84,13 +85,14 @@ pisces_NtoM_queue::deadlock_check()
       if (output){
         pkt->set_inport(poutput.dst_inport);
         int vc = update_vc_ ? pkt->next_vc() : pkt->vc();
-        std::cerr << "Starting deadlock check on " << to_string() << " on queue " << i
-          << " going to " << output->to_string()
-          << " outport=" << pkt->next_port()
-          << " inport=" << pkt->inport()
-          << " vc=" << vc
-          << " for message " << pkt->to_string()
-          << std::endl;
+        std::cerr << "Starting deadlock check on " << to_string()
+                  << " on queue " << i
+                  << " going to " << output->to_string()
+                  << " outport=" << pkt->next_port()
+                  << " inport=" << pkt->inport()
+                  << " vc=" << vc
+                  << " for message " << pkt->to_string()
+                  << std::endl;
         output->deadlock_check(pkt);
       }
       queue.pop(1000000);
@@ -102,14 +104,11 @@ pisces_NtoM_queue::deadlock_check()
 void
 pisces_NtoM_queue::build_blocked_messages()
 {
-  //std::cerr << "\tbuild blocked messages on " << to_string() << std::endl;
   for (int i=0; i < queues_.size(); ++i){
     payload_queue& queue = queues_[i];
     pisces_payload* pkt = queue.pop(1000000);
     while (pkt){
       blocked_messages_[pkt->inport()][pkt->vc()].push_back(pkt);
-      //std::cerr << "\t\t" << "into port=" << msg->inport() << " vc=" << msg->vc()
-      //  << " out on port=" << msg->port() << " vc=" << msg->routable_message::vc() << std::endl;
       pkt = queue.pop(10000000);
     }
   }
@@ -144,12 +143,12 @@ pisces_NtoM_queue::deadlock_check(event* ev)
     pisces_output& poutput = outputs_[local_port(outport)];
     event_handler* output = output_handler(next);
     next->set_inport(poutput.dst_inport);
-    std::cerr << to_string() << " going to " << output->to_string() 
-      << " outport=" << next->next_port()
-      << " inport=" << next->inport()
-      << " vc=" << next->next_vc()
-      << " : " << next->to_string()
-      << std::endl;
+    std::cerr << to_string() << " going to " << output->to_string()
+              << " outport=" << next->next_port()
+              << " inport=" << next->inport()
+              << " vc=" << next->next_vc()
+              << " : " << next->to_string()
+              << std::endl;
     output->deadlock_check(next);
   }
 }
@@ -188,13 +187,13 @@ pisces_NtoM_queue::send_payload(pisces_payload* pkt)
 {
   int loc_port = local_port(pkt->next_port());
   pisces_debug(
-    "On %s:%p mapped port:%d vc:%d to local port %d handling {%s} going to %s:%p",
-     to_string().c_str(), this,
-     pkt->next_port(), pkt->next_vc(),
-     loc_port,
-     pkt->to_string().c_str(),
-     output_name(pkt).c_str(),
-     output_handler(pkt));
+        "On %s:%p mapped port:%d vc:%d to local port %d handling {%s} going to %s:%p",
+        to_string().c_str(), this,
+        pkt->next_port(), pkt->next_vc(),
+        loc_port,
+        pkt->to_string().c_str(),
+        output_name(pkt).c_str(),
+        output_handler(pkt));
   send(arb_, pkt, inputs_[pkt->inport()], outputs_[loc_port]);
 }
 

@@ -43,8 +43,9 @@ tiled_torus::tiled_torus(sprockit::sim_parameters *params) :
 
 void
 tiled_torus::get_redundant_paths(
-  routable::path& current,
-  routable::path_set &paths) const
+    routable::path& current,
+    routable::path_set &paths,
+    switch_id addr) const
 {
   if (current.outport < first_simple_torus_eject_port_){
     //intranetwork routing
@@ -94,7 +95,7 @@ tiled_torus::configure_individual_port_params(switch_id src,
 }
 
 void
-tiled_torus::configure_geometric_paths(std::vector<int>& redundancies) const
+tiled_torus::configure_geometric_paths(std::vector<int>& redundancies)
 {
   int ndims = dimensions_.size();
   int ngeom_paths = ndims * 2 + netlinks_per_switch_; //2 for +/-

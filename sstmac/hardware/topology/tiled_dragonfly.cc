@@ -57,9 +57,6 @@ tiled_dragonfly::tiled_dragonfly(sprockit::sim_parameters* params) :
                       max_port,n_tiles_-1);
   max_ports_injection_ = injection_ports_.size();
 
-  max_ports_intra_network_ = n_tiles_ - max_ports_injection_;
-  eject_geometric_id_ = x_ + y_ + group_con_ - 2; // first eject port
-
   // initialize data structures
   int group_size = x_ * y_;
   int nswitches = num_switches();
@@ -73,175 +70,14 @@ tiled_dragonfly::tiled_dragonfly(sprockit::sim_parameters* params) :
     intergrp_conn_map_.push_back(new coormap_xy_map_t);
   switch_to_connected_groups_.resize(nswitches);
 
-  // check that parents didn't overwrite max_ports_injection_ incorrectly
-  if (max_ports_injection_ != injection_ports_.size())
-    spkt_throw(sprockit::input_error, "tiled_dragonfly inconsistent number of injection ports");
+  n_geom_paths_ = x_ + y_ + g_ + netlinks_per_switch_;
+  outports_.resize(nswitches);
+  for (int i=0; i < nswitches; ++i)
+    outports_[i].resize(n_geom_paths_);
 
   read_intragroup_connections();
   read_intergroup_connections();
-  intragroup_connections();
-  intergroup_connections();
-  make_geomid();
-}
-
-//void
-//tiled_dragonfly::connect_objects(sprockit::sim_parameters* params,
-//                                 internal_connectable_map& objects)
-//{
-//  sprockit::sim_parameters* link_params = params->get_namespace("link");
-//  read_intragroup_connections();
-//  read_intergroup_connections();
-//  int index = 0;
-//  intragroup_connections(conns, index);
-//  intergroup_connections(conns, index);
-//  make_geomid();
-//}
-
-void
-tiled_dragonfly::configure_geometric_paths(std::vector<int> &redundancies)
-{
-  int npaths = x_ + y_ + group_con_ - 2 + netlinks_per_switch_;
-  redundancies.resize(npaths);
-  //do x paths, then y paths, then g paths
-  int path = 0;
-  for (int x=0; x < (x_ - 1); ++x, ++path){
-    redundancies[path] = red_[x_dimension];
-  }
-  for (int y=0; y < (y_ -1); ++y, ++path){
-    redundancies[path] = red_[y_dimension];
-  }
-  for (int g=0; g < group_con_; ++g, ++path){
-    redundancies[path] = red_[g_dimension];
-  }
-  configure_injection_geometry(redundancies);
-}
-
-void
-tiled_dragonfly::minimal_routes_to_switch(switch_id current_sw_addr,
-                                          switch_id dest_sw_addr,
-                                          routable::path &current_path,
-                                          routable::path_set &paths) const
-{
-  coordinates src = switch_coords(current_sw_addr);
-  coordinates dst = switch_coords(dest_sw_addr);
-  minimal_routes_to_coords(src, dst, current_path, paths);
-}
-
-void
-tiled_dragonfly::minimal_routes_to_coords(
-  const coordinates &src_coords,
-  const coordinates &dest_coords,
-  routable::path &current_path,
-  routable::path_set &paths) const
-{
-  top_debug("tiled dfly: minimal routes from %s to %s",
-            set_string(src_coords[0], src_coords[1], src_coords[2]).c_str(),
-            set_string(dest_coords[0], dest_coords[1], dest_coords[2]).c_str());
-
-  int src_id = switch_addr(src_coords);
-  int dst_id = switch_addr(dest_coords);
-
-  //if we crossed a global link in the past, set to 1
-  current_path.vc = current_path.metadata_bit(
-        routable::crossed_timeline) ? 1 : 0;
-
-  xy_list_t* ports;
-  coordinates dst(dest_coords);
-  coordinates src(src_coords);
-  if (src[g_dimension] == dst[g_dimension]) { // intragroup routing
-    src[g_dimension] = dst[g_dimension] = 0;
-    if (src[0] != dst[0] && src[1] != dst[1]) {
-      dst[1] = src[1];
-    }
-    if (!intragrp_conn_map_[switch_addr(src)]->size()) {
-      spkt_throw(sprockit::invalid_key_error,"src %s not found in intragroup map",
-                 set_string(src[0], src[1], src[2]).c_str());
-    }
-    coor_xy_map_t& dst_map = *intragrp_conn_map_[switch_addr(src)];
-    if (!dst_map[switch_addr(dst)]->size()) {
-      spkt_throw(sprockit::invalid_key_error,"dst %s not found in intragroup map",
-                 set_string(dst[0], dst[1], dst[2]).c_str());
-    }
-    ports = dst_map[switch_addr(dst)];
-  }
-  else { // intergroup routing
-
-    // find x,y coords for destination that is connected to target group
-    routable::path path;
-    coordinates new_dst(3);
-    dragonfly::find_path_to_group(src[0], src[1], src[2],
-                                  new_dst[0], new_dst[1], dst[2], path);
-    top_debug("find_path_to_group: target x,y is %d,%d",new_dst[0],new_dst[1]);
-
-    // find_path_to_group returns src x,y != dst x,y if we still need
-    // to make local hop(s) to get to correct switch for global hop
-    if (new_dst[0] != src[0] || new_dst[1] != src[1]) {
-      new_dst[2] = src[2]; // staying in local group
-      minimal_routes_to_coords(src_coords,new_dst,current_path,paths); //recursive
-      return;
-    }
-
-    // otherwise we're ready for intergroup hop
-    else {
-      new_dst[2] = dst[2]; // go global
-
-      // we need to take one of our global links
-      coormap_xy_map_t* dst_map = intergrp_conn_map_[switch_addr(src)];
-      if (!dst_map->size())
-        spkt_throw(sprockit::value_error,
-                   "src switch %s has no intergroup links",
-                   set_string(src[0], src[1], src[2]).c_str());
-
-      // but at this point we don't actually know what coordinates we're
-      // jumping to, so we need to iterate to find which of our possible gobal
-      // destinations matches the target, then use the ports that go there
-      for (coormap_xy_map_t::iterator dst_it = dst_map->begin();
-           dst_it != dst_map->end(); ++dst_it) {
-        coordinates temp(3);
-        temp = dragonfly::switch_coords(switch_id(dst_it->first));
-        if (temp[2] == dst[2] && dst_it->second->size()) {
-          ports = dst_it->second;
-          continue;
-        }
-      }
-      if (!ports)
-        spkt_throw(sprockit::value_error,"couldn't find global connection ports");
-    }
-  }
-
-  int i=0;
-  for (xy_list_iter iter = ports->begin();
-       iter != ports->end(); ++iter, ++i) {
-
-    // copy over outport
-    int outport = iter->first;
-    paths[i].outport = outport;
-
-    // determine and write the geometric id
-    paths[i].geometric_id = port_to_geomid_[outport];
-
-    // copy over virtual channel and related metadata
-    paths[i].vc = current_path.vc;
-    if (current_path.metadata_bit(routable::crossed_timeline))
-      paths[i].set_metadata_bit(routable::crossed_timeline);
-
-    top_debug("minimal_routes_to_coords: outport: %d, geometric id: %d, vc: %d",
-              paths[i].outport, paths[i].geometric_id, paths[i].vc);
-  }
-}
-
-bool
-tiled_dragonfly::xy_connected_to_group(int myX, int myY, int myG, int dstg) const
-{
-  coordinates me(3);
-  me[0] = myX;
-  me[1] = myY;
-  me[2] = myG;
-  const std::set<int>& my_groups = switch_to_connected_groups_[switch_addr(me)];
-  const std::set<int>::iterator iter = my_groups.find(dstg);
-  if (iter != my_groups.end())
-    return true;
-  return false;
+  configure_outports();
 }
 
 switch_id
@@ -279,109 +115,18 @@ tiled_dragonfly::eject_paths_on_switch(
   }
 }
 
-void
-tiled_dragonfly::minimal_route_to_coords(
-  const sstmac::hw::coordinates& src,
-  const sstmac::hw::coordinates& dst,
-  routable::path& path) const
+bool
+tiled_dragonfly::xy_connected_to_group(int myX, int myY, int myG, int dstg) const
 {
-  spkt_throw(sprockit::unimplemented_error, "tiled_dragonfly::minimal_route_to_coords");
-}
-
-int
-tiled_dragonfly::port(int replica, int dim, int dir)
-{
-  spkt_throw(sprockit::unimplemented_error, "tiled_dragonfly::port");
-}
-
-int
-tiled_dragonfly::convert_to_port(int dim, int dir) const
-{
-  spkt_throw(sprockit::unimplemented_error, "tiled_dragonfly::convert_to_port");
-}
-
-void
-tiled_dragonfly::read_intragroup_connections()
-{
-  std::ifstream in;
-  sprockit::SpktFileIO::open_file(in, intragroup_file_);
-  if (!in.is_open()) {
-    spkt_throw_printf(sprockit::input_error,
-                      "tiled_connect_objects: could not find intragroup connection file %s",
-                      intragroup_file_.c_str());
-  }
-
-  while (!in.eof())
-  {
-    int src_x, src_y, src_g = 0, src_port_x, src_port_y,
-        dst_x, dst_y, dst_g = 0, dst_port_x, dst_port_y;
-    std::string delimiter;
-    in >> src_x >> src_y;
-    in >> delimiter;
-    in >> src_port_x >> src_port_y;
-    in >> delimiter;
-    in >> dst_x >> dst_y;
-    in >> delimiter;
-    in >> dst_port_x >> dst_port_y;
-
-    // validate
-    check_switch_x(src_x);
-    check_switch_y(src_y);
-    check_port_xy(src_port_x,src_port_y);
-    check_switch_x(dst_x);
-    check_switch_y(dst_y);
-    check_port_xy(dst_port_x,dst_port_y);
-
-    connection c;
-    c.src_group = 0;
-    c.src_switch_xy = xy_t( src_x, src_y );
-    c.src_port_xy = xy_t( src_port_x, src_port_y );
-    c.dst_group = 0;
-    c.dst_switch_xy = xy_t( dst_x, dst_y );
-    c.dst_port_xy = xy_t( dst_port_x, dst_port_y );
-    intragrp_conns_.push_back(c);
-  }
-}
-
-void
-tiled_dragonfly::read_intergroup_connections()
-{
-  std::ifstream in;
-  sprockit::SpktFileIO::open_file(in, intergroup_file_);
-  if (!in.is_open()) {
-    spkt_throw_printf(sprockit::input_error,
-                      "tiled_connect_objects: could not find intergroup connection file %s",
-                      intergroup_file_.c_str());
-  }
-
-  while (!in.eof())
-  {
-    int src_x, src_y, src_g, src_port_x, src_port_y,
-        dst_x, dst_y, dst_g, dst_port_x, dst_port_y;
-    std::string delimiter;
-    in >> src_x >> src_y >> src_g;
-    in >> delimiter;
-    in >> src_port_x >> src_port_y;
-    in >> delimiter;
-    in >> dst_x >> dst_y >> dst_g;
-    in >> delimiter;
-    in >> dst_port_x >> dst_port_y;
-
-    // validate
-    check_switch_xyg(src_x,src_y,src_g);
-    check_port_xy(src_port_x,src_port_y);
-    check_switch_xyg(dst_x,dst_y,dst_g);
-    check_port_xy(dst_port_x,dst_port_y);
-
-    connection c;
-    c.src_switch_xy = xy_t( src_x, src_y );
-    c.src_group = src_g;
-    c.src_port_xy = xy_t( src_port_x, src_port_y );
-    c.dst_switch_xy = xy_t( dst_x, dst_y );
-    c.dst_group = dst_g;
-    c.dst_port_xy = xy_t( dst_port_x, dst_port_y );
-    intergrp_conns_.push_back(c);
-  }
+  coordinates me(3);
+  me[0] = myX;
+  me[1] = myY;
+  me[2] = myG;
+  const std::set<int>& my_groups = switch_to_connected_groups_[switch_addr(me)];
+  const std::set<int>::iterator iter = my_groups.find(dstg);
+  if (iter != my_groups.end())
+    return true;
+  return false;
 }
 
 void
@@ -423,9 +168,120 @@ tiled_dragonfly::connected_outports(switch_id src, std::vector<sstmac::hw::topol
 
 }
 
+
+
+//---------------------------------------------------------------------
+// Multipath topology
+//---------------------------------------------------------------------
+
 void
-tiled_dragonfly::intragroup_connections()
+tiled_dragonfly::get_redundant_paths(routable::path& current,
+                                     routable::path_set& paths,
+                                     switch_id addr) const
 {
+  int geomid = current.outport;
+  int dim;
+  if (geomid < eject_geometric_id_){
+    //intranetwork routing
+    if (geomid < x_)
+      dim = 0;
+    else if (geomid < (x_ + y_))
+      dim = 1;
+    else
+      dim = 2;
+
+    int red = red_[dim];
+    paths.resize(red);
+    const std::list<int> &ports = outports_[addr][geomid];
+
+    int pi=0;
+    for (std::list<int>::const_iterator it = ports.begin();
+         it != ports.end(); ++it) {
+      paths[pi] = current;
+      paths[pi].geometric_id = geomid;
+      paths[pi].outport = *it;
+      ++pi;
+    }
+  }
+  else {
+    //ejection routing
+    paths.resize(injection_redundancy_);
+    int offset = (geomid - eject_geometric_id_) * injection_redundancy_;
+    for (int i=0; i < injection_redundancy_; ++i) {
+      paths[i] = current;
+      paths[i].outport = injection_ports_[offset+i];
+    }
+  }
+}
+
+void
+tiled_dragonfly::configure_geometric_paths(std::vector<int> &redundancies)
+{
+  redundancies.resize(n_geom_paths_);
+  for (int i=0; i < n_geom_paths_; ++i)
+    redundancies[i] = 0;
+
+  for (int srcid=0; srcid < num_switches(); ++srcid) {
+    for (int geomid=0; geomid < n_geom_paths_; ++geomid) {
+      int gsize = outports_[srcid][geomid].size();
+      if (gsize > redundancies[geomid])
+        redundancies[geomid] = gsize;
+    }
+  }
+
+  for (int i=0; i < netlinks_per_switch_; ++i){
+    redundancies[eject_geometric_id_ + i] = injection_redundancy_;
+  }
+}
+
+//-----------------------------------------------------------------------
+// Connection Setup
+//-----------------------------------------------------------------------
+
+void
+tiled_dragonfly::read_intragroup_connections()
+{
+  // read the file and make list of connections
+  std::ifstream in;
+  sprockit::SpktFileIO::open_file(in, intragroup_file_);
+  if (!in.is_open()) {
+    spkt_throw_printf(sprockit::input_error,
+                      "tiled_connect_objects: could not find intragroup connection file %s",
+                      intragroup_file_.c_str());
+  }
+
+  int src_x, src_y, src_g = 0, src_port_x, src_port_y,
+      dst_x, dst_y, dst_g = 0, dst_port_x, dst_port_y;
+  while (in >> src_x)
+  {
+    std::string delimiter;
+    in >> src_y;
+    in >> delimiter;
+    in >> src_port_x >> src_port_y;
+    in >> delimiter;
+    in >> dst_x >> dst_y;
+    in >> delimiter;
+    in >> dst_port_x >> dst_port_y;
+
+    // validate
+    check_switch_x(src_x);
+    check_switch_y(src_y);
+    check_port_xy(src_port_x,src_port_y);
+    check_switch_x(dst_x);
+    check_switch_y(dst_y);
+    check_port_xy(dst_port_x,dst_port_y);
+
+    connection c;
+    c.src_group = 0;
+    c.src_switch_xy = xy_t( src_x, src_y );
+    c.src_port_xy = xy_t( src_port_x, src_port_y );
+    c.dst_group = 0;
+    c.dst_switch_xy = xy_t( dst_x, dst_y );
+    c.dst_port_xy = xy_t( dst_port_x, dst_port_y );
+    intragrp_conns_.push_back(c);
+  }
+
+  // insert connections into more convenient data structure
   for (int g=0; g<numG(); ++g) {
     for( std::list<connection>::iterator it=intragrp_conns_.begin();
          it!=intragrp_conns_.end(); ++it ) {
@@ -480,17 +336,6 @@ tiled_dragonfly::intragroup_connections()
                 int(dst_id), set_string(dst_x, dst_y, g).c_str(),
                 outport,inport);
 
-//      if(g==0) {
-//        int src = switch_addr(src_coords);
-//        int dst = switch_addr(dst_coords);
-//        intragrp_conn_map_[src]->at(dst)->push_back(
-//            std::pair<int,int>(outport,inport));
-//      }
-
-//      objects[src_id]->connect_output(params,outport,inport,
-//                               objects[dst_id]);
-//      objects[dst_id]->connect_input(params,outport,inport,
-
       intragrp_conn_map_[src_id]->at(dst_id)->push_back(
           std::pair<int,int>(outport,inport));
     }
@@ -498,8 +343,48 @@ tiled_dragonfly::intragroup_connections()
 }
 
 void
-tiled_dragonfly::intergroup_connections()
+tiled_dragonfly::read_intergroup_connections()
 {
+  // read the file and make list of connections
+  std::ifstream in;
+  sprockit::SpktFileIO::open_file(in, intergroup_file_);
+  if (!in.is_open()) {
+    spkt_throw_printf(
+          sprockit::input_error,
+          "tiled_connect_objects: could not find intergroup connection file %s",
+          intergroup_file_.c_str());
+  }
+
+  int src_x, src_y, src_g, src_port_x, src_port_y,
+      dst_x, dst_y, dst_g, dst_port_x, dst_port_y;
+  while (in >> src_x)
+  {
+    std::string delimiter;
+    in >> src_y >> src_g;
+    in >> delimiter;
+    in >> src_port_x >> src_port_y;
+    in >> delimiter;
+    in >> dst_x >> dst_y >> dst_g;
+    in >> delimiter;
+    in >> dst_port_x >> dst_port_y;
+
+    // validate
+    check_switch_xyg(src_x,src_y,src_g);
+    check_port_xy(src_port_x,src_port_y);
+    check_switch_xyg(dst_x,dst_y,dst_g);
+    check_port_xy(dst_port_x,dst_port_y);
+
+    connection c;
+    c.src_switch_xy = xy_t( src_x, src_y );
+    c.src_group = src_g;
+    c.src_port_xy = xy_t( src_port_x, src_port_y );
+    c.dst_switch_xy = xy_t( dst_x, dst_y );
+    c.dst_group = dst_g;
+    c.dst_port_xy = xy_t( dst_port_x, dst_port_y );
+    intergrp_conns_.push_back(c);
+  }
+
+  // insert connections into more convenient data structure
   for( std::list<connection>::iterator it=intergrp_conns_.begin();
        it!=intergrp_conns_.end(); ++it ) {
 
@@ -543,73 +428,70 @@ tiled_dragonfly::intergroup_connections()
     }
     intergrp_conn_map_[src_id]->at(dst_id)->push_back(
           std::pair<int,int>(outport,inport));
-
-//    objects[src_id]->connect_output(params,outport,inport,
-//                             objects[dst_id]);
-//    objects[dst_id]->connect_input(params,outport,inport,
-//                             objects[src_id]);
   }
 }
 
 void
-tiled_dragonfly::make_geomid()
+tiled_dragonfly::configure_outports()
 {
-  // initialize
-  for (int i=0; i < n_tiles_; ++i) {
-    port_to_geomid_[i] = -1;
-  }
+  int geomid, srcid, dstid;
+  for (int srcx=0; srcx < x_; ++srcx) {
+    for (int srcy=0; srcy < y_; ++srcy) {
+      for (int srcg=0; srcg < g_; ++srcg) {
+        srcid = get_uid(srcx, srcy, srcg);
 
-  // all intragrp connections have same geometric port assignments
-  // (only one group in connection file)
-  coordinates src = coordinates(3);
-  src[0] = 0;
-  src[1] = 0;
-  src[2] = 0;
-  int next_x = 0, next_y = x_ - 2, next_g = x_ + y_ - 2;
-  coor_xy_map_t* links = intragrp_conn_map_[0];
-  for (int i=1; i < links->size(); ++i) {
-    std::list< std::pair<int,int> >* port_list = links->at(i);
-    if (port_list->size()) {
-      coordinates dst(3);
-      dst = switch_coords(switch_id(i));
-      int id;
-      if (dst[0] == src[0]) {
-        id = next_y;
-        ++next_y;
-      }
-      else if (dst[1] == src[1]) {
-        id = next_x;
-        ++next_x;
-      }
-      std::list< std::pair<int,int> >::iterator port_iter = port_list->begin();
-      for (; port_iter != port_list->end(); ++port_iter) {
-        int outport = port_iter->first;
-        port_to_geomid_[outport] = id;
+        // intragroup
+        for (int dstx=0; dstx < x_; ++dstx) {
+          for (int dsty=0; dsty < y_; ++dsty) {
+            int dstg = srcg;
+            dstid = get_uid(dstx, dsty, dstg);
+            if (srcy == dsty)
+              geomid = dstx;
+            else if (srcx == dstx)
+              geomid = x_ + dsty;
+
+            // iterate over group connections, add outports to list
+            xy_list_t* conn_list =
+                intragrp_conn_map_[srcid]->at(dstid);
+            for (xy_list_iter it=conn_list->begin();
+                 it != conn_list->end(); ++it) {
+              outports_[srcid][geomid].push_back(it->first);
+            }
+          }
+        }
+
+        // intergroup
+        coormap_xy_map_t* glinks = intergrp_conn_map_[srcid];
+        for (coormap_xy_map_t::iterator lnk_it = glinks->begin();
+             lnk_it != glinks->end(); ++lnk_it) {
+          std::list< std::pair<int,int> >* port_list = lnk_it->second;
+          if (port_list->size()) {
+            std::list< std::pair<int,int> >::iterator port_iter = port_list->begin();
+            for (; port_iter != port_list->end(); ++port_iter) {
+              int gx, gy, gg;
+              get_coords(lnk_it->first, gx, gy, gg);
+              outports_[srcid][x_ + y_ + gg].push_back(port_iter->first);
+            }
+          }
+        }
+
       }
     }
   }
 
-  // assume intergrp connections have same geometric port assigments
-  coormap_xy_map_t* glinks = intergrp_conn_map_[0];
-  for (coormap_xy_map_t::iterator lnk_it = glinks->begin();
-       lnk_it != glinks->end(); ++lnk_it) {
-    std::list< std::pair<int,int> >* port_list = lnk_it->second;
-    if (port_list->size()) {
-      std::list< std::pair<int,int> >::iterator port_iter = port_list->begin();
-      for (; port_iter != port_list->end(); ++port_iter) {
-        int outport = port_iter->first;
-        port_to_geomid_[outport] = next_g;
-      }
-      ++next_g;
-    }
-  }
-
-  // injection links are last
-  for (int i=0; i < injection_ports_.size(); ++i) {
-    port_to_geomid_[injection_ports_[i]] = next_g;
-    ++next_g;
-  }
-
+  // could check here that all nonzero redundancies are equal
+  int max=0;
+  for (int i=0; i<x_; ++i)
+    max = std::max(max, (int) outports_[0][i].size());
+  red_[0] = max;
+  max = 0;
+  for (int i=x_; i<x_+y_; ++i)
+    max = std::max(max, (int) outports_[0][i].size());
+  red_[1] = max;
+  max = 0;
+  for (int i=x_+y_; i<x_+y_+g_; ++i)
+    max = std::max(max, (int) outports_[0][i].size());
+  red_[2] = max;
 }
 
 } } //end of namespace sstmac

@@ -13,12 +13,13 @@
 #define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_TILED_DRAGONFLY_H_INCLUDED
 
 #include <sstmac/hardware/topology/dragonfly.h>
+#include <sstmac/hardware/topology/multipath_topology.h>
 #include <set>
 
 namespace sstmac {
 namespace hw {
 
-class tiled_dragonfly : public dragonfly
+class tiled_dragonfly : public dragonfly, public multipath_topology
 {
   private:
 
@@ -45,6 +46,9 @@ class tiled_dragonfly : public dragonfly
   mutable conn_map_t intragrp_conn_map_; //FIXME mutable is a hack
   mutable gconn_map_t intergrp_conn_map_; //FIXME mutable is a hack
 
+  // outports_[srcid][geomid] is a list of outports
+  std::vector< std::vector< std::list<int> > > outports_;
+
   std::string intragroup_file_;
   std::string intergroup_file_;
   int tiles_x_, tiles_y_, tiles_inj_;
@@ -52,6 +56,7 @@ class tiled_dragonfly : public dragonfly
   mutable std::map<int,int> port_to_geomid_; //FIXME mutable is a hack
   std::vector< std::set<int> > switch_to_connected_groups_;
   int n_tiles_;
+  int n_geom_paths_;
 
  public:
   virtual std::string
@@ -59,9 +64,9 @@ class tiled_dragonfly : public dragonfly
     return "tiled_dragonfly";
   }
 
-  virtual ~tiled_dragonfly() {}
-
   tiled_dragonfly(sprockit::sim_parameters* params);
+
+  virtual ~tiled_dragonfly() {}
 
   bool
   uniform_network_ports() const override {
@@ -78,32 +83,6 @@ class tiled_dragonfly : public dragonfly
     return true;
   }
 
-//  void
-//  connect_objects(sprockit::sim_parameters* params, internal_connectable_map& switches);
-
-  void
-  connected_outports(switch_id src, std::vector<sstmac::hw::topology::connection>& conns) const override;
-
-  void
-  configure_geometric_paths(std::vector<int> &redundancies);
-
-  virtual void
-  minimal_routes_to_switch(
-      switch_id current_sw_addr,
-      switch_id dest_sw_addr,
-      routable::path &current_path,
-      routable::path_set &paths) const;
-
-  virtual void
-  minimal_routes_to_coords(
-      const coordinates &src_coords,
-      const coordinates &dest_coords,
-      routable::path &current_path,
-      routable::path_set &paths) const;
-
-  virtual bool
-  xy_connected_to_group(int myX, int myY, int myG,
-                        int dstg) const;
   switch_id
   netlink_to_injection_switch(
       node_id nodeaddr, int ports[], int &num_ports) const;
@@ -118,40 +97,46 @@ class tiled_dragonfly : public dragonfly
       switch_id sw_addr,
       routable::path_set &paths) const;
 
-  // throw unimplemented exception on the following
+  virtual bool
+  xy_connected_to_group(int myX, int myY, int myG,
+                        int dstg) const;
+
+  void
+  connected_outports(
+      switch_id src,
+      std::vector<sstmac::hw::topology::connection>& conns)
+  const override;
+
+  //---------------------------------------------------------------------
+  // Multipath topology
+  //---------------------------------------------------------------------
+
   virtual void
-  minimal_route_to_coords(
-    const coordinates &current_coords,
-    const coordinates &dest_coords,
-    routable::path& path) const;
+  configure_geometric_paths(std::vector<int> &redundancies) override;
 
-  virtual int
-  port(int replica, int dim, int dir);
-
-  virtual int
-  convert_to_port(int dim, int dir) const;
-
+  virtual void
+  get_redundant_paths(routable::path& inPath,
+                      routable::path_set& outPaths,
+                      switch_id addr) const  override;
 
  private:
-  int xy_to_int(xy_t xy) const
-  {
-    return xy.second * tiles_x_ + xy.first;
-  }
+
+  //---------------------------------------------------------------------
+  // Connection setup
+  //---------------------------------------------------------------------
 
   void
   read_intragroup_connections();
 
   void
-  read_intergroup_connections(); 
+  read_intergroup_connections();
 
   void
-  intragroup_connections();
+  configure_outports();
 
-  void
-  intergroup_connections();
-
-  void
-  make_geomid();
+  //---------------------------------------------------------------------
+  // Utility functions
+  //---------------------------------------------------------------------
 
   void
   check_switch_x(int n) {

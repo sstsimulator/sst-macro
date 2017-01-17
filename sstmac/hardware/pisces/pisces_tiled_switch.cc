@@ -42,15 +42,13 @@ pisces_tiled_switch::pisces_tiled_switch(sprockit::sim_parameters* params,
                                                    uint64_t id, event_manager* mgr)
   : pisces_abstract_switch(params, id, mgr)
 {
-  //row_buffer_num_bytes_ = params->get_byte_length_param("row_buffer_size");
-
   nrows_ = params->get_int_param("nrows");
   ncols_ = params->get_int_param("ncols");
 
-//#if !SSTMAC_INTEGRATED_SST_CORE
-//  payload_handler_ = new_handler(this, &pisces_tiled_switch::handle_payload);
-//  ack_handler_ = new_handler(this, &pisces_tiled_switch::handle_credit);
-//#endif
+#if !SSTMAC_INTEGRATED_SST_CORE
+  payload_handler_ = new_handler(this, &pisces_tiled_switch::handle_payload);
+  ack_handler_ = new_handler(this, &pisces_tiled_switch::handle_credit);
+#endif
 
   init_components(params);
 }
@@ -80,26 +78,19 @@ pisces_tiled_switch::tile_to_row_col(int tile, int& row, int& col){
 }
 
 void
-pisces_tiled_switch::deadlock_check()
-{
-  for (int i=0; i < col_output_muxers_.size(); ++i){
-    pisces_muxer* muxer = col_output_muxers_[i];
-    muxer->deadlock_check();
-  }
-}
-
-void
 pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
 {
   if (!xbar_tiles_.empty())
     return;
 
   sprockit::sim_parameters* demuxer_params = params->get_namespace("input");
+  demuxer_params->add_param_override("num_vc", router_->max_num_vc());
 
   sprockit::sim_parameters* xbar_params = params->get_namespace("xbar");
   xbar_params->add_param_override("num_vc", router_->max_num_vc());
 
   sprockit::sim_parameters* muxer_params = params->get_namespace("link");
+  muxer_params->add_param_override("num_vc", router_->max_num_vc());
 
   //int min_buffer_size = row_buffer_num_bytes_ / router_->max_num_vc();
   //if (min_buffer_size < packet_size_){
@@ -211,6 +202,7 @@ pisces_tiled_switch::connect_output(
   int dst_inport,
   event_handler *mod)
 {
+  params->add_param_override("num_vc", router_->max_num_vc());
   pisces_sender* muxer = col_output_muxers_[src_outport];
   muxer->set_output(params, src_outport, dst_inport, mod);
 }
@@ -360,6 +352,32 @@ pisces_tiled_switch::payload_handler(int port) const
 #else
   return payload_handler_;
 #endif
+}
+
+void
+pisces_tiled_switch::deadlock_check()
+{
+  for (int r=0; r < nrows_; ++r){
+    for (int c=0; c < ncols_; ++c){
+      int tile = row_col_to_tile(r, c);
+      row_input_demuxers_[tile]->deadlock_check();
+      col_output_muxers_[tile]->deadlock_check();
+      xbar_tiles_[tile]->deadlock_check();
+    }
+  }
+}
+
+void
+pisces_tiled_switch::deadlock_check(event *ev)
+{
+  for (int r=0; r < nrows_; ++r){
+    for (int c=0; c < ncols_; ++c){
+      int tile = row_col_to_tile(r, c);
+      row_input_demuxers_[tile]->deadlock_check(ev);
+      col_output_muxers_[tile]->deadlock_check(ev);
+      xbar_tiles_[tile]->deadlock_check(ev);
+    }
+  }
 }
 
 }

@@ -86,8 +86,9 @@ class pisces_tiled_switch :
   }
 #endif
 
-  void
-  deadlock_check() override;
+  void deadlock_check() override;
+
+  void deadlock_check(event* ev) override;
 
  protected:
 

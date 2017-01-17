@@ -17,10 +17,11 @@ class tiled_torus :
 
   void
   get_redundant_paths(routable::path& inPath,
-                      routable::path_set& outPaths) const override;
+                      routable::path_set& outPaths,
+                      switch_id addr) const override;
 
   void
-  configure_geometric_paths(std::vector<int>& redundancies) const override;
+  configure_geometric_paths(std::vector<int>& redundancies) override;
 
   switch_id
   netlink_to_injection_switch(
