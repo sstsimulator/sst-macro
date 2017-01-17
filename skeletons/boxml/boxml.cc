@@ -173,7 +173,7 @@ namespace lblxml
           "Effective bandwidth tracker must be histogram, %s given",
           stat_params->get_param("type").c_str());
       else
-        event_manager::global->register_stat(hist_eff_bw_);
+        event_manager::global->register_stat(hist_eff_bw_, nullptr);
     }
 
     if (params_->has_namespace("polling_time")) {
@@ -387,7 +387,7 @@ namespace lblxml
 
     if (idle_time_) {
       idle_time_->set_id(rank_);
-      event_manager::global->register_stat(idle_time_);
+      event_manager::global->register_stat(idle_time_, nullptr);
     }
   }
 

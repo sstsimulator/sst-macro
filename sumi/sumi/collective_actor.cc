@@ -501,6 +501,7 @@ void
 dag_collective_actor::add_comm_dependency(action* precursor, action *ac)
 {
   int physical_rank = comm_->comm_to_global_rank(comm_rank(ac->partner));
+
   if (physical_rank == communicator::unresolved_rank){
     //uh oh - need to wait on this
     uint32_t resolve_id = action::message_id(action::resolve, 0, ac->partner);

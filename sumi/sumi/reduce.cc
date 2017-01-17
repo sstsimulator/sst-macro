@@ -237,7 +237,7 @@ wilke_reduce_actor::init_dag()
       add_dependency(final_join, send_ac);
     }
 
-    if (dense_me_ == 1){
+    if (dense_me_ == 1 && root_ != dense_me_){
       action* send_ac = new send_action(round, root_, fan_in_send_type);
       send_ac->nelems = nelems_ - nelems_split;
       send_ac->offset = nelems_split;
@@ -249,8 +249,10 @@ wilke_reduce_actor::init_dag()
       recv_ac->nelems = nelems_split;
       recv_ac->offset = 0;
       add_dependency(final_join, recv_ac);
+    }
 
-      recv_ac = new recv_action(round, 1, fan_in_recv_type);
+    if (dense_me_ == root_ && root_ != 1){
+      action* recv_ac = new recv_action(round, 1, fan_in_recv_type);
       recv_ac->nelems = nelems_ - nelems_split;
       recv_ac->offset = nelems_split;
       add_dependency(final_join, recv_ac);
