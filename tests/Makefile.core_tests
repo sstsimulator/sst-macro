@@ -4,6 +4,7 @@
 
 
 CORETESTS+= \
+  test_core_apps_compute \
   test_core_apps_ping_all_uneven_tree \
   test_core_apps_ping_all_torus_netlink \
   test_core_apps_stop_time \
@@ -17,6 +18,10 @@ CORETESTS+= \
 if HAVE_EVENT_CALENDAR
 CORETESTS +=  test_core_apps_mpi_event_calendar 
 endif
+
+test_core_apps_compute.$(CHKSUF): $(SSTMACEXEC)
+	$(PYRUNTEST) 6 $(top_srcdir) $@ True \
+    $(SSTMACEXEC) --no-wall-time -f $(srcdir)/test_configs/test_compute_api.ini 
 
 test_sumi_%.$(CHKSUF): sumi/sst_%
 	$(PYRUNTEST) 5 $(top_srcdir) $@ True sumi/sst_$* -f $(srcdir)/sumi/ini/test_sst_$*.ini --no-wall-time 

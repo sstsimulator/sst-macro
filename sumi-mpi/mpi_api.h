@@ -410,10 +410,12 @@ class mpi_api :
          int count, MPI_Datatype type, MPI_Op op, int root,
          MPI_Comm comm);
 
+#pragma GCC diagnostic ignored "-Woverloaded-virtual"
   int
   allreduce(int count, MPI_Datatype type, MPI_Op op,
             MPI_Comm comm);
 
+#pragma GCC diagnostic ignored "-Woverloaded-virtual"
   int
   allreduce(const void* src, void* dst,
             int count, MPI_Datatype type, MPI_Op op,

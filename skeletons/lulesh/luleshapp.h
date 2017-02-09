@@ -45,7 +45,9 @@ namespace luleshmodel {
   bool usetopo_;
 
   public:
-    luleshapp(sprockit::sim_parameters* params, sstmac::sw::software_id sid);
+    luleshapp(sprockit::sim_parameters* params, 
+              sstmac::sw::software_id sid,
+              sstmac::sw::operating_system* os);
 
     /** Destructor. */
     virtual ~luleshapp() throw() {};

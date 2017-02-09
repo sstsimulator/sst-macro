@@ -188,8 +188,9 @@ class event_scheduler :
 
  protected:
   event_scheduler(event_manager* mgr, uint32_t* seqnum, device_id loc, int thread_id) :
-   eventman_(mgr), seqnum_(seqnum),
-   locatable(loc, thread_id)
+   locatable(loc, thread_id),
+    eventman_(mgr),
+   seqnum_(seqnum)
   {
   }
 
