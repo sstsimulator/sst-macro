@@ -109,7 +109,7 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
 
 #if SSTMAC_HAVE_GRAPHVIZ
   stat_descr_t stat_descr;
-  stat_descr.dump_all = true;
+  stat_descr.dump_all = false;
   call_graph_ = optional_stats<graph_viz>(parent,
           params, "call_graph", "call_graph", &stat_descr);
 #else
@@ -172,6 +172,10 @@ operating_system::~operating_system()
    *  It not, leave it. It's a leak */
   //sprockit::delete_vals(libs_);
   current_os_thread_context().stackalloc.clear();
+
+#if SSTMAC_HAVE_GRAPHVIZ
+  if (call_graph_) delete call_graph_;
+#endif
 
   if (ftq_trace_) delete ftq_trace_;
 }

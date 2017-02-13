@@ -178,9 +178,6 @@ class mpi_comm : public communicator
   friend std::ostream&
   operator<<(std::ostream &os, mpi_comm* comm);
 
-  void
-  validate(const char* fxn) const;
-
  protected:
   friend class mpi_comm_factory;
 

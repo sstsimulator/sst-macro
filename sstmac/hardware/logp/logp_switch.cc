@@ -130,6 +130,8 @@ logp_switch::handle(event* ev)
       //local staying local
       int num_hops = top_->num_hops_to_node(src, dst);
       extra_delay += num_hops * hop_latency_ + dbl_inj_lat_; //factor of 2 for in-out
+      switch_debug("sending message over %d hops with extra delay %12.8e and inj lat %12.8e: %s",
+                   num_hops, extra_delay.sec(), dbl_inj_lat_.sec(), msg->to_string().c_str());
     } else; //remote coming local
     send_delayed_to_link(extra_delay, nics_[dst], msg);
   } else {

@@ -42,17 +42,21 @@ void
 event_map::add_event(event_queue_entry* ev)
 {
 #if SSTMAC_SANITY_CHECK
-  if (ev->event_location() == device_id::uninitialized){
-    spkt_throw_printf(sprockit::value_error,
-      "got uninitialized event location for %s",
-      ev->to_string().c_str());
-  } else if (ev->src_location() == device_id::uninitialized){
-    spkt_throw_printf(sprockit::value_error,
-      "got uninitialized src location for %s",
-      ev->to_string().c_str());
+  if (ev->event_location().type() == device_id::null){
+    spkt_abort_printf("got uninitialized event location for %s",
+      sprockit::to_string(ev).c_str());
+  } else if (ev->src_location().type() == device_id::null){
+    spkt_abort_printf("got uninitialized src location for %s",
+      sprockit::to_string(ev).c_str());
   }
+  size_t old_size = queue_.size();
 #endif
   queue_.insert(ev);
+#if SSTMAC_SANITY_CHECK
+  if (queue_.size() == old_size){
+    spkt_abort_printf("inserted event, but comparison erroneously matched previous event");
+  }
+#endif
 }
 
 //

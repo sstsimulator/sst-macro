@@ -429,7 +429,7 @@ sumi_transport::poll_pending_messages(bool blocking, double timeout)
 
     debug_printf(sprockit::dbg::sumi,
                  "rank %d polling on %p returned msg %s",
-                 rank(), msg->to_string().c_str());
+                 rank(), this, msg->to_string().c_str());
     sumi::message_ptr notification = handle(msg);
     delete msg;
     if (notification){

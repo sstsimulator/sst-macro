@@ -125,6 +125,12 @@ mpi_queue::~mpi_queue() throw ()
   for (mpi_queue_recv_request* req : waiting_message_){
     delete req;
   }
+  for (mpi_queue_send_request* req : send_needs_eager_ack_){
+    delete req;
+  }
+  for (mpi_queue_send_request* req : send_needs_nic_ack_){
+    delete req;
+  }
   for (auto& pair : recv_needs_payload_){
     delete pair.second;
   }
