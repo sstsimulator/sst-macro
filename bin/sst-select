@@ -1,0 +1,40 @@
+#! /usr/bin/env python
+
+import os
+import sys
+
+path_dir = os.path.dirname(sys.argv[0]) 
+
+install=sys.argv[1]
+
+install_folder = None
+if os.path.isdir(install):
+  install_folder = install 
+else:
+  sys.exit("need a full folder")
+
+tmpls = [
+  "rm -f $path_dir/dsst++",
+  "rm -f $path_dir/sst++",
+  "rm -f $path_dir/sstcc",
+  "rm -f $path_dir/sstmac",
+  "rm -f $path_dir/dumpi2ascii",
+  "ln -s $install_folder/bin/dsst++ $path_dir/dsst++",
+  "ln -s $install_folder/bin/sst++ $path_dir/sst++",
+  "ln -s $install_folder/bin/sstcc $path_dir/sstcc",
+  "ln -s $install_folder/bin/sstmac $path_dir/sstmac",
+  "ln -s $install_folder/bin/dumpi2ascii $path_dir/dumpi2ascii",
+  "export LD_LIBRARY_PATH=$install_folder/lib:$LD_LIBRARY_PATH",
+  "export DYLD_LIBRARY_PATH=$install_folder/lib:$DYLD_LIBRARY_PATH",
+]
+
+for tmpl in tmpls:
+  cmd = tmpl.replace("$path_dir", path_dir).replace("$install_folder", install_folder)
+  print cmd
+  os.system(cmd)
+
+
+
+
+
+
