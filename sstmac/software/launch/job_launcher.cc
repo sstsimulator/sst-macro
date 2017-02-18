@@ -93,7 +93,6 @@ job_launcher::satisfy_launch_request(app_launch* appman, hw::node* nd)
 void
 default_job_launcher::handle_new_launch_request(app_launch* appman, hw::node* nd)
 {
-  ::printf("Handling launch request from node %d\n", nd->addr());
   static thread_lock lock;
   lock.lock();
   if (!appman->is_indexed()){
