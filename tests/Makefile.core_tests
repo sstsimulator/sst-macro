@@ -4,6 +4,7 @@
 
 
 CORETESTS+= \
+  test_core_apps_ping_all_ns \
   test_core_apps_compute \
   test_core_apps_ping_all_uneven_tree \
   test_core_apps_ping_all_torus_netlink \

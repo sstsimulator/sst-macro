@@ -11,44 +11,36 @@
 #include <sstmac/skeleton.h>
 #include <sprockit/keyword_registration.h>
 
-#define sstmac_app_name mpi_delay_stats
+#define sstmac_app_name mpi_progress
 
-RegisterKeywords("sync_delay");
 
 int USER_MAIN(int argc, char** argv)
 {
   SSTMACBacktrace("main");
-
-  //make sure everyone gets here at exatly the same time
-  double now = MPI_Wtime();
-  sstmac_compute(5e-5 - now);
-
   MPI_Init(&argc, &argv);
 
   int me, nproc;
   MPI_Comm_rank(MPI_COMM_WORLD, &me);
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
-  if (nproc < 8){
-    spkt_abort_printf("Test must run with at least 8 ranks");
-  }
-
+  int send_size = get_params()->get_byte_length_param("send_size");
   double send_delay = get_params()->get_time_param("send_delay");
-  double recv_delay = get_params()->get_time_param("recv_delay");
-  int send_size = get_params()->get_byte_length_param("message_size");
-
-
+  int num_sends = get_params()->get_int_param("num_sends");
   int send_to = (me + 1) % nproc;
   int recv_from = (me - 1 + nproc) % nproc;
-
-  if (me % 2 == 0){
-    //all even ranks create some delay
-    sstmac_compute(send_delay);
-    MPI_Send(NULL, send_size, MPI_BYTE, send_to, 42, MPI_COMM_WORLD);
-  } else {
-    sstmac_compute(recv_delay);
-    MPI_Recv(NULL, send_size, MPI_BYTE, recv_from, 42, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+  MPI_Request send_reqs[10];
+  MPI_Request recv_reqs[10];
+  for (int i=0; i < num_sends; ++i){
+    MPI_Irecv(NULL, send_size, MPI_BYTE, recv_from, 42, MPI_COMM_WORLD, &recv_reqs[i]);
   }
+
+  for (int i=0; i < num_sends; ++i){
+    sstmac_compute(send_delay);
+    MPI_Isend(NULL, send_size, MPI_BYTE, send_to, 42, MPI_COMM_WORLD, &send_reqs[i]);
+  }
+
+  MPI_Waitall(num_sends, recv_reqs, MPI_STATUSES_IGNORE);
+  MPI_Waitall(num_sends, send_reqs, MPI_STATUSES_IGNORE);
 
   MPI_Finalize();
   return 0;

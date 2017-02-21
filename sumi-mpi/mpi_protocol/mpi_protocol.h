@@ -6,6 +6,7 @@
 #include <sumi-mpi/mpi_queue/mpi_queue_recv_request_fwd.h>
 #include <sumi-mpi/mpi_message.h>
 #include <sstmac/common/sst_event.h>
+#include <sprockit/sim_parameters_fwd.h>
 
 namespace sumi {
 
@@ -94,7 +95,7 @@ class mpi_protocol : public sprockit::printable {
    * @param buffer The buffer corresponding to the send
    */
   virtual void
-  configure_send_buffer(const mpi_message::ptr& msg, void* buffer) = 0;
+  configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& msg, void* buffer) = 0;
 
   virtual bool
   send_needs_completion_ack() const = 0;
@@ -107,9 +108,6 @@ class mpi_protocol : public sprockit::printable {
 
   virtual PROTOCOL_ID
   get_prot_id() const = 0;
-
-  virtual void
-  handle_nic_ack(mpi_queue* queue, const mpi_message::ptr& msg);
 
   virtual ~mpi_protocol(){}
 
@@ -135,6 +133,7 @@ class mpi_protocol : public sprockit::printable {
 class eager0 : public mpi_protocol
 {
  public:
+  eager0(sprockit::sim_parameters* params){}
 
   virtual ~eager0(){}
 
@@ -159,7 +158,7 @@ class eager0 : public mpi_protocol
   }
 
   void
-  configure_send_buffer(const mpi_message::ptr& msg, void* buffer) override;
+  configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& msg, void* buffer) override;
 
   void
   send_header(mpi_queue* queue, const mpi_message::ptr& msg) override;
@@ -192,6 +191,8 @@ class eager0 : public mpi_protocol
 class eager1 : public mpi_protocol
 {
  public:
+  eager1(sprockit::sim_parameters* params){}
+
   virtual ~eager1(){}
 
   std::string
@@ -205,7 +206,7 @@ class eager1 : public mpi_protocol
   }
 
   void
-  configure_send_buffer(const mpi_message::ptr& msg, void* buffer) override;
+  configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& msg, void* buffer) override;
 
   bool
   send_needs_nic_ack() const override {
@@ -237,6 +238,11 @@ class eager1 : public mpi_protocol
 class eager1_singlecpy : public eager1
 {
  public:
+  eager1_singlecpy(sprockit::sim_parameters* params) :
+    eager1(params)
+  {
+  }
+
   virtual ~eager1_singlecpy(){}
 
   std::string
@@ -265,6 +271,11 @@ class eager1_singlecpy : public eager1
 class eager1_doublecpy : public eager1
 {
  public:
+  eager1_doublecpy(sprockit::sim_parameters* params) :
+    eager1(params)
+  {
+  }
+
   virtual ~eager1_doublecpy(){}
 
   std::string
@@ -289,12 +300,19 @@ class eager1_doublecpy : public eager1
 class rendezvous_protocol : public mpi_protocol
 {
  public:
+  rendezvous_protocol(sprockit::sim_parameters* params);
+
   std::string
   to_string() const override {
     return "rendezvous";
   }
 
   virtual ~rendezvous_protocol(){}
+
+ protected:
+  sstmac::timestamp rdma_pin_delay_;
+  bool software_ack_;
+
 };
 
 
@@ -307,11 +325,16 @@ class rendezvous_protocol : public mpi_protocol
 class rendezvous_get : public rendezvous_protocol
 {
  public:
+  rendezvous_get(sprockit::sim_parameters* params) :
+    rendezvous_protocol(params)
+  {
+  }
+
   virtual ~rendezvous_get();
 
   bool
   send_needs_nic_ack() const override {
-    return true;
+    return !software_ack_;
   }
 
   bool
@@ -321,7 +344,7 @@ class rendezvous_get : public rendezvous_protocol
 
   bool
   send_needs_completion_ack() const override {
-    return false;
+    return software_ack_;
   }
 
   void
@@ -348,7 +371,7 @@ class rendezvous_get : public rendezvous_protocol
   }
 
   void
-  configure_send_buffer(const mpi_message::ptr& msg, void* buffer) override;
+  configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& msg, void* buffer) override;
 
 };
 

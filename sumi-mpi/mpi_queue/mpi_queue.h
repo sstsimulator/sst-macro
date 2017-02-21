@@ -108,17 +108,14 @@ class mpi_queue
     return user_lib_mem_;
   }
 
-  sstmac::sw::lib_compute_time*
-  user_lib_time() const {
-    return user_lib_time_;
-  }
-
   void
   finalize_recv(const mpi_message::ptr& msg,
                 mpi_queue_recv_request* req);
 
   timestamp
   progress_loop(mpi_request* req);
+
+  void nonblocking_progress();
 
   void
   start_progress_loop(const std::vector<mpi_request*>& req);
@@ -179,9 +176,6 @@ class mpi_queue
 
   void
   handle_nic_ack(const mpi_message::ptr& message);
-
-  void
-  complete_nic_ack(const mpi_message::ptr& message);
 
   void
   handle_new_message(const mpi_message::ptr& message);
@@ -263,18 +257,11 @@ class mpi_queue
   /// A blocking memcpy library for buffered sends in which
   /// the memcpy happens in the application
   sstmac::sw::lib_compute_memmove* user_lib_mem_;
-  sstmac::sw::lib_compute_time* user_lib_time_;
 
   sstmac::sw::operating_system* os_;
 
   int max_vshort_msg_size_;
   int max_eager_msg_size_;
-
-  timestamp post_rdma_delay_;
-
-  timestamp post_header_delay_;
-
-  timestamp poll_delay_;
 
 };
 

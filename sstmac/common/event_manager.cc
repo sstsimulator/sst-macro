@@ -35,7 +35,7 @@ class stop_event : public event_queue_entry
 
   stop_event(event_manager* man) :
     man_(man),
-    event_queue_entry(device_id(), device_id())
+    event_queue_entry(device_id::ctrl_event(), device_id::ctrl_event())
   {
   }
 
@@ -118,9 +118,7 @@ event_manager::set_now(const timestamp &ts)
 stat_collector*
 event_manager::register_thread_unique_stat(
   stat_collector *stat,
-  bool reduce_all,
-  bool dump_all,
-  bool dump_main)
+  stat_descr_t* descr)
 {
   std::map<std::string, stats_entry>::iterator it = stats_.find(stat->fileroot());
   if (it != stats_.end()){
@@ -130,25 +128,27 @@ event_manager::register_thread_unique_stat(
 
   //clone a stat collector for this thread
   stat_collector* cln = stat->clone();
-  register_stat(cln, reduce_all, dump_all, dump_main);
+  register_stat(cln, descr);
   return cln;
 }
+
+static stat_descr_t default_descr;
 
 void
 event_manager::register_stat(
   stat_collector* stat,
-  bool reduce_all,
-  bool dump_all,
-  bool dump_main)
+  stat_descr_t* descr)
 {
   if (stat->registered())
     return;
 
+  if (!descr) descr = &default_descr;
+
   stats_entry& entry = stats_[stat->fileroot()];
   entry.collectors.push_back(stat);
-  entry.reduce_all = reduce_all;
-  entry.dump_all = dump_all;
-  entry.dump_main = dump_main;
+  entry.reduce_all = descr->reduce_all;
+  entry.dump_all = descr->dump_all;
+  entry.dump_main = descr->dump_main;
   stat->set_registered(true);
 }
 

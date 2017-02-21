@@ -49,27 +49,9 @@ graph_viz_increment_stack::~graph_viz_increment_stack()
 void
 graph_viz::trace::add_call(void* fxn, int ncalls, long count)
 {
-  static thread_lock lock;
-  lock.lock();
   graphviz_call& call = calls_[fxn];
   call.first += ncalls;
   call.second += count;
-  lock.unlock();
-}
-
-void
-graph_viz::trace::add_self(long count)
-{
-  self_ += count;
-}
-
-void
-graph_viz::global_reduce(parallel_runtime *rt)
-{
-  if (rt->nproc() > 1){
-    spkt_throw(sprockit::unimplemented_error, 
-      "graph_viz::global_reduce: graphviz not available in parallel");
-  }
 }
 
 std::string
@@ -88,16 +70,13 @@ graph_viz::trace::summary() const
   return sstr.str();
 }
 
-void*
-graph_viz::trace::fxn() const
+void
+graph_viz::global_reduce(parallel_runtime *rt)
 {
-  return fxn_;
-}
-
-graph_viz::trace::trace(graph_viz* parent, void* fxn)
-  : self_(0), fxn_(fxn), parent_(parent)
-{
-
+  if (rt->nproc() > 1){
+    spkt_throw(sprockit::unimplemented_error,
+      "graph_viz::global_reduce: graphviz not available in parallel");
+  }
 }
 
 graph_viz::trace*
@@ -107,9 +86,43 @@ graph_viz::get_trace(void* fxn)
 }
 
 void
+graph_viz::dump_summary(std::ostream& os)
+{
+  for (auto& pair : traces_){
+    trace* tr = pair.second;
+    const char* name = (const char*) pair.first;
+    int len = ::strlen(name);
+    os << name;
+    for (int i=0; i < (50 - len); ++i){
+      os << " ";
+    }
+    uint64_t total = tr->self_;
+    for (auto& callpair : tr->calls_){
+      total += callpair.second.second;
+    }
+    os << sprockit::printf("%12lu %12lld\n", total, tr->self_);
+    for (auto& callpair : tr->calls_){
+      graphviz_call& call = callpair.second;
+      const char* name = (const char*)callpair.first;
+      os << "     ";
+      int len = ::strlen(name);
+      os << name;
+      for (int i=0; i < (45 - len); ++i){
+        os << " ";
+      }
+      os << call.second << "\n";
+    }
+  }
+}
+
+void
 graph_viz::dump_local_data()
 {
-  spkt_throw(sprockit::unimplemented_error, "graph_viz::dump_local_data");
+  char fname[128];
+  sprintf(fname, "%s.calls.%d.out", fileroot_.c_str(), id());
+  std::ofstream ofs(fname);
+  dump_summary(ofs);
+  ofs.close();
 }
 
 void
@@ -126,6 +139,9 @@ graph_viz::dump_global_data()
     myfile << "\n";
   }
   myfile.close();
+
+  dump_summary(std::cout);
+
 }
 
 void
@@ -175,11 +191,53 @@ graph_viz::delete_trace(void **tr)
 void
 graph_viz::reduce(stat_collector *coll)
 {
+  graph_viz* other = dynamic_cast<graph_viz*>(coll);
+  for (auto& trPair : other->traces_){
+    void* name = trPair.first;
+    trace* othTrace = trPair.second;
+    trace* myTrace = traces_[name];
+    if (myTrace == nullptr){
+      myTrace = new trace(this, name);
+      traces_[name] = myTrace;
+    }
+    myTrace->add_self(othTrace->self_);
+    for (auto& callPair : othTrace->calls_){
+      void* callName = callPair.first;
+      graphviz_call& call = callPair.second;
+      myTrace->add_call(callName, call.first, call.second);
+    }
+  }
 }
 
 void
 graph_viz::clear()
 {
+}
+
+void
+graph_viz::add_self(void* fxn, long count)
+{
+  trace* tr = traces_[fxn];
+  if (!tr) {
+    tr = new trace(this, fxn);
+    traces_[fxn] = tr;
+  }
+  tr->add_self(count);
+}
+
+void
+graph_viz::reclassify_self(const char* _subfxn, long count, thread* thr)
+{
+  static thread_lock lock;
+  lock.lock();
+  void* subfxn = const_cast<char*>(_subfxn);
+  int stack_end = thr->last_backtrace_nfxn() - 1;
+  void* fxn = thr->backtrace()[stack_end];
+  trace* tr = traces_[fxn];
+  tr->substract_self(count);
+  add_call(1, count, fxn, subfxn);
+  add_self(subfxn, count);
+  lock.unlock();
 }
 
 void
@@ -205,6 +263,10 @@ graph_viz::count_trace(long count, thread* thr)
      " - ensure that at least main exists with SSTMACBacktrace",
      thr->thread_id());
   }
+
+  static thread_lock lock;
+  lock.lock();
+
   int stack_end = nfxn_total - 1;
   int recollect_stop = std::min(stack_end,last_collect_nfxn);
   for (int i=0; i < recollect_stop; ++i) {
@@ -220,12 +282,8 @@ graph_viz::count_trace(long count, thread* thr)
   }
 
   void* fxn = stack[stack_end];
-  trace* tr = traces_[fxn];
-  if (!tr) {
-    tr = new trace(this, fxn);
-    traces_[fxn] = tr;
-  }
-  tr->add_self(count);
+  add_self(fxn, count);
+  lock.unlock();
 
   thr->collect_backtrace(nfxn_total);
 }

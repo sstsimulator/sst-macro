@@ -903,6 +903,13 @@ class mpi_api :
 
   void check_init();
 
+  int do_irecv(void *buf, int count, MPI_Datatype datatype, int source,
+            int tag, MPI_Comm comm, MPI_Request *request);
+
+  int do_isend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+            MPI_Comm comm, MPI_Request *request);
+
+
  private:
   /// The MPI server.
   mpi_queue* queue_;
@@ -953,6 +960,16 @@ class mpi_api :
   MPI_Request req_counter_;
 
   spkt_unordered_map<int, keyval*> keyvals_;
+
+#if SSTMAC_COMM_SYNC_STATS
+ public:
+  void collect_sync_delays(double wait_start, const sumi::message_ptr& msg) override;
+
+  void start_collective_sync_delays() override;
+
+ private:
+  double last_collection_;
+#endif
 
 };
 

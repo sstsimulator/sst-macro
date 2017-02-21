@@ -85,6 +85,8 @@ class job_launcher
 
   virtual ~job_launcher(){}
 
+  static void delete_statics();
+
  protected:
   job_launcher(sprockit::sim_parameters* params, event_manager* mgr);
 

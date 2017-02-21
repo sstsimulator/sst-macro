@@ -176,6 +176,7 @@ class nic :
 
   void record_message(network_message* msg);
 
+  void finish_memcpy(network_message* msg);
 
 };
 

@@ -12,12 +12,18 @@ struct device_id {
     router=1,
     netlink=2,
     logp_overlay=3,
-    null=4
+    control_event=4,
+    null=5,
   } type_t;
 
   explicit device_id(uint32_t id, type_t ty) :
     location_(id), type_(ty)
   {
+  }
+
+  static device_id
+  ctrl_event() {
+    return device_id(0,control_event);
   }
 
   device_id() :

@@ -34,7 +34,6 @@ event_container::do_next_event()
   debug_printf(sprockit::dbg::all_events,
     "running event %s", sprockit::to_string(ev).c_str());
 
-
   ev->execute();
   delete ev;
 }
@@ -69,19 +68,6 @@ event_container::run()
   while (1){
     while (!empty() && !stopped_) {
       do_next_event();
-
-#if SSTMAC_SANITY_CHECK
-      if(event_rate_reporting_) {
-        ++n_events;
-        t2 = clock() - t1;
-        if (t2/CLOCKS_PER_SEC > event_rate_window_) {
-          std::cout << n_events << " events executed in last "
-                    << event_rate_window_ << "s\n";
-          t1 = clock();
-          n_events = 0;
-        }
-      }
-#endif
     }
     bool terminate = vote_to_terminate();
     if (terminate)

@@ -86,7 +86,6 @@ namespace sw {
 
 static sprockit::need_delete_statics<operating_system> del_statics;
 size_t operating_system::stacksize_ = 0;
-graph_viz* operating_system::call_graph_ = nullptr;
 
 #if SSTMAC_USE_MULTITHREAD
 std::vector<operating_system::os_thread_context> operating_system::os_thread_contexts_;
@@ -108,10 +107,16 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
   compute_sched_ = compute_scheduler_factory::get_optional_param(
                      "compute_scheduler", "simple", params, this);
 
-  if (!call_graph_){ //not yet built
-    call_graph_ = optional_stats<graph_viz>(parent,
-          params, "call_graph", "call_graph");
+#if SSTMAC_HAVE_GRAPHVIZ
+  stat_descr_t stat_descr;
+  stat_descr.dump_all = false;
+  call_graph_ = optional_stats<graph_viz>(parent,
+          params, "call_graph", "call_graph", &stat_descr);
+#else
+  if (params->has_namespace("call_graph")){
+    spkt_abort_printf("cannot activate call graph collection - need to configure with --enable-graphviz");
   }
+#endif
 
   ftq_trace_ = optional_stats<ftq_calendar>(parent,
         params, "ftq", "ftq");
@@ -167,6 +172,10 @@ operating_system::~operating_system()
    *  It not, leave it. It's a leak */
   //sprockit::delete_vals(libs_);
   current_os_thread_context().stackalloc.clear();
+
+#if SSTMAC_HAVE_GRAPHVIZ
+  if (call_graph_) delete call_graph_;
+#endif
 
   if (ftq_trace_) delete ftq_trace_;
 }

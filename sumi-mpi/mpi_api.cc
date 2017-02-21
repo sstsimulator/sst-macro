@@ -75,6 +75,9 @@ mpi_api::mpi_api(sprockit::sim_parameters* params,
                  sstmac::sw::software_id sid,
                  sstmac::sw::operating_system* os) :
   status_(is_fresh),
+#if SSTMAC_COMM_SYNC_STATS
+  last_collection_(0),
+#endif
   next_type_id_(0),
   next_op_id_(first_custom_op_id),
   group_counter_(MPI_GROUP_WORLD+1),
@@ -181,7 +184,10 @@ mpi_api::do_init(int* argc, char*** argv)
 
   status_ = is_initialized;
 
-  barrier(MPI_COMM_WORLD);
+
+  collective_op_base* op = start_barrier("MPI_Init", MPI_COMM_WORLD);
+  wait_collective(op);
+  delete op;
 
   return MPI_SUCCESS;
 }
@@ -201,7 +207,11 @@ int
 mpi_api::do_finalize()
 {  
   start_mpi_call("MPI_Finalize");
-  barrier(MPI_COMM_WORLD);
+
+  collective_op_base* op = start_barrier("MPI_Finalize", MPI_COMM_WORLD);
+  wait_collective(op);
+  delete op;
+
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Finalize()");
 
   status_ = is_finalized;
@@ -508,6 +518,51 @@ mpi_api::error_string(int errorcode, char *str, int *resultlen)
   ::strcpy(str, errorstr);
   return MPI_SUCCESS;
 }
+
+#if SSTMAC_COMM_SYNC_STATS
+void
+mpi_api::start_collective_sync_delays()
+{
+  last_collection_ = now().sec();
+}
+
+void
+mpi_api::collect_sync_delays(double wait_start, const message::ptr &msg)
+{
+  if (os_->call_graph()){
+    //there are two possible sync delays
+    //#1: For sender, synced - header_arrived
+    //#2: For recver, time_sent - wait_start
+
+
+    double sync_delay = 0;
+    double start = std::max(last_collection_, wait_start);
+    if (start < msg->time_sent()){
+      sync_delay += msg->time_sent() - start;
+    }
+
+    double header_arrived = std::max(start, msg->time_header_arrived());
+    if (header_arrived < msg->time_synced()){
+      sync_delay += msg->time_synced() - header_arrived;
+    }
+
+    /**
+    std::cout << msg->to_string() << std::endl;
+    std::cout << sprockit::printf(
+      "wait=%5.2e,last=%5.2e,sent=%5.2e,header=%5.2e,payload=%10.7e,sync=%10.7e,total=%10.7e\n",
+           wait_start, last_collection_, msg->time_sent(),
+           msg->time_header_arrived(), msg->time_payload_arrived(),
+           msg->time_synced(), sync_delay);
+    */
+
+    int64_t ticks = timestamp(sync_delay).ticks_int64();
+    if (ticks){
+      os_->call_graph()->reclassify_self("sync", ticks, os_->current_thread());
+    }
+    last_collection_ = now().sec();
+  }
+}
+#endif
 
 }
 

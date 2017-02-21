@@ -29,6 +29,12 @@ struct unique_event_id {
     return lo | hi;
   }
 
+  static void
+  unpack(uint64_t id, uint32_t& node, uint32_t& num){
+    num = id; //low 32
+    node = (id>>32); //high 32
+  }
+
   std::string
   to_string() const {
     std::stringstream sstr;

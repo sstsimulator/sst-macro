@@ -149,38 +149,10 @@ mpi_comm::next_collective_tag()
   return next_tag;
 }
 
-void
-mpi_comm::validate(const char* fxn) const
-{
-#if SSTMAC_SANITY_CHECK
-  if (id_ == MPI_COMM_NULL) {
-    spkt_throw_printf(sprockit::null_error,
-                     "mpicomm::%s trying to call function on a null mpicomm",
-                     fxn);
-  }
-  if (!group_) {
-    spkt_throw_printf(sprockit::null_error,
-                     "mpicomm::%s: group_ is null for some reason",
-                     fxn);
-  }
-  if (rank_ < 0|| rank_ >= env_->nproc()) {
-    spkt_throw_printf(sprockit::illformed_error,
-                     "mpicomm::%s: invalid rank %d",
-                     fxn, rank_);
-  }
-  if (!env_) {
-    spkt_throw_printf(sprockit::null_error,
-                     "mpicomm::validate: env_ is null for some reason",
-                     fxn);
-  }
-#endif
-}
-
 /// The task index of the caller.
 task_id
 mpi_comm::my_task() const
 {
-  validate("my_task");
   return group_->at(rank_);
 }
 
@@ -188,7 +160,6 @@ mpi_comm::my_task() const
 task_id
 mpi_comm::peer_task(int rank) const
 {
-  validate("peer_task");
   return group_->at(rank);
 }
 
