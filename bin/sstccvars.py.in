@@ -8,6 +8,9 @@ sstmac_extra_ldflags = [
 '@LIBS@',
 ]
 
+clang_cppflags="@CLANG_CPPFLAGS@"
+clang_ldflags="@CLANG_LDFLAGS@"
+
 sstmac_cppflags = [
 "@BOOST_CPPFLAGS@",
 "@SST_CPPFLAGS@",
