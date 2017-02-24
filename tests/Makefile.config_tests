@@ -33,6 +33,7 @@ COVERAGETESTS = \
   test_coverage_edison_amm1 \
   test_coverage_edison_amm2 \
   test_coverage_edison_amm3 \
+  test_mpi_only_coverage_edison_amm3 \
   test_coverage_hopper_amm1 \
   test_coverage_hopper_amm2 \
   test_coverage_hopper_amm3 \
@@ -44,6 +45,7 @@ COVERAGETESTS = \
   test_coverage_exa1_pflow \
   test_coverage_exa1_simple \
   test_coverage_exa2_pflow \
+  test_mpi_only_coverage_exa2_simple \
   test_coverage_exa2_simple 
 else
 COVERAGETESTS =
@@ -54,6 +56,11 @@ endif
 test_coverage_%.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 15 $(top_srcdir) $@ True \
     $(SSTMACEXEC) -f mpi_coverage.ini -i $*.ini -i exa_mini_top.ini \
+    --no-wall-time 
+
+test_mpi_only_coverage_%.$(CHKSUF): $(SSTMACEXEC)
+	$(PYRUNTEST) 15 $(top_srcdir) $@ True \
+    $(SSTMACEXEC) -f mpi_only_coverage.ini -i $*.ini -i exa_mini_top.ini \
     --no-wall-time 
 
 test_configs_exa%.$(CHKSUF): $(SSTMACEXEC)

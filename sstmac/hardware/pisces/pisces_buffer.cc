@@ -76,7 +76,7 @@ pisces_network_buffer::handle_credit(event* ev)
     spkt_throw_printf(sprockit::value_error,
                      "pisces_buffer::handle_credit: on %s, port %d, invalid vc %d",
                      to_string().c_str(),
-                     msg->port(), vc);
+                     credit->port(), vc);
   }
 #endif
   int& num_credits = credits_[vc];
@@ -123,7 +123,7 @@ pisces_network_buffer::handle_payload(event* ev)
   int dst_vc = pkt->vc();
 #if SSTMAC_SANITY_CHECK
   //vc default to uninit instead of zero to make sure routers set VC
-  dst_vc = dst_vc == routing_info::uninitialized ? 0 : dst_vc;
+  dst_vc = dst_vc == routing::uninitialized ? 0 : dst_vc;
 #endif
 
 #if SSTMAC_SANITY_CHECK
@@ -131,7 +131,7 @@ pisces_network_buffer::handle_payload(event* ev)
     spkt_throw_printf(sprockit::value_error,
                      "pisces_buffer::handle_payload: on %s, port %d, invalid vc %d",
                      to_string().c_str(),
-                     msg->port(),
+                     pkt->next_port(),
                      dst_vc);
   }
 #endif
@@ -153,16 +153,6 @@ pisces_network_buffer::handle_payload(event* ev)
   }
   else {
     queues_[dst_vc].push_back(pkt);
-#if SSTMAC_SANITY_CHECK
-    if (queue_depth_reporting_) {
-      if(queues_[dst_vc].size() > 0 &&
-         !(queues_[dst_vc].size() % queue_depth_delta_)) {
-        std::cout << "warning: packet flow output buffer queue has reached a depth of "
-                  << queues_[dst_vc].size()
-                  << "\n";
-      }
-    }
-#endif
   }
 }
 

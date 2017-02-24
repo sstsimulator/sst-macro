@@ -20,11 +20,13 @@ libsstmac_skeletons_la_LDFLAGS =
 
 libsstmac_skeletons_la_SOURCES = \
   traffic_matrix/main.cc \
+  test/compute.cc \
   test/service_test.cc \
   test/app_hello_world.cc \
   test/mpi_coverage_test.cc \
   test/mpi_ping_all.cc \
   test/mpi_delay_stats.cc \
+  test/mpi_isend_progress.cc \
   test/global_test.cc \
   sumi_undumpi/parsedumpi.cc \
   sumi_undumpi/parsedumpi_callbacks.cc \

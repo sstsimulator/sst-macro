@@ -112,9 +112,9 @@ stat_collector::optional_build(sprockit::sim_parameters* params,
 }
 
 void
-stat_collector::register_optional_stat(event_scheduler* parent, stat_collector *coll)
+stat_collector::register_optional_stat(event_scheduler* parent, stat_collector *coll, stat_descr_t* descr)
 {
-  parent->register_stat(coll);
+  parent->register_stat(coll, descr);
 }
 
 stat_value_base::stat_value_base(sprockit::sim_parameters *params) :

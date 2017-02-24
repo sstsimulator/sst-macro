@@ -23,39 +23,6 @@
 
 namespace sstmac {
 
-class sumi_queue
-{
-
- public:
-  sumi_queue(sstmac::sw::operating_system* os);
-
-  sumi_queue();
-
-  ~sumi_queue();
-
-  transport_message*
-  poll_until_message();
-
-  transport_message*
-  poll_until_message(timestamp timeout);
-
-  void
-  put_message(transport_message* message);
-
-  bool
-  blocked() const {
-    return !blocked_keys_.empty();
-  }
-
- private:
-  std::list<transport_message*> pending_messages_;
-
-  std::list<sstmac::sw::key*> blocked_keys_;
-
-  sstmac::sw::operating_system* os_;
-
-};
-
 class sumi_transport :
   public sstmac::sw::api,
   public sstmac::sw::process_manager,
@@ -82,6 +49,8 @@ class sumi_transport :
   handle(sstmac::transport_message* msg);
 
   void incoming_event(event *ev) override;
+
+  void compute(timestamp t);
 
   void
   client_server_send(
@@ -114,10 +83,7 @@ class sumi_transport :
   wall_time() const override;
 
   sumi::message::ptr
-  block_until_message() override;
-
-  sumi::message::ptr
-  block_until_message(double timeout) override;
+  poll_pending_messages(bool blocking, double timeout = -1) override;
 
   void
   ping_timeout(sumi::pinger* pnger);
@@ -148,11 +114,6 @@ class sumi_transport :
   }
 
  private:
-  bool
-  blocked() const {
-    return queue_->blocked();
-  }
-
   void
   do_smsg_send(int dst, const sumi::message::ptr &msg) override;
 
@@ -220,14 +181,19 @@ class sumi_transport :
 
   sstmac::sw::app_launch* rank_mapper_;
 
-  /**
-   * @brief queue_
-   * Manages incoming/outgoing messages
-   */
-  sumi_queue* queue_;
+  std::list<transport_message*> pending_messages_;
+
+  std::list<sstmac::sw::key*> blocked_keys_;
 
   device_id loc_;
 
+  timestamp post_rdma_delay_;
+
+  timestamp post_header_delay_;
+
+  timestamp poll_delay_;
+
+  sstmac::sw::lib_compute_time* user_lib_time_;
 
 };
 

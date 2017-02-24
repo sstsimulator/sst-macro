@@ -31,9 +31,7 @@ class memory_message : public message
   }
 
   std::string
-  to_string() const override {
-    return "memory message";
-  }
+  to_string() const override;
 
   node_id
   toaddr() const override {

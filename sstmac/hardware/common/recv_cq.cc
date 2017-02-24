@@ -27,9 +27,9 @@ recv_cq::recv(uint64_t unique_id, int bytes, message* orig)
   incoming_msg& incoming  = bytes_recved_[unique_id];
 #if SSTMAC_SANITY_CHECK
   if (incoming.msg && orig){
-    spkt_throw_printf(sprockit::illformed_error,
-        "recv_cq::recv: only one message chunk should carry the parent payload for %lu",
-        unique_id);
+    spkt_abort_printf(
+        "recv_cq::recv: only one message chunk should carry the parent payload for %lu: %s",
+        unique_id, incoming.msg->to_string().c_str());
   }
 #endif
   if (orig){

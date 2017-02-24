@@ -225,8 +225,9 @@ void
 node::schedule_launches()
 {
   for (app_launch* appman : app_launchers_){
-    schedule(appman->time(), new_callback(job_launcher_,
-                &job_launcher::handle_new_launch_request, appman, this));
+    auto ev = new_callback(event_location(), job_launcher_,
+        &job_launcher::handle_new_launch_request, appman, this);
+    schedule(appman->time(), ev);
   }
 }
 

@@ -20,6 +20,7 @@
 #include <sstmac/common/stats/stat_global_int.h>
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/event_callback.h>
+#include <sstmac/hardware/memory/memory_model.h>
 #include <sprockit/statics.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
@@ -190,8 +191,23 @@ nic::intranode_send(network_message* payload)
     break; //nothing to do
   }
 
-  send_to_node(payload);
+  memory_model* mem = parent_->mem();
+  //use 64 as a negligible number of compute bytes
+  long byte_length = payload->byte_length();
+  if (byte_length > 64){
+    mem->access(payload->byte_length(),
+                mem->max_single_bw(),
+                new_callback(this, &nic::finish_memcpy, payload));
+  } else {
+    finish_memcpy(payload);
+  }
+}
+
+void
+nic::finish_memcpy(network_message* payload)
+{
   ack_send(payload);
+  send_to_node(payload);
 }
 
 void

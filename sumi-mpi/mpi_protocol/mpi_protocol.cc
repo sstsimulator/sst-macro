@@ -4,10 +4,10 @@
 namespace sumi {
 
 
-mpi_protocol* mpi_protocol::eager0_protocol = new eager0;
-mpi_protocol* mpi_protocol::eager1_singlecpy_protocol = new eager1_singlecpy;
-mpi_protocol* mpi_protocol::eager1_doublecpy_protocol = new eager1_doublecpy;
-mpi_protocol* mpi_protocol::rendezvous_protocol = new rendezvous_get;
+mpi_protocol* mpi_protocol::eager0_protocol = nullptr;
+mpi_protocol* mpi_protocol::eager1_singlecpy_protocol = nullptr;
+mpi_protocol* mpi_protocol::eager1_doublecpy_protocol = nullptr;
+mpi_protocol* mpi_protocol::rendezvous_protocol = nullptr;
 
 static sprockit::need_delete_statics<mpi_protocol> del_statics;
 
@@ -39,13 +39,6 @@ mpi_protocol::delete_statics()
   delete eager1_singlecpy_protocol;
   delete eager1_doublecpy_protocol;
   delete rendezvous_protocol;
-}
-
-void
-mpi_protocol::handle_nic_ack(mpi_queue* queue,
-                             const mpi_message::ptr& msg)
-{
-  queue->complete_nic_ack(msg);
 }
 
 void
