@@ -59,8 +59,14 @@ app::app(sprockit::sim_parameters *params, software_id sid,
   params_(params),
   next_tls_key_(0),
   next_condition_(0),
-  next_mutex_(0)
+  next_mutex_(0),
+  globals_storage_(nullptr)
 {
+  int globalsSize = GlobalVariable::globalsSize();
+  if (globalsSize != 0){
+    globals_storage_ = new char[globalsSize];
+    ::memcpy(globals_storage_, GlobalVariable::globalInit(), globalsSize);
+  }
 }
 
 app::~app()
@@ -72,6 +78,7 @@ app::~app()
   if (compute_mem_move_) delete compute_mem_move_;
   if (compute_loops_) delete compute_loops_;
   if (sleep_lib_) delete sleep_lib_;
+  if (globals_storage_) delete[] globals_storage_;
 }
 
 lib_compute_loops*

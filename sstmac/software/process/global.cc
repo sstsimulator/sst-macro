@@ -2,19 +2,31 @@
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
 
+int sstmac_global_stacksize = 0;
+
 namespace sstmac {
+
+int GlobalVariable::stackOffset = 0;
+char GlobalVariable::globalInits[SSTMAC_MAX_GLOBALS];
+
+GlobalVariable::GlobalVariable(const int &offset, const int size, const void *initData)
+{
+  const_cast<int&>(offset) = stackOffset;
+  printf("Adding global variable of size %d at offset %d\n", size, stackOffset);
+
+  int rem = size % 4;
+  int offsetIncrement = rem ? (size + (4-rem)) : size; //align on 32-bits
+
+  if (initData){
+    void* initStart = (char*)globalInits + stackOffset;
+    ::memcpy(initStart, initData, size);
+  }
+
+  stackOffset += offsetIncrement;
+}
+
 namespace sw {
 
-process_context
-sstmac_global::current_context() const {
-  thread* t = operating_system::current_thread();
-  if (t) {
-    return t->get_process_context();
-  }
-  else {
-    return process_context(process_context::none);
-  }
 }
 
-}
 }

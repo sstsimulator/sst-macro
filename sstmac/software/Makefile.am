@@ -31,6 +31,7 @@ libsstmac_sw_la_SOURCES = \
   process/ftq.cc \
   process/operating_system.cc \
   process/thread.cc \
+  process/thread_info.cc \
   process/app.cc \
   process/time.cc \
   threading/context_util.cc \
@@ -95,18 +96,12 @@ nobase_library_include_HEADERS = \
   process/software_id.h \
   process/task_id.h \
   process/time.h \
-  process/perf_counter.h \
+  process/thread_info.h \
   process/thread_data.h \
   process/thread.h \
   process/thread_fwd.h \
   process/thread_id.h \
   process/global.h \
-  process/global_base.h \
-  process/global_builtin.h \
-  process/global_builtin_array.h \
-  process/global_ptr.h \
-  process/global_ptr_array.h \
-  process/global_struct.h \
   process/process_context.h \
   threading/context_util.h \
   threading/stack_alloc_chunk.h \

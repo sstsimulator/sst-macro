@@ -178,6 +178,10 @@ class app : public thread
 
   bool erase_mutex(int id);
 
+  void* globals_storage() const {
+    return globals_storage_;
+  }
+
   virtual void
   clear_subthread_from_parent_app() override;
 
@@ -206,13 +210,12 @@ class app : public thread
   int next_mutex_;
 
   std::map<long, thread*> subthreads_;
-
   std::map<int, mutex_t> mutexes_;
-
   std::map<int, condition_t> conditions_;
-
   std::map<int, destructor_fxn> tls_key_fxns_;
   spkt_unordered_map<std::string, api*> apis_;
+
+  char* globals_storage_;
 
 };
 

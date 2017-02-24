@@ -13,51 +13,165 @@
 #define SSTMAC_SOFTWARE_PROCESS_GLOBAL_H_INCLUDED
 
 #include <sstream>
+#include <sstmac/software/process/thread_info.h>
 
-#include <sprockit/unordered.h>
-#include <sstmac/software/process/global_builtin.h>
-#include <sstmac/software/process/global_builtin_array.h>
-#include <sstmac/software/process/global_ptr.h>
-#include <sstmac/software/process/global_ptr_array.h>
-#include <sstmac/software/process/global_struct.h>
+extern int sstmac_global_stacksize;
 
-typedef sstmac::sw::sstmac_global_builtin<double*> global_double_ptr;
-typedef sstmac::sw::sstmac_global_builtin<double> global_double;
-typedef sstmac::sw::sstmac_global_builtin<char*> global_char_ptr;
-typedef sstmac::sw::sstmac_global_builtin<char> global_char;
-typedef sstmac::sw::sstmac_global_builtin<long*> global_long_ptr;
-typedef sstmac::sw::sstmac_global_builtin<long> global_long;
-typedef sstmac::sw::sstmac_global_builtin<int*> global_int_ptr;
+namespace sstmac {
 
-typedef sstmac::sw::sstmac_global_builtin<int> global_int;
-typedef sstmac::sw::sstmac_global_builtin<long long> global_long_long;
-typedef sstmac::sw::sstmac_global_builtin<bool*> global_bool_ptr;
-typedef sstmac::sw::sstmac_global_builtin<bool> global_bool;
+class GlobalVariable {
+ public:
+  GlobalVariable(const int& offset, const int size, const void* initData);
 
-template<typename T, int N>
-struct global_arr : public sstmac::sw::sstmac_global_builtin_arr<T, N> {
+  static int globalsSize() {
+    return stackOffset;
+  }
 
-};
+  static void* globalInit() {
+    return globalInits;
+  }
 
-
-template<typename T, int N>
-struct global_ptr_arr : public sstmac::sw::sstmac_global_builtin_arr<T*, N> {
+ private:
+  static int stackOffset;
+  #define SSTMAC_MAX_GLOBALS 16384 // For now assume 16KB is the max
+  static char globalInits[16384];
 
 };
 
-template<typename T>
-void
-delete_global(const sstmac::sw::sstmac_global_builtin<T*> &x)
-{
-  delete x.get_val();
+static inline void* get_global_at_offset(int offset){
+  int stack; int* stackPtr = &stack;
+  printf("Stack ptr %p\n", stackPtr);
+  fflush(stdout);
+  size_t stackTopInt = ((size_t)stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize + TLS_GLOBAL_MAP;
+  printf("stack calc %lu\n", stackTopInt);
+  fflush(stdout);
+  char** stackTopPtr = (char**) stackTopInt;
+  char* globalMap = *stackTopPtr;
+  return globalMap + offset;
 }
 
-template<typename T>
-void
-delete_global(const sstmac::sw::sstmac_global_struct<T*> &x)
-{
-  delete x.get_val();
+template <class T>
+static inline T& get_global_ref_at_offset(int offset){
+  printf("Getting offset %d, stacksize %d\n",
+         offset, sstmac_global_stacksize);
+  T* t = (T*) get_global_at_offset(offset);
+  return *t;
 }
+
+namespace sw {
+
+template <class T,class enable=void>
+struct global {};
+
+template <class T>
+struct global<T*,void> : public GlobalVariable {
+  explicit global() : GlobalVariable(offset,sizeof(T*),nullptr){}
+
+  explicit global(T* t) : GlobalVariable(offset, sizeof(T*), &t){}
+
+  T*& get() {
+    return get_global_ref_at_offset<T*>(offset);
+  }
+
+  operator T*() const {
+    return get_global_ref_at_offset<T*>(offset);
+  }
+
+  template <class U>
+  T*& operator=(U*& u) {
+    T*& t = get_global_ref_at_offset<T*>(offset);
+    t = u;
+    return t;
+  }
+
+  template <class U>
+  T*& operator=(U& u) {
+    T*& t = get_global_ref_at_offset<T*>(offset);
+    t = u;
+    return t;
+  }
+
+  int offset;
+};
+
+template <class T>
+struct global<T,typename std::enable_if<std::is_arithmetic<T>::value>::type> : public GlobalVariable {
+
+  explicit global() : GlobalVariable(offset, sizeof(T), nullptr){}
+
+  explicit global(const T& t) : GlobalVariable(offset, sizeof(T), &t){}
+
+  template <class U>
+  T& operator=(const U& u){
+    T& t = get_global_ref_at_offset<T>(offset);
+    t = u;
+    return t;
+  }
+
+  template <class U>
+  operator U() const {
+    return get_global_ref_at_offset<T>(offset);
+  }
+
+  T& get() const {
+    return get_global_ref_at_offset<T>(offset);
+  }
+
+  template <class U>
+  bool operator<(const U& u){
+    return get_global_ref_at_offset<T>(offset) < u;
+  }
+
+  template <class U>
+  void operator+=(const U& u){
+    get_global_ref_at_offset<T>(offset) += u;
+  }
+
+  T& operator++(){
+    T& t = get_global_ref_at_offset<T>(offset);
+    t++;
+    return t;
+  }
+
+  T operator++(int offset){
+    T& t = get_global_ref_at_offset<T>(offset);
+    T result(t);
+    t++;
+    return result;
+  }
+
+  T* operator&() {
+    return (T*) get_global_at_offset(offset);
+  }
+
+  int offset;
+};
+
+#define OPERATOR(op,ret) \
+  template <typename T, typename U> ret \
+  operator op(const global<T>& l, const U& r){ \
+    return l.get() op r; \
+  } \
+  template <typename T, typename U> ret \
+  operator op(const U& l, const global<T>& r){ \
+    return l op r.get(); \
+  }
+
+OPERATOR(+,T)
+OPERATOR(-,T)
+OPERATOR(*,T)
+OPERATOR(&,T)
+OPERATOR(<,bool)
+OPERATOR(<=,bool)
+OPERATOR(>,bool)
+OPERATOR(>=,bool)
+OPERATOR(==,bool)
+
+}
+}
+
+typedef sstmac::sw::global<int> global_int;
+typedef sstmac::sw::global<const char*> global_cstr;
 
 #endif
 
