@@ -71,8 +71,9 @@ struct GlobalVarNamespace
 
   void genSSTCode(std::ostream& os, const std::string& indent){
     for (const std::string& var : vars){
-      os << indent << "const int __offset_" << var << ";\n";
+      os << indent << "int __offset_" << var << " = 0;\n";
       os << indent << "extern const int __sizeof_" << var << ";\n";
+      os << indent << "extern void* __ptr_" << var << ";\n";
       os << indent << "sstmac::GlobalVariable gv("
               << "__offset_" << var
               << ",__sizeof_" << var
@@ -145,12 +146,13 @@ class FindGlobalASTVisitor : public RecursiveASTVisitor<FindGlobalASTVisitor> {
     // roundabout way to get the type of the variable
     std::string retType = QualType::getAsString(D->getType().split()) + "*";
     // add the variable that stores the TLS offset
-    os << "extern const int __offset_" << sstVarName << ";\n";
+    os << "extern int __offset_" << sstVarName << ";\n"
+       << "extern int sstmac_global_stacksize;\n";
     // add the line function that fetches the TLS storage location
     os << "static inline " << retType
        << " get_" << sstVarName << "(){\n"
        << " int stack; int* stackPtr = &stack;\n"
-       << " size_t localStorage = ((size_t) stackPtr/SST_STACK_SIZE)*SST_STACK_SIZE" //find bottom of stack
+       << " size_t localStorage = ((size_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize" //find bottom of stack
        << " + __offset_" << sstVarName << ";\n" //add the variable's offset to get the TLS
        << " return (((" << retType << ")((void*)localStorage)));\n"
        << "}\n";
@@ -271,14 +273,14 @@ class MyFrontendAction : public ASTFrontendAction {
     std::size_t lastSlashPos = sourceFile.find_last_of("/");
     if (lastSlashPos == std::string::npos){
       sstSourceFile = "sst." + sourceFile;
-      sstGlobalFile = "sstGlobals." + sourceFile;
+      sstGlobalFile = "sstGlobals." + sourceFile + ".cpp";
     } else {
       lastSlashPos++;
       sstSourceFile = sourceFile.substr(0, lastSlashPos) + "sst." + sourceFile.substr(lastSlashPos);
-      sstGlobalFile = sourceFile.substr(0, lastSlashPos) + "sstGlobals." + sourceFile.substr(lastSlashPos);
+      sstGlobalFile = sourceFile.substr(0, lastSlashPos) + "sstGlobals." + sourceFile.substr(lastSlashPos) + ".cpp";
     }
 
-    llvm::errs() << "Writing source file " << sstSourceFile << "\n";
+    //llvm::errs() << "Writing source file " << sstSourceFile << "\n";
     std::error_code rc;
     llvm::raw_fd_ostream fs(sstSourceFile, rc, llvm::sys::fs::F_RW);
     TheRewriter.getEditBuffer(TheRewriter.getSourceMgr().getMainFileID()).write(fs);
@@ -286,6 +288,8 @@ class MyFrontendAction : public ASTFrontendAction {
 
     std::ofstream ofs(sstGlobalFile.c_str());
     if (ofs.good()){
+      //add the header files needed
+      ofs << "#include <sstmac/software/process/global.h>\n\n";
       globalNamespace.genSSTCode(ofs,"");
     } else {
       llvm::errs() << "Failed opening " << sstGlobalFile << "\n";
@@ -302,8 +306,8 @@ class MyFrontendAction : public ASTFrontendAction {
     //globalNamespace.subspaces.clear();
 
     SourceManager& SM = CI.getSourceManager();
-    llvm::errs() << "Running SST source-to-source on "
-                << SM.getFileEntryForID(SM.getMainFileID())->getName() << "\n";
+    //llvm::errs() << "Running SST source-to-source on "
+    //           << SM.getFileEntryForID(SM.getMainFileID())->getName() << "\n";
     //SM.PrintStats();
     TheRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
     return llvm::make_unique<MyASTConsumer>(TheRewriter, CI);

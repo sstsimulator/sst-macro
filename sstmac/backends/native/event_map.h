@@ -14,7 +14,6 @@
 
 #include <sstmac/common/sstmac_config.h>
 
-#include <sstmac/backends/native/event_container.h>
 #include <sstmac/common/sst_event.h>
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/event_scheduler.h>

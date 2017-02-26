@@ -698,7 +698,7 @@ mpi_api::start_reduce_scatter(collective_op* op)
 
 collective_op_base*
 mpi_api::start_reduce_scatter(const char *name, const void *src, void *dst,
-                              int *recvcnts, MPI_Datatype type,
+                              const int *recvcnts, MPI_Datatype type,
                               MPI_Op mop, MPI_Comm comm)
 {
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
@@ -717,7 +717,7 @@ mpi_api::start_reduce_scatter(const char *name, const void *src, void *dst,
 }
 
 int
-mpi_api::reduce_scatter(const void *src, void *dst, int *recvcnts,
+mpi_api::reduce_scatter(const void *src, void *dst, const int *recvcnts,
                         MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
 {
   collective_op_base* op = start_reduce_scatter("MPI_Reduce_scatter", src, dst,
@@ -734,7 +734,7 @@ mpi_api::reduce_scatter(int *recvcnts, MPI_Datatype type, MPI_Op op, MPI_Comm co
 }
 
 int
-mpi_api::ireduce_scatter(const void *src, void *dst, int *recvcnts,
+mpi_api::ireduce_scatter(const void *src, void *dst, const int *recvcnts,
                         MPI_Datatype type, MPI_Op mop,
                         MPI_Comm comm, MPI_Request* req)
 {

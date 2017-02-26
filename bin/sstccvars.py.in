@@ -10,6 +10,8 @@ sstmac_extra_ldflags = [
 
 clang_cppflags="@CLANG_CPPFLAGS@"
 clang_ldflags="@CLANG_LDFLAGS@"
+clang_libtooling_cxxflags="@CLANG_LIBTOOLING_CXX_FLAGS@"
+clang_libtooling_cflags="@CLANG_LIBTOOLING_C_FLAGS@"
 
 sstmac_cppflags = [
 "@BOOST_CPPFLAGS@",

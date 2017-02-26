@@ -1,12 +1,9 @@
-#ifndef THREAD_INFO_H
-#define THREAD_INFO_H
+#ifndef sstmac_software_process_THREAD_INFO_H
+#define sstmac_software_process_THREAD_INFO_H
 
 #include <pthread.h>
 #include <sstmac/common/sstmac_config.h>
-
-#define TLS_THREAD_ID 0
-#define TLS_SANITY_CHECK sizeof(int)
-#define TLS_GLOBAL_MAP (TLS_SANITY_CHECK + sizeof(int))
+#include <sstmac/software/process/tls.h>
 
 extern int sstmac_global_stacksize;
 

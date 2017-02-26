@@ -9,33 +9,10 @@
 #   SST/macroscale directory.
 #
 
-STD_SUBDIRS = \
-  clang_replacements \
-  replacements \
-  common \
-  dumpi_util \
-  software \
-  hardware \
-  backends \
-  main \
-  libraries \
-  skeletons \
-  sst_core \
-  install
 
-library_includedir=$(includedir)/sstmac
+library_includedir=$(includedir)/sstmac/clang_replacements
 
-library_include_HEADERS = \
-variable.h \
-blas.h \
-compute.h \
-sstmacro.h \
-util.h \
-sstsockets.h \
-skeleton.h \
-sumi.h
-
-SUBDIRS = $(STD_SUBDIRS) 
-DIST_SUBDIRS = $(STD_SUBDIRS) 
+nobase_library_include_HEADERS = \
+  mpi.h
 
 

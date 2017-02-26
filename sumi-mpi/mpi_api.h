@@ -220,10 +220,9 @@ class mpi_api :
     return MPI_SUCCESS;
   }
 
-  int
-  group_incl(int* ranks,
+  int group_incl(MPI_Group oldgrp,
              int num_ranks,
-             MPI_Group oldgrp,
+             const int* ranks,
              MPI_Group* newgrp);
 
   int group_free(MPI_Group* grp);
@@ -427,7 +426,7 @@ class mpi_api :
 
   int
   reduce_scatter(const void* src, void* dst,
-                 int* recvcnts, MPI_Datatype type,
+                 const int* recvcnts, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm);
 
   int
@@ -566,7 +565,7 @@ class mpi_api :
 
   int
   ireduce_scatter(const void* src, void* dst,
-                 int* recvcnts, MPI_Datatype type,
+                 const int* recvcnts, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm, MPI_Request* req);
 
   int
@@ -872,7 +871,7 @@ class mpi_api :
 
   collective_op_base*
   start_reduce_scatter(const char* name, const void* src, void* dst,
-                 int* recvcnts, MPI_Datatype type,
+                 const int* recvcnts, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm);
 
   collective_op_base*

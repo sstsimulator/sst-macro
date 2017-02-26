@@ -33,7 +33,7 @@ endif
 
 bin_SCRIPTS = sstmacro-config sstccvars.py
 
-EXTRA_DIST = sstmacro-config.in sstcclib.py sstccvars.py.in tools/getbt tools/sst-select
+EXTRA_DIST = sstmacro-config.in sstcclib.py sstccvars.py.in tools
 
 AM_CPPFLAGS += -I$(top_builddir)/pth -I$(top_srcdir)/pth -I$(top_builddir)/bin \
   -I$(top_srcdir)/bin -I$(top_builddir)/dumpi -I$(top_srcdir)/dumpi
@@ -61,7 +61,8 @@ bin_PROGRAMS += sstmac_clang_deglobal
 sstmac_clang_deglobal_SOURCES = src/globals.cc
 sstmac_clang_deglobal_CXXFLAGS = -fno-rtti
 sstmac_clang_deglobal_CPPFLAGS = $(CLANG_CPPFLAGS)
-sstmac_clang_deglobal_LDADD = $(CLANG_LDFLAGS) \
+sstmac_clang_deglobal_LDFLAGS = $(CLANG_LDFLAGS) \
+ -Wl,-rpath,$(HOME)/Programs/install/clang-llvm/lib \
  -lclang \
  -lz \
  -lm \

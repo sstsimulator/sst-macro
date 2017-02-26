@@ -13,7 +13,7 @@
 #define SSTMAC_SOFTWARE_PROCESS_GLOBAL_H_INCLUDED
 
 #include <sstream>
-#include <sstmac/software/process/thread_info.h>
+#include <sstmac/software/process/tls.h>
 
 extern int sstmac_global_stacksize;
 
@@ -21,7 +21,7 @@ namespace sstmac {
 
 class GlobalVariable {
  public:
-  GlobalVariable(const int& offset, const int size, const void* initData);
+  GlobalVariable(int& offset, const int size, const void* initData);
 
   static int globalsSize() {
     return stackOffset;
@@ -40,11 +40,7 @@ class GlobalVariable {
 
 static inline void* get_global_at_offset(int offset){
   int stack; int* stackPtr = &stack;
-  printf("Stack ptr %p\n", stackPtr);
-  fflush(stdout);
   size_t stackTopInt = ((size_t)stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize + TLS_GLOBAL_MAP;
-  printf("stack calc %lu\n", stackTopInt);
-  fflush(stdout);
   char** stackTopPtr = (char**) stackTopInt;
   char* globalMap = *stackTopPtr;
   return globalMap + offset;
@@ -52,8 +48,6 @@ static inline void* get_global_at_offset(int offset){
 
 template <class T>
 static inline T& get_global_ref_at_offset(int offset){
-  printf("Getting offset %d, stacksize %d\n",
-         offset, sstmac_global_stacksize);
   T* t = (T*) get_global_at_offset(offset);
   return *t;
 }

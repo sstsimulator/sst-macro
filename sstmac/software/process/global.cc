@@ -9,7 +9,7 @@ namespace sstmac {
 int GlobalVariable::stackOffset = 0;
 char GlobalVariable::globalInits[SSTMAC_MAX_GLOBALS];
 
-GlobalVariable::GlobalVariable(const int &offset, const int size, const void *initData)
+GlobalVariable::GlobalVariable(int &offset, const int size, const void *initData)
 {
   const_cast<int&>(offset) = stackOffset;
   printf("Adding global variable of size %d at offset %d\n", size, stackOffset);

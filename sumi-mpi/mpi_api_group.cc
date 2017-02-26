@@ -4,7 +4,7 @@
 namespace sumi {
 
 int
-mpi_api::group_incl(int *ranks, int num_ranks, MPI_Group oldgrp, MPI_Group *newgrp)
+mpi_api::group_incl(MPI_Group oldgrp, int num_ranks, const int *ranks, MPI_Group *newgrp)
 {
   mpi_group* oldgrpPtr = get_group(oldgrp);
   if (num_ranks > oldgrpPtr->size()) {
