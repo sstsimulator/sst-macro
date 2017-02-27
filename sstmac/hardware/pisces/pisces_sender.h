@@ -26,6 +26,11 @@ struct payload_queue {
   pisces_payload*
   front();
 
+  size_t
+  size() const {
+    return queue.size();
+  }
+
   void
   push_back(pisces_payload* payload);
 

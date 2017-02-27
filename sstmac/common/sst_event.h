@@ -135,6 +135,9 @@ class callback :
     event_queue_entry(local, local)
   {
   }
+
+  virtual ~callback(){}
+
 };
 
 

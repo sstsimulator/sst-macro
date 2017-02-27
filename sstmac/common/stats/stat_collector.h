@@ -249,7 +249,7 @@ optional_stats(event_scheduler* parent,
               const std::string& deflt,
               stat_descr_t* descr = nullptr){
 
-  stat_collector* coll = stat_collector::optional_build(params,ns,deflt, descr ? descr->suffix : nullptr);
+  stat_collector* coll = stat_collector::optional_build(params, ns, deflt, descr ? descr->suffix : nullptr);
   if (coll){
     T* t = dynamic_cast<T*>(coll);
     if (!t){

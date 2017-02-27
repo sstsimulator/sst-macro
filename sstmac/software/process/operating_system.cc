@@ -173,6 +173,10 @@ operating_system::~operating_system()
   //sprockit::delete_vals(libs_);
   current_os_thread_context().stackalloc.clear();
 
+#if SSTMAC_HAVE_GRAPHVIZ
+  if (call_graph_) delete call_graph_;
+#endif
+
   if (ftq_trace_) delete ftq_trace_;
 }
 

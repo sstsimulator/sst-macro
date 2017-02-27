@@ -14,6 +14,8 @@ ImplementFactory(sstmac::sw::job_launcher)
 namespace sstmac {
 namespace sw {
 
+static sprockit::need_delete_statics<job_launcher> del_statics;
+
 SpktRegister("default", job_launcher, default_job_launcher);
 
 job_launcher* job_launcher::static_launcher_ = nullptr;
@@ -63,6 +65,12 @@ job_launcher::node_for_task(app_id aid, task_id tid) const
   }
   app_launch* appman = iter->second;
   return appman->node_assignment(int(tid));
+}
+
+void
+job_launcher::delete_statics()
+{
+  if (static_launcher_) delete static_launcher_;
 }
 
 void
