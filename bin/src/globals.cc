@@ -74,8 +74,8 @@ struct GlobalVarNamespace
       os << indent << "int __offset_" << var << " = 0;\n";
       os << indent << "extern const int __sizeof_" << var << ";\n";
       os << indent << "extern void* __ptr_" << var << ";\n";
-      os << indent << "sstmac::GlobalVariable gv("
-              << "__offset_" << var
+      os << indent << "sstmac::GlobalVariable __gv_" << var
+              << "(__offset_" << var
               << ",__sizeof_" << var
               << ",__ptr_" << var
               << ");\n";
@@ -144,7 +144,16 @@ class FindGlobalASTVisitor : public RecursiveASTVisitor<FindGlobalASTVisitor> {
     //}
 
     // roundabout way to get the type of the variable
-    std::string retType = QualType::getAsString(D->getType().split()) + "*";
+    std::string retType;
+    const Type* ty  = D->getType().getTypePtr();
+    bool isC99array = ty->isArrayType();
+    if (isC99array){
+      const ArrayType* aty = ty->getAsArrayTypeUnsafe();
+      retType = QualType::getAsString(aty->getElementType().split()) + "**";
+    } else {
+      retType = QualType::getAsString(D->getType().split()) + "*";
+    }
+
     // add the variable that stores the TLS offset
     os << "extern int __offset_" << sstVarName << ";\n"
        << "extern int sstmac_global_stacksize;\n";
@@ -152,7 +161,7 @@ class FindGlobalASTVisitor : public RecursiveASTVisitor<FindGlobalASTVisitor> {
     os << "static inline " << retType
        << " get_" << sstVarName << "(){\n"
        << " int stack; int* stackPtr = &stack;\n"
-       << " size_t localStorage = ((size_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize" //find bottom of stack
+       << " uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize" //find bottom of stack
        << " + __offset_" << sstVarName << ";\n" //add the variable's offset to get the TLS
        << " return (((" << retType << ")((void*)localStorage)));\n"
        << "}\n";
@@ -243,11 +252,11 @@ class MyASTConsumer : public ASTConsumer {
   bool HandleTopLevelDecl(DeclGroupRef DR) override {
     for (DeclGroupRef::iterator b = DR.begin(), e = DR.end(); b != e; ++b){
       Decl* d = *b;
-      //bool visit = isa<VarDecl>(d) || isa<NamespaceDecl>(d);
       if (!d->isImplicit()){
+        //we have to find a particular set of declarations that
+        //will need later replacing/processing
         FindVisitor.TraverseDecl(*b);
       }
-
       //the replace visitor should visit everything in the source file
       ReplVisitor.TraverseDecl(*b);
     }
@@ -267,7 +276,6 @@ class MyFrontendAction : public ASTFrontendAction {
   void EndSourceFileAction() override {
     SourceManager &SM = TheRewriter.getSourceMgr();
 
-
     std::string sourceFile = SM.getFileEntryForID(SM.getMainFileID())->getName().str();
     std::string sstSourceFile, sstGlobalFile;
     std::size_t lastSlashPos = sourceFile.find_last_of("/");
@@ -280,7 +288,6 @@ class MyFrontendAction : public ASTFrontendAction {
       sstGlobalFile = sourceFile.substr(0, lastSlashPos) + "sstGlobals." + sourceFile.substr(lastSlashPos) + ".cpp";
     }
 
-    //llvm::errs() << "Writing source file " << sstSourceFile << "\n";
     std::error_code rc;
     llvm::raw_fd_ostream fs(sstSourceFile, rc, llvm::sys::fs::F_RW);
     TheRewriter.getEditBuffer(TheRewriter.getSourceMgr().getMainFileID()).write(fs);
@@ -296,19 +303,9 @@ class MyFrontendAction : public ASTFrontendAction {
       abort();
     }
     ofs.close();
-
-    //const RewriteBuffer *RewriteBuf = TheRewriter.getRewriteBufferFor(SM.getMainFileID());
-    //llvm::outs() << std::string(RewriteBuf->begin(), RewriteBuf->end());
   }
 
   std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance& CI, StringRef file) override {
-    //globalNamespace.vars.clear();
-    //globalNamespace.subspaces.clear();
-
-    SourceManager& SM = CI.getSourceManager();
-    //llvm::errs() << "Running SST source-to-source on "
-    //           << SM.getFileEntryForID(SM.getMainFileID())->getName() << "\n";
-    //SM.PrintStats();
     TheRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
     return llvm::make_unique<MyASTConsumer>(TheRewriter, CI);
   }
@@ -321,7 +318,6 @@ int main(int argc, const char** argv) {
   CommonOptionsParser op(argc, argv, ToolingSampleCategory);
   ClangTool Tool(op.getCompilations(), op.getSourcePathList());
   int rc =  Tool.run(newFrontendActionFactory<MyFrontendAction>().get());
-  //globalNamespace.genSSTCode(std::cout, "");
   return rc;
 }
 

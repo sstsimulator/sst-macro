@@ -32,6 +32,11 @@ typedef long MPI_Comm;
 #define MPI_COMM_WORLD ((MPI_Comm)0)
 #define MPI_COMM_SELF  ((MPI_Comm)1)
 
+#define MPI_PROC_NULL   (-1)
+#define MPI_ANY_SOURCE  (-2)
+#define MPI_ROOT        (-3)
+#define MPI_ANY_TAG     (-1)
+
 typedef long MPI_Group;
 #define MPI_GROUP_EMPTY ((MPI_Group)0x48000000)
 
