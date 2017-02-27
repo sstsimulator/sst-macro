@@ -109,7 +109,7 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
 
 #if SSTMAC_HAVE_GRAPHVIZ
   stat_descr_t stat_descr;
-  stat_descr.dump_all = true;
+  stat_descr.dump_all = false;
   call_graph_ = optional_stats<graph_viz>(parent,
           params, "call_graph", "call_graph", &stat_descr);
 #else
