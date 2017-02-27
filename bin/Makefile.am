@@ -12,20 +12,11 @@
 include $(top_srcdir)/Makefile.common
 
 dist_bin_SCRIPTS = \
-tools/dumpibreakdown \
-tools/fix_style \
-tools/readsymbols \
 sst++ \
 dsst++ \
 sstcc \
 dsstcc \
-sstcclib.py \
-config_tools/check_repo_build \
-config_tools/get_clang \
-config_tools/get_os \
-config_tools/get_include_path \
-config_tools/get_pthread_mutex_vars \
-config_tools/get_pthread_cond_vars
+sstcclib.py 
 
 if INTEGRATED_SST_CORE
 dist_bin_SCRIPTS += pysstmac
@@ -33,10 +24,13 @@ endif
 
 bin_SCRIPTS = sstmacro-config sstccvars.py
 
-EXTRA_DIST = sstmacro-config.in sstcclib.py sstccvars.py.in tools
+EXTRA_DIST = sstmacro-config.in sstcclib.py sstccvars.py.in tools config_tools
 
-AM_CPPFLAGS += -I$(top_builddir)/pth -I$(top_srcdir)/pth -I$(top_builddir)/bin \
-  -I$(top_srcdir)/bin -I$(top_builddir)/dumpi -I$(top_srcdir)/dumpi
+AM_CPPFLAGS += \
+ -I$(top_builddir)/bin \
+ -I$(top_srcdir)/bin \
+ -I$(top_builddir)/dumpi \
+ -I$(top_srcdir)/dumpi
 
 if !INTEGRATED_SST_CORE
 bin_PROGRAMS = sstmac sstmac_top_info
