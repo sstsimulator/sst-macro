@@ -336,6 +336,19 @@ operating_system::sleep(timestamp t)
 }
 
 void
+operating_system::sleep_until(timestamp t)
+{
+  timestamp now_ = now();
+  if (t > now_){
+    sw::key* k = sw::key::construct();
+    sw::unblock_event* ev = new sw::unblock_event(this, k);
+    schedule(t, ev);
+    block(k);
+    delete k;
+  }
+}
+
+void
 operating_system::compute(timestamp t)
 {
   //first thing's first - make sure I have a core to execute on

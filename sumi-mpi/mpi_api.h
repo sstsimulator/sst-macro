@@ -420,6 +420,17 @@ class mpi_api :
             int count, MPI_Datatype type, MPI_Op op,
             MPI_Comm comm);
 
+#pragma GCC diagnostic ignored "-Woverloaded-virtual"
+  int
+  scan(int count, MPI_Datatype type, MPI_Op op,
+            MPI_Comm comm);
+
+#pragma GCC diagnostic ignored "-Woverloaded-virtual"
+  int
+  scan(const void* src, void* dst,
+            int count, MPI_Datatype type, MPI_Op op,
+            MPI_Comm comm);
+
   int
   reduce_scatter(int* recvcnts, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm);
@@ -437,14 +448,6 @@ class mpi_api :
   reduce_scatter_block(const void* src, void* dst,
                  int recvcnt, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm);
-
-  int
-  scan(int count, MPI_Datatype type, MPI_Op op, MPI_Comm comm);
-
-  int
-  scan(const void* src, void* dst,
-      int count, MPI_Datatype type, MPI_Op op,
-       MPI_Comm comm);
 
   int
   ibarrier(MPI_Comm comm, MPI_Request* req);
@@ -560,6 +563,15 @@ class mpi_api :
             MPI_Comm comm, MPI_Request* req);
 
   int
+  iscan(int count, MPI_Datatype type, MPI_Op op,
+        MPI_Comm comm, MPI_Request* req);
+
+  int
+  iscan(const void* src, void* dst,
+        int count, MPI_Datatype type, MPI_Op op,
+        MPI_Comm comm, MPI_Request* req);
+
+  int
   ireduce_scatter(int* recvcnts, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm, MPI_Request* req);
 
@@ -576,14 +588,6 @@ class mpi_api :
   ireduce_scatter_block(const void* src, void* dst,
                  int recvcnt, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm, MPI_Request* req);
-
-  int
-  iscan(int count, MPI_Datatype type, MPI_Op op, MPI_Comm comm, MPI_Request* req);
-
-  int
-  iscan(const void* src, void* dst,
-      int count, MPI_Datatype type, MPI_Op op,
-       MPI_Comm comm, MPI_Request* req);
 
 
   int
