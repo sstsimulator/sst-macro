@@ -126,7 +126,7 @@ sumi_transport::sumi_transport(sprockit::sim_parameters* params,
   poll_delay_ = params->get_optional_time_param("poll_delay", 0);
   user_lib_time_ = new sstmac::sw::lib_compute_time(params, "sumi-user-lib-time", sid, os);
 
-  rank_mapper_ = runtime::launcher()->task_mapper(sid.app_);
+  rank_mapper_ = sstmac::sw::task_mapping::global_mapping(sid.app_);
   nproc_ = rank_mapper_->nproc();
   loc_ = os_->event_location();
 
@@ -282,7 +282,7 @@ sumi_transport::send(
   int dst_rank,
   bool needs_ack)
 {
-  node_id dst_node = rank_mapper_->node_assignment(dst_rank);
+  node_id dst_node = rank_mapper_->rank_to_node(dst_rank);
   send(byte_length, dst_rank, dst_node, sid().app_, msg, needs_ack, sendType);
 }
 

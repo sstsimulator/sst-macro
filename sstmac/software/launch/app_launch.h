@@ -24,32 +24,17 @@
 namespace sstmac {
 namespace sw {
 
-class software_launch
+class software_launch_request
 {
 
  public:
-  software_launch(sprockit::sim_parameters* params);
+  software_launch_request(sprockit::sim_parameters* params);
 
-  virtual ~software_launch();
+  virtual ~software_launch_request();
 
   int
   nproc() const {
     return nproc_;
-  }
-
-  node_id
-  node_assignment(int rank) const {
-    return rank_to_node_indexing_[rank];
-  }
-
-  const std::vector<node_id>&
-  node_assignments() const {
-    return rank_to_node_indexing_;
-  }
-
-  const std::list<int>&
-  rank_assignment(node_id nid) const {
-    return node_to_rank_indexing_[nid];
   }
 
   timestamp
@@ -60,11 +45,6 @@ class software_launch
   std::vector<int>
   core_affinities() const {
     return core_affinities_;
-  }
-
-  hw::topology*
-  topol() const {
-    return top_;
   }
 
   /**
@@ -85,7 +65,11 @@ class software_launch
    * @param allocation        The set of nodes returned by the allocation request
    */
   void
-  index_allocation(const ordered_node_set& allocation);
+  index_allocation(
+    hw::topology* top,
+    const ordered_node_set& allocation,
+    std::vector<node_id>& rank_to_node,
+    std::vector<std::list<int>>& node_to_rank);
 
   bool
   is_indexed() const {
@@ -111,14 +95,9 @@ class software_launch
  private:
   sw::node_allocator* allocator_;
   sw::task_mapper* indexer_;
-  std::vector<node_id> rank_to_node_indexing_;
-  std::vector<std::list<int> > node_to_rank_indexing_;
-
-  hw::topology* top_;
+  std::vector<int> core_affinities_;
 
   bool indexed_;
-
-  std::vector<int> core_affinities_;
 
   timestamp time_;
 
@@ -135,14 +114,14 @@ class software_launch
 
 };
 
-class app_launch : public software_launch
+class app_launch_request : public software_launch_request
 {
  public:
-  app_launch(sprockit::sim_parameters* params,
+  app_launch_request(sprockit::sim_parameters* params,
              app_id aid,
              const std::string& app_namespace);
 
-  virtual ~app_launch();
+  virtual ~app_launch_request();
 
   const std::string&
   app_namespace() const {
@@ -159,45 +138,12 @@ class app_launch : public software_launch
     return aid_;
   }
 
-  /**
-   * @brief nodes
-   * @param name The name and corresponding namespace (usually app1) for the application
-   * @return The list of nodes assigned to each rank in the application launch
-   */
-  static const std::vector<node_id>&
-  nodes(const std::string& name);
-
-  static app_launch*
-  static_app_launch(int aid, const std::string& name, sprockit::sim_parameters* params);
-
-  static app_launch*
-  static_app_launch(int aid, sprockit::sim_parameters* params);
-
-  static app_launch*
-  static_app_launch(int aid);
-
-  static app_launch*
-  static_app_launch(const std::string& name);
-
-  static app_launch*
-  service_info(const std::string& name);
-
-  static void
-  clear_static_app_launch(){
-    for (auto& pair : static_app_launches_){
-      delete pair.second;
-    }
-    static_app_launches_.clear();
-  }
-
  private:
   sw::app_id aid_;
 
   std::string app_namespace_;
 
   sprockit::sim_parameters* app_params_;
-
-  static std::map<std::string, app_launch*> static_app_launches_;
 
 };
 

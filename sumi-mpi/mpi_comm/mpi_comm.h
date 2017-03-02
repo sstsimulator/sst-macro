@@ -25,7 +25,6 @@
 namespace sumi {
 
 using sstmac::sw::app_id;
-using sstmac::sw::app_launch;
 using sstmac::node_id;
 
 /**

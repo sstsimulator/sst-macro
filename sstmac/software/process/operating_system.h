@@ -200,7 +200,7 @@ class operating_system :
   add_application(app* a);
 
   void
-  start_app(app* a);
+  start_app(app* a, const std::string& unique_name);
 
   void
   handle_event(event* ev);

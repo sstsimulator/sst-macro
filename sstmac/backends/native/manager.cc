@@ -109,7 +109,7 @@ manager::compute_max_nproc_for_app(sprockit::sim_parameters* app_params)
   }
   int nproc, procs_per_node;
   std::vector<int> ignore;
-  app_launch::parse_launch_cmd(app_params, nproc,
+  app_launch_request::parse_launch_cmd(app_params, nproc,
     procs_per_node, ignore);
   return std::max(nproc, max_nproc);
 }

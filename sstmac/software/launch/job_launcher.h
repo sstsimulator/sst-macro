@@ -5,15 +5,102 @@
 #include <sprockit/unordered.h>
 #include <sstmac/common/event_handler.h>
 #include <sstmac/common/event_scheduler.h>
-#include <sstmac/hardware/interconnect/interconnect_fwd.h>
+#include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/software/launch/node_set.h>
 #include <sstmac/software/process/task_id.h>
 #include <sstmac/software/process/app_id.h>
+#include <sstmac/software/libraries/service.h>
 #include <sstmac/software/launch/app_launch_fwd.h>
+#include <sstmac/software/launch/launch_event_fwd.h>
+#include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/hardware/node/node_fwd.h>
+
 
 namespace sstmac {
 namespace sw {
+
+struct job_allocation
+{
+  timestamp requested; //time job was requested to start
+  timestamp start; //time job actually started
+  timestamp estimated; //time job is estimated to take
+  ordered_node_set nodes;
+  int nproc_launched;
+  int nproc_completed;
+};
+
+class task_mapping : public sprockit::ptr_type
+{
+ public:
+  task_mapping(app_id aid) : aid_(aid) {}
+
+  typedef sprockit::refcount_ptr<task_mapping> ptr;
+
+  node_id rank_to_node(int rank) const {
+    return rank_to_node_indexing_[rank];
+  }
+
+  const std::list<int>&
+  node_to_ranks(int node) const {
+    return node_to_rank_indexing_[node];
+  }
+
+  app_id aid() const {
+    return aid_;
+  }
+
+  int
+  num_ranks() const {
+    return rank_to_node_indexing_.size();
+  }
+
+  int nproc() const {
+    return rank_to_node_indexing_.size();
+  }
+
+  const std::vector<node_id>&
+  rank_to_node() const {
+    return rank_to_node_indexing_;
+  }
+
+  std::vector<node_id>&
+  rank_to_node() {
+    return rank_to_node_indexing_;
+  }
+
+  const std::vector<std::list<int>>& node_to_rank() const {
+    return node_to_rank_indexing_;
+  }
+
+  std::vector<std::list<int>>& node_to_rank() {
+    return node_to_rank_indexing_;
+  }
+
+  static task_mapping::ptr
+  global_mapping(app_id aid);
+
+  static task_mapping::ptr
+  global_mapping(const std::string& unique_name);
+
+  static void
+  add_global_mapping(app_id aid, const std::string& unique_name,
+                     const task_mapping::ptr& mapping);
+
+  static void
+  remove_global_mapping(app_id aid, const std::string& name);
+
+ private:
+  app_id aid_;
+  std::vector<node_id> rank_to_node_indexing_;
+  std::vector<std::list<int> > node_to_rank_indexing_;
+  std::vector<int> core_affinities_;
+
+  static std::map<app_id,int>  local_refcounts_;
+  static std::map<app_id, task_mapping::ptr> app_ids_launched_;
+  static std::map<std::string, task_mapping::ptr> app_names_launched_;
+
+  static void delete_statics();
+};
 
 /**
  * @brief The job_launcher class performs the combined operations a queue scheduler like PBS or MOAB
@@ -25,15 +112,9 @@ namespace sw {
  * allocation/indexing. In most cases, the job_launcher will honor exactly each applications's request
  * unless there is a conflict - in which case the job_launcher must arbitrate conflicting requests.
  */
-class job_launcher
+class job_launcher : public service
 {
  public:
-  node_id
-  node_for_task(app_id aid, task_id tid) const;
-
-  app_launch*
-  task_mapper(app_id aid) const;
-
   /**
    * @brief handle_new_launch_request As if a new job had been submitted with qsub or salloc.
    * The job_launcher receives a new request to launch an application, at which point
@@ -42,83 +123,67 @@ class job_launcher
    *                of the application being launched
    */
   virtual void
-  handle_new_launch_request(app_launch* appman, hw::node* target) = 0;
+  handle_new_launch_request(app_launch_request* appman) = 0;
 
-  static job_launcher*
-  static_job_launcher(sprockit::sim_parameters* params, event_manager* mgr);
-
-  static int
-  launch_root() {
-    return launch_root_;
-  }
-
-  static void
-  clear_static_job_launcher(){
-    if (static_launcher_) delete static_launcher_;
-    static_launcher_ = nullptr;
-  }
+  void incoming_event(event *ev);
 
   device_id
-  event_location() const {
-    return device_id();
-  }
-
-  static app_launch*
-  app_launcher(int aid) {
-    return static_launcher_->apps_launched_[aid];
-  }
-
-  bool
-  app_done(app_id aid){
-    apps_finished_.insert(aid);
-    if (apps_launched_.find(aid) == apps_launched_.end()){
-      spkt_abort_printf("trying to finish invalid app id %d", aid);
-    }
-    return apps_launched_.size() == apps_finished_.size();
-  }
-
-  static bool
-  static_app_done(app_id aid){
-    return static_launcher_->app_done(aid);
-  }
-
+  event_location() const;
 
   virtual ~job_launcher(){}
 
-  static void delete_statics();
-
  protected:
-  job_launcher(sprockit::sim_parameters* params, event_manager* mgr);
+  job_launcher(sprockit::sim_parameters* params, operating_system* os);
 
   void
-  satisfy_launch_request(app_launch* appman, hw::node* nd);
+  satisfy_launch_request(app_launch_request* appman, task_mapping::ptr mapper);
+
+  virtual void
+  stop_event_received(job_stop_event* ev) = 0;
 
  protected:
-  hw::interconnect* interconnect_;
-  ordered_node_set allocated_;
+  hw::topology* topology_;
+
+  std::map<app_id, job_allocation*> allocations_;
   ordered_node_set available_;
 
-  std::map<app_id, app_launch*> apps_launched_;
-  std::set<app_id> apps_finished_;
-
-  static job_launcher* static_launcher_;
-  static int launch_root_;
-
+ private:
+  void add_launch_requests(sprockit::sim_parameters* params);
 };
 
-DeclareFactory(job_launcher, event_manager*);
 
-class default_job_launcher :
-  public job_launcher
+DeclareFactory(job_launcher, operating_system*);
+
+class default_job_launcher : public job_launcher
 {
  public:
-  default_job_launcher(sprockit::sim_parameters* params, event_manager* mgr) :
-    job_launcher(params, mgr)
+  default_job_launcher(sprockit::sim_parameters* params, operating_system* os) :
+    job_launcher(params, os)
   {
   }
 
  protected:
-  void handle_new_launch_request(app_launch* appman, hw::node* nd);
+  void handle_new_launch_request(app_launch_request* appman);
+
+ private:
+  void stop_event_received(job_stop_event* ev);
+
+};
+
+class exclusive_job_launcher : public default_job_launcher
+{
+ public:
+  exclusive_job_launcher(sprockit::sim_parameters* params, operating_system* os) :
+   default_job_launcher(params, os)
+  {
+  }
+
+ private:
+  void handle_new_launch_request(app_launch_request* appman);
+
+  void stop_event_received(job_stop_event* ev);
+
+  std::list<app_launch_request*> pending_requests_;
 
 };
 

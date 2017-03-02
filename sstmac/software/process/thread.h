@@ -148,9 +148,6 @@ class thread
     return os_;
   }
 
-  app_launch*
-  env() const;
-
   void*
   stack() const {
     return stack_;

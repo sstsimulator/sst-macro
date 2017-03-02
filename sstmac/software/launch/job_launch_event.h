@@ -13,19 +13,19 @@ class job_launch_event :
   NotSerializable(job_launch_event)
 
  public:
-  job_launch_event(app_launch* appman) :
+  job_launch_event(app_launch_request* appman) :
     appman_(appman)
   {
   }
 
-  app_launch*
+  app_launch_request*
   appman() const {
     return appman_;
   }
 
  private:
   int appnum_;
-  app_launch* appman_;
+  app_launch_request* appman_;
 };
 
 }

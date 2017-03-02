@@ -5,6 +5,7 @@
 #include <sstmac/software/launch/launch_event.h>
 #include <sstmac/software/launch/job_launch_event.h>
 #include <sstmac/software/launch/app_launch.h>
+#include <sstmac/hardware/topology/topology.h>
 #include <sstmac/common/runtime.h>
 #include <sstmac/common/thread_lock.h>
 #include <sprockit/util.h>
@@ -14,102 +15,183 @@ ImplementFactory(sstmac::sw::job_launcher)
 namespace sstmac {
 namespace sw {
 
-static sprockit::need_delete_statics<job_launcher> del_statics;
-
 SpktRegister("default", job_launcher, default_job_launcher);
+SpktRegister("exclusive", job_launcher, exclusive_job_launcher);
 
-job_launcher* job_launcher::static_launcher_ = nullptr;
-int job_launcher::launch_root_ = 0;
+std::map<app_id, task_mapping::ptr> task_mapping::app_ids_launched_;
+std::map<std::string, task_mapping::ptr> task_mapping::app_names_launched_;
+std::map<int,app_id> task_mapping::local_refcounts_;
 
-job_launcher*
-job_launcher::static_job_launcher(sprockit::sim_parameters* params, event_manager* mgr)
+job_launcher::job_launcher(sprockit::sim_parameters* params,
+                           operating_system* os) :
+  service(std::string("job_launcher"), software_id(0,0,0), os)
 {
-  if (!static_launcher_){
-    static_launcher_ = job_launcher_factory::get_optional_param("job_launcher", "default",
-                                                                params, mgr);
-    runtime::set_job_launcher(static_launcher_);
-  }
-  return static_launcher_;
-}
-
-job_launcher::job_launcher(sprockit::sim_parameters* params, event_manager* mgr)
-{
-  interconnect_ = sstmac::hw::interconnect::static_interconnect(params, mgr);
-  int num_nodes = interconnect_->num_nodes();
+  topology_ = sstmac::hw::topology::static_topology(params);
+  int num_nodes = topology_->num_nodes();
   for (int i=0; i < num_nodes; ++i){
     available_.insert(i);
   }
-  launch_root_ = params->get_optional_int_param("launch_root", 0);
+  add_launch_requests(params);
 }
 
-app_launch*
-job_launcher::task_mapper(app_id aid) const
+void
+job_launcher::incoming_event(event *ev)
 {
-  auto iter = apps_launched_.find(aid);
-  if (iter == apps_launched_.end()){
-    spkt_throw_printf(sprockit::value_error,
-                      "cannot find application launched with id %d",
-                      int(aid));
+  job_stop_event* stop_ev = safe_cast(job_stop_event, ev);
+  stop_event_received(stop_ev);
+}
+
+void
+job_launcher::add_launch_requests(sprockit::sim_parameters* params)
+{
+  bool keep_going = true;
+  int aid = 1;
+  int last_used_aid = 0;
+  while (keep_going || aid < 10){
+    std::string name = sprockit::printf("app%d",aid);
+    if (params->has_namespace(name)){
+      sprockit::sim_parameters* app_params = params->get_namespace(name);
+      app_launch_request* mgr = new app_launch_request(app_params, app_id(aid), name);
+      os_->schedule(mgr->time(),
+          new_callback(os_->event_location(), this, &job_launcher::handle_new_launch_request, mgr));
+      keep_going = true;
+      last_used_aid = aid;
+    } else {
+      keep_going = false;
+    }
+    ++aid;
+  }
+
+  aid = last_used_aid+1;
+
+  std::vector<std::string> services_to_launch;
+  params->get_optional_vector_param("services", services_to_launch);
+  for (std::string& str : services_to_launch){
+    sprockit::sim_parameters* srv_params = params->get_namespace(str);
+    //setup the name for app factory
+    srv_params->add_param_override("name", "distributed_service");
+    //setup the name for distributed service
+    srv_params->add_param_override("libname", str);
+    app_launch_request* mgr = new app_launch_request(srv_params, app_id(aid), str);
+    node_debug("adding distributed service %s", str.c_str());
+    os_->schedule(mgr->time(),
+        new_callback(os_->event_location(), this, &job_launcher::handle_new_launch_request, mgr));
+    ++aid;
+  }
+}
+
+device_id
+job_launcher::event_location() const
+{
+  return os_->event_location();
+}
+
+
+void
+job_launcher::satisfy_launch_request(app_launch_request* appman, task_mapping::ptr mapping)
+{
+  int num_ranks = mapping->num_ranks();
+  for (int rank=0; rank < num_ranks; ++rank){
+    sw::start_app_event* lev = new start_app_event(appman->aid(), appman->app_namespace(),
+                                    mapping, rank, mapping->rank_to_node(rank),
+                                    os_->addr(),//the job launch root
+                                    appman->app_params());
+    os_->execute_kernel(ami::COMM_PMI_SEND, lev);
+  }
+  //job launcher needs to add this - might need it later
+  task_mapping::add_global_mapping(appman->aid(), appman->app_namespace(), mapping);
+}
+
+void
+default_job_launcher::handle_new_launch_request(app_launch_request* appman)
+{
+  ordered_node_set allocation;
+  task_mapping::ptr mapping = new task_mapping(appman->aid());
+  appman->request_allocation(available_, allocation);
+
+
+  for (const node_id& nid : allocation){
+    if (available_.find(nid) == available_.end()){
+      spkt_throw_printf(sprockit::value_error,
+                        "allocation requested node %d, but it's not available",
+                        int(nid));
+    }
+    available_.erase(nid);
+  }
+  appman->index_allocation(
+     topology_, allocation,
+     mapping->rank_to_node(),
+     mapping->node_to_rank());
+  satisfy_launch_request(appman, mapping);
+}
+
+void
+default_job_launcher::stop_event_received(job_stop_event *ev)
+{
+  task_mapping::remove_global_mapping(ev->aid(), ev->unique_name());
+}
+
+void
+exclusive_job_launcher::handle_new_launch_request(app_launch_request *appman)
+{
+  if (pending_requests_.empty()){
+    default_job_launcher::handle_new_launch_request(appman);
+  }
+  pending_requests_.push_back(appman);
+}
+
+void
+exclusive_job_launcher::stop_event_received(job_stop_event *ev)
+{
+  pending_requests_.pop_front();
+  if (!pending_requests_.empty()){
+    app_launch_request* next = pending_requests_.front();
+    default_job_launcher::handle_new_launch_request(next);
+  }
+}
+
+task_mapping::ptr
+task_mapping::global_mapping(app_id aid)
+{
+  auto iter = app_ids_launched_.find(aid);
+  if (iter == app_ids_launched_.end()){
+    spkt_abort_printf("cannot find global task mapping for %d", aid);
   }
   return iter->second;
 }
 
-node_id
-job_launcher::node_for_task(app_id aid, task_id tid) const
+task_mapping::ptr
+task_mapping::global_mapping(const std::string& name)
 {
-  auto iter = apps_launched_.find(aid);
-  if (iter == apps_launched_.end()){
-    spkt_throw(sprockit::value_error,
-               "cannot find launched application %d",
-               int(aid));
+  auto iter = app_names_launched_.find(name);
+  if (iter == app_names_launched_.end()){
+    spkt_abort_printf("cannot find global task mapping for %s", name.c_str());
   }
-  app_launch* appman = iter->second;
-  return appman->node_assignment(int(tid));
+  return iter->second;
 }
 
 void
-job_launcher::delete_statics()
+task_mapping::add_global_mapping(app_id aid, const std::string &unique_name, const task_mapping::ptr &mapping)
 {
-  if (static_launcher_) delete static_launcher_;
+  app_ids_launched_[aid] = mapping;
+  app_names_launched_[unique_name] = mapping;
+  local_refcounts_[aid]++;
 }
 
 void
-job_launcher::satisfy_launch_request(app_launch* appman, hw::node* nd)
-{
-  apps_launched_[appman->aid()] = appman;
-  if (nd->addr() != launch_root_)
-    return;
-
-  auto nodes = appman->node_assignments();
-  int num_ranks = nodes.size();
-  for (int rank=0; rank < num_ranks; ++rank){
-    sw::launch_event* lev = new launch_event(launch_event::Start,
-                                    appman->aid(),
-                                    rank, nodes[rank], launch_root_);
-    nd->os()->execute_kernel(ami::COMM_PMI_SEND, lev);
-  }
-}
-
-void
-default_job_launcher::handle_new_launch_request(app_launch* appman, hw::node* nd)
+task_mapping::remove_global_mapping(app_id aid, const std::string& name)
 {
   static thread_lock lock;
   lock.lock();
-  if (!appman->is_indexed()){
-    ordered_node_set allocation;
-    appman->request_allocation(available_, allocation);
-    for (const node_id& nid : allocation){
-      if (available_.find(nid) == available_.end()){
-        spkt_throw_printf(sprockit::value_error,
-                          "allocation requested node %d, but it's not available",
-                          int(nid));
-      }
-      available_.erase(nid);
-    }
-    appman->index_allocation(allocation);
+  auto iter = local_refcounts_.find(aid);
+  int& refcount = iter->second;
+  refcount--;
+  if (refcount == 0){
+    local_refcounts_.erase(iter);
+    app_ids_launched_.erase(aid);
+    app_names_launched_.erase(name);
   }
   lock.unlock();
-  satisfy_launch_request(appman, nd);
 }
 
 }

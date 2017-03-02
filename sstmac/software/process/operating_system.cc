@@ -849,7 +849,7 @@ operating_system::start_api_call()
 }
 
 void
-operating_system::start_app(app* theapp)
+operating_system::start_app(app* theapp, const std::string& unique_name)
 {
   os_debug("starting app %d:%d on thread %d",
     int(theapp->tid()), int(theapp->aid()), thread_id());
