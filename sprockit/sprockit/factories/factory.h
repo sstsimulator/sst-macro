@@ -302,6 +302,15 @@ class Factory
   }
 
  public:
+  static bool valid_param(const std::string& name, sprockit::sim_parameters* params) {
+    std::string value = params->get_param(name);
+    return builder_map_->find(value) != builder_map_->end();
+  }
+
+  static bool valid_value(const std::string& value) {
+    return builder_map_->find(value) != builder_map_->end();
+  }
+
   /**
    * @brief get_value Return a constructed child class corresponding
    *                  to a given string name

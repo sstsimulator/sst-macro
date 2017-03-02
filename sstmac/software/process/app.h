@@ -55,6 +55,11 @@ class app : public thread
   typedef int (*main_fxn)(int argc, char** argv);
   typedef int (*empty_main_fxn)();
 
+  struct factory {
+    static app* get_param(const std::string& name, sprockit::sim_parameters* params,
+                          software_id sid, operating_system* os);
+  };
+
   int
   allocate_tls_key(destructor_fxn fnx);
 

@@ -123,6 +123,11 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
         params, "ftq", "ftq");
 
   sstmac_global_stacksize = params->get_optional_byte_length_param("stack_size", 1 << 17);
+  //must be a multiple of 4096
+  int stack_rem = sstmac_global_stacksize % 4096;
+  if (stack_rem){
+    sstmac_global_stacksize += (4096 - stack_rem);
+  }
   bool mprot = params->get_optional_bool_param("stack_protect", false);
   long suggested_chunk_size = 1<22;
   long min_chunk_size = 8*sstmac_global_stacksize;

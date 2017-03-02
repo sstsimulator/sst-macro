@@ -40,8 +40,8 @@ app_launcher::incoming_event(event* ev)
   app_launch* launch = job_launcher::app_launcher(lev->aid());
   if (lev->type() == launch_event::Start){
     software_id sid(lev->aid(), lev->tid());
-    app* theapp = app_factory::get_param("name", launch->app_params(),
-                                         sid, os_);
+    //call to special factory instead of direct to other one
+    app* theapp = app::factory::get_param("name", launch->app_params(), sid, os_);
     int intranode_rank = num_apps_launched_[lev->aid()]++;
     int core_affinity = lev->core_affinity(intranode_rank);
     theapp->set_affinity(core_affinity);

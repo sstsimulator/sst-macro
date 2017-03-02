@@ -111,7 +111,8 @@ class sim_parameters  {
   parallel_build_params(sprockit::sim_parameters* params,
                         int me, int nproc,
                         const std::string& filename,
-                        param_bcaster* bcaster);
+                        param_bcaster* bcaster,
+                        bool fail_if_not_found = true);
 
   virtual ~sim_parameters();
 
@@ -413,7 +414,8 @@ class sim_parameters  {
   has_namespace(const std::string& ns) const;
 
   void
-  parse_file(const std::string& fname, bool fail_on_existing, bool override_existing);
+  parse_file(const std::string& fname, bool fail_on_existing,
+             bool override_existing, bool fail_if_not_found = true);
 
   void
   parse_stream(std::istream& in, bool fail_on_existing, bool override_existing);

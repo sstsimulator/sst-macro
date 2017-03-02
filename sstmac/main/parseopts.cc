@@ -85,7 +85,10 @@ parse_opts(int argc, char **argv, opts &oo)
         activate_debugs(optarg);
         break;
       case 'a': {
-        oo.configfile = "debug.ini";
+        sprockit::sim_parameters* params = new sprockit::sim_parameters("debug.ini");
+        params->combine_into(oo.params);
+        oo.configRequired = false;
+        delete params;
         break;
       }
       case 'n' : {

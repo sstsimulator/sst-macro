@@ -89,6 +89,7 @@ struct GlobalVarNamespace
 
 };
 
+FunctionDecl* mainFxn = nullptr;
 std::map<NamedDecl*,std::string> globals;
 GlobalVarNamespace globalNamespace;
 GlobalVarNamespace* currentNamespace = &globalNamespace;
@@ -147,11 +148,14 @@ class FindGlobalASTVisitor : public RecursiveASTVisitor<FindGlobalASTVisitor> {
     std::string retType;
     const Type* ty  = D->getType().getTypePtr();
     bool isC99array = ty->isArrayType();
+    //varRepl will hold the replacement text that we will use in the map
     if (isC99array){
       const ArrayType* aty = ty->getAsArrayTypeUnsafe();
-      retType = QualType::getAsString(aty->getElementType().split()) + "**";
+      retType = QualType::getAsString(aty->getElementType().split()) + "*";
+      varRepl = "(" + currentNamespace->nsPrefix() + "get_" + sstVarName + "())";
     } else {
       retType = QualType::getAsString(D->getType().split()) + "*";
+      varRepl = "(*" + currentNamespace->nsPrefix() + "get_" + sstVarName + "())";
     }
 
     // add the variable that stores the TLS offset
@@ -161,13 +165,11 @@ class FindGlobalASTVisitor : public RecursiveASTVisitor<FindGlobalASTVisitor> {
     os << "static inline " << retType
        << " get_" << sstVarName << "(){\n"
        << " int stack; int* stackPtr = &stack;\n"
-       << " uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize" //find bottom of stack
-       << " + __offset_" << sstVarName << ";\n" //add the variable's offset to get the TLS
-       << " return (((" << retType << ")((void*)localStorage)));\n"
+       << " uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;\n" //find bottom of stack
+       << " char* offsetPtr = *((char**)localStorage) + __offset_" << sstVarName << ";\n" //add the variable's offset to get the TLS
+       << " return (((" << retType << ")((void*)offsetPtr)));\n"
        << "}\n";
 
-    //now put the replacement that we will use in the map
-    varRepl = "(*" + currentNamespace->nsPrefix() + "get_" + sstVarName + "())";
 
     /** find end of decl - need it for replacements */
     SourceLocation endLoc = Lexer::findLocationAfterToken(D->getLocEnd(), tok::semi,
@@ -177,6 +179,9 @@ class FindGlobalASTVisitor : public RecursiveASTVisitor<FindGlobalASTVisitor> {
   }
 
   bool TraverseFunctionDecl(FunctionDecl* D){
+    if (D->isMain()){
+      mainFxn = D;
+    }
     return false;
   }
 
@@ -276,6 +281,16 @@ class MyFrontendAction : public ASTFrontendAction {
   void EndSourceFileAction() override {
     SourceManager &SM = TheRewriter.getSourceMgr();
 
+    if (mainFxn){
+      std::stringstream sstr;
+      sstr << "#define SSTPP_STR(name) SSTPP_QUOTE(name)\n"
+           << "#define SST_APP_NAME_QUOTED SSTPP_STR(sstmac_app_name)\n"
+           << "const char SSTMAC_USER_APPNAME[] = SST_APP_NAME_QUOTED;\n"
+           << "#undef main\n"
+           << "#define main SSTMAC_USER_MAIN\n";
+      TheRewriter.InsertText(mainFxn->getLocStart(), sstr.str(), false);
+    }
+
     std::string sourceFile = SM.getFileEntryForID(SM.getMainFileID())->getName().str();
     std::string sstSourceFile, sstGlobalFile;
     std::size_t lastSlashPos = sourceFile.find_last_of("/");
@@ -298,6 +313,12 @@ class MyFrontendAction : public ASTFrontendAction {
       //add the header files needed
       ofs << "#include <sstmac/software/process/global.h>\n\n";
       globalNamespace.genSSTCode(ofs,"");
+      if (mainFxn){
+        ofs << "int user_skeleton_main_init_fxn(const char* name, int (*foo)(int,char**));\n"
+           << "extern const char SSTMAC_USER_APPNAME[];\n"
+           << "extern \"C\" int SSTMAC_USER_MAIN(int argc, char** argv);\n"
+           << "static int dont_ignore_this = user_skeleton_main_init_fxn(SSTMAC_USER_APPNAME, SSTMAC_USER_MAIN);\n\n";
+      }
     } else {
       llvm::errs() << "Failed opening " << sstGlobalFile << "\n";
       abort();

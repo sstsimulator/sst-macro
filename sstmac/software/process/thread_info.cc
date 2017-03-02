@@ -1,4 +1,5 @@
 #include <sstmac/software/process/thread_info.h>
+#include <sstmac/software/process/tls.h>
 #include <sstmac/common/thread_lock.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sprockit/errors.h>
@@ -21,14 +22,12 @@ thread_info::register_user_space_virtual_thread(int phys_thread_id, void *stack,
         sstmac_global_stacksize);
   }
 
-  printf("Registering thread %d with globalsMap %p\n", phys_thread_id, globalsMap);
-
   //essentially treat this as thread-local storage
   int* tls = (int*) stack;
-  tls[0] = phys_thread_id;
-  tls[1] = tls_sanity_check;
+  tls[TLS_THREAD_ID] = phys_thread_id;
+  tls[TLS_SANITY_CHECK] = tls_sanity_check;
   //this is dirty - so dirty, but it works
-  void** globalPtr = (void**) &tls[2];
+  void** globalPtr = (void**) &tls[TLS_GLOBAL_MAP];
   *globalPtr = globalsMap;
 }
 

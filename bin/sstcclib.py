@@ -301,7 +301,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         #now we generate the .o file containing the CXX linkage 
         #for global variable CXX init - because C is stupid
         cxxInitObjFile = "sstGlobals." + srcFile + ".o"
-        cxxInitCompileCmd = "%s -o %s -I%s/include -c %s" % (compiler, cxxInitObjFile, prefix, cxxInitSrcFile)
+        cxxInitCompileCmd = "%s -o %s -I%s/include -c %s" % (cxx, cxxInitObjFile, prefix, cxxInitSrcFile)
         if verbose: sys.stderr.write("%s\n" % cxxInitCompileCmd)
         rc = os.system(cxxInitCompileCmd)
         if delTempFiles:
@@ -327,7 +327,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         #now we have to merge the src-to-src generated .o with cxx linkage .o
         if manyObjects:
           #we need to generate a .o for each source file
-          cxxMergeCmd = "%s -Wl,-r %s %s -o %s" % (compiler, srcTformObjFile, cxxInitObjFile, srcObjTarget)
+          cxxMergeCmd = "%s -Wl,-r %s %s -o %s" % (cxx, srcTformObjFile, cxxInitObjFile, srcObjTarget)
           if verbose: sys.stderr.write("%s\n" % cxxMergeCmd)
           rc, output = commands.getstatusoutput(cxxMergeCmd)
           if delTempFiles:
