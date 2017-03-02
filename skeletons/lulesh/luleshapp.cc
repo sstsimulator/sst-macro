@@ -50,29 +50,16 @@ namespace luleshmodel
 
     if (rank == 0)
     {
-      //SSTMAC_DEBUG << "------------------------------------------------------------\n";
-      //SSTMAC_DEBUG << "Sandia Nat. Labs LULESH Hydro. SSTMacro Model.\n";
-      //SSTMAC_DEBUG << "Computer Science Research Institute, NM\n";
-      //SSTMAC_DEBUG << "------------------------------------------------------------\n";
-      //SSTMAC_DEBUG << "\n";
-      //SSTMAC_DEBUG << "** DEVELOPMENTAL DO NOT USE FOR PRODUCTION **\n";
-      //SSTMAC_DEBUG << "\n";
-      //SSTMAC_DEBUG << "This is an early unvalidated simulation model.\n";
-      //SSTMAC_DEBUG << "\n";
-      //SSTMAC_DEBUG << "------------------------------------------------------------\n";
-    }
-
-    if (rank == 0)
-    {
-      //SSTMAC_DEBUG << "Simulation Information:\n";
-      //SSTMAC_DEBUG << " -> NPEs (Total):     " << npes << "\n";
-      //SSTMAC_DEBUG << " -> PE(x):            " << pe_x << "\n";
-      //SSTMAC_DEBUG << " -> PE(y):            " << pe_y << "\n";
-      //SSTMAC_DEBUG << " -> PE(z):            " << pe_z << "\n";
-      //SSTMAC_DEBUG << " -> N(x) (Subdomain): " << nx << "\n";
-      //SSTMAC_DEBUG << " -> N(y) (Subdomain): " << ny << "\n";
-      //SSTMAC_DEBUG << " -> N(z) (Subdomain): " << nz << "\n";
-      //SSTMAC_DEBUG << " -> Iter (Max):       " << iter_max << "\n";
+      printf("Simulation Information:\n"
+        " -> NPEs (Total):     %d\n"
+        " -> PE(x):            %d\n"
+        " -> PE(y):            %d\n"
+        " -> PE(z):            %d\n"
+        " -> N(x) (Subdomain): %d\n"
+        " -> N(y) (Subdomain): %d\n"
+        " -> N(z) (Subdomain): %d\n"
+        " -> Iter (Max):       %d\n",
+        npes, pe_x, pe_y, pe_z, nx, ny, nz, iter_max);
     }
 
     double start_main = MPI_Wtime();
@@ -333,19 +320,6 @@ namespace luleshmodel
     int corner_g_id(corner_g % size);
     int corner_h_id(corner_h % size);
 
-    /*//SSTMAC_DEBUG << "rank=%d, x-left=%d, x-right=%d, y-left=%d, y-right=%d, z-down=%d, z-up=%d, px=%d,",
-     rank, x_left, x_right, y_left, y_right, z_down, z_up, px;
-     //SSTMAC_DEBUG << "rank=%d, a=%d, b=%d, c=%d, d=%d, e=%d, f=%d, g=%d, h=%d, i=%d, j=%d, k=%d, l=%d\n",
-     rank, edge_a, edge_b, edge_c, edge_d, edge_e, edge_f, edge_g, edge_h, edge_i,
-     edge_j, edge_k, edge_l;*/
-    /*printf("rank=%d, x-left=%d, x-right=%d, y-left=%d, y-right=%d, z-down=%d, z-up=%d, px=%d,",
-     rank, x_left, x_right, y_left, y_right, z_down, z_up, px);
-     printf("rank=%d, a=%d, b=%d, c=%d, d=%d, e=%d, f=%d, g=%d, h=%d, i=%d, j=%d, k=%d, l=%d\n",
-     rank, edge_a, edge_b, edge_c, edge_d, edge_e, edge_f, edge_g, edge_h, edge_i,
-     edge_j, edge_k, edge_l);
-     printf("rank=%d, c_a=%d, c_b=%d, c_c=%d, c_d=%d, c_e=%d, c_f=%d, c_g=%d, c_h=%d\n",
-     corner_a, corner_b, corner_c, corner_d, corner_e, corner_g, corner_h);*/
-
     int next_recv = 0;
 
     // 3 is the default setting for xfer-fields.
@@ -357,126 +331,108 @@ namespace luleshmodel
     {
       MPI_Irecv(NULL, plane_message_size, MPI_DOUBLE,
           x_left_id, tag, world_, &reqs[next_recv++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted x_left recv to " << x_left_id << "\n";
     }
 
     if (x_right > -1)
     {
       MPI_Irecv(NULL, plane_message_size, MPI_DOUBLE,
           x_right_id, tag, world_, &reqs[next_recv++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted x_right recv to "  << x_right_id << "\n";
     }
 
     if (y_left > -1)
     {
       MPI_Irecv(NULL, plane_message_size, MPI_DOUBLE,
           y_left_id, tag, world_, &reqs[next_recv++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted y_left recv to " << y_left_id << "\n";
     }
 
     if (y_right > -1)
     {
       MPI_Irecv(NULL, plane_message_size, MPI_DOUBLE,
           y_right_id, tag, world_, &reqs[next_recv++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted x_right recv to " << x_right_id << "\n";
     }
 
     if (z_down > -1)
     {
       MPI_Irecv(NULL, plane_message_size, MPI_DOUBLE,
           z_down_id, tag, world_, &reqs[next_recv++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted z_down recv to " << z_down_id << "\n";
     }
 
     if (z_up > -1)
     {
       MPI_Irecv(NULL, plane_message_size, MPI_DOUBLE,
           z_up_id, tag, world_, &reqs[next_recv++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted z_up recv to " << z_up_id << "\n";
     }
 
     if (edge_a > -1)
     {
       MPI_Irecv(NULL, pencil_message_size, MPI_DOUBLE,
           edge_a_id, tag, world_, &reqs[next_recv++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted edge_a recv to " << edge_a_id << "\n";
     }
 
     if (edge_b > -1)
     {
       MPI_Irecv(NULL, pencil_message_size, MPI_DOUBLE,
           edge_b_id, tag, world_, &reqs[next_recv++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted edge_b recv to " << edge_b_id << "\n";
     }
 
     if (edge_c > -1)
     {
       MPI_Irecv(NULL, pencil_message_size, MPI_DOUBLE,
           edge_c_id, tag, world_, &reqs[next_recv++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted edge_c recv to " << edge_c_id << "\n";
     }
 
     if (edge_d > -1)
     {
       MPI_Irecv(NULL, pencil_message_size, MPI_DOUBLE,
           edge_d_id, tag, world_, &reqs[next_recv++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted edge_d recv to " << edge_d_id << "\n";
     }
 
     if (edge_e > -1)
     {
       MPI_Irecv(NULL, pencil_message_size, MPI_DOUBLE,
           edge_e_id, tag, world_, &reqs[next_recv++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted edge_e recv to " << edge_e_id << "\n";
     }
 
     if (edge_f > -1)
     {
       MPI_Irecv(NULL, pencil_message_size, MPI_DOUBLE,
           edge_f_id, tag, world_, &reqs[next_recv++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted edge_f recv to " << edge_f_id << "\n";
     }
 
     if (edge_g > -1)
     {
       MPI_Irecv(NULL, pencil_message_size, MPI_DOUBLE,
           edge_g_id, tag, world_, &reqs[next_recv++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted edge_g recv to " << edge_g_id << "\n";
     }
 
     if (edge_h > -1)
     {
       MPI_Irecv(NULL, pencil_message_size, MPI_DOUBLE,
           edge_h_id, tag, world_, &reqs[next_recv++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted edge_h recv to " << edge_h_id << "\n";
     }
 
     if (edge_i > -1)
     {
       MPI_Irecv(NULL, pencil_message_size, MPI_DOUBLE,
           edge_i_id, tag, world_, &reqs[next_recv++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted edge_i recv to " << edge_i_id << "\n";
     }
 
     if (edge_j > -1)
     {
       MPI_Irecv(NULL, pencil_message_size, MPI_DOUBLE,
           edge_j_id, tag, world_, &reqs[next_recv++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted edge_j recv to " << edge_j_id << "\n";
     }
 
     if (edge_k > -1)
     {
       MPI_Irecv(NULL, pencil_message_size, MPI_DOUBLE,
           edge_k_id, tag, world_, &reqs[next_recv++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted edge_k recv to " << edge_k_id << "\n";
     }
 
     if (edge_l > -1)
     {
       MPI_Irecv(NULL, pencil_message_size, MPI_DOUBLE,
           edge_l_id, tag, world_, &reqs[next_recv++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted edge_l recv to " << edge_l_id << "\n";
     }
 
     if (corner_a > -1)
@@ -526,9 +482,6 @@ namespace luleshmodel
       MPI_Irecv(NULL, corner_message_size, MPI_DOUBLE,
           corner_h_id, tag, world_, &reqs[next_recv++]);
     }
-
-    //printf("rank=%d, posted %d receives\n", rank, next_recv);
-
   }
 
   void
@@ -550,7 +503,6 @@ namespace luleshmodel
     {
       x_left = rank - 1;
       message_count++;
-      //SSTMAC_DEBUG << "rank=" << rank << " find x_left\n";
     }
     else
       x_left = -1;
@@ -560,7 +512,6 @@ namespace luleshmodel
     {
       x_right = rank + 1;
       message_count++;
-      //SSTMAC_DEBUG << "rank=" << rank << " find x_right\n";
     }
     else
       x_right = -1;
@@ -571,7 +522,6 @@ namespace luleshmodel
     {
       y_left = rank + px;
       message_count++;
-      //SSTMAC_DEBUG << "rank=" << rank << " find y_left\n";
     }
     else
       y_left = -1;
@@ -581,7 +531,6 @@ namespace luleshmodel
     {
       y_right = rank - px;
       message_count++;
-      //SSTMAC_DEBUG << "rank=" << rank << " find y_right\n";
     }
     else
       y_right = -1;
@@ -591,7 +540,6 @@ namespace luleshmodel
     {
       z_down = rank + (px * px);
       message_count++;
-      //SSTMAC_DEBUG << "rank=" << rank << " find z_downl\n";
     }
     else
       z_down = -1;
@@ -601,7 +549,6 @@ namespace luleshmodel
     {
       z_up = rank - (px * px);
       message_count++;
-      //SSTMAC_DEBUG << "rank=" << rank << " find z_up\n";
     }
     else
       z_up = -1;
@@ -613,7 +560,6 @@ namespace luleshmodel
     {
       edge_a = z_down - px;
       message_count++;
-      //SSTMAC_DEBUG << "rank=" << rank << " find edge_a\n";
     }
     else
       edge_a = -1;
@@ -623,7 +569,6 @@ namespace luleshmodel
     {
       edge_b = x_left - px;
       message_count++;
-      //SSTMAC_DEBUG << "rank=" << rank << " find edge_b\n";
     }
     else
       edge_b = -1;
@@ -633,7 +578,6 @@ namespace luleshmodel
     {
       edge_c = z_up - px;
       message_count++;
-      //SSTMAC_DEBUG << "rank=" << rank << " find edge_c\n";
     }
     else
       edge_c = -1;
@@ -643,7 +587,6 @@ namespace luleshmodel
     {
       edge_d = y_right + 1;
       message_count++;
-      //SSTMAC_DEBUG << "rank=" << rank << " find edge_d\n";
     }
     else
       edge_d = -1;
@@ -653,7 +596,6 @@ namespace luleshmodel
     {
       edge_e = z_down - 1;
       message_count++;
-      //SSTMAC_DEBUG << "rank=" << rank << " find edge_e\n";
     }
     else
       edge_e = -1;
@@ -663,7 +605,6 @@ namespace luleshmodel
     {
       edge_f = z_up - 1;
       message_count++;
-      //SSTMAC_DEBUG << "rank=" << rank << " find edge_f\n";
     }
     else
       edge_f = -1;
@@ -673,7 +614,6 @@ namespace luleshmodel
     {
       edge_g = z_up + 1;
       message_count++;
-      //SSTMAC_DEBUG << "rank=" << rank << " find edge_g\n";
     }
     else
       edge_g = -1;
@@ -683,7 +623,6 @@ namespace luleshmodel
     {
       edge_h = z_down + 1;
       message_count++;
-      //SSTMAC_DEBUG << "rank=" << rank << " find edge_h\n";
     }
     else
       edge_h = -1;
@@ -693,7 +632,6 @@ namespace luleshmodel
     {
       edge_i = z_up + px;
       message_count++;
-      //SSTMAC_DEBUG << "rank=" << rank << " find edge_i\n";
     }
     else
       edge_i = -1;
@@ -703,7 +641,6 @@ namespace luleshmodel
     {
       edge_j = x_left + px;
       message_count++;
-      //SSTMAC_DEBUG << "rank=" << rank << " find edge_j\n";
     }
     else
       edge_j = -1;
@@ -713,7 +650,6 @@ namespace luleshmodel
     {
       edge_k = z_down + px;
       message_count++;
-      //SSTMAC_DEBUG << "rank=" << rank << " find edge_k\n";
     }
     else
       edge_k = -1;
@@ -723,7 +659,6 @@ namespace luleshmodel
     {
       edge_l = x_right + px;
       message_count++;
-      //SSTMAC_DEBUG << "rank=" << rank << " find edge_l\n";
     }
     else
       edge_l = -1;
@@ -824,7 +759,6 @@ namespace luleshmodel
     int corner_h_id(corner_h % size);
 
     const int expected_recvs = message_count;
-    //printf("rank=%d, send calculates %d receives were posted.\n", rank, message_count);
 
     // 3 is the default setting for xfer-fields.
     const int plane_message_size = nx * nx * 3;
@@ -835,126 +769,108 @@ namespace luleshmodel
     {
       MPI_Isend(NULL, plane_message_size, MPI_DOUBLE,
           x_left_id, tag, world_, &reqs[message_count++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted x_left send to " << x_left_id << "\n";
     }
 
     if (x_right > -1)
     {
       MPI_Isend(NULL, plane_message_size, MPI_DOUBLE,
           x_right_id, tag, world_, &reqs[message_count++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted x_right send to " << x_right_id << "\n";
     }
 
     if (y_left > -1)
     {
       MPI_Isend(NULL, plane_message_size, MPI_DOUBLE,
           y_left_id, tag, world_, &reqs[message_count++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted y_left send to " << y_left_id << "\n";
     }
 
     if (y_right > -1)
     {
       MPI_Isend(NULL, plane_message_size, MPI_DOUBLE,
           y_right_id, tag, world_, &reqs[message_count++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted y_right send to " << y_right_id << "\n";
     }
 
     if (z_down > -1)
     {
       MPI_Isend(NULL, plane_message_size, MPI_DOUBLE,
           z_down_id, tag, world_, &reqs[message_count++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted z_down send to " << z_down_id << "\n";
     }
 
     if (z_up > -1)
     {
       MPI_Isend(NULL, plane_message_size, MPI_DOUBLE,
           z_up_id, tag, world_, &reqs[message_count++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted z_up send to " << z_up_id << "\n";
     }
 
     if (edge_a > -1)
     {
       MPI_Isend(NULL, pencil_message_size, MPI_DOUBLE,
           edge_a_id, tag, world_, &reqs[message_count++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted edge_a send to " << edge_a_id << "\n";
     }
 
     if (edge_b > -1)
     {
       MPI_Isend(NULL, pencil_message_size, MPI_DOUBLE,
           edge_b_id, tag, world_, &reqs[message_count++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted edge_b send to " << edge_b_id << "\n";
     }
 
     if (edge_c > -1)
     {
       MPI_Isend(NULL, pencil_message_size, MPI_DOUBLE,
           edge_c_id, tag, world_, &reqs[message_count++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted edge_c send to " << edge_c_id << "\n";
     }
 
     if (edge_d > -1)
     {
       MPI_Isend(NULL, pencil_message_size, MPI_DOUBLE,
           edge_d_id, tag, world_, &reqs[message_count++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted edge_d send to " << edge_d_id << "\n";
     }
 
     if (edge_e > -1)
     {
       MPI_Isend(NULL, pencil_message_size, MPI_DOUBLE,
           edge_e_id, tag, world_, &reqs[message_count++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted edge_e send to " << edge_e_id << "\n";
     }
 
     if (edge_f > -1)
     {
       MPI_Isend(NULL, pencil_message_size, MPI_DOUBLE,
           edge_f_id, tag, world_, &reqs[message_count++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted edge_f send to " << edge_f_id << "\n";
     }
 
     if (edge_g > -1)
     {
       MPI_Isend(NULL, pencil_message_size, MPI_DOUBLE,
           edge_g_id, tag, world_, &reqs[message_count++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted edge_g send to " << edge_g_id << "\n";
     }
 
     if (edge_h > -1)
     {
       MPI_Isend(NULL, pencil_message_size, MPI_DOUBLE,
           edge_h_id, tag, world_, &reqs[message_count++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted edge_h send to " << edge_h_id << "\n";
     }
 
     if (edge_i > -1)
     {
       MPI_Isend(NULL, pencil_message_size, MPI_DOUBLE,
           edge_i_id, tag, world_, &reqs[message_count++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted edge_i send to "<< edge_i_id << "\n";
     }
 
     if (edge_j > -1)
     {
       MPI_Isend(NULL, pencil_message_size, MPI_DOUBLE,
           edge_j_id, tag, world_, &reqs[message_count++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted edge_j send to " << edge_j_id << "\n";
     }
 
     if (edge_k > -1)
     {
       MPI_Isend(NULL, pencil_message_size, MPI_DOUBLE,
           edge_k_id, tag, world_, &reqs[message_count++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted edge_k send to " << edge_k_id << "\n";
     }
 
     if (edge_l > -1)
     {
       MPI_Isend(NULL, pencil_message_size, MPI_DOUBLE,
           edge_l_id, tag, world_, &reqs[message_count++]);
-      //SSTMAC_DEBUG << "rank=" << rank << " posted edge_l send to " << edge_l_id << "\n";
     }
 
     if (corner_a > -1)
@@ -1019,9 +935,7 @@ namespace luleshmodel
       req_vec[i] = reqs[i];
     }
 
-    //SSTMAC_DEBUG << "rank=" << rank << " waitall posted: " << message_count << " messages.\n";
     MPI_Waitall(message_count, req_vec, status_vec);
-    //SSTMAC_DEBUG << "DONE.\n";
 
     MPI_Barrier(world_);
   }
@@ -1357,8 +1271,10 @@ namespace luleshmodel
 
   // Overrides app::consum_params virtual function
 
-  luleshapp::luleshapp(sprockit::sim_parameters* params, software_id sid) :
-    app(params, sid)
+  luleshapp::luleshapp(sprockit::sim_parameters* params, 
+                       software_id sid,
+                       operating_system* os) :
+    app(params, sid, os)
   {
     usetopo_ = params->get_optional_bool_param("use_libtopomap", false);
     SPTL_INTEGRATE_STRESS_ELEMS = atof(
@@ -1398,7 +1314,6 @@ namespace luleshmodel
     SPTL_CALC_ENERGY_FOR_ELEMS = atof(
         params->get_param("SPTL_CALC_ENERGY_FOR_ELEMS").c_str());
 
-    //printf("SPTL_CALC_ENERGY_FOR_ELEMS = %f\n", SPTL_CALC_ENERGY_FOR_ELEMS);
   }
 
 } // end of namespace hellosim

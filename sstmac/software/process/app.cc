@@ -13,6 +13,9 @@
 #include <sstmac/software/api/api.h>
 #include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/process/backtrace.h>
+#include <sstmac/common/sstmac_env.h>
+#include <sstmac/dumpi_util/dumpi_meta.h>
 #include <sstmac/software/launch/job_launcher.h>
 #include <sstmac/software/launch/launch_event.h>
 #include <sstmac/common/sstmac_env.h>
@@ -214,6 +217,7 @@ app::_get_api(const char* name)
 void
 app::run()
 {
+  SSTMACBacktrace("main");
   skeleton_main();
   for (auto& pair : apis_){
     delete pair.second;

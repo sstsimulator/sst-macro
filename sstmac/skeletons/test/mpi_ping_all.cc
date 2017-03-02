@@ -18,8 +18,6 @@ RegisterKeywords("print_times",
 
 int USER_MAIN(int argc, char** argv)
 {
-
-  SSTMACBacktrace("main");
   MPI_Init(&argc, &argv);
 
   sstmac::runtime::add_deadlock_check(

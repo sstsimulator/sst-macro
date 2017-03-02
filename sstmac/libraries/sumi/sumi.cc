@@ -86,6 +86,12 @@ comm_allreduce(void *dst, void *src, int nelems, int type_size, int tag, reduce_
 }
 
 void
+comm_scan(void *dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn, bool fault_aware, int context, communicator* dom)
+{
+  current_transport()->scan(dst, src, nelems, type_size, tag, fxn, fault_aware, context, dom);
+}
+
+void
 comm_reduce(int root, void *dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn,
             bool fault_aware, int context, communicator* dom)
 {
