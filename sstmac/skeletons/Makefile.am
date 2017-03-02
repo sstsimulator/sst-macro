@@ -13,8 +13,14 @@ include $(top_srcdir)/Makefile.common
 noinst_LTLIBRARIES = libsstmac_skeletons.la
 library_includedir=$(includedir)/sstmac/skeletons
 
+if HAVE_OTF2
+AM_CPPFLAGS += $(OTF2_CPPFLAGS)
+AM_LDFLAGS += $(OTF2_LDFLAGS)
+endif
+
 AM_CPPFLAGS += -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi -I$(top_builddir)/sumi -I$(top_srcdir)/sumi
 AM_CPPFLAGS += -I$(top_builddir)/sstmac/replacements -I$(top_srcdir)/sstmac/replacements
+AM_LDFLAGS += -lotf2
 
 libsstmac_skeletons_la_LDFLAGS = 
 
@@ -31,6 +37,15 @@ libsstmac_skeletons_la_SOURCES = \
   sumi_undumpi/parsedumpi.cc \
   sumi_undumpi/parsedumpi_callbacks.cc \
   test/sstmac_mpi_test_all.cc 
+
+if HAVE_OTF2
+  libsstmac_skeletons_la_SOURCES += \
+  otf2_trace_replay/callbase_impl.cc \
+  otf2_trace_replay/callbacks.cc \
+  otf2_trace_replay/callqueue.cc \
+  otf2_trace_replay/otf2_trace_replay.cc \
+  otf2_trace_replay/structures.cc
+endif
 
 nobase_library_include_HEADERS = \
   sumi_undumpi/parsedumpi.h \
