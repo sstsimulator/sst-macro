@@ -86,8 +86,8 @@ class nic :
    * @return The absolute time the requested NIC operation completes
    */
   timestamp
-  nic_operation() {
-    next_free_ += nic_use_delay_;
+  nic_operation(long bytes) {
+    next_free_ += post_latency_ + timestamp(post_inv_bw_ * bytes);
     return next_free_;
   }
 
@@ -191,7 +191,8 @@ class nic :
   stat_local_int* local_bytes_sent_;
   stat_global_int* global_bytes_sent_;
   timestamp next_free_;
-  timestamp nic_use_delay_;
+  timestamp post_latency_;
+  double post_inv_bw_;
 
  private:
   /**

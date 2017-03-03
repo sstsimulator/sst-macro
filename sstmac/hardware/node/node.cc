@@ -281,7 +281,7 @@ node::send_to_nic(network_message* netmsg)
   netmsg->set_flow_id(allocate_unique_id());
   netmsg->put_on_wire();
 
-  timestamp op_complete = nic_->nic_operation();
+  timestamp op_complete = nic_->nic_operation(netmsg->byte_length());
   os_->sleep_until(op_complete);
 
   if (netmsg->toaddr() == my_addr_){

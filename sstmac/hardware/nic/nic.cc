@@ -35,6 +35,8 @@ RegisterNamespaces("nic", "message_sizes", "traffic_matrix",
 RegisterKeywords(
 "nic_name",
 "network_spyplot",
+"post_bandwidth",
+"post_latency",
 );
 
 #define DEFAULT_NEGLIGIBLE_SIZE 256
@@ -54,13 +56,22 @@ nic::nic(sprockit::sim_parameters* params, node* parent) :
   logp_switch_(nullptr),
   event_mtl_handler_(nullptr),
   my_addr_(parent->addr()),
+  post_inv_bw_(0),
+  post_latency_(0),
   next_free_(0),
   connectable_subcomponent(parent) //no self events with NIC
 {
   event_mtl_handler_ = new_handler(this, &nic::mtl_handle);
   node_handler_ = new_handler(parent, &node::handle);
 
-  nic_use_delay_ = params->get_optional_time_param("use_delay", 0);
+  if (params->has_param("post_latency")){
+    post_latency_ = params->get_time_param("post_latency");
+    sprockit::sim_parameters* inj_params = params->get_namespace("injection");
+    double bw = inj_params->get_bandwidth_param("bandwidth");
+    post_inv_bw_ = 1.0 / bw;
+  }
+
+
 
   negligible_size_ = params->get_optional_int_param("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
 

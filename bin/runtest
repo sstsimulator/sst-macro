@@ -181,9 +181,10 @@ def checkValgrind(tmpFile):
     "stack_alloc::alloc",
     "total heap usage",
     "vfprintf_l",
+    "copySwiftV1MangledName",
   ]
 
-  block_regexp = re.compile("bytes in \d+ blocks(.*?)== \n",re.DOTALL)
+  block_regexp = re.compile("bytes in [,\d]+ blocks(.*?)== \n",re.DOTALL)
   blocks = block_regexp.findall(text)
   text_arr = []
   nfailures = 0
