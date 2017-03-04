@@ -50,8 +50,10 @@ public:
 
     void start_mpi(const sstmac::timestamp);
     void end_mpi(const sstmac::timestamp);
+    void add_request(dumpi_request, MPI_Request);
 
     int rank = -1;
+    long total_events = 0;
 
     OTF2_ClockProperties otf2_clock_properties;
 	vector<string> otf2_string_table;
@@ -67,6 +69,8 @@ private:
     OTF2_Reader* initialize_event_reader();
     void initiate_trace_replay(OTF2_Reader*);
     void verify_replay_success();
+
+    unordered_map<dumpi_request, MPI_Request> request_map;
 
 private:
     CallQueue call_queue_;

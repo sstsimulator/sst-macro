@@ -11,6 +11,7 @@
 
 #include "otf2_trace_replay.h"
 #include "callbacks.h"
+#include <algorithm>
 
 OTF2_GlobalDefReaderCallbacks* create_global_def_callbacks() {
     OTF2_GlobalDefReaderCallbacks* callbacks = OTF2_GlobalDefReaderCallbacks_New();
@@ -67,6 +68,7 @@ OTF2_trace_replay_app::OTF2_trace_replay_app(sprockit::sim_parameters* params,
     print_progress_ = params->get_optional_bool_param("otf2_print_progress", true);
     metafile_ = params->get_param("otf2_metafile");
 }
+
 void OTF2_trace_replay_app::skeleton_main() {
     rank = this->tid();
 
@@ -100,6 +102,10 @@ void OTF2_trace_replay_app::end_mpi(const sstmac::timestamp wall) {
     compute_time = wall;
 }
 
+void OTF2_trace_replay_app::add_request(dumpi_request dr_req, MPI_Request req) {
+	request_map[dr_req] = req;
+}
+
 struct c_vector {
     size_t capacity;
     size_t size;
@@ -109,14 +115,13 @@ struct c_vector {
 // What did this function do. It caused a memory error, disabling it doesn't seem to affect trace replay.
 static OTF2_CallbackCode GlobDefLocation_Register(void* userData,
         OTF2_LocationRef location, OTF2_StringRef name,
-        OTF2_LocationType locationType, uint64_t numberOfEvents,
+        OTF2_LocationType locationType,
+		uint64_t numberOfEvents,
         OTF2_LocationGroupRef locationGroup) {
-    //struct c_vector* locations = (c_vector*) userData;
 
-    //if (locations->size == locations->capacity)
-    //    return OTF2_CALLBACK_INTERRUPT;
+	auto app = (OTF2_trace_replay_app*)userData;
+	app->total_events += numberOfEvents;
 
-    //locations->members[locations->size++] = location;
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -124,6 +129,7 @@ OTF2_Reader* OTF2_trace_replay_app::initialize_event_reader() {
 
 	// OTF2 has an excellent API
 	uint64_t number_of_locations;
+	//uint64_t trace_length = 0;
     auto reader = OTF2_Reader_Open(metafile_.c_str());
     OTF2_Reader_SetSerialCollectiveCallbacks(reader);
     check_status(OTF2_Reader_GetNumberOfLocations(reader, &number_of_locations), "OTF2_Reader_GetNumberOfLocations\n");
@@ -142,6 +148,7 @@ OTF2_Reader* OTF2_trace_replay_app::initialize_event_reader() {
                  "OTF2_Reader_ReadAllGlobalDefinitions\n");
 
     for (size_t i = 0; i < locations->size; i++) {
+    	cout << "registering def reader" << endl;
         check_status(OTF2_Reader_SelectLocation(reader, locations->members[i]),
                      "OTF2_Reader_ReadAllGlobalDefinitions\n");
     }
@@ -184,20 +191,42 @@ OTF2_Reader* OTF2_trace_replay_app::initialize_event_reader() {
                                          event_callbacks, (void*)this),
         "OTF2_Reader_RegisterGlobalEvtCallbacks\n");
     OTF2_EvtReaderCallbacks_Delete(event_callbacks);
+
+    //cout << trace_length << endl;
     return reader;
 }
 
+inline int handle_events(OTF2_Reader* reader, OTF2_EvtReader* event_reader, uint64_t events_to_read) {
+	uint64_t events_read = 0;
+	check_status(OTF2_Reader_ReadLocalEvents(reader, event_reader, events_to_read, &events_read),"Trace replay failure\n");
+	return events_read;
+}
+
 void OTF2_trace_replay_app::initiate_trace_replay(OTF2_Reader* reader) {
-    /* Change these variables and write a loop if we want to
-     * print percentage complete and terminate at a percent */
-    uint64_t events_to_read = OTF2_UNDEFINED_UINT64;
-    uint64_t events_read = events_to_read;
+	uint64_t total_events_to_read, events_per_percent, events_read;
+    total_events_to_read = total_events*(terminate_percent_/100.0);
+    events_per_percent = total_events_to_read/100;
+    events_read = 0;
 
     // get the trace reader corresponding to the rank
     OTF2_EvtReader* event_reader = OTF2_Reader_GetEvtReader(reader, rank);
 
-    // this line initiates trace replay
-    check_status(OTF2_Reader_ReadLocalEvents(reader, event_reader, events_to_read, &events_read), "Trace replay failure\n");
+    if (total_events_to_read < 101) {
+		handle_events(reader, event_reader, total_events_to_read);
+    } else {
+		for (int i = 0; i < 100; i++) {
+			events_read += handle_events(reader, event_reader, events_per_percent);
+			if (rank == 0)
+				cout << "OTF2 Trace Percentage: " << (int)(100*events_read/(double)total_events_to_read)
+				<< ", " << events_per_percent << "/" << total_events_to_read << " Events Read"<< endl;
+		}
+
+		// Read the remaining events
+		handle_events(reader, event_reader, total_events_to_read - events_per_percent*100);
+    }
+
+    if (rank == 0)
+    	cout << "OTF2 Trace replay complete" << endl;
 
     // cleanup
     check_status(OTF2_Reader_CloseEvtReader(reader, event_reader), "OTF2_Reader_CloseEvtReader");

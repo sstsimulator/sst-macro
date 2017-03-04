@@ -452,6 +452,11 @@ OTF2_CallbackCode event_parameter_string(
     return OTF2_CALLBACK_SUCCESS;
 }
 
+// Ignoring MPI calls in event_enter and event_leave will prevent it being
+// added to the queue.
+#define CASE_IGNORE(obj_name) case obj_name::id : \
+	break;
+
 OTF2_CallbackCode event_enter(
     OTF2_LocationRef    location,
     OTF2_TimeStamp      time,
@@ -519,13 +524,13 @@ OTF2_CallbackCode event_enter(
         CASE_ADD_CALL(MpiCommgetparentCall)
         CASE_ADD_CALL(MpiCommgroupCall)
         CASE_ADD_CALL(MpiCommjoinCall)
-        CASE_ADD_CALL(MpiCommrankCall)
+		CASE_IGNORE(MpiCommrankCall)
         CASE_ADD_CALL(MpiCommremotegroupCall)
         CASE_ADD_CALL(MpiCommremotesizeCall)
         CASE_ADD_CALL(MpiCommsetattrCall)
         CASE_ADD_CALL(MpiCommseterrhandlerCall)
         CASE_ADD_CALL(MpiCommsetnameCall)
-        CASE_ADD_CALL(MpiCommsizeCall)
+		CASE_IGNORE(MpiCommsizeCall)
         CASE_ADD_CALL(MpiCommspawnCall)
         CASE_ADD_CALL(MpiCommspawnmultipleCall)
         CASE_ADD_CALL(MpiCommsplitCall)
@@ -635,7 +640,7 @@ OTF2_CallbackCode event_enter(
         CASE_ADD_CALL(MpiInfosetCall)
         CASE_ADD_CALL(MpiInitCall)
         CASE_ADD_CALL(MpiInitthreadCall)
-        CASE_ADD_CALL(MpiInitializedCall)
+		CASE_IGNORE(MpiInitializedCall)
         CASE_ADD_CALL(MpiIntercommcreateCall)
         CASE_ADD_CALL(MpiIntercommmergeCall)
         CASE_ADD_CALL(MpiIprobeCall)
@@ -771,20 +776,20 @@ OTF2_CallbackCode event_leave(
     CallQueue& callqueue = app->get_callqueue();
 
     // Record end time and trigger the call
-#define CASE_READY(_class) case _class::id : { \
-            auto call = callqueue.find_latest<_class>(); \
-            CallBase::assert_call(call, "Lookup for #_class in 'event_leave' returned NULL"); \
-            call->end_time = time; \
-            callqueue.CallReady(call); \
-            break;}
+	#define CASE_READY(_class) case _class::id : { \
+		auto call = callqueue.find_latest<_class>(); \
+		CallBase::assert_call(call, "Lookup for " #_class " in 'event_leave' returned NULL"); \
+		call->end_time = time; \
+		callqueue.CallReady(call); \
+		break;}
+
     // Record end time and do not trigger the call. This happens when
     // there is not enough information yet available in the callback.
-#define CASE_NOT_READY(_class) case _class::id : { \
-            auto call = callqueue.find_latest<_class>(); \
-            CallBase::assert_call(call, "Lookup for #_class in 'event_leave' returned NULL"); \
-            call->end_time = time; \
-            break;}
-    //const auto id = OTF2_MPICallMap[OTF2_RegionTable[region].name];
+    #define CASE_NOT_READY(_class) case _class::id : { \
+		auto call = callqueue.find_latest<_class>(); \
+		CallBase::assert_call(call, "Lookup for " #_class " in 'event_leave' returned NULL"); \
+		call->end_time = time; \
+		break;}
 
     const auto id = app->otf2_mpi_call_map[app->otf2_regions[region].name];
 
@@ -839,13 +844,13 @@ OTF2_CallbackCode event_leave(
         CASE_READY(MpiCommgetparentCall)
         CASE_READY(MpiCommgroupCall)
         CASE_READY(MpiCommjoinCall)
-        CASE_READY(MpiCommrankCall)
+		CASE_IGNORE(MpiCommrankCall)
         CASE_READY(MpiCommremotegroupCall)
         CASE_READY(MpiCommremotesizeCall)
         CASE_READY(MpiCommsetattrCall)
         CASE_READY(MpiCommseterrhandlerCall)
         CASE_READY(MpiCommsetnameCall)
-        CASE_READY(MpiCommsizeCall)
+		CASE_IGNORE(MpiCommsizeCall)
         CASE_READY(MpiCommspawnCall)
         CASE_READY(MpiCommspawnmultipleCall)
         CASE_READY(MpiCommsplitCall)
@@ -955,7 +960,7 @@ OTF2_CallbackCode event_leave(
         CASE_READY(MpiInfosetCall)
         CASE_READY(MpiInitCall)
         CASE_READY(MpiInitthreadCall)
-        CASE_READY(MpiInitializedCall)
+		CASE_IGNORE(MpiInitializedCall)
         CASE_READY(MpiIntercommcreateCall)
         CASE_READY(MpiIntercommmergeCall)
         CASE_READY(MpiIprobeCall)
@@ -1069,7 +1074,6 @@ OTF2_CallbackCode event_leave(
         CASE_READY(MpiWinwaitCall)
         CASE_READY(MpiWtickCall)
         CASE_READY(MpiWtimeCall)
-
     default:
         cout << "ERROR: 'event_leave' callback did not capture event: " << id << endl;
     }
@@ -1079,3 +1083,5 @@ OTF2_CallbackCode event_leave(
     EVENT_PRINT("LEAVE Time: %llu\n", time);
     return OTF2_CALLBACK_SUCCESS;
 }
+
+#undef CASE_IGNORE
