@@ -51,6 +51,7 @@ public:
     void start_mpi(const sstmac::timestamp);
     void end_mpi(const sstmac::timestamp);
     void add_request(dumpi_request, MPI_Request);
+    MPI_Request get_request(dumpi_request);
 
     int rank = -1;
     long total_events = 0;

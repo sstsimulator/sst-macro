@@ -144,6 +144,11 @@ def_location_property( void*               userData,
  *    MPI_Collective_Begin
  *    MPI_Collective_End (Important Attributes)
  *    Leave
+ *
+ * MPI_Wait and MPI_Waitall/some/any do not have dedicated callbacks.
+ *    ENTER
+ *    MPI_IRECV or MPI_ISEND
+ *    LEAVE
  */
 
 OTF2_CallbackCode event_enter(
