@@ -46,18 +46,13 @@ OTF2_EvtReaderCallbacks* create_evt_callbacks() {
     return callbacks;
 }
 
-void check_status(OTF2_ErrorCode status, string description, ...) {
-    va_list va;
-    va_start(va, description);
-
-    if (status != OTF2_SUCCESS) {
-        printf("==ERROR== %s ", OTF2_Error_GetName(status));
-        vfprintf( stdout, description.c_str(), va);
-        printf("\n");
-        exit( EXIT_FAILURE);
-    }
-
-    va_end(va);
+void check_status(OTF2_ErrorCode status, const std::string& description)
+{
+  if (status != OTF2_SUCCESS){
+    spkt_abort_printf("OTF2 Error: %s  %s",
+                      OTF2_Error_GetName(status),
+                      description.c_str());
+  }
 }
 
 OTF2_trace_replay_app::OTF2_trace_replay_app(sprockit::sim_parameters* params,
@@ -79,10 +74,10 @@ void OTF2_trace_replay_app::skeleton_main() {
 
 sumi::mpi_api*
 OTF2_trace_replay_app::get_mpi() {
-    if (mpi_) return mpi_;
+  if (mpi_) return mpi_;
 
-    mpi_ = get_api<sumi::mpi_api>();
-    return mpi_;
+  mpi_ = get_api<sumi::mpi_api>();
+  return mpi_;
 }
 
 CallQueue& OTF2_trace_replay_app::get_callqueue() {
@@ -125,8 +120,8 @@ static OTF2_CallbackCode GlobDefLocation_Register(void* userData,
     return OTF2_CALLBACK_SUCCESS;
 }
 
-OTF2_Reader* OTF2_trace_replay_app::initialize_event_reader() {
-
+OTF2_Reader*
+OTF2_trace_replay_app::initialize_event_reader() {
 	// OTF2 has an excellent API
 	uint64_t number_of_locations;
 	//uint64_t trace_length = 0;
@@ -184,8 +179,7 @@ OTF2_Reader* OTF2_trace_replay_app::initialize_event_reader() {
 
     OTF2_Reader_CloseGlobalDefReader(reader, global_def_reader);
     OTF2_EvtReader* evt_reader = OTF2_Reader_GetEvtReader(reader, rank);
-    OTF2_EvtReaderCallbacks* event_callbacks =
-        create_evt_callbacks();
+    OTF2_EvtReaderCallbacks* event_callbacks = create_evt_callbacks();
     check_status(
         OTF2_Reader_RegisterEvtCallbacks(reader, evt_reader,
                                          event_callbacks, (void*)this),
@@ -196,48 +190,33 @@ OTF2_Reader* OTF2_trace_replay_app::initialize_event_reader() {
     return reader;
 }
 
-inline int handle_events(OTF2_Reader* reader, OTF2_EvtReader* event_reader, uint64_t events_to_read) {
-	uint64_t events_read = 0;
-	check_status(OTF2_Reader_ReadLocalEvents(reader, event_reader, events_to_read, &events_read),"Trace replay failure\n");
+inline uint64_t
+handle_events(OTF2_Reader* reader, OTF2_EvtReader* event_reader) {
+  uint64_t events_read = 0;
+  uint64_t read_all_events = OTF2_UNDEFINED_UINT64;
+  check_status(OTF2_Reader_ReadLocalEvents(reader, event_reader, read_all_events, &events_read),
+               "Trace replay failure");
 	return events_read;
 }
 
 void OTF2_trace_replay_app::initiate_trace_replay(OTF2_Reader* reader) {
-	uint64_t total_events_to_read, events_per_percent, events_read;
-    total_events_to_read = total_events*(terminate_percent_/100.0);
-    events_per_percent = total_events_to_read/100;
-    events_read = 0;
+  // get the trace reader corresponding to the rank
+  OTF2_EvtReader* event_reader = OTF2_Reader_GetEvtReader(reader, rank);
 
-    // get the trace reader corresponding to the rank
-    OTF2_EvtReader* event_reader = OTF2_Reader_GetEvtReader(reader, rank);
+  handle_events(reader, event_reader);
 
-    if (total_events_to_read < 101) {
-		handle_events(reader, event_reader, total_events_to_read);
-    } else {
-		for (int i = 0; i < 100; i++) {
-			events_read += handle_events(reader, event_reader, events_per_percent);
-			if (rank == 0)
-				cout << "OTF2 Trace Percentage: " << (int)(100*events_read/(double)total_events_to_read)
-				<< ", " << events_per_percent << "/" << total_events_to_read << " Events Read"<< endl;
-		}
+  if (rank == 0) std::cout << "OTF2 Trace replay complete" << endl;
 
-		// Read the remaining events
-		handle_events(reader, event_reader, total_events_to_read - events_per_percent*100);
-    }
-
-    if (rank == 0)
-    	cout << "OTF2 Trace replay complete" << endl;
-
-    // cleanup
-    check_status(OTF2_Reader_CloseEvtReader(reader, event_reader), "OTF2_Reader_CloseEvtReader");
-    check_status(OTF2_Reader_CloseEvtFiles(reader), "OTF2_Reader_CloseEvtFiles\n");
+  // cleanup
+  check_status(OTF2_Reader_CloseEvtReader(reader, event_reader), "OTF2_Reader_CloseEvtReader");
+  check_status(OTF2_Reader_CloseEvtFiles(reader), "OTF2_Reader_CloseEvtFiles\n");
 }
 
 void OTF2_trace_replay_app::verify_replay_success() {
-    int incomplete_calls = call_queue_.GetDepth();
+  int incomplete_calls = call_queue_.GetDepth();
 
-    if(incomplete_calls > 0) { // Something stalled the queue...
-        cout << "ERROR: rank " << rank << " has " << incomplete_calls << " incomplete calls!" << endl;
-        cout << "  ==> Appears to be stuck on '" << call_queue_.Peek()->ToString() << "'" << endl;
-    }
+  if(incomplete_calls > 0) { // Something stalled the queue...
+      cout << "ERROR: rank " << rank << " has " << incomplete_calls << " incomplete calls!" << endl;
+      cout << "  ==> Appears to be stuck on '" << call_queue_.Peek()->ToString() << "'" << endl;
+  }
 }
