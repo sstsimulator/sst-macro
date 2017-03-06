@@ -33,7 +33,6 @@ libsstmac_skeletons_la_SOURCES = \
   test/mpi_ping_all.cc \
   test/mpi_delay_stats.cc \
   test/mpi_isend_progress.cc \
-  test/global_test.cc \
   sumi_undumpi/parsedumpi.cc \
   sumi_undumpi/parsedumpi_callbacks.cc \
   test/sstmac_mpi_test_all.cc 
@@ -53,3 +52,4 @@ nobase_library_include_HEADERS = \
 
 
 
+#  test/global_test.cc 

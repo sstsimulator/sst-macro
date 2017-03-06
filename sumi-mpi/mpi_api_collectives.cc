@@ -402,6 +402,35 @@ mpi_api::iallreduce(int count, MPI_Datatype type, MPI_Op op,
 }
 
 void
+mpi_api::start_scan(collective_op* op)
+{
+  reduce_fxn fxn = get_collective_function(op);
+  transport::scan(op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
+                  op->sendtype->packed_size(), op->tag,
+                  fxn, false, options::initial_context, op->comm);
+}
+
+collective_op_base*
+mpi_api::start_scan(const char* name, const void *src, void *dst, int count,
+                   MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
+{
+
+  mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
+    "%s(%d,%s,%s,%s)", name,
+    count, type_str(type).c_str(), op_str(mop), comm_str(comm).c_str());
+
+  collective_op* op = new collective_op(count, get_comm(comm));
+  if (src == MPI_IN_PLACE){
+    src = dst;
+  }
+
+  op->op = mop;
+  start_mpi_collective(collective::scan, src, dst, type, type, op);
+  start_scan(op);
+  return op;
+}
+
+void
 mpi_api::start_barrier(collective_op* op)
 {
   op->ty = collective::barrier;
@@ -698,7 +727,7 @@ mpi_api::start_reduce_scatter(collective_op* op)
 
 collective_op_base*
 mpi_api::start_reduce_scatter(const char *name, const void *src, void *dst,
-                              int *recvcnts, MPI_Datatype type,
+                              const int *recvcnts, MPI_Datatype type,
                               MPI_Op mop, MPI_Comm comm)
 {
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
@@ -717,7 +746,7 @@ mpi_api::start_reduce_scatter(const char *name, const void *src, void *dst,
 }
 
 int
-mpi_api::reduce_scatter(const void *src, void *dst, int *recvcnts,
+mpi_api::reduce_scatter(const void *src, void *dst, const int *recvcnts,
                         MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
 {
   collective_op_base* op = start_reduce_scatter("MPI_Reduce_scatter", src, dst,
@@ -734,7 +763,7 @@ mpi_api::reduce_scatter(int *recvcnts, MPI_Datatype type, MPI_Op op, MPI_Comm co
 }
 
 int
-mpi_api::ireduce_scatter(const void *src, void *dst, int *recvcnts,
+mpi_api::ireduce_scatter(const void *src, void *dst, const int *recvcnts,
                         MPI_Datatype type, MPI_Op mop,
                         MPI_Comm comm, MPI_Request* req)
 {
@@ -805,34 +834,6 @@ mpi_api::ireduce_scatter_block(int recvcnt, MPI_Datatype type,
                          MPI_Op op, MPI_Comm comm, MPI_Request* req)
 {
   return ireduce_scatter_block(NULL, NULL, recvcnt, type, op, comm, req);
-}
-
-
-
-void
-mpi_api::start_scan(collective_op* op)
-{
-  spkt_throw(sprockit::unimplemented_error, "sumi::scan");
-  reduce_fxn fxn = get_collective_function(op);
-  //transport::reduce(op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
-  //                     op->sendtype->packed_size(), op->tag,
-  //                     fxn, false, options::initial_context, op->comm);
-}
-
-collective_op_base*
-mpi_api::start_scan(const char* name, const void *src, void *dst,
-                    int count, MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
-{
-  mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
-    "%s(%d,%s,%s,%s)", name,
-    count, type_str(type).c_str(), op_str(mop), comm_str(comm).c_str());
-
-  collective_op* op = new collective_op(count, get_comm(comm));
-  op->op = mop;
-
-  start_mpi_collective(collective::scan, src, dst, type, type, op);
-  start_scan(op);
-  return op;
 }
 
 int

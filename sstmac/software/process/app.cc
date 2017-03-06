@@ -13,10 +13,12 @@
 #include <sstmac/software/api/api.h>
 #include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/process/backtrace.h>
 #include <sstmac/common/sstmac_env.h>
 #include <sstmac/dumpi_util/dumpi_meta.h>
 #include <sstmac/software/launch/job_launcher.h>
 #include <sstmac/software/launch/launch_event.h>
+#include <dlfcn.h>
 #include <sprockit/statics.h>
 #include <sprockit/delete.h>
 #include <sprockit/output.h>
@@ -34,10 +36,17 @@ SpktRegister("user_app_cxx_full_main", app, user_app_cxx_full_main);
 SpktRegister("user_app_cxx_empty_main", app, user_app_cxx_empty_main);
 
 std::map<std::string, app::main_fxn>*
-  user_app_cxx_full_main::main_fxns_ = 0;
+  user_app_cxx_full_main::main_fxns_ = nullptr;
 std::map<std::string, app::empty_main_fxn>*
-  user_app_cxx_empty_main::empty_main_fxns_ = 0;
+  user_app_cxx_empty_main::empty_main_fxns_ = nullptr;
 std::map<app_id, user_app_cxx_full_main::argv_entry> user_app_cxx_full_main::argv_map_;
+
+app*
+app::factory::get_param(const std::string &name, sprockit::sim_parameters *params, software_id sid, operating_system *os)
+{
+  //wrapper in place in case we want to use dlsym fanciness to link in skeleton apps
+  return app_factory::get_param(name, params, sid, os);
+}
 
 int
 app::allocate_tls_key(destructor_fxn fxn)
@@ -59,8 +68,14 @@ app::app(sprockit::sim_parameters *params, software_id sid,
   params_(params),
   next_tls_key_(0),
   next_condition_(0),
-  next_mutex_(0)
+  next_mutex_(0),
+  globals_storage_(nullptr)
 {
+  int globalsSize = GlobalVariable::globalsSize();
+  if (globalsSize != 0){
+    globals_storage_ = new char[globalsSize];
+    ::memcpy(globals_storage_, GlobalVariable::globalInit(), globalsSize);
+  }
 }
 
 app::~app()
@@ -72,6 +87,7 @@ app::~app()
   if (compute_mem_move_) delete compute_mem_move_;
   if (compute_loops_) delete compute_loops_;
   if (sleep_lib_) delete sleep_lib_;
+  if (globals_storage_) delete[] globals_storage_;
 }
 
 lib_compute_loops*
@@ -213,6 +229,7 @@ app::_get_api(const char* name)
 void
 app::run()
 {
+  SSTMACBacktrace("main");
   skeleton_main();
   for (auto& pair : apis_){
     delete pair.second;
@@ -369,6 +386,8 @@ void
 user_app_cxx_full_main::register_main_fxn(const char *name, app::main_fxn fxn)
 {
   if (!main_fxns_) main_fxns_ = new std::map<std::string, main_fxn>;
+
+  std::cout << "registering main function " << name << std::endl;
 
   (*main_fxns_)[name] = fxn;
   app_factory::register_alias("user_app_cxx_full_main", name);

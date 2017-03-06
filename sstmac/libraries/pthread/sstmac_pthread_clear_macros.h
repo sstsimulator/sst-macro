@@ -138,6 +138,9 @@
 #undef pthread_once_t
 #undef pthread_mutexattr_t
 
-#undef PTHREAD_SCOPE_PROCESS
-#undef PTHREAD_SCOPE_SYSTEM 
+#undef PTHREAD_MUTEX_NORMAL
+#undef PTHREAD_MUTEX_ERRORCHECK
+#undef PTHREAD_MUTEX_RECURSIVE
+#undef PTHREAD_MUTEX_DEFAULT
+
 

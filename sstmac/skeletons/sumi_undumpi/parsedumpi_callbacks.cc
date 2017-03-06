@@ -2014,7 +2014,7 @@ on_MPI_Group_incl(const dumpi_group_incl *prm, uint16_t thread,
   cb->start_mpi(cpu, wall, perf);
   MPI_Group newgrp;
   MPI_Group oldgrp = cb->get_mpigroup(prm->group);
-  cb->getmpi()->group_incl(prm->ranks, prm->count, oldgrp, &newgrp);
+  cb->getmpi()->group_incl(oldgrp, prm->count, prm->ranks, &newgrp);
   cb->add_mpigroup(prm->newgroup, newgrp);
   cb->end_mpi(cpu, wall, perf);
 #endif

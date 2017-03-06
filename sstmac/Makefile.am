@@ -10,6 +10,7 @@
 #
 
 STD_SUBDIRS = \
+  clang_replacements \
   replacements \
   common \
   dumpi_util \

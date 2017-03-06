@@ -115,7 +115,7 @@ LT_INIT([disable-shared])
 LT_PREREQ([2.2.6])
 AC_PROG_LN_S
 
-os=`$srcdir/bin/get_os`
+os=`$srcdir/bin/config_tools/get_os`
 
 if test "X$os" = "Xubuntu"; then
 LDFLAGS="$LDFLAGS -Wl,--no-as-needed"
@@ -186,6 +186,8 @@ CHECK_STL_REPLACEMENT_HEADERS()
 
 CHECK_COMM_SYNC_STATS()
 
+CHECK_CLANG_LIBTOOLING()
+
 #-------------------------------------------------
 # Configure subdirs
 #-------------------------------------------------
@@ -235,6 +237,7 @@ AC_CONFIG_FILES([
  sstmac/main/Makefile
  sstmac/common/Makefile
  sstmac/replacements/Makefile
+ sstmac/clang_replacements/Makefile
  sstmac/replacements/mpi.h
  bin/Makefile
  python/Makefile

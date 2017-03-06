@@ -86,7 +86,8 @@ class threading_pthread : public threading_interface
   /// Start a new context. It does not start yet -- swap_context will start it. This is only called from the scheduler's thread.
   void
   start_context(int physical_thread_id, void *stack, size_t stacksize, void
-                 (*func)(void*), void *args, threading_interface *yield_to);
+                 (*func)(void*), void *args, threading_interface *yield_to,
+                void* globals_storage);
 
   /// This is called when we have completed running the thread. It is
   /// called in the from context.

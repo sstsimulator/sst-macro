@@ -9,6 +9,9 @@ AC_ARG_ENABLE([comm-sync-stats],
 
 if test "X$with_comm_sync_stats" = "Xyes"; then
   AC_DEFINE_UNQUOTED([COMM_SYNC_STATS], 1, [Track communcation synchronization stats])
+  AM_CONDITIONAL(COMM_SYNC_STATS, true)
+else
+  AM_CONDITIONAL(COMM_SYNC_STATS, false)
 fi
 
 ])

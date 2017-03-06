@@ -11,9 +11,9 @@
 
 #include <sprockit/errors.h>
 #include <sprockit/debug.h>
-#include <sstmac/common/thread_info.h>
 #include <sstmac/common/thread_lock.h>
 #include <sstmac/software/threading/threading_pthread.h>
+#include <sstmac/software/process/thread_info.h>
 
 MakeDebugSlot(pth);
 #define pthread_ctx_debug(ctx,...) \
@@ -149,14 +149,18 @@ threading_pthread::destroy_context()
 void
 threading_pthread::start_context(int physical_thread_id,
    void *stack, size_t stacksize, void
-   (*func)(void*), void *args, threading_interface *yield_to)
+   (*func)(void*), void *args, threading_interface *yield_to,
+   void* globals_storage)
 {
+  if (globals_storage){
+    spkt_abort_printf("cannot use global variables with pthread");
+  }
+
   pthread_attr_t thread_attr;
   pthread_attr_init(&thread_attr);
   //pthread_attr_setstack(&thread_attr, stack, stacksize);
   init_context_common(context_);
 
-  //thread_info::register_kernel_space_virtual_thread(physical_thread_id, &context_.thread, &thread_attr);
   pthread_debug("starting pthread %p with stack %p of size %lu on physical thread %d",
        &context_, &context_.thread, stack, stacksize, physical_thread_id);
 

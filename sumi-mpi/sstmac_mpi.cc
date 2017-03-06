@@ -31,10 +31,10 @@ extern "C" int sstmac_cart_coords(MPI_Comm comm, int rank, int maxdims, int coor
 extern "C" int sstmac_comm_free(MPI_Comm* input){ return sumi::sstmac_mpi()->comm_free(input); }
 extern "C" int sstmac_comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler){ return sumi::sstmac_mpi()->comm_set_errhandler(comm,errhandler); }
 extern "C" int sstmac_group_free(MPI_Group* grp){ return sumi::sstmac_mpi()->group_free(grp); }
-extern "C" int sstmac_group_incl(int* ranks,
+extern "C" int sstmac_group_incl(MPI_Group oldgrp,
              int num_ranks,
-             MPI_Group oldgrp,
-             MPI_Group* newgrp){ return sumi::sstmac_mpi()->group_incl(ranks,num_ranks,oldgrp,newgrp); }
+             const int* ranks,
+             MPI_Group* newgrp){ return sumi::sstmac_mpi()->group_incl(oldgrp,num_ranks,ranks,newgrp); }
 extern "C" int sstmac_sendrecv(const void* sendbuf, int sendcount,
         MPI_Datatype sendtype, int dest, int sendtag,
         void* recvbuf, int recvcount,
@@ -111,7 +111,7 @@ extern "C" int sstmac_allreduce(const void* src, void* dst,
             int count, MPI_Datatype type, MPI_Op op,
             MPI_Comm comm){ return sumi::sstmac_mpi()->allreduce(src,dst,count,type,op,comm); }
 extern "C" int sstmac_reduce_scatter(const void* src, void* dst,
-                 int* recvcnts, MPI_Datatype type,
+                 const int* recvcnts, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm){ return sumi::sstmac_mpi()->reduce_scatter(src,dst,recvcnts,type,op,comm); }
 extern "C" int sstmac_reduce_scatter_block(const void* src, void* dst,
                  int recvcnt, MPI_Datatype type,
@@ -156,7 +156,7 @@ extern "C" int sstmac_iallreduce(const void* src, void* dst,
             int count, MPI_Datatype type, MPI_Op op,
             MPI_Comm comm, MPI_Request* req){ return sumi::sstmac_mpi()->iallreduce(src,dst,count,type,op,comm,req); }
 extern "C" int sstmac_ireduce_scatter(const void* src, void* dst,
-                 int* recvcnts, MPI_Datatype type,
+                 const int* recvcnts, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm, MPI_Request* req){ return sumi::sstmac_mpi()->ireduce_scatter(src,dst,recvcnts,type,op,comm,req); }
 extern "C" int sstmac_ireduce_scatter_block(const void* src, void* dst,
                  int recvcnt, MPI_Datatype type,
@@ -182,9 +182,13 @@ extern "C" int sstmac_type_vector(int count, int blocklength, int stride,
 extern "C" int sstmac_type_hvector(int count, int blocklength, MPI_Aint stride,
               MPI_Datatype old_type,
               MPI_Datatype* new_type){ return sumi::sstmac_mpi()->type_hvector(count,blocklength,stride,old_type,new_type); }
-extern "C" int sstmac_type_create_struct(const int count, const int* blocklens,
-              const int* displs,
+extern "C" int sstmac_type_create_struct(int count, const int* blocklens,
+              const MPI_Aint* displs,
               const MPI_Datatype* old_types,
               MPI_Datatype* newtype){ return sumi::sstmac_mpi()->type_create_struct(count,blocklens,displs,old_types,newtype); }
 extern "C" int sstmac_type_commit(MPI_Datatype* type){ return sumi::sstmac_mpi()->type_commit(type); }
 extern "C" int sstmac_type_free(MPI_Datatype* type){ return sumi::sstmac_mpi()->type_free(type); }
+
+extern "C" double sstmac_wtime(){ return sumi::sstmac_mpi()->wtime(); }
+extern "C" double sstmac_wticks(){ return sumi::sstmac_mpi()->wtime(); }
+

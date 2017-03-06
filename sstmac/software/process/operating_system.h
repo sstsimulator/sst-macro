@@ -24,21 +24,22 @@
 #include <sstmac/common/messages/sst_message.h>
 #include <sstmac/common/stats/event_trace.h>
 #include <sstmac/common/event_scheduler.h>
-#include <sstmac/common/thread_info.h>
+//#include <sstmac/common/thread_info.h>
 
-
+#include <sstmac/software/launch/app_launch_fwd.h>
 #include <sstmac/software/libraries/service_fwd.h>
 #include <sstmac/software/process/ftq_fwd.h>
 #include <sstmac/software/process/graphviz_fwd.h>
-#include <sstmac/software/launch/app_launch_fwd.h>
 #include <sstmac/software/process/compute_scheduler_fwd.h>
-
+#include <sstmac/software/process/global.h>
 #include <sstmac/hardware/node/node_fwd.h>
 
 #include <sprockit/unordered.h>
 #include <sprockit/debug.h>
 #include <stack>
 #include <queue>
+
+
 
 DeclareDebugSlot(os);
 
@@ -72,9 +73,6 @@ class operating_system :
 
   static inline os_thread_context&
   static_os_thread_context() {
-    if (cxa_finalizing_){
-      abort();
-    }
   #if SSTMAC_USE_MULTITHREAD
     int thr = thread_info::current_physical_thread_id();
     return os_thread_contexts_[thr];
@@ -131,9 +129,8 @@ class operating_system :
    * @param data  Event carrying all the data describing the compute
    */
   void
-  execute(ami::COMM_FUNC func,
-          message* data){
-    execute_kernel(func, data);
+  execute(ami::COMM_FUNC func, message* data){
+    return execute_kernel(func, data);
   }
 
   /**
@@ -143,10 +140,9 @@ class operating_system :
    * This function can therefore run on the main DES thread
    * @param func  The function to perform
    * @param data  Event carrying all the data describing the compute
+   * @return A return code specifying success or failure
    */
-  void
-  execute_kernel(ami::COMM_FUNC func,
-                 message* data);
+  void execute_kernel(ami::COMM_FUNC func, message* data);
 
   /**
    * @brief execute Execute a communication function.
@@ -253,7 +249,7 @@ class operating_system :
 
   static size_t
   stacksize(){
-    return stacksize_;
+    return sstmac_global_stacksize;
   }
 
   static thread*
@@ -272,11 +268,27 @@ class operating_system :
     return params_;
   }
 
-  void
-  sleep(timestamp t);
+  /**
+   * @brief sleep Sleep for a specified delay. Sleeps do not require
+   *        core reservation, unlike #compute. Sleeps always begin immediately.
+   * @param sleep_delay The length of time to sleep (delta T)
+   */
+  void sleep(timestamp sleep_delay);
 
-  void
-  compute(timestamp t);
+  /**
+   * @brief sleep_until Sleep until a specified time. If that time has already been reached
+   *          return immediately. Otherwise block until the time arrives.
+   * @param t The time to sleep until
+   */
+  void sleep_until(timestamp t);
+
+  /**
+   * @brief compute Compute for a specified time period. This requires
+   *        a core to be reserved. If no cores are available,
+   *        block until a core becomes available.
+   * @param t The length of time to compute (delta T)
+   */
+  void compute(timestamp t);
 
   void kill_node();
 
@@ -349,14 +361,11 @@ class operating_system :
   static operating_system::os_thread_context os_thread_context_;
 #endif
 
-
 #if SSTMAC_SANITY_CHECK
   std::set<key*> valid_keys_;
 #endif
 
  private:
-  static size_t stacksize_;
-  static bool cxa_finalizing_;
   static os_thread_context cxa_finalize_context_;
 
 };

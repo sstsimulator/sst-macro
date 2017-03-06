@@ -155,9 +155,10 @@ init_params(parallel_runtime* rt, opts& oo, sprockit::sim_parameters* params, bo
 
   if (parallel){
     runtime_param_bcaster bcaster(rt);
-    sprockit::sim_parameters::parallel_build_params(params, rt->me(), rt->nproc(), oo.configfile, &bcaster);
+    sprockit::sim_parameters::parallel_build_params(params, rt->me(), rt->nproc(),
+                                                    oo.configfile, &bcaster, oo.configRequired);
   } else {
-    params->parse_file(oo.configfile, false, true);
+    params->parse_file(oo.configfile, false, true, oo.configRequired);
   }
 
   if (oo.params) {

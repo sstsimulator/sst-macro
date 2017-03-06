@@ -74,6 +74,32 @@ class nic :
     parent_ = nd;
   }
 
+  /**
+   * @brief nic_operation Perform an operation on the NIC. This does
+   *  not actually perform an operation. It instead returns the time
+   *  that the NIC will complete the requested operation. It is up
+   *  to the caller (usually OS) to sleep/compute for appropriate time.
+   *  This assumes an exlcusive model of NIC use. If NIC is busy,
+   *  operation may complete far in the future. The NIC operation
+   *  is NOT cancelable. If wishing to query for how busy the NIC is,
+   *  use #next_free;
+   * @return The absolute time the requested NIC operation completes
+   */
+  timestamp
+  nic_operation() {
+    next_free_ += nic_use_delay_;
+    return next_free_;
+  }
+
+  /**
+   * @brief next_free
+   * @return The next time the NIC would be free to start an operation
+   */
+  timestamp
+  next_free() const {
+    return next_free_;
+  }
+
   event_handler*
   mtl_handler() const {
     return event_mtl_handler_;
@@ -164,6 +190,8 @@ class nic :
   stat_histogram* hist_msg_size_;
   stat_local_int* local_bytes_sent_;
   stat_global_int* global_bytes_sent_;
+  timestamp next_free_;
+  timestamp nic_use_delay_;
 
  private:
   /**

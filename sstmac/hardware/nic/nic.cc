@@ -54,10 +54,13 @@ nic::nic(sprockit::sim_parameters* params, node* parent) :
   logp_switch_(nullptr),
   event_mtl_handler_(nullptr),
   my_addr_(parent->addr()),
+  next_free_(0),
   connectable_subcomponent(parent) //no self events with NIC
 {
   event_mtl_handler_ = new_handler(this, &nic::mtl_handle);
   node_handler_ = new_handler(parent, &node::handle);
+
+  nic_use_delay_ = params->get_optional_time_param("use_delay", 0);
 
   negligible_size_ = params->get_optional_int_param("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
 
@@ -173,9 +176,6 @@ nic::ack_send(network_message* payload)
 void
 nic::intranode_send(network_message* payload)
 {
-  //Stop recording for now
-  //record_message(payload);
-
   nic_debug("intranode send payload %p:%s",
     payload, payload->to_string().c_str());
 

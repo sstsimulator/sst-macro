@@ -35,6 +35,7 @@ library_include_HEADERS = \
  gatherv.h \
  bcast.h \
  reduce.h \
+ scan.h \
  scatter.h \
  scatterv.h \
  collective.h \
@@ -79,6 +80,7 @@ libsumi_la_SOURCES = \
  gather.cc \
  gatherv.cc \
  reduce.cc \
+ scan.cc \
  scatter.cc \
  scatterv.cc \
  collective.cc \
