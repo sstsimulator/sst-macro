@@ -82,6 +82,9 @@ public:
     // Get the entry at the front of the queue
     CallBase* Peek();
 
+    // Get the entry from the back of the queue
+    CallBase* PeekBack();
+
 private:
     iterable_queue<CallBase*> call_queue;
     OTF2_trace_replay_app* app;

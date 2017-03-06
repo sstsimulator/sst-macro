@@ -106,6 +106,10 @@ void OTF2_trace_replay_app::add_request(dumpi_request dr_req, MPI_Request req) {
 	request_map[dr_req] = req;
 }
 
+MPI_Request OTF2_trace_replay_app::get_request(dumpi_request dr_req) {
+	return request_map[dr_req];
+}
+
 struct c_vector {
     size_t capacity;
     size_t size;

@@ -9,6 +9,8 @@
  *  SST/macroscale directory.
  */
 
+#include <sprockit/errors.h>
+
 #include "structures.h"
 #include "callbacks.h"
 
@@ -23,8 +25,8 @@
     #define DEF_PRINT(...)
 #endif
 
-#if 0
-    #define EVENT_PRINT(...) fprintf(stderr, "EVENT: " __VA_ARGS__)
+#if 1
+    #define EVENT_PRINT(...) cerr << "EVENT: " __VA_ARGS__ << endl;
 #else
     #define EVENT_PRINT(...)
 #endif
@@ -215,7 +217,7 @@ OTF2_CallbackCode event_mpi_send(
     call->tag = msgTag;
     call->location = location;
 
-    EVENT_PRINT("MPI SEND\n");
+    EVENT_PRINT("MPI SEND");
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -243,11 +245,10 @@ OTF2_CallbackCode event_mpi_isend(
     call->request = requestID;
     call->tag = msgTag;
 
-    EVENT_PRINT("MPI ISEND\n");
+    EVENT_PRINT("MPI ISEND");
     return OTF2_CALLBACK_SUCCESS;
 }
 
-// probably not needed
 OTF2_CallbackCode event_mpi_isend_complete(
     OTF2_LocationRef    location,
     OTF2_TimeStamp      time,
@@ -256,7 +257,25 @@ OTF2_CallbackCode event_mpi_isend_complete(
     OTF2_AttributeList* attributes,
     uint64_t            requestID ) {
 
-    EVENT_PRINT("ISEND COMPLETE\n");
+	auto app = (OTF2_trace_replay_app*)userData;
+	auto& callqueue = app->get_callqueue();
+
+	// find the wait event responsible for this and assign the request ID
+	auto latest_call = callqueue.PeekBack();
+
+	switch(latest_call->GetID()) {
+	case ID_MPI_Wait:
+		((MpiWaitCall*)latest_call)->request = requestID; break;
+	case ID_MPI_Waitall:
+	case ID_MPI_Waitany:
+	case ID_MPI_Waitsome:
+		cerr << "ERROR " << latest_call->ToString() << " is not supported call" << endl;
+		spkt_throw(sprockit::null_error, " not implemented"); break;
+	default:
+		spkt_throw(sprockit::null_error, " not recognized as a wait call"); break;
+	}
+
+    EVENT_PRINT("ISEND COMPLETE");
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -275,7 +294,55 @@ OTF2_CallbackCode event_mpi_irecv_request(
 
     call->request = requestID;
 
-    EVENT_PRINT("IRECV REQUEST\n");
+    EVENT_PRINT("IRECV REQUEST id: " << requestID );
+    return OTF2_CALLBACK_SUCCESS;
+}
+
+// This event is triggered inside a wait. Must finish the Irecv event,
+// and find the parent wait call to give it this request
+OTF2_CallbackCode event_mpi_irecv(
+    OTF2_LocationRef    location,
+    OTF2_TimeStamp      time,
+    uint64_t            eventPosition,
+    void*               userData,
+    OTF2_AttributeList* attributes,
+    uint32_t            sender,
+    OTF2_CommRef        communicator,
+    uint32_t            msgTag,
+    uint64_t            msgLength,
+    uint64_t            requestID ) {
+
+    auto app = (OTF2_trace_replay_app*)userData;
+    auto& callqueue = app->get_callqueue();
+
+    // finish off the Irecv call
+    MpiIrecvCall* call = callqueue.find_latest<MpiIrecvCall>(requestID);
+    CallBase::assert_call(call, "Lookup for MpiIrecvCall in 'event_mpi_irecv' returned NULL");
+
+    call->comm = communicator;
+    call->count = msgLength;
+    call->datatype = MPI_CHAR;
+    call->source = sender;
+    call->tag = msgTag;
+
+    callqueue.CallReady(call);
+
+    // find the wait event responsible for this and assign the request ID
+    auto latest_call = callqueue.PeekBack();
+
+    switch(latest_call->GetID()) {
+    case ID_MPI_Wait:
+    	((MpiWaitCall*)latest_call)->request = requestID; break;
+    case ID_MPI_Waitall:
+    case ID_MPI_Waitany:
+    case ID_MPI_Waitsome:
+    	cerr << "ERROR " << latest_call->ToString() << " is not supported call" << endl;
+    	spkt_throw(sprockit::null_error, " not implemented"); break;
+    default:
+    	spkt_throw(sprockit::null_error, " not recognized as a wait call"); break;
+    }
+
+    EVENT_PRINT("IRECV count: " << msgLength << " source: " << sender << " tag: " << msgTag);
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -301,36 +368,7 @@ OTF2_CallbackCode event_mpi_recv(
     call->source = sender;
     call->tag = msgTag;
 
-    EVENT_PRINT("RECV\n");
-    return OTF2_CALLBACK_SUCCESS;
-}
-
-OTF2_CallbackCode event_mpi_irecv(
-    OTF2_LocationRef    location,
-    OTF2_TimeStamp      time,
-    uint64_t            eventPosition,
-    void*               userData,
-    OTF2_AttributeList* attributes,
-    uint32_t            sender,
-    OTF2_CommRef        communicator,
-    uint32_t            msgTag,
-    uint64_t            msgLength,
-    uint64_t            requestID ) {
-
-    auto app = (OTF2_trace_replay_app*)userData;
-
-    MpiIrecvCall* call = app->get_callqueue().find_latest<MpiIrecvCall>(requestID);
-    CallBase::assert_call(call, "Lookup for MpiIrecvCall in 'event_mpi_irecv' returned NULL");
-
-    call->comm = communicator;
-    call->count = msgLength;
-    call->datatype = MPI_CHAR;
-    call->source = sender;
-    call->tag = msgTag;
-
-    app->get_callqueue().CallReady(call);
-
-    EVENT_PRINT("IRECV\n");
+    EVENT_PRINT("RECV count: " << msgLength << " source: " << sender << " tag: " << msgTag);
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -467,11 +505,16 @@ OTF2_CallbackCode event_enter(
 
     auto app = (OTF2_trace_replay_app*)userData;
     auto id = app->otf2_mpi_call_map[app->otf2_regions[region].name];
+    CallBase* call = NULL;
 
 #define CASE_ADD_CALL(obj_name) case obj_name::id : \
-        /* cout << "Creating Call for " << #obj_name << endl; */ \
-        app->get_callqueue().AddCall(new obj_name(location, time)); \
-        break;
+	call = new obj_name(location, time); \
+	app->get_callqueue().AddCall(call); \
+	EVENT_PRINT("ENTER " << call->ToString() << " time: " << time); \
+	break;
+
+#define ADD_SPECIAL_CASE(obj_name) case obj_name::id :
+#define END_SPECIAL_CASE break;
 
     switch (id) {
         CASE_ADD_CALL(MpiAbortCall)
@@ -759,7 +802,7 @@ OTF2_CallbackCode event_enter(
         cout << "ERROR: 'event_enter' callback did not capture event: " << id << endl;
     }
 
-    EVENT_PRINT("ENTER Time: %llu\n", time);
+
 #undef ADD_CALL
     return OTF2_CALLBACK_SUCCESS;
 }
@@ -779,6 +822,7 @@ OTF2_CallbackCode event_leave(
 	#define CASE_READY(_class) case _class::id : { \
 		auto call = callqueue.find_latest<_class>(); \
 		CallBase::assert_call(call, "Lookup for " #_class " in 'event_leave' returned NULL"); \
+		EVENT_PRINT("LEAVE " << call->ToString() << " time: " << time); \
 		call->end_time = time; \
 		callqueue.CallReady(call); \
 		break;}
@@ -788,6 +832,7 @@ OTF2_CallbackCode event_leave(
     #define CASE_NOT_READY(_class) case _class::id : { \
 		auto call = callqueue.find_latest<_class>(); \
 		CallBase::assert_call(call, "Lookup for " #_class " in 'event_leave' returned NULL"); \
+		EVENT_PRINT("LEAVE " << call->ToString() << " time: " << time); \
 		call->end_time = time; \
 		break;}
 
@@ -964,7 +1009,7 @@ OTF2_CallbackCode event_leave(
         CASE_READY(MpiIntercommcreateCall)
         CASE_READY(MpiIntercommmergeCall)
         CASE_READY(MpiIprobeCall)
-        CASE_NOT_READY(MpiIrecvCall)
+		CASE_NOT_READY(MpiIrecvCall)
         CASE_READY(MpiIrsendCall)
         CASE_READY(MpiIsthreadmainCall)
         CASE_READY(MpiIsendCall)
@@ -1080,7 +1125,6 @@ OTF2_CallbackCode event_leave(
 
 #undef CASE_READY
 #undef CASE_NOT_READY
-    EVENT_PRINT("LEAVE Time: %llu\n", time);
     return OTF2_CALLBACK_SUCCESS;
 }
 

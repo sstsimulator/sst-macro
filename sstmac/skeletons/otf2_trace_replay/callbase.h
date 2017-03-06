@@ -41,6 +41,7 @@ public:
 
     sstmac::timestamp GetStart();
     sstmac::timestamp GetEnd();
+    virtual int GetID() = 0;
 
     OTF2_TimeStamp start_time, end_time;
     bool isready;
@@ -74,6 +75,7 @@ private:
         } \
         static const int id = call_id; \
         virtual string const ToString() { return _name; } \
+		virtual int GetID() { return id; }\
     private: \
         string _name = #name; \
     };
@@ -92,6 +94,7 @@ private:
         } \
         static const int id = call_id; \
         virtual string const ToString() { return _name; } \
+		virtual int GetID() { return id; }\
         virtual void Trigger(); \
     };
 
@@ -309,7 +312,7 @@ private:
     CREATE_EMPTY_CALL(MpiIntercommcreateCall, ID_MPI_Intercomm_create, dumpi_intercomm_create)
     CREATE_EMPTY_CALL(MpiIntercommmergeCall, ID_MPI_Intercomm_merge, dumpi_intercomm_merge)
     CREATE_EMPTY_CALL(MpiIprobeCall, ID_MPI_Iprobe, dumpi_iprobe)
-    CREATE_EMPTY_CALL(MpiIrecvCall, ID_MPI_Irecv, dumpi_irecv)
+    CREATE_CALL(MpiIrecvCall, ID_MPI_Irecv, dumpi_irecv)
 //CREATE_EMPTY_CALL(MpiIreduceCall, ID_MPI_Ireduce, dumpi_ireduce)
 //CREATE_EMPTY_CALL(MpiIreducescatterCall, ID_MPI_Ireduce_scatter, dumpi_ireduce_scatter)
 //CREATE_EMPTY_CALL(MpiIreducescatterblockCall, ID_MPI_Ireduce_scatter_block, dumpi_ireduce_scatter_block)
@@ -318,7 +321,7 @@ private:
 //CREATE_EMPTY_CALL(MpiIscanCall, ID_MPI_Iscan, dumpi_iscan)
 //CREATE_EMPTY_CALL(MpiIscatterCall, ID_MPI_Iscatter, dumpi_iscatter)
 //CREATE_EMPTY_CALL(MpiIscattervCall, ID_MPI_Iscatterv, dumpi_iscatterv)
-    CREATE_EMPTY_CALL(MpiIsendCall, ID_MPI_Isend, dumpi_isend)
+    CREATE_CALL(MpiIsendCall, ID_MPI_Isend, dumpi_isend)
     CREATE_EMPTY_CALL(MpiIssendCall, ID_MPI_Issend, dumpi_issend)
     CREATE_EMPTY_CALL(MpiKeyvalcreateCall, ID_MPI_Keyval_create, dumpi_keyval_create)
     CREATE_EMPTY_CALL(MpiKeyvalfreeCall, ID_MPI_Keyval_free, dumpi_keyval_free)
@@ -445,7 +448,7 @@ private:
     CREATE_EMPTY_CALL(MpiUnpackCall, ID_MPI_Unpack, dumpi_unpack)
     CREATE_EMPTY_CALL(MpiUnpackexternalCall, ID_MPI_Unpack_external, dumpi_unpack_external)
     CREATE_EMPTY_CALL(MpiUnpublishnameCall, ID_MPI_Unpublish_name, dumpi_unpublish_name)
-    CREATE_EMPTY_CALL(MpiWaitCall, ID_MPI_Wait, dumpi_wait)
+    CREATE_CALL(MpiWaitCall, ID_MPI_Wait, dumpi_wait)
     CREATE_EMPTY_CALL(MpiWaitallCall, ID_MPI_Waitall, dumpi_waitall)
     CREATE_EMPTY_CALL(MpiWaitanyCall, ID_MPI_Waitany, dumpi_waitany)
     CREATE_EMPTY_CALL(MpiWaitsomeCall, ID_MPI_Waitsome, dumpi_waitsome)

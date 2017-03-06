@@ -12,6 +12,12 @@
 #include "callqueue.h"
 #include "otf2_trace_replay.h"
 
+#if 1
+    #define TRIGGER_PRINT(...) cerr << "TRIGGERED CALL: " << __VA_ARGS__ << endl
+#else
+    #define TRIGGER_PRINT(...)
+#endif
+
 /******************************************************************************
  *  BaseCall functions
  */
@@ -82,6 +88,7 @@ int CallQueue::CallReady(CallBase* call) {
         while (call_queue.size() > 0 && call_queue.front()->IsReady()) {
             auto front = call_queue.front();
             front->Trigger();
+            TRIGGER_PRINT(front->ToString().c_str());
             call_queue.pop();
             delete front;
             triggered++;
@@ -97,4 +104,8 @@ int CallQueue::GetDepth() {
 
 CallBase* CallQueue::Peek() {
     return call_queue.front();
+}
+
+CallBase* CallQueue::PeekBack() {
+    return call_queue.back();
 }
