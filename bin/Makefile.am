@@ -50,9 +50,23 @@ endif
 sstmac_LDADD = $(exe_LDADD)
 sstmac_top_info_LDADD = $(exe_LDADD)
 
+EXTRA_DIST += \
+ clang/astConsumers.h \
+ clang/clangheaders.h \
+ clang/findAstVisitor.h \
+ clang/foundMacro.h \
+ clang/frontendActions.h \
+ clang/globalVarNamespace.h \
+ clang/replAstVisitor.h
+
 if HAVE_CLANG
 bin_PROGRAMS += sstmac_clang_deglobal
-sstmac_clang_deglobal_SOURCES = src/globals.cc
+sstmac_clang_deglobal_SOURCES = clang/globals.cc \
+  clang/astConsumers.cc \
+  clang/findAstVisitor.cc \
+  clang/frontendActions.cc \
+  clang/replAstVisitor.cc 
+
 sstmac_clang_deglobal_CXXFLAGS = -fno-rtti
 sstmac_clang_deglobal_CPPFLAGS = $(CLANG_CPPFLAGS)
 sstmac_clang_deglobal_LDFLAGS = $(CLANG_LDFLAGS) \

@@ -290,8 +290,10 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         #the source to source generates temp .cc files
         #we need the compile command to generate .o files from the temp .cc files
         #update the command to point to them
-        objRepl = "sst." + objTarget
-        cxxCmd = cxxCmd.replace(srcFile,srcRepl).replace(objTarget,objRepl)
+        cxxCmd = cxxCmd.replace(srcFile,srcRepl)
+        if objTarget:
+          objRepl = "sst." + objTarget
+          cxxCmd = cxxCmd.replace(objTarget,objRepl)
         rc = os.system(cxxCmd)
         if not rc == 0:
           if delTempFiles:
