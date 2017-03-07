@@ -15,9 +15,10 @@ FindGlobalASTVisitor::VisitVarDecl(VarDecl* D){
   if (isa<ParmVarDecl>(D)){
     return false;
   }
-  //if (!validSrc(filename)){
-  //  return false;
-  //}
+
+  if (!validSrc(filename)){
+    return false;
+  }
 
   if (currentNS->isPrefixSet){
     currentNS->setFilePrefix(filename.c_str());
@@ -25,11 +26,6 @@ FindGlobalASTVisitor::VisitVarDecl(VarDecl* D){
 
   FileID id = CI.getSourceManager().getFileID(startLoc);
   SourceLocation headerLoc = CI.getSourceManager().getIncludeLoc(id);
-
-  std::cout << "Visting variable declaration " << D->getName().str()
-            << " at " << startLoc.printToString(CI.getSourceManager())
-            << " at " << headerLoc.printToString(CI.getSourceManager())
-           << std::endl;
 
   std::string str;
   llvm::raw_string_ostream os(str);

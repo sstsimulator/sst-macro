@@ -51,6 +51,7 @@ sstmac_LDADD = $(exe_LDADD)
 sstmac_top_info_LDADD = $(exe_LDADD)
 
 EXTRA_DIST += \
+ clang/util.h \
  clang/astConsumers.h \
  clang/clangheaders.h \
  clang/findAstVisitor.h \
