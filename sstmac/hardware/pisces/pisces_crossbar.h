@@ -51,26 +51,40 @@ class pisces_NtoM_queue :
   configure_mod_ports(int mod);
 
   void
-  configure_div_ports(int div, int max_port);
+  configure_div_ports(int div, int num_ports);
 
   void
-  configure_offset_ports(int offset, int max_port);
+  configure_offset_ports(int offset, int num_ports);
 
   void
   configure_basic_ports(int num_ports);
 
   inline int
   local_port(int port) const {
+    int lp;
     if (port_mod_){
-      return port % port_mod_;
+      lp =  port % port_mod_;
     } else {
-      return port / port_div_ - port_offset_;
+      lp = port / port_div_ - port_offset_;
     }
+    if (lp < 0) {
+      spkt_abort_printf("pisces_NtoM_queue: negative local port %d\n", lp);
+    }
+    return lp;
   }
 
   inline int
   local_slot(int port, int vc) const {
     return local_port(port) * num_vc_ + vc;
+  }
+
+  void
+  set_tile_id(std::string id) {
+    tile_id_ = id;
+  }
+
+  std::string tile_id() const {
+    return tile_id_;
   }
 
   void
@@ -107,6 +121,8 @@ class pisces_NtoM_queue :
   std::map<int, std::set<int> > deadlocked_channels_;
 
   std::map<int, std::map<int, std::list<pisces_payload*> > > blocked_messages_;
+
+  std::string tile_id_;
 
  protected:
   void
@@ -146,7 +162,7 @@ class pisces_demuxer :
 
   std::string
   pisces_name() const override {
-    return "demuxer";
+    return "demuxer" + tile_id();
   }
 
 
@@ -162,7 +178,7 @@ class pisces_muxer :
 
   std::string
   pisces_name() const override {
-    return "muxer";
+    return "muxer" + tile_id();
   }
 
 };
@@ -176,7 +192,7 @@ class pisces_crossbar :
 
   std::string
   pisces_name() const override {
-    return "crossbar";
+    return "crossbar" + tile_id();
   }
 
 };

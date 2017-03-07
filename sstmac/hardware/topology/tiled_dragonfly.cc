@@ -250,8 +250,8 @@ tiled_dragonfly::read_intragroup_connections()
                       intragroup_file_.c_str());
   }
 
-  int src_x, src_y, src_g = 0, src_port_x, src_port_y,
-      dst_x, dst_y, dst_g = 0, dst_port_x, dst_port_y;
+  int src_x, src_y, src_port_x, src_port_y,
+      dst_x, dst_y, dst_port_x, dst_port_y;
   while (in >> src_x)
   {
     std::string delimiter;
@@ -286,8 +286,6 @@ tiled_dragonfly::read_intragroup_connections()
     for( std::list<connection>::iterator it=intragrp_conns_.begin();
          it!=intragrp_conns_.end(); ++it ) {
 
-      int src_g = 0;
-      int dst_g = 0;
       int src_x = it->src_switch_xy.first;
       int src_y = it->src_switch_xy.second;
       int dst_x = it->dst_switch_xy.first;

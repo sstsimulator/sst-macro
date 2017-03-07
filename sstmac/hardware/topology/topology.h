@@ -323,7 +323,7 @@ class topology : public sprockit::printable
   }
 
   switch_id
-  netloink_to_injection_switch(netlink_id nodeaddr) const {
+  netlink_to_injection_switch(netlink_id nodeaddr) const {
     int ignore;
     return netlink_to_injection_switch(nodeaddr, ignore);
   }

@@ -9,6 +9,8 @@
  *  SST/macroscale directory.
  */
 
+#include <string>
+
 #include <sstmac/hardware/pisces/pisces_tiled_switch.h>
 #include <sstmac/hardware/pisces/pisces_stats.h>
 #include <sstmac/hardware/pisces/pisces_nic.h>
@@ -103,54 +105,38 @@ pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
   row_input_demuxers_.resize(ntiles);
   xbar_tiles_.resize(ntiles);
   col_output_muxers_.resize(ntiles);
+
   for (int r=0; r < nrows_; ++r){
     for (int c=0; c < ncols_; ++c){
       int tile = row_col_to_tile(r, c);
-
-//      pisces_crossbar* xbar = new pisces_crossbar(this,
-//        timestamp(0), //just assume no latency in crossbar
-//        timestamp(0), //just assume no latency in crossbar
-//        xbar_bw,
-//        router_->max_num_vc(),
-//        xbar_input_buffer_num_bytes,
-//        link_arbitrator_template->clone(-1));
+      std::string location(std::to_string(tile) + "(" + std::to_string(r) + ":" + std::to_string(c) + ")");
 
       pisces_crossbar* xbar = new pisces_crossbar(xbar_params, this);
       xbar->set_stat_collector(xbar_stats_);
-      hw::structured_topology* s_top = safe_cast(hw::structured_topology, top_);
-      xbar->configure_basic_ports(s_top->max_num_ports());
+      //hw::structured_topology* s_top = safe_cast(hw::structured_topology, top_);
+      //xbar->configure_basic_ports(s_top->max_num_ports());
 
       //we can route to a destination port that differs from the local port
-      int xbar_mapper = ncols_; //map port by dividing by ncols
-      //xbar->set_event_location(my_addr_);
-      xbar->configure_div_ports(xbar_mapper, ntiles-1);
+      int xbar_mapper = ncols_;
+      //xbar->configure_div_ports(xbar_mapper, ntiles-1);
+      xbar->configure_div_ports(xbar_mapper, nrows_);
       xbar->set_update_vc(false);
+      xbar->set_tile_id(location);
 
-//      pisces_muxer* muxer = new pisces_muxer(this,
-//        hop_lat, //put all the latency in the send
-//        timestamp(0), //assume zero latency credits
-//        link_bw,
-//        router_->max_num_vc(),
-//        xbar_output_buffer_num_bytes,
-//        link_arbitrator_template->clone(-1));
       pisces_muxer* muxer = new pisces_muxer(muxer_params, this);
       int muxer_offset = tile;
-      int muxer_max_port = tile;
+      //int muxer_max_port = tile;
       //muxer->set_event_location(my_addr_);
-      muxer->configure_offset_ports(muxer_offset, muxer_max_port);
+      muxer->configure_offset_ports(muxer_offset, 1);
+      muxer->set_tile_id(location);
 
-//      pisces_demuxer* dm = new pisces_demuxer(this,
-//        timestamp(0), //assume zero latency send
-//        hop_lat, //credit latency
-//        router_->max_num_vc(),
-//        row_buffer_num_bytes_);
       pisces_demuxer* dm = new pisces_demuxer(demuxer_params, this);
       //routed port numbers are 0-48, e.g. for a 6x8
       //we route locally to a given column number
       int dm_mod = ncols_;
-      //dm->set_event_location(my_addr_);
       dm->configure_mod_ports(dm_mod);
       dm->set_update_vc(false);
+      dm->set_tile_id(location);
 
       row_input_demuxers_[tile] = dm;
       col_output_muxers_[tile] = muxer;
@@ -158,9 +144,6 @@ pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
     }
   }
 
-  //this is a bit confusing - the demuxer could actually send to ANY output tile
-  //rather than require the demuxer to internally do routing logic,
-  //we just configure it with mappings for all NxM outputs
   for (int row_dm=0; row_dm < nrows_; ++row_dm){
     for (int col_dm=0; col_dm < ncols_; ++col_dm){
       int tile_dm = row_col_to_tile(row_dm, col_dm);
@@ -190,6 +173,9 @@ pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
         //use zero-based input ports corresponding to row number for the muxer
         xbar->set_output(xbar_params, tile_muxer, rx, muxer->payload_handler());
         muxer->set_input(muxer_params, rx, tile_muxer, xbar->credit_handler());
+        //xbar->set_output(xbar_params, rm, rx, muxer->payload_handler());
+        //muxer->set_input(muxer_params, rx, rm, xbar->credit_handler());
+
       }
     }
   }
@@ -204,6 +190,7 @@ pisces_tiled_switch::connect_output(
 {
   params->add_param_override("num_vc", router_->max_num_vc());
   pisces_sender* muxer = col_output_muxers_[src_outport];
+  std::cerr << "setting muxer output on outport " << src_outport << "\n";
   muxer->set_output(params, src_outport, dst_inport, mod);
 }
 
