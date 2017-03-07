@@ -387,8 +387,6 @@ user_app_cxx_full_main::register_main_fxn(const char *name, app::main_fxn fxn)
 {
   if (!main_fxns_) main_fxns_ = new std::map<std::string, main_fxn>;
 
-  std::cout << "registering main function " << name << std::endl;
-
   (*main_fxns_)[name] = fxn;
   app_factory::register_alias("user_app_cxx_full_main", name);
 }

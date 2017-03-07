@@ -155,6 +155,11 @@ class mpi_api :
   double
   wtime();
 
+  void
+  set_generate_ids(bool flag){
+    generate_ids_ = flag;
+  }
+
   void abort(MPI_Comm comm, int errcode);
 
   int errhandler_set(MPI_Comm comm, MPI_Errhandler handler){
@@ -693,14 +698,14 @@ class mpi_api :
   mpi_request*
   get_request(MPI_Request req);
 
-  MPI_Comm
-  add_comm_ptr(mpi_comm* ptr);
+  void
+  add_comm_ptr(mpi_comm* ptr, MPI_Comm* comm);
 
   void
   erase_comm_ptr(MPI_Comm comm);
 
-  MPI_Group
-  add_group_ptr(mpi_group* ptr);
+  void
+  add_group_ptr(mpi_group* ptr, MPI_Group* grp);
 
   void
   add_group_ptr(MPI_Group grp, mpi_group* ptr);
@@ -708,8 +713,8 @@ class mpi_api :
   void
   erase_group_ptr(MPI_Group grp);
 
-  MPI_Request
-  add_request_ptr(mpi_request* ptr);
+  void
+  add_request_ptr(mpi_request* ptr, MPI_Request* req);
 
   void
   erase_request_ptr(MPI_Request req);
@@ -730,12 +735,12 @@ class mpi_api :
   finish_collective(collective_op_base* op);
 
  private:
-  int
-  do_wait(MPI_Request *request, MPI_Status *status);
+  int do_wait(MPI_Request *request, MPI_Status *status);
+
+  void do_wait(mpi_request* req);
 
   void
-  finalize_wait_request(mpi_request* reqPtr, MPI_Request* request,
-                        MPI_Status* status, sstmac::timestamp wait_start);
+  finalize_wait_request(mpi_request* reqPtr, MPI_Request* request, MPI_Status* status);
 
   int
   do_type_hvector(int count, int blocklength, MPI_Aint stride,
@@ -907,11 +912,16 @@ class mpi_api :
   void check_init();
 
   int do_irecv(void *buf, int count, MPI_Datatype datatype, int source,
-            int tag, MPI_Comm comm, MPI_Request *request);
+               int tag, MPI_Comm comm, MPI_Request *request);
 
-  int do_isend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
-            MPI_Comm comm, MPI_Request *request);
+  int do_isend(const void *buf, int count, MPI_Datatype datatype, int dest,
+               int tag, MPI_Comm comm, MPI_Request *request);
 
+  mpi_request* do_irecv(void *buf, int count, MPI_Datatype datatype, int source,
+                        int tag, MPI_Comm comm);
+
+  mpi_request* do_isend(const void *buf, int count, MPI_Datatype datatype, int dest,
+                        int tag, MPI_Comm comm);
 
  private:
   /// The MPI server.
@@ -963,6 +973,8 @@ class mpi_api :
   MPI_Request req_counter_;
 
   spkt_unordered_map<int, keyval*> keyvals_;
+
+  bool generate_ids_;
 
 #if SSTMAC_COMM_SYNC_STATS
  public:

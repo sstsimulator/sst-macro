@@ -53,27 +53,13 @@ class parsedumpi_callbacks
   std::vector<int64_t> perfctr_compute_start_;
 
   /// Map dumpi request identifiers to objects.
-  typedef std::map<dumpi_comm, MPI_Comm> mpicomm_map_t;
-  typedef std::map<dumpi_request, MPI_Request> request_map_t;
-  typedef std::map<dumpi_group, MPI_Group> mpigroup_map_t;
-  typedef std::map<dumpi_op, MPI_Op> mpiop_map_t;
   typedef std::map<dumpi_datatype, MPI_Datatype> mpitype_map_t;
-
-  request_map_t request_;
 
   /// MPI types.  Gets pre-populated with all the standard datatypes.
   mpitype_map_t mpitype_;
 
   /// Dumpi also (as of version 0.6 or so) contains datatype sizes.
   dumpi_sizeof datatype_sizes_;
-
-  /// MPI communicators.
-  mpicomm_map_t mpicomm_;
-
-  mpigroup_map_t mpigroups_;
-
-  /// MPI operations.
-  mpiop_map_t mpiop_;
 
   bool initialized_;
 
@@ -119,26 +105,6 @@ class parsedumpi_callbacks
     return parent_->mpi();
   }
 
-  /// Store a single request handle.
-  void store_request(dumpi_request id, MPI_Request request);
-
-  /// Get a single request handle.
-  MPI_Request* get_request_ptr(dumpi_request id);
-
-  /// Get a group of request handles.
-  MPI_Request* get_requests(int count, const dumpi_request *dumpireq);
-
-  /// Remove a request from the map.
-  void complete_request(dumpi_request id);
-
-  /// Complete multiple requests.
-  template <typename Iter>
-  void complete_requests(Iter begin, Iter end);
-
-  void nullify_request(dumpi_request rid);
-
-  void nullify_requests(int count, const dumpi_request* trace_requests);
-
   /// Get an mpiid.
   /// Special handling for MPI_ROOT and MPI_ANY_SOURCE.
   int get_mpiid(dumpi_source id);
@@ -163,33 +129,6 @@ class parsedumpi_callbacks
   /// Access mpi type.
   /// \throw sprockit::value_error if no mapping exists for this datatype.
   MPI_Datatype* get_mpitypes(int count, const dumpi_datatype* id);
-
-  /// Add a new mpi comm.
-  void add_mpicomm(dumpi_comm id, MPI_Comm comm);
-
-  /// Erase the mapping for an mpi comm.  Does not erase built-in comms.
-  void erase_mpicomm(dumpi_comm id);
-
-  /// Access an mpi communicator.
-  MPI_Comm get_mpicomm(dumpi_comm id);
-
-  /// Add a new mpi group.
-  void add_mpigroup(dumpi_group id, MPI_Group comm);
-
-  /// Erase the mapping for an mpi group.  Does not erase built-in group.
-  void erase_mpigroup(dumpi_group id);
-
-  /// Access an mpi communicator.
-  MPI_Group get_mpigroup(dumpi_group id);
-
-  /// Add a new mpi op.
-  void add_mpiop(dumpi_op id, MPI_Op op);
-
-  /// Erase the mapping for an mpi op.  Does not erase built-in operations.
-  void erase_mpiop(dumpi_op id);
-
-  /// Access an mpi opunicator.
-  MPI_Op get_mpiop(dumpi_op id);
 
   /// Define all callback routines.
   void set_callbacks();

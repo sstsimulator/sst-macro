@@ -34,6 +34,7 @@ using sstmac::node_id;
 class mpi_comm : public communicator
 {
  public:
+  friend class mpi_api;
 
   enum topotypes {
     TOPO_NONE, TOPO_GRAPH, TOPO_CART
@@ -50,7 +51,8 @@ class mpi_comm : public communicator
     int rank,
     mpi_group* peers,
     app_id aid,
-    bool del_grp = false);
+    bool del_grp = false,
+    topotypes ty = TOPO_NONE);
 
   /// Goodbye.
   virtual
@@ -84,9 +86,6 @@ class mpi_comm : public communicator
 
   /// This is the null communicator.
   static mpi_comm* comm_null;
-
-  MPI_Comm id_;
-  int rank_;
 
   std::string
   to_string() const;
@@ -178,8 +177,12 @@ class mpi_comm : public communicator
   friend std::ostream&
   operator<<(std::ostream &os, mpi_comm* comm);
 
- protected:
+ private:
   friend class mpi_comm_factory;
+
+  void set_id(MPI_Comm id){
+    id_ = id;
+  }
 
   /// The tasks participating in this communicator.  This is only used for an mpicomm* which is NOT WORLD_COMM.
   mpi_group* group_;
@@ -198,6 +201,10 @@ class mpi_comm : public communicator
 
   std::map<int, mpi_request*> ireqs_;
 
+  MPI_Comm id_;
+
+ protected:
+  int rank_;
 
 };
 

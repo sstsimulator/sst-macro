@@ -18,7 +18,6 @@ int
 mpi_api::do_wait(MPI_Request *request, MPI_Status *status)
 {
   MPI_Request req = *request;
-  timestamp wait_start = now();
   if (req == MPI_REQUEST_NULL){
     return MPI_SUCCESS;
   }
@@ -27,18 +26,24 @@ mpi_api::do_wait(MPI_Request *request, MPI_Status *status)
     "   MPI_Wait_nonnull(%d)", req);
 
   mpi_request* reqPtr = get_request(req);
-  if (!reqPtr->is_complete()){
-   queue_->progress_loop(reqPtr);
-  }
+  do_wait(reqPtr);
 
-  finalize_wait_request(reqPtr, request, status, wait_start);
+  finalize_wait_request(reqPtr, request, status);
 
   return MPI_SUCCESS;
 }
 
 void
+mpi_api::do_wait(mpi_request* reqPtr)
+{
+  if (!reqPtr->is_complete()){
+   queue_->progress_loop(reqPtr);
+  }
+}
+
+void
 mpi_api::finalize_wait_request(mpi_request* reqPtr, MPI_Request* req,
-                               MPI_Status* status, timestamp wait_start)
+                               MPI_Status* status)
 {
   if (status != MPI_STATUS_IGNORE){
     *status = reqPtr->status();
@@ -82,9 +87,7 @@ mpi_api::waitany(int count, MPI_Request array_of_requests[], int *indx,
       mpi_request* reqPtr = get_request(req);
       if (reqPtr->is_complete()){
         *indx = i;
-        finalize_wait_request(reqPtr,
-                              &array_of_requests[i],
-                              status, wait_start);
+        finalize_wait_request(reqPtr, &array_of_requests[i], status);
         return MPI_SUCCESS;
       }
       reqPtrs[numNonnull++] = reqPtr;
@@ -107,8 +110,7 @@ mpi_api::waitany(int count, MPI_Request array_of_requests[], int *indx,
       mpi_request* reqPtr = reqPtrs[numNonnull++];
       if (reqPtr->is_complete()){
         *indx = i;
-        finalize_wait_request(reqPtr, &array_of_requests[i],
-                              status, wait_start);
+        finalize_wait_request(reqPtr, &array_of_requests[i], status);
         return MPI_SUCCESS;
       }
     }
@@ -140,8 +142,7 @@ mpi_api::waitsome(int incount, MPI_Request array_of_requests[],
       if (reqPtr->is_complete()){
         array_of_indices[numComplete++] = i;
         finalize_wait_request(reqPtr, &array_of_requests[i],
-           ignore_status ? MPI_STATUS_IGNORE : &array_of_statuses[i],
-           wait_start);
+           ignore_status ? MPI_STATUS_IGNORE : &array_of_statuses[i]);
       } else {
         reqPtrs[numIncomplete++] = reqPtr;
       }
@@ -164,8 +165,7 @@ mpi_api::waitsome(int incount, MPI_Request array_of_requests[],
       if (reqPtr->is_complete()){
         array_of_indices[numComplete++] = i;
         finalize_wait_request(reqPtr, &array_of_requests[i],
-           ignore_status ? MPI_STATUS_IGNORE : &array_of_statuses[i],
-           wait_start);
+           ignore_status ? MPI_STATUS_IGNORE : &array_of_statuses[i]);
       }
     }
   }

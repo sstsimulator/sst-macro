@@ -64,7 +64,7 @@ extern void api_unlock();
 namespace sumi {
 
 /// The shared callback pointer array.
-libundumpi_callbacks *parsedumpi_callbacks::cbacks_ = NULL;
+libundumpi_callbacks *parsedumpi_callbacks::cbacks_ = nullptr;
 
 
 int pass(void* uarg,
@@ -104,6 +104,7 @@ parsedumpi_callbacks(parsedumpi *parent) :
   init_maps();
   memset(&datatype_sizes_, 0, sizeof(dumpi_sizeof));
   sstmac::sw::api_unlock();
+  parent->mpi()->set_generate_ids(false);
 }
 
 /// Start parsing.
@@ -133,9 +134,6 @@ parsedumpi_callbacks::parse_stream(
 /// Initialize maps.
 void parsedumpi_callbacks::init_maps()
 {
-  // Null requests.
-  request_[DUMPI_REQUEST_ERROR] = 0;
-  request_[DUMPI_REQUEST_NULL] = MPI_REQUEST_NULL;
   // Built-in mpitypes.
   mpitype_[DUMPI_DATATYPE_ERROR] = MPI_DATATYPE_NULL;
   mpitype_[DUMPI_DATATYPE_NULL] = MPI_DATATYPE_NULL;
@@ -165,26 +163,6 @@ void parsedumpi_callbacks::init_maps()
   mpitype_[DUMPI_SHORT_INT] = MPI_SHORT_INT;
   mpitype_[DUMPI_2INT] = MPI_2INT;
   mpitype_[DUMPI_LONG_DOUBLE_INT] = MPI_LONG_DOUBLE_INT;
-  // MPI communicators.
-  mpicomm_[DUMPI_COMM_NULL]  = MPI_COMM_NULL;
-  mpicomm_[DUMPI_COMM_WORLD] = MPI_COMM_WORLD;
-  mpicomm_[DUMPI_COMM_SELF]  = MPI_COMM_SELF;
-  mpigroups_[DUMPI_FIRST_USER_GROUP] = MPI_GROUP_WORLD;
-  // MPI operations
-  mpiop_[DUMPI_MAX] = MPI_MAX;
-  mpiop_[DUMPI_MIN] = MPI_MIN;
-  mpiop_[DUMPI_SUM] = MPI_SUM;
-  mpiop_[DUMPI_PROD] = MPI_PROD;
-  mpiop_[DUMPI_LAND] = MPI_LAND;
-  mpiop_[DUMPI_BAND] = MPI_BAND;
-  mpiop_[DUMPI_LOR] = MPI_LOR;
-  mpiop_[DUMPI_BOR] = MPI_BOR;
-  mpiop_[DUMPI_LXOR] = MPI_LXOR;
-  mpiop_[DUMPI_BXOR] = MPI_BXOR;
-  mpiop_[DUMPI_MINLOC] = MPI_MINLOC;
-  mpiop_[DUMPI_MAXLOC] = MPI_MAXLOC;
-  mpiop_[DUMPI_REPLACE] = MPI_REPLACE;
-  mpiop_[DUMPI_OP_NULL] = MPI_OP_NULL;
 }
 
 
@@ -262,82 +240,27 @@ end_mpi(const dumpi_time *cpu, const dumpi_time *wall,
   }
 }
 
-
-/// Store a single request handle.
-void parsedumpi_callbacks::
-store_request(dumpi_request id, MPI_Request request)
+static MPI_Request
+translate_request(dumpi_request req)
 {
-  if(id >= DUMPI_FIRST_USER_REQUEST) {
-    request_[id] = request;
-  }
+  if (req == DUMPI_REQUEST_NULL) return MPI_REQUEST_NULL;
+  else return req;
 }
 
-/// Get a single request handle.
-MPI_Request*
-parsedumpi_callbacks::get_request_ptr(dumpi_request id)
+static MPI_Group
+translate_group(dumpi_group grp)
 {
-  request_map_t::iterator it = request_.find(id);
-  if(it == request_.end()){
-    spkt_throw_printf(sprockit::value_error, 
-       "parsedumpi_callbacks::get_request %d on node unmapped request id %d",
-        int(id), int(parent_->mpi()->comm_world()->rank()));
-  }
-  return &it->second;
+  if (grp == DUMPI_FIRST_USER_GROUP) return MPI_GROUP_WORLD;
+  else return grp;
 }
 
-//
-// Get a group of request handles.
-//
-MPI_Request*
-parsedumpi_callbacks::get_requests(int count, const dumpi_request *dumpireq)
+static MPI_Comm
+translate_comm(dumpi_comm comm)
 {
-  static_assert(sizeof(MPI_Request) <= sizeof(dumpi_request), "sizes");
-  MPI_Request* mpireq = (MPI_Request*) (const_cast<dumpi_request*>(dumpireq));
-  if(count < 0){
-    spkt_throw(sprockit::value_error,
-      "parsedumpi_callbacks::get_requests: negative request count");
-  }
-  for(int i = 0; i < count; ++i) {
-    mpireq[i] = *get_request_ptr(dumpireq[i]);
-  }
-  return mpireq;
+  if (comm == DUMPI_COMM_WORLD) return MPI_COMM_WORLD;
+  else return comm;
 }
 
-/// Remove a request from the map.
-void parsedumpi_callbacks::
-complete_request(dumpi_request id)
-{
-  return; // until I find a better way to deal with persistent requests.
-  if(id >= DUMPI_FIRST_USER_REQUEST) {
-    request_map_t::iterator it = request_.find(id);
-    if(it != request_.end()) {
-      request_.erase(it);
-    }
-  }
-}
-
-/// Complete multiple requests.
-template <typename Iter>
-void parsedumpi_callbacks::complete_requests(Iter begin, Iter end)
-{
-  for(Iter it = begin; it != end; ++it) {
-    complete_request(*it);
-  }
-}
-
-void parsedumpi_callbacks::
-nullify_request(dumpi_request rid)
-{
-  request_[rid] = MPI_REQUEST_NULL;
-}
-
-void parsedumpi_callbacks::
-nullify_requests(int count, const dumpi_request* dumpi_reqs)
-{
-  for (int i=0; i < count; ++i){
-    nullify_request(dumpi_reqs[i]);
-  }
-}
 
 /// Get an mpiid.
 /// Special handling for MPI_ROOT and MPI_ANY_SOURCE.
@@ -414,120 +337,6 @@ parsedumpi_callbacks::get_mpitypes(int count, const dumpi_datatype *dumpitypes)
     mpitypes[i] = get_mpitype(dumpitypes[i]);
   }
   return mpitypes;
-}
-
-/// Access an mpi communicator.
-MPI_Comm parsedumpi_callbacks::get_mpicomm(dumpi_comm id)
-{
-  if(id == DUMPI_COMM_ERROR){
-    spkt_throw(sprockit::value_error,
-      "parsedumpi_callbacks::get_mpicomm: cannot operate on MPI_COMM_ERROR");
-  }
-  mpicomm_map_t::iterator it = mpicomm_.find(id);
-  if(it == mpicomm_.end()){
-    spkt_throw_printf(sprockit::value_error,
-     "parsedumpi_callbacks::get_mpicomm: No match for communicator index %d",
-     int(id));
-  }
-  return it->second;
-}
-
-/// Add a new mpi comm.
-void parsedumpi_callbacks::add_mpicomm(dumpi_comm id, MPI_Comm comm)
-{
-  if(id < DUMPI_FIRST_USER_COMM) {
-    spkt_throw_printf(sprockit::value_error,
-     "parsedumpi_callbacks::add_mpicomm: trying to redefine built-in comm index %d",
-     int(id));
-  }
-  mpicomm_[id] = comm;
-}
-
-/// Erase the mapping for an mpi comm.  Does not erase MPI_COMM_WORLD.
-void parsedumpi_callbacks::erase_mpicomm(dumpi_comm id)
-{
-  if(id >= DUMPI_FIRST_USER_COMM) {
-    mpicomm_map_t::iterator it = mpicomm_.find(id);
-    if(it != mpicomm_.end()) {
-      mpicomm_.erase(it);
-    }
-  }
-}
-
-/// Access an mpi group.
-MPI_Group parsedumpi_callbacks::get_mpigroup(dumpi_group id)
-{
-  if(id == DUMPI_COMM_ERROR){
-    spkt_throw(sprockit::value_error,
-      "parsedumpi_callbacks::get_mpicomm: cannot operate on MPI_COMM_ERROR");
-  }
-  mpigroup_map_t::iterator it = mpigroups_.find(id);
-  if(it == mpigroups_.end()){
-    spkt_throw_printf(sprockit::value_error,
-     "parsedumpi_callbacks::get_mpigroup: no match for communicator index %d", 
-      int(id));
-  }
-  return it->second;
-}
-
-/// Add a new mpi comm.
-void parsedumpi_callbacks::add_mpigroup(dumpi_group id, MPI_Group grp)
-{
-  if(id < DUMPI_FIRST_USER_COMM) {
-    spkt_throw_printf(sprockit::value_error,
-     "parsedumpi_callbacks::add_mpigroup: trying to redefine built-in comm index %d",
-     int(id));
-  }
-  mpigroups_[id] = grp;
-}
-
-/// Erase the mapping for an mpi comm.  Does not erase MPI_COMM_WORLD.
-void parsedumpi_callbacks::erase_mpigroup(dumpi_group id)
-{
-  if(id >= DUMPI_FIRST_USER_COMM) {
-    mpigroup_map_t::iterator it = mpigroups_.find(id);
-    if(it != mpigroups_.end()) {
-      mpigroups_.erase(it);
-    }
-  }
-}
-
-/// Add a new mpi op.
-void parsedumpi_callbacks::add_mpiop(dumpi_op id, MPI_Op op)
-{
-  if(id < DUMPI_FIRST_USER_OP) {
-    spkt_throw_printf(sprockit::value_error,
-       "parsedumpi_callbacks::add_mpiop: trying to redefine built-in operation index %d",
-       int(id));
-  }
-  mpiop_[id] = op;
-}
-
-/// Erase the mapping for an mpi op.  Does not erase built-in operations.
-void parsedumpi_callbacks::erase_mpiop(dumpi_op id)
-{
-  if(id >= DUMPI_FIRST_USER_OP) {
-    mpiop_map_t::iterator it = mpiop_.find(id);
-    if(it != mpiop_.end()) {
-      mpiop_.erase(it);
-    }
-  }
-}
-
-/// Access an mpi opunicator.
-MPI_Op
-parsedumpi_callbacks::get_mpiop(dumpi_op id)
-{
-  if(id == DUMPI_OP_ERROR) {
-    spkt_throw_printf(sprockit::value_error, "Cannot operate on MPI_OP_ERROR");
-  }
-  mpiop_map_t::iterator it = mpiop_.find(id);
-  if(it == mpiop_.end()){
-    //you know what - I don't care - just return sum
-    return get_mpiop(DUMPI_SUM);
-    //spkt_throw_printf(sprockit::value_error, "no match for mpi operation index %d", id);
-  }
-  return it->second;
 }
 
 /// Set all callbacks.
@@ -870,7 +679,7 @@ on_MPI_Send(const dumpi_send *prm, uint16_t thread,
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->send(NULL, prm->count, cb->get_mpitype(prm->datatype),
                      cb->get_mpiid(prm->dest), cb->get_mpitag(prm->tag),
-                     cb->get_mpicomm(prm->comm));
+                     translate_comm(prm->comm));
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -890,7 +699,7 @@ on_MPI_Recv(const dumpi_recv *prm, uint16_t thread,
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->recv(NULL, prm->count, cb->get_mpitype(prm->datatype),
                      cb->get_mpiid(prm->source), cb->get_mpitag(prm->tag),
-                     cb->get_mpicomm(prm->comm), MPI_STATUS_IGNORE);
+                     translate_comm(prm->comm), MPI_STATUS_IGNORE);
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -959,11 +768,10 @@ on_MPI_Isend(const dumpi_isend *prm, uint16_t thread,
       "MPI_Isend: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
-  MPI_Request req;
+  MPI_Request req = prm->request;
   cb->getmpi()->isend(NULL, prm->count, cb->get_mpitype(prm->datatype),
                       cb->get_mpiid(prm->dest), cb->get_mpitag(prm->tag),
-                      cb->get_mpicomm(prm->comm), &req);
-  cb->store_request(prm->request, req);
+                      translate_comm(prm->comm), &req);
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -981,11 +789,10 @@ on_MPI_Irecv(const dumpi_irecv *prm, uint16_t thread,
       "MPI_Irecv: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
-  MPI_Request req;
+  MPI_Request req = prm->request;
   cb->getmpi()->irecv(NULL, prm->count, cb->get_mpitype(prm->datatype),
                       cb->get_mpiid(prm->source), cb->get_mpitag(prm->tag),
-                      cb->get_mpicomm(prm->comm), &req);
-  cb->store_request(prm->request, req);
+                      translate_comm(prm->comm), &req);
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -1003,8 +810,8 @@ on_MPI_Wait(const dumpi_wait *prm, uint16_t thread,
       "MPI_Irecv: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
-  cb->getmpi()->wait(cb->get_request_ptr(prm->request), MPI_STATUS_IGNORE);
-  cb->nullify_request(prm->request);
+  MPI_Request req = translate_request(prm->request);
+  cb->getmpi()->wait(&req, MPI_STATUS_IGNORE);
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -1022,14 +829,12 @@ on_MPI_Test(const dumpi_test *prm, uint16_t thread,
       "MPI_Test: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
-  MPI_Request* reqptr = cb->get_request_ptr(prm->request);
-  cb->getmpi()->wait(reqptr, MPI_STATUS_IGNORE);
   if (prm->flag){
     //this needs to complete - to keep trace 'valid'
     //we have to make sure this request is complete
-    cb->getmpi()->wait(cb->get_request_ptr(prm->request), MPI_STATUS_IGNORE);
+    MPI_Request req = translate_request(prm->request);
+    cb->getmpi()->wait(&req, MPI_STATUS_IGNORE);
   } else;  //otherwise - don't do anything - this isn't finished
-
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -1069,8 +874,8 @@ waitany_pessimistic(const dumpi_waitany *prm, uint16_t thread,
   cb->start_mpi(cpu, wall, perf);
   if(prm->index >= 0 && prm->index < prm->count) {
     dumpi_request rid = prm->requests[prm->index];
-    cb->getmpi()->wait(cb->get_request_ptr(rid), MPI_STATUS_IGNORE);
-    cb->nullify_request(rid);
+    MPI_Request req = translate_request(rid);
+    cb->getmpi()->wait(&req, MPI_STATUS_IGNORE);
   }
   cb->end_mpi(cpu, wall, perf);
 #endif
@@ -1104,8 +909,8 @@ testany_pessimistic(const dumpi_testany *prm, uint16_t thread,
   if(prm->flag == 1 && prm->index >= 0 && prm->index < prm->count) {
     // The trace file matched a request -- we will match the same one.
     dumpi_request rid = prm->requests[prm->index];
-    cb->getmpi()->wait(cb->get_request_ptr(rid), MPI_STATUS_IGNORE);
-    cb->nullify_request(rid);
+    MPI_Request req = translate_request(rid);
+    cb->getmpi()->wait(&req, MPI_STATUS_IGNORE);
   }
   cb->end_mpi(cpu, wall, perf);
 #endif
@@ -1124,10 +929,10 @@ on_MPI_Waitall(const dumpi_waitall *prm, uint16_t thread,
       "MPI_Waitall: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
-  MPI_Request* reqs = cb->get_requests(prm->count, prm->requests);
-  cb->getmpi()->waitall(prm->count, reqs, MPI_STATUSES_IGNORE);
-  cb->complete_requests(prm->requests, prm->requests + prm->count);
-  cb->nullify_requests(prm->count, prm->requests);
+  for (int i=0; i < prm->count; ++i){
+    prm->requests[i] = translate_request(prm->requests[i]);
+  }
+  cb->getmpi()->waitall(prm->count, prm->requests, MPI_STATUSES_IGNORE);
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -1148,9 +953,9 @@ on_MPI_Testall(const dumpi_testall *prm, uint16_t thread,
   // Only go ahead if flag is true (otherwise may have some odd findings).
   // This also means that we convert the 'testall' to a 'waitall'
   if(prm->flag) {
-    MPI_Request* reqs = cb->get_requests(prm->count, prm->requests);
-    cb->getmpi()->waitall(prm->count, reqs, MPI_STATUSES_IGNORE);
-    cb->complete_requests(prm->requests, prm->requests + prm->count);
+    for (int i=0; i < prm->count; ++i)
+      prm->requests[i] = translate_request(prm->requests[i]);
+    cb->getmpi()->waitall(prm->count, prm->requests, MPI_STATUSES_IGNORE);
   }
   cb->end_mpi(cpu, wall, perf);
 #endif
@@ -1171,8 +976,8 @@ on_MPI_Waitsome(const dumpi_waitsome *prm, uint16_t thread,
   cb->start_mpi(cpu, wall, perf);
   for (int i=0; i < prm->outcount; ++i){
     dumpi_request rid = prm->requests[prm->indices[i]];
-    cb->getmpi()->wait(cb->get_request_ptr(rid), MPI_STATUSES_IGNORE);
-    cb->nullify_request(rid);
+    MPI_Request req = translate_request(rid);
+    cb->getmpi()->wait(&req, MPI_STATUSES_IGNORE);
   }
   cb->end_mpi(cpu, wall, perf);
 #endif
@@ -1193,8 +998,8 @@ on_MPI_Testsome(const dumpi_testsome *prm, uint16_t thread,
   cb->start_mpi(cpu, wall, perf);
   for (int i=0; i < prm->outcount; ++i){
     dumpi_request rid = prm->requests[prm->indices[i]];
-    cb->getmpi()->wait(cb->get_request_ptr(rid), MPI_STATUS_IGNORE);
-    cb->nullify_request(rid);
+    MPI_Request req = translate_request(rid);
+    cb->getmpi()->wait(&req, MPI_STATUS_IGNORE);
   }
   cb->end_mpi(cpu, wall, perf);
 #endif
@@ -1231,7 +1036,7 @@ on_MPI_Probe(const dumpi_probe *prm, uint16_t thread,
   //I should stay here and spin until I get a matching probe
   cb->getmpi()->probe(cb->get_mpiid(prm->source),
     cb->get_mpitag(prm->tag),
-    cb->get_mpicomm(prm->comm),
+    translate_comm(prm->comm),
     MPI_STATUS_IGNORE);
   cb->end_mpi(cpu, wall, perf);
   return 1;
@@ -1264,11 +1069,10 @@ on_MPI_Send_init(const dumpi_send_init *prm, uint16_t thread,
     "MPI_Send_init: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
-  MPI_Request req;
+  MPI_Request req = prm->request;
   cb->getmpi()->send_init(NULL, prm->count, cb->get_mpitype(prm->datatype),
                     cb->get_mpiid(prm->dest), cb->get_mpitag(prm->tag),
-                    cb->get_mpicomm(prm->comm), &req);
-  cb->store_request(prm->request, req);
+                    translate_comm(prm->comm), &req);
   cb->end_mpi(cpu, wall, perf);
   return 1;
 }
@@ -1311,13 +1115,10 @@ on_MPI_Recv_init(const dumpi_recv_init *prm, uint16_t thread,
   "MPI_Recv_init: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
-
-  MPI_Request req;
+  MPI_Request req = prm->request;
   cb->getmpi()->recv_init(NULL, prm->count, cb->get_mpitype(prm->datatype),
                           cb->get_mpiid(prm->source), cb->get_mpitag(prm->tag),
-                          cb->get_mpicomm(prm->comm), &req);
-  cb->store_request(prm->request, req);
-
+                          translate_comm(prm->comm), &req);
   cb->end_mpi(cpu, wall, perf);
   return 1;
 }
@@ -1334,7 +1135,8 @@ on_MPI_Start(const dumpi_start *prm, uint16_t thread,
     "MPI_Start: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
-  cb->getmpi()->start(cb->get_request_ptr(prm->request));
+  MPI_Request req = translate_request(prm->request);
+  cb->getmpi()->start(&req);
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -1352,8 +1154,7 @@ on_MPI_Startall(const dumpi_startall *prm, uint16_t thread,
     "MPI_Startall: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
-  MPI_Request* reqs = cb->get_requests(prm->count, prm->requests);
-  cb->getmpi()->startall(prm->count, reqs);
+  cb->getmpi()->startall(prm->count, prm->requests);
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -1375,7 +1176,7 @@ on_MPI_Sendrecv(const dumpi_sendrecv *prm, uint16_t thread,
                         cb->get_mpiid(prm->dest), cb->get_mpitag(prm->sendtag),
                         NULL, prm->recvcount, cb->get_mpitype(prm->recvtype),
                         cb->get_mpiid(prm->source), cb->get_mpitag(prm->recvtag),
-                        cb->get_mpicomm(prm->comm), MPI_STATUS_IGNORE);
+                        translate_comm(prm->comm), MPI_STATUS_IGNORE);
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -1397,7 +1198,7 @@ on_MPI_Sendrecv_replace(const dumpi_sendrecv_replace *prm, uint16_t thread,
                         cb->get_mpiid(prm->dest), cb->get_mpitag(prm->sendtag),
                         NULL, prm->count, cb->get_mpitype(prm->datatype),
                         cb->get_mpiid(prm->source), cb->get_mpitag(prm->recvtag),
-                        cb->get_mpicomm(prm->comm), MPI_STATUS_IGNORE);
+                        translate_comm(prm->comm), MPI_STATUS_IGNORE);
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -1626,7 +1427,7 @@ on_MPI_Barrier(const dumpi_barrier *prm, uint16_t thread,
       "on_MPI_Barrier: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
-  cb->getmpi()->barrier(cb->get_mpicomm(prm->comm));
+  cb->getmpi()->barrier(translate_comm(prm->comm));
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -1645,7 +1446,7 @@ on_MPI_Bcast(const dumpi_bcast *prm, uint16_t thread,
   }
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->bcast(prm->count, cb->get_mpitype(prm->datatype),
-                      cb->get_mpiid(prm->root), cb->get_mpicomm(prm->comm));
+                      cb->get_mpiid(prm->root), translate_comm(prm->comm));
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -1667,7 +1468,8 @@ on_MPI_Gather(const dumpi_gather *prm, uint16_t thread,
                        cb->get_mpitype(prm->sendtype),
                        prm->recvcount,
                        cb->get_mpitype(prm->recvtype),
-                       cb->get_mpiid(prm->root), cb->get_mpicomm(prm->comm));
+                       cb->get_mpiid(prm->root),
+                       translate_comm(prm->comm));
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -1701,7 +1503,7 @@ on_MPI_Gatherv(const dumpi_gatherv *prm, uint16_t thread,
                         prm->recvcounts,
                         recvtype,
                         cb->get_mpiid(prm->root), 
-                        cb->get_mpicomm(prm->comm));
+                        translate_comm(prm->comm));
 
   cb->end_mpi(cpu, wall, perf);
 #endif
@@ -1724,7 +1526,8 @@ on_MPI_Scatter(const dumpi_scatter *prm, uint16_t thread,
                         cb->get_mpitype(prm->sendtype),
                         prm->recvcount,
                         cb->get_mpitype(prm->recvtype),
-                        cb->get_mpiid(prm->root), cb->get_mpicomm(prm->comm));
+                        cb->get_mpiid(prm->root),
+                        translate_comm(prm->comm));
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -1747,7 +1550,7 @@ on_MPI_Scatterv(const dumpi_scatterv *prm, uint16_t thread,
                          prm->recvcount,
                          cb->get_mpitype(prm->recvtype),
                          cb->get_mpiid(prm->root),
-                         cb->get_mpicomm(prm->comm));
+                         translate_comm(prm->comm));
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -1769,7 +1572,7 @@ on_MPI_Allgather(const dumpi_allgather *prm, uint16_t thread,
                           cb->get_mpitype(prm->sendtype),
                           prm->recvcount,
                           cb->get_mpitype(prm->recvtype),
-                          cb->get_mpicomm(prm->comm));
+                          translate_comm(prm->comm));
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -1791,7 +1594,7 @@ on_MPI_Allgatherv(const dumpi_allgatherv *prm, uint16_t thread,
                            cb->get_mpitype(prm->sendtype),
                            prm->recvcounts,
                            cb->get_mpitype(prm->recvtype),
-                           cb->get_mpicomm(prm->comm));
+                           translate_comm(prm->comm));
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -1813,7 +1616,7 @@ on_MPI_Alltoall(const dumpi_alltoall *prm, uint16_t thread,
                          cb->get_mpitype(prm->sendtype),
                          prm->recvcount,
                          cb->get_mpitype(prm->recvtype),
-                         cb->get_mpicomm(prm->comm));
+                         translate_comm(prm->comm));
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -1833,7 +1636,7 @@ on_MPI_Alltoallv(const dumpi_alltoallv *prm, uint16_t thread,
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->alltoallv(prm->sendcounts, cb->get_mpitype(prm->sendtype),
                           prm->recvcounts, cb->get_mpitype(prm->recvtype),
-                          cb->get_mpicomm(prm->comm));
+                          translate_comm(prm->comm));
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -1852,9 +1655,9 @@ on_MPI_Reduce(const dumpi_reduce *prm, uint16_t thread,
   }
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->reduce(prm->count, cb->get_mpitype(prm->datatype),
-                       cb->get_mpiop(prm->op),
+                       DUMPI_OP, //this doesn't matter
                        cb->get_mpiid(prm->root),
-                       cb->get_mpicomm(prm->comm));
+                       translate_comm(prm->comm));
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -1874,8 +1677,8 @@ on_MPI_Allreduce(const dumpi_allreduce *prm, uint16_t thread,
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->allreduce(prm->count,
                           cb->get_mpitype(prm->datatype),
-                          cb->get_mpiop(prm->op),
-                          cb->get_mpicomm(prm->comm));
+                          DUMPI_OP, //this doesn't matter
+                          translate_comm(prm->comm));
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -1894,8 +1697,8 @@ on_MPI_Reduce_scatter(const dumpi_reduce_scatter *prm, uint16_t thread,
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->reduce_scatter(prm->recvcounts,
                                cb->get_mpitype(prm->datatype),
-                               cb->get_mpiop(prm->op),
-                               cb->get_mpicomm(prm->comm));
+                               DUMPI_OP,
+                               translate_comm(prm->comm));
   cb->end_mpi(cpu, wall, perf);
   return 1;
 }
@@ -1912,7 +1715,7 @@ on_MPI_Scan(const dumpi_scan *prm, uint16_t thread,
   }
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->scan(prm->count, cb->get_mpitype(prm->datatype),
-                     cb->get_mpiop(prm->op), cb->get_mpicomm(prm->comm));
+                     DUMPI_OP, translate_comm(prm->comm));
   cb->end_mpi(cpu, wall, perf);
   return 1;
 }
@@ -2012,10 +1815,9 @@ on_MPI_Group_incl(const dumpi_group_incl *prm, uint16_t thread,
 
   //int retval = cb->handle_unimplemented(me);
   cb->start_mpi(cpu, wall, perf);
-  MPI_Group newgrp;
-  MPI_Group oldgrp = cb->get_mpigroup(prm->group);
-  cb->getmpi()->group_incl(oldgrp, prm->count, prm->ranks, &newgrp);
-  cb->add_mpigroup(prm->newgroup, newgrp);
+  MPI_Group ingrp = translate_group(prm->group);
+  MPI_Group outgrp = prm->newgroup;
+  cb->getmpi()->group_incl(ingrp, prm->count, prm->ranks, &outgrp);
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -2089,9 +1891,8 @@ on_MPI_Comm_dup(const dumpi_comm_dup *prm, uint16_t thread,
       "on_MPI_Group_incl: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
-  MPI_Comm newcomm;
-  cb->getmpi()->comm_dup(cb->get_mpicomm(prm->oldcomm), &newcomm);
-  cb->add_mpicomm(prm->newcomm, newcomm);
+  MPI_Comm newcomm = prm->newcomm;
+  cb->getmpi()->comm_dup(translate_comm(prm->oldcomm), &newcomm);
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -2109,11 +1910,9 @@ on_MPI_Comm_create(const dumpi_comm_create *prm, uint16_t thread,
       "on_MPI_Comm_create: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
-  MPI_Comm newcomm;
-  cb->getmpi()->comm_create(cb->get_mpicomm(prm->oldcomm),
-                            cb->get_mpigroup(prm->group), &newcomm);
-  if(newcomm != MPI_COMM_NULL)
-    cb->add_mpicomm(prm->newcomm, newcomm);
+  MPI_Comm newcomm = prm->newcomm;
+  cb->getmpi()->comm_create(translate_comm(prm->oldcomm),
+                            prm->group, &newcomm);
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -2131,10 +1930,9 @@ on_MPI_Comm_split(const dumpi_comm_split *prm, uint16_t thread,
       "on_MPI_Comm_split: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
-  MPI_Comm newcomm;
-  cb->getmpi()->comm_split(cb->get_mpicomm(prm->oldcomm),
+  MPI_Comm newcomm = prm->newcomm;
+  cb->getmpi()->comm_split(translate_comm(prm->oldcomm),
                            prm->color, prm->key, &newcomm);
-  cb->add_mpicomm(prm->newcomm, newcomm);
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
@@ -2153,9 +1951,8 @@ on_MPI_Comm_free(const dumpi_comm_free *prm, uint16_t thread,
   }
 
   cb->start_mpi(cpu, wall, perf);
-  MPI_Comm comm = cb->get_mpicomm(prm->comm);
+  MPI_Comm comm = prm->comm;
   cb->getmpi()->comm_free(&comm);
-  cb->erase_mpicomm(prm->comm);
   cb->end_mpi(cpu, wall, perf);
 #endif
   return 1;
