@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+gsize = 96
+
 node_ncol = 6
 port_ncol = 6
 
@@ -23,7 +25,7 @@ def port_num(r, c):
 
 intrafile = open('intragroup.txt','w')
 
-for src in range(0,96):
+for src in range(0,gsize):
 
   src_row = node_row(src)
   src_col = node_col(src)
@@ -94,39 +96,48 @@ ngcon = 5
 ngp = ngcon 
 
 # nuber of groups in a partition
-gpsize = ngroup / ngp
-# if remainder present, some partitions will be bigger by one
-if (ngroup % ngp) > 0:
-  gpsize += 1
+psize = ngroup / ngp
+interfile.write("psize: %s\n" % psize)
+
+gsplit_size = gsize / (psize-1)
+interfile.write("gsplit_size: %s\n" % gsplit_size)
 
 # loop over groups
 for myg in range(0,ngroup):
 
+  gid = myg % gsize 
+
+  pnum = myg / psize
+
   # myg's id within the its partition
-  gpid = myg % gpsize
+  pid = myg % psize
 
-  # loop over group directions
-  for gdir in range(0,ngcon):
+  # loop over switches in the group
+  for src in range(0,96):
 
-    gpdir = 0
-    # loop over switches in the group
-    for src in range(0,96):
+    # determine which neighborhood to connect to
+    nid = gid / gsplit_size
+    noff = nid
+    if noff >= pid:
+      noff += 1
+
+    #interfile.write("myg: %s, pid: %s, gid: %s\n" % (myg, pid, gid) )
+
+    # determine which partition to connect to
+    for target_p in range(0,ngcon):
  
-      # reset partition direction
-      if gpdir == gpsize:
-        gpdir = 0
+      #interfile.write("noff: %s, target_p: %s\n" % (noff, target_p))
 
-      # no self connection
-      if gpid != gpdir:
-        destg = gdir * gpsize + gpdir    
-        outport = 30 + gdir
-        if gpdir >= gpid:
-          outport -= 1
-        inport = 30 + gpid
-        if inport >= gpdir:
-          inport -= 1
-        if myg != destg and gpid != gpdir:
-          interfile.write("%s %s %s : %s %s -> %s %s %s : %s %s\n" % (
+      destg = target_p * psize + noff
+      outport = 30 + target_p
+      inport = 30 + pnum
+        #if gpdir >= pid:
+        #  outport -= 1
+        #inport = 30 + pid
+        #if inport >= gpdir:
+        #  inport -= 1
+        #if myg != destg:
+      interfile.write("%s %s %s : %s %s -> %s %s %s : %s %s\n" % (
                node_row(src), node_col(src), myg,
                port_row(outport), port_col(outport),
                node_row(src), node_col(src), destg,
@@ -134,4 +145,4 @@ for myg in range(0,ngroup):
      
 
       # increment partition direction
-      gpdir += 1
+      #gpdir += 1
