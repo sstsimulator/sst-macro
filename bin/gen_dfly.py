@@ -135,6 +135,13 @@ for grp in range(0,ngroup):
     if pid == 1:
       target_pid *= 2
 
+    # determine which gid to connect to
+    target_gid = gid
+    if pid == 0 and hood == 1:
+      target_gid -= gsplit_size
+    if pid == 2 and hood == 0:
+      target_gid += gsplit_size
+
     #interfile.write("grp: %s, pid: %s\n" % (grp, pid) )
 
     # determine which partition to connect to
@@ -148,6 +155,6 @@ for grp in range(0,ngroup):
       interfile.write("%s %s %s : %s %s -> %s %s %s : %s %s\n" % (
                node_row(gid), node_col(gid), grp,
                port_row(outport), port_col(outport),
-               node_row(gid), node_col(gid), destg,
+               node_row(target_gid), node_col(target_gid), destg,
                port_row(inport), port_col(inport) ) )
      
