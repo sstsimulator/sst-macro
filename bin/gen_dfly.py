@@ -23,6 +23,11 @@ def port_col( n ):
 def port_num(r, c):
   return r * port_ncol + c
 
+
+#########################
+# intragroup connections#
+#########################
+
 intrafile = open('intragroup.txt','w')
 
 for src in range(0,gsize):
@@ -87,62 +92,62 @@ for src in range(0,gsize):
 
 intrafile.close()
 
+
+#########################
+# intergroup connections#
+#########################
+
 interfile = open('intergroup.txt','w')
 
 ngroup = 15
 ngcon = 5
 
-# number of group partitions
+# number of partitions
+# each node connects into each partition once
 ngp = ngcon 
 
 # nuber of groups in a partition
 psize = ngroup / ngp
-interfile.write("psize: %s\n" % psize)
 
+# split each group to divide connections between the different
+# groups in each partition
 gsplit_size = gsize / (psize-1)
-interfile.write("gsplit_size: %s\n" % gsplit_size)
 
 # loop over groups
-for myg in range(0,ngroup):
+for grp in range(0,ngroup):
 
-  gid = myg % gsize 
+  # partition that group is in
+  prt = grp / psize
 
-  pnum = myg / psize
-
-  # myg's id within the its partition
-  pid = myg % psize
+  # group's id within its partition
+  pid = grp % psize
 
   # loop over switches in the group
-  for src in range(0,96):
+  for gid in range(0,96):
 
-    # determine which neighborhood to connect to
-    nid = gid / gsplit_size
-    noff = nid
-    if noff >= pid:
-      noff += 1
+    # determine which neighboorhood we're in
+    hood = gid / gsplit_size
 
-    #interfile.write("myg: %s, pid: %s, gid: %s\n" % (myg, pid, gid) )
+    # determine which pid to connect to
+    target_pid = hood
+    if pid == 0:
+      target_pid += 1
+    if pid == 1:
+      target_pid *= 2
+
+    #interfile.write("grp: %s, pid: %s\n" % (grp, pid) )
 
     # determine which partition to connect to
     for target_p in range(0,ngcon):
  
-      #interfile.write("noff: %s, target_p: %s\n" % (noff, target_p))
+      #interfile.write("target_pid: %s, target_p: %s\n" % (target_pid, target_p))
 
-      destg = target_p * psize + noff
+      destg = target_p * psize + target_pid
       outport = 30 + target_p
-      inport = 30 + pnum
-        #if gpdir >= pid:
-        #  outport -= 1
-        #inport = 30 + pid
-        #if inport >= gpdir:
-        #  inport -= 1
-        #if myg != destg:
+      inport = 30 + prt
       interfile.write("%s %s %s : %s %s -> %s %s %s : %s %s\n" % (
-               node_row(src), node_col(src), myg,
+               node_row(gid), node_col(gid), grp,
                port_row(outport), port_col(outport),
-               node_row(src), node_col(src), destg,
+               node_row(gid), node_col(gid), destg,
                port_row(inport), port_col(inport) ) )
      
-
-      # increment partition direction
-      #gpdir += 1
