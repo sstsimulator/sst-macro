@@ -27,7 +27,7 @@
     #define DEF_PRINT(...)
 #endif
 
-#if 0
+#if 1
     #define EVENT_PRINT(...) cerr << "EVT (#" << setw(2) << ((OTF2_trace_replay_app*)userData)->rank << "): " __VA_ARGS__ << endl;
 #else
     #define EVENT_PRINT(...)
@@ -361,7 +361,7 @@ OTF2_CallbackCode event_mpi_recv(
     MpiRecvCall* call = app->get_callqueue().find_latest<MpiRecvCall>();
     CallBase::assert_call(call, "Lookup for MpiIrecvCall in 'event_mpi_irecv_request' returned NULL");
 
-    call->on_trigger = [=]() {app->get_mpi()->send(nullptr, msgLength, MPI_BYTE, sender, msgTag, communicator);};
+    call->on_trigger = [=]() {app->get_mpi()->recv(nullptr, msgLength, MPI_BYTE, sender, msgTag, communicator, MPI_STATUS_IGNORE);};
 
     EVENT_PRINT("RECV count: " << msgLength << " source: " << sender << " tag: " << msgTag);
     return OTF2_CALLBACK_SUCCESS;
