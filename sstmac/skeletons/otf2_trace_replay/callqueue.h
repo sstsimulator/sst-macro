@@ -15,6 +15,7 @@
 #include <queue>
 #include <deque>
 #include <iostream>
+#include <sumi-mpi/mpi_api.h>
 
 #include "callbase.h"
 #include "mpi_calls.h"
@@ -22,8 +23,6 @@
 // forward declare
 class CallBase;
 class OTF2_trace_replay_app;
-
-using namespace std;
 
 // http://stackoverflow.com/questions/1259099/stdqueue-iteration
 template<typename T, typename Container=std::deque<T> >
@@ -38,10 +37,10 @@ public:
     iterator end() {
         return this->c.end();
     }
-    reverse_iterator<iterator> rbegin() {
+    std::reverse_iterator<iterator> rbegin() {
         return this->c.rbegin();
     }
-    reverse_iterator<iterator> rend() {
+    std::reverse_iterator<iterator> rend() {
         return this->c.rend();
     }
     const_iterator begin() const {
@@ -85,9 +84,21 @@ public:
     // Get the entry from the back of the queue
     CallBase* PeekBack();
 
+    // Begin tracking a pending MPI call with a request
+    void AddRequest(CallBase*);
+
+    // Finds an MPI call based on a request
+    CallBase* FindRequest(MPI_Request);
+
+    // Stop tracking a pending MPI call
+    void RemoveRequest(MPI_Request);
+
 private:
     iterable_queue<CallBase*> call_queue;
+    std::unordered_map<MPI_Request, CallBase*> request_map;
     OTF2_trace_replay_app* app;
+
+    friend class OTF2_trace_replay_app;
 };
 
 // template definitions here

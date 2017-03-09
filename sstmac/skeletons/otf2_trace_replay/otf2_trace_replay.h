@@ -50,8 +50,8 @@ public:
 
     void start_mpi(const sstmac::timestamp);
     void end_mpi(const sstmac::timestamp);
-    void add_request(dumpi_request, MPI_Request);
-    MPI_Request get_request(dumpi_request);
+    //void add_request(dumpi_request, MPI_Request);
+    //MPI_Request get_request(dumpi_request);
 
     int rank = -1;
     long total_events = 0;
@@ -71,7 +71,7 @@ private:
     void initiate_trace_replay(OTF2_Reader*);
     void verify_replay_success();
 
-    unordered_map<dumpi_request, MPI_Request> request_map;
+    //unordered_map<dumpi_request, MPI_Request> request_map;
 
 private:
     CallQueue call_queue_;

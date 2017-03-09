@@ -14,40 +14,54 @@
 
 // Templated definitions for CallQueue search functions.
 
+//template<typename T> T* CallQueue::find_earliest() {
+//	for (auto iter = call_queue.begin(); iter != call_queue.end(); iter++) {
+//		auto call = dynamic_cast<T*>(*iter);
+//		if (call != NULL)
+//			return call;
+//	}
+//	return NULL;
+//}
+//
+//template<typename T> T* CallQueue::find_earliest(int request) {
+//	for (auto iter = call_queue.begin(); iter != call_queue.end(); iter++) {
+//		auto call = dynamic_cast<T*>(*iter);
+//		if (call != NULL && call->request == request)
+//			return call;
+//	}
+//	return NULL;
+//}
+//
+//template<typename T> T* CallQueue::find_latest() {
+//	for (auto iter = call_queue.rbegin(); iter != call_queue.rend(); iter++) {
+//		auto call = dynamic_cast<T*>(*iter);
+//		if (dynamic_cast<T*>(call) != NULL)
+//			return call;
+//	}
+//	return NULL;
+//}
+//
+//template<typename T> T* CallQueue::find_latest(int request) {
+//	for (auto iter = call_queue.rbegin(); iter != call_queue.rend(); iter++) {
+//		auto call = dynamic_cast<T*>(*iter);
+//		if (call != NULL && call->request == request)
+//			return call;
+//	}
+//	return NULL;
+//}
+
 template<typename T> T* CallQueue::find_earliest() {
 	for (auto iter = call_queue.begin(); iter != call_queue.end(); iter++) {
-		auto call = dynamic_cast<T*>(*iter);
-		if (call != NULL)
-			return call;
+		if (T::id == (*iter)->GetID()) return (T*)(*iter);
 	}
-	return NULL;
-}
-
-template<typename T> T* CallQueue::find_earliest(int request) {
-	for (auto iter = call_queue.begin(); iter != call_queue.end(); iter++) {
-		auto call = dynamic_cast<T*>(*iter);
-		if (call != NULL && call->request == request)
-			return call;
-	}
-	return NULL;
+	return nullptr;
 }
 
 template<typename T> T* CallQueue::find_latest() {
 	for (auto iter = call_queue.rbegin(); iter != call_queue.rend(); iter++) {
-		auto call = dynamic_cast<T*>(*iter);
-		if (dynamic_cast<T*>(call) != NULL)
-			return call;
+		if (T::id == (*iter)->GetID()) return (T*)(*iter);
 	}
-	return NULL;
-}
-
-template<typename T> T* CallQueue::find_latest(int request) {
-	for (auto iter = call_queue.rbegin(); iter != call_queue.rend(); iter++) {
-		auto call = dynamic_cast<T*>(*iter);
-		if (call != NULL && call->request == request)
-			return call;
-	}
-	return NULL;
+	return nullptr;
 }
 
 #endif /* CALLQUEUE_HPP_ */

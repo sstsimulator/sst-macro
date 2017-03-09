@@ -12,6 +12,7 @@
 #include "otf2_trace_replay.h"
 #include "callbacks.h"
 #include <algorithm>
+#include <iomanip>
 
 OTF2_GlobalDefReaderCallbacks* create_global_def_callbacks() {
     OTF2_GlobalDefReaderCallbacks* callbacks = OTF2_GlobalDefReaderCallbacks_New();
@@ -77,6 +78,7 @@ OTF2_trace_replay_app::get_mpi() {
   if (mpi_) return mpi_;
 
   mpi_ = get_api<sumi::mpi_api>();
+  mpi_->set_generate_ids(false); // OTF2 supplies these
   return mpi_;
 }
 
@@ -89,7 +91,7 @@ void OTF2_trace_replay_app::start_mpi(const sstmac::timestamp wall) {
 	// Time not initialized
 	if (compute_time == sstmac::timestamp::zero) return;
 
-	//cout << "Delta T: " << (wall-compute_time).sec() << endl;
+	cout << "\u0394T " << (wall-compute_time).sec() << " seconds"<< endl;
     compute((timescale_ * (wall - compute_time)));
 }
 
@@ -97,13 +99,13 @@ void OTF2_trace_replay_app::end_mpi(const sstmac::timestamp wall) {
     compute_time = wall;
 }
 
-void OTF2_trace_replay_app::add_request(dumpi_request dr_req, MPI_Request req) {
-	request_map[dr_req] = req;
-}
-
-MPI_Request OTF2_trace_replay_app::get_request(dumpi_request dr_req) {
-	return request_map[dr_req];
-}
+//void OTF2_trace_replay_app::add_request(dumpi_request dr_req, MPI_Request req) {
+//	request_map[dr_req] = req;
+//}
+//
+//MPI_Request OTF2_trace_replay_app::get_request(dumpi_request dr_req) {
+//	return request_map[dr_req];
+//}
 
 struct c_vector {
     size_t capacity;
@@ -221,6 +223,14 @@ void OTF2_trace_replay_app::verify_replay_success() {
 
   if(incomplete_calls > 0) { // Something stalled the queue...
       cout << "ERROR: rank " << rank << " has " << incomplete_calls << " incomplete calls!" << endl;
-      cout << "  ==> Appears to be stuck on '" << call_queue_.Peek()->ToString() << "'" << endl;
+
+      int calls_to_print = min(incomplete_calls,25);
+      cout << "Printing " << calls_to_print << " calls" << endl;
+
+      for (int i = 0; i < calls_to_print; i++) {
+    	  auto call = call_queue_.Peek();
+    	  call_queue_.call_queue.pop();
+    	  cout << "  ==> " << setw(15) << call->ToString() << (call->isready?"\tREADY":"\tNOT READY")<< endl;
+      }
   }
 }

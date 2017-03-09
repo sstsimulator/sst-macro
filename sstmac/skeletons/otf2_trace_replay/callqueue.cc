@@ -12,20 +12,23 @@
 #include "callqueue.h"
 #include "otf2_trace_replay.h"
 
+using namespace std;
+
 #if 1
-    #define TRIGGER_PRINT(...) cerr << "TRIGGERED CALL: " << __VA_ARGS__ << endl
+    #define TRIGGER_PRINT(...) cerr << "TRIGGERED CALL (#" << app->rank << "): " << __VA_ARGS__ << endl;
 #else
     #define TRIGGER_PRINT(...)
 #endif
 
 /******************************************************************************
- *  BaseCall functions
+ *  BaseCall members and functions
  */
+
 
 CallBase::CallBase() : CallBase(NULL) {}
 CallBase::CallBase(OTF2_trace_replay_app* app) : CallBase(0, 0, app) {}
-CallBase::CallBase(OTF2_LocationRef location, OTF2_TimeStamp _start, OTF2_trace_replay_app* app=NULL) : CallBase(location, _start, 0, app) {}
-CallBase::CallBase(OTF2_LocationRef location, OTF2_TimeStamp _start, OTF2_TimeStamp _stop, OTF2_trace_replay_app* app=NULL) : isready(false), location(location), app(app) {
+CallBase::CallBase(OTF2_LocationRef location, OTF2_TimeStamp _start, OTF2_trace_replay_app* app=nullptr) : CallBase(location, _start, 0, app) {}
+CallBase::CallBase(OTF2_LocationRef location, OTF2_TimeStamp _start, OTF2_TimeStamp _stop, OTF2_trace_replay_app* app=nullptr) : isready(false), location(location), app(app), request_id(0) {
     start_time = _start;
     end_time = _stop;
 }
@@ -34,14 +37,13 @@ bool CallBase::IsReady() {
     return isready;
 }
 
-string const CallBase::ToString() {
-    return "CallBase";
+const char* CallBase::ToString() {
+	return _name;
 }
 
 void CallBase::assert_call(CallBase* cb, string msg) {
     if (cb == NULL) {
-        cerr << "ASSERT FAILED: " << msg << endl;
-        exit(1);
+        spkt_throw(sprockit::io_error, "ASSERT FAILED: ", msg.c_str());
     }
 }
 
@@ -60,6 +62,16 @@ sstmac::timestamp CallBase::GetStart() {
 sstmac::timestamp CallBase::GetEnd() {
 	if (end_time == 0) cerr << "Warning: end timestamp is not initialized for " << ToString() << endl;
     return convert_time(end_time);
+}
+
+void CallBase::Trigger() {
+	if (on_trigger != nullptr) {
+		app->start_mpi(GetStart());
+		on_trigger();
+		app->end_mpi(GetEnd());
+	} else {
+		 cout << "Rank " << location << ":\t"<< ToString() <<  ": Empty Trigger " << endl;
+	}
 }
 
 /******************************************************************************
@@ -83,12 +95,12 @@ int CallQueue::CallReady(CallBase* call) {
     call->isready = true;
 
     if (call == call_queue.front()) {
-        // when a call at the front of the queue is resolved, there may be a
+        // when a call at the front of the queue is ready, there may be a
         // cascade of other ready calls behind it.
         while (call_queue.size() > 0 && call_queue.front()->IsReady()) {
             auto front = call_queue.front();
             front->Trigger();
-            TRIGGER_PRINT(front->ToString().c_str());
+            TRIGGER_PRINT(front->ToString());
             call_queue.pop();
             delete front;
             triggered++;
@@ -96,6 +108,18 @@ int CallQueue::CallReady(CallBase* call) {
     }
 
     return triggered;
+}
+
+void CallQueue::AddRequest(CallBase* cb) {
+	request_map[cb->request_id] = cb;
+}
+
+CallBase* CallQueue::FindRequest(MPI_Request req) {
+	return request_map[req];
+}
+
+void CallQueue::RemoveRequest(MPI_Request req) {
+	if (request_map.count(req)) request_map.erase(req);
 }
 
 int CallQueue::GetDepth() {
