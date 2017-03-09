@@ -10,7 +10,7 @@ using namespace clang::tooling;
 bool
 FindGlobalASTVisitor::VisitVarDecl(VarDecl* D){
   SourceLocation startLoc = D->getLocStart();
-  std::string filename = CI.getSourceManager().getFilename(startLoc).str();
+  std::string filename = CI->getSourceManager().getFilename(startLoc).str();
 
   if (isa<ParmVarDecl>(D)){
     return false;
@@ -24,8 +24,8 @@ FindGlobalASTVisitor::VisitVarDecl(VarDecl* D){
     currentNS->setFilePrefix(filename.c_str());
   }
 
-  FileID id = CI.getSourceManager().getFileID(startLoc);
-  SourceLocation headerLoc = CI.getSourceManager().getIncludeLoc(id);
+  FileID id = CI->getSourceManager().getFileID(startLoc);
+  SourceLocation headerLoc = CI->getSourceManager().getIncludeLoc(id);
 
   std::string str;
   llvm::raw_string_ostream os(str);
@@ -84,7 +84,7 @@ FindGlobalASTVisitor::VisitVarDecl(VarDecl* D){
 
   /** find end of decl - need it for replacements */
   SourceLocation endLoc = Lexer::findLocationAfterToken(D->getLocEnd(), tok::semi,
-                               CI.getSourceManager(), CI.getLangOpts(), true);
+                               CI->getSourceManager(), CI->getLangOpts(), true);
   TheRewriter.InsertText(endLoc, os.str());
   return true;
 }
@@ -112,7 +112,7 @@ FindGlobalASTVisitor::validSrc(const std::string& filename){
 bool
 FindGlobalASTVisitor::TraverseNamespaceDecl(NamespaceDecl* D){
   SourceLocation startLoc = D->getLocStart();
-  std::string filename = CI.getSourceManager().getFilename(startLoc).str();
+  std::string filename = CI->getSourceManager().getFilename(startLoc).str();
   if (!validSrc(filename)){
     return false;
   }
@@ -128,5 +128,28 @@ FindGlobalASTVisitor::TraverseNamespaceDecl(NamespaceDecl* D){
   }
   currentNS = stash;
   return true;
+}
+
+bool
+FindGlobalASTVisitor::printNewDeclRef(DeclRefExpr* expr, PrettyPrinter& pp)
+{
+  NamedDecl* decl = expr->getFoundDecl();
+  auto iter = globals.find(decl);
+  if (iter == globals.end()){
+    pp.print(expr);
+    return false;
+  } else {
+    pp.os << iter->second;
+    return true;
+  }
+}
+
+void
+FindGlobalASTVisitor::replGlobal(NamedDecl* decl, SourceRange replRng)
+{
+  auto iter = globals.find(decl);
+  if (iter != globals.end()){
+    TheRewriter.ReplaceText(replRng, iter->second);
+  }
 }
 

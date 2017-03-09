@@ -2,16 +2,99 @@
 #include "globalVarNamespace.h"
 #include <sstream>
 #include <fstream>
+#include <iostream>
 
 using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
 
 
+#define scase(type,s,pp) \
+  case(clang::Stmt::type##Class): \
+    return visit##type(clang::cast<type>(s),pp) \
+
+bool
+MyFrontendAction::visitDeclRefExpr(clang::DeclRefExpr* exp, PrettyPrinter& pp)
+{
+  return finder.printNewDeclRef(exp,pp);
+}
+
+bool
+MyFrontendAction::visitBinaryOperator(clang::BinaryOperator* bop, PrettyPrinter& pp)
+{
+  bool foundGlobal = visitStmt(bop->getLHS(), pp);
+  pp.os << bop->getOpcodeStr().str();
+  foundGlobal |= visitStmt(bop->getRHS(), pp);
+  return foundGlobal;
+}
+
+bool
+MyFrontendAction::visitCallExpr(CallExpr *exp, PrettyPrinter &pp)
+{
+  //pp.os << exp->getCalleeDecl()->getName() << "(";
+  bool foundGlobal = visitStmt(exp->getCallee(),pp);
+  pp.os << "(";
+  int numArgs = exp->getNumArgs();
+  for (int i=0; i < numArgs; ++i){
+    if (i > 0) pp.os << ",";
+    Expr* arg = exp->getArg(i);
+    foundGlobal |= visitStmt(arg, pp);
+  }
+  pp.os << ")";
+  return foundGlobal;
+}
+
+bool
+MyFrontendAction::visitMemberExpr(MemberExpr *exp, PrettyPrinter &pp)
+{
+  bool foundGlobal = visitStmt(exp->getBase(), pp);
+  if (exp->isArrow()){
+    pp.os << "->";
+  } else {
+    pp.os << ".";
+  }
+  pp.os << exp->getMemberDecl()->getName();
+  return foundGlobal;
+}
+
+bool
+MyFrontendAction::visitImplicitCastExpr(ImplicitCastExpr *exp, PrettyPrinter &pp)
+{
+  return visitStmt(exp->getSubExpr(), pp);
+}
+
+bool
+MyFrontendAction::visitStmt(clang::Stmt* s, PrettyPrinter& pp)
+{
+  switch (s->getStmtClass()){
+    scase(BinaryOperator,s,pp);
+    scase(DeclRefExpr,s,pp);
+    scase(MemberExpr,s,pp);
+    scase(ImplicitCastExpr,s,pp);
+    scase(CallExpr,s,pp);
+    default:
+      pp.print(s);
+      return false;
+  }
+}
+
+void
+MyFrontendAction::VisitMacros()
+{
+  for (FoundMacro& fm : mlist.macros){
+    PrettyPrinter pp;
+    bool foundGlobal = visitStmt(fm.stmt,pp);
+    if (foundGlobal)
+      TheRewriter.ReplaceText(fm.range(), pp.str());
+  }
+}
+
 void
 MyFrontendAction::EndSourceFileAction()
 {
   SourceManager &SM = TheRewriter.getSourceMgr();
+
+  VisitMacros();
 
   std::string sourceFile = SM.getFileEntryForID(SM.getMainFileID())->getName().str();
   std::string suffix2 = sourceFile.substr(sourceFile.size()-1,2);

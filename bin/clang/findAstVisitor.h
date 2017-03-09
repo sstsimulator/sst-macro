@@ -3,12 +3,18 @@
 
 #include "clangHeaders.h"
 #include "globalVarNamespace.h"
+#include "util.h"
 
 class FindGlobalASTVisitor : public clang::RecursiveASTVisitor<FindGlobalASTVisitor> {
  public:
-  FindGlobalASTVisitor(clang::Rewriter &R, clang::CompilerInstance& C,
-                       GlobalVarNamespace& ns, clang::FunctionDecl** mainPtr) :
-    TheRewriter(R), CI(C), globalNS(ns), mainFxn(mainPtr){}
+  FindGlobalASTVisitor(clang::Rewriter &R, GlobalVarNamespace& ns, clang::FunctionDecl** mainPtr) :
+    TheRewriter(R), globalNS(ns), mainFxn(mainPtr), currentNS(&ns)
+  {
+  }
+
+  void setCompilerInstance(clang::CompilerInstance& c){
+    CI = &c;
+  }
 
   /**
    * @brief VisitVarDecl We only need to visit variables once down the AST.
@@ -49,9 +55,19 @@ class FindGlobalASTVisitor : public clang::RecursiveASTVisitor<FindGlobalASTVisi
    */
   bool TraverseNamespaceDecl(clang::NamespaceDecl* D);
 
+  void replGlobal(clang::NamedDecl* decl, clang::SourceRange rng);
+
+  /**
+   * @brief printNewDeclRef
+   * @param expr
+   * @param pp
+   * @return If the ref expr referes to a global variable
+   */
+  bool printNewDeclRef(clang::DeclRefExpr* expr, PrettyPrinter& pp);
+
  private:
   clang::Rewriter& TheRewriter;
-  clang::CompilerInstance& CI;
+  clang::CompilerInstance* CI;
   clang::FunctionDecl** mainFxn;
   GlobalVarNamespace& globalNS;
   GlobalVarNamespace* currentNS;

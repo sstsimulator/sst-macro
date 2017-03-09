@@ -1,76 +1,75 @@
 #include "util.h"
 #include <list>
-
-struct CodeItem {
-  CodeItem(clang::Stmt* s) : stmt(s), decl(nullptr){}
-  CodeItem(clang::Decl* d) : decl(d), stmt(nullptr){}
-
-  clang::Stmt* stmt;
-  clang::Decl* decl;
-};
-
+#include <iostream>
 
 struct FoundMacro {
-  std::list<CodeItem> items;
+  clang::Stmt* stmt;
   clang::SourceLocation start;
   clang::SourceLocation end;
+  clang::CompilerInstance& CI;
+  bool compound;
 
-  FoundMacro(clang::CompilerInstance& CI, clang::SourceLocation loc){
+  clang::SourceRange
+  range() const {
+    return clang::SourceRange(start, end);
+  }
+
+  FoundMacro(clang::CompilerInstance& c, clang::SourceLocation loc): CI(c), compound(false) {
     //need to figure out start and end of macro
     auto expansionRange = CI.getSourceManager().getExpansionRange(loc);
     if (expansionRange.first == expansionRange.second){
       //okay, this is a macro token, not a macro expansion of the form macro(x,y)
-      expansionRange.second = clang::Lexer::getLocForEndOfToken(expansionRange.second, 0,
+      expansionRange.second = clang::Lexer::getLocForEndOfToken(expansionRange.second, 1,
                                        CI.getSourceManager(), CI.getLangOpts());
     }
     start = expansionRange.first;
     end = expansionRange.second;
   }
 
-  template <class T>
-  bool overlaps(T* t){
-    clang::SourceLocation Tst = t->getLocStart();
-    clang::SourceLocation Tend = t->getLocEnd();
-    return start <= Tst && Tend <= end;
+  bool overlaps(clang::Stmt* s) const {
+    clang::SourceManager& SM = CI.getSourceManager();
+    clang::SourceLocation startLoc = SM.getFileLoc(s->getLocStart());
+    clang::SourceLocation endLoc = SM.getFileLoc(s->getLocEnd());
+    return start <= startLoc && endLoc <= end;
   }
 
-  template <class T>
-  void append(T* t){
-    items.emplace_back(t);
-  }
-
-  template <class T>
-  bool appendIfOverlap(T* t){
-    bool over = overlaps<T>(t);
-    if (over){
-      items.emplace_back(t);
-    }
-    return over;
-  }
 };
 
 struct MacroList {
-  MacroList(clang::CompilerInstance& c) :
-    current(nullptr), CI(c) {}
-  FoundMacro* current;
   std::list<FoundMacro> macros;
-  clang::CompilerInstance& CI;
+  clang::CompilerInstance* CI;
 
-  template <class T>
-  void appendNew(T* t){
-    macros.emplace_back(CI, t->getLocStart());
-    macros.back().append(t);
+  void
+  setCompilerInstance(clang::CompilerInstance& c){
+    CI = &c;
   }
 
-  /**
-   * Should only be invoked when the stmt/decl is definitely within a macro
-   */
-  template <class T>
-  void append(T* t){
-    if (macros.empty()) appendNew(t);
-    bool matches = macros.back().appendIfOverlap(t);
-    if (!matches){
-      appendNew(t);
+  FoundMacro& newMacro(clang::Stmt* s){
+    macros.emplace_back(*CI, s->getLocStart());
+    macros.back().stmt = s;
+    return macros.back();
+  }
+
+  bool hasOverlappingMacro(clang::Stmt* s){
+    if (macros.empty()) return false;
+    FoundMacro& back = macros.back();
+    return back.overlaps(s);
+  }
+
+  FoundMacro& getOverlappingMacro(clang::Stmt* s){
+    clang::SourceManager& SM = CI->getSourceManager();
+    if (macros.empty()){
+      return newMacro(s);
+    } else {
+      FoundMacro& back = macros.back();
+      if (back.overlaps(s)){
+        back.compound = true;
+        return back;
+      } else {
+        return newMacro(s);
+      }
     }
   }
+
+
 };

@@ -8,21 +8,25 @@ using namespace clang::tooling;
 bool
 ReplGlobalASTVisitor::VisitDecl(Decl* d)
 {
+  return true;
+  /** I think this isn't needed - all global var uses
+      with macros will end up in statements
   SourceLocation startLoc = d->getLocStart();
   if (startLoc.isMacroID()){
     mlist.append(d);
     return false;
   }
   return true;
+  */
 }
 
 bool
 ReplGlobalASTVisitor::VisitStmt(Stmt *s)
 {
   SourceLocation startLoc = s->getLocStart();
-  if (startLoc.isMacroID()){
-    mlist.append(s);
-    return false;
+  SourceLocation endLoc = s->getLocEnd();
+  if (startLoc.isMacroID() && endLoc.isMacroID()){
+    FoundMacro& fm = mlist.getOverlappingMacro(s);
   }
   return true;
 }
@@ -30,25 +34,17 @@ ReplGlobalASTVisitor::VisitStmt(Stmt *s)
 bool
 ReplGlobalASTVisitor::VisitDeclRefExpr(DeclRefExpr* expr){
   NamedDecl* decl =  expr->getFoundDecl();
-  ValueDecl* val = expr->getDecl();
-
   SourceLocation startLoc = expr->getLocStart();
-  SourceRange replRng;
-  if (startLoc.isMacroID()){
-    //if somehow we magically got here, then the macro was a direct replacement
-    //of a global variable - no special care needed to directly replace it
-    FoundMacro fm(CI, startLoc);
-    replRng = SourceRange(fm.start, fm.end);
+  SourceLocation endLoc = expr->getLocEnd();
+  if (startLoc.isMacroID() && endLoc.isMacroID()){
+    bool exists = mlist.hasOverlappingMacro(expr);
+    if (exists) return true;
+    FoundMacro tmp(*CI, startLoc);
+    SourceRange rng(tmp.start, tmp.end);
+    finder.replGlobal(decl, rng);
   } else {
-    replRng = expr->getSourceRange();
+    finder.replGlobal(decl, expr->getSourceRange());
   }
-
-  auto globals = finder.globalVariables();
-  auto iter = globals.find(decl);
-  if (iter != globals.end()){
-    TheRewriter.ReplaceText(replRng, iter->second);
-  }
-
   return true;
 }
 
