@@ -63,6 +63,10 @@ OTF2_trace_replay_app::OTF2_trace_replay_app(sprockit::sim_parameters* params,
     terminate_percent_ = params->get_optional_double_param("otf2_terminate_percent", 1);
     print_progress_ = params->get_optional_bool_param("otf2_print_progress", true);
     metafile_ = params->get_param("otf2_metafile");
+
+    print_mpi_calls_ = params->get_optional_bool_param("otf2_print_mpi_calls", false);
+    print_trace_events_ = params->get_optional_bool_param("otf2_print_trace_events", false);
+    print_time_deltas_ = params->get_optional_bool_param("otf2_print_time_deltas", false);
 }
 
 void OTF2_trace_replay_app::skeleton_main() {
@@ -91,7 +95,10 @@ void OTF2_trace_replay_app::start_mpi(const sstmac::timestamp wall) {
 	// Time not initialized
 	if (compute_time == sstmac::timestamp::zero) return;
 
-	cout << "\u0394T " << (wall-compute_time).sec() << " seconds"<< endl;
+	if (print_time_deltas()) {
+		cout << "\u0394T " << (wall-compute_time).sec() << " seconds"<< endl;
+	}
+
     compute((timescale_ * (wall - compute_time)));
 }
 
@@ -234,3 +241,15 @@ void OTF2_trace_replay_app::verify_replay_success() {
       }
   }
 }
+
+bool OTF2_trace_replay_app::print_trace_events() {
+	return print_trace_events_;
+}
+
+bool OTF2_trace_replay_app::print_mpi_calls() {
+	return print_mpi_calls_;
+}
+bool OTF2_trace_replay_app::print_time_deltas() {
+	return print_time_deltas_;
+}
+

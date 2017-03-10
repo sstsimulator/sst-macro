@@ -27,7 +27,10 @@ RegisterKeywords(
     "otf2_timescale",
     "otf2_terminate_percent",
     "otf2_print_progress",
-    "otf2_metafile"
+    "otf2_metafile",
+    "otf2_print_mpi_calls",
+    "otf2_print_trace_events",
+    "otf2_print_time_deltas"
 );
 
 class OTF2_trace_replay_app;
@@ -45,11 +48,15 @@ public:
 
     sumi::mpi_api* get_mpi();
     CallQueue& get_callqueue();
+    bool print_trace_events();
+    bool print_mpi_calls();
+    bool print_time_deltas();
 
     virtual void skeleton_main();
 
     void start_mpi(const sstmac::timestamp);
     void end_mpi(const sstmac::timestamp);
+
     //void add_request(dumpi_request, MPI_Request);
     //MPI_Request get_request(dumpi_request);
 
@@ -84,6 +91,9 @@ private:
     double timescale_;
     double terminate_percent_;
     bool print_progress_;
+    bool print_mpi_calls_;
+	bool print_trace_events_;
+	bool print_time_deltas_;
     string metafile_;
 };
 

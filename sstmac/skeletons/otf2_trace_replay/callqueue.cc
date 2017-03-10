@@ -100,7 +100,10 @@ int CallQueue::CallReady(CallBase* call) {
         while (call_queue.size() > 0 && call_queue.front()->IsReady()) {
             auto front = call_queue.front();
             front->Trigger();
-            TRIGGER_PRINT(front->ToString());
+
+            if (app->print_mpi_calls()) {
+               TRIGGER_PRINT(front->ToString());
+            }
             call_queue.pop();
             delete front;
             triggered++;

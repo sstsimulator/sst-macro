@@ -24,13 +24,13 @@
 #if 0
     #define DEF_PRINT(...) printf("DEF: " __VA_ARGS__)
 #else
-    #define DEF_PRINT(...)
+    #define DEF_PRINT(...) ;
 #endif
 
 #if 1
     #define EVENT_PRINT(...) cerr << "EVT (#" << setw(2) << ((OTF2_trace_replay_app*)userData)->rank << "): " __VA_ARGS__ << endl;
 #else
-    #define EVENT_PRINT(...)
+    #define EVENT_PRINT(...) ;
 #endif
 
 /******************************************************************************
@@ -240,7 +240,7 @@ OTF2_CallbackCode event_mpi_send(
 
     call->on_trigger = [=]() { call->app->get_mpi()->send(nullptr, msgLength, MPI_BYTE, receiver, msgTag, communicator); };
 
-    EVENT_PRINT("MPI SEND");
+    if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("MPI SEND");
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -266,7 +266,7 @@ OTF2_CallbackCode event_mpi_isend(
     app->get_callqueue().AddRequest(call);
     call->on_trigger = [=]() {call->app->get_mpi()->isend(nullptr, msgLength, MPI_BYTE, receiver, msgTag, communicator, &call->request_id); };
 
-    EVENT_PRINT("ISEND count" << msgLength << " tag " << msgTag << " id " << requestID << " comm " << communicator << " dest " << receiver);
+    if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("ISEND count" << msgLength << " tag " << msgTag << " id " << requestID << " comm " << communicator << " dest " << receiver);
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -289,7 +289,7 @@ OTF2_CallbackCode event_mpi_isend_complete(
 	add_wait(app, app->get_callqueue(), (MPI_Request)requestID);
 	callqueue.RemoveRequest((MPI_Request)requestID);
 
-	EVENT_PRINT("ISEND COMPLETE");
+	if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("ISEND COMPLETE");
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -308,7 +308,7 @@ OTF2_CallbackCode event_mpi_irecv_request(
     call->request_id = requestID;
     app->get_callqueue().AddRequest(call);
 
-    EVENT_PRINT("IRECV REQUEST id: " << requestID );
+    if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("IRECV REQUEST id: " << requestID );
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -342,7 +342,7 @@ OTF2_CallbackCode event_mpi_irecv(
     callqueue.RemoveRequest((MPI_Request)requestID);
     callqueue.CallReady(call);
 
-    EVENT_PRINT("IRECV count: " << msgLength << " source: " << sender << " tag: " << msgTag);
+    if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("IRECV count: " << msgLength << " source: " << sender << " tag: " << msgTag);
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -363,7 +363,7 @@ OTF2_CallbackCode event_mpi_recv(
 
     call->on_trigger = [=]() {app->get_mpi()->recv(nullptr, msgLength, MPI_BYTE, sender, msgTag, communicator, MPI_STATUS_IGNORE);};
 
-    EVENT_PRINT("RECV count: " << msgLength << " source: " << sender << " tag: " << msgTag);
+    if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("RECV count: " << msgLength << " source: " << sender << " tag: " << msgTag);
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -376,7 +376,7 @@ OTF2_CallbackCode event_mpi_request_test(
     OTF2_AttributeList* attributes,
     uint64_t            requestID ) {
 
-	EVENT_PRINT("REQUEST TEST\n");
+	if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("REQUEST TEST\n");
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -389,7 +389,7 @@ OTF2_CallbackCode event_mpi_request_cancelled(
     OTF2_AttributeList* attributes,
     uint64_t            requestID ) {
 
-	EVENT_PRINT("REQUEST CANCELLED\n");
+	if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("REQUEST CANCELLED\n");
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -401,7 +401,7 @@ OTF2_CallbackCode event_mpi_collective_begin(
     void*               userData,
     OTF2_AttributeList* attributes ) {
 
-	EVENT_PRINT("COLLECTIVE BEGIN\n");
+	if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("COLLECTIVE BEGIN\n");
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -467,7 +467,7 @@ OTF2_CallbackCode event_mpi_collective_end(
 
 #undef HANDLE_CASE
 #undef END_CASE
-    EVENT_PRINT("COLLECTIVE END");
+    if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("COLLECTIVE END");
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -481,7 +481,7 @@ OTF2_CallbackCode event_parameter_string(
     OTF2_ParameterRef   parameter,
     OTF2_StringRef      string ) {
 
-    EVENT_PRINT("PARAMETER STRING\n");
+    if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("PARAMETER STRING\n");
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -505,7 +505,7 @@ OTF2_CallbackCode event_enter(
 #define CASE_ADD_CALL(obj_name) case obj_name::id : \
 	call = new obj_name(location, time); \
 	app->get_callqueue().AddCall(call); \
-	EVENT_PRINT("ENTER " << call->ToString() << " time: " << time); \
+	if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("ENTER " << call->ToString() << " time: " << time); \
 	break;
 
 #define ADD_SPECIAL_CASE(obj_name) case obj_name::id :
@@ -820,7 +820,7 @@ OTF2_CallbackCode event_leave(
 	#define CASE_READY(_class, ...) case _class::id : { \
 		auto call = callqueue.find_latest<_class>(); \
 		CallBase::assert_call(call, "Lookup for " #_class " in 'event_leave' returned NULL"); \
-		EVENT_PRINT("LEAVE " << call->ToString() << " time: " << time); \
+		if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("LEAVE " << call->ToString() << " time: " << time); \
 		call->end_time = time; \
 		__VA_ARGS__; \
 		callqueue.CallReady(call); \
@@ -831,7 +831,7 @@ OTF2_CallbackCode event_leave(
     #define CASE_NOT_READY(_class) case _class::id : { \
 		auto call = callqueue.find_latest<_class>(); \
 		CallBase::assert_call(call, "Lookup for " #_class " in 'event_leave' returned NULL"); \
-		EVENT_PRINT("LEAVE " << call->ToString() << " time: " << time); \
+		if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("LEAVE " << call->ToString() << " time: " << time); \
 		call->end_time = time; \
 		break;}
 
