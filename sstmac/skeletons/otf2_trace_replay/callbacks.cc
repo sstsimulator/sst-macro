@@ -423,6 +423,9 @@ OTF2_CallbackCode event_mpi_collective_begin(
     OTF2_COLLECTIVE_OP_SCAN                          = 14,
  */
 
+// otf2 doesn't save mpi ops, so pick one for the replay
+#define OTF2_OP MPI_MAX
+
 OTF2_CallbackCode event_mpi_collective_end(
     OTF2_LocationRef    location,
     OTF2_TimeStamp      time,
@@ -430,7 +433,7 @@ OTF2_CallbackCode event_mpi_collective_end(
     void*               userData,
     OTF2_AttributeList* attributes,
     OTF2_CollectiveOp   collectiveOp,
-    OTF2_CommRef        communicator,
+    OTF2_CommRef        comm,
     uint32_t            root,
     uint64_t            sizeSent,
     uint64_t            sizeReceived ) {
@@ -442,21 +445,21 @@ OTF2_CallbackCode event_mpi_collective_end(
             } break;
 
     switch (collectiveOp) {
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_BARRIER, call->on_trigger = [=]() {call->app->get_mpi()->barrier(communicator);})
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_BCAST, call->on_trigger = [=]() {call->app->get_mpi()->bcast(sizeSent, MPI_BYTE, root, communicator);})
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_GATHER, call->on_trigger = [=]() {call->app->get_mpi()->gather(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, root, communicator);})
-//		HANDLE_CASE(OTF2_COLLECTIVE_OP_GATHERV, call->on_trigger = [=]() {call->app->get_mpi()->gatherv(sizeSent, MPI_BYTE, nullptr, MPI_BYTE, root, communicator);})
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_SCATTER, call->on_trigger = [=]() {call->app->get_mpi()->scatter(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, root, communicator);})
-//		HANDLE_CASE(OTF2_COLLECTIVE_OP_SCATTERV, call->on_trigger = [=]() {call->app->get_mpi()->scatterv(nullptr, nullptr, nullptr, MPI_BYTE, nullptr, sizeReceived, root, communicator);})
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLGATHER, call->on_trigger = [=]() {call->app->get_mpi()->allgather(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, communicator);})
-//		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLGATHERV, call->on_trigger = [=]() {call->app->get_mpi()->barrier(communicator);})
-//		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLTOALL, call->on_trigger = [=]() {call->app->get_mpi()->barrier(communicator);})
-//		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLTOALLV, call->on_trigger = [=]() {call->app->get_mpi()->barrier(communicator);})
-//		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLTOALLW, call->on_trigger = [=]() {call->app->get_mpi()->barrier(communicator);})
-//		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLREDUCE, call->on_trigger = [=]() {call->app->get_mpi()->barrier(communicator);})
-//		HANDLE_CASE(OTF2_COLLECTIVE_OP_REDUCE, call->on_trigger = [=]() {call->app->get_mpi()->barrier(communicator);})
-//		HANDLE_CASE(OTF2_COLLECTIVE_OP_REDUCE_SCATTER, call->on_trigger = [=]() {call->app->get_mpi()->barrier(communicator);})
-//		HANDLE_CASE(OTF2_COLLECTIVE_OP_SCAN, call->on_trigger = [=]() {call->app->get_mpi()->barrier(communicator);})
+		HANDLE_CASE(OTF2_COLLECTIVE_OP_BARRIER, call->on_trigger = [=]() {call->app->get_mpi()->barrier(comm);})
+		HANDLE_CASE(OTF2_COLLECTIVE_OP_BCAST, call->on_trigger = [=]() {call->app->get_mpi()->bcast(sizeSent, MPI_BYTE, root, comm);})
+		HANDLE_CASE(OTF2_COLLECTIVE_OP_GATHER, call->on_trigger = [=]() {call->app->get_mpi()->gather(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, root, comm);})
+//		HANDLE_CASE(OTF2_COLLECTIVE_OP_GATHERV, call->on_trigger = [=]() {call->app->get_mpi()->gatherv(sizeSent, MPI_BYTE, nullptr, MPI_BYTE, root, comm);})
+		HANDLE_CASE(OTF2_COLLECTIVE_OP_SCATTER, call->on_trigger = [=]() {call->app->get_mpi()->scatter(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, root, comm);})
+//		HANDLE_CASE(OTF2_COLLECTIVE_OP_SCATTERV, call->on_trigger = [=]() {call->app->get_mpi()->scatterv(nullptr, nullptr, nullptr, MPI_BYTE, nullptr, sizeReceived, root, comm);})
+		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLGATHER, call->on_trigger = [=]() {call->app->get_mpi()->allgather(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, comm);}) //allgather(int count, MPI_Datatype type, MPI_Comm comm)
+//		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLGATHERV, call->on_trigger = [=]() {call->app->get_mpi()->barrier();})
+		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLTOALL, call->on_trigger = [=]() {call->app->get_mpi()->alltoall(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, comm);}) // test
+//		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLTOALLV, call->on_trigger = [=]() {call->app->get_mpi()->barrier();})
+//		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLTOALLW, call->on_trigger = [=]() {call->app->get_mpi()->barrier();})
+		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLREDUCE, call->on_trigger = [=]() {call->app->get_mpi()->allreduce(sizeSent, MPI_BYTE, OTF2_OP, comm);})           //allreduce(int count, MPI_Datatype type, MPI_Op op, MPI_Comm comm);
+		HANDLE_CASE(OTF2_COLLECTIVE_OP_REDUCE, call->on_trigger = [=]() {call->app->get_mpi()->reduce(sizeSent, MPI_BYTE, OTF2_OP, root, comm);})           //reduce(int count, MPI_Datatype type, MPI_Op op, int root, MPI_Comm comm);
+		HANDLE_CASE(OTF2_COLLECTIVE_OP_REDUCE_SCATTER, call->on_trigger = [=]() {call->app->get_mpi()->reduce_scatter_block(sizeReceived, MPI_BYTE, OTF2_OP, comm);}) //reduce_scatter_block(int recvcnt, MPI_Datatype type, MPI_Op op, MPI_Comm comm);
+		HANDLE_CASE(OTF2_COLLECTIVE_OP_SCAN, call->on_trigger = [=]() {call->app->get_mpi()->scan(sizeSent, MPI_BYTE, OTF2_OP, comm);})                     // scan(int count, MPI_Datatype type, MPI_Op op, MPI_Comm comm);
 
     default:
         cout << "ERROR: Collective not handled; " << (int)collectiveOp << endl;
