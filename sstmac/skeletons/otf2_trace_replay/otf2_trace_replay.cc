@@ -56,7 +56,7 @@ void check_status(OTF2_ErrorCode status, const std::string& description)
   }
 }
 
-OTF2_trace_replay_app::OTF2_trace_replay_app(sprockit::sim_parameters* params,
+OTF2TraceReplayApp::OTF2TraceReplayApp(sprockit::sim_parameters* params,
         sumi::software_id sid, sstmac::sw::operating_system* os) :
     app(params, sid, os), mpi_(nullptr), call_queue_(this) {
     timescale_ = params->get_optional_double_param("otf2_timescale", 1.0);
@@ -69,7 +69,7 @@ OTF2_trace_replay_app::OTF2_trace_replay_app(sprockit::sim_parameters* params,
     print_time_deltas_ = params->get_optional_bool_param("otf2_print_time_deltas", false);
 }
 
-void OTF2_trace_replay_app::skeleton_main() {
+void OTF2TraceReplayApp::skeleton_main() {
     rank = this->tid();
 
     auto event_reader = initialize_event_reader();
@@ -79,7 +79,7 @@ void OTF2_trace_replay_app::skeleton_main() {
 }
 
 sumi::mpi_api*
-OTF2_trace_replay_app::get_mpi() {
+OTF2TraceReplayApp::GetMpi() {
   if (mpi_) return mpi_;
 
   mpi_ = get_api<sumi::mpi_api>();
@@ -87,23 +87,23 @@ OTF2_trace_replay_app::get_mpi() {
   return mpi_;
 }
 
-CallQueue& OTF2_trace_replay_app::get_callqueue() {
+CallQueue& OTF2TraceReplayApp::GetCallQueue() {
     return call_queue_;
 }
 
 // Indicate that we are starting an MPI call.
-void OTF2_trace_replay_app::start_mpi(const sstmac::timestamp wall) {
+void OTF2TraceReplayApp::StartMpi(const sstmac::timestamp wall) {
 	// Time not initialized
 	if (compute_time == sstmac::timestamp::zero) return;
 
-	if (print_time_deltas()) {
+	if (PrintTimeDeltas()) {
 		cout << "\u0394T " << (wall-compute_time).sec() << " seconds"<< endl;
 	}
 
     compute((timescale_ * (wall - compute_time)));
 }
 
-void OTF2_trace_replay_app::end_mpi(const sstmac::timestamp wall) {
+void OTF2TraceReplayApp::EndMpi(const sstmac::timestamp wall) {
     compute_time = wall;
 }
 
@@ -128,14 +128,14 @@ static OTF2_CallbackCode GlobDefLocation_Register(void* userData,
 		uint64_t numberOfEvents,
         OTF2_LocationGroupRef locationGroup) {
 
-	auto app = (OTF2_trace_replay_app*)userData;
+	auto app = (OTF2TraceReplayApp*)userData;
 	app->total_events += numberOfEvents;
 
     return OTF2_CALLBACK_SUCCESS;
 }
 
 OTF2_Reader*
-OTF2_trace_replay_app::initialize_event_reader() {
+OTF2TraceReplayApp::initialize_event_reader() {
 	// OTF2 has an excellent API
 	uint64_t number_of_locations;
 	//uint64_t trace_length = 0;
@@ -218,7 +218,7 @@ handle_events(OTF2_Reader* reader, OTF2_EvtReader* event_reader) {
 	return events_read;
 }
 
-void OTF2_trace_replay_app::initiate_trace_replay(OTF2_Reader* reader) {
+void OTF2TraceReplayApp::initiate_trace_replay(OTF2_Reader* reader) {
   // get the trace reader corresponding to the rank
   uint64_t locs = 0;
   OTF2_Reader_GetNumberOfLocations(reader, &locs);
@@ -235,7 +235,7 @@ void OTF2_trace_replay_app::initiate_trace_replay(OTF2_Reader* reader) {
   check_status(OTF2_Reader_CloseEvtFiles(reader), "OTF2_Reader_CloseEvtFiles\n");
 }
 
-void OTF2_trace_replay_app::verify_replay_success() {
+void OTF2TraceReplayApp::verify_replay_success() {
   int incomplete_calls = call_queue_.GetDepth();
 
   if(incomplete_calls > 0) { // Something stalled the queue...
@@ -252,14 +252,14 @@ void OTF2_trace_replay_app::verify_replay_success() {
   }
 }
 
-bool OTF2_trace_replay_app::print_trace_events() {
+bool OTF2TraceReplayApp::PrintTraceEvents() {
 	return print_trace_events_;
 }
 
-bool OTF2_trace_replay_app::print_mpi_calls() {
+bool OTF2TraceReplayApp::PrintMpiCalls() {
 	return print_mpi_calls_;
 }
-bool OTF2_trace_replay_app::print_time_deltas() {
+bool OTF2TraceReplayApp::PrintTimeDeltas() {
 	return print_time_deltas_;
 }
 

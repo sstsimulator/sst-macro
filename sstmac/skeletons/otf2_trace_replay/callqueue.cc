@@ -26,9 +26,9 @@ using namespace std;
 
 
 CallBase::CallBase() : CallBase(NULL) {}
-CallBase::CallBase(OTF2_trace_replay_app* app) : CallBase(0, 0, app) {}
-CallBase::CallBase(OTF2_LocationRef location, OTF2_TimeStamp _start, OTF2_trace_replay_app* app=nullptr) : CallBase(location, _start, 0, app) {}
-CallBase::CallBase(OTF2_LocationRef location, OTF2_TimeStamp _start, OTF2_TimeStamp _stop, OTF2_trace_replay_app* app=nullptr) : isready(false), location(location), app(app), request_id(0) {
+CallBase::CallBase(OTF2TraceReplayApp* app) : CallBase(0, 0, app) {}
+CallBase::CallBase(OTF2_LocationRef location, OTF2_TimeStamp _start, OTF2TraceReplayApp* app=nullptr) : CallBase(location, _start, 0, app) {}
+CallBase::CallBase(OTF2_LocationRef location, OTF2_TimeStamp _start, OTF2_TimeStamp _stop, OTF2TraceReplayApp* app=nullptr) : isready(false), location(location), app(app), request_id(0) {
     start_time = _start;
     end_time = _stop;
 }
@@ -66,9 +66,9 @@ sstmac::timestamp CallBase::GetEnd() {
 
 void CallBase::Trigger() {
 	if (on_trigger != nullptr) {
-		app->start_mpi(GetStart());
+		app->StartMpi(GetStart());
 		on_trigger();
-		app->end_mpi(GetEnd());
+		app->EndMpi(GetEnd());
 	} else {
 		 cout << "Rank " << location << ":\t"<< ToString() <<  ": Empty Trigger " << endl;
 	}
@@ -79,7 +79,7 @@ void CallBase::Trigger() {
  */
 
 CallQueue::CallQueue() : CallQueue(NULL) {};
-CallQueue::CallQueue(OTF2_trace_replay_app* app) {
+CallQueue::CallQueue(OTF2TraceReplayApp* app) {
     this->app = app;
 }
 
@@ -101,7 +101,7 @@ int CallQueue::CallReady(CallBase* call) {
             auto front = call_queue.front();
             front->Trigger();
 
-            if (app->print_mpi_calls()) {
+            if (app->PrintMpiCalls()) {
                TRIGGER_PRINT(front->ToString());
             }
             call_queue.pop();

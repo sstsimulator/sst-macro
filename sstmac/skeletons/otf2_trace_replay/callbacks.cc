@@ -28,7 +28,7 @@
 #endif
 
 #if 1
-    #define EVENT_PRINT(...) cerr << "EVT (#" << setw(2) << ((OTF2_trace_replay_app*)userData)->rank << "): " __VA_ARGS__ << endl;
+    #define EVENT_PRINT(...) cerr << "EVT (#" << setw(2) << ((OTF2TraceReplayApp*)userData)->rank << "): " __VA_ARGS__ << endl;
 #else
     #define EVENT_PRINT(...) ;
 #endif
@@ -47,7 +47,7 @@ OTF2_CallbackCode def_clock_properties(
     uint64_t globalOffset,
     uint64_t traceLength ) {
 
-	auto app = (OTF2_trace_replay_app*)userData;
+	auto app = (OTF2TraceReplayApp*)userData;
 	app->otf2_clock_properties =  {
         timerResolution, globalOffset, traceLength
     };
@@ -60,7 +60,7 @@ OTF2_CallbackCode def_string(
     OTF2_StringRef self,
     const char*    str ) {
 
-	auto app = (OTF2_trace_replay_app*)userData;
+	auto app = (OTF2TraceReplayApp*)userData;
     app->otf2_string_table.push_back(str);
     app->otf2_mpi_call_map[self] = MPI_call_to_id[str];
 
@@ -106,7 +106,7 @@ OTF2_CallbackCode def_region(
     uint32_t        beginLineNumber,
     uint32_t        endLineNumber ) {
 
-	auto app = (OTF2_trace_replay_app*)userData;
+	auto app = (OTF2TraceReplayApp*)userData;
 	app->otf2_regions.push_back({name, regionRole, paradigm});
 
     DEF_PRINT("REGION\n");
@@ -119,7 +119,7 @@ OTF2_CallbackCode def_callpath(
     OTF2_CallpathRef parent,
     OTF2_RegionRef   region ) {
 
-	auto app = (OTF2_trace_replay_app*)userData;
+	auto app = (OTF2TraceReplayApp*)userData;
 	app->otf2_callpaths.push_back({region});
 
     DEF_PRINT("CALLPATH\n");
@@ -137,7 +137,7 @@ OTF2_CallbackCode def_group(
     uint32_t        numberOfMembers,
     const uint64_t* members ) {
 
-	auto app = (OTF2_trace_replay_app*)userData;
+	auto app = (OTF2TraceReplayApp*)userData;
 	app->otf2_groups.push_back({
         name, groupType, paradigm, groupFlags
     });
@@ -153,7 +153,7 @@ OTF2_CallbackCode def_comm(
     OTF2_GroupRef  group,
     OTF2_CommRef   parent ) {
 
-	auto app = (OTF2_trace_replay_app*)userData;
+	auto app = (OTF2TraceReplayApp*)userData;
 	app->otf2_regions.push_back({ name });
 
     DEF_PRINT("COMMUNICATOR\n");
@@ -195,11 +195,11 @@ def_location_property(
 // puts call into wait when wait does not have one, otherwise it will make a new wait
 // Fundamental assumption: requests are always resolved inside MPI_Waits. This means
 // an event_enter must have put one on the stack before this function is called.
-void add_wait(OTF2_trace_replay_app* app, CallQueue& queue, MPI_Request requestID) {
+void add_wait(OTF2TraceReplayApp* app, CallQueue& queue, MPI_Request requestID) {
 
 	auto wait_event = [=]() {
 		MPI_Request req = requestID;
-		app->get_mpi()->wait(&req, MPI_STATUS_IGNORE);
+		app->GetMpi()->wait(&req, MPI_STATUS_IGNORE);
 	};
 
 	MpiWaitCall* wait_call = dynamic_cast<MpiWaitCall*>(queue.PeekBack());
@@ -218,8 +218,8 @@ void add_wait(OTF2_trace_replay_app* app, CallQueue& queue, MPI_Request requestI
 		wait_call->end_time = wait_call->start_time;
 
 		// Update the queue
-		app->get_callqueue().AddCall(new_call);
-		app->get_callqueue().CallReady(wait_call);
+		app->GetCallQueue().AddCall(new_call);
+		app->GetCallQueue().CallReady(wait_call);
 	}
 }
 
@@ -234,13 +234,13 @@ OTF2_CallbackCode event_mpi_send(
     uint32_t            msgTag,
     uint64_t            msgLength ) {
 
-    auto app = (OTF2_trace_replay_app*)userData;
-    MpiSendCall* call = app->get_callqueue().find_latest<MpiSendCall>();
+    auto app = (OTF2TraceReplayApp*)userData;
+    MpiSendCall* call = app->GetCallQueue().find_latest<MpiSendCall>();
     CallBase::assert_call(call, "Lookup for MpiSendCall in 'event_mpi_send' returned NULL");
 
-    call->on_trigger = [=]() { call->app->get_mpi()->send(nullptr, msgLength, MPI_BYTE, receiver, msgTag, communicator); };
+    call->on_trigger = [=]() { call->app->GetMpi()->send(nullptr, msgLength, MPI_BYTE, receiver, msgTag, communicator); };
 
-    if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("MPI SEND");
+    if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("MPI SEND");
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -256,17 +256,17 @@ OTF2_CallbackCode event_mpi_isend(
     uint64_t            msgLength,
     uint64_t            requestID ) {
 
-    auto app = (OTF2_trace_replay_app*)userData;
+    auto app = (OTF2TraceReplayApp*)userData;
 
     // event_enter has just put an isend on the top of the queue
-    MpiIsendCall* call = dynamic_cast<MpiIsendCall*>(app->get_callqueue().PeekBack());
+    MpiIsendCall* call = dynamic_cast<MpiIsendCall*>(app->GetCallQueue().PeekBack());
     CallBase::assert_call(call, "Lookup for MpiIsendCall in 'event_mpi_isend' returned NULL");
 
     call->request_id = requestID;
-    app->get_callqueue().AddRequest(call);
-    call->on_trigger = [=]() {call->app->get_mpi()->isend(nullptr, msgLength, MPI_BYTE, receiver, msgTag, communicator, &call->request_id); };
+    app->GetCallQueue().AddRequest(call);
+    call->on_trigger = [=]() {call->app->GetMpi()->isend(nullptr, msgLength, MPI_BYTE, receiver, msgTag, communicator, &call->request_id); };
 
-    if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("ISEND count" << msgLength << " tag " << msgTag << " id " << requestID << " comm " << communicator << " dest " << receiver);
+    if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("ISEND count" << msgLength << " tag " << msgTag << " id " << requestID << " comm " << communicator << " dest " << receiver);
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -278,18 +278,18 @@ OTF2_CallbackCode event_mpi_isend_complete(
     OTF2_AttributeList* attributes,
     uint64_t            requestID ) {
 
-	auto app = (OTF2_trace_replay_app*)userData;
-	auto& callqueue = app->get_callqueue();
+	auto app = (OTF2TraceReplayApp*)userData;
+	auto& callqueue = app->GetCallQueue();
 
 	// Is isend_complete always wrapped by a wait? If not, we can't reliably
 	// generate a wait. The current behavior is to fail
 	MpiWaitCall* call = dynamic_cast<MpiWaitCall*>(callqueue.PeekBack());
 	CallBase::assert_call(call, "Lookup for MpiWaitCall in 'event_mpi_isend_complete' returned NULL");
 
-	add_wait(app, app->get_callqueue(), (MPI_Request)requestID);
+	add_wait(app, app->GetCallQueue(), (MPI_Request)requestID);
 	callqueue.RemoveRequest((MPI_Request)requestID);
 
-	if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("ISEND COMPLETE");
+	if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("ISEND COMPLETE");
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -301,14 +301,14 @@ OTF2_CallbackCode event_mpi_irecv_request(
     OTF2_AttributeList* attributes,
     uint64_t            requestID ) {
 
-    auto app = (OTF2_trace_replay_app*)userData;
-    MpiIrecvCall* call = dynamic_cast<MpiIrecvCall*>(app->get_callqueue().PeekBack());
+    auto app = (OTF2TraceReplayApp*)userData;
+    MpiIrecvCall* call = dynamic_cast<MpiIrecvCall*>(app->GetCallQueue().PeekBack());
     CallBase::assert_call(call, "Lookup for MpiIrecvCall in 'event_mpi_irecv_request' returned NULL");
 
     call->request_id = requestID;
-    app->get_callqueue().AddRequest(call);
+    app->GetCallQueue().AddRequest(call);
 
-    if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("IRECV REQUEST id: " << requestID );
+    if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("IRECV REQUEST id: " << requestID );
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -326,8 +326,8 @@ OTF2_CallbackCode event_mpi_irecv(
     uint64_t            msgLength,
     uint64_t            requestID ) {
 
-    auto app = (OTF2_trace_replay_app*)userData;
-    auto& callqueue = app->get_callqueue();
+    auto app = (OTF2TraceReplayApp*)userData;
+    auto& callqueue = app->GetCallQueue();
 
     // finish off the Irecv call
     MpiIrecvCall* call = dynamic_cast<MpiIrecvCall*>(callqueue.FindRequest((MPI_Request)requestID));
@@ -335,14 +335,14 @@ OTF2_CallbackCode event_mpi_irecv(
 
     call->on_trigger = [=]() {
     	MPI_Request req = requestID;
-    	app->get_mpi()->irecv(nullptr, msgLength, MPI_BYTE, sender, msgTag, communicator, &req);};
+    	app->GetMpi()->irecv(nullptr, msgLength, MPI_BYTE, sender, msgTag, communicator, &req);};
 
     MpiWaitCall* wait = new MpiWaitCall();
-    add_wait(app, app->get_callqueue(), (MPI_Request)requestID);
+    add_wait(app, app->GetCallQueue(), (MPI_Request)requestID);
     callqueue.RemoveRequest((MPI_Request)requestID);
     callqueue.CallReady(call);
 
-    if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("IRECV count: " << msgLength << " source: " << sender << " tag: " << msgTag);
+    if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("IRECV count: " << msgLength << " source: " << sender << " tag: " << msgTag);
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -357,13 +357,13 @@ OTF2_CallbackCode event_mpi_recv(
     uint32_t            msgTag,
     uint64_t            msgLength ) {
 
-	auto app = (OTF2_trace_replay_app*)userData;
-    MpiRecvCall* call = app->get_callqueue().find_latest<MpiRecvCall>();
+	auto app = (OTF2TraceReplayApp*)userData;
+    MpiRecvCall* call = app->GetCallQueue().find_latest<MpiRecvCall>();
     CallBase::assert_call(call, "Lookup for MpiIrecvCall in 'event_mpi_irecv_request' returned NULL");
 
-    call->on_trigger = [=]() {app->get_mpi()->recv(nullptr, msgLength, MPI_BYTE, sender, msgTag, communicator, MPI_STATUS_IGNORE);};
+    call->on_trigger = [=]() {app->GetMpi()->recv(nullptr, msgLength, MPI_BYTE, sender, msgTag, communicator, MPI_STATUS_IGNORE);};
 
-    if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("RECV count: " << msgLength << " source: " << sender << " tag: " << msgTag);
+    if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("RECV count: " << msgLength << " source: " << sender << " tag: " << msgTag);
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -376,7 +376,7 @@ OTF2_CallbackCode event_mpi_request_test(
     OTF2_AttributeList* attributes,
     uint64_t            requestID ) {
 
-	if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("REQUEST TEST\n");
+	if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("REQUEST TEST\n");
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -389,7 +389,7 @@ OTF2_CallbackCode event_mpi_request_cancelled(
     OTF2_AttributeList* attributes,
     uint64_t            requestID ) {
 
-	if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("REQUEST CANCELLED\n");
+	if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("REQUEST CANCELLED\n");
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -401,7 +401,7 @@ OTF2_CallbackCode event_mpi_collective_begin(
     void*               userData,
     OTF2_AttributeList* attributes ) {
 
-	if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("COLLECTIVE BEGIN\n");
+	if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("COLLECTIVE BEGIN\n");
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -438,28 +438,28 @@ OTF2_CallbackCode event_mpi_collective_end(
     uint64_t            sizeSent,
     uint64_t            sizeReceived ) {
 
-    auto app = (OTF2_trace_replay_app*)userData;
+    auto app = (OTF2TraceReplayApp*)userData;
 #define HANDLE_CASE(op, ...) case op : { \
-            auto call = app->get_callqueue().PeekBack(); \
+            auto call = app->GetCallQueue().PeekBack(); \
             __VA_ARGS__; \
             } break;
 
     switch (collectiveOp) {
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_BARRIER, call->on_trigger = [=]() {call->app->get_mpi()->barrier(comm);})
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_BCAST, call->on_trigger = [=]() {call->app->get_mpi()->bcast(sizeSent, MPI_BYTE, root, comm);})
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_GATHER, call->on_trigger = [=]() {call->app->get_mpi()->gather(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, root, comm);})
+		HANDLE_CASE(OTF2_COLLECTIVE_OP_BARRIER, call->on_trigger = [=]() {call->app->GetMpi()->barrier(comm);})
+		HANDLE_CASE(OTF2_COLLECTIVE_OP_BCAST, call->on_trigger = [=]() {call->app->GetMpi()->bcast(sizeSent, MPI_BYTE, root, comm);})
+		HANDLE_CASE(OTF2_COLLECTIVE_OP_GATHER, call->on_trigger = [=]() {call->app->GetMpi()->gather(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, root, comm);})
 //		HANDLE_CASE(OTF2_COLLECTIVE_OP_GATHERV, call->on_trigger = [=]() {call->app->get_mpi()->gatherv(sizeSent, MPI_BYTE, nullptr, MPI_BYTE, root, comm);})
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_SCATTER, call->on_trigger = [=]() {call->app->get_mpi()->scatter(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, root, comm);})
+		HANDLE_CASE(OTF2_COLLECTIVE_OP_SCATTER, call->on_trigger = [=]() {call->app->GetMpi()->scatter(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, root, comm);})
 //		HANDLE_CASE(OTF2_COLLECTIVE_OP_SCATTERV, call->on_trigger = [=]() {call->app->get_mpi()->scatterv(nullptr, nullptr, nullptr, MPI_BYTE, nullptr, sizeReceived, root, comm);})
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLGATHER, call->on_trigger = [=]() {call->app->get_mpi()->allgather(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, comm);}) //allgather(int count, MPI_Datatype type, MPI_Comm comm)
+		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLGATHER, call->on_trigger = [=]() {call->app->GetMpi()->allgather(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, comm);}) //allgather(int count, MPI_Datatype type, MPI_Comm comm)
 //		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLGATHERV, call->on_trigger = [=]() {call->app->get_mpi()->barrier();})
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLTOALL, call->on_trigger = [=]() {call->app->get_mpi()->alltoall(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, comm);}) // test
+		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLTOALL, call->on_trigger = [=]() {call->app->GetMpi()->alltoall(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, comm);}) // test
 //		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLTOALLV, call->on_trigger = [=]() {call->app->get_mpi()->barrier();})
 //		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLTOALLW, call->on_trigger = [=]() {call->app->get_mpi()->barrier();})
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLREDUCE, call->on_trigger = [=]() {call->app->get_mpi()->allreduce(sizeSent, MPI_BYTE, OTF2_OP, comm);})           //allreduce(int count, MPI_Datatype type, MPI_Op op, MPI_Comm comm);
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_REDUCE, call->on_trigger = [=]() {call->app->get_mpi()->reduce(sizeSent, MPI_BYTE, OTF2_OP, root, comm);})           //reduce(int count, MPI_Datatype type, MPI_Op op, int root, MPI_Comm comm);
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_REDUCE_SCATTER, call->on_trigger = [=]() {call->app->get_mpi()->reduce_scatter_block(sizeReceived, MPI_BYTE, OTF2_OP, comm);}) //reduce_scatter_block(int recvcnt, MPI_Datatype type, MPI_Op op, MPI_Comm comm);
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_SCAN, call->on_trigger = [=]() {call->app->get_mpi()->scan(sizeSent, MPI_BYTE, OTF2_OP, comm);})                     // scan(int count, MPI_Datatype type, MPI_Op op, MPI_Comm comm);
+		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLREDUCE, call->on_trigger = [=]() {call->app->GetMpi()->allreduce(sizeSent, MPI_BYTE, OTF2_OP, comm);})           //allreduce(int count, MPI_Datatype type, MPI_Op op, MPI_Comm comm);
+		HANDLE_CASE(OTF2_COLLECTIVE_OP_REDUCE, call->on_trigger = [=]() {call->app->GetMpi()->reduce(sizeSent, MPI_BYTE, OTF2_OP, root, comm);})           //reduce(int count, MPI_Datatype type, MPI_Op op, int root, MPI_Comm comm);
+		HANDLE_CASE(OTF2_COLLECTIVE_OP_REDUCE_SCATTER, call->on_trigger = [=]() {call->app->GetMpi()->reduce_scatter_block(sizeReceived, MPI_BYTE, OTF2_OP, comm);}) //reduce_scatter_block(int recvcnt, MPI_Datatype type, MPI_Op op, MPI_Comm comm);
+		HANDLE_CASE(OTF2_COLLECTIVE_OP_SCAN, call->on_trigger = [=]() {call->app->GetMpi()->scan(sizeSent, MPI_BYTE, OTF2_OP, comm);})                     // scan(int count, MPI_Datatype type, MPI_Op op, MPI_Comm comm);
 
     default:
         cout << "ERROR: Collective not handled; " << (int)collectiveOp << endl;
@@ -467,7 +467,7 @@ OTF2_CallbackCode event_mpi_collective_end(
 
 #undef HANDLE_CASE
 #undef END_CASE
-    if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("COLLECTIVE END");
+    if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("COLLECTIVE END");
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -481,7 +481,7 @@ OTF2_CallbackCode event_parameter_string(
     OTF2_ParameterRef   parameter,
     OTF2_StringRef      string ) {
 
-    if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("PARAMETER STRING\n");
+    if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("PARAMETER STRING\n");
     return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -498,14 +498,14 @@ OTF2_CallbackCode event_enter(
     OTF2_AttributeList* attributes,
     OTF2_RegionRef      region ) {
 
-    auto app = (OTF2_trace_replay_app*)userData;
+    auto app = (OTF2TraceReplayApp*)userData;
     auto id = app->otf2_mpi_call_map[app->otf2_regions[region].name];
     CallBase* call = nullptr;
 
 #define CASE_ADD_CALL(obj_name) case obj_name::id : \
 	call = new obj_name(location, time); \
-	app->get_callqueue().AddCall(call); \
-	if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("ENTER " << call->ToString() << " time: " << time); \
+	app->GetCallQueue().AddCall(call); \
+	if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("ENTER " << call->ToString() << " time: " << time); \
 	break;
 
 #define ADD_SPECIAL_CASE(obj_name) case obj_name::id :
@@ -813,14 +813,14 @@ OTF2_CallbackCode event_leave(
     OTF2_AttributeList* attributes,
     OTF2_RegionRef      region ) {
 
-    auto app = (OTF2_trace_replay_app*)userData;
-    CallQueue& callqueue = app->get_callqueue();
+    auto app = (OTF2TraceReplayApp*)userData;
+    CallQueue& callqueue = app->GetCallQueue();
 
     // Record end time and trigger the call
 	#define CASE_READY(_class, ...) case _class::id : { \
 		auto call = callqueue.find_latest<_class>(); \
 		CallBase::assert_call(call, "Lookup for " #_class " in 'event_leave' returned NULL"); \
-		if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("LEAVE " << call->ToString() << " time: " << time); \
+		if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("LEAVE " << call->ToString() << " time: " << time); \
 		call->end_time = time; \
 		__VA_ARGS__; \
 		callqueue.CallReady(call); \
@@ -831,7 +831,7 @@ OTF2_CallbackCode event_leave(
     #define CASE_NOT_READY(_class) case _class::id : { \
 		auto call = callqueue.find_latest<_class>(); \
 		CallBase::assert_call(call, "Lookup for " #_class " in 'event_leave' returned NULL"); \
-		if (((OTF2_trace_replay_app*)userData)->print_trace_events()) EVENT_PRINT("LEAVE " << call->ToString() << " time: " << time); \
+		if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("LEAVE " << call->ToString() << " time: " << time); \
 		call->end_time = time; \
 		break;}
 
@@ -962,7 +962,7 @@ OTF2_CallbackCode event_leave(
         CASE_READY(MpiFilewriteorderedbeginCall)
         CASE_READY(MpiFilewriteorderedendCall)
         CASE_READY(MpiFilewritesharedCall)
-        CASE_READY(MpiFinalizeCall, call->on_trigger = [=] () {call->app->get_mpi()->do_finalize();})
+        CASE_READY(MpiFinalizeCall, call->on_trigger = [=] () {call->app->GetMpi()->do_finalize();})
         CASE_IGNORE(MpiFinalizedCall)
         CASE_READY(MpiFreememCall)
         CASE_READY(MpiGatherCall)
@@ -1002,7 +1002,7 @@ OTF2_CallbackCode event_leave(
         CASE_READY(MpiInfogetnthkeyCall)
         CASE_READY(MpiInfogetvaluelenCall)
         CASE_READY(MpiInfosetCall)
-        CASE_READY(MpiInitCall, call->on_trigger = [=] () {call->app->get_mpi()->do_init(nullptr, nullptr);};)
+        CASE_READY(MpiInitCall, call->on_trigger = [=] () {call->app->GetMpi()->do_init(nullptr, nullptr);};)
         CASE_READY(MpiInitthreadCall)
 		CASE_IGNORE(MpiInitializedCall)
         CASE_READY(MpiIntercommcreateCall)

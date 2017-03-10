@@ -21,15 +21,15 @@
 #include "mpi_calls.h"
 
 // forward declare
-class OTF2_trace_replay_app;
+class OTF2TraceReplayApp;
 
 class CallBase {
 public:
     // Ctors
     CallBase();
-    CallBase(OTF2_trace_replay_app*);
-    CallBase(OTF2_LocationRef, OTF2_TimeStamp, OTF2_trace_replay_app*);
-    CallBase(OTF2_LocationRef, OTF2_TimeStamp, OTF2_TimeStamp, OTF2_trace_replay_app*);
+    CallBase(OTF2TraceReplayApp*);
+    CallBase(OTF2_LocationRef, OTF2_TimeStamp, OTF2TraceReplayApp*);
+    CallBase(OTF2_LocationRef, OTF2_TimeStamp, OTF2_TimeStamp, OTF2TraceReplayApp*);
     virtual ~CallBase() {}
 
     // Methods
@@ -46,7 +46,7 @@ public:
     OTF2_LocationRef location;
     MPI_Request request_id;
     std::function<void()> on_trigger;
-    OTF2_trace_replay_app* app;
+    OTF2TraceReplayApp* app;
     bool isready;
 
     static void assert_call(CallBase* cb, std::string msg);
@@ -64,8 +64,8 @@ private:
     class name : public CallBase { \
     public: \
         name(): CallBase(NULL) { }; \
-        name(OTF2_trace_replay_app* app) : CallBase(app) { }; \
-        name(OTF2_LocationRef location, OTF2_TimeStamp time, OTF2_trace_replay_app* app=NULL) : CallBase(location, time, app) { } \
+        name(OTF2TraceReplayApp* app) : CallBase(app) { }; \
+        name(OTF2_LocationRef location, OTF2_TimeStamp time, OTF2TraceReplayApp* app=NULL) : CallBase(location, time, app) { } \
         static const int id = call_id; \
         virtual const char* ToString() { return _name; } \
 		virtual int GetID() { return id; }\

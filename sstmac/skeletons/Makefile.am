@@ -39,7 +39,6 @@ libsstmac_skeletons_la_SOURCES = \
 
 if HAVE_OTF2
   libsstmac_skeletons_la_SOURCES += \
-  otf2_trace_replay/callbase_impl.cc \
   otf2_trace_replay/callbacks.cc \
   otf2_trace_replay/callqueue.cc \
   otf2_trace_replay/otf2_trace_replay.cc \

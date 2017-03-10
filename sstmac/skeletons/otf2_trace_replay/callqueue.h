@@ -22,7 +22,7 @@
 
 // forward declare
 class CallBase;
-class OTF2_trace_replay_app;
+class OTF2TraceReplayApp;
 
 // http://stackoverflow.com/questions/1259099/stdqueue-iteration
 template<typename T, typename Container=std::deque<T> >
@@ -61,7 +61,7 @@ class CallQueue {
 public:
 
     CallQueue();
-    CallQueue(OTF2_trace_replay_app*);
+    CallQueue(OTF2TraceReplayApp*);
 
     template<typename T> T* find_earliest();
     template<typename T> T* find_earliest(int request);
@@ -96,9 +96,9 @@ public:
 private:
     iterable_queue<CallBase*> call_queue;
     std::unordered_map<MPI_Request, CallBase*> request_map;
-    OTF2_trace_replay_app* app;
+    OTF2TraceReplayApp* app;
 
-    friend class OTF2_trace_replay_app;
+    friend class OTF2TraceReplayApp;
 };
 
 // template definitions here

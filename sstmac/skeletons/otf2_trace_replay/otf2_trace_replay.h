@@ -33,29 +33,29 @@ RegisterKeywords(
     "otf2_print_time_deltas"
 );
 
-class OTF2_trace_replay_app;
+class OTF2TraceReplayApp;
 
-SpktRegister("otf2_trace_replay_app", sstmac::sw::app, OTF2_trace_replay_app,
+SpktRegister("otf2_trace_replay_app", sstmac::sw::app, OTF2TraceReplayApp,
              "application for parsing and simulating OTF2 traces");
 
 using namespace sstmac::hw;
 using namespace std;
 
-class OTF2_trace_replay_app : public sstmac::sw::app {
+class OTF2TraceReplayApp : public sstmac::sw::app {
 public:
-    OTF2_trace_replay_app(sprockit::sim_parameters* params, sstmac::sw::software_id sid,
+    OTF2TraceReplayApp(sprockit::sim_parameters* params, sstmac::sw::software_id sid,
                           sstmac::sw::operating_system* os);
 
-    sumi::mpi_api* get_mpi();
-    CallQueue& get_callqueue();
-    bool print_trace_events();
-    bool print_mpi_calls();
-    bool print_time_deltas();
+    sumi::mpi_api* GetMpi();
+    CallQueue& GetCallQueue();
+    bool PrintTraceEvents();
+    bool PrintMpiCalls();
+    bool PrintTimeDeltas();
 
     virtual void skeleton_main();
 
-    void start_mpi(const sstmac::timestamp);
-    void end_mpi(const sstmac::timestamp);
+    void StartMpi(const sstmac::timestamp);
+    void EndMpi(const sstmac::timestamp);
 
     //void add_request(dumpi_request, MPI_Request);
     //MPI_Request get_request(dumpi_request);
@@ -71,7 +71,7 @@ public:
 	vector<OTF2_Comm> otf2_comms;
 	unordered_map<OTF2_StringRef, int> otf2_mpi_call_map;
 
-	~OTF2_trace_replay_app() throw()	{ }
+	~OTF2TraceReplayApp() throw()	{ }
 
 private:
     OTF2_Reader* initialize_event_reader();
