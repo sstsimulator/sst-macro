@@ -73,8 +73,9 @@ void OTF2_trace_replay_app::skeleton_main() {
     rank = this->tid();
 
     auto event_reader = initialize_event_reader();
-    initiate_trace_replay(event_reader);
-    verify_replay_success();
+
+	initiate_trace_replay(event_reader);
+	verify_replay_success();
 }
 
 sumi::mpi_api*
@@ -82,7 +83,7 @@ OTF2_trace_replay_app::get_mpi() {
   if (mpi_) return mpi_;
 
   mpi_ = get_api<sumi::mpi_api>();
-  mpi_->set_generate_ids(false); // OTF2 supplies these
+  mpi_->set_generate_ids(false); // We use requests, comms, etc from OTF2 traces
   return mpi_;
 }
 
@@ -141,6 +142,12 @@ OTF2_trace_replay_app::initialize_event_reader() {
     auto reader = OTF2_Reader_Open(metafile_.c_str());
     OTF2_Reader_SetSerialCollectiveCallbacks(reader);
     check_status(OTF2_Reader_GetNumberOfLocations(reader, &number_of_locations), "OTF2_Reader_GetNumberOfLocations\n");
+
+    if (number_of_locations <= rank) {
+    	cerr << "ERROR: Rank " << rank << " cannot participate in a trace replay with " << number_of_locations << " ranks" << endl;
+    	spkt_throw(sprockit::io_error, "ASSERT FAILED:", " Number of MPI ranks must match the number of trace files.");
+    }
+
     struct c_vector* locations = (c_vector*) malloc(sizeof(*locations) + number_of_locations * sizeof(*locations->members));
     locations->capacity = number_of_locations;
     locations->size = 0;
@@ -193,10 +200,9 @@ OTF2_trace_replay_app::initialize_event_reader() {
     OTF2_Reader_CloseGlobalDefReader(reader, global_def_reader);
     OTF2_EvtReader* evt_reader = OTF2_Reader_GetEvtReader(reader, rank);
     OTF2_EvtReaderCallbacks* event_callbacks = create_evt_callbacks();
-    check_status(
-        OTF2_Reader_RegisterEvtCallbacks(reader, evt_reader,
+    check_status(OTF2_Reader_RegisterEvtCallbacks(reader, evt_reader,
                                          event_callbacks, (void*)this),
-        "OTF2_Reader_RegisterGlobalEvtCallbacks\n");
+        "OTF2_Reader_RegisterEvtCallbacks\n");
     OTF2_EvtReaderCallbacks_Delete(event_callbacks);
 
     //cout << trace_length << endl;
@@ -214,6 +220,10 @@ handle_events(OTF2_Reader* reader, OTF2_EvtReader* event_reader) {
 
 void OTF2_trace_replay_app::initiate_trace_replay(OTF2_Reader* reader) {
   // get the trace reader corresponding to the rank
+  uint64_t locs = 0;
+  OTF2_Reader_GetNumberOfLocations(reader, &locs);
+  cout << "detected " << locs << endl;
+
   OTF2_EvtReader* event_reader = OTF2_Reader_GetEvtReader(reader, rank);
 
   handle_events(reader, event_reader);
