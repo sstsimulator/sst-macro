@@ -436,35 +436,35 @@ OTF2_CallbackCode event_mpi_collective_end(
     uint64_t            sizeReceived ) {
 
     auto app = (OTF2_trace_replay_app*)userData;
-#define HANDLE_CASE(_class) case _class::id : { \
-            auto call = app->get_callqueue().find_latest<_class>(); \
-            CallBase::assert_call(call, "Lookup for #_class in 'event_mpi_collective_end' returned NULL");
-#define END_CASE break;}
+#define HANDLE_CASE(op, ...) case op : { \
+            auto call = app->get_callqueue().PeekBack(); \
+            __VA_ARGS__; \
+            } break;
 
     switch (collectiveOp) {
-        HANDLE_CASE(MpiAllgatherCall) END_CASE
-        //HANDLE_CASE(MpiAllgatherCall) END_CASE
-        //HANDLE_CASE(MpiBarrierCall) END_CASE
-        HANDLE_CASE(MpiGatherCall) END_CASE
-        //HANDLE_CASE(MpiGathervCall) END_CASE
-        HANDLE_CASE(MpiScatterCall) END_CASE
-        //HANDLE_CASE(MpiScattervCall) END_CASE
-        HANDLE_CASE(MpiAlltoallCall) END_CASE
+		HANDLE_CASE(OTF2_COLLECTIVE_OP_BARRIER, call->on_trigger = [=]() {call->app->get_mpi()->barrier(communicator);})
+		HANDLE_CASE(OTF2_COLLECTIVE_OP_BCAST, call->on_trigger = [=]() {call->app->get_mpi()->bcast(sizeSent, MPI_BYTE, root, communicator);})
+		HANDLE_CASE(OTF2_COLLECTIVE_OP_GATHER, call->on_trigger = [=]() {call->app->get_mpi()->gather(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, root, communicator);})
+//		HANDLE_CASE(OTF2_COLLECTIVE_OP_GATHERV, call->on_trigger = [=]() {call->app->get_mpi()->gatherv(sizeSent, MPI_BYTE, nullptr, MPI_BYTE, root, communicator);})
+		HANDLE_CASE(OTF2_COLLECTIVE_OP_SCATTER, call->on_trigger = [=]() {call->app->get_mpi()->scatter(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, root, communicator);})
+//		HANDLE_CASE(OTF2_COLLECTIVE_OP_SCATTERV, call->on_trigger = [=]() {call->app->get_mpi()->scatterv(nullptr, nullptr, nullptr, MPI_BYTE, nullptr, sizeReceived, root, communicator);})
+		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLGATHER, call->on_trigger = [=]() {call->app->get_mpi()->allgather(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, communicator);})
+//		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLGATHERV, call->on_trigger = [=]() {call->app->get_mpi()->barrier(communicator);})
+//		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLTOALL, call->on_trigger = [=]() {call->app->get_mpi()->barrier(communicator);})
+//		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLTOALLV, call->on_trigger = [=]() {call->app->get_mpi()->barrier(communicator);})
+//		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLTOALLW, call->on_trigger = [=]() {call->app->get_mpi()->barrier(communicator);})
+//		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLREDUCE, call->on_trigger = [=]() {call->app->get_mpi()->barrier(communicator);})
+//		HANDLE_CASE(OTF2_COLLECTIVE_OP_REDUCE, call->on_trigger = [=]() {call->app->get_mpi()->barrier(communicator);})
+//		HANDLE_CASE(OTF2_COLLECTIVE_OP_REDUCE_SCATTER, call->on_trigger = [=]() {call->app->get_mpi()->barrier(communicator);})
+//		HANDLE_CASE(OTF2_COLLECTIVE_OP_SCAN, call->on_trigger = [=]() {call->app->get_mpi()->barrier(communicator);})
 
-    //HANDLE_CASE(MpiAlltoallvCall) END_CASE
-    //HANDLE_CASE(MpiAlltoallwCall) END_CASE
-    //HANDLE_CASE(MpiAllreduceCall) END_CASE
-    //HANDLE_CASE(MpiReduceCall) END_CASE
-    //HANDLE_CASE(MpiScatterCall) END_CASE
-    //HANDLE_CASE(MpiReducescatterCall) END_CASE
-    //HANDLE_CASE(MpiScanCall) END_CASE
     default:
         cout << "ERROR: Collective not handled; " << (int)collectiveOp << endl;
     }
 
 #undef HANDLE_CASE
 #undef END_CASE
-    EVENT_PRINT("COLLECTIVE END\n");
+    EVENT_PRINT("COLLECTIVE END");
     return OTF2_CALLBACK_SUCCESS;
 }
 
