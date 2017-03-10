@@ -15,6 +15,8 @@ MyASTConsumer::HandleTopLevelDecl(DeclGroupRef DR)
       FindVisitor.TraverseDecl(*b);
     }
     //the replace visitor should visit everything in the source file
+    bool isGlobalVar = isa<VarDecl>(d);
+    ReplVisitor.setVisitingGlobal(isGlobalVar);
     ReplVisitor.TraverseDecl(*b);
   }
   return true;

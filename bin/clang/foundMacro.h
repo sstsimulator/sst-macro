@@ -14,16 +14,32 @@ struct FoundMacro {
     return clang::SourceRange(start, end);
   }
 
-  FoundMacro(clang::CompilerInstance& c, clang::SourceLocation loc): CI(c), compound(false) {
-    //need to figure out start and end of macro
-    auto expansionRange = CI.getSourceManager().getExpansionRange(loc);
-    if (expansionRange.first == expansionRange.second){
+  typedef std::pair<clang::SourceLocation,clang::SourceLocation> LocPair;
+
+  void getLocations(clang::SourceLocation loc, LocPair& pair){
+    pair = CI.getSourceManager().getExpansionRange(loc);
+    if (pair.first == pair.second){
       //okay, this is a macro token, not a macro expansion of the form macro(x,y)
-      expansionRange.second = clang::Lexer::getLocForEndOfToken(expansionRange.second, 1,
+      pair.second = clang::Lexer::getLocForEndOfToken(pair.second, 1,
                                        CI.getSourceManager(), CI.getLangOpts());
     }
-    start = expansionRange.first;
-    end = expansionRange.second;
+  }
+
+  FoundMacro(clang::CompilerInstance& c, clang::Stmt* s): CI(c), compound(false) {
+    //need to figure out start and end of macro
+    LocPair startExpansionRange; getLocations(s->getLocStart(), startExpansionRange);
+    LocPair endExpansionRange; getLocations(s->getLocEnd(), endExpansionRange);
+    start = startExpansionRange.first;
+    end = startExpansionRange.second;
+    if (endExpansionRange.second.isValid()){
+      end = endExpansionRange.second;
+    }
+    //statement might cover multiple macros, unfortunately
+    //unsigned MacroIDBit = 1U << 31; //because clang is a BoD with private functions
+    //this is so dirty
+    //unsigned maxID = s->getLocEnd().getRawEncoding() & ~MacroIDBit;
+    //clang::SourceLocation maxEnd = clang::SourceLocation::getFromRawEncoding(maxID);
+    //if (end < maxEnd) end = maxEnd;
   }
 
   bool overlaps(clang::Stmt* s) const {
@@ -45,7 +61,7 @@ struct MacroList {
   }
 
   FoundMacro& newMacro(clang::Stmt* s){
-    macros.emplace_back(*CI, s->getLocStart());
+    macros.emplace_back(*CI, s);
     macros.back().stmt = s;
     return macros.back();
   }

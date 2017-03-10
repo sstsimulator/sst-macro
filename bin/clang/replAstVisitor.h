@@ -11,9 +11,11 @@
 class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisitor> {
  public:
   ReplGlobalASTVisitor(clang::Rewriter &R,  FindGlobalASTVisitor& F, MacroList& m) :
-    TheRewriter(R), finder(F), mlist(m) {}
+    TheRewriter(R), finder(F), mlist(m), visitingGlobal(false) {}
 
   bool VisitDeclRefExpr(clang::DeclRefExpr* expr);
+
+  bool VisitUnaryOperator(clang::UnaryOperator* op);
 
   bool VisitDecl(clang::Decl *D);
 
@@ -21,6 +23,9 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
     CI = &c;
   }
 
+  void setVisitingGlobal(bool flag){
+    visitingGlobal = flag;
+  }
 
   bool VisitStmt(clang::Stmt* s);
 
@@ -34,6 +39,7 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
   clang::CompilerInstance* CI;
   FindGlobalASTVisitor& finder;
   MacroList& mlist;
+  bool visitingGlobal;
 
 };
 

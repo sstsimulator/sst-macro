@@ -14,6 +14,12 @@ struct PrettyPrinter
     LangOpts.CPlusPlus = true;
   }
 
+  ~PrettyPrinter(){
+    //must be flushed
+    //prior to deleting string
+    os.flush();
+  }
+
   void print(clang::Stmt* s){
     s->printPretty(os, nullptr, Policy);
   }
@@ -26,6 +32,7 @@ struct PrettyPrinter
   str() {
     return os.str();
   }
+
  private:
   std::string baseStr;
 };

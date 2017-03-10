@@ -139,6 +139,12 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     else:
       cppflags += " -include stdint.h"
 
+    remGlobals = True
+    if os.environ.has_key("SSTMAC_REMOVE_GLOBALS"):
+      remGlobals = int(os.environ["SSTMAC_REMOVE_GLOBALS"])
+    if remGlobals:
+      cppflags += " -include sstmac/globalVariables.h"
+
     if sys.argv[1] == "--version" or sys.argv[1] == "-V":
       import inspect, os
       print os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -260,9 +266,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         ]
 
     cxxCmd = " ".join(cxxCmdArr)
-    runClang = runClang and haveClangSrcToSrc
-    if os.environ.has_key("SSTMAC_REMOVE_GLOBALS"):
-      runClang = runClang and int(os.environ["SSTMAC_REMOVE_GLOBALS"])
+    runClang = runClang and haveClangSrcToSrc and remGlobals
     clangExtraArgs = []
     if runClang:
       #this is more complicated - we have to use clang to do a source to source transformation
@@ -294,6 +298,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         if objTarget:
           objRepl = "sst." + objTarget
           cxxCmd = cxxCmd.replace(objTarget,objRepl)
+        if verbose: sys.stderr.write("%s\n" % cxxCmd)
         rc = os.system(cxxCmd)
         if not rc == 0:
           if delTempFiles:

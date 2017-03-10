@@ -32,6 +32,10 @@ class MyFrontendAction : public clang::ASTFrontendAction {
   bool visitMemberExpr(clang::MemberExpr* exp, PrettyPrinter& pp);
   bool visitImplicitCastExpr(clang::ImplicitCastExpr* exp, PrettyPrinter& pp);
   bool visitCallExpr(clang::CallExpr* exp, PrettyPrinter& pp);
+  bool visitArraySubscriptExpr(clang::ArraySubscriptExpr* exp, PrettyPrinter& pp);
+  bool visitParenExpr(clang::ParenExpr* exp, PrettyPrinter& pp);
+  bool visitCStyleCastExpr(clang::CStyleCastExpr* exp, PrettyPrinter& pp);
+  bool visitCompoundAssignOperator(clang::CompoundAssignOperator* exp, PrettyPrinter& pp);
 
   FindGlobalASTVisitor finder;
   ReplGlobalASTVisitor replacer;

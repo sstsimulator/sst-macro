@@ -2,10 +2,38 @@
 #include "globalVarNamespace.h"
 #include "findAstVisitor.h"
 #include <iostream>
+#include <fstream>
+#include <stdlib.h>
 
 using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
+
+void
+FindGlobalASTVisitor::initHeaders()
+{
+  const char* headerListFile = getenv("SSTMAC_HEADERS");
+  if (headerListFile == nullptr){
+    const char* allHeaders = getenv("SSTMAC_ALL_HEADERS");
+    if (allHeaders == nullptr){
+      std::cerr << "No header file specified through environment variable SSTMAC_HEADERS" << std::endl;
+    }
+    return;
+  }
+
+  std::ifstream ifs(headerListFile);
+  if (!ifs.good()){
+    std::cerr << "Bad header list file from environment SSTMAC_HEADERS=" << headerListFile << std::endl;
+    abort();
+  }
+
+  std::string line;
+  char fullpath[256];
+  while (ifs.good()){
+    std::getline(ifs, line);
+    validHeaders.insert(fullpath);
+  }
+}
 
 bool
 FindGlobalASTVisitor::VisitVarDecl(VarDecl* D){
@@ -16,16 +44,32 @@ FindGlobalASTVisitor::VisitVarDecl(VarDecl* D){
     return false;
   }
 
-  if (!validSrc(filename)){
-    return false;
-  }
-
-  if (currentNS->isPrefixSet){
-    currentNS->setFilePrefix(filename.c_str());
-  }
 
   FileID id = CI->getSourceManager().getFileID(startLoc);
   SourceLocation headerLoc = CI->getSourceManager().getIncludeLoc(id);
+  if (headerLoc.isValid() && !useAllHeaders){
+    //we are inside a header
+    char fullpathBuffer[1024];
+    const char* fullpath = realpath(filename.c_str(), fullpathBuffer);
+    //this is not in the list of valid headers, skipping
+    if (validHeaders.find(fullpath) == validHeaders.end()){
+      return true;
+    }
+  }
+
+  SourceLocation nextLoc = headerLoc;
+  while (nextLoc.isValid()){
+    //this might be deep inside nested includes
+    headerLoc = nextLoc;
+    FileID id = CI->getSourceManager().getFileID(nextLoc);
+    nextLoc = CI->getSourceManager().getIncludeLoc(id);
+  }
+
+  bool isHeader = headerLoc.isValid();
+
+  if (!currentNS->isPrefixSet){
+    currentNS->setFilePrefix(filename.c_str());
+  }
 
   std::string str;
   llvm::raw_string_ostream os(str);
@@ -41,19 +85,7 @@ FindGlobalASTVisitor::VisitVarDecl(VarDecl* D){
     sstVarName = D->getNameAsString();
   }
 
-  if (!D->hasExternalStorage()){
-    //we need to track non-extern variables
-    //we must create a tmp C++ file that explicitly defines them
-    currentNS->vars.insert(sstVarName);
-    os << "void* __ptr_" << sstVarName
-       << " = &" << D->getNameAsString() << ";\n";
-    os << "const int __sizeof_" << sstVarName
-       << " = sizeof(" << D->getNameAsString() << ");\n";
-  }
-
-  //if (D->isStaticDataMember()){
-  //  return false;
-  //}
+  if (isHeader) os << "\n"; //need to hop down from header line
 
   // roundabout way to get the type of the variable
   std::string retType;
@@ -69,22 +101,42 @@ FindGlobalASTVisitor::VisitVarDecl(VarDecl* D){
     varRepl = "(*" + currentNS->nsPrefix() + "get_" + sstVarName + "())";
   }
 
-  // add the variable that stores the TLS offset
-  os << "extern int __offset_" << sstVarName << ";\n"
-     << "extern int sstmac_global_stacksize;\n";
-  // add the line function that fetches the TLS storage location
-  os << "static inline " << retType
-     << " get_" << sstVarName << "(){\n"
-     << " int stack; int* stackPtr = &stack;\n"
-     << " uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;\n" //find bottom of stack
-     << " char* offsetPtr = *((char**)localStorage) + __offset_" << sstVarName << ";\n" //add the variable's offset to get the TLS
-     << " return (((" << retType << ")((void*)offsetPtr)));\n"
-     << "}\n";
 
+  std::string varName = D->getNameAsString();
+  bool notDeclared = globalsDeclared.find(varName) == globalsDeclared.end();
+  if (notDeclared){
+    os << " SSTMAC_DECL_GLOBAL_VAR(" << retType << "," << sstVarName << ")";
+    globalsDeclared.insert(varName);
+  }
+  if (!D->hasExternalStorage()){
+    currentNS->vars.insert(sstVarName);
+    os << " SSTMAC_DEF_GLOBAL_VAR(" << retType << "," << D->getNameAsString() << "," << sstVarName << ")";
+  }
+  os << "  ";
 
-  /** find end of decl - need it for replacements */
-  SourceLocation endLoc = Lexer::findLocationAfterToken(D->getLocEnd(), tok::semi,
-                               CI->getSourceManager(), CI->getLangOpts(), true);
+  SourceLocation endLoc = headerLoc;
+  if (headerLoc.isValid()){
+    //the declaration is inside a header file, which means delaying the fetcher function
+    //until after the include direction
+    //find the end of the header include directive
+    //but first figure out what kind of include we have
+    Token t; Lexer::getRawToken(headerLoc, t, CI->getSourceManager(), CI->getLangOpts(), true);
+    if (t.getKind() == tok::string_literal){ //include "X"
+      //just need to find end of string literal
+      endLoc = Lexer::getLocForEndOfToken(headerLoc, 0, CI->getSourceManager(), CI->getLangOpts());
+    } else if (t.getKind() == tok::less){ //include <X>
+      //find end of > token
+      while (t.getKind() != tok::greater){
+        endLoc = Lexer::getLocForEndOfToken(endLoc, 0, CI->getSourceManager(), CI->getLangOpts());
+        Lexer::getRawToken(endLoc, t, CI->getSourceManager(), CI->getLangOpts(), true);
+      }
+      endLoc = Lexer::getLocForEndOfToken(endLoc, 0, CI->getSourceManager(), CI->getLangOpts());
+    }
+  } else {
+    // find end of decl in source file - need it for replacements */
+    endLoc = Lexer::findLocationAfterToken(D->getLocEnd(), tok::semi,
+                                 CI->getSourceManager(), CI->getLangOpts(), false);
+  }
   TheRewriter.InsertText(endLoc, os.str());
   return true;
 }

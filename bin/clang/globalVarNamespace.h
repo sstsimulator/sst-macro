@@ -32,6 +32,7 @@ struct GlobalVarNamespace
           break;
       }
     }
+    isPrefixSet = true;
   }
 
   void appendNamespace(const std::string& nestedNS, const std::string& newNS){

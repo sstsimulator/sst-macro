@@ -16,7 +16,8 @@ using namespace clang::tooling;
 bool
 MyFrontendAction::visitDeclRefExpr(clang::DeclRefExpr* exp, PrettyPrinter& pp)
 {
-  return finder.printNewDeclRef(exp,pp);
+  bool ret = finder.printNewDeclRef(exp,pp);
+  return ret;
 }
 
 bool
@@ -31,7 +32,6 @@ MyFrontendAction::visitBinaryOperator(clang::BinaryOperator* bop, PrettyPrinter&
 bool
 MyFrontendAction::visitCallExpr(CallExpr *exp, PrettyPrinter &pp)
 {
-  //pp.os << exp->getCalleeDecl()->getName() << "(";
   bool foundGlobal = visitStmt(exp->getCallee(),pp);
   pp.os << "(";
   int numArgs = exp->getNumArgs();
@@ -64,6 +64,38 @@ MyFrontendAction::visitImplicitCastExpr(ImplicitCastExpr *exp, PrettyPrinter &pp
 }
 
 bool
+MyFrontendAction::visitArraySubscriptExpr(ArraySubscriptExpr* exp, PrettyPrinter& pp)
+{
+  bool foundGlobal = visitStmt(exp->getBase(), pp);
+  pp.os << "[";
+  foundGlobal |= visitStmt(exp->getIdx(), pp);
+  pp.os << "]";
+  return foundGlobal;
+}
+
+bool
+MyFrontendAction::visitParenExpr(ParenExpr *exp, PrettyPrinter &pp)
+{
+  pp.os << "(";
+  bool foundGlobal = visitStmt(exp->getSubExpr(), pp);
+  pp.os << ")";
+  return foundGlobal;
+}
+
+bool
+MyFrontendAction::visitCStyleCastExpr(CStyleCastExpr *exp, PrettyPrinter &pp)
+{
+  pp.os << "(" << QualType::getAsString(exp->getTypeAsWritten().split()) << ")";
+  return visitStmt(exp->getSubExpr(), pp);
+}
+
+bool
+MyFrontendAction::visitCompoundAssignOperator(CompoundAssignOperator *exp, PrettyPrinter &pp)
+{
+  return visitBinaryOperator(exp, pp);
+}
+
+bool
 MyFrontendAction::visitStmt(clang::Stmt* s, PrettyPrinter& pp)
 {
   switch (s->getStmtClass()){
@@ -72,7 +104,12 @@ MyFrontendAction::visitStmt(clang::Stmt* s, PrettyPrinter& pp)
     scase(MemberExpr,s,pp);
     scase(ImplicitCastExpr,s,pp);
     scase(CallExpr,s,pp);
+    scase(ArraySubscriptExpr,s,pp);
+    scase(ParenExpr,s,pp);
+    scase(CStyleCastExpr,s,pp);
+    scase(CompoundAssignOperator,s,pp);
     default:
+      //std::cout << "Missing statement case " << s->getStmtClassName() << std::endl;
       pp.print(s);
       return false;
   }
@@ -84,8 +121,11 @@ MyFrontendAction::VisitMacros()
   for (FoundMacro& fm : mlist.macros){
     PrettyPrinter pp;
     bool foundGlobal = visitStmt(fm.stmt,pp);
-    if (foundGlobal)
+    if (foundGlobal){
       TheRewriter.ReplaceText(fm.range(), pp.str());
+    } else {
+      //std::cout << "NOT replacing macro " << pp.str() << std::endl;
+    }
   }
 }
 
@@ -97,7 +137,7 @@ MyFrontendAction::EndSourceFileAction()
   VisitMacros();
 
   std::string sourceFile = SM.getFileEntryForID(SM.getMainFileID())->getName().str();
-  std::string suffix2 = sourceFile.substr(sourceFile.size()-1,2);
+  std::string suffix2 = sourceFile.substr(sourceFile.size()-2,2);
   bool isC = suffix2 == ".c";
 
   if (mainFxn && isC){

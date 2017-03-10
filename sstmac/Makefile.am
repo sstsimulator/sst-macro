@@ -31,6 +31,7 @@ blas.h \
 compute.h \
 sstmacro.h \
 util.h \
+globalVariables.h \
 sstsockets.h \
 skeleton.h \
 sumi.h

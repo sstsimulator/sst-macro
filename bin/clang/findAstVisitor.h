@@ -8,8 +8,9 @@
 class FindGlobalASTVisitor : public clang::RecursiveASTVisitor<FindGlobalASTVisitor> {
  public:
   FindGlobalASTVisitor(clang::Rewriter &R, GlobalVarNamespace& ns, clang::FunctionDecl** mainPtr) :
-    TheRewriter(R), globalNS(ns), mainFxn(mainPtr), currentNS(&ns)
+    TheRewriter(R), globalNS(ns), mainFxn(mainPtr), currentNS(&ns), useAllHeaders(false)
   {
+    initHeaders();
   }
 
   void setCompilerInstance(clang::CompilerInstance& c){
@@ -45,6 +46,8 @@ class FindGlobalASTVisitor : public clang::RecursiveASTVisitor<FindGlobalASTVisi
 
   }
 
+  void initHeaders();
+
   static bool validSrc(const std::string& filename);
 
   /**
@@ -65,6 +68,10 @@ class FindGlobalASTVisitor : public clang::RecursiveASTVisitor<FindGlobalASTVisi
    */
   bool printNewDeclRef(clang::DeclRefExpr* expr, PrettyPrinter& pp);
 
+  bool isGlobal(clang::DeclRefExpr* expr){
+    return globals.find(expr->getFoundDecl()) != globals.end();
+  }
+
  private:
   clang::Rewriter& TheRewriter;
   clang::CompilerInstance* CI;
@@ -72,6 +79,9 @@ class FindGlobalASTVisitor : public clang::RecursiveASTVisitor<FindGlobalASTVisi
   GlobalVarNamespace& globalNS;
   GlobalVarNamespace* currentNS;
   std::map<clang::NamedDecl*,std::string> globals;
+  std::set<std::string> globalsDeclared;
+  std::set<std::string> validHeaders;
+  bool useAllHeaders;
 
 };
 
