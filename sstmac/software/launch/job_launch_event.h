@@ -2,7 +2,7 @@
 #define JOB_LAUNCH_EVENT_H
 
 #include <sstmac/common/sst_event.h>
-#include <sstmac/software/launch/app_launch_fwd.h>
+#include <sstmac/software/launch/launch_request_fwd.h>
 
 namespace sstmac {
 namespace sw {

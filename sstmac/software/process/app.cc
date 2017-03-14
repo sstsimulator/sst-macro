@@ -11,7 +11,6 @@
 
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/api/api.h>
-#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/common/sstmac_env.h>

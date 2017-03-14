@@ -27,7 +27,7 @@
 #include <sstmac/software/launch/launch_event.h>
 #include <sstmac/software/launch/job_launcher.h>
 #include <sstmac/software/launch/job_launch_event.h>
-#include <sstmac/software/launch/app_launch.h>
+#include <sstmac/software/launch/launch_request.h>
 
 #include <sprockit/driver_util.h>
 #include <sprockit/keyword_registration.h>

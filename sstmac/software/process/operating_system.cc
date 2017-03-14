@@ -28,14 +28,13 @@
 #include <sstmac/software/threading/threading_pthread.h>
 #endif
 #include <sstmac/software/libraries/service.h>
-#include <sstmac/software/launch/launcher.h>
+#include <sstmac/software/launch/app_launcher.h>
 #include <sstmac/software/process/graphviz.h>
 #include <sstmac/software/process/ftq.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/key.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/compute_scheduler.h>
-#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/libraries/unblock_event.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/hardware/nic/nic.h>

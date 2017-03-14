@@ -19,7 +19,6 @@
 #include <sstmac/software/api/api.h>
 #include <sprockit/errors.h>
 
-#include <sstmac/software/launch/app_launch_fwd.h>
 #include <sstmac/software/process/key_fwd.h>
 #include <sstmac/software/process/app_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>

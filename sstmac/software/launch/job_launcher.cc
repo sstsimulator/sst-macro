@@ -4,7 +4,7 @@
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/software/launch/launch_event.h>
 #include <sstmac/software/launch/job_launch_event.h>
-#include <sstmac/software/launch/app_launch.h>
+#include <sstmac/software/launch/launch_request.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/common/runtime.h>
 #include <sstmac/common/thread_lock.h>
@@ -38,7 +38,18 @@ void
 job_launcher::incoming_event(event *ev)
 {
   job_stop_event* stop_ev = safe_cast(job_stop_event, ev);
+  cleanup_app(stop_ev);
   stop_event_received(stop_ev);
+}
+
+void
+job_launcher::incoming_launch_request(app_launch_request *request)
+{
+  ordered_node_set allocation;
+  bool startJob = handle_launch_request(request, allocation);
+  if (startJob){
+    satisfy_launch_request(request, allocation);
+  }
 }
 
 void
@@ -53,7 +64,7 @@ job_launcher::add_launch_requests(sprockit::sim_parameters* params)
       sprockit::sim_parameters* app_params = params->get_namespace(name);
       app_launch_request* mgr = new app_launch_request(app_params, app_id(aid), name);
       os_->schedule(mgr->time(),
-          new_callback(os_->event_location(), this, &job_launcher::handle_new_launch_request, mgr));
+          new_callback(os_->event_location(), this, &job_launcher::incoming_launch_request, mgr));
       keep_going = true;
       last_used_aid = aid;
     } else {
@@ -75,7 +86,7 @@ job_launcher::add_launch_requests(sprockit::sim_parameters* params)
     app_launch_request* mgr = new app_launch_request(srv_params, app_id(aid), str);
     node_debug("adding distributed service %s", str.c_str());
     os_->schedule(mgr->time(),
-        new_callback(os_->event_location(), this, &job_launcher::handle_new_launch_request, mgr));
+        new_callback(os_->event_location(), this, &job_launcher::incoming_launch_request, mgr));
     ++aid;
   }
 }
@@ -86,29 +97,46 @@ job_launcher::event_location() const
   return os_->event_location();
 }
 
-
 void
-job_launcher::satisfy_launch_request(app_launch_request* appman, task_mapping::ptr mapping)
+job_launcher::cleanup_app(job_stop_event* ev)
 {
-  int num_ranks = mapping->num_ranks();
-  for (int rank=0; rank < num_ranks; ++rank){
-    sw::start_app_event* lev = new start_app_event(appman->aid(), appman->app_namespace(),
-                                    mapping, rank, mapping->rank_to_node(rank),
-                                    os_->addr(),//the job launch root
-                                    appman->app_params());
-    os_->execute_kernel(ami::COMM_PMI_SEND, lev);
+  task_mapping::ptr themap = task_mapping::global_mapping(ev->aid());
+  task_mapping::remove_global_mapping(ev->aid(), ev->unique_name());
+  const std::vector<node_id>& rank_to_node = themap->rank_to_node();
+  int num_ranks = rank_to_node.size();
+  //put all the nodes back in the available map
+  for (int i=0; i < num_ranks; ++i){
+    node_id nid = rank_to_node[i];
+    available_.insert(nid);
   }
-  //job launcher needs to add this - might need it later
-  task_mapping::add_global_mapping(appman->aid(), appman->app_namespace(), mapping);
 }
 
 void
-default_job_launcher::handle_new_launch_request(app_launch_request* appman)
+job_launcher::satisfy_launch_request(app_launch_request* request, const ordered_node_set& allocation)
 {
-  ordered_node_set allocation;
-  task_mapping::ptr mapping = new task_mapping(appman->aid());
-  appman->request_allocation(available_, allocation);
+  task_mapping::ptr mapping = new task_mapping(request->aid());
+  request->index_allocation(
+     topology_, allocation,
+     mapping->rank_to_node(),
+     mapping->node_to_rank());
 
+  int num_ranks = mapping->num_ranks();
+  for (int rank=0; rank < num_ranks; ++rank){
+    sw::start_app_event* lev = new start_app_event(request->aid(), request->app_namespace(),
+                                    mapping, rank, mapping->rank_to_node(rank),
+                                    os_->addr(),//the job launch root
+                                    request->app_params());
+    os_->execute_kernel(ami::COMM_PMI_SEND, lev);
+    //os_->execute_kernel(ami::COMM_PMI_BCAST, lev);
+  }
+  //job launcher needs to add this - might need it later
+  task_mapping::add_global_mapping(request->aid(), request->app_namespace(), mapping);
+}
+
+bool
+default_job_launcher::handle_launch_request(app_launch_request* request, ordered_node_set& allocation)
+{
+  request->request_allocation(available_, allocation);
 
   for (const node_id& nid : allocation){
     if (available_.find(nid) == available_.end()){
@@ -118,35 +146,35 @@ default_job_launcher::handle_new_launch_request(app_launch_request* appman)
     }
     available_.erase(nid);
   }
-  appman->index_allocation(
-     topology_, allocation,
-     mapping->rank_to_node(),
-     mapping->node_to_rank());
-  satisfy_launch_request(appman, mapping);
+  return true;
 }
 
 void
 default_job_launcher::stop_event_received(job_stop_event *ev)
 {
-  task_mapping::remove_global_mapping(ev->aid(), ev->unique_name());
 }
 
-void
-exclusive_job_launcher::handle_new_launch_request(app_launch_request *appman)
+bool
+exclusive_job_launcher::handle_launch_request(app_launch_request *request, ordered_node_set& allocation)
 {
-  if (pending_requests_.empty()){
-    default_job_launcher::handle_new_launch_request(appman);
+  if (active_job_ == nullptr){
+    active_job_ = request;
+    return default_job_launcher::handle_launch_request(request, allocation);
+  } else {
+    pending_requests_.push_back(request);
+    return false;
   }
-  pending_requests_.push_back(appman);
 }
 
 void
 exclusive_job_launcher::stop_event_received(job_stop_event *ev)
 {
-  pending_requests_.pop_front();
+  delete active_job_;
+  active_job_ = nullptr;
   if (!pending_requests_.empty()){
     app_launch_request* next = pending_requests_.front();
-    default_job_launcher::handle_new_launch_request(next);
+    pending_requests_.pop_front(); //remove the running job
+    job_launcher::incoming_launch_request(next);
   }
 }
 

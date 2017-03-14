@@ -5,7 +5,6 @@
 #include <sstmac/common/node_address.h>
 #include <sstmac/libraries/sumi/message_fwd.h>
 #include <sstmac/software/process/pmi.h>
-#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/launch/job_launcher.h>
 #include <sstmac/software/libraries/service.h>
 #include <sstmac/software/api/api.h>

@@ -18,8 +18,7 @@
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/app.h>
-#include <sstmac/software/launch/app_launch.h>
-#include <sstmac/software/launch/launcher.h>
+#include <sstmac/software/launch/app_launcher.h>
 #include <sstmac/software/launch/launch_event.h>
 #include <sstmac/software/launch/job_launcher.h>
 #include <sstmac/common/event_callback.h>

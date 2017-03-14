@@ -26,7 +26,6 @@
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/common/thread_info.h>
 
-#include <sstmac/software/launch/app_launch_fwd.h>
 #include <sstmac/software/libraries/service_fwd.h>
 #include <sstmac/software/process/ftq_fwd.h>
 #include <sstmac/software/process/graphviz_fwd.h>

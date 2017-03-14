@@ -2,7 +2,7 @@
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/topology/cartesian_topology.h>
 #include <sstmac/software/process/app.h>
-#include <sstmac/software/launch/app_launch.h>
+#include <sstmac/software/launch/launch_request.h>
 #include <sstmac/software/launch/job_launcher.h>
 #include <sstmac/common/thread_lock.h>
 #include <sstmac/dumpi_util/dumpi_meta.h>

@@ -1,5 +1,5 @@
 #include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/launch/app_launch.h>
+#include <sstmac/software/launch/launch_request.h>
 #include <sstmac/skeleton.h>
 #include <sstmac/util.h>
 #include <sumi/transport.h>

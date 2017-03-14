@@ -1,5 +1,5 @@
 #include <sstmac/software/process/pmi.h>
-#include <sstmac/software/launch/launcher.h>
+#include <sstmac/software/launch/app_launcher.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/hardware/nic/nic.h>

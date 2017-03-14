@@ -48,7 +48,7 @@ libsstmac_sw_la_SOURCES = \
   libraries/compute/lib_sleep.cc \
   libraries/compute/lib_compute_loops.cc \
   libraries/unblock_event.cc \
-  launch/app_launch.cc \
+  launch/launch_request.cc \
   launch/node_allocator.cc \
   launch/cart_allocation.cc \
   launch/coordinate_allocation.cc \
@@ -66,7 +66,7 @@ libsstmac_sw_la_SOURCES = \
   launch/round_robin_task_mapper.cc \
   launch/node_id_task_mapper.cc \
   launch/job_launcher.cc \
-  launch/launcher.cc 
+  launch/app_launcher.cc 
 
 
 library_includedir=$(includedir)/sstmac/software
@@ -132,8 +132,8 @@ nobase_library_include_HEADERS = \
   libraries/unblock_event.h \
   libraries/service.h \
   libraries/service_fwd.h \
-  launch/app_launch.h \
-  launch/app_launch_fwd.h \
+  launch/launch_request.h \
+  launch/launch_request_fwd.h \
   launch/node_allocator.h \
   launch/cart_allocation.h  \
   launch/coordinate_allocation.h \
@@ -153,9 +153,8 @@ nobase_library_include_HEADERS = \
   launch/node_set.h \
   launch/job_launcher.h \
   launch/job_launcher_fwd.h \
-  launch/launcher.h \
-  launch/launcher_fwd.h \
-  launch/launch_handler.h \
+  launch/app_launcher.h \
+  launch/app_launcher_fwd.h \
   launch/job_launch_event.h \
   launch/launch_event.h  \
   launch/launch_event_fwd.h  

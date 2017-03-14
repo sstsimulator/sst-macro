@@ -4,7 +4,7 @@
 #include <sprockit/debug.h>
 #include <cstring>
 #include <vector>
-#include <sstmac/software/launch/app_launch.h>
+#include <sstmac/software/launch/launch_request.h>
 
 using namespace sstmac;
 
