@@ -131,6 +131,8 @@ node::setup()
 #if SSTMAC_INTEGRATED_SST_CORE
   event_component::setup();
 #endif
+  if (job_launcher_)
+    job_launcher_->schedule_launch_requests();
 }
 
 void

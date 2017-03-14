@@ -53,6 +53,15 @@ job_launcher::incoming_launch_request(app_launch_request *request)
 }
 
 void
+job_launcher::schedule_launch_requests()
+{
+  for (app_launch_request* req : initial_requests_){
+    os_->schedule(req->time(),
+        new_callback(os_->event_location(), this, &job_launcher::incoming_launch_request, req));
+  }
+}
+
+void
 job_launcher::add_launch_requests(sprockit::sim_parameters* params)
 {
   bool keep_going = true;
@@ -63,8 +72,7 @@ job_launcher::add_launch_requests(sprockit::sim_parameters* params)
     if (params->has_namespace(name)){
       sprockit::sim_parameters* app_params = params->get_namespace(name);
       app_launch_request* mgr = new app_launch_request(app_params, app_id(aid), name);
-      os_->schedule(mgr->time(),
-          new_callback(os_->event_location(), this, &job_launcher::incoming_launch_request, mgr));
+      initial_requests_.push_back(mgr);
       keep_going = true;
       last_used_aid = aid;
     } else {
@@ -85,8 +93,7 @@ job_launcher::add_launch_requests(sprockit::sim_parameters* params)
     srv_params->add_param_override("libname", str);
     app_launch_request* mgr = new app_launch_request(srv_params, app_id(aid), str);
     node_debug("adding distributed service %s", str.c_str());
-    os_->schedule(mgr->time(),
-        new_callback(os_->event_location(), this, &job_launcher::incoming_launch_request, mgr));
+    initial_requests_.push_back(mgr);
     ++aid;
   }
 }

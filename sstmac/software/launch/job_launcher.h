@@ -123,6 +123,8 @@ class job_launcher : public service
 
   void incoming_launch_request(app_launch_request* request);
 
+  void schedule_launch_requests();
+
   device_id event_location() const;
 
   virtual ~job_launcher(){}
@@ -135,6 +137,7 @@ class job_launcher : public service
   hw::topology* topology_;
   /** The set of available nodes - equivalent to std::set<node_id> */
   ordered_node_set available_;
+  std::list<app_launch_request*> initial_requests_;
 
  private:
   void add_launch_requests(sprockit::sim_parameters* params);

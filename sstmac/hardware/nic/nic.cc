@@ -269,7 +269,9 @@ nic::send_to_logp_switch(network_message* netmsg)
 {
   nic_debug("send to logP switch %p:%s",
     netmsg, netmsg->to_string().c_str());
-  send_to_link(logp_switch_, netmsg);
+  //we might not have a logp overlay network
+  if (logp_switch_) send_to_link(logp_switch_, netmsg);
+  else do_send(netmsg);
 }
 
 void
