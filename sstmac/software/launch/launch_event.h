@@ -81,6 +81,7 @@ class launch_event :
     network_message(aid, to, from, 0)
   {
     network_message::type_ = payload;
+    set_needs_ack(false);
   }
 
   launch_event(){} //for serialization

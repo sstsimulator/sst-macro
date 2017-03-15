@@ -13,8 +13,6 @@
 #define SSTMAC_SOFTWARE_LIBRARIES_MPI_MPIMESSAGE_H_INCLUDED
 
 #include <sstmac/common/sstmac_config.h>
-#include <sstmac/hardware/network/network_message.h>
-#include <sstmac/common/messages/library_message.h>
 #include <sumi-mpi/mpi_status.h>
 #include <sumi-mpi/mpi_types/mpi_type.h>
 #include <sumi-mpi/sstmac_mpi.h>

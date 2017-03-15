@@ -31,6 +31,8 @@
 #include <sstmac/software/process/graphviz_fwd.h>
 #include <sstmac/software/process/compute_scheduler_fwd.h>
 
+#include <sstmac/common/messages/sst_message_fwd.h>
+
 #include <sstmac/hardware/node/node_fwd.h>
 
 #include <sprockit/unordered.h>
@@ -320,12 +322,15 @@ class operating_system :
 
   void
   local_shutdown();
+
+  bool handle_library_event(const std::string& name, event* ev);
   
  private:
   hw::node* node_;
   spkt_unordered_map<std::string, library*> libs_;
   spkt_unordered_map<library*, int> lib_refcounts_;
   spkt_unordered_map<void*, std::list<library*> > libs_by_owner_;
+  std::map<std::string, std::list<event*>> pending_library_events_;
 
   node_id my_addr_;
 
