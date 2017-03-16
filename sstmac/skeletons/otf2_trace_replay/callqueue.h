@@ -63,10 +63,21 @@ public:
     CallQueue();
     CallQueue(OTF2TraceReplayApp*);
 
-    template<typename T> T* find_earliest();
-    template<typename T> T* find_earliest(int request);
-    template<typename T> T* find_latest();
-    template<typename T> T* find_latest(int request);
+    CallBase* find_latest(int id) {
+    	for (auto iter = call_queue.rbegin(); iter != call_queue.rend(); iter++)
+    	   if (id == (*iter)->id) return *iter;
+
+    	std::cout << "Failed to find " << id << ", printing the queue in reverse" << std::endl;
+    	for (auto iter = call_queue.rbegin(); iter != call_queue.rend(); iter++)
+    		std::cout << (*iter)->id << std::endl;
+    	return nullptr;
+    }
+
+    CallBase* find_earliest(int id) {
+    	for (auto iter = call_queue.begin(); iter != call_queue.end(); iter++)
+    		if (id == (*iter)->id) return (*iter);
+    	return nullptr;
+    }
 
     // Push a new call onto the back of the CallQueue
     void AddCall(CallBase*);
@@ -88,7 +99,7 @@ public:
     void AddRequest(CallBase*);
 
     // Finds an MPI call based on a request
-    CallBase* FindRequest(MPI_Request);
+    CallBase* FindRequest(MPI_Request); // TODO: is request collision possible with the current implementation?
 
     // Stop tracking a pending MPI call
     void RemoveRequest(MPI_Request);
@@ -102,6 +113,6 @@ private:
 };
 
 // template definitions here
-#include "callqueue.hpp"
+//#include "callqueue.hpp"
 
 #endif /* CALLQUEUE_H_ */

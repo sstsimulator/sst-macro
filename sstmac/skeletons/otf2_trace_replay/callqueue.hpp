@@ -52,14 +52,14 @@
 
 template<typename T> T* CallQueue::find_earliest() {
 	for (auto iter = call_queue.begin(); iter != call_queue.end(); iter++) {
-		if (T::id == (*iter)->GetID()) return (T*)(*iter);
+		if (T::id == (*iter)->id) return (T*)(*iter);
 	}
 	return nullptr;
 }
 
 template<typename T> T* CallQueue::find_latest() {
 	for (auto iter = call_queue.rbegin(); iter != call_queue.rend(); iter++) {
-		if (T::id == (*iter)->GetID()) return (T*)(*iter);
+		if (T::id == (*iter)->id) return (T*)(*iter);
 	}
 	return nullptr;
 }

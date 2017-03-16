@@ -213,6 +213,7 @@ inline uint64_t
 handle_events(OTF2_Reader* reader, OTF2_EvtReader* event_reader) {
   uint64_t events_read = 0;
   uint64_t read_all_events = OTF2_UNDEFINED_UINT64;
+
   check_status(OTF2_Reader_ReadLocalEvents(reader, event_reader, read_all_events, &events_read),
                "Trace replay failure");
 	return events_read;
@@ -222,7 +223,7 @@ void OTF2TraceReplayApp::initiate_trace_replay(OTF2_Reader* reader) {
   // get the trace reader corresponding to the rank
   uint64_t locs = 0;
   OTF2_Reader_GetNumberOfLocations(reader, &locs);
-  cout << "detected " << locs << endl;
+  //cout << "detected " << locs << endl;
 
   OTF2_EvtReader* event_reader = OTF2_Reader_GetEvtReader(reader, rank);
 

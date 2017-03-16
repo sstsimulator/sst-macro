@@ -27,8 +27,8 @@ using namespace std;
 
 CallBase::CallBase() : CallBase(NULL) {}
 CallBase::CallBase(OTF2TraceReplayApp* app) : CallBase(0, 0, app) {}
-CallBase::CallBase(OTF2_LocationRef location, OTF2_TimeStamp _start, OTF2TraceReplayApp* app=nullptr) : CallBase(location, _start, 0, app) {}
-CallBase::CallBase(OTF2_LocationRef location, OTF2_TimeStamp _start, OTF2_TimeStamp _stop, OTF2TraceReplayApp* app=nullptr) : isready(false), location(location), app(app), request_id(0) {
+CallBase::CallBase(OTF2_LocationRef location, OTF2_TimeStamp _start, OTF2TraceReplayApp* app) : CallBase(location, _start, 0, app) {}
+CallBase::CallBase(OTF2_LocationRef location, OTF2_TimeStamp _start, OTF2_TimeStamp _stop, OTF2TraceReplayApp* app) : isready(false), location(location), app(app), request_id(0), name((const char*)"UNKNOWN"), id(-1) {
     start_time = _start;
     end_time = _stop;
 }
@@ -38,7 +38,7 @@ bool CallBase::IsReady() {
 }
 
 const char* CallBase::ToString() {
-	return _name;
+	return name;
 }
 
 void CallBase::assert_call(CallBase* cb, string msg) {
