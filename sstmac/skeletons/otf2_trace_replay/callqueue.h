@@ -17,11 +17,11 @@
 #include <iostream>
 #include <sumi-mpi/mpi_api.h>
 
-#include "callbase.h"
+#include "mpicall.h"
 #include "mpi_calls.h"
 
 // forward declare
-class CallBase;
+class MpiCall;
 class OTF2TraceReplayApp;
 
 // http://stackoverflow.com/questions/1259099/stdqueue-iteration
@@ -63,7 +63,7 @@ public:
     CallQueue();
     CallQueue(OTF2TraceReplayApp*);
 
-    CallBase* find_latest(int id) {
+    MpiCall* find_latest(int id) {
     	for (auto iter = call_queue.rbegin(); iter != call_queue.rend(); iter++)
     	   if (id == (*iter)->id) return *iter;
 
@@ -73,40 +73,40 @@ public:
     	return nullptr;
     }
 
-    CallBase* find_earliest(int id) {
+    MpiCall* find_earliest(int id) {
     	for (auto iter = call_queue.begin(); iter != call_queue.end(); iter++)
     		if (id == (*iter)->id) return (*iter);
     	return nullptr;
     }
 
     // Push a new call onto the back of the CallQueue
-    void AddCall(CallBase*);
+    void AddCall(MpiCall*);
 
     // Notify the CallQueue handlers that a given call was finished
     // Returns the number of calls triggered
-    int CallReady(CallBase*);
+    int CallReady(MpiCall*);
 
     // Returns the number of calls waiting in the queue
     int GetDepth();
 
     // Get the entry at the front of the queue
-    CallBase* Peek();
+    MpiCall* Peek();
 
     // Get the entry from the back of the queue
-    CallBase* PeekBack();
+    MpiCall* PeekBack();
 
     // Begin tracking a pending MPI call with a request
-    void AddRequest(CallBase*);
+    void AddRequest(MpiCall*);
 
     // Finds an MPI call based on a request
-    CallBase* FindRequest(MPI_Request); // TODO: is request collision possible with the current implementation?
+    MpiCall* FindRequest(MPI_Request); // TODO: is request collision possible with the current implementation?
 
     // Stop tracking a pending MPI call
     void RemoveRequest(MPI_Request);
 
 private:
-    iterable_queue<CallBase*> call_queue;
-    std::unordered_map<MPI_Request, CallBase*> request_map;
+    iterable_queue<MpiCall*> call_queue;
+    std::unordered_map<MPI_Request, MpiCall*> request_map;
     OTF2TraceReplayApp* app;
 
     friend class OTF2TraceReplayApp;

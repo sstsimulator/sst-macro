@@ -16,7 +16,7 @@
 #include "structures.h"
 #include "callbacks.h"
 
-#include "callbase.h"
+#include "MpiCall.h"
 #include "mpi_calls.h"
 #include "callqueue.h"
 #include "otf2_trace_replay.h"
@@ -202,7 +202,7 @@ void add_wait(OTF2TraceReplayApp* app, CallQueue& queue, MPI_Request requestID) 
 		app->GetMpi()->wait(&req, MPI_STATUS_IGNORE);
 	};
 
-	CallBase* wait_call = queue.PeekBack();
+	MpiCall* wait_call = queue.PeekBack();
 	if (wait_call == nullptr) spkt_throw(sprockit::io_error, "ASSERT FAILED:", " expected MPI_Wait at the back of the call queue");
 
 	if (wait_call->on_trigger == nullptr) {
@@ -210,7 +210,7 @@ void add_wait(OTF2TraceReplayApp* app, CallQueue& queue, MPI_Request requestID) 
 	}
 	else {
 		// Something got to the wait first, make a new one
-		CallBase* new_call = new CallBase(app);
+		MpiCall* new_call = new MpiCall(app);
 		new_call->on_trigger = wait_event;
 		new_call->id = ID_MPI_Wait;
 
@@ -236,8 +236,8 @@ OTF2_CallbackCode event_mpi_send(
     uint64_t            msgLength ) {
 
     auto app = (OTF2TraceReplayApp*)userData;
-    CallBase* call = app->GetCallQueue().find_latest(ID_MPI_Send);
-    CallBase::assert_call(call, "Lookup for MPI_Send in 'event_mpi_send' returned NULL");
+    MpiCall* call = app->GetCallQueue().find_latest(ID_MPI_Send);
+    MpiCall::assert_call(call, "Lookup for MPI_Send in 'event_mpi_send' returned NULL");
 
     call->on_trigger = [=]() { call->app->GetMpi()->send(nullptr, msgLength, MPI_BYTE, receiver, msgTag, communicator); };
 
@@ -260,8 +260,8 @@ OTF2_CallbackCode event_mpi_isend(
     auto app = (OTF2TraceReplayApp*)userData;
 
     // event_enter has just put an isend on the top of the queue
-    CallBase* call = app->GetCallQueue().PeekBack();
-    CallBase::assert_call(call, "Lookup for MPI_Send in 'event_mpi_isend' returned NULL");
+    MpiCall* call = app->GetCallQueue().PeekBack();
+    MpiCall::assert_call(call, "Lookup for MPI_Send in 'event_mpi_isend' returned NULL");
 
     call->request_id = requestID;
     app->GetCallQueue().AddRequest(call);
@@ -284,8 +284,8 @@ OTF2_CallbackCode event_mpi_isend_complete(
 
 	// Is isend_complete always wrapped by a wait? If not, we can't reliably
 	// generate a wait. The current behavior is to fail
-	CallBase* call = callqueue.PeekBack();
-	CallBase::assert_call(call, "Lookup for MPI_Wait in 'event_mpi_isend_complete' returned NULL");
+	MpiCall* call = callqueue.PeekBack();
+	MpiCall::assert_call(call, "Lookup for MPI_Wait in 'event_mpi_isend_complete' returned NULL");
 
 	add_wait(app, app->GetCallQueue(), (MPI_Request)requestID);
 	callqueue.RemoveRequest((MPI_Request)requestID);
@@ -303,8 +303,8 @@ OTF2_CallbackCode event_mpi_irecv_request(
     uint64_t            requestID ) {
 
     auto app = (OTF2TraceReplayApp*)userData;
-    CallBase* call = app->GetCallQueue().PeekBack();
-    CallBase::assert_call(call, "Lookup for MPI_Irecv in 'event_mpi_irecv_request' returned NULL");
+    MpiCall* call = app->GetCallQueue().PeekBack();
+    MpiCall::assert_call(call, "Lookup for MPI_Irecv in 'event_mpi_irecv_request' returned NULL");
 
     call->request_id = requestID;
     app->GetCallQueue().AddRequest(call);
@@ -331,14 +331,14 @@ OTF2_CallbackCode event_mpi_irecv(
     auto& callqueue = app->GetCallQueue();
 
     // finish off the Irecv call
-    CallBase* call = callqueue.FindRequest((MPI_Request)requestID);
-    CallBase::assert_call(call, "Lookup for MpiIrecvCall in 'event_mpi_irecv' returned NULL");
+    MpiCall* call = callqueue.FindRequest((MPI_Request)requestID);
+    MpiCall::assert_call(call, "Lookup for MpiIrecvCall in 'event_mpi_irecv' returned NULL");
 
     call->on_trigger = [=]() {
     	MPI_Request req = requestID;
     	app->GetMpi()->irecv(nullptr, msgLength, MPI_BYTE, sender, msgTag, communicator, &req);};
 
-    CallBase* wait = new CallBase(app);
+    MpiCall* wait = new MpiCall(app);
     wait->id = ID_MPI_Wait;
     add_wait(app, app->GetCallQueue(), (MPI_Request)requestID);
     callqueue.RemoveRequest((MPI_Request)requestID);
@@ -360,8 +360,8 @@ OTF2_CallbackCode event_mpi_recv(
     uint64_t            msgLength ) {
 
 	auto app = (OTF2TraceReplayApp*)userData;
-    CallBase* call = app->GetCallQueue().find_latest(ID_MPI_Recv);
-    CallBase::assert_call(call, "Lookup for MpiIrecvCall in 'event_mpi_irecv_request' returned NULL");
+    MpiCall* call = app->GetCallQueue().find_latest(ID_MPI_Recv);
+    MpiCall::assert_call(call, "Lookup for MpiIrecvCall in 'event_mpi_irecv_request' returned NULL");
 
     call->on_trigger = [=]() {app->GetMpi()->recv(nullptr, msgLength, MPI_BYTE, sender, msgTag, communicator, MPI_STATUS_IGNORE);};
 
@@ -502,10 +502,10 @@ OTF2_CallbackCode event_enter(
 
     auto app = (OTF2TraceReplayApp*)userData;
     auto id = app->otf2_mpi_call_map[app->otf2_regions[region].name];
-    CallBase* call = nullptr;
+    MpiCall* call = nullptr;
 
 #define CASE_ADD_CALL(call_id) case call_id: \
-	call = new CallBase(location, time); \
+	call = new MpiCall(location, time); \
 	call->id = call_id; \
 	call->name = ((const char*)#call_id) + 3; \
 	app->GetCallQueue().AddCall(call); \
@@ -939,7 +939,7 @@ OTF2_CallbackCode event_leave(
     // Record end time and trigger the call
 	#define CASE_READY(call_id, ...) case call_id : { \
 		auto call = callqueue.find_latest(call_id); \
-		CallBase::assert_call(call, "Lookup for " #call_id " in 'event_leave' returned NULL"); \
+		MpiCall::assert_call(call, "Lookup for " #call_id " in 'event_leave' returned NULL"); \
 		if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("LEAVE " << call->ToString() << " time: " << time); \
 		call->end_time = time; \
 		__VA_ARGS__; \
@@ -950,7 +950,7 @@ OTF2_CallbackCode event_leave(
     // there is not enough information yet available in the callback.
 	#define CASE_NOT_READY(call_id) case call_id : { \
 			auto call = callqueue.find_latest(call_id); \
-			CallBase::assert_call(call, "Lookup for " #call_id " in 'event_leave' returned NULL"); \
+			MpiCall::assert_call(call, "Lookup for " #call_id " in 'event_leave' returned NULL"); \
 			if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("LEAVE " << call->ToString() << " time: " << time); \
 			call->end_time = time; \
 			break;}

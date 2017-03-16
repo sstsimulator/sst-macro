@@ -25,46 +25,46 @@ using namespace std;
  */
 
 
-CallBase::CallBase() : CallBase(NULL) {}
-CallBase::CallBase(OTF2TraceReplayApp* app) : CallBase(0, 0, app) {}
-CallBase::CallBase(OTF2_LocationRef location, OTF2_TimeStamp _start, OTF2TraceReplayApp* app) : CallBase(location, _start, 0, app) {}
-CallBase::CallBase(OTF2_LocationRef location, OTF2_TimeStamp _start, OTF2_TimeStamp _stop, OTF2TraceReplayApp* app) : isready(false), location(location), app(app), request_id(0), name((const char*)"UNKNOWN"), id(-1) {
+MpiCall::MpiCall() : MpiCall(NULL) {}
+MpiCall::MpiCall(OTF2TraceReplayApp* app) : MpiCall(0, 0, app) {}
+MpiCall::MpiCall(OTF2_LocationRef location, OTF2_TimeStamp _start, OTF2TraceReplayApp* app) : MpiCall(location, _start, 0, app) {}
+MpiCall::MpiCall(OTF2_LocationRef location, OTF2_TimeStamp _start, OTF2_TimeStamp _stop, OTF2TraceReplayApp* app) : isready(false), location(location), app(app), request_id(0), name((const char*)"UNKNOWN"), id(-1) {
     start_time = _start;
     end_time = _stop;
 }
 
-bool CallBase::IsReady() {
+bool MpiCall::IsReady() {
     return isready;
 }
 
-const char* CallBase::ToString() {
+const char* MpiCall::ToString() {
 	return name;
 }
 
-void CallBase::assert_call(CallBase* cb, string msg) {
+void MpiCall::assert_call(MpiCall* cb, string msg) {
     if (cb == NULL) {
         spkt_throw(sprockit::io_error, "ASSERT FAILED: ", msg.c_str());
     }
 }
 
-sstmac::timestamp CallBase::convert_time(const OTF2_TimeStamp ts) {
+sstmac::timestamp MpiCall::convert_time(const OTF2_TimeStamp ts) {
 	const auto start_offset = app->otf2_clock_properties.globalOffset;
 	const auto ticks_per_second = app->otf2_clock_properties.timerResolution;
 
 	return sstmac::timestamp(((double(ts) - start_offset)/ticks_per_second));
 }
 
-sstmac::timestamp CallBase::GetStart() {
+sstmac::timestamp MpiCall::GetStart() {
 	if (start_time == 0) cerr << "Warning: start timestamp is not initialized for " << ToString() << endl;
 	return convert_time(start_time);
 }
 
-sstmac::timestamp CallBase::GetEnd() {
+sstmac::timestamp MpiCall::GetEnd() {
 	if (end_time == 0) cerr << "Warning: end timestamp is not initialized for " << ToString() << endl;
     return convert_time(end_time);
 }
 
-void CallBase::Trigger() {
+void MpiCall::Trigger() {
 	if (on_trigger != nullptr) {
 		app->StartMpi(GetStart());
 		on_trigger();
@@ -83,14 +83,14 @@ CallQueue::CallQueue(OTF2TraceReplayApp* app) {
     this->app = app;
 }
 
-void CallQueue::AddCall(CallBase* cb) {
+void CallQueue::AddCall(MpiCall* cb) {
     // another strategy would be to make 'app' an argument that gets passed into 'Trigger'.
     // This would decrease the size of each callback by sizeof(ptr)
     cb->app = app;
     call_queue.push(cb);
 }
 
-int CallQueue::CallReady(CallBase* call) {
+int CallQueue::CallReady(MpiCall* call) {
     int triggered = 0;
     call->isready = true;
 
@@ -113,11 +113,11 @@ int CallQueue::CallReady(CallBase* call) {
     return triggered;
 }
 
-void CallQueue::AddRequest(CallBase* cb) {
+void CallQueue::AddRequest(MpiCall* cb) {
 	request_map[cb->request_id] = cb;
 }
 
-CallBase* CallQueue::FindRequest(MPI_Request req) {
+MpiCall* CallQueue::FindRequest(MPI_Request req) {
 	return request_map[req];
 }
 
@@ -129,10 +129,10 @@ int CallQueue::GetDepth() {
     return call_queue.size();
 }
 
-CallBase* CallQueue::Peek() {
+MpiCall* CallQueue::Peek() {
     return call_queue.front();
 }
 
-CallBase* CallQueue::PeekBack() {
+MpiCall* CallQueue::PeekBack() {
     return call_queue.back();
 }

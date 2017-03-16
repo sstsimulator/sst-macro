@@ -9,8 +9,8 @@
  *  SST/macroscale directory.
  */
 
-#ifndef SSTMAC_SKELETONS_OTF2_TRACE_REPLAY_CALLBASE_H_
-#define SSTMAC_SKELETONS_OTF2_TRACE_REPLAY_CALLBASE_H_
+#ifndef SSTMAC_SKELETONS_OTF2_TRACE_REPLAY_MpiCall_H_
+#define SSTMAC_SKELETONS_OTF2_TRACE_REPLAY_MpiCall_H_
 
 #include <sstmac/software/process/operating_system.h>
 #include <sumi-mpi/mpi_api.h>
@@ -23,14 +23,14 @@
 // forward declare
 class OTF2TraceReplayApp;
 
-class CallBase {
+class MpiCall {
 public:
     // Ctors
-    CallBase();
-    CallBase(OTF2TraceReplayApp*);
-    CallBase(OTF2_LocationRef, OTF2_TimeStamp, OTF2TraceReplayApp* app = nullptr);
-    CallBase(OTF2_LocationRef, OTF2_TimeStamp, OTF2_TimeStamp, OTF2TraceReplayApp* app = nullptr);
-    virtual ~CallBase() {}
+    MpiCall();
+    MpiCall(OTF2TraceReplayApp*);
+    MpiCall(OTF2_LocationRef, OTF2_TimeStamp, OTF2TraceReplayApp* app = nullptr);
+    MpiCall(OTF2_LocationRef, OTF2_TimeStamp, OTF2_TimeStamp, OTF2TraceReplayApp* app = nullptr);
+    virtual ~MpiCall() {}
 
     // Methods
     sstmac::timestamp GetStart();
@@ -50,10 +50,10 @@ public:
     int id;
     const char* name;
 
-    static void assert_call(CallBase* cb, std::string msg);
+    static void assert_call(MpiCall* cb, std::string msg);
 
 private:
     sstmac::timestamp convert_time(const OTF2_TimeStamp);
 };
 
-#endif /* SSTMAC_SKELETONS_OTF2_TRACE_REPLAY_CALLBASE_H_ */
+#endif /* SSTMAC_SKELETONS_OTF2_TRACE_REPLAY_MpiCall_H_ */
