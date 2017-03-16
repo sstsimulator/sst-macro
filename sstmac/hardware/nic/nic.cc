@@ -37,6 +37,7 @@ RegisterKeywords(
 "network_spyplot",
 "post_bandwidth",
 "post_latency",
+"pipeline_fraction",
 );
 
 #define DEFAULT_NEGLIGIBLE_SIZE 256
@@ -69,9 +70,11 @@ nic::nic(sprockit::sim_parameters* params, node* parent) :
     sprockit::sim_parameters* inj_params = params->get_namespace("injection");
     double bw = inj_params->get_bandwidth_param("bandwidth");
     post_inv_bw_ = 1.0 / bw;
+    //by default, assume very little contention on the nic
+    double nic_pipeline_fraction = params->get_double_param("pipeline_fraction");
+    //we multiply by the percent that is NOT pipelineable
+    nic_pipeline_multiplier_ = 1.0 - nic_pipeline_fraction;
   }
-
-
 
   negligible_size_ = params->get_optional_int_param("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
 
@@ -115,6 +118,22 @@ nic::mtl_handle(event *ev)
 void
 nic::delete_statics()
 {
+}
+
+void
+nic::inject_send(network_message* netmsg, sw::operating_system* os)
+{
+  long bytes = netmsg->byte_length();
+  timestamp delay = post_latency_ + timestamp(post_inv_bw_ * bytes);
+  timestamp nic_ready = next_free_ + delay;
+  next_free_ = next_free_ + delay * nic_pipeline_multiplier_;
+  os->sleep_until(nic_ready);
+
+  if (netmsg->toaddr() == my_addr_){
+    intranode_send(netmsg);
+  } else {
+    internode_send(netmsg);
+  }
 }
 
 void

@@ -23,6 +23,7 @@
 #include <sstmac/common/stats/stat_local_int_fwd.h>
 #include <sstmac/common/stats/stat_global_int_fwd.h>
 #include <sstmac/common/messages/sst_message_fwd.h>
+#include <sstmac/software/process/operating_system_fwd.h>
 
 #include <sprockit/debug.h>
 #include <sprockit/factories/factory.h>
@@ -75,21 +76,17 @@ class nic :
   }
 
   /**
-   * @brief nic_operation Perform an operation on the NIC. This does
-   *  not actually perform an operation. It instead returns the time
-   *  that the NIC will complete the requested operation. It is up
-   *  to the caller (usually OS) to sleep/compute for appropriate time.
+   * @brief inject_send Perform an operation on the NIC.
    *  This assumes an exlcusive model of NIC use. If NIC is busy,
-   *  operation may complete far in the future. The NIC operation
-   *  is NOT cancelable. If wishing to query for how busy the NIC is,
-   *  use #next_free;
-   * @return The absolute time the requested NIC operation completes
+   *  operation may complete far in the future. If wishing to query for how busy the NIC is,
+   *  use #next_free. Calls to hardware taking an OS parameter
+   *  indicate 1) they MUST occur on a user-space software thread
+   *  and 2) that they should us the os to block and compute
+   * @param netmsg The message being injected
+   * @param os     The OS to use form software compute delays
    */
-  timestamp
-  nic_operation(long bytes) {
-    next_free_ += post_latency_ + timestamp(post_inv_bw_ * bytes);
-    return next_free_;
-  }
+  void
+  inject_send(network_message* netmsg, sw::operating_system* os);
 
   /**
    * @brief next_free
@@ -192,6 +189,7 @@ class nic :
   stat_global_int* global_bytes_sent_;
   timestamp next_free_;
   timestamp post_latency_;
+  double nic_pipeline_multiplier_;
   double post_inv_bw_;
 
  private:
