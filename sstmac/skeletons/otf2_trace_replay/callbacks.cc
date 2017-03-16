@@ -504,12 +504,6 @@ OTF2_CallbackCode event_enter(
     auto id = app->otf2_mpi_call_map[app->otf2_regions[region].name];
     CallBase* call = nullptr;
 
-//#define CASE_ADD_CALL(obj_name) case obj_name::id : \
-	call = new obj_name(location, time); \
-	app->GetCallQueue().AddCall(call); \
-	if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("ENTER " << call->ToString() << " time: " << time); \
-	break;
-
 #define CASE_ADD_CALL(call_id) case call_id: \
 	call = new CallBase(location, time); \
 	call->id = call_id; \

@@ -112,7 +112,4 @@ private:
     friend class OTF2TraceReplayApp;
 };
 
-// template definitions here
-//#include "callqueue.hpp"
-
 #endif /* CALLQUEUE_H_ */
