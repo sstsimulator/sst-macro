@@ -200,7 +200,6 @@ class app : public thread
 
  private:
   lib_compute_loops* compute_lib_;
-  lib_sleep* sleep_lib_;
   long next_tls_key_;
 
   int next_condition_;

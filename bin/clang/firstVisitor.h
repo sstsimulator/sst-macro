@@ -35,8 +35,6 @@ class FirstASTVisitor : public clang::RecursiveASTVisitor<FirstASTVisitor> {
 
   void initHeaders();
 
-  static bool validSrc(const std::string& filename);
-
   /**
    * @brief TraverseNamespaceDecl We have to traverse namespaces.
    *        We need pre and post operations. We have to explicitly recurse subnodes.

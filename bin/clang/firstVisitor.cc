@@ -60,19 +60,6 @@ FirstASTVisitor::VisitVarDecl(VarDecl* D){
 }
 
 
-bool
-FirstASTVisitor::validSrc(const std::string& filename){
-  //this is really dirty and not very resilient - but I don't know how to fix this yet
-  //for now just check to see if this is actually a valid source file
-  size_t size = filename.size();
-  if (size == 0) return false;
-  std::string suffix4; if (size >= 4) suffix4 = filename.substr(size-4,3);
-  std::string suffix3; if (size >= 3) suffix3 = filename.substr(size-3,3);
-  std::string suffix2 = filename.substr(size-2,2);
-  bool valid = suffix4 == ".cpp" || suffix3 == ".cc" || suffix2 == ".c" || suffix4 == ".cxx";
-  return valid;
-}
-
 /**
  * @brief TraverseNamespaceDecl We have to traverse namespaces.
  *        We need pre and post operations. We have to explicitly recurse subnodes.
@@ -83,7 +70,7 @@ bool
 FirstASTVisitor::TraverseNamespaceDecl(NamespaceDecl* D){
   SourceLocation startLoc = D->getLocStart();
   std::string filename = CI.getSourceManager().getFilename(startLoc).str();
-  if (!validSrc(filename)){
+  if (!isValidSrc(filename)){
     return false;
   }
 

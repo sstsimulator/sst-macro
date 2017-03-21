@@ -24,14 +24,21 @@ ReplGlobalASTVisitor::VisitCXXNewExpr(CXXNewExpr *expr)
     return true;
   }
 
-  std::string allocatedTypeStr = QualType::getAsString(expr->getAllocatedType().split());;
+  std::string allocatedTypeStr = expr->getAllocatedType().getAsString();
   if (expr->getNumPlacementArgs() == 0){
     PrettyPrinter pp;
-    pp.os << "conditional_new<" << allocatedTypeStr << ">(";
     if (expr->isArray()){
+      pp.os << "conditional_array_new<" << allocatedTypeStr << ">(";
       pp.print(expr->getArraySize());
+      pp.os << ")";
+    } else {
+      pp.os << "conditional_new<" << allocatedTypeStr << ">(";
+      const Expr* ctor = expr->getConstructExpr();
+      if (ctor){
+        pp.print(ctor);
+      }
+      pp.os << ")";
     }
-    pp.os << ")";
     TheRewriter.ReplaceText(expr->getSourceRange(), pp.os.str());
   } else {
     //might be a placement new or no-throw new
@@ -60,6 +67,11 @@ ReplGlobalASTVisitor::VisitCXXNewExpr(CXXNewExpr *expr)
           if (expr->isArray()){
             pp.os << ",";
             pp.print(expr->getArraySize());
+          } else {
+            const Expr* ctor = expr->getConstructExpr();
+            if (ctor){
+              pp.print(ctor);
+            }
           }
           pp.os << ")";
           TheRewriter.ReplaceText(expr->getSourceRange(), pp.os.str());
@@ -111,6 +123,21 @@ ReplGlobalASTVisitor::TraverseFunctionTemplateDecl(FunctionTemplateDecl *D)
     TraverseDecl(D->getTemplatedDecl());
     return true;
   }
+}
+
+bool
+ReplGlobalASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
+{
+  //do not traverse this - will mess everything up
+  //this got implicitly inserted into AST - has no source location
+  if (D->isTemplateInstantiation())
+    return true;
+
+  auto end = D->decls_end();
+  for (auto iter=D->decls_begin(); iter != end; ++iter){
+    TraverseDecl(*iter);
+  }
+  return true;
 }
 
 bool

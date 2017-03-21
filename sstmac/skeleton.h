@@ -62,7 +62,7 @@ placement_new(void* sstmac_placement_ptr){
 
 template <class T>
 T*
-conditional_new(unsigned long size){
+conditional_array_new(unsigned long size){
   bool& flag = should_skip_operator_new();
   T* ret = nullptr;
   if (!flag){
@@ -72,13 +72,13 @@ conditional_new(unsigned long size){
   return ret;
 }
 
-template <class T>
+template <class T, class... Args>
 T*
-conditional_new(){
+conditional_new(Args&&... args){
   bool& flag = should_skip_operator_new();
   T* ret = nullptr;
   if (!flag){
-    ret = new T;
+    ret = new T(args...);
   }
   flag = false;
   return ret;
@@ -108,6 +108,7 @@ get_params();
 
 #else
 //not C++, extra work required in sst clang compiler
+#define main ignore_this_fxn();
 #endif
 
 

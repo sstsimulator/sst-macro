@@ -51,14 +51,19 @@ ReplaceAction::EndSourceFileAction()
   bool isC = suffix2 == ".c";
 
   if (mainFxn && isC){
+    const char* appname = getenv("SSTMAC_APP_NAME");
+    if (appname == nullptr){
+      llvm::errs() << "Cannot refactor main function unless SSTMAC_APP_NAME environment var is defined\n";
+      abort();
+    }
     std::stringstream sstr;
-    sstr << "#define SSTPP_QUOTE(name) #name\n"
-         << "#define SSTPP_STR(name) SSTPP_QUOTE(name)\n"
-         << "#define SST_APP_NAME_QUOTED SSTPP_STR(sstmac_app_name)\n"
-         << "const char* SSTMAC_USER_APPNAME = SST_APP_NAME_QUOTED;\n"
-         << "#undef main\n"
-         << "#define main SSTMAC_USER_MAIN\n";
-    TheRewriter.InsertText(mainFxn->getLocStart(), sstr.str(), false);
+    sstr << "int sstmac_user_main_" << appname << "(";
+    if (mainFxn->getNumParams() == 2){
+      sstr << "int argc, char** argv";
+    }
+    sstr << "){";
+    SourceRange rng(mainFxn->getLocStart(), mainFxn->getBody()->getLocStart());
+    TheRewriter.ReplaceText(rng, sstr.str());
   }
 
   std::string sstSourceFile, sstGlobalFile;
@@ -85,10 +90,15 @@ ReplaceAction::EndSourceFileAction()
     ofs << "#include <sstmac/software/process/global.h>\n\n";
     globalNS.genSSTCode(ofs,"");
     if (mainFxn && isC){
+      const char* appname = getenv("SSTMAC_APP_NAME");
+      if (appname == nullptr){
+        llvm::errs() << "Cannot refactor main function unless SSTMAC_APP_NAME environment var is defined\n";
+        abort();
+      }
       ofs << "int user_skeleton_main_init_fxn(const char* name, int (*foo)(int,char**));\n"
-         << "extern const char* SSTMAC_USER_APPNAME;\n"
-         << "extern \"C\" int SSTMAC_USER_MAIN(int argc, char** argv);\n"
-         << "static int dont_ignore_this = user_skeleton_main_init_fxn(SSTMAC_USER_APPNAME, SSTMAC_USER_MAIN);\n\n";
+         << "extern \"C\" int sstmac_user_main_" << appname << "(int argc, char** argv);\n"
+         << "static int dont_ignore_this = user_skeleton_main_init_fxn("
+           << "\"" << appname << "\",sstmac_user_main_" << appname << ");\n\n";
     }
   } else {
     llvm::errs() << "Failed opening " << sstGlobalFile << "\n";

@@ -28,6 +28,8 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
 
   bool TraverseFunctionTemplateDecl(clang::FunctionTemplateDecl* D);
 
+  bool TraverseCXXMethodDecl(clang::CXXMethodDecl *D);
+
   void setVisitingGlobal(bool flag){
     visitingGlobal = flag;
   }

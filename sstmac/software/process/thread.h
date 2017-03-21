@@ -25,7 +25,6 @@
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/software/process/thread_fwd.h>
 #include <sstmac/software/libraries/library_fwd.h>
-#include <sstmac/software/libraries/compute/lib_sleep_fwd.h>
 #include <sstmac/software/api/api_fwd.h>
 #include <sstmac/software/threading/threading_interface_fwd.h>
 #include <queue>

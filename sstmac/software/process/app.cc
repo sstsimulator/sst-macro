@@ -13,7 +13,6 @@
 #include <sstmac/software/libraries/compute/lib_compute_time.h>
 #include <sstmac/software/libraries/compute/lib_compute_memmove.h>
 #include <sstmac/software/libraries/compute/lib_compute_loops.h>
-#include <sstmac/software/libraries/compute/lib_sleep.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/api/api.h>
 #include <sstmac/software/launch/app_launch.h>

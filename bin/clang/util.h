@@ -20,8 +20,12 @@ struct PrettyPrinter
     os.flush();
   }
 
-  void print(clang::Stmt* s){
+  void print(const clang::Stmt* s){
     s->printPretty(os, nullptr, Policy);
+  }
+
+  void print(const clang::Decl* d){
+    d->print(os, Policy);
   }
 
   void dump(std::ostream& sos = std::cout){
@@ -36,6 +40,9 @@ struct PrettyPrinter
  private:
   std::string baseStr;
 };
+
+bool isCxx(const std::string& filename);
+bool isValidSrc(const std::string& filename);
 
 void errorAbort(clang::SourceLocation loc, clang::CompilerInstance& CI, const std::string& error);
 

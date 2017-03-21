@@ -1,5 +1,5 @@
 TARGET := runmultiapp
-SRC := $(shell ls *.cc) 
+SRC := allgather.cc allreduce.cc
 
 CXX :=    sst++
 CC :=     sstcc

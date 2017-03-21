@@ -27,18 +27,19 @@ def cleanFlag(flag):
 
 clangCppArgs = [
   cleanFlag("-I${includedir}/sstmac/clang_replacements"),
-  "-I/Users/jjwilke/Programs/install/clang-llvm/bin/../include/c++/v1",
-  "-I/Users/jjwilke/Programs/install/clang-llvm/bin/../lib/clang/5.0.0/include",
 ]
-clangCppArgs.extend(clang_libtooling_cflags.strip().split())
 clangCxxArgs = [
   "-std=c++1y",
   "-stdlib=libc++", 
 ]
 clangCxxArgs.extend(clang_libtooling_cxxflags.strip().split())
+
+def addClangArg(a, ret):
+  ret.append("--extra-arg=%s" % a)
+
 def addClangArgs(argList, ret):
   for a in argList:
-    ret.append("--extra-arg=%s" % a)
+    addClangArg(a,ret)
   return ret
 
 haveClangSrcToSrc = bool(clang_cppflags)
@@ -50,7 +51,6 @@ sstmac_ldflags = []
 sstmac_ldflags.extend(sstmac_default_ldflags)
 sstmac_ldflags.extend(sstmac_libs)
 
-cppflags=" ".join(sstmac_cppflags)
 ldflags=" ".join(sstmac_ldflags)
 
 
@@ -64,7 +64,7 @@ for entry in sstmac_ldflags:
   new_ldflags.append(cleanFlag(entry))
 sstmac_ldflags = new_ldflags
 
-cppflags = " ".join(sstmac_cppflags)
+sstCppFlagsStr=" ".join(sstmac_cppflags)
 ldflags =  " ".join(sstmac_ldflags)
 ld = cc 
 repldir = os.path.join(includedir, "sstmac", "replacements")
@@ -95,7 +95,7 @@ srcFiles = False
 asmFiles = False
 verbose = False
 delTempFiles = True
-otherCppArgs = []
+givenCppFlags = []
 controlArgs = []
 sourceFiles = []
 objectFiles = []
@@ -106,6 +106,7 @@ for arg in sysargs:
   if sarg.endswith('.o'):
     objectFiles.append(sarg)
     objTarget = sarg
+    getObjTarget=False
   elif sarg.endswith('.cpp') or sarg.endswith('.cc') or sarg.endswith('.c'):
     srcFiles = True
     sourceFiles.append(sarg)
@@ -121,9 +122,9 @@ for arg in sysargs:
     objTarget = sarg
     getObjTarget=False
   else:
-    otherCppArgs.append(sarg)
+    givenCppFlags.append(sarg)
 if sst_core:
-  otherCppArgs.append(" -DSSTMAC_EXTERNAL_SKELETON")
+  givenCppFlags.append(" -DSSTMAC_EXTERNAL_SKELETON")
 
 if sourceFiles and len(objectFiles) > 1:
   sys.exit("Specified multiple object files for source compilation: %" % " ".join(objectFiles))
@@ -137,15 +138,15 @@ if os.environ.has_key("SSTMAC_DELETE_TEMPS"):
   
 
 def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=True):
-    direct_includes = []
+    directIncludes = []
     global ldflags
-    global cppflags
+    global sstCppFlagsStr
     import os
     
     if type == "c++":
-      direct_includes.append("-include cstdint")
+      directIncludes.append("-include cstdint")
     else:
-      direct_includes.append("-include stdint.h")
+      directIncludes.append("-include stdint.h")
 
     remGlobals = True
     if os.environ.has_key("SSTMAC_REMOVE_GLOBALS"):
@@ -159,7 +160,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       sys.exit()
     elif sys.argv[1] == "--flags":
       sys.stderr.write("LDFLAGS=%s\n" % ldflags)
-      sys.stderr.write("CPPFLAGS=%s\n" % cppflags)
+      sys.stderr.write("CPPFLAGS=%s\n" % sstCppFlagsStr)
       sys.stderr.write("CXXFLAGS=%s\n" % cxxflags)
       sys.exit()
     elif sys.argv[1] == "--help":
@@ -185,7 +186,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         ld = cxx #always use c++ for linking since we are bringing a bunch of sstmac C++ into the game
     ldflags = "%s %s" % (compilerFlags, ldflags)
 
-    directIncludes = " ".join(direct_includes)
+    directIncludesStr = " ".join(directIncludes)
 
     extraCppFlags = []
     if redefineSymbols:
@@ -196,30 +197,35 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       ]
 
     if asmFiles:
-        extraCppFlags = "" #add nothing
-    else:
-        extraCppFlags = " ".join(extraCppFlags)
+        extraCppFlags = [] #add nothing
 
     if "--no-integrated-cpp" in sysargs:
-        extraCppFlags = "" #add nothing
+        extraCppFlags = [] #add nothing
 
     ldpathMaker = "-Wl,-rpath,%s/lib" % prefix
 
-    if redefineSymbols: extraCppFlags = "-I%s " % repldir + extraCppFlags
+    if redefineSymbols: 
+      extraCppFlags.insert(0,"-I%s" % repldir)
+
     
     cxxCmdArr = []
     ppCmdArr = []
     ppOnly = "-E" in controlArgs
     runClang = haveClangSrcToSrc and remGlobals
     controlArgStr = " ".join(controlArgs)
+    extraCppFlagsStr = " ".join(extraCppFlags)
+    givenCppFlagsStr = " ".join(givenCppFlags)
+    srcFileStr = " ".join(sourceFiles)
     if '-c' in sysargs or ppOnly:
       runClang = runClang and (not ppOnly)
       if runClang:
         ppCmdArr = [
           compiler, 
           "-include sstmac/skeleton.h",
-          extraCppFlags, 
-          cppflags, 
+          directIncludesStr,
+          extraCppFlagsStr, 
+          givenCppFlagsStr,
+          sstCppFlagsStr,
           compilerFlags, 
           "-E"
         ]
@@ -227,22 +233,24 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         #only put cxxflags in the cmd arr for now
         cxxCmdArr = [
           compiler,
-          compilerFlags,
+          compilerFlags
         ]
       else: 
         cxxCmdArr = [
           compiler, 
-          extraCppFlags, 
-          cppflags, 
+          extraCppFlagsStr, 
+          givenCppFlagsStr,
+          sstCppFlagsStr, 
           compilerFlags, 
-          controlArgStr
+          controlArgStr,
+          srcFileStr
         ]
     elif objTarget and srcFiles:
       runClang = True
       cxxCmdArr = [
         compiler, 
-        extraCppFlags, 
-        cppflags, 
+        extraCppFlagsStr, 
+        sstCppFlagsStr, 
         compilerFlags, 
         args, 
         ldflags, 
@@ -284,7 +292,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       cxxCmdArr = [
         compiler, 
         args, 
-        extraCppFlags, 
+        extraCppFlagsStr, 
         cppflags, 
         compilerFlags, 
         ldflags, 
@@ -312,6 +320,11 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         clangCmdArr = [clangDeglobal]
         if typ == "c++":
           addClangArgs(clangCxxArgs, clangCmdArr)
+          addClangArgs(clang_libtooling_cxxflags.split(), clangCmdArr)
+        else:
+          addClangArg(clang_libtooling_cflags, clangCmdArr)
+        addClangArgs(givenCppFlags, clangCmdArr)
+        addClangArgs(clangCppArgs, clangCmdArr)
         clangCmdArr.append(srcFile)
         clangCmdArr.append("--")
         clangCmd = " ".join(clangCmdArr)
