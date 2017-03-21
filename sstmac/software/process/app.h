@@ -12,11 +12,8 @@
 #ifndef SSTMAC_SOFTWARE_PROCESS_APP_H_INCLUDED
 #define SSTMAC_SOFTWARE_PROCESS_APP_H_INCLUDED
 
-#include <sstmac/software/libraries/compute/lib_compute_inst.h>
-#include <sstmac/software/libraries/compute/lib_compute_time.h>
-#include <sstmac/software/libraries/compute/lib_compute_memmove.h>
-#include <sstmac/software/libraries/compute/lib_compute_loops.h>
-#include <sstmac/software/libraries/compute/lib_sleep.h>
+#include <sstmac/software/libraries/compute/lib_compute_fwd.h>
+#include <sstmac/software/libraries/compute/compute_event_fwd.h>
 #include <sprockit/factories/factory.h>
 #include <sstmac/software/process/thread.h>
 
@@ -199,15 +196,10 @@ class app : public thread
   api*
   _get_api(const char* name) override;
 
-  void init_mem_lib();
-
   sprockit::sim_parameters* params_;
 
  private:
-  lib_compute_inst* compute_inst_;
-  lib_compute_time* compute_time_;
-  lib_compute_memmove* compute_mem_move_;
-  lib_compute_loops* compute_loops_;
+  lib_compute_loops* compute_lib_;
   lib_sleep* sleep_lib_;
   long next_tls_key_;
 

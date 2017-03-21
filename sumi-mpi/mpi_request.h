@@ -12,7 +12,7 @@
 #ifndef SSTMAC_SOFTWARE_LIBRARIES_MPI_MPIREQUEST_H_INCLUDED
 #define SSTMAC_SOFTWARE_LIBRARIES_MPI_MPIREQUEST_H_INCLUDED
 
-#include <sstmac/software/process/key.h>
+#include <sstmac/software/process/key_fwd.h>
 #include <sumi/collective.h>
 #include <sumi-mpi/mpi_status.h>
 #include <sumi-mpi/mpi_message.h>
@@ -23,11 +23,7 @@
 namespace sumi {
 
 using sstmac::sw::key;
-
-class pt2pt_delay_histograms
-{
-
-};
+using sstmac::sw::key_traits::category;
 
 /**
  * Persistent send operations (send, bsend, rsend, ssend)
@@ -99,7 +95,7 @@ class mpi_request  {
   // ------- constructor / boost stuff -------------//
 
  public:
-  mpi_request(const key::category& cat);
+  mpi_request(const category& cat);
 
   std::string
   to_string() const {
@@ -110,7 +106,7 @@ class mpi_request  {
   type_str() const;
 
   static mpi_request*
-  construct(const key::category& cat);
+  construct(const category& cat);
   // --------------------------------------//
 
   ~mpi_request();

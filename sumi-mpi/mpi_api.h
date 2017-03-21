@@ -26,7 +26,7 @@
 #include <sumi-mpi/mpi_debug.h>
 
 #include <sstmac/software/process/software_id.h>
-#include <sstmac/software/process/key.h>
+#include <sstmac/software/process/key_fwd.h>
 #include <sstmac/software/process/pmi.h>
 #include <sstmac/software/process/backtrace.h>
 
@@ -47,6 +47,7 @@
 namespace sumi {
 
 using sstmac::sw::key;
+using sstmac::sw::key_traits::category;
 using sstmac::sw::software_id;
 using sstmac::sw::operating_system;
 
@@ -60,9 +61,9 @@ class mpi_api :
   class persistent_recv;
 
  public:
-  static key::category default_key_category;
-  static key::category poll_key_category;
-  static key::category memcpy_key_category;
+  static category default_key_category;
+  static category poll_key_category;
+  static category memcpy_key_category;
 
   mpi_api(sprockit::sim_parameters* params,
           sstmac::sw::software_id sid,

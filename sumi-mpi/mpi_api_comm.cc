@@ -25,8 +25,8 @@ mpi_api::comm_dup(MPI_Comm input, MPI_Comm *output)
 int
 mpi_api::comm_size(MPI_Comm comm, int *size)
 {
-  mpi_api_debug(sprockit::dbg::mpi,
-                "MPI_Comm_size(%s)", comm_str(comm).c_str());
+  //mpi_api_debug(sprockit::dbg::mpi,
+  //              "MPI_Comm_size(%s)", comm_str(comm).c_str());
   *size = get_comm(comm)->size();
   return MPI_SUCCESS;
 }

@@ -78,9 +78,7 @@ def argify(x):
     return x
 
 sysargs = sys.argv[1:]
-args = " ".join(map(argify,sysargs))
-if sst_core:
-  args += " -DSSTMAC_EXTERNAL_SKELETON"
+
 
 so_sysargs = sysargs[:]
 exeTarget = None
@@ -98,25 +96,34 @@ asmFiles = False
 verbose = False
 delTempFiles = True
 otherCppArgs = []
+controlArgs = []
 sourceFiles = []
 objectFiles = []
 objTarget = None
-for arg in args.split():
-    sarg = arg.strip().strip("'")
-    if sarg.endswith('.o'):
-      objectFiles.append(sarg)
-      objTarget = sarg
-    elif sarg.endswith('.cpp') or sarg.endswith('.cc') or sarg.endswith('.c'):
-      srcFiles = True
-      sourceFiles.append(sarg)
-    elif sarg.endswith('.S'):
-      asmFiles = True
-    elif sarg == "--verbose":
-      verbose = True
-    elif sarg in ("-c","-o"):
-      pass #do nothing
-    else:
-      otherCppArgs.append(sarg)
+getObjTarget = False
+for arg in sysargs:
+  sarg = arg.strip().strip("'")
+  if sarg.endswith('.o'):
+    objectFiles.append(sarg)
+    objTarget = sarg
+  elif sarg.endswith('.cpp') or sarg.endswith('.cc') or sarg.endswith('.c'):
+    srcFiles = True
+    sourceFiles.append(sarg)
+  elif sarg.endswith('.S'):
+    asmFiles = True
+  elif sarg == "--verbose":
+    verbose = True
+  elif sarg in ("-c","-E"):
+    controlArgs.append(sarg)
+  elif sarg in ('-o',):
+    getObjTarget=True
+  elif getObjTarget:
+    objTarget = sarg
+    getObjTarget=False
+  else:
+    otherCppArgs.append(sarg)
+if sst_core:
+  otherCppArgs.append(" -DSSTMAC_EXTERNAL_SKELETON")
 
 if sourceFiles and len(objectFiles) > 1:
   sys.exit("Specified multiple object files for source compilation: %" % " ".join(objectFiles))
@@ -130,20 +137,19 @@ if os.environ.has_key("SSTMAC_DELETE_TEMPS"):
   
 
 def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=True):
+    direct_includes = []
     global ldflags
     global cppflags
     import os
     
     if type == "c++":
-      cppflags += " -include cstdint"
+      direct_includes.append("-include cstdint")
     else:
-      cppflags += " -include stdint.h"
+      direct_includes.append("-include stdint.h")
 
     remGlobals = True
     if os.environ.has_key("SSTMAC_REMOVE_GLOBALS"):
       remGlobals = int(os.environ["SSTMAC_REMOVE_GLOBALS"])
-    if remGlobals:
-      cppflags += " -include sstmac/globalVariables.h"
 
     if sys.argv[1] == "--version" or sys.argv[1] == "-V":
       import inspect, os
@@ -179,6 +185,8 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         ld = cxx #always use c++ for linking since we are bringing a bunch of sstmac C++ into the game
     ldflags = "%s %s" % (compilerFlags, ldflags)
 
+    directIncludes = " ".join(direct_includes)
+
     extraCppFlags = []
     if redefineSymbols:
         extraCppFlags = [
@@ -200,17 +208,35 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     if redefineSymbols: extraCppFlags = "-I%s " % repldir + extraCppFlags
     
     cxxCmdArr = []
-    cppOnly = "-E" in sysargs
-    runClang = False
-    if '-c' in sysargs or cppOnly:
-      runClang = not cppOnly
-      cxxCmdArr = [
-        compiler, 
-        extraCppFlags, 
-        cppflags, 
-        compilerFlags, 
-        args
-      ]
+    ppCmdArr = []
+    ppOnly = "-E" in controlArgs
+    runClang = haveClangSrcToSrc and remGlobals
+    controlArgStr = " ".join(controlArgs)
+    if '-c' in sysargs or ppOnly:
+      runClang = runClang and (not ppOnly)
+      if runClang:
+        ppCmdArr = [
+          compiler, 
+          "-include sstmac/skeleton.h",
+          extraCppFlags, 
+          cppflags, 
+          compilerFlags, 
+          "-E"
+        ]
+        #we run clang on a direct source file with no includes
+        #only put cxxflags in the cmd arr for now
+        cxxCmdArr = [
+          compiler,
+          compilerFlags,
+        ]
+      else: 
+        cxxCmdArr = [
+          compiler, 
+          extraCppFlags, 
+          cppflags, 
+          compilerFlags, 
+          controlArgStr
+        ]
     elif objTarget and srcFiles:
       runClang = True
       cxxCmdArr = [
@@ -224,60 +250,66 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         ldpathMaker
       ]
     elif objTarget:
-        global verbose
-        global exeTarget
-        makeLibrary = False
-        if exeTarget.endswith("dylib") or exeTarget.endswith("so") or exeTarget.endswith(".a"):
-          makeLibrary = True
+      global verbose
+      global exeTarget
+      runClang = False
+      makeLibrary = False
+      if exeTarget.endswith("dylib") or exeTarget.endswith("so") or exeTarget.endswith(".a"):
+        makeLibrary = True
 
+      if sst_core:
+        if not makeLibrary:
+          sys.exit("SST core requires all external elements to be .so files\n")
+        verbose = True
+
+      if makeLibrary:
         if sst_core:
-          if not makeLibrary:
-            sys.exit("SST core requires all external elements to be .so files\n")
-          verbose = True
-
-        if makeLibrary:
-          if sst_core:
-            ldflags=ldflags.replace("-lsstmac","")
-          cxxCmdArr = [
-            ld,
-            so_args, 
-            ldflags,
-            ldpathMaker
-          ]
-        else: #executable
-          cxxCmdArr = [
-            ld,
-            args, 
-            extralibs,
-            ldflags, 
-            extralibs, 
-            ldpathMaker
-          ]
-    else: #all in one
+          ldflags=ldflags.replace("-lsstmac","")
         cxxCmdArr = [
-          compiler, 
-          args, 
-          extraCppFlags, 
-          cppflags, 
-          compilerFlags, 
+          ld,
+          so_args, 
+          ldflags,
+          ldpathMaker
+        ]
+      else: #executable
+        cxxCmdArr = [
+          ld,
+          extralibs,
           ldflags, 
           extralibs, 
           ldpathMaker
         ]
+        cxxCmdArr.extend(sysargs)
+    else: #all in one
+      cxxCmdArr = [
+        compiler, 
+        args, 
+        extraCppFlags, 
+        cppflags, 
+        compilerFlags, 
+        ldflags, 
+        extralibs, 
+        ldpathMaker
+      ]
 
     cxxCmd = " ".join(cxxCmdArr)
-    runClang = runClang and haveClangSrcToSrc and remGlobals
     clangExtraArgs = []
     if runClang:
       #this is more complicated - we have to use clang to do a source to source transformation
       #then we need to run the compiler on that modified source
       for srcFile in sourceFiles:
-        srcRepl = "sst." + srcFile
-        cxxInitSrcFile = "sstGlobals." + srcFile + ".cpp"
+        ppTmpFile = "pp." + srcFile
+        cmdArr = ppCmdArr[:]
+        cmdArr.append(srcFile)
+        cmdArr.append("> %s" % ppTmpFile)
+        ppCmd = " ".join(cmdArr) 
+        if verbose: sys.stderr.write("%s\n" % ppCmd)
+        os.system(ppCmd)
+
+        srcRepl = "sst.pp." + srcFile
+        cxxInitSrcFile = "sstGlobals.pp." + srcFile + ".cpp"
 
         clangCmdArr = [clangDeglobal]
-        addClangArgs(otherCppArgs, clangCmdArr)
-        addClangArgs(clangCppArgs, clangCmdArr)
         if typ == "c++":
           addClangArgs(clangCxxArgs, clangCmdArr)
         clangCmdArr.append(srcFile)
@@ -287,22 +319,30 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         rc = os.system(clangCmd)
         if not rc == 0:
           if delTempFiles:
+            os.system("rm -f %s" % ppTmpFile)
             os.system("rm -f %s" % srcRepl)
             os.system("rm -f %s" % cxxInitSrcFile)
           return rc
-        
+
         #the source to source generates temp .cc files
         #we need the compile command to generate .o files from the temp .cc files
         #update the command to point to them
-        cxxCmd = cxxCmd.replace(srcFile,srcRepl)
+        cmdArr = cxxCmdArr[:]
         if objTarget:
           objRepl = "sst." + objTarget
-          cxxCmd = cxxCmd.replace(objTarget,objRepl)
+          cmdArr.append("-o")
+          cmdArr.append(objRepl)
+        cmdArr.append("-c")
+        cmdArr.append(srcRepl)
+        cmdArr.append("--no-integrated-cpp")
+        cxxCmd = " ".join(cmdArr)
         if verbose: sys.stderr.write("%s\n" % cxxCmd)
         rc = os.system(cxxCmd)
         if not rc == 0:
           if delTempFiles:
-            os.system("rm -f %s" % srcRepl)
+            os.system("rm -f %s" % ppTmpFile)
+            os.system("rm -f %s" % objRepl)
+            os.system("rm -f %s" % cxxInitSrcFile)
           return rc
 
         #now we generate the .o file containing the CXX linkage 
@@ -312,16 +352,11 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         if verbose: sys.stderr.write("%s\n" % cxxInitCompileCmd)
         rc = os.system(cxxInitCompileCmd)
         if delTempFiles:
+          os.system("rm -f %s" % ppTmpFile)
           os.system("rm -f %s" % cxxInitSrcFile)
         if not rc == 0:
           return rc
 
-
-      #run the regular compile command to generate the .o file (or files)
-      if verbose: sys.stderr.write("%s\n" % cxxCmd)
-      rc = os.system(cxxCmd)
-      if not rc == 0:
-        return rc
 
       #some idiots generate multiple .o files at once
       manyObjects = objTarget == None #no specific target specified

@@ -15,5 +15,6 @@
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/Expr.h"
 #include "clang/Lex/Lexer.h"
+#include <clang/Lex/Preprocessor.h>
 
 #endif // CLANGHEADERS_H

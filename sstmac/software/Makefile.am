@@ -114,8 +114,7 @@ nobase_library_include_HEADERS = \
   libraries/compute/compute_event.h \
   libraries/compute/compute_event_fwd.h \
   libraries/compute/lib_compute_inst.h \
-  libraries/compute/lib_compute_inst_fwd.h \
-  libraries/compute/lib_compute_memmove_fwd.h \
+  libraries/compute/lib_compute_fwd.h \
   libraries/compute/lib_compute_matrix.h \
   libraries/compute/lib_compute_memmove.h \
   libraries/compute/lib_compute_time.h \

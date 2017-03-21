@@ -5,6 +5,7 @@
 #include <sstmac/libraries/sumi/sumi_transport.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/process/key.h>
 #include <sstmac/software/launch/job_launcher.h>
 #include <sstmac/common/event_callback.h>
 #include <sstmac/libraries/sumi/message.h>
@@ -12,9 +13,10 @@
 #include <sprockit/output.h>
 #include <sstmac/common/runtime.h>
 
+
 using namespace sprockit::dbg;
 
-static sstmac::sw::key::category message_thread("Server");
+static sstmac::sw::key_traits::category message_thread("Server");
 
 namespace sstmac {
 

@@ -42,6 +42,48 @@ typedef int (*empty_main_fxn)();
 #include <sstmac/common/sstmac_config.h>
 
 #ifdef __cplusplus
+//redirect all operator news to the nothrow version
+//sst will decide whether memory is actually going to be allocated
+extern void* sstmac_new(unsigned long size);
+
+#define __builtin_operator_new(size) sstmac_new(size)
+#include <new>
+
+extern bool& should_skip_operator_new();
+
+template <class T>
+T*
+placement_new(void* sstmac_placement_ptr){
+  if (sstmac_placement_ptr != nullptr){
+    return new (sstmac_placement_ptr) T;
+  }
+  return reinterpret_cast<T*>(sstmac_placement_ptr);
+}
+
+template <class T>
+T*
+conditional_new(unsigned long size){
+  bool& flag = should_skip_operator_new();
+  T* ret = nullptr;
+  if (!flag){
+    ret = new T[size];
+  }
+  flag = false;
+  return ret;
+}
+
+template <class T>
+T*
+conditional_new(){
+  bool& flag = should_skip_operator_new();
+  T* ret = nullptr;
+  if (!flag){
+    ret = new T;
+  }
+  flag = false;
+  return ret;
+}
+
 #include <sprockit/sim_parameters.h>
 #include <sstmac/software/process/global.h>
 #include <sstmac/software/api/api_fwd.h>
@@ -63,7 +105,10 @@ using sprockit::sim_parameters;
 
 extern sprockit::sim_parameters*
 get_params();
-#endif //not C++, extra work required in sst clang compiler
+
+#else
+//not C++, extra work required in sst clang compiler
+#endif
 
 
 

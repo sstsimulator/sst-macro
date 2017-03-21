@@ -52,8 +52,10 @@ sstmac_top_info_LDADD = $(exe_LDADD)
 
 EXTRA_DIST += \
  clang/util.h \
+ clang/pragmas.h \
  clang/astConsumers.h \
  clang/clangheaders.h \
+ clang/firstAstVisitor.h \
  clang/findAstVisitor.h \
  clang/foundMacro.h \
  clang/frontendActions.h \
@@ -62,8 +64,12 @@ EXTRA_DIST += \
 
 if HAVE_CLANG
 bin_PROGRAMS += sstmac_clang_deglobal
-sstmac_clang_deglobal_SOURCES = clang/globals.cc \
+sstmac_clang_deglobal_SOURCES = \
+  clang/util.cc \
+  clang/globals.cc \
+  clang/pragmas.cc \
   clang/astConsumers.cc \
+  clang/firstVisitor.cc \
   clang/findAstVisitor.cc \
   clang/frontendActions.cc \
   clang/replAstVisitor.cc 

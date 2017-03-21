@@ -54,9 +54,9 @@ namespace sumi {
 
 RegisterAPI("mpi", mpi_api);
 
-key::category mpi_api::default_key_category("MPI");
-key::category mpi_api::poll_key_category("MPI Poll");
-key::category mpi_api::memcpy_key_category("MPI Memcpy");
+category mpi_api::default_key_category("MPI");
+category mpi_api::poll_key_category("MPI Poll");
+category mpi_api::memcpy_key_category("MPI Memcpy");
 
 
 static sprockit::need_delete_statics<mpi_api> del_statics;

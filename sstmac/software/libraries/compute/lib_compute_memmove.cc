@@ -20,7 +20,7 @@
 namespace sstmac {
 namespace sw {
 
-key::category lib_compute_memmove::key_category("Memory");
+key_traits::category lib_compute_memmove::key_category("Memory");
 
 lib_compute_memmove::lib_compute_memmove(sprockit::sim_parameters* params,
                                          software_id id, operating_system* os) :

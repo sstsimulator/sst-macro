@@ -3,7 +3,7 @@
 
 #include <sprockit/factories/factory.h>
 #include <sstmac/software/libraries/library.h>
-#include <sstmac/software/process/key.h>
+#include <sstmac/software/process/key_fwd.h>
 #include <sstmac/common/sst_event_fwd.h>
 
 #include <sstmac/software/libraries/compute/lib_compute_time.h>
@@ -65,7 +65,7 @@ class api :
       const char* prefix,
       software_id sid,
       operating_system* os,
-      const key::category& ty) :
+      const key_traits::category& ty) :
     api(params, prefix, sid, os)
   {
     key_cat_ = ty;

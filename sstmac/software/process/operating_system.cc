@@ -379,7 +379,7 @@ operating_system::execute_kernel(ami::COMP_FUNC func, event *data,
 void
 operating_system::execute(ami::COMP_FUNC func,
                            event* data,
-                           key::category cat)
+                           key_traits::category cat)
 {
   //first thing's first - make sure I have a core to execute on
   thread_data_t top = threadstack_.top();  
@@ -961,4 +961,16 @@ operating_system::app_ptr(software_id sid)
 
 }
 } //end of namespace sstmac
+
+void*
+sstmac_new(unsigned long size){
+  bool& skip = sstmac::sw::operating_system::static_os_thread_context().skip_next_op_new;
+  if (skip){
+    skip = false;
+    return nullptr;
+  } else {
+    skip = false;
+    return ::operator new(size); //call out to non-throwing version
+  }
+}
 

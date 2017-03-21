@@ -14,7 +14,7 @@ class lib_compute :
   public library
 {  
  public:
-  static key::category key_category;
+  static key_traits::category key_category;
   
  protected:
   lib_compute(sprockit::sim_parameters* params,

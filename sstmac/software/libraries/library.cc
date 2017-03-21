@@ -11,6 +11,7 @@
 
 #include <sstmac/software/libraries/library.h>
 #include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/process/key.h>
 #include <sstmac/common/sstmac_env.h>
 
 ImplementFactory(sstmac::sw::library);
@@ -20,7 +21,8 @@ namespace sw {
 
 library::library(const std::string& libname, software_id sid, operating_system* os) :
   sid_(sid), libname_(libname), os_(os),
-  addr_(os->addr())
+  addr_(os->addr()),
+  key_cat_(key::general)
 {
   os_->register_lib(this);
 }
@@ -45,7 +47,7 @@ library::incoming_event(event* ev)
 }
 
 void
-blocking_library::wait_event(event *ev, key::category cat)
+blocking_library::wait_event(event *ev, key_traits::category cat)
 {
   key* k = key::construct(cat);
   blocked_events_[ev] = k;

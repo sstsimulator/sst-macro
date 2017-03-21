@@ -1,7 +1,9 @@
 #include <sstmac/util.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/app.h>
-#include <sstmac/skeleton.h>
+
+typedef int (*main_fxn)(int,char**);
+typedef int (*empty_main_fxn)();
 
 extern "C" double
 sstmac_now(){
@@ -11,6 +13,11 @@ sstmac_now(){
 sprockit::sim_parameters*
 get_params(){
   return sstmac::sw::operating_system::current_thread()->parent_app()->params();
+}
+
+bool&
+should_skip_operator_new(){
+  return sstmac::sw::operating_system::static_os_thread_context().skip_next_op_new;
 }
 
 int

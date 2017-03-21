@@ -12,7 +12,6 @@ char GlobalVariable::globalInits[SSTMAC_MAX_GLOBALS];
 GlobalVariable::GlobalVariable(int &offset, const int size, const void *initData)
 {
   const_cast<int&>(offset) = stackOffset;
-  printf("Adding global variable of size %d at offset %d\n", size, stackOffset);
 
   int rem = size % 4;
   int offsetIncrement = rem ? (size + (4-rem)) : size; //align on 32-bits

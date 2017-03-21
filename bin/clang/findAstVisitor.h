@@ -8,9 +8,8 @@
 class FindGlobalASTVisitor : public clang::RecursiveASTVisitor<FindGlobalASTVisitor> {
  public:
   FindGlobalASTVisitor(clang::Rewriter &R, GlobalVarNamespace& ns, clang::FunctionDecl** mainPtr) :
-    TheRewriter(R), globalNS(ns), mainFxn(mainPtr), currentNS(&ns), useAllHeaders(false)
+    TheRewriter(R), globalNS(ns), mainFxn(mainPtr), currentNS(&ns)
   {
-    initHeaders();
   }
 
   void setCompilerInstance(clang::CompilerInstance& c){
@@ -46,10 +45,6 @@ class FindGlobalASTVisitor : public clang::RecursiveASTVisitor<FindGlobalASTVisi
 
   }
 
-  void initHeaders();
-
-  static bool validSrc(const std::string& filename);
-
   /**
    * @brief TraverseNamespaceDecl We have to traverse namespaces.
    *        We need pre and post operations. We have to explicitly recurse subnodes.
@@ -59,14 +54,6 @@ class FindGlobalASTVisitor : public clang::RecursiveASTVisitor<FindGlobalASTVisi
   bool TraverseNamespaceDecl(clang::NamespaceDecl* D);
 
   void replGlobal(clang::NamedDecl* decl, clang::SourceRange rng);
-
-  /**
-   * @brief printNewDeclRef
-   * @param expr
-   * @param pp
-   * @return If the ref expr referes to a global variable
-   */
-  bool printNewDeclRef(clang::DeclRefExpr* expr, PrettyPrinter& pp);
 
   bool isGlobal(clang::DeclRefExpr* expr){
     return globals.find(expr->getFoundDecl()) != globals.end();
@@ -80,8 +67,6 @@ class FindGlobalASTVisitor : public clang::RecursiveASTVisitor<FindGlobalASTVisi
   GlobalVarNamespace* currentNS;
   std::map<clang::NamedDecl*,std::string> globals;
   std::set<std::string> globalsDeclared;
-  std::set<std::string> validHeaders;
-  bool useAllHeaders;
 
 };
 

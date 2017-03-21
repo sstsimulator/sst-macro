@@ -19,9 +19,9 @@ class thread_info {
     char x;
     size_t stackptr = (size_t) &x;
     size_t stack_mult = stackptr / sstmac_global_stacksize;
-    size_t aligned_stack_ptr = stack_mult * sstmac_global_stacksize;
-    int* tls = (int*) aligned_stack_ptr;
-    return tls[0];
+    char* aligned_stack_ptr = (char*) (stack_mult * sstmac_global_stacksize);
+    int* tls = (int*) &aligned_stack_ptr[TLS_THREAD_ID];
+    return *tls;
   }
 };
 

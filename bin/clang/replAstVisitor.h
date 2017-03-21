@@ -4,16 +4,19 @@
 #include "clangHeaders.h"
 #include "findAstVisitor.h"
 #include "foundMacro.h"
+#include "pragmas.h"
 
 #define visitFxn(cls) \
   bool Visit##cls(clang::cls* c){ return TestStmtMacro(c); }
 
 class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisitor> {
  public:
-  ReplGlobalASTVisitor(clang::Rewriter &R,  FindGlobalASTVisitor& F, MacroList& m) :
-    TheRewriter(R), finder(F), mlist(m), visitingGlobal(false) {}
+  ReplGlobalASTVisitor(clang::Rewriter &R,  FindGlobalASTVisitor& F, std::set<clang::Expr*>& deld) :
+    TheRewriter(R), finder(F), visitingGlobal(false), deleted(deld) {}
 
   bool VisitDeclRefExpr(clang::DeclRefExpr* expr);
+
+  bool VisitCXXNewExpr(clang::CXXNewExpr* expr);
 
   bool VisitUnaryOperator(clang::UnaryOperator* op);
 
@@ -23,14 +26,18 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
     CI = &c;
   }
 
+  bool TraverseFunctionTemplateDecl(clang::FunctionTemplateDecl* D);
+
   void setVisitingGlobal(bool flag){
     visitingGlobal = flag;
   }
 
   bool VisitStmt(clang::Stmt* s);
 
-  //visitFxn(CompoundStmt)
-  //visitFxn(Expr)
+  SSTPragmaList&
+  getPragmas(){
+    return pragmas;
+  }
 
  private:
   bool TestStmtMacro(clang::Stmt* s);
@@ -38,8 +45,9 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
   clang::Rewriter& TheRewriter;
   clang::CompilerInstance* CI;
   FindGlobalASTVisitor& finder;
-  MacroList& mlist;
+  SSTPragmaList pragmas;
   bool visitingGlobal;
+  std::set<clang::Expr*>& deleted;
 
 };
 

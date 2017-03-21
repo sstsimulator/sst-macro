@@ -11,8 +11,8 @@ mpi_api::send(const void *buf, int count, MPI_Datatype datatype, int dest, int t
   start_mpi_call("MPI_Send");
   mpi_comm* commPtr = get_comm(comm);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_pt2pt,
-    "MPI_Send(%d,%s,%d:%d,%s,%s)",
-    count, type_str(datatype).c_str(), int(dest), int(commPtr->peer_task(dest)),
+    "MPI_Send(%p,%d,%s,%d:%d,%s,%s)",
+    buf,count, type_str(datatype).c_str(), int(dest), int(commPtr->peer_task(dest)),
     tag_str(tag).c_str(), comm_str(comm).c_str());
   mpi_request* req = mpi_request::construct(default_key_category);
   queue_->send(req, count, datatype, dest, tag, commPtr, const_cast<void*>(buf));
@@ -139,8 +139,8 @@ mpi_api::do_isend(const void *buf, int count, MPI_Datatype datatype, int dest,
   mpi_request* req = mpi_request::construct(default_key_category);
   *request = add_request_ptr(req);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request | sprockit::dbg::mpi_pt2pt,
-    "MPI_Isend(%d,%s,%d:%d,%s,%s;REQ=%d)",
-    count, type_str(datatype).c_str(), int(dest), int(commPtr->peer_task(dest)),
+    "MPI_Isend(%p,%d,%s,%d:%d,%s,%s;REQ=%d)",
+    buf,count, type_str(datatype).c_str(), int(dest), int(commPtr->peer_task(dest)),
     tag_str(tag).c_str(), comm_str(comm).c_str(), *request);
   queue_->send(req, count, datatype, dest, tag, commPtr, const_cast<void*>(buf));
   return MPI_SUCCESS;
@@ -162,18 +162,19 @@ mpi_api::recv(void *buf, int count, MPI_Datatype datatype, int source,
 {
   start_mpi_call("MPI_Recv");
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_pt2pt,
-    "MPI_Recv(%d,%s,%s,%s,%s)",
-    count, type_str(datatype).c_str(),
+    "MPI_Recv(%p,%d,%s,%s,%s,%s)",
+    buf,count, type_str(datatype).c_str(),
     src_str(source).c_str(), tag_str(tag).c_str(),
     comm_str(comm).c_str());
 
   mpi_request* req = mpi_request::construct(default_key_category);
   mpi_comm* commPtr = get_comm(comm);
   queue_->recv(req, count, datatype, source, tag, commPtr, buf);
-
   queue_->progress_loop(req);
+  if (status != MPI_STATUS_IGNORE){
+    *status = req->status();
+  }
   delete req;
-
   return MPI_SUCCESS;
 }
 
@@ -216,8 +217,8 @@ mpi_api::do_irecv(void *buf, int count, MPI_Datatype datatype, int source,
   *request = add_request_ptr(req);
 
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request | sprockit::dbg::mpi_pt2pt,
-    "MPI_Irecv(%d,%s,%s,%s,%s;REQ=%d)",
-    count, type_str(datatype).c_str(),
+    "MPI_Irecv(%p,%d,%s,%s,%s,%s;REQ=%d)",
+    buf, count, type_str(datatype).c_str(),
     src_str(commPtr, source).c_str(), tag_str(tag).c_str(),
     comm_str(comm).c_str(), *request);
 

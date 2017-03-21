@@ -37,6 +37,8 @@ struct PrettyPrinter
   std::string baseStr;
 };
 
+void errorAbort(clang::SourceLocation loc, clang::CompilerInstance& CI, const std::string& error);
+
 inline bool operator<=(const clang::SourceLocation &LHS, const clang::SourceLocation &RHS) {
   return LHS < RHS || LHS == RHS;
 }

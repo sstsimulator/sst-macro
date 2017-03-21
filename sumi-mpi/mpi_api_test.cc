@@ -7,9 +7,6 @@ namespace sumi {
 bool
 mpi_api::test(MPI_Request *request, MPI_Status *status)
 {
-  start_mpi_call("MPI_Test");
-  mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, "MPI_Test(...)");
-
   if (*request == MPI_REQUEST_NULL){
     return true;
   }
@@ -33,7 +30,9 @@ mpi_api::test(MPI_Request *request, MPI_Status *status)
 int
 mpi_api::test(MPI_Request *request, int *flag, MPI_Status *status)
 {
+  start_mpi_call("MPI_Test");
   if (test(request, status)){
+    mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, "MPI_Test(...)");
     *flag = 1;
   } else {
     *flag = 0;
@@ -45,6 +44,7 @@ mpi_api::test(MPI_Request *request, int *flag, MPI_Status *status)
 int
 mpi_api::testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Status array_of_statuses[])
 {
+  start_mpi_call("MPI_Testall");
   *flag = 1;
   bool ignore_status = array_of_statuses == MPI_STATUSES_IGNORE;
   for (int i=0; i < count; ++i){
@@ -52,6 +52,10 @@ mpi_api::testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Stat
     if (!test(&array_of_requests[i], stat)){
       *flag = 0;
     }
+  }
+  if (*flag){
+    mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request,
+      "MPI_Testall(%d,...)", count);
   }
   return MPI_SUCCESS;
 }
