@@ -5,11 +5,14 @@
 #include "util.h"
 #include <set>
 
+class ReplGlobalASTVisitor;
+
 struct SSTPragma {
   clang::StringRef name;
   clang::SourceLocation startLoc;
   clang::SourceLocation endLoc;
   clang::CompilerInstance* CI;
+  ReplGlobalASTVisitor* visitor;
   std::set<clang::Expr*>* deleted;
 
   template <class T>
@@ -38,6 +41,7 @@ class SSTNewPragma : public SSTPragma {
   void act(clang::Decl *decl, clang::Rewriter &r);
   void act(clang::Stmt *stmt, clang::Rewriter &r);
   void visitDeclStmt(clang::DeclStmt *stmt, clang::Rewriter &r);
+  void visitCompoundStmt(clang::CompoundStmt *stmt, clang::Rewriter& r);
   void visitBinaryOperator(clang::BinaryOperator *op, clang::Rewriter& r);
   void defaultAct(clang::Stmt* stmt, clang::Rewriter& r);
 };
@@ -70,13 +74,16 @@ class SSTPragmaHandler : public clang::PragmaHandler {
 
  protected:
   SSTPragmaHandler(const char* name, SSTPragmaList& plist,
-                   clang::CompilerInstance& c,
-                   std::set<clang::Expr*>& deld) :
-    pragmas(plist), CI(c), PragmaHandler(name), deleted(deld)
+                   clang::CompilerInstance& ci,
+                   ReplGlobalASTVisitor& visitor,
+                   std::set<clang::Expr*>& deleted) :
+    PragmaHandler(name), pragmas_(plist), ci_(ci),
+    deleted_(deleted), visitor_(visitor)
   {}
-  SSTPragmaList& pragmas;
-  clang::CompilerInstance& CI;
-  std::set<clang::Expr*>& deleted;
+  SSTPragmaList& pragmas_;
+  clang::CompilerInstance& ci_;
+  ReplGlobalASTVisitor& visitor_;
+  std::set<clang::Expr*>& deleted_;
 };
 
 /**
@@ -93,8 +100,9 @@ class SSTSimplePragmaHandler_base : public SSTPragmaHandler {
  protected:
   SSTSimplePragmaHandler_base(const char* name, SSTPragmaList& plist,
                               clang::CompilerInstance& CI,
+                              ReplGlobalASTVisitor& visitor,
                               std::set<clang::Expr*>& deld) :
-    SSTPragmaHandler(name, plist, CI, deld)
+    SSTPragmaHandler(name, plist, CI, visitor, deld)
   {}
 
  private:
@@ -113,8 +121,9 @@ class SSTSimplePragmaHandler : public SSTSimplePragmaHandler_base
    */
   SSTSimplePragmaHandler(const char* name, SSTPragmaList& plist,
                          clang::CompilerInstance& CI,
+                         ReplGlobalASTVisitor& visitor,
                          std::set<clang::Expr*>& deld) :
-    SSTSimplePragmaHandler_base(name, plist, CI, deld)
+    SSTSimplePragmaHandler_base(name, plist, CI, visitor, deld)
   {}
 
  private:
@@ -130,24 +139,24 @@ class SSTSimplePragmaHandler : public SSTSimplePragmaHandler_base
 class SSTDeletePragmaHandler : public SSTSimplePragmaHandler<SSTDeletePragma> {
  public:
   SSTDeletePragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
-                         std::set<clang::Expr*>& deld) :
-    SSTSimplePragmaHandler<SSTDeletePragma>("delete", plist, CI, deld)
+                         ReplGlobalASTVisitor& visitor, std::set<clang::Expr*>& deld) :
+    SSTSimplePragmaHandler<SSTDeletePragma>("delete", plist, CI, visitor, deld)
   {}
 };
 
 class SSTMallocPragmaHandler : public SSTSimplePragmaHandler<SSTMallocPragma> {
  public:
   SSTMallocPragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
-                         std::set<clang::Expr*>& deld) :
-   SSTSimplePragmaHandler<SSTMallocPragma>("malloc", plist, CI, deld)
+                         ReplGlobalASTVisitor& visitor, std::set<clang::Expr*>& deld) :
+   SSTSimplePragmaHandler<SSTMallocPragma>("malloc", plist, CI, visitor, deld)
   {}
 };
 
 class SSTNewPragmaHandler : public SSTSimplePragmaHandler<SSTNewPragma> {
  public:
   SSTNewPragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
-                      std::set<clang::Expr*>& deld) :
-   SSTSimplePragmaHandler<SSTNewPragma>("new", plist, CI, deld)
+                      ReplGlobalASTVisitor& visitor, std::set<clang::Expr*>& deld) :
+   SSTSimplePragmaHandler<SSTNewPragma>("new", plist, CI, visitor, deld)
   {}
 };
 

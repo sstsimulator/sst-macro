@@ -323,9 +323,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
           addClangArgs(clang_libtooling_cxxflags.split(), clangCmdArr)
         else:
           addClangArg(clang_libtooling_cflags, clangCmdArr)
-        addClangArgs(givenCppFlags, clangCmdArr)
-        addClangArgs(clangCppArgs, clangCmdArr)
-        clangCmdArr.append(srcFile)
+        clangCmdArr.append(ppTmpFile)
         clangCmdArr.append("--")
         clangCmd = " ".join(clangCmdArr)
         if verbose: sys.stderr.write("%s\n" % clangCmd)

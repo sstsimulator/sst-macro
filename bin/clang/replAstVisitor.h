@@ -2,17 +2,25 @@
 #define bin_clang_replAstVisitor_h
 
 #include "clangHeaders.h"
-#include "findAstVisitor.h"
-#include "foundMacro.h"
 #include "pragmas.h"
+#include "globalVarNamespace.h"
 
 #define visitFxn(cls) \
   bool Visit##cls(clang::cls* c){ return TestStmtMacro(c); }
 
 class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisitor> {
  public:
-  ReplGlobalASTVisitor(clang::Rewriter &R,  FindGlobalASTVisitor& F, std::set<clang::Expr*>& deld) :
-    TheRewriter(R), finder(F), visitingGlobal(false), deleted(deld) {}
+  ReplGlobalASTVisitor(clang::Rewriter &R,
+                       GlobalVarNamespace& ns,
+                       std::set<clang::Expr*>& deld) :
+    rewriter_(R), visitingGlobal_(false), deletedExprs_(deld),
+    globalNs_(ns), currentNs_(&ns),
+    insideClass_(0), insideFxn_(0),
+    foundCMain_(false)
+  {
+    initHeaders();
+    initReservedNames();
+  }
 
   bool VisitDeclRefExpr(clang::DeclRefExpr* expr);
 
@@ -23,33 +31,87 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
   bool VisitDecl(clang::Decl *D);
 
   void setCompilerInstance(clang::CompilerInstance& c){
-    CI = &c;
+    ci_ = &c;
   }
+
+  bool VisitStmt(clang::Stmt* s);
+
+  /**
+   * @brief VisitVarDecl We only need to visit variables once down the AST.
+   *        No pre or post operations.
+   * @param D
+   * @return
+   */
+  bool VisitVarDecl(clang::VarDecl* D);
+
+  /**
+   * @brief TraverseNamespaceDecl We have to traverse namespaces.
+   *        We need pre and post operations. We have to explicitly recurse subnodes.
+   * @param D
+   * @return
+   */
+  bool TraverseNamespaceDecl(clang::NamespaceDecl* D);
+
+  bool TraverseCXXRecordDecl(clang::CXXRecordDecl* D);
+
+  bool TraverseFunctionDecl(clang::FunctionDecl* D);
 
   bool TraverseFunctionTemplateDecl(clang::FunctionTemplateDecl* D);
 
   bool TraverseCXXMethodDecl(clang::CXXMethodDecl *D);
 
-  void setVisitingGlobal(bool flag){
-    visitingGlobal = flag;
-  }
+  bool TraverseCompundStmt(clang::CompoundStmt* S);
 
-  bool VisitStmt(clang::Stmt* s);
+  void replGlobal(clang::NamedDecl* decl, clang::SourceRange rng);
+
+  bool isGlobal(clang::DeclRefExpr* expr){
+    return globals_.find(expr->getFoundDecl()) != globals_.end();
+  }
 
   SSTPragmaList&
   getPragmas(){
-    return pragmas;
+    return pragmas_;
+  }
+
+  const std::map<clang::NamedDecl*,std::string>&
+  globalVariables() const {
+    return globals_;
+
+  }
+
+  void setVisitingGlobal(bool flag){
+    visitingGlobal_ = flag;
+  }
+
+  bool hasCStyleMain() const {
+    return foundCMain_;
   }
 
  private:
-  bool TestStmtMacro(clang::Stmt* s);
+  bool shouldVisitDecl(clang::VarDecl* D);
 
-  clang::Rewriter& TheRewriter;
-  clang::CompilerInstance* CI;
-  FindGlobalASTVisitor& finder;
-  SSTPragmaList pragmas;
-  bool visitingGlobal;
-  std::set<clang::Expr*>& deleted;
+  void initHeaders();
+
+  void initReservedNames();
+
+  void replaceMain(clang::FunctionDecl* mainFxn);
+
+ private:
+  clang::Rewriter& rewriter_;
+  clang::CompilerInstance* ci_;
+  SSTPragmaList pragmas_;
+  bool visitingGlobal_;
+  std::set<clang::Expr*>& deletedExprs_;
+  GlobalVarNamespace& globalNs_;
+  GlobalVarNamespace* currentNs_;
+  std::map<clang::NamedDecl*,std::string> globals_;
+  std::set<std::string> globalsDeclared_;
+  bool useAllHeaders_;
+  int insideClass_;
+  int insideFxn_;
+  bool foundCMain_;
+  std::set<std::string> validHeaders_;
+  std::set<std::string> reservedNames_;
 
 };
 

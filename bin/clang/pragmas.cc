@@ -22,7 +22,7 @@ SSTSimplePragmaHandler_base::HandlePragma(clang::Preprocessor &PP,
      std::stringstream sstr;
      sstr << "Got pragma " << this->getName().str()
            << " using non-hash #pragma. Must use #pragma to ensure no pragmas in macros";
-     errorAbort(PragmaTok.getLocation(), CI, sstr.str());
+     errorAbort(PragmaTok.getLocation(), ci_, sstr.str());
    }
   }
 
@@ -32,7 +32,7 @@ SSTSimplePragmaHandler_base::HandlePragma(clang::Preprocessor &PP,
     std::stringstream sstr;
     sstr << "Pragma handler for " << getName().str()
          << " got invalid token type " << eodToken.getName();
-    errorAbort(PragmaTok.getLocation(), CI, sstr.str());
+    errorAbort(PragmaTok.getLocation(), ci_, sstr.str());
   }
 
   SSTPragma* fsp = allocatePragma();
@@ -41,9 +41,10 @@ SSTSimplePragmaHandler_base::HandlePragma(clang::Preprocessor &PP,
   fsp->name = getName();
   fsp->startLoc = PragmaTok.getLocation();
   fsp->endLoc = pragmaTarget.getEndLoc();
-  fsp->CI = &CI;
-  fsp->deleted = &deleted;
-  pragmas.push_back(fsp);
+  fsp->CI = &ci_;
+  fsp->visitor = &visitor_;
+  fsp->deleted = &deleted_;
+  pragmas_.push_back(fsp);
   PP.Backtrack();
 }
 
@@ -113,20 +114,19 @@ SSTNewPragma::defaultAct(Stmt* stmt, Rewriter& r)
 {
   r.InsertText(stmt->getLocStart(), "should_skip_operator_new()=true;", false);
   SourceLocation endLoc = stmt->getLocEnd();
-  Token edgeTok;
-  Lexer::getRawToken(endLoc, edgeTok,
-                     CI->getSourceManager(), CI->getLangOpts(),
-                     false);
+  SourceLocation insertLoc = Lexer::getLocForEndOfToken(endLoc, 0,
+                      CI->getSourceManager(), CI->getLangOpts());
   bool insertAfter = true;
-  if (edgeTok.getKind() != tok::semi){
-    endLoc = Lexer::findLocationAfterToken(endLoc, tok::semi,
-                                 CI->getSourceManager(), CI->getLangOpts(), false);
-    //insertAfter = false;
-  } else {
-    endLoc = Lexer::getLocForEndOfToken(endLoc, 0,
-                        CI->getSourceManager(), CI->getLangOpts());
+  if (insertLoc.isInvalid()){
+    errorAbort(endLoc, *CI, "trouble parsing sst new pragma");
   }
-  r.InsertText(endLoc, "should_skip_operator_new()=false;", insertAfter);
+  r.InsertText(insertLoc, "should_skip_operator_new()=false;", insertAfter);
+}
+
+void
+SSTNewPragma::visitCompoundStmt(clang::CompoundStmt* stmt, Rewriter& r)
+{
+  defaultAct(stmt,r);
 }
 
 void
@@ -135,6 +135,7 @@ SSTNewPragma::act(Stmt* stmt, Rewriter &r)
   switch(stmt->getStmtClass()){
     scase(DeclStmt,stmt,r);
     scase(BinaryOperator,stmt,r);
+    scase(CompoundStmt,stmt,r);
     default: //just delete what follows
       defaultAct(stmt,r);
       break;
@@ -173,7 +174,6 @@ SSTMallocPragma::visitDeclStmt(DeclStmt *stmt, Rewriter &r)
   } else {
     errorAbort(stmt->getLocStart(), *CI, "sst malloc pragma applied to non-variable declaration");
   }
-
 }
 
 void

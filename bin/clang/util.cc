@@ -37,7 +37,7 @@ errorAbort(SourceLocation loc, CompilerInstance &CI, const std::string &error)
   loc.print(os, CI.getSourceManager());
   os << " error: " << error;
   std::cerr << os.str() << std::endl;
-  abort();
+  exit(EXIT_FAILURE);
 }
 
 

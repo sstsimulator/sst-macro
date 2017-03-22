@@ -13,13 +13,12 @@ struct GlobalVarNamespace
 
   std::string ns;
   std::set<std::string> replVars;
-  std::set<std::string> validVars;
   std::map<std::string, GlobalVarNamespace> subspaces;
   char uniqueFilePrefix[256];
   bool isPrefixSet;
 
   bool empty() const {
-    return validVars.empty() && subspaces.empty();
+    return replVars.empty() && subspaces.empty();
   }
 
   void setFilePrefix(const char* name){

@@ -10,19 +10,8 @@ using namespace clang::driver;
 using namespace clang::tooling;
 
 
-GlobalVarNamespace globals;
-
-FindAction::FindAction() : globalNS(globals) {}
-
-void
-FindAction::EndSourceFileAction()
-{
-}
-
-ReplaceAction::ReplaceAction() : mainFxn(nullptr),
-  finder(TheRewriter, globals, &mainFxn),
-  replacer(TheRewriter, finder, deleted),
-  globalNS(globals)
+ReplaceAction::ReplaceAction() :
+  visitor_(rewriter_, globalNs_, deletedExprs_)
 {
 }
 
@@ -34,38 +23,18 @@ void
 ReplaceAction::initPragmas(CompilerInstance& CI)
 {
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTDeletePragmaHandler(replacer.getPragmas(), CI, deleted));
+    new SSTDeletePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedExprs_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTMallocPragmaHandler(replacer.getPragmas(), CI, deleted));
+    new SSTMallocPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedExprs_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTNewPragmaHandler(replacer.getPragmas(), CI, deleted));
+    new SSTNewPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedExprs_));
 }
 
 void
 ReplaceAction::EndSourceFileAction()
 {
-  SourceManager &SM = TheRewriter.getSourceMgr();
-
+  SourceManager &SM = rewriter_.getSourceMgr();
   std::string sourceFile = SM.getFileEntryForID(SM.getMainFileID())->getName().str();
-  std::string suffix2 = sourceFile.substr(sourceFile.size()-2,2);
-  bool isC = suffix2 == ".c";
-
-  if (mainFxn && isC){
-    const char* appname = getenv("SSTMAC_APP_NAME");
-    if (appname == nullptr){
-      llvm::errs() << "Cannot refactor main function unless SSTMAC_APP_NAME environment var is defined\n";
-      abort();
-    }
-    std::stringstream sstr;
-    sstr << "int sstmac_user_main_" << appname << "(";
-    if (mainFxn->getNumParams() == 2){
-      sstr << "int argc, char** argv";
-    }
-    sstr << "){";
-    SourceRange rng(mainFxn->getLocStart(), mainFxn->getBody()->getLocStart());
-    TheRewriter.ReplaceText(rng, sstr.str());
-  }
-
   std::string sstSourceFile, sstGlobalFile;
   std::size_t lastSlashPos = sourceFile.find_last_of("/");
   if (lastSlashPos == std::string::npos){
@@ -79,7 +48,7 @@ ReplaceAction::EndSourceFileAction()
 
   std::error_code rc;
   llvm::raw_fd_ostream fs(sstSourceFile, rc, llvm::sys::fs::F_RW);
-  TheRewriter.getEditBuffer(TheRewriter.getSourceMgr().getMainFileID()).write(fs);
+  rewriter_.getEditBuffer(rewriter_.getSourceMgr().getMainFileID()).write(fs);
   fs.close();
 
 
@@ -88,12 +57,12 @@ ReplaceAction::EndSourceFileAction()
   if (ofs.good()){
     //add the header files needed
     ofs << "#include <sstmac/software/process/global.h>\n\n";
-    globalNS.genSSTCode(ofs,"");
-    if (mainFxn && isC){
+    globalNs_.genSSTCode(ofs,"");
+    if (visitor_.hasCStyleMain()){
       const char* appname = getenv("SSTMAC_APP_NAME");
       if (appname == nullptr){
         llvm::errs() << "Cannot refactor main function unless SSTMAC_APP_NAME environment var is defined\n";
-        abort();
+        exit(EXIT_FAILURE);
       }
       ofs << "int user_skeleton_main_init_fxn(const char* name, int (*foo)(int,char**));\n"
          << "extern \"C\" int sstmac_user_main_" << appname << "(int argc, char** argv);\n"
@@ -102,7 +71,7 @@ ReplaceAction::EndSourceFileAction()
     }
   } else {
     llvm::errs() << "Failed opening " << sstGlobalFile << "\n";
-    abort();
+    exit(EXIT_FAILURE);
   }
   ofs.close();
 }

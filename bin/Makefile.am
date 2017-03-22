@@ -55,9 +55,6 @@ EXTRA_DIST += \
  clang/pragmas.h \
  clang/astConsumers.h \
  clang/clangheaders.h \
- clang/firstAstVisitor.h \
- clang/findAstVisitor.h \
- clang/foundMacro.h \
  clang/frontendActions.h \
  clang/globalVarNamespace.h \
  clang/replAstVisitor.h
@@ -69,8 +66,6 @@ sstmac_clang_deglobal_SOURCES = \
   clang/globals.cc \
   clang/pragmas.cc \
   clang/astConsumers.cc \
-  clang/firstVisitor.cc \
-  clang/findAstVisitor.cc \
   clang/frontendActions.cc \
   clang/replAstVisitor.cc 
 

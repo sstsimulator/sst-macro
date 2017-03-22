@@ -5,21 +5,6 @@
 #include "astConsumers.h"
 #include "globalVarNamespace.h"
 
-class FindAction : public clang::ASTFrontendAction {
- public:
-  FindAction();
-
-  void EndSourceFileAction() override;
-
-  std::unique_ptr<clang::ASTConsumer>
-  CreateASTConsumer(clang::CompilerInstance& CI, clang::StringRef file) override {
-    return llvm::make_unique<FindASTConsumer>(CI, globalNS);
-  }
-
- private:
-  GlobalVarNamespace& globalNS;
-
-};
 
 class ReplaceAction : public clang::ASTFrontendAction {
  public:
@@ -29,22 +14,19 @@ class ReplaceAction : public clang::ASTFrontendAction {
 
   std::unique_ptr<clang::ASTConsumer>
   CreateASTConsumer(clang::CompilerInstance& CI, clang::StringRef file) override {
-    TheRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
-    finder.setCompilerInstance(CI);
-    replacer.setCompilerInstance(CI);
+    rewriter_.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
+    visitor_.setCompilerInstance(CI);
     initPragmas(CI);
-    return llvm::make_unique<ReplaceASTConsumer>(TheRewriter, finder, replacer, globalNS);
+    return llvm::make_unique<ReplaceASTConsumer>(rewriter_, visitor_);
   }
 
  private:
   void initPragmas(clang::CompilerInstance& CI);
 
-  FindGlobalASTVisitor finder;
-  ReplGlobalASTVisitor replacer;
-  clang::Rewriter TheRewriter;
-  clang::FunctionDecl* mainFxn;
-  GlobalVarNamespace& globalNS;
-  std::set<clang::Expr*> deleted;
+  ReplGlobalASTVisitor visitor_;
+  clang::Rewriter rewriter_;
+  GlobalVarNamespace globalNs_;
+  std::set<clang::Expr*> deletedExprs_;
 };
 
 #endif
