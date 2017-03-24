@@ -28,6 +28,8 @@ ReplaceAction::initPragmas(CompilerInstance& CI)
     new SSTMallocPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedExprs_));
   CI.getPreprocessor().AddPragmaHandler("sst",
     new SSTNewPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedExprs_));
+  CI.getPreprocessor().AddPragmaHandler("sst",
+    new SSTComputePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedExprs_));
 }
 
 void

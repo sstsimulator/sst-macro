@@ -147,6 +147,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       directIncludes.append("-include cstdint")
     else:
       directIncludes.append("-include stdint.h")
+    directIncludes.append("-include sstmac/compute.h")
 
     remGlobals = True
     if os.environ.has_key("SSTMAC_REMOVE_GLOBALS"):

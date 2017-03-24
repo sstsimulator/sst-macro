@@ -65,6 +65,7 @@ sstmac_clang_deglobal_SOURCES = \
   clang/util.cc \
   clang/globals.cc \
   clang/pragmas.cc \
+  clang/computePragma.cc \
   clang/astConsumers.cc \
   clang/frontendActions.cc \
   clang/replAstVisitor.cc 

@@ -187,5 +187,3 @@ SSTMallocPragma::act(Stmt *stmt, Rewriter &r)
       break;
   }
 }
-
-

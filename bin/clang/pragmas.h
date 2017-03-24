@@ -46,6 +46,15 @@ class SSTNewPragma : public SSTPragma {
   void defaultAct(clang::Stmt* stmt, clang::Rewriter& r);
 };
 
+class SSTComputePragma : public SSTPragma {
+  friend class ComputeVisitor;
+
+  void act(clang::Decl *decl, clang::Rewriter &r);
+  void act(clang::Stmt *stmt, clang::Rewriter &r);
+  void defaultAct(clang::Stmt* stmt, clang::Rewriter &r);
+  void visitForStmt(clang::ForStmt* stmt, clang::Rewriter& r);
+};
+
 
 struct SSTPragmaList {
   void push_back(SSTPragma* p){
@@ -157,6 +166,14 @@ class SSTNewPragmaHandler : public SSTSimplePragmaHandler<SSTNewPragma> {
   SSTNewPragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
                       ReplGlobalASTVisitor& visitor, std::set<clang::Expr*>& deld) :
    SSTSimplePragmaHandler<SSTNewPragma>("new", plist, CI, visitor, deld)
+  {}
+};
+
+class SSTComputePragmaHandler : public SSTSimplePragmaHandler<SSTComputePragma> {
+ public:
+  SSTComputePragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
+                      ReplGlobalASTVisitor& visitor, std::set<clang::Expr*>& deld) :
+   SSTSimplePragmaHandler<SSTComputePragma>("compute", plist, CI, visitor, deld)
   {}
 };
 
