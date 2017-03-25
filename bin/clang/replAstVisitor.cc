@@ -133,14 +133,14 @@ ReplGlobalASTVisitor::initHeaders()
   if (headerListFile == nullptr){
     const char* allHeaders = getenv("SSTMAC_ALL_HEADERS");
     if (allHeaders == nullptr){
-      std::cerr << "WARNING: No header file specified through environment variable SSTMAC_HEADERS" << std::endl;
+      std::cerr << "WARNING: No header list specified through environment variable SSTMAC_HEADERS" << std::endl;
     }
     return;
   }
 
   std::ifstream ifs(headerListFile);
   if (!ifs.good()){
-    std::cerr << "Bad header list file from environment SSTMAC_HEADERS=" << headerListFile << std::endl;
+    std::cerr << "Bad header list from environment SSTMAC_HEADERS=" << headerListFile << std::endl;
     exit(EXIT_FAILURE);
   }
 
