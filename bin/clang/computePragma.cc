@@ -562,6 +562,7 @@ SSTComputePragma::act(Stmt *stmt, Rewriter &r)
 void
 SSTComputePragma::defaultAct(Stmt *stmt, Rewriter &r)
 {
+  r.ReplaceText(stmt->getSourceRange(),"");
 }
 
 void

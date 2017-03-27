@@ -10,6 +10,10 @@ class ReplaceAction : public clang::ASTFrontendAction {
  public:
   ReplaceAction();
 
+  bool BeginSourceFileAction(clang::CompilerInstance &CI, llvm::StringRef Filename) override;
+
+  void ExecuteAction() override;
+
   void EndSourceFileAction() override;
 
   std::unique_ptr<clang::ASTConsumer>
@@ -26,6 +30,7 @@ class ReplaceAction : public clang::ASTFrontendAction {
   ReplGlobalASTVisitor visitor_;
   clang::Rewriter rewriter_;
   GlobalVarNamespace globalNs_;
+  clang::CompilerInstance* ci_;
   std::set<clang::Expr*> deletedExprs_;
 };
 

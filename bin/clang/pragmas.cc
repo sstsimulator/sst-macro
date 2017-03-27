@@ -9,23 +9,55 @@ using namespace clang::tooling;
   case(clang::Stmt::type##Class): \
     visit##type(clang::cast<type>(s),rw); break \
 
+#define lexify(x) \
+  PP.Lex(x); std::cout << x.getName(); \
+  if (x.getKind() == tok::identifier) std::cout << " " << x.getIdentifierInfo()->getNameStart(); \
+  std::cout << std::endl;
+
+static int pragmaDepth = 0;
+static int maxPragmaDepth = 0;
+static SSTPragma* topPragma = nullptr;
+std::list<SSTPragma*> pendingPragmas;
+
+void
+SSTPragmaHandler::configure(Token& PragmaTok, Preprocessor& PP, SSTPragma* fsp)
+{
+  if (topPragma == nullptr) topPragma = fsp;
+  pragmaDepth++;
+  maxPragmaDepth++;
+  if (topPragma){
+    topPragma->subPragmas.push_back(fsp);
+  } else {
+    pragmas_.push_back(fsp);
+  }
+  fsp->name = getName();
+  fsp->startLoc = PragmaTok.getLocation();
+  fsp->CI = &ci_;
+  fsp->visitor = &visitor_;
+  fsp->deleted = &deleted_;
+  PP.EnableBacktrackAtThisPos(); //this controls the backtrack
+  Token pragmaTarget;
+  PP.Lex(pragmaTarget); //this might hit another pragma
+  fsp->endLoc = pragmaTarget.getEndLoc();
+  PP.Backtrack();
+  if (pragmaDepth == 1){ //this is the top pragma
+    //if we hit multiple pragmas, we might have redundant tokens
+    //becaue of recursion weirdness in the lexer
+    for (int i=1; i < maxPragmaDepth; ++i){
+      Token throwAway;
+      PP.Lex(throwAway);
+    }
+    maxPragmaDepth = 0;
+    topPragma = nullptr;
+  }
+  --pragmaDepth;
+}
 
 void
 SSTSimplePragmaHandler_base::HandlePragma(clang::Preprocessor &PP,
                   clang::PragmaIntroducerKind Introducer,
                   clang::Token &PragmaTok)
 {
-  switch (Introducer){
-    case PIK_HashPragma:
-      break; //great valid
-   default: {
-     std::stringstream sstr;
-     sstr << "Got pragma " << this->getName().str()
-           << " using non-hash #pragma. Must use #pragma to ensure no pragmas in macros";
-     errorAbort(PragmaTok.getLocation(), ci_, sstr.str());
-   }
-  }
-
   //the next token should be an eod
   Token eodToken; PP.Lex(eodToken);
   if (!eodToken.is(tok::eod)){
@@ -36,16 +68,20 @@ SSTSimplePragmaHandler_base::HandlePragma(clang::Preprocessor &PP,
   }
 
   SSTPragma* fsp = allocatePragma();
-  PP.EnableBacktrackAtThisPos();
-  Token pragmaTarget; PP.Lex(pragmaTarget);
-  fsp->name = getName();
-  fsp->startLoc = PragmaTok.getLocation();
-  fsp->endLoc = pragmaTarget.getEndLoc();
-  fsp->CI = &ci_;
-  fsp->visitor = &visitor_;
-  fsp->deleted = &deleted_;
-  pragmas_.push_back(fsp);
-  PP.Backtrack();
+  configure(PragmaTok, PP, fsp);
+}
+
+void
+SSTTokenStreamPragmaHandler::HandlePragma(Preprocessor &PP, PragmaIntroducerKind Introducer, Token &PragmaTok)
+{
+  std::list<Token> tokens;
+  Token next; PP.Lex(next);
+  while (!next.is(tok::eod)){
+    tokens.push_back(next);
+    PP.Lex(next);
+  }
+  SSTPragma* fsp = allocatePragma(tokens);
+  configure(PragmaTok, PP, fsp);
 }
 
 void

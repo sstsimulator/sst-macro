@@ -14,6 +14,7 @@ struct SSTPragma {
   clang::CompilerInstance* CI;
   ReplGlobalASTVisitor* visitor;
   std::set<clang::Expr*>* deleted;
+  std::list<SSTPragma*> subPragmas;
 
   template <class T>
   bool matches(T* s){
@@ -55,7 +56,6 @@ class SSTComputePragma : public SSTPragma {
   void visitForStmt(clang::ForStmt* stmt, clang::Rewriter& r);
 };
 
-
 struct SSTPragmaList {
   void push_back(SSTPragma* p){
     pragmas.push_back(p);
@@ -93,6 +93,15 @@ class SSTPragmaHandler : public clang::PragmaHandler {
   clang::CompilerInstance& ci_;
   ReplGlobalASTVisitor& visitor_;
   std::set<clang::Expr*>& deleted_;
+
+  /**
+   * @brief configure Assuming the PP lex position is currently on eod,
+   *        configure the source locations of the pragma and initialize fields
+   * @param PP
+   * @param pragma
+   */
+  void configure(clang::Token& PragmaTok, clang::Preprocessor& PP, SSTPragma* pragma);
+
 };
 
 /**
@@ -175,6 +184,46 @@ class SSTComputePragmaHandler : public SSTSimplePragmaHandler<SSTComputePragma> 
                       ReplGlobalASTVisitor& visitor, std::set<clang::Expr*>& deld) :
    SSTSimplePragmaHandler<SSTComputePragma>("compute", plist, CI, visitor, deld)
   {}
+};
+
+class SSTTokenStreamPragmaHandler : public SSTPragmaHandler
+{
+ public:
+  void HandlePragma(clang::Preprocessor &PP,
+                   clang::PragmaIntroducerKind Introducer,
+                   clang::Token &PragmaTok);
+
+ protected:
+  /**
+   * @brief SSTSimplePragmaHandler Constructor for pragma handlers for pragmas of the form
+   *        #pragma sst name
+   * @param name  The string identifying the pragma
+   * @param plist The pragma list to append to
+   */
+  SSTTokenStreamPragmaHandler(const char* name, SSTPragmaList& plist,
+                         clang::CompilerInstance& CI,
+                         ReplGlobalASTVisitor& visitor,
+                         std::set<clang::Expr*>& deld) :
+    SSTPragmaHandler(name, plist, CI, visitor, deld)
+  {}
+
+ private:
+  virtual SSTPragma* allocatePragma(const std::list<clang::Token>& tokens) const = 0;
+};
+
+class SSTOpenMPParallelPragmaHandler : public SSTTokenStreamPragmaHandler
+{
+ public:
+  SSTOpenMPParallelPragmaHandler(SSTPragmaList& plist,
+                         clang::CompilerInstance& CI,
+                         ReplGlobalASTVisitor& visitor,
+                         std::set<clang::Expr*>& deld) :
+      SSTTokenStreamPragmaHandler("parallel", plist, CI, visitor, deld){}
+ private:
+  SSTPragma* allocatePragma(const std::list<clang::Token> &tokens) const {
+    //this actually just maps cleanly into a compute pragma
+    return new SSTComputePragma;
+  }
 };
 
 #endif
