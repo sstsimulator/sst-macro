@@ -540,16 +540,8 @@ addLoopContribution(std::ostream& os, Loop& loop)
 
 };
 
-
-
-
 void
-SSTComputePragma::act(Decl *decl, Rewriter &r)
-{
-}
-
-void
-SSTComputePragma::act(Stmt *stmt, Rewriter &r)
+SSTComputePragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig& cfg)
 {
   switch(stmt->getStmtClass()){
     scase(ForStmt,stmt,r);

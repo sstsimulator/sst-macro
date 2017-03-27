@@ -6,28 +6,6 @@ using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
 
-bool
-ReplGlobalASTVisitor::VisitDecl(Decl* d)
-{
-  SSTPragma* prg = pragmas_.takeMatch(d);
-  if (prg){
-    //pragma takes precedence
-    prg->act(d, rewriter_);
-  }
-  return true;
-}
-
-bool
-ReplGlobalASTVisitor::VisitStmt(Stmt *s)
-{
-  SSTPragma* prg = pragmas_.takeMatch(s);
-  if (prg){
-    //pragma takes precedence
-    prg->act(s, rewriter_);
-    return true;
-  }
-  return true;
-}
 
 bool
 ReplGlobalASTVisitor::VisitCXXNewExpr(CXXNewExpr *expr)
@@ -96,6 +74,26 @@ ReplGlobalASTVisitor::VisitCXXNewExpr(CXXNewExpr *expr)
   }
   return true;
 }
+
+
+bool
+ReplGlobalASTVisitor::VisitCXXDeleteExpr(CXXDeleteExpr* expr)
+{
+  std::string allocatedTypeStr = expr->getDestroyedType().getAsString();
+  PrettyPrinter pp;
+  if (expr->isArrayForm()){
+    pp.os << "conditional_delete_array";
+  } else {
+    pp.os << "conditional_delete";
+  }
+  pp.os << "<" << allocatedTypeStr << ">"
+        << "(";
+  pp.print(expr->getArgument());
+  pp.os << ")";
+  rewriter_.ReplaceText(expr->getSourceRange(), pp.os.str());
+  return true;
+}
+
 
 bool
 ReplGlobalASTVisitor::VisitUnaryOperator(UnaryOperator* op)
@@ -174,6 +172,19 @@ ReplGlobalASTVisitor::shouldVisitDecl(VarDecl* D){
     return validHeaders.find(fullpath) != validHeaders.end();
   }
   //not a header - good to go
+  return true;
+}
+
+bool
+ReplGlobalASTVisitor::VisitCallExpr(CallExpr* expr)
+{
+  FunctionDecl* callee = expr->getDirectCallee();
+  if (callee && pragma_config_.pragmaDepth){
+    auto iter = pragma_config_.functionReplacements.find(callee->getNameAsString());
+    if (iter != pragma_config_.functionReplacements.end()){
+      rewriter_.ReplaceText(expr->getSourceRange(), iter->second);
+    }
+  }
   return true;
 }
 
@@ -285,6 +296,8 @@ ReplGlobalASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
 {
   if (D->isMain()){
     replaceMain(D);
+  } else if (D->isTemplateInstantiation()){
+    return true; //do not visit implicitly instantiated template stuff
   }
   ++insideFxn_;
   TraverseStmt(D->getBody());
@@ -301,22 +314,6 @@ ReplGlobalASTVisitor::TraverseCXXRecordDecl(CXXRecordDecl *D)
     TraverseDecl(*iter);
   }
   insideClass_--;
-  return true;
-}
-
-bool
-ReplGlobalASTVisitor::TraverseCompundStmt(CompoundStmt *S)
-{
-  SSTPragma* prg = pragmas_.takeMatch(S);
-  if (prg){
-    //pragma takes precedence
-    prg->act(S, rewriter_);
-  }
-  auto end = S->child_end();
-  for (auto iter=S->child_begin(); iter != end; ++iter){
-    bool cont = TraverseStmt(*iter);
-    if (!cont) return false;
-  }
   return true;
 }
 
@@ -375,6 +372,38 @@ ReplGlobalASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
 
   return true;
 }
+
+bool
+ReplGlobalASTVisitor::VisitStmt(Stmt *S)
+{
+  SSTPragma* prg = pragmas_.takeMatch(S);
+  if (prg){
+    pragma_config_.pragmaDepth++;
+    activePragmas_[S] = prg;
+    //pragma takes precedence - must occur in pre-visit
+    prg->activate(S, rewriter_, pragma_config_);
+  }
+  return true;
+}
+
+bool
+ReplGlobalASTVisitor::dataTraverseStmtPre(Stmt* S)
+{
+  return true;
+}
+
+bool
+ReplGlobalASTVisitor::dataTraverseStmtPost(Stmt* S)
+{
+  auto iter = activePragmas_.find(S);
+  if (iter != activePragmas_.end()){
+    SSTPragma* prg = iter->second;
+    prg->deactivate(S, pragma_config_);
+    pragma_config_.pragmaDepth--;
+  }
+  return true;
+}
+
 
 void
 ReplGlobalASTVisitor::replGlobal(NamedDecl* decl, SourceRange replRng)

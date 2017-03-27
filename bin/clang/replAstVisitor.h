@@ -22,19 +22,21 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
     initReservedNames();
   }
 
+  bool VisitStmt(clang::Stmt* S);
+
   bool VisitDeclRefExpr(clang::DeclRefExpr* expr);
 
   bool VisitCXXNewExpr(clang::CXXNewExpr* expr);
 
+  bool VisitCXXDeleteExpr(clang::CXXDeleteExpr* expr);
+
   bool VisitUnaryOperator(clang::UnaryOperator* op);
 
-  bool VisitDecl(clang::Decl *D);
+  bool VisitCallExpr(clang::CallExpr* expr);
 
   void setCompilerInstance(clang::CompilerInstance& c){
     ci_ = &c;
   }
-
-  bool VisitStmt(clang::Stmt* s);
 
   /**
    * @brief VisitVarDecl We only need to visit variables once down the AST.
@@ -60,7 +62,9 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
 
   bool TraverseCXXMethodDecl(clang::CXXMethodDecl *D);
 
-  bool TraverseCompundStmt(clang::CompoundStmt* S);
+  bool dataTraverseStmtPre(clang::Stmt* S);
+
+  bool dataTraverseStmtPost(clang::Stmt* S);
 
   void replGlobal(clang::NamedDecl* decl, clang::SourceRange rng);
 
@@ -112,6 +116,8 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
   bool foundCMain_;
   std::set<std::string> validHeaders_;
   std::set<std::string> reservedNames_;
+  PragmaConfig pragma_config_;
+  std::map<clang::Stmt*,SSTPragma*> activePragmas_;
 
 };
 

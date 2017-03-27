@@ -84,6 +84,21 @@ conditional_new(Args&&... args){
   return ret;
 }
 
+
+
+template <class T>
+void
+conditional_delete(T* t){
+  if (t != nullptr) delete t;
+}
+
+template <class T>
+void
+conditional_delete_array(T* t){
+  if (t != nullptr) delete[] t;
+}
+
+
 #include <sprockit/sim_parameters.h>
 #include <sstmac/software/process/global.h>
 #include <sstmac/software/api/api_fwd.h>
@@ -111,6 +126,17 @@ get_params();
 #define main ignore_this_fxn();
 #endif
 
+#define free sstmac_free
+
+/**
+ * Valid in both C and C++
+ * @brief sstmac_free
+ * @param ptr A pointer which may or may not have been skeletonized
+ */
+static inline void
+sstmac_free(void* ptr){
+  if (ptr != nullptr) ::free(ptr);
+}
 
 
 #endif
