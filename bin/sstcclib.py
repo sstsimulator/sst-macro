@@ -96,6 +96,7 @@ asmFiles = False
 verbose = False
 delTempFiles = True
 givenCppFlags = []
+givenCompilerFlags = []
 controlArgs = []
 sourceFiles = []
 objectFiles = []
@@ -107,6 +108,10 @@ for arg in sysargs:
     objectFiles.append(sarg)
     objTarget = sarg
     getObjTarget=False
+  elif sarg.startswith("-O"):
+    givenCompilerFlags.append(sarg)
+  elif sarg == "-g":
+    givenCompilerFlags.append(sarg)
   elif sarg.endswith('.cpp') or sarg.endswith('.cc') or sarg.endswith('.c'):
     srcFiles = True
     sourceFiles.append(sarg)
@@ -125,6 +130,8 @@ for arg in sysargs:
     givenCppFlags.append(sarg)
 if sst_core:
   givenCppFlags.append(" -DSSTMAC_EXTERNAL_SKELETON")
+
+
 
 if sourceFiles and len(objectFiles) > 1:
   sys.exit("Specified multiple object files for source compilation: %" % " ".join(objectFiles))
@@ -170,22 +177,32 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       sys.stderr.write(helpText)
       sys.exit()
 
-    compilerFlags = ""
+    compilerFlagsStr = ""
     compiler = ""
     cxxCmd = ""
     if includeMain:
       extralibs += " -lsstmac_main"
     #always c++ no matter what for now
     if typ.lower() == "c++":
-        compilerFlags = cleanFlag(cxxflags)
-        ldflags = "%s %s" % (compilerFlags, ldflags)
+        compilerFlagsStr = cleanFlag(cxxflags)
         compiler = cxx
         ld = cxx
     elif typ.lower() == "c":
-        compilerFlags = cleanFlag(cflags)
+        compilerFlagsStr = cleanFlag(cflags)
         compiler = cc
         ld = cxx #always use c++ for linking since we are bringing a bunch of sstmac C++ into the game
-    ldflags = "%s %s" % (compilerFlags, ldflags)
+    ldflags = "%s %s" % (compilerFlagsStr, ldflags)
+
+    compilerFlagsArr = compilerFlagsStr.split()
+    compilerFlags = []
+    for entry in compilerFlagsArr:
+      if entry[:2] == "-O": #do not send optimization flags forward
+        pass
+      elif entry == "-g": #do not send debug flags forward
+        pass
+      else:
+        compilerFlags.append(entry)
+    compilerFlagsStr = " ".join(compilerFlags)
 
     directIncludesStr = " ".join(directIncludes)
 
@@ -216,6 +233,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     controlArgStr = " ".join(controlArgs)
     extraCppFlagsStr = " ".join(extraCppFlags)
     givenCppFlagsStr = " ".join(givenCppFlags)
+    givenCompilerFlagsStr = " ".join(givenCompilerFlags)
     srcFileStr = " ".join(sourceFiles)
     if '-c' in sysargs or ppOnly:
       runClang = runClang and (not ppOnly)
@@ -226,23 +244,26 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
           directIncludesStr,
           extraCppFlagsStr, 
           givenCppFlagsStr,
+          givenCompilerFlagsStr,
           sstCppFlagsStr,
-          compilerFlags, 
+          compilerFlagsStr, 
           "-E"
         ]
         #we run clang on a direct source file with no includes
         #only put cxxflags in the cmd arr for now
         cxxCmdArr = [
           compiler,
-          compilerFlags
+          compilerFlagsStr,
+          givenCompilerFlagsStr
         ]
       else: 
         cxxCmdArr = [
           compiler, 
           extraCppFlagsStr, 
           givenCppFlagsStr,
+          givenCompilerFlagsStr,
           sstCppFlagsStr, 
-          compilerFlags, 
+          compilerFlagsStr, 
           controlArgStr,
           srcFileStr
         ]
@@ -252,7 +273,8 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         compiler, 
         extraCppFlagsStr, 
         sstCppFlagsStr, 
-        compilerFlags, 
+        compilerFlagsStr, 
+        givenCompilerFlagsStr,
         args, 
         ldflags, 
         extralibs, 
@@ -295,7 +317,8 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         args, 
         extraCppFlagsStr, 
         cppflags, 
-        compilerFlags, 
+        compilerFlagsStr, 
+        givenCompilerFlagsStr,
         ldflags, 
         extralibs, 
         ldpathMaker
@@ -313,7 +336,9 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         cmdArr.append("> %s" % ppTmpFile)
         ppCmd = " ".join(cmdArr) 
         if verbose: sys.stderr.write("%s\n" % ppCmd)
-        os.system(ppCmd)
+        rc = os.system(ppCmd)
+        if not rc == 0:
+          return rc
 
         srcRepl = "sst.pp." + srcFile
         cxxInitSrcFile = "sstGlobals.pp." + srcFile + ".cpp"

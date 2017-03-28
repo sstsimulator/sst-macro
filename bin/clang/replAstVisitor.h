@@ -16,11 +16,12 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
     rewriter_(R), visitingGlobal_(false), deletedExprs_(deld),
     globalNs_(ns), currentNs_(&ns),
     insideClass_(0), insideFxn_(0),
-    foundCMain_(false)
+    foundCMain_(false), keepGlobals_(false), noSkeletonize_(false)
   {
     initHeaders();
     initReservedNames();
     initMPICalls();
+    initConfig();
   }
 
   bool VisitStmt(clang::Stmt* S);
@@ -107,6 +108,8 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
 
   void initMPICalls();
 
+  void initConfig();
+
   void replaceMain(clang::FunctionDecl* mainFxn);
 
  private:
@@ -123,6 +126,8 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
   int insideClass_;
   int insideFxn_;
   bool foundCMain_;
+  bool keepGlobals_;
+  bool noSkeletonize_;
   std::set<std::string> validHeaders_;
   std::set<std::string> reservedNames_;
   PragmaConfig pragma_config_;

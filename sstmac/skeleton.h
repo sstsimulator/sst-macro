@@ -121,15 +121,7 @@ using sprockit::sim_parameters;
 extern sprockit::sim_parameters*
 get_params();
 
-#else
-//not C++, extra work required in sst clang compiler
-#define main ignore_this_fxn();
-#endif
-
-#define free sstmac_free
-
 /**
- * Valid in both C and C++
  * @brief sstmac_free
  * @param ptr A pointer which may or may not have been skeletonized
  */
@@ -137,6 +129,22 @@ static inline void
 sstmac_free(void* ptr){
   if (ptr != nullptr) ::free(ptr);
 }
+
+#else
+#include <stdlib.h>
+/**
+ * @brief sstmac_free
+ * @param ptr A pointer which may or may not have been skeletonized
+ */
+static inline void
+sstmac_free(void* ptr){
+  if (ptr != NULL) free(ptr);
+}
+#endif
+
+
+
+#define free sstmac_free
 
 
 #endif

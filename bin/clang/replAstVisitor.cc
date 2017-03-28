@@ -7,6 +7,16 @@ using namespace clang::driver;
 using namespace clang::tooling;
 
 void
+ReplGlobalASTVisitor::initConfig()
+{
+  const char* skelStr = getenv("SSTMAC_SKELETONIZE");
+  if (skelStr){
+    bool doSkel = atoi(skelStr);
+    noSkeletonize_ = !doSkel;
+  }
+}
+
+void
 ReplGlobalASTVisitor::initMPICalls()
 {
   mpiCalls_["irecv"] = &ReplGlobalASTVisitor::visitPt2Pt;
@@ -52,8 +62,10 @@ ReplGlobalASTVisitor::initHeaders()
 }
 
 bool
-ReplGlobalASTVisitor::shouldVisitDecl(VarDecl* D){
-  if (isa<ParmVarDecl>(D) || D->isImplicit() || insideClass_ || insideFxn_){
+ReplGlobalASTVisitor::shouldVisitDecl(VarDecl* D)
+{
+  if (keepGlobals_ || isa<ParmVarDecl>(D) || D->isImplicit()
+      || insideClass_ || insideFxn_){
     return false;
   }
 
@@ -80,6 +92,8 @@ ReplGlobalASTVisitor::shouldVisitDecl(VarDecl* D){
 bool
 ReplGlobalASTVisitor::VisitCXXNewExpr(CXXNewExpr *expr)
 {
+  if (noSkeletonize_) return true;
+
   if (deletedExprs_.find(expr) != deletedExprs_.end()){
     //already deleted - do nothing here
     return true;
@@ -149,6 +163,8 @@ ReplGlobalASTVisitor::VisitCXXNewExpr(CXXNewExpr *expr)
 bool
 ReplGlobalASTVisitor::VisitCXXDeleteExpr(CXXDeleteExpr* expr)
 {
+  if (noSkeletonize_) return true;
+
   std::string allocatedTypeStr = expr->getDestroyedType().getAsString();
   PrettyPrinter pp;
   if (expr->isArrayForm()){
@@ -168,6 +184,8 @@ ReplGlobalASTVisitor::VisitCXXDeleteExpr(CXXDeleteExpr* expr)
 bool
 ReplGlobalASTVisitor::VisitUnaryOperator(UnaryOperator* op)
 {
+  if (keepGlobals_) return true;
+
   if (visitingGlobal_){
     Expr* exp = op->getSubExpr();
     if (isa<DeclRefExpr>(exp)){
@@ -182,7 +200,8 @@ ReplGlobalASTVisitor::VisitUnaryOperator(UnaryOperator* op)
 }
 
 bool
-ReplGlobalASTVisitor::VisitDeclRefExpr(DeclRefExpr* expr){
+ReplGlobalASTVisitor::VisitDeclRefExpr(DeclRefExpr* expr)
+{
   NamedDecl* decl =  expr->getFoundDecl();
   replGlobal(decl, expr->getSourceRange());
   return true;
@@ -191,6 +210,8 @@ ReplGlobalASTVisitor::VisitDeclRefExpr(DeclRefExpr* expr){
 void
 ReplGlobalASTVisitor::visitCollective(CallExpr *expr)
 {
+  if (noSkeletonize_) return;
+
   //first buffer argument to nullptr
   if (expr->getArg(0)->getType()->isPointerType()){
     //make sure this isn't a shortcut function without buffers
@@ -202,6 +223,8 @@ ReplGlobalASTVisitor::visitCollective(CallExpr *expr)
 void
 ReplGlobalASTVisitor::visitReduce(CallExpr *expr)
 {
+  if (noSkeletonize_) return;
+
   //first buffer argument to nullptr
   if (expr->getArg(0)->getType()->isPointerType()){
     //make sure this isn't a shortcut function without buffers
@@ -213,6 +236,8 @@ ReplGlobalASTVisitor::visitReduce(CallExpr *expr)
 void
 ReplGlobalASTVisitor::visitPt2Pt(CallExpr *expr)
 {
+  if (noSkeletonize_) return;
+
   //first buffer argument to nullptr
   if (expr->getArg(0)->getType()->isPointerType()){
     //make sure this isn't a shortcut function without buffers
@@ -223,6 +248,8 @@ ReplGlobalASTVisitor::visitPt2Pt(CallExpr *expr)
 bool
 ReplGlobalASTVisitor::VisitCXXMemberCallExpr(CXXMemberCallExpr* expr)
 {
+  if (noSkeletonize_) return true;
+
   CXXRecordDecl* cls = expr->getRecordDecl();
   std::string clsName = cls->getNameAsString();
   //std::cout << "got call on " << clsName << std::endl;
@@ -243,6 +270,8 @@ ReplGlobalASTVisitor::VisitCXXMemberCallExpr(CXXMemberCallExpr* expr)
 bool
 ReplGlobalASTVisitor::VisitCallExpr(CallExpr* expr)
 {
+  if (noSkeletonize_) return true;
+
   FunctionDecl* callee = expr->getDirectCallee();
   if (callee && pragma_config_.pragmaDepth){
     auto iter = pragma_config_.functionReplacements.find(callee->getNameAsString());
@@ -392,7 +421,8 @@ ReplGlobalASTVisitor::TraverseCXXRecordDecl(CXXRecordDecl *D)
  * @return
  */
 bool
-ReplGlobalASTVisitor::TraverseNamespaceDecl(NamespaceDecl* D){
+ReplGlobalASTVisitor::TraverseNamespaceDecl(NamespaceDecl* D)
+{
   GlobalVarNamespace* stash = currentNs_;
   GlobalVarNamespace& next = currentNs_->subspaces[D->getNameAsString()];
   next.appendNamespace(currentNs_->ns, D->getNameAsString());
@@ -412,6 +442,8 @@ ReplGlobalASTVisitor::TraverseFunctionTemplateDecl(FunctionTemplateDecl *D)
   if (D->getNameAsString() == "placement_new"){
     return true;
   } else if (D->getNameAsString() == "conditional_new"){
+    return true;
+  } else if (D->getNameAsString() == "conditional_array_new"){
     return true;
   } else {
     TraverseDecl(D->getTemplatedDecl());
@@ -456,6 +488,7 @@ ReplGlobalASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
 bool
 ReplGlobalASTVisitor::VisitStmt(Stmt *S)
 {
+  if (noSkeletonize_) return true;
 
   SSTPragma* prg;
   while ((prg = pragmas_.takeMatch(S))){
@@ -470,6 +503,8 @@ ReplGlobalASTVisitor::VisitStmt(Stmt *S)
 bool
 ReplGlobalASTVisitor::VisitDecl(Decl *D)
 {
+  if (noSkeletonize_) return true;
+
   SSTPragma* prg;
   while ((prg = pragmas_.takeMatch(D))){
     pragma_config_.pragmaDepth++;
@@ -502,6 +537,8 @@ ReplGlobalASTVisitor::dataTraverseStmtPost(Stmt* S)
 void
 ReplGlobalASTVisitor::replGlobal(NamedDecl* decl, SourceRange replRng)
 {
+  if (keepGlobals_) return;
+
   auto iter = globals_.find(decl);
   if (iter != globals_.end()){
     rewriter_.ReplaceText(replRng, iter->second);
