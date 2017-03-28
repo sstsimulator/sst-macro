@@ -28,6 +28,11 @@ struct PrettyPrinter
     d->print(os, Policy);
   }
 
+  std::string
+  print(const clang::BuiltinType* ty){
+    return ty->getName(Policy).str();
+  }
+
   void dump(std::ostream& sos = std::cout){
     sos << os.str() << std::endl;
   }

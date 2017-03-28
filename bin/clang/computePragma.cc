@@ -150,9 +150,24 @@ uint32_t currentGeneration; //0 is sentinel for not inited
 std::map<MemoryLocation,AccessHistory,MemoryLocationCompare> arrays;
 std::map<NamedDecl*,Variable> variables;
 CompilerInstance& CI;
+SSTPragmaList& pragmas;
+SourceLocation scopeStartLine;
+std::list<std::string> scopedVariables;
+ComputeVisitor* parent;
 
 //97 = 'a', for debug printing
-ComputeVisitor(clang::CompilerInstance& c) : CI(c), idCount(97), currentGeneration(1) {}
+ComputeVisitor(clang::CompilerInstance& c, SSTPragmaList& plist, ComputeVisitor* par) :
+  CI(c), idCount(97), currentGeneration(1), pragmas(plist), parent(par)
+{}
+
+std::list<std::string>&
+getScopedVariables(){
+  if (parent){
+    return parent->getScopedVariables();
+  } else {
+    return scopedVariables;
+  }
+}
 
 Variable&
 getVariable(NamedDecl* decl){
@@ -308,13 +323,20 @@ visitBodyBinaryOperator(BinaryOperator* op, Loop::Body& body)
     case BO_Add:
     case BO_Div:
     case BO_Sub:
-      if (op->getType()->isIntegerType())
+      if (op->getType()->isIntegerType()) {
         body.intops += 1;
-      else if (op->getType()->isFloatingType())
+      }
+      else if (op->getType()->isFloatingType()) {
         body.flops += 1;
-      else
+      }
+      else if (op->getType()->isDependentType()){
+        //this better be a template type
+        const TemplateTypeParmType* ty = cast<const TemplateTypeParmType>(op->getLHS()->getType().getTypePtr());
+      }
+      else {
         errorAbort(op->getLocStart(), CI,
                    "binary operator in skeletonized loop does not operate on int or float types");
+      }
     default:
       break;
   }
@@ -381,6 +403,53 @@ visitBodyCStyleCastExpr(CStyleCastExpr* expr, Loop::Body& body, bool isLHS)
   addOperations(expr->getSubExpr(), body, isLHS);
 }
 
+#define printbool(fxn,x) std::cout << #x << std::boolalpha << " " << fxn->x() << std::endl
+#define printbools(callee) \
+  printbool(callee,isLateTemplateParsed); \
+  printbool(callee,hasBody); \
+  printbool(callee,isDefined); \
+  printbool(callee,hasTrivialBody); \
+  printbool(callee,isDeleted); \
+  printbool(callee,isConstexpr); \
+  printbool(callee,hasSkippedBody); \
+  printbool(callee,isInlined); \
+  printbool(callee,isFunctionTemplateSpecialization); \
+  printbool(callee,isImplicitlyInstantiable); \
+  printbool(callee,isTemplateInstantiation)
+
+void
+visitBodyCallExpr(CallExpr* expr, Loop::Body& body)
+{
+  //the definition of this function better be available
+  //procedure calls should NOT be INSIDE a compute intensive loop
+  FunctionDecl* callee = expr->getDirectCallee();
+  if (callee){
+    if (callee->isTemplateInstantiation()){
+      FunctionTemplateDecl* td = callee->getPrimaryTemplate();
+      addOperations(td->getTemplatedDecl()->getBody(), body);
+    } else {
+      FunctionDecl* def = callee->getDefinition();
+      if (!def){
+        errorAbort(expr->getLocStart(), CI,
+                   "non-inlinable function inside compute-intensive code");
+      }
+      addOperations(def->getBody(), body);
+    }
+  } else {
+    errorAbort(expr->getLocStart(), CI,
+               "non-inlinable function inside compute-intensive code");
+  }
+}
+
+void
+visitBodyDeclStmt(DeclStmt* stmt, Loop::Body& body)
+{
+  SSTPragma* prg = pragmas.takeMatch(stmt);
+  if (prg){
+    prg->activate(stmt->getSingleDecl(), getScopedVariables());
+  }
+}
+
 void
 addOperations(Stmt* stmt, Loop::Body& body, bool isLHS = false)
 {
@@ -391,15 +460,23 @@ addOperations(Stmt* stmt, Loop::Body& body, bool isLHS = false)
     body_case(CompoundAssignOperator,stmt,body);
     body_case(BinaryOperator,stmt,body);
     body_case(ParenExpr,stmt,body);
+    body_case(CallExpr,stmt,body);
     body_case(DeclRefExpr,stmt,body,isLHS);
     body_case(ImplicitCastExpr,stmt,body,isLHS);
     body_case(CStyleCastExpr,stmt,body,isLHS);
     body_case(ArraySubscriptExpr,stmt,body,isLHS);
+    body_case(DeclStmt,stmt,body);
     default:
       break;
   }
 }
 
+void
+setLoopControlExpr(Expr*& lhs, Expr* rhs)
+{
+  //we may have issues if the rhs references variables
+  //that are scoped inside the loop
+}
 
 void
 visitStrideCompoundStmt(clang::CompoundStmt* stmt, ForLoopSpec* spec)
@@ -438,6 +515,7 @@ getStride(Stmt* stmt, ForLoopSpec* spec)
 void
 visitPredicateBinaryOperator(BinaryOperator* op, ForLoopSpec* spec)
 {
+  setLoopControlExpr(spec->predicateMax, op->getRHS());
   spec->predicateMax = op->getRHS();
 }
 
@@ -513,7 +591,12 @@ getTripCount(ForLoopSpec* spec)
 void
 addLoopContribution(std::ostream& os, Loop& loop)
 {
-  os << "{ int tripCount" << loop.body.depth << "=";
+  os << "{ ";
+  for (auto& str : scopedVariables){
+    //might have some special vars to "elevate" in scope
+    os << str << "; ";
+  }
+  os << " int tripCount" << loop.body.depth << "=";
   if (loop.body.depth > 0){
     os << "tripCount" << (loop.body.depth-1) << "*";
   }
@@ -538,6 +621,12 @@ addLoopContribution(std::ostream& os, Loop& loop)
   os << "}";
 }
 
+void
+setLoopContext(ForStmt* stmt){
+  Stmt* body = stmt->getBody();
+  scopeStartLine = body->getLocStart();
+}
+
 };
 
 void
@@ -560,13 +649,23 @@ SSTComputePragma::defaultAct(Stmt *stmt, Rewriter &r)
 void
 SSTComputePragma::visitForStmt(ForStmt *stmt, Rewriter &r)
 {
-  ComputeVisitor vis(*CI);
+  ComputeVisitor vis(*CI, *pragmaList, nullptr); //null, no parent
   Loop loop(0); //depth zeros
+  vis.setLoopContext(stmt);
   vis.visitLoop(stmt,loop);
   std::stringstream sstr;
   sstr << "{ uint64_t flops(0); uint64_t readBytes(0); uint64_t writeBytes(0); uint64_t intops(0); ";
   vis.addLoopContribution(sstr, loop);
   sstr << "sstmac_compute_detailed(flops,intops,readBytes); /*assume write-through for now*/";
   sstr << " }";
+
+  PresumedLoc start = CI->getSourceManager().getPresumedLoc(stmt->getLocStart());
+  PresumedLoc stop = CI->getSourceManager().getPresumedLoc(stmt->getLocEnd());
+  int numLinesDeleted = stop.getLine() - start.getLine();
+  //to preserve the correspondence of line numbers
+  for (int i=0; i < numLinesDeleted; ++i){
+    sstr << "\n";
+  }
+
   r.ReplaceText(stmt->getSourceRange(), sstr.str());
 }

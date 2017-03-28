@@ -240,6 +240,12 @@ mpi_api::allgather(int sendcount, MPI_Datatype sendtype,
 }
 
 int
+mpi_api::allgather(int count, MPI_Datatype type, MPI_Comm comm){
+  return allgather(count, type, count, type, comm);
+}
+
+
+int
 mpi_api::allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                    void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
 {

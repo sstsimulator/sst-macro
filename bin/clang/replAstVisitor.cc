@@ -6,6 +6,76 @@ using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
 
+void
+ReplGlobalASTVisitor::initMPICalls()
+{
+  mpiCalls_["irecv"] = &ReplGlobalASTVisitor::visitPt2Pt;
+  mpiCalls_["isend"] = &ReplGlobalASTVisitor::visitPt2Pt;
+  mpiCalls_["recv"] = &ReplGlobalASTVisitor::visitPt2Pt;
+  mpiCalls_["send"] = &ReplGlobalASTVisitor::visitPt2Pt;
+  mpiCalls_["bcast"] = &ReplGlobalASTVisitor::visitPt2Pt; //bit of a hack
+  mpiCalls_["allreduce"] = &ReplGlobalASTVisitor::visitReduce;
+  mpiCalls_["reduce"] = &ReplGlobalASTVisitor::visitReduce;
+  mpiCalls_["allgather"] = &ReplGlobalASTVisitor::visitCollective;
+}
+
+void
+ReplGlobalASTVisitor::initReservedNames()
+{
+  reservedNames_.insert("dont_ignore_this");
+}
+
+void
+ReplGlobalASTVisitor::initHeaders()
+{
+  const char* headerListFile = getenv("SSTMAC_HEADERS");
+  if (headerListFile == nullptr){
+    const char* allHeaders = getenv("SSTMAC_ALL_HEADERS");
+    if (allHeaders == nullptr){
+      std::cerr << "WARNING: No header list specified through environment variable SSTMAC_HEADERS" << std::endl;
+    }
+    return;
+  }
+
+  std::ifstream ifs(headerListFile);
+  if (!ifs.good()){
+    std::cerr << "Bad header list from environment SSTMAC_HEADERS=" << headerListFile << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  std::string line;
+  char fullpath[256];
+  while (ifs.good()){
+    std::getline(ifs, line);
+    validHeaders_.insert(fullpath);
+  }
+}
+
+bool
+ReplGlobalASTVisitor::shouldVisitDecl(VarDecl* D){
+  if (isa<ParmVarDecl>(D) || D->isImplicit() || insideClass_ || insideFxn_){
+    return false;
+  }
+
+  SourceLocation startLoc = D->getLocStart();
+  PresumedLoc ploc = ci_->getSourceManager().getPresumedLoc(startLoc);
+  SourceLocation headerLoc = ploc.getIncludeLoc();
+  //std::cout << ploc.getFilename() << std::boolalpha << " " << headerLoc.isValid() << std::endl;
+
+  bool useAllHeaders = false;
+  std::set<std::string> validHeaders;
+  if (headerLoc.isValid() && !useAllHeaders){
+    //we are inside a header
+    char fullpathBuffer[1024];
+    std::string filename = ci_->getSourceManager().getFilename(startLoc).str();
+    const char* fullpath = realpath(filename.c_str(), fullpathBuffer);
+    //is this in the list of valid headers
+    return validHeaders.find(fullpath) != validHeaders.end();
+  }
+  //not a header - good to go
+  return true;
+}
+
 
 bool
 ReplGlobalASTVisitor::VisitCXXNewExpr(CXXNewExpr *expr)
@@ -119,59 +189,54 @@ ReplGlobalASTVisitor::VisitDeclRefExpr(DeclRefExpr* expr){
 }
 
 void
-ReplGlobalASTVisitor::initReservedNames()
+ReplGlobalASTVisitor::visitCollective(CallExpr *expr)
 {
-  reservedNames_.insert("dont_ignore_this");
+  //first buffer argument to nullptr
+  if (expr->getArg(0)->getType()->isPointerType()){
+    //make sure this isn't a shortcut function without buffers
+    rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
+    rewriter_.ReplaceText(expr->getArg(3)->getSourceRange(), "nullptr");
+  }
 }
 
 void
-ReplGlobalASTVisitor::initHeaders()
+ReplGlobalASTVisitor::visitReduce(CallExpr *expr)
 {
-  const char* headerListFile = getenv("SSTMAC_HEADERS");
-  if (headerListFile == nullptr){
-    const char* allHeaders = getenv("SSTMAC_ALL_HEADERS");
-    if (allHeaders == nullptr){
-      std::cerr << "WARNING: No header list specified through environment variable SSTMAC_HEADERS" << std::endl;
-    }
-    return;
+  //first buffer argument to nullptr
+  if (expr->getArg(0)->getType()->isPointerType()){
+    //make sure this isn't a shortcut function without buffers
+    rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
+    rewriter_.ReplaceText(expr->getArg(1)->getSourceRange(), "nullptr");
   }
+}
 
-  std::ifstream ifs(headerListFile);
-  if (!ifs.good()){
-    std::cerr << "Bad header list from environment SSTMAC_HEADERS=" << headerListFile << std::endl;
-    exit(EXIT_FAILURE);
-  }
-
-  std::string line;
-  char fullpath[256];
-  while (ifs.good()){
-    std::getline(ifs, line);
-    validHeaders_.insert(fullpath);
+void
+ReplGlobalASTVisitor::visitPt2Pt(CallExpr *expr)
+{
+  //first buffer argument to nullptr
+  if (expr->getArg(0)->getType()->isPointerType()){
+    //make sure this isn't a shortcut function without buffers
+    rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
   }
 }
 
 bool
-ReplGlobalASTVisitor::shouldVisitDecl(VarDecl* D){
-  if (isa<ParmVarDecl>(D) || D->isImplicit()){
-    return false;
+ReplGlobalASTVisitor::VisitCXXMemberCallExpr(CXXMemberCallExpr* expr)
+{
+  CXXRecordDecl* cls = expr->getRecordDecl();
+  std::string clsName = cls->getNameAsString();
+  //std::cout << "got call on " << clsName << std::endl;
+  if (clsName == "mpi_api"){
+    FunctionDecl* decl = expr->getDirectCallee();
+    if (!decl){
+      errorAbort(expr->getLocStart(), *ci_, "invalid MPI call");
+    }
+    auto iter = mpiCalls_.find(decl->getNameAsString());
+    if (iter != mpiCalls_.end()){
+      MPI_Call call = iter->second;
+      (this->*call)(expr);
+    }
   }
-
-  SourceLocation startLoc = D->getLocStart();
-  PresumedLoc ploc = ci_->getSourceManager().getPresumedLoc(startLoc);
-  SourceLocation headerLoc = ploc.getIncludeLoc();
-  //std::cout << ploc.getFilename() << std::boolalpha << " " << headerLoc.isValid() << std::endl;
-
-  bool useAllHeaders = false;
-  std::set<std::string> validHeaders;
-  if (headerLoc.isValid() && !useAllHeaders){
-    //we are inside a header
-    char fullpathBuffer[1024];
-    std::string filename = ci_->getSourceManager().getFilename(startLoc).str();
-    const char* fullpath = realpath(filename.c_str(), fullpathBuffer);
-    //is this in the list of valid headers
-    return validHeaders.find(fullpath) != validHeaders.end();
-  }
-  //not a header - good to go
   return true;
 }
 
@@ -192,10 +257,6 @@ bool
 ReplGlobalASTVisitor::VisitVarDecl(VarDecl* D){
   bool valid = shouldVisitDecl(D);
   if (!valid)
-    return true;
-
-  /** not a global variable */
-  if (insideClass_ || insideFxn_)
     return true;
 
   if (reservedNames_.find(D->getNameAsString()) != reservedNames_.end()){
@@ -260,6 +321,9 @@ ReplGlobalASTVisitor::VisitVarDecl(VarDecl* D){
 
   SourceLocation endLoc = Lexer::findLocationAfterToken(D->getLocEnd(), tok::semi,
                                  ci_->getSourceManager(), ci_->getLangOpts(), false);
+  if (endLoc.isInvalid()){
+    errorAbort(D->getLocStart(), *ci_, "failed replacing global variable declaration");
+  }
   rewriter_.InsertText(endLoc, os.str());
   return true;
 }
@@ -299,6 +363,10 @@ ReplGlobalASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
   } else if (D->isTemplateInstantiation()){
     return true; //do not visit implicitly instantiated template stuff
   }
+
+  if (D->isThisDeclarationADefinition())
+    VisitDecl(D); //check for pragmas on it
+
   ++insideFxn_;
   TraverseStmt(D->getBody());
   --insideFxn_;
@@ -352,6 +420,21 @@ ReplGlobalASTVisitor::TraverseFunctionTemplateDecl(FunctionTemplateDecl *D)
 }
 
 bool
+ReplGlobalASTVisitor::TraverseCXXConstructorDecl(CXXConstructorDecl *D)
+{
+  if (D->isTemplateInstantiation())
+    return true;
+
+  ++insideFxn_;
+  for (auto *I : D->inits()) {
+    TraverseConstructorInitializer(I);
+  }
+  TraverseCXXMethodDecl(D);
+  --insideFxn_;
+  return true;
+}
+
+bool
 ReplGlobalASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
 {
   //do not traverse this - will mess everything up
@@ -359,29 +442,39 @@ ReplGlobalASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
   if (D->isTemplateInstantiation())
     return true;
 
-  if (CXXConstructorDecl *Ctor = dyn_cast<CXXConstructorDecl>(D)) {
-    // Constructor initializers.
-    for (auto *I : Ctor->inits()) {
-      TraverseConstructorInitializer(I);
-    }
-  }
+  ++insideFxn_;
 
   if (D->isThisDeclarationADefinition()) {
+    VisitDecl(D); //check for pragmas
     TraverseStmt(D->getBody());
   }
 
+  --insideFxn_;
   return true;
 }
 
 bool
 ReplGlobalASTVisitor::VisitStmt(Stmt *S)
 {
-  SSTPragma* prg = pragmas_.takeMatch(S);
-  if (prg){
+
+  SSTPragma* prg;
+  while ((prg = pragmas_.takeMatch(S))){
     pragma_config_.pragmaDepth++;
     activePragmas_[S] = prg;
     //pragma takes precedence - must occur in pre-visit
     prg->activate(S, rewriter_, pragma_config_);
+  }
+  return true;
+}
+
+bool
+ReplGlobalASTVisitor::VisitDecl(Decl *D)
+{
+  SSTPragma* prg;
+  while ((prg = pragmas_.takeMatch(D))){
+    pragma_config_.pragmaDepth++;
+    //pragma takes precedence - must occur in pre-visit
+    prg->activate(D, rewriter_, pragma_config_);
   }
   return true;
 }
@@ -399,6 +492,7 @@ ReplGlobalASTVisitor::dataTraverseStmtPost(Stmt* S)
   if (iter != activePragmas_.end()){
     SSTPragma* prg = iter->second;
     prg->deactivate(S, pragma_config_);
+    activePragmas_.erase(iter);
     pragma_config_.pragmaDepth--;
   }
   return true;

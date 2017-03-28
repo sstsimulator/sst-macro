@@ -20,15 +20,20 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
   {
     initHeaders();
     initReservedNames();
+    initMPICalls();
   }
 
   bool VisitStmt(clang::Stmt* S);
+
+  bool VisitDecl(clang::Decl* D);
 
   bool VisitDeclRefExpr(clang::DeclRefExpr* expr);
 
   bool VisitCXXNewExpr(clang::CXXNewExpr* expr);
 
   bool VisitCXXDeleteExpr(clang::CXXDeleteExpr* expr);
+
+  bool VisitCXXMemberCallExpr(clang::CXXMemberCallExpr* expr);
 
   bool VisitUnaryOperator(clang::UnaryOperator* op);
 
@@ -61,6 +66,8 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
   bool TraverseFunctionTemplateDecl(clang::FunctionTemplateDecl* D);
 
   bool TraverseCXXMethodDecl(clang::CXXMethodDecl *D);
+
+  bool TraverseCXXConstructorDecl(clang::CXXConstructorDecl* D);
 
   bool dataTraverseStmtPre(clang::Stmt* S);
 
@@ -98,6 +105,8 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
 
   void initReservedNames();
 
+  void initMPICalls();
+
   void replaceMain(clang::FunctionDecl* mainFxn);
 
  private:
@@ -118,6 +127,14 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
   std::set<std::string> reservedNames_;
   PragmaConfig pragma_config_;
   std::map<clang::Stmt*,SSTPragma*> activePragmas_;
+
+  typedef void (ReplGlobalASTVisitor::*MPI_Call)(clang::CallExpr* expr);
+  std::map<std::string, MPI_Call> mpiCalls_;
+
+ private:
+  void visitCollective(clang::CallExpr* expr);
+  void visitReduce(clang::CallExpr* expr);
+  void visitPt2Pt(clang::CallExpr* expr);
 
 };
 

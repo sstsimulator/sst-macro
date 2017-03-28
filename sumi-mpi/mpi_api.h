@@ -356,9 +356,7 @@ class mpi_api :
           MPI_Datatype recvtype, int root, MPI_Comm comm);
 
   int
-  allgather(int count, MPI_Datatype type, MPI_Comm comm){
-    return allgather(count, type, count, type, comm);
-  }
+  allgather(int count, MPI_Datatype type, MPI_Comm comm);
 
   int
   allgather(int sendcount, MPI_Datatype sendtype,

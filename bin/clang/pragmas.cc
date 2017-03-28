@@ -7,16 +7,21 @@ using namespace clang::tooling;
 
 #define scase(type,s,rw) \
   case(clang::Stmt::type##Class): \
-    visit##type(clang::cast<type>(s),rw); break \
+    visit##type(clang::cast<type>(s),rw); break
+
+#define dcase(type,d,rw) \
+  case(clang::Decl::type): \
+    visit##type##Decl(clang::cast<type##Decl>(d),rw); break
 
 #define lexify(x) \
   PP.Lex(x); std::cout << x.getName(); \
   if (x.getKind() == tok::identifier) std::cout << " " << x.getIdentifierInfo()->getNameStart(); \
   std::cout << std::endl;
 
+
+
 static int pragmaDepth = 0;
 static int maxPragmaDepth = 0;
-static SSTPragma* topPragma = nullptr;
 std::list<SSTPragma*> pendingPragmas;
 
 void
@@ -24,12 +29,8 @@ SSTPragmaHandler::configure(Token& PragmaTok, Preprocessor& PP, SSTPragma* fsp)
 {
   pragmaDepth++;
   maxPragmaDepth++;
-  if (topPragma){
-    topPragma->subPragmas.push_back(fsp);
-  } else {
-    pragmas_.push_back(fsp);
-    topPragma = fsp;
-  }
+  pragmas_.push_back(fsp);
+  fsp->pragmaList = &pragmas_;
   fsp->name = getName();
   fsp->startLoc = PragmaTok.getLocation();
   fsp->CI = &ci_;
@@ -48,7 +49,6 @@ SSTPragmaHandler::configure(Token& PragmaTok, Preprocessor& PP, SSTPragma* fsp)
       PP.Lex(throwAway);
     }
     maxPragmaDepth = 0;
-    topPragma = nullptr;
   }
   --pragmaDepth;
 }
@@ -77,7 +77,6 @@ SSTTokenStreamPragmaHandler::HandlePragma(Preprocessor &PP, PragmaIntroducerKind
   std::list<Token> tokens;
   Token next; PP.Lex(next);
   while (!next.is(tok::eod)){
-    std::cout << getName().str() << " lexed " << next.getName() << std::endl;
     tokens.push_back(next);
     PP.Lex(next);
   }
@@ -89,6 +88,29 @@ void
 SSTDeletePragma::activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg){
   clang::SourceRange rng(s->getLocStart(), s->getLocEnd());
   r.ReplaceText(rng,"");
+}
+
+void
+SSTNewPragma::visitCXXMethodDecl(CXXMethodDecl* decl, Rewriter& r)
+{
+  defaultAct(decl->getBody(), r, true, false);
+}
+
+void
+SSTNewPragma::visitFunctionDecl(FunctionDecl* decl, Rewriter& r)
+{
+  defaultAct(decl->getBody(), r, true, false);
+}
+
+void
+SSTNewPragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
+{
+  switch(d->getKind()){
+    dcase(Function,d,r);
+    dcase(CXXMethod,d,r);
+    default:
+      break;
+  }
 }
 
 void
@@ -112,7 +134,7 @@ SSTNewPragma::visitDeclStmt(DeclStmt *stmt, Rewriter &r)
         deleted->insert(init);
       } else {
         //nope, need extra hacking
-        defaultAct(stmt,r);
+        defaultAct(stmt,r,false,true);
       }
     }
   } else {
@@ -131,28 +153,38 @@ SSTNewPragma::visitBinaryOperator(BinaryOperator *op, Rewriter& r)
     r.ReplaceText(op->getSourceRange(), pp.os.str());
     deleted->insert(op->getRHS());
   } else {
-    defaultAct(op,r);
+    defaultAct(op,r,false,true);
   }
 }
 
 void
-SSTNewPragma::defaultAct(Stmt* stmt, Rewriter& r)
+SSTNewPragma::defaultAct(Stmt* stmt, Rewriter& r, bool insertStartAfter, bool insertStopAfter)
 {
-  r.InsertText(stmt->getLocStart(), "should_skip_operator_new()=true;", false);
+  SourceLocation startLoc = stmt->getLocStart();
+  SourceLocation insertLoc = endLoc;
+  if (insertStartAfter){
+    insertLoc = Lexer::getLocForEndOfToken(startLoc, 0,
+                        CI->getSourceManager(), CI->getLangOpts());
+  }
+  r.InsertText(insertLoc, "should_skip_operator_new()=true;", false);
+
   SourceLocation endLoc = stmt->getLocEnd();
-  SourceLocation insertLoc = Lexer::getLocForEndOfToken(endLoc, 0,
-                      CI->getSourceManager(), CI->getLangOpts());
-  bool insertAfter = true;
+  insertLoc = endLoc;
+  if (insertStopAfter){
+    insertLoc = Lexer::getLocForEndOfToken(endLoc, 0,
+                        CI->getSourceManager(), CI->getLangOpts());
+  }
   if (insertLoc.isInvalid()){
     errorAbort(endLoc, *CI, "trouble parsing sst new pragma");
   }
-  r.InsertText(insertLoc, "should_skip_operator_new()=false;", insertAfter);
+  //locations are weird with functions - insert after is always false
+  r.InsertText(insertLoc, "should_skip_operator_new()=false;", false);
 }
 
 void
 SSTNewPragma::visitCompoundStmt(clang::CompoundStmt* stmt, Rewriter& r)
 {
-  defaultAct(stmt,r);
+  defaultAct(stmt,r,false,true);
 }
 
 void
@@ -163,7 +195,7 @@ SSTNewPragma::activate(Stmt* stmt, Rewriter &r, PragmaConfig& cfg)
     scase(BinaryOperator,stmt,r);
     scase(CompoundStmt,stmt,r);
     default: //just delete what follows
-      defaultAct(stmt,r);
+      defaultAct(stmt,r,false,false);
       break;
   }
 }
@@ -209,36 +241,37 @@ SSTMallocPragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig& cfg)
   }
 }
 
-SSTPragma*
-SSTReplacePragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+std::string
+SSTReplacePragmaHandler::parse(CompilerInstance& CI, SourceLocation loc,
+                               const std::list<Token>& tokens, std::ostream& os)
 {
   if (tokens.size() < 2){
-    errorAbort(loc, ci_, "pragma replace requires both a function and replacement text");
+    errorAbort(loc, CI, "pragma replace requires both a function and replacement text");
   }
   const Token& fxn = tokens.front();
   if (!fxn.is(tok::identifier)){
-    errorAbort(loc, ci_, "pragma replace got invalid function name");
+    errorAbort(loc, CI, "pragma replace got invalid function name");
   }
-  std::stringstream sstr;
+
   auto iter = tokens.begin(); ++iter; //skip front
   auto end = tokens.end();
   for ( ; iter != end; ++iter){
     const Token& next = *iter;
     switch (next.getKind()){
       case tok::identifier:
-        sstr << next.getIdentifierInfo()->getNameStart();
+         os << next.getIdentifierInfo()->getNameStart();
         break;
       case tok::l_paren:
-        sstr << '(';
+         os << '(';
         break;
       case tok::r_paren:
-        sstr << ')';
+         os << ')';
         break;
       case tok::comma:
-        sstr << ',';
+         os << ',';
         break;
       case tok::kw_nullptr:
-        sstr << "nullptr";
+         os << "nullptr";
         break;
       case tok::string_literal:
       case tok::numeric_constant:
@@ -246,17 +279,50 @@ SSTReplacePragmaHandler::allocatePragma(SourceLocation loc, const std::list<Toke
         const char* data = next.getLiteralData(); //not null-terminated, direct from buffer
         for (int i=0 ; i < next.getLength(); ++i){
           //must explicitly add chars, this will not hit a \0
-          sstr << data[i];
+           os << data[i];
         }
         break;
       }
       default:
         std::cerr << "bad token: " << next.getName() << std::endl;
-        errorAbort(loc, ci_, "invalid token in replace pragma");
+        errorAbort(loc, CI, "invalid token in replace pragma");
         break;
     }
   }
-  return new SSTReplacePragma(fxn.getIdentifierInfo()->getNameStart(), sstr.str());
+  return fxn.getIdentifierInfo()->getNameStart();
+}
+
+SSTPragma*
+SSTReplacePragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  std::stringstream sstr;
+  std::string fxn = parse(ci_, loc, tokens, sstr);
+  return new SSTReplacePragma(fxn, sstr.str());
+}
+
+SSTPragma*
+SSTStartReplacePragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  std::stringstream sstr;
+  std::string fxn = SSTReplacePragmaHandler::parse(ci_, loc, tokens, sstr);
+  return new SSTStartReplacePragma(fxn, sstr.str());
+}
+
+SSTPragma*
+SSTStopReplacePragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  std::string fxn = tokens.front().getIdentifierInfo()->getNameStart();
+  return new SSTStopReplacePragma(fxn, "not relevant");
+}
+
+void
+SSTReplacePragma::activate(Decl *d, std::list<std::string>& vars)
+{
+  VarDecl* vd = cast<VarDecl>(d);
+  std::stringstream sstr;
+  sstr << vd->getType().getAsString() << " "
+       << fxn_ << "(" << replacement_ << ")";
+  vars.push_back(sstr.str());
 }
 
 void
@@ -270,3 +336,4 @@ SSTReplacePragma::deactivate(Stmt *s, PragmaConfig &cfg)
 {
   cfg.functionReplacements.erase(fxn_);
 }
+
