@@ -127,10 +127,11 @@ pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
       int muxer_offset = tile;
       //int muxer_max_port = tile;
       //muxer->set_event_location(my_addr_);
-      muxer->configure_offset_ports(muxer_offset, 1);
+      muxer->configure_div_ports(ntiles, 1);
       muxer->set_tile_id(location);
 
       pisces_demuxer* dm = new pisces_demuxer(demuxer_params, this);
+//      std::cerr << "created dm: " << dm << "\n";
       //routed port numbers are 0-48, e.g. for a 6x8
       //we route locally to a given column number
       int dm_mod = ncols_;
@@ -171,8 +172,12 @@ pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
         int tile_muxer = row_col_to_tile(rm, cx);
         pisces_muxer* muxer = col_output_muxers_[tile_muxer];
         //use zero-based input ports corresponding to row number for the muxer
-        xbar->set_output(xbar_params, tile_muxer, rx, muxer->payload_handler());
-        muxer->set_input(muxer_params, rx, tile_muxer, xbar->credit_handler());
+        pisces_debug(
+         "Connecting %s:%p port %d to %s:%p port %d",
+          xbar->to_string().c_str(), this, rm,
+          muxer->to_string().c_str(), this, rx);
+        xbar->set_output(xbar_params, rm * ncols_, rx, muxer->payload_handler());
+        muxer->set_input(muxer_params, rx, rm, xbar->credit_handler());
         //xbar->set_output(xbar_params, rm, rx, muxer->payload_handler());
         //muxer->set_input(muxer_params, rx, rm, xbar->credit_handler());
 
@@ -190,7 +195,7 @@ pisces_tiled_switch::connect_output(
 {
   params->add_param_override("num_vc", router_->max_num_vc());
   pisces_sender* muxer = col_output_muxers_[src_outport];
-  std::cerr << "setting muxer output on outport " << src_outport << "\n";
+  //std::cerr << "setting muxer output on outport " << src_outport << "\n";
   muxer->set_output(params, src_outport, dst_inport, mod);
 }
 
@@ -202,6 +207,7 @@ pisces_tiled_switch::connect_input(
   event_handler *mod)
 {
   pisces_sender* demuxer = row_input_demuxers_[dst_inport];
+//  std::cerr << "demuxer: " << demuxer << std::endl;
   demuxer->set_input(params, dst_inport, src_outport, mod);
 }
 

@@ -197,9 +197,9 @@ interconnect::connect_endpoints(sprockit::sim_parameters* inj_params,
         injaddr = topology_->netlink_to_injection_switch(netlink_id, inj_ports, num_inj_ports);
         ejaddr = topology_->netlink_to_injection_switch(netlink_id, ej_ports, num_ej_ports);
         ep_id = netlink_id;
-      } else {
-        continue; //no connection required
-      }
+    } else {
+      continue; //no connection required
+    }
     } else {
       ep = nodes_[nodeaddr]->get_nic();
       injaddr = topology_->node_to_injection_switch(nodeaddr, inj_ports, num_inj_ports);
@@ -388,10 +388,12 @@ interconnect::connect_switches(sprockit::sim_parameters* switch_params)
                 topology_->switch_label(conn.dst).c_str(),
                 conn.src_outport, conn.dst_inport);
 
+      //std::cerr << "making switch to switch connection, outport " << conn.src_outport << "\n";
       src_sw->connect_output(port_params,
                              conn.src_outport,
                              conn.dst_inport,
                              dst_sw->payload_handler(conn.dst_inport));
+//      std::cerr << "dst_sw: " << dst_sw << "\n";
       dst_sw->connect_input(port_params,
                             conn.src_outport,
                             conn.dst_inport,

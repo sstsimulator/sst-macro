@@ -132,7 +132,7 @@ tiled_dragonfly::xy_connected_to_group(int myX, int myY, int myG, int dstg) cons
 void
 tiled_dragonfly::connected_outports(switch_id src, std::vector<sstmac::hw::topology::connection>& conns) const
 {
-  int max_num_conns = (x_ - 1) + (y_ - 1) + group_con_;
+  int max_num_conns = red_[0] * (x_ - 1) + red_[1] * (y_ - 1) + group_con_;
   conns.resize(max_num_conns);
   int index=0;
 
@@ -147,6 +147,8 @@ tiled_dragonfly::connected_outports(switch_id src, std::vector<sstmac::hw::topol
       conn.dst = dst_it - dst_vec->begin();
       conn.src_outport = (*conn_it).first;
       conn.dst_inport = (*conn_it).second;
+//      std::cerr << sprockit::printf("adding intra conn: src:%d dst:%d op:%d ip:%d\n",
+//             conn.src, conn.dst, conn.src_outport, conn.dst_inport);
       ++index;
     }
   }
@@ -162,6 +164,8 @@ tiled_dragonfly::connected_outports(switch_id src, std::vector<sstmac::hw::topol
       conn.dst = (*dst_it).first;
       conn.src_outport = (*conn_it).first;
       conn.dst_inport = (*conn_it).second;
+//      std::cerr << sprockit::printf("adding inter conn: src:%d dst:%d op:%d ip:%d\n",
+//             conn.src, conn.dst, conn.src_outport, conn.dst_inport);
       ++index;
     }
   }
@@ -312,22 +316,22 @@ tiled_dragonfly::read_intragroup_connections()
       int inport = dst_port_y * tiles_x_ + dst_port_x;
 
       // hack to map Edison's two geometric configurations back to a single config
-      int port_remap[48] = {
-        7, -1, -1, -1, -1, -1, -1, 0, 14, 15,
-        -1, -1, -1, -1, 8, 9, 20, 23, 28, 36,
-        16, 17, 18, 19, 29, 31, 38, 21, 24, 25,
-        26, 27, 30, 37, 39, 22, 32, 33, 34, 35,
-        -1, -1, -1, -1, -1, -1, -1, -1 };
-      if (src_x > 7) {
-        if (port_remap[outport] < 0)
-          spkt_throw(sprockit::value_error, "bad remap value\n");
-        outport = port_remap[outport];
-      }
-      if (dst_x > 7) {
-        if (port_remap[inport] < 0)
-          spkt_throw(sprockit::value_error, "bad remap value\n");
-        inport = port_remap[inport];
-      }
+//      int port_remap[48] = {
+//        7, -1, -1, -1, -1, -1, -1, 0, 14, 15,
+//        -1, -1, -1, -1, 8, 9, 20, 23, 28, 36,
+//        16, 17, 18, 19, 29, 31, 38, 21, 24, 25,
+//        26, 27, 30, 37, 39, 22, 32, 33, 34, 35,
+//        -1, -1, -1, -1, -1, -1, -1, -1 };
+//      if (src_x > 7) {
+//        if (port_remap[outport] < 0)
+//          spkt_throw(sprockit::value_error, "bad remap value\n");
+//        outport = port_remap[outport];
+//      }
+//      if (dst_x > 7) {
+//        if (port_remap[inport] < 0)
+//          spkt_throw(sprockit::value_error, "bad remap value\n");
+//        inport = port_remap[inport];
+//      }
 
       top_debug("node %d,%s connecting to node %d,%s: outport %d, inport %d",
                 int(src_id), set_string(src_x, src_y, g).c_str(),

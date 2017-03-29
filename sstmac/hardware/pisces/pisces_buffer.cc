@@ -25,10 +25,10 @@ pisces_buffer::set_input(
   int this_inport, int src_outport,
   event_handler* input)
 {
-  debug_printf(sprockit::dbg::pisces_config,
-    "On %s:%d setting input %s:%d",
-    to_string().c_str(), this_inport,
-    input->to_string().c_str(), src_outport);
+//  debug_printf(sprockit::dbg::pisces_config,
+//    "On %s:%d setting input %s:%d",
+//    to_string().c_str(), this_inport,
+//    input->to_string().c_str(), src_outport);
   input_.src_outport = src_outport;
   input_.handler = input;
 }
@@ -38,11 +38,10 @@ pisces_buffer::set_output(sprockit::sim_parameters* params,
                                int this_outport, int dst_inport,
                                event_handler* output)
 {
-  debug_printf(sprockit::dbg::pisces_config,
-  "On %s:%d setting output %s:%d",
-  to_string().c_str(), this_outport,
-  output->to_string().c_str(), dst_inport);
-
+//  debug_printf(sprockit::dbg::pisces_config,
+//  "On %s:%d setting output %s:%d",
+//  to_string().c_str(), this_outport,
+//  output->to_string().c_str(), dst_inport);
   output_.handler = output;
   output_.dst_inport = dst_inport;
 }

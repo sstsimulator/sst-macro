@@ -62,9 +62,13 @@ class pisces_NtoM_queue :
   inline int
   local_port(int port) const {
     int lp;
+//    std::cerr << "port: " << port << std::endl;
     if (port_mod_){
+//      std::cerr << "yes port_mod_: " << port_mod_ << std::endl;
       lp =  port % port_mod_;
     } else {
+//      std::cerr << "no port_div_: " << port_div_ << " port_offset: "
+//                << port_offset_ << std::endl;
       lp = port / port_div_ - port_offset_;
     }
     if (lp < 0) {
@@ -103,7 +107,6 @@ class pisces_NtoM_queue :
   pisces_bandwidth_arbitrator* arb_;
 
   input_map inputs_;
-  //indexed by slot number = (port,vc)
   output_map outputs_;
   //indexed by slot number = (port,vc)
   credit_map credits_;
