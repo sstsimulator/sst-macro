@@ -18,7 +18,7 @@
 #include <string>
 #include <functional>
 
-#include "mpi_calls.h"
+#include <sstmac/skeletons/otf2_trace_replay/callid.h>
 
 // forward declare
 class OTF2TraceReplayApp;

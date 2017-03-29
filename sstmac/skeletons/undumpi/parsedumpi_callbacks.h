@@ -12,7 +12,7 @@
 #ifndef SSTMAC_SOFTWARE_SKELETONS_UNDUMPI_PARSEDUMPI_CALLBACKS_H_INCLUDED
 #define SSTMAC_SOFTWARE_SKELETONS_UNDUMPI_PARSEDUMPI_CALLBACKS_H_INCLUDED
 
-#include <sstmac/skeletons/sumi_undumpi/parsedumpi.h>
+#include <sstmac/skeletons/undumpi/parsedumpi.h>
 #include <sumi-mpi/sstmac_mpi_integers.h>
 #include <sumi-mpi/mpi_api_fwd.h>
 #include <sumi-mpi/mpi_status.h>

@@ -32,6 +32,10 @@ AM_CPPFLAGS += \
  -I$(top_builddir)/dumpi \
  -I$(top_srcdir)/dumpi
 
+if HAVE_OTF2
+AM_LDFLAGS += $(OTF2_LDFLAGS)
+endif
+
 if !INTEGRATED_SST_CORE
 bin_PROGRAMS = sstmac sstmac_top_info
 

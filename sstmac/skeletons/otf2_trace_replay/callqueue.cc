@@ -9,8 +9,8 @@
  *  SST/macroscale directory.
  */
 
-#include "callqueue.h"
-#include "otf2_trace_replay.h"
+#include <sstmac/skeletons/otf2_trace_replay/callqueue.h>
+#include <sstmac/skeletons/otf2_trace_replay/otf2_trace_replay.h>
 
 using namespace std;
 

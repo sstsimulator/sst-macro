@@ -11,7 +11,7 @@
 
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
-#include <sstmac/skeletons/sumi_undumpi/parsedumpi_callbacks.h>
+#include <sstmac/skeletons/undumpi/parsedumpi_callbacks.h>
 #include <sprockit/errors.h>
 #include <sprockit/output.h>
 #include <cstring>

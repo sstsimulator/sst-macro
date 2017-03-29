@@ -33,8 +33,8 @@ libsstmac_skeletons_la_SOURCES = \
   test/mpi_ping_all.cc \
   test/mpi_delay_stats.cc \
   test/mpi_isend_progress.cc \
-  sumi_undumpi/parsedumpi.cc \
-  sumi_undumpi/parsedumpi_callbacks.cc \
+  undumpi/parsedumpi.cc \
+  undumpi/parsedumpi_callbacks.cc \
   test/sstmac_mpi_test_all.cc 
 
 if HAVE_OTF2
@@ -46,9 +46,18 @@ if HAVE_OTF2
 endif
 
 nobase_library_include_HEADERS = \
-  sumi_undumpi/parsedumpi.h \
-  sumi_undumpi/parsedumpi_callbacks.h 
+  undumpi/parsedumpi.h \
+  undumpi/parsedumpi_callbacks.h 
+
+if HAVE_OTF2
+nobase_library_include_HEADERS += \
+ otf2_trace_replay/callbacks.h \
+ otf2_trace_replay/callid.h \
+ otf2_trace_replay/callqueue.h \
+ otf2_trace_replay/mpicall.h \
+ otf2_trace_replay/otf2_trace_replay.h \
+ otf2_trace_replay/structures.h
+endif
 
 
 
-#  test/global_test.cc 

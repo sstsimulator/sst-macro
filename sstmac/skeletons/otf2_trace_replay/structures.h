@@ -15,8 +15,8 @@
 #include <string>
 #include <unordered_map>
 #include <otf2/otf2.h>
-
-using namespace std;
+#include <sstmac/skeletons/otf2_trace_replay/callid.h>
+#include <sprockit/errors.h>
 
 /*
  * Forward declarations for definition tables constructed from definition
@@ -24,39 +24,53 @@ using namespace std;
  */
 
 struct OTF2_ClockProperties {
-    uint64_t timerResolution;
-    uint64_t globalOffset;
-    uint64_t traceLength;
+  uint64_t timerResolution;
+  uint64_t globalOffset;
+  uint64_t traceLength;
 };
 
 struct OTF2_Location {
-    OTF2_StringRef name;
-    OTF2_LocationType locationType;
-    uint64_t numberOfEvents;
-    OTF2_LocationGroupRef locationGroup;
+  OTF2_StringRef name;
+  OTF2_LocationType locationType;
+  uint64_t numberOfEvents;
+  OTF2_LocationGroupRef locationGroup;
 };
 
 struct OTF2_Region {
-    OTF2_StringRef name;
-    OTF2_RegionRole regionRole;
-    OTF2_Paradigm paradigm;
+  OTF2_StringRef name;
+  OTF2_RegionRole regionRole;
+  OTF2_Paradigm paradigm;
 };
 
 struct OTF2_Callpath {
-    OTF2_RegionRef region;
+  OTF2_RegionRef region;
 };
 
 struct OTF2_Group {
-    OTF2_StringRef name;
-    OTF2_GroupType groupType;
-    OTF2_Paradigm paradigm;
-    OTF2_GroupFlag groupFlags;
+  OTF2_StringRef name;
+  OTF2_GroupType groupType;
+  OTF2_Paradigm paradigm;
+  OTF2_GroupFlag groupFlags;
 };
 
 struct OTF2_Comm {
-    OTF2_StringRef name;
+  OTF2_StringRef name;
 };
 
-extern unordered_map<string, int> MPI_call_to_id;
+struct MPINameIDMap {
+  std::unordered_map<std::string, MPI_CALL_ID> idMap;
+  MPI_CALL_ID get(const std::string& str){
+    auto iter = idMap.find(str);
+    if (iter == idMap.end()){
+      std::cerr << "unknown MPI call " << str << "in ID map" << std::endl;
+      //spkt_abort_printf("unknown MPI call %s in ID map", str.c_str());
+      return (MPI_CALL_ID)(0);
+    }
+    return iter->second;
+  }
+  MPINameIDMap();
+};
+
+extern MPINameIDMap MPI_call_to_id;
 
 #endif /* STRUCTURES_H_ */

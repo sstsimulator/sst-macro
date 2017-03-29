@@ -26,7 +26,7 @@ OTF2_CallbackCode def_clock_properties(
     void*    userData,
     uint64_t timerResolution,
     uint64_t globalOffset,
-    uint64_t traceLength );
+    uint64_t traceLength);
 
 OTF2_CallbackCode def_string(
     void*          userData,

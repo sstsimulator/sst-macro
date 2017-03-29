@@ -13,8 +13,8 @@
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/runtime.h>
-#include <sstmac/skeletons/sumi_undumpi/parsedumpi.h>
-#include <sstmac/skeletons/sumi_undumpi/parsedumpi_callbacks.h>
+#include <sstmac/skeletons/undumpi/parsedumpi.h>
+#include <sstmac/skeletons/undumpi/parsedumpi_callbacks.h>
 #include <sstmac/dumpi_util/dumpi_meta.h>
 #include <sstmac/dumpi_util/dumpi_util.h>
 #include <sumi-mpi/mpi_api.h>
@@ -37,7 +37,7 @@ RegisterKeywords(
 
 namespace sumi {
 
-SpktRegister("parsedumpi", sstmac::sw::app, parsedumpi,
+SpktRegister("parsedumpi | dumpi", sstmac::sw::app, parsedumpi,
             "application for parsing and simulating dumpi traces");
 
 using namespace sstmac::hw;

@@ -13,13 +13,19 @@
 #include <functional>
 #include <iomanip>
 
-#include "structures.h"
-#include "callbacks.h"
+#include <sstmac/skeletons/otf2_trace_replay/structures.h>
+#include <sstmac/skeletons/otf2_trace_replay/callbacks.h>
 
-#include "MpiCall.h"
-#include "mpi_calls.h"
-#include "callqueue.h"
-#include "otf2_trace_replay.h"
+#include <sstmac/skeletons/otf2_trace_replay/mpicall.h>
+#include <sstmac/skeletons/otf2_trace_replay/callid.h>
+#include <sstmac/skeletons/otf2_trace_replay/callqueue.h>
+#include <sstmac/skeletons/otf2_trace_replay/otf2_trace_replay.h>
+
+using std::cout;
+using std::cerr;
+using std::endl;
+using std::min;
+using std::setw;
 
 #if 0
     #define DEF_PRINT(...) printf("DEF: " __VA_ARGS__)
@@ -62,7 +68,7 @@ OTF2_CallbackCode def_string(
 
 	auto app = (OTF2TraceReplayApp*)userData;
     app->otf2_string_table.push_back(str);
-    app->otf2_mpi_call_map[self] = MPI_call_to_id[str];
+    app->otf2_mpi_call_map[self] = MPI_call_to_id.get(str);
 
     DEF_PRINT("STRING\n");
     return OTF2_CALLBACK_SUCCESS;
