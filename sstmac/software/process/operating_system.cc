@@ -98,6 +98,8 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
   my_addr_(parent->addr()),
   node_(parent),
   next_msg_id_(0),
+  call_graph_(nullptr),
+  call_graph_active_(false),
   des_context_(nullptr),
   ftq_trace_(nullptr),
   compute_sched_(nullptr),
@@ -583,7 +585,7 @@ operating_system::block(key* req)
   int64_t after_ticks = now().ticks_int64();
   int64_t delta_ticks = after_ticks - before_ticks;
 
-  if (call_graph_) {
+  if (call_graph_ && call_graph_active_) {
     call_graph_->count_trace(delta_ticks, ctxt.current_thread);
   }
 

@@ -166,6 +166,7 @@ mpi_api::do_init(int* argc, char*** argv)
                "mpiapi::init: os has not been initialized yet");
   }
 
+
   comm_factory_ = new mpi_comm_factory(sid().app_, this);
   comm_factory_->init(rank_, nproc_);
 
@@ -185,9 +186,11 @@ mpi_api::do_init(int* argc, char*** argv)
   status_ = is_initialized;
 
 
+  os_->set_call_graph_active(false);
   collective_op_base* op = start_barrier("MPI_Init", MPI_COMM_WORLD);
   wait_collective(op);
   delete op;
+  os_->set_call_graph_active(false);
 
   return MPI_SUCCESS;
 }
@@ -529,7 +532,7 @@ mpi_api::start_collective_sync_delays()
 void
 mpi_api::collect_sync_delays(double wait_start, const message::ptr &msg)
 {
-  if (os_->call_graph()){
+  if (os_->call_graph() && os_->call_graph_active()){
     //there are two possible sync delays
     //#1: For sender, synced - header_arrived
     //#2: For recver, time_sent - wait_start
