@@ -35,6 +35,8 @@ libsstmac_skeletons_la_SOURCES = \
   test/mpi_isend_progress.cc \
   undumpi/parsedumpi.cc \
   undumpi/parsedumpi_callbacks.cc \
+  test/global_test.cc \
+  test/memory_leak_test.cc \
   test/sstmac_mpi_test_all.cc 
 
 if HAVE_OTF2

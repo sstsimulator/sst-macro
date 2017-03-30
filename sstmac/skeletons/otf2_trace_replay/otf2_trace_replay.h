@@ -9,8 +9,8 @@
  *  SST/macroscale directory.
  */
 
-#ifndef OTF2_TRACE_REPLAY_H_
-#define OTF2_TRACE_REPLAY_H_
+#ifndef sstmac_skeletons_otf2_OTF2_TRACE_REPLAY_H_
+#define sstmac_skeletons_otf2_OTF2_TRACE_REPLAY_H_
 
 #include <otf2/otf2.h>
 #include <string>
@@ -60,7 +60,7 @@ class OTF2TraceReplayApp : public sstmac::sw::app {
   std::vector<OTF2_Callpath> otf2_callpaths;
   std::vector<OTF2_Group> otf2_groups;
   std::vector<OTF2_Comm> otf2_comms;
-  std::unordered_map<OTF2_StringRef, int> otf2_mpi_call_map;
+  std::unordered_map<OTF2_StringRef, MPI_CALL_ID> otf2_mpi_call_map;
 
   ~OTF2TraceReplayApp() throw()	{ }
 

@@ -26,11 +26,19 @@ using namespace std;
 
 
 MpiCall::MpiCall() : MpiCall(NULL) {}
+
 MpiCall::MpiCall(OTF2TraceReplayApp* app) : MpiCall(0, 0, app) {}
-MpiCall::MpiCall(OTF2_LocationRef location, OTF2_TimeStamp _start, OTF2TraceReplayApp* app) : MpiCall(location, _start, 0, app) {}
-MpiCall::MpiCall(OTF2_LocationRef location, OTF2_TimeStamp _start, OTF2_TimeStamp _stop, OTF2TraceReplayApp* app) : isready(false), location(location), app(app), request_id(0), name((const char*)"UNKNOWN"), id(-1) {
-    start_time = _start;
-    end_time = _stop;
+
+MpiCall::MpiCall(OTF2_LocationRef location, OTF2_TimeStamp _start, OTF2TraceReplayApp* app) :
+  MpiCall(location, _start, 0, app) {}
+
+MpiCall::MpiCall(OTF2_LocationRef location, OTF2_TimeStamp _start,
+                 OTF2_TimeStamp _stop, OTF2TraceReplayApp* app) :
+  isready(false), location(location), app(app),
+  request_id(0), name((const char*)"UNKNOWN"), id(-1)
+{
+  start_time = _start;
+  end_time = _stop;
 }
 
 bool MpiCall::IsReady() {
@@ -42,9 +50,9 @@ const char* MpiCall::ToString() {
 }
 
 void MpiCall::assert_call(MpiCall* cb, string msg) {
-    if (cb == NULL) {
-        spkt_throw(sprockit::io_error, "ASSERT FAILED: ", msg.c_str());
-    }
+  if (cb == NULL) {
+      spkt_throw(sprockit::io_error, "ASSERT FAILED: ", msg.c_str());
+  }
 }
 
 sstmac::timestamp MpiCall::convert_time(const OTF2_TimeStamp ts) {

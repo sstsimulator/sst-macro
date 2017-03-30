@@ -58,6 +58,8 @@ pisces_memory_packetizer::pisces_memory_packetizer(
   init_noise_model();
 
   self_credit_handler_ = new_handler(this, &pisces_memory_packetizer::recv_credit);
+
+  debug("initializing pisces memory packetizer with mtu %d", packetSize());
 }
 
 link_handler*
@@ -202,6 +204,7 @@ pisces_memory_packetizer::recv_credit(event* ev)
   debug("got credit %s on vn %d", credit->to_string().c_str(), credit->port());
 
   int channel = credit->port();
+  delete credit;
   sendWhatYouCan(channel);
 }
 

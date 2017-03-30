@@ -9,11 +9,12 @@
  *  SST/macroscale directory.
  */
 
-#ifndef MPI_CALLS_H_
-#define MPI_CALLS_H_
+#ifndef sstmac_skeletons_otf2_MPI_CALLS_H_
+#define sstmac_skeletons_otf2_MPI_CALLS_H_
 
 enum MPI_CALL_ID {
-    ID_MPIX_Comm_agree = 0,
+    ID_NULL = 0,
+    ID_MPIX_Comm_agree,
     ID_MPI_File_set_errhandler,
     ID_MPI_Rsend,
     ID_MPIX_Comm_failure_ack,

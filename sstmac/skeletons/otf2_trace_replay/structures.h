@@ -9,8 +9,8 @@
  *  SST/macroscale directory.
  */
 
-#ifndef STRUCTURES_H_
-#define STRUCTURES_H_
+#ifndef sstmac_skeletons_otf2_STRUCTURES_H_
+#define sstmac_skeletons_otf2_STRUCTURES_H_
 
 #include <string>
 #include <unordered_map>
@@ -62,7 +62,7 @@ struct MPINameIDMap {
   MPI_CALL_ID get(const std::string& str){
     auto iter = idMap.find(str);
     if (iter == idMap.end()){
-      std::cerr << "unknown MPI call " << str << "in ID map" << std::endl;
+      //std::cerr << "unknown MPI call " << str << "in ID map" << std::endl;
       //spkt_abort_printf("unknown MPI call %s in ID map", str.c_str());
       return (MPI_CALL_ID)(0);
     }

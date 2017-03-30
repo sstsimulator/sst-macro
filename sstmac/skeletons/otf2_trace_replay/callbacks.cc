@@ -48,122 +48,123 @@ using std::setw;
  */
 
 OTF2_CallbackCode def_clock_properties(
-    void*    userData,
-    uint64_t timerResolution,
-    uint64_t globalOffset,
-    uint64_t traceLength ) {
+  void*    userData,
+  uint64_t timerResolution,
+  uint64_t globalOffset,
+  uint64_t traceLength )
+{
+  auto app = (OTF2TraceReplayApp*)userData;
+  app->otf2_clock_properties =  {
+    timerResolution, globalOffset, traceLength
+  };
 
-	auto app = (OTF2TraceReplayApp*)userData;
-	app->otf2_clock_properties =  {
-        timerResolution, globalOffset, traceLength
-    };
-
-    return OTF2_CALLBACK_SUCCESS;
+  return OTF2_CALLBACK_SUCCESS;
 }
 
 OTF2_CallbackCode def_string(
-    void*          userData,
-    OTF2_StringRef self,
-    const char*    str ) {
-
+  void*          userData,
+  OTF2_StringRef self,
+  const char*    str)
+{
 	auto app = (OTF2TraceReplayApp*)userData;
-    app->otf2_string_table.push_back(str);
-    app->otf2_mpi_call_map[self] = MPI_call_to_id.get(str);
-
-    DEF_PRINT("STRING\n");
-    return OTF2_CALLBACK_SUCCESS;
+  app->otf2_string_table.push_back(str);
+  MPI_CALL_ID id = MPI_call_to_id.get(str);
+  if (id != ID_NULL){
+    app->otf2_mpi_call_map[self] = id;
+  }
+  DEF_PRINT("STRING\n");
+  return OTF2_CALLBACK_SUCCESS;
 }
 
 // probably not needed
 OTF2_CallbackCode def_location(
-    void*                 userData,
-    OTF2_LocationRef      self,
-    OTF2_StringRef        name,
-    OTF2_LocationType     locationType,
-    uint64_t              numberOfEvents,
-    OTF2_LocationGroupRef locationGroup ) {
-
-    DEF_PRINT("LOCATION\n");
-    return OTF2_CALLBACK_SUCCESS;
+  void*                 userData,
+  OTF2_LocationRef      self,
+  OTF2_StringRef        name,
+  OTF2_LocationType     locationType,
+  uint64_t              numberOfEvents,
+  OTF2_LocationGroupRef locationGroup )
+{
+  DEF_PRINT("LOCATION\n");
+  return OTF2_CALLBACK_SUCCESS;
 }
 
 // probably not needed
 OTF2_CallbackCode def_location_group(
-    void*                  userData,
-    OTF2_LocationGroupRef  self,
-    OTF2_StringRef         name,
-    OTF2_LocationGroupType locationGroupType,
-    OTF2_SystemTreeNodeRef systemTreeParent ) {
-
-    DEF_PRINT("LOCATION GROUP\n");
-    return OTF2_CALLBACK_SUCCESS;
+  void*                  userData,
+  OTF2_LocationGroupRef  self,
+  OTF2_StringRef         name,
+  OTF2_LocationGroupType locationGroupType,
+  OTF2_SystemTreeNodeRef systemTreeParent )
+{
+  DEF_PRINT("LOCATION GROUP\n");
+  return OTF2_CALLBACK_SUCCESS;
 }
 
 OTF2_CallbackCode def_region(
-    void*           userData,
-    OTF2_RegionRef  self,
-    OTF2_StringRef  name,
-    OTF2_StringRef  canonicalName,
-    OTF2_StringRef  description,
-    OTF2_RegionRole regionRole,
-    OTF2_Paradigm   paradigm,
-    OTF2_RegionFlag regionFlags,
-    OTF2_StringRef  sourceFile,
-    uint32_t        beginLineNumber,
-    uint32_t        endLineNumber ) {
-
+  void*           userData,
+  OTF2_RegionRef  self,
+  OTF2_StringRef  name,
+  OTF2_StringRef  canonicalName,
+  OTF2_StringRef  description,
+  OTF2_RegionRole regionRole,
+  OTF2_Paradigm   paradigm,
+  OTF2_RegionFlag regionFlags,
+  OTF2_StringRef  sourceFile,
+  uint32_t        beginLineNumber,
+  uint32_t        endLineNumber )
+{
 	auto app = (OTF2TraceReplayApp*)userData;
 	app->otf2_regions.push_back({name, regionRole, paradigm});
-
-    DEF_PRINT("REGION\n");
-    return OTF2_CALLBACK_SUCCESS;
+  DEF_PRINT("REGION\n");
+  return OTF2_CALLBACK_SUCCESS;
 }
 
 OTF2_CallbackCode def_callpath(
-    void*            userData,
-    OTF2_CallpathRef self,
-    OTF2_CallpathRef parent,
-    OTF2_RegionRef   region ) {
+  void*            userData,
+  OTF2_CallpathRef self,
+  OTF2_CallpathRef parent,
+  OTF2_RegionRef   region )
+{
+  auto app = (OTF2TraceReplayApp*)userData;
+  app->otf2_callpaths.push_back({region});
 
-	auto app = (OTF2TraceReplayApp*)userData;
-	app->otf2_callpaths.push_back({region});
-
-    DEF_PRINT("CALLPATH\n");
-    return OTF2_CALLBACK_SUCCESS;
+  DEF_PRINT("CALLPATH\n");
+  return OTF2_CALLBACK_SUCCESS;
 }
 
 // May be useful for ID'ing threads
 OTF2_CallbackCode def_group(
-    void*           userData,
-    OTF2_GroupRef   self,
-    OTF2_StringRef  name,
-    OTF2_GroupType  groupType,
-    OTF2_Paradigm   paradigm,
-    OTF2_GroupFlag  groupFlags,
-    uint32_t        numberOfMembers,
-    const uint64_t* members ) {
+  void*           userData,
+  OTF2_GroupRef   self,
+  OTF2_StringRef  name,
+  OTF2_GroupType  groupType,
+  OTF2_Paradigm   paradigm,
+  OTF2_GroupFlag  groupFlags,
+  uint32_t        numberOfMembers,
+  const uint64_t* members )
+{
+  auto app = (OTF2TraceReplayApp*)userData;
+  app->otf2_groups.push_back({
+      name, groupType, paradigm, groupFlags
+  });
 
-	auto app = (OTF2TraceReplayApp*)userData;
-	app->otf2_groups.push_back({
-        name, groupType, paradigm, groupFlags
-    });
-
-    DEF_PRINT("GROUP\n");
-    return OTF2_CALLBACK_SUCCESS;
+  DEF_PRINT("GROUP\n");
+  return OTF2_CALLBACK_SUCCESS;
 }
 
 OTF2_CallbackCode def_comm(
-    void*          userData,
-    OTF2_CommRef   self,
-    OTF2_StringRef name,
-    OTF2_GroupRef  group,
-    OTF2_CommRef   parent ) {
+  void*          userData,
+  OTF2_CommRef   self,
+  OTF2_StringRef name,
+  OTF2_GroupRef  group,
+  OTF2_CommRef   parent )
+{
+  auto app = (OTF2TraceReplayApp*)userData;
+  app->otf2_regions.push_back({ name });
 
-	auto app = (OTF2TraceReplayApp*)userData;
-	app->otf2_regions.push_back({ name });
-
-    DEF_PRINT("COMMUNICATOR\n");
-    return OTF2_CALLBACK_SUCCESS;
+  DEF_PRINT("COMMUNICATOR\n");
+  return OTF2_CALLBACK_SUCCESS;
 }
 
 // probably not needed
@@ -173,10 +174,10 @@ def_location_group_property(
 	OTF2_LocationGroupRef locationGroup,
 	OTF2_StringRef        name,
 	OTF2_Type             type,
-	OTF2_AttributeValue   value ) {
-
-    cout << "LOCATION_GROUP_PROPERTY" << endl;
-    return OTF2_CALLBACK_SUCCESS;
+  OTF2_AttributeValue   value )
+{
+  cout << "LOCATION_GROUP_PROPERTY" << endl;
+  return OTF2_CALLBACK_SUCCESS;
 }
 
 // probably not needed
@@ -186,10 +187,10 @@ def_location_property(
 	OTF2_LocationRef    location,
 	OTF2_StringRef      name,
 	OTF2_Type           type,
-	OTF2_AttributeValue value ) {
-
-    cout << "LOCATION_PROPERTY" << endl;
-    return OTF2_CALLBACK_SUCCESS;
+  OTF2_AttributeValue value)
+{
+  cout << "LOCATION_PROPERTY" << endl;
+  return OTF2_CALLBACK_SUCCESS;
 }
 
 /******************************************************************************
@@ -209,7 +210,9 @@ void add_wait(OTF2TraceReplayApp* app, CallQueue& queue, MPI_Request requestID) 
 	};
 
 	MpiCall* wait_call = queue.PeekBack();
-	if (wait_call == nullptr) spkt_throw(sprockit::io_error, "ASSERT FAILED:", " expected MPI_Wait at the back of the call queue");
+  if (wait_call == nullptr){
+    spkt_abort_printf("expected MPI_Wait at the back of the call queue");
+  }
 
 	if (wait_call->on_trigger == nullptr) {
 		wait_call->on_trigger = wait_event;
@@ -322,36 +325,37 @@ OTF2_CallbackCode event_mpi_irecv_request(
 // This event is triggered inside a wait. Must finish the Irecv event,
 // and find the parent wait call to give it this request
 OTF2_CallbackCode event_mpi_irecv(
-    OTF2_LocationRef    location,
-    OTF2_TimeStamp      time,
-    uint64_t            eventPosition,
-    void*               userData,
-    OTF2_AttributeList* attributes,
-    uint32_t            sender,
-    OTF2_CommRef        communicator,
-    uint32_t            msgTag,
-    uint64_t            msgLength,
-    uint64_t            requestID ) {
+  OTF2_LocationRef    location,
+  OTF2_TimeStamp      time,
+  uint64_t            eventPosition,
+  void*               userData,
+  OTF2_AttributeList* attributes,
+  uint32_t            sender,
+  OTF2_CommRef        communicator,
+  uint32_t            msgTag,
+  uint64_t            msgLength,
+  uint64_t            requestID )
+{
+  auto app = (OTF2TraceReplayApp*)userData;
+  auto& callqueue = app->GetCallQueue();
 
-    auto app = (OTF2TraceReplayApp*)userData;
-    auto& callqueue = app->GetCallQueue();
+  // finish off the Irecv call
+  MpiCall* call = callqueue.FindRequest((MPI_Request)requestID);
+  MpiCall::assert_call(call, "Lookup for MpiIrecvCall in 'event_mpi_irecv' returned NULL");
 
-    // finish off the Irecv call
-    MpiCall* call = callqueue.FindRequest((MPI_Request)requestID);
-    MpiCall::assert_call(call, "Lookup for MpiIrecvCall in 'event_mpi_irecv' returned NULL");
+  call->on_trigger = [=]() {
+    MPI_Request req = requestID;
+    app->GetMpi()->irecv(nullptr, msgLength, MPI_BYTE, sender, msgTag, communicator, &req);
+  };
+  //MpiCall* wait = new MpiCall(app);
+  //wait->id = ID_MPI_Wait;
+  add_wait(app, app->GetCallQueue(), (MPI_Request)requestID);
+  callqueue.RemoveRequest((MPI_Request)requestID);
+  callqueue.CallReady(call);
 
-    call->on_trigger = [=]() {
-    	MPI_Request req = requestID;
-    	app->GetMpi()->irecv(nullptr, msgLength, MPI_BYTE, sender, msgTag, communicator, &req);};
-
-    MpiCall* wait = new MpiCall(app);
-    wait->id = ID_MPI_Wait;
-    add_wait(app, app->GetCallQueue(), (MPI_Request)requestID);
-    callqueue.RemoveRequest((MPI_Request)requestID);
-    callqueue.CallReady(call);
-
-    if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("IRECV count: " << msgLength << " source: " << sender << " tag: " << msgTag);
-    return OTF2_CALLBACK_SUCCESS;
+  if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents())
+    EVENT_PRINT("IRECV count: " << msgLength << " source: " << sender << " tag: " << msgTag);
+  return OTF2_CALLBACK_SUCCESS;
 }
 
 OTF2_CallbackCode event_mpi_recv(
@@ -497,6 +501,18 @@ OTF2_CallbackCode event_parameter_string(
 // added to the queue.
 #define CASE_IGNORE(call_id) case call_id : \
 	break;
+#define CASE_ADD_CALL(call_id) case call_id: \
+    { \
+  MpiCall* call = new MpiCall(location, time); \
+  call->id = call_id; \
+  call->name = ((const char*)#call_id) + 3; \
+  app->GetCallQueue().AddCall(call); \
+  if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) \
+    EVENT_PRINT("ENTER " << call->ToString() << " time: " << time); \
+  } \
+  break;
+#define ADD_SPECIAL_CASE(call_id) case call_id:
+#define END_SPECIAL_CASE break;
 
 OTF2_CallbackCode event_enter(
     OTF2_LocationRef    location,
@@ -507,20 +523,13 @@ OTF2_CallbackCode event_enter(
     OTF2_RegionRef      region ) {
 
     auto app = (OTF2TraceReplayApp*)userData;
-    auto id = app->otf2_mpi_call_map[app->otf2_regions[region].name];
-    MpiCall* call = nullptr;
+    auto iter = app->otf2_mpi_call_map.find(app->otf2_regions[region].name);
+    if (iter == app->otf2_mpi_call_map.end()){
+      spkt_abort_printf("unknown OTF2 region name %s",
+                 app->otf2_string_table[region].c_str());
+    }
 
-#define CASE_ADD_CALL(call_id) case call_id: \
-	call = new MpiCall(location, time); \
-	call->id = call_id; \
-	call->name = ((const char*)#call_id) + 3; \
-	app->GetCallQueue().AddCall(call); \
-	if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("ENTER " << call->ToString() << " time: " << time); \
-	break;
-
-//#define ADD_SPECIAL_CASE(obj_name) case obj_name::id :
-#define ADD_SPECIAL_CASE(call_id) case call_id:
-#define END_SPECIAL_CASE break;
+    MPI_CALL_ID id = iter->second;
 
     switch (id) {
 		CASE_ADD_CALL(ID_MPI_Abort)
@@ -931,446 +940,451 @@ OTF2_CallbackCode event_enter(
     return OTF2_CALLBACK_SUCCESS;
 }
 
+// Record end time and trigger the call
+#define CASE_READY(call_id, ...) case call_id : { \
+ auto call = callqueue.find_latest(call_id); \
+ MpiCall::assert_call(call, "Lookup for " #call_id " in 'event_leave' returned NULL"); \
+ if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) \
+  EVENT_PRINT("LEAVE " << call->ToString() << " time: " << time); \
+ call->end_time = time; \
+ __VA_ARGS__; \
+ callqueue.CallReady(call); \
+ break; \
+}
+
+
+// Record end time and do not trigger the call. This happens when
+// there is not enough information yet available in the callback.
+#define CASE_NOT_READY(call_id) case call_id : { \
+  auto call = callqueue.find_latest(call_id); \
+  MpiCall::assert_call(call, "Lookup for " #call_id " in 'event_leave' returned NULL"); \
+  if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) \
+    EVENT_PRINT("LEAVE " << call->ToString() << " time: " << time); \
+  call->end_time = time; \
+  break; \
+}
+
 OTF2_CallbackCode event_leave(
-    OTF2_LocationRef    location,
-    OTF2_TimeStamp      time,
-    uint64_t            eventPosition,
-    void*               userData,
-    OTF2_AttributeList* attributes,
-    OTF2_RegionRef      region ) {
+  OTF2_LocationRef    location,
+  OTF2_TimeStamp      time,
+  uint64_t            eventPosition,
+  void*               userData,
+  OTF2_AttributeList* attributes,
+  OTF2_RegionRef      region )
+{
+  auto app = (OTF2TraceReplayApp*)userData;
+  CallQueue& callqueue = app->GetCallQueue();
 
-    auto app = (OTF2TraceReplayApp*)userData;
-    CallQueue& callqueue = app->GetCallQueue();
+  const auto id = app->otf2_mpi_call_map[app->otf2_regions[region].name];
 
-    // Record end time and trigger the call
-	#define CASE_READY(call_id, ...) case call_id : { \
-		auto call = callqueue.find_latest(call_id); \
-		MpiCall::assert_call(call, "Lookup for " #call_id " in 'event_leave' returned NULL"); \
-		if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("LEAVE " << call->ToString() << " time: " << time); \
-		call->end_time = time; \
-		__VA_ARGS__; \
-		callqueue.CallReady(call); \
-		break;}
+  switch (id) {
+  CASE_READY(ID_MPI_Abort)
+  CASE_READY(ID_MPI_Accumulate)
+  CASE_READY(ID_MPI_Add_error_class)
+  CASE_READY(ID_MPI_Add_error_code)
+  CASE_READY(ID_MPI_Add_error_string)
+  CASE_READY(ID_MPI_Address)
+  CASE_READY(ID_MPI_Aint_add)
+  CASE_READY(ID_MPI_Aint_diff)
+  CASE_READY(ID_MPI_Allgather)
+  CASE_READY(ID_MPI_Allgatherv)
+  CASE_READY(ID_MPI_Alloc_mem)
+  CASE_READY(ID_MPI_Allreduce)
+  CASE_READY(ID_MPI_Alltoall)
+  CASE_READY(ID_MPI_Alltoallv)
+  CASE_READY(ID_MPI_Alltoallw)
+  CASE_READY(ID_MPI_Attr_delete)
+  CASE_READY(ID_MPI_Attr_get)
+  CASE_READY(ID_MPI_Attr_put)
+  CASE_READY(ID_MPI_Barrier)
+  CASE_READY(ID_MPI_Bcast)
+  CASE_READY(ID_MPI_Bsend)
+  CASE_READY(ID_MPI_Bsend_init)
+  CASE_READY(ID_MPI_Buffer_attach)
+  CASE_READY(ID_MPI_Buffer_detach)
+  CASE_READY(ID_MPI_Cancel)
+  CASE_READY(ID_MPI_Cart_coords)
+  CASE_READY(ID_MPI_Cart_create)
+  CASE_READY(ID_MPI_Cart_get)
+  CASE_READY(ID_MPI_Cart_map)
+  CASE_READY(ID_MPI_Cart_rank)
+  CASE_READY(ID_MPI_Cart_shift)
+  CASE_READY(ID_MPI_Cart_sub)
+  CASE_READY(ID_MPI_Cartdim_get)
+  CASE_READY(ID_MPI_Close_port)
+  CASE_READY(ID_MPI_Comm_accept)
+  CASE_READY(ID_MPI_Comm_call_errhandler)
+  CASE_READY(ID_MPI_Comm_compare)
+  CASE_READY(ID_MPI_Comm_connect)
+  CASE_READY(ID_MPI_Comm_create)
+  CASE_READY(ID_MPI_Comm_create_errhandler)
+  CASE_READY(ID_MPI_Comm_create_group)
+  CASE_READY(ID_MPI_Comm_create_keyval)
+  CASE_READY(ID_MPI_Comm_delete_attr)
+  CASE_READY(ID_MPI_Comm_disconnect)
+  CASE_READY(ID_MPI_Comm_dup)
+  CASE_READY(ID_MPI_Comm_dup_with_info)
+  CASE_READY(ID_MPI_Comm_free)
+  CASE_READY(ID_MPI_Comm_free_keyval)
+  CASE_READY(ID_MPI_Comm_get_attr)
+  CASE_READY(ID_MPI_Comm_get_errhandler)
+  CASE_READY(ID_MPI_Comm_get_info)
+  CASE_READY(ID_MPI_Comm_get_name)
+  CASE_READY(ID_MPI_Comm_get_parent)
+  CASE_READY(ID_MPI_Comm_group)
+  CASE_READY(ID_MPI_Comm_idup)
+  CASE_READY(ID_MPI_Comm_join)
+  CASE_IGNORE(ID_MPI_Comm_rank)
+  CASE_READY(ID_MPI_Comm_remote_group)
+  CASE_READY(ID_MPI_Comm_remote_size)
+  CASE_READY(ID_MPI_Comm_set_attr)
+  CASE_READY(ID_MPI_Comm_set_errhandler)
+  CASE_READY(ID_MPI_Comm_set_info)
+  CASE_READY(ID_MPI_Comm_set_name)
+  CASE_IGNORE(ID_MPI_Comm_size)
+  CASE_READY(ID_MPI_Comm_spawn)
+  CASE_READY(ID_MPI_Comm_spawn_multiple)
+  CASE_READY(ID_MPI_Comm_split)
+  CASE_READY(ID_MPI_Comm_split_type)
+  CASE_READY(ID_MPI_Comm_test_inter)
+  CASE_READY(ID_MPI_Compare_and_swap)
+  CASE_READY(ID_MPI_Dims_create)
+  CASE_READY(ID_MPI_Dist_graph_create)
+  CASE_READY(ID_MPI_Dist_graph_create_adjacent)
+  CASE_READY(ID_MPI_Dist_graph_neighbors)
+  CASE_READY(ID_MPI_Dist_graph_neighbors_count)
+  CASE_READY(ID_MPI_Errhandler_create)
+  CASE_READY(ID_MPI_Errhandler_free)
+  CASE_READY(ID_MPI_Errhandler_get)
+  CASE_READY(ID_MPI_Errhandler_set)
+  CASE_READY(ID_MPI_Error_class)
+  CASE_READY(ID_MPI_Error_string)
+  CASE_READY(ID_MPI_Exscan)
+  CASE_READY(ID_MPI_Fetch_and_op)
+  CASE_READY(ID_MPI_File_c2f)
+  CASE_READY(ID_MPI_File_call_errhandler)
+  CASE_READY(ID_MPI_File_close)
+  CASE_READY(ID_MPI_File_create_errhandler)
+  CASE_READY(ID_MPI_File_delete)
+  CASE_READY(ID_MPI_File_f2c)
+  CASE_READY(ID_MPI_File_get_amode)
+  CASE_READY(ID_MPI_File_get_atomicity)
+  CASE_READY(ID_MPI_File_get_byte_offset)
+  CASE_READY(ID_MPI_File_get_errhandler)
+  CASE_READY(ID_MPI_File_get_group)
+  CASE_READY(ID_MPI_File_get_info)
+  CASE_READY(ID_MPI_File_get_position)
+  CASE_READY(ID_MPI_File_get_position_shared)
+  CASE_READY(ID_MPI_File_get_size)
+  CASE_READY(ID_MPI_File_get_type_extent)
+  CASE_READY(ID_MPI_File_get_view)
+  CASE_READY(ID_MPI_File_iread)
+  CASE_READY(ID_MPI_File_iread_all)
+  CASE_READY(ID_MPI_File_iread_at)
+  CASE_READY(ID_MPI_File_iread_at_all)
+  CASE_READY(ID_MPI_File_iread_shared)
+  CASE_READY(ID_MPI_File_iwrite)
+  CASE_READY(ID_MPI_File_iwrite_all)
+  CASE_READY(ID_MPI_File_iwrite_at)
+  CASE_READY(ID_MPI_File_iwrite_at_all)
+  CASE_READY(ID_MPI_File_iwrite_shared)
+  CASE_READY(ID_MPI_File_open)
+  CASE_READY(ID_MPI_File_preallocate)
+  CASE_READY(ID_MPI_File_read)
+  CASE_READY(ID_MPI_File_read_all)
+  CASE_READY(ID_MPI_File_read_all_begin)
+  CASE_READY(ID_MPI_File_read_all_end)
+  CASE_READY(ID_MPI_File_read_at)
+  CASE_READY(ID_MPI_File_read_at_all)
+  CASE_READY(ID_MPI_File_read_at_all_begin)
+  CASE_READY(ID_MPI_File_read_at_all_end)
+  CASE_READY(ID_MPI_File_read_ordered)
+  CASE_READY(ID_MPI_File_read_ordered_begin)
+  CASE_READY(ID_MPI_File_read_ordered_end)
+  CASE_READY(ID_MPI_File_read_shared)
+  CASE_READY(ID_MPI_File_seek)
+  CASE_READY(ID_MPI_File_seek_shared)
+  CASE_READY(ID_MPI_File_set_atomicity)
+  CASE_READY(ID_MPI_File_set_errhandler)
+  CASE_READY(ID_MPI_File_set_info)
+  CASE_READY(ID_MPI_File_set_size)
+  CASE_READY(ID_MPI_File_set_view)
+  CASE_READY(ID_MPI_File_sync)
+  CASE_READY(ID_MPI_File_write)
+  CASE_READY(ID_MPI_File_write_all)
+  CASE_READY(ID_MPI_File_write_all_begin)
+  CASE_READY(ID_MPI_File_write_all_end)
+  CASE_READY(ID_MPI_File_write_at)
+  CASE_READY(ID_MPI_File_write_at_all)
+  CASE_READY(ID_MPI_File_write_at_all_begin)
+  CASE_READY(ID_MPI_File_write_at_all_end)
+  CASE_READY(ID_MPI_File_write_ordered)
+  CASE_READY(ID_MPI_File_write_ordered_begin)
+  CASE_READY(ID_MPI_File_write_ordered_end)
+  CASE_READY(ID_MPI_File_write_shared)
+  CASE_READY(ID_MPI_Finalize, call->on_trigger = [=] () {call->app->GetMpi()->do_finalize();})
+  CASE_IGNORE(ID_MPI_Finalized)
+  CASE_READY(ID_MPI_Free_mem)
+  CASE_READY(ID_MPI_Gather)
+  CASE_READY(ID_MPI_Gatherv)
+  CASE_READY(ID_MPI_Get)
+  CASE_READY(ID_MPI_Get_accumulate)
+  CASE_READY(ID_MPI_Get_address)
+  CASE_READY(ID_MPI_Get_count)
+  CASE_READY(ID_MPI_Get_elements)
+  CASE_READY(ID_MPI_Get_elements_x)
+  CASE_READY(ID_MPI_Get_library_version)
+  CASE_READY(ID_MPI_Get_processor_name)
+  CASE_READY(ID_MPI_Get_version)
+  CASE_READY(ID_MPI_Graph_create)
+  CASE_READY(ID_MPI_Graph_get)
+  CASE_READY(ID_MPI_Graph_map)
+  CASE_READY(ID_MPI_Graph_neighbors)
+  CASE_READY(ID_MPI_Graph_neighbors_count)
+  CASE_READY(ID_MPI_Graphdims_get)
+  CASE_READY(ID_MPI_Grequest_complete)
+  CASE_READY(ID_MPI_Grequest_start)
+  CASE_READY(ID_MPI_Group_compare)
+  CASE_READY(ID_MPI_Group_difference)
+  CASE_READY(ID_MPI_Group_excl)
+  CASE_READY(ID_MPI_Group_free)
+  CASE_READY(ID_MPI_Group_incl)
+  CASE_READY(ID_MPI_Group_intersection)
+  CASE_READY(ID_MPI_Group_range_excl)
+  CASE_READY(ID_MPI_Group_range_incl)
+  CASE_READY(ID_MPI_Group_rank)
+  CASE_READY(ID_MPI_Group_size)
+  CASE_READY(ID_MPI_Group_translate_ranks)
+  CASE_READY(ID_MPI_Group_union)
+  CASE_READY(ID_MPI_Iallgather)
+  CASE_READY(ID_MPI_Iallgatherv)
+  CASE_READY(ID_MPI_Iallreduce)
+  CASE_READY(ID_MPI_Ialltoall)
+  CASE_READY(ID_MPI_Ialltoallv)
+  CASE_READY(ID_MPI_Ialltoallw)
+  CASE_READY(ID_MPI_Ibarrier)
+  CASE_READY(ID_MPI_Ibcast)
+  CASE_READY(ID_MPI_Ibsend)
+  CASE_READY(ID_MPI_Iexscan)
+  CASE_READY(ID_MPI_Igather)
+  CASE_READY(ID_MPI_Igatherv)
+  CASE_READY(ID_MPI_Improbe)
+  CASE_READY(ID_MPI_Imrecv)
+  CASE_READY(ID_MPI_Ineighbor_allgather)
+  CASE_READY(ID_MPI_Ineighbor_allgatherv)
+  CASE_READY(ID_MPI_Ineighbor_alltoall)
+  CASE_READY(ID_MPI_Ineighbor_alltoallv)
+  CASE_READY(ID_MPI_Ineighbor_alltoallw)
+  CASE_READY(ID_MPI_Info_create)
+  CASE_READY(ID_MPI_Info_delete)
+  CASE_READY(ID_MPI_Info_dup)
+  CASE_READY(ID_MPI_Info_free)
+  CASE_READY(ID_MPI_Info_get)
+  CASE_READY(ID_MPI_Info_get_nkeys)
+  CASE_READY(ID_MPI_Info_get_nthkey)
+  CASE_READY(ID_MPI_Info_get_valuelen)
+  CASE_READY(ID_MPI_Info_set)
+  CASE_READY(ID_MPI_Init, call->on_trigger = [=] () {call->app->GetMpi()->do_init(nullptr, nullptr);};)
+  CASE_READY(ID_MPI_Init_thread)
+  CASE_IGNORE(ID_MPI_Initialized)
+  CASE_READY(ID_MPI_Intercomm_create)
+  CASE_READY(ID_MPI_Intercomm_merge)
+  CASE_READY(ID_MPI_Iprobe)
+  CASE_NOT_READY(ID_MPI_Irecv)
+  CASE_READY(ID_MPI_Ireduce)
+  CASE_READY(ID_MPI_Ireduce_scatter)
+  CASE_READY(ID_MPI_Ireduce_scatter_block)
+  CASE_READY(ID_MPI_Irsend)
+  CASE_READY(ID_MPI_Is_thread_main)
+  CASE_READY(ID_MPI_Iscan)
+  CASE_READY(ID_MPI_Iscatter)
+  CASE_READY(ID_MPI_Iscatterv)
+  CASE_READY(ID_MPI_Isend)
+  CASE_READY(ID_MPI_Issend)
+  CASE_READY(ID_MPI_Keyval_create)
+  CASE_READY(ID_MPI_Keyval_free)
+  CASE_READY(ID_MPI_Lookup_name)
+  CASE_READY(ID_MPI_Mprobe)
+  CASE_READY(ID_MPI_Mrecv)
+  CASE_READY(ID_MPI_Neighbor_allgather)
+  CASE_READY(ID_MPI_Neighbor_allgatherv)
+  CASE_READY(ID_MPI_Neighbor_alltoall)
+  CASE_READY(ID_MPI_Neighbor_alltoallv)
+  CASE_READY(ID_MPI_Neighbor_alltoallw)
+  CASE_READY(ID_MPI_Op_commute)
+  CASE_READY(ID_MPI_Op_create)
+  CASE_READY(ID_MPI_Op_free)
+  CASE_READY(ID_MPI_Open_port)
+  CASE_READY(ID_MPI_Pack)
+  CASE_READY(ID_MPI_Pack_external)
+  CASE_READY(ID_MPI_Pack_external_size)
+  CASE_READY(ID_MPI_Pack_size)
+  CASE_READY(ID_MPI_Pcontrol)
+  CASE_READY(ID_MPI_Probe)
+  CASE_READY(ID_MPI_Publish_name)
+  CASE_READY(ID_MPI_Put)
+  CASE_READY(ID_MPI_Query_thread)
+  CASE_READY(ID_MPI_Raccumulate)
+  CASE_READY(ID_MPI_Recv)
+  CASE_READY(ID_MPI_Recv_init)
+  CASE_READY(ID_MPI_Reduce)
+  CASE_READY(ID_MPI_Reduce_local)
+  CASE_READY(ID_MPI_Reduce_scatter)
+  CASE_READY(ID_MPI_Reduce_scatter_block)
+  CASE_READY(ID_MPI_Register_datarep)
+  CASE_READY(ID_MPI_Request_free)
+  CASE_READY(ID_MPI_Request_get_status)
+  CASE_READY(ID_MPI_Rget)
+  CASE_READY(ID_MPI_Rget_accumulate)
+  CASE_READY(ID_MPI_Rput)
+  CASE_READY(ID_MPI_Rsend)
+  CASE_READY(ID_MPI_Rsend_init)
+  CASE_READY(ID_MPI_Scan)
+  CASE_READY(ID_MPI_Scatter)
+  CASE_READY(ID_MPI_Scatterv)
+  CASE_READY(ID_MPI_Send)
+  CASE_READY(ID_MPI_Send_init)
+  CASE_READY(ID_MPI_Sendrecv)
+  CASE_READY(ID_MPI_Sendrecv_replace)
+  CASE_READY(ID_MPI_Ssend)
+  CASE_READY(ID_MPI_Ssend_init)
+  CASE_READY(ID_MPI_Start)
+  CASE_READY(ID_MPI_Startall)
+  CASE_READY(ID_MPI_Status_set_cancelled)
+  CASE_READY(ID_MPI_Status_set_elements)
+  CASE_READY(ID_MPI_Status_set_elements_x)
+  CASE_READY(ID_MPI_T_category_changed)
+  CASE_READY(ID_MPI_T_category_get_categories)
+  CASE_READY(ID_MPI_T_category_get_cvars)
+  CASE_READY(ID_MPI_T_category_get_info)
+  CASE_READY(ID_MPI_T_category_get_num)
+  CASE_READY(ID_MPI_T_category_get_pvars)
+  CASE_READY(ID_MPI_T_cvar_get_info)
+  CASE_READY(ID_MPI_T_cvar_get_num)
+  CASE_READY(ID_MPI_T_cvar_handle_alloc)
+  CASE_READY(ID_MPI_T_cvar_handle_free)
+  CASE_READY(ID_MPI_T_cvar_read)
+  CASE_READY(ID_MPI_T_cvar_write)
+  CASE_READY(ID_MPI_T_enum_get_info)
+  CASE_READY(ID_MPI_T_enum_get_item)
+  CASE_READY(ID_MPI_T_finalize)
+  CASE_READY(ID_MPI_T_init_thread)
+  CASE_READY(ID_MPI_T_pvar_get_info)
+  CASE_READY(ID_MPI_T_pvar_get_num)
+  CASE_READY(ID_MPI_T_pvar_handle_alloc)
+  CASE_READY(ID_MPI_T_pvar_handle_free)
+  CASE_READY(ID_MPI_T_pvar_read)
+  CASE_READY(ID_MPI_T_pvar_readreset)
+  CASE_READY(ID_MPI_T_pvar_reset)
+  CASE_READY(ID_MPI_T_pvar_session_create)
+  CASE_READY(ID_MPI_T_pvar_session_free)
+  CASE_READY(ID_MPI_T_pvar_start)
+  CASE_READY(ID_MPI_T_pvar_stop)
+  CASE_READY(ID_MPI_T_pvar_write)
+  CASE_READY(ID_MPI_Test)
+  CASE_READY(ID_MPI_Test_cancelled)
+  CASE_READY(ID_MPI_Testall)
+  CASE_READY(ID_MPI_Testany)
+  CASE_READY(ID_MPI_Testsome)
+  CASE_READY(ID_MPI_Topo_test)
+  CASE_READY(ID_MPI_Type_commit)
+  CASE_READY(ID_MPI_Type_contiguous)
+  CASE_READY(ID_MPI_Type_create_darray)
+  CASE_READY(ID_MPI_Type_create_hindexed)
+  CASE_READY(ID_MPI_Type_create_hindexed_block)
+  CASE_READY(ID_MPI_Type_create_hvector)
+  CASE_READY(ID_MPI_Type_create_indexed_block)
+  CASE_READY(ID_MPI_Type_create_keyval)
+  CASE_READY(ID_MPI_Type_create_resized)
+  CASE_READY(ID_MPI_Type_create_struct)
+  CASE_READY(ID_MPI_Type_create_subarray)
+  CASE_READY(ID_MPI_Type_delete_attr)
+  CASE_READY(ID_MPI_Type_dup)
+  CASE_READY(ID_MPI_Type_extent)
+  CASE_READY(ID_MPI_Type_free)
+  CASE_READY(ID_MPI_Type_free_keyval)
+  CASE_READY(ID_MPI_Type_get_attr)
+  CASE_READY(ID_MPI_Type_get_contents)
+  CASE_READY(ID_MPI_Type_get_envelope)
+  CASE_READY(ID_MPI_Type_get_extent)
+  CASE_READY(ID_MPI_Type_get_extent_x)
+  CASE_READY(ID_MPI_Type_get_name)
+  CASE_READY(ID_MPI_Type_get_true_extent)
+  CASE_READY(ID_MPI_Type_get_true_extent_x)
+  CASE_READY(ID_MPI_Type_hindexed)
+  CASE_READY(ID_MPI_Type_hvector)
+  CASE_READY(ID_MPI_Type_indexed)
+  CASE_READY(ID_MPI_Type_lb)
+  CASE_READY(ID_MPI_Type_match_size)
+  CASE_READY(ID_MPI_Type_set_attr)
+  CASE_READY(ID_MPI_Type_set_name)
+  CASE_READY(ID_MPI_Type_size)
+  CASE_READY(ID_MPI_Type_size_x)
+  CASE_READY(ID_MPI_Type_struct)
+  CASE_READY(ID_MPI_Type_ub)
+  CASE_READY(ID_MPI_Type_vector)
+  CASE_READY(ID_MPI_Unpack)
+  CASE_READY(ID_MPI_Unpack_external)
+  CASE_READY(ID_MPI_Unpublish_name)
 
-    // Record end time and do not trigger the call. This happens when
-    // there is not enough information yet available in the callback.
-	#define CASE_NOT_READY(call_id) case call_id : { \
-			auto call = callqueue.find_latest(call_id); \
-			MpiCall::assert_call(call, "Lookup for " #call_id " in 'event_leave' returned NULL"); \
-			if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("LEAVE " << call->ToString() << " time: " << time); \
-			call->end_time = time; \
-			break;}
+  // MPI_Wait is used for all waits
+  ADD_SPECIAL_CASE(ID_MPI_Waitall)
+  ADD_SPECIAL_CASE(ID_MPI_Waitany)
+  ADD_SPECIAL_CASE(ID_MPI_Waitsome)
+  CASE_READY(ID_MPI_Wait)
 
-    const auto id = app->otf2_mpi_call_map[app->otf2_regions[region].name];
+  CASE_IGNORE(ID_MPI_Win_allocate)
+  CASE_IGNORE(ID_MPI_Win_allocate_shared)
+  CASE_IGNORE(ID_MPI_Win_attach)
+  CASE_IGNORE(ID_MPI_Win_call_errhandler)
+  CASE_IGNORE(ID_MPI_Win_complete)
+  CASE_IGNORE(ID_MPI_Win_create)
+  CASE_IGNORE(ID_MPI_Win_create_dynamic)
+  CASE_IGNORE(ID_MPI_Win_create_errhandler)
+  CASE_IGNORE(ID_MPI_Win_create_keyval)
+  CASE_IGNORE(ID_MPI_Win_delete_attr)
+  CASE_IGNORE(ID_MPI_Win_detach)
+  CASE_IGNORE(ID_MPI_Win_fence)
+  CASE_IGNORE(ID_MPI_Win_flush)
+  CASE_IGNORE(ID_MPI_Win_flush_all)
+  CASE_IGNORE(ID_MPI_Win_flush_local)
+  CASE_IGNORE(ID_MPI_Win_flush_local_all)
+  CASE_IGNORE(ID_MPI_Win_free)
+  CASE_IGNORE(ID_MPI_Win_free_keyval)
+  CASE_IGNORE(ID_MPI_Win_get_attr)
+  CASE_IGNORE(ID_MPI_Win_get_errhandler)
+  CASE_IGNORE(ID_MPI_Win_get_group)
+  CASE_IGNORE(ID_MPI_Win_get_info)
+  CASE_IGNORE(ID_MPI_Win_get_name)
+  CASE_IGNORE(ID_MPI_Win_lock)
+  CASE_IGNORE(ID_MPI_Win_lock_all)
+  CASE_IGNORE(ID_MPI_Win_post)
+  CASE_IGNORE(ID_MPI_Win_set_attr)
+  CASE_IGNORE(ID_MPI_Win_set_errhandler)
+  CASE_IGNORE(ID_MPI_Win_set_info)
+  CASE_IGNORE(ID_MPI_Win_set_name)
+  CASE_IGNORE(ID_MPI_Win_shared_query)
+  CASE_IGNORE(ID_MPI_Win_start)
+  CASE_IGNORE(ID_MPI_Win_sync)
+  CASE_IGNORE(ID_MPI_Win_test)
+  CASE_IGNORE(ID_MPI_Win_unlock)
+  CASE_IGNORE(ID_MPI_Win_unlock_all)
+  CASE_IGNORE(ID_MPI_Win_wait)
+  CASE_READY(ID_MPI_Wtick)
+  CASE_READY(ID_MPI_Wtime)
+  CASE_READY(ID_MPIX_Comm_agree)
+  CASE_READY(ID_MPIX_Comm_failure_ack)
+  CASE_READY(ID_MPIX_Comm_failure_get_acked)
+  CASE_READY(ID_MPIX_Comm_revoke)
+  CASE_READY(ID_MPIX_Comm_shrink)
 
-    switch (id) {
-		CASE_READY(ID_MPI_Abort)
-		CASE_READY(ID_MPI_Accumulate)
-		CASE_READY(ID_MPI_Add_error_class)
-		CASE_READY(ID_MPI_Add_error_code)
-		CASE_READY(ID_MPI_Add_error_string)
-		CASE_READY(ID_MPI_Address)
-		CASE_READY(ID_MPI_Aint_add)
-		CASE_READY(ID_MPI_Aint_diff)
-		CASE_READY(ID_MPI_Allgather)
-		CASE_READY(ID_MPI_Allgatherv)
-		CASE_READY(ID_MPI_Alloc_mem)
-		CASE_READY(ID_MPI_Allreduce)
-		CASE_READY(ID_MPI_Alltoall)
-		CASE_READY(ID_MPI_Alltoallv)
-		CASE_READY(ID_MPI_Alltoallw)
-		CASE_READY(ID_MPI_Attr_delete)
-		CASE_READY(ID_MPI_Attr_get)
-		CASE_READY(ID_MPI_Attr_put)
-		CASE_READY(ID_MPI_Barrier)
-		CASE_READY(ID_MPI_Bcast)
-		CASE_READY(ID_MPI_Bsend)
-		CASE_READY(ID_MPI_Bsend_init)
-		CASE_READY(ID_MPI_Buffer_attach)
-		CASE_READY(ID_MPI_Buffer_detach)
-		CASE_READY(ID_MPI_Cancel)
-		CASE_READY(ID_MPI_Cart_coords)
-		CASE_READY(ID_MPI_Cart_create)
-		CASE_READY(ID_MPI_Cart_get)
-		CASE_READY(ID_MPI_Cart_map)
-		CASE_READY(ID_MPI_Cart_rank)
-		CASE_READY(ID_MPI_Cart_shift)
-		CASE_READY(ID_MPI_Cart_sub)
-		CASE_READY(ID_MPI_Cartdim_get)
-		CASE_READY(ID_MPI_Close_port)
-		CASE_READY(ID_MPI_Comm_accept)
-		CASE_READY(ID_MPI_Comm_call_errhandler)
-		CASE_READY(ID_MPI_Comm_compare)
-		CASE_READY(ID_MPI_Comm_connect)
-		CASE_READY(ID_MPI_Comm_create)
-		CASE_READY(ID_MPI_Comm_create_errhandler)
-		CASE_READY(ID_MPI_Comm_create_group)
-		CASE_READY(ID_MPI_Comm_create_keyval)
-		CASE_READY(ID_MPI_Comm_delete_attr)
-		CASE_READY(ID_MPI_Comm_disconnect)
-		CASE_READY(ID_MPI_Comm_dup)
-		CASE_READY(ID_MPI_Comm_dup_with_info)
-		CASE_READY(ID_MPI_Comm_free)
-		CASE_READY(ID_MPI_Comm_free_keyval)
-		CASE_READY(ID_MPI_Comm_get_attr)
-		CASE_READY(ID_MPI_Comm_get_errhandler)
-		CASE_READY(ID_MPI_Comm_get_info)
-		CASE_READY(ID_MPI_Comm_get_name)
-		CASE_READY(ID_MPI_Comm_get_parent)
-		CASE_READY(ID_MPI_Comm_group)
-		CASE_READY(ID_MPI_Comm_idup)
-		CASE_READY(ID_MPI_Comm_join)
-		CASE_IGNORE(ID_MPI_Comm_rank)
-		CASE_READY(ID_MPI_Comm_remote_group)
-		CASE_READY(ID_MPI_Comm_remote_size)
-		CASE_READY(ID_MPI_Comm_set_attr)
-		CASE_READY(ID_MPI_Comm_set_errhandler)
-		CASE_READY(ID_MPI_Comm_set_info)
-		CASE_READY(ID_MPI_Comm_set_name)
-		CASE_IGNORE(ID_MPI_Comm_size)
-		CASE_READY(ID_MPI_Comm_spawn)
-		CASE_READY(ID_MPI_Comm_spawn_multiple)
-		CASE_READY(ID_MPI_Comm_split)
-		CASE_READY(ID_MPI_Comm_split_type)
-		CASE_READY(ID_MPI_Comm_test_inter)
-		CASE_READY(ID_MPI_Compare_and_swap)
-		CASE_READY(ID_MPI_Dims_create)
-		CASE_READY(ID_MPI_Dist_graph_create)
-		CASE_READY(ID_MPI_Dist_graph_create_adjacent)
-		CASE_READY(ID_MPI_Dist_graph_neighbors)
-		CASE_READY(ID_MPI_Dist_graph_neighbors_count)
-		CASE_READY(ID_MPI_Errhandler_create)
-		CASE_READY(ID_MPI_Errhandler_free)
-		CASE_READY(ID_MPI_Errhandler_get)
-		CASE_READY(ID_MPI_Errhandler_set)
-		CASE_READY(ID_MPI_Error_class)
-		CASE_READY(ID_MPI_Error_string)
-		CASE_READY(ID_MPI_Exscan)
-		CASE_READY(ID_MPI_Fetch_and_op)
-		CASE_READY(ID_MPI_File_c2f)
-		CASE_READY(ID_MPI_File_call_errhandler)
-		CASE_READY(ID_MPI_File_close)
-		CASE_READY(ID_MPI_File_create_errhandler)
-		CASE_READY(ID_MPI_File_delete)
-		CASE_READY(ID_MPI_File_f2c)
-		CASE_READY(ID_MPI_File_get_amode)
-		CASE_READY(ID_MPI_File_get_atomicity)
-		CASE_READY(ID_MPI_File_get_byte_offset)
-		CASE_READY(ID_MPI_File_get_errhandler)
-		CASE_READY(ID_MPI_File_get_group)
-		CASE_READY(ID_MPI_File_get_info)
-		CASE_READY(ID_MPI_File_get_position)
-		CASE_READY(ID_MPI_File_get_position_shared)
-		CASE_READY(ID_MPI_File_get_size)
-		CASE_READY(ID_MPI_File_get_type_extent)
-		CASE_READY(ID_MPI_File_get_view)
-		CASE_READY(ID_MPI_File_iread)
-		CASE_READY(ID_MPI_File_iread_all)
-		CASE_READY(ID_MPI_File_iread_at)
-		CASE_READY(ID_MPI_File_iread_at_all)
-		CASE_READY(ID_MPI_File_iread_shared)
-		CASE_READY(ID_MPI_File_iwrite)
-		CASE_READY(ID_MPI_File_iwrite_all)
-		CASE_READY(ID_MPI_File_iwrite_at)
-		CASE_READY(ID_MPI_File_iwrite_at_all)
-		CASE_READY(ID_MPI_File_iwrite_shared)
-		CASE_READY(ID_MPI_File_open)
-		CASE_READY(ID_MPI_File_preallocate)
-		CASE_READY(ID_MPI_File_read)
-		CASE_READY(ID_MPI_File_read_all)
-		CASE_READY(ID_MPI_File_read_all_begin)
-		CASE_READY(ID_MPI_File_read_all_end)
-		CASE_READY(ID_MPI_File_read_at)
-		CASE_READY(ID_MPI_File_read_at_all)
-		CASE_READY(ID_MPI_File_read_at_all_begin)
-		CASE_READY(ID_MPI_File_read_at_all_end)
-		CASE_READY(ID_MPI_File_read_ordered)
-		CASE_READY(ID_MPI_File_read_ordered_begin)
-		CASE_READY(ID_MPI_File_read_ordered_end)
-		CASE_READY(ID_MPI_File_read_shared)
-		CASE_READY(ID_MPI_File_seek)
-		CASE_READY(ID_MPI_File_seek_shared)
-		CASE_READY(ID_MPI_File_set_atomicity)
-		CASE_READY(ID_MPI_File_set_errhandler)
-		CASE_READY(ID_MPI_File_set_info)
-		CASE_READY(ID_MPI_File_set_size)
-		CASE_READY(ID_MPI_File_set_view)
-		CASE_READY(ID_MPI_File_sync)
-		CASE_READY(ID_MPI_File_write)
-		CASE_READY(ID_MPI_File_write_all)
-		CASE_READY(ID_MPI_File_write_all_begin)
-		CASE_READY(ID_MPI_File_write_all_end)
-		CASE_READY(ID_MPI_File_write_at)
-		CASE_READY(ID_MPI_File_write_at_all)
-		CASE_READY(ID_MPI_File_write_at_all_begin)
-		CASE_READY(ID_MPI_File_write_at_all_end)
-		CASE_READY(ID_MPI_File_write_ordered)
-		CASE_READY(ID_MPI_File_write_ordered_begin)
-		CASE_READY(ID_MPI_File_write_ordered_end)
-		CASE_READY(ID_MPI_File_write_shared)
-		CASE_READY(ID_MPI_Finalize, call->on_trigger = [=] () {call->app->GetMpi()->do_finalize();})
-		CASE_IGNORE(ID_MPI_Finalized)
-		CASE_READY(ID_MPI_Free_mem)
-		CASE_READY(ID_MPI_Gather)
-		CASE_READY(ID_MPI_Gatherv)
-		CASE_READY(ID_MPI_Get)
-		CASE_READY(ID_MPI_Get_accumulate)
-		CASE_READY(ID_MPI_Get_address)
-		CASE_READY(ID_MPI_Get_count)
-		CASE_READY(ID_MPI_Get_elements)
-		CASE_READY(ID_MPI_Get_elements_x)
-		CASE_READY(ID_MPI_Get_library_version)
-		CASE_READY(ID_MPI_Get_processor_name)
-		CASE_READY(ID_MPI_Get_version)
-		CASE_READY(ID_MPI_Graph_create)
-		CASE_READY(ID_MPI_Graph_get)
-		CASE_READY(ID_MPI_Graph_map)
-		CASE_READY(ID_MPI_Graph_neighbors)
-		CASE_READY(ID_MPI_Graph_neighbors_count)
-		CASE_READY(ID_MPI_Graphdims_get)
-		CASE_READY(ID_MPI_Grequest_complete)
-		CASE_READY(ID_MPI_Grequest_start)
-		CASE_READY(ID_MPI_Group_compare)
-		CASE_READY(ID_MPI_Group_difference)
-		CASE_READY(ID_MPI_Group_excl)
-		CASE_READY(ID_MPI_Group_free)
-		CASE_READY(ID_MPI_Group_incl)
-		CASE_READY(ID_MPI_Group_intersection)
-		CASE_READY(ID_MPI_Group_range_excl)
-		CASE_READY(ID_MPI_Group_range_incl)
-		CASE_READY(ID_MPI_Group_rank)
-		CASE_READY(ID_MPI_Group_size)
-		CASE_READY(ID_MPI_Group_translate_ranks)
-		CASE_READY(ID_MPI_Group_union)
-		CASE_READY(ID_MPI_Iallgather)
-		CASE_READY(ID_MPI_Iallgatherv)
-		CASE_READY(ID_MPI_Iallreduce)
-		CASE_READY(ID_MPI_Ialltoall)
-		CASE_READY(ID_MPI_Ialltoallv)
-		CASE_READY(ID_MPI_Ialltoallw)
-		CASE_READY(ID_MPI_Ibarrier)
-		CASE_READY(ID_MPI_Ibcast)
-		CASE_READY(ID_MPI_Ibsend)
-		CASE_READY(ID_MPI_Iexscan)
-		CASE_READY(ID_MPI_Igather)
-		CASE_READY(ID_MPI_Igatherv)
-		CASE_READY(ID_MPI_Improbe)
-		CASE_READY(ID_MPI_Imrecv)
-		CASE_READY(ID_MPI_Ineighbor_allgather)
-		CASE_READY(ID_MPI_Ineighbor_allgatherv)
-		CASE_READY(ID_MPI_Ineighbor_alltoall)
-		CASE_READY(ID_MPI_Ineighbor_alltoallv)
-		CASE_READY(ID_MPI_Ineighbor_alltoallw)
-		CASE_READY(ID_MPI_Info_create)
-		CASE_READY(ID_MPI_Info_delete)
-		CASE_READY(ID_MPI_Info_dup)
-		CASE_READY(ID_MPI_Info_free)
-		CASE_READY(ID_MPI_Info_get)
-		CASE_READY(ID_MPI_Info_get_nkeys)
-		CASE_READY(ID_MPI_Info_get_nthkey)
-		CASE_READY(ID_MPI_Info_get_valuelen)
-		CASE_READY(ID_MPI_Info_set)
-		CASE_READY(ID_MPI_Init, call->on_trigger = [=] () {call->app->GetMpi()->do_init(nullptr, nullptr);};)
-		CASE_READY(ID_MPI_Init_thread)
-		CASE_IGNORE(ID_MPI_Initialized)
-		CASE_READY(ID_MPI_Intercomm_create)
-		CASE_READY(ID_MPI_Intercomm_merge)
-		CASE_READY(ID_MPI_Iprobe)
-		CASE_READY(ID_MPI_Irecv)
-		CASE_READY(ID_MPI_Ireduce)
-		CASE_READY(ID_MPI_Ireduce_scatter)
-		CASE_READY(ID_MPI_Ireduce_scatter_block)
-		CASE_READY(ID_MPI_Irsend)
-		CASE_READY(ID_MPI_Is_thread_main)
-		CASE_READY(ID_MPI_Iscan)
-		CASE_READY(ID_MPI_Iscatter)
-		CASE_READY(ID_MPI_Iscatterv)
-		CASE_READY(ID_MPI_Isend)
-		CASE_READY(ID_MPI_Issend)
-		CASE_READY(ID_MPI_Keyval_create)
-		CASE_READY(ID_MPI_Keyval_free)
-		CASE_READY(ID_MPI_Lookup_name)
-		CASE_READY(ID_MPI_Mprobe)
-		CASE_READY(ID_MPI_Mrecv)
-		CASE_READY(ID_MPI_Neighbor_allgather)
-		CASE_READY(ID_MPI_Neighbor_allgatherv)
-		CASE_READY(ID_MPI_Neighbor_alltoall)
-		CASE_READY(ID_MPI_Neighbor_alltoallv)
-		CASE_READY(ID_MPI_Neighbor_alltoallw)
-		CASE_READY(ID_MPI_Op_commute)
-		CASE_READY(ID_MPI_Op_create)
-		CASE_READY(ID_MPI_Op_free)
-		CASE_READY(ID_MPI_Open_port)
-		CASE_READY(ID_MPI_Pack)
-		CASE_READY(ID_MPI_Pack_external)
-		CASE_READY(ID_MPI_Pack_external_size)
-		CASE_READY(ID_MPI_Pack_size)
-		CASE_READY(ID_MPI_Pcontrol)
-		CASE_READY(ID_MPI_Probe)
-		CASE_READY(ID_MPI_Publish_name)
-		CASE_READY(ID_MPI_Put)
-		CASE_READY(ID_MPI_Query_thread)
-		CASE_READY(ID_MPI_Raccumulate)
-		CASE_READY(ID_MPI_Recv)
-		CASE_READY(ID_MPI_Recv_init)
-		CASE_READY(ID_MPI_Reduce)
-		CASE_READY(ID_MPI_Reduce_local)
-		CASE_READY(ID_MPI_Reduce_scatter)
-		CASE_READY(ID_MPI_Reduce_scatter_block)
-		CASE_READY(ID_MPI_Register_datarep)
-		CASE_READY(ID_MPI_Request_free)
-		CASE_READY(ID_MPI_Request_get_status)
-		CASE_READY(ID_MPI_Rget)
-		CASE_READY(ID_MPI_Rget_accumulate)
-		CASE_READY(ID_MPI_Rput)
-		CASE_READY(ID_MPI_Rsend)
-		CASE_READY(ID_MPI_Rsend_init)
-		CASE_READY(ID_MPI_Scan)
-		CASE_READY(ID_MPI_Scatter)
-		CASE_READY(ID_MPI_Scatterv)
-		CASE_READY(ID_MPI_Send)
-		CASE_READY(ID_MPI_Send_init)
-		CASE_READY(ID_MPI_Sendrecv)
-		CASE_READY(ID_MPI_Sendrecv_replace)
-		CASE_READY(ID_MPI_Ssend)
-		CASE_READY(ID_MPI_Ssend_init)
-		CASE_READY(ID_MPI_Start)
-		CASE_READY(ID_MPI_Startall)
-		CASE_READY(ID_MPI_Status_set_cancelled)
-		CASE_READY(ID_MPI_Status_set_elements)
-		CASE_READY(ID_MPI_Status_set_elements_x)
-		CASE_READY(ID_MPI_T_category_changed)
-		CASE_READY(ID_MPI_T_category_get_categories)
-		CASE_READY(ID_MPI_T_category_get_cvars)
-		CASE_READY(ID_MPI_T_category_get_info)
-		CASE_READY(ID_MPI_T_category_get_num)
-		CASE_READY(ID_MPI_T_category_get_pvars)
-		CASE_READY(ID_MPI_T_cvar_get_info)
-		CASE_READY(ID_MPI_T_cvar_get_num)
-		CASE_READY(ID_MPI_T_cvar_handle_alloc)
-		CASE_READY(ID_MPI_T_cvar_handle_free)
-		CASE_READY(ID_MPI_T_cvar_read)
-		CASE_READY(ID_MPI_T_cvar_write)
-		CASE_READY(ID_MPI_T_enum_get_info)
-		CASE_READY(ID_MPI_T_enum_get_item)
-		CASE_READY(ID_MPI_T_finalize)
-		CASE_READY(ID_MPI_T_init_thread)
-		CASE_READY(ID_MPI_T_pvar_get_info)
-		CASE_READY(ID_MPI_T_pvar_get_num)
-		CASE_READY(ID_MPI_T_pvar_handle_alloc)
-		CASE_READY(ID_MPI_T_pvar_handle_free)
-		CASE_READY(ID_MPI_T_pvar_read)
-		CASE_READY(ID_MPI_T_pvar_readreset)
-		CASE_READY(ID_MPI_T_pvar_reset)
-		CASE_READY(ID_MPI_T_pvar_session_create)
-		CASE_READY(ID_MPI_T_pvar_session_free)
-		CASE_READY(ID_MPI_T_pvar_start)
-		CASE_READY(ID_MPI_T_pvar_stop)
-		CASE_READY(ID_MPI_T_pvar_write)
-		CASE_READY(ID_MPI_Test)
-		CASE_READY(ID_MPI_Test_cancelled)
-		CASE_READY(ID_MPI_Testall)
-		CASE_READY(ID_MPI_Testany)
-		CASE_READY(ID_MPI_Testsome)
-		CASE_READY(ID_MPI_Topo_test)
-		CASE_READY(ID_MPI_Type_commit)
-		CASE_READY(ID_MPI_Type_contiguous)
-		CASE_READY(ID_MPI_Type_create_darray)
-		CASE_READY(ID_MPI_Type_create_hindexed)
-		CASE_READY(ID_MPI_Type_create_hindexed_block)
-		CASE_READY(ID_MPI_Type_create_hvector)
-		CASE_READY(ID_MPI_Type_create_indexed_block)
-		CASE_READY(ID_MPI_Type_create_keyval)
-		CASE_READY(ID_MPI_Type_create_resized)
-		CASE_READY(ID_MPI_Type_create_struct)
-		CASE_READY(ID_MPI_Type_create_subarray)
-		CASE_READY(ID_MPI_Type_delete_attr)
-		CASE_READY(ID_MPI_Type_dup)
-		CASE_READY(ID_MPI_Type_extent)
-		CASE_READY(ID_MPI_Type_free)
-		CASE_READY(ID_MPI_Type_free_keyval)
-		CASE_READY(ID_MPI_Type_get_attr)
-		CASE_READY(ID_MPI_Type_get_contents)
-		CASE_READY(ID_MPI_Type_get_envelope)
-		CASE_READY(ID_MPI_Type_get_extent)
-		CASE_READY(ID_MPI_Type_get_extent_x)
-		CASE_READY(ID_MPI_Type_get_name)
-		CASE_READY(ID_MPI_Type_get_true_extent)
-		CASE_READY(ID_MPI_Type_get_true_extent_x)
-		CASE_READY(ID_MPI_Type_hindexed)
-		CASE_READY(ID_MPI_Type_hvector)
-		CASE_READY(ID_MPI_Type_indexed)
-		CASE_READY(ID_MPI_Type_lb)
-		CASE_READY(ID_MPI_Type_match_size)
-		CASE_READY(ID_MPI_Type_set_attr)
-		CASE_READY(ID_MPI_Type_set_name)
-		CASE_READY(ID_MPI_Type_size)
-		CASE_READY(ID_MPI_Type_size_x)
-		CASE_READY(ID_MPI_Type_struct)
-		CASE_READY(ID_MPI_Type_ub)
-		CASE_READY(ID_MPI_Type_vector)
-		CASE_READY(ID_MPI_Unpack)
-		CASE_READY(ID_MPI_Unpack_external)
-		CASE_READY(ID_MPI_Unpublish_name)
-
-		// MPI_Wait is used for all waits
-		ADD_SPECIAL_CASE(ID_MPI_Waitall)
-		ADD_SPECIAL_CASE(ID_MPI_Waitany)
-		ADD_SPECIAL_CASE(ID_MPI_Waitsome)
-		CASE_READY(ID_MPI_Wait)
-
-		CASE_IGNORE(ID_MPI_Win_allocate)
-		CASE_IGNORE(ID_MPI_Win_allocate_shared)
-		CASE_IGNORE(ID_MPI_Win_attach)
-		CASE_IGNORE(ID_MPI_Win_call_errhandler)
-		CASE_IGNORE(ID_MPI_Win_complete)
-		CASE_IGNORE(ID_MPI_Win_create)
-		CASE_IGNORE(ID_MPI_Win_create_dynamic)
-		CASE_IGNORE(ID_MPI_Win_create_errhandler)
-		CASE_IGNORE(ID_MPI_Win_create_keyval)
-		CASE_IGNORE(ID_MPI_Win_delete_attr)
-		CASE_IGNORE(ID_MPI_Win_detach)
-		CASE_IGNORE(ID_MPI_Win_fence)
-		CASE_IGNORE(ID_MPI_Win_flush)
-		CASE_IGNORE(ID_MPI_Win_flush_all)
-		CASE_IGNORE(ID_MPI_Win_flush_local)
-		CASE_IGNORE(ID_MPI_Win_flush_local_all)
-		CASE_IGNORE(ID_MPI_Win_free)
-		CASE_IGNORE(ID_MPI_Win_free_keyval)
-		CASE_IGNORE(ID_MPI_Win_get_attr)
-		CASE_IGNORE(ID_MPI_Win_get_errhandler)
-		CASE_IGNORE(ID_MPI_Win_get_group)
-		CASE_IGNORE(ID_MPI_Win_get_info)
-		CASE_IGNORE(ID_MPI_Win_get_name)
-		CASE_IGNORE(ID_MPI_Win_lock)
-		CASE_IGNORE(ID_MPI_Win_lock_all)
-		CASE_IGNORE(ID_MPI_Win_post)
-		CASE_IGNORE(ID_MPI_Win_set_attr)
-		CASE_IGNORE(ID_MPI_Win_set_errhandler)
-		CASE_IGNORE(ID_MPI_Win_set_info)
-		CASE_IGNORE(ID_MPI_Win_set_name)
-		CASE_IGNORE(ID_MPI_Win_shared_query)
-		CASE_IGNORE(ID_MPI_Win_start)
-		CASE_IGNORE(ID_MPI_Win_sync)
-		CASE_IGNORE(ID_MPI_Win_test)
-		CASE_IGNORE(ID_MPI_Win_unlock)
-		CASE_IGNORE(ID_MPI_Win_unlock_all)
-		CASE_IGNORE(ID_MPI_Win_wait)
-		CASE_READY(ID_MPI_Wtick)
-		CASE_READY(ID_MPI_Wtime)
-		CASE_READY(ID_MPIX_Comm_agree)
-		CASE_READY(ID_MPIX_Comm_failure_ack)
-		CASE_READY(ID_MPIX_Comm_failure_get_acked)
-		CASE_READY(ID_MPIX_Comm_revoke)
-		CASE_READY(ID_MPIX_Comm_shrink)
-
-    default:
-        cout << "ERROR: 'event_leave' callback did not capture event: " << id << endl;
-    }
+  default:
+      cout << "ERROR: 'event_leave' callback did not capture event: " << id << endl;
+  }
 
 #undef CASE_READY
 #undef CASE_NOT_READY
-    return OTF2_CALLBACK_SUCCESS;
+  return OTF2_CALLBACK_SUCCESS;
 }
 
 #undef CASE_IGNORE

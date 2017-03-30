@@ -9,8 +9,8 @@
  *  SST/macroscale directory.
  */
 
-#ifndef CALLBACKS_H_
-#define CALLBACKS_H_
+#ifndef sstmac_skeletons_otf2_CALLBACKS_H_
+#define sstmac_skeletons_otf2_CALLBACKS_H_
 
 #include <otf2/otf2.h>
 

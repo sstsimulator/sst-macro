@@ -280,15 +280,7 @@ node::send_to_nic(network_message* netmsg)
   node_debug("sending to %d", int(netmsg->toaddr()));
   netmsg->set_flow_id(allocate_unique_id());
   netmsg->put_on_wire();
-
-  timestamp op_complete = nic_->nic_operation();
-  os_->sleep_until(op_complete);
-
-  if (netmsg->toaddr() == my_addr_){
-    nic_->intranode_send(netmsg);
-  } else {
-    nic_->internode_send(netmsg);
-  }
+  nic_->inject_send(netmsg, os_);
 }
 
 }

@@ -97,6 +97,7 @@ operating_system::os_thread_context operating_system::os_thread_context_;
 operating_system::operating_system(sprockit::sim_parameters* params, hw::node* parent) :
   current_thread_id_(thread::main_thread),
   my_addr_(parent->addr()),
+  call_graph_(nullptr),
   node_(parent),
   next_msg_id_(0),
   des_context_(nullptr),

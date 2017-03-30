@@ -86,6 +86,8 @@ OTF2TraceReplayApp::skeleton_main() {
 
   initiate_trace_replay(event_reader);
   verify_replay_success();
+
+  OTF2_Reader_Close(event_reader);
 }
 
 sumi::mpi_api*
@@ -206,7 +208,8 @@ OTF2TraceReplayApp::initialize_event_reader() {
       "OTF2_Reader_RegisterEvtCallbacks\n");
   OTF2_EvtReaderCallbacks_Delete(event_callbacks);
 
-  //cout << trace_length << endl;
+  free(locations);
+
   return reader;
 }
 

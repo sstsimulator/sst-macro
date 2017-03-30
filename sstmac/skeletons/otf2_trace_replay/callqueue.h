@@ -9,8 +9,8 @@
  *  SST/macroscale directory.
  */
 
-#ifndef CALLQUEUE_H_
-#define CALLQUEUE_H_
+#ifndef sstmac_skeletons_otf2_CALLQUEUE_H_
+#define sstmac_skeletons_otf2_CALLQUEUE_H_
 
 #include <queue>
 #include <deque>
