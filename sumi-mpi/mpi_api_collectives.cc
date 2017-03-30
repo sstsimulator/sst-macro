@@ -205,6 +205,10 @@ mpi_api::wait_collective(collective_op_base* op)
   for (it=pending.begin(); it != end; ++it){
     completion_queue_.push_back(*it);
   }
+
+  if (op->comm->id() == MPI_COMM_WORLD){
+    os_->set_call_graph_active(true);
+  }
 }
 
 void
