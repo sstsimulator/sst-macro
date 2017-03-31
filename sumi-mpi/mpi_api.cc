@@ -86,6 +86,7 @@ mpi_api::mpi_api(sprockit::sim_parameters* params,
   comm_factory_(nullptr),
   worldcomm_(nullptr),
   selfcomm_(nullptr),
+  crossed_comm_world_barrier_(false),
   sstmac::sumi_transport(params, "mpi", sid, os)
 {
   sprockit::sim_parameters* queue_params = params->get_optional_namespace("queue");
@@ -191,6 +192,7 @@ mpi_api::do_init(int* argc, char*** argv)
   wait_collective(op);
   delete op;
   os_->set_call_graph_active(false);
+  crossed_comm_world_barrier_ = false;
 
   return MPI_SUCCESS;
 }

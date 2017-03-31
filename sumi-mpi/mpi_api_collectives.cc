@@ -208,6 +208,7 @@ mpi_api::wait_collective(collective_op_base* op)
 
   if (op->comm->id() == MPI_COMM_WORLD){
     os_->set_call_graph_active(true);
+    crossed_comm_world_barrier_ = true;
   }
 }
 

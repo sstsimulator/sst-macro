@@ -80,6 +80,11 @@ class mpi_api :
     return queue_;
   }
 
+  bool
+  crossed_comm_world_barrier() const {
+    return crossed_comm_world_barrier_;
+  }
+
   /*
    * Methods exposing MPI calls and other key methods to
    * derived objects.
@@ -933,6 +938,8 @@ class mpi_api :
   enum {
     is_fresh, is_initialized, is_finalizing, is_finalized
   } status_;
+
+  bool crossed_comm_world_barrier_;
 
   /// MPI_COMM_WORLD.
   mpi_comm* worldcomm_;

@@ -94,7 +94,8 @@ int not_implemented(const char* fxn)
 parsedumpi_callbacks::
 parsedumpi_callbacks(parsedumpi *parent) :
   parent_(parent),
-  initialized_(false)
+  initialized_(false),
+  exact_mpi_times_(parent->exact_mpi_times())
 {
   sstmac::sw::api_lock();
   if(cbacks_ == NULL) {
@@ -104,6 +105,19 @@ parsedumpi_callbacks(parsedumpi *parent) :
   init_maps();
   memset(&datatype_sizes_, 0, sizeof(dumpi_sizeof));
   sstmac::sw::api_unlock();
+
+  if (exact_mpi_times_){
+    int rank = parent->tid();
+    std::string outFile = sprockit::printf("delta.%d.out", rank);
+    deltaOutput_.open(outFile.c_str(), std::ios::out);
+  }
+}
+
+parsedumpi_callbacks::~parsedumpi_callbacks()
+{
+  if (exact_mpi_times_){
+    deltaOutput_.close();
+  }
 }
 
 /// Start parsing.
@@ -203,8 +217,19 @@ start_mpi(const dumpi_time *cpu, const dumpi_time *wall,
 {
   if (!initialized_) return;
 
-  if(trace_compute_start_.sec >= 0) {
-    // This is not the first MPI call -- simulate a compute.
+
+  if (exact_mpi_times_ && simTraceDelta_.ticks() != 0){
+    sstmac::timestamp traceStart(wall->start.sec,wall->start.nsec);
+    sstmac::timestamp simStart = simTraceDelta_ + traceStart;
+    //std::cout << "Delaying rank " << parent_->mpi()->rank()
+    //          << " until " << simStart
+    //          << " from trace start " << traceStart
+    //          << std::endl;
+    parent_->os()->sleep_until(simStart);
+    simCallStart_ = parent_->now();
+  }
+  else if(trace_compute_start_.sec >= 0) {
+    // This is not the first MPI call -- simulate a compute
     if(perf != NULL && perf->count > 0) {
       spkt_throw(sprockit::unimplemented_error,
         "DUMPI perfctr compute: only compatible with time");
@@ -212,28 +237,18 @@ start_mpi(const dumpi_time *cpu, const dumpi_time *wall,
       // We get here if we are using the processor model.
       if(size_t(perf->count) != perfctr_compute_start_.size())
         spkt_throw(sprockit::illformed_error, "parsedumpi_callbacks::start_mpi:  "
-                              "Number of active perfcounters changed "
-                              "between calls.");
-      //sstmac::sw::compute_event* evts = new sstmac::sw::compute_event;
+                              "Number of active perfcounters changed between calls");
       for(int i = 0; i < perf->count; ++i) {
         int64_t evtval = perf->invalue[i] - perfctr_compute_start_[i];
         if(evtval < 0) {
           spkt_throw(sprockit::illformed_error, "parsedumpi_callbacks::start_mpi:  "
-                                "Performance counter moved backward "
-                                "between calls.");
+                                "Performance counter moved backward between calls");
         }
-        /**
-         this needs to change
-         evts->set_event_value(perf->counter_tag[i], evtval);
-        */
       }
-      //parent_->compute_inst(evts);
-      //delete evts;
     }
     else {
       // We get here if we are not using processor modeling.
-      sstmac::timestamp thetime = (parent_->timescaling_ *
-                           deltat(wall->start, trace_compute_start_));
+      sstmac::timestamp thetime = (parent_->timescaling_ * deltat(wall->start, trace_compute_start_));
       if(thetime.ticks() < 0) {
         // It turns out that RSQ can actually screw up on times
         // (both wall time and cpu time are wrong for final MPI barrier
@@ -259,6 +274,23 @@ end_mpi(const dumpi_time *cpu, const dumpi_time *wall,
     for(int i = 0; i < perf->count; ++i) {
       perfctr_compute_start_[i] = perf->outvalue[i];
     }
+  }
+  if (exact_mpi_times_ && parent_->mpi()->crossed_comm_world_barrier()){
+    sstmac::timestamp simNow = parent_->now();
+    sstmac::timestamp traceNow(usetime.stop.sec, usetime.stop.nsec);
+    if (simTraceDelta_.ticks_int64() == 0){
+      simTraceDelta_ = simNow - traceNow;
+      //std::cout << "Set rank " << parent_->mpi()->rank()
+      //          << " start to " << simTraceDelta_
+      //          << " at sim time " << simNow
+      //          << " at trace time " << traceNow
+      //          << std::endl;
+    }
+    sstmac::timestamp simTimeCall = simNow - simCallStart_;
+    sstmac::timestamp traceTimeStart = sstmac::timestamp(wall->start.sec, wall->start.nsec);
+    sstmac::timestamp traceTimeCall = traceNow - traceTimeStart;
+    sstmac::timestamp delta = traceTimeCall - simTimeCall;
+    deltaOutput_ << delta.ticks_int64() << "\n";
   }
 }
 

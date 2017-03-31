@@ -18,6 +18,7 @@
 #include <sumi-mpi/mpi_status.h>
 #include <dumpi/libundumpi/libundumpi.h>
 #include <stdint.h>
+#include <fstream>
 
 
 namespace sumi {
@@ -48,6 +49,8 @@ class parsedumpi_callbacks
 
   /// The dumpi timestamp at which we finished the most recent MPI call.
   dumpi_clock trace_compute_start_;
+  sstmac::timestamp simCallStart_;
+  sstmac::timestamp simTraceDelta_;
 
   /// The state of perfcounters when the most recent MPI call was finished.
   std::vector<int64_t> perfctr_compute_start_;
@@ -75,11 +78,18 @@ class parsedumpi_callbacks
   /// MPI operations.
   mpiop_map_t mpiop_;
 
+  std::ofstream deltaOutput_;
+
   bool initialized_;
+
+  // Whether to start MPI calls on the exact times they started in the trace
+  bool exact_mpi_times_;
 
  public:
   /// Populate callbacks.
   parsedumpi_callbacks(parsedumpi *parent);
+
+  ~parsedumpi_callbacks();
 
   void
   set_initialized(bool flag) {

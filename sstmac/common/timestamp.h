@@ -32,6 +32,14 @@ class timestamp
   /// The type that holds a timestamp.
   typedef int64_t tick_t;
 
+  static tick_t PSEC_PER_TICK;
+  static const timestamp::tick_t zero = 0;
+  static timestamp::tick_t nanoseconds;
+  static timestamp::tick_t microseconds;
+  static timestamp::tick_t milliseconds;
+  static timestamp::tick_t seconds;
+  static timestamp::tick_t minutes;
+
  private:
   /// Picoseconds between clock ticks.
 
@@ -52,19 +60,26 @@ class timestamp
   /// representable internal time.
   /// \throw sprockit::time_error if this time is outside the range that can
   /// can be represented with this time container
-  timestamp(double t);
+  timestamp(double t){
+    ticks_ = int64_t((t) * ( 1e12 / (PSEC_PER_TICK)));
+    if (t > max_time() || (t < min_time())) {
+      spkt_abort_printf("timestamp(): Time value %e out of bounds %e...%e",
+                        t, min_time(), max_time());
+    }
+  }
 
-  explicit
-  timestamp(tick_t ticks, timestamp_param_type_t ty);
+  explicit timestamp(tick_t ticks, timestamp_param_type_t ty) : ticks_(ticks) {}
 
-  explicit
-  timestamp();
+  explicit timestamp(uint32_t sec, uint32_t nsec) :
+      ticks_(sec*seconds + nsec*nanoseconds) {}
 
-  static tick_t zero;
+  explicit timestamp() : ticks_(0) {}
 
   /// Convert a tick type to int64_t.
   int64_t
-  ticks_int64() const;
+  ticks_int64() const {
+    return ticks_;
+  }
 
   /// Return the current time in seconds.
   double
@@ -95,15 +110,9 @@ class timestamp
     return ticks_;
   }
 
-  static double
-  tick_interval_sec();
-
   /// Get the tick interval in picoseconds.
   static tick_t
   tick_interval();
-
-  static int64_t
-  tick_interval_int64();
 
   /// Get the tick interval in std::string form (for example, "1ps").
   static const std::string &
