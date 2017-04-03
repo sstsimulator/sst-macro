@@ -217,7 +217,6 @@ start_mpi(const dumpi_time *cpu, const dumpi_time *wall,
 {
   if (!initialized_) return;
 
-
   if (exact_mpi_times_ && simTraceDelta_.ticks() != 0){
     sstmac::timestamp traceStart(wall->start.sec,wall->start.nsec);
     sstmac::timestamp simStart = simTraceDelta_ + traceStart;
@@ -266,9 +265,8 @@ void parsedumpi_callbacks::
 end_mpi(const dumpi_time *cpu, const dumpi_time *wall,
         const dumpi_perfinfo *perf)
 {
-  const bool use_walltime = true;
-  const dumpi_time &usetime = (use_walltime ? *wall : *cpu);
-  trace_compute_start_ = usetime.stop;
+  trace_compute_start_ = wall->stop;
+  sstmac::timestamp simNow = parent_->now();
   if(perf) {
     perfctr_compute_start_.resize(perf->count);
     for(int i = 0; i < perf->count; ++i) {
@@ -276,8 +274,7 @@ end_mpi(const dumpi_time *cpu, const dumpi_time *wall,
     }
   }
   if (exact_mpi_times_ && parent_->mpi()->crossed_comm_world_barrier()){
-    sstmac::timestamp simNow = parent_->now();
-    sstmac::timestamp traceNow(usetime.stop.sec, usetime.stop.nsec);
+    sstmac::timestamp traceNow(wall->stop.sec, wall->stop.nsec);
     if (simTraceDelta_.ticks_int64() == 0){
       simTraceDelta_ = simNow - traceNow;
       //std::cout << "Set rank " << parent_->mpi()->rank()
@@ -2511,7 +2508,7 @@ on_MPI_Init(const dumpi_init *prm, uint16_t thread,
       "on_MPI_Init: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
-  cb->getmpi()->do_init(const_cast<int*>(&prm->argc), const_cast<char***>(&prm->argv));
+  cb->getmpi()->init(const_cast<int*>(&prm->argc), const_cast<char***>(&prm->argv));
   cb->end_mpi(cpu, wall, perf);
   cb->set_initialized(true);
   return 1;
@@ -2564,7 +2561,7 @@ on_MPI_Finalize(const dumpi_finalize *prm, uint16_t thread,
       "on_MPI_Finalize: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
-  cb->getmpi()->do_finalize();
+  cb->getmpi()->finalize();
   cb->end_mpi(cpu, wall, perf);
   return 1;
 }

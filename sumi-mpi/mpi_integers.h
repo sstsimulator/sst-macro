@@ -1,8 +1,6 @@
 #ifndef SSTMAC_MPI_INTEGERS_H
 #define SSTMAC_MPI_INTEGERS_H
 
-#include <sumi-mpi/mpi_types.h>
-
 #ifdef __cplusplus
 #include <cstdint>
 #else

@@ -99,7 +99,7 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
   node_(parent),
   next_msg_id_(0),
   call_graph_(nullptr),
-  call_graph_active_(false),
+  call_graph_active_(true), //on by default
   des_context_(nullptr),
   ftq_trace_(nullptr),
   compute_sched_(nullptr),
@@ -312,9 +312,6 @@ operating_system::init_threading()
 void
 operating_system::local_shutdown()
 {
-  for (api* lib : services_){
-    lib->finalize();
-  }
 }
 
 void

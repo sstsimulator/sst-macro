@@ -41,7 +41,7 @@ class sumi_transport :
   init() override;
 
   virtual void
-  finalize() override;
+  finish() override;
 
   virtual ~sumi_transport();
 

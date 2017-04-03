@@ -13,10 +13,10 @@
 #define MPI_Taskid current_mpi()->taskid
 #define MPI_Errhandler_set current_mpi()->errhandler_set
 #define MPI_Print current_mpi()->print
-#define MPI_Init current_mpi()->do_init
+#define MPI_Init current_mpi()->init
 #define MPI_Initialized current_mpi()->initialized
 #define MPI_Abort current_mpi()->abort
-#define MPI_Finalize current_mpi()->do_finalize
+#define MPI_Finalize current_mpi()->finalize
 #define MPI_Wait current_mpi()->wait
 #define MPI_Waitall current_mpi()->waitall
 #define MPI_Waitany current_mpi()->waitany

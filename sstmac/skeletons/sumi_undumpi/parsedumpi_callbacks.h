@@ -13,12 +13,15 @@
 #define SSTMAC_SOFTWARE_SKELETONS_UNDUMPI_PARSEDUMPI_CALLBACKS_H_INCLUDED
 
 #include <sstmac/skeletons/sumi_undumpi/parsedumpi.h>
-#include <sumi-mpi/sstmac_mpi_integers.h>
+#include <sumi-mpi/mpi_integers.h>
 #include <sumi-mpi/mpi_api_fwd.h>
+#include <sumi-mpi/mpi_types.h>
 #include <sumi-mpi/mpi_status.h>
+#include <sumi-mpi/mpi_call.h>
 #include <dumpi/libundumpi/libundumpi.h>
 #include <stdint.h>
 #include <fstream>
+#include <unordered_map>
 
 
 namespace sumi {

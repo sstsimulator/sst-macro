@@ -88,8 +88,9 @@ nobase_library_include_HEADERS = \
   mpi_status_fwd.h \
   mpi_types.h \
   mpi_wrapper.h \
+  mpi_integers.h \
+  mpi_call.h \
   sstmac_mpi.h \
-  sstmac_mpi_integers.h \
   sstmac_mpi_macro.h 
   
 

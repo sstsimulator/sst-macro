@@ -17,7 +17,7 @@
 #include <sstmac/common/messages/library_message.h>
 #include <sumi-mpi/mpi_status.h>
 #include <sumi-mpi/mpi_types/mpi_type.h>
-#include <sumi-mpi/sstmac_mpi.h>
+#include <sumi-mpi/mpi_integers.h>
 #include <sstmac/software/process/task_id.h>
 #include <sstmac/software/process/app_id.h>
 

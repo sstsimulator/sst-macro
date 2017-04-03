@@ -57,7 +57,7 @@ class transport
   init();
   
   virtual void
-  finalize();
+  finish();
 
   void
   deadlock_check();
