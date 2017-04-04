@@ -1,4 +1,6 @@
 #include <mpi.h>
+#include <stddef.h>
+#include <stdio.h>
 
 #define sstmac_app_name sendrecv
 

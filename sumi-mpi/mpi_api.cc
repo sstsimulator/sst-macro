@@ -90,6 +90,7 @@ mpi_api::mpi_api(sprockit::sim_parameters* params,
   comm_factory_(nullptr),
   worldcomm_(nullptr),
   selfcomm_(nullptr),
+  generate_ids_(true),
   crossed_comm_world_barrier_(false),
   sstmac::sumi_transport(params, "mpi", sid, os)
 {
@@ -422,7 +423,7 @@ mpi_api::get_group(MPI_Group grp)
 }
 
 void
-mpi_api::add_keyval(int key, keyval*keyval)
+mpi_api::add_keyval(int key, keyval* keyval)
 {
   keyvals_[key] = keyval;
 }
@@ -438,26 +439,27 @@ mpi_request*
 mpi_api::get_request(MPI_Request req)
 {
   if (req == MPI_REQUEST_NULL){
-    return 0;
+    return nullptr;
   }
 
-  spkt_unordered_map<MPI_Request, mpi_request*>::iterator it
-    = req_map_.find(req);
+  auto it = req_map_.find(req);
   if (it == req_map_.end()) {
     spkt_throw_printf(sprockit::spkt_error,
         "could not find mpi request %d for rank %d",
         req, int(rank_));
   }
-
   return it->second;
 }
 
-MPI_Comm
-mpi_api::add_comm_ptr(mpi_comm* ptr)
+void
+mpi_api::add_comm_ptr(mpi_comm* ptr, MPI_Comm* comm)
 {
-  MPI_Comm comm = ptr->id();
-  comm_map_[comm] = ptr;
-  return comm;
+  if (generate_ids_){
+    *comm = ptr->id();
+  } else {
+    ptr->set_id(*comm);
+  }
+  comm_map_[*comm] = ptr;
 }
 
 void
@@ -480,14 +482,12 @@ mpi_api::add_group_ptr(MPI_Group grp, mpi_group* ptr)
   grp_map_[grp] = ptr;
 }
 
-
-MPI_Group
-mpi_api::add_group_ptr(mpi_group* ptr)
+void
+mpi_api::add_group_ptr(mpi_group* ptr, MPI_Group* grp)
 {
-  MPI_Group grp = group_counter_++;
-  grp_map_[grp] = ptr;
-  ptr->set_id(grp);
-  return grp;
+  if (generate_ids_) *grp = group_counter_++;
+  grp_map_[*grp] = ptr;
+  ptr->set_id(*grp);
 }
 
 void
@@ -505,12 +505,11 @@ mpi_api::erase_group_ptr(MPI_Group grp)
   }
 }
 
-MPI_Request
-mpi_api::add_request_ptr(mpi_request* ptr)
+void
+mpi_api::add_request_ptr(mpi_request* ptr, MPI_Request* req)
 {
-  MPI_Request req = req_counter_++;
-  req_map_[req] = ptr;
-  return req;
+  if (generate_ids_) *req = req_counter_++;
+  req_map_[*req] = ptr;
 }
 
 void

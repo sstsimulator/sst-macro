@@ -37,6 +37,10 @@ typedef void (*sstmac_pthread_key_destructor_fxn)(void*);
 #define SSTAMC_PTHREAD_CREATE_DETACHED 0
 #define SSTMAC_PTHREAD_CREATE_JOINABLE 1
 
+#define PTHREAD_MUTEX_NORMAL     0
+#define PTHREAD_MUTEX_ERRORCHECK 1
+#define PTHREAD_MUTEX_RECURSIVE  2
+
 #undef PTHREAD_SCOPE_PROCESS
 #define PTHREAD_SCOPE_PROCESS 0
 

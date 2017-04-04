@@ -39,7 +39,8 @@ class threading_interface
   virtual void
   start_context(int physical_thread_id,
                 void *stack, size_t stacksize, void
-                (*func)(void*), void *args, threading_interface *yield_to) = 0;
+                (*func)(void*), void *args, threading_interface *yield_to,
+                void* globals_storage) = 0;
 
   /// Swap context.
   virtual void

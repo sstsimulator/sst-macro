@@ -28,62 +28,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-ImplementFactory(sstmac::sw::perf_counter_model);
-
 namespace sstmac {
 namespace sw {
-
-class null_perf_counter_model : public perf_counter_model
-{
- public:
-  compute_event*
-  get_next_event() {
-    return nullptr;
-  }
-
-  perf_counter*
-  register_variable(void *ptr){
-    return &null_counter;
-  }
-
-  void
-  remove_variable(void *ptr){}
-
- private:
-  perf_counter null_counter;
-
-};
-
-class flops_perf_counter_model : public perf_counter_model
-{
- public:
-  flops_perf_counter_model() {
-    flops_.counters() = 0;
-  }
-
-  compute_event*
-  get_next_event() {
-    sstmac::sw::basic_compute_event* ev = new sstmac::sw::basic_compute_event;
-    ev->data().flops = flops_.counters();
-    flops_.counters() = 0;
-    return ev;
-  }
-
-  perf_counter*
-  register_variable(void* ptr){
-    return &flops_;
-  }
-
-  void
-  remove_variable(void *ptr){}
-
- private:
-  perf_counter_impl<uint64_t> flops_;
-
-};
-
-SpktRegister("null", perf_counter_model, null_perf_counter_model);
-SpktRegister("flops", perf_counter_model, flops_perf_counter_model);
 
 static thread_safe_long THREAD_ID_CNT(0);
 const app_id thread::main_thread_aid(-1);
@@ -94,7 +40,7 @@ const task_id thread::main_thread_tid(-1);
 //
 void
 thread::init_thread(int physical_thread_id, threading_interface* threadcopy, void *stack,
-                    int stacksize, threading_interface *yield_to)
+                    int stacksize, threading_interface *yield_to, void* globals_storage)
 {
   stack_ = stack;
   stacksize_ = stacksize;
@@ -108,7 +54,8 @@ thread::init_thread(int physical_thread_id, threading_interface* threadcopy, voi
   threadinfo* info = new threadinfo();
   info->thethread = this;
 
-  context_->start_context(physical_thread_id, stack, stacksize, run_routine, info, yield_to);
+  context_->start_context(physical_thread_id, stack, stacksize, run_routine, info,
+                          yield_to, globals_storage);
 }
 
 device_id
@@ -158,13 +105,6 @@ thread::kill()
 void
 thread::cleanup()
 {
-  if (pthread_map_){
-    //don't delete here
-    //someone will come along and try to join this thread
-    //we have to leave to the a null pointer so the joiner
-    //knows that the thread has finished
-    (*pthread_map_)[thread_id_] = 0;
-  }
 }
 
 class delete_thread_event :
@@ -255,16 +195,11 @@ thread::thread(sprockit::sim_parameters* params, software_id sid, operating_syst
   stack_(nullptr),
   context_(nullptr),
   cpumask_(0),
-  pthread_map_(nullptr),
   parent_app_(nullptr),
-  perf_model_(nullptr),
   sid_(sid)
 {
   //make all cores possible active
   cpumask_ = ~(cpumask_);
-
-  perf_model_ = perf_counter_model_factory
-                  ::get_optional_param("perf_model", "null", params);
 }
 
 long
@@ -337,7 +272,6 @@ thread::~thread()
     delete context_;
   }
   if (schedule_key_) delete schedule_key_;
-  if (perf_model_) delete perf_model_;
 }
 
 

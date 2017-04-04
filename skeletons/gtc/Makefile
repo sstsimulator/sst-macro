@@ -23,10 +23,10 @@ $(TARGET): $(OBJ)
 	$(CXX) -o $@ $+ $(LDFLAGS) $(LIBS) 
 
 %.o: %.cc 
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
+	SSTMAC_REMOVE_GLOBALS=0 $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
 %.o: %.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+	SSTMAC_REMOVE_GLOBALS=0 $(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 clean: 
 	rm -f $(TARGET) $(OBJ) 

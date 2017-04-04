@@ -37,12 +37,11 @@ mpi_api::sendrecv(const void *sendbuf, int sendcount,
  MPI_Comm comm, MPI_Status *status)
 {
   start_pt2pt_call(MPI_Sendrecv,recvcount,recvtype,source,recvtag,comm);
-  MPI_Request sendreq;
-  do_isend(sendbuf, sendcount, sendtype, dest, sendtag, comm, &sendreq, false);
-  finish_Impi_call(MPI_Sendrecv,&sendreq);
+  mpi_request* req = do_isend(sendbuf, sendcount, sendtype, dest, sendtag, comm);
   do_recv(recvbuf, recvcount, recvtype, source, recvtag, comm, status);
+  queue_->progress_loop(req);
+  delete req;
   finish_mpi_call(MPI_Sendrecv);
-  do_wait(&sendreq, MPI_STATUS_IGNORE);
   return MPI_SUCCESS;
 }
 
@@ -112,7 +111,7 @@ mpi_api::send_init(const void *buf, int count,
   _start_mpi_call_(MPI_Send_init);
 
   mpi_request* req = mpi_request::construct(default_key_category);
-  *request = add_request_ptr(req);
+  add_request_ptr(req, request);
 
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request | sprockit::dbg::mpi_pt2pt,
     "MPI_Send_init(%d,%s,%d:%d,%s,%s;REQ=%d)",
@@ -135,31 +134,31 @@ mpi_api::send_init(const void *buf, int count,
   return MPI_SUCCESS;
 }
 
-int
+mpi_request*
 mpi_api::do_isend(const void *buf, int count, MPI_Datatype datatype, int dest,
-               int tag, MPI_Comm comm, MPI_Request *request, bool print)
+               int tag, MPI_Comm comm)
 {
-  using namespace sprockit;
   mpi_comm* commPtr = get_comm(comm);
   mpi_request* req = mpi_request::construct(default_key_category);
-  *request = add_request_ptr(req);
-  mpi_api_cond_debug(dbg::mpi | dbg::mpi_request | dbg::mpi_pt2pt, print,
-    "MPI_Isend(%d,%s,%d:%d,%s,%s;REQ=%d)",
-    count, type_str(datatype).c_str(), int(dest), int(commPtr->peer_task(dest)),
-    tag_str(tag).c_str(), comm_str(comm).c_str(), *request);
   queue_->send(req, count, datatype, dest, tag, commPtr, const_cast<void*>(buf));
-  return MPI_SUCCESS;
+  return req;
 }
 
 int
 mpi_api::isend(const void *buf, int count, MPI_Datatype datatype, int dest,
                int tag, MPI_Comm comm, MPI_Request *request)
 {
+  using namespace sprockit;
   start_Ipt2pt_call(MPI_Isend,count,datatype,dest,tag,comm,request);
-  int ret = do_isend(buf, count, datatype, dest, tag, comm, request, true);
+  mpi_api_debug(dbg::mpi | dbg::mpi_request | dbg::mpi_pt2pt,
+    "MPI_Isend(%d,%s,%d,%s,%s;REQ=%d)",
+    count, type_str(datatype).c_str(), int(dest),
+    tag_str(tag).c_str(), comm_str(comm).c_str(), *request);
+  mpi_request* req = do_isend(buf, count, datatype, dest, tag, comm);
+  add_request_ptr(req, request);
   queue_->nonblocking_progress();
   finish_Impi_call(MPI_Isend,request);
-  return ret;
+  return MPI_SUCCESS;
 }
 
 int
@@ -194,7 +193,7 @@ mpi_api::recv_init(void *buf, int count, MPI_Datatype datatype, int source,
   _start_mpi_call_(MPI_Recv_init);
 
   mpi_request* req = mpi_request::construct(default_key_category);
-  *request = add_request_ptr(req);
+  add_request_ptr(req, request);
 
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_pt2pt,
     "MPI_Recv_init(%d,%s,%s,%s,%s;REQ=%d)",
@@ -226,18 +225,19 @@ mpi_api::irecv(void *buf, int count, MPI_Datatype datatype, int source,
   mpi_comm* commPtr = get_comm(comm);
 
   mpi_request* req = mpi_request::construct(default_key_category);
-  *request = add_request_ptr(req);
+  add_request_ptr(req, request);
 
   mpi_api_debug(dbg::mpi | dbg::mpi_request | dbg::mpi_pt2pt,
-    "MPI_Irecv(%d,%s,%s,%s,%s;REQ=%d)",
-    count, type_str(datatype).c_str(),
-    src_str(commPtr, source).c_str(), tag_str(tag).c_str(),
-    comm_str(comm).c_str(), *request);
+      "MPI_Irecv(%d,%s,%s,%s,%s;REQ=%d)",
+      count, type_str(datatype).c_str(),
+      src_str(commPtr, source).c_str(), tag_str(tag).c_str(),
+      comm_str(comm).c_str(), *request);
 
   queue_->recv(req, count, datatype, source, tag, commPtr, buf);
   queue_->nonblocking_progress();
   finish_Impi_call(MPI_Irecv,request);
   return MPI_SUCCESS;
 }
+
 
 }

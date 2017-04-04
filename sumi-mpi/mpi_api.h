@@ -163,6 +163,11 @@ class mpi_api :
   double
   wtime();
 
+  void
+  set_generate_ids(bool flag){
+    generate_ids_ = flag;
+  }
+
   void abort(MPI_Comm comm, int errcode);
 
   int errhandler_set(MPI_Comm comm, MPI_Errhandler handler){
@@ -228,10 +233,9 @@ class mpi_api :
     return MPI_SUCCESS;
   }
 
-  int
-  group_incl(int* ranks,
+  int group_incl(MPI_Group oldgrp,
              int num_ranks,
-             MPI_Group oldgrp,
+             const int* ranks,
              MPI_Group* newgrp);
 
   int group_free(MPI_Group* grp);
@@ -446,7 +450,7 @@ class mpi_api :
 
   int
   reduce_scatter(const void* src, void* dst,
-                 int* recvcnts, MPI_Datatype type,
+                 const int* recvcnts, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm);
 
   int
@@ -586,7 +590,7 @@ class mpi_api :
 
   int
   ireduce_scatter(const void* src, void* dst,
-                 int* recvcnts, MPI_Datatype type,
+                 const int* recvcnts, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm, MPI_Request* req);
 
   int
@@ -702,14 +706,14 @@ class mpi_api :
   mpi_request*
   get_request(MPI_Request req);
 
-  MPI_Comm
-  add_comm_ptr(mpi_comm* ptr);
+  void
+  add_comm_ptr(mpi_comm* ptr, MPI_Comm* comm);
 
   void
   erase_comm_ptr(MPI_Comm comm);
 
-  MPI_Group
-  add_group_ptr(mpi_group* ptr);
+  void
+  add_group_ptr(mpi_group* ptr, MPI_Group* grp);
 
   void
   add_group_ptr(MPI_Group grp, mpi_group* ptr);
@@ -717,8 +721,8 @@ class mpi_api :
   void
   erase_group_ptr(MPI_Group grp);
 
-  MPI_Request
-  add_request_ptr(mpi_request* ptr);
+  void
+  add_request_ptr(mpi_request* ptr, MPI_Request* req);
 
   void
   erase_request_ptr(MPI_Request req);
@@ -871,7 +875,7 @@ class mpi_api :
                MPI_Op op, const void* src, void* dst);
 
   collective_op_base*
-  start_reduce_scatter(MPI_Comm comm, int* recvcounts, MPI_Datatype type,
+  start_reduce_scatter(MPI_Comm comm, const int* recvcounts, MPI_Datatype type,
                        MPI_Op op, const void* src, void* dst);
 
   collective_op_base*
@@ -900,6 +904,8 @@ class mpi_api :
 
   void check_init();
 
+  mpi_request* do_isend(const void *buf, int count, MPI_Datatype datatype, int dest,
+                        int tag, MPI_Comm comm);
   int do_recv(void *buf, int count, MPI_Datatype datatype, int source,
             int tag, MPI_Comm comm, MPI_Status* status);
 
@@ -960,6 +966,8 @@ class mpi_api :
   MPI_Request req_counter_;
 
   spkt_unordered_map<int, keyval*> keyvals_;
+
+  bool generate_ids_;
 
 #if SSTMAC_COMM_SYNC_STATS
  public:

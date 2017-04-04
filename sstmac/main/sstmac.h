@@ -37,6 +37,7 @@ struct opts {
     debug(""),
     params(0),
     configfile(""),
+    got_config_file(false),
     low_res_timer(false),
     print_walltime(true),
     print_params(false),

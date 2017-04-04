@@ -22,8 +22,9 @@ mpi_api::comm_dup(MPI_Comm input, MPI_Comm *output)
   start_comm_call(MPI_Comm_dup,input);
   mpi_comm* inputPtr = get_comm(input);
   mpi_comm* outputPtr = comm_factory_->comm_dup(inputPtr);
-  *output = add_comm_ptr(outputPtr);
-  finish_comm_call(MPI_Comm_dup,input,output);
+  add_comm_ptr(outputPtr, output);
+  mpi_api_debug(sprockit::dbg::mpi, "MPI_Comm_dup(%s,*%s) finish",
+                comm_str(input).c_str(), comm_str(*output).c_str());
   return MPI_SUCCESS;
 }
 
@@ -41,8 +42,9 @@ mpi_api::comm_create(MPI_Comm input, MPI_Group group, MPI_Comm *output)
   start_comm_call(MPI_Comm_create,input);
   mpi_comm* inputPtr = get_comm(input);
   mpi_group* groupPtr = get_group(group);
-  *output = add_comm_ptr(comm_factory_->comm_create(inputPtr, groupPtr));
-  finish_comm_call(MPI_Comm_create,input,output);
+  add_comm_ptr(comm_factory_->comm_create(inputPtr, groupPtr), output);
+  mpi_api_debug(sprockit::dbg::mpi, "MPI_Comm_create(%s,%d,*%s)",
+                comm_str(input).c_str(), group, comm_str(*output).c_str());
   return MPI_SUCCESS;
 }
 
@@ -66,7 +68,7 @@ mpi_api::cart_create(MPI_Comm comm_old, int ndims, const int dims[],
   start_comm_call(MPI_Cart_create,comm_old);
   mpi_comm* incommPtr = get_comm(comm_old);
   mpi_comm* outcommPtr = comm_factory_->create_cart(incommPtr, ndims, dims, periods, reorder);
-  *comm_cart = add_comm_ptr(outcommPtr);
+  add_comm_ptr(outcommPtr, comm_cart);
   return MPI_SUCCESS;
 }
 
@@ -144,8 +146,10 @@ mpi_api::comm_split(MPI_Comm incomm, int color, int key, MPI_Comm *outcomm)
   start_comm_call(MPI_Comm_split,incomm);
   mpi_comm* incommPtr = get_comm(incomm);
   mpi_comm* outcommPtr = comm_factory_->comm_split(incommPtr, color, key);
-  *outcomm = add_comm_ptr(outcommPtr);
-  finish_comm_call(MPI_Comm_split,incomm,outcomm);
+  add_comm_ptr(outcommPtr, outcomm);
+  mpi_api_debug(sprockit::dbg::mpi,
+      "MPI_Comm_split(%s,%d,%d,*%s) exit",
+                comm_str(incomm).c_str(), color, key, comm_str(*outcomm).c_str());
   return MPI_SUCCESS;
 }
 

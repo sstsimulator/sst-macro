@@ -1,7 +1,6 @@
 #include <sstmac/common/sstmac_config.h>
 #if !SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/backends/native/clock_cycle_parallel/clock_cycle_event_container.h>
-#include <sstmac/common/thread_info.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/node/node.h>

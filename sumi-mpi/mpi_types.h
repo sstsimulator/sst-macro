@@ -1,5 +1,5 @@
-#ifndef MPITYPES_H_IN
-#define MPITYPES_H_IN
+#ifndef sumi_mpi_MPITYPES_H_IN
+#define sumi_mpi_MPITYPES_H_IN
 
 #ifdef __cpluscplus
 #include <cstdint>

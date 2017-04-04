@@ -91,6 +91,7 @@ parse_opts(int argc, char **argv, opts &oo)
       }
       case 'f':
         oo.configfile = optarg;
+        oo.got_config_file = true;
         break;
       case 'a': {
         need_config_file = false;
@@ -129,8 +130,6 @@ parse_opts(int argc, char **argv, opts &oo)
       return PARSE_OPT_EXIT_FAIL;
     }
   }
-
-  oo.params->print_params(std::cerr);
 
   if (oo.configfile == "" && need_config_file){
     spkt_abort_printf("need to specify input file with -f flag");

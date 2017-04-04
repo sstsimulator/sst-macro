@@ -38,6 +38,7 @@ The following are dependencies for \sstmacro.
 \item Automake: 1.11.1 or later 
 \item Libtool: 2.4 or later 
 \item A C/C++ compiler is required with C++11 support.  gcc 4.8 and onward is known to work. 
+\item (optional) OTF2: 2.0 or later for OTF2 trace replay.
 \item (optional) Doxygen and Graphviz are needed to build the documentation.
 \item (optional) Graphviz is needed to collect call graphs.
 %\item (optional, recommended) Qt libraries and build system (qmake) are needed to build the GUI input configuration tool.
@@ -96,7 +97,7 @@ Once \sstmacro is extracted to a directory, we recommend the following as a base
 sst-macro> ./bootstrap.sh
 sst-macro> mkdir build
 sst-macro> cd build
-sst-macro/build> ../configure --prefix=/path-to-install --with-sst-core=$PATH_TO_SST_CORE CC=$MPICC CXX=$MPICXX
+sst-macro/build> ../configure --prefix=$PATH_TO_INSTALL --with-sst-core=$PATH_TO_SST_CORE CC=$MPICC CXX=$MPICXX
 \end{ShellCmd}
 \inlinecode{PATH_TO_SST_CORE} should be the prefix install directory used when installing the core.  The MPI compilers should be the same compilers used for building Boost and SST core.
 
@@ -109,6 +110,7 @@ Enabled by default. Disable if not using Boost or C++11. Ordered maps can be use
 Enabled by default. Disable if not using Boost or C++11.
 \item --(dis|en)able-custom-new : Memory is allocated in larger chunks in the simulator, which can speed up large simulations.
 \item --(dis|en)able-multithread : This configures for thread-level parallelism for (hopefully) faster simulation
+\item --(dis|en)able-otf2: Enable OTF2 trace replay, requires a path to OTF2 installation.
 \end{itemize}
 
 Once configuration has completed, printing a summary of the things it found, simply type \inlineshell{make}.  

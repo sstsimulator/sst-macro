@@ -937,7 +937,8 @@ void
 sim_parameters::parallel_build_params(sprockit::sim_parameters* params,
                                       int me, int nproc,
                                       const std::string& filename,
-                                      param_bcaster *bcaster)
+                                      param_bcaster *bcaster,
+                                      bool fail_if_not_found)
 {
   bool fail_on_existing = false;
   bool overwrite_existing = true;
@@ -946,7 +947,7 @@ sim_parameters::parallel_build_params(sprockit::sim_parameters* params,
     if (me == 0){
       //I don't want all processes hitting the network and reading the file
       //Proc 0 reads it and then broadcasts
-      params->parse_file(filename, fail_on_existing, overwrite_existing);
+      params->parse_file(filename, fail_on_existing, overwrite_existing, fail_if_not_found);
       if (nproc > 1){
         //this is a bit more complicated than bcast_file_stream
         //in parsing the main file, root might open more files
@@ -1032,7 +1033,8 @@ void
 sim_parameters::parse_file(
   const std::string& input_fname,
   bool fail_on_existing,
-  bool override_existing)
+  bool override_existing,
+  bool fail_if_not_found)
 {
   std::string fname = trim_str(input_fname);
 
@@ -1041,7 +1043,7 @@ sim_parameters::parse_file(
 
   if (in.is_open()) {
     parse_stream(in, fail_on_existing, override_existing);
-  } else {
+  } else if (fail_if_not_found){
     SpktFileIO::not_found(fname);
   }
 }

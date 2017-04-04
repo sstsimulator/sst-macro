@@ -29,7 +29,7 @@ mpi_api::add_immediate_collective(collective_op_base* op, MPI_Request* req)
   mpi_request* reqPtr = mpi_request::construct(default_key_category);
   reqPtr->set_collective(op);
   op->comm->add_request(op->tag, reqPtr);
-  *req = add_request_ptr(reqPtr);
+  add_request_ptr(reqPtr, req);
 }
 
 void
@@ -728,7 +728,7 @@ mpi_api::start_reduce_scatter(collective_op* op)
 }
 
 collective_op_base*
-mpi_api::start_reduce_scatter(MPI_Comm comm, int* recvcounts, MPI_Datatype type,
+mpi_api::start_reduce_scatter(MPI_Comm comm, const int* recvcounts, MPI_Datatype type,
                               MPI_Op mop, const void* src, void* dst)
 {
   spkt_throw(sprockit::unimplemented_error,
@@ -743,7 +743,7 @@ mpi_api::start_reduce_scatter(MPI_Comm comm, int* recvcounts, MPI_Datatype type,
 }
 
 int
-mpi_api::reduce_scatter(const void *src, void *dst, int *recvcnts,
+mpi_api::reduce_scatter(const void *src, void *dst, const int *recvcnts,
                         MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
 {
   collective_op_base* op = start_all(reduce_scatter,MPI_Reduce_scatter,
@@ -761,7 +761,7 @@ mpi_api::reduce_scatter(int *recvcnts, MPI_Datatype type, MPI_Op op, MPI_Comm co
 }
 
 int
-mpi_api::ireduce_scatter(const void *src, void *dst, int *recvcnts,
+mpi_api::ireduce_scatter(const void *src, void *dst, const int *recvcnts,
                         MPI_Datatype type, MPI_Op mop,
                         MPI_Comm comm, MPI_Request* req)
 {

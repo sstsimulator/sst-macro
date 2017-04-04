@@ -2,7 +2,6 @@
 #if !SSTMAC_INTEGRATED_SST_CORE
 
 #include <sstmac/backends/native/clock_cycle_parallel/multithreaded_event_container.h>
-#include <sstmac/common/thread_info.h>
 #include <unistd.h>
 #include <execinfo.h>
 #include <dlfcn.h>
