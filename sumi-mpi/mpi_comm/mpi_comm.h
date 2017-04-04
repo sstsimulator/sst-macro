@@ -19,7 +19,7 @@
 #include <sstmac/software/launch/app_launch.h>
 #include <sumi-mpi/mpi_comm/keyval_fwd.h>
 #include <sumi-mpi/mpi_comm/mpi_group.h>
-#include <sumi-mpi/sstmac_mpi_integers.h>
+#include <sumi-mpi/mpi_integers.h>
 #include <sumi-mpi/mpi_request_fwd.h>
 
 namespace sumi {

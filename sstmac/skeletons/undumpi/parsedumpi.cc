@@ -55,16 +55,10 @@ parsedumpi::parsedumpi(sprockit::sim_parameters* params, software_id sid,
   print_progress_ = params->get_optional_bool_param("parsedumpi_print_progress", true);
 
   percent_terminate_ = params->get_optional_double_param("parsedumpi_terminate_percent", -1);
+
+  exact_mpi_times_ = params->get_optional_bool_param("parsedumpi_exact_times", false);
 }
 
-mpi_api* 
-parsedumpi::mpi() 
-{
-  if (mpi_) return mpi_;
-
-  mpi_ = get_api<mpi_api>();
-  return mpi_;
-}
 
 //
 // Wait!  That's not good news at all!
@@ -81,7 +75,7 @@ parsedumpi::~parsedumpi() throw()
 void parsedumpi::skeleton_main()
 {
   int rank = this->tid();
-
+  mpi_ = get_api<mpi_api>();
   sstmac::sw::dumpi_meta* meta = new   sstmac::sw::dumpi_meta(fileroot_);
   parsedumpi_callbacks cbacks(this);
   std::string fname = sstmac::sw::dumpi_file_name(rank, meta->dirplusfileprefix_);

@@ -42,7 +42,13 @@ class parsedumpi : public sstmac::sw::app
   virtual
   ~parsedumpi() throw ();
 
-  mpi_api* mpi();
+  mpi_api* mpi() {
+    return mpi_;
+  }
+
+  bool exact_mpi_times() const {
+    return exact_mpi_times_;
+  }
 
   /// Parse the tracefile.
   virtual void
@@ -58,6 +64,8 @@ class parsedumpi : public sstmac::sw::app
   mpi_api* mpi_;
 
   bool print_progress_;
+
+  bool exact_mpi_times_;
 
   double percent_terminate_;
 

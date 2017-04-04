@@ -296,6 +296,16 @@ class operating_system :
 
   void increment_app_refcount();
 
+  void
+  set_call_graph_active(bool flag){
+    call_graph_active_ = flag;
+  }
+
+  bool
+  call_graph_active() const {
+    return call_graph_active_;
+  }
+
  private:
   void
   add_thread(thread* t);
@@ -354,6 +364,8 @@ class operating_system :
   graph_viz* call_graph_;
 
   ftq_calendar* ftq_trace_;
+
+  bool call_graph_active_;
 
 #if SSTMAC_USE_MULTITHREAD
   static std::vector<operating_system::os_thread_context> os_thread_contexts_;

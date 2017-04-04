@@ -448,7 +448,7 @@ boxml_standalone(int argc, char** argv)
   if (rank != 0)
     std::cout << "rank " << rank << " ran " << lblxml::g_ncomp_run << " computes\n";
   std::cout << "scheduler exiting normally\n";
-  sch->finalize();
+  sch->finish();
 }
 
 RegisterTest("boxml",boxml_standalone);

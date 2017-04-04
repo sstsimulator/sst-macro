@@ -85,7 +85,7 @@ int USER_MAIN(int argc, char** argv)
   }
   //send a shutdown request to server 0 - make rank 0 in charge
   if (tport->rank() == 0) tport->shutdown_server(0, srv->node_assignment(0), srv->aid());
-  tport->finalize();
+  tport->finish();
   return 0;
 }
 

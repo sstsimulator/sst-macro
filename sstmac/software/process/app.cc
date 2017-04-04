@@ -213,11 +213,8 @@ app::_get_api(const char* name)
   // an underlying thread may have built this
   api* my_api = apis_[name];
   if (!my_api) {
-    bool new_params = params_->has_namespace(name);
-    sprockit::sim_parameters* app_params = params_;
-    if (new_params)
-      app_params = params_->get_namespace(name);
-    api* new_api = api_factory::get_value(name, app_params, sid_, os_);
+    sprockit::sim_parameters* api_params = params_->get_optional_namespace(name);
+    api* new_api = api_factory::get_value(name, api_params, sid_, os_);
     apis_[name] = new_api;
     return new_api;
   }

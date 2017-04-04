@@ -7,7 +7,7 @@ namespace sumi {
 bool
 mpi_api::test(MPI_Request *request, MPI_Status *status)
 {
-  start_mpi_call("MPI_Test");
+  _start_mpi_call_(MPI_Test);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, "MPI_Test(...)");
 
   if (*request == MPI_REQUEST_NULL){

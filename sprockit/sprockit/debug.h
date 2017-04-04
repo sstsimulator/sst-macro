@@ -278,6 +278,12 @@ class debug_register_slot {
   if (::sprockit::debug::slot_active(slot_bitmask)){ \
     ::sprockit::debug::print_debug_string(::sprockit::printf(__VA_ARGS__)); \
   }
+
+#define conditional_debug_printf(slot_bitmask, cond, ...) \
+  if (::sprockit::debug::slot_active(slot_bitmask && (cond))){ \
+    ::sprockit::debug::print_debug_string(::sprockit::printf(__VA_ARGS__)); \
+  }
+
 #endif
 
 

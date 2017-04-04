@@ -143,9 +143,6 @@ init_opts(opts& oo, int argc, char** argv)
 void
 init_params(parallel_runtime* rt, opts& oo, sprockit::sim_parameters* params, bool parallel)
 {
-  if (oo.configfile == "")
-    oo.configfile = "parameters.ini";
-
   //use the config file to set up file search paths
   size_t pos = oo.configfile.find_last_of('/');
   if (pos != std::string::npos) {
@@ -153,13 +150,16 @@ init_params(parallel_runtime* rt, opts& oo, sprockit::sim_parameters* params, bo
     sprockit::SpktFileIO::add_path(dir);
   }
 
-  if (parallel){
-    runtime_param_bcaster bcaster(rt);
-    sprockit::sim_parameters::parallel_build_params(params, rt->me(), rt->nproc(),
-                                                    oo.configfile, &bcaster, oo.configRequired);
-  } else {
-    params->parse_file(oo.configfile, false, true, oo.configRequired);
+  if (oo.got_config_file){
+    if (parallel){
+      runtime_param_bcaster bcaster(rt);
+      sprockit::sim_parameters::parallel_build_params(params, rt->me(), rt->nproc(),
+                                                      oo.configfile, &bcaster, true);
+    } else {
+      if (oo.got_config_file) params->parse_file(oo.configfile, false, true);
+    }
   }
+
 
   if (oo.params) {
     // there were command-line overrides

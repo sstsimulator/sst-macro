@@ -13,7 +13,8 @@
 #define SSTMAC_SOFTWARE_LIBRARIES_MPI_MPI_TYPES_MPITYPE_H_INCLUDED
 
 #include <sumi/comm_functions.h>
-#include <sumi-mpi/sstmac_mpi.h>
+#include <sumi-mpi/mpi_integers.h>
+#include <sumi-mpi/mpi_types.h>
 #include <sprockit/spkt_config.h>
 #include <sprockit/unordered.h>
 #include <vector>

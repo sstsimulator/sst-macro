@@ -263,10 +263,10 @@ sumi_transport::init()
 }
 
 void
-sumi_transport::finalize()
+sumi_transport::finish()
 {
   debug_printf(sprockit::dbg::sumi, "Rank %d finalizing", rank_);
-  transport::finalize();
+  transport::finish();
   monitor_->validate_done();
   stop_heartbeat();
   //sstmac_usleep(heartbeat_interval_*1e6);

@@ -44,6 +44,7 @@ parse_opts(int argc, char **argv, opts &oo)
   int dodumpi = 0;
   int lowrestimer = 0;
   int run_ping_all = 0;
+  bool need_config_file = true;
   option gopt[] = {
     { "help", no_argument, NULL, 'h' },
     { "include", required_argument, NULL, 'i' },
@@ -84,20 +85,21 @@ parse_opts(int argc, char **argv, opts &oo)
       case 'd':
         activate_debugs(optarg);
         break;
-      case 'a': {
-        sprockit::sim_parameters* params = new sprockit::sim_parameters("debug.ini");
-        params->combine_into(oo.params);
-        oo.configRequired = false;
-        delete params;
-        break;
-      }
       case 'n' : {
         oo.params->add_param_override("app1.launch_cmd", sprockit::printf("aprun -n %s -N 1", optarg));
         break;
       }
       case 'f':
         oo.configfile = optarg;
+        oo.got_config_file = true;
         break;
+      case 'a': {
+        need_config_file = false;
+        sprockit::sim_parameters* params = new sprockit::sim_parameters("debug.ini");
+        params->combine_into(oo.params);
+        delete params;
+        break;
+      }
       case 'i': {
         sprockit::sim_parameters* params = new sprockit::sim_parameters(optarg);
         params->combine_into(oo.params);
@@ -127,6 +129,12 @@ parse_opts(int argc, char **argv, opts &oo)
     if (errorflag) {
       return PARSE_OPT_EXIT_FAIL;
     }
+  }
+
+  oo.params->print_params(std::cerr);
+
+  if (oo.configfile == "" && need_config_file){
+    spkt_abort_printf("need to specify input file with -f flag");
   }
 
   if (print_params) {

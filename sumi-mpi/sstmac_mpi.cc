@@ -1,7 +1,7 @@
 #include <sumi-mpi/mpi_api.h>
 
-extern "C" int sstmac_init(int* argc, char*** argv){ return sumi::sstmac_mpi()->do_init(argc, argv); }
-extern "C" int sstmac_finalize(){ return sumi::sstmac_mpi()->do_finalize(); }
+extern "C" int sstmac_init(int* argc, char*** argv){ return sumi::sstmac_mpi()->init(argc, argv); }
+extern "C" int sstmac_finalize(){ return sumi::sstmac_mpi()->finalize(); }
 extern "C" int sstmac_comm_rank(MPI_Comm comm, int* rank){ return sumi::sstmac_mpi()->comm_rank(comm,rank); }
 extern "C" int sstmac_comm_size(MPI_Comm comm, int* size){ return sumi::sstmac_mpi()->comm_size(comm,size); }
 extern "C" int sstmac_type_size(MPI_Datatype type, int* size){ return sumi::sstmac_mpi()->type_size(type,size); }

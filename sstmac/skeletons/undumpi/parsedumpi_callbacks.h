@@ -13,11 +13,15 @@
 #define SSTMAC_SOFTWARE_SKELETONS_UNDUMPI_PARSEDUMPI_CALLBACKS_H_INCLUDED
 
 #include <sstmac/skeletons/undumpi/parsedumpi.h>
-#include <sumi-mpi/sstmac_mpi_integers.h>
+#include <sumi-mpi/mpi_integers.h>
 #include <sumi-mpi/mpi_api_fwd.h>
+#include <sumi-mpi/mpi_types.h>
 #include <sumi-mpi/mpi_status.h>
+#include <sumi-mpi/mpi_call.h>
 #include <dumpi/libundumpi/libundumpi.h>
 #include <stdint.h>
+#include <fstream>
+#include <unordered_map>
 
 
 namespace sumi {
@@ -48,6 +52,8 @@ class parsedumpi_callbacks
 
   /// The dumpi timestamp at which we finished the most recent MPI call.
   dumpi_clock trace_compute_start_;
+  sstmac::timestamp simCallStart_;
+  sstmac::timestamp simTraceDelta_;
 
   /// The state of perfcounters when the most recent MPI call was finished.
   std::vector<int64_t> perfctr_compute_start_;
@@ -61,11 +67,18 @@ class parsedumpi_callbacks
   /// Dumpi also (as of version 0.6 or so) contains datatype sizes.
   dumpi_sizeof datatype_sizes_;
 
+  std::ofstream deltaOutput_;
+
   bool initialized_;
+
+  // Whether to start MPI calls on the exact times they started in the trace
+  bool exact_mpi_times_;
 
  public:
   /// Populate callbacks.
   parsedumpi_callbacks(parsedumpi *parent);
+
+  ~parsedumpi_callbacks();
 
   void
   set_initialized(bool flag) {
