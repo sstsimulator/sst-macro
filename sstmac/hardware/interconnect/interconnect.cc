@@ -159,7 +159,7 @@ interconnect::node_to_logp_switch(node_id nid) const
 #if SSTMAC_INTEGRATED_SST_CORE
   return topology_->node_to_logp_switch(nid);
 #else
-  int ignore;
+  uint16_t ignore;
   switch_id real_sw_id = topology_->node_to_injection_switch(nid, ignore);
   int target_rank = partition_->lpid_for_switch(real_sw_id);
   return target_rank;
@@ -187,9 +187,9 @@ interconnect::connect_endpoints(sprockit::sim_parameters* inj_params,
     int ep_id;
     //map to topology-specific port
     int num_inj_ports;
-    int inj_ports[32];
+    uint16_t inj_ports[32];
     int num_ej_ports;
-    int ej_ports[32];
+    uint16_t ej_ports[32];
     bool has_netlink = topology_->node_to_netlink(nodeaddr, netlink_id, netlink_offset);
     if (has_netlink) {
       if (netlink_offset == 0){

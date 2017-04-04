@@ -68,7 +68,7 @@ class multipath_router :
     routable::path_set paths;
     ParentRouter::route(pkt);
     routable::path& path = pkt->interface<routable>()->current_path();
-    path.geometric_id = path.outport;
+    path.geometric_id = path.outport();
     top_->get_redundant_paths(path, paths, this->addr());
 
     int path_id = path.geometric_id;

@@ -183,7 +183,7 @@ class topology : public sprockit::printable
      @return The switch that injects from the node
   */
   virtual switch_id
-  netlink_to_injection_switch(netlink_id nodeaddr, int& switch_port) const = 0;
+  netlink_to_injection_switch(netlink_id nodeaddr, uint16_t& switch_port) const = 0;
 
   /**
      For a given node, determine the ejection switch
@@ -194,7 +194,7 @@ class topology : public sprockit::printable
      @return The switch that ejects into the node
   */
   virtual switch_id
-  netlink_to_ejection_switch(netlink_id nodeaddr, int& switch_port) const = 0;
+  netlink_to_ejection_switch(netlink_id nodeaddr, uint16_t& switch_port) const = 0;
 
   /**
    * @brief configure_vc_routing  Configure the number of virtual channels
@@ -213,10 +213,10 @@ class topology : public sprockit::printable
    * @return
    */
   virtual switch_id
-  node_to_ejection_switch(node_id addr, int& port) const = 0;
+  node_to_ejection_switch(node_id addr, uint16_t& port) const = 0;
 
   virtual switch_id
-  node_to_injection_switch(node_id addr, int& port) const = 0;
+  node_to_injection_switch(node_id addr, uint16_t& port) const = 0;
 
   /**
     This gives the minimal distance counting the number of hops between switches.
@@ -296,7 +296,7 @@ class topology : public sprockit::printable
   */
   int
   endpoint_to_injection_port(node_id nodeaddr) const {
-    int port;
+    uint16_t port;
     switch_id sid = netlink_to_injection_switch(nodeaddr, port);
     return port;
   }
@@ -311,20 +311,20 @@ class topology : public sprockit::printable
   */
   int
   netlink_to_ejection_port(netlink_id nodeaddr) const {
-    int port;
+    uint16_t port;
     switch_id sid = netlink_to_ejection_switch(nodeaddr, port);
     return port;
   }
 
   switch_id
   netlink_to_ejection_switch(netlink_id nodeaddr) const {
-    int ignore;
+    uint16_t ignore;
     return netlink_to_ejection_switch(nodeaddr, ignore);
   }
 
   switch_id
   netlink_to_injection_switch(netlink_id nodeaddr) const {
-    int ignore;
+    uint16_t ignore;
     return netlink_to_injection_switch(nodeaddr, ignore);
   }
 
@@ -366,14 +366,14 @@ class topology : public sprockit::printable
 
   virtual switch_id
   node_to_injection_switch(
-        node_id nodeaddr, int ports[], int& num_ports) const {
+        node_id nodeaddr, uint16_t ports[], int& num_ports) const {
     num_ports = 1;
     return node_to_injection_switch(nodeaddr, ports[0]);
   }
 
   virtual switch_id
   node_to_ejection_switch(
-        node_id nodeaddr, int ports[], int& num_ports) const {
+        node_id nodeaddr, uint16_t ports[], int& num_ports) const {
     num_ports = 1;
     return node_to_ejection_switch(nodeaddr, ports[0]);
   }
@@ -381,14 +381,14 @@ class topology : public sprockit::printable
 
   virtual switch_id
   netlink_to_injection_switch(
-        node_id nodeaddr, int ports[], int& num_ports) const {
+        node_id nodeaddr, uint16_t ports[], int& num_ports) const {
     num_ports = 1;
     return netlink_to_injection_switch(nodeaddr, ports[0]);
   }
 
   virtual switch_id
   netlink_to_ejection_switch(
-        node_id nodeaddr, int ports[], int& num_ports) const {
+        node_id nodeaddr, uint16_t ports[], int& num_ports) const {
     num_ports = 1;
     return netlink_to_ejection_switch(nodeaddr, ports[0]);
   }

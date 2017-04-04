@@ -47,10 +47,10 @@ tiled_torus::get_redundant_paths(
     routable::path_set &paths,
     switch_id addr) const
 {
-  if (current.outport < first_simple_torus_eject_port_){
+  if (current.outport() < first_simple_torus_eject_port_){
     //intranetwork routing
-    int dim = current.outport / 2; //2 for +/-
-    int dir = current.outport % 2;
+    int dim = current.outport() / 2; //2 for +/-
+    int dir = current.outport() % 2;
     int red = red_[dim];
     paths.resize(red);
     int port_offset = tile_offsets_[dim] + red * dir;
@@ -58,24 +58,24 @@ tiled_torus::get_redundant_paths(
     //outport identifies a unique path
     for (int r=0; r < red; ++r){
       paths[r] = current;
-      paths[r].geometric_id = current.outport;
-      paths[r].outport = port_offset + r;
+      paths[r].geometric_id = current.outport();
+      paths[r].set_outport(port_offset + r);
     }
   } else {
     //ejection routing
-    int offset = current.outport - first_simple_torus_eject_port_;
+    int offset = current.outport() - first_simple_torus_eject_port_;
     int port = max_ports_intra_network_ + offset*injection_redundancy_;
     int num_ports = injection_redundancy_;
     for (int i=0; i < num_ports; ++i, ++port){
-      paths[i].outport = port;
+      paths[i].set_outport(port);
     }
   }
 }
 
 switch_id
-tiled_torus::netlink_to_injection_switch(node_id nodeaddr, int ports[], int &num_ports) const
+tiled_torus::netlink_to_injection_switch(node_id nodeaddr, uint16_t ports[], int &num_ports) const
 {
-  int port;
+  uint16_t port;
   switch_id sid = hdtorus::netlink_to_injection_switch(nodeaddr, port);
   //ejection routing
   int offset = port - first_simple_torus_eject_port_;

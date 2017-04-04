@@ -17,20 +17,25 @@ class routable
   } metadata_slot;
 
   struct path {
-   int outport;
+   struct outport_t {
+     uint16_t global;
+     uint16_t local;
+   };
+   outport_t outport_;
    int vc;
    /** An identifier indicating what geometric path on the topology this is following */
    int geometric_id;
    sprockit::metadata_bits<uint32_t> metadata;
 
    path() :
-     outport(routing::uninitialized),
   #if SSTMAC_SANITY_CHECK
      vc(uninitialized)
   #else
      vc(0)
   #endif
    {
+     outport_.global = routing::uninitialized;
+     outport_.local = routing::uninitialized;
    }
 
    bool
@@ -52,6 +57,37 @@ class routable
    clear_metadata() {
      metadata.clear();
    }
+
+   uint16_t&
+   outport() {
+     return outport_.global;
+   }
+
+   uint16_t&
+   global_outport() {
+     return outport_.global;
+   }
+
+   uint16_t&
+   local_outport() {
+     return outport_.local;
+   }
+
+   void
+   set_outport(const uint16_t port) {
+     outport_.global = port;
+   }
+
+   void
+   set_global_outport(const uint16_t port) {
+     outport_.global = port;
+   }
+
+   void
+   set_local_outport(const uint16_t port) {
+     outport_.local = port;
+   }
+
   };
 
  #define MAX_PATHS 32
@@ -114,9 +150,34 @@ class routable
     return path_.vc;
   }
 
+  void
+  set_outport(const int port) {
+    path_.outport_.global = port;
+  }
+
+  void
+  set_global_outport(const int port) {
+    path_.outport_.global = port;
+  }
+
+  void
+  set_local_outport(const int port) {
+    path_.outport_.local = port;
+  }
+
   int
-  port() const {
-    return path_.outport;
+  outport() const {
+    return path_.outport_.global;
+  }
+
+  int
+  global_outport() const {
+    return path_.outport_.global;
+  }
+
+  int
+  local_outport() const {
+    return path_.outport_.local;
   }
 
   void

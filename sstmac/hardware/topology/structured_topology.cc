@@ -46,7 +46,7 @@ structured_topology::endpoint_eject_paths_on_switch(
   int node_offset = dest_addr % netlinks_per_switch_;
   int switch_port = node_offset + max_ports_intra_network_;
   paths.resize(1);
-  paths[0].outport = switch_port;
+  paths[0].set_outport(switch_port);
   paths[0].vc = 0;
   paths[0].geometric_id = eject_geometric_id_ + node_offset;
 }

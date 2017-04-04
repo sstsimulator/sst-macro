@@ -68,7 +68,7 @@ router::compatibility_check() const
 switch_id
 router::find_ejection_site(node_id node_addr, routable::path &path) const
 {
-  return top_->node_to_ejection_switch(node_addr, path.outport);
+  return top_->node_to_ejection_switch(node_addr, path.outport());
 }
 
 void
@@ -79,12 +79,12 @@ router::route(packet *pkt)
   switch_id sid = find_ejection_site(pkt->toaddr(), path);
   if (sid == my_addr_){
     rter_debug("Ejecting %s from switch %d on port %d",
-               pkt->to_string().c_str(), sid, path.outport);
+               pkt->to_string().c_str(), sid, path.outport());
     configure_ejection_path(path);
   }
   else {
     rter_debug("Routing %s to switch %d on port %d",
-               pkt->to_string().c_str(), sid, path.outport);
+               pkt->to_string().c_str(), sid, path.outport());
     route_to_switch(sid, path);
   }
 }

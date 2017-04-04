@@ -180,20 +180,15 @@ pisces_NtoM_queue::output_name(pisces_payload* pkt)
 void
 pisces_NtoM_queue::send_payload(pisces_payload* pkt)
 {
+  auto rpkt = static_cast<pisces_routable_packet*>(pkt);
   pisces_debug(
-        "On %s:%p port:%d vc:%d handling {%s} going to %s:%p",
+        "On %s:%p local_port:%d vc:%d sending {%s} going to %s:%p",
         to_string().c_str(), this,
-        pkt->next_port(), pkt->next_vc(),
+        rpkt->local_outport(), pkt->next_vc(),
         pkt->to_string().c_str(),
         output_name(pkt).c_str(),
         output_handler(pkt));
-  int loc_port = local_port(pkt->next_port());
-  pisces_debug(
-        "On %s:%p mapped port:%d vc:%d to local port %d",
-        to_string().c_str(), this,
-        pkt->next_port(), pkt->next_vc(),
-        loc_port);
-  send(arb_, pkt, inputs_[pkt->inport()], outputs_[loc_port]);
+  send(arb_, pkt, inputs_[pkt->inport()], outputs_[rpkt->local_outport()]);
 }
 
 void
@@ -203,23 +198,22 @@ pisces_NtoM_queue::handle_credit(event* ev)
     "On %s:%p handling credit",
      to_string().c_str(), this);
   pisces_credit* pkt = static_cast<pisces_credit*>(ev);
-  int outport = pkt->port();
-  int loc_outport = local_port(outport);
+  int loc_outport = pkt->port();
   int vc = pkt->vc();
   int channel = loc_outport * num_vc_ + vc;
 
-  int& num_credits = credit(outport, vc);
+  int& num_credits = credit(loc_outport, vc);
 
   pisces_debug(
-    "On %s:%p with %d credits, handling credit {%s} for port:%d vc:%d channel:%d local_port:%d",
+    "On %s:%p with %d credits, handling credit {%s} for local port:%d vc:%d channel:%d",
      to_string().c_str(), this,
      num_credits,
      pkt->to_string().c_str(),
-     outport, vc, channel, loc_outport);
+     loc_outport, vc, channel);
 
   num_credits += pkt->num_credits();
 
-  pisces_payload* payload = queue(outport, vc).pop(num_credits);
+  pisces_payload* payload = queue(loc_outport, vc).pop(num_credits);
   if (payload) {
     num_credits -= payload->num_bytes();
     send_payload(payload);
@@ -231,36 +225,31 @@ pisces_NtoM_queue::handle_credit(event* ev)
 void
 pisces_NtoM_queue::handle_payload(event* ev)
 {
-  auto pkt = static_cast<pisces_payload*>(ev);
+  auto pkt = static_cast<pisces_routable_packet*>(ev);
   pkt->set_arrival(now());
 
-  int dst_vc = update_vc_ ? pkt->next_vc() : pkt->vc();
-  int dst_port = pkt->next_port();
+  int dst_vc = update_vc_ ? pkt->next_vc() : pkt->routable::vc();
+  int glob_port = pkt->global_outport();
+  int loc_port = local_port(glob_port);
+  pkt->set_local_outport(loc_port);
   pisces_debug(
-   "On %s:%p, handling {%s} for port:%d vc:%d",
+   "On %s:%p, handling {%s} for global_port:%d vc:%d local_port:%d",
     to_string().c_str(), this,
     pkt->to_string().c_str(),
-    dst_port,
-    dst_vc);
+    glob_port, dst_vc, loc_port);
 
-  int& num_credits = credit(dst_port, dst_vc);
+  int& num_credits = credit(loc_port, dst_vc);
    pisces_debug(
-    "On %s:%p with %d credits, handling {%s} for port:%d vc:%d",
+    "On %s:%p with %d credits, handling {%s} for local port:%d vc:%d",
      to_string().c_str(), this,
      num_credits,
      pkt->to_string().c_str(),
-     dst_port,
-     dst_vc);
-//   pisces_debug(
-//    "On %s:%p mapped port:%d -> local port %d",
-//     to_string().c_str(), this,
-//     dst_port, local_port(dst_port));
-   //output_name(msg).c_str(), output_handler(msg));
+     loc_port, dst_vc);
 
-  if (dst_vc < 0 || dst_port < 0){
+  if (dst_vc < 0 || loc_port < 0){
     spkt_throw_printf(sprockit::value_error,
-       "On %s handling {%s}, got negative vc,port %d,%d",
-        to_string().c_str(), pkt->to_string().c_str(), dst_port, dst_vc);
+       "On %s handling {%s}, got negative vc,local_port %d,%d",
+        to_string().c_str(), pkt->to_string().c_str(), loc_port, dst_vc);
   }
 
   if (num_credits >= pkt->num_bytes()) {
@@ -271,9 +260,9 @@ pisces_NtoM_queue::handle_payload(event* ev)
     pisces_debug(
       "On %s:%p, pushing back %s on queue %d=(%d,%d) for nq=%d nvc=%d mapper=(%d,%d,%d)",
       to_string().c_str(), this, pkt->to_string().c_str(),
-      local_slot(dst_port, dst_vc), dst_port, dst_vc, queues_.size(), num_vc_,
+      slot(loc_port, dst_vc), loc_port, dst_vc, queues_.size(), num_vc_,
       port_offset_, port_div_, port_mod_);
-    queue(dst_port, dst_vc).push_back(pkt);
+      queue(loc_port, dst_vc).push_back(pkt);
   }
 }
 
@@ -361,49 +350,33 @@ pisces_NtoM_queue::set_output(
   int my_outport, int dst_inport,
   event_handler* output)
 {
-//  std::cerr << "inputs size before: " << inputs_.size() << std::endl;
-//  std::cerr << "before local_port, outport: " << my_outport << "\n";
-  int loc_port = local_port(my_outport);
-//  std::cerr << "after local_port, loc_port: " << loc_port << "\n";
   debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
-    "On %s:%d setting output %s:%d -> local port %d, mapper=(%d,%d,%d) of %d",
-    to_string().c_str(), my_outport,
+    "On %s setting output %s:%d for local port %d, mapper=(%d,%d,%d) of %d",
+    to_string().c_str(),
     output->to_string().c_str(), dst_inport,
-    loc_port, port_offset_, port_div_, port_mod_,
+    my_outport, port_offset_, port_div_, port_mod_,
     outputs_.size());
-
-//  std::cerr << sprockit::printf("On %s:%d setting output %s:%d -> local port %d, mapper=(%d,%d,%d) of %d",
-//  to_string().c_str(), my_outport,
-//  output->to_string().c_str(), dst_inport,
-//  loc_port, port_offset_, port_div_, port_mod_,
-//  outputs_.size());
 
   pisces_output out;
   out.dst_inport = dst_inport;
   out.handler = output;
 
-  if (loc_port > outputs_.size()) {
-    std::cerr << sprockit::printf("my_outport %i > outputs_.size() %i\n", loc_port, outputs_.size());
+  if (my_outport > outputs_.size()) {
+    std::cerr << sprockit::printf("my_outport %i > outputs_.size() %i\n", my_outport, outputs_.size());
     abort();
   }
-  outputs_[loc_port] = out;
+  outputs_[my_outport] = out;
 
   int num_credits = port_params->get_byte_length_param("credits");
   int num_credits_per_vc = num_credits / num_vc_;
   for (int i=0; i < num_vc_; ++i) {
-//    debug_printf(sprockit::dbg::pisces_config,
-//      "On %s:%p, initing %d credits on port:%d vc:%d",
-//      to_string().c_str(), this,
-//      num_credits_per_vc,
-//      my_outport, i);
-//    std::cerr << sprockit::printf(
-//          "On %s:%p, initing %d credits on port:%d vc:%d\n",
-//          to_string().c_str(), this,
-//          num_credits_per_vc,
-//          my_outport, i);
+    debug_printf(sprockit::dbg::pisces_config,
+                 "On %s:%p, initing %d credits on port:%d vc:%d",
+                 to_string().c_str(), this,
+                 num_credits_per_vc,
+                 my_outport, i);
     credit(my_outport, i) = num_credits_per_vc;
   }
-//  std::cerr << "inputs size after: " << inputs_.size() << std::endl;
 }
 
 #if PRINT_FINISH_DETAILS

@@ -82,7 +82,7 @@ tiled_dragonfly::tiled_dragonfly(sprockit::sim_parameters* params) :
 
 switch_id
 tiled_dragonfly::netlink_to_injection_switch(
-    node_id nodeaddr, int ports[], int &num_ports) const
+    node_id nodeaddr, uint16_t ports[], int &num_ports) const
 {
   num_ports = injection_redundancy_;
   long net_id = nodeaddr / netlinks_per_switch_;
@@ -96,7 +96,7 @@ tiled_dragonfly::netlink_to_injection_switch(
 
 switch_id
 tiled_dragonfly::netlink_to_ejection_switch(
-    node_id nodeaddr, int ports[], int &num_ports) const
+    node_id nodeaddr, uint16_t ports[], int &num_ports) const
 {
   return netlink_to_injection_switch(nodeaddr,ports,num_ports);
 }
@@ -109,7 +109,7 @@ tiled_dragonfly::eject_paths_on_switch(
   int node_offset = dest_addr % netlinks_per_switch_;
   int index = node_offset * injection_redundancy_;
   for (int i=0; i < injection_redundancy_; ++i, ++index){
-    paths[i].outport = injection_ports_[index];
+    paths[i].set_outport(injection_ports_[index]);
     paths[i].vc = 0;
     paths[i].geometric_id = eject_geometric_id_ + node_offset;
   }
@@ -183,7 +183,7 @@ tiled_dragonfly::get_redundant_paths(routable::path& current,
                                      routable::path_set& paths,
                                      switch_id addr) const
 {
-  int geomid = current.outport;
+  int geomid = current.outport();
   int dim;
   if (geomid < eject_geometric_id_){
     //intranetwork routing
@@ -203,7 +203,7 @@ tiled_dragonfly::get_redundant_paths(routable::path& current,
          it != ports.end(); ++it) {
       paths[pi] = current;
       paths[pi].geometric_id = geomid;
-      paths[pi].outport = *it;
+      paths[pi].set_outport(*it);
       ++pi;
     }
   }
@@ -213,7 +213,7 @@ tiled_dragonfly::get_redundant_paths(routable::path& current,
     int offset = (geomid - eject_geometric_id_) * injection_redundancy_;
     for (int i=0; i < injection_redundancy_; ++i) {
       paths[i] = current;
-      paths[i].outport = injection_ports_[offset+i];
+      paths[i].set_outport(injection_ports_[offset+i]);
     }
   }
 }

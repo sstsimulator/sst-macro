@@ -271,21 +271,21 @@ pisces_netlink::handle_payload(event* ev)
   if (dst_netid == id_){
     //stays local - goes to a node
     int node_offset = toaddr % conc_;
-    p.outport = netlink::node_port(node_offset);
+    p.set_outport(netlink::node_port(node_offset));
     p.vc = 0;
     p.geometric_id = 0;
     debug_printf(sprockit::dbg::pisces,
      "netlink %d ejecting %s to node %d at offset %d to port %d",
-        int(id_), sprockit::to_string(ev).c_str(), int(toaddr), node_offset, p.outport);
+        int(id_), sprockit::to_string(ev).c_str(), int(toaddr), node_offset, p.outport());
     ej_block_->handle_payload(payload);
   } else {
     //goes to switch
-    p.outport = netlink::switch_port(tile_rotater_);
+    p.set_outport(netlink::switch_port(tile_rotater_));
     p.vc = 0;
     debug_printf(sprockit::dbg::pisces,
      "netlink %d injecting msg %s to switch %d on redundant path %d of %d to port %d",
         int(id_), sprockit::to_string(ev).c_str(),
-        int(toaddr), tile_rotater_, num_tiles_, p.outport);
+        int(toaddr), tile_rotater_, num_tiles_, p.outport());
     tile_rotater_ = (tile_rotater_ + 1) % num_tiles_;
     inj_block_->handle_payload(payload);
   }

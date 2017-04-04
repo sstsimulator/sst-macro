@@ -362,7 +362,9 @@ pisces_injection_buffer::handle_credit(event* ev)
 void
 pisces_injection_buffer::handle_payload(event* ev)
 {
-  auto pkt = static_cast<pisces_payload*>(ev);
+  auto pkt = static_cast<pisces_routable_packet*>(ev);
+  pkt->set_global_outport(0);
+  pkt->set_local_outport(0);
   pkt->set_arrival(now());
   credits_ -= pkt->byte_length();
   //we only get here if we cleared the credits

@@ -67,12 +67,12 @@ hdtorus::minimal_route_to_switch(
     if (srcX != dstX){
       if (shortest_path_positive(i, srcX, dstX)){
         top_debug("hdtorus routing up on dim %d for switch %d to %d on port %d",
-                  i, src, dst, path.outport);
+                  i, src, dst, path.outport());
         up_path(i, srcX, dstX, path);
       } else {
         down_path(i, srcX, dstX, path);
         top_debug("hdtorus routing down on dim %d for switch %d to %d on port %d",
-                  i, src, dst, path.outport);
+                  i, src, dst, path.outport());
       }
       return;
     }
@@ -151,7 +151,7 @@ hdtorus::torus_path(bool reset_dim, bool wrapped, int dim, int dir,
   } else {
     path.vc = 0;
   }
-  path.outport = convert_to_port(dim, dir);
+  path.set_outport(convert_to_port(dim, dir));
 
   if (reset_dim){
     path.unset_metadata_bit(routable::crossed_timeline); //we reached this dim

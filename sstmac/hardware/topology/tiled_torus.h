@@ -25,7 +25,7 @@ class tiled_torus :
 
   switch_id
   netlink_to_injection_switch(
-        node_id nodeaddr, int ports[], int& num_ports) const override;
+        node_id nodeaddr, uint16_t ports[], int& num_ports) const override;
 
   bool
   uniform_network_ports() const override {

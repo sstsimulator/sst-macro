@@ -62,13 +62,9 @@ class pisces_NtoM_queue :
   inline int
   local_port(int port) const {
     int lp;
-//    std::cerr << "port: " << port << std::endl;
     if (port_mod_){
-//      std::cerr << "yes port_mod_: " << port_mod_ << std::endl;
       lp =  port % port_mod_;
     } else {
-//      std::cerr << "no port_div_: " << port_div_ << " port_offset: "
-//                << port_offset_ << std::endl;
       lp = port / port_div_ - port_offset_;
     }
     if (lp < 0) {
@@ -78,8 +74,8 @@ class pisces_NtoM_queue :
   }
 
   inline int
-  local_slot(int port, int vc) const {
-    return local_port(port) * num_vc_ + vc;
+  slot(int port, int vc) const {
+    return port * num_vc_ + vc;
   }
 
   void
@@ -136,13 +132,13 @@ class pisces_NtoM_queue :
 
  private:
   inline int& credit(int port, int vc){
-    return credits_[local_slot(port, vc)];
+    return credits_[slot(port, vc)];
   }
 
   void resize(int num_ports);
 
   inline payload_queue& queue(int port, int vc){
-    return queues_[local_slot(port, vc)];
+    return queues_[slot(port, vc)];
   }
 
   std::string

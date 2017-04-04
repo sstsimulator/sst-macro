@@ -125,7 +125,7 @@ dragonfly::find_y_path_to_group(int myX, int myG, int dstG, int& dstY,
   for (int yy = 0; yy < y_; ++yy) {
     dstY = (ystart + yy) % y_;
     if (xy_connected_to_group(myX, dstY, myG, dstG)) {
-      path.outport = y_port(dstY);
+      path.set_outport(y_port(dstY));
       return true;
     }
   }
@@ -140,7 +140,7 @@ dragonfly::find_x_path_to_group(int myY, int myG, int dstG, int& dstX,
   for (int xx = 0; xx < x_; ++xx) {
     dstX = (xstart + xx) % x_;
     if (xy_connected_to_group(dstX, myY, myG, dstG)) {
-      path.outport = x_port(dstX);
+      path.set_outport( x_port(dstX) );
       return true;
     }
   }
@@ -154,7 +154,7 @@ dragonfly::find_path_to_group(int myX, int myY, int myG,
 {
   //see if we can go directly to the group
   if (xy_connected_to_group(myX, myY, myG, dstG)){
-    path.outport = g_port(dstG);
+    path.set_outport(g_port(dstG));
     dstX = myX;
     dstY = myY;
     path.set_metadata_bit(routable::crossed_timeline);
@@ -201,16 +201,16 @@ dragonfly::minimal_route_to_switch(
     top_debug("dragonfly routing from (%d,%d,%d) to (%d,%d,%d) through "
               "gateway (%d,%d,%d) on port %d",
               srcX, srcY, srcG, dstX, dstY, dstG,
-              interX, interY, srcG, path.outport);
+              interX, interY, srcG, path.outport());
   }
   else if (srcX != dstX){
+    path.set_outport( x_port(dstX) );
     top_debug("dragonfly routing X from (%d,%d,%d) to (%d,%d,%d) on port %d",
-              srcX, srcY, srcG, dstX, dstY, dstG, path.outport);
-    path.outport = x_port(dstX);
+              srcX, srcY, srcG, dstX, dstY, dstG, path.outport());
   } else if (srcY != dstY){
+    path.set_outport( y_port(dstY) );
     top_debug("dragonfly routing Y from (%d,%d,%d) to (%d,%d,%d) on port %d",
-              srcX, srcY, srcG, dstX, dstY, dstG, path.outport);
-    path.outport = y_port(dstY);
+              srcX, srcY, srcG, dstX, dstY, dstG, path.outport());
   }
 }
 
