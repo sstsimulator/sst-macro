@@ -215,21 +215,27 @@ void add_wait(OTF2TraceReplayApp* app, CallQueue& queue, MPI_Request requestID) 
   }
 
 	if (wait_call->on_trigger == nullptr) {
+    // this is the first wait request
+    // this could be part of a waitall, waitany, wait, or waitsome
 		wait_call->on_trigger = wait_event;
-	}
-	else {
-		// Something got to the wait first, make a new one
-		MpiCall* new_call = new MpiCall(app);
-		new_call->on_trigger = wait_event;
+  } else {
+    MpiCall* prev_wait = wait_call;
+    // for trace replay, we have to breakdown MPI_Waitall into
+    // a sequence of individual MPI_Wait calls
+    // this is a 2nd or later wait request in a waitall (or waitsome)
+    MpiCall* new_call = new MpiCall(prev_wait->start_time,app,
+                                    prev_wait->id,prev_wait->name); //transfer start time
+    // the previous call should not advance any time when executing
+    prev_wait->end_time = prev_wait->start_time;
+    new_call->on_trigger = wait_event;
 		new_call->id = ID_MPI_Wait;
 
-		// merge compute delay
-		new_call->start_time = wait_call->start_time;
-		wait_call->end_time = wait_call->start_time;
-
-		// Update the queue
+    // for trace replay, we have to breakdown MPI_Waitall into
+    // a sequence of individual MPI_Wait calls - add the next wait
 		app->GetCallQueue().AddCall(new_call);
-		app->GetCallQueue().CallReady(wait_call);
+    // because of subtletlies with event enter/leave, we should only need
+    // one wait call pending at a time - the previous wait can be declared ready
+    app->GetCallQueue().CallReady(prev_wait);
 	}
 }
 
@@ -272,9 +278,12 @@ OTF2_CallbackCode event_mpi_isend(
     MpiCall* call = app->GetCallQueue().PeekBack();
     MpiCall::assert_call(call, "Lookup for MPI_Send in 'event_mpi_isend' returned NULL");
 
-    call->request_id = requestID;
-    app->GetCallQueue().AddRequest(call);
-    call->on_trigger = [=]() {call->app->GetMpi()->isend(nullptr, msgLength, MPI_BYTE, receiver, msgTag, communicator, &call->request_id); };
+    app->GetCallQueue().AddRequest(requestID, call);
+    call->on_trigger = [=]() {
+      MPI_Request req = requestID;
+      call->app->GetMpi()->isend(nullptr, msgLength, MPI_BYTE, receiver, msgTag,
+                                 communicator, &req);
+    };
 
     if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("ISEND count" << msgLength << " tag " << msgTag << " id " << requestID << " comm " << communicator << " dest " << receiver);
     return OTF2_CALLBACK_SUCCESS;
@@ -286,15 +295,11 @@ OTF2_CallbackCode event_mpi_isend_complete(
     uint64_t            eventPosition,
     void*               userData,
     OTF2_AttributeList* attributes,
-    uint64_t            requestID ) {
+    uint64_t            requestID )
+{
 
 	auto app = (OTF2TraceReplayApp*)userData;
 	auto& callqueue = app->GetCallQueue();
-
-	// Is isend_complete always wrapped by a wait? If not, we can't reliably
-	// generate a wait. The current behavior is to fail
-	MpiCall* call = callqueue.PeekBack();
-	MpiCall::assert_call(call, "Lookup for MPI_Wait in 'event_mpi_isend_complete' returned NULL");
 
 	add_wait(app, app->GetCallQueue(), (MPI_Request)requestID);
 	callqueue.RemoveRequest((MPI_Request)requestID);
@@ -315,8 +320,7 @@ OTF2_CallbackCode event_mpi_irecv_request(
     MpiCall* call = app->GetCallQueue().PeekBack();
     MpiCall::assert_call(call, "Lookup for MPI_Irecv in 'event_mpi_irecv_request' returned NULL");
 
-    call->request_id = requestID;
-    app->GetCallQueue().AddRequest(call);
+    app->GetCallQueue().AddRequest(requestID, call);
 
     if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("IRECV REQUEST id: " << requestID );
     return OTF2_CALLBACK_SUCCESS;
@@ -341,14 +345,12 @@ OTF2_CallbackCode event_mpi_irecv(
 
   // finish off the Irecv call
   MpiCall* call = callqueue.FindRequest((MPI_Request)requestID);
-  MpiCall::assert_call(call, "Lookup for MpiIrecvCall in 'event_mpi_irecv' returned NULL");
 
   call->on_trigger = [=]() {
     MPI_Request req = requestID;
     app->GetMpi()->irecv(nullptr, msgLength, MPI_BYTE, sender, msgTag, communicator, &req);
   };
-  //MpiCall* wait = new MpiCall(app);
-  //wait->id = ID_MPI_Wait;
+
   add_wait(app, app->GetCallQueue(), (MPI_Request)requestID);
   callqueue.RemoveRequest((MPI_Request)requestID);
   callqueue.CallReady(call);
@@ -503,9 +505,8 @@ OTF2_CallbackCode event_parameter_string(
 	break;
 #define CASE_ADD_CALL(call_id) case call_id: \
     { \
-  MpiCall* call = new MpiCall(location, time); \
-  call->id = call_id; \
-  call->name = ((const char*)#call_id) + 3; \
+  const char* name = #call_id; \
+  MpiCall* call = new MpiCall(time,app,call_id,name + 3/*strip ID_*/); \
   app->GetCallQueue().AddCall(call); \
   if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) \
     EVENT_PRINT("ENTER " << call->ToString() << " time: " << time); \

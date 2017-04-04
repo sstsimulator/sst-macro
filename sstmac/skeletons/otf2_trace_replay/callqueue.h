@@ -95,10 +95,10 @@ class CallQueue {
   MpiCall* PeekBack();
 
   // Begin tracking a pending MPI call with a request
-  void AddRequest(MpiCall*);
+  void AddRequest(MPI_Request req, MpiCall*);
 
   // Finds an MPI call based on a request
-  MpiCall* FindRequest(MPI_Request); // TODO: is request collision possible with the current implementation?
+  MpiCall* FindRequest(MPI_Request);
 
   // Stop tracking a pending MPI call
   void RemoveRequest(MPI_Request);

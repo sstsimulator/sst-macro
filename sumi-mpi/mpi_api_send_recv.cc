@@ -150,7 +150,7 @@ mpi_api::isend(const void *buf, int count, MPI_Datatype datatype, int dest,
 {
   using namespace sprockit;
   start_Ipt2pt_call(MPI_Isend,count,datatype,dest,tag,comm,request);
-  debug_printf(dbg::mpi | dbg::mpi_request | dbg::mpi_pt2pt,
+  mpi_api_debug(dbg::mpi | dbg::mpi_request | dbg::mpi_pt2pt,
     "MPI_Isend(%d,%s,%d,%s,%s;REQ=%d)",
     count, type_str(datatype).c_str(), int(dest),
     tag_str(tag).c_str(), comm_str(comm).c_str(), *request);

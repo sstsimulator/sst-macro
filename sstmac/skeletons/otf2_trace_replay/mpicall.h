@@ -24,13 +24,11 @@
 class OTF2TraceReplayApp;
 
 class MpiCall {
-public:
-  // Ctors
-  MpiCall();
-  MpiCall(OTF2TraceReplayApp*);
-  MpiCall(OTF2_LocationRef, OTF2_TimeStamp, OTF2TraceReplayApp* app = nullptr);
-  MpiCall(OTF2_LocationRef, OTF2_TimeStamp, OTF2_TimeStamp, OTF2TraceReplayApp* app = nullptr);
-  virtual ~MpiCall() {}
+ public:
+  MpiCall(OTF2_TimeStamp start, OTF2TraceReplayApp* app,
+          MPI_CALL_ID id, const char* name);
+
+  ~MpiCall() {}
 
   // Methods
   sstmac::timestamp GetStart();
@@ -42,17 +40,15 @@ public:
 
   // Members
   OTF2_TimeStamp start_time, end_time;
-  OTF2_LocationRef location;
-  MPI_Request request_id;
   std::function<void()> on_trigger;
   OTF2TraceReplayApp* app;
   bool isready;
-  int id;
+  MPI_CALL_ID id;
   const char* name;
 
   static void assert_call(MpiCall* cb, std::string msg);
 
-private:
+ private:
   sstmac::timestamp convert_time(const OTF2_TimeStamp);
 };
 

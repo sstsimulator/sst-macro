@@ -25,20 +25,14 @@ using namespace std;
  */
 
 
-MpiCall::MpiCall() : MpiCall(NULL) {}
-
-MpiCall::MpiCall(OTF2TraceReplayApp* app) : MpiCall(0, 0, app) {}
-
-MpiCall::MpiCall(OTF2_LocationRef location, OTF2_TimeStamp _start, OTF2TraceReplayApp* app) :
-  MpiCall(location, _start, 0, app) {}
-
-MpiCall::MpiCall(OTF2_LocationRef location, OTF2_TimeStamp _start,
-                 OTF2_TimeStamp _stop, OTF2TraceReplayApp* app) :
-  isready(false), location(location), app(app),
-  request_id(0), name((const char*)"UNKNOWN"), id(-1)
+MpiCall::MpiCall(OTF2_TimeStamp start, OTF2TraceReplayApp* app,
+                 MPI_CALL_ID ID, const char* _name) :
+  isready(false), app(app),
+  start_time(start),
+  end_time(0),
+  name(_name),
+  id(ID)
 {
-  start_time = _start;
-  end_time = _stop;
 }
 
 bool MpiCall::IsReady() {
@@ -73,13 +67,11 @@ sstmac::timestamp MpiCall::GetEnd() {
 }
 
 void MpiCall::Trigger() {
-	if (on_trigger != nullptr) {
-		app->StartMpi(GetStart());
-		on_trigger();
-		app->EndMpi(GetEnd());
-	} else {
-		 cout << "Rank " << location << ":\t"<< ToString() <<  ": Empty Trigger " << endl;
-	}
+  app->StartMpi(GetStart());
+  if (on_trigger){
+    on_trigger();
+  }
+  app->EndMpi(GetEnd());
 }
 
 /******************************************************************************
@@ -88,59 +80,66 @@ void MpiCall::Trigger() {
 
 CallQueue::CallQueue() : CallQueue(NULL) {};
 CallQueue::CallQueue(OTF2TraceReplayApp* app) {
-    this->app = app;
+  this->app = app;
 }
 
 void CallQueue::AddCall(MpiCall* cb) {
-    // another strategy would be to make 'app' an argument that gets passed into 'Trigger'.
-    // This would decrease the size of each callback by sizeof(ptr)
-    cb->app = app;
-    call_queue.push(cb);
+  // another strategy would be to make 'app' an argument that gets passed into 'Trigger'.
+  // This would decrease the size of each callback by sizeof(ptr)
+  cb->app = app;
+  call_queue.push(cb);
 }
 
 int CallQueue::CallReady(MpiCall* call) {
-    int triggered = 0;
-    call->isready = true;
+  int triggered = 0;
+  call->isready = true;
 
-    if (call == call_queue.front()) {
-        // when a call at the front of the queue is ready, there may be a
-        // cascade of other ready calls behind it.
-        while (call_queue.size() > 0 && call_queue.front()->IsReady()) {
-            auto front = call_queue.front();
-            front->Trigger();
+  if (call == call_queue.front()) {
+    // when a call at the front of the queue is ready, there may be a
+    // cascade of other ready calls behind it.
+    while (call_queue.size() > 0 && call_queue.front()->IsReady()) {
+      auto front = call_queue.front();
+      front->Trigger();
 
-            if (app->PrintMpiCalls()) {
-               TRIGGER_PRINT(front->ToString());
-            }
-            call_queue.pop();
-            delete front;
-            triggered++;
-        }
+      if (app->PrintMpiCalls()) {
+         TRIGGER_PRINT(front->ToString());
+      }
+      call_queue.pop();
+      delete front;
+      triggered++;
     }
+  }
 
-    return triggered;
+  return triggered;
 }
 
-void CallQueue::AddRequest(MpiCall* cb) {
-	request_map[cb->request_id] = cb;
+void CallQueue::AddRequest(MPI_Request req, MpiCall* cb) {
+  request_map[req] = cb;
 }
 
-MpiCall* CallQueue::FindRequest(MPI_Request req) {
-	return request_map[req];
+MpiCall* CallQueue::FindRequest(MPI_Request req)
+{
+  auto iter = request_map.find(req);
+  if (iter == request_map.end()){
+    spkt_abort_printf("Rank %d cannot find request %ld\n",
+                      app->GetMpi()->rank(), req);
+  }
+  return iter->second;
 }
 
-void CallQueue::RemoveRequest(MPI_Request req) {
-	if (request_map.count(req)) request_map.erase(req);
+void CallQueue::RemoveRequest(MPI_Request req)
+{
+  request_map.erase(req);
 }
 
 int CallQueue::GetDepth() {
-    return call_queue.size();
+  return call_queue.size();
 }
 
 MpiCall* CallQueue::Peek() {
-    return call_queue.front();
+  return call_queue.front();
 }
 
 MpiCall* CallQueue::PeekBack() {
-    return call_queue.back();
+  return call_queue.back();
 }
