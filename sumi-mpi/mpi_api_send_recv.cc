@@ -143,7 +143,7 @@ mpi_api::do_isend(const void *buf, int count, MPI_Datatype datatype, int dest,
   mpi_comm* commPtr = get_comm(comm);
   mpi_request* req = mpi_request::construct(default_key_category);
   *request = add_request_ptr(req);
-  conditional_debug_printf(dbg::mpi | dbg::mpi_request | dbg::mpi_pt2pt, print,
+  mpi_api_cond_debug(dbg::mpi | dbg::mpi_request | dbg::mpi_pt2pt, print,
     "MPI_Isend(%d,%s,%d:%d,%s,%s;REQ=%d)",
     count, type_str(datatype).c_str(), int(dest), int(commPtr->peer_task(dest)),
     tag_str(tag).c_str(), comm_str(comm).c_str(), *request);
