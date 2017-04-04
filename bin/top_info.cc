@@ -59,7 +59,8 @@ try_top_info_main(int argc, char **argv)
   else if (parse_status == PARSE_OPT_EXIT_FAIL) {
     return 1;
   }
-  else if (oo.configfile == "") {
+
+  if (oo.configfile == "") {
     oo.configfile = "parameters.ini"; //default
   }
 

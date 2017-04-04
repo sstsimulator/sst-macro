@@ -259,6 +259,7 @@ mpi_api::allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                         sendbuf, recvbuf);
   wait_collective(op);
   delete op;
+  finish_mpi_call(MPI_Allgather);
   return MPI_SUCCESS;
 
 }
@@ -314,6 +315,7 @@ mpi_api::alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                                  sendbuf, recvbuf);
   wait_collective(op);
   delete op;
+  finish_mpi_call(MPI_Alltoall);
   return MPI_SUCCESS;
 }
 
@@ -380,6 +382,7 @@ mpi_api::allreduce(const void *src, void *dst, int count,
                                  count, type, mop, src, dst);
   wait_collective(op);
   delete op;
+  finish_mpi_call(MPI_Allreduce);
   return MPI_SUCCESS;
 }
 

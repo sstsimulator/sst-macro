@@ -25,6 +25,7 @@ struct opts {
   int help;
   std::string debug;
   std::string configfile;
+  bool got_config_file;
   sprockit::sim_parameters* params;
   bool print_walltime;
   bool print_params;

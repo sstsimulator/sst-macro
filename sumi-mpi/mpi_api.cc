@@ -249,11 +249,12 @@ mpi_api::finalize()
     auto callEnd = call_groups_.end();
     for (auto& pair : call_groups_){
       const MPI_Call& call = pair.first;
-      ofs << sprockit::printf("%12s %8d %12s %16s ",
+      ofs << sprockit::printf("%14s %8d %12s %16s ",
               call.ID_str(), call.count,
               type_str(call.type).c_str(), comm_str(call.comm).c_str());
-      for (sstmac::timestamp t : pair.second){
-        ofs << sprockit::printf("%10.5e  ", t.msec());
+      for (auto& tpair : pair.second){
+        ofs << sprockit::printf("%6.3e:%6.3e ",
+                   tpair.first.msec(),tpair.second.msec());
       }
       ofs << "\n";
     }
@@ -622,7 +623,7 @@ void
 mpi_api::finish_last_mpi_call(MPI_function func)
 {
   last_call_.ID = func;
-  std::list<sstmac::timestamp>& times = call_groups_[last_call_];
+  auto& times = call_groups_[last_call_];
   sstmac::timestamp total = now() - last_call_.start;
   sstmac::timestamp nonSync = total - last_call_.sync;
   /**
@@ -631,7 +632,7 @@ mpi_api::finish_last_mpi_call(MPI_function func)
                                 last_call_.start.msec(), last_call_.sync.msec(), now().msec(), total.msec())
             << std::endl;
   */
-  times.push_back(nonSync);
+  times.emplace_back(nonSync,last_call_.sync);
   last_call_.sync = timestamp(); //zero for next guy
 }
 

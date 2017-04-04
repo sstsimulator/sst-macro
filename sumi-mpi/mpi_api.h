@@ -983,7 +983,12 @@ class mpi_api :
 
   std::map<MPI_Request,MPI_Call> saved_calls_;
 
-  std::unordered_map<MPI_Call,std::list<sstmac::timestamp>> call_groups_;
+
+  std::unordered_map<MPI_Call,
+    std::list<
+      std::pair<sstmac::timestamp,sstmac::timestamp>
+    >
+  > call_groups_;
 #endif
 
 };

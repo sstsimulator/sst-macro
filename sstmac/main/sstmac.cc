@@ -143,9 +143,6 @@ init_opts(opts& oo, int argc, char** argv)
 void
 init_params(parallel_runtime* rt, opts& oo, sprockit::sim_parameters* params, bool parallel)
 {
-  if (oo.configfile == "")
-    oo.configfile = "parameters.ini";
-
   //use the config file to set up file search paths
   size_t pos = oo.configfile.find_last_of('/');
   if (pos != std::string::npos) {
