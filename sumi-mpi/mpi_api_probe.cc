@@ -17,7 +17,7 @@ mpi_api::probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
 
   mpi_comm* commPtr = get_comm(comm);
 
-  mpi_request* req = mpi_request::construct(default_key_category);
+  mpi_request* req = mpi_request::construct(mpi_request::Probe,default_key_category);
   queue_->probe(req, commPtr, source, tag);
   queue_->progress_loop(req);
 

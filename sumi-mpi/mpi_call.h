@@ -132,11 +132,13 @@ typedef enum {
   Call_ID_MPI_Type_create_struct,        Call_ID_MPI_Type_create_subarray,
   Call_ID_MPI_Type_get_extent,           Call_ID_MPI_Type_get_true_extent,
   Call_ID_MPI_Unpack_external,           Call_ID_MPI_Win_create_errhandler,
-  Call_ID_MPI_Win_get_errhandler,        Call_ID_MPI_Win_set_errhandler,
+  Call_ID_MPI_Win_get_errhandler,        Call_ID_MPI_Win_set_errhandler
 } MPI_function;
 
 struct MPI_Call {
   MPI_function ID;
+  MPI_function prev;
+  MPI_function inside;
   int count;
   MPI_Datatype type;
   MPI_Comm comm;
@@ -144,7 +146,11 @@ struct MPI_Call {
   sstmac::timestamp sync;
   sstmac::timestamp wait;
 
-  const char* ID_str() const;
+  const char* ID_str() const {
+    return ID_str(ID);
+  }
+
+  static const char* ID_str(MPI_function func);
 };
 
 
@@ -182,6 +188,8 @@ struct hash<sumi::MPI_Call> {
     append(call.count,scratch,length);
     append(call.type,scratch,length);
     append(call.comm,scratch,length);
+    append(call.prev,scratch,length);
+    append(call.inside,scratch,length);
     return jenkins_one_at_a_time_hash(scratch, length);
   }
 
@@ -195,7 +203,9 @@ struct equal_to<sumi::MPI_Call> {
     return lhs.ID == rhs.ID &&
            lhs.count == rhs.count &&
            lhs.type == rhs.type &&
-           lhs.comm == rhs.comm;
+           lhs.comm == rhs.comm &&
+           lhs.prev == rhs.prev &&
+           lhs.inside == rhs.inside;
   }
 };
 

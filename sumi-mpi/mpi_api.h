@@ -975,12 +975,18 @@ class mpi_api :
 
   void start_collective_sync_delays() override;
 
+  void set_next_call_length(sstmac::timestamp t){
+    next_call_total_length_ = t;
+  }
+
  private:
+  void set_new_mpi_call(MPI_function func);
+
   void start_new_mpi_call(MPI_function func, int count, MPI_Datatype type, MPI_Comm comm);
 
   void start_new_mpi_call(MPI_function func, const int* counts, MPI_Datatype type, MPI_Comm comm);
 
-  void finish_last_mpi_call(MPI_function func);
+  void finish_last_mpi_call(MPI_function func, bool dumpThis = true);
 
  private:
   double last_collection_;
@@ -988,6 +994,10 @@ class mpi_api :
   bool dump_comm_times_;
 
   MPI_Call last_call_;
+
+  /** If trying to match MPI start times to a trace, sleep until
+   * the current MPI call lasts exactly as long as call did in trace */
+  sstmac::timestamp next_call_total_length_;
 
   std::map<MPI_Request,MPI_Call> saved_calls_;
 
@@ -1013,11 +1023,14 @@ sstmac_mpi();
 #if SSTMAC_COMM_SYNC_STATS
   #define start_mpi_call(fxn,count,type,comm) \
     _start_mpi_call_(fxn); \
-    if (dump_comm_times_) start_new_mpi_call(Call_ID_##fxn,count,type,comm)
-  #define start_wait_call(fxn,...) _start_mpi_call_(fxn)
-  #define finish_Impi_call(fxn,reqptr) saved_calls_[*reqptr] = last_call_
-  #define finish_mpi_call(fxn) \
-    if (dump_comm_times_) finish_last_mpi_call(Call_ID_##fxn)
+    start_new_mpi_call(Call_ID_##fxn,count,type,comm)
+  #define start_wait_call(fxn,...) \
+    _start_mpi_call_(fxn); \
+    set_new_mpi_call(Call_ID_##fxn)
+  #define finish_Impi_call(fxn,reqptr) \
+    finish_last_mpi_call(Call_ID_##fxn, false); \
+    saved_calls_[*reqptr] = last_call_
+  #define finish_mpi_call(fxn) finish_last_mpi_call(Call_ID_##fxn)
 #else
   #define start_mpi_call(fxn,count,type,comm) _start_mpi_call_(fxn)
   #define start_wait_call(fxn,...) _start_mpi_call_(fxn)

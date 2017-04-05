@@ -52,8 +52,6 @@ class parsedumpi_callbacks
 
   /// The dumpi timestamp at which we finished the most recent MPI call.
   dumpi_clock trace_compute_start_;
-  sstmac::timestamp simCallStart_;
-  sstmac::timestamp simTraceDelta_;
 
   /// The state of perfcounters when the most recent MPI call was finished.
   std::vector<int64_t> perfctr_compute_start_;
@@ -67,13 +65,12 @@ class parsedumpi_callbacks
   /// Dumpi also (as of version 0.6 or so) contains datatype sizes.
   dumpi_sizeof datatype_sizes_;
 
-  std::ofstream deltaOutput_;
-
   bool initialized_;
 
+#if SSTMAC_COMM_SYNC_STATS
   // Whether to start MPI calls on the exact times they started in the trace
   bool exact_mpi_times_;
-
+#endif
  public:
   /// Populate callbacks.
   parsedumpi_callbacks(parsedumpi *parent);

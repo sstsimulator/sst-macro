@@ -93,9 +93,11 @@ int not_implemented(const char* fxn)
 /// Populate callbacks.
 parsedumpi_callbacks::
 parsedumpi_callbacks(parsedumpi *parent) :
+#if SSTMAC_COMM_SYNC_STATS
+  exact_mpi_times_(parent->exact_mpi_times()),
+#endif
   parent_(parent),
-  initialized_(false),
-  exact_mpi_times_(parent->exact_mpi_times())
+  initialized_(false)
 {
   sstmac::sw::api_lock();
   if(cbacks_ == NULL) {
@@ -106,19 +108,10 @@ parsedumpi_callbacks(parsedumpi *parent) :
   memset(&datatype_sizes_, 0, sizeof(dumpi_sizeof));
   sstmac::sw::api_unlock();
   parent->mpi()->set_generate_ids(false);
-
-  if (exact_mpi_times_){
-    int rank = parent->tid();
-    std::string outFile = sprockit::printf("delta.%d.out", rank);
-    deltaOutput_.open(outFile.c_str(), std::ios::out);
-  }
 }
 
 parsedumpi_callbacks::~parsedumpi_callbacks()
 {
-  if (exact_mpi_times_){
-    deltaOutput_.close();
-  }
 }
 
 /// Start parsing.
@@ -195,17 +188,15 @@ start_mpi(const dumpi_time *cpu, const dumpi_time *wall,
 {
   if (!initialized_) return;
 
-  if (exact_mpi_times_ && simTraceDelta_.ticks() != 0){
-    sstmac::timestamp traceStart(wall->start.sec,wall->start.nsec);
-    sstmac::timestamp simStart = simTraceDelta_ + traceStart;
-    //std::cout << "Delaying rank " << parent_->mpi()->rank()
-    //          << " until " << simStart
-    //          << " from trace start " << traceStart
-    //          << std::endl;
-    parent_->os()->sleep_until(simStart);
-    simCallStart_ = parent_->now();
+#if SSTMAC_COMM_SYNC_STATS
+  if (exact_mpi_times_){
+    auto deltaSec = wall->stop.sec - wall->start.sec;
+    auto deltaNsec = wall->stop.nsec - wall->start.nsec;
+    sstmac::timestamp traceMPItime(deltaSec, deltaNsec);
+    parent_->mpi()->set_next_call_length(traceMPItime);
   }
-  else if(trace_compute_start_.sec >= 0) {
+#endif
+  if(trace_compute_start_.sec >= 0) {
     // This is not the first MPI call -- simulate a compute
     if(perf != NULL && perf->count > 0) {
       spkt_throw(sprockit::unimplemented_error,
@@ -222,8 +213,7 @@ start_mpi(const dumpi_time *cpu, const dumpi_time *wall,
                                 "Performance counter moved backward between calls");
         }
       }
-    }
-    else {
+    } else {
       // We get here if we are not using processor modeling.
       sstmac::timestamp thetime = (parent_->timescaling_ * deltat(wall->start, trace_compute_start_));
       if(thetime.ticks() < 0) {
@@ -244,28 +234,11 @@ end_mpi(const dumpi_time *cpu, const dumpi_time *wall,
         const dumpi_perfinfo *perf)
 {
   trace_compute_start_ = wall->stop;
-  sstmac::timestamp simNow = parent_->now();
   if(perf) {
     perfctr_compute_start_.resize(perf->count);
     for(int i = 0; i < perf->count; ++i) {
       perfctr_compute_start_[i] = perf->outvalue[i];
     }
-  }
-  if (exact_mpi_times_ && parent_->mpi()->crossed_comm_world_barrier()){
-    sstmac::timestamp traceNow(wall->stop.sec, wall->stop.nsec);
-    if (simTraceDelta_.ticks_int64() == 0){
-      simTraceDelta_ = simNow - traceNow;
-      //std::cout << "Set rank " << parent_->mpi()->rank()
-      //          << " start to " << simTraceDelta_
-      //          << " at sim time " << simNow
-      //          << " at trace time " << traceNow
-      //          << std::endl;
-    }
-    sstmac::timestamp simTimeCall = simNow - simCallStart_;
-    sstmac::timestamp traceTimeStart = sstmac::timestamp(wall->start.sec, wall->start.nsec);
-    sstmac::timestamp traceTimeCall = traceNow - traceTimeStart;
-    sstmac::timestamp delta = traceTimeCall - simTimeCall;
-    deltaOutput_ << delta.ticks_int64() << "\n";
   }
 }
 

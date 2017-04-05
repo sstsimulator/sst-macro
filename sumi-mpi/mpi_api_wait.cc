@@ -46,9 +46,12 @@ mpi_api::finalize_wait_request(mpi_request* reqPtr, MPI_Request* req, MPI_Status
     spkt_abort_printf("rank %d cannot find pending request %ld for MPI_Wait stats",
                       comm_world()->rank(), *req);
   }
-  sstmac::timestamp saveSync = last_call_.sync;
-  last_call_ = iter->second;
-  last_call_.sync = saveSync;
+  MPI_Call& Ipt2pt = iter->second;
+  last_call_.comm = Ipt2pt.comm;
+  last_call_.count = Ipt2pt.count;
+  last_call_.type = Ipt2pt.type;
+  last_call_.start = Ipt2pt.start;
+  last_call_.ID = Ipt2pt.ID;
   saved_calls_.erase(iter);
 #endif
   if (status != MPI_STATUS_IGNORE){
