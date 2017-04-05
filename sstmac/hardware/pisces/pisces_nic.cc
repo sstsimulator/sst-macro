@@ -169,7 +169,9 @@ pisces_netlink::connect_output(
   event_handler *mod)
 {
   if (is_node_port(src_outport)){
-    ej_block_->set_output(params, src_outport, dst_inport, mod);
+    //ej_block_->set_output(params, src_outport, dst_inport, mod);
+    int offset = node_offset(src_outport);
+    ej_block_->set_output(params, offset, dst_inport, mod);
   } else {
     inj_block_->set_output(params, src_outport, dst_inport, mod);
   }

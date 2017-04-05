@@ -493,7 +493,7 @@ tapered_fat_tree::minimal_route_to_switch(
   int dst_level = level(dest_sw_addr);
   //question is whether I go up or down
   if (dst_level >= src_level){ //definitely have to go up
-    path.set_outport(src_level);
+    path.set_outport(up_port(src_level));
     path.vc = 0;
     top_debug("fat_tree: routing up to get to s=%d,l=%d from s=%d,l=%d",
             int(dest_sw_addr), dst_level,

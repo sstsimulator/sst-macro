@@ -78,14 +78,14 @@ router::route(packet *pkt)
   routable::path& path = rtbl->current_path();
   switch_id sid = find_ejection_site(pkt->toaddr(), path);
   if (sid == my_addr_){
+    configure_ejection_path(path);
     rter_debug("Ejecting %s from switch %d on port %d",
                pkt->to_string().c_str(), sid, path.outport());
-    configure_ejection_path(path);
   }
   else {
+    route_to_switch(sid, path);
     rter_debug("Routing %s to switch %d on port %d",
                pkt->to_string().c_str(), sid, path.outport());
-    route_to_switch(sid, path);
   }
 }
 
