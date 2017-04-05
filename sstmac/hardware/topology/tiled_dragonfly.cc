@@ -183,7 +183,7 @@ tiled_dragonfly::get_redundant_paths(routable::path& current,
                                      routable::path_set& paths,
                                      switch_id addr) const
 {
-  int geomid = current.outport();
+  int geomid = current.geometric_id;
   int dim;
   if (geomid < eject_geometric_id_){
     //intranetwork routing

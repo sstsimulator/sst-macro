@@ -178,9 +178,6 @@ pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
           muxer->to_string().c_str(), this, rx);
         xbar->set_output(xbar_params, rm, rx, muxer->payload_handler());
         muxer->set_input(muxer_params, rx, rm, xbar->credit_handler());
-        //xbar->set_output(xbar_params, rm, rx, muxer->payload_handler());
-        //muxer->set_input(muxer_params, rx, rm, xbar->credit_handler());
-
       }
     }
   }
@@ -196,7 +193,7 @@ pisces_tiled_switch::connect_output(
   params->add_param_override("num_vc", router_->max_num_vc());
   pisces_sender* muxer = col_output_muxers_[src_outport];
   //std::cerr << "setting muxer output on outport " << src_outport << "\n";
-  muxer->set_output(params, src_outport, dst_inport, mod);
+  muxer->set_output(params, 0, dst_inport, mod);
 }
 
 void
@@ -313,7 +310,7 @@ pisces_tiled_switch::handle_payload(event *ev)
   //now figure out the new port I am routing to
   router_->route(payload);
   debug_printf(sprockit::dbg::pisces,
-               "tiled switch %d: routed payload %s to outport %d",
+               "tiled switch %d: routed payload %s to port %d",
                int(my_addr_), payload->to_string().c_str(),
                payload->next_port());
   demuxer->handle_payload(payload);

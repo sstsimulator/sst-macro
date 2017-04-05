@@ -87,6 +87,11 @@ class pisces_NtoM_queue :
     return tile_id_;
   }
 
+  virtual int
+  remap_input_port(const int port) const {
+    return port;
+  }
+
   void
   deadlock_check() override;
 
@@ -178,6 +183,11 @@ class pisces_muxer :
   std::string
   pisces_name() const override {
     return "muxer" + tile_id();
+  }
+
+  virtual int
+  remap_input_port(const int port) const override {
+    return 0;
   }
 
 };

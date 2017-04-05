@@ -285,7 +285,7 @@ pisces_netlink::handle_payload(event* ev)
     p.set_outport(netlink::switch_port(tile_rotater_));
     p.vc = 0;
     debug_printf(sprockit::dbg::pisces,
-     "netlink %d injecting msg %s to switch %d on redundant path %d of %d to port %d",
+     "netlink %d injecting msg %s to node %d on redundant path %d of %d to port %d",
         int(id_), sprockit::to_string(ev).c_str(),
         int(toaddr), tile_rotater_, num_tiles_, p.outport());
     tile_rotater_ = (tile_rotater_ + 1) % num_tiles_;

@@ -198,7 +198,7 @@ pisces_NtoM_queue::handle_credit(event* ev)
     "On %s:%p handling credit",
      to_string().c_str(), this);
   pisces_credit* pkt = static_cast<pisces_credit*>(ev);
-  int loc_outport = pkt->port();
+  int loc_outport = remap_input_port(pkt->port());
   int vc = pkt->vc();
   int channel = loc_outport * num_vc_ + vc;
 

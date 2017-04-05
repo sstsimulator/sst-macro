@@ -52,11 +52,16 @@ for src in range(0,gsize):
     outport *= dim_red
     inport *= dim_red
     for red in range(0,dim_red):
+#      intrafile.write( "%s %s : %s %s -> %s %s : %s %s\n" % (
+#           src_row, src_col,
+#           port_row(outport), port_col(outport),
+#           dst_row, dst_col,
+#           port_row(inport), port_col(inport)) )
       intrafile.write( "%s %s : %s %s -> %s %s : %s %s\n" % (
-           src_row, src_col,
-           port_row(outport), port_col(outport),
-           dst_row, dst_col,
-           port_row(inport), port_col(inport)) )
+           src_col, src_row,
+           port_col(outport), port_row(outport),
+           dst_col, dst_row,
+           port_col(inport), port_row(inport)) )
       outport += 1
       inport += 1
 
@@ -82,11 +87,17 @@ for src in range(0,gsize):
     inport += (node_ncol - 1) * row_red
     #print "shifted outport: %s" % outport
     for red in range(0,dim_red):
+#      intrafile.write( "%s %s : %s %s -> %s %s : %s %s\n" % (
+#           src_row, src_col,
+#           port_row(outport), port_col(outport),
+#           dst_row, dst_col,
+#           port_row(inport), port_col(inport)) )
       intrafile.write( "%s %s : %s %s -> %s %s : %s %s\n" % (
-           src_row, src_col,
-           port_row(outport), port_col(outport),
-           dst_row, dst_col,
-           port_row(inport), port_col(inport)) )
+           src_col, src_row,
+           port_col(outport), port_row(outport),
+           dst_col, dst_row,
+           port_col(inport), port_row(inport)) )
+
       outport += 1
       inport += 1
 
@@ -152,9 +163,14 @@ for grp in range(0,ngroup):
       destg = target_p * psize + target_pid
       outport = 30 + target_p
       inport = 30 + prt
+      #interfile.write("%s %s %s : %s %s -> %s %s %s : %s %s\n" % (
+      #         node_row(gid), node_col(gid), grp,
+      #         port_row(outport), port_col(outport),
+      #         node_row(target_gid), node_col(target_gid), destg,
+      #         port_row(inport), port_col(inport) ) )
       interfile.write("%s %s %s : %s %s -> %s %s %s : %s %s\n" % (
-               node_row(gid), node_col(gid), grp,
-               port_row(outport), port_col(outport),
-               node_row(target_gid), node_col(target_gid), destg,
-               port_row(inport), port_col(inport) ) )
+               node_col(gid), node_row(gid), grp,
+               port_col(outport), port_row(outport),
+               node_col(target_gid), node_row(target_gid), destg,
+               port_col(inport), port_row(inport) ) )
      
