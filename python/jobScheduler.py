@@ -5,13 +5,11 @@ import sst.macro
 
 mtu = 1204
 arb = "cut_through"
-
-
-params = sst.merlin._params
-
 buffer_size = "64KB"
 
+
 topo = topoTorus()
+params = sst.merlin._params
 params["torus:shape"] = "2x2x2";
 params["torus:width"] = "1x1x1";
 params["flit_size"] = "8B"
@@ -49,29 +47,43 @@ nicParams = {
   "module" : "merlin.linkcontrol",
 }
 
-appParams = {
+app1Params = {
   "name" : "mpi_coverage",
   "start" : "0ms",
   "launch_cmd" : "aprun -n 8 -N 1",
+  "indexing" : "block",
+  "allocation" : "cartesian",
+  "cart_sizes" : "2 2 2",
 }
-
+app2Params = {
+  "name" : "mpi_coverage",
+  "start" : "1ms",
+  "launch_cmd" : "aprun -n 8 -N 1",
+  "indexing" : "round_robin",
+  "allocation" : "first_available",
+}
 
 nodeParams = {
   "nic" : nicParams,
   "memory" : memParams,
   "proc" : procParams,
   "topology" : {
-    "name" : "merlin",
-    "num_nodes" : 8,
-    "num_switches" : 8,
-  },
-  "app1" : appParams,
+    "name" : "torus",
+    "geometry" : "2 2 2",
+  }
+}
+
+jobParams = {
+  "job_launcher" : "exclusive",
+  "app1" : app1Params,
+  "app2" : app2Params,
 }
 
 
 topo.prepParams()
 
 nodeParams = macroToCoreParams(nodeParams)
+jobParams = macroToCoreParams(jobParams)
 
 class TestEP(EndPoint):
   def build( self, nodeID, extraKeys ):
@@ -79,14 +91,14 @@ class TestEP(EndPoint):
     node.addParams(extraKeys)
     node.addParams(nodeParams)
     node.addParam("id", nodeID)
+    if nodeID == 0:
+      node.addParams(jobParams)
     return (node, "rtr", params["link_lat"])
 
 ep = TestEP()
 topo.setEndPoint(ep)
 topo.build()
 
-#sst.macro.debug("mpi", "timestamp")
-#sst.macro.debug("packetizer")
 
 
 

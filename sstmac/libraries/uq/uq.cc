@@ -4,7 +4,7 @@
 #include <sprockit/debug.h>
 #include <cstring>
 #include <vector>
-#include <sstmac/software/launch/app_launch.h>
+#include <sstmac/software/launch/launch_request.h>
 
 using namespace sstmac;
 
@@ -48,7 +48,7 @@ sstmac_uq_sim_nproc(void* queue)
   }
   int nproc, procs_per_node;
   std::vector<int> affinities;
-  sstmac::sw::app_launch::parse_launch_cmd(&params, nproc, procs_per_node, affinities);
+  sstmac::sw::app_launch_request::parse_launch_cmd(&params, nproc, procs_per_node, affinities);
   return nproc;
 }
 

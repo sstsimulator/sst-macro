@@ -27,7 +27,6 @@
 #include <sstmac/backends/native/serial_runtime.h>
 #include <sstmac/backends/native/manager.h>
 #include <sstmac/software/process/app.h>
-#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/time.h>
 #include <sstmac/hardware/interconnect/interconnect.h>

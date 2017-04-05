@@ -22,10 +22,9 @@
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/hardware/network/network_message_fwd.h>
-#include <sstmac/software/launch/app_launch_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/software/launch/job_launcher_fwd.h>
-#include <sstmac/software/launch/launcher_fwd.h>
+#include <sstmac/software/launch/app_launcher_fwd.h>
 #include <sstmac/software/launch/launch_event_fwd.h>
 #include <sstmac/software/libraries/service_fwd.h>
 #include <sstmac/hardware/nic/nic_fwd.h>
@@ -119,6 +118,11 @@ class node :
     return nsocket_;
   }
 
+  int
+  launch_root() const {
+    return launch_root_;
+  }
+
   /**
    Cause the node to crash. This cancels all future events for this node.
   */
@@ -165,8 +169,6 @@ class node :
   */
   void send_to_nic(network_message* netmsg);
 
-  void schedule_launches();
-
   void deadlock_check() override;
 
   void increment_app_refcount();
@@ -192,13 +194,12 @@ class node :
   int nsocket_;
 
  private:
-  void build_launchers(sprockit::sim_parameters* params);
-
- private:
   int app_refcount_;
+  int launch_root_;
+
   sw::app_launcher* app_launcher_;
   sw::job_launcher* job_launcher_;
-  static std::list<sw::app_launch*> app_launchers_;
+
   unique_event_id next_outgoing_id_;
   sprockit::sim_parameters* params_;
 

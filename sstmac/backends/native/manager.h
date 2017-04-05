@@ -15,7 +15,6 @@
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/event_manager_fwd.h>
 #include <sstmac/software/process/app_id.h>
-#include <sstmac/software/launch/app_launch_fwd.h>
 #include <sstmac/hardware/node/node_fwd.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/software/launch/job_launcher_fwd.h>

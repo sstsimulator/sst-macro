@@ -133,7 +133,14 @@ struct comm_split_entry {
   int refcount;
   comm_split_entry() : buf(0), refcount(0) {}
 };
-static std::map<int, std::map<int, std::map<int, comm_split_entry> > > comm_split_entries;
+
+static std::map<int, //app ID
+        std::map<int, //comm ID
+          std::map<int, //comm rank 0 comm world
+              std::map<int, comm_split_entry> //tag
+          >
+         >
+       > comm_split_entries;
 #endif
 
 
@@ -149,6 +156,8 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
   mydata[1] = my_color;
   mydata[2] = my_key;
 
+  app_id aid = parent_->sid().app_;
+
   //printf("Rank %d = {%d %d %d}\n",
   //       caller->rank(), next_id_, my_color, my_key);
 
@@ -161,7 +170,7 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
   sstmac::sw::api_lock();
   int root = caller->peer_task(int(0));
   int tag = caller->next_collective_tag();
-  comm_split_entry& entry = comm_split_entries[int(caller->id())][root][tag];
+  comm_split_entry& entry = comm_split_entries[aid][int(caller->id())][root][tag];
   char fname[256];
   size_t len = 3*caller->size()*sizeof(int);
   entry.refcount++;
