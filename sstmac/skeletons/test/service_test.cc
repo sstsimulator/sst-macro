@@ -1,5 +1,5 @@
 #include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/launch/app_launch.h>
+#include <sstmac/software/launch/launch_request.h>
 #include <sstmac/skeleton.h>
 #include <sstmac/util.h>
 #include <sumi/transport.h>
@@ -72,19 +72,19 @@ int USER_MAIN(int argc, char** argv)
   sumi_transport* tport = sumi::sumi_api();
   tport->init();
 
-  sstmac::sw::app_launch* srv = sstmac::sw::app_launch::service_info("test_service");
+  sstmac::sw::task_mapping::ptr srv = sstmac::sw::task_mapping::global_mapping("test_service");
   int num_service_nodes = srv->nproc();
   int me = tport->rank();
   int partner = me;
   for (int i=0; i < num_messages; ++i){
     partner = ((partner + 5) * 7) % num_service_nodes;
     printf("Client %d sending to service node %d at addr %d\n",
-           me, partner, srv->node_assignment(partner));
+           me, partner, srv->rank_to_node(partner));
     service_test_message* msg = new service_test_message(task_length);
-    tport->client_server_send(partner, srv->node_assignment(partner), srv->aid(), msg);
+    tport->client_server_send(partner, srv->rank_to_node(partner), srv->aid(), msg);
   }
   //send a shutdown request to server 0 - make rank 0 in charge
-  if (tport->rank() == 0) tport->shutdown_server(0, srv->node_assignment(0), srv->aid());
+  if (tport->rank() == 0) tport->shutdown_server(0, srv->rank_to_node(0), srv->aid());
   tport->finalize();
   return 0;
 }

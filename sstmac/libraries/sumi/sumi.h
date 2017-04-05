@@ -56,32 +56,32 @@ comm_nvram_get(int dst, const message::ptr& msg);
 void
 comm_alltoall(void* dst, void* src, int nelems,
    int type_size, int tag, bool fault_aware = false,
-   int context = options::initial_context, communicator* dom = 0);
+   int context = options::initial_context, communicator* dom = nullptr);
 
 void
 comm_allgather(void* dst, void* src, int nelems,
    int type_size, int tag, bool fault_aware = false,
-   int context = options::initial_context, communicator* dom = 0);
+   int context = options::initial_context, communicator* dom = nullptr);
 
 void
 comm_allgatherv(void* dst, void* src, int* recv_counts,
    int type_size, int tag, bool fault_aware = false,
-   int context = options::initial_context, communicator* dom = 0);
+   int context = options::initial_context, communicator* dom = nullptr);
 
 void
 comm_gather(int root, void* dst, void* src, int nelems,
    int type_size, int tag, bool fault_aware = false,
-   int context = options::initial_context, communicator* dom = 0);
+   int context = options::initial_context, communicator* dom = nullptr);
 
 void
 comm_scatter(int root, void* dst, void* src, int nelems,
    int type_size, int tag, bool fault_aware = false,
-   int context = options::initial_context, communicator* dom = 0);
+   int context = options::initial_context, communicator* dom = nullptr);
 
 void
 comm_bcast(int root, void* buffer, int nelems,
    int type_size, int tag, bool fault_aware = false,
-   int context = options::initial_context, communicator* dom = 0);
+   int context = options::initial_context, communicator* dom = nullptr);
 
 /**
 * The total size of the input/result buffer in bytes is nelems*type_size
@@ -97,29 +97,44 @@ comm_bcast(int root, void* buffer, int nelems,
 void
 comm_allreduce(void* dst, void* src, int nelems, int type_size, int tag,
   reduce_fxn fxn, bool fault_aware=false, int context = options::initial_context,
-  communicator* dom = 0);
+  communicator* dom = nullptr);
 
 template <typename data_t, template <typename> class Op>
 void
-comm_allreduce(void* dst, void* src, int nelems, int tag, bool fault_aware = false, int context = options::initial_context, communicator* dom = 0){
+comm_allreduce(void* dst, void* src, int nelems, int tag,
+               bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr){
   typedef ReduceOp<Op, data_t> op_class_type;
   comm_allreduce(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
 }
 
 void
-comm_reduce(int root, void* dst, void* src, int nelems, int type_size, int tag,
+comm_scan(void* dst, void* src, int nelems, int type_size, int tag,
   reduce_fxn fxn, bool fault_aware=false, int context = options::initial_context,
-  communicator* dom = 0);
+  communicator* dom = nullptr);
 
 template <typename data_t, template <typename> class Op>
 void
-comm_reduce(int root, void* dst, void* src, int nelems, int tag, bool fault_aware = false, int context = options::initial_context, communicator* dom = 0){
+comm_scan(void* dst, void* src, int nelems, int tag,
+          bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr){
+  typedef ReduceOp<Op, data_t> op_class_type;
+  comm_scan(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
+}
+
+void
+comm_reduce(int root, void* dst, void* src, int nelems, int type_size, int tag,
+  reduce_fxn fxn, bool fault_aware=false, int context = options::initial_context,
+  communicator* dom = nullptr);
+
+template <typename data_t, template <typename> class Op>
+void
+comm_reduce(int root, void* dst, void* src, int nelems, int tag,
+            bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr){
   typedef ReduceOp<Op, data_t> op_class_type;
   comm_reduce(root, dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
 }
 
 void
-comm_barrier(int tag, bool fault_aware = false, communicator* dom = 0);
+comm_barrier(int tag, bool fault_aware = false, communicator* dom = nullptr);
 
 /**
 * The total size of the input/result buffer in bytes is nelems*type_size
@@ -132,11 +147,11 @@ comm_barrier(int tag, bool fault_aware = false, communicator* dom = 0);
 * @param context The context (i.e. initial set of failed procs)
 */
 void
-comm_vote(int vote, int tag, vote_fxn fxn, int context = options::initial_context, communicator* dom = 0);
+comm_vote(int vote, int tag, vote_fxn fxn, int context = options::initial_context, communicator* dom = nullptr);
 
 template <template <class> class VoteOp>
 void
-comm_vote(int vote, int tag, int context = options::initial_context, communicator* dom = 0){
+comm_vote(int vote, int tag, int context = options::initial_context, communicator* dom = nullptr){
   typedef VoteOp<int> op_class_type;
   comm_vote(vote, tag, &op_class_type::op, context, dom);
 }

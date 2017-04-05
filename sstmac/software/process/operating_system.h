@@ -26,12 +26,12 @@
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/common/thread_info.h>
 
-
 #include <sstmac/software/libraries/service_fwd.h>
 #include <sstmac/software/process/ftq_fwd.h>
 #include <sstmac/software/process/graphviz_fwd.h>
-#include <sstmac/software/launch/app_launch_fwd.h>
 #include <sstmac/software/process/compute_scheduler_fwd.h>
+
+#include <sstmac/common/messages/sst_message_fwd.h>
 
 #include <sstmac/hardware/node/node_fwd.h>
 
@@ -131,9 +131,8 @@ class operating_system :
    * @param data  Event carrying all the data describing the compute
    */
   void
-  execute(ami::COMM_FUNC func,
-          message* data){
-    execute_kernel(func, data);
+  execute(ami::COMM_FUNC func, message* data){
+    return execute_kernel(func, data);
   }
 
   /**
@@ -143,10 +142,9 @@ class operating_system :
    * This function can therefore run on the main DES thread
    * @param func  The function to perform
    * @param data  Event carrying all the data describing the compute
+   * @return A return code specifying success or failure
    */
-  void
-  execute_kernel(ami::COMM_FUNC func,
-                 message* data);
+  void execute_kernel(ami::COMM_FUNC func, message* data);
 
   /**
    * @brief execute Execute a communication function.
@@ -200,7 +198,7 @@ class operating_system :
   add_application(app* a);
 
   void
-  start_app(app* a);
+  start_app(app* a, const std::string& unique_name);
 
   void
   handle_event(event* ev);
@@ -272,11 +270,27 @@ class operating_system :
     return params_;
   }
 
-  void
-  sleep(timestamp t);
+  /**
+   * @brief sleep Sleep for a specified delay. Sleeps do not require
+   *        core reservation, unlike #compute. Sleeps always begin immediately.
+   * @param sleep_delay The length of time to sleep (delta T)
+   */
+  void sleep(timestamp sleep_delay);
 
-  void
-  compute(timestamp t);
+  /**
+   * @brief sleep_until Sleep until a specified time. If that time has already been reached
+   *          return immediately. Otherwise block until the time arrives.
+   * @param t The time to sleep until
+   */
+  void sleep_until(timestamp t);
+
+  /**
+   * @brief compute Compute for a specified time period. This requires
+   *        a core to be reserved. If no cores are available,
+   *        block until a core becomes available.
+   * @param t The length of time to compute (delta T)
+   */
+  void compute(timestamp t);
 
   void kill_node();
 
@@ -308,12 +322,15 @@ class operating_system :
 
   void
   local_shutdown();
+
+  bool handle_library_event(const std::string& name, event* ev);
   
  private:
   hw::node* node_;
   spkt_unordered_map<std::string, library*> libs_;
   spkt_unordered_map<library*, int> lib_refcounts_;
   spkt_unordered_map<void*, std::list<library*> > libs_by_owner_;
+  std::map<std::string, std::list<event*>> pending_library_events_;
 
   node_id my_addr_;
 

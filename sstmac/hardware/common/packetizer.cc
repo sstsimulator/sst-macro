@@ -77,7 +77,8 @@ packetizer::sendWhatYouCan(int vn)
     long bytes_sent = next.offset - initial_offset;
     if (next.msg->needs_ack()){
       timestamp time_to_send(bytes_sent * inv_bw_);
-      schedule_delay(time_to_send, acker_, next.msg->clone_ack());
+      message* ack = next.msg->clone_ack();
+      schedule_delay(time_to_send, acker_, ack);
     }
     //the entire packet sent
     pending.pop_front();

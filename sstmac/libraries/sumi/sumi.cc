@@ -1,4 +1,3 @@
-#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sprockit/util.h>
@@ -83,6 +82,12 @@ void
 comm_allreduce(void *dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn, bool fault_aware, int context, communicator* dom)
 {
   current_transport()->allreduce(dst, src, nelems, type_size, tag, fxn, fault_aware, context, dom);
+}
+
+void
+comm_scan(void *dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn, bool fault_aware, int context, communicator* dom)
+{
+  current_transport()->scan(dst, src, nelems, type_size, tag, fxn, fault_aware, context, dom);
 }
 
 void

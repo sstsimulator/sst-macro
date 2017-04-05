@@ -17,6 +17,7 @@
 #include <sprockit/spkt_config.h>
 #include <sprockit/unordered.h>
 #include <vector>
+#include <string>
 
 #include <iosfwd>
 #include <map>

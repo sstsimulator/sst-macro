@@ -16,8 +16,6 @@
 #include <sstmac/dumpi_util/dumpi_meta.h>
 #include <sstmac/software/launch/dumpi_task_mapper.h>
 #include <sstmac/software/launch/hostname_allocation.h>
-#include <sstmac/software/launch/launcher.h>
-#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/common/runtime.h>
 #include <dumpi/libundumpi/libundumpi.h>
 #include <sprockit/errors.h>
