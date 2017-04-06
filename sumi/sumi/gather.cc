@@ -127,7 +127,6 @@ btree_gather_actor::init_dag()
       send->offset = 0; //I send my whole buffer
       add_dependency(prev, send);
       prev = send;
-
       break; //I am done, yo
     }
     ++round;

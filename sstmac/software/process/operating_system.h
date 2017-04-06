@@ -19,12 +19,12 @@
 #include <sstmac/software/libraries/library.h>
 #include <sstmac/software/process/thread_fwd.h>
 #include <sstmac/software/process/app_fwd.h>
+#include <sstmac/software/process/thread_info.h>
 #include <sstmac/software/api/api_fwd.h>
 
 #include <sstmac/common/messages/sst_message.h>
 #include <sstmac/common/stats/event_trace.h>
 #include <sstmac/common/event_scheduler.h>
-//#include <sstmac/common/thread_info.h>
 
 #include <sstmac/software/launch/app_launch_fwd.h>
 #include <sstmac/software/libraries/service_fwd.h>
@@ -72,7 +72,7 @@ class operating_system :
   }
 
   static inline os_thread_context&
-  static_os_thread_context() {
+  static_os_thread_context(){
   #if SSTMAC_USE_MULTITHREAD
     int thr = thread_info::current_physical_thread_id();
     return os_thread_contexts_[thr];
@@ -220,9 +220,6 @@ class operating_system :
   void
   print_libs(std::ostream& os = std::cout) const;
 
-  long
-  current_threadid() const;
-
   void
   set_node(sstmac::hw::node* n){
     node_ = n;
@@ -253,7 +250,9 @@ class operating_system :
   }
 
   static thread*
-  current_thread();
+  current_thread(){
+    return static_os_thread_context().current_thread;
+  }
 
   graph_viz*
   call_graph() const {

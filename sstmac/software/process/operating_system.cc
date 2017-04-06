@@ -144,7 +144,7 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
   if (os_thread_contexts_.size() == 0){
     os_thread_contexts_.resize(1);
     stack_alloc& salloc = os_thread_contexts_[0].stackalloc;
-    salloc.init(stacksize_, chunksize, mprot);
+    salloc.init(sstmac_global_stacksize, chunksize, mprot);
   }
 #else
   os_thread_context_.stackalloc.init(sstmac_global_stacksize, chunksize, mprot);
@@ -529,7 +529,6 @@ operating_system::switch_to_thread(thread_data_t tothread)
   current_thread_id_ = next_thread->thread_id();
 
   ctxt.current_thread = tothread.second;
-  current_thread_id_ = current_threadid();
   ctxt.current_os = this;
   ctxt.current_aid = ctxt.current_thread->aid();
   ctxt.current_tid = ctxt.current_thread->tid(  );
@@ -764,27 +763,6 @@ operating_system::lib(const std::string& name) const
   }
   else {
     return it->second;
-  }
-}
-
-thread*
-operating_system::current_thread()
-{
-  return static_os_thread_context().current_thread;
-}
-
-long
-operating_system::current_threadid() const
-{
-  if (threadstack_.size() > 0) {
-    thread_data_t td = current_context();
-    if (td.first != des_context_) {
-      return td.second->thread_id();
-    }
-    return thread::main_thread;
-  }
-  else {
-    return thread::main_thread;
   }
 }
 

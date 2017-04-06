@@ -233,8 +233,8 @@ mpi_api::start_gatherv(const char* name, MPI_Comm comm, int sendcount, MPI_Datat
       }
       recvcount = total_count / nproc;
     }
-    collective_op_base* op = start_gather(comm, sendcount, sendtype, recvcount, recvtype,
-                                          root, sendbuf, recvbuf);
+    collective_op_base* op = start_gather(comm, sendcount, sendtype, root, recvcount, recvtype,
+                                          sendbuf, recvbuf);
     return op;
   }
 }
