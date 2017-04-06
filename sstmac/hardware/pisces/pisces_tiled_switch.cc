@@ -192,7 +192,6 @@ pisces_tiled_switch::connect_output(
 {
   params->add_param_override("num_vc", router_->max_num_vc());
   pisces_sender* muxer = col_output_muxers_[src_outport];
-  //std::cerr << "setting muxer output on outport " << src_outport << "\n";
   muxer->set_output(params, 0, dst_inport, mod);
 }
 
@@ -204,7 +203,6 @@ pisces_tiled_switch::connect_input(
   event_handler *mod)
 {
   pisces_sender* demuxer = row_input_demuxers_[dst_inport];
-//  std::cerr << "demuxer: " << demuxer << std::endl;
   demuxer->set_input(params, dst_inport, src_outport, mod);
 }
 

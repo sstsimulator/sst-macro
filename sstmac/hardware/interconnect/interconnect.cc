@@ -207,6 +207,7 @@ interconnect::connect_endpoints(sprockit::sim_parameters* inj_params,
       ep_id = nodeaddr;
     }
 
+    // connect endpoints to switches
     network_switch* injsw = switches_[injaddr];
     for (int i=0; i < num_inj_ports; ++i){
       int injector_port = i;
@@ -219,7 +220,7 @@ interconnect::connect_endpoints(sprockit::sim_parameters* inj_params,
                          injsw->payload_handler(switch_port));
     }
 
-
+    // connect switches to endpoints
     network_switch* ejsw = switches_[ejaddr];
     for (int i=0; i < num_ej_ports; ++i){
       int ejector_port = i;
@@ -296,12 +297,15 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
           interconn_debug("Adding netlink %d connected to switch %d, node %d on port %d for rank %d",
             int(net_id), i, nid, inj_port, my_rank);
 
+          // connect nic to netlink
           nlink->connect_input(nlink_ej_params,
-                        nic::Injection, inj_port,
-                        the_nic->credit_handler(nic::Injection));
+                               nic::Injection, inj_port,
+                               the_nic->credit_handler(nic::Injection));
           the_nic->connect_output(inj_params,
                            nic::Injection, inj_port,
                            nlink->payload_handler(inj_port));
+
+          // connect netlink to nic
           nlink->connect_output(nlink_ej_params,
                         inj_port, nic::Injection,
                         the_nic->payload_handler(nic::Injection));

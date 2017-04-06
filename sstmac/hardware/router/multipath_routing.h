@@ -69,6 +69,9 @@ class multipath_router :
     ParentRouter::route(pkt);
     routable::path& path = pkt->interface<routable>()->current_path();
     path.geometric_id = path.outport();
+    debug_printf(sprockit::dbg::router,
+      "multipath routing: geometric id %d", path.geometric_id);
+
     top_->get_redundant_paths(path, paths, this->addr());
 
     int path_id = path.geometric_id;

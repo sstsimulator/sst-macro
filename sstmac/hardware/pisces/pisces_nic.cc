@@ -169,10 +169,13 @@ pisces_netlink::connect_output(
   event_handler *mod)
 {
   if (is_node_port(src_outport)){
-    //ej_block_->set_output(params, src_outport, dst_inport, mod);
+    // set nic payload handler
+    // ej_block payload handler will offset ports --
+    // -- need to match (use local ports)
     int offset = node_offset(src_outport);
     ej_block_->set_output(params, offset, dst_inport, mod);
   } else {
+    // set switch payload handler
     inj_block_->set_output(params, src_outport, dst_inport, mod);
   }
 }
@@ -184,9 +187,11 @@ pisces_netlink::connect_input(
   event_handler* mod)
 {
   if (is_node_port(dst_inport)){
+    // set nic credit handler
     inj_block_->set_input(params, dst_inport, src_outport, mod);
-    ej_block_->set_input(params, dst_inport, src_outport, mod);
+    //ej_block_->set_input(params, dst_inport, src_outport, mod); //???
   } else {
+    // set switch credit handler
     ej_block_->set_input(params, dst_inport, src_outport, mod);
   }
 }
@@ -199,10 +204,12 @@ pisces_netlink::pisces_netlink(sprockit::sim_parameters *params, node *parent)
 {
   sprockit::sim_parameters* inj_params = params->get_optional_namespace("injection");
   inj_block_ = new pisces_crossbar(inj_params, parent);
-  inj_block_->configure_basic_ports(num_tiles_ + conc_);
+  inj_block_->configure_basic_ports(num_tiles_);
+  //inj_block_->configure_basic_ports(num_tiles_ + conc_);
   sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
   ej_block_ = new pisces_crossbar(ej_params, parent);
-  ej_block_->configure_offset_ports(num_tiles_, num_tiles_ + conc_);
+  ej_block_->configure_offset_ports(num_tiles_, conc_);
+  //ej_block_->configure_offset_ports(num_tiles_, num_tiles_ + conc_);
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   ack_handler_ = new_handler(this,
@@ -252,7 +259,11 @@ pisces_netlink::handle_credit(event* ev)
      this,
      credit->to_string().c_str());
   if (is_node_port(credit->port())){
-    ej_block_->handle_credit(credit);
+    pisces_credit* local_credit = new pisces_credit(
+          node_offset(credit->port()),
+          credit->vc(),
+          credit->num_credits());
+    ej_block_->handle_credit(local_credit);
   } else {
     inj_block_->handle_credit(credit);
   }
@@ -273,6 +284,7 @@ pisces_netlink::handle_payload(event* ev)
   if (dst_netid == id_){
     //stays local - goes to a node
     int node_offset = toaddr % conc_;
+    // ej_block expects global port
     p.set_outport(netlink::node_port(node_offset));
     p.vc = 0;
     p.geometric_id = 0;
@@ -281,7 +293,7 @@ pisces_netlink::handle_payload(event* ev)
         int(id_), sprockit::to_string(ev).c_str(), int(toaddr), node_offset, p.outport());
     ej_block_->handle_payload(payload);
   } else {
-    //goes to switch
+    //goes to switch, global/local port is identical for switch ports
     p.set_outport(netlink::switch_port(tile_rotater_));
     p.vc = 0;
     debug_printf(sprockit::dbg::pisces,
