@@ -1,5 +1,5 @@
-#ifndef JOB_LAUNCHER_H
-#define JOB_LAUNCHER_H
+#ifndef sstmac_software_process_JOB_LAUNCHER_H
+#define sstmac_software_process_JOB_LAUNCHER_H
 
 #include <sprockit/factories/factory.h>
 #include <sprockit/unordered.h>

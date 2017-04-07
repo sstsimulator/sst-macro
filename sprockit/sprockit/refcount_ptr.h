@@ -2,6 +2,7 @@
 #define sprockit_refcount_ptr_h
 
 #include <cstdio>
+#include <functional>
 #include <sprockit/spkt_config.h>
 
 #if SPKT_ATOMIC_REFCOUNT

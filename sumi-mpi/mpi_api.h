@@ -1018,7 +1018,7 @@ sstmac_mpi();
 
 #define _start_mpi_call_(fxn) \
   SSTMACBacktrace(#fxn); \
-  os_->start_api_call()
+  start_api_call()
 
 #if SSTMAC_COMM_SYNC_STATS
   #define start_mpi_call(fxn,count,type,comm) \

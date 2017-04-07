@@ -1,7 +1,5 @@
 #include <sumi-mpi/mpi_api.h>
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
-#include <sstmac/software/process/backtrace.h>
-#include <sstmac/software/process/operating_system.h>
 
 #define start_pt2pt_call(fxn, count, type, partner, tag, comm) \
   start_mpi_call(fxn,count,type,comm); \

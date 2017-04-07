@@ -122,6 +122,15 @@ app::kill()
   thread::kill();
 }
 
+lib_compute_time*
+app::compute_time_lib()
+{
+  if (!compute_time_) {
+    compute_time_ = new lib_compute_time(params_, sid_, os_);
+  }
+  return compute_time_;
+}
+
 void
 app::sleep(timestamp time)
 {

@@ -1,5 +1,4 @@
 #include <sumi-mpi/mpi_api.h>
-#include <sstmac/software/process/operating_system.h>
 
 namespace sumi {
 

@@ -178,7 +178,8 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         extraCppFlags = [
         "-I%s/include/sumi" % prefix,
         "-DSSTMAC=1",
-        "-D__thread=dontallow",
+        "-D__thread=thread_local_not_yet_allowed",
+        "-Dthread_local=thread_local_not_yet_allowed",
       ]
 
     if asmFiles:

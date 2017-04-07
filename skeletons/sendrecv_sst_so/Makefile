@@ -1,13 +1,12 @@
-TARGET := runlflr
-
-SRC := $(shell ls *.cc) 
+TARGET := libsendrecv.so
+SRC := main.cc
 
 CXX :=    sst++
 CC :=     sstcc
-CXXFLAGS := -fPIC
+CXXFLAGS := 
 CPPFLAGS := -I.
-LIBDIR :=   
-PREFIX :=   
+LIBDIR :=  
+PREFIX := 
 LDFLAGS :=  -Wl,-rpath,$(PREFIX)/lib
 
 OBJ := $(SRC:.cc=.o) 
@@ -19,7 +18,7 @@ OBJ := $(OBJ:.c=.o)
 all: $(TARGET)
 
 $(TARGET): $(OBJ) 
-	$(CXX) -o $@ $+ $(LDFLAGS) $(LIBS) 
+	$(CXX) -o $@ $+ $(LDFLAGS) $(LIBS)  $(CXXFLAGS)
 
 %.o: %.cc 
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@

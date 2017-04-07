@@ -5,6 +5,7 @@
 #include <sumi/transport.h>
 #include <sstmac/libraries/sumi/sumi.h>
 #include <sstmac/libraries/sumi/distributed_service.h>
+#include <sstmac/software/launch/job_launcher.h>
 
 namespace sstmac {
 

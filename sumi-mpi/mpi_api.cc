@@ -95,7 +95,7 @@ mpi_api::mpi_api(sprockit::sim_parameters* params,
   sstmac::sumi_transport(params, "mpi", sid, os)
 {
   sprockit::sim_parameters* queue_params = params->get_optional_namespace("queue");
-  queue_ = new mpi_queue(queue_params, sid, this);
+  queue_ = new mpi_queue(queue_params, sid.task_, this);
 
   double probe_delay_s = params->get_optional_time_param("iprobe_delay", 0);
   iprobe_delay_us_ = probe_delay_s * 1e6;

@@ -2,9 +2,6 @@
 #include <sstmac/util.h>
 #include <sstmac/compute.h>
 #include <sstmac/replacements/mpi.h>
-#include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/process/app.h>
-#include <sstmac/software/process/thread.h>
 #include <sstmac/common/runtime.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sumi-mpi/mpi_api.h>

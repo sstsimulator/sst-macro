@@ -22,7 +22,7 @@
 #include <sstmac/software/process/thread_info.h>
 #include <sstmac/software/api/api_fwd.h>
 
-#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/common/messages/sst_message_fwd.h>
 #include <sstmac/common/stats/event_trace.h>
 #include <sstmac/common/event_scheduler.h>
 

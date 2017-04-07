@@ -15,6 +15,11 @@ sstmac_usleep(unsigned int usecs){
   return 0;
 }
 
+extern "C" int
+sstmac_fsleep(double secs){
+  sstmac::sw::operating_system::current_thread()->parent_app()->sleep(sstmac::timestamp(secs));
+}
+
 extern "C" void
 sstmac_compute(double secs){
   sstmac::sw::operating_system::current_thread()->parent_app()->compute(sstmac::timestamp(secs));

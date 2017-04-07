@@ -1,8 +1,6 @@
 #include <sumi-mpi/mpi_api.h>
 #include <sumi-mpi/mpi_comm/mpi_comm_cart.h>
-#include <sstmac/software/process/backtrace.h>
 #include <sprockit/stl_string.h>
-#include <sstmac/software/process/operating_system.h>
 
 #define start_comm_call(fxn,comm) \
   start_mpi_call(fxn,0,0,comm); \

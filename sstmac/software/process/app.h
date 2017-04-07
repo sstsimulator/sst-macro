@@ -106,6 +106,9 @@ class app : public thread
   lib_compute_loops*
   compute_loops_lib();
 
+  lib_compute_time*
+  compute_time_lib();
+
   /// Goodbye.
   virtual ~app();
 

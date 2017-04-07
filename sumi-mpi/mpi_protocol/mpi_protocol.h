@@ -5,12 +5,10 @@
 #include <sumi-mpi/mpi_queue/mpi_queue_send_request_fwd.h>
 #include <sumi-mpi/mpi_queue/mpi_queue_recv_request_fwd.h>
 #include <sumi-mpi/mpi_message.h>
-#include <sstmac/common/sst_event.h>
 #include <sprockit/sim_parameters_fwd.h>
+#include <sstmac/common/timestamp.h>
 
 namespace sumi {
-
-using sstmac::event;
 
 /**
  * @brief The mpi_protocol class
