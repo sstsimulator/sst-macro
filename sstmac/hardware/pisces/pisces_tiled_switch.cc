@@ -94,13 +94,6 @@ pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
   sprockit::sim_parameters* muxer_params = params->get_namespace("link");
   muxer_params->add_param_override("num_vc", router_->max_num_vc());
 
-  //int min_buffer_size = row_buffer_num_bytes_ / router_->max_num_vc();
-  //if (min_buffer_size < packet_size_){
-  //  spkt_throw(sprockit::value_error,
-  //             "chosen packet size of %d is bigger than chosen buffer size %d = %d over %d vcs",
-  //             packet_size_, min_buffer_size, row_buffer_num_bytes_, router_->max_num_vc());
-  //}
-
   int ntiles = nrows_ * ncols_;
   row_input_demuxers_.resize(ntiles);
   xbar_tiles_.resize(ntiles);
@@ -118,23 +111,25 @@ pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
 //      int xbar_mapper = ncols_; //DELETEME
 //      xbar->configure_div_ports(xbar_mapper, nrows_); //DELETEME
 //      xbar->configure_outports(nrows_,
-      xbar->configure_outports(nrows_, div_port_mapper(ncols_));
+      xbar->configure_outports(nrows_, divide_port_mapper(ncols_));
       xbar->set_update_vc(false);
       xbar->set_tile_id(location);
 
       pisces_muxer* muxer = new pisces_muxer(muxer_params, this);
       int muxer_offset = tile;
-      //int muxer_max_port = tile;
-      //muxer->set_event_location(my_addr_);
-      muxer->configure_div_ports(ntiles, 1);
+      //muxer->configure_div_ports(ntiles, 1);
+      // credits will arrive at muxer with global port ids,
+      // need to be mapped to local ports as well as payloads
+      muxer->configure_outports(
+            1, constant_port_mapper(0), constant_port_mapper(0));
       muxer->set_tile_id(location);
 
       pisces_demuxer* dm = new pisces_demuxer(demuxer_params, this);
-//      std::cerr << "created dm: " << dm << "\n";
       //routed port numbers are 0-48, e.g. for a 6x8
       //we route locally to a given column number
-      int dm_mod = ncols_;
-      dm->configure_mod_ports(dm_mod);
+      //int dm_mod = ncols_;
+      //dm->configure_mod_ports(dm_mod);
+      dm->configure_outports(ncols_, mod_port_mapper(ncols_));
       dm->set_update_vc(false);
       dm->set_tile_id(location);
 

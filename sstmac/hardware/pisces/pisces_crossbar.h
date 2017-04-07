@@ -9,7 +9,11 @@
 
 #include <memory>
 
-#define div_port_mapper(n) std::unique_ptr<pisces_NtoM_queue::port_mapper>(new pisces_NtoM_queue::div_mapper(n))
+#define identity_port_mapper(n) std::unique_ptr<pisces_NtoM_queue::port_mapper> (new pisces_NtoM_queue::identity_mapper())
+#define constant_port_mapper(n) std::unique_ptr<pisces_NtoM_queue::port_mapper> (new pisces_NtoM_queue::constant_mapper(n))
+#define offset_port_mapper(n) std::unique_ptr<pisces_NtoM_queue::port_mapper> (new pisces_NtoM_queue::offset_mapper(n))
+#define divide_port_mapper(n) std::unique_ptr<pisces_NtoM_queue::port_mapper> (new pisces_NtoM_queue::div_mapper(n))
+#define mod_port_mapper(n) std::unique_ptr<pisces_NtoM_queue::port_mapper> (new pisces_NtoM_queue::mod_mapper(n))
 
 namespace sstmac {
 namespace hw {
@@ -51,31 +55,31 @@ class pisces_NtoM_queue :
   virtual void
   start_message(message* msg);
 
-  void
-  configure_mod_ports(int mod);
+//  void
+//  configure_mod_ports(int mod);
 
-  void
-  configure_div_ports(int div, int num_ports);
+//  void
+//  configure_div_ports(int div, int num_ports);
 
-  void
-  configure_offset_ports(int offset, int num_ports);
+//  void
+//  configure_offset_ports(int offset, int num_ports);
 
-  void
-  configure_basic_ports(int num_ports);
+//  void
+//  configure_basic_ports(int num_ports);
 
-  inline int
-  local_port(int port) const {
-    int lp;
-    if (port_mod_){
-      lp =  port % port_mod_;
-    } else {
-      lp = port / port_div_ - port_offset_;
-    }
-    if (lp < 0) {
-      spkt_abort_printf("pisces_NtoM_queue: negative local port %d\n", lp);
-    }
-    return lp;
-  }
+//  inline int
+//  local_port(int port) const {
+//    int lp;
+//    if (port_mod_){
+//      lp =  port % port_mod_;
+//    } else {
+//      lp = port / port_div_ - port_offset_;
+//    }
+//    if (lp < 0) {
+//      spkt_abort_printf("pisces_NtoM_queue: negative local port %d\n", lp);
+//    }
+//    return lp;
+//  }
 
   inline int
   slot(int port, int vc) const {
@@ -97,10 +101,10 @@ class pisces_NtoM_queue :
   void
   deadlock_check(event* ev) override;
 
-  virtual int
-  remap_input_port(const int port) const {
-    return port;
-  }
+//  virtual int
+//  remap_input_port(const int port) const {
+//    return port;
+//  }
 
   class port_mapper
   {
@@ -173,14 +177,12 @@ class pisces_NtoM_queue :
   void
   configure_outports(int num_ports,
                      std::unique_ptr<port_mapper> mapper
+                     = std::unique_ptr<port_mapper>(new identity_mapper()),
+                     std::unique_ptr<port_mapper> credit_mapper
                      = std::unique_ptr<port_mapper>(new identity_mapper()) ) {
     resize(num_ports);
     outport_mapper_ = std::move(mapper);
-  }
-
-  void
-  configure_inports(std::unique_ptr<port_mapper> mapper) {
-    inport_mapper_ = std::move(mapper);
+    credit_mapper_ = std::move(credit_mapper);
   }
 
   int
@@ -189,8 +191,8 @@ class pisces_NtoM_queue :
   }
 
   int
-  local_inport(int port) {
-    return inport_mapper_->local_port(port);
+  local_outport_credit(int port) {
+    return credit_mapper_->local_port(port);
   }
 
  protected:
@@ -231,8 +233,8 @@ class pisces_NtoM_queue :
   build_blocked_messages();
 
  private:
-  std::unique_ptr<port_mapper> inport_mapper_;
   std::unique_ptr<port_mapper> outport_mapper_;
+  std::unique_ptr<port_mapper> credit_mapper_;
 
   inline int& credit(int port, int vc){
     return credits_[slot(port, vc)];
@@ -283,10 +285,10 @@ class pisces_muxer :
     return "muxer" + tile_id();
   }
 
-  virtual int
-  remap_input_port(const int port) const override {
-    return 0;
-  }
+//  virtual int
+//  remap_input_port(const int port) const override {
+//    return 0;
+//  }
 
 };
 

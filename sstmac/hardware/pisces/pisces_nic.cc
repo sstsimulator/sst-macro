@@ -204,12 +204,18 @@ pisces_netlink::pisces_netlink(sprockit::sim_parameters *params, node *parent)
 {
   sprockit::sim_parameters* inj_params = params->get_optional_namespace("injection");
   inj_block_ = new pisces_crossbar(inj_params, parent);
-  inj_block_->configure_basic_ports(num_tiles_);
   //inj_block_->configure_basic_ports(num_tiles_ + conc_);
+  //inj_block_->configure_basic_ports(num_tiles_);
+  // tile ports start at 0, so local and global ports are identical
+  inj_block_->configure_outports(num_tiles_);
   sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
   ej_block_ = new pisces_crossbar(ej_params, parent);
-  ej_block_->configure_offset_ports(num_tiles_, conc_);
   //ej_block_->configure_offset_ports(num_tiles_, num_tiles_ + conc_);
+  //ej_block_->configure_offset_ports(num_tiles_, conc_);
+  // node ports > tile ports, must be offset
+  ej_block_->configure_outports(conc_,
+                                offset_port_mapper(num_tiles_),
+                                offset_port_mapper(num_tiles_));
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   ack_handler_ = new_handler(this,
@@ -259,11 +265,12 @@ pisces_netlink::handle_credit(event* ev)
      this,
      credit->to_string().c_str());
   if (is_node_port(credit->port())){
-    pisces_credit* local_credit = new pisces_credit(
-          node_offset(credit->port()),
-          credit->vc(),
-          credit->num_credits());
-    ej_block_->handle_credit(local_credit);
+    // handled by local_outport_credit mapper now
+//    pisces_credit* local_credit = new pisces_credit(
+//          node_offset(credit->port()),
+//          credit->vc(),
+//          credit->num_credits());
+    ej_block_->handle_credit(credit);
   } else {
     inj_block_->handle_credit(credit);
   }

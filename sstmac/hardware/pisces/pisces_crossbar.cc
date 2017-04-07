@@ -44,8 +44,8 @@ pisces_NtoM_queue(sprockit::sim_parameters* params,
     credit_handler_(nullptr),
     payload_handler_(nullptr),
     tile_id_(""),
-    inport_mapper_(new identity_mapper()),
-    outport_mapper_(new identity_mapper())
+    outport_mapper_(new identity_mapper()),
+    credit_mapper_(new identity_mapper())
 {
   num_vc_ = params->get_int_param("num_vc");
   arb_ = pisces_bandwidth_arbitrator_factory::get_param("arbitrator", params);
@@ -83,7 +83,7 @@ pisces_NtoM_queue::deadlock_check()
     pisces_payload* pkt = queue.front();
     while (pkt){
       deadlocked_channels_[pkt->next_port()].insert(pkt->next_vc());
-      pisces_output& poutput = outputs_[local_port(pkt->next_port())];
+      pisces_output& poutput = outputs_[local_outport(pkt->next_port())];
       event_handler* output = output_handler(pkt);
       if (output){
         pkt->set_inport(poutput.dst_inport);
@@ -143,7 +143,7 @@ pisces_NtoM_queue::deadlock_check(event* ev)
       outport, inport, vc);
   } else {
     pisces_payload* next = blocked.front();
-    pisces_output& poutput = outputs_[local_port(outport)];
+    pisces_output& poutput = outputs_[local_outport(outport)];
     event_handler* output = output_handler(next);
     next->set_inport(poutput.dst_inport);
     output->deadlock_check(next);
@@ -160,17 +160,11 @@ pisces_NtoM_queue::input_name(pisces_payload* pkt)
 event_handler*
 pisces_NtoM_queue::output_handler(pisces_payload* pkt)
 {
-  int loc_port = local_port(pkt->next_port());
+  int loc_port = local_outport(pkt->next_port());
   event_handler* handler = outputs_[loc_port].handler;
   if (!handler)
     return nullptr;
-
-  //pisces_tiled_switch* sw = test_cast(pisces_tiled_switch, handler);
-  //if (sw){
-  //  return sw->demuxer(pkt->next_port());
-  //} else {
-    return handler;
-  //}
+  return handler;
 }
 
 std::string
@@ -200,7 +194,7 @@ pisces_NtoM_queue::handle_credit(event* ev)
     "On %s:%p handling credit",
      to_string().c_str(), this);
   pisces_credit* pkt = static_cast<pisces_credit*>(ev);
-  int loc_outport = remap_input_port(pkt->port());
+  int loc_outport = local_outport_credit(pkt->port());
   int vc = pkt->vc();
   int channel = loc_outport * num_vc_ + vc;
 
@@ -232,7 +226,7 @@ pisces_NtoM_queue::handle_payload(event* ev)
 
   int dst_vc = update_vc_ ? pkt->next_vc() : pkt->routable::vc();
   int glob_port = pkt->global_outport();
-  int loc_port = local_port(glob_port);
+  int loc_port = local_outport(glob_port);
   pkt->set_local_outport(loc_port);
   pisces_debug(
    "On %s:%p, handling {%s} for global_port:%d vc:%d local_port:%d",
@@ -276,53 +270,53 @@ pisces_NtoM_queue::resize(int num_ports)
   credits_.resize(num_ports*num_vc_);
 }
 
-void
-pisces_NtoM_queue::configure_basic_ports(int num_ports)
-{
-  port_offset_ = 0;
-  port_mod_ = 0;
-  port_div_ = 1;
-  resize(num_ports);
-}
+//void
+//pisces_NtoM_queue::configure_basic_ports(int num_ports)
+//{
+//  port_offset_ = 0;
+//  port_mod_ = 0;
+//  port_div_ = 1;
+//  resize(num_ports);
+//}
 
-void
-pisces_NtoM_queue::configure_div_ports(int div, int num_ports)
-{
-//  debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
-//    "On %s configured for div local ports: div=%d,max=%d",
-//    to_string().c_str(), div, num_ports);
+//void
+//pisces_NtoM_queue::configure_div_ports(int div, int num_ports)
+//{
+////  debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
+////    "On %s configured for div local ports: div=%d,max=%d",
+////    to_string().c_str(), div, num_ports);
 
-  port_offset_ = 0;
-  port_mod_ = 0;
-  port_div_ = div;
-  resize(num_ports);
-}
+//  port_offset_ = 0;
+//  port_mod_ = 0;
+//  port_div_ = div;
+//  resize(num_ports);
+//}
 
-void
-pisces_NtoM_queue::configure_offset_ports(int offset, int num_ports)
-{
-//  debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
-//    "On %s configured for offset local ports: offset=%d,max=%d",
-//    to_string().c_str(), offset, num_ports);
+//void
+//pisces_NtoM_queue::configure_offset_ports(int offset, int num_ports)
+//{
+////  debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
+////    "On %s configured for offset local ports: offset=%d,max=%d",
+////    to_string().c_str(), offset, num_ports);
 
-  port_offset_ = offset;
-  port_mod_ = 0;
-  port_div_ = 1;
-  resize(num_ports);
-}
+//  port_offset_ = offset;
+//  port_mod_ = 0;
+//  port_div_ = 1;
+//  resize(num_ports);
+//}
 
-void
-pisces_NtoM_queue::configure_mod_ports(int mod)
-{
-//  debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
-//    "On %s configured for modulo local ports: m=%d",
-//    to_string().c_str(), mod);
+//void
+//pisces_NtoM_queue::configure_mod_ports(int mod)
+//{
+////  debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
+////    "On %s configured for modulo local ports: m=%d",
+////    to_string().c_str(), mod);
 
-  port_offset_ = 0;
-  port_mod_ = mod;
-  port_div_ = 1;
-  resize(mod);
-}
+//  port_offset_ = 0;
+//  port_mod_ = mod;
+//  port_div_ = 1;
+//  resize(mod);
+//}
 
 void
 pisces_NtoM_queue::set_input(
