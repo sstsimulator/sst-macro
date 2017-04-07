@@ -18,7 +18,8 @@ nobase_nodist_library_include_HEADERS =
 nobase_library_include_HEADERS = 
 
 nobase_nodist_library_include_HEADERS += \
-  mpi.h 
+  mpi.h \
+  sstCoreElement.h 
 
 if USE_REPLACEMENT_HEADERS
 nobase_library_include_HEADERS += \
