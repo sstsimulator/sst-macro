@@ -26,7 +26,7 @@
 #include <sstmac/software/threading/threading_pthread.h>
 #endif
 #include <sstmac/software/libraries/service.h>
-#include <sstmac/software/launch/launcher.h>
+#include <sstmac/software/launch/app_launcher.h>
 #include <sstmac/software/process/graphviz.h>
 #include <sstmac/software/process/ftq.h>
 #include <sstmac/software/process/app.h>
@@ -34,7 +34,7 @@
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/compute_scheduler.h>
 #include <sstmac/software/process/thread_info.h>
-#include <sstmac/software/launch/app_launch.h>
+#include <sstmac/software/launch/app_launcher.h>
 #include <sstmac/software/libraries/unblock_event.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/hardware/nic/nic.h>
@@ -171,6 +171,19 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
 
 operating_system::~operating_system()
 {
+  if (!pending_library_events_.empty()){
+    auto& pair = *pending_library_events_.begin();
+    const std::string& name = pair.first;
+    event* ev = pair.second.front();
+    cerrn << "Valid libraries on OS " << addr() << ":\n";
+    for  (auto& pair : libs_){
+      cerrn << pair.first << std::endl;
+    }
+    spkt_abort_printf("operating_system::handle_event: never registered library %s on os %d for event %s",
+                   name.c_str(), int(addr()),
+                   sprockit::to_string(ev).c_str());
+  }
+
   if (des_context_) {
     des_context_->destroy_context();
     delete des_context_;
@@ -729,6 +742,15 @@ operating_system::register_lib(library* lib)
   debug_printf(sprockit::dbg::dropped_events,
                "OS %d should no longer drop events for %s",
                addr(), lib->lib_name().c_str());
+
+  auto iter = pending_library_events_.find(lib->lib_name());
+  if (iter != pending_library_events_.end()){
+    const std::list<event*> events = iter->second;
+    for (event* ev : events){
+      schedule_now(new_callback(event_location(), lib, &library::incoming_event, ev));
+    }
+    pending_library_events_.erase(iter);
+  }
 }
 
 void
@@ -836,7 +858,7 @@ operating_system::start_api_call()
 }
 
 void
-operating_system::start_app(app* theapp)
+operating_system::start_app(app* theapp, const std::string& unique_name)
 {
   os_debug("starting app %d:%d on thread %d",
     int(theapp->tid()), int(theapp->aid()), thread_id());
@@ -852,6 +874,20 @@ operating_system::start_app(app* theapp)
   switch_to_thread(thread_data_t(theapp->context_, theapp));
 }
 
+bool
+operating_system::handle_library_event(const std::string& name, event* ev)
+{
+  auto it = libs_.find(name);
+  bool found = it != libs_.end();
+  if (found){
+    library* lib = it->second;
+    os_debug("delivering message to lib %s:%p\n%s",
+        name.c_str(), lib, sprockit::to_string(ev).c_str());
+    lib->incoming_event(ev);
+  }
+  return found;
+}
+
 void
 operating_system::handle_event(event* ev)
 {  
@@ -863,42 +899,9 @@ operating_system::handle_event(event* ev)
       sprockit::to_string(ev).c_str());
   }
 
-  auto it = libs_.find(libmsg->lib_name());
-
-  if (it == libs_.end()) {
-    //event arrived for library that doesn't exist yet
-    sprockit::sim_parameters* lib_params = params_->get_optional_namespace(libmsg->lib_name());
-    software_id sid(0,0); //service
-    library* lib = library_factory::get_extra_value(libmsg->lib_name(), lib_params, sid, this);
-    if (lib){
-      os_debug("delivering message to newly created lib %s:%p\n%s",
-          libmsg->lib_name().c_str(), sprockit::to_string(ev).c_str());
-      lib->incoming_event(ev);
-    } else {
-      cerrn << "Valid libraries on OS " << addr() << ":\n";
-      for  (auto& pair : libs_){
-        cerrn << pair.first << std::endl;
-      }
-      spkt_abort_printf("operating_system::handle_event: can't find library %s on os %d for event %s",
-                     libmsg->lib_name().c_str(), int(addr()),
-                     sprockit::to_string(ev).c_str());
-    }
-    /**
-    if (deleted_libs_.find(libn) == deleted_libs_.end()){
-
-    } else {
-      debug_printf(sprockit::dbg::dropped_events | sprockit::dbg::os,
-                   "OS %d for library %s dropping event %s",
-                   addr(), libn.c_str(), sprockit::to_string(ev).c_str());
-      //drop the event
-    }
-    */
-  }
-  else {
-    library* lib = it->second;
-    os_debug("delivering message to lib %s:%p\n%s",
-        libmsg->lib_name().c_str(), lib, sprockit::to_string(ev).c_str());
-    lib->incoming_event(ev);
+  bool found = handle_library_event(libmsg->lib_name(), ev);
+  if (!found){
+    pending_library_events_[libmsg->lib_name()].push_back(ev);
   }
 }
 

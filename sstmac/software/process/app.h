@@ -190,6 +190,16 @@ class app : public thread
   virtual void
   clear_subthread_from_parent_app() override;
 
+  const std::string&
+  unique_name() const {
+    return unique_name_;
+  }
+
+  void
+  set_unique_name(const std::string& name) {
+    unique_name_ = name;
+  }
+
  protected:
   friend class thread;
 
@@ -209,8 +219,9 @@ class app : public thread
   lib_compute_memmove* compute_mem_move_;
   lib_compute_loops* compute_loops_;
   lib_sleep* sleep_lib_;
-  long next_tls_key_;
+  std::string unique_name_;
 
+  int next_tls_key_;
   int next_condition_;
   int next_mutex_;
 
@@ -218,7 +229,7 @@ class app : public thread
   std::map<int, mutex_t> mutexes_;
   std::map<int, condition_t> conditions_;
   std::map<int, destructor_fxn> tls_key_fxns_;
-  spkt_unordered_map<std::string, api*> apis_;
+  std::map<std::string, api*> apis_;
 
   char* globals_storage_;
 

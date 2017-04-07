@@ -7,6 +7,8 @@ namespace sstmac {
 namespace sw {
 
 class launch_event;
+class job_stop_event;
+class app_start_event;
 
 }
 }

@@ -18,8 +18,7 @@
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/app.h>
-#include <sstmac/software/launch/app_launch.h>
-#include <sstmac/software/launch/launcher.h>
+#include <sstmac/software/launch/app_launcher.h>
 #include <sstmac/software/launch/launch_event.h>
 #include <sstmac/software/launch/job_launcher.h>
 #include <sstmac/common/event_callback.h>
@@ -53,8 +52,6 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-std::list<sw::app_launch*> node::app_launchers_;
-
 using namespace sstmac::sw;
 
 node::node(sprockit::sim_parameters* params,
@@ -63,7 +60,8 @@ node::node(sprockit::sim_parameters* params,
     device_id(params->get_int_param("id"), device_id::node),
     mgr),
   params_(params),
-  app_refcount_(0)
+  app_refcount_(0),
+  job_launcher_(nullptr)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   static bool init_debug = false;
@@ -97,9 +95,14 @@ node::node(sprockit::sim_parameters* params,
   os_ = new sw::operating_system(os_params, this);
 
   app_launcher_ = new app_launcher(os_);
-  job_launcher_ = job_launcher::static_job_launcher(params, mgr);
 
-  if (my_addr_ == job_launcher::launch_root()){
+  launch_root_ = params->get_optional_int_param("launch_root", 0);
+  if (my_addr_ == launch_root_){
+    job_launcher_ =   job_launcher_factory::get_optional_param(
+          "job_launcher", "default", params, os_);
+  }
+
+  if (my_addr_ == launch_root_){
     increment_app_refcount();
   }
 }
@@ -125,10 +128,11 @@ node::deadlock_check()
 void
 node::setup()
 {
-  schedule_launches();
 #if SSTMAC_INTEGRATED_SST_CORE
   event_component::setup();
 #endif
+  if (job_launcher_)
+    job_launcher_->schedule_launch_requests();
 }
 
 void
@@ -138,9 +142,6 @@ node::init(unsigned int phase)
   event_component::init(phase);
 #endif
   nic_->init(phase);
-  if (phase == 0){
-    build_launchers(params_);
-  }
 }
 
 node::~node()
@@ -178,57 +179,10 @@ node::execute(ami::SERVICE_FUNC func, event* data)
              "node does not implement asynchronous services - choose new node model");
 }
 
-void
-node::build_launchers(sprockit::sim_parameters* params)
-{
-  if (!app_launchers_.empty()) return;
-
-  bool keep_going = true;
-  int aid = 1;
-  int last_used_aid = 0;
-  while (keep_going || aid < 10){
-    app_launch* appman = app_launch::static_app_launch(aid, params);
-    if (appman){
-      app_launchers_.push_back(appman);
-      keep_going = true;
-      last_used_aid = aid;
-    } else {
-      keep_going = false;
-    }
-    ++aid;
-  }
-
-  aid = last_used_aid+1;
-
-  std::vector<std::string> services_to_launch;
-  params->get_optional_vector_param("services", services_to_launch);
-  for (std::string& str : services_to_launch){
-    sprockit::sim_parameters* srv_params = params->get_namespace(str);
-    //setup the name for app factory
-    srv_params->add_param_override("name", "distributed_service");
-    //setup the name for distributed service
-    srv_params->add_param_override("libname", str);
-    app_launch* appman = app_launch::static_app_launch(aid, str, srv_params);
-    node_debug("adding distributed service %s", str.c_str());
-    app_launchers_.push_back(appman);
-    ++aid;
-  }
-}
-
 std::string
 node::to_string() const
 {
   return sprockit::printf("node(%d)", int(my_addr_));
-}
-
-void
-node::schedule_launches()
-{
-  for (app_launch* appman : app_launchers_){
-    auto ev = new_callback(event_location(), job_launcher_,
-        &job_launcher::handle_new_launch_request, appman, this);
-    schedule(appman->time(), ev);
-  }
 }
 
 void

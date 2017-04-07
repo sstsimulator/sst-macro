@@ -26,14 +26,13 @@
 #include <sstmac/common/stats/event_trace.h>
 #include <sstmac/common/event_scheduler.h>
 
-#include <sstmac/software/launch/app_launch_fwd.h>
 #include <sstmac/software/libraries/service_fwd.h>
 #include <sstmac/software/process/ftq_fwd.h>
 #include <sstmac/software/process/graphviz_fwd.h>
 #include <sstmac/software/process/compute_scheduler_fwd.h>
 #include <sstmac/software/process/global.h>
+#include <sstmac/common/messages/sst_message_fwd.h>
 #include <sstmac/hardware/node/node_fwd.h>
-
 #include <sprockit/unordered.h>
 #include <sprockit/debug.h>
 #include <stack>
@@ -196,7 +195,7 @@ class operating_system :
   add_application(app* a);
 
   void
-  start_app(app* a);
+  start_app(app* a, const std::string& unique_name);
 
   void
   handle_event(event* ev);
@@ -329,12 +328,15 @@ class operating_system :
 
   void
   local_shutdown();
+
+  bool handle_library_event(const std::string& name, event* ev);
   
  private:
   hw::node* node_;
   spkt_unordered_map<std::string, library*> libs_;
   spkt_unordered_map<library*, int> lib_refcounts_;
   spkt_unordered_map<void*, std::list<library*> > libs_by_owner_;
+  std::map<std::string, std::list<event*>> pending_library_events_;
 
   node_id my_addr_;
 

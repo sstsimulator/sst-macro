@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <iostream>
 #include <sstmac/common/serializable.h>
+#include <sprockit/errors.h>
 
 namespace sstmac {
 

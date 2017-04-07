@@ -11,7 +11,6 @@
 
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/api/api.h>
-#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/common/sstmac_env.h>
@@ -19,6 +18,9 @@
 #include <sstmac/software/launch/job_launcher.h>
 #include <sstmac/software/launch/launch_event.h>
 #include <dlfcn.h>
+#include <sstmac/common/sstmac_env.h>
+#include <sstmac/dumpi_util/dumpi_meta.h>
+#include <sstmac/hardware/node/node.h>
 #include <sprockit/statics.h>
 #include <sprockit/delete.h>
 #include <sprockit/output.h>
@@ -234,13 +236,14 @@ app::run()
   apis_.clear();
 
   //now we have to send a message to the job launcher to let it know we are done
-  int launch_root = job_launcher::launch_root();
-  launch_event* lev = new launch_event(launch_event::Stop,
-                            aid(), tid(),
-                            launch_root, os_->addr());
-  os_->execute_kernel(ami::COMM_PMI_SEND, lev);
-
   os_->decrement_app_refcount();
+  //for now assume that the application has finished with a barrier - which is true of like everything
+  if (sid_.task_ == 0){
+    int launch_root = os_->node()->launch_root();
+    job_stop_event* lev = new job_stop_event(sid_.app_, unique_name_, launch_root, os_->addr());
+    os_->execute_kernel(ami::COMM_PMI_SEND, lev);
+  }
+  task_mapping::remove_global_mapping(sid_.app_, unique_name_);
 }
 
 void
