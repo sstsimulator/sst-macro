@@ -170,6 +170,7 @@ pisces_sender::send(
   if (update_vc_) pkt->update_vc();
 
   send_to_link(st.head_leaves, send_lat_, dest.handler, pkt);
+
 }
 
 std::string

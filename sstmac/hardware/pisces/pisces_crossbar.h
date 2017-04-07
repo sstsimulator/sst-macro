@@ -7,6 +7,10 @@
 #include <sstmac/hardware/router/router.h>
 #include <sprockit/keyword_registration.h>
 
+#include <memory>
+
+#define div_port_mapper(n) std::unique_ptr<pisces_NtoM_queue::port_mapper>(new pisces_NtoM_queue::div_mapper(n))
+
 namespace sstmac {
 namespace hw {
 
@@ -87,16 +91,107 @@ class pisces_NtoM_queue :
     return tile_id_;
   }
 
-  virtual int
-  remap_input_port(const int port) const {
-    return port;
-  }
-
   void
   deadlock_check() override;
 
   void
   deadlock_check(event* ev) override;
+
+  virtual int
+  remap_input_port(const int port) const {
+    return port;
+  }
+
+  class port_mapper
+  {
+  public:
+    port_mapper() {}
+    virtual ~port_mapper() {}
+    virtual int local_port(const int) const = 0;
+  };
+
+  class identity_mapper : public port_mapper
+  {
+  private:
+  public:
+    identity_mapper() {}
+    ~identity_mapper() {}
+    virtual int local_port(const int port) const override {
+      return port;
+    }
+  };
+
+  class constant_mapper : public port_mapper
+  {
+  private:
+    int constant_;
+  public:
+    constant_mapper(int constant) : constant_(constant) {}
+    ~constant_mapper() {}
+    virtual int local_port(const int port) const override {
+      return constant_;
+    }
+  };
+
+  class offset_mapper : public port_mapper
+  {
+  private:
+    int offset_;
+  public:
+    offset_mapper(int offset) : offset_(offset)  {}
+    ~offset_mapper() {}
+    virtual int local_port(const int port) const override {
+      return port - offset_;
+    }
+  };
+
+  class div_mapper : public port_mapper
+  {
+  private:
+    int div_;
+  public:
+    div_mapper(int div) : div_(div) {
+    }
+    ~div_mapper() {}
+    virtual int local_port(const int port) const override {
+      return port / div_;
+    }
+  };
+
+  class mod_mapper : public port_mapper
+  {
+  private:
+    int mod_;
+  public:
+    mod_mapper(int mod) : mod_(mod) {}
+    ~mod_mapper() {}
+    virtual int local_port(const int port) const override {
+      return port % mod_;
+    }
+  };
+
+  void
+  configure_outports(int num_ports,
+                     std::unique_ptr<port_mapper> mapper
+                     = std::unique_ptr<port_mapper>(new identity_mapper()) ) {
+    resize(num_ports);
+    outport_mapper_ = std::move(mapper);
+  }
+
+  void
+  configure_inports(std::unique_ptr<port_mapper> mapper) {
+    inport_mapper_ = std::move(mapper);
+  }
+
+  int
+  local_outport(int port) {
+    return outport_mapper_->local_port(port);
+  }
+
+  int
+  local_inport(int port) {
+    return inport_mapper_->local_port(port);
+  }
 
  protected:
   typedef spkt_unordered_map<int, pisces_input> input_map;
@@ -136,6 +231,9 @@ class pisces_NtoM_queue :
   build_blocked_messages();
 
  private:
+  std::unique_ptr<port_mapper> inport_mapper_;
+  std::unique_ptr<port_mapper> outport_mapper_;
+
   inline int& credit(int port, int vc){
     return credits_[slot(port, vc)];
   }

@@ -113,13 +113,12 @@ pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
 
       pisces_crossbar* xbar = new pisces_crossbar(xbar_params, this);
       xbar->set_stat_collector(xbar_stats_);
-      //hw::structured_topology* s_top = safe_cast(hw::structured_topology, top_);
-      //xbar->configure_basic_ports(s_top->max_num_ports());
 
       //we can route to a destination port that differs from the local port
-      int xbar_mapper = ncols_;
-      //xbar->configure_div_ports(xbar_mapper, ntiles-1);
-      xbar->configure_div_ports(xbar_mapper, nrows_);
+//      int xbar_mapper = ncols_; //DELETEME
+//      xbar->configure_div_ports(xbar_mapper, nrows_); //DELETEME
+//      xbar->configure_outports(nrows_,
+      xbar->configure_outports(nrows_, div_port_mapper(ncols_));
       xbar->set_update_vc(false);
       xbar->set_tile_id(location);
 

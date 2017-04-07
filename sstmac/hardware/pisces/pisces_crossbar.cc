@@ -43,7 +43,9 @@ pisces_NtoM_queue(sprockit::sim_parameters* params,
   : pisces_sender(params, parent),
     credit_handler_(nullptr),
     payload_handler_(nullptr),
-    tile_id_("")
+    tile_id_(""),
+    inport_mapper_(new identity_mapper()),
+    outport_mapper_(new identity_mapper())
 {
   num_vc_ = params->get_int_param("num_vc");
   arb_ = pisces_bandwidth_arbitrator_factory::get_param("arbitrator", params);
