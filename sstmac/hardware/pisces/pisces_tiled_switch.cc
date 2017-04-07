@@ -102,36 +102,33 @@ pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
   for (int r=0; r < nrows_; ++r){
     for (int c=0; c < ncols_; ++c){
       int tile = row_col_to_tile(r, c);
-      std::string location(std::to_string(tile) + "(" + std::to_string(r) + ":" + std::to_string(c) + ")");
+      std::string location(std::to_string(tile) + "(" + std::to_string(r) +
+                           ":" + std::to_string(c) + ")");
 
-      pisces_crossbar* xbar = new pisces_crossbar(xbar_params, this);
-      xbar->set_stat_collector(xbar_stats_);
+      // global destination port given by the router is for the switch
+      // must map gbobal port to the local port for each
+      // element (NtoM_queue) that makes up the switch
 
-      //we can route to a destination port that differs from the local port
-//      int xbar_mapper = ncols_; //DELETEME
-//      xbar->configure_div_ports(xbar_mapper, nrows_); //DELETEME
-//      xbar->configure_outports(nrows_,
-      xbar->configure_outports(nrows_, divide_port_mapper(ncols_));
-      xbar->set_update_vc(false);
-      xbar->set_tile_id(location);
-
-      pisces_muxer* muxer = new pisces_muxer(muxer_params, this);
-      int muxer_offset = tile;
-      //muxer->configure_div_ports(ntiles, 1);
-      // credits will arrive at muxer with global port ids,
-      // need to be mapped to local ports as well as payloads
-      muxer->configure_outports(
-            1, constant_port_mapper(0), constant_port_mapper(0));
-      muxer->set_tile_id(location);
-
+      // mod num columns to get column for xbar
       pisces_demuxer* dm = new pisces_demuxer(demuxer_params, this);
-      //routed port numbers are 0-48, e.g. for a 6x8
-      //we route locally to a given column number
-      //int dm_mod = ncols_;
-      //dm->configure_mod_ports(dm_mod);
       dm->configure_outports(ncols_, mod_port_mapper(ncols_));
       dm->set_update_vc(false);
       dm->set_tile_id(location);
+
+      // divide by num columns to get row for output muxer
+      pisces_crossbar* xbar = new pisces_crossbar(xbar_params, this);
+      xbar->configure_outports(nrows_, divide_port_mapper(ncols_));
+      xbar->set_update_vc(false);
+      xbar->set_tile_id(location);
+      xbar->set_stat_collector(xbar_stats_);
+
+      // packet leaves the switch from the muxer
+      // credits will arrive back at muxer with global port ids,
+      // need to map these to local ports as well as payloads
+      pisces_muxer* muxer = new pisces_muxer(muxer_params, this);
+      muxer->configure_outports(
+            1, constant_port_mapper(0), constant_port_mapper(0));
+      muxer->set_tile_id(location);
 
       row_input_demuxers_[tile] = dm;
       col_output_muxers_[tile] = muxer;
@@ -149,8 +146,10 @@ pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
         int tile_xbar = row_col_to_tile(row_dm, col_out);
         pisces_crossbar* xbar = xbar_tiles_[tile_xbar];
         //label unique input ports on the xbar by column
-        demuxer->set_output(demuxer_params,col_out,col_dm,xbar->payload_handler());
-        xbar->set_input(xbar_params, col_dm, col_out, demuxer->credit_handler());
+        demuxer->set_output(
+              demuxer_params,col_out,col_dm,xbar->payload_handler());
+        xbar->set_input(
+              xbar_params, col_dm, col_out, demuxer->credit_handler());
       }
     }
   }
@@ -264,7 +263,6 @@ pisces_tiled_switch::handle(event* ev)
     }
     case pisces_interface::payload: {
       pisces_payload* payload = static_cast<pisces_payload*>(ev);
-      //routable* rtbl = payload->interface<routable>();
       debug_printf(sprockit::dbg::pisces,
          "tiled switch %d: incoming payload %s",
           int(my_addr_), payload->to_string().c_str());
@@ -294,7 +292,6 @@ void
 pisces_tiled_switch::handle_payload(event *ev)
 {
   pisces_payload* payload = static_cast<pisces_payload*>(ev);
-  //routable* rtbl = payload->interface<routable>();
   debug_printf(sprockit::dbg::pisces,
                "tiled switch %d: incoming payload %s",
                int(my_addr_), payload->to_string().c_str());

@@ -153,7 +153,6 @@ pisces_nic::do_send(network_message* payload)
   nic_debug("packet flow: sending %s", payload->to_string().c_str());
   int vn = 0; //we only ever use one virtual network
   packetizer_->start(vn, payload);
-  //schedule_delay(inj_lat_, new_callback(packetizer_, &packetizer::start, vn, payload));
 }
 
 void
@@ -189,7 +188,6 @@ pisces_netlink::connect_input(
   if (is_node_port(dst_inport)){
     // set nic credit handler
     inj_block_->set_input(params, dst_inport, src_outport, mod);
-    //ej_block_->set_input(params, dst_inport, src_outport, mod); //???
   } else {
     // set switch credit handler
     ej_block_->set_input(params, dst_inport, src_outport, mod);
@@ -204,14 +202,10 @@ pisces_netlink::pisces_netlink(sprockit::sim_parameters *params, node *parent)
 {
   sprockit::sim_parameters* inj_params = params->get_optional_namespace("injection");
   inj_block_ = new pisces_crossbar(inj_params, parent);
-  //inj_block_->configure_basic_ports(num_tiles_ + conc_);
-  //inj_block_->configure_basic_ports(num_tiles_);
   // tile ports start at 0, so local and global ports are identical
   inj_block_->configure_outports(num_tiles_);
   sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
   ej_block_ = new pisces_crossbar(ej_params, parent);
-  //ej_block_->configure_offset_ports(num_tiles_, num_tiles_ + conc_);
-  //ej_block_->configure_offset_ports(num_tiles_, conc_);
   // node ports > tile ports, must be offset
   ej_block_->configure_outports(conc_,
                                 offset_port_mapper(num_tiles_),
@@ -265,11 +259,6 @@ pisces_netlink::handle_credit(event* ev)
      this,
      credit->to_string().c_str());
   if (is_node_port(credit->port())){
-    // handled by local_outport_credit mapper now
-//    pisces_credit* local_credit = new pisces_credit(
-//          node_offset(credit->port()),
-//          credit->vc(),
-//          credit->num_credits());
     ej_block_->handle_credit(credit);
   } else {
     inj_block_->handle_credit(credit);
@@ -283,7 +272,6 @@ pisces_netlink::handle_payload(event* ev)
   routable* rtbl = payload->interface<routable>();
   debug_printf(sprockit::dbg::pisces,
        "netlink %d:%p handling payload %s",
-        //topology::global()->label(event_location()).c_str(),
         int(id_), this, payload->to_string().c_str());
   node_id toaddr = payload->toaddr();
   netlink_id dst_netid(toaddr / conc_);

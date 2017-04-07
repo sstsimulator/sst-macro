@@ -55,32 +55,6 @@ class pisces_NtoM_queue :
   virtual void
   start_message(message* msg);
 
-//  void
-//  configure_mod_ports(int mod);
-
-//  void
-//  configure_div_ports(int div, int num_ports);
-
-//  void
-//  configure_offset_ports(int offset, int num_ports);
-
-//  void
-//  configure_basic_ports(int num_ports);
-
-//  inline int
-//  local_port(int port) const {
-//    int lp;
-//    if (port_mod_){
-//      lp =  port % port_mod_;
-//    } else {
-//      lp = port / port_div_ - port_offset_;
-//    }
-//    if (lp < 0) {
-//      spkt_abort_printf("pisces_NtoM_queue: negative local port %d\n", lp);
-//    }
-//    return lp;
-//  }
-
   inline int
   slot(int port, int vc) const {
     return port * num_vc_ + vc;
@@ -100,11 +74,6 @@ class pisces_NtoM_queue :
 
   void
   deadlock_check(event* ev) override;
-
-//  virtual int
-//  remap_input_port(const int port) const {
-//    return port;
-//  }
 
   class port_mapper
   {
@@ -263,13 +232,10 @@ class pisces_demuxer :
  public:
   pisces_demuxer(sprockit::sim_parameters* params,
                       event_scheduler* parent);
-
   std::string
   pisces_name() const override {
     return "demuxer" + tile_id();
   }
-
-
 };
 
 
@@ -279,17 +245,10 @@ class pisces_muxer :
  public:
   pisces_muxer(sprockit::sim_parameters* params,
                     event_scheduler* parent);
-
   std::string
   pisces_name() const override {
     return "muxer" + tile_id();
   }
-
-//  virtual int
-//  remap_input_port(const int port) const override {
-//    return 0;
-//  }
-
 };
 
 class pisces_crossbar :
@@ -298,12 +257,10 @@ class pisces_crossbar :
  public:
   pisces_crossbar(sprockit::sim_parameters* params,
                        event_scheduler* parent);
-
   std::string
   pisces_name() const override {
     return "crossbar" + tile_id();
   }
-
 };
 
 

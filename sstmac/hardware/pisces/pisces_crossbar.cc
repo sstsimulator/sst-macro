@@ -270,74 +270,22 @@ pisces_NtoM_queue::resize(int num_ports)
   credits_.resize(num_ports*num_vc_);
 }
 
-//void
-//pisces_NtoM_queue::configure_basic_ports(int num_ports)
-//{
-//  port_offset_ = 0;
-//  port_mod_ = 0;
-//  port_div_ = 1;
-//  resize(num_ports);
-//}
-
-//void
-//pisces_NtoM_queue::configure_div_ports(int div, int num_ports)
-//{
-////  debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
-////    "On %s configured for div local ports: div=%d,max=%d",
-////    to_string().c_str(), div, num_ports);
-
-//  port_offset_ = 0;
-//  port_mod_ = 0;
-//  port_div_ = div;
-//  resize(num_ports);
-//}
-
-//void
-//pisces_NtoM_queue::configure_offset_ports(int offset, int num_ports)
-//{
-////  debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
-////    "On %s configured for offset local ports: offset=%d,max=%d",
-////    to_string().c_str(), offset, num_ports);
-
-//  port_offset_ = offset;
-//  port_mod_ = 0;
-//  port_div_ = 1;
-//  resize(num_ports);
-//}
-
-//void
-//pisces_NtoM_queue::configure_mod_ports(int mod)
-//{
-////  debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
-////    "On %s configured for modulo local ports: m=%d",
-////    to_string().c_str(), mod);
-
-//  port_offset_ = 0;
-//  port_mod_ = mod;
-//  port_div_ = 1;
-//  resize(mod);
-//}
-
 void
 pisces_NtoM_queue::set_input(
   sprockit::sim_parameters* port_params,
   int my_inport, int src_outport,
   event_handler* input)
 {
+  // ports are local for local links and global otherwise
+
   debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
     "On %s:%d setting input %s:%d",
     to_string().c_str(), my_inport,
     input->to_string().c_str(), src_outport);
-
-//  std::cerr << "inputs size1: " << inputs_.size() << std::endl;
-
-//  std::cerr << "my_inport: " << my_inport << "\n";
   pisces_input inp;
   inp.src_outport = src_outport;
   inp.handler = input;
-//  std::cerr << "inputs size2: " << inputs_.size() << std::endl;
   inputs_[my_inport] = inp;
-//  std::cerr << "inputs size3: " << inputs_.size() << std::endl;
 }
 
 void
@@ -346,6 +294,12 @@ pisces_NtoM_queue::set_output(
   int my_outport, int dst_inport,
   event_handler* output)
 {
+  // must be called with local my_outport (if there's a difference)
+  // global port numbers aren't unique for individual elements of
+  // a tiled switch, for instance, so this is the only logical approach
+
+  // dst_inport is local for local links and global otherwise
+
   debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
     "On %s setting output %s:%d for local port %d, mapper=(%d,%d,%d) of %d",
     to_string().c_str(),
@@ -358,8 +312,9 @@ pisces_NtoM_queue::set_output(
   out.handler = output;
 
   if (my_outport > outputs_.size()) {
-    std::cerr << sprockit::printf("my_outport %i > outputs_.size() %i\n", my_outport, outputs_.size());
-    abort();
+    spkt_throw_printf(sprockit::value_error,
+                      "pisces_crossbar: my_outport %i > outputs_.size() %i",
+                      my_outport, outputs_.size());
   }
   outputs_[my_outport] = out;
 
