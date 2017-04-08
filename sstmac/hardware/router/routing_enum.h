@@ -11,8 +11,7 @@ namespace sstmac {
     minimal,
     minimal_adaptive,
     valiant,
-    ugal,
-    deflt
+    ugal
   } algorithm_t;
 
   const char*
