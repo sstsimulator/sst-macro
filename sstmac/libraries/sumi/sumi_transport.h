@@ -5,7 +5,7 @@
 #include <sstmac/common/node_address.h>
 #include <sstmac/libraries/sumi/message_fwd.h>
 #include <sstmac/software/process/pmi.h>
-#include <sstmac/software/launch/job_launcher.h>
+#include <sstmac/software/launch/job_launcher_fwd.h>
 #include <sstmac/software/libraries/service.h>
 #include <sstmac/software/api/api.h>
 #include <sstmac/hardware/network/network_message_fwd.h>
@@ -32,16 +32,13 @@ class sumi_transport :
  public:  
   sumi_transport(sprockit::sim_parameters* params,
                  sstmac::sw::software_id sid,
-                 sstmac::sw::operating_system* os) :
-    sumi_transport(params, "sumi", sid, os)
-  {
-  }
+                 sstmac::sw::operating_system* os);
 
   virtual void
   init() override;
 
   virtual void
-  finalize() override;
+  finish() override;
 
   virtual ~sumi_transport();
 
@@ -76,17 +73,14 @@ class sumi_transport :
   sumi::collective_done_message::ptr
   collective_block(sumi::collective::type_t ty, int tag) override;
 
-  void
-  cq_notify() override;
+  void cq_notify() override;
 
-  double
-  wall_time() const override;
+  double wall_time() const override;
 
   sumi::message::ptr
   poll_pending_messages(bool blocking, double timeout = -1) override;
 
-  void
-  ping_timeout(sumi::pinger* pnger);
+  void ping_timeout(sumi::pinger* pnger);
 
   /**
    * @brief send Intra-app. Send within the same process launch (i.e. intra-comm MPI_COMM_WORLD). This contrasts
@@ -97,8 +91,7 @@ class sumi_transport :
    * @param dst
    * @param needs_ack
    */
-  void
-  send(long byte_length,
+  void send(long byte_length,
     const sumi::message_ptr& msg,
     int ty,
     int dst,
@@ -108,10 +101,13 @@ class sumi_transport :
 
   void shutdown_server(int dest_rank, node_id dest_node, int dest_app);
 
-  std::string
-  server_libname() const {
+  std::string server_libname() const {
     return server_libname_;
   }
+
+  event_scheduler* des_scheduler() const;
+
+  void memcopy(long bytes);
 
  private:
   void
@@ -179,7 +175,7 @@ class sumi_transport :
 
   std::string server_libname_;
 
-  sstmac::sw::task_mapping::ptr rank_mapper_;
+  sstmac::sw::task_mapping_ptr rank_mapper_;
 
   std::list<transport_message*> pending_messages_;
 

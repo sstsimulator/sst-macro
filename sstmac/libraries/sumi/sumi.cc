@@ -57,7 +57,7 @@ comm_kill_node()
 void
 comm_finalize()
 {
-  current_transport()->finalize();
+  current_transport()->finish();
 }
 
 void

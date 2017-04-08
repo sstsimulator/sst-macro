@@ -1,0 +1,214 @@
+#ifndef sumi_mpi_Call_ID_MPI_H
+#define sumi_mpi_Call_ID_MPI_H
+
+#include <sumi-mpi/mpi_types.h>
+#include <sumi-mpi/mpi_integers.h>
+#include <sumi-mpi/mpi_api_fwd.h>
+#include <sstmac/common/timestamp.h>
+
+namespace sumi {
+
+typedef enum {
+  Call_ID_MPI_Send=0,                    Call_ID_MPI_Recv,
+  Call_ID_MPI_Get_count,                 Call_ID_MPI_Bsend,
+  Call_ID_MPI_Ssend,                     Call_ID_MPI_Rsend,
+  Call_ID_MPI_Buffer_attach,             Call_ID_MPI_Buffer_detach,
+  Call_ID_MPI_Isend,                     Call_ID_MPI_Ibsend,
+  Call_ID_MPI_Issend,                    Call_ID_MPI_Irsend,
+  Call_ID_MPI_Irecv,                     Call_ID_MPI_Wait,
+  Call_ID_MPI_Test,                      Call_ID_MPI_Request_free,
+  Call_ID_MPI_Waitany,                   Call_ID_MPI_Testany,
+  Call_ID_MPI_Waitall,                   Call_ID_MPI_Testall,
+  Call_ID_MPI_Waitsome,                  Call_ID_MPI_Testsome,
+  Call_ID_MPI_Iprobe,                    Call_ID_MPI_Probe,
+  Call_ID_MPI_Cancel,                    Call_ID_MPI_Test_cancelled,
+  Call_ID_MPI_Send_init,                 Call_ID_MPI_Bsend_init,
+  Call_ID_MPI_Ssend_init,                Call_ID_MPI_Rsend_init,
+  Call_ID_MPI_Recv_init,                 Call_ID_MPI_Start,
+  Call_ID_MPI_Startall,                  Call_ID_MPI_Sendrecv,
+  Call_ID_MPI_Sendrecv_replace,          Call_ID_MPI_Type_contiguous,
+  Call_ID_MPI_Type_vector,               Call_ID_MPI_Type_hvector,
+  Call_ID_MPI_Type_indexed,              Call_ID_MPI_Type_hindexed,
+  Call_ID_MPI_Type_struct,               Call_ID_MPI_Address,
+  Call_ID_MPI_Type_extent,               Call_ID_MPI_Type_size,
+  Call_ID_MPI_Type_lb,                   Call_ID_MPI_Type_ub,
+  Call_ID_MPI_Type_commit,               Call_ID_MPI_Type_free,
+  Call_ID_MPI_Get_elements,              Call_ID_MPI_Pack,
+  Call_ID_MPI_Unpack,                    Call_ID_MPI_Pack_size,
+  Call_ID_MPI_Barrier,                   Call_ID_MPI_Bcast,
+  Call_ID_MPI_Gather,                    Call_ID_MPI_Gatherv,
+  Call_ID_MPI_Scatter,                   Call_ID_MPI_Scatterv,
+  Call_ID_MPI_Allgather,                 Call_ID_MPI_Allgatherv,
+  Call_ID_MPI_Alltoall,                  Call_ID_MPI_Alltoallv,
+  Call_ID_MPI_Reduce,                    Call_ID_MPI_Op_create,
+  Call_ID_MPI_Op_free,                   Call_ID_MPI_Allreduce,
+  Call_ID_MPI_Reduce_scatter,            Call_ID_MPI_Scan,
+  Call_ID_MPI_Ibarrier,                   Call_ID_MPI_Ibcast,
+  Call_ID_MPI_Igather,                    Call_ID_MPI_Igatherv,
+  Call_ID_MPI_Iscatter,                   Call_ID_MPI_Iscatterv,
+  Call_ID_MPI_Iallgather,                 Call_ID_MPI_Iallgatherv,
+  Call_ID_MPI_Ialltoall,                  Call_ID_MPI_Ialltoallv,
+  Call_ID_MPI_Ireduce,                    Call_ID_MPI_Iallreduce,
+  Call_ID_MPI_Ireduce_scatter,            Call_ID_MPI_Iscan,
+  Call_ID_MPI_Reduce_scatter_block,
+  Call_ID_MPI_Ireduce_scatter_block,
+  Call_ID_MPI_Group_size,                Call_ID_MPI_Group_rank,
+  Call_ID_MPI_Group_translate_ranks,     Call_ID_MPI_Group_compare,
+  Call_ID_MPI_Comm_group,                Call_ID_MPI_Group_union,
+  Call_ID_MPI_Group_intersection,        Call_ID_MPI_Group_difference,
+  Call_ID_MPI_Group_incl,                Call_ID_MPI_Group_excl,
+  Call_ID_MPI_Group_range_incl,          Call_ID_MPI_Group_range_excl,
+  Call_ID_MPI_Group_free,                Call_ID_MPI_Comm_size,
+  Call_ID_MPI_Comm_rank,                 Call_ID_MPI_Comm_compare,
+  Call_ID_MPI_Comm_dup,                  Call_ID_MPI_Comm_create,
+  Call_ID_MPI_Comm_split,                Call_ID_MPI_Comm_free,
+  Call_ID_MPI_Comm_test_inter,           Call_ID_MPI_Comm_remote_size,
+  Call_ID_MPI_Comm_remote_group,         Call_ID_MPI_Intercomm_create,
+  Call_ID_MPI_Intercomm_merge,           Call_ID_MPI_Keyval_create,
+  Call_ID_MPI_Keyval_free,               Call_ID_MPI_Attr_put,
+  Call_ID_MPI_Attr_get,                  Call_ID_MPI_Attr_delete,
+  Call_ID_MPI_Topo_test,                 Call_ID_MPI_Cart_create,
+  Call_ID_MPI_Dims_create,               Call_ID_MPI_Graph_create,
+  Call_ID_MPI_Graphdims_get,             Call_ID_MPI_Graph_get,
+  Call_ID_MPI_Cartdim_get,               Call_ID_MPI_Cart_get,
+  Call_ID_MPI_Cart_rank,                 Call_ID_MPI_Cart_coords,
+  Call_ID_MPI_Graph_neighbors_count,     Call_ID_MPI_Graph_neighbors,
+  Call_ID_MPI_Cart_shift,                Call_ID_MPI_Cart_sub,
+  Call_ID_MPI_Cart_map,                  Call_ID_MPI_Graph_map,
+  Call_ID_MPI_Get_processor_name,        Call_ID_MPI_Get_version,
+  Call_ID_MPI_Errhandler_create,         Call_ID_MPI_Errhandler_set,
+  Call_ID_MPI_Errhandler_get,            Call_ID_MPI_Errhandler_free,
+  Call_ID_MPI_Error_string,              Call_ID_MPI_Error_class,
+  Call_ID_MPI_Wtime,                     Call_ID_MPI_Wtick,
+  Call_ID_MPI_Init,                      Call_ID_MPI_Finalize,
+  Call_ID_MPI_Initialized,               Call_ID_MPI_Abort,
+  Call_ID_MPI_Pcontrol,                  Call_ID_MPI_Close_port,
+  Call_ID_MPI_Comm_accept,               Call_ID_MPI_Comm_connect,
+  Call_ID_MPI_Comm_disconnect,           Call_ID_MPI_Comm_get_parent,
+  Call_ID_MPI_Comm_join,                 Call_ID_MPI_Comm_spawn,
+  Call_ID_MPI_Comm_spawn_multiple,       Call_ID_MPI_Lookup_name,
+  Call_ID_MPI_Open_port,                 Call_ID_MPI_Publish_name,
+  Call_ID_MPI_Unpublish_name,            Call_ID_MPI_Accumulate,
+  Call_ID_MPI_Get,                       Call_ID_MPI_Put,
+  Call_ID_MPI_Win_complete,              Call_ID_MPI_Win_create,
+  Call_ID_MPI_Win_fence,                 Call_ID_MPI_Win_free,
+  Call_ID_MPI_Win_get_group,             Call_ID_MPI_Win_lock,
+  Call_ID_MPI_Win_post,                  Call_ID_MPI_Win_start,
+  Call_ID_MPI_Win_test,                  Call_ID_MPI_Win_unlock,
+  Call_ID_MPI_Win_wait,                  Call_ID_MPI_Alltoallw,
+  Call_ID_MPI_Exscan,                    Call_ID_MPI_Add_error_class,
+  Call_ID_MPI_Add_error_code,            Call_ID_MPI_Add_error_string,
+  Call_ID_MPI_Comm_call_errhandler,      Call_ID_MPI_Comm_create_keyval,
+  Call_ID_MPI_Comm_delete_attr,          Call_ID_MPI_Comm_free_keyval,
+  Call_ID_MPI_Comm_get_attr,             Call_ID_MPI_Comm_get_name,
+  Call_ID_MPI_Comm_set_attr,             Call_ID_MPI_Comm_set_name,
+  Call_ID_MPI_File_call_errhandler,      Call_ID_MPI_Grequest_complete,
+  Call_ID_MPI_Grequest_start,            Call_ID_MPI_Init_thread,
+  Call_ID_MPI_Is_thread_main,            Call_ID_MPI_Query_thread,
+  Call_ID_MPI_Status_set_cancelled,      Call_ID_MPI_Status_set_elements,
+  Call_ID_MPI_Type_create_keyval,        Call_ID_MPI_Type_delete_attr,
+  Call_ID_MPI_Type_dup,                  Call_ID_MPI_Type_free_keyval,
+  Call_ID_MPI_Type_get_attr,             Call_ID_MPI_Type_get_contents,
+  Call_ID_MPI_Type_get_envelope,         Call_ID_MPI_Type_get_name,
+  Call_ID_MPI_Type_set_attr,             Call_ID_MPI_Type_set_name,
+  Call_ID_MPI_Type_match_size,           Call_ID_MPI_Win_call_errhandler,
+  Call_ID_MPI_Win_create_keyval,         Call_ID_MPI_Win_delete_attr,
+  Call_ID_MPI_Win_free_keyval,           Call_ID_MPI_Win_get_attr,
+  Call_ID_MPI_Win_get_name,              Call_ID_MPI_Win_set_attr,
+  Call_ID_MPI_Win_set_name,              Call_ID_MPI_Alloc_mem,
+  Call_ID_MPI_Comm_create_errhandler,    Call_ID_MPI_Comm_get_errhandler,
+  Call_ID_MPI_Comm_set_errhandler,       Call_ID_MPI_File_create_errhandler,
+  Call_ID_MPI_File_get_errhandler,       Call_ID_MPI_File_set_errhandler,
+  Call_ID_MPI_Finalized,                 Call_ID_MPI_Free_mem,
+  Call_ID_MPI_Get_address,               Call_ID_MPI_Info_create,
+  Call_ID_MPI_Info_delete,               Call_ID_MPI_Info_dup,
+  Call_ID_MPI_Info_free,                 Call_ID_MPI_Info_get,
+  Call_ID_MPI_Info_get_nkeys,            Call_ID_MPI_Info_get_nthkey,
+  Call_ID_MPI_Info_get_valuelen,         Call_ID_MPI_Info_set,
+  Call_ID_MPI_Pack_external,             Call_ID_MPI_Pack_external_size,
+  Call_ID_MPI_Request_get_status,        Call_ID_MPI_Type_create_darray,
+  Call_ID_MPI_Type_create_hindexed,      Call_ID_MPI_Type_create_hvector,
+  Call_ID_MPI_Type_create_indexed_block, Call_ID_MPI_Type_create_resized,
+  Call_ID_MPI_Type_create_struct,        Call_ID_MPI_Type_create_subarray,
+  Call_ID_MPI_Type_get_extent,           Call_ID_MPI_Type_get_true_extent,
+  Call_ID_MPI_Unpack_external,           Call_ID_MPI_Win_create_errhandler,
+  Call_ID_MPI_Win_get_errhandler,        Call_ID_MPI_Win_set_errhandler
+} MPI_function;
+
+struct MPI_Call {
+  MPI_function ID;
+  MPI_function prev;
+  MPI_function inside;
+  int count;
+  MPI_Datatype type;
+  MPI_Comm comm;
+  sstmac::timestamp start;
+  sstmac::timestamp sync;
+  sstmac::timestamp wait;
+
+  const char* ID_str() const {
+    return ID_str(ID);
+  }
+
+  static const char* ID_str(MPI_function func);
+};
+
+
+}
+
+namespace std {
+
+template <>
+struct hash<sumi::MPI_Call> {
+  uint32_t
+  jenkins_one_at_a_time_hash(const uint8_t* key, size_t length) const {
+    size_t i = 0;
+    uint32_t hash = 0;
+    while (i != length) {
+      hash += key[i++];
+      hash += hash << 10;
+      hash ^= hash >> 6;
+    }
+    hash += hash << 3;
+    hash ^= hash >> 11;
+    hash += hash << 15;
+    return hash;
+  }
+
+  void append(uint32_t next, uint8_t* scratch, size_t& length) const {
+    uint32_t* tmp = (uint32_t*)&scratch[length];
+    *tmp = next;
+    length += 4;
+  }
+
+  std::size_t operator()(const sumi::MPI_Call& call) const {
+    uint8_t scratch[128];
+    size_t length = 0;
+    append(call.ID,scratch,length);
+    append(call.count,scratch,length);
+    append(call.type,scratch,length);
+    append(call.comm,scratch,length);
+    append(call.prev,scratch,length);
+    append(call.inside,scratch,length);
+    return jenkins_one_at_a_time_hash(scratch, length);
+  }
+
+
+
+};
+
+template <>
+struct equal_to<sumi::MPI_Call> {
+  bool operator()(const sumi::MPI_Call& lhs, const sumi::MPI_Call& rhs) const {
+    return lhs.ID == rhs.ID &&
+           lhs.count == rhs.count &&
+           lhs.type == rhs.type &&
+           lhs.comm == rhs.comm &&
+           lhs.prev == rhs.prev &&
+           lhs.inside == rhs.inside;
+  }
+};
+
+}
+
+#endif // Call_ID_MPI_H

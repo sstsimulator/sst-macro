@@ -55,16 +55,6 @@ class graph_viz :
 
   void dump_global_data() override;
 
-  /**
-   * @brief reclassify_self For the very last function profiled,
-   *        change reclassify some self count to be treated as a
-   *        different sub-function.
-   * @param subfxn
-   * @param count
-   * @param thr
-   */
-  void reclassify_self(const char* subfxn, long count, thread* thr);
-
   void
   global_reduce(parallel_runtime *rt) override;
 

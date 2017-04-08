@@ -13,7 +13,7 @@
 #define SSTMAC_SOFTWARE_LIBRARIES_MPI_MPI_COMM_MPIGROUP_H_INCLUDED
 
 #include <sstmac/software/process/task_id.h>
-#include <sumi-mpi/sstmac_mpi_integers.h>
+#include <sumi-mpi/mpi_integers.h>
 #include <vector>
 #include <cstring>
 

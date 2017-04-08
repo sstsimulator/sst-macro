@@ -2,9 +2,6 @@
 #include <sstmac/util.h>
 #include <sstmac/compute.h>
 #include <sstmac/replacements/mpi.h>
-#include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/process/app.h>
-#include <sstmac/software/process/thread.h>
 #include <sstmac/common/runtime.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sumi-mpi/mpi_api.h>
@@ -32,7 +29,9 @@ int USER_MAIN(int argc, char** argv)
   }
 
   double send_delay = get_params()->get_time_param("send_delay");
+  double send_compute = get_params()->get_time_param("send_compute");
   double recv_delay = get_params()->get_time_param("recv_delay");
+  double recv_compute = get_params()->get_time_param("recv_compute");
   int send_size = get_params()->get_byte_length_param("message_size");
 
 
@@ -43,9 +42,23 @@ int USER_MAIN(int argc, char** argv)
     //all even ranks create some delay
     sstmac_compute(send_delay);
     MPI_Send(NULL, send_size, MPI_BYTE, send_to, 42, MPI_COMM_WORLD);
+    sstmac_compute(send_delay);
+    MPI_Request sendreq;
+    MPI_Isend(NULL, send_size, MPI_BYTE, send_to, 42, MPI_COMM_WORLD, &sendreq);
+    sstmac_compute(send_compute);
+    MPI_Wait(&sendreq, MPI_STATUS_IGNORE);
+    sstmac_compute(send_delay);
+    MPI_Allreduce(send_size, MPI_CHAR, MPI_MAX, MPI_COMM_WORLD);
   } else {
     sstmac_compute(recv_delay);
     MPI_Recv(NULL, send_size, MPI_BYTE, recv_from, 42, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    sstmac_compute(recv_delay);
+    MPI_Request recvreq;
+    MPI_Irecv(NULL, send_size, MPI_BYTE, recv_from, 42, MPI_COMM_WORLD, &recvreq);
+    sstmac_compute(recv_compute);
+    MPI_Wait(&recvreq, MPI_STATUS_IGNORE);
+    sstmac_compute(recv_delay);
+    MPI_Allreduce(send_size, MPI_CHAR, MPI_MAX, MPI_COMM_WORLD);
   }
 
   MPI_Finalize();

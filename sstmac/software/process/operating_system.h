@@ -19,26 +19,26 @@
 #include <sstmac/software/libraries/library.h>
 #include <sstmac/software/process/thread_fwd.h>
 #include <sstmac/software/process/app_fwd.h>
+#include <sstmac/software/process/thread_info.h>
 #include <sstmac/software/api/api_fwd.h>
 
-#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/common/messages/sst_message_fwd.h>
 #include <sstmac/common/stats/event_trace.h>
 #include <sstmac/common/event_scheduler.h>
-#include <sstmac/common/thread_info.h>
 
 #include <sstmac/software/libraries/service_fwd.h>
 #include <sstmac/software/process/ftq_fwd.h>
 #include <sstmac/software/process/graphviz_fwd.h>
 #include <sstmac/software/process/compute_scheduler_fwd.h>
-
+#include <sstmac/software/process/global.h>
 #include <sstmac/common/messages/sst_message_fwd.h>
-
 #include <sstmac/hardware/node/node_fwd.h>
-
 #include <sprockit/unordered.h>
 #include <sprockit/debug.h>
 #include <stack>
 #include <queue>
+
+
 
 DeclareDebugSlot(os);
 
@@ -71,10 +71,7 @@ class operating_system :
   }
 
   static inline os_thread_context&
-  static_os_thread_context() {
-    if (cxa_finalizing_){
-      abort();
-    }
+  static_os_thread_context(){
   #if SSTMAC_USE_MULTITHREAD
     int thr = thread_info::current_physical_thread_id();
     return os_thread_contexts_[thr];
@@ -222,9 +219,6 @@ class operating_system :
   void
   print_libs(std::ostream& os = std::cout) const;
 
-  long
-  current_threadid() const;
-
   void
   set_node(sstmac::hw::node* n){
     node_ = n;
@@ -251,11 +245,13 @@ class operating_system :
 
   static size_t
   stacksize(){
-    return stacksize_;
+    return sstmac_global_stacksize;
   }
 
   static thread*
-  current_thread();
+  current_thread(){
+    return static_os_thread_context().current_thread;
+  }
 
   graph_viz*
   call_graph() const {
@@ -297,6 +293,16 @@ class operating_system :
   void decrement_app_refcount();
 
   void increment_app_refcount();
+
+  void
+  set_call_graph_active(bool flag){
+    call_graph_active_ = flag;
+  }
+
+  bool
+  call_graph_active() const {
+    return call_graph_active_;
+  }
 
  private:
   void
@@ -360,20 +366,19 @@ class operating_system :
 
   ftq_calendar* ftq_trace_;
 
+  bool call_graph_active_;
+
 #if SSTMAC_USE_MULTITHREAD
   static std::vector<operating_system::os_thread_context> os_thread_contexts_;
 #else
   static operating_system::os_thread_context os_thread_context_;
 #endif
 
-
 #if SSTMAC_SANITY_CHECK
   std::set<key*> valid_keys_;
 #endif
 
  private:
-  static size_t stacksize_;
-  static bool cxa_finalizing_;
   static os_thread_context cxa_finalize_context_;
 
 };

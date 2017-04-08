@@ -131,6 +131,7 @@ event_scheduler::handle_self_event(SST::Event* ev)
   if (!entry){
     spkt_throw_printf(sprockit::value_error,
       "event on self link did not cast to an event entry");
+  }
 #else
   sstmac::event_queue_entry* entry = static_cast<sstmac::event_queue_entry*>(ev);
 #endif

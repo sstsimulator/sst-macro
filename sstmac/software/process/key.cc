@@ -10,7 +10,7 @@
  */
 
 #include <sstmac/software/process/key.h>
-#include <sstmac/common/thread_info.h>
+#include <sstmac/software/process/thread_info.h>
 #include <sstmac/common/thread_lock.h>
 #include <sprockit/output.h>
 #include <sprockit/statics.h>

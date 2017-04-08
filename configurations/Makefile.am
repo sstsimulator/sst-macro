@@ -13,6 +13,7 @@ library_includedir=$(includedir)/sstmac/configurations
 
 library_include_HEADERS = \
     debug.ini \
+    infinite.ini \
     pisces.ini \
     macrels.ini \
     hopper_pflow.ini \

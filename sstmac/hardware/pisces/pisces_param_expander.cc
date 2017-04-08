@@ -55,9 +55,9 @@ pisces_param_expander::expand(sprockit::sim_parameters* params)
   buffer_size = switch_params->get_optional_byte_length_param("buffer_size", buffer_size);
   switch_params->add_param_override("buffer_size", buffer_size);
 
-  mem_params->add_param_override("mtu", mem_packet_size);
-  switch_params->add_param_override("mtu", net_packet_size);
-  nic_params->add_param_override("mtu", net_packet_size);
+  if (!mem_params->has_param("mtu")) mem_params->add_param_override("mtu", mem_packet_size);
+  if (!switch_params->has_param("mtu")) switch_params->add_param_override("mtu", net_packet_size);
+  if (!nic_params->has_param("mtu")) nic_params->add_param_override("mtu", net_packet_size);
 
   if (amm_type == "amm1"){
     expand_amm1_memory(params, mem_params);

@@ -28,7 +28,6 @@ libsstmac_common_la_SOURCES = \
   lodepng.cc \
   param_expander.cc \
   sstmac_env.cc \
-  thread_info.cc \
   thread_lock.cc \
   messages/message_buffer_cache.cc \
   messages/library_message.cc \
@@ -64,7 +63,6 @@ nobase_library_include_HEADERS = \
   timestamp_fwd.h \
   sst_event.h \
   sst_event_fwd.h \
-  thread_info.h \
   lodepng.h \
   sstmac_env.h \
   param_expander.h \

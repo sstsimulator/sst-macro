@@ -12,7 +12,7 @@
 #ifndef SSTMAC_SOFTWARE_LIBRARIES_MPI_MPI_COMM_KEYVAL_H_INCLUDED
 #define SSTMAC_SOFTWARE_LIBRARIES_MPI_MPI_COMM_KEYVAL_H_INCLUDED
 
-#include <sumi-mpi/sstmac_mpi_integers.h>
+#include <sumi-mpi/mpi_integers.h>
 #include <string>
 
 namespace sumi {

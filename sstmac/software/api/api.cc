@@ -11,6 +11,7 @@
 
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
+#include <sstmac/software/process/app.h>
 #include <sstmac/software/api/api.h>
 #include <sstmac/common/messages/sst_message.h>
 #include <sstmac/common/sstmac_env.h>
@@ -56,7 +57,7 @@ api::init(sprockit::sim_parameters* params)
   hostcompute_ = params->get_optional_bool_param("host_compute_modeling", false);
   if (hostcompute_) {
     timer_ = new Timer();
-    compute_ = new lib_compute_time(params, "api-hostcompute", sid(), os_);
+    compute_ = operating_system::current_thread()->parent_app()->compute_time_lib();
   }
 }
 

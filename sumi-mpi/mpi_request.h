@@ -24,26 +24,16 @@ namespace sumi {
 
 using sstmac::sw::key;
 
-class pt2pt_delay_histograms
-{
-
-};
-
 /**
  * Persistent send operations (send, bsend, rsend, ssend)
  */
 class persistent_op
 {
  public:
-  typedef enum {
-    Send,
-    Recv
-  } op_type_t;
   /// The arguments.
   int count;
   MPI_Datatype datatype;
   MPI_Comm comm;
-  op_type_t optype;
   int partner;
   int tag;
   void* content;
@@ -96,10 +86,15 @@ struct collectivev_op : public collective_op_base
 };
 
 class mpi_request  {
-  // ------- constructor / boost stuff -------------//
-
  public:
-  mpi_request(const key::category& cat);
+  typedef enum {
+    Send,
+    Recv,
+    Collective,
+    Probe
+  } op_type_t;
+
+  mpi_request(op_type_t ty, const key::category& cat);
 
   std::string
   to_string() const {
@@ -110,8 +105,9 @@ class mpi_request  {
   type_str() const;
 
   static mpi_request*
-  construct(const key::category& cat);
-  // --------------------------------------//
+  construct(op_type_t ty, const key::category& cat){
+    return new mpi_request(ty,cat);
+  }
 
   ~mpi_request();
 
@@ -184,11 +180,17 @@ class mpi_request  {
     return collective_op_;
   }
 
+  op_type_t
+  optype() const {
+    return optype_;
+  }
+
  private:
   MPI_Status stat_;
   key* key_;
   bool complete_;
   bool cancelled_;
+  op_type_t optype_;
 
   persistent_op* persistent_op_;
   collective_op_base* collective_op_;

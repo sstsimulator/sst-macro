@@ -5,7 +5,6 @@
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/common/runtime.h>
-#include <sstmac/common/thread_info.h>
 #include <sstmac/common/thread_lock.h>
 
 namespace sstmac {

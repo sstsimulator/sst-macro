@@ -1,13 +1,11 @@
 #include <sprockit/test/test.h>
 #include <sstmac/util.h>
 #include <sstmac/replacements/mpi.h>
-#include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/process/app.h>
-#include <sstmac/software/process/thread.h>
 #include <sstmac/common/runtime.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sumi-mpi/mpi_api.h>
 #include <sstmac/skeleton.h>
+#include <sstmac/compute.h>
 #include <sprockit/keyword_registration.h>
 
 RegisterKeywords("print_times",
@@ -21,7 +19,7 @@ int USER_MAIN(int argc, char** argv)
   MPI_Init(&argc, &argv);
 
   sstmac::runtime::add_deadlock_check(
-    sstmac::new_deadlock_check(current_mpi(), &sumi::transport::deadlock_check));
+    sstmac::new_deadlock_check(sumi::sstmac_mpi(), &sumi::transport::deadlock_check));
   sstmac::runtime::enter_deadlock_region();
 
   double t_start = MPI_Wtime();
@@ -55,18 +53,18 @@ int USER_MAIN(int argc, char** argv)
   int quarter_size =  num_requests / 4;
   int remainder = num_requests % 4;
 
-  sstmac::timestamp sleep_length = params->get_optional_time_param("sleep_time", 1);
+  double sleep_length = params->get_optional_time_param("sleep_time", 1);
 
   reqptr = reqs;
   for (int q=0; q < 4; ++q) {
     MPI_Waitall(quarter_size, reqptr, MPI_STATUSES_IGNORE);
     reqptr += quarter_size;
-    sstmac::sw::operating_system::current_thread()->parent_app()->sleep(sleep_length);
+    sstmac_fsleep(sleep_length);
   }
 
   if (remainder) {
     MPI_Waitall(remainder, reqptr, MPI_STATUSES_IGNORE);
-    sstmac::sw::operating_system::current_thread()->parent_app()->sleep(sleep_length);
+    sstmac_fsleep(sleep_length);
   }
 
   double t_stop = MPI_Wtime();

@@ -8,10 +8,9 @@
 typedef int (*main_fxn)(int,char**);
 typedef int (*empty_main_fxn)();
 
-#define main USER_MAIN
-
 #if SSTMAC_INTEGRATED_SST_CORE && defined(SSTMAC_EXTERNAL_SKELETON)
 #include <Python.h>
+#include <sstCoreElement.h>
 #define sst_eli_block(app) \
   static PyMethodDef sst_macro_null_methods[] = { \
       { NULL, NULL, 0, NULL } \
@@ -51,7 +50,8 @@ typedef int (*empty_main_fxn)();
 /** Automatically inherit runtime types */
 using sprockit::sim_parameters;
 
-#ifndef USER_MAIN
+#undef main
+#define main USER_MAIN
 #define USER_MAIN(...) \
  fxn_that_nobody_ever_uses_to_make_magic_happen(); \
  typedef int (*this_file_main_fxn)(__VA_ARGS__); \
@@ -61,21 +61,10 @@ using sprockit::sim_parameters;
   user_skeleton_main_init_fxn(SST_APP_NAME_QUOTED, user_skeleton_main); \
   sst_eli_block(sstmac_app_name) \
  static int user_skeleton_main(__VA_ARGS__)
-#endif
 
 extern sprockit::sim_parameters*
 get_params();
-#else //not C++, extra work required
-
-#ifndef USER_MAIN
-#define USER_MAIN(...) \
- fxn_that_nobody_ever_uses_to_make_magic_happen(); \
- sst_eli_block(sstmac_app_name) \
- int sstmac_app_name(__VA_ARGS__)
-#endif
-
-#endif
-
+#endif //not C++, extra work required in sst clang compiler
 
 
 

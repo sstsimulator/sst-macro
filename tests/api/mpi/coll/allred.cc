@@ -92,7 +92,7 @@ struct double_test { double a; int b; };
         if (lerrcnt) {                                                  \
             MPI_Type_get_name(mpi_type, name, &len);                    \
             fprintf(stderr, "(%d) Error for type %s and op %s\n",       \
-                    rank.get_val(), name, mpi_op2str(mpi_op));                    \
+                    (int)rank, name, mpi_op2str(mpi_op));                    \
         }                                                               \
         free(in); free(out); free(sol);                                 \
     } while(0)

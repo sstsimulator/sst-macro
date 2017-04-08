@@ -10,7 +10,6 @@
  */
 
 #include <sstmac/backends/mpi/mpi_runtime.h>
-#include <sstmac/common/thread_info.h>
 #include <cstring>
 #include <sprockit/keyword_registration.h>
 

@@ -18,10 +18,6 @@
 #include <sumi-mpi/mpi_comm/mpi_comm.h>
 #include <sumi-mpi/mpi_types/mpi_type.h>
 
-#include <sstmac/software/libraries/compute/lib_compute_memmove.h>
-#include <sstmac/software/libraries/compute/lib_compute_time.h>
-
-#include <sstmac/common/event_handler.h>
 #include <sstmac/common/event_scheduler_fwd.h>
 
 #include <sprockit/factories/factory.h>
@@ -38,16 +34,9 @@
 #include <sumi-mpi/mpi_queue/mpi_queue_probe_request_fwd.h>
 
 #include <queue>
+#include <sstmac/common/timestamp.h>
 
 namespace sumi {
-
-using sstmac::event_manager;
-using sstmac::event_handler;
-using sstmac::sw::operating_system;
-using sstmac::sw::software_id;
-using sstmac::timestamp;
-using sstmac::sw::task_id;
-using sstmac::sw::app_id;
 
 class mpi_queue
 {
@@ -64,7 +53,7 @@ class mpi_queue
   friend class mpi_queue_recv_request;
 
  public:
-  mpi_queue(sprockit::sim_parameters* params, sstmac::sw::software_id sid, mpi_api* api);
+  mpi_queue(sprockit::sim_parameters* params, int task_id, mpi_api* api);
 
   /// Goodbye.
   ~mpi_queue() throw ();
@@ -95,50 +84,38 @@ class mpi_queue
   mpi_protocol*
   protocol(long bytes) const;
 
-  mpi_api*
-  api() const {
+  mpi_api* api() const {
     return api_;
   }
 
-  double
-  now() const;
+  void memcopy(long bytes);
 
-  sstmac::sw::lib_compute_memmove*
-  user_lib_mem() const {
-    return user_lib_mem_;
-  }
+  double now() const;
 
-  void
-  finalize_recv(const mpi_message::ptr& msg,
+  void finalize_recv(const mpi_message::ptr& msg,
                 mpi_queue_recv_request* req);
 
-  timestamp
+  sstmac::timestamp
   progress_loop(mpi_request* req);
 
   void nonblocking_progress();
 
-  void
-  start_progress_loop(const std::vector<mpi_request*>& req);
+  void start_progress_loop(const std::vector<mpi_request*>& req);
 
-  void
-  start_progress_loop(const std::vector<mpi_request*>& req,
-                      timestamp timeout);
+  void start_progress_loop(const std::vector<mpi_request*>& req,
+                      sstmac::timestamp timeout);
 
-  void
-  finish_progress_loop(const std::vector<mpi_request*>& req);
+  void finish_progress_loop(const std::vector<mpi_request*>& req);
 
   void forward_progress(double timeout);
 
-  void
-  buffer_unexpected(const mpi_message::ptr& msg);
+  void buffer_unexpected(const mpi_message::ptr& msg);
 
-  void
-  post_rdma(const mpi_message::ptr& msg,
+  void post_rdma(const mpi_message::ptr& msg,
     bool needs_send_ack,
     bool needs_recv_ack);
 
-  void
-  post_header(const mpi_message::ptr& msg, bool needs_ack);
+  void post_header(const mpi_message::ptr& msg, bool needs_ack);
 
  private:
   struct sortbyseqnum {
@@ -253,12 +230,6 @@ class mpi_queue
   app_id appid_;
 
   mpi_api* api_;
-
-  /// A blocking memcpy library for buffered sends in which
-  /// the memcpy happens in the application
-  sstmac::sw::lib_compute_memmove* user_lib_mem_;
-
-  sstmac::sw::operating_system* os_;
 
   int max_vshort_msg_size_;
   int max_eager_msg_size_;

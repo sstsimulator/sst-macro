@@ -55,6 +55,11 @@ class app : public thread
   typedef int (*main_fxn)(int argc, char** argv);
   typedef int (*empty_main_fxn)();
 
+  struct factory {
+    static app* get_param(const std::string& name, sprockit::sim_parameters* params,
+                          software_id sid, operating_system* os);
+  };
+
   int
   allocate_tls_key(destructor_fxn fnx);
 
@@ -100,6 +105,9 @@ class app : public thread
 
   lib_compute_loops*
   compute_loops_lib();
+
+  lib_compute_time*
+  compute_time_lib();
 
   /// Goodbye.
   virtual ~app();
@@ -178,6 +186,10 @@ class app : public thread
 
   bool erase_mutex(int id);
 
+  void* globals_storage() const {
+    return globals_storage_;
+  }
+
   virtual void
   clear_subthread_from_parent_app() override;
 
@@ -221,6 +233,8 @@ class app : public thread
   std::map<int, condition_t> conditions_;
   std::map<int, destructor_fxn> tls_key_fxns_;
   std::map<std::string, api*> apis_;
+
+  char* globals_storage_;
 
 };
 

@@ -5,6 +5,7 @@
 #include <sumi/transport.h>
 #include <sstmac/libraries/sumi/sumi.h>
 #include <sstmac/libraries/sumi/distributed_service.h>
+#include <sstmac/software/launch/job_launcher.h>
 
 namespace sstmac {
 
@@ -85,7 +86,7 @@ int USER_MAIN(int argc, char** argv)
   }
   //send a shutdown request to server 0 - make rank 0 in charge
   if (tport->rank() == 0) tport->shutdown_server(0, srv->rank_to_node(0), srv->aid());
-  tport->finalize();
+  tport->finish();
   return 0;
 }
 
