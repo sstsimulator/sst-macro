@@ -18,6 +18,7 @@ sstmac_usleep(unsigned int usecs){
 extern "C" int
 sstmac_fsleep(double secs){
   sstmac::sw::operating_system::current_thread()->parent_app()->sleep(sstmac::timestamp(secs));
+  return 0;
 }
 
 extern "C" void

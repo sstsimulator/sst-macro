@@ -577,7 +577,7 @@ mpi_api::set_new_mpi_call(MPI_function func)
   last_call_.ID = func;
   last_call_.inside = func;
   last_call_.start = now();
-  last_call_.sync = timestamp();
+  last_call_.sync = sstmac::timestamp();
 }
 
 void
@@ -617,7 +617,7 @@ mpi_api::collect_sync_delays(double wait_start, const message::ptr &msg)
      msg->time_synced(), sync_delay);
   */
 
-  last_call_.sync += timestamp(sync_delay);
+  last_call_.sync += sstmac::timestamp(sync_delay);
   last_collection_ = now().sec();
 }
 
@@ -631,7 +631,7 @@ mpi_api::finish_last_mpi_call(MPI_function func, bool dumpThis)
       os_->sleep(extra_time);
     }
     total = next_call_total_length_;
-    next_call_total_length_ = timestamp(); //zero out
+    next_call_total_length_ = sstmac::timestamp(); //zero out
   }
   //last_call_.ID = func;
 
@@ -640,7 +640,7 @@ mpi_api::finish_last_mpi_call(MPI_function func, bool dumpThis)
     sstmac::timestamp nonSync = total - last_call_.sync;
     times.emplace_back(nonSync,last_call_.sync);
   }
-  last_call_.sync = timestamp(); //zero for next guy
+  last_call_.sync = sstmac::timestamp(); //zero for next guy
 }
 
 #endif
