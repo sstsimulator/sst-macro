@@ -22,12 +22,12 @@
 #include <math.h>
 
 RegisterKeywords(
+"branching",
 "num_levels",
 "num_inj_switches_per_subtree",
 "num_core_switches",
 "num_agg_subtrees",
-"num_agg_switches_per_subtree",
-"radix",
+"num_agg_switches_per_subtree"
 );
 
 namespace sstmac {
@@ -69,18 +69,20 @@ fat_tree::fat_tree(sprockit::sim_parameters* params) :
                     InitMaxPortsIntra::I_Remembered,
                     InitGeomEjectID::I_Remembered)
 {
-  std::vector<int> args;
-  params->get_vector_param("geometry", args);
-  if (args.size() != 2) {
-    spkt_throw_printf(sprockit::input_error,
-                     "fat_tree::init_factory_params: geometry needs 2 parameters, got %d",
-                     args.size());
+  if (params->has_param("geometry")){
+    std::vector<int> args;
+    params->get_vector_param("geometry", args);
+    if (args.size() != 2) {
+      spkt_throw_printf(sprockit::input_error,
+                       "fat_tree::init_factory_params: geometry needs 2 parameters, got %d",
+                       args.size());
+    }
+    l_ = args[0];
+    k_ = args[1];
+  } else {
+    l_ = params->get_int_param("num_levels");
+    k_ = params->get_int_param("branching");
   }
-  l_ = args[0];
-  k_ = args[1];
-  sprockit::sim_parameters* rtr_params = params->get_optional_namespace("router");
-  rtr_params->add_param_override("radix", k_);
-  rtr_params->add_param_override("num_levels", l_);
 
   numleafswitches_ = pow(k_, l_ - 1);
   toplevel_ = l_ - 1;
