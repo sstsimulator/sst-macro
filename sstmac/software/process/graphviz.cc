@@ -226,21 +226,6 @@ graph_viz::add_self(void* fxn, long count)
 }
 
 void
-graph_viz::reclassify_self(const char* _subfxn, long count, thread* thr)
-{
-  static thread_lock lock;
-  lock.lock();
-  void* subfxn = const_cast<char*>(_subfxn);
-  int stack_end = thr->last_backtrace_nfxn() - 1;
-  void* fxn = thr->backtrace()[stack_end];
-  trace* tr = traces_[fxn];
-  tr->substract_self(count);
-  add_call(1, count, fxn, subfxn);
-  add_self(subfxn, count);
-  lock.unlock();
-}
-
-void
 graph_viz::count_trace(long count, thread* thr)
 {
 #if !SSTMAC_HAVE_GRAPHVIZ

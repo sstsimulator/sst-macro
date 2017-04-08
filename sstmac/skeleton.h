@@ -10,6 +10,7 @@ typedef int (*empty_main_fxn)();
 
 #if SSTMAC_INTEGRATED_SST_CORE && defined(SSTMAC_EXTERNAL_SKELETON)
 #include <Python.h>
+#include <sstCoreElement.h>
 #define sst_eli_block(app) \
   static PyMethodDef sst_macro_null_methods[] = { \
       { NULL, NULL, 0, NULL } \

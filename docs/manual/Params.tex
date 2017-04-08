@@ -407,5 +407,15 @@ parsedumpi\_terminate\_percent \paramType{int} & 100 & 1-100 & Percent of trace.
 \hline
 \end{tabular}
 
+\openTable
+otf2\_terminate\_percent \paramType{int} & 100 & 1-100 & Percent of trace. Can be used to terminate large traces early \\
+\hline
+otf2\_print\_progress \paramType{bool} & false & true or false & Print percent complete throughout an otf2 replay \\
+\hline
+otf2\_metafile \paramType{string} & No default & string & The root file of an OTF2 trace. \\
+\hline
+otf2\_timescale \paramType{double} & 1.0 & Positive float & If running OTF2 traces, scale compute times by the given value. Values less than 1.0 speed up computation. Values greater than 1.0 slow down computation. \\
+\hline
+\end{tabular}
 
 

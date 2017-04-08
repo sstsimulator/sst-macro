@@ -234,7 +234,7 @@ transport::free_eager_buffer(const message::ptr& msg)
 }
 
 void
-transport::finalize()
+transport::finish()
 {
   clean_up();
   //this should really loop through and kill off all the pings

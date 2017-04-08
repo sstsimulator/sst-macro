@@ -1,4 +1,3 @@
-#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sprockit/util.h>
@@ -58,7 +57,7 @@ comm_kill_node()
 void
 comm_finalize()
 {
-  current_transport()->finalize();
+  current_transport()->finish();
 }
 
 void

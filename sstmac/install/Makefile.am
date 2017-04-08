@@ -16,6 +16,7 @@ lib_LTLIBRARIES = libsstmac.la
 libsstmac_la_LDFLAGS = -version-info @SSTMAC_LIBVERSION@
 endif
 
+
 libsstmac_la_SOURCES =
 nodist_EXTRA_libsstmac_la_SOURCES = dummy.cxx
 libsstmac_la_LIBADD = \
@@ -33,6 +34,10 @@ libsstmac_la_LIBADD = \
   ../skeletons/libsstmac_skeletons.la \
   ../software/libsstmac_sw.la \
   ../../sumi-mpi/libsstmac_mpi.la
+
+if HAVE_OTF2
+libsstmac_la_LIBADD += $(OTF2_LDFLAGS)
+endif
 
 if USE_MPIPARALLEL
 libsstmac_la_LIBADD += ../backends/mpi/libsstmac_mpi_runtime.la 

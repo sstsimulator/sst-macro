@@ -125,10 +125,6 @@
 #undef PTHREAD_COND_INITIALIZER
 #undef PTHREAD_MUTEX_INITIALIZER
 
-#ifdef SSTMAC_SAVE_ONCE_INIT
-#define PTHREAD_ONCE_INIT SSTMAC_SAVE_ONCE_INIT
-#undef SSTMAC_SAVE_ONCE_INIT
-#endif
 
 #undef pthread_t
 #undef pthread_attr_t
@@ -142,5 +138,11 @@
 #undef PTHREAD_MUTEX_ERRORCHECK
 #undef PTHREAD_MUTEX_RECURSIVE
 #undef PTHREAD_MUTEX_DEFAULT
+
+#undef __thread
+#undef thread_local
+
+#undef PTHREAD_SCOPE_PROCESS 
+#undef PTHREAD_SCOPE_SYSTEM 
 
 

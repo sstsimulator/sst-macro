@@ -18,8 +18,6 @@
 #include <sumi-mpi/mpi_status.h>
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
 #include <sstmac/common/stats/stat_spyplot.h>
-#include <sstmac/common/event_manager.h>
-#include <sstmac/hardware/node/node.h>
 #include <sstmac/software/process/key.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/factories/factory.h>
@@ -28,11 +26,6 @@
 #include <sprockit/statics.h>
 #include <sprockit/keyword_registration.h>
 #include <sprockit/util.h>
-
-#include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/process/app_id.h>
-#include <sstmac/software/process/thread.h>
-
 #include <stdint.h>
 
 RegisterNamespaces("traffic_matrix", "num_messages");
@@ -71,30 +64,25 @@ mpi_queue::sortbyseqnum::operator()(const mpi_message::ptr& a,
 }
 
 mpi_queue::mpi_queue(sprockit::sim_parameters* params,
-                     sstmac::sw::software_id sid,
+                     int task_id,
                      mpi_api* api) :
   next_id_(0),
-  taskid_(sid.task_),
-  appid_(sid.app_),
+  taskid_(task_id),
   api_(api),
-  user_lib_mem_(nullptr),
-  os_(api->os()),
   spy_num_messages_(nullptr),
   spy_bytes_(nullptr)
 {
   max_vshort_msg_size_ = params->get_optional_byte_length_param("max_vshort_msg_size", 512);
   max_eager_msg_size_ = params->get_optional_byte_length_param("max_eager_msg_size", 8192);
 
-  spy_num_messages_ = sstmac::optional_stats<sstmac::stat_spyplot>(os_->node(),
+  spy_num_messages_ = sstmac::optional_stats<sstmac::stat_spyplot>(api_->des_scheduler(),
         params, "traffic_matrix", "ascii", "num_messages");
-  spy_bytes_ = sstmac::optional_stats<sstmac::stat_spyplot>(os_->node(),
+  spy_bytes_ = sstmac::optional_stats<sstmac::stat_spyplot>(api_->des_scheduler(),
         params, "traffic_matrix", "ascii", "bytes");
 
-  user_lib_mem_ = new sstmac::sw::lib_compute_memmove(params, "mpi_queue-user-lib-mem", sid, os_);
+  //user_lib_mem_ = new sstmac::sw::lib_compute_memmove(params, "mpi_queue-user-lib-mem", sid, os_);
 
   lookahead_progress_ = params->get_optional_bool_param("lookahead_progress", false);
-
-  mpi_queue_debug("init on node %d", int(operating_system::current_node_id()));
 
   next_id_ = uint64_t(taskid_) << 32;
 
@@ -113,7 +101,7 @@ mpi_queue::delete_statics()
 
 double
 mpi_queue::now() const {
-  return os_->now().sec();
+  return api_->now().sec();
 }
 
 mpi_queue::~mpi_queue() throw ()
@@ -135,8 +123,6 @@ mpi_queue::~mpi_queue() throw ()
   for (auto& pair : recv_needs_payload_){
     delete pair.second;
   }
-
-  delete user_lib_mem_;
 }
 
 mpi_message::ptr
@@ -623,24 +609,24 @@ mpi_queue::nonblocking_progress()
   }
 }
 
-timestamp
+sstmac::timestamp
 mpi_queue::progress_loop(mpi_request* req)
 {
   if (!req || req->is_complete()) {
-    return os_->now();
+    return api_->now();
   }
 
   mpi_queue_debug("entering progress loop");
 
   //SSTMACBacktrace("MPI Queue Poll");
-  sstmac::timestamp wait_start = os_->now();
+  sstmac::timestamp wait_start = api_->now();
   sumi::message_ptr msg;
   while (!req->is_complete()) {
     mpi_queue_debug("blocking on progress loop");
     msg = api_->blocking_poll();
     handle_poll_msg(msg);
   }
-  sstmac::timestamp stop = os_->now();
+  sstmac::timestamp stop = api_->now();
 #if SSTMAC_COMM_SYNC_STATS
   if (stop != wait_start && msg){
     api_->collect_sync_delays(wait_start.sec(), msg);
@@ -701,9 +687,15 @@ mpi_queue::forward_progress(double timeout)
 void
 mpi_queue::start_progress_loop(
   const std::vector<mpi_request*>& req,
-  timestamp timeout)
+  sstmac::timestamp timeout)
 {
   start_progress_loop(req);
+}
+
+void
+mpi_queue::memcopy(long bytes)
+{
+  api_->memcopy(bytes);
 }
 
 void
@@ -715,7 +707,7 @@ void
 mpi_queue::buffer_unexpected(const mpi_message::ptr& msg)
 {
   SSTMACBacktrace("MPI Queue Buffer Unexpected Message");
-  user_lib_mem_->copy(msg->payload_bytes());
+  api_->memcopy(msg->payload_bytes());
 }
 
 void

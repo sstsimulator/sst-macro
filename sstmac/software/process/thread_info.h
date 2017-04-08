@@ -1,9 +1,9 @@
 #ifndef sstmac_software_process_THREAD_INFO_H
 #define sstmac_software_process_THREAD_INFO_H
 
-#include <pthread.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/software/process/tls.h>
+#include <cstring>
 
 extern int sstmac_global_stacksize;
 

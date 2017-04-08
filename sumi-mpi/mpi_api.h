@@ -15,12 +15,15 @@
 #include <sstmac/software/libraries/library.h>
 #include <sstmac/software/api/api.h>
 
-#include <sumi-mpi/sstmac_mpi.h>
+#include <sumi-mpi/mpi_types.h>
+#include <sumi-mpi/mpi_integers.h>
 #include <sumi-mpi/mpi_comm/mpi_comm.h>
 #include <sumi-mpi/mpi_types/mpi_type_fwd.h>
 
 #include <sumi-mpi/mpi_request.h>
 #include <sumi-mpi/mpi_status.h>
+
+#include <sumi-mpi/mpi_call.h>
 
 #include <sumi-mpi/mpi_comm/mpi_comm_factory.h>
 #include <sumi-mpi/mpi_debug.h>
@@ -38,10 +41,6 @@
 #include <sprockit/factories/factory.h>
 
 #include <sstmac/libraries/sumi/sumi_transport.h>
-
-#define start_mpi_call(fxn) \
-  SSTMACBacktrace(fxn); \
-  os_->start_api_call()
 
 
 namespace sumi {
@@ -72,6 +71,10 @@ class mpi_api :
   static void
   delete_statics();
 
+  struct mpi_call {
+
+  };
+
  public:
   virtual
   ~mpi_api();
@@ -79,6 +82,11 @@ class mpi_api :
   mpi_queue*
   queue() {
     return queue_;
+  }
+
+  bool
+  crossed_comm_world_barrier() const {
+    return crossed_comm_world_barrier_;
   }
 
   /*
@@ -137,7 +145,7 @@ class mpi_api :
 
   int
   init_thread(int* argc, char*** argv, int required, int* provided){
-    do_init(argc, argv);
+    init(argc, argv);
     *provided = required;
     return MPI_SUCCESS;
   }
@@ -145,16 +153,21 @@ class mpi_api :
   /// Initialize MPI.  Must be the first MPI call made other than
   /// initialized or finalized.
   int
-  do_init(int* argc, char*** argv);
+  init(int* argc, char*** argv);
 
   /// Finalize MPI.  Must be the last MPI call other than
   /// initialized or finalized.
   int
-  do_finalize();
+  finalize();
 
   /// Get current time.
   double
   wtime();
+
+  void
+  set_generate_ids(bool flag){
+    generate_ids_ = flag;
+  }
 
   void abort(MPI_Comm comm, int errcode);
 
@@ -692,14 +705,14 @@ class mpi_api :
   mpi_request*
   get_request(MPI_Request req);
 
-  MPI_Comm
-  add_comm_ptr(mpi_comm* ptr);
+  void
+  add_comm_ptr(mpi_comm* ptr, MPI_Comm* comm);
 
   void
   erase_comm_ptr(MPI_Comm comm);
 
-  MPI_Group
-  add_group_ptr(mpi_group* ptr);
+  void
+  add_group_ptr(mpi_group* ptr, MPI_Group* grp);
 
   void
   add_group_ptr(MPI_Group grp, mpi_group* ptr);
@@ -707,8 +720,8 @@ class mpi_api :
   void
   erase_group_ptr(MPI_Group grp);
 
-  MPI_Request
-  add_request_ptr(mpi_request* ptr);
+  void
+  add_request_ptr(mpi_request* ptr, MPI_Request* req);
 
   void
   erase_request_ptr(MPI_Request req);
@@ -716,28 +729,26 @@ class mpi_api :
   void
   add_comm_grp(MPI_Comm comm, MPI_Group grp);
 
-  void
-  check_key(int key);
+  void check_key(int key);
 
-  void
-  add_keyval(int key, keyval* keyval);
+  void add_keyval(int key, keyval* keyval);
 
-  keyval*
-  get_keyval(int key);
+  keyval* get_keyval(int key);
 
-  void
-  finish_collective(collective_op_base* op);
+  void finish_collective(collective_op_base* op);
+
+#if SSTMAC_COMM_SYNC_STATS
+  const MPI_Call& get_last_call() const {
+    return last_call_;
+  }
+#endif
 
  private:
-  int
-  do_wait(MPI_Request *request, MPI_Status *status);
+  int do_wait(MPI_Request *request, MPI_Status *status);
 
-  void
-  finalize_wait_request(mpi_request* reqPtr, MPI_Request* request,
-                        MPI_Status* status, sstmac::timestamp wait_start);
+  void finalize_wait_request(mpi_request* reqPtr, MPI_Request* request, MPI_Status* status);
 
-  int
-  do_type_hvector(int count, int blocklength, MPI_Aint stride,
+  int do_type_hvector(int count, int blocklength, MPI_Aint stride,
               mpi_type* old_type,
               MPI_Datatype* new_type);
 
@@ -817,75 +828,62 @@ class mpi_api :
   start_barrier(const char* name, MPI_Comm comm);
 
   collective_op_base*
-  start_bcast(const char* name, void *buffer, int count, MPI_Datatype datatype, int root,
-        MPI_Comm comm);
+  start_bcast(MPI_Comm comm, int count, MPI_Datatype datatype, int root, void *buffer);
 
   collective_op_base*
-  start_scatter(const char* name, const void *sendbuf, int sendcount, MPI_Datatype sendtype,
-           void *recvbuf, int recvcount, MPI_Datatype recvtype, int root,
-           MPI_Comm comm);
+  start_scatter(MPI_Comm comm, int sendcount, MPI_Datatype sendtype, int root,
+           int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf);
 
   collective_op_base*
-  start_scatterv(const char* name, const void *sendbuf, const int *sendcounts, const int *displs,
-           MPI_Datatype sendtype, void *recvbuf, int recvcount,
-           MPI_Datatype recvtype,
-           int root, MPI_Comm comm);
+  start_scatterv(const char* name, MPI_Comm comm, const int *sendcounts, MPI_Datatype sendtype, int root,
+                 const int *displs, int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf);
 
   collective_op_base*
-  start_gather(const char* name, const void *sendbuf, int sendcount, MPI_Datatype sendtype,
-         void *recvbuf, int recvcount, MPI_Datatype recvtype,
-         int root, MPI_Comm comm);
+  start_gather(MPI_Comm comm, int sendcount, MPI_Datatype sendtype, int root,
+               int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf);
 
   collective_op_base*
-  start_gatherv(const char* name, const void *sendbuf, int sendcount, MPI_Datatype sendtype,
-          void *recvbuf, const int *recvcounts, const int *displs,
-          MPI_Datatype recvtype, int root, MPI_Comm comm);
+  start_gatherv(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype, int root,
+          const int *recvcounts, const int *displs, MPI_Datatype recvtype,
+          const void *sendbuf, void *recvbuf);
 
   collective_op_base*
-  start_allgather(const char* name, const void *sendbuf, int sendcount, MPI_Datatype sendtype,
-            void *recvbuf, int recvcount, MPI_Datatype recvtype,
-            MPI_Comm comm);
+  start_allgather(MPI_Comm comm, int sendcount, MPI_Datatype sendtype,
+            int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf);
 
   collective_op_base*
-  start_allgatherv(const char* name, const void *sendbuf, int sendcount, MPI_Datatype sendtype,
-             void *recvbuf, const int *recvcounts, const int *displs,
-             MPI_Datatype recvtype, MPI_Comm comm);
+  start_allgatherv(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype,
+                   const int *recvcounts, const int *displs, MPI_Datatype recvtype,
+                   const void *sendbuf, void *recvbuf);
 
   collective_op_base*
-  start_alltoall(const char* name, const void *sendbuf, int sendcount, MPI_Datatype sendtype,
-            void *recvbuf, int recvcount, MPI_Datatype recvtype,
-            MPI_Comm comm);
+  start_alltoall(MPI_Comm comm, int sendcount, MPI_Datatype sendtype,
+                 int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf);
 
   collective_op_base*
-  start_alltoallv(const char* name, const void *sendbuf, const int *sendcounts,
-            const int *sdispls, MPI_Datatype sendtype, void *recvbuf,
-            const int *recvcounts, const int *rdispls, MPI_Datatype recvtype,
-            MPI_Comm comm);
+  start_alltoallv(const char* name, MPI_Comm comm, const int *sendcounts, MPI_Datatype sendtype, const int *sdispls,
+            const int *recvcounts, MPI_Datatype recvtype, const int *rdispls,
+            const void *sendbuf,  void *recvbuf);
 
   collective_op_base*
-  start_reduce(const char* name, const void* src, void* dst,
-         int count, MPI_Datatype type, MPI_Op op, int root,
-         MPI_Comm comm);
+  start_reduce(MPI_Comm comm, int count, MPI_Datatype type, int root,
+               MPI_Op op, const void* src, void* dst);
 
   collective_op_base*
-  start_allreduce(const char* name, const void* src, void* dst,
-            int count, MPI_Datatype type, MPI_Op op,
-            MPI_Comm comm);
+  start_allreduce(MPI_Comm comm, int count, MPI_Datatype type,
+               MPI_Op op, const void* src, void* dst);
 
   collective_op_base*
-  start_reduce_scatter(const char* name, const void* src, void* dst,
-                 const int* recvcnts, MPI_Datatype type,
-                 MPI_Op op, MPI_Comm comm);
+  start_reduce_scatter(MPI_Comm comm, const int* recvcounts, MPI_Datatype type,
+                       MPI_Op op, const void* src, void* dst);
 
   collective_op_base*
-  start_reduce_scatter_block(const char* name, const void* src, void* dst,
-                 int recvcnt, MPI_Datatype type,
-                 MPI_Op op, MPI_Comm comm);
+  start_reduce_scatter_block(MPI_Comm comm, int count, MPI_Datatype type,
+                             MPI_Op op, const void* src, void* dst);
 
   collective_op_base*
-  start_scan(const char* name, const void* src, void* dst,
-      int count, MPI_Datatype type, MPI_Op op,
-       MPI_Comm comm);
+  start_scan(MPI_Comm comm, int count, MPI_Datatype type,
+             MPI_Op op, const void* src, void* dst);
 
   void do_start(MPI_Request req);
 
@@ -905,14 +903,17 @@ class mpi_api :
 
   void check_init();
 
-  int do_irecv(void *buf, int count, MPI_Datatype datatype, int source,
-            int tag, MPI_Comm comm, MPI_Request *request);
+  mpi_request* do_isend(const void *buf, int count, MPI_Datatype datatype, int dest,
+                        int tag, MPI_Comm comm);
+  int do_recv(void *buf, int count, MPI_Datatype datatype, int source,
+            int tag, MPI_Comm comm, MPI_Status* status);
 
   int do_isend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
-            MPI_Comm comm, MPI_Request *request);
-
+            MPI_Comm comm, MPI_Request *request, bool print);
 
  private:
+  friend class mpi_comm_factory;
+
   /// The MPI server.
   mpi_queue* queue_;
 
@@ -931,6 +932,8 @@ class mpi_api :
   enum {
     is_fresh, is_initialized, is_finalizing, is_finalized
   } status_;
+
+  bool crossed_comm_world_barrier_;
 
   /// MPI_COMM_WORLD.
   mpi_comm* worldcomm_;
@@ -963,14 +966,46 @@ class mpi_api :
 
   spkt_unordered_map<int, keyval*> keyvals_;
 
+  bool generate_ids_;
+
 #if SSTMAC_COMM_SYNC_STATS
  public:
   void collect_sync_delays(double wait_start, const sumi::message_ptr& msg) override;
 
   void start_collective_sync_delays() override;
 
+  void set_next_call_length(sstmac::timestamp t){
+    next_call_total_length_ = t;
+  }
+
+ private:
+  void set_new_mpi_call(MPI_function func);
+
+  void start_new_mpi_call(MPI_function func, int count, MPI_Datatype type, MPI_Comm comm);
+
+  void start_new_mpi_call(MPI_function func, const int* counts, MPI_Datatype type, MPI_Comm comm);
+
+  void finish_last_mpi_call(MPI_function func, bool dumpThis = true);
+
  private:
   double last_collection_;
+
+  bool dump_comm_times_;
+
+  MPI_Call last_call_;
+
+  /** If trying to match MPI start times to a trace, sleep until
+   * the current MPI call lasts exactly as long as call did in trace */
+  sstmac::timestamp next_call_total_length_;
+
+  std::map<MPI_Request,MPI_Call> saved_calls_;
+
+
+  std::unordered_map<MPI_Call,
+    std::list<
+      std::pair<sstmac::timestamp,sstmac::timestamp>
+    >
+  > call_groups_;
 #endif
 
 };
@@ -978,10 +1013,35 @@ class mpi_api :
 mpi_api*
 sstmac_mpi();
 
+}
+
+#define _start_mpi_call_(fxn) \
+  SSTMACBacktrace(#fxn); \
+  start_api_call()
+
+#if SSTMAC_COMM_SYNC_STATS
+  #define start_mpi_call(fxn,count,type,comm) \
+    _start_mpi_call_(fxn); \
+    start_new_mpi_call(Call_ID_##fxn,count,type,comm)
+  #define start_wait_call(fxn,...) \
+    _start_mpi_call_(fxn); \
+    set_new_mpi_call(Call_ID_##fxn)
+  #define finish_Impi_call(fxn,reqptr) \
+    finish_last_mpi_call(Call_ID_##fxn, false); \
+    saved_calls_[*reqptr] = last_call_
+  #define finish_mpi_call(fxn) finish_last_mpi_call(Call_ID_##fxn)
+#else
+  #define start_mpi_call(fxn,count,type,comm) _start_mpi_call_(fxn)
+  #define start_wait_call(fxn,...) _start_mpi_call_(fxn)
+  #define finish_mpi_call(fxn)
+  #define finish_Impi_call(fxn,reqptr)
+#endif
+
 #define mpi_api_debug(flags, ...) \
   mpi_debug(worldcomm_->rank(), flags, __VA_ARGS__)
 
-}
+#define mpi_api_cond_debug(flags, cond, ...) \
+  mpi_cond_debug(worldcomm_->rank(), flags, cond, __VA_ARGS__)
 
 
 #endif

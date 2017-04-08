@@ -1,5 +1,4 @@
 #include <sumi-mpi/mpi_api.h>
-#include <sstmac/software/process/operating_system.h>
 
 namespace sumi {
 
@@ -17,7 +16,7 @@ mpi_api::group_incl(MPI_Group oldgrp, int num_ranks, const int *ranks, MPI_Group
     vec_ranks[i] = oldgrpPtr->at(ranks[i]);
   }
   mpi_group* newgrpPtr = new mpi_group(vec_ranks);
-  *newgrp = add_group_ptr(newgrpPtr);
+  add_group_ptr(newgrpPtr, newgrp);
 
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Group_incl(%d,%d,*%d)",
                 num_ranks, oldgrp, *newgrp);

@@ -19,22 +19,21 @@
 #include <sstmac/software/libraries/library.h>
 #include <sstmac/software/process/thread_fwd.h>
 #include <sstmac/software/process/app_fwd.h>
+#include <sstmac/software/process/thread_info.h>
 #include <sstmac/software/api/api_fwd.h>
 
-#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/common/messages/sst_message_fwd.h>
 #include <sstmac/common/stats/event_trace.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/software/process/thread_data.h>
-//#include <sstmac/common/thread_info.h>
 
-#include <sstmac/software/launch/app_launch_fwd.h>
 #include <sstmac/software/libraries/service_fwd.h>
 #include <sstmac/software/process/ftq_fwd.h>
 #include <sstmac/software/process/graphviz_fwd.h>
 #include <sstmac/software/process/compute_scheduler_fwd.h>
 #include <sstmac/software/process/global.h>
+#include <sstmac/common/messages/sst_message_fwd.h>
 #include <sstmac/hardware/node/node_fwd.h>
-
 #include <sprockit/unordered.h>
 #include <sprockit/debug.h>
 #include <stack>
@@ -83,7 +82,7 @@ class operating_system :
   }
 
   static inline os_thread_context&
-  static_os_thread_context() {
+  static_os_thread_context(){
   #if SSTMAC_USE_MULTITHREAD
     int thr = thread_info::current_physical_thread_id();
     return os_thread_contexts_[thr];
@@ -206,7 +205,7 @@ class operating_system :
   add_application(app* a);
 
   void
-  start_app(app* a);
+  start_app(app* a, const std::string& unique_name);
 
   void
   handle_event(event* ev);
@@ -229,9 +228,6 @@ class operating_system :
 
   void
   print_libs(std::ostream& os = std::cout) const;
-
-  long
-  current_threadid() const;
 
   void
   set_node(sstmac::hw::node* n){
@@ -263,7 +259,9 @@ class operating_system :
   }
 
   static thread*
-  current_thread();
+  current_thread(){
+    return static_os_thread_context().current_thread;
+  }
 
   graph_viz*
   call_graph() const {
@@ -306,6 +304,16 @@ class operating_system :
 
   void increment_app_refcount();
 
+  void
+  set_call_graph_active(bool flag){
+    call_graph_active_ = flag;
+  }
+
+  bool
+  call_graph_active() const {
+    return call_graph_active_;
+  }
+
  private:
   void
   add_thread(thread* t);
@@ -330,12 +338,15 @@ class operating_system :
 
   void
   local_shutdown();
+
+  bool handle_library_event(const std::string& name, event* ev);
   
  private:
   hw::node* node_;
   spkt_unordered_map<std::string, library*> libs_;
   spkt_unordered_map<library*, int> lib_refcounts_;
   spkt_unordered_map<void*, std::list<library*> > libs_by_owner_;
+  std::map<std::string, std::list<event*>> pending_library_events_;
 
   node_id my_addr_;
 
@@ -364,6 +375,8 @@ class operating_system :
   graph_viz* call_graph_;
 
   ftq_calendar* ftq_trace_;
+
+  bool call_graph_active_;
 
 #if SSTMAC_USE_MULTITHREAD
   static std::vector<operating_system::os_thread_context> os_thread_contexts_;

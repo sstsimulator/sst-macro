@@ -13,7 +13,6 @@
 #include <sstmac/common/cartgrid.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/software/process/app.h>
-#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sstmac/backends/native/manager.h>
 #include <sprockit/fileio.h>
@@ -172,9 +171,8 @@ remap_params(sprockit::sim_parameters* params, bool verbose)
 
   int max_nproc = native::manager::compute_max_nproc(params);
   if (max_nproc == 0){
-    params->print_params(std::cerr);
-    spkt_throw(sprockit::value_error,
-               "computed max nproc=0 from parameters - need app1.launch_cmd or app1.size");
+    params->print_scoped_params(std::cerr);
+    spkt_abort_printf("computed max nproc=0 from parameters - need app1.launch_cmd or app1.size");
   }
   resize_topology(max_nproc, params, verbose);
 

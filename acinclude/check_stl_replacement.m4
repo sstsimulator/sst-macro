@@ -9,8 +9,9 @@ AC_CONFIG_FILES([
 enable_repl_headers=yes
 
 AM_CONDITIONAL([USE_REPLACEMENT_HEADERS], true)
-AC_SUBST([PTHREAD_MACRO_DEF_MUTEX_INITIALIZER], "`$srcdir/bin/config_tools/get_pthread_mutex_vars $CC`")
-AC_SUBST([PTHREAD_MACRO_DEF_COND_INITIALIZER], "`$srcdir/bin/config_tools/get_pthread_cond_vars $CC`")
+AC_SUBST([PTHREAD_MACRO_DEF_MUTEX_INITIALIZER], "`$srcdir/bin/config_tools/get_pthread_vars $CC mutex`")
+AC_SUBST([PTHREAD_MACRO_DEF_COND_INITIALIZER], "`$srcdir/bin/config_tools/get_pthread_vars $CC cond`")
+AC_SUBST([PTHREAD_MACRO_DEF_ONCE_INITIALIZER], "`$srcdir/bin/config_tools/get_pthread_vars $CC once`")
 AC_SUBST([STL_HEADER_FSTREAM_FULL_PATH], "`$srcdir/bin/config_tools/get_include_path $CXX fstream $CPPFLAGS $CXXFLAGS`")
 AC_SUBST([STL_HEADER_ISTREAM_FULL_PATH], "`$srcdir/bin/config_tools/get_include_path $CXX istream $CPPFLAGS $CXXFLAGS`")
 AC_SUBST([STL_HEADER_IOSTREAM_FULL_PATH], "`$srcdir/bin/config_tools/get_include_path $CXX iostream $CPPFLAGS $CXXFLAGS`")
@@ -33,7 +34,6 @@ AC_SUBST([SYS_TIME_FULL_PATH], "`$srcdir/bin/config_tools/get_include_path $CXX 
 AC_SUBST([SIGNAL_FULL_PATH], "`$srcdir/bin/config_tools/get_include_path $CXX signal.h $CPPFLAGS $CXXFLAGS`")
 AC_CONFIG_FILES([
   sstmac/replacements/sstmac_pthread_clear.h
-  sstmac/replacements/sstmac_pthread_return.h
   sstmac/replacements/fstream
   sstmac/replacements/istream
   sstmac/replacements/iostream

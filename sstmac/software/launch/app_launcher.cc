@@ -9,10 +9,9 @@
  *  SST/macroscale directory.
  */
 
-#include <sstmac/software/launch/launcher.h>
+#include <sstmac/software/launch/app_launcher.h>
 #include <sstmac/software/launch/launch_event.h>
 #include <sstmac/software/launch/job_launcher.h>
-#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/app.h>
 #include <sprockit/sim_parameters.h>
@@ -36,25 +35,17 @@ app_launcher::~app_launcher() throw()
 void
 app_launcher::incoming_event(event* ev)
 {
-  launch_event* lev = safe_cast(launch_event, ev);
-  app_launch* launch = job_launcher::app_launcher(lev->aid());
+  start_app_event* lev = safe_cast(start_app_event, ev);
   if (lev->type() == launch_event::Start){
+    task_mapping::add_global_mapping(lev->aid(), lev->unique_name(), lev->mapping());
     software_id sid(lev->aid(), lev->tid());
-    //call to special factory instead of direct to other one
-    app* theapp = app::factory::get_param("name", launch->app_params(), sid, os_);
+    app* theapp = app_factory::get_param("name", lev->app_params(), sid, os_);
+    theapp->set_unique_name(lev->unique_name());
     int intranode_rank = num_apps_launched_[lev->aid()]++;
     int core_affinity = lev->core_affinity(intranode_rank);
     theapp->set_affinity(core_affinity);
     os_->increment_app_refcount();
-    os_->start_app(theapp);
-  } else {
-    bool app_done = launch->proc_done();
-    if (app_done){
-      bool sim_done = job_launcher::static_app_done(lev->aid());
-      if (sim_done){
-        os_->decrement_app_refcount();
-      }
-    }
+    os_->start_app(theapp, lev->unique_name());
   }
   delete lev;
 }
@@ -70,7 +61,7 @@ app_launcher::start()
 }
 
 int
-launch_event::core_affinity(int intranode_rank) const
+start_app_event::core_affinity(int intranode_rank) const
 {
   return thread::no_core_affinity;
 }

@@ -170,6 +170,8 @@ CHECK_REPO_BUILD([sstmac])
 
 CHECK_MPI_IMPLEMENTATION()
 
+CHECK_OTF2()
+
 CHECK_MPI_TIMELINE_STATS()
 
 CHECK_THREAD_PARALLEL()
@@ -236,7 +238,6 @@ AC_CONFIG_FILES([
  sstmac/common/Makefile
  sstmac/replacements/Makefile
  sstmac/clang_replacements/Makefile
- sstmac/replacements/mpi.h
  bin/Makefile
  python/Makefile
  configurations/Makefile

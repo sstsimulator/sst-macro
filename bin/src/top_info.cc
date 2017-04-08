@@ -24,7 +24,6 @@
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sstmac/backends/native/manager.h>
 #include <sstmac/software/process/app.h>
-#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/topology/cartesian_topology.h>
 #include <sprockit/fileio.h>
@@ -59,7 +58,8 @@ try_top_info_main(int argc, char **argv)
   else if (parse_status == PARSE_OPT_EXIT_FAIL) {
     return 1;
   }
-  else if (oo.configfile == "") {
+
+  if (oo.configfile == "") {
     oo.configfile = "parameters.ini"; //default
   }
 

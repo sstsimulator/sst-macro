@@ -38,7 +38,7 @@ main(int argc, char **argv)
   run_test(tport,0);
   run_test(tport,1);
   run_test(tport,2);
-  tport->finalize();
+  tport->finish();
   sstmac::runtime::exit_deadlock_region();
   return 0;
 }

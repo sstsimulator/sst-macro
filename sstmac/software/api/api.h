@@ -96,7 +96,7 @@ class api :
   init(){}
 
   virtual void
-  finalize(){}
+  finish(){}
 
   timestamp
   now() const;

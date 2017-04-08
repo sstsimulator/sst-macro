@@ -24,15 +24,15 @@ for test in tests:
   chk_file = os.path.join(cwd, test)
   text = open(chk_file).read()
   if not "PASSED" in text:
-    print (bcolors.FAIL, chk_file, "FAILED", bcolors.ENDC)
+    print (bcolors.FAIL + ("%s FAILED" % chk_file) + bcolors.ENDC)
     failures += 1
   total += 1
 
 if failures:
-  print (bcolors.FAIL, "%d of %d tests failed" % (failures, total), bcolors.ENDC)
+  print (bcolors.FAIL + ("%d of %d tests failed" % (failures, total)) + bcolors.ENDC)
   sys.exit(1)
 else:
-  print (bcolors.OKGREEN, "All %d tests passed" % total, bcolors.ENDC)
+  print (bcolors.OKGREEN + ("All %d tests passed" % total) + bcolors.ENDC)
 
 
     

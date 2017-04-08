@@ -1,15 +1,13 @@
 #ifndef SSTMAC_MPI_INTEGERS_H
 #define SSTMAC_MPI_INTEGERS_H
 
-#include <sumi-mpi/mpi_types.h>
-
 #ifdef __cplusplus
 #include <cstdint>
 #else
 #include <stdint.h>
 #endif
 
-typedef uint32_t MPI_Request;
+typedef int32_t MPI_Request;
 typedef long MPI_Op;
 
 typedef uint16_t MPI_Datatype;
@@ -19,7 +17,7 @@ typedef long MPI_Comm;
 
 typedef int MPI_Message;
 
-typedef long MPI_Group;
+typedef uint16_t MPI_Group;
 #define MPI_GROUP_EMPTY ((MPI_Group)0x48000000)
 
 /* for info */
@@ -52,7 +50,8 @@ enum _mpi_ops_ {
   MPI_BXOR = 10,
   MPI_MAXLOC = 11,
   MPI_MINLOC = 12,
-  MPI_REPLACE = 13  //for MPI_Accumulate
+  MPI_REPLACE = 13,  //for MPI_Accumulate
+  DUMPI_OP = 14
 };
 
 // datatypes

@@ -63,8 +63,9 @@ collective_op::collective_op(int count, mpi_comm* cm) :
   recvcnt = count;
 }
 
-mpi_request::mpi_request(const sstmac::sw::key_traits::category& cat) :
+mpi_request::mpi_request(op_type_t ty, const category& cat) :
  key_(key::construct(cat)),
+ optype_(ty),
  complete_(false),
  cancelled_(false),
  persistent_op_(nullptr),
@@ -78,15 +79,6 @@ mpi_request::~mpi_request()
   if (persistent_op_) delete persistent_op_;
   //do not delete - deleted elsewhere
   //if (collective_op_) delete collective_op_;
-}
-
-//
-// Build me a request.
-//
-mpi_request*
-mpi_request::construct(const category& cat)
-{
-  return new mpi_request(cat);
 }
 
 void
