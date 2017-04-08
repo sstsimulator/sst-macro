@@ -16,7 +16,8 @@ sst++ \
 dsst++ \
 sstcc \
 dsstcc \
-sstcclib.py 
+sstcclib.py \
+configlib.py
 
 if INTEGRATED_SST_CORE
 dist_bin_SCRIPTS += pysstmac
@@ -24,7 +25,7 @@ endif
 
 bin_SCRIPTS = sstmacro-config sstccvars.py
 
-EXTRA_DIST = sstmacro-config.in sstcclib.py sstccvars.py.in tools config_tools
+EXTRA_DIST = sstmacro-config.in sstccvars.py.in tools config_tools manifest
 
 AM_CPPFLAGS += \
  -I$(top_builddir)/bin \

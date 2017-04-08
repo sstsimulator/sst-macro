@@ -3,7 +3,7 @@
 import sys
 import re
 import os
-import commands
+from configlib import getoutput
 
 clangPath = sys.argv[1]
 extraFlags = ""
@@ -11,8 +11,8 @@ if len(sys.argv) > 2:
   extraFlags = " ".join(sys.argv[2:])
 clang = os.path.join(clangPath, "bin", "clang++")
 
-cmd = "%s -E -v %s - < /dev/null" % (clang, extraFlags)
-vOutput = commands.getoutput(cmd)
+cmd = "%s -E -v %s -" % (clang, extraFlags)
+vOutput = getoutput(cmd,stdin="/dev/null")
 
 regexp = re.compile("include <.*?search starts here:(.*?)End of search",re.DOTALL)
 lines = regexp.search(vOutput).groups()[0].strip().splitlines()
@@ -25,6 +25,6 @@ for l in lines:
 
   includes.append("-I%s" % l)
 
-sys.stdout.write(" ".join(includes))
+print(" ".join(includes))
 
 

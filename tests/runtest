@@ -4,9 +4,9 @@ import sys
 import signal
 import time
 import os
-import commands
 import subprocess
 import re
+from configlib import getoutput
 
 class bcolors:
     HEADER = '\033[95m'
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     timeout *= 1000 #basically no timeout
     fullPathMemCheck = None
     if not os.path.exists(memcheck):
-      fullPathMemCheck = commands.getoutput("which %s" % memcheck)
+      fullPathMemCheck = getoutput("which %s" % memcheck)
     else:
       fullPathMemCheck = memcheck
     if not os.path.exists(fullPathMemCheck):
@@ -255,7 +255,7 @@ def checkOutput(srcdir, tmpfile, condition):
       return errorMsg
 
   for line in refSim.lines:
-    if not chkSim.lines.has_key(line):
+    if not line in chkSim.lines:
       return "Line %s missing from CHK file" % line
 
   #all good

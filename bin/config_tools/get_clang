@@ -2,12 +2,12 @@
 
 import sys
 import re
-import commands
+from configlib import getoutput
 
 cxx = sys.argv[1]
 
 cmd = "%s --version" % cxx
-text = commands.getoutput(cmd)
+text = getoutput(cmd)
 
 if "clang" in text:
   print("yes")

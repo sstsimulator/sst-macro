@@ -2,13 +2,13 @@
 
 import glob
 import os
-import commands
+from configlib import getoutput
 
 def run(f):
   import re
   import sys
 
-  text = commands.getoutput("dumpi2ascii %s" % f)
+  text = getoutput("dumpi2ascii %s" % f)
 
   start = 0
   end = 0

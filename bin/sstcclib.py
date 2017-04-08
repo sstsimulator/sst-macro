@@ -1,6 +1,6 @@
 import os
 import sys
-import commands
+from configlib import getstatusoutput
 
 helpText = """The following environmental variables can be defined for the SST compiler
 SSTMAC_VERBOSE=0 or 1:        produce verbose output from the SST compiler (default 0)
@@ -136,10 +136,10 @@ if sst_core:
 if sourceFiles and len(objectFiles) > 1:
   sys.exit("Specified multiple object files for source compilation: %" % " ".join(objectFiles))
 
-if os.environ.has_key("SSTMAC_VERBOSE"):
+if "SSTMAC_VERBOSE" in os.environ:
   flag = int(os.environ["SSTMAC_VERBOSE"])
   verbose = verbose or flag
-if os.environ.has_key("SSTMAC_DELETE_TEMPS"):
+if "SSTMAC_DELETE_TEMPS" in os.environ:
   flag = int(os.environ["SSTMAC_DELETE_TEMPS"])
   delTempFiles = delTempFiles and flag
   
@@ -157,7 +157,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     directIncludes.append("-include sstmac/compute.h")
 
     remGlobals = True
-    if os.environ.has_key("SSTMAC_REMOVE_GLOBALS"):
+    if "SSTMAC_REMOVE_GLOBALS" in os.environ:
       remGlobals = int(os.environ["SSTMAC_REMOVE_GLOBALS"])
 
     if sys.argv[1] == "--version" or sys.argv[1] == "-V":
@@ -410,7 +410,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
           #we need to generate a .o for each source file
           cxxMergeCmd = "%s -Wl,-r %s %s -o %s" % (cxx, srcTformObjFile, cxxInitObjFile, srcObjTarget)
           if verbose: sys.stderr.write("%s\n" % cxxMergeCmd)
-          rc, output = commands.getstatusoutput(cxxMergeCmd)
+          rc, output = getstatusoutput(cxxMergeCmd)
           if delTempFiles:
             os.system("rm -f %s %s %s" % (srcTformObjFile, cxxInitObjFile, srcRepl))
           if not rc == 0:
@@ -421,7 +421,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         mergeCmdArr.append("-o %s" % objTarget)
         mergeCmd = " ".join(mergeCmdArr)
         if verbose: sys.stderr.write("%s\n" % mergeCmd)
-        rc, output = commands.getstatusoutput(mergeCmd)
+        rc, output = getstatusoutput(mergeCmd)
         if delTempFiles:
           os.system("rm -f %s %s %s" % (srcTformObjFile, cxxInitObjFile, srcRepl))
         if not rc == 0:

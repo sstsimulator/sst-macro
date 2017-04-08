@@ -53,7 +53,8 @@ EXTRA_DIST = \
   test_pthread.cc \
   sstmac_testutil.h \
   api/parameters.ini \
-  runtest checktest
+  runtest checktest \
+  configlib.py
 
 
 CORE_LIBS = ../sstmac/install/libsstmac.la ../sprockit/sprockit/libsprockit.la

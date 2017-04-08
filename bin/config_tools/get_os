@@ -1,11 +1,9 @@
 #! /usr/bin/env python
 
-import commands
 import sys
+from configlib import getoutput
 
-fullos = commands.getoutput("uname -a").lower()
-
-
+fullos = getoutput("uname -a").lower()
 
 os = None
 for entry in "darwin", "ubuntu":
@@ -15,8 +13,5 @@ for entry in "darwin", "ubuntu":
 if not os:
     os = "linux"
 
-print(os)
-        
-
-
+print (os)
 
