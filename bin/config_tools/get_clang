@@ -10,8 +10,8 @@ cmd = "%s --version" % cxx
 text = commands.getoutput(cmd)
 
 if "clang" in text:
-  print "yes"
+  print("yes")
 else:
-  print "no"
+  print("no")
 
 

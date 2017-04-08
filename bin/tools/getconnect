@@ -253,13 +253,11 @@ def extract(match):
     dstg, dsty, dstx = map(int, match[14:17])
 
     nid_src = Router.nid(srcx, srcy, srcg)
-    #print nid_src, srcx, srcy, srcg
     rsrc = routers[nid_src]
     if rsrc == None:
         rsrc = Router(srcx, srcy, srcg)
         routers[nid_src] = rsrc
     nid_dst = Router.nid(dstx, dsty, dstg)
-    #print nid_dst, dstx, dsty, dstg
     rdst = routers[nid_dst]
     if rdst == None:
         rdst = Router(dstx, dsty, dstg)
@@ -280,7 +278,7 @@ def print_router(x,y,z):
     rtr = routers.get(x,y,z)
     outputs = rtr.get_intergroup_outputs()
     for out in outputs:
-        print "%s -> %s" % (rtr, out)
+        sys.stdout.write("%s -> %s\n" % (rtr, out))
 
 
 # Print all connections from one group to another
@@ -290,16 +288,16 @@ def print_grp_conns(srcg,dstg):
     for rtr in rtrs:
         conns = rtr.get_outputs_to_group(dstg)
         if not conns:
-            print "NOTHING TO %d" % dstg
+            sys.stdout.write("NOTHING TO %d\n" % dstg)
         for c in conns:
-            print "%s -> %s" % (rtr, c)
+            sys.stdout.write("%s -> %s\n" % (rtr, c))
 
 def print_rtr_conns(src,dst):
     srcx, srcy, srcg = src
     src_rtr = routers.get(srcx, srcy, srcg)
     dstx, dsty, dstg = dst
     links = src_rtr.get_links_to_router(dstx, dsty, dstg)
-    print links
+    sys.stdout.write("%s\n" % links)
 
 # Print all outputs for a given router by port number
 def print_ports(x,y,z):
@@ -307,7 +305,7 @@ def print_ports(x,y,z):
     for p in range(48):
         out = rtr.outputs[p]
         if out:
-            print "%s : %2d -> %s" % (rtr, p, out)
+            sys.stdout.write("%s : %2d -> %s\n" % (rtr, p, out))
 
 def find_conflicts(lset, rset):
     conflicts = []
@@ -353,7 +351,7 @@ paths1 = mid.get_paths(src1,dst1)
 paths2 = mid.get_paths(src2,dst2)
 conflicts = find_conflicts(paths1,paths2)
 for c in conflicts:
-    print c
+    sys.stdout.write("%s\n" % c)
 sys.exit()
 
 num_printed = 0
@@ -370,8 +368,8 @@ def conflict_test(left_y, left_x, mid, right_y, right_x):
   conflicts = find_conflicts(lpaths,rpaths)
   if conflicts:
     for c in conflicts:
-        print c
-        num_printed += 1
+      sys.stdout.write("%s\n" % c)
+      num_printed += 1
 
 for ly in range(6):
   for m in range(6):

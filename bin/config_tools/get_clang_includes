@@ -25,6 +25,6 @@ for l in lines:
 
   includes.append("-I%s" % l)
 
-print " ".join(includes)
+sys.stdout.write(" ".join(includes))
 
 

@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import commands
+import sys
 
 fullos = commands.getoutput("uname -a").lower()
 
@@ -14,7 +15,7 @@ for entry in "darwin", "ubuntu":
 if not os:
     os = "linux"
 
-print os
+print(os)
         
 
 

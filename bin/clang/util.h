@@ -50,6 +50,7 @@ bool isCxx(const std::string& filename);
 bool isValidSrc(const std::string& filename);
 
 void errorAbort(clang::SourceLocation loc, clang::CompilerInstance& CI, const std::string& error);
+void warn(clang::SourceLocation loc, clang::CompilerInstance& CI, const std::string& warning);
 
 inline bool operator<=(const clang::SourceLocation &LHS, const clang::SourceLocation &RHS) {
   return LHS < RHS || LHS == RHS;

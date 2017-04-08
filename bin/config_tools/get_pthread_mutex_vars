@@ -30,5 +30,5 @@ match = regexp.search(text)
 if not match:
     sys.exit("Could not process pthread.h")
 
-print match.groups()[0]
+print(match.groups()[0])
 

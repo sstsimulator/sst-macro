@@ -397,7 +397,10 @@ ReplGlobalASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
     VisitDecl(D); //check for pragmas on it
 
   ++insideFxn_;
-  TraverseStmt(D->getBody());
+  if (!pragma_config_.skipNextStmt){
+    TraverseStmt(D->getBody());
+    pragma_config_.skipNextStmt = false;
+  }
   --insideFxn_;
   return true;
 }
@@ -478,7 +481,10 @@ ReplGlobalASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
 
   if (D->isThisDeclarationADefinition()) {
     VisitDecl(D); //check for pragmas
-    TraverseStmt(D->getBody());
+    if (!pragma_config_.skipNextStmt){
+      TraverseStmt(D->getBody());
+      pragma_config_.skipNextStmt = false;
+    }
   }
 
   --insideFxn_;

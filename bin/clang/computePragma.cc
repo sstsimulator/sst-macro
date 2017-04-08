@@ -5,6 +5,10 @@ using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
 
+#define dcase(type,d,rw,cfg) \
+  case(clang::Decl::type): \
+    visit##type##Decl(clang::cast<type##Decl>(d),rw,cfg); break
+
 #define scase(type,s,rw) \
   case(clang::Stmt::type##Class): \
     visit##type(clang::cast<type>(s),rw); break
@@ -329,6 +333,9 @@ visitBodyBinaryOperator(BinaryOperator* op, Loop::Body& body)
       else if (op->getType()->isFloatingType()) {
         body.flops += 1;
       }
+      else if (op->getType()->isPointerType()){
+        body.intops += 1;
+      }
       else if (op->getType()->isDependentType()){
         //this better be a template type
         const TemplateTypeParmType* ty = cast<const TemplateTypeParmType>(op->getLHS()->getType().getTypePtr());
@@ -430,13 +437,16 @@ visitBodyCallExpr(CallExpr* expr, Loop::Body& body)
     } else {
       FunctionDecl* def = callee->getDefinition();
       if (!def){
-        errorAbort(expr->getLocStart(), CI,
-                   "non-inlinable function inside compute-intensive code");
+        std::stringstream sstr;
+        sstr << "non-inlineable function " << callee->getNameAsString()
+             << " inside compute-intensive code";
+        warn(expr->getLocStart(), CI, sstr.str());
+      } else {
+        addOperations(def->getBody(), body);
       }
-      addOperations(def->getBody(), body);
     }
   } else {
-    errorAbort(expr->getLocStart(), CI,
+    warn(expr->getLocStart(), CI,
                "non-inlinable function inside compute-intensive code");
   }
 }
@@ -445,8 +455,20 @@ void
 visitBodyDeclStmt(DeclStmt* stmt, Loop::Body& body)
 {
   SSTPragma* prg = pragmas.takeMatch(stmt);
-  if (prg){
-    prg->activate(stmt->getSingleDecl(), getScopedVariables());
+  if (!stmt->isSingleDecl()){
+    return;
+  }
+  Decl* d = stmt->getSingleDecl();
+  if (d){
+    if (prg){
+      prg->activate(d, getScopedVariables());
+    }
+    if (isa<VarDecl>(d)){
+      VarDecl* vd = cast<VarDecl>(d);
+      if (vd->hasInit()){
+        addOperations(vd->getInit(), body);
+      }
+    }
   }
 }
 
@@ -627,15 +649,58 @@ setLoopContext(ForStmt* stmt){
   scopeStartLine = body->getLocStart();
 }
 
+void
+replaceStmt(Stmt* stmt, Rewriter& r, Loop& loop)
+{
+  std::stringstream sstr;
+  sstr << "{ uint64_t flops(0); uint64_t readBytes(0); uint64_t writeBytes(0); uint64_t intops(0); ";
+  addLoopContribution(sstr, loop);
+  sstr << "sstmac_compute_detailed(flops,intops,readBytes); /*assume write-through for now*/";
+  sstr << " }";
+
+  PresumedLoc start = CI.getSourceManager().getPresumedLoc(stmt->getLocStart());
+  PresumedLoc stop = CI.getSourceManager().getPresumedLoc(stmt->getLocEnd());
+  int numLinesDeleted = stop.getLine() - start.getLine();
+  //to preserve the correspondence of line numbers
+  for (int i=0; i < numLinesDeleted; ++i){
+    sstr << "\n";
+  }
+
+  r.ReplaceText(stmt->getSourceRange(), sstr.str());
+}
+
 };
+
+
+void
+SSTComputePragma::visitAndReplaceStmt(Stmt* stmt, Rewriter& r)
+{
+  Loop loop(0); //just treat this is a loop of size 1
+  loop.tripCount = "1";
+  ComputeVisitor vis(*CI, *pragmaList, nullptr);
+  vis.addOperations(stmt,loop.body);
+  vis.replaceStmt(stmt,r,loop);
+}
 
 void
 SSTComputePragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig& cfg)
 {
   switch(stmt->getStmtClass()){
     scase(ForStmt,stmt,r);
+    scase(IfStmt,stmt,r);
     default:
       defaultAct(stmt,r);
+      break;
+  }
+}
+
+void
+SSTComputePragma::activate(Decl* d, Rewriter& r, PragmaConfig& cfg)
+{
+  switch(d->getKind()){
+    dcase(Function,d,r,cfg);
+    dcase(CXXMethod,d,r,cfg);
+    default:
       break;
   }
 }
@@ -646,6 +711,35 @@ SSTComputePragma::defaultAct(Stmt *stmt, Rewriter &r)
   r.ReplaceText(stmt->getSourceRange(),"");
 }
 
+
+void
+SSTComputePragma::visitCXXMethodDecl(CXXMethodDecl* decl, Rewriter& r, PragmaConfig& cfg)
+{
+  if (decl->hasBody()){
+    visitAndReplaceStmt(decl->getBody(), r);
+    cfg.skipNextStmt = true;
+  }
+}
+
+void
+SSTComputePragma::visitFunctionDecl(FunctionDecl* decl, Rewriter& r, PragmaConfig& cfg)
+{
+  if (decl->hasBody()){
+    visitAndReplaceStmt(decl->getBody(), r);
+    cfg.skipNextStmt = true;
+  }
+}
+
+
+void
+SSTComputePragma::visitIfStmt(IfStmt* stmt, Rewriter& r)
+{
+  visitAndReplaceStmt(stmt->getThen(), r);
+  if (stmt->getElse()){
+    visitAndReplaceStmt(stmt->getElse(), r);
+  }
+}
+
 void
 SSTComputePragma::visitForStmt(ForStmt *stmt, Rewriter &r)
 {
@@ -653,19 +747,5 @@ SSTComputePragma::visitForStmt(ForStmt *stmt, Rewriter &r)
   Loop loop(0); //depth zeros
   vis.setLoopContext(stmt);
   vis.visitLoop(stmt,loop);
-  std::stringstream sstr;
-  sstr << "{ uint64_t flops(0); uint64_t readBytes(0); uint64_t writeBytes(0); uint64_t intops(0); ";
-  vis.addLoopContribution(sstr, loop);
-  sstr << "sstmac_compute_detailed(flops,intops,readBytes); /*assume write-through for now*/";
-  sstr << " }";
-
-  PresumedLoc start = CI->getSourceManager().getPresumedLoc(stmt->getLocStart());
-  PresumedLoc stop = CI->getSourceManager().getPresumedLoc(stmt->getLocEnd());
-  int numLinesDeleted = stop.getLine() - start.getLine();
-  //to preserve the correspondence of line numbers
-  for (int i=0; i < numLinesDeleted; ++i){
-    sstr << "\n";
-  }
-
-  r.ReplaceText(stmt->getSourceRange(), sstr.str());
+  vis.replaceStmt(stmt,r,loop);
 }

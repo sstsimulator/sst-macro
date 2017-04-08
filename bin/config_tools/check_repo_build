@@ -2,9 +2,10 @@
 
 import os
 import commands
+import sys
 
 if os.path.isdir(".git"):
-  print commands.getoutput("git rev-parse --abbrev-ref HEAD").strip()
+  sys.stdout.write("%s\n" % commands.getoutput("git rev-parse --abbrev-ref HEAD").strip())
 else:
-  print ""
+  sys.stdout.write("\n")
 

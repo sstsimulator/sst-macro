@@ -18,8 +18,7 @@ def format_header(filename):
 --indent-switches \
 < %s > %s.new
     """ % (filename, filename)
-    #print cmd
-    print filename
+    sys.stdout.write("%s\n" % filename)
     ret = os.system(cmd)
     if ret == 0:
         os.system("mv %s.new %s" % (filename, filename))
@@ -39,8 +38,7 @@ def format_source(filename):
 --indent-switches \
 < %s > %s.new
     """ % (filename, filename)
-    #print cmd
-    print filename
+    sys.stdout.write("%s\n" % filename)
     ret = os.system(cmd)
     if ret == 0:
         os.system("mv %s.new %s" % (filename, filename))

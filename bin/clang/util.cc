@@ -40,4 +40,13 @@ errorAbort(SourceLocation loc, CompilerInstance &CI, const std::string &error)
   exit(EXIT_FAILURE);
 }
 
+void
+warn(SourceLocation loc, CompilerInstance &CI, const std::string &warning)
+{
+  std::string errorStr;
+  llvm::raw_string_ostream os(errorStr);
+  loc.print(os, CI.getSourceManager());
+  os << " WARNING: " << warning;
+  std::cerr << os.str() << std::endl;
+}
 

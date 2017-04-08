@@ -162,7 +162,8 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
 
     if sys.argv[1] == "--version" or sys.argv[1] == "-V":
       import inspect, os
-      print os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+      pathStr = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+      print(pathStr)
       cmd = "%s %s" % (cxx, sys.argv[1])
       os.system(cmd)
       sys.exit()

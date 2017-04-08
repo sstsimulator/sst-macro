@@ -9,8 +9,9 @@ class ReplGlobalASTVisitor;
 
 struct PragmaConfig {
   int pragmaDepth;
+  bool skipNextStmt;
   std::map<std::string, std::string> functionReplacements;
-  PragmaConfig() : pragmaDepth(0) {}
+  PragmaConfig() : pragmaDepth(0), skipNextStmt(false) {}
 };
 
 struct SSTPragmaList;
@@ -60,8 +61,13 @@ class SSTComputePragma : public SSTPragma {
   friend class ComputeVisitor;
 
   void activate(clang::Stmt *stmt, clang::Rewriter &r, PragmaConfig& cfg) override;
+  void activate(clang::Decl* decl, clang::Rewriter& r, PragmaConfig& cfg) override;
   void defaultAct(clang::Stmt* stmt, clang::Rewriter &r);
   void visitForStmt(clang::ForStmt* stmt, clang::Rewriter& r);
+  void visitCXXMethodDecl(clang::CXXMethodDecl* decl, clang::Rewriter& r, PragmaConfig& cfg);
+  void visitFunctionDecl(clang::FunctionDecl* decl, clang::Rewriter& r, PragmaConfig& cfg);
+  void visitIfStmt(clang::IfStmt* stmt, clang::Rewriter& r);
+  void visitAndReplaceStmt(clang::Stmt* stmt, clang::Rewriter& r);
 };
 
 class SSTReplacePragma : public SSTPragma {

@@ -88,7 +88,7 @@ if __name__ == "__main__":
 
   if debugger:
       debugargs = "r " + args
-      print "DEBUG ARGS: ", debugargs
+      print ("DEBUG ARGS: ", debugargs)
       folder, script = os.path.split(exe)
       actualExe = ".libs/%s" % script
       actualExe = os.path.join(folder, actualExe)
@@ -286,18 +286,18 @@ def runexe(exe, args, tmpFile):
   out=open(tmpFile,"w")
   err=open(errorFile,"w")
   if verbose:
-    print cmd
+    print (cmd)
   try:
     rc = subprocess.call(sys.argv[EXE_START:], stdout=out, stderr=err)
     out.close()
     err.close()
   except Exception as e:
-    print e
+    print (e)
     sys.exit(111)
   if rc < 0:
     sig = abs(rc)
     text = "TERMINATED WITH SIGNAL: %d %s" % (sig, tmpFile)
-    print bcolors.FAIL, text, bcolors.ENDC
+    print (bcolors.FAIL, text, bcolors.ENDC)
     open(tmpFile,"w").write(text)
     sys.exit(111)
   else:
@@ -307,7 +307,7 @@ if __name__ == "__main__":
   #fork off a child process to run the test
   try: exepid = os.fork()
   except OSError: 
-    print bcolors.FAIL, "TEST FORK FAILED"
+    print (bcolors.FAIL, "TEST FORK FAILED")
     sys.exit(111)
   if exepid == 0:
     runexe(exe, args, tmpFile)
@@ -315,7 +315,7 @@ if __name__ == "__main__":
 
   try: waiterpid = os.fork()
   except OSError: 
-    print bcolors.FAIL, "TEST FORK FAILED"
+    print (bcolors.FAIL, "TEST FORK FAILED")
     sys.exit(111)
   if waiterpid == 0:
       signal.signal(signal.SIGTERM, handleTerminate)
@@ -330,7 +330,7 @@ if __name__ == "__main__":
       if sig:
           if sig == signal.SIGKILL:
               text = "TIMEOUT: %s" % outputFile
-              print bcolors.FAIL, text, bcolors.ENDC
+              print (bcolors.FAIL, text, bcolors.ENDC)
               open(outputFile,"w").write(text)
           else:
             text = "TERMINATED WITH SIGNAL %d" % sig
@@ -342,17 +342,17 @@ if __name__ == "__main__":
           text = None
           if errorMsg:
             text = "FAILED: %s: %s" % (outputFile, errorMsg)
-            print bcolors.FAIL, text, bcolors.ENDC
+            print (bcolors.FAIL, text, bcolors.ENDC)
           else:
             text = "PASSED: %s" % outputFile
-            print bcolors.OKGREEN, text, bcolors.ENDC
+            print (bcolors.OKGREEN, text, bcolors.ENDC)
           open(outputFile,"w").write(text)
       elif rc == 111:
           text = "TERMINATED WITH UNKNOWN ERROR"
           open(outputFile,"w").write(text)
       else:
           text = "ERROR/EXCEPTION: %s" % outputFile
-          print bcolors.FAIL, text, bcolors.ENDC
+          print (bcolors.FAIL, text, bcolors.ENDC)
           open(outputFile,"w").write(text)
 
 

@@ -20,5 +20,5 @@ match = regexp.search(text)
 if not match:
     sys.exit("Could not locate include path for header <%s>" % header)
 
-print match.groups()[0]
+sys.stdout.write("%s\n" % match.groups()[0])
 
