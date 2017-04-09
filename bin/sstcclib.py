@@ -387,7 +387,16 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         #now we generate the .o file containing the CXX linkage 
         #for global variable CXX init - because C is stupid
         cxxInitObjFile = "sstGlobals." + srcFile + ".o"
-        cxxInitCompileCmd = "%s -o %s -I%s/include -c %s" % (cxx, cxxInitObjFile, prefix, cxxInitSrcFile)
+        cxxInitCmdArr = [
+          cxx,
+          compilerFlagsStr,
+          "-o",
+          cxxInitObjFile,
+          "-I%s/include" % prefix,
+          "-c",
+          cxxInitSrcFile
+        ]
+        cxxInitCompileCmd = " ".join(cxxInitCmdArr)
         if verbose: sys.stderr.write("%s\n" % cxxInitCompileCmd)
         rc = os.system(cxxInitCompileCmd)
         if delTempFiles:
@@ -399,7 +408,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
 
       #some idiots generate multiple .o files at once
       manyObjects = objTarget == None #no specific target specified
-      mergeCmdArr = ["%s -Wl,-r" % compiler]
+      mergeCmdArr = ["%s -Wl,-r -nostdlib" % compiler]
       for srcFile in sourceFiles:
         srcFileNoSuffix = ".".join(srcFile.split(".")[:-1])
         srcObjTarget = srcFileNoSuffix + ".o"

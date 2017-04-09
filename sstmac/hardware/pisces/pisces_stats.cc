@@ -1,3 +1,5 @@
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <sstmac/hardware/pisces/pisces_stats.h>
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/backends/common/parallel_runtime.h>

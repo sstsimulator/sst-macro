@@ -615,7 +615,6 @@ void IntegrateStressForElems( Domain &domain,
            fx_tmp += fx_elem[elem] ;
            fy_tmp += fy_elem[elem] ;
            fz_tmp += fz_elem[elem] ;
-           if (moved) numToSend[dst]++;
         }
         domain.fx(gnode) = fx_tmp ;
         domain.fy(gnode) = fy_tmp ;

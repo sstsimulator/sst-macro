@@ -5,13 +5,8 @@ SHELL = /bin/sh
 
 LULESH_EXEC = lulesh2.0
 
-MPI_INC = /opt/local/include/openmpi
-MPI_LIB = /opt/local/lib
 
-SERCXX = g++ -DUSE_MPI=0
-#MPICXX = mpig++ -DUSE_MPI=1
-#MPICXX = $(HOME)/Programs/install/openmpi/clang3.9/bin/mpicxx -DUSE_MPI=1 
-MPICXX = sst++ -DUSE_MPI=1 -Dsstmac_app_name=lulesh 
+MPICXX = sst++ -DUSE_MPI=1 -Dsstmac_app_name=lulesh -std=c++11
 CXX = $(MPICXX)
 
 SOURCES2.0 = \
