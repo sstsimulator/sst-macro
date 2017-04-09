@@ -10,7 +10,7 @@ AC_ARG_ENABLE(regex,
   [
     enable_regexp=$enableval
   ], [
-    enable_regexp=yes
+    enable_regexp=no
   ]
 )
 if test "X$enable_regexp" = "Xyes"; then
@@ -51,6 +51,9 @@ BODY="
     }
 "
 
+SAVE_CXXFLAGS="$CXXFLAGS"
+CXXFLAGS="$CXXFLAGS -std=c++1y"
+
 AC_LINK_IFELSE([AC_LANG_PROGRAM([$HEADER], [$BODY])],
 [AC_MSG_RESULT([linked successfully against C++11 regex])],
 [AC_MSG_FAILURE([C++11 detected, but could not link against regex
@@ -69,5 +72,7 @@ Regex is required for input file proofreading, but sims will still run])]
 else
 AC_MSG_RESULT([skipping regex])
 fi
+
+CXXFLAGS="$SAVE_CXXFLAGS"
 
 ])

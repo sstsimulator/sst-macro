@@ -33,6 +33,7 @@ verbose = 0
 debugger = None
 memcheck = None
 threads = None
+timeoutOverride = None
 
 signalBitmask = (1<<7)-1
 rcBitmask = (1<<15)-1
@@ -47,13 +48,16 @@ time_point_regexp = re.compile("T\s*=\s*(\d+[.]\d+)")
 final_time_regexp = re.compile("[Rr]untime.*?(\d+[.]\d+)(.*)")
 
 if __name__ == "__main__":
-  try: verbose = int(os.environ["VERBOSE"])
+  try: verbose = int(os.environ["SSTMAC_VERBOSE"])
   except: pass
 
-  try: debugger = os.environ["DEBUGGER"]
+  try: debugger = os.environ["SSTMAC_DEBUGGER"]
   except: pass
 
-  try: memcheck = os.environ["MEMCHECK"]
+  try: memcheck = os.environ["SSTMAC_MEMCHECK"]
+  except: pass
+
+  try: timeoutOverride = int(os.environ["SSTMAC_TIMEOUT"])
   except: pass
 
   try: threads = int(os.environ["SST_NTHREADS"])
@@ -80,6 +84,9 @@ if __name__ == "__main__":
       sys.exit("MEMCHECK=%s is not a valid executable for valgrind" % memcheck)
 
     memcheck = fullPathMemCheck
+  
+  if timeoutOverride:
+    timeout = timeoutOverride
 
   if not os.path.isdir(srcdir):
     sys.exit("runtest received %s instead of a valid srcdir" % srcdir)
