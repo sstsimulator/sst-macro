@@ -29,14 +29,14 @@ tostr(routing::algorithm_t algo)
   switch(algo) {
       enumcase(minimal);
       enumcase(valiant);
-      enumcase(deflt);
+      enumcase(minimal_adaptive);
       enumcase(ugal);
     default:
       spkt_throw_printf(sprockit::value_error,
                        "invalud routing algorithm enum %d",
                        algo);
   }
-  return 0;
+  return nullptr;
 }
 
 }
