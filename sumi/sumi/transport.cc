@@ -1147,7 +1147,7 @@ transport::smsg_send(int dst, message::payload_type_t ev,
     handle(msg);
     if (needs_ack){
       message::ptr ack = msg->clone();
-      msg->set_payload_type(message::eager_payload_ack);
+      ack->set_payload_type(message::eager_payload_ack);
       handle(ack);
     }
 

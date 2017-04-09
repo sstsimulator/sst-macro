@@ -10,8 +10,6 @@
 #include <sumi/thread_safe_set.h>
 #include <sstmac/libraries/sumi/sumi_transport.h>
 
-#define main USER_MAIN
-
 namespace sumi {
 
 void

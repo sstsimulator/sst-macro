@@ -18,6 +18,7 @@
 #include <sumi-mpi/mpi_status.h>
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
 #include <sstmac/common/stats/stat_spyplot.h>
+#include <sstmac/software/process/key.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
@@ -354,9 +355,6 @@ mpi_queue::send_completion_ack(const mpi_message::ptr& message)
 void
 mpi_queue::incoming_progress_loop_message(const mpi_message::ptr& message)
 {
-  mpi_queue_debug("have incoming %p message %s", 
-    message.get(), message->to_string().c_str());
-
   if (message->is_nic_ack()) {
     handle_nic_ack(message);
     return;
@@ -530,7 +528,7 @@ mpi_queue::pop_matching_request(pending_message_t &pending,
       return req;
     }
   }
-  return 0;
+  return nullptr;
 }
 
 mpi_queue_recv_request*

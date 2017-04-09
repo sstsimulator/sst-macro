@@ -4,7 +4,7 @@
 #include <sstmacro.h>
 #include <sstmac/libraries/sumi/sumi.h>
 #include <sstmac/software/process/app.h>
-#include <sstmac/software/process/key.h>
+//#include <sstmac/software/process/key.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/runtime.h>

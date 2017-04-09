@@ -16,6 +16,7 @@
 #include <limits>
 #include <vector>
 #include <string>
+#include <ctime>
 
 namespace RNG {
 

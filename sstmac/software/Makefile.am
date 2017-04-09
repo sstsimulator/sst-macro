@@ -46,7 +46,6 @@ libsstmac_sw_la_SOURCES = \
   libraries/compute/lib_compute_matrix.cc \
   libraries/compute/lib_compute_memmove.cc \
   libraries/compute/lib_compute_time.cc \
-  libraries/compute/lib_sleep.cc \
   libraries/compute/lib_compute_loops.cc \
   libraries/unblock_event.cc \
   launch/launch_request.cc \
@@ -114,14 +113,11 @@ nobase_library_include_HEADERS = \
   libraries/compute/compute_event.h \
   libraries/compute/compute_event_fwd.h \
   libraries/compute/lib_compute_inst.h \
-  libraries/compute/lib_compute_inst_fwd.h \
-  libraries/compute/lib_compute_memmove_fwd.h \
+  libraries/compute/lib_compute_fwd.h \
   libraries/compute/lib_compute_matrix.h \
   libraries/compute/lib_compute_memmove.h \
   libraries/compute/lib_compute_time.h \
   libraries/compute/lib_compute.h \
-  libraries/compute/lib_sleep.h \
-  libraries/compute/lib_sleep_fwd.h \
   libraries/compute/lib_compute_loops.h \
   libraries/library.h \
   libraries/library_fwd.h \

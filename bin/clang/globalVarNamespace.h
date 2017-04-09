@@ -5,19 +5,20 @@
 #include <set>
 #include <map>
 #include <ostream>
+#include <sstream>
 
 struct GlobalVarNamespace
 {
   GlobalVarNamespace() : isPrefixSet(false) {}
 
   std::string ns;
-  std::set<std::string> vars;
+  std::set<std::string> replVars;
   std::map<std::string, GlobalVarNamespace> subspaces;
   char uniqueFilePrefix[256];
   bool isPrefixSet;
 
   bool empty() const {
-    return vars.empty() && subspaces.empty();
+    return replVars.empty() && subspaces.empty();
   }
 
   void setFilePrefix(const char* name){
@@ -32,6 +33,7 @@ struct GlobalVarNamespace
           break;
       }
     }
+    isPrefixSet = true;
   }
 
   void appendNamespace(const std::string& nestedNS, const std::string& newNS){
@@ -48,10 +50,11 @@ struct GlobalVarNamespace
     return uniqueFilePrefix;
   }
 
-  void genSSTCode(std::ostream& os, const std::string& indent){
-    for (const std::string& var : vars){
+  bool genSSTCode(std::ostream& os, const std::string& indent){
+    bool nonEmpty = !replVars.empty();
+    for (const std::string& var : replVars){
       os << indent << "int __offset_" << var << " = 0;\n";
-      os << indent << "extern const int __sizeof_" << var << ";\n";
+      os << indent << "extern int __sizeof_" << var << ";\n";
       os << indent << "extern void* __ptr_" << var << ";\n";
       os << indent << "sstmac::GlobalVariable __gv_" << var
               << "(__offset_" << var
@@ -60,10 +63,17 @@ struct GlobalVarNamespace
               << ");\n";
     }
     for (auto& pair : subspaces){
-      os << indent << "namespace " << pair.first << " {\n";
-      pair.second.genSSTCode(os, indent + " ");
-      os << indent << "}\n";
+      std::stringstream sstr;
+      bool subNotEmpty = false;
+      if (!pair.second.empty()){
+        sstr << indent << "namespace " << pair.first << " {\n";
+        subNotEmpty |= pair.second.genSSTCode(sstr, indent + " ");
+        sstr << indent << "}\n";
+      }
+      if (subNotEmpty) os << sstr.str();
+      nonEmpty |= subNotEmpty;
     }
+    return nonEmpty;
   }
 
 };

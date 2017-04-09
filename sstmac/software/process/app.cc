@@ -9,6 +9,10 @@
  *  SST/macroscale directory.
  */
 
+#include <sstmac/software/libraries/compute/lib_compute_inst.h>
+#include <sstmac/software/libraries/compute/lib_compute_time.h>
+#include <sstmac/software/libraries/compute/lib_compute_memmove.h>
+#include <sstmac/software/libraries/compute/lib_compute_loops.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/api/api.h>
 #include <sstmac/software/process/operating_system.h>
@@ -62,11 +66,7 @@ app::allocate_tls_key(destructor_fxn fxn)
 app::app(sprockit::sim_parameters *params, software_id sid,
          operating_system* os) :
   thread(params, sid, os),
-  compute_inst_(nullptr),
-  compute_time_(nullptr),
-  compute_mem_move_(nullptr),
-  compute_loops_(nullptr),
-  sleep_lib_(nullptr),
+  compute_lib_(nullptr),
   params_(params),
   next_tls_key_(0),
   next_condition_(0),
@@ -84,21 +84,17 @@ app::~app()
 {
   /** These get deleted by unregister */
   //sprockit::delete_vals(apis_);
-  if (compute_inst_) delete compute_inst_;
-  if (compute_time_) delete compute_time_;
-  if (compute_mem_move_) delete compute_mem_move_;
-  if (compute_loops_) delete compute_loops_;
-  if (sleep_lib_) delete sleep_lib_;
+  if (compute_lib_) delete compute_lib_;
   if (globals_storage_) delete[] globals_storage_;
 }
 
 lib_compute_loops*
 app::compute_loops_lib()
 {
-  if(!compute_loops_) {
-    compute_loops_ = new lib_compute_loops(params_, sid_, os_);
+  if(!compute_lib_) {
+    compute_lib_ = new lib_compute_loops(params_, sid_, os_);
   }
-  return compute_loops_;
+  return compute_lib_;
 }
 
 void
@@ -125,37 +121,25 @@ app::kill()
 lib_compute_time*
 app::compute_time_lib()
 {
-  if (!compute_time_) {
-    compute_time_ = new lib_compute_time(params_, sid_, os_);
-  }
-  return compute_time_;
+  return compute_loops_lib();
 }
 
 void
 app::sleep(timestamp time)
 {
-  if (!sleep_lib_) {
-    sleep_lib_ = new lib_sleep(params_, sid_, os_);
-  }
-  sleep_lib_->sleep(time);
+  compute_loops_lib()->sleep(time);
 }
 
 void
 app::compute(timestamp time)
 {
-  if (!compute_time_) {
-    compute_time_ = new lib_compute_time(params_, sid_, os_);
-  }
-  compute_time_->compute(time);
+  compute_loops_lib()->compute(time);
 }
 
 void
 app::compute_inst(compute_event* cmsg)
 {
-  if (!compute_inst_) {
-    compute_inst_ = new lib_compute_inst(params_, sid_, os_);
-  }
-  compute_inst_->compute_inst(cmsg);
+  compute_loops_lib()->compute_inst(cmsg);
 }
 
 void
@@ -164,37 +148,26 @@ app::compute_loop(uint64_t num_loops,
   int nintops_per_loop,
   int bytes_per_loop)
 {
-  if (!compute_inst_){
-    compute_inst_ = new lib_compute_inst(params_, sid_, os_);
-  }
-  compute_inst_->compute_loop(num_loops, nflops_per_loop, nintops_per_loop, bytes_per_loop);
+  compute_loops_lib()->lib_compute_inst::compute_loop(
+          num_loops, nflops_per_loop, nintops_per_loop, bytes_per_loop);
 }
 
 void
 app::compute_detailed(long flops, long nintops, long bytes)
 {
-  if (!compute_inst_){
-    compute_inst_ = new lib_compute_inst(params_, sid_, os_);
-  }
-  compute_inst_->compute_detailed(flops, nintops, bytes);
+  compute_loops_lib()->compute_detailed(flops, nintops, bytes);
 }
 
 void
 app::compute_block_read(long bytes)
 {
-  if (!compute_mem_move_) {
-    init_mem_lib();
-  }
-  compute_mem_move_->read(bytes);
+  compute_loops_lib()->read(bytes);
 }
 
 void
 app::compute_block_write(long bytes)
 {
-  if (!compute_mem_move_) {
-    init_mem_lib();
-  }
-  compute_mem_move_->write(bytes);
+  compute_loops_lib()->write(bytes);
 }
 
 sprockit::sim_parameters*
@@ -204,18 +177,9 @@ app::get_params()
 }
 
 void
-app::init_mem_lib()
-{
-  compute_mem_move_ = new lib_compute_memmove(params_, sid_, os_);
-}
-
-void
 app::compute_block_memcpy(long bytes)
 {
-  if (!compute_mem_move_) {
-    init_mem_lib();
-  }
-  compute_mem_move_->copy(bytes);
+  compute_loops_lib()->copy(bytes);
 }
 
 api*

@@ -107,7 +107,6 @@ mpi_api::waitany(int count, MPI_Request array_of_requests[], int *indx,
   }
 
   if (numNonnull == 0){
-    printf("all null\n");
     return MPI_SUCCESS;
   }
 

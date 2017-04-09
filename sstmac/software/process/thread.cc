@@ -180,7 +180,7 @@ thread::run_routine(void* threadptr)
   }
 }
 
-key::category schedule_delay("CPU_Sched Delay");
+key_traits::category schedule_delay("CPU_Sched Delay");
 
 thread::thread(sprockit::sim_parameters* params, software_id sid, operating_system* os) :
   os_(os),

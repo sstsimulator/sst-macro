@@ -25,6 +25,7 @@
 #include <sstmac/common/messages/sst_message_fwd.h>
 #include <sstmac/common/stats/event_trace.h>
 #include <sstmac/common/event_scheduler.h>
+#include <sstmac/software/process/thread_data.h>
 
 #include <sstmac/software/libraries/service_fwd.h>
 #include <sstmac/software/process/ftq_fwd.h>
@@ -61,7 +62,17 @@ class operating_system :
     stack_alloc stackalloc;
     app_id current_aid;
     task_id current_tid;
+    bool skip_next_op_new;
+    os_thread_context() :
+      current_thread(nullptr),
+      current_os(nullptr),
+      skip_next_op_new(false)
+    {}
   };
+
+  static void skip_next_op_new(){
+    static_os_thread_context().skip_next_op_new = true;
+  }
 
   virtual ~operating_system();
 
@@ -116,8 +127,7 @@ class operating_system :
    *              operation
    */
   void
-  execute(ami::COMP_FUNC, event* data,
-          key::category cat = key::general);
+  execute(ami::COMP_FUNC, event* data, key_traits::category cat);
 
   /**
    * @brief execute Execute a communication function.

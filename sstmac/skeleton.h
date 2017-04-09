@@ -43,6 +43,63 @@ typedef int (*empty_main_fxn)();
 #include <sstmac/common/sstmac_config.h>
 
 #ifdef __cplusplus
+//redirect all operator news to the nothrow version
+//sst will decide whether memory is actually going to be allocated
+extern void* sstmac_new(unsigned long size);
+
+#define __builtin_operator_new(size) sstmac_new(size)
+#include <new>
+
+extern bool& should_skip_operator_new();
+
+template <class T>
+T*
+placement_new(void* sstmac_placement_ptr){
+  if (sstmac_placement_ptr != nullptr){
+    return new (sstmac_placement_ptr) T;
+  }
+  return reinterpret_cast<T*>(sstmac_placement_ptr);
+}
+
+template <class T>
+T*
+conditional_array_new(unsigned long size){
+  bool& flag = should_skip_operator_new();
+  T* ret = nullptr;
+  if (!flag){
+    ret = new T[size];
+  }
+  flag = false;
+  return ret;
+}
+
+template <class T, class... Args>
+T*
+conditional_new(Args&&... args){
+  bool& flag = should_skip_operator_new();
+  T* ret = nullptr;
+  if (!flag){
+    ret = new T(args...);
+  }
+  flag = false;
+  return ret;
+}
+
+
+
+template <class T>
+void
+conditional_delete(T* t){
+  if (t != nullptr) delete t;
+}
+
+template <class T>
+void
+conditional_delete_array(T* t){
+  if (t != nullptr) delete[] t;
+}
+
+
 #include <sprockit/sim_parameters.h>
 #include <sstmac/software/process/global.h>
 #include <sstmac/software/api/api_fwd.h>
@@ -64,8 +121,31 @@ using sprockit::sim_parameters;
 
 extern sprockit::sim_parameters*
 get_params();
-#endif //not C++, extra work required in sst clang compiler
 
+/**
+ * @brief sstmac_free
+ * @param ptr A pointer which may or may not have been skeletonized
+ */
+static inline void
+sstmac_free(void* ptr){
+  if (ptr != nullptr) ::free(ptr);
+}
+
+#else
+#include <stdlib.h>
+/**
+ * @brief sstmac_free
+ * @param ptr A pointer which may or may not have been skeletonized
+ */
+static inline void
+sstmac_free(void* ptr){
+  if (ptr != NULL) free(ptr);
+}
+#endif
+
+
+
+#define free sstmac_free
 
 
 #endif

@@ -11,6 +11,7 @@
 
 #include <sumi-mpi/mpi_request.h>
 #include <sumi-mpi/mpi_comm/mpi_comm.h>
+#include <sstmac/software/process/key.h>
 
 namespace sumi {
 
@@ -62,7 +63,7 @@ collective_op::collective_op(int count, mpi_comm* cm) :
   recvcnt = count;
 }
 
-mpi_request::mpi_request(op_type_t ty, const key::category& cat) :
+mpi_request::mpi_request(op_type_t ty, const category& cat) :
  key_(key::construct(cat)),
  optype_(ty),
  complete_(false),

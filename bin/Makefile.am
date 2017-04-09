@@ -16,7 +16,8 @@ sst++ \
 dsst++ \
 sstcc \
 dsstcc \
-sstcclib.py 
+sstcclib.py \
+configlib.py
 
 if INTEGRATED_SST_CORE
 dist_bin_SCRIPTS += pysstmac
@@ -24,7 +25,7 @@ endif
 
 bin_SCRIPTS = sstmacro-config sstccvars.py
 
-EXTRA_DIST = sstmacro-config.in sstcclib.py sstccvars.py.in tools config_tools
+EXTRA_DIST = sstmacro-config.in sstccvars.py.in tools config_tools manifest
 
 AM_CPPFLAGS += \
  -I$(top_builddir)/bin \
@@ -55,19 +56,22 @@ sstmac_LDADD = $(exe_LDADD)
 sstmac_top_info_LDADD = $(exe_LDADD)
 
 EXTRA_DIST += \
+ clang/util.h \
+ clang/pragmas.h \
  clang/astConsumers.h \
  clang/clangheaders.h \
- clang/findAstVisitor.h \
- clang/foundMacro.h \
  clang/frontendActions.h \
  clang/globalVarNamespace.h \
  clang/replAstVisitor.h
 
 if HAVE_CLANG
 bin_PROGRAMS += sstmac_clang_deglobal
-sstmac_clang_deglobal_SOURCES = clang/globals.cc \
+sstmac_clang_deglobal_SOURCES = \
+  clang/util.cc \
+  clang/globals.cc \
+  clang/pragmas.cc \
+  clang/computePragma.cc \
   clang/astConsumers.cc \
-  clang/findAstVisitor.cc \
   clang/frontendActions.cc \
   clang/replAstVisitor.cc 
 

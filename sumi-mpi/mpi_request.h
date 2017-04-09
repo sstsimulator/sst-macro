@@ -12,7 +12,7 @@
 #ifndef SSTMAC_SOFTWARE_LIBRARIES_MPI_MPIREQUEST_H_INCLUDED
 #define SSTMAC_SOFTWARE_LIBRARIES_MPI_MPIREQUEST_H_INCLUDED
 
-#include <sstmac/software/process/key.h>
+#include <sstmac/software/process/key_fwd.h>
 #include <sumi/collective.h>
 #include <sumi-mpi/mpi_status.h>
 #include <sumi-mpi/mpi_message.h>
@@ -23,6 +23,7 @@
 namespace sumi {
 
 using sstmac::sw::key;
+using sstmac::sw::key_traits::category;
 
 /**
  * Persistent send operations (send, bsend, rsend, ssend)
@@ -94,7 +95,7 @@ class mpi_request  {
     Probe
   } op_type_t;
 
-  mpi_request(op_type_t ty, const key::category& cat);
+  mpi_request(op_type_t ty, const category& cat);
 
   std::string
   to_string() const {
@@ -105,7 +106,7 @@ class mpi_request  {
   type_str() const;
 
   static mpi_request*
-  construct(op_type_t ty, const key::category& cat){
+  construct(op_type_t ty, const category& cat){
     return new mpi_request(ty,cat);
   }
 

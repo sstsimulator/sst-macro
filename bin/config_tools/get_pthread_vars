@@ -3,7 +3,7 @@
 import sys
 import re
 import os
-import commands
+from configlib import getoutput
 
 source = None
 
@@ -44,7 +44,7 @@ open("conftest.c", "w").write(source)
 
 
 cmd = "%s -E conftest.c" % (cc)
-text = commands.getoutput(cmd)
+text = getoutput(cmd)
 
 os.remove("conftest.c")
 

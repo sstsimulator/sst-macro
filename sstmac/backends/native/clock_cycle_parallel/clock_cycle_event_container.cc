@@ -1,3 +1,5 @@
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <sstmac/common/sstmac_config.h>
 #if !SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/backends/native/clock_cycle_parallel/clock_cycle_event_container.h>

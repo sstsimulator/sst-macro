@@ -16,6 +16,7 @@
 #include <sstmac/software/process/thread_data.h>
 #include <sprockit/unordered.h>
 #include <stdint.h>
+#include <sstmac/software/process/key_fwd.h>
 
 #include <cstring>
 #include <set>
@@ -37,40 +38,20 @@ class key  {
  public:
   typedef std::set<thread_data_t> blocking_t;
 
-  class category
-  {
-   private:
-    friend class library;
-
-    int id_;
-
-    //only callable by library
-    category();
-
-   public:
-    category(const std::string& name);
-
-
-    std::string
-    name() const {
-      return key::name(id_);
-    }
-
-    int id() const {
-      return id_;
-    }
-  };
-
 
  public:
-  static category general;
+  static key_traits::category general;
 
  public:
   static key*
-  construct();
+  construct(){
+    return new key;
+  }
 
   static key*
-  construct(const category& name);
+  construct(const key_traits::category& name){
+    return new key(name);
+  }
 
   static std::string
   name(int keyname_id) {
@@ -98,7 +79,7 @@ class key  {
     return keyname_id_;
   }
 
-  virtual ~key();
+  virtual ~key(){}
 
   void*
   operator new(size_t size);
@@ -140,7 +121,7 @@ class key  {
 
   key();
 
-  key(const category& name);
+  key(const key_traits::category& name);
 
  private:
   static spkt_unordered_map<std::string, int>* category_name_to_id_;
