@@ -69,10 +69,11 @@ If using GCC >= 4.9, be sure LD_LIBRARY_PATH is correct
 Use the flag --disable-regex to disable regex-dependent features
 Regex is required for input file proofreading, but sims will still run])]
 )
+
+CXXFLAGS="$SAVE_CXXFLAGS"
 else
 AC_MSG_RESULT([skipping regex])
 fi
 
-CXXFLAGS="$SAVE_CXXFLAGS"
 
 ])
