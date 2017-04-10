@@ -47,6 +47,7 @@ RegisterKeywords(
 "node_sockets",
 "node_pipeline_speedup",
 "node_frequency",
+"job_launcher",
 );
 
 namespace sstmac {

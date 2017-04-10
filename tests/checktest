@@ -24,7 +24,11 @@ for test in tests:
   chk_file = os.path.join(cwd, test)
   text = open(chk_file).read()
   if not "PASSED" in text:
-    print (bcolors.FAIL + ("%s FAILED" % chk_file) + bcolors.ENDC)
+    failstr = "FAILED"
+    if "TIMEOUT" in text:
+      failstr = "TIMEOUT" 
+    failstr = "%s %s" % (chk_file, failstr)
+    print (bcolors.FAIL + failstr + bcolors.ENDC)
     failures += 1
   total += 1
 

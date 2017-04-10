@@ -55,14 +55,15 @@ endif
 sstmac_LDADD = $(exe_LDADD)
 sstmac_top_info_LDADD = $(exe_LDADD)
 
-EXTRA_DIST += \
- clang/util.h \
- clang/pragmas.h \
- clang/astConsumers.h \
- clang/clangheaders.h \
- clang/frontendActions.h \
- clang/globalVarNamespace.h \
- clang/replAstVisitor.h
+EXTRA_DIST += clang
+
+# clang/util.h 
+# clang/pragmas.h 
+# clang/astConsumers.h 
+# clang/clangheaders.h 
+# clang/frontendActions.h 
+# clang/globalVarNamespace.h 
+# clang/replAstVisitor.h
 
 if HAVE_CLANG
 bin_PROGRAMS += sstmac_clang_deglobal

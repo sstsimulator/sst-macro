@@ -53,7 +53,9 @@ EXTRA_DIST = \
   test_pthread.cc \
   sstmac_testutil.h \
   api/parameters.ini \
-  runtest checktest \
+  runtest \
+  checktest \
+  noop \
   configlib.py
 
 

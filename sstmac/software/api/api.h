@@ -5,7 +5,7 @@
 #include <sstmac/software/libraries/library.h>
 #include <sstmac/software/process/key_fwd.h>
 #include <sstmac/common/sst_event_fwd.h>
-
+#include <sprockit/keyword_registration.h>
 #include <sstmac/software/libraries/compute/lib_compute_time.h>
 
 # if  (defined(__MACH__) && defined(__APPLE__))
@@ -134,6 +134,7 @@ void api_unlock();
 
 #define RegisterAPI(name, child_cls) \
   SpktRegister(name, sstmac::sw::api, child_cls); \
+  RegisterNamespaces(name); \
   const char* child_cls::api_name = name
 
 DeclareFactory(api,software_id,operating_system*);
