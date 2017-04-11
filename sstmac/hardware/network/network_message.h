@@ -44,6 +44,7 @@ class network_message :
    node_id to,
    node_id from,
    long payload_bytes) :
+    aid_(aid),
     needs_ack_(true),
     toaddr_(to),
     fromaddr_(from),

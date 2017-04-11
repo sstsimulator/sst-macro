@@ -87,8 +87,7 @@ class sim_parameters  {
     bool read;
   };
 
-  void
-  reproduce_params(std::ostream& os);
+  void reproduce_params(std::ostream& os) const ;
 
   typedef spkt_unordered_map<std::string, parameter_entry> key_value_map;
 
@@ -97,6 +96,8 @@ class sim_parameters  {
   sim_parameters(const key_value_map& p);
 
   sim_parameters(const std::string& filename);
+
+  sim_parameters(const sprockit::sim_parameters* params); //deep copy
 
   /**
    * In a parallel environment (abstracted through a param_bcaster object),

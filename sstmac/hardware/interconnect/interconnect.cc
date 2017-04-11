@@ -69,6 +69,15 @@ interconnect::static_interconnect(sprockit::sim_parameters* params, event_manage
   return static_interconnect_;
 }
 
+interconnect*
+interconnect::static_interconnect()
+{
+  if (!static_interconnect_){
+    spkt_abort_printf("interconnect not initialized");
+  }
+  return static_interconnect_;
+}
+
 #if !SSTMAC_INTEGRATED_SST_CORE
 interconnect::~interconnect()
 {
@@ -178,6 +187,7 @@ interconnect::connect_endpoints(sprockit::sim_parameters* inj_params,
                                 sprockit::sim_parameters* ej_params)
 {
   int num_nodes = topology_->num_nodes();
+  int me = rt_->me();
   for (int nodeaddr=0; nodeaddr < num_nodes; ++nodeaddr){
     node_id netlink_id;
     int netlink_offset;
@@ -193,7 +203,6 @@ interconnect::connect_endpoints(sprockit::sim_parameters* inj_params,
     bool has_netlink = topology_->node_to_netlink(nodeaddr, netlink_id, netlink_offset);
     if (has_netlink) {
       if (netlink_offset == 0){
-        ep = netlinks_[netlink_id];
         injaddr = topology_->netlink_to_injection_switch(netlink_id, inj_ports, num_inj_ports);
         ejaddr = topology_->netlink_to_injection_switch(netlink_id, ej_ports, num_ej_ports);
         ep_id = netlink_id;
@@ -201,10 +210,19 @@ interconnect::connect_endpoints(sprockit::sim_parameters* inj_params,
         continue; //no connection required
       }
     } else {
-      ep = nodes_[nodeaddr]->get_nic();
       injaddr = topology_->node_to_injection_switch(nodeaddr, inj_ports, num_inj_ports);
       ejaddr = topology_->node_to_injection_switch(nodeaddr, ej_ports, num_ej_ports);
       ep_id = nodeaddr;
+    }
+
+    //parallel - I don't own this
+    int target_rank = partition_->lpid_for_switch(injaddr);
+    if (target_rank != me) continue;
+
+    if (has_netlink){
+      ep = netlinks_[netlink_id];
+    }	else {
+      ep = nodes_[nodeaddr]->get_nic();
     }
 
     network_switch* injsw = switches_[injaddr];

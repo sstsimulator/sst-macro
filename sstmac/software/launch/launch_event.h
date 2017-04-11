@@ -46,7 +46,6 @@ class launch_event :
     library_interface::serialize_order(ser);
     hw::network_message::serialize_order(ser);
     ser & ty_;
-    ser & aid_;
     ser & tid_;
   }
 
@@ -75,7 +74,7 @@ class launch_event :
                const std::string& unique_name,
                node_id to, node_id from,
                const std::string& libname) :
-    ty_(ty), aid_(aid), tid_(tid),
+    ty_(ty), tid_(tid),
     unique_name_(unique_name),
     library_interface(libname),
     network_message(aid, to, from, 0)
@@ -87,7 +86,6 @@ class launch_event :
   launch_event(){} //for serialization
 
  private:
-  app_id aid_;
   task_id tid_;
   std::string unique_name_;
   type_t ty_;
@@ -103,27 +101,30 @@ class start_app_event : public launch_event {
      task_id tid,
      node_id to,
      node_id from,
-     sprockit::sim_parameters* app_params) :
+     const sprockit::sim_parameters* app_params) :
     launch_event(Start, aid, tid, unique_name, to, from, "launcher"),
     app_params_(app_params),
     mapping_(mapping)
   {
   }
 
-  int
-  core_affinity(int intranode_rank) const;
+  int core_affinity(int intranode_rank) const;
 
-  start_app_event(){} //for serialization
-
-  void
-  serialize_order(serializer& ser) override {
-    spkt_throw_printf(sprockit::unimplemented_error,
-                      "start_app_event::serialize_order");
+  bool is_bcast() const override {
+    return true;
   }
 
-  sprockit::sim_parameters*
-  app_params() const {
+  start_app_event() : app_params_(nullptr) {} //for serialization
+
+  void serialize_order(serializer& ser) override;
+
+  sprockit::sim_parameters&
+  app_params() {
     return app_params_;
+  }
+
+  start_app_event* clone(int rank, node_id src, node_id dst) const {
+    return new start_app_event(aid_, unique_name_, mapping_, rank, dst, src, &app_params_);
   }
 
   task_mapping::ptr
@@ -132,11 +133,9 @@ class start_app_event : public launch_event {
   }
 
  private:
-  app_id aid_;
-  task_id tid_;
   std::string unique_name_;
   task_mapping::ptr mapping_;
-  sprockit::sim_parameters* app_params_;
+  sprockit::sim_parameters app_params_;
 
 };
 

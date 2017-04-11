@@ -60,6 +60,10 @@ class logp_switch :
   }
 
  private:
+  void incoming_message(message* msg, node_id src, node_id dst, bool local_src);
+  void outgoing_message(message* msg, node_id src, node_id dst);
+
+ private:
   double inj_bw_inverse_;
 
   timestamp inj_lat_;

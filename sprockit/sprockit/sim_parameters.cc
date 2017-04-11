@@ -207,6 +207,17 @@ sim_parameters::sim_parameters() :
 {
 }
 
+sim_parameters::sim_parameters(const sim_parameters *params) :
+  extra_data_(nullptr),
+  parent_(nullptr),
+  namespace_(params->namespace_)
+{
+  params_ = params->params_;
+  for (auto& pair : params->subspaces_){
+    subspaces_[pair.first] = new sprockit::sim_parameters(pair.second);
+  }
+}
+
 sim_parameters::sim_parameters(const key_value_map& p) :
   params_(p),
   extra_data_(nullptr),
@@ -435,7 +446,7 @@ sim_parameters::build_local_namespace(const std::string& ns)
 }
 
 void
-sim_parameters::reproduce_params(std::ostream& os)
+sim_parameters::reproduce_params(std::ostream& os) const
 {
   for (auto& pair : params_){
     os << pair.first << " = " << pair.second.value << "\n";
