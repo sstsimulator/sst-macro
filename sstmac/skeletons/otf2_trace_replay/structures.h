@@ -38,11 +38,15 @@ struct OTF2_Location {
 
 struct OTF2_Region {
   OTF2_StringRef name;
+  OTF2_StringRef canonicalName;
+  OTF2_StringRef description;
   OTF2_RegionRole regionRole;
   OTF2_Paradigm paradigm;
+  OTF2_StringRef sourceFile;
 };
 
 struct OTF2_Callpath {
+  OTF2_CallpathRef parent;
   OTF2_RegionRef region;
 };
 
@@ -55,6 +59,8 @@ struct OTF2_Group {
 
 struct OTF2_Comm {
   OTF2_StringRef name;
+  OTF2_GroupRef group;
+  OTF2_CommRef parent;
 };
 
 struct MPINameIDMap {

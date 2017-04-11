@@ -66,7 +66,7 @@ OTF2_CallbackCode def_string(
   OTF2_StringRef self,
   const char*    str)
 {
-	auto app = (OTF2TraceReplayApp*)userData;
+  auto app = (OTF2TraceReplayApp*)userData;
   app->otf2_string_table.push_back(str);
   MPI_CALL_ID id = MPI_call_to_id.get(str);
   if (id != ID_NULL){
@@ -114,8 +114,9 @@ OTF2_CallbackCode def_region(
   uint32_t        beginLineNumber,
   uint32_t        endLineNumber )
 {
-	auto app = (OTF2TraceReplayApp*)userData;
-	app->otf2_regions.push_back({name, regionRole, paradigm});
+  auto app = (OTF2TraceReplayApp*)userData;
+  app->otf2_regions.push_back({
+    name, canonicalName, description, regionRole, paradigm, sourceFile});
   DEF_PRINT("REGION\n");
   return OTF2_CALLBACK_SUCCESS;
 }
@@ -127,7 +128,7 @@ OTF2_CallbackCode def_callpath(
   OTF2_RegionRef   region )
 {
   auto app = (OTF2TraceReplayApp*)userData;
-  app->otf2_callpaths.push_back({region});
+  app->otf2_callpaths.push_back({parent, region});
 
   DEF_PRINT("CALLPATH\n");
   return OTF2_CALLBACK_SUCCESS;
@@ -161,7 +162,7 @@ OTF2_CallbackCode def_comm(
   OTF2_CommRef   parent )
 {
   auto app = (OTF2TraceReplayApp*)userData;
-  app->otf2_regions.push_back({ name });
+  app->otf2_comms.push_back({name, group, parent});
 
   DEF_PRINT("COMMUNICATOR\n");
   return OTF2_CALLBACK_SUCCESS;
@@ -176,7 +177,7 @@ def_location_group_property(
 	OTF2_Type             type,
   OTF2_AttributeValue   value )
 {
-  cout << "LOCATION_GROUP_PROPERTY" << endl;
+  DEF_PRINT("LOCATION_GROUP_PROPERTY\n");
   return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -189,7 +190,7 @@ def_location_property(
 	OTF2_Type           type,
   OTF2_AttributeValue value)
 {
-  cout << "LOCATION_PROPERTY" << endl;
+  DEF_PRINT("LOCATION_PROPERTY\n");
   return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -524,11 +525,10 @@ OTF2_CallbackCode event_enter(
     OTF2_RegionRef      region ) {
 
     auto app = (OTF2TraceReplayApp*)userData;
+
     auto iter = app->otf2_mpi_call_map.find(app->otf2_regions[region].name);
-    if (iter == app->otf2_mpi_call_map.end()){
-      spkt_abort_printf("unknown OTF2 region name %s",
-                 app->otf2_string_table[region].c_str());
-    }
+    if (iter == app->otf2_mpi_call_map.end() && app->PrintUnknownCallback())
+      std::cout << "unknown OTF2 region name " << app->otf2_string_table[region].c_str() << std::endl;
 
     MPI_CALL_ID id = iter->second;
 
@@ -976,7 +976,13 @@ OTF2_CallbackCode event_leave(
   auto app = (OTF2TraceReplayApp*)userData;
   CallQueue& callqueue = app->GetCallQueue();
 
-  const auto id = app->otf2_mpi_call_map[app->otf2_regions[region].name];
+  //const auto id = app->otf2_mpi_call_map[app->otf2_regions[region].name];
+
+  auto iter = app->otf2_mpi_call_map.find(app->otf2_regions[region].name);
+      if (iter == app->otf2_mpi_call_map.end() && app->PrintUnknownCallback())
+        std::cout << "unknown OTF2 region name " << app->otf2_string_table[region].c_str() << std::endl;
+
+  MPI_CALL_ID id = iter->second;
 
   switch (id) {
   CASE_READY(ID_MPI_Abort)

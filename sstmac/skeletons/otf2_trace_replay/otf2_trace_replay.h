@@ -31,6 +31,7 @@ RegisterKeywords(
   "otf2_print_mpi_calls",
   "otf2_print_trace_events",
   "otf2_print_time_deltas"
+  "otf2_print_unknown_callback"
 );
 
 
@@ -45,6 +46,7 @@ class OTF2TraceReplayApp : public sstmac::sw::app {
   bool PrintTraceEvents();
   bool PrintMpiCalls();
   bool PrintTimeDeltas();
+  bool PrintUnknownCallback();
 
   virtual void skeleton_main();
 
@@ -56,6 +58,7 @@ class OTF2TraceReplayApp : public sstmac::sw::app {
 
   OTF2_ClockProperties otf2_clock_properties;
   std::vector<std::string> otf2_string_table;
+  //std::unordered_map<OTF2_RegionRef, OTF2_Region> otf2_regions;
   std::vector<OTF2_Region> otf2_regions;
   std::vector<OTF2_Callpath> otf2_callpaths;
   std::vector<OTF2_Group> otf2_groups;
@@ -83,6 +86,7 @@ class OTF2TraceReplayApp : public sstmac::sw::app {
   bool print_mpi_calls_;
   bool print_trace_events_;
   bool print_time_deltas_;
+  bool print_unknown_callback_;
   std::string metafile_;
 };
 

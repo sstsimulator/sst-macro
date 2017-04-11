@@ -76,6 +76,7 @@ OTF2TraceReplayApp::OTF2TraceReplayApp(sprockit::sim_parameters* params,
   print_mpi_calls_ = params->get_optional_bool_param("otf2_print_mpi_calls", false);
   print_trace_events_ = params->get_optional_bool_param("otf2_print_trace_events", false);
   print_time_deltas_ = params->get_optional_bool_param("otf2_print_time_deltas", false);
+  print_unknown_callback_ = params->get_optional_bool_param("otf2_print_unknown_callback", false);
 }
 
 void
@@ -266,5 +267,8 @@ bool OTF2TraceReplayApp::PrintMpiCalls() {
 }
 bool OTF2TraceReplayApp::PrintTimeDeltas() {
 	return print_time_deltas_;
+}
+bool OTF2TraceReplayApp::PrintUnknownCallback() {
+	return print_unknown_callback_;
 }
 
