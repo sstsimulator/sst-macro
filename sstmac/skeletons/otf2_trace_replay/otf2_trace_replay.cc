@@ -106,12 +106,12 @@ CallQueue& OTF2TraceReplayApp::GetCallQueue() {
 
 // Indicate that we are starting an MPI call.
 void OTF2TraceReplayApp::StartMpi(const sstmac::timestamp wall) {
-	// Time not initialized
-	if (compute_time == sstmac::timestamp::zero) return;
+  // Time not initialized
+  if (compute_time == sstmac::timestamp::zero) return;
 
-	if (PrintTimeDeltas()) {
+  if (PrintTimeDeltas()) {
     cout << "\u0394T " << (wall-compute_time).sec() << " seconds"<< endl;
-	}
+  }
 
   compute((timescale_ * (wall - compute_time)));
 }
