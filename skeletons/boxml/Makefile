@@ -36,7 +36,7 @@ $(LIBTARGET): $(OBJ)
 	ar rvs $(LIBTARGET) $(OBJ)
 
 %.o: %.cc containers.h boxml.h
-	SSTMAC_REMOVE_GLOBALS=0 $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
+	SSTMAC_SRC2SRC=0 $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
 clean: 
 	rm -f $(TARGET) $(OBJ) 

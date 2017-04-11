@@ -99,6 +99,10 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
     return foundCMain_;
   }
 
+  const std::string& getAppName() const {
+    return mainName_;
+  }
+
  private:
   bool shouldVisitDecl(clang::VarDecl* D);
 
@@ -126,6 +130,7 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
   int insideClass_;
   int insideFxn_;
   bool foundCMain_;
+  std::string mainName_;
   bool keepGlobals_;
   bool noSkeletonize_;
   std::set<std::string> validHeaders_;

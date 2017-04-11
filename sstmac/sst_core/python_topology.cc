@@ -80,8 +80,12 @@ static PyMethodDef system_methods[] = {
 
 
 static PyTypeObject SystemType = {
+#if PY_MAJOR_VERSION >= 3
+    PyVarObject_HEAD_INIT(NULL, 0)
+#else
     PyObject_HEAD_INIT(NULL)
     0,                         /* ob_size */
+#endif
     "sst.macro.Topology",      /* tp_name */
     sizeof(SystemPy_t),        /* tp_basicsize */
     0,                         /* tp_itemsize */
@@ -268,11 +272,15 @@ sys_init(SystemPy_t* self, PyObject* args, PyObject* kwargs)
   return 0;
 }
 
+#ifndef Py_TYPE
+ #define Py_TYPE(ob) (((PyObject*)(ob))->ob_type)
+#endif
+
 static void
 sys_dealloc(SystemPy_t* self)
 {
   if(self->params) delete self->params;
-  self->ob_type->tp_free((PyObject*)self);
+  Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 static PyObject*

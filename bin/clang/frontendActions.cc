@@ -4,6 +4,7 @@
 #include <sstream>
 #include <fstream>
 #include <iostream>
+#include <sstmac/common/sstmac_config.h>
 
 using namespace clang;
 using namespace clang::driver;
@@ -128,14 +129,37 @@ ReplaceAction::EndSourceFileAction()
     ofs << "#include <sstmac/software/process/global.h>\n\n";
     globalNs_.genSSTCode(ofs,"");
     if (visitor_.hasCStyleMain()){
-      const char* appname = getenv("SSTMAC_APP_NAME");
-      if (appname == nullptr){
-        llvm::errs() << "Cannot refactor main function unless SSTMAC_APP_NAME environment var is defined\n";
-        exit(EXIT_FAILURE);
-      }
+      std::string appname = visitor_.getAppName();
+#if SSTMAC_INTEGRATED_SST_CORE
+      ofs << "#include <sstmac/replacements/sstCoreElement.h>\n\n";
+      ofs << "#include <Python.h>\n\n";
+      ofs << "static PyMethodDef sst_macro_null_methods[] = { "
+        "{ NULL, NULL, 0, NULL }"
+    "}; "
+    "static inline void* gen_sst_macro_integrated_pymodule(void){"
+      "PyObject* module = Py_InitModule(\"sst." << appname << "\", sst_macro_null_methods);"
+      "return module;"
+    "}"
+    "static const SST::ElementInfoComponent macro_components[] = {"
+    "    {NULL, NULL, NULL, NULL}"
+    "};"
+    "extern \"C\" {"
+    "SST::ElementLibraryInfo " << appname << "_eli = {"
+        "\"" << appname << "\","
+        "\"SST Macroscale skeleton app\","
+        "macro_components,"
+        "NULL,"
+        "NULL,"
+        "NULL,"
+        "NULL,"
+        "NULL,"
+        "gen_sst_macro_integrated_pymodule"
+    "}; }";
+#endif
+
       ofs << "int user_skeleton_main_init_fxn(const char* name, int (*foo)(int,char**));\n"
          << "extern \"C\" int sstmac_user_main_" << appname << "(int argc, char** argv);\n"
-         << "static int dont_ignore_this = user_skeleton_main_init_fxn("
+         << "int " << appname << "_sstmac_initer = user_skeleton_main_init_fxn("
            << "\"" << appname << "\",sstmac_user_main_" << appname << ");\n\n";
     }
   } else {

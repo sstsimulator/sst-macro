@@ -89,7 +89,7 @@ class graph_viz :
 
    public:
     trace(graph_viz* parent, void* fxn) :
-      parent_(parent), fxn_(fxn), self_(0)
+      self_(0), fxn_(fxn), parent_(parent)
     {
     }
 

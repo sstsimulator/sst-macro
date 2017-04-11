@@ -295,13 +295,25 @@ static PyMethodDef sst_macro_integrated_methods[] = {
   { NULL, NULL, 0, NULL }
 };
 
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef py3sstDef {
+  PyModuleDef_HEAD_INIT,
+  "sstmac", "", -1,
+  sst_macro_integrated_methods
+};
+#endif
+
 static void* gen_sst_macro_integrated_pymodule(void)
 {
   static_assert( (sizeof(fxns)/sizeof(myMethod)) ==
       (((sizeof(sst_macro_integrated_methods))/sizeof(PyMethodDef)) - 1),
       "The size of the functions does not match");
 
+#if PY_MAJOR_VERSION < 3
   PyObject* tmpModule = Py_InitModule("sstmac", sst_macro_integrated_methods);
+#else
+  PyObject* tmpModule = PyModule_Create(&py3sstDef);
+#endif
   PyObject *code = Py_CompileString(py_sstmacro, "sstmacro", Py_file_input);
 #pragma GCC diagnostic ignored "-Wwrite-strings"
   PyObject* module = PyImport_ExecCodeModule("sst.macro", code);

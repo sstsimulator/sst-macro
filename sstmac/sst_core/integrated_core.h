@@ -14,6 +14,13 @@
 
 #include <Python.h>
 
+#if PY_MAJOR_VERSION >= 3
+#define PyString_FromString PyUnicode_FromString
+#define PyString_AsString(x) PyBytes_AS_STRING(PyUnicode_AsASCIIString(x))
+#define PyInt_FromLong PyLong_FromLong
+#define PyInt_AsLong PyLong_AsLong
+#endif
+
 namespace sstmac {
 
 /**

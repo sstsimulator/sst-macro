@@ -1,4 +1,7 @@
+#ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
+#endif
+
 #include <inttypes.h>
 #include <sstmac/hardware/pisces/pisces_stats.h>
 #include <sstmac/hardware/topology/structured_topology.h>

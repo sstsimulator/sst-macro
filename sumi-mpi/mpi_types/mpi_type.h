@@ -26,8 +26,8 @@
 namespace sumi {
 
 
-class pairdata;
-class vecdata;
+struct pairdata;
+struct vecdata;
 struct inddata;
 
 }

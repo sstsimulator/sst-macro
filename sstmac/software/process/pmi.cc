@@ -32,7 +32,7 @@ process_manager::~process_manager()
 void
 process_manager::kill_node()
 {
-#if !SSTMAC_INTEGRATED_CORE
+#if !SSTMAC_INTEGRATED_SST_CORE
   my_os_->kill_node();
 #else
   spkt_throw(sprockit::unimplemented_error,
