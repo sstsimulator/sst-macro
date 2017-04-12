@@ -316,7 +316,6 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     else: #all in one
       cxxCmdArr = [
         compiler, 
-        args, 
         extraCppFlagsStr, 
         cppflags, 
         compilerFlagsStr, 
