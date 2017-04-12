@@ -10,7 +10,7 @@ As noted in the introduction, \sstmacro is primarily intended to be an on-line s
 Although DUMPI is automatically included as a subproject in the \sstmacro download, trace collection can be easier if DUMPI is built independently from \sstmacro.  The code can be downloaded from \url{https://bitbucket.org/sst-ca/dumpi}. If downloaded through Mercurial, one must initialize the build system and create the configure script.
 
 \begin{ShellCmd}
-dumpi> ./bootstraps.h
+dumpi> ./bootstrap.sh
 \end{ShellCmd}
 
 DUMPI must be built with an MPI compiler.
@@ -30,7 +30,7 @@ your_project/build> ../configure CC=mpicc CXX=mpicxx \
                                   LDFLAGS=``-L$DUMPI_PATH/lib -ldumpi"
 \end{ShellCmd}
 
-\subsubsection{Trace Collection}
+\subsection{Trace Collection}
 \label{subsec:dumpi:tracecollection}
 DUMPI works by overriding \emph{weak symbols} in the MPI library.
 In all MPI libraries, functions such as \inlinecode{MPI_Send} are only weak symbol wrappers to the actual function \inlinecode{PMPI_Send}.
@@ -104,7 +104,7 @@ subversion=1
 subsubversion=0
 \end{ViFile}
 
-\subsubsection{Trace Replay}
+\subsection{Trace Replay}
 \label{subsec:dumpi:tracereplay}
 It is often useful to validate the correctness of a trace.  Sometimes there can be problems with trace collection. 
 There are also a few nooks and crannies of the MPI standard left unimplemented.
