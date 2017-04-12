@@ -151,14 +151,13 @@ logp_switch::handle(event* ev)
   if (msg->is_bcast() && local_dst){
     sw::start_app_event* lev = safe_cast(sw::start_app_event, msg);
     sw::task_mapping::ptr mapping = lev->mapping();
-    node_id src_node = msg->fromaddr();
     int num_ranks = mapping->num_ranks();
     for (int i=0; i < num_ranks; ++i){
       node_id dst_node = mapping->rank_to_node(i);
       bool local_dst = nics_[dst_node];
       if (local_dst){
-        sw::start_app_event* new_lev = lev->clone(i, src_node, dst_node);
-        incoming_message(new_lev, src, dst, local_src);
+        sw::start_app_event* new_lev = lev->clone(i, src, dst_node);
+        incoming_message(new_lev, src, dst_node, local_src);
       }
     }
   } else if (local_dst){
