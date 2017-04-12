@@ -73,7 +73,6 @@ class network_switch :
   virtual int
   queue_length(int port) const = 0;
 
-
  protected:
   network_switch(
     sprockit::sim_parameters* params,

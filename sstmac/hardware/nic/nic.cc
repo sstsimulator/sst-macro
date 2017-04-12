@@ -187,8 +187,8 @@ nic::recv_message(message* msg)
     }
     default: {
       spkt_throw_printf(sprockit::value_error,
-        "nic::handle: invalid message type %s",
-        network_message::tostr(netmsg->type()));
+        "nic::handle: invalid message type %s: %s",
+        network_message::tostr(netmsg->type()), netmsg->to_string().c_str());
     }
   }
 }

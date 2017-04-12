@@ -69,6 +69,8 @@ class launch_event :
     return ty_;
   }
 
+  network_message* clone_injection_ack() const override;
+
  protected:
   launch_event(type_t ty, app_id aid, task_id tid,
                const std::string& unique_name,
@@ -93,7 +95,7 @@ class launch_event :
 };
 
 class start_app_event : public launch_event {
-
+  ImplementSerializable(start_app_event)
  public:
   start_app_event(app_id aid,
      const std::string& unique_name,
@@ -103,8 +105,8 @@ class start_app_event : public launch_event {
      node_id from,
      const sprockit::sim_parameters* app_params) :
     launch_event(Start, aid, tid, unique_name, to, from, "launcher"),
-    app_params_(app_params),
-    mapping_(mapping)
+    mapping_(mapping),
+    app_params_(app_params)
   {
   }
 
@@ -114,7 +116,9 @@ class start_app_event : public launch_event {
     return true;
   }
 
-  start_app_event() : app_params_(nullptr) {} //for serialization
+  std::string to_string() const override;
+
+  start_app_event(){} //for serialization
 
   void serialize_order(serializer& ser) override;
 
@@ -141,6 +145,7 @@ class start_app_event : public launch_event {
 
 class job_stop_event : public launch_event
 {
+  ImplementSerializable(start_app_event)
  public:
   job_stop_event(app_id aid,
      const std::string& unique_name,
@@ -149,6 +154,8 @@ class job_stop_event : public launch_event
     launch_event(Stop, aid, 0, unique_name, to, from, "job_launcher")
   {
   }
+
+  std::string to_string() const override;
 };
 
 }

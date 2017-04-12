@@ -5,7 +5,6 @@
 #include <sprockit/errors.h>
 
 namespace sprockit {
-namespace pvt {
 
 class ser_buffer_overrun : public spkt_error {
  public:
@@ -14,6 +13,9 @@ class ser_buffer_overrun : public spkt_error {
   {
   }
 };
+
+namespace pvt {
+
 
 class ser_buffer_accessor {
  public:

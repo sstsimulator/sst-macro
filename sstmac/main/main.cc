@@ -97,7 +97,6 @@ main(int argc, char **argv)
               << ": caught unknown exception while setting up simulation\n";
     return 1;
   }
-
   return 0;
 }
 #endif // !SSTMAC_INTEGRATED_SST_CORE

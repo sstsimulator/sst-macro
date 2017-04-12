@@ -135,7 +135,7 @@ class routable_pisces :
 pisces_payload*
 msg(long nid)
 {
-  network_message* new_msg = new network_message;
+  network_message* new_msg = nullptr;//new network_message;
   new_msg->set_toaddr(naddr(nid));
   new_msg->set_flow_id(hw::network_id(0,0));
   return new routable_pisces(new_msg, 0, 0);

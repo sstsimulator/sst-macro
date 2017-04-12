@@ -304,6 +304,14 @@ class pisces_credit :
     return port_;
   }
 
+  bool is_payload() const override {
+    return false;
+  }
+
+  bool is_ack() const override {
+    return true;
+  }
+
   int
   num_credits() const {
     return num_credits_;

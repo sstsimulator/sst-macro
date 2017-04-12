@@ -132,10 +132,6 @@ pisces_switch::output_buffer(sprockit::sim_parameters* params,
     out_buffers_.resize(top_->max_num_ports());
   }
   if (!out_buffers_[src_outport]){
-    //debug_printf(sprockit::dbg::pisces | sprockit::dbg::pisces_config,
-    //  "Switch %d: making buffer with bw=%10.6e on port=%d with buffer size %d going into buffer size %d",
-    //  int(my_addr_), total_link_bw, port, src_buffer_size, dst_buffer_size);
-
     params->add_param_override("num_vc", router_->max_num_vc());
     pisces_network_buffer* out_buffer = new pisces_network_buffer(params, this);
 

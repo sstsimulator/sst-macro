@@ -224,6 +224,7 @@ task_mapping::serialize_order(app_id aid, sprockit::serializer &ser)
     ser & num_nodes;
     ser & mapping->rank_to_node_indexing_;
   }
+  return mapping;
 }
 
 task_mapping::ptr

@@ -57,8 +57,14 @@ app_launcher::start()
   service::start();
   if (!os_) {
     spkt_throw_printf(sprockit::value_error,
-                     "instantlaunch::start: OS hasn't been registered yet");
+                     "app_launcher::start: OS hasn't been registered yet");
   }
+}
+
+hw::network_message*
+launch_event::clone_injection_ack() const
+{
+  spkt_abort_printf("launch event should never be cloned for injection");
 }
 
 int
@@ -84,6 +90,18 @@ start_app_event::serialize_order(sprockit::serializer &ser)
     ser & paramStr;
   }
   mapping_ = task_mapping::serialize_order(aid_, ser);
+}
+
+std::string
+start_app_event::to_string() const
+{
+  return sprockit::printf("start_app_event: app=%d task=%d node=%d", aid_, tid(), toaddr());
+}
+
+std::string
+job_stop_event::to_string() const
+{
+  return sprockit::printf("job_stop_event: app=%d task=%d node=%d", aid_, tid(), fromaddr());
 }
 
 

@@ -33,8 +33,15 @@ class event :
  public serializable
 {
  public:
-  void
-  serialize_order(serializer& ser){}
+  void serialize_order(serializer& ser){}
+
+  virtual bool is_payload() const {
+    return true;
+  }
+
+  virtual bool is_ack() const {
+    return false;
+  }
 };
 #endif
 

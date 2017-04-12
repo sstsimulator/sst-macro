@@ -97,6 +97,7 @@ network_message::serialize_order(serializer& ser)
   ser & flow_id_;
   ser & bytes_;
   ser & type_;
+  ser & aid_;
   message::serialize_order(ser);
 }
 

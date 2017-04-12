@@ -106,6 +106,7 @@ class pisces_switch :
 #if !SSTMAC_INTEGRATED_SST_CORE
   link_handler* ack_handler_;
   link_handler* payload_handler_;
+  event_handler* pkt_handler_; //handles either type
 #endif
 
  private:

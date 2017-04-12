@@ -12,6 +12,7 @@
 #include <sstmac/backends/mpi/mpi_runtime.h>
 #include <cstring>
 #include <sprockit/keyword_registration.h>
+#include <iostream>
 
 RegisterKeywords(
 "mpi_max_num_requests",
@@ -22,6 +23,19 @@ RegisterKeywords(
 
 namespace sstmac {
 namespace mpi {
+
+void pair_reduce_function(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype)
+{
+  int* in = (int*) invec;
+  int* out = (int*) inoutvec;
+  int length = *len;
+  for (int i=0; i < length; ++i){
+    int* inpair = &in[2*i];
+    int* outpair = &out[2*i];
+    outpair[0] += inpair[0];
+    outpair[1] += inpair[1];
+  }
+}
 
 SpktRegister("mpi", parallel_runtime, mpi_runtime);
 
@@ -104,10 +118,12 @@ mpi_runtime::init_runtime_params(sprockit::sim_parameters* params)
   requests_ = new MPI_Request[max_num_requests_];
   total_num_sent_ = 0;
   parallel_runtime::init_runtime_params(params);
+
+  int rc = MPI_Op_create(pair_reduce_function, 1, &reduce_op_);
+  if (rc != MPI_SUCCESS) spkt_abort_printf("failed creating pair reduce function");
 }
 
 mpi_runtime::mpi_runtime(sprockit::sim_parameters* params) :
-  finalize_needed_(false),
   parallel_runtime(params,
   init_rank(params),
   init_size(params))
@@ -118,8 +134,8 @@ mpi_runtime::mpi_runtime(sprockit::sim_parameters* params) :
     array_of_ones_[i] = 1;
   }
 
-  num_sent_ = new int[nproc_];
-  ::memset(num_sent_, 0, nproc_ * sizeof(int));
+  num_sent_ = new int[2*nproc_];
+  ::memset(num_sent_, 0, 2*nproc_ * sizeof(int));
 }
 
 int
@@ -128,8 +144,6 @@ mpi_runtime::init_size(sprockit::sim_parameters* params)
   int inited;
   MPI_Initialized(&inited);
   if (!inited){
-    //nothing, fake it
-    finalize_needed_ = true;
     int argc = 1;
     char** argv = 0;
     int rc = MPI_Init(&argc, &argv);
@@ -147,8 +161,6 @@ mpi_runtime::init_rank(sprockit::sim_parameters* params)
   int inited;
   MPI_Initialized(&inited);
   if (!inited){
-    //nothing, fake it
-    finalize_needed_ = true;
     int argc = 1;
     char** argv = 0;
     int rc = MPI_Init(&argc, &argv);
@@ -223,7 +235,7 @@ mpi_runtime::do_merge_array(int tag)
     spkt_throw_printf(sprockit::value_error,
         "mpi_runtime::do_merge_array: invalid merge tag %d",
         tag);
-  }
+  }http://www.espn.com/
   merge_request& req = it->second;
   MPI_Allreduce(MPI_IN_PLACE, req.buffer, req.size, MPI_BYTE, MPI_BOR, MPI_COMM_WORLD);
   req.merged = true;
@@ -256,38 +268,35 @@ void
 mpi_runtime::do_send_recv_messages(std::vector<void*>& buffers)
 {
   int num_sent_to_me = 0;
+  int outdata[2];
   //reduce scatter the number of messages sent
-  MPI_Reduce_scatter(num_sent_, &num_sent_to_me, array_of_ones_, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Reduce_scatter(num_sent_, outdata, array_of_ones_, MPI_2INT, reduce_op_, MPI_COMM_WORLD);
+  num_sent_to_me = outdata[0];
   while (num_sent_to_me < 0){
     //ooooh, hey - people want to do collectives
     do_collective_merges(-1); //I don't have anything to do
-    MPI_Reduce_scatter(num_sent_, &num_sent_to_me, array_of_ones_, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Reduce_scatter(num_sent_, outdata, array_of_ones_, MPI_2INT, reduce_op_, MPI_COMM_WORLD);
+    num_sent_to_me = outdata[0];
   }
 
   buffers.resize(num_sent_to_me);
 
-  mpi_debug("receiving %d messages on epoch %d",
-    num_sent_to_me, epoch_);
-
-
+  int bytes_sent_to_me = outdata[1];
+  recv_buffer_.resize(bytes_sent_to_me);
+  mpi_debug("receiving %d messages of size %d on epoch %d", num_sent_to_me, bytes_sent_to_me, epoch_);
   for (int i=0; i < num_sent_to_me; ++i){
-    int reqidx = i + total_num_sent_;
-    if (reqidx >= max_num_requests_){
-      reallocate_requests();
-    }
-    MPI_Request* reqptr = &requests_[reqidx];
-    void* buffer = recv_buffer_pool_.pop();
-    MPI_Irecv(buffer, buf_size_, MPI_BYTE, MPI_ANY_SOURCE, epoch_, MPI_COMM_WORLD, reqptr);
+    MPI_Status stat;
+    void* buffer = recv_buffer_.ptr;
+    MPI_Recv(buffer, recv_buffer_.remaining, MPI_BYTE, MPI_ANY_SOURCE, epoch_, MPI_COMM_WORLD, &stat);
+    int count; MPI_Get_count(&stat, MPI_BYTE, &count);
+    recv_buffer_.shift(count);
     buffers[i] = buffer;
   }
 
+  mpi_debug("waiting on %d sends", total_num_sent_);
+  MPI_Waitall(total_num_sent_, requests_, MPI_STATUSES_IGNORE);
 
-  int total_pending_ops = num_sent_to_me + total_num_sent_;
-  mpi_debug("waiting on %d requests: %d recvs and %d sends",
-    total_pending_ops, num_sent_to_me, total_num_sent_);
-  MPI_Waitall(total_pending_ops, requests_, MPI_STATUSES_IGNORE);
-
-  ::memset(num_sent_, 0, nproc_ * sizeof(int));
+  ::memset(num_sent_, 0, nproc_ * 2 * sizeof(int));
   total_num_sent_ = 0;
   ++epoch_;
 }
@@ -314,7 +323,9 @@ mpi_runtime::do_send_message(int lp, void *buffer, int size)
         "mpi_runtime::do_send_message: sending buffer that is too large");
   }
 #endif
-  num_sent_[lp]++;
+  int* pairData = &num_sent_[2*lp];
+  pairData[0]++;
+  pairData[1] += size;
   if (total_num_sent_ == max_num_requests_){
     reallocate_requests();
   }
@@ -354,9 +365,7 @@ void
 mpi_runtime::finalize()
 {
   MPI_Barrier(MPI_COMM_WORLD);
-  if(finalize_needed_) {
-    MPI_Finalize();
-  }
+  MPI_Finalize();
 }
 
 }

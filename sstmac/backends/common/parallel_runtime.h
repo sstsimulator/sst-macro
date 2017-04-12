@@ -12,6 +12,7 @@
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sprockit/factories/factory.h>
 #include <sprockit/sim_parameters.h>
+#include <list>
 
 DeclareDebugSlot(parallel);
 
@@ -23,9 +24,48 @@ class parallel_runtime :
  public:
   virtual ~parallel_runtime();
 
-  struct incoming_msg {
-    switch_id sid;
-    void* buffer;
+  struct comm_buffer {
+    char* ptr;
+    size_t remaining;
+    size_t allocSize;
+    char* storage;
+    std::list<char*> expiredArrays;
+
+    comm_buffer() : storage(nullptr), ptr(nullptr) {}
+
+    void init(size_t size){
+      allocSize = size;
+      storage = new char[allocSize];
+      ptr = storage;
+      remaining = allocSize;
+    }
+
+    void resize(size_t size){
+      if (size <= allocSize) return;
+
+      expiredArrays.push_back(storage);
+      init(size);
+    }
+
+    void reset(){
+      for (char* old : expiredArrays){
+        delete[] old;
+      }
+      ptr = storage;
+      remaining = allocSize;
+    }
+
+    void grow(){
+      if (!ptr) spkt_abort_printf("comm_buffer cannot grow - no previous storage allocated");
+      expiredArrays.push_back(storage);
+      init(allocSize*2);
+    }
+
+    void shift(size_t size){
+      ptr += size;
+      remaining -= size;
+    }
+
   };
 
   static const int global_root;
@@ -146,9 +186,6 @@ class parallel_runtime :
   virtual bool
   release_merge_array(int tag) = 0;
 
-  void
-  free_recv_buffers(const std::vector<void*>& buffers);
-
   static parallel_runtime*
   static_runtime(sprockit::sim_parameters* params);
 
@@ -172,10 +209,8 @@ class parallel_runtime :
    int nproc_;
    int nthread_;
    int me_;
-   std::vector<message_buffer_cache> send_buffer_pools_;
-   message_buffer_cache recv_buffer_pool_;
-   typedef std::pair<int, void*> send_buf_t;
-   std::vector<std::vector<void*> > send_buffers_;
+   std::vector<comm_buffer> send_buffers_;
+   comm_buffer recv_buffer_;
    int buf_size_;
    partition* part_;
    static parallel_runtime* static_runtime_;
