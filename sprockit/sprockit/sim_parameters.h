@@ -117,6 +117,14 @@ class sim_parameters  {
 
   virtual ~sim_parameters();
 
+  bool public_scope() const {
+    return public_scope_;
+  }
+
+  void set_public_scope(bool flag){
+    public_scope_ = flag;
+  }
+
   void
   remove_param(const std::string &key);
 
@@ -185,20 +193,19 @@ class sim_parameters  {
   void
   copy_optional_param(const std::string& oldname, const std::string& newname);
 
-  void
-  add_param_override(const std::string& key, const std::string& val);
+  void add_param_override(const std::string& key, const std::string& val);
 
-  void
-  add_param_override(const std::string &key, double val);
+  void add_param_override(const std::string &key, double val);
 
-  void
-  add_param_override(const std::string& key, double val, const char* units);
+  void add_param_override(const std::string& key, double val, const char* units);
 
-  void
-  add_param_override(const std::string& key, int val);
+  void add_param_override(const std::string& key, int val);
 
-  void
-  combine_into(sim_parameters* sp,
+  void add_param_override_recursive(const std::string& key, int val);
+
+  void add_param_override_recursive(const std::string& key, const std::string& val);
+
+  void combine_into(sim_parameters* sp,
                bool fail_on_existing = false,
                bool override_existing = true,
                bool mark_as_read = true);
@@ -496,6 +503,8 @@ class sim_parameters  {
   key_value_map params_;
 
   uint64_t current_id_;
+
+  bool public_scope_;
 
   /**
    * @brief _get_namespace Get a parameter namespace. If the namespace does not exist in the current scope locally,

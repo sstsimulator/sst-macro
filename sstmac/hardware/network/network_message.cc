@@ -91,6 +91,7 @@ network_message::tostr(type_t ty)
 void
 network_message::serialize_order(serializer& ser)
 {
+  message::serialize_order(ser);
   ser & needs_ack_;
   ser & toaddr_;
   ser & fromaddr_;
@@ -98,7 +99,6 @@ network_message::serialize_order(serializer& ser)
   ser & bytes_;
   ser & type_;
   ser & aid_;
-  message::serialize_order(ser);
 }
 
 bool

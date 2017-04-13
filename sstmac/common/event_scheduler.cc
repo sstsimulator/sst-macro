@@ -39,6 +39,8 @@ event_component::cancel_all_messages()
 #endif
 }
 
+#define sending(x) //printf("Sending %u:%s at %s:%d\n", x->cls_id(), sprockit::to_string(ev).c_str(), __FILE__, __LINE__)
+
 #if SSTMAC_INTEGRATED_SST_CORE
 SST::TimeConverter* event_scheduler::time_converter_ = nullptr;
 
@@ -104,6 +106,7 @@ event_scheduler::send_to_link(event_handler* handler, event *ev)
   SST::Link* link = handler->link();
   if (link){
     //we ignore the latency here
+    sending(ev);
     link->send(0, time_converter_, ev);
   } else {
     //oh - there is no link, you lied to me
@@ -146,6 +149,7 @@ event_scheduler::send_to_link(timestamp enter, timestamp lat,
   SST::Link* link = handler->link();
   if (link){
     //we ignore the latency here
+    sending(ev);
     link->send(extra_delay(enter), time_converter_, ev);
   } else {
     //oh - there is no link, you lied to me
@@ -160,6 +164,7 @@ event_scheduler::send_delayed_to_link(timestamp extra_delay, timestamp lat,
   SST::Link* link = handler->link();
   if (link){
     //we ignore the latency here
+    sending(ev);
     link->send(SST::SimTime_t(extra_delay.ticks_int64()), time_converter_, ev);
   } else {
     //oh - there is no link, you lied to me
@@ -174,6 +179,7 @@ event_scheduler::send_delayed_to_link(timestamp extra_delay,
   SST::Link* link = handler->link();
   if (link){
     //we ignore the latency here
+    sending(ev);
     link->send(SST::SimTime_t(extra_delay.ticks_int64()), time_converter_, ev);
   } else {
     //oh - there is no link, you lied to me

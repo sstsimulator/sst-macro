@@ -42,9 +42,9 @@ class launch_event :
 
   void
   serialize_order(serializer& ser) override {
+    hw::network_message::serialize_order(ser);
     timed_interface::serialize_order(ser);
     library_interface::serialize_order(ser);
-    hw::network_message::serialize_order(ser);
     ser & ty_;
     ser & tid_;
   }
@@ -145,7 +145,7 @@ class start_app_event : public launch_event {
 
 class job_stop_event : public launch_event
 {
-  ImplementSerializable(start_app_event)
+  ImplementSerializable(job_stop_event)
  public:
   job_stop_event(app_id aid,
      const std::string& unique_name,
@@ -154,6 +154,8 @@ class job_stop_event : public launch_event
     launch_event(Stop, aid, 0, unique_name, to, from, "job_launcher")
   {
   }
+
+  job_stop_event(){} //for serialization
 
   std::string to_string() const override;
 };

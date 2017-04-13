@@ -82,6 +82,7 @@ main(int argc, char **argv)
 
   try {
     sprockit::sim_parameters params;
+    params.set_public_scope(false); //do not expose top-level params to subspaces
     bool params_only = false;
     sstmac::try_main(&params, argc, argv, params_only);
   }

@@ -95,7 +95,7 @@ parse_opts(int argc, char **argv, opts &oo)
         activate_debugs(optarg);
         break;
       case 'n' : {
-        oo.params->add_param_override("app1.launch_cmd", sprockit::printf("aprun -n %s -N 1", optarg));
+        oo.params->add_param_override("node.app1.launch_cmd", sprockit::printf("aprun -n %s -N 1", optarg));
         break;
       }
       case 'f':
@@ -156,7 +156,7 @@ parse_opts(int argc, char **argv, opts &oo)
       machine_configured = true;
     }
     need_config_file = false;
-    oo.params->add_param("app1.name", "parsedumpi");
+    oo.params->add_param("node.app1.name", "parsedumpi");
   }
 
   if (oo.configfile == "" && need_config_file){
@@ -186,7 +186,7 @@ parse_opts(int argc, char **argv, opts &oo)
   }
 
   if (run_ping_all){
-    oo.params->add_param("app1.name", "mpi_ping_all");
+    oo.params->add_param("node.app1.name", "mpi_ping_all");
   }
 
   if (debugflags){
@@ -202,7 +202,7 @@ parse_opts(int argc, char **argv, opts &oo)
     oo.configfile = "mpi_test_all.ini";
   }
   if (printnodes) {
-    oo.params->add_param_override("app1.name", "mpi_printnodes");
+    oo.params->add_param_override("node.app1.name", "mpi_printnodes");
   }
 
   if (lowrestimer){

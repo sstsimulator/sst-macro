@@ -203,13 +203,15 @@ param_assign::setByteLength(long x, const char* units)
 
 sim_parameters::sim_parameters() :
   parent_(nullptr),
-  extra_data_(nullptr)
+  extra_data_(nullptr),
+  public_scope_(true)
 {
 }
 
 sim_parameters::sim_parameters(const sim_parameters *params) :
   extra_data_(nullptr),
   parent_(nullptr),
+  public_scope_(true),
   namespace_(params->namespace_)
 {
   params_ = params->params_;
@@ -222,6 +224,7 @@ sim_parameters::sim_parameters(const key_value_map& p) :
   params_(p),
   extra_data_(nullptr),
   parent_(nullptr),
+  public_scope_(true),
   namespace_("global")
 {
 }
@@ -229,6 +232,7 @@ sim_parameters::sim_parameters(const key_value_map& p) :
 sim_parameters::sim_parameters(const std::string& filename) :
   parent_(nullptr),
   extra_data_(nullptr),
+  public_scope_(true),
   namespace_("global")
 {
   //don't fail, but don't overwrite anything
@@ -274,11 +278,10 @@ sim_parameters::_get_namespace(const std::string &ns)
   KeywordRegistration::validate_namespace(ns);
   auto it = subspaces_.find(ns);
   if (it == subspaces_.end()){
-    if (parent_){
+    if (parent_ && parent_->public_scope()){
       return parent_->_get_namespace(ns);
     } else {
       return nullptr;
-
     }
   }
   return it->second;
@@ -314,6 +317,22 @@ void
 sim_parameters::add_param_override(const std::string &key, int val)
 {
   add_param_override(key, printf("%d", val));
+}
+
+void
+sim_parameters::add_param_override_recursive(const std::string &key, int val)
+{
+  std::string valStr = printf("%d", val);
+  add_param_override_recursive(key, valStr);
+}
+
+void
+sim_parameters::add_param_override_recursive(const std::string &key, const std::string& val)
+{
+  add_param_override(key,val);
+  for (auto& pair : subspaces_){
+    pair.second->add_param_override_recursive(key,val);
+  }
 }
 
 void
@@ -1114,7 +1133,10 @@ sim_parameters::get_param(std::string& inout, const std::string& key)
 {
   bool found = get_scoped_param(inout, key);
   if (!found && parent_){
-    return parent_->get_param(inout, key);
+    //never return anything from the top-level global namespace - no, don't
+    if (parent_ && parent_->public_scope()){
+      return parent_->get_param(inout, key);
+    }
   } else {
     return found;
   }
@@ -1158,7 +1180,10 @@ sim_parameters::has_param(const std::string& key) const
 {
   bool has_here = has_scoped_param(key);
   if (!has_here && parent_){
-    return parent_->has_param(key);
+    //never return anything from the top-level global namespace - no, don't
+    if (parent_ && parent_->public_scope()){
+      return parent_->has_param(key);
+    }
   } else {
     return has_here;
   }

@@ -64,7 +64,7 @@ pisces_abstract_switch::pisces_abstract_switch(
                                              buf_params, this);
 
   sprockit::sim_parameters* rtr_params = params->get_optional_namespace("router");
-  rtr_params->add_param_override("id", int(my_addr_));
+  rtr_params->add_param_override_recursive("id", int(my_addr_));
   router_ = router_factory::get_param("name", rtr_params, top_, this);
 
   sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");

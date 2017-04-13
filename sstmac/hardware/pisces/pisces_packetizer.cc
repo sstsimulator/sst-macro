@@ -48,11 +48,10 @@ pisces_packetizer::pisces_packetizer(sprockit::sim_parameters* params,
 void
 pisces_packetizer::init(sprockit::sim_parameters* params, event_scheduler* parent)
 {
-  sprockit::sim_parameters* inj_params = params->get_optional_namespace("injection");
-  pisces_sender::configure_payload_port_latency(inj_params);
-  inj_buffer_ = new pisces_injection_buffer(inj_params, parent);
+  pisces_sender::configure_payload_port_latency(params);
+  inj_buffer_ = new pisces_injection_buffer(params, parent);
   inj_stats_ = packet_stats_callback_factory::
-                get_optional_param("stats", "null", inj_params, parent);
+                get_optional_param("stats", "null", params, parent);
   inj_buffer_->set_stat_collector(inj_stats_);
 
   sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");

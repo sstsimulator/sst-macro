@@ -180,8 +180,8 @@ logp_switch::handle(event* ev)
   node_id src = msg->fromaddr();
   bool local_dst = nics_[dst];
 
-  switch_debug("handling message %d(%p)->%d(%p) of size %ld: %s",
-               src, nics_[src], dst, nics_[dst], msg->byte_length(), 
+  switch_debug("handling message %d->%d of size %ld: %s",
+               src, dst, msg->byte_length(),
                msg->to_string().c_str());
 
   if (msg->is_bcast()){

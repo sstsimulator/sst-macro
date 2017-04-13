@@ -356,7 +356,7 @@ tapered_fat_tree::configure_individual_port_params(switch_id src,
                                   sprockit::sim_parameters *switch_params) const
 {
   sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
-  int buffer_size = switch_params->get_int_param("buffer_size");
+  int buffer_size = link_params->get_int_param("buffer_size");
   double bw = link_params->get_bandwidth_param("bandwidth");
   double taper = link_params->get_optional_double_param("core_taper",1.0);
   int taperedBufSize = buffer_size * agg_bw_multiplier_ * taper;
