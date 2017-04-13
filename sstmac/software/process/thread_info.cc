@@ -23,9 +23,13 @@ thread_info::register_user_space_virtual_thread(int phys_thread_id, void *stack,
   }
 
   //essentially treat this as thread-local storage
-  int* tls = (int*) stack;
-  tls[TLS_THREAD_ID] = phys_thread_id;
-  tls[TLS_SANITY_CHECK] = tls_sanity_check;
+  char* tls = (char*) stack;
+  int* thr_id_ptr = (int*) &tls[TLS_THREAD_ID];
+  *thr_id_ptr = phys_thread_id;
+
+  int* sanity_ptr = (int*) &tls[TLS_SANITY_CHECK];
+  *sanity_ptr = tls_sanity_check;
+
   //this is dirty - so dirty, but it works
   void** globalPtr = (void**) &tls[TLS_GLOBAL_MAP];
   *globalPtr = globalsMap;

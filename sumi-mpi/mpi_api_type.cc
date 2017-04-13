@@ -90,7 +90,6 @@ struct ldcomplex {
 void
 mpi_api::commit_builtin_types()
 {
-
   sstmac::sw::api_lock();
 
   bool need_init = !mpi_type::mpi_null->committed();

@@ -371,6 +371,9 @@ event_scheduler::schedule(timestamp t,
   else {
     event_queue_entry* qev = new handler_event_queue_entry(ev, handler, event_location());
 #if SSTMAC_USE_MULTITHREAD
+    if(handler->thread_id() == -1){
+      std::cout << "null=" << (void*)handler << " " << handler->to_string() << std::endl;
+    }
     multithread_schedule(thread_id(), handler->thread_id(), t, qev);
 #else
     eventman_->schedule(t, (*seqnum_)++, qev);

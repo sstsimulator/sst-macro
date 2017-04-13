@@ -266,8 +266,11 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
   logp_switch* local_logp_switch = safe_cast(logp_switch,
                                          logp_overlay_switches_[my_rank]);
 
+  int local_sw_idx = 0;
   for (int i=0; i < num_switches_; ++i){
     switch_id sid(i);
+    int thread = partition_->thread_for_local_switch(local_sw_idx);
+    event_manager* thread_mgr = mgr->ev_man_for_thread(thread);
     int target_rank = partition_->lpid_for_switch(sid);
     std::vector<topology::injection_port> nodes;
     topology_->nodes_connected_to_injection_switch(sid, nodes);
@@ -283,7 +286,7 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
         //local node - actually build it
         node_params->add_param_override("id", int(nid));
         node* nd = node_factory::get_optional_param("model", "simple", node_params,
-                                                    nid, mgr);
+                                                    nid, thread_mgr);
         nic* the_nic = nd->get_nic();
         nodes_[nid] = nd;
 
@@ -336,6 +339,9 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
           logp_overlay_switches_[target_rank]->payload_handler(port));
       }
     }
+    if (my_rank == target_rank){
+      ++local_sw_idx;
+    }
   }
 }
 
@@ -349,6 +355,7 @@ interconnect::build_switches(sprockit::sim_parameters* switch_params,
   int my_rank = rt_->me();
   bool all_switches_same = topology_->uniform_switches();
   switch_id num_switch_ids = topology_->max_switch_id();
+  int local_sw_idx = 0;
   for (switch_id i=0; i < num_switch_ids; ++i){
     if (!topology_->switch_id_slot_filled(i))
       continue; //don't build
@@ -357,8 +364,11 @@ interconnect::build_switches(sprockit::sim_parameters* switch_params,
     if (partition_->lpid_for_switch(i) == my_rank){
       if (!all_switches_same)
         topology_->configure_nonuniform_switch_params(i, switch_params);
+      int thread = partition_->thread_for_local_switch(local_sw_idx);
+      event_manager* thread_mgr = mgr->ev_man_for_thread(thread);
       switches_[i] = network_switch_factory::get_param("model",
-                      switch_params, i, mgr);
+                      switch_params, i, thread_mgr);
+      ++local_sw_idx;
     } else {
       switches_[i] = new dist_dummy_switch(switch_params, i, mgr, device_id::router);
     }

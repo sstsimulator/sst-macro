@@ -126,6 +126,7 @@ multithreaded_event_container::multithreaded_event_container(
 
   send_recv_barrier_.init(nthread_);
   vote_barrier_.init(nthread_);
+  final_time_barrier_.init(nthread_);
 
   subthreads_.resize(nthread_);
   for (int i=1; i < nthread_; ++i){
@@ -243,12 +244,13 @@ timestamp
 multithreaded_event_container::time_vote_barrier(int thread_id, timestamp time, vote_type_t ty)
 {
   int64_t ticks = time.ticks_int64();
-  //std::cout << sprockit::printf("Thread %d epoch %d: voting for t=%lld\n",
-  //  thread_id, epoch_, ticks);
-  int64_t final_vote = vote_barrier_.vote(thread_id, ticks, ty, &vote_functor_);
+  int64_t final_vote;
+  if (ty == vote_type_t::max){
+    final_vote = final_time_barrier_.vote(thread_id, ticks, ty, nullptr);
+  } else {
+    final_vote = vote_barrier_.vote(thread_id, ticks, ty, &vote_functor_);
+  }
   timestamp newtime = timestamp(final_vote, timestamp::exact);
-  //std::cout << sprockit::printf("Thread %d epoch %d: received t=%lld\n",
-  //  thread_id, epoch_, newtime.ticks());
   return newtime;
 }
 
@@ -296,7 +298,7 @@ timestamp
 multithreaded_event_container::vote_next_round(timestamp my_time, vote_type_t ty)
 {
   debug_printf(sprockit::dbg::event_manager | sprockit::dbg::event_manager_time_vote | sprockit::dbg::parallel,
-    "Rank %d thread barrier to start vote on thread %d, epoch %d\n",
+    "Rank %d thread barrier to start vote on thread %d, epoch %d",
     rt_->me(), thread_id(), epoch_);
 
   return time_vote_barrier(thread_id_, my_time, ty);

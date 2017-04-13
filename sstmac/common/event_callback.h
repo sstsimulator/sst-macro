@@ -35,8 +35,8 @@ class member_fxn_handler :
   virtual ~member_fxn_handler(){}
 
  protected:
-  member_fxn_handler(device_id id) :
-    event_handler(id)
+  member_fxn_handler(device_id id, int thread_id) :
+    event_handler(id, thread_id)
   {
   }
 };
@@ -63,7 +63,7 @@ class member_fxn_handler_impl :
     params_(args...),
     obj_(obj),
     fxn_(fxn),
-    member_fxn_handler(id)
+    member_fxn_handler(id,obj->thread_id())
   {
   }
 

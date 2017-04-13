@@ -196,7 +196,7 @@ clock_cycle_event_map::do_next_event()
 
 #if DEBUG_DETERMINISM
   std::ofstream*& f = outs[ev->event_location()];
-  if (f == 0){
+  if (f == nullptr){
     char fname[64];
     sprintf(fname, "events.%d.out", int(ev->event_location().location));
     f = new std::ofstream(fname);

@@ -199,12 +199,16 @@ exclusive_job_launcher::stop_event_received(job_stop_event *ev)
   }
 }
 
+static thread_lock lock;
+
 task_mapping::ptr
 task_mapping::serialize_order(app_id aid, sprockit::serializer &ser)
 {
+  lock.lock();
   task_mapping::ptr& mapping = app_ids_launched_[aid];
   if (ser.mode() == ser.UNPACK){
     if (mapping){
+      lock.unlock();
       return mapping;
     } else {
       int num_nodes;
@@ -224,6 +228,7 @@ task_mapping::serialize_order(app_id aid, sprockit::serializer &ser)
     ser & num_nodes;
     ser & mapping->rank_to_node_indexing_;
   }
+  lock.unlock();
   return mapping;
 }
 
@@ -250,15 +255,16 @@ task_mapping::global_mapping(const std::string& name)
 void
 task_mapping::add_global_mapping(app_id aid, const std::string &unique_name, const task_mapping::ptr &mapping)
 {
+  lock.lock();
   app_ids_launched_[aid] = mapping;
   app_names_launched_[unique_name] = mapping;
   local_refcounts_[aid]++;
+  lock.unlock();
 }
 
 void
 task_mapping::remove_global_mapping(app_id aid, const std::string& name)
 {
-  static thread_lock lock;
   lock.lock();
   auto iter = local_refcounts_.find(aid);
   int& refcount = iter->second;
