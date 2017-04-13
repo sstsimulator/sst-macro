@@ -7,7 +7,7 @@ OTF2 is a general purpose trace format with specialized callbacks for the MPI AP
 \label{subset:otf:build}
 \subsubsection{Spack}
 \begin{ViFile}
-spack install scorep -shmem
+spack install scorep
 \end{ViFile}
 As of v0.10.0, Spack will build it's own MPI. To use an existing system MPI, modify Spack's package.yaml file.
 \subsubsection{Centos 7}
@@ -19,7 +19,7 @@ yum install	-y scorep
 
 \subsection{Trace Collection}
 \label{subsec:otf:traceCollection}
-ScoreP's default collection strategy will include every function call in the trace, making even small programs produce untenably large traces. ScoreP supports collection filters, which can restrict collection at a minimum to MPI and OMP function calls. The By the end of the program's runtime, traces from each rank are put in a common directory. This script that demonstrates the creation, compilation and running of an MPI program compiled with ScoreP to produce traces:
+ScoreP's default collection strategy will include every function call in the trace, making even small programs produce untenably large traces. ScoreP supports collection filters, which can restrict collection at a minimum to MPI and OMP function calls. At the end of the program's runtime, traces from each rank are put in a common directory. This script demonstrates the creation, compilation and running of an MPI program compiled with ScoreP to produce traces:
 
 \begin{ViFile}
 #!/bin/bash
