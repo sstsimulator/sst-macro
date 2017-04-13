@@ -3,6 +3,7 @@
 
 #include <sstmac/common/node_address.h>
 #include <sprockit/errors.h>
+#include <sstmac/common/serializable.h>
 
 namespace sstmac {
 
@@ -74,6 +75,19 @@ operator<(const device_id& a, const device_id& b){
 }
 
 }
+
+START_SERIALIZATION_NAMESPACE
+template <>
+class serialize<sstmac::device_id>
+{
+ public:
+  void
+  operator()(sstmac::device_id& t, serializer& ser){
+    ser.primitive(t);
+  }
+};
+END_SERIALIZATION_NAMESPACE
+
 
 #endif // EVENT_LOCATION_H
 

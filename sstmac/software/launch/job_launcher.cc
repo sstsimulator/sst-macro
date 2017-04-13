@@ -202,7 +202,7 @@ exclusive_job_launcher::stop_event_received(job_stop_event *ev)
 static thread_lock lock;
 
 task_mapping::ptr
-task_mapping::serialize_order(app_id aid, sprockit::serializer &ser)
+task_mapping::serialize_order(app_id aid, serializer &ser)
 {
   lock.lock();
   task_mapping::ptr& mapping = app_ids_launched_[aid];

@@ -153,7 +153,7 @@ parallel_runtime::~parallel_runtime()
 }
 
 static inline void
-run_serialize(sprockit::serializer& ser, timestamp t, device_id dst, device_id src, uint32_t seqnum, event* ev)
+run_serialize(serializer& ser, timestamp t, device_id dst, device_id src, uint32_t seqnum, event* ev)
 {
   ser & dst;
   ser & src;

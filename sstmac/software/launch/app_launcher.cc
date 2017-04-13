@@ -74,7 +74,7 @@ start_app_event::core_affinity(int intranode_rank) const
 }
 
 void
-start_app_event::serialize_order(sprockit::serializer &ser)
+start_app_event::serialize_order(serializer &ser)
 {
   launch_event::serialize_order(ser);
   ser & unique_name_;

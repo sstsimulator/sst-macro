@@ -35,10 +35,17 @@ class member_fxn_handler :
   virtual ~member_fxn_handler(){}
 
  protected:
-  member_fxn_handler(device_id id, int thread_id) :
+#if SSTMAC_INTEGRATED_SST_CORE
+    member_fxn_handler(device_id id) :
+    event_handler(id)
+  {
+  }
+#else
+    member_fxn_handler(device_id id, int thread_id) :
     event_handler(id, thread_id)
   {
   }
+#endif
 };
 
 template <class Cls, typename Fxn, class ...Args>
@@ -63,7 +70,11 @@ class member_fxn_handler_impl :
     params_(args...),
     obj_(obj),
     fxn_(fxn),
+#if SSTMAC_INTEGRATED_SST_CORE
+    member_fxn_handler(id)
+#else
     member_fxn_handler(id,obj->thread_id())
+#endif
   {
   }
 

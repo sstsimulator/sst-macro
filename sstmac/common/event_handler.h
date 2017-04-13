@@ -40,7 +40,7 @@ class locatable
   }
 
  protected:
-#if SSTMAC_INTEGRATED_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
   locatable(device_id id) :
     loc_id_(id),
     thread_id_(null_threadid)
