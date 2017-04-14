@@ -90,9 +90,9 @@ class shifted_communicator :
   shifted_communicator(communicator* dom, int left_shift) :
     communicator((dom->my_comm_rank() - left_shift + dom->nproc()) % dom->nproc()),
     dom_(dom),
-    shift_(left_shift),
-    nproc_(dom->nproc()) {
-  }
+    nproc_(dom->nproc()),
+    shift_(left_shift)
+  {}
 
   int
   nproc() const {
@@ -127,8 +127,8 @@ class index_communicator :
    * @param proc_list
    */
   index_communicator(int comm_rank, int nproc, int* proc_list) :
-    proc_list_(proc_list), nproc_(nproc),
-    communicator(comm_rank)
+    communicator(comm_rank),
+    proc_list_(proc_list), nproc_(nproc)
   {
   }
 
@@ -159,8 +159,8 @@ class rotate_communicator :
    * @param me
    */
   rotate_communicator(int my_global_rank, int nproc, int shift) :
-    nproc_(nproc), shift_(shift),
-    communicator(global_to_comm_rank(my_global_rank))
+    communicator(global_to_comm_rank(my_global_rank)),
+    nproc_(nproc), shift_(shift)
   {
   }
 
@@ -187,8 +187,8 @@ class subrange_communicator :
 {
  public:
   subrange_communicator(int my_global_rank, int start, int nproc) :
-    nproc_(nproc), start_(start),
-    communicator(global_to_comm_rank(my_global_rank))
+    communicator(global_to_comm_rank(my_global_rank)),
+    nproc_(nproc), start_(start)
   {
   }
 

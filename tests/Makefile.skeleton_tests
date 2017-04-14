@@ -16,6 +16,10 @@ SKELETONCASES= \
   sendrecv \
   boxml
 
+if HAVE_CLANG
+SKELETONCASES += lulesh2.0.3 
+endif
+
 SKELETONTESTS = $(SKELETONCASES:%=test_skeleton_%)
 
 skeletons:

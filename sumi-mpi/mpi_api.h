@@ -143,29 +143,21 @@ class mpi_api :
     return MPI_SUCCESS;
   }
 
-  int
-  init_thread(int* argc, char*** argv, int required, int* provided){
+  int init_thread(int* argc, char*** argv, int required, int* provided){
     init(argc, argv);
     *provided = required;
     return MPI_SUCCESS;
   }
 
-  /// Initialize MPI.  Must be the first MPI call made other than
-  /// initialized or finalized.
-  int
-  init(int* argc, char*** argv);
+#pragma GCC diagnostic ignored "-Woverloaded-virtual"
+  int init(int* argc, char*** argv);
 
-  /// Finalize MPI.  Must be the last MPI call other than
-  /// initialized or finalized.
-  int
-  finalize();
+  int finalize();
 
   /// Get current time.
-  double
-  wtime();
+  double wtime();
 
-  void
-  set_generate_ids(bool flag){
+  void set_generate_ids(bool flag){
     generate_ids_ = flag;
   }
 
@@ -316,15 +308,13 @@ class mpi_api :
          MPI_Status *status);
 
   /* Collective operations */
-  int
-  barrier(MPI_Comm comm);
+#pragma GCC diagnostic ignored "-Woverloaded-virtual"
+  int barrier(MPI_Comm comm);
 
-  int
-  bcast(int count, MPI_Datatype datatype, int root,
+  int bcast(int count, MPI_Datatype datatype, int root,
         MPI_Comm comm);
 
-  int
-  bcast(void *buffer, int count, MPI_Datatype datatype, int root,
+  int bcast(void *buffer, int count, MPI_Datatype datatype, int root,
         MPI_Comm comm);
 
   int
@@ -332,144 +322,121 @@ class mpi_api :
           int recvcount, MPI_Datatype recvtype, int root,
           MPI_Comm comm);
 
-  int
-  scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+  int scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
            void *recvbuf, int recvcount, MPI_Datatype recvtype, int root,
            MPI_Comm comm);
 
-  int
-  scatterv(const int *sendcounts,
+  int scatterv(const int *sendcounts,
            MPI_Datatype sendtype, int recvcount,
            MPI_Datatype recvtype,
            int root, MPI_Comm comm);
 
-  int
-  scatterv(const void *sendbuf, const int *sendcounts, const int *displs,
+  int scatterv(const void *sendbuf, const int *sendcounts, const int *displs,
            MPI_Datatype sendtype, void *recvbuf, int recvcount,
            MPI_Datatype recvtype,
            int root, MPI_Comm comm);
 
-  int
-  gather(int sendcount, MPI_Datatype sendtype,
+  int gather(int sendcount, MPI_Datatype sendtype,
          int recvcount, MPI_Datatype recvtype,
          int root, MPI_Comm comm);
 
-  int
-  gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+#pragma GCC diagnostic ignored "-Woverloaded-virtual"
+  int gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
          void *recvbuf, int recvcount, MPI_Datatype recvtype,
          int root, MPI_Comm comm);
-  int
-  gatherv(int sendcount, MPI_Datatype sendtype,
+
+  int gatherv(int sendcount, MPI_Datatype sendtype,
          const int *recvcounts,
          MPI_Datatype recvtype, int root, MPI_Comm comm);
 
-  int
-  gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+  int gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
           void *recvbuf, const int *recvcounts, const int *displs,
           MPI_Datatype recvtype, int root, MPI_Comm comm);
 
-  int
-  allgather(int count, MPI_Datatype type, MPI_Comm comm);
+  int allgather(int count, MPI_Datatype type, MPI_Comm comm);
 
-  int
-  allgather(int sendcount, MPI_Datatype sendtype,
+  int allgather(int sendcount, MPI_Datatype sendtype,
             int recvcount, MPI_Datatype recvtype,
             MPI_Comm comm);
 
-  int
-  allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+  int allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
             void *recvbuf, int recvcount, MPI_Datatype recvtype,
             MPI_Comm comm);
 
-  int
-  allgatherv(int sendcount, MPI_Datatype sendtype,
+  int allgatherv(int sendcount, MPI_Datatype sendtype,
              const int *recvcounts,
              MPI_Datatype recvtype, MPI_Comm comm);
 
-  int
-  allgatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+  int allgatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
              void *recvbuf, const int *recvcounts, const int *displs,
              MPI_Datatype recvtype, MPI_Comm comm);
 
-  int
-  alltoall(int sendcount, MPI_Datatype sendtype,
+  int alltoall(int sendcount, MPI_Datatype sendtype,
            int recvcount, MPI_Datatype recvtype,
             MPI_Comm comm);
 
-  int
-  alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+  int alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
             void *recvbuf, int recvcount, MPI_Datatype recvtype,
             MPI_Comm comm);
-  int
-  alltoallv(const int *sendcounts,
+
+  int alltoallv(const int *sendcounts,
             MPI_Datatype sendtype,
             const int *recvcounts,
             MPI_Datatype recvtype,
             MPI_Comm comm);
 
-  int
-  alltoallv(const void *sendbuf, const int *sendcounts,
+  int alltoallv(const void *sendbuf, const int *sendcounts,
             const int *sdispls, MPI_Datatype sendtype, void *recvbuf,
             const int *recvcounts, const int *rdispls, MPI_Datatype recvtype,
             MPI_Comm comm);
 
-  int
-  reduce(int count, MPI_Datatype type, MPI_Op op, int root,
+#pragma GCC diagnostic ignored "-Woverloaded-virtual"
+  int reduce(int count, MPI_Datatype type, MPI_Op op, int root,
             MPI_Comm comm);
-  int
-  reduce(const void* src, void* dst,
+
+#pragma GCC diagnostic ignored "-Woverloaded-virtual"
+  int reduce(const void* src, void* dst,
          int count, MPI_Datatype type, MPI_Op op, int root,
          MPI_Comm comm);
 
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
-  int
-  allreduce(int count, MPI_Datatype type, MPI_Op op,
+  int allreduce(int count, MPI_Datatype type, MPI_Op op,
             MPI_Comm comm);
 
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
-  int
-  allreduce(const void* src, void* dst,
+  int allreduce(const void* src, void* dst,
             int count, MPI_Datatype type, MPI_Op op,
             MPI_Comm comm);
 
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
-  int
-  scan(int count, MPI_Datatype type, MPI_Op op,
+  int scan(int count, MPI_Datatype type, MPI_Op op,
             MPI_Comm comm);
 
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
-  int
-  scan(const void* src, void* dst,
+  int scan(const void* src, void* dst,
             int count, MPI_Datatype type, MPI_Op op,
             MPI_Comm comm);
 
-  int
-  reduce_scatter(int* recvcnts, MPI_Datatype type,
+  int reduce_scatter(int* recvcnts, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm);
 
-  int
-  reduce_scatter(const void* src, void* dst,
+  int reduce_scatter(const void* src, void* dst,
                  const int* recvcnts, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm);
 
-  int
-  reduce_scatter_block(int recvcnt, MPI_Datatype type,
+  int reduce_scatter_block(int recvcnt, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm);
 
-  int
-  reduce_scatter_block(const void* src, void* dst,
+  int reduce_scatter_block(const void* src, void* dst,
                  int recvcnt, MPI_Datatype type,
                  MPI_Op op, MPI_Comm comm);
 
-  int
-  ibarrier(MPI_Comm comm, MPI_Request* req);
+  int ibarrier(MPI_Comm comm, MPI_Request* req);
 
-  int
-  ibcast(int count, MPI_Datatype datatype, int root,
+  int ibcast(int count, MPI_Datatype datatype, int root,
         MPI_Comm comm, MPI_Request* req);
 
-  int
-  ibcast(void *buffer, int count, MPI_Datatype datatype, int root,
+  int ibcast(void *buffer, int count, MPI_Datatype datatype, int root,
         MPI_Comm comm, MPI_Request* req);
 
   int

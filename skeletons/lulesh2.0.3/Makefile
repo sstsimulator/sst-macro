@@ -3,7 +3,7 @@
 SHELL = /bin/sh
 .SUFFIXES: .cc .o
 
-LULESH_EXEC = lulesh2.0
+LULESH_EXEC = runlulesh2.0.3
 
 
 MPICXX = sst++ -DUSE_MPI=1 -Dsstmac_app_name=lulesh -std=c++11
@@ -45,7 +45,7 @@ LDFLAGS = -g -O0
 
 all: $(LULESH_EXEC)
 
-lulesh2.0: $(OBJECTS2.0)
+runlulesh2.0.3: $(OBJECTS2.0)
 	@echo "Linking"
 	$(CXX) $(OBJECTS2.0) $(LDFLAGS) -lm -o $@
 

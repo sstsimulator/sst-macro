@@ -33,6 +33,7 @@ void
 ReplGlobalASTVisitor::initReservedNames()
 {
   reservedNames_.insert("dont_ignore_this");
+  reservedNames_.insert("ignore_for_app_name");
 }
 
 void
@@ -142,9 +143,23 @@ ReplGlobalASTVisitor::VisitCXXNewExpr(CXXNewExpr *expr)
           if (expr->isArray()){
             pp.os << ",";
             pp.print(expr->getArraySize());
+          } else if (expr->hasInitializer()){
+            Expr* init = expr->getInitializer();
+            if (isa<ParenListExpr>(init)){
+              ParenListExpr* pinit = cast<ParenListExpr>(init);
+              for (int i=0; i < pinit->getNumExprs(); ++i){
+                pp.os << ",";
+                pp.print(pinit->getExpr(i));
+              }
+            } else {
+              pp.os << ",";
+              pp.print(init);
+              init->dump();
+            }
           } else {
             const Expr* ctor = expr->getConstructExpr();
             if (ctor){
+              pp.os << ",";
               pp.print(ctor);
             }
           }
@@ -292,6 +307,14 @@ ReplGlobalASTVisitor::VisitVarDecl(VarDecl* D){
     return true;
   }
 
+  if (D->getNameAsString() == "sstmac_appname_str"){
+    const ImplicitCastExpr* expr1 = cast<const ImplicitCastExpr>(D->getInit());
+    const ImplicitCastExpr* expr2 = cast<const ImplicitCastExpr>(expr1->getSubExpr());
+    const StringLiteral* lit = cast<StringLiteral>(expr2->getSubExpr());
+    mainName_ = lit->getString();
+    return true;
+  }
+
   SourceLocation startLoc = D->getLocStart();
   std::string filename = ci_->getSourceManager().getFilename(startLoc).str();
 
@@ -365,12 +388,12 @@ ReplGlobalASTVisitor::replaceMain(clang::FunctionDecl* mainFxn)
   std::string suffix2 = sourceFile.substr(sourceFile.size()-2,2);
   bool isC = suffix2 == ".c";
 
-  if (isC){
+  if (isC){    
     foundCMain_ = true;
-    const char* appname = getenv("SSTMAC_APP_NAME");
-    if (appname == nullptr){
-      llvm::errs() << "Cannot refactor main function unless SSTMAC_APP_NAME environment var is defined\n";
-      exit(EXIT_FAILURE);
+    std::string appname = getAppName();
+    if (appname.size() == 0){
+      errorAbort(mainFxn->getLocStart(), *ci_,
+                 "sstmac_app_name macro not defined before main");
     }
     std::stringstream sstr;
     sstr << "int sstmac_user_main_" << appname << "(";
@@ -378,6 +401,7 @@ ReplGlobalASTVisitor::replaceMain(clang::FunctionDecl* mainFxn)
       sstr << "int argc, char** argv";
     }
     sstr << "){";
+
     SourceRange rng(mainFxn->getLocStart(), mainFxn->getBody()->getLocStart());
     rewriter_.ReplaceText(rng, sstr.str());
 
