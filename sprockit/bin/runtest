@@ -77,7 +77,7 @@ else:
         if sig == signal.SIGKILL:
             print (bcolors.FAIL + "TIMEOUT: %s" % outputFile + bcolors.ENDC)
     elif rc == 0:
-        print (bcolors.OKGREEN + "PASSED: %s" % outputFile, bcolors.ENDC)
+        print (bcolors.OKGREEN + "PASSED: %s" % outputFile + bcolors.ENDC)
     elif rc == 111:
         pass #already printed stuff
     else:
