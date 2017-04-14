@@ -5,7 +5,7 @@ from configlib import getstatusoutput
 helpText = """The following environmental variables can be defined for the SST compiler
 SSTMAC_VERBOSE=0 or 1:        produce verbose output from the SST compiler (default 0)
 SSTMAC_DELETE_TEMPS=0 or 1:   remove all temp source-to-source files (default 1)
-SSTMAC_REMOVE_GLOBALS=0 or 1: run a source-to-source pass converting globals to TLS (default 1)
+SSTMAC_SRC2SRC=0 or 1: run a source-to-source pass converting globals to TLS (default 1)
 """
 
 sstmac_libs = [
@@ -47,25 +47,20 @@ clangDeglobal = None
 if haveClangSrcToSrc:
   clangDeglobal = os.path.join(prefix, "bin", "sstmac_clang_deglobal")
 
-sstmac_ldflags = []
-sstmac_ldflags.extend(sstmac_default_ldflags)
-sstmac_ldflags.extend(sstmac_libs)
-
-ldflags=" ".join(sstmac_ldflags)
-
 
 new_cppflags = []
 for entry in sstmac_cppflags:
   new_cppflags.append(cleanFlag(entry))
 sstmac_cppflags = new_cppflags
 
-new_ldflags = []
-for entry in sstmac_ldflags:
-  new_ldflags.append(cleanFlag(entry))
-sstmac_ldflags = new_ldflags
+sstmac_ldflags = []
+for entry in sstmac_default_ldflags:
+  sstmac_ldflags.append(cleanFlag(entry))
+for entry in sstmac_libs:
+  sstmac_ldflags.append(cleanFlag(entry))
 
 sstCppFlagsStr=" ".join(sstmac_cppflags)
-ldflags =  " ".join(sstmac_ldflags)
+ldflagsStr =  " ".join(sstmac_ldflags)
 ld = cc 
 repldir = os.path.join(includedir, "sstmac", "replacements")
 repldir = cleanFlag(repldir)
@@ -80,24 +75,14 @@ def argify(x):
 sysargs = sys.argv[1:]
 
 
-so_sysargs = sysargs[:]
-exeTarget = None
-for idx in range(len(so_sysargs)):
-  entry = so_sysargs[idx]
-  if entry == "-o":
-    exeTarget = so_sysargs[idx+1]
-    break
-so_args = " ".join(map(argify, so_sysargs))
-so_args += " " + so_flags
-
-
 srcFiles = False
 asmFiles = False
 verbose = False
 delTempFiles = True
-givenCppFlags = []
+givenFlags = []
 givenCompilerFlags = []
 controlArgs = []
+linkerArgs = []
 sourceFiles = []
 objectFiles = []
 objTarget = None
@@ -108,6 +93,8 @@ for arg in sysargs:
     objectFiles.append(sarg)
     objTarget = sarg
     getObjTarget=False
+  elif sarg.startswith("-Wl"):
+    linkerArgs.append(sarg)
   elif sarg.startswith("-O"):
     givenCompilerFlags.append(sarg)
   elif sarg == "-g":
@@ -124,12 +111,13 @@ for arg in sysargs:
   elif sarg in ('-o',):
     getObjTarget=True
   elif getObjTarget:
+    exeTarget = sarg
     objTarget = sarg
     getObjTarget=False
   else:
-    givenCppFlags.append(sarg)
+    givenFlags.append(sarg)
 if sst_core:
-  givenCppFlags.append(" -DSSTMAC_EXTERNAL_SKELETON")
+  givenFlags.append(" -DSSTMAC_EXTERNAL_SKELETON")
 
 
 
@@ -143,10 +131,17 @@ if "SSTMAC_DELETE_TEMPS" in os.environ:
   flag = int(os.environ["SSTMAC_DELETE_TEMPS"])
   delTempFiles = delTempFiles and flag
   
+def runCmdArr(cmdArr):
+  if cmdArr:
+    cmd = " ".join(cmdArr)
+    if verbose: sys.stderr.write("%s\n" % cmd)
+    return os.system(cmd)
+  else:
+    return 0
 
 def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=True):
     directIncludes = []
-    global ldflags
+    global ldflagsStr
     global sstCppFlagsStr
     import os
     
@@ -156,9 +151,9 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       directIncludes.append("-include stdint.h")
     directIncludes.append("-include sstmac/compute.h")
 
-    remGlobals = True
-    if "SSTMAC_REMOVE_GLOBALS" in os.environ:
-      remGlobals = int(os.environ["SSTMAC_REMOVE_GLOBALS"])
+    src2src = True
+    if "SSTMAC_SRC2SRC" in os.environ:
+      src2src = int(os.environ["SSTMAC_SRC2SRC"])
 
     if sys.argv[1] == "--version" or sys.argv[1] == "-V":
       import inspect, os
@@ -168,7 +163,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       os.system(cmd)
       sys.exit()
     elif sys.argv[1] == "--flags":
-      sys.stderr.write("LDFLAGS=%s\n" % ldflags)
+      sys.stderr.write("LDFLAGS=%s\n" % ldflagsStr)
       sys.stderr.write("CPPFLAGS=%s\n" % sstCppFlagsStr)
       sys.stderr.write("CXXFLAGS=%s\n" % cxxflags)
       sys.exit()
@@ -185,14 +180,16 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       extralibs += " -lsstmac_main"
     #always c++ no matter what for now
     if typ.lower() == "c++":
-        compilerFlagsStr = cleanFlag(cxxflags)
-        compiler = cxx
-        ld = cxx
+      compilerFlagsStr = cleanFlag(cxxflags)
+      compiler = cxx
+      ld = cxx
     elif typ.lower() == "c":
-        compilerFlagsStr = cleanFlag(cflags)
-        compiler = cc
-        ld = cxx #always use c++ for linking since we are bringing a bunch of sstmac C++ into the game
-    ldflags = "%s %s" % (compilerFlagsStr, ldflags)
+      compilerFlagsStr = cleanFlag(cflags)
+      compiler = cc
+      ld = cxx #always use c++ for linking since we are bringing a bunch of sstmac C++ into the game
+    cxxFlagsStr = cleanFlag(cxxflags)
+    cFlagsStr = cleanFlag(cflags)
+    objectFilesStr = " ".join(objectFiles)
 
     compilerFlagsArr = compilerFlagsStr.split()
     compilerFlags = []
@@ -229,12 +226,14 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
 
     
     cxxCmdArr = []
+    ldCmdArr = []
+    arCmdArr = []
     ppCmdArr = []
     ppOnly = "-E" in controlArgs
-    runClang = haveClangSrcToSrc and remGlobals
+    runClang = haveClangSrcToSrc and src2src 
     controlArgStr = " ".join(controlArgs)
     extraCppFlagsStr = " ".join(extraCppFlags)
-    givenCppFlagsStr = " ".join(givenCppFlags)
+    givenFlagsStr = " ".join(givenFlags)
     givenCompilerFlagsStr = " ".join(givenCompilerFlags)
     srcFileStr = " ".join(sourceFiles)
     if '-c' in sysargs or ppOnly:
@@ -245,7 +244,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
           "-include sstmac/skeleton.h",
           directIncludesStr,
           extraCppFlagsStr, 
-          givenCppFlagsStr,
+          givenFlagsStr,
           givenCompilerFlagsStr,
           sstCppFlagsStr,
           compilerFlagsStr, 
@@ -262,7 +261,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         cxxCmdArr = [
           compiler, 
           extraCppFlagsStr, 
-          givenCppFlagsStr,
+          givenFlagsStr,
           givenCompilerFlagsStr,
           sstCppFlagsStr, 
           compilerFlagsStr, 
@@ -275,10 +274,12 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         compiler, 
         extraCppFlagsStr, 
         sstCppFlagsStr, 
+        givenFlagsStr,
         compilerFlagsStr, 
         givenCompilerFlagsStr,
         args, 
-        ldflags, 
+        ldflagsStr, 
+        compilerFlagsStr,
         extralibs, 
         ldpathMaker
       ]
@@ -286,46 +287,47 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       global verbose
       global exeTarget
       runClang = False
-      makeLibrary = False
-      if exeTarget.endswith("dylib") or exeTarget.endswith("so") or exeTarget.endswith(".a"):
-        makeLibrary = True
 
-      if sst_core:
-        if not makeLibrary:
-          sys.exit("SST core requires all external elements to be .so files\n")
-        verbose = True
-
-      if makeLibrary:
-        if sst_core:
-          ldflags=ldflags.replace("-lsstmac","")
-        cxxCmdArr = [
+      if "fPIC" in cxxflags or "fPIC" in sstCppFlagsStr:
+        arCmdArr = [
           ld,
-          so_args, 
-          ldflags,
-          ldpathMaker
+          so_flags,
+          objectFilesStr,
+          ldflagsStr,
+          givenFlagsStr,
+          compilerFlagsStr,
+          ldpathMaker,
+          "-o",
+          "lib" + exeTarget + ".so",
         ]
-      else: #executable
-        cxxCmdArr = [
+        arCmdArr.extend(linkerArgs)
+
+      if not sst_core:
+        ldCmdArr = [
           ld,
+          objectFilesStr,
           extralibs,
-          ldflags, 
+          ldflagsStr, 
+          givenFlagsStr,
+          compilerFlagsStr,
           extralibs, 
-          ldpathMaker
+          ldpathMaker,
+          "-o",
+          exeTarget
         ]
-        cxxCmdArr.extend(sysargs)
+        ldCmdArr.extend(linkerArgs)
     else: #all in one
       cxxCmdArr = [
         compiler, 
         extraCppFlagsStr, 
-        cppflags, 
+        sstCppFlagsStr, 
         compilerFlagsStr, 
         givenCompilerFlagsStr,
-        ldflags, 
+        ldflagsStr, 
         extralibs, 
         ldpathMaker
       ]
 
-    cxxCmd = " ".join(cxxCmdArr)
     clangExtraArgs = []
     if runClang:
       #this is more complicated - we have to use clang to do a source to source transformation
@@ -388,7 +390,8 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         cxxInitObjFile = "sstGlobals." + srcFile + ".o"
         cxxInitCmdArr = [
           cxx,
-          compilerFlagsStr,
+          cxxFlagsStr,
+          sstCppFlagsStr,
           "-o",
           cxxInitObjFile,
           "-I%s/include" % prefix,
@@ -437,9 +440,13 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       return rc
           
     else:
-      #standard compiler wrapper
-      if verbose:
-          sys.stderr.write("%s\n" % cxxCmd)
-      rc = os.system(cxxCmd)
+      rc = runCmdArr(cxxCmdArr)
+      if not rc == 0: return rc
+      rc = runCmdArr(ldCmdArr)
+      if not rc == 0: return rc
+      rc = runCmdArr(arCmdArr)
       return rc
+
+
+
 

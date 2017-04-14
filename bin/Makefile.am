@@ -11,6 +11,8 @@
 
 include $(top_srcdir)/Makefile.common
 
+bin_PROGRAMS = 
+
 dist_bin_SCRIPTS = \
 sst++ \
 dsst++ \
@@ -38,7 +40,7 @@ AM_LDFLAGS += $(OTF2_LDFLAGS)
 endif
 
 if !INTEGRATED_SST_CORE
-bin_PROGRAMS = sstmac sstmac_top_info
+bin_PROGRAMS += sstmac sstmac_top_info
 
 sstmac_SOURCES = src/sstmac_dummy_main.cc
 sstmac_top_info_SOURCES = src/top_info.cc
@@ -54,6 +56,7 @@ endif
 
 sstmac_LDADD = $(exe_LDADD)
 sstmac_top_info_LDADD = $(exe_LDADD)
+endif
 
 EXTRA_DIST += clang
 
@@ -76,8 +79,8 @@ sstmac_clang_deglobal_SOURCES = \
   clang/frontendActions.cc \
   clang/replAstVisitor.cc 
 
-sstmac_clang_deglobal_CXXFLAGS = -fno-rtti
-sstmac_clang_deglobal_CPPFLAGS = $(CLANG_CPPFLAGS)
+sstmac_clang_deglobal_CXXFLAGS = -fno-rtti $(AM_CXXFLAGS)
+sstmac_clang_deglobal_CPPFLAGS = $(CLANG_CPPFLAGS) $(AM_CPPFLAGS)
 sstmac_clang_deglobal_LDFLAGS = $(CLANG_LDFLAGS) \
  -Wl,-rpath,$(HOME)/Programs/install/clang-llvm/lib \
  -lclang \
@@ -113,10 +116,7 @@ sstmac_clang_deglobal_LDFLAGS = $(CLANG_LDFLAGS) \
  -lLLVMDemangle
 endif
 
-uninstall-local:
-	test -f $(includedir)/sstmac/pysst/__init__.pyc ; if [[ $$? -eq 0 ]] ; then rm $(includedir)/sstmac/pysst/*.pyc; fi
 
-endif
 
 
 

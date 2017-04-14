@@ -8,6 +8,9 @@
 typedef int (*main_fxn)(int,char**);
 typedef int (*empty_main_fxn)();
 
+#include <sstmac/common/sstmac_config.h>
+
+#ifdef __cplusplus
 #if SSTMAC_INTEGRATED_SST_CORE && defined(SSTMAC_EXTERNAL_SKELETON)
 #include <Python.h>
 #include <sstCoreElement.h>
@@ -40,23 +43,21 @@ typedef int (*empty_main_fxn)();
 #define sst_eli_block(app)
 #endif
 
-#include <sstmac/common/sstmac_config.h>
-
-#ifdef __cplusplus
 //redirect all operator news to the nothrow version
 //sst will decide whether memory is actually going to be allocated
 extern void* sstmac_new(unsigned long size);
 
 #define __builtin_operator_new(size) sstmac_new(size)
 #include <new>
+#include <utility>
 
 extern bool& should_skip_operator_new();
 
-template <class T>
+template <class T, class... Args>
 T*
-placement_new(void* sstmac_placement_ptr){
+placement_new(void* sstmac_placement_ptr, Args&&... args){
   if (sstmac_placement_ptr != nullptr){
-    return new (sstmac_placement_ptr) T;
+    return new (sstmac_placement_ptr) T(std::forward<Args>(args)...);
   }
   return reinterpret_cast<T*>(sstmac_placement_ptr);
 }
@@ -79,7 +80,7 @@ conditional_new(Args&&... args){
   bool& flag = should_skip_operator_new();
   T* ret = nullptr;
   if (!flag){
-    ret = new T(args...);
+    ret = new T(std::forward<Args>(args)...);
   }
   flag = false;
   return ret;
@@ -141,6 +142,8 @@ static inline void
 sstmac_free(void* ptr){
   if (ptr != NULL) free(ptr);
 }
+
+#define main ignore_for_app_name; const char* sstmac_appname_str = SST_APP_NAME_QUOTED; int main
 #endif
 
 

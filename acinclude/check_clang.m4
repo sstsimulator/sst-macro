@@ -33,6 +33,7 @@ AC_ARG_WITH(clang,
 if test "$clang" != "no"; then
   SAVE_LDFLAGS=$LDFLAGS
   SAVE_CPPFLAGS=$CPPFLAGS
+  SAVE_CXXFLAGS=$CXXFLAGS
   CLANG_LDFLAGS=
   CLANG_CPPFLAGS=
   if test "$clang" != "yes"; then
@@ -41,6 +42,7 @@ if test "$clang" != "no"; then
     LDFLAGS="$LDFLAGS $CLANG_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $CLANG_CPPFLAGS"
   fi
+  CXXFLAGS="$CXXFLAGS $SST_CXXFLAGS"
   AC_CHECK_HEADER([clang/AST/AST.h],
     found_clang=yes
     AC_SUBST(CLANG_LDFLAGS)
@@ -50,6 +52,7 @@ if test "$clang" != "no"; then
     AC_MSG_ERROR([Unable to find valid Clang libTooling at specified location])
   )
   CPPFLAGS="$SAVE_CPPFLAGS"
+  CXXFLAGS="$SAVE_CXXFLAGS"
   LDFLAGS="$SAVE_LDFLAGS"
 else
 found_clang=no

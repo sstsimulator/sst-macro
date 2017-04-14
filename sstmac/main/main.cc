@@ -70,7 +70,7 @@ void new_error_handler()
 }
 #endif
 
-#if !SSTMAC_INTEGRATED_CORE
+#if !SSTMAC_INTEGRATED_SST_CORE
 int
 main(int argc, char **argv)
 {
