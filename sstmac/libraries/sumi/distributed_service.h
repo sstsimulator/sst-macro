@@ -18,7 +18,7 @@ class distributed_service :
                       const std::string& libname,
                       sw::software_id sid,
                       sw::operating_system* os) :
-    sumi_transport(params, libname, sid, os),
+    sumi_transport(params, libname.c_str(), sid, os),
     terminated_(false)
   {
   }

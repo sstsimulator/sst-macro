@@ -42,11 +42,10 @@ class launch_event :
 
   void
   serialize_order(serializer& ser) override {
+    hw::network_message::serialize_order(ser);
     timed_interface::serialize_order(ser);
     library_interface::serialize_order(ser);
-    hw::network_message::serialize_order(ser);
     ser & ty_;
-    ser & aid_;
     ser & tid_;
   }
 
@@ -70,12 +69,14 @@ class launch_event :
     return ty_;
   }
 
+  network_message* clone_injection_ack() const override;
+
  protected:
   launch_event(type_t ty, app_id aid, task_id tid,
                const std::string& unique_name,
                node_id to, node_id from,
                const std::string& libname) :
-    ty_(ty), aid_(aid), tid_(tid),
+    ty_(ty), tid_(tid),
     unique_name_(unique_name),
     library_interface(libname),
     network_message(aid, to, from, 0)
@@ -87,7 +88,6 @@ class launch_event :
   launch_event(){} //for serialization
 
  private:
-  app_id aid_;
   task_id tid_;
   std::string unique_name_;
   type_t ty_;
@@ -95,7 +95,7 @@ class launch_event :
 };
 
 class start_app_event : public launch_event {
-
+  ImplementSerializable(start_app_event)
  public:
   start_app_event(app_id aid,
      const std::string& unique_name,
@@ -103,27 +103,32 @@ class start_app_event : public launch_event {
      task_id tid,
      node_id to,
      node_id from,
-     sprockit::sim_parameters* app_params) :
+     const sprockit::sim_parameters* app_params) :
     launch_event(Start, aid, tid, unique_name, to, from, "launcher"),
-    app_params_(app_params),
-    mapping_(mapping)
+    mapping_(mapping),
+    app_params_(app_params)
   {
   }
 
-  int
-  core_affinity(int intranode_rank) const;
+  int core_affinity(int intranode_rank) const;
+
+  bool is_bcast() const override {
+    return true;
+  }
+
+  std::string to_string() const override;
 
   start_app_event(){} //for serialization
 
-  void
-  serialize_order(serializer& ser) override {
-    spkt_throw_printf(sprockit::unimplemented_error,
-                      "start_app_event::serialize_order");
+  void serialize_order(serializer& ser) override;
+
+  sprockit::sim_parameters&
+  app_params() {
+    return app_params_;
   }
 
-  sprockit::sim_parameters*
-  app_params() const {
-    return app_params_;
+  start_app_event* clone(int rank, node_id src, node_id dst) const {
+    return new start_app_event(aid_, unique_name_, mapping_, rank, dst, src, &app_params_);
   }
 
   task_mapping::ptr
@@ -132,16 +137,15 @@ class start_app_event : public launch_event {
   }
 
  private:
-  app_id aid_;
-  task_id tid_;
   std::string unique_name_;
   task_mapping::ptr mapping_;
-  sprockit::sim_parameters* app_params_;
+  sprockit::sim_parameters app_params_;
 
 };
 
 class job_stop_event : public launch_event
 {
+  ImplementSerializable(job_stop_event)
  public:
   job_stop_event(app_id aid,
      const std::string& unique_name,
@@ -150,6 +154,10 @@ class job_stop_event : public launch_event
     launch_event(Stop, aid, 0, unique_name, to, from, "job_launcher")
   {
   }
+
+  job_stop_event(){} //for serialization
+
+  std::string to_string() const override;
 };
 
 }

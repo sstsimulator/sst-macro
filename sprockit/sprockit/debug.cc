@@ -60,9 +60,14 @@ debug::turn_off(){
 void
 debug::print_debug_string(const std::string &str, std::ostream& os)
 {
-  if (prefix_fxn)
-    os << prefix_fxn->str();
-  os << str << std::endl;
+  std::string strToPrint;
+  if (prefix_fxn){
+    strToPrint = prefix_fxn->str() + str + "\n";
+  } else {
+    strToPrint = str + "\n";
+  }
+  os << strToPrint;
+  os.flush();
 }
 
 std::string

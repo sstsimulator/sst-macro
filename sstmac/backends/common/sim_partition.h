@@ -38,48 +38,11 @@ class partition
  public:
   virtual ~partition();
 
-  hw::index_subset*
-  subset(int lpid) const {
-    if(lpid >= subsets_.size()) {
-      spkt_throw_printf(sprockit::value_error,
-                       "partition::get_partition: invalid lpid %d requested for parallel run",
-                       lpid);
-    }
-    return subsets_[lpid];
-  }
-
-  int*
-  num_switches_per_lp() {
-    return num_switches_per_lp_;
-  }
-
-  int
-  local_switch(int idx) const {
-    return local_switches_[idx];
-  }
-
-  int*
-  local_switches() {
-    return local_switches_;
-  }
-
-  int*
-  switch_to_lpid() {
-    return switch_to_lpid_;
-  }
-
-  int
-  num_switches_total() const {
+  int num_switches_total() const {
     return num_switches_total_;
   }
 
-  int
-  local_num_switches() const {
-    return local_num_switches_;
-  }
-
-  int
-  lpid_for_switch(int switch_id) const {
+  int lpid_for_switch(int switch_id) const {
 #if SSTMAC_SANITY_CHECK
     if (switch_id >= num_switches_total_){
       spkt_throw_printf(sprockit::value_error,
@@ -90,29 +53,21 @@ class partition
     return switch_to_lpid_[switch_id];
   }
 
-  virtual int
-  thread_for_local_switch(int local_idx) const;
+  int thread_for_switch(int switch_id) const {
+    return switch_to_thread_[switch_id];
+  }
 
-  virtual void
-  finalize_init(){}
+  virtual void finalize_init(){}
 
  protected:
   partition(sprockit::sim_parameters* params, parallel_runtime* rt);
 
-  void init_local_switches();
-
  protected:
   int* switch_to_lpid_;
 
-  int* num_switches_per_lp_;
-
-  int* local_switches_;
+  int* switch_to_thread_;
 
   int num_switches_total_;
-
-  int local_num_switches_;
-
-  int switches_per_thread_;
 
   int nthread_;
 
@@ -121,9 +76,6 @@ class partition
   int me_;
 
   parallel_runtime* rt_;
-
-  std::vector<hw::index_subset*> subsets_;
-
 
 };
 
@@ -165,15 +117,8 @@ class topology_partition :
 
   virtual ~topology_partition();
 
-  virtual int
-  thread_for_local_switch(int local_idx) const {
-    return local_switch_to_thread_[local_idx];
-  }
-
  protected:
    hw::topology* fake_top_;
-
-   int* local_switch_to_thread_;
 
    int noccupied_;
 
@@ -209,18 +154,9 @@ class occupied_block_partition :
   virtual void
   partition_switches();
 
-  int
-  thread_for_local_switch(int local_idx) const;
-
  protected:
   int occupied_switches_;
   int unoccupied_switches_;
-  int occupied_per_lp_;
-  int unoccupied_per_lp_;
-  int my_num_occupied_;
-  int my_num_unoccupied_;
-  int occupied_per_thread_;
-  int unoccupied_per_thread_;
 
 };
 

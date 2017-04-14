@@ -189,9 +189,7 @@ operating_system::~operating_system()
     delete des_context_;
   }
   if (compute_sched_) delete compute_sched_;
-  /** JJW 01/28/2016 This should already be cleared out
-   *  It not, leave it. It's a leak */
-  //sprockit::delete_vals(libs_);
+
   current_os_thread_context().stackalloc.clear();
 
 #if SSTMAC_HAVE_GRAPHVIZ

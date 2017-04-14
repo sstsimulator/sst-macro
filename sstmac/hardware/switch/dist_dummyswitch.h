@@ -35,7 +35,7 @@ class dist_dummy_switch :
   dist_dummy_switch(sprockit::sim_parameters* params, uint64_t sid, event_manager* mgr,
                     device_id::type_t ty)
     : network_switch(params, sid, mgr),
-      event_handler(device_id(sid, ty))
+      event_handler(device_id(sid, ty), mgr->thread_id())
   {
   }
 

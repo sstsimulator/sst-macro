@@ -47,6 +47,12 @@ class interconnect
   static interconnect*
   static_interconnect(sprockit::sim_parameters* params, event_manager* mgr);
 
+  /**
+   * @brief static_interconnect Must already exist
+   * @return
+   */
+  static interconnect* static_interconnect();
+
   static void
   clear_static_interconnect(){
     if (static_interconnect_) delete static_interconnect_;

@@ -135,7 +135,7 @@ class routable_pisces :
 pisces_payload*
 msg(long nid)
 {
-  network_message* new_msg = new network_message;
+  network_message* new_msg = nullptr;//new network_message;
   new_msg->set_toaddr(naddr(nid));
   new_msg->set_flow_id(hw::network_id(0,0));
   return new routable_pisces(new_msg, 0, 0);
@@ -175,7 +175,7 @@ init_switches(interconnect::switch_map &switches,
   // create all the switches
   for (int i=0; i < num_switches; i++)
   {
-    params.add_param_override("id", i);
+    params.add_param_override_recursive("id", i);
     network_switch* sw = network_switch_factory::get_param(
           "model", &params, i, &mgr);
     switches[switch_id(i)] = sw;

@@ -64,12 +64,12 @@ class Interconnect:
     return self.num_switches
 
   def defaultEpFxn(self, nodeID):
-      nodeParams = self.params["node"]
-      compName = nodeParams["model"] + "_node"
-      node = sst.Component("Node %d" % nodeID, "macro.%s" % compName)
-      node.addParams(macroToCoreParams(nodeParams))
-      node.addParam("id", nodeID)
-      return node
+    nodeParams = self.params["node"]
+    compName = nodeParams["model"] + "_node"
+    node = sst.Component("Node %d" % nodeID, "macro.%s" % compName)
+    node.addParams(macroToCoreParams(nodeParams))
+    node.addParam("id", nodeID)
+    return node
 
   def buildSwitches(self):
     for i in range(self.num_switches):
@@ -240,6 +240,7 @@ def setupDeprecated():
         exec(cmd)
       del params[ns]
 
+
   debugList = []
   if params.has_key("debug"):
     debugList = params["debug"].strip().split()
@@ -250,11 +251,6 @@ def setupDeprecated():
   icParams = {}
   icParams["topology"] = params["topology"]
   nodeParams["interconnect"] = icParams
-  if params.has_key("nic"):
-    if not nodeParams.has_key("nic"):
-      nodeParams["nic"] = {}
-    nodeParams["nic"].update(params["nic"])
-    del params["nic"]
   if debugList:
     nodeParams["debug"] = " ".join(debugList)
   swParams["topology"] = params["topology"]

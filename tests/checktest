@@ -27,6 +27,10 @@ for test in tests:
     failstr = "FAILED"
     if "TIMEOUT" in text:
       failstr = "TIMEOUT" 
+    elif "TERMINATED" in text:
+      failstr = "TERMINATED"
+    elif "ERROR" in text:
+      failstr = "ERROR"
     failstr = "%s %s" % (chk_file, failstr)
     print (bcolors.FAIL + failstr + bcolors.ENDC)
     failures += 1

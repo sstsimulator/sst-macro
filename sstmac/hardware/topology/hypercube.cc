@@ -84,7 +84,7 @@ hypercube::configure_individual_port_params(switch_id src,
 {
   sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
   double bw = link_params->get_bandwidth_param("bandwidth");
-  int bufsize = switch_params->get_byte_length_param("buffer_size");
+  int bufsize = link_params->get_byte_length_param("buffer_size");
   for (int dim=0; dim < dimensions_.size(); ++dim){
     double port_bw = bw * red_[dim];
     int credits = bufsize * red_[dim];
