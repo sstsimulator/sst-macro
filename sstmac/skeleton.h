@@ -49,6 +49,7 @@ extern void* sstmac_new(unsigned long size);
 
 #define __builtin_operator_new(size) sstmac_new(size)
 #include <new>
+#include <utility>
 
 extern bool& should_skip_operator_new();
 
