@@ -5,7 +5,7 @@ category: SSTDocumentation
 ---
 
 
-# SST/macro 6.0 User's Manual
+# SST/macro 7.0 User's Manual
 
 ![](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/sstlogo.png) 
 
@@ -25,14 +25,13 @@ category: SSTDocumentation
          - [1.2.2: Analysis Tools and Statistics](#subsec:intro:toolsandstats)
             - [Fully tested](#subsubsec:intro:fulltestedtools)
       - [Section 1.3: Known Issues and Limitations](#sec:intro:issues)
-         - [1.3.1: Global Variables](#subsec:issues:globals)
-         - [1.3.2: MPI](#subsec:issues:mpi)
+         - [1.3.1: MPI](#subsec:issues:mpi)
             - [Communicators](#subsubsec:issues:mpi:comm)
             - [Datatypes and Addressing](#subsubsec:issues:mpi:types)
             - [Info and Attributes](#subsubsec:issues:mpi:info)
             - [Point-to-Point](#subsubsec:issues:mpi:ptpt)
             - [Collectives](#subsubsec:issues:mpi:collectives)
-         - [1.3.3: Fortran](#subsec:issues:fortran)
+         - [1.3.2: Fortran](#subsec:issues:fortran)
    - [Chapter 2: Building and Running SST/macro](#chapter:building)
       - [Section 2.1: Build and Installation of SST-macro](#sec:buildinstall)
          - [2.1.1: Downloading](#subsec:build:downloading)
@@ -44,16 +43,18 @@ category: SSTDocumentation
          - [2.1.5: Known Issues](#subsec:build:issues)
       - [Section 2.2: Building DUMPI](#sec:building:dumpi)
          - [2.2.1: Known Issues](#subsubsec:building:dumpi:issues)
-      - [Section 2.3: Running an Application](#sec:building:running)
-         - [2.3.1: SST Python Scripts](#subsec:SSTPythonScripts)
-         - [2.3.2: Building Skeleton Applications](#sec:tutorial:runapp)
-         - [2.3.3: Makefiles](#subsec:tutorial:makefiles)
-         - [2.3.4: Command-line arguments](#subsec:tutorial:cmdline)
-      - [Section 2.4: Parallel Simulations in Standalone Mode](#sec:PDES)
-         - [2.4.1: Distributed Memory Parallel](#subsec:mpiparallel)
-         - [2.4.2: Shared Memory Parallel](#subsec:parallelopt)
-         - [2.4.3: Warnings for Parallel Simulation](#subsec:parallelwarn)
-      - [Section 2.5: Debug Output](#sec:dbgoutput)
+      - [Section 2.3: Building with OTF2 (Beta)](#sec:buildingOtf2)
+      - [Section 2.4: Building Clang source-to-source support](#sec:buildingClang)
+      - [Section 2.5: Running an Application](#sec:building:running)
+         - [2.5.1: SST Python Scripts](#subsec:SSTPythonScripts)
+         - [2.5.2: Building Skeleton Applications](#sec:tutorial:runapp)
+         - [2.5.3: Makefiles](#subsec:tutorial:makefiles)
+         - [2.5.4: Command-line arguments](#subsec:tutorial:cmdline)
+      - [Section 2.6: Parallel Simulations in Standalone Mode](#sec:PDES)
+         - [2.6.1: Distributed Memory Parallel](#subsec:mpiparallel)
+         - [2.6.2: Shared Memory Parallel](#subsec:parallelopt)
+         - [2.6.3: Warnings for Parallel Simulation](#subsec:parallelwarn)
+      - [Section 2.7: Debug Output](#sec:dbgoutput)
    - [Chapter 3: Basic Tutorials](#chapter:tutorials)
       - [Section 3.1: SST/macro Parameter files](#sec:parameters)
          - [3.1.1: Parameter Namespace Rules](#subsec:parameterNamespace)
@@ -80,15 +81,18 @@ category: SSTDocumentation
       - [Section 3.7: Discrete Event Simulation](#sec:tutorial:des)
       - [Section 3.8: Using DUMPI](#sec:tutorial:dumpi)
          - [3.8.1: Building DUMPI](#subset:dump:build)
-            - [Trace Collection](#subsec:dumpi:tracecollection)
-            - [Trace Replay](#subsec:dumpi:tracereplay)
-      - [Section 3.9: Call Graph Visualization](#sec:tutorials:callgraph)
-      - [Section 3.10: Spyplot Diagrams](#sec:tutorials:spyplot)
-      - [Section 3.11: Fixed-Time Quanta Charts](#sec:tutorials:ftq)
-      - [Section 3.12: Network Statistics](#sec:tutorials:packetStats)
-         - [3.12.1: Message Size Histogram](#subsec:messageSizeHistogram)
-         - [3.12.2: Congestion Delay Histogram](#subsec:congestionDelayHistogram)
-         - [3.12.3: Congestion Spyplot and Multi-stats](#subsec:congestionSpyplot)
+         - [3.8.2: Trace Collection](#subsec:dumpi:tracecollection)
+         - [3.8.3: Trace Replay](#subsec:dumpi:tracereplay)
+      - [Section 3.9: Using Score-P and OTF2 (Beta)](#sec:tutorial:otf)
+         - [3.9.1: Trace Collection](#subsec:otf:traceCollection)
+         - [3.9.2: Trace Replay](#subsec:otf:traceReplay)
+      - [Section 3.10: Call Graph Visualization](#sec:tutorials:callgraph)
+      - [Section 3.11: Spyplot Diagrams](#sec:tutorials:spyplot)
+      - [Section 3.12: Fixed-Time Quanta Charts](#sec:tutorials:ftq)
+      - [Section 3.13: Network Statistics](#sec:tutorials:packetStats)
+         - [3.13.1: Message Size Histogram](#subsec:messageSizeHistogram)
+         - [3.13.2: Congestion Delay Histogram](#subsec:congestionDelayHistogram)
+         - [3.13.3: Congestion Spyplot and Multi-stats](#subsec:congestionSpyplot)
    - [Chapter 4: Topologies](#chapter:topologies)
       - [Section 4.1: Topology Query Utility](#sec:topologyQuery)
       - [Section 4.2: Torus](#subsec:tutorial:hypercube)
@@ -103,15 +107,13 @@ category: SSTDocumentation
          - [4.5.2: Routing](#subsec:dragonfly:routing)
    - [Chapter 5: Applications and Skeletonization](#chap:appsAndSkeletonization)
       - [Section 5.1: Basic Application porting](#sec:skel:basic)
-      - [Section 5.2: Redirected linkage](#sec:skel:linkage)
-         - [5.2.1: Loading external skeletons with the integrated core](#subsec:linkageCore)
-      - [Section 5.3: Skeletonization](#sec:skeletonization)
+         - [5.1.1: Loading external skeletons with the integrated core](#subsec:linkageCore)
+      - [Section 5.2: Auto-skeletonization with Clang (Beta)](#sec:autoSkeletonization)
+      - [Section 5.3: Manual Skeletonization](#sec:manSkeletonization)
          - [5.3.1: Basic compute modeling](#subsec:basicCompute)
          - [5.3.2: Detailed compute modeling](#subsec:detailedCompute)
          - [5.3.3: Skeletonization Issues](#subsec:skeletonIssues)
       - [Section 5.4: Process Encapsulation](#sec:processEncapsulation)
-         - [5.4.1: Manually refactoring global variables](#sec:skel:globals)
-         - [5.4.2: Automatically refactoring global variables](#subsec:autoRefactorGlobals)
    - [Chapter 6: Detailed Parameter Listings](#chapter:parameters)
       - [Section 6.1: Global namespace](#sec:globalParams)
       - [Section 6.2: Namespace "topology"](#sec:topologyParams)
@@ -169,7 +171,7 @@ This event trace can then be replayed post-mortem in the simulator.
 Most common are MPI traces which record all MPI events, and
 SST-macro provides the DUMPI utility ([3.8](#sec:tutorial:dumpi)) for collecting and replaying MPI traces. 
 Trace extrapolation can extend the usefulness of off-line simulation by estimating large or untraceable system scales without   
-having to collect a trace, it is typically only limited to strictly weak scaling.  
+having to collect a trace, but it is limited.
 
 We turn to on-line simulation when the hardware or applications parameters need to change.
 On-line simulators instead run real application code, allowing native C/C++/Fortran to be compiled directly into the simulator.
@@ -188,10 +190,9 @@ or at least not convenient.
 Simulation requires coarse-grained approximations to be practical.
 SST-macro is therefore designed for specific cost/accuracy tradeoffs.
 It should still capture complex cause/effect behavior in applications and hardware, but be efficient enough to simulate at the system-level. 
-For speeding up simulator execution, we encourage skeletonization, discussed further in Chapter [5.3](#sec:skeletonization). 
+For speeding up simulator execution, we encourage skeletonization, discussed further in Chapter [5](#chap:appsAndSkeletonization). 
 A high-quality skeleton is an application model that reproduces certain characteristics with only limited computation.  
-We also encourage uncertainty quantification (UQ) for validating simulator results,
-to be detailed in a pending SAND report.  
+We also encourage uncertainty quantification (UQ) for validating simulator results.
 Skeletonization and UQ are the two main elements in the "canonical" SST-macro workflow (Figure [1](#fig:workflow)).
 
 
@@ -212,7 +213,7 @@ Skeletonization and UQ are the two main elements in the "canonical" SST-macro wo
 Because of its popularity, MPI is one of our main priorities in providing programming model support.  
 We currently test against the MPICH test suite. All tests compile, so you should never see compilation errors.  
 However, since many of the functions are not typically used in the community, we only test commonly-used functions.   
-See Section [1.3.2](#subsec:issues:mpi) for functions that are not supported.  
+See Section [1.3.1](#subsec:issues:mpi) for functions that are not supported.  
 Functions that are not implemented will throw a `unimplemented_error`, reporting the function name. 
 
 #### 1.2.2: Analysis Tools and Statistics<a name="subsec:intro:toolsandstats"></a>
@@ -225,26 +226,15 @@ Some are thoroughly tested. Others have undergone some testing, but are still co
 
 
 
--   Call graph: Generates callgrind.out file that can be visualized in either KCacheGrind or QCacheGrind. More details are given in [3.9](#sec:tutorials:callgraph).
--   Spyplot: Generates .csv data files tabulating the number of messages and number of bytes sent between MPI ranks. SST-macro can also directly generate a PNG file. Otherwise, the .csv files can be visualized in the plotting program Scilab. More details are given in [3.10](#sec:tutorials:spyplot).
--   Fixed-time quanta (FTQ): Generates a .csv data tabulating the amount of time spent doing computation/communication as the application progresses along with a Gnuplot script for visualization as a histogram. More details are given in [3.11](#sec:tutorials:ftq)
+-   Call graph: Generates callgrind.out file that can be visualized in either KCacheGrind or QCacheGrind. More details are given in [3.10](#sec:tutorials:callgraph).
+-   Spyplot: Generates .csv data files tabulating the number of messages and number of bytes sent between MPI ranks. SST-macro can also directly generate a PNG file. Otherwise, the .csv files can be visualized in the plotting program Scilab. More details are given in [3.11](#sec:tutorials:spyplot).
+-   Fixed-time quanta (FTQ): Generates a .csv data tabulating the amount of time spent doing computation/communication as the application progresses along with a Gnuplot script for visualization as a histogram. More details are given in [3.12](#sec:tutorials:ftq)
 
 ### Section 1.3: Known Issues and Limitations<a name="sec:intro:issues"></a>
 
 
 
-#### 1.3.1: Global Variables<a name="subsec:issues:globals"></a>
-
-
-
-The use of global variables in SST-macro inherently creates a false-sharing scenario 
-because of the use of user-space threads to model parallel processes.   
-While we do have a mechanism for supporting them (see [5.1](#sec:skel:basic) for more information), 
-the file using them must be compiled with C++.   
-This is somewhat unfortunate, because many C programs will use global variables as a convenient means of accessing program data.   
-In almost every case, though, a C program can simply be compiled as C++ by changing the extension to .cc or .cpp.
-
-#### 1.3.2: MPI<a name="subsec:issues:mpi"></a>
+#### 1.3.1: MPI<a name="subsec:issues:mpi"></a>
 
 
 
@@ -305,16 +295,15 @@ Even if configured so that time progresses, the code will work but will take a v
 
 
 
--   There seems to be a problem with using `MPI_FLOAT` and `MPI_PROD` in `MPI_Allreduce()` (MPI test 22)
--   There seems to be a problem with using non-commutative user-defined operators in `MPI_Reduce()` and `MPI_Allreduce()`.
+-   Non-commutative user-defined operators in `MPI_Reduce()` and `MPI_Allreduce()`.
 -   `MPI_Alltoallw()` is not implemented
 -   `MPI_Exscan()` is not implemented
 -   `MPI_Reduce_Scatter_block()` is not implemented.
--   `MPIX_*` functions are not implemented  (like non-blocking collectives).
+-   `MPIX_*` functions are not implemented
 -   Calling MPI functions from user-defined reduce operations (MPI test 39; including `MPI_Comm_rank`).
 
 
-#### 1.3.3: Fortran<a name="subsec:issues:fortran"></a>
+#### 1.3.2: Fortran<a name="subsec:issues:fortran"></a>
 
 
 
@@ -349,9 +338,6 @@ or for ssh
 shell> git clone ssh://git@github.com/sstsimulator/sst-macro.git
 ````
 
-
-If you'd like to use ssh for convenience, make sure you have added a public key for your GitHub account.
-
 #### 2.1.2: Dependencies<a name="subsec:build:dependencies"></a>
 
 
@@ -366,7 +352,8 @@ The following are dependencies for SST-macro.
 -   Autoconf: 2.68 or later
 -   Automake: 1.11.1 or later
 -   Libtool: 2.4 or later
--   A C/C++ compiler is required with C++11 support.  gcc 4.8 and onward is known to work.
+-   A C/C++ compiler is required with C++11 support.  gcc >=4.8 and clang >= 3.7 are known to work.
+-   (optional) OTF2: 2.0 or later for OTF2 trace replay.
 -   (optional) Doxygen and Graphviz are needed to build the documentation.
 -   (optional) Graphviz is needed to collect call graphs.
 
@@ -383,8 +370,8 @@ The workflow for installing and running is therefore:
 
 -   Build and install SST core
 -   Build and install the SST/macro element library `libmacro.so`
--   Make sure paths are properly configured for `libmacro.so` to be visible to the SST core
--   Run the `sstmac` wrapper Python script that runs SST/macro-specific parameters OR
+-   Make sure paths are properly configured for `libmacro.so` to be visible to the SST core (`SST_LIB_PATH`)
+-   Run the `pysstmac` wrapper Python script that runs SST/macro-specific parameters OR
 -   Write a custom Python script
 
 ##### Build SST core<a name="subsec:buildSSTCore"></a>
@@ -425,7 +412,7 @@ Once SST-macro is extracted to a directory, we recommend the following as a base
 sst-macro> ./bootstrap.sh
 sst-macro> mkdir build
 sst-macro> cd build
-sst-macro/build> ../configure --prefix=/path-to-install --with-sst-core=$PATH_TO_SST_CORE CC=$MPICC CXX=$MPICXX
+sst-macro/build> ../configure --prefix=$PATH_TO_INSTALL --with-sst-core=$PATH_TO_SST_CORE CC=MPICC CXX=MPICXX
 ````
 `PATH_TO_SST_CORE` should be the prefix install directory used when installing the core.  The MPI compilers should be the same compilers used for building Boost and SST core.
 
@@ -438,6 +425,7 @@ Enabled by default. Disable if not using Boost or C++11. Ordered maps can be use
 Enabled by default. Disable if not using Boost or C++11.
 -   --(dis|en)able-custom-new : Memory is allocated in larger chunks in the simulator, which can speed up large simulations.
 -   --(dis|en)able-multithread : This configures for thread-level parallelism for (hopefully) faster simulation
+-   --(dis|en)able-otf2: Enable OTF2 trace replay, requires a path to OTF2 installation.
 
 Once configuration has completed, printing a summary of the things it found, simply type `make`.  
 
@@ -477,16 +465,15 @@ If this occurs, restart the compilation.  If the error vanishes, it was a parall
 If the error persists, then it's a real bug.
 -   Ubuntu: The Ubuntu linker performs too much optimization on dynamically linked executables.
 Some call it a feature.  I call it a bug.
-In the process it throws away symbols it actually needs later.
-When compiling with Ubuntu, make sure that '-Wl,--no-as-needed' is always given in LDFLAGS.
+In the process it throws away symbols it actually needs later. The build system should automatically fix Ubuntu flags.
+If still having issues, make sure that '-Wl,--no-as-needed' is given in LDFLAGS.
 
 The problem occurs when the executable depends on libA which depends on libB.
 The executable has no direct dependence on any symbols in libB.
 Even if you add `-lB` to the `LDFLAGS` or `LDADD` variables,
 the linker ignores them and throws the library out.
 It takes a dirty hack to force the linkage.
-If there are issues, contact the developers at sstmacro-devel@googlegroups.com and report the problem. 
-It can be fixed easily enough.
+If there are issues, contact the developers at sstmacro-devel@googlegroups.com and report the problem.
 -   Compilation with clang should work, although the compiler is very sensitive.  
 In particular, template code which is correct and compiles on several other platforms can mysteriously fail.  Tread with caution.
 
@@ -496,11 +483,10 @@ In particular, template code which is correct and compiles on several other plat
 
 By default, DUMPI is configured and built along with SST/macro with support for reading and parsing DUMPI traces, known as libundumpi.  
 DUMPI binaries and libraries are also installed along with everything for SST-macro during make install.   
-DUMPI can be used as it's own library within the SST-macro source tree by changing to `sst-macro/sst-dumpi`, 
+DUMPI can be used as its own library within the SST-macro source tree by changing to `sst-macro/sst-dumpi`, 
 where you can change its configuration options.  
-It is not recommended to disable libundumpi support, which wouldn't make much sense anyway. 
 
-DUMPI can also be used as stand-alone tool/library if you wish (\eg~for simplicity if you're only tracing). 
+DUMPI can also be used as stand-alone tool (\eg~for simplicity if you're only tracing). 
 To get DUMPI by itself, either copy the `sstmacro/dumpi` directory somewhere else or visit https://github.com/sstsimulator/sst-dumpi and follow similar instructions for obtaining SST-macro.
 
 To see a list of configuration options for DUMPI, run `./configure --help`.  
@@ -526,10 +512,81 @@ the libtool script.  Search for predeps/postdeps and set the values to empty.
 This will clear all the erroneous linker flags.  The compilation/linkage should still work since 
 all necessary flags are set by the wrappers.
 
-### Section 2.3: Running an Application<a name="sec:building:running"></a>
+### Section 2.3: Building with OTF2 (Beta)<a name="sec:buildingOtf2"></a>
 
 
-#### 2.3.1: SST Python Scripts<a name="subsec:SSTPythonScripts"></a>
+OTF2 is a general purpose trace format with specialized callbacks for the MPI API. OTF2 traces are generated by programs compiled with Score-P compiler wrappers. SST/macro 7.0 supports OTF2 trace replay when configured with 
+
+````
+./configure --enable-otf2=<OTF2-root>
+````
+where the OTF2 root is the installation prefix for a valid OTF2 build. OTF2 can be obtained from the Score-P project at {http://www.vi-hps.org/projects/score-p}.
+Detailed build and usage instructions can be found on the website.
+
+
+### Section 2.4: Building Clang source-to-source support<a name="sec:buildingClang"></a>
+
+
+
+\subsection{Building Clang libTooling}
+
+Building Clang support has a few steps (and takes quite a while to build), but is straightforward.
+Having a Clang compiler is not enough. You have to install a special libTooling library for Clang.
+Go to http://releases.llvm.org/download.html. Instead of having an all-in-one tarball, you will have to download 6 different components:
+
+
+-   LLVM source code
+-   Clang source code
+-   compiler-rt source code
+-   libc++ source code
+-   libc++abi source code
+-   OpenMP source code
+
+Setting up the folders can be done automatically using the `setup-clang` script in `bin/tools` folder in sst-macro. Put all of downloaded tarballs in a folder, e.g. `clang-llvm`. Then run `setup-clang` in the directory. 
+It will automatically place files where LLVM needs them.
+LLVM is the ``driver" for the entire build. Everything else is a subcomponent. 
+The setup script places each tarball in the following subfolders of the main LLVM folder
+
+
+-   tools/clang
+-   projects/compiler-rt
+-   projects/libc++
+-   projects/libc++abi
+-   projects/openmp
+
+Using CMake (assuming you are in a build subdirectory of the LLVM tree), you would run the script below to configure.
+You MUST use another Clang compiler to build. If not, then you need to bootstrap (use GCC to build Clang, then use that Clang to build itself).
+
+````
+cmake ../llvm \
+  -DCMAKE_CXX_COMPILER=clang++ \
+  -DCMAKE_C_COMPILER=clang \
+  -DCMAKE_CXX_FLAGS="-O3" \
+  -DCMAKE_C_FLAGS="-O3" \
+  -DLLVM_ENABLE_LIBCXX=ON \
+  -DLLVM_TOOL_COMPILER_RT_BUILD=ON \
+  -DLLVM_TOOL_LIBCXXABI_BUILD=ON \
+  -DLLVM_TOOL_LIBCXX_BUILD=ON \
+  -DCMAKE_INSTALL_PREFIX=$install
+````
+
+On some systems, linking Clang might blow out your memory. If that is the case, you have to set `LD=ld.gold` for the linker.
+Run `make install`. The libTooling library will now be available at the `\$install` location.
+
+\subsection{Building SST/macro with Clang}
+Now that clang is installled, you only need to add the configure flag `--with-clang` pointing it to the install location from above.
+You must use the same Clang compiler to build SST that you used to build libTooling.
+
+````
+../configure CXX=clang++ CC=clang --with-clang=$install
+````
+
+Clang source-to-source support will now be built into the `sst++` compiler.
+
+### Section 2.5: Running an Application<a name="sec:building:running"></a>
+
+
+#### 2.5.1: SST Python Scripts<a name="subsec:SSTPythonScripts"></a>
 
 
 
@@ -560,7 +617,7 @@ setupDeprecated()
 ````
 since there is no Python setup involved.
 
-#### 2.3.2: Building Skeleton Applications<a name="sec:tutorial:runapp"></a>
+#### 2.5.2: Building Skeleton Applications<a name="sec:tutorial:runapp"></a>
 
 
 
@@ -586,7 +643,7 @@ Then you run that binary and pass it a parameter file which describes the machin
 ````
 Any extra shared libraries can be given as the first few parameters and these will automatically be imported.
 
-#### 2.3.3: Makefiles<a name="subsec:tutorial:makefiles"></a>
+#### 2.5.3: Makefiles<a name="subsec:tutorial:makefiles"></a>
 
 
 
@@ -605,9 +662,9 @@ PREFIX :=   ...
 LDFLAGS :=  -Wl,-rpath,$(PREFIX)/lib
 ...
 ````
-The SST compiler wrappers `sst++` and `sstcc` automagically configure and map the code for simulation.  More details are given in Section [5.2](#sec:skel:linkage).  If using external skeleton applications, the default Python script for SST/macro will not work and a small modification will be required.
+The SST compiler wrappers `sst++` and `sstcc` automagically configure and map the code for simulation. 
 
-#### 2.3.4: Command-line arguments<a name="subsec:tutorial:cmdline"></a>
+#### 2.5.4: Command-line arguments<a name="subsec:tutorial:cmdline"></a>
 
 
 
@@ -619,18 +676,18 @@ There are only a few basic command-line arguments you'll ever need to use with S
 This can be relative to the current directory, an absolute path, or the name of a pre-set file that is in sstmacro/configurations 
 (which installs to /path-to-install/include/configurations, and gets searched along with current directory).
 -   --dumpi: If you are in a folder with all the DUMPI traces, you can invoke the main `sstmac` executable with this option.  This replays the trace in a special debug mode for quickly validating the correctness of a trace.
--   -d [debug flags]: A list of debug flags to activate as a comma-separated list (no spaces) - see Section [2.5](#sec:dbgoutput)
+-   -d [debug flags]: A list of debug flags to activate as a comma-separated list (no spaces) - see Section [2.7](#sec:dbgoutput)
 -   -p [parameter]=[value]: Setting a parameter value (overrides what is in the parameter file)
 -   -t [value]: Stop the simulation at simulated time [value]
--   -c: If multithreaded, give a comma-separated list (no spaces) of the core affinities to use - see Section [2.4.2](#subsec:parallelopt)
+-   -c: If multithreaded, give a comma-separated list (no spaces) of the core affinities to use - see Section [2.6.2](#subsec:parallelopt)
 
-### Section 2.4: Parallel Simulations in Standalone Mode<a name="sec:PDES"></a>
+### Section 2.6: Parallel Simulations in Standalone Mode<a name="sec:PDES"></a>
 
 
 
-SST-macro supports running parallel discrete event simulation (PDES) in distributed memory (MPI), threaded shared memory (pthreads) and hybrid (MPI+pthreads) modes.  Running these in standalone mode is generally discouraged as parallel simulations should use the unified SST core.
+SST-macro supports running parallel discrete event simulation (PDES) in distributed memory (MPI), threaded shared memory (pthreads) and hybrid (MPI+pthreads) modes.  Running these in standalone mode will be discouraged as parallel simulations should use the unified SST core. However, near-term, hybrid modes and other optimizations are not fully supported in the unified SST core. They standalone core may still be required for certain cases.
 
-#### 2.4.1: Distributed Memory Parallel<a name="subsec:mpiparallel"></a>
+#### 2.6.1: Distributed Memory Parallel<a name="subsec:mpiparallel"></a>
 
 
 Configure will automatically check for MPI.
@@ -640,9 +697,6 @@ Your configure should look something like:
 sst-macro/build> ../configure CXX=mpicxx CC=mpicc ...
 ````
 With the above options, you can just compile and go.
-
-
-
 SST-macro is run exactly like the serial version, but is spawned like any other MPI parallel program.
 Use your favorite MPI launcher to run, e.g. for OpenMPI
 
@@ -660,7 +714,7 @@ SST-macro will notice the total number of ranks is 1 and ignore any parallel opt
 When launched with multiple MPI ranks, SST-macro will automatically figure out how many partitions (MPI processes) 
 you are using, partition the network topology into contiguous blocks, and start running in parallel.   
 
-#### 2.4.2: Shared Memory Parallel<a name="subsec:parallelopt"></a>
+#### 2.6.2: Shared Memory Parallel<a name="subsec:parallelopt"></a>
 
 
 In order to run shared memory parallel, you must configure the simulator with the `--enable-multithread` flag.
@@ -677,16 +731,12 @@ For a threaded only simulation `cpu_affinity = 4` would pin the main process to 
 The affinities can also be specified on the command line using the `-c` option.
 Job launchers may in some cases provide duplicate functionality and either method can be used.
 
-#### 2.4.3: Warnings for Parallel Simulation<a name="subsec:parallelwarn"></a>
+#### 2.6.3: Warnings for Parallel Simulation<a name="subsec:parallelwarn"></a>
 
 
 
 -   Watch your `LD_LIBRARY_PATH` if you have multiple different builds. If your paths get scrambled and the wrong libraries are being read, you will get bizarre, inscrutable errors.
--   If the number of simulated processes specified by e.g. `aprun -n 100` does not match the number of nodes in the topology (i.e. you are not space-filling the whole simulated machine),
-parallel performance will suffer. SST-macro partitions nodes, not processes.
--   If running an MPI program,  you should probably be safe and use the `mpi_check` debug flag (see below) to ensure the simulation runs to completion.
-The flag ensures `MPI_Finalize` is called and the simulation did not ``deadlock."
-While the PDES implementation should be stable, it's best to treat it as Beta++ to ensure program correctness.
+-   If the number of simulated processes specified by e.g. `aprun -n 100` does not match the number of nodes in the topology (i.e. you are not space-filling the whole simulated machine), parallel performance will suffer. SST-macro partitions nodes, not MPI ranks.
 
 
 Parallel simulation speedups are likely to be modest for small runs.
@@ -695,7 +745,7 @@ Weak scaling is usually achievable with 100-500 simulated MPI ranks per logical 
 Even without speedup, parallel simulation can certainly be useful in overcoming memory constraints, expanding the maximum memory footprint. 
 
 
-### Section 2.5: Debug Output<a name="sec:dbgoutput"></a>
+### Section 2.7: Debug Output<a name="sec:dbgoutput"></a>
 
 
 SST-macro defines a set of debug flags that can be specified in the parameter file to control debug output printed by the simulator.
@@ -753,34 +803,51 @@ The preferred input files now use namespaces.
 However, for consistency with previous versions, we also show the deprecated parameters.
 
 ````
-# Launch parameters
-app1.indexing = block
-app1.allocation = first_available
-app1.launch_cmd = aprun -n8 -N1
-app1.name = sstmac_mpi_testall
-app1.argv =
-# Application parameters
-app1.sendrecv_message_size = 128
-# Network parameters
 amm_model = amm1
 congestion_model = simple
-switch.ejection.bandwidth = 1GB/s
-switch.ejection.latency = 100ns
-switch.link.bandwidth = 1.0GB/s
-switch.link.latency = 100ns
-# Topology - 4x4 Torus
-topology.name = torus
-topology.geometry = 4,4
-# Node parameters
-node.ncores = 1
-node.model = simple
-node.memory.model = simple
-node.memory.bandwidth = 1GB/s
-node.memory.latency = 10ns
-node.proc.frequency = 1GHz
-nic.model = simple
-nic.injection.bandwidth = 1GB/s
-nic.injection.latency = 1us
+node {
+ #run a single mpi test
+ app1 {
+  indexing = block
+  allocation = first_available
+  launch_cmd = aprun -n8 -N1
+  name = sstmac_mpi_testall
+  argv =
+  sendrecv_message_size = 128
+ }
+ ncores = 1
+ model = simple
+ memory {
+  model = simple
+  bandwidth = 1GB/s
+  latency = 10ns
+ }
+ proc {
+  frequency = 1GHz
+ }
+ nic {
+  injection {
+   bandwidth = 1GB/s
+   latency = 1us
+  }
+  model = simple
+ }
+}
+switch {
+ ejection {
+  bandwidth = 1GB/s
+  latency = 100ns
+ }
+ link {
+  bandwidth = 1.0GB/s
+   latency = 100ns
+ }
+}
+
+topology {
+ name = torus
+ geometry = 4,4
+}
 ````
 The input file follows a basic syntax of `parameter = value`.  
 Parameter names follow C++ variable rules (letters, numbers, underscore) while parameter values can contain spaces.  Trailing and leading whitespaces are stripped from parameters.
@@ -791,21 +858,21 @@ Comments can be included on lines starting with \#.
 
 Periods denote nesting of parameter namespaces.
 The parameter `node.memory.model` will be nested in namespace `memory` inside namespace `node`.
-SST/macro generally requests variable values via the inner-most namespace only.
-This means rather than asking for variable `node::memory::model` it will actually look for variable `memory::model` starting with the most deeply nested namespace.
-This exactly follows C++ namespace rules.
+If inside a given namespace, SST-macro looks within that namespace first.
+If unable to find it, the input parser moves through the namespace nesting to find the value.
+This exactly follows C++ namespace rules with one important exception. 
+The "global" namespace is reserved for special keywords that get translated.
+Keywords in the global namespace are not visible to any components.
+
 
 For example, consider the following:
-
 ````
-memory.model = simple
+node.model = simple
 node.memory.model = pisces
 ````
-If I am building the node's memory system, the initialization will look for `memory::model` inside namespace `node` first, returning the value `pisces`.
-If node initialization had been unable to find the variable in the `node` namespace,
-it would have moved up and looked in the global namespace, returning the value `simple`.
+If I am building the node's memory system, the initialization will look for `memory::model` inside namespace `node` first, returning the value `pisces`. 
 
-A new syntax supported in 6.1 more closely resembles C++ namespace declarations. 
+The preferred syntax from 6.1 more closely resembles C++ namespace declarations. 
 Namespaces can be scoped using brackets \{\}:
 
 ````
@@ -821,60 +888,13 @@ node {
 Any line containing a single string with an opening \{ starts a new namespace.
 A line containing only a closing \} ends the innermost namespace.
 The syntax is not as flexible as C++ since the opening \{ must appear on the same line as the namespace and the closing \} must be on a line of its own.
-
-Using the new syntax, the parameter file above now becomes:
-
-````
-amm_model = amm1
-congestion_model = simple
-
-app1 {
- indexing = block
- allocation = first_available
- launch_cmd = aprun -n8 -N1
- name = sstmac_mpi_testall
- argv =
- sendrecv_message_size = 128
-}
-
-switch {
- ejection {
-  bandwidth = 1GB/s
-  latency = 100ns
- }
- link {
-  bandwidth = 1.0GB/s
-  latency = 100ns
- }
-}
-
-topology {
- name = torus
- geometry = 4,4
-}
-
-node {
- ncores = 1
- model = simple
- memory {
-  bandwidth = 1GB/s
-  latency = 10ns
-  model = simple
- }
- proc.frequency = 1GHz
- nic {
-  injection.bandwidth = 1GB/s
-  injection.latency = 1us
- }
-}
-````
-Again, a detailed listing of parameter namespaces and keywords is given in Section [6](#chapter:parameters).
+A detailed listing of parameter namespaces and keywords is given in Section [6](#chapter:parameters).
 
 #### 3.1.2: Initial Example<a name="subsec:initialExample"></a>
 
 
-Continuing with the example above, we see the input file is broken into sections via comments.  
-First, application launch parameters must be chosen determining what application will launch, 
+Continuing with the example above, we see the input file is broken into namespace sections. 
+First, application launch parameters for each node must be chosen determining what application will launch, 
 how nodes will be allocated, how ranks will be indexed, and finally what application will be run.  
 Additionally, you must specify how many processes to launch and how many to spawn per node.  
 We currently recommend using aprun syntax (the launcher for Cray machines), 
@@ -902,13 +922,17 @@ An alternative parameter file would be:
 ````
 include machine.ini
 # Launch parameters
-app1.indexing = block
-app1.allocation = first_available
-app1.launch_cmd = aprun -n2 -N1
-app1.name = user_mpiapp_cxx
-app1.argv = 
-# Application parameters
-app1.sendrecv_message_size = 128
+node {
+ app1 {
+  indexing = block
+  allocation = first_available
+  launch_cmd = aprun -n2 -N1
+  name = user_mpiapp_cxx
+  argv = 
+  # Application parameters
+  sendrecv_message_size = 128
+ }
+}
 ````
 where in the first line we include the file `machine.ini`.  
 All network, topology, and node parameters would be placed into a `machine.ini` file.  
@@ -939,6 +963,8 @@ nic_name = null
 # Application parameters
 sendrecv_message_size = 128
 ````
+
+All of these are special keywords in the global namespace that get expanded into parameters in a specific namespace.
 
 
 
@@ -977,13 +1003,15 @@ If the parameter is set to 100-1000 bytes, e.g., that means we are doing more fi
 
 
 The following parameters define the CPU and compute power of the node (independent of memory subsystem).
-They are universal and are valid for all abstract machine models.  Using the preferred (current) namespace parameters:
+They are universal and are valid for all abstract machine models. 
 
 ````
-node.model = simple
-node.frequency = 2.1ghz
-node.ncores = 24
-node.nsockets = 4
+node {
+ model = simple
+ frequency = 2.1ghz
+ ncores = 24
+ nsockets = 4
+}
 ````
 or using the deprecated parameters:
 
@@ -1165,9 +1193,11 @@ While in many previous architectures there was generally a one-to-one correspond
 Multinode switches can be specified via
 
 ````
-topology.name = torus
-topology.geometry = 4 4
-topology.concentration = 2
+topology {
+ name = torus
+ geometry = 4 4
+ concentration = 2
+}
 ````
 which would now generate a torus topology with 16 switches and 32 compute nodes.
 
@@ -1175,24 +1205,30 @@ Another subtle modification of torus (and other networks) can be controlled by g
 The above network could be modified as
 
 ````
-topology.name = torus
-topology.geometry = 4 4
-topology.redundant = 2 1
+topology {
+ name = torus
+ geometry = 4 4
+ redundant = 2 1
+}
 ````
 giving the the X-dimension twice the bandwidth of the Y-dimension.  
 This pattern DOES exist in some interconnects as a load-balancing strategy.  
 A very subtle point arises here. Consider two different networks:
 
 ````
-topology.name = torus
-topology.geometry = 4 4
-topology.redundant = 1 1
+topology {
+ name = torus
+ geometry = 4 4
+ redundant = 1 1
+}
 network_bandwidth = 2GB/s
 ````
 ````
-topology.name = torus
-topology.geometry = 4 4
-topology.redundant = 2 2
+topology {
+ name = torus
+ geometry = 4 4
+ redundant = 2 2
+}
 network_bandwidth = 1GB/s
 ````
 For some coarse-grained models, these two networks are exactly equivalent.  
@@ -1214,7 +1250,11 @@ The above scheme is entirely static, making no adjustments to avoid congestion i
 SST-macro supports a variety of adaptive routing algorithms.  This can be specified:
 
 ````
-router = min_ad
+switch {
+ router {
+  name = min_ad
+ }
+}
 ````
 which specifies minimal adaptive routing. 
 There are now multiple valid paths between network endpoints, one of which is illustrated in Figure [8](#fig:torus:minadrouting).
@@ -1433,7 +1473,7 @@ the code is now indistinguishable from regular MPI C++ code.
 In the parameter file to be used with the simulation, you must set
 
 ````
-app1.name = simple_test
+node.app1.name = simple_test
 ````
 
 The name associated to the application is given by the `sstmac_app_name` macro.
@@ -1479,8 +1519,12 @@ Currently, we encourage the user to use aprun from Cray, for which documentation
 In the parameter file you specify, e.g.
 
 ````
-app1.name = user_mpiapp_cxx
-app1.launch_cmd = aprun -n 8 -N 2
+node {
+ app1 {
+  name = user_mpiapp_cxx
+  launch_cmd = aprun -n 8 -N 2
+ }
+}
 ````
 which launches an external user C++ application with eight ranks and two ranks per node.
 The aprun command has many command line options (see online documentation), some of which may be supported in future versions of SST/macro.  In particular, we are in the process of adding support for thread affinity, OpenMP thread allocation, and NUMA containment flags.  Most flags, if included, will simply be ignored.
@@ -1500,7 +1544,7 @@ For the launch command `aprun -n 8 -N 2`, we must allocate 4 compute nodes from 
 Our first option is to specify the first available allocation scheme (Figure [10](#fig:allocation:first_available))
 
 ````
-app1.allocation = first_available
+node.app1.allocation = first_available
 ````
 
 ![Figure 10: First available Allocation of 4 Compute Codes on a 3x3 2D Torus](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/allocation/firstavailable.png) 
@@ -1515,9 +1559,11 @@ In general, first available will give a contiguous allocation, but it won't nece
 To give more structure to the allocation, a Cartesian allocator can be used (Figure [11](#fig:allocation:cartesian)).
 
 ````
-app1.allocation = cartesian
-app1.cart_sizes = 2 2
-app1.cart_offsets = 0 0
+app1 {
+ allocation = cartesian
+ cart_sizes = 2 2
+ cart_offsets = 0 0
+}
 ````
 
 ![Figure 11: Cartesian Allocation of 4 Compute Codes on a 3x3 2D Torus](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/allocation/cartesian.png) 
@@ -1529,7 +1575,7 @@ Rather than just looping through the list of available nodes, we explicitly allo
 If testing how "topology agnostic" your application is, you can also choose a random allocation.
 
 ````
-app1.allocation = random
+node.app1.allocation = random
 ````
 
 ![Figure 12: Random Allocation of 4 Compute Codes on a 3x3 2D Torus](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/allocation/random.png) 
@@ -1553,7 +1599,7 @@ indexing MPI ranks in the order received from the allocation list.
 If running multiple MPI ranks per node, block indexing tries to keep consecutive MPI ranks on the same node (Figure [13](#fig:indexing:block)).
 
 ````
-app1.indexing = block
+node.app1.indexing = block
 ````
 
 ![Figure 13: Block Indexing of 8 MPI Ranks on 4 Compute Nodes](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/indexing/block.png) 
@@ -1564,7 +1610,7 @@ app1.indexing = block
 In contrast, round-robin spreads out MPI ranks by assigning consecutive MPI ranks on different nodes (Figure [14](#fig:indexing:round_robin)).
 
 ````
-app1.indexing = round_robin
+node.app1.indexing = round_robin
 ````
 
 ![Figure 14: Round-Robin Indexing of 8 MPI Ranks on 4 Compute Nodes](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/indexing/roundrobin.png) 
@@ -1575,7 +1621,7 @@ app1.indexing = round_robin
 Finally, one may also choose
 
 ````
-app1.indexing = random
+node.app1.indexing = random
 ````
 Random allocation with random indexing is somewhat redundant.  
 Random allocation with block indexing is not similar to Cartesian allocation with random indexing.
@@ -1717,7 +1763,7 @@ As noted in the introduction, SST-macro is primarily intended to be an on-line s
 Although DUMPI is automatically included as a subproject in the SST-macro download, trace collection can be easier if DUMPI is built independently from SST-macro.  The code can be downloaded from https://bitbucket.org/sst-ca/dumpi. If downloaded through Mercurial, one must initialize the build system and create the configure script.
 
 ````
-dumpi> ./bootstraps.h
+dumpi> ./bootstrap.sh
 ````
 
 DUMPI must be built with an MPI compiler.
@@ -1737,7 +1783,7 @@ your_project/build> ../configure CC=mpicc CXX=mpicxx \
                                   LDFLAGS="-L$DUMPI_PATH/lib -ldumpi"
 ````
 
-##### Trace Collection<a name="subsec:dumpi:tracecollection"></a>
+#### 3.8.2: Trace Collection<a name="subsec:dumpi:tracecollection"></a>
 
 
 DUMPI works by overriding weak symbols in the MPI library.
@@ -1812,7 +1858,7 @@ subversion=1
 subsubversion=0
 ````
 
-##### Trace Replay<a name="subsec:dumpi:tracereplay"></a>
+#### 3.8.3: Trace Replay<a name="subsec:dumpi:tracereplay"></a>
 
 
 It is often useful to validate the correctness of a trace.  Sometimes there can be problems with trace collection. 
@@ -1832,11 +1878,15 @@ When topology information is recorded, trace replay is much easier.
 The parameter file then becomes, e.g.
 
 ````
-app1.launch_type = dumpi
-app1.indexing = dumpi
-app1.allocation = dumpi
-app1.name = parsedumpi
-app1.dumpi_metaname = testbgp.meta
+node {
+ app1 {
+  launch_type = dumpi
+  indexing = dumpi
+  allocation = dumpi
+  name = parsedumpi
+  dumpi_metaname = testbgp.meta
+ }
+}
 ````
 We have a new parameter `launch_type` set to `dumpi`.
 This was implicit before, taking the default value of `skeleton`.
@@ -1867,8 +1917,10 @@ it cannot read the topology type.  It could be a torus, dragonfly, or fat tree.
 The parameter file therefore needs
 
 ````
-topology_name = torus
-topology_geometry = 4 2 2
+topology {
+ name = torus
+ geometry = 4 2 2
+}
 ````
 Beyond the topology, the user must also specify the machine model with bandwidth and latency parameters.
 Again, this is information that cannot be automatically encoded in the trace.
@@ -1884,15 +1936,21 @@ The new parameter file, for a fictional machine called deep thought
 
 ````
 # Launch parameters
-app1.launch_type = dumpi
-app1.indexing = dumpi
-app1.allocation = hostname
-app1.name = parsedumpi
-app1.dumpi_metaname = dumpi-2013.09.26.10.55.53.meta
-app1.dumpi_mapname = deepthought.map
+node {
+ app1 {
+  launch_type = dumpi
+  indexing = dumpi
+  allocation = hostname
+  name = parsedumpi
+  dumpi_metaname = dumpi-2013.09.26.10.55.53.meta
+  dumpi_mapname = deepthought.map
+ }
+}
 # Machine parameters
-topology_name = torus
-topology_geometry = 2 2
+topology {
+ name = torus
+ geometry = 2 2
+}
 ````
 
 
@@ -1918,14 +1976,20 @@ Suppose we want to test a crossbar topology.
 
 ````
 # Launch parameters
-app1.indexing = block
-app1.allocation = first_available
-app1.dumpi_metaname = dumpi-2013.09.26.10.55.53.meta
-app1.name = parsedumpi
-app1.size = 2
+node {
+ app1 {
+  indexing = block
+  allocation = first_available
+  dumpi_metaname = dumpi-2013.09.26.10.55.53.meta
+  name = parsedumpi
+  size = 2
+ }
+}
 # Machine parameters
-topology.name = crossbar
-topology.geometry = 4
+topology {
+ name = crossbar
+ geometry = 4
+}
 ````
 We no longer use the DUMPI allocation and indexing. 
 We also no longer require a hostname map.
@@ -1935,8 +1999,80 @@ The MPI ranks are mapped to physical nodes entirely independent of the trace.
 
 
 
+### Section 3.9: Using Score-P and OTF2 (Beta)<a name="sec:tutorial:otf"></a>
 
-### Section 3.9: Call Graph Visualization<a name="sec:tutorials:callgraph"></a>
+
+
+OTF2 is part of Score-P. Sources for both can be found here 
+````
+http://www.vi-hps.org/projects/score-p
+````
+
+
+Trace collection requires both Score-P and OTF2 installations. Trace replay with SST/macro requires OTF2.
+
+
+#### 3.9.1: Trace Collection<a name="subsec:otf:traceCollection"></a>
+
+
+Score-P's default collection strategy will include every function call in the trace, making even small programs produce untenably large traces. Score-P supports collection filters, which can restrict collection at a minimum to MPI and OMP function calls. At the end of the program's runtime, traces from each rank are put in a common directory.  An MPI program must be compiled with Score-P to produce traces:
+
+````
+scorep-mpicxx -o test.exe test.cc
+````
+
+
+
+To limit the size of the traces, run the program with:
+
+````
+# these environment variables are picked up by Score-P at runtime
+export SCOREP_ENABLE_TRACING=true
+export SCOREP_TOTAL_MEMORY=1G
+export SCOREP_FILTERING_FILE='scorep.filter'
+
+mpirun -n 2 test.exe
+````
+
+The file `scorep.filter` should contain:
+````
+SCOREP_REGION_NAMES_BEGIN EXCLUDE *
+````
+
+
+To view a plain-text representation of the trace after running, use the otf2-print tool.
+
+````
+otf2-print scorep-*/traces.otf2
+````
+
+#### 3.9.2: Trace Replay<a name="subsec:otf:traceReplay"></a>
+
+
+SST/macro will use a trace replay skeleton for OTF2 in much the same way as it does for dumpi. SST/macro trace replays configured using *.ini files. 
+
+````
+...
+
+node {
+ app1 {
+  otf2_timescale = 1.0
+  name = otf2_trace_replay_app
+  size = N
+  otf2_metafile = <trace-root>/scorep-20170309_1421_27095992608015568/traces.otf2
+ # debugging output
+  otf2_print_mpi_calls=false
+  otf2_print_trace_events=false
+  otf2_print_time_deltas=false
+  otf2_warn_unknown_callback=false
+ }
+}
+````
+
+
+
+
+### Section 3.10: Call Graph Visualization<a name="sec:tutorials:callgraph"></a>
 
 
 Generating call graphs requires a special build of SST-macro.
@@ -1994,7 +2130,7 @@ Here we see the function splits execution time between buffering messages (memcp
 
 
 
-### Section 3.10: Spyplot Diagrams<a name="sec:tutorials:spyplot"></a>
+### Section 3.11: Spyplot Diagrams<a name="sec:tutorials:spyplot"></a>
 
 
 
@@ -2045,7 +2181,7 @@ This gives a better sense of spatial locality when many MPI ranks are on the sam
 *Figure 20: Application Activity (Fixed-Time Quanta; FTQ) for Simple MPI Test Suite*
 
 
-### Section 3.11: Fixed-Time Quanta Charts<a name="sec:tutorials:ftq"></a>
+### Section 3.12: Fixed-Time Quanta Charts<a name="sec:tutorials:ftq"></a>
 
 
 Another way of visualizing application activity is a fixed-time quanta (FTQ) chart.
@@ -2095,25 +2231,27 @@ node.os.ftq.epoch=5us
 
 
 
-### Section 3.12: Network Statistics<a name="sec:tutorials:packetStats"></a>
+### Section 3.13: Network Statistics<a name="sec:tutorials:packetStats"></a>
 
 
 
 Here we describe a few of the network statistics that can be collected and the basic mechanism for activating them.
 These statistics are usually collected on either the NIC, switch crossbar, or switch output buffers.
 
-#### 3.12.1: Message Size Histogram<a name="subsec:messageSizeHistogram"></a>
+#### 3.13.1: Message Size Histogram<a name="subsec:messageSizeHistogram"></a>
 
 
 To active a message size histogram on the NIC to determine the distribution of message sizes, the parameter file should include, for example:
 
 ````
-nic {
- message_size_histogram {
+node {
+ nic {
+  message_size_histogram {
    fileroot = histogram
    bin_size = 1
    logarithmic = true
- }
+  }
+ } 
 }
 ````
 The statistics are activated when the parameter reader sees the namespace `message_size_histogram`.
@@ -2128,7 +2266,7 @@ An example generated for Nekbone with 1024 processors is in Figure [21](#fig:nek
 
 
 
-#### 3.12.2: Congestion Delay Histogram<a name="subsec:congestionDelayHistogram"></a>
+#### 3.13.2: Congestion Delay Histogram<a name="subsec:congestionDelayHistogram"></a>
 
 
 
@@ -2140,13 +2278,15 @@ Thus, the packet allocator must be changed.
 The NIC parameters now become:
 
 ````
-nic {
- packet_allocator = delay_stats
- ejection {
-  stats = delay_histogram
-  delay_histogram {
-   fileroot = delay
-   bin_size = 0.5us
+node {
+ nic {
+  packet_allocator = delay_stats
+  ejection {
+   stats = delay_histogram
+   delay_histogram {
+    fileroot = delay
+    bin_size = 0.5us
+   }
   }
  }
 }
@@ -2187,7 +2327,7 @@ switch {
 }
 ````
 
-#### 3.12.3: Congestion Spyplot and Multi-stats<a name="subsec:congestionSpyplot"></a>
+#### 3.13.3: Congestion Spyplot and Multi-stats<a name="subsec:congestionSpyplot"></a>
 
 
 
@@ -2199,19 +2339,21 @@ Most of the same parameters from the delay histogram are required.
 However, we now want to collect both a spyplot and the histogram.
 
 ````
-nic {
- packet_allocator = delay_stats
- ejection {
-  stats = multi
-  callbacks = congestion_spyplot delay_histogram
-  congestion_spyplot {
-   fileroot = spyplot
-   type = png
-   normalization = 100000
-  }
-  delay_histogram {
-   fileroot = delay
-   bin_size = 0.5us
+node {
+ nic {
+  packet_allocator = delay_stats
+  ejection {
+   stats = multi
+   callbacks = congestion_spyplot delay_histogram
+   congestion_spyplot {
+    fileroot = spyplot
+    type = png
+    normalization = 100000
+   }
+   delay_histogram {
+    fileroot = delay
+    bin_size = 0.5us
+   }
   }
  }
 }
@@ -2314,13 +2456,19 @@ For torus we illustrate here the Cartesian allocation for generating regular Car
 For this, the input file would look like 
 
 ````
-topology.name = torus
-topology.geometry = 4 4 4
-app1.launch_cmd = aprun -n 8
-app1.indexing = block
-app1.allocation = cartesian
-app1.cart_sizes = 2 2 2
-app1.cart_offsets = 0 0 0
+topology {
+ name = torus
+ geometry = 4 4 4
+}
+node {
+ app1 {
+  launch_cmd = aprun -n 8
+  indexing = block
+  allocation = cartesian
+  cart_sizes = 2 2 2
+  cart_offsets = 0 0 0
+ }
+}
 ````
 
 This allocates a 3D torus of size 4x4x4.
@@ -2338,14 +2486,18 @@ i.e. if two nodes have the 4D coordinates [1 2 3 0] and [1 2 3 1] they are both 
 Consider the example below:
 
 ````
-topology.name = torus
-topology.geometry = 4 4 4
-topology.concentration = 2
-app1.launch_cmd = aprun -n 8
-app1.indexing = block
-app1.allocation = cartesian
-app1.cart_sizes = 2 2 1 2
-app1.cart_offsets = 0 0 0 0
+topology {
+ name = torus
+ geometry = 4 4 4
+ concentration = 2
+}
+app1 {
+ launch_cmd = aprun -n 8
+ indexing = block
+ allocation = cartesian
+ cart_sizes = 2 2 1 2
+ cart_offsets = 0 0 0 0
+}
 ````
 
 We allocate a set of switches across an XY plane (2 in X, 2 in Y, 1 in Z for a single plane).
@@ -2398,10 +2550,14 @@ Here each switch has radix 12 (3 connections in X, 4 connections in Y, 5 connect
 A hypercube has the same coordinate system as a torus. For example, to create a very specific, irregular allocation on a hyerpcube:
 
 ````
-app1.launch_cmd = aprun -n 5
-app1.indexing = coordinate
-app1.allocation = coordinate
-app1.coordinate_file = coords.txt
+node {
+ app1 {
+  launch_cmd = aprun -n 5
+  indexing = coordinate
+  allocation = coordinate
+  coordinate_file = coords.txt
+ }
+}
 ````
 and then a coordinate file named `coords.txt`
 
@@ -2525,7 +2681,7 @@ The numbering of compute nodes is shown in Figure [29](#fig:topologies:fattreeid
 Consider the case
 
 ````
-app1.launch_cmd = aprun -n 4 -N 1
+node.app1.launch_cmd = aprun -n 4 -N 1
 ````
 which launches four processes all on distinct nodes.
 In the simplest allocation and indexing scheme (first available),
@@ -2533,9 +2689,13 @@ processes would be placed in order on 0,1,2,3.
 An alternative allocation/indexing scheme uses the Node ID allocator.
 
 ````
-app1.allocation = node_id
-app1.indexing = node_id
-app1.node_id_file = nodes.txt
+node {
+ app1 {
+  allocation = node_id
+  indexing = node_id
+  node_id_file = nodes.txt
+ }
+}
 ````
 Here `nodes.txt` would contain the number of nodes on the first line, followed by the list of Node IDs, in order, of where to place MPI ranks.
 For the file
@@ -2553,15 +2713,19 @@ If indexing differs from allocation (usually because there are multiple MPI rank
 Suppose we have:
 
 ````
-app1.launch_cmd = aprun -n 4 -N 2
+node.app1.launch_cmd = aprun -n 4 -N 2
 ````
 We then need:
 
 ````
-app1.allocation = node_id
-app1.indexing = node_id
-app1.node_id_allocation_file = alloc.txt
-app1.node_id_indexing_file = index.txt
+node {
+ app1 {
+  allocation = node_id
+  indexing = node_id
+  node_id_allocation_file = alloc.txt
+  node_id_indexing_file = index.txt
+ }
+}
 ````
 where the contents of `alloc.txt` are, e.g.
 
@@ -2743,27 +2907,22 @@ router = ugal
 
 There are three parts to successfully taking a C++ code and turning it into a running application.
 
--   Redirected linkage: Rather than linking to MPI, pThreads, or other parallel libraries (or even calling `hostname`), these functions must be redirected to SST-macro rather than actually executing.
+-   Redirected linkage: Rather than linking to MPI, pThreads, or other parallel libraries (or even calling `hostname`), these functions must be redirected to SST-macro rather than calling the native libraries on the machine running the simulator.
 You get all redirected linkage for free by using
 the SST compiler wrappers `sst++` and `sstcc` installed in the `bin` folder.
--   Skeletonization: While SST-macro can run in emulation mode, executing your entire application exactly, this is not scalable.  To simulate at scale (i.e. 100K or more MPI ranks) you must strip down or "skeletonize" the application to the minimal amount of computation.  The energy and time cost of expensive compute kernels are then simulated via models rather than explicitly executed.
--   Process encapsulation: Each virtual process being simulated is not an actual physical process. It is instead modeled as a lightweight user-space thread.  This means each virtual process has its own stack and register variables, but that is it.
-Virtual processes share the same address space and the same global variables.  Some refactoring may be necessary if you have global variables.
+-   Skeletonization: While SST-macro can run in emulation mode, executing your entire application exactly, this is not scalable.  To simulate at scale (i.e. 1K or more MPI ranks) you must strip down or "skeletonize" the application to the minimal amount of computation.  The energy and time cost of expensive compute kernels are then simulated via models rather than explicitly executed.
+-   Process encapsulation: Each virtual process being simulated is not an actual physical process. It is instead modeled as a lightweight user-space thread.  This means each virtual process has its own stack and register variables, but not its own data segment (global variables).
+Virtual processes share the same address space and the same global variables.  A Beta version of the auto-skeletonizing clang-based SST compiler is available with the 7.0 release. If the Beta is not stable with your application, manual refactoring may be necessary if you have global variables.
 
-### Section 5.2: Redirected linkage<a name="sec:skel:linkage"></a>
-
-
-Because of the way libraries are import in the SST core, using external skeleton apps is more complicated than previously.  Steps are being taken to re-automate this process, which will hopefully be available in the next subversion. For running the standalone version, this is essentially automatic  if using the SST compiler wrappers.  The compiler wrappers produce a new executable incorporating your new skeleton.
-
-The wrinkle is external skeletons apps is changing the application's entry point, i.e. `main`.
-The SST/macro framework has already taken the \texttt{main} function, and consequently the user application becomes a sub-routine within the simulation environment. As introduced in Section~[3.5](#sec:tutorial:basicmpi), one needs redirect \texttt{main} to a different symbol by defining the macro `sstmac_app_name` at the top of the file containing `main`. This refactoring happens automatically in the SST compiler wrappers. 
-
-
-#### 5.2.1: Loading external skeletons with the integrated core<a name="subsec:linkageCore"></a>
+#### 5.1.1: Loading external skeletons with the integrated core<a name="subsec:linkageCore"></a>
 
 
 While the main `libmacro.so` provides the bulk of SST/macro functionality, 
-users may wish to compile and run external skeletons.  This gets a bit confusing with SST core since you have an external skeleton for an external element.  One can do this manually following the instructions on http://sst-simulator.org. You must create an element info struct name `X_eli` for X your library name.  You can still use the `sst++` compiler wrappers for building, but you must now manually create a `libX.so` from the compiled object files.  The `default.py` script used by `pysstmac` must also be edited.  The top lines was previously
+users may wish to compile and run external skeletons.  This gets a bit confusing with SST core since you have an external skeleton for an external element.  
+This now gets performed automatically with the `sst++` compiler. 
+When the executable is generated, SST-macro will also generate a `libX.so` containing all the element info.
+This can then be used for SST simulations.
+The `default.py` script used by `pysstmac` must also be edited.  The top lines was previously
 
 ````
 import sst.macro
@@ -2774,15 +2933,95 @@ This only loads the main components, not the external skeleton. You must add
 import sst.X
 ````
 where X is the name of your skeleton. This causes the core to also load the shared library corresponding to your external skeleton app.
-If using the SST compiler wrappers, the ELI block and .so file will actually be generated automatically.  As shown in Section [2.3](#sec:building:running),
+If using the SST compiler wrappers, the ELI block and .so file will actually be generated automatically.  As shown in Section [2.5](#sec:building:running),
 the generate shared library files can be added as the first parameters to the `pysstmac` script.
 
 ````
 >sst-macro/skeletons/sendrecv> pysstmac librunsstmac.so -f parameters.ini
 ```` 
 
+### Section 5.2: Auto-skeletonization with Clang (Beta)<a name="sec:autoSkeletonization"></a>
 
-### Section 5.3: Skeletonization<a name="sec:skeletonization"></a>
+
+
+The build of the Clang toolchain is described in Section [2.4](#sec:buildingClang). 
+This enables a source-to-source translation capability in the `sst++` compiler that can auto-skeletonize computation and fix global variable references.
+Some of this can be accomplished automatically (global variables), but most of it (removing computation and memory allocations) must occur through pragmas.
+A good example of skeletonization can be found in the lulesh2.0.3 example in the skeletons folder. Most of the available SST pragmas are used there.
+Pragmas are preferred since they allow switching easily back and forth between skeleton and full applications.
+This allows much easier validation of the simulation.
+
+\subsection{Redirecting Main}
+Your application's `main` has to have its symbols changed.
+The simulator itself takes over `main`.
+SST-macro therefore has to capture the function pointer in your code and associate it with a string name for the input file.
+This is automatically accomplished by defining the macro `sstmac_app_name` either in your code or through a `-D=` build flag to the name of your application (unquoted!). The value of the macro will become the string name used for launching the application via `node.app1.name=X`.
+Even without Clang, this works for C++. For C, Clang source-to-source is required.
+
+\subsection{Memory Allocations}
+To deactivate memory allocations in C code that uses `malloc`, use:
+````
+#pragma sst malloc
+  void* ptr = malloc(...)
+````
+prior to any memory allocations that should be deactivated during skeleton runs, but active during real runs.
+
+Similarly, for C++ we have
+````
+#pragma sst new
+  int* ptr = new int[...]
+````
+
+\subsection{Computation}
+In general, the SST compiler captures all `#pragma omp parallel` statements.
+It then analyzes the for-loop or code block and attempts to derive a computational model for it.
+The computational models are quite simple (skeleton apps!), 
+based simply on the number of flops executed and the number of bytes read (written) from memory.
+Consider the example:
+
+````
+double A[N], B[N];
+#pragma omp parallel for
+for (int i=0; i < N; ++i){
+  A[i] = alpha*A[i] + B[i];
+}
+````
+The SST compiler deduces 16N bytes read, 8N bytes written, and 16N flops (or 8N if fused-multiplies are enabled).
+Based on processor speed and memory speed, it then estimates how long the kernel will take without actually executing the loop.
+If not wanting to use OpenMP in the code, `#pragma sst compute` can be used instead of `#pragma omp parallel`.
+
+
+\subsection{Special Pragmas}
+Many special cases can arise that break skeletonization.
+This is often not a limited of the SST compiler, but rather a fundemental limitation in the static analysis of the code.
+This most often arises due to nested loops. Consider the example:
+
+````
+#pragma omp parallel for
+for (int i=0; i < N; ++i){
+  int nElems = nElemLookup[i];
+  for (int e=0; e < nElems; ++e){
+  }
+}
+````
+Auto-skeletonization will fail. The skeletonization converts the outer loop into a single call to an SST compute model.
+However, the inner loop can vary depending on the index.
+This data-dependency breaks the static analysis.
+To fix this, a hint must be given to SST as to what the "average" inner loop size is.
+For example, it may loops nodes in a mesh. In this case, it may almost always be 8.
+
+````
+#pragma omp parallel for
+for (int i=0; i < N; ++i){
+  int nElems = nElemLookup[i];
+  #sst replace nElems 8
+  for (int e=0; e < nElems; ++e){
+  }
+}
+````
+This hint allows SST to skeletonize the inner loop and "guess" at the data dependency.
+
+### Section 5.3: Manual Skeletonization<a name="sec:manSkeletonization"></a>
 
 
 
@@ -2797,8 +3036,6 @@ Skeletonization falls into three main categories:
 -   Loops - Usually the main brunt of CPU time, so get rid of any loops that don't contain MPI calls or calculate variables needed in MPI calls.
 -   Communication buffers - While you can pass in real buffers with data to SST-macro MPI calls and they will work like normal, it is relatively expensive. If they're not needed, get rid of them.
 
-A good example of skeletonization can be found in the lulesh2.0.3 example in the skeletons folder.
-
 #### 5.3.1: Basic compute modeling<a name="subsec:basicCompute"></a>
 
 
@@ -2809,7 +3046,7 @@ By default, even if you don't remove any computation, simulation time doesn't pa
 host_compute_modeling = true
 ````
 
-in your parameter file.  In this case, SST-macro will use the wall time that the host takes to run code between MPI calls and use that as simulated time.  This only makes sense, of course, if you didn't do any skeletonization and the original code is all there. 
+in your parameter file.  In this case, SST-macro will use the wall time that the host takes to run code between MPI calls and use that as simulated time.  This only makes sense if you did not do any skeletonization and the original code is all there. 
 
 If you do skeletonize your application and remove computation, you need to replace it with a model of the time or resources necessary to perform that computation so that SST-macro can advance simulation time properly. 
 These functions are all accessible by using the SST compiler wrappers or by adding `#include <sstmac/compute.h>` to your file.
@@ -2847,8 +3084,7 @@ but as more threads are added the contention will quickly increase.
 The function prototype is
 
 ````
-void
-sstmac_compute_detailed(long nflops, long nintops, long bytes);
+void sstmac_compute_detailed(uint64_t nflops, uint64_t nintops, uint64_t bytes);
 ````
 Here `flops` is the number of floating point operations and `bytes` is the number of bytes that hit the memory controller.
 `bytes` is not simply the number of writes/reads that a kernel performs.
@@ -2895,34 +3131,8 @@ They are explicitly managed user-space threads with a private stack, but without
 When porting an application to SST/macro, global variables used in C programs will not be mapped to separate memory addresses causing incorrect execution or even segmentation faults.
 If you have avoided global variables, there is no major issue.  
 If you have read-only global variables with the same value on each machine, there is still no issue.
-If you have mutable global variables or read-only variables such as `mpi_rank` that differ across processes,
-there is so minor refactoring that needs to be done.
-
-#### 5.4.1: Manually refactoring global variables<a name="sec:skel:globals"></a>
-
-
-
-SST-macro provides a complete set of global variable replacements from 
-`\#include <sstmac/sstmac_global.h>`, which is automatically included the SST compiler wrappers.
-Then replace the variable type declaration with the ones that have a `global_` prefix in the header file.
-To use this file, you must compile your application with a C++ compiler as a C++ program.  While most of C++ is backwards-compatible, there are some things that are not, and will require either a compiler flag to relax strictness or quick refactor of some of your syntax.
-
-When printing a global variable with `printf`, the user should explicitly invoke a cast to the primitive type in the function call:
-
-````
-print("Hello world on rank %d", int(rank));
-````
-If not explicitly cast, the `va_args` function will be misinterpreted and produce an "Illegal instruction" error.  
-This still follows the "single-source" principle since whether compiling for SST-macro or a real machine, the code is still valid.
-
-#### 5.4.2: Automatically refactoring global variables<a name="subsec:autoRefactorGlobals"></a>
-
-
-
-Tools are currently in use by developers to automatically refactor codes to use no global variables.
-This involves running the source code through a compiler tool chain that then creates a `struct`
-encapsulating all global variables into thread-specific classes.
-This process is only for advanced users and requires developer help.
+If you have mutable global variables, you should use the `sst++` clang-based compiler wrappers to auto-refactor your code (Section [5.2](#sec:autoSkeletonization)).
+This feature is current labeled Beta, but is stable for numerous tests and will be fully supported for release 7.1.
 
 
 
@@ -3086,7 +3296,7 @@ All other parameters can be filled in from `node.nic.injection`.
 
 | Name (type) | Default | Allowed | Description |
 |-------------|---------|---------|-------------|
-| stats (string) | null | delay\_histogram,   congestion\_spyplot,   multi, 	null | The type of statistics to collect from packets leaving or arriving at the NIC.    Null indicates no statistics collected. For details on the other types of statistics, see Section [3.12](#sec:tutorials:packetStats) |
+| stats (string) | null | delay\_histogram,   congestion\_spyplot,   multi, 	null | The type of statistics to collect from packets leaving or arriving at the NIC.    Null indicates no statistics collected. For details on the other types of statistics, see Section [3.13](#sec:tutorials:packetStats) |
 | callbacks (vector of string) | No default | Any valid stats name | If `stats` is set to `multi`,then multiple different stats can be given here |
 | arbitrator (string) | cut\_through | null, simple, cut\_through | Bandwidth arbitrator for PISCES congestion modeling. Null uses simple delays with no congestion. Simple uses store-and-forward that is cheap to compute, but can have severe latency errors for large packets. Cut-through approximates pipelining of flits across stages. |
 | latency (time) | No default |  | If given, overwrites the send and credit latency parameters. Depending on component, the entire latency may be put on either the credits or the send. |
@@ -3104,7 +3314,7 @@ All other parameters can be filled in from `node.nic.injection`.
 
 | Name (type) | Default | Allowed | Description |
 |-------------|---------|---------|-------------|
-| stats (string) | null | delay\_histogram, 	null | The type of statistics to collect from packets leaving or arriving at the NIC.    Null indicates no statistics collected. For details on the other types of statistics, see Section [3.12](#sec:tutorials:packetStats) |
+| stats (string) | null | delay\_histogram, 	null | The type of statistics to collect from packets leaving or arriving at the NIC.    Null indicates no statistics collected. For details on the other types of statistics, see Section [3.13](#sec:tutorials:packetStats) |
 | arbitrator (string) | cut\_through | null, simple, cut\_through | Bandwidth arbitrator for PISCES congestion modeling. Null uses simple delays with no congestion. Simple uses store-and-forward that is cheap to compute, but can have severe latency errors for large packets. Cut-through approximates pipelining of flits across stages. |
 | latency (time) | No default |  | If given, overwrites the send and credit latency parameters. Depending on component, the entire latency may be put on either the credits or the send. |
 | bandwidth | No default |  | The bandwidth of the arbitrator |
@@ -3260,7 +3470,7 @@ All other parameters can be filled in from `node.nic.injection`.
 
 | Name (type) | Default | Allowed | Description |
 |-------------|---------|---------|-------------|
-| stats (string) | null | delay\_histogram,   byte\_hops, 	null | The type of statistics to collect from packets leaving or arriving at the switch output buffers.    Null indicates no statistics collected. For details on the other types of statistics, see Section [3.12](#sec:tutorials:packetStats) |
+| stats (string) | null | delay\_histogram,   byte\_hops, 	null | The type of statistics to collect from packets leaving or arriving at the switch output buffers.    Null indicates no statistics collected. For details on the other types of statistics, see Section [3.13](#sec:tutorials:packetStats) |
 
 ##### Namespace ``switch.output\_buffer.delay\_histogram"<a name="subsubsec:switch:outputBuffer:delayHistogram:Params"></a>
 
@@ -3290,7 +3500,7 @@ All other parameters can be filled in from `node.nic.injection`.
 
 | Name (type) | Default | Allowed | Description |
 |-------------|---------|---------|-------------|
-| stats (string) | null | bytes\_sent, 	null | The type of statistics to collect from packets leaving or arriving at the switch crossbar.    Null indicates no statistics collected. For details on the other types of statistics, see Section [3.12](#sec:tutorials:packetStats) |
+| stats (string) | null | bytes\_sent, 	null | The type of statistics to collect from packets leaving or arriving at the switch crossbar.    Null indicates no statistics collected. For details on the other types of statistics, see Section [3.13](#sec:tutorials:packetStats) |
 | arbitrator (string) | cut\_through | null, simple, cut\_through | Bandwidth arbitrator for PISCES congestion modeling. Null uses simple delays with no congestion. Simple uses store-and-forward that is cheap to compute, but can have severe latency errors for large packets. Cut-through approximates pipelining of flits across stages. |
 | latency (time) | No default |  | If given, overwrites the send and credit latency parameters. Depending on component, the entire latency may be put on either the credits or the send. |
 | bandwidth | No default |  | The bandwidth of the arbitrator |
@@ -3347,7 +3557,7 @@ If unspecified, all of the values here will be filled in from `nic.injection`.
 ### Section 6.7: Namespace "appN"<a name="sec:appN:Params"></a>
 
 
-This is a series of namespaces `app1`, `app2`, and so on for each of the launched applications.
+This is a series of namespaces `app1`, `app2`, and so on for each of the launched applications. These should be contained within the `node` namespace.
 
 
 | Name (type) | Default | Allowed | Description |
@@ -3371,6 +3581,15 @@ This is a series of namespaces `app1`, `app2`, and so on for each of the launche
 | parsedumpi\_timescale (double) | 1.0 | Positive float | If running DUMPI traces, scale compute times by the given value. Values less than 1.0 speed up computation. Values greater than 1.0 slow down computation. |
 | parsedumpi\_terminate\_percent (int) | 100 | 1-100 | Percent of trace. Can be used to terminate large traces early |
 
+
+| Name (type) | Default | Allowed | Description |
+|-------------|---------|---------|-------------|
+| otf2\_metafile (string) | No default | string | The root file of an OTF2 trace. |
+| otf2\_timescale (double) | 1.0 | Positive float | If running OTF2 traces, scale compute times by the given value. Values less than 1.0 speed up computation. Values greater than 1.0 slow down computation. |
+| otf2\_print\_mpi\_calls (bool) | false |  | Print MPI calls found in the OTF2 trace |
+| otf2\_print\_trace\_events (bool) | false |  | Debugging flag that printsindividual trace events (which includes details such as when an MPI call begins, ends, and when a collective begins and ends |
+| otf2\_print\_time\_deltas (bool) | false |  | Debugging flag that prints compute delays injected by the simulator |
+| otf2\_warn\_unknown\_callback (bool) | false |  | Debugging flag the prints unknown callbacks |
 
 
 
