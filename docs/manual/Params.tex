@@ -365,7 +365,7 @@ If unspecified, all of the values here will be filled in from \inlinefile{nic.in
 
 \section{Namespace ``appN''}
 \label{sec:appN:Params}
-This is a series of namespaces \inlineshell{app1}, \inlineshell{app2}, and so on for each of the launched applications.
+This is a series of namespaces \inlineshell{app1}, \inlineshell{app2}, and so on for each of the launched applications. These should be contained within the \inlineshell{node} namespace.
 
 \openTable
 \hline
@@ -408,13 +408,23 @@ parsedumpi\_terminate\_percent \paramType{int} & 100 & 1-100 & Percent of trace.
 \end{tabular}
 
 \openTable
-otf2\_terminate\_percent \paramType{int} & 100 & 1-100 & Percent of trace. Can be used to terminate large traces early \\
-\hline
-otf2\_print\_progress \paramType{bool} & false & true or false & Print percent complete throughout an otf2 replay \\
+\\
 \hline
 otf2\_metafile \paramType{string} & No default & string & The root file of an OTF2 trace. \\
 \hline
 otf2\_timescale \paramType{double} & 1.0 & Positive float & If running OTF2 traces, scale compute times by the given value. Values less than 1.0 speed up computation. Values greater than 1.0 slow down computation. \\
+\hline
+otf2\_print\_mpi\_calls \paramType{bool} & false & & Print MPI calls found in the OTF2 trace
+\\
+\hline
+otf2\_print\_trace\_events \paramType{bool} & false & & Debugging flag that printsindividual trace events (which includes details such as when an MPI call begins, ends, and when a collective begins and ends
+\\
+\hline
+otf2\_print\_time\_deltas \paramType{bool} & false & & Debugging flag that prints compute delays injected by the simulator
+\\
+\hline
+otf2\_warn\_unknown\_callback \paramType{bool} & false & & Debugging flag the prints unknown callbacks
+\\
 \hline
 \end{tabular}
 

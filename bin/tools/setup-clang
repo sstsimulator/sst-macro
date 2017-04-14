@@ -1,0 +1,44 @@
+#! /usr/bin/env python
+
+import os
+import sys
+
+order = [
+ ("llvm", "llvm"),
+ ("cfe", "llvm/tools/clang"),
+ ("compiler-rt", "llvm/projects/compiler-rt"),
+ ("openmp", "llvm/projects/openmp"),
+ ("libcxx", "llvm/projects/libcxx"),
+ ("libcxxabi", "llvm/projects/libcxxabi"),
+]
+
+import glob
+for pattern, dst in order:
+  if os.path.isdir(dst):
+    print("skipping %s" % dst)
+    continue
+
+  tarball = glob.glob("%s-*tar*" % pattern)
+  if len(tarball) == 0:
+    sys.exit("no matches for %s tarball" % pattern)
+  elif len(tarball) > 1:
+    sys.exit("multiple matches for %s tarball: %s" % (pattern, tarball))
+
+  tarball = tarball[0]
+  cmd = "tar -xvf %s" % tarball
+  print(cmd)
+  rc = os.system(cmd)
+  if not rc == 0:
+    sys.exit("failed unpacking %s" % tarball)
+  
+  matches = glob.glob("%s*" % pattern)
+  folder = None
+  for m in matches:
+    if not "tar" in m:
+      folder = m
+      break
+  cmd = "mv %s %s" % (folder, dst)
+  print(cmd)
+  rc = os.system(cmd)
+  if not rc == 0:
+    sys.exit("failed moving %s to %s" % (folder, dst))

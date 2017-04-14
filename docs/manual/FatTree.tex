@@ -71,7 +71,7 @@ The numbering of compute nodes is shown in Figure \ref{fig:topologies:fattreeids
 Consider the case
 
 \begin{ViFile}
-app1.launch_cmd = aprun -n 4 -N 1
+node.app1.launch_cmd = aprun -n 4 -N 1
 \end{ViFile}
 which launches four processes all on distinct nodes.
 In the simplest allocation and indexing scheme (first available),
@@ -79,9 +79,13 @@ processes would be placed in order on 0,1,2,3.
 An alternative allocation/indexing scheme uses the Node ID allocator.
 
 \begin{ViFile}
-app1.allocation = node_id
-app1.indexing = node_id
-app1.node_id_file = nodes.txt
+node {
+ app1 {
+  allocation = node_id
+  indexing = node_id
+  node_id_file = nodes.txt
+ }
+}
 \end{ViFile}
 Here \inlineshell{nodes.txt} would contain the number of nodes on the first line, followed by the list of Node IDs, in order, of where to place MPI ranks.
 For the file
@@ -99,15 +103,19 @@ If indexing differs from allocation (usually because there are multiple MPI rank
 Suppose we have:
 
 \begin{ViFile}
-app1.launch_cmd = aprun -n 4 -N 2
+node.app1.launch_cmd = aprun -n 4 -N 2
 \end{ViFile}
 We then need:
 
 \begin{ViFile}
-app1.allocation = node_id
-app1.indexing = node_id
-app1.node_id_allocation_file = alloc.txt
-app1.node_id_indexing_file = index.txt
+node {
+ app1 {
+  allocation = node_id
+  indexing = node_id
+  node_id_allocation_file = alloc.txt
+  node_id_indexing_file = index.txt
+ }
+}
 \end{ViFile}
 where the contents of \inlineshell{alloc.txt} are, e.g.
 
