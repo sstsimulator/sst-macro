@@ -1132,11 +1132,9 @@ bool
 sim_parameters::get_param(std::string& inout, const std::string& key)
 {
   bool found = get_scoped_param(inout, key);
-  if (!found && parent_){
+  if (!found && parent_ && parent_->public_scope()){
     //never return anything from the top-level global namespace - no, don't
-    if (parent_ && parent_->public_scope()){
-      return parent_->get_param(inout, key);
-    }
+    return parent_->get_param(inout, key);
   } else {
     return found;
   }
@@ -1179,11 +1177,9 @@ bool
 sim_parameters::has_param(const std::string& key) const
 {
   bool has_here = has_scoped_param(key);
-  if (!has_here && parent_){
+  if (!has_here && parent_ && parent_->public_scope()){
     //never return anything from the top-level global namespace - no, don't
-    if (parent_ && parent_->public_scope()){
-      return parent_->has_param(key);
-    }
+    return parent_->has_param(key);
   } else {
     return has_here;
   }
