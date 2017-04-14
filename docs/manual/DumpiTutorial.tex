@@ -123,11 +123,15 @@ When topology information is recorded, trace replay is much easier.
 The parameter file then becomes, e.g.
 
 \begin{ViFile}
-app1.launch_type = dumpi
-app1.indexing = dumpi
-app1.allocation = dumpi
-app1.name = parsedumpi
-app1.dumpi_metaname = testbgp.meta
+node {
+ app1 {
+  launch_type = dumpi
+  indexing = dumpi
+  allocation = dumpi
+  name = parsedumpi
+  dumpi_metaname = testbgp.meta
+ }
+}
 \end{ViFile}
 We have a new parameter \inlinefile{launch_type} set to \inlinefile{dumpi}.
 This was implicit before, taking the default value of \inlinefile{skeleton}.
@@ -158,8 +162,10 @@ it cannot read the topology \emph{type}.  It could be a torus, dragonfly, or fat
 The parameter file therefore needs
 
 \begin{ViFile}
-topology_name = torus
-topology_geometry = 4 2 2
+topology {
+ name = torus
+ geometry = 4 2 2
+}
 \end{ViFile}
 Beyond the topology, the user must also specify the machine model with bandwidth and latency parameters.
 Again, this is information that cannot be automatically encoded in the trace.
@@ -175,15 +181,21 @@ The new parameter file, for a fictional machine called deep thought
 
 \begin{ViFile}
 # Launch parameters
-app1.launch_type = dumpi
-app1.indexing = dumpi
-app1.allocation = hostname
-app1.name = parsedumpi
-app1.dumpi_metaname = dumpi-2013.09.26.10.55.53.meta
-app1.dumpi_mapname = deepthought.map
+node {
+ app1 {
+  launch_type = dumpi
+  indexing = dumpi
+  allocation = hostname
+  name = parsedumpi
+  dumpi_metaname = dumpi-2013.09.26.10.55.53.meta
+  dumpi_mapname = deepthought.map
+ }
+}
 # Machine parameters
-topology_name = torus
-topology_geometry = 2 2
+topology {
+ name = torus
+ geometry = 2 2
+}
 \end{ViFile}
 
 
@@ -209,14 +221,20 @@ Suppose we want to test a crossbar topology.
 
 \begin{ViFile}
 # Launch parameters
-app1.indexing = block
-app1.allocation = first_available
-app1.dumpi_metaname = dumpi-2013.09.26.10.55.53.meta
-app1.name = parsedumpi
-app1.size = 2
+node {
+ app1 {
+  indexing = block
+  allocation = first_available
+  dumpi_metaname = dumpi-2013.09.26.10.55.53.meta
+  name = parsedumpi
+  size = 2
+ }
+}
 # Machine parameters
-topology.name = crossbar
-topology.geometry = 4
+topology {
+ name = crossbar
+ geometry = 4
+}
 \end{ViFile}
 We no longer use the DUMPI allocation and indexing. 
 We also no longer require a hostname map.

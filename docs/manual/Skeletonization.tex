@@ -48,14 +48,78 @@ The build of the Clang toolchain is described in Section \ref{sec:buildingClang}
 This enables a source-to-source translation capability in the \inlineshell{sst++} compiler that can auto-skeletonize computation and fix global variable references.
 Some of this can be accomplished automatically (global variables), but most of it (removing computation and memory allocations) must occur through pragmas.
 A good example of skeletonization can be found in the lulesh2.0.3 example in the skeletons folder. Most of the available SST pragmas are used there.
+Pragmas are preferred since they allow switching easily back and forth between skeleton and full applications.
+This allows much easier validation of the simulation.
 
 \subsection{Redirecting Main}
+Your application's \inlinecode{main} has to have its symbols changed.
+The simulator itself takes over \inlinecode{main}.
+\sstmacro therefore has to capture the function pointer in your code and associate it with a string name for the input file.
+This is automatically accomplished by defining the macro \inlinecode{sstmac_app_name} either in your code or through a \inlineshell{-D=} build flag to the name of your application (unquoted!). The value of the macro will become the string name used for launching the application via \inlinecode{node.app1.name=X}.
+Even without Clang, this works for C++. For C, Clang source-to-source is required.
 
 \subsection{Memory Allocations}
+To deactivate memory allocations in C code that uses \inlinecode{malloc}, use:
+\begin{CppCode}
+#pragma sst malloc
+  void* ptr = malloc(...)
+\end{CppCode}
+prior to any memory allocations that should be deactivated during skeleton runs, but active during real runs.
+
+Similarly, for C++ we have
+\begin{CppCode}
+#pragma sst new
+  int* ptr = new int[...]
+\end{CppCode}
 
 \subsection{Computation}
+In general, the SST compiler captures all \inlinecode{#pragma omp parallel} statements.
+It then analyzes the for-loop or code block and attempts to derive a computational model for it.
+The computational models are quite simple (skeleton apps!), 
+based simply on the number of flops executed and the number of bytes read (written) from memory.
+Consider the example:
+
+\begin{CppCode}
+double A[N], B[N];
+#pragma omp parallel for
+for (int i=0; i < N; ++i){
+  A[i] = alpha*A[i] + B[i];
+}
+\end{CppCode}
+The SST compiler deduces $16N$ bytes read, $8N$ bytes written, and $16N$ flops (or $8N$ if fused-multiplies are enabled).
+Based on processor speed and memory speed, it then estimates how long the kernel will take without actually executing the loop.
+If not wanting to use OpenMP in the code, \inlinecode{#pragma sst compute} can be used instead of \inlinecode{#pragma omp parallel}.
+
 
 \subsection{Special Pragmas}
+Many special cases can arise that break skeletonization.
+This is often not a limited of the SST compiler, but rather a fundemental limitation in the static analysis of the code.
+This most often arises due to nested loops. Consider the example:
+
+\begin{CppCode}
+#pragma omp parallel for
+for (int i=0; i < N; ++i){
+  int nElems = nElemLookup[i];
+  for (int e=0; e < nElems; ++e){
+  }
+}
+\end{CppCode}
+Auto-skeletonization will fail. The skeletonization converts the outer loop into a single call to an SST compute model.
+However, the inner loop can vary depending on the index.
+This data-dependency breaks the static analysis.
+To fix this, a hint must be given to SST as to what the ``average'' inner loop size is.
+For example, it may loops nodes in a mesh. In this case, it may almost always be 8.
+
+\begin{CppCode}
+#pragma omp parallel for
+for (int i=0; i < N; ++i){
+  int nElems = nElemLookup[i];
+  #sst replace nElems 8
+  for (int e=0; e < nElems; ++e){
+  }
+}
+\end{CppCode}
+This hint allows SST to skeletonize the inner loop and ``guess'' at the data dependency.
 
 \section{Manual Skeletonization}
 \label{sec:manSkeletonization}
@@ -118,8 +182,7 @@ but as more threads are added the contention will quickly increase.
 The function prototype is
 
 \begin{CppCode}
-void
-sstmac_compute_detailed(uint64_t nflops, uint64_t nintops, uint64_t bytes);
+void sstmac_compute_detailed(uint64_t nflops, uint64_t nintops, uint64_t bytes);
 \end{CppCode}
 Here \inlinecode{flops} is the number of floating point operations and \inlinecode{bytes} is the number of bytes that hit the memory controller.
 \inlinecode{bytes} is \emph{not} simply the number of writes/reads that a kernel performs.
