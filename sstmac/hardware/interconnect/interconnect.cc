@@ -106,13 +106,14 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   rt_ = rt;
   int my_rank = rt_->me();
   int nproc = rt_->nproc();
+  int nthread = rt_->nthread();
   sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
   sprockit::sim_parameters* nlink_inj_params =
       netlink_params->get_optional_namespace("injection");
   num_speedy_switches_with_extra_node_ = num_nodes_ % nproc;
   num_nodes_per_speedy_switch_ = num_nodes_ / nproc;
   node_to_logp_switch_.resize(num_nodes_);
-  logp_overlay_switches_.resize(nproc);
+  logp_overlay_switches_.resize(nproc*nthread);
 
   sprockit::sim_parameters* node_params = params->get_namespace("node");
   sprockit::sim_parameters* nic_params = node_params->get_namespace("nic");
@@ -130,12 +131,16 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   local_logp_switch_ = my_rank;
   logp_switch* local_logp_switch;
   for (int i=0; i < nproc; ++i){
-    switch_id sid(i);
-    switch_params->add_param_override("id", int(sid));
-    if (i == my_rank){
-      logp_overlay_switches_[sid] = local_logp_switch = new logp_switch(switch_params, sid, mgr);
-    } else {
-      logp_overlay_switches_[sid] = new dist_dummy_switch(switch_params, sid, mgr, device_id::logp_overlay);
+    int offset = i*nthread;
+    for (int t=0; t < nthread; ++t){
+      switch_id sid(t+offset);
+      switch_params->add_param_override("id", int(sid));
+      if (i == my_rank){
+        logp_overlay_switches_[sid] = new logp_switch(switch_params, sid, mgr->ev_man_for_thread(t));
+      } else {
+        logp_overlay_switches_[sid] = new dist_dummy_switch(switch_params, sid, mgr, 
+                                                            device_id::logp_overlay);
+      }
     }
   }
 
@@ -266,10 +271,9 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
   logp_switch* local_logp_switch = safe_cast(logp_switch,
                                          logp_overlay_switches_[my_rank]);
 
-  int local_sw_idx = 0;
   for (int i=0; i < num_switches_; ++i){
     switch_id sid(i);
-    int thread = partition_->thread_for_local_switch(local_sw_idx);
+    int thread = partition_->thread_for_switch(i);
     event_manager* thread_mgr = mgr->ev_man_for_thread(thread);
     int target_rank = partition_->lpid_for_switch(sid);
     std::vector<topology::injection_port> nodes;
@@ -339,9 +343,6 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
           logp_overlay_switches_[target_rank]->payload_handler(port));
       }
     }
-    if (my_rank == target_rank){
-      ++local_sw_idx;
-    }
   }
 }
 
@@ -355,7 +356,6 @@ interconnect::build_switches(sprockit::sim_parameters* switch_params,
   int my_rank = rt_->me();
   bool all_switches_same = topology_->uniform_switches();
   switch_id num_switch_ids = topology_->max_switch_id();
-  int local_sw_idx = 0;
   for (switch_id i=0; i < num_switch_ids; ++i){
     if (!topology_->switch_id_slot_filled(i))
       continue; //don't build
@@ -364,11 +364,10 @@ interconnect::build_switches(sprockit::sim_parameters* switch_params,
     if (partition_->lpid_for_switch(i) == my_rank){
       if (!all_switches_same)
         topology_->configure_nonuniform_switch_params(i, switch_params);
-      int thread = partition_->thread_for_local_switch(local_sw_idx);
+      int thread = partition_->thread_for_switch(i);
       event_manager* thread_mgr = mgr->ev_man_for_thread(thread);
       switches_[i] = network_switch_factory::get_param("model",
                       switch_params, i, thread_mgr);
-      ++local_sw_idx;
     } else {
       switches_[i] = new dist_dummy_switch(switch_params, i, mgr, device_id::router);
     }

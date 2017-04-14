@@ -220,10 +220,8 @@ fat_tree::minimal_distance(switch_id src,
 
 void
 tapered_fat_tree::create_partition(
-  int* switches_per_lp,
   int *switch_to_lp,
   int *switch_to_thread,
-  int& local_num_switches,
   int me,
   int nproc,
   int nthread,

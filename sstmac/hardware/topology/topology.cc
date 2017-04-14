@@ -162,10 +162,8 @@ topology::get_port_params(sprockit::sim_parameters *params, int port)
 
 void
 topology::create_partition(
-  int* switches_per_lp,
   int *switch_to_lp,
   int *switch_to_thread,
-  int& local_num_switches,
   int me,
   int nproc,
   int nthread,

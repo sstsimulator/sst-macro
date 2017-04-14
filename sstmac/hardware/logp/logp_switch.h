@@ -34,7 +34,7 @@ class logp_switch :
 
   std::string
   to_string() const override {
-    return "simple switch";
+    return "LogP switch";
   }
 
   int queue_length(int port) const override {

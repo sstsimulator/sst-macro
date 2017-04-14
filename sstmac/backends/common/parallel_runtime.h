@@ -42,7 +42,6 @@ class parallel_runtime :
 
     void resize(size_t size){
       if (size <= allocSize) return;
-
       expiredArrays.push_back(storage);
       init(size);
     }
@@ -51,6 +50,7 @@ class parallel_runtime :
       for (char* old : expiredArrays){
         delete[] old;
       }
+      expiredArrays.clear();
       ptr = storage;
       remaining = allocSize;
     }

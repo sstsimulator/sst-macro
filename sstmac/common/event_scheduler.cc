@@ -266,8 +266,8 @@ event_scheduler::send_delayed_to_link(timestamp extra_delay,
 void
 event_scheduler::schedule_now(event_handler *handler, event* ev)
 {
-  event_queue_entry* qev = new handler_event_queue_entry(ev, handler, event_location());
-  schedule(now(), qev);
+  //event_queue_entry* qev = new handler_event_queue_entry(ev, handler, event_location());
+  schedule(now(), handler, ev);
 }
 
 void
@@ -350,8 +350,8 @@ event_scheduler::multithread_schedule(int src_thread, int dst_thread,
   timestamp t, event_queue_entry* ev)
 {
   debug_printf(sprockit::dbg::event_manager,
-      "At location %d, scheduling event at t=%12.8e srcthread=%d dstthread=%d",
-      event_location().id(), t.sec(), src_thread, dst_thread);
+      "At location %d:%s, scheduling event at t=%12.8e srcthread=%d dstthread=%d",
+      event_location().id(), to_string().c_str(), t.sec(), src_thread, dst_thread);
   if (dst_thread != event_handler::null_threadid
      && dst_thread != src_thread){
     ev->set_time(t);
@@ -377,9 +377,6 @@ event_scheduler::schedule(timestamp t,
   else {
     event_queue_entry* qev = new handler_event_queue_entry(ev, handler, event_location());
 #if SSTMAC_USE_MULTITHREAD
-    if(handler->thread_id() == -1){
-      std::cout << "null=" << (void*)handler << " " << handler->to_string() << std::endl;
-    }
     multithread_schedule(thread_id(), handler->thread_id(), t, qev);
 #else
     eventman_->schedule(t, (*seqnum_)++, qev);
