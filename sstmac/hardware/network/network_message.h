@@ -44,6 +44,7 @@ class network_message :
    node_id to,
    node_id from,
    long payload_bytes) :
+    aid_(aid),
     needs_ack_(true),
     toaddr_(to),
     fromaddr_(from),
@@ -81,14 +82,11 @@ class network_message :
 
   virtual ~network_message() {}
 
-  static const char*
-  tostr(nic_event_t mut);
+  static const char* tostr(nic_event_t mut);
 
-  static const char*
-  tostr(type_t ty);
+  static const char* tostr(type_t ty);
 
-  bool
-  is_metadata() const;
+  bool is_metadata() const;
 
   virtual network_message*
   clone_injection_ack() const {
@@ -97,95 +95,75 @@ class network_message :
     return cln;
   }
 
-  message*
-  clone_ack() const override {
+  message* clone_ack() const override {
     return clone_injection_ack();
   }
 
-  virtual void
-  nic_reverse(type_t newtype);
+  virtual void nic_reverse(type_t newtype);
 
-  bool
-  is_nic_ack() const;
+  bool is_nic_ack() const;
 
-  node_id
-  toaddr() const override {
+  node_id toaddr() const override {
     return toaddr_;
   }
 
-  virtual void
-  put_on_wire();
+  virtual void put_on_wire();
 
-  node_id
-  fromaddr() const override {
+  node_id fromaddr() const override {
     return fromaddr_;
   }
 
-  void
-  set_toaddr(node_id addr) {
+  void set_toaddr(node_id addr) {
     toaddr_ = addr;
   }
 
-  void
-  set_fromaddr(node_id addr) {
+  void set_fromaddr(node_id addr) {
     fromaddr_ = addr;
   }
 
-  void
-  set_needs_ack(bool n) {
+  void set_needs_ack(bool n) {
     needs_ack_ = n;
   }
 
-  virtual bool
-  needs_ack() const override {
+  virtual bool needs_ack() const override {
     //only paylods get acked
     return needs_ack_ && type_ >= payload;
   }
 
-  virtual void
-  serialize_order(serializer& ser) override;
+  virtual void serialize_order(serializer& ser) override;
 
-  void
-  convert_to_ack();
+  void convert_to_ack();
 
-  void
-  set_flow_id(uint64_t id) {
+  void set_flow_id(uint64_t id) {
     flow_id_ = id;
   }
 
-  uint64_t
-  flow_id() const override {
+  uint64_t flow_id() const override {
     return flow_id_;
   }
 
-  sw::app_id
-  aid() const {
+  sw::app_id aid() const {
     return aid_;
   }
 
-  type_t
-  type() const {
+  type_t type() const {
     return type_;
   }
 
-  void
-  set_type(type_t ty){
+  void set_type(type_t ty){
     type_ = ty;
   }
 
-  virtual void
-  reverse();
+  virtual void reverse();
 
-  long
-  byte_length() const override;
+  long byte_length() const override;
 
   node_id toaddr_;
 
   node_id fromaddr_;
 
  protected:
-  void
-  clone_into(network_message* cln) const;
+  void clone_into(network_message* cln) const;
 
  protected:
   uint64_t flow_id_;

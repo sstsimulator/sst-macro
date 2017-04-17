@@ -288,18 +288,19 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       global exeTarget
       runClang = False
 
-      arCmdArr = [
-        ld,
-        so_flags,
-        objectFilesStr,
-        ldflagsStr,
-        givenFlagsStr,
-        compilerFlagsStr,
-        ldpathMaker,
-        "-o",
-        "lib" + exeTarget + ".so",
-      ]
-      arCmdArr.extend(linkerArgs)
+      if "fPIC" in cxxflags or "fPIC" in sstCppFlagsStr:
+        arCmdArr = [
+          ld,
+          so_flags,
+          objectFilesStr,
+          ldflagsStr,
+          givenFlagsStr,
+          compilerFlagsStr,
+          ldpathMaker,
+          "-o",
+          "lib" + exeTarget + ".so",
+        ]
+        arCmdArr.extend(linkerArgs)
 
       if not sst_core:
         ldCmdArr = [
@@ -318,9 +319,8 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     else: #all in one
       cxxCmdArr = [
         compiler, 
-        args, 
         extraCppFlagsStr, 
-        cppflags, 
+        sstCppFlagsStr, 
         compilerFlagsStr, 
         givenCompilerFlagsStr,
         ldflagsStr, 

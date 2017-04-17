@@ -13,7 +13,7 @@ external_test_%.$(CHKSUF): $(top_builddir)/tests/external/test_%
     external/test_$* \
     -a -n 1 \
 		--no-wall-time \
-		-p app1.name=user_app_cxx \
+    -p node.app1.name=user_app_cxx \
 		-p node_cores=4 \
 		-p node.os.compute_scheduler=cpuset \
 		-d compute_scheduler 

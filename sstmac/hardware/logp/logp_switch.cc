@@ -21,7 +21,7 @@
 #include <sstmac/common/event_manager.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
-
+#include <sstmac/software/launch/launch_event.h>
 
 namespace sstmac {
 namespace hw {
@@ -111,36 +111,89 @@ logp_switch::connect_input(sprockit::sim_parameters *params,
 }
 
 void
+logp_switch::incoming_message(message* msg, node_id src, node_id dst)
+{
+  bool local_src = nics_[src];
+  timestamp delay(inv_min_bw_ * msg->byte_length()); //bw term
+  int num_hops = 0;
+  if (local_src){ //need to accumulate all the delay here
+    //local staying local
+    num_hops = top_->num_hops_to_node(src, dst);
+    delay += num_hops * hop_latency_ + dbl_inj_lat_; //factor of 2 for in-out
+  }
+  switch_debug("incoming message over %d hops with extra delay %12.8e and inj lat %12.8e: %s",
+               num_hops, delay.sec(), dbl_inj_lat_.sec(), msg->to_string().c_str());
+  send_delayed_to_link(delay, nics_[dst], msg);
+}
+
+void
+logp_switch::outgoing_message(message* msg, node_id src, node_id dst)
+{
+  //local going remote - just accumulate latency delay
+  int num_hops = top_->num_hops_to_node(src, dst);
+  timestamp delay = num_hops * hop_latency_; //factor of 2 for in-out
+
+  int dst_switch = interconn_->node_to_logp_switch(dst);
+  switch_debug("outgoing message over %d hops with extra delay %12.8e and inj lat %12.8e: %s",
+               num_hops, delay.sec(), dbl_inj_lat_.sec(), msg->to_string().c_str());
+  send_delayed_to_link(delay, dbl_inj_lat_, neighbors_[dst_switch], msg);
+}
+
+void
+logp_switch::bcast_local_message(message* msg, node_id src)
+{
+  sw::start_app_event* lev = safe_cast(sw::start_app_event, msg);
+  sw::task_mapping::ptr mapping = lev->mapping();
+  int num_ranks = mapping->num_ranks();
+  for (int i=0; i < num_ranks; ++i){
+    node_id dst_node = mapping->rank_to_node(i);
+    auto dst_nic = nics_[dst_node];
+    bool local_dst = dst_nic;
+    bool local_src = nics_[src];
+
+    if (local_dst){
+      sw::start_app_event* new_lev = lev->clone(i, src, dst_node);
+      int num_hops = top_->num_hops_to_node(src, dst_node);
+      timestamp delay = num_hops * hop_latency_;
+      if (local_src){ //have to accumulate inj latency here
+        delay += dbl_inj_lat_; //factor of 2 for in-out
+      }
+      send_delayed_to_link(delay, dst_nic, new_lev);
+    }
+  }
+}
+
+void
+logp_switch::forward_bcast_message(message* msg, node_id dst)
+{
+  int dst_switch = interconn_->node_to_logp_switch(dst);
+  //only accumulate inj lat - exact hop latency gets added on the other side
+  send_delayed_to_link(timestamp(), dbl_inj_lat_, neighbors_[dst_switch], msg);
+}
+
+void
 logp_switch::handle(event* ev)
 {
   //this should only handle messages
   message* msg = safe_cast(message, ev);
   node_id dst = msg->toaddr();
   node_id src = msg->fromaddr();
-
   bool local_dst = nics_[dst];
-  bool local_src = nics_[src];
 
-  switch_debug("handling message %d(%d)->%d(%d): %s",
-               src, local_src, dst, local_dst, msg->to_string().c_str());
+  switch_debug("handling message %d->%d of size %ld: %s",
+               src, dst, msg->byte_length(),
+               msg->to_string().c_str());
 
-  if (local_dst){
-    timestamp extra_delay(inv_min_bw_ * msg->byte_length()); //bw term
-    if (local_src){ //need to accumulate all the delay here
-      //local staying local
-      int num_hops = top_->num_hops_to_node(src, dst);
-      extra_delay += num_hops * hop_latency_ + dbl_inj_lat_; //factor of 2 for in-out
-      switch_debug("sending message over %d hops with extra delay %12.8e and inj lat %12.8e: %s",
-                   num_hops, extra_delay.sec(), dbl_inj_lat_.sec(), msg->to_string().c_str());
-    } else; //remote coming local
-    send_delayed_to_link(extra_delay, nics_[dst], msg);
-  } else {
-    //local going remote - just accumulate latency delay
-    int num_hops = top_->num_hops_to_node(src, dst);
-    timestamp extra_delay = num_hops * hop_latency_; //factor of 2 for in-out
-
-    int dst_switch = interconn_->node_to_logp_switch(dst);
-    send_delayed_to_link(extra_delay, dbl_inj_lat_, neighbors_[dst_switch], msg);
+  if (msg->is_bcast()){
+    if (local_dst){
+      bcast_local_message(msg, src);
+    } else {
+      forward_bcast_message(msg, dst);
+    }
+  } else if (local_dst){
+    incoming_message(msg, src, dst);
+  } else { //locall going remote
+    outgoing_message(msg, src, dst);
   }
 }
 

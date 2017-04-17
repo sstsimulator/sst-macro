@@ -220,10 +220,8 @@ class tapered_fat_tree : public abstract_fat_tree
 
   virtual void
   create_partition(
-    int* switches_per_lp,
-    int *switch_to_lp,
-    int *switch_to_thread,
-    int& local_num_switches,
+    int* switch_to_lp,
+    int* switch_to_thread,
     int me,
     int nproc,
     int nthread,

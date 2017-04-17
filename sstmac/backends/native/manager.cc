@@ -120,11 +120,12 @@ manager::compute_max_nproc(sprockit::sim_parameters* params)
   int appnum = 1;
   int max_nproc = 0;
   bool found_app = true;
+  sprockit::sim_parameters* node_params = params->get_namespace("node");
   while (found_app || appnum < 10) {
     std::string app_namespace = sprockit::printf("app%d", appnum);
-    found_app = params->has_namespace(app_namespace);
+    found_app = node_params->has_namespace(app_namespace);
     if (found_app){
-      sprockit::sim_parameters* app_params = params->get_namespace(app_namespace);
+      sprockit::sim_parameters* app_params = node_params->get_namespace(app_namespace);
       int nproc = compute_max_nproc_for_app(app_params);
       max_nproc = std::max(nproc, max_nproc);
     }

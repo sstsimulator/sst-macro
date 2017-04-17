@@ -19,7 +19,7 @@ This event trace can then be replayed post-mortem in the simulator.
 Most common are MPI traces which record all MPI events, and
 \sstmacro provides the DUMPI utility (\ref{sec:tutorial:dumpi}) for collecting and replaying MPI traces. 
 Trace extrapolation can extend the usefulness of off-line simulation by estimating large or untraceable system scales without   
-having to collect a trace, it is typically only limited to strictly weak scaling.  
+having to collect a trace, but it is limited.
 
 We turn to on-line simulation when the hardware or applications parameters need to change.
 On-line simulators instead run real application code, allowing native C/C++/Fortran to be compiled directly into the simulator.
@@ -38,10 +38,9 @@ or at least not convenient.
 Simulation requires coarse-grained approximations to be practical.
 \sstmacro is therefore designed for specific cost/accuracy tradeoffs.
 It should still capture complex cause/effect behavior in applications and hardware, but be efficient enough to simulate at the system-level. 
-For speeding up simulator execution, we encourage \textit{skeletonization}, discussed further in Chapter \ref{sec:skeletonization}. 
+For speeding up simulator execution, we encourage \textit{skeletonization}, discussed further in Chapter \ref{chap:appsAndSkeletonization}. 
 A high-quality skeleton is an application model that reproduces certain characteristics with only limited computation.  
-We also encourage uncertainty quantification (UQ) for validating simulator results,
-to be detailed in a pending SAND report.  
+We also encourage uncertainty quantification (UQ) for validating simulator results.
 Skeletonization and UQ are the two main elements in the ``canonical'' \sstmacro workflow (Figure \ref{fig:workflow}).
 
 \begin{figure}[t]
@@ -78,16 +77,6 @@ Some are thoroughly tested. Others have undergone some testing, but are still co
 
 \section{Known Issues and Limitations}
 \label{sec:intro:issues}
-
-\subsection{Global Variables}
-\label{subsec:issues:globals}
-
-The use of global variables in \sstmacro inherently creates a false-sharing scenario 
-because of the use of user-space threads to model parallel processes.   
-While we do have a mechanism for supporting them (see \ref{sec:skel:basic} for more information), 
-the file using them must be compiled with C++.   
-This is somewhat unfortunate, because many C programs will use global variables as a convenient means of accessing program data.   
-In almost every case, though, a C program can simply be compiled as C++ by changing the extension to .cc or .cpp.
 
 \subsection{MPI}
 \label{subsec:issues:mpi}
@@ -148,12 +137,11 @@ Even if configured so that time progresses, the code will work but will take a v
 \label{subsubsec:issues:mpi:collectives}
 
 \begin{itemize}
-\item There seems to be a problem with using \inlinecode{MPI_FLOAT} and \inlinecode{MPI_PROD} in \inlinecode{MPI_Allreduce()} (MPI test 22)
-\item There seems to be a problem with using non-commutative user-defined operators in \inlinecode{MPI_Reduce()} and \inlinecode{MPI_Allreduce()}.
+\item Non-commutative user-defined operators in \inlinecode{MPI_Reduce()} and \inlinecode{MPI_Allreduce()}.
 \item \inlinecode{MPI_Alltoallw()} is not implemented
 \item \inlinecode{MPI_Exscan()} is not implemented
 \item \inlinecode{MPI_Reduce_Scatter_block()} is not implemented.
-\item \inlinecode{MPIX_*} functions are not implemented  (like non-blocking collectives).
+\item \inlinecode{MPIX_*} functions are not implemented 
 \item Calling MPI functions from user-defined reduce operations (MPI test 39; including \inlinecode{MPI_Comm_rank}).
 \end{itemize}
 

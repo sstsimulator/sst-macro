@@ -113,7 +113,7 @@ sumi_transport::sumi_transport(sprockit::sim_parameters* params,
     const std::string& libname, sstmac::sw::software_id sid,
     sstmac::sw::operating_system* os) :
   //the name of the transport itself should be mapped to a unique name
-  api(params, standard_lib_name(libname.c_str(), sid), sid, os),
+  api(params, libname, sid, os),
   //the server is what takes on the specified libname
   server_libname_("sumi_server"),
   process_manager(sid, os),

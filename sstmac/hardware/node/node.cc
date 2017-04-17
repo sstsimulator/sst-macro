@@ -79,7 +79,7 @@ node::node(sprockit::sim_parameters* params,
   next_outgoing_id_.set_src_node(my_addr_);
 
   sprockit::sim_parameters* nic_params = params->get_namespace("nic");
-  nic_params->add_param_override("id", int(my_addr_));
+  nic_params->add_param_override_recursive("id", int(my_addr_));
   nic_ = nic_factory::get_param("model", nic_params, this);
 
   sprockit::sim_parameters* mem_params = params->get_optional_namespace("memory");

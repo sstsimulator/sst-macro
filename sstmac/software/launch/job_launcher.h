@@ -49,6 +49,8 @@ class task_mapping : public sprockit::ptr_type
     return aid_;
   }
 
+  static task_mapping::ptr serialize_order(app_id aid, serializer& ser);
+
   int
   num_ranks() const {
     return rank_to_node_indexing_.size();

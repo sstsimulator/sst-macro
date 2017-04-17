@@ -88,7 +88,7 @@ void overpack_buffer()
 
 void test_serialize_overrun(UnitTest& unit)
 {
-  assertThrows(unit, "overrun exception", sprockit::pvt::ser_buffer_overrun,
+  assertThrows(unit, "overrun exception", sprockit::ser_buffer_overrun,
     static_fxn(overpack_buffer));
 }
 

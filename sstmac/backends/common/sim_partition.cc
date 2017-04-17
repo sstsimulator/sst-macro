@@ -38,7 +38,8 @@ SpktRegister("serial", partition, serial_partition);
 
 partition::partition(sprockit::sim_parameters* params, parallel_runtime* rt) :
   rt_(rt),
-  local_switches_(nullptr)
+  switch_to_lpid_(nullptr),
+  switch_to_thread_(nullptr)
 {
   nproc_ = rt_->nproc();
   me_ = rt_->me();
@@ -47,73 +48,12 @@ partition::partition(sprockit::sim_parameters* params, parallel_runtime* rt) :
 
 partition::~partition()
 {
-  if (local_switches_) delete[] local_switches_;
 }
-
-void
-partition::init_local_switches()
-{
-  local_switches_ = new int[local_num_switches_];
-  int idx = 0;
-  for (int i=0; i < num_switches_total_; ++i){
-    int lp = switch_to_lpid_[i];
-    if (lp == me_){
-      local_switches_[idx] = i;
-      ++idx;
-    }
-  }
-
-  switches_per_thread_ = local_num_switches_ / nthread_;
-  if (local_num_switches_ % nthread_){
-    ++switches_per_thread_;
-  }
-}
-
-int
-partition::thread_for_local_switch(int local_idx) const
-{
-  return local_idx / switches_per_thread_;
-}
-
-#if 0
-void
-partition::init_subsets_from_array()
-{
-  subsets_.resize(nproc_);
-  num_switches_total_ = 0;
-  for (int i=0; i < nproc_; ++i){
-    int num_switches_this_lp = num_switches_per_lp_[i];
-    subsets_[i] = new hw::index_subset;
-    subsets_[i]->data().resize(num_switches_this_lp);
-    part_debug("there are %d switches in subset %d",
-        num_switches_this_lp, i);
-  }
-}
-
-void
-partition::build_subsets_from_array()
-{
-  int* tmp_counts = new int[nproc_];
-  ::memset(tmp_counts, 0, nproc_ * sizeof(int));
-  for (int i=0; i < num_switches_total_; ++i){
-    int swid = i;
-    int lp = switch_to_lpid_[swid];
-    int idx = tmp_counts[lp]++;
-    subsets_[lp]->data()[idx] = swid;
-    //std::cout << sprockit::printf("Putting switch %d in subset %d as index %d\n", i, lp, idx);
-  }
-  delete[] tmp_counts;
-}
-#endif
-
 
 serial_partition::~serial_partition()
 {
-  delete[] num_switches_per_lp_;
+  delete[] switch_to_thread_;
   delete[] switch_to_lpid_;
-  for (int i=0; i < subsets_.size(); ++i){
-    delete subsets_[i];
-  }
 }
 
 
@@ -123,15 +63,13 @@ serial_partition::serial_partition(sprockit::sim_parameters* params, parallel_ru
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
   hw::topology* fake_top = hw::topology_factory::get_param("name", top_params);
   int nswitches = fake_top->num_switches();
-  num_switches_per_lp_ = new int[1];
-  num_switches_per_lp_[0] = nswitches;
   num_switches_total_ = nswitches;
-  local_num_switches_ = nswitches;
   switch_to_lpid_ = new int[nswitches];
+  switch_to_thread_ = new int[nswitches];
   for (int i=0; i < nswitches; ++i){
     switch_to_lpid_[i] = 0;
+    switch_to_thread_[i] = 0;
   }
-  init_local_switches();
   nproc_ = 1;
   me_ = 0;
   delete fake_top;
@@ -173,15 +111,15 @@ metis_partition::metis_partition(sprockit::sim_parameters* params, parallel_runt
 
     int root = 0;
     /** BCAST both bits of information */
-    rt_->bcast(num_switches_per_lp_, nproc_ * sizeof(int), root);
     rt_->bcast(switch_to_lpid_, num_switches_total_ * sizeof(int), root);
+    rt_->bcast(switch_to_thread_, num_switches_total_ * sizeof(int), root);
   }
   else {
     int root = 0;
-    num_switches_per_lp_ = new int[nproc_];
-    rt_->bcast(num_switches_per_lp_, nproc_ * sizeof(int), root);
     switch_to_lpid_ = new int[num_switches_total_];
     rt_->bcast(switch_to_lpid_, num_switches_total_ * sizeof(int), root);
+    switch_to_thread_ = new int[num_switches_total_];
+    rt_->bcast(switch_to_thread_, num_switches_total_ * sizeof(int), root);
   }
 
   fake_ic_ = 0;
@@ -231,8 +169,6 @@ metis_partition::read_partition(const std::string &partfilename, int nproc)
   //now that we have sorted all the partition data, create the array
   int num_subsets = max_lp+1;
   switch_to_lpid_ = new int[num_nodes];
-  num_switches_per_lp_ = new int[num_subsets];
-  subsets_.resize(num_subsets);
   num_switches_total_ = 0;
   for (int lp=0; lp <= max_lp; ++lp){
     const std::list<int>& node_list = partitions[lp];
@@ -247,8 +183,6 @@ metis_partition::read_partition(const std::string &partfilename, int nproc)
       subset_nodes[idx] = swid;
       ++idx;
     }
-    subsets_[lp] = subset;
-    num_switches_per_lp_[lp] = num_nodes_lp;
     num_switches_total_ += num_nodes_lp;
   }
 
@@ -267,14 +201,11 @@ topology_partition::topology_partition(sprockit::sim_parameters* params, paralle
 
   noccupied_ = params->get_int_param("num_occupied");
 
-  num_switches_per_lp_ = new int[nproc_];
   num_switches_total_ = fake_top_->num_switches();
   switch_to_lpid_ = new int[num_switches_total_];
-  local_switch_to_thread_ = new int[num_switches_total_];
-  fake_top_->create_partition(num_switches_per_lp_, switch_to_lpid_,
-    local_switch_to_thread_, local_num_switches_,
-    me_, nproc_, nthread_, noccupied_);
-  init_local_switches();
+  switch_to_thread_ = new int[num_switches_total_];
+  fake_top_->create_partition(switch_to_lpid_, switch_to_thread_,
+                              me_, nproc_, nthread_, noccupied_);
 }
 
 block_partition::~block_partition()
@@ -290,27 +221,25 @@ block_partition::block_partition(sprockit::sim_parameters* params, parallel_runt
 
   num_switches_total_ = fake_top_->num_switches();
   switch_to_lpid_ = new int[num_switches_total_];
-  num_switches_per_lp_ = new int[nproc_];
-  for(int i=0; i<nproc_; ++i) num_switches_per_lp_[i] = 0;
+  switch_to_thread_ = new int[num_switches_total_];
 }
 
 void
 block_partition::partition_switches()
 {
-  int sw_per_lp = num_switches_total_ / nproc_;
-  if (num_switches_total_ % nproc_){
-    ++sw_per_lp;
+  int nworkers = nproc_ * nthread_;
+  int sw_per_worker = num_switches_total_ / nworkers;
+  if (num_switches_total_ % nworkers){
+    ++sw_per_worker;
   }
 
   for (int i=0; i < num_switches_total_; ++i){
-    int lp = i / sw_per_lp;
-    switch_to_lpid_[i] = lp;
-    num_switches_per_lp_[lp]++;
+    int worker = i / sw_per_worker;
+    int rank = worker / nthread_;
+    int thr = worker % nthread_;
+    switch_to_lpid_[i] = rank;
+    switch_to_thread_[i] = thr;
   }
-
-  int remainder = num_switches_total_ - sw_per_lp*me_;
-  remainder = std::max(0, remainder);
-  local_num_switches_ = std::min(remainder, sw_per_lp);
 }
 
 occupied_block_partition::~occupied_block_partition()
@@ -321,7 +250,6 @@ void
 block_partition::finalize_init()
 {
   partition_switches();
-  init_local_switches();
 }
 
 occupied_block_partition::occupied_block_partition(sprockit::sim_parameters* params,
@@ -347,59 +275,31 @@ occupied_block_partition::partition_switches()
   int remainder;
 
   // first place full switches
-  occupied_per_lp_ = occupied_switches_ / nproc_;
-  remainder = occupied_switches_ % nproc_;
+  int nworker = nproc_ * nthread_;
+  int occupied_per_worker = occupied_switches_ / nworker;
+  remainder = occupied_switches_ % nworker;
   if (remainder){
-    occupied_per_lp_++;
+    occupied_per_worker++;
   }
 
   for (int i=0; i < occupied_switches_; ++i){
-    int lp = i / occupied_per_lp_;
-    switch_to_lpid_[i] = lp;
-    num_switches_per_lp_[lp]++;
+    int worker = i / occupied_per_worker;
+    int rank = worker / nthread_;
+    int thr = worker % nthread_;
+    switch_to_lpid_[i] = rank;
+    switch_to_thread_[i] = thr;
   }
   
   // then place empty switches
-  unoccupied_per_lp_ = unoccupied_switches_ / nproc_;
-  remainder = unoccupied_switches_ % nproc_;
+  int unoccupied_per_worker = unoccupied_switches_ / nworker;
+  remainder = unoccupied_switches_ % nworker;
 
   for (int i=0; i < unoccupied_switches_; ++i){
-    int lp = i / unoccupied_per_lp_;
-    switch_to_lpid_[i] = lp;
-    num_switches_per_lp_[lp]++;
-  }
-
-  if (me_ < (nproc_ - 1)) {
-    my_num_occupied_ = occupied_per_lp_;
-    my_num_unoccupied_ = unoccupied_per_lp_;
-  } 
-  else {
-    my_num_occupied_ = occupied_switches_ - occupied_per_lp_ * (nproc_-1);
-    my_num_unoccupied_ = unoccupied_switches_ - unoccupied_per_lp_ * (nproc_-1);
-  }
-
-  local_num_switches_ = my_num_occupied_ + my_num_unoccupied_;
-
-  occupied_per_thread_ = my_num_occupied_ / nthread_;
-  if (occupied_per_thread_ % nthread_){
-    ++occupied_per_thread_;
-  }
-
-  unoccupied_per_thread_ = my_num_unoccupied_ / nthread_;
-  if (unoccupied_per_thread_ % nthread_){
-    ++unoccupied_per_thread_;
-  }
-}
-
-int
-occupied_block_partition::thread_for_local_switch(int local_idx) const
-{
-  if (local_idx < my_num_occupied_) {
-    return local_idx / occupied_per_thread_;
-  }
-  else {
-    int offset_idx = local_idx - my_num_occupied_;
-    return offset_idx / unoccupied_per_thread_;
+    int worker = i / unoccupied_per_worker;
+    int rank = worker / nthread_;
+    int thr = worker % nthread_;
+    switch_to_lpid_[i] = rank;
+    switch_to_thread_[i] = thr;
   }
 }
 

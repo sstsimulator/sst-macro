@@ -31,7 +31,6 @@
 RegisterNamespaces("traffic_matrix", "num_messages");
 RegisterKeywords(
 "mpi_delay",
-"mpi_implementation",
 "envelope",
 "smp_single_copy_size",
 "max_eager_msg_size",
@@ -43,7 +42,6 @@ RegisterKeywords(
 "post_rdma_delay",
 "post_header_delay",
 "poll_delay",
-"implementation",
 );
 
 DeclareDebugSlot(mpi_all_sends);

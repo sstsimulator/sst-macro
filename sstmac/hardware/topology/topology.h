@@ -323,7 +323,7 @@ class topology : public sprockit::printable
   }
 
   switch_id
-  netloink_to_injection_switch(netlink_id nodeaddr) const {
+  netlink_to_injection_switch(netlink_id nodeaddr) const {
     int ignore;
     return netlink_to_injection_switch(nodeaddr, ignore);
   }
@@ -340,10 +340,8 @@ class topology : public sprockit::printable
 
   virtual void
   create_partition(
-    int* switches_per_lp,
-    int *switch_to_lp,
-    int *switch_to_thread,
-    int& local_num_switches,
+    int* switch_to_lp,
+    int* switch_to_thread,
     int me,
     int nproc,
     int nthread,

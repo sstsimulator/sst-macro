@@ -7,27 +7,23 @@
 \label{sec:skel:basic}
 There are three parts to successfully taking a C++ code and turning it into a running application.
 \begin{itemize}
-\item Redirected linkage: Rather than linking to MPI, pThreads, or other parallel libraries (or even calling \inlinecode{hostname}), these functions must be redirected to \sstmacro rather than actually executing.
+\item Redirected linkage: Rather than linking to MPI, pThreads, or other parallel libraries (or even calling \inlinecode{hostname}), these functions must be redirected to \sstmacro rather than calling the native libraries on the machine running the simulator.
 You get all redirected linkage for free by using
 the SST compiler wrappers \inlineshell{sst++} and \inlineshell{sstcc} installed in the \inlineshell{bin} folder.
-\item Skeletonization: While \sstmacro can run in emulation mode, executing your entire application exactly, this is not scalable.  To simulate at scale (i.e. 100K or more MPI ranks) you must strip down or ``skeletonize'' the application to the minimal amount of computation.  The energy and time cost of expensive compute kernels are then simulated via models rather than explicitly executed. 
+\item Skeletonization: While \sstmacro can run in emulation mode, executing your entire application exactly, this is not scalable.  To simulate at scale (i.e. 1K or more MPI ranks) you must strip down or ``skeletonize'' the application to the minimal amount of computation.  The energy and time cost of expensive compute kernels are then simulated via models rather than explicitly executed. 
 
-\item Process encapsulation: Each virtual process being simulated is not an actual physical process. It is instead modeled as a lightweight user-space thread.  This means each virtual process has its own stack and register variables, but that is it.
-Virtual processes share the same address space and the same global variables.  Some refactoring may be necessary if you have global variables.
+\item Process encapsulation: Each virtual process being simulated is not an actual physical process. It is instead modeled as a lightweight user-space thread.  This means each virtual process has its own stack and register variables, but not its own data segment (global variables).
+Virtual processes share the same address space and the same global variables.  A Beta version of the auto-skeletonizing clang-based SST compiler is available with the 7.0 release. If the Beta is not stable with your application, manual refactoring may be necessary if you have global variables.
 
 \end{itemize}
 
-\section{Redirected linkage}
-\label{sec:skel:linkage}
-Because of the way libraries are import in the SST core, using external skeleton apps is more complicated than previously.  Steps are being taken to re-automate this process, which will hopefully be available in the next subversion. For running the standalone version, this is essentially automatic  if using the SST compiler wrappers.  The compiler wrappers produce a new executable incorporating your new skeleton.
-
-The wrinkle is external skeletons apps is changing the application's entry point, i.e. \inlinecode{main}.
-The SST/macro framework has already taken the \texttt{main} function, and consequently the user application becomes a sub-routine within the simulation environment. As introduced in Section~\ref{sec:tutorial:basicmpi}, one needs redirect \texttt{main} to a different symbol by defining the macro \inlinecode{sstmac_app_name} at the top of the file containing \inlinecode{main}. This refactoring happens automatically in the SST compiler wrappers. 
-
-
 \subsection{Loading external skeletons with the integrated core}\label{subsec:linkageCore}
 While the main \inlineshell{libmacro.so} provides the bulk of SST/macro functionality, 
-users may wish to compile and run external skeletons.  This gets a bit confusing with SST core since you have an external skeleton for an external element.  One can do this manually following the instructions on \url{http://sst-simulator.org}. You must create an element info struct name \inlinecode{X_eli} for X your library name.  You can still use the \inlineshell{sst++} compiler wrappers for building, but you must now manually create a \inlineshell{libX.so} from the compiled object files.  The \inlineshell{default.py} script used by \inlineshell{pysstmac} must also be edited.  The top lines was previously
+users may wish to compile and run external skeletons.  This gets a bit confusing with SST core since you have an external skeleton for an external element.  
+This now gets performed automatically with the \inlineshell{sst++} compiler. 
+When the executable is generated, \sstmacro will also generate a \inlineshell{libX.so} containing all the element info.
+This can then be used for SST simulations.
+The \inlineshell{default.py} script used by \inlineshell{pysstmac} must also be edited.  The top lines was previously
 
 \begin{ViFile}
 import sst.macro
@@ -45,9 +41,88 @@ the generate shared library files can be added as the first parameters to the \i
 >sst-macro/skeletons/sendrecv> pysstmac librunsstmac.so -f parameters.ini
 \end{ShellCmd} 
 
+\section{Auto-skeletonization with Clang (Beta)}
+\label{sec:autoSkeletonization}
 
-\section{Skeletonization}
-\label{sec:skeletonization}
+The build of the Clang toolchain is described in Section \ref{sec:buildingClang}. 
+This enables a source-to-source translation capability in the \inlineshell{sst++} compiler that can auto-skeletonize computation and fix global variable references.
+Some of this can be accomplished automatically (global variables), but most of it (removing computation and memory allocations) must occur through pragmas.
+A good example of skeletonization can be found in the lulesh2.0.3 example in the skeletons folder. Most of the available SST pragmas are used there.
+Pragmas are preferred since they allow switching easily back and forth between skeleton and full applications.
+This allows much easier validation of the simulation.
+
+\subsection{Redirecting Main}
+Your application's \inlinecode{main} has to have its symbols changed.
+The simulator itself takes over \inlinecode{main}.
+\sstmacro therefore has to capture the function pointer in your code and associate it with a string name for the input file.
+This is automatically accomplished by defining the macro \inlinecode{sstmac_app_name} either in your code or through a \inlineshell{-D=} build flag to the name of your application (unquoted!). The value of the macro will become the string name used for launching the application via \inlinecode{node.app1.name=X}.
+Even without Clang, this works for C++. For C, Clang source-to-source is required.
+
+\subsection{Memory Allocations}
+To deactivate memory allocations in C code that uses \inlinecode{malloc}, use:
+\begin{CppCode}
+#pragma sst malloc
+  void* ptr = malloc(...)
+\end{CppCode}
+prior to any memory allocations that should be deactivated during skeleton runs, but active during real runs.
+
+Similarly, for C++ we have
+\begin{CppCode}
+#pragma sst new
+  int* ptr = new int[...]
+\end{CppCode}
+
+\subsection{Computation}
+In general, the SST compiler captures all \inlinecode{#pragma omp parallel} statements.
+It then analyzes the for-loop or code block and attempts to derive a computational model for it.
+The computational models are quite simple (skeleton apps!), 
+based simply on the number of flops executed and the number of bytes read (written) from memory.
+Consider the example:
+
+\begin{CppCode}
+double A[N], B[N];
+#pragma omp parallel for
+for (int i=0; i < N; ++i){
+  A[i] = alpha*A[i] + B[i];
+}
+\end{CppCode}
+The SST compiler deduces $16N$ bytes read, $8N$ bytes written, and $16N$ flops (or $8N$ if fused-multiplies are enabled).
+Based on processor speed and memory speed, it then estimates how long the kernel will take without actually executing the loop.
+If not wanting to use OpenMP in the code, \inlinecode{#pragma sst compute} can be used instead of \inlinecode{#pragma omp parallel}.
+
+
+\subsection{Special Pragmas}
+Many special cases can arise that break skeletonization.
+This is often not a limited of the SST compiler, but rather a fundemental limitation in the static analysis of the code.
+This most often arises due to nested loops. Consider the example:
+
+\begin{CppCode}
+#pragma omp parallel for
+for (int i=0; i < N; ++i){
+  int nElems = nElemLookup[i];
+  for (int e=0; e < nElems; ++e){
+  }
+}
+\end{CppCode}
+Auto-skeletonization will fail. The skeletonization converts the outer loop into a single call to an SST compute model.
+However, the inner loop can vary depending on the index.
+This data-dependency breaks the static analysis.
+To fix this, a hint must be given to SST as to what the ``average'' inner loop size is.
+For example, it may loops nodes in a mesh. In this case, it may almost always be 8.
+
+\begin{CppCode}
+#pragma omp parallel for
+for (int i=0; i < N; ++i){
+  int nElems = nElemLookup[i];
+  #sst replace nElems 8
+  for (int e=0; e < nElems; ++e){
+  }
+}
+\end{CppCode}
+This hint allows SST to skeletonize the inner loop and ``guess'' at the data dependency.
+
+\section{Manual Skeletonization}
+\label{sec:manSkeletonization}
 
 A program skeleton is a simplified program derived from a parent application. The purpose of a skeleton application is to retain the performance characteristics of interest. At the same time, program logic that is orthogonal to performance properties is removed.  The rest of this chapter will talk about skeletonizing an MPI program, but the concepts mostly apply regardless of what programming/communication model you're using. 
 
@@ -61,8 +136,6 @@ Skeletonization falls into three main categories:
 \item \textit{Communication buffers} - While you can pass in real buffers with data to \sstmacro MPI calls and they will work like normal, it is relatively expensive. If they're not needed, get rid of them.
 \end{itemize}
 
-A good example of skeletonization can be found in the lulesh2.0.3 example in the skeletons folder.
-
 \subsection{Basic compute modeling}
 \label{subsec:basicCompute}
 
@@ -72,7 +145,7 @@ By default, even if you don't remove any computation, \textit{simulation time do
 host_compute_modeling = true
 \end{ViFile}
 
-in your parameter file.  In this case, \sstmacro will use the wall time that the host takes to run code between MPI calls and use that as simulated time.  This only makes sense, of course, if you didn't do any skeletonization and the original code is all there. 
+in your parameter file.  In this case, \sstmacro will use the wall time that the host takes to run code between MPI calls and use that as simulated time.  This only makes sense if you did not do any skeletonization and the original code is all there. 
 
 If you do skeletonize your application and remove computation, you need to replace it with a model of the time or resources necessary to perform that computation so that \sstmacro can advance simulation time properly. 
 These functions are all accessible by using the SST compiler wrappers or by adding \inlinefile{#include <sstmac/compute.h>} to your file.
@@ -109,8 +182,7 @@ but as more threads are added the contention will quickly increase.
 The function prototype is
 
 \begin{CppCode}
-void
-sstmac_compute_detailed(long nflops, long nintops, long bytes);
+void sstmac_compute_detailed(uint64_t nflops, uint64_t nintops, uint64_t bytes);
 \end{CppCode}
 Here \inlinecode{flops} is the number of floating point operations and \inlinecode{bytes} is the number of bytes that hit the memory controller.
 \inlinecode{bytes} is \emph{not} simply the number of writes/reads that a kernel performs.
@@ -157,30 +229,6 @@ They are explicitly managed user-space threads with a private stack, but without
 When porting an application to SST/macro, global variables used in C programs will not be mapped to separate memory addresses causing incorrect execution or even segmentation faults.
 If you have avoided global variables, there is no major issue.  
 If you have read-only global variables with the same value on each machine, there is still no issue.
-If you have mutable global variables or read-only variables such as \inlinecode{mpi_rank} that differ across processes,
-there is so minor refactoring that needs to be done.
-
-\subsection{Manually refactoring global variables}
-\label{sec:skel:globals}
-
-\sstmacro provides a complete set of global variable replacements from 
-\inlinecode{\#include <sstmac/sstmac_global.h>}, which is automatically included the SST compiler wrappers.
-Then replace the variable type declaration with the ones that have a \inlinecode{global_} prefix in the header file.
-To use this file, you must compile your application with a C++ compiler as a C++ program.  While most of C++ is backwards-compatible, there are some things that are not, and will require either a compiler flag to relax strictness or quick refactor of some of your syntax.
-
-When printing a global variable with \inlinecode{printf}, the user should explicitly invoke a cast to the primitive type in the function call:
-
-\begin{CppCode}
-print("Hello world on rank %d", int(rank));
-\end{CppCode}
-If not explicitly cast, the \inlinecode{va_args} function will be misinterpreted and produce an ``Illegal instruction'' error.  
-This still follows the ``single-source'' principle since whether compiling for \sstmacro or a real machine, the code is still valid.
-
-\subsection{Automatically refactoring global variables}
-\label{subsec:autoRefactorGlobals}
-
-Tools are currently in use by developers to automatically refactor codes to use no global variables.
-This involves running the source code through a compiler tool chain that then creates a \inlinecode{struct}
-encapsulating all global variables into thread-specific classes.
-This process is only for advanced users and requires developer help.
+If you have mutable global variables, you should use the \inlineshell{sst++} clang-based compiler wrappers to auto-refactor your code (Section \ref{sec:autoSkeletonization}).
+This feature is current labeled Beta, but is stable for numerous tests and will be fully supported for release 7.1.
 

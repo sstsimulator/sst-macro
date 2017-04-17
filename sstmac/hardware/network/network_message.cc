@@ -91,13 +91,14 @@ network_message::tostr(type_t ty)
 void
 network_message::serialize_order(serializer& ser)
 {
+  message::serialize_order(ser);
   ser & needs_ack_;
   ser & toaddr_;
   ser & fromaddr_;
   ser & flow_id_;
   ser & bytes_;
   ser & type_;
-  message::serialize_order(ser);
+  ser & aid_;
 }
 
 bool

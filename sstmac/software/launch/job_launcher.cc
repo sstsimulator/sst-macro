@@ -127,12 +127,26 @@ job_launcher::satisfy_launch_request(app_launch_request* request, const ordered_
      mapping->rank_to_node(),
      mapping->node_to_rank());
 
+#if SSTMAC_INTEGRATED_SST_CORE
+  hw::topology* logp_mapper = topology_;
+#else
+  hw::interconnect* logp_mapper = hw::interconnect::static_interconnect();
+#endif
+
+  std::set<int> ranksSent;
+
   int num_ranks = mapping->num_ranks();
   for (int rank=0; rank < num_ranks; ++rank){
+    int dst_nid = mapping->rank_to_node(rank);
+    int logp_switch = logp_mapper->node_to_logp_switch(dst_nid);
+    if (ranksSent.find(logp_switch) != ranksSent.end()){
+      continue; //redundant, no need
+    }
+    ranksSent.insert(logp_switch);
     sw::start_app_event* lev = new start_app_event(request->aid(), request->app_namespace(),
-                                    mapping, rank, mapping->rank_to_node(rank),
-                                    os_->addr(),//the job launch root
-                                    request->app_params());
+                                     mapping, rank, mapping->rank_to_node(rank),
+                                     os_->addr(),//the job launch root
+                                     request->app_params());
     os_->execute_kernel(ami::COMM_PMI_SEND, lev);
     //os_->execute_kernel(ami::COMM_PMI_BCAST, lev);
   }
@@ -185,6 +199,39 @@ exclusive_job_launcher::stop_event_received(job_stop_event *ev)
   }
 }
 
+static thread_lock lock;
+
+task_mapping::ptr
+task_mapping::serialize_order(app_id aid, serializer &ser)
+{
+  lock.lock();
+  task_mapping::ptr& mapping = app_ids_launched_[aid];
+  if (ser.mode() == ser.UNPACK){
+    if (mapping){
+      lock.unlock();
+      return mapping;
+    } else {
+      int num_nodes;
+      ser & num_nodes;
+      mapping = new task_mapping(aid);
+      ser & mapping->rank_to_node_indexing_;
+      mapping->node_to_rank_indexing_.resize(num_nodes);
+      int num_ranks = mapping->rank_to_node_indexing_.size();
+      for (int i=0; i < num_ranks; ++i){
+        node_id nid = mapping->rank_to_node_indexing_[i];
+        mapping->node_to_rank_indexing_[nid].push_back(i);
+      }
+    }
+  } else {
+    if (!mapping) spkt_abort_printf("no task mapping exists for application %d", aid);
+    int num_nodes = mapping->node_to_rank_indexing_.size();
+    ser & num_nodes;
+    ser & mapping->rank_to_node_indexing_;
+  }
+  lock.unlock();
+  return mapping;
+}
+
 task_mapping::ptr
 task_mapping::global_mapping(app_id aid)
 {
@@ -208,15 +255,16 @@ task_mapping::global_mapping(const std::string& name)
 void
 task_mapping::add_global_mapping(app_id aid, const std::string &unique_name, const task_mapping::ptr &mapping)
 {
+  lock.lock();
   app_ids_launched_[aid] = mapping;
   app_names_launched_[unique_name] = mapping;
   local_refcounts_[aid]++;
+  lock.unlock();
 }
 
 void
 task_mapping::remove_global_mapping(app_id aid, const std::string& name)
 {
-  static thread_lock lock;
   lock.lock();
   auto iter = local_refcounts_.find(aid);
   int& refcount = iter->second;

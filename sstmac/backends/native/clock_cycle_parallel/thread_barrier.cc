@@ -31,6 +31,7 @@ thread_barrier::run(int me, int level, int nthread,
    thread_barrier_functor* functor)
 {
   if (nthread==1){
+    if (level == 0) abort();
     if (functor){
       return functor->execute(vote);
     } else {
@@ -49,10 +50,8 @@ thread_barrier::run(int me, int level, int nthread,
     int partner = me + 1;
     if (partner >= nthread){
       return run(next_me, next_level, next_nthread, vote, ty, functor); //just go right on
-    }
-    else {
+    } else {
       barrier_state& pst = levels_[level][partner];
-
       lock_t* plock = pst.in_lock;
       lock_t* mylock = myst.out_lock;
       lock(plock); //make sure my partner is unlocked
@@ -66,8 +65,6 @@ thread_barrier::run(int me, int level, int nthread,
          next_vote = std::max(myst.vote, pst.vote);
          break;
       }
-      //std::cout << sprockit::printf("Merged votes %d=%ld and %d=%ld to %ld\n",
-      //  me, vote, partner, pst.vote, next_vote);
       myst.vote = run(next_me, next_level, next_nthread, next_vote, ty, functor);
       //okay, I will now own a different lock
       //swap things for the next iteration
@@ -76,8 +73,7 @@ thread_barrier::run(int me, int level, int nthread,
       //at this point, my partner is waiting for me to unlock
       unlock(mylock);
     }
-  }
-  else {
+  } else {
     int partner = me - 1;
     barrier_state& myst = levels_[level][me];
     barrier_state& pst = levels_[level][partner];
@@ -100,6 +96,11 @@ int64_t
 thread_barrier::vote(int me, int64_t vote, vote_type_t ty,
           thread_barrier_functor* functor)
 {
+    if (ty == vote_type_t::max){
+  static thread_lock lock;
+  lock.lock();
+  lock.unlock();
+    }
   return run(me, 0, nthread_, vote, ty, functor);
 }
 
