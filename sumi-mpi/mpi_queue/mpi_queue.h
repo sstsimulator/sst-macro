@@ -177,7 +177,7 @@ class mpi_queue
   send_completion_ack(const mpi_message::ptr& message);
 
   mpi_message::ptr
-  send_message(int count, MPI_Datatype type,
+  send_message(void* buffer, int count, MPI_Datatype type,
     int dst_rank, int tag, mpi_comm* comm);
 
   void

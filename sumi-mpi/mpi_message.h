@@ -29,7 +29,7 @@ namespace sumi {
  * A specialization of networkdata that contains envelope information
  * relevant to MPI messaging.
  */
-class mpi_message :
+class mpi_message final :
   public sumi::message
 {
   ImplementSerializable(mpi_message)
@@ -57,50 +57,39 @@ class mpi_message :
 
   mpi_message(){}
 
-  virtual std::string
-  to_string() const override;
+  std::string to_string() const override;
 
   static const char*
   str(content_type_t content_type);
 
   /// Goodbye.
-  virtual ~mpi_message() throw ();
+  ~mpi_message() throw ();
 
-  virtual sumi::message*
-  clone() const override;
+  sumi::message* clone() const override;
 
   /**
    * Serialize this message during parallel simulation.
    * @param ser The serializer to use
    */
-  virtual void
-  serialize_order(serializer& ser) override;
+  void serialize_order(serializer& ser) override;
 
-  long
-  payload_bytes() const {
+  long payload_bytes() const {
     return count_ * type_packed_size_;
   }
 
-  mpi_protocol*
-  protocol() const;
+  mpi_protocol* protocol() const;
 
-  void
-  put_on_wire();
+  void put_on_wire();
 
-  void
-  set_protocol(mpi_protocol* protocol);
+  void set_protocol(mpi_protocol* protocol);
 
-  void
-  payload_to_completion_ack();
+  void payload_to_completion_ack();
 
-  /// The number of elements sent.
-  int
-  count() const {
+  int count() const {
     return count_;
   }
 
-  bool
-  is_header() const {
+  bool is_header() const {
     switch (content_type_){
   case completion_ack:
   case fake:
@@ -111,8 +100,7 @@ class mpi_message :
     }
   }
 
-  bool
-  is_payload() const {
+  bool is_payload() const {
     switch (content_type_){
   case eager_payload:
   case data:
@@ -123,13 +111,11 @@ class mpi_message :
   }
 
   /// Access the type label associted with this mesage.
-  MPI_Datatype
-  type() const {
+  MPI_Datatype type() const {
     return type_;
   }
 
-  int
-  type_packed_size() const {
+  int type_packed_size() const {
     return type_packed_size_;
   }
 
@@ -140,79 +126,66 @@ class mpi_message :
   }
 
   /// Access the id of the communicator that owns this message.
-  MPI_Comm
-  comm() const {
+  MPI_Comm comm() const {
     return commid_;
   }
 
   /// Access the sequence number for this message.
-  int
-  seqnum() const {
+  int seqnum() const {
     return seqnum_;
   }
 
-  int
-  src_rank() const {
+  int src_rank() const {
     return src_rank_;
   }
 
-  void
-  set_src_rank(int rank) {
+  void set_src_rank(int rank) {
     src_rank_ = rank;
   }
 
-  int
-  dst_rank() const {
+  int dst_rank() const {
     return dst_rank_;
   }
 
-  void
-  set_dst_rank(int rank) {
+  void set_dst_rank(int rank) {
     dst_rank_ = rank;
   }
 
-  /// A (hopfully unique) message id.
-  mpi_message::id
-  unique_int() const {
+  mpi_message::id unique_int() const {
     return msgid_;
   }
 
-  content_type_t
-  content_type() const {
+  content_type_t content_type() const {
     return content_type_;
   }
 
-  void
-  set_content_type(content_type_t ty) {
+  void set_content_type(content_type_t ty) {
     content_type_ = ty;
     recompute_bytes();
   }
 
-  void
-  build_status(MPI_Status* stat) const;
+  void build_status(MPI_Status* stat) const;
 
-  void
-  set_in_flight(bool flag){
+  void set_in_flight(bool flag){
     in_flight_ = flag;
   }
 
-  bool
-  in_flight() const {
+  bool in_flight() const {
     return in_flight_;
   }
 
-  virtual void
-  move_remote_to_local() override;
+  void move_remote_to_local() override;
 
-  virtual void
-  move_local_to_remote() override;
+  void move_local_to_remote() override;
+
+  void set_already_buffered(bool flag){
+    already_buffered_ = flag;
+  }
 
  protected:
-  void
-  clone_into(mpi_message* cln) const;
+  void clone_into(mpi_message* cln) const;
 
-  virtual void
-  buffer_send() override;
+  void buffer_send() override;
 
  protected:
   int src_rank_;
@@ -227,6 +200,7 @@ class mpi_message :
   content_type_t content_type_;
   int protocol_;
   bool in_flight_;
+  bool already_buffered_;
 
 };
 

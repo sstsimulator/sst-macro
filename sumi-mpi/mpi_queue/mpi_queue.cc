@@ -124,8 +124,8 @@ mpi_queue::~mpi_queue() throw ()
 }
 
 mpi_message::ptr
-mpi_queue::send_message(int count, MPI_Datatype type,
-                int dst_rank, int tag, mpi_comm* comm)
+mpi_queue::send_message(void* buffer, int count, MPI_Datatype type,
+                        int dst_rank, int tag, mpi_comm* comm)
 {
   mpi_type* typeobj = api_->type_from_id(type);
   if (typeobj->packed_size() < 0){
@@ -145,6 +145,8 @@ mpi_queue::send_message(int count, MPI_Datatype type,
                           tag, comm->id(),
                           next_outbound_[dst_tid]++,
                           next_id_++, prot);
+
+  mess->protocol()->configure_send_buffer(this, mess, buffer, typeobj);
 
   if (spy_num_messages_) spy_num_messages_->add_one(int(taskid_), dst_tid);
   if (spy_bytes_) spy_bytes_->add(int(taskid_), dst_tid, bytes);
@@ -176,7 +178,7 @@ void
 mpi_queue::send(mpi_request *key, int count, MPI_Datatype type,
   int dest, int tag, mpi_comm *comm, void *buffer)
 {
-  mpi_message::ptr mess = send_message(count, type, dest, tag, comm);
+  mpi_message::ptr mess = send_message(buffer, count, type, dest, tag, comm);
   configure_send_request(mess, key);
 
   if (dest >= comm->size()){
@@ -192,8 +194,6 @@ mpi_queue::send(mpi_request *key, int count, MPI_Datatype type,
   }
 #endif
 
-  //either return the original buffer or create a new one for eager
-  mess->protocol()->configure_send_buffer(this, mess, buffer);
   mess->protocol()->send_header(this, mess);
 }
 
@@ -281,6 +281,10 @@ mpi_queue::finalize_recv(const mpi_message::ptr& msg,
                          mpi_queue_recv_request* req)
 {
   req->key_->complete(msg);
+  if (req->recv_buffer_ != req->final_buffer_){
+    req->type_->unpack_recv(req->recv_buffer_, req->final_buffer_, msg->count());
+    delete[] req->recv_buffer_;
+  }
   delete req;
 }
 

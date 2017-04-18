@@ -79,5 +79,19 @@ mpi_protocol::incoming_payload(mpi_queue* queue,
      to_string().c_str());
 }
 
+void*
+mpi_protocol::fill_send_buffer(const mpi_message::ptr &msg, void *buffer, mpi_type *typeobj)
+{
+  msg->set_already_buffered(true);
+  long length = msg->payload_bytes();
+  void* eager_buf = new char[length];
+  if (typeobj->contiguous()){
+    ::memcpy(eager_buf, buffer, length);
+  } else {
+    typeobj->pack_send(buffer, eager_buf, msg->count());
+  }
+  return eager_buf;
+}
+
 }
 

@@ -590,111 +590,82 @@ class mpi_api :
 
   int get_count(const MPI_Status* status, MPI_Datatype datatype, int* count);
 
-  int
-  type_dup(MPI_Datatype intype, MPI_Datatype* outtype);
+  int type_dup(MPI_Datatype intype, MPI_Datatype* outtype);
 
-  int
-  type_set_name(MPI_Datatype id, const std::string &name);
+  int type_set_name(MPI_Datatype id, const std::string &name);
 
-  int
-  type_indexed(int count, const int _blocklens_[], const int* _indices_,
+  int type_indexed(int count, const int _blocklens_[],
+               const int* _indices_,
                MPI_Datatype intype, MPI_Datatype* outtype);
 
-  int
-  type_hindexed(int count, const int _blocklens_[], const MPI_Aint* _indices_,
+  int type_hindexed(int count, const int _blocklens_[],
+              const MPI_Aint* _indices_,
                MPI_Datatype intype, MPI_Datatype* outtype);
 
 
-  int
-  type_contiguous(int count, MPI_Datatype old_type, MPI_Datatype* new_type);
+  int type_contiguous(int count, MPI_Datatype old_type, MPI_Datatype* new_type);
 
-  int
-  type_vector(int count, int blocklength, int stride,
+  int type_vector(int count, int blocklength, int stride,
               MPI_Datatype old_type,
               MPI_Datatype* new_type);
 
-  int
-  type_hvector(int count, int blocklength, MPI_Aint stride,
+  int type_hvector(int count, int blocklength, MPI_Aint stride,
               MPI_Datatype old_type,
               MPI_Datatype* new_type);
 
-  int
-  type_create_struct(const int count, const int* blocklens,
+  int type_create_struct(const int count, const int* blocklens,
               const MPI_Aint* displs,
               const MPI_Datatype* old_types,
               MPI_Datatype* newtype);
 
-  int
-  type_create_struct(const int count, const int* blocklens,
+  int type_create_struct(const int count, const int* blocklens,
               const int* displs,
               const MPI_Datatype* old_types,
               MPI_Datatype* newtype);
 
-  int
-  type_commit(MPI_Datatype* type);
+  int type_commit(MPI_Datatype* type);
 
-  int
-  type_free(MPI_Datatype* type);
+  int type_free(MPI_Datatype* type);
 
-  mpi_type*
-  type_from_id(MPI_Datatype id);
+  mpi_type* type_from_id(MPI_Datatype id);
 
-  void
-  allocate_type_id(mpi_type* type);
+  void allocate_type_id(mpi_type* type);
 
-  std::string
-  comm_str(mpi_comm* comm);
+  std::string comm_str(mpi_comm* comm);
 
-  std::string
-  comm_str(MPI_Comm comm);
+  std::string comm_str(MPI_Comm comm);
 
-  std::string
-  tag_str(int tag);
+  std::string tag_str(int tag);
 
-  std::string
-  src_str(int id);
+  std::string src_str(int id);
 
-  std::string
-  src_str(mpi_comm* comm, int id);
+  std::string src_str(mpi_comm* comm, int id);
 
-  std::string
-  type_str(MPI_Datatype mid);
+  std::string type_str(MPI_Datatype mid);
 
-  const char*
-  op_str(MPI_Op op);
+  const char* op_str(MPI_Op op);
 
-  mpi_comm*
-  get_comm(MPI_Comm comm);
+  mpi_comm* get_comm(MPI_Comm comm);
 
-  mpi_group*
-  get_group(MPI_Group grp);
+  mpi_group* get_group(MPI_Group grp);
 
-  mpi_request*
-  get_request(MPI_Request req);
+  mpi_request* get_request(MPI_Request req);
 
-  void
-  add_comm_ptr(mpi_comm* ptr, MPI_Comm* comm);
+  void add_comm_ptr(mpi_comm* ptr, MPI_Comm* comm);
 
-  void
-  erase_comm_ptr(MPI_Comm comm);
+  void erase_comm_ptr(MPI_Comm comm);
 
-  void
-  add_group_ptr(mpi_group* ptr, MPI_Group* grp);
+  void add_group_ptr(mpi_group* ptr, MPI_Group* grp);
 
-  void
-  add_group_ptr(MPI_Group grp, mpi_group* ptr);
+  void add_group_ptr(MPI_Group grp, mpi_group* ptr);
 
-  void
-  erase_group_ptr(MPI_Group grp);
+  void erase_group_ptr(MPI_Group grp);
 
-  void
-  add_request_ptr(mpi_request* ptr, MPI_Request* req);
+  void add_request_ptr(mpi_request* ptr, MPI_Request* req);
 
-  void
-  erase_request_ptr(MPI_Request req);
+  void erase_request_ptr(MPI_Request req);
 
-  void
-  add_comm_grp(MPI_Comm comm, MPI_Group grp);
+  void add_comm_grp(MPI_Comm comm, MPI_Group grp);
 
   void check_key(int key);
 
@@ -719,13 +690,11 @@ class mpi_api :
               mpi_type* old_type,
               MPI_Datatype* new_type);
 
-  int
-  do_type_hindexed(int count, const int _blocklens_[],
+  int do_type_hindexed(int count, const int _blocklens_[],
        const MPI_Aint* _indices_,
        mpi_type* old_type, MPI_Datatype* outtype);
 
-  void
-  start_mpi_collective(
+  void start_mpi_collective(
       collective::type_t ty,
       const void* sendbuf, void* recvbuf,
       MPI_Datatype sendtype, MPI_Datatype recvtype,
@@ -735,10 +704,6 @@ class mpi_api :
   void* allocate_temp_pack_buffer(int count, mpi_type* type);
 
   void free_temp_pack_buffer(void* srcbuf);
-
-  void pack_send(void* srcbuf, void* dstbuf, int sendcnt, mpi_type* type);
-
-  void unpack_recv(void* srcbuf, void* dstbuf, int recvcnt, mpi_type* type);
 
   void wait_collective(collective_op_base* op);
 

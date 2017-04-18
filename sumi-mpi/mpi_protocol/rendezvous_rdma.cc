@@ -19,13 +19,19 @@ rendezvous_get::~rendezvous_get()
 }
 
 void
-rendezvous_get::configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& msg, void *buffer)
+rendezvous_get::configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& msg,
+                                      void *buffer, mpi_type* type)
 {
   if (rdma_pin_delay_.ticks_int64()){
     queue->api()->compute(rdma_pin_delay_); 
   }
   if (buffer){
-    msg->remote_buffer().ptr = buffer;
+    if (type->contiguous()){
+      msg->remote_buffer().ptr = buffer;
+    } else {
+      void* eager_buf = fill_send_buffer(msg, buffer, type);
+      msg->remote_buffer().ptr = eager_buf;
+    }
   }
 }
 
@@ -63,7 +69,7 @@ rendezvous_get::incoming_header(mpi_queue *queue,
       msg->to_string().c_str());
     msg->set_needs_send_ack(false); //TODO do I need this?
     msg->set_content_type(mpi_message::data);
-    msg->local_buffer().ptr = req->buffer_;
+    msg->local_buffer().ptr = req->recv_buffer_;
     queue->recv_needs_payload_[msg->unique_int()] = req;
     //generate both a send and recv ack
     //but the send ack might be hardware or software level
