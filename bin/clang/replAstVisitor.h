@@ -16,7 +16,7 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
     rewriter_(R), visitingGlobal_(false), deletedExprs_(deld),
     globalNs_(ns), currentNs_(&ns),
     insideClass_(0), insideFxn_(0),
-    foundCMain_(false), keepGlobals_(false), noSkeletonize_(false)
+    foundCMain_(false), keepGlobals_(false), noSkeletonize_(true)
   {
     initHeaders();
     initReservedNames();

@@ -9,7 +9,7 @@ using namespace clang::tooling;
 void
 ReplGlobalASTVisitor::initConfig()
 {
-  const char* skelStr = getenv("SSTMAC_SKELETONIZE");
+  const char* skelStr = getenv("SSTMAC_SKELETONIZE_MPI");
   if (skelStr){
     bool doSkel = atoi(skelStr);
     noSkeletonize_ = !doSkel;
@@ -405,6 +405,9 @@ ReplGlobalASTVisitor::replaceMain(clang::FunctionDecl* mainFxn)
     SourceRange rng(mainFxn->getLocStart(), mainFxn->getBody()->getLocStart());
     rewriter_.ReplaceText(rng, sstr.str());
 
+  } else {
+    errorAbort(mainFxn->getLocStart(), *ci_,
+               "sstmac_app_name macro not defined before main");
   }
 }
 

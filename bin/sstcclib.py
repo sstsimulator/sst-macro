@@ -11,6 +11,10 @@ def argify(x):
   else:
     return x
 
+def delete(files):
+  import os
+  os.system("rm -f %s" % (" ".join(files)))
+
 def swapSuffix(suffix, path):
   splitter = path.split(".")[:-1]
   splitter.append(suffix)
@@ -115,7 +119,9 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   linkerArgs = []
   sourceFiles = []
   objectFiles = []
+  optFlags = []
   objTarget = None
+  exeTarget = None
   getObjTarget = False
   for arg in sysargs:
     sarg = arg.strip().strip("'")
@@ -146,10 +152,13 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     elif sarg in ('-o',):
       getObjTarget=True
     elif getObjTarget:
-      objTarget = sarg
+      exeTarget = sarg
       getObjTarget=False
     else:
       givenFlags.append(sarg)
+
+  exeFromSrc = sourceFiles and not objectFiles
+
   if sst_core:
     givenFlags.append(" -DSSTMAC_EXTERNAL_SKELETON")
 
@@ -200,8 +209,27 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     compilerFlagsStr = cleanFlag(cflags)
     compiler = cc
     ld = cxx #always use c++ for linking since we are bringing a bunch of sstmac C++ into the game
+
+  compilerFlags = []
+  for flag in compilerFlagsStr.split():
+    if not flag.startswith("-O") and not flag == "-g":
+      compilerFlags.append(flag)
+  compilerFlagsStr = " ".join(compilerFlags)
+
   cxxFlagsStr = cleanFlag(cxxflags)
+  cxxFlags = []
+  for flag in cxxFlagsStr.split():
+    if not flag.startswith("-O") and not flag == "-g":
+      cxxFlags.append(flag)
+  cxxFlagsStr = " ".join(cxxFlags)
+    
   cFlagsStr = cleanFlag(cflags)
+  cFlags = []
+  for flag in cxxFlagsStr.split():
+    if not flag.startswith("-O") and not flag == "-g":
+      cFlags.append(flag)
+  cFlagsStr = " ".join(cxxFlags)
+
   objectFilesStr = " ".join(objectFiles)
 
   compilerFlagsArr = compilerFlagsStr.split()
@@ -296,7 +324,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       ldpathMaker
     ]
   else:
-    if not objTarget: objTarget = "a.out"
+    if not exeTarget: exeTarget = "a.out"
     #linking executable/lib from object files (or source files)
     runClang = srcFiles
 
@@ -310,7 +338,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         compilerFlagsStr,
         ldpathMaker,
         "-o",
-        "lib" + objTarget + ".so",
+        "lib" + exeTarget + ".so",
       ]
       arCmdArr.extend(linkerArgs)
 
@@ -325,7 +353,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         extralibs, 
         ldpathMaker,
         "-o",
-        objTarget
+        exeTarget
       ]
       ldCmdArr.extend(linkerArgs)
 
@@ -375,10 +403,11 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         compilerFlagsStr, 
         givenCompilerFlagsStr
       ]
+      srcTformObjFile = swapSuffix("o", srcRepl)
       if objTarget:
-        objRepl = addPrefix("sst.",objTarget)
-        cmdArr.append("-o")
-        cmdArr.append(objRepl)
+        srcTformObjFile = addPrefix("sst.", objTarget)
+      cmdArr.append("-o")
+      cmdArr.append(srcTformObjFile)
       cmdArr.append("-c")
       cmdArr.append(srcRepl)
       cmdArr.append("--no-integrated-cpp")
@@ -388,7 +417,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       if not rc == 0:
         if delTempFiles:
           os.system("rm -f %s" % ppTmpFile)
-          os.system("rm -f %s" % objRepl)
+          os.system("rm -f %s" % srcTformObjFile)
           os.system("rm -f %s" % cxxInitSrcFile)
         return rc
 
@@ -416,38 +445,52 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
 
     #some idiots generate multiple .o files at once
     manyObjects = objTarget == None #no specific target specified
-    mergeCmdArr = ["%s -Wl,-r -nostdlib" % compiler]
-    srcTformObjFile = None
-    cxxInitObjFile = None
+    mergeCmdArr = [compiler]
+    mergeCmdArr.append("-Wl,-r -nostdlib")
+    allObjects = []
     for srcFile in sourceFiles:
-      if not objTarget: objTarget = swapSuffix("o", srcFile)
+      target = objTarget
       srcFileNoSuffix = ".".join(srcFile.split(".")[:-1])
       srcObjTarget = srcFileNoSuffix + ".o"
-      srcTformObjFile = addPrefix("sst.", objTarget)
+      srcTformObjFile = swapSuffix("o", addPrefix("sst.pp.", srcFile))
+      if objTarget:
+        srcTformObjFile = addPrefix("sst.", objTarget)
       cxxInitObjFile = addPrefix("sstGlobals.", srcFile) + ".o"
       #now we have to merge the src-to-src generated .o with cxx linkage .o
-      if manyObjects:
-        #we need to generate a .o for each source file
-        cxxMergeCmd = "%s -Wl,-r %s %s -o %s" % (cxx, srcTformObjFile, cxxInitObjFile, srcObjTarget)
-        if verbose: sys.stderr.write("%s\n" % cxxMergeCmd)
-        rc, output = getstatusoutput(cxxMergeCmd)
-        if delTempFiles:
-          os.system("rm -f %s %s" % (srcTformObjFile, cxxInitObjFile))
-        if not rc == 0:
-          return rc
-      else:
-        mergeCmdArr.append("%s %s" % (srcTformObjFile, cxxInitObjFile))
-    if not manyObjects:
-      mergeCmdArr.append("-o %s" % objTarget)
-      mergeCmd = " ".join(mergeCmdArr)
-      if verbose: sys.stderr.write("%s\n" % mergeCmd)
-      rc, output = getstatusoutput(mergeCmd)
+      #we need to generate a .o for each source file
+      cmdArr = mergeCmdArr[:]
+      target = objTarget
+      if manyObjects: 
+        target = srcObjTarget
+      cmdArr.append("-o")
+      cmdArr.append(target)
+      cmdArr.append(srcTformObjFile)
+      cmdArr.append(cxxInitObjFile)
+      cxxMergeCmd = " ".join(cmdArr)
+      if verbose: sys.stderr.write("%s\n" % cxxMergeCmd)
+      rc, output = getstatusoutput(cxxMergeCmd)
       if delTempFiles:
         os.system("rm -f %s %s" % (srcTformObjFile, cxxInitObjFile))
       if not rc == 0:
-        sys.stderr.write("deglobal merge error on %s:\n%s\n" % (objTarget, output))
-    return rc
-        
+        delete(allObjects)
+        sys.stderr.write("deglobal merge error on %s:\n%s\n" % (target, output))
+        return rc
+      if exeFromSrc:
+        allObjects.append(target)
+
+    if exeFromSrc:
+      if ldCmdArr:
+        ldCmdArr.extend(allObjects)
+        rc = runCmdArr(ldCmdArr,verbose)
+        if not rc == 0: return rc
+      if arCmdArr:
+        arCmdArr.extend(allObjects)
+        rc = runCmdArr(arCmdArr,verbose)
+        if not rc == 0: return rc
+      if delTempFiles:
+        delete(allObjects)
+    return 0
+
   else:
     rc = runCmdArr(cxxCmdArr,verbose)
     if not rc == 0: return rc
