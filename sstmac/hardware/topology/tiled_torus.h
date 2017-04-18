@@ -7,10 +7,7 @@
 namespace sstmac {
 namespace hw {
 
-
-class tiled_torus :
-  public hdtorus,
-  public multipath_topology
+class tiled_torus : public hdtorus, public multipath_topology
 {
  public:
   tiled_torus(sprockit::sim_parameters *params);
@@ -22,10 +19,6 @@ class tiled_torus :
 
   void
   configure_geometric_paths(std::vector<int>& redundancies) override;
-
-  switch_id
-  netlink_to_injection_switch(
-        node_id nodeaddr, uint16_t ports[], int& num_ports) const override;
 
   bool
   uniform_network_ports() const override {
@@ -44,6 +37,20 @@ class tiled_torus :
   void
   configure_individual_port_params(switch_id src,
             sprockit::sim_parameters *switch_params) const override;
+
+  virtual switch_id
+  netlink_to_injection_switch(
+      node_id nodeaddr, uint16_t ports[], int &num_ports) const override;
+
+  virtual switch_id
+  netlink_to_ejection_switch(
+      node_id nodeaddr, uint16_t ports[], int &num_ports) const override;
+
+  virtual switch_id
+  netlink_to_injection_switch(netlink_id nodeaddr, uint16_t& switch_port) const override;
+
+  virtual switch_id
+  netlink_to_ejection_switch(node_id nodeaddr, uint16_t& switch_port) const override;
 
  private:
   inline int port(int replica, int dim, int dir) const {

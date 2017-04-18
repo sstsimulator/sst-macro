@@ -101,19 +101,19 @@ tiled_dragonfly::netlink_to_ejection_switch(
   return netlink_to_injection_switch(nodeaddr,ports,num_ports);
 }
 
-void
-tiled_dragonfly::eject_paths_on_switch(
-   node_id dest_addr, switch_id sw_addr, routable::path_set &paths) const
-{
-  paths.resize(injection_redundancy_);
-  int node_offset = dest_addr % netlinks_per_switch_;
-  int index = node_offset * injection_redundancy_;
-  for (int i=0; i < injection_redundancy_; ++i, ++index){
-    paths[i].set_outport(injection_ports_[index]);
-    paths[i].vc = 0;
-    paths[i].geometric_id = eject_geometric_id_ + node_offset;
-  }
-}
+//void
+//tiled_dragonfly::eject_paths_on_switch(
+//   node_id dest_addr, switch_id sw_addr, routable::path_set &paths) const
+//{
+//  paths.resize(injection_redundancy_);
+//  int node_offset = dest_addr % netlinks_per_switch_;
+//  int index = node_offset * injection_redundancy_;
+//  for (int i=0; i < injection_redundancy_; ++i, ++index){
+//    paths[i].set_outport(injection_ports_[index]);
+//    paths[i].vc = 0;
+//    paths[i].geometric_id = eject_geometric_id_ + node_offset;
+//  }
+//}
 
 bool
 tiled_dragonfly::xy_connected_to_group(int myX, int myY, int myG, int dstg) const

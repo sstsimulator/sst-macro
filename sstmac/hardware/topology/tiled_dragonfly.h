@@ -105,11 +105,11 @@ class tiled_dragonfly : public dragonfly, public multipath_topology
   netlink_to_ejection_switch(
       node_id nodeaddr, uint16_t ports[], int &num_ports) const override;
 
-  virtual void
-  eject_paths_on_switch(
-      node_id dest_addr,
-      switch_id sw_addr,
-      routable::path_set &paths) const;
+//  virtual void
+//  eject_paths_on_switch(
+//      node_id dest_addr,
+//      switch_id sw_addr,
+//      routable::path_set &paths) const;
 
   virtual bool
   xy_connected_to_group(int myX, int myY, int myG,
