@@ -426,6 +426,7 @@ ReplGlobalASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
   ++insideFxn_;
   if (!pragma_config_.skipNextStmt){
     TraverseStmt(D->getBody());
+  } else {
     pragma_config_.skipNextStmt = false;
   }
   --insideFxn_;
@@ -510,6 +511,7 @@ ReplGlobalASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
     VisitDecl(D); //check for pragmas
     if (!pragma_config_.skipNextStmt){
       TraverseStmt(D->getBody());
+    } else {
       pragma_config_.skipNextStmt = false;
     }
   }
@@ -543,7 +545,9 @@ ReplGlobalASTVisitor::VisitDecl(Decl *D)
     pragma_config_.pragmaDepth++;
     //pragma takes precedence - must occur in pre-visit
     prg->activate(D, rewriter_, pragma_config_);
+    pragma_config_.pragmaDepth--;
   }
+
   return true;
 }
 

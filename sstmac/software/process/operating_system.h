@@ -62,11 +62,11 @@ class operating_system :
     stack_alloc stackalloc;
     app_id current_aid;
     task_id current_tid;
-    bool skip_next_op_new;
+    int skip_next_op_new;
     os_thread_context() :
       current_thread(nullptr),
       current_os(nullptr),
-      skip_next_op_new(false)
+      skip_next_op_new(0)
     {}
   };
 

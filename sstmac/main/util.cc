@@ -15,7 +15,7 @@ get_params(){
   return sstmac::sw::operating_system::current_thread()->parent_app()->params();
 }
 
-bool&
+int&
 should_skip_operator_new(){
   return sstmac::sw::operating_system::static_os_thread_context().skip_next_op_new;
 }

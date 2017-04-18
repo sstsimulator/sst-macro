@@ -83,22 +83,26 @@ Domain::Domain(Int_t numRanks, Index_t colLoc,
    }
 
    // Note - v initializes to 1.0, not 0.0!
+#pragma sst compute
    for (Index_t i=0; i<numElem(); ++i) {
       v(i) = Real_t(1.0) ;
    }
 
+#pragma sst compute
    for (Index_t i=0; i<numNode(); ++i) {
       xd(i) = Real_t(0.0) ;
       yd(i) = Real_t(0.0) ;
       zd(i) = Real_t(0.0) ;
    }
 
+#pragma sst compute
    for (Index_t i=0; i<numNode(); ++i) {
       xdd(i) = Real_t(0.0) ;
       ydd(i) = Real_t(0.0) ;
       zdd(i) = Real_t(0.0) ;
    }
 
+#pragma sst compute
    for (Index_t i=0; i<numNode(); ++i) {
       nodalMass(i) = Real_t(0.0) ;
    }
@@ -518,6 +522,7 @@ Domain::SetupSymmetryPlanes(Int_t edgeNodes)
 
 
 /////////////////////////////////////////////////////////////
+#pragma sst compute
 void
 Domain::SetupElementConnectivities(Int_t edgeElems)
 {
@@ -554,6 +559,7 @@ Domain::SetupBoundaryConditions(Int_t edgeElems)
   Index_t ghostIdx[6] ;  // offsets to ghost locations
 
   // set up boundary condition information
+#pragma sst compute
   for (Index_t i=0; i<numElem(); ++i) {
      elemBC(i) = Int_t(0) ;
   }
@@ -593,6 +599,7 @@ Domain::SetupBoundaryConditions(Int_t edgeElems)
   }
 
   // symmetry plane or free surface BCs 
+#pragma sst compute
   for (Index_t i=0; i<edgeElems; ++i) {
     Index_t planeInc = i*edgeElems*edgeElems ;
     Index_t rowInc   = i*edgeElems ;
