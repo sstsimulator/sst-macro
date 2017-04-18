@@ -15,7 +15,7 @@ get_params(){
   return sstmac::sw::operating_system::current_thread()->parent_app()->params();
 }
 
-bool&
+int&
 should_skip_operator_new(){
   return sstmac::sw::operating_system::static_os_thread_context().skip_next_op_new;
 }
@@ -23,7 +23,6 @@ should_skip_operator_new(){
 int
 user_skeleton_main_init_fxn(const char* name, main_fxn fxn)
 {
-  std::cout << "Yeah, I got called with " << name << std::endl;
   sstmac::sw::user_app_cxx_full_main::register_main_fxn(name, fxn);
   return 42;
 }

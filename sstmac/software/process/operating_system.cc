@@ -942,13 +942,11 @@ operating_system::app_ptr(software_id sid)
 
 void*
 sstmac_new(unsigned long size){
-  bool& skip = sstmac::sw::operating_system::static_os_thread_context().skip_next_op_new;
-  if (skip){
-    skip = false;
-    return nullptr;
-  } else {
-    skip = false;
+  int skip = sstmac::sw::operating_system::static_os_thread_context().skip_next_op_new;
+  if (skip == 0){
     return ::operator new(size); //call out to non-throwing version
+  } else {
+    return nullptr;
   }
 }
 

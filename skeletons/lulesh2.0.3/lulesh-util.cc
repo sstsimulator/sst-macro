@@ -185,14 +185,15 @@ void VerifyAndWriteFinalOutput(Real_t elapsed_time,
    printf("   Problem size        =  %i \n",    nx);
    printf("   MPI tasks           =  %i \n",    numRanks);
    printf("   Iteration count     =  %i \n",    locDom.cycle());
-   printf("   Final Origin Energy = %12.6e \n", locDom.e(ElemId));
+   //printf("   Final Origin Energy = %12.6e \n", locDom.e(ElemId));
 
    Real_t   MaxAbsDiff = Real_t(0.0);
    Real_t TotalAbsDiff = Real_t(0.0);
    Real_t   MaxRelDiff = Real_t(0.0);
 
    for (Index_t j=0; j<nx; ++j) {
-      for (Index_t k=j+1; k<nx; ++k) {
+     #pragma sst compute
+     for (Index_t k=j+1; k<nx; ++k) {
          Real_t AbsDiff = FABS(locDom.e(j*nx+k)-locDom.e(k*nx+j));
          TotalAbsDiff  += AbsDiff;
 

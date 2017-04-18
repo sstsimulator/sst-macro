@@ -1946,6 +1946,7 @@ void CalcQForElems(Domain& domain, Real_t vnew[])
 
       /* Don't allow excessive artificial viscosity */
       Index_t idx = -1; 
+      #pragma sst compute
       for (Index_t i=0; i<numElem; ++i) {
          if ( domain.q(i) > domain.qstop() ) {
             idx = i ;

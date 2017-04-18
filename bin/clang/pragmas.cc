@@ -166,7 +166,7 @@ SSTNewPragma::defaultAct(Stmt* stmt, Rewriter& r, bool insertStartAfter, bool in
     insertLoc = Lexer::getLocForEndOfToken(startLoc, 0,
                         CI->getSourceManager(), CI->getLangOpts());
   }
-  r.InsertText(insertLoc, "should_skip_operator_new()=true;", false);
+  r.InsertText(insertLoc, "should_skip_operator_new()++;", false);
 
   SourceLocation endLoc = stmt->getLocEnd();
   insertLoc = endLoc;
@@ -178,7 +178,7 @@ SSTNewPragma::defaultAct(Stmt* stmt, Rewriter& r, bool insertStartAfter, bool in
     errorAbort(endLoc, *CI, "trouble parsing sst new pragma");
   }
   //locations are weird with functions - insert after is always false
-  r.InsertText(insertLoc, "should_skip_operator_new()=false;", false);
+  r.InsertText(insertLoc, "should_skip_operator_new()--;", false);
 }
 
 void

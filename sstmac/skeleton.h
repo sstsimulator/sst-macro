@@ -51,38 +51,41 @@ extern void* sstmac_new(unsigned long size);
 #include <new>
 #include <utility>
 
-extern bool& should_skip_operator_new();
+extern int& should_skip_operator_new();
 
 template <class T, class... Args>
 T*
 placement_new(void* sstmac_placement_ptr, Args&&... args){
-  if (sstmac_placement_ptr != nullptr){
-    return new (sstmac_placement_ptr) T(std::forward<Args>(args)...);
+  int flag = should_skip_operator_new();
+  if (flag == 0){
+    if (sstmac_placement_ptr != nullptr){
+      return new (sstmac_placement_ptr) T(std::forward<Args>(args)...);
+    }
+    return reinterpret_cast<T*>(sstmac_placement_ptr);
+  } else {
+    return nullptr;
   }
-  return reinterpret_cast<T*>(sstmac_placement_ptr);
 }
 
 template <class T>
 T*
 conditional_array_new(unsigned long size){
-  bool& flag = should_skip_operator_new();
+  int flag = should_skip_operator_new();
   T* ret = nullptr;
-  if (!flag){
+  if (flag == 0){
     ret = new T[size];
   }
-  flag = false;
   return ret;
 }
 
 template <class T, class... Args>
 T*
 conditional_new(Args&&... args){
-  bool& flag = should_skip_operator_new();
+  int flag = should_skip_operator_new();
   T* ret = nullptr;
-  if (!flag){
+  if (flag == 0){
     ret = new T(std::forward<Args>(args)...);
   }
-  flag = false;
   return ret;
 }
 

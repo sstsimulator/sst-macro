@@ -245,9 +245,9 @@ mpi_queue::recv(mpi_request* key, int count,
                 mpi_comm* comm,
                 void* buffer)
 {
-  mpi_queue_debug("starting recv count=%d, type=%s, src=%s, tag=%s, comm=%s",
+  mpi_queue_debug("starting recv count=%d, type=%s, src=%s, tag=%s, comm=%s, buffer=%p",
         count, api_->type_str(type).c_str(), api_->src_str(source).c_str(),
-        api_->tag_str(tag).c_str(), api_->comm_str(comm).c_str());
+        api_->tag_str(tag).c_str(), api_->comm_str(comm).c_str(), buffer);
 
 #if !SSTMAC_ALLOW_LARGE_PAYLOADS
   if (buffer && count > 16){

@@ -7,6 +7,8 @@
 // used supports it (i.e. the _OPENMP symbol is defined)
 #define USE_OMP 1
 
+#define heisenbug printf("%s:%d\n", __FILE__, __LINE__)
+
 #if USE_MPI
 #include <mpi.h>
 
