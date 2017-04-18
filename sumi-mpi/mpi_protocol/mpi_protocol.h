@@ -92,20 +92,16 @@ class mpi_protocol : public sprockit::printable {
    * @param msg   The message to be sent
    * @param buffer The buffer corresponding to the send
    */
-  virtual void
-  configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& msg, void* buffer) = 0;
+  virtual void configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& msg,
+                                     void* buffer, mpi_type* typeobj) = 0;
 
-  virtual bool
-  send_needs_completion_ack() const = 0;
+  virtual bool send_needs_completion_ack() const = 0;
 
-  virtual bool
-  send_needs_nic_ack() const = 0;
+  virtual bool send_needs_nic_ack() const = 0;
 
-  virtual bool
-  send_needs_eager_ack() const = 0;
+  virtual bool send_needs_eager_ack() const = 0;
 
-  virtual PROTOCOL_ID
-  get_prot_id() const = 0;
+  virtual PROTOCOL_ID get_prot_id() const = 0;
 
   virtual ~mpi_protocol(){}
 
@@ -114,12 +110,13 @@ class mpi_protocol : public sprockit::printable {
   static mpi_protocol* eager1_doublecpy_protocol;
   static mpi_protocol* rendezvous_protocol;
 
-  static mpi_protocol*
-  get_protocol_object(PROTOCOL_ID id);
+  static mpi_protocol* get_protocol_object(PROTOCOL_ID id);
 
-  static void
-  delete_statics();
+  static void delete_statics();
 
+ protected:
+  void* fill_send_buffer(const mpi_message::ptr &msg,
+                         void *buffer, mpi_type *typeobj);
 };
 
 /**
@@ -128,48 +125,40 @@ class mpi_protocol : public sprockit::printable {
  * MPI_Send completes immediately. Assumes dest has allocated "mailbox"
  * temp buffers to receive unexpected messages.
  */
-class eager0 : public mpi_protocol
+class eager0 final : public mpi_protocol
 {
  public:
   eager0(sprockit::sim_parameters* params){}
 
-  virtual ~eager0(){}
+  ~eager0(){}
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "eager0";
   }
 
-  bool
-  send_needs_completion_ack() const override {
+  bool send_needs_completion_ack() const override {
     return false;
   }
 
-  bool
-  send_needs_nic_ack() const override {
+  bool send_needs_nic_ack() const override {
     return true;
   }
 
-  bool
-  send_needs_eager_ack() const override {
+  bool send_needs_eager_ack() const override {
     return true;
   }
 
-  void
-  configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& msg, void* buffer) override;
+  void configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& msg,
+                             void* buffer, mpi_type* typeobj) override;
 
-  void
-  send_header(mpi_queue* queue, const mpi_message::ptr& msg) override;
+  void send_header(mpi_queue* queue, const mpi_message::ptr& msg) override;
 
-  void
-  incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg) override;
+  void incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg) override;
 
-  void
-  incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg,
+  void incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg,
                    mpi_queue_recv_request* req) override;
 
-  virtual PROTOCOL_ID
-  get_prot_id() const override {
+  PROTOCOL_ID get_prot_id() const override {
     return EAGER0;
   }
 
@@ -193,37 +182,30 @@ class eager1 : public mpi_protocol
 
   virtual ~eager1(){}
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "eager1";
   }
 
-  bool
-  send_needs_completion_ack() const override {
+  bool send_needs_completion_ack() const override {
     return false;
   }
 
-  void
-  configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& msg, void* buffer) override;
+  void configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& msg,
+                             void* buffer, mpi_type* typeobj) override;
 
-  bool
-  send_needs_nic_ack() const override {
+  bool send_needs_nic_ack() const override {
     return false;
   }
 
-  bool
-  send_needs_eager_ack() const override {
+  bool send_needs_eager_ack() const override {
     return true;
   }
 
-  void
-  send_header(mpi_queue* queue, const mpi_message::ptr& msg) override;
+  void send_header(mpi_queue* queue, const mpi_message::ptr& msg) override;
 
-  void
-  incoming_header(mpi_queue* queue, const mpi_message::ptr& msg) override;
+  void incoming_header(mpi_queue* queue, const mpi_message::ptr& msg) override;
 
-  void
-  incoming_header(mpi_queue* queue, const mpi_message::ptr& msg,
+  void incoming_header(mpi_queue* queue, const mpi_message::ptr& msg,
                   mpi_queue_recv_request* req) override;
 
 };
@@ -233,7 +215,7 @@ class eager1 : public mpi_protocol
  * Eager1 optimization that eliminates recv temp buf if receive is
  * posted before RDMA header arrives from sender.
  */
-class eager1_singlecpy : public eager1
+class eager1_singlecpy final : public eager1
 {
  public:
   eager1_singlecpy(sprockit::sim_parameters* params) :
@@ -241,23 +223,19 @@ class eager1_singlecpy : public eager1
   {
   }
 
-  virtual ~eager1_singlecpy(){}
+  ~eager1_singlecpy(){}
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "eager1_rdma_singlecpy";
   }
 
-  virtual PROTOCOL_ID
-  get_prot_id() const override {
+  PROTOCOL_ID get_prot_id() const override {
     return EAGER1_SINGLECPY;
   }
 
-  void
-  incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg) override;
+  void incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg) override;
 
-  void
-  incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg,
+  void incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg,
                    mpi_queue_recv_request* req) override;
 
 };
@@ -266,7 +244,7 @@ class eager1_singlecpy : public eager1
  * @brief The eager1 class
  * Standard eager1 protocol uses temp bufs for both send/recv
  */
-class eager1_doublecpy : public eager1
+class eager1_doublecpy final : public eager1
 {
  public:
   eager1_doublecpy(sprockit::sim_parameters* params) :
@@ -276,21 +254,17 @@ class eager1_doublecpy : public eager1
 
   virtual ~eager1_doublecpy(){}
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "eager1_doublecpy";
   }
 
-  virtual PROTOCOL_ID
-  get_prot_id() const override {
+  PROTOCOL_ID get_prot_id() const override {
     return EAGER1_DOUBLECPY;
   }
 
-  void
-  incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg) override;
+  void incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg) override;
 
-  void
-  incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg,
+  void incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg,
                    mpi_queue_recv_request* req) override;
 
 };
@@ -300,8 +274,7 @@ class rendezvous_protocol : public mpi_protocol
  public:
   rendezvous_protocol(sprockit::sim_parameters* params);
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "rendezvous";
   }
 
@@ -320,7 +293,7 @@ class rendezvous_protocol : public mpi_protocol
  * to the destination. On MPI_Recv, the destination then posts an RDMA get.
  * Hardware acks arrive at both dest/source signaling done.
  */
-class rendezvous_get : public rendezvous_protocol
+class rendezvous_get final : public rendezvous_protocol
 {
  public:
   rendezvous_get(sprockit::sim_parameters* params) :
@@ -328,48 +301,39 @@ class rendezvous_get : public rendezvous_protocol
   {
   }
 
-  virtual ~rendezvous_get();
+  ~rendezvous_get();
 
-  bool
-  send_needs_nic_ack() const override {
+  bool send_needs_nic_ack() const override {
     return !software_ack_;
   }
 
-  bool
-  send_needs_eager_ack() const override {
+  bool send_needs_eager_ack() const override {
     return false;
   }
 
-  bool
-  send_needs_completion_ack() const override {
+  bool send_needs_completion_ack() const override {
     return software_ack_;
   }
 
-  void
-  send_header(mpi_queue* queue, const mpi_message::ptr& msg) override;
+  void send_header(mpi_queue* queue, const mpi_message::ptr& msg) override;
 
-  void
-  incoming_header(mpi_queue* queue, const mpi_message::ptr& msg) override;
+  void incoming_header(mpi_queue* queue, const mpi_message::ptr& msg) override;
 
-  void
-  incoming_header(mpi_queue* queue, const mpi_message::ptr& msg,
+  void incoming_header(mpi_queue* queue, const mpi_message::ptr& msg,
                    mpi_queue_recv_request* req) override;
 
-  void
-  incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg) override;
+  void incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg) override;
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "rendezvous protocol rdma";
   }
 
-  virtual PROTOCOL_ID
-  get_prot_id() const override {
+  PROTOCOL_ID get_prot_id() const override {
     return RENDEZVOUS_GET;
   }
 
-  void
-  configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& msg, void* buffer) override;
+  void configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& msg,
+                             void* buffer, mpi_type* typeobj) override;
 
 };
 

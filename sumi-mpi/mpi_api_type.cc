@@ -471,7 +471,7 @@ mpi_api::type_create_struct(const int count, const int* blocklens,
       next.byte_disp = indices[i];
       next.num = blocklens[i];
       packed_size += old_type_obj->packed_size() * blocklens[i];
-      extent += old_type_obj->packed_size() * blocklens[i];
+      extent = next.byte_disp + old_type_obj->packed_size() * blocklens[i];
       index++;
     }
   }

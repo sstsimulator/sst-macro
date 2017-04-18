@@ -9,7 +9,7 @@ using namespace clang::tooling;
 void
 ReplGlobalASTVisitor::initConfig()
 {
-  const char* skelStr = getenv("SSTMAC_SKELETONIZE_MPI");
+  const char* skelStr = getenv("SSTMAC_SKELETONIZE");
   if (skelStr){
     bool doSkel = atoi(skelStr);
     noSkeletonize_ = !doSkel;

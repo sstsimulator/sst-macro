@@ -41,7 +41,7 @@ LDFLAGS = -g -O0
 
 .cc.o: lulesh.h
 	@echo "Building $<"
-	SSTMAC_SKELETONIZE_MPI=1 $(CXX) -c $(CXXFLAGS) -o $@  $<
+	SSTMAC_SKELETONIZE=1 $(CXX) -c $(CXXFLAGS) -o $@  $<
 
 all: $(LULESH_EXEC)
 

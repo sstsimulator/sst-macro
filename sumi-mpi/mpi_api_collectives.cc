@@ -82,7 +82,7 @@ mpi_api::start_mpi_collective(collective::type_t ty,
 
   if (op->sendbuf && !op->sendtype->contiguous()){
     void* newbuf = allocate_temp_pack_buffer(op->sendcnt, op->sendtype);
-    pack_send(op->sendbuf, newbuf, op->sendcnt, op->sendtype);
+    op->sendtype->pack_send(op->sendbuf, newbuf, op->sendcnt);
     op->tmp_sendbuf = newbuf;
     op->packed_send = true;
   } else {
@@ -97,20 +97,6 @@ mpi_api::start_mpi_collective(collective::type_t ty,
     op->tmp_recvbuf = recvbuf;
   }
 
-}
-
-
-
-void
-mpi_api::pack_send(void* srcbuf, void* dstbuf, int sendcnt, mpi_type* sendtypePtr)
-{
-  char* src = (char*) srcbuf;
-  char* dst = (char*) dstbuf;
-  int src_stride = sendtypePtr->extent();
-  int dst_stride = sendtypePtr->packed_size();
-  for (int i=0; i < sendcnt; ++i, src += src_stride, dst += dst_stride){
-    sendtypePtr->pack(src, dst);
-  }
 }
 
 void*
@@ -128,18 +114,6 @@ mpi_api::free_temp_pack_buffer(void* srcbuf)
 }
 
 void
-mpi_api::unpack_recv(void *srcbuf, void *dstbuf, int recvcnt, mpi_type* recvtypePtr)
-{
-  char* src = (char*) srcbuf;
-  char* dst = (char*) dstbuf;
-  int src_stride = recvtypePtr->packed_size();
-  int dst_stride = recvtypePtr->extent();
-  for (int i=0; i < recvcnt; ++i, src += src_stride, dst += dst_stride){
-    recvtypePtr->unpack(src, dst);
-  }
-}
-
-void
 mpi_api::finish_collective_op(collective_op_base* op_)
 {
   collective_op* op = static_cast<collective_op*>(op_);
@@ -149,7 +123,7 @@ mpi_api::finish_collective_op(collective_op_base* op_)
                 op->packed_send, op->packed_recv);
 
   if (op->packed_recv){
-    unpack_recv(op->tmp_recvbuf, op->recvbuf, op->recvcnt, op->recvtype);
+    op->recvtype->unpack_recv(op->tmp_recvbuf, op->recvbuf, op->recvcnt);
     free_temp_pack_buffer(op->tmp_recvbuf);
   }
   if (op->packed_send){
