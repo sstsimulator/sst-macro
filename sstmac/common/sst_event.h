@@ -51,12 +51,10 @@ class event_queue_entry : public event
  public:
   virtual ~event_queue_entry() {}
 
-  virtual void
-  execute() = 0;
-
 #if SSTMAC_INTEGRATED_SST_CORE
-  event_queue_entry(device_id dst,
-    device_id src) 
+  virtual void execute() override = 0;
+
+  event_queue_entry(device_id dst, device_id src)
   {
     //simply ignore parameters - not needed
   }
@@ -69,33 +67,29 @@ class event_queue_entry : public event
   {
   }
 
-  timestamp
-  time() const {
+  virtual void execute() = 0;
+
+  timestamp time() const {
     return time_;
   }
 
-  void
-  set_time(const timestamp& t) {
+  void set_time(const timestamp& t) {
     time_ = t;
   }
 
-  void
-  set_seqnum(uint32_t seqnum) {
+  void set_seqnum(uint32_t seqnum) {
     seqnum_ = seqnum;
   }
 
-  uint32_t
-  seqnum() const {
+  uint32_t seqnum() const {
     return seqnum_;
   }
 
-  device_id
-  event_location() const {
+  device_id event_location() const {
     return dst_loc_;
   }
 
-  device_id
-  src_location() const {
+  device_id src_location() const {
     return src_loc_;
   }
 
@@ -124,8 +118,7 @@ class handler_event_queue_entry :
     event_handler* hand,
     device_id src_loc);
 
-  void
-  execute();
+  void execute() override;
 
  protected:
   event* ev_to_deliver_;
