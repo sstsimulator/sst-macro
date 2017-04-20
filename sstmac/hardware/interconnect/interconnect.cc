@@ -392,12 +392,10 @@ interconnect::connect_switches(sprockit::sim_parameters* switch_params)
                 topology_->switch_label(conn.dst).c_str(),
                 conn.src_outport, conn.dst_inport);
 
-      //std::cerr << "making switch to switch connection, outport " << conn.src_outport << "\n";
       src_sw->connect_output(port_params,
                              conn.src_outport,
                              conn.dst_inport,
                              dst_sw->payload_handler(conn.dst_inport));
-//      std::cerr << "dst_sw: " << dst_sw << "\n";
       dst_sw->connect_input(port_params,
                             conn.src_outport,
                             conn.dst_inport,

@@ -99,17 +99,12 @@ tiled_torus::configure_geometric_paths(std::vector<int>& redundancies)
   for (int i=0; i < netlinks_per_switch_; ++i){
     redundancies[i+eject_geometric_id_] = injection_redundancy_;
   }
-
-  for (int i=0; i < ngeom_paths; ++i )
-    std::cerr << sprockit::printf("redundancies[%i]: %i\n", i, redundancies[i]);
 }
 
 void
 tiled_torus::connected_outports(switch_id src, std::vector<connection>& conns) const
 {
-  std::cerr << "getting connected ouports for switch " << src << "\n";
   int max_port = max_ports_intra_network_ - 1;
-  std::cerr << "max_port: " << max_port << "\n";
   conns.resize(max_port);
   int cidx = 0;
   int ndims = dimensions_.size();
@@ -130,26 +125,28 @@ tiled_torus::connected_outports(switch_id src, std::vector<connection>& conns) c
 
     switch_id minus_partner = src + minus_jump * dim_stride;
 
+     //std::cerr << sprockit::printf("plus jump: %i\nminus jump: %i\n", plus_jump, minus_jump);
+    //std::cerr << sprockit::printf("plus partner: %i\nminus partner: %i\n", plus_partner, minus_partner);
+
     int nreplica = red_[i];
-    std::cerr << "nreplica: " << red_[i] << std::endl;
     int outport, inport;
     for (int r=0; r < nreplica; ++r){
-      if ( (cidx + 1) > max_port ) {
-        std::cerr << "overrunning\n";
-        abort();
-      }
-      outport = inport = port(r, i, hdtorus::pos);
-      std::cerr << sprockit::printf("setting pos connection %i to node/port %i/%i\n", cidx, plus_partner, outport);
+      outport = port(r, i, hdtorus::pos);
+      inport = port(r, i, hdtorus::neg);
+      //std::cerr << sprockit::printf("setting connection %i (pos) src:port %i:%i -> dst:port %i:%i\n", cidx, src, outport, plus_partner, inport);
       connection& conn = conns[cidx];
       conn.src = src;
       conn.dst = plus_partner;
       conn.src_outport = outport;
       conn.dst_inport = inport;
       ++cidx;
+    }
 
-      outport = inport = port(r, i, hdtorus::neg);
-      std::cerr << sprockit::printf("setting neg connection %i to node/port %i/%i\n", cidx, minus_partner, outport);
-      conn = conns[cidx];
+    for (int r=0; r < nreplica; ++r){
+      outport = port(r, i, hdtorus::neg);
+      inport = port(r, i, hdtorus::pos);
+      //std::cerr << sprockit::printf("setting connection %i (neg) src:port %i:%i -> dst:port %i:%i\n", cidx, src, outport, minus_partner, inport);
+      connection& conn = conns[cidx];
       conn.src = src;
       conn.dst = minus_partner;
       conn.src_outport = outport;
@@ -160,18 +157,6 @@ tiled_torus::connected_outports(switch_id src, std::vector<connection>& conns) c
   }
   //conns.resize(cidx);
 }
-
-//switch_id
-//tiled_torus::netlink_to_injection_switch(node_id nodeaddr, uint16_t ports[], int &num_ports) const
-//{
-//  uint16_t port;
-//  switch_id sid = hdtorus::netlink_to_injection_switch(nodeaddr, port);
-//  num_ports = injection_redundancy_;
-//  for (int i=0; i < num_ports; ++i, ++port){
-//    ports[i] = port;
-//  }
-//  return sid;
-//}
 
 switch_id
 tiled_torus::netlink_to_injection_switch(
