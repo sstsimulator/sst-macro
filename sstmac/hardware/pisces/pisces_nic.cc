@@ -35,12 +35,6 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-SpktRegister("pisces | pisces", nic, pisces_nic,
-            "implements a nic that models messages as a packet flow");
-
-SpktRegister("pisces | pisces", netlink, pisces_netlink,
-            "implements a netlink that models messages as a packet flow");
-
 const int pisces_netlink::really_big_buffer = 1<<30;
 
 pisces_nic::pisces_nic(sprockit::sim_parameters* params, node* parent) :

@@ -23,8 +23,6 @@
 namespace sstmac {
 namespace hw {
 
-SpktRegister("fattree | ftree", router, fat_tree_router);
-
 fat_tree_router::fat_tree_router(sprockit::sim_parameters* params, topology *top,
                                  network_switch *netsw) :
   router(params, top, netsw, routing::minimal),

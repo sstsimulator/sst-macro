@@ -22,7 +22,6 @@ class parallel_runtime :
   public lockable
 {
   DeclareFactory(parallel_runtime)
-
  public:
   virtual ~parallel_runtime();
 

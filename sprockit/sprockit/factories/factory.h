@@ -27,7 +27,7 @@ namespace sprockit {
  *  Object that will actually build classes from the given list of arguments
  */
 template <class T, typename... Args>
-class SpktBuilder
+class Builder
 {
  public:
   virtual T*
@@ -35,18 +35,7 @@ class SpktBuilder
 
 };
 
-/**
- *  For partial template specialization.  The Factory object is
- *  never directly specified and will be determined automatically from
- *  a child class type and the top-level parent type (see below)
- */
-template<class Child, class Factory>
-class SpktBuilderImpl
-{
-};
-
 #include <type_traits>
-
 
 template <class> struct wrap { typedef void type; };
 
@@ -158,7 +147,7 @@ class Factory
 {
 
  public:
-  typedef SpktBuilder<T,Args...> builder_t;
+  typedef Builder<T,Args...> builder_t;
   typedef T element_type;
 
   typedef std::map<std::string, builder_t*> builder_map;
@@ -178,8 +167,7 @@ class Factory
    *                depending on static init order
    * @param newname The new name that can be used for accessing child type
    */
-  static void
-  register_alias(const std::string& oldname, const std::string& newname){
+  static void register_alias(const std::string& oldname, const std::string& newname){
     if (!builder_map_) {
       builder_map_ = new builder_map;
     }
@@ -195,16 +183,15 @@ class Factory
     }
   }
 
-  static void
-  clean_up(){
+  static void clean_up(){
     //do not iterate the builder map and delete entry
     //each builder_t is a static objec that gets cleaned up automatically
 
     if (builder_map_) delete builder_map_;
     if (alias_map_) delete alias_map_;
 
-    builder_map_ = 0;
-    alias_map_ = 0;
+    builder_map_ = nullptr;
+    alias_map_ = nullptr;
   }
 
   /**
@@ -213,8 +200,7 @@ class Factory
    * @param builder The builder object whose virtual functio returns
    *                the correct child type
    */
-  static void
-  register_name(const std::string& name, builder_t* builder) {
+  static void register_name(const std::string& name, builder_t* builder) {
     //clang complains about valid variable - turn it off
 #pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #pragma GCC diagnostic ignored "-Wundefined-var-template"
@@ -237,8 +223,7 @@ class Factory
    * @param descr_map
    * @param alias_map
    */
-  static void
-  add_to_map(const std::string& namestr, builder_t* desc,
+  static void add_to_map(const std::string& namestr, builder_t* desc,
             std::map<std::string, builder_t*>* builder_map,
             std::map<std::string, std::list<std::string> >* alias_map)
   {
@@ -417,23 +402,6 @@ class Factory
 
 };
 
-template<class Child, typename Parent, typename... Args>
-class SpktBuilderImpl<Child, Factory<Parent, Args...> > :
-  public SpktBuilder<Parent, Args...>
-{
- public:
-  SpktBuilderImpl(const char *name){
-    Factory<Parent, Args...>::register_name(name, this);
-  }
-
-  Parent*
-  build(sprockit::sim_parameters* params, const Args&... args) {
-    return call_constructor<Child,Args...>()(params, args...);
-  }
-
-};
-
-
 template<class T, typename... Args> const char* Factory<T,Args...>::name_ = T::factory_name();
 template<class T, typename... Args> std::map<std::string, typename Factory<T,Args...>::builder_t*>*
    Factory<T,Args...>::builder_map_ = nullptr;
@@ -442,21 +410,66 @@ template<class T, typename... Args> std::map<std::string, std::list<std::string>
 template<class T, typename... Args> CleanupFactory<Factory<T,Args...>>
   Factory<T,Args...>::clean_up_ = nullptr;
 
+template<class Child, typename Parent, typename... Args>
+class BuilderImpl : public Builder<Parent, Args...>
+{
+ public:
+  BuilderImpl(const char *name){
+    Factory<Parent, Args...>::register_name(name, this);
+    registered_ = true;
+  }
+
+  Parent* build(sprockit::sim_parameters* params, const Args&... args) {
+    return call_constructor<Child,Args...>()(params, args...);
+  }
+
+  static bool is_registered() {
+    return registered_;
+  }
+
+ private:
+  static bool registered_;
+
+};
+template <class Child, class Parent, class... Args> bool BuilderImpl<Child,Parent,Args...>::registered_ = false;
+
+template <class Child, class Factory>
+class BuilderRegistration {
+};
+
+template <class Child, class Parent, class... Args>
+class BuilderRegistration<Child, Factory<Parent,Args...>>
+{
+ public:
+  static bool builder_registered(){ return builder_.is_registered(); }
+
+ private:
+  static BuilderImpl<Child,Parent,Args...> builder_;
+};
+
+template <class Child, class Parent, class... Args> BuilderImpl<Child,Parent,Args...>
+  BuilderRegistration<Child,Factory<Parent,Args...>>::builder_(Child::factory_string());
+
+
 
 }
 
 #define FirstArgStr(X, ...) #X
 #define FirstArgFactoryName(X, ...) X##_factory
 
-#define SpktTemplateRegister(cls_str, parent_cls, child_cls, unique_name, ...) \
-    static ::sprockit::SpktBuilderImpl<child_cls, parent_cls::factory> unique_name##_cd(cls_str)
-
-#define SpktRegister(cls_str, parent_cls, child_cls, ...) \
-  static ::sprockit::SpktBuilderImpl<child_cls,parent_cls::factory> child_cls##_cd(cls_str)
+#define FactoryRegister(cls_str, parent_cls, child_cls, ...) \
+  friend class ::sprockit::BuilderImpl<child_cls,parent_cls::factory>; \
+  public: \
+   static const char* factory_string() { \
+     return cls_str; \
+   } \
+   static bool factory_registered() { \
+     return ::sprockit::BuilderRegistration<child_cls,parent_cls::factory>::builder_registered(); \
+   }
 
 #define DeclareFactory(...) \
   public: \
-  friend class ::sprockit::Factory<__VA_ARGS__>; \
+   friend class ::sprockit::Factory<__VA_ARGS__>; \
     typedef ::sprockit::Factory<__VA_ARGS__> factory; \
     static const char* class_name(){ \
       return factory::name(); \

@@ -10,6 +10,7 @@ namespace sstmac
 class stat_local_double :
   public stat_value<double>
 {
+  FactoryRegister("local_double", stat_collector, stat_local_double)
  public:
   stat_local_double(sprockit::sim_parameters* params);
 

@@ -33,8 +33,6 @@ blas_kernel* blas_api::dgemv_kernel_;
 blas_kernel* blas_api::daxpy_kernel_;
 blas_kernel* blas_api::ddot_kernel_;
 
-RegisterAPI("blas", blas_api);
-
 blas_api::blas_api(sprockit::sim_parameters* params,
                    software_id sid,
                    operating_system* os)

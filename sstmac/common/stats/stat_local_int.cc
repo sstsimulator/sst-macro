@@ -8,8 +8,6 @@
 
 namespace sstmac {
 
-SpktRegister("local_int", stat_collector, stat_local_int);
-
 stat_local_int::stat_local_int(sprockit::sim_parameters* params) :
   stat_value<int>(params)
 {

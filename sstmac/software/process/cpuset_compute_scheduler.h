@@ -8,6 +8,8 @@ namespace sw {
 
 class cpuset_compute_scheduler : public compute_scheduler
 {
+  FactoryRegister("cpuset", compute_scheduler, cpuset_compute_scheduler,
+              "Compute scheduler that assigns threads to specific cores based on CPU_SET")
  public:  
   cpuset_compute_scheduler(sprockit::sim_parameters* params,
                            operating_system* os) :

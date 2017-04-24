@@ -45,9 +45,6 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-SpktRegister("pisces", network_switch, pisces_switch,
-  "A network switch implementing the packet flow congestion model");
-
 pisces_abstract_switch::pisces_abstract_switch(
   sprockit::sim_parameters *params, uint64_t id, event_manager *mgr) :
   buf_stats_(nullptr),

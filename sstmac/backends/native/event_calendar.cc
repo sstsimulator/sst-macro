@@ -27,9 +27,6 @@ RegisterKeywords(
 namespace sstmac {
 namespace native {
 
-SpktRegister("calendar", event_manager, event_calendar,
-  "Implements the event queue as an O(1) event calendar. Provides faster scheduling if many, many events");
-
 
 event_calendar::event_calendar(sprockit::sim_parameters* params, parallel_runtime* rt)
   : event_manager(params, rt)

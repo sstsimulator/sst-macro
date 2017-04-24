@@ -9,7 +9,7 @@ namespace native {
 class serial_runtime :
   public parallel_runtime
 {
-  DeclareFactory(parallel_runtime)
+  FactoryRegister("serial", parallel_runtime, serial_runtime)
  public:
   serial_runtime(sprockit::sim_parameters* params);
 

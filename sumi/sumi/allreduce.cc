@@ -5,18 +5,13 @@
 #include <sprockit/stl_string.h>
 #include <cstring>
 
-#define divide_by_2_round_up(x) \
-  ((x/2) + (x%2))
+#define divide_by_2_round_up(x) ((x/2) + (x%2))
 
-#define divide_by_2_round_down(x) \
-  (x/2)
+#define divide_by_2_round_down(x) (x/2)
 
 using namespace sprockit::dbg;
 
-namespace sumi
-{
-
-SpktRegister("wilke", dag_collective, wilke_halving_allreduce);
+namespace sumi {
 
 void
 wilke_allreduce_actor::finalize_buffers()

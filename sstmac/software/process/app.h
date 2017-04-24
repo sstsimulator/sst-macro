@@ -205,6 +205,7 @@ class app : public thread
 
 class user_app_cxx_full_main : public app
 {
+  FactoryRegister("user_app_cxx_full_main", app, user_app_cxx_full_main)
  public:
   user_app_cxx_full_main(sprockit::sim_parameters* params, software_id sid,
                          operating_system* os);
@@ -232,6 +233,7 @@ class user_app_cxx_full_main : public app
 
 class user_app_cxx_empty_main : public app
 {
+  FactoryRegister("user_app_cxx_empty_main", app, user_app_cxx_empty_main)
  public:
   user_app_cxx_empty_main(sprockit::sim_parameters* params, software_id sid,
                           operating_system* os);

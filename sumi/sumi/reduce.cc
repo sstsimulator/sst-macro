@@ -13,10 +13,7 @@
 
 using namespace sprockit::dbg;
 
-namespace sumi
-{
-
-SpktRegister("wilke", dag_collective, wilke_halving_reduce);
+namespace sumi {
 
 wilke_halving_reduce::wilke_halving_reduce(int root, reduce_fxn fxn) :
  root_(root), fxn_(fxn)

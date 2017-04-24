@@ -225,6 +225,7 @@ topology::label(device_id id) const
 }
 
 class merlin_topology : public topology {
+  FactoryRegister("merlin", topology, merlin_topology)
  public:
   merlin_topology(sprockit::sim_parameters* params) 
     : topology(params)
@@ -233,151 +234,119 @@ class merlin_topology : public topology {
     num_switches_ = params->get_int_param("num_switches");
   }
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "merlin topology";
   }
 
-  int 
-  num_switches() const override {
+  int num_switches() const override {
     return num_switches_;
   }
 
-  int
-  num_nodes() const override {
+  int num_nodes() const override {
     return num_nodes_;
   }
 
-  bool
-  uniform_network_ports() const override {
+  bool uniform_network_ports() const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  bool
-  uniform_switches_non_uniform_network_ports() const override {
+  bool uniform_switches_non_uniform_network_ports() const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  bool
-  uniform_switches() const override {
+  bool uniform_switches() const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  void
-  connected_outports(switch_id src, std::vector<topology::connection>& conns) const override {
+  void connected_outports(switch_id src, std::vector<topology::connection>& conns) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  void
-  configure_individual_port_params(switch_id src,
+  void configure_individual_port_params(switch_id src,
           sprockit::sim_parameters* switch_params) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  int
-  num_leaf_switches() const override {
+
+  int num_netlinks() const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-
-  int
-  num_netlinks() const override {
+  int max_num_ports() const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  int
-  max_num_ports() const override {
+  switch_id netlink_to_injection_switch(node_id nodeaddr, int& switch_port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  switch_id
-  netlink_to_injection_switch(node_id nodeaddr, int& switch_port) const override {
+  switch_id netlink_to_ejection_switch(node_id nodeaddr, int& switch_port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  switch_id
-  netlink_to_ejection_switch(node_id nodeaddr, int& switch_port) const override {
+  void configure_vc_routing(std::map<routing::algorithm_t, int>& m) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  void
-  configure_vc_routing(std::map<routing::algorithm_t, int>& m) const override {
+  switch_id node_to_ejection_switch(node_id addr, int& port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  switch_id
-  node_to_ejection_switch(node_id addr, int& port) const override {
+  switch_id node_to_injection_switch(node_id addr, int& port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  switch_id
-  node_to_injection_switch(node_id addr, int& port) const override {
+  int minimal_distance(switch_id src, switch_id dst) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  int
-  minimal_distance(switch_id src, switch_id dst) const override {
+  int num_hops_to_node(node_id src, node_id dst) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  int
-  num_hops_to_node(node_id src, node_id dst) const override {
-    spkt_abort_printf("merlin topology functions should never be called");
-  }
-
-  void
-  nodes_connected_to_injection_switch(switch_id swid,
+  void nodes_connected_to_injection_switch(switch_id swid,
                           std::vector<injection_port>& nodes) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  void
-  nodes_connected_to_ejection_switch(switch_id swid,
+  void nodes_connected_to_ejection_switch(switch_id swid,
                           std::vector<injection_port>& nodes) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  switch_id
-  max_switch_id() const override {
+  switch_id max_switch_id() const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  bool
-  switch_id_slot_filled(switch_id sid) const override{
+  bool switch_id_slot_filled(switch_id sid) const override{
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  netlink_id
-  max_netlink_id() const override {
+  netlink_id max_netlink_id() const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  bool
-  netlink_id_slot_filled(netlink_id sid) const override{
+  bool netlink_id_slot_filled(netlink_id sid) const override{
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
 
-  node_id
-  max_node_id() const override {
+  node_id max_node_id() const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  bool
-  node_id_slot_filled(node_id nid) const override{
+  bool node_id_slot_filled(node_id nid) const override{
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  void
-  minimal_route_to_switch(
+  void minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
     routable::path& path) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  bool
-  node_to_netlink(node_id nid, node_id& net_id, int& offset) const override {
+  bool node_to_netlink(node_id nid, node_id& net_id, int& offset) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
@@ -385,8 +354,6 @@ class merlin_topology : public topology {
   int num_nodes_;
   int num_switches_;
 };
-
-SpktRegister("merlin", topology, merlin_topology);
 
 }
 }

@@ -35,9 +35,6 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-SpktRegister("instruction", processor, instruction_processor,
-            "Extension of simpleprocessor that estimates compute time of instruction counters");
-
 instruction_processor::~instruction_processor()
 {
   if (noise_model_) delete noise_model_;

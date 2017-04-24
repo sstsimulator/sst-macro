@@ -19,19 +19,19 @@ namespace sw {
 
 class random_allocation : public node_allocator
 {
+  FactoryRegister("random", node_allocator, random_allocation,
+              "Allocate a random set of nodes from the list of available nodes."
+              "This will give a non-contiguous allocation")
  public:
   random_allocation(sprockit::sim_parameters *params);
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "random allocation";
   }
 
-  virtual
-  ~random_allocation() throw ();
+  virtual ~random_allocation() throw ();
 
-  void
-  allocate(
+  void allocate(
     int nnode_requested,
     const ordered_node_set& available,
     ordered_node_set& allocation) const override;

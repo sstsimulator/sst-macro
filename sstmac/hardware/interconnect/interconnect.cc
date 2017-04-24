@@ -39,11 +39,7 @@ RegisterKeywords("network_name", "interconnect");
 namespace sstmac {
 namespace hw {
 
-//static sprockit::need_delete_statics<interconnect> del_statics;
-
-SpktRegister("switch | simple", interconnect, interconnect);
-
-interconnect* interconnect::static_interconnect_ = 0;
+interconnect* interconnect::static_interconnect_ = nullptr;
 
 #if !SPKT_DISABLE_REGEX
 sprockit::StaticKeywordRegisterRegexp node_failure_ids_keyword("node_failure_\\d+_id");

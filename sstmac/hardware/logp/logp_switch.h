@@ -20,6 +20,8 @@ namespace hw {
 class logp_switch :
   public network_switch
 {
+  FactoryRegister("logP | simple | LogP | logp", network_switch, logp_switch,
+    "A switch that implements no congestion modeling")
 
  public:
   typedef enum {
@@ -29,11 +31,9 @@ class logp_switch :
 
   logp_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr);
 
-  void
-  handle(event* ev);
+  void handle(event* ev);
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "LogP switch";
   }
 
@@ -51,11 +51,9 @@ class logp_switch :
                      int src_outport, int dst_inport,
                      event_handler* handler) override;
 
-  link_handler*
-  payload_handler(int port) const override;
+  link_handler* payload_handler(int port) const override;
 
-  link_handler*
-  credit_handler(int port) const override {
+  link_handler* credit_handler(int port) const override {
     return nullptr;
   }
 

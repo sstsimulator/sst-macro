@@ -10,8 +10,6 @@ RegisterKeywords("services");
 
 namespace sstmac {
 
-SpktRegister("distributed_service", sw::app, distributed_service_app);
-
 distributed_service_app::distributed_service_app(sprockit::sim_parameters* params,
                     sw::software_id sid,
                     sw::operating_system* os) :

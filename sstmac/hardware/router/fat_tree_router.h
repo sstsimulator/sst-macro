@@ -27,16 +27,13 @@ namespace hw {
 class fat_tree_router :
   public router
 {
+  FactoryRegister("fattree | ftree", router, fat_tree_router)
  public:
   virtual ~fat_tree_router();
 
   fat_tree_router(sprockit::sim_parameters* params, topology* top, network_switch* netsw);
 
-  //void
-  //productive_paths_to_switch(switch_id dst, structured_routable::path_set &paths);
-
-  virtual std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "fat tree router";
   }
 
@@ -45,11 +42,9 @@ class fat_tree_router :
    * @brief build_rng
    * Build the random number generator for selecting paths
    */
-  void
-  build_rng();
+  void build_rng();
 
-  void
-  route_to_switch(
+  void route_to_switch(
     switch_id sw_addr,
     routable::path& path) override;
 
@@ -57,8 +52,7 @@ class fat_tree_router :
    * @brief choose_up_path
    * @return The selected path from the redundant (equivalent) set of minimal paths
    */
-  int
-  choose_up_minimal_path();
+  int choose_up_minimal_path();
 
   /**
    * @brief number_paths
@@ -66,9 +60,7 @@ class fat_tree_router :
    * @return The number of equivalent paths the packet can traverse
    *    on a minimal path to its destination switch.
    */
-  int
-  number_minimal_paths(packet* pkt) const;
-
+  int number_minimal_paths(packet* pkt) const;
 
  private:
   int l_;

@@ -20,8 +20,6 @@ using std::endl;
 using std::min;
 using std::setw;
 
-SpktRegister("otf2_trace_replay_app | parseotf2 | otf2", sstmac::sw::app, OTF2TraceReplayApp,
-             "application for parsing and simulating OTF2 traces");
 
 OTF2_GlobalDefReaderCallbacks* create_global_def_callbacks() {
   OTF2_GlobalDefReaderCallbacks* callbacks = OTF2_GlobalDefReaderCallbacks_New();

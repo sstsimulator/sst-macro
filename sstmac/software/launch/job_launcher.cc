@@ -13,9 +13,6 @@
 namespace sstmac {
 namespace sw {
 
-SpktRegister("default", job_launcher, default_job_launcher);
-SpktRegister("exclusive", job_launcher, exclusive_job_launcher);
-
 std::map<app_id, task_mapping::ptr> task_mapping::app_ids_launched_;
 std::map<std::string, task_mapping::ptr> task_mapping::app_names_launched_;
 std::map<int,app_id> task_mapping::local_refcounts_;

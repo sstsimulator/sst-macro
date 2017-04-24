@@ -28,6 +28,7 @@ namespace sstmac {
 class stat_spyplot :
   public stat_collector
 {
+  FactoryRegister("ascii", stat_collector, stat_spyplot)
  public:
   virtual std::string
   to_string() const override {
@@ -89,6 +90,7 @@ class stat_spyplot :
  */
 class stat_spyplot_png : public stat_spyplot
 {
+  FactoryRegister("png", stat_collector, stat_spyplot_png)
  public:
   stat_spyplot_png(sprockit::sim_parameters* params);
 

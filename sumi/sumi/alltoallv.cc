@@ -5,11 +5,9 @@
 #include <sprockit/output.h>
 #include <cstring>
 
-#define divide_by_2_round_up(x) \
-  ((x/2) + (x%2))
+#define divide_by_2_round_up(x) ((x/2) + (x%2))
 
-#define divide_by_2_round_down(x) \
-  (x/2)
+#define divide_by_2_round_down(x) (x/2)
 
 using namespace sprockit::dbg;
 
@@ -18,10 +16,7 @@ using namespace sprockit::dbg;
 
 #define MAX_UNROLL =
 
-namespace sumi
-{
-
-SpktRegister("bruck_alltoall", dag_collective, direct_alltoallv_collective);
+namespace sumi {
 
 void
 direct_alltoallv_actor::init_buffers(void* dst, void* src)

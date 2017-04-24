@@ -16,10 +16,7 @@ using namespace sprockit::dbg;
 #define SEND_SHUFFLE 0
 #define RECV_SHUFFLE 1
 
-namespace sumi
-{
-
-SpktRegister("bruck_alltoall", dag_collective, bruck_alltoall_collective);
+namespace sumi {
 
 void
 bruck_alltoall_actor::init_buffers(void* dst, void* src)

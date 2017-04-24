@@ -21,22 +21,20 @@ namespace sw {
 
 class dumpi_allocation : public node_allocator
 {
+  FactoryRegister("dumpi", node_allocator, dumpi_allocation,
+              "Allocate nodes directly from the trace files themselves")
  public:
   dumpi_allocation(sprockit::sim_parameters* params);
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "dumpi allocation";
   }
 
-  virtual void
-  allocate(int nnode_requested,
+  virtual void allocate(int nnode_requested,
     const ordered_node_set& available,
     ordered_node_set& allocation) const override;
 
-  virtual
-  ~dumpi_allocation() throw () {
-  }
+  virtual ~dumpi_allocation() throw () {}
 
  protected:
   std::string metafile_;

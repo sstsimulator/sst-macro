@@ -35,10 +35,7 @@ RegisterKeywords(
 "dumpi_metaname",
 );
 
-namespace sumi {
-
-SpktRegister("parsedumpi | dumpi", sstmac::sw::app, parsedumpi,
-            "application for parsing and simulating dumpi traces");
+namespace sumi{
 
 using namespace sstmac::hw;
 

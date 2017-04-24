@@ -20,7 +20,7 @@ namespace sstmac {
 class event_trace :
   public stat_collector
 {
-
+  FactoryRegister("event_trace", stat_collector, event_trace)
  public:
   event_trace(sprockit::sim_parameters* params);
 

@@ -29,12 +29,6 @@ RegisterDebugSlot(partition);
 
 namespace sstmac {
 
-SpktRegister("block", partition, block_partition);
-SpktRegister("occupied_block", partition, occupied_block_partition);
-SpktRegister("metis", partition, metis_partition);
-SpktRegister("topology", partition, topology_partition);
-SpktRegister("serial", partition, serial_partition);
-
 partition::partition(sprockit::sim_parameters* params, parallel_runtime* rt) :
   rt_(rt),
   switch_to_lpid_(nullptr),

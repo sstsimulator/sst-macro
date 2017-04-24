@@ -26,9 +26,6 @@
 namespace sstmac {
 namespace sw {
 
-SpktRegister("dumpi", task_mapper, dumpi_task_mapper,
-            "indexes nodes based on hostname map file and hostname list in dumpi trace");
-
 node_id
 dumpi_task_mapper::node_id_from_hostname(const std::string& hostname)
 {

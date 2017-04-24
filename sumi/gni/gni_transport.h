@@ -55,6 +55,8 @@ class gni_transport :
   public active_msg_transport
 {
 
+  FactoryRegister("gni", transport, gni_transport,
+              "Create a SUMI transport suitable for uGNI")
  public:
   gni_transport();
 
@@ -64,20 +66,15 @@ class gni_transport :
 
   void finalize();
 
-  public_buffer
-  allocate_public_buffer(int size);
+  public_buffer allocate_public_buffer(int size);
 
-  public_buffer
-  make_public_buffer(void* buf, int size);
+  public_buffer make_public_buffer(void* buf, int size);
 
-  void
-  free_public_buffer(public_buffer buf, int size);
+  void free_public_buffer(public_buffer buf, int size);
 
-  void
-  unmake_public_buffer(public_buffer buf, int size);
+  void unmake_public_buffer(public_buffer buf, int size);
 
-  bool
-  supports_hardware_ack() const {
+  bool supports_hardware_ack() const {
     return true;
   }
 
@@ -92,13 +89,11 @@ class gni_transport :
 
   void do_send_ping_request(int dst);
 
-  void
-  rdma_get_done(const message::ptr& msg);
+  void rdma_get_done(const message::ptr& msg);
 
   void do_rdma_put(int dst, const message::ptr &msg);
 
-  void
-  rdma_put_done(const message::ptr& msg);
+  void rdma_put_done(const message::ptr& msg);
 
   void do_nvram_get(int src, const message::ptr &msg);
 
@@ -116,23 +111,17 @@ class gni_transport :
     TERMINATE
   } header_type_t;
 
-  void
-  smsg_send(int dst, const message::ptr& msg, header_type_t type);
+  void smsg_send(int dst, const message::ptr& msg, header_type_t type);
 
-  void
-  rdma_done(int src, gni_cq_entry_t& event_data, gni_cq_handle_t cqh);
+  void rdma_done(int src, gni_cq_entry_t& event_data, gni_cq_handle_t cqh);
 
-  void
-  send_cq_poll();
+  void send_cq_poll();
 
-  void
-  smsg_send_done(int src, int msg_id);
+  void smsg_send_done(int src, int msg_id);
 
-  void
-  gather_peer_data();
+  void gather_peer_data();
 
-  void
-  gather_nic_data();
+  void gather_nic_data();
 
   struct pmi_env
   {
@@ -207,64 +196,46 @@ class gni_transport :
     void* buffer;
   };
 
-  void
-  init_cdm();
+  void init_cdm();
 
-  void
-  init_cdm(gni_comm_context& c, pmi_env& env, int modes);
+  void init_cdm(gni_comm_context& c, pmi_env& env, int modes);
 
-  void
-  destroy_cdm(gni_comm_context& c);
+  void destroy_cdm(gni_comm_context& c);
 
-  void
-  init_smsg_metadata();
+  void init_smsg_metadata();
 
-  void
-  init_smsg_buffer();
+  void init_smsg_buffer();
 
-  void
-  init_smsg();
+  void init_smsg();
 
-  void
-  finalize_smsg_buffer();
+  void finalize_smsg_buffer();
 
-  void
-  delete_smsg_header(void* header_buf);
+  void delete_smsg_header(void* header_buf);
 
-  void
-  init_cq(gni_comm_context& c, gni_cq_handle_t* cqh, int num_entries);
+  void init_cq(gni_comm_context& c, gni_cq_handle_t* cqh, int num_entries);
 
-  void
-  finalize_cq(gni_cq_handle_t cq);
+  void finalize_cq(gni_cq_handle_t cq);
 
-  void
-  init_end_points(gni_comm_context& c);
+  void init_end_points(gni_comm_context& c);
 
-  void
-  finalize_end_points(gni_comm_context& c, bool wait);
+  void finalize_end_points(gni_comm_context& c, bool wait);
 
-  void
-  print_post_descriptor(gni_post_descriptor_t* pd);
+  void print_post_descriptor(gni_post_descriptor_t* pd);
 
-  void
-  print_event_data(gni_cq_entry_t event_data);
+  void print_event_data(gni_cq_entry_t event_data);
 
-  const char*
-  strerror(gni_return_t);
+  const char* strerror(gni_return_t);
 
-  void
-  register_mem(uint64_t length,
+  void register_mem(uint64_t length,
     void* buffer,
     gni_mem_handle_t* mem_handle,
     gni_nic_handle_t nic_handle,
     gni_cq_handle_t cq_handle);
 
-  void
-  unregister_mem(gni_nic_handle_t nic_handle,
+  void unregister_mem(gni_nic_handle_t nic_handle,
     gni_mem_handle_t* mem_handle);
 
-  void
-  post_rdma(
+  void post_rdma(
     int dst,
     size_t length,
     int tag,
@@ -279,49 +250,36 @@ class gni_transport :
 
   int progress_loop();
 
-  void
-  poll_smsg_queue();
+  void poll_smsg_queue();
 
-  void
-  smsg_recv();
+  void smsg_recv();
 
-  void
-  smsg_poll();
+  void smsg_poll();
 
-  void
-  smsg_queue_endpoint(smsg_endpoint_t *ep);
+  void smsg_queue_endpoint(smsg_endpoint_t *ep);
 
-  void
-  smsg_unqueue_endpoint(smsg_endpoint_t *ep);
+  void smsg_unqueue_endpoint(smsg_endpoint_t *ep);
 
-  gni_return_t
-  get_next_smsg(int src);
+  gni_return_t get_next_smsg(int src);
 
-  void
-  send_pending_smsg();
+  void send_pending_smsg();
 
-  void
-  smsg_send(
+  void smsg_send(
     int dst,
     void* header,
     uint32_t header_length,
     void* payload,
     uint32_t payload_length);
 
-  void
-  rdma_poll();
+  void rdma_poll();
 
-  int
-  allocate_rdma_tag(const message::ptr& msg);
+  int allocate_rdma_tag(const message::ptr& msg);
 
-  int*
-  allocate_ping_buffer();
+  int* allocate_ping_buffer();
 
-  void
-  free_ping_buffer(int* buf);
+  void free_ping_buffer(int* buf);
 
-  uint32_t
-  allocate_smsg_id();
+  uint32_t allocate_smsg_id();
 
   uint32_t current_smsg_id_;
   static const uint32_t max_smsg_id_ = 10000000;

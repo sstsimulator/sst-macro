@@ -20,9 +20,6 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-SpktRegister("cart | cartesian", node_allocator, cart_allocation,
-            "Allocate a regular, cartesian volume of nodes.  This is meant mostly for torus topologies, but is also meaningful for dragonfly and hypercube.");
-
 cart_allocation::cart_allocation(sprockit::sim_parameters* params) :
   node_allocator(params)
 {

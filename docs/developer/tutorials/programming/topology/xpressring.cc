@@ -3,9 +3,6 @@
 namespace sstmac {
 namespace hw {
 
-SpktRegister("xpress", topology, xpress_ring,
-            "A ring topology with express cables that make large jumps");
-
 xpress_ring::xpress_ring(sprockit::sim_parameters* params)
   : structured_topology(params, InitMaxPortsIntra::I_Remembered, InitGeomEjectID::I_Remembered)
 {

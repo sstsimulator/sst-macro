@@ -10,6 +10,7 @@ namespace hw {
 class pisces_default_packet_allocator :
  public packet_allocator
 {
+  FactoryRegister("pisces | default", packet_allocator, pisces_default_packet_allocator)
  public:
   pisces_default_packet_allocator(sprockit::sim_parameters* params)
     : packet_allocator(params)
@@ -24,27 +25,27 @@ class pisces_default_packet_allocator :
                              toaddr, fromaddr);
   }
 };
-SpktRegister("pisces | default", packet_allocator, pisces_default_packet_allocator);
 
 
 class pisces_delay_stats_packet_allocator :
  public packet_allocator
 {
-public:
- pisces_delay_stats_packet_allocator(sprockit::sim_parameters* params)
+  FactoryRegister("delay_stats", packet_allocator, pisces_delay_stats_packet_allocator)
+ public:
+  pisces_delay_stats_packet_allocator(sprockit::sim_parameters* params)
    : packet_allocator(params)
- {
- }
+  {
+  }
 
- virtual pisces_payload*
- new_packet(int bytes, uint64_t flow_id, bool is_tail,
+  virtual pisces_payload*
+  new_packet(int bytes, uint64_t flow_id, bool is_tail,
             node_id toaddr, node_id fromaddr,
             serializable *msg) override {
-   return new pisces_delay_stats_packet(msg, flow_id, bytes, is_tail,
+    return new pisces_delay_stats_packet(msg, flow_id, bytes, is_tail,
                             toaddr, fromaddr);
- }
+  }
 };
-SpktRegister("delay_stats", packet_allocator, pisces_delay_stats_packet_allocator);
+
 
 }
 }

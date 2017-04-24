@@ -37,8 +37,6 @@ void pair_reduce_function(void *invec, void *inoutvec, int *len, MPI_Datatype *d
   }
 }
 
-SpktRegister("mpi", parallel_runtime, mpi_runtime);
-
 int64_t
 mpi_runtime::allreduce_min(int64_t my_time)
 {

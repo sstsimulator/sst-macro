@@ -25,8 +25,6 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-SpktRegister("pisces | pisces", memory_model, pisces_memory_model);
-
 std::string
 memory_message::to_string() const
 {

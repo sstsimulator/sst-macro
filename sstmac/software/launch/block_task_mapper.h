@@ -22,23 +22,22 @@ namespace sw {
  */
 class block_task_mapper : public task_mapper
 {
-
+  FactoryRegister("block", task_mapper, block_task_mapper,
+     "Tries to group consecutive MPI ranks on the same node (i.e. in a block)."
+     "Otherwise, indexes in the same order as the allocation list")
  public:
   block_task_mapper(sprockit::sim_parameters* params) :
     task_mapper(params)
   {
   }
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "block task mapper";
   }
 
-  virtual
-  ~block_task_mapper() throw ();
+  virtual ~block_task_mapper() throw () {}
 
-  virtual void
-  map_ranks(
+  virtual void map_ranks(
      const ordered_node_set& nodes, int ppn,
      std::vector<node_id> &result, int nproc) override;
 

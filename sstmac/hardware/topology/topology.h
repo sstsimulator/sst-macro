@@ -107,55 +107,39 @@ class topology : public sprockit::printable
      switches that are only a part of the network
      @return The total number of switches
   */
-  virtual int
-  num_switches() const = 0;
-
-  /**
-     For direct networks, this includes all switches.
-     For indirect networks, this includes only those switches
-     connected to endpoint nodes
-     @return The number of switches connected to endpoint nodes
-  */
-  virtual int
-  num_leaf_switches() const = 0;
+  virtual int num_switches() const = 0;
 
   /**
    * @brief max_switch_id Depending on the node indexing scheme, the maximum switch id
    *  might be larger than the actual number of switches.
    * @return The max switch id
    */
-  virtual switch_id
-  max_switch_id() const = 0;
+  virtual switch_id max_switch_id() const = 0;
 
   /**
    * @brief swithc_id_slot_filled
    * @param sid
    * @return Whether a switch object should be built for a given switch_id
    */
-  virtual bool
-  switch_id_slot_filled(switch_id sid) const = 0;
+  virtual bool switch_id_slot_filled(switch_id sid) const = 0;
 
-  virtual int
-  num_nodes() const = 0;
+  virtual int num_nodes() const = 0;
 
   /**
    * @brief max_node_id Depending on the node indexing scheme, the maximum node id
    *  might be larger than the actual number of nodes.
    * @return The max node id
    */
-  virtual node_id
-  max_node_id() const = 0;
+  virtual node_id max_node_id() const = 0;
 
   /**
    * @brief node_id_slot_filled
    * @param nid
    * @return Whether a node object should be built for a given node_id
    */
-  virtual bool
-  node_id_slot_filled(node_id nid) const = 0;
+  virtual bool node_id_slot_filled(node_id nid) const = 0;
 
-  virtual switch_id
-  max_netlink_id() const = 0;
+  virtual switch_id max_netlink_id() const = 0;
 
   virtual bool
   netlink_id_slot_filled(node_id nid) const = 0;

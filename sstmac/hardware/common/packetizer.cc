@@ -113,12 +113,12 @@ class SimpleNetworkPacket : public SST::Event
 class merlin_packetizer :
   public packetizer
 {
+  FactoryRegister("merlin", packetizer, merlin_packetizer);
  public:
   merlin_packetizer(sprockit::sim_parameters* params,
                       event_scheduler* parent);
 
-  std::string
-  to_string() const {
+  std::string to_string() const {
     return "merling packetizer";
   }
 
@@ -143,13 +143,11 @@ class merlin_packetizer :
     m_linkControl->setup();
   }
 
-  link_handler*
-  new_credit_handler() const{
+  link_handler* new_credit_handler() const{
     spkt_abort_printf("merlin_packetizier::new_ack_handler: never used");
   }
 
-  link_handler*
-  new_payload_handler() const{
+  link_handler* new_payload_handler() const{
     spkt_abort_printf("merlin_packetizier::new_payload_handler: never used");
   }
 
@@ -226,7 +224,6 @@ merlin_packetizer::inject(int vn, long bytes, long byte_offset, message* payload
   m_linkControl->send(req, vn);
 }
 
-SpktRegister("merlin", packetizer, merlin_packetizer);
 #endif
 
 

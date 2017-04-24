@@ -8,8 +8,6 @@
 
 namespace sstmac {
 
-SpktRegister("global_int", stat_collector, stat_global_int);
-
 stat_global_int::stat_global_int(sprockit::sim_parameters* params) :
     stat_value<int>(params)
 {

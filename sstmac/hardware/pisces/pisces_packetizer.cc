@@ -29,9 +29,6 @@ RegisterNamespaces("congestion_delays", "congestion_matrix");
 namespace sstmac {
 namespace hw {
 
-SpktRegister("cut_through | null", packetizer, pisces_cut_through_packetizer);
-SpktRegister("simple", packetizer, pisces_simple_packetizer);
-
 pisces_packetizer::pisces_packetizer(sprockit::sim_parameters* params,
                                      event_scheduler* parent) :
  inj_buffer_(nullptr),

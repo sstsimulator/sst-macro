@@ -40,8 +40,7 @@ struct epoch_check
   void print_epoch() { printf("rank %d last epoch runnning is %d\n", *rank, *epoch); }
 };
 
-namespace lblxml
-{
+namespace lblxml {
 
   class box_domain;
 
@@ -154,6 +153,7 @@ namespace lblxml
 
   class boxml : public sstmac::sw::app
   {
+   FactoryRegister("boxml", sstmac::sw::app, boxml, "amr simulator")
   public:
     static sstmac::sim_thread_lock* event_lock;
     epoch_check checker_;

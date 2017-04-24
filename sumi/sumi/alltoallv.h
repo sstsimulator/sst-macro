@@ -49,20 +49,17 @@ class direct_alltoallv_actor :
 class direct_alltoallv_collective :
   public dag_collective
 {
-
+  FactoryRegister("bruck_alltoall", dag_collective, direct_alltoallv_collective)
  public:
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "all-to-all";
   }
 
-  dag_collective_actor*
-  new_actor() const override {
+  dag_collective_actor* new_actor() const override {
     return new direct_alltoallv_actor(send_counts_, recv_counts_);
   }
 
-  dag_collective*
-  clone() const override {
+  dag_collective* clone() const override {
     return new direct_alltoallv_collective;
   }
 

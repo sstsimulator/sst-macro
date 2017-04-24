@@ -8,9 +8,6 @@
 namespace sstmac {
 namespace hw {
 
-SpktRegister("minimal", router, minimal_router,
-            "a routing algorithm for minimal routing on regular topologies");
-
 minimal_router::minimal_router(sprockit::sim_parameters* params, topology* top,
                                network_switch* netsw, routing::algorithm_t algo) :
   router(params, top, netsw, algo)

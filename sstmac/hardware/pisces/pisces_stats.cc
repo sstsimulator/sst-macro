@@ -22,15 +22,6 @@ MakeDebugSlot(pisces_stats)
 namespace sstmac {
 namespace hw {
 
-SpktRegister("bytes_sent", stat_collector, stat_bytes_sent);
-SpktRegister("congestion_spyplot", packet_stats_callback, congestion_spyplot);
-SpktRegister("congestion_delay", packet_stats_callback, packet_delay_stats);
-SpktRegister("bytes_sent", packet_stats_callback, bytes_sent_collector);
-SpktRegister("byte_hops", packet_stats_callback, byte_hop_collector);
-SpktRegister("delay_histogram", packet_stats_callback, delay_histogram);
-SpktRegister("multi", packet_stats_callback, multi_stats);
-SpktRegister("null", packet_stats_callback, null_stats);
-
 RegisterNamespaces("bytes_sent", "congestion_spyplot", "congestion_delay",
                    "bytes_sent", "byte_hops", "delay_histogram");
 

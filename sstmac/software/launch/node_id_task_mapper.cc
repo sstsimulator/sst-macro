@@ -36,9 +36,6 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-SpktRegister("node_id", task_mapper, node_id_task_mapper,
-            "assigns tasks to nodes based on list of nodes ids in file");
-
 node_id_task_mapper::node_id_task_mapper(sprockit::sim_parameters* params) :
   task_mapper(params)
 {

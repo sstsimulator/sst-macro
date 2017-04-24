@@ -3,9 +3,6 @@
 namespace sstmac {
 namespace tutorial {
 
-SpktRegister("patinkin", actor, mandy_patinkin,
-            "He's on one of those shows now... NCIS? CSI?");
-
 mandy_patinkin::mandy_patinkin(sprockit::sim_parameters* params)
  : actor(params)
 {

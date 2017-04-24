@@ -12,9 +12,6 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-SpktRegister("random", node_allocator, random_allocation,
-            "Allocate a random set of nodes from the list of available nodes. This will give a non-contiguous allocation.");
-
 random_allocation::~random_allocation() throw ()
 {
 }

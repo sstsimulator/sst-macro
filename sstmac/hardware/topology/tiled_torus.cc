@@ -13,8 +13,6 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-SpktRegister("tiled_torus | tiled_hdtorus", topology, tiled_torus);
-
 tiled_torus::tiled_torus(sprockit::sim_parameters *params) :
   hdtorus(params)
 {

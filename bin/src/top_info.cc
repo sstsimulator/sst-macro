@@ -99,7 +99,6 @@ try_top_info_main(int argc, char **argv)
   hw::cartesian_topology* top = test_cast(hw::cartesian_topology, thetop);
 
   std::cout << "Number of nodes:         " << top->num_nodes() << std::endl;
-  std::cout << "Number of leaf switches: " << top->num_leaf_switches() << std::endl;
   std::cout << "Number of switches:      " << top->num_switches() << std::endl;
 
   if (top){

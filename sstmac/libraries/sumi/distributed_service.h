@@ -42,6 +42,7 @@ class distributed_service :
 class distributed_service_app :
   public sstmac::sw::app
 {
+  FactoryRegister("distributed_service", sw::app, distributed_service_app)
  public:
   distributed_service_app(sprockit::sim_parameters* params,
                       sw::software_id sid,
@@ -55,8 +56,8 @@ class distributed_service_app :
 };
 
 #define ServiceRegister(str, name) \
-  RegisterNamespaces(str); \
-  SpktRegister(str, distributed_service, name)
+  NamespaceRegister(str, name) \
+  FactoryRegister(str, distributed_service, name)
 
 }
 

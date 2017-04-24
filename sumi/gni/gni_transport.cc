@@ -7,9 +7,6 @@ RegisterDebugSlot(gni);
 
 namespace sumi {
 
-SpktRegister("gni", transport, gni_transport,
-            "Create a SUMI transport suitable for uGNI");
-
 #define enumcase(x) case x: return #x
 
 gni_transport::gni_transport()  :

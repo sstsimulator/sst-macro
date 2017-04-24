@@ -18,9 +18,6 @@
 namespace sstmac {
 namespace sw {
 
-SpktRegister("random", task_mapper, random_task_mapper,
-            "randomly assigns tasks to nodes");
-
 random_task_mapper::random_task_mapper(sprockit::sim_parameters *params) :
   task_mapper(params)
 {

@@ -44,6 +44,7 @@ namespace hw {
 class interconnect
 {
   DeclareFactory(interconnect, event_manager*, partition*, parallel_runtime*)
+  FactoryRegister("switch | simple", interconnect, interconnect)
  public:
   static interconnect* static_interconnect(sprockit::sim_parameters* params, event_manager* mgr);
 

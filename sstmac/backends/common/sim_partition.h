@@ -82,6 +82,7 @@ class partition
 class serial_partition :
   public partition
 {
+  FactoryRegister("serial", partition, serial_partition)
  public:
   serial_partition(sprockit::sim_parameters* params, parallel_runtime* rt);
 
@@ -93,14 +94,14 @@ class serial_partition :
 class metis_partition :
   public partition
 {
+  FactoryRegister("metis", partition, metis_partition)
  public:
   metis_partition(sprockit::sim_parameters* params, parallel_runtime* rt);
 
   virtual ~metis_partition();
 
  protected:
-  void
-  read_partition(const std::string &partfilename, int nproc);
+  void read_partition(const std::string &partfilename, int nproc);
 
  protected:
   hw::interconnect* fake_ic_;
@@ -110,6 +111,8 @@ class metis_partition :
 class topology_partition :
   public partition
 {
+  FactoryRegister("topology", partition, topology_partition)
+
  public:
   topology_partition(sprockit::sim_parameters* params, parallel_runtime* rt);
 
@@ -125,16 +128,15 @@ class topology_partition :
 class block_partition :
   public partition
 {
+  FactoryRegister("block", partition, block_partition)
  public:
   block_partition(sprockit::sim_parameters* params, parallel_runtime* rt);
 
   virtual ~block_partition();
 
-  void
-  finalize_init();
+  void finalize_init();
 
-  virtual void
-  partition_switches();
+  virtual void partition_switches();
 
  protected:
    hw::topology* fake_top_;
@@ -144,13 +146,13 @@ class block_partition :
 class occupied_block_partition :
   public block_partition
 {
+  FactoryRegister("occupied_block", partition, occupied_block_partition)
  public:
   occupied_block_partition(sprockit::sim_parameters* params, parallel_runtime* rt);
 
   virtual ~occupied_block_partition();
 
-  virtual void
-  partition_switches();
+  virtual void partition_switches();
 
  protected:
   int occupied_switches_;

@@ -194,6 +194,7 @@ class job_launcher : public service
  */
 class default_job_launcher : public job_launcher
 {
+  FactoryRegister("default", job_launcher, default_job_launcher)
  public:
   default_job_launcher(sprockit::sim_parameters* params, operating_system* os) :
     job_launcher(params, os)
@@ -216,6 +217,7 @@ class default_job_launcher : public job_launcher
  */
 class exclusive_job_launcher : public default_job_launcher
 {
+  FactoryRegister("exclusive", job_launcher, exclusive_job_launcher)
  public:
   exclusive_job_launcher(sprockit::sim_parameters* params, operating_system* os) :
    default_job_launcher(params, os), active_job_(nullptr)

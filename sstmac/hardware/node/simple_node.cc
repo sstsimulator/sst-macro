@@ -25,8 +25,6 @@
 namespace sstmac {
 namespace hw {
 
-SpktRegister("simple", node, simple_node,
-  "A basic endpoint node running SST/macro software stacks");
 
 simple_node::~simple_node()
 {

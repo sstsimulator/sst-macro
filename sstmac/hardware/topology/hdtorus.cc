@@ -25,9 +25,6 @@
 namespace sstmac {
 namespace hw {
 
-SpktRegister("torus | hdtorus", topology, hdtorus,
-            "hdtorus implements a high-dimension torus with an arbitrary number of dimensions");
-
 static bool
 equals(const std::vector<int>& coords, int x, int y, int z)
 {

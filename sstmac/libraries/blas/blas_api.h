@@ -29,7 +29,7 @@ class blas_kernel
 class blas_api :
   public api
 {
-  ImplementAPI(blas_api)
+  RegisterAPI("blas", blas_api)
 
  public:
   blas_api(sprockit::sim_parameters* params,

@@ -55,8 +55,6 @@ sprockit::StaticNamespaceRegister queue_ns_reg("queue");
 
 namespace sumi {
 
-RegisterAPI("mpi", mpi_api);
-
 category mpi_api::default_key_category("MPI");
 category mpi_api::poll_key_category("MPI Poll");
 category mpi_api::memcpy_key_category("MPI Memcpy");

@@ -22,46 +22,40 @@ namespace hw {
 class hypercube :
   public hdtorus
 {
+  FactoryRegister("hypercube", topology, hypercube,
+              "hypercube implements a high-dimension torus with an arbitrary number of dimensions")
  public:
   hypercube(sprockit::sim_parameters* params);
 
-  virtual std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "hdtorus topology";
   }
 
   virtual ~hypercube() {}
 
-  void
-  minimal_route_to_switch(
+  void minimal_route_to_switch(
     switch_id src,
     switch_id dst,
     routable::path& path) const override;
 
-  bool
-  uniform_network_ports() const override {
+  bool uniform_network_ports() const override {
     return false;
   }
 
-  bool
-  uniform_switches_non_uniform_network_ports() const override {
+  bool uniform_switches_non_uniform_network_ports() const override {
     return true;
   }
 
-  void
-  connected_outports(switch_id src, std::vector<connection>& conns) const override;
+  void connected_outports(switch_id src, std::vector<connection>& conns) const override;
 
-  void
-  configure_individual_port_params(switch_id src,
+  void configure_individual_port_params(switch_id src,
            sprockit::sim_parameters *switch_params) const override;
 
-  inline int
-  convert_to_port(int dim, int dir) const {
+  inline int convert_to_port(int dim, int dir) const {
     return dim_to_outport_[dim] + dir;
   }
 
-  int
-  minimal_distance(switch_id src, switch_id dst) const override;
+  int minimal_distance(switch_id src, switch_id dst) const override;
 
  protected:
   int radix_;

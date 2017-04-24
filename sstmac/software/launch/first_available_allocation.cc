@@ -4,12 +4,6 @@
 namespace sstmac {
 namespace sw {
 
-SpktRegister("first_available | first", node_allocator,
-            first_available_allocation,
-            "Allocate the first set of nodes from the list of available nodes. In most cases, allocating from the available node list will give you a regular, contiguous allocation");
-
-
-
 first_available_allocation::~first_available_allocation() throw ()
 {
 }

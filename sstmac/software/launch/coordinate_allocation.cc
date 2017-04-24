@@ -19,8 +19,6 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-SpktRegister("coordinate", node_allocator, coordinate_allocation);
-
 coordinate_allocation::coordinate_allocation(sprockit::sim_parameters* params) :
   node_allocator(params)
 {

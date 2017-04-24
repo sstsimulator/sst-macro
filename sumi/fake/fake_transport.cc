@@ -4,8 +4,6 @@
 
 namespace sumi {
 
-SpktRegister("fake", transport, fake_transport, "A fake transport that doesn't actually send messages - just logs them");
-
 static message::ptr fake_msg;
 
 message::ptr

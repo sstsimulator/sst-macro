@@ -11,10 +11,8 @@ namespace sumi {
 class bruck_alltoall_actor :
   public bruck_actor
 {
-
  public:
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "bruck all-to-all actor";
   }
 
@@ -37,20 +35,17 @@ class bruck_alltoall_actor :
 class bruck_alltoall_collective :
   public dag_collective
 {
-
+  FactoryRegister("bruck_alltoall", dag_collective, bruck_alltoall_collective)
  public:
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "all-to-all";
   }
 
-  dag_collective_actor*
-  new_actor() const override {
+  dag_collective_actor* new_actor() const override {
     return new bruck_alltoall_actor;
   }
 
-  dag_collective*
-  clone() const override {
+  dag_collective* clone() const override {
     return new bruck_alltoall_collective;
   }
 

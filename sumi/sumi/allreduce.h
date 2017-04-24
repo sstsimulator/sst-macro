@@ -13,13 +13,11 @@ class wilke_allreduce_actor :
 {
 
  public:
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "virtual all reduce actor";
   }
 
-  void
-  buffer_action(void *dst_buffer,
+  void buffer_action(void *dst_buffer,
                 void *msg_buffer, action* ac) override;
 
   wilke_allreduce_actor(reduce_fxn fxn) : fxn_(fxn) {}
@@ -42,9 +40,10 @@ class wilke_allreduce_actor :
 class wilke_halving_allreduce :
   public dag_collective
 {
+  FactoryRegister("wilke", dag_collective, wilke_halving_allreduce)
+
  public:
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "sumi allreduce";
   }
 
@@ -52,18 +51,15 @@ class wilke_halving_allreduce :
 
   wilke_halving_allreduce(){}
 
-  virtual void
-  init_reduce(reduce_fxn fxn) override {
+  virtual void init_reduce(reduce_fxn fxn) override {
     fxn_ = fxn;
   }
 
-  dag_collective_actor*
-  new_actor() const override {
+  dag_collective_actor* new_actor() const override {
     return new wilke_allreduce_actor(fxn_);
   }
 
-  dag_collective*
-  clone() const override {
+  dag_collective* clone() const override {
     return new wilke_halving_allreduce(fxn_);
   }
 

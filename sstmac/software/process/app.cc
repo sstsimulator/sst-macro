@@ -36,9 +36,6 @@ static sprockit::need_delete_statics<sstmac::sw::user_app_cxx_full_main> del_app
 namespace sstmac {
 namespace sw {
 
-SpktRegister("user_app_cxx_full_main", app, user_app_cxx_full_main);
-SpktRegister("user_app_cxx_empty_main", app, user_app_cxx_empty_main);
-
 std::map<std::string, app::main_fxn>*
   user_app_cxx_full_main::main_fxns_ = nullptr;
 std::map<std::string, app::empty_main_fxn>*

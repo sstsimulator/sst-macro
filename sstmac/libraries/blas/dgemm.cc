@@ -10,6 +10,7 @@ namespace sw {
 class default_dgemm :
   public blas_kernel
 {
+  FactoryRegister("default_dgemm", blas_kernel, default_dgemm)
  public:
   default_dgemm(sprockit::sim_parameters* params){
     cache_size_bytes_ = params->get_optional_byte_length_param("dgemm_cache_size", 32000);
@@ -31,7 +32,6 @@ class default_dgemm :
   int cache_size_bytes_;
 
 };
-SpktRegister("default_dgemm", blas_kernel, default_dgemm);
 
 compute_event*
 default_dgemm::op_3d(int mm, int nn, int kk)

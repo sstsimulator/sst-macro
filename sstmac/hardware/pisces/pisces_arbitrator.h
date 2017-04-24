@@ -73,6 +73,8 @@ class pisces_bandwidth_arbitrator
 class pisces_null_arbitrator :
   public pisces_bandwidth_arbitrator
 {
+  FactoryRegister("null", pisces_bandwidth_arbitrator, pisces_null_arbitrator,
+              "Simple bandwidth arbitrator that models zero congestion on a link")
  public:
   pisces_null_arbitrator(sprockit::sim_parameters* params);
 
@@ -97,6 +99,9 @@ class pisces_null_arbitrator :
 class pisces_simple_arbitrator :
   public pisces_bandwidth_arbitrator
 {
+  FactoryRegister("simple", pisces_bandwidth_arbitrator, pisces_simple_arbitrator,
+              "Simple bandwidth arbitrator that only ever gives exclusive access to a link."
+              "This corresponds to store-and-forward, which can be inaccurate for large packet sizes")
  public:
   pisces_simple_arbitrator(sprockit::sim_parameters* params);
 
@@ -127,6 +132,10 @@ class pisces_simple_arbitrator :
 class pisces_cut_through_arbitrator :
   public pisces_bandwidth_arbitrator
 {
+  FactoryRegister("cut_through", pisces_bandwidth_arbitrator, pisces_cut_through_arbitrator,
+              "Bandwidth arbitrator that forwards packets as soon as they arrive and enough credits are received"
+              "This is a much better approximation to wormhole or virtual cut_through routing")
+ private:
   typedef uint64_t ticks_t;
   typedef double bw_t;
 

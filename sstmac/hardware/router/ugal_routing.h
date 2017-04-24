@@ -15,19 +15,18 @@ namespace hw {
 class ugal_router :
   public valiant_router
 {
-
+  FactoryRegister("ugal", router, ugal_router,
+              "router implementing ugal congestion-aware routing")
  public:
   ugal_router(sprockit::sim_parameters* params, topology* top, network_switch* netsw);
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "ugal";
   }
 
  protected:
   next_action_t initial_step(
-    routable* rtbl,
-    packet* pkt) override;
+    routable* rtbl, packet* pkt) override;
 
   /**
     The topology object specifies a virtual channel based purely on geometry.
@@ -39,8 +38,7 @@ class ugal_router :
     @param topology_vc The geometry-specific virtual channel
     @return The second stage virtual channel
   */
-  virtual int
-  first_stage_vc(int topology_vc) override {
+  int first_stage_vc(int topology_vc) const override {
     return 3 * topology_vc;
   }
 
@@ -54,8 +52,7 @@ class ugal_router :
     @param topology_vc The geometry-specific virtual channel
     @return The second stage virtual channel
   */
-  virtual int
-  second_stage_vc(int topology_vc) override {
+  int second_stage_vc(int topology_vc) const override {
     return 3 * topology_vc + 1;
   }
 
@@ -65,8 +62,7 @@ class ugal_router :
     @param topology_vc The geometry-specific virtual channel
     @return The zero stage virtual channel
   */
-  int
-  zero_stage_vc(int topology_vc) {
+  int zero_stage_vc(int topology_vc) const {
     return 3 * topology_vc + 2;
   }
 

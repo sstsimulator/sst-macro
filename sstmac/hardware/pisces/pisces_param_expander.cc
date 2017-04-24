@@ -10,8 +10,6 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-SpktRegister("pisces | pisces", sstmac::param_expander, pisces_param_expander);
-
 void
 pisces_param_expander::expand(sprockit::sim_parameters* params)
 {
