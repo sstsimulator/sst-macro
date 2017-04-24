@@ -46,65 +46,45 @@ typedef std::map<long, mutex_t*> condition_t;
  */
 class app : public thread
 {
+  DeclareFactory(app, software_id, operating_system*)
  public:
   typedef void (*destructor_fxn)(void*);
 
   typedef int (*main_fxn)(int argc, char** argv);
   typedef int (*empty_main_fxn)();
 
-  struct factory {
-    static app* get_param(const std::string& name, sprockit::sim_parameters* params,
-                          software_id sid, operating_system* os);
-  };
+  int allocate_tls_key(destructor_fxn fnx);
 
-  int
-  allocate_tls_key(destructor_fxn fnx);
+  static sprockit::sim_parameters* get_params();
 
-  static sprockit::sim_parameters*
-  get_params();
-
-  app*
-  parent_app() const override {
+  app* parent_app() const override {
     return const_cast<app*>(this);
   }
 
-  static void
-  delete_statics();
+  static void delete_statics();
 
-  void
-  sleep(timestamp time);
+  void sleep(timestamp time);
 
-  // convenience functions for apps
-  // public to allow C interface
-  void
-  compute(timestamp time);
+  void compute(timestamp time);
 
-  void
-  compute_inst(compute_event* cmsg);
+  void compute_inst(compute_event* cmsg);
 
-  void
-  compute_loop(uint64_t,
+  void compute_loop(uint64_t,
     int nflops_per_loop,
     int nintops_per_loop,
     int bytes_per_loop);
 
-  void
-  compute_detailed(long flops, long intops, long bytes);
+  void compute_detailed(long flops, long intops, long bytes);
 
-  void
-  compute_block_read(long bytes);
+  void compute_block_read(long bytes);
 
-  void
-  compute_block_write(long bytes);
+  void compute_block_write(long bytes);
 
-  void
-  compute_block_memcpy(long bytes);
+  void compute_block_memcpy(long bytes);
 
-  lib_compute_loops*
-  compute_loops_lib();
+  lib_compute_loops* compute_loops_lib();
 
-  lib_compute_time*
-  compute_time_lib();
+  lib_compute_time* compute_time_lib();
 
   /// Goodbye.
   virtual ~app();
@@ -112,13 +92,11 @@ class app : public thread
   //called when killing the app, in case you want to check or clean anything up before destructor
   virtual void kill() override;
 
-  virtual void
-  skeleton_main() = 0;
+  virtual void skeleton_main() = 0;
 
   void run() override;
 
-  sprockit::sim_parameters*
-  params() const {
+  sprockit::sim_parameters* params() const {
     return params_;
   }
 
@@ -187,11 +165,9 @@ class app : public thread
     return globals_storage_;
   }
 
-  virtual void
-  clear_subthread_from_parent_app() override;
+  virtual void clear_subthread_from_parent_app() override;
 
-  const std::string&
-  unique_name() const {
+  const std::string& unique_name() const {
     return unique_name_;
   }
 
@@ -233,13 +209,11 @@ class user_app_cxx_full_main : public app
   user_app_cxx_full_main(sprockit::sim_parameters* params, software_id sid,
                          operating_system* os);
 
-  static void
-  register_main_fxn(const char* name, app::main_fxn fxn);
+  static void register_main_fxn(const char* name, app::main_fxn fxn);
 
   void skeleton_main() override;
 
-  static void
-  delete_statics();
+  static void delete_statics();
 
   struct argv_entry {
     char** argv;
@@ -262,8 +236,7 @@ class user_app_cxx_empty_main : public app
   user_app_cxx_empty_main(sprockit::sim_parameters* params, software_id sid,
                           operating_system* os);
 
-  static void
-  register_main_fxn(const char* name, app::empty_main_fxn fxn);
+  static void register_main_fxn(const char* name, app::empty_main_fxn fxn);
 
   void skeleton_main() override;
 
@@ -275,8 +248,6 @@ class user_app_cxx_empty_main : public app
 
 /** utility function for computing stuff */
 void compute_time(double tsec);
-
-DeclareFactory(app, software_id, operating_system*)
 
 }
 } // end of namespace sstmac.

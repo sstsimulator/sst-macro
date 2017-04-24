@@ -3,7 +3,6 @@
 #include <sumi/transport.h>
 #include <sprockit/keyword_registration.h>
 
-ImplementFactory(sstmac::distributed_service)
 MakeDebugSlot(distributed_service)
 RegisterKeywords("services");
 
@@ -25,7 +24,7 @@ void
 distributed_service_app::skeleton_main()
 {
   //need to pass libname twice - once for the factory, once for OS registration
-  distributed_service* srv = distributed_service_factory::get_value(libname_, params_, libname_, sid(), os_);
+  distributed_service* srv = distributed_service::factory::get_value(libname_, params_, libname_, sid(), os_);
   srv->init();
   debug("initialized distributed service %s on rank %d", libname_.c_str(), srv->rank());
   srv->barrier(0);

@@ -40,7 +40,7 @@ app_launcher::incoming_event(event* ev)
     task_mapping::add_global_mapping(lev->aid(), lev->unique_name(), lev->mapping());
     software_id sid(lev->aid(), lev->tid());
     sprockit::sim_parameters* app_params = new sprockit::sim_parameters(std::move(lev->app_params()));
-    app* theapp = app_factory::get_param("name", app_params, sid, os_);
+    app* theapp = app::factory::get_param("name", app_params, sid, os_);
     theapp->set_unique_name(lev->unique_name());
     int intranode_rank = num_apps_launched_[lev->aid()]++;
     int core_affinity = lev->core_affinity(intranode_rank);

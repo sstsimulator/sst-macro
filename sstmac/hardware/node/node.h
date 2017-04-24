@@ -45,7 +45,7 @@ class node :
   public failable,
   public connectable_component
 {
-
+  DeclareFactory(node,uint64_t,event_manager*)
  public:
   void setup() override;
 
@@ -204,8 +204,6 @@ class node :
   sprockit::sim_parameters* params_;
 
 };
-
-DeclareFactory(node,uint64_t,event_manager*);
 
 }
 } // end of namespace sstmac

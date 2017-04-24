@@ -34,7 +34,7 @@ namespace sstmac {
  */
 class partition
 {
-
+  DeclareFactory(partition, parallel_runtime*)
  public:
   virtual ~partition();
 
@@ -78,8 +78,6 @@ class partition
   parallel_runtime* rt_;
 
 };
-
-DeclareFactory1InitParam(partition, parallel_runtime*);
 
 class serial_partition :
   public partition

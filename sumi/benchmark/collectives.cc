@@ -175,7 +175,7 @@ run_test()
 
   params["use_put_protocol"] = "false";
   params["lazy_watch"] = "true";
-  transport* t = transport_factory::get_param("transport", &params);
+  transport* t = transport::factory::get_param("transport", &params);
 
   t->init();
 

@@ -9,6 +9,7 @@ namespace native {
 class serial_runtime :
   public parallel_runtime
 {
+  DeclareFactory(parallel_runtime)
  public:
   serial_runtime(sprockit::sim_parameters* params);
 
@@ -73,8 +74,6 @@ class serial_runtime :
   std::map<int, int> merge_refcounts_;
 
 };
-
-DeclareFactory(parallel_runtime);
 
 
 }

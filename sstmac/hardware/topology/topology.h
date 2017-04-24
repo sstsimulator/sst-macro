@@ -36,6 +36,8 @@ namespace hw {
 
 class topology : public sprockit::printable
 {
+  DeclareFactory(topology)
+
  public:
   static const int eject;
 
@@ -480,7 +482,6 @@ class topology : public sprockit::printable
 
 };
 
-DeclareFactory(topology);
 }
 }
 

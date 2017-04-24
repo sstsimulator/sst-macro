@@ -13,6 +13,7 @@ namespace sstmac {
 class distributed_service :
  public sumi_transport
 {
+  DeclareFactory(distributed_service, const std::string&, sw::software_id, sw::operating_system*)
  public:
   distributed_service(sprockit::sim_parameters* params,
                       const std::string& libname,
@@ -37,8 +38,6 @@ class distributed_service :
   bool terminated_;
 
 };
-
-DeclareFactory(distributed_service, const std::string&, sw::software_id, sw::operating_system*);
 
 class distributed_service_app :
   public sstmac::sw::app

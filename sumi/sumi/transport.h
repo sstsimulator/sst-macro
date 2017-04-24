@@ -27,7 +27,7 @@ namespace sumi {
 
 class transport
 {
-
+  DeclareFactory(transport)
  public:
   class notify_callback {
    public:
@@ -819,8 +819,6 @@ class transport
   virtual void start_collective_sync_delays(){}
 #endif
 };
-
-DeclareFactory(transport);
 
 template <class MsgType, class T, class Fxn>
 transport::notify_callback*

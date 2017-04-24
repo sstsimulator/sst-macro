@@ -19,8 +19,6 @@
 
 RegisterDebugSlot(event_manager);
 
-ImplementFactory(sstmac::event_manager);
-
 namespace sstmac {
 
 class stop_event : public event_queue_entry

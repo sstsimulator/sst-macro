@@ -60,6 +60,7 @@ class Timer
 class api :
   public library
 {
+  DeclareFactory(api,software_id,operating_system*)
  public:
   api(sprockit::sim_parameters* params,
       const char* prefix,
@@ -136,8 +137,6 @@ void api_unlock();
   SpktRegister(name, sstmac::sw::api, child_cls); \
   RegisterNamespaces(name); \
   const char* child_cls::api_name = name
-
-DeclareFactory(api,software_id,operating_system*);
 
 }
 }

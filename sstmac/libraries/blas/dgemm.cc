@@ -4,8 +4,6 @@
 #include <cmath>
 #include <sstmac/software/libraries/compute/compute_event.h>
 
-ImplementFactory(sstmac::sw::blas_kernel);
-
 namespace sstmac {
 namespace sw {
 

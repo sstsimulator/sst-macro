@@ -6,8 +6,6 @@ RegisterDebugSlot(sumi_ping,
 RegisterDebugSlot(sumi_failure,
   "print all the debug output associated with all node failures detected by the sumi framework");
 
-ImplementFactory(sumi::activity_monitor);
-
 namespace sumi {
 
 void

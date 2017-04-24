@@ -29,8 +29,6 @@ RegisterKeywords(
 
 RegisterDebugSlot(sumi);
 
-ImplementFactory(sumi::transport)
-
 #define START_PT2PT_FUNCTION(dst) \
   start_function(); \
   if (is_failed(dst)) \
@@ -135,7 +133,7 @@ transport::transport(sprockit::sim_parameters* params) :
   heartbeat_tag_stop_ = heartbeat_tag_start_ + 10000;
   heartbeat_tag_ = heartbeat_tag_start_;
 
-  monitor_ = activity_monitor_factory::get_optional_param("activity_monitor", "ping",
+  monitor_ = activity_monitor::factory::get_optional_param("activity_monitor", "ping",
                                         params, this);
 
   eager_cutoff_ = params->get_optional_int_param("eager_cutoff", 512);

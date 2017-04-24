@@ -20,8 +20,6 @@
 
 RegisterDebugSlot(allocation);
 
-ImplementFactory(sstmac::sw::node_allocator);
-
 namespace sstmac {
 namespace sw {
 

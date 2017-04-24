@@ -2,8 +2,6 @@
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 
-ImplementFactory(sstmac::hw::packetizer)
-
 RegisterDebugSlot(packetizer);
 
 #define pkt_debug(...) debug_printf(sprockit::dbg::packetizer, "packetizer " __VA_ARGS__)

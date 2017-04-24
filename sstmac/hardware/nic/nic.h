@@ -46,7 +46,7 @@ class nic :
   public failable,
   public connectable_subcomponent
 {
-
+  DeclareFactory(nic,node*)
  public:
   typedef enum {
     Injection,
@@ -206,8 +206,6 @@ class nic :
   void finish_memcpy(network_message* msg);
 
 };
-
-DeclareFactory(nic,node*);
 
 }
 } // end of namespace sstmac.

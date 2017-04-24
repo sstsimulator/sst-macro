@@ -18,7 +18,6 @@
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 
-ImplementFactory(sstmac::hw::router);
 RegisterDebugSlot(router);
 RegisterDebugSlot(routing);
 RegisterNamespaces("router");

@@ -43,9 +43,9 @@ namespace hw {
  */
 class interconnect
 {
+  DeclareFactory(interconnect, event_manager*, partition*, parallel_runtime*)
  public:
-  static interconnect*
-  static_interconnect(sprockit::sim_parameters* params, event_manager* mgr);
+  static interconnect* static_interconnect(sprockit::sim_parameters* params, event_manager* mgr);
 
   /**
    * @brief static_interconnect Must already exist
@@ -62,13 +62,11 @@ class interconnect
   interconnect(sprockit::sim_parameters* params, event_manager* mgr,
                     partition* part, parallel_runtime* rt);
 
-  int
-  num_nodes() const {
+  int num_nodes() const {
     return num_nodes_;
   }
 
-  switch_id
-  node_to_logp_switch(node_id nid) const;
+  switch_id node_to_logp_switch(node_id nid) const;
 
  protected:
   topology* topology_;
@@ -95,8 +93,7 @@ class interconnect
 
   ~interconnect();
 
-  topology*
-  topol() const {
+  topology* topol() const {
     return topology_;
   }
 
@@ -114,52 +111,41 @@ class interconnect
    * @param nid The ID of the node object to get
    * @return The node object or NULL, if ID is not found
    */
-  node*
-  node_at(node_id nid) const {
+  node* node_at(node_id nid) const {
     return nodes_[nid];
   }
 
-  network_switch*
-  logp_switch_at(switch_id sid) const {
+  network_switch* logp_switch_at(switch_id sid) const {
     return logp_overlay_switches_[sid];
   }
 
-  network_switch*
-  switch_at(switch_id id) const {
+  network_switch* switch_at(switch_id id) const {
     return switches_[id];
   }
 
-  const node_map&
-  nodes() const {
+  const node_map& nodes() const {
     return nodes_;
   }
 
-  void
-  kill_node(node_id nid);
+  void kill_node(node_id nid);
 
-  void
-  kill_node(node_id nid, timestamp t);
+  void kill_node(node_id nid, timestamp t);
 
-  void
-  deadlock_check();
+  void deadlock_check();
 
   void handle(event* ev);
 
-  const switch_map&
-  switches() const {
+  const switch_map& switches() const {
     return switches_;
   }
 
-  int
-  thread_for_switch(switch_id sid) const;
+  int thread_for_switch(switch_id sid) const;
 
-  timestamp
-  hop_latency() const {
+  timestamp hop_latency() const {
     return hop_latency_;
   }
 
-  timestamp
-  lookahead() const {
+  timestamp lookahead() const {
     return lookahead_;
   }
 
@@ -203,8 +189,6 @@ class interconnect
   netlink_map netlinks_;
 #endif
 };
-
-DeclareFactory3InitParams(interconnect, event_manager*, partition*, parallel_runtime*);
 
 }
 } // end of namespace sstmac

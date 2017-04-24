@@ -14,8 +14,6 @@
 #include <sstmac/software/process/key.h>
 #include <sstmac/common/sstmac_env.h>
 
-ImplementFactory(sstmac::sw::library);
-
 namespace sstmac {
 namespace sw {
 

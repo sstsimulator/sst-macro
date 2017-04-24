@@ -56,7 +56,7 @@ instruction_processor(sprockit::sim_parameters* params,
 
   if (params->has_namespace("noise")){
     sprockit::sim_parameters* noise_params = params->get_namespace("noise");
-    noise_model_ = noise_model_factory::get_param("model", noise_params);
+    noise_model_ = noise_model::factory::get_param("model", noise_params);
   }
 
   tflop_ = tintop_ = 1.0 / freq_;

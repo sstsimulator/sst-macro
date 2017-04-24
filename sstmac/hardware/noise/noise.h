@@ -9,6 +9,7 @@ namespace sstmac {
 
 class noise_model
 {
+  DeclareFactory(noise_model)
  public:
   virtual ~noise_model(){}
 
@@ -19,7 +20,6 @@ class noise_model
   noise_model(){}
 
 };
-DeclareFactory(noise_model);
 
 class gaussian_noise_model :
   public noise_model

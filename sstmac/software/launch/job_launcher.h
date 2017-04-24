@@ -116,6 +116,7 @@ class task_mapping : public sprockit::ptr_type
  */
 class job_launcher : public service
 {
+  DeclareFactory(job_launcher, operating_system*)
  public:
   /**
    * @brief incoming_event Handle an event sent from one of the nodes
@@ -184,9 +185,6 @@ class job_launcher : public service
 
 
 };
-
-
-DeclareFactory(job_launcher, operating_system*);
 
 /**
  * @brief The default_job_launcher

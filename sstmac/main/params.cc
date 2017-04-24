@@ -187,7 +187,7 @@ remap_params(sprockit::sim_parameters* params, bool verbose)
   }
 
   if (has_cong_model && has_amm_model){
-    sstmac::param_expander* hw_expander = sstmac::param_expander_factory::get_param("congestion_model", params);
+    sstmac::param_expander* hw_expander = sstmac::param_expander::factory::get_param("congestion_model", params);
     hw_expander->expand(params);
     delete hw_expander;
   }

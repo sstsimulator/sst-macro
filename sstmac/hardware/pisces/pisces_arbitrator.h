@@ -18,6 +18,7 @@ namespace hw {
  */
 class pisces_bandwidth_arbitrator
 {
+  DeclareFactory(pisces_bandwidth_arbitrator)
  public:
   /**
       Assign bandwidth to payload.
@@ -45,20 +46,16 @@ class pisces_bandwidth_arbitrator
     return timestamp(bytes * credit_delta);
   }
 
-  virtual void
-  init_noise_model(noise_model* noise);
+  virtual void init_noise_model(noise_model* noise);
 
   /**
    * @brief partition Partition the arbitrator time windows into a series of randomly sized chunks
    * @param noise  The noise model that randomly selects time values
    * @param num_intervals
    */
-  virtual void
-  partition(noise_model* noise,
-    int num_intervals);
+  virtual void partition(noise_model* noise, int num_intervals);
 
-  virtual int
-  bytes_sending(timestamp now) const = 0;
+  virtual int bytes_sending(timestamp now) const = 0;
 
  protected:
   pisces_bandwidth_arbitrator(sprockit::sim_parameters* params);
@@ -79,19 +76,15 @@ class pisces_null_arbitrator :
  public:
   pisces_null_arbitrator(sprockit::sim_parameters* params);
 
-  virtual void
-  arbitrate(pkt_arbitration_t& st) override;
+  virtual void arbitrate(pkt_arbitration_t& st) override;
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "pisces null arbitrator";
   }
 
-  timestamp
-  head_tail_delay(pisces_payload *pkt) override;
+  timestamp head_tail_delay(pisces_payload *pkt) override;
 
-  int
-  bytes_sending(timestamp now) const override;
+  int bytes_sending(timestamp now) const override;
 
 };
 
@@ -107,22 +100,18 @@ class pisces_simple_arbitrator :
  public:
   pisces_simple_arbitrator(sprockit::sim_parameters* params);
 
-  virtual void
-  arbitrate(pkt_arbitration_t& st) override;
+  virtual void arbitrate(pkt_arbitration_t& st) override;
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "pisces simple arbitrator";
   }
 
-  timestamp
-  head_tail_delay(pisces_payload *pkt) override {
+  timestamp head_tail_delay(pisces_payload *pkt) override {
     //no delay
     return timestamp(0,timestamp::exact);
   }
 
-  int
-  bytes_sending(timestamp now) const override;
+  int bytes_sending(timestamp now) const override;
 
  protected:
   timestamp next_free_;
@@ -146,32 +135,25 @@ class pisces_cut_through_arbitrator :
 
   ~pisces_cut_through_arbitrator();
 
-  virtual void
-  arbitrate(pkt_arbitration_t& st) override;
+  virtual void arbitrate(pkt_arbitration_t& st) override;
 
-  int
-  bytes_sending(timestamp now) const override;
+  int bytes_sending(timestamp now) const override;
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "cut through arbitrator";
   }
 
-  void
-  partition(noise_model* model,
+  void partition(noise_model* model,
     int num_intervals) override;
 
-  void
-  init_noise_model(noise_model* noise) override;
+  void init_noise_model(noise_model* noise) override;
 
-  timestamp
-  head_tail_delay(pisces_payload *pkt) override;
+  timestamp head_tail_delay(pisces_payload *pkt) override;
 
  private:
   void clean_up(ticks_t now);
 
-  void
-  do_arbitrate(pkt_arbitration_t& st);
+  void do_arbitrate(pkt_arbitration_t& st);
 
   struct bandwidth_epoch {
     bw_t bw_available; //bandwidth is bytes per timestamp tick
@@ -198,8 +180,6 @@ class pisces_cut_through_arbitrator :
   double bw_sec_to_tick_conversion_;
 
 };
-
-DeclareFactory(pisces_bandwidth_arbitrator);
 
 }
 }

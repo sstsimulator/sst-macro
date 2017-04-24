@@ -31,7 +31,7 @@
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 
-ImplementFactory(sstmac::hw::interconnect)
+
 RegisterDebugSlot(interconnect);
 RegisterNamespaces("interconnect");
 RegisterKeywords("network_name", "interconnect");
@@ -63,7 +63,7 @@ interconnect::static_interconnect(sprockit::sim_parameters* params, event_manage
     const char* ic_param = ic_params->has_param("network_name") ? "network_name" : "interconnect";
     parallel_runtime* rt = parallel_runtime::static_runtime(params);
     partition* part = rt ? rt->topology_partition() : nullptr;
-    static_interconnect_ = interconnect_factory::get_optional_param(ic_param, "switch", ic_params,
+    static_interconnect_ = interconnect::factory::get_optional_param(ic_param, "switch", ic_params,
       mgr, part, rt);
   }
   return static_interconnect_;
@@ -289,7 +289,7 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
       if (my_rank == target_rank){
         //local node - actually build it
         node_params->add_param_override("id", int(nid));
-        node* nd = node_factory::get_optional_param("model", "simple", node_params,
+        node* nd = node::factory::get_optional_param("model", "simple", node_params,
                                                     nid, thread_mgr);
         nic* the_nic = nd->get_nic();
         nodes_[nid] = nd;
@@ -314,7 +314,7 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
           netlink_params->add_param_override("id", int(net_id));
           netlink* nlink = netlinks_[net_id];
           if (!nlink){
-            nlink = netlink_factory::get_param("model", netlink_params, nd);
+            nlink = netlink::factory::get_param("model", netlink_params, nd);
             netlinks_[net_id] = nlink;
           }
           int inj_port = nlink->node_port(netlink_offset);
@@ -366,7 +366,7 @@ interconnect::build_switches(sprockit::sim_parameters* switch_params,
         topology_->configure_nonuniform_switch_params(i, switch_params);
       int thread = partition_->thread_for_switch(i);
       event_manager* thread_mgr = mgr->ev_man_for_thread(thread);
-      switches_[i] = network_switch_factory::get_param("model",
+      switches_[i] = network_switch::factory::get_param("model",
                       switch_params, i, thread_mgr);
     } else {
       switches_[i] = new dist_dummy_switch(switch_params, i, mgr, device_id::router);

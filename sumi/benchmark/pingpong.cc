@@ -154,7 +154,7 @@ run_test()
   params["eager_cutoff"] = "512";
   params["use_put_protocol"] = "false";
   params["lazy_watch"] = "true";
-  transport* t = transport_factory::get_param("transport", &params);
+  transport* t = transport::factory::get_param("transport", &params);
 
 #if HAVE_MPI
   int argc = 1;

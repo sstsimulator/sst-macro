@@ -19,7 +19,6 @@
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 
-ImplementFactory(sstmac::hw::processor);
 RegisterDebugSlot(processor);
 
 RegisterKeywords(

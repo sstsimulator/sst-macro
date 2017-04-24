@@ -15,11 +15,9 @@
 #include <sprockit/keyword_registration.h>
 #include <cinttypes>
 
-ImplementFactory(sstmac::hw::packet_stats_callback);
 MakeDebugSlot(pisces_stats)
 
-#define debug(...) \
-  debug_printf(sprockit::dbg::pisces_stats, __VA_ARGS__)
+#define debug(...) debug_printf(sprockit::dbg::pisces_stats, __VA_ARGS__)
 
 namespace sstmac {
 namespace hw {
@@ -146,7 +144,7 @@ multi_stats::multi_stats(sprockit::sim_parameters *params, event_scheduler *pare
   params->get_vector_param("callbacks", stats_list);
   cbacks_.reserve(stats_list.size());
   for (const std::string& str : stats_list){
-    packet_stats_callback* cb = packet_stats_callback_factory::get_value(str, params, parent);
+    packet_stats_callback* cb = packet_stats_callback::factory::get_value(str, params, parent);
     cbacks_.push_back(cb);
   }
 }

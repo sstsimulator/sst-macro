@@ -10,8 +10,6 @@
 #include <sstmac/common/thread_lock.h>
 #include <sprockit/util.h>
 
-ImplementFactory(sstmac::sw::job_launcher)
-
 namespace sstmac {
 namespace sw {
 

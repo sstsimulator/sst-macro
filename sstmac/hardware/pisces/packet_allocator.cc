@@ -4,9 +4,6 @@
 #include <sprockit/sim_parameters.h>
 #include <sstmac/hardware/network/network_message.h>
 
-
-ImplementFactory(sstmac::hw::packet_allocator);
-
 namespace sstmac {
 namespace hw {
 

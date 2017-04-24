@@ -50,10 +50,10 @@ software_launch_request::software_launch_request(sprockit::sim_parameters *param
     procs_per_node_ = params->get_optional_int_param("tasks_per_node", 1);
   }
 
-  allocator_ = sw::node_allocator_factory
+  allocator_ = sw::node_allocator::factory
                 ::get_optional_param("allocation", "first_available", params);
 
-  indexer_ = sw::task_mapper_factory
+  indexer_ = sw::task_mapper::factory
                 ::get_optional_param("indexing", "block", params);
 }
 

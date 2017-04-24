@@ -14,22 +14,17 @@ namespace sw {
 
 class blas_kernel
 {
+  DeclareFactory(blas_kernel)
  public:
-  virtual std::string
-  to_string() const = 0;
+  virtual std::string to_string() const = 0;
 
-  virtual compute_event*
-  op_3d(int m, int k, int n);
+  virtual compute_event* op_3d(int m, int k, int n);
 
-  virtual compute_event*
-  op_2d(int m, int n);
+  virtual compute_event* op_2d(int m, int n);
 
-  virtual compute_event*
-  op_1d(int n);
+  virtual compute_event* op_1d(int n);
 
 };
-DeclareFactory(blas_kernel);
-
 
 class blas_api :
   public api
@@ -46,23 +41,18 @@ class blas_api :
   /**
    A(m,n) * B(n,k) = C(m,k)
   */
-  void
-  dgemm(int m, int n, int k);
+  void dgemm(int m, int n, int k);
 
   /**
    A(m,n) * X(n) = B(m)
   */
-  void
-  dgemv(int m, int n);
+  void dgemv(int m, int n);
 
-  void
-  daxpy(int n);
+  void daxpy(int n);
 
-  void
-  ddot(int n);
+  void ddot(int n);
 
-  void
-  incoming_event(event *ev){
+  void incoming_event(event *ev){
     library::incoming_event(ev);
   }
 

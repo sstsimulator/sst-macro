@@ -20,7 +20,6 @@
 #include <sprockit/keyword_registration.h>
 
 RegisterKeywords("host_compute_modeling");
-ImplementFactory(sstmac::sw::api)
 
 namespace sstmac {
 namespace sw {

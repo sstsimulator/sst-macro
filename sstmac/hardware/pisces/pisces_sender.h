@@ -20,19 +20,15 @@ struct payload_queue {
 
   typedef std::list<pisces_payload*>::iterator iterator;
 
-  pisces_payload*
-  pop(int num_credits);
+  pisces_payload* pop(int num_credits);
 
-  pisces_payload*
-  front();
+  pisces_payload* front();
 
-  size_t
-  size() const {
+  size_t size() const {
     return queue.size();
   }
 
-  void
-  push_back(pisces_payload* payload);
+  void push_back(pisces_payload* payload);
 
 };
 
@@ -59,16 +55,15 @@ struct pisces_output {
 class pisces_sender :
   public event_subcomponent
 {
+  DeclareFactory(pisces_sender, event_component*)
  public:
   virtual ~pisces_sender() {}
 
-  virtual void
-  set_input(sprockit::sim_parameters* params,
+  virtual void set_input(sprockit::sim_parameters* params,
      int my_inport, int dst_outport,
      event_handler* input) = 0;
 
-  virtual void
-  set_output(sprockit::sim_parameters* params,
+  virtual void set_output(sprockit::sim_parameters* params,
     int my_outport, int dst_inport,
     event_handler* output) = 0;
 
@@ -76,25 +71,19 @@ class pisces_sender :
 
   virtual void handle_payload(event* ev) = 0;
 
-  static void
-  configure_credit_port_latency(sprockit::sim_parameters* params);
+  static void configure_credit_port_latency(sprockit::sim_parameters* params);
 
-  static void
-  configure_payload_port_latency(sprockit::sim_parameters* params);
+  static void configure_payload_port_latency(sprockit::sim_parameters* params);
 
-  void
-  set_stat_collector(packet_stats_callback* c){
+  void set_stat_collector(packet_stats_callback* c){
     stat_collector_ = c;
   }
 
-  virtual std::string
-  pisces_name() const = 0;
+  virtual std::string pisces_name() const = 0;
 
-  std::string
-  to_string() const override;
+  std::string to_string() const override;
 
-  void
-  set_update_vc(bool flag){
+  void set_update_vc(bool flag){
     update_vc_ = flag;
   }
 
@@ -102,13 +91,11 @@ class pisces_sender :
   pisces_sender(sprockit::sim_parameters* params,
                      event_scheduler* parent);
 
-  virtual void
-  send_credit(const pisces_input& src,
+  virtual void send_credit(const pisces_input& src,
     pisces_payload* payload,
     timestamp packet_tail_leaves);
 
-  void
-  send(pisces_bandwidth_arbitrator* arb,
+  void send(pisces_bandwidth_arbitrator* arb,
        pisces_payload* pkt,
        const pisces_input& src,
        const pisces_output& dest);
@@ -123,8 +110,6 @@ class pisces_sender :
   bool update_vc_;
 
 };
-
-DeclareFactory(pisces_sender, event_component*)
 
 }
 }

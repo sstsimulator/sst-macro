@@ -54,10 +54,10 @@ blas_api::~blas_api()
 void
 blas_api::init_kernels(sprockit::sim_parameters* params)
 {
-  dgemm_kernel_ = blas_kernel_factory::get_optional_param("dgemm", "default_dgemm", params);
-  dgemv_kernel_ = blas_kernel_factory::get_optional_param("dgemv", "default_dgemv", params);
-  daxpy_kernel_ = blas_kernel_factory::get_optional_param("daxpy", "default_daxpy", params);
-  ddot_kernel_ = blas_kernel_factory::get_optional_param("ddot", "default_ddot", params);
+  dgemm_kernel_ = blas_kernel::factory::get_optional_param("dgemm", "default_dgemm", params);
+  dgemv_kernel_ = blas_kernel::factory::get_optional_param("dgemv", "default_dgemv", params);
+  daxpy_kernel_ = blas_kernel::factory::get_optional_param("daxpy", "default_daxpy", params);
+  ddot_kernel_ = blas_kernel::factory::get_optional_param("ddot", "default_ddot", params);
 }
 
 void

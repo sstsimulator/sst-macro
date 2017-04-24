@@ -33,10 +33,9 @@ namespace sw {
  */
 class task_mapper : public sprockit::printable
 {
-
+  DeclareFactory(task_mapper)
  public:
-  virtual
-  ~task_mapper() throw ();
+  virtual ~task_mapper() throw ();
 
   /** Assign processes to nodes.
    @param aid The application ID for the application whose processes are being indexed
@@ -48,8 +47,7 @@ class task_mapper : public sprockit::printable
    @throw value_error if ppn <= 0
    @throw value_error if nodes.size()*ppn < nproc
   */
-  virtual void
-  map_ranks(
+  virtual void map_ranks(
     const ordered_node_set& allocation,
     int ppn,
     std::vector<node_id>& result,
@@ -58,16 +56,13 @@ class task_mapper : public sprockit::printable
  protected:
   task_mapper(sprockit::sim_parameters* params);
 
-  int
-  validate_nproc(int ppn, int num_nodes, int nproc, const char* name) const;
+  int validate_nproc(int ppn, int num_nodes, int nproc, const char* name) const;
 
  protected:
   hw::topology* topology_;
   parallel_runtime* rt_;
 
 };
-
-DeclareFactory(task_mapper);
 
 }
 } // end of namespace sstmac

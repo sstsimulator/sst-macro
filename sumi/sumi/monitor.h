@@ -41,6 +41,7 @@ class function_set {
 
 class activity_monitor
 {
+  DeclareFactory(activity_monitor, transport*)
  public:
   activity_monitor(sprockit::sim_parameters* params,
                    transport* t) : api_(t){}
@@ -69,8 +70,6 @@ class activity_monitor
   transport* api_;
 
 };
-
-DeclareFactory(activity_monitor, transport*);
 
 }
 

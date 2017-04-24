@@ -25,7 +25,6 @@ RegisterKeywords(
 "congestion_model",
 );
 
-ImplementFactory(sstmac::param_expander)
 
 namespace sstmac {
 

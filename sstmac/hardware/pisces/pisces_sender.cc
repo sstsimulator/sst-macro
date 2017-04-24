@@ -8,7 +8,6 @@
 #include <sprockit/util.h>
 
 MakeDebugSlot(pisces_timeline)
-ImplementFactory(sstmac::hw::pisces_sender);
 
 namespace sstmac {
 namespace hw {

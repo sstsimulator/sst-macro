@@ -34,6 +34,7 @@ struct pkt_arbitration_t
  */
 class packet_stats_callback
 {
+  DeclareFactory(packet_stats_callback, event_scheduler*)
  public:
   virtual ~packet_stats_callback(){}
 
@@ -43,8 +44,7 @@ class packet_stats_callback
    *            objects.
    * @param st All the details of the last arbitration of a given packet
    */
-  virtual void
-  collect_single_event(const pkt_arbitration_t& st);
+  virtual void collect_single_event(const pkt_arbitration_t& st);
 
   /**
    * @brief collect_final_event Collects stats associated with flow-level
@@ -53,8 +53,7 @@ class packet_stats_callback
    *          attached to a packet at the end of the path
    * @param pkt
    */
-  virtual void
-  collect_final_event(pisces_payload* pkt);
+  virtual void collect_final_event(pisces_payload* pkt);
 
   /**
    * @brief id
@@ -73,8 +72,6 @@ class packet_stats_callback
   int id_;
 
 };
-
-DeclareFactory(packet_stats_callback, event_scheduler*)
 
 class congestion_spyplot :
  virtual public packet_stats_callback

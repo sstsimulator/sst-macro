@@ -2,8 +2,6 @@
 
 #include <math.h>
 
-ImplementFactory(sstmac::hw::pisces_bandwidth_arbitrator);
-
 #define one_indent "  "
 #define two_indent "    "
 

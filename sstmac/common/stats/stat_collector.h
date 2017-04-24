@@ -44,7 +44,7 @@ struct stat_descr_t {
  */
 class stat_collector : public sprockit::printable
 {
-
+  DeclareFactory(stat_collector)
  public:
   virtual
   ~stat_collector();
@@ -273,8 +273,6 @@ optional_stats(event_scheduler* parent,
   descr.suffix = suffix;
   return optional_stats<T>(parent, params, ns, deflt, &descr);
 }
-
-DeclareFactory(stat_collector);
 
 
 } // end of namespace sstmac
