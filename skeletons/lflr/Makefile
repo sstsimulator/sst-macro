@@ -1,5 +1,5 @@
 TARGET := runlflr
-SRC := $(shell ls *.cc) 
+SRC := main.cc
 
 CXX :=    sst++
 CC :=     sstcc

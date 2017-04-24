@@ -44,8 +44,7 @@ class mpi_queue_recv_request  {
   /// Do we match the given message?
   bool matches(const mpi_message::ptr& msg);
 
-  void
-  set_seqnum(int seqnum) {
+  void set_seqnum(int seqnum) {
     seqnum_ = seqnum;
   }
 
@@ -53,8 +52,7 @@ class mpi_queue_recv_request  {
     return key_;
   }
 
-  bool
-  is_cancelled() const;
+  bool is_cancelled() const;
 
  private:
   /// The queue to whom we belong.
@@ -66,11 +64,15 @@ class mpi_queue_recv_request  {
   MPI_Comm comm_;
   int seqnum_;
 
-  void* buffer_;
+  /** Where data will end up in its final form */
+  void* final_buffer_;
+  /** Temporary buffer that initially receives data.
+   *  Needed for non-contiguous types */
+  char* recv_buffer_;
 
   /// The parameters I will not be matching on, but are good error checks.
   int count_;
-  MPI_Datatype type_;
+  mpi_type* type_;
   mpi_request* key_;
 };
 

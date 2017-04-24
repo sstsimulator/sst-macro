@@ -31,6 +31,7 @@ libsstmac_sw_la_SOURCES = \
   process/ftq.cc \
   process/operating_system.cc \
   process/thread.cc \
+  process/thread_info.cc \
   process/app.cc \
   process/time.cc \
   threading/context_util.cc \
@@ -45,10 +46,9 @@ libsstmac_sw_la_SOURCES = \
   libraries/compute/lib_compute_matrix.cc \
   libraries/compute/lib_compute_memmove.cc \
   libraries/compute/lib_compute_time.cc \
-  libraries/compute/lib_sleep.cc \
   libraries/compute/lib_compute_loops.cc \
   libraries/unblock_event.cc \
-  launch/app_launch.cc \
+  launch/launch_request.cc \
   launch/node_allocator.cc \
   launch/cart_allocation.cc \
   launch/coordinate_allocation.cc \
@@ -66,7 +66,7 @@ libsstmac_sw_la_SOURCES = \
   launch/round_robin_task_mapper.cc \
   launch/node_id_task_mapper.cc \
   launch/job_launcher.cc \
-  launch/launcher.cc 
+  launch/app_launcher.cc 
 
 
 library_includedir=$(includedir)/sstmac/software
@@ -95,18 +95,13 @@ nobase_library_include_HEADERS = \
   process/software_id.h \
   process/task_id.h \
   process/time.h \
-  process/perf_counter.h \
+  process/thread_info.h \
+  process/tls.h \
   process/thread_data.h \
   process/thread.h \
   process/thread_fwd.h \
   process/thread_id.h \
   process/global.h \
-  process/global_base.h \
-  process/global_builtin.h \
-  process/global_builtin_array.h \
-  process/global_ptr.h \
-  process/global_ptr_array.h \
-  process/global_struct.h \
   process/process_context.h \
   threading/context_util.h \
   threading/stack_alloc_chunk.h \
@@ -118,22 +113,19 @@ nobase_library_include_HEADERS = \
   libraries/compute/compute_event.h \
   libraries/compute/compute_event_fwd.h \
   libraries/compute/lib_compute_inst.h \
-  libraries/compute/lib_compute_inst_fwd.h \
-  libraries/compute/lib_compute_memmove_fwd.h \
+  libraries/compute/lib_compute_fwd.h \
   libraries/compute/lib_compute_matrix.h \
   libraries/compute/lib_compute_memmove.h \
   libraries/compute/lib_compute_time.h \
   libraries/compute/lib_compute.h \
-  libraries/compute/lib_sleep.h \
-  libraries/compute/lib_sleep_fwd.h \
   libraries/compute/lib_compute_loops.h \
   libraries/library.h \
   libraries/library_fwd.h \
   libraries/unblock_event.h \
   libraries/service.h \
   libraries/service_fwd.h \
-  launch/app_launch.h \
-  launch/app_launch_fwd.h \
+  launch/launch_request.h \
+  launch/launch_request_fwd.h \
   launch/node_allocator.h \
   launch/cart_allocation.h  \
   launch/coordinate_allocation.h \
@@ -153,9 +145,8 @@ nobase_library_include_HEADERS = \
   launch/node_set.h \
   launch/job_launcher.h \
   launch/job_launcher_fwd.h \
-  launch/launcher.h \
-  launch/launcher_fwd.h \
-  launch/launch_handler.h \
+  launch/app_launcher.h \
+  launch/app_launcher_fwd.h \
   launch/job_launch_event.h \
   launch/launch_event.h  \
   launch/launch_event_fwd.h  

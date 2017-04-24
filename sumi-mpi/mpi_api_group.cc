@@ -1,10 +1,9 @@
 #include <sumi-mpi/mpi_api.h>
-#include <sstmac/software/process/operating_system.h>
 
 namespace sumi {
 
 int
-mpi_api::group_incl(int *ranks, int num_ranks, MPI_Group oldgrp, MPI_Group *newgrp)
+mpi_api::group_incl(MPI_Group oldgrp, int num_ranks, const int *ranks, MPI_Group *newgrp)
 {
   mpi_group* oldgrpPtr = get_group(oldgrp);
   if (num_ranks > oldgrpPtr->size()) {
@@ -17,7 +16,7 @@ mpi_api::group_incl(int *ranks, int num_ranks, MPI_Group oldgrp, MPI_Group *newg
     vec_ranks[i] = oldgrpPtr->at(ranks[i]);
   }
   mpi_group* newgrpPtr = new mpi_group(vec_ranks);
-  *newgrp = add_group_ptr(newgrpPtr);
+  add_group_ptr(newgrpPtr, newgrp);
 
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Group_incl(%d,%d,*%d)",
                 num_ranks, oldgrp, *newgrp);

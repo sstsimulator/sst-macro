@@ -19,7 +19,6 @@
 #include <sstmac/software/launch/node_id_task_mapper.h>
 #include <sstmac/software/launch/node_id_allocation.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/launch/launcher.h>
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/common/runtime.h>
 #include <sprockit/sim_parameters.h>

@@ -12,8 +12,6 @@
 #include <stdlib.h>
 #include <sstream>
 
-#include <sstmac/common/thread_info.h>
-
 #include <sstmac/common/messages/sst_message.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/event_callback.h>
@@ -28,14 +26,15 @@
 #include <sstmac/software/threading/threading_pthread.h>
 #endif
 #include <sstmac/software/libraries/service.h>
-#include <sstmac/software/launch/launcher.h>
+#include <sstmac/software/launch/app_launcher.h>
 #include <sstmac/software/process/graphviz.h>
 #include <sstmac/software/process/ftq.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/key.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/compute_scheduler.h>
-#include <sstmac/software/launch/app_launch.h>
+#include <sstmac/software/process/thread_info.h>
+#include <sstmac/software/launch/app_launcher.h>
 #include <sstmac/software/libraries/unblock_event.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/hardware/nic/nic.h>
@@ -81,11 +80,13 @@ RegisterKeywords(
 "compute_scheduler",
 );
 
+//we have to have a globally visible (to C code) stack-size variable
+extern int sstmac_global_stacksize;
+
 namespace sstmac {
 namespace sw {
 
 static sprockit::need_delete_statics<operating_system> del_statics;
-size_t operating_system::stacksize_ = 0;
 
 #if SSTMAC_USE_MULTITHREAD
 std::vector<operating_system::os_thread_context> operating_system::os_thread_contexts_;
@@ -98,6 +99,8 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
   my_addr_(parent->addr()),
   node_(parent),
   next_msg_id_(0),
+  call_graph_(nullptr),
+  call_graph_active_(true), //on by default
   des_context_(nullptr),
   ftq_trace_(nullptr),
   compute_sched_(nullptr),
@@ -121,10 +124,15 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
   ftq_trace_ = optional_stats<ftq_calendar>(parent,
         params, "ftq", "ftq");
 
-  stacksize_ = params->get_optional_byte_length_param("stack_size", 1 << 17);
+  sstmac_global_stacksize = params->get_optional_byte_length_param("stack_size", 1 << 17);
+  //must be a multiple of 4096
+  int stack_rem = sstmac_global_stacksize % 4096;
+  if (stack_rem){
+    sstmac_global_stacksize += (4096 - stack_rem);
+  }
   bool mprot = params->get_optional_bool_param("stack_protect", false);
   long suggested_chunk_size = 1<22;
-  long min_chunk_size = 8*stacksize_;
+  long min_chunk_size = 8*sstmac_global_stacksize;
   long default_chunk_size = std::max(suggested_chunk_size, min_chunk_size);
   long chunksize = params->get_optional_byte_length_param("stack_chunk_size", default_chunk_size);
 #if SSTMAC_USE_MULTITHREAD
@@ -136,10 +144,10 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
   if (os_thread_contexts_.size() == 0){
     os_thread_contexts_.resize(1);
     stack_alloc& salloc = os_thread_contexts_[0].stackalloc;
-    salloc.init(stacksize_, chunksize, mprot);
+    salloc.init(sstmac_global_stacksize, chunksize, mprot);
   }
 #else
-  os_thread_context_.stackalloc.init(stacksize_, chunksize, mprot);
+  os_thread_context_.stackalloc.init(sstmac_global_stacksize, chunksize, mprot);
 #endif
 
   //we automatically initialize the first context
@@ -163,14 +171,25 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
 
 operating_system::~operating_system()
 {
+  if (!pending_library_events_.empty()){
+    auto& pair = *pending_library_events_.begin();
+    const std::string& name = pair.first;
+    event* ev = pair.second.front();
+    cerrn << "Valid libraries on OS " << addr() << ":\n";
+    for  (auto& pair : libs_){
+      cerrn << pair.first << std::endl;
+    }
+    spkt_abort_printf("operating_system::handle_event: never registered library %s on os %d for event %s",
+                   name.c_str(), int(addr()),
+                   sprockit::to_string(ev).c_str());
+  }
+
   if (des_context_) {
     des_context_->destroy_context();
     delete des_context_;
   }
   if (compute_sched_) delete compute_sched_;
-  /** JJW 01/28/2016 This should already be cleared out
-   *  It not, leave it. It's a leak */
-  //sprockit::delete_vals(libs_);
+
   current_os_thread_context().stackalloc.clear();
 
 #if SSTMAC_HAVE_GRAPHVIZ
@@ -180,8 +199,6 @@ operating_system::~operating_system()
   if (ftq_trace_) delete ftq_trace_;
 }
 
-static bool you_have_been_warned = false;
-bool operating_system::cxa_finalizing_ = false;
 operating_system::os_thread_context operating_system::cxa_finalize_context_;
 
 
@@ -276,6 +293,7 @@ operating_system::init_threading()
     spkt_throw(sprockit::value_error,
       "operating_system: SSTMAC_THREADING=pthread is not supported");
 #endif
+    static bool you_have_been_warned = false;
     if (!you_have_been_warned)
       cerr0 << "Using pthread framework for virtual application stacks - good for debugging, but bad for performance\n"
 #if SSTMAC_USE_MULTITHREAD
@@ -310,9 +328,6 @@ operating_system::init_threading()
 void
 operating_system::local_shutdown()
 {
-  for (api* lib : services_){
-    lib->finalize();
-  }
 }
 
 void
@@ -328,6 +343,19 @@ operating_system::sleep(timestamp t)
   schedule_delay(t, ev);
   block(k);
   delete k;
+}
+
+void
+operating_system::sleep_until(timestamp t)
+{
+  timestamp now_ = now();
+  if (t > now_){
+    sw::key* k = sw::key::construct();
+    sw::unblock_event* ev = new sw::unblock_event(this, k);
+    schedule(t, ev);
+    block(k);
+    delete k;
+  }
 }
 
 void
@@ -361,7 +389,7 @@ operating_system::execute_kernel(ami::COMP_FUNC func, event *data,
 void
 operating_system::execute(ami::COMP_FUNC func,
                            event* data,
-                           key::category cat)
+                           key_traits::category cat)
 {
   //first thing's first - make sure I have a core to execute on
   thread_data_t top = threadstack_.top();  
@@ -413,7 +441,6 @@ operating_system::increment_app_refcount()
 void
 operating_system::simulation_done()
 {
-  cxa_finalizing_ = true;
   cxa_finalize_context_.current_tid = task_id(-1);
   cxa_finalize_context_.current_aid = app_id(-1);
   cxa_finalize_context_.current_os = 0;
@@ -513,7 +540,6 @@ operating_system::switch_to_thread(thread_data_t tothread)
   current_thread_id_ = next_thread->thread_id();
 
   ctxt.current_thread = tothread.second;
-  current_thread_id_ = current_threadid();
   ctxt.current_os = this;
   ctxt.current_aid = ctxt.current_thread->aid();
   ctxt.current_tid = ctxt.current_thread->tid(  );
@@ -570,7 +596,7 @@ operating_system::block(key* req)
   int64_t after_ticks = now().ticks_int64();
   int64_t delta_ticks = after_ticks - before_ticks;
 
-  if (call_graph_) {
+  if (call_graph_ && call_graph_active_) {
     call_graph_->count_trace(delta_ticks, ctxt.current_thread);
   }
 
@@ -714,6 +740,15 @@ operating_system::register_lib(library* lib)
   debug_printf(sprockit::dbg::dropped_events,
                "OS %d should no longer drop events for %s",
                addr(), lib->lib_name().c_str());
+
+  auto iter = pending_library_events_.find(lib->lib_name());
+  if (iter != pending_library_events_.end()){
+    const std::list<event*> events = iter->second;
+    for (event* ev : events){
+      schedule_now(new_callback(event_location(), lib, &library::incoming_event, ev));
+    }
+    pending_library_events_.erase(iter);
+  }
 }
 
 void
@@ -748,27 +783,6 @@ operating_system::lib(const std::string& name) const
   }
   else {
     return it->second;
-  }
-}
-
-thread*
-operating_system::current_thread()
-{
-  return static_os_thread_context().current_thread;
-}
-
-long
-operating_system::current_threadid() const
-{
-  if (threadstack_.size() > 0) {
-    thread_data_t td = current_context();
-    if (td.first != des_context_) {
-      return td.second->thread_id();
-    }
-    return thread::main_thread;
-  }
-  else {
-    return thread::main_thread;
   }
 }
 
@@ -813,12 +827,13 @@ operating_system::add_thread(thread* t)
   os_thread_context& ctxt = current_os_thread_context();
   stack_alloc& stackalloc_ = ctxt.stackalloc;
 
+  app* parent = t->parent_app();
   t->init_thread(
     thread_id(),
     des_context_,
     stackalloc_.alloc(),
     stackalloc_.stacksize(),
-    NULL);
+    NULL, parent->globals_storage());
 
   threads_.push_back(t);
 }
@@ -838,18 +853,10 @@ operating_system::add_application(app* a)
 void
 operating_system::start_api_call()
 {
-  os_thread_context& ctxt = current_os_thread_context();
-  perf_counter_model* mdl = ctxt.current_thread->perf_ctr_model();
-  compute_event* ev = mdl->get_next_event();
-  os_debug("starting api call with event %s",
-           ev ? sprockit::to_string(ev).c_str() : "null");
-  if (ev){
-    execute(ami::COMP_INSTR, ev);
-  }
 }
 
 void
-operating_system::start_app(app* theapp)
+operating_system::start_app(app* theapp, const std::string& unique_name)
 {
   os_debug("starting app %d:%d on thread %d",
     int(theapp->tid()), int(theapp->aid()), thread_id());
@@ -865,6 +872,20 @@ operating_system::start_app(app* theapp)
   switch_to_thread(thread_data_t(theapp->context_, theapp));
 }
 
+bool
+operating_system::handle_library_event(const std::string& name, event* ev)
+{
+  auto it = libs_.find(name);
+  bool found = it != libs_.end();
+  if (found){
+    library* lib = it->second;
+    os_debug("delivering message to lib %s:%p\n%s",
+        name.c_str(), lib, sprockit::to_string(ev).c_str());
+    lib->incoming_event(ev);
+  }
+  return found;
+}
+
 void
 operating_system::handle_event(event* ev)
 {  
@@ -876,42 +897,9 @@ operating_system::handle_event(event* ev)
       sprockit::to_string(ev).c_str());
   }
 
-  auto it = libs_.find(libmsg->lib_name());
-
-  if (it == libs_.end()) {
-    //event arrived for library that doesn't exist yet
-    sprockit::sim_parameters* lib_params = params_->get_optional_namespace(libmsg->lib_name());
-    software_id sid(0,0); //service
-    library* lib = library_factory::get_extra_value(libmsg->lib_name(), lib_params, sid, this);
-    if (lib){
-      os_debug("delivering message to newly created lib %s:%p\n%s",
-          libmsg->lib_name().c_str(), sprockit::to_string(ev).c_str());
-      lib->incoming_event(ev);
-    } else {
-      cerrn << "Valid libraries on OS " << addr() << ":\n";
-      for  (auto& pair : libs_){
-        cerrn << pair.first << std::endl;
-      }
-      spkt_abort_printf("operating_system::handle_event: can't find library %s on os %d for event %s",
-                     libmsg->lib_name().c_str(), int(addr()),
-                     sprockit::to_string(ev).c_str());
-    }
-    /**
-    if (deleted_libs_.find(libn) == deleted_libs_.end()){
-
-    } else {
-      debug_printf(sprockit::dbg::dropped_events | sprockit::dbg::os,
-                   "OS %d for library %s dropping event %s",
-                   addr(), libn.c_str(), sprockit::to_string(ev).c_str());
-      //drop the event
-    }
-    */
-  }
-  else {
-    library* lib = it->second;
-    os_debug("delivering message to lib %s:%p\n%s",
-        libmsg->lib_name().c_str(), lib, sprockit::to_string(ev).c_str());
-    lib->incoming_event(ev);
+  bool found = handle_library_event(libmsg->lib_name(), ev);
+  if (!found){
+    pending_library_events_[libmsg->lib_name()].push_back(ev);
   }
 }
 
@@ -951,4 +939,14 @@ operating_system::app_ptr(software_id sid)
 
 }
 } //end of namespace sstmac
+
+void*
+sstmac_new(unsigned long size){
+  int skip = sstmac::sw::operating_system::static_os_thread_context().skip_next_op_new;
+  if (skip == 0){
+    return ::operator new(size); //call out to non-throwing version
+  } else {
+    return nullptr;
+  }
+}
 

@@ -12,11 +12,8 @@
 #ifndef SSTMAC_SOFTWARE_PROCESS_APP_H_INCLUDED
 #define SSTMAC_SOFTWARE_PROCESS_APP_H_INCLUDED
 
-#include <sstmac/software/libraries/compute/lib_compute_inst.h>
-#include <sstmac/software/libraries/compute/lib_compute_time.h>
-#include <sstmac/software/libraries/compute/lib_compute_memmove.h>
-#include <sstmac/software/libraries/compute/lib_compute_loops.h>
-#include <sstmac/software/libraries/compute/lib_sleep.h>
+#include <sstmac/software/libraries/compute/lib_compute_fwd.h>
+#include <sstmac/software/libraries/compute/compute_event_fwd.h>
 #include <sprockit/factories/factory.h>
 #include <sstmac/software/process/thread.h>
 
@@ -54,6 +51,11 @@ class app : public thread
 
   typedef int (*main_fxn)(int argc, char** argv);
   typedef int (*empty_main_fxn)();
+
+  struct factory {
+    static app* get_param(const std::string& name, sprockit::sim_parameters* params,
+                          software_id sid, operating_system* os);
+  };
 
   int
   allocate_tls_key(destructor_fxn fnx);
@@ -100,6 +102,9 @@ class app : public thread
 
   lib_compute_loops*
   compute_loops_lib();
+
+  lib_compute_time*
+  compute_time_lib();
 
   /// Goodbye.
   virtual ~app();
@@ -178,8 +183,21 @@ class app : public thread
 
   bool erase_mutex(int id);
 
+  void* globals_storage() const {
+    return globals_storage_;
+  }
+
   virtual void
   clear_subthread_from_parent_app() override;
+
+  const std::string&
+  unique_name() const {
+    return unique_name_;
+  }
+
+  void set_unique_name(const std::string& name) {
+    unique_name_ = name;
+  }
 
  protected:
   friend class thread;
@@ -187,32 +205,25 @@ class app : public thread
   app(sprockit::sim_parameters *params, software_id sid,
       operating_system* os);
 
-  api*
-  _get_api(const char* name) override;
-
-  void init_mem_lib();
+  api* _get_api(const char* name) override;
 
   sprockit::sim_parameters* params_;
 
  private:
-  lib_compute_inst* compute_inst_;
-  lib_compute_time* compute_time_;
-  lib_compute_memmove* compute_mem_move_;
-  lib_compute_loops* compute_loops_;
-  lib_sleep* sleep_lib_;
-  long next_tls_key_;
+  lib_compute_loops* compute_lib_;
+  std::string unique_name_;
 
+  int next_tls_key_;
   int next_condition_;
   int next_mutex_;
 
   std::map<long, thread*> subthreads_;
-
   std::map<int, mutex_t> mutexes_;
-
   std::map<int, condition_t> conditions_;
-
   std::map<int, destructor_fxn> tls_key_fxns_;
-  spkt_unordered_map<std::string, api*> apis_;
+  std::map<std::string, api*> apis_;
+
+  char* globals_storage_;
 
 };
 

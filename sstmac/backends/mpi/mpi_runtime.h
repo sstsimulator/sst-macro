@@ -98,6 +98,8 @@ class mpi_runtime :
  private:
    MPI_Request* requests_;
 
+   MPI_Op reduce_op_;
+
    struct merge_request {
      void* buffer;
      int size;
@@ -112,8 +114,6 @@ class mpi_runtime :
    int* array_of_ones_;
    int total_num_sent_;
    int epoch_;
-
-   bool finalize_needed_;
 
 };
 

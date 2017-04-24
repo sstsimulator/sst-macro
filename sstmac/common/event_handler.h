@@ -40,11 +40,13 @@ class locatable
   }
 
  protected:
+#if SSTMAC_INTEGRATED_SST_CORE
   locatable(device_id id) :
     loc_id_(id),
     thread_id_(null_threadid)
   {
   }
+#endif
 
   locatable(device_id id, int thread_id) :
     loc_id_(id),
@@ -67,17 +69,18 @@ class event_handler :
  public:
   static const int null_lpid = -1;
 
-protected:
- event_handler(device_id id) :
-   locatable(id)
- {
- }
 
 #if SSTMAC_INTEGRATED_SST_CORE
  public:
   virtual SST::Link*
   link() const {
     return nullptr;
+  }
+
+ protected:
+  event_handler(device_id id) :
+   locatable(id)
+  {
   }
 #else
  protected:

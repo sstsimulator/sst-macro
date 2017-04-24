@@ -44,7 +44,8 @@ mpi_comm::mpi_comm(
   MPI_Comm id, //const appid &aid,
   int rank, mpi_group* peers,
   app_id aid,
-  bool del_grp) :
+  bool del_grp,
+  topotypes ty) :
   sumi::communicator(rank),
   group_(peers),
   next_collective_tag_(MPI_COMM_WORLD + 100),
@@ -52,7 +53,7 @@ mpi_comm::mpi_comm(
   id_(id),
   rank_(rank),
   del_grp_(del_grp),
-  topotype_(TOPO_NONE)
+  topotype_(ty)
 {
   if (peers->size() == 0) {
     spkt_throw_printf(sprockit::value_error,

@@ -58,7 +58,6 @@ if test "X$have_integrated_core" = "Xyes"; then
   enable_pthread=no
 else
   if test "$enable_pthread" != no; then
-    AC_MSG_CHECKING([whether pthreads is automatically usable])
     AC_LINK_IFELSE(
       [AC_LANG_PROGRAM(
         [
@@ -68,9 +67,11 @@ else
           pthread_join(0,0);
         ])],
       [
+       AC_MSG_CHECKING([whether pthreads is automatically usable])
        AC_MSG_RESULT([yes])
         enable_pthread="yes"
       ],[
+        AC_MSG_CHECKING([whether pthreads is automatically usable])
         AC_MSG_RESULT([no])
         enable_pthread="no"
         if test "$user_with_pthread" = yes; then
@@ -79,7 +80,6 @@ else
       ])
 
     if test "$enable_pthread" = no; then
-      AC_MSG_CHECKING([whether libpthread is present and usable])
       LIBSAVE="$LIBS"
       LIBS="$LIBS -lpthread"
       AC_LINK_IFELSE(
@@ -110,7 +110,6 @@ else
 fi
 
 if test "$enable_ucontext" != no; then
-  AC_MSG_CHECKING([whether ucontext.h is present and usable])
   AC_LINK_IFELSE(
     [AC_LANG_PROGRAM(
       [
@@ -123,11 +122,13 @@ if test "$enable_ucontext" != no; then
         swapcontext(&ucp, &mcp);
       ])],
     [
+      AC_MSG_CHECKING([whether ucontext.h is present and usable])
       AC_MSG_RESULT([yes])
       enable_ucontext="yes"
       AC_DEFINE(HAVE_UCONTEXT)
       AM_CONDITIONAL(HAVE_UCONTEXT, true)
     ], [
+      AC_MSG_CHECKING([whether ucontext.h is present and usable])
       AC_MSG_RESULT([no])
       enable_ucontext="no"
       AM_CONDITIONAL(HAVE_UCONTEXT, false)
@@ -141,7 +142,6 @@ else
 fi
 
 if test "$enable_pth" != "no"; then
-  AC_MSG_CHECKING([whether GNU pth is present and usable])
   SAVE_LDFLAGS=$LDFLAGS
   SAVE_CPPFLAGS=$CPPFLAGS
   PTH_LDFLAGS=

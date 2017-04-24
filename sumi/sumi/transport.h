@@ -57,7 +57,7 @@ class transport
   init();
   
   virtual void
-  finalize();
+  finish();
 
   void
   deadlock_check();
@@ -316,11 +316,11 @@ class transport
    * @param context The context (i.e. initial set of failed procs)
    */
   virtual void
-  dynamic_tree_vote(int vote, int tag, vote_fxn fxn, int context = options::initial_context, communicator* dom = 0);
+  dynamic_tree_vote(int vote, int tag, vote_fxn fxn, int context = options::initial_context, communicator* dom = nullptr);
 
   template <template <class> class VoteOp>
   void
-  vote(int vote, int tag, int context = options::initial_context, communicator* dom = 0){
+  vote(int vote, int tag, int context = options::initial_context, communicator* dom = nullptr){
     typedef VoteOp<int> op_class_type;
     dynamic_tree_vote(vote, tag, &op_class_type::op, context, dom);
   }
@@ -328,7 +328,8 @@ class transport
   /**
    * The total size of the input/result buffer in bytes is nelems*type_size
    * @param dst  Buffer for the result. Can be NULL to ignore payloads.
-   * @param src  Buffer for the input. Can be NULL to ignore payloads. This need not be public! Automatically memcpy from src to public facing dst.
+   * @param src  Buffer for the input. Can be NULL to ignore payloads.
+   *             Automatically memcpy from src to dst.
    * @param nelems The number of elements in the input and result buffer.
    * @param type_size The size of the input type, i.e. sizeof(int), sizeof(double)
    * @param tag A unique tag identifier for the collective
@@ -337,22 +338,49 @@ class transport
    * @param context The context (i.e. initial set of failed procs)
    */
   virtual void
-  allreduce(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn, bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
+  allreduce(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
+            bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
   template <typename data_t, template <typename> class Op>
   void
-  allreduce(void* dst, void* src, int nelems, int tag, bool fault_aware = false, int context = options::initial_context, communicator* dom = 0){
+  allreduce(void* dst, void* src, int nelems, int tag,
+            bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr){
     typedef ReduceOp<Op, data_t> op_class_type;
     allreduce(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
   }
 
+  /**
+   * The total size of the input/result buffer in bytes is nelems*type_size
+   * @param dst  Buffer for the result. Can be NULL to ignore payloads.
+   * @param src  Buffer for the input. Can be NULL to ignore payloads.
+   *             Automatically memcpy from src to dst.
+   * @param nelems The number of elements in the input and result buffer.
+   * @param type_size The size of the input type, i.e. sizeof(int), sizeof(double)
+   * @param tag A unique tag identifier for the collective
+   * @param fxn The function that will actually perform the reduction
+   * @param fault_aware Whether to execute in a fault-aware fashion to detect failures
+   * @param context The context (i.e. initial set of failed procs)
+   */
   virtual void
-  reduce(int root, void* dst, void* src, int nelems, int type_size, int tag,
-    reduce_fxn fxn, bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
+  scan(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
+       bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
   template <typename data_t, template <typename> class Op>
   void
-  reduce(int root, void* dst, void* src, int nelems, int tag, bool fault_aware = false, int context = options::initial_context, communicator* dom = 0){
+  scan(void* dst, void* src, int nelems, int tag, bool fault_aware = false,
+       int context = options::initial_context, communicator* dom = nullptr){
+    typedef ReduceOp<Op, data_t> op_class_type;
+    scan(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
+  }
+
+  virtual void
+  reduce(int root, void* dst, void* src, int nelems, int type_size, int tag,
+    reduce_fxn fxn, bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
+
+  template <typename data_t, template <typename> class Op>
+  void
+  reduce(int root, void* dst, void* src, int nelems, int tag,
+         bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr){
     typedef ReduceOp<Op, data_t> op_class_type;
     reduce(root, dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
   }
@@ -370,35 +398,35 @@ class transport
    */
   virtual void
   allgather(void* dst, void* src, int nelems, int type_size, int tag,
-            bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
+            bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
   virtual void
   allgatherv(void* dst, void* src, int* recv_counts, int type_size, int tag,
-             bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
+             bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
   virtual void
   gather(int root, void* dst, void* src, int nelems, int type_size, int tag,
-         bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
+         bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
   virtual void
   gatherv(int root, void* dst, void* src, int sendcnt, int* recv_counts, int type_size, int tag,
-          bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
+          bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
   virtual void
   alltoall(void* dst, void* src, int nelems, int type_size, int tag,
-             bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
+             bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
   virtual void
   alltoallv(void* dst, void* src, int* send_counts, int* recv_counts, int type_size, int tag,
-             bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
+             bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
   virtual void
   scatter(int root, void* dst, void* src, int nelems, int type_size, int tag,
-          bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
+          bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
   virtual void
   scatterv(int root, void* dst, void* src, int* send_counts, int recvcnt, int type_size, int tag,
-          bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
+          bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
   /**
    * Essentially just executes a zero-byte allgather.
@@ -406,10 +434,11 @@ class transport
    * @param fault_aware
    */
   void
-  barrier(int tag, bool fault_aware = false, communicator* dom = 0);
+  barrier(int tag, bool fault_aware = false, communicator* dom = nullptr);
 
   void
-  bcast(int root, void* buf, int nelems, int type_size, int tag, bool fault_aware, int context=options::initial_context, communicator* dom=0);
+  bcast(int root, void* buf, int nelems, int type_size, int tag, bool fault_aware,
+        int context=options::initial_context, communicator* dom=nullptr);
   
   void system_bcast(const message::ptr& msg);
 
@@ -773,6 +802,7 @@ class transport
   static collective_algorithm_selector* alltoall_selector_;
   static collective_algorithm_selector* alltoallv_selector_;
   static collective_algorithm_selector* allreduce_selector_;
+  static collective_algorithm_selector* scan_selector_;
   static collective_algorithm_selector* allgatherv_selector_;
   static collective_algorithm_selector* bcast_selector_;
   static collective_algorithm_selector* gather_selector_;

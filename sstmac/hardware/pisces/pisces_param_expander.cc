@@ -24,6 +24,7 @@ pisces_param_expander::expand(sprockit::sim_parameters* params)
 
   sprockit::sim_parameters* node_params = params->get_optional_namespace("node");
   sprockit::sim_parameters* nic_params = node_params->get_optional_namespace("nic");
+  sprockit::sim_parameters* inj_params = nic_params->get_optional_namespace("injection");
   sprockit::sim_parameters* mem_params = node_params->get_optional_namespace("memory");
   sprockit::sim_parameters* switch_params = params->get_optional_namespace("switch");
   sprockit::sim_parameters* top_params = params->get_optional_namespace("topology");
@@ -41,8 +42,16 @@ pisces_param_expander::expand(sprockit::sim_parameters* params)
   buffer_depth_ = params->get_optional_int_param("network_buffer_depth", 8);
   //by default, quite coarse-grained
 
-  if (!params->has_param("arbitrator")){
-    params->add_param("arbitrator", "cut_through");
+
+  std::string arb = params->get_optional_param("arbitrator", "cut_through");
+  if (!switch_params->has_param("arbitrator")){
+    switch_params->add_param("arbitrator", arb);
+  }
+  if (!nic_params->has_param("arbitrator")){
+    nic_params->add_param("arbitrator",arb);
+  }
+  if (!netlink_params->has_param("arbitrator")){
+    netlink_params->add_param("arbitrator",arb);
   }
 
 
@@ -50,14 +59,16 @@ pisces_param_expander::expand(sprockit::sim_parameters* params)
   int net_packet_size = params->get_optional_int_param("network_accuracy_parameter", packet_size);
   int mem_packet_size = params->get_optional_int_param("memory_accuracy_parameter", packet_size);
 
-  int size_multiplier = switch_buffer_multiplier(params);
-  int buffer_size = buffer_depth_ * packet_size * size_multiplier;
-  buffer_size = switch_params->get_optional_byte_length_param("buffer_size", buffer_size);
-  switch_params->add_param_override("buffer_size", buffer_size);
 
-  mem_params->add_param_override("mtu", mem_packet_size);
-  switch_params->add_param_override("mtu", net_packet_size);
-  nic_params->add_param_override("mtu", net_packet_size);
+  if (!mem_params->has_param("mtu")){
+    mem_params->add_param_override("mtu", mem_packet_size);
+  }
+  if (!switch_params->has_param("mtu")){
+    switch_params->add_param_override("mtu", net_packet_size);
+  }
+  if (!nic_params->has_param("mtu")){
+    nic_params->add_param_override("mtu", net_packet_size);
+  }
 
   if (amm_type == "amm1"){
     expand_amm1_memory(params, mem_params);
@@ -116,7 +127,7 @@ pisces_param_expander::expand_amm1_network(sprockit::sim_parameters* params,
 
   sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
   sprockit::sim_parameters* xbar_params = switch_params->get_namespace("xbar");
-  sprockit::sim_parameters* ej_params = switch_params->get_namespace("ejection");
+  sprockit::sim_parameters* ej_params = switch_params->get_optional_namespace("ejection");
   sprockit::sim_parameters* node_params = params->get_namespace("node");
   sprockit::sim_parameters* nic_params = node_params->get_namespace("nic");
   sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
@@ -150,14 +161,22 @@ pisces_param_expander::expand_amm1_network(sprockit::sim_parameters* params,
     xbar_params->add_param_override("arbitrator", "null");
   }
 
+  int buffer_size;
+  if (switch_params->has_param("buffer_size")){
+    buffer_size = switch_params->get_byte_length_param("buffer_size");
+  } else {
+    int size_multiplier = switch_buffer_multiplier(params);
+    int packet_size = params->get_optional_int_param("accuracy_parameter", 4096);
+    buffer_size = buffer_depth_ * packet_size * size_multiplier;
+    switch_params->add_param_override("buffer_size", buffer_size);
+  }
 
 
-  int buffer_size = xbar_params->get_byte_length_param("buffer_size");
   link_params->add_param_override("credits", buffer_size);
 
   if (!ej_params->has_param("send_latency")){
     if (!ej_params->has_param("latency")){
-      ej_params->add_param_override("send_latency", link_lat);
+      ej_params->add_param_override("send_latency", inj_params->get_param("latency"));
     } else {
       ej_params->add_param_override("send_latency",
                                     ej_params->get_param("latency"));
@@ -165,7 +184,7 @@ pisces_param_expander::expand_amm1_network(sprockit::sim_parameters* params,
   }
   if (!ej_params->has_param("bandwidth")){
     ej_params->add_param_override("bandwidth",
-                 link_params->get_bandwidth_param("bandwidth"));
+                 inj_params->get_param("bandwidth"));
   }
 
   (*ej_params)["credits"].setByteLength(100, "GB");
@@ -174,6 +193,7 @@ pisces_param_expander::expand_amm1_network(sprockit::sim_parameters* params,
   }
   if (!ej_params->has_param("credit_latency"))
     ej_params->add_param_override("credit_latency", "0ns");
+
 
 
   std::string net_model = netlink_params->get_optional_param("model", "null");
@@ -202,16 +222,16 @@ pisces_param_expander::expand_amm1_network(sprockit::sim_parameters* params,
 
 void
 pisces_param_expander::expand_amm1_nic(sprockit::sim_parameters* params,
-                                            sprockit::sim_parameters* nic_params)
+                                       sprockit::sim_parameters* nic_params)
 {
-  sprockit::sim_parameters* switch_params = params->get_namespace("switch");
+  sprockit::sim_parameters* xbar_params = params->get_namespace("switch")->get_namespace("xbar");
   sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
   if (!inj_params->has_param("arbitrator")){
     inj_params->add_param("arbitrator", "cut_through");
   }
 
   int inj_red = inj_params->get_optional_int_param("redundant",1);
-  int buf_size = switch_params->get_byte_length_param("buffer_size");
+  int buf_size = xbar_params->get_byte_length_param("buffer_size");
   int inj_credits = buf_size * inj_red;
   (*inj_params)["credits"].setByteLength(inj_credits, "B");
 }

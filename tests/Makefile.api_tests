@@ -68,12 +68,7 @@ APITESTS = \
   testsuite_mpi_104 \
   testsuite_mpi_115 \
   testsuite_mpi_207 \
-  testsuite_mpi_239 \
-  testsuite_globals_0 \
-  testsuite_globals_1 \
-  testsuite_globals_2 \
-  testsuite_globals_3 \
-  testsuite_globals_4
+  testsuite_mpi_239 
 
 APITESTS_DISABLED = \
   testsuite_mpi_88 \
@@ -123,12 +118,12 @@ SUPERCHECK_APITESTS = \
 testsuite_mpi_%.$(CHKSUF): $(MPI_TEST_DEPS)
 	$(PYRUNTEST) 20 $(top_srcdir) $@ 'text=No Errors' \
     $(MPI_LAUNCHER) $(top_builddir)/tests/api/mpi/testexec -f $(srcdir)/api/parameters.ini \
-    -p app1.testsuite_testmode=$* $(THREAD_ARGS)
+    -p node.app1.testsuite_testmode=$* $(THREAD_ARGS)
 
 
 testsuite_globals_%.$(CHKSUF): $(GLOBALS_TEST_DEPS)
 	$(PYRUNTEST) 20 $(top_srcdir) $@ 'text=Passed' \
     $(top_builddir)/tests/api/globals/testexec -f $(srcdir)/api/parameters.ini \
-    -p app1.testsuite_testmode=$* 
+    -p node.app1.testsuite_testmode=$*
 
 #------------------------------------------------------------------------------------------#

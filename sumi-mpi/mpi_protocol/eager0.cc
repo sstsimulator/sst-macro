@@ -6,12 +6,11 @@
 namespace sumi {
 
 void
-eager0::configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& msg, void *buffer)
+eager0::configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& msg,
+                              void *buffer, mpi_type* type)
 {
   if (buffer){
-    long length = msg->payload_bytes();
-    void* eager_buf = new char[length];
-    ::memcpy(eager_buf, buffer, length);
+    void* eager_buf = fill_send_buffer(msg, buffer, type);
     msg->eager_buffer() = eager_buf;
   }
 }
@@ -40,8 +39,8 @@ eager0::incoming_payload(mpi_queue *queue,
 {
   SSTMACBacktrace("MPI Eager 0 Protocol: Handle Header");
   if (req) {
-    if (msg->local_buffer().ptr && req->buffer_){
-      msg->remote_buffer().ptr = req->buffer_;
+    if (msg->local_buffer().ptr && req->recv_buffer_){
+      msg->remote_buffer().ptr = req->recv_buffer_;
       msg->move_local_to_remote();
     }
     queue->finalize_recv(msg, req);

@@ -1,8 +1,12 @@
 #ifndef sstmac_software_libraries_compute_compute_api_h
 #define sstmac_software_libraries_compute_compute_api_h
 
+
 #ifdef __cplusplus
+#include <cstdint>
 extern "C" {
+#else
+#include <stdint.h>
 #endif
 
 /**
@@ -10,23 +14,22 @@ extern "C" {
  * @param secs
  * @return Always zero, successful return code for Linux
  */
-int
-sstmac_sleep(unsigned int secs);
+int sstmac_sleep(unsigned int secs);
 
 /**
  * @brief sstmac_usleep SST virtual equivalent of Linux usleep
  * @param usecs
  * @return Always zero, successful return code for Linux
  */
-int
-sstmac_usleep(unsigned int usecs);
+int sstmac_usleep(unsigned int usecs);
+
+int sstmac_fsleep(double secs);
 
 /**
  * @brief sstmac_compute Compute for a specified number of seconds
  * @param secs
  */
-void
-sstmac_compute(double secs);
+void sstmac_compute(double secs);
 
 /**
  * @brief sstmac_compute_detailed Model a specific compute block
@@ -35,8 +38,7 @@ sstmac_compute(double secs);
  *
  * @param bytes
  */
-void
-sstmac_compute_detailed(long nflops, long nintops, long bytes);
+void sstmac_compute_detailed(uint64_t nflops, uint64_t nintops, uint64_t bytes);
 
 /**
  * @brief sstmac_compute_loop
@@ -45,11 +47,10 @@ sstmac_compute_detailed(long nflops, long nintops, long bytes);
  * @param nintops_per_loop The number of integer ops in the inner loop (not including loop predicates like i < N)
  * @param bytes_per_loop   The average number of unique bytes read + written per loop
  */
-void
-sstmac_compute_loop(long num_loops,
-                    int nflops_per_loop,
-                    int nintops_per_loop,
-                    int bytes_per_loop);
+void sstmac_compute_loop(uint64_t num_loops,
+                    uint32_t nflops_per_loop,
+                    uint32_t nintops_per_loop,
+                    uint32_t bytes_per_loop);
 
 /**
  * @brief sstmac_compute_loop2
@@ -59,11 +60,10 @@ sstmac_compute_loop(long num_loops,
  * @param nintops_per_loop The number of integer ops in the inner loop (not including loop predicates like i < N)
  * @param bytes_per_loop   The average number of unique bytes read + written per loop
  */
-void
-sstmac_compute_loop2(long isize, long jsize,
-                    int nflops_per_loop,
-                    int nintops_per_loop,
-                    int bytes_per_loop);
+void sstmac_compute_loop2(uint64_t isize, uint64_t jsize,
+                    uint32_t nflops_per_loop,
+                    uint32_t nintops_per_loop,
+                    uint32_t bytes_per_loop);
 
 /**
  * @brief sstmac_compute_loop3
@@ -74,12 +74,11 @@ sstmac_compute_loop2(long isize, long jsize,
  * @param nintops_per_loop The number of integer ops in the inner loop (not including loop predicates like i < N)
  * @param bytes_per_loop   The average number of unique bytes read + written per loop
  */
-void
-sstmac_compute_loop3(long isize, long jsize,
-                    long ksize,
-                    int nflops_per_loop,
-                    int nintops_per_loop,
-                    int bytes_per_loop);
+void sstmac_compute_loop3(uint64_t isize, uint64_t jsize,
+                    uint64_t ksize,
+                    uint32_t nflops_per_loop,
+                    uint32_t nintops_per_loop,
+                    uint32_t bytes_per_loop);
 
 /**
  * @brief sstmac_compute_loop4
@@ -91,21 +90,20 @@ sstmac_compute_loop3(long isize, long jsize,
  * @param nintops_per_loop The number of integer ops in the inner loop (not including loop predicates like i < N)
  * @param bytes_per_loop   The average number of unique bytes read + written per loop
  */
-void
-sstmac_compute_loop4(long isize, long jsize,
-                    long ksize, long lsize,
-                    int nflops_per_loop,
-                    int nintops_per_loop,
-                    int bytes_per_loop);
+void sstmac_compute_loop4(uint64_t isize, uint64_t jsize,
+                    uint64_t ksize, uint64_t lsize,
+                    uint32_t nflops_per_loop,
+                    uint32_t nintops_per_loop,
+                    uint32_t bytes_per_loop);
 
 void
-sstmac_memread(long bytes);
+sstmac_memread(uint64_t bytes);
 
 void
-sstmac_memwrite(long bytes);
+sstmac_memwrite(uint64_t bytes);
 
 void
-sstmac_memcpy(long bytes);
+sstmac_memcpy(uint64_t bytes);
 
 #define SSTMAC_sleep(...) sstmac_sleep(__VA_ARGS__)
 #define SSTMAC_usleep(...) sstmac_usleep(__VA_ARGS__)

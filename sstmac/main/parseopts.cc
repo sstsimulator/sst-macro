@@ -30,6 +30,12 @@ operator<<(std::ostream &os, const opts &oo)
   return os;
 }
 
+void
+machine_already_configured(){
+  spkt_abort_printf("conflicting machine declarations: cannot combine"
+    "--inf, --auto/-a, --debug/-d, --pisces, or --macrels flags");
+}
+
 int
 parse_opts(int argc, char **argv, opts &oo)
 {
@@ -44,10 +50,14 @@ parse_opts(int argc, char **argv, opts &oo)
   int dodumpi = 0;
   int lowrestimer = 0;
   int run_ping_all = 0;
+  int infinite_network = 0;
+  bool need_config_file = true;
+  bool machine_configured = false;
   option gopt[] = {
     { "help", no_argument, NULL, 'h' },
     { "include", required_argument, NULL, 'i' },
     { "debug", required_argument, NULL, 'd' },
+    { "inf", no_argument, &infinite_network, 1},
     { "configfile", required_argument, NULL, 'f' },
     { "auto", no_argument, NULL, 'a' },
     { "nproc", required_argument, NULL, 'n' },
@@ -84,21 +94,24 @@ parse_opts(int argc, char **argv, opts &oo)
       case 'd':
         activate_debugs(optarg);
         break;
-      case 'a': {
-        oo.configfile = "debug.ini";
-        break;
-      }
       case 'n' : {
-        oo.params->add_param_override("app1.launch_cmd", sprockit::printf("aprun -n %s -N 1", optarg));
+        oo.params->add_param_override("node.app1.launch_cmd", sprockit::printf("aprun -n %s -N 1", optarg));
         break;
       }
       case 'f':
         oo.configfile = optarg;
+        oo.got_config_file = true;
         break;
+      case 'a': {
+        need_config_file = false;
+        sprockit::sim_parameters params("debug.ini");
+        params.combine_into(oo.params);
+        machine_configured = true;
+        break;
+      }
       case 'i': {
-        sprockit::sim_parameters* params = new sprockit::sim_parameters(optarg);
-        params->combine_into(oo.params);
-        delete params;
+        sprockit::sim_parameters params(optarg);
+        params.combine_into(oo.params);
       }
       break;
       case 'p': {
@@ -126,6 +139,30 @@ parse_opts(int argc, char **argv, opts &oo)
     }
   }
 
+  if (infinite_network) {
+    sprockit::sim_parameters params("infinite.ini");
+    params.combine_into(oo.params);
+    need_config_file = false;
+    if (machine_configured){
+      machine_already_configured();
+    }
+    machine_configured = true;
+  }
+
+  if (dodumpi) {
+    if (!machine_configured){
+      sprockit::sim_parameters params("debug.ini");
+      params.combine_into(oo.params);
+      machine_configured = true;
+    }
+    need_config_file = false;
+    oo.params->add_param("node.app1.name", "parsedumpi");
+  }
+
+  if (oo.configfile == "" && need_config_file){
+    spkt_abort_printf("need to specify input file with -f flag");
+  }
+
   if (print_params) {
     oo.print_params = true;
   }
@@ -134,21 +171,22 @@ parse_opts(int argc, char **argv, opts &oo)
     oo.params->add_param("switch.arbitrator", "null");
   }
 
-  if (dodumpi) {
-    oo.configfile = "debug.ini";
-    oo.params->add_param("app1.name", "parsedumpi");
-  }
-
   if (pisces_debug) {
+    if (machine_configured){
+      machine_already_configured();
+    }
     oo.configfile = "pisces.ini";
   }
 
   if (macrels_debug) {
+    if (machine_configured){
+      machine_already_configured();
+    }
     oo.configfile = "macrels.ini";
   }
 
   if (run_ping_all){
-    oo.params->add_param("app1.name", "mpi_ping_all");
+    oo.params->add_param("node.app1.name", "mpi_ping_all");
   }
 
   if (debugflags){
@@ -164,7 +202,7 @@ parse_opts(int argc, char **argv, opts &oo)
     oo.configfile = "mpi_test_all.ini";
   }
   if (printnodes) {
-    oo.params->add_param_override("app1.name", "mpi_printnodes");
+    oo.params->add_param_override("node.app1.name", "mpi_printnodes");
   }
 
   if (lowrestimer){

@@ -41,10 +41,14 @@ Here each switch has radix 12 (3 connections in X, 4 connections in Y, 5 connect
 A hypercube has the same coordinate system as a torus. For example, to create a very specific, irregular allocation on a hyerpcube:
 
 \begin{ViFile}
-app1.launch_cmd = aprun -n 5
-app1.indexing = coordinate
-app1.allocation = coordinate
-app1.coordinate_file = coords.txt
+node {
+ app1 {
+  launch_cmd = aprun -n 5
+  indexing = coordinate
+  allocation = coordinate
+  coordinate_file = coords.txt
+ }
+}
 \end{ViFile}
 and then a coordinate file named \inlineshell{coords.txt}
 

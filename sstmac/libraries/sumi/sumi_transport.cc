@@ -5,6 +5,8 @@
 #include <sstmac/libraries/sumi/sumi_transport.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/process/key.h>
+#include <sstmac/hardware/node/node.h>
 #include <sstmac/software/launch/job_launcher.h>
 #include <sstmac/common/event_callback.h>
 #include <sstmac/libraries/sumi/message.h>
@@ -12,9 +14,10 @@
 #include <sprockit/output.h>
 #include <sstmac/common/runtime.h>
 
+
 using namespace sprockit::dbg;
 
-static sstmac::sw::key::category message_thread("Server");
+static sstmac::sw::key_traits::category message_thread("Server");
 
 namespace sstmac {
 
@@ -99,10 +102,18 @@ sumi_transport::sumi_transport(sprockit::sim_parameters* params,
 }
 
 sumi_transport::sumi_transport(sprockit::sim_parameters* params,
+               sstmac::sw::software_id sid,
+               sstmac::sw::operating_system* os) :
+  sumi_transport(params, "sumi", sid, os)
+{
+}
+
+
+sumi_transport::sumi_transport(sprockit::sim_parameters* params,
     const std::string& libname, sstmac::sw::software_id sid,
     sstmac::sw::operating_system* os) :
   //the name of the transport itself should be mapped to a unique name
-  api(params, standard_lib_name(libname.c_str(), sid), sid, os),
+  api(params, libname, sid, os),
   //the server is what takes on the specified libname
   server_libname_("sumi_server"),
   process_manager(sid, os),
@@ -126,7 +137,7 @@ sumi_transport::sumi_transport(sprockit::sim_parameters* params,
   poll_delay_ = params->get_optional_time_param("poll_delay", 0);
   user_lib_time_ = new sstmac::sw::lib_compute_time(params, "sumi-user-lib-time", sid, os);
 
-  rank_mapper_ = runtime::launcher()->task_mapper(sid.app_);
+  rank_mapper_ = sstmac::sw::task_mapping::global_mapping(sid.app_);
   nproc_ = rank_mapper_->nproc();
   loc_ = os_->event_location();
 
@@ -148,6 +159,18 @@ sumi_transport::~sumi_transport()
   sumi_server* server = safe_cast(sumi_server, os_->lib(server_libname_));
   bool del = server->unregister_proc(rank_, this);
   if (del) delete server;
+}
+
+event_scheduler*
+sumi_transport::des_scheduler() const
+{
+  return os_->node();
+}
+
+void
+sumi_transport::memcopy(long bytes)
+{
+  os_->current_thread()->parent_app()->compute_block_memcpy(bytes);
 }
 
 void
@@ -263,10 +286,10 @@ sumi_transport::init()
 }
 
 void
-sumi_transport::finalize()
+sumi_transport::finish()
 {
   debug_printf(sprockit::dbg::sumi, "Rank %d finalizing", rank_);
-  transport::finalize();
+  transport::finish();
   monitor_->validate_done();
   stop_heartbeat();
   //sstmac_usleep(heartbeat_interval_*1e6);
@@ -282,7 +305,7 @@ sumi_transport::send(
   int dst_rank,
   bool needs_ack)
 {
-  node_id dst_node = rank_mapper_->node_assignment(dst_rank);
+  node_id dst_node = rank_mapper_->rank_to_node(dst_rank);
   send(byte_length, dst_rank, dst_node, sid().app_, msg, needs_ack, sendType);
 }
 

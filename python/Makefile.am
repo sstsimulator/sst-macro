@@ -13,7 +13,7 @@ include $(top_srcdir)/Makefile.common
 
 python_includedir=$(includedir)/python
 EXTRA_DIST= \
-  env.sh \
+  jobScheduler.py \
   merlin.py \
   emberMacro.py \
   emberLoadInfo.py \

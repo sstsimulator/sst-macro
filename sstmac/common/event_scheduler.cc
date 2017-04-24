@@ -39,6 +39,8 @@ event_component::cancel_all_messages()
 #endif
 }
 
+#define sending(x) //printf("Sending %u:%s at %s:%d\n", x->cls_id(), sprockit::to_string(ev).c_str(), __FILE__, __LINE__)
+
 #if SSTMAC_INTEGRATED_SST_CORE
 SST::TimeConverter* event_scheduler::time_converter_ = nullptr;
 
@@ -104,6 +106,7 @@ event_scheduler::send_to_link(event_handler* handler, event *ev)
   SST::Link* link = handler->link();
   if (link){
     //we ignore the latency here
+    sending(ev);
     link->send(0, time_converter_, ev);
   } else {
     //oh - there is no link, you lied to me
@@ -131,6 +134,7 @@ event_scheduler::handle_self_event(SST::Event* ev)
   if (!entry){
     spkt_throw_printf(sprockit::value_error,
       "event on self link did not cast to an event entry");
+  }
 #else
   sstmac::event_queue_entry* entry = static_cast<sstmac::event_queue_entry*>(ev);
 #endif
@@ -145,6 +149,7 @@ event_scheduler::send_to_link(timestamp enter, timestamp lat,
   SST::Link* link = handler->link();
   if (link){
     //we ignore the latency here
+    sending(ev);
     link->send(extra_delay(enter), time_converter_, ev);
   } else {
     //oh - there is no link, you lied to me
@@ -159,6 +164,7 @@ event_scheduler::send_delayed_to_link(timestamp extra_delay, timestamp lat,
   SST::Link* link = handler->link();
   if (link){
     //we ignore the latency here
+    sending(ev);
     link->send(SST::SimTime_t(extra_delay.ticks_int64()), time_converter_, ev);
   } else {
     //oh - there is no link, you lied to me
@@ -173,6 +179,7 @@ event_scheduler::send_delayed_to_link(timestamp extra_delay,
   SST::Link* link = handler->link();
   if (link){
     //we ignore the latency here
+    sending(ev);
     link->send(SST::SimTime_t(extra_delay.ticks_int64()), time_converter_, ev);
   } else {
     //oh - there is no link, you lied to me
@@ -259,8 +266,8 @@ event_scheduler::send_delayed_to_link(timestamp extra_delay,
 void
 event_scheduler::schedule_now(event_handler *handler, event* ev)
 {
-  event_queue_entry* qev = new handler_event_queue_entry(ev, handler, event_location());
-  schedule(now(), qev);
+  //event_queue_entry* qev = new handler_event_queue_entry(ev, handler, event_location());
+  schedule(now(), handler, ev);
 }
 
 void
@@ -343,8 +350,8 @@ event_scheduler::multithread_schedule(int src_thread, int dst_thread,
   timestamp t, event_queue_entry* ev)
 {
   debug_printf(sprockit::dbg::event_manager,
-      "At location %d, scheduling event at t=%12.8e srcthread=%d dstthread=%d",
-      event_location().id(), t.sec(), src_thread, dst_thread);
+      "At location %d:%s, scheduling event at t=%12.8e srcthread=%d dstthread=%d",
+      event_location().id(), to_string().c_str(), t.sec(), src_thread, dst_thread);
   if (dst_thread != event_handler::null_threadid
      && dst_thread != src_thread){
     ev->set_time(t);

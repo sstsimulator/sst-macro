@@ -183,6 +183,7 @@ mpi_type::init_indexed(const std::string &labelit,
   size_ = sz;
   extent_ = ext;
   idata_ = dat;
+  contiguous_ = extent_ == size_;
 }
 
 mpi_type::~mpi_type()
@@ -320,13 +321,43 @@ mpi_type::pack_action_indexed(void* packed_buf, void* unpacked_buf, bool pack) c
   char* unpacked_ptr = (char*) unpacked_buf;
   for (int j=0; j < idata_->blocks.size(); ++j){
     const ind_block& next_block = idata_->blocks[j];
-    char* this_unpacked_ptr = unpacked_ptr + next_block.byte_disp;
-    next_block.base->pack_action(packed_ptr, this_unpacked_ptr, pack);
-    //std::cout << sprockit::printf("copying %d bytes at displacement %d, packed=%p unpacked=%p %d bytes left\n",
-    //                  bytes_this_round, next_block.disp, packed*, this_unpacked*, bytes_left);
-    packed_ptr += next_block.base->packed_size();
+    int size = next_block.base->packed_size();
+    if (next_block.base->contiguous()){
+      char *src, *dst;
+      if (pack){ src = unpacked_ptr; dst = packed_ptr; }
+      else     { src = packed_ptr;   dst = unpacked_ptr; }
+      ::memcpy(dst, src, size*next_block.num);
+    } else {
+      if (pack) next_block.base->pack_send(unpacked_ptr, packed_ptr, next_block.num);
+      else      next_block.base->unpack_recv(packed_ptr, unpacked_ptr, next_block.num);
+    }
+    packed_ptr += size*next_block.num;
+    unpacked_ptr += next_block.base->extent()*next_block.num;
   }
-  unpacked_ptr += extent_;
+}
+
+void
+mpi_type::pack_send(void* srcbuf, void* dstbuf, int sendcnt)
+{
+  char* src = (char*) srcbuf;
+  char* dst = (char*) dstbuf;
+  int src_stride = extent_;
+  int dst_stride = size_;
+  for (int i=0; i < sendcnt; ++i, src += src_stride, dst += dst_stride){
+    pack(src, dst);
+  }
+}
+
+void
+mpi_type::unpack_recv(void *srcbuf, void *dstbuf, int recvcnt)
+{
+  char* src = (char*) srcbuf;
+  char* dst = (char*) dstbuf;
+  int src_stride = size_;
+  int dst_stride = extent_;
+  for (int i=0; i < recvcnt; ++i, src += src_stride, dst += dst_stride){
+    unpack(src, dst);
+  }
 }
 
 void

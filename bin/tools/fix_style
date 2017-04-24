@@ -1,0 +1,68 @@
+#! /usr/bin/env python
+
+import os.path
+import os
+import sys
+
+def format_header(filename):
+    cmd = """astyle \
+--style=otbs \
+--attach-inlines \
+--indent=spaces=2 \
+--break-closing-brackets \
+--indent-col1-comments \
+--add-brackets \
+--max-code-length=80 \
+--attach-namespaces \
+--indent-modifiers \
+--indent-switches \
+< %s > %s.new
+    """ % (filename, filename)
+    sys.stdout.write("%s\n" % filename)
+    ret = os.system(cmd)
+    if ret == 0:
+        os.system("mv %s.new %s" % (filename, filename))
+    else:
+        sys.stderr.write("Failed on %s\n" % filename)
+
+def format_source(filename):
+    cmd = """astyle \
+--style=otbs \
+--indent=spaces=2 \
+--break-closing-brackets \
+--indent-col1-comments \
+--add-brackets \
+--max-code-length=80 \
+--attach-namespaces \
+--indent-modifiers \
+--indent-switches \
+< %s > %s.new
+    """ % (filename, filename)
+    sys.stdout.write("%s\n" % filename)
+    ret = os.system(cmd)
+    if ret == 0:
+        os.system("mv %s.new %s" % (filename, filename))
+    else:
+        sys.stderr.write("Failed on %s\n" % filename)
+
+def format_file(fname):
+    if fname.endswith(".h"):
+        format_header(fname)
+    elif fname.endswith(".cc"):
+        format_source(fname)
+
+def visit(args, dirname, files):
+    topdir = args
+    os.chdir(dirname)
+    for fname in files:
+        format_file(fname)
+    os.chdir(topdir)
+        
+if len(sys.argv) > 1:
+    fname = sys.argv[1]
+    format_file(fname)
+else: #fix all
+    cwd = os.getcwd()
+    os.path.walk(".", visit, cwd)
+
+

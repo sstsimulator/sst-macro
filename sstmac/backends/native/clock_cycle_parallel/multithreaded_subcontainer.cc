@@ -1,6 +1,5 @@
 #include <sstmac/backends/native/clock_cycle_parallel/multithreaded_subcontainer.h>
 #include <sstmac/backends/native/clock_cycle_parallel/multithreaded_event_container.h>
-#include <sstmac/common/thread_info.h>
 #include <sstmac/common/sstmac_config.h>
 #if !SSTMAC_INTEGRATED_SST_CORE
 

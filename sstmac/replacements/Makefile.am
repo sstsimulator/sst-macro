@@ -17,12 +17,14 @@ nobase_library_includedir=$(includedir)/sstmac/replacements
 nobase_nodist_library_include_HEADERS = 
 nobase_library_include_HEADERS = 
 
-nobase_nodist_library_include_HEADERS += \
-  mpi.h 
+nobase_library_include_HEADERS += \
+  mpi.h \
+  sstCoreElement.h 
 
 if USE_REPLACEMENT_HEADERS
 nobase_library_include_HEADERS += \
   linux/mmtimer.h \
+  sstmac_pthread_return.h \
   sys/types.h 
 
 nobase_nodist_library_include_HEADERS += \
@@ -31,7 +33,7 @@ nobase_nodist_library_include_HEADERS += \
   ios \
   ostream \
   istream \
-	condition_variable \
+  condition_variable \
   list \
   map \
   memory \
@@ -45,7 +47,6 @@ nobase_nodist_library_include_HEADERS += \
   vector \
   signal.h \
   sstmac_pthread_clear.h \
-  sstmac_pthread_return.h \
   sys/time.h \
   sys/signal.h
 endif

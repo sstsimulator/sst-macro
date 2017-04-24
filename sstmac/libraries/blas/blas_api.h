@@ -2,7 +2,7 @@
 #define sstmac_software_libraries_socketapiS_H
 
 #include <sstmac/software/api/api.h>
-#include <sstmac/software/libraries/compute/lib_compute_inst_fwd.h>
+#include <sstmac/software/libraries/compute/lib_compute_fwd.h>
 #include <sstmac/software/libraries/compute/compute_event_fwd.h>
 #include <sstmac/software/process/software_id.h>
 #include <sstmac/software/process/operating_system_fwd.h>

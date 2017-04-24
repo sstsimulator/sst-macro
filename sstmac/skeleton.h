@@ -8,10 +8,12 @@
 typedef int (*main_fxn)(int,char**);
 typedef int (*empty_main_fxn)();
 
-#define main USER_MAIN
+#include <sstmac/common/sstmac_config.h>
 
+#ifdef __cplusplus
 #if SSTMAC_INTEGRATED_SST_CORE && defined(SSTMAC_EXTERNAL_SKELETON)
 #include <Python.h>
+#include <sstCoreElement.h>
 #define sst_eli_block(app) \
   static PyMethodDef sst_macro_null_methods[] = { \
       { NULL, NULL, 0, NULL } \
@@ -41,9 +43,67 @@ typedef int (*empty_main_fxn)();
 #define sst_eli_block(app)
 #endif
 
-#include <sstmac/common/sstmac_config.h>
+//redirect all operator news to the nothrow version
+//sst will decide whether memory is actually going to be allocated
+extern void* sstmac_new(unsigned long size);
 
-#ifdef __cplusplus
+#define __builtin_operator_new(size) sstmac_new(size)
+#include <new>
+#include <utility>
+
+extern int& should_skip_operator_new();
+
+template <class T, class... Args>
+T*
+placement_new(void* sstmac_placement_ptr, Args&&... args){
+  int flag = should_skip_operator_new();
+  if (flag == 0){
+    if (sstmac_placement_ptr != nullptr){
+      return new (sstmac_placement_ptr) T(std::forward<Args>(args)...);
+    }
+    return reinterpret_cast<T*>(sstmac_placement_ptr);
+  } else {
+    return nullptr;
+  }
+}
+
+template <class T>
+T*
+conditional_array_new(unsigned long size){
+  int flag = should_skip_operator_new();
+  T* ret = nullptr;
+  if (flag == 0){
+    ret = new T[size];
+  }
+  return ret;
+}
+
+template <class T, class... Args>
+T*
+conditional_new(Args&&... args){
+  int flag = should_skip_operator_new();
+  T* ret = nullptr;
+  if (flag == 0){
+    ret = new T(std::forward<Args>(args)...);
+  }
+  return ret;
+}
+
+
+
+template <class T>
+void
+conditional_delete(T* t){
+  if (t != nullptr) delete t;
+}
+
+template <class T>
+void
+conditional_delete_array(T* t){
+  if (t != nullptr) delete[] t;
+}
+
+
 #include <sprockit/sim_parameters.h>
 #include <sstmac/software/process/global.h>
 #include <sstmac/software/api/api_fwd.h>
@@ -51,7 +111,8 @@ typedef int (*empty_main_fxn)();
 /** Automatically inherit runtime types */
 using sprockit::sim_parameters;
 
-#ifndef USER_MAIN
+#undef main
+#define main USER_MAIN
 #define USER_MAIN(...) \
  fxn_that_nobody_ever_uses_to_make_magic_happen(); \
  typedef int (*this_file_main_fxn)(__VA_ARGS__); \
@@ -61,22 +122,36 @@ using sprockit::sim_parameters;
   user_skeleton_main_init_fxn(SST_APP_NAME_QUOTED, user_skeleton_main); \
   sst_eli_block(sstmac_app_name) \
  static int user_skeleton_main(__VA_ARGS__)
-#endif
 
 extern sprockit::sim_parameters*
 get_params();
-#else //not C++, extra work required
 
-#ifndef USER_MAIN
-#define USER_MAIN(...) \
- fxn_that_nobody_ever_uses_to_make_magic_happen(); \
- sst_eli_block(sstmac_app_name) \
- int sstmac_app_name(__VA_ARGS__)
+/**
+ * @brief sstmac_free
+ * @param ptr A pointer which may or may not have been skeletonized
+ */
+static inline void
+sstmac_free(void* ptr){
+  if (ptr != nullptr) ::free(ptr);
+}
+
+#else
+#include <stdlib.h>
+/**
+ * @brief sstmac_free
+ * @param ptr A pointer which may or may not have been skeletonized
+ */
+static inline void
+sstmac_free(void* ptr){
+  if (ptr != NULL) free(ptr);
+}
+
+#define main ignore_for_app_name; const char* sstmac_appname_str = SST_APP_NAME_QUOTED; int main
 #endif
 
-#endif
 
 
+#define free sstmac_free
 
 
 #endif

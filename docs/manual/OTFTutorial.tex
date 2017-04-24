@@ -1,0 +1,69 @@
+%% !TEX root = manual.tex
+
+\section{Using Score-P and OTF2 (Beta)}
+\label{sec:tutorial:otf}
+
+OTF2 is part of Score-P. Sources for both can be found here 
+\begin{ViFile}
+http://www.vi-hps.org/projects/score-p
+\end{ViFile}
+
+
+Trace collection requires both Score-P and OTF2 installations. Trace replay with SST/macro requires OTF2.
+
+
+\subsection{Trace Collection}
+\label{subsec:otf:traceCollection}
+Score-P's default collection strategy will include every function call in the trace, making even small programs produce untenably large traces. Score-P supports collection filters, which can restrict collection at a minimum to MPI and OMP function calls. At the end of the program's runtime, traces from each rank are put in a common directory.  An MPI program must be compiled with Score-P to produce traces:
+
+\begin{ShellCmd}
+scorep-mpicxx -o test.exe test.cc
+\end{ShellCmd}
+
+
+
+To limit the size of the traces, run the program with:
+
+\begin{ViFile}
+# these environment variables are picked up by Score-P at runtime
+export SCOREP_ENABLE_TRACING=true
+export SCOREP_TOTAL_MEMORY=1G
+export SCOREP_FILTERING_FILE='scorep.filter'
+
+mpirun -n 2 test.exe
+\end{ViFile}
+
+The file \inlineshell{scorep.filter} should contain:
+\begin{ViFile}
+SCOREP_REGION_NAMES_BEGIN EXCLUDE *
+\end{ViFile}
+
+
+To view a plain-text representation of the trace after running, use the otf2-print tool.
+
+\begin{ViFile}
+otf2-print scorep-*/traces.otf2
+\end{ViFile}
+
+\subsection{Trace Replay}
+\label{subsec:otf:traceReplay}
+SST/macro will use a trace replay skeleton for OTF2 in much the same way as it does for dumpi. SST/macro trace replays configured using *.ini files. 
+
+\begin{ViFile}
+...
+
+node {
+ app1 {
+  otf2_timescale = 1.0
+  name = otf2_trace_replay_app
+  size = N
+  otf2_metafile = <trace-root>/scorep-20170309_1421_27095992608015568/traces.otf2
+ # debugging output
+  otf2_print_mpi_calls=false
+  otf2_print_trace_events=false
+  otf2_print_time_deltas=false
+  otf2_warn_unknown_callback=false
+ }
+}
+
+\end{ViFile}

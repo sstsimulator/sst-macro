@@ -36,7 +36,6 @@ libsstmac_mpi_la_SOURCES = \
   mpi_queue/mpi_queue_recv_request.cc \
   mpi_queue/mpi_queue_send_request.cc \
   mpi_queue/mpi_queue.cc \
-  mpi_queue/user_thread_mpi_queue.cc \
   mpi_protocol/mpi_protocol.cc \
   mpi_protocol/eager1.cc \
   mpi_protocol/eager0.cc \
@@ -88,8 +87,9 @@ nobase_library_include_HEADERS = \
   mpi_status_fwd.h \
   mpi_types.h \
   mpi_wrapper.h \
+  mpi_integers.h \
+  mpi_call.h \
   sstmac_mpi.h \
-  sstmac_mpi_integers.h \
   sstmac_mpi_macro.h 
   
 

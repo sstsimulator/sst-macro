@@ -16,12 +16,11 @@ SKELETONCASES= \
   sendrecv \
   boxml
 
-SKELETONTESTS = $(SKELETONCASES:%=test_skeleton_%)
-
-SKELETON_DEFINES=
-if HAVE_ATOMIC_BUILTIN
-  SKELETON_DEFINES += -DHAVE_ATOMIC_BUILTIN
+if HAVE_CLANG
+SKELETONCASES += lulesh2.0.3 
 endif
+
+SKELETONTESTS = $(SKELETONCASES:%=test_skeleton_%)
 
 skeletons:
 	rm -fr skeletons
@@ -29,26 +28,25 @@ skeletons:
 	chmod -R u+w skeletons # required for make distcheck (makes files r/o)
 
 $(SKELETONCASES): skeletons
-	cd skeletons/$@; PATH=$(bindir):$$PATH \
-          SKELETON_DEFINES=$(SKELETON_DEFINES) $(MAKE)
+	cd skeletons/$@; PATH=$(bindir):$$PATH $(MAKE)
 
 test_skeleton_boxml.$(CHKSUF): boxml
-	$(top_srcdir)/bin/runtest 2 $(top_srcdir) $@ text=finalized \
+	$(PYRUNTEST) 2 $(top_srcdir) $@ text=finalized \
     ./skeletons/boxml/runboxml \
     -f $(top_srcdir)/skeletons/boxml/example/parameters.ini \
-    -p boxml_boxfile=$(top_srcdir)/skeletons/boxml/example/ks.4.new.boxes.xml \
-    -p boxml_eventfiles=$(top_srcdir)/skeletons/boxml/example/test-mlmg-4-4.xml 
+    -p node.app1.boxml_boxfile=$(top_srcdir)/skeletons/boxml/example/ks.4.new.boxes.xml \
+    -p node.app1.boxml_eventfiles=$(top_srcdir)/skeletons/boxml/example/test-mlmg-4-4.xml 
 
 test_skeleton_%.$(CHKSUF): % 
-	$(top_srcdir)/bin/runtest 3 $(top_srcdir) $@ notime \
+	$(PYRUNTEST) 3 $(top_srcdir) $@ notime \
     ./skeletons/$*/run$* --help 
 
 test_apps_%.$(CHKSUF): %
-	$(top_srcdir)/bin/runtest 3 $(top_srcdir) $@ True \
+	$(PYRUNTEST) 3 $(top_srcdir) $@ True \
     ./skeletons/$*/runsst -f $(srcdir)/test_configs/test_$*_app.ini --no-wall-time 
 
 test_mpi_apps_%.$(CHKSUF): %
-	$(top_srcdir)/bin/runtest 3 $(top_srcdir) $@ True \
+	$(PYRUNTEST) 3 $(top_srcdir) $@ True \
     ./skeletons/$*/runsst -f $(srcdir)/test_configs/test_$*_mpi.ini --no-wall-time 
 
 #------------------------------------------------------------------------------------------#

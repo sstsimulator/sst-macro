@@ -13,7 +13,6 @@
 #include <sstmac/common/cartgrid.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/software/process/app.h>
-#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sstmac/backends/native/manager.h>
 #include <sprockit/fileio.h>
@@ -94,14 +93,13 @@ param_remap remap_list[] = {
   pr("node_sockets", "node.nsockets"),
   pr("node_model", "node.model"),
   pr("node_pipeline_speedup", "node.proc.parallelism"),
-  pr("smp_single_copy_size", "mpi.smp_single_copy_size"),
-  pr("max_eager_msg_size", "mpi.max_eager_msg_size"),
-  pr("max_vshort_msg_size", "mpi.max_vshort_msg_size"),
-  pr("mpi_implementation", "mpi.queue.implementation"),
-  pr("mpi_queue_post_rdma_delay", "mpi.queue.post_rdma_delay"),
-  pr("mpi_queue_post_header_delay", "mpi.queue.post_header_delay"),
-  pr("mpi_queue_poll_delay", "mpi.queue.poll_delay"),
-  pr("mpi_spyplot", "mpi.queue.traffic_matrix.fileroot"),
+  pr("smp_single_copy_size", "node.app1.mpi.smp_single_copy_size"),
+  pr("max_eager_msg_size", "node.app1.mpi.max_eager_msg_size"),
+  pr("max_vshort_msg_size", "node.app1.mpi.max_vshort_msg_size"),
+  pr("mpi_queue_post_rdma_delay", "node.mpi.queue.post_rdma_delay"),
+  pr("mpi_queue_post_header_delay", "node.mpi.queue.post_header_delay"),
+  pr("mpi_queue_poll_delay", "node.mpi.queue.poll_delay"),
+  pr("mpi_spyplot", "node.mpi.queue.traffic_matrix.fileroot"),
   pr("network_spyplot", "node.nic.traffic_matrix.fileroot"),
   pr("ftq", "node.os.ftq.fileroot"),
   pr("ftq_epoch", "node.os.ftq.epoch"),
@@ -117,26 +115,26 @@ param_remap remap_list[] = {
   pr("injection_bandwidth", "switch.ejection.bandwidth"),
   pr("intragroup_connection_file", "topology.intragroup_connection_file", false),
   pr("intergroup_connection_file", "topology.intergroup_connection_file"),
-  pr("launch_app1", "app1.name"),
-  pr("launch_app1_start", "app1.start"),
-  pr("launch_allocation", "app1.allocation"),
-  pr("launch_indexing", "app1.indexing"),
-  pr("launch_app1_cmd", "app1.launch_cmd"),
-  pr("launch_app1_type", "app1.launch_type"),
-  pr("launch_app1_argv", "app1.argv"),
-  pr("launch_app1_size", "app1.size"),
-  pr("launch_dumpi_metaname", "app1.dumpi_metaname"),
-  pr("launch_dumpi_mapname", "app1.dumpi_mapname"),
-  pr("launch_node_id_file", "app1.node_id_file"),
-  pr("launch_coordinate_file", "app1.coordinate_file"),
-  pr("launch_dumpi_mapname", "app1.dumpi_mapname"),
-  pr("launch_hostname_list", "app1.hostname_list"),
-  pr("cart_launch_sizes", "app1.cart_sizes"),
-  pr("cart_launch_offsets", "app1.cart_offsets"),
-  pr("launch_node_id_file", "app1.node_id_file"),
-  pr("launch_node_id_allocation_file", "app1.node_id_allocation_file"),
-  pr("launch_node_id_mapper_file", "app1.node_id_indexing_file"),
-  pr("launch_node_id_indexing_file", "app1.node_id_indexing_file"),
+  pr("launch_app1", "node.app1.name"),
+  pr("launch_app1_start", "node.app1.start"),
+  pr("launch_allocation", "node.app1.allocation"),
+  pr("launch_indexing", "node.app1.indexing"),
+  pr("launch_app1_cmd", "node.app1.launch_cmd"),
+  pr("launch_app1_type", "node.app1.launch_type"),
+  pr("launch_app1_argv", "node.app1.argv"),
+  pr("launch_app1_size", "node.app1.size"),
+  pr("launch_dumpi_metaname", "node.app1.dumpi_metaname"),
+  pr("launch_dumpi_mapname", "node.app1.dumpi_mapname"),
+  pr("launch_node_id_file", "node.app1.node_id_file"),
+  pr("launch_coordinate_file", "node.app1.coordinate_file"),
+  pr("launch_dumpi_mapname", "node.app1.dumpi_mapname"),
+  pr("launch_hostname_list", "node.app1.hostname_list"),
+  pr("cart_launch_sizes", "node.app1.cart_sizes"),
+  pr("cart_launch_offsets", "node.app1.cart_offsets"),
+  pr("launch_node_id_file", "node.app1.node_id_file"),
+  pr("launch_node_id_allocation_file", "node.app1.node_id_allocation_file"),
+  pr("launch_node_id_mapper_file", "node.app1.node_id_indexing_file"),
+  pr("launch_node_id_indexing_file", "node.app1.node_id_indexing_file"),
 };
 
 void
@@ -172,9 +170,8 @@ remap_params(sprockit::sim_parameters* params, bool verbose)
 
   int max_nproc = native::manager::compute_max_nproc(params);
   if (max_nproc == 0){
-    params->print_params(std::cerr);
-    spkt_throw(sprockit::value_error,
-               "computed max nproc=0 from parameters - need app1.launch_cmd or app1.size");
+    params->print_scoped_params(std::cerr);
+    spkt_abort_printf("computed max nproc=0 from parameters - need app1.launch_cmd or app1.size");
   }
   resize_topology(max_nproc, params, verbose);
 

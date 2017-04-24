@@ -53,6 +53,13 @@ lib_compute_time::compute(timestamp time)
   os_->compute(time);
 }
 
+void
+lib_compute_time::sleep(timestamp time)
+{
+  SSTMACBacktrace("Sleep");
+  os_->sleep(time);
+}
+
 }
 } //end of namespace sstmac
 

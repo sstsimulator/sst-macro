@@ -22,7 +22,7 @@ class lib_compute_memmove :
 {
 
  public:
-  static key::category key_category;
+  static key_traits::category key_category;
 
   virtual
   ~lib_compute_memmove() {}

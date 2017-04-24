@@ -3,24 +3,11 @@
 SHELL = /bin/sh
 .SUFFIXES: .cc .o
 
-LULESH_EXEC = lulesh2.0
+LULESH_EXEC = runlulesh2.0.3
 
-MPI_INC = /opt/local/include/openmpi
-MPI_LIB = /opt/local/lib
 
-# For pure(ish) Lulesh:
-#LULESH_SST_FLAGS=
-
-# For slightly tweaked Lulesh (for apples-to-apples comparison with SST model):
-#LULESH_SST_FLAGS=-DLULESH_SST_MODS
-
-# For SST model:
-LULESH_SST_FLAGS=-DLULESH_SST_MODS -DLULESH_SST_SIM
-
-SERCXX = sst++ -DUSE_MPI=0 $(LULESH_SST_FLAGS)
-MPICXX = sst++ -DUSE_MPI=1 $(LULESH_SST_FLAGS)
+MPICXX = sst++ -DUSE_MPI=1 -Dsstmac_app_name=lulesh -std=c++11
 CXX = $(MPICXX)
-#CXX = $(SERCXX)
 
 SOURCES2.0 = \
 	lulesh.cc \
@@ -31,12 +18,12 @@ SOURCES2.0 = \
 OBJECTS2.0 = $(SOURCES2.0:.cc=.o)
 
 #Default build suggestions with OpenMP for g++
-#CXXFLAGS = -g -O3 -fopenmp -I. -Wall
-#LDFLAGS = -g -O3 -fopenmp
+CXXFLAGS = -g -O0 -I. -Wall -Wno-unknown-pragmas
+LDFLAGS = -g -O0 
 
 #Below are reasonable default flags for a serial build
-CXXFLAGS = -g -O3 -I. -Wall
-LDFLAGS = -g -O3
+#CXXFLAGS = -g -O3 -I. -Wall
+#LDFLAGS = -g -O3 
 
 #common places you might find silo on the Livermore machines.
 #SILO_INCDIR = /opt/local/include
@@ -54,11 +41,11 @@ LDFLAGS = -g -O3
 
 .cc.o: lulesh.h
 	@echo "Building $<"
-	$(CXX) -c $(CXXFLAGS) -o $@  $<
+	SSTMAC_SKELETONIZE=1 $(CXX) -c $(CXXFLAGS) -o $@  $<
 
 all: $(LULESH_EXEC)
 
-lulesh2.0: $(OBJECTS2.0)
+runlulesh2.0.3: $(OBJECTS2.0)
 	@echo "Linking"
 	$(CXX) $(OBJECTS2.0) $(LDFLAGS) -lm -o $@
 

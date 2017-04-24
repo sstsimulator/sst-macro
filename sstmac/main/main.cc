@@ -70,7 +70,7 @@ void new_error_handler()
 }
 #endif
 
-#if !SSTMAC_INTEGRATED_CORE
+#if !SSTMAC_INTEGRATED_SST_CORE
 int
 main(int argc, char **argv)
 {
@@ -82,6 +82,7 @@ main(int argc, char **argv)
 
   try {
     sprockit::sim_parameters params;
+    params.set_public_scope(false); //do not expose top-level params to subspaces
     bool params_only = false;
     sstmac::try_main(&params, argc, argv, params_only);
   }
@@ -97,7 +98,6 @@ main(int argc, char **argv)
               << ": caught unknown exception while setting up simulation\n";
     return 1;
   }
-
   return 0;
 }
 #endif // !SSTMAC_INTEGRATED_SST_CORE

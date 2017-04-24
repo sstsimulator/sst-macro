@@ -6,6 +6,7 @@
 namespace sstmac {
 
 class message;
+class library_interface;
 
 }
 

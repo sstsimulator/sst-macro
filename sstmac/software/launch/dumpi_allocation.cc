@@ -50,7 +50,7 @@ dumpi_allocation::allocate(
     std::string fname = dumpi_file_name(i, meta->dirplusfileprefix_);
     dumpi_profile *profile = undumpi_open(fname.c_str());
     if (profile == NULL) {
-      spkt_throw(sprockit::io_error, "dumpiallocation::allocate: unable to open ", fname);
+      spkt_throw(sprockit::io_error, "dumpi_allocation::allocate: unable to open ", fname);
     }
     dumpi_header *header = dumpi_build_header();
     if (header == NULL) {

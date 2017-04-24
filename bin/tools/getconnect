@@ -1,0 +1,388 @@
+#! /usr/bin/env python
+
+import re
+import sys
+
+text = open("interconnect.txt").read()
+
+aries_re = r"""
+    c(\d+)[-](\d+) #cabinet X,Y pos on floor
+    c(\d+) #
+    s(\d+) #slot
+    a\d+ #always zero, ignore
+    l(\d+) #tile port number
+    [(](\d+)[:](\d+)[:](\d+)[)] #x,y,g coordinates
+    """
+
+inter = r"\s+([a-z]+)\s+[-][>]\s+"
+
+retext = aries_re + inter + aries_re
+
+regexp = re.compile(retext,re.VERBOSE)
+
+class Conflict:
+    NONE = 0
+    INPUT = 1
+    CROSSBAR = 2
+    INPUT_CROSSBAR = 3
+    OUTPUT_CROSSBAR = 4
+    OUTPUT = 5
+    def __init__(self, typ, path1, path2):
+        self.typ = typ
+        self.path1 = path1
+        self.path2 = path2
+
+    def typ_str(self):
+        if self.typ == self.INPUT:
+            return "input"
+        elif self.typ == self.OUTPUT:
+            return "output"
+        elif self.typ == self.CROSSBAR:
+            return "crossbar"
+        elif self.typ == self.INPUT_CROSSBAR:
+            return "input and crossbar"
+        elif self.typ == self.OUTPUT_CROSSBAR:
+            return "crossbar and output"
+        else:
+          raise Exception("invalid conflict %d" % type)
+
+    def __str__(self):
+        return "Conflict on %s:\n  %s\n  %s" % (self.typ_str(), self.path1, self.path2)
+
+class Path:
+    def __init__(self,input,inport,midport,outport,output):
+        self.input = input
+        self.inport = inport
+        self.midport = midport
+        self.outport = outport
+        self.output = output
+
+    def __str__(self):
+        return "%s -> %d : %d : %d -> %s" % (self.input, self.inport, self.midport, self.outport, self.output)
+
+    def __repr__(self):
+        return str(self)
+
+    def conflicts_with(self, other):
+        if not self.input == other.input and self.inport == other.inport:
+            if self.midport == other.midport:
+              return Conflict(Conflict.INPUT_CROSSBAR, self, other)
+            else:
+              return Conflict(Conflict.INPUT, self, other)
+        elif self.midport == other.midport:
+            if self.outport == other.outport:
+              return Conflict(Conflict.OUTPUT_CROSSBAR, self, other)
+            else:
+              return Conflict(Conflict.CROSSBAR, self, other)
+        elif self.outport == other.outport:
+            return Conflict(Conflict.OUTPUT, self, other)
+        return Conflict.NONE
+
+
+
+class Router:
+    nx = 16
+    ny = 6
+    def __init__(self,x,y,g):   
+        self.x = x
+        self.y = y
+        self.g = g
+        self.inputs = [None]*48
+        self.outputs = [None]*48
+        self.printed = False
+
+    #def __eq__(self,other):
+    #    return self.x == other.x and self.y == other.y and self.g == other.g
+
+    def __str__(self):
+        return "%2d %d %2d" % (self.x, self.y, self.g)
+
+    def __repr__(self):
+        return str(self)
+
+    def get_x_outputs(self):
+        out = []
+        for link in self.outputs:
+            if link and self.g == link.dst.g and self.y == link.dst.y:
+                out.append(entry)
+        return out
+
+    def get_y_outputs(self):
+        out = []
+        for link in self.outputs:
+            if link and self.g == link.dst.g and self.x == link.dst.x:
+                out.append(entry)
+        return out
+
+    def get_intragroup_outputs(self):
+        out = []
+        for link in self.outputs:
+            if link and self.g == link.dst.g:
+                out.append(entry)
+        return out
+
+    def get_paths(self,input_rtr,output_rtr):
+        inports = []
+        for link in self.inputs:
+            if link and link.src == input_rtr:
+                inports.append(link.dstport)
+        outports = []
+        for link in self.outputs:
+            if link and link.dst == output_rtr:
+                outports.append(link.srcport)
+
+        paths = []
+        for inport in inports:
+            inrow = inport / 10
+            incol = inport % 10
+            for outport in outports:
+                outrow = outport / 10
+                outcol = outport % 10
+                midtile = inrow*10 + outcol
+                paths.append(Path(input_rtr,inport,midtile,outport,output_rtr))
+
+        return paths
+
+
+    def get_intergroup_outputs(self):
+        out = []
+        for link in self.outputs:
+            if link and not self.g == link.dst.g:
+                out.append(entry)
+        return out
+
+    def get_links_to_router(self,dstx,dsty,dstg):
+        entries = []
+        for link in self.outputs:
+            if link and link.dst.x == dstx and link.dst.y == dsty and link.dst.g == dstg:
+                entries.append(link)
+        return entries
+
+    def get_outputs_to_group(self,g):
+        out = []
+        for link in self.outputs:
+            if link and link.dst.g == g:
+                out.append(entry)
+        return out
+        
+
+    def has_output_to_group(self,g):
+        for link in self.outputs:
+            if link and link.dst.g == g:
+                return True
+
+    def _edison_coords(cls,nid):
+        node = nid % 4;
+        nid = (nid - node) / 4;
+
+        y = nid % 16;
+        nid = (nid - y) / 16;
+
+        x = nid % 6;
+        nid = (nid - x) / 6;
+
+        g = nid;
+        return x,y,g
+    edison_coords = classmethod(_edison_coords)
+
+    def _nid(cls,x,y,g):
+        nid = g*cls.nx*cls.ny + y*cls.nx + x;
+        return nid;
+    nid = classmethod(_nid)
+
+    def _edison_nid(cls,x,y,g):
+        nid = g * 6;
+        nid = (nid + x) * 16;
+        nid = (nid + y) * 4;
+        nid += node;
+        return nid;
+    edison_nid = classmethod(_edison_nid)
+
+class Link:
+    def __init__(self, srcport, src_rtr, dstport, dst_rtr):
+        self.srcport = srcport
+        self.src = src_rtr
+        self.dstport = dstport
+        self.dst = dst_rtr
+
+    def __str__(self):
+        return "%s:%d -> %s:%d" % (self.src,self.srcport,self.dst,self.dstport)
+
+    def __repr__(self):
+        return str(self)
+
+class RouterSet:
+    def __init__(self):
+        self.routers = [None]*1600
+    
+    def __getitem__(self,idx):
+        return self.routers[idx]
+    
+    def __setitem__(self,idx,item):
+        self.routers[idx] = item
+
+    def get(self,x,y,g):
+        nid = Router.nid(x,y,g)
+        return self.routers[nid]
+
+class Group:
+    def __init__(self, routers, g):
+        self.g = g
+        self.routers = []
+        for rtr in routers:
+            if rtr and rtr.g == g:
+                self.routers.append(rtr)
+
+    def get_routers_connected_to_group(self,g):
+        out = []
+        for rtr in self.routers:
+            if rtr.has_output_to_group(g):
+                out.append(rtr)
+        return out
+            
+
+routers = RouterSet()
+
+def extract(match):
+    #0-3 are cabinet stuff 
+    srcport = int(match[4])
+    srcg, srcy, srcx = map(int, match[5:8])
+    #8 = color
+    #9-12 are cabinet stuff 
+    dstport = int(match[13])
+    dstg, dsty, dstx = map(int, match[14:17])
+
+    nid_src = Router.nid(srcx, srcy, srcg)
+    rsrc = routers[nid_src]
+    if rsrc == None:
+        rsrc = Router(srcx, srcy, srcg)
+        routers[nid_src] = rsrc
+    nid_dst = Router.nid(dstx, dsty, dstg)
+    rdst = routers[nid_dst]
+    if rdst == None:
+        rdst = Router(dstx, dsty, dstg)
+        routers[nid_dst] = rdst
+
+    link = Link(srcport, rsrc, dstport, rdst)
+    rsrc.outputs[srcport] = link 
+    rdst.inputs[dstport] = link
+    
+
+matches = regexp.findall(text)
+for m in matches:
+    extract(m)
+
+
+# Print all outputs for a given router
+def print_router(x,y,z):
+    rtr = routers.get(x,y,z)
+    outputs = rtr.get_intergroup_outputs()
+    for out in outputs:
+        sys.stdout.write("%s -> %s\n" % (rtr, out))
+
+
+# Print all connections from one group to another
+def print_grp_conns(srcg,dstg):
+    grp = Group(routers, srcg)
+    rtrs = grp.get_routers_connected_to_group(dstg)
+    for rtr in rtrs:
+        conns = rtr.get_outputs_to_group(dstg)
+        if not conns:
+            sys.stdout.write("NOTHING TO %d\n" % dstg)
+        for c in conns:
+            sys.stdout.write("%s -> %s\n" % (rtr, c))
+
+def print_rtr_conns(src,dst):
+    srcx, srcy, srcg = src
+    src_rtr = routers.get(srcx, srcy, srcg)
+    dstx, dsty, dstg = dst
+    links = src_rtr.get_links_to_router(dstx, dsty, dstg)
+    sys.stdout.write("%s\n" % links)
+
+# Print all outputs for a given router by port number
+def print_ports(x,y,z):
+    rtr = routers.get(x,y,z)
+    for p in range(48):
+        out = rtr.outputs[p]
+        if out:
+            sys.stdout.write("%s : %2d -> %s\n" % (rtr, p, out))
+
+def find_conflicts(lset, rset):
+    conflicts = []
+    for l in lset:
+        for r in rset:
+            conflict = l.conflicts_with(r)
+            if conflict:
+                conflicts.append(conflict)
+    return conflicts
+            
+
+
+#print "Router 0 0 0"
+#print_router(0,0,0)
+#print ""
+
+#print "Outputs G0->G11"
+#print_grp_conns(0,11)
+#print ""
+
+#print "Router 1,2,3 Ports"
+#print_ports(1,2,3)
+
+#print_rtr_conns((0,0,0),(0,0,1))
+#print_rtr_conns((0,0,0),(0,1,0))
+#print_rtr_conns((0,0,0),(1,0,0))
+
+def rtr(x,y,g):
+    return routers.get(x,y,g)
+
+mset = range(6)
+yset = range(6)
+xset = range(16)
+
+
+src1 = rtr(0,0,0)
+dst1 = rtr(1,2,0)
+src2 = rtr(0,3,0)
+dst2 = rtr(4,2,0)
+mid = rtr(0,2,0)
+
+paths1 = mid.get_paths(src1,dst1)
+paths2 = mid.get_paths(src2,dst2)
+conflicts = find_conflicts(paths1,paths2)
+for c in conflicts:
+    sys.stdout.write("%s\n" % c)
+sys.exit()
+
+num_printed = 0
+
+def conflict_test(left_y, left_x, mid, right_y, right_x):
+  global num_printed
+  left_src = rtr(0, left_y, 0)
+  left_dst = rtr(left_x, mid, 0)
+  right_src = rtr(0, right_y, 0)
+  right_dst = rtr(right_x, mid, 0)
+  mid = rtr(0, mid, 0)
+  lpaths = mid.get_paths(left_src, left_dst)
+  rpaths = mid.get_paths(right_src, right_dst)
+  conflicts = find_conflicts(lpaths,rpaths)
+  if conflicts:
+    for c in conflicts:
+      sys.stdout.write("%s\n" % c)
+      num_printed += 1
+
+for ly in range(6):
+  for m in range(6):
+    for ry in range(ly,6):
+      if m == ly or m == ry:
+        continue
+
+      for lx in range(16):
+        for rx in range(16):
+          if lx == rx:
+            continue
+          conflict_test(ly,lx,m,ry,rx)
+          if num_printed >= 20:
+            sys.exit()
+
+

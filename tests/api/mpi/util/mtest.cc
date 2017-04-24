@@ -1086,8 +1086,8 @@ MTestGetDatatypeName(MTestDatatype *dtype)
  */
 global_int interCommIdx(0);
 global_int intraCommIdx(0);
-sstmac::sw::sstmac_global_builtin<const char*> intraCommName(0);
-sstmac::sw::sstmac_global_builtin<const char*> interCommName(0);
+global_cstr intraCommName(0);
+global_cstr interCommName(0);
 
 /** 
  * Get an intracommunicator with at least min_size members.  If "allowSmaller"
@@ -1109,7 +1109,7 @@ MTestGetIntracommGeneral(MPI_Comm *comm, int min_size, int allowSmaller)
   {
     isBasic = 0;
     intraCommName = "";
-    switch (intraCommIdx.get_val())
+    switch ((int)intraCommIdx)
     {
     case 0:
       *comm = MPI_COMM_WORLD;
@@ -1238,7 +1238,7 @@ MTestGetIntracommGeneral(MPI_Comm *comm, int min_size, int allowSmaller)
     }
   }
 
-  std::cout << "getcomm(" << rank << "): returning " << intraCommName.get_val() << "\n";
+  std::cout << "getcomm(" << rank << "): returning " << (const char*)intraCommName << "\n";
 
   return intraCommIdx;
 }

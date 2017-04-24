@@ -27,27 +27,19 @@ mpi_queue_recv_request::mpi_queue_recv_request(
   MPI_Datatype type,
   int source, int tag, MPI_Comm comm, void* buffer) :
   queue_(queue), source_(source), tag_(tag), comm_(comm),
-  seqnum_(0), count_(count), type_(type), key_(key),
-  buffer_(buffer)
+  seqnum_(0), count_(count), type_(queue->api()->type_from_id(type)),
+  key_(key), final_buffer_(buffer), recv_buffer_(nullptr)
 {
+  if (buffer && !type_->contiguous()){
+    recv_buffer_ = new char[count*type_->packed_size()];
+  } else {
+    recv_buffer_ = (char*) final_buffer_;
+  }
 }
 
 mpi_queue_recv_request::~mpi_queue_recv_request()
 {
 }
-
-template <class T>
-class delete_this {
- public:
-  delete_this() : t_(nullptr) {}
-  ~delete_this(){ if (t_) delete t_; }
-  void operator=(T* t){
-    t_ = t;
-  }
- private:
-  T* t_;
-};
-
 
 bool
 mpi_queue_recv_request::is_cancelled() const {
@@ -64,26 +56,21 @@ mpi_queue_recv_request::matches(const mpi_message::ptr& msg)
   bool tag_equals = tag_ == msg->tag() || tag_ == MPI_ANY_TAG;
   bool match = comm_equals && seq_equals && src_equals && tag_equals && count_equals;
 
-
   if (match){
     int incoming_bytes = msg->payload_bytes();
     mpi_api* api = queue_->api();
-    int recv_buffer_size = count_ * api->type_from_id(type_)->packed_size();
+    int recv_buffer_size = count_ * type_->packed_size();
     if (incoming_bytes > recv_buffer_size){
       spkt_abort_printf("MPI matching error: incoming message has %d bytes, but matches buffer of too small size %d:\n"
                         "MPI_Recv(%d,%s,%s,%s,%s) matches\n"
                         "MPI_Send(%d,%s,%d,%s,%s)",
                         incoming_bytes, recv_buffer_size,
-                        count_, api->type_str(type_).c_str(),
+                        count_, api->type_str(type_->id).c_str(),
                         api->src_str(source_).c_str(), api->tag_str(tag_).c_str(),
                         api->comm_str(comm_).c_str(),
                         msg->count(), api->type_str(msg->type()).c_str(), msg->dst_rank(),
                         api->tag_str(msg->tag()).c_str(), api->comm_str(msg->comm()).c_str());
     }
-
-
-
-
   }
   return match;
 }

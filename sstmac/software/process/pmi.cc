@@ -1,11 +1,10 @@
 #include <sstmac/software/process/pmi.h>
-#include <sstmac/software/launch/launcher.h>
+#include <sstmac/software/launch/app_launcher.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/common/runtime.h>
-#include <sstmac/common/thread_info.h>
 #include <sstmac/common/thread_lock.h>
 
 namespace sstmac {
@@ -33,7 +32,7 @@ process_manager::~process_manager()
 void
 process_manager::kill_node()
 {
-#if !SSTMAC_INTEGRATED_CORE
+#if !SSTMAC_INTEGRATED_SST_CORE
   my_os_->kill_node();
 #else
   spkt_throw(sprockit::unimplemented_error,

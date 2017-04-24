@@ -1,8 +1,4 @@
 #include <sprockit/test/test.h>
-#include <sprockit/output.h>
-#include <sstmac/util.h>
-#include <sstmac/skeleton.h>
-#include <sstmac/compute.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
@@ -10,6 +6,12 @@
 #include <sstmac/libraries/sumi/sumi_transport.h>
 #include <sstmac/common/runtime.h>
 #include <sumi/transport.h>
+
+#include <sprockit/output.h>
+#include <sstmac/util.h>
+#include <sstmac/skeleton.h>
+#include <sstmac/compute.h>
+
 #define sstmac_app_name user_app_cxx
 using namespace sumi;
 
@@ -36,7 +38,7 @@ main(int argc, char **argv)
   run_test(tport,0);
   run_test(tport,1);
   run_test(tport,2);
-  tport->finalize();
+  tport->finish();
   sstmac::runtime::exit_deadlock_region();
   return 0;
 }

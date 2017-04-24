@@ -19,16 +19,13 @@
 #include <sstmac/software/api/api.h>
 #include <sprockit/errors.h>
 
-#include <sstmac/software/launch/app_launch_fwd.h>
 #include <sstmac/software/process/key_fwd.h>
 #include <sstmac/software/process/app_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/software/process/thread_fwd.h>
 #include <sstmac/software/libraries/library_fwd.h>
-#include <sstmac/software/libraries/compute/lib_sleep_fwd.h>
 #include <sstmac/software/api/api_fwd.h>
 #include <sstmac/software/threading/threading_interface_fwd.h>
-#include <sstmac/software/process/perf_counter.h>
 #include <queue>
 #include <map>
 #include <utility>
@@ -148,9 +145,6 @@ class thread
     return os_;
   }
 
-  app_launch*
-  env() const;
-
   void*
   stack() const {
     return stack_;
@@ -195,7 +189,7 @@ class thread
   void
   init_thread(int phyiscal_thread_id,
     threading_interface* tocopy, void *stack, int stacksize,
-    threading_interface *yield_to);
+    threading_interface *yield_to, void* globals_storage);
 
   /// Derived types need to override this method.
   virtual void
@@ -246,28 +240,6 @@ class thread
     cpumask_ = 0;
   }
 
-  template <class T>
-  T&
-  register_perf_ctr_variable(void* ptr){
-    perf_counter* ctr = perf_model_->register_variable(ptr);
-    perf_counter_impl<T>* pctr = dynamic_cast<perf_counter_impl<T>*>(ctr);
-    if (!pctr){
-      spkt_throw(sprockit::value_error,
-                 "failed casting perf_counter type - check perf_model in params");
-    }
-    return pctr->counters();
-  }
-  
-  void
-  remove_perf_ctr_variable(void* ptr){
-    perf_model_->remove_variable(ptr);
-  }
-
-  perf_counter_model*
-  perf_ctr_model() const {
-    return perf_model_;
-  }
-
   void
   set_cpumask(uint64_t cpumask){
     cpumask_ = cpumask;
@@ -286,12 +258,6 @@ class thread
   void
   set_active_core(int core) {
     active_core_ = core;
-  }
-  
-  typedef spkt_unordered_map<long, thread*> pthread_map_t;
-  void
-  set_pthread_map(pthread_map_t* threadmap){
-    pthread_map_ = threadmap;
   }
 
   void*
@@ -348,8 +314,6 @@ class thread
 
   std::map<long, void*> tls_values_;
 
-  pthread_map_t* pthread_map_;
-
   int last_bt_collect_nfxn_;
 
   /// The stack given to this thread.
@@ -358,8 +322,6 @@ class thread
   size_t stacksize_;
   
   long thread_id_;
-
-  perf_counter_model* perf_model_;
 
   threading_interface* context_;
 

@@ -229,7 +229,7 @@ run_test()
   };
   run_vote_test("sequential", t, max_num_failed_procs, seq_failed_procs, tag);
 
-  t->finalize();
+  t->finish();
 }
 
 int main(int argc, char** argv)

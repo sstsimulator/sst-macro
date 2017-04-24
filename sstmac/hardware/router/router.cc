@@ -75,6 +75,7 @@ void
 router::route(packet *pkt)
 {
   routable* rtbl = pkt->interface<routable>();
+  if (!rtbl) abort();
   routable::path& path = rtbl->current_path();
   switch_id sid = find_ejection_site(pkt->toaddr(), path);
   if (sid == my_addr_){

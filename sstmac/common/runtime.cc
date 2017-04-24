@@ -1,7 +1,6 @@
 #include <sstmac/common/runtime.h>
 #include <sprockit/statics.h>
 #include <sprockit/delete.h>
-#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/node/node.h>
@@ -34,7 +33,6 @@ runtime::clear_statics()
   hw::interconnect::clear_static_interconnect();
   //parallel_runtime::clear_static_runtime();
   hw::topology::clear_static_topology();
-  sw::app_launch::clear_static_app_launch();
 }
 
 node_id
@@ -59,7 +57,7 @@ runtime::delete_statics()
 node_id
 runtime::node_for_task(sw::app_id aid, sw::task_id tid)
 {
-  return launcher_->node_for_task(aid, tid);
+  return sstmac::sw::task_mapping::global_mapping(aid)->rank_to_node(tid);
 }
 
 void

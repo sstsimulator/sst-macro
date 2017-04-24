@@ -110,6 +110,7 @@ class multithreaded_event_container :
 
   thread_barrier send_recv_barrier_;
   thread_barrier vote_barrier_;
+  thread_barrier final_time_barrier_;
 
   thread_event_schedule_map pending_event_map_;
 

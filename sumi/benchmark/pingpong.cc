@@ -193,7 +193,7 @@ run_test()
     }
   }
 
-  t->finalize();
+  t->finish();
 #endif
 }
 

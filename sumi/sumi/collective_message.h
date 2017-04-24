@@ -26,9 +26,9 @@ class collective_done_message :
 
   collective_done_message(int tag, collective::type_t ty,
                           communicator* dom) :
+    message(collective_done),
     tag_(tag), result_(0), vote_(0), type_(ty),
-    all_ranks_know_failure_(false), dom_(dom),
-    message(collective_done)
+    all_ranks_know_failure_(false), dom_(dom)
   {
   }
 

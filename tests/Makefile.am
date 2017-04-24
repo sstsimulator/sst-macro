@@ -19,6 +19,8 @@ AM_CPPFLAGS += -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi \
   -I$(srcdir) -I$(top_builddir)/pth -I$(top_srcdir)/pth \
   -I$(top_builddir)/tests -I$(top_srcdir)/tests
 
+
+
 SUBDIRS = unit_tests sumi
 
 SUBDIRS += api/mpi api/globals
@@ -29,10 +31,10 @@ endif
 
 # runtest arguments are:
 #   <timeout, in seconds> <output file> <executable> <arguments passed to executable...>
-PYRUNTEST = $(top_srcdir)/bin/runtest
-PYVALIDATE = $(top_srcdir)/bin/checktest
+PYRUNTEST = $(top_srcdir)/tests/runtest
+PYVALIDATE = $(top_srcdir)/tests/checktest
 
-NOOP = $(top_srcdir)/bin/noop
+NOOP = $(top_srcdir)/tests/noop
 DIFF=diff -u
 if INTEGRATED_SST_CORE
 SSTMACEXEC = $(top_builddir)/bin/sstmac-check
@@ -50,7 +52,11 @@ EXTRA_DIST = \
   test_utilities.cc \
   test_pthread.cc \
   sstmac_testutil.h \
-  api/parameters.ini
+  api/parameters.ini \
+  runtest \
+  checktest \
+  noop \
+  configlib.py
 
 
 CORE_LIBS = ../sstmac/install/libsstmac.la ../sprockit/sprockit/libsprockit.la
@@ -141,3 +147,4 @@ clean-skeletons:
 
 
 #------------------------------------------------------------------------------------------#
+

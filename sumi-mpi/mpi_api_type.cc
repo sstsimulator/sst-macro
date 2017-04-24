@@ -1,5 +1,4 @@
 #include <sumi-mpi/mpi_api.h>
-#include <sstmac/software/process/operating_system.h>
 #include <climits>
 
 namespace sstmac {
@@ -91,7 +90,6 @@ struct ldcomplex {
 void
 mpi_api::commit_builtin_types()
 {
-
   sstmac::sw::api_lock();
 
   bool need_init = !mpi_type::mpi_null->committed();
@@ -473,7 +471,7 @@ mpi_api::type_create_struct(const int count, const int* blocklens,
       next.byte_disp = indices[i];
       next.num = blocklens[i];
       packed_size += old_type_obj->packed_size() * blocklens[i];
-      extent += old_type_obj->packed_size() * blocklens[i];
+      extent = next.byte_disp + old_type_obj->packed_size() * blocklens[i];
       index++;
     }
   }

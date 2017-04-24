@@ -35,8 +35,11 @@ if test "X$have_integrated_core" = "Xyes"; then
   SST_CPPFLAGS="-DSSTMAC_INTEGRATED_SST_CORE=1 $SST_INCLUDES -D__STDC_FORMAT_MACROS"
   SAVE_CPPFLAGS="$CPPFLAGS"
   PY_INCLUDES="`python-config --includes`"
+  PY_LDFLAGS=`$srcdir/bin/config_tools/get_py_ldflags`
   SST_CPPFLAGS="$SST_CPPFLAGS $PY_INCLUDES"
   CPPFLAGS="$CPPFLAGS $SST_CPPFLAGS"
+
+  SST_LDFLAGS="$PY_LDFLAGS"
 
   # We have to use CXXFLAGS from sst-config script
   SAVE_CXXFLAGS="$CXXFLAGS"
@@ -52,6 +55,7 @@ if test "X$have_integrated_core" = "Xyes"; then
   AC_SUBST(SST_CPPFLAGS)
   CPPFLAGS="$SAVE_CPPFLAGS"
   AC_SUBST(SST_CXXFLAGS)
+  AC_SUBST(SST_LDFLAGS)
   CXXFLAGS="$SAVE_CXXFLAGS"
 
 

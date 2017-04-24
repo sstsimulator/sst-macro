@@ -73,8 +73,10 @@ class mpi_comm_factory  {
   mpi_comm* create_cart(mpi_comm* caller, int ndims,
                         const int *dims, const int *periods, int reorder);
 
- protected:
+ private:
+  MPI_Comm comm_new_id_agree(MPI_Comm old);
 
+ private:
   mpi_api* parent_;
 
   app_id aid_;

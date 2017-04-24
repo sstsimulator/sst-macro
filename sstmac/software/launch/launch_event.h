@@ -15,6 +15,7 @@
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/common/messages/library_message.h>
 #include <sstmac/common/messages/timed_event.h>
+#include <sstmac/software/launch/job_launcher.h>
 #include <sstmac/software/process/app_fwd.h>
 #include <sstmac/software/process/app_id.h>
 #include <sprockit/sim_parameters_fwd.h>
@@ -27,8 +28,6 @@ class launch_event :
   public library_interface,
   public timed_interface
 {
-  ImplementSerializable(launch_event)
-
  public:
   typedef enum {
     Start,
@@ -41,30 +40,12 @@ class launch_event :
                             aid_, tid_, toaddr_);
   }
 
-  launch_event(type_t ty,
-     app_id aid,
-     task_id tid,
-     node_id to,
-     node_id from) :
-    network_message(aid, to, from, 0),
-    library_interface("launcher"),
-    timed_interface(timestamp(0)),
-    tid_(tid),
-    aid_(aid),
-    ty_(ty)
-  {
-    type_ = payload;
-  }
-
-  launch_event(){} //for serialization
-
   void
   serialize_order(serializer& ser) override {
+    hw::network_message::serialize_order(ser);
     timed_interface::serialize_order(ser);
     library_interface::serialize_order(ser);
-    hw::network_message::serialize_order(ser);
     ser & ty_;
-    ser & aid_;
     ser & tid_;
   }
 
@@ -73,23 +54,110 @@ class launch_event :
     return tid_;
   }
 
-  type_t
-  type() const {
-    return ty_;
-  }
-
   app_id
   aid() const {
     return aid_;
   }
 
-  int
-  core_affinity(int intranode_rank) const;
+  std::string
+  unique_name() const {
+    return unique_name_;
+  }
+
+  type_t
+  type() const {
+    return ty_;
+  }
+
+  network_message* clone_injection_ack() const override;
 
  protected:
-  type_t ty_;
-  app_id aid_;
+  launch_event(type_t ty, app_id aid, task_id tid,
+               const std::string& unique_name,
+               node_id to, node_id from,
+               const std::string& libname) :
+    ty_(ty), tid_(tid),
+    unique_name_(unique_name),
+    library_interface(libname),
+    network_message(aid, to, from, 0)
+  {
+    network_message::type_ = payload;
+    set_needs_ack(false);
+  }
+
+  launch_event(){} //for serialization
+
+ private:
   task_id tid_;
+  std::string unique_name_;
+  type_t ty_;
+
+};
+
+class start_app_event : public launch_event {
+  ImplementSerializable(start_app_event)
+ public:
+  start_app_event(app_id aid,
+     const std::string& unique_name,
+     task_mapping::ptr mapping,
+     task_id tid,
+     node_id to,
+     node_id from,
+     const sprockit::sim_parameters* app_params) :
+    launch_event(Start, aid, tid, unique_name, to, from, "launcher"),
+    mapping_(mapping),
+    app_params_(app_params)
+  {
+  }
+
+  int core_affinity(int intranode_rank) const;
+
+  bool is_bcast() const override {
+    return true;
+  }
+
+  std::string to_string() const override;
+
+  start_app_event(){} //for serialization
+
+  void serialize_order(serializer& ser) override;
+
+  sprockit::sim_parameters&
+  app_params() {
+    return app_params_;
+  }
+
+  start_app_event* clone(int rank, node_id src, node_id dst) const {
+    return new start_app_event(aid_, unique_name_, mapping_, rank, dst, src, &app_params_);
+  }
+
+  task_mapping::ptr
+  mapping() const {
+    return mapping_;
+  }
+
+ private:
+  std::string unique_name_;
+  task_mapping::ptr mapping_;
+  sprockit::sim_parameters app_params_;
+
+};
+
+class job_stop_event : public launch_event
+{
+  ImplementSerializable(job_stop_event)
+ public:
+  job_stop_event(app_id aid,
+     const std::string& unique_name,
+     node_id to,
+     node_id from) :
+    launch_event(Stop, aid, 0, unique_name, to, from, "job_launcher")
+  {
+  }
+
+  job_stop_event(){} //for serialization
+
+  std::string to_string() const override;
 };
 
 }

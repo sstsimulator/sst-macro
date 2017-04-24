@@ -205,6 +205,10 @@ class Factory
    */
   static void
   register_name(const std::string& name, builder_t* builder) {
+    //clang complains about valid variable - turn it off
+#pragma GCC diagnostic ignored "-Wunknown-pragmas"
+#pragma GCC diagnostic ignored "-Wundefined-var-template"
+    {
     if (!builder_map_) {
       builder_map_ = new builder_map;
     }
@@ -212,6 +216,7 @@ class Factory
       alias_map_ = new alias_map;
     }
     add_to_map(name, builder, builder_map_, alias_map_);
+    }
   }
 
  private:
@@ -297,6 +302,15 @@ class Factory
   }
 
  public:
+  static bool valid_param(const std::string& name, sprockit::sim_parameters* params) {
+    std::string value = params->get_param(name);
+    return builder_map_->find(value) != builder_map_->end();
+  }
+
+  static bool valid_value(const std::string& value) {
+    return builder_map_->find(value) != builder_map_->end();
+  }
+
   /**
    * @brief get_value Return a constructed child class corresponding
    *                  to a given string name

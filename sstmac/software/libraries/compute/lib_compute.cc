@@ -5,7 +5,7 @@ RegisterDebugSlot(lib_compute)
 namespace sstmac {
 namespace sw {
 
-key::category lib_compute::key_category("Compute");
+key_traits::category lib_compute::key_category("Compute");
 
 }
 }

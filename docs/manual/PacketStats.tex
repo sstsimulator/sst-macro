@@ -12,12 +12,14 @@ These statistics are usually collected on either the NIC, switch crossbar, or sw
 To active a message size histogram on the NIC to determine the distribution of message sizes, the parameter file should include, for example:
 
 \begin{ViFile}
-nic {
- message_size_histogram {
+node {
+ nic {
+  message_size_histogram {
    fileroot = histogram
    bin_size = 1
    logarithmic = true
- }
+  }
+ } 
 }
 \end{ViFile}
 The statistics are activated when the parameter reader sees the namespace \inlinefile{message_size_histogram}.
@@ -43,13 +45,15 @@ Thus, the packet allocator must be changed.
 The NIC parameters now become:
 
 \begin{ViFile}
-nic {
- packet_allocator = delay_stats
- ejection {
-  stats = delay_histogram
-  delay_histogram {
-   fileroot = delay
-   bin_size = 0.5us
+node {
+ nic {
+  packet_allocator = delay_stats
+  ejection {
+   stats = delay_histogram
+   delay_histogram {
+    fileroot = delay
+    bin_size = 0.5us
+   }
   }
  }
 }
@@ -101,19 +105,21 @@ Most of the same parameters from the delay histogram are required.
 However, we now want to collect both a spyplot and the histogram.
 
 \begin{ViFile}
-nic {
- packet_allocator = delay_stats
- ejection {
-  stats = multi
-  callbacks = congestion_spyplot delay_histogram
-  congestion_spyplot {
-   fileroot = spyplot
-   type = png
-   normalization = 100000
-  }
-  delay_histogram {
-   fileroot = delay
-   bin_size = 0.5us
+node {
+ nic {
+  packet_allocator = delay_stats
+  ejection {
+   stats = multi
+   callbacks = congestion_spyplot delay_histogram
+   congestion_spyplot {
+    fileroot = spyplot
+    type = png
+    normalization = 100000
+   }
+   delay_histogram {
+    fileroot = delay
+    bin_size = 0.5us
+   }
   }
  }
 }

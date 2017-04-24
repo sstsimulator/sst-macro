@@ -34,7 +34,7 @@ class logp_switch :
 
   std::string
   to_string() const override {
-    return "simple switch";
+    return "LogP switch";
   }
 
   int queue_length(int port) const override {
@@ -58,6 +58,12 @@ class logp_switch :
   credit_handler(int port) const override {
     return nullptr;
   }
+
+ private:
+  void incoming_message(message* msg, node_id src, node_id dst);
+  void outgoing_message(message* msg, node_id src, node_id dst);
+  void bcast_local_message(message* msg, node_id src);
+  void forward_bcast_message(message* msg, node_id dst);
 
  private:
   double inj_bw_inverse_;
