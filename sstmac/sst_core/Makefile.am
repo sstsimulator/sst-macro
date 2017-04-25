@@ -49,6 +49,7 @@ nobase_library_include_HEADERS = \
 
 # micro pieces, baseclasses, etc needed for linking in the rest of sstmac
 libsstmac_sst_core_la_SOURCES =  \
+  partitioner.cc \
 	python_topology.cc \
   integrated_component.cc \
   integrated_core.cc

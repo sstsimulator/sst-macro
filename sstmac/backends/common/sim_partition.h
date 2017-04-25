@@ -138,6 +138,10 @@ class block_partition :
 
   virtual void partition_switches();
 
+  hw::topology* top() const {
+    return fake_top_;
+  }
+
  protected:
    hw::topology* fake_top_;
 
