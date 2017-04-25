@@ -28,10 +28,8 @@
 #include <sprockit/util.h>
 #include <sprockit/output.h>
 
-#if SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/sst_core/integrated_component.h>
 #include <sstmac/sst_core/connectable_wrapper.h>
-#endif
 
 RegisterDebugSlot(node)
 RegisterNamespaces("os", "memory", "proc", "node");

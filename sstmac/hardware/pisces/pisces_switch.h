@@ -43,8 +43,9 @@ class pisces_abstract_switch :
 class pisces_switch :
   public pisces_abstract_switch
 {
-  FactoryRegister("pisces", network_switch, pisces_switch,
-    "A network switch implementing the packet flow congestion model")
+  RegisterComponent("pisces", network_switch, pisces_switch,
+         "macro", COMPONENT_CATEGORY_NETWORK,
+         "A network switch implementing the packet flow congestion model")
  public:
   pisces_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr);
 

@@ -20,8 +20,9 @@ namespace hw {
 class logp_switch :
   public network_switch
 {
-  FactoryRegister("logP | simple | LogP | logp", network_switch, logp_switch,
-    "A switch that implements no congestion modeling")
+  RegisterComponent("logP | simple | LogP | logp", network_switch, logp_switch,
+         "macro", COMPONENT_CATEGORY_NETWORK,
+         "A switch that implements a basic delay model with no congestion modeling")
 
  public:
   typedef enum {

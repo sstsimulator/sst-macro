@@ -26,8 +26,11 @@ namespace hw {
 class simple_node :
   public node
 {
-  FactoryRegister("simple", node, simple_node,
-    "A basic endpoint node running SST/macro software stacks")
+  RegisterComponent("simple",node,simple_node,
+         "macro", COMPONENT_CATEGORY_NETWORK,
+         "A basic endpoint node running SST/macro software stacks")
+
+
  public:
   simple_node(sprockit::sim_parameters* params,
     uint64_t id, event_manager* mgr);

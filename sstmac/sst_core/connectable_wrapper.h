@@ -1,6 +1,9 @@
 #ifndef CONNECTABLE_WRAPPER_H
 #define CONNECTABLE_WRAPPER_H
 
+#include <sstmac/common/sstmac_config.h>
+
+#if SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/hardware/common/connection.h>
 #include <sprockit/unordered.h>
 #include <sst/core/link.h>
@@ -44,5 +47,6 @@ class link_wrapper :
 };
 
 }
+#endif
 
 #endif // CONNECTABLE_WRAPPER_H

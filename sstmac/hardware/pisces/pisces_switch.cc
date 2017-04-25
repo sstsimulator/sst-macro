@@ -78,6 +78,7 @@ pisces_abstract_switch::pisces_abstract_switch(
     sprockit::sim_parameters* port_params = topology::get_port_params(params, conn.port);
     ej_params->combine_into(port_params);
   }
+
 }
 
 
@@ -101,7 +102,9 @@ pisces_switch::pisces_switch(
   xbar_ = new pisces_crossbar(xbar_params, this);
   xbar_->set_stat_collector(xbar_stats_);
   xbar_->configure_basic_ports(top_->max_num_ports());
-#if !SSTMAC_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
+  init_links(params);
+#else
   payload_handler_ = new_handler(this, &pisces_switch::handle_payload);
   ack_handler_ = new_handler(this, &pisces_switch::handle_credit);
 #endif

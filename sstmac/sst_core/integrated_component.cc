@@ -1,5 +1,4 @@
 
-#include <sst/core/component.h>
 #include <sst/core/linkMap.h>
 #include <sstmac/sst_core/integrated_component.h>
 #include <sstmac/sst_core/integrated_core.h>

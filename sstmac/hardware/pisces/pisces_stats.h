@@ -142,8 +142,8 @@ class null_stats : public packet_stats_callback
 class multi_stats : public packet_stats_callback
 {
   FactoryRegister("multi", packet_stats_callback, multi_stats)
-  public:
-   multi_stats(sprockit::sim_parameters* params, event_scheduler* parent);
+ public:
+  multi_stats(sprockit::sim_parameters* params, event_scheduler* parent);
 
   void collect_single_event(const pkt_arbitration_t &st);
 
