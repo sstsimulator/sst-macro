@@ -13,7 +13,7 @@
 #define SPROCKIT_COMMON_ERRORS_H_INCLUDED
 
 #include <exception>
-#include <stdlib.h>
+#include <cstdlib>
 #include <sprockit/spkt_string.h>
 #include <iostream>
 
