@@ -51,6 +51,7 @@ void
 job_launcher::schedule_launch_requests()
 {
   for (app_launch_request* req : initial_requests_){
+    os_->increment_app_refcount();
     os_->schedule(req->time(),
         new_callback(os_->event_location(), this, &job_launcher::incoming_launch_request, req));
   }
@@ -168,6 +169,7 @@ default_job_launcher::handle_launch_request(app_launch_request* request, ordered
 void
 default_job_launcher::stop_event_received(job_stop_event *ev)
 {
+  os_->decrement_app_refcount();
 }
 
 bool
@@ -192,6 +194,7 @@ exclusive_job_launcher::stop_event_received(job_stop_event *ev)
     pending_requests_.pop_front(); //remove the running job
     job_launcher::incoming_launch_request(next);
   }
+  os_->decrement_app_refcount();
 }
 
 static thread_lock lock;

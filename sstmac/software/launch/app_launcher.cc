@@ -45,7 +45,6 @@ app_launcher::incoming_event(event* ev)
     int intranode_rank = num_apps_launched_[lev->aid()]++;
     int core_affinity = lev->core_affinity(intranode_rank);
     theapp->set_affinity(core_affinity);
-    os_->increment_app_refcount();
     os_->start_app(theapp, lev->unique_name());
   }
   delete lev;

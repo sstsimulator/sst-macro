@@ -324,8 +324,7 @@ class topology : public sprockit::printable
     minimal_route_to_switch(current_sw_addr, dest_sw_addr, paths[0]);
   }
 
-  virtual void
-  create_partition(
+  virtual void create_partition(
     int* switch_to_lp,
     int* switch_to_thread,
     int me,
@@ -334,8 +333,7 @@ class topology : public sprockit::printable
     int noccupied) const;
 
 #if SSTMAC_INTEGRATED_SST_CORE
-  switch_id
-  node_to_logp_switch(node_id nid) const;
+  switch_id node_to_logp_switch(node_id nid) const;
 
   static int nproc;
 #endif

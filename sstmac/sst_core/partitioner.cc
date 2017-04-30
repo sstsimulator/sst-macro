@@ -8,7 +8,6 @@
 #include <sstmac/sst_core/integrated_component.h>
 #include <sstmac/hardware/topology/topology.h>
 
-
 using namespace SST;
 using namespace SST::Partition;
 
@@ -96,11 +95,13 @@ void
 SSTMacroPartition::performPartition(SST::ConfigGraph *graph)
 {
   SST::ConfigComponentMap_t& compMap = graph->getComponentMap();
-
+  if (compMap.size() == 0)
+    return;
   sprockit::sim_parameters part_params;
   sprockit::sim_parameters* top_subparams = part_params.get_optional_namespace("topology");
   //I need to figure out the topology
   ConfigComponent& front = *compMap.begin();
+
   sprockit::sim_parameters* params = make_spkt_params_from_sst_params(front.params);
   if (params->has_namespace("interconnect")){
     params->get_namespace("interconnect")
@@ -108,20 +109,19 @@ SSTMacroPartition::performPartition(SST::ConfigGraph *graph)
   } else {
     params->get_namespace("topology")->combine_into(top_subparams);
   }
+
+  //if we have no switches, logp network only
+  bool is_logp = front.name.substr(0,4) == "Node";
+
   delete params;
-
   part_params.add_param_override("name", "block");
-
   int nthread = world_size.thread;
   int nproc = world_size.rank;
-
   dummy_runtime rt(&part_params, me.rank, nproc, nthread);
-
   block_partition part(&part_params, &rt);
   part.finalize_init();
-
   hw::topology* top = part.top();
-  int num_switches = top->num_switches();
+  int num_switches = is_logp ? 0 : top->num_switches();
   int num_nodes = top->num_nodes();
   int node_cutoff = num_switches;
   int logp_cutoff = num_switches + num_nodes;
@@ -134,13 +134,15 @@ SSTMacroPartition::performPartition(SST::ConfigGraph *graph)
       int thread = logp_offset % nthread;
       comp.rank.rank = rank;
       comp.rank.thread = thread;
+    } else if (id >= node_cutoff){
+      int node_offset = id - node_cutoff;
+      int logp_id = top->node_to_logp_switch(node_offset);
+      int rank = logp_id / nthread;
+      int thread = logp_id % nthread;
+      comp.rank.rank = rank;
+      comp.rank.thread = thread;
     } else {
       int sw_id = id;
-      if (id >= node_cutoff){
-        int node_offset = id - node_cutoff;
-        int ignore;
-        sw_id = top->node_to_injection_switch(node_offset, ignore);
-      }
       int rank = part.lpid_for_switch(sw_id);
       int thread = part.thread_for_switch(sw_id);
       comp.rank.rank = rank;

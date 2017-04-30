@@ -190,6 +190,7 @@ void
 app::run()
 {
   SSTMACBacktrace("main");
+  os_->increment_app_refcount();
   skeleton_main();
   for (auto& pair : apis_){
     delete pair.second;

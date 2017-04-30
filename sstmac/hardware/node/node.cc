@@ -99,10 +99,6 @@ node::node(sprockit::sim_parameters* params,
     job_launcher_ =   job_launcher::factory::get_optional_param(
           "job_launcher", "default", params, os_);
   }
-
-  if (my_addr_ == launch_root_){
-    increment_app_refcount();
-  }
 }
 
 link_handler*
@@ -147,7 +143,6 @@ node::~node()
   if (app_launcher_) delete app_launcher_;
   if (mem_model_) delete mem_model_;
   if (proc_) delete proc_;
-  /** JJW Delete this last since destructor may unregister libs from OS */
   if (os_) delete os_;
   if (nic_) delete nic_;
 }

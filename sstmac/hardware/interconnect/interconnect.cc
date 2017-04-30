@@ -108,7 +108,6 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
       netlink_params->get_optional_namespace("injection");
   num_speedy_switches_with_extra_node_ = num_nodes_ % nproc;
   num_nodes_per_speedy_switch_ = num_nodes_ / nproc;
-  node_to_logp_switch_.resize(num_nodes_);
   logp_overlay_switches_.resize(nproc*nthread);
 
   sprockit::sim_parameters* node_params = params->get_namespace("node");

@@ -170,7 +170,6 @@ class interconnect
   node_map nodes_;
 
   switch_id local_logp_switch_;
-  std::vector<switch_id> node_to_logp_switch_;
 
   double hop_bw_;
 
