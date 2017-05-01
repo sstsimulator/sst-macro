@@ -113,7 +113,7 @@ Timer::Timer()
   conv_factor_ = conv_factor_ * 1.0e-9;
 
 #else
-  conv_factor = 1.0;
+  conv_factor_ = 1.0;
 #endif
 
   reset();
@@ -127,9 +127,9 @@ Timer::start()
   start_ = mach_absolute_time();
 
 #else
-  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
-  start_ = static_cast<double>(ts.tv_sec) + 1.0e-9 *
-          static_cast<double>(ts.tv_nsec);
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts_);
+  start_ = static_cast<double>(ts_.tv_sec) + 1.0e-9 *
+          static_cast<double>(ts_.tv_nsec);
 
 #endif
 }
@@ -141,9 +141,9 @@ Timer::stamp()
   duration_ = static_cast<double> (mach_absolute_time() - start_);
 
 #else
-  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
-  duration_ = (static_cast<double>(ts.tv_sec) + 1.0e-9 *
-              static_cast<double>(ts.tv_nsec)) - start_;
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts_);
+  duration_ = (static_cast<double>(ts_.tv_sec) + 1.0e-9 *
+              static_cast<double>(ts_.tv_nsec)) - start_;
 
 #endif
 
