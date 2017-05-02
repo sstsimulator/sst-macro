@@ -257,31 +257,45 @@ AC_CONFIG_FILES([bin/sstccvars.py])
 
 AC_OUTPUT
 
+if test "X$with_mpiparallel" = "Xtrue"; then
+  yesno_mpiparallel="yes"
+else
+  yesno_mpiparallel="no"
+fi
+
 # --------- Print out a configuration summary. ---------
 echo
-echo "Configuration Summary:"
+echo "SST Macroscale Configuration Summary:"
 echo "---------------------------------------------------------------"
 echo "Install prefix     $prefix"
+echo "OS                 $os"
 echo "C compiler         $CC"
 echo "C++ compiler       $CXX"
-
-echo "OS                 $os"
-
-echo "Graphviz Trace     $enable_graphviz" 
-
-dnl --- threading ---
-echo "Threading:"
-echo "  GNU Pth          $enable_pth"
-echo "  pthread          $enable_pthread"
-echo "  ucontext         $enable_ucontext"
-
-dnl echo "SST/macro Native   $native_des"
-dnl echo "Python             $PYTHON"
-echo "MPI PDES           $with_mpiparallel"
 echo "CFLAGS             $CFLAGS"
 echo "CXXFLAGS           $CXXFLAGS"
 echo "CPPFLAGS           $CPPFLAGS"
 echo "LDFLAGS            $LDFLAGS"
+echo
+
+echo "User Space Threading:"
+echo "  GNU Pth          $enable_pth"
+echo "  Pthread          $enable_pthread"
+echo "  Ucontext         $enable_ucontext"
+echo
+
+echo "Parallel Discrete Event Simulation:"
+echo "  MPI PDES         $yesno_mpiparallel"
+echo "  Multithreaded    $with_multithread"
+echo "  Spinlock         $with_spinlock"
+echo "  Thread Affinity  $with_cpu_affinity"
+echo
+
+echo "SST Core           $have_integrated_core"
+echo "Clang Autoskeleton $found_clang"
+echo "MPI Timeline Stats $enable_mpi_timeline"
+echo "MPI Sync Stats     $with_comm_sync_stats"
+echo "Graphviz Trace     $enable_graphviz"
+echo "Sanity Checking    $enable_sanity_check"
 
 echo "---------------------------------------------------------------"
 
