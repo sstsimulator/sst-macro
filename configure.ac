@@ -257,6 +257,12 @@ AC_CONFIG_FILES([bin/sstccvars.py])
 
 AC_OUTPUT
 
+if test "X$with_mpiparallel" = "Xtrue"; then
+  yesno_mpiparallel="yes"
+else
+  yesno_mpiparallel="no"
+fi
+
 # --------- Print out a configuration summary. ---------
 echo
 echo "SST Macroscale Configuration Summary:"
@@ -278,7 +284,7 @@ echo "  Ucontext         $enable_ucontext"
 echo
 
 echo "Parallel Discrete Event Simulation:"
-echo "  MPI PDES         $with_mpiparallel"
+echo "  MPI PDES         $yesno_mpiparallel"
 echo "  Multithreaded    $with_multithread"
 echo "  Spinlock         $with_spinlock"
 echo "  Thread Affinity  $with_cpu_affinity"
