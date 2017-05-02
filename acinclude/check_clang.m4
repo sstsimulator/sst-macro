@@ -43,6 +43,11 @@ if test "$clang" != "no"; then
     CPPFLAGS="$CPPFLAGS $CLANG_CPPFLAGS"
   fi
   CXXFLAGS="$CXXFLAGS $SST_CXXFLAGS"
+  AC_CHECK_LIB(clang,
+    clang_createIndex,
+    [:],
+    AC_MSG_ERROR([Unable to find valid Clang libTooling at specified location])
+  )
   AC_CHECK_HEADER([clang/AST/AST.h],
     found_clang=yes
     AC_SUBST(CLANG_LDFLAGS)
