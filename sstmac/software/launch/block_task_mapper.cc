@@ -19,15 +19,6 @@
 namespace sstmac  {
 namespace sw {
 
-SpktRegister("block", task_mapper, block_task_mapper,
-   "Tries to group consecutive MPI ranks on the same node (i.e. in a block)."
-   "Otherwise, indexes in the same order as the allocation list.");
-
-
-block_task_mapper::~block_task_mapper() throw()
-{
-}
-
 void
 block_task_mapper::map_ranks(
   const ordered_node_set& nodes,

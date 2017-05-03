@@ -19,7 +19,6 @@ namespace hw {
 class pisces_packetizer :
   public packetizer
 {
-
  public:
   pisces_packetizer(sprockit::sim_parameters* params,
                     event_scheduler* parent);
@@ -30,8 +29,7 @@ class pisces_packetizer :
 
   void setup() override;
 
-  bool
-  spaceToSend(int vn, int num_bits) override;
+  bool spaceToSend(int vn, int num_bits) override;
 
   void inject(int vn, long bytes, long byte_offset, message *payload) override;
 
@@ -39,12 +37,10 @@ class pisces_packetizer :
    Set up the injection/ejection links to the switch the NIC is connected to
    @param sw The switch that injects/ejects
    */
-  void
-  set_output(sprockit::sim_parameters* params,
+  void set_output(sprockit::sim_parameters* params,
              int port, event_handler* output);
 
-  void
-  set_input(sprockit::sim_parameters* params,
+  void set_input(sprockit::sim_parameters* params,
             int port, event_handler* input);
 
   void recv_credit(event* credit);
@@ -56,17 +52,14 @@ class pisces_packetizer :
    */
   virtual void recv_packet(event* ev) = 0;
 
-  link_handler*
-  new_payload_handler() const override;
+  link_handler* new_payload_handler() const override;
 
-  link_handler*
-  new_credit_handler() const override;
+  link_handler* new_credit_handler() const override;
 
   void deadlock_check() override;
 
  protected:
-  void
-  recv_packet_common(pisces_payload* pkt);
+  void recv_packet_common(pisces_payload* pkt);
 
  private:
   void init(sprockit::sim_parameters* params, event_scheduler* parent);
@@ -93,6 +86,7 @@ class pisces_packetizer :
  */
 class pisces_cut_through_packetizer : public pisces_packetizer
 {
+  FactoryRegister("cut_through | null", packetizer, pisces_cut_through_packetizer)
  public:
   pisces_cut_through_packetizer(sprockit::sim_parameters* params,
                                 event_scheduler* parent) :
@@ -107,8 +101,7 @@ class pisces_cut_through_packetizer : public pisces_packetizer
    */
   void recv_packet(event* pkt) override;
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "cut through packetizer";
   }
 
@@ -119,6 +112,7 @@ class pisces_cut_through_packetizer : public pisces_packetizer
  */
 class pisces_simple_packetizer : public pisces_packetizer
 {
+  FactoryRegister("simple", packetizer, pisces_simple_packetizer)
  public:
   pisces_simple_packetizer(sprockit::sim_parameters* params,
                            event_scheduler* parent) :
@@ -126,8 +120,7 @@ class pisces_simple_packetizer : public pisces_packetizer
   {
   }
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "simple packetizer";
   }
 

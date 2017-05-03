@@ -21,12 +21,12 @@ namespace sw {
 
 class dumpi_task_mapper : public task_mapper
 {
-
+  FactoryRegister("dumpi", task_mapper, dumpi_task_mapper,
+              "indexes nodes based on hostname map file and hostname list in dumpi trace")
  public:
   dumpi_task_mapper(sprockit::sim_parameters *params);
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "dumpi task mapper";
   }
 
@@ -37,11 +37,9 @@ class dumpi_task_mapper : public task_mapper
                 std::vector<node_id> &result,
                 int nproc) override;
  protected:
-  node_id
-  node_id_from_hostname(const std::string& hostname);
+  node_id node_id_from_hostname(const std::string& hostname);
 
-  node_id
-  node_id_from_coordinates(int ncoord, int* coordinates);
+  node_id node_id_from_coordinates(int ncoord, int* coordinates);
 
  protected:
   std::string metaname_;

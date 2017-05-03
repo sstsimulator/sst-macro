@@ -23,20 +23,18 @@ namespace sw {
  */
 class random_task_mapper : public task_mapper
 {
-
+  FactoryRegister("random", task_mapper, random_task_mapper,
+              "randomly assigns tasks to nodes")
  public:
   random_task_mapper(sprockit::sim_parameters* params);
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "random task mapper";
   }
 
-  virtual
-  ~random_task_mapper() throw ();
+  virtual ~random_task_mapper() throw ();
 
-  virtual void
-  map_ranks(const ordered_node_set& nodes,
+  virtual void map_ranks(const ordered_node_set& nodes,
     int ppn,
     std::vector<node_id> &result,
     int nproc) override;

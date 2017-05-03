@@ -16,8 +16,6 @@
 
 RegisterDebugSlot(indexing);
 
-ImplementFactory(sstmac::sw::task_mapper);
-
 namespace sstmac {
 namespace sw {
 

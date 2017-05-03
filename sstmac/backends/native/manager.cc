@@ -145,7 +145,7 @@ manager::manager(sprockit::sim_parameters* params, parallel_runtime* rt) :
   interconnect_(nullptr),
   rt_(rt)
 {
-  event_manager_ = event_manager_factory::get_optional_param(
+  event_manager_ = event_manager::factory::get_optional_param(
                        "event_manager", SSTMAC_DEFAULT_EVENT_MANAGER_STRING, params, rt_);
   event_manager::global = event_manager_;
 

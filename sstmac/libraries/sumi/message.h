@@ -30,65 +30,51 @@ class transport_message :
   {
   }
 
-  virtual void
-  serialize_order(serializer& ser) override;
+  virtual void serialize_order(serializer& ser) override;
 
-  sumi::message_ptr
-  payload() const {
+  sumi::message_ptr payload() const {
     return payload_;
   }
 
-  std::string
-  to_string() const override;
+  std::string to_string() const override;
 
-  int
-  dest_rank() const {
+  int dest_rank() const {
     return dest_;
   }
 
-  void
-  set_dest_rank(int dest) {
+  void set_dest_rank(int dest) {
     dest_ = dest;
   }
 
-  int
-  src_rank() const {
+  int src_rank() const {
     return src_;
   }
 
-  void
-  set_src_rank(int src) {
+  void set_src_rank(int src) {
     src_ = src;
   }
 
-  void
-  set_apps(int src, int dst){
+  void set_apps(int src, int dst){
     src_app_ = src;
     dest_app_ = dst;
   }
 
-  int
-  src_app() const {
+  int src_app() const {
     return src_app_;
   }
 
-  int
-  dest_app() const {
+  int dest_app() const {
     return dest_app_;
   }
 
-  virtual void
-  put_on_wire() override;
+  virtual void put_on_wire() override;
 
-  ::sstmac::hw::network_message*
-  clone_injection_ack() const override;
+  ::sstmac::hw::network_message* clone_injection_ack() const override;
 
  protected:
-  void
-  clone_into(transport_message* cln) const;
+  void clone_into(transport_message* cln) const;
 
-  void
-  reverse() override;
+  void reverse() override;
 
  private:
   sumi::message_ptr payload_;

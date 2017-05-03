@@ -43,11 +43,9 @@ class mpi_message final :
     null_content, data, header, eager_payload, completion_ack, fake
   } content_type_t;
 
-  void
-  recompute_bytes();
+  void recompute_bytes();
 
  public:
-  /// Hello.
   mpi_message(int src, int dst, int count,
               MPI_Datatype type, int type_packed_size,
               int tag,
@@ -59,18 +57,12 @@ class mpi_message final :
 
   std::string to_string() const override;
 
-  static const char*
-  str(content_type_t content_type);
+  static const char* str(content_type_t content_type);
 
-  /// Goodbye.
   ~mpi_message() throw ();
 
   sumi::message* clone() const override;
 
-  /**
-   * Serialize this message during parallel simulation.
-   * @param ser The serializer to use
-   */
   void serialize_order(serializer& ser) override;
 
   long payload_bytes() const {
@@ -89,16 +81,6 @@ class mpi_message final :
     return count_;
   }
 
-  bool is_header() const {
-    switch (content_type_){
-  case completion_ack:
-  case fake:
-  case header:
-    return true;
-  default:
-    return false;
-    }
-  }
 
   bool is_payload() const {
     switch (content_type_){
@@ -120,8 +102,7 @@ class mpi_message final :
   }
 
   /// Access the tag associated with this message.
-  int
-  tag() const {
+  int tag() const {
     return tag_;
   }
 

@@ -37,8 +37,6 @@ void pair_reduce_function(void *invec, void *inoutvec, int *len, MPI_Datatype *d
   }
 }
 
-SpktRegister("mpi", parallel_runtime, mpi_runtime);
-
 int64_t
 mpi_runtime::allreduce_min(int64_t my_time)
 {
@@ -270,12 +268,13 @@ mpi_runtime::do_send_recv_messages(std::vector<void*>& buffers)
   int num_sent_to_me = 0;
   int outdata[2];
   //reduce scatter the number of messages sent
-  MPI_Reduce_scatter(num_sent_, outdata, array_of_ones_, MPI_2INT, reduce_op_, MPI_COMM_WORLD);
+  //everybode gets one
+  MPI_Reduce_scatter_block(num_sent_, outdata, 1, MPI_2INT, reduce_op_, MPI_COMM_WORLD);
   num_sent_to_me = outdata[0];
   while (num_sent_to_me < 0){
     //ooooh, hey - people want to do collectives
     do_collective_merges(-1); //I don't have anything to do
-    MPI_Reduce_scatter(num_sent_, outdata, array_of_ones_, MPI_2INT, reduce_op_, MPI_COMM_WORLD);
+    MPI_Reduce_scatter_block(num_sent_, outdata, 1, MPI_2INT, reduce_op_, MPI_COMM_WORLD);
     num_sent_to_me = outdata[0];
   }
 

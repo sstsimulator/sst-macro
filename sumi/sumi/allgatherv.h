@@ -13,8 +13,7 @@ class bruck_allgatherv_actor :
 {
 
  public:
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "bruck allgatherv actor";
   }
 
@@ -41,20 +40,18 @@ class bruck_allgatherv_actor :
 class bruck_allgatherv_collective :
   public dag_collective
 {
+  FactoryRegister("bruck_allgatherv", dag_collective, bruck_allgatherv_collective)
 
  public:
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "bruck allgatherv";
   }
 
-  dag_collective_actor*
-  new_actor() const override {
+  dag_collective_actor* new_actor() const override {
     return new bruck_allgatherv_actor(recv_counts_);
   }
 
-  dag_collective*
-  clone() const override {
+  dag_collective* clone() const override {
     return new bruck_allgatherv_collective;
   }
 

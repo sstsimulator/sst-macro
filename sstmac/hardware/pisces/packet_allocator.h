@@ -18,6 +18,7 @@ namespace hw {
  */
 class packet_allocator
 {
+  DeclareFactory(packet_allocator)
  public:
   packet_allocator(sprockit::sim_parameters* params){}
 
@@ -37,8 +38,6 @@ class packet_allocator
   virtual ~packet_allocator(){}
 
 };
-
-DeclareFactory(packet_allocator)
 
 }
 }

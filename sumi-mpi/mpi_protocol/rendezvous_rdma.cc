@@ -41,7 +41,7 @@ rendezvous_get::send_header(mpi_queue* queue,
 {
   SSTMACBacktrace("MPI Rendezvous Protocol: RDMA Send Header");
   msg->set_content_type(mpi_message::header);
-  queue->post_header(msg, false); //don't need the nic ack
+  queue->post_header(msg, sumi::message::header, false); //don't need the nic ack
 }
 
 void

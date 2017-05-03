@@ -12,8 +12,7 @@ class binary_tree_bcast_actor :
   public dag_collective_actor
 {
  public:
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "bcast actor";
   }
 
@@ -37,20 +36,17 @@ class binary_tree_bcast_actor :
 class binary_tree_bcast_collective :
   public dag_collective
 {
-
+  FactoryRegister("wilke", dag_collective, binary_tree_bcast_collective)
  public:
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "bcast";
   }
 
-  dag_collective_actor*
-  new_actor() const override {
+  dag_collective_actor* new_actor() const override {
     return new binary_tree_bcast_actor(root_);
   }
 
-  dag_collective*
-  clone() const override {
+  dag_collective* clone() const override {
     return new binary_tree_bcast_collective(root_);
   }
 

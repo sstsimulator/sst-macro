@@ -35,12 +35,6 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-SpktRegister("pisces | pisces", nic, pisces_nic,
-            "implements a nic that models messages as a packet flow");
-
-SpktRegister("pisces | pisces", netlink, pisces_netlink,
-            "implements a netlink that models messages as a packet flow");
-
 const int pisces_netlink::really_big_buffer = 1<<30;
 
 pisces_nic::pisces_nic(sprockit::sim_parameters* params, node* parent) :
@@ -50,7 +44,7 @@ pisces_nic::pisces_nic(sprockit::sim_parameters* params, node* parent) :
   sprockit::sim_parameters* inj_params = params->get_namespace("injection");
 
 
-  packetizer_ = packetizer_factory::get_optional_param("packetizer", "cut_through",
+  packetizer_ = packetizer::factory::get_optional_param("packetizer", "cut_through",
                                               inj_params, parent);
   packetizer_->setArrivalNotify(this);
   packetizer_->setInjectionAcker(mtl_handler());

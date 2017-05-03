@@ -32,6 +32,7 @@ class graph_viz_increment_stack
 class graph_viz :
   public stat_collector
 {
+  FactoryRegister("graph_viz | call_graph", stat_collector, graph_viz)
  public:
   graph_viz(sprockit::sim_parameters* params) :
     stat_collector(params)

@@ -34,6 +34,7 @@ struct pkt_arbitration_t
  */
 class packet_stats_callback
 {
+  DeclareFactory(packet_stats_callback, event_scheduler*)
  public:
   virtual ~packet_stats_callback(){}
 
@@ -43,8 +44,7 @@ class packet_stats_callback
    *            objects.
    * @param st All the details of the last arbitration of a given packet
    */
-  virtual void
-  collect_single_event(const pkt_arbitration_t& st);
+  virtual void collect_single_event(const pkt_arbitration_t& st);
 
   /**
    * @brief collect_final_event Collects stats associated with flow-level
@@ -53,8 +53,7 @@ class packet_stats_callback
    *          attached to a packet at the end of the path
    * @param pkt
    */
-  virtual void
-  collect_final_event(pisces_payload* pkt);
+  virtual void collect_final_event(pisces_payload* pkt);
 
   /**
    * @brief id
@@ -74,21 +73,18 @@ class packet_stats_callback
 
 };
 
-DeclareFactory(packet_stats_callback, event_scheduler*)
-
 class congestion_spyplot :
  virtual public packet_stats_callback
 {
+  FactoryRegister("congestion_spyplot", packet_stats_callback, congestion_spyplot)
  public:
   congestion_spyplot(sprockit::sim_parameters* params, event_scheduler* parent);
 
   virtual ~congestion_spyplot();
 
-  virtual void
-  collect_single_event(const pkt_arbitration_t& st);
+  virtual void collect_single_event(const pkt_arbitration_t& st);
 
-  virtual void
-  collect_final_event(pisces_payload* pkt);
+  virtual void collect_final_event(pisces_payload* pkt);
 
  protected:
   void collect(double delay_us, pisces_payload* pkt);
@@ -101,16 +97,15 @@ class congestion_spyplot :
 class delay_histogram :
   virtual public packet_stats_callback
 {
+  FactoryRegister("delay_histogram", packet_stats_callback, delay_histogram)
  public:
   delay_histogram(sprockit::sim_parameters* params, event_scheduler* parent);
 
   virtual ~delay_histogram();
 
-  virtual void
-  collect_final_event(pisces_payload* pkt);
+  virtual void collect_final_event(pisces_payload* pkt);
 
-  virtual void
-  collect_single_event(const pkt_arbitration_t& st);
+  virtual void collect_single_event(const pkt_arbitration_t& st);
 
  private:
   stat_histogram* congestion_hist_;
@@ -119,36 +114,36 @@ class delay_histogram :
 class packet_delay_stats :
  virtual public packet_stats_callback
 {
+  FactoryRegister("congestion_delay", packet_stats_callback, packet_delay_stats)
  public:
   packet_delay_stats(sprockit::sim_parameters* params, event_scheduler* parent) :
     packet_stats_callback(params, parent)
   {
   }
 
-  virtual void
-  collect_single_event(const pkt_arbitration_t &st);
+  virtual void collect_single_event(const pkt_arbitration_t &st);
 
 };
 
 class null_stats : public packet_stats_callback
 {
+  FactoryRegister("null", packet_stats_callback, null_stats)
  public:
   null_stats(sprockit::sim_parameters* params, event_scheduler* parent) :
     packet_stats_callback(params, parent)
   {
   }
 
-  virtual void
-  collect_single_event(const pkt_arbitration_t &st){}
+  virtual void collect_single_event(const pkt_arbitration_t &st){}
 
-  virtual void
-  collect_final_event(pisces_payload *pkt){}
+  virtual void collect_final_event(pisces_payload *pkt){}
 };
 
 class multi_stats : public packet_stats_callback
 {
-  public:
-   multi_stats(sprockit::sim_parameters* params, event_scheduler* parent);
+  FactoryRegister("multi", packet_stats_callback, multi_stats)
+ public:
+  multi_stats(sprockit::sim_parameters* params, event_scheduler* parent);
 
   void collect_single_event(const pkt_arbitration_t &st);
 
@@ -162,13 +157,13 @@ class multi_stats : public packet_stats_callback
 class byte_hop_collector :
  virtual public packet_stats_callback
 {
+  FactoryRegister("byte_hops", packet_stats_callback, byte_hop_collector)
  public:
   byte_hop_collector(sprockit::sim_parameters* params, event_scheduler* parent);
 
   virtual ~byte_hop_collector();
 
-  virtual void
-  collect_single_event(const pkt_arbitration_t& st);
+  virtual void collect_single_event(const pkt_arbitration_t& st);
 
  private:
   stat_global_int* byte_hops_;
@@ -178,64 +173,51 @@ class stat_bytes_sent :
   public stat_collector
 {
   FRIEND_SERIALIZATION;
-
+  FactoryRegister("bytes_sent", stat_collector, stat_bytes_sent)
  public:
   stat_bytes_sent(sprockit::sim_parameters* params);
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "stat bytes sent";
   }
 
   virtual ~stat_bytes_sent();
 
-  void
-  record(int port, long bytes){
+  void record(int port, long bytes){
     port_map_[port] += bytes;
   }
 
-  void
-  simulation_finished(timestamp end) override;
+  void simulation_finished(timestamp end) override;
 
-  void
-  dump_local_data() override;
+  void dump_local_data() override;
 
-  void
-  dump_global_data() override;
+  void dump_global_data() override;
 
-  void
-  global_reduce(parallel_runtime *rt) override;
+  void global_reduce(parallel_runtime *rt) override;
 
-  void
-  reduce(stat_collector *coll) override;
+  void reduce(stat_collector *coll) override;
 
-  stat_collector*
-  do_clone(sprockit::sim_parameters* params) const override {
+  stat_collector* do_clone(sprockit::sim_parameters* params) const override {
     return new stat_bytes_sent(params);
   }
 
-  void
-  clear() override {}
+  void clear() override {}
 
  private:
-  void
-  global_reduce_non_root(parallel_runtime* rt, int root, char* buffer, int buffer_size);
+  void global_reduce_non_root(parallel_runtime* rt, int root, char* buffer, int buffer_size);
 
-  void
-  collect_buffer_at_root(char* buffer, int buffer_size);
+  void collect_buffer_at_root(char* buffer, int buffer_size);
 
-  void
-  output_switch(int sid, std::fstream& data_str);
+  void output_switch(int sid, std::fstream& data_str);
 
   struct global_gather_stats_t {
     int buffer_size;
   };
 
-  void
-  collect_counts_at_root(parallel_runtime* rt, int src, global_gather_stats_t stats);
+  void collect_counts_at_root(parallel_runtime* rt, int src, global_gather_stats_t stats);
 
-  void
-  global_reduce_root(parallel_runtime* rt, global_gather_stats_t* stats, char* my_buffer, int my_buffer_size);
+  void global_reduce_root(parallel_runtime* rt, global_gather_stats_t* stats,
+                          char* my_buffer, int my_buffer_size);
 
 
  private:
@@ -265,8 +247,7 @@ class stat_bytes_sent :
    public:
     aggregation() : max_sid_(0), num_counts_(0) {}
 
-    void
-    append(int sid, const port_map& pmap){
+    void append(int sid, const port_map& pmap){
       entry e;
       e.pmap = pmap;
       e.sid = sid;
@@ -275,30 +256,25 @@ class stat_bytes_sent :
       num_counts_ += pmap.size();
     }
 
-    int
-    num_counts() const {
+    int num_counts() const {
       return num_counts_;
     }
 
-    int
-    num_entries() const {
+    int num_entries() const {
       return entries_.size();
     }
 
-    int
-    ser_size() const {
+    int ser_size() const {
       int entry_size = sizeof(int) + sizeof(size_t); //sid + map size
       int count_size = sizeof(int) + sizeof(long); //port + num bytes
       return num_entries() * entry_size + num_counts_ * count_size + sizeof(size_t);
     }
 
-    int
-    max_sid() const {
+    int max_sid() const {
       return max_sid_;
     }
 
-    const std::list<entry>&
-    entries() const {
+    const std::list<entry>& entries() const {
       return entries_;
     }
 
@@ -312,13 +288,13 @@ class stat_bytes_sent :
 class bytes_sent_collector :
  virtual public packet_stats_callback
 {
+  FactoryRegister("bytes_sent", packet_stats_callback, bytes_sent_collector)
  public:
   bytes_sent_collector(sprockit::sim_parameters* params, event_scheduler* parent);
 
   virtual ~bytes_sent_collector();
 
-  virtual void
-  collect_single_event(const pkt_arbitration_t &st);
+  virtual void collect_single_event(const pkt_arbitration_t &st);
 
  private:
   stat_bytes_sent* bytes_sent_;

@@ -25,6 +25,8 @@ namespace hw {
 class logp_nic :
   public nic
 {
+  FactoryRegister("logP | simple | LogP | logp", nic, logp_nic,
+              "implements a nic that models messages via a simple latency/bandwidth injection delay")
  public:
   logp_nic(sprockit::sim_parameters* params, node* parent);
 

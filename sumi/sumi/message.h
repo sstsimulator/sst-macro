@@ -32,8 +32,7 @@ class message :
  ImplementSerializable(message)
 
  public:
-  virtual std::string
-  to_string() const override;
+  virtual std::string to_string() const override;
 
   typedef enum {
     header,
@@ -117,145 +116,113 @@ class message :
   {
   }
 
-  static const char*
-  tostr(payload_type_t ty);
+  static const char* tostr(payload_type_t ty);
 
-  static const char*
-  tostr(class_t ty);
+  static const char* tostr(class_t ty);
 
-  payload_type_t
-  payload_type() const {
+  payload_type_t payload_type() const {
     return payload_type_;
   }
 
-  bool
-  is_nic_ack() const;
+  bool is_nic_ack() const;
 
-  virtual void
-  serialize_order(sumi::serializer &ser) override;
+  virtual void serialize_order(sumi::serializer &ser) override;
 
-  void
-  set_payload_type(payload_type_t ty) {
+  void set_payload_type(payload_type_t ty) {
     payload_type_ = ty;
   }
 
-  virtual message*
-  clone() const;
+  virtual message* clone() const;
 
-  virtual void
-  buffer_send();
+  virtual void buffer_send();
 
-  message*
-  clone_ack() const;
+  message* clone_ack() const;
 
-  message*
-  clone_msg() const {
+  message* clone_msg() const {
     return clone();
   }
 
-  class_t
-  class_type() const {
+  class_t class_type() const {
     return class_;
   }
 
-  void
-  set_class_type(class_t cls) {
+  void set_class_type(class_t cls) {
     class_ = cls;
   }
 
-  int
-  recver() const {
+  int recver() const {
     return recver_;
   }
 
-  void
-  set_recver(int dst) {
+  void set_recver(int dst) {
     recver_ = dst;
   }
 
-  int
-  sender() const {
+  int sender() const {
     return sender_;
   }
 
-  void
-  set_sender(int src) {
+  void set_sender(int src) {
     sender_ = src;
   }
 
-  long
-  byte_length() const {
+  long byte_length() const {
     return num_bytes_;
   }
 
-  void
-  set_byte_length(long bytes) {
+  void set_byte_length(long bytes) {
     num_bytes_ = bytes;
   }
 
-  int
-  transaction_id() const {
+  int transaction_id() const {
     return transaction_id_;
   }
 
-  void
-  set_transaction_id(int tid) {
+  void set_transaction_id(int tid) {
     transaction_id_ = tid;
   }
 
-  bool
-  has_transaction_id() const {
+  bool has_transaction_id() const {
     return transaction_id_ >= 0;
   }
 
-  virtual void
-  reverse();
+  virtual void reverse();
 
-  bool
-  needs_send_ack() const {
+  bool needs_send_ack() const {
     return needs_send_ack_;
   }
 
-  void
-  set_needs_send_ack(bool need) {
+  void set_needs_send_ack(bool need) {
     needs_send_ack_ = need;
   }
 
-  bool
-  needs_recv_ack() const {
+  bool needs_recv_ack() const {
     return needs_recv_ack_;
   }
 
-  void
-  set_needs_recv_ack(bool need) {
+  void set_needs_recv_ack(bool need) {
     needs_recv_ack_ = need;
   }
 
-  bool
-  has_payload() const {
+  bool has_payload() const {
     return local_buffer_.ptr || remote_buffer_.ptr;
   }
 
-  virtual void
-  move_remote_to_local();
+  virtual void move_remote_to_local();
 
-  virtual void
-  move_local_to_remote();
+  virtual void move_local_to_remote();
 
   sumi::public_buffer& local_buffer() { return local_buffer_; }
   sumi::public_buffer& remote_buffer() { return remote_buffer_; }
 
-  void*&
-  eager_buffer() {
+  void*& eager_buffer() {
    return local_buffer_.ptr;
   }
 
  protected:
-  void
-  clone_into(message* cln) const;
+  void clone_into(message* cln) const;
 
-  static void
-  buffer_send(public_buffer& buf, long num_bytes);
+  static void buffer_send(public_buffer& buf, long num_bytes);
 
  protected:
   long num_bytes_;
@@ -351,8 +318,7 @@ class system_bcast_message : public message
     return root_;
   }
 
-  void
-  serialize_order(serializer& ser) override;
+  void serialize_order(serializer& ser) override;
 
   action_t action() const {
     return action_;

@@ -21,9 +21,6 @@
 namespace sstmac {
 namespace hw {
 
-SpktRegister("simple", processor, simple_processor,
-            "Basic processor that only does timed_message computes");
-
 void
 simple_processor::compute(event* ev, callback* cb)
 {

@@ -17,14 +17,14 @@
 namespace sstmac {
 namespace sw {
 
-
 class node_id_task_mapper : public task_mapper
 {
+  FactoryRegister("node_id", task_mapper, node_id_task_mapper,
+              "assigns tasks to nodes based on list of nodes ids in file")
  public:
   node_id_task_mapper(sprockit::sim_parameters* params);
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "node id task mapper";
   }
 

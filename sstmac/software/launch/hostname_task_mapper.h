@@ -20,11 +20,12 @@ namespace sw {
 
 class hostname_task_mapper : public task_mapper
 {
+  FactoryRegister("hostname", task_mapper, hostname_task_mapper,
+              "assigns tasks to nodes based on hostname map of topology and hostname list in file")
  public:
   hostname_task_mapper(sprockit::sim_parameters *params);
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "hostname task mapper";
   }
 

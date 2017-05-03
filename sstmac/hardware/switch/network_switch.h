@@ -44,6 +44,7 @@ namespace hw {
 class network_switch :
   public connectable_component
 {
+  DeclareFactory(network_switch,uint64_t,event_manager*)
  public:
   virtual void
   init(unsigned int phase);
@@ -84,9 +85,6 @@ class network_switch :
   topology* top_;
 
 };
-
-
-DeclareFactory(network_switch,uint64_t,event_manager*);
 
 
 }

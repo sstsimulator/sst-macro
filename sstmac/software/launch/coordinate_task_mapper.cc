@@ -25,10 +25,6 @@
 namespace sstmac {
 namespace sw {
 
-SpktRegister("coordinate", task_mapper, coordinate_task_mapper,
-            "assigns tasks to nodes based on hostname map of topology and hostname list in file");
-
-
 coordinate_task_mapper::coordinate_task_mapper(sprockit::sim_parameters *params) :
   task_mapper(params)
 {

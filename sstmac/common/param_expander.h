@@ -8,15 +8,13 @@ namespace sstmac {
 
 class param_expander
 {
+  DeclareFactory(param_expander)
  public:
   virtual ~param_expander(){}
 
-  virtual void
-  expand(sprockit::sim_parameters* params) = 0;
+  virtual void expand(sprockit::sim_parameters* params) = 0;
 
 };
-
-DeclareFactory(param_expander);
 
 }
 

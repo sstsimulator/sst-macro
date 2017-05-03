@@ -15,7 +15,6 @@
 #include <sprockit/statics.h>
 #include <sprockit/sim_parameters.h>
 
-ImplementFactory(sstmac::hw::memory_model);
 RegisterDebugSlot(memory, "debug info related to memory accesses");
 
 namespace sstmac {

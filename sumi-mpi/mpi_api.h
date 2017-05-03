@@ -53,8 +53,7 @@ using sstmac::sw::operating_system;
 class mpi_api :
   public sstmac::sumi_transport
 {
-  ImplementAPI(mpi_api)
-
+  RegisterAPI("mpi", mpi_api)
  private:
   class persistent_send;
   class persistent_recv;

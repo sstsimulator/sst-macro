@@ -143,7 +143,7 @@ class serializer
     {
     case SIZER: {
       sizer_.add(sizeof(Int));
-      sizer_.add(size);
+      sizer_.add(size*sizeof(T));
       break;
     }
     case PACK: {
@@ -171,7 +171,7 @@ class serializer
     {
     case SIZER: {
       sizer_.add(sizeof(Int));
-      sizer_.add(size);
+      if (buffer) sizer_.add(size);
       break;
     }
     case PACK: {

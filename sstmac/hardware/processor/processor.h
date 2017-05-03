@@ -31,7 +31,7 @@ namespace hw {
  */
 class processor
 {
-
+  DeclareFactory(processor, memory_model*, node*)
  public:
   virtual ~processor();
 
@@ -58,8 +58,6 @@ class processor
 
 
 };
-
-DeclareFactory2InitParams(processor, memory_model*, node*);
 
 }
 } // end of namespace sstmac

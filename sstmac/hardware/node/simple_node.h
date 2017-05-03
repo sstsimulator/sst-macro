@@ -26,16 +26,19 @@ namespace hw {
 class simple_node :
   public node
 {
+  RegisterComponent("simple",node,simple_node,
+         "macro", COMPONENT_CATEGORY_NETWORK,
+         "A basic endpoint node running SST/macro software stacks")
+
+
  public:
   simple_node(sprockit::sim_parameters* params,
     uint64_t id, event_manager* mgr);
 
   virtual ~simple_node();
 
-  virtual void
-  execute(ami::COMP_FUNC func,
-         event* data,
-         callback* cb);
+  virtual void execute(ami::COMP_FUNC func,
+         event* data, callback* cb);
 
 
 };

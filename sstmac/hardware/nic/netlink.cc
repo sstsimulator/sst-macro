@@ -3,8 +3,6 @@
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 
-ImplementFactory(sstmac::hw::netlink);
-
 RegisterNamespaces("netlink", "injection", "ejection");
 
 namespace sstmac {

@@ -15,23 +15,12 @@
 #include <sprockit/keyword_registration.h>
 #include <cinttypes>
 
-ImplementFactory(sstmac::hw::packet_stats_callback);
 MakeDebugSlot(pisces_stats)
 
-#define debug(...) \
-  debug_printf(sprockit::dbg::pisces_stats, __VA_ARGS__)
+#define debug(...) debug_printf(sprockit::dbg::pisces_stats, __VA_ARGS__)
 
 namespace sstmac {
 namespace hw {
-
-SpktRegister("bytes_sent", stat_collector, stat_bytes_sent);
-SpktRegister("congestion_spyplot", packet_stats_callback, congestion_spyplot);
-SpktRegister("congestion_delay", packet_stats_callback, packet_delay_stats);
-SpktRegister("bytes_sent", packet_stats_callback, bytes_sent_collector);
-SpktRegister("byte_hops", packet_stats_callback, byte_hop_collector);
-SpktRegister("delay_histogram", packet_stats_callback, delay_histogram);
-SpktRegister("multi", packet_stats_callback, multi_stats);
-SpktRegister("null", packet_stats_callback, null_stats);
 
 RegisterNamespaces("bytes_sent", "congestion_spyplot", "congestion_delay",
                    "bytes_sent", "byte_hops", "delay_histogram");
@@ -146,7 +135,7 @@ multi_stats::multi_stats(sprockit::sim_parameters *params, event_scheduler *pare
   params->get_vector_param("callbacks", stats_list);
   cbacks_.reserve(stats_list.size());
   for (const std::string& str : stats_list){
-    packet_stats_callback* cb = packet_stats_callback_factory::get_value(str, params, parent);
+    packet_stats_callback* cb = packet_stats_callback::factory::get_value(str, params, parent);
     cbacks_.push_back(cb);
   }
 }

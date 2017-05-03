@@ -47,15 +47,51 @@
 
 #include <sstmac/common/sstmac_config.h>
 #include <sprockit/sim_parameters_fwd.h>
-
-#include <sst/core/link.h>
-#include <sst/core/linkMap.h>
-#include <sst/core/params.h>
-#include <sst/core/element.h>
+#include <sprockit/factories/factory.h>
 #include <sstmac/common/sst_event_fwd.h>
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/event_handler_fwd.h>
 #include <sstmac/hardware/common/connection_fwd.h>
+
+#if SSTMAC_INTEGRATED_SST_CORE
+#include <sst/core/link.h>
+#include <sst/core/linkMap.h>
+#include <sst/core/params.h>
+#include <sst/core/element.h>
+#include <sst/core/elementinfo.h>
+#include <sst/core/component.h>
+
+using SST::ComponentId_t;
+using SST::Params;
+using SST::ComponentDoc;
+using SST::ElementInfoParam;
+using SST::ElementInfoPort2;
+using SST::ElementInfoStatistic;
+
+#define SSTMAC_VALID_PORTS \
+   {"input %(out)d %(in)d",  "Will receive new payloads here",      {}}, \
+   {"output %(out)d %(in)d", "Will receive new acks(credits) here", {}}, \
+   {"in-out %(out)d %(in)d", "Will send/recv payloads here",        {}}, \
+   {"rtr",                   "Special link to Merlin router",       {}}
+
+#define RegisterComponent(name,parent,cls,lib,cat,desc) \
+  FactoryRegister(name,parent,cls,desc) \
+  SST_ELI_REGISTER_COMPONENT(cls,lib,#cls,desc,cat) \
+  SST_ELI_DOCUMENT_PARAMS() \
+  SST_ELI_DOCUMENT_PORTS(SSTMAC_VALID_PORTS) \
+  SST_ELI_DOCUMENT_STATISTICS() \
+ protected: \
+  cls(SST::ComponentId_t id, SST::Params& params) : \
+    cls(make_spkt_params_from_sst_params(params), id, nullptr){}
+
+#define RegisterSubcomponent(name,parent,cls,lib,interfaceStr,desc) \
+  FactoryRegister(name,parent,cls,desc) \
+  SST_ELI_REGISTER_SUBCOMPONENT(cls,lib,#cls,desc,interfaceStr) \
+  protected: \
+  cls(SST::ComponentId_t id, SST::Params& params) : \
+    cls(make_spkt_params_from_sst_params(params), id, nullptr){}
+
+sprockit::sim_parameters* make_spkt_params_from_sst_params(SST::Params& map);
 
 namespace sstmac {
 
@@ -76,8 +112,7 @@ class SSTIntegratedComponent
    * @param dst_inport
    * @param mod
    */
-  virtual void
-  connect_input(
+  virtual void connect_input(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
@@ -91,8 +126,7 @@ class SSTIntegratedComponent
    * @param dst_inport
    * @param mod
    */
-  virtual void
-  connect_output(
+  virtual void connect_output(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
@@ -103,19 +137,16 @@ class SSTIntegratedComponent
    * @param port
    * @return The handler that will receive payloads from an SST link
    */
-  virtual SST::Event::HandlerBase*
-  payload_handler(int port) const = 0;
+  virtual SST::Event::HandlerBase* payload_handler(int port) const = 0;
 
   /**
    * @brief credit_handler
    * @param port
    * @return The handler that will receive credits from an SST link
    */
-  virtual SST::Event::HandlerBase*
-  credit_handler(int port) const = 0;
+  virtual SST::Event::HandlerBase* credit_handler(int port) const = 0;
 
-  void
-  init_links(sprockit::sim_parameters* params);
+  void init_links(sprockit::sim_parameters* params);
 
  protected:
   SSTIntegratedComponent(sprockit::sim_parameters* params, uint64_t id);
@@ -126,6 +157,20 @@ class SSTIntegratedComponent
 };
 
 } /* end namespace sstmac */
+
+#else
+#define RegisterComponent(name,parent,cls,lib,cat,desc) \
+  FactoryRegister(name,parent,cls,desc)
+
+#define RegisterSubcomponent(name,parent,cls,lib,interfaceStr,desc) \
+  FactoryRegister(name,parent,cls,desc)
+
+#define COMPONENT_CATEGORY_UNCATEGORIZED  0x00
+#define COMPONENT_CATEGORY_PROCESSOR      0x01
+#define COMPONENT_CATEGORY_MEMORY         0x02
+#define COMPONENT_CATEGORY_NETWORK        0x04
+#define COMPONENT_CATEGORY_SYSTEM         0x08
+#endif
 
 #endif /* SSTMAC_MICRO_INTEGRATED_COMPONENT_H_ */
 

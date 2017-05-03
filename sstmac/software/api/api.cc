@@ -20,7 +20,6 @@
 #include <sprockit/keyword_registration.h>
 
 RegisterKeywords("host_compute_modeling");
-ImplementFactory(sstmac::sw::api)
 
 namespace sstmac {
 namespace sw {
@@ -67,7 +66,7 @@ api::start_api_call()
   if (hostcompute_) {
     if (endcount_ > 0
         && startcount_ == endcount_) { //can't do it on the first time through
-      timer_->toc();
+      timer_->start();
 
       timestamp t(timer_->getTime());
       compute_->compute(t);
@@ -79,7 +78,7 @@ void
 api::end_api_call()
 {
   if (hostcompute_) {
-    timer_->tic();
+    timer_->stamp();
     endcount_++;
   }
 }
@@ -109,59 +108,46 @@ Timer::Timer()
   mach_timebase_info_data_t info;
   mach_timebase_info(&info);
 
-  conv_factor = (static_cast<double> (info.numer))
+  conv_factor_ = (static_cast<double> (info.numer))
                 / (static_cast<double> (info.denom));
-  conv_factor = conv_factor * 1.0e-9;
+  conv_factor_ = conv_factor_ * 1.0e-9;
 
 #else
-  conv_factor = 1.0;
+  conv_factor_ = 1.0;
 #endif
 
   reset();
 }
 
 inline void
-Timer::tic()
+Timer::start()
 {
 
 #if defined(_MAC)
-  start = mach_absolute_time();
+  start_ = mach_absolute_time();
 
 #else
-  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
-  start = static_cast<double>(ts.tv_sec) + 1.0e-9 *
-          static_cast<double>(ts.tv_nsec);
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts_);
+  start_ = static_cast<double>(ts_.tv_sec) + 1.0e-9 *
+          static_cast<double>(ts_.tv_nsec);
 
 #endif
 }
 
 inline void
-Timer::toc()
+Timer::stamp()
 {
 #if defined(_MAC)
-  duration = static_cast<double> (mach_absolute_time() - start);
+  duration_ = static_cast<double> (mach_absolute_time() - start_);
 
 #else
-  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
-  duration = (static_cast<double>(ts.tv_sec) + 1.0e-9 *
-              static_cast<double>(ts.tv_nsec)) - start;
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts_);
+  duration_ = (static_cast<double>(ts_.tv_sec) + 1.0e-9 *
+              static_cast<double>(ts_.tv_nsec)) - start_;
 
 #endif
 
-  elapsed_time = duration * conv_factor;
-}
-
-void
-Timer::reset()
-{
-  start = 0;
-  duration = 0;
-  elapsed_time = 0;
-}
-double
-Timer::getTime()
-{
-  return elapsed_time;
+  elapsed_time_ = duration_ * conv_factor_;
 }
 
 }

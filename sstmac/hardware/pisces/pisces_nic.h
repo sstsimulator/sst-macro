@@ -19,12 +19,12 @@ class pisces_nic :
   public nic,
   public packetizer_callback
 {
-
+  FactoryRegister("pisces | pisces", nic, pisces_nic,
+              "implements a nic that models messages as a packet flow")
  public:
   pisces_nic(sprockit::sim_parameters* params, node* parent);
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return sprockit::printf("packet flow nic(%d)", int(addr()));
   }
 
@@ -38,32 +38,26 @@ class pisces_nic :
     recv_message(msg);
   }
 
-  virtual void
-  connect_output(
+  virtual void connect_output(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
     event_handler* mod) override;
 
-  virtual void
-  connect_input(
+  virtual void connect_input(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
     event_handler* mod) override;
 
-  link_handler*
-  credit_handler(int port) const override;
+  link_handler* credit_handler(int port) const override;
 
-  link_handler*
-  payload_handler(int port) const override;
+  link_handler* payload_handler(int port) const override;
 
-  void
-  deadlock_check() override;
+  void deadlock_check() override;
 
  protected:
-  virtual void
-  do_send(network_message* payload) override;
+  virtual void do_send(network_message* payload) override;
 
  protected:
   packetizer* packetizer_;
@@ -76,6 +70,8 @@ class pisces_nic :
 class pisces_netlink :
   public netlink
 {
+  FactoryRegister("pisces | pisces", netlink, pisces_netlink,
+              "implements a netlink that models messages as a packet flow")
  public:
   pisces_netlink(sprockit::sim_parameters* params, node* parent);
 
@@ -92,21 +88,17 @@ class pisces_netlink :
 
   void deadlock_check() override;
 
-  link_handler*
-  payload_handler(int port) const override;
+  link_handler* payload_handler(int port) const override;
 
-  link_handler*
-  credit_handler(int port) const override;
+  link_handler* credit_handler(int port) const override;
 
-  virtual void
-  connect_output(
+  virtual void connect_output(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
     event_handler* mod) override;
 
-  virtual void
-  connect_input(
+  virtual void connect_input(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,

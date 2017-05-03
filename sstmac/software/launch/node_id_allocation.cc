@@ -13,8 +13,6 @@ RegisterKeywords("launch_node_id_allocation_file",
 namespace sstmac {
 namespace sw {
 
-SpktRegister("node_id", node_allocator, node_id_allocation);
-
 node_id_allocation::node_id_allocation(sprockit::sim_parameters* params) :
   node_allocator(params)
 {

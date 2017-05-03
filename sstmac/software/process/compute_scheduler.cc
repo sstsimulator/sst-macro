@@ -14,7 +14,6 @@
 #include <sstmac/software/process/operating_system.h>
 #include <sprockit/sim_parameters.h>
 
-ImplementFactory(sstmac::sw::compute_scheduler);
 RegisterDebugSlot(compute_scheduler, "Print all debug information related to the OS compute scheduler");
 
 namespace sstmac {

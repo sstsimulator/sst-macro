@@ -14,6 +14,7 @@ class netlink :
   public connectable,
   public event_subcomponent
 {
+  DeclareFactory(netlink, node*)
  public:
   virtual ~netlink(){}
 
@@ -40,7 +41,6 @@ class netlink :
   netlink_id id_;
 
 };
-DeclareFactory1InitParam(netlink, node*)
 
 }
 }

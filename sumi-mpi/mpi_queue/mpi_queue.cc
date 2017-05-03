@@ -713,13 +713,13 @@ mpi_queue::buffer_unexpected(const mpi_message::ptr& msg)
 }
 
 void
-mpi_queue::post_header(const mpi_message::ptr& msg, bool needs_ack)
+mpi_queue::post_header(const mpi_message::ptr& msg, sumi::message::payload_type_t ty, bool needs_ack)
 {
   SSTMACBacktrace("MPI Queue Post Header");
   mpi_comm* comm = api_->get_comm(msg->comm());
   int dst_world_rank = comm->peer_task(msg->dst_rank());
   msg->set_src_rank(comm->rank());
-  api_->send_header(dst_world_rank, msg, needs_ack);
+  api_->smsg_send(dst_world_rank, ty, msg, needs_ack);
 }
 
 void

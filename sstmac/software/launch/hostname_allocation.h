@@ -18,16 +18,17 @@
 #include <sstmac/hardware/topology/structured_topology.h>
 
 namespace sstmac {
-
 namespace sw {
+
 class hostname_allocation : public node_allocator
 {
-
+  FactoryRegister("hostname", node_allocator, hostname_allocation,
+              "Given a file containing one hostname/coordinate pair per line, "
+              "return a node allocation with all hosts in the file")
  public:
   hostname_allocation(sprockit::sim_parameters* params);
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "hostname allocation";
   }
 
@@ -37,20 +38,15 @@ class hostname_allocation : public node_allocator
    * @param mapfile name of the map file
    * @param hostmap map in which host mappings are placed
    */
-  static void
-  read_map_file(parallel_runtime* rt,
-                const char* here,
-                const std::string &mapfile,
+  static void read_map_file(parallel_runtime* rt,
+                const char* here, const std::string &mapfile,
                 std::map<std::string,std::vector<int> >& hostmap);
 
-  virtual void
-  allocate(int nnode_requested,
+  virtual void allocate(int nnode_requested,
     const ordered_node_set& available,
     ordered_node_set &allocation) const override;
 
-  virtual
-  ~hostname_allocation() throw () {
-  }
+  virtual ~hostname_allocation() throw () {}
 
   typedef spkt_unordered_map<std::string, node_id> nodemap_t;
   static nodemap_t hostnamemap_;

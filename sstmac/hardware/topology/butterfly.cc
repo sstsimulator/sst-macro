@@ -8,10 +8,6 @@
 namespace sstmac {
 namespace hw {
 
-SpktRegister("butterfly | bfly", topology, butterfly);
-
-
-
 void
 butterfly::minimal_route_to_switch(switch_id src,
                                     switch_id dst,

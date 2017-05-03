@@ -29,7 +29,7 @@ namespace hw {
 class memory_model :
   public event_subcomponent
 {
-
+  DeclareFactory(memory_model,node*)
  public:
   memory_model(sprockit::sim_parameters* params,
                node* node);
@@ -60,8 +60,6 @@ class memory_model :
   event_handler* done_;
 
 };
-
-DeclareFactory1InitParam(memory_model,node*);
 
 }
 } /* namespace sstmac */

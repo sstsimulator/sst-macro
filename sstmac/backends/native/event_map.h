@@ -30,7 +30,8 @@ namespace native {
 class event_map :
   public event_manager
 {
-
+  FactoryRegister("map", event_manager, event_map,
+      "Implements the event queue as an ordered multimap")
  public:
   event_map(sprockit::sim_parameters* params, parallel_runtime* rt);
 

@@ -43,8 +43,7 @@ class multipath_router :
     }
   };
 
-  virtual void
-  compatibility_check(){
+  virtual void compatibility_check(){
     //do nothing
   }
 
@@ -63,8 +62,7 @@ class multipath_router :
     }
   }
 
-  virtual void
-  route(packet* pkt){
+  virtual void route(packet* pkt){
     routable::path_set paths;
     ParentRouter::route(pkt);
     routable::path& path = pkt->interface<routable>()->current_path();

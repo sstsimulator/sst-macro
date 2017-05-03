@@ -19,8 +19,6 @@
 namespace sstmac {
 namespace hw {
 
-SpktRegister("crossbar | xbar", topology, crossbar);
-
 crossbar::crossbar(sprockit::sim_parameters* params) :
   structured_topology(params,
                       InitMaxPortsIntra::I_Remembered,

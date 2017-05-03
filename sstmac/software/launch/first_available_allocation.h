@@ -19,22 +19,23 @@ namespace sw {
 
 class first_available_allocation : public node_allocator
 {
+  FactoryRegister("first_available | first", node_allocator, first_available_allocation,
+              "Allocate the first set of nodes from the list of available nodes."
+              "In most cases, allocating from the available node list will give "
+              "you a regular, contiguous allocation")
  public:
   first_available_allocation(sprockit::sim_parameters* params) :
     node_allocator(params)
   {
   }
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "first available allocator";
   }
 
-  virtual
-  ~first_available_allocation() throw ();
+  virtual ~first_available_allocation() throw ();
 
-  void
-  allocate(
+  void allocate(
     int nnode_requested,
     const ordered_node_set& available,
     ordered_node_set& allocation) const override;

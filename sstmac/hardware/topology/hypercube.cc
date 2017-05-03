@@ -22,9 +22,6 @@
 namespace sstmac {
 namespace hw {
 
-SpktRegister("hypercube", topology, hypercube,
-            "hypercube implements a high-dimension torus with an arbitrary number of dimensions");
-
 hypercube::hypercube(sprockit::sim_parameters* params) :
   hdtorus(params)
 {

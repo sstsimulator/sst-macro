@@ -8,8 +8,6 @@
 
 namespace sstmac {
 
-SpktRegister("local_double", stat_collector, stat_local_double);
-
 stat_local_double::stat_local_double(sprockit::sim_parameters* params) :
     stat_value<double>(params)
 {

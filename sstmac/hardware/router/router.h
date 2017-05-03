@@ -44,6 +44,7 @@ namespace hw {
 */
 class router : public sprockit::printable
 {
+  DeclareFactory(router, topology*, network_switch*)
  public:
   /**
    * @brief route Makes a routing decision for the packet.
@@ -122,12 +123,6 @@ class router : public sprockit::printable
   routing::algorithm_t algo_;
 
 };
-
-DeclareFactory(router, topology*, network_switch*);
-
-
-
-
 
 }
 }

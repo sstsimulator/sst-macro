@@ -23,9 +23,9 @@ namespace hw {
  */
 class crossbar : public structured_topology
 {
+  FactoryRegister("crossbar | xbar", topology, crossbar)
  public:
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "crossbar topology";
   }
 
@@ -33,13 +33,11 @@ class crossbar : public structured_topology
 
   crossbar(sprockit::sim_parameters* params);
 
-  int
-  diameter() const override {
+  int diameter() const override {
     return 1;
   }
 
-  int
-  num_leaf_switches() const override {
+  int num_leaf_switches() const override {
     return size_;
   }
 
@@ -47,40 +45,32 @@ class crossbar : public structured_topology
     return 1;
   }
 
-  bool
-  uniform_network_ports() const override {
+  bool uniform_network_ports() const override {
     return true;
   }
 
-  bool
-  uniform_switches_non_uniform_network_ports() const override {
+  bool uniform_switches_non_uniform_network_ports() const override {
     return true;
   }
 
-  bool
-  uniform_switches() const override {
+  bool uniform_switches() const override {
     return true;
   }
 
-  void
-  configure_individual_port_params(switch_id src,
+  void configure_individual_port_params(switch_id src,
         sprockit::sim_parameters *switch_params) const override;
 
-  void
-  connected_outports(switch_id src,
+  void connected_outports(switch_id src,
        std::vector<connection>& conns) const override;
 
-  void
-  configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
+  void configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
 
-  void
-  minimal_route_to_switch(
+  void minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
     routable::path& path) const override;
 
-  virtual int
-  num_switches() const override {
+  virtual int num_switches() const override {
     return size_;
   }
 

@@ -9,9 +9,6 @@
 namespace sstmac {
 namespace hw {
 
-SpktRegister("logP | simple | LogP | logp", nic, logp_nic,
-            "implements a nic that models messages via a simple latency/bandwidth injection delay");
-
 logp_nic::logp_nic(sprockit::sim_parameters* params, node* parent) :
   next_free_(0),
   nic(params, parent)

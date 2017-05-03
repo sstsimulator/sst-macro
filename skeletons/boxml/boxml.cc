@@ -46,9 +46,7 @@ using namespace sstmac;
 using namespace sstmac::sw;
 using namespace sumi;
 
-namespace lblxml
-{
-  SpktRegister("boxml", sstmac::sw::app, boxml, "amr simulator");
+namespace lblxml {
 
   bool boxml::have_data_ = false;
   bool boxml::have_input_bin_ = false;
@@ -166,7 +164,7 @@ namespace lblxml
 
     if (params_->has_namespace("effective_bandwidths")){
       sprockit::sim_parameters* stat_params = params_->get_namespace("effective_bandwidths");
-      hist_eff_bw_ = test_cast(stat_histogram, stat_collector_factory::get_optional_param("type", "histogram", stat_params));
+      hist_eff_bw_ = test_cast(stat_histogram, stat_collector::factory::get_optional_param("type", "histogram", stat_params));
 
       if (!hist_eff_bw_)
         spkt_throw_printf(sprockit::value_error,
@@ -178,7 +176,7 @@ namespace lblxml
 
     if (params_->has_namespace("polling_time")) {
       sprockit::sim_parameters* stat_params = params_->get_namespace("polling_time");
-      idle_time_ = test_cast(stat_local_double, stat_collector_factory::get_optional_param("type", "local_double", stat_params));
+      idle_time_ = test_cast(stat_local_double, stat_collector::factory::get_optional_param("type", "local_double", stat_params));
 
       if (!idle_time_)
         spkt_throw_printf(sprockit::value_error,
@@ -187,7 +185,7 @@ namespace lblxml
     }
     if (params_->has_namespace("barrier_time")) {
       sprockit::sim_parameters* stat_params = params_->get_namespace("barrier_time");
-      barrier_time_ = test_cast(stat_local_double, stat_collector_factory::get_optional_param("type", "local_double", stat_params));
+      barrier_time_ = test_cast(stat_local_double, stat_collector::factory::get_optional_param("type", "local_double", stat_params));
 
       if (!idle_time_)
         spkt_throw_printf(sprockit::value_error,
@@ -196,7 +194,7 @@ namespace lblxml
     }
     if (params_->has_namespace("compute_time")) {
       sprockit::sim_parameters* stat_params = params_->get_namespace("compute_time");
-      compute_time_ = test_cast(stat_local_double, stat_collector_factory::get_optional_param("type", "local_double", stat_params));
+      compute_time_ = test_cast(stat_local_double, stat_collector::factory::get_optional_param("type", "local_double", stat_params));
 
       if (!idle_time_)
         spkt_throw_printf(sprockit::value_error,

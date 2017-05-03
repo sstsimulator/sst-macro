@@ -9,50 +9,41 @@ namespace sstmac {
 class location_trace :
   public stat_collector
 {
-
+  FactoryRegister("location_trace", stat_collector, location_trace)
  public:
   location_trace(sprockit::sim_parameters* params) :
     stat_collector(params)
   {
   }
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "location trace";
   }
 
-  void
-  collect(timestamp created,
+  void collect(timestamp created,
           device_id creator,
           timestamp scheduled,
           device_id runner);
 
-  bool
-  read(std::istream& myfile,
+  bool read(std::istream& myfile,
        timestamp& created,
        device_id& creator,
        timestamp& scheduled,
        device_id& runner);
 
-  void
-  dump_local_data() override;
+  void dump_local_data() override;
 
-  void
-  dump_global_data() override;
+  void dump_global_data() override;
 
-  void
-  global_reduce(parallel_runtime *rt) override;
+  void global_reduce(parallel_runtime *rt) override;
 
-  void
-  simulation_finished(timestamp end) override {}
+  void simulation_finished(timestamp end) override {}
 
-  stat_collector*
-  do_clone(sprockit::sim_parameters* params) const override {
+  stat_collector* do_clone(sprockit::sim_parameters* params) const override {
     return new location_trace(params);
   }
 
-  void
-  reduce(stat_collector* coll) override;
+  void reduce(stat_collector* coll) override;
 
   void clear() override;
 

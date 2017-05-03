@@ -112,6 +112,7 @@ class app_ftq_calendar
 class ftq_calendar :
   public stat_collector
 {
+  FactoryRegister("ftq", stat_collector, ftq_calendar)
  public:
   ftq_calendar(sprockit::sim_parameters* params);
 

@@ -13,11 +13,7 @@
 
 using namespace sprockit::dbg;
 
-namespace sumi
-{
-
-SpktRegister("bruck_allgatherv", dag_collective, bruck_allgatherv_collective);
-
+namespace sumi {
 
 bruck_allgatherv_actor::bruck_allgatherv_actor(int* counts) : recv_counts_(counts)
 {

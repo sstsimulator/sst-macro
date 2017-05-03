@@ -21,10 +21,6 @@
 namespace sstmac {
 namespace native {
 
-SpktRegister("map", event_manager, event_map,
-    "Implements the event queue as an ordered multimap");
-
-
 event_map::~event_map() throw ()
 {
 }

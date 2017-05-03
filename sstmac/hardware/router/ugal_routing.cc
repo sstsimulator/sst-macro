@@ -7,9 +7,6 @@
 namespace sstmac {
 namespace hw {
 
-SpktRegister("ugal", router, ugal_router,
-            "router implementing ugal congestion-aware routing");
-
 ugal_router::ugal_router(sprockit::sim_parameters *params, topology *top, network_switch *netsw)
   :  valiant_router(params, top, netsw, routing::ugal)
 {

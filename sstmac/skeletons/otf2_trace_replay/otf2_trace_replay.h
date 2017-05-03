@@ -36,6 +36,9 @@ RegisterKeywords(
 
 
 class OTF2TraceReplayApp : public sstmac::sw::app {
+  FactoryRegister("otf2_trace_replay_app | parseotf2 | otf2",
+               sstmac::sw::app, OTF2TraceReplayApp,
+               "application for parsing and simulating OTF2 traces")
  public:
   OTF2TraceReplayApp(sprockit::sim_parameters* params,
                      sstmac::sw::software_id sid,

@@ -27,7 +27,7 @@ class packetizer_callback
 class packetizer :
   public event_subcomponent
 {
-
+  DeclareFactory(packetizer, event_component*)
  public:
   virtual ~packetizer();
 
@@ -86,10 +86,6 @@ class packetizer :
   void bytesArrived(int vn, uint64_t unique_id, int bytes, message* parent);
 
 };
-
-DeclareFactory(packetizer, event_component*)
-
-
 
 }
 }

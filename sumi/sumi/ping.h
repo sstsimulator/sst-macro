@@ -15,39 +15,34 @@ namespace sumi {
  * funneled into the same ping.
  */
 class pinger
-{
+{  
  public:
   ~pinger();
 
   pinger(transport* api, int dst, double timeout);
 
-  void
-  execute();
+  void execute();
 
   /**
    * Notify the pinger that its ping has safely arrived
    */
-  void
-  arrived();
+  void arrived();
 
   /**
    * Send out the first ping and start things going
    */
-  void
-  start();
+  void start();
 
   /**
    * Create the event that waits on a successful ping
    */
-  void
-  wait();
+  void wait();
 
   /**
    * @brief cancel
    * @param tag
    */
-  void
-  cancel(timeout_function* func);
+  void cancel(timeout_function* func);
 
   /**
    * The number of independent listeners, i.e.
@@ -55,33 +50,27 @@ class pinger
    * from this piong
    * @return
    */
-  int
-  refcount(){
+  int refcount(){
     return functions_.refcount();
   }
 
-  bool
-  has_arrived() const {
+  bool has_arrived() const {
     return arrived_;
   }
 
-  bool
-  has_failed() const {
+  bool has_failed() const {
     return failed_;
   }
 
-  bool
-  is_expired(double wtime) const {
+  bool is_expired(double wtime) const {
     return (start_time_ + timeout_) < wtime;
   }
 
-  double
-  start_time() const {
+  double start_time() const {
     return start_time_;
   }
 
-  void
-  maybe_renew(double wtime);
+  void maybe_renew(double wtime);
 
   /**
    * Attach a new listener (timeout function) to this ping
@@ -91,14 +80,11 @@ class pinger
   attach_listener(timeout_function* func);
 
  protected:
-  void
-  timeout_all_listeners();
+  void timeout_all_listeners();
 
-  void
-  schedule_next();
+  void schedule_next();
 
-  void
-  schedule_next(double wtime);
+  void schedule_next(double wtime);
 
  protected:
   function_set functions_;
@@ -115,27 +101,22 @@ class pinger
 class ping_monitor :
     public activity_monitor
 {
+  FactoryRegister("ping", activity_monitor, ping_monitor)
  public:
   ping_monitor(sprockit::sim_parameters* params,
                transport* tport);
 
-  void
-  ping(int dst, timeout_function* func);
+  void ping(int dst, timeout_function* func);
 
-  void
-  renew_pings(double wtime);
+  void renew_pings(double wtime);
 
-  void
-  cancel_ping(int dst, timeout_function* func);
+  void cancel_ping(int dst, timeout_function* func);
 
-  void
-  message_received(const message::ptr& msg);
+  void message_received(const message::ptr& msg);
 
-  void
-  validate_done();
+  void validate_done();
 
-  void
-  validate_all_pings();
+  void validate_all_pings();
 
  protected:
   /**

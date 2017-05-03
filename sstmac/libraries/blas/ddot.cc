@@ -9,6 +9,7 @@ namespace sw {
 class default_ddot :
   public blas_kernel
 {
+  FactoryRegister("default_ddot", blas_kernel, default_ddot)
  public:
   default_ddot(sprockit::sim_parameters* params){
     loop_unroll_ = params->get_optional_double_param("ddot_loop_unroll", 4);
@@ -28,7 +29,6 @@ class default_ddot :
   double pipeline_;
 
 };
-SpktRegister("default_ddot", blas_kernel, default_ddot);
 
 compute_event*
 default_ddot::op_1d(int n)

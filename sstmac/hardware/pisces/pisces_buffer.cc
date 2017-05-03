@@ -62,7 +62,7 @@ pisces_network_buffer::pisces_network_buffer(
   for (int i=0; i < num_vc_; ++i) {
     credits_[i] = num_credits_per_vc;
   }
-  arb_ = pisces_bandwidth_arbitrator_factory::
+  arb_ = pisces_bandwidth_arbitrator::factory::
           get_param("arbitrator", params);
 }
 
@@ -322,7 +322,7 @@ pisces_injection_buffer(sprockit::sim_parameters* params, event_scheduler* paren
 {
   packet_size_ = params->get_byte_length_param("mtu");
   credits_ = params->get_byte_length_param("credits");
-  arb_ = pisces_bandwidth_arbitrator_factory::
+  arb_ = pisces_bandwidth_arbitrator::factory::
           get_param("arbitrator", params);
   if (send_lat_.ticks_int64() == 0){
     params->print_scoped_params(std::cerr);

@@ -26,62 +26,43 @@
 
 static int errors_ = 0;
 
-static void
-test_sendrecv();
+static void test_sendrecv();
 
-static void
-test_barrier();
+static void test_barrier();
 
-static void
-test_asynch();
+static void test_asynch();
 
-static void
-test_bcast();
+static void test_bcast();
 
-static void
-test_scatter();
+static void test_scatter();
 
-static void
-test_gather();
+static void test_gather();
 
-static void
-test_scan();
+static void test_scan();
 
-static void
-test_send();
+static void test_send();
 
-static void
-test_isend();
+static void test_isend();
 
-static void
-test_allgather();
+static void test_allgather();
 
-static void
-test_reduce();
+static void test_reduce();
 
-static void
-test_allreduce();
+static void test_allreduce();
 
-static void
-test_alltoall();
+static void test_alltoall();
 
-static void
-test_comms();
+static void test_comms();
 
-static void
-test_wait();
+static void test_wait();
 
-static void
-test_reducescatter();
+static void test_reducescatter();
 
-static void
-test_probe();
+static void test_probe();
 
-static void
-test_persistent();
+static void test_persistent();
 
-static void
-test_reduce_scatter();
+static void test_reduce_scatter();
 
 int USER_MAIN(int argc, char** argv)
 {

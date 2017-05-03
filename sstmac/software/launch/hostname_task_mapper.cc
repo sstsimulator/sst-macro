@@ -23,9 +23,6 @@
 namespace sstmac {
 namespace sw {
 
-SpktRegister("hostname", task_mapper, hostname_task_mapper,
-            "assigns tasks to nodes based on hostname map of topology and hostname list in file");
-
 hostname_task_mapper::hostname_task_mapper(sprockit::sim_parameters *params) :
   task_mapper(params)
 {

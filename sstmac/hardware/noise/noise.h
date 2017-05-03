@@ -9,6 +9,7 @@ namespace sstmac {
 
 class noise_model
 {
+  DeclareFactory(noise_model)
  public:
   virtual ~noise_model(){}
 
@@ -19,11 +20,13 @@ class noise_model
   noise_model(){}
 
 };
-DeclareFactory(noise_model);
 
 class gaussian_noise_model :
   public noise_model
 {
+  FactoryRegister("gaussian", noise_model, gaussian_noise_model,
+      "implements a normally distributed noise model with mean, stdev "
+      "and optional max parameter defining cutoff")
  public:
   gaussian_noise_model(
     double mean,

@@ -14,15 +14,6 @@
 
 namespace sstmac {
 namespace sw {
-SpktRegister("round | round_robin", task_mapper, round_robin_task_mapper,
-   "Tries to spread out ranks across the nodes. Ranks 0,1,2,3 are on different nodes."
-   "Ranks 0,4,8 are on the same node."
-   "Round robin and block indexing are equivalent if there is one process per node.");
-
-
-round_robin_task_mapper::~round_robin_task_mapper() throw ()
-{
-}
 
 void
 round_robin_task_mapper::map_ranks(

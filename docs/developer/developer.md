@@ -1191,8 +1191,6 @@ virtual void configure_individual_port_params(switch_id src, sprockit::sim_param
 
 virtual int num_switches() const = 0;
 
-virtual int num_leaf_switches() const = 0;
-
 virtual int num_nodes() const = 0;
 
 virtual int num_endpoints() const = 0;

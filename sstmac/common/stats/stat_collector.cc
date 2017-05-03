@@ -15,7 +15,6 @@
 #include <sprockit/errors.h>
 #include <sprockit/keyword_registration.h>
 
-ImplementFactory(sstmac::stat_collector);
 RegisterKeywords(
 "suffix",
 "fileroot",
@@ -105,7 +104,7 @@ stat_collector::optional_build(sprockit::sim_parameters* params,
     params->add_param_override("suffix", suffix);
   }
 
-  stat_collector* stats = stat_collector_factory::get_optional_param(
+  stat_collector* stats = stat_collector::factory::get_optional_param(
         "type", deflt, params);
 
   return stats;

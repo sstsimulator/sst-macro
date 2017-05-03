@@ -44,7 +44,7 @@ pisces_NtoM_queue(sprockit::sim_parameters* params,
     credit_handler_(nullptr)
 {
   num_vc_ = params->get_int_param("num_vc");
-  arb_ = pisces_bandwidth_arbitrator_factory::get_param("arbitrator", params);
+  arb_ = pisces_bandwidth_arbitrator::factory::get_param("arbitrator", params);
 }
 
 event_handler*

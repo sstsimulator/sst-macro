@@ -20,13 +20,15 @@ pisces_simple_network::pisces_simple_network(sprockit::sim_parameters *params, S
   //we need a self link
   event_scheduler::init_self_link(comp);
 
+  init_links(params);
+
   sprockit::sim_parameters* inj_params = params->get_optional_namespace("injection");
   pisces_sender::configure_payload_port_latency(inj_params);
   inj_buffer_ = new pisces_injection_buffer(inj_params, this);
   inj_buffer_->set_input(inj_params, 0, 0, new_handler(this, &pisces_simple_network::credit_arrived));
 
   sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
-  arb_ = pisces_bandwidth_arbitrator_factory::get_param("arbitrator", params);
+  arb_ = pisces_bandwidth_arbitrator::factory::get_param("arbitrator", params);
 }
 
 void

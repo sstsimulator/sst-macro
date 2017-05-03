@@ -34,13 +34,14 @@ class parsedumpi : public sstmac::sw::app
   friend class parsedumpi_unit_test;
   friend class parsedumpi_callbacks;
 
+  FactoryRegister("parsedumpi | dumpi", sstmac::sw::app, parsedumpi,
+              "application for parsing and simulating dumpi traces")
  public:
   parsedumpi(sprockit::sim_parameters* params, sstmac::sw::software_id sid,
              sstmac::sw::operating_system* os);
 
   /// Wait!  That's not good news at all!
-  virtual
-  ~parsedumpi() throw ();
+  virtual ~parsedumpi() throw ();
 
   mpi_api* mpi() {
     return mpi_;
@@ -50,9 +51,7 @@ class parsedumpi : public sstmac::sw::app
     return exact_mpi_times_;
   }
 
-  /// Parse the tracefile.
-  virtual void
-  skeleton_main();
+  virtual void skeleton_main();
 
  private:
   /// The fileroot we plan to parse.

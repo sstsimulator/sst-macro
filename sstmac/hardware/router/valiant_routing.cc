@@ -6,10 +6,6 @@
 namespace sstmac {
 namespace hw {
 
-SpktRegister("valiant", router, valiant_router,
-            "router implementing valiant routing");
-
-
 valiant_router::valiant_router(sprockit::sim_parameters* params, topology *top,
                                network_switch *netsw, routing::algorithm_t algo)
   : minimal_router(params, top, netsw, algo)

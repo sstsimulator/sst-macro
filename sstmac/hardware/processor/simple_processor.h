@@ -26,6 +26,8 @@ namespace hw {
 class simple_processor :
   public processor
 {
+  FactoryRegister("simple", processor, simple_processor,
+              "Basic processor that only does timed_message computes")
  public:
   simple_processor(sprockit::sim_parameters* params,
                    memory_model* mem, node* nd) :
@@ -34,8 +36,7 @@ class simple_processor :
   /// Goodbye.
   virtual ~simple_processor() {}
 
-  void
-  compute(event* ev, callback* cb) override;
+  void compute(event* ev, callback* cb) override;
 
 };
 
