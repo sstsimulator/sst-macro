@@ -60,7 +60,7 @@ mpi_queue_send_request::wait_for_buffer()
     Just clear the completion handlers and use this as a
     placeholder for clearing nic acks
   */
-  key_ = 0;
+  key_ = nullptr;
 }
 
 void

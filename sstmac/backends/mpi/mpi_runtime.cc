@@ -127,10 +127,6 @@ mpi_runtime::mpi_runtime(sprockit::sim_parameters* params) :
   init_size(params))
 {
   epoch_ = 0;
-  array_of_ones_ = new int[nproc_];
-  for (int i=0; i < nproc_; ++i){
-    array_of_ones_[i] = 1;
-  }
 
   num_sent_ = new int[2*nproc_];
   ::memset(num_sent_, 0, 2*nproc_ * sizeof(int));
@@ -143,7 +139,7 @@ mpi_runtime::init_size(sprockit::sim_parameters* params)
   MPI_Initialized(&inited);
   if (!inited){
     int argc = 1;
-    char** argv = 0;
+    char** argv = nullptr;
     int rc = MPI_Init(&argc, &argv);
     if (rc != MPI_SUCCESS){
       spkt_abort_printf("mpi_runtime::init_rank: could not MPI_Init");
@@ -160,7 +156,7 @@ mpi_runtime::init_rank(sprockit::sim_parameters* params)
   MPI_Initialized(&inited);
   if (!inited){
     int argc = 1;
-    char** argv = 0;
+    char** argv = nullptr;
     int rc = MPI_Init(&argc, &argv);
     if (rc != MPI_SUCCESS){
       spkt_abort_printf("mpi_runtime::init_rank: could not MPI_Init");
@@ -198,7 +194,7 @@ mpi_runtime::wait_merge_array(int tag)
   }
 
   int num_sent_to_me;
-  MPI_Reduce_scatter(fake_num_sent, &num_sent_to_me, array_of_ones_, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Reduce_scatter_block(fake_num_sent, &num_sent_to_me, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
   do_collective_merges(tag);
   delete[] fake_num_sent;
 }

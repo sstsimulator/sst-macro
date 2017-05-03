@@ -35,8 +35,8 @@ gni_transport::init_smsg_metadata()
     ep.refcount = 0;
     ep.queued = false;
     ep.rank = i;
-    ep.next = 0;
-    ep.prev = 0;
+    ep.next = nullptr;
+    ep.prev = nullptr;
   }
 }
 

@@ -189,7 +189,7 @@ bool
 merlin_packetizer::recvNotify(int vn)
 {
   SST::Interfaces::SimpleNetwork::Request* req = m_linkControl->recv(vn);
-  message* m = 0;
+  message* m = nullptr;
   uint64_t flow_id;
   if (req->tail){
     m = static_cast<message*>(req->takePayload());

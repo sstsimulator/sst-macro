@@ -568,7 +568,7 @@ transport::~transport()
 void
 transport::dynamic_tree_vote(int vote, int tag, vote_fxn fxn, int context, communicator* dom)
 {
-  if (dom == 0) dom = global_domain_;
+  if (dom == nullptr) dom = global_domain_;
   if (dom->nproc() == 1){
     collective_done_message::ptr dmsg = new collective_done_message(tag, collective::dynamic_tree_vote, dom);
     dmsg->set_comm_rank(0);

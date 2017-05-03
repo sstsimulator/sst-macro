@@ -75,12 +75,12 @@ gni_transport::smsg_queue_endpoint(smsg_endpoint_t *ep)
   if (smsg_endpoint_tail_){
     smsg_endpoint_tail_->next = ep;
     ep->prev = smsg_endpoint_tail_;
-    ep->next = 0;
+    ep->next = nullptr;
     smsg_endpoint_tail_ = ep;
   }
   else {
-    ep->next = 0;
-    ep->prev = 0;
+    ep->next = nullptr;
+    ep->prev = nullptr;
     smsg_endpoint_head_ = smsg_endpoint_tail_ = ep;
   }
   ep->queued = true;
@@ -99,15 +99,15 @@ gni_transport::smsg_unqueue_endpoint(smsg_endpoint_t *ep)
 
   // I am all there is!
   if (smsg_num_endpoints_queued_ == 1){
-    smsg_endpoint_head_ = smsg_endpoint_tail_ = 0;
+    smsg_endpoint_head_ = smsg_endpoint_tail_ = nullptr;
   }
-  else if (ep->prev == 0){ //I'm the head
+  else if (ep->prev == nullptr){ //I'm the head
     smsg_endpoint_head_ = ep->next;
-    smsg_endpoint_head_->prev = 0;
+    smsg_endpoint_head_->prev = nullptr;
   }
-  else if (ep->next == 0){ //I'm the tail
+  else if (ep->next == nullptr){ //I'm the tail
     smsg_endpoint_tail_ = ep->prev;
-    smsg_endpoint_tail_->next = 0;
+    smsg_endpoint_tail_->next = nullptr;
   }
   else { //neither
     ep->next->prev = ep->prev;

@@ -168,7 +168,7 @@ manager::~manager() throw ()
 {
   if (sprockit::debug::prefix_fxn) 
     delete sprockit::debug::prefix_fxn;
-  sprockit::debug::prefix_fxn = 0;
+  sprockit::debug::prefix_fxn = nullptr;
   if (this->running_){
     cerrn << "FATAL:  manager going out of scope while still running.\n";
     abort();

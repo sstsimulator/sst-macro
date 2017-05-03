@@ -560,7 +560,7 @@ SSTMAC_pthread_attr_getaffinity_np(sstmac_pthread_attr_t attr, size_t cpusetsize
 extern "C" int
 SSTMAC_pthread_attr_getstack(sstmac_pthread_attr_t *attr, void **stack, size_t *stacksize)
 {
-  *stack = 0;
+  *stack = nullptr;
   *stacksize = sstmac::sw::operating_system::stacksize();
   return 0;
 }

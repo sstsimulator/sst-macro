@@ -109,7 +109,7 @@ btree_scatter_actor::init_dag()
   int nproc = comm_->nproc();
   int round = 0;
 
-  action* prev = 0;
+  action* prev = nullptr;
 
   //as with many other collectives - make absolutely no sense to run this on unpacked data
   //collective does not really need to worry about processing packed versus unpacked data

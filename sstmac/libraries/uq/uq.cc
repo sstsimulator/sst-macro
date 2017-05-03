@@ -256,7 +256,7 @@ sstmac_uq_run(void* queue,
   if (max_nthread <= 0) max_nthread = q->maxParallelWorkers();
 
   Simulation** sims = q->allocateSims(max_nthread);
-  char* bufferPtr = 0;
+  char* bufferPtr = nullptr;
   int num_running = 0;
   int result_offset = 0;
   int last_job = njobs - 1;

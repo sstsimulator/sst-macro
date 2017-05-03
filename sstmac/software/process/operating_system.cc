@@ -567,7 +567,7 @@ operating_system::block(key* req)
 {
 #if SSTMAC_SANITY_CHECK
   valid_keys_.insert(req);
-  if (req == 0) {
+  if (req == nullptr) {
     spkt_throw(sprockit::null_error,
               "operating_system::block:  cannot block a null key pointer");
   }

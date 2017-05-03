@@ -220,7 +220,7 @@ app::add_subthread(thread *thr)
 void
 app::set_subthread_done(thread* thr)
 {
-  subthreads_[thr->thread_id()] = 0;
+  subthreads_[thr->thread_id()] = nullptr;
 }
 
 thread*

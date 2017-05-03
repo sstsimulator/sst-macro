@@ -28,8 +28,8 @@ static std::vector<key*>* chunks = new std::vector<key*>;
 } // end of namespace keypool.
 
 key_traits::category key::general("General");
-spkt_unordered_map<std::string,int>* key::category_name_to_id_ = 0;
-spkt_unordered_map<int,std::string>* key::category_id_to_name_ = 0;
+spkt_unordered_map<std::string,int>* key::category_name_to_id_ = nullptr;
+spkt_unordered_map<int,std::string>* key::category_id_to_name_ = nullptr;
 uint64_t key::key_storage_size_ = 0;
 static sprockit::need_delete_statics<key> del_statics;
 static thread_lock lock_;
@@ -79,16 +79,16 @@ key::key() :
   keyname_id_(general.id()),
   timed_out_(false)
 {
-  blocked_thread_.first = 0;
-  blocked_thread_.second = 0;
+  blocked_thread_.first = nullptr;
+  blocked_thread_.second = nullptr;
 }
 
 key::key(const key_traits::category& cat) :
   keyname_id_(cat.id()),
   timed_out_(false)
 {
-  blocked_thread_.first = 0;
-  blocked_thread_.second = 0;
+  blocked_thread_.first = nullptr;
+  blocked_thread_.second = nullptr;
 }
 
 
@@ -140,7 +140,7 @@ key::delete_statics()
     }
     keypool::chunks->clear();
     delete keypool::chunks;
-    keypool::chunks = 0;
+    keypool::chunks = nullptr;
   }
   delete category_name_to_id_;
   delete category_id_to_name_;

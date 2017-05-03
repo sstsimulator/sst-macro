@@ -101,7 +101,7 @@ bruck_alltoall_actor::init_dag()
   int partnerGap = 1;
   int me = dense_me_;
   int nproc = dense_nproc_;
-  action* prev_shuffle = 0;
+  action* prev_shuffle = nullptr;
   if (nprocs_extra_round) ++num_rounds;
 
   //similar to the allgather - makes no sense to run this on unpacked ata

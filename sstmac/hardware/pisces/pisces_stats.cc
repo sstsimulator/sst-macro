@@ -321,7 +321,7 @@ stat_bytes_sent::global_reduce(parallel_runtime *rt)
 
   global_gather_stats_t stats;
   stats.buffer_size = total_size;
-  global_gather_stats_t* stats_array = 0;
+  global_gather_stats_t* stats_array = nullptr;
 
   if (rt->me() == root){
     stats_array = new global_gather_stats_t[rt->nproc()];

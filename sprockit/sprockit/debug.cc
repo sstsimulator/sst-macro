@@ -25,11 +25,11 @@ namespace sprockit {
 static need_delete_statics<debug> del_statics;
 
 
-debug_prefix_fxn* debug::prefix_fxn = 0;
+debug_prefix_fxn* debug::prefix_fxn = nullptr;
 debug_int debug::current_bitmask_;
 debug_int debug::start_bitmask_;
-std::map<std::string, debug_int*>* debug::debug_ints_ = 0;
-std::map<std::string, std::string>* debug::docstrings_ = 0;
+std::map<std::string, debug_int*>* debug::debug_ints_ = nullptr;
+std::map<std::string, std::string>* debug::docstrings_ = nullptr;
 int debug::num_bits_assigned = 1; //the zeroth bit is reserved empty
 
 #if SPROCKIT_ENABLE_DEBUG

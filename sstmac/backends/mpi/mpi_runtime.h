@@ -90,7 +90,6 @@ class mpi_runtime :
 
    int max_num_requests_;
    int* num_sent_;
-   int* array_of_ones_;
    int total_num_sent_;
    int epoch_;
 

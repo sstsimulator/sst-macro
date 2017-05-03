@@ -746,7 +746,7 @@ dag_collective_actor::send_failure_message(
   if (is_failed(ac->partner))
     return;
 
-  void* no_buffer = 0;
+  void* no_buffer = nullptr;
   int no_elems = 0;
   //send a failure message to the neighbor letting him know to abandon the collective
   collective_work_message::ptr msg = new collective_work_message(

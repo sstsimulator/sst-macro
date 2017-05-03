@@ -29,7 +29,7 @@ int USER_MAIN(int argc, char** argv)
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
   //send/recv from all the other procs
-  void* null_buffer = 0;
+  void* null_buffer = nullptr;
   sprockit::sim_parameters* params = get_params();
   int count = params->get_optional_byte_length_param("message_size", 100);
   bool print_times = params->get_optional_bool_param("print_times", true);
