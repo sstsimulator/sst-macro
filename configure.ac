@@ -123,6 +123,8 @@ fi
 
 CHECK_CLANG()
 
+CHECK_GCC()
+
 CHECK_SST_CORE()
 
 AC_CHECK_HEADERS([mpi.h],

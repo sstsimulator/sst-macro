@@ -30,8 +30,7 @@ template <class T, typename... Args>
 class SpktBuilder
 {
  public:
-  virtual T*
-  build(sprockit::sim_parameters* params, const Args&... args) = 0;
+  virtual T* build(sprockit::sim_parameters* params, const Args&... args) = 0;
 
 };
 
@@ -168,8 +167,7 @@ class Factory
    *                depending on static init order
    * @param newname The new name that can be used for accessing child type
    */
-  static void
-  register_alias(const std::string& oldname, const std::string& newname){
+  static void register_alias(const std::string& oldname, const std::string& newname){
     if (!builder_map_) {
       builder_map_ = new builder_map;
     }
@@ -185,16 +183,15 @@ class Factory
     }
   }
 
-  static void
-  clean_up(){
+  static void clean_up(){
     //do not iterate the builder map and delete entry
     //each builder_t is a static objec that gets cleaned up automatically
 
     if (builder_map_) delete builder_map_;
     if (alias_map_) delete alias_map_;
 
-    builder_map_ = 0;
-    alias_map_ = 0;
+    builder_map_ = nullptr;
+    alias_map_ = nullptr;
   }
 
   /**
@@ -203,11 +200,8 @@ class Factory
    * @param builder The builder object whose virtual functio returns
    *                the correct child type
    */
-  static void
-  register_name(const std::string& name, builder_t* builder) {
+  static void register_name(const std::string& name, builder_t* builder) {
     //clang complains about valid variable - turn it off
-#pragma GCC diagnostic ignored "-Wunknown-pragmas"
-#pragma GCC diagnostic ignored "-Wundefined-var-template"
     {
     if (!builder_map_) {
       builder_map_ = new builder_map;
@@ -267,8 +261,7 @@ class Factory
    * @param args        The required arguments for the constructor
    * @return  A constructed child class corresponding to a given string name
    */
-  static T*
-  _get_value(const std::string& valname,
+  static T* _get_value(const std::string& valname,
              sprockit::sim_parameters* params,
              const Args&... args) {
     if (!builder_map_) {
@@ -394,8 +387,7 @@ class Factory
    * @param args      The required arguments for the constructor
    * @return  A constructed child class corresponding to a given string name
    */
-  static T*
-  get_optional_param(const std::string& param_name,
+  static T* get_optional_param(const std::string& param_name,
                      const std::string& defval,
                      sim_parameters* params,
                      const Args&... args) {
@@ -414,8 +406,7 @@ class SpktBuilderImpl<Child, Factory<Parent, Args...> > :
     Factory<Parent, Args...>::register_name(name, this);
   }
 
-  Parent*
-  build(sprockit::sim_parameters* params, const Args&... args) {
+  Parent* build(sprockit::sim_parameters* params, const Args&... args) {
     return call_constructor<Child,Args...>()(params, args...);
   }
 

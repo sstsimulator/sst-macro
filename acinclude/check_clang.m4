@@ -2,17 +2,17 @@
 
 AC_DEFUN([CHECK_CLANG], [
 
-AC_MSG_CHECKING("Checking for clang .so linker flags")
+AC_MSG_CHECKING("Checking for Clang flags")
 have_clang=`$srcdir/bin/config_tools/get_clang $CXX`
 AC_MSG_RESULT([$have_clang])
 
 
 if test "X$have_clang" = "Xyes"; then
-  AC_MSG_RESULT([clang sub])
   AC_SUBST([LD_SO_FLAGS], ["-shared -undefined dynamic_lookup"])
+  AM_CONDITIONAL([HAVE_CLANG], true)
 else
-  AC_MSG_RESULT([gcc sub])
   AC_SUBST([LD_SO_FLAGS], ["-shared"])
+  AM_CONDITIONAL([HAVE_CLANG], false)
 fi
 ])
 
