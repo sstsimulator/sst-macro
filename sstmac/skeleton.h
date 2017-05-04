@@ -11,6 +11,7 @@ typedef int (*empty_main_fxn)();
 #include <sstmac/common/sstmac_config.h>
 
 #ifdef __cplusplus
+#include <cstdlib> //must come first
 #if SSTMAC_INTEGRATED_SST_CORE && defined(SSTMAC_EXTERNAL_SKELETON)
 #include <Python.h>
 #include <sstCoreElement.h>
@@ -135,6 +136,13 @@ sstmac_free(void* ptr){
   if (ptr != nullptr) ::free(ptr);
 }
 
+namespace std {
+static inline void
+sstmac_free(void* ptr){
+  if (ptr != nullptr) std::free(ptr);
+}
+}
+
 #else
 #include <stdlib.h>
 /**
@@ -149,9 +157,6 @@ sstmac_free(void* ptr){
 #define main ignore_for_app_name; const char* sstmac_appname_str = SST_APP_NAME_QUOTED; int main
 #endif
 
-
-
 #define free sstmac_free
-
 
 #endif
