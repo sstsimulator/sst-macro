@@ -144,7 +144,7 @@ AC_CONFIG_FILES([
 ])
 AC_OUTPUT
 
-echo "Configuration Summary:"
+echo "SProCKit Configuration Summary:"
 echo "---------------------------------------------------------------"
 echo "Install prefix     $prefix"
 echo "C compiler         $CC"
