@@ -116,6 +116,7 @@ class task_mapping : public sprockit::ptr_type
  */
 class job_launcher : public service
 {
+  DeclareFactory(job_launcher, operating_system*)
  public:
   /**
    * @brief incoming_event Handle an event sent from one of the nodes
@@ -185,9 +186,6 @@ class job_launcher : public service
 
 };
 
-
-DeclareFactory(job_launcher, operating_system*);
-
 /**
  * @brief The default_job_launcher
  * Encapsulates a job launcher that ALWAYS tries to launch a job. It performs no queueing
@@ -196,6 +194,7 @@ DeclareFactory(job_launcher, operating_system*);
  */
 class default_job_launcher : public job_launcher
 {
+  FactoryRegister("default", job_launcher, default_job_launcher)
  public:
   default_job_launcher(sprockit::sim_parameters* params, operating_system* os) :
     job_launcher(params, os)
@@ -218,6 +217,7 @@ class default_job_launcher : public job_launcher
  */
 class exclusive_job_launcher : public default_job_launcher
 {
+  FactoryRegister("exclusive", job_launcher, exclusive_job_launcher)
  public:
   exclusive_job_launcher(sprockit::sim_parameters* params, operating_system* os) :
    default_job_launcher(params, os), active_job_(nullptr)

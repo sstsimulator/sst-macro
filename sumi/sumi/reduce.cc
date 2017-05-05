@@ -13,10 +13,7 @@
 
 using namespace sprockit::dbg;
 
-namespace sumi
-{
-
-SpktRegister("wilke", dag_collective, wilke_halving_reduce);
+namespace sumi {
 
 wilke_halving_reduce::wilke_halving_reduce(int root, reduce_fxn fxn) :
  root_(root), fxn_(fxn)
@@ -98,7 +95,7 @@ wilke_reduce_actor::init_dag()
   action* final_join = new action(action::join, 0, 0);
 
   for (int role=0; role < num_roles; ++role){
-    action* null = 0;
+    action* null = nullptr;
     std::vector<action*> send_rounds(num_doubling_rounds, null);
     std::vector<action*> recv_rounds(num_doubling_rounds, null);
 
@@ -107,7 +104,7 @@ wilke_reduce_actor::init_dag()
     int partner_gap = 1;
     int round_nelems = nelems_;
 
-    action *prev_send = 0, *prev_recv = 0;
+    action *prev_send = nullptr, *prev_recv = nullptr;
 
     int virtual_me = my_roles[role];
     if (virtual_me == midpoint) i_am_midpoint = true;

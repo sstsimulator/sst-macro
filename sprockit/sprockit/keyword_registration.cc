@@ -11,11 +11,11 @@
 
 namespace sprockit {
 
-spkt_unordered_set<std::string>* KeywordRegistration::valid_keywords_ = 0;
-spkt_unordered_set<std::string>* KeywordRegistration::valid_namespaces_ = 0;
-spkt_unordered_set<std::string>* KeywordRegistration::removed_ = 0;
+spkt_unordered_set<std::string>* KeywordRegistration::valid_keywords_ = nullptr;
+spkt_unordered_set<std::string>* KeywordRegistration::valid_namespaces_ = nullptr;
+spkt_unordered_set<std::string>* KeywordRegistration::removed_ = nullptr;
 #if !SPKT_DISABLE_REGEX
-std::list<std::string>* KeywordRegistration::regexps_ = 0;
+std::list<std::string>* KeywordRegistration::regexps_ = nullptr;
 #endif
 bool KeywordRegistration::inited_ = false;
 #if !SPKT_DISABLE_REGEX

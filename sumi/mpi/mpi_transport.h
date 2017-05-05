@@ -60,7 +60,8 @@ class PendingMPI
 class mpi_transport :
   public active_msg_transport
 {
-
+  FactoryRegister("mpi", transport, mpi_transport,
+              "Create a SUMI transport suitable for MPI")
  public:
   mpi_transport();
 
@@ -72,13 +73,11 @@ class mpi_transport :
 
   void wait_on_pending();
 
-  public_buffer
-  allocate_public_buffer(int size){
+  public_buffer allocate_public_buffer(int size){
     return public_buffer(::malloc(size));
   }
 
-  public_buffer
-  make_public_buffer(void* buf, int size){
+  public_buffer make_public_buffer(void* buf, int size){
     return public_buffer(buf); //nothing to do
   }
 
@@ -177,8 +176,7 @@ class mpi_transport :
 
   char* allocate_smsg_buffer();
 
-  void
-  transport_smsg_send(int dst, int tag, PendingMPI::type_t ty,
+  void transport_smsg_send(int dst, int tag, PendingMPI::type_t ty,
     const message::ptr& msg,
     void* extra_md = 0, int md_size = 0);
 

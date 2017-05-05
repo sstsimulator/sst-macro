@@ -1,5 +1,6 @@
 #include <sumi/message.h>
 
+
 namespace sumi {
 
 const int message::ack_size = 16;
@@ -193,13 +194,13 @@ message::serialize_order(sumi::serializer &ser)
   {
     case rdma_get:
       if (remote_buffer_.ptr){
-        sumi::array(remote_buffer_.ptr, num_bytes_);
+        ser & sumi::array(remote_buffer_.ptr, num_bytes_);
       }
       break;
     case rdma_put:
     case eager_payload:
       if (local_buffer_.ptr){
-        sumi::array(local_buffer_.ptr, num_bytes_);
+        ser & sumi::array(local_buffer_.ptr, num_bytes_);
       }
       break;
     default:
@@ -210,6 +211,7 @@ message::serialize_order(sumi::serializer &ser)
 void
 system_bcast_message::serialize_order(serializer& ser)
 {
+  message::serialize_order(ser);
   ser & root_;
   ser & action_;
 }

@@ -21,6 +21,8 @@ enum class vote_type_t {
 class clock_cycle_event_map :
   public event_map
 {
+  FactoryRegister("clock_cycle_parallel", event_manager, clock_cycle_event_map,
+      "Implements a parallel event queue with synchronization on regular clock cycles")
  public:
   clock_cycle_event_map(sprockit::sim_parameters* params, parallel_runtime* rt);
 

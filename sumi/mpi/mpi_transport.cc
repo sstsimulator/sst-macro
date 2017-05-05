@@ -10,9 +10,6 @@ RegisterDebugSlot(mpi);
 
 namespace sumi {
 
-SpktRegister("mpi", transport, mpi_transport,
-            "Create a SUMI transport suitable for MPI");
-
 #define enumcase(x) case x: return #x
 
 

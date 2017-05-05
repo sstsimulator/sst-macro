@@ -40,121 +40,98 @@
 
 #include <sstmac/common/rng.h>
 
-namespace gtc
+namespace gtc {
+
+/**
+ * Basic MPI ping-pong.
+ */
+class gtc_main :
+  public sstmac::sw::app
 {
+  FactoryRegister("gtc", sstmac::sw::app, gtc_main, "gyroknetic toroidal code")
+ private:
+  std::map<std::string,double> param_map_;
 
-  /**
-   * Basic MPI ping-pong.
-   */
-  class gtc_main :
-    public sstmac::sw::app
-  {
-    std::map<std::string,double> param_map_;
+ public:
+  gtc_main(sprockit::sim_parameters* params, sstmac::sw::software_id sid,
+           sstmac::sw::operating_system* os);
 
-  public:
-    gtc_main(sprockit::sim_parameters* params, sstmac::sw::software_id sid,
-             sstmac::sw::operating_system* os);
+  /// Goodbye.
+  virtual ~gtc_main() {}
 
-    /// Goodbye.
-    virtual
-    ~gtc_main() //throw ()
-    {
+  /// Go.
+  void skeleton_main() override;
+
+  // -------------- GTC Functions
+ private:
+  void setup();
+
+  void rand_num_gen_init();
+
+  void load();
+
+  void read_input_params();
+
+  void chargei(int istep);
+
+  void smooth(int something);
+
+  void field();
+
+  void pushi(int istep);
+
+  void diagnosis(int istep);
+
+  void shifti();
+
+  void collision(int istep, int neop = 32, int neot = 1, int neoz = 1);
+
+  void pushe(int s1, int s2, int istep);
+
+  void shifte();
+
+  void chargee();
+
+  void poisson(int istep, int iflag);
+
+  void snapshot();
+
+  double sign(double ret, double of){
+    return (of >= 0) ? ret : (-1*ret);
+  }
+
+  double modulo(double num, double by){
+    int div = num / by;
+    double temp = by * div;
+    double ret = std::fabs(num - temp);
+    if(sign(1, num) != sign(1, by)){
+        ret--;
     }
+    return sign(num, by);
+  }
 
-    /// Go.
-    void
-    skeleton_main() override;
+  // -------------Configuration Parameters ----------------- //
+  // ------------------------------------------------------- //
+ private:
+  config_parameters::ptr gtcparams_;
 
-    // -------------- GTC Functions
-  private:
+  // ------- added by GRH for control ---
+  int nthreads_;
+  field_array::ptr field_array_;
+  particle_decomp::ptr part_decomp_;
 
-    void
-    setup();
+  sumi::mpi_api* mpi_;
+  sumi::mpi_api* mpi() const {
+    return mpi_;
+  }
 
-    void
-    rand_num_gen_init();
-
-    void
-    load();
-
-    void
-    read_input_params();
-
-    void
-    chargei(int istep);
-
-    void
-    smooth(int something);
-
-    void
-    field();
-
-    void
-    pushi(int istep);
-
-    void
-    diagnosis(int istep);
-
-    void
-    shifti();
-
-    void
-    collision(int istep, int neop = 32, int neot = 1, int neoz = 1);
-
-    void
-    pushe(int s1, int s2, int istep);
-
-    void
-    shifte();
-
-    void
-    chargee();
-
-    void
-    poisson(int istep, int iflag);
-
-    void
-    snapshot();
-
-    double sign(double ret, double of){
-      return (of >= 0) ? ret : (-1*ret);
-    }
-
-    double
-    modulo(double num, double by){
-      int div = num / by;
-      double temp = by * div;
-      double ret = std::fabs(num - temp);
-      if(sign(1, num) != sign(1, by)){
-          ret--;
-      }
-      return sign(num, by);
-    }
-
-    // -------------Configuration Parameters ----------------- //
-    // ------------------------------------------------------- //
-  private:
-
-    config_parameters::ptr gtcparams_;
-
-    // ------- added by GRH for control ---
-    int nthreads_;
-    field_array::ptr field_array_;
-    particle_decomp::ptr part_decomp_;
-
-    sumi::mpi_api* mpi_;
-    sumi::mpi_api* mpi() const {
-      return mpi_;
-    }
-
-
-    RNG::SHR3* rng_;
+  RNG::SHR3* rng_;
 
 #ifdef _USE_LOOPS
-    sstmac::sw::lib_compute_loops* libloops_;
+  sstmac::sw::lib_compute_loops* libloops_;
 #endif
 
-  };
+};
 
 } // end of namespace sstmac
 

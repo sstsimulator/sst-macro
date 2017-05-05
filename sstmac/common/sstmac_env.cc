@@ -11,7 +11,7 @@
 #include <sstmac/common/sstmac_env.h>
 
 namespace sstmac {
-sprockit::sim_parameters* sstmac::env::params = 0;
-parallel_runtime* sstmac::env::rt = 0;
+sprockit::sim_parameters* sstmac::env::params = nullptr;
+parallel_runtime* sstmac::env::rt = nullptr;
 }
 

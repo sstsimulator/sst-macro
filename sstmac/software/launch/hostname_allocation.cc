@@ -31,11 +31,6 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-SpktRegister("hostname",
-            node_allocator,
-            hostname_allocation,
-            "Given a file containing one hostname/coordinate pair per line, return a node allocation with all hosts in the file");
-
 hostname_allocation::nodemap_t hostname_allocation::hostnamemap_;
 
 std::map<long, std::string> hostname_allocation::nodenum_to_host_map_;

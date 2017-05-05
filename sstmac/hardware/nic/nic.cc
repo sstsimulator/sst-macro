@@ -26,7 +26,6 @@
 #include <sprockit/keyword_registration.h>
 #include <sprockit/util.h>
 
-ImplementFactory(sstmac::hw::nic);
 RegisterDebugSlot(nic);
 
 RegisterNamespaces("nic", "message_sizes", "traffic_matrix",

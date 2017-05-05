@@ -4,12 +4,12 @@
 #include <sstmac/common/stats/stat_collector.h>
 #include <vector>
 
-namespace sstmac
-{
+namespace sstmac {
 
 class stat_local_int :
   public stat_value<int>
 {
+  FactoryRegister("local_int", stat_collector, stat_local_int)
  public:
   stat_local_int(sprockit::sim_parameters* params);
 

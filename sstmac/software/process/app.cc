@@ -31,28 +31,16 @@
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 
-ImplementFactory(sstmac::sw::app);
-
 static sprockit::need_delete_statics<sstmac::sw::user_app_cxx_full_main> del_app_statics;
 
 namespace sstmac {
 namespace sw {
-
-SpktRegister("user_app_cxx_full_main", app, user_app_cxx_full_main);
-SpktRegister("user_app_cxx_empty_main", app, user_app_cxx_empty_main);
 
 std::map<std::string, app::main_fxn>*
   user_app_cxx_full_main::main_fxns_ = nullptr;
 std::map<std::string, app::empty_main_fxn>*
   user_app_cxx_empty_main::empty_main_fxns_ = nullptr;
 std::map<app_id, user_app_cxx_full_main::argv_entry> user_app_cxx_full_main::argv_map_;
-
-app*
-app::factory::get_param(const std::string &name, sprockit::sim_parameters *params, software_id sid, operating_system *os)
-{
-  //wrapper in place in case we want to use dlsym fanciness to link in skeleton apps
-  return app_factory::get_param(name, params, sid, os);
-}
 
 int
 app::allocate_tls_key(destructor_fxn fxn)
@@ -189,7 +177,7 @@ app::_get_api(const char* name)
   api* my_api = apis_[name];
   if (!my_api) {
     sprockit::sim_parameters* api_params = params_->get_optional_namespace(name);
-    api* new_api = api_factory::get_value(name, api_params, sid_, os_);
+    api* new_api = api::factory::get_value(name, api_params, sid_, os_);
     apis_[name] = new_api;
     return new_api;
   }
@@ -202,6 +190,7 @@ void
 app::run()
 {
   SSTMACBacktrace("main");
+  os_->increment_app_refcount();
   skeleton_main();
   for (auto& pair : apis_){
     delete pair.second;
@@ -231,7 +220,7 @@ app::add_subthread(thread *thr)
 void
 app::set_subthread_done(thread* thr)
 {
-  subthreads_[thr->thread_id()] = 0;
+  subthreads_[thr->thread_id()] = nullptr;
 }
 
 thread*
@@ -361,7 +350,7 @@ user_app_cxx_full_main::register_main_fxn(const char *name, app::main_fxn fxn)
   if (!main_fxns_) main_fxns_ = new std::map<std::string, main_fxn>;
 
   (*main_fxns_)[name] = fxn;
-  app_factory::register_alias("user_app_cxx_full_main", name);
+  app::factory::register_alias("user_app_cxx_full_main", name);
 }
 
 void
@@ -422,7 +411,7 @@ user_app_cxx_empty_main::register_main_fxn(const char *name, app::empty_main_fxn
     empty_main_fxns_ = new std::map<std::string, empty_main_fxn>;
 
   (*empty_main_fxns_)[name] = fxn;
-  app_factory::register_alias("user_app_cxx_empty_main", name);
+  app::factory::register_alias("user_app_cxx_empty_main", name);
 }
 
 void

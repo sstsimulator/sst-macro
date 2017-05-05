@@ -4,8 +4,6 @@
 namespace sstmac {
 namespace native {
 
-SpktRegister("serial", parallel_runtime, serial_runtime);
-
 serial_runtime::serial_runtime(sprockit::sim_parameters* params)
   : parallel_runtime(params, 0, 1)
 {

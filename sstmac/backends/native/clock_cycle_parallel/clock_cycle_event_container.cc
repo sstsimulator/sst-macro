@@ -25,9 +25,6 @@ RegisterDebugSlot(thread_events)
 namespace sstmac {
 namespace native {
 
-SpktRegister("clock_cycle_parallel", event_manager, clock_cycle_event_map,
-    "Implements a parallel event queue with synchronization on regular clock cycles");
-
 clock_cycle_event_map::clock_cycle_event_map(
   sprockit::sim_parameters* params, parallel_runtime* rt) :
   event_map(params, rt),

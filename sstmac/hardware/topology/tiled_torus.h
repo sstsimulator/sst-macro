@@ -12,36 +12,30 @@ class tiled_torus :
   public hdtorus,
   public multipath_topology
 {
+  FactoryRegister("tiled_torus | tiled_hdtorus", topology, tiled_torus)
  public:
   tiled_torus(sprockit::sim_parameters *params);
 
-  void
-  get_redundant_paths(routable::path& inPath,
+  void get_redundant_paths(routable::path& inPath,
                       routable::path_set& outPaths) const override;
 
-  void
-  configure_geometric_paths(std::vector<int>& redundancies) const override;
+  void configure_geometric_paths(std::vector<int>& redundancies) const override;
 
-  switch_id
-  netlink_to_injection_switch(
+  switch_id netlink_to_injection_switch(
         node_id nodeaddr, int ports[], int& num_ports) const override;
 
-  bool
-  uniform_network_ports() const override {
+  bool uniform_network_ports() const override {
     return true;
   }
 
-  bool
-  uniform_switches_non_uniform_network_ports() const override {
+  bool uniform_switches_non_uniform_network_ports() const override {
     return true;
   }
 
-  void
-  connected_outports(switch_id src,
+  void connected_outports(switch_id src,
            std::vector<connection>& conns) const override;
 
-  void
-  configure_individual_port_params(switch_id src,
+  void configure_individual_port_params(switch_id src,
             sprockit::sim_parameters *switch_params) const override;
 
  private:

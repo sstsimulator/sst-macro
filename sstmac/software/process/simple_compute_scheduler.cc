@@ -6,9 +6,6 @@
 namespace sstmac {
 namespace sw {
 
-SpktRegister("simple", compute_scheduler, simple_compute_scheduler,
-            "Compute scheduler that migrates work to any open core");
-
 void
 simple_compute_scheduler::reserve_core(thread* thr)
 {

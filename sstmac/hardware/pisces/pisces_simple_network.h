@@ -72,8 +72,7 @@ class simple_network_message : public network_message
   {
   }
 
-  SST::Interfaces::SimpleNetwork::Request*
-  req() const {
+  SST::Interfaces::SimpleNetwork::Request* req() const {
     return req_;
   }
 
@@ -92,8 +91,7 @@ class pisces_simple_network :
  public:
   pisces_simple_network(sprockit::sim_parameters *params, SST::Component* comp);
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "PISCES simple network";
   }
 
@@ -102,7 +100,7 @@ class pisces_simple_network :
    *        setup connections to PISCES switches
    * @param parmas
    */
-  void init_links(sprockit::sim_parameters* parmas);
+  void init_links(sprockit::sim_parameters* params);
 
   /**
    * @brief packet_arrived Callback when first flit from packet arrives off the network
@@ -167,8 +165,7 @@ class pisces_simple_network :
    return initialized_;
   }
 
-  nid_t
-  getEndpointID() const override {
+  nid_t getEndpointID() const override {
    return nid_;
   }
 
@@ -176,16 +173,13 @@ class pisces_simple_network :
    return sst_link_bw_;
   }
 
-  bool
-  spaceToSend(int vn, int num_bits) override;
+  bool spaceToSend(int vn, int num_bits) override;
 
   using SST::Interfaces::SimpleNetwork::Request;
 
-  virtual void
-  sendInitData(Request* req) override;
+  virtual void sendInitData(Request* req) override;
 
-  virtual Request*
-  recvInitData() override;
+  virtual Request* recvInitData() override;
 
  private:
   device_id init_loc(sprockit::sim_parameters* params);

@@ -38,72 +38,57 @@ class key  {
  public:
   typedef std::set<thread_data_t> blocking_t;
 
-
  public:
   static key_traits::category general;
 
  public:
-  static key*
-  construct(){
+  static key* construct(){
     return new key;
   }
 
-  static key*
-  construct(const key_traits::category& name){
+  static key* construct(const key_traits::category& name){
     return new key(name);
   }
 
-  static std::string
-  name(int keyname_id) {
+  static std::string name(int keyname_id) {
     return (*category_id_to_name_)[keyname_id];
   }
 
-  static int
-  allocate_category_id(const std::string& name);
+  static int allocate_category_id(const std::string& name);
 
-  static int
-  event_typeid(const std::string& event_name);
+  static int event_typeid(const std::string& event_name);
 
-  static int
-  num_categories() {
+  static int num_categories() {
     return category_name_to_id_->size();
   }
 
-  std::string
-  name() const {
+  std::string name() const {
     return name(keyname_id_);
   }
 
-  int 
-  event_typeid() const {
+  int  event_typeid() const {
     return keyname_id_;
   }
 
   virtual ~key(){}
 
-  void*
-  operator new(size_t size);
+  void* operator new(size_t size);
 
-  void
-  operator delete(void* ptr);
+  void operator delete(void* ptr);
 
-  void
-  block_thread(thread_data_t t){
+  void block_thread(thread_data_t t){
     blocked_thread_ = t;
   }
 
-  bool
-  still_blocked() {
+  bool still_blocked() {
     return blocked_thread_.second;
   }
 
-  bool
-  timed_out() const {
+  bool timed_out() const {
     return timed_out_;
   }
 
-  void
-  set_timed_out() {
+  void set_timed_out() {
     timed_out_ = true;
   }
 
@@ -113,8 +98,7 @@ class key  {
     blocked_thread_.second = 0;
   }
 
-  static void
-  delete_statics();
+  static void delete_statics();
 
  private:
   friend class operating_system;

@@ -3,10 +3,7 @@
 
 namespace sstmac {
 
-SpktRegister("location_trace", stat_collector, location_trace);
-
-#define cast_bytes(x) \
-    reinterpret_cast<char*>(&x)
+#define cast_bytes(x)  reinterpret_cast<char*>(&x)
 
 void
 location_trace::collect(

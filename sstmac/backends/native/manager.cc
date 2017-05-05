@@ -145,7 +145,7 @@ manager::manager(sprockit::sim_parameters* params, parallel_runtime* rt) :
   interconnect_(nullptr),
   rt_(rt)
 {
-  event_manager_ = event_manager_factory::get_optional_param(
+  event_manager_ = event_manager::factory::get_optional_param(
                        "event_manager", SSTMAC_DEFAULT_EVENT_MANAGER_STRING, params, rt_);
   event_manager::global = event_manager_;
 
@@ -168,7 +168,7 @@ manager::~manager() throw ()
 {
   if (sprockit::debug::prefix_fxn) 
     delete sprockit::debug::prefix_fxn;
-  sprockit::debug::prefix_fxn = 0;
+  sprockit::debug::prefix_fxn = nullptr;
   if (this->running_){
     cerrn << "FATAL:  manager going out of scope while still running.\n";
     abort();

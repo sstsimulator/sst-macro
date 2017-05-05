@@ -26,8 +26,6 @@ typedef void* graphviz_trace[BACKTRACE_NFXN];
 
 static sprockit::need_delete_statics<graph_viz> del_statics;
 
-SpktRegister("graph_viz | call_graph", stat_collector, graph_viz);
-
 graph_viz_increment_stack::graph_viz_increment_stack(const char *fxn) 
 {
   thread* thr = operating_system::current_thread();

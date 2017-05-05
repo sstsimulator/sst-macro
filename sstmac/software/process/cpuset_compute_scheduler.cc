@@ -5,9 +5,6 @@
 namespace sstmac {
 namespace sw {
 
-SpktRegister("cpuset", compute_scheduler, cpuset_compute_scheduler,
-            "Compute scheduler that assigns threads to specific cores based on CPU_SET");
-
 void
 cpuset_compute_scheduler::configure(int ncore, int nsocket)
 {

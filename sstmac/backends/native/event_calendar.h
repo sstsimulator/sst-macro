@@ -29,38 +29,32 @@ namespace native {
 class event_calendar :
   public event_container
 {
+  FactoryRegister("calendar", event_manager, event_calendar,
+    "Implements the event queue as an O(1) event calendar. Provides faster scheduling if many, many events")
 
  public:
   event_calendar(sprockit::sim_parameters* params, parallel_runtime* rt);
 
   ~event_calendar() throw ();
 
-  void
-  clear(timestamp zero_time = timestamp(0));
+  void clear(timestamp zero_time = timestamp(0));
 
-  void
-  cancel_all_messages(device_id mod);
+  void cancel_all_messages(device_id mod);
 
-  bool
-  empty() const {
+  bool empty() const {
     return num_events_left_ == 0;
   }
 
  protected:
-  event*
-  pop_next_event();
+  event* pop_next_event();
 
-  event*
-  pop_next_event_in_search_window();
+  event* pop_next_event_in_search_window();
 
-  void
-  go_do_one_event();
+  void go_do_one_event();
 
-  void
-  add_event(event* ev);
+  void add_event(event* ev);
 
-  void
-  go_to_next_epoch();
+  void go_to_next_epoch();
 
  protected:
   int num_events_left_;

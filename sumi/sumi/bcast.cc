@@ -4,8 +4,6 @@
 
 namespace sumi {
 
-SpktRegister("wilke", dag_collective, binary_tree_bcast_collective);
-
 void
 binary_tree_bcast_actor::buffer_action(void *dst_buffer, void *msg_buffer, action *ac)
 {

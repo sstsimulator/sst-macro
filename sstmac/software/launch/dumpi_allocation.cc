@@ -27,8 +27,6 @@
 
 namespace sstmac {
 namespace sw {
-SpktRegister("dumpi", node_allocator, dumpi_allocation,
-            "Allocate nodes directly from the trace files themselves");
 
 dumpi_allocation::dumpi_allocation(sprockit::sim_parameters* params)
  : node_allocator(params)

@@ -28,7 +28,8 @@ class sumi_transport :
   public sstmac::sw::process_manager,
   public sumi::transport
 {
-  ImplementAPI(sumi_transport)
+  RegisterAPI("sumi_transport", sumi_transport)
+
  public:  
   sumi_transport(sprockit::sim_parameters* params,
                  sstmac::sw::software_id sid,

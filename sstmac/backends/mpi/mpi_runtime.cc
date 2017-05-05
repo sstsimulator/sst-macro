@@ -37,8 +37,6 @@ void pair_reduce_function(void *invec, void *inoutvec, int *len, MPI_Datatype *d
   }
 }
 
-SpktRegister("mpi", parallel_runtime, mpi_runtime);
-
 int64_t
 mpi_runtime::allreduce_min(int64_t my_time)
 {
@@ -129,10 +127,6 @@ mpi_runtime::mpi_runtime(sprockit::sim_parameters* params) :
   init_size(params))
 {
   epoch_ = 0;
-  array_of_ones_ = new int[nproc_];
-  for (int i=0; i < nproc_; ++i){
-    array_of_ones_[i] = 1;
-  }
 
   num_sent_ = new int[2*nproc_];
   ::memset(num_sent_, 0, 2*nproc_ * sizeof(int));
@@ -145,7 +139,7 @@ mpi_runtime::init_size(sprockit::sim_parameters* params)
   MPI_Initialized(&inited);
   if (!inited){
     int argc = 1;
-    char** argv = 0;
+    char** argv = nullptr;
     int rc = MPI_Init(&argc, &argv);
     if (rc != MPI_SUCCESS){
       spkt_abort_printf("mpi_runtime::init_rank: could not MPI_Init");
@@ -162,7 +156,7 @@ mpi_runtime::init_rank(sprockit::sim_parameters* params)
   MPI_Initialized(&inited);
   if (!inited){
     int argc = 1;
-    char** argv = 0;
+    char** argv = nullptr;
     int rc = MPI_Init(&argc, &argv);
     if (rc != MPI_SUCCESS){
       spkt_abort_printf("mpi_runtime::init_rank: could not MPI_Init");
@@ -200,7 +194,7 @@ mpi_runtime::wait_merge_array(int tag)
   }
 
   int num_sent_to_me;
-  MPI_Reduce_scatter(fake_num_sent, &num_sent_to_me, array_of_ones_, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Reduce_scatter_block(fake_num_sent, &num_sent_to_me, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
   do_collective_merges(tag);
   delete[] fake_num_sent;
 }
@@ -270,12 +264,13 @@ mpi_runtime::do_send_recv_messages(std::vector<void*>& buffers)
   int num_sent_to_me = 0;
   int outdata[2];
   //reduce scatter the number of messages sent
-  MPI_Reduce_scatter(num_sent_, outdata, array_of_ones_, MPI_2INT, reduce_op_, MPI_COMM_WORLD);
+  //everybode gets one
+  MPI_Reduce_scatter_block(num_sent_, outdata, 1, MPI_2INT, reduce_op_, MPI_COMM_WORLD);
   num_sent_to_me = outdata[0];
   while (num_sent_to_me < 0){
     //ooooh, hey - people want to do collectives
     do_collective_merges(-1); //I don't have anything to do
-    MPI_Reduce_scatter(num_sent_, outdata, array_of_ones_, MPI_2INT, reduce_op_, MPI_COMM_WORLD);
+    MPI_Reduce_scatter_block(num_sent_, outdata, 1, MPI_2INT, reduce_op_, MPI_COMM_WORLD);
     num_sent_to_me = outdata[0];
   }
 

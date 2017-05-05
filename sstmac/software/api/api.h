@@ -39,27 +39,40 @@ class Timer
  public:
   Timer();
 
-  inline void
-  tic();
-  inline void
-  toc();
+  /**
+   * @brief start
+   * Set the start time for the current window
+   */
+  inline void start();
 
-  void
-  reset();
-  double
-  getTime();
+  /**
+   * @brief stamp
+   * Set the current time as the endpoint for the current window
+   */
+  inline void stamp();
+
+  void reset(){
+    start_ = 0;
+    duration_ = 0;
+    elapsed_time_ = 0;
+  }
+
+  double getTime() const {
+    return elapsed_time_;
+  }
 
  private:
-  my_timer_t start;
-  double duration;
-  timer_c ts;
-  double conv_factor;
-  double elapsed_time;
+  my_timer_t start_;
+  double duration_;
+  timer_c ts_;
+  double conv_factor_;
+  double elapsed_time_;
 };
 
 class api :
   public library
 {
+  DeclareFactory(api,software_id,operating_system*)
  public:
   api(sprockit::sim_parameters* params,
       const char* prefix,
@@ -92,27 +105,31 @@ class api :
 
   virtual ~api();
 
-  virtual void
-  init(){}
+  virtual void init(){}
 
-  virtual void
-  finish(){}
+  virtual void finish(){}
 
-  timestamp
-  now() const;
+  timestamp now() const;
 
-  void
-  schedule(timestamp t, event_queue_entry* ev);
+  void schedule(timestamp t, event_queue_entry* ev);
 
-  void
-  schedule_delay(timestamp t, event_queue_entry* ev);
+  void schedule_delay(timestamp t, event_queue_entry* ev);
 
-  //these can be used for direct execution compute modeling
-  virtual void
-  start_api_call();
+  /**
+   * @brief start_api_call
+   * Enter a call such as MPI_Send. Any perf counters or time counters
+   * collected since the last API call can then advance time or
+   * increment statistics.
+   */
+  virtual void start_api_call();
 
-  virtual void
-  end_api_call();
+  /**
+   * @brief end_api_call
+   * Exit a call such as MPI_Send. Perf counters or time counters
+   * collected since the last API call can then clear counters for
+   * the next time window.
+   */
+  virtual void end_api_call();
 
  protected:
   bool hostcompute_;
@@ -128,16 +145,11 @@ class api :
 void api_lock();
 void api_unlock();
 
-#define ImplementAPI(x) \
- public: \
-  static const char* api_name;
+#define NamespaceRegister(name, child_cls)
 
 #define RegisterAPI(name, child_cls) \
-  SpktRegister(name, sstmac::sw::api, child_cls); \
-  RegisterNamespaces(name); \
-  const char* child_cls::api_name = name
-
-DeclareFactory(api,software_id,operating_system*);
+  FactoryRegister(name, sstmac::sw::api, child_cls) \
+  NamespaceRegister(name, child_cls)
 
 }
 }

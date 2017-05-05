@@ -29,9 +29,6 @@ RegisterNamespaces("congestion_delays", "congestion_matrix");
 namespace sstmac {
 namespace hw {
 
-SpktRegister("cut_through | null", packetizer, pisces_cut_through_packetizer);
-SpktRegister("simple", packetizer, pisces_simple_packetizer);
-
 pisces_packetizer::pisces_packetizer(sprockit::sim_parameters* params,
                                      event_scheduler* parent) :
  inj_buffer_(nullptr),
@@ -50,7 +47,7 @@ pisces_packetizer::init(sprockit::sim_parameters* params, event_scheduler* paren
 {
   pisces_sender::configure_payload_port_latency(params);
   inj_buffer_ = new pisces_injection_buffer(params, parent);
-  inj_stats_ = packet_stats_callback_factory::
+  inj_stats_ = packet_stats_callback::factory::
                 get_optional_param("stats", "null", params, parent);
   inj_buffer_->set_stat_collector(inj_stats_);
 
@@ -60,10 +57,10 @@ pisces_packetizer::init(sprockit::sim_parameters* params, event_scheduler* paren
   ej_params->add_param_override("credit_latency", "0ns");
   ej_params->add_param_override("credits", 1<<30);
   ej_buffer_ = new pisces_eject_buffer(ej_params, parent);
-  ej_stats_ = packet_stats_callback_factory::
+  ej_stats_ = packet_stats_callback::factory::
                         get_optional_param("stats", "null", ej_params, parent);
 
-  pkt_allocator_ = packet_allocator_factory
+  pkt_allocator_ = packet_allocator::factory
       ::get_optional_param("packet_allocator", "pisces", params);
 
 

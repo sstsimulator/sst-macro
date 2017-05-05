@@ -55,8 +55,6 @@ sprockit::StaticNamespaceRegister queue_ns_reg("queue");
 
 namespace sumi {
 
-RegisterAPI("mpi", mpi_api);
-
 category mpi_api::default_key_category("MPI");
 category mpi_api::poll_key_category("MPI Poll");
 category mpi_api::memcpy_key_category("MPI Memcpy");
@@ -77,6 +75,7 @@ sstmac_mpi()
 mpi_api::mpi_api(sprockit::sim_parameters* params,
                  sstmac::sw::software_id sid,
                  sstmac::sw::operating_system* os) :
+  sstmac::sumi_transport(params, "mpi", sid, os),
   status_(is_fresh),
 #if SSTMAC_COMM_SYNC_STATS
   last_collection_(0),
@@ -87,13 +86,18 @@ mpi_api::mpi_api(sprockit::sim_parameters* params,
   group_counter_(MPI_GROUP_WORLD+1),
   req_counter_(0),
   queue_(nullptr),
-  comm_factory_(nullptr),
-  worldcomm_(nullptr),
-  selfcomm_(nullptr),
+  comm_factory_(sid, this),
   generate_ids_(true),
-  crossed_comm_world_barrier_(false),
-  sstmac::sumi_transport(params, "mpi", sid, os)
+  crossed_comm_world_barrier_(false)
+
 {
+  //at this point, guarantee that nproc_ is known
+  comm_factory_.init(sid.task_, nproc_);
+
+  comm_map_[MPI_COMM_WORLD] = comm_world();
+  comm_map_[MPI_COMM_SELF] = comm_self();
+  grp_map_[MPI_GROUP_WORLD] = comm_world()->group();
+
   sprockit::sim_parameters* queue_params = params->get_optional_namespace("queue");
   queue_ = new mpi_queue(queue_params, sid.task_, this);
 
@@ -121,7 +125,6 @@ mpi_api::~mpi_api()
   //an unblock finishes finalize... so finalize is called while the DES thread is still inside the queue
   //the queue outlives mpi_api::finalize!
   if (queue_) delete queue_;
-  if (comm_factory_) delete comm_factory_;
 
   //these are often not cleaned up correctly by app
   for (auto& pair : grp_map_){
@@ -176,18 +179,6 @@ mpi_api::init(int* argc, char*** argv)
                "mpiapi::init: os has not been initialized yet");
   }
 
-
-  comm_factory_ = new mpi_comm_factory(sid().app_, this);
-  comm_factory_->init(rank_, nproc_);
-
-  //printf("Initialized %p with %p\n", this, comm_factory_);
-
-  worldcomm_ = comm_factory_->world();
-  selfcomm_ = comm_factory_->self();
-  comm_map_[MPI_COMM_WORLD] = worldcomm_;
-  comm_map_[MPI_COMM_SELF] = selfcomm_;
-  grp_map_[MPI_GROUP_WORLD] = worldcomm_->group();
-
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Init()");
 
   /** Make sure all the default types are known */
@@ -228,7 +219,7 @@ mpi_api::finalize()
 
   status_ = is_finalized;
 
-  int rank = worldcomm_->rank();
+  int rank = comm_world()->rank();
   if (rank == 0) {
     debug_printf(sprockit::dbg::mpi_check,
       "MPI application with ID %s passed barrier in finalize on Rank 0\n"
@@ -237,9 +228,6 @@ mpi_api::finalize()
       sid().to_string().c_str(),
       os_->now().sec());
   }
-
-  delete comm_factory_;
-  comm_factory_ = nullptr;
 
   transport::finish();
 
@@ -329,10 +317,10 @@ mpi_api::type_str(MPI_Datatype mid)
 std::string
 mpi_api::comm_str(MPI_Comm comm)
 {
-  if (comm == worldcomm_->id()){
+  if (comm == comm_world()->id()){
     return "MPI_COMM_WORLD";
   }
-  else if (comm == selfcomm_->id()){
+  else if (comm == comm_self()->id()){
     return "MPI_COMM_SELF";
   }
   else if (comm == mpi_comm::comm_null->id()){
@@ -346,10 +334,10 @@ mpi_api::comm_str(MPI_Comm comm)
 std::string
 mpi_api::comm_str(mpi_comm* comm)
 {
-  if (comm == worldcomm_){
+  if (comm == comm_world()){
     return "MPI_COMM_WORLD";
   }
-  else if (comm == selfcomm_){
+  else if (comm == comm_self()){
     return "MPI_COMM_SELF";
   }
   else if (comm == mpi_comm::comm_null){

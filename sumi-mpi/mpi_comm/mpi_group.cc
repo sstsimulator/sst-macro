@@ -15,7 +15,7 @@
 
 namespace sumi {
 
-mpi_group::mpi_group(const std::vector<task_id>& tl) :
+mpi_group::mpi_group(std::vector<task_id>&& tl) :
   task_list_(tl),
   is_comm_world_(false),
   size_(tl.size())
@@ -45,7 +45,7 @@ mpi_group::at(int rank)
 }
 
 int
-mpi_group::rank_of_task(task_id t)
+mpi_group::rank_of_task(task_id t) const
 {
   if (is_comm_world_){
     return int(t);
@@ -56,7 +56,7 @@ mpi_group::rank_of_task(task_id t)
       }
     }
   }
-  return int(-1);
+  return int(-1); //compiler warnings
 }
 
 }

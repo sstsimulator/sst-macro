@@ -27,6 +27,7 @@ namespace sw {
 
 class compute_scheduler
 {
+  DeclareFactory(compute_scheduler, sw::operating_system*)
  public:
   compute_scheduler(sprockit::sim_parameters* params, sw::operating_system* os) :
     os_(os)
@@ -70,8 +71,6 @@ class compute_scheduler
   sw::operating_system* os_;
 
 };
-
-DeclareFactory1InitParam(compute_scheduler, sw::operating_system*);
 
 }
 } //end of namespace sstmac

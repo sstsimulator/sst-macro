@@ -78,8 +78,6 @@ mpi_queue::mpi_queue(sprockit::sim_parameters* params,
   spy_bytes_ = sstmac::optional_stats<sstmac::stat_spyplot>(api_->des_scheduler(),
         params, "traffic_matrix", "ascii", "bytes");
 
-  //user_lib_mem_ = new sstmac::sw::lib_compute_memmove(params, "mpi_queue-user-lib-mem", sid, os_);
-
   lookahead_progress_ = params->get_optional_bool_param("lookahead_progress", false);
 
   next_id_ = uint64_t(taskid_) << 32;
@@ -713,13 +711,13 @@ mpi_queue::buffer_unexpected(const mpi_message::ptr& msg)
 }
 
 void
-mpi_queue::post_header(const mpi_message::ptr& msg, bool needs_ack)
+mpi_queue::post_header(const mpi_message::ptr& msg, sumi::message::payload_type_t ty, bool needs_ack)
 {
   SSTMACBacktrace("MPI Queue Post Header");
   mpi_comm* comm = api_->get_comm(msg->comm());
   int dst_world_rank = comm->peer_task(msg->dst_rank());
   msg->set_src_rank(comm->rank());
-  api_->send_header(dst_world_rank, msg, needs_ack);
+  api_->smsg_send(dst_world_rank, ty, msg, needs_ack);
 }
 
 void

@@ -24,24 +24,22 @@ namespace hw {
 class instruction_processor :
   public simple_processor
 {
+  FactoryRegister("instruction", processor, instruction_processor,
+              "Extension of simpleprocessor that estimates compute time of instruction counters")
  public:
   instruction_processor(sprockit::sim_parameters* params,
                         memory_model* mem, node* nd);
 
   virtual ~instruction_processor();
 
-  virtual void
-  compute(event* ev, callback* cb) override;
+  virtual void compute(event* ev, callback* cb) override;
 
  protected:
-  void
-  set_memop_distribution(double stdev);
+  void set_memop_distribution(double stdev);
 
-  void
-  set_flop_distribution(double stdev);
+  void set_flop_distribution(double stdev);
 
-  double
-  instruction_time(sw::basic_compute_event* msg);
+  double instruction_time(sw::basic_compute_event* msg);
 
  protected:
   double tflop_;

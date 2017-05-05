@@ -15,8 +15,6 @@
 
 namespace sstmac {
 
-SpktRegister("event_trace", stat_collector, event_trace);
-
 void
 event_trace::simulation_finished(timestamp end)
 {

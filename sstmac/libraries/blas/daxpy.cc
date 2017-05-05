@@ -9,6 +9,7 @@ namespace sw {
 class default_daxpy :
   public blas_kernel
 {
+  FactoryRegister("default_daxpy", blas_kernel, default_daxpy)
  public:
   default_daxpy(sprockit::sim_parameters* params){
     loop_unroll_ = params->get_optional_double_param("daxpy_loop_unroll", 4);
@@ -28,7 +29,6 @@ class default_daxpy :
   double pipeline_;
 
 };
-SpktRegister("default_daxpy", blas_kernel, default_daxpy);
 
 compute_event*
 default_daxpy::op_1d(int n)

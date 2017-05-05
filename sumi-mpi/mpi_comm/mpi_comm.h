@@ -16,6 +16,7 @@
 #include <sstmac/common/node_address.h>
 #include <sstmac/software/process/task_id.h>
 #include <sstmac/software/process/app_id.h>
+#include <sstmac/software/process/software_id.h>
 #include <sumi-mpi/mpi_comm/keyval_fwd.h>
 #include <sumi-mpi/mpi_comm/mpi_group.h>
 #include <sumi-mpi/mpi_integers.h>
@@ -28,6 +29,7 @@
 namespace sumi {
 
 using sstmac::sw::app_id;
+using sstmac::sw::software_id;
 using sstmac::node_id;
 
 /**

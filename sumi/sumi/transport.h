@@ -27,7 +27,7 @@ namespace sumi {
 
 class transport
 {
-
+  DeclareFactory(transport)
  public:
   class notify_callback {
    public:
@@ -442,36 +442,32 @@ class transport
   
   void system_bcast(const message::ptr& msg);
 
-  int 
-  rank() const {
+  int rank() const {
     return rank_;
   }
 
-  int 
-  nproc() const {
+  int nproc() const {
     return nproc_;
   }
 
-  int 
-  nproc_alive() const {
+  int nproc_alive() const {
     return nproc_ - failed_ranks_.size();
   }
 
-  int 
-  nproc_failed() const {
+  int nproc_failed() const {
     return failed_ranks_.size();
   }
 
-  communicator*
-  global_dom() const;
+  communicator* global_dom() const {
+    return global_domain_;
+  }
 
   /**
    * The cutoff for message size in bytes
    * for switching between an eager protocol and a rendezvous RDMA protocol
    * @return
    */
-  int
-  eager_cutoff() const {
+  int eager_cutoff() const {
     return eager_cutoff_;
   }
   
@@ -819,8 +815,6 @@ class transport
   virtual void start_collective_sync_delays(){}
 #endif
 };
-
-DeclareFactory(transport);
 
 template <class MsgType, class T, class Fxn>
 transport::notify_callback*

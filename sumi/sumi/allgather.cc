@@ -14,10 +14,7 @@
 using namespace sprockit::dbg;
 
 
-namespace sumi
-{
-
-SpktRegister("bruck_allgather", dag_collective, bruck_allgather_collective);
+namespace sumi {
 
 void
 bruck_allgather_actor::init_buffers(void* dst, void* src)

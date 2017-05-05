@@ -176,7 +176,7 @@ init_switches(interconnect::switch_map &switches,
   for (int i=0; i < num_switches; i++)
   {
     params.add_param_override_recursive("id", i);
-    network_switch* sw = network_switch_factory::get_param(
+    network_switch* sw = network_switch::factory::get_param(
           "model", &params, i, &mgr);
     switches[switch_id(i)] = sw;
   }

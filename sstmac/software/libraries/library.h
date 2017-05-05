@@ -26,44 +26,37 @@
 namespace sstmac {
 namespace sw {
 
-class library {
-  
+class library
+{
+  DeclareFactory(library, software_id, operating_system*)
  public:
-  std::string
-  to_string() const {
+  std::string to_string() const {
     return libname_;
   }
 
-  virtual std::string
-  lib_name() const {
+  virtual std::string lib_name() const {
     return libname_;
   }
 
-  virtual void
-  incoming_event(event* ev) = 0;
+  virtual void incoming_event(event* ev) = 0;
 
-  operating_system*
-  os() const {
+  operating_system* os() const {
     return os_;
   }
 
-  software_id
-  sid() const {
+  software_id sid() const {
     return sid_;
   }
 
-  int
-  aid() const {
+  int aid() const {
     return sid_.app_;
   }
 
-  node_id
-  addr() const {
+  node_id addr() const {
     return addr_;
   }
 
-  device_id
-  event_location() const;
+  device_id event_location() const;
 
   virtual ~library();
 
@@ -130,8 +123,6 @@ class blocking_library :
   std::map<event*,key*> blocked_events_;
 
 };
-
-DeclareFactory(library, software_id, operating_system*);
 
 }
 } //end of namespace sstmac

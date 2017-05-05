@@ -23,9 +23,6 @@
 namespace sumi {
 
 
-//
-// Hello.
-//
 mpi_message::mpi_message(int src, int dst, int count,
    MPI_Datatype type, int type_packed_size,
    int tag,

@@ -19,11 +19,6 @@ RegisterKeywords(
 namespace sstmac {
 namespace native {
 
-#if SSTMAC_USE_MULTITHREAD
-SpktRegister("multithread | multithreaded", event_manager, multithreaded_event_container,
-    "Implements a parallel event queue with support for SMP-aware multithreading");
-#endif
-
 void*
 pthread_run_subthread(void* args)
 {

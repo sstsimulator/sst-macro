@@ -13,13 +13,11 @@ class simultaneous_btree_scan_actor :
 {
 
  public:
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "simultaneous btree scan";
   }
 
-  void
-  buffer_action(void *dst_buffer, void *msg_buffer, action* ac) override;
+  void buffer_action(void *dst_buffer, void *msg_buffer, action* ac) override;
 
   simultaneous_btree_scan_actor(int root, reduce_fxn fxn);
 
@@ -43,9 +41,9 @@ class simultaneous_btree_scan_actor :
 class simultaneous_btree_scan :
   public dag_collective
 {
+  FactoryRegister("sim_btree_scan", dag_collective, simultaneous_btree_scan)
  public:
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "simultaneous btree scan";
   }
 
@@ -53,13 +51,11 @@ class simultaneous_btree_scan :
 
   simultaneous_btree_scan() : root_(-1) {}
 
-  virtual void
-  init_reduce(reduce_fxn fxn) override{
+  virtual void init_reduce(reduce_fxn fxn) override{
     fxn_ = fxn;
   }
 
-  dag_collective_actor*
-  new_actor() const override {
+  dag_collective_actor* new_actor() const override {
     return new simultaneous_btree_scan_actor(root_, fxn_);
   }
 
@@ -67,8 +63,7 @@ class simultaneous_btree_scan :
     root_ = root;
   }
 
-  dag_collective*
-  clone() const override {
+  dag_collective* clone() const override {
     return new simultaneous_btree_scan(root_, fxn_);
   }
 

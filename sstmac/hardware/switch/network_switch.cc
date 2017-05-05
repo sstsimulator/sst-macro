@@ -23,7 +23,6 @@
 #include <sstmac/sst_core/integrated_component.h>
 #endif
 
-ImplementFactory(sstmac::hw::network_switch);
 RegisterDebugSlot(network_switch)
 
 RegisterKeywords("switch_name");

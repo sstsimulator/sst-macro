@@ -90,9 +90,6 @@ class sumi_server :
 
 };
 
-
-RegisterAPI("sumi_transport", sumi_transport);
-
 sumi_transport::sumi_transport(sprockit::sim_parameters* params,
                const char* prefix,
                sstmac::sw::software_id sid,

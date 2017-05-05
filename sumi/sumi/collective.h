@@ -136,6 +136,8 @@ class collective
 class dag_collective :
   public collective
 {
+  DeclareFactory(dag_collective)
+
  public:
   void
   recv(int target, const collective_work_message_ptr& msg);
@@ -209,8 +211,6 @@ class collective_algorithm_selector
   virtual dag_collective* select(int nproc, int nelems) = 0;
   virtual dag_collective* select(int nproc, int* counts) = 0;
 };
-
-DeclareFactory(dag_collective);
 
 
 }

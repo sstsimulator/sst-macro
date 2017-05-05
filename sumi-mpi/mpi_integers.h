@@ -13,7 +13,7 @@ typedef long MPI_Op;
 typedef uint16_t MPI_Datatype;
 typedef long MPI_Comm;
 #define MPI_COMM_WORLD ((MPI_Comm)0)
-#define MPI_COMM_SELF  ((MPI_Comm)1)
+#define MPI_COMM_SELF  ((MPI_Comm)0x44444444)
 
 typedef int MPI_Message;
 

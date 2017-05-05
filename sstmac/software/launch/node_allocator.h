@@ -37,9 +37,9 @@ namespace sw {
 class node_allocator :
   public sprockit::printable
 {
+  DeclareFactory(node_allocator)
  public:
-  virtual
-  ~node_allocator() throw ();
+  virtual ~node_allocator() throw ();
 
   /** Get nodes.
     @param nnode number of nodes requested
@@ -47,8 +47,7 @@ class node_allocator :
     @param allocation returns the nodes that have been allocated
     @return Whether the allocation succeeded based on available nodes
   */
-  virtual void
-  allocate(int nnode,
+  virtual void allocate(int nnode,
    const ordered_node_set& available,
    ordered_node_set& allocation) const = 0;
 
@@ -60,9 +59,6 @@ class node_allocator :
   parallel_runtime* rt_;
 
 };
-
-
-DeclareFactory(node_allocator);
 
 }
 } // end of namespace sstmac

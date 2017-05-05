@@ -14,6 +14,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <vector>
 #include <otf2/otf2.h>
 #include <sstmac/skeletons/otf2_trace_replay/callid.h>
 #include <sprockit/errors.h>

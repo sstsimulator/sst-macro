@@ -22,6 +22,10 @@ namespace sw {
  */
 class round_robin_task_mapper : public task_mapper
 {
+  FactoryRegister("round | round_robin", task_mapper, round_robin_task_mapper,
+     "Tries to spread out ranks across the nodes. Ranks 0,1,2,3 are on different nodes."
+     "Ranks 0,4,8 are on the same node. Round robin and block indexing are equivalent "
+     "if there is one process per node")
 
  public:
   round_robin_task_mapper(sprockit::sim_parameters* params) :
@@ -29,16 +33,13 @@ class round_robin_task_mapper : public task_mapper
   {
   }
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "round robin task mapper";
   }
 
-  virtual
-  ~round_robin_task_mapper() throw ();
+  virtual ~round_robin_task_mapper() throw () {}
 
-  virtual void
-  map_ranks(
+  virtual void map_ranks(
     const ordered_node_set& nodes,
     int ppn,
     std::vector<node_id> &result,

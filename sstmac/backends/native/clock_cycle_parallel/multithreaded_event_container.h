@@ -22,8 +22,7 @@ class thread_event_schedule_map
   std::list<event_queue_entry*>&
   pending_events(int srcthread, int dstthread);
 
-  void
-  init(int nthread);
+  void init(int nthread);
 
  protected:
   int array_index(int srcthread, int dstthread);
@@ -39,19 +38,18 @@ class thread_event_schedule_map
 class multithreaded_event_container :
   public clock_cycle_event_map
 {
+  FactoryRegister("multithread | multithreaded", event_manager, multithreaded_event_container,
+    "Implements a parallel event queue with support for SMP-aware multithreading")
  public:
   multithreaded_event_container(sprockit::sim_parameters* params, parallel_runtime* rt);
 
   ~multithreaded_event_container() throw () {}
 
-  virtual void
-  run() override;
+  virtual void run() override;
 
-  virtual void
-  schedule_stop(timestamp until) override;
+  virtual void schedule_stop(timestamp until) override;
 
-  void
-  multithread_schedule(
+  void multithread_schedule(
     int srcthread,
     int dstthread,
     uint32_t seqnum,
@@ -62,29 +60,21 @@ class multithreaded_event_container :
     return pending_event_map_.pending_events(srcthread, dstthread);
   }
 
-  virtual void
-  set_interconnect(hw::interconnect* interconn) override;
+  virtual void set_interconnect(hw::interconnect* interconn) override;
 
-  virtual void
-  receive_incoming_events() override;
+  virtual void receive_incoming_events() override;
 
-  void
-  schedule_incoming(int thread_id, clock_cycle_event_map* mgr);
+  void schedule_incoming(int thread_id, clock_cycle_event_map* mgr);
 
-  void
-  send_recv_barrier(int thread_id);
+  void send_recv_barrier(int thread_id);
 
-  timestamp
-  time_vote_barrier(int thread_id, timestamp min_time, vote_type_t ty);
+  timestamp time_vote_barrier(int thread_id, timestamp min_time, vote_type_t ty);
 
-  timestamp
-  vote_next_round(timestamp my_time, vote_type_t ty) override;
+  timestamp vote_next_round(timestamp my_time, vote_type_t ty) override;
 
-  event_manager*
-  ev_man_for_thread(int thread_id) const override;
+  event_manager* ev_man_for_thread(int thread_id) const override;
 
-  virtual void
-  finish_stats(stat_collector *main, const std::string &name, timestamp end) override;
+  virtual void finish_stats(stat_collector *main, const std::string &name, timestamp end) override;
 
  protected:
   struct vote_thread_functor : public thread_barrier_functor {

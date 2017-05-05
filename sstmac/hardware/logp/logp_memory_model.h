@@ -23,21 +23,20 @@ namespace hw {
  */
 class logp_memory_model : public memory_model
 {
+  FactoryRegister("logP | simple | LogP | logp", memory_model,logp_memory_model,
+              "Implements a simple memory model that is just a single link")
  public:
   logp_memory_model(sprockit::sim_parameters* params, node* nd);
 
   virtual ~logp_memory_model();
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "logGP memory model";
   }
 
-  void
-  access(long bytes, double max_bw, callback* cb) override;
+  void access(long bytes, double max_bw, callback* cb) override;
 
-  double
-  max_single_bw() const override {
+  double max_single_bw() const override {
     return bw_;
   }
 

@@ -22,15 +22,16 @@ namespace sw {
 class cart_allocation :
   public node_allocator
 {
-
+  FactoryRegister("cart | cartesian", node_allocator, cart_allocation,
+              "Allocate a regular, cartesian volume of nodes."
+              "This is meant mostly for torus topologies, "
+              "but is also meaningful for dragonfly and hypercube")
  public:
   cart_allocation(sprockit::sim_parameters* params);
 
-  virtual
-  ~cart_allocation() throw () {}
+  virtual ~cart_allocation() throw () {}
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "cart allocation";
   }
 
@@ -41,8 +42,7 @@ class cart_allocation :
    * @param allocation
    * @return  Whether the allocation succeeded based on the available nodes
    */
-  void
-  allocate(int nnode,
+  void allocate(int nnode,
    const ordered_node_set& available,
    ordered_node_set& allocation) const override;
 
@@ -54,8 +54,7 @@ class cart_allocation :
    * @param allocation The set of nodes storing the current allocation
    * @return Whether the insertion succeeded based on the available nodes
    */
-  void
-  insert(
+  void insert(
     hw::cartesian_topology* regtop,
     const std::vector<int>& coords,
     const ordered_node_set& available,
@@ -70,8 +69,7 @@ class cart_allocation :
    * @param allocation
    * @return Whether the allocation succeeded based on the available nodes
    */
-  void
-  allocate_dim(
+  void allocate_dim(
    hw::cartesian_topology* regtop,
    int dim,
    std::vector<int>& vec,

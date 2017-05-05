@@ -60,12 +60,12 @@ class thread
   template <class T>
   T*
   get_api() {
-    api* a = _get_api(T::api_name);
+    api* a = _get_api(T::factory_string());
     T* casted = dynamic_cast<T*>(a);
     if (!casted) {
       spkt_throw_printf(sprockit::value_error,
                "Failed to cast API to correct type for %s",
-                T::api_name);
+                T::factory_string());
     }
     return casted;
   }

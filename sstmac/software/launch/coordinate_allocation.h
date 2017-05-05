@@ -10,23 +10,21 @@ namespace sw {
 class coordinate_allocation :
   public node_allocator
 {
+  FactoryRegister("coordinate", node_allocator, coordinate_allocation)
  public:
   coordinate_allocation(sprockit::sim_parameters* params);
 
   virtual ~coordinate_allocation() throw() {}
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "coordinate allocation";
   }
 
-  virtual void
-  allocate(int nnode_requested,
+  virtual void allocate(int nnode_requested,
     const ordered_node_set& available,
     ordered_node_set& allocation) const override;
 
-  static void
-  read_coordinate_file(
+  static void read_coordinate_file(
     parallel_runtime* rt,
     const std::string& file,
     std::vector<hw::coordinates>& node_list);

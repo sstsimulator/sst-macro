@@ -19,12 +19,12 @@
 namespace sprockit {
 
 static need_delete_statics<serializable_factory> del_statics;
-serializable_factory::builder_map* serializable_factory::builders_ = 0;
+serializable_factory::builder_map* serializable_factory::builders_ = nullptr;
 
 uint32_t
 serializable_factory::add_builder(serializable_builder* builder, const char* name)
 {
-  if (builders_ == 0) {
+  if (builders_ == nullptr) {
     builders_ = new builder_map;
   }
 

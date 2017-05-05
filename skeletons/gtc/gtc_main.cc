@@ -17,9 +17,7 @@
 
 #include <sstmac/sstmacro.h>
 
-namespace gtc
-{
-  SpktRegister("gtc", sstmac::sw::app, gtc_main, "gyroknetic toroidal code");
+namespace gtc {
 
   using namespace sstmac;
   using namespace sstmac::sw;

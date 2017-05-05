@@ -15,9 +15,6 @@ RegisterKeywords(
 
 namespace sstmac {
 
-SpktRegister("histogram", stat_collector, stat_histogram);
-SpktRegister("time_histogram", stat_collector, stat_time_histogram);
-
 stat_histogram::stat_histogram(sprockit::sim_parameters* params) :
     bin_size_(0),
     max_bin_(-1),

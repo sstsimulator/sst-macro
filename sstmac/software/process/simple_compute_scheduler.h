@@ -8,6 +8,8 @@ namespace sw {
 
 class simple_compute_scheduler : public compute_scheduler
 {
+  FactoryRegister("simple", compute_scheduler, simple_compute_scheduler,
+              "Compute scheduler that migrates work to any open core")
  public:
   simple_compute_scheduler(sprockit::sim_parameters*params,
                            operating_system* os)

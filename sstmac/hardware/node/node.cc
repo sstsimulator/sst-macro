@@ -28,12 +28,9 @@
 #include <sprockit/util.h>
 #include <sprockit/output.h>
 
-#if SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/sst_core/integrated_component.h>
 #include <sstmac/sst_core/connectable_wrapper.h>
-#endif
 
-ImplementFactory(sstmac::hw::node);
 RegisterDebugSlot(node)
 RegisterNamespaces("os", "memory", "proc", "node");
 RegisterKeywords(
@@ -80,13 +77,13 @@ node::node(sprockit::sim_parameters* params,
 
   sprockit::sim_parameters* nic_params = params->get_namespace("nic");
   nic_params->add_param_override_recursive("id", int(my_addr_));
-  nic_ = nic_factory::get_param("model", nic_params, this);
+  nic_ = nic::factory::get_param("model", nic_params, this);
 
   sprockit::sim_parameters* mem_params = params->get_optional_namespace("memory");
-  mem_model_ = memory_model_factory::get_optional_param("model", "logP", mem_params, this);
+  mem_model_ = memory_model::factory::get_optional_param("model", "logP", mem_params, this);
 
   sprockit::sim_parameters* proc_params = params->get_optional_namespace("proc");
-  proc_ = processor_factory::get_optional_param("processor", "instruction",
+  proc_ = processor::factory::get_optional_param("processor", "instruction",
           proc_params,
           mem_model_, this);
 
@@ -99,12 +96,8 @@ node::node(sprockit::sim_parameters* params,
 
   launch_root_ = params->get_optional_int_param("launch_root", 0);
   if (my_addr_ == launch_root_){
-    job_launcher_ =   job_launcher_factory::get_optional_param(
+    job_launcher_ =   job_launcher::factory::get_optional_param(
           "job_launcher", "default", params, os_);
-  }
-
-  if (my_addr_ == launch_root_){
-    increment_app_refcount();
   }
 }
 
@@ -150,7 +143,6 @@ node::~node()
   if (app_launcher_) delete app_launcher_;
   if (mem_model_) delete mem_model_;
   if (proc_) delete proc_;
-  /** JJW Delete this last since destructor may unregister libs from OS */
   if (os_) delete os_;
   if (nic_) delete nic_;
 }

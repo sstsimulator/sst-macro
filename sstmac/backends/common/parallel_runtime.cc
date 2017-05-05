@@ -8,7 +8,6 @@
 #include <fstream>
 #include <sprockit/keyword_registration.h>
 
-ImplementFactory(sstmac::parallel_runtime);
 RegisterDebugSlot(parallel);
 
 RegisterKeywords(
@@ -91,7 +90,7 @@ parallel_runtime::init_partition_params(sprockit::sim_parameters *params)
 #else
   //out with the old, in with the new
   if (part_) delete part_;
-  part_ = partition_factory::get_optional_param("partition", SSTMAC_DEFAULT_PARTITION_STRING, params, this);
+  part_ = partition::factory::get_optional_param("partition", SSTMAC_DEFAULT_PARTITION_STRING, params, this);
 #endif
 }
 
@@ -104,7 +103,7 @@ parallel_runtime::static_runtime(sprockit::sim_parameters* params)
   static thread_lock rt_lock;
   rt_lock.lock();
   if (!static_runtime_){
-    static_runtime_ = parallel_runtime_factory::get_param("runtime", params);
+    static_runtime_ = parallel_runtime::factory::get_param("runtime", params);
   }
   rt_lock.unlock();
   return static_runtime_;

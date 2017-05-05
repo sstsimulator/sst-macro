@@ -18,9 +18,6 @@
 namespace sstmac {
 namespace hw {
 
-SpktRegister("logP | simple | LogP | logp", memory_model,logp_memory_model,
-            "Implements a simple memory model that is just a single link");
-
 logp_memory_model::~logp_memory_model()
 {
   if (link_) delete link_;

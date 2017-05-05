@@ -8,8 +8,6 @@ using namespace sstmac::sw;
 
 namespace sumi {
 
-SpktRegister("sumi", api, sumi_transport, "Create bindings for SUMI runtime");
-
 static sumi_transport*
 current_transport()
 {

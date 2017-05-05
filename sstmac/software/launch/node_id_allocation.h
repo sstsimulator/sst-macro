@@ -10,24 +10,22 @@ namespace sw {
 class node_id_allocation :
   public node_allocator
 {
+  FactoryRegister("node_id", node_allocator, node_id_allocation)
 
  public:
   node_id_allocation(sprockit::sim_parameters* params);
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "node id allocation";
   }
 
   virtual ~node_id_allocation() throw() {}
 
-  virtual void
-  allocate(int nnode_requested,
+  virtual void allocate(int nnode_requested,
     const ordered_node_set& available,
     ordered_node_set &allocation) const override;
 
-  static void
-  read_coordinate_file(const std::string& file,
+  static void read_coordinate_file(const std::string& file,
     std::vector<node_id>& node_list,
     hw::topology* top);
 

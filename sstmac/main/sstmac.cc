@@ -221,7 +221,7 @@ run_params(parallel_runtime* rt,
 
     mgr->finish();
 
-    sstmac::env::params = 0;
+    sstmac::env::params = nullptr;
 
     delete mgr;
   } // try
@@ -277,7 +277,7 @@ try_main(sprockit::sim_parameters* params,
 
   sstmac::parallel_runtime* rt;
   if (params_only){
-    rt = 0;
+    rt = nullptr;
   } else {
     rt = sstmac::init();
   }

@@ -95,11 +95,10 @@ try_top_info_main(int argc, char **argv)
   params->print_params();
 
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
-  hw::topology* thetop = hw::topology_factory::get_param("name", top_params);
+  hw::topology* thetop = hw::topology::factory::get_param("name", top_params);
   hw::cartesian_topology* top = test_cast(hw::cartesian_topology, thetop);
 
   std::cout << "Number of nodes:         " << top->num_nodes() << std::endl;
-  std::cout << "Number of leaf switches: " << top->num_leaf_switches() << std::endl;
   std::cout << "Number of switches:      " << top->num_switches() << std::endl;
 
   if (top){

@@ -107,7 +107,7 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
   event_subcomponent(parent),
   params_(params)
 {
-  compute_sched_ = compute_scheduler_factory::get_optional_param(
+  compute_sched_ = compute_scheduler::factory::get_optional_param(
                      "compute_scheduler", "simple", params, this);
 
 #if SSTMAC_HAVE_GRAPHVIZ
@@ -567,7 +567,7 @@ operating_system::block(key* req)
 {
 #if SSTMAC_SANITY_CHECK
   valid_keys_.insert(req);
-  if (req == 0) {
+  if (req == nullptr) {
     spkt_throw(sprockit::null_error,
               "operating_system::block:  cannot block a null key pointer");
   }

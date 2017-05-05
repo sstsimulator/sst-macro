@@ -22,19 +22,12 @@
 
 #include <cstring>
 
-ImplementFactory(sstmac::partition);
 RegisterDebugSlot(partition);
 
 #define part_debug(...) \
   debug_printf(sprockit::dbg::partition, "Rank %d: %s", me_, sprockit::printf(__VA_ARGS__).c_str())
 
 namespace sstmac {
-
-SpktRegister("block", partition, block_partition);
-SpktRegister("occupied_block", partition, occupied_block_partition);
-SpktRegister("metis", partition, metis_partition);
-SpktRegister("topology", partition, topology_partition);
-SpktRegister("serial", partition, serial_partition);
 
 partition::partition(sprockit::sim_parameters* params, parallel_runtime* rt) :
   rt_(rt),
@@ -61,7 +54,7 @@ serial_partition::serial_partition(sprockit::sim_parameters* params, parallel_ru
  : partition(params, rt)
 {
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
-  hw::topology* fake_top = hw::topology_factory::get_param("name", top_params);
+  hw::topology* fake_top = hw::topology::factory::get_param("name", top_params);
   int nswitches = fake_top->num_switches();
   num_switches_total_ = nswitches;
   switch_to_lpid_ = new int[nswitches];
@@ -197,7 +190,7 @@ topology_partition::topology_partition(sprockit::sim_parameters* params, paralle
 {
   //this will need to be fixed later...
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
-  fake_top_ = hw::topology_factory::get_param("name", top_params);
+  fake_top_ = hw::topology::factory::get_param("name", top_params);
 
   noccupied_ = params->get_int_param("num_occupied");
 
@@ -216,7 +209,7 @@ block_partition::block_partition(sprockit::sim_parameters* params, parallel_runt
   : partition(params, rt)
 {
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
-  fake_top_ = hw::topology_factory::get_param("name", top_params);
+  fake_top_ = hw::topology::factory::get_param("name", top_params);
   num_switches_total_ = fake_top_->num_switches();
 
   num_switches_total_ = fake_top_->num_switches();

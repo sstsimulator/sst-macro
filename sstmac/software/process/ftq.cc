@@ -14,8 +14,6 @@ namespace sw {
 spkt_unordered_map<int, app_ftq_calendar*> ftq_calendar::calendars_;
 const long app_ftq_calendar::allocation_num_epochs = 10000;
 
-SpktRegister("ftq", stat_collector, ftq_calendar);
-
 ftq_calendar::ftq_calendar(sprockit::sim_parameters* params) :
   num_ticks_epoch_(0),
   stat_collector(params)

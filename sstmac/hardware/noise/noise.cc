@@ -2,9 +2,6 @@
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 
-ImplementFactory(sstmac::hw::noise_model);
-
-
 RegisterKeywords(
 "mean",
 "seed",
@@ -13,10 +10,7 @@ RegisterKeywords(
 );
 
 namespace sstmac {
-  namespace hw {
-
-SpktRegister("gaussian", noise_model, gaussian_noise_model,
-    "implements a normally distributed noise model with mean, stdev, and optional max parameter defining cutoff");
+namespace hw {
 
 gaussian_noise_model::~gaussian_noise_model()
 {

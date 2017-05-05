@@ -14,7 +14,7 @@ struct public_buffer :
   }
 
   public_buffer() {
-    ptr = 0;
+    ptr = nullptr;
   }
 
   void offset_ptr(int offset) {

@@ -32,10 +32,7 @@ static char py_sstmacro[] = {
 using namespace sstmac;
 using namespace SST;
 
-DeclareDebugSlot(timestamp);
-static bool checked_prefix_fxn = false;
-
-static sprockit::sim_parameters*
+sprockit::sim_parameters*
 make_spkt_params_from_sst_params(SST::Params& map)
 {
   sprockit::sim_parameters* rv = new sprockit::sim_parameters;
@@ -47,101 +44,6 @@ make_spkt_params_from_sst_params(SST::Params& map)
   rv->append_extra_data(&map);
   return rv;
 }
-
-class timestamp_prefix_fxn :
-  public sprockit::debug_prefix_fxn
-{
- public:
-  timestamp_prefix_fxn(sstmac::event_scheduler* mgr) : mgr_(mgr){}
-
-  std::string
-  str() {
-    double t_ms = mgr_->now().msec();
-    return sprockit::printf("T=%12.8e ms:", t_ms);
-  }
-
- private:
-  event_scheduler* mgr_;
-};
-
-template <class T>
-SST::Component*
-create_component(SST::ComponentId_t id, SST::Params& params){
-  sprockit::sim_parameters* macParams =
-    make_spkt_params_from_sst_params(params);
-
-  T* created = new T(macParams, id, nullptr);
-  if (!checked_prefix_fxn){
-    if (sprockit::debug::slot_active(sprockit::dbg::timestamp)){
-      sprockit::debug_prefix_fxn* fxn = new timestamp_prefix_fxn(created);
-      sprockit::debug::prefix_fxn = fxn;
-    }
-    checked_prefix_fxn = true;
-  }
-
-  created->init_links(macParams);
-  return created;
-}
-
-template <class T>
-SST::SubComponent*
-create_subcomponent(SST::Component* parent, SST::Params& params){
-  sprockit::sim_parameters* macParams =
-    make_spkt_params_from_sst_params(params);
-  T* created = new T(macParams, parent);
-  created->init_links(macParams);
-  return created;
-}
-
-static const ElementInfoPort ports[] = {
- {"input %(out)d %(in)d",  "Will receive new payloads here",      NULL},
- {"output %(out)d %(in)d", "Will receive new acks(credits) here", NULL},
- {"in-out %(out)d %(in)d", "Will send/recv payloads here",       NULL},
- {"rtr", "Special link to Merlin router", NULL},
- {NULL, NULL, NULL}
-};
-
-static const ElementInfoSubComponent subcomponents[] = {
-  { "pisces",
-    "Link Control module for building Pisces NICs",
-    NULL,
-    create_subcomponent<hw::pisces_simple_network>,
-    NULL,
-    NULL,
-    "SST::Interfaces::SimpleNetwork"
-  },
-  { NULL, NULL, NULL, NULL, NULL, NULL }
-};
-
-const static SST::ElementInfoComponent pisces_switch_element_info = {
-  "pisces_switch",
-  "A network switch implementing a packet-flow congestion model",
-  NULL,
-  create_component<hw::pisces_switch>,
-  NULL,
-  ports,
-  COMPONENT_CATEGORY_NETWORK
-};
-
-const static SST::ElementInfoComponent logp_switch_element_info = {
-  "logp_switch",
-  "A network switch implementing a LogP congestion model",
-  NULL,
-  create_component<hw::logp_switch>,
-  NULL,
-  ports,
-  COMPONENT_CATEGORY_NETWORK
-};
-
-const static SST::ElementInfoComponent simple_node_element_info = {
-  "simple_node",
-  "A node with basic OS and basic compute functionality",
-  NULL,
-  create_component<hw::simple_node>,
-  NULL,
-  ports,
-  COMPONENT_CATEGORY_PROCESSOR
-};
 
 namespace sstmac {
 
@@ -272,13 +174,6 @@ read_params(PyObject* self, PyObject* args)
   return dict;
 }
 
-static const ElementInfoComponent macro_components[] = {
-    pisces_switch_element_info,
-    simple_node_element_info,
-    logp_switch_element_info,
-    {NULL, NULL, NULL, NULL}
-};
-
 struct myMethod {
   const char* name;
   PyCFunction fxn;
@@ -361,11 +256,11 @@ extern "C" {
 ElementLibraryInfo macro_eli = {
     "macro",
     "SST Macroscale integrated components",
-    macro_components,                  // Components
+    NULL,                  // Components
     NULL,                              // Events
     NULL,                              // Introspectors
     NULL,                              // Modules
-    subcomponents,
+    NULL,
     NULL,                              // Partitioners
     gen_sst_macro_integrated_pymodule,  // Python Module Generator
     NULL

@@ -20,8 +20,6 @@
 namespace sstmac {
 namespace hw {
 
-SpktRegister("dragonfly | dfly", topology, dragonfly);
-
 static const double PI = 3.141592653589793238462;
 
 dragonfly::dragonfly(sprockit::sim_parameters* params) :

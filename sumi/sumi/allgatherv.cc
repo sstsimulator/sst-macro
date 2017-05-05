@@ -13,11 +13,7 @@
 
 using namespace sprockit::dbg;
 
-namespace sumi
-{
-
-SpktRegister("bruck_allgatherv", dag_collective, bruck_allgatherv_collective);
-
+namespace sumi {
 
 bruck_allgatherv_actor::bruck_allgatherv_actor(int* counts) : recv_counts_(counts)
 {
@@ -110,7 +106,7 @@ bruck_allgatherv_actor::init_dag()
 
 
   int partner_gap = 1;
-  action *prev_send = 0, *prev_recv = 0;
+  action *prev_send = nullptr, *prev_recv = nullptr;
   int nelems_recvd = recv_counts_[dense_me_];
   for (int i=0; i < num_rounds; ++i){
     int send_partner = (dense_me_ + nproc - partner_gap) % nproc;

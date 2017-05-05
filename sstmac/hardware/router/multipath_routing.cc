@@ -6,11 +6,19 @@
 namespace sstmac {
 namespace hw {
 
-SpktTemplateRegister("minimal_multipath", router, multipath_router<minimal_router>, minmp);
+class multipath_minimal : public multipath_router<minimal_router> {
+  FactoryRegister("minimal_multipath", router, multipath_minimal)
+ public:
+  multipath_minimal(sprockit::sim_parameters* params, topology* top, network_switch* netsw) :
+   multipath_router(params,top,netsw){}
+};
 
-SpktTemplateRegister("valiant_multipath", router, multipath_router<valiant_router>, valmp);
-
-//SpktTemplateRegister("ugal_multipath", router, multipath_router<ugal_router>, ugalmp);
+class multipath_valiant : public multipath_router<valiant_router> {
+  FactoryRegister("valiant_multipath", router, multipath_valiant)
+ public:
+  multipath_valiant(sprockit::sim_parameters* params, topology* top, network_switch* netsw) :
+   multipath_router(params,top,netsw){}
+};
 
 }
 }

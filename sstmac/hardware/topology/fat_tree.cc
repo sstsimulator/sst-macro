@@ -33,11 +33,6 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-SpktRegister("fattree | fat_tree | ftree", topology, fat_tree,
-  "Fat tree topology with L levels and radix K.  This fat tree is actually implemented with commodity switches. Each level of the fat tree has the same number of switches.  This is equivalent to archetypal fat tree with fatter links being replaced by MORE links.");
-
-SpktRegister("tapered_fat_tree | simple_fattree", topology, tapered_fat_tree);
-
 
 abstract_fat_tree::abstract_fat_tree(sprockit::sim_parameters *params,
                                      InitMaxPortsIntra i1,

@@ -19,45 +19,43 @@
 
 namespace sumi {
 
-
 using sstmac::sw::task_id;
 
 class mpi_group  {
 
  public:
-  mpi_group(const std::vector<task_id>& tl);
+  mpi_group(std::vector<task_id>&& tl);
 
   mpi_group(size_t size);
 
-  virtual
-  ~mpi_group() {
-  }
+  virtual ~mpi_group() { }
 
-  task_id
-  at(int rank);
+  task_id at(int rank);
 
-  size_t
-  size() const {
+  size_t size() const {
     return size_;
   }
 
-  const std::vector<task_id>&
-  ids() const {
+  const std::vector<task_id>& ids() const {
     return task_list_;
   }
 
-  MPI_Group
-  id() const {
+  MPI_Group id() const {
     return id_;
   }
 
-  void
-  set_id(MPI_Group grp){
+  void set_id(MPI_Group grp){
     id_ = grp;
   }
 
-  int
-  rank_of_task(task_id t);
+  /**
+   * @brief rank_of_task See if task exists in this group.
+   *      If yes, return its rank within the group.
+   *      If not, return -1.
+   * @param t The world task_id to find in the group
+   * @return The local rank of task within the group.
+   */
+  int rank_of_task(task_id t) const;
 
  protected:
   std::vector<task_id> task_list_;

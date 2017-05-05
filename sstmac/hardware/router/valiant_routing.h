@@ -13,19 +13,18 @@ namespace hw {
  */
 class valiant_router : public minimal_router
 {
+  FactoryRegister("valiant", router, valiant_router,
+              "router implementing valiant routing")
  public:
   valiant_router(sprockit::sim_parameters* params,
                  topology* top, network_switch* netsw,
                  routing::algorithm_t algo = routing::valiant);
 
-  virtual
-  ~valiant_router() { }
+  virtual ~valiant_router() { }
 
-  virtual void
-  route(packet* pkt) override;
+  virtual void route(packet* pkt) override;
 
-  virtual std::string
-  to_string() const override {
+  virtual std::string to_string() const override {
     return "valiant";
   }
 
@@ -39,8 +38,7 @@ class valiant_router : public minimal_router
     @param topology_vc The geometry-specific virtual channel
     @return The first stage virtual channel
   */
-  virtual int
-  first_stage_vc(int topology_vc) {
+  virtual int first_stage_vc(int topology_vc) const {
     return 2*topology_vc;
   }
 
@@ -54,8 +52,7 @@ class valiant_router : public minimal_router
     @param topology_vc The geometry-specific virtual channel
     @return The second stage virtual channel
   */
-  virtual int
-  second_stage_vc(int topology_vc) {
+  virtual int second_stage_vc(int topology_vc) const {
     return 2*topology_vc + 1;
   }
 
@@ -75,16 +72,12 @@ class valiant_router : public minimal_router
    * final_node depending on whether the intermediate switch has been
    * reached or not.
    */
-  next_action_t
-  intermediate_step(routable* rtbl,
-                    packet* pkt);
+  next_action_t intermediate_step(routable* rtbl, packet* pkt);
 
   /**
    Different for pure valiant and UGAL.
    */
-  virtual next_action_t
-  initial_step(routable* rtbl,
-               packet* pkt);
+  virtual next_action_t initial_step(routable* rtbl, packet* pkt);
 
   /**
    * @brief next_routing_stage
@@ -95,8 +88,7 @@ class valiant_router : public minimal_router
    * reached or not. Or it may be minimal if the packet is still on
    * the minimal path and has not switched to Valiant.
    */
-  next_action_t
-  next_routing_stage(packet* pkt);
+  next_action_t next_routing_stage(packet* pkt);
 
   /**
    * @brief configure_intermediate_path
@@ -104,8 +96,7 @@ class valiant_router : public minimal_router
    * chosen intermediate switch
    * @param path
    */
-  void
-  configure_intermediate_path(routable::path& path);
+  void configure_intermediate_path(routable::path& path);
 
   /**
    * @brief configure_final_path
@@ -113,8 +104,7 @@ class valiant_router : public minimal_router
    * compute a path to the final ejection switch
    * @param path
    */
-  void
-  configure_final_path(routable::path& path);
+  void configure_final_path(routable::path& path);
 
   /**
    * @brief route_valiant

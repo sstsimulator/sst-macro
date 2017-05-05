@@ -30,7 +30,7 @@ run_test(const std::string& test, transport* t, communicator* dom, int nelems, i
 
 
   double t_start;
-  int *src_buf = 0, *dst_buf = 0, *reduce_buf = 0;
+  int *src_buf = nullptr, *dst_buf = nullptr, *reduce_buf = nullptr;
   if (test == "allgather"){
     src_buf = (int*) ::malloc(sizeof(int)*nelems);
     dst_buf = (int*) ::malloc(sizeof(int)*nelems*nproc);
@@ -175,7 +175,7 @@ run_test()
 
   params["use_put_protocol"] = "false";
   params["lazy_watch"] = "true";
-  transport* t = transport_factory::get_param("transport", &params);
+  transport* t = transport::factory::get_param("transport", &params);
 
   t->init();
 

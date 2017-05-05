@@ -8,10 +8,7 @@
 
 using namespace sprockit::dbg;
 
-namespace sumi
-{
-
-SpktRegister("sim_btree_scan", dag_collective, simultaneous_btree_scan);
+namespace sumi {
 
 simultaneous_btree_scan::simultaneous_btree_scan(int root, reduce_fxn fxn) :
  root_(root), fxn_(fxn)

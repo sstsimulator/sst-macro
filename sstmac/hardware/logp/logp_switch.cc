@@ -26,9 +26,6 @@
 namespace sstmac {
 namespace hw {
 
-SpktRegister("logP | simple | LogP | logp", network_switch, logp_switch,
-  "A switch that implements no congestion modeling");
-
 logp_switch::logp_switch(sprockit::sim_parameters *params, uint64_t id, event_manager *mgr) :
   network_switch(params, id, mgr, device_id::logp_overlay)
 {
@@ -58,7 +55,10 @@ logp_switch::logp_switch(sprockit::sim_parameters *params, uint64_t id, event_ma
 
   nics_.resize(top_->num_nodes());
   neighbors_.reserve(1000); //nproc - just reserve a large block for now
-#if !SSTMAC_INTEGRATED_SST_CORE
+
+#if SSTMAC_INTEGRATED_SST_CORE
+  init_links(params);
+#else
   mtl_handler_ = new_handler(this, &logp_switch::handle);
 #endif
 }

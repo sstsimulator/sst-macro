@@ -55,34 +55,26 @@ class mpi_queue
  public:
   mpi_queue(sprockit::sim_parameters* params, int task_id, mpi_api* api);
 
-  /// Goodbye.
   ~mpi_queue() throw ();
 
-  static void
-  delete_statics();
+  static void delete_statics();
 
-  void
-  send(mpi_request* key, int count, MPI_Datatype type,
+  void send(mpi_request* key, int count, MPI_Datatype type,
        int dest, int tag, mpi_comm* comm,
        void* buffer);
 
-  void
-  recv(mpi_request* key, int count, MPI_Datatype type,
+  void recv(mpi_request* key, int count, MPI_Datatype type,
        int source, int tag, mpi_comm* comm,
        void* buffer = 0);
 
-  void
-  probe(mpi_request* key, mpi_comm* comm,
+  void probe(mpi_request* key, mpi_comm* comm,
         int source, int tag);
 
-  bool
-  iprobe(mpi_comm* comm, int source, int tag, MPI_Status* stat);
+  bool iprobe(mpi_comm* comm, int source, int tag, MPI_Status* stat);
 
-  void
-  incoming_progress_loop_message(const mpi_message::ptr& message);
+  void incoming_progress_loop_message(const mpi_message::ptr& message);
 
-  mpi_protocol*
-  protocol(long bytes) const;
+  mpi_protocol* protocol(long bytes) const;
 
   mpi_api* api() const {
     return api_;
@@ -95,8 +87,7 @@ class mpi_queue
   void finalize_recv(const mpi_message::ptr& msg,
                 mpi_queue_recv_request* req);
 
-  sstmac::timestamp
-  progress_loop(mpi_request* req);
+  sstmac::timestamp progress_loop(mpi_request* req);
 
   void nonblocking_progress();
 
@@ -115,7 +106,7 @@ class mpi_queue
     bool needs_send_ack,
     bool needs_recv_ack);
 
-  void post_header(const mpi_message::ptr& msg, bool needs_ack);
+  void post_header(const mpi_message::ptr& msg, sumi::message::payload_type_t ty, bool needs_ack);
 
  private:
   struct sortbyseqnum {
@@ -142,23 +133,17 @@ class mpi_queue
  private:
   void handle_poll_msg(const sumi::message::ptr& msg);
 
-  void
-  handle_collective_done(const sumi::message::ptr& msg);
+  void handle_collective_done(const sumi::message::ptr& msg);
 
-  void
-  incoming_completion_ack(const mpi_message::ptr& message);
+  void incoming_completion_ack(const mpi_message::ptr& message);
 
-  void
-  incoming_new_message(const mpi_message::ptr& message);
+  void incoming_new_message(const mpi_message::ptr& message);
 
-  void
-  handle_nic_ack(const mpi_message::ptr& message);
+  void handle_nic_ack(const mpi_message::ptr& message);
 
-  void
-  handle_new_message(const mpi_message::ptr& message);
+  void handle_new_message(const mpi_message::ptr& message);
 
-  void
-  notify_probes(const mpi_message::ptr& message);
+  void notify_probes(const mpi_message::ptr& message);
 
   mpi_queue_recv_request*
   pop_matching_request(pending_message_t& pending, const mpi_message::ptr& message);
@@ -167,26 +152,20 @@ class mpi_queue
   pop_pending_request(const mpi_message::ptr& message,
                        bool set_need_recv = true);
 
-  mpi_queue_recv_request*
-  pop_waiting_request(const mpi_message::ptr& message);
+  mpi_queue_recv_request* pop_waiting_request(const mpi_message::ptr& message);
 
-  mpi_message::ptr
-  find_matching_recv(mpi_queue_recv_request* req);
+  mpi_message::ptr find_matching_recv(mpi_queue_recv_request* req);
 
-  void
-  send_completion_ack(const mpi_message::ptr& message);
+  void send_completion_ack(const mpi_message::ptr& message);
 
-  mpi_message::ptr
-  send_message(void* buffer, int count, MPI_Datatype type,
+  mpi_message::ptr send_message(void* buffer, int count, MPI_Datatype type,
     int dst_rank, int tag, mpi_comm* comm);
 
-  void
-  configure_send_request(const mpi_message::ptr& mess, mpi_request* req);
+  void configure_send_request(const mpi_message::ptr& mess, mpi_request* req);
 
   void clear_pending();
 
-  bool
-  at_least_one_complete(const std::vector<mpi_request*>& req);
+  bool at_least_one_complete(const std::vector<mpi_request*>& req);
 
  private:
   sstmac::stat_spyplot* spy_num_messages_;

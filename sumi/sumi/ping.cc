@@ -11,10 +11,7 @@ RegisterKeywords(
 "activity_monitor",
 );
 
-namespace sumi
-{
-
-SpktRegister("ping", activity_monitor, ping_monitor);
+namespace sumi {
 
 pinger::pinger(transport* api, int dst, double timeout) :
   my_api_(api),

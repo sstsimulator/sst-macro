@@ -10,6 +10,7 @@ namespace sstmac
 class stat_histogram :
   public stat_collector
 {
+  FactoryRegister("histogram", stat_collector, stat_histogram)
  public:
   stat_histogram(sprockit::sim_parameters* params);
 
@@ -65,6 +66,7 @@ class stat_histogram :
 class stat_time_histogram :
   public stat_histogram
 {
+  FactoryRegister("time_histogram", stat_collector, stat_time_histogram)
  public:
   stat_time_histogram(sprockit::sim_parameters* params) :
     stat_histogram(params)

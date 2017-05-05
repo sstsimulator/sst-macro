@@ -46,6 +46,7 @@ namespace sstmac {
 
 class event_manager
 {
+  DeclareFactory(event_manager, parallel_runtime*)
   friend class event_component;
   friend class event_subcomponent;
   friend class event_scheduler;
@@ -235,9 +236,6 @@ class null_event_manager : public event_manager
   }
 
 };
-
-DeclareFactory(event_manager, parallel_runtime*);
-
 #endif
 
 } // end of namespace sstmac

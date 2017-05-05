@@ -6,6 +6,8 @@ namespace hw {
 class xpress_ring :
   public structured_topology
 {
+  FactoryRegister("xpress", topology, xpress_ring,
+              "A ring topology with express cables that make large jumps")
  public:
   typedef enum {
     up_port = 0,
@@ -23,43 +25,25 @@ class xpress_ring :
     return true;
   }
 
-  bool
-  uniform_network_ports() const override {
+  bool uniform_network_ports() const override {
     return true;
   }
 
-  bool
-  uniform_switches_non_uniform_network_ports() const override {
+  bool uniform_switches_non_uniform_network_ports() const override {
     return true;
   }
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "xpress ring topology";
   }
 
-  void
-  configure_individual_port_params(switch_id src,
+  void configure_individual_port_params(switch_id src,
               sprockit::sim_parameters* switch_params) const override;
 
-  void
-  configure_vc_routing(std::map<routing::algorithm_t, int>& m) const override;
+  void configure_vc_routing(std::map<routing::algorithm_t, int>& m) const override;
 
-  void
-  connected_outports(switch_id src, 
+  void connected_outports(switch_id src,
         std::vector<topology::connection>& conns) const override;
-
-  /**
-  Structured topologies can be direct (torus) or indirect (fat tree).
-  We therefore need to distinguish the total number of switches and
-  the number of leaf switches - i.e. those directly connected to nodes.
-  For direct topologies, num_switches and num_leaf_switches are the same.
-  For indirect, num_leaf_switches < num_switches.
-  @return The number of leaf switches directly connected to compute nodes
-  */
-  int num_leaf_switches() const override {
-    return ring_size_;
-  }
 
   /**
   Workhorse function for implementing #minimal_route_to_switch
@@ -69,8 +53,7 @@ class xpress_ring :
   @param dest_sw_addr The addr of the destination switch
   @param path [inout] A complete path descriptor to the destination switch
   */
-  void
-  minimal_route_to_switch(
+  void minimal_route_to_switch(
     switch_id src,
     switch_id dest,
     routable::path& path) const override;
@@ -83,22 +66,18 @@ class xpress_ring :
   @param dest_coords. The destination coordinates. This can be either switch or node coordinates.
   @return The number of hops to final destination
   */
-  int
-  minimal_distance(
+  int minimal_distance(
     switch_id src,
     switch_id dest) const override;
 
-  int
-  num_switches() const override {
+  int num_switches() const override {
     return ring_size_;
   }
 
-  int
-  diameter() const override;
+  int diameter() const override;
 
  private:
-  int
-  num_hops(int total_distance) const;
+  int num_hops(int total_distance) const;
 
  private:
   int ring_size_;

@@ -13,35 +13,28 @@
 namespace sstmac {
 namespace hw {
 
-
-
 class connectable
 {
  public:
-  virtual std::string
-  to_string() const = 0;
+  virtual std::string to_string() const = 0;
 
   static const int any_port = -1;
 
-  virtual void
-  connect_output(
+  virtual void connect_output(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
     event_handler* handler) = 0;
 
-  virtual void
-  connect_input(
+  virtual void connect_input(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
     event_handler* handler) = 0;
 
-  virtual link_handler*
-  credit_handler(int port) const = 0;
+  virtual link_handler* credit_handler(int port) const = 0;
 
-  virtual link_handler*
-  payload_handler(int port) const = 0;
+  virtual link_handler* payload_handler(int port) const = 0;
 
 };
 
@@ -53,10 +46,7 @@ class connectable_component :
   connectable_component(sprockit::sim_parameters* params,
                         uint64_t cid,
                         device_id id,
-                        event_manager* mgr)
-    : event_component(params, cid, id, mgr)
-  {
-  }
+                        event_manager* mgr);
 
 };
 
@@ -64,11 +54,12 @@ class connectable_subcomponent :
   public event_subcomponent,
   public connectable
 {
-protected:
- connectable_subcomponent(event_scheduler* parent)
-   : event_subcomponent(parent)
- {
- }
+ protected:
+  connectable_subcomponent(event_scheduler* parent)
+    : event_subcomponent(parent)
+  {
+  }
+
 };
 
 }

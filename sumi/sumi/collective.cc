@@ -27,8 +27,6 @@ RegisterDebugSlot(sumi_collective_round,
 RegisterDebugSlot(sumi_vote,
  "print all debug output for fault-tolerant voting collectives within the sumi framework")
 
-ImplementFactory(sumi::dag_collective)
-
 namespace sumi {
 
 #define enumcase(x) case x: return #x
@@ -143,14 +141,14 @@ dag_collective*
 dag_collective::construct(const std::string& name, sprockit::sim_parameters *params)
 {
   sprockit::sim_parameters* collective_params = params->get_namespace(name);
-  return dag_collective_factory::get_param("algorithm", collective_params);
+  return dag_collective::factory::get_param("algorithm", collective_params);
 }
 
 dag_collective*
 dag_collective::construct(const std::string& name, sprockit::sim_parameters *params, reduce_fxn fxn)
 {
   sprockit::sim_parameters* collective_params = params->get_namespace(name);
-  dag_collective* coll = dag_collective_factory::get_param("algorithm", collective_params);
+  dag_collective* coll = dag_collective::factory::get_param("algorithm", collective_params);
   coll->init_reduce(fxn);
   return coll;
 }

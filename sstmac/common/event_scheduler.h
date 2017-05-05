@@ -19,12 +19,12 @@
 #include <sstmac/common/sst_event_fwd.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/event_manager_fwd.h>
+#include <sstmac/sst_core/integrated_component.h>
 #include <sprockit/sim_parameters_fwd.h>
 
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sst/core/params.h>
 #include <sst/core/link.h>
-#include <sstmac/sst_core/integrated_component.h>
 
 namespace sstmac {
 typedef SST::Event::HandlerBase link_handler;

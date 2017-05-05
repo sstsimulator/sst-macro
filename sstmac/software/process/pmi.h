@@ -21,11 +21,9 @@ class process_manager  {
 
   virtual ~process_manager();
 
-  int
-  get_partner(node_id addr) const;
+  int get_partner(node_id addr) const;
 
-  node_id
-  my_addr() const {
+  node_id my_addr() const {
     return my_addr_;
   }
 

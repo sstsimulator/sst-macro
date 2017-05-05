@@ -45,9 +45,6 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-SpktRegister("pisces", network_switch, pisces_switch,
-  "A network switch implementing the packet flow congestion model");
-
 pisces_abstract_switch::pisces_abstract_switch(
   sprockit::sim_parameters *params, uint64_t id, event_manager *mgr) :
   buf_stats_(nullptr),
@@ -56,16 +53,16 @@ pisces_abstract_switch::pisces_abstract_switch(
   network_switch(params, id, mgr)
 {
   sprockit::sim_parameters* xbar_params = params->get_optional_namespace("xbar");
-  xbar_stats_ = packet_stats_callback_factory::get_optional_param("stats", "null",
+  xbar_stats_ = packet_stats_callback::factory::get_optional_param("stats", "null",
                                              xbar_params, this);
 
   sprockit::sim_parameters* buf_params = params->get_optional_namespace("output_buffer");
-  buf_stats_ = packet_stats_callback_factory::get_optional_param("stats", "null",
+  buf_stats_ = packet_stats_callback::factory::get_optional_param("stats", "null",
                                              buf_params, this);
 
   sprockit::sim_parameters* rtr_params = params->get_optional_namespace("router");
   rtr_params->add_param_override_recursive("id", int(my_addr_));
-  router_ = router_factory::get_param("name", rtr_params, top_, this);
+  router_ = router::factory::get_param("name", rtr_params, top_, this);
 
   sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
   std::vector<topology::injection_port> conns;
@@ -81,6 +78,7 @@ pisces_abstract_switch::pisces_abstract_switch(
     sprockit::sim_parameters* port_params = topology::get_port_params(params, conn.port);
     ej_params->combine_into(port_params);
   }
+
 }
 
 
@@ -104,7 +102,9 @@ pisces_switch::pisces_switch(
   xbar_ = new pisces_crossbar(xbar_params, this);
   xbar_->set_stat_collector(xbar_stats_);
   xbar_->configure_basic_ports(top_->max_num_ports());
-#if !SSTMAC_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
+  init_links(params);
+#else
   payload_handler_ = new_handler(this, &pisces_switch::handle_payload);
   ack_handler_ = new_handler(this, &pisces_switch::handle_credit);
 #endif

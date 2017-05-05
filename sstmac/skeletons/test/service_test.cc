@@ -11,6 +11,7 @@ namespace sstmac {
 
 class test_service : public distributed_service
 {
+  ServiceRegister("test_service", test_service)
  public:
   test_service(sprockit::sim_parameters* params,
                const std::string& libname,
@@ -28,8 +29,7 @@ class service_test_message : public sumi::message
  public:
   typedef sprockit::refcount_ptr<service_test_message> ptr;
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "service test message";
   }
 
@@ -53,8 +53,6 @@ test_service::run()
     }
   }
 }
-
-ServiceRegister("test_service", test_service);
 
 } //end namespace sstmac
 

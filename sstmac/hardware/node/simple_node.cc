@@ -25,8 +25,6 @@
 namespace sstmac {
 namespace hw {
 
-SpktRegister("simple", node, simple_node,
-  "A basic endpoint node running SST/macro software stacks");
 
 simple_node::~simple_node()
 {
@@ -37,6 +35,9 @@ simple_node::simple_node(sprockit::sim_parameters *params,
                          event_manager *mgr)
   : node(params, id, mgr)
 {
+#if SSTMAC_INTEGRATED_SST_CORE
+  init_links(params);
+#endif
 }
 
 void

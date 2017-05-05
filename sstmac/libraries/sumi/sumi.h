@@ -12,72 +12,54 @@
 
 namespace sumi {
 
-void
-comm_init();
+void comm_init();
 
-void
-comm_finalize();
+void comm_finalize();
 
-int
-comm_rank();
+int comm_rank();
 
-int
-comm_nproc();
+int comm_nproc();
 
 /**
     @param dst The destination to send to
 */
-void
-comm_send_header(int dst, const message::ptr& msg);
+void comm_send_header(int dst, const message::ptr& msg);
 
-void
-comm_cancel_ping(int dst, int tag);
+void comm_cancel_ping(int dst, int tag);
 
-void
-comm_ping(int dst, int tag, timeout_function* func);
+void comm_ping(int dst, int tag, timeout_function* func);
 
-void
-comm_send_payload(int dst, const message::ptr& msg);
+void comm_send_payload(int dst, const message::ptr& msg);
 
-void
-comm_send(int dst, message::payload_type_t ev, const message::ptr& msg);
+void comm_send(int dst, message::payload_type_t ev, const message::ptr& msg);
 
-void
-comm_rdma_put(int dst, const message::ptr& msg);
+void comm_rdma_put(int dst, const message::ptr& msg);
 
-void
-comm_rdma_get(int dst, const message::ptr& msg);
+void comm_rdma_get(int dst, const message::ptr& msg);
 
-void
-comm_nvram_get(int dst, const message::ptr& msg);
+void comm_nvram_get(int dst, const message::ptr& msg);
 
-void
-comm_alltoall(void* dst, void* src, int nelems,
+void comm_alltoall(void* dst, void* src, int nelems,
    int type_size, int tag, bool fault_aware = false,
    int context = options::initial_context, communicator* dom = nullptr);
 
-void
-comm_allgather(void* dst, void* src, int nelems,
+void comm_allgather(void* dst, void* src, int nelems,
    int type_size, int tag, bool fault_aware = false,
    int context = options::initial_context, communicator* dom = nullptr);
 
-void
-comm_allgatherv(void* dst, void* src, int* recv_counts,
+void comm_allgatherv(void* dst, void* src, int* recv_counts,
    int type_size, int tag, bool fault_aware = false,
    int context = options::initial_context, communicator* dom = nullptr);
 
-void
-comm_gather(int root, void* dst, void* src, int nelems,
+void comm_gather(int root, void* dst, void* src, int nelems,
    int type_size, int tag, bool fault_aware = false,
    int context = options::initial_context, communicator* dom = nullptr);
 
-void
-comm_scatter(int root, void* dst, void* src, int nelems,
+void comm_scatter(int root, void* dst, void* src, int nelems,
    int type_size, int tag, bool fault_aware = false,
    int context = options::initial_context, communicator* dom = nullptr);
 
-void
-comm_bcast(int root, void* buffer, int nelems,
+void comm_bcast(int root, void* buffer, int nelems,
    int type_size, int tag, bool fault_aware = false,
    int context = options::initial_context, communicator* dom = nullptr);
 
@@ -92,47 +74,40 @@ comm_bcast(int root, void* buffer, int nelems,
 * @param fault_aware Whether to execute in a fault-aware fashion to detect failures
 * @param context The context (i.e. initial set of failed procs)
 */
-void
-comm_allreduce(void* dst, void* src, int nelems, int type_size, int tag,
+void comm_allreduce(void* dst, void* src, int nelems, int type_size, int tag,
   reduce_fxn fxn, bool fault_aware=false, int context = options::initial_context,
   communicator* dom = nullptr);
 
 template <typename data_t, template <typename> class Op>
-void
-comm_allreduce(void* dst, void* src, int nelems, int tag,
-               bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr){
+void comm_allreduce(void* dst, void* src, int nelems, int tag,
+    bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr){
   typedef ReduceOp<Op, data_t> op_class_type;
   comm_allreduce(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
 }
 
-void
-comm_scan(void* dst, void* src, int nelems, int type_size, int tag,
+void comm_scan(void* dst, void* src, int nelems, int type_size, int tag,
   reduce_fxn fxn, bool fault_aware=false, int context = options::initial_context,
   communicator* dom = nullptr);
 
 template <typename data_t, template <typename> class Op>
-void
-comm_scan(void* dst, void* src, int nelems, int tag,
-          bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr){
+void comm_scan(void* dst, void* src, int nelems, int tag,
+      bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr){
   typedef ReduceOp<Op, data_t> op_class_type;
   comm_scan(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
 }
 
-void
-comm_reduce(int root, void* dst, void* src, int nelems, int type_size, int tag,
+void comm_reduce(int root, void* dst, void* src, int nelems, int type_size, int tag,
   reduce_fxn fxn, bool fault_aware=false, int context = options::initial_context,
   communicator* dom = nullptr);
 
 template <typename data_t, template <typename> class Op>
-void
-comm_reduce(int root, void* dst, void* src, int nelems, int tag,
+void comm_reduce(int root, void* dst, void* src, int nelems, int tag,
             bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr){
   typedef ReduceOp<Op, data_t> op_class_type;
   comm_reduce(root, dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
 }
 
-void
-comm_barrier(int tag, bool fault_aware = false, communicator* dom = nullptr);
+void comm_barrier(int tag, bool fault_aware = false, communicator* dom = nullptr);
 
 /**
 * The total size of the input/result buffer in bytes is nelems*type_size
@@ -144,12 +119,10 @@ comm_barrier(int tag, bool fault_aware = false, communicator* dom = nullptr);
 * @param fxn The function that merges vote, usually AND, OR, MAX, MIN
 * @param context The context (i.e. initial set of failed procs)
 */
-void
-comm_vote(int vote, int tag, vote_fxn fxn, int context = options::initial_context, communicator* dom = nullptr);
+void comm_vote(int vote, int tag, vote_fxn fxn, int context = options::initial_context, communicator* dom = nullptr);
 
 template <template <class> class VoteOp>
-void
-comm_vote(int vote, int tag, int context = options::initial_context, communicator* dom = nullptr){
+void comm_vote(int vote, int tag, int context = options::initial_context, communicator* dom = nullptr){
   typedef VoteOp<int> op_class_type;
   comm_vote(vote, tag, &op_class_type::op, context, dom);
 }
@@ -159,33 +132,25 @@ comm_vote(int vote, int tag, int context = options::initial_context, communicato
 * This is invoked by an application.  This allows an
 * application to die at a very, very specific point in application execution.
 */
-void
-comm_kill_node();
+void comm_kill_node();
 
 /**
 * Helper function. Kill the process that is currently running.
 * This only kills the process - it leaves the node alive and well.
 */
-void
-comm_kill_process();
+void comm_kill_process();
 
-const thread_safe_set<int>&
-comm_failed_ranks();
+const thread_safe_set<int>& comm_failed_ranks();
 
-const thread_safe_set<int>&
-comm_failed_ranks(int context);
+const thread_safe_set<int>& comm_failed_ranks(int context);
 
-void
-comm_start_heartbeat(double interval);
+void comm_start_heartbeat(double interval);
 
-void
-comm_stop_heartbeat();
+void comm_stop_heartbeat();
 
-collective_done_message::ptr
-comm_collective_block(collective::type_t ty, int tag);
+collective_done_message::ptr comm_collective_block(collective::type_t ty, int tag);
 
-message::ptr
-comm_poll();
+message::ptr comm_poll();
 
 void compute(double sec);
 
@@ -198,8 +163,7 @@ void sleep_until(double sec);
  * @param node_id
  * @return
  */
-int
-comm_partner(long node_id);
+int comm_partner(long node_id);
 
 /**
  * Every node has exactly the same notion of time - universal, global clock.
@@ -209,11 +173,9 @@ comm_partner(long node_id);
  * @return The current system wall-clock time in seconds.
  *         At application launch, time is zero.
  */
-double
-wall_time();
+double wall_time();
 
-sstmac::sumi_transport*
-sumi_api();
+sstmac::sumi_transport* sumi_api();
 
 }
 

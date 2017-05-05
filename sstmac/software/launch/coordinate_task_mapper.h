@@ -23,21 +23,19 @@ namespace sw {
 
 class coordinate_task_mapper : public task_mapper
 {
-
+  FactoryRegister("coordinate", task_mapper, coordinate_task_mapper,
+              "assigns tasks to nodes based on hostname map of topology and hostname list in file")
  public:
   coordinate_task_mapper(sprockit::sim_parameters* params);
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "coordinate task mapper";
   }
 
   virtual ~coordinate_task_mapper() throw() {}
 
-  void
-  map_ranks(const ordered_node_set& nodes,
-        int ppn,
-        std::vector<node_id> &result,
+  void map_ranks(const ordered_node_set& nodes,
+        int ppn, std::vector<node_id> &result,
         int nproc) override;
 
  protected:

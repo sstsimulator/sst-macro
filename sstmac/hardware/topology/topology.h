@@ -36,6 +36,8 @@ namespace hw {
 
 class topology : public sprockit::printable
 {
+  DeclareFactory(topology)
+
  public:
   static const int eject;
 
@@ -105,55 +107,39 @@ class topology : public sprockit::printable
      switches that are only a part of the network
      @return The total number of switches
   */
-  virtual int
-  num_switches() const = 0;
-
-  /**
-     For direct networks, this includes all switches.
-     For indirect networks, this includes only those switches
-     connected to endpoint nodes
-     @return The number of switches connected to endpoint nodes
-  */
-  virtual int
-  num_leaf_switches() const = 0;
+  virtual int num_switches() const = 0;
 
   /**
    * @brief max_switch_id Depending on the node indexing scheme, the maximum switch id
    *  might be larger than the actual number of switches.
    * @return The max switch id
    */
-  virtual switch_id
-  max_switch_id() const = 0;
+  virtual switch_id max_switch_id() const = 0;
 
   /**
    * @brief swithc_id_slot_filled
    * @param sid
    * @return Whether a switch object should be built for a given switch_id
    */
-  virtual bool
-  switch_id_slot_filled(switch_id sid) const = 0;
+  virtual bool switch_id_slot_filled(switch_id sid) const = 0;
 
-  virtual int
-  num_nodes() const = 0;
+  virtual int num_nodes() const = 0;
 
   /**
    * @brief max_node_id Depending on the node indexing scheme, the maximum node id
    *  might be larger than the actual number of nodes.
    * @return The max node id
    */
-  virtual node_id
-  max_node_id() const = 0;
+  virtual node_id max_node_id() const = 0;
 
   /**
    * @brief node_id_slot_filled
    * @param nid
    * @return Whether a node object should be built for a given node_id
    */
-  virtual bool
-  node_id_slot_filled(node_id nid) const = 0;
+  virtual bool node_id_slot_filled(node_id nid) const = 0;
 
-  virtual switch_id
-  max_netlink_id() const = 0;
+  virtual switch_id max_netlink_id() const = 0;
 
   virtual bool
   netlink_id_slot_filled(node_id nid) const = 0;
@@ -338,8 +324,7 @@ class topology : public sprockit::printable
     minimal_route_to_switch(current_sw_addr, dest_sw_addr, paths[0]);
   }
 
-  virtual void
-  create_partition(
+  virtual void create_partition(
     int* switch_to_lp,
     int* switch_to_thread,
     int me,
@@ -348,8 +333,7 @@ class topology : public sprockit::printable
     int noccupied) const;
 
 #if SSTMAC_INTEGRATED_SST_CORE
-  switch_id
-  node_to_logp_switch(node_id nid) const;
+  switch_id node_to_logp_switch(node_id nid) const;
 
   static int nproc;
 #endif
@@ -480,7 +464,6 @@ class topology : public sprockit::printable
 
 };
 
-DeclareFactory(topology);
 }
 }
 

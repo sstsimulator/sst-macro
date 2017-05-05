@@ -25,8 +25,6 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-SpktRegister("pisces | pisces", memory_model, pisces_memory_model);
-
 std::string
 memory_message::to_string() const
 {
@@ -51,8 +49,8 @@ pisces_memory_packetizer::pisces_memory_packetizer(
   max_bw_ = params->get_bandwidth_param("total_bandwidth");
   max_single_bw_ = params->get_optional_bandwidth_param("max_single_bandwidth", max_bw_);
   latency_ = params->get_time_param("latency");
-  arb_ = pisces_bandwidth_arbitrator_factory::get_value("cut_through", params);
-  pkt_allocator_ = packet_allocator_factory
+  arb_ = pisces_bandwidth_arbitrator::factory::get_value("cut_through", params);
+  pkt_allocator_ = packet_allocator::factory
       ::get_optional_param("packet_allocator", "pisces", params);
 
   init_noise_model();
