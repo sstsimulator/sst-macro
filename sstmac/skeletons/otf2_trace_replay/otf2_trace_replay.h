@@ -53,6 +53,7 @@ class OTF2TraceReplayApp : public sstmac::sw::app {
   void StartMpi(const sstmac::timestamp);
   void EndMpi(const sstmac::timestamp);
 
+
   int rank = -1;
   long total_events = 0;
 
@@ -63,7 +64,10 @@ class OTF2TraceReplayApp : public sstmac::sw::app {
   std::vector<OTF2_Callpath> otf2_callpaths;
   std::vector<OTF2_Group> otf2_groups;
   std::vector<OTF2_Comm> otf2_comms;
+  std::vector<OTF2_Location> otf2_locations;
+  std::vector<OTF2_LocationGroup> otf2_location_groups;
   std::unordered_map<OTF2_StringRef, MPI_CALL_ID> otf2_mpi_call_map;
+  std::vector<std::vector<uint32_t>> comm_map;
 
   ~OTF2TraceReplayApp() throw()	{ }
 
@@ -71,6 +75,8 @@ class OTF2TraceReplayApp : public sstmac::sw::app {
   OTF2_Reader* initialize_event_reader();
   void initiate_trace_replay(OTF2_Reader*);
   void verify_replay_success();
+  void build_comm_map();
+  void create_communicators();
 
  private:
   CallQueue call_queue_;

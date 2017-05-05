@@ -85,11 +85,17 @@ OTF2_CallbackCode def_location(
   uint64_t              numberOfEvents,
   OTF2_LocationGroupRef locationGroup )
 {
+  auto app = (OTF2TraceReplayApp*)userData;
+  app->otf2_locations.push_back({
+	  name,
+	  locationType,
+	  numberOfEvents,
+	  locationGroup});
+
   DEF_PRINT("LOCATION\n");
   return OTF2_CALLBACK_SUCCESS;
 }
 
-// probably not needed
 OTF2_CallbackCode def_location_group(
   void*                  userData,
   OTF2_LocationGroupRef  self,
@@ -97,6 +103,11 @@ OTF2_CallbackCode def_location_group(
   OTF2_LocationGroupType locationGroupType,
   OTF2_SystemTreeNodeRef systemTreeParent )
 {
+  auto app = (OTF2TraceReplayApp*)userData;
+  app->otf2_location_groups.push_back({
+	 name, locationGroupType, systemTreeParent
+  });
+
   DEF_PRINT("LOCATION GROUP\n");
   return OTF2_CALLBACK_SUCCESS;
 }
@@ -146,8 +157,13 @@ OTF2_CallbackCode def_group(
   const uint64_t* members )
 {
   auto app = (OTF2TraceReplayApp*)userData;
+
+  std::vector<uint64_t> member_vect;
+  for (int i = 0; i < numberOfMembers; i++)
+	  member_vect.push_back(members[i]);
+
   app->otf2_groups.push_back({
-      name, groupType, paradigm, groupFlags
+      name, groupType, paradigm, groupFlags, member_vect
   });
 
   DEF_PRINT("GROUP\n");

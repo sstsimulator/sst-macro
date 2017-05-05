@@ -13,6 +13,7 @@
 #include "callbacks.h"
 #include <algorithm>
 #include <iomanip>
+#include <string>
 
 using std::cout;
 using std::cerr;
@@ -65,6 +66,32 @@ void check_status(OTF2_ErrorCode status, const std::string& description)
   }
 }
 
+void OTF2TraceReplayApp::create_communicators() {
+	auto mpi = GetMpi();
+
+	// Loop over the communicators declared by OTF2, skip first one, which is MPI_COMM_WORLD
+	for (int i = 1; i < comm_map.size(); i++) {
+		auto comm_rank_list = comm_map[i];
+
+		// Don't add empty communicators or MPI_COMM_SELF
+		if(comm_rank_list.size() < 2)
+					continue;
+
+		int* p_rank_list = new int[comm_rank_list.size()];
+		for (int j = 0; j < comm_rank_list.size(); j++)
+			p_rank_list[j] = (int)comm_rank_list[j];
+
+		// TODO: make the communicators here
+		std::cout << "Making Communicator for ranks: ";
+		for (int j = 0; j < comm_rank_list.size(); j++)
+			std::cout << p_rank_list[j] << " ";
+
+		std::cout << std::endl;
+
+		delete p_rank_list;
+	}
+}
+
 OTF2TraceReplayApp::OTF2TraceReplayApp(sprockit::sim_parameters* params,
         sumi::software_id sid, sstmac::sw::operating_system* os) :
   app(params, sid, os), mpi_(nullptr), call_queue_(this) {
@@ -79,12 +106,38 @@ OTF2TraceReplayApp::OTF2TraceReplayApp(sprockit::sim_parameters* params,
   print_unknown_callback_ = params->get_optional_bool_param("otf2_print_unknown_callback", false);
 }
 
+// gets rank from the last token in the string
+// ie "MPI Rank 2" -> 2
+uint32_t rank_from_otf2_string(std::string str) {
+	auto str_num = str.substr(str.find_last_of(' ') + 1, 10);
+	return atoi(str_num.c_str());
+}
+
+// fills OTF2TraceReplayApp::comm_map with mpi communicator mappings
+void OTF2TraceReplayApp::build_comm_map() {
+  for (auto _id = 0; _id < otf2_comms.size(); _id++) {
+	  auto group = otf2_groups[otf2_comms[_id].group];
+	  comm_map.push_back({});
+	  for(auto m = group.members.begin(); m != group.members.end(); m++) {
+		  std::string name_str = otf2_string_table[otf2_location_groups[*m].name].c_str();
+		  comm_map[_id].push_back(rank_from_otf2_string(name_str));
+	  }
+  }
+}
+
 void
 OTF2TraceReplayApp::skeleton_main() {
   rank = this->tid();
 
   auto event_reader = initialize_event_reader();
 
+  build_comm_map();
+
+  if (rank == 0) {
+    create_communicators();
+  }
+
+  return;
   initiate_trace_replay(event_reader);
   verify_replay_success();
 
