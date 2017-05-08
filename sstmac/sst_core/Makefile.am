@@ -22,6 +22,8 @@ nobase_library_include_HEADERS = \
   integrated_component.h \
   integrated_core.h
 
+EXTRA_DIST = sstmacro.py
+
 if INTEGRATED_SST_CORE
 noinst_LTLIBRARIES = libsstmac_sst_core.la
 
