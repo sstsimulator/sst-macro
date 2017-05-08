@@ -17,12 +17,12 @@ library_includedir=$(includedir)/sstmac/sst_core
 SUBDIRS = $(STD_SUBDIRS) 
 DIST_SUBDIRS = $(STD_SUBDIRS) 
 
+EXTRA_DIST = sstmacro.py
+
 nobase_library_include_HEADERS = \
   connectable_wrapper.h \
   integrated_component.h \
   integrated_core.h
-
-EXTRA_DIST = sstmacro.py
 
 if INTEGRATED_SST_CORE
 noinst_LTLIBRARIES = libsstmac_sst_core.la

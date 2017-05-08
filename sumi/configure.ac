@@ -109,12 +109,12 @@ AC_CONFIG_FILES([
 ])
 AC_OUTPUT
 
-echo "Configuration Summary:"
+echo "SUMI Configuration Summary:"
 echo "---------------------------------------------------------------"
 echo "Install prefix     $prefix"
 echo "C compiler         $CC"
 echo "C++ compiler       $CXX"
-echo "Preset CXXFLAGS    $with_parent_cxxflags"
+#echo "Preset CXXFLAGS    $with_parent_cxxflags"
 echo "CFLAGS             $CFLAGS"
 echo "CXXFLAGS           $CXXFLAGS"
 echo "CPPFLAGS           $CPPFLAGS"

@@ -30,8 +30,7 @@ template <class T, typename... Args>
 class Builder
 {
  public:
-  virtual T*
-  build(sprockit::sim_parameters* params, const Args&... args) = 0;
+  virtual T* build(sprockit::sim_parameters* params, const Args&... args) = 0;
 
 };
 
@@ -202,8 +201,6 @@ class Factory
    */
   static void register_name(const std::string& name, builder_t* builder) {
     //clang complains about valid variable - turn it off
-#pragma GCC diagnostic ignored "-Wunknown-pragmas"
-#pragma GCC diagnostic ignored "-Wundefined-var-template"
     {
     if (!builder_map_) {
       builder_map_ = new builder_map;
@@ -262,8 +259,7 @@ class Factory
    * @param args        The required arguments for the constructor
    * @return  A constructed child class corresponding to a given string name
    */
-  static T*
-  _get_value(const std::string& valname,
+  static T* _get_value(const std::string& valname,
              sprockit::sim_parameters* params,
              const Args&... args) {
     if (!builder_map_) {
@@ -391,8 +387,7 @@ class Factory
    * @param args      The required arguments for the constructor
    * @return  A constructed child class corresponding to a given string name
    */
-  static T*
-  get_optional_param(const std::string& param_name,
+  static T* get_optional_param(const std::string& param_name,
                      const std::string& defval,
                      sim_parameters* params,
                      const Args&... args) {
@@ -449,8 +444,6 @@ class BuilderRegistration<Child, Factory<Parent,Args...>>
 
 template <class Child, class Parent, class... Args> BuilderImpl<Child,Parent,Args...>
   BuilderRegistration<Child,Factory<Parent,Args...>>::builder_(Child::factory_string());
-
-
 
 }
 

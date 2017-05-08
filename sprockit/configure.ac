@@ -144,13 +144,11 @@ AC_CONFIG_FILES([
 ])
 AC_OUTPUT
 
-echo "Configuration Summary:"
+echo "SProCKit Configuration Summary:"
 echo "---------------------------------------------------------------"
 echo "Install prefix     $prefix"
 echo "C compiler         $CC"
 echo "C++ compiler       $CXX"
-echo "Enable C++11       $enable_cpp11"
-echo "Preset CXXFLAGS    $with_parent_cxxflags"
 
 if test "X$with_external_boost" = "Xno"; then
 echo "Boost              None"
@@ -168,7 +166,6 @@ if test "X$enable_regexp" = "Xno"; then
 echo "Regex              None"
 fi
 
-echo "Darwin OS?         $darwin"
 echo "CFLAGS             $CFLAGS"
 echo "CXXFLAGS           $CXXFLAGS"
 echo "CPPFLAGS           $CPPFLAGS"
