@@ -76,6 +76,8 @@ using SST::ElementInfoStatistic;
 
 #define RegisterComponent(name,parent,cls,lib,cat,desc) \
   FactoryRegister(name,parent,cls,desc) \
+  SST_ELI_DOCUMENT_VERSION(7,0,0) \
+  SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS() \
   SST_ELI_REGISTER_COMPONENT(cls,lib,#cls,desc,cat) \
   SST_ELI_DOCUMENT_PARAMS() \
   SST_ELI_DOCUMENT_PORTS(SSTMAC_VALID_PORTS) \
@@ -148,11 +150,10 @@ class SSTIntegratedComponent
 
   void init_links(sprockit::sim_parameters* params);
 
- protected:
+  protected:
   SSTIntegratedComponent(sprockit::sim_parameters* params, uint64_t id);
 
   SST::LinkMap* link_map_;
-
 
 };
 

@@ -133,6 +133,8 @@ class SSTMacroPartition : public SSTPartitioner
   SST_ELI_REGISTER_PARTITIONER(SSTMacroPartition,"macro","block",
      "Partitions using the SST/macro based partitioning schemes")
 
+  SST_ELI_DOCUMENT_VERSION(7,0,0)
+
 };
 
 void

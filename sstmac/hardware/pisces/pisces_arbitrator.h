@@ -68,14 +68,11 @@ class pisces_bandwidth_arbitrator
       Assign bandwidth to payload.
       @return The time at which the packet can be forwarded to the next switch/node/etc.
   */
-  virtual void
-  arbitrate(pkt_arbitration_t& st) = 0;
+  virtual void arbitrate(pkt_arbitration_t& st) = 0;
 
-  virtual timestamp
-  head_tail_delay(pisces_payload* pkt) = 0;
+  virtual timestamp head_tail_delay(pisces_payload* pkt) = 0;
 
-  virtual std::string
-  to_string() const = 0;
+  virtual std::string to_string() const = 0;
 
   virtual ~pisces_bandwidth_arbitrator(){}
 
