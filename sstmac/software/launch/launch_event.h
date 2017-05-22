@@ -67,14 +67,12 @@ class launch_event :
     Stop
   } type_t;
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return sprockit::printf("launch event app=%d task=%d node=%d",
                             aid_, tid_, toaddr_);
   }
 
-  void
-  serialize_order(serializer& ser) override {
+  void serialize_order(serializer& ser) override {
     hw::network_message::serialize_order(ser);
     timed_interface::serialize_order(ser);
     library_interface::serialize_order(ser);
@@ -82,23 +80,19 @@ class launch_event :
     ser & tid_;
   }
 
-  task_id
-  tid() const {
+  task_id tid() const {
     return tid_;
   }
 
-  app_id
-  aid() const {
+  app_id aid() const {
     return aid_;
   }
 
-  std::string
-  unique_name() const {
+  std::string unique_name() const {
     return unique_name_;
   }
 
-  type_t
-  type() const {
+  type_t type() const {
     return ty_;
   }
 
@@ -155,8 +149,7 @@ class start_app_event : public launch_event {
 
   void serialize_order(serializer& ser) override;
 
-  sprockit::sim_parameters&
-  app_params() {
+  sprockit::sim_parameters& app_params() {
     return app_params_;
   }
 
@@ -164,8 +157,7 @@ class start_app_event : public launch_event {
     return new start_app_event(aid_, unique_name_, mapping_, rank, dst, src, &app_params_);
   }
 
-  task_mapping::ptr
-  mapping() const {
+  task_mapping::ptr mapping() const {
     return mapping_;
   }
 

@@ -1,6 +1,7 @@
 .PHONY: histogram \
   ftq_app1 \
   spyplot \
+  spyplot_collectives \
   parallel_histogram parallel_spyplot \
   bytes_sent_torus \
   bytes_sent_fattree \
@@ -13,6 +14,7 @@ if !INTEGRATED_SST_CORE
 STATSTESTS = \
   test_stats_msg_size_histogram \
   test_stats_spyplot \
+  test_stats_spyplot_collectives \
   test_stats_bytes_sent_torus \
   test_stats_bytes_sent_fattree \
   histogram.p \
@@ -22,6 +24,8 @@ STATSTESTS = \
   ftq_app1.dat \
   spyplot.bytes.csv \
   spyplot.num_messages.csv \
+  spyplot_collectives.bytes.csv \
+  spyplot_collectives.num_messages.csv \
   bytes_sent_torus.dat \
   bytes_sent_fattree.dat 
 
@@ -71,6 +75,11 @@ spyplot:
 	$(PYRUNTEST) 5 $(top_srcdir) test_stats_spyplot.$(CHKSUF) True \
     $(SSTMACEXEC) -f $(srcdir)/test_configs/test_stats_spyplot.ini --low-res-timer --no-wall-time  
 test_stats_spyplot.$(CHKSUF): spyplot
+
+spyplot_collectives:
+	$(PYRUNTEST) 5 $(top_srcdir) test_stats_spyplot_collectives.$(CHKSUF) True \
+    $(SSTMACEXEC) -f $(srcdir)/test_configs/test_stats_spyplot_collectives.ini --no-wall-time  
+test_stats_spyplot_collectives.$(CHKSUF): spyplot_collectives
 
 ftq_app1:
 	$(PYRUNTEST) 5 $(top_srcdir) test_stats_ftq.$(CHKSUF) True \
