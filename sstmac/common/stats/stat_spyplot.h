@@ -68,36 +68,25 @@ class stat_spyplot :
     return "stat_spyplot";
   }
 
-  virtual void
-  simulation_finished(timestamp end) override;
+  virtual void simulation_finished(timestamp end) override;
 
-  virtual void
-  dump_to_file(const std::string& froot);
+  virtual void dump_to_file(const std::string& froot);
 
-  virtual void
-  dump_local_data() override;
+  virtual void dump_local_data() override;
 
-  virtual void
-  dump_global_data() override;
+  virtual void dump_global_data() override;
 
-  virtual void
-  reduce(stat_collector *coll) override;
+  virtual void reduce(stat_collector *coll) override;
 
-  virtual void
-  global_reduce(parallel_runtime *rt) override;
+  virtual void global_reduce(parallel_runtime *rt) override;
 
-  virtual void
-  clear() override;
+  virtual void clear() override;
 
-  virtual
-  ~stat_spyplot() {
-  }
+  virtual ~stat_spyplot() {}
 
-  virtual void
-  add_one(int source, int dest);
+  virtual void add_one(int source, int dest);
 
-  virtual void
-  add(int source, int dest, long num);
+  virtual void add(int source, int dest, long num);
 
   virtual stat_collector*
   do_clone(sprockit::sim_parameters* params) const override {

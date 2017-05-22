@@ -47,17 +47,17 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sst/core/event.h>
 #endif
 #include <sstmac/libraries/sumi/sumi_transport.h>
+#include <sstmac/libraries/sumi/message.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/key.h>
-#include <sstmac/hardware/node/node.h>
 #include <sstmac/software/launch/job_launcher.h>
+#include <sstmac/hardware/node/node.h>
 #include <sstmac/common/event_callback.h>
-#include <sstmac/libraries/sumi/message.h>
+#include <sstmac/common/runtime.h>
+#include <sstmac/common/stats/stat_spyplot.h>
 #include <sumi/message.h>
 #include <sprockit/output.h>
-#include <sstmac/common/runtime.h>
-
 
 using namespace sprockit::dbg;
 
@@ -159,7 +159,9 @@ sumi_transport::sumi_transport(sprockit::sim_parameters* params,
   server_libname_("sumi_server"),
   process_manager(sid, os),
   transport(params),
-  user_lib_time_(nullptr)
+  user_lib_time_(nullptr),
+  spy_num_messages_(nullptr),
+  spy_bytes_(nullptr)
 {
   rank_ = sid.task_;
   library* server_lib = os_->lib(server_libname_);
@@ -183,6 +185,11 @@ sumi_transport::sumi_transport(sprockit::sim_parameters* params,
   loc_ = os_->event_location();
 
   server->register_proc(rank_, this);
+
+  spy_num_messages_ = sstmac::optional_stats<sstmac::stat_spyplot>(des_scheduler(),
+        params, "traffic_matrix", "ascii", "num_messages");
+  spy_bytes_ = sstmac::optional_stats<sstmac::stat_spyplot>(des_scheduler(),
+        params, "traffic_matrix", "ascii", "bytes");
 }
 
 void
@@ -369,6 +376,10 @@ sumi_transport::send(
   tmsg->set_dest_rank(dst_task);
   //send intra-app
   tmsg->set_apps(sid().app_, dst_app);
+
+  if (spy_num_messages_) spy_num_messages_->add_one(rank_, dst_task);
+  if (spy_bytes_) spy_bytes_->add(rank_, dst_task, byte_length);
+
   sw::library::os_->execute(ami::COMM_SEND, tmsg);
 }
 
@@ -423,6 +434,7 @@ sumi_transport::do_rdma_get(int dst, const sumi::message::ptr& msg)
   if (post_rdma_delay_.ticks_int64()) {
     user_lib_time_->compute(post_rdma_delay_);
   }
+
   send(msg->byte_length(), msg,
     sstmac::hw::network_message::rdma_get_request,
     dst, msg->needs_send_ack());
