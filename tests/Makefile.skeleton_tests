@@ -10,7 +10,6 @@ if !INTEGRATED_SST_CORE
 # These are run with the same rule
 SKELETONCASES= \
   gtc \
-  miniFE \
   lflr \
   multiapp \
   sendrecv \

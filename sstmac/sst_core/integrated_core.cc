@@ -1,3 +1,46 @@
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
 
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/main/sstmac.h>
@@ -32,10 +75,7 @@ static char py_sstmacro[] = {
 using namespace sstmac;
 using namespace SST;
 
-DeclareDebugSlot(timestamp);
-static bool checked_prefix_fxn = false;
-
-static sprockit::sim_parameters*
+sprockit::sim_parameters*
 make_spkt_params_from_sst_params(SST::Params& map)
 {
   sprockit::sim_parameters* rv = new sprockit::sim_parameters;
@@ -47,101 +87,6 @@ make_spkt_params_from_sst_params(SST::Params& map)
   rv->append_extra_data(&map);
   return rv;
 }
-
-class timestamp_prefix_fxn :
-  public sprockit::debug_prefix_fxn
-{
- public:
-  timestamp_prefix_fxn(sstmac::event_scheduler* mgr) : mgr_(mgr){}
-
-  std::string
-  str() {
-    double t_ms = mgr_->now().msec();
-    return sprockit::printf("T=%12.8e ms:", t_ms);
-  }
-
- private:
-  event_scheduler* mgr_;
-};
-
-template <class T>
-SST::Component*
-create_component(SST::ComponentId_t id, SST::Params& params){
-  sprockit::sim_parameters* macParams =
-    make_spkt_params_from_sst_params(params);
-
-  T* created = new T(macParams, id, nullptr);
-  if (!checked_prefix_fxn){
-    if (sprockit::debug::slot_active(sprockit::dbg::timestamp)){
-      sprockit::debug_prefix_fxn* fxn = new timestamp_prefix_fxn(created);
-      sprockit::debug::prefix_fxn = fxn;
-    }
-    checked_prefix_fxn = true;
-  }
-
-  created->init_links(macParams);
-  return created;
-}
-
-template <class T>
-SST::SubComponent*
-create_subcomponent(SST::Component* parent, SST::Params& params){
-  sprockit::sim_parameters* macParams =
-    make_spkt_params_from_sst_params(params);
-  T* created = new T(macParams, parent);
-  created->init_links(macParams);
-  return created;
-}
-
-static const ElementInfoPort ports[] = {
- {"input %(out)d %(in)d",  "Will receive new payloads here",      NULL},
- {"output %(out)d %(in)d", "Will receive new acks(credits) here", NULL},
- {"in-out %(out)d %(in)d", "Will send/recv payloads here",       NULL},
- {"rtr", "Special link to Merlin router", NULL},
- {NULL, NULL, NULL}
-};
-
-static const ElementInfoSubComponent subcomponents[] = {
-  { "pisces",
-    "Link Control module for building Pisces NICs",
-    NULL,
-    create_subcomponent<hw::pisces_simple_network>,
-    NULL,
-    NULL,
-    "SST::Interfaces::SimpleNetwork"
-  },
-  { NULL, NULL, NULL, NULL, NULL, NULL }
-};
-
-const static SST::ElementInfoComponent pisces_switch_element_info = {
-  "pisces_switch",
-  "A network switch implementing a packet-flow congestion model",
-  NULL,
-  create_component<hw::pisces_switch>,
-  NULL,
-  ports,
-  COMPONENT_CATEGORY_NETWORK
-};
-
-const static SST::ElementInfoComponent logp_switch_element_info = {
-  "logp_switch",
-  "A network switch implementing a LogP congestion model",
-  NULL,
-  create_component<hw::logp_switch>,
-  NULL,
-  ports,
-  COMPONENT_CATEGORY_NETWORK
-};
-
-const static SST::ElementInfoComponent simple_node_element_info = {
-  "simple_node",
-  "A node with basic OS and basic compute functionality",
-  NULL,
-  create_component<hw::simple_node>,
-  NULL,
-  ports,
-  COMPONENT_CATEGORY_PROCESSOR
-};
 
 namespace sstmac {
 
@@ -272,13 +217,6 @@ read_params(PyObject* self, PyObject* args)
   return dict;
 }
 
-static const ElementInfoComponent macro_components[] = {
-    pisces_switch_element_info,
-    simple_node_element_info,
-    logp_switch_element_info,
-    {NULL, NULL, NULL, NULL}
-};
-
 struct myMethod {
   const char* name;
   PyCFunction fxn;
@@ -361,11 +299,11 @@ extern "C" {
 ElementLibraryInfo macro_eli = {
     "macro",
     "SST Macroscale integrated components",
-    macro_components,                  // Components
+    NULL,                  // Components
     NULL,                              // Events
     NULL,                              // Introspectors
     NULL,                              // Modules
-    subcomponents,
+    NULL,
     NULL,                              // Partitioners
     gen_sst_macro_integrated_pymodule,  // Python Module Generator
     NULL
@@ -373,4 +311,3 @@ ElementLibraryInfo macro_eli = {
 
 
 } // end extern "C"
-

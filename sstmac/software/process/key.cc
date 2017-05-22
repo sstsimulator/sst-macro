@@ -1,13 +1,46 @@
-/*
- *  This file is part of SST/macroscale:
- *               The macroscale architecture simulator from the SST suite.
- *  Copyright (c) 2009 Sandia Corporation.
- *  This software is distributed under the BSD License.
- *  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- *  the U.S. Government retains certain rights in this software.
- *  For more information, see the LICENSE file in the top
- *  SST/macroscale directory.
- */
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
 
 #include <sstmac/software/process/key.h>
 #include <sstmac/software/process/thread_info.h>
@@ -28,8 +61,8 @@ static std::vector<key*>* chunks = new std::vector<key*>;
 } // end of namespace keypool.
 
 key_traits::category key::general("General");
-spkt_unordered_map<std::string,int>* key::category_name_to_id_ = 0;
-spkt_unordered_map<int,std::string>* key::category_id_to_name_ = 0;
+spkt_unordered_map<std::string,int>* key::category_name_to_id_ = nullptr;
+spkt_unordered_map<int,std::string>* key::category_id_to_name_ = nullptr;
 uint64_t key::key_storage_size_ = 0;
 static sprockit::need_delete_statics<key> del_statics;
 static thread_lock lock_;
@@ -79,16 +112,16 @@ key::key() :
   keyname_id_(general.id()),
   timed_out_(false)
 {
-  blocked_thread_.first = 0;
-  blocked_thread_.second = 0;
+  blocked_thread_.first = nullptr;
+  blocked_thread_.second = nullptr;
 }
 
 key::key(const key_traits::category& cat) :
   keyname_id_(cat.id()),
   timed_out_(false)
 {
-  blocked_thread_.first = 0;
-  blocked_thread_.second = 0;
+  blocked_thread_.first = nullptr;
+  blocked_thread_.second = nullptr;
 }
 
 
@@ -140,7 +173,7 @@ key::delete_statics()
     }
     keypool::chunks->clear();
     delete keypool::chunks;
-    keypool::chunks = 0;
+    keypool::chunks = nullptr;
   }
   delete category_name_to_id_;
   delete category_id_to_name_;
@@ -148,4 +181,3 @@ key::delete_statics()
 
 }
 } // end of namespace sstmac.
-

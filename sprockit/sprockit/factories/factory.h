@@ -1,13 +1,46 @@
-/*
- *  This file is part of SST/macroscale:
- *               The macroscale architecture simulator from the SST suite.
- *  Copyright (c) 2009 Sandia Corporation.
- *  This software is distributed under the BSD License.
- *  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- *  the U.S. Government retains certain rights in this software.
- *  For more information, see the LICENSE file in the top
- *  SST/macroscale directory.
- */
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
 
 #ifndef SPROCKIT_COMMON_FACTORIES_FACTORY_H_INCLUDED
 #define SPROCKIT_COMMON_FACTORIES_FACTORY_H_INCLUDED
@@ -27,26 +60,14 @@ namespace sprockit {
  *  Object that will actually build classes from the given list of arguments
  */
 template <class T, typename... Args>
-class SpktBuilder
+class Builder
 {
  public:
-  virtual T*
-  build(sprockit::sim_parameters* params, const Args&... args) = 0;
+  virtual T* build(sprockit::sim_parameters* params, const Args&... args) = 0;
 
-};
-
-/**
- *  For partial template specialization.  The Factory object is
- *  never directly specified and will be determined automatically from
- *  a child class type and the top-level parent type (see below)
- */
-template<class Child, class Factory>
-class SpktBuilderImpl
-{
 };
 
 #include <type_traits>
-
 
 template <class> struct wrap { typedef void type; };
 
@@ -138,6 +159,14 @@ template <typename T, typename... Args>
 class call_constructor : public call_constructor_impl<T, void, Args...> {};
 
 
+template <class Factory>
+class CleanupFactory {
+ public:
+  ~CleanupFactory(){
+    Factory::clean_up();
+  }
+};
+
 /**
  * @class Factory
  * Object that provides static methods for mapping string names
@@ -150,7 +179,7 @@ class Factory
 {
 
  public:
-  typedef SpktBuilder<T,Args...> builder_t;
+  typedef Builder<T,Args...> builder_t;
   typedef T element_type;
 
   typedef std::map<std::string, builder_t*> builder_map;
@@ -158,6 +187,8 @@ class Factory
 
   typedef std::map<std::string, std::list<std::string> > alias_map;
   static alias_map* alias_map_;
+
+  static CleanupFactory<Factory<T,Args...>> clean_up_;
 
   static const char* name_;
 
@@ -168,8 +199,7 @@ class Factory
    *                depending on static init order
    * @param newname The new name that can be used for accessing child type
    */
-  static void
-  register_alias(const std::string& oldname, const std::string& newname){
+  static void register_alias(const std::string& oldname, const std::string& newname){
     if (!builder_map_) {
       builder_map_ = new builder_map;
     }
@@ -185,16 +215,15 @@ class Factory
     }
   }
 
-  static void
-  clean_up(){
+  static void clean_up(){
     //do not iterate the builder map and delete entry
     //each builder_t is a static objec that gets cleaned up automatically
 
     if (builder_map_) delete builder_map_;
     if (alias_map_) delete alias_map_;
 
-    builder_map_ = 0;
-    alias_map_ = 0;
+    builder_map_ = nullptr;
+    alias_map_ = nullptr;
   }
 
   /**
@@ -203,11 +232,8 @@ class Factory
    * @param builder The builder object whose virtual functio returns
    *                the correct child type
    */
-  static void
-  register_name(const std::string& name, builder_t* builder) {
+  static void register_name(const std::string& name, builder_t* builder) {
     //clang complains about valid variable - turn it off
-#pragma GCC diagnostic ignored "-Wunknown-pragmas"
-#pragma GCC diagnostic ignored "-Wundefined-var-template"
     {
     if (!builder_map_) {
       builder_map_ = new builder_map;
@@ -227,8 +253,7 @@ class Factory
    * @param descr_map
    * @param alias_map
    */
-  static void
-  add_to_map(const std::string& namestr, builder_t* desc,
+  static void add_to_map(const std::string& namestr, builder_t* desc,
             std::map<std::string, builder_t*>* builder_map,
             std::map<std::string, std::list<std::string> >* alias_map)
   {
@@ -267,8 +292,7 @@ class Factory
    * @param args        The required arguments for the constructor
    * @return  A constructed child class corresponding to a given string name
    */
-  static T*
-  _get_value(const std::string& valname,
+  static T* _get_value(const std::string& valname,
              sprockit::sim_parameters* params,
              const Args&... args) {
     if (!builder_map_) {
@@ -310,6 +334,8 @@ class Factory
   static bool valid_value(const std::string& value) {
     return builder_map_->find(value) != builder_map_->end();
   }
+
+  static const char* name() { return name_; }
 
   /**
    * @brief get_value Return a constructed child class corresponding
@@ -394,8 +420,7 @@ class Factory
    * @param args      The required arguments for the constructor
    * @return  A constructed child class corresponding to a given string name
    */
-  static T*
-  get_optional_param(const std::string& param_name,
+  static T* get_optional_param(const std::string& param_name,
                      const std::string& defval,
                      sim_parameters* params,
                      const Args&... args) {
@@ -405,62 +430,78 @@ class Factory
 
 };
 
+template<class T, typename... Args> const char* Factory<T,Args...>::name_ = T::factory_name();
+template<class T, typename... Args> std::map<std::string, typename Factory<T,Args...>::builder_t*>*
+   Factory<T,Args...>::builder_map_ = nullptr;
+template<class T, typename... Args> std::map<std::string, std::list<std::string>>*
+  Factory<T,Args...>::alias_map_ = nullptr;
+template<class T, typename... Args> CleanupFactory<Factory<T,Args...>>
+  Factory<T,Args...>::clean_up_ = nullptr;
+
 template<class Child, typename Parent, typename... Args>
-class SpktBuilderImpl<Child, Factory<Parent, Args...> > :
-  public SpktBuilder<Parent, Args...>
+class BuilderImpl : public Builder<Parent, Args...>
 {
  public:
-  SpktBuilderImpl(const char *name){
+  BuilderImpl(const char *name){
     Factory<Parent, Args...>::register_name(name, this);
+    registered_ = true;
   }
 
-  Parent*
-  build(sprockit::sim_parameters* params, const Args&... args) {
+  Parent* build(sprockit::sim_parameters* params, const Args&... args) {
     return call_constructor<Child,Args...>()(params, args...);
   }
 
-};
-
-
-template <class Factory>
-class CleanupFactory {
- public:
-  ~CleanupFactory(){
-    Factory::clean_up();
+  static bool is_registered() {
+    return registered_;
   }
+
+ private:
+  static bool registered_;
+
 };
+template <class Child, class Parent, class... Args> bool BuilderImpl<Child,Parent,Args...>::registered_ = false;
+
+template <class Child, class Factory>
+class BuilderRegistration {
+};
+
+template <class Child, class Parent, class... Args>
+class BuilderRegistration<Child, Factory<Parent,Args...>>
+{
+ public:
+  static bool builder_registered(){ return builder_.is_registered(); }
+
+ private:
+  static BuilderImpl<Child,Parent,Args...> builder_;
+};
+
+template <class Child, class Parent, class... Args> BuilderImpl<Child,Parent,Args...>
+  BuilderRegistration<Child,Factory<Parent,Args...>>::builder_(Child::factory_string());
 
 }
 
 #define FirstArgStr(X, ...) #X
 #define FirstArgFactoryName(X, ...) X##_factory
 
+#define FactoryRegister(cls_str, parent_cls, child_cls, ...) \
+  friend class ::sprockit::BuilderImpl<child_cls,parent_cls::factory>; \
+  public: \
+   static const char* factory_string() { \
+     return cls_str; \
+   } \
+   static bool factory_registered() { \
+     return ::sprockit::BuilderRegistration<child_cls,parent_cls::factory>::builder_registered(); \
+   }
+
 #define DeclareFactory(...) \
-  typedef ::sprockit::Factory<__VA_ARGS__> FirstArgFactoryName(__VA_ARGS__);
-
-#define ImplementFactory(type_name) \
-  template<> const char* type_name##_factory::name_ = #type_name; \
-  template<> std::map<std::string, type_name##_factory::builder_t*>* type_name##_factory::builder_map_ = nullptr; \
-  template<> std::map<std::string, std::list<std::string>>* type_name##_factory::alias_map_ = nullptr; \
-  namespace { static sprockit::CleanupFactory<type_name##_factory> cleaner; }
-
-
-
-#define SpktTemplateRegister(cls_str, parent_cls, child_cls, unique_name, ...) \
-    static ::sprockit::SpktBuilderImpl<child_cls, parent_cls##_factory> unique_name##_cd(cls_str)
-
-#define SpktRegister(cls_str, parent_cls, child_cls, ...) \
-  static ::sprockit::SpktBuilderImpl<child_cls,parent_cls##_factory> child_cls##_cd(cls_str)
-
-
-#define DeclareFactory1InitParam(type_name, param1_name) \
-  DeclareFactory(type_name, param1_name);
-
-#define DeclareFactory2InitParams(type_name, param1_name, param2_name) \
-  DeclareFactory(type_name, param1_name, param2_name);
-
-#define DeclareFactory3InitParams(type_name, param1_name, param2_name, param3_name) \
-  DeclareFactory(type_name, param1_name, param2_name, param3_name);
+  public: \
+   friend class ::sprockit::Factory<__VA_ARGS__>; \
+    typedef ::sprockit::Factory<__VA_ARGS__> factory; \
+    static const char* class_name(){ \
+      return factory::name(); \
+    } \
+    static const char* factory_name(){ \
+      return FirstArgStr(__VA_ARGS__); \
+    }
 
 #endif
-

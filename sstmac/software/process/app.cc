@@ -1,13 +1,46 @@
-/*
- *  This file is part of SST/macroscale:
- *               The macroscale architecture simulator from the SST suite.
- *  Copyright (c) 2009 Sandia Corporation.
- *  This software is distributed under the BSD License.
- *  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- *  the U.S. Government retains certain rights in this software.
- *  For more information, see the LICENSE file in the top
- *  SST/macroscale directory.
- */
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
 
 #include <sstmac/software/libraries/compute/lib_compute_inst.h>
 #include <sstmac/software/libraries/compute/lib_compute_time.h>
@@ -31,28 +64,16 @@
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 
-ImplementFactory(sstmac::sw::app);
-
 static sprockit::need_delete_statics<sstmac::sw::user_app_cxx_full_main> del_app_statics;
 
 namespace sstmac {
 namespace sw {
-
-SpktRegister("user_app_cxx_full_main", app, user_app_cxx_full_main);
-SpktRegister("user_app_cxx_empty_main", app, user_app_cxx_empty_main);
 
 std::map<std::string, app::main_fxn>*
   user_app_cxx_full_main::main_fxns_ = nullptr;
 std::map<std::string, app::empty_main_fxn>*
   user_app_cxx_empty_main::empty_main_fxns_ = nullptr;
 std::map<app_id, user_app_cxx_full_main::argv_entry> user_app_cxx_full_main::argv_map_;
-
-app*
-app::factory::get_param(const std::string &name, sprockit::sim_parameters *params, software_id sid, operating_system *os)
-{
-  //wrapper in place in case we want to use dlsym fanciness to link in skeleton apps
-  return app_factory::get_param(name, params, sid, os);
-}
 
 int
 app::allocate_tls_key(destructor_fxn fxn)
@@ -189,7 +210,7 @@ app::_get_api(const char* name)
   api* my_api = apis_[name];
   if (!my_api) {
     sprockit::sim_parameters* api_params = params_->get_optional_namespace(name);
-    api* new_api = api_factory::get_value(name, api_params, sid_, os_);
+    api* new_api = api::factory::get_value(name, api_params, sid_, os_);
     apis_[name] = new_api;
     return new_api;
   }
@@ -202,6 +223,7 @@ void
 app::run()
 {
   SSTMACBacktrace("main");
+  os_->increment_app_refcount();
   skeleton_main();
   for (auto& pair : apis_){
     delete pair.second;
@@ -231,7 +253,7 @@ app::add_subthread(thread *thr)
 void
 app::set_subthread_done(thread* thr)
 {
-  subthreads_[thr->thread_id()] = 0;
+  subthreads_[thr->thread_id()] = nullptr;
 }
 
 thread*
@@ -361,7 +383,7 @@ user_app_cxx_full_main::register_main_fxn(const char *name, app::main_fxn fxn)
   if (!main_fxns_) main_fxns_ = new std::map<std::string, main_fxn>;
 
   (*main_fxns_)[name] = fxn;
-  app_factory::register_alias("user_app_cxx_full_main", name);
+  app::factory::register_alias("user_app_cxx_full_main", name);
 }
 
 void
@@ -422,7 +444,7 @@ user_app_cxx_empty_main::register_main_fxn(const char *name, app::empty_main_fxn
     empty_main_fxns_ = new std::map<std::string, empty_main_fxn>;
 
   (*empty_main_fxns_)[name] = fxn;
-  app_factory::register_alias("user_app_cxx_empty_main", name);
+  app::factory::register_alias("user_app_cxx_empty_main", name);
 }
 
 void
@@ -441,4 +463,3 @@ void compute_time(double tsec)
 
 }
 }
-

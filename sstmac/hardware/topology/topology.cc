@@ -1,3 +1,47 @@
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
+
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/backends/common/sim_partition.h>
 #include <sstmac/common/thread_lock.h>
@@ -11,7 +55,6 @@
 #include <mpi.h>
 #endif
 
-ImplementFactory(sstmac::hw::topology);
 RegisterNamespaces("topology");
 
 RegisterKeywords(
@@ -96,7 +139,7 @@ topology::static_topology(sprockit::sim_parameters* params)
 {
   if (!static_topology_){
     sprockit::sim_parameters* top_params = params->get_namespace("topology");
-    static_topology_ = topology_factory::get_param("name", top_params);
+    static_topology_ = topology::factory::get_param("name", top_params);
   }
   return static_topology_;
 }
@@ -226,6 +269,7 @@ topology::label(device_id id) const
 }
 
 class merlin_topology : public topology {
+  FactoryRegister("merlin", topology, merlin_topology)
  public:
   merlin_topology(sprockit::sim_parameters* params) 
     : topology(params)
@@ -234,151 +278,119 @@ class merlin_topology : public topology {
     num_switches_ = params->get_int_param("num_switches");
   }
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "merlin topology";
   }
 
-  int 
-  num_switches() const override {
+  int num_switches() const override {
     return num_switches_;
   }
 
-  int
-  num_nodes() const override {
+  int num_nodes() const override {
     return num_nodes_;
   }
 
-  bool
-  uniform_network_ports() const override {
+  bool uniform_network_ports() const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  bool
-  uniform_switches_non_uniform_network_ports() const override {
+  bool uniform_switches_non_uniform_network_ports() const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  bool
-  uniform_switches() const override {
+  bool uniform_switches() const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  void
-  connected_outports(switch_id src, std::vector<topology::connection>& conns) const override {
+  void connected_outports(switch_id src, std::vector<topology::connection>& conns) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  void
-  configure_individual_port_params(switch_id src,
+  void configure_individual_port_params(switch_id src,
           sprockit::sim_parameters* switch_params) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  int
-  num_leaf_switches() const override {
+
+  int num_netlinks() const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-
-  int
-  num_netlinks() const override {
+  int max_num_ports() const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  int
-  max_num_ports() const override {
+  switch_id netlink_to_injection_switch(node_id nodeaddr, int& switch_port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  switch_id
-  netlink_to_injection_switch(node_id nodeaddr, int& switch_port) const override {
+  switch_id netlink_to_ejection_switch(node_id nodeaddr, int& switch_port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  switch_id
-  netlink_to_ejection_switch(node_id nodeaddr, int& switch_port) const override {
+  void configure_vc_routing(std::map<routing::algorithm_t, int>& m) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  void
-  configure_vc_routing(std::map<routing::algorithm_t, int>& m) const override {
+  switch_id node_to_ejection_switch(node_id addr, int& port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  switch_id
-  node_to_ejection_switch(node_id addr, int& port) const override {
+  switch_id node_to_injection_switch(node_id addr, int& port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  switch_id
-  node_to_injection_switch(node_id addr, int& port) const override {
+  int minimal_distance(switch_id src, switch_id dst) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  int
-  minimal_distance(switch_id src, switch_id dst) const override {
+  int num_hops_to_node(node_id src, node_id dst) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  int
-  num_hops_to_node(node_id src, node_id dst) const override {
-    spkt_abort_printf("merlin topology functions should never be called");
-  }
-
-  void
-  nodes_connected_to_injection_switch(switch_id swid,
+  void nodes_connected_to_injection_switch(switch_id swid,
                           std::vector<injection_port>& nodes) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  void
-  nodes_connected_to_ejection_switch(switch_id swid,
+  void nodes_connected_to_ejection_switch(switch_id swid,
                           std::vector<injection_port>& nodes) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  switch_id
-  max_switch_id() const override {
+  switch_id max_switch_id() const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  bool
-  switch_id_slot_filled(switch_id sid) const override{
+  bool switch_id_slot_filled(switch_id sid) const override{
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  netlink_id
-  max_netlink_id() const override {
+  netlink_id max_netlink_id() const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  bool
-  netlink_id_slot_filled(netlink_id sid) const override{
+  bool netlink_id_slot_filled(netlink_id sid) const override{
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
 
-  node_id
-  max_node_id() const override {
+  node_id max_node_id() const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  bool
-  node_id_slot_filled(node_id nid) const override{
+  bool node_id_slot_filled(node_id nid) const override{
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  void
-  minimal_route_to_switch(
+  void minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
     routable::path& path) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  bool
-  node_to_netlink(node_id nid, node_id& net_id, int& offset) const override {
+  bool node_to_netlink(node_id nid, node_id& net_id, int& offset) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
@@ -387,8 +399,5 @@ class merlin_topology : public topology {
   int num_switches_;
 };
 
-SpktRegister("merlin", topology, merlin_topology);
-
 }
 }
-
