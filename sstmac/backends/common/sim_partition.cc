@@ -1,14 +1,47 @@
-/*
- *
- *  This file is part of SST/macroscale:
- *               The macroscale architecture simulator from the SST suite.
- *  Copyright (c) 2009-2010 Sandia Corporation.
- *  This software is distributed under the BSD License.
- *  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- *  the U.S. Government retains certain rights in this software.
- *  For more information, see the LICENSE file in the top
- *  SST/macroscale directory.
- */
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
+
 #include <sstmac/backends/common/sim_partition.h>
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sstmac/hardware/topology/topology.h>
@@ -22,19 +55,12 @@
 
 #include <cstring>
 
-ImplementFactory(sstmac::partition);
 RegisterDebugSlot(partition);
 
 #define part_debug(...) \
   debug_printf(sprockit::dbg::partition, "Rank %d: %s", me_, sprockit::printf(__VA_ARGS__).c_str())
 
 namespace sstmac {
-
-SpktRegister("block", partition, block_partition);
-SpktRegister("occupied_block", partition, occupied_block_partition);
-SpktRegister("metis", partition, metis_partition);
-SpktRegister("topology", partition, topology_partition);
-SpktRegister("serial", partition, serial_partition);
 
 partition::partition(sprockit::sim_parameters* params, parallel_runtime* rt) :
   rt_(rt),
@@ -61,7 +87,7 @@ serial_partition::serial_partition(sprockit::sim_parameters* params, parallel_ru
  : partition(params, rt)
 {
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
-  hw::topology* fake_top = hw::topology_factory::get_param("name", top_params);
+  hw::topology* fake_top = hw::topology::factory::get_param("name", top_params);
   int nswitches = fake_top->num_switches();
   num_switches_total_ = nswitches;
   switch_to_lpid_ = new int[nswitches];
@@ -197,7 +223,7 @@ topology_partition::topology_partition(sprockit::sim_parameters* params, paralle
 {
   //this will need to be fixed later...
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
-  fake_top_ = hw::topology_factory::get_param("name", top_params);
+  fake_top_ = hw::topology::factory::get_param("name", top_params);
 
   noccupied_ = params->get_int_param("num_occupied");
 
@@ -216,7 +242,7 @@ block_partition::block_partition(sprockit::sim_parameters* params, parallel_runt
   : partition(params, rt)
 {
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
-  fake_top_ = hw::topology_factory::get_param("name", top_params);
+  fake_top_ = hw::topology::factory::get_param("name", top_params);
   num_switches_total_ = fake_top_->num_switches();
 
   num_switches_total_ = fake_top_->num_switches();
@@ -304,7 +330,3 @@ occupied_block_partition::partition_switches()
 }
 
 }
-
-
-
-

@@ -1,3 +1,47 @@
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
+
 #include "boxml.h"
 #include "lock_array.h"
 #include <sprockit/factories/factory.h>
@@ -46,9 +90,7 @@ using namespace sstmac;
 using namespace sstmac::sw;
 using namespace sumi;
 
-namespace lblxml
-{
-  SpktRegister("boxml", sstmac::sw::app, boxml, "amr simulator");
+namespace lblxml {
 
   bool boxml::have_data_ = false;
   bool boxml::have_input_bin_ = false;
@@ -166,7 +208,7 @@ namespace lblxml
 
     if (params_->has_namespace("effective_bandwidths")){
       sprockit::sim_parameters* stat_params = params_->get_namespace("effective_bandwidths");
-      hist_eff_bw_ = test_cast(stat_histogram, stat_collector_factory::get_optional_param("type", "histogram", stat_params));
+      hist_eff_bw_ = test_cast(stat_histogram, stat_collector::factory::get_optional_param("type", "histogram", stat_params));
 
       if (!hist_eff_bw_)
         spkt_throw_printf(sprockit::value_error,
@@ -178,7 +220,7 @@ namespace lblxml
 
     if (params_->has_namespace("polling_time")) {
       sprockit::sim_parameters* stat_params = params_->get_namespace("polling_time");
-      idle_time_ = test_cast(stat_local_double, stat_collector_factory::get_optional_param("type", "local_double", stat_params));
+      idle_time_ = test_cast(stat_local_double, stat_collector::factory::get_optional_param("type", "local_double", stat_params));
 
       if (!idle_time_)
         spkt_throw_printf(sprockit::value_error,
@@ -187,7 +229,7 @@ namespace lblxml
     }
     if (params_->has_namespace("barrier_time")) {
       sprockit::sim_parameters* stat_params = params_->get_namespace("barrier_time");
-      barrier_time_ = test_cast(stat_local_double, stat_collector_factory::get_optional_param("type", "local_double", stat_params));
+      barrier_time_ = test_cast(stat_local_double, stat_collector::factory::get_optional_param("type", "local_double", stat_params));
 
       if (!idle_time_)
         spkt_throw_printf(sprockit::value_error,
@@ -196,7 +238,7 @@ namespace lblxml
     }
     if (params_->has_namespace("compute_time")) {
       sprockit::sim_parameters* stat_params = params_->get_namespace("compute_time");
-      compute_time_ = test_cast(stat_local_double, stat_collector_factory::get_optional_param("type", "local_double", stat_params));
+      compute_time_ = test_cast(stat_local_double, stat_collector::factory::get_optional_param("type", "local_double", stat_params));
 
       if (!idle_time_)
         spkt_throw_printf(sprockit::value_error,

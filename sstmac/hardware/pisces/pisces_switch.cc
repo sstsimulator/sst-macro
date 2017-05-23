@@ -1,13 +1,46 @@
-/*
- *  This file is part of SST/macroscale:
- *               The macroscale architecture simulator from the SST suite.
- *  Copyright (c) 2009 Sandia Corporation.
- *  This software is distributed under the BSD License.
- *  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- *  the U.S. Government retains certain rights in this software.
- *  For more information, see the LICENSE file in the top
- *  SST/macroscale directory.
- */
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
 
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/pisces/pisces_switch.h>
@@ -45,9 +78,6 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-SpktRegister("pisces", network_switch, pisces_switch,
-  "A network switch implementing the packet flow congestion model");
-
 pisces_abstract_switch::pisces_abstract_switch(
   sprockit::sim_parameters *params, uint64_t id, event_manager *mgr) :
   buf_stats_(nullptr),
@@ -56,16 +86,16 @@ pisces_abstract_switch::pisces_abstract_switch(
   network_switch(params, id, mgr)
 {
   sprockit::sim_parameters* xbar_params = params->get_optional_namespace("xbar");
-  xbar_stats_ = packet_stats_callback_factory::get_optional_param("stats", "null",
+  xbar_stats_ = packet_stats_callback::factory::get_optional_param("stats", "null",
                                              xbar_params, this);
 
   sprockit::sim_parameters* buf_params = params->get_optional_namespace("output_buffer");
-  buf_stats_ = packet_stats_callback_factory::get_optional_param("stats", "null",
+  buf_stats_ = packet_stats_callback::factory::get_optional_param("stats", "null",
                                              buf_params, this);
 
   sprockit::sim_parameters* rtr_params = params->get_optional_namespace("router");
   rtr_params->add_param_override_recursive("id", int(my_addr_));
-  router_ = router_factory::get_param("name", rtr_params, top_, this);
+  router_ = router::factory::get_param("name", rtr_params, top_, this);
 
   sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
   std::vector<topology::injection_port> conns;
@@ -81,6 +111,7 @@ pisces_abstract_switch::pisces_abstract_switch(
     sprockit::sim_parameters* port_params = topology::get_port_params(params, conn.port);
     ej_params->combine_into(port_params);
   }
+
 }
 
 
@@ -104,7 +135,9 @@ pisces_switch::pisces_switch(
   xbar_ = new pisces_crossbar(xbar_params, this);
   xbar_->set_stat_collector(xbar_stats_);
   xbar_->configure_basic_ports(top_->max_num_ports());
-#if !SSTMAC_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
+  init_links(params);
+#else
   payload_handler_ = new_handler(this, &pisces_switch::handle_payload);
   ack_handler_ = new_handler(this, &pisces_switch::handle_credit);
 #endif
@@ -241,6 +274,3 @@ pisces_switch::payload_handler(int port) const
 
 }
 }
-
-
-

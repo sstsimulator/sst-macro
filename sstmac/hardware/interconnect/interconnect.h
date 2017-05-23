@@ -1,13 +1,46 @@
-/*
- *  This file is part of SST/macroscale:
- *               The macroscale architecture simulator from the SST suite.
- *  Copyright (c) 2009 Sandia Corporation.
- *  This software is distributed under the BSD License.
- *  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- *  the U.S. Government retains certain rights in this software.
- *  For more information, see the LICENSE file in the top
- *  SST/macroscale directory.
- */
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
 
 #ifndef SSTMAC_HARDWARE_NETWORK_CONGESTION_INTERCONNECT_H_INCLUDED
 #define SSTMAC_HARDWARE_NETWORK_CONGESTION_INTERCONNECT_H_INCLUDED
@@ -43,9 +76,10 @@ namespace hw {
  */
 class interconnect
 {
+  DeclareFactory(interconnect, event_manager*, partition*, parallel_runtime*)
+  FactoryRegister("switch | simple", interconnect, interconnect)
  public:
-  static interconnect*
-  static_interconnect(sprockit::sim_parameters* params, event_manager* mgr);
+  static interconnect* static_interconnect(sprockit::sim_parameters* params, event_manager* mgr);
 
   /**
    * @brief static_interconnect Must already exist
@@ -62,13 +96,11 @@ class interconnect
   interconnect(sprockit::sim_parameters* params, event_manager* mgr,
                     partition* part, parallel_runtime* rt);
 
-  int
-  num_nodes() const {
+  int num_nodes() const {
     return num_nodes_;
   }
 
-  switch_id
-  node_to_logp_switch(node_id nid) const;
+  switch_id node_to_logp_switch(node_id nid) const;
 
  protected:
   topology* topology_;
@@ -95,8 +127,7 @@ class interconnect
 
   ~interconnect();
 
-  topology*
-  topol() const {
+  topology* topol() const {
     return topology_;
   }
 
@@ -114,52 +145,41 @@ class interconnect
    * @param nid The ID of the node object to get
    * @return The node object or NULL, if ID is not found
    */
-  node*
-  node_at(node_id nid) const {
+  node* node_at(node_id nid) const {
     return nodes_[nid];
   }
 
-  network_switch*
-  logp_switch_at(switch_id sid) const {
+  network_switch* logp_switch_at(switch_id sid) const {
     return logp_overlay_switches_[sid];
   }
 
-  network_switch*
-  switch_at(switch_id id) const {
+  network_switch* switch_at(switch_id id) const {
     return switches_[id];
   }
 
-  const node_map&
-  nodes() const {
+  const node_map& nodes() const {
     return nodes_;
   }
 
-  void
-  kill_node(node_id nid);
+  void kill_node(node_id nid);
 
-  void
-  kill_node(node_id nid, timestamp t);
+  void kill_node(node_id nid, timestamp t);
 
-  void
-  deadlock_check();
+  void deadlock_check();
 
   void handle(event* ev);
 
-  const switch_map&
-  switches() const {
+  const switch_map& switches() const {
     return switches_;
   }
 
-  int
-  thread_for_switch(switch_id sid) const;
+  int thread_for_switch(switch_id sid) const;
 
-  timestamp
-  hop_latency() const {
+  timestamp hop_latency() const {
     return hop_latency_;
   }
 
-  timestamp
-  lookahead() const {
+  timestamp lookahead() const {
     return lookahead_;
   }
 
@@ -183,7 +203,6 @@ class interconnect
   node_map nodes_;
 
   switch_id local_logp_switch_;
-  std::vector<switch_id> node_to_logp_switch_;
 
   double hop_bw_;
 
@@ -204,10 +223,7 @@ class interconnect
 #endif
 };
 
-DeclareFactory3InitParams(interconnect, event_manager*, partition*, parallel_runtime*);
-
 }
 } // end of namespace sstmac
 
 #endif
-

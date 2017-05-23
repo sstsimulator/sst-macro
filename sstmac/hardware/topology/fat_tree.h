@@ -1,17 +1,46 @@
-/*
- *  This file is part of SST/macroscale:
- *               The macroscale architecture simulator from the SST suite.
- *  Copyright (c) 2009 Sandia Corporation.
- *  This software is distributed under the BSD License.
- *  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- *  the U.S. Government retains certain rights in this software.
- *  For more information, see the LICENSE file in the top
- *  SST/macroscale directory.
- */
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
 
-// fattree.h: Interface for fat tree networks.
-//
-// Author: Jeremiah Wilke <jjwilke@sandia.gov>
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
 
 #ifndef SSTMAC_HARDWARE_NETWORK_TOPOLOGY_FATTREE_H_INCLUDED
 #define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_FATTREE_H_INCLUDED
@@ -31,8 +60,7 @@ class abstract_fat_tree :
    down_dimension = 0
   } dimension_t;
 
-  static int
-  pow(int a, int exp){
+  static int pow(int a, int exp){
     int res = 1;
     for (int i=0; i < exp; ++i){
       res *= a;
@@ -40,17 +68,14 @@ class abstract_fat_tree :
     return res;
   }
 
-  virtual int
-  num_leaf_switches() const override {
+  virtual int num_leaf_switches() const override {
     return numleafswitches_;
   }
 
-  void
-  nodes_connected_to_injection_switch(switch_id swaddr,
+  void nodes_connected_to_injection_switch(switch_id swaddr,
                             std::vector<injection_port>& nodes) const override;
 
-  void
-  nodes_connected_to_ejection_switch(switch_id swaddr,
+  void nodes_connected_to_ejection_switch(switch_id swaddr,
                             std::vector<injection_port>& nodes) const override;
 
  protected:
@@ -73,12 +98,15 @@ class abstract_fat_tree :
 class fat_tree :
   public abstract_fat_tree
 {
+  FactoryRegister("fattree | fat_tree | ftree", topology, fat_tree,
+    "Fat tree topology with L levels and radix K.  This fat tree is actually implemented with"
+    " commodity switches. Each level of the fat tree has the same number of switches."
+    "This is equivalent to archetypal fat tree with fatter links being replaced by MORE links")
 
  public:
   fat_tree(sprockit::sim_parameters* params);
 
-  virtual std::string
-  to_string() const override {
+  virtual std::string to_string() const override {
     return "fat tree topology";
   }
 
@@ -92,79 +120,63 @@ class fat_tree :
 
   virtual ~fat_tree() {}
 
-  bool
-  uniform_network_ports() const override {
+  bool uniform_network_ports() const override {
     return true;
   }
 
-  int
-  l() const {
+  int l() const {
     return l_;
   }
 
-  int
-  k() const {
+  int k() const {
     return k_;
   }
 
-  int
-  diameter() const override {
+  int diameter() const override {
     return (l_ + 1) * 2;
   }
 
-  bool
-  uniform_switches_non_uniform_network_ports() const override {
+  bool uniform_switches_non_uniform_network_ports() const override {
     return true;
   }
 
-  bool
-  uniform_switches() const override {
+  bool uniform_switches() const override {
     return true;
   }
 
-  void
-  connected_outports(switch_id src, std::vector<connection>& conns) const override;
+  void connected_outports(switch_id src, std::vector<connection>& conns) const override;
 
-  void
-  configure_individual_port_params(switch_id src,
+  void configure_individual_port_params(switch_id src,
       sprockit::sim_parameters *switch_params) const override;
 
 
-  virtual int
-  num_switches() const override {
+  virtual int num_switches() const override {
     return numleafswitches_ * l_;
   }
 
-  void
-  configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
+  void configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
 
-  void
-  minimal_route_to_switch(
+  void minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
     routable::path& path) const override;
 
-  int
-  minimal_distance(
+  int minimal_distance(
     switch_id src,
     switch_id dest) const override;
 
-  int
-  switch_at_row_col(int row, int col) const {
+  int switch_at_row_col(int row, int col) const {
     return row * numleafswitches_ + col;
   }
 
-  void
-  compute_row_col(switch_id sid, int& row, int& col) const {
+  void compute_row_col(switch_id sid, int& row, int& col) const {
     row = sid / numleafswitches_;
     col = sid % numleafswitches_;
   }
 
-  static int
-  upColumnConnection(int k, int myColumn, int upPort, int columnSize);
+  static int upColumnConnection(int k, int myColumn, int upPort, int columnSize);
 
-  static int
-  downColumnConnection(int k, int myColumn, int downPort, int columnSize);
+  static int downColumnConnection(int k, int myColumn, int downPort, int columnSize);
 
  private:
   int toplevel_;
@@ -174,52 +186,43 @@ class fat_tree :
 
 class tapered_fat_tree : public abstract_fat_tree
 {
+  FactoryRegister("tapered_fat_tree | simple_fattree", topology, tapered_fat_tree)
  public:
   tapered_fat_tree(sprockit::sim_parameters* params);
 
-  virtual std::string
-  to_string() const override {
+  virtual std::string to_string() const override {
     return "simple fat tree topology";
   }
 
   virtual ~tapered_fat_tree() {}
 
-  bool
-  uniform_network_ports() const override {
+  bool uniform_network_ports() const override {
     return false;
   }
 
-  bool
-  uniform_switches_non_uniform_network_ports() const override {
+  bool uniform_switches_non_uniform_network_ports() const override {
     return false;
   }
 
-  bool
-  uniform_switches() const override {
+  bool uniform_switches() const override {
     return false;
   }
 
-  void
-  connected_outports(switch_id src, std::vector<connection>& conns) const override;
+  void connected_outports(switch_id src, std::vector<connection>& conns) const override;
 
-  void
-  configure_nonuniform_switch_params(switch_id src,
+  void configure_nonuniform_switch_params(switch_id src,
         sprockit::sim_parameters* switch_params) const override;
 
-  void
-  configure_individual_port_params(switch_id src,
+  void configure_individual_port_params(switch_id src,
       sprockit::sim_parameters *switch_params) const override;
 
-  int
-  num_switches() const override {
+  int num_switches() const override {
     return num_switches_;
   }
 
-  int
-  convert_to_port(int dim, int dir) const;
+  int convert_to_port(int dim, int dir) const;
 
-  virtual void
-  create_partition(
+  virtual void create_partition(
     int* switch_to_lp,
     int* switch_to_thread,
     int me,
@@ -227,21 +230,16 @@ class tapered_fat_tree : public abstract_fat_tree
     int nthread,
     int noccupied) const override;
 
-  int
-  minimal_distance(switch_id src,
-                   switch_id dest) const override;
+  int minimal_distance(switch_id src, switch_id dest) const override;
 
-  void
-  configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
+  void configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
 
-  void
-  minimal_route_to_switch(
+  void minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
     routable::path& path) const override;
 
-  int
-  level(switch_id sid) const;
+  int level(switch_id sid) const;
 
   inline int inj_sub_tree(switch_id sid) const {
     return sid / num_inj_switches_per_subtree_;
@@ -293,4 +291,3 @@ class tapered_fat_tree : public abstract_fat_tree
 } //end of namespace sstmac
 
 #endif
-

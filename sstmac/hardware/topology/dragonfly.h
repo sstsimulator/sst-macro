@@ -1,13 +1,46 @@
-/*
- *  This file is part of SST/macroscale:
- *               The macroscale architecture simulator from the SST suite.
- *  Copyright (c) 2009 Sandia Corporation.
- *  This software is distributed under the BSD License.
- *  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- *  the U.S. Government retains certain rights in this software.
- *  For more information, see the LICENSE file in the top
- *  SST/macroscale directory.
- */
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
 
 #ifndef SSTMAC_HARDWARE_NETWORK_TOPOLOGY_DRAGONFLY_H_INCLUDED
 #define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_DRAGONFLY_H_INCLUDED
@@ -19,7 +52,7 @@ namespace hw {
 
 class dragonfly : public cartesian_topology
 {
-
+  FactoryRegister("dragonfly | dfly", topology, dragonfly)
  public:
   dragonfly(sprockit::sim_parameters* params);
 
@@ -40,13 +73,11 @@ class dragonfly : public cartesian_topology
   } y_vc_t;
 
  public:
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "dragonfly";
   }
 
-  dimension_t
-  dim_for_port(int port){
+  dimension_t dim_for_port(int port){
     if (port >= (x_ + y_)){
       return g_dimension;
     } else if (port >= x_){
@@ -56,57 +87,46 @@ class dragonfly : public cartesian_topology
     }
   }
 
-  bool
-  uniform_network_ports() const override {
+  bool uniform_network_ports() const override {
     return false;
   }
 
-  bool
-  uniform_switches_non_uniform_network_ports() const override {
+  bool uniform_switches_non_uniform_network_ports() const override {
     return true;
   }
 
-  bool
-  uniform_switches() const override {
+  bool uniform_switches() const override {
     return true;
   }
 
-  void
-  connected_outports(switch_id src, std::vector<connection>& conns) const override;
+  void connected_outports(switch_id src, std::vector<connection>& conns) const override;
 
-  void
-  configure_individual_port_params(switch_id src,
+  void configure_individual_port_params(switch_id src,
         sprockit::sim_parameters *switch_params) const override;
 
   virtual ~dragonfly() {}
 
-  int
-  ndimensions() const {
+  int ndimensions() const {
     return 3;
   }
 
-  int
-  numX() const {
+  int numX() const {
     return x_;
   }
 
-  int
-  numY() const {
+  int numY() const {
     return y_;
   }
 
-  int
-  numG() const {
+  int numG() const {
     return g_;
   }
 
-  int
-  group_con() const {
+  int group_con() const {
     return group_con_;
   }
 
-  inline void
-  get_coords(switch_id sid, int& x, int& y, int& g) const {
+  inline void get_coords(switch_id sid, int& x, int& y, int& g) const {
     x = computeX(sid);
     y = computeY(sid);
     g = computeG(sid);
@@ -140,13 +160,11 @@ class dragonfly : public cartesian_topology
     return (sid / (x_*y_));
   }
 
-  virtual int
-  num_switches() const override {
+  int num_switches() const override {
     return x_ * y_ * g_;
   }
 
-  int
-  num_leaf_switches() const override {
+  int num_leaf_switches() const override {
     return x_ * y_ * g_;
   }
 
@@ -155,49 +173,37 @@ class dragonfly : public cartesian_topology
       switch_id dest_sw_addr,
       routable::path &path) const override;
 
-  int
-  minimal_distance(switch_id src, switch_id dst) const override;
+  int minimal_distance(switch_id src, switch_id dst) const override;
 
-  virtual int
-  diameter() const override {
+  virtual int diameter() const override {
     return 5;
   }
 
-  virtual switch_id
-  random_intermediate_switch(switch_id current_sw,
+  virtual switch_id random_intermediate_switch(switch_id current_sw,
                              switch_id dest_sw = switch_id(-1)) override;
 
-  void
-  configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
+  void configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
 
-  virtual void
-  new_routing_stage(routable* rtbl) override;
+  virtual void new_routing_stage(routable* rtbl) override;
 
-  virtual void
-  configure_geometric_paths(std::vector<int> &redundancies);
+  virtual void configure_geometric_paths(std::vector<int> &redundancies);
 
-  coordinates
-  switch_coords(switch_id) const override;
+  coordinates switch_coords(switch_id) const override;
 
-  switch_id
-  switch_addr(const coordinates &coords) const override;
+  switch_id switch_addr(const coordinates &coords) const override;
 
  protected:
-  virtual void
-  find_path_to_group(int myX, int myY, int myG, int dstG,
+  virtual void find_path_to_group(int myX, int myY, int myG, int dstG,
                      int& dstX, int& dstY,
                      routable::path& path) const;
 
-  bool
-  find_y_path_to_group(int myX, int myG, int dstG, int& dstY,
+  bool find_y_path_to_group(int myX, int myG, int dstG, int& dstY,
                        routable::path& path) const;
 
-  bool
-  find_x_path_to_group(int myY, int myG, int dstG, int& dstX,
+  bool find_x_path_to_group(int myY, int myG, int dstG, int& dstX,
                        routable::path& path) const;
 
-  virtual bool
-  xy_connected_to_group(int myX, int myY, int myG, int dstG) const;
+  virtual bool xy_connected_to_group(int myX, int myY, int myG, int dstG) const;
 
  protected:
   int x_;
@@ -206,12 +212,10 @@ class dragonfly : public cartesian_topology
   int group_con_;
   bool true_random_intermediate_;
 
-  void
-  setup_port_params(sprockit::sim_parameters* params,
+  void setup_port_params(sprockit::sim_parameters* params,
                     int dim, int dimsize) const;
 
-  static std::string
-  set_string(int x, int y, int g)
+  static std::string set_string(int x, int y, int g)
   {
     return sprockit::printf("{ %d %d %d }", x, y, g);
   }
@@ -224,8 +228,7 @@ class dragonfly : public cartesian_topology
     else return -1;
   }
 
-  int
-  xyg_dir_to_group(int myX, int myY, int myG, int dir) const;
+  int xyg_dir_to_group(int myX, int myY, int myG, int dir) const;
 
 };
 
@@ -233,4 +236,3 @@ class dragonfly : public cartesian_topology
 } //end of namespace sstmac
 
 #endif
-

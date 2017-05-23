@@ -1,3 +1,47 @@
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
+
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
 #endif
@@ -15,23 +59,12 @@
 #include <sprockit/keyword_registration.h>
 #include <cinttypes>
 
-ImplementFactory(sstmac::hw::packet_stats_callback);
 MakeDebugSlot(pisces_stats)
 
-#define debug(...) \
-  debug_printf(sprockit::dbg::pisces_stats, __VA_ARGS__)
+#define debug(...) debug_printf(sprockit::dbg::pisces_stats, __VA_ARGS__)
 
 namespace sstmac {
 namespace hw {
-
-SpktRegister("bytes_sent", stat_collector, stat_bytes_sent);
-SpktRegister("congestion_spyplot", packet_stats_callback, congestion_spyplot);
-SpktRegister("congestion_delay", packet_stats_callback, packet_delay_stats);
-SpktRegister("bytes_sent", packet_stats_callback, bytes_sent_collector);
-SpktRegister("byte_hops", packet_stats_callback, byte_hop_collector);
-SpktRegister("delay_histogram", packet_stats_callback, delay_histogram);
-SpktRegister("multi", packet_stats_callback, multi_stats);
-SpktRegister("null", packet_stats_callback, null_stats);
 
 RegisterNamespaces("bytes_sent", "congestion_spyplot", "congestion_delay",
                    "bytes_sent", "byte_hops", "delay_histogram");
@@ -146,7 +179,7 @@ multi_stats::multi_stats(sprockit::sim_parameters *params, event_scheduler *pare
   params->get_vector_param("callbacks", stats_list);
   cbacks_.reserve(stats_list.size());
   for (const std::string& str : stats_list){
-    packet_stats_callback* cb = packet_stats_callback_factory::get_value(str, params, parent);
+    packet_stats_callback* cb = packet_stats_callback::factory::get_value(str, params, parent);
     cbacks_.push_back(cb);
   }
 }
@@ -332,7 +365,7 @@ stat_bytes_sent::global_reduce(parallel_runtime *rt)
 
   global_gather_stats_t stats;
   stats.buffer_size = total_size;
-  global_gather_stats_t* stats_array = 0;
+  global_gather_stats_t* stats_array = nullptr;
 
   if (rt->me() == root){
     stats_array = new global_gather_stats_t[rt->nproc()];

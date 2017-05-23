@@ -91,6 +91,13 @@ if __name__ == "__main__":
   if not os.path.isdir(srcdir):
     sys.exit("runtest received %s instead of a valid srcdir" % srcdir)
 
+  if not os.path.isfile(exe):
+    output = getoutput("which %s" % exe)
+    if not output:
+      sys.exit("runtest received invalid exe %s" % exe)
+    else:
+      exe = output
+
   if not os.path.isfile(exe) or not os.access(exe, os.X_OK):
     sys.exit("runtest received invalid exe %s" % exe)
 

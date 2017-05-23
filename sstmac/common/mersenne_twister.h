@@ -1,72 +1,45 @@
-/*
- * Mersenne twister adapted for SST/macroscale:
- *               The macroscale architecture simulator from the SST suite.
- *
- * The original code has the following license information:
- *
- **********************************
- *
- * A C-program for MT19937-64 (2004/9/29 version).
- * Coded by Takuji Nishimura and Makoto Matsumoto.
- *
- * This is a 64-bit version of Mersenne Twister pseudorandom number
- * generator.
- *
- * Before using, initialize the state by using init_genrand64(seed)
- * or init_by_array64(init_key, key_length).
- *
- * Copyright (C) 2004, Makoto Matsumoto and Takuji Nishimura,
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- *   1. Redistributions of source code must retain the above copyright
- *      notice, this list of conditions and the following disclaimer.
- *
- *   2. Redistributions in binary form must reproduce the above copyright
- *      notice, this list of conditions and the following disclaimer in the
- *      documentation and/or other materials provided with the distribution.
- *
- *   3. The names of its contributors may not be used to endorse or promote
- *      products derived from this software without specific prior written
- *      permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER
- * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * References:
- * T. Nishimura, ``Tables of 64-bit Mersenne Twisters''
- *   ACM Transactions on Modeling and
- *   Computer Simulation 10. (2000) 348--357.
- * M. Matsumoto and T. Nishimura,
- *   ``Mersenne Twister: a 623-dimensionally equidistributed
- *     uniform pseudorandom number generator''
- *   ACM Transactions on Modeling and
- *   Computer Simulation 8. (Jan. 1998) 3--30.
- *
- * Any feedback is very welcome.
- * http://www.math.hiroshima-u.ac.jp/~m-mat/MT/emt.html
- * email: m-mat @ math.sci.hiroshima-u.ac.jp (remove spaces)
- *
- ***************************************
- *
- * Modest changes made to adapt the code for SST/macroscale:
- * 1) Global (static) state eliminated -- state vector is now member data.
- * 2) Code moved into namespace sstmac::RNG and put in a class derived from
- *    UniformInteger.
- * 3) Some function signatures and types renamed to better match function
- *    names in SST/macro.
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
 */
 
 #ifndef SSTMAC_COMMON_MERSENNETWISTER_H_INCLUDED
@@ -144,4 +117,3 @@ class mersenne_twister : public UniformInteger
 
 
 #endif
-

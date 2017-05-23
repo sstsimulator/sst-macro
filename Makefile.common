@@ -15,6 +15,14 @@ if INTEGRATED_SST_CORE
   AM_CXXFLAGS += $(SST_CXXFLAGS)
 endif
 
+if HAVE_CLANG
+#clean up warnings on clang
+endif
+
+if HAVE_GCC
+#clean up warnings on clang
+endif
+
 AM_CPPFLAGS += $(PTH_CPPFLAGS)
 AM_LDFLAGS += $(PTH_LDFLAGS)
 
