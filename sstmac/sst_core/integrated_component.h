@@ -82,7 +82,6 @@ using SST::ElementInfoStatistic;
   SST_ELI_DOCUMENT_PARAMS() \
   SST_ELI_DOCUMENT_PORTS(SSTMAC_VALID_PORTS) \
   SST_ELI_DOCUMENT_STATISTICS() \
- protected: \
   cls(SST::ComponentId_t id, SST::Params& params) : \
     cls(make_spkt_params_from_sst_params(params), id, nullptr){}
 
