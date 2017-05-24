@@ -64,6 +64,7 @@ namespace hw {
 class logp_switch :
   public network_switch
 {
+ public:
   RegisterComponent("logP | simple | LogP | logp", network_switch, logp_switch,
          "macro", COMPONENT_CATEGORY_NETWORK,
          "A switch that implements a basic delay model with no congestion modeling")
