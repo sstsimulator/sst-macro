@@ -48,6 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/errors.h>
 
 namespace sprockit {
+
 std::list<std::string> SpktFileIO::file_paths_;
 
 void

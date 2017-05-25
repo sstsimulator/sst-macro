@@ -60,11 +60,13 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   def cleanFlag(flag):
     return flag.replace("${includedir}", includedir).replace("${exec_prefix}", exec_prefix).replace("${prefix}",prefix)
 
-  sstmac_libs = [
-  '-lsprockit',
-  '-lundumpi',
-  '-lsstmac',
-  ]
+  sstmac_libs = []
+  if not sst_core:
+    sstmac_libs = [
+      '-lsstmac',
+      '-lsprockit',
+      '-lundumpi',
+    ]
 
 
   clangCppArgs = [
@@ -121,7 +123,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   objectFiles = []
   optFlags = []
   objTarget = None
-  exeTarget = None
+  ldTarget = None
   getObjTarget = False
   for arg in sysargs:
     sarg = arg.strip().strip("'")
@@ -152,7 +154,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     elif sarg in ('-o',):
       getObjTarget=True
     elif getObjTarget:
-      exeTarget = sarg
+      ldTarget = sarg
       getObjTarget=False
     else:
       givenFlags.append(sarg)
@@ -324,23 +326,10 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       ldpathMaker
     ]
   else:
-    if not exeTarget: exeTarget = "a.out"
+    if not ldTarget: ldTarget = "a.out"
     #linking executable/lib from object files (or source files)
     runClang = srcFiles
 
-    if "fPIC" in cxxflags or "fPIC" in sstCppFlagsStr:
-      arCmdArr = [
-        ld,
-        so_flags,
-        objectFilesStr,
-        ldflagsStr,
-        givenFlagsStr,
-        compilerFlagsStr,
-        ldpathMaker,
-        "-o",
-        "lib" + exeTarget + ".so",
-      ]
-      arCmdArr.extend(linkerArgs)
 
     if not sst_core:
       ldCmdArr = [
@@ -353,9 +342,32 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         extralibs, 
         ldpathMaker,
         "-o",
-        exeTarget
+        ldTarget
       ]
       ldCmdArr.extend(linkerArgs)
+    else:
+      if "fPIC" in cxxflags or "fPIC" in sstCppFlagsStr:
+        libTarget = ldTarget
+        if not libTarget.endswith(".so"):
+          libTarget += ".so"
+        if not libTarget.startswith("lib"):
+          libTarget = "lib" + libTarget
+
+        arCmdArr = [
+          ld,
+          so_flags,
+          objectFilesStr,
+          ldflagsStr,
+          givenFlagsStr,
+          compilerFlagsStr,
+          ldpathMaker,
+          "-o",
+          libTarget
+        ]
+        arCmdArr.extend(linkerArgs)
+      else:
+        sys.stderr.write("Cannot create .so file: fPIC not in C/CXXFLAGS\n")
+        return 1
 
   clangExtraArgs = []
   if runClang:
@@ -443,7 +455,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         return rc
 
 
-    #some idiots generate multiple .o files at once
+    #some generate multiple .o files at once, I don't know why
     manyObjects = objTarget == None #no specific target specified
     mergeCmdArr = [compiler]
     mergeCmdArr.append("-Wl,-r -nostdlib")
