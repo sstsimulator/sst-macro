@@ -1,5 +1,4 @@
 ![SST](http://sst-simulator.org/img/sst-logo-small.png)
-[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 # Structural Simulation Toolkit (SST) Macroscale Element Library
 
@@ -27,6 +26,9 @@ To learn more, see the PDF manuals in the top-level source directory.
 Visit [sst-simulator.org](http://sst-simulator.org) to learn more about SST core.
 
 ##### [LICENSE](https://github.com/sstsimulator/sst-core/blob/devel/LICENSE)
+
+[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+
 Under the terms of Contract DE-NA0003525 with Sandia Corporation, 
 the U.S. Government retains certain rights in this software.
 
