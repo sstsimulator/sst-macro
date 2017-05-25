@@ -56,7 +56,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/factories/factory.h>
 
 #include <sstmac/common/event_manager_fwd.h>
-#include <sstmac/common/stats/stat_spyplot_fwd.h>
 
 #include <sumi-mpi/mpi_api_fwd.h>
 #include <sumi-mpi/mpi_status_fwd.h>
@@ -202,9 +201,6 @@ class mpi_queue
   bool at_least_one_complete(const std::vector<mpi_request*>& req);
 
  private:
-  sstmac::stat_spyplot* spy_num_messages_;
-  sstmac::stat_spyplot* spy_bytes_;
-
   /// The sequence number for our next outbound transmission.
   spkt_unordered_map<task_id, int> next_outbound_;
 

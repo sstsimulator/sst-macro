@@ -45,8 +45,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef sumi_SUMI_TRANSPORT_H
 #define sumi_SUMI_TRANSPORT_H
 
+#include <sstmac/common/stats/stat_spyplot_fwd.h>
 #include <sstmac/libraries/sumi/message_fwd.h>
-#include <sstmac/common/node_address.h>
 #include <sstmac/libraries/sumi/message_fwd.h>
 #include <sstmac/software/process/pmi.h>
 #include <sstmac/software/launch/job_launcher_fwd.h>
@@ -64,7 +64,6 @@ Questions? Contact sst-macro-help@sandia.gov
  * It is also the name for a solid ink in Japanese -
  * i.e. the substrate for sending messages!
  */
-
 namespace sstmac {
 
 class sumi_transport :
@@ -79,30 +78,25 @@ class sumi_transport :
                  sstmac::sw::software_id sid,
                  sstmac::sw::operating_system* os);
 
-  virtual void
-  init() override;
+  virtual void init() override;
 
-  virtual void
-  finish() override;
+  virtual void finish() override;
 
   virtual ~sumi_transport();
 
-  sumi::message_ptr
-  handle(sstmac::transport_message* msg);
+  sumi::message_ptr handle(sstmac::transport_message* msg);
 
   void incoming_event(event *ev) override;
 
   void compute(timestamp t);
 
-  void
-  client_server_send(
+  void client_server_send(
     int dest_rank,
     node_id dest_node,
     int dest_app,
     const sumi::message::ptr& msg);
 
-  void
-  client_server_rdma_put(
+  void client_server_rdma_put(
     int dest_rank,
     node_id dest_node,
     int dest_app,
@@ -122,8 +116,7 @@ class sumi_transport :
 
   double wall_time() const override;
 
-  sumi::message::ptr
-  poll_pending_messages(bool blocking, double timeout = -1) override;
+  sumi::message::ptr poll_pending_messages(bool blocking, double timeout = -1) override;
 
   void ping_timeout(sumi::pinger* pnger);
 
@@ -155,38 +148,27 @@ class sumi_transport :
   void memcopy(long bytes);
 
  private:
-  void
-  do_smsg_send(int dst, const sumi::message::ptr &msg) override;
+  void do_smsg_send(int dst, const sumi::message::ptr &msg) override;
 
-  void
-  do_rdma_put(int dst, const sumi::message::ptr& msg) override;
+  void do_rdma_put(int dst, const sumi::message::ptr& msg) override;
 
-  void
-  do_rdma_get(int src, const sumi::message::ptr& msg) override;
+  void do_rdma_get(int src, const sumi::message::ptr& msg) override;
 
-  void
-  do_nvram_get(int src, const sumi::message::ptr& msg) override;
+  void do_nvram_get(int src, const sumi::message::ptr& msg) override;
 
-  void
-  do_send_terminate(int dst) override;
+  void do_send_terminate(int dst) override;
 
-  void
-  do_send_ping_request(int dst) override;
+  void do_send_ping_request(int dst) override;
 
-  void
-  delayed_transport_handle(const sumi::message::ptr& msg) override;
+  void delayed_transport_handle(const sumi::message::ptr& msg) override;
 
-  void
-  schedule_ping_timeout(sumi::pinger* pnger, double to) override;
+  void schedule_ping_timeout(sumi::pinger* pnger, double to) override;
 
-  void
-  schedule_next_heartbeat() override;
+  void schedule_next_heartbeat() override;
 
-  void
-  go_die() override;
+  void go_die() override;
 
-  void
-  go_revive() override;
+  void go_revive() override;
 
  protected:
   sumi_transport(sprockit::sim_parameters* params,
@@ -236,6 +218,9 @@ class sumi_transport :
 
   sstmac::sw::lib_compute_time* user_lib_time_;
 
+  sstmac::stat_spyplot* spy_num_messages_;
+
+  sstmac::stat_spyplot* spy_bytes_;
 };
 
 }
