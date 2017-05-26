@@ -1,8 +1,1 @@
-The tarball and repo do not come with a standard configure script due to machine-dependent
-variations in autotools that have caused problems (mostly with C++11).
-To generate a configure script run:
-
-./bootstrap.sh
-
-This will set up the configure environment.
-More details can be found in the PDF manual in the top-level directory.
+See installation directions in the PDF manual
