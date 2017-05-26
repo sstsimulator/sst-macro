@@ -261,6 +261,12 @@ sim_parameters::sim_parameters(const key_value_map& p) :
 {
 }
 
+void
+sim_parameters::moved()
+{
+  params_.clear();
+}
+
 sim_parameters::sim_parameters(const std::string& filename) :
   parent_(nullptr),
   extra_data_(nullptr),

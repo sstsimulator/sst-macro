@@ -55,19 +55,17 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sumi-mpi/mpi_request.h>
 #include <sumi-mpi/mpi_status.h>
-
 #include <sumi-mpi/mpi_call.h>
-
 #include <sumi-mpi/mpi_comm/mpi_comm_factory.h>
 #include <sumi-mpi/mpi_debug.h>
+#include <sumi-mpi/mpi_queue/mpi_queue_fwd.h>
 
 #include <sstmac/software/process/software_id.h>
 #include <sstmac/software/process/key_fwd.h>
 #include <sstmac/software/process/pmi.h>
 #include <sstmac/software/process/backtrace.h>
-
-#include <sumi-mpi/mpi_queue/mpi_queue_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
+#include <sstmac/common/stats/stat_spyplot_fwd.h>
 
 #include <sprockit/sim_parameters_fwd.h>
 #include <sprockit/unordered.h>
