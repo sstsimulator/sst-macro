@@ -42,49 +42,30 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstream>
+#include <sprockit/test/test.h>
+#include <sstmac/util.h>
+#include <sstmac/replacements/mpi.h>
+#include <sstmac/common/runtime.h>
+#include <sstmac/software/process/backtrace.h>
+#include <sumi-mpi/mpi_api.h>
+#include <sstmac/skeleton.h>
+#include <sstmac/compute.h>
+#include <sprockit/keyword_registration.h>
 
-#include <sprockit/fileio.h>
-#include <sprockit/errors.h>
+#define sstmac_app_name mpi_all_collectives
 
-namespace sprockit {
-
-std::list<std::string> SpktFileIO::file_paths_;
-
-void
-SpktFileIO::add_path(const std::string& path)
+int USER_MAIN(int argc, char** argv)
 {
-  file_paths_.push_front(path);
-}
+  MPI_Init(&argc, &argv);
 
-void
-SpktFileIO::open_file(std::ifstream& in, const std::string& filename)
-{
-  //check to see if it is in the current folder
-  in.open(filename.c_str());
-  if (in.is_open()) {
-    return;
-  }
+  int me, nproc;
+  MPI_Comm_rank(MPI_COMM_WORLD, &me);
+  MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
-  for (auto& str : file_paths_) {
-    std::string fullpath = str + "/" + filename;
-    in.open(fullpath.c_str());
-    if (in.is_open()) {
-      return;
-    }
-  }
-}
+  MPI_Alltoall(100, MPI_INT, 100, MPI_INT, MPI_COMM_WORLD);
+  MPI_Allgather(1000, MPI_DOUBLE, 1000, MPI_DOUBLE, MPI_COMM_WORLD);
+  MPI_Allreduce(400, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
-void
-SpktFileIO::not_found(const std::string& filename)
-{
-  std::stringstream ss;
-  ss << "File not found: " << filename << ".  Search path is: \n";
-  for (auto& str : file_paths_) {
-    ss << str << "\n";
-  }
-
-  spkt_throw(io_error, ss.str());
-}
-
+  MPI_Finalize();
+  return 0;
 }

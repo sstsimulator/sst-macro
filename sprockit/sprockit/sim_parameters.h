@@ -103,11 +103,9 @@ class param_assign {
 
 class param_bcaster {
  public:
-  virtual void
-  bcast(void* buf, int size, int me, int root) = 0;
+  virtual void bcast(void* buf, int size, int me, int root) = 0;
 
-  void
-  bcast_string(std::string& str, int me, int root);
+  void bcast_string(std::string& str, int me, int root);
 };
 
 class sim_parameters  {
@@ -158,28 +156,27 @@ class sim_parameters  {
     public_scope_ = flag;
   }
 
-  void
-  remove_param(const std::string &key);
+  /**
+   * Needed in conjunction with moved constructors to clear map
+   * and keep things from getting deleted
+   */
+  void moved();
 
-  std::string
-  get_variable(const std::string& str);
+  void remove_param(const std::string &key);
 
-  std::string
-  get_param(const std::string& key, bool throw_on_error = true);
+  std::string get_variable(const std::string& str);
 
-  std::string
-  get_scoped_param(const std::string& key, bool throw_on_error = true);
+  std::string get_param(const std::string& key, bool throw_on_error = true);
 
-  sim_parameters*
-  get_optional_local_namespace(const std::string& ns);
+  std::string get_scoped_param(const std::string& key, bool throw_on_error = true);
 
-  std::string
-  reread_param(const std::string& key) {
+  sim_parameters* get_optional_local_namespace(const std::string& ns);
+
+  std::string reread_param(const std::string& key) {
     return get_param(key);
   }
 
-  std::string
-  reread_optional_param(const std::string& key, const std::string& def) {
+  std::string reread_optional_param(const std::string& key, const std::string& def) {
     return get_optional_param(key, def);
   }
 
@@ -188,15 +185,11 @@ class sim_parameters  {
   /// @param key gives the keyword
   /// @param def gives the default value (used if has_param(key) is false)
   /// @return the value if it exists, otherwise the default
-  std::string
-  get_optional_param(const std::string &key, const std::string &def);
+  std::string get_optional_param(const std::string &key, const std::string &def);
 
-  std::string
-  deprecated_optional_param(const std::string &key, const std::string &def);
+  std::string deprecated_optional_param(const std::string &key, const std::string &def);
 
-  std::string
-  deprecated_param(const std::string& key);
-
+  std::string deprecated_param(const std::string& key);
 
   /**
    * @brief get_either_or_param Return a parameter which can have one of two names.
@@ -205,26 +198,19 @@ class sim_parameters  {
    * @param key2
    * @return The parameter value for key1 or key2
    */
-  std::string
-  get_either_or_param(const std::string& key1, const std::string& key2);
+  std::string get_either_or_param(const std::string& key1, const std::string& key2);
 
-  int
-  get_either_or_int_param(const std::string& key1, const std::string& key2);
+  int get_either_or_int_param(const std::string& key1, const std::string& key2);
 
-  double
-  get_either_or_time_param(const std::string& key1, const std::string& key2);
+  double get_either_or_time_param(const std::string& key1, const std::string& key2);
 
-  double
-  get_either_or_bandwidth_param(const std::string& key1, const std::string& key2);
+  double get_either_or_bandwidth_param(const std::string& key1, const std::string& key2);
 
-  void
-  add_param(const std::string& key, const std::string& val);
+  void add_param(const std::string& key, const std::string& val);
 
-  void
-  copy_param(const std::string& oldname, const std::string& newname);
+  void copy_param(const std::string& oldname, const std::string& newname);
 
-  void
-  copy_optional_param(const std::string& oldname, const std::string& newname);
+  void copy_optional_param(const std::string& oldname, const std::string& newname);
 
   void add_param_override(const std::string& key, const std::string& val);
 
@@ -243,76 +229,56 @@ class sim_parameters  {
                bool override_existing = true,
                bool mark_as_read = true);
 
-  std::string
-  print_scoped_params(std::ostream& os) const;
+  std::string print_scoped_params(std::ostream& os) const;
 
-  std::string
-  print_scopes(std::ostream& os);
+  std::string print_scopes(std::ostream& os);
 
-  void
-  print_local_params(std::ostream& os, const std::string& prefix) const;
+  void print_local_params(std::ostream& os, const std::string& prefix) const;
 
-  void
-  print_params(std::ostream& os = std::cerr, const std::string& prefix = "") const;
+  void print_params(std::ostream& os = std::cerr, const std::string& prefix = "") const;
 
-  bool
-  print_unread_params(std::ostream& os = std::cerr) const;
+  bool print_unread_params(std::ostream& os = std::cerr) const;
 
-  bool
-  has_param(const std::string& key) const;
+  bool has_param(const std::string& key) const;
 
-  bool
-  has_scoped_param(const std::string& key) const;
+  bool has_scoped_param(const std::string& key) const;
 
-  int
-  get_int_param(const std::string& key);
+  int get_int_param(const std::string& key);
 
-  int
-  deprecated_int_param(const std::string& key);
+  int deprecated_int_param(const std::string& key);
 
-  int
-  deprecated_optional_int_param(const std::string &key, int def);
+  int deprecated_optional_int_param(const std::string &key, int def);
 
-  int
-  reread_int_param(const std::string& key);
+  int reread_int_param(const std::string& key);
 
-  int
-  reread_optional_int_param(const std::string& key, int def);
+  int reread_optional_int_param(const std::string& key, int def);
 
   /// Return the value of the keyword if it exists. Otherwise return
   /// a default value.
   /// @param key gives the keyword
   /// @param def gives the default value (used if has_param(key) is false)
   /// @return the value if it exists, otherwise the default
-  int
-  get_optional_int_param(const std::string &key, int def);
+  int get_optional_int_param(const std::string &key, int def);
 
   /// Returns the value of the key as a boolean.
-  bool
-  get_bool_param(const std::string &key);
+  bool get_bool_param(const std::string &key);
 
-  bool
-  reread_bool_param(const std::string& key);
+  bool reread_bool_param(const std::string& key);
 
-  bool
-  deprecated_bool_param(const std::string& key);
+  bool deprecated_bool_param(const std::string& key);
 
-  bool
-  deprecated_optional_bool_param(const std::string& key, bool def);
+  bool deprecated_optional_bool_param(const std::string& key, bool def);
 
-  bool
-  reread_optional_bool_param(const std::string& key, bool def);
+  bool reread_optional_bool_param(const std::string& key, bool def);
 
   /// Return the value of the keyword if it exists. Otherwise return
   /// a default value.
   /// @param key gives the keyword
   /// @param def gives the default value (used if has_param(key) is false)
   /// @return the value if it exists, otherwise the default
-  bool
-  get_optional_bool_param(const std::string &key, int def);
+  bool get_optional_bool_param(const std::string &key, int def);
 
-  double
-  get_bandwidth_param(const std::string& key);
+  double get_bandwidth_param(const std::string& key);
 
   /**
    @param key The parameter name
@@ -320,157 +286,113 @@ class sim_parameters  {
            to return any value that can have units. Everything is normalized to baseslines
            of B/s, s, Hz, etc
   */
-  double
-  get_quantity(const std::string& key);
+  double get_quantity(const std::string& key);
 
-  double
-  get_optional_quantity(const std::string& key, double def);
+  double get_optional_quantity(const std::string& key, double def);
 
-  double
-  deprecated_bandwidth_param(const std::string& key);
+  double deprecated_bandwidth_param(const std::string& key);
 
-  double
-  reread_bandwidth_param(const std::string& key);
+  double reread_bandwidth_param(const std::string& key);
 
-  double
-  reread_optional_bandwidth_param(const std::string& key, double def);
+  double reread_optional_bandwidth_param(const std::string& key, double def);
 
-  double
-  deprecated_optional_bandwidth_param(const std::string& key, double def);
+  double deprecated_optional_bandwidth_param(const std::string& key, double def);
 
-  double
-  get_optional_bandwidth_param(const std::string &key, double def);
+  double get_optional_bandwidth_param(const std::string &key, double def);
 
-  double
-  get_optional_bandwidth_param(
+  double get_optional_bandwidth_param(
     const std::string& key,
     const std::string& def);
 
-  long
-  get_byte_length_param(const std::string& key);
+  long get_byte_length_param(const std::string& key);
 
-  long
-  get_optional_byte_length_param(const std::string& key, long def);
+  long get_optional_byte_length_param(const std::string& key, long def);
 
-  long
-  deprecated_byte_length_param(const std::string& key);
+  long deprecated_byte_length_param(const std::string& key);
 
-  long
-  deprecated_optional_byte_length_param(const std::string& key, long def);
+  long deprecated_optional_byte_length_param(const std::string& key, long def);
 
-  double
-  get_optional_freq_param(const std::string& key, double def);
+  double get_optional_freq_param(const std::string& key, double def);
 
-  double
-  get_freq_param(const std::string& key);
+  double get_freq_param(const std::string& key);
 
-  double
-  deprecated_freq_param(const std::string& key);
+  double deprecated_freq_param(const std::string& key);
 
-  double
-  deprecated_optional_freq_param(const std::string& key, double def);
+  double deprecated_optional_freq_param(const std::string& key, double def);
 
   /// Return the value of the keyword if it exists. Otherwise return
   /// a default value.
   /// @param key gives the keyword
   /// @param def gives the default value (used if has_param(key) is false)
   /// @return the value if it exists, otherwise the default
-  long
-  get_optional_long_param(const std::string &key, long def);
+  long get_optional_long_param(const std::string &key, long def);
 
-  long
-  get_long_param(const std::string& key);
+  long get_long_param(const std::string& key);
 
-  long
-  deprecated_long_param(const std::string& key);
+  long deprecated_long_param(const std::string& key);
 
-  long
-  deprecated_optional_long_param(const std::string& key, long def);
+  long deprecated_optional_long_param(const std::string& key, long def);
 
-  long
-  reread_long_param(const std::string& key);
+  long reread_long_param(const std::string& key);
 
-  void
-  reread_optional_long_param(const std::string& key);
+  void reread_optional_long_param(const std::string& key);
 
-  double
-  get_double_param(const std::string& key);
+  double get_double_param(const std::string& key);
 
   /// Return the value of the keyword if it exists. Otherwise return
   /// a default value.
   /// @param key gives the keyword
   /// @param def gives the default value (used if has_param(key) is false)
   /// @return the value if it exists, otherwise the default
-  double
-  get_optional_double_param(const std::string &key, double def);
+  double get_optional_double_param(const std::string &key, double def);
 
-  double
-  reread_double_param(const std::string& key);
+  double reread_double_param(const std::string& key);
 
-  double
-  reread_optional_double_param(const std::string &key, double def);
+  double reread_optional_double_param(const std::string &key, double def);
 
-  double
-  deprecated_double_param(const std::string& key);
+  double deprecated_double_param(const std::string& key);
 
-  double
-  deprecated_optional_double_param(const std::string& key, double def);
+  double deprecated_optional_double_param(const std::string& key, double def);
 
-  double
-  get_time_param(const std::string& key);
+  double get_time_param(const std::string& key);
 
-  double
-  get_optional_time_param(const std::string &key, double def);
+  double get_optional_time_param(const std::string &key, double def);
 
-  double
-  deprecated_optional_time_param(const std::string &key, double def);
+  double deprecated_optional_time_param(const std::string &key, double def);
 
-  double
-  deprecated_time_param(const std::string& key);
+  double deprecated_time_param(const std::string& key);
 
-  void
-  get_vector_param(const std::string& key, std::vector<int>& vals);
+  void get_vector_param(const std::string& key, std::vector<int>& vals);
 
-  void
-  get_vector_param(const std::string& key, std::vector<double>& vals);
+  void get_vector_param(const std::string& key, std::vector<double>& vals);
 
-  void
-  get_vector_param(const std::string& key, std::vector<std::string>& vals);
+  void get_vector_param(const std::string& key, std::vector<std::string>& vals);
 
-  void
-  get_optional_vector_param(const std::string& key, std::vector<std::string>& vals);
+  void get_optional_vector_param(const std::string& key, std::vector<std::string>& vals);
 
-  sim_parameters*
-  get_namespace(const std::string& ns);
+  sim_parameters* get_namespace(const std::string& ns);
 
-  sim_parameters*
-  get_optional_namespace(const std::string& ns);
+  sim_parameters* get_optional_namespace(const std::string& ns);
 
-  void
-  set_namespace(const std::string& ns, sim_parameters* params){
+  void set_namespace(const std::string& ns, sim_parameters* params){
     subspaces_[ns] = params;
   }
 
-  bool
-  has_namespace(const std::string& ns) const;
+  bool has_namespace(const std::string& ns) const;
 
-  void
-  parse_file(const std::string& fname, bool fail_on_existing,
+  void parse_file(const std::string& fname, bool fail_on_existing,
              bool override_existing, bool fail_if_not_found = true);
 
-  void
-  parse_stream(std::istream& in, bool fail_on_existing, bool override_existing);
+  void parse_stream(std::istream& in, bool fail_on_existing, bool override_existing);
 
-  void
-  parse_line(const std::string& line, bool fail_on_existing, bool override_existing);
+  void parse_line(const std::string& line, bool fail_on_existing, bool override_existing);
 
   /**
     @param key
     @param value
     @param fail_on_existing Fail if the parameter named by key already exists
   */
-  void
-  parse_keyval(const std::string& key,
+  void parse_keyval(const std::string& key,
     const std::string& value,
     bool fail_on_existing,
     bool override_existing,
@@ -480,8 +402,7 @@ class sim_parameters  {
    * This is a dirty hack to store non-sprockit parameter objects
    * on this parameter object
    */
-  void
-  append_extra_data(void* data) {
+  void append_extra_data(void* data) {
     extra_data_ = data;
   }
 
@@ -492,8 +413,7 @@ class sim_parameters  {
     return static_cast<T*>(ptr);
   }
 
-  param_assign
-  operator[](const std::string& key);
+  param_assign operator[](const std::string& key);
 
   key_value_map::iterator begin() { return params_.begin(); }
   key_value_map::const_iterator begin() const { return params_.begin(); }
@@ -547,54 +467,40 @@ class sim_parameters  {
    */
   sim_parameters* _get_namespace(const std::string &ns);
 
-  sim_parameters*
-  build_local_namespace(const std::string& ns);
+  sim_parameters* build_local_namespace(const std::string& ns);
 
-  void
-  throw_key_error(const std::string& key) const;
+  void throw_key_error(const std::string& key) const;
 
-  void
-  set_parent(sim_parameters* p) {
+  void set_parent(sim_parameters* p) {
     parent_ = p;
   }
 
-  void
-  set_namespace(const std::string& str) {
+  void set_namespace(const std::string& str) {
     namespace_ = str;
   }
 
-  bool
-  local_has_namespace(const std::string& ns) const {
+  bool local_has_namespace(const std::string& ns) const {
     return subspaces_.find(ns) != subspaces_.end();
   }
 
-  void
-  split_line(const std::string& line, std::pair<std::string, std::string>& p);
+  void split_line(const std::string& line, std::pair<std::string, std::string>& p);
 
-  void
-  try_to_parse(const std::string& fname, bool fail_on_existing, bool override_existing);
+  void try_to_parse(const std::string& fname, bool fail_on_existing, bool override_existing);
 
-  void
-  print_params(const key_value_map& pmap, std::ostream& os, bool pretty_print, std::list<std::string>& ns) const;
+  void print_params(const key_value_map& pmap, std::ostream& os, bool pretty_print, std::list<std::string>& ns) const;
 
-  void
-  do_add_param(const std::string& key,
+  void do_add_param(const std::string& key,
     const std::string& val,
     bool fail_on_existing,
     bool override_existing,
     bool mark_as_read);
 
 
-  sim_parameters*
-  get_scope_and_key(const std::string& key, std::string& final_key);
+  sim_parameters* get_scope_and_key(const std::string& key, std::string& final_key);
 
-  bool
-  get_param(std::string& inout, const std::string& key);
+  bool get_param(std::string& inout, const std::string& key);
 
-  bool
-  get_scoped_param(std::string& inout, const std::string& key);
-
-
+  bool get_scoped_param(std::string& inout, const std::string& key);
 
 
 };

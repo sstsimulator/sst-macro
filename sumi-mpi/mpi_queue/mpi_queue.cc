@@ -49,7 +49,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_queue/mpi_queue_probe_request.h>
 #include <sumi-mpi/mpi_status.h>
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
-#include <sstmac/common/stats/stat_spyplot.h>
 #include <sstmac/software/process/key.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/factories/factory.h>
@@ -98,17 +97,10 @@ mpi_queue::mpi_queue(sprockit::sim_parameters* params,
                      mpi_api* api) :
   next_id_(0),
   taskid_(task_id),
-  api_(api),
-  spy_num_messages_(nullptr),
-  spy_bytes_(nullptr)
+  api_(api)
 {
   max_vshort_msg_size_ = params->get_optional_byte_length_param("max_vshort_msg_size", 512);
   max_eager_msg_size_ = params->get_optional_byte_length_param("max_eager_msg_size", 8192);
-
-  spy_num_messages_ = sstmac::optional_stats<sstmac::stat_spyplot>(api_->des_scheduler(),
-        params, "traffic_matrix", "ascii", "num_messages");
-  spy_bytes_ = sstmac::optional_stats<sstmac::stat_spyplot>(api_->des_scheduler(),
-        params, "traffic_matrix", "ascii", "bytes");
 
   //user_lib_mem_ = new sstmac::sw::lib_compute_memmove(params, "mpi_queue-user-lib-mem", sid, os_);
 
@@ -179,9 +171,6 @@ mpi_queue::send_message(void* buffer, int count, MPI_Datatype type,
                           next_id_++, prot);
 
   mess->protocol()->configure_send_buffer(this, mess, buffer, typeobj);
-
-  if (spy_num_messages_) spy_num_messages_->add_one(int(taskid_), dst_tid);
-  if (spy_bytes_) spy_bytes_->add(int(taskid_), dst_tid, bytes);
   return mess;
 }
 
