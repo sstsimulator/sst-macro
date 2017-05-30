@@ -67,6 +67,9 @@ using SST::ComponentDoc;
 using SST::ElementInfoParam;
 using SST::ElementInfoPort2;
 using SST::ElementInfoStatistic;
+using SST::SST_ELI_getMajorNumberFromVersion;
+using SST::SST_ELI_getMinorNumberFromVersion;
+using SST::SST_ELI_getTertiaryNumberFromVersion;
 
 #define SSTMAC_VALID_PORTS \
    {"input %(out)d %(in)d",  "Will receive new payloads here",      {}}, \
@@ -76,9 +79,8 @@ using SST::ElementInfoStatistic;
 
 #define RegisterComponent(name,parent,cls,lib,cat,desc) \
   FactoryRegister(name,parent,cls,desc) \
-  SST_ELI_DOCUMENT_VERSION(7,0,0) \
   SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS() \
-  SST_ELI_REGISTER_COMPONENT(cls,lib,#cls,desc,cat) \
+  SST_ELI_REGISTER_COMPONENT(cls,lib,#cls,SST_ELI_ELEMENT_VERSION(7,1,0),desc,cat) \
   SST_ELI_DOCUMENT_PARAMS() \
   SST_ELI_DOCUMENT_PORTS(SSTMAC_VALID_PORTS) \
   SST_ELI_DOCUMENT_STATISTICS() \
