@@ -131,9 +131,8 @@ class SSTMacroPartition : public SSTPartitioner
   bool spawnOnAllRanks() override { return false; }
 
   SST_ELI_REGISTER_PARTITIONER(SSTMacroPartition,"macro","block",
+     SST_ELI_ELEMENT_VERSION(7,1,0),
      "Partitions using the SST/macro based partitioning schemes")
-
-  SST_ELI_DOCUMENT_VERSION(7,0,0)
 
 };
 
