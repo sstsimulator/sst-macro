@@ -3,7 +3,7 @@ SRC := allgather.cc allreduce.cc
 
 CXX :=    sst++
 CC :=     sstcc
-CXXFLAGS := 
+CXXFLAGS := -fPIC
 CPPFLAGS := -I.
 LIBDIR :=  
 PREFIX := 

@@ -94,21 +94,18 @@ int main(int argc, char** argv)
     int nelems_left_block = nelems_row_per_proc*nelems_link_per_proc;
     int nelems_right_block = nelems_link_per_proc*nelems_col_per_proc;
 
+#pragma sst new
     double* product_block = new double[nelems_product_block];
+#pragma sst new
     double* left_block = new double[nelems_left_block];
+#pragma sst new
     double* right_block = new double[nelems_right_block];
+#pragma sst new
     double* next_product_block = new double[nelems_product_block];
+#pragma sst new
     double* next_left_block = new double[nelems_left_block];
+#pragma sst new
     double* next_right_block = new double[nelems_right_block];
-
-#if 0
-    ::memset(product_block, 0, sizeof(double)*nelems_product_block);
-    ::memset(next_product_block, 0, sizeof(double)*nelems_product_block);
-    ::memset(left_block, 0, sizeof(double)*nelems_left_block);
-    ::memset(next_left_block, 0, sizeof(double)*nelems_left_block);
-    ::memset(right_block, 0, sizeof(double)*nelems_right_block);
-    ::memset(next_right_block, 0, sizeof(double)*nelems_right_block);
-#endif
 
     int niter = proc_grid_dim_size;
 
@@ -153,7 +150,6 @@ int main(int argc, char** argv)
         double task_start = MPI_Wtime();
         
         //matmul
-
 
         MPI_Waitall(NUM_REQUESTS, reqs, MPI_STATUSES_IGNORE);
 

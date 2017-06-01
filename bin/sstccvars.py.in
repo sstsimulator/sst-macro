@@ -1,19 +1,14 @@
-sstmac_default_ldflags = [
+sstLdFlags = [
 '@LDFLAGS@',
 '-L@libdir@',
 ]
 
-sstmac_extra_ldflags = [
-'@BOOST_LDFLAGS@',
-'@LIBS@',
-]
+clangCppFlagsStr="@CLANG_CPPFLAGS@"
+clangLdFlagsStr="@CLANG_LDFLAGS@"
+clangLibtoolingCxxFlagsStr="@CLANG_LIBTOOLING_CXX_FLAGS@"
+clangLibtoolingCFlagsStr="@CLANG_LIBTOOLING_C_FLAGS@"
 
-clang_cppflags="@CLANG_CPPFLAGS@"
-clang_ldflags="@CLANG_LDFLAGS@"
-clang_libtooling_cxxflags="@CLANG_LIBTOOLING_CXX_FLAGS@"
-clang_libtooling_cflags="@CLANG_LIBTOOLING_C_FLAGS@"
-
-sstmac_cppflags = [
+sstCppFlags = [
 "@BOOST_CPPFLAGS@",
 "@SST_CPPFLAGS@",
 "@CPPFLAGS@",
@@ -26,14 +21,14 @@ sstmac_cppflags = [
 "-I${includedir}/sstmac/replacements",
 ]
 
-sst_core="@SST_CPPFLAGS@"
-so_flags="@LD_SO_FLAGS@"
+sstCore=bool("@SST_CPPFLAGS@")
+soFlagsStr="@LD_SO_FLAGS@"
 
 prefix="@prefix@"
-exec_prefix="@exec_prefix@"
-includedir="@includedir@"
-cxxflags="@CXXFLAGS@ @SST_CXXFLAGS@"
-cflags="@CFLAGS@"
+execPrefix="@exec_prefix@"
+includeDir="@includedir@"
+sstCxxFlagsStr="@CXXFLAGS@ @SST_CXXFLAGS@"
+sstCFlagsStr="@CFLAGS@"
 cc="@CC@"
 cxx="@CXX@"
 

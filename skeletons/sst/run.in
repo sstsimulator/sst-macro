@@ -1,5 +1,0 @@
-#! /usr/bin/env bash
-
-source env.sh
-@sst_prefix@/bin/sst config.py
-

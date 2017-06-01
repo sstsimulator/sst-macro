@@ -1,4 +1,4 @@
-usage: runlflr -f <config file> [options] 
+usage: runmatmul -f <config file> [options] 
  
 Options are: 
 	[(--help|-h)]                          
