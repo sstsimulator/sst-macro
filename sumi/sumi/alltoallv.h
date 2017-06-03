@@ -60,8 +60,7 @@ class direct_alltoallv_actor :
   direct_alltoallv_actor(int* send_counts, int* recv_counts) :
     send_counts_(send_counts), recv_counts_(recv_counts) {}
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "bruck all-to-allv actor";
   }
 

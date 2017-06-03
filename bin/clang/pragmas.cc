@@ -110,7 +110,6 @@ SSTSimplePragmaHandler_base::HandlePragma(clang::Preprocessor &PP,
          << " got invalid token type " << eodToken.getName();
     errorAbort(PragmaTok.getLocation(), ci_, sstr.str());
   }
-
   SSTPragma* fsp = allocatePragma();
   configure(PragmaTok, PP, fsp);
 }

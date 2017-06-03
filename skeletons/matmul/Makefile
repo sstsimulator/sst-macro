@@ -1,4 +1,4 @@
-TARGET := runlflr
+TARGET := runmatmul
 SRC := main.cc
 
 CXX :=    sst++
@@ -21,7 +21,7 @@ $(TARGET): $(OBJ)
 	$(CXX) -o $@ $+ $(LDFLAGS) $(LIBS) 
 
 %.o: %.cc 
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
+	SSTMAC_SKELETONIZE=1 $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
 %.o: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@

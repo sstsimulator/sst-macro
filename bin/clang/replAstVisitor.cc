@@ -153,9 +153,22 @@ ReplGlobalASTVisitor::VisitCXXNewExpr(CXXNewExpr *expr)
       pp.os << ")";
     } else {
       pp.os << "conditional_new<" << allocatedTypeStr << ">(";
-      const Expr* ctor = expr->getConstructExpr();
-      if (ctor){
-        pp.print(ctor);
+      if (expr->hasInitializer()){
+        Expr* init = expr->getInitializer();
+        if (isa<ParenListExpr>(init)){
+          ParenListExpr* pinit = cast<ParenListExpr>(init);
+          for (int i=0; i < pinit->getNumExprs(); ++i){
+            if (i >= 1) pp.os << ",";
+            pp.print(pinit->getExpr(i));
+          }
+        } else {
+          pp.print(init);
+        }
+      } else {
+        const Expr* ctor = expr->getConstructExpr();
+        if (ctor){
+          pp.print(ctor);
+        }
       }
       pp.os << ")";
     }
@@ -185,7 +198,6 @@ ReplGlobalASTVisitor::VisitCXXNewExpr(CXXNewExpr *expr)
           pp.os << "placement_new<" << allocatedTypeStr << ">(";
           pp.print(placer);
           if (expr->isArray()){
-            pp.os << ",";
             pp.print(expr->getArraySize());
           } else if (expr->hasInitializer()){
             Expr* init = expr->getInitializer();
@@ -198,7 +210,6 @@ ReplGlobalASTVisitor::VisitCXXNewExpr(CXXNewExpr *expr)
             } else {
               pp.os << ",";
               pp.print(init);
-              init->dump();
             }
           } else {
             const Expr* ctor = expr->getConstructExpr();
