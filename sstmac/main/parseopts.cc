@@ -104,6 +104,7 @@ parse_opts(int argc, char **argv, opts &oo)
     { "inf", no_argument, &infinite_network, 1},
     { "configfile", required_argument, NULL, 'f' },
     { "auto", no_argument, NULL, 'a' },
+    { "app", required_argument, NULL, 'A' },
     { "nproc", required_argument, NULL, 'n' },
     { "param", required_argument, NULL, 'p' },
     { "srun", required_argument, NULL, 's' },
@@ -138,10 +139,12 @@ parse_opts(int argc, char **argv, opts &oo)
       case 'd':
         activate_debugs(optarg);
         break;
-      case 'n' : {
+      case 'n' :
         oo.params->add_param_override("node.app1.launch_cmd", sprockit::printf("aprun -n %s -N 1", optarg));
         break;
-      }
+      case 'A' :
+        oo.params->add_param_override("node.app1.name", optarg);
+        break;
       case 'f':
         oo.configfile = optarg;
         oo.got_config_file = true;
