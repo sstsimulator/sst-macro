@@ -109,8 +109,7 @@ ReplGlobalASTVisitor::initHeaders()
 bool
 ReplGlobalASTVisitor::shouldVisitDecl(VarDecl* D)
 {
-  if (keepGlobals_ || isa<ParmVarDecl>(D) || D->isImplicit()
-      || insideClass_ || insideFxn_){
+  if (keepGlobals_ || isa<ParmVarDecl>(D) || D->isImplicit() || insideCxxMethod_){
     return false;
   }
 
@@ -353,43 +352,15 @@ ReplGlobalASTVisitor::VisitCallExpr(CallExpr* expr)
 }
 
 bool
-ReplGlobalASTVisitor::VisitVarDecl(VarDecl* D){
-  bool valid = shouldVisitDecl(D);
-  if (!valid)
-    return true;
-
-  if (reservedNames_.find(D->getNameAsString()) != reservedNames_.end()){
-    return true;
-  }
-
-  if (D->getNameAsString() == "sstmac_appname_str"){
-    const ImplicitCastExpr* expr1 = cast<const ImplicitCastExpr>(D->getInit());
-    const ImplicitCastExpr* expr2 = cast<const ImplicitCastExpr>(expr1->getSubExpr());
-    const StringLiteral* lit = cast<StringLiteral>(expr2->getSubExpr());
-    mainName_ = lit->getString();
-    return true;
-  }
-
-  SourceLocation startLoc = D->getLocStart();
-  std::string filename = ci_->getSourceManager().getFilename(startLoc).str();
-
-  if (!currentNs_->isPrefixSet){
-    currentNs_->setFilePrefix(filename.c_str());
-  }
-
+ReplGlobalASTVisitor::replaceGlobalVar(const std::string& scope_prefix,
+                                       const std::string& init_prefix,
+                                       SourceLocation insertLoc,
+                                       VarDecl* D)
+{
   std::string str;
   llvm::raw_string_ostream os(str);
-
   std::string& varRepl = globals_[D];
-  std::string sstVarName;
-  if (D->getStorageClass() == StorageClass::SC_Static){
-    //static, local scope
-    //we lose static-ness in the deglobalization so make it have a unique name
-    sstVarName = currentNs_->filePrefix() + D->getNameAsString();
-  } else {
-    //global, we can keep the name as is
-    sstVarName = D->getNameAsString();
-  }
+  std::string sstVarName = scope_prefix + D->getNameAsString();
 
   // roundabout way to get the type of the variable
   std::string retType;
@@ -404,7 +375,6 @@ ReplGlobalASTVisitor::VisitVarDecl(VarDecl* D){
     retType = QualType::getAsString(D->getType().split()) + "*";
     varRepl = "(*" + currentNs_->nsPrefix() + "get_" + sstVarName + "())";
   }
-
 
   std::string varName = D->getNameAsString();
   bool notDeclared = globalsDeclared_.find(varName) == globalsDeclared_.end();
@@ -421,18 +391,133 @@ ReplGlobalASTVisitor::VisitVarDecl(VarDecl* D){
   }
   if (!D->hasExternalStorage()){
     currentNs_->replVars.insert(sstVarName);
-    os << "void* __ptr_" << sstVarName << " = &" << D->getNameAsString() << "; "
-       << "int __sizeof_" << sstVarName << " = sizeof(" << D->getNameAsString() << ");";
+    os << "void* __ptr_" << sstVarName << " = &" << init_prefix << D->getNameAsString() << "; "
+       << "int __sizeof_" << sstVarName << " = sizeof(" << init_prefix << D->getNameAsString() << ");";
   }
   os << "  ";
 
-  SourceLocation endLoc = Lexer::findLocationAfterToken(D->getLocEnd(), tok::semi,
-                                 ci_->getSourceManager(), ci_->getLangOpts(), false);
-  if (endLoc.isInvalid()){
+  if (insertLoc.isInvalid()){
     errorAbort(D->getLocStart(), *ci_, "failed replacing global variable declaration");
   }
-  rewriter_.InsertText(endLoc, os.str());
+  rewriter_.InsertText(insertLoc, os.str());
   return true;
+}
+
+clang::SourceLocation
+ReplGlobalASTVisitor::getEndLoc(VarDecl *D)
+{
+  SourceLocation endLoc = Lexer::findLocationAfterToken(D->getLocEnd(), tok::semi,
+                                 ci_->getSourceManager(), ci_->getLangOpts(), false);
+  return endLoc;
+}
+
+bool
+ReplGlobalASTVisitor::checkStaticFileVar(VarDecl* D)
+{
+  return replaceGlobalVar(currentNs_->filePrefix(), "", getEndLoc(D), D);
+}
+
+bool
+ReplGlobalASTVisitor::checkGlobalVar(VarDecl* D)
+{
+  return replaceGlobalVar("", "", getEndLoc(D), D);
+}
+
+bool
+ReplGlobalASTVisitor::checkStaticFxnVar(VarDecl *D)
+{
+  if (D->isStaticLocal()){
+    FunctionDecl* outerFxn = fxn_contexts_.front();
+    SourceLocation insertLoc = outerFxn->getLocStart();
+    std::stringstream prefix_sstr; prefix_sstr << "_";
+    for (FunctionDecl* fxn : fxn_contexts_){
+      prefix_sstr << "_" << fxn->getNameAsString();
+    }
+
+    if (D->getType().getTypePtr()->isArrayType()){
+      errorAbort(D->getLocStart(), *ci_,
+                 "cannot currently refactory array static function variables");
+    }
+
+    std::string init_prefix = prefix_sstr.str();
+    std::string scope_prefix = currentNs_->filePrefix() + init_prefix;
+    /** we have to move the initializer outside the function, which is annoying
+     *  to avoid name conflicts, we have to change the name of the initializer to
+     *  something unique */
+    PrettyPrinter new_init_pp;
+    new_init_pp.os << "static " << QualType::getAsString(D->getType().split())
+                  << " " << init_prefix << D->getNameAsString();
+    if (D->hasInit()){
+      new_init_pp.os << " = ";
+      new_init_pp.print(D->getInit());
+    }
+    new_init_pp.os << ";";
+    rewriter_.InsertText(insertLoc, new_init_pp.str());
+    //now that we have moved the initializer, we can do the replacement
+    //but the replacement should point to the new initializer
+    replaceGlobalVar(scope_prefix, init_prefix, insertLoc, D);
+    SourceLocation endLoc = getEndLoc(D);
+    SourceRange rng(D->getLocStart(), endLoc);
+    //while we're at it, might as well get rid of the old initializer
+    rewriter_.ReplaceText(rng, "");
+  }
+  return true;
+}
+
+bool
+ReplGlobalASTVisitor::checkStaticClassVar(VarDecl *D)
+{
+  errorAbort(D->getLocStart(), *ci_,
+             "cannot yet handle class static variables");
+  /**
+  if (D->isStaticDataMember()){
+    CXXRecordDecl* outerCls = class_contexts_.front();
+    SourceLocation insertLoc = outerCls->getLocEnd();
+    std::stringstream prefix_sstr;
+    for (CXXRecordDecl* cls : class_contexts_){
+      prefix_sstr << "_" << cls->getNameAsString();
+    }
+    return replaceGlobalVar(prefix_sstr.str(), "", insertLoc, D);
+  }
+  */
+  return true;
+}
+
+bool
+ReplGlobalASTVisitor::VisitVarDecl(VarDecl* D){
+
+  if (!shouldVisitDecl(D)){
+    return true;
+  }
+
+  if (reservedNames_.find(D->getNameAsString()) != reservedNames_.end()){
+    return true;
+  }
+
+  SourceLocation startLoc = D->getLocStart();
+  std::string filename = ci_->getSourceManager().getFilename(startLoc).str();
+
+  if (!currentNs_->isPrefixSet){
+    currentNs_->setFilePrefix(filename.c_str());
+  }
+
+  if (D->getNameAsString() == "sstmac_appname_str"){
+    const ImplicitCastExpr* expr1 = cast<const ImplicitCastExpr>(D->getInit());
+    const ImplicitCastExpr* expr2 = cast<const ImplicitCastExpr>(expr1->getSubExpr());
+    const StringLiteral* lit = cast<StringLiteral>(expr2->getSubExpr());
+    mainName_ = lit->getString();
+    return true;
+  }
+
+  if (insideClass()){
+    return checkStaticClassVar(D);
+  } else if (insideFxn()){
+    return checkStaticFxnVar(D);
+  } else if (D->getStorageClass() == StorageClass::SC_Static){
+    return checkStaticFileVar(D);
+  } else {
+    return checkGlobalVar(D);
+  }
 }
 
 void
@@ -478,25 +563,25 @@ ReplGlobalASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
   if (D->isThisDeclarationADefinition())
     VisitDecl(D); //check for pragmas on it
 
-  ++insideFxn_;
+  fxn_contexts_.push_back(D);
   if (!pragma_config_.skipNextStmt){
     TraverseStmt(D->getBody());
   } else {
     pragma_config_.skipNextStmt = false;
   }
-  --insideFxn_;
+  fxn_contexts_.pop_back();
   return true;
 }
 
 bool
 ReplGlobalASTVisitor::TraverseCXXRecordDecl(CXXRecordDecl *D)
 {
-  insideClass_++;
+  class_contexts_.push_back(D);
   auto end = D->decls_end();
   for (auto iter=D->decls_begin(); iter != end; ++iter){
     TraverseDecl(*iter);
   }
-  insideClass_--;
+  class_contexts_.pop_back();
   return true;
 }
 
@@ -543,12 +628,12 @@ ReplGlobalASTVisitor::TraverseCXXConstructorDecl(CXXConstructorDecl *D)
   if (D->isTemplateInstantiation())
     return true;
 
-  ++insideFxn_;
+  ++insideCxxMethod_;
   for (auto *I : D->inits()) {
     TraverseConstructorInitializer(I);
   }
   TraverseCXXMethodDecl(D);
-  --insideFxn_;
+  --insideCxxMethod_;
   return true;
 }
 
@@ -560,8 +645,7 @@ ReplGlobalASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
   if (D->isTemplateInstantiation())
     return true;
 
-  ++insideFxn_;
-
+  ++insideCxxMethod_;
   if (D->isThisDeclarationADefinition()) {
     VisitDecl(D); //check for pragmas
     if (!pragma_config_.skipNextStmt){
@@ -570,8 +654,7 @@ ReplGlobalASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
       pragma_config_.skipNextStmt = false;
     }
   }
-
-  --insideFxn_;
+  --insideCxxMethod_;
   return true;
 }
 
