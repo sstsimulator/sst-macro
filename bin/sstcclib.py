@@ -117,7 +117,6 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
 
   sysargs = sys.argv[1:]
 
-  srcFiles = False
   asmFiles = False
   givenFlags = []
   controlArgs = []
@@ -148,7 +147,6 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       givenFlags.append(sarg)
       optFlags.append(sarg)
     elif sarg.endswith('.cpp') or sarg.endswith('.cc') or sarg.endswith('.c') or sarg.endswith(".cxx"):
-      srcFiles = True
       sourceFiles.append(sarg)
     elif sarg.endswith('.S'):
       asmFiles = True
@@ -281,6 +279,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   controlArgStr = " ".join(controlArgs)
   extraCppFlagsStr = " ".join(extraCppFlags)
   givenFlagsStr = " ".join(givenFlags)
+  sourceFilesStr = " ".join(sourceFiles)
   #We need to separate specific flags 
   srcFileStr = " ".join(sourceFiles)
   ppCmdArr = [
@@ -292,6 +291,13 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     sstCppFlagsStr,
     sstCompilerFlagsStr, 
     "-E"
+  ]
+  sourceFileCompileFlags = [
+    sourceFilesStr,
+    sstCppFlagsStr,
+    extraCppFlagsStr,
+    givenFlagsStr,
+    sstCompilerFlagsStr
   ]
   if '-c' in sysargs or ppOnly:
     runClang = runClang and (not ppOnly)
@@ -317,8 +323,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     if not "fPIC" in allCompilerFlags:
       sys.stderr.write("Linker/dlopen will eventually fail on .so file: fPIC not in C/CXXFLAGS\n")
       return 1
-  elif objTarget and srcFiles:
-    runClang = True
+  elif objTarget and sourceFiles:
     cxxCmdArr = [
       compiler, 
       extraCppFlagsStr, 
@@ -326,7 +331,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       givenFlagsStr,
       sstCompilerFlagsStr, 
       givenFlagsStr,
-      args, 
+      sourceFilesStr,
       sstLdflagsStr, 
       extraLibsStr, 
       ldpathMaker
@@ -334,7 +339,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   else:
     if not ldTarget: ldTarget = "a.out"
     #linking executable/lib from object files (or source files)
-    runClang = srcFiles
+    runClang = runClang and sourceFiles
 
     if not sstCore:
       ldCmdArr = [
@@ -350,6 +355,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         ldTarget
       ]
       ldCmdArr.extend(linkerArgs)
+      if sourceFiles: 
+        ldCmdArr.extend(sourceFileCompileFlags)
     else:
       libTarget = ldTarget
       if not libTarget.endswith(".so"):
@@ -368,6 +375,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         "-o",
         libTarget
       ]
+      if sourceFiles: 
+        arCmdArr.extend(sourceFileCompileFlags)
       arCmdArr.extend(linkerArgs)
 
   clangExtraArgs = []
