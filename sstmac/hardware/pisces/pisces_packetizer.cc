@@ -1,13 +1,47 @@
-/*
- *  This file is part of SST/macroscale:
- *               The macroscale architecture simulator from the SST suite.
- *  Copyright (c) 2009 Sandia Corporation.
- *  This software is distributed under the BSD License.
- *  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- *  the U.S. Government retains certain rights in this software.
- *  For more information, see the LICENSE file in the top
- *  SST/macroscale directory.
- */
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
+
 #include <sstmac/hardware/pisces/pisces_packetizer.h>
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/hardware/network/network_message.h>
@@ -29,9 +63,6 @@ RegisterNamespaces("congestion_delays", "congestion_matrix");
 namespace sstmac {
 namespace hw {
 
-SpktRegister("cut_through | null", packetizer, pisces_cut_through_packetizer);
-SpktRegister("simple", packetizer, pisces_simple_packetizer);
-
 pisces_packetizer::pisces_packetizer(sprockit::sim_parameters* params,
                                      event_scheduler* parent) :
  inj_buffer_(nullptr),
@@ -50,7 +81,7 @@ pisces_packetizer::init(sprockit::sim_parameters* params, event_scheduler* paren
 {
   pisces_sender::configure_payload_port_latency(params);
   inj_buffer_ = new pisces_injection_buffer(params, parent);
-  inj_stats_ = packet_stats_callback_factory::
+  inj_stats_ = packet_stats_callback::factory::
                 get_optional_param("stats", "null", params, parent);
   inj_buffer_->set_stat_collector(inj_stats_);
 
@@ -60,10 +91,10 @@ pisces_packetizer::init(sprockit::sim_parameters* params, event_scheduler* paren
   ej_params->add_param_override("credit_latency", "0ns");
   ej_params->add_param_override("credits", 1<<30);
   ej_buffer_ = new pisces_eject_buffer(ej_params, parent);
-  ej_stats_ = packet_stats_callback_factory::
+  ej_stats_ = packet_stats_callback::factory::
                         get_optional_param("stats", "null", ej_params, parent);
 
-  pkt_allocator_ = packet_allocator_factory
+  pkt_allocator_ = packet_allocator::factory
       ::get_optional_param("packet_allocator", "pisces", params);
 
 
@@ -198,6 +229,3 @@ pisces_cut_through_packetizer::recv_packet(event* ev)
 
 }
 } // end of namespace sstmac.
-
-
-

@@ -10,7 +10,7 @@ dnl   SST/macroscale directory.
 dnl
 
 dnl Version info
-m4_define([SPROCKIT_VERSION_TAG], 1)
+m4_define([SPROCKIT_VERSION_TAG], 7)
 m4_define([SPROCKIT_SUBVERSION_TAG], 0)
 m4_define([SPROCKIT_SUBSUBVERSION_TAG], 0)
 # Enable this for releases
@@ -27,7 +27,7 @@ dnl     subversion B (backward compatible for all A:X where X <= B)
 dnl     and A is backward compatible to major version A-C
 dnl which means that C <= A,
 dnl and C == 0 means no major-version backward compatibility.
-m4_define([SPROCKIT_MAJOR_LIBVERS], 3)
+m4_define([SPROCKIT_MAJOR_LIBVERS], 7)
 m4_define([SPROCKIT_MINOR_LIBVERS], 0)
 m4_define([SPROCKIT_BACKW_LIBVERS], 0)
 m4_define([SPROCKIT_LIBVERSION_TAG],
@@ -144,13 +144,11 @@ AC_CONFIG_FILES([
 ])
 AC_OUTPUT
 
-echo "Configuration Summary:"
+echo "SProCKit Configuration Summary:"
 echo "---------------------------------------------------------------"
 echo "Install prefix     $prefix"
 echo "C compiler         $CC"
 echo "C++ compiler       $CXX"
-echo "Enable C++11       $enable_cpp11"
-echo "Preset CXXFLAGS    $with_parent_cxxflags"
 
 if test "X$with_external_boost" = "Xno"; then
 echo "Boost              None"
@@ -168,7 +166,6 @@ if test "X$enable_regexp" = "Xno"; then
 echo "Regex              None"
 fi
 
-echo "Darwin OS?         $darwin"
 echo "CFLAGS             $CFLAGS"
 echo "CXXFLAGS           $CXXFLAGS"
 echo "CPPFLAGS           $CPPFLAGS"

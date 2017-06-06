@@ -46,25 +46,31 @@ def runCmdArr(cmdArr,verbose):
   else:
     return 0
 
-def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=True):
+def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=True):
+  extraLibsStr = extraLibs
+  extraLibs = extraLibs.split()
   import os
   import sys
   from configlib import getstatusoutput
-  from sstccvars import sstmac_default_ldflags, sstmac_extra_ldflags, sstmac_cppflags
-  from sstccvars import prefix, exec_prefix, includedir, cc, cxx, cxxflags, cflags
-  from sstccvars import includedir
-  from sstccvars import sst_core
-  from sstccvars import so_flags
-  from sstccvars import clang_cppflags, clang_ldflags, clang_libtooling_cxxflags, clang_libtooling_cflags
+  from sstccvars import sstLdFlags, sstCppFlags
+  from sstccvars import prefix, execPrefix, includeDir, cc, cxx
+  from sstccvars import sstCxxFlagsStr, sstCFlagsStr
+  from sstccvars import includeDir
+  from sstccvars import sstCore
+  from sstccvars import soFlagsStr
+  from sstccvars import clangCppFlagsStr, clangLdFlagsStr
+  from sstccvars import clangLibtoolingCxxFlagsStr, clangLibtoolingCFlagsStr
 
   def cleanFlag(flag):
-    return flag.replace("${includedir}", includedir).replace("${exec_prefix}", exec_prefix).replace("${prefix}",prefix)
+    return flag.replace("${includedir}", includeDir).replace("${exec_prefix}", execPrefix).replace("${prefix}",prefix)
 
-  sstmac_libs = [
-  '-lsprockit',
-  '-lundumpi',
-  '-lsstmac',
-  ]
+  sstLibs = []
+  if not sstCore:
+    sstLibs = [
+      '-lsstmac',
+      '-lsprockit',
+      '-lundumpi',
+    ]
 
 
   clangCppArgs = [
@@ -74,7 +80,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     "-std=c++1y",
     "-stdlib=libc++", 
   ]
-  clangCxxArgs.extend(clang_libtooling_cxxflags.strip().split())
+  clangCxxArgs.extend(clangLibtoolingCxxFlagsStr.strip().split())
 
   verbose = False
   delTempFiles = True
@@ -85,43 +91,41 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     flag = int(os.environ["SSTMAC_DELETE_TEMPS"])
     delTempFiles = delTempFiles and flag
 
-  haveClangSrcToSrc = bool(clang_cppflags)
+  haveClangSrcToSrc = bool(clangCppFlagsStr)
   clangDeglobal = None
   if haveClangSrcToSrc:
     clangDeglobal = os.path.join(prefix, "bin", "sstmac_clang_deglobal")
 
 
-  new_cppflags = []
-  for entry in sstmac_cppflags:
-    new_cppflags.append(cleanFlag(entry))
-  sstmac_cppflags = new_cppflags
+  newCppFlags = []
+  for entry in sstCppFlags:
+    newCppFlags.append(cleanFlag(entry))
+  sstCppFlags = newCppFlags
 
-  sstmac_ldflags = []
-  for entry in sstmac_default_ldflags:
-    sstmac_ldflags.append(cleanFlag(entry))
-  for entry in sstmac_libs:
-    sstmac_ldflags.append(cleanFlag(entry))
+  newLdFlags = []
+  for entry in sstLdFlags:
+    newLdFlags.append(cleanFlag(entry))
+  for entry in sstLibs:
+    newLdFlags.append(cleanFlag(entry))
+  sstLdFlags = newLdFlags
 
-  sstCppFlagsStr=" ".join(sstmac_cppflags)
-  ldflagsStr =  " ".join(sstmac_ldflags)
+  sstCppFlagsStr=" ".join(sstCppFlags)
+  sstLdFlagsStr =  " ".join(sstLdFlags)
   ld = cc 
-  repldir = os.path.join(includedir, "sstmac", "replacements")
+  repldir = os.path.join(includeDir, "sstmac", "replacements")
   repldir = cleanFlag(repldir)
 
   sysargs = sys.argv[1:]
 
-
-  srcFiles = False
   asmFiles = False
   givenFlags = []
-  givenCompilerFlags = []
   controlArgs = []
   linkerArgs = []
   sourceFiles = []
   objectFiles = []
   optFlags = []
   objTarget = None
-  exeTarget = None
+  ldTarget = None
   getObjTarget = False
   for arg in sysargs:
     sarg = arg.strip().strip("'")
@@ -137,11 +141,12 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     elif sarg.startswith("-l"):
       linkerArgs.append(sarg)
     elif sarg.startswith("-O"):
-      givenCompilerFlags.append(sarg)
+      givenFlags.append(sarg)
+      optFlags.append(sarg)
     elif sarg == "-g":
-      givenCompilerFlags.append(sarg)
+      givenFlags.append(sarg)
+      optFlags.append(sarg)
     elif sarg.endswith('.cpp') or sarg.endswith('.cc') or sarg.endswith('.c') or sarg.endswith(".cxx"):
-      srcFiles = True
       sourceFiles.append(sarg)
     elif sarg.endswith('.S'):
       asmFiles = True
@@ -152,14 +157,14 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     elif sarg in ('-o',):
       getObjTarget=True
     elif getObjTarget:
-      exeTarget = sarg
+      ldTarget = sarg
       getObjTarget=False
     else:
       givenFlags.append(sarg)
 
   exeFromSrc = sourceFiles and not objectFiles
 
-  if sst_core:
+  if sstCore:
     givenFlags.append(" -DSSTMAC_EXTERNAL_SKELETON")
 
   if sourceFiles and len(objectFiles) > 1:
@@ -185,9 +190,9 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     os.system(cmd)
     sys.exit()
   elif sys.argv[1] == "--flags":
-    sys.stderr.write("LDFLAGS=%s\n" % ldflagsStr)
+    sys.stderr.write("LDFLAGS=%s\n" % sstLdFlagsStr)
     sys.stderr.write("CPPFLAGS=%s\n" % sstCppFlagsStr)
-    sys.stderr.write("CXXFLAGS=%s\n" % cxxflags)
+    sys.stderr.write("CXXFLAGS=%s\n" % sstCxxFlagsStr)
     sys.exit()
   elif sys.argv[1] == "--help":
     cmd = "%s --help" % (cxx)
@@ -195,53 +200,53 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     sys.stderr.write(helpText)
     sys.exit()
 
-  compilerFlagsStr = ""
+  sstCompilerFlagsStr = ""
   compiler = ""
   cxxCmd = ""
   if includeMain:
-    extralibs += " -lsstmac_main"
+    extraLibsStr += " -lsstmac_main"
   #always c++ no matter what for now
   if typ.lower() == "c++":
-    compilerFlagsStr = cleanFlag(cxxflags)
+    sstCompilerFlagsStr = cleanFlag(sstCxxFlagsStr)
     compiler = cxx
     ld = cxx
   elif typ.lower() == "c":
-    compilerFlagsStr = cleanFlag(cflags)
+    sstCompilerFlagsStr = cleanFlag(sstCFlagsStr)
     compiler = cc
     ld = cxx #always use c++ for linking since we are bringing a bunch of sstmac C++ into the game
 
-  compilerFlags = []
-  for flag in compilerFlagsStr.split():
+  sstCompilerFlags = []
+  for flag in sstCompilerFlagsStr.split():
     if not flag.startswith("-O") and not flag == "-g":
-      compilerFlags.append(flag)
-  compilerFlagsStr = " ".join(compilerFlags)
+      sstCompilerFlags.append(flag)
+  sstCompilerFlagsStr = " ".join(sstCompilerFlags)
 
-  cxxFlagsStr = cleanFlag(cxxflags)
-  cxxFlags = []
-  for flag in cxxFlagsStr.split():
+  sstCxxFlagsStr = cleanFlag(sstCxxFlagsStr)
+  sstCxxFlags = []
+  for flag in sstCxxFlagsStr.split():
     if not flag.startswith("-O") and not flag == "-g":
-      cxxFlags.append(flag)
-  cxxFlagsStr = " ".join(cxxFlags)
+      sstCxxFlags.append(flag)
+  sstCxxFlagsStr = " ".join(sstCxxFlags)
     
-  cFlagsStr = cleanFlag(cflags)
-  cFlags = []
-  for flag in cxxFlagsStr.split():
+  sstCFlagsStr = cleanFlag(sstCFlagsStr)
+  sstCFlags = []
+  for flag in sstCFlagsStr.split():
     if not flag.startswith("-O") and not flag == "-g":
-      cFlags.append(flag)
-  cFlagsStr = " ".join(cxxFlags)
+      sstCFlags.append(flag)
+  sstCFlagsStr = " ".join(sstCFlags)
 
   objectFilesStr = " ".join(objectFiles)
 
-  compilerFlagsArr = compilerFlagsStr.split()
-  compilerFlags = []
-  for entry in compilerFlagsArr:
+  sstCompilerFlagsArr = sstCompilerFlagsStr.split()
+  sstCompilerFlags = []
+  for entry in sstCompilerFlagsArr:
     if entry[:2] == "-O": #do not send optimization flags forward
       pass
     elif entry == "-g": #do not send debug flags forward
       pass
     else:
-      compilerFlags.append(entry)
-  compilerFlagsStr = " ".join(compilerFlags)
+      sstCompilerFlags.append(entry)
+  sstCompilerFlagsStr = " ".join(sstCompilerFlags)
 
   directIncludesStr = " ".join(directIncludes)
 
@@ -274,7 +279,8 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   controlArgStr = " ".join(controlArgs)
   extraCppFlagsStr = " ".join(extraCppFlags)
   givenFlagsStr = " ".join(givenFlags)
-  givenCompilerFlagsStr = " ".join(givenCompilerFlags)
+  sourceFilesStr = " ".join(sourceFiles)
+  #We need to separate specific flags 
   srcFileStr = " ".join(sourceFiles)
   ppCmdArr = [
     compiler, 
@@ -282,10 +288,16 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     directIncludesStr,
     extraCppFlagsStr, 
     givenFlagsStr,
-    givenCompilerFlagsStr,
     sstCppFlagsStr,
-    compilerFlagsStr, 
+    sstCompilerFlagsStr, 
     "-E"
+  ]
+  sourceFileCompileFlags = [
+    sourceFilesStr,
+    sstCppFlagsStr,
+    extraCppFlagsStr,
+    givenFlagsStr,
+    sstCompilerFlagsStr
   ]
   if '-c' in sysargs or ppOnly:
     runClang = runClang and (not ppOnly)
@@ -294,68 +306,78 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       #only put cxxflags in the cmd arr for now
       cxxCmdArr = [
         compiler,
-        compilerFlagsStr,
-        givenCompilerFlagsStr
+        sstCompilerFlagsStr,
+        givenFlagsStr
       ]
     else: 
       cxxCmdArr = [
         compiler, 
         extraCppFlagsStr, 
         givenFlagsStr,
-        givenCompilerFlagsStr,
         sstCppFlagsStr, 
-        compilerFlagsStr, 
+        sstCompilerFlagsStr, 
         controlArgStr,
         srcFileStr
       ]
-  elif objTarget and srcFiles:
-    runClang = True
+    allCompilerFlags = sstCxxFlagsStr + sstCppFlagsStr + givenFlagsStr
+    if not "fPIC" in allCompilerFlags:
+      sys.stderr.write("Linker/dlopen will eventually fail on .so file: fPIC not in C/CXXFLAGS\n")
+      return 1
+  elif objTarget and sourceFiles:
     cxxCmdArr = [
       compiler, 
       extraCppFlagsStr, 
       sstCppFlagsStr, 
       givenFlagsStr,
-      compilerFlagsStr, 
-      givenCompilerFlagsStr,
-      args, 
-      ldflagsStr, 
-      compilerFlagsStr,
-      extralibs, 
+      sstCompilerFlagsStr, 
+      givenFlagsStr,
+      sourceFilesStr,
+      sstLdflagsStr, 
+      extraLibsStr, 
       ldpathMaker
     ]
   else:
-    if not exeTarget: exeTarget = "a.out"
+    if not ldTarget: ldTarget = "a.out"
     #linking executable/lib from object files (or source files)
-    runClang = srcFiles
+    runClang = runClang and sourceFiles
 
-    if "fPIC" in cxxflags or "fPIC" in sstCppFlagsStr:
-      arCmdArr = [
-        ld,
-        so_flags,
-        objectFilesStr,
-        ldflagsStr,
-        givenFlagsStr,
-        compilerFlagsStr,
-        ldpathMaker,
-        "-o",
-        "lib" + exeTarget + ".so",
-      ]
-      arCmdArr.extend(linkerArgs)
-
-    if not sst_core:
+    if not sstCore:
       ldCmdArr = [
         ld,
         objectFilesStr,
-        extralibs,
-        ldflagsStr, 
+        extraLibsStr,
+        sstLdFlagsStr, 
         givenFlagsStr,
-        compilerFlagsStr,
-        extralibs, 
+        sstCompilerFlagsStr,
+        extraLibsStr, 
         ldpathMaker,
         "-o",
-        exeTarget
+        ldTarget
       ]
       ldCmdArr.extend(linkerArgs)
+      if sourceFiles: 
+        ldCmdArr.extend(sourceFileCompileFlags)
+    else:
+      libTarget = ldTarget
+      if not libTarget.endswith(".so"):
+        libTarget += ".so"
+      if not libTarget.startswith("lib"):
+        libTarget = "lib" + libTarget
+
+      arCmdArr = [
+        ld,
+        soFlagsStr,
+        objectFilesStr,
+        sstLdFlagsStr,
+        givenFlagsStr,
+        sstCompilerFlagsStr,
+        ldpathMaker,
+        "-o",
+        libTarget
+      ]
+      if sourceFiles: 
+        arCmdArr.extend(sourceFileCompileFlags)
+      arCmdArr.extend(linkerArgs)
 
   clangExtraArgs = []
   if runClang:
@@ -370,6 +392,8 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       if verbose: sys.stderr.write("%s\n" % ppCmd)
       rc = os.system(ppCmd)
       if not rc == 0:
+        if delTempFiles:
+          os.system("rm -f %s" % ppTmpFile)  
         return rc
 
       srcRepl = addPrefix("sst.pp.",srcFile)
@@ -378,9 +402,9 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       clangCmdArr = [clangDeglobal]
       if typ == "c++":
         addClangArgs(clangCxxArgs, clangCmdArr)
-        addClangArgs(clang_libtooling_cxxflags.split(), clangCmdArr)
+        addClangArgs(clangLibtoolingCxxFlagsStr.split(), clangCmdArr)
       else:
-        addClangArg(clang_libtooling_cflags, clangCmdArr)
+        addClangArg(clangLibtoolingCFlagsStr, clangCmdArr)
       clangCmdArr.append(ppTmpFile)
       clangCmdArr.append("--")
       clangCmd = " ".join(clangCmdArr)
@@ -400,8 +424,8 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         compiler, 
         extraCppFlagsStr, 
         sstCppFlagsStr, 
-        compilerFlagsStr, 
-        givenCompilerFlagsStr
+        sstCompilerFlagsStr, 
+        givenFlagsStr
       ]
       srcTformObjFile = swapSuffix("o", srcRepl)
       if objTarget:
@@ -417,6 +441,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       if not rc == 0:
         if delTempFiles:
           os.system("rm -f %s" % ppTmpFile)
+          os.system("rm -f %s" % srcRepl)
           os.system("rm -f %s" % srcTformObjFile)
           os.system("rm -f %s" % cxxInitSrcFile)
         return rc
@@ -426,7 +451,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       cxxInitObjFile = addPrefix("sstGlobals.",srcFile) + ".o"
       cxxInitCmdArr = [
         cxx,
-        cxxFlagsStr,
+        sstCxxFlagsStr,
         sstCppFlagsStr,
         "-o",
         cxxInitObjFile,
@@ -443,7 +468,7 @@ def run(typ, extralibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         return rc
 
 
-    #some idiots generate multiple .o files at once
+    #some generate multiple .o files at once, I don't know why
     manyObjects = objTarget == None #no specific target specified
     mergeCmdArr = [compiler]
     mergeCmdArr.append("-Wl,-r -nostdlib")

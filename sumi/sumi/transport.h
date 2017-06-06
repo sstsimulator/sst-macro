@@ -1,3 +1,47 @@
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
+
 #ifndef sumi_api_TRANSPORT_H
 #define sumi_api_TRANSPORT_H
 
@@ -27,7 +71,7 @@ namespace sumi {
 
 class transport
 {
-
+  DeclareFactory(transport)
  public:
   class notify_callback {
    public:
@@ -53,14 +97,11 @@ class transport
 
   virtual ~transport();
 
-  virtual void
-  init();
+  virtual void init();
   
-  virtual void
-  finish();
+  virtual void finish();
 
-  void
-  deadlock_check();
+  void deadlock_check();
 
   /**
    Send a message directly to a destination node.
@@ -70,8 +111,7 @@ class transport
    * @param needs_ack   Whether an ack should be generated notifying that the message was fully injected
    * @param msg         The message to send (full message at the MTL layer)
    */
-  void
-  smsg_send(int dst,
+  void smsg_send(int dst,
      message::payload_type_t ev,
      const message::ptr& msg,
      bool needs_ack = false);
@@ -81,16 +121,14 @@ class transport
    * @param dst
    * @param msg
    */
-  void
-  send_header(int dst, const message::ptr& msg, bool needs_ack = false);
+  void send_header(int dst, const message::ptr& msg, bool needs_ack = false);
 
   /**
    Helper function for #smsg_send. Directly send an actual data payload.
    * @param dst
    * @param msg
    */
-  void
-  send_payload(int dst, const message::ptr& msg, bool needs_ack = false);
+  void send_payload(int dst, const message::ptr& msg, bool needs_ack = false);
 
   /**
    Put a message directly to the destination node.
@@ -99,8 +137,7 @@ class transport
    * @param msg      The message to send (full message at the MTL layer).
    *                 Should have local/remote buffers configured for RDMA.
    */
-  void
-  rdma_put(int dst, const message::ptr& msg);
+  void rdma_put(int dst, const message::ptr& msg);
 
   /**
    Put a message directly to the destination node.
@@ -111,8 +148,7 @@ class transport
    * @param needs_send_ack  Whether an ack should be generated send-side when the message is fully injected
    * @param needs_recv_ack  Whether an ack should be generated recv-side when the message is fully received
    */
-  void
-  rdma_put(
+  void rdma_put(
     int dst,
     const message::ptr &msg,
     bool needs_send_ack,
@@ -125,8 +161,7 @@ class transport
    * @param msg      The message to get (full message at the MTL layer).
    *                 Should have local/remote buffers configured for RDMA.
    */
-  void
-  rdma_get(int src, const message::ptr& msg);
+  void rdma_get(int src, const message::ptr& msg);
 
   /**
    Get a message directly from the source node.
@@ -137,18 +172,15 @@ class transport
    * @param needs_send_ack  Whether an ack should be generated send-side (source) when the message is fully injected
    * @param needs_recv_ack  Whether an ack should be generated recv-side when the message is fully received
    */
-  void
-  rdma_get(
+  void rdma_get(
     int src,
     const message::ptr &msg,
     bool needs_send_ack,
     bool needs_recv_ack);
 
-  virtual void
-  free_eager_buffer(const message::ptr& msg);
+  virtual void free_eager_buffer(const message::ptr& msg);
 
-  void
-  nvram_get(int src, const message::ptr& msg);
+  void nvram_get(int src, const message::ptr& msg);
   
   /**
    Check if a message has been received. Return immediately even if empty queue.
@@ -156,8 +188,7 @@ class transport
    Successive calls to the function do NOT return the same message.
    @return    The next message to be received, null if no messages
   */
-  message::ptr
-  poll(bool blocking, double timeout = -1);
+  message::ptr poll(bool blocking, double timeout = -1);
 
   /**
    Block until a message is received.
@@ -167,8 +198,7 @@ class transport
    @param timeout   Timeout in seconds
    @return          The next message to be received. Message is NULL on timeout
   */
-  message::ptr
-  blocking_poll(double timeout = -1);
+  message::ptr blocking_poll(double timeout = -1);
 
   template <class T>
   typename T::ptr
@@ -196,55 +226,44 @@ class transport
 #define SUMI_POLL_TIME(tport, msgtype, to) tport->poll<msgtype>(to, __FILE__, __LINE__, #msgtype)
 
 
-  message::ptr
-  blocking_poll(message::payload_type_t);
+  message::ptr blocking_poll(message::payload_type_t);
 
-  virtual message::ptr
-  poll_pending_messages(bool blocking, double timeout) = 0;
+  virtual message::ptr poll_pending_messages(bool blocking, double timeout) = 0;
 
-  bool
-  use_eager_protocol(long byte_length) const {
+  bool use_eager_protocol(long byte_length) const {
     return byte_length < eager_cutoff_;
   }
 
-  void
-  set_eager_cutoff(long bytes) {
+  void set_eager_cutoff(long bytes) {
     eager_cutoff_ = bytes;
   }
 
-  bool
-  use_put_protocol() const {
+  bool use_put_protocol() const {
     return use_put_protocol_;
   }
 
-  bool
-  use_get_protocol() const {
+  bool use_get_protocol() const {
     return !use_put_protocol_;
   }
 
-  void
-  set_put_protocol(bool flag) {
+  void set_put_protocol(bool flag) {
     use_put_protocol_ = flag;
   }
 
-  void
-  set_use_hardware_ack(bool flag);
+  void set_use_hardware_ack(bool flag);
 
-  virtual bool
-  supports_hardware_ack() const {
+  virtual bool supports_hardware_ack() const {
     return false;
   }
   
-  virtual void
-  init_spares(int nspares);
+  virtual void init_spares(int nspares);
 
   /**
    * Cancel a currently active ping
    * @param dst
    * @param func
    */
-  void
-  cancel_ping(int dst, timeout_function* func);
+  void cancel_ping(int dst, timeout_function* func);
 
   /**
     @param dst The neighbor
@@ -252,8 +271,7 @@ class transport
                 or NACK received
     @return True if the dst node is already known to be failed. False if not.
   */
-  bool
-  ping(int dst, timeout_function* func);
+  bool ping(int dst, timeout_function* func);
 
   /**
    * @brief watch Wait on heartbeat notifcations for failures on this node.
@@ -262,26 +280,19 @@ class transport
    * @param func
    * @return True if the dst node is already known to be failed. False if not.
    */
-  bool
-  start_watching(int dst, timeout_function* func);
+  bool start_watching(int dst, timeout_function* func);
 
-  void
-  stop_watching(int dst, timeout_function* func);
+  void stop_watching(int dst, timeout_function* func);
 
-  void
-  send_self_terminate();
+  void send_self_terminate();
 
-  void
-  send_terminate(int rank);
+  void send_terminate(int rank);
 
-  virtual double
-  wall_time() const = 0;
+  virtual double wall_time() const = 0;
 
-  void
-  send_ping_request(int dst);
+  void send_ping_request(int dst);
 
-  void
-  renew_pings();
+  void renew_pings();
   
   /**
    * Start regular heartbeat (i.e. vote) collectives going
@@ -433,45 +444,37 @@ class transport
    * @param tag
    * @param fault_aware
    */
-  void
-  barrier(int tag, bool fault_aware = false, communicator* dom = nullptr);
+  void barrier(int tag, bool fault_aware = false, communicator* dom = nullptr);
 
-  void
-  bcast(int root, void* buf, int nelems, int type_size, int tag, bool fault_aware,
+  void bcast(int root, void* buf, int nelems, int type_size, int tag, bool fault_aware,
         int context=options::initial_context, communicator* dom=nullptr);
   
   void system_bcast(const message::ptr& msg);
 
-  int 
-  rank() const {
+  int rank() const {
     return rank_;
   }
 
-  int 
-  nproc() const {
+  int nproc() const {
     return nproc_;
   }
 
-  int 
-  nproc_alive() const {
+  int nproc_alive() const {
     return nproc_ - failed_ranks_.size();
   }
 
-  int 
-  nproc_failed() const {
+  int nproc_failed() const {
     return failed_ranks_.size();
   }
 
-  communicator*
-  global_dom() const;
+  communicator* global_dom() const;
 
   /**
    * The cutoff for message size in bytes
    * for switching between an eager protocol and a rendezvous RDMA protocol
    * @return
    */
-  int
-  eager_cutoff() const {
+  int eager_cutoff() const {
     return eager_cutoff_;
   }
   
@@ -482,87 +485,67 @@ class transport
    * @throw If the context is unknown - i.e. no vote has executed with that tag number
    * @return The set of failed procs
    */
-  const thread_safe_set<int>&
-  failed_ranks(int context) const;
+  const thread_safe_set<int>& failed_ranks(int context) const;
 
-  const thread_safe_set<int>&
-  failed_ranks() const {
+  const thread_safe_set<int>& failed_ranks() const {
     return failed_ranks_;
   }
 
-  void
-  clear_failures() {
+  void clear_failures() {
     failed_ranks_.clear();
   }
 
-  void
-  declare_failed(int rank){
+  void declare_failed(int rank){
     failed_ranks_.insert(rank);
   }
 
-  bool
-  is_failed(int rank) const {
+  bool is_failed(int rank) const {
     return failed_ranks_.count(rank);
   }
 
-  bool
-  is_alive(int rank) const {
+  bool is_alive(int rank) const {
     return failed_ranks_.count(rank) == 0;
   }
   
-  virtual void
-  delayed_transport_handle(const message::ptr& msg) = 0;
+  virtual void delayed_transport_handle(const message::ptr& msg) = 0;
 
-  virtual void
-  cq_notify() = 0;
+  virtual void cq_notify() = 0;
   
-  void
-  die();
+  void die();
 
-  void
-  revive();
+  void revive();
 
-  bool
-  is_dead() const {
+  bool is_dead() const {
     return is_dead_;
   }
 
-  void
-  notify_collective_done(const collective_done_message::ptr& msg);
+  void notify_collective_done(const collective_done_message::ptr& msg);
   
-  virtual void
-  schedule_ping_timeout(pinger* pnger, double to) = 0;
+  virtual void schedule_ping_timeout(pinger* pnger, double to) = 0;
   
-  virtual void
-  schedule_next_heartbeat() = 0;
+  virtual void schedule_next_heartbeat() = 0;
 
   /**
    * Execute the next heartbeat. This figures out the next tag and prev context
    * and then calls #do_heartbeat
    */
-  void 
-  next_heartbeat();  
+  void next_heartbeat();
 
-  void
-  handle(const message::ptr& msg);
+  void handle(const message::ptr& msg);
 
-  virtual public_buffer
-  allocate_public_buffer(int size) {
+  virtual public_buffer allocate_public_buffer(int size) {
     return public_buffer(::malloc(size));
   }
 
-  virtual public_buffer
-  make_public_buffer(void* buffer, int size) {
+  virtual public_buffer make_public_buffer(void* buffer, int size) {
     return public_buffer(buffer);
   }
 
-  virtual void
-  unmake_public_buffer(public_buffer buf, int size) {
+  virtual void unmake_public_buffer(public_buffer buf, int size) {
     //nothing to do
   }
 
-  virtual void
-  free_public_buffer(public_buffer buf, int size) {
+  virtual void free_public_buffer(public_buffer buf, int size) {
     ::free(buf.ptr);
   }
 
@@ -574,112 +557,83 @@ class transport
    * @param dst
    * @param msg
    */
-  void
-  send_rdma_header(int dst, const message::ptr& msg);
+  void send_rdma_header(int dst, const message::ptr& msg);
 
-  void
-  send(int dst, const message::ptr& msg);
+  void send(int dst, const message::ptr& msg);
 
-  void
-  send_unexpected_rdma(int dst, const message::ptr& msg);
+  void send_unexpected_rdma(int dst, const message::ptr& msg);
 
-  void
-  set_callback(notify_callback* cb){
+  void set_callback(notify_callback* cb){
     notify_cb_ = cb;
   }
 
-  void
-  unset_callback(){
+  void unset_callback(){
     notify_cb_ = 0;
   }
 
  protected:
-  void
-  start_transaction(const message::ptr& msg);
+  void start_transaction(const message::ptr& msg);
 
-  void
-  clean_up();
+  void clean_up();
 
-  void
-  handle_unexpected_rdma_header(const message::ptr& msg);
+  void handle_unexpected_rdma_header(const message::ptr& msg);
 
-  message::ptr
-  finish_transaction(int tid);
+  message::ptr finish_transaction(int tid);
 
-  void
-  configure_send(int dst,
+  void configure_send(int dst,
     message::payload_type_t ev,
     const message::ptr& msg);
 
-  virtual void
-  do_smsg_send(int dst, const message::ptr& msg) = 0;
+  virtual void do_smsg_send(int dst, const message::ptr& msg) = 0;
 
-  virtual void
-  do_rdma_put(int dst, const message::ptr& msg) = 0;
+  virtual void do_rdma_put(int dst, const message::ptr& msg) = 0;
 
-  virtual void
-  do_rdma_get(int src, const message::ptr& msg) = 0;
+  virtual void do_rdma_get(int src, const message::ptr& msg) = 0;
 
-  virtual void
-  do_nvram_get(int src, const message::ptr& msg) = 0;
+  virtual void do_nvram_get(int src, const message::ptr& msg) = 0;
 
-  virtual void
-  do_send_terminate(int dst) = 0;
+  virtual void do_send_terminate(int dst) = 0;
 
-  virtual void
-  do_send_ping_request(int dst) = 0;
+  virtual void do_send_ping_request(int dst) = 0;
 
-  virtual void
-  go_die() = 0;
+  virtual void go_die() = 0;
 
-  virtual void
-  go_revive() = 0;
+  virtual void go_revive() = 0;
 
   /* Has default behavior */
-  void
-  operation_done(const message::ptr& msg);
+  void operation_done(const message::ptr& msg);
 
  private:  
-  bool
-  is_heartbeat(const collective_done_message::ptr& dmsg) const {
+  bool is_heartbeat(const collective_done_message::ptr& dmsg) const {
     return dmsg->tag() >= heartbeat_tag_start_ && dmsg->tag() <= heartbeat_tag_stop_;
   }
 
-  void 
-  finish_collective(collective* coll, const collective_done_message::ptr& dmsg);
+  void finish_collective(collective* coll, const collective_done_message::ptr& dmsg);
 
-  void 
-  start_collective(collective* coll);
+  void start_collective(collective* coll);
 
   /**
    * Helper function for doing operations necessary to close out a heartbeat
    * @param dmsg
    */
-  void 
-  vote_done(const collective_done_message::ptr& dmsg);
+  void vote_done(const collective_done_message::ptr& dmsg);
 
-  void 
-  validate_collective(collective::type_t ty, int tag);
+  void validate_collective(collective::type_t ty, int tag);
 
-  void 
-  deliver_pending(collective* coll, int tag, collective::type_t ty);
+  void deliver_pending(collective* coll, int tag, collective::type_t ty);
 
   /**
    * Actually do the work of executing a heartbeat
    * @param prev_context The context number for the last successful heartbeat
    */
-  void 
-  do_heartbeat(int prev_context);  
-
+  void do_heartbeat(int prev_context);
   
  protected:
   transport(sprockit::sim_parameters* params);
   
-  void
-  validate_api();
+  void validate_api();
 
-  void
-  fail_watcher(int dst);
+  void fail_watcher(int dst);
 
   void lock();
 
@@ -694,8 +648,7 @@ class transport
   void end_function();
 
  private:  
-  bool
-  skip_collective(collective::type_t ty,
+  bool skip_collective(collective::type_t ty,
     communicator*& dom,
     void* dst, void *src,
     int nelems, int type_size,
@@ -787,8 +740,7 @@ class transport
   thread_safe_int<uint32_t> recovery_lock_;
 
  private:
-  void
-  poll_cast_error(const char* file, int line, const char* cls, const message::ptr& msg){
+  void poll_cast_error(const char* file, int line, const char* cls, const message::ptr& msg){
     spkt_throw_printf(sprockit::value_error,
        "Could not cast incoming message to type %s\n"
        "Got %s\n"
@@ -819,8 +771,6 @@ class transport
   virtual void start_collective_sync_delays(){}
 #endif
 };
-
-DeclareFactory(transport);
 
 template <class MsgType, class T, class Fxn>
 transport::notify_callback*

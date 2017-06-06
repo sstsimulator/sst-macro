@@ -1,13 +1,46 @@
-/*
- *  This file is part of SST/macroscale:
- *               The macroscale architecture simulator from the SST suite.
- *  Copyright (c) 2009 Sandia Corporation.
- *  This software is distributed under the BSD License.
- *  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- *  the U.S. Government retains certain rights in this software.
- *  For more information, see the LICENSE file in the top
- *  SST/macroscale directory.
- */
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
 
 #ifndef SSTMAC_SOFTWARE_PROCESS_operatingsystem_H_INCLUDED
 #define SSTMAC_SOFTWARE_PROCESS_operatingsystem_H_INCLUDED
@@ -76,13 +109,11 @@ class operating_system :
 
   virtual ~operating_system();
 
-  std::string
-  to_string() const {
+  std::string to_string() const {
     return "operating system";
   }
 
-  static inline os_thread_context&
-  static_os_thread_context(){
+  static inline os_thread_context& static_os_thread_context(){
   #if SSTMAC_USE_MULTITHREAD
     int thr = thread_info::current_physical_thread_id();
     return os_thread_contexts_[thr];
@@ -91,29 +122,21 @@ class operating_system :
   #endif
   }
 
-  static void
-  delete_statics();
+  static void delete_statics();
 
-  static void
-  switch_to_context(int aid, int tid);
+  static void switch_to_context(int aid, int tid);
 
-  static operating_system*
-  current_os();
+  static operating_system* current_os();
 
-  static app_id
-  current_aid();
+  static app_id current_aid();
 
-  static task_id
-  current_tid();
+  static task_id current_tid();
 
-  static library*
-  current_library(const std::string& name);
+  static library* current_library(const std::string& name);
 
-  static node_id
-  current_node_id();
+  static node_id current_node_id();
 
-  static node_id
-  remote_node(int tid);
+  static node_id remote_node(int tid);
 
   /**
    * @brief execute Execute a compute function.
@@ -126,8 +149,7 @@ class operating_system :
    * @param cat   An optional category labeling the type of
    *              operation
    */
-  void
-  execute(ami::COMP_FUNC, event* data, key_traits::category cat);
+  void execute(ami::COMP_FUNC, event* data, key_traits::category cat);
 
   /**
    * @brief execute Execute a communication function.
@@ -137,8 +159,7 @@ class operating_system :
    * use execute_kernel
    * @param data  Event carrying all the data describing the compute
    */
-  void
-  execute(ami::COMM_FUNC func, message* data){
+  void execute(ami::COMM_FUNC func, message* data){
     return execute_kernel(func, data);
   }
 
@@ -162,8 +183,7 @@ class operating_system :
    * @param data  Event carrying all the data describing the compute
    * @param cb    The callback to invoke when the kernel is complete
    */
-  void
-  execute_kernel(ami::COMP_FUNC func,
+  void execute_kernel(ami::COMP_FUNC func,
                  event* data,
                  callback* cb);
   /**
@@ -176,103 +196,75 @@ class operating_system :
    * @param func  The function to perform
    * @param data  Event carrying all the data describing the compute
    */
-  void
-  async_kernel(ami::SERVICE_FUNC func,
-               event* data);
+  void async_kernel(ami::SERVICE_FUNC func, event* data);
 
-  static void
-  stack_check();
+  static void stack_check();
   
-  timestamp
-  block(key* req);
+  timestamp block(key* req);
 
-  timestamp
-  unblock(key* req);
+  timestamp unblock(key* req);
 
-  void
-  start_thread(thread* t);
+  void start_thread(thread* t);
 
-  void
-  join_thread(thread* t);
+  void join_thread(thread* t);
 
-  void
-  complete_thread(bool succ);
+  void complete_thread(bool succ);
 
-  library*
-  lib(const std::string& name) const;
+  library* lib(const std::string& name) const;
 
-  void
-  add_application(app* a);
+  void add_application(app* a);
 
-  void
-  start_app(app* a, const std::string& unique_name);
+  void start_app(app* a, const std::string& unique_name);
 
-  void
-  handle_event(event* ev);
+  void handle_event(event* ev);
 
-  std::list<app*>
-  app_ptrs(app_id aid);
+  std::list<app*> app_ptrs(app_id aid);
 
-  app*
-  app_ptr(software_id sid);
+  app* app_ptr(software_id sid);
 
-  thread_data_t
-  current_context() const {
+  thread_data_t current_context() const {
     return threadstack_.top();
   }
 
-  static void
-  shutdown() {
+  static void shutdown() {
     current_os()->local_shutdown();
   }
 
-  void
-  print_libs(std::ostream& os = std::cout) const;
+  void print_libs(std::ostream& os = std::cout) const;
 
-  void
-  set_node(sstmac::hw::node* n){
+  void set_node(sstmac::hw::node* n){
     node_ = n;
   }
 
-  hw::node*
-  node() const {
+  hw::node* node() const {
     return node_;
   }
 
-  node_id
-  addr() const {
+  node_id addr() const {
     return my_addr_;
   }
 
-  void
-  start_api_call();
+  void start_api_call();
 
-  void
-  schedule_timeout(timestamp delay, key* k);
+  void schedule_timeout(timestamp delay, key* k);
 
-  void
-  free_thread_stack(void* stack);
+  void free_thread_stack(void* stack);
 
-  static size_t
-  stacksize(){
+  static size_t stacksize(){
     return sstmac_global_stacksize;
   }
 
-  static thread*
-  current_thread(){
+  static thread* current_thread(){
     return static_os_thread_context().current_thread;
   }
 
-  graph_viz*
-  call_graph() const {
+  graph_viz* call_graph() const {
     return call_graph_;
   }
 
-  static void
-  simulation_done();
+  static void simulation_done();
 
-  sprockit::sim_parameters*
-  params() const {
+  sprockit::sim_parameters* params() const {
     return params_;
   }
 
@@ -304,40 +296,31 @@ class operating_system :
 
   void increment_app_refcount();
 
-  void
-  set_call_graph_active(bool flag){
+  void set_call_graph_active(bool flag){
     call_graph_active_ = flag;
   }
 
-  bool
-  call_graph_active() const {
+  bool call_graph_active() const {
     return call_graph_active_;
   }
 
  private:
-  void
-  add_thread(thread* t);
+  void add_thread(thread* t);
 
-  void
-  switch_to_thread(thread_data_t tothread);
+  void switch_to_thread(thread_data_t tothread);
 
-  void
-  init_threading();
+  void init_threading();
 
-  os_thread_context&
-  current_os_thread_context();
+  os_thread_context& current_os_thread_context();
 
 
   friend class library;
 
-  void
-  register_lib(library* lib);
+  void register_lib(library* lib);
 
-  void
-  unregister_lib(library* lib);
+  void unregister_lib(library* lib);
 
-  void
-  local_shutdown();
+  void local_shutdown();
 
   bool handle_library_event(const std::string& name, event* ev);
   
@@ -396,4 +379,3 @@ class operating_system :
 }
 } //end of namespace sstmac
 #endif
-

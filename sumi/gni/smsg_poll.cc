@@ -1,3 +1,47 @@
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
+
 #include <gni/gni_transport.h>
 
 namespace sumi {
@@ -75,12 +119,12 @@ gni_transport::smsg_queue_endpoint(smsg_endpoint_t *ep)
   if (smsg_endpoint_tail_){
     smsg_endpoint_tail_->next = ep;
     ep->prev = smsg_endpoint_tail_;
-    ep->next = 0;
+    ep->next = nullptr;
     smsg_endpoint_tail_ = ep;
   }
   else {
-    ep->next = 0;
-    ep->prev = 0;
+    ep->next = nullptr;
+    ep->prev = nullptr;
     smsg_endpoint_head_ = smsg_endpoint_tail_ = ep;
   }
   ep->queued = true;
@@ -99,15 +143,15 @@ gni_transport::smsg_unqueue_endpoint(smsg_endpoint_t *ep)
 
   // I am all there is!
   if (smsg_num_endpoints_queued_ == 1){
-    smsg_endpoint_head_ = smsg_endpoint_tail_ = 0;
+    smsg_endpoint_head_ = smsg_endpoint_tail_ = nullptr;
   }
-  else if (ep->prev == 0){ //I'm the head
+  else if (ep->prev == nullptr){ //I'm the head
     smsg_endpoint_head_ = ep->next;
-    smsg_endpoint_head_->prev = 0;
+    smsg_endpoint_head_->prev = nullptr;
   }
-  else if (ep->next == 0){ //I'm the tail
+  else if (ep->next == nullptr){ //I'm the tail
     smsg_endpoint_tail_ = ep->prev;
-    smsg_endpoint_tail_->next = 0;
+    smsg_endpoint_tail_->next = nullptr;
   }
   else { //neither
     ep->next->prev = ep->prev;

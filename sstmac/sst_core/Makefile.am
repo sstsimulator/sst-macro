@@ -17,6 +17,12 @@ library_includedir=$(includedir)/sstmac/sst_core
 SUBDIRS = $(STD_SUBDIRS) 
 DIST_SUBDIRS = $(STD_SUBDIRS) 
 
+EXTRA_DIST = sstmacro.py
+
+nobase_library_include_HEADERS = \
+  connectable_wrapper.h \
+  integrated_component.h \
+  integrated_core.h
 
 if INTEGRATED_SST_CORE
 noinst_LTLIBRARIES = libsstmac_sst_core.la
@@ -42,13 +48,10 @@ if EXTERNAL_BOOST
   libsstmac_sst_core_la_LDFLAGS += $(BOOST_LDFLAGS)
 endif
 
-nobase_library_include_HEADERS = \
-  connectable_wrapper.h \
-  integrated_component.h \
-  integrated_core.h
 
 # micro pieces, baseclasses, etc needed for linking in the rest of sstmac
 libsstmac_sst_core_la_SOURCES =  \
+  partitioner.cc \
 	python_topology.cc \
   integrated_component.cc \
   integrated_core.cc

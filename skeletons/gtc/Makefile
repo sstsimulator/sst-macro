@@ -5,7 +5,7 @@ COMPUTE := -D_USE_LOOPS
 
 CXX := sst++
 CC :=  sstcc
-CXXFLAGS := 
+CXXFLAGS := -fPIC
 CPPFLAGS := -I. $(COMPUTE)
 LIBDIR :=   
 PREFIX := install

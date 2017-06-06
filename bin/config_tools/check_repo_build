@@ -7,5 +7,5 @@ from configlib import getoutput
 if os.path.isdir(".git"):
   print(getoutput("git rev-parse --abbrev-ref HEAD").strip())
 else:
-  print()
+  sys.stdout.write("\n")
 

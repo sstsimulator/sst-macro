@@ -1,13 +1,46 @@
-/*
- *  This file is part of SST/macroscale:
- *               The macroscale architecture simulator from the SST suite.
- *  Copyright (c) 2009 Sandia Corporation.
- *  This software is distributed under the BSD License.
- *  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- *  the U.S. Government retains certain rights in this software.
- *  For more information, see the LICENSE file in the top
- *  SST/macroscale directory.
- */
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
 
 #include <sstmac/software/libraries/unblock_event.h>
 #include <sstmac/software/process/operating_system.h>
@@ -28,12 +61,9 @@
 #include <sprockit/util.h>
 #include <sprockit/output.h>
 
-#if SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/sst_core/integrated_component.h>
 #include <sstmac/sst_core/connectable_wrapper.h>
-#endif
 
-ImplementFactory(sstmac::hw::node);
 RegisterDebugSlot(node)
 RegisterNamespaces("os", "memory", "proc", "node");
 RegisterKeywords(
@@ -80,13 +110,13 @@ node::node(sprockit::sim_parameters* params,
 
   sprockit::sim_parameters* nic_params = params->get_namespace("nic");
   nic_params->add_param_override_recursive("id", int(my_addr_));
-  nic_ = nic_factory::get_param("model", nic_params, this);
+  nic_ = nic::factory::get_param("model", nic_params, this);
 
   sprockit::sim_parameters* mem_params = params->get_optional_namespace("memory");
-  mem_model_ = memory_model_factory::get_optional_param("model", "logP", mem_params, this);
+  mem_model_ = memory_model::factory::get_optional_param("model", "logP", mem_params, this);
 
   sprockit::sim_parameters* proc_params = params->get_optional_namespace("proc");
-  proc_ = processor_factory::get_optional_param("processor", "instruction",
+  proc_ = processor::factory::get_optional_param("processor", "instruction",
           proc_params,
           mem_model_, this);
 
@@ -99,12 +129,8 @@ node::node(sprockit::sim_parameters* params,
 
   launch_root_ = params->get_optional_int_param("launch_root", 0);
   if (my_addr_ == launch_root_){
-    job_launcher_ =   job_launcher_factory::get_optional_param(
+    job_launcher_ =   job_launcher::factory::get_optional_param(
           "job_launcher", "default", params, os_);
-  }
-
-  if (my_addr_ == launch_root_){
-    increment_app_refcount();
   }
 }
 
@@ -150,7 +176,6 @@ node::~node()
   if (app_launcher_) delete app_launcher_;
   if (mem_model_) delete mem_model_;
   if (proc_) delete proc_;
-  /** JJW Delete this last since destructor may unregister libs from OS */
   if (os_) delete os_;
   if (nic_) delete nic_;
 }
@@ -240,5 +265,3 @@ node::send_to_nic(network_message* netmsg)
 
 }
 } // end of namespace sstmac
-
-

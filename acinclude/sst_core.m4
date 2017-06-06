@@ -22,8 +22,6 @@ if test "X$have_integrated_core" = "Xyes"; then
 fi
 
 if test "X$have_integrated_core" = "Xyes"; then
-  AC_CONFIG_FILES([skeletons/sst/env.sh skeletons/sst/config.py])
-  AC_CONFIG_FILES([skeletons/sst/run], [chmod +x skeletons/sst/run])
   AC_CONFIG_FILES([bin/pysstmac], [chmod +x bin/pysstmac])
   AC_CONFIG_FILES([bin/sstmac-check], [chmod +x bin/sstmac-check])
   AC_CONFIG_FILES([tests/api/mpi/testexec], [chmod +x tests/api/mpi/testexec])

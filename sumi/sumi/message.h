@@ -1,3 +1,47 @@
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
+
 #ifndef sumi_api_MESSAGE_H
 #define sumi_api_MESSAGE_H
 
@@ -32,8 +76,7 @@ class message :
  ImplementSerializable(message)
 
  public:
-  virtual std::string
-  to_string() const override;
+  virtual std::string to_string() const override;
 
   typedef enum {
     header,
@@ -117,145 +160,113 @@ class message :
   {
   }
 
-  static const char*
-  tostr(payload_type_t ty);
+  static const char* tostr(payload_type_t ty);
 
-  static const char*
-  tostr(class_t ty);
+  static const char* tostr(class_t ty);
 
-  payload_type_t
-  payload_type() const {
+  payload_type_t payload_type() const {
     return payload_type_;
   }
 
-  bool
-  is_nic_ack() const;
+  bool is_nic_ack() const;
 
-  virtual void
-  serialize_order(sumi::serializer &ser) override;
+  virtual void serialize_order(sumi::serializer &ser) override;
 
-  void
-  set_payload_type(payload_type_t ty) {
+  void set_payload_type(payload_type_t ty) {
     payload_type_ = ty;
   }
 
-  virtual message*
-  clone() const;
+  virtual message* clone() const;
 
-  virtual void
-  buffer_send();
+  virtual void buffer_send();
 
-  message*
-  clone_ack() const;
+  message* clone_ack() const;
 
-  message*
-  clone_msg() const {
+  message* clone_msg() const {
     return clone();
   }
 
-  class_t
-  class_type() const {
+  class_t class_type() const {
     return class_;
   }
 
-  void
-  set_class_type(class_t cls) {
+  void set_class_type(class_t cls) {
     class_ = cls;
   }
 
-  int
-  recver() const {
+  int recver() const {
     return recver_;
   }
 
-  void
-  set_recver(int dst) {
+  void set_recver(int dst) {
     recver_ = dst;
   }
 
-  int
-  sender() const {
+  int sender() const {
     return sender_;
   }
 
-  void
-  set_sender(int src) {
+  void set_sender(int src) {
     sender_ = src;
   }
 
-  long
-  byte_length() const {
+  long byte_length() const {
     return num_bytes_;
   }
 
-  void
-  set_byte_length(long bytes) {
+  void set_byte_length(long bytes) {
     num_bytes_ = bytes;
   }
 
-  int
-  transaction_id() const {
+  int transaction_id() const {
     return transaction_id_;
   }
 
-  void
-  set_transaction_id(int tid) {
+  void set_transaction_id(int tid) {
     transaction_id_ = tid;
   }
 
-  bool
-  has_transaction_id() const {
+  bool has_transaction_id() const {
     return transaction_id_ >= 0;
   }
 
-  virtual void
-  reverse();
+  virtual void reverse();
 
-  bool
-  needs_send_ack() const {
+  bool needs_send_ack() const {
     return needs_send_ack_;
   }
 
-  void
-  set_needs_send_ack(bool need) {
+  void set_needs_send_ack(bool need) {
     needs_send_ack_ = need;
   }
 
-  bool
-  needs_recv_ack() const {
+  bool needs_recv_ack() const {
     return needs_recv_ack_;
   }
 
-  void
-  set_needs_recv_ack(bool need) {
+  void set_needs_recv_ack(bool need) {
     needs_recv_ack_ = need;
   }
 
-  bool
-  has_payload() const {
+  bool has_payload() const {
     return local_buffer_.ptr || remote_buffer_.ptr;
   }
 
-  virtual void
-  move_remote_to_local();
+  virtual void move_remote_to_local();
 
-  virtual void
-  move_local_to_remote();
+  virtual void move_local_to_remote();
 
   sumi::public_buffer& local_buffer() { return local_buffer_; }
   sumi::public_buffer& remote_buffer() { return remote_buffer_; }
 
-  void*&
-  eager_buffer() {
+  void*& eager_buffer() {
    return local_buffer_.ptr;
   }
 
  protected:
-  void
-  clone_into(message* cln) const;
+  void clone_into(message* cln) const;
 
-  static void
-  buffer_send(public_buffer& buf, long num_bytes);
+  static void buffer_send(public_buffer& buf, long num_bytes);
 
  protected:
   long num_bytes_;
@@ -351,8 +362,7 @@ class system_bcast_message : public message
     return root_;
   }
 
-  void
-  serialize_order(serializer& ser) override;
+  void serialize_order(serializer& ser) override;
 
   action_t action() const {
     return action_;
@@ -366,4 +376,3 @@ class system_bcast_message : public message
 }
 
 #endif // SIMPLE_MESSAGE_H
-

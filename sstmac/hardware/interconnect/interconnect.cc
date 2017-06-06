@@ -1,13 +1,46 @@
-/*
- *  This file is part of SST/macroscale:
- *               The macroscale architecture simulator from the SST suite.
- *  Copyright (c) 2009 Sandia Corporation.
- *  This software is distributed under the BSD License.
- *  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- *  the U.S. Government retains certain rights in this software.
- *  For more information, see the LICENSE file in the top
- *  SST/macroscale directory.
- */
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
 
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/topology/structured_topology.h>
@@ -31,7 +64,7 @@
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 
-ImplementFactory(sstmac::hw::interconnect)
+
 RegisterDebugSlot(interconnect);
 RegisterNamespaces("interconnect");
 RegisterKeywords("network_name", "interconnect");
@@ -39,11 +72,7 @@ RegisterKeywords("network_name", "interconnect");
 namespace sstmac {
 namespace hw {
 
-//static sprockit::need_delete_statics<interconnect> del_statics;
-
-SpktRegister("switch | simple", interconnect, interconnect);
-
-interconnect* interconnect::static_interconnect_ = 0;
+interconnect* interconnect::static_interconnect_ = nullptr;
 
 #if !SPKT_DISABLE_REGEX
 sprockit::StaticKeywordRegisterRegexp node_failure_ids_keyword("node_failure_\\d+_id");
@@ -63,7 +92,7 @@ interconnect::static_interconnect(sprockit::sim_parameters* params, event_manage
     const char* ic_param = ic_params->has_param("network_name") ? "network_name" : "interconnect";
     parallel_runtime* rt = parallel_runtime::static_runtime(params);
     partition* part = rt ? rt->topology_partition() : nullptr;
-    static_interconnect_ = interconnect_factory::get_optional_param(ic_param, "switch", ic_params,
+    static_interconnect_ = interconnect::factory::get_optional_param(ic_param, "switch", ic_params,
       mgr, part, rt);
   }
   return static_interconnect_;
@@ -109,7 +138,6 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   int nthread = rt_->nthread();
   num_speedy_switches_with_extra_node_ = num_nodes_ % nproc;
   num_nodes_per_speedy_switch_ = num_nodes_ / nproc;
-  node_to_logp_switch_.resize(num_nodes_);
   logp_overlay_switches_.resize(nproc*nthread);
 
   sprockit::sim_parameters* node_params = params->get_namespace("node");
@@ -291,7 +319,7 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
       if (my_rank == target_rank){
         //local node - actually build it
         node_params->add_param_override("id", int(nid));
-        node* nd = node_factory::get_optional_param("model", "simple", node_params,
+        node* nd = node::factory::get_optional_param("model", "simple", node_params,
                                                     nid, thread_mgr);
         nic* the_nic = nd->get_nic();
         nodes_[nid] = nd;
@@ -316,7 +344,7 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
           netlink_params->add_param_override("id", int(net_id));
           netlink* nlink = netlinks_[net_id];
           if (!nlink){
-            nlink = netlink_factory::get_param("model", netlink_params, nd);
+            nlink = netlink::factory::get_param("model", netlink_params, nd);
             netlinks_[net_id] = nlink;
           }
           int inj_port = nlink->node_port(netlink_offset);
@@ -370,7 +398,7 @@ interconnect::build_switches(sprockit::sim_parameters* switch_params,
         topology_->configure_nonuniform_switch_params(i, switch_params);
       int thread = partition_->thread_for_switch(i);
       event_manager* thread_mgr = mgr->ev_man_for_thread(thread);
-      switches_[i] = network_switch_factory::get_param("model",
+      switches_[i] = network_switch::factory::get_param("model",
                       switch_params, i, thread_mgr);
     } else {
       switches_[i] = new dist_dummy_switch(switch_params, i, mgr, device_id::router);
@@ -458,4 +486,3 @@ interconnect::thread_for_switch(switch_id sid) const
 
 }
 }
-

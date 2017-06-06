@@ -1,13 +1,46 @@
-/*
- *  This file is part of SST/macroscale:
- *               The macroscale architecture simulator from the SST suite.
- *  Copyright (c) 2009 Sandia Corporation.
- *  This software is distributed under the BSD License.
- *  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- *  the U.S. Government retains certain rights in this software.
- *  For more information, see the LICENSE file in the top
- *  SST/macroscale directory.
- */
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
 
 #ifndef SSTMAC_HARDWARE_NETWORK_SWITCHES_REGULAR_TOPOLOGY_H_INCLUDED
 #define SSTMAC_HARDWARE_NETWORK_SWITCHES_REGULAR_TOPOLOGY_H_INCLUDED
@@ -47,78 +80,65 @@ class structured_topology : public topology
 
   /**** BEGIN PURE VIRTUAL INTERFACE *****/
   /**
-    Structured topologies can be direct (torus) or indirect (fat tree).
-    We therefore need to distinguish the total number of switches and
-    the number of leaf switches - i.e. those directly connected to nodes.
-    For direct topologies, num_switches and num_leaf_switches are the same.
-    For indirect, num_leaf_switches < num_switches.
-    @return The number of leaf switches directly connected to compute nodes
+     Structured topologies can be direct (torus) or indirect (fat tree).
+     We therefore need to distinguish the total number of switches and
+     the number of leaf switches - i.e. those directly connected to nodes.
+     For direct topologies, num_switches and num_leaf_switches are the same.
+     For indirect, num_leaf_switches < num_switches.
+     @return The number of leaf switches directly connected to compute nodes
   */
-  virtual int
-  num_leaf_switches() const override = 0;
+  virtual int num_leaf_switches() const = 0;
 
-  int
-  max_num_ports() const override {
+  int max_num_ports() const override {
     return max_ports_injection_ + max_ports_intra_network_;
   }
 
-  bool
-  node_to_netlink(node_id nid, node_id& net_id, int& offset) const override {
+  bool node_to_netlink(node_id nid, node_id& net_id, int& offset) const override {
     net_id = nid / num_nodes_per_netlink_;
     offset = nid % num_nodes_per_netlink_;
     return num_nodes_per_netlink_ > 1;
   }
 
-  virtual void
-  nodes_connected_to_injection_switch(switch_id swid,
-                                      std::vector<injection_port>& nodes) const override;
+  virtual void nodes_connected_to_injection_switch(switch_id swid,
+                       std::vector<injection_port>& nodes) const override;
 
-  virtual void
-  nodes_connected_to_ejection_switch(switch_id swid,
-                                     std::vector<injection_port>& nodes) const override;
+  virtual void nodes_connected_to_ejection_switch(switch_id swid,
+                       std::vector<injection_port>& nodes) const override;
 
   /**
    * Given a switch address, return number of nodes connected to it
    */
-  int
-  netlinks_per_switch() {
+  int netlinks_per_switch() {
     return netlinks_per_switch_;
   }
 
-  int
-  concentration() const {
+  int concentration() const {
     return concentration_;
   }
 
-  int
-  num_nodes() const override {
+  int num_nodes() const override {
     return concentration_ * num_leaf_switches();
   }
 
-  int
-  num_netlinks() const override {
+  int num_netlinks() const override {
     return netlinks_per_switch_ * num_leaf_switches();
   }
 
-  int
-  num_hops_to_node(node_id src, node_id dst) const override {
+  int num_hops_to_node(node_id src, node_id dst) const override {
     switch_id src_sw = src / concentration_;
     switch_id dst_sw = dst / concentration_;
     return minimal_distance(src_sw, dst_sw);
   }
 
-  switch_id
-  max_switch_id() const override {
+  switch_id max_switch_id() const override {
     return num_switches();
   }
 
-  bool
-  switch_id_slot_filled(switch_id sid) const override{
+  bool switch_id_slot_filled(switch_id sid) const override{
     return true;
   }
 
-  netlink_id
-  max_netlink_id() const override {
+  netlink_id max_netlink_id() const override {
     if (num_nodes_per_netlink_ > 1){
       return num_nodes() / num_nodes_per_netlink_;
     } else {
@@ -126,35 +146,27 @@ class structured_topology : public topology
     }
   }
 
-  bool
-  netlink_id_slot_filled(netlink_id sid) const override{
+  bool netlink_id_slot_filled(netlink_id sid) const override{
     return true;
   }
 
-  node_id
-  max_node_id() const override {
+  node_id max_node_id() const override {
     return num_nodes();
   }
 
-  bool
-  node_id_slot_filled(node_id nid) const override{
+  bool node_id_slot_filled(node_id nid) const override{
     return true;
   }
 
-  virtual int
-  diameter() const = 0;
-
+  virtual int diameter() const = 0;
   /**** END PURE VIRTUAL INTERFACE *****/
 
-
-  virtual void
-  endpoint_eject_paths_on_switch(
+  virtual void endpoint_eject_paths_on_switch(
     node_id dest_addr,
     switch_id sw_addr,
     routable::path_set& paths) const;
 
-  void
-  node_eject_paths_on_switch(
+  void node_eject_paths_on_switch(
       node_id dest_addr,
       switch_id sw_addr,
       routable::path_set& paths) const {
@@ -188,8 +200,7 @@ class structured_topology : public topology
   }
 
  protected:
-  void
-  configure_injection_geometry(std::vector<int>& redundancies);
+  void configure_injection_geometry(std::vector<int>& redundancies);
 
   structured_topology(sprockit::sim_parameters* params,
                       InitMaxPortsIntra i1,
@@ -220,4 +231,3 @@ class structured_topology : public topology
 }
 
 #endif
-
