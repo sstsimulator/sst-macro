@@ -84,15 +84,6 @@ serial_runtime::bcast(void* buffer, int bytes, int root)
 }
 
 void
-serial_runtime::send_recv_messages(std::vector<incoming_msg>& incoming)
-{
- if (incoming.size() != 0){
-   spkt_throw_printf(sprockit::illformed_error,
-     "serial_runtime::send_recv_messages: should not be receiving any messages");
- }
-}
-
-void
 serial_runtime::send_event(timestamp t, switch_id tid, event* ev)
 {
   spkt_throw_printf(sprockit::illformed_error,

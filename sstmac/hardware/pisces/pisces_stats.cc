@@ -1,3 +1,8 @@
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#endif
+
+#include <inttypes.h>
 #include <sstmac/hardware/pisces/pisces_stats.h>
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/backends/common/parallel_runtime.h>
@@ -254,7 +259,6 @@ stat_bytes_sent::collect_buffer_at_root(char* buffer, int buffer_size)
   int num_entries = entries.size();
   for (int i=0; i < num_entries; ++i){
     aggregation::entry& entry = entries[i];
-    fflush(stdout);
     global_aggregation_[entry.sid] = entry.pmap;
   }
 }

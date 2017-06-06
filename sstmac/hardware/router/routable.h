@@ -29,7 +29,7 @@ class routable
 
    path() :
   #if SSTMAC_SANITY_CHECK
-     vc(uninitialized)
+     vc(routing::uninitialized)
   #else
      vc(0)
   #endif

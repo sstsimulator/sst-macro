@@ -100,18 +100,20 @@ class message :
           long num_bytes,
           class_t cls,
           payload_type_t pty) :
-#if SUMI_COMM_SYNC_STATS
-    sent_(-1),
-    arrived_(-1),
-#endif
-    sender_(sender),
-    recver_(recver),
     num_bytes_(num_bytes),
     payload_type_(pty),
     class_(cls),
+    sender_(sender),
+    recver_(recver),
     transaction_id_(-1),
     needs_send_ack_(false),
     needs_recv_ack_(false)
+#if SUMI_COMM_SYNC_STATS
+    ,sent_(-1),
+    header_arrived_(-1),
+    payload_arrived_(-1),
+    synced_(-1)
+#endif
   {
   }
 
@@ -281,8 +283,16 @@ class message :
     return sent_;
   }
 
-  double time_arrived() const {
-    return arrived_;
+  double time_header_arrived() const {
+    return header_arrived_;
+  }
+
+  double time_payload_arrived() const {
+    return payload_arrived_;
+  }
+
+  double time_synced() const {
+    return synced_;
   }
 
   void
@@ -295,12 +305,26 @@ class message :
 
   void
   set_time_arrived(double now){
-    arrived_ = now;
+    if (header_arrived_ < 0){
+      header_arrived_ = now;
+    } else {
+      payload_arrived_ = now;
+    }
   }
+
+  void
+  set_time_synced(double now){
+    synced_ = now;
+  }
+
  private:
   double sent_;
 
-  double arrived_;
+  double header_arrived_;
+
+  double payload_arrived_;
+
+  double synced_;
 #endif
 };
 
@@ -315,9 +339,9 @@ class system_bcast_message : public message
   } action_t;
 
   system_bcast_message(action_t action, int root) :
-    action_(action),
+    message(bcast),
     root_(root),
-    message(bcast)
+    action_(action)
   {
   }
 

@@ -14,7 +14,7 @@
 
 #include <sstmac/common/sst_event_fwd.h>
 #include <sstmac/common/event_location.h>
-#include <sstmac/software/process/key.h>
+#include <sstmac/software/process/key_fwd.h>
 #include <sstmac/software/process/software_id.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/software/libraries/library_fwd.h>
@@ -98,7 +98,7 @@ class library {
 
  protected:
   operating_system* os_;
-  key::category key_cat_;
+  key_traits::category key_cat_;
   software_id sid_;
   node_id addr_;
 
@@ -121,7 +121,7 @@ class blocking_library :
   {
   }
 
-  void wait_event(event* ev, key::category = key::general);
+  void wait_event(event* ev, key_traits::category cat);
 
   virtual void
   incoming_event(event *ev);

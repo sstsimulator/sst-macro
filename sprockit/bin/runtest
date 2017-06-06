@@ -4,7 +4,6 @@ import sys
 import signal
 import time
 import os
-import commands
 import subprocess
 
 class bcolors:
@@ -40,18 +39,18 @@ def runexe(exe, args, outputFile):
     errorFile = "%s.ERROR" % outputFile
     cmd = "%s %s 1>> %s 2>> %s" % (exe, args, outputFile, errorFile)
     if verbose:
-        print cmd
+        print (cmd)
     rc = subprocess.call(sys.argv[3:], stdout=open(outputFile,"w"), stderr=open(errorFile,"w"))
     if rc < 0:
         sig = abs(rc)
-        print bcolors.FAIL, "TERMINATED WITH SIGNAL %d: %s" % (sig, outputFile), bcolors.ENDC
+        print (bcolors.FAIL + "TERMINATED WITH SIGNAL %d: %s" % (sig, outputFile) + bcolors.ENDC)
         sys.exit(111)
     else:
         sys.exit(rc)
 
 if debugger:
     debugargs = "r " + args
-    print "DEBUG ARGS: ", debugargs
+    print ("DEBUG ARGS: ", debugargs)
     folder, script = os.path.split(exe)
     actualExe = ".libs/%s" % script
     actualExe = os.path.join(folder, actualExe)
@@ -76,13 +75,13 @@ else:
     sig = bits & signalBitmask
     if sig:
         if sig == signal.SIGKILL:
-            print bcolors.FAIL, "TIMEOUT: %s" % outputFile, bcolors.ENDC
+            print (bcolors.FAIL + "TIMEOUT: %s" % outputFile + bcolors.ENDC)
     elif rc == 0:
-        print bcolors.OKGREEN, "PASSED: %s" % outputFile, bcolors.ENDC
+        print (bcolors.OKGREEN + "PASSED: %s" % outputFile + bcolors.ENDC)
     elif rc == 111:
         pass #already printed stuff
     else:
-        print bcolors.FAIL, "ERROR/EXCEPTION: %s" % outputFile, bcolors.ENDC
+        print (bcolors.FAIL + "ERROR/EXCEPTION: %s" % outputFile + bcolors.ENDC)
 
 
 

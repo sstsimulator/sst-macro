@@ -13,7 +13,7 @@
 #include <sumi-mpi/mpi_comm/mpi_comm.h>
 #include <sumi-mpi/mpi_comm/mpi_comm_cart.h>
 #include <sumi-mpi/mpi_api.h>
-#include <sumi-mpi/sstmac_mpi_integers.h>
+#include <sumi-mpi/mpi_integers.h>
 #include <sumi-mpi/mpi_types.h>
 #include <sprockit/errors.h>
 #include <sprockit/stl_string.h>
@@ -96,22 +96,30 @@ mpi_comm_factory::comm_dup(mpi_comm* caller)
   return ret;
 }
 
+
+MPI_Comm
+mpi_comm_factory::comm_new_id_agree(MPI_Comm oldComm)
+{
+  int inputID = next_id_;
+  int outputID = 0;
+  collective_op_base* op = parent_->start_allreduce(oldComm, 1, MPI_INT, MPI_MAX, &inputID, &outputID);
+  parent_->wait_collective(op);
+  delete op;
+
+  next_id_ = outputID + 1;
+  return outputID;
+}
+
 //
 // Make the given mpiid refer to a newly created communicator.
 //
 mpi_comm*
 mpi_comm_factory::comm_create(mpi_comm* caller, mpi_group* group)
 {
-  int inputID = next_id_;
-  int outputID = 0;
-  parent_->allreduce(&inputID, &outputID, 1, MPI_INT, MPI_MAX, caller->id());
-
-  MPI_Comm cid = outputID;
+  MPI_Comm cid = comm_new_id_agree(caller->id());
 
   //now find my rank
   int newrank = group->rank_of_task(caller->my_task());
-
-  next_id_ = cid + 1;
 
   if (newrank >= 0) {
     return new mpi_comm(cid, newrank, group, aid_);
@@ -133,7 +141,14 @@ struct comm_split_entry {
   int refcount;
   comm_split_entry() : buf(0), refcount(0) {}
 };
-static std::map<int, std::map<int, std::map<int, comm_split_entry> > > comm_split_entries;
+
+static std::map<int, //app ID
+        std::map<int, //comm ID
+          std::map<int, //comm rank 0 comm world
+              std::map<int, comm_split_entry> //tag
+          >
+         >
+       > comm_split_entries;
 #endif
 
 
@@ -149,6 +164,8 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
   mydata[1] = my_color;
   mydata[2] = my_key;
 
+  app_id aid = parent_->sid().app_;
+
   //printf("Rank %d = {%d %d %d}\n",
   //       caller->rank(), next_id_, my_color, my_key);
 
@@ -161,7 +178,7 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
   sstmac::sw::api_lock();
   int root = caller->peer_task(int(0));
   int tag = caller->next_collective_tag();
-  comm_split_entry& entry = comm_split_entries[int(caller->id())][root][tag];
+  comm_split_entry& entry = comm_split_entries[aid][int(caller->id())][root][tag];
   char fname[256];
   size_t len = 3*caller->size()*sizeof(int);
   entry.refcount++;
@@ -273,16 +290,10 @@ mpi_comm*
 mpi_comm_factory::create_cart(mpi_comm* caller, int ndims,
                               const int *dims, const int *periods, int reorder)
 {
-  int inputID = next_id_;
-  int outputID = 0;
-  parent_->allreduce(&inputID, &outputID, 1, MPI_INT, MPI_MAX, caller->id());
-
-  MPI_Comm cid = outputID;
-
+  MPI_Comm cid = comm_new_id_agree(caller->id());
 
   //now find my rank
   int newrank = caller->group_->rank_of_task(caller->my_task());
-  next_id_ = cid + 1;
 
   if (newrank >= 0) {
     return new mpi_comm_cart(cid, newrank, caller->group_,

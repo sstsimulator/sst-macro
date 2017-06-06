@@ -1,7 +1,8 @@
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <sstmac/common/sstmac_config.h>
 #if !SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/backends/native/clock_cycle_parallel/clock_cycle_event_container.h>
-#include <sstmac/common/thread_info.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/node/node.h>
@@ -49,8 +50,9 @@ clock_cycle_event_map::schedule_incoming(const std::vector<void*>& buffers)
     uint32_t seqnum;
     timestamp time;
     event* ev;
+    char* customBuffer = nullptr;
     void* buffer = buffers[i];
-    ser.start_unpacking((char*)buffer, buf_size);
+    ser.start_unpacking((char*)buffer, 100e9); //we don't worry about overruns anymore
     ser & dst;
     ser & src;
     ser & seqnum;
@@ -60,8 +62,8 @@ clock_cycle_event_map::schedule_incoming(const std::vector<void*>& buffers)
 
 
 
-    event_debug("epoch %d: scheduling incoming event of type %d at %12.8e to device %d: %s\n",
-      epoch_, dst.type(), time.sec(), dst.id(), sprockit::to_string(ev).c_str());
+    event_debug("epoch %d: scheduling incoming event of type %d at %12.8e to device %d, payload? %d:\n   %s",
+      epoch_, dst.type(), time.sec(), dst.id(), ev->is_payload(), sprockit::to_string(ev).c_str());
     switch (dst.type()){
       case device_id::node:
         dst_handler = interconn_->node_at(dst.id())->get_nic()->payload_handler(hw::nic::LogP);
@@ -70,7 +72,11 @@ clock_cycle_event_map::schedule_incoming(const std::vector<void*>& buffers)
         dst_handler = interconn_->logp_switch_at(dst.id())->payload_handler(0);
         break;
       case device_id::router:
-        dst_handler = interconn_->switch_at(dst.id())->payload_handler(0); //port 0 for now - hack - all the same
+        if (ev->is_payload()){
+          dst_handler = interconn_->switch_at(dst.id())->payload_handler(0); //port 0 for now - hack - all the same
+        } else {
+          dst_handler = interconn_->switch_at(dst.id())->credit_handler(0);
+        }
         break;
       default:
         spkt_abort_printf("Invalid device type %d in parallel run", dst.type());
@@ -82,8 +88,6 @@ clock_cycle_event_map::schedule_incoming(const std::vector<void*>& buffers)
     }
     schedule(time, seqnum, new handler_event_queue_entry(ev, dst_handler, src));
   }
-
-  rt_->free_recv_buffers(buffers);
 }
 
 void
@@ -192,7 +196,7 @@ clock_cycle_event_map::do_next_event()
 
 #if DEBUG_DETERMINISM
   std::ofstream*& f = outs[ev->event_location()];
-  if (f == 0){
+  if (f == nullptr){
     char fname[64];
     sprintf(fname, "events.%d.out", int(ev->event_location().location));
     f = new std::ofstream(fname);
@@ -265,7 +269,7 @@ clock_cycle_event_map::ipc_schedule(timestamp t,
   uint32_t seqnum,
   event* ev)
 {
-  event_debug("epoch %d: scheduling outgoing event with cls id %" PRIu32 " at t=%12.8e to location %d of type %d\n%s\n",
+  event_debug("epoch %d: scheduling outgoing event with cls id %" PRIu32 " at t=%12.8e to location %d of type %d\n  %s",
     epoch_, ev->cls_id(), t.sec(), dst.id(), dst.type(),
     sprockit::to_string(ev).c_str());
 

@@ -83,16 +83,12 @@ class event_manager
   void
   register_stat(
     stat_collector* stat,
-    bool reduce_all = true,
-    bool dump_all = false,
-    bool dump_main = true);
+    stat_descr_t* descr);
 
   stat_collector*
   register_thread_unique_stat(
     stat_collector* stat,
-    bool reduce_all = true,
-    bool dump_all = false,
-    bool dump_main = true);
+    stat_descr_t* descr);
 
   virtual void
   cancel_all_messages(device_id canceled_loc) = 0;

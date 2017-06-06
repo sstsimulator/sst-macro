@@ -120,9 +120,13 @@ parallel_runtime::init_runtime_params(sprockit::sim_parameters *params)
 
   buf_size_ = params->get_optional_byte_length_param("serialization_buffer_size", 512);
   int num_bufs_window = params->get_optional_int_param("serialization_num_bufs_allocation", 100);
-  send_buffer_pools_.resize(nthread_, message_buffer_cache(buf_size_, num_bufs_window));
+
+  size_t allocSize = buf_size_ * num_bufs_window;
+
   send_buffers_.resize(nthread_);
-  recv_buffer_pool_.init(buf_size_, num_bufs_window);
+  for (int i=0; i < nthread_; ++i) send_buffers_[i].init(allocSize);
+
+  recv_buffer_.init(allocSize);
 }
 
 parallel_runtime::parallel_runtime(sprockit::sim_parameters* params,
@@ -148,6 +152,16 @@ parallel_runtime::~parallel_runtime()
   if (part_) delete part_;
 }
 
+static inline void
+run_serialize(serializer& ser, timestamp t, device_id dst, device_id src, uint32_t seqnum, event* ev)
+{
+  ser & dst;
+  ser & src;
+  ser & seqnum;
+  ser & t;
+  ser & ev;
+}
+
 void
 parallel_runtime::send_event(int thread_id,
   timestamp t,
@@ -160,21 +174,25 @@ parallel_runtime::send_event(int thread_id,
   spkt_throw_printf(sprockit::unimplemented_error,
       "parallel_runtime::send_event: should not be called on integrated core");
 #else
-  //event_debug("On rank %d, sending event from %d:%d to %d:%d\n",
-  //            me(), src.id(), src.type(), dst.id(), dst.type());
+
   sprockit::serializer ser;
-  void* buffer = send_buffer_pools_[thread_id].pop();
-  ser.start_packing((char*)buffer, buf_size_);
-  ser & dst;
-  ser & src;
-  ser & seqnum;
-  ser & t;
-  ser & ev;
-  if (ser.packer().size() > buf_size_){
-    spkt_throw_printf(sprockit::value_error,
-        "parallel_runtime::send_message:: buffer overrun %d > %d: set param serialization_buffer_size larger",
-        ser.packer().size(), buf_size_);
+  comm_buffer& buff = send_buffers_[thread_id];
+  //optimistically try packing into ready buffer
+  bool failed = true;
+  void* sendPtr = buff.ptr;
+  while (failed){
+    ser.start_packing((char*)sendPtr, buff.remaining);
+    try {
+      run_serialize(ser,t,dst,src,seqnum,ev);
+      failed = false;
+    } catch (sprockit::ser_buffer_overrun& e) {
+      //huh, oops
+      buff.grow();
+      sendPtr = buff.ptr;
+    }
   }
+  buff.shift(ser.packer().size());
+
   int lp;
   switch (dst.type()){
     case device_id::router:
@@ -187,22 +205,13 @@ parallel_runtime::send_event(int thread_id,
       spkt_abort_printf("Invalid IPC handler of type %d", dst.type());
   }
 
-  send_buffers_[thread_id].push_back(buffer);
+  //event_debug("On rank %d, sending event from %d:%d to %d:%d of size %d",
+  //            me(), src.id(), src.type(), dst.id(), dst.type(), ser.packer().size());
+
   lock();
-  do_send_message(lp, buffer, ser.packer().size());
+  do_send_message(lp, sendPtr, ser.packer().size());
   unlock();
 #endif
-}
-
-void
-parallel_runtime::free_recv_buffers(const std::vector<void*>& buffers)
-{
-  int num_bufs = buffers.size();
-  lock();
-  for (int i=0; i < num_bufs; ++i){
-    recv_buffer_pool_.push(buffers[i]);
-  }
-  unlock();
 }
 
 void
@@ -219,13 +228,9 @@ parallel_runtime::send_recv_messages(std::vector<void*>& recv_buffers)
 
   //and all the send buffers are now done
   for (int t=0; t < nthread(); ++t){
-    std::vector<void*>& bufs = send_buffers_[t];
-    int num_bufs = bufs.size();
-    for (int i=0; i < num_bufs; ++i){
-      send_buffer_pools_[t].push(bufs[i]);
-    }
-    bufs.clear();
+    send_buffers_[t].reset();
   }
+  recv_buffer_.reset();
 }
 
 }

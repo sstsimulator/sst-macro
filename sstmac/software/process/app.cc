@@ -9,14 +9,22 @@
  *  SST/macroscale directory.
  */
 
+#include <sstmac/software/libraries/compute/lib_compute_inst.h>
+#include <sstmac/software/libraries/compute/lib_compute_time.h>
+#include <sstmac/software/libraries/compute/lib_compute_memmove.h>
+#include <sstmac/software/libraries/compute/lib_compute_loops.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/api/api.h>
-#include <sstmac/software/launch/app_launch.h>
 #include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/process/backtrace.h>
 #include <sstmac/common/sstmac_env.h>
 #include <sstmac/dumpi_util/dumpi_meta.h>
 #include <sstmac/software/launch/job_launcher.h>
 #include <sstmac/software/launch/launch_event.h>
+#include <dlfcn.h>
+#include <sstmac/common/sstmac_env.h>
+#include <sstmac/dumpi_util/dumpi_meta.h>
+#include <sstmac/hardware/node/node.h>
 #include <sprockit/statics.h>
 #include <sprockit/delete.h>
 #include <sprockit/output.h>
@@ -34,10 +42,17 @@ SpktRegister("user_app_cxx_full_main", app, user_app_cxx_full_main);
 SpktRegister("user_app_cxx_empty_main", app, user_app_cxx_empty_main);
 
 std::map<std::string, app::main_fxn>*
-  user_app_cxx_full_main::main_fxns_ = 0;
+  user_app_cxx_full_main::main_fxns_ = nullptr;
 std::map<std::string, app::empty_main_fxn>*
-  user_app_cxx_empty_main::empty_main_fxns_ = 0;
+  user_app_cxx_empty_main::empty_main_fxns_ = nullptr;
 std::map<app_id, user_app_cxx_full_main::argv_entry> user_app_cxx_full_main::argv_map_;
+
+app*
+app::factory::get_param(const std::string &name, sprockit::sim_parameters *params, software_id sid, operating_system *os)
+{
+  //wrapper in place in case we want to use dlsym fanciness to link in skeleton apps
+  return app_factory::get_param(name, params, sid, os);
+}
 
 int
 app::allocate_tls_key(destructor_fxn fxn)
@@ -51,36 +66,35 @@ app::allocate_tls_key(destructor_fxn fxn)
 app::app(sprockit::sim_parameters *params, software_id sid,
          operating_system* os) :
   thread(params, sid, os),
-  compute_inst_(nullptr),
-  compute_time_(nullptr),
-  compute_mem_move_(nullptr),
-  compute_loops_(nullptr),
-  sleep_lib_(nullptr),
+  compute_lib_(nullptr),
   params_(params),
   next_tls_key_(0),
   next_condition_(0),
-  next_mutex_(0)
+  next_mutex_(0),
+  globals_storage_(nullptr)
 {
+  int globalsSize = GlobalVariable::globalsSize();
+  if (globalsSize != 0){
+    globals_storage_ = new char[globalsSize];
+    ::memcpy(globals_storage_, GlobalVariable::globalInit(), globalsSize);
+  }
 }
 
 app::~app()
 {
   /** These get deleted by unregister */
   //sprockit::delete_vals(apis_);
-  if (compute_inst_) delete compute_inst_;
-  if (compute_time_) delete compute_time_;
-  if (compute_mem_move_) delete compute_mem_move_;
-  if (compute_loops_) delete compute_loops_;
-  if (sleep_lib_) delete sleep_lib_;
+  if (compute_lib_) delete compute_lib_;
+  if (globals_storage_) delete[] globals_storage_;
 }
 
 lib_compute_loops*
 app::compute_loops_lib()
 {
-  if(!compute_loops_) {
-    compute_loops_ = new lib_compute_loops(params_, sid_, os_);
+  if(!compute_lib_) {
+    compute_lib_ = new lib_compute_loops(params_, sid_, os_);
   }
-  return compute_loops_;
+  return compute_lib_;
 }
 
 void
@@ -104,31 +118,28 @@ app::kill()
   thread::kill();
 }
 
+lib_compute_time*
+app::compute_time_lib()
+{
+  return compute_loops_lib();
+}
+
 void
 app::sleep(timestamp time)
 {
-  if (!sleep_lib_) {
-    sleep_lib_ = new lib_sleep(params_, sid_, os_);
-  }
-  sleep_lib_->sleep(time);
+  compute_loops_lib()->sleep(time);
 }
 
 void
 app::compute(timestamp time)
 {
-  if (!compute_time_) {
-    compute_time_ = new lib_compute_time(params_, sid_, os_);
-  }
-  compute_time_->compute(time);
+  compute_loops_lib()->compute(time);
 }
 
 void
 app::compute_inst(compute_event* cmsg)
 {
-  if (!compute_inst_) {
-    compute_inst_ = new lib_compute_inst(params_, sid_, os_);
-  }
-  compute_inst_->compute_inst(cmsg);
+  compute_loops_lib()->compute_inst(cmsg);
 }
 
 void
@@ -137,37 +148,26 @@ app::compute_loop(uint64_t num_loops,
   int nintops_per_loop,
   int bytes_per_loop)
 {
-  if (!compute_inst_){
-    compute_inst_ = new lib_compute_inst(params_, sid_, os_);
-  }
-  compute_inst_->compute_loop(num_loops, nflops_per_loop, nintops_per_loop, bytes_per_loop);
+  compute_loops_lib()->lib_compute_inst::compute_loop(
+          num_loops, nflops_per_loop, nintops_per_loop, bytes_per_loop);
 }
 
 void
 app::compute_detailed(long flops, long nintops, long bytes)
 {
-  if (!compute_inst_){
-    compute_inst_ = new lib_compute_inst(params_, sid_, os_);
-  }
-  compute_inst_->compute_detailed(flops, nintops, bytes);
+  compute_loops_lib()->compute_detailed(flops, nintops, bytes);
 }
 
 void
 app::compute_block_read(long bytes)
 {
-  if (!compute_mem_move_) {
-    init_mem_lib();
-  }
-  compute_mem_move_->read(bytes);
+  compute_loops_lib()->read(bytes);
 }
 
 void
 app::compute_block_write(long bytes)
 {
-  if (!compute_mem_move_) {
-    init_mem_lib();
-  }
-  compute_mem_move_->write(bytes);
+  compute_loops_lib()->write(bytes);
 }
 
 sprockit::sim_parameters*
@@ -177,18 +177,9 @@ app::get_params()
 }
 
 void
-app::init_mem_lib()
-{
-  compute_mem_move_ = new lib_compute_memmove(params_, sid_, os_);
-}
-
-void
 app::compute_block_memcpy(long bytes)
 {
-  if (!compute_mem_move_) {
-    init_mem_lib();
-  }
-  compute_mem_move_->copy(bytes);
+  compute_loops_lib()->copy(bytes);
 }
 
 api*
@@ -197,11 +188,8 @@ app::_get_api(const char* name)
   // an underlying thread may have built this
   api* my_api = apis_[name];
   if (!my_api) {
-    bool new_params = params_->has_namespace(name);
-    sprockit::sim_parameters* app_params = params_;
-    if (new_params)
-      app_params = params_->get_namespace(name);
-    api* new_api = api_factory::get_value(name, app_params, sid_, os_);
+    sprockit::sim_parameters* api_params = params_->get_optional_namespace(name);
+    api* new_api = api_factory::get_value(name, api_params, sid_, os_);
     apis_[name] = new_api;
     return new_api;
   }
@@ -213,6 +201,7 @@ app::_get_api(const char* name)
 void
 app::run()
 {
+  SSTMACBacktrace("main");
   skeleton_main();
   for (auto& pair : apis_){
     delete pair.second;
@@ -220,13 +209,14 @@ app::run()
   apis_.clear();
 
   //now we have to send a message to the job launcher to let it know we are done
-  int launch_root = job_launcher::launch_root();
-  launch_event* lev = new launch_event(launch_event::Stop,
-                            aid(), tid(),
-                            launch_root, os_->addr());
-  os_->execute_kernel(ami::COMM_PMI_SEND, lev);
-
   os_->decrement_app_refcount();
+  //for now assume that the application has finished with a barrier - which is true of like everything
+  if (sid_.task_ == 0){
+    int launch_root = os_->node()->launch_root();
+    job_stop_event* lev = new job_stop_event(sid_.app_, unique_name_, launch_root, os_->addr());
+    os_->execute_kernel(ami::COMM_PMI_SEND, lev);
+  }
+  task_mapping::remove_global_mapping(sid_.app_, unique_name_);
 }
 
 void

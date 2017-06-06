@@ -7,8 +7,6 @@ mtu = 1204
 arb = "cut_through"
 
 
-print dir()
-
 params = sst.merlin._params
 
 buffer_size = "64KB"

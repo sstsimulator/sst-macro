@@ -42,8 +42,8 @@ class lib_compute_time :
     library::incoming_event(ev);
   }
 
-  void
-  compute(timestamp time);
+  void compute(timestamp time);
+  void sleep(timestamp time);
 
 };
 

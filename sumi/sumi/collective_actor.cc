@@ -285,6 +285,9 @@ collective_actor::validate_pings_cleared()
 void
 dag_collective_actor::start()
 {
+#if SUMI_COMM_SYNC_STATS
+  my_api_->start_collective_sync_delays();
+#endif
   while (!initial_actions_.empty()){
     auto iter = initial_actions_.begin();
     action* ac = *iter;
@@ -457,7 +460,9 @@ dag_collective_actor::send_rdma_get_header(action* ac)
   collective_work_message::ptr msg = new_message(
         ac, collective_work_message::rdma_get_header);
 
-  //msg->remote_buffer() = send_buffer(ac);
+#if SUMI_COMM_SYNC_STATS
+  msg->set_time_sent(my_api_->wall_time());
+#endif
 
   debug_printf(sumi_collective | sumi_collective_sendrecv | sumi_failure,
    "Rank %s, collective %s(%p) sending rdma get message to %s on round=%d tag=%d "
@@ -496,6 +501,7 @@ void
 dag_collective_actor::add_comm_dependency(action* precursor, action *ac)
 {
   int physical_rank = comm_->comm_to_global_rank(comm_rank(ac->partner));
+
   if (physical_rank == communicator::unresolved_rank){
     //uh oh - need to wait on this
     uint32_t resolve_id = action::message_id(action::resolve, 0, ac->partner);
@@ -809,9 +815,7 @@ dag_collective_actor::data_sent(const collective_work_message::ptr& msg)
 {
   action* ac = comm_action_done(action::send, msg->round(), msg->dense_recver());
 #if SUMI_COMM_SYNC_STATS
-  if (my_api_->sync_stats()){
-    my_api_->sync_stats()->collect(msg, my_api_->wall_time(), ac->start);
-  }
+  my_api_->collect_sync_delays(0,msg); //the zero doesn't matter here
 #endif
 }
 
@@ -827,6 +831,9 @@ dag_collective_actor::incoming_nack(action::type_t ty, const collective_work_mes
 void
 dag_collective_actor::data_recved(action* ac_, const collective_work_message::ptr &msg, void *recvd_buffer)
 {
+#if SUMI_COMM_SYNC_STATS
+  my_api_->collect_sync_delays(0,msg);
+#endif
   recv_action* ac = static_cast<recv_action*>(ac_);
   //we are allowed to have a null buffer
   //this just walks through the communication pattern
@@ -906,11 +913,6 @@ dag_collective_actor::data_recved(
 
   uint32_t id = action::message_id(action::recv, msg->round(), msg->dense_sender());
   action* ac = active_comms_[id];
-#if SUMI_COMM_SYNC_STATS
-  if (my_api_->sync_stats()){
-    my_api_->sync_stats()->collect(msg, my_api_->wall_time(), ac->start);
-  }
-#endif
   if (ac == nullptr){
     spkt_throw_printf(sprockit::value_error,
       "on %d, received data for unknown receive %u from %d on round %d",
@@ -1063,7 +1065,7 @@ dag_collective_actor::next_round_ready_to_get(
        get_req->remote_buffer());
 
 #if SUMI_COMM_SYNC_STATS
-    header->set_time_sent(my_api_->wall_time());
+    header->set_time_synced(my_api_->wall_time());
 #endif
 
     my_api_->rdma_get(ac->phys_partner, header,

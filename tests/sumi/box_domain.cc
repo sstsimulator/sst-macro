@@ -1,8 +1,4 @@
 #include <sprockit/test/test.h>
-#include <sprockit/output.h>
-#include <sstmac/util.h>
-#include <sstmac/compute.h>
-#include <sstmac/skeleton.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
@@ -10,6 +6,12 @@
 #include <sumi/dense_rank_map.h>
 #include <sumi/transport.h>
 #include <sumi/thread_safe_set.h>
+
+#include <sstmac/util.h>
+#include <sstmac/compute.h>
+#include <sstmac/skeleton.h>
+#include <sprockit/output.h>
+
 #define sstmac_app_name user_app_cxx
 using namespace sstmac;
 using namespace sstmac::sw;

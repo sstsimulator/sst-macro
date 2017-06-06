@@ -3,6 +3,7 @@
 
 #include <sstmac/common/node_address.h>
 #include <sprockit/errors.h>
+#include <sstmac/common/serializable.h>
 
 namespace sstmac {
 
@@ -12,12 +13,18 @@ struct device_id {
     router=1,
     netlink=2,
     logp_overlay=3,
-    null=4
+    control_event=4,
+    null=5,
   } type_t;
 
   explicit device_id(uint32_t id, type_t ty) :
     location_(id), type_(ty)
   {
+  }
+
+  static device_id
+  ctrl_event() {
+    return device_id(0,control_event);
   }
 
   device_id() :
@@ -68,6 +75,19 @@ operator<(const device_id& a, const device_id& b){
 }
 
 }
+
+START_SERIALIZATION_NAMESPACE
+template <>
+class serialize<sstmac::device_id>
+{
+ public:
+  void
+  operator()(sstmac::device_id& t, serializer& ser){
+    ser.primitive(t);
+  }
+};
+END_SERIALIZATION_NAMESPACE
+
 
 #endif // EVENT_LOCATION_H
 

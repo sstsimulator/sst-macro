@@ -28,14 +28,14 @@ static sprockit::StaticKeywordRegister deprecated_keys(1, deprecated);
 lib_compute_inst::lib_compute_inst(sprockit::sim_parameters* params,
                                    const std::string& libname, software_id id,
                                    operating_system* os)
-  : lib_compute(params, libname, id, os)
+  : lib_compute_time(params, libname, id, os)
 {
   init(params);
 }
 
 lib_compute_inst::lib_compute_inst(sprockit::sim_parameters* params,
                                    software_id sid, operating_system* os) :
-  lib_compute(params, "computelibinstr%s", sid, os)
+  lib_compute_time(params, "computelibinstr%s", sid, os)
 {
   init(params);
 }

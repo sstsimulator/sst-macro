@@ -57,7 +57,7 @@ class transport
   init();
   
   virtual void
-  finalize();
+  finish();
 
   void
   deadlock_check();
@@ -151,23 +151,13 @@ class transport
   nvram_get(int src, const message::ptr& msg);
   
   /**
-   Block until a message is received.
-   Returns immediately if message already waiting.
-   Message returned is removed from the internal queue.
-   Successive calls to the function do NOT return the same message.
-   @return    The next message to be received
-  */
-  message::ptr
-  blocking_poll();
-
-  /**
    Check if a message has been received. Return immediately even if empty queue.
    Message returned is removed from the internal queue.
    Successive calls to the function do NOT return the same message.
    @return    The next message to be received, null if no messages
   */
   message::ptr
-  poll(bool blocking);
+  poll(bool blocking, double timeout = -1);
 
   /**
    Block until a message is received.
@@ -178,7 +168,7 @@ class transport
    @return          The next message to be received. Message is NULL on timeout
   */
   message::ptr
-  blocking_poll(double timeout);
+  blocking_poll(double timeout = -1);
 
   template <class T>
   typename T::ptr
@@ -208,12 +198,9 @@ class transport
 
   message::ptr
   blocking_poll(message::payload_type_t);
-  
-  virtual message::ptr
-  block_until_message() = 0;
 
   virtual message::ptr
-  block_until_message(double timeout) = 0;
+  poll_pending_messages(bool blocking, double timeout) = 0;
 
   bool
   use_eager_protocol(long byte_length) const {
@@ -329,11 +316,11 @@ class transport
    * @param context The context (i.e. initial set of failed procs)
    */
   virtual void
-  dynamic_tree_vote(int vote, int tag, vote_fxn fxn, int context = options::initial_context, communicator* dom = 0);
+  dynamic_tree_vote(int vote, int tag, vote_fxn fxn, int context = options::initial_context, communicator* dom = nullptr);
 
   template <template <class> class VoteOp>
   void
-  vote(int vote, int tag, int context = options::initial_context, communicator* dom = 0){
+  vote(int vote, int tag, int context = options::initial_context, communicator* dom = nullptr){
     typedef VoteOp<int> op_class_type;
     dynamic_tree_vote(vote, tag, &op_class_type::op, context, dom);
   }
@@ -341,7 +328,8 @@ class transport
   /**
    * The total size of the input/result buffer in bytes is nelems*type_size
    * @param dst  Buffer for the result. Can be NULL to ignore payloads.
-   * @param src  Buffer for the input. Can be NULL to ignore payloads. This need not be public! Automatically memcpy from src to public facing dst.
+   * @param src  Buffer for the input. Can be NULL to ignore payloads.
+   *             Automatically memcpy from src to dst.
    * @param nelems The number of elements in the input and result buffer.
    * @param type_size The size of the input type, i.e. sizeof(int), sizeof(double)
    * @param tag A unique tag identifier for the collective
@@ -350,22 +338,49 @@ class transport
    * @param context The context (i.e. initial set of failed procs)
    */
   virtual void
-  allreduce(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn, bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
+  allreduce(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
+            bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
   template <typename data_t, template <typename> class Op>
   void
-  allreduce(void* dst, void* src, int nelems, int tag, bool fault_aware = false, int context = options::initial_context, communicator* dom = 0){
+  allreduce(void* dst, void* src, int nelems, int tag,
+            bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr){
     typedef ReduceOp<Op, data_t> op_class_type;
     allreduce(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
   }
 
+  /**
+   * The total size of the input/result buffer in bytes is nelems*type_size
+   * @param dst  Buffer for the result. Can be NULL to ignore payloads.
+   * @param src  Buffer for the input. Can be NULL to ignore payloads.
+   *             Automatically memcpy from src to dst.
+   * @param nelems The number of elements in the input and result buffer.
+   * @param type_size The size of the input type, i.e. sizeof(int), sizeof(double)
+   * @param tag A unique tag identifier for the collective
+   * @param fxn The function that will actually perform the reduction
+   * @param fault_aware Whether to execute in a fault-aware fashion to detect failures
+   * @param context The context (i.e. initial set of failed procs)
+   */
   virtual void
-  reduce(int root, void* dst, void* src, int nelems, int type_size, int tag,
-    reduce_fxn fxn, bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
+  scan(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
+       bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
   template <typename data_t, template <typename> class Op>
   void
-  reduce(int root, void* dst, void* src, int nelems, int tag, bool fault_aware = false, int context = options::initial_context, communicator* dom = 0){
+  scan(void* dst, void* src, int nelems, int tag, bool fault_aware = false,
+       int context = options::initial_context, communicator* dom = nullptr){
+    typedef ReduceOp<Op, data_t> op_class_type;
+    scan(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
+  }
+
+  virtual void
+  reduce(int root, void* dst, void* src, int nelems, int type_size, int tag,
+    reduce_fxn fxn, bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
+
+  template <typename data_t, template <typename> class Op>
+  void
+  reduce(int root, void* dst, void* src, int nelems, int tag,
+         bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr){
     typedef ReduceOp<Op, data_t> op_class_type;
     reduce(root, dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
   }
@@ -383,35 +398,35 @@ class transport
    */
   virtual void
   allgather(void* dst, void* src, int nelems, int type_size, int tag,
-            bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
+            bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
   virtual void
   allgatherv(void* dst, void* src, int* recv_counts, int type_size, int tag,
-             bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
+             bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
   virtual void
   gather(int root, void* dst, void* src, int nelems, int type_size, int tag,
-         bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
+         bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
   virtual void
   gatherv(int root, void* dst, void* src, int sendcnt, int* recv_counts, int type_size, int tag,
-          bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
+          bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
   virtual void
   alltoall(void* dst, void* src, int nelems, int type_size, int tag,
-             bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
+             bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
   virtual void
   alltoallv(void* dst, void* src, int* send_counts, int* recv_counts, int type_size, int tag,
-             bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
+             bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
   virtual void
   scatter(int root, void* dst, void* src, int nelems, int type_size, int tag,
-          bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
+          bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
   virtual void
   scatterv(int root, void* dst, void* src, int* send_counts, int recvcnt, int type_size, int tag,
-          bool fault_aware = false, int context = options::initial_context, communicator* dom = 0);
+          bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
   /**
    * Essentially just executes a zero-byte allgather.
@@ -419,10 +434,11 @@ class transport
    * @param fault_aware
    */
   void
-  barrier(int tag, bool fault_aware = false, communicator* dom = 0);
+  barrier(int tag, bool fault_aware = false, communicator* dom = nullptr);
 
   void
-  bcast(int root, void* buf, int nelems, int type_size, int tag, bool fault_aware, int context=options::initial_context, communicator* dom=0);
+  bcast(int root, void* buf, int nelems, int type_size, int tag, bool fault_aware,
+        int context=options::initial_context, communicator* dom=nullptr);
   
   void system_bcast(const message::ptr& msg);
 
@@ -786,6 +802,7 @@ class transport
   static collective_algorithm_selector* alltoall_selector_;
   static collective_algorithm_selector* alltoallv_selector_;
   static collective_algorithm_selector* allreduce_selector_;
+  static collective_algorithm_selector* scan_selector_;
   static collective_algorithm_selector* allgatherv_selector_;
   static collective_algorithm_selector* bcast_selector_;
   static collective_algorithm_selector* gather_selector_;
@@ -797,39 +814,10 @@ class transport
 
 #if SUMI_COMM_SYNC_STATS
  public:
-  struct comm_sync_stats {
-    comm_sync_stats() :
-      total_sync_delay(0.),
-      total_comm_delay(0.),
-      total_busy_delay(0.),
-      last_done(0.)
-    {
-    }
+  virtual void collect_sync_delays(double wait_start, const message::ptr& msg){}
 
-    void collect(const message::ptr& msg, double now, double start);
-
-    void collect(double time_sent, double time_arrived,
-                 double now, double start);
-
-    void print(int rank, std::ostream& os);
-
-    double total_sync_delay;
-    double total_comm_delay;
-    double total_busy_delay;
-
-   private:
-    double last_done;
-  };
-
-  comm_sync_stats*
-  sync_stats() const {
-    return comm_sync_stats_;
-  }
-
- private:
-  comm_sync_stats* comm_sync_stats_;
+  virtual void start_collective_sync_delays(){}
 #endif
-
 };
 
 DeclareFactory(transport);

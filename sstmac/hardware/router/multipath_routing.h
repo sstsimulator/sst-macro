@@ -76,9 +76,9 @@ class multipath_router :
 
     int path_id = path.geometric_id;
     int next_index = geom_paths_[path_id].next_index();
-    debug_printf(sprockit::dbg::router,
-      "multipath routing: using index %d", next_index);
     path = paths[next_index];
+    debug_printf(sprockit::dbg::router,
+      "multipath routing: index %d yielded outport %d", next_index, path.outport());
   }
 
  private:

@@ -365,7 +365,7 @@ int USER_MAIN(int argc, char** argv)
    sstmac::SimulationQueue::publishResults();
    num_done = 0;
  }
- tport->finalize();
+ tport->finish();
  return 0;
 }
 

@@ -27,7 +27,7 @@
 #include <sstmac/software/launch/launch_event.h>
 #include <sstmac/software/launch/job_launcher.h>
 #include <sstmac/software/launch/job_launch_event.h>
-#include <sstmac/software/launch/app_launch.h>
+#include <sstmac/software/launch/launch_request.h>
 
 #include <sprockit/driver_util.h>
 #include <sprockit/keyword_registration.h>
@@ -109,7 +109,7 @@ manager::compute_max_nproc_for_app(sprockit::sim_parameters* app_params)
   }
   int nproc, procs_per_node;
   std::vector<int> ignore;
-  app_launch::parse_launch_cmd(app_params, nproc,
+  app_launch_request::parse_launch_cmd(app_params, nproc,
     procs_per_node, ignore);
   return std::max(nproc, max_nproc);
 }
@@ -120,11 +120,12 @@ manager::compute_max_nproc(sprockit::sim_parameters* params)
   int appnum = 1;
   int max_nproc = 0;
   bool found_app = true;
+  sprockit::sim_parameters* node_params = params->get_namespace("node");
   while (found_app || appnum < 10) {
     std::string app_namespace = sprockit::printf("app%d", appnum);
-    found_app = params->has_namespace(app_namespace);
+    found_app = node_params->has_namespace(app_namespace);
     if (found_app){
-      sprockit::sim_parameters* app_params = params->get_namespace(app_namespace);
+      sprockit::sim_parameters* app_params = node_params->get_namespace(app_namespace);
       int nproc = compute_max_nproc_for_app(app_params);
       max_nproc = std::max(nproc, max_nproc);
     }

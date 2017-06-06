@@ -41,9 +41,11 @@ While in many previous architectures there was generally a one-to-one correspond
 Multinode switches can be specified via
 
 \begin{ViFile}
-topology.name = torus
-topology.geometry = 4 4
-topology.concentration = 2
+topology {
+ name = torus
+ geometry = 4 4
+ concentration = 2
+}
 \end{ViFile}
 which would now generate a torus topology with 16 switches and 32 compute nodes.
 
@@ -51,24 +53,30 @@ Another subtle modification of torus (and other networks) can be controlled by g
 The above network could be modified as
 
 \begin{ViFile}
-topology.name = torus
-topology.geometry = 4 4
-topology.redundant = 2 1
+topology {
+ name = torus
+ geometry = 4 4
+ redundant = 2 1
+}
 \end{ViFile}
 giving the the $X$-dimension twice the bandwidth of the $Y$-dimension.  
 This pattern DOES exist in some interconnects as a load-balancing strategy.  
 A very subtle point arises here. Consider two different networks:
 
 \begin{ViFile}
-topology.name = torus
-topology.geometry = 4 4
-topology.redundant = 1 1
+topology {
+ name = torus
+ geometry = 4 4
+ redundant = 1 1
+}
 network_bandwidth = 2GB/s
 \end{ViFile}
 \begin{ViFile}
-topology.name = torus
-topology.geometry = 4 4
-topology.redundant = 2 2
+topology {
+ name = torus
+ geometry = 4 4
+ redundant = 2 2
+}
 network_bandwidth = 1GB/s
 \end{ViFile}
 For some coarse-grained models, these two networks are exactly equivalent.  
@@ -89,7 +97,11 @@ The above scheme is entirely static, making no adjustments to avoid congestion i
 \sstmacro supports a variety of adaptive routing algorithms.  This can be specified:
 
 \begin{ViFile}
-router = min_ad
+switch {
+ router {
+  name = min_ad
+ }
+}
 \end{ViFile}
 which specifies minimal adaptive routing. 
 There are now multiple valid paths between network endpoints, one of which is illustrated in Figure \ref{fig:torus:minadrouting}.

@@ -11,21 +11,15 @@
 
 include $(top_srcdir)/Makefile.common
 
-dist_bin_SCRIPTS = aprun \
-dumpibreakdown \
-fix_style \
-readsymbols \
-sstmain \
+bin_PROGRAMS = 
+
+dist_bin_SCRIPTS = \
 sst++ \
 dsst++ \
 sstcc \
 dsstcc \
 sstcclib.py \
-check_repo_build \
-get_os \
-get_include_path \
-get_pthread_mutex_vars \
-get_pthread_cond_vars
+configlib.py
 
 if INTEGRATED_SST_CORE
 dist_bin_SCRIPTS += pysstmac
@@ -33,16 +27,23 @@ endif
 
 bin_SCRIPTS = sstmacro-config sstccvars.py
 
-EXTRA_DIST = sstmacro-config.in sstcclib.py sstccvars.py.in runtest checktest noop
+EXTRA_DIST = sstmacro-config.in sstccvars.py.in tools config_tools manifest
 
-AM_CPPFLAGS += -I$(top_builddir)/pth -I$(top_srcdir)/pth -I$(top_builddir)/bin \
-  -I$(top_srcdir)/bin -I$(top_builddir)/dumpi -I$(top_srcdir)/dumpi
+AM_CPPFLAGS += \
+ -I$(top_builddir)/bin \
+ -I$(top_srcdir)/bin \
+ -I$(top_builddir)/dumpi \
+ -I$(top_srcdir)/dumpi
+
+if HAVE_OTF2
+AM_LDFLAGS += $(OTF2_LDFLAGS)
+endif
 
 if !INTEGRATED_SST_CORE
-bin_PROGRAMS = sstmac sstmac_top_info
+bin_PROGRAMS += sstmac sstmac_top_info
 
-sstmac_SOURCES = sstmac_dummy_main.cc
-sstmac_top_info_SOURCES = top_info.cc
+sstmac_SOURCES = src/sstmac_dummy_main.cc
+sstmac_top_info_SOURCES = src/top_info.cc
 
 exe_LDADD = \
     ../sprockit/sprockit/libsprockit.la \
@@ -55,32 +56,67 @@ endif
 
 sstmac_LDADD = $(exe_LDADD)
 sstmac_top_info_LDADD = $(exe_LDADD)
-
-python_includedir=$(includedir)/sstmac
-nobase_python_include_HEADERS = \
-    pysst/__init__.py \
-    pysst/append.py \
-    pysst/collect.py \
-    pysst/compile.py \
-    pysst/refactor.py \
-    pysst/fakepath.py \
-    pysst/fakeparse.py \
-    pysst/var.py \
-    pysst/fake.py \
-    pysst/gui.py \
-    pysst/header.py \
-    pysst/keyword.py \
-    pysst/util.py \
-    pysst/parse.py \
-    pysst/path.py \
-    pysst/scope.py \
-    pysst/sstglobals.py \
-    pysst/standardize.py 
-
-uninstall-local:
-	test -f $(includedir)/sstmac/pysst/__init__.pyc ; if [[ $$? -eq 0 ]] ; then rm $(includedir)/sstmac/pysst/*.pyc; fi
-
 endif
+
+EXTRA_DIST += clang
+
+# clang/util.h 
+# clang/pragmas.h 
+# clang/astConsumers.h 
+# clang/clangheaders.h 
+# clang/frontendActions.h 
+# clang/globalVarNamespace.h 
+# clang/replAstVisitor.h
+
+if HAVE_CLANG
+bin_PROGRAMS += sstmac_clang_deglobal
+sstmac_clang_deglobal_SOURCES = \
+  clang/util.cc \
+  clang/globals.cc \
+  clang/pragmas.cc \
+  clang/computePragma.cc \
+  clang/astConsumers.cc \
+  clang/frontendActions.cc \
+  clang/replAstVisitor.cc 
+
+sstmac_clang_deglobal_CXXFLAGS = -fno-rtti $(AM_CXXFLAGS)
+sstmac_clang_deglobal_CPPFLAGS = $(CLANG_CPPFLAGS) $(AM_CPPFLAGS)
+sstmac_clang_deglobal_LDFLAGS = $(CLANG_LDFLAGS) \
+ -Wl,-rpath,$(HOME)/Programs/install/clang-llvm/lib \
+ -lclang \
+ -lz \
+ -lm \
+ -lcurses \
+ -lclangFrontend \
+ -lclangFrontendTool \
+ -lLLVMSupport \
+ -lclangTooling \
+ -lclangBasic \
+ -lclangASTMatchers \
+ -lclangFormat \
+ -lclangFrontend \
+ -lclangDriver \
+ -lclangParse \
+ -lLLVMMCParser \
+ -lclangSerialization \
+ -lclangSema \
+ -lclangEdit \
+ -lclangAnalysis \
+ -lLLVMBitReader \
+ -lLLVMProfileData \
+ -lclangToolingCore \
+ -lclangAST \
+ -lclangRewrite \
+ -lclangLex \
+ -lclangBasic \
+ -lLLVMCore \
+ -lLLVMMC \
+ -lLLVMOption \
+ -lLLVMSupport \
+ -lLLVMDemangle
+endif
+
+
 
 
 

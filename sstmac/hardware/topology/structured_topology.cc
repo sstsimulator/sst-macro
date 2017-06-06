@@ -24,17 +24,21 @@ structured_topology::structured_topology(sprockit::sim_parameters* params,
   injection_redundancy_ = params->get_optional_int_param("injection_redundant", 1);
   max_ports_injection_ = netlinks_per_switch_;
 
-  sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
-  if (netlink_params->has_scoped_param("model") &&
-      netlink_params->get_scoped_param("model") != "null"){
-    num_nodes_per_netlink_ = netlink_params->get_int_param("concentration");
-    netlinks_per_switch_ /= num_nodes_per_netlink_;
+  num_nodes_per_netlink_ = params->get_optional_int_param("netlink_concentration",1);
+  netlinks_per_switch_ /= num_nodes_per_netlink_;
+
+  if (num_nodes_per_netlink_ > 1){
     if (netlinks_per_switch_ == 0){
       spkt_abort_printf("Error - netlink concentration cannot be higher than node concentration");
     }
-  } else {
-    num_nodes_per_netlink_ = 1;
   }
+
+//  } else {
+//    num_nodes_per_netlink_ = 1;
+//    std::cerr << "else\n";
+//  }
+  std::cerr << "num_nodes_per_netlink_: " << num_nodes_per_netlink_ << "\n";
+  std::cerr << "netlinks_per_switch_: " << netlinks_per_switch_ << "\n";
 }
 
 void

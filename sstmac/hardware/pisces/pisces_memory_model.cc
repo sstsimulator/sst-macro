@@ -27,6 +27,15 @@ namespace hw {
 
 SpktRegister("pisces | pisces", memory_model, pisces_memory_model);
 
+std::string
+memory_message::to_string() const
+{
+  uint32_t num, node;
+  unique_event_id::unpack(id_, node, num);
+  return sprockit::printf("memory message %lu: seqnum %d on node %d with %d bytes",
+                          id_, node, num, bytes_);
+}
+
 pisces_memory_packetizer::pisces_memory_packetizer(
   sprockit::sim_parameters* params,
   event_scheduler* parent) :
@@ -49,6 +58,8 @@ pisces_memory_packetizer::pisces_memory_packetizer(
   init_noise_model();
 
   self_credit_handler_ = new_handler(this, &pisces_memory_packetizer::recv_credit);
+
+  debug("initializing pisces memory packetizer with mtu %d", packetSize());
 }
 
 link_handler*
@@ -98,7 +109,8 @@ pisces_memory_model::access(
                    parent_node_->allocate_unique_id(), max_bw);
   pending_requests_[msg] = cb;
   int channel = allocate_channel();
-  debug("starting access %lu on vn %d", msg->flow_id(), channel);
+  debug("Node %d starting access %lu on vn %d",
+        parent_node_->addr(), msg->flow_id(), channel);
   mem_packetizer_->start(channel, msg);
 }
 
@@ -146,7 +158,7 @@ pisces_memory_packetizer::inject(int vn, long bytes, long byte_offset, message* 
   bool is_tail = (bytes + byte_offset) == msg->byte_length();
   pisces_payload* payload = pkt_allocator_->new_packet(bytes, msg->flow_id(), is_tail,
                                                        msg->toaddr(), msg->fromaddr(),
-                                                       msg);
+                                                       is_tail ? msg : nullptr);
 
   payload->set_inport(vn);
   memory_message* orig = safe_cast(memory_message, msg);
@@ -192,6 +204,7 @@ pisces_memory_packetizer::recv_credit(event* ev)
   debug("got credit %s on vn %d", credit->to_string().c_str(), credit->port());
 
   int channel = credit->port();
+  delete credit;
   sendWhatYouCan(channel);
 }
 

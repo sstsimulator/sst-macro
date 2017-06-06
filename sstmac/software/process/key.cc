@@ -10,7 +10,7 @@
  */
 
 #include <sstmac/software/process/key.h>
-#include <sstmac/common/thread_info.h>
+#include <sstmac/software/process/thread_info.h>
 #include <sstmac/common/thread_lock.h>
 #include <sprockit/output.h>
 #include <sprockit/statics.h>
@@ -27,23 +27,27 @@ namespace keypool {
 static std::vector<key*>* chunks = new std::vector<key*>;
 } // end of namespace keypool.
 
-key::category key::general("General");
+key_traits::category key::general("General");
 spkt_unordered_map<std::string,int>* key::category_name_to_id_ = 0;
 spkt_unordered_map<int,std::string>* key::category_id_to_name_ = 0;
 uint64_t key::key_storage_size_ = 0;
 static sprockit::need_delete_statics<key> del_statics;
 static thread_lock lock_;
 
-key::category::category(const std::string &name) :
+namespace key_traits {
+
+category::category(const char* name) :
   id_(-1)
 {
   id_ = key::allocate_category_id(name);
 
 }
 
-key::category::category() :
+category::category() :
   id_(-1)
 {
+}
+
 }
 
 int
@@ -79,7 +83,7 @@ key::key() :
   blocked_thread_.second = 0;
 }
 
-key::key(const category& cat) :
+key::key(const key_traits::category& cat) :
   keyname_id_(cat.id()),
   timed_out_(false)
 {
@@ -87,22 +91,6 @@ key::key(const category& cat) :
   blocked_thread_.second = 0;
 }
 
-key*
-key::construct()
-{
-  return new key;
-}
-
-key*
-key::construct(const category &name)
-{
-  return new key(name);
-}
-
-
-key::~key()
-{
-}
 
 void*
 key::operator new(size_t size)

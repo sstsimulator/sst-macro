@@ -324,6 +324,16 @@ class pisces_credit :
     return port_;
   }
 
+#if !SSTMAC_INTEGRATED_SST_CORE
+  bool is_payload() const override {
+    return false;
+  }
+
+  bool is_ack() const override {
+    return true;
+  }
+#endif
+
   int
   num_credits() const {
     return num_credits_;

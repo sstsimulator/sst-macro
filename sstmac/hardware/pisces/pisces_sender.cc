@@ -141,11 +141,11 @@ pisces_sender::send(
   if (stat_collector_) stat_collector_->collect_single_event(st);
 
 #if SSTMAC_SANITY_CHECK
-  if (msg->bw() <= 0 && msg->bw() != pisces_payload::uninitialized_bw) {
+  if (pkt->bw() <= 0 && pkt->bw() != pisces_payload::uninitialized_bw) {
     spkt_throw_printf(sprockit::value_error,
                      "On %s, got negative bandwidth for msg %s",
                      to_string().c_str(),
-                     msg->to_string().c_str());
+                     pkt->to_string().c_str());
   }
 #endif
 

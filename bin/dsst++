@@ -2,7 +2,7 @@
 
 from sstcclib import run
 import sys
-rc =  run("c++", include_main=False, redefine_symbols=False)
+rc =  run("c++", includeMain=False, redefineSymbols=False)
 if not rc == 0:
     sys.exit(1)
 

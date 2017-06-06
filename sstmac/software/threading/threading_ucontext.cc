@@ -1,5 +1,5 @@
 #include <sstmac/software/threading/threading_ucontext.h>
-#include <sstmac/common/thread_info.h>
+#include <sstmac/software/process/thread_info.h>
 
 namespace sstmac {
 namespace sw {
@@ -20,9 +20,10 @@ threading_ucontext::init_context()
 void
 threading_ucontext::start_context(int physical_thread_id,
    void *stack, size_t stacksize, void
-   (*func)(void*), void *args, threading_interface *yield_to)
+   (*func)(void*), void *args, threading_interface *yield_to,
+   void* globals_storage)
 {
-  thread_info::register_user_space_virtual_thread(physical_thread_id, stack, stacksize);
+  thread_info::register_user_space_virtual_thread(physical_thread_id, stack, globals_storage);
 
   funcptr funcp(func);
   voidptr voidp(args);

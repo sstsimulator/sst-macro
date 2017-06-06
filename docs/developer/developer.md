@@ -5,7 +5,7 @@ category: SSTDocumentation
 ---
 
 
-# SST/macro 6.0: Developer's Reference
+# SST/macro 7.0: Developer's Reference
 
 ![](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/sstlogo.png)
 

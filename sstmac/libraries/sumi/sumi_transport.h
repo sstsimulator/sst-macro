@@ -5,7 +5,7 @@
 #include <sstmac/common/node_address.h>
 #include <sstmac/libraries/sumi/message_fwd.h>
 #include <sstmac/software/process/pmi.h>
-#include <sstmac/software/launch/app_launch.h>
+#include <sstmac/software/launch/job_launcher_fwd.h>
 #include <sstmac/software/libraries/service.h>
 #include <sstmac/software/api/api.h>
 #include <sstmac/hardware/network/network_message_fwd.h>
@@ -23,39 +23,6 @@
 
 namespace sstmac {
 
-class sumi_queue
-{
-
- public:
-  sumi_queue(sstmac::sw::operating_system* os);
-
-  sumi_queue();
-
-  ~sumi_queue();
-
-  transport_message*
-  poll_until_message();
-
-  transport_message*
-  poll_until_message(timestamp timeout);
-
-  void
-  put_message(transport_message* message);
-
-  bool
-  blocked() const {
-    return !blocked_keys_.empty();
-  }
-
- private:
-  std::list<transport_message*> pending_messages_;
-
-  std::list<sstmac::sw::key*> blocked_keys_;
-
-  sstmac::sw::operating_system* os_;
-
-};
-
 class sumi_transport :
   public sstmac::sw::api,
   public sstmac::sw::process_manager,
@@ -65,16 +32,13 @@ class sumi_transport :
  public:  
   sumi_transport(sprockit::sim_parameters* params,
                  sstmac::sw::software_id sid,
-                 sstmac::sw::operating_system* os) :
-    sumi_transport(params, "sumi", sid, os)
-  {
-  }
+                 sstmac::sw::operating_system* os);
 
   virtual void
   init() override;
 
   virtual void
-  finalize() override;
+  finish() override;
 
   virtual ~sumi_transport();
 
@@ -82,6 +46,8 @@ class sumi_transport :
   handle(sstmac::transport_message* msg);
 
   void incoming_event(event *ev) override;
+
+  void compute(timestamp t);
 
   void
   client_server_send(
@@ -107,20 +73,14 @@ class sumi_transport :
   sumi::collective_done_message::ptr
   collective_block(sumi::collective::type_t ty, int tag) override;
 
-  void
-  cq_notify() override;
+  void cq_notify() override;
 
-  double
-  wall_time() const override;
+  double wall_time() const override;
 
   sumi::message::ptr
-  block_until_message() override;
+  poll_pending_messages(bool blocking, double timeout = -1) override;
 
-  sumi::message::ptr
-  block_until_message(double timeout) override;
-
-  void
-  ping_timeout(sumi::pinger* pnger);
+  void ping_timeout(sumi::pinger* pnger);
 
   /**
    * @brief send Intra-app. Send within the same process launch (i.e. intra-comm MPI_COMM_WORLD). This contrasts
@@ -131,8 +91,7 @@ class sumi_transport :
    * @param dst
    * @param needs_ack
    */
-  void
-  send(long byte_length,
+  void send(long byte_length,
     const sumi::message_ptr& msg,
     int ty,
     int dst,
@@ -142,17 +101,15 @@ class sumi_transport :
 
   void shutdown_server(int dest_rank, node_id dest_node, int dest_app);
 
-  std::string
-  server_libname() const {
+  std::string server_libname() const {
     return server_libname_;
   }
 
- private:
-  bool
-  blocked() const {
-    return queue_->blocked();
-  }
+  event_scheduler* des_scheduler() const;
 
+  void memcopy(long bytes);
+
+ private:
   void
   do_smsg_send(int dst, const sumi::message::ptr &msg) override;
 
@@ -218,16 +175,21 @@ class sumi_transport :
 
   std::string server_libname_;
 
-  sstmac::sw::app_launch* rank_mapper_;
+  sstmac::sw::task_mapping_ptr rank_mapper_;
 
-  /**
-   * @brief queue_
-   * Manages incoming/outgoing messages
-   */
-  sumi_queue* queue_;
+  std::list<transport_message*> pending_messages_;
+
+  std::list<sstmac::sw::key*> blocked_keys_;
 
   device_id loc_;
 
+  timestamp post_rdma_delay_;
+
+  timestamp post_header_delay_;
+
+  timestamp poll_delay_;
+
+  sstmac::sw::lib_compute_time* user_lib_time_;
 
 };
 

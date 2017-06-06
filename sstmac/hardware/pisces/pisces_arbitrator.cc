@@ -480,22 +480,6 @@ pisces_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
         //we are also draining the queue
         //delta < 0 so this is really a subtraction
         bytes_queued += ceil(delta_bw * epoch->length);
-#if SSTMAC_SANITY_CHECK
-        if (bytes_queued < 0) {
-          spkt_throw_printf(sprockit::value_error,
-                           "Payload now has negative number of bytes queued:\n"
-                           "payload_bw=%20.16e\n"
-                           "epoch_bw=%20.16e\n"
-                           "delta_bw=%20.16e\n"
-                           "epoch_length=%20.16e\n"
-                           "bytes_queued=%d\n",
-                           payload->bw(),
-                           epoch->bw_available,
-                           delta_bw,
-                           epoch->length,
-                           save_bytes_queued);
-        }
-#endif
         //this epoch is exhausted
         head_ = epoch->next;
         delete epoch;

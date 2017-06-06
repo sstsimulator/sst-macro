@@ -42,17 +42,21 @@ void
 event_map::add_event(event_queue_entry* ev)
 {
 #if SSTMAC_SANITY_CHECK
-  if (ev->event_location() == device_id::uninitialized){
-    spkt_throw_printf(sprockit::value_error,
-      "got uninitialized event location for %s",
-      ev->to_string().c_str());
-  } else if (ev->src_location() == device_id::uninitialized){
-    spkt_throw_printf(sprockit::value_error,
-      "got uninitialized src location for %s",
-      ev->to_string().c_str());
+  if (ev->event_location().type() == device_id::null){
+    spkt_abort_printf("got uninitialized event location for %s",
+      sprockit::to_string(ev).c_str());
+  } else if (ev->src_location().type() == device_id::null){
+    spkt_abort_printf("got uninitialized src location for %s",
+      sprockit::to_string(ev).c_str());
   }
+  size_t old_size = queue_.size();
 #endif
   queue_.insert(ev);
+#if SSTMAC_SANITY_CHECK
+  if (queue_.size() == old_size){
+    spkt_abort_printf("inserted event, but comparison erroneously matched previous event");
+  }
+#endif
 }
 
 //
@@ -82,6 +86,109 @@ event_map::cancel_all_messages(device_id canceled_loc)
       queue_.erase(tmp);
     }
   }
+}
+
+//
+// Hello.
+//
+event_map::event_map(sprockit::sim_parameters* params, parallel_runtime* rt) :
+  running_(false),
+  event_manager(params, rt)
+{
+  set_now(timestamp(0));
+}
+
+
+void
+event_map::do_next_event()
+{
+  event_queue_entry* ev = pop_next_event();
+  set_now(ev->time());
+  //debug_printf(sprockit::dbg::all_events,
+  //  "running event %s", sprockit::to_string(ev).c_str());
+
+  ev->execute();
+  delete ev;
+}
+
+#if DEBUG_DETERMINISM
+extern std::map<device_id,std::ofstream*> outs;
+#endif
+
+//
+// Run the eventmanager.
+//
+void
+event_map::run()
+{
+  if (running_) {
+    spkt_throw(sprockit::illformed_error,
+              "event_map::run: event manager already running.");
+  }
+  running_ = true;
+  stopped_ = false;
+
+#if SSTMAC_SANITY_CHECK
+  int n_events = 0;
+  clock_t t1 = clock();
+  clock_t t2;
+#endif
+
+#if SSTMAC_DEBUG_THREAD_EVENTS
+  open_debug_file();
+#endif
+
+  while (1){
+    while (!empty() && !stopped_) {
+      do_next_event();
+    }
+    bool terminate = vote_to_terminate();
+    if (terminate)
+      break;
+  }
+
+#if SSTMAC_DEBUG_THREAD_EVENTS
+  close_debug_file();
+#endif
+
+  running_ = false;
+
+  if (empty() || finish_on_stop_) {
+    complete_ = true;
+    finish();
+  }
+
+#if DEBUG_DETERMINISM
+  std::map<device_id,std::ofstream*>::iterator it, end = outs.end();
+  for (it=outs.begin(); it != end; ++it){
+    it->second->close();
+  }
+#endif
+}
+
+
+void
+event_map::schedule(timestamp start_time, uint32_t seqnum, event_queue_entry* ev)
+{
+  if (start_time < now()) {
+    spkt_throw_printf(sprockit::illformed_error,
+                     "event_map::schedule: scheduling event in the past: now=%ld units, ev=%ld units",
+                     now().ticks(), start_time.ticks());
+  }
+
+  ev->set_time(start_time);
+  ev->set_seqnum(seqnum);
+
+
+  //debug_printf(sprockit::dbg::all_events,
+  //  "adding event to run at %10.5e: %s",
+  //  start_time.sec(), sprockit::to_string(ev).c_str());
+  add_event(ev);
+}
+
+void
+event_map::finish()
+{
 }
 
 }

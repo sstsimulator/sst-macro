@@ -73,9 +73,11 @@ class graph_viz :
   delete_statics();
 
  private:
+  void dump_summary(std::ostream& os);
+
   typedef std::pair<long, long long> graphviz_call;
   class trace  {
-
+   friend class graph_viz;
    private:
     std::map<void*, graphviz_call> calls_;
 
@@ -86,20 +88,33 @@ class graph_viz :
     graph_viz* parent_;
 
    public:
-    trace(graph_viz* parent, void* fxn);
+    trace(graph_viz* parent, void* fxn) :
+      self_(0), fxn_(fxn), parent_(parent)
+    {
+    }
 
     std::string
     summary() const;
 
-    void* fxn() const;
+    void* fxn() const {
+      return fxn_;
+    }
 
     void add_call(void* fxn, int ncalls, long count);
 
-    void add_self(long count);
+    void add_self(long count) {
+      self_ += count;
+    }
+
+    void substract_self(long count) {
+      self_ -= count;
+    }
 
   };
 
   void add_call(int ncalls, long count, void* fxn, void* callfxn);
+
+  void add_self(void* fxn, long count);
 
   std::map<void*, trace*> traces_;
 

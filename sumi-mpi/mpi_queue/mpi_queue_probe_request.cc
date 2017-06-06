@@ -12,7 +12,6 @@
 #include <sumi-mpi/mpi_queue/mpi_queue_probe_request.h>
 #include <sumi-mpi/mpi_request.h>
 #include <sumi-mpi/mpi_status.h>
-#include <sstmac/common/event_handler.h>
 #include <sprockit/errors.h>
 
 namespace sumi {

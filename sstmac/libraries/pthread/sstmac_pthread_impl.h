@@ -37,11 +37,15 @@ typedef void (*sstmac_pthread_key_destructor_fxn)(void*);
 #define SSTAMC_PTHREAD_CREATE_DETACHED 0
 #define SSTMAC_PTHREAD_CREATE_JOINABLE 1
 
-#undef PTHREAD_SCOPE_PROCESS
-#define PTHREAD_SCOPE_PROCESS 0
+#define PTHREAD_MUTEX_NORMAL     0
+#define PTHREAD_MUTEX_ERRORCHECK 1
+#define PTHREAD_MUTEX_RECURSIVE  2
 
-#undef PTHREAD_SCOPE_SYSTEM
-#define PTHREAD_SCOPE_SYSTEM 1
+
+enum {
+ SSTMAC_PTHREAD_SCOPE_PROCESS,
+ SSTMAC_PTHREAD_SCOPE_SYSTEM
+};
 
 #include <sstmac/libraries/pthread/sstmac_cpu_set.h>
 #include <sstmac/software/process/time.h>

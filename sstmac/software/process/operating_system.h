@@ -19,26 +19,27 @@
 #include <sstmac/software/libraries/library.h>
 #include <sstmac/software/process/thread_fwd.h>
 #include <sstmac/software/process/app_fwd.h>
+#include <sstmac/software/process/thread_info.h>
 #include <sstmac/software/api/api_fwd.h>
 
-#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/common/messages/sst_message_fwd.h>
 #include <sstmac/common/stats/event_trace.h>
 #include <sstmac/common/event_scheduler.h>
-#include <sstmac/common/thread_info.h>
-
+#include <sstmac/software/process/thread_data.h>
 
 #include <sstmac/software/libraries/service_fwd.h>
 #include <sstmac/software/process/ftq_fwd.h>
 #include <sstmac/software/process/graphviz_fwd.h>
-#include <sstmac/software/launch/app_launch_fwd.h>
 #include <sstmac/software/process/compute_scheduler_fwd.h>
-
+#include <sstmac/software/process/global.h>
+#include <sstmac/common/messages/sst_message_fwd.h>
 #include <sstmac/hardware/node/node_fwd.h>
-
 #include <sprockit/unordered.h>
 #include <sprockit/debug.h>
 #include <stack>
 #include <queue>
+
+
 
 DeclareDebugSlot(os);
 
@@ -61,7 +62,17 @@ class operating_system :
     stack_alloc stackalloc;
     app_id current_aid;
     task_id current_tid;
+    int skip_next_op_new;
+    os_thread_context() :
+      current_thread(nullptr),
+      current_os(nullptr),
+      skip_next_op_new(0)
+    {}
   };
+
+  static void skip_next_op_new(){
+    static_os_thread_context().skip_next_op_new = true;
+  }
 
   virtual ~operating_system();
 
@@ -71,10 +82,7 @@ class operating_system :
   }
 
   static inline os_thread_context&
-  static_os_thread_context() {
-    if (cxa_finalizing_){
-      abort();
-    }
+  static_os_thread_context(){
   #if SSTMAC_USE_MULTITHREAD
     int thr = thread_info::current_physical_thread_id();
     return os_thread_contexts_[thr];
@@ -119,8 +127,7 @@ class operating_system :
    *              operation
    */
   void
-  execute(ami::COMP_FUNC, event* data,
-          key::category cat = key::general);
+  execute(ami::COMP_FUNC, event* data, key_traits::category cat);
 
   /**
    * @brief execute Execute a communication function.
@@ -131,9 +138,8 @@ class operating_system :
    * @param data  Event carrying all the data describing the compute
    */
   void
-  execute(ami::COMM_FUNC func,
-          message* data){
-    execute_kernel(func, data);
+  execute(ami::COMM_FUNC func, message* data){
+    return execute_kernel(func, data);
   }
 
   /**
@@ -143,10 +149,9 @@ class operating_system :
    * This function can therefore run on the main DES thread
    * @param func  The function to perform
    * @param data  Event carrying all the data describing the compute
+   * @return A return code specifying success or failure
    */
-  void
-  execute_kernel(ami::COMM_FUNC func,
-                 message* data);
+  void execute_kernel(ami::COMM_FUNC func, message* data);
 
   /**
    * @brief execute Execute a communication function.
@@ -200,7 +205,7 @@ class operating_system :
   add_application(app* a);
 
   void
-  start_app(app* a);
+  start_app(app* a, const std::string& unique_name);
 
   void
   handle_event(event* ev);
@@ -223,9 +228,6 @@ class operating_system :
 
   void
   print_libs(std::ostream& os = std::cout) const;
-
-  long
-  current_threadid() const;
 
   void
   set_node(sstmac::hw::node* n){
@@ -253,11 +255,18 @@ class operating_system :
 
   static size_t
   stacksize(){
-    return stacksize_;
+    return sstmac_global_stacksize;
   }
 
   static thread*
-  current_thread();
+  current_thread(){
+    return static_os_thread_context().current_thread;
+  }
+
+  graph_viz*
+  call_graph() const {
+    return call_graph_;
+  }
 
   static void
   simulation_done();
@@ -267,17 +276,43 @@ class operating_system :
     return params_;
   }
 
-  void
-  sleep(timestamp t);
+  /**
+   * @brief sleep Sleep for a specified delay. Sleeps do not require
+   *        core reservation, unlike #compute. Sleeps always begin immediately.
+   * @param sleep_delay The length of time to sleep (delta T)
+   */
+  void sleep(timestamp sleep_delay);
 
-  void
-  compute(timestamp t);
+  /**
+   * @brief sleep_until Sleep until a specified time. If that time has already been reached
+   *          return immediately. Otherwise block until the time arrives.
+   * @param t The time to sleep until
+   */
+  void sleep_until(timestamp t);
+
+  /**
+   * @brief compute Compute for a specified time period. This requires
+   *        a core to be reserved. If no cores are available,
+   *        block until a core becomes available.
+   * @param t The length of time to compute (delta T)
+   */
+  void compute(timestamp t);
 
   void kill_node();
 
   void decrement_app_refcount();
 
   void increment_app_refcount();
+
+  void
+  set_call_graph_active(bool flag){
+    call_graph_active_ = flag;
+  }
+
+  bool
+  call_graph_active() const {
+    return call_graph_active_;
+  }
 
  private:
   void
@@ -303,12 +338,15 @@ class operating_system :
 
   void
   local_shutdown();
+
+  bool handle_library_event(const std::string& name, event* ev);
   
  private:
   hw::node* node_;
   spkt_unordered_map<std::string, library*> libs_;
   spkt_unordered_map<library*, int> lib_refcounts_;
   spkt_unordered_map<void*, std::list<library*> > libs_by_owner_;
+  std::map<std::string, std::list<event*>> pending_library_events_;
 
   node_id my_addr_;
 
@@ -334,9 +372,11 @@ class operating_system :
 
   compute_scheduler* compute_sched_;
 
-  static graph_viz* call_graph_;
+  graph_viz* call_graph_;
 
   ftq_calendar* ftq_trace_;
+
+  bool call_graph_active_;
 
 #if SSTMAC_USE_MULTITHREAD
   static std::vector<operating_system::os_thread_context> os_thread_contexts_;
@@ -344,14 +384,11 @@ class operating_system :
   static operating_system::os_thread_context os_thread_context_;
 #endif
 
-
 #if SSTMAC_SANITY_CHECK
   std::set<key*> valid_keys_;
 #endif
 
  private:
-  static size_t stacksize_;
-  static bool cxa_finalizing_;
   static os_thread_context cxa_finalize_context_;
 
 };

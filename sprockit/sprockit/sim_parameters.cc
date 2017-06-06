@@ -203,14 +203,28 @@ param_assign::setByteLength(long x, const char* units)
 
 sim_parameters::sim_parameters() :
   parent_(nullptr),
-  extra_data_(nullptr)
+  extra_data_(nullptr),
+  public_scope_(true)
 {
+}
+
+sim_parameters::sim_parameters(const sim_parameters *params) :
+  extra_data_(nullptr),
+  parent_(nullptr),
+  public_scope_(true),
+  namespace_(params->namespace_)
+{
+  params_ = params->params_;
+  for (auto& pair : params->subspaces_){
+    subspaces_[pair.first] = new sprockit::sim_parameters(pair.second);
+  }
 }
 
 sim_parameters::sim_parameters(const key_value_map& p) :
   params_(p),
   extra_data_(nullptr),
   parent_(nullptr),
+  public_scope_(true),
   namespace_("global")
 {
 }
@@ -218,6 +232,7 @@ sim_parameters::sim_parameters(const key_value_map& p) :
 sim_parameters::sim_parameters(const std::string& filename) :
   parent_(nullptr),
   extra_data_(nullptr),
+  public_scope_(true),
   namespace_("global")
 {
   //don't fail, but don't overwrite anything
@@ -263,11 +278,10 @@ sim_parameters::_get_namespace(const std::string &ns)
   KeywordRegistration::validate_namespace(ns);
   auto it = subspaces_.find(ns);
   if (it == subspaces_.end()){
-    if (parent_){
+    if (parent_ && parent_->public_scope()){
       return parent_->_get_namespace(ns);
     } else {
       return nullptr;
-
     }
   }
   return it->second;
@@ -303,6 +317,22 @@ void
 sim_parameters::add_param_override(const std::string &key, int val)
 {
   add_param_override(key, printf("%d", val));
+}
+
+void
+sim_parameters::add_param_override_recursive(const std::string &key, int val)
+{
+  std::string valStr = printf("%d", val);
+  add_param_override_recursive(key, valStr);
+}
+
+void
+sim_parameters::add_param_override_recursive(const std::string &key, const std::string& val)
+{
+  add_param_override(key,val);
+  for (auto& pair : subspaces_){
+    pair.second->add_param_override_recursive(key,val);
+  }
 }
 
 void
@@ -435,7 +465,7 @@ sim_parameters::build_local_namespace(const std::string& ns)
 }
 
 void
-sim_parameters::reproduce_params(std::ostream& os)
+sim_parameters::reproduce_params(std::ostream& os) const
 {
   for (auto& pair : params_){
     os << pair.first << " = " << pair.second.value << "\n";
@@ -937,7 +967,8 @@ void
 sim_parameters::parallel_build_params(sprockit::sim_parameters* params,
                                       int me, int nproc,
                                       const std::string& filename,
-                                      param_bcaster *bcaster)
+                                      param_bcaster *bcaster,
+                                      bool fail_if_not_found)
 {
   bool fail_on_existing = false;
   bool overwrite_existing = true;
@@ -946,7 +977,7 @@ sim_parameters::parallel_build_params(sprockit::sim_parameters* params,
     if (me == 0){
       //I don't want all processes hitting the network and reading the file
       //Proc 0 reads it and then broadcasts
-      params->parse_file(filename, fail_on_existing, overwrite_existing);
+      params->parse_file(filename, fail_on_existing, overwrite_existing, fail_if_not_found);
       if (nproc > 1){
         //this is a bit more complicated than bcast_file_stream
         //in parsing the main file, root might open more files
@@ -1032,7 +1063,8 @@ void
 sim_parameters::parse_file(
   const std::string& input_fname,
   bool fail_on_existing,
-  bool override_existing)
+  bool override_existing,
+  bool fail_if_not_found)
 {
   std::string fname = trim_str(input_fname);
 
@@ -1041,7 +1073,7 @@ sim_parameters::parse_file(
 
   if (in.is_open()) {
     parse_stream(in, fail_on_existing, override_existing);
-  } else {
+  } else if (fail_if_not_found){
     SpktFileIO::not_found(fname);
   }
 }
@@ -1100,7 +1132,8 @@ bool
 sim_parameters::get_param(std::string& inout, const std::string& key)
 {
   bool found = get_scoped_param(inout, key);
-  if (!found && parent_){
+  if (!found && parent_ && parent_->public_scope()){
+    //never return anything from the top-level global namespace - no, don't
     return parent_->get_param(inout, key);
   } else {
     return found;
@@ -1144,7 +1177,8 @@ bool
 sim_parameters::has_param(const std::string& key) const
 {
   bool has_here = has_scoped_param(key);
-  if (!has_here && parent_){
+  if (!has_here && parent_ && parent_->public_scope()){
+    //never return anything from the top-level global namespace - no, don't
     return parent_->has_param(key);
   } else {
     return has_here;

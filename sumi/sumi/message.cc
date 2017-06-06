@@ -112,7 +112,9 @@ message::clone_into(message* cln) const
   cln->recver_ = recver_;
 #if SUMI_COMM_SYNC_STATS
   cln->sent_ = sent_;
-  cln->arrived_ = arrived_;
+  cln->header_arrived_ = header_arrived_;
+  cln->payload_arrived_ = payload_arrived_;
+  cln->synced_ = synced_;
 #endif
 }
 
@@ -131,7 +133,7 @@ message::move_local_to_remote()
   if (local_buffer_.ptr){ //might be null
     ::memcpy(remote_buffer_.ptr, local_buffer_.ptr, num_bytes_);
     delete[] (char*) local_buffer_.ptr;
-    local_buffer_.ptr = 0;
+    local_buffer_.ptr = nullptr;
   }
 }
 
@@ -141,7 +143,7 @@ message::move_remote_to_local()
   if (remote_buffer_.ptr){
     ::memcpy(local_buffer_.ptr, remote_buffer_.ptr, num_bytes_);
     delete[] (char*) remote_buffer_.ptr;
-    remote_buffer_.ptr = 0;
+    remote_buffer_.ptr = nullptr;
   }
 }
 
@@ -173,7 +175,9 @@ message::serialize_order(sumi::serializer &ser)
 {
 #if SUMI_COMM_SYNC_STATS
   ser & sent_;
-  ser & arrived_;
+  ser & header_arrived_;
+  ser & payload_arrived_;
+  ser & synced_;
 #endif
   ser & sender_;
   ser & recver_;

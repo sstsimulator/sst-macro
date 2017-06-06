@@ -34,47 +34,20 @@ inline double TOD(const timestamp::tick_t &t)
 }
 #endif
 
-timestamp::tick_t timestamp::zero = 0;
-timestamp::tick_t nanoseconds = 1000;
-timestamp::tick_t microseconds = 1000 * nanoseconds;
-timestamp::tick_t milliseconds = 1000 * microseconds;
-timestamp::tick_t seconds = 1000 * milliseconds; //default is 1 tick per ps
-timestamp::tick_t minutes = seconds * 60;
-
 //
 // Static variables.
 //
-static timestamp::tick_t _psec_tick_spacing_ = 1;
-#define PSEC_PER_TICK _psec_tick_spacing_
+timestamp::tick_t timestamp::PSEC_PER_TICK = 1;
+timestamp::tick_t timestamp::nanoseconds = 1000;
+timestamp::tick_t timestamp::microseconds = 1000 * nanoseconds;
+timestamp::tick_t timestamp::milliseconds = 1000 * microseconds;
+timestamp::tick_t timestamp::seconds = 1000 * milliseconds; //default is 1 tick per ps
+timestamp::tick_t timestamp::minutes = seconds * 60;
+
 
 static double _double_to_tick_prefactor_ = 1e12;
 static double _tick_to_double_prefactor_ = 1e-12;
 static std::string _tick_spacing_string_("1 ps");
-
-//
-// Private method to get around the fact that GMP doesn't support
-// assignment/construction from long long.
-//
-inline timestamp::tick_t to_tick(int64_t value)
-{
-#ifdef SSTMAC_USE_GMPXX
-  if(sizeof(int64_t) > sizeof(long)) {
-    // Mask with low 31 bits set.
-    static const int64_t mask = (uint64_t(1) << 31) - 1;
-    const int32_t lowbits = int32_t(value & mask);
-    const int32_t highbits = value >> 31;
-    timestamp::tick_t retval(highbits);
-    retval = retval << 31;
-    retval = retval + lowbits;
-    return retval;
-  }
-  else {
-    return timestamp::tick_t(long(value));
-  }
-#else
-  return timestamp::tick_t(value);
-#endif
-}
 
 void timestamp::init_stamps(tick_t tick_spacing)
 {
@@ -92,45 +65,6 @@ void timestamp::init_stamps(tick_t tick_spacing)
   seconds = (tick_t(1000) * 1000 * 1000 * 1000) / PSEC_PER_TICK;
   minutes = 60 * seconds;
 }
-
-//
-// Round the given time value to the nearest representable internal time.
-//
-timestamp::timestamp(double t)
-{
-#ifndef SSTMAC_USE_GMPXX
-  ticks_ = int64_t((t) * ( 1e12 / (PSEC_PER_TICK)));
-  if (t > max_time() || (t < min_time())) {
-    cerrn << "timestamp():  Time value " << t << " is outside the range "
-              << max_time() << ".." << min_time() << " available with "
-              << PSEC_PER_TICK << " picosecond clock resolution.\n";
-    throw sprockit::value_error("timestamp(double):  Time value out of bounds.");
-  }
-#else
-  ticks_ = t * _double_to_tick_prefactor_;
-  // ticks_ = t * 1e12;
-  //ticks_ /= *psec_tick_spacing_;
-#endif
-}
-
-timestamp::timestamp()
-  : ticks_(0)
-{
-}
-
-timestamp::timestamp(timestamp::tick_t ticks,
-                     timestamp::timestamp_param_type_t t)
-  : ticks_(ticks)
-{
-}
-
-//
-// Assignment.
-//
-//timestamp& timestamp::operator=(double v) {
-//  ticks_ = (int64_t((v * 1e12) / *psec_tick_spacing_));
-//  return *this;
-//}
 
 //
 // Return the current time in seconds.
@@ -191,51 +125,12 @@ timestamp::tick_t timestamp::tick_interval()
   return PSEC_PER_TICK;
 }
 
-double timestamp::tick_interval_sec()
-{
-  return 1e-12 * TOD(PSEC_PER_TICK);
-}
-
-//
-// static:  Get the tick interval.
-//
-int64_t timestamp::tick_interval_int64()
-{
-#ifndef SSTMAC_USE_GMPXX
-  return PSEC_PER_TICK;
-#else
-  return PSEC_PER_TICK.get_si();
-#endif
-}
-
 //
 // Get the tick interval in std::string form (for example, "1ps").
 //
 const std::string& timestamp::tick_interval_string()
 {
   return _tick_spacing_string_;
-}
-
-//
-// static:  Convert a tick type to int64_t.
-//
-int64_t timestamp::ticks_int64() const
-{
-#ifndef SSTMAC_USE_GMPXX
-  return ticks_;
-#else
-  if(sizeof(long) >= sizeof(int64_t)) {
-    return ticks_.get_si();
-  }
-  else {
-    tick_t mask((1 << 31) - 1);
-    tick_t lowbits = ticks_ & mask;
-    tick_t highbits = ticks_ >> 31;
-    int64_t lowraw = lowbits.get_si();
-    int64_t highraw = highbits.get_si();
-    return ((highraw << 31) | lowraw);
-  }
-#endif
 }
 
 //
@@ -251,11 +146,7 @@ timestamp::tick_t timestamp::frequency()
 //
 double timestamp::max_time()
 {
-#ifndef SSTMAC_USE_GMPXX
   return ((std::numeric_limits<int64_t>::max()) * 1e-12) * PSEC_PER_TICK;
-#else
-  return INFINITY;
-#endif
 }
 
 //
@@ -263,11 +154,7 @@ double timestamp::max_time()
 //
 double timestamp::min_time()
 {
-#ifndef SSTMAC_USE_GMPXX
   return (std::numeric_limits<int64_t>::min() * 1e-12) * PSEC_PER_TICK;
-#else
-  return -INFINITY;
-#endif
 }
 
 //
@@ -321,20 +208,8 @@ timestamp timestamp::exact_sec(int64_t sec)
 timestamp timestamp::scaled_time(int64_t value, int64_t scaling,
                                  const char *caller, const char *units)
 {
-#ifndef SSTMAC_USE_GMPXX
-  static const int64_t max = std::numeric_limits<int64_t>::max();
-  static const int64_t min = std::numeric_limits<int64_t>::min();
-  if(((value/(PSEC_PER_TICK)) > (max/scaling)) ||
-      ((value/(PSEC_PER_TICK)) < (min/scaling))) {
-    cerrn << caller << ":  The time value " << value << " " << units
-              << " is outside the range of "
-              << min << " through " << max << " picoseconds\n";
-    throw sprockit::value_error("timestamp::scaled_time:  Value out of range.");
-  }
-#endif // ! SSTMAC_USE_GMPXX
   timestamp retval(0);
-  retval.ticks_ = to_tick(value) * to_tick(scaling) / PSEC_PER_TICK;
-
+  retval.ticks_ = value * scaling / PSEC_PER_TICK;
   return retval;
 }
 
@@ -343,15 +218,6 @@ timestamp timestamp::scaled_time(int64_t value, int64_t scaling,
 //
 timestamp& timestamp::operator+=(const timestamp &other)
 {
-#ifndef SSTMAC_USE_GMPXX
-  double approximate = this->sec() + other.sec();
-  if(approximate < min_time() || approximate > max_time()) {
-    cerrn << "operator+=:  Result " << approximate
-              << " is out of range " << min_time() << ".."
-              << max_time() << "\n";
-    throw sprockit::time_error("timestamp::operator+=():  Result out of range.");
-  }
-#endif
   ticks_ += other.ticks_;
   return *this;
 }
@@ -361,15 +227,6 @@ timestamp& timestamp::operator+=(const timestamp &other)
 //
 timestamp& timestamp::operator-=(const timestamp &other)
 {
-#ifndef SSTMAC_USE_GMPXX
-  double approximate = this->sec() - other.sec();
-  if(approximate < min_time() || approximate > max_time()) {
-    cerrn << "operator-=:  Result " << approximate
-              << " is out of range " << min_time() << ".."
-              << max_time() << "\n";
-    throw sprockit::time_error("timestamp::operator-=():  Result out of range.");
-  }
-#endif
   ticks_ -= other.ticks_;
   return *this;
 }
@@ -379,22 +236,7 @@ timestamp& timestamp::operator-=(const timestamp &other)
 //
 timestamp& timestamp::operator*=(double scale)
 {
-#ifndef SSTMAC_USE_GMPXX
-  double approximate = this->sec() * scale;
-  if(approximate < min_time() || approximate > max_time()) {
-    cerrn << "operator*=:  Result " << approximate
-              << " is out of range " << min_time() << ".."
-              << max_time() << "\n";
-    throw sprockit::time_error("timestamp::operator*=():  Result out of range.");
-  }
   ticks_ *= scale;
-#else
-  // gmpxx has stupid promotion rules; using operator*= will
-  // promote (truncate) the floating point value to an integer
-  // and then perform an integer multiply (unfortunately, this can come
-  // with a major rounding error).
-  ticks_ = ticks_.get_d() * scale;
-#endif
   return *this;
 }
 
@@ -403,19 +245,7 @@ timestamp& timestamp::operator*=(double scale)
 //
 timestamp& timestamp::operator/=(double scale)
 {
-#ifndef SSTMAC_USE_GMPXX
-  double approximate = this->sec() / scale;
-  if(approximate < min_time() || approximate > max_time()) {
-    cerrn << "operator/=:  Result " << approximate
-              << " is out of range " << min_time() << ".."
-              << max_time() << "\n";
-    throw sprockit::time_error("timestamp::operator/=():  Result out of range.");
-  }
   ticks_ /= scale;
-#else
-  // Same stupid gmpixx rounding rules as with multiply.
-  ticks_ = ticks_.get_d() / scale;
-#endif
   return *this;
 }
 

@@ -43,7 +43,8 @@ class threading_pth : public threading_interface
   /// Start a new context.
   virtual void
   start_context(int physical_thread_id, void *stack, size_t stacksize, void
-                (*func)(void*), void *args, threading_interface *yield_to);
+                (*func)(void*), void *args, threading_interface *yield_to,
+                void* globals_storage);
 
   /// Swap context.
   virtual void

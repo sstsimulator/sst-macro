@@ -39,8 +39,12 @@ namespace sprockit {
     throw exc(::sprockit::printf(#exc ": " template_str "\n%s %d", ##__VA_ARGS__, __FILE__, __LINE__))
 
 #define spkt_abort_printf(template_str, ...) \
-    std::cerr << ::sprockit::printf("error: " template_str "\n%s %d\n", ##__VA_ARGS__, __FILE__, __LINE__); \
-    ::abort()
+  { \
+    std::cerr << ::sprockit::printf("error: " template_str "\n%s %d", ##__VA_ARGS__, __FILE__, __LINE__) \
+              << std::endl; \
+    ::abort(); \
+  }
+
 
 #define spkt_throw(exc, ...) \
     { \

@@ -1,7 +1,13 @@
 from sst.macro import *
 import sys
 import os
+import sst
 
+#link = sst.Link("okay")
+#print dir(link)
+
+#switch = sst.Component("LogP", "macro.logp_switch")
+#print dir(switch)
 
 
 isSoFile = True

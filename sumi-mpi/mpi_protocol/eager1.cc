@@ -7,12 +7,12 @@
 namespace sumi {
 
 void
-eager1::configure_send_buffer(const mpi_message::ptr& msg, void *buffer)
+eager1::configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& msg, void *buffer, mpi_type* typeobj)
 {
-  long length = msg->payload_bytes();
-  void* eager_buf = new char[length];
-  ::memcpy(eager_buf, buffer, length);
-  msg->remote_buffer().ptr = eager_buf;
+  if (buffer){
+    void* eager_buf = fill_send_buffer(msg, buffer, typeobj);
+    msg->remote_buffer().ptr = eager_buf;
+  }
 }
 
 void
@@ -21,10 +21,7 @@ eager1::send_header(mpi_queue* queue,
 {
   SSTMACBacktrace("MPI Eager 1 Protocol: Send RDMA Header");
   msg->set_content_type(mpi_message::header);
-#if SSTMAC_COMM_SYNC_STATS
-  msg->set_time_sent(queue->now());
-#endif
-  queue->user_lib_mem()->copy(msg->byte_length());
+  queue->memcopy(msg->byte_length());
 
   queue->post_header(msg, false/*the send is "done" - no need to ack*/);
 
@@ -67,7 +64,7 @@ eager1::incoming_header(mpi_queue* queue,
     req->set_seqnum(msg->seqnum()); //set seqnum to avoid accidental matches
     queue->waiting_message_.push_front(req);
     req->set_seqnum(msg->seqnum()); //associate the messages
-    msg->local_buffer().ptr = req->buffer_;
+    msg->local_buffer().ptr = req->recv_buffer_;
   }
   else {
     msg->set_protocol(mpi_protocol::eager1_doublecpy_protocol);
@@ -97,15 +94,6 @@ eager1_singlecpy::incoming_payload(mpi_queue *queue,
 }
 
 void
-eager1_doublecpy::incoming_payload(mpi_queue *queue,
-                         const mpi_message::ptr &msg)
-{
-  mpi_queue_recv_request* req = queue->pop_matching_request(queue->in_flight_messages_, msg);
-  //guaranteed that msg arrived before recv was posted
-  incoming_payload(queue, msg, req);
-}
-
-void
 eager1_singlecpy::incoming_payload(mpi_queue *queue,
                                    const mpi_message::ptr &msg,
                                    mpi_queue_recv_request *req)
@@ -120,6 +108,15 @@ eager1_singlecpy::incoming_payload(mpi_queue *queue,
 }
 
 void
+eager1_doublecpy::incoming_payload(mpi_queue *queue,
+                         const mpi_message::ptr &msg)
+{
+  mpi_queue_recv_request* req = queue->pop_matching_request(queue->in_flight_messages_, msg);
+  //guaranteed that msg arrived before recv was posted
+  incoming_payload(queue, msg, req);
+}
+
+void
 eager1_doublecpy::incoming_payload(mpi_queue* queue,
                                    const mpi_message::ptr& msg,
                                    mpi_queue_recv_request* req)
@@ -129,8 +126,8 @@ eager1_doublecpy::incoming_payload(mpi_queue* queue,
   //finish the transfer
   msg->set_in_flight(false);
   if (req){
-    if (req->buffer_){
-      msg->local_buffer().ptr = req->buffer_;
+    if (req->recv_buffer_){
+      msg->local_buffer().ptr = req->recv_buffer_;
       //bypass mpi-message - actually do the move
       msg->message::move_remote_to_local();
     }

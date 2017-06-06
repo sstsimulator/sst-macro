@@ -1,4 +1,5 @@
 #include <mpi.h>
+#include <stddef.h>
 
 #define sstmac_app_name allgather_test
 

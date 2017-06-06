@@ -1,5 +1,5 @@
 #include <sstmac/software/threading/threading_pth.h>
-#include <sstmac/common/thread_info.h>
+#include <sstmac/software/process/thread_info.h>
 #include <sprockit/errors.h>
 
 namespace sstmac {
@@ -26,12 +26,12 @@ threading_pth::destroy_context() {
   /// Start a new context.
 void
 threading_pth::start_context(int physical_thread_id, void *stack, size_t stacksize, void
-                (*func)(void*), void *args, threading_interface *yield_to) {
+                (*func)(void*), void *args, threading_interface *yield_to, void* globals_storage) {
   if (stacksize < (16384)) {
     spkt_throw(sprockit::value_error,
         "threading_pth::start_context: PTH does not accept stacks smaller than 16KB");
   }
-  thread_info::register_user_space_virtual_thread(physical_thread_id, stack, stacksize);
+  thread_info::register_user_space_virtual_thread(physical_thread_id, stack, globals_storage);
   init_context();
   threading_pth* yield_pth = (threading_pth*)yield_to;
   int retval = pth_uctx_make(context_, (char*) stack, stacksize, NULL, func,

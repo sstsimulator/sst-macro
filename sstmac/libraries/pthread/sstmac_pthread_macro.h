@@ -142,4 +142,13 @@
 #define PTHREAD_COND_INITIALIZER SSTMAC_PTHREAD_COND_INITIALIZER
 #define PTHREAD_MUTEX_INITIALIZER SSTMAC_PTHREAD_MUTEX_INITIALIZER
 
+#define PTHREAD_SCOPE_PROCESS SSTMAC_PTHREAD_SCOPE_PROCESS
+#define PTHREAD_SCOPE_SYSTEM SSTMAC_PTHREAD_SCOPE_SYSTEM
+
+#undef __thread
+#define __thread thread_local_not_yet_allowed
+#undef thread_local
+#define thread_local thread_local_not_yet_allowed
+
+
 #endif

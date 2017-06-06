@@ -17,6 +17,12 @@ Makefile.in
 /missing
 /stamp-h1
 
+sst-macro.creator
+sst-macro.files
+sst-macro.creator.user
+sst-macro.includes
+sst-macro.config
+
 sprockit/configure
 sumi/configure
 

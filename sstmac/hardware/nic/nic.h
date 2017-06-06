@@ -23,6 +23,7 @@
 #include <sstmac/common/stats/stat_local_int_fwd.h>
 #include <sstmac/common/stats/stat_global_int_fwd.h>
 #include <sstmac/common/messages/sst_message_fwd.h>
+#include <sstmac/software/process/operating_system_fwd.h>
 
 #include <sprockit/debug.h>
 #include <sprockit/factories/factory.h>
@@ -72,6 +73,28 @@ class nic :
   virtual void
   set_node(node* nd){
     parent_ = nd;
+  }
+
+  /**
+   * @brief inject_send Perform an operation on the NIC.
+   *  This assumes an exlcusive model of NIC use. If NIC is busy,
+   *  operation may complete far in the future. If wishing to query for how busy the NIC is,
+   *  use #next_free. Calls to hardware taking an OS parameter
+   *  indicate 1) they MUST occur on a user-space software thread
+   *  and 2) that they should us the os to block and compute
+   * @param netmsg The message being injected
+   * @param os     The OS to use form software compute delays
+   */
+  void
+  inject_send(network_message* netmsg, sw::operating_system* os);
+
+  /**
+   * @brief next_free
+   * @return The next time the NIC would be free to start an operation
+   */
+  timestamp
+  next_free() const {
+    return next_free_;
   }
 
   event_handler*
@@ -164,6 +187,10 @@ class nic :
   stat_histogram* hist_msg_size_;
   stat_local_int* local_bytes_sent_;
   stat_global_int* global_bytes_sent_;
+  timestamp next_free_;
+  timestamp post_latency_;
+  double nic_pipeline_multiplier_;
+  double post_inv_bw_;
 
  private:
   /**
@@ -176,6 +203,7 @@ class nic :
 
   void record_message(network_message* msg);
 
+  void finish_memcpy(network_message* msg);
 
 };
 

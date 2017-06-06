@@ -110,7 +110,7 @@ class event_scheduler :
                event_handler* lnk, event* ev);
 
   void
-  register_stat(stat_collector* coll);
+  register_stat(stat_collector* coll, stat_descr_t* descr);
 
 #if SSTMAC_INTEGRATED_SST_CORE
  public:
@@ -188,8 +188,9 @@ class event_scheduler :
 
  protected:
   event_scheduler(event_manager* mgr, uint32_t* seqnum, device_id loc, int thread_id) :
-   eventman_(mgr), seqnum_(seqnum),
-   locatable(loc, thread_id)
+   locatable(loc, thread_id),
+    eventman_(mgr),
+   seqnum_(seqnum)
   {
   }
 

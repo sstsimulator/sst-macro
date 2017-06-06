@@ -22,12 +22,12 @@
 #include <math.h>
 
 RegisterKeywords(
+"branching",
 "num_levels",
 "num_inj_switches_per_subtree",
 "num_core_switches",
 "num_agg_subtrees",
-"num_agg_switches_per_subtree",
-"radix",
+"num_agg_switches_per_subtree"
 );
 
 namespace sstmac {
@@ -69,18 +69,20 @@ fat_tree::fat_tree(sprockit::sim_parameters* params) :
                     InitMaxPortsIntra::I_Remembered,
                     InitGeomEjectID::I_Remembered)
 {
-  std::vector<int> args;
-  params->get_vector_param("geometry", args);
-  if (args.size() != 2) {
-    spkt_throw_printf(sprockit::input_error,
-                     "fat_tree::init_factory_params: geometry needs 2 parameters, got %d",
-                     args.size());
+  if (params->has_param("geometry")){
+    std::vector<int> args;
+    params->get_vector_param("geometry", args);
+    if (args.size() != 2) {
+      spkt_throw_printf(sprockit::input_error,
+                       "fat_tree::init_factory_params: geometry needs 2 parameters, got %d",
+                       args.size());
+    }
+    l_ = args[0];
+    k_ = args[1];
+  } else {
+    l_ = params->get_int_param("num_levels");
+    k_ = params->get_int_param("branching");
   }
-  l_ = args[0];
-  k_ = args[1];
-  sprockit::sim_parameters* rtr_params = params->get_optional_namespace("router");
-  rtr_params->add_param_override("radix", k_);
-  rtr_params->add_param_override("num_levels", l_);
 
   numleafswitches_ = pow(k_, l_ - 1);
   toplevel_ = l_ - 1;
@@ -218,10 +220,8 @@ fat_tree::minimal_distance(switch_id src,
 
 void
 tapered_fat_tree::create_partition(
-  int* switches_per_lp,
   int *switch_to_lp,
   int *switch_to_thread,
-  int& local_num_switches,
   int me,
   int nproc,
   int nthread,
@@ -354,7 +354,7 @@ tapered_fat_tree::configure_individual_port_params(switch_id src,
                                   sprockit::sim_parameters *switch_params) const
 {
   sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
-  int buffer_size = switch_params->get_int_param("buffer_size");
+  int buffer_size = link_params->get_int_param("buffer_size");
   double bw = link_params->get_bandwidth_param("bandwidth");
   double taper = link_params->get_optional_double_param("core_taper",1.0);
   int taperedBufSize = buffer_size * agg_bw_multiplier_ * taper;

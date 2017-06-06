@@ -87,8 +87,7 @@ class sim_parameters  {
     bool read;
   };
 
-  void
-  reproduce_params(std::ostream& os);
+  void reproduce_params(std::ostream& os) const ;
 
   typedef spkt_unordered_map<std::string, parameter_entry> key_value_map;
 
@@ -97,6 +96,8 @@ class sim_parameters  {
   sim_parameters(const key_value_map& p);
 
   sim_parameters(const std::string& filename);
+
+  sim_parameters(const sprockit::sim_parameters* params); //deep copy
 
   /**
    * In a parallel environment (abstracted through a param_bcaster object),
@@ -111,9 +112,18 @@ class sim_parameters  {
   parallel_build_params(sprockit::sim_parameters* params,
                         int me, int nproc,
                         const std::string& filename,
-                        param_bcaster* bcaster);
+                        param_bcaster* bcaster,
+                        bool fail_if_not_found = true);
 
   virtual ~sim_parameters();
+
+  bool public_scope() const {
+    return public_scope_;
+  }
+
+  void set_public_scope(bool flag){
+    public_scope_ = flag;
+  }
 
   void
   remove_param(const std::string &key);
@@ -183,20 +193,19 @@ class sim_parameters  {
   void
   copy_optional_param(const std::string& oldname, const std::string& newname);
 
-  void
-  add_param_override(const std::string& key, const std::string& val);
+  void add_param_override(const std::string& key, const std::string& val);
 
-  void
-  add_param_override(const std::string &key, double val);
+  void add_param_override(const std::string &key, double val);
 
-  void
-  add_param_override(const std::string& key, double val, const char* units);
+  void add_param_override(const std::string& key, double val, const char* units);
 
-  void
-  add_param_override(const std::string& key, int val);
+  void add_param_override(const std::string& key, int val);
 
-  void
-  combine_into(sim_parameters* sp,
+  void add_param_override_recursive(const std::string& key, int val);
+
+  void add_param_override_recursive(const std::string& key, const std::string& val);
+
+  void combine_into(sim_parameters* sp,
                bool fail_on_existing = false,
                bool override_existing = true,
                bool mark_as_read = true);
@@ -413,7 +422,8 @@ class sim_parameters  {
   has_namespace(const std::string& ns) const;
 
   void
-  parse_file(const std::string& fname, bool fail_on_existing, bool override_existing);
+  parse_file(const std::string& fname, bool fail_on_existing,
+             bool override_existing, bool fail_if_not_found = true);
 
   void
   parse_stream(std::istream& in, bool fail_on_existing, bool override_existing);
@@ -493,6 +503,8 @@ class sim_parameters  {
   key_value_map params_;
 
   uint64_t current_id_;
+
+  bool public_scope_;
 
   /**
    * @brief _get_namespace Get a parameter namespace. If the namespace does not exist in the current scope locally,

@@ -20,6 +20,7 @@
 #include <sstmac/common/stats/stat_global_int.h>
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/event_callback.h>
+#include <sstmac/hardware/memory/memory_model.h>
 #include <sprockit/statics.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
@@ -34,6 +35,9 @@ RegisterNamespaces("nic", "message_sizes", "traffic_matrix",
 RegisterKeywords(
 "nic_name",
 "network_spyplot",
+"post_bandwidth",
+"post_latency",
+"pipeline_fraction",
 );
 
 #define DEFAULT_NEGLIGIBLE_SIZE 256
@@ -53,10 +57,25 @@ nic::nic(sprockit::sim_parameters* params, node* parent) :
   logp_switch_(nullptr),
   event_mtl_handler_(nullptr),
   my_addr_(parent->addr()),
+  nic_pipeline_multiplier_(0.),
+  post_inv_bw_(0),
+  post_latency_(0),
+  next_free_(0),
   connectable_subcomponent(parent) //no self events with NIC
 {
   event_mtl_handler_ = new_handler(this, &nic::mtl_handle);
   node_handler_ = new_handler(parent, &node::handle);
+
+  if (params->has_param("post_latency")){
+    post_latency_ = params->get_time_param("post_latency");
+    sprockit::sim_parameters* inj_params = params->get_namespace("injection");
+    double bw = inj_params->get_bandwidth_param("bandwidth");
+    post_inv_bw_ = 1.0 / bw;
+    //by default, assume very little contention on the nic
+    double nic_pipeline_fraction = params->get_double_param("pipeline_fraction");
+    //we multiply by the percent that is NOT pipelineable
+    nic_pipeline_multiplier_ = 1.0 - nic_pipeline_fraction;
+  }
 
   negligible_size_ = params->get_optional_int_param("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
 
@@ -103,14 +122,30 @@ nic::delete_statics()
 }
 
 void
+nic::inject_send(network_message* netmsg, sw::operating_system* os)
+{
+  long bytes = netmsg->byte_length();
+  timestamp delay = post_latency_ + timestamp(post_inv_bw_ * bytes);
+  timestamp nic_ready = next_free_ + delay;
+  next_free_ = next_free_ + delay * nic_pipeline_multiplier_;
+  os->sleep_until(nic_ready);
+
+  if (netmsg->toaddr() == my_addr_){
+    intranode_send(netmsg);
+  } else {
+    internode_send(netmsg);
+  }
+}
+
+void
 nic::recv_message(message* msg)
 {
   if (parent_->failed()){
     return;
   }
 
-  nic_debug("receiving message %p:%s",
-    msg, msg->to_string().c_str());
+  nic_debug("receiving message %s",
+    msg->to_string().c_str());
 
   network_message* netmsg = safe_cast(network_message, msg);
 
@@ -152,8 +187,8 @@ nic::recv_message(message* msg)
     }
     default: {
       spkt_throw_printf(sprockit::value_error,
-        "nic::handle: invalid message type %s",
-        network_message::tostr(netmsg->type()));
+        "nic::handle: invalid message type %s: %s",
+        network_message::tostr(netmsg->type()), netmsg->to_string().c_str());
     }
   }
 }
@@ -163,8 +198,8 @@ nic::ack_send(network_message* payload)
 {
   if (payload->needs_ack()){
     network_message* ack = payload->clone_injection_ack();
-    nic_debug("acking payload %p:%s with ack %p",
-      payload, payload->to_string().c_str(), ack);
+    nic_debug("acking payload %s with ack %p",
+      payload->to_string().c_str(), ack);
     send_to_node(ack);
   }
 }
@@ -172,11 +207,8 @@ nic::ack_send(network_message* payload)
 void
 nic::intranode_send(network_message* payload)
 {
-  //Stop recording for now
-  //record_message(payload);
-
-  nic_debug("intranode send payload %p:%s",
-    payload, payload->to_string().c_str());
+  nic_debug("intranode send payload %s",
+    payload->to_string().c_str());
 
   switch(payload->type())
   {
@@ -190,8 +222,23 @@ nic::intranode_send(network_message* payload)
     break; //nothing to do
   }
 
-  send_to_node(payload);
+  memory_model* mem = parent_->mem();
+  //use 64 as a negligible number of compute bytes
+  long byte_length = payload->byte_length();
+  if (byte_length > 64){
+    mem->access(payload->byte_length(),
+                mem->max_single_bw(),
+                new_callback(this, &nic::finish_memcpy, payload));
+  } else {
+    finish_memcpy(payload);
+  }
+}
+
+void
+nic::finish_memcpy(network_message* payload)
+{
   ack_send(payload);
+  send_to_node(payload);
 }
 
 void
@@ -237,8 +284,8 @@ void
 nic::internode_send(network_message* netmsg)
 {
   record_message(netmsg);
-  nic_debug("internode send payload %p:%s",
-    netmsg, netmsg->to_string().c_str());
+  nic_debug("internode send payload %s",
+    netmsg->to_string().c_str());
   //we might not have a logp overlay network
   if (logp_switch_ && negligible_size(netmsg->byte_length())){
     send_to_link(logp_switch_, netmsg);
@@ -251,9 +298,11 @@ nic::internode_send(network_message* netmsg)
 void
 nic::send_to_logp_switch(network_message* netmsg)
 {
-  nic_debug("send to logP switch %p:%s",
-    netmsg, netmsg->to_string().c_str());
-  send_to_link(logp_switch_, netmsg);
+  nic_debug("send to logP switch %s",
+    netmsg->to_string().c_str());
+  //we might not have a logp overlay network
+  if (logp_switch_) send_to_link(logp_switch_, netmsg);
+  else do_send(netmsg);
 }
 
 void

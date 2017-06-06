@@ -253,6 +253,7 @@ dragonfly::setup_port_params(sprockit::sim_parameters* params, int dim, int dims
 
   for (int i=0; i < dimsize; ++i){
     int port = convert_to_port(dim, i);
+  //std::cout << "setting port " << port << " to " << port_bw << " " << credits << std::endl;
     sprockit::sim_parameters* port_params = topology
         ::setup_port_params(port, credits, port_bw, link_params, params);
   }

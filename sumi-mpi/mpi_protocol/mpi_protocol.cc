@@ -4,10 +4,10 @@
 namespace sumi {
 
 
-mpi_protocol* mpi_protocol::eager0_protocol = new eager0;
-mpi_protocol* mpi_protocol::eager1_singlecpy_protocol = new eager1_singlecpy;
-mpi_protocol* mpi_protocol::eager1_doublecpy_protocol = new eager1_doublecpy;
-mpi_protocol* mpi_protocol::rendezvous_protocol = new rendezvous_get;
+mpi_protocol* mpi_protocol::eager0_protocol = nullptr;
+mpi_protocol* mpi_protocol::eager1_singlecpy_protocol = nullptr;
+mpi_protocol* mpi_protocol::eager1_doublecpy_protocol = nullptr;
+mpi_protocol* mpi_protocol::rendezvous_protocol = nullptr;
 
 static sprockit::need_delete_statics<mpi_protocol> del_statics;
 
@@ -42,13 +42,6 @@ mpi_protocol::delete_statics()
 }
 
 void
-mpi_protocol::handle_nic_ack(mpi_queue* queue,
-                             const mpi_message::ptr& msg)
-{
-  queue->complete_nic_ack(msg);
-}
-
-void
 mpi_protocol::incoming_header(mpi_queue* queue,
   const mpi_message::ptr& msg)
 {
@@ -84,6 +77,20 @@ mpi_protocol::incoming_payload(mpi_queue* queue,
   spkt_throw_printf(sprockit::illformed_error,
     "%s should never handle payload",
      to_string().c_str());
+}
+
+void*
+mpi_protocol::fill_send_buffer(const mpi_message::ptr &msg, void *buffer, mpi_type *typeobj)
+{
+  msg->set_already_buffered(true);
+  long length = msg->payload_bytes();
+  void* eager_buf = new char[length];
+  if (typeobj->contiguous()){
+    ::memcpy(eager_buf, buffer, length);
+  } else {
+    typeobj->pack_send(buffer, eager_buf, msg->count());
+  }
+  return eager_buf;
 }
 
 }

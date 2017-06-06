@@ -84,20 +84,6 @@ class tiled_dragonfly : public dragonfly, public multipath_topology
   }
 
   virtual switch_id
-  node_to_injection_switch(
-        node_id nodeaddr, uint16_t ports[], int& num_ports) const override
-  {
-    spkt_throw(sprockit::unimplemented_error, "tiled switch should never connect directly to node");
-  }
-
-  virtual switch_id
-  node_to_ejection_switch(
-        node_id nodeaddr, uint16_t ports[], int& num_ports) const override
-  {
-        spkt_throw(sprockit::unimplemented_error, "tiled switch should never connect directly to node");
-  }
-
-  virtual switch_id
   netlink_to_injection_switch(
       node_id nodeaddr, uint16_t ports[], int &num_ports) const override;
 

@@ -13,13 +13,19 @@ For torus we illustrate here the Cartesian allocation for generating regular Car
 For this, the input file would look like 
 
 \begin{ViFile}
-topology.name = torus
-topology.geometry = 4 4 4
-app1.launch_cmd = aprun -n 8
-app1.indexing = block
-app1.allocation = cartesian
-app1.cart_sizes = 2 2 2
-app1.cart_offsets = 0 0 0
+topology {
+ name = torus
+ geometry = 4 4 4
+}
+node {
+ app1 {
+  launch_cmd = aprun -n 8
+  indexing = block
+  allocation = cartesian
+  cart_sizes = 2 2 2
+  cart_offsets = 0 0 0
+ }
+}
 \end{ViFile}
 
 This allocates a 3D torus of size 4x4x4.
@@ -37,14 +43,18 @@ i.e. if two nodes have the 4D coordinates [1 2 3 0] and [1 2 3 1] they are both 
 Consider the example below:
 
 \begin{ViFile}
-topology.name = torus
-topology.geometry = 4 4 4
-topology.concentration = 2
-app1.launch_cmd = aprun -n 8
-app1.indexing = block
-app1.allocation = cartesian
-app1.cart_sizes = 2 2 1 2
-app1.cart_offsets = 0 0 0 0
+topology {
+ name = torus
+ geometry = 4 4 4
+ concentration = 2
+}
+app1 {
+ launch_cmd = aprun -n 8
+ indexing = block
+ allocation = cartesian
+ cart_sizes = 2 2 1 2
+ cart_offsets = 0 0 0 0
+}
 \end{ViFile}
 
 We allocate a set of switches across an XY plane (2 in X, 2 in Y, 1 in Z for a single plane).

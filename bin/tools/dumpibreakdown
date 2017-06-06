@@ -1,0 +1,54 @@
+#! /usr/bin/env python
+
+import glob
+import os
+from configlib import getoutput
+
+def run(f):
+  import re
+  import sys
+
+  text = getoutput("dumpi2ascii %s" % f)
+
+  start = 0
+  end = 0
+  totalmpi = 0
+  totalcomp = 0
+  startFxn = ""
+  stopFxn = ""
+  maxd = [(0,"x"), (0,"x"), (0,"x"), (0,"x")] 
+  maxc = [(0,"x"), (0,"x"), (0,"x"), (0,"x")] 
+  for line in text.splitlines():
+    split = line.split()
+    if split[1] == "returning":
+      stopFxn = split[0]
+      end = float(split[6])
+      delta = end - start
+      if delta > maxd[0][0]:
+        maxd[0] = (delta,stopFxn)
+        maxd.sort()
+      totalmpi += delta
+    elif split[1] == "entering":
+      startFxn = split[0]
+      start = float(split[6])
+      if stopFxn:
+        delta = start - end
+        totalcomp += delta
+        if delta > maxc[0][0]:
+          fxn = "%s->%s" % (stopFxn, startFxn)
+          maxc[0] = (delta, fxn)
+          maxc.sort()
+
+  str_arr = ["%20s comm %10.6f" % (f,totalmpi)]
+  for time,fxn in maxd:
+    str_arr.append("%13s=%6.4f" % (fxn,time))
+  sys.std.out.write("%s\n" % " ".join(str_arr))
+  str_arr = ["%20s comp %10.6f" % (f,totalcomp)]
+  for time,fxn in maxc:
+    str_arr.append("  %25s=%6.4f" % (fxn,time))
+  sys.std.out.write("%s\n" % " ".join(str_arr))
+
+files = glob.glob("*.bin")
+for f in files:
+  run(f)
+

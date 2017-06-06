@@ -7,6 +7,8 @@
 // used supports it (i.e. the _OPENMP symbol is defined)
 #define USE_OMP 1
 
+#define heisenbug printf("%s:%d\n", __FILE__, __LINE__)
+
 #if USE_MPI
 #include <mpi.h>
 
@@ -24,14 +26,6 @@
 #include <math.h>
 #include <vector>
 
-#if defined(LULESH_SST_MODS) && defined(LULESH_SST_SIM)
-#include <variable.h>
-
-#if _OPENMP
-#error The SST model does not support OpenMP.
-#endif
-#endif
-
 //**************************************************
 // Allow flexibility for arithmetic representations 
 //**************************************************
@@ -48,64 +42,19 @@ typedef int    Index_t ; // array subscript and loop index
 typedef real8  Real_t ;  // floating point representation
 typedef int    Int_t ;   // integer representation
 
-#if defined(LULESH_SST_MODS) && defined(LULESH_SST_SIM)
-typedef Variable<Real_t> Real_t_sim;
-typedef VariablePtr<Real_t> Real_t_ptr_sim;
-typedef VariablePtr<Real_t> Real_t_ptr_const_sim;
-typedef VariablePtr<Real_t> const_Real_t_ptr_sim;
-typedef VariablePtr<Real_t> const_Real_t_ptr_const_sim;
-typedef VariablePtr<Real_t> Real_t_vec_sim;
-
-typedef Variable<Index_t> Index_t_sim;
-typedef VariablePtr<Index_t> Index_t_ptr_sim;
-typedef VariablePtr<Index_t> Index_t_ptr_const_sim;
-typedef VariablePtr<Index_t> const_Index_t_ptr_sim;
-typedef VariablePtr<Index_t> const_Index_t_ptr_const_sim;
-typedef VariablePtr<Index_t> Index_t_vec_sim;
-
-typedef Variable<Int_t> Int_t_sim;
-typedef VariablePtr<Int_t> Int_t_vec_sim;
-#else
-typedef Real_t Real_t_sim;
-typedef Real_t* Real_t_ptr_sim;
-typedef Real_t* const Real_t_ptr_const_sim;
-typedef const Real_t* const_Real_t_ptr_sim;
-typedef const Real_t* const const_Real_t_ptr_const_sim;
-typedef std::vector<Real_t> Real_t_vec_sim;
-
-typedef Index_t Index_t_sim;
-typedef Index_t* Index_t_ptr_sim;
-typedef Index_t* const Index_t_ptr_const_sim;
-typedef const Index_t* const_Index_t_ptr_sim;
-typedef const Index_t* const const_Index_t_ptr_const_sim;
-typedef std::vector<Index_t> Index_t_vec_sim;
-
-typedef Int_t Int_t_sim;
-typedef std::vector<Int_t> Int_t_vec_sim;
-#endif
-
 enum { VolumeError = -1, QStopError = -2 } ;
 
 inline real4  SQRT(real4  arg) { return sqrtf(arg) ; }
 inline real8  SQRT(real8  arg) { return sqrt(arg) ; }
 inline real10 SQRT(real10 arg) { return sqrtl(arg) ; }
-#if defined(LULESH_SST_MODS) && defined(LULESH_SST_SIM)
-inline Variable<Real_t> SQRT(const Variable<Real_t> &arg) { return sqrt(arg) ; }
-#endif
 
 inline real4  CBRT(real4  arg) { return cbrtf(arg) ; }
 inline real8  CBRT(real8  arg) { return cbrt(arg) ; }
 inline real10 CBRT(real10 arg) { return cbrtl(arg) ; }
-#if defined(LULESH_SST_MODS) && defined(LULESH_SST_SIM)
-inline Variable<Real_t> CBRT(const Variable<Real_t> &arg) { return cbrt(arg) ; }
-#endif
 
 inline real4  FABS(real4  arg) { return fabsf(arg) ; }
 inline real8  FABS(real8  arg) { return fabs(arg) ; }
 inline real10 FABS(real10 arg) { return fabsl(arg) ; }
-#if defined(LULESH_SST_MODS) && defined(LULESH_SST_SIM)
-inline Variable<Real_t> FABS(const Variable<Real_t> &arg) { return fabs(arg) ; }
-#endif
 
 
 // Stuff needed for boundary conditions
@@ -211,6 +160,7 @@ class Domain {
       m_nodalMass.resize(numNode);  // mass
    }
 
+#pragma sst new
    void AllocateElemPersistent(Int_t numElem) // Elem-centered
    {
       m_nodelist.resize(8*numElem);
@@ -245,6 +195,7 @@ class Domain {
       m_elemMass.resize(numElem);
    }
 
+#pragma sst new
    void AllocateGradients(Int_t numElem, Int_t allElem)
    {
       // Position gradients
@@ -269,6 +220,7 @@ class Domain {
       m_delv_xi.clear() ;
    }
 
+#pragma sst new
    void AllocateStrains(Int_t numElem)
    {
       m_dxx.resize(numElem) ;
@@ -290,41 +242,35 @@ class Domain {
    // Node-centered
 
    // Nodal coordinates
-   Real_t_sim& x(Index_t_sim idx)    { return m_x[idx] ; }
-   Real_t_sim& y(Index_t_sim idx)    { return m_y[idx] ; }
-   Real_t_sim& z(Index_t_sim idx)    { return m_z[idx] ; }
+   Real_t& x(Index_t idx)    { return m_x[idx] ; }
+   Real_t& y(Index_t idx)    { return m_y[idx] ; }
+   Real_t& z(Index_t idx)    { return m_z[idx] ; }
 
    // Nodal velocities
-   Real_t_sim& xd(Index_t_sim idx)   { return m_xd[idx] ; }
-   Real_t_sim& yd(Index_t_sim idx)   { return m_yd[idx] ; }
-   Real_t_sim& zd(Index_t_sim idx)   { return m_zd[idx] ; }
+   Real_t& xd(Index_t idx)   { return m_xd[idx] ; }
+   Real_t& yd(Index_t idx)   { return m_yd[idx] ; }
+   Real_t& zd(Index_t idx)   { return m_zd[idx] ; }
 
    // Nodal accelerations
-   Real_t_sim& xdd(Index_t_sim idx)  { return m_xdd[idx] ; }
-   Real_t_sim& ydd(Index_t_sim idx)  { return m_ydd[idx] ; }
-   Real_t_sim& zdd(Index_t_sim idx)  { return m_zdd[idx] ; }
+   Real_t& xdd(Index_t idx)  { return m_xdd[idx] ; }
+   Real_t& ydd(Index_t idx)  { return m_ydd[idx] ; }
+   Real_t& zdd(Index_t idx)  { return m_zdd[idx] ; }
 
    // Nodal forces
-   Real_t_sim& fx(Index_t_sim idx)   { return m_fx[idx] ; }
-   Real_t_sim& fy(Index_t_sim idx)   { return m_fy[idx] ; }
-   Real_t_sim& fz(Index_t_sim idx)   { return m_fz[idx] ; }
+   Real_t& fx(Index_t idx)   { return m_fx[idx] ; }
+   Real_t& fy(Index_t idx)   { return m_fy[idx] ; }
+   Real_t& fz(Index_t idx)   { return m_fz[idx] ; }
 
    // Nodal mass
-   Real_t_sim& nodalMass(Index_t_sim idx) { return m_nodalMass[idx] ; }
+   Real_t& nodalMass(Index_t idx) { return m_nodalMass[idx] ; }
 
    // Nodes on symmertry planes
-   Index_t_sim symmX(Index_t_sim idx) { return m_symmX[idx] ; }
-   Index_t_sim symmY(Index_t_sim idx) { return m_symmY[idx] ; }
-   Index_t_sim symmZ(Index_t_sim idx) { return m_symmZ[idx] ; }
-#if defined(LULESH_SST_MODS) && defined(LULESH_SST_SIM)
-   bool symmXempty()          { return m_colLoc != 0; }
-   bool symmYempty()          { return m_rowLoc != 0; }
-   bool symmZempty()          { return m_planeLoc != 0; }
-#else
+   Index_t symmX(Index_t idx) { return m_symmX[idx] ; }
+   Index_t symmY(Index_t idx) { return m_symmY[idx] ; }
+   Index_t symmZ(Index_t idx) { return m_symmZ[idx] ; }
    bool symmXempty()          { return m_symmX.empty(); }
    bool symmYempty()          { return m_symmY.empty(); }
    bool symmZempty()          { return m_symmZ.empty(); }
-#endif
 
    //
    // Element-centered
@@ -332,112 +278,112 @@ class Domain {
    Index_t&  regElemSize(Index_t idx) { return m_regElemSize[idx] ; }
    Index_t&  regNumList(Index_t idx) { return m_regNumList[idx] ; }
    Index_t*  regNumList()            { return &m_regNumList[0] ; }
-   Index_t_ptr_sim  regElemlist(Int_t r)    { return m_regElemlist[r] ; }
-   Index_t_sim&  regElemlist(Int_t r, Index_t_sim idx) { return m_regElemlist[r][idx] ; }
+   Index_t*  regElemlist(Int_t r)    { return m_regElemlist[r] ; }
+   Index_t&  regElemlist(Int_t r, Index_t idx) { return m_regElemlist[r][idx] ; }
 
-   Index_t_ptr_sim  nodelist(Index_t idx)    { return &m_nodelist[Index_t(8)*idx] ; }
+   Index_t*  nodelist(Index_t idx)    { return &m_nodelist[Index_t(8)*idx] ; }
 
    // elem connectivities through face
-   Index_t_sim&  lxim(Index_t_sim idx) { return m_lxim[idx] ; }
-   Index_t_sim&  lxip(Index_t_sim idx) { return m_lxip[idx] ; }
-   Index_t_sim&  letam(Index_t_sim idx) { return m_letam[idx] ; }
-   Index_t_sim&  letap(Index_t_sim idx) { return m_letap[idx] ; }
-   Index_t_sim&  lzetam(Index_t_sim idx) { return m_lzetam[idx] ; }
-   Index_t_sim&  lzetap(Index_t_sim idx) { return m_lzetap[idx] ; }
+   Index_t&  lxim(Index_t idx) { return m_lxim[idx] ; }
+   Index_t&  lxip(Index_t idx) { return m_lxip[idx] ; }
+   Index_t&  letam(Index_t idx) { return m_letam[idx] ; }
+   Index_t&  letap(Index_t idx) { return m_letap[idx] ; }
+   Index_t&  lzetam(Index_t idx) { return m_lzetam[idx] ; }
+   Index_t&  lzetap(Index_t idx) { return m_lzetap[idx] ; }
 
    // elem face symm/free-surface flag
-   Int_t_sim&  elemBC(Index_t_sim idx) { return m_elemBC[idx] ; }
+   Int_t&  elemBC(Index_t idx) { return m_elemBC[idx] ; }
 
    // Principal strains - temporary
-   Real_t_sim& dxx(Index_t_sim idx)  { return m_dxx[idx] ; }
-   Real_t_sim& dyy(Index_t_sim idx)  { return m_dyy[idx] ; }
-   Real_t_sim& dzz(Index_t_sim idx)  { return m_dzz[idx] ; }
+   Real_t& dxx(Index_t idx)  { return m_dxx[idx] ; }
+   Real_t& dyy(Index_t idx)  { return m_dyy[idx] ; }
+   Real_t& dzz(Index_t idx)  { return m_dzz[idx] ; }
 
    // Velocity gradient - temporary
-   Real_t_sim& delv_xi(Index_t_sim idx)    { return m_delv_xi[idx] ; }
-   Real_t_sim& delv_eta(Index_t_sim idx)   { return m_delv_eta[idx] ; }
-   Real_t_sim& delv_zeta(Index_t_sim idx)  { return m_delv_zeta[idx] ; }
+   Real_t& delv_xi(Index_t idx)    { return m_delv_xi[idx] ; }
+   Real_t& delv_eta(Index_t idx)   { return m_delv_eta[idx] ; }
+   Real_t& delv_zeta(Index_t idx)  { return m_delv_zeta[idx] ; }
 
    // Position gradient - temporary
-   Real_t_sim& delx_xi(Index_t_sim idx)    { return m_delx_xi[idx] ; }
-   Real_t_sim& delx_eta(Index_t_sim idx)   { return m_delx_eta[idx] ; }
-   Real_t_sim& delx_zeta(Index_t_sim idx)  { return m_delx_zeta[idx] ; }
+   Real_t& delx_xi(Index_t idx)    { return m_delx_xi[idx] ; }
+   Real_t& delx_eta(Index_t idx)   { return m_delx_eta[idx] ; }
+   Real_t& delx_zeta(Index_t idx)  { return m_delx_zeta[idx] ; }
 
    // Energy
-   Real_t_sim& e(Index_t_sim idx)          { return m_e[idx] ; }
+   Real_t& e(Index_t idx)          { return m_e[idx] ; }
 
    // Pressure
-   Real_t_sim& p(Index_t_sim idx)          { return m_p[idx] ; }
+   Real_t& p(Index_t idx)          { return m_p[idx] ; }
 
    // Artificial viscosity
-   Real_t_sim& q(Index_t_sim idx)          { return m_q[idx] ; }
+   Real_t& q(Index_t idx)          { return m_q[idx] ; }
 
    // Linear term for q
-   Real_t_sim& ql(Index_t_sim idx)         { return m_ql[idx] ; }
+   Real_t& ql(Index_t idx)         { return m_ql[idx] ; }
    // Quadratic term for q
-   Real_t_sim& qq(Index_t_sim idx)         { return m_qq[idx] ; }
+   Real_t& qq(Index_t idx)         { return m_qq[idx] ; }
 
    // Relative volume
-   Real_t_sim& v(Index_t_sim idx)          { return m_v[idx] ; }
-   Real_t_sim& delv(Index_t_sim idx)       { return m_delv[idx] ; }
+   Real_t& v(Index_t idx)          { return m_v[idx] ; }
+   Real_t& delv(Index_t idx)       { return m_delv[idx] ; }
 
    // Reference volume
-   Real_t_sim& volo(Index_t_sim idx)       { return m_volo[idx] ; }
+   Real_t& volo(Index_t idx)       { return m_volo[idx] ; }
 
    // volume derivative over volume
-   Real_t_sim& vdov(Index_t_sim idx)       { return m_vdov[idx] ; }
+   Real_t& vdov(Index_t idx)       { return m_vdov[idx] ; }
 
    // Element characteristic length
-   Real_t_sim& arealg(Index_t_sim idx)     { return m_arealg[idx] ; }
+   Real_t& arealg(Index_t idx)     { return m_arealg[idx] ; }
 
    // Sound speed
-   Real_t_sim& ss(Index_t_sim idx)         { return m_ss[idx] ; }
+   Real_t& ss(Index_t idx)         { return m_ss[idx] ; }
 
    // Element mass
-   Real_t_sim& elemMass(Index_t_sim idx)  { return m_elemMass[idx] ; }
+   Real_t& elemMass(Index_t idx)  { return m_elemMass[idx] ; }
 
-   Index_t_sim nodeElemCount(Index_t_sim idx)
+   Index_t nodeElemCount(Index_t idx)
    { return m_nodeElemStart[idx+1] - m_nodeElemStart[idx] ; }
 
-   Index_t_ptr_sim nodeElemCornerList(Index_t_sim idx)
+   Index_t *nodeElemCornerList(Index_t idx)
    { return &m_nodeElemCornerList[m_nodeElemStart[idx]] ; }
 
    // Parameters 
 
    // Cutoffs
-   Real_t_sim u_cut() const               { return m_u_cut ; }
-   Real_t_sim e_cut() const               { return m_e_cut ; }
-   Real_t_sim p_cut() const               { return m_p_cut ; }
-   Real_t_sim q_cut() const               { return m_q_cut ; }
-   Real_t_sim v_cut() const               { return m_v_cut ; }
+   Real_t u_cut() const               { return m_u_cut ; }
+   Real_t e_cut() const               { return m_e_cut ; }
+   Real_t p_cut() const               { return m_p_cut ; }
+   Real_t q_cut() const               { return m_q_cut ; }
+   Real_t v_cut() const               { return m_v_cut ; }
 
    // Other constants (usually are settable via input file in real codes)
-   Real_t_sim hgcoef() const              { return m_hgcoef ; }
-   Real_t_sim qstop() const               { return m_qstop ; }
-   Real_t_sim monoq_max_slope() const     { return m_monoq_max_slope ; }
-   Real_t_sim monoq_limiter_mult() const  { return m_monoq_limiter_mult ; }
-   Real_t_sim ss4o3() const               { return m_ss4o3 ; }
-   Real_t_sim qlc_monoq() const           { return m_qlc_monoq ; }
-   Real_t_sim qqc_monoq() const           { return m_qqc_monoq ; }
-   Real_t_sim qqc() const                 { return m_qqc ; }
+   Real_t hgcoef() const              { return m_hgcoef ; }
+   Real_t qstop() const               { return m_qstop ; }
+   Real_t monoq_max_slope() const     { return m_monoq_max_slope ; }
+   Real_t monoq_limiter_mult() const  { return m_monoq_limiter_mult ; }
+   Real_t ss4o3() const               { return m_ss4o3 ; }
+   Real_t qlc_monoq() const           { return m_qlc_monoq ; }
+   Real_t qqc_monoq() const           { return m_qqc_monoq ; }
+   Real_t qqc() const                 { return m_qqc ; }
 
-   Real_t_sim eosvmax() const             { return m_eosvmax ; }
-   Real_t_sim eosvmin() const             { return m_eosvmin ; }
-   Real_t_sim pmin() const                { return m_pmin ; }
-   Real_t_sim emin() const                { return m_emin ; }
-   Real_t_sim dvovmax() const             { return m_dvovmax ; }
-   Real_t_sim refdens() const             { return m_refdens ; }
+   Real_t eosvmax() const             { return m_eosvmax ; }
+   Real_t eosvmin() const             { return m_eosvmin ; }
+   Real_t pmin() const                { return m_pmin ; }
+   Real_t emin() const                { return m_emin ; }
+   Real_t dvovmax() const             { return m_dvovmax ; }
+   Real_t refdens() const             { return m_refdens ; }
 
    // Timestep controls, etc...
-   Real_t_sim& time()                 { return m_time ; }
-   Real_t_sim& deltatime()            { return m_deltatime ; }
-   Real_t_sim& deltatimemultlb()      { return m_deltatimemultlb ; }
-   Real_t_sim& deltatimemultub()      { return m_deltatimemultub ; }
-   Real_t_sim& stoptime()             { return m_stoptime ; }
-   Real_t_sim& dtcourant()            { return m_dtcourant ; }
-   Real_t_sim& dthydro()              { return m_dthydro ; }
-   Real_t_sim& dtmax()                { return m_dtmax ; }
-   Real_t_sim& dtfixed()              { return m_dtfixed ; }
+   Real_t& time()                 { return m_time ; }
+   Real_t& deltatime()            { return m_deltatime ; }
+   Real_t& deltatimemultlb()      { return m_deltatimemultlb ; }
+   Real_t& deltatimemultub()      { return m_deltatimemultub ; }
+   Real_t& stoptime()             { return m_stoptime ; }
+   Real_t& dtcourant()            { return m_dtcourant ; }
+   Real_t& dthydro()              { return m_dthydro ; }
+   Real_t& dtmax()                { return m_dtmax ; }
+   Real_t& dtfixed()              { return m_dtfixed ; }
 
    Int_t&  cycle()                { return m_cycle ; }
    Index_t&  numRanks()           { return m_numRanks ; }
@@ -464,8 +410,8 @@ class Domain {
 
 #if USE_MPI   
    // Communication Work space 
-   Real_t_ptr_sim commDataSend ;
-   Real_t_ptr_sim commDataRecv ;
+   Real_t *commDataSend ;
+   Real_t *commDataRecv ;
    
    // Maximum number of block neighbors 
    MPI_Request recvRequest[26] ; // 6 faces + 12 edges + 8 corners 
@@ -487,137 +433,135 @@ class Domain {
    //
 
    /* Node-centered */
-   Real_t_vec_sim m_x ;  /* coordinates */
-   Real_t_vec_sim m_y ;
-   Real_t_vec_sim m_z ;
+   std::vector<Real_t> m_x ;  /* coordinates */
+   std::vector<Real_t> m_y ;
+   std::vector<Real_t> m_z ;
 
-   Real_t_vec_sim m_xd ; /* velocities */
-   Real_t_vec_sim m_yd ;
-   Real_t_vec_sim m_zd ;
+   std::vector<Real_t> m_xd ; /* velocities */
+   std::vector<Real_t> m_yd ;
+   std::vector<Real_t> m_zd ;
 
-   Real_t_vec_sim m_xdd ; /* accelerations */
-   Real_t_vec_sim m_ydd ;
-   Real_t_vec_sim m_zdd ;
+   std::vector<Real_t> m_xdd ; /* accelerations */
+   std::vector<Real_t> m_ydd ;
+   std::vector<Real_t> m_zdd ;
 
-   Real_t_vec_sim m_fx ;  /* forces */
-   Real_t_vec_sim m_fy ;
-   Real_t_vec_sim m_fz ;
+   std::vector<Real_t> m_fx ;  /* forces */
+   std::vector<Real_t> m_fy ;
+   std::vector<Real_t> m_fz ;
 
-   Real_t_vec_sim m_nodalMass ;  /* mass */
+   std::vector<Real_t> m_nodalMass ;  /* mass */
 
-   Index_t_vec_sim m_symmX ;  /* symmetry plane nodesets */
-   Index_t_vec_sim m_symmY ;
-   Index_t_vec_sim m_symmZ ;
+   std::vector<Index_t> m_symmX ;  /* symmetry plane nodesets */
+   std::vector<Index_t> m_symmY ;
+   std::vector<Index_t> m_symmZ ;
 
    // Element-centered
 
    // Region information
-
-   Int_t    m_numReg ;                                 // NLS: NEEDED FOR FLOPS
-   Int_t    m_cost; //imbalance cost                   // NLS: NEEDED FOR FLOPS
-   Index_t *m_regElemSize ;   // Size of region sets   // NLS: NEEDED FOR FLOPS
-   // NLS: NEEDED TO COMPUTE m_regElemSize BUT COULD BE FREED AFTER THAT (UNLESS DUMP VTK)
+   Int_t    m_numReg ;
+   Int_t    m_cost; //imbalance cost
+   Index_t *m_regElemSize ;   // Size of region sets
    Index_t *m_regNumList ;    // Region number per domain element
-   Index_t_ptr_sim *m_regElemlist ;  // region indexset 
+   Index_t **m_regElemlist ;  // region indexset 
 
-   Index_t_vec_sim  m_nodelist ;     /* elemToNode connectivity */
+   std::vector<Index_t>  m_nodelist ;     /* elemToNode connectivity */
 
-   Index_t_vec_sim  m_lxim ;  /* element connectivity across each face */
-   Index_t_vec_sim  m_lxip ;
-   Index_t_vec_sim  m_letam ;
-   Index_t_vec_sim  m_letap ;
-   Index_t_vec_sim  m_lzetam ;
-   Index_t_vec_sim  m_lzetap ;
+   std::vector<Index_t>  m_lxim ;  /* element connectivity across each face */
+   std::vector<Index_t>  m_lxip ;
+   std::vector<Index_t>  m_letam ;
+   std::vector<Index_t>  m_letap ;
+   std::vector<Index_t>  m_lzetam ;
+   std::vector<Index_t>  m_lzetap ;
 
-   Int_t_vec_sim    m_elemBC ;  /* symmetry/free-surface flags for each elem face */
+   std::vector<Int_t>    m_elemBC ;  /* symmetry/free-surface flags for each elem face */
 
-   Real_t_vec_sim m_dxx ;  /* principal strains -- temporary */
-   Real_t_vec_sim m_dyy ;
-   Real_t_vec_sim m_dzz ;
+   std::vector<Real_t> m_dxx ;  /* principal strains -- temporary */
+   std::vector<Real_t> m_dyy ;
+   std::vector<Real_t> m_dzz ;
 
-   Real_t_vec_sim m_delv_xi ;    /* velocity gradient -- temporary */
-   Real_t_vec_sim m_delv_eta ;
-   Real_t_vec_sim m_delv_zeta ;
+   std::vector<Real_t> m_delv_xi ;    /* velocity gradient -- temporary */
+   std::vector<Real_t> m_delv_eta ;
+   std::vector<Real_t> m_delv_zeta ;
 
-   Real_t_vec_sim m_delx_xi ;    /* coordinate gradient -- temporary */
-   Real_t_vec_sim m_delx_eta ;
-   Real_t_vec_sim m_delx_zeta ;
+   std::vector<Real_t> m_delx_xi ;    /* coordinate gradient -- temporary */
+   std::vector<Real_t> m_delx_eta ;
+   std::vector<Real_t> m_delx_zeta ;
    
-   Real_t_vec_sim m_e ;   /* energy */
+   std::vector<Real_t> m_e ;   /* energy */
 
-   Real_t_vec_sim m_p ;   /* pressure */
-   Real_t_vec_sim m_q ;   /* q */
-   Real_t_vec_sim m_ql ;  /* linear term for q */
-   Real_t_vec_sim m_qq ;  /* quadratic term for q */
+   std::vector<Real_t> m_p ;   /* pressure */
+   std::vector<Real_t> m_q ;   /* q */
+   std::vector<Real_t> m_ql ;  /* linear term for q */
+   std::vector<Real_t> m_qq ;  /* quadratic term for q */
 
-   Real_t_vec_sim m_v ;     /* relative volume */
-   Real_t_vec_sim m_volo ;  /* reference volume */
-   Real_t_vec_sim m_vnew ;  /* new relative volume -- temporary */
-   Real_t_vec_sim m_delv ;  /* m_vnew - m_v */
-   Real_t_vec_sim m_vdov ;  /* volume derivative over volume */
+   std::vector<Real_t> m_v ;     /* relative volume */
+   std::vector<Real_t> m_volo ;  /* reference volume */
+   std::vector<Real_t> m_vnew ;  /* new relative volume -- temporary */
+   std::vector<Real_t> m_delv ;  /* m_vnew - m_v */
+   std::vector<Real_t> m_vdov ;  /* volume derivative over volume */
 
-   Real_t_vec_sim m_arealg ;  /* characteristic length of an element */
+   std::vector<Real_t> m_arealg ;  /* characteristic length of an element */
    
-   Real_t_vec_sim m_ss ;      /* "sound speed" */
+   std::vector<Real_t> m_ss ;      /* "sound speed" */
 
-   Real_t_vec_sim m_elemMass ;  /* mass */
+   std::vector<Real_t> m_elemMass ;  /* mass */
 
    // Cutoffs (treat as constants)
-   const Real_t_sim  m_e_cut ;             // energy tolerance 
-   const Real_t_sim  m_p_cut ;             // pressure tolerance 
-   const Real_t_sim  m_q_cut ;             // q tolerance 
-   const Real_t_sim  m_v_cut ;             // relative volume tolerance 
-   const Real_t_sim  m_u_cut ;             // velocity tolerance 
+   const Real_t  m_e_cut ;             // energy tolerance 
+   const Real_t  m_p_cut ;             // pressure tolerance 
+   const Real_t  m_q_cut ;             // q tolerance 
+   const Real_t  m_v_cut ;             // relative volume tolerance 
+   const Real_t  m_u_cut ;             // velocity tolerance 
 
    // Other constants (usually setable, but hardcoded in this proxy app)
 
-   const Real_t_sim  m_hgcoef ;            // hourglass control 
-   const Real_t_sim  m_ss4o3 ;
-   const Real_t_sim  m_qstop ;             // excessive q indicator 
-   const Real_t_sim  m_monoq_max_slope ;
-   const Real_t_sim  m_monoq_limiter_mult ;
-   const Real_t_sim  m_qlc_monoq ;         // linear term coef for q 
-   const Real_t_sim  m_qqc_monoq ;         // quadratic term coef for q 
-   const Real_t_sim  m_qqc ;
-   const Real_t_sim  m_eosvmax ;
-   const Real_t_sim  m_eosvmin ;
-   const Real_t_sim  m_pmin ;              // pressure floor 
-   const Real_t_sim  m_emin ;              // energy floor 
-   const Real_t_sim  m_dvovmax ;           // maximum allowable volume change 
-   const Real_t_sim  m_refdens ;           // reference density 
+   const Real_t  m_hgcoef ;            // hourglass control 
+   const Real_t  m_ss4o3 ;
+   const Real_t  m_qstop ;             // excessive q indicator 
+   const Real_t  m_monoq_max_slope ;
+   const Real_t  m_monoq_limiter_mult ;
+   const Real_t  m_qlc_monoq ;         // linear term coef for q 
+   const Real_t  m_qqc_monoq ;         // quadratic term coef for q 
+   const Real_t  m_qqc ;
+   const Real_t  m_eosvmax ;
+   const Real_t  m_eosvmin ;
+   const Real_t  m_pmin ;              // pressure floor 
+   const Real_t  m_emin ;              // energy floor 
+   const Real_t  m_dvovmax ;           // maximum allowable volume change 
+   const Real_t  m_refdens ;           // reference density 
 
    // Variables to keep track of timestep, simulation time, and cycle
-   Real_t_sim  m_dtcourant ;         // courant constraint 
-   Real_t_sim  m_dthydro ;           // volume change constraint 
+   Real_t  m_dtcourant ;         // courant constraint 
+   Real_t  m_dthydro ;           // volume change constraint 
    Int_t   m_cycle ;             // iteration count for simulation 
-   Real_t_sim  m_dtfixed ;           // fixed time increment 
-   Real_t_sim  m_time ;              // current time 
-   Real_t_sim  m_deltatime ;         // variable time increment 
-   Real_t_sim  m_deltatimemultlb ;
-   Real_t_sim  m_deltatimemultub ;
-   Real_t_sim  m_dtmax ;             // maximum allowable time increment 
-   Real_t_sim  m_stoptime ;          // end time for simulation 
+   Real_t  m_dtfixed ;           // fixed time increment 
+   Real_t  m_time ;              // current time 
+   Real_t  m_deltatime ;         // variable time increment 
+   Real_t  m_deltatimemultlb ;
+   Real_t  m_deltatimemultub ;
+   Real_t  m_dtmax ;             // maximum allowable time increment 
+   Real_t  m_stoptime ;          // end time for simulation 
 
 
-   Int_t   m_numRanks ;          // NLS: NEEDED FOR COMM PATTERN
+   Int_t   m_numRanks ;
 
-   Index_t m_colLoc ;            // NLS: NEEDED FOR COMM PATTERN
-   Index_t m_rowLoc ;            // NLS: NEEDED FOR COMM PATTERN
-   Index_t m_planeLoc ;          // NLS: NEEDED FOR COMM PATTERN
-   Index_t m_tp ;                // NLS: NEEDED FOR COMM PATTERN
+   Index_t m_colLoc ;
+   Index_t m_rowLoc ;
+   Index_t m_planeLoc ;
+   Index_t m_tp ;
 
-   Index_t m_sizeX ;             // NLS: NEEDED FOR COMM PATTERN
-   Index_t m_sizeY ;             // NLS: NEEDED FOR COMM PATTERN
-   Index_t m_sizeZ ;             // NLS: NEEDED FOR COMM PATTERN
-   Index_t m_numElem ;           // NLS: NEEDED FOR COMM PATTERN AND FLOPS
-   Index_t m_numNode ;           // NLS: NEEDED FOR FLOPS
+   Index_t m_sizeX ;
+   Index_t m_sizeY ;
+   Index_t m_sizeZ ;
+   Index_t m_numElem ;
+   Index_t m_numNode ;
 
-   Index_t m_maxPlaneSize ;      // NLS: NEEDED FOR COMM PATTERN
-   Index_t m_maxEdgeSize ;       // NLS: NEEDED FOR COMM PATTERN
+   Index_t m_maxPlaneSize ;
+   Index_t m_maxEdgeSize ;
 
    // OMP hack 
-   Index_t_ptr_sim m_nodeElemStart ;
-   Index_t_ptr_sim m_nodeElemCornerList ;
+   Index_t *m_nodeElemStart ;
+   Index_t *m_nodeElemCornerList ;
 
    // Used in setup
    Index_t m_rowMin, m_rowMax;
@@ -626,7 +570,7 @@ class Domain {
 
 } ;
 
-typedef Real_t_sim &(Domain::* Domain_member )(Index_t_sim) ;
+typedef Real_t &(Domain::* Domain_member )(Index_t) ;
 
 struct cmdLineOpts {
    Int_t its; // -i 
@@ -644,15 +588,103 @@ struct cmdLineOpts {
 
 // Function Prototypes
 
+static inline
+Real_t CalcElemVolume( const Real_t x0, const Real_t x1,
+               const Real_t x2, const Real_t x3,
+               const Real_t x4, const Real_t x5,
+               const Real_t x6, const Real_t x7,
+               const Real_t y0, const Real_t y1,
+               const Real_t y2, const Real_t y3,
+               const Real_t y4, const Real_t y5,
+               const Real_t y6, const Real_t y7,
+               const Real_t z0, const Real_t z1,
+               const Real_t z2, const Real_t z3,
+               const Real_t z4, const Real_t z5,
+               const Real_t z6, const Real_t z7 )
+{
+  Real_t twelveth = Real_t(1.0)/Real_t(12.0);
+
+  Real_t dx61 = x6 - x1;
+  Real_t dy61 = y6 - y1;
+  Real_t dz61 = z6 - z1;
+
+  Real_t dx70 = x7 - x0;
+  Real_t dy70 = y7 - y0;
+  Real_t dz70 = z7 - z0;
+
+  Real_t dx63 = x6 - x3;
+  Real_t dy63 = y6 - y3;
+  Real_t dz63 = z6 - z3;
+
+  Real_t dx20 = x2 - x0;
+  Real_t dy20 = y2 - y0;
+  Real_t dz20 = z2 - z0;
+
+  Real_t dx50 = x5 - x0;
+  Real_t dy50 = y5 - y0;
+  Real_t dz50 = z5 - z0;
+
+  Real_t dx64 = x6 - x4;
+  Real_t dy64 = y6 - y4;
+  Real_t dz64 = z6 - z4;
+
+  Real_t dx31 = x3 - x1;
+  Real_t dy31 = y3 - y1;
+  Real_t dz31 = z3 - z1;
+
+  Real_t dx72 = x7 - x2;
+  Real_t dy72 = y7 - y2;
+  Real_t dz72 = z7 - z2;
+
+  Real_t dx43 = x4 - x3;
+  Real_t dy43 = y4 - y3;
+  Real_t dz43 = z4 - z3;
+
+  Real_t dx57 = x5 - x7;
+  Real_t dy57 = y5 - y7;
+  Real_t dz57 = z5 - z7;
+
+  Real_t dx14 = x1 - x4;
+  Real_t dy14 = y1 - y4;
+  Real_t dz14 = z1 - z4;
+
+  Real_t dx25 = x2 - x5;
+  Real_t dy25 = y2 - y5;
+  Real_t dz25 = z2 - z5;
+
+#define TRIPLE_PRODUCT(x1, y1, z1, x2, y2, z2, x3, y3, z3) \
+   ((x1)*((y2)*(z3) - (z2)*(y3)) + (x2)*((z1)*(y3) - (y1)*(z3)) + (x3)*((y1)*(z2) - (z1)*(y2)))
+
+  Real_t volume =
+    TRIPLE_PRODUCT(dx31 + dx72, dx63, dx20,
+       dy31 + dy72, dy63, dy20,
+       dz31 + dz72, dz63, dz20) +
+    TRIPLE_PRODUCT(dx43 + dx57, dx64, dx70,
+       dy43 + dy57, dy64, dy70,
+       dz43 + dz57, dz64, dz70) +
+    TRIPLE_PRODUCT(dx14 + dx25, dx61, dx50,
+       dy14 + dy25, dy61, dy50,
+       dz14 + dz25, dz61, dz50);
+
+#undef TRIPLE_PRODUCT
+
+  volume *= twelveth;
+
+  return volume ;
+}
+
 // lulesh-par
-Real_t_sim CalcElemVolume( const Real_t_sim x[8],
-                       const Real_t_sim y[8],
-                       const Real_t_sim z[8]);
+static inline
+Real_t CalcElemVolume(const Real_t x[8], const Real_t y[8], const Real_t z[8]){
+  return CalcElemVolume( x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7],
+                         y[0], y[1], y[2], y[3], y[4], y[5], y[6], y[7],
+                         z[0], z[1], z[2], z[3], z[4], z[5], z[6], z[7]);
+}
 
 // lulesh-util
 void ParseCommandLineOptions(int argc, char *argv[],
                              Int_t myRank, struct cmdLineOpts *opts);
-void VerifyAndWriteFinalOutput(Real_t_sim elapsed_time,
+void VerifyAndWriteFinalOutput(Real_t elapsed_time,
                                Domain& locDom,
                                Int_t nx,
                                Int_t numRanks);
