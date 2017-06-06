@@ -32,13 +32,6 @@ structured_topology::structured_topology(sprockit::sim_parameters* params,
       spkt_abort_printf("Error - netlink concentration cannot be higher than node concentration");
     }
   }
-
-//  } else {
-//    num_nodes_per_netlink_ = 1;
-//    std::cerr << "else\n";
-//  }
-  std::cerr << "num_nodes_per_netlink_: " << num_nodes_per_netlink_ << "\n";
-  std::cerr << "netlinks_per_switch_: " << netlinks_per_switch_ << "\n";
 }
 
 void
