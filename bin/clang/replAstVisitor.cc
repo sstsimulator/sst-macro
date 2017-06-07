@@ -272,7 +272,7 @@ bool
 ReplGlobalASTVisitor::VisitDeclRefExpr(DeclRefExpr* expr)
 {
   NamedDecl* decl =  expr->getFoundDecl();
-  replGlobal(decl, expr->getSourceRange());
+  replaceGlobalUse(decl, expr->getSourceRange());
   return true;
 }
 
@@ -351,16 +351,40 @@ ReplGlobalASTVisitor::VisitCallExpr(CallExpr* expr)
   return true;
 }
 
+void
+ReplGlobalASTVisitor::defineGlobalVarInitializers(const std::string& scope_unique_var_name,
+   const std::string& var_name, const std::string& init_prefix, llvm::raw_string_ostream& os)
+{
+  //this has an initial value we need to transfer over
+  //log the variable so we can drop replacement info in the static cxx file
+  //if static and no init given, then we will drop this initialization code at the instantiation point
+  os << "void* __ptr_" << scope_unique_var_name << " = &" << init_prefix << var_name << "; "
+     << "int __sizeof_" << scope_unique_var_name << " = sizeof(" << init_prefix << var_name << ");";
+}
+
+void
+ReplGlobalASTVisitor::declareStaticInitializers(const std::string& scope_unique_var_name,
+                                                llvm::raw_string_ostream& os)
+{
+  //this has an initial value we need to transfer over
+  //log the variable so we can drop replacement info in the static cxx file
+  //if static and no init given, then we will drop this initialization code at the instantiation point
+  currentNs_->replVars.insert(scope_unique_var_name);
+  os << "extern void* __ptr_" << scope_unique_var_name << ";"
+     << "extern int __sizeof_" << scope_unique_var_name << ";";
+}
+
 bool
-ReplGlobalASTVisitor::replaceGlobalVar(const std::string& scope_prefix,
+ReplGlobalASTVisitor::setupGlobalVar(const std::string& scope_prefix,
                                        const std::string& init_prefix,
-                                       SourceLocation insertLoc,
+                                       SourceLocation externVarsInsertLoc,
+                                       SourceLocation getRefInsertLoc,
+                                       GlobalRedirect_t red_ty,
                                        VarDecl* D)
 {
-  std::string str;
-  llvm::raw_string_ostream os(str);
+
   std::string& varRepl = globals_[D];
-  std::string sstVarName = scope_prefix + D->getNameAsString();
+  std::string scopeUniqueVarName = scope_prefix + D->getNameAsString();
 
   // roundabout way to get the type of the variable
   std::string retType;
@@ -370,41 +394,52 @@ ReplGlobalASTVisitor::replaceGlobalVar(const std::string& scope_prefix,
   if (isC99array){
     const ArrayType* aty = ty->getAsArrayTypeUnsafe();
     retType = QualType::getAsString(aty->getElementType().split()) + "*";
-    varRepl = "(" + currentNs_->nsPrefix() + "get_" + sstVarName + "())";
+    varRepl = "(" + currentNs_->nsPrefix() + "get_" + scopeUniqueVarName + "())";
   } else {
     retType = QualType::getAsString(D->getType().split()) + "*";
-    varRepl = "(*" + currentNs_->nsPrefix() + "get_" + sstVarName + "())";
+    varRepl = "(*" + currentNs_->nsPrefix() + "get_" + scopeUniqueVarName + "())";
   }
 
+  //std::string str;
+  {std::string empty;
+  llvm::raw_string_ostream os(empty);
+  /** Add an extern declaration of all sstmac stack config vars */
+  os << "extern int sstmac_global_stacksize; ";
+  if (!D->hasExternalStorage()){
+    os << "extern int __offset_" << scopeUniqueVarName << "; ";
+    currentNs_->replVars.insert(scopeUniqueVarName);
+    if (red_ty == Extern){
+      defineGlobalVarInitializers(scopeUniqueVarName, D->getNameAsString(), init_prefix, os);
+    } else {
+      declareStaticInitializers(scopeUniqueVarName, os);
+    }
+  }
+  rewriter_.InsertText(externVarsInsertLoc, os.str());}
+
+  std::string empty;
+  llvm::raw_string_ostream os(empty);
   std::string varName = D->getNameAsString();
   bool notDeclared = globalsDeclared_.find(varName) == globalsDeclared_.end();
   if (notDeclared){
-    os << " extern int __offset_" << sstVarName << "; "
-       << "extern int sstmac_global_stacksize; "
-       << "static inline " << retType << " get_" << sstVarName << "(){ "
+    os << "static inline " << retType << " get_" << scopeUniqueVarName << "(){ "
        << " int stack; int* stackPtr = &stack; "
        << " uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize; "
-       << " char* offsetPtr = *((char**)localStorage) + __offset_" << sstVarName << "; "
+       << " char* offsetPtr = *((char**)localStorage) + __offset_" << scopeUniqueVarName << "; "
        << "return (((" << retType << ")((void*)offsetPtr))); "
        << "}";
     globalsDeclared_.insert(varName);
   }
-  if (!D->hasExternalStorage()){
-    currentNs_->replVars.insert(sstVarName);
-    os << "void* __ptr_" << sstVarName << " = &" << init_prefix << D->getNameAsString() << "; "
-       << "int __sizeof_" << sstVarName << " = sizeof(" << init_prefix << D->getNameAsString() << ");";
-  }
   os << "  ";
 
-  if (insertLoc.isInvalid()){
+  if (getRefInsertLoc.isInvalid()){
     errorAbort(D->getLocStart(), *ci_, "failed replacing global variable declaration");
   }
-  rewriter_.InsertText(insertLoc, os.str());
+  rewriter_.InsertText(getRefInsertLoc, os.str());
   return true;
 }
 
 clang::SourceLocation
-ReplGlobalASTVisitor::getEndLoc(VarDecl *D)
+ReplGlobalASTVisitor::getEndLoc(const VarDecl *D)
 {
   SourceLocation endLoc = Lexer::findLocationAfterToken(D->getLocEnd(), tok::semi,
                                  ci_->getSourceManager(), ci_->getLangOpts(), false);
@@ -414,13 +449,15 @@ ReplGlobalASTVisitor::getEndLoc(VarDecl *D)
 bool
 ReplGlobalASTVisitor::checkStaticFileVar(VarDecl* D)
 {
-  return replaceGlobalVar(currentNs_->filePrefix(), "", getEndLoc(D), D);
+
+  return setupGlobalVar(currentNs_->filePrefix(), "",
+                        D->getLocStart(), getEndLoc(D), Extern, D);
 }
 
 bool
 ReplGlobalASTVisitor::checkGlobalVar(VarDecl* D)
 {
-  return replaceGlobalVar("", "", getEndLoc(D), D);
+  return setupGlobalVar("", "", D->getLocStart(), getEndLoc(D), Extern, D);
 }
 
 bool
@@ -455,7 +492,8 @@ ReplGlobalASTVisitor::checkStaticFxnVar(VarDecl *D)
     rewriter_.InsertText(insertLoc, new_init_pp.str());
     //now that we have moved the initializer, we can do the replacement
     //but the replacement should point to the new initializer
-    replaceGlobalVar(scope_prefix, init_prefix, insertLoc, D);
+    setupGlobalVar(scope_prefix, init_prefix,
+                   outerFxn->getLocStart(), insertLoc, Extern, D);
     SourceLocation endLoc = getEndLoc(D);
     SourceRange rng(D->getLocStart(), endLoc);
     //while we're at it, might as well get rid of the old initializer
@@ -465,21 +503,90 @@ ReplGlobalASTVisitor::checkStaticFxnVar(VarDecl *D)
 }
 
 bool
-ReplGlobalASTVisitor::checkStaticClassVar(VarDecl *D)
+ReplGlobalASTVisitor::checkDeclStaticClassVar(VarDecl *D)
 {
-  errorAbort(D->getLocStart(), *ci_,
-             "cannot yet handle class static variables");
-  /**
   if (D->isStaticDataMember()){
-    CXXRecordDecl* outerCls = class_contexts_.front();
-    SourceLocation insertLoc = outerCls->getLocEnd();
-    std::stringstream prefix_sstr;
-    for (CXXRecordDecl* cls : class_contexts_){
-      prefix_sstr << "_" << cls->getNameAsString();
+    if (class_contexts_.size() > 1){
+      errorAbort(D->getLocStart(), *ci_, "cannot handle static variables in inner classes");
     }
-    return replaceGlobalVar(prefix_sstr.str(), "", insertLoc, D);
+    CXXRecordDecl* outerCls = class_contexts_.front();
+    std::stringstream scope_sstr; scope_sstr << "_";
+    for (CXXRecordDecl* decl : class_contexts_){
+      scope_sstr << "_" << decl->getNameAsString();
+    }
+    std::string scope_prefix = scope_sstr.str();
+    if (!D->hasInit()){
+      //no need for special scope prefixes - these are fully scoped within in the class
+      setupGlobalVar(scope_prefix, ""/*not used*/, outerCls->getLocStart(),
+                     getEndLoc(D), CxxStatic, D);
+    } //else this must be a const integer if inited in the header file
+      //we don't have to "deglobalize" this
   }
-  */
+  return true;
+}
+
+static void
+scopeString(SourceLocation loc, CompilerInstance& ci, DeclContext* ctx,
+            std::list<std::string>& scopes){
+  while (ctx->getDeclKind() != Decl::TranslationUnit){
+    switch (ctx->getDeclKind()){
+      case Decl::Namespace: {
+        NamespaceDecl* nsDecl = cast<NamespaceDecl>(ctx);
+        ctx = nsDecl->getDeclContext();
+        scopes.push_front(nsDecl->getNameAsString());
+      }
+      break;
+      case Decl::CXXRecord: {
+        CXXRecordDecl* clsDecl = cast<CXXRecordDecl>(ctx);
+        ctx = clsDecl->getDeclContext();
+        scopes.push_front(clsDecl->getNameAsString());
+      }
+      break;
+    default:
+      errorAbort(loc, ci, "bad context type in scope string");
+      break;
+    }
+  }
+}
+
+bool
+ReplGlobalASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
+{
+  if (D->isStaticDataMember()){
+    //okay - this sucks - I have no idea how this variable is being declared
+    //it could be ns::A::x = 10 for a variable in namespace ns, class A
+    //it could namespace ns { A::x = 10 }
+    //we must the variable declarations in the full namespace - we can't cheat
+    DeclContext* lexicalContext = D->getLexicalDeclContext();
+    DeclContext* semanticContext = D->getDeclContext();
+    CXXRecordDecl* parentCls = cast<CXXRecordDecl>(semanticContext);
+    std::list<std::string> lex;
+    scopeString(D->getLocStart(), *ci_, lexicalContext, lex);
+    std::list<std::string> sem;
+    scopeString(D->getLocStart(), *ci_, semanticContext, sem);
+
+    //match the format from checkDeclStaticClassVar
+    std::string scope_unique_var_name = "__" + parentCls->getNameAsString() + D->getNameAsString();
+
+    std::string empty;
+    llvm::raw_string_ostream os(empty);
+    //throw away the class name in the list of scopes
+    sem.pop_back();
+    auto semBegin = sem.begin();
+    for (auto& ignore : lex){ //figure out the overlap between lexical and semantic namespaces
+      ++semBegin;
+    }
+    for (auto iter = semBegin; iter != sem.end(); ++iter){ //I must declare vars in the most enclosing namespace
+      os << "namespace " << *iter << " {";
+    }
+
+    std::string init_prefix = parentCls->getNameAsString() + "::";
+    defineGlobalVarInitializers(scope_unique_var_name, D->getNameAsString(), init_prefix, os);
+    for (auto iter = semBegin; iter != sem.end(); ++iter){
+      os << "}"; //close namespaces
+    }
+    rewriter_.InsertText(getEndLoc(D), os.str());
+  }
   return true;
 }
 
@@ -510,14 +617,22 @@ ReplGlobalASTVisitor::VisitVarDecl(VarDecl* D){
   }
 
   if (insideClass()){
-    return checkStaticClassVar(D);
+    return checkDeclStaticClassVar(D);
   } else if (insideFxn()){
     return checkStaticFxnVar(D);
+  } else if (D->isCXXClassMember()){
+    return checkInstanceStaticClassVar(D);
   } else if (D->getStorageClass() == StorageClass::SC_Static){
     return checkStaticFileVar(D);
   } else {
     return checkGlobalVar(D);
   }
+}
+
+bool
+ReplGlobalASTVisitor::VisitDeclStmt(DeclStmt *S)
+{
+  return true;
 }
 
 void
@@ -710,7 +825,7 @@ ReplGlobalASTVisitor::dataTraverseStmtPost(Stmt* S)
 
 
 void
-ReplGlobalASTVisitor::replGlobal(NamedDecl* decl, SourceRange replRng)
+ReplGlobalASTVisitor::replaceGlobalUse(NamedDecl* decl, SourceRange replRng)
 {
   if (keepGlobals_) return;
 
