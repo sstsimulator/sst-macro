@@ -322,10 +322,10 @@ pisces_param_expander::expand_amm4_network(sprockit::sim_parameters* params,
       "AMM4: need switch geometry vector with 2 params:\n"
       "tiles-per-row, tiles-per-col");
   }
-  int nrows = switch_geom[0];
-  int ncols = switch_geom[1];
-  top_params->add_param_override("tiles_per_row", nrows);
-  top_params->add_param_override("tiles_per_col", ncols);
+  int ncols = switch_geom[0];
+  int nrows = switch_geom[1];
+  top_params->add_param_override("tiles_per_row", ncols);
+  top_params->add_param_override("tiles_per_col", nrows);
   top_params->add_param_override("name", newtop);
 
   switch_params->add_param_override("model", "pisces_tiled");
