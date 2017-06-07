@@ -1,5 +1,5 @@
 ---
-title: Manual for SST-Macro 6.1.x
+title: Manual for SST-Macro 7.1.x
 published: true
 category: SSTDocumentation
 ---
@@ -1189,7 +1189,7 @@ virtual void connected_outports(switch_id src, std::vector<topology::connection>
 
 virtual void configure_individual_port_params(switch_id src, sprockit::sim_parameters* switch_params) const = 0;
 
-virtual int num_switches() const = 0;
+virtual in num_switches() const = 0;
 
 virtual int num_nodes() const = 0;
 
@@ -1215,8 +1215,7 @@ virtual void nodes_connected_to_ejection_switch(switch_id swid, std::vector<inje
 
 virtual void minimal_route_to_switch( switch_id current_sw_addr, switch_id dest_sw_addr, routable::path& path) const = 0;
 
-virtual bool
-node_to_netlink(node_id nid, node_id& net_id, int& offset) const = 0;
+virtual bool node_to_netlink(node_id nid, node_id& net_id, int& offset) const = 0;
 ````
 
 These functions are documented in the `topology.h` header file. The first few functions just give the number of switches, number of nodes, and finally which nodes are connected to a given switch. Each compute node will be connected to an injector switch and an ejector switch (often the same switch). The topology must provide a mapping between a node and its ejection and injection points. Additionally, the topology must indicate a port number or offset for the injection in case the switch has many nodes injecting to it. The most important thing to distinguish here are `node_id` and `switch_id` types. These are typedefs that distinguish between a switch in the topology and a node or network endpoint.
@@ -1254,8 +1253,7 @@ virtual void
 Different routers exist for the different routing algorithms: 	minimal, valiant, ugal. The router objects are specific to a switch and can therefore store state information. However, the router should query the topology object for any path-specific information, e.g.
 
 ````
-void
-minimal_router::route_to_switch(switch_id sid, routable::path& path)
+void minimal_router::route_to_switch(switch_id sid, routable::path& path)
 {
   top_->minimal_route_to_switch(my_addr_, sid, path);
 }

@@ -355,7 +355,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         ldTarget
       ]
       ldCmdArr.extend(linkerArgs)
-      if sourceFiles: 
+      if sourceFiles and not runClang: 
         ldCmdArr.extend(sourceFileCompileFlags)
     else:
       libTarget = ldTarget
@@ -375,7 +375,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         "-o",
         libTarget
       ]
-      if sourceFiles: 
+      if sourceFiles and not runClang: 
         arCmdArr.extend(sourceFileCompileFlags)
       arCmdArr.extend(linkerArgs)
 

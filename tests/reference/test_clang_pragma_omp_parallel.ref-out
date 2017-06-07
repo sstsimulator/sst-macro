@@ -1,0 +1,24 @@
+
+int fxn()
+{
+  int i=0;
+  int mul = 0;
+  double* x = conditional_array_new<double>(10);
+  int* idx = conditional_array_new<int>(5);
+  for (i=0; i < 5; ++i){
+    mul *= i;
+ { uint64_t flops(0); uint64_t readBytes(0); uint64_t writeBytes(0); uint64_t intops(0); {  int tripCount0=((10)-(0));  flops += tripCount0*1; readBytes += tripCount0*36;  writeBytes += tripCount0*12;  intops += tripCount0*16;}sstmac_compute_detailed(flops,intops,readBytes); /*assume write-through for now*/ }
+
+
+
+
+
+
+
+
+
+  }
+  return 0;
+}
+#include <sstmac/software/process/global.h>
+
