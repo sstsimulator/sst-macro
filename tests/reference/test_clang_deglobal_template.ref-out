@@ -1,0 +1,14 @@
+
+template <class T> class A {};
+extern int sstmac_global_stacksize; extern int __offset_a; void* __ptr_a = &a; int __sizeof_a = sizeof(a);A<int> a;static inline A<int>* get_a(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char* offsetPtr = *((char**)localStorage) + __offset_a; return (((A<int>*)((void*)offsetPtr))); }  
+
+void fxn()
+{
+  auto ptr = &(*get_a());
+}
+#include <sstmac/software/process/global.h>
+
+int __offset_a = 0;
+extern int __sizeof_a;
+extern void* __ptr_a;
+sstmac::GlobalVariable __gv_a(__offset_a,__sizeof_a,__ptr_a);

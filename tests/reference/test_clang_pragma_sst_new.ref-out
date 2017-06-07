@@ -1,0 +1,14 @@
+
+void fxn1()
+{should_skip_operator_new()++;
+  double* x = conditional_array_new<double>(10);
+  int* idx = conditional_array_new<int>(5);
+should_skip_operator_new()--;}
+
+void fxn2()
+{
+ double * x = nullptr;
+  int* idx = conditional_array_new<int>(5);
+}
+#include <sstmac/software/process/global.h>
+

@@ -1,0 +1,44 @@
+if HAVE_CLANG
+#------------------------------------------------------------------------------------------#
+#  Allocation tests                                                                     {{{#
+#------------------------------------------------------------------------------------------#
+
+SSTMAC_DEGLOBAL=$(top_builddir)/bin/sstmac_clang_deglobal
+
+CLANGTESTS = \
+  deglobal_regular \
+  deglobal_array \
+  deglobal_template \
+  deglobal_fxn_static \
+  deglobal_file_static \
+  deglobal_cxx_static \
+  pragma_sst_new \
+  pragma_sst_scoped_replace \
+  pragma_sst_replace \
+  pragma_sst_compute \
+  pragma_omp_parallel
+
+
+#the CHKSUF will get appended to this later
+CLANGCHECKTESTS=$(CLANGTESTS:%=test_clang_%)
+
+CLANGTEMP=$(CLANGTESTS:%=test_clang_%.tmp-out)
+
+.PRECIOUS: $(CLANGTEMP)
+
+test_clang_%.$(CHKSUF): test_clang_%.tmp-out
+	$(top_srcdir)/tests/checkdiff $< $(top_srcdir)
+
+test_clang_%.tmp-out: sst.pp.%.cc $(SSTMAC_DEGLOBAL) 
+	cat $< | grep -v '^#' > $@
+	cat sstGlobals.pp.$*.cc.cpp >> $@
+	rm -f sstGlobals.pp.$*.cc.cpp
+
+sst.pp.%.cc: pp.%.cc $(SSTMAC_DEGLOBAL)
+	-SSTMAC_CLANG_TEST_PREFIX=xyz SSTMAC_SKELETONIZE=1 SSTMAC_DELETE_TEMPS=0 \
+  $(SSTMAC_DEGLOBAL) $< --extra-arg=-std=c++11 --
+
+pp.%.cc: $(top_srcdir)/tests/clang_src2src/%.cc $(SSTMAC_DEGLOBAL)
+	-$(CXX) -std=c++11 -E $< >& $@
+
+endif
