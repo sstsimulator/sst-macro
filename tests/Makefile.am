@@ -55,6 +55,7 @@ EXTRA_DIST = \
   api/parameters.ini \
   runtest \
   checktest \
+  checkdiff \
   noop \
   configlib.py
 
