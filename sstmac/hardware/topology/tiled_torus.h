@@ -51,22 +51,19 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-
-class tiled_torus :
-  public hdtorus,
-  public multipath_topology
+class tiled_torus : public hdtorus, public multipath_topology
 {
   FactoryRegister("tiled_torus | tiled_hdtorus", topology, tiled_torus)
  public:
   tiled_torus(sprockit::sim_parameters *params);
 
-  void get_redundant_paths(routable::path& inPath,
-                      routable::path_set& outPaths) const override;
+  void
+  get_redundant_paths(routable::path& inPath,
+                      routable::path_set& outPaths,
+                      switch_id addr) const override;
 
-  void configure_geometric_paths(std::vector<int>& redundancies) const override;
-
-  switch_id netlink_to_injection_switch(
-        node_id nodeaddr, int ports[], int& num_ports) const override;
+  void
+  configure_geometric_paths(std::vector<int>& redundancies) override;
 
   bool uniform_network_ports() const override {
     return true;
@@ -81,6 +78,20 @@ class tiled_torus :
 
   void configure_individual_port_params(switch_id src,
             sprockit::sim_parameters *switch_params) const override;
+
+  virtual switch_id
+  netlink_to_injection_switch(
+      node_id nodeaddr, uint16_t ports[], int &num_ports) const override;
+
+  virtual switch_id
+  netlink_to_ejection_switch(
+      node_id nodeaddr, uint16_t ports[], int &num_ports) const override;
+
+  virtual switch_id
+  netlink_to_injection_switch(netlink_id nodeaddr, uint16_t& switch_port) const override;
+
+  virtual switch_id
+  netlink_to_ejection_switch(node_id nodeaddr, uint16_t& switch_port) const override;
 
  private:
   inline int port(int replica, int dim, int dir) const {

@@ -166,7 +166,7 @@ class routable_pisces :
 
   int
   next_port() const override {
-    return routable::port();
+    return routable::global_outport();
   }
 
   int

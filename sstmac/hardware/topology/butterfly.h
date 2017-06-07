@@ -163,7 +163,7 @@ class butterfly :
 
   switch_id netlink_to_ejection_switch(
     node_id nodeaddr,
-    int &switch_port) const override;
+    uint16_t &switch_port) const override;
 
   void nodes_connected_to_injection_switch(switch_id swaddr,
                                       std::vector<injection_port>& nodes) const override;

@@ -68,16 +68,13 @@ structured_topology::structured_topology(sprockit::sim_parameters* params,
   injection_redundancy_ = params->get_optional_int_param("injection_redundant", 1);
   max_ports_injection_ = netlinks_per_switch_;
 
-  sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
-  if (netlink_params->has_scoped_param("model") &&
-      netlink_params->get_scoped_param("model") != "null"){
-    num_nodes_per_netlink_ = netlink_params->get_int_param("concentration");
-    netlinks_per_switch_ /= num_nodes_per_netlink_;
+  num_nodes_per_netlink_ = params->get_optional_int_param("netlink_concentration",1);
+  netlinks_per_switch_ /= num_nodes_per_netlink_;
+
+  if (num_nodes_per_netlink_ > 1){
     if (netlinks_per_switch_ == 0){
       spkt_abort_printf("Error - netlink concentration cannot be higher than node concentration");
     }
-  } else {
-    num_nodes_per_netlink_ = 1;
   }
 }
 
@@ -90,7 +87,7 @@ structured_topology::endpoint_eject_paths_on_switch(
   int node_offset = dest_addr % netlinks_per_switch_;
   int switch_port = node_offset + max_ports_intra_network_;
   paths.resize(1);
-  paths[0].outport = switch_port;
+  paths[0].set_outport(switch_port);
   paths[0].vc = 0;
   paths[0].geometric_id = eject_geometric_id_ + node_offset;
 }

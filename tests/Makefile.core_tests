@@ -11,9 +11,9 @@ CORETESTS+= \
   test_core_apps_stop_time \
   test_core_apps_distributed_service \
   test_sumi_failure \
-  test_sumi_collective 
-
-#  test_core_apps_ping_all_tiled_dfly \
+  test_sumi_collective \
+  test_core_apps_ping_all_tiled_dfly \
+  test_core_apps_ping_all_tiled_torus
 #  test_core_apps_ping_all_butterfly 
 
 if HAVE_EVENT_CALENDAR
@@ -29,6 +29,9 @@ test_sumi_%.$(CHKSUF): sumi/sst_%
 
 test_core_apps_ping_all_tiled_dfly.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 15 $(top_srcdir) $@ True $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_all_tiled_dfly.ini --no-wall-time 
+
+test_core_apps_ping_all_tiled_torus.$(CHKSUF): $(SSTMACEXEC)
+	$(PYRUNTEST) 15 $(top_srcdir) $@ True $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_all_tiled_torus.ini --no-wall-time
 
 test_core_apps_%.$(CHKSUF): $(CORE_TEST_DEPS)
 	$(PYRUNTEST) 10 $(top_srcdir) $@ True \

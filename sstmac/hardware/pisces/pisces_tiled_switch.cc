@@ -42,9 +42,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
+#include <string>
+
 #include <sstmac/hardware/pisces/pisces_tiled_switch.h>
 #include <sstmac/hardware/pisces/pisces_stats.h>
 #include <sstmac/hardware/pisces/pisces_nic.h>
+#include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/switch/dist_dummyswitch.h>
 #include <sstmac/common/event_manager.h>
@@ -63,22 +66,25 @@ RegisterKeywords(
 "netlink_radix",
 );
 
-#if 0
-
 namespace sstmac {
 namespace hw {
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-SpktRegister("pisces_tiled | pisces_tiled", network_switch, pisces_tiled_switch);
-#endif
+//#if !SSTMAC_INTEGRATED_SST_CORE
+//SpktRegister("pisces_tiled | pisces_tiled", network_switch, pisces_tiled_switch);
+//#endif
 
 pisces_tiled_switch::pisces_tiled_switch(sprockit::sim_parameters* params,
                                                    uint64_t id, event_manager* mgr)
   : pisces_abstract_switch(params, id, mgr)
 {
-  //row_buffer_num_bytes = params->get_byte_length_param("row_buffer_size");
   nrows_ = params->get_int_param("nrows");
   ncols_ = params->get_int_param("ncols");
+
+#if !SSTMAC_INTEGRATED_SST_CORE
+  payload_handler_ = new_handler(this, &pisces_tiled_switch::handle_payload);
+  ack_handler_ = new_handler(this, &pisces_tiled_switch::handle_credit);
+#endif
+
   init_components(params);
 }
 
@@ -107,72 +113,55 @@ pisces_tiled_switch::tile_to_row_col(int tile, int& row, int& col){
 }
 
 void
-pisces_tiled_switch::deadlock_check()
-{
-  for (int i=0; i < col_output_muxers_.size(); ++i){
-    pisces_muxer* muxer = col_output_muxers_[i];
-    muxer->deadlock_check();
-  }
-}
-
-void
 pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
 {
-  spkt_throw(sprockit::unimplemented_error, "init_components");
-#if 0
   if (!xbar_tiles_.empty())
     return;
 
-  int min_buffer_size = xbar_input_buffer_num_bytes / router_->max_num_vc();
-  if (min_buffer_size < packet_size_){
-    spkt_throw(sprockit::value_error,
-               "chosen packet size of %d is bigger than chosen buffer size %d = %d over %d vcs",
-               packet_size_, min_buffer_size, xbar_input_buffer_num_bytes, router_->max_num_vc());
-  }
+  sprockit::sim_parameters* demuxer_params = params->get_namespace("input");
+  demuxer_params->add_param_override("num_vc", router_->max_num_vc());
+
+  sprockit::sim_parameters* xbar_params = params->get_namespace("xbar");
+  xbar_params->add_param_override("num_vc", router_->max_num_vc());
+
+  sprockit::sim_parameters* muxer_params = params->get_namespace("link");
+  muxer_params->add_param_override("num_vc", router_->max_num_vc());
 
   int ntiles = nrows_ * ncols_;
   row_input_demuxers_.resize(ntiles);
   xbar_tiles_.resize(ntiles);
   col_output_muxers_.resize(ntiles);
+
   for (int r=0; r < nrows_; ++r){
     for (int c=0; c < ncols_; ++c){
       int tile = row_col_to_tile(r, c);
-      pisces_crossbar* xbar = new pisces_crossbar(this,
-        timestamp(0), //just assume no latency in crossbar
-        timestamp(0), //just assume no latency in crossbar
-        xbar_bw,
-        router_->max_num_vc(),
-        xbar_input_buffer_num_bytes,
-        link_arbitrator_template->clone(-1));
-      //we can route to a destination port that differs from the local port
-      int xbar_mapper = ncols_; //map port by dividing by ncols
-      xbar->set_event_location(my_addr_);
-      xbar->configure_div_ports(xbar_mapper, ntiles-1);
-      xbar->set_update_vc(false);
+      std::string location(std::to_string(tile) + "(" + std::to_string(r) +
+                           ":" + std::to_string(c) + ")");
 
-      pisces_muxer* muxer = new pisces_muxer(this,
-        hop_lat, //put all the latency in the send
-        timestamp(0), //assume zero latency credits
-        link_bw,
-        router_->max_num_vc(),
-        xbar_output_buffer_num_bytes,
-        link_arbitrator_template->clone(-1));
-      int muxer_offset = tile;
-      int muxer_max_port = tile;
-      muxer->set_event_location(my_addr_);
-      muxer->configure_offset_ports(muxer_offset, muxer_max_port);
+      // global destination port given by the router is for the switch
+      // must map gbobal port to the local port for each
+      // element (NtoM_queue) that makes up the switch
 
-      pisces_demuxer* dm = new pisces_demuxer(this,
-        timestamp(0), //assume zero latency send
-        hop_lat, //credit latency
-        router_->max_num_vc(),
-        row_buffer_num_bytes);
-      //routed port numbers are 0-48, e.g. for a 6x8
-      //we route locally to a given column number
-      int dm_mod = ncols_;
-      dm->set_event_location(my_addr_);
-      dm->configure_mod_ports(dm_mod);
+      // mod num columns to get column for xbar
+      pisces_demuxer* dm = new pisces_demuxer(demuxer_params, this);
+      dm->configure_outports(ncols_, mod_port_mapper(ncols_));
       dm->set_update_vc(false);
+      dm->set_tile_id(location);
+
+      // divide by num columns to get row for output muxer
+      pisces_crossbar* xbar = new pisces_crossbar(xbar_params, this);
+      xbar->configure_outports(nrows_, divide_port_mapper(ncols_));
+      xbar->set_update_vc(false);
+      xbar->set_tile_id(location);
+      xbar->set_stat_collector(xbar_stats_);
+
+      // packet leaves the switch from the muxer
+      // credits will arrive back at muxer with global port ids,
+      // need to map these to local ports as well as payloads
+      pisces_muxer* muxer = new pisces_muxer(muxer_params, this);
+      muxer->configure_outports(
+            1, constant_port_mapper(0), constant_port_mapper(0));
+      muxer->set_tile_id(location);
 
       row_input_demuxers_[tile] = dm;
       col_output_muxers_[tile] = muxer;
@@ -180,22 +169,20 @@ pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
     }
   }
 
-  //this is a bit confusing - the demuxer could actually send to ANY output tile
-  //rather than require the demuxer to internally do routing logic,
-  //we just configure it with mappings for all NxM outputs
   for (int row_dm=0; row_dm < nrows_; ++row_dm){
     for (int col_dm=0; col_dm < ncols_; ++col_dm){
       int tile_dm = row_col_to_tile(row_dm, col_dm);
-      pisces_sender* demuxer = row_input_demuxers_[tile_dm];
+      pisces_demuxer* demuxer = row_input_demuxers_[tile_dm];
       //demuxer is connected to all xbars in the row
       for (int col_out=0; col_out < ncols_; ++col_out){
         //we must traverse the xbar at (row_dm, col_out)
         int tile_xbar = row_col_to_tile(row_dm, col_out);
-        pisces_sender* xbar = xbar_tiles_[tile_xbar];
+        pisces_crossbar* xbar = xbar_tiles_[tile_xbar];
         //label unique input ports on the xbar by column
-        demuxer->set_output(col_out, col_dm, xbar);
-        demuxer->init_credits(col_out, xbar->num_initial_credits());
-        xbar->set_input(col_dm, col_out, demuxer);
+        demuxer->set_output(
+              demuxer_params,col_out,col_dm,xbar->payload_handler());
+        xbar->set_input(
+              xbar_params, col_dm, col_out, demuxer->credit_handler());
       }
     }
   }
@@ -211,22 +198,15 @@ pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
         int tile_muxer = row_col_to_tile(rm, cx);
         pisces_muxer* muxer = col_output_muxers_[tile_muxer];
         //use zero-based input ports corresponding to row number for the muxer
-        xbar->set_output(tile_muxer, rx, muxer);
-        xbar->init_credits(tile_muxer, muxer->num_initial_credits());
-        muxer->set_input(rx, tile_muxer, xbar);
+        pisces_debug(
+         "Connecting %s:%p local port %d to %s:%p local port %d",
+          xbar->to_string().c_str(), this, rm,
+          muxer->to_string().c_str(), this, rx);
+        xbar->set_output(xbar_params, rm, rx, muxer->payload_handler());
+        muxer->set_input(muxer_params, rx, rm, xbar->credit_handler());
       }
     }
   }
-#endif
-}
-
-void
-pisces_tiled_switch::connect_output(sprockit::sim_parameters* params,
-                                         int src_outport, int dst_inport,
-                                         connectable *mod)
-{
-  connect_output(params, src_outport, dst_inport,
-                 safe_cast(event_handler, mod));
 }
 
 void
@@ -236,16 +216,9 @@ pisces_tiled_switch::connect_output(
   int dst_inport,
   event_handler *mod)
 {
+  params->add_param_override("num_vc", router_->max_num_vc());
   pisces_sender* muxer = col_output_muxers_[src_outport];
-  muxer->set_output(params, src_outport, dst_inport, mod);
-}
-
-void
-pisces_tiled_switch::connect_input(sprockit::sim_parameters* params,
-                                        int src_outport, int dst_inport,
-                                        connectable *mod)
-{
-  connect_input(params, src_outport, dst_inport, safe_cast(event_handler, mod));
+  muxer->set_output(params, 0, dst_inport, mod);
 }
 
 void
@@ -259,6 +232,7 @@ pisces_tiled_switch::connect_input(
   demuxer->set_input(params, dst_inport, src_outport, mod);
 }
 
+#if 0
 void
 pisces_tiled_switch::connect(
   sprockit::sim_parameters* params,
@@ -297,6 +271,7 @@ pisces_tiled_switch::connect_ejector(sprockit::sim_parameters* params,
   pisces_sender* muxer = col_output_muxers_[src_outport];
   muxer->set_output(params, src_outport, dst_inport, handler);
 }
+#endif
 
 int
 pisces_tiled_switch::queue_length(int port) const
@@ -305,6 +280,7 @@ pisces_tiled_switch::queue_length(int port) const
     "pisces_tiled_switch::queue_length");
 }
 
+#if 0
 void
 pisces_tiled_switch::handle(event* ev)
 {
@@ -320,7 +296,6 @@ pisces_tiled_switch::handle(event* ev)
     }
     case pisces_interface::payload: {
       pisces_payload* payload = static_cast<pisces_payload*>(ev);
-      //routable* rtbl = payload->interface<routable>();
       debug_printf(sprockit::dbg::pisces,
          "tiled switch %d: incoming payload %s",
           int(my_addr_), payload->to_string().c_str());
@@ -336,14 +311,87 @@ pisces_tiled_switch::handle(event* ev)
     }
   }
 }
+#endif
+
+void
+pisces_tiled_switch::handle_credit(event *ev)
+{
+  pisces_credit* credit = static_cast<pisces_credit*>(ev);
+  pisces_muxer* recver = col_output_muxers_[credit->port()];
+  recver->handle_credit(credit);
+}
+
+void
+pisces_tiled_switch::handle_payload(event *ev)
+{
+  pisces_payload* payload = static_cast<pisces_payload*>(ev);
+  debug_printf(sprockit::dbg::pisces,
+               "tiled switch %d: incoming payload %s",
+               int(my_addr_), payload->to_string().c_str());
+  pisces_demuxer* demuxer = row_input_demuxers_[payload->inport()];
+  //now figure out the new port I am routing to
+  router_->route(payload);
+  debug_printf(sprockit::dbg::pisces,
+               "tiled switch %d: routed payload %s to port %d",
+               int(my_addr_), payload->to_string().c_str(),
+               payload->next_port());
+  demuxer->handle_payload(payload);
+}
 
 std::string
-pisces_tiled_switch::to_string() const override
+pisces_tiled_switch::to_string() const
 {
-  return sprockit::printf("pisces switch %d", int(my_addr_));
+  return sprockit::printf("pisces tiled switch %d", int(my_addr_));
 }
 
-}
-}
-
+link_handler*
+pisces_tiled_switch::credit_handler(int port) const
+{
+#if SSTMAC_INTEGRATED_SST_CORE
+  return new SST::Event::Handler<pisces_switch>(const_cast<pisces_switch*>(this),
+                          &pisces_tiled_switch::handle_credit);
+#else
+  return ack_handler_;
 #endif
+}
+
+link_handler*
+pisces_tiled_switch::payload_handler(int port) const
+{
+#if SSTMAC_INTEGRATED_SST_CORE
+  return new SST::Event::Handler<pisces_switch>(const_cast<pisces_switch*>(this),
+                          &pisces_tiled_switch::handle_payload);
+#else
+  return payload_handler_;
+#endif
+}
+
+void
+pisces_tiled_switch::deadlock_check()
+{
+  for (int r=0; r < nrows_; ++r){
+    for (int c=0; c < ncols_; ++c){
+      int tile = row_col_to_tile(r, c);
+      row_input_demuxers_[tile]->deadlock_check();
+      col_output_muxers_[tile]->deadlock_check();
+      xbar_tiles_[tile]->deadlock_check();
+    }
+  }
+}
+
+void
+pisces_tiled_switch::deadlock_check(event *ev)
+{
+  for (int r=0; r < nrows_; ++r){
+    for (int c=0; c < ncols_; ++c){
+      int tile = row_col_to_tile(r, c);
+      row_input_demuxers_[tile]->deadlock_check(ev);
+      col_output_muxers_[tile]->deadlock_check(ev);
+      xbar_tiles_[tile]->deadlock_check(ev);
+    }
+  }
+}
+
+}
+
+}

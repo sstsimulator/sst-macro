@@ -77,7 +77,7 @@ hypercube::minimal_route_to_switch(
     int dstX = (dst / div) % dimensions_[i];
     if (srcX != dstX){
       path.vc = 0;
-      path.outport = convert_to_port(i, dstX);
+      path.set_outport(convert_to_port(i, dstX));
       return;
     }
     div *= dimensions_[i];

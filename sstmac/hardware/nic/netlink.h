@@ -73,6 +73,11 @@ class netlink :
   }
 
   int
+  node_offset(int port) const {
+    return port - num_tiles_;
+  }
+
+  int
   switch_port(int tile_offset) const {
     return tile_offset;
   }

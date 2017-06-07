@@ -223,12 +223,32 @@ class pisces_routable_packet :
 
   int
   next_port() const override {
-    return routable::port();
+    return routable::global_outport();
   }
 
   int
   next_vc() const override {
     return routable::vc();
+  }
+
+  int
+  global_outport() const {
+    return routable::global_outport();
+  }
+
+  int
+  local_outport() const {
+    return routable::local_outport();
+  }
+
+  int
+  set_global_outport(const int port) {
+    routable::set_global_outport(port);
+  }
+
+  int
+  set_local_outport(const int port) {
+    routable::set_local_outport(port);
   }
 
  protected:

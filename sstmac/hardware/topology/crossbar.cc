@@ -76,7 +76,7 @@ crossbar::minimal_route_to_switch(switch_id current_sw_addr,
                                   routable::path &path) const
 {
   path.vc = 0;
-  path.outport = dest_sw_addr;
+  path.set_outport(dest_sw_addr);
 }
 
 void
