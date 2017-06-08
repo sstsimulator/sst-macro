@@ -57,6 +57,7 @@ ReplaceASTConsumer::HandleTopLevelDecl(DeclGroupRef DR)
     bool isGlobalVar = isa<VarDecl>(d);
     visitor_.setVisitingGlobal(isGlobalVar);
     visitor_.TraverseDecl(*b);
+    visitor_.setVisitingGlobal(false); //and reset
   }
   return true;
 }

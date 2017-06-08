@@ -449,15 +449,15 @@ ReplGlobalASTVisitor::getEndLoc(const VarDecl *D)
 bool
 ReplGlobalASTVisitor::checkStaticFileVar(VarDecl* D)
 {
-
-  return setupGlobalVar(currentNs_->filePrefix(), "",
-                        D->getLocStart(), getEndLoc(D), Extern, D);
+  SourceLocation end = getEndLoc(D);
+  return setupGlobalVar(currentNs_->filePrefix(), "", end, end, Extern, D);
 }
 
 bool
 ReplGlobalASTVisitor::checkGlobalVar(VarDecl* D)
 {
-  return setupGlobalVar("", "", D->getLocStart(), getEndLoc(D), Extern, D);
+  SourceLocation end = getEndLoc(D);
+  return setupGlobalVar("", "", end, end, Extern, D);
 }
 
 bool
@@ -624,9 +624,10 @@ ReplGlobalASTVisitor::VisitVarDecl(VarDecl* D){
     return checkInstanceStaticClassVar(D);
   } else if (D->getStorageClass() == StorageClass::SC_Static){
     return checkStaticFileVar(D);
-  } else {
+  } else if (visitingGlobal_){
     return checkGlobalVar(D);
   }
+  return true;
 }
 
 bool
