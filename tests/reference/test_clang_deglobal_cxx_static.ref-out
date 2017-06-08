@@ -9,11 +9,11 @@ extern int sstmac_global_stacksize; extern int __offset___Ax; extern void* __ptr
 namespace ns {
 extern int sstmac_global_stacksize; extern int __offset___Bx; extern void* __ptr___Bx;extern int __sizeof___Bx;struct B {
  static int x;  
-}
+};
 namespace ns2 {
  extern int sstmac_global_stacksize; extern int __offset___Cx; extern void* __ptr___Cx;extern int __sizeof___Cx;struct C {
   static int x;  
- }
+ };
 }
 }
 
