@@ -4,9 +4,16 @@ int fxn()
   int i=0;
 #pragma sst compute
   for (i=0; i < 5; ++i){
-    for (int j=0; j < 10; ++j){
+    int count = i;
 #pragma sst replace count 6
-      int count = 5;
+    for (int j=0; j < count; ++j){
+    }
+  }
+#pragma sst compute
+  for (i=0; i < 5; ++i){
+#pragma sst replace count 6
+    int count = i;
+    for (int j=0; j < count; ++j){
     }
   }
   return 0;

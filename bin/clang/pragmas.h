@@ -51,15 +51,22 @@ Questions? Contact sst-macro-help@sandia.gov
 
 class ReplGlobalASTVisitor;
 
+struct SSTReplacePragma;
 struct PragmaConfig {
   int pragmaDepth;
   bool skipNextStmt;
-  std::map<std::string, std::string> functionReplacements;
+  std::map<std::string,SSTReplacePragma*> replacePragmas;
   PragmaConfig() : pragmaDepth(0), skipNextStmt(false) {}
 };
 
 struct SSTPragmaList;
 struct SSTPragma {
+  typedef enum {
+    Replace=0,
+    Delete=1,
+    Compute=2,
+    New=3
+  } class_t;
   clang::StringRef name;
   clang::SourceLocation startLoc;
   clang::SourceLocation endLoc;
@@ -67,30 +74,39 @@ struct SSTPragma {
   ReplGlobalASTVisitor* visitor;
   std::set<clang::Expr*>* deleted;
   SSTPragmaList* pragmaList;
+  class_t cls;
+
 
   template <class T>
   bool matches(T* s){
     return startLoc < s->getLocStart() && s->getLocStart() <= endLoc;
   }
 
+  SSTPragma(class_t _cls) : cls(_cls){}
+
   virtual void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) = 0;
   virtual void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig &cfg){} //not required
-  virtual void activate(clang::Decl* d, std::list<std::string>& vars){}
   virtual void deactivate(clang::Stmt* s, PragmaConfig& cfg){} //not required
 };
 
 class SSTDeletePragma : public SSTPragma {
- protected:
+ public:
+  SSTDeletePragma() : SSTPragma(Delete) {}
+ private:
   void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override;
 };
 
 class SSTMallocPragma : public SSTDeletePragma {
+ private:
   void activate(clang::Stmt *stmt, clang::Rewriter &r, PragmaConfig& cfg) override;
   void visitDeclStmt(clang::DeclStmt* stmt, clang::Rewriter& r);
   void visitBinaryOperator(clang::BinaryOperator* op, clang::Rewriter& r);
 };
 
 class SSTNewPragma : public SSTPragma {
+ public:
+  SSTNewPragma() : SSTPragma(New) {}
+ private:
   void activate(clang::Stmt *stmt, clang::Rewriter &r, PragmaConfig& cfg) override;
   void activate(clang::Decl* d, clang::Rewriter &r, PragmaConfig& cfg) override;
   void visitDeclStmt(clang::DeclStmt *stmt, clang::Rewriter &r);
@@ -99,32 +115,51 @@ class SSTNewPragma : public SSTPragma {
   void defaultAct(clang::Stmt* stmt, clang::Rewriter& r, bool insertStartAfter, bool insertStopAfter);
   void visitCXXMethodDecl(clang::CXXMethodDecl* decl, clang::Rewriter& r);
   void visitFunctionDecl(clang::FunctionDecl* decl, clang::Rewriter& r);
+  void visitForStmt(clang::ForStmt* stmt, clang::Rewriter& r);
 };
 
 class SSTComputePragma : public SSTPragma {
   friend class ComputeVisitor;
-
+ public:
+  SSTComputePragma() : SSTPragma(Compute) {}
+ private:
   void activate(clang::Stmt *stmt, clang::Rewriter &r, PragmaConfig& cfg) override;
   void activate(clang::Decl* decl, clang::Rewriter& r, PragmaConfig& cfg) override;
   void defaultAct(clang::Stmt* stmt, clang::Rewriter &r);
-  void visitForStmt(clang::ForStmt* stmt, clang::Rewriter& r);
+  void visitForStmt(clang::ForStmt* stmt, clang::Rewriter& r, PragmaConfig& cfg);
   void visitCXXMethodDecl(clang::CXXMethodDecl* decl, clang::Rewriter& r, PragmaConfig& cfg);
   void visitFunctionDecl(clang::FunctionDecl* decl, clang::Rewriter& r, PragmaConfig& cfg);
-  void visitIfStmt(clang::IfStmt* stmt, clang::Rewriter& r);
-  void visitAndReplaceStmt(clang::Stmt* stmt, clang::Rewriter& r);
+  void visitIfStmt(clang::IfStmt* stmt, clang::Rewriter& r, PragmaConfig& cfg);
+  void visitAndReplaceStmt(clang::Stmt* stmt, clang::Rewriter& r, PragmaConfig& cfg);
 };
 
 class SSTReplacePragma : public SSTPragma {
+ protected:
   std::string fxn_;
   std::string replacement_;
  public:
   SSTReplacePragma(const std::string& fxn, const std::string& replace) :
-    fxn_(fxn), replacement_(replace)
+    fxn_(fxn), replacement_(replace),
+    SSTPragma(Replace)
   {
   }
-  void activate(clang::Decl* d, std::list<std::string>& vars) override;
+
+  const std::string& replacement() const {
+    return replacement_;
+  }
+
+  const std::string& fxn() const {
+    return fxn_;
+  }
+
+  void run(clang::Stmt* s, std::list<const clang::Expr*>& replaced);
+  void run(clang::Stmt* s, clang::Rewriter& r);
   void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
-  void deactivate(clang::Stmt *s, PragmaConfig& cfg) override;
+  void activate(clang::Decl *d, clang::Rewriter &r, PragmaConfig &cfg) override;
+ private:
+  void activateFunctionDecl(clang::FunctionDecl* d, clang::Rewriter& r);
+  void activateVarDecl(clang::VarDecl* d, clang::Rewriter& r);
+  void activateCXXRecordDecl(clang::CXXRecordDecl* d, clang::Rewriter& r);
 };
 
 class SSTStartReplacePragma : public SSTReplacePragma {
@@ -133,9 +168,8 @@ class SSTStartReplacePragma : public SSTReplacePragma {
     SSTReplacePragma(fxn,replace){}
 
   void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override {
-    SSTReplacePragma::activate(s,r,cfg);
+    cfg.replacePragmas[fxn_] = this;
   }
-  void deactivate(clang::Stmt* s, PragmaConfig& cfg) override {} //no op
 };
 
 class SSTStopReplacePragma : public SSTReplacePragma {
@@ -144,9 +178,9 @@ class SSTStopReplacePragma : public SSTReplacePragma {
     SSTReplacePragma(fxn,replace){}
 
   void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override {
-    SSTReplacePragma::deactivate(s,cfg);
+    cfg.replacePragmas.erase(fxn_);
   }
-  void deactivate(clang::Stmt* s, PragmaConfig& cfg) override {} //no op
+
 };
 
 struct SSTPragmaList {

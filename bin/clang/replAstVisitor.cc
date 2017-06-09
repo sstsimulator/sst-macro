@@ -116,7 +116,6 @@ ReplGlobalASTVisitor::shouldVisitDecl(VarDecl* D)
   SourceLocation startLoc = D->getLocStart();
   PresumedLoc ploc = ci_->getSourceManager().getPresumedLoc(startLoc);
   SourceLocation headerLoc = ploc.getIncludeLoc();
-  //std::cout << ploc.getFilename() << std::boolalpha << " " << headerLoc.isValid() << std::endl;
 
   bool useAllHeaders = false;
   std::set<std::string> validHeaders;
@@ -321,7 +320,6 @@ ReplGlobalASTVisitor::VisitCXXMemberCallExpr(CXXMemberCallExpr* expr)
 
   CXXRecordDecl* cls = expr->getRecordDecl();
   std::string clsName = cls->getNameAsString();
-  //std::cout << "got call on " << clsName << std::endl;
   if (clsName == "mpi_api"){
     FunctionDecl* decl = expr->getDirectCallee();
     if (!decl){
@@ -341,12 +339,9 @@ ReplGlobalASTVisitor::VisitCallExpr(CallExpr* expr)
 {
   if (noSkeletonize_) return true;
 
-  FunctionDecl* callee = expr->getDirectCallee();
-  if (callee && pragma_config_.pragmaDepth){
-    auto iter = pragma_config_.functionReplacements.find(callee->getNameAsString());
-    if (iter != pragma_config_.functionReplacements.end()){
-      rewriter_.ReplaceText(expr->getSourceRange(), iter->second);
-    }
+  for (auto& pair : pragma_config_.replacePragmas){
+    SSTReplacePragma* replPrg = cast<SSTReplacePragma>(pair.second);
+    replPrg->run(expr, rewriter_);
   }
   return true;
 }

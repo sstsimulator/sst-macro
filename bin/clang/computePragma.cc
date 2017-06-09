@@ -43,6 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include "pragmas.h"
+#include "recurseall.h"
 #include <sstream>
 
 using namespace clang;
@@ -53,9 +54,9 @@ using namespace clang::tooling;
   case(clang::Decl::type): \
     visit##type##Decl(clang::cast<type##Decl>(d),rw,cfg); break
 
-#define scase(type,s,rw) \
+#define scase(type,s,rw,cfg) \
   case(clang::Stmt::type##Class): \
-    visit##type(clang::cast<type>(s),rw); break
+    visit##type(clang::cast<type>(s),rw,cfg); break
 
 #define for_case(feature,type,stmt,spec) \
   case(clang::Stmt::type##Class): \
@@ -69,7 +70,52 @@ using namespace clang::tooling;
   case(clang::Stmt::type##Class): \
     visitAccess##type(clang::cast<type>(stmt),__VA_ARGS__); break
 
+struct Replacements {
+  std::map<const Decl*, std::string> decls;
+  std::map<const Expr*, std::string> exprs;
+};
 
+
+struct ValidateScope {
+  bool operator()(const Expr* e, ExprRole role,
+                  Replacements& repls,
+                  CompilerInstance& CI, SourceLocation scopeBegin){
+    //if this has been replaced, assume it's all good
+    return repls.exprs.find(e) != repls.exprs.end();
+  }
+
+  bool operator()(const Stmt* s, ExprRole role,
+                  Replacements& repls,
+                  CompilerInstance& CI, SourceLocation scopeBegin){
+    //do nothing
+    return false;
+  }
+
+  bool operator()(const DeclRefExpr* expr, ExprRole role, Replacements& repls,
+                  CompilerInstance& CI, SourceLocation scopeBegin){
+    const ValueDecl* d = expr->getDecl();
+
+    //this might be already replaced - then we don't need to worry about it
+    if (repls.decls.find(expr->getDecl()) != repls.decls.end()){
+      return false;
+    } else if (repls.exprs.find(expr) != repls.exprs.end()){
+      return true;
+    }
+
+
+    if (d->getLocStart() > scopeBegin || d->getLocStart() == scopeBegin){
+      std::stringstream sstr;
+      sstr << "control variable '" << d->getNameAsString()
+           << "' declared at "
+           << d->getLocStart().printToString(CI.getSourceManager())
+           << " but used inside skeletonized block starting at "
+           << scopeBegin.printToString(CI.getSourceManager())
+           << " - must use #pragma sst replace";
+      errorAbort(expr->getLocStart(), CI, sstr.str());
+    }
+    return false;
+  }
+};
 
 struct DataFlowMap {
   struct Access {
@@ -199,23 +245,14 @@ std::map<MemoryLocation,AccessHistory,MemoryLocationCompare> arrays;
 std::map<NamedDecl*,Variable> variables;
 CompilerInstance& CI;
 SSTPragmaList& pragmas;
+Replacements repls;
 SourceLocation scopeStartLine;
-std::list<std::string> scopedVariables;
 ComputeVisitor* parent;
 
 //97 = 'a', for debug printing
 ComputeVisitor(clang::CompilerInstance& c, SSTPragmaList& plist, ComputeVisitor* par) :
   CI(c), idCount(97), currentGeneration(1), pragmas(plist), parent(par)
 {}
-
-std::list<std::string>&
-getScopedVariables(){
-  if (parent){
-    return parent->getScopedVariables();
-  } else {
-    return scopedVariables;
-  }
-}
 
 Variable&
 getVariable(NamedDecl* decl){
@@ -327,15 +364,17 @@ visitLoop(ForStmt* stmt, Loop& loop)
   getInitialVariables(stmt->getInit(), &spec);
   getPredicateVariables(stmt->getCond(), &spec);
   getStride(stmt->getInc(), &spec);
-  loop.tripCount = getTripCount(&spec);
-
   //now lets examine the body
   addOperations(stmt->getBody(), loop.body);
+  //validate that the static analysis succeeded
+  validateLoopControlExpr(spec.predicateMax);
+  loop.tripCount = getTripCount(&spec);
 }
 
 void
 visitBodyForStmt(ForStmt* stmt, Loop::Body& body)
 {
+  checkStmtPragmas(stmt);
   body.subLoops.emplace_back(body.depth+1);
   visitLoop(stmt, body.subLoops.back());
 }
@@ -343,6 +382,7 @@ visitBodyForStmt(ForStmt* stmt, Loop::Body& body)
 void
 visitBodyCompoundStmt(CompoundStmt* stmt, Loop::Body& body)
 {
+  checkStmtPragmas(stmt);
   auto end = stmt->child_end();
   for (auto iter=stmt->child_begin(); iter != end; ++iter){
     addOperations(*iter, body);
@@ -496,6 +536,22 @@ visitBodyCallExpr(CallExpr* expr, Loop::Body& body)
 }
 
 void
+checkStmtPragmas(Stmt* s)
+{
+  SSTPragma* prg = pragmas.takeMatch(s);
+  if (prg){
+    if (prg && prg->cls == SSTPragma::Replace){
+      SSTReplacePragma* rprg = static_cast<SSTReplacePragma*>(prg);
+      std::list<const Expr*> replaced;
+      rprg->run(s, replaced);
+      for (auto e : replaced){
+        repls.exprs[e] = rprg->replacement();
+      }
+    }
+  }
+}
+
+void
 visitBodyDeclStmt(DeclStmt* stmt, Loop::Body& body)
 {
   SSTPragma* prg = pragmas.takeMatch(stmt);
@@ -504,8 +560,9 @@ visitBodyDeclStmt(DeclStmt* stmt, Loop::Body& body)
   }
   Decl* d = stmt->getSingleDecl();
   if (d){
-    if (prg){
-      prg->activate(d, getScopedVariables());
+    if (prg && prg->cls == SSTPragma::Replace){
+      SSTReplacePragma* rprg = static_cast<SSTReplacePragma*>(prg);
+      repls.decls[d] = rprg->replacement();
     }
     if (isa<VarDecl>(d)){
       VarDecl* vd = cast<VarDecl>(d);
@@ -535,13 +592,6 @@ addOperations(Stmt* stmt, Loop::Body& body, bool isLHS = false)
     default:
       break;
   }
-}
-
-void
-setLoopControlExpr(Expr*& lhs, Expr* rhs)
-{
-  //we may have issues if the rhs references variables
-  //that are scoped inside the loop
 }
 
 void
@@ -579,10 +629,33 @@ getStride(Stmt* stmt, ForLoopSpec* spec)
 }
 
 void
+validateLoopControlExpr(Expr* rhs)
+{
+  //we may have issues if the rhs references variables
+  //that are scoped inside the loop
+  recurseAll<ValidateScope,NullVisit>(rhs, repls,
+                                      CI, scopeStartLine);
+}
+
+void
 visitPredicateBinaryOperator(BinaryOperator* op, ForLoopSpec* spec)
 {
-  setLoopControlExpr(spec->predicateMax, op->getRHS());
-  spec->predicateMax = op->getRHS();
+  Expr* rhs = op->getRHS();
+  bool keep_going = true;
+  while (keep_going){
+    switch(rhs->getStmtClass()){
+      case Stmt::ImplicitCastExprClass:
+        rhs = cast<ImplicitCastExpr>(rhs)->getSubExpr();
+        break;
+      case Stmt::ParenExprClass:
+        rhs = cast<ImplicitCastExpr>(rhs)->getSubExpr();
+        break;
+      default:
+        keep_going = false;
+        break;
+    }
+  }
+  spec->predicateMax = rhs;
 }
 
 void
@@ -630,6 +703,27 @@ getInitialVariables(Stmt* stmt, ForLoopSpec* spec)
   }
 }
 
+void appendPredicateMax(Expr* max, PrettyPrinter& pp)
+{
+  auto iter = repls.exprs.find(max);
+  if (iter != repls.exprs.end()){
+    pp.os << iter->second;
+    return;
+  }
+
+  //we might have overriden a declaration
+  if (max->getStmtClass() == Stmt::DeclRefExprClass){
+    DeclRefExpr* dref = cast<DeclRefExpr>(max);
+    auto iter = repls.decls.find(dref->getDecl());
+    if (iter != repls.decls.end()){
+      pp.os << iter->second;
+      return;
+    }
+  }
+
+  pp.print(max);
+}
+
 std::string
 getTripCount(ForLoopSpec* spec)
 {
@@ -638,7 +732,7 @@ getTripCount(ForLoopSpec* spec)
     pp.os << "(";
   }
   pp.os << "(";
-  pp.print(spec->predicateMax);
+  appendPredicateMax(spec->predicateMax,pp);
   pp.os << ")";
   if (spec->init){
     pp.os << "-";
@@ -658,10 +752,10 @@ void
 addLoopContribution(std::ostream& os, Loop& loop)
 {
   os << "{ ";
-  for (auto& str : scopedVariables){
-    //might have some special vars to "elevate" in scope
-    os << str << "; ";
-  }
+  //for (auto& str : scopedVariables){
+  //  //might have some special vars to "elevate" in scope
+  //  os << str << "; ";
+  //}
   os << " int tripCount" << loop.body.depth << "=";
   if (loop.body.depth > 0){
     os << "tripCount" << (loop.body.depth-1) << "*";
@@ -688,9 +782,8 @@ addLoopContribution(std::ostream& os, Loop& loop)
 }
 
 void
-setLoopContext(ForStmt* stmt){
-  Stmt* body = stmt->getBody();
-  scopeStartLine = body->getLocStart();
+setContext(Stmt* stmt){
+  scopeStartLine = stmt->getLocStart();
 }
 
 void
@@ -717,11 +810,12 @@ replaceStmt(Stmt* stmt, Rewriter& r, Loop& loop)
 
 
 void
-SSTComputePragma::visitAndReplaceStmt(Stmt* stmt, Rewriter& r)
+SSTComputePragma::visitAndReplaceStmt(Stmt* stmt, Rewriter& r, PragmaConfig& cfg)
 {
   Loop loop(0); //just treat this is a loop of size 1
   loop.tripCount = "1";
   ComputeVisitor vis(*CI, *pragmaList, nullptr);
+  vis.setContext(stmt);
   vis.addOperations(stmt,loop.body);
   vis.replaceStmt(stmt,r,loop);
 }
@@ -730,8 +824,8 @@ void
 SSTComputePragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig& cfg)
 {
   switch(stmt->getStmtClass()){
-    scase(ForStmt,stmt,r);
-    scase(IfStmt,stmt,r);
+    scase(ForStmt,stmt,r,cfg);
+    scase(IfStmt,stmt,r,cfg);
     default:
       defaultAct(stmt,r);
       break;
@@ -760,7 +854,7 @@ void
 SSTComputePragma::visitCXXMethodDecl(CXXMethodDecl* decl, Rewriter& r, PragmaConfig& cfg)
 {
   if (decl->hasBody()){
-    visitAndReplaceStmt(decl->getBody(), r);
+    visitAndReplaceStmt(decl->getBody(), r, cfg);
     cfg.skipNextStmt = true;
   }
 }
@@ -769,27 +863,27 @@ void
 SSTComputePragma::visitFunctionDecl(FunctionDecl* decl, Rewriter& r, PragmaConfig& cfg)
 {
   if (decl->hasBody()){
-    visitAndReplaceStmt(decl->getBody(), r);
+    visitAndReplaceStmt(decl->getBody(), r, cfg);
     cfg.skipNextStmt = true;
   }
 }
 
 
 void
-SSTComputePragma::visitIfStmt(IfStmt* stmt, Rewriter& r)
+SSTComputePragma::visitIfStmt(IfStmt* stmt, Rewriter& r, PragmaConfig& cfg)
 {
-  visitAndReplaceStmt(stmt->getThen(), r);
+  visitAndReplaceStmt(stmt->getThen(), r, cfg);
   if (stmt->getElse()){
-    visitAndReplaceStmt(stmt->getElse(), r);
+    visitAndReplaceStmt(stmt->getElse(), r, cfg);
   }
 }
 
 void
-SSTComputePragma::visitForStmt(ForStmt *stmt, Rewriter &r)
+SSTComputePragma::visitForStmt(ForStmt *stmt, Rewriter &r, PragmaConfig& cfg)
 {
   ComputeVisitor vis(*CI, *pragmaList, nullptr); //null, no parent
   Loop loop(0); //depth zeros
-  vis.setLoopContext(stmt);
+  vis.setContext(stmt);
   vis.visitLoop(stmt,loop);
   vis.replaceStmt(stmt,r,loop);
 }

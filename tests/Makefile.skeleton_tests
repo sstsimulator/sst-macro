@@ -9,7 +9,6 @@ if !INTEGRATED_SST_CORE
 
 # These are run with the same rule
 SKELETONCASES= \
-  gtc \
   matmul \
   multiapp \
   sendrecv \
@@ -38,7 +37,7 @@ test_skeleton_boxml.$(CHKSUF): boxml
 
 test_skeleton_%.$(CHKSUF): % 
 	$(PYRUNTEST) 3 $(top_srcdir) $@ notime \
-    ./skeletons/$*/run$* --help 
+    ./skeletons/$*/run$* -f $(top_srcdir)/skeletons/$*/parameters.ini --no-wall-time
 
 test_apps_%.$(CHKSUF): %
 	$(PYRUNTEST) 3 $(top_srcdir) $@ True \
