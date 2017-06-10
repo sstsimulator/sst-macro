@@ -128,9 +128,27 @@ SSTTokenStreamPragmaHandler::HandlePragma(Preprocessor &PP, PragmaIntroducerKind
 }
 
 void
-SSTDeletePragma::activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg){
+SSTDeletePragma::replace(clang::Stmt* s, clang::Rewriter& r, const char* repl){
   clang::SourceRange rng(s->getLocStart(), s->getLocEnd());
-  r.ReplaceText(rng,"");
+  r.ReplaceText(rng, repl);
+}
+
+void
+SSTDeletePragma::activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg){
+  replace(s,r,"");
+}
+
+void
+SSTDeletePragma::activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg){
+  cfg.skipNextStmt = true;
+#define prg_case(x,d) case Decl::x: replace(cast<x##Decl>(d)->getBody(), r, "{}"); break
+  switch (d->getKind()){
+    prg_case(Function,d);
+    prg_case(CXXMethod,d);
+    default:
+      break;
+  }
+#undef prg_case
 }
 
 void
@@ -321,6 +339,9 @@ SSTReplacePragmaHandler::parse(CompilerInstance& CI, SourceLocation loc,
       case tok::comma:
          os << ',';
         break;
+      case tok::star:
+        os << "*";
+        break;
       case tok::kw_nullptr:
          os << "nullptr";
         break;
@@ -403,6 +424,22 @@ struct ReplaceStatementVisit {
     return false;
   }
 
+  void visit(const Expr* expr, const std::string& name, ExprRole role,
+             CompilerInstance& CI, ReplacementConfig& cfg){
+    if (PreVisit && name == cfg.matchText){
+      switch (role){
+        case ExprRole::ArrayBase:
+        case ExprRole::CallFxn:
+          cfg.replacedExprs.push_back(cfg.parents.back());
+          break;
+        default:
+          //any other use, means this variable is not "connected" to anything else
+          cfg.replacedExprs.push_back(expr);
+          break;
+      }
+    }
+  }
+
   void visit(const Expr* expr, ExprRole role,
              CompilerInstance& CI,
              ReplacementConfig& cfg)
@@ -444,22 +481,6 @@ struct ReplaceStatementVisit {
     return false;
   }
 
-  void visit(const Expr* expr, const std::string& name, ExprRole role,
-             CompilerInstance& CI, ReplacementConfig& cfg){
-    if (PreVisit && name == cfg.matchText){
-      switch (role){
-        case ExprRole::ArrayBase:
-        case ExprRole::CallFxn:
-          cfg.replacedExprs.push_back(cfg.parents.back());
-          break;
-        default:
-          //any other use, means this variable is not "connected" to anything else
-          cfg.replacedExprs.push_back(expr);
-          break;
-      }
-    }
-  }
-
   bool operator()(const DeclRefExpr* expr, ExprRole role,
                   CompilerInstance& CI, ReplacementConfig& cfg){
     visit(expr, expr->getFoundDecl()->getNameAsString(), role, CI, cfg);
@@ -469,6 +490,25 @@ struct ReplaceStatementVisit {
   bool operator()(const MemberExpr* expr, ExprRole role,
                   CompilerInstance& CI, ReplacementConfig& cfg){
     visit(expr, expr->getFoundDecl()->getNameAsString(), role, CI, cfg);
+    return false;
+  }
+
+  bool operator()(const DeclStmt* stmt, ExprRole role,
+                  CompilerInstance& CI, ReplacementConfig& cfg){
+    if (PreVisit){
+      const Decl* d = stmt->getSingleDecl();
+      if (d && d->getKind() == Decl::Var){
+        const VarDecl* vd = cast<VarDecl>(d);
+        if (vd->getNameAsString() == cfg.matchText){
+          if (vd->hasInit()) {
+            cfg.replacedExprs.push_back(vd->getInit());
+          } else {
+            errorAbort(stmt->getLocStart(), CI,
+              "replace pragma applied to declaration with no initializer");
+          }
+        }
+      }
+    }
     return false;
   }
 

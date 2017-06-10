@@ -58,6 +58,7 @@ inline void InitializeVector(Vector & v, local_int_t localLength) {
 inline void ZeroVector(Vector & v) {
   local_int_t localLength = v.localLength;
   double * vv = v.values;
+#pragma sst compute
   for (int i=0; i<localLength; ++i) vv[i] = 0.0;
   return;
 }
@@ -82,6 +83,7 @@ inline void ScaleVectorValue(Vector & v, local_int_t index, double value) {
 inline void FillRandomVector(Vector & v) {
   local_int_t localLength = v.localLength;
   double * vv = v.values;
+#pragma sst compute
   for (int i=0; i<localLength; ++i) vv[i] = rand() / (double)(RAND_MAX) + 1.0;
   return;
 }
@@ -96,6 +98,7 @@ inline void CopyVector(const Vector & v, Vector & w) {
   assert(w.localLength >= localLength);
   double * vv = v.values;
   double * wv = w.values;
+#pragma sst compute
   for (int i=0; i<localLength; ++i) wv[i] = vv[i];
   return;
 }

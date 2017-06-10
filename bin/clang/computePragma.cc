@@ -154,6 +154,7 @@ struct Loop {
 
 struct ForLoopSpec
 {
+  bool increment = true;
   clang::Expr* stride;
   clang::Expr* init;
   clang::Expr* predicateMax;
@@ -609,10 +610,19 @@ visitStrideCompoundAssignOperator(clang::CompoundAssignOperator* op, ForLoopSpec
 void
 visitStrideUnaryOperator(clang::UnaryOperator* op, ForLoopSpec* spec)
 {
-  if (op->isPrefix() || op->isPostfix()){
-    spec->stride = nullptr; //null indicates ++
-  } else {
-    errorAbort(op->getLocStart(), CI, "got unary operator that not a ++ increment");
+  switch(op->getOpcode()){
+    case UO_PostInc:
+    case UO_PreInc:
+      spec->stride = nullptr;
+      spec->increment = true;
+      break;
+    case UO_PostDec:
+    case UO_PreDec:
+      spec->stride = nullptr;
+      spec->increment = false;
+      break;
+    default:
+      errorAbort(op->getLocStart(), CI, "got unary operator that's not a ++/-- increment");
   }
 }
 
@@ -728,20 +738,22 @@ std::string
 getTripCount(ForLoopSpec* spec)
 {
   PrettyPrinter pp;
-  if (spec->stride){
-    pp.os << "(";
-  }
-  pp.os << "(";
-  appendPredicateMax(spec->predicateMax,pp);
+  Expr* max = spec->increment ? spec->predicateMax : spec->init;
+  Expr* min = spec->increment ? spec->init : spec->predicateMax;
+
+  pp.os << "((";
+  if (max) appendPredicateMax(max,pp);
+  else pp.os << "0";
   pp.os << ")";
-  if (spec->init){
+  if (min){
     pp.os << "-";
     pp.os << "(";
-    pp.print(spec->init);
+    pp.print(min);
     pp.os << ")";
   }
+  pp.os << ")";
   if (spec->stride){
-    pp.os << ") / (";
+    pp.os << "/ (";
     pp.print(spec->stride);
     pp.os << ")";
   }
@@ -886,4 +898,5 @@ SSTComputePragma::visitForStmt(ForStmt *stmt, Rewriter &r, PragmaConfig& cfg)
   vis.setContext(stmt);
   vis.visitLoop(stmt,loop);
   vis.replaceStmt(stmt,r,loop);
+  //cfg.skipNextStmt = true;
 }

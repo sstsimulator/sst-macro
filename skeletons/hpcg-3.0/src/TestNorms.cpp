@@ -30,12 +30,15 @@
 */
 int TestNorms(TestNormsData & testnorms_data) {
  double mean_delta = 0.0;
+#pragma sst compute
  for (int i= 0; i<testnorms_data.samples; ++i) mean_delta += (testnorms_data.values[i] - testnorms_data.values[0]);
+#pragma sst replace mean 1
  double mean = testnorms_data.values[0] + mean_delta/(double)testnorms_data.samples;
  testnorms_data.mean = mean;
 
  // Compute variance
  double sumdiff = 0.0;
+#pragma sst compute
  for (int i= 0; i<testnorms_data.samples; ++i) sumdiff += (testnorms_data.values[i] - mean) * (testnorms_data.values[i] - mean);
  testnorms_data.variance = sumdiff/(double)testnorms_data.samples;
 

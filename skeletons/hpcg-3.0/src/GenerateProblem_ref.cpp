@@ -109,7 +109,7 @@ void GenerateProblem_ref(SparseMatrix & A, Vector * b, Vector * x, Vector * xexa
     mtxIndL[i] = 0;
   }
   // Now allocate the arrays pointed to
-#pragma sst new
+#pragma sst compute
   for (local_int_t i=0; i< localNumberOfRows; ++i) {
     mtxIndL[i] = new local_int_t[numberOfNonzerosPerRow];
     matrixValues[i] = new double[numberOfNonzerosPerRow];
@@ -117,7 +117,7 @@ void GenerateProblem_ref(SparseMatrix & A, Vector * b, Vector * x, Vector * xexa
   }
 
 
-
+#pragma sst replace localNumberOfNonzeros numberOfNonzerosPerRow*nx*ny*nz
   local_int_t localNumberOfNonzeros = 0;
   // TODO:  This triply nested loop could be flattened or use nested parallelism
 #ifndef HPCG_NO_OPENMP
@@ -185,9 +185,11 @@ void GenerateProblem_ref(SparseMatrix & A, Vector * b, Vector * x, Vector * xexa
 #ifndef HPCG_NO_MPI
   // Use MPI's reduce function to sum all nonzeros
 #ifdef HPCG_NO_LONG_LONG
+#pragma sst keep
   MPI_Allreduce(&localNumberOfNonzeros, &totalNumberOfNonzeros, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 #else
   long long lnnz = localNumberOfNonzeros, gnnz = 0; // convert to 64 bit for MPI call
+#pragma sst keep
   MPI_Allreduce(&lnnz, &gnnz, 1, MPI_LONG_LONG_INT, MPI_SUM, MPI_COMM_WORLD);
   totalNumberOfNonzeros = gnnz; // Copy back
 #endif

@@ -118,7 +118,9 @@ inline void InitializeSparseMatrix(SparseMatrix & A, Geometry * geom) {
 inline void CopyMatrixDiagonal(SparseMatrix & A, Vector & diagonal) {
     double ** curDiagA = A.matrixDiagonal;
     double * dv = diagonal.values;
+#pragma sst delete
     assert(A.localNumberOfRows==diagonal.localLength);
+#pragma sst compute
     for (local_int_t i=0; i<A.localNumberOfRows; ++i) dv[i] = *(curDiagA[i]);
   return;
 }
@@ -131,7 +133,9 @@ inline void CopyMatrixDiagonal(SparseMatrix & A, Vector & diagonal) {
 inline void ReplaceMatrixDiagonal(SparseMatrix & A, Vector & diagonal) {
     double ** curDiagA = A.matrixDiagonal;
     double * dv = diagonal.values;
+#pragma sst delete
     assert(A.localNumberOfRows==diagonal.localLength);
+#pragma sst compute
     for (local_int_t i=0; i<A.localNumberOfRows; ++i) *(curDiagA[i]) = dv[i];
   return;
 }
@@ -140,8 +144,8 @@ inline void ReplaceMatrixDiagonal(SparseMatrix & A, Vector & diagonal) {
 
   @param[in] A the known system matrix
  */
+#pragma sst delete
 inline void DeleteMatrix(SparseMatrix & A) {
-
   for (local_int_t i = 0; i< A.localNumberOfRows; ++i) {
     delete [] A.matrixValues[i];
     delete [] A.mtxIndG[i];

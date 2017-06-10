@@ -65,6 +65,7 @@ int TestCG(SparseMatrix & A, CGData & data, Vector & b, Vector & x, TestCGData &
 
   // Modify the matrix diagonal to greatly exaggerate diagonal values.
   // CG should converge in about 10 iterations for this problem, regardless of problem size
+#pragma sst compute
   for (local_int_t i=0; i< A.localNumberOfRows; ++i) {
     global_int_t globalRowID = A.localToGlobalMap[i];
     if (globalRowID<9) {

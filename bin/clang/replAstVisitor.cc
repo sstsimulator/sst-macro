@@ -316,7 +316,7 @@ ReplGlobalASTVisitor::visitPt2Pt(CallExpr *expr)
 bool
 ReplGlobalASTVisitor::VisitCXXMemberCallExpr(CXXMemberCallExpr* expr)
 {
-  if (noSkeletonize_) return true;
+  if (noSkeletonize_ || pragma_config_.makeNoChanges) return true;
 
   CXXRecordDecl* cls = expr->getRecordDecl();
   std::string clsName = cls->getNameAsString();
@@ -718,14 +718,20 @@ ReplGlobalASTVisitor::TraverseNamespaceDecl(NamespaceDecl* D)
   return true;
 }
 
+
+
 bool
 ReplGlobalASTVisitor::TraverseFunctionTemplateDecl(FunctionTemplateDecl *D)
 {
-  if (D->getNameAsString() == "placement_new"){
-    return true;
-  } else if (D->getNameAsString() == "conditional_new"){
-    return true;
-  } else if (D->getNameAsString() == "conditional_array_new"){
+  static const std::set<std::string> skip_set = {
+    "placement_new",
+    "conditional_new",
+    "conditional_array_new",
+    "conditional_delete",
+    "conditional_delete_array",
+  };
+
+  if (skip_set.find(D->getNameAsString()) != skip_set.end()){
     return true;
   } else {
     TraverseDecl(D->getTemplatedDecl());
@@ -745,6 +751,24 @@ ReplGlobalASTVisitor::TraverseCXXConstructorDecl(CXXConstructorDecl *D)
   }
   TraverseCXXMethodDecl(D);
   --insideCxxMethod_;
+  return true;
+}
+
+bool
+ReplGlobalASTVisitor::TraverseForStmt(ForStmt *S)
+{
+  if (pragma_config_.skipNextStmt){
+    pragma_config_.skipNextStmt = false;
+    return true;
+  }
+
+  bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(S);
+  if (!skipVisit){
+    if (S->getInit()) TraverseStmt(S->getInit());
+    if (S->getCond()) TraverseStmt(S->getCond());
+    if (S->getInc()) TraverseStmt(S->getInc());
+    if (S->getBody()) TraverseStmt(S->getBody());
+  }
   return true;
 }
 
@@ -770,17 +794,33 @@ ReplGlobalASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
 }
 
 bool
-ReplGlobalASTVisitor::VisitStmt(Stmt *S)
+ReplGlobalASTVisitor::activatePragmasForStmt(Stmt* S)
 {
-  if (noSkeletonize_) return true;
-
   SSTPragma* prg;
+  bool skipVisit = false;
   while ((prg = pragmas_.takeMatch(S))){
+    if (skipVisit){
+      errorAbort(S->getLocStart(), *ci_,
+           "code block deleted by pragma - invalid pragma combination");
+    }
     pragma_config_.pragmaDepth++;
     activePragmas_[S] = prg;
     //pragma takes precedence - must occur in pre-visit
     prg->activate(S, rewriter_, pragma_config_);
+    //a compute pragma totally deletes the block
+    bool blockDeleted = prg->cls == SSTPragma::Compute || prg->cls == SSTPragma::Delete;
+    skipVisit = skipVisit || blockDeleted;
   }
+  return skipVisit;
+}
+
+bool
+ReplGlobalASTVisitor::VisitStmt(Stmt *S)
+{
+  if (noSkeletonize_) return true;
+
+  activatePragmasForStmt(S);
+
   return true;
 }
 

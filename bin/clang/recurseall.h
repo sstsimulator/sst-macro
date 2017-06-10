@@ -72,7 +72,7 @@ template <class PreVisit, class PostVisit, class... Args>
 struct RecurseAll {
 
   void recurse(const Stmt* stmt, ExprRole role, Args&& ...args){
-   //std::cout << "Recursing " << stmt->getStmtClassName() << std::endl;
+   //std::cout << "Recursing " << stmt->getStmtClassName() << " " << stmt << std::endl;
    switch(stmt->getStmtClass()){
     recurse_case(ForStmt,stmt,role,std::forward<Args>(args)...)
     recurse_case(CompoundStmt,stmt,role,std::forward<Args>(args)...)

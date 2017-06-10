@@ -14,7 +14,6 @@
 
 /*!
  @file ComputeSYMGS_ref.cpp
-
  HPCG routine
  */
 
@@ -63,14 +62,14 @@ int ComputeSYMGS_ref( const SparseMatrix & A, const Vector & r, Vector & x) {
   double ** matrixDiagonal = A.matrixDiagonal;  // An array of pointers to the diagonal entries A.matrixValues
   const double * const rv = r.values;
   double * const xv = x.values;
-
+#pragma sst compute
   for (local_int_t i=0; i< nrow; i++) {
     const double * const currentValues = A.matrixValues[i];
     const local_int_t * const currentColIndices = A.mtxIndL[i];
     const int currentNumberOfNonzeros = A.nonzerosInRow[i];
     const double  currentDiagonal = matrixDiagonal[i][0]; // Current diagonal value
     double sum = rv[i]; // RHS value
-
+#pragma sst replace currentNumberOfNonzeros 27
     for (int j=0; j< currentNumberOfNonzeros; j++) {
       local_int_t curCol = currentColIndices[j];
       sum -= currentValues[j] * xv[curCol];
@@ -82,14 +81,14 @@ int ComputeSYMGS_ref( const SparseMatrix & A, const Vector & r, Vector & x) {
   }
 
   // Now the back sweep.
-
+#pragma sst compute
   for (local_int_t i=nrow-1; i>=0; i--) {
     const double * const currentValues = A.matrixValues[i];
     const local_int_t * const currentColIndices = A.mtxIndL[i];
     const int currentNumberOfNonzeros = A.nonzerosInRow[i];
     const double  currentDiagonal = matrixDiagonal[i][0]; // Current diagonal value
     double sum = rv[i]; // RHS value
-
+#pragma sst replace currentNumberOfNonzeros 27
     for (int j = 0; j< currentNumberOfNonzeros; j++) {
       local_int_t curCol = currentColIndices[j];
       sum -= currentValues[j]*xv[curCol];

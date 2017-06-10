@@ -34,8 +34,8 @@ test_clang_%.tmp-out: sst.pp.%.cc $(SSTMAC_DEGLOBAL)
     -I$(top_srcdir) -I$(top_builddir) \
     -I$(top_srcdir)/sprockit -I$(top_builddir)/sprockit \
     -include sstmac/compute.h -include sstmac/skeleton.h 2>&1 /dev/null | grep error >& $@
-	cat $< | grep -v '^#' >> $@
-	cat sstGlobals.pp.$*.cc.cpp >> $@
+	-cat $< | grep -v '^#' >> $@
+	-cat sstGlobals.pp.$*.cc.cpp >> $@
 	rm -f sstGlobals.pp.$*.cc.cpp tmp.o
 
 sst.pp.%.cc: pp.%.cc $(SSTMAC_DEGLOBAL)

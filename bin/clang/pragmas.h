@@ -55,8 +55,11 @@ struct SSTReplacePragma;
 struct PragmaConfig {
   int pragmaDepth;
   bool skipNextStmt;
+  bool makeNoChanges;
   std::map<std::string,SSTReplacePragma*> replacePragmas;
-  PragmaConfig() : pragmaDepth(0), skipNextStmt(false) {}
+  PragmaConfig() : pragmaDepth(0),
+    skipNextStmt(false),
+    makeNoChanges(false) {}
 };
 
 struct SSTPragmaList;
@@ -65,7 +68,8 @@ struct SSTPragma {
     Replace=0,
     Delete=1,
     Compute=2,
-    New=3
+    New=3,
+    Keep=4
   } class_t;
   clang::StringRef name;
   clang::SourceLocation startLoc;
@@ -94,6 +98,8 @@ class SSTDeletePragma : public SSTPragma {
   SSTDeletePragma() : SSTPragma(Delete) {}
  private:
   void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override;
+  void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg) override;
+  void replace(clang::Stmt* s, clang::Rewriter& r, const char* repl);
 };
 
 class SSTMallocPragma : public SSTDeletePragma {
@@ -101,6 +107,18 @@ class SSTMallocPragma : public SSTDeletePragma {
   void activate(clang::Stmt *stmt, clang::Rewriter &r, PragmaConfig& cfg) override;
   void visitDeclStmt(clang::DeclStmt* stmt, clang::Rewriter& r);
   void visitBinaryOperator(clang::BinaryOperator* op, clang::Rewriter& r);
+};
+
+class SSTKeepPragma : public SSTPragma {
+ public:
+  SSTKeepPragma() : SSTPragma(Keep) {}
+ private:
+  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override {
+    cfg.makeNoChanges = true;
+  }
+  void deactivate(clang::Stmt *s, PragmaConfig &cfg) override {
+    cfg.makeNoChanges = false;
+  }
 };
 
 class SSTNewPragma : public SSTPragma {
@@ -302,6 +320,14 @@ class SSTNewPragmaHandler : public SSTSimplePragmaHandler<SSTNewPragma> {
   SSTNewPragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
                       ReplGlobalASTVisitor& visitor, std::set<clang::Expr*>& deld) :
    SSTSimplePragmaHandler<SSTNewPragma>("new", plist, CI, visitor, deld)
+  {}
+};
+
+class SSTKeepPragmaHandler : public SSTSimplePragmaHandler<SSTKeepPragma> {
+ public:
+  SSTKeepPragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
+                      ReplGlobalASTVisitor& visitor, std::set<clang::Expr*>& deld) :
+   SSTSimplePragmaHandler<SSTKeepPragma>("keep", plist, CI, visitor, deld)
   {}
 };
 

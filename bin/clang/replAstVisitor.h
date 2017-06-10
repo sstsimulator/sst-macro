@@ -110,6 +110,8 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
 
   bool TraverseFunctionDecl(clang::FunctionDecl* D);
 
+  bool TraverseForStmt(clang::ForStmt* S);
+
   bool TraverseFunctionTemplateDecl(clang::FunctionTemplateDecl* D);
 
   bool TraverseCXXMethodDecl(clang::CXXMethodDecl *D);
@@ -188,6 +190,7 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
   std::map<std::string, MPI_Call> mpiCalls_;
 
  private:
+  bool activatePragmasForStmt(clang::Stmt* S);
   void visitCollective(clang::CallExpr* expr);
   void visitReduce(clang::CallExpr* expr);
   void visitPt2Pt(clang::CallExpr* expr);

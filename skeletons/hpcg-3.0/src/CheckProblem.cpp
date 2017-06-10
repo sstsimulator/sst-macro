@@ -145,10 +145,13 @@ void CheckProblem(const SparseMatrix & A, Vector * b, Vector * x, Vector * xexac
   totalNumberOfNonzeros = localNumberOfNonzeros;
 #endif
 
+#pragma sst delete
+  {
   assert(A.totalNumberOfRows == totalNumberOfRows);
   assert(A.totalNumberOfNonzeros == totalNumberOfNonzeros);
   assert(A.localNumberOfRows == localNumberOfRows);
   assert(A.localNumberOfNonzeros == localNumberOfNonzeros);
+  }
 
   return;
 }

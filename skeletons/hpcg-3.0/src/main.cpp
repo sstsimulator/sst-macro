@@ -339,6 +339,7 @@ int main(int argc, char * argv[]) {
     ierr = CG( A, data, b, x, optMaxIters, optTolerance, niters, normr, normr0, &times[0], true);
     if (ierr) HPCG_fout << "Error in call to CG: " << ierr << ".\n" << endl;
     if (rank==0) HPCG_fout << "Call [" << i << "] Scaled Residual [" << normr/normr0 << "]" << endl;
+#pragma sst delete
     testnorms_data.values[i] = normr/normr0; // Record scaled residual from this run
   }
 
