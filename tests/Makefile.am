@@ -55,6 +55,7 @@ EXTRA_DIST = \
   api/parameters.ini \
   runtest \
   checktest \
+  checkdiff \
   noop \
   configlib.py
 
@@ -72,6 +73,7 @@ endif
 CORETESTS=
 
 include Makefile.shared_core_tests
+include Makefile.clang_tests
 include Makefile.config_tests
 include Makefile.api_tests
 if !INTEGRATED_SST_CORE
@@ -94,6 +96,7 @@ endif
 
 CHECK_TESTS = \
   $(CORETESTS) \
+  $(CLANGCHECKTESTS) \
   $(STATSTESTS) \
   $(CONFIGTESTS) \
   $(COVERAGETESTS) \
@@ -141,6 +144,7 @@ clean-local: clean-skeletons
 	rm -f *temp*.out
 	rm -f *.ERROR
 	rm -f test.model
+	rm -f *.pp.*
 
 clean-skeletons:
 	rm -rf skeletons

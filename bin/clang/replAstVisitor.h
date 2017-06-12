@@ -59,7 +59,7 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
                        std::set<clang::Expr*>& deld) :
     rewriter_(R), visitingGlobal_(false), deletedExprs_(deld),
     globalNs_(ns), currentNs_(&ns),
-    insideClass_(0), insideFxn_(0),
+    insideCxxMethod_(0),
     foundCMain_(false), keepGlobals_(false), noSkeletonize_(true)
   {
     initHeaders();
@@ -96,6 +96,8 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
    */
   bool VisitVarDecl(clang::VarDecl* D);
 
+  bool VisitDeclStmt(clang::DeclStmt* S);
+
   /**
    * @brief TraverseNamespaceDecl We have to traverse namespaces.
    *        We need pre and post operations. We have to explicitly recurse subnodes.
@@ -118,14 +120,13 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
 
   bool dataTraverseStmtPost(clang::Stmt* S);
 
-  void replGlobal(clang::NamedDecl* decl, clang::SourceRange rng);
+  void replaceGlobalUse(clang::NamedDecl* decl, clang::SourceRange rng);
 
   bool isGlobal(clang::DeclRefExpr* expr){
     return globals_.find(expr->getFoundDecl()) != globals_.end();
   }
 
-  SSTPragmaList&
-  getPragmas(){
+  SSTPragmaList& getPragmas(){
     return pragmas_;
   }
 
@@ -171,8 +172,9 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
   std::map<clang::NamedDecl*,std::string> globals_;
   std::set<std::string> globalsDeclared_;
   bool useAllHeaders_;
-  int insideClass_;
-  int insideFxn_;
+  int insideCxxMethod_;
+  std::list<clang::FunctionDecl*> fxn_contexts_;
+  std::list<clang::CXXRecordDecl*> class_contexts_;
   bool foundCMain_;
   std::string mainName_;
   bool keepGlobals_;
@@ -189,7 +191,75 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
   void visitCollective(clang::CallExpr* expr);
   void visitReduce(clang::CallExpr* expr);
   void visitPt2Pt(clang::CallExpr* expr);
+  bool checkDeclStaticClassVar(clang::VarDecl* D);
+  bool checkInstanceStaticClassVar(clang::VarDecl* D);
+  bool checkStaticFxnVar(clang::VarDecl* D);
+  bool checkGlobalVar(clang::VarDecl* D);
+  bool checkStaticFileVar(clang::VarDecl* D);
+  clang::SourceLocation getEndLoc(const clang::VarDecl* D);
+  bool insideClass() const {
+    return !class_contexts_.empty();
+  }
+  bool insideFxn() const {
+    return !fxn_contexts_.empty();
+  }
 
+  typedef enum {
+    Extern, //regular global variable (C-style)
+    CxxStatic, //c++ static class variable
+  } GlobalRedirect_t;
+
+  /**
+   * @brief replaceGlobalVar
+   * @param scope_prefix       A unique string needed for file-local or ns-local variables
+   * @param init_scope_prefix  A unique string needed when the initializers move out of scope
+   *              (as in static function or class vars) to avoid name conflicts on the initializer
+   * @param externVarsInsertLoc The location in the file to declare extern vars from SST/macro.
+   *                            May be invalid to indicate no insertion should be done.
+   * @param getRefInsertLoc     The location in the file to insert symbol redirect function get_X()
+   * @param D             The variable declaration being deglobalized
+   * @return  Standard clang continue return
+   */
+  bool setupGlobalVar(const std::string& scope_prefix,
+                      const std::string& init_scope_prefix,
+                      clang::SourceLocation externVarsInsertLoc,
+                      clang::SourceLocation getRefInsertLoc,
+                      GlobalRedirect_t red_ty,
+                      clang::VarDecl* D);
+
+  /**
+   * @brief defineGlobalVarInitializers
+   *        Dump the text needed to define new global variables for
+   *        initializing thread-local variables
+   * @param scope_unique_var_name A modified variable name unique to its scope
+   * @param var_name    The name of the variable in original source code
+   * @param init_prefix A prefix required
+   * @param os  A stream to dump output to
+   */
+  void defineGlobalVarInitializers(
+     const std::string& scope_unique_var_name,
+     const std::string& var_name,
+     const std::string& init_scope_prefix,
+     llvm::raw_string_ostream& os);
+
+  /**
+   * @brief declareStaticInitializers
+   *        Similar to #defineGlobalVarInitializers, but we are in class declaration
+   *        and unable to define the symbols. Just declare static variables to be
+   *        defined later.
+   * @param scope_unique_var_name
+   * @param os
+   */
+  void declareStaticInitializers(
+     const std::string& scope_unique_var_name,
+     llvm::raw_string_ostream& os);
+
+  /**
+   * @brief declareSSTExternVars
+   * Declare all the external SST global variables we need to access
+   * @param insertLoc The source location where the text should go
+   */
+  void declareSSTExternVars(clang::SourceLocation insertLoc);
 };
 
 

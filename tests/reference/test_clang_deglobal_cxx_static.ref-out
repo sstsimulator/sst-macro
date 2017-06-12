@@ -1,0 +1,49 @@
+
+extern int sstmac_global_stacksize; extern int __offset___Ax; extern void* __ptr___Ax;extern int __sizeof___Ax;struct A {
+ static int x;static inline int* get___Ax(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char* offsetPtr = *((char**)localStorage) + __offset___Ax; return (((int*)((void*)offsetPtr))); }  
+ void fxn(){
+  (*get___Ax()) -= 1;
+ }
+};
+
+namespace ns {
+extern int sstmac_global_stacksize; extern int __offset___Bx; extern void* __ptr___Bx;extern int __sizeof___Bx;struct B {
+ static int x;  
+}
+namespace ns2 {
+ extern int sstmac_global_stacksize; extern int __offset___Cx; extern void* __ptr___Cx;extern int __sizeof___Cx;struct C {
+  static int x;  
+ }
+}
+}
+
+int ns::B::x = 42;namespace ns {void* __ptr___Bx = &B::x; int __sizeof___Bx = sizeof(B::x);}
+int A::x = 5;void* __ptr___Ax = &A::x; int __sizeof___Ax = sizeof(A::x);
+namespace ns {
+ namespace ns2 {
+  int C::x = 10;void* __ptr___Cx = &C::x; int __sizeof___Cx = sizeof(C::x);
+ }
+}
+
+void fxn()
+{
+  A::x = 10;
+};
+#include <sstmac/software/process/global.h>
+
+int __offset___Ax = 0;
+extern int __sizeof___Ax;
+extern void* __ptr___Ax;
+sstmac::GlobalVariable __gv___Ax(__offset___Ax,__sizeof___Ax,__ptr___Ax);
+namespace ns {
+ int __offset___Bx = 0;
+ extern int __sizeof___Bx;
+ extern void* __ptr___Bx;
+ sstmac::GlobalVariable __gv___Bx(__offset___Bx,__sizeof___Bx,__ptr___Bx);
+ namespace ns2 {
+  int __offset___Cx = 0;
+  extern int __sizeof___Cx;
+  extern void* __ptr___Cx;
+  sstmac::GlobalVariable __gv___Cx(__offset___Cx,__sizeof___Cx,__ptr___Cx);
+ }
+}

@@ -1,0 +1,13 @@
+
+extern int sstmac_global_stacksize; extern int __offset_x; void* __ptr_x = &x; int __sizeof_x = sizeof(x);int x = 10;static inline int* get_x(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char* offsetPtr = *((char**)localStorage) + __offset_x; return (((int*)((void*)offsetPtr))); }  
+
+void fxn()
+{
+  (*get_x()) += 5;
+}
+#include <sstmac/software/process/global.h>
+
+int __offset_x = 0;
+extern int __sizeof_x;
+extern void* __ptr_x;
+sstmac::GlobalVariable __gv_x(__offset_x,__sizeof_x,__ptr_x);

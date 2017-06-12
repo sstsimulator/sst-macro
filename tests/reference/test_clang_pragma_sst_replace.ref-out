@@ -1,0 +1,19 @@
+
+template <class T>
+T* allocate();
+
+void fxn1()
+{
+ auto x = nullptr;
+  auto y = allocate<int>();
+ auto z = allocate<int>();
+}
+
+void fxn2()
+{
+  auto x = allocate<int>();
+  auto y = allocate<int>();
+  auto z = allocate<int>();
+}
+#include <sstmac/software/process/global.h>
+
