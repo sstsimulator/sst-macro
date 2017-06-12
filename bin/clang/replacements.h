@@ -41,28 +41,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Questions? Contact sst-macro-help@sandia.gov
 */
-
-#ifndef bin_clang_astconsumers_h
-#define bin_clang_astconsumers_h
+#ifndef bin_clang_replacements_h
+#define bin_clang_replacements_h
 
 #include "clangHeaders.h"
-#include "astVisitor.h"
-#include "globalVarNamespace.h"
 
-class ReplaceASTConsumer : public clang::ASTConsumer {
- public:
-  ReplaceASTConsumer(clang::Rewriter &R, ReplGlobalASTVisitor& r) :
-    visitor_(r)
-  {
-  }
-
-  bool HandleTopLevelDecl(clang::DeclGroupRef DR) override;
-
- private:
-  ReplGlobalASTVisitor& visitor_;
-
+struct Replacements {
+  std::map<const clang::Decl*, std::string> decls;
+  std::map<const clang::Expr*, std::string> exprs;
 };
-
-
 
 #endif

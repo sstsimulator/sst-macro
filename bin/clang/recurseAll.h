@@ -2,26 +2,9 @@
 #define sstmac_bin_clang_RECURSEALL_H
 
 #include "clangHeaders.h"
-
-
-
 #include <utility>
 
-#define recurse_case(type,stmt,role,...) \
-  case(clang::Stmt::type##Class): { \
-    auto ptr = clang::cast<type>(stmt); \
-    bool stop = PreVisit()(ptr,role,std::forward<Args>(args)...); \
-    if (!stop){ \
-      recurse##type(clang::cast<type>(stmt),role,__VA_ARGS__); \
-      PostVisit()(ptr,role,std::forward<Args>(args)...); \
-    }; \
-    break; \
-  }
 
-
-using namespace clang;
-using namespace clang::driver;
-using namespace clang::tooling;
 
 enum class ExprRole {
   ArrayBase,
@@ -68,15 +51,30 @@ static const char* tostr(ExprRole role)
 #undef enum_case
 }
 
+namespace pvt {
+
+using namespace clang;
+using namespace clang::driver;
+using namespace clang::tooling;
+
 template <class PreVisit, class PostVisit, class... Args>
 struct RecurseAll {
 
   void recurse(const Stmt* stmt, ExprRole role, Args&& ...args){
-   //std::cout << "Recursing " << stmt->getStmtClassName() << " " << stmt << std::endl;
+    #define recurse_case(type,stmt,role,...) \
+      case(clang::Stmt::type##Class): { \
+      auto ptr = clang::cast<type>(stmt); \
+      bool stop = PreVisit()(ptr,role,std::forward<Args>(args)...); \
+      if (!stop){ \
+       recurse##type(clang::cast<type>(stmt),role,__VA_ARGS__); \
+       PostVisit()(ptr,role,std::forward<Args>(args)...); \
+      }; \
+      break; \
+    }
+    //std::cout << "Recursing " << stmt->getStmtClassName() << " " << stmt << std::endl;
    switch(stmt->getStmtClass()){
     recurse_case(ForStmt,stmt,role,std::forward<Args>(args)...)
     recurse_case(CompoundStmt,stmt,role,std::forward<Args>(args)...)
-    //recurse_case(CompoundAssignOperator,stmt,std::forward<Args>(args)...)
     recurse_case(IfStmt,stmt,role,std::forward<Args>(args)...)
     recurse_case(BinaryOperator,stmt,role,std::forward<Args>(args)...)
     recurse_case(ParenExpr,stmt,role,std::forward<Args>(args)...)
@@ -85,13 +83,14 @@ struct RecurseAll {
     recurse_case(MemberExpr,stmt,role,std::forward<Args>(args)...)
     recurse_case(DeclRefExpr,stmt,role,std::forward<Args>(args)...)
     recurse_case(ImplicitCastExpr,stmt,role,std::forward<Args>(args)...)
-    //recurse_case(CStyleCastExpr,stmt,std::forward<Args>(args)...)
+    recurse_case(CStyleCastExpr,stmt,role,std::forward<Args>(args)...)
     recurse_case(CXXFunctionalCastExpr,stmt,role,std::forward<Args>(args)...);
     recurse_case(ArraySubscriptExpr,stmt,role,std::forward<Args>(args)...)
     recurse_case(DeclStmt,stmt,role,std::forward<Args>(args)...)
     default:
       break;
    }
+#undef recurse_case
   }
 
   void recurseForStmt(const ForStmt* stmt, ExprRole role, Args&& ...args){
@@ -167,9 +166,15 @@ struct RecurseAll {
   }
 
   void recurseDeclRefExpr(const DeclRefExpr* expr, ExprRole role, Args&& ...args){
+    //nothing to do - there are no sub expressions
   }
 
   void recurseImplicitCastExpr(const ImplicitCastExpr* expr, ExprRole role, Args&& ...args){
+    //implicit cast doesn't change "the role" of the variable
+    recurse(expr->getSubExpr(), role, std::forward<Args>(args)...);
+  }
+
+  void recurseCStyleCastExpr(const CStyleCastExpr* expr, ExprRole role, Args&& ...args){
     //implicit cast doesn't change "the role" of the variable
     recurse(expr->getSubExpr(), role, std::forward<Args>(args)...);
   }
@@ -178,8 +183,9 @@ struct RecurseAll {
     recurse(expr->getBase(), ExprRole::ArrayBase, std::forward<Args>(args)...);
     recurse(expr->getIdx(), ExprRole::ArrayIdx, std::forward<Args>(args)...);
   }
-
 };
+
+}
 
 struct NullVisit
 {
@@ -188,8 +194,8 @@ struct NullVisit
 };
 
 template <class PreVisit, class PostVisit, class... Args>
-void recurseAll(Stmt* stmt, Args&& ...args){
-  RecurseAll<PreVisit,PostVisit,Args...>().recurse(stmt, ExprRole::Standalone,
+void recurseAll(clang::Stmt* stmt, Args&& ...args){
+  pvt::RecurseAll<PreVisit,PostVisit,Args...>().recurse(stmt, ExprRole::Standalone,
                                          std::forward<Args>(args)...);
 }
 

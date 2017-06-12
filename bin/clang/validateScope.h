@@ -41,28 +41,57 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Questions? Contact sst-macro-help@sandia.gov
 */
-
-#ifndef bin_clang_astconsumers_h
-#define bin_clang_astconsumers_h
+#ifndef bin_clang_validate_scope_h
+#define bin_clang_validate_scope_h
 
 #include "clangHeaders.h"
-#include "astVisitor.h"
-#include "globalVarNamespace.h"
+#include "replacements.h"
+#include "recurseAll.h"
+#include <sstream>
 
-class ReplaceASTConsumer : public clang::ASTConsumer {
- public:
-  ReplaceASTConsumer(clang::Rewriter &R, ReplGlobalASTVisitor& r) :
-    visitor_(r)
-  {
+struct ValidateScope {
+  bool operator()(const clang::Expr* e, 
+                  ExprRole role, Replacements& repls,
+                  clang::CompilerInstance& CI, 
+                  clang::SourceLocation scopeBegin){
+    //if this has been replaced, stop recursing
+    return repls.exprs.find(e) != repls.exprs.end();
   }
 
-  bool HandleTopLevelDecl(clang::DeclGroupRef DR) override;
+  bool operator()(const clang::Stmt* s, 
+                  ExprRole role, Replacements& repls,
+                  clang::CompilerInstance& CI, 
+                  clang::SourceLocation scopeBegin){
+    //do nothing
+    return false; //but don't stop recursing
+  }
 
- private:
-  ReplGlobalASTVisitor& visitor_;
+  bool operator()(const clang::DeclRefExpr* expr, 
+                  ExprRole role, Replacements& repls,
+                  clang::CompilerInstance& CI, 
+                  clang::SourceLocation scopeBegin){
+    const clang::ValueDecl* d = expr->getDecl();
 
+    //this might be already replaced - then we don't need to worry about it
+    if (repls.decls.find(expr->getDecl()) != repls.decls.end()){
+      return false;
+    } else if (repls.exprs.find(expr) != repls.exprs.end()){
+      return true;
+    }
+
+
+    if (d->getLocStart() > scopeBegin || d->getLocStart() == scopeBegin){
+      std::stringstream sstr;
+      sstr << "control variable '" << d->getNameAsString()
+           << "' declared at "
+           << d->getLocStart().printToString(CI.getSourceManager())
+           << " but used inside skeletonized block starting at "
+           << scopeBegin.printToString(CI.getSourceManager())
+           << " - must use #pragma sst replace";
+      errorAbort(expr->getLocStart(), CI, sstr.str());
+    }
+    return false;
+  }
 };
-
-
 
 #endif

@@ -41,28 +41,56 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Questions? Contact sst-macro-help@sandia.gov
 */
+#ifndef bin_clang_replacePragma_h
+#define bin_clang_replacePragma_h
 
-#ifndef bin_clang_astconsumers_h
-#define bin_clang_astconsumers_h
+#include "pragmas.h"
 
-#include "clangHeaders.h"
-#include "astVisitor.h"
-#include "globalVarNamespace.h"
-
-class ReplaceASTConsumer : public clang::ASTConsumer {
+class SSTReplacePragmaHandler : public SSTTokenStreamPragmaHandler
+{
  public:
-  ReplaceASTConsumer(clang::Rewriter &R, ReplGlobalASTVisitor& r) :
-    visitor_(r)
-  {
-  }
+  SSTReplacePragmaHandler(SSTPragmaList& plist,
+                        clang::CompilerInstance& CI,
+                        ReplGlobalASTVisitor& visitor,
+                        std::set<clang::Expr*>& deld) :
+     SSTTokenStreamPragmaHandler("replace", plist, CI, visitor, deld){}
 
-  bool HandleTopLevelDecl(clang::DeclGroupRef DR) override;
+  static std::string
+  parse(clang::CompilerInstance& CI, clang::SourceLocation loc,
+        const std::list<clang::Token>& tokens, std::ostream& os);
 
  private:
-  ReplGlobalASTVisitor& visitor_;
+  SSTPragma* allocatePragma(clang::SourceLocation loc, 
+                            const std::list<clang::Token> &tokens) const;
 
 };
 
+class SSTStartReplacePragmaHandler : public SSTTokenStreamPragmaHandler
+{
+ public:
+  SSTStartReplacePragmaHandler(SSTPragmaList& plist,
+                        clang::CompilerInstance& CI,
+                        ReplGlobalASTVisitor& visitor,
+                        std::set<clang::Expr*>& deld) :
+     SSTTokenStreamPragmaHandler("start_replace", plist, CI, visitor, deld){}
 
+ private:
+  SSTPragma* allocatePragma(clang::SourceLocation loc, 
+                            const std::list<clang::Token> &tokens) const;
+};
+
+class SSTStopReplacePragmaHandler : public SSTTokenStreamPragmaHandler
+{
+ public:
+  SSTStopReplacePragmaHandler(SSTPragmaList& plist,
+                        clang::CompilerInstance& CI,
+                        ReplGlobalASTVisitor& visitor,
+                        std::set<clang::Expr*>& deld) :
+     SSTTokenStreamPragmaHandler("stop_replace", plist, CI, visitor, deld){}
+
+ private:
+  SSTPragma* allocatePragma(clang::SourceLocation loc, 
+                            const std::list<clang::Token> &tokens) const;
+};
 
 #endif

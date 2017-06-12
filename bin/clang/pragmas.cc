@@ -49,14 +49,6 @@ using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
 
-#define scase(type,s,rw) \
-  case(clang::Stmt::type##Class): \
-    visit##type(clang::cast<type>(s),rw); break
-
-#define dcase(type,d,rw) \
-  case(clang::Decl::type): \
-    visit##type##Decl(clang::cast<type##Decl>(d),rw); break
-
 #define lexify(x) \
   PP.Lex(x); std::cout << x.getName(); \
   if (x.getKind() == tok::identifier) std::cout << " " << x.getIdentifierInfo()->getNameStart(); \
@@ -166,12 +158,16 @@ SSTNewPragma::visitFunctionDecl(FunctionDecl* decl, Rewriter& r)
 void
 SSTNewPragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
 {
+#define dcase(type,d,rw) \
+  case(clang::Decl::type): \
+    visit##type##Decl(clang::cast<type##Decl>(d),rw); break
   switch(d->getKind()){
     dcase(Function,d,r);
     dcase(CXXMethod,d,r);
     default:
       break;
   }
+#undef dcase
 }
 
 void
@@ -258,6 +254,9 @@ SSTNewPragma::visitForStmt(ForStmt *stmt, Rewriter &r)
 void
 SSTNewPragma::activate(Stmt* stmt, Rewriter &r, PragmaConfig& cfg)
 {
+#define scase(type,s,rw) \
+  case(clang::Stmt::type##Class): \
+    visit##type(clang::cast<type>(s),rw); break
   switch(stmt->getStmtClass()){
     scase(DeclStmt,stmt,r);
     scase(BinaryOperator,stmt,r);
@@ -267,6 +266,7 @@ SSTNewPragma::activate(Stmt* stmt, Rewriter &r, PragmaConfig& cfg)
       defaultAct(stmt,r,false,false);
       break;
   }
+#undef scase
 }
 
 void
@@ -301,6 +301,9 @@ SSTMallocPragma::visitDeclStmt(DeclStmt *stmt, Rewriter &r)
 void
 SSTMallocPragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig& cfg)
 {
+#define scase(type,s,rw) \
+  case(clang::Stmt::type##Class): \
+    visit##type(clang::cast<type>(s),rw); break
   switch(stmt->getStmtClass()){
     scase(DeclStmt,stmt,r);
     scase(BinaryOperator,stmt,r);
@@ -308,271 +311,7 @@ SSTMallocPragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig& cfg)
       //SSTDeletePragma::act(stmt,r);
       break;
   }
+#undef scase
 }
 
-std::string
-SSTReplacePragmaHandler::parse(CompilerInstance& CI, SourceLocation loc,
-                               const std::list<Token>& tokens, std::ostream& os)
-{
-  if (tokens.size() < 2){
-    errorAbort(loc, CI, "pragma replace requires both a function and replacement text");
-  }
-  const Token& fxn = tokens.front();
-  if (!fxn.is(tok::identifier)){
-    errorAbort(loc, CI, "pragma replace got invalid function name");
-  }
 
-  auto iter = tokens.begin(); ++iter; //skip front
-  auto end = tokens.end();
-  for ( ; iter != end; ++iter){
-    const Token& next = *iter;
-    switch (next.getKind()){
-      case tok::identifier:
-         os << next.getIdentifierInfo()->getNameStart();
-        break;
-      case tok::l_paren:
-         os << '(';
-        break;
-      case tok::r_paren:
-         os << ')';
-        break;
-      case tok::comma:
-         os << ',';
-        break;
-      case tok::star:
-        os << "*";
-        break;
-      case tok::kw_nullptr:
-         os << "nullptr";
-        break;
-      case tok::string_literal:
-      case tok::numeric_constant:
-      {
-        const char* data = next.getLiteralData(); //not null-terminated, direct from buffer
-        for (int i=0 ; i < next.getLength(); ++i){
-          //must explicitly add chars, this will not hit a \0
-           os << data[i];
-        }
-        break;
-      }
-      default:
-        std::cerr << "bad token: " << next.getName() << std::endl;
-        errorAbort(loc, CI, "invalid token in replace pragma");
-        break;
-    }
-  }
-  return fxn.getIdentifierInfo()->getNameStart();
-}
-
-SSTPragma*
-SSTReplacePragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
-{
-  std::stringstream sstr;
-  std::string fxn = parse(ci_, loc, tokens, sstr);
-  return new SSTReplacePragma(fxn, sstr.str());
-}
-
-SSTPragma*
-SSTStartReplacePragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
-{
-  std::stringstream sstr;
-  std::string fxn = SSTReplacePragmaHandler::parse(ci_, loc, tokens, sstr);
-  return new SSTStartReplacePragma(fxn, sstr.str());
-}
-
-SSTPragma*
-SSTStopReplacePragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
-{
-  std::string fxn = tokens.front().getIdentifierInfo()->getNameStart();
-  return new SSTStopReplacePragma(fxn, "not relevant");
-}
-
-#include "recurseall.h"
-
-struct ReplacementConfig
-{
-  ReplacementConfig(const std::string& match, const std::string& repl,
-                    std::list<const Expr*>& replaced) :
-    matchText(match), replacementText(repl), replacedExprs(replaced) {}
-  std::list<const Expr*> parents;
-  std::list<const Expr*>& replacedExprs;
-  const std::string& matchText;
-  const std::string& replacementText;
-};
-
-/**
- * @brief The ReplaceStatementPreVisit struct
- *
- * The replace pragma tells us to change expressions matching a string
- * This applies to functions, variables, or array exprs.
- * Consider an #sst pragma replace A
- * For simple variables, this is easy.
- * For arrays, this is harder
- *    For A[i] or A[i][j], we need to drop everything not just the "A" part
- * For functions, also annoying
- *    For A(args), we also need to drop everthing
- * Thus, we need to determine if the "base" or "lhs" of an expr
- * is a DeclRefExpr matching the replace pragma
- * Then we need to replace the entire parent expression
- */
-template <bool PreVisit> //whether pre or post visit
-struct ReplaceStatementVisit {
-  template <class T, class... Args>
-  bool operator()(T* t, ExprRole role,
-                  CompilerInstance& CI,
-                  ReplacementConfig& cfg) {
-    return false;
-  }
-
-  void visit(const Expr* expr, const std::string& name, ExprRole role,
-             CompilerInstance& CI, ReplacementConfig& cfg){
-    if (PreVisit && name == cfg.matchText){
-      switch (role){
-        case ExprRole::ArrayBase:
-        case ExprRole::CallFxn:
-          cfg.replacedExprs.push_back(cfg.parents.back());
-          break;
-        default:
-          //any other use, means this variable is not "connected" to anything else
-          cfg.replacedExprs.push_back(expr);
-          break;
-      }
-    }
-  }
-
-  void visit(const Expr* expr, ExprRole role,
-             CompilerInstance& CI,
-             ReplacementConfig& cfg)
-  {
-    switch(role){
-      case ExprRole::ArrayBase:
-      case ExprRole::CallFxn:
-        //this is connected to the parent
-        //current parent remains the parent
-        break;
-      default:
-        if (PreVisit){
-          //break the connection to prev parent
-          cfg.parents.push_back(expr);
-        } else { //restore the original parent
-          cfg.parents.pop_back();
-        }
-    }
-  }
-
-  bool operator()(const ArraySubscriptExpr* expr, ExprRole role,
-                  CompilerInstance& CI,
-                  ReplacementConfig& cfg){
-    visit(expr, role, CI, cfg);
-    return false;
-  }
-
-  bool operator()(const CXXMemberCallExpr* expr, ExprRole role,
-                  CompilerInstance& CI,
-                  ReplacementConfig& cfg){
-    visit(expr, role, CI, cfg);
-    return false;
-  }
-
-  bool operator()(const CallExpr* expr, ExprRole role,
-                  CompilerInstance& CI,
-                  ReplacementConfig& cfg){
-    visit(expr, role, CI, cfg);
-    return false;
-  }
-
-  bool operator()(const DeclRefExpr* expr, ExprRole role,
-                  CompilerInstance& CI, ReplacementConfig& cfg){
-    visit(expr, expr->getFoundDecl()->getNameAsString(), role, CI, cfg);
-    return false;
-  }
-
-  bool operator()(const MemberExpr* expr, ExprRole role,
-                  CompilerInstance& CI, ReplacementConfig& cfg){
-    visit(expr, expr->getFoundDecl()->getNameAsString(), role, CI, cfg);
-    return false;
-  }
-
-  bool operator()(const DeclStmt* stmt, ExprRole role,
-                  CompilerInstance& CI, ReplacementConfig& cfg){
-    if (PreVisit){
-      const Decl* d = stmt->getSingleDecl();
-      if (d && d->getKind() == Decl::Var){
-        const VarDecl* vd = cast<VarDecl>(d);
-        if (vd->getNameAsString() == cfg.matchText){
-          if (vd->hasInit()) {
-            cfg.replacedExprs.push_back(vd->getInit());
-          } else {
-            errorAbort(stmt->getLocStart(), CI,
-              "replace pragma applied to declaration with no initializer");
-          }
-        }
-      }
-    }
-    return false;
-  }
-
-};
-
-void
-SSTReplacePragma::run(Stmt *s, std::list<const Expr*>& replacedExprs)
-{
-  using PreVisit=ReplaceStatementVisit<true>;
-  using PostVisit=ReplaceStatementVisit<false>;
-  ReplacementConfig rcfg(fxn_, replacement_, replacedExprs);
-  recurseAll<PreVisit,PostVisit>(s, *CI, rcfg);
-  if (replacedExprs.size() == 0){
-    std::string error = "replace pragma '" + fxn_ + "' did not match anything";
-    errorAbort(s->getLocStart(), *CI, error);
-  }
-}
-
-void
-SSTReplacePragma::run(Stmt *s, Rewriter &r)
-{
-  std::list<const Expr*> replaced;
-  run(s,replaced);
-  for (const Expr* e: replaced){
-    SourceRange rng(e->getLocStart(), e->getLocEnd());
-    r.ReplaceText(rng,replacement_);
-  }
-}
-
-void
-SSTReplacePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
-{
-  run(s,r);
-}
-
-#define repl_case(kind,d,rw) \
-  case Decl::kind: activate##kind##Decl(cast<kind##Decl>(d), rw); break
-
-void
-SSTReplacePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
-{
-  switch(d->getKind()){
-    repl_case(Function,d,r);
-    repl_case(Var,d,r);
-    repl_case(CXXRecord,d,r);
-    default:
-      break;
-  }
-}
-
-void
-SSTReplacePragma::activateFunctionDecl(FunctionDecl *d, Rewriter &r)
-{
-  if (d->hasBody()) run(d->getBody(), r);
-}
-
-void
-SSTReplacePragma::activateVarDecl(VarDecl *d, Rewriter &r)
-{
-  if (d->hasInit()) run(d->getInit(), r);
-}
-
-void
-SSTReplacePragma::activateCXXRecordDecl(CXXRecordDecl *d, Rewriter &r)
-{
-  if (d->hasBody()) run(d->getBody(), r);
-}

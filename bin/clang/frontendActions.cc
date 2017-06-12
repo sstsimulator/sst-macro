@@ -45,6 +45,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include "frontendActions.h"
 #include "globalVarNamespace.h"
 #include "pragmas.h"
+#include "replacePragma.h"
+#include "computePragma.h"
 #include <sstream>
 #include <fstream>
 #include <iostream>
@@ -58,10 +60,6 @@ ReplaceAction::ReplaceAction() :
   visitor_(rewriter_, globalNs_, deletedExprs_)
 {
 }
-
-#define scase(type,s,pp) \
-  case(clang::Stmt::type##Class): \
-    return visit##type(clang::cast<type>(s),pp)
 
 bool
 ReplaceAction::BeginSourceFileAction(CompilerInstance &CI, llvm::StringRef Filename)

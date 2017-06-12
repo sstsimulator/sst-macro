@@ -41,28 +41,48 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Questions? Contact sst-macro-help@sandia.gov
 */
+#ifndef bin_clang_computePragma_h
+#define bin_clang_computePragma_h
 
-#ifndef bin_clang_astconsumers_h
-#define bin_clang_astconsumers_h
+#include "pragmas.h"
 
-#include "clangHeaders.h"
-#include "astVisitor.h"
-#include "globalVarNamespace.h"
-
-class ReplaceASTConsumer : public clang::ASTConsumer {
+class SSTComputePragma : public SSTPragma {
+  friend class ComputeVisitor;
  public:
-  ReplaceASTConsumer(clang::Rewriter &R, ReplGlobalASTVisitor& r) :
-    visitor_(r)
-  {
-  }
-
-  bool HandleTopLevelDecl(clang::DeclGroupRef DR) override;
-
+  SSTComputePragma() : SSTPragma(Compute) {}
  private:
-  ReplGlobalASTVisitor& visitor_;
-
+  void activate(clang::Stmt *stmt, clang::Rewriter &r, PragmaConfig& cfg) override;
+  void activate(clang::Decl* decl, clang::Rewriter& r, PragmaConfig& cfg) override;
+  void defaultAct(clang::Stmt* stmt, clang::Rewriter &r);
+  void visitForStmt(clang::ForStmt* stmt, clang::Rewriter& r, PragmaConfig& cfg);
+  void visitCXXMethodDecl(clang::CXXMethodDecl* decl, clang::Rewriter& r, PragmaConfig& cfg);
+  void visitFunctionDecl(clang::FunctionDecl* decl, clang::Rewriter& r, PragmaConfig& cfg);
+  void visitIfStmt(clang::IfStmt* stmt, clang::Rewriter& r, PragmaConfig& cfg);
+  void visitAndReplaceStmt(clang::Stmt* stmt, clang::Rewriter& r, PragmaConfig& cfg);
 };
 
+class SSTOpenMPParallelPragmaHandler : public SSTTokenStreamPragmaHandler
+{
+ public:
+  SSTOpenMPParallelPragmaHandler(SSTPragmaList& plist,
+                         clang::CompilerInstance& CI,
+                         ReplGlobalASTVisitor& visitor,
+                         std::set<clang::Expr*>& deld) :
+      SSTTokenStreamPragmaHandler("parallel", plist, CI, visitor, deld){}
+ private:
+  SSTPragma* allocatePragma(clang::SourceLocation loc, const std::list<clang::Token> &tokens) const {
+    //this actually just maps cleanly into a compute pragma
+    return new SSTComputePragma;
+  }
+};
+
+class SSTComputePragmaHandler : public SSTSimplePragmaHandler<SSTComputePragma> {
+ public:
+  SSTComputePragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
+                      ReplGlobalASTVisitor& visitor, std::set<clang::Expr*>& deld) :
+   SSTSimplePragmaHandler<SSTComputePragma>("compute", plist, CI, visitor, deld)
+  {}
+};
 
 
 #endif

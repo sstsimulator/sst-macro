@@ -42,7 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include "replAstVisitor.h"
+#include "astVisitor.h"
 #include <iostream>
 #include <fstream>
 

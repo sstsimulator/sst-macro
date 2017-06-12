@@ -136,21 +136,6 @@ class SSTNewPragma : public SSTPragma {
   void visitForStmt(clang::ForStmt* stmt, clang::Rewriter& r);
 };
 
-class SSTComputePragma : public SSTPragma {
-  friend class ComputeVisitor;
- public:
-  SSTComputePragma() : SSTPragma(Compute) {}
- private:
-  void activate(clang::Stmt *stmt, clang::Rewriter &r, PragmaConfig& cfg) override;
-  void activate(clang::Decl* decl, clang::Rewriter& r, PragmaConfig& cfg) override;
-  void defaultAct(clang::Stmt* stmt, clang::Rewriter &r);
-  void visitForStmt(clang::ForStmt* stmt, clang::Rewriter& r, PragmaConfig& cfg);
-  void visitCXXMethodDecl(clang::CXXMethodDecl* decl, clang::Rewriter& r, PragmaConfig& cfg);
-  void visitFunctionDecl(clang::FunctionDecl* decl, clang::Rewriter& r, PragmaConfig& cfg);
-  void visitIfStmt(clang::IfStmt* stmt, clang::Rewriter& r, PragmaConfig& cfg);
-  void visitAndReplaceStmt(clang::Stmt* stmt, clang::Rewriter& r, PragmaConfig& cfg);
-};
-
 class SSTReplacePragma : public SSTPragma {
  protected:
   std::string fxn_;
@@ -331,14 +316,6 @@ class SSTKeepPragmaHandler : public SSTSimplePragmaHandler<SSTKeepPragma> {
   {}
 };
 
-class SSTComputePragmaHandler : public SSTSimplePragmaHandler<SSTComputePragma> {
- public:
-  SSTComputePragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
-                      ReplGlobalASTVisitor& visitor, std::set<clang::Expr*>& deld) :
-   SSTSimplePragmaHandler<SSTComputePragma>("compute", plist, CI, visitor, deld)
-  {}
-};
-
 class SSTTokenStreamPragmaHandler : public SSTPragmaHandler
 {
  public:
@@ -365,63 +342,5 @@ class SSTTokenStreamPragmaHandler : public SSTPragmaHandler
                                     const std::list<clang::Token>& tokens) const = 0;
 };
 
-class SSTOpenMPParallelPragmaHandler : public SSTTokenStreamPragmaHandler
-{
- public:
-  SSTOpenMPParallelPragmaHandler(SSTPragmaList& plist,
-                         clang::CompilerInstance& CI,
-                         ReplGlobalASTVisitor& visitor,
-                         std::set<clang::Expr*>& deld) :
-      SSTTokenStreamPragmaHandler("parallel", plist, CI, visitor, deld){}
- private:
-  SSTPragma* allocatePragma(clang::SourceLocation loc, const std::list<clang::Token> &tokens) const {
-    //this actually just maps cleanly into a compute pragma
-    return new SSTComputePragma;
-  }
-};
-
-class SSTReplacePragmaHandler : public SSTTokenStreamPragmaHandler
-{
-public:
- SSTReplacePragmaHandler(SSTPragmaList& plist,
-                        clang::CompilerInstance& CI,
-                        ReplGlobalASTVisitor& visitor,
-                        std::set<clang::Expr*>& deld) :
-     SSTTokenStreamPragmaHandler("replace", plist, CI, visitor, deld){}
-
- static std::string
- parse(clang::CompilerInstance& CI, clang::SourceLocation loc,
-        const std::list<clang::Token>& tokens, std::ostream& os);
-
-private:
- SSTPragma* allocatePragma(clang::SourceLocation loc, const std::list<clang::Token> &tokens) const;
-
-};
-
-class SSTStartReplacePragmaHandler : public SSTTokenStreamPragmaHandler
-{
-public:
- SSTStartReplacePragmaHandler(SSTPragmaList& plist,
-                        clang::CompilerInstance& CI,
-                        ReplGlobalASTVisitor& visitor,
-                        std::set<clang::Expr*>& deld) :
-     SSTTokenStreamPragmaHandler("start_replace", plist, CI, visitor, deld){}
-
-private:
- SSTPragma* allocatePragma(clang::SourceLocation loc, const std::list<clang::Token> &tokens) const;
-};
-
-class SSTStopReplacePragmaHandler : public SSTTokenStreamPragmaHandler
-{
-public:
- SSTStopReplacePragmaHandler(SSTPragmaList& plist,
-                        clang::CompilerInstance& CI,
-                        ReplGlobalASTVisitor& visitor,
-                        std::set<clang::Expr*>& deld) :
-     SSTTokenStreamPragmaHandler("stop_replace", plist, CI, visitor, deld){}
-
-private:
- SSTPragma* allocatePragma(clang::SourceLocation loc, const std::list<clang::Token> &tokens) const;
-};
 
 #endif
