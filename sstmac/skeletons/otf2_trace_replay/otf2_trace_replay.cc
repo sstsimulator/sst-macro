@@ -14,6 +14,8 @@
 #include <algorithm>
 #include <iomanip>
 #include <string>
+#include <algorithm>
+#include <string>
 
 using std::cout;
 using std::cerr;
@@ -34,6 +36,14 @@ OTF2_GlobalDefReaderCallbacks* create_global_def_callbacks() {
   OTF2_GlobalDefReaderCallbacks_SetCommCallback(callbacks, def_comm);
   OTF2_GlobalDefReaderCallbacks_SetLocationGroupPropertyCallback( callbacks, def_location_group_property );
   OTF2_GlobalDefReaderCallbacks_SetLocationPropertyCallback( callbacks, def_location_property );
+
+  return callbacks;
+}
+
+OTF2_DefReaderCallbacks* create_def_mapping_callback() {
+  OTF2_DefReaderCallbacks* callbacks = OTF2_DefReaderCallbacks_New();
+  OTF2_DefReaderCallbacks_SetMappingTableCallback(callbacks, def_mapping_table);
+
   return callbacks;
 }
 
@@ -65,29 +75,41 @@ void check_status(OTF2_ErrorCode status, const std::string& description)
 }
 
 void OTF2TraceReplayApp::create_communicators() {
-	auto mpi = GetMpi();
+  auto mpi = GetMpi();
 
-	// Loop over the communicators declared by OTF2, skip first one, which is MPI_COMM_WORLD
-	for (int i = 1; i < comm_map.size(); i++) {
-		auto comm_rank_list = comm_map[i];
+  // Loop over the communicators declared by OTF2, skip first one, which is MPI_COMM_WORLD
+  for (int i = 1; i < comm_map.size(); i++) {
+    auto comm_rank_list = comm_map[i];
 
-		// Don't add empty communicators or MPI_COMM_SELF
-		if(comm_rank_list.size() < 2)
-					continue;
+    uint64_t this_rank = this->tid();
 
-		int* p_rank_list = new int[comm_rank_list.size()];
-		for (int j = 0; j < comm_rank_list.size(); j++)
-			p_rank_list[j] = (int)comm_rank_list[j];
+    // skip communicator creation when it doesn't have this rank
+    if (std::find(comm_rank_list.begin(), comm_rank_list.end(), this_rank) == comm_rank_list.end() && comm_rank_list.size() > 0)
+      continue;
 
-		// TODO: make the communicators here
-		std::cout << "Making Communicator for ranks: ";
-		for (int j = 0; j < comm_rank_list.size(); j++)
-			std::cout << p_rank_list[j] << " ";
+    uint64_t* p_rank_list = new uint64_t[comm_rank_list.size()];
 
-		std::cout << std::endl;
+    for (int j = 0; j < comm_rank_list.size(); j++)
+      p_rank_list[j] = (int) comm_rank_list[j];
 
-    delete[] p_rank_list;
-	}
+    // An empty rank list implies MPI_COMM_SELF
+    if (comm_rank_list.size() == 0)
+      p_rank_list = &this_rank;
+
+    // fetch group ID
+    int group_id = otf2_comms[i].group;
+
+    // create the group
+    mpi->group_create_with_id( group_id,
+                               std::max(comm_rank_list.size(), (size_t)1),
+                               p_rank_list);
+
+    // create the communicator
+    mpi->comm_create_with_id(MPI_COMM_WORLD, group_id, i);
+
+    if (p_rank_list != &this_rank)
+      delete[] p_rank_list;
+  }
 }
 
 OTF2TraceReplayApp::OTF2TraceReplayApp(sprockit::sim_parameters* params,
@@ -114,11 +136,11 @@ uint32_t rank_from_otf2_string(std::string str) {
 // fills OTF2TraceReplayApp::comm_map with mpi communicator mappings
 void OTF2TraceReplayApp::build_comm_map() {
   for (auto _id = 0; _id < otf2_comms.size(); _id++) {
-	  auto group = otf2_groups[otf2_comms[_id].group];
-	  comm_map.push_back({});
-	  for(auto m = group.members.begin(); m != group.members.end(); m++) {
-		  std::string name_str = otf2_string_table[otf2_location_groups[*m].name].c_str();
-		  comm_map[_id].push_back(rank_from_otf2_string(name_str));
+    auto group = otf2_groups[otf2_comms[_id].group];
+    comm_map.push_back({});
+    for(auto m = group.members.begin(); m != group.members.end(); m++) {
+      std::string name_str = otf2_string_table[otf2_location_groups[*m].name].c_str();
+      comm_map[_id].push_back(rank_from_otf2_string(name_str));
 	  }
   }
 }
@@ -130,12 +152,8 @@ OTF2TraceReplayApp::skeleton_main() {
   auto event_reader = initialize_event_reader();
 
   build_comm_map();
+  create_communicators();
 
-  if (rank == 0) {
-    create_communicators();
-  }
-
-  return;
   initiate_trace_replay(event_reader);
   verify_replay_success();
 
@@ -206,7 +224,7 @@ OTF2TraceReplayApp::initialize_event_reader() {
 
   struct c_vector* locations = (c_vector*) malloc(sizeof(*locations) + number_of_locations * sizeof(*locations->members));
   locations->capacity = number_of_locations;
-  locations->size = 0;
+  locations->size = number_of_locations;
   OTF2_GlobalDefReader* global_def_reader = OTF2_Reader_GetGlobalDefReader(reader);
   OTF2_GlobalDefReaderCallbacks* global_def_callbacks;
   global_def_callbacks = create_global_def_callbacks();
@@ -218,17 +236,27 @@ OTF2TraceReplayApp::initialize_event_reader() {
   check_status(OTF2_Reader_ReadAllGlobalDefinitions(reader, global_def_reader, &definitions_read),
                "OTF2_Reader_ReadAllGlobalDefinitions\n");
 
-  for (size_t i = 0; i < locations->size; i++) {
-    cout << "registering def reader" << endl;
-      check_status(OTF2_Reader_SelectLocation(reader, locations->members[i]),
-                   "OTF2_Reader_ReadAllGlobalDefinitions\n");
-  }
+  //for (size_t i = 0; i < locations->size; i++) {
+  //  cout << "registering def reader" << endl;
+  //    check_status(OTF2_Reader_SelectLocation(reader, locations->members[i]),
+  //                 "OTF2_Reader_ReadAllGlobalDefinitions\n");
+  //}
 
-  bool successful_open_def_files = OTF2_Reader_OpenDefFiles(reader)
-                                   == OTF2_SUCCESS;
-  check_status(OTF2_Reader_OpenEvtFiles(reader),
-               "OTF2_Reader_OpenEvtFiles\n");
+  bool successful_open_def_files = OTF2_Reader_OpenDefFiles(reader) == OTF2_SUCCESS;
+  check_status(OTF2_Reader_OpenEvtFiles(reader), "OTF2_Reader_OpenEvtFiles\n");
 
+  OTF2_DefReader* def_reader = OTF2_Reader_GetDefReader(reader, this->tid());
+  OTF2_DefReaderCallbacks* def_callbacks = create_def_mapping_callback();
+
+  check_status( OTF2_Reader_RegisterDefCallbacks(reader, def_reader, def_callbacks, (void*)this),
+                   "OTF2_Reader_RegisterGlobalDefCallbacks\n");
+  OTF2_DefReaderCallbacks_Delete(def_callbacks);
+
+  definitions_read = 0;
+  check_status(OTF2_Reader_ReadAllLocalDefinitions(reader, def_reader, &definitions_read),
+                 "OTF2_Reader_ReadAllDefinitions\n");
+
+  /*
   for (size_t i = 0; i < locations->size; i++) {
     if (successful_open_def_files) {
       OTF2_DefReader* def_reader = OTF2_Reader_GetDefReader(reader,
@@ -246,6 +274,7 @@ OTF2TraceReplayApp::initialize_event_reader() {
     }
     OTF2_Reader_GetEvtReader(reader, locations->members[i]);
   }
+  */
 
   if (successful_open_def_files) {
     check_status(OTF2_Reader_CloseDefFiles(reader),
@@ -307,6 +336,11 @@ void OTF2TraceReplayApp::verify_replay_success() {
       cout << "  ==> " << setw(15) << call->ToString() << (call->isready?"\tREADY":"\tNOT READY")<< endl;
     }
   }
+}
+
+uint32_t OTF2TraceReplayApp::MapRank(uint32_t local_rank) {
+  auto global_rank = local_to_global_comm_map.find(local_rank);
+  return (global_rank == local_to_global_comm_map.end()) ? local_rank:(*global_rank).second;
 }
 
 bool OTF2TraceReplayApp::PrintTraceEvents() {

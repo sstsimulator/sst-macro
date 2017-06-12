@@ -29,7 +29,7 @@ mpi_api::group_create_with_id(MPI_Group group, int num_members, const uint64_t *
 {
   int my_rank = comm_world()->rank();
   bool in_group = false;
-  for (int i=0; num_members; ++i){
+  for (int i=0; i < num_members; ++i){
     if (members[i] == my_rank){
       in_group = true;
       break;
