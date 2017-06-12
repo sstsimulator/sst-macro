@@ -229,7 +229,6 @@ void traverse_IdMap( uint64_t localId,
                      uint64_t globalId,
                      void* userData) {
   auto app = (OTF2TraceReplayApp*)userData;
-  std::cout << "\t rank " << app->tid() << " local " << localId << " -> remote " << globalId << endl;
   app->local_to_global_comm_map[localId] = globalId;
 }
 
@@ -243,7 +242,6 @@ def_mapping_table(
     OTF2_IdMapMode map_node;
 
     OTF2_IdMap_GetMode(idMap, &map_node);
-    std::cout << "Type " << std::to_string(mappingType) <<  " Density: " << std::to_string(map_node) << std::endl;
 
     // OTF2 traverses over the struct by recursively calling with the struct
     OTF2_IdMap_Traverse(idMap, traverse_IdMap, userData);
