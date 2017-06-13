@@ -1,8 +1,52 @@
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
+
 #ifndef sumi_SUMI_TRANSPORT_H
 #define sumi_SUMI_TRANSPORT_H
 
+#include <sstmac/common/stats/stat_spyplot_fwd.h>
 #include <sstmac/libraries/sumi/message_fwd.h>
-#include <sstmac/common/node_address.h>
 #include <sstmac/libraries/sumi/message_fwd.h>
 #include <sstmac/software/process/pmi.h>
 #include <sstmac/software/launch/job_launcher_fwd.h>
@@ -20,7 +64,6 @@
  * It is also the name for a solid ink in Japanese -
  * i.e. the substrate for sending messages!
  */
-
 namespace sstmac {
 
 class sumi_transport :
@@ -35,30 +78,25 @@ class sumi_transport :
                  sstmac::sw::software_id sid,
                  sstmac::sw::operating_system* os);
 
-  virtual void
-  init() override;
+  virtual void init() override;
 
-  virtual void
-  finish() override;
+  virtual void finish() override;
 
   virtual ~sumi_transport();
 
-  sumi::message_ptr
-  handle(sstmac::transport_message* msg);
+  sumi::message_ptr handle(sstmac::transport_message* msg);
 
   void incoming_event(event *ev) override;
 
   void compute(timestamp t);
 
-  void
-  client_server_send(
+  void client_server_send(
     int dest_rank,
     node_id dest_node,
     int dest_app,
     const sumi::message::ptr& msg);
 
-  void
-  client_server_rdma_put(
+  void client_server_rdma_put(
     int dest_rank,
     node_id dest_node,
     int dest_app,
@@ -78,8 +116,7 @@ class sumi_transport :
 
   double wall_time() const override;
 
-  sumi::message::ptr
-  poll_pending_messages(bool blocking, double timeout = -1) override;
+  sumi::message::ptr poll_pending_messages(bool blocking, double timeout = -1) override;
 
   void ping_timeout(sumi::pinger* pnger);
 
@@ -111,38 +148,27 @@ class sumi_transport :
   void memcopy(long bytes);
 
  private:
-  void
-  do_smsg_send(int dst, const sumi::message::ptr &msg) override;
+  void do_smsg_send(int dst, const sumi::message::ptr &msg) override;
 
-  void
-  do_rdma_put(int dst, const sumi::message::ptr& msg) override;
+  void do_rdma_put(int dst, const sumi::message::ptr& msg) override;
 
-  void
-  do_rdma_get(int src, const sumi::message::ptr& msg) override;
+  void do_rdma_get(int src, const sumi::message::ptr& msg) override;
 
-  void
-  do_nvram_get(int src, const sumi::message::ptr& msg) override;
+  void do_nvram_get(int src, const sumi::message::ptr& msg) override;
 
-  void
-  do_send_terminate(int dst) override;
+  void do_send_terminate(int dst) override;
 
-  void
-  do_send_ping_request(int dst) override;
+  void do_send_ping_request(int dst) override;
 
-  void
-  delayed_transport_handle(const sumi::message::ptr& msg) override;
+  void delayed_transport_handle(const sumi::message::ptr& msg) override;
 
-  void
-  schedule_ping_timeout(sumi::pinger* pnger, double to) override;
+  void schedule_ping_timeout(sumi::pinger* pnger, double to) override;
 
-  void
-  schedule_next_heartbeat() override;
+  void schedule_next_heartbeat() override;
 
-  void
-  go_die() override;
+  void go_die() override;
 
-  void
-  go_revive() override;
+  void go_revive() override;
 
  protected:
   sumi_transport(sprockit::sim_parameters* params,
@@ -192,6 +218,9 @@ class sumi_transport :
 
   sstmac::sw::lib_compute_time* user_lib_time_;
 
+  sstmac::stat_spyplot* spy_num_messages_;
+
+  sstmac::stat_spyplot* spy_bytes_;
 };
 
 }

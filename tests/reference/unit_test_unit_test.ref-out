@@ -1,39 +1,39 @@
-SUCCESS: int equality test_unit_test.cc:64
-FAILURE: int equality test_unit_test.cc:65  SHOULD BE EQUAL
-Test: 3
-Asserted: 4
-SUCCESS: float equality test_unit_test.cc:66
-SUCCESS: fill vector test_unit_test.cc:70
-SUCCESS: fill vector test_unit_test.cc:75
-SUCCESS: test false test_unit_test.cc:78
-SUCCESS: test true test_unit_test.cc:79
-SUCCESS: does throw test_unit_test.cc:82
-FAILURE: doesn't throw test_unit_test.cc:84  SHOULD THROW
-Test: No Exception
-Asserted: error1
-FAILURE: throws wrong test_unit_test.cc:86  WRONG EXCEPTION THROWN
-Test: error
-Asserted: error2
-FAILURE: throws int test_unit_test.cc:88  WRONG EXCEPTION THROWN
-Test: Unknown Exception
-Asserted: error2
-SUCCESS: ptr member does throw test_unit_test.cc:93
-FAILURE: ptr member doesn't throw test_unit_test.cc:95  SHOULD THROW
-Test: No Exception
-Asserted: error1
-FAILURE: ptr member throws wrong test_unit_test.cc:97  WRONG EXCEPTION THROWN
-Test: error
-Asserted: error2
-FAILURE: ptr member throws int test_unit_test.cc:99  WRONG EXCEPTION THROWN
-Test: Unknown Exception
-Asserted: error2
-SUCCESS: member does throw test_unit_test.cc:105
-FAILURE: member doesn't throw test_unit_test.cc:107  SHOULD THROW
-Test: No Exception
-Asserted: error1
-FAILURE: member throws wrong test_unit_test.cc:109  WRONG EXCEPTION THROWN
-Test: error
-Asserted: error2
-FAILURE: member throws int test_unit_test.cc:111  WRONG EXCEPTION THROWN
-Test: Unknown Exception
-Asserted: error2
+SUCCESS: int equality test_unit_test.cc:108
+FAILURE: int equality test_unit_test.cc:109  SHOULD BE EQUAL
+	     Test: 3
+	 Asserted: 4
+SUCCESS: float equality test_unit_test.cc:110
+SUCCESS: fill vector test_unit_test.cc:114
+SUCCESS: fill vector test_unit_test.cc:119
+SUCCESS: test false test_unit_test.cc:122
+SUCCESS: test true test_unit_test.cc:123
+SUCCESS: does throw test_unit_test.cc:126
+FAILURE: doesn't throw test_unit_test.cc:128  SHOULD THROW
+	     Test: No Exception
+	 Asserted: error1
+FAILURE: throws wrong test_unit_test.cc:130  WRONG EXCEPTION THROWN
+	     Test: error
+	 Asserted: error2
+FAILURE: throws int test_unit_test.cc:132  WRONG EXCEPTION THROWN
+	     Test: Unknown Exception
+	 Asserted: error2
+SUCCESS: ptr member does throw test_unit_test.cc:137
+FAILURE: ptr member doesn't throw test_unit_test.cc:139  SHOULD THROW
+	     Test: No Exception
+	 Asserted: error1
+FAILURE: ptr member throws wrong test_unit_test.cc:141  WRONG EXCEPTION THROWN
+	     Test: error
+	 Asserted: error2
+FAILURE: ptr member throws int test_unit_test.cc:143  WRONG EXCEPTION THROWN
+	     Test: Unknown Exception
+	 Asserted: error2
+SUCCESS: member does throw test_unit_test.cc:149
+FAILURE: member doesn't throw test_unit_test.cc:151  SHOULD THROW
+	     Test: No Exception
+	 Asserted: error1
+FAILURE: member throws wrong test_unit_test.cc:153  WRONG EXCEPTION THROWN
+	     Test: error
+	 Asserted: error2
+FAILURE: member throws int test_unit_test.cc:155  WRONG EXCEPTION THROWN
+	     Test: Unknown Exception
+	 Asserted: error2

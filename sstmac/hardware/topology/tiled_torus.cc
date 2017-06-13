@@ -1,3 +1,46 @@
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
 
 #include <sstmac/hardware/topology/tiled_torus.h>
 #include <sprockit/sim_parameters.h>
@@ -23,6 +66,9 @@ tiled_torus::tiled_torus(sprockit::sim_parameters *params) :
 
   first_simple_torus_eject_port_ = max_ports_intra_network_;
 
+  max_ports_injection_ =
+      netlinks_per_switch_ * injection_redundancy_;
+
   max_ports_intra_network_ = ntiles - max_ports_injection_;
 
   int ndims = red_.size();
@@ -41,13 +87,14 @@ tiled_torus::tiled_torus(sprockit::sim_parameters *params) :
 
 void
 tiled_torus::get_redundant_paths(
-  routable::path& current,
-  routable::path_set &paths) const
+    routable::path& current,
+    routable::path_set &paths,
+    switch_id addr) const
 {
-  if (current.outport < first_simple_torus_eject_port_){
+  if (current.outport() < first_simple_torus_eject_port_){
     //intranetwork routing
-    int dim = current.outport / 2; //2 for +/-
-    int dir = current.outport % 2;
+    int dim = current.outport() / 2; //2 for +/-
+    int dir = current.outport() % 2;
     int red = red_[dim];
     paths.resize(red);
     int port_offset = tile_offsets_[dim] + red * dir;
@@ -55,33 +102,18 @@ tiled_torus::get_redundant_paths(
     //outport identifies a unique path
     for (int r=0; r < red; ++r){
       paths[r] = current;
-      paths[r].geometric_id = current.outport;
-      paths[r].outport = port_offset + r;
+      paths[r].geometric_id = current.outport();
+      paths[r].set_outport(port_offset + r);
     }
   } else {
     //ejection routing
-    int offset = current.outport - first_simple_torus_eject_port_;
+    int offset = current.outport() - first_simple_torus_eject_port_;
     int port = max_ports_intra_network_ + offset*injection_redundancy_;
     int num_ports = injection_redundancy_;
     for (int i=0; i < num_ports; ++i, ++port){
-      paths[i].outport = port;
+      paths[i].set_outport(port);
     }
   }
-}
-
-switch_id
-tiled_torus::netlink_to_injection_switch(node_id nodeaddr, int ports[], int &num_ports) const
-{
-  int port;
-  switch_id sid = hdtorus::netlink_to_injection_switch(nodeaddr, port);
-  //ejection routing
-  int offset = port - first_simple_torus_eject_port_;
-  port = max_ports_intra_network_ + offset*injection_redundancy_;
-  num_ports = injection_redundancy_;
-  for (int i=0; i < num_ports; ++i, ++port){
-    ports[i] = port;
-  }
-  return sid;
 }
 
 void
@@ -92,7 +124,7 @@ tiled_torus::configure_individual_port_params(switch_id src,
 }
 
 void
-tiled_torus::configure_geometric_paths(std::vector<int>& redundancies) const
+tiled_torus::configure_geometric_paths(std::vector<int>& redundancies)
 {
   int ndims = dimensions_.size();
   int ngeom_paths = ndims * 2 + netlinks_per_switch_; //2 for +/-
@@ -113,7 +145,8 @@ tiled_torus::configure_geometric_paths(std::vector<int>& redundancies) const
 void
 tiled_torus::connected_outports(switch_id src, std::vector<connection>& conns) const
 {
-  conns.resize(max_ports_intra_network_ + max_ports_injection_);
+  int max_port = max_ports_intra_network_ - 1;
+  conns.resize(max_port);
   int cidx = 0;
   int ndims = dimensions_.size();
   int dim_stride = 1;
@@ -133,19 +166,28 @@ tiled_torus::connected_outports(switch_id src, std::vector<connection>& conns) c
 
     switch_id minus_partner = src + minus_jump * dim_stride;
 
+     //std::cerr << sprockit::printf("plus jump: %i\nminus jump: %i\n", plus_jump, minus_jump);
+    //std::cerr << sprockit::printf("plus partner: %i\nminus partner: %i\n", plus_partner, minus_partner);
+
     int nreplica = red_[i];
     int outport, inport;
     for (int r=0; r < nreplica; ++r){
-      outport = inport = port(r, i, hdtorus::pos);
+      outport = port(r, i, hdtorus::pos);
+      inport = port(r, i, hdtorus::neg);
+      //std::cerr << sprockit::printf("setting connection %i (pos) src:port %i:%i -> dst:port %i:%i\n", cidx, src, outport, plus_partner, inport);
       connection& conn = conns[cidx];
       conn.src = src;
       conn.dst = plus_partner;
       conn.src_outport = outport;
       conn.dst_inport = inport;
       ++cidx;
+    }
 
-      outport = inport = port(r, i, hdtorus::neg);
-      conn = conns[cidx];
+    for (int r=0; r < nreplica; ++r){
+      outport = port(r, i, hdtorus::neg);
+      inport = port(r, i, hdtorus::pos);
+      //std::cerr << sprockit::printf("setting connection %i (neg) src:port %i:%i -> dst:port %i:%i\n", cidx, src, outport, minus_partner, inport);
+      connection& conn = conns[cidx];
       conn.src = src;
       conn.dst = minus_partner;
       conn.src_outport = outport;
@@ -154,7 +196,43 @@ tiled_torus::connected_outports(switch_id src, std::vector<connection>& conns) c
     }
     dim_stride *= dimensions_[i];
   }
-  conns.resize(cidx);
+  //conns.resize(cidx);
+}
+
+switch_id
+tiled_torus::netlink_to_injection_switch(
+    node_id netladdr, uint16_t ports[], int &num_ports) const
+{
+  // UGLY: interconnect calls this, it needs to return a real port number
+  num_ports = injection_redundancy_;
+  long sw = netladdr / netlinks_per_switch_;
+  int local_endpoint_id = netladdr % netlinks_per_switch_;
+  int first_port =
+      max_ports_intra_network_ + local_endpoint_id * injection_redundancy_;
+  for (int i=0; i < injection_redundancy_; ++i)
+    ports[i] = first_port + i;
+  return switch_id(sw);
+}
+
+switch_id
+tiled_torus::netlink_to_ejection_switch(
+    node_id nodeaddr, uint16_t ports[], int &num_ports) const
+{
+  return netlink_to_injection_switch(nodeaddr,ports,num_ports);
+}
+
+switch_id
+tiled_torus::netlink_to_injection_switch(netlink_id netladdr, uint16_t& switch_port) const {
+  // UGLY: route calls this, it needs to return a geometric id for port
+  long sw = netladdr / netlinks_per_switch_;
+  int local_endpoint_id = netladdr % netlinks_per_switch_;
+  switch_port = first_simple_torus_eject_port_ + local_endpoint_id;
+  return switch_id(sw);
+}
+
+switch_id
+tiled_torus::netlink_to_ejection_switch(node_id nodeaddr, uint16_t& switch_port) const {
+  return netlink_to_injection_switch(nodeaddr, switch_port);
 }
 
 }

@@ -1,13 +1,47 @@
-/*
- *  This file is part of SST/macroscale:
- *               The macroscale architecture simulator from the SST suite.
- *  Copyright (c) 2009 Sandia Corporation.
- *  This software is distributed under the BSD License.
- *  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- *  the U.S. Government retains certain rights in this software.
- *  For more information, see the LICENSE file in the top
- *  SST/macroscale directory.
- */
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
+
 #include <sstmac/hardware/topology/dragonfly.h>
 #include <sstmac/hardware/router/router.h>
 #include <math.h>
@@ -123,7 +157,7 @@ dragonfly::find_y_path_to_group(int myX, int myG, int dstG, int& dstY,
   for (int yy = 0; yy < y_; ++yy) {
     dstY = (ystart + yy) % y_;
     if (xy_connected_to_group(myX, dstY, myG, dstG)) {
-      path.outport = y_port(dstY);
+      path.set_outport(y_port(dstY));
       return true;
     }
   }
@@ -138,7 +172,7 @@ dragonfly::find_x_path_to_group(int myY, int myG, int dstG, int& dstX,
   for (int xx = 0; xx < x_; ++xx) {
     dstX = (xstart + xx) % x_;
     if (xy_connected_to_group(dstX, myY, myG, dstG)) {
-      path.outport = x_port(dstX);
+      path.set_outport( x_port(dstX) );
       return true;
     }
   }
@@ -152,7 +186,7 @@ dragonfly::find_path_to_group(int myX, int myY, int myG,
 {
   //see if we can go directly to the group
   if (xy_connected_to_group(myX, myY, myG, dstG)){
-    path.outport = g_port(dstG);
+    path.set_outport(g_port(dstG));
     dstX = myX;
     dstY = myY;
     path.set_metadata_bit(routable::crossed_timeline);
@@ -199,16 +233,16 @@ dragonfly::minimal_route_to_switch(
     top_debug("dragonfly routing from (%d,%d,%d) to (%d,%d,%d) through "
               "gateway (%d,%d,%d) on port %d",
               srcX, srcY, srcG, dstX, dstY, dstG,
-              interX, interY, srcG, path.outport);
+              interX, interY, srcG, path.outport());
   }
   else if (srcX != dstX){
+    path.set_outport( x_port(dstX) );
     top_debug("dragonfly routing X from (%d,%d,%d) to (%d,%d,%d) on port %d",
-              srcX, srcY, srcG, dstX, dstY, dstG, path.outport);
-    path.outport = x_port(dstX);
+              srcX, srcY, srcG, dstX, dstY, dstG, path.outport());
   } else if (srcY != dstY){
+    path.set_outport( y_port(dstY) );
     top_debug("dragonfly routing Y from (%d,%d,%d) to (%d,%d,%d) on port %d",
-              srcX, srcY, srcG, dstX, dstY, dstG, path.outport);
-    path.outport = y_port(dstY);
+              srcX, srcY, srcG, dstX, dstY, dstG, path.outport());
   }
 }
 
@@ -361,6 +395,3 @@ dragonfly::switch_addr(const coordinates &coords) const
 
 }
 } //end of namespace sstmac
-
-
-

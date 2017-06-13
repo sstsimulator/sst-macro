@@ -1,13 +1,46 @@
-/*
- *  This file is part of SST/macroscale:
- *               The macroscale architecture simulator from the SST suite.
- *  Copyright (c) 2009 Sandia Corporation.
- *  This software is distributed under the BSD License.
- *  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- *  the U.S. Government retains certain rights in this software.
- *  For more information, see the LICENSE file in the top
- *  SST/macroscale directory.
- */
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
 
 #include <sstmac/hardware/router/fat_tree_router.h>
 #include <sstmac/hardware/router/routable.h>
@@ -76,8 +109,8 @@ fat_tree_router::productive_paths_to_switch(
 {
   structured_routable::path tmp_path;
   minimal_route_to_switch(dst, tmp_path);
-  int dim = tmp_path.outport / k_;
-  int dir = tmp_path.outport % k_;
+  int dim = tmp_path.outport() / k_;
+  int dir = tmp_path.outport() % k_;
   if (dim == fat_tree::down_dimension) {
     //we have no choice - only one path down is correct
     paths.resize(1);
@@ -90,7 +123,7 @@ fat_tree_router::productive_paths_to_switch(
       //paths[i].dim = fat_tree::up_dimension;
       //paths[i].dir = i;
       paths[i].vc = 0;
-      paths[i].outport = ftree_->up_port(i);
+      paths[i].set_outport(ftree_->up_port(i));
     }
   }
 }
@@ -110,12 +143,12 @@ fat_tree_router::route_to_switch(
     pathDir = relative_ej_id / num_leaf_switches_per_path_;
     ftree_rter_debug("routing down with dir %d: eject-id=%ld rel-eject-id=%ld",
         pathDir, ej_id, relative_ej_id);
-    path.outport = ftree_->down_port(pathDir);
+    path.set_outport(ftree_->down_port(pathDir));
   }
   else {
     //route up
     pathDir = choose_up_minimal_path();
-    path.outport = ftree_->up_port(pathDir);
+    path.set_outport(ftree_->up_port(pathDir));
     path.vc = 0;
     ftree_rter_debug("routing up with dir %d", pathDir);
   }
@@ -149,4 +182,3 @@ fat_tree_router::number_minimal_paths(packet* pkt) const
 
 }
 }
-

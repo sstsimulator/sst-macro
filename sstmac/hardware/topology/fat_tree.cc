@@ -1,16 +1,47 @@
-/*
- *  This file is part of SST/macroscale:
- *               The macroscale architecture simulator from the SST suite.
- *  Copyright (c) 2009 Sandia Corporation.
- *  This software is distributed under the BSD License.
- *  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- *  the U.S. Government retains certain rights in this software.
- *  For more information, see the LICENSE file in the top
- *  SST/macroscale directory.
- */
-// fattree.cc: Implementation of fat tree networks.
-//
-// Author: Jeremiah Wilke <jjwilke@sandia.gov>
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
+
 #include <sstream>
 #include <sstmac/hardware/topology/fat_tree.h>
 #include <sstmac/hardware/router/router.h>
@@ -488,7 +519,7 @@ tapered_fat_tree::minimal_route_to_switch(
   int dst_level = level(dest_sw_addr);
   //question is whether I go up or down
   if (dst_level >= src_level){ //definitely have to go up
-    path.outport = up_port(src_level);
+    path.set_outport(up_port(src_level));
     path.vc = 0;
     top_debug("fat_tree: routing up to get to s=%d,l=%d from s=%d,l=%d",
             int(dest_sw_addr), dst_level,
@@ -496,19 +527,19 @@ tapered_fat_tree::minimal_route_to_switch(
   } else if (src_level == 2){
     //definitely have to go down
     int dst_sub_tree = dst_level == 0 ? inj_sub_tree(dest_sw_addr) : agg_sub_tree(dest_sw_addr);
-    path.outport = dst_sub_tree;
+    path.set_outport(dst_sub_tree);
     path.vc = 0;
     top_debug("fat_tree: routing down to get to s=%d,l=%d from s=%d,l=%d on port %d",
             int(dest_sw_addr), dst_level,
             int(current_sw_addr), src_level,
-            path.outport);
+            path.outport());
   } else if (src_level == 1){
     //going to level 0, but may have to go up or down to get there
     int my_tree = agg_sub_tree(current_sw_addr);
     int dst_tree = inj_sub_tree(dest_sw_addr);
     if (dst_tree == my_tree){
       //okay, great, I should have direct link
-      path.outport = dest_sw_addr % num_inj_switches_per_subtree_;
+      path.set_outport(dest_sw_addr % num_inj_switches_per_subtree_);
       path.vc = 0;
       top_debug("fat_tree: routing up to get to s=%d,l=%d from s=%d,l=%d hopping from tree %d to tree %d",
               int(dest_sw_addr), dst_level,
@@ -516,12 +547,12 @@ tapered_fat_tree::minimal_route_to_switch(
               my_tree, dst_tree);
     } else {
       //nope, have to go to core to hope over to other tree
-      path.outport = up_port(src_level);
+      path.set_outport(up_port(src_level));
       path.vc = 0;
       top_debug("fat_tree: routing down to get to s=%d,l=%d from s=%d,l=%d on port %d within tree %d",
               int(dest_sw_addr), dst_level,
               int(current_sw_addr), src_level,
-              path.outport, my_tree);
+              path.outport(), my_tree);
     }
   }
 }
@@ -535,4 +566,3 @@ tapered_fat_tree::configure_vc_routing(std::map<routing::algorithm_t, int> &m) c
 
 }
 } //end of namespace sstmac
-

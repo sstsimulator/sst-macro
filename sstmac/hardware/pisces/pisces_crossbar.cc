@@ -1,3 +1,47 @@
+/**
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+retains certain rights in this software.
+
+Sandia National Laboratories is a multimission laboratory managed and operated
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+Energy's National Nuclear Security Administration under contract DE-NA0003525.
+
+Copyright (c) 2009-2017, NTESS
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, 
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of Sandia Corporation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Questions? Contact sst-macro-help@sandia.gov
+*/
+
 #include <sstmac/hardware/pisces/pisces_crossbar.h>
 #include <sstmac/hardware/pisces/pisces_stats.h>
 #include <sstmac/hardware/pisces/pisces_tiled_switch.h>
@@ -41,7 +85,11 @@ pisces_NtoM_queue::
 pisces_NtoM_queue(sprockit::sim_parameters* params,
                        event_scheduler* parent)
   : pisces_sender(params, parent),
-    credit_handler_(nullptr)
+    credit_handler_(nullptr),
+    payload_handler_(nullptr),
+    tile_id_(""),
+    outport_mapper_(new identity_mapper()),
+    credit_mapper_(new identity_mapper())
 {
   num_vc_ = params->get_int_param("num_vc");
   arb_ = pisces_bandwidth_arbitrator::factory::get_param("arbitrator", params);
@@ -54,6 +102,15 @@ pisces_NtoM_queue::credit_handler()
     credit_handler_ = new_handler(this, &pisces_NtoM_queue::handle_credit);
   }
   return credit_handler_;
+}
+
+event_handler*
+pisces_NtoM_queue::payload_handler()
+{
+  if (!payload_handler_){
+    payload_handler_ = new_handler(this, &pisces_NtoM_queue::handle_payload);
+  }
+  return payload_handler_;
 }
 
 pisces_NtoM_queue::~pisces_NtoM_queue()
@@ -70,18 +127,19 @@ pisces_NtoM_queue::deadlock_check()
     pisces_payload* pkt = queue.front();
     while (pkt){
       deadlocked_channels_[pkt->next_port()].insert(pkt->next_vc());
-      pisces_output& poutput = outputs_[local_port(pkt->next_port())];
+      pisces_output& poutput = outputs_[local_outport(pkt->next_port())];
       event_handler* output = output_handler(pkt);
       if (output){
         pkt->set_inport(poutput.dst_inport);
         int vc = update_vc_ ? pkt->next_vc() : pkt->vc();
-        std::cerr << "Starting deadlock check on " << to_string() << " on queue " << i
-          << " going to " << output->to_string()
-          << " outport=" << pkt->next_port()
-          << " inport=" << pkt->inport()
-          << " vc=" << vc
-          << " for message " << pkt->to_string()
-          << std::endl;
+        std::cerr << "Starting deadlock check on " << to_string()
+                  << " on queue " << i
+                  << " going to " << output->to_string()
+                  << " outport=" << pkt->next_port()
+                  << " inport=" << pkt->inport()
+                  << " vc=" << vc
+                  << " for message " << pkt->to_string()
+                  << std::endl;
         output->deadlock_check(pkt);
       }
       queue.pop(1000000);
@@ -93,14 +151,11 @@ pisces_NtoM_queue::deadlock_check()
 void
 pisces_NtoM_queue::build_blocked_messages()
 {
-  //std::cerr << "\tbuild blocked messages on " << to_string() << std::endl;
   for (int i=0; i < queues_.size(); ++i){
     payload_queue& queue = queues_[i];
     pisces_payload* pkt = queue.pop(1000000);
     while (pkt){
       blocked_messages_[pkt->inport()][pkt->vc()].push_back(pkt);
-      //std::cerr << "\t\t" << "into port=" << msg->inport() << " vc=" << msg->vc()
-      //  << " out on port=" << msg->port() << " vc=" << msg->routable_message::vc() << std::endl;
       pkt = queue.pop(10000000);
     }
   }
@@ -132,15 +187,9 @@ pisces_NtoM_queue::deadlock_check(event* ev)
       outport, inport, vc);
   } else {
     pisces_payload* next = blocked.front();
-    pisces_output& poutput = outputs_[local_port(outport)];
+    pisces_output& poutput = outputs_[local_outport(outport)];
     event_handler* output = output_handler(next);
     next->set_inport(poutput.dst_inport);
-    std::cerr << to_string() << " going to " << output->to_string() 
-      << " outport=" << next->next_port()
-      << " inport=" << next->inport()
-      << " vc=" << next->next_vc()
-      << " : " << next->to_string()
-      << std::endl;
     output->deadlock_check(next);
   }
 }
@@ -155,17 +204,11 @@ pisces_NtoM_queue::input_name(pisces_payload* pkt)
 event_handler*
 pisces_NtoM_queue::output_handler(pisces_payload* pkt)
 {
-  int loc_port = local_port(pkt->next_port());
+  int loc_port = local_outport(pkt->next_port());
   event_handler* handler = outputs_[loc_port].handler;
   if (!handler)
     return nullptr;
-
-  //pisces_tiled_switch* sw = test_cast(pisces_tiled_switch, handler);
-  //if (sw){
-  //  return sw->demuxer(pkt->next_port());
-  //} else {
-    return handler;
-  //}
+  return handler;
 }
 
 std::string
@@ -177,38 +220,40 @@ pisces_NtoM_queue::output_name(pisces_payload* pkt)
 void
 pisces_NtoM_queue::send_payload(pisces_payload* pkt)
 {
-  int loc_port = local_port(pkt->next_port());
+  auto rpkt = static_cast<pisces_routable_packet*>(pkt);
   pisces_debug(
-    "On %s:%p mapped port:%d vc:%d to local port %d handling {%s} going to %s:%p",
-     to_string().c_str(), this,
-     pkt->next_port(), pkt->next_vc(),
-     loc_port,
-     pkt->to_string().c_str(),
-     output_name(pkt).c_str(),
-     output_handler(pkt));
-  send(arb_, pkt, inputs_[pkt->inport()], outputs_[loc_port]);
+        "On %s:%p local_port:%d vc:%d sending {%s} going to %s:%p",
+        to_string().c_str(), this,
+        rpkt->local_outport(), pkt->next_vc(),
+        pkt->to_string().c_str(),
+        output_name(pkt).c_str(),
+        output_handler(pkt));
+  send(arb_, pkt, inputs_[pkt->inport()], outputs_[rpkt->local_outport()]);
 }
 
 void
 pisces_NtoM_queue::handle_credit(event* ev)
 {
+  pisces_debug(
+    "On %s:%p handling credit",
+     to_string().c_str(), this);
   pisces_credit* pkt = static_cast<pisces_credit*>(ev);
-  int outport = pkt->port();
+  int loc_outport = local_outport_credit(pkt->port());
   int vc = pkt->vc();
-  int channel = outport * num_vc_ + vc;
+  int channel = loc_outport * num_vc_ + vc;
 
-  int& num_credits = credit(outport, vc);
+  int& num_credits = credit(loc_outport, vc);
 
   pisces_debug(
-    "On %s:%p with %d credits, handling credit {%s} for port:%d vc:%d channel:%d",
+    "On %s:%p with %d credits, handling credit {%s} for local port:%d vc:%d channel:%d",
      to_string().c_str(), this,
      num_credits,
      pkt->to_string().c_str(),
-     outport, vc, channel);
+     loc_outport, vc, channel);
 
   num_credits += pkt->num_credits();
 
-  pisces_payload* payload = queue(outport, vc).pop(num_credits);
+  pisces_payload* payload = queue(loc_outport, vc).pop(num_credits);
   if (payload) {
     num_credits -= payload->num_bytes();
     send_payload(payload);
@@ -220,27 +265,31 @@ pisces_NtoM_queue::handle_credit(event* ev)
 void
 pisces_NtoM_queue::handle_payload(event* ev)
 {
-  auto pkt = static_cast<pisces_payload*>(ev);
+  auto pkt = static_cast<pisces_routable_packet*>(ev);
   pkt->set_arrival(now());
 
-  int dst_vc = update_vc_ ? pkt->next_vc() : pkt->vc();
-  int dst_port = pkt->next_port();
+  int dst_vc = update_vc_ ? pkt->next_vc() : pkt->routable::vc();
+  int glob_port = pkt->global_outport();
+  int loc_port = local_outport(glob_port);
+  pkt->set_local_outport(loc_port);
+  pisces_debug(
+   "On %s:%p, handling {%s} for global_port:%d vc:%d local_port:%d",
+    to_string().c_str(), this,
+    pkt->to_string().c_str(),
+    glob_port, dst_vc, loc_port);
 
-  int& num_credits = credit(dst_port, dst_vc);
+  int& num_credits = credit(loc_port, dst_vc);
    pisces_debug(
-    "On %s:%p with %d credits, handling {%s} for port:%d vc:%d -> local port %d going to",// %s:%p",
+    "On %s:%p with %d credits, handling {%s} for local port:%d vc:%d",
      to_string().c_str(), this,
      num_credits,
      pkt->to_string().c_str(),
-     dst_port,
-     dst_vc,
-     local_port(dst_port));
-     //output_name(msg).c_str(), output_handler(msg));
+     loc_port, dst_vc);
 
-  if (dst_vc < 0 || dst_port < 0){
+  if (dst_vc < 0 || loc_port < 0){
     spkt_throw_printf(sprockit::value_error,
-       "On %s handling {%s}, got negative vc,port %d,%d",
-        to_string().c_str(), pkt->to_string().c_str(), dst_port, dst_vc);
+       "On %s handling {%s}, got negative vc,local_port %d,%d",
+        to_string().c_str(), pkt->to_string().c_str(), loc_port, dst_vc);
   }
 
   if (num_credits >= pkt->num_bytes()) {
@@ -251,9 +300,9 @@ pisces_NtoM_queue::handle_payload(event* ev)
     pisces_debug(
       "On %s:%p, pushing back %s on queue %d=(%d,%d) for nq=%d nvc=%d mapper=(%d,%d,%d)",
       to_string().c_str(), this, pkt->to_string().c_str(),
-      local_slot(dst_port, dst_vc), dst_port, dst_vc, queues_.size(), num_vc_,
+      slot(loc_port, dst_vc), loc_port, dst_vc, queues_.size(), num_vc_,
       port_offset_, port_div_, port_mod_);
-    queue(dst_port, dst_vc).push_back(pkt);
+      queue(loc_port, dst_vc).push_back(pkt);
   }
 }
 
@@ -266,65 +315,17 @@ pisces_NtoM_queue::resize(int num_ports)
 }
 
 void
-pisces_NtoM_queue::configure_basic_ports(int num_ports)
-{
-  port_offset_ = 0;
-  port_mod_ = 0;
-  port_div_ = 1;
-  resize(num_ports);
-}
-
-void
-pisces_NtoM_queue::configure_div_ports(int div, int max_port)
-{
-  debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
-    "On %s configured for div local ports: div=%d,max=%d",
-    to_string().c_str(), div, max_port);
-
-  port_offset_ = 0;
-  port_mod_ = 0;
-  port_div_ = div;
-  int my_num_ports = (max_port + 1) / port_div_;
-  resize(my_num_ports);
-}
-
-void
-pisces_NtoM_queue::configure_offset_ports(int offset, int max_port)
-{
-  debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
-    "On %s configured for offset local ports: offset=%d,max=%d",
-    to_string().c_str(), offset, max_port);
-
-  port_offset_ = offset;
-  port_mod_ = 0;
-  port_div_ = 1;
-  resize(max_port + 1);
-}
-
-void
-pisces_NtoM_queue::configure_mod_ports(int mod)
-{
-  debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
-    "On %s configured for modulo local ports: m=%d",
-    to_string().c_str(), mod);
-
-  port_offset_ = 0;
-  port_mod_ = mod;
-  port_div_ = 1;
-  resize(mod);
-}
-
-void
 pisces_NtoM_queue::set_input(
   sprockit::sim_parameters* port_params,
   int my_inport, int src_outport,
   event_handler* input)
 {
+  // ports are local for local links and global otherwise
+
   debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
     "On %s:%d setting input %s:%d",
     to_string().c_str(), my_inport,
     input->to_string().c_str(), src_outport);
-
   pisces_input inp;
   inp.src_outport = src_outport;
   inp.handler = input;
@@ -337,28 +338,38 @@ pisces_NtoM_queue::set_output(
   int my_outport, int dst_inport,
   event_handler* output)
 {
-  int loc_port = local_port(my_outport);
+  // must be called with local my_outport (if there's a difference)
+  // global port numbers aren't unique for individual elements of
+  // a tiled switch, for instance, so this is the only logical approach
+
+  // dst_inport is local for local links and global otherwise
+
   debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
-    "On %s:%d setting output %s:%d -> local port %d, mapper=(%d,%d,%d) of %d",
-    to_string().c_str(), my_outport,
+    "On %s setting output %s:%d for local port %d, mapper=(%d,%d,%d) of %d",
+    to_string().c_str(),
     output->to_string().c_str(), dst_inport,
-    loc_port, port_offset_, port_div_, port_mod_,
+    my_outport, port_offset_, port_div_, port_mod_,
     outputs_.size());
 
   pisces_output out;
   out.dst_inport = dst_inport;
   out.handler = output;
 
-  outputs_[loc_port] = out;
+  if (my_outport > outputs_.size()) {
+    spkt_throw_printf(sprockit::value_error,
+                      "pisces_crossbar: my_outport %i > outputs_.size() %i",
+                      my_outport, outputs_.size());
+  }
+  outputs_[my_outport] = out;
 
   int num_credits = port_params->get_byte_length_param("credits");
   int num_credits_per_vc = num_credits / num_vc_;
   for (int i=0; i < num_vc_; ++i) {
     debug_printf(sprockit::dbg::pisces_config,
-      "On %s:%p, initing %d credits on port:%d vc:%d",
-      to_string().c_str(), this,
-      num_credits_per_vc,
-      my_outport, i);
+                 "On %s:%p, initing %d credits on port:%d vc:%d",
+                 to_string().c_str(), this,
+                 num_credits_per_vc,
+                 my_outport, i);
     credit(my_outport, i) = num_credits_per_vc;
   }
 }
@@ -422,5 +433,3 @@ pisces_NtoM_queue::start_message(message* msg)
 
 }
 }
-
-
