@@ -51,8 +51,8 @@ class SSTReplacePragmaHandler : public SSTTokenStreamPragmaHandler
  public:
   SSTReplacePragmaHandler(SSTPragmaList& plist,
                         clang::CompilerInstance& CI,
-                        ReplGlobalASTVisitor& visitor,
-                        std::set<clang::Expr*>& deld) :
+                        SkeletonASTVisitor& visitor,
+                        std::set<clang::Stmt*>& deld) :
      SSTTokenStreamPragmaHandler("replace", plist, CI, visitor, deld){}
 
   static std::string
@@ -70,8 +70,8 @@ class SSTStartReplacePragmaHandler : public SSTTokenStreamPragmaHandler
  public:
   SSTStartReplacePragmaHandler(SSTPragmaList& plist,
                         clang::CompilerInstance& CI,
-                        ReplGlobalASTVisitor& visitor,
-                        std::set<clang::Expr*>& deld) :
+                        SkeletonASTVisitor& visitor,
+                        std::set<clang::Stmt*>& deld) :
      SSTTokenStreamPragmaHandler("start_replace", plist, CI, visitor, deld){}
 
  private:
@@ -84,8 +84,8 @@ class SSTStopReplacePragmaHandler : public SSTTokenStreamPragmaHandler
  public:
   SSTStopReplacePragmaHandler(SSTPragmaList& plist,
                         clang::CompilerInstance& CI,
-                        ReplGlobalASTVisitor& visitor,
-                        std::set<clang::Expr*>& deld) :
+                        SkeletonASTVisitor& visitor,
+                        std::set<clang::Stmt*>& deld) :
      SSTTokenStreamPragmaHandler("stop_replace", plist, CI, visitor, deld){}
 
  private:

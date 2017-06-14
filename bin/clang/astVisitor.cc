@@ -51,7 +51,7 @@ using namespace clang::driver;
 using namespace clang::tooling;
 
 void
-ReplGlobalASTVisitor::initConfig()
+SkeletonASTVisitor::initConfig()
 {
   const char* skelStr = getenv("SSTMAC_SKELETONIZE");
   if (skelStr){
@@ -61,27 +61,27 @@ ReplGlobalASTVisitor::initConfig()
 }
 
 void
-ReplGlobalASTVisitor::initMPICalls()
+SkeletonASTVisitor::initMPICalls()
 {
-  mpiCalls_["irecv"] = &ReplGlobalASTVisitor::visitPt2Pt;
-  mpiCalls_["isend"] = &ReplGlobalASTVisitor::visitPt2Pt;
-  mpiCalls_["recv"] = &ReplGlobalASTVisitor::visitPt2Pt;
-  mpiCalls_["send"] = &ReplGlobalASTVisitor::visitPt2Pt;
-  mpiCalls_["bcast"] = &ReplGlobalASTVisitor::visitPt2Pt; //bit of a hack
-  mpiCalls_["allreduce"] = &ReplGlobalASTVisitor::visitReduce;
-  mpiCalls_["reduce"] = &ReplGlobalASTVisitor::visitReduce;
-  mpiCalls_["allgather"] = &ReplGlobalASTVisitor::visitCollective;
+  mpiCalls_["irecv"] = &SkeletonASTVisitor::visitPt2Pt;
+  mpiCalls_["isend"] = &SkeletonASTVisitor::visitPt2Pt;
+  mpiCalls_["recv"] = &SkeletonASTVisitor::visitPt2Pt;
+  mpiCalls_["send"] = &SkeletonASTVisitor::visitPt2Pt;
+  mpiCalls_["bcast"] = &SkeletonASTVisitor::visitPt2Pt; //bit of a hack
+  mpiCalls_["allreduce"] = &SkeletonASTVisitor::visitReduce;
+  mpiCalls_["reduce"] = &SkeletonASTVisitor::visitReduce;
+  mpiCalls_["allgather"] = &SkeletonASTVisitor::visitCollective;
 }
 
 void
-ReplGlobalASTVisitor::initReservedNames()
+SkeletonASTVisitor::initReservedNames()
 {
   reservedNames_.insert("dont_ignore_this");
   reservedNames_.insert("ignore_for_app_name");
 }
 
 void
-ReplGlobalASTVisitor::initHeaders()
+SkeletonASTVisitor::initHeaders()
 {
   const char* headerListFile = getenv("SSTMAC_HEADERS");
   if (headerListFile == nullptr){
@@ -107,7 +107,7 @@ ReplGlobalASTVisitor::initHeaders()
 }
 
 bool
-ReplGlobalASTVisitor::shouldVisitDecl(VarDecl* D)
+SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
 {
   if (keepGlobals_ || isa<ParmVarDecl>(D) || D->isImplicit() || insideCxxMethod_){
     return false;
@@ -133,11 +133,11 @@ ReplGlobalASTVisitor::shouldVisitDecl(VarDecl* D)
 
 
 bool
-ReplGlobalASTVisitor::VisitCXXNewExpr(CXXNewExpr *expr)
+SkeletonASTVisitor::VisitCXXNewExpr(CXXNewExpr *expr)
 {
   if (noSkeletonize_) return true;
 
-  if (deletedExprs_.find(expr) != deletedExprs_.end()){
+  if (deletedStmts_.find(expr) != deletedStmts_.end()){
     //already deleted - do nothing here
     return true;
   }
@@ -229,7 +229,7 @@ ReplGlobalASTVisitor::VisitCXXNewExpr(CXXNewExpr *expr)
 
 
 bool
-ReplGlobalASTVisitor::VisitCXXDeleteExpr(CXXDeleteExpr* expr)
+SkeletonASTVisitor::VisitCXXDeleteExpr(CXXDeleteExpr* expr)
 {
   if (noSkeletonize_) return true;
 
@@ -250,7 +250,7 @@ ReplGlobalASTVisitor::VisitCXXDeleteExpr(CXXDeleteExpr* expr)
 
 
 bool
-ReplGlobalASTVisitor::VisitUnaryOperator(UnaryOperator* op)
+SkeletonASTVisitor::VisitUnaryOperator(UnaryOperator* op)
 {
   if (keepGlobals_) return true;
 
@@ -268,15 +268,30 @@ ReplGlobalASTVisitor::VisitUnaryOperator(UnaryOperator* op)
 }
 
 bool
-ReplGlobalASTVisitor::VisitDeclRefExpr(DeclRefExpr* expr)
+SkeletonASTVisitor::VisitDeclRefExpr(DeclRefExpr* expr)
 {
   NamedDecl* decl =  expr->getFoundDecl();
-  replaceGlobalUse(decl, expr->getSourceRange());
+  if (pragmaConfig_.nullVariables.find(decl) != pragmaConfig_.nullVariables.end()){
+    //we need to delete whatever parent statement this is a part of
+    if (stmt_contexts_.empty()){
+      errorAbort(expr->getLocStart(), *ci_,
+                 "null variable used in statement, but context list is empty");
+    }
+    Stmt* s = stmt_contexts_.front(); //delete the outermost stmt
+    if (!loop_contexts_.empty()){
+      errorAbort(expr->getLocStart(), *ci_,
+                 "null variable used inside loop - loop skeletonization "
+                 "must be indicated with #pragma sst compute outside loop");
+    }
+    deleteStmt(s);
+  } else {
+    replaceGlobalUse(decl, expr->getSourceRange());
+  }
   return true;
 }
 
 void
-ReplGlobalASTVisitor::visitCollective(CallExpr *expr)
+SkeletonASTVisitor::visitCollective(CallExpr *expr)
 {
   if (noSkeletonize_) return;
 
@@ -289,7 +304,7 @@ ReplGlobalASTVisitor::visitCollective(CallExpr *expr)
 }
 
 void
-ReplGlobalASTVisitor::visitReduce(CallExpr *expr)
+SkeletonASTVisitor::visitReduce(CallExpr *expr)
 {
   if (noSkeletonize_) return;
 
@@ -302,7 +317,7 @@ ReplGlobalASTVisitor::visitReduce(CallExpr *expr)
 }
 
 void
-ReplGlobalASTVisitor::visitPt2Pt(CallExpr *expr)
+SkeletonASTVisitor::visitPt2Pt(CallExpr *expr)
 {
   if (noSkeletonize_) return;
 
@@ -314,9 +329,9 @@ ReplGlobalASTVisitor::visitPt2Pt(CallExpr *expr)
 }
 
 bool
-ReplGlobalASTVisitor::VisitCXXMemberCallExpr(CXXMemberCallExpr* expr)
+SkeletonASTVisitor::VisitCXXMemberCallExpr(CXXMemberCallExpr* expr)
 {
-  if (noSkeletonize_ || pragma_config_.makeNoChanges) return true;
+  if (noSkeletonize_ || pragmaConfig_.makeNoChanges) return true;
 
   CXXRecordDecl* cls = expr->getRecordDecl();
   std::string clsName = cls->getNameAsString();
@@ -335,19 +350,21 @@ ReplGlobalASTVisitor::VisitCXXMemberCallExpr(CXXMemberCallExpr* expr)
 }
 
 bool
-ReplGlobalASTVisitor::VisitCallExpr(CallExpr* expr)
+SkeletonASTVisitor::VisitCallExpr(CallExpr* expr)
 {
   if (noSkeletonize_) return true;
 
-  for (auto& pair : pragma_config_.replacePragmas){
+
+  for (auto& pair : pragmaConfig_.replacePragmas){
     SSTReplacePragma* replPrg = cast<SSTReplacePragma>(pair.second);
     replPrg->run(expr, rewriter_);
   }
+
   return true;
 }
 
 void
-ReplGlobalASTVisitor::defineGlobalVarInitializers(const std::string& scope_unique_var_name,
+SkeletonASTVisitor::defineGlobalVarInitializers(const std::string& scope_unique_var_name,
    const std::string& var_name, const std::string& init_prefix, llvm::raw_string_ostream& os)
 {
   //this has an initial value we need to transfer over
@@ -358,7 +375,7 @@ ReplGlobalASTVisitor::defineGlobalVarInitializers(const std::string& scope_uniqu
 }
 
 void
-ReplGlobalASTVisitor::declareStaticInitializers(const std::string& scope_unique_var_name,
+SkeletonASTVisitor::declareStaticInitializers(const std::string& scope_unique_var_name,
                                                 llvm::raw_string_ostream& os)
 {
   //this has an initial value we need to transfer over
@@ -370,7 +387,7 @@ ReplGlobalASTVisitor::declareStaticInitializers(const std::string& scope_unique_
 }
 
 bool
-ReplGlobalASTVisitor::setupGlobalVar(const std::string& scope_prefix,
+SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
                                        const std::string& init_prefix,
                                        SourceLocation externVarsInsertLoc,
                                        SourceLocation getRefInsertLoc,
@@ -434,7 +451,7 @@ ReplGlobalASTVisitor::setupGlobalVar(const std::string& scope_prefix,
 }
 
 clang::SourceLocation
-ReplGlobalASTVisitor::getEndLoc(const VarDecl *D)
+SkeletonASTVisitor::getEndLoc(const VarDecl *D)
 {
   SourceLocation endLoc = Lexer::findLocationAfterToken(D->getLocEnd(), tok::semi,
                                  ci_->getSourceManager(), ci_->getLangOpts(), false);
@@ -442,21 +459,28 @@ ReplGlobalASTVisitor::getEndLoc(const VarDecl *D)
 }
 
 bool
-ReplGlobalASTVisitor::checkStaticFileVar(VarDecl* D)
+SkeletonASTVisitor::checkStaticFileVar(VarDecl* D)
 {
   SourceLocation end = getEndLoc(D);
   return setupGlobalVar(currentNs_->filePrefix(), "", end, end, Extern, D);
 }
 
 bool
-ReplGlobalASTVisitor::checkGlobalVar(VarDecl* D)
+SkeletonASTVisitor::checkGlobalVar(VarDecl* D)
 {
   SourceLocation end = getEndLoc(D);
   return setupGlobalVar("", "", end, end, Extern, D);
 }
 
+void
+SkeletonASTVisitor::deleteStmt(Stmt *s)
+{
+  SourceRange rng(s->getLocStart(), s->getLocEnd());
+  rewriter_.ReplaceText(rng,"");
+}
+
 bool
-ReplGlobalASTVisitor::checkStaticFxnVar(VarDecl *D)
+SkeletonASTVisitor::checkStaticFxnVar(VarDecl *D)
 {
   if (D->isStaticLocal()){
     FunctionDecl* outerFxn = fxn_contexts_.front();
@@ -498,7 +522,7 @@ ReplGlobalASTVisitor::checkStaticFxnVar(VarDecl *D)
 }
 
 bool
-ReplGlobalASTVisitor::checkDeclStaticClassVar(VarDecl *D)
+SkeletonASTVisitor::checkDeclStaticClassVar(VarDecl *D)
 {
   if (D->isStaticDataMember()){
     if (class_contexts_.size() > 1){
@@ -545,7 +569,7 @@ scopeString(SourceLocation loc, CompilerInstance& ci, DeclContext* ctx,
 }
 
 bool
-ReplGlobalASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
+SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
 {
   if (D->isStaticDataMember()){
     //okay - this sucks - I have no idea how this variable is being declared
@@ -586,7 +610,7 @@ ReplGlobalASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
 }
 
 bool
-ReplGlobalASTVisitor::VisitVarDecl(VarDecl* D){
+SkeletonASTVisitor::VisitVarDecl(VarDecl* D){
 
   if (!shouldVisitDecl(D)){
     return true;
@@ -625,14 +649,8 @@ ReplGlobalASTVisitor::VisitVarDecl(VarDecl* D){
   return true;
 }
 
-bool
-ReplGlobalASTVisitor::VisitDeclStmt(DeclStmt *S)
-{
-  return true;
-}
-
 void
-ReplGlobalASTVisitor::replaceMain(clang::FunctionDecl* mainFxn)
+SkeletonASTVisitor::replaceMain(clang::FunctionDecl* mainFxn)
 {
   SourceManager &SM = rewriter_.getSourceMgr();
   std::string sourceFile = SM.getFileEntryForID(SM.getMainFileID())->getName().str();
@@ -663,7 +681,7 @@ ReplGlobalASTVisitor::replaceMain(clang::FunctionDecl* mainFxn)
 }
 
 bool
-ReplGlobalASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
+SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
 {
   if (D->isMain()){
     replaceMain(D);
@@ -675,17 +693,17 @@ ReplGlobalASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
     VisitDecl(D); //check for pragmas on it
 
   fxn_contexts_.push_back(D);
-  if (!pragma_config_.skipNextStmt){
+  if (!pragmaConfig_.skipNextStmt){
     TraverseStmt(D->getBody());
   } else {
-    pragma_config_.skipNextStmt = false;
+    pragmaConfig_.skipNextStmt = false;
   }
   fxn_contexts_.pop_back();
   return true;
 }
 
 bool
-ReplGlobalASTVisitor::TraverseCXXRecordDecl(CXXRecordDecl *D)
+SkeletonASTVisitor::TraverseCXXRecordDecl(CXXRecordDecl *D)
 {
   class_contexts_.push_back(D);
   auto end = D->decls_end();
@@ -703,7 +721,7 @@ ReplGlobalASTVisitor::TraverseCXXRecordDecl(CXXRecordDecl *D)
  * @return
  */
 bool
-ReplGlobalASTVisitor::TraverseNamespaceDecl(NamespaceDecl* D)
+SkeletonASTVisitor::TraverseNamespaceDecl(NamespaceDecl* D)
 {
   GlobalVarNamespace* stash = currentNs_;
   GlobalVarNamespace& next = currentNs_->subspaces[D->getNameAsString()];
@@ -721,7 +739,7 @@ ReplGlobalASTVisitor::TraverseNamespaceDecl(NamespaceDecl* D)
 
 
 bool
-ReplGlobalASTVisitor::TraverseFunctionTemplateDecl(FunctionTemplateDecl *D)
+SkeletonASTVisitor::TraverseFunctionTemplateDecl(FunctionTemplateDecl *D)
 {
   static const std::set<std::string> skip_set = {
     "placement_new",
@@ -740,7 +758,7 @@ ReplGlobalASTVisitor::TraverseFunctionTemplateDecl(FunctionTemplateDecl *D)
 }
 
 bool
-ReplGlobalASTVisitor::TraverseCXXConstructorDecl(CXXConstructorDecl *D)
+SkeletonASTVisitor::TraverseCXXConstructorDecl(CXXConstructorDecl *D)
 {
   if (D->isTemplateInstantiation())
     return true;
@@ -755,25 +773,7 @@ ReplGlobalASTVisitor::TraverseCXXConstructorDecl(CXXConstructorDecl *D)
 }
 
 bool
-ReplGlobalASTVisitor::TraverseForStmt(ForStmt *S)
-{
-  if (pragma_config_.skipNextStmt){
-    pragma_config_.skipNextStmt = false;
-    return true;
-  }
-
-  bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(S);
-  if (!skipVisit){
-    if (S->getInit()) TraverseStmt(S->getInit());
-    if (S->getCond()) TraverseStmt(S->getCond());
-    if (S->getInc()) TraverseStmt(S->getInc());
-    if (S->getBody()) TraverseStmt(S->getBody());
-  }
-  return true;
-}
-
-bool
-ReplGlobalASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
+SkeletonASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
 {
   //do not traverse this - will mess everything up
   //this got implicitly inserted into AST - has no source location
@@ -783,10 +783,10 @@ ReplGlobalASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
   ++insideCxxMethod_;
   if (D->isThisDeclarationADefinition()) {
     VisitDecl(D); //check for pragmas
-    if (!pragma_config_.skipNextStmt){
+    if (!pragmaConfig_.skipNextStmt){
       TraverseStmt(D->getBody());
     } else {
-      pragma_config_.skipNextStmt = false;
+      pragmaConfig_.skipNextStmt = false;
     }
   }
   --insideCxxMethod_;
@@ -794,28 +794,52 @@ ReplGlobalASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
 }
 
 bool
-ReplGlobalASTVisitor::activatePragmasForStmt(Stmt* S)
+SkeletonASTVisitor::TraverseDeclStmt(DeclStmt* stmt, DataRecursionQueue* queue)
 {
-  SSTPragma* prg;
-  bool skipVisit = false;
-  while ((prg = pragmas_.takeMatch(S))){
-    if (skipVisit){
-      errorAbort(S->getLocStart(), *ci_,
-           "code block deleted by pragma - invalid pragma combination");
+  if (noSkeletonize_) return true;
+
+  VisitStmt(stmt); //do any common stmt ops like pragmas
+  stmt_contexts_.push_back(stmt);
+  Decl* D = stmt->getSingleDecl();
+  if (D){
+    TraverseDecl(D);
+    if (pragmaConfig_.nullVariables.find(D) != pragmaConfig_.nullVariables.end()){
+      deleteStmt(stmt);
     }
-    pragma_config_.pragmaDepth++;
-    activePragmas_[S] = prg;
-    //pragma takes precedence - must occur in pre-visit
-    prg->activate(S, rewriter_, pragma_config_);
-    //a compute pragma totally deletes the block
-    bool blockDeleted = prg->cls == SSTPragma::Compute || prg->cls == SSTPragma::Delete;
-    skipVisit = skipVisit || blockDeleted;
+  } else {
+    for (auto* D : stmt->decls()){
+      TraverseDecl(D);
+    }
   }
-  return skipVisit;
+  stmt_contexts_.pop_back();
+
+  return true;
 }
 
 bool
-ReplGlobalASTVisitor::VisitStmt(Stmt *S)
+SkeletonASTVisitor::TraverseForStmt(ForStmt *S, DataRecursionQueue* queue)
+{
+  if (noSkeletonize_) return true;
+
+  if (pragmaConfig_.skipNextStmt){
+    pragmaConfig_.skipNextStmt = false;
+    return true;
+  }
+
+  loop_contexts_.push_back(S);
+  bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(S);
+  if (!skipVisit){
+    if (S->getInit()) TraverseStmt(S->getInit());
+    if (S->getCond()) TraverseStmt(S->getCond());
+    if (S->getInc()) TraverseStmt(S->getInc());
+    if (S->getBody()) TraverseStmt(S->getBody());
+  }
+  loop_contexts_.pop_back();
+  return true;
+}
+
+bool
+SkeletonASTVisitor::VisitStmt(Stmt *S)
 {
   if (noSkeletonize_) return true;
 
@@ -825,43 +849,85 @@ ReplGlobalASTVisitor::VisitStmt(Stmt *S)
 }
 
 bool
-ReplGlobalASTVisitor::VisitDecl(Decl *D)
+SkeletonASTVisitor::VisitDecl(Decl *D)
 {
   if (noSkeletonize_) return true;
 
   SSTPragma* prg;
   while ((prg = pragmas_.takeMatch(D))){
-    pragma_config_.pragmaDepth++;
+    pragmaConfig_.pragmaDepth++;
     //pragma takes precedence - must occur in pre-visit
-    prg->activate(D, rewriter_, pragma_config_);
-    pragma_config_.pragmaDepth--;
+    prg->activate(D, rewriter_, pragmaConfig_);
+    pragmaConfig_.pragmaDepth--;
   }
 
   return true;
 }
 
 bool
-ReplGlobalASTVisitor::dataTraverseStmtPre(Stmt* S)
+SkeletonASTVisitor::dataTraverseStmtPre(Stmt* S)
 {
+  switch(S->getStmtClass()){
+    case Stmt::ForStmtClass:
+    case Stmt::BinaryOperatorClass:
+    case Stmt::CompoundAssignOperatorClass:
+    case Stmt::CallExprClass:
+      stmt_contexts_.push_back(S);
+      break;
+    default:
+      break;
+  }
+
   return true;
 }
 
 bool
-ReplGlobalASTVisitor::dataTraverseStmtPost(Stmt* S)
+SkeletonASTVisitor::dataTraverseStmtPost(Stmt* S)
 {
+  switch(S->getStmtClass()){
+    case Stmt::ForStmtClass:
+    case Stmt::BinaryOperatorClass:
+    case Stmt::CompoundAssignOperatorClass:
+    case Stmt::CallExprClass:
+      stmt_contexts_.pop_back();
+      break;
+    default:
+      break;
+  }
+
   auto iter = activePragmas_.find(S);
   if (iter != activePragmas_.end()){
     SSTPragma* prg = iter->second;
-    prg->deactivate(S, pragma_config_);
+    prg->deactivate(S, pragmaConfig_);
     activePragmas_.erase(iter);
-    pragma_config_.pragmaDepth--;
+    pragmaConfig_.pragmaDepth--;
   }
   return true;
 }
 
+bool
+SkeletonASTVisitor::activatePragmasForStmt(Stmt* S)
+{
+  SSTPragma* prg;
+  bool skipVisit = false;
+  while ((prg = pragmas_.takeMatch(S))){
+    if (skipVisit){
+      errorAbort(S->getLocStart(), *ci_,
+           "code block deleted by pragma - invalid pragma combination");
+    }
+    pragmaConfig_.pragmaDepth++;
+    activePragmas_[S] = prg;
+    //pragma takes precedence - must occur in pre-visit
+    prg->activate(S, rewriter_, pragmaConfig_);
+    //a compute pragma totally deletes the block
+    bool blockDeleted = prg->cls == SSTPragma::Compute || prg->cls == SSTPragma::Delete;
+    skipVisit = skipVisit || blockDeleted;
+  }
+  return skipVisit;
+}
 
 void
-ReplGlobalASTVisitor::replaceGlobalUse(NamedDecl* decl, SourceRange replRng)
+SkeletonASTVisitor::replaceGlobalUse(NamedDecl* decl, SourceRange replRng)
 {
   if (keepGlobals_) return;
 

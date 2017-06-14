@@ -49,7 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include "util.h"
 #include <set>
 
-class ReplGlobalASTVisitor;
+class SkeletonASTVisitor;
 
 struct SSTReplacePragma;
 struct PragmaConfig {
@@ -57,6 +57,7 @@ struct PragmaConfig {
   bool skipNextStmt;
   bool makeNoChanges;
   std::map<std::string,SSTReplacePragma*> replacePragmas;
+  std::set<clang::Decl*> nullVariables;
   PragmaConfig() : pragmaDepth(0),
     skipNextStmt(false),
     makeNoChanges(false) {}
@@ -69,14 +70,15 @@ struct SSTPragma {
     Delete=1,
     Compute=2,
     New=3,
-    Keep=4
+    Keep=4,
+    NullVariable=5
   } class_t;
   clang::StringRef name;
   clang::SourceLocation startLoc;
   clang::SourceLocation endLoc;
   clang::CompilerInstance* CI;
-  ReplGlobalASTVisitor* visitor;
-  std::set<clang::Expr*>* deleted;
+  SkeletonASTVisitor* visitor;
+  std::set<clang::Stmt*>* deleted;
   SSTPragmaList* pragmaList;
   class_t cls;
 
@@ -91,6 +93,15 @@ struct SSTPragma {
   virtual void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) = 0;
   virtual void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig &cfg){} //not required
   virtual void deactivate(clang::Stmt* s, PragmaConfig& cfg){} //not required
+};
+
+class SSTNullVariablePragma : public SSTPragma {
+ public:
+  SSTNullVariablePragma() : SSTPragma(NullVariable) {}
+ private:
+  void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override;
+  void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg) override;
+  void replace(clang::Stmt* s, clang::Rewriter& r, const char* repl);
 };
 
 class SSTDeletePragma : public SSTPragma {
@@ -214,15 +225,15 @@ class SSTPragmaHandler : public clang::PragmaHandler {
  protected:
   SSTPragmaHandler(const char* name, SSTPragmaList& plist,
                    clang::CompilerInstance& ci,
-                   ReplGlobalASTVisitor& visitor,
-                   std::set<clang::Expr*>& deleted) :
+                   SkeletonASTVisitor& visitor,
+                   std::set<clang::Stmt*>& deleted) :
     PragmaHandler(name), pragmas_(plist), ci_(ci),
     deleted_(deleted), visitor_(visitor)
   {}
   SSTPragmaList& pragmas_;
   clang::CompilerInstance& ci_;
-  ReplGlobalASTVisitor& visitor_;
-  std::set<clang::Expr*>& deleted_;
+  SkeletonASTVisitor& visitor_;
+  std::set<clang::Stmt*>& deleted_;
 
   /**
    * @brief configure Assuming the PP lex position is currently on eod,
@@ -248,8 +259,8 @@ class SSTSimplePragmaHandler_base : public SSTPragmaHandler {
  protected:
   SSTSimplePragmaHandler_base(const char* name, SSTPragmaList& plist,
                               clang::CompilerInstance& CI,
-                              ReplGlobalASTVisitor& visitor,
-                              std::set<clang::Expr*>& deld) :
+                              SkeletonASTVisitor& visitor,
+                              std::set<clang::Stmt*>& deld) :
     SSTPragmaHandler(name, plist, CI, visitor, deld)
   {}
 
@@ -269,8 +280,8 @@ class SSTSimplePragmaHandler : public SSTSimplePragmaHandler_base
    */
   SSTSimplePragmaHandler(const char* name, SSTPragmaList& plist,
                          clang::CompilerInstance& CI,
-                         ReplGlobalASTVisitor& visitor,
-                         std::set<clang::Expr*>& deld) :
+                         SkeletonASTVisitor& visitor,
+                         std::set<clang::Stmt*>& deld) :
     SSTSimplePragmaHandler_base(name, plist, CI, visitor, deld)
   {}
 
@@ -287,7 +298,7 @@ class SSTSimplePragmaHandler : public SSTSimplePragmaHandler_base
 class SSTDeletePragmaHandler : public SSTSimplePragmaHandler<SSTDeletePragma> {
  public:
   SSTDeletePragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
-                         ReplGlobalASTVisitor& visitor, std::set<clang::Expr*>& deld) :
+                         SkeletonASTVisitor& visitor, std::set<clang::Stmt*>& deld) :
     SSTSimplePragmaHandler<SSTDeletePragma>("delete", plist, CI, visitor, deld)
   {}
 };
@@ -295,7 +306,7 @@ class SSTDeletePragmaHandler : public SSTSimplePragmaHandler<SSTDeletePragma> {
 class SSTMallocPragmaHandler : public SSTSimplePragmaHandler<SSTMallocPragma> {
  public:
   SSTMallocPragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
-                         ReplGlobalASTVisitor& visitor, std::set<clang::Expr*>& deld) :
+                         SkeletonASTVisitor& visitor, std::set<clang::Stmt*>& deld) :
    SSTSimplePragmaHandler<SSTMallocPragma>("malloc", plist, CI, visitor, deld)
   {}
 };
@@ -303,7 +314,7 @@ class SSTMallocPragmaHandler : public SSTSimplePragmaHandler<SSTMallocPragma> {
 class SSTNewPragmaHandler : public SSTSimplePragmaHandler<SSTNewPragma> {
  public:
   SSTNewPragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
-                      ReplGlobalASTVisitor& visitor, std::set<clang::Expr*>& deld) :
+                      SkeletonASTVisitor& visitor, std::set<clang::Stmt*>& deld) :
    SSTSimplePragmaHandler<SSTNewPragma>("new", plist, CI, visitor, deld)
   {}
 };
@@ -311,8 +322,16 @@ class SSTNewPragmaHandler : public SSTSimplePragmaHandler<SSTNewPragma> {
 class SSTKeepPragmaHandler : public SSTSimplePragmaHandler<SSTKeepPragma> {
  public:
   SSTKeepPragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
-                      ReplGlobalASTVisitor& visitor, std::set<clang::Expr*>& deld) :
+                      SkeletonASTVisitor& visitor, std::set<clang::Stmt*>& deld) :
    SSTSimplePragmaHandler<SSTKeepPragma>("keep", plist, CI, visitor, deld)
+  {}
+};
+
+class SSTNullVariablePragmaHandler : public SSTSimplePragmaHandler<SSTNullVariablePragma> {
+ public:
+  SSTNullVariablePragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
+                      SkeletonASTVisitor& visitor, std::set<clang::Stmt*>& deld) :
+   SSTSimplePragmaHandler<SSTNullVariablePragma>("null_variable", plist, CI, visitor, deld)
   {}
 };
 
@@ -332,8 +351,8 @@ class SSTTokenStreamPragmaHandler : public SSTPragmaHandler
    */
   SSTTokenStreamPragmaHandler(const char* name, SSTPragmaList& plist,
                          clang::CompilerInstance& CI,
-                         ReplGlobalASTVisitor& visitor,
-                         std::set<clang::Expr*>& deld) :
+                         SkeletonASTVisitor& visitor,
+                         std::set<clang::Stmt*>& deld) :
     SSTPragmaHandler(name, plist, CI, visitor, deld)
   {}
 

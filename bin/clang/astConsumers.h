@@ -51,7 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 class ReplaceASTConsumer : public clang::ASTConsumer {
  public:
-  ReplaceASTConsumer(clang::Rewriter &R, ReplGlobalASTVisitor& r) :
+  ReplaceASTConsumer(clang::Rewriter &R, SkeletonASTVisitor& r) :
     visitor_(r)
   {
   }
@@ -59,7 +59,7 @@ class ReplaceASTConsumer : public clang::ASTConsumer {
   bool HandleTopLevelDecl(clang::DeclGroupRef DR) override;
 
  private:
-  ReplGlobalASTVisitor& visitor_;
+  SkeletonASTVisitor& visitor_;
 
 };
 

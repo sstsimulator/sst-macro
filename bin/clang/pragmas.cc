@@ -314,4 +314,26 @@ SSTMallocPragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig& cfg)
 #undef scase
 }
 
+void
+SSTNullVariablePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
+{
+  cfg.nullVariables.insert(d);
+}
+
+void
+SSTNullVariablePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+{
+  if (s->getStmtClass() == Stmt::DeclStmtClass){
+    DeclStmt* ds = cast<DeclStmt>(s);
+    Decl* d = ds->getSingleDecl();
+    if (d == nullptr){
+      errorAbort(s->getLocStart(), *CI,
+                 "pragma null_variable only valid for single declarations");
+    }
+    activate(d,r,cfg);
+  } else {
+    errorAbort(s->getLocStart(), *CI,
+        "pragma null_variable should only apply to declaration statements");
+  }
+}
 

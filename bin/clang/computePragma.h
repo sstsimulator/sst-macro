@@ -66,8 +66,8 @@ class SSTOpenMPParallelPragmaHandler : public SSTTokenStreamPragmaHandler
  public:
   SSTOpenMPParallelPragmaHandler(SSTPragmaList& plist,
                          clang::CompilerInstance& CI,
-                         ReplGlobalASTVisitor& visitor,
-                         std::set<clang::Expr*>& deld) :
+                         SkeletonASTVisitor& visitor,
+                         std::set<clang::Stmt*>& deld) :
       SSTTokenStreamPragmaHandler("parallel", plist, CI, visitor, deld){}
  private:
   SSTPragma* allocatePragma(clang::SourceLocation loc, const std::list<clang::Token> &tokens) const {
@@ -79,7 +79,7 @@ class SSTOpenMPParallelPragmaHandler : public SSTTokenStreamPragmaHandler
 class SSTComputePragmaHandler : public SSTSimplePragmaHandler<SSTComputePragma> {
  public:
   SSTComputePragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
-                      ReplGlobalASTVisitor& visitor, std::set<clang::Expr*>& deld) :
+                      SkeletonASTVisitor& visitor, std::set<clang::Stmt*>& deld) :
    SSTSimplePragmaHandler<SSTComputePragma>("compute", plist, CI, visitor, deld)
   {}
 };

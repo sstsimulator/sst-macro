@@ -52,12 +52,24 @@ Questions? Contact sst-macro-help@sandia.gov
 #define visitFxn(cls) \
   bool Visit##cls(clang::cls* c){ return TestStmtMacro(c); }
 
-class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisitor> {
+/**
+ * @brief The SkeletonASTVisitor class
+ *
+ * Go through every node in the abstract syntax tree and perform
+ * certain skeletonization operations on them using the rewriter object.
+ * For certain nodes, we Visit. This means performing a single visit
+ * operation in isolation. We do not need parent or children nodes in a Vist.
+ * For certain nodes, we must Traverse. The means performing a pre-visit operation
+ * before visiting and child nodes. A post-visit operation is then performed
+ * after visiting all child nodes. A traversal also gives the option
+ * to cancel all visits to child nodes.
+ */
+class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor> {
  public:
-  ReplGlobalASTVisitor(clang::Rewriter &R,
+  SkeletonASTVisitor(clang::Rewriter &R,
                        GlobalVarNamespace& ns,
-                       std::set<clang::Expr*>& deld) :
-    rewriter_(R), visitingGlobal_(false), deletedExprs_(deld),
+                       std::set<clang::Stmt*>& deld) :
+    rewriter_(R), visitingGlobal_(false), deletedStmts_(deld),
     globalNs_(ns), currentNs_(&ns),
     insideCxxMethod_(0),
     foundCMain_(false), keepGlobals_(false), noSkeletonize_(true)
@@ -68,25 +80,69 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
     initConfig();
   }
 
-  bool VisitStmt(clang::Stmt* S);
-
-  bool VisitDecl(clang::Decl* D);
-
-  bool VisitDeclRefExpr(clang::DeclRefExpr* expr);
-
-  bool VisitCXXNewExpr(clang::CXXNewExpr* expr);
-
-  bool VisitCXXDeleteExpr(clang::CXXDeleteExpr* expr);
-
-  bool VisitCXXMemberCallExpr(clang::CXXMemberCallExpr* expr);
-
-  bool VisitUnaryOperator(clang::UnaryOperator* op);
-
-  bool VisitCallExpr(clang::CallExpr* expr);
-
   void setCompilerInstance(clang::CompilerInstance& c){
     ci_ = &c;
   }
+
+  /**
+   * @brief VisitStmt Activate any pragmas associated with this statement
+   * This function is not called if a more specific matching function is found
+   * @param S
+   * @return
+   */
+  bool VisitStmt(clang::Stmt* S);
+
+  /**
+   * @brief VisitDecl Activate any pragmas associated with this declaration
+   * This function is not called if a more specific matching function is found
+   * @param D
+   * @return
+   */
+  bool VisitDecl(clang::Decl* D);
+
+  /**
+   * @brief VisitDeclRefExpr Examine the usage of a variable to determine
+   * if it is either a global variable or a pragma null_variable and therefore
+   * requires a rewrite
+   * @param expr
+   * @return
+   */
+  bool VisitDeclRefExpr(clang::DeclRefExpr* expr);
+
+  /**
+   * @brief VisitCXXNewExpr Capture all usages of operator new. Rewrite all
+   * operator new calls into SST-specific memory management functions.
+   * @param expr
+   * @return
+   */
+  bool VisitCXXNewExpr(clang::CXXNewExpr* expr);
+
+  /**
+   * @brief VisitCXXNewExpr Capture all usages of operator delete. Rewrite all
+   * operator delete calls into SST-specific memory management functions.
+   * @param expr
+   * @return
+   */
+  bool VisitCXXDeleteExpr(clang::CXXDeleteExpr* expr);
+
+  /**
+   * @brief VisitCXXMemberCallExpr Certain function calls get redirected to
+   * calls on member functions of SST classes. See if this is one such instance.
+   * Certain rewriting operations might be required. This most often occurs
+   * for MPI calls to convert payloads into null buffers.
+   * @param expr
+   * @return
+   */
+  bool VisitCXXMemberCallExpr(clang::CXXMemberCallExpr* expr);
+
+  /**
+   * @brief VisitUnaryOperator Currently no rewrite operations are performed.
+   * Unary operators are not valid in certain global variables usages.
+   * Validate that this unary operator is not a violation.
+   * @param op
+   * @return
+   */
+  bool VisitUnaryOperator(clang::UnaryOperator* op);
 
   /**
    * @brief VisitVarDecl We only need to visit variables once down the AST.
@@ -96,7 +152,14 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
    */
   bool VisitVarDecl(clang::VarDecl* D);
 
-  bool VisitDeclStmt(clang::DeclStmt* S);
+  /**
+   * @brief Activate any pragmas associated with this.
+   * In contrast to VisitStmt, call expressions can only have special replace pragmas.
+   * We have to push this onto the contexts list in case we have any null variables
+   * @param expr
+   * @return
+   */
+  bool VisitCallExpr(clang::CallExpr* expr);
 
   /**
    * @brief TraverseNamespaceDecl We have to traverse namespaces.
@@ -106,36 +169,83 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
    */
   bool TraverseNamespaceDecl(clang::NamespaceDecl* D);
 
+  /**
+   * @brief TraverseCXXRecordDecl We have to traverse record declarations.
+   *        In the pre-visit, we have to push the Decl onto a class contexts list
+   *        In the post-visit, we pop the Decl off the list
+   * @param D
+   * @return
+   */
   bool TraverseCXXRecordDecl(clang::CXXRecordDecl* D);
 
+  /**
+   * @brief TraverseFunctionDecl  We have to traverse function declarations
+   *        In the pre-visit, we have to push the Decl onto a function contexts list
+   *        In the post-visit, we pop the Decl off the list
+   * @param D
+   * @return
+   */
   bool TraverseFunctionDecl(clang::FunctionDecl* D);
 
-  bool TraverseForStmt(clang::ForStmt* S);
+  /**
+   * @brief TraverseForStmt We have to traverse for loops.
+   *        In the pre-visit, we have to push the ForStmt onto a context list
+   *        In the post-visit, we have to pop the ForStmt off the list
+   * @param S
+   * @return
+   */
+  bool TraverseForStmt(clang::ForStmt* S, DataRecursionQueue* queue = nullptr);
 
+  bool TraverseDeclStmt(clang::DeclStmt* op, DataRecursionQueue* queue = nullptr);
+
+  /**
+   * @brief TraverseFunctionTemplateDecl We have to traverse template functions
+   * No special pre or post visit is performed. However, there are certain SST/macro
+   * template functions that should be skipped. If this is a SST/macro function template,
+   * do not visit any of the child nodes.
+   * @param D
+   * @return
+   */
   bool TraverseFunctionTemplateDecl(clang::FunctionTemplateDecl* D);
 
+  /**
+   * @brief TraverseCXXMethodDecl We have to traverse function declarations
+   *        In the pre-visit, we have to push the Decl onto a function contexts list
+   *        In the post-visit, we pop the Decl off the list
+   * @param D
+   * @return
+   */
   bool TraverseCXXMethodDecl(clang::CXXMethodDecl *D);
 
+  /**
+   * @brief TraverseCXXConstructorDecl We have to traverse constructors
+   *        If the constructor is actually a template instantation of a specific type,
+   *        we should skip it and not visit any of the child nodes
+   * @param D
+   * @return
+   */
   bool TraverseCXXConstructorDecl(clang::CXXConstructorDecl* D);
 
+  /**
+   * @brief dataTraverseStmtPost Call after the traversal of all statements.
+   * Certain pragmas might have deactivate operations to be performed after traversing
+   * the statement. If there are any activate pragmas, deactivate them now
+   * @param S
+   * @return
+   */
   bool dataTraverseStmtPre(clang::Stmt* S);
 
+  /**
+   * @brief dataTraverseStmtPost Call after the traversal of all statements.
+   * Certain pragmas might have deactivate operations to be performed after traversing
+   * the statement. If there are any activate pragmas, deactivate them now
+   * @param S
+   * @return
+   */
   bool dataTraverseStmtPost(clang::Stmt* S);
-
-  void replaceGlobalUse(clang::NamedDecl* decl, clang::SourceRange rng);
-
-  bool isGlobal(clang::DeclRefExpr* expr){
-    return globals_.find(expr->getFoundDecl()) != globals_.end();
-  }
 
   SSTPragmaList& getPragmas(){
     return pragmas_;
-  }
-
-  const std::map<clang::NamedDecl*,std::string>&
-  globalVariables() const {
-    return globals_;
-
   }
 
   void setVisitingGlobal(bool flag){
@@ -168,7 +278,7 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
   clang::CompilerInstance* ci_;
   SSTPragmaList pragmas_;
   bool visitingGlobal_;
-  std::set<clang::Expr*>& deletedExprs_;
+  std::set<clang::Stmt*>& deletedStmts_;
   GlobalVarNamespace& globalNs_;
   GlobalVarNamespace* currentNs_;
   std::map<clang::NamedDecl*,std::string> globals_;
@@ -177,19 +287,27 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
   int insideCxxMethod_;
   std::list<clang::FunctionDecl*> fxn_contexts_;
   std::list<clang::CXXRecordDecl*> class_contexts_;
+  std::list<clang::ForStmt*> loop_contexts_;
+  std::list<clang::Stmt*> stmt_contexts_;
   bool foundCMain_;
   std::string mainName_;
   bool keepGlobals_;
   bool noSkeletonize_;
   std::set<std::string> validHeaders_;
   std::set<std::string> reservedNames_;
-  PragmaConfig pragma_config_;
+  PragmaConfig pragmaConfig_;
   std::map<clang::Stmt*,SSTPragma*> activePragmas_;
 
-  typedef void (ReplGlobalASTVisitor::*MPI_Call)(clang::CallExpr* expr);
+  typedef void (SkeletonASTVisitor::*MPI_Call)(clang::CallExpr* expr);
   std::map<std::string, MPI_Call> mpiCalls_;
 
  private:
+  void replaceGlobalUse(clang::NamedDecl* decl, clang::SourceRange rng);
+
+  bool isGlobal(clang::DeclRefExpr* expr){
+    return globals_.find(expr->getFoundDecl()) != globals_.end();
+  }
+
   bool activatePragmasForStmt(clang::Stmt* S);
   void visitCollective(clang::CallExpr* expr);
   void visitReduce(clang::CallExpr* expr);
@@ -256,6 +374,12 @@ class ReplGlobalASTVisitor : public clang::RecursiveASTVisitor<ReplGlobalASTVisi
   void declareStaticInitializers(
      const std::string& scope_unique_var_name,
      llvm::raw_string_ostream& os);
+
+  /**
+   * @brief deleteStmt Delete a statement completely in the source-to-source
+   * @param s
+   */
+  void deleteStmt(clang::Stmt* s);
 
   /**
    * @brief declareSSTExternVars
