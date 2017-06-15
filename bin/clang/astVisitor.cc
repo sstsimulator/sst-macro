@@ -416,9 +416,9 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
   {std::string empty;
   llvm::raw_string_ostream os(empty);
   /** Add an extern declaration of all sstmac stack config vars */
-  os << "extern int sstmac_global_stacksize; ";
+  os << "extern int sstmac_global_stacksize; "
+     << "extern int __offset_" << scopeUniqueVarName << "; ";
   if (!D->hasExternalStorage()){
-    os << "extern int __offset_" << scopeUniqueVarName << "; ";
     currentNs_->replVars.insert(scopeUniqueVarName);
     if (red_ty == Extern){
       defineGlobalVarInitializers(scopeUniqueVarName, D->getNameAsString(), init_prefix, os);
@@ -800,8 +800,8 @@ SkeletonASTVisitor::TraverseDeclStmt(DeclStmt* stmt, DataRecursionQueue* queue)
 
   VisitStmt(stmt); //do any common stmt ops like pragmas
   stmt_contexts_.push_back(stmt);
-  Decl* D = stmt->getSingleDecl();
-  if (D){
+  if (stmt->isSingleDecl()){
+    Decl* D = stmt->getSingleDecl();
     TraverseDecl(D);
     if (pragmaConfig_.nullVariables.find(D) != pragmaConfig_.nullVariables.end()){
       deleteStmt(stmt);

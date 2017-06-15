@@ -5,5 +5,9 @@ inline static int omp_get_num_threads(){
   return 1;
 }
 
+inline static int omp_get_max_threads(){
+  return 1;
+}
+
 #endif
 

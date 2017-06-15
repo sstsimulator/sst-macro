@@ -85,7 +85,7 @@ eager0::incoming_payload(mpi_queue *queue,
   if (req) {
     if (msg->local_buffer().ptr && req->recv_buffer_){
       msg->remote_buffer().ptr = req->recv_buffer_;
-      msg->move_local_to_remote();
+      msg->inject_local_to_remote();
     }
     queue->finalize_recv(msg, req);
 #if SSTMAC_COMM_SYNC_STATS
