@@ -75,6 +75,7 @@ class ComputeVisitor  {
   uint32_t currentGeneration; //0 is sentinel for not inited
   std::map<MemoryLocation,AccessHistory,MemoryLocationCompare> arrays;
   std::map<clang::NamedDecl*,Variable> variables;
+  std::map<clang::ForStmt*,std::string> explicitLoopCounts_;
   clang::CompilerInstance& CI;
   SSTPragmaList& pragmas;
   Replacements repls;

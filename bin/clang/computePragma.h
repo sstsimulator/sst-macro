@@ -61,6 +61,21 @@ class SSTComputePragma : public SSTPragma {
   void visitAndReplaceStmt(clang::Stmt* stmt, clang::Rewriter& r, PragmaConfig& cfg);
 };
 
+class SSTLoopCountPragma : public SSTPragma {
+ public:
+  SSTLoopCountPragma(const std::list<clang::Token> &tokens);
+  const std::string& count() const {
+    return loopCount_;
+  }
+
+  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override {
+    //no activate actions are actually required
+    //other code in computeVisitor.cc will detect this pragma and trigger actions
+  }
+ private:
+  std::string loopCount_;
+};
+
 class SSTOpenMPParallelPragmaHandler : public SSTTokenStreamPragmaHandler
 {
  public:
@@ -73,6 +88,21 @@ class SSTOpenMPParallelPragmaHandler : public SSTTokenStreamPragmaHandler
   SSTPragma* allocatePragma(clang::SourceLocation loc, const std::list<clang::Token> &tokens) const {
     //this actually just maps cleanly into a compute pragma
     return new SSTComputePragma;
+  }
+};
+
+class SSTLoopCountPragmaHandler : public SSTTokenStreamPragmaHandler
+{
+ public:
+  SSTLoopCountPragmaHandler(SSTPragmaList& plist,
+                        clang::CompilerInstance& CI,
+                        SkeletonASTVisitor& visitor,
+                        std::set<clang::Stmt*>& deld) :
+     SSTTokenStreamPragmaHandler("loop_count", plist, CI, visitor, deld){}
+ private:
+  SSTPragma* allocatePragma(clang::SourceLocation loc, const std::list<clang::Token> &tokens) const {
+    //this actually just maps cleanly into a compute pragma
+    return new SSTLoopCountPragma(tokens);
   }
 };
 

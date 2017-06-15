@@ -71,7 +71,8 @@ struct SSTPragma {
     Compute=2,
     New=3,
     Keep=4,
-    NullVariable=5
+    NullVariable=5,
+    LoopCount=6
   } class_t;
   clang::StringRef name;
   clang::SourceLocation startLoc;
@@ -93,6 +94,11 @@ struct SSTPragma {
   virtual void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) = 0;
   virtual void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig &cfg){} //not required
   virtual void deactivate(clang::Stmt* s, PragmaConfig& cfg){} //not required
+
+  static void tokenStreamToString(clang::SourceLocation loc,
+      std::list<clang::Token>::const_iterator beg,
+      std::list<clang::Token>::const_iterator end,
+      std::ostream& os, clang::CompilerInstance& CI);
 };
 
 class SSTNullVariablePragma : public SSTPragma {

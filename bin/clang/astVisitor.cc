@@ -356,7 +356,7 @@ SkeletonASTVisitor::VisitCallExpr(CallExpr* expr)
 
 
   for (auto& pair : pragmaConfig_.replacePragmas){
-    SSTReplacePragma* replPrg = cast<SSTReplacePragma>(pair.second);
+    SSTReplacePragma* replPrg = static_cast<SSTReplacePragma*>(pair.second);
     replPrg->run(expr, rewriter_);
   }
 
@@ -578,6 +578,10 @@ SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
     //we must the variable declarations in the full namespace - we can't cheat
     DeclContext* lexicalContext = D->getLexicalDeclContext();
     DeclContext* semanticContext = D->getDeclContext();
+    if (!isa<CXXRecordDecl>(semanticContext)){
+      std::string error = "variable " + D->getNameAsString() + " does not have class semantic context";
+      errorAbort(D->getLocStart(), *ci_, error);
+    }
     CXXRecordDecl* parentCls = cast<CXXRecordDecl>(semanticContext);
     std::list<std::string> lex;
     scopeString(D->getLocStart(), *ci_, lexicalContext, lex);

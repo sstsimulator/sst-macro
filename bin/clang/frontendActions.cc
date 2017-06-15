@@ -144,6 +144,8 @@ ReplaceAction::initPragmas(CompilerInstance& CI)
     new SSTKeepPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
   CI.getPreprocessor().AddPragmaHandler("sst",
     new SSTNullVariablePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+  CI.getPreprocessor().AddPragmaHandler("sst",
+    new SSTLoopCountPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
 }
 
 void

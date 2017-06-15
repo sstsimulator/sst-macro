@@ -100,6 +100,7 @@ void createFccLattice(int nx, int ny, int nz, real_t lat, SimFlat* s)
                putAtomInBox(s->boxes, s->atoms, id, 0, rx, ry, rz, px, py, pz);
             }
 
+   s->boxes->nTotalAtoms = end[0]*end[1]*end[2];
    // set total atoms in simulation
    startTimer(commReduceTimer);
    addIntParallel(&s->atoms->nLocal, &s->atoms->nGlobal, 1);

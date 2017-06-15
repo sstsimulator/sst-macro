@@ -42,6 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 #include "computeVisitor.h"
+#include "computePragma.h"
 #include "recurseAll.h"
 #include "validateScope.h"
 
@@ -151,14 +152,24 @@ void
 ComputeVisitor::visitLoop(ForStmt* stmt, Loop& loop)
 {
   ForLoopSpec spec;
-  getInitialVariables(stmt->getInit(), &spec);
-  getPredicateVariables(stmt->getCond(), &spec);
-  getStride(stmt->getInc(), &spec);
+  auto iter = explicitLoopCounts_.find(stmt);
+  if (iter != explicitLoopCounts_.end()){
+    //the number of loop iterations is given explicitly
+    spec.init = nullptr;
+    spec.predicateMax = nullptr;
+    spec.stride = nullptr;
+    loop.tripCount = iter->second;
+  } else {
+    getInitialVariables(stmt->getInit(), &spec);
+    getPredicateVariables(stmt->getCond(), &spec);
+    getStride(stmt->getInc(), &spec);
+    //validate that the static analysis succeeded
+    validateLoopControlExpr(spec.predicateMax);
+    loop.tripCount = getTripCount(&spec);
+  }
+
   //now lets examine the body
   addOperations(stmt->getBody(), loop.body);
-  //validate that the static analysis succeeded
-  validateLoopControlExpr(spec.predicateMax);
-  loop.tripCount = getTripCount(&spec);
 }
 
 void
@@ -212,7 +223,11 @@ ComputeVisitor::visitBodyBinaryOperator(BinaryOperator* op, Loop::Body& body)
       }
       else if (op->getType()->isDependentType()){
         //this better be a template type
-        const TemplateTypeParmType* ty = cast<const TemplateTypeParmType>(op->getLHS()->getType().getTypePtr());
+        const Type* ty = op->getLHS()->getType().getTypePtr();
+        if (!isa<const TemplateTypeParmType>(ty)){
+          errorAbort(op->getLocStart(), CI,
+                     "binary operator has non-template dependent type");
+        }
       }
       else {
         errorAbort(op->getLocStart(), CI,
@@ -316,13 +331,24 @@ ComputeVisitor::checkStmtPragmas(Stmt* s)
 {
   SSTPragma* prg = pragmas.takeMatch(s);
   if (prg){
-    if (prg && prg->cls == SSTPragma::Replace){
+    switch (prg->cls){
+    case SSTPragma::Replace: {
       SSTReplacePragma* rprg = static_cast<SSTReplacePragma*>(prg);
       std::list<const Expr*> replaced;
       rprg->run(s, replaced);
       for (auto e : replaced){
         repls.exprs[e] = rprg->replacement();
       }
+    } break;
+    case SSTPragma::LoopCount: {
+      SSTLoopCountPragma* rprg = static_cast<SSTLoopCountPragma*>(prg);
+      if (!isa<ForStmt>(s)){
+        errorAbort(s->getLocStart(), CI, "pragma loop_count not applied to for loop");
+      }
+      explicitLoopCounts_[cast<ForStmt>(s)] = rprg->count();
+    } break;
+    default:
+      errorAbort(s->getLocStart(), CI, "invalid pragma applied to statement");
     }
   }
 }
@@ -463,7 +489,7 @@ ComputeVisitor::visitPredicateBinaryOperator(BinaryOperator* op, ForLoopSpec* sp
         rhs = cast<ImplicitCastExpr>(rhs)->getSubExpr();
         break;
       case Stmt::ParenExprClass:
-        rhs = cast<ImplicitCastExpr>(rhs)->getSubExpr();
+        rhs = cast<ParenExpr>(rhs)->getSubExpr();
         break;
       default:
         keep_going = false;
@@ -479,6 +505,10 @@ ComputeVisitor::visitInitialDeclStmt(clang::DeclStmt* stmt, ForLoopSpec* spec)
   if (!stmt->isSingleDecl()){
     errorAbort(stmt->getLocStart(), CI,
                "skeleton for loop initializer is not single declaration");
+  }
+  if (!isa<VarDecl>(stmt->getSingleDecl())){
+    errorAbort(stmt->getLocStart(), CI,
+               "declaration statement does not declare a variable");
   }
   VarDecl* var = cast<VarDecl>(stmt->getSingleDecl());
   spec->incrementer = var;

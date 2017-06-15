@@ -244,10 +244,10 @@ void destroyHaloExchange(HaloExchange** haloExchange)
    *haloExchange = NULL;
 }
 
-void haloExchange(HaloExchange* haloExchange, void* data)
+void haloExchange(LinkCell* boxes, HaloExchange* haloExchange, void* data)
 {
    for (int iAxis=0; iAxis<3; ++iAxis)
-      exchangeData(haloExchange, data, iAxis);
+      exchangeData(boxes, haloExchange, data, iAxis);
 }
 
 /// Base class constructor.
@@ -275,7 +275,7 @@ HaloExchange* initHaloExchange(Domain* domain)
 /// \param [in] iAxis     Axis index.
 /// \param [in, out] data Pointer to data that will be passed to the load and
 ///                       unload functions
-void exchangeData(HaloExchange* haloExchange, void* data, int iAxis)
+void exchangeData(LinkCell* boxes, HaloExchange* haloExchange, void* data, int iAxis)
 {
    enum HaloFaceOrder faceM = 2*iAxis;
    enum HaloFaceOrder faceP = faceM+1;
@@ -287,6 +287,8 @@ void exchangeData(HaloExchange* haloExchange, void* data, int iAxis)
 
    int nSendM = haloExchange->loadBuffer(haloExchange->parms, data, faceM, sendBufM);
    int nSendP = haloExchange->loadBuffer(haloExchange->parms, data, faceP, sendBufP);
+   boxes->nTotalAtoms -= nSendM;
+   boxes->nTotalAtoms -= nSendP;
 
    int nbrRankM = haloExchange->nbrRank[faceM];
    int nbrRankP = haloExchange->nbrRank[faceP];
@@ -423,6 +425,7 @@ void unloadAtomsBuffer(void* vparms, void* data, int face, int bufSize, char* ch
       real_t pz = buf[ii].pz;
       putAtomInBox(s->boxes, s->atoms, gid, type, rx, ry, rz, px, py, pz);
    }
+   s->boxes->nTotalAtoms += nBuf;
 }
 
 void destroyAtomsExchange(void* vparms)

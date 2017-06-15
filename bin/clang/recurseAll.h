@@ -119,7 +119,7 @@ struct RecurseAll {
     if (D){
       switch(D->getKind()){
         case Decl::Var: {
-          const VarDecl* vd = cast<VarDecl>(D);
+          const VarDecl* vd = cast<const VarDecl>(D);
           if (vd->hasInit()){
             recurse(vd->getInit(), ExprRole::Standalone,
                     std::forward<Args>(args)...);

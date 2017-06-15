@@ -69,6 +69,7 @@ struct ForLoopSpec
   clang::Expr* stride;
   clang::Expr* init;
   clang::Expr* predicateMax;
+  std::string explicitLoopCount;
   clang::NamedDecl* incrementer;
 };
 

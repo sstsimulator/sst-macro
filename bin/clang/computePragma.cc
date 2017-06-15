@@ -55,6 +55,13 @@ using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
 
+SSTLoopCountPragma::SSTLoopCountPragma(const std::list<Token> &tokens) :
+  SSTPragma(LoopCount)
+{
+  std::stringstream sstr;
+  SSTPragma::tokenStreamToString(startLoc, tokens.begin(), tokens.end(), sstr, *CI);
+  loopCount_ = sstr.str();
+}
 
 void
 SSTComputePragma::visitAndReplaceStmt(Stmt* stmt, Rewriter& r, PragmaConfig& cfg)

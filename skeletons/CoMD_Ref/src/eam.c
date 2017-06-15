@@ -245,6 +245,7 @@ int eamForce(SimFlat* s)
    }
 
    int nNbrBoxes = 27;
+   int avgAtomsPerBox = s->boxes->nTotalAtoms / s->boxes->nLocalBoxes; //for SST sims
    // loop over local boxes
    #pragma omp parallel for reduction(+:etot)
    for (int iBox=0; iBox<s->boxes->nLocalBoxes; iBox++)
@@ -258,6 +259,7 @@ int eamForce(SimFlat* s)
          int nJBox = s->boxes->nAtoms[jBox];
 
          // loop over atoms in iBox
+
          for (int iOff=MAXATOMS*iBox; iOff<(iBox*MAXATOMS+nIBox); iOff++)
          {
             // loop over atoms in jBox
@@ -319,7 +321,7 @@ int eamForce(SimFlat* s)
 
    // exchange derivative of the embedding energy with repsect to rhobar
    startTimer(eamHaloTimer);
-   haloExchange(pot->forceExchange, pot->forceExchangeData);
+   haloExchange(s->boxes, pot->forceExchange, pot->forceExchangeData);
    stopTimer(eamHaloTimer);
 
    // third pass

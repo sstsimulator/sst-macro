@@ -158,7 +158,7 @@ struct ReplaceStatementVisit {
     if (PreVisit){
       const Decl* d = stmt->getSingleDecl();
       if (d && d->getKind() == Decl::Var){
-        const VarDecl* vd = cast<VarDecl>(d);
+        const VarDecl* vd = cast<const VarDecl>(d);
         if (vd->getNameAsString() == cfg.matchText){
           if (vd->hasInit()) {
             cfg.replacedExprs.push_back(vd->getInit());
@@ -252,43 +252,8 @@ SSTReplacePragmaHandler::parse(CompilerInstance& CI, SourceLocation loc,
 
   auto iter = tokens.begin(); ++iter; //skip front
   auto end = tokens.end();
-  for ( ; iter != end; ++iter){
-    const Token& next = *iter;
-    switch (next.getKind()){
-      case tok::identifier:
-         os << next.getIdentifierInfo()->getNameStart();
-        break;
-      case tok::l_paren:
-         os << '(';
-        break;
-      case tok::r_paren:
-         os << ')';
-        break;
-      case tok::comma:
-         os << ',';
-        break;
-      case tok::star:
-        os << "*";
-        break;
-      case tok::kw_nullptr:
-         os << "nullptr";
-        break;
-      case tok::string_literal:
-      case tok::numeric_constant:
-      {
-        const char* data = next.getLiteralData(); //not null-terminated, direct from buffer
-        for (int i=0 ; i < next.getLength(); ++i){
-          //must explicitly add chars, this will not hit a \0
-           os << data[i];
-        }
-        break;
-      }
-      default:
-        std::cerr << "bad token: " << next.getName() << std::endl;
-        errorAbort(loc, CI, "invalid token in replace pragma");
-        break;
-    }
-  }
+  SSTPragma::tokenStreamToString(loc,iter,end,os,CI);
+
   return fxn.getIdentifierInfo()->getNameStart();
 }
 

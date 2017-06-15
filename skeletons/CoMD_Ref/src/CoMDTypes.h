@@ -69,6 +69,7 @@ typedef struct SimFlatSt
 
    LinkCell* boxes;       //<! link-cell data
 
+#pragma sst null_variable
    Atoms* atoms;          //<! atom data (positions, momenta, ...)
 
    SpeciesData* species;  //<! species data (per species, not per atom)

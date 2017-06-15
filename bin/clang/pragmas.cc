@@ -337,3 +337,52 @@ SSTNullVariablePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
   }
 }
 
+void
+SSTPragma::tokenStreamToString(SourceLocation loc,
+                               std::list<Token>::const_iterator beg,
+                               std::list<Token>::const_iterator end,
+                               std::ostream& os,
+                               CompilerInstance& CI)
+{
+  for (auto iter=beg; iter != end; ++iter){
+    const Token& next = *iter;
+    switch (next.getKind()){
+      case tok::identifier:
+         os << next.getIdentifierInfo()->getNameStart();
+        break;
+      case tok::l_paren:
+         os << '(';
+        break;
+      case tok::r_paren:
+         os << ')';
+        break;
+      case tok::comma:
+         os << ',';
+        break;
+      case tok::slash:
+        os << "/";
+        break;
+      case tok::star:
+        os << "*";
+        break;
+      case tok::kw_nullptr:
+         os << "nullptr";
+        break;
+      case tok::string_literal:
+      case tok::numeric_constant:
+      {
+        const char* data = next.getLiteralData(); //not null-terminated, direct from buffer
+        for (int i=0 ; i < next.getLength(); ++i){
+          //must explicitly add chars, this will not hit a \0
+           os << data[i];
+        }
+        break;
+      }
+      default:
+        std::cerr << "bad token: " << next.getName() << std::endl;
+        errorAbort(loc, CI, "invalid token in replace pragma");
+        break;
+    }
+  }
+}
+

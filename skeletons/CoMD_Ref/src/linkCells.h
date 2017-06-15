@@ -21,12 +21,14 @@ typedef struct LinkCellSt
    int nHaloBoxes;      //!< total number of remote halo/ghost boxes on processor
    int nTotalBoxes;     //!< total number of boxes on processor
                         //!< nLocalBoxes + nHaloBoxes
+   int nTotalAtoms;
    real3 localMin;      //!< minimum local bounds on processor
    real3 localMax;      //!< maximum local bounds on processor
    real3 boxSize;       //!< size of box in each dimension
    real3 invBoxSize;    //!< inverse size of box in each dimension
-
+#pragma sst null_variable
    int* nAtoms;         //!< total number of atoms in each box
+#pragma sst null_variable
    int** nbrBoxes;      //!< neighbor boxes for each box
 } LinkCell;
 

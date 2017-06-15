@@ -8,6 +8,7 @@
 struct AtomsSt;
 struct LinkCellSt;
 struct DomainSt;
+struct LinkCell;
 
 /// A polymorphic structure to store information about a halo exchange.
 /// This structure can be thought of as an abstract base class that
@@ -78,7 +79,7 @@ HaloExchange* initForceHaloExchange(struct DomainSt* domain, struct LinkCellSt* 
 void destroyHaloExchange(HaloExchange** haloExchange);
 
 /// Execute a halo exchange.
-void haloExchange(HaloExchange* haloExchange, void* data);
+void haloExchange(struct LinkCellSt* boxes, HaloExchange* haloExchange, void* data);
 
 /// Sort the atoms by gid in the specified link cell.
 void sortAtomsInCell(struct AtomsSt* atoms, struct LinkCellSt* boxes, int iBox);
