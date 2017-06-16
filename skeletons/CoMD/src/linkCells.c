@@ -103,6 +103,7 @@ LinkCell* initLinkCells(const Domain* domain, real_t cutoff)
    ll->nTotalBoxes = ll->nLocalBoxes + ll->nHaloBoxes;
    
    ll->nAtoms = comdMalloc(ll->nTotalBoxes*sizeof(int));
+#pragma sst delete
    for (int iBox=0; iBox<ll->nTotalBoxes; ++iBox)
       ll->nAtoms[iBox] = 0;
 
@@ -110,11 +111,12 @@ LinkCell* initLinkCells(const Domain* domain, real_t cutoff)
 
    // Added creating neighbors once
    ll->nbrBoxes = comdMalloc(ll->nTotalBoxes*sizeof(int*));
+#pragma sst delete
    for (int iBox=0; iBox<ll->nTotalBoxes; ++iBox)
    {
       ll->nbrBoxes[iBox] = comdMalloc(27*sizeof(int));
    }
-
+#pragma sst delete
    for (int iBox=0; iBox<ll->nLocalBoxes; ++iBox)
    {
       int nNbrBoxes = getNeighborBoxes(ll, iBox, ll->nbrBoxes[iBox]);
@@ -253,6 +255,7 @@ int getBoxFromTuple(LinkCell* boxes, int ix, int iy, int iz)
 /// \param iId [in]  The index with box iBox of the atom to be moved.
 /// \param iBox [in] The index of the link cell the particle is moving from.
 /// \param jBox [in] The index of the link cell the particle is moving to.
+#pragma sst delete
 void moveAtom(LinkCell* boxes, Atoms* atoms, int iId, int iBox, int jBox)
 {
    int nj = boxes->nAtoms[jBox];
@@ -287,7 +290,8 @@ void moveAtom(LinkCell* boxes, Atoms* atoms, int iId, int iBox, int jBox)
 void updateLinkCells(LinkCell* boxes, Atoms* atoms)
 {
    emptyHaloCells(boxes);
-   
+   int avgAtomsPerBox = boxes->nTotalAtoms / boxes->nLocalBoxes; //for SST sims
+#pragma sst compute
    for (int iBox=0; iBox<boxes->nLocalBoxes; ++iBox)
    {
       int iOff = iBox*MAXATOMS;
@@ -307,6 +311,7 @@ void updateLinkCells(LinkCell* boxes, Atoms* atoms)
 int maxOccupancy(LinkCell* boxes)
 {
    int localMax = 0;
+#pragma sst delete
    for (int ii=0; ii<boxes->nLocalBoxes; ++ii)
       localMax = MAX(localMax, boxes->nAtoms[ii]);
 
@@ -381,6 +386,7 @@ int getBoxFromCoord(LinkCell* boxes, real_t rr[3])
 /// Set the number of atoms to zero in all halo link cells.
 void emptyHaloCells(LinkCell* boxes)
 {
+#pragma sst delete
    for (int ii=boxes->nLocalBoxes; ii<boxes->nTotalBoxes; ++ii)
       boxes->nAtoms[ii] = 0;
 }

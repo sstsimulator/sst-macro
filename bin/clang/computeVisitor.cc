@@ -43,6 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 #include "computeVisitor.h"
 #include "computePragma.h"
+#include "replacePragma.h"
 #include "recurseAll.h"
 #include "validateScope.h"
 
@@ -584,7 +585,7 @@ ComputeVisitor::addLoopContribution(std::ostream& os, Loop& loop)
   if (loop.body.depth > 0){
     os << "tripCount" << (loop.body.depth-1) << "*";
   }
-  os << "(" << loop.tripCount << "); ";
+  os << loop.tripCount << "; ";
   if (loop.body.flops > 0){
       os << " flops += tripCount" << loop.body.depth << "*" << loop.body.flops << ";";
   }
@@ -614,7 +615,7 @@ void
 ComputeVisitor::replaceStmt(Stmt* stmt, Rewriter& r, Loop& loop)
 {
   std::stringstream sstr;
-  sstr << "{ uint64_t flops(0); uint64_t readBytes(0); uint64_t writeBytes(0); uint64_t intops(0); ";
+  sstr << "{ uint64_t flops=0; uint64_t readBytes=0; uint64_t writeBytes=0; uint64_t intops=0; ";
   addLoopContribution(sstr, loop);
   sstr << "sstmac_compute_detailed(flops,intops,readBytes); /*assume write-through for now*/";
   sstr << " }";

@@ -68,9 +68,11 @@ void computeForce(SimFlat* s)
 
 void advanceVelocity(SimFlat* s, int nBoxes, real_t dt)
 {
+   int avgAtomsPerBox = s->boxes->nTotalAtoms / s->boxes->nLocalBoxes;
    #pragma omp parallel for
    for (int iBox=0; iBox<nBoxes; iBox++)
    {
+      #pragma sst loop_count avgAtomsPerBox
       for (int iOff=MAXATOMS*iBox,ii=0; ii<s->boxes->nAtoms[iBox]; ii++,iOff++)
       {
          s->atoms->p[iOff][0] += dt*s->atoms->f[iOff][0];
@@ -82,9 +84,11 @@ void advanceVelocity(SimFlat* s, int nBoxes, real_t dt)
 
 void advancePosition(SimFlat* s, int nBoxes, real_t dt)
 {
+   int avgAtomsPerBox = s->boxes->nTotalAtoms / s->boxes->nLocalBoxes;
    #pragma omp parallel for
    for (int iBox=0; iBox<nBoxes; iBox++)
    {
+      #pragma sst loop_count avgAtomsPerBox
       for (int iOff=MAXATOMS*iBox,ii=0; ii<s->boxes->nAtoms[iBox]; ii++,iOff++)
       {
          int iSpecies = s->atoms->iSpecies[iOff];
@@ -100,6 +104,7 @@ void advancePosition(SimFlat* s, int nBoxes, real_t dt)
 /// local potential energy is a by-product of the force routine.
 void kineticEnergy(SimFlat* s)
 {
+   int avgAtomsPerBox = s->boxes->nTotalAtoms / s->boxes->nLocalBoxes;
    real_t eLocal[2];
    real_t kenergy = 0.0;
    eLocal[0] = s->ePotential;
@@ -107,6 +112,7 @@ void kineticEnergy(SimFlat* s)
    #pragma omp parallel for reduction(+:kenergy)
    for (int iBox=0; iBox<s->boxes->nLocalBoxes; iBox++)
    {
+      #pragma sst loop_count avgAtomsPerBox
       for (int iOff=MAXATOMS*iBox,ii=0; ii<s->boxes->nAtoms[iBox]; ii++,iOff++)
       {
          int iSpecies = s->atoms->iSpecies[iOff];
@@ -146,7 +152,7 @@ void redistributeAtoms(SimFlat* sim)
    updateLinkCells(sim->boxes, sim->atoms);
 
    startTimer(atomHaloTimer);
-   haloExchange(sim->atomExchange, sim);
+   haloExchange(sim->boxes, sim->atomExchange, sim);
    stopTimer(atomHaloTimer);
 
    #pragma omp parallel for

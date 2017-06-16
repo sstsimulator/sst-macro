@@ -167,7 +167,7 @@ int ljForce(SimFlat* s)
    real_t eShift = POT_SHIFT * rCut6 * (rCut6 - 1.0);
 
    int nNbrBoxes = 27;
-
+   int avgAtomsPerBox = s->boxes->nTotalAtoms / s->boxes->nLocalBoxes;
    // loop over local boxes
    #pragma omp parallel for reduction(+:ePot)
    for (int iBox=0; iBox<s->boxes->nLocalBoxes; iBox++)
@@ -184,10 +184,12 @@ int ljForce(SimFlat* s)
          int nJBox = s->boxes->nAtoms[jBox];
          
          // loop over atoms in iBox
+         #pragma sst loop_count avgAtomsPerBox
          for (int iOff=MAXATOMS*iBox; iOff<(iBox*MAXATOMS+nIBox); iOff++)
          {
 
             // loop over atoms in jBox
+            #pragma sst loop_count avgAtomsPerBox
             for (int jOff=jBox*MAXATOMS; jOff<(jBox*MAXATOMS+nJBox); jOff++)
             {
                real3 dr;

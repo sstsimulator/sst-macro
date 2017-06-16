@@ -43,6 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include "astVisitor.h"
+#include "replacePragma.h"
 #include <iostream>
 #include <fstream>
 
@@ -271,19 +272,16 @@ bool
 SkeletonASTVisitor::VisitDeclRefExpr(DeclRefExpr* expr)
 {
   NamedDecl* decl =  expr->getFoundDecl();
-  if (pragmaConfig_.nullVariables.find(decl) != pragmaConfig_.nullVariables.end()){
+  if (isNullVariable(decl)){
     //we need to delete whatever parent statement this is a part of
     if (stmt_contexts_.empty()){
-      errorAbort(expr->getLocStart(), *ci_,
-                 "null variable used in statement, but context list is empty");
+      if (pragmaConfig_.deletedRefs.find(expr) == pragmaConfig_.deletedRefs.end()){
+        errorAbort(expr->getLocStart(), *ci_,
+                   "null variable used in statement, but context list is empty");
+      } //else this was deleted - so no problem
+    } else {
+      deleteNullVariableStmt(expr, decl);
     }
-    Stmt* s = stmt_contexts_.front(); //delete the outermost stmt
-    if (!loop_contexts_.empty()){
-      errorAbort(expr->getLocStart(), *ci_,
-                 "null variable used inside loop - loop skeletonization "
-                 "must be indicated with #pragma sst compute outside loop");
-    }
-    deleteStmt(s);
   } else {
     replaceGlobalUse(decl, expr->getSourceRange());
   }
@@ -350,11 +348,19 @@ SkeletonASTVisitor::VisitCXXMemberCallExpr(CXXMemberCallExpr* expr)
 }
 
 bool
+SkeletonASTVisitor::VisitMemberExpr(MemberExpr *expr)
+{
+  ValueDecl* vd = expr->getMemberDecl();
+  if (isNullVariable(vd)){
+    deleteNullVariableStmt(expr, vd);
+  }
+  return true;
+}
+
+bool
 SkeletonASTVisitor::VisitCallExpr(CallExpr* expr)
 {
   if (noSkeletonize_) return true;
-
-
   for (auto& pair : pragmaConfig_.replacePragmas){
     SSTReplacePragma* replPrg = static_cast<SSTReplacePragma*>(pair.second);
     replPrg->run(expr, rewriter_);
@@ -693,14 +699,14 @@ SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
     return true; //do not visit implicitly instantiated template stuff
   }
 
-  if (D->isThisDeclarationADefinition())
-    VisitDecl(D); //check for pragmas on it
+  bool skipVisit = false;
+  if (D->isThisDeclarationADefinition()){
+    skipVisit = noSkeletonize_ ? false : activatePragmasForDecl(D);
+  }
 
   fxn_contexts_.push_back(D);
-  if (!pragmaConfig_.skipNextStmt){
+  if (!skipVisit){
     TraverseStmt(D->getBody());
-  } else {
-    pragmaConfig_.skipNextStmt = false;
   }
   fxn_contexts_.pop_back();
   return true;
@@ -786,11 +792,9 @@ SkeletonASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
 
   ++insideCxxMethod_;
   if (D->isThisDeclarationADefinition()) {
-    VisitDecl(D); //check for pragmas
-    if (!pragmaConfig_.skipNextStmt){
+    bool skipVisit = noSkeletonize_ ? false : activatePragmasForDecl(D);
+    if (!skipVisit){
       TraverseStmt(D->getBody());
-    } else {
-      pragmaConfig_.skipNextStmt = false;
     }
   }
   --insideCxxMethod_;
@@ -798,24 +802,79 @@ SkeletonASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
 }
 
 bool
-SkeletonASTVisitor::TraverseDeclStmt(DeclStmt* stmt, DataRecursionQueue* queue)
+SkeletonASTVisitor::TraverseCompoundStmt(CompoundStmt* stmt, DataRecursionQueue* queue)
 {
-  if (noSkeletonize_) return true;
+  bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(stmt);
 
-  VisitStmt(stmt); //do any common stmt ops like pragmas
-  stmt_contexts_.push_back(stmt);
-  if (stmt->isSingleDecl()){
-    Decl* D = stmt->getSingleDecl();
-    TraverseDecl(D);
-    if (pragmaConfig_.nullVariables.find(D) != pragmaConfig_.nullVariables.end()){
-      deleteStmt(stmt);
-    }
-  } else {
-    for (auto* D : stmt->decls()){
-      TraverseDecl(D);
+  if (!skipVisit){
+    auto end = stmt->body_end();
+    for (auto iter=stmt->body_begin(); iter != end; ++iter){
+      TraverseStmt(*iter);
     }
   }
+
+  return true;
+}
+
+bool
+SkeletonASTVisitor::TraverseUnaryOperator(UnaryOperator* op, DataRecursionQueue* queue)
+{
+  VisitStmt(op);
+  stmt_contexts_.push_back(op);
+  TraverseStmt(op->getSubExpr());
   stmt_contexts_.pop_back();
+  return true;
+}
+
+bool
+SkeletonASTVisitor::TraverseBinaryOperator(BinaryOperator* op, DataRecursionQueue* queue)
+{
+  bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(op);
+  stmt_contexts_.push_back(op);
+  if (skipVisit){
+    deletedStmts_.insert(op);
+  } else {
+    TraverseStmt(op->getLHS());
+    TraverseStmt(op->getRHS());
+  }
+  stmt_contexts_.pop_back();
+  return true;
+}
+
+bool
+SkeletonASTVisitor::TraverseIfStmt(IfStmt* stmt, DataRecursionQueue* queue)
+{
+  VisitStmt(stmt);
+  stmt_contexts_.push_back(stmt);
+  TraverseStmt(stmt->getCond());
+  TraverseStmt(stmt->getThen());
+  if (stmt->getElse()) TraverseStmt(stmt->getElse());
+  stmt_contexts_.pop_back();
+  return true;
+}
+
+bool
+SkeletonASTVisitor::TraverseDeclStmt(DeclStmt* stmt, DataRecursionQueue* queue)
+{
+  bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(stmt);
+  if (skipVisit){
+    deletedStmts_.insert(stmt);
+  } else {
+    stmt_contexts_.push_back(stmt);
+    if (stmt->isSingleDecl()){
+      Decl* D = stmt->getSingleDecl();
+      TraverseDecl(D);
+      if (isNullVariable(D)){
+        deleteStmt(stmt);
+      }
+    } else {
+      for (auto* D : stmt->decls()){
+        TraverseDecl(D);
+      }
+    }
+    stmt_contexts_.pop_back();
+  }
+
 
   return true;
 }
@@ -823,13 +882,6 @@ SkeletonASTVisitor::TraverseDeclStmt(DeclStmt* stmt, DataRecursionQueue* queue)
 bool
 SkeletonASTVisitor::TraverseForStmt(ForStmt *S, DataRecursionQueue* queue)
 {
-  if (noSkeletonize_) return true;
-
-  if (pragmaConfig_.skipNextStmt){
-    pragmaConfig_.skipNextStmt = false;
-    return true;
-  }
-
   loop_contexts_.push_back(S);
   bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(S);
   if (!skipVisit){
@@ -909,6 +961,22 @@ SkeletonASTVisitor::dataTraverseStmtPost(Stmt* S)
   return true;
 }
 
+void
+SkeletonASTVisitor::deleteNullVariableStmt(Stmt* use_stmt, Decl* d)
+{
+  if (stmt_contexts_.empty()){
+    errorAbort(use_stmt->getLocStart(), *ci_,
+               "null variable used in statement, but context list is empty");
+  }
+  Stmt* s = stmt_contexts_.front(); //delete the outermost stmt
+  if (!loop_contexts_.empty()){
+    errorAbort(use_stmt->getLocStart(), *ci_,
+               "null variable used inside loop - loop skeletonization "
+               "must be indicated with #pragma sst compute outside loop");
+  }
+  deleteStmt(s);
+}
+
 bool
 SkeletonASTVisitor::activatePragmasForStmt(Stmt* S)
 {
@@ -923,6 +991,34 @@ SkeletonASTVisitor::activatePragmasForStmt(Stmt* S)
     activePragmas_[S] = prg;
     //pragma takes precedence - must occur in pre-visit
     prg->activate(S, rewriter_, pragmaConfig_);
+    //a compute pragma totally deletes the block
+    bool blockDeleted = false;
+    switch (prg->cls){
+      case SSTPragma::Compute:
+      case SSTPragma::Delete:
+      case SSTPragma::Init:
+        blockDeleted = true;
+        break;
+      default: break;
+    }
+    skipVisit = skipVisit || blockDeleted;
+  }
+  return skipVisit;
+}
+
+bool
+SkeletonASTVisitor::activatePragmasForDecl(Decl* D)
+{
+  SSTPragma* prg;
+  bool skipVisit = false;
+  while ((prg = pragmas_.takeMatch(D))){
+    if (skipVisit){
+      errorAbort(D->getLocStart(), *ci_,
+           "code block deleted by pragma - invalid pragma combination");
+    }
+    pragmaConfig_.pragmaDepth++;
+    //pragma takes precedence - must occur in pre-visit
+    prg->activate(D, rewriter_, pragmaConfig_);
     //a compute pragma totally deletes the block
     bool blockDeleted = prg->cls == SSTPragma::Compute || prg->cls == SSTPragma::Delete;
     skipVisit = skipVisit || blockDeleted;

@@ -259,10 +259,11 @@ int eamForce(SimFlat* s)
          int nJBox = s->boxes->nAtoms[jBox];
 
          // loop over atoms in iBox
-
+         #pragma sst loop_count avgAtomsPerBox
          for (int iOff=MAXATOMS*iBox; iOff<(iBox*MAXATOMS+nIBox); iOff++)
          {
             // loop over atoms in jBox
+            #pragma sst loop_count avgAtomsPerBox
             for (int jOff=MAXATOMS*jBox; jOff<(jBox*MAXATOMS+nJBox); jOff++)
             {
 
@@ -309,6 +310,7 @@ int eamForce(SimFlat* s)
       int nIBox =  s->boxes->nAtoms[iBox];
 
       // loop over atoms in iBox
+      #pragma sst loop_count avgAtomsPerBox
       for (int iOff=MAXATOMS*iBox; iOff<(MAXATOMS*iBox+nIBox); iOff++)
       {
          real_t fEmbed, dfEmbed;
@@ -338,9 +340,11 @@ int eamForce(SimFlat* s)
          int nJBox = s->boxes->nAtoms[jBox];
 
          // loop over atoms in iBox
+         #pragma sst loop_count avgAtomsPerBox
          for (int iOff=MAXATOMS*iBox; iOff<(MAXATOMS*iBox+nIBox); iOff++)
          {
             // loop over atoms in jBox
+            #pragma sst loop_count avgAtomsPerBox
             for (int jOff=MAXATOMS*jBox; jOff<(MAXATOMS*jBox+nJBox); jOff++)
             { 
 

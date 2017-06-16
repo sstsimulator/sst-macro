@@ -26,16 +26,19 @@ Atoms* initAtoms(LinkCell* boxes)
 
    int maxTotalAtoms = MAXATOMS*boxes->nTotalBoxes;
 
+//#pragma sst delete
+   {
    atoms->gid =      (int*)   comdMalloc(maxTotalAtoms*sizeof(int));
    atoms->iSpecies = (int*)   comdMalloc(maxTotalAtoms*sizeof(int));
    atoms->r =        (real3*) comdMalloc(maxTotalAtoms*sizeof(real3));
    atoms->p =        (real3*) comdMalloc(maxTotalAtoms*sizeof(real3));
    atoms->f =        (real3*) comdMalloc(maxTotalAtoms*sizeof(real3));
    atoms->U =        (real_t*)comdMalloc(maxTotalAtoms*sizeof(real_t));
+   }
 
    atoms->nLocal = 0;
    atoms->nGlobal = 0;
-
+   #pragma sst compute
    for (int iOff = 0; iOff < maxTotalAtoms; iOff++)
    {
       atoms->gid[iOff] = 0;
@@ -121,9 +124,11 @@ void setVcm(SimFlat* s, real_t newVcm[3])
    vShift[1] = (newVcm[1] - oldVcm[1]);
    vShift[2] = (newVcm[2] - oldVcm[2]);
 
+   int avgAtomsPerBox = s->boxes->nTotalAtoms / s->boxes->nLocalBoxes;
    #pragma omp parallel for
    for (int iBox=0; iBox<s->boxes->nLocalBoxes; ++iBox)
    {
+      #pragma sst loop_count avgAtomsPerBox
       for (int iOff=MAXATOMS*iBox, ii=0; ii<s->boxes->nAtoms[iBox]; ++ii, ++iOff)
       {
          int iSpecies = s->atoms->iSpecies[iOff];
@@ -148,10 +153,12 @@ void setVcm(SimFlat* s, real_t newVcm[3])
 /// the input temperature.
 void setTemperature(SimFlat* s, real_t temperature)
 {
-   // set initial velocities for the distribution
+   int avgAtomsPerBox = s->boxes->nTotalAtoms / s->boxes->nLocalBoxes;
+  // set initial velocities for the distribution
    #pragma omp parallel for
    for (int iBox=0; iBox<s->boxes->nLocalBoxes; ++iBox)
    {
+      #pragma sst loop_count avgAtomsPerBox
       for (int iOff=MAXATOMS*iBox, ii=0; ii<s->boxes->nAtoms[iBox]; ++ii, ++iOff)
       {
          int iType = s->atoms->iSpecies[iOff];
@@ -175,6 +182,7 @@ void setTemperature(SimFlat* s, real_t temperature)
    #pragma omp parallel for
    for (int iBox=0; iBox<s->boxes->nLocalBoxes; ++iBox)
    {
+      #pragma sst loop_count avgAtomsPerBox
       for (int iOff=MAXATOMS*iBox, ii=0; ii<s->boxes->nAtoms[iBox]; ++ii, ++iOff)
       {
          s->atoms->p[iOff][0] *= scaleFactor;
@@ -192,9 +200,11 @@ void setTemperature(SimFlat* s, real_t temperature)
 /// \param [in] delta The maximum displacement (along each axis).
 void randomDisplacements(SimFlat* s, real_t delta)
 {
+   int avgAtomsPerBox = s->boxes->nTotalAtoms / s->boxes->nLocalBoxes;
    #pragma omp parallel for
    for (int iBox=0; iBox<s->boxes->nLocalBoxes; ++iBox)
    {
+      #pragma sst loop_count avgAtomsPerBox
       for (int iOff=MAXATOMS*iBox, ii=0; ii<s->boxes->nAtoms[iBox]; ++ii, ++iOff)
       {
          uint64_t seed = mkSeed(s->atoms->gid[iOff], 457);
@@ -214,11 +224,12 @@ void computeVcm(SimFlat* s, real_t vcm[3])
    real_t v1 = 0.0;
    real_t v2 = 0.0;
    real_t v3 = 0.0;
-
+   int avgAtomsPerBox = s->boxes->nTotalAtoms / s->boxes->nLocalBoxes;
    // sum the momenta and particle masses 
    #pragma omp parallel for reduction(+:v0) reduction(+:v1) reduction(+:v2) reduction(+:v3)
    for (int iBox=0; iBox<s->boxes->nLocalBoxes; ++iBox)
    {
+      #pragma sst loop_count avgAtomsPerBox
       for (int iOff=MAXATOMS*iBox, ii=0; ii<s->boxes->nAtoms[iBox]; ++ii, ++iOff)
       {
          v0 += s->atoms->p[iOff][0];

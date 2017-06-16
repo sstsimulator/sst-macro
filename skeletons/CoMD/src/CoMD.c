@@ -8,7 +8,7 @@
 /// The Exascale Co-Design Center for Materials in Extreme Environments
 /// (ExMatEx).  http://codesign.lanl.gov/projects/exmatex.  The
 /// code is intended to serve as a vehicle for co-design by allowing
-/// others to extend and/or reimplement it as needed to test performance of 
+/// others to extend and/or reimplement it as needed to test performance of
 /// new architectures, programming models, etc.
 ///
 /// The current version of CoMD is available from:
@@ -93,7 +93,7 @@ int main(int argc, char** argv)
    initParallel(&argc, &argv);
    profileStart(totalTimer);
    initSubsystems();
-   timestampBarrier("Starting Initialization\n");
+   //timestampBarrier("Starting Initialization\n");
 
    yamlAppInfo(yamlFile);
    yamlAppInfo(screenOut);
@@ -107,9 +107,9 @@ int main(int argc, char** argv)
    printSimulationDataYaml(screenOut, sim);
 
    Validate* validate = initValidate(sim); // atom counts, energy
-   timestampBarrier("Initialization Finished\n");
+   //timestampBarrier("Initialization Finished\n");
 
-   timestampBarrier("Starting simulation\n");
+   //timestampBarrier("Starting simulation\n");
 
    // This is the CoMD main loop
    const int nSteps = sim->nSteps;
@@ -134,7 +134,7 @@ int main(int argc, char** argv)
 
    sumAtoms(sim);
    printThings(sim, iStep, getElapsedTime(timestepTimer));
-   timestampBarrier("Ending simulation\n");
+   //timestampBarrier("Ending simulation\n");
 
    // Epilog
    validateResult(validate, sim);
@@ -147,7 +147,7 @@ int main(int argc, char** argv)
    comdFree(validate);
    finalizeSubsystems();
 
-   timestampBarrier("CoMD Ending\n");
+   //timestampBarrier("CoMD Ending\n");
    destroyParallel();
 
    return 0;
@@ -263,9 +263,9 @@ BasePotential* initPotential(
 {
    BasePotential* pot = NULL;
 
-   if (doeam) 
+   if (doeam)
       pot = initEamPot(potDir, potName, potType);
-   else 
+   else
       pot = initLjPot();
    assert(pot);
    return pot;
@@ -286,14 +286,16 @@ Validate* initValidate(SimFlat* sim)
 {
    sumAtoms(sim);
    Validate* val = comdMalloc(sizeof(Validate));
+#pragma sst init 0
    val->eTot0 = (sim->ePotential + sim->eKinetic) / sim->atoms->nGlobal;
+#pragma sst init 0
    val->nAtoms0 = sim->atoms->nGlobal;
 
    if (printRank())
    {
       fprintf(screenOut, "\n");
       printSeparator(screenOut);
-      fprintf(screenOut, "Initial energy : %14.12f, atom count : %d \n", 
+      fprintf(screenOut, "Initial energy : %14.12f, atom count : %d \n",
             val->eTot0, val->nAtoms0);
       fprintf(screenOut, "\n");
    }
@@ -304,7 +306,8 @@ void validateResult(const Validate* val, SimFlat* sim)
 {
    if (printRank())
    {
-      real_t eFinal = (sim->ePotential + sim->eKinetic) / sim->atoms->nGlobal;
+#pragma sst init 0
+     real_t eFinal = (sim->ePotential + sim->eKinetic) / sim->atoms->nGlobal;
 
       int nAtomsDelta = (sim->atoms->nGlobal - val->nAtoms0);
 
@@ -314,7 +317,7 @@ void validateResult(const Validate* val, SimFlat* sim)
 
       fprintf(screenOut, "  Initial energy  : %14.12f\n", val->eTot0);
       fprintf(screenOut, "  Final energy    : %14.12f\n", eFinal);
-      fprintf(screenOut, "  eFinal/eInitial : %f\n", eFinal/val->eTot0);
+      //fprintf(screenOut, "  eFinal/eInitial : %f\n", eFinal/val->eTot0);
       if ( nAtomsDelta == 0)
       {
          fprintf(screenOut, "  Final atom count : %d, no atoms lost\n",
@@ -333,6 +336,7 @@ void sumAtoms(SimFlat* s)
 {
    // sum atoms across all processers
    s->atoms->nLocal = 0;
+#pragma sst compute
    for (int i = 0; i < s->boxes->nLocalBoxes; i++)
    {
       s->atoms->nLocal += s->boxes->nAtoms[i];
@@ -350,30 +354,35 @@ void sumAtoms(SimFlat* s)
 void printThings(SimFlat* s, int iStep, double elapsedTime)
 {
    // keep track previous value of iStep so we can calculate number of steps.
-   static int iStepPrev = -1; 
+   static int iStepPrev = -1;
    static int firstCall = 1;
 
    int nEval = iStep - iStepPrev; // gives nEval = 1 for zeroth step.
    iStepPrev = iStep;
-   
+
    if (! printRank() )
       return;
 
    if (firstCall)
    {
       firstCall = 0;
-      fprintf(screenOut, 
-       "#                                                                                         Performance\n" 
+      fprintf(screenOut,
+       "#                                                                                         Performance\n"
        "#  Loop   Time(fs)       Total Energy   Potential Energy     Kinetic Energy  Temperature   (us/atom)     # Atoms\n");
       fflush(screenOut);
    }
 
+#pragma sst init 0
    real_t time = iStep*s->dt;
+#pragma sst init 0
    real_t eTotal = (s->ePotential+s->eKinetic) / s->atoms->nGlobal;
+#pragma sst init 0
    real_t eK = s->eKinetic / s->atoms->nGlobal;
+#pragma sst init 0
    real_t eU = s->ePotential / s->atoms->nGlobal;
+#pragma sst init 0
    real_t Temp = (s->eKinetic / s->atoms->nGlobal) / (kB_eV * 1.5);
-
+#pragma sst init 0
    double timePerAtom = 1.0e6*elapsedTime/(double)(nEval*s->atoms->nLocal);
 
    fprintf(screenOut, " %6d %10.2f %18.12f %18.12f %18.12f %12.4f %10.4f %12d\n",
@@ -390,9 +399,9 @@ void printSimulationDataYaml(FILE* file, SimFlat* s)
    // Only rank 0 prints
    if (! printRank())
       return;
-   
+
    fprintf(file,"Simulation data: \n");
-   fprintf(file,"  Total atoms        : %d\n", 
+   fprintf(file,"  Total atoms        : %d\n",
            s->atoms->nGlobal);
    fprintf(file,"  Min global bounds  : [ %14.10f, %14.10f, %14.10f ]\n",
            s->domain->globalMin[0], s->domain->globalMin[1], s->domain->globalMin[2]);
@@ -400,14 +409,14 @@ void printSimulationDataYaml(FILE* file, SimFlat* s)
            s->domain->globalMax[0], s->domain->globalMax[1], s->domain->globalMax[2]);
    printSeparator(file);
    fprintf(file,"Decomposition data: \n");
-   fprintf(file,"  Processors         : %6d,%6d,%6d\n", 
+   fprintf(file,"  Processors         : %6d,%6d,%6d\n",
            s->domain->procGrid[0], s->domain->procGrid[1], s->domain->procGrid[2]);
-   fprintf(file,"  Local boxes        : %6d,%6d,%6d = %8d\n", 
-           s->boxes->gridSize[0], s->boxes->gridSize[1], s->boxes->gridSize[2], 
+   fprintf(file,"  Local boxes        : %6d,%6d,%6d = %8d\n",
+           s->boxes->gridSize[0], s->boxes->gridSize[1], s->boxes->gridSize[2],
            s->boxes->gridSize[0]*s->boxes->gridSize[1]*s->boxes->gridSize[2]);
-   fprintf(file,"  Box size           : [ %14.10f, %14.10f, %14.10f ]\n", 
+   fprintf(file,"  Box size           : [ %14.10f, %14.10f, %14.10f ]\n",
            s->boxes->boxSize[0], s->boxes->boxSize[1], s->boxes->boxSize[2]);
-   fprintf(file,"  Box factor         : [ %14.10f, %14.10f, %14.10f ] \n", 
+   fprintf(file,"  Box factor         : [ %14.10f, %14.10f, %14.10f ] \n",
            s->boxes->boxSize[0]/s->pot->cutoff,
            s->boxes->boxSize[1]/s->pot->cutoff,
            s->boxes->boxSize[2]/s->pot->cutoff);
@@ -416,7 +425,7 @@ void printSimulationDataYaml(FILE* file, SimFlat* s)
    printSeparator(file);
    fprintf(file,"Potential data: \n");
    s->pot->print(file, s->pot);
-   
+
    // Memory footprint diagnostics
    int perAtomSize = 10*sizeof(real_t)+2*sizeof(int);
    float mbPerAtom = perAtomSize/1024/1024;
@@ -435,7 +444,7 @@ void printSimulationDataYaml(FILE* file, SimFlat* s)
    fprintf(file, "  Link cell atom footprint = %7.3f MB/node\n", paddedMemLocal);
    fprintf(file, "  Link cell atom footprint = %7.3f MB/node (including halo cell data\n", paddedMemTotal);
 
-   fflush(file);      
+   fflush(file);
 }
 
 /// Check that the user input meets certain criteria.
@@ -486,7 +495,7 @@ void sanityChecks(Command cmd, double cutoff, double latticeConst, char latticeT
    // This assertion can only fail if different tasks failed different
    // sanity checks.  That should not be possible.
    assert(checkCode == failCode);
-      
+
    if (failCode != 0)
       exit(failCode);
 }
@@ -500,37 +509,37 @@ void sanityChecks(Command cmd, double cutoff, double latticeConst, char latticeT
 /// practically any compiler that implements the C99 standard.  You will
 /// need to create a Makefile by copying the sample provided with the
 /// distribution (Makefile.vanilla).
-/// 
+///
 ///     $ cp Makefile.vanilla Makefile
 ///
 /// and use the make command to build the code
-/// 
+///
 ///    $ make
 ///
 /// The sample Makefile will compile the code on many platforms.  See
 /// comments in Makefile.vanilla for information about specifying the
 /// name of the C compiler, and/or additional compiler switches that
 /// might be necessary for your platform.
-/// 
-/// The main options available in the Makefile are toggling single/double 
+///
+/// The main options available in the Makefile are toggling single/double
 /// precision and enabling/disabling MPI. In the event MPI is not
 /// available, setting the DO_MPI flag to OFF will create a purely
 /// serial build (you will likely also need to change the setting of
 /// CC).
-/// 
+///
 /// The makefile should handle all the dependency checking needed, via
 /// makedepend.
-/// 
-/// 'make clean' removes the object and dependency files. 
-/// 
+///
+/// 'make clean' removes the object and dependency files.
+///
 /// 'make distclean' additionally removes the executable file and the
 /// documentation files.
-/// 
+///
 /// Other build options
 /// -------------------
 ///
-/// Various other options are made available by \#define arguments within 
-/// some of the source files. 
+/// Various other options are made available by \#define arguments within
+/// some of the source files.
 ///
 /// #REDIRECT_OUTPUT in CoMD.c
 ///
@@ -547,7 +556,7 @@ void sanityChecks(Command cmd, double cutoff, double latticeConst, char latticeT
 /// conservation of the code.
 ///
 /// #MAXATOMS in linkCells.h
-/// 
+///
 /// The default value is 64, which allows ample padding of the linkCell
 /// structure to allow for density fluctuations. Reducing it may improve
 /// the efficiency of the code via improved thread utilization and
@@ -568,7 +577,7 @@ void sanityChecks(Command cmd, double cutoff, double latticeConst, char latticeT
 /// the getTime() and getTick() functions can be easily reimplemented to
 /// take advantage of platform specific timing resources.
 ///
-/// A timing report is printed at the end of each simulation. 
+/// A timing report is printed at the end of each simulation.
 ///
 /// ~~~~
 /// Timings for Rank 0
@@ -585,7 +594,7 @@ void sanityChecks(Command cmd, double cutoff, double latticeConst, char latticeT
 ///     eamHalo            10001       0.0001        1.0592        2.09
 /// commHalo               60006       0.0000        1.7550        3.46
 /// commReduce                12       0.0000        0.0003        0.00
-/// 
+///
 /// Timing Statistics Across 8 Ranks:
 ///         Timer        Rank: Min(s)       Rank: Max(s)      Avg(s)    Stdev(s)
 /// _____________________________________________________________________________
@@ -600,7 +609,7 @@ void sanityChecks(Command cmd, double cutoff, double latticeConst, char latticeT
 ///     eamHalo          3:    0.2269       6:    1.2936      1.0951      0.3344
 /// commHalo             3:    1.0803       6:    2.1856      1.9363      0.3462
 /// commReduce           6:    0.0002       2:    0.0003      0.0003      0.0000
-/// 
+///
 /// ---------------------------------------------------
 ///  Average atom update rate:   9.39 us/atom/task
 /// ---------------------------------------------------
@@ -620,17 +629,17 @@ void sanityChecks(Command cmd, double cutoff, double latticeConst, char latticeT
 /// numbers of atoms and different numbers of tasks.  Any increase in
 /// this number relative to a large number of atoms on a single task
 /// represents a loss of parallel efficiency.
-/// 
-/// Choosing the problem size correctly has important implications for the 
-/// reported performance. Small problem sizes may run entirely in the cache 
-/// of some architectures, leading to very good performance results. 
-/// For general characterization of performance, it is probably best to 
+///
+/// Choosing the problem size correctly has important implications for the
+/// reported performance. Small problem sizes may run entirely in the cache
+/// of some architectures, leading to very good performance results.
+/// For general characterization of performance, it is probably best to
 /// choose problem sizes which force the code to access main memory, even
-/// though there may be strong scaling scenarios where the code is indeed 
+/// though there may be strong scaling scenarios where the code is indeed
 /// running mainly in cache.
 ///
 /// *** Architecture/Configuration for above timing numbers:
-/// SGI XE1300 cluster with dual-socket Intel quad-core Nehalem processors. 
+/// SGI XE1300 cluster with dual-socket Intel quad-core Nehalem processors.
 /// Each node has 2 Quad-Core Xeon X5550 processors runnning at 2.66 GHz
 /// with 3 GB of memory per core.
 
@@ -649,7 +658,7 @@ void sanityChecks(Command cmd, double cutoff, double latticeConst, char latticeT
 /// cubic (FCC) lattice.  The initial thermodynamic conditions
 /// (Temperature and Volume (via the lattice spacing, lat))can be specified
 /// from the command line input. The default is 600 K and standard
-/// volume (lat = 3.615 Angstroms).  
+/// volume (lat = 3.615 Angstroms).
 /// Different temperatures (e.g. T =3000K) and volumes can be
 /// specified to melt the system and enhance the interchange of atoms
 /// between domains.
@@ -717,7 +726,7 @@ void sanityChecks(Command cmd, double cutoff, double latticeConst, char latticeT
 ///
 /// In general, it is wise to keep the ratio of processor count to
 /// system size in each direction fixed (i.e. cubic domains): xproc_0 / nx_0 = xproc_1 /
-/// nx_1, since this minimizes surface area to volume. 
+/// nx_1, since this minimizes surface area to volume.
 /// Feel free to experiment, you might learn something about
 /// algorithms to optimize communication relative to work.
 ///
@@ -738,7 +747,7 @@ void sanityChecks(Command cmd, double cutoff, double latticeConst, char latticeT
 ///    (xproc=yproc=zproc=2, nx=ny=nz=20) -> (xproc=yproc=2, zproc=4, nx=ny=nz=20)
 ///
 /// The domain decomposition requires O(1000) atoms per domain and
-/// begins to scale poorly for small numbers of atoms per domain. 
+/// begins to scale poorly for small numbers of atoms per domain.
 /// Again, feel free to experiment, you might learn something here as
 /// well.  For example, when molecular dynamics codes were written for
 /// vector supercomputers, large lists of force pairs were created for
@@ -822,7 +831,7 @@ void sanityChecks(Command cmd, double cutoff, double latticeConst, char latticeT
 /// - Fluctuations in the energy can make it difficult to tell if
 ///   conservation is observed.  Increasing the number of atoms will reduce
 ///   the fluctuations.
-/// 
+///
 ///
 /// Particle Conservation {#sec_ver_particle_conservation}
 /// =====================
@@ -917,7 +926,7 @@ void sanityChecks(Command cmd, double cutoff, double latticeConst, char latticeT
 ///
 /// The epilog code handles end of run bookkeeping such as
 /// - validateResult() to check validation
-/// - printPerformanceResults() to print a performance summary 
+/// - printPerformanceResults() to print a performance summary
 /// - destroySimulation() to free memory
 ///
 /// Key Data Structures {#sec_key_data_structures}
@@ -965,7 +974,7 @@ void sanityChecks(Command cmd, double cutoff, double latticeConst, char latticeT
 ///
 /// Communication {#sec_communication}
 /// =============
-///  
+///
 /// As the number of atoms per MPI rank decreases, the communication
 /// routines will start to require a significant fraction of the
 /// run time.  The main communication routine in CoMD is haloExchange().

@@ -92,6 +92,7 @@ app::app(sprockit::sim_parameters *params, software_id sid,
   next_tls_key_(0),
   next_condition_(0),
   next_mutex_(0),
+  min_op_cutoff_(0),
   globals_storage_(nullptr)
 {
   int globalsSize = GlobalVariable::globalsSize();
@@ -99,6 +100,7 @@ app::app(sprockit::sim_parameters *params, software_id sid,
     globals_storage_ = new char[globalsSize];
     ::memcpy(globals_storage_, GlobalVariable::globalInit(), globalsSize);
   }
+  min_op_cutoff_ = params->get_optional_int_param("min_op_cutoff", 1e3);
 }
 
 app::~app()
@@ -174,8 +176,11 @@ app::compute_loop(uint64_t num_loops,
 }
 
 void
-app::compute_detailed(long flops, long nintops, long bytes)
+app::compute_detailed(uint64_t flops, uint64_t nintops, uint64_t bytes)
 {
+  if ((flops+nintops) < min_op_cutoff_){
+    return;
+  }
   compute_loops_lib()->compute_detailed(flops, nintops, bytes);
 }
 

@@ -1,4 +1,4 @@
-.PHONY: skeletons
+.PHONY: skeletons pots
 
 if !INTEGRATED_SST_CORE
 #------------------------------------------------------------------------------------------#
@@ -15,7 +15,7 @@ SKELETONCASES= \
   boxml
 
 if HAVE_CLANG
-SKELETONCASES += lulesh2.0.3 hpcg-3.0
+SKELETONCASES += lulesh2.0.3 hpcg-3.0 CoMD
 endif
 
 SKELETONTESTS = $(SKELETONCASES:%=test_skeleton_%)
@@ -24,6 +24,11 @@ skeletons:
 	rm -fr skeletons
 	cp -fpR $(top_srcdir)/skeletons .
 	chmod -R u+w skeletons # required for make distcheck (makes files r/o)
+
+pots:
+	rm -fr pots
+	cp -fpR $(top_srcdir)/skeletons/CoMD/pots .
+	chmod -R u+w pots # required for make distcheck (makes files r/o)
 
 $(SKELETONCASES): skeletons
 	cd skeletons/$@; PATH=$(bindir):$$PATH $(MAKE)
@@ -38,6 +43,10 @@ test_skeleton_boxml.$(CHKSUF): boxml
 test_skeleton_%.$(CHKSUF): % 
 	$(PYRUNTEST) 3 $(top_srcdir) $@ notime \
     ./skeletons/$*/run$* -f $(top_srcdir)/skeletons/$*/parameters.ini --no-wall-time
+
+test_skeleton_CoMD.$(CHKSUF): CoMD pots
+	$(PYRUNTEST) 3 $(top_srcdir) $@ notime \
+    ./skeletons/CoMD/runCoMD -f $(top_srcdir)/skeletons/CoMD/parameters.ini --no-wall-time
 
 test_apps_%.$(CHKSUF): %
 	$(PYRUNTEST) 3 $(top_srcdir) $@ True \

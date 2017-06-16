@@ -109,6 +109,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    */
   bool VisitDeclRefExpr(clang::DeclRefExpr* expr);
 
+  bool VisitMemberExpr(clang::MemberExpr* expr);
+
   /**
    * @brief VisitCXXNewExpr Capture all usages of operator new. Rewrite all
    * operator new calls into SST-specific memory management functions.
@@ -196,7 +198,29 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    */
   bool TraverseForStmt(clang::ForStmt* S, DataRecursionQueue* queue = nullptr);
 
+  bool TraverseUnaryOperator(clang::UnaryOperator* op, DataRecursionQueue* queue = nullptr);
+
+  bool TraverseBinaryOperator(clang::BinaryOperator* op, DataRecursionQueue* queue = nullptr);
+
+  bool TraverseIfStmt(clang::IfStmt* S, DataRecursionQueue* queue = nullptr);
+
+  bool TraverseCompoundStmt(clang::CompoundStmt* S, DataRecursionQueue* queue = nullptr);
+
   bool TraverseDeclStmt(clang::DeclStmt* op, DataRecursionQueue* queue = nullptr);
+
+#define OPERATOR(NAME) \
+  bool TraverseBin##NAME(clang::BinaryOperator* op, DataRecursionQueue* queue = nullptr){ \
+    return TraverseBinaryOperator(op,queue); \
+  }
+  BINOP_LIST()
+#undef OPERATOR
+
+#define OPERATOR(NAME) \
+  bool TraverseUnary##NAME(clang::UnaryOperator* op, DataRecursionQueue* queue = nullptr){ \
+    return TraverseUnaryOperator(op,queue); \
+  }
+  UNARYOP_LIST()
+#undef OPERATOR
 
   /**
    * @brief TraverseFunctionTemplateDecl We have to traverse template functions
@@ -302,13 +326,19 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::map<std::string, MPI_Call> mpiCalls_;
 
  private:
+  bool isNullVariable(clang::Decl* d) const {
+    return pragmaConfig_.nullVariables.find(d) != pragmaConfig_.nullVariables.end();
+  }
+
   void replaceGlobalUse(clang::NamedDecl* decl, clang::SourceRange rng);
 
   bool isGlobal(clang::DeclRefExpr* expr){
     return globals_.find(expr->getFoundDecl()) != globals_.end();
   }
 
+  void deleteNullVariableStmt(clang::Stmt* use_stmt, clang::Decl* d);
   bool activatePragmasForStmt(clang::Stmt* S);
+  bool activatePragmasForDecl(clang::Decl* D);
   void visitCollective(clang::CallExpr* expr);
   void visitReduce(clang::CallExpr* expr);
   void visitPt2Pt(clang::CallExpr* expr);

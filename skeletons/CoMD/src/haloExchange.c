@@ -91,7 +91,7 @@ typedef struct ForceMsgSt
 ForceMsg;
 
 static HaloExchange* initHaloExchange(Domain* domain);
-static void exchangeData(HaloExchange* haloExchange, void* data, int iAxis);
+static void exchangeData(LinkCell* boxes, HaloExchange* haloExchange, void* data, int iAxis);
 
 static int* mkAtomCellList(LinkCell* boxes, enum HaloFaceOrder iFace, const int nCells);
 static int loadAtomsBuffer(void* vparms, void* data, int face, char* charBuf);
@@ -280,15 +280,15 @@ void exchangeData(LinkCell* boxes, HaloExchange* haloExchange, void* data, int i
    enum HaloFaceOrder faceM = 2*iAxis;
    enum HaloFaceOrder faceP = faceM+1;
 
+#pragma sst start_replace comdMalloc 0
    char* sendBufM = comdMalloc(haloExchange->bufCapacity);
    char* sendBufP = comdMalloc(haloExchange->bufCapacity);
    char* recvBufM = comdMalloc(haloExchange->bufCapacity);
    char* recvBufP = comdMalloc(haloExchange->bufCapacity);
+#pragma sst stop_replace comdMalloc
 
    int nSendM = haloExchange->loadBuffer(haloExchange->parms, data, faceM, sendBufM);
    int nSendP = haloExchange->loadBuffer(haloExchange->parms, data, faceP, sendBufP);
-   boxes->nTotalAtoms -= nSendM;
-   boxes->nTotalAtoms -= nSendP;
 
    int nbrRankM = haloExchange->nbrRank[faceM];
    int nbrRankP = haloExchange->nbrRank[faceP];
@@ -299,7 +299,7 @@ void exchangeData(LinkCell* boxes, HaloExchange* haloExchange, void* data, int i
    nRecvP = sendReceiveParallel(sendBufM, nSendM, nbrRankM, recvBufP, haloExchange->bufCapacity, nbrRankP);
    nRecvM = sendReceiveParallel(sendBufP, nSendP, nbrRankP, recvBufM, haloExchange->bufCapacity, nbrRankM);
    stopTimer(commHaloTimer);
-   
+
    haloExchange->unloadBuffer(haloExchange->parms, data, faceM, nRecvM, recvBufM);
    haloExchange->unloadBuffer(haloExchange->parms, data, faceP, nRecvP, recvBufP);
    comdFree(recvBufP);
@@ -374,11 +374,15 @@ int loadAtomsBuffer(void* vparms, void* data, int face, char* charBuf)
    
    int nCells = parms->nCells[face];
    int* cellList = parms->cellList[face];
+#pragma sst init 2
    int nBuf = 0;
+   int avgAtomsPerBox = s->boxes->nTotalAtoms/s->boxes->nLocalBoxes;
+#pragma sst compute
    for (int iCell=0; iCell<nCells; ++iCell)
    {
       int iBox = cellList[iCell];
       int iOff = iBox*MAXATOMS;
+#pragma sst loop_count avgAtomsPerBox
       for (int ii=iOff; ii<iOff+s->boxes->nAtoms[iBox]; ++ii)
       {
          buf[nBuf].gid  = s->atoms->gid[ii];
@@ -392,6 +396,8 @@ int loadAtomsBuffer(void* vparms, void* data, int face, char* charBuf)
          ++nBuf;
       }
    }
+   s->boxes->nTotalAtoms -= nBuf;
+   //printf("Lowered total atoms by %d to %d\n", nBuf, s->boxes->nTotalAtoms);
    return nBuf*sizeof(AtomMsg);
 }
 
@@ -412,7 +418,8 @@ void unloadAtomsBuffer(void* vparms, void* data, int face, int bufSize, char* ch
    AtomMsg* buf = (AtomMsg*) charBuf;
    int nBuf = bufSize / sizeof(AtomMsg);
    assert(bufSize % sizeof(AtomMsg) == 0);
-   
+
+#pragma sst compute
    for (int ii=0; ii<nBuf; ++ii)
    {
       int gid   = buf[ii].gid;
@@ -426,6 +433,7 @@ void unloadAtomsBuffer(void* vparms, void* data, int face, int bufSize, char* ch
       putAtomInBox(s->boxes, s->atoms, gid, type, rx, ry, rz, px, py, pz);
    }
    s->boxes->nTotalAtoms += nBuf;
+   //printf("Added %d atoms to total %d\n", nBuf, s->boxes->nTotalAtoms);
 }
 
 void destroyAtomsExchange(void* vparms)
@@ -552,10 +560,13 @@ int loadForceBuffer(void* vparms, void* vdata, int face, char* charBuf)
    int nCells = parms->nCells[face];
    int* cellList = parms->sendCells[face];
    int nBuf = 0;
+   int avgAtomsPerBox = data->boxes->nTotalAtoms/data->boxes->nLocalBoxes;
+#pragma sst compute
    for (int iCell=0; iCell<nCells; ++iCell)
    {
       int iBox = cellList[iCell];
       int iOff = iBox*MAXATOMS;
+#pragma sst loop_count avgAtomsPerBox
       for (int ii=iOff; ii<iOff+data->boxes->nAtoms[iBox]; ++ii)
       {
          buf[nBuf].dfEmbed = data->dfEmbed[ii];
@@ -581,10 +592,13 @@ void unloadForceBuffer(void* vparms, void* vdata, int face, int bufSize, char* c
    int nCells = parms->nCells[face];
    int* cellList = parms->recvCells[face];
    int iBuf = 0;
+   int avgAtomsPerBox = data->boxes->nTotalAtoms/data->boxes->nLocalBoxes;
+#pragma sst compute
    for (int iCell=0; iCell<nCells; ++iCell)
    {
       int iBox = cellList[iCell];
       int iOff = iBox*MAXATOMS;
+#pragma sst loop_count avgAtomsPerBox
       for (int ii=iOff; ii<iOff+data->boxes->nAtoms[iBox]; ++ii)
       {
          data->dfEmbed[ii] = buf[iBuf].dfEmbed;
@@ -613,6 +627,7 @@ void destroyForceExchange(void* vparms)
 /// from one task to another.  Trying to maintain the atom order during
 /// the atom exchange would immensely complicate that code.  Instead, we
 /// just sort the atoms after the atom exchange.
+#pragma sst delete
 void sortAtomsInCell(Atoms* atoms, LinkCell* boxes, int iBox)
 {
    int nAtoms = boxes->nAtoms[iBox];

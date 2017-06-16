@@ -158,10 +158,13 @@ void printPerformanceResults(int nGlobalAtoms, int printRate)
             perfTimer[ii].average*tick, perfTimer[ii].stdev*tick);
    }
    double atomsPerTask = nGlobalAtoms/(real_t)getNRanks();
+#pragma sst init 0
    perfGlobal.atomRate = perfTimer[timestepTimer].average * tick * 1e6 /
       (atomsPerTask * perfTimer[timestepTimer].count * printRate);
+#pragma sst init 0
    perfGlobal.atomAllRate = perfTimer[timestepTimer].average * tick * 1e6 /
       (nGlobalAtoms * perfTimer[timestepTimer].count * printRate);
+#pragma sst init 0
    perfGlobal.atomsPerUSec = 1.0 / perfGlobal.atomAllRate;
 
    fprintf(screenOut, "\n---------------------------------------------------\n");

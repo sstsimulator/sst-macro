@@ -46,6 +46,72 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include "pragmas.h"
 
+class SSTReplacePragma : public SSTPragma {
+ protected:
+  std::string fxn_;
+  std::string replacement_;
+ public:
+  SSTReplacePragma(const std::string& fxn, const std::string& replace) :
+    fxn_(fxn), replacement_(replace),
+    SSTPragma(Replace)
+  {
+  }
+
+  const std::string& replacement() const {
+    return replacement_;
+  }
+
+  const std::string& fxn() const {
+    return fxn_;
+  }
+
+  void run(clang::Stmt* s, std::list<const clang::Expr*>& replaced);
+  void run(clang::Stmt* s, clang::Rewriter& r);
+  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
+  void activate(clang::Decl *d, clang::Rewriter &r, PragmaConfig &cfg) override;
+ private:
+  void run(clang::Stmt* s, clang::Rewriter& rw, std::list<const clang::Expr*>& replaced);
+  void activateFunctionDecl(clang::FunctionDecl* d, clang::Rewriter& r);
+  void activateVarDecl(clang::VarDecl* d, clang::Rewriter& r);
+  void activateCXXRecordDecl(clang::CXXRecordDecl* d, clang::Rewriter& r);
+};
+
+class SSTStartReplacePragma : public SSTReplacePragma {
+ public:
+  SSTStartReplacePragma(const std::string& fxn, const std::string& replace) :
+    SSTReplacePragma(fxn,replace){}
+
+  void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override {
+    cfg.replacePragmas[fxn_] = this;
+  }
+};
+
+class SSTStopReplacePragma : public SSTReplacePragma {
+ public:
+  SSTStopReplacePragma(const std::string& fxn, const std::string& replace) :
+    SSTReplacePragma(fxn,replace){}
+
+  void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override {
+    cfg.replacePragmas.erase(fxn_);
+  }
+
+};
+
+class SSTInitPragma : public SSTPragma {
+ public:
+  SSTInitPragma(const std::string& repl) : init_(repl), SSTPragma(Init) {}
+  const std::string& init() const {
+    return init_;
+  }
+
+  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
+
+ private:
+  void activateDeclStmt(clang::DeclStmt* s, clang::Rewriter& r);
+  void activateBinaryOperator(clang::BinaryOperator* op, clang::Rewriter& r);
+  std::string init_;
+};
+
 class SSTReplacePragmaHandler : public SSTTokenStreamPragmaHandler
 {
  public:
@@ -61,6 +127,21 @@ class SSTReplacePragmaHandler : public SSTTokenStreamPragmaHandler
 
  private:
   SSTPragma* allocatePragma(clang::SourceLocation loc, 
+                            const std::list<clang::Token> &tokens) const;
+
+};
+
+class SSTInitPragmaHandler : public SSTTokenStreamPragmaHandler
+{
+ public:
+  SSTInitPragmaHandler(SSTPragmaList& plist,
+                        clang::CompilerInstance& CI,
+                        SkeletonASTVisitor& visitor,
+                        std::set<clang::Stmt*>& deld) :
+     SSTTokenStreamPragmaHandler("init", plist, CI, visitor, deld){}
+
+ private:
+  SSTPragma* allocatePragma(clang::SourceLocation loc,
                             const std::list<clang::Token> &tokens) const;
 
 };

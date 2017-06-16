@@ -61,6 +61,12 @@ static int maxPragmaDepth = 0;
 std::list<SSTPragma*> pendingPragmas;
 
 void
+SSTPragma::replace(const clang::Stmt* s, clang::Rewriter& r, const std::string& repl){
+  clang::SourceRange rng(s->getLocStart(), s->getLocEnd());
+  r.ReplaceText(rng, repl);
+}
+
+void
 SSTPragmaHandler::configure(Token& PragmaTok, Preprocessor& PP, SSTPragma* fsp)
 {
   pragmaDepth++;
@@ -128,11 +134,17 @@ SSTDeletePragma::replace(clang::Stmt* s, clang::Rewriter& r, const char* repl){
 void
 SSTDeletePragma::activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg){
   replace(s,r,"");
+  switch(s->getStmtClass()){
+  case Stmt::ForStmtClass:
+  case Stmt::CompoundStmtClass:
+    break;
+  default:
+    break;
+  }
 }
 
 void
 SSTDeletePragma::activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg){
-  cfg.skipNextStmt = true;
 #define prg_case(x,d) case Decl::x: replace(cast<x##Decl>(d)->getBody(), r, "{}"); break
   switch (d->getKind()){
     prg_case(Function,d);
@@ -364,6 +376,9 @@ SSTPragma::tokenStreamToString(SourceLocation loc,
         break;
       case tok::star:
         os << "*";
+        break;
+      case tok::kw_int:
+        os << "int";
         break;
       case tok::kw_nullptr:
          os << "nullptr";

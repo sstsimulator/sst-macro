@@ -70,6 +70,7 @@ void yamlAppInfo(FILE* file)
    printSeparator(file);
    fprintf(file,"Mini-Application Name    : %s\n", CoMDVariant);
    fprintf(file,"Mini-Application Version : %s\n", CoMDVersion);
+#if 0
    fprintf(file,"Platform:\n");
    fprintf(file,"  hostname: %s\n",         CoMD_HOSTNAME);
    fprintf(file,"  kernel name: %s\n",      CoMD_KERNEL_NAME);
@@ -87,6 +88,7 @@ void yamlAppInfo(FILE* file)
    getTimeString(timestring);
    fprintf(file,"Run Date/Time: %s\n", timestring);
    fprintf(file, "\n");
+#endif
    fflush(file);
 }
 

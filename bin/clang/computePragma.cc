@@ -117,7 +117,6 @@ SSTComputePragma::visitCXXMethodDecl(CXXMethodDecl* decl, Rewriter& r, PragmaCon
 {
   if (decl->hasBody()){
     visitAndReplaceStmt(decl->getBody(), r, cfg);
-    cfg.skipNextStmt = true;
   }
 }
 
@@ -126,7 +125,6 @@ SSTComputePragma::visitFunctionDecl(FunctionDecl* decl, Rewriter& r, PragmaConfi
 {
   if (decl->hasBody()){
     visitAndReplaceStmt(decl->getBody(), r, cfg);
-    cfg.skipNextStmt = true;
   }
 }
 

@@ -66,7 +66,7 @@ INCLUDES += ${MPI_INCLUDE}
 CFLAGS += -DDO_MPI
 LDFLAGS += ${MPI_LIB}
 endif
-CoMD_EXE = runcomd
+CoMD_EXE = runCoMD
 
 LDFLAGS += ${C_LIB} ${OTHER_LIB}
 CFLAGS  += ${OPTFLAGS} ${INCLUDES} ${OTHER_INCLUDE}
@@ -94,7 +94,8 @@ OBJECTS=$(SOURCES:.c=.o)
 DEFAULT: ${CoMD_EXE}
 
 %.o: %.c
-	${CC} ${CFLAGS} -c $< -o $@
+	SSTMAC_SKELETONIZE=1 SSTMAC_HEADERS=`pwd`/sstmac_headers \
+   ${CC} ${CFLAGS} -c $< -o $@
 
 ${CoMD_EXE}: CoMD_info.h ${OBJECTS} 
 	${CC} ${CFLAGS} -o ${CoMD_EXE} ${OBJECTS} ${LDFLAGS}
@@ -103,7 +104,7 @@ CoMD_info.h: Makefile
 	./generate_info_header ${CoMD_VARIANT} "$(CC)" "$(CFLAGS)" "$(LDFLAGS)"
 
 clean:
-	rm -f src/*.o CoMD_info.h .depend ${CoMD_EXE}
+	rm -f src/*.o CoMD_info.h .depend ${CoMD_EXE} src/.depend.bak .depend.bak src/.depend
 
 distclean: clean
 	rm -f ${CoMD_EXE} .depend.bak

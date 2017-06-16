@@ -188,9 +188,8 @@ SSTReplacePragma::run(Stmt *s, std::list<const Expr*>& replacedExprs)
 }
 
 void
-SSTReplacePragma::run(Stmt *s, Rewriter &r)
+SSTReplacePragma::run(Stmt *s, Rewriter& r, std::list<const Expr *> &replaced)
 {
-  std::list<const Expr*> replaced;
   run(s,replaced);
   for (const Expr* e: replaced){
     SourceRange rng(e->getLocStart(), e->getLocEnd());
@@ -199,9 +198,22 @@ SSTReplacePragma::run(Stmt *s, Rewriter &r)
 }
 
 void
+SSTReplacePragma::run(Stmt *s, Rewriter &r)
+{
+  std::list<const Expr*> replaced;
+  run(s,r,replaced);
+}
+
+void
 SSTReplacePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 {
-  run(s,r);
+  std::list<const Expr*> replaced;
+  run(s,r,replaced);
+  for (const Expr* e: replaced){
+    if (e->getStmtClass() == Stmt::DeclRefExprClass){
+      cfg.deletedRefs.insert(cast<const DeclRefExpr>(e));
+    }
+  }
 }
 
 
@@ -236,6 +248,47 @@ void
 SSTReplacePragma::activateCXXRecordDecl(CXXRecordDecl *d, Rewriter &r)
 {
   if (d->hasBody()) run(d->getBody(), r);
+}
+
+void
+SSTInitPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+{
+#define repl_case(cls,s,rw) \
+  case Stmt::cls##Class: activate##cls(cast<cls>(s), rw); break
+  switch(s->getStmtClass()){
+    repl_case(DeclStmt,s,r);
+    repl_case(BinaryOperator,s,r);
+    default:
+      errorAbort(s->getLocStart(), *CI,
+                 "pragma init not applied to initialization statement");
+  }
+#undef repl_case
+}
+
+void
+SSTInitPragma::activateBinaryOperator(BinaryOperator* op, Rewriter& r)
+{
+  replace(op->getRHS(), r, init_);
+}
+
+void
+SSTInitPragma::activateDeclStmt(DeclStmt* s, Rewriter& r)
+{
+  if (!s->isSingleDecl()){
+    errorAbort(s->getLocStart(), *CI,
+               "pragma init cannot apply to multiple declaration");
+  }
+  Decl* d = s->getSingleDecl();
+  if (!isa<VarDecl>(d)){
+    errorAbort(s->getLocStart(), *CI,
+               "pragma init only applies to variable declarations");
+  }
+  VarDecl* vd = cast<VarDecl>(d);
+  if (!vd->hasInit()){
+    errorAbort(s->getLocStart(), *CI,
+               "pragma init applied to variable without initializer");
+  }
+  replace(vd->getInit(), r, init_);
 }
 
 std::string
@@ -278,4 +331,12 @@ SSTStopReplacePragmaHandler::allocatePragma(SourceLocation loc, const std::list<
 {
   std::string fxn = tokens.front().getIdentifierInfo()->getNameStart();
   return new SSTStopReplacePragma(fxn, "not relevant");
+}
+
+SSTPragma*
+SSTInitPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  std::stringstream sstr;
+  SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
+  return new SSTInitPragma(sstr.str());
 }

@@ -100,7 +100,6 @@ int sendReceiveParallel(void* sendBuf, int sendLen, int dest,
                 recvBuf, recvLen, MPI_BYTE, source, 0,
                 MPI_COMM_WORLD, &status);
    MPI_Get_count(&status, MPI_BYTE, &bytesReceived);
-
    return bytesReceived;
 #else
    assert(source == dest);

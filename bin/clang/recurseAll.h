@@ -23,7 +23,8 @@ enum class ExprRole {
   IfElse,
   IfInit,
   Standalone,
-  ThisPtr
+  ThisPtr,
+  ReturnValue
 };
 
 static const char* tostr(ExprRole role)
@@ -47,6 +48,7 @@ static const char* tostr(ExprRole role)
   enum_case(IfInit);
   enum_case(Standalone);
   enum_case(ThisPtr);
+  enum_case(ReturnValue);
   }
 #undef enum_case
 }
@@ -87,10 +89,15 @@ struct RecurseAll {
     recurse_case(CXXFunctionalCastExpr,stmt,role,std::forward<Args>(args)...);
     recurse_case(ArraySubscriptExpr,stmt,role,std::forward<Args>(args)...)
     recurse_case(DeclStmt,stmt,role,std::forward<Args>(args)...)
+    recurse_case(ReturnStmt,stmt,role,std::forward<Args>(args)...)
     default:
       break;
    }
 #undef recurse_case
+  }
+
+  void recurseReturnStmt(const ReturnStmt* stmt, ExprRole role, Args&& ...args){
+    recurse(stmt->getRetValue(), ExprRole::ReturnValue, std::forward<Args>(args)...);
   }
 
   void recurseForStmt(const ForStmt* stmt, ExprRole role, Args&& ...args){
