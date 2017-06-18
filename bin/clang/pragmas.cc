@@ -158,13 +158,13 @@ SSTDeletePragma::activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg)
 void
 SSTNewPragma::visitCXXMethodDecl(CXXMethodDecl* decl, Rewriter& r)
 {
-  defaultAct(decl->getBody(), r, true, false);
+  defaultAct(decl->getBody(), r, *CI, true, false);
 }
 
 void
 SSTNewPragma::visitFunctionDecl(FunctionDecl* decl, Rewriter& r)
 {
-  defaultAct(decl->getBody(), r, true, false);
+  defaultAct(decl->getBody(), r, *CI, true, false);
 }
 
 void
@@ -203,7 +203,7 @@ SSTNewPragma::visitDeclStmt(DeclStmt *stmt, Rewriter &r)
         deleted->insert(init);
       } else {
         //nope, need extra hacking
-        defaultAct(stmt,r,false,true);
+        defaultAct(stmt,r,*CI,false,true);
       }
     }
   } else {
@@ -222,29 +222,28 @@ SSTNewPragma::visitBinaryOperator(BinaryOperator *op, Rewriter& r)
     r.ReplaceText(op->getSourceRange(), pp.os.str());
     deleted->insert(op->getRHS());
   } else {
-    defaultAct(op,r,false,true);
+    defaultAct(op,r,*CI,false,true);
   }
 }
 
 void
-SSTNewPragma::defaultAct(Stmt* stmt, Rewriter& r, bool insertStartAfter, bool insertStopAfter)
+SSTNewPragma::defaultAct(Stmt* stmt, Rewriter& r, clang::CompilerInstance& CI,
+                         bool insertStartAfter, bool insertStopAfter)
 {
-  SourceLocation startLoc = stmt->getLocStart();
-  SourceLocation insertLoc = endLoc;
+  SourceLocation insertLoc = stmt->getLocStart();
   if (insertStartAfter){
-    insertLoc = Lexer::getLocForEndOfToken(startLoc, 0,
-                        CI->getSourceManager(), CI->getLangOpts());
+    insertLoc = Lexer::getLocForEndOfToken(insertLoc, 0,
+                        CI.getSourceManager(), CI.getLangOpts());
   }
   r.InsertText(insertLoc, "should_skip_operator_new()++;", false);
 
-  SourceLocation endLoc = stmt->getLocEnd();
-  insertLoc = endLoc;
+  insertLoc = stmt->getLocEnd();
   if (insertStopAfter){
-    insertLoc = Lexer::getLocForEndOfToken(endLoc, 0,
-                        CI->getSourceManager(), CI->getLangOpts());
+    insertLoc = Lexer::getLocForEndOfToken(insertLoc, 0,
+                        CI.getSourceManager(), CI.getLangOpts());
   }
   if (insertLoc.isInvalid()){
-    errorAbort(endLoc, *CI, "trouble parsing sst new pragma");
+    errorAbort(stmt->getLocStart(), CI, "trouble parsing sst new pragma");
   }
   //locations are weird with functions - insert after is always false
   r.InsertText(insertLoc, "should_skip_operator_new()--;", false);
@@ -253,7 +252,7 @@ SSTNewPragma::defaultAct(Stmt* stmt, Rewriter& r, bool insertStartAfter, bool in
 void
 SSTNewPragma::visitCompoundStmt(clang::CompoundStmt* stmt, Rewriter& r)
 {
-  defaultAct(stmt,r,false,true);
+  defaultAct(stmt,r,*CI,false,true);
 }
 
 void
@@ -275,7 +274,7 @@ SSTNewPragma::activate(Stmt* stmt, Rewriter &r, PragmaConfig& cfg)
     scase(CompoundStmt,stmt,r);
     scase(ForStmt,stmt,r);
     default: //just delete what follows
-      defaultAct(stmt,r,false,false);
+      defaultAct(stmt,r,*CI,false,false);
       break;
   }
 #undef scase

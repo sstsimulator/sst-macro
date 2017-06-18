@@ -93,7 +93,10 @@ OBJECTS=$(SOURCES:.c=.o)
 
 DEFAULT: ${CoMD_EXE}
 
-%.o: %.c
+sstmac_headers:
+	$(shell find `pwd`/src -name "*.h" > $@)
+
+%.o: %.c sstmac_headers
 	SSTMAC_SKELETONIZE=1 SSTMAC_HEADERS=`pwd`/sstmac_headers \
    ${CC} ${CFLAGS} -c $< -o $@
 
@@ -104,7 +107,7 @@ CoMD_info.h: Makefile
 	./generate_info_header ${CoMD_VARIANT} "$(CC)" "$(CFLAGS)" "$(LDFLAGS)"
 
 clean:
-	rm -f src/*.o CoMD_info.h .depend ${CoMD_EXE} src/.depend.bak .depend.bak src/.depend
+	rm -f src/*.o CoMD_info.h .depend ${CoMD_EXE} src/.depend.bak .depend.bak src/.depend sstmac_headers
 
 distclean: clean
 	rm -f ${CoMD_EXE} .depend.bak
