@@ -42,92 +42,37 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/process/thread.h>
-#include <sstmac/software/process/app.h>
-#include <sstmac/software/api/api.h>
-#include <sstmac/common/messages/sst_message.h>
-#include <sstmac/common/sstmac_env.h>
-#include <sstmac/common/thread_lock.h>
-#include <sprockit/sim_parameters.h>
-#include <sprockit/keyword_registration.h>
+#ifndef SSTMAC_SOFTWARE_PROCESS_host_timer
+#define SSTMAC_SOFTWARE_PROCESS_host_timer
 
-RegisterKeywords("host_compute_modeling");
+#include <sys/time.h>
 
-namespace sstmac {
-namespace sw {
+class HostTimer {
 
-static thread_lock the_api_lock;
-
-void
-api_lock() {
-  the_api_lock.lock();
-}
-
-void
-api_unlock() {
-  the_api_lock.unlock();
-}
-
-api*
-static_get_api(const char *name)
-{
-  api* a = operating_system::current_thread()->_get_api(name);
-  return a;
-}
-
-api::~api()
-{
-  if (host_timer_) {
-    delete host_timer_;
+ public:
+  HostTimer(){}
+  
+  /**
+  * @brief start
+  * Set the start time for the current window
+  */
+  void start(){
+    gettimeofday(&start_, nullptr);
   }
-}
-
-void
-api::init(sprockit::sim_parameters* params)
-{
-  bool host_compute_local = params->get_optional_bool_param("host_api_timer", false);
-  if (host_compute_local) {
-    host_timer_ = new HostTimer();
-    compute_ = operating_system::current_thread()->parent_app()->compute_time_lib();
+  
+  /**
+  * @brief stamp
+  * Set the current time as the endpoint for the current window
+  */
+  double stamp(){
+    timeval t_st;
+    gettimeofday(&t_st, nullptr);
+    double duration = (t_st.tv_sec - start_.tv_sec) + 1e-6*(t_st.tv_usec - start_.tv_usec);
+    return duration;
   }
-}
 
-void
-api::start_api_call()
-{
-  if (host_timer_){
-    host_timer_->start();
-  }
-  os_->active_thread()->start_api_call();
-}
-void
-api::end_api_call()
-{
-  if (host_timer_) {
-    double time = host_timer_->stamp();
-    compute_->compute(timestamp(time));
-  }
-  os_->active_thread()->end_api_call();
-}
+ private:
+  timeval start_;
+};
 
-timestamp
-api::now() const 
-{
-  return os()->now();
-}
-
-void
-api::schedule(timestamp t, event_queue_entry* ev)
-{
-  os()->schedule(t, ev);
-}
-
-void
-api::schedule_delay(timestamp t, event_queue_entry* ev)
-{
-  os()->schedule_delay(t, ev);
-}
-
-}
-}
+#endif

@@ -83,7 +83,7 @@ mpi_api::test(MPI_Request *request, int *flag, MPI_Status *status)
   } else {
     *flag = 0;
   }
-
+  end_api_call();
   return MPI_SUCCESS;
 }
 
@@ -103,12 +103,14 @@ mpi_api::testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Stat
     mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request,
       "MPI_Testall(%d,...)", count);
   }
+  end_api_call();
   return MPI_SUCCESS;
 }
 
 int
 mpi_api::testany(int count, MPI_Request array_of_requests[], int *indx, int *flag, MPI_Status *status)
 {
+  start_api_call();
   if (count == 0){
     *flag = 1;
     return MPI_SUCCESS;
@@ -122,12 +124,14 @@ mpi_api::testany(int count, MPI_Request array_of_requests[], int *indx, int *fla
       return MPI_SUCCESS;
     }
   }
+  end_api_call();
   return MPI_SUCCESS;
 }
 
 int
 mpi_api::testsome(int incount, MPI_Request array_of_requests[], int *outcount, int array_of_indices[], MPI_Status array_of_statuses[])
 {
+  start_api_call();
   int numComplete = 0;
   bool ignore_status = array_of_statuses == MPI_STATUSES_IGNORE;
   for (int i=0; i < incount; ++i){
@@ -137,6 +141,7 @@ mpi_api::testsome(int incount, MPI_Request array_of_requests[], int *outcount, i
     }
   }
   *outcount = numComplete;
+  end_api_call();
   return MPI_SUCCESS;
 }
 
