@@ -109,7 +109,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    */
   bool VisitDeclRefExpr(clang::DeclRefExpr* expr);
 
-  bool VisitMemberExpr(clang::MemberExpr* expr);
+  bool TraverseMemberExpr(clang::MemberExpr* expr, DataRecursionQueue* queue = nullptr);
 
   /**
    * @brief VisitCXXNewExpr Capture all usages of operator new. Rewrite all
@@ -328,6 +328,14 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
  private:
   bool isNullVariable(clang::Decl* d) const {
     return pragmaConfig_.nullVariables.find(d) != pragmaConfig_.nullVariables.end();
+  }
+
+  SSTNullVariablePragma* getNullVariable(clang::Decl* d) const {
+    auto iter = pragmaConfig_.nullVariables.find(d);
+    if (iter != pragmaConfig_.nullVariables.end()){
+      return iter->second;
+    }
+    return nullptr;
   }
 
   void replaceGlobalUse(clang::NamedDecl* decl, clang::SourceRange rng);

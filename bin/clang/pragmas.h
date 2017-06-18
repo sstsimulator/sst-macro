@@ -52,11 +52,12 @@ Questions? Contact sst-macro-help@sandia.gov
 class SkeletonASTVisitor;
 
 struct SSTReplacePragma;
+struct SSTNullVariablePragma;
 struct PragmaConfig {
   int pragmaDepth;
   bool makeNoChanges;
   std::map<std::string,SSTReplacePragma*> replacePragmas;
-  std::set<clang::Decl*> nullVariables;
+  std::map<clang::Decl*,SSTNullVariablePragma*> nullVariables;
   std::set<const clang::DeclRefExpr*> deletedRefs;
   PragmaConfig() : pragmaDepth(0),
     makeNoChanges(false) {}
@@ -107,11 +108,35 @@ struct SSTPragma {
 
 class SSTNullVariablePragma : public SSTPragma {
  public:
-  SSTNullVariablePragma() : SSTPragma(NullVariable) {}
+  SSTNullVariablePragma(clang::SourceLocation loc,
+                        clang::CompilerInstance& CI,
+                        const std::list<clang::Token>& tokens);
+  bool hasOnly() const {
+    return !nullOnly_.empty();
+  }
+
+  bool hasExceptions() const {
+    return !nullExcept_.empty();
+  }
+
+  bool isOnly(clang::NamedDecl* d) const {
+    return nullOnly_.find(d->getNameAsString()) != nullOnly_.end();
+  }
+
+  bool isException(clang::NamedDecl* d) const {
+    return nullExcept_.find(d->getNameAsString()) != nullExcept_.end();
+  }
+
+  bool keepCtor() const {
+    return !nullOnly_.empty() || !nullExcept_.empty();
+  }
+
  private:
   void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override;
   void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg) override;
   void replace(clang::Stmt* s, clang::Rewriter& r, const char* repl);
+  std::set<std::string> nullOnly_;
+  std::set<std::string> nullExcept_;
 };
 
 class SSTDeletePragma : public SSTPragma {
@@ -146,7 +171,7 @@ class SSTNewPragma : public SSTPragma {
  public:
   SSTNewPragma() : SSTPragma(New) {}
   static void defaultAct(clang::Stmt* stmt, clang::Rewriter& r, clang::CompilerInstance& CI,
-                         bool insertStartAfter, bool insertStopAfter);
+                         bool insertStartAfter, bool insertStopAfter, bool trailingSemiColon=false);
  private:
   void activate(clang::Stmt *stmt, clang::Rewriter &r, PragmaConfig& cfg) override;
   void activate(clang::Decl* d, clang::Rewriter &r, PragmaConfig& cfg) override;
@@ -288,14 +313,6 @@ class SSTKeepPragmaHandler : public SSTSimplePragmaHandler<SSTKeepPragma> {
   {}
 };
 
-class SSTNullVariablePragmaHandler : public SSTSimplePragmaHandler<SSTNullVariablePragma> {
- public:
-  SSTNullVariablePragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
-                      SkeletonASTVisitor& visitor, std::set<clang::Stmt*>& deld) :
-   SSTSimplePragmaHandler<SSTNullVariablePragma>("null_variable", plist, CI, visitor, deld)
-  {}
-};
-
 class SSTTokenStreamPragmaHandler : public SSTPragmaHandler
 {
  public:
@@ -322,5 +339,20 @@ class SSTTokenStreamPragmaHandler : public SSTPragmaHandler
                                     const std::list<clang::Token>& tokens) const = 0;
 };
 
+
+class SSTNullVariablePragmaHandler : public SSTTokenStreamPragmaHandler
+{
+ public:
+  SSTNullVariablePragmaHandler(SSTPragmaList& plist,
+                        clang::CompilerInstance& CI,
+                        SkeletonASTVisitor& visitor,
+                        std::set<clang::Stmt*>& deld) :
+     SSTTokenStreamPragmaHandler("null_variable", plist, CI, visitor, deld){}
+
+ private:
+  SSTPragma* allocatePragma(clang::SourceLocation loc,
+                            const std::list<clang::Token> &tokens) const;
+
+};
 
 #endif

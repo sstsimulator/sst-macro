@@ -82,7 +82,6 @@ class SSTStartReplacePragma : public SSTReplacePragma {
     SSTReplacePragma(fxn,replace){}
 
   void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override {
-    std::cout << "start replacing " << fxn_ << " with " << replacement_ << std::endl;
     cfg.replacePragmas[fxn_] = this;
   }
 };
@@ -93,7 +92,6 @@ class SSTStopReplacePragma : public SSTReplacePragma {
     SSTReplacePragma(fxn,replace){}
 
   void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override {
-    std::cout << "stop replacing " << fxn_ << " with " << replacement_ << std::endl;
     cfg.replacePragmas.erase(fxn_);
   }
 

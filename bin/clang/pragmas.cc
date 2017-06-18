@@ -228,7 +228,8 @@ SSTNewPragma::visitBinaryOperator(BinaryOperator *op, Rewriter& r)
 
 void
 SSTNewPragma::defaultAct(Stmt* stmt, Rewriter& r, clang::CompilerInstance& CI,
-                         bool insertStartAfter, bool insertStopAfter)
+                         bool insertStartAfter, bool insertStopAfter,
+                         bool trailingSemiColon)
 {
   SourceLocation insertLoc = stmt->getLocStart();
   if (insertStartAfter){
@@ -241,10 +242,20 @@ SSTNewPragma::defaultAct(Stmt* stmt, Rewriter& r, clang::CompilerInstance& CI,
   if (insertStopAfter){
     insertLoc = Lexer::getLocForEndOfToken(insertLoc, 0,
                         CI.getSourceManager(), CI.getLangOpts());
+    if (insertLoc.isInvalid()){
+      errorAbort(stmt->getLocStart(), CI, "trouble turning off operator new");
+    }
   }
-  if (insertLoc.isInvalid()){
-    errorAbort(stmt->getLocStart(), CI, "trouble parsing sst new pragma");
+
+  std::cout << insertLoc.printToString(CI.getSourceManager()) << std::endl;
+  if (trailingSemiColon){
+    insertLoc = Lexer::findLocationAfterToken(insertLoc, tok::semi,
+                                  CI.getSourceManager(), CI.getLangOpts(), false);
+    if (insertLoc.isInvalid()){
+      errorAbort(stmt->getLocStart(), CI, "trouble turning off operator new");
+    }
   }
+
   //locations are weird with functions - insert after is always false
   r.InsertText(insertLoc, "should_skip_operator_new()--;", false);
 }
@@ -325,10 +336,44 @@ SSTMallocPragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig& cfg)
 #undef scase
 }
 
+SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstance& CI,
+                                             const std::list<Token> &tokens)
+ : SSTPragma(NullVariable)
+{
+  if (tokens.empty()) return;
+
+  const Token& first = tokens.front();
+  std::set<std::string>* inserter;
+  if (first.getKind() == tok::identifier && first.getIdentifierInfo()->getName().str() == "except"){
+    inserter = &nullExcept_;
+  } else if (first.getKind() == tok::string_literal && first.getLiteralData() == std::string("only")){
+    inserter = &nullOnly_;
+  } else {
+    errorAbort(loc, CI, "illegal null_variable spec: 'only' or 'except' allowed");
+  }
+
+  auto iter = tokens.begin();
+  auto end = tokens.end();
+  ++iter;
+  for (; iter != end; ++iter){
+    const Token& token = *iter;
+    std::string next;
+    if (token.getKind() == tok::string_literal){
+      next = token.getLiteralData();
+    } else if (token.getKind() == tok::identifier){
+      next = token.getIdentifierInfo()->getName().str();
+    } else {
+      errorAbort(loc, CI, "token to pragma is not a valid string name");
+    }
+    inserter->insert(next);
+  }
+
+}
+
 void
 SSTNullVariablePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
 {
-  cfg.nullVariables.insert(d);
+  cfg.nullVariables[d] = this;
 }
 
 void
@@ -400,3 +445,8 @@ SSTPragma::tokenStreamToString(SourceLocation loc,
   }
 }
 
+SSTPragma*
+SSTNullVariablePragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  return new SSTNullVariablePragma(loc, ci_, tokens);
+}

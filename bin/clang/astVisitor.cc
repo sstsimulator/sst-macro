@@ -280,6 +280,7 @@ SkeletonASTVisitor::VisitDeclRefExpr(DeclRefExpr* expr)
                    "null variable used in statement, but context list is empty");
       } //else this was deleted - so no problem
     } else {
+      std::cout << "deleting decl ref " << decl->getNameAsString() << std::endl;
       deleteNullVariableStmt(expr, decl);
     }
   } else {
@@ -349,10 +350,9 @@ SkeletonASTVisitor::TraverseCXXMemberCallExpr(CXXMemberCallExpr* expr, DataRecur
       }
     }
   }
-
   stmt_contexts_.push_back(expr);
-  TraverseStmt(expr->getImplicitObjectArgument());
-  //TraverseStmt(expr->getCallee());
+  //TraverseStmt(expr->getImplicitObjectArgument());
+  TraverseStmt(expr->getCallee()); //this will visit member expr that also visit implicit this
   for (int i=0; i < expr->getNumArgs(); ++i){
     TraverseStmt(expr->getArg(i));
   }
@@ -362,12 +362,39 @@ SkeletonASTVisitor::TraverseCXXMemberCallExpr(CXXMemberCallExpr* expr, DataRecur
 }
 
 bool
-SkeletonASTVisitor::VisitMemberExpr(MemberExpr *expr)
+SkeletonASTVisitor::TraverseMemberExpr(MemberExpr *expr, DataRecursionQueue* queue)
 {
   ValueDecl* vd = expr->getMemberDecl();
+
   if (isNullVariable(vd)){
     deleteNullVariableStmt(expr, vd);
+    return true;
   }
+
+  Expr* base = getUnderlyingExpr(expr->getBase());
+  if (base->getStmtClass() == Stmt::DeclRefExprClass){
+    DeclRefExpr* dref = cast<DeclRefExpr>(base);
+    SSTNullVariablePragma* prg = getNullVariable(dref->getFoundDecl());
+    if (prg){
+      bool deleteStmt = true;
+      if (prg->hasExceptions()){
+        deleteStmt = !prg->isException(vd); //this might be a thing we dont delete
+      } else if (prg->hasOnly()){
+        deleteStmt = prg->isOnly(vd); //this might be a thing we do delete
+      }
+
+      if (deleteStmt){
+        deleteNullVariableStmt(expr, vd);
+      } else {
+        //make damn sure we allocate no memory
+        //even though we keep the statement
+        SSTNewPragma::defaultAct(stmt_contexts_.front(),rewriter_,*ci_,false,false,true);
+      }
+      return true;
+    }
+  }
+
+  TraverseStmt(expr->getBase());
   return true;
 }
 
@@ -900,9 +927,15 @@ SkeletonASTVisitor::TraverseDeclStmt(DeclStmt* stmt, DataRecursionQueue* queue)
     stmt_contexts_.push_back(stmt);
     if (stmt->isSingleDecl()){
       Decl* D = stmt->getSingleDecl();
-      TraverseDecl(D);
-      if (isNullVariable(D)){
-        deleteStmt(stmt);
+      SSTNullVariablePragma* prg = getNullVariable(D);
+      if (prg){
+        if (prg->keepCtor()){
+          SSTNewPragma::defaultAct(stmt_contexts_.front(),rewriter_,*ci_,false,true,false);
+        } else {
+          deleteStmt(stmt);
+        }
+      } else {
+        TraverseDecl(D);
       }
     } else {
       for (auto* D : stmt->decls()){
