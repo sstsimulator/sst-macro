@@ -247,7 +247,6 @@ SSTNewPragma::defaultAct(Stmt* stmt, Rewriter& r, clang::CompilerInstance& CI,
     }
   }
 
-  std::cout << insertLoc.printToString(CI.getSourceManager()) << std::endl;
   if (trailingSemiColon){
     insertLoc = Lexer::findLocationAfterToken(insertLoc, tok::semi,
                                   CI.getSourceManager(), CI.getLangOpts(), false);
@@ -285,7 +284,7 @@ SSTNewPragma::activate(Stmt* stmt, Rewriter &r, PragmaConfig& cfg)
     scase(CompoundStmt,stmt,r);
     scase(ForStmt,stmt,r);
     default: //just delete what follows
-      defaultAct(stmt,r,*CI,false,false);
+      defaultAct(stmt,r,*CI,false,false,true);
       break;
   }
 #undef scase
@@ -423,6 +422,9 @@ SSTPragma::tokenStreamToString(SourceLocation loc,
         break;
       case tok::kw_int:
         os << "int";
+        break;
+      case tok::kw_false:
+        os << "false";
         break;
       case tok::kw_nullptr:
          os << "nullptr";

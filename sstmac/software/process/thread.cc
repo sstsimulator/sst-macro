@@ -61,6 +61,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <stdlib.h>
 #include <stdio.h>
 
+MakeDebugSlot(host_compute)
+
 namespace sstmac {
 namespace sw {
 
@@ -239,8 +241,10 @@ thread::thread(sprockit::sim_parameters* params, software_id sid, operating_syst
 void
 thread::start_api_call()
 {
-  if (host_timer_ && thread_id_ == 0){
+  if (host_timer_){
     double duration = host_timer_->stamp();
+    debug_printf(sprockit::dbg::host_compute,
+                 "host compute for %12.8es", duration);
     parent_app()->compute(timestamp(duration));
   }
 }
@@ -248,7 +252,7 @@ thread::start_api_call()
 void
 thread::end_api_call()
 {
-  if (host_timer_ && thread_id_ == 0){
+  if (host_timer_){
     host_timer_->start();
   }
 }

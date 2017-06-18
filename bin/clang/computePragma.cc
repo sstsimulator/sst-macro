@@ -68,7 +68,7 @@ SSTComputePragma::visitAndReplaceStmt(Stmt* stmt, Rewriter& r, PragmaConfig& cfg
 {
   Loop loop(0); //just treat this is a loop of size 1
   loop.tripCount = "1";
-  ComputeVisitor vis(*CI, *pragmaList, nullptr);
+  ComputeVisitor vis(*CI, *pragmaList, nullptr, cfg.astVisitor);
   vis.setContext(stmt);
   vis.addOperations(stmt,loop.body);
   vis.replaceStmt(stmt,r,loop);
@@ -141,7 +141,7 @@ SSTComputePragma::visitIfStmt(IfStmt* stmt, Rewriter& r, PragmaConfig& cfg)
 void
 SSTComputePragma::visitForStmt(ForStmt *stmt, Rewriter &r, PragmaConfig& cfg)
 {
-  ComputeVisitor vis(*CI, *pragmaList, nullptr); //null, no parent
+  ComputeVisitor vis(*CI, *pragmaList, nullptr, cfg.astVisitor); //null, no parent
   Loop loop(0); //depth zeros
   vis.setContext(stmt);
   vis.visitLoop(stmt,loop);

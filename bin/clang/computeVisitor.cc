@@ -45,11 +45,35 @@ Questions? Contact sst-macro-help@sandia.gov
 #include "computePragma.h"
 #include "replacePragma.h"
 #include "recurseAll.h"
+#include "printAll.h"
 #include "validateScope.h"
+#include "astVisitor.h"
 
 using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
+
+struct GlobalVarReplacer
+{
+  bool hasReplacement(const DeclRefExpr* expr){
+    return visitor->isGlobal(const_cast<DeclRefExpr*>(expr));
+  }
+  std::string getReplacement(const DeclRefExpr* expr){
+    return visitor->getGlobalReplacement(const_cast<NamedDecl*>(expr->getFoundDecl()));
+  }
+
+  template <class T>
+  bool hasReplacement(T* t){
+    return false;
+  }
+
+  template <class T>
+  std::string getReplacement(T* t){
+    return "";
+  }
+
+  SkeletonASTVisitor* visitor;
+};
 
 void
 ComputeVisitor::visitAccessDeclRefExpr(DeclRefExpr* expr, MemoryLocation& mloc)
@@ -529,13 +553,13 @@ ComputeVisitor::visitInitialBinaryOperator(clang::BinaryOperator* op, ForLoopSpe
 }
 
 
-void 
-ComputeVisitor::appendPredicateMax(Expr* max, PrettyPrinter& pp)
+bool
+ComputeVisitor::checkPredicateMax(Expr* max, std::ostream& os)
 {
   auto iter = repls.exprs.find(max);
   if (iter != repls.exprs.end()){
-    pp.os << iter->second;
-    return;
+    os << iter->second;
+    return true;
   }
 
   //we might have overriden a declaration
@@ -543,38 +567,47 @@ ComputeVisitor::appendPredicateMax(Expr* max, PrettyPrinter& pp)
     DeclRefExpr* dref = cast<DeclRefExpr>(max);
     auto iter = repls.decls.find(dref->getDecl());
     if (iter != repls.decls.end()){
-      pp.os << iter->second;
-      return;
+      os << iter->second;
+      return true;
     }
   }
 
-  pp.print(max);
+  return false;
 }
 
 std::string
 ComputeVisitor::getTripCount(ForLoopSpec* spec)
 {
-  PrettyPrinter pp;
   Expr* max = spec->increment ? spec->predicateMax : spec->init;
   Expr* min = spec->increment ? spec->init : spec->predicateMax;
 
-  pp.os << "((";
-  if (max) appendPredicateMax(max,pp);
-  else pp.os << "0";
-  pp.os << ")";
+  GlobalVarReplacer repl;
+  repl.visitor = this->context;
+
+  std::stringstream os;
+  os << "((";
+  if (max){
+    bool specialReplace = checkPredicateMax(max,os);
+    if (!specialReplace){
+      printAll(max,os,repl);
+    }
+  } else {
+    os << "0";
+  }
+  os << ")";
   if (min){
-    pp.os << "-";
-    pp.os << "(";
-    pp.print(min);
-    pp.os << ")";
+    os << "-";
+    os << "(";
+    printAll(min,os,repl);
+    os << ")";
   }
-  pp.os << ")";
+  os << ")";
   if (spec->stride){
-    pp.os << "/ (";
-    pp.print(spec->stride);
-    pp.os << ")";
+    os << "/ (";
+    printAll(spec->stride,os,repl);
+    os << ")";
   }
-  return pp.str();
+  return os.str();
 }
 
 void

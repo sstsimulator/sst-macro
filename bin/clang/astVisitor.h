@@ -78,6 +78,20 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     initReservedNames();
     initMPICalls();
     initConfig();
+    pragmaConfig_.astVisitor = this;
+  }
+
+  bool isGlobal(clang::DeclRefExpr* expr) const {
+    return globals_.find(expr->getFoundDecl()) != globals_.end();
+  }
+
+  std::string getGlobalReplacement(clang::NamedDecl* decl) const {
+    auto iter = globals_.find(decl);
+    if (iter == globals_.end()){
+      errorAbort(decl->getLocStart(), *ci_,
+                 "getting global replacement for non-global variable");
+    }
+    return iter->second;
   }
 
   void setCompilerInstance(clang::CompilerInstance& c){
@@ -339,10 +353,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   }
 
   void replaceGlobalUse(clang::NamedDecl* decl, clang::SourceRange rng);
-
-  bool isGlobal(clang::DeclRefExpr* expr){
-    return globals_.find(expr->getFoundDecl()) != globals_.end();
-  }
 
   clang::Expr* getUnderlyingExpr(clang::Expr *e);
 

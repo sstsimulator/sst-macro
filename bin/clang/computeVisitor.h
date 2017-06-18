@@ -53,8 +53,10 @@ Questions? Contact sst-macro-help@sandia.gov
 class ComputeVisitor  {
  public:
   //97 = 'a', for debug printing
-  ComputeVisitor(clang::CompilerInstance& c, SSTPragmaList& plist, ComputeVisitor* par) :
-    CI(c), idCount(97), currentGeneration(1), pragmas(plist), parent(par)
+  ComputeVisitor(clang::CompilerInstance& c, SSTPragmaList& plist, ComputeVisitor* par,
+                 SkeletonASTVisitor* ctxt) :
+    CI(c), idCount(97), currentGeneration(1), pragmas(plist), parent(par),
+    context(ctxt)
   {}
 
   void replaceStmt(clang::Stmt* stmt, clang::Rewriter& r, Loop& loop);
@@ -81,6 +83,7 @@ class ComputeVisitor  {
   Replacements repls;
   clang::SourceLocation scopeStartLine;
   ComputeVisitor* parent;
+  SkeletonASTVisitor* context;
 
   Variable& getVariable(clang::NamedDecl* decl){
     Variable& var = variables[decl];
@@ -151,7 +154,13 @@ class ComputeVisitor  {
 
   void getInitialVariables(clang::Stmt* stmt, ForLoopSpec* spec);
 
-  void appendPredicateMax(clang::Expr* max, PrettyPrinter& pp);
+  /**
+   * @brief checkPredicateMax
+   * @param max
+   * @param os
+   * @return true if a special replacement was printed to os, false otherwise
+   */
+  bool checkPredicateMax(clang::Expr* max, std::ostream& os);
 
   std::string getTripCount(ForLoopSpec* spec);
 

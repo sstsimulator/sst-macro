@@ -299,6 +299,8 @@ SkeletonASTVisitor::visitCollective(CallExpr *expr)
     //make sure this isn't a shortcut function without buffers
     rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
     rewriter_.ReplaceText(expr->getArg(3)->getSourceRange(), "nullptr");
+    deletedStmts_.insert(expr->getArg(0));
+    deletedStmts_.insert(expr->getArg(3));
   }
 }
 
@@ -312,6 +314,8 @@ SkeletonASTVisitor::visitReduce(CallExpr *expr)
     //make sure this isn't a shortcut function without buffers
     rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
     rewriter_.ReplaceText(expr->getArg(1)->getSourceRange(), "nullptr");
+    deletedStmts_.insert(expr->getArg(0));
+    deletedStmts_.insert(expr->getArg(1));
   }
 }
 
@@ -324,6 +328,7 @@ SkeletonASTVisitor::visitPt2Pt(CallExpr *expr)
   if (expr->getArg(0)->getType()->isPointerType()){
     //make sure this isn't a shortcut function without buffers
     rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
+    deletedStmts_.insert(expr->getArg(0));
   }
 }
 
@@ -354,7 +359,11 @@ SkeletonASTVisitor::TraverseCXXMemberCallExpr(CXXMemberCallExpr* expr, DataRecur
   //TraverseStmt(expr->getImplicitObjectArgument());
   TraverseStmt(expr->getCallee()); //this will visit member expr that also visit implicit this
   for (int i=0; i < expr->getNumArgs(); ++i){
-    TraverseStmt(expr->getArg(i));
+    Expr* arg = expr->getArg(i);
+    //this did not get modified
+    if (deletedStmts_.find(arg) == deletedStmts_.end()){
+      TraverseStmt(expr->getArg(i));
+    }
   }
   stmt_contexts_.pop_back();
 
@@ -496,6 +505,9 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
       declareStaticInitializers(scopeUniqueVarName, os);
     }
   }
+  if (externVarsInsertLoc.isInvalid()){
+    errorAbort(D->getLocStart(), *ci_, "got bad global variable source location");
+  }
   rewriter_.InsertText(externVarsInsertLoc, os.str());}
 
   std::string empty;
@@ -539,6 +551,10 @@ bool
 SkeletonASTVisitor::checkGlobalVar(VarDecl* D)
 {
   SourceLocation end = getEndLoc(D);
+  if (end.isInvalid()){
+    errorAbort(D->getLocStart(), *ci_,
+               "Multi-variable declrations for global variables not allowed");
+  }
   return setupGlobalVar("", "", end, end, Extern, D);
 }
 
@@ -685,6 +701,10 @@ SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
 
 bool
 SkeletonASTVisitor::VisitVarDecl(VarDecl* D){
+  //we need do nothing with this
+  if (D->isConstexpr()){
+    return true;
+  }
 
   if (!shouldVisitDecl(D)){
     return true;

@@ -59,6 +59,7 @@ struct PragmaConfig {
   std::map<std::string,SSTReplacePragma*> replacePragmas;
   std::map<clang::Decl*,SSTNullVariablePragma*> nullVariables;
   std::set<const clang::DeclRefExpr*> deletedRefs;
+  SkeletonASTVisitor* astVisitor;
   PragmaConfig() : pragmaDepth(0),
     makeNoChanges(false) {}
 };
