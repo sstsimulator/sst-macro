@@ -327,23 +327,37 @@ SkeletonASTVisitor::visitPt2Pt(CallExpr *expr)
 }
 
 bool
-SkeletonASTVisitor::VisitCXXMemberCallExpr(CXXMemberCallExpr* expr)
+SkeletonASTVisitor::TraverseCXXMemberCallExpr(CXXMemberCallExpr* expr, DataRecursionQueue* queue)
 {
-  if (noSkeletonize_ || pragmaConfig_.makeNoChanges) return true;
+  bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(expr);
+  if (skipVisit){
+    return true;
+  }
 
-  CXXRecordDecl* cls = expr->getRecordDecl();
-  std::string clsName = cls->getNameAsString();
-  if (clsName == "mpi_api"){
-    FunctionDecl* decl = expr->getDirectCallee();
-    if (!decl){
-      errorAbort(expr->getLocStart(), *ci_, "invalid MPI call");
-    }
-    auto iter = mpiCalls_.find(decl->getNameAsString());
-    if (iter != mpiCalls_.end()){
-      MPI_Call call = iter->second;
-      (this->*call)(expr);
+  if (!pragmaConfig_.makeNoChanges){
+    CXXRecordDecl* cls = expr->getRecordDecl();
+    std::string clsName = cls->getNameAsString();
+    if (clsName == "mpi_api"){
+      FunctionDecl* decl = expr->getDirectCallee();
+      if (!decl){
+        errorAbort(expr->getLocStart(), *ci_, "invalid MPI call");
+      }
+      auto iter = mpiCalls_.find(decl->getNameAsString());
+      if (iter != mpiCalls_.end()){
+        MPI_Call call = iter->second;
+        (this->*call)(expr);
+      }
     }
   }
+
+  stmt_contexts_.push_back(expr);
+  TraverseStmt(expr->getImplicitObjectArgument());
+  //TraverseStmt(expr->getCallee());
+  for (int i=0; i < expr->getNumArgs(); ++i){
+    TraverseStmt(expr->getArg(i));
+  }
+  stmt_contexts_.pop_back();
+
   return true;
 }
 
@@ -358,13 +372,36 @@ SkeletonASTVisitor::VisitMemberExpr(MemberExpr *expr)
 }
 
 bool
-SkeletonASTVisitor::VisitCallExpr(CallExpr* expr)
+SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue)
 {
-  if (noSkeletonize_) return true;
-  for (auto& pair : pragmaConfig_.replacePragmas){
-    SSTReplacePragma* replPrg = static_cast<SSTReplacePragma*>(pair.second);
-    replPrg->run(expr, rewriter_);
+  bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(expr);
+  if (skipVisit){
+    return true;
   }
+
+  if (!noSkeletonize_ && !pragmaConfig_.replacePragmas.empty()){
+    Expr* fxn = getUnderlyingExpr(const_cast<Expr*>(expr->getCallee()));
+    if (fxn->getStmtClass() == Stmt::DeclRefExprClass){
+      //this is a basic function call
+      DeclRefExpr* dref = cast<DeclRefExpr>(fxn);
+      std::string fxnName = dref->getFoundDecl()->getNameAsString();
+      for (auto& pair : pragmaConfig_.replacePragmas){
+        SSTReplacePragma* replPrg = static_cast<SSTReplacePragma*>(pair.second);
+        if (replPrg->fxn() == fxnName){
+          replPrg->run(expr, rewriter_);
+          return true;
+        }
+      }
+    }
+  }
+
+  stmt_contexts_.push_back(expr);
+  TraverseStmt(expr->getCallee());
+  for (int i=0; i < expr->getNumArgs(); ++i){
+    TraverseStmt(expr->getArg(i));
+  }
+  stmt_contexts_.pop_back();
+
 
   return true;
 }
@@ -1024,6 +1061,24 @@ SkeletonASTVisitor::activatePragmasForDecl(Decl* D)
     skipVisit = skipVisit || blockDeleted;
   }
   return skipVisit;
+}
+
+Expr*
+SkeletonASTVisitor::getUnderlyingExpr(Expr *e)
+{
+#define sub_case(e,cls) \
+  case Stmt::cls##Class: \
+    e = cast<cls>(e)->getSubExpr(); break
+  while (1){
+    switch(e->getStmtClass()){
+    sub_case(e,ParenExpr);
+    sub_case(e,CStyleCastExpr);
+    sub_case(e,ImplicitCastExpr);
+    default:
+      return e;
+    }
+  }
+#undef sub_case
 }
 
 void

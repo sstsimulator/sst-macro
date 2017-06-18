@@ -135,7 +135,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    * @param expr
    * @return
    */
-  bool VisitCXXMemberCallExpr(clang::CXXMemberCallExpr* expr);
+  bool TraverseCXXMemberCallExpr(clang::CXXMemberCallExpr* expr, DataRecursionQueue* queue = nullptr);
 
   /**
    * @brief VisitUnaryOperator Currently no rewrite operations are performed.
@@ -161,7 +161,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    * @param expr
    * @return
    */
-  bool VisitCallExpr(clang::CallExpr* expr);
+  bool TraverseCallExpr(clang::CallExpr* expr, DataRecursionQueue* queue = nullptr);
 
   /**
    * @brief TraverseNamespaceDecl We have to traverse namespaces.
@@ -335,6 +335,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   bool isGlobal(clang::DeclRefExpr* expr){
     return globals_.find(expr->getFoundDecl()) != globals_.end();
   }
+
+  clang::Expr* getUnderlyingExpr(clang::Expr *e);
 
   void deleteNullVariableStmt(clang::Stmt* use_stmt, clang::Decl* d);
   bool activatePragmasForStmt(clang::Stmt* S);
