@@ -118,7 +118,7 @@ rendezvous_get::incoming_header(mpi_queue *queue,
     //generate both a send and recv ack
     //but the send ack might be hardware or software level
     bool hardware_send_ack = !software_ack_;
-    queue->post_rdma(msg, hardware_send_ack, true);
+    queue->post_rdma(msg, hardware_send_ack, true/*definitely ack on recver side*/);
   } else {
     mpi_queue_action_debug(
       queue->api()->comm_world()->rank(),
