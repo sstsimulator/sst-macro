@@ -62,13 +62,11 @@ class locatable
  public:
   static const int null_threadid = -1;
 
-  int
-  thread_id() const {
+  int thread_id() const {
     return thread_id_;
   }
 
-  device_id
-  event_location() const {
+  device_id event_location() const {
     return loc_id_;
   }
 
@@ -102,11 +100,9 @@ class event_handler :
  public:
   static const int null_lpid = -1;
 
-
 #if SSTMAC_INTEGRATED_SST_CORE
  public:
-  virtual SST::Link*
-  link() const {
+  virtual SST::Link* link() const {
     return nullptr;
   }
 
@@ -126,8 +122,7 @@ class event_handler :
  public:
   virtual ~event_handler() {}
 
-  virtual void
-  handle(event* ev) = 0;
+  virtual void handle(event* ev) = 0;
 
 
   /**
@@ -135,18 +130,13 @@ class event_handler :
    * logical process boundary.  Messages scheduled here are sent to another process.
    * @return If this is an IPC stub handler
    */
-  virtual bool
-  ipc_handler() const {
+  virtual bool ipc_handler() const {
     return false;
   }
 
-  virtual void
-  deadlock_check(event* ev){}
+  virtual void deadlock_check(event* ev){}
   
-  virtual void
-  deadlock_check(){}
-
-
+  virtual void deadlock_check(){}
 
 };
 

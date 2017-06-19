@@ -42,7 +42,7 @@ LDFLAGS =
 all: $(LULESH_EXEC)
 
 sstmac_headers:
-	find `pwd` -name "*.h" > $@
+	$(shell find `pwd` -name "*.h" > $@)
 
 %.o: %.cc lulesh.h sstmac_headers 
 	@echo "Building $<"

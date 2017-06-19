@@ -46,12 +46,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #define bin_clang_astconsumers_h
 
 #include "clangHeaders.h"
-#include "replAstVisitor.h"
+#include "astVisitor.h"
 #include "globalVarNamespace.h"
 
 class ReplaceASTConsumer : public clang::ASTConsumer {
  public:
-  ReplaceASTConsumer(clang::Rewriter &R, ReplGlobalASTVisitor& r) :
+  ReplaceASTConsumer(clang::Rewriter &R, SkeletonASTVisitor& r) :
     visitor_(r)
   {
   }
@@ -59,7 +59,7 @@ class ReplaceASTConsumer : public clang::ASTConsumer {
   bool HandleTopLevelDecl(clang::DeclGroupRef DR) override;
 
  private:
-  ReplGlobalASTVisitor& visitor_;
+  SkeletonASTVisitor& visitor_;
 
 };
 

@@ -80,6 +80,36 @@ transport_message::put_on_wire()
   }
 }
 
+void
+transport_message::take_off_wire()
+{
+  switch (type()){
+    case rdma_get_payload:
+      payload_->inject_remote_to_local();
+      break;
+    case rdma_put_payload:
+      payload_->inject_local_to_remote();
+      break;
+    default:
+      break;
+  }
+}
+
+void
+transport_message::intranode_memmove()
+{
+  switch (type()){
+    case rdma_get_payload:
+      payload_->memmove_remote_to_local();
+      break;
+    case rdma_put_payload:
+      payload_->memmove_local_to_remote();
+      break;
+    default:
+      break;
+  }
+}
+
 sstmac::hw::network_message*
 transport_message::clone_injection_ack() const
 {

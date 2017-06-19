@@ -231,7 +231,7 @@ mpi_api::init(int* argc, char*** argv)
   wait_collective(op);
   delete op;
   crossed_comm_world_barrier_ = false;
-
+  end_api_call();
   return MPI_SUCCESS;
 }
 
@@ -293,7 +293,7 @@ mpi_api::finalize()
     }
   }
 #endif
-
+  end_api_call();
   return MPI_SUCCESS;
 }
 

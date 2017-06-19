@@ -102,12 +102,12 @@ class app : public thread
 
   void compute_inst(compute_event* cmsg);
 
-  void compute_loop(uint64_t,
+  void compute_loop(uint64_t num_loops,
     int nflops_per_loop,
     int nintops_per_loop,
     int bytes_per_loop);
 
-  void compute_detailed(long flops, long intops, long bytes);
+  void compute_detailed(uint64_t flops, uint64_t intops, uint64_t bytes);
 
   void compute_block_read(long bytes);
 
@@ -225,6 +225,7 @@ class app : public thread
   int next_tls_key_;
   int next_condition_;
   int next_mutex_;
+  int min_op_cutoff_;
 
   std::map<long, thread*> subthreads_;
   std::map<int, mutex_t> mutexes_;

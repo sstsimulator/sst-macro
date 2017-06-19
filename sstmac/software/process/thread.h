@@ -56,6 +56,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/app_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/software/process/thread_fwd.h>
+#include <sstmac/software/process/host_timer.h>
 #include <sstmac/software/libraries/library_fwd.h>
 #include <sstmac/software/api/api_fwd.h>
 #include <sstmac/software/threading/threading_interface_fwd.h>
@@ -87,8 +88,7 @@ class thread
     DONE=6
   };
 
-  static thread*
-  current();
+  static thread* current();
 
   template <class T>
   T*
@@ -103,13 +103,11 @@ class thread
     return casted;
   }
 
-  virtual app*
-  parent_app() const {
+  virtual app* parent_app() const {
     return parent_app_;
   }
 
-  virtual void
-  clear_subthread_from_parent_app();
+  virtual void clear_subthread_from_parent_app();
 
   static const int no_core_affinity = -1;
   static const int no_socket_affinity = -1;
@@ -121,12 +119,9 @@ class thread
 
 
  public:
-  virtual
-  ~thread();
+  virtual ~thread();
 
-  /// Get current thread state.
-  state
-  get_state() const {
+  state get_state() const {
     return state_;
   }
 
@@ -138,19 +133,15 @@ class thread
     return sid_.task_;
   }
 
-  software_id
-  sid() const {
+  software_id sid() const {
     return sid_;
   }
 
-  void
-  spawn(thread* thr);
+  void spawn(thread* thr);
 
-  long
-  init_id();
+  long init_id();
 
-  long
-  thread_id() const {
+  long thread_id() const {
     return thread_id_;
   }
 
@@ -160,84 +151,66 @@ class thread
    * this thread again.  Make sure the thread doesn't unblock
    * and clean up all resources associated with the thread
    */
-  void
-  cancel(){
+  void cancel(){
     state_ = CANCELED;
   }
 
-  bool
-  is_canceled() const {
+  bool is_canceled() const {
     return state_ == CANCELED;
   }
 
-  virtual void
-  kill();
+  virtual void kill();
 
-  operating_system*
-  os() const {
+  operating_system* os() const {
     return os_;
   }
 
-  void*
-  stack() const {
+  void* stack() const {
     return stack_;
   }
 
-  size_t
-  stacksize() const {
+  size_t stacksize() const {
     return stacksize_;
   }
 
-  void**
-  backtrace() const {
+  void** backtrace() const {
     return backtrace_;
   }
 
-  int
-  last_backtrace_nfxn() const {
+  int last_backtrace_nfxn() const {
     return last_bt_collect_nfxn_;
   }
 
-  int
-  backtrace_nfxn() const {
+  int backtrace_nfxn() const {
     return bt_nfxn_;
   }
 
-  void
-  append_backtrace(void* fxn);
+  void append_backtrace(void* fxn);
 
-  void
-  pop_backtrace();
+  void pop_backtrace();
 
-  void
-  set_backtrace(void** bt) {
+  void set_backtrace(void** bt) {
     backtrace_ = bt;
   }
 
-  device_id
-  event_location() const;
+  device_id event_location() const;
 
   void collect_backtrace(int nfxn);
 
-  void
-  init_thread(int phyiscal_thread_id,
+  void init_thread(int phyiscal_thread_id,
     threading_interface* tocopy, void *stack, int stacksize,
     threading_interface *yield_to, void* globals_storage);
 
   /// Derived types need to override this method.
-  virtual void
-  run() = 0;
+  virtual void run() = 0;
 
   /// A convenience request to start a new thread.
   /// The current thread has to be initialized for this to work.
-  void
-  start_thread(thread* thr);
+  void start_thread(thread* thr);
 
-  void
-  join();
+  void join();
 
-  process_context
-  get_process_context() const {
+  process_context get_process_context() const {
     return p_txt_;
   }
 
@@ -245,76 +218,66 @@ class thread
    * @brief key used 
    * @return 
    */
-  key*
-  schedule_key() {
+  key* schedule_key() {
     return schedule_key_;
   }
 
   /// Test whether the current task has been initialized (activated)
   /// by a scheduler.
-  bool
-  is_initialized() const {
+  bool is_initialized() const {
     return state_ >= INITIALIZED;
   }
 
-  void
-  set_affinity(int core){
+  void set_affinity(int core){
     zero_affinity();
     add_affinity(core);
   }
   
-  void
-  add_affinity(int core){
+  void add_affinity(int core){
     cpumask_ = cpumask_ | (1<<core);
   }
   
-  void
-  zero_affinity(){
+  void zero_affinity(){
     cpumask_ = 0;
   }
 
-  void
-  set_cpumask(uint64_t cpumask){
+  void set_cpumask(uint64_t cpumask){
     cpumask_ = cpumask;
   }
   
-  uint64_t
-  cpumask() const {
+  uint64_t cpumask() const {
     return cpumask_;
   }
   
-  int
-  active_core() const {
+  int active_core() const {
     return active_core_;
   }
   
-  void
-  set_active_core(int core) {
+  void set_active_core(int core) {
     active_core_ = core;
   }
 
-  void*
-  get_tls_value(long thekey) const;
+  void* get_tls_value(long thekey) const;
 
-  void
-  set_tls_value(long thekey, void* ptr);
+  void set_tls_value(long thekey, void* ptr);
 
-  timestamp
-  now();
+  timestamp now();
+
+  void start_api_call();
+
+  void end_api_call();
 
  protected:
   thread(sprockit::sim_parameters* params, software_id sid, operating_system* os);
 
   friend api* static_get_api(const char *name);
 
-  virtual api*
-  _get_api(const char* name);
+  virtual api* _get_api(const char* name);
 
  private:
   /// Run routine that defines the initial context for this task.
   /// This routine calls the virtual thread::run method.
-  static void
-  run_routine(void* threadptr);
+  static void run_routine(void* threadptr);
 
   /**
    * This should only ever be invoked by the delete thread event.
@@ -337,6 +300,8 @@ class thread
   process_context p_txt_;
 
   software_id sid_;
+
+  HostTimer* host_timer_;
 
  private:
   bool isInit;

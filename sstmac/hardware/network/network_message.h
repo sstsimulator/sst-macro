@@ -151,7 +151,9 @@ class network_message :
     return toaddr_;
   }
 
-  virtual void put_on_wire();
+  virtual void put_on_wire(){}
+  virtual void take_off_wire(){}
+  virtual void intranode_memmove(){}
 
   node_id fromaddr() const override {
     return fromaddr_;

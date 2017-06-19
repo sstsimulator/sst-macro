@@ -6,6 +6,7 @@
 CORETESTS+= \
   test_core_apps_ping_all_ns \
   test_core_apps_compute \
+  test_core_apps_host_compute \
   test_core_apps_ping_all_uneven_tree \
   test_core_apps_ping_all_torus_netlink \
   test_core_apps_stop_time \
@@ -21,17 +22,22 @@ CORETESTS +=  test_core_apps_mpi_event_calendar
 endif
 
 test_core_apps_compute.$(CHKSUF): $(SSTMACEXEC)
-	$(PYRUNTEST) 6 $(top_srcdir) $@ True \
+	$(PYRUNTEST) 6 $(top_srcdir) $@ Exact \
     $(SSTMACEXEC) --no-wall-time -f $(srcdir)/test_configs/test_compute_api.ini 
 
 test_sumi_%.$(CHKSUF): sumi/sst_%
-	$(PYRUNTEST) 5 $(top_srcdir) $@ True sumi/sst_$* -f $(srcdir)/sumi/ini/test_sst_$*.ini --no-wall-time 
+	$(PYRUNTEST) 5 $(top_srcdir) $@ Exact sumi/sst_$* -f $(srcdir)/sumi/ini/test_sst_$*.ini --no-wall-time 
 
 test_core_apps_ping_all_tiled_dfly.$(CHKSUF): $(SSTMACEXEC)
-	$(PYRUNTEST) 15 $(top_srcdir) $@ True $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_all_tiled_dfly.ini --no-wall-time 
+	$(PYRUNTEST) 15 $(top_srcdir) $@ Exact \
+   $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_all_tiled_dfly.ini --no-wall-time 
+
+test_core_apps_host_compute.$(CHKSUF): $(CORE_TEST_DEPS)
+	$(PYRUNTEST) 20 $(top_srcdir) $@ 't>0.1' \
+    $(MPI_LAUNCHER) $(SSTMACEXEC) -f $(srcdir)/test_configs/test_host_compute.ini --no-wall-time $(THREAD_ARGS)
 
 test_core_apps_%.$(CHKSUF): $(CORE_TEST_DEPS)
-	$(PYRUNTEST) 10 $(top_srcdir) $@ True \
+	$(PYRUNTEST) 10 $(top_srcdir) $@ Exact \
     $(MPI_LAUNCHER) $(SSTMACEXEC) -f $(srcdir)/test_configs/test_$*.ini --no-wall-time $(THREAD_ARGS)
 
 #------------------------------------------------------------------------------------------#

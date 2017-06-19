@@ -292,12 +292,12 @@ sumi_transport::handle(sstmac::transport_message* smsg)
     break;
    }
    case sstmac::hw::network_message::rdma_get_payload:
-    my_msg->move_remote_to_local();
+    //my_msg->inject_remote_to_local();
     if (my_msg->needs_recv_ack()) //only if I requested to be notified
       transport::handle(my_msg);
     break;
    case sstmac::hw::network_message::rdma_put_payload:
-    my_msg->move_local_to_remote();
+    //my_msg->inject_local_to_remote();
     if (my_msg->needs_recv_ack()) //only if I requested to be notified
       transport::handle(my_msg);
     break;

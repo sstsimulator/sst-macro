@@ -188,10 +188,6 @@ class mpi_message final :
     return in_flight_;
   }
 
-  void move_remote_to_local() override;
-
-  void move_local_to_remote() override;
-
   void set_already_buffered(bool flag){
     already_buffered_ = flag;
   }

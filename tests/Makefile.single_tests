@@ -54,12 +54,12 @@ traces:
 	chmod u+w *.bin *.meta *.map # required for make distcheck (makes files r/o)
 
 test_dumpi_manager.$(CHKSUF): $(SSTMACEXEC) traces
-	$(PYRUNTEST) 5 $(top_srcdir) $@ True \
+	$(PYRUNTEST) 5 $(top_srcdir) $@ Exact \
     $(SSTMACEXEC) -f $(srcdir)/test_configs/test_dumpi_manager.ini \
           -d indexing,allocation --no-wall-time 
 
 test_dumpi_bgp.$(CHKSUF): $(SSTMACEXEC) traces
-	$(PYRUNTEST) 5 $(top_srcdir) $@ True \
+	$(PYRUNTEST) 5 $(top_srcdir) $@ Exact \
     $(SSTMACEXEC) -f $(srcdir)/test_configs/test_dumpi_bgp.ini \
           -d indexing,allocation --no-wall-time 
 

@@ -67,6 +67,7 @@ mpi_api::comm_dup(MPI_Comm input, MPI_Comm *output)
   add_comm_ptr(outputPtr, output);
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Comm_dup(%s,*%s) finish",
                 comm_str(input).c_str(), comm_str(*output).c_str());
+  end_api_call();
   return MPI_SUCCESS;
 }
 
@@ -75,6 +76,7 @@ mpi_api::comm_size(MPI_Comm comm, int *size)
 {
   start_comm_call(MPI_Comm_size,comm);
   *size = get_comm(comm)->size();
+  end_api_call();
   return MPI_SUCCESS;
 }
 
@@ -87,6 +89,7 @@ mpi_api::comm_create(MPI_Comm input, MPI_Group group, MPI_Comm *output)
   add_comm_ptr(comm_factory_->comm_create(inputPtr, groupPtr), output);
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Comm_create(%s,%d,*%s)",
                 comm_str(input).c_str(), group, comm_str(*output).c_str());
+  end_api_call();
   return MPI_SUCCESS;
 }
 
@@ -111,6 +114,7 @@ mpi_api::cart_create(MPI_Comm comm_old, int ndims, const int dims[],
   mpi_comm* incommPtr = get_comm(comm_old);
   mpi_comm* outcommPtr = comm_factory_->create_cart(incommPtr, ndims, dims, periods, reorder);
   add_comm_ptr(outcommPtr, comm_cart);
+  end_api_call();
   return MPI_SUCCESS;
 }
 
@@ -130,7 +134,7 @@ mpi_api::cart_get(MPI_Comm comm, int maxdims, int dims[], int periods[],
   }
 
   c->set_coords(c->mpi_comm::rank(), coords);
-
+  end_api_call();
   return MPI_SUCCESS;
 }
 
@@ -142,6 +146,7 @@ mpi_api::cartdim_get(MPI_Comm comm, int *ndims)
   mpi_comm_cart* c = safe_cast(mpi_comm_cart, incommPtr,
     "mpi_api::cartdim_get: mpi comm did not cast to mpi_comm_cart");
   *ndims = c->ndims();
+  end_api_call();
   return MPI_SUCCESS;
 }
 
@@ -153,6 +158,7 @@ mpi_api::cart_rank(MPI_Comm comm, const int coords[], int *rank)
   mpi_comm_cart* c = safe_cast(mpi_comm_cart, incommPtr,
     "mpi_api::cart_rank: mpi comm did not cast to mpi_comm_cart");
   *rank = c->rank(coords);
+  end_api_call();
   return MPI_SUCCESS;
 }
 
@@ -166,6 +172,7 @@ mpi_api::cart_shift(MPI_Comm comm, int direction, int disp, int *rank_source,
     "mpi_api::cart_shift: mpi comm did not cast to mpi_comm_cart");
   *rank_source = c->shift(direction, -1 * disp);
   *rank_dest = c->shift(direction, disp);
+  end_api_call();
   return MPI_SUCCESS;
 }
 
@@ -178,6 +185,7 @@ mpi_api::cart_coords(MPI_Comm comm, int rank, int maxdims, int coords[])
   mpi_comm_cart* c = safe_cast(mpi_comm_cart, incommPtr,
     "mpi_api::cart_coords: mpi comm did not cast to mpi_comm_cart");
   c->set_coords(rank, coords);
+  end_api_call();
   return MPI_SUCCESS;
 }
 
@@ -192,6 +200,7 @@ mpi_api::comm_split(MPI_Comm incomm, int color, int key, MPI_Comm *outcomm)
   mpi_api_debug(sprockit::dbg::mpi,
       "MPI_Comm_split(%s,%d,%d,*%s) exit",
                 comm_str(incomm).c_str(), color, key, comm_str(*outcomm).c_str());
+  end_api_call();
   return MPI_SUCCESS;
 }
 
@@ -203,6 +212,7 @@ mpi_api::comm_free(MPI_Comm* input)
   comm_map_.erase(*input);
   delete inputPtr;
   *input = MPI_COMM_NULL;
+  end_api_call();
   return MPI_SUCCESS;
 }
 
