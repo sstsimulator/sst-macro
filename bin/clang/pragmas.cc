@@ -341,30 +341,37 @@ SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstanc
 {
   if (tokens.empty()) return;
 
-  const Token& first = tokens.front();
-  std::set<std::string>* inserter;
-  if (first.getKind() == tok::identifier && first.getIdentifierInfo()->getName().str() == "except"){
-    inserter = &nullExcept_;
-  } else if (first.getKind() == tok::string_literal && first.getLiteralData() == std::string("only")){
-    inserter = &nullOnly_;
-  } else {
-    errorAbort(loc, CI, "illegal null_variable spec: 'only' or 'except' allowed");
-  }
-
-  auto iter = tokens.begin();
+  std::set<std::string>* inserter = nullptr;
   auto end = tokens.end();
-  ++iter;
-  for (; iter != end; ++iter){
+  for (auto iter=tokens.begin(); iter != end; ++iter){
     const Token& token = *iter;
     std::string next;
-    if (token.getKind() == tok::string_literal){
+    switch(token.getKind()){
+    case tok::string_literal:
       next = token.getLiteralData();
-    } else if (token.getKind() == tok::identifier){
+      break;
+    case tok::kw_new:
+      next = "new";
+      break;
+    case tok::identifier:
       next = token.getIdentifierInfo()->getName().str();
-    } else {
+      break;
+    default:
       errorAbort(loc, CI, "token to pragma is not a valid string name");
+      break;
     }
-    inserter->insert(next);
+
+    if (next == "except"){
+      inserter = &nullExcept_;
+    } else if (next == "only"){
+      inserter = &nullOnly_;
+    } else if (next == "new"){
+      inserter = &nullNew_;
+    } else if (inserter == nullptr){
+      errorAbort(loc, CI, "illegal null_variable spec: must begin with 'only', 'except', or 'new'");
+    } else {
+      inserter->insert(next);
+    }
   }
 
 }

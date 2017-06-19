@@ -29,11 +29,13 @@ struct vector {
 
 int fxn()
 {
-#pragma sst null_variable except resize size ctor
+#pragma sst null_variable except size ctor new resize
   vector<double> vec;
   vec.resize(100);
 
   vec.null_fxn();
+
+  int n = vec.size();
 
 #pragma sst compute
   for (int i=0; i < vec.size(); ++i){

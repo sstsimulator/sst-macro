@@ -117,7 +117,7 @@ class SSTNullVariablePragma : public SSTPragma {
   }
 
   bool hasExceptions() const {
-    return !nullExcept_.empty();
+    return !nullExcept_.empty() || !nullNew_.empty();
   }
 
   bool isOnly(clang::NamedDecl* d) const {
@@ -125,11 +125,16 @@ class SSTNullVariablePragma : public SSTPragma {
   }
 
   bool isException(clang::NamedDecl* d) const {
-    return nullExcept_.find(d->getNameAsString()) != nullExcept_.end();
+    return (nullExcept_.find(d->getNameAsString()) != nullExcept_.end()) ||
+           (nullNew_.find(d->getNameAsString()) != nullNew_.end());
+  }
+
+  bool isNullifiedNew(clang::NamedDecl* d) const {
+    return nullNew_.find(d->getNameAsString()) != nullNew_.end();
   }
 
   bool keepCtor() const {
-    return !nullOnly_.empty() || !nullExcept_.empty();
+    return !nullOnly_.empty() || !nullExcept_.empty() || !nullNew_.empty();
   }
 
  private:
@@ -138,6 +143,7 @@ class SSTNullVariablePragma : public SSTPragma {
   void replace(clang::Stmt* s, clang::Rewriter& r, const char* repl);
   std::set<std::string> nullOnly_;
   std::set<std::string> nullExcept_;
+  std::set<std::string> nullNew_;
 };
 
 class SSTDeletePragma : public SSTPragma {

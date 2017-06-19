@@ -395,9 +395,11 @@ SkeletonASTVisitor::TraverseMemberExpr(MemberExpr *expr, DataRecursionQueue* que
       if (deleteStmt){
         deleteNullVariableStmt(expr, vd);
       } else {
-        //make damn sure we allocate no memory
-        //even though we keep the statement
-        SSTNewPragma::defaultAct(stmt_contexts_.front(),rewriter_,*ci_,false,false,true);
+        if (prg->isNullifiedNew(vd)){
+          //make damn sure we allocate no memory
+          //even though we keep the statement
+          SSTNewPragma::defaultAct(stmt_contexts_.front(),rewriter_,*ci_,false,false,true);
+        }
       }
       return true;
     }
