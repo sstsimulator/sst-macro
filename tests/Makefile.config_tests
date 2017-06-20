@@ -57,24 +57,24 @@ endif
 #  test_configs_hopper_amm4 
 
 test_coverage_%.$(CHKSUF): $(SSTMACEXEC)
-	$(PYRUNTEST) 15 $(top_srcdir) $@ True \
+	$(PYRUNTEST) 15 $(top_srcdir) $@ Exact \
     $(MPI_LAUNCHER) $(SSTMACEXEC) -i mpi_coverage.ini -f $*.ini -i exa_mini_top.ini \
     --no-wall-time 
 
 test_memory_leak.$(CHKSUF): $(SSTMACEXEC)
-	$(PYRUNTEST) 15 $(top_srcdir) $@ True \
+	$(PYRUNTEST) 15 $(top_srcdir) $@ Exact \
     $(SSTMACEXEC) -f $(top_srcdir)/tests/test_configs/memory_leak.ini \
     -i exa_mini_top.ini -i edison_amm3.ini \
     --no-wall-time 
 
 test_feature_%.$(CHKSUF): $(SSTMACEXEC)
-	$(PYRUNTEST) 15 $(top_srcdir) $@ True \
+	$(PYRUNTEST) 15 $(top_srcdir) $@ Exact \
     $(SSTMACEXEC) -f $(top_srcdir)/tests/test_configs/$*.ini \
     -i exa_mini_top.ini -i edison_amm3.ini \
     --no-wall-time 
 
 test_mpi_only_coverage_%.$(CHKSUF): $(SSTMACEXEC)
-	$(PYRUNTEST) 15 $(top_srcdir) $@ True \
+	$(PYRUNTEST) 15 $(top_srcdir) $@ Exact \
     $(SSTMACEXEC) -f mpi_only_coverage.ini -i $*.ini -i exa_mini_top.ini \
     --no-wall-time 
 
@@ -84,7 +84,7 @@ test_configs_exa%.$(CHKSUF): $(SSTMACEXEC)
     --no-wall-time
 
 test_configs_smp_%.$(CHKSUF): $(SSTMACEXEC)
-	$(PYRUNTEST) 15 $(top_srcdir) $@ True \
+	$(PYRUNTEST) 15 $(top_srcdir) $@ Exact \
     $(SSTMACEXEC) -f smp_mpi_test.ini -i default.ini -i smp_$*.ini \
     --no-wall-time
 

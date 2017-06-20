@@ -19,3 +19,29 @@ void fxn2()
   auto z = allocate<int>();
 }
 
+int compute(){ return 0; }
+
+void fxn3()
+{
+  int a[4];
+#pragma sst replace a 5
+  for (int i=0; i < 3; ++i){
+    int x = a[i];
+  }
+#pragma sst replace compute 10
+  for (int i=0; i < 3; ++i){
+    int x = compute();
+  }
+
+  int b[10][10];
+#pragma sst replace b 42
+  int x = b[0][0];
+
+#pragma sst replace compute 10
+#pragma sst replace b 42
+  for (int i=0; i < 3; ++i){
+    int x = compute();
+    int z = b[3][2];
+  }
+}
+

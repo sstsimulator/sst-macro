@@ -162,7 +162,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     else:
       givenFlags.append(sarg)
 
-  exeFromSrc = sourceFiles and not objectFiles
+  exeFromSrc = sourceFiles and not objectFiles and not '-c' in sysargs
 
   if sstCore:
     givenFlags.append(" -DSSTMAC_EXTERNAL_SKELETON")
@@ -474,9 +474,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     mergeCmdArr.append("-Wl,-r -nostdlib")
     allObjects = []
     for srcFile in sourceFiles:
-      target = objTarget
       srcFileNoSuffix = ".".join(srcFile.split(".")[:-1])
-      srcObjTarget = srcFileNoSuffix + ".o"
+      srcObjTarget = os.path.split(srcFileNoSuffix)[-1] + ".o"
       srcTformObjFile = swapSuffix("o", addPrefix("sst.pp.", srcFile))
       if objTarget:
         srcTformObjFile = addPrefix("sst.", objTarget)

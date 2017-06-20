@@ -260,13 +260,14 @@ def checkOutput(srcdir, tmpfile, condition):
 
   if chkSim.integratedCore:
     pass
+  elif condition == "Exact": #we need to check reference time
+    errorMsg = checkTime(refSim.finalTime, chkSim.finalTime)
+    if errorMsg:
+      return errorMsg
   elif not condType == "notime":
     timeChecker = eval("lambda t: %s" % condition)
     if not timeChecker(chkSim.finalTime):
       return "t=%f failed time check %s" % (chkSim.finalTime, condition)
-    errorMsg = checkTime(refSim.finalTime, chkSim.finalTime)
-    if errorMsg:
-      return errorMsg
 
   for line in refSim.lines:
     if not line in chkSim.lines:

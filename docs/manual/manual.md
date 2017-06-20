@@ -3580,6 +3580,7 @@ This is a series of namespaces `app1`, `app2`, and so on for each of the launche
 | cart\_offsets (vector of int) | No default |  | Launch a contiguous block nodes in a Cartesian topology. This gives the offset in each dimension where the block begins. |
 | parsedumpi\_timescale (double) | 1.0 | Positive float | If running DUMPI traces, scale compute times by the given value. Values less than 1.0 speed up computation. Values greater than 1.0 slow down computation. |
 | parsedumpi\_terminate\_percent (int) | 100 | 1-100 | Percent of trace. Can be used to terminate large traces early |
+| host\_compute\_timer (bool) | False |  | Use the compute time on the host to estimate compute delays |
 
 
 | Name (type) | Default | Allowed | Description |

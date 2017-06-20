@@ -214,6 +214,7 @@ nic::recv_message(message* msg)
     case network_message::rdma_put_payload:
     case network_message::nvram_get_payload:
     case network_message::payload: {
+      netmsg->take_off_wire();
       send_to_node(netmsg);
       break;
     }
@@ -269,6 +270,7 @@ nic::intranode_send(network_message* payload)
 void
 nic::finish_memcpy(network_message* payload)
 {
+  payload->intranode_memmove();
   ack_send(payload);
   send_to_node(payload);
 }

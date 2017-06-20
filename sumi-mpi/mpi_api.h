@@ -990,13 +990,16 @@ sstmac_mpi();
     set_new_mpi_call(Call_ID_##fxn)
   #define finish_Impi_call(fxn,reqptr) \
     finish_last_mpi_call(Call_ID_##fxn, false); \
-    saved_calls_[*reqptr] = last_call_
-  #define finish_mpi_call(fxn) finish_last_mpi_call(Call_ID_##fxn)
+    saved_calls_[*reqptr] = last_call_; \
+    end_api_call()
+  #define finish_mpi_call(fxn) \
+    finish_last_mpi_call(Call_ID_##fxn); \
+    end_api_call()
 #else
   #define start_mpi_call(fxn,count,type,comm) _start_mpi_call_(fxn)
   #define start_wait_call(fxn,...) _start_mpi_call_(fxn)
-  #define finish_mpi_call(fxn)
-  #define finish_Impi_call(fxn,reqptr)
+  #define finish_mpi_call(fxn) end_api_call()
+  #define finish_Impi_call(fxn,reqptr) end_api_call()
 #endif
 
 #define mpi_api_debug(flags, ...) \

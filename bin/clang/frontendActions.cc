@@ -45,6 +45,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include "frontendActions.h"
 #include "globalVarNamespace.h"
 #include "pragmas.h"
+#include "replacePragma.h"
+#include "computePragma.h"
 #include <sstream>
 #include <fstream>
 #include <iostream>
@@ -55,13 +57,9 @@ using namespace clang::driver;
 using namespace clang::tooling;
 
 ReplaceAction::ReplaceAction() :
-  visitor_(rewriter_, globalNs_, deletedExprs_)
+  visitor_(rewriter_, globalNs_, deletedStmts_)
 {
 }
-
-#define scase(type,s,pp) \
-  case(clang::Stmt::type##Class): \
-    return visit##type(clang::cast<type>(s),pp)
 
 bool
 ReplaceAction::BeginSourceFileAction(CompilerInstance &CI, llvm::StringRef Filename)
@@ -99,7 +97,7 @@ ReplaceAction::ExecuteAction()
   //okay, super annoying - I have to DELETE the openmp handlers
   DeleteOpenMPPragma deleter; ci_->getPreprocessor().RemovePragmaHandler(&deleter);
   ci_->getPreprocessor().AddPragmaHandler("omp", new SSTOpenMPParallelPragmaHandler(
-                     visitor_.getPragmas(), *ci_, visitor_, deletedExprs_)); //and put it back
+                     visitor_.getPragmas(), *ci_, visitor_, deletedStmts_)); //and put it back
 
   S.getPreprocessor().EnterMainSourceFile();
   P.Initialize();
@@ -129,19 +127,27 @@ void
 ReplaceAction::initPragmas(CompilerInstance& CI)
 {
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTDeletePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedExprs_));
+    new SSTDeletePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTMallocPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedExprs_));
+    new SSTMallocPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTNewPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedExprs_));
+    new SSTNewPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTComputePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedExprs_));
+    new SSTComputePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTReplacePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedExprs_));
+    new SSTReplacePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTStartReplacePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedExprs_));
+    new SSTStartReplacePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTStopReplacePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedExprs_));
+    new SSTStopReplacePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+  CI.getPreprocessor().AddPragmaHandler("sst",
+    new SSTKeepPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+  CI.getPreprocessor().AddPragmaHandler("sst",
+    new SSTNullVariablePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+  CI.getPreprocessor().AddPragmaHandler("sst",
+    new SSTLoopCountPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+  CI.getPreprocessor().AddPragmaHandler("sst",
+    new SSTInitPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
 }
 
 void

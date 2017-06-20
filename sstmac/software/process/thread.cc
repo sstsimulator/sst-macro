@@ -61,6 +61,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <stdlib.h>
 #include <stdio.h>
 
+MakeDebugSlot(host_compute)
+
 namespace sstmac {
 namespace sw {
 
@@ -228,11 +230,31 @@ thread::thread(sprockit::sim_parameters* params, software_id sid, operating_syst
   stack_(nullptr),
   context_(nullptr),
   cpumask_(0),
+  host_timer_(nullptr),
   parent_app_(nullptr),
   sid_(sid)
 {
   //make all cores possible active
   cpumask_ = ~(cpumask_);
+}
+
+void
+thread::start_api_call()
+{
+  if (host_timer_){
+    double duration = host_timer_->stamp();
+    debug_printf(sprockit::dbg::host_compute,
+                 "host compute for %12.8es", duration);
+    parent_app()->compute(timestamp(duration));
+  }
+}
+
+void
+thread::end_api_call()
+{
+  if (host_timer_){
+    host_timer_->start();
+  }
 }
 
 long
@@ -287,6 +309,10 @@ void
 thread::spawn(thread* thr)
 {
   thr->parent_app_ = parent_app();
+  if (host_timer_){
+    thr->host_timer_ = new HostTimer;
+    thr->host_timer_->start();
+  }
   os_->start_thread(thr);
 }
 
@@ -305,6 +331,7 @@ thread::~thread()
     delete context_;
   }
   if (schedule_key_) delete schedule_key_;
+  if (host_timer_) delete host_timer_;
 }
 
 

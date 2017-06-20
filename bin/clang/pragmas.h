@@ -49,104 +49,139 @@ Questions? Contact sst-macro-help@sandia.gov
 #include "util.h"
 #include <set>
 
-class ReplGlobalASTVisitor;
+class SkeletonASTVisitor;
 
+struct SSTReplacePragma;
+struct SSTNullVariablePragma;
 struct PragmaConfig {
   int pragmaDepth;
-  bool skipNextStmt;
-  std::map<std::string, std::string> functionReplacements;
-  PragmaConfig() : pragmaDepth(0), skipNextStmt(false) {}
+  bool makeNoChanges;
+  std::map<std::string,SSTReplacePragma*> replacePragmas;
+  std::map<clang::Decl*,SSTNullVariablePragma*> nullVariables;
+  std::set<const clang::DeclRefExpr*> deletedRefs;
+  SkeletonASTVisitor* astVisitor;
+  PragmaConfig() : pragmaDepth(0),
+    makeNoChanges(false) {}
 };
 
 struct SSTPragmaList;
 struct SSTPragma {
+  typedef enum {
+    Replace=0,
+    Delete=1,
+    Compute=2,
+    New=3,
+    Keep=4,
+    NullVariable=5,
+    LoopCount=6,
+    Init=7
+  } class_t;
   clang::StringRef name;
   clang::SourceLocation startLoc;
   clang::SourceLocation endLoc;
   clang::CompilerInstance* CI;
-  ReplGlobalASTVisitor* visitor;
-  std::set<clang::Expr*>* deleted;
+  SkeletonASTVisitor* visitor;
+  std::set<clang::Stmt*>* deleted;
   SSTPragmaList* pragmaList;
+  class_t cls;
+
 
   template <class T>
   bool matches(T* s){
     return startLoc < s->getLocStart() && s->getLocStart() <= endLoc;
   }
 
+  SSTPragma(class_t _cls) : cls(_cls){}
+
   virtual void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) = 0;
   virtual void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig &cfg){} //not required
-  virtual void activate(clang::Decl* d, std::list<std::string>& vars){}
   virtual void deactivate(clang::Stmt* s, PragmaConfig& cfg){} //not required
+
+  static void tokenStreamToString(clang::SourceLocation loc,
+      std::list<clang::Token>::const_iterator beg,
+      std::list<clang::Token>::const_iterator end,
+      std::ostream& os, clang::CompilerInstance& CI);
+
+ protected:
+  void replace(const clang::Stmt* s, clang::Rewriter& r, const std::string& repl);
+
+};
+
+class SSTNullVariablePragma : public SSTPragma {
+ public:
+  SSTNullVariablePragma(clang::SourceLocation loc,
+                        clang::CompilerInstance& CI,
+                        const std::list<clang::Token>& tokens);
+  bool hasOnly() const {
+    return !nullOnly_.empty();
+  }
+
+  bool hasExceptions() const {
+    return !nullExcept_.empty();
+  }
+
+  bool isOnly(clang::NamedDecl* d) const {
+    return nullOnly_.find(d->getNameAsString()) != nullOnly_.end();
+  }
+
+  bool isException(clang::NamedDecl* d) const {
+    return nullExcept_.find(d->getNameAsString()) != nullExcept_.end();
+  }
+
+  bool keepCtor() const {
+    return !nullOnly_.empty() || !nullExcept_.empty();
+  }
+
+ private:
+  void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override;
+  void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg) override;
+  void replace(clang::Stmt* s, clang::Rewriter& r, const char* repl);
+  std::set<std::string> nullOnly_;
+  std::set<std::string> nullExcept_;
 };
 
 class SSTDeletePragma : public SSTPragma {
- protected:
+ public:
+  SSTDeletePragma() : SSTPragma(Delete) {}
+ private:
   void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override;
+  void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg) override;
+  void replace(clang::Stmt* s, clang::Rewriter& r, const char* repl);
 };
 
 class SSTMallocPragma : public SSTDeletePragma {
+ private:
   void activate(clang::Stmt *stmt, clang::Rewriter &r, PragmaConfig& cfg) override;
   void visitDeclStmt(clang::DeclStmt* stmt, clang::Rewriter& r);
   void visitBinaryOperator(clang::BinaryOperator* op, clang::Rewriter& r);
 };
 
+class SSTKeepPragma : public SSTPragma {
+ public:
+  SSTKeepPragma() : SSTPragma(Keep) {}
+ private:
+  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override {
+    cfg.makeNoChanges = true;
+  }
+  void deactivate(clang::Stmt *s, PragmaConfig &cfg) override {
+    cfg.makeNoChanges = false;
+  }
+};
+
 class SSTNewPragma : public SSTPragma {
+ public:
+  SSTNewPragma() : SSTPragma(New) {}
+  static void defaultAct(clang::Stmt* stmt, clang::Rewriter& r, clang::CompilerInstance& CI,
+                         bool insertStartAfter, bool insertStopAfter, bool trailingSemiColon=false);
+ private:
   void activate(clang::Stmt *stmt, clang::Rewriter &r, PragmaConfig& cfg) override;
   void activate(clang::Decl* d, clang::Rewriter &r, PragmaConfig& cfg) override;
   void visitDeclStmt(clang::DeclStmt *stmt, clang::Rewriter &r);
   void visitCompoundStmt(clang::CompoundStmt *stmt, clang::Rewriter& r);
   void visitBinaryOperator(clang::BinaryOperator *op, clang::Rewriter& r);
-  void defaultAct(clang::Stmt* stmt, clang::Rewriter& r, bool insertStartAfter, bool insertStopAfter);
   void visitCXXMethodDecl(clang::CXXMethodDecl* decl, clang::Rewriter& r);
   void visitFunctionDecl(clang::FunctionDecl* decl, clang::Rewriter& r);
-};
-
-class SSTComputePragma : public SSTPragma {
-  friend class ComputeVisitor;
-
-  void activate(clang::Stmt *stmt, clang::Rewriter &r, PragmaConfig& cfg) override;
-  void activate(clang::Decl* decl, clang::Rewriter& r, PragmaConfig& cfg) override;
-  void defaultAct(clang::Stmt* stmt, clang::Rewriter &r);
   void visitForStmt(clang::ForStmt* stmt, clang::Rewriter& r);
-  void visitCXXMethodDecl(clang::CXXMethodDecl* decl, clang::Rewriter& r, PragmaConfig& cfg);
-  void visitFunctionDecl(clang::FunctionDecl* decl, clang::Rewriter& r, PragmaConfig& cfg);
-  void visitIfStmt(clang::IfStmt* stmt, clang::Rewriter& r);
-  void visitAndReplaceStmt(clang::Stmt* stmt, clang::Rewriter& r);
-};
-
-class SSTReplacePragma : public SSTPragma {
-  std::string fxn_;
-  std::string replacement_;
- public:
-  SSTReplacePragma(const std::string& fxn, const std::string& replace) :
-    fxn_(fxn), replacement_(replace)
-  {
-  }
-  void activate(clang::Decl* d, std::list<std::string>& vars) override;
-  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
-  void deactivate(clang::Stmt *s, PragmaConfig& cfg) override;
-};
-
-class SSTStartReplacePragma : public SSTReplacePragma {
- public:
-  SSTStartReplacePragma(const std::string& fxn, const std::string& replace) :
-    SSTReplacePragma(fxn,replace){}
-
-  void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override {
-    SSTReplacePragma::activate(s,r,cfg);
-  }
-  void deactivate(clang::Stmt* s, PragmaConfig& cfg) override {} //no op
-};
-
-class SSTStopReplacePragma : public SSTReplacePragma {
- public:
-  SSTStopReplacePragma(const std::string& fxn, const std::string& replace) :
-    SSTReplacePragma(fxn,replace){}
-
-  void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override {
-    SSTReplacePragma::deactivate(s,cfg);
-  }
-  void deactivate(clang::Stmt* s, PragmaConfig& cfg) override {} //no op
 };
 
 struct SSTPragmaList {
@@ -177,15 +212,15 @@ class SSTPragmaHandler : public clang::PragmaHandler {
  protected:
   SSTPragmaHandler(const char* name, SSTPragmaList& plist,
                    clang::CompilerInstance& ci,
-                   ReplGlobalASTVisitor& visitor,
-                   std::set<clang::Expr*>& deleted) :
+                   SkeletonASTVisitor& visitor,
+                   std::set<clang::Stmt*>& deleted) :
     PragmaHandler(name), pragmas_(plist), ci_(ci),
     deleted_(deleted), visitor_(visitor)
   {}
   SSTPragmaList& pragmas_;
   clang::CompilerInstance& ci_;
-  ReplGlobalASTVisitor& visitor_;
-  std::set<clang::Expr*>& deleted_;
+  SkeletonASTVisitor& visitor_;
+  std::set<clang::Stmt*>& deleted_;
 
   /**
    * @brief configure Assuming the PP lex position is currently on eod,
@@ -211,8 +246,8 @@ class SSTSimplePragmaHandler_base : public SSTPragmaHandler {
  protected:
   SSTSimplePragmaHandler_base(const char* name, SSTPragmaList& plist,
                               clang::CompilerInstance& CI,
-                              ReplGlobalASTVisitor& visitor,
-                              std::set<clang::Expr*>& deld) :
+                              SkeletonASTVisitor& visitor,
+                              std::set<clang::Stmt*>& deld) :
     SSTPragmaHandler(name, plist, CI, visitor, deld)
   {}
 
@@ -232,8 +267,8 @@ class SSTSimplePragmaHandler : public SSTSimplePragmaHandler_base
    */
   SSTSimplePragmaHandler(const char* name, SSTPragmaList& plist,
                          clang::CompilerInstance& CI,
-                         ReplGlobalASTVisitor& visitor,
-                         std::set<clang::Expr*>& deld) :
+                         SkeletonASTVisitor& visitor,
+                         std::set<clang::Stmt*>& deld) :
     SSTSimplePragmaHandler_base(name, plist, CI, visitor, deld)
   {}
 
@@ -250,7 +285,7 @@ class SSTSimplePragmaHandler : public SSTSimplePragmaHandler_base
 class SSTDeletePragmaHandler : public SSTSimplePragmaHandler<SSTDeletePragma> {
  public:
   SSTDeletePragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
-                         ReplGlobalASTVisitor& visitor, std::set<clang::Expr*>& deld) :
+                         SkeletonASTVisitor& visitor, std::set<clang::Stmt*>& deld) :
     SSTSimplePragmaHandler<SSTDeletePragma>("delete", plist, CI, visitor, deld)
   {}
 };
@@ -258,7 +293,7 @@ class SSTDeletePragmaHandler : public SSTSimplePragmaHandler<SSTDeletePragma> {
 class SSTMallocPragmaHandler : public SSTSimplePragmaHandler<SSTMallocPragma> {
  public:
   SSTMallocPragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
-                         ReplGlobalASTVisitor& visitor, std::set<clang::Expr*>& deld) :
+                         SkeletonASTVisitor& visitor, std::set<clang::Stmt*>& deld) :
    SSTSimplePragmaHandler<SSTMallocPragma>("malloc", plist, CI, visitor, deld)
   {}
 };
@@ -266,16 +301,16 @@ class SSTMallocPragmaHandler : public SSTSimplePragmaHandler<SSTMallocPragma> {
 class SSTNewPragmaHandler : public SSTSimplePragmaHandler<SSTNewPragma> {
  public:
   SSTNewPragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
-                      ReplGlobalASTVisitor& visitor, std::set<clang::Expr*>& deld) :
+                      SkeletonASTVisitor& visitor, std::set<clang::Stmt*>& deld) :
    SSTSimplePragmaHandler<SSTNewPragma>("new", plist, CI, visitor, deld)
   {}
 };
 
-class SSTComputePragmaHandler : public SSTSimplePragmaHandler<SSTComputePragma> {
+class SSTKeepPragmaHandler : public SSTSimplePragmaHandler<SSTKeepPragma> {
  public:
-  SSTComputePragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
-                      ReplGlobalASTVisitor& visitor, std::set<clang::Expr*>& deld) :
-   SSTSimplePragmaHandler<SSTComputePragma>("compute", plist, CI, visitor, deld)
+  SSTKeepPragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
+                      SkeletonASTVisitor& visitor, std::set<clang::Stmt*>& deld) :
+   SSTSimplePragmaHandler<SSTKeepPragma>("keep", plist, CI, visitor, deld)
   {}
 };
 
@@ -295,8 +330,8 @@ class SSTTokenStreamPragmaHandler : public SSTPragmaHandler
    */
   SSTTokenStreamPragmaHandler(const char* name, SSTPragmaList& plist,
                          clang::CompilerInstance& CI,
-                         ReplGlobalASTVisitor& visitor,
-                         std::set<clang::Expr*>& deld) :
+                         SkeletonASTVisitor& visitor,
+                         std::set<clang::Stmt*>& deld) :
     SSTPragmaHandler(name, plist, CI, visitor, deld)
   {}
 
@@ -305,63 +340,20 @@ class SSTTokenStreamPragmaHandler : public SSTPragmaHandler
                                     const std::list<clang::Token>& tokens) const = 0;
 };
 
-class SSTOpenMPParallelPragmaHandler : public SSTTokenStreamPragmaHandler
+
+class SSTNullVariablePragmaHandler : public SSTTokenStreamPragmaHandler
 {
  public:
-  SSTOpenMPParallelPragmaHandler(SSTPragmaList& plist,
-                         clang::CompilerInstance& CI,
-                         ReplGlobalASTVisitor& visitor,
-                         std::set<clang::Expr*>& deld) :
-      SSTTokenStreamPragmaHandler("parallel", plist, CI, visitor, deld){}
+  SSTNullVariablePragmaHandler(SSTPragmaList& plist,
+                        clang::CompilerInstance& CI,
+                        SkeletonASTVisitor& visitor,
+                        std::set<clang::Stmt*>& deld) :
+     SSTTokenStreamPragmaHandler("null_variable", plist, CI, visitor, deld){}
+
  private:
-  SSTPragma* allocatePragma(clang::SourceLocation loc, const std::list<clang::Token> &tokens) const {
-    //this actually just maps cleanly into a compute pragma
-    return new SSTComputePragma;
-  }
-};
+  SSTPragma* allocatePragma(clang::SourceLocation loc,
+                            const std::list<clang::Token> &tokens) const;
 
-class SSTReplacePragmaHandler : public SSTTokenStreamPragmaHandler
-{
-public:
- SSTReplacePragmaHandler(SSTPragmaList& plist,
-                        clang::CompilerInstance& CI,
-                        ReplGlobalASTVisitor& visitor,
-                        std::set<clang::Expr*>& deld) :
-     SSTTokenStreamPragmaHandler("replace", plist, CI, visitor, deld){}
-
- static std::string
- parse(clang::CompilerInstance& CI, clang::SourceLocation loc,
-        const std::list<clang::Token>& tokens, std::ostream& os);
-
-private:
- SSTPragma* allocatePragma(clang::SourceLocation loc, const std::list<clang::Token> &tokens) const;
-
-};
-
-class SSTStartReplacePragmaHandler : public SSTTokenStreamPragmaHandler
-{
-public:
- SSTStartReplacePragmaHandler(SSTPragmaList& plist,
-                        clang::CompilerInstance& CI,
-                        ReplGlobalASTVisitor& visitor,
-                        std::set<clang::Expr*>& deld) :
-     SSTTokenStreamPragmaHandler("start_replace", plist, CI, visitor, deld){}
-
-private:
- SSTPragma* allocatePragma(clang::SourceLocation loc, const std::list<clang::Token> &tokens) const;
-};
-
-class SSTStopReplacePragmaHandler : public SSTTokenStreamPragmaHandler
-{
-public:
- SSTStopReplacePragmaHandler(SSTPragmaList& plist,
-                        clang::CompilerInstance& CI,
-                        ReplGlobalASTVisitor& visitor,
-                        std::set<clang::Expr*>& deld) :
-     SSTTokenStreamPragmaHandler("stop_replace", plist, CI, visitor, deld){}
-
-private:
- SSTPragma* allocatePragma(clang::SourceLocation loc, const std::list<clang::Token> &tokens) const;
 };
 
 #endif

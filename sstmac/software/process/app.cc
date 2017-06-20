@@ -92,12 +92,18 @@ app::app(sprockit::sim_parameters *params, software_id sid,
   next_tls_key_(0),
   next_condition_(0),
   next_mutex_(0),
+  min_op_cutoff_(0),
   globals_storage_(nullptr)
 {
   int globalsSize = GlobalVariable::globalsSize();
   if (globalsSize != 0){
     globals_storage_ = new char[globalsSize];
     ::memcpy(globals_storage_, GlobalVariable::globalInit(), globalsSize);
+  }
+  min_op_cutoff_ = params->get_optional_int_param("min_op_cutoff", 1e3);
+  bool host_compute = params->get_optional_bool_param("host_compute_timer", false);
+  if (host_compute){
+    host_timer_ = new HostTimer;
   }
 }
 
@@ -174,8 +180,11 @@ app::compute_loop(uint64_t num_loops,
 }
 
 void
-app::compute_detailed(long flops, long nintops, long bytes)
+app::compute_detailed(uint64_t flops, uint64_t nintops, uint64_t bytes)
 {
+  if ((flops+nintops) < min_op_cutoff_){
+    return;
+  }
   compute_loops_lib()->compute_detailed(flops, nintops, bytes);
 }
 
@@ -224,7 +233,11 @@ app::run()
 {
   SSTMACBacktrace("main");
   os_->increment_app_refcount();
+  end_api_call(); //this initializes things, "fake" api call at beginning
   skeleton_main();
+  //we are ending but perform the equivalent
+  //to a start api call to flush any compute
+  start_api_call();
   for (auto& pair : apis_){
     delete pair.second;
   }

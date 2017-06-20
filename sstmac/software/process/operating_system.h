@@ -122,6 +122,10 @@ class operating_system :
   #endif
   }
 
+  thread* active_thread() const {
+    return current_os_thread_context().current_thread;
+  }
+
   static void delete_statics();
 
   static void switch_to_context(int aid, int tid);
@@ -244,8 +248,6 @@ class operating_system :
     return my_addr_;
   }
 
-  void start_api_call();
-
   void schedule_timeout(timestamp delay, key* k);
 
   void free_thread_stack(void* stack);
@@ -311,8 +313,14 @@ class operating_system :
 
   void init_threading();
 
-  os_thread_context& current_os_thread_context();
-
+  os_thread_context& current_os_thread_context() const {
+  #if SSTMAC_USE_MULTITHREAD
+    int thr = thread_id();
+    return os_thread_contexts_[thr];
+  #else
+    return os_thread_context_;
+  #endif
+  }
 
   friend class library;
 
@@ -323,7 +331,7 @@ class operating_system :
   void local_shutdown();
 
   bool handle_library_event(const std::string& name, event* ev);
-  
+
  private:
   hw::node* node_;
   spkt_unordered_map<std::string, library*> libs_;

@@ -526,25 +526,12 @@ operating_system::current_node_id()
   return addr;
 }
 
-operating_system::os_thread_context&
-operating_system::current_os_thread_context()
-{
-#if SSTMAC_USE_MULTITHREAD
-  int thr = thread_id();
-  return os_thread_contexts_[thr];
-#else
-  return os_thread_context_;
-#endif
-}
-
 void
 operating_system::switch_to_thread(thread_data_t tothread)
 {
   //here there id is physical thread id
   os_thread_context& ctxt = current_os_thread_context();
   thread* next_thread = tothread.second;
-
-  //ctxt.globals = next_thread->globals();
 
 
   long old_id = current_thread_id_;
@@ -881,11 +868,6 @@ operating_system::add_application(app* a)
   add_thread(a);
 
   task_to_thread_[a->sid().task_] = a->thread_id();
-}
-
-void
-operating_system::start_api_call()
-{
 }
 
 void

@@ -204,11 +204,5 @@ network_message::clone_into(network_message* cln) const
   cln->type_ = type_;
 }
 
-void
-network_message::put_on_wire()
-{
- //do nothing by default
-}
-
 }
 }

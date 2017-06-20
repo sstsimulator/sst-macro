@@ -252,9 +252,23 @@ class message :
     return local_buffer_.ptr || remote_buffer_.ptr;
   }
 
-  virtual void move_remote_to_local();
+  /**
+   * @brief inject_remote_to_local
+   * Coming off the NIC, copy data into the waiting buffer to
+   * complete a get operation: remote->local
+   */
+  void inject_remote_to_local();
 
-  virtual void move_local_to_remote();
+  /**
+   * @brief inject_local_to_remote
+   * Comming off the NIC, copy data into the waiting buffer to
+   * complete a put operation: local->remote
+   */
+  void inject_local_to_remote();
+
+  void memmove_remote_to_local();
+
+  void memmove_local_to_remote();
 
   sumi::public_buffer& local_buffer() { return local_buffer_; }
   sumi::public_buffer& remote_buffer() { return remote_buffer_; }
