@@ -125,6 +125,7 @@ struct RecurseAll {
     recurse_case(ParenExpr,stmt,role,std::forward<Args>(args)...)
     recurse_case(CallExpr,stmt,role,std::forward<Args>(args)...)
     recurse_case(CXXMemberCallExpr,stmt,role,std::forward<Args>(args)...)
+    recurse_case(CXXOperatorCallExpr,stmt,role,std::forward<Args>(args)...)
     recurse_case(MemberExpr,stmt,role,std::forward<Args>(args)...)
     recurse_case(DeclRefExpr,stmt,role,std::forward<Args>(args)...)
     recurse_case(ImplicitCastExpr,stmt,role,std::forward<Args>(args)...)
@@ -204,12 +205,21 @@ struct RecurseAll {
   }
 
   void recurseCXXMemberCallExpr(const CXXMemberCallExpr* expr, ExprRole role, Args&& ...args){
-    recurse(expr->getImplicitObjectArgument(), ExprRole::ThisPtr, std::forward<Args>(args)...);
+    //recurse(expr->getImplicitObjectArgument(), ExprRole::ThisPtr, std::forward<Args>(args)...);
     recurse(expr->getCallee(), ExprRole::CallFxn, std::forward<Args>(args)...);
     for (int i=0; i < expr->getNumArgs(); ++i){
       recurse(expr->getArg(i), ExprRole::CallArg, std::forward<Args>(args)...);
     }
   }
+
+  void recurseCXXOperatorCallExpr(const CXXOperatorCallExpr* expr, ExprRole role, Args&& ...args){
+    //recurse(expr->getImplicitObjectArgument(), ExprRole::ThisPtr, std::forward<Args>(args)...);
+    recurse(expr->getCallee(), ExprRole::CallFxn, std::forward<Args>(args)...);
+    for (int i=0; i < expr->getNumArgs(); ++i){
+      recurse(expr->getArg(i), ExprRole::CallArg, std::forward<Args>(args)...);
+    }
+  }
+
 
   void recurseMemberExpr(const MemberExpr* expr, ExprRole role, Args&& ...args){
     recurse(expr->getBase(), ExprRole::ThisPtr, std::forward<Args>(args)...);

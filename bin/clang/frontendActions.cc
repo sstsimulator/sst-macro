@@ -148,6 +148,8 @@ ReplaceAction::initPragmas(CompilerInstance& CI)
     new SSTLoopCountPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
   CI.getPreprocessor().AddPragmaHandler("sst",
     new SSTInitPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+  CI.getPreprocessor().AddPragmaHandler("sst",
+    new SSTReturnPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
 }
 
 void

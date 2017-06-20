@@ -74,7 +74,8 @@ struct SSTPragma {
     Keep=4,
     NullVariable=5,
     LoopCount=6,
-    Init=7
+    Init=7,
+    Return=8
   } class_t;
   clang::StringRef name;
   clang::SourceLocation startLoc;
@@ -107,6 +108,25 @@ struct SSTPragma {
 
 };
 
+class SSTReturnPragma : public SSTPragma {
+ public:
+  SSTReturnPragma(clang::SourceLocation loc,
+                  clang::CompilerInstance& CI,
+                  const std::string& replText) :
+    repl_(replText), SSTPragma(Return)
+  {}
+
+  std::string replacement() const {
+    return repl_;
+  }
+
+
+ private:
+  void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override;
+
+  std::string repl_;
+};
+
 class SSTNullVariablePragma : public SSTPragma {
  public:
   SSTNullVariablePragma(clang::SourceLocation loc,
@@ -118,6 +138,10 @@ class SSTNullVariablePragma : public SSTPragma {
 
   bool hasExceptions() const {
     return !nullExcept_.empty() || !nullNew_.empty();
+  }
+
+  bool noExceptions() const {
+    return nullExcept_.empty() && nullOnly_.empty() && nullNew_.empty();
   }
 
   bool isOnly(clang::NamedDecl* d) const {
@@ -196,22 +220,66 @@ struct SSTPragmaList {
   }
 
   template <class T>
-  SSTPragma*
-  takeMatch(T* t){
+  std::list<SSTPragma*>
+  getMatches(T* t){
+    std::list<SSTPragma*> ret;
     auto end = pragmas.end();
-    for (auto iter=pragmas.begin(); iter != end; ++iter){
-      SSTPragma* p = *iter;
+    auto iter=pragmas.begin();
+    while (iter != end){
+      auto tmp = iter++;
+      SSTPragma* p = *tmp;
       bool match = p->matches<T>(t);
       if (match){
-        pragmas.erase(iter);
-        return p;
+        pragmas.erase(tmp);
+        ret.push_back(p);
+        //if (p->reusable()){
+          //we might visit the same source location many times
+          //just in case, log the pragmas we already applied to it
+          appendPulled(t,p);
+        //}
       }
     }
-    return nullptr;
+    if (ret.empty()){
+      //possibly we are revisiting this - see if we already have a pragma list for it
+      return getPulled(t);
+    } else {
+      return ret;
+    }
+  }
+
+  void appendPulled(clang::Stmt* s, SSTPragma* prg){
+    pulledStmts[s].push_back(prg);
+  }
+
+  void appendPulled(clang::Decl* d, SSTPragma* prg){
+    pulledDecls[d].push_back(prg);
+  }
+
+  std::list<SSTPragma*>
+  getPulled(clang::Stmt* s) const {
+    auto iter = pulledStmts.find(s);
+    if (iter != pulledStmts.end()){
+      return iter->second;
+    } else {
+      return std::list<SSTPragma*>();
+    }
+  }
+
+  std::list<SSTPragma*>
+  getPulled(clang::Decl* d) const {
+    auto iter = pulledDecls.find(d);
+    if (iter != pulledDecls.end()){
+      return iter->second;
+    } else {
+      return std::list<SSTPragma*>();
+    }
   }
 
   std::list<SSTPragma*> pragmas;
+  std::map<clang::Stmt*,std::list<SSTPragma*>> pulledStmts;
+  std::map<clang::Decl*,std::list<SSTPragma*>> pulledDecls;
 };
+
 
 class SSTPragmaHandler : public clang::PragmaHandler {
 
@@ -355,6 +423,21 @@ class SSTNullVariablePragmaHandler : public SSTTokenStreamPragmaHandler
                         SkeletonASTVisitor& visitor,
                         std::set<clang::Stmt*>& deld) :
      SSTTokenStreamPragmaHandler("null_variable", plist, CI, visitor, deld){}
+
+ private:
+  SSTPragma* allocatePragma(clang::SourceLocation loc,
+                            const std::list<clang::Token> &tokens) const;
+
+};
+
+class SSTReturnPragmaHandler : public SSTTokenStreamPragmaHandler
+{
+ public:
+  SSTReturnPragmaHandler(SSTPragmaList& plist,
+                        clang::CompilerInstance& CI,
+                        SkeletonASTVisitor& visitor,
+                        std::set<clang::Stmt*>& deld) :
+     SSTTokenStreamPragmaHandler("return", plist, CI, visitor, deld){}
 
  private:
   SSTPragma* allocatePragma(clang::SourceLocation loc,

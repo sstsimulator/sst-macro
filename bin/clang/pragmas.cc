@@ -377,6 +377,17 @@ SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstanc
 }
 
 void
+SSTReturnPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+{
+  if (s->getStmtClass() != Stmt::ReturnStmtClass){
+    errorAbort(s->getLocStart(), *CI,
+              "pragma return not applied to return statement");
+  }
+  SourceRange rng(s->getLocStart(), s->getLocEnd());
+  r.ReplaceText(rng, "return " + repl_);
+}
+
+void
 SSTNullVariablePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
 {
   cfg.nullVariables[d] = this;
@@ -427,6 +438,12 @@ SSTPragma::tokenStreamToString(SourceLocation loc,
       case tok::star:
         os << "*";
         break;
+      case tok::period:
+        os << ".";
+        break;
+      case tok::coloncolon:
+        os << "::";
+        break;
       case tok::kw_int:
         os << "int";
         break;
@@ -458,4 +475,12 @@ SSTPragma*
 SSTNullVariablePragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
 {
   return new SSTNullVariablePragma(loc, ci_, tokens);
+}
+
+SSTPragma*
+SSTReturnPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  std::stringstream sstr;
+  SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
+  return new SSTReturnPragma(loc, ci_, sstr.str());
 }

@@ -333,7 +333,11 @@ ComputeVisitor::visitBodyCallExpr(CallExpr* expr, Loop::Body& body)
   if (callee){
     if (callee->isTemplateInstantiation()){
       FunctionTemplateDecl* td = callee->getPrimaryTemplate();
-      addOperations(td->getTemplatedDecl()->getBody(), body);
+      //std::cout << "Found callee: "
+      //          << callee->getNameAsString() << ": "
+      //          << callee << std::endl;
+      //callee->dump();
+      //addOperations(td->getTemplatedDecl()->getBody(), body);
     } else {
       FunctionDecl* def = callee->getDefinition();
       if (!def){
@@ -354,8 +358,9 @@ ComputeVisitor::visitBodyCallExpr(CallExpr* expr, Loop::Body& body)
 void
 ComputeVisitor::checkStmtPragmas(Stmt* s)
 {
-  SSTPragma* prg = pragmas.takeMatch(s);
-  if (prg){
+  auto matches = pragmas.getMatches(s);
+  if (!matches.empty()){
+    SSTPragma* prg = matches.front();
     switch (prg->cls){
     case SSTPragma::Replace: {
       SSTReplacePragma* rprg = static_cast<SSTReplacePragma*>(prg);
@@ -381,15 +386,18 @@ ComputeVisitor::checkStmtPragmas(Stmt* s)
 void
 ComputeVisitor::visitBodyDeclStmt(DeclStmt* stmt, Loop::Body& body)
 {
-  SSTPragma* prg = pragmas.takeMatch(stmt);
   if (!stmt->isSingleDecl()){
     return;
   }
   Decl* d = stmt->getSingleDecl();
   if (d){
-    if (prg && prg->cls == SSTPragma::Replace){
-      SSTReplacePragma* rprg = static_cast<SSTReplacePragma*>(prg);
-      repls.decls[d] = rprg->replacement();
+    auto matches = pragmas.getMatches(stmt);
+    if (!matches.empty()){
+     SSTPragma* prg = matches.front();
+      if (prg->cls == SSTPragma::Replace){
+        SSTReplacePragma* rprg = static_cast<SSTReplacePragma*>(prg);
+        repls.decls[d] = rprg->replacement();
+      }
     }
     if (isa<VarDecl>(d)){
       VarDecl* vd = cast<VarDecl>(d);
@@ -499,8 +507,13 @@ ComputeVisitor::validateLoopControlExpr(Expr* rhs)
 {
   //we may have issues if the rhs references variables
   //that are scoped inside the loop
-  recurseAll<ValidateScope,NullVisit>(rhs, repls,
-                                      CI, scopeStartLine);
+  VariableScope scope;
+  scope.astContext = context;
+  scope.start = context->getTopLevelScope()->getLocStart();
+  //this is the START of the compute block
+  //but also the END of the allowed scope for usable variables
+  scope.stop = scopeStartLine;
+  recurseAll<ValidateScope,NullVisit>(rhs, repls, CI, scope);
 }
 
 void
@@ -618,7 +631,7 @@ ComputeVisitor::addLoopContribution(std::ostream& os, Loop& loop)
   if (loop.body.depth > 0){
     os << "tripCount" << (loop.body.depth-1) << "*";
   }
-  os << loop.tripCount << "; ";
+  os << "(" << loop.tripCount << "); ";
   if (loop.body.flops > 0){
       os << " flops += tripCount" << loop.body.depth << "*" << loop.body.flops << ";";
   }

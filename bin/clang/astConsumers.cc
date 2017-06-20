@@ -52,12 +52,37 @@ using namespace clang::tooling;
 bool
 ReplaceASTConsumer::HandleTopLevelDecl(DeclGroupRef DR)
 {
+  /**
+    We have to loop through twice. The first time through,
+    we have to collect all the template instantiations.
+    Once all actual template instatiations are found,
+    we can do a second pass to actually anaylze the code.
+    This must occur because template instatiations might come
+    at the end of the declaration list.
+  */
   for (DeclGroupRef::iterator b = DR.begin(), e = DR.end(); b != e; ++b){
     Decl* d = *b;
+    if (d->getKind() == Decl::Function){
+      FunctionDecl* fd = cast<FunctionDecl>(d);
+      if (fd->isTemplateInstantiation()){
+        //td::cout << "Found template function: "
+        //          << fd->getNameAsString() << ": "
+        //          << fd << std::endl;
+        //fd->dump();
+      }
+    }
+  }
+
+
+  for (DeclGroupRef::iterator b = DR.begin(), e = DR.end(); b != e; ++b){
+    Decl* d = *b;
+    visitor_.setTopLevelScope(d);
     bool isGlobalVar = isa<VarDecl>(d);
     visitor_.setVisitingGlobal(isGlobalVar);
     visitor_.TraverseDecl(*b);
     visitor_.setVisitingGlobal(false); //and reset
   }
+
+
   return true;
 }

@@ -376,34 +376,41 @@ SkeletonASTVisitor::TraverseMemberExpr(MemberExpr *expr, DataRecursionQueue* que
   ValueDecl* vd = expr->getMemberDecl();
 
   if (isNullVariable(vd)){
-    deleteNullVariableStmt(expr, vd);
-    return true;
-  }
-
-  Expr* base = getUnderlyingExpr(expr->getBase());
-  if (base->getStmtClass() == Stmt::DeclRefExprClass){
-    DeclRefExpr* dref = cast<DeclRefExpr>(base);
-    SSTNullVariablePragma* prg = getNullVariable(dref->getFoundDecl());
-    if (prg){
-      bool deleteStmt = true;
-      if (prg->hasExceptions()){
-        deleteStmt = !prg->isException(vd); //this might be a thing we dont delete
-      } else if (prg->hasOnly()){
-        deleteStmt = prg->isOnly(vd); //this might be a thing we do delete
-      }
-
-      if (deleteStmt){
-        deleteNullVariableStmt(expr, vd);
-      } else {
-        if (prg->isNullifiedNew(vd)){
-          //make damn sure we allocate no memory
-          //even though we keep the statement
-          SSTNewPragma::defaultAct(stmt_contexts_.front(),rewriter_,*ci_,false,false,true);
-        }
-      }
+    SSTNullVariablePragma* prg = getNullVariable(vd);
+    if (prg->noExceptions()){
+      //we delete all uses of this variable
+      deleteNullVariableStmt(expr, vd);
       return true;
     }
+    //else depends on which members of this member are used
+  } else {
+    Expr* base = getUnderlyingExpr(expr->getBase());
+    if (base->getStmtClass() == Stmt::DeclRefExprClass){
+      DeclRefExpr* dref = cast<DeclRefExpr>(base);
+      SSTNullVariablePragma* prg = getNullVariable(dref->getFoundDecl());
+      if (prg){
+        bool deleteStmt = true;
+        if (prg->hasExceptions()){
+          deleteStmt = !prg->isException(vd); //this might be a thing we dont delete
+        } else if (prg->hasOnly()){
+          deleteStmt = prg->isOnly(vd); //this might be a thing we do delete
+        }
+
+        if (deleteStmt){
+          deleteNullVariableStmt(expr, vd);
+        } else {
+          if (prg->isNullifiedNew(vd)){
+            //make damn sure we allocate no memory
+            //even though we keep the statement
+            SSTNewPragma::defaultAct(stmt_contexts_.front(),rewriter_,*ci_,false,false,true);
+          }
+        }
+        return true;
+      }
+    }
   }
+
+
 
   TraverseStmt(expr->getBase());
   return true;
@@ -1001,8 +1008,7 @@ SkeletonASTVisitor::VisitDecl(Decl *D)
 {
   if (noSkeletonize_) return true;
 
-  SSTPragma* prg;
-  while ((prg = pragmas_.takeMatch(D))){
+  for (SSTPragma* prg : pragmas_.getMatches(D)){
     pragmaConfig_.pragmaDepth++;
     //pragma takes precedence - must occur in pre-visit
     prg->activate(D, rewriter_, pragmaConfig_);
@@ -1072,9 +1078,8 @@ SkeletonASTVisitor::deleteNullVariableStmt(Stmt* use_stmt, Decl* d)
 bool
 SkeletonASTVisitor::activatePragmasForStmt(Stmt* S)
 {
-  SSTPragma* prg;
   bool skipVisit = false;
-  while ((prg = pragmas_.takeMatch(S))){
+  for (SSTPragma* prg : pragmas_.getMatches(S)){
     if (skipVisit){
       errorAbort(S->getLocStart(), *ci_,
            "code block deleted by pragma - invalid pragma combination");
@@ -1101,9 +1106,8 @@ SkeletonASTVisitor::activatePragmasForStmt(Stmt* S)
 bool
 SkeletonASTVisitor::activatePragmasForDecl(Decl* D)
 {
-  SSTPragma* prg;
   bool skipVisit = false;
-  while ((prg = pragmas_.takeMatch(D))){
+  for (SSTPragma* prg : pragmas_.getMatches(D)){
     if (skipVisit){
       errorAbort(D->getLocStart(), *ci_,
            "code block deleted by pragma - invalid pragma combination");

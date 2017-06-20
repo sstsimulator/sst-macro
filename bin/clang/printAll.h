@@ -174,7 +174,9 @@ struct PrintAll {
   }
 
   void recurseDeclRefExpr(const DeclRefExpr* expr, std::ostream& os, Replacer&& repl){
-    os << expr->getFoundDecl()->getNameAsString();
+    PrettyPrinter pp;
+    pp.print(expr);
+    os << pp.str();
   }
 
   void recurseImplicitCastExpr(const ImplicitCastExpr* expr, std::ostream& os, Replacer&& repl){

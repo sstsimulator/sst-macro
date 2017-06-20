@@ -81,7 +81,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     pragmaConfig_.astVisitor = this;
   }
 
-  bool isGlobal(clang::DeclRefExpr* expr) const {
+  bool isGlobal(const clang::DeclRefExpr* expr) const {
     return globals_.find(expr->getFoundDecl()) != globals_.end();
   }
 
@@ -290,6 +290,14 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     visitingGlobal_ = flag;
   }
 
+  void setTopLevelScope(clang::Decl* d){
+    currentTopLevelScope_ = d;
+  }
+
+  clang::Decl* getTopLevelScope() const {
+    return currentTopLevelScope_;
+  }
+
   bool hasCStyleMain() const {
     return foundCMain_;
   }
@@ -312,6 +320,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   void replaceMain(clang::FunctionDecl* mainFxn);
 
  private:
+  clang::Decl* currentTopLevelScope_;
   clang::Rewriter& rewriter_;
   clang::CompilerInstance* ci_;
   SSTPragmaList pragmas_;
@@ -319,7 +328,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::set<clang::Stmt*>& deletedStmts_;
   GlobalVarNamespace& globalNs_;
   GlobalVarNamespace* currentNs_;
-  std::map<clang::NamedDecl*,std::string> globals_;
+  std::map<const clang::NamedDecl*,std::string> globals_;
   std::set<std::string> globalsDeclared_;
   bool useAllHeaders_;
   int insideCxxMethod_;

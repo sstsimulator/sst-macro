@@ -47,13 +47,28 @@ Questions? Contact sst-macro-help@sandia.gov
 #include "clangHeaders.h"
 #include "replacements.h"
 #include "recurseAll.h"
+#include "astVisitor.h"
 #include <sstream>
+
+struct VariableScope {
+  clang::SourceLocation start;
+  clang::SourceLocation stop;
+  SkeletonASTVisitor* astContext;
+  bool inScope(const clang::DeclRefExpr* expr){
+    clang::SourceLocation loc = expr->getDecl()->getLocStart();
+    bool inside = loc > start && loc < stop;
+    if (inside) return true;
+
+    //okay, not in scope by itself - maybe a global?
+    return astContext->isGlobal(expr);
+  }
+};
 
 struct ValidateScope {
   bool operator()(const clang::Expr* e, 
                   ExprRole role, Replacements& repls,
                   clang::CompilerInstance& CI, 
-                  clang::SourceLocation scopeBegin){
+                  VariableScope& scope){
     //if this has been replaced, stop recursing
     return repls.exprs.find(e) != repls.exprs.end();
   }
@@ -61,7 +76,7 @@ struct ValidateScope {
   bool operator()(const clang::Stmt* s, 
                   ExprRole role, Replacements& repls,
                   clang::CompilerInstance& CI, 
-                  clang::SourceLocation scopeBegin){
+                  VariableScope& scope){
     //do nothing
     return false; //but don't stop recursing
   }
@@ -69,7 +84,7 @@ struct ValidateScope {
   bool operator()(const clang::DeclRefExpr* expr, 
                   ExprRole role, Replacements& repls,
                   clang::CompilerInstance& CI, 
-                  clang::SourceLocation scopeBegin){
+                  VariableScope& scope){
     const clang::ValueDecl* d = expr->getDecl();
 
     //this might be already replaced - then we don't need to worry about it
@@ -79,14 +94,22 @@ struct ValidateScope {
       return true;
     }
 
+    //some types we skip
+    switch(d->getKind()){
+      case clang::Decl::EnumConstant:
+      case clang::Decl::CXXMethod:
+        return false;
+      default: break;
+    }
 
-    if (d->getLocStart() > scopeBegin || d->getLocStart() == scopeBegin){
+    if (!scope.inScope(expr)){
       std::stringstream sstr;
       sstr << "control variable '" << d->getNameAsString()
            << "' declared at "
            << d->getLocStart().printToString(CI.getSourceManager())
-           << " but used inside skeletonized block starting at "
-           << scopeBegin.printToString(CI.getSourceManager())
+           << " of type " << d->getDeclKindName()
+           << " which is inside skeletonized block starting at "
+           << scope.stop.printToString(CI.getSourceManager())
            << " - must use #pragma sst replace";
       errorAbort(expr->getLocStart(), CI, sstr.str());
     }
