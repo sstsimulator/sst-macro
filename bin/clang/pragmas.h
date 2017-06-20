@@ -92,6 +92,10 @@ struct SSTPragma {
     return startLoc < s->getLocStart() && s->getLocStart() <= endLoc;
   }
 
+  virtual bool reusable() const {
+    return false;
+  }
+
   SSTPragma(class_t _cls) : cls(_cls){}
 
   virtual void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) = 0;
@@ -222,7 +226,7 @@ struct SSTPragmaList {
   template <class T>
   std::list<SSTPragma*>
   getMatches(T* t){
-    std::list<SSTPragma*> ret;
+    std::list<SSTPragma*> ret = getPulled(t);
     auto end = pragmas.end();
     auto iter=pragmas.begin();
     while (iter != end){
@@ -230,21 +234,15 @@ struct SSTPragmaList {
       SSTPragma* p = *tmp;
       bool match = p->matches<T>(t);
       if (match){
-        pragmas.erase(tmp);
-        ret.push_back(p);
-        //if (p->reusable()){
-          //we might visit the same source location many times
-          //just in case, log the pragmas we already applied to it
+        if (!p->reusable()){
+          pragmas.erase(tmp);
+        } else {
           appendPulled(t,p);
-        //}
+        }
+        ret.push_back(p);
       }
     }
-    if (ret.empty()){
-      //possibly we are revisiting this - see if we already have a pragma list for it
-      return getPulled(t);
-    } else {
-      return ret;
-    }
+    return ret;
   }
 
   void appendPulled(clang::Stmt* s, SSTPragma* prg){

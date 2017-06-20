@@ -709,13 +709,30 @@ SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
 }
 
 bool
-SkeletonASTVisitor::VisitVarDecl(VarDecl* D){
-  //we need do nothing with this
-  if (D->isConstexpr()){
+SkeletonASTVisitor::TraverseVarDecl(VarDecl* D)
+{
+  if (D->getMemberSpecializationInfo() && D->getTemplateInstantiationPattern()){
     return true;
   }
 
+  visitVarDecl(D);
+
+  if (D->hasInit()){
+    TraverseStmt(D->getInit());
+  }
+
+  return true;
+}
+
+bool
+SkeletonASTVisitor::visitVarDecl(VarDecl* D)
+{
   if (!shouldVisitDecl(D)){
+    return true;
+  }
+
+  //we need do nothing with this
+  if (D->isConstexpr()){
     return true;
   }
 

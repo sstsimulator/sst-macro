@@ -55,12 +55,16 @@ struct VariableScope {
   clang::SourceLocation stop;
   SkeletonASTVisitor* astContext;
   bool inScope(const clang::DeclRefExpr* expr){
-    clang::SourceLocation loc = expr->getDecl()->getLocStart();
-    bool inside = loc > start && loc < stop;
-    if (inside) return true;
+    if (astContext->isGlobal(expr)){
+      return true;
+    }
 
-    //okay, not in scope by itself - maybe a global?
-    return astContext->isGlobal(expr);
+    if (stop.isInvalid()){
+      return false; //well crap, null scope
+    }
+
+    clang::SourceLocation loc = expr->getFoundDecl()->getLocStart();
+    return loc > start && loc < stop;
   }
 };
 

@@ -49,18 +49,21 @@ Questions? Contact sst-macro-help@sandia.gov
 #include "astVisitor.h"
 #include "globalVarNamespace.h"
 
-class ReplaceASTConsumer : public clang::ASTConsumer {
+class SkeletonASTConsumer : public clang::ASTConsumer {
  public:
-  ReplaceASTConsumer(clang::Rewriter &R, SkeletonASTVisitor& r) :
+  SkeletonASTConsumer(clang::Rewriter &R, SkeletonASTVisitor& r) :
     visitor_(r)
   {
   }
 
   bool HandleTopLevelDecl(clang::DeclGroupRef DR) override;
 
+  void run();
+
  private:
   SkeletonASTVisitor& visitor_;
 
+  std::list<clang::Decl*> allDecls_;
 };
 
 

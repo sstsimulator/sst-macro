@@ -94,6 +94,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     return iter->second;
   }
 
+  void addTemplateDefinition(clang::FunctionDecl* decl){
+
+  }
+
   void setCompilerInstance(clang::CompilerInstance& c){
     ci_ = &c;
   }
@@ -166,7 +170,9 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    * @param D
    * @return
    */
-  bool VisitVarDecl(clang::VarDecl* D);
+  bool visitVarDecl(clang::VarDecl* D);
+
+  bool TraverseVarDecl(clang::VarDecl* D);
 
   /**
    * @brief Activate any pragmas associated with this.
@@ -325,6 +331,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   clang::CompilerInstance* ci_;
   SSTPragmaList pragmas_;
   bool visitingGlobal_;
+  std::set<clang::FunctionDecl*> templateDefinitions_;
   std::set<clang::Stmt*>& deletedStmts_;
   GlobalVarNamespace& globalNs_;
   GlobalVarNamespace* currentNs_;

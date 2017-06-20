@@ -48,41 +48,46 @@ using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
 
-
 bool
-ReplaceASTConsumer::HandleTopLevelDecl(DeclGroupRef DR)
+SkeletonASTConsumer::HandleTopLevelDecl(DeclGroupRef DR)
 {
-  /**
-    We have to loop through twice. The first time through,
-    we have to collect all the template instantiations.
-    Once all actual template instatiations are found,
-    we can do a second pass to actually anaylze the code.
-    This must occur because template instatiations might come
-    at the end of the declaration list.
-  */
   for (DeclGroupRef::iterator b = DR.begin(), e = DR.end(); b != e; ++b){
     Decl* d = *b;
-    if (d->getKind() == Decl::Function){
-      FunctionDecl* fd = cast<FunctionDecl>(d);
-      if (fd->isTemplateInstantiation()){
-        //td::cout << "Found template function: "
-        //          << fd->getNameAsString() << ": "
-        //          << fd << std::endl;
-        //fd->dump();
+    switch(d->getKind()){
+     case Decl::Function: {
+        FunctionDecl* fd = cast<FunctionDecl>(d);
+        //the function decl will have its body filled in later
+        //possibly - we need to make sure to only add the function once
+        if (fd->isThisDeclarationADefinition()){
+          //also, we only really care about the definition anyway
+          allDecls_.push_back(d);
+        }
       }
+      break;
+     default:
+      allDecls_.push_back(d);
+      break;
     }
+
+    //delay processing to force all template instances to be generated
+    //visitor_.setTopLevelScope(d);
+    //bool isGlobalVar = isa<VarDecl>(d);
+    //visitor_.setVisitingGlobal(isGlobalVar);
+    //visitor_.TraverseDecl(d);
+    //visitor_.setVisitingGlobal(false); //and reset
+    //allDecls_.push_back(d);
   }
+  return true;
+}
 
-
-  for (DeclGroupRef::iterator b = DR.begin(), e = DR.end(); b != e; ++b){
-    Decl* d = *b;
+void
+SkeletonASTConsumer::run()
+{
+  for (Decl* d : allDecls_){
     visitor_.setTopLevelScope(d);
     bool isGlobalVar = isa<VarDecl>(d);
     visitor_.setVisitingGlobal(isGlobalVar);
-    visitor_.TraverseDecl(*b);
+    visitor_.TraverseDecl(d);
     visitor_.setVisitingGlobal(false); //and reset
   }
-
-
-  return true;
 }
