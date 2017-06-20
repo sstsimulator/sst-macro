@@ -200,8 +200,8 @@ pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
         //use zero-based input ports corresponding to row number for the muxer
         pisces_debug(
          "Connecting %s:%p local port %d to %s:%p local port %d",
-          xbar->to_string().c_str(), this, rm,
-          muxer->to_string().c_str(), this, rx);
+          xbar->to_string().c_str(), xbar, rm,
+          muxer->to_string().c_str(), muxer, rx);
         xbar->set_output(xbar_params, rm, rx, muxer->payload_handler());
         muxer->set_input(muxer_params, rx, rm, xbar->credit_handler());
       }

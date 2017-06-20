@@ -99,16 +99,6 @@ pisces_param_expander::expand(sprockit::sim_parameters* params)
   int net_packet_size = params->get_optional_int_param("network_accuracy_parameter", packet_size);
   int mem_packet_size = params->get_optional_int_param("memory_accuracy_parameter", packet_size);
 
-/* DIFF: causes a few extra failures */
-//  int size_multiplier = switch_buffer_multiplier(params);
-//  int buffer_size = buffer_depth_ * packet_size * size_multiplier;
-//  buffer_size = switch_params->get_optional_byte_length_param("buffer_size", buffer_size);
-//  switch_params->add_param_override("buffer_size", buffer_size);
-
-//  mem_params->add_param_override("mtu", mem_packet_size);
-//  switch_params->add_param_override("mtu", net_packet_size);
-//  nic_params->add_param_override("mtu", net_packet_size);
-
   if (!mem_params->has_param("mtu")){
     mem_params->add_param_override("mtu", mem_packet_size);
   }
@@ -118,7 +108,6 @@ pisces_param_expander::expand(sprockit::sim_parameters* params)
   if (!nic_params->has_param("mtu")){
     nic_params->add_param_override("mtu", net_packet_size);
   }
-  /* END DIFF */
 
   if (amm_type == "amm1"){
     expand_amm1_memory(params, mem_params);
@@ -427,6 +416,8 @@ pisces_param_expander::expand_amm4_network(sprockit::sim_parameters* params,
   ej_params->add_param_override("credit_latency", "0ns");
 
   // setup netlink (required)
+  int nl_conc = netlink_params->get_int_param("concentration");
+  top_params->add_param_override("netlink_concentration", nl_conc);
   netlink_params->add_param_override("model", "pisces");
   inj_params = netlink_params->get_optional_namespace("injection");
   ej_params = netlink_params->get_optional_namespace("ejection");
