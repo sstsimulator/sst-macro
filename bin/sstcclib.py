@@ -325,8 +325,10 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       ]
       if objTarget:
         folder, obj = os.path.split(objTarget)
-        try: os.makedirs(folder)
-        except OSError: pass
+        if folder:
+          if not os.path.isdir(folder):
+            try: os.makedirs(folder)
+            except OSError: pass
         cxxCmdArr.append("-o")
         cxxCmdArr.append(objTarget)
     allCompilerFlags = sstCxxFlagsStr + sstCppFlagsStr + givenFlagsStr
