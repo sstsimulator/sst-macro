@@ -323,6 +323,12 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         controlArgStr,
         srcFileStr
       ]
+      if objTarget:
+        folder, obj = os.path.split(objTarget)
+        try: os.makedirs(folder)
+        except OSError: pass
+        cxxCmdArr.append("-o")
+        cxxCmdArr.append(objTarget)
     allCompilerFlags = sstCxxFlagsStr + sstCppFlagsStr + givenFlagsStr
     if not "fPIC" in allCompilerFlags:
       sys.stderr.write("Linker/dlopen will eventually fail on .so file: fPIC not in C/CXXFLAGS\n")
