@@ -72,6 +72,10 @@ struct PrettyPrinter
     d->print(os, Policy);
   }
 
+  void print(clang::QualType ty){
+    ty.print(os,Policy);
+  }
+
   std::string
   print(const clang::BuiltinType* ty){
     return ty->getName(Policy).str();

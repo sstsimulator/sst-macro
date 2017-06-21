@@ -72,6 +72,11 @@ class SSTLoopCountPragma : public SSTPragma {
     //no activate actions are actually required
     //other code in computeVisitor.cc will detect this pragma and trigger actions
   }
+
+  bool reusable() const override {
+    return true;
+  }
+
  private:
   std::string loopCount_;
 };

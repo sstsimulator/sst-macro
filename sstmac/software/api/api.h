@@ -77,8 +77,8 @@ class api :
       software_id sid,
       operating_system *os) :
     library(libname, sid, os),
-    compute_(nullptr),
-    host_timer_(nullptr)
+    host_timer_(nullptr),
+    compute_(nullptr)
   {
     init(params);
   }
