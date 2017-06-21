@@ -404,7 +404,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         addClangArgs(clangCxxArgs, clangCmdArr)
         addClangArgs(clangLibtoolingCxxFlagsStr.split(), clangCmdArr)
       else:
-        addClangArg(clangLibtoolingCFlagsStr, clangCmdArr)
+        addClangArgs(clangLibtoolingCFlagsStr.split(), clangCmdArr)
       clangCmdArr.append(ppTmpFile)
       clangCmdArr.append("--")
       clangCmd = " ".join(clangCmdArr)
