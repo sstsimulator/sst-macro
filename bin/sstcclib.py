@@ -326,7 +326,6 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     allCompilerFlags = sstCxxFlagsStr + sstCppFlagsStr + givenFlagsStr
     if not "fPIC" in allCompilerFlags:
       sys.stderr.write("Linker/dlopen will eventually fail on .so file: fPIC not in C/CXXFLAGS\n")
-      return 1
   elif objTarget and sourceFiles:
     cxxCmdArr = [
       compiler, 
