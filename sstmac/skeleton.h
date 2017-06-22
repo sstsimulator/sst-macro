@@ -156,6 +156,10 @@ conditional_delete_array(T* t){
 /** Automatically inherit runtime types */
 using sprockit::sim_parameters;
 
+
+#define define_var_name_pass_through(x) sstmac_dont_ignore_this##x
+#define define_var_name(x) define_var_name_pass_through(x)
+
 #undef main
 #define main USER_MAIN
 #define USER_MAIN(...) \

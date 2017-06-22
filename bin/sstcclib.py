@@ -134,6 +134,10 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       if getObjTarget:
         objTarget = sarg
         getObjTarget=False
+      else:
+        cxxInitFile = addPrefix("sstGlobals.", sarg)
+        if os.path.isfile(cxxInitFile):
+          objectFiles.append(cxxInitFile)
     elif sarg.startswith("-Wl"):
       linkerArgs.append(sarg)
     elif sarg.startswith("-L"):
@@ -319,10 +323,17 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         controlArgStr,
         srcFileStr
       ]
+      if objTarget:
+        folder, obj = os.path.split(objTarget)
+        if folder:
+          if not os.path.isdir(folder):
+            try: os.makedirs(folder)
+            except OSError: pass
+        cxxCmdArr.append("-o")
+        cxxCmdArr.append(objTarget)
     allCompilerFlags = sstCxxFlagsStr + sstCppFlagsStr + givenFlagsStr
     if not "fPIC" in allCompilerFlags:
       sys.stderr.write("Linker/dlopen will eventually fail on .so file: fPIC not in C/CXXFLAGS\n")
-      return 1
   elif objTarget and sourceFiles:
     cxxCmdArr = [
       compiler, 
@@ -404,7 +415,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         addClangArgs(clangCxxArgs, clangCmdArr)
         addClangArgs(clangLibtoolingCxxFlagsStr.split(), clangCmdArr)
       else:
-        addClangArg(clangLibtoolingCFlagsStr, clangCmdArr)
+        addClangArgs(clangLibtoolingCFlagsStr.split(), clangCmdArr)
       clangCmdArr.append(ppTmpFile)
       clangCmdArr.append("--")
       clangCmd = " ".join(clangCmdArr)
@@ -427,11 +438,11 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         sstCompilerFlagsStr, 
         givenFlagsStr
       ]
-      srcTformObjFile = swapSuffix("o", srcRepl)
-      if objTarget:
-        srcTformObjFile = addPrefix("sst.", objTarget)
+      target = objTarget
+      if not objTarget:
+        target = swapSuffix("o", srcFile)
       cmdArr.append("-o")
-      cmdArr.append(srcTformObjFile)
+      cmdArr.append(target)
       cmdArr.append("-c")
       cmdArr.append(srcRepl)
       cmdArr.append("--no-integrated-cpp")
@@ -442,13 +453,13 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         if delTempFiles:
           os.system("rm -f %s" % ppTmpFile)
           os.system("rm -f %s" % srcRepl)
-          os.system("rm -f %s" % srcTformObjFile)
+          os.system("rm -f %s" % target)
           os.system("rm -f %s" % cxxInitSrcFile)
         return rc
 
       #now we generate the .o file containing the CXX linkage 
       #for global variable CXX init - because C is stupid
-      cxxInitObjFile = addPrefix("sstGlobals.",srcFile) + ".o"
+      cxxInitObjFile = addPrefix("sstGlobals.",target)
       cxxInitCmdArr = [
         cxx,
         sstCxxFlagsStr,
@@ -475,32 +486,36 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     allObjects = []
     for srcFile in sourceFiles:
       srcFileNoSuffix = ".".join(srcFile.split(".")[:-1])
-      srcObjTarget = os.path.split(srcFileNoSuffix)[-1] + ".o"
-      srcTformObjFile = swapSuffix("o", addPrefix("sst.pp.", srcFile))
-      if objTarget:
-        srcTformObjFile = addPrefix("sst.", objTarget)
       cxxInitObjFile = addPrefix("sstGlobals.", srcFile) + ".o"
+      if exeFromSrc:
+        if objTarget:
+          allObjects.append(objTarget)
+        else:
+          allObjects.append(swapSuffix("o", srcFile))
+        allObjects.append(cxxInitObjFile)
       #now we have to merge the src-to-src generated .o with cxx linkage .o
       #we need to generate a .o for each source file
-      cmdArr = mergeCmdArr[:]
-      target = objTarget
-      if manyObjects: 
-        target = srcObjTarget
-      cmdArr.append("-o")
-      cmdArr.append(target)
-      cmdArr.append(srcTformObjFile)
-      cmdArr.append(cxxInitObjFile)
-      cxxMergeCmd = " ".join(cmdArr)
-      if verbose: sys.stderr.write("%s\n" % cxxMergeCmd)
-      rc, output = getstatusoutput(cxxMergeCmd)
-      if delTempFiles:
-        os.system("rm -f %s %s" % (srcTformObjFile, cxxInitObjFile))
-      if not rc == 0:
-        delete(allObjects)
-        sys.stderr.write("deglobal merge error on %s:\n%s\n" % (target, output))
-        return rc
-      if exeFromSrc:
-        allObjects.append(target)
+      #No, don't do this anymore
+      #This linux linker is stupid and can't do partial linking properly
+      #Instead compile directly to the object target and then add the sstGlobals.o
+      #files to the final linking  stage
+      #cmdArr = mergeCmdArr[:]
+      #target = objTarget
+      #if manyObjects: 
+      #  target = srcObjTarget
+      #cmdArr.append("-o")
+      #cmdArr.append(target)
+      #cmdArr.append(srcTformObjFile)
+      #cmdArr.append(cxxInitObjFile)
+      #cxxMergeCmd = " ".join(cmdArr)
+      #if verbose: sys.stderr.write("%s\n" % cxxMergeCmd)
+      #rc, output = getstatusoutput(cxxMergeCmd)
+      #if delTempFiles:
+      #  os.system("rm -f %s %s" % (srcTformObjFile, cxxInitObjFile))
+      #if not rc == 0:
+      #  delete(allObjects)
+      #  sys.stderr.write("deglobal merge error on %s:\n%s\n" % (target, output))
+      #  return rc
 
     if exeFromSrc:
       if ldCmdArr:
