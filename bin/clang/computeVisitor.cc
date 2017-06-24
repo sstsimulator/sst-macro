@@ -635,7 +635,7 @@ void
 ComputeVisitor::addLoopContribution(std::ostream& os, Loop& loop)
 {
   os << "{ ";
-  os << " int tripCount" << loop.body.depth << "=";
+  os << " uint64_t tripCount" << loop.body.depth << "=";
   if (loop.body.depth > 0){
     os << "tripCount" << (loop.body.depth-1) << "*";
   }
@@ -652,6 +652,12 @@ ComputeVisitor::addLoopContribution(std::ostream& os, Loop& loop)
   if (loop.body.intops > 0){
       os << " intops += tripCount" << loop.body.depth << "*" << loop.body.intops << ";";
   }
+
+#if 0
+    printf("trip%d=%s,flops=%d,read=%d,write=%d,ops=%d\n",
+         loop.body.depth, loop.tripCount.c_str(),
+         loop.body.flops, loop.body.readBytes, loop.body.writeBytes, loop.body.intops);
+#endif
 
   auto end = loop.body.subLoops.end();
   for (auto iter=loop.body.subLoops.begin(); iter != end; ++iter){

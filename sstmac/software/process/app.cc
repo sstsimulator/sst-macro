@@ -187,9 +187,9 @@ app::compute_loop(uint64_t num_loops,
 void
 app::compute_detailed(uint64_t flops, uint64_t nintops, uint64_t bytes)
 {
-  if (flops > 1e100 || bytes > 1e100){
-    spkt_abort_printf("bad compute config: flops=%" PRIu64 " bytes=%" PRIu64,
-                      flops, bytes);
+  static const uint64_t overflow = 18006744072479883520;
+  if (flops > overflow || bytes > overflow){
+    spkt_abort_printf("flops/byte counts for compute overflowed");
   }
   if ((flops+nintops) < min_op_cutoff_){
     return;
