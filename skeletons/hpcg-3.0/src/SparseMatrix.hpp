@@ -144,7 +144,7 @@ inline void ReplaceMatrixDiagonal(SparseMatrix & A, Vector & diagonal) {
 
   @param[in] A the known system matrix
  */
-#pragma sst delete
+#pragma sst empty
 inline void DeleteMatrix(SparseMatrix & A) {
   for (local_int_t i = 0; i< A.localNumberOfRows; ++i) {
     delete [] A.matrixValues[i];

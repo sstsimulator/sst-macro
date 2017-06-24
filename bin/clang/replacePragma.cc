@@ -192,8 +192,7 @@ SSTReplacePragma::run(Stmt *s, Rewriter& r, std::list<const Expr *> &replaced)
 {
   run(s,replaced);
   for (const Expr* e: replaced){
-    SourceRange rng(e->getLocStart(), e->getLocEnd());
-    r.ReplaceText(rng,replacement_);
+    replace(e,r,replacement_,*CI);
   }
 }
 
@@ -268,7 +267,7 @@ SSTInitPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 void
 SSTInitPragma::activateBinaryOperator(BinaryOperator* op, Rewriter& r)
 {
-  replace(op->getRHS(), r, init_);
+  replace(op->getRHS(), r, init_, *CI);
 }
 
 void
@@ -288,7 +287,7 @@ SSTInitPragma::activateDeclStmt(DeclStmt* s, Rewriter& r)
     errorAbort(s->getLocStart(), *CI,
                "pragma init applied to variable without initializer");
   }
-  replace(vd->getInit(), r, init_);
+  replace(vd->getInit(), r, init_, *CI);
 }
 
 std::string

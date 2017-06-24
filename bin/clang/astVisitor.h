@@ -52,6 +52,22 @@ Questions? Contact sst-macro-help@sandia.gov
 #define visitFxn(cls) \
   bool Visit##cls(clang::cls* c){ return TestStmtMacro(c); }
 
+class FirstPassASTVistor : public clang::RecursiveASTVisitor<FirstPassASTVistor>
+{
+ public:
+  FirstPassASTVistor(SSTPragmaList& prgs, clang::Rewriter& rw,
+                     PragmaConfig& cfg);
+
+  bool VisitDecl(clang::Decl* d);
+  bool VisitStmt(clang::Stmt* s);
+
+ private:
+  SSTPragmaList& pragmas_;
+  PragmaConfig& pragmaConfig_;
+  clang::Rewriter& rewriter_;
+  bool noSkeletonize_;
+};
+
 /**
  * @brief The SkeletonASTVisitor class
  *
@@ -67,12 +83,14 @@ Questions? Contact sst-macro-help@sandia.gov
 class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor> {
  public:
   SkeletonASTVisitor(clang::Rewriter &R,
-                       GlobalVarNamespace& ns,
-                       std::set<clang::Stmt*>& deld) :
+                     GlobalVarNamespace& ns,
+                     std::set<clang::Stmt*>& deld,
+                     PragmaConfig& cfg) :
     rewriter_(R), visitingGlobal_(false), deletedStmts_(deld),
     globalNs_(ns), currentNs_(&ns),
     insideCxxMethod_(0),
-    foundCMain_(false), keepGlobals_(false), noSkeletonize_(true)
+    foundCMain_(false), keepGlobals_(false), noSkeletonize_(true),
+    pragmaConfig_(cfg)
   {
     initHeaders();
     initReservedNames();
@@ -83,6 +101,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   bool isGlobal(const clang::DeclRefExpr* expr) const {
     return globals_.find(expr->getFoundDecl()) != globals_.end();
+  }
+
+  PragmaConfig& getPragmaConfig() {
+    return pragmaConfig_;
   }
 
   std::string getGlobalReplacement(clang::NamedDecl* decl) const {
@@ -136,6 +158,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    * @return
    */
   bool VisitCXXNewExpr(clang::CXXNewExpr* expr);
+
+  bool VisitCXXOperatorCallExpr(clang::CXXOperatorCallExpr* expr);
+
+  bool VisitArraySubscriptExpr(clang::ArraySubscriptExpr* expr);
 
   /**
    * @brief VisitCXXNewExpr Capture all usages of operator delete. Rewrite all
@@ -349,7 +375,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   bool noSkeletonize_;
   std::set<std::string> validHeaders_;
   std::set<std::string> reservedNames_;
-  PragmaConfig pragmaConfig_;
+  PragmaConfig& pragmaConfig_;
   std::map<clang::Stmt*,SSTPragma*> activePragmas_;
 
   typedef void (SkeletonASTVisitor::*MPI_Call)(clang::CallExpr* expr);
@@ -453,6 +479,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    * @param insertLoc The source location where the text should go
    */
   void declareSSTExternVars(clang::SourceLocation insertLoc);
+
 };
 
 

@@ -75,6 +75,7 @@ class ReplaceAction : public clang::ASTFrontendAction {
   clang::Rewriter rewriter_;
   GlobalVarNamespace globalNs_;
   clang::CompilerInstance* ci_;
+  PragmaConfig prgConfig_;
   std::set<clang::Stmt*> deletedStmts_;
 };
 

@@ -52,7 +52,8 @@ Questions? Contact sst-macro-help@sandia.gov
 class SkeletonASTConsumer : public clang::ASTConsumer {
  public:
   SkeletonASTConsumer(clang::Rewriter &R, SkeletonASTVisitor& r) :
-    visitor_(r)
+    visitor_(r),
+    firstPass_(r.getPragmas(), R, r.getPragmaConfig())
   {
   }
 
@@ -62,6 +63,8 @@ class SkeletonASTConsumer : public clang::ASTConsumer {
 
  private:
   SkeletonASTVisitor& visitor_;
+
+  FirstPassASTVistor firstPass_;
 
   std::list<clang::Decl*> allDecls_;
 };

@@ -148,6 +148,37 @@ conditional_delete_array(T* t){
   if (t != nullptr) delete[] t;
 }
 
+namespace sstmac {
+
+class vector {
+ public:
+  void resize(size_t sz){
+    size_ = sz;
+  }
+
+  size_t size() const {
+    return size_;
+  }
+
+  template <class... Args>
+  void push_back(Args... args){
+    ++size_;
+  }
+
+  template <class... Args>
+  void emplace_back(Args... args){
+    ++size_;
+  }
+
+  bool empty() const {
+    return size_ == 0;
+  }
+
+ private:
+  size_t size_;
+};
+}
+
 
 #include <sprockit/sim_parameters.h>
 #include <sstmac/software/process/global.h>
@@ -185,11 +216,30 @@ sstmac_free(void* ptr){
 }
 
 namespace std {
+
 static inline void
 sstmac_free(void* ptr){
   if (ptr != nullptr) std::free(ptr);
 }
+
+static inline void*
+sstmac_memset(void* ptr, int value, size_t sz){
+  if (ptr != nullptr) std::memset(ptr,value,sz);
+  return ptr;
 }
+
+}
+
+static inline void*
+sstmac_memset(void* ptr, int value, size_t sz){
+  if (ptr != nullptr) std::memset(ptr, value, sz);
+  return ptr;
+}
+
+#define memset sstmac_memset
+
+
+
 
 #else
 #include <stdlib.h>

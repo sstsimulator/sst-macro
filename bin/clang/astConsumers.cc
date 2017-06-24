@@ -68,7 +68,7 @@ SkeletonASTConsumer::HandleTopLevelDecl(DeclGroupRef DR)
       allDecls_.push_back(d);
       break;
     }
-
+    firstPass_.TraverseDecl(d);
     //delay processing to force all template instances to be generated
     //visitor_.setTopLevelScope(d);
     //bool isGlobalVar = isa<VarDecl>(d);

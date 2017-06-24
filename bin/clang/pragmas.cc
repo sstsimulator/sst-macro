@@ -61,12 +61,6 @@ static int maxPragmaDepth = 0;
 std::list<SSTPragma*> pendingPragmas;
 
 void
-SSTPragma::replace(const clang::Stmt* s, clang::Rewriter& r, const std::string& repl){
-  clang::SourceRange rng(s->getLocStart(), s->getLocEnd());
-  r.ReplaceText(rng, repl);
-}
-
-void
 SSTPragmaHandler::configure(Token& PragmaTok, Preprocessor& PP, SSTPragma* fsp)
 {
   pragmaDepth++;
@@ -126,14 +120,8 @@ SSTTokenStreamPragmaHandler::HandlePragma(Preprocessor &PP, PragmaIntroducerKind
 }
 
 void
-SSTDeletePragma::replace(clang::Stmt* s, clang::Rewriter& r, const char* repl){
-  clang::SourceRange rng(s->getLocStart(), s->getLocEnd());
-  r.ReplaceText(rng, repl);
-}
-
-void
 SSTDeletePragma::activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg){
-  replace(s,r,"");
+  replace(s,r,"",*CI);
   switch(s->getStmtClass()){
   case Stmt::ForStmtClass:
   case Stmt::CompoundStmtClass:
@@ -145,7 +133,12 @@ SSTDeletePragma::activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg)
 
 void
 SSTDeletePragma::activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg){
-#define prg_case(x,d) case Decl::x: replace(cast<x##Decl>(d)->getBody(), r, "{}"); break
+  replace(d,r,"",*CI);
+}
+
+void
+SSTEmptyPragma::activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg){
+#define prg_case(x,d) case Decl::x: replace(cast<x##Decl>(d)->getBody(), r, "{}",*CI); break
   switch (d->getKind()){
     prg_case(Function,d);
     prg_case(CXXMethod,d);
@@ -153,6 +146,13 @@ SSTDeletePragma::activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg)
       break;
   }
 #undef prg_case
+}
+
+void
+SSTEmptyPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+{
+  errorAbort(s->getLocStart(), *CI,
+       "pragma empty should only apply to declarations, not statmements");
 }
 
 void
@@ -199,7 +199,7 @@ SSTNewPragma::visitDeclStmt(DeclStmt *stmt, Rewriter &r)
         std::string name = vd->getNameAsString();
         std::stringstream sstr;
         sstr << type << " " << name << " = nullptr;"; //don't know why - but okay, semicolon needed
-        r.ReplaceText(stmt->getSourceRange(), sstr.str());
+        replace(stmt, r, sstr.str(), *CI);
         deleted->insert(init);
       } else {
         //nope, need extra hacking
@@ -219,7 +219,7 @@ SSTNewPragma::visitBinaryOperator(BinaryOperator *op, Rewriter& r)
     //this better be an equals
     pp.print(op->getLHS());
     pp.os << " = nullptr"; //don't know why - but okay, semicolon not needed
-    r.ReplaceText(op->getSourceRange(), pp.os.str());
+    replace(op, r, pp.os.str(),*CI);
     deleted->insert(op->getRHS());
   } else {
     defaultAct(op,r,*CI,false,true);
@@ -297,7 +297,7 @@ SSTMallocPragma::visitBinaryOperator(BinaryOperator *op, Rewriter &r)
   //this better be an equals
   pp.print(op->getLHS());
   pp.os << " = 0"; //don't know why - but okay, semicolon not needed
-  r.ReplaceText(op->getSourceRange(), pp.os.str());
+  replace(op, r, pp.os.str(), *CI);
 }
 
 void
@@ -313,9 +313,10 @@ SSTMallocPragma::visitDeclStmt(DeclStmt *stmt, Rewriter &r)
     std::string name = vd->getNameAsString();
     std::stringstream sstr;
     sstr << type << " " << name << " = 0;"; //don't know why - but okay, semicolon needed
-    r.ReplaceText(stmt->getSourceRange(), sstr.str());
+    replace(stmt, r, sstr.str(), *CI);
   } else {
-    errorAbort(stmt->getLocStart(), *CI, "sst malloc pragma applied to non-variable declaration");
+    errorAbort(stmt->getLocStart(), *CI,
+               "sst malloc pragma applied to non-variable declaration");
   }
 }
 
@@ -334,6 +335,17 @@ SSTMallocPragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig& cfg)
   }
 #undef scase
 }
+
+void
+SSTReturnPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+{
+  if (s->getStmtClass() != Stmt::ReturnStmtClass){
+    errorAbort(s->getLocStart(), *CI,
+              "pragma return not applied to return statement");
+  }
+  replace(s, r, "return " + repl_, *CI);
+}
+
 
 SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstance& CI,
                                              const std::list<Token> &tokens)
@@ -373,18 +385,6 @@ SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstanc
       inserter->insert(next);
     }
   }
-
-}
-
-void
-SSTReturnPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
-{
-  if (s->getStmtClass() != Stmt::ReturnStmtClass){
-    errorAbort(s->getLocStart(), *CI,
-              "pragma return not applied to return statement");
-  }
-  SourceRange rng(s->getLocStart(), s->getLocEnd());
-  r.ReplaceText(rng, "return " + repl_);
 }
 
 void
@@ -408,6 +408,72 @@ SSTNullVariablePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
     errorAbort(s->getLocStart(), *CI,
         "pragma null_variable should only apply to declaration statements");
   }
+}
+
+SSTNullTypePragma::SSTNullTypePragma(SourceLocation loc, CompilerInstance& CI,
+                                     const std::list<Token> &tokens)
+ : SSTNullVariablePragma(NullType)
+{
+  if (tokens.empty()){
+    errorAbort(loc, CI, "null_type pragma requires a type argument");
+  }
+
+  std::list<std::string> toInsert;
+  bool connectPrev = false;
+  for (const Token& token : tokens){
+    std::string next;
+    bool connectNext = false;
+    switch(token.getKind()){
+    case tok::string_literal:
+      next = token.getLiteralData();
+      break;
+    case tok::coloncolon:
+      next = "::";
+      connectNext = true;
+      break;
+    case tok::identifier:
+      next = token.getIdentifierInfo()->getName().str();
+      break;
+    default:
+      errorAbort(loc, CI, "token to pragma is not a valid string name");
+      break;
+    }
+    if (connectPrev || connectNext){
+      toInsert.back() += next;
+    } else {
+      toInsert.push_back(next);
+    }
+    connectPrev = connectNext;
+  }
+  newType_ = toInsert.front();
+  toInsert.pop_front();
+  for (auto& str : toInsert){
+    nullExcept_.insert(str);
+  }
+}
+
+void
+SSTNullTypePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
+{
+  std::string name;
+  switch(d->getKind()){
+  case Decl::Var: {
+    VarDecl* vd = cast<VarDecl>(d);
+    name = vd->getNameAsString();
+    break;
+  }
+  case Decl::Field: {
+    FieldDecl* fd = cast<FieldDecl>(d);
+    name = fd->getNameAsString();
+    break;
+  }
+  default:
+    errorAbort(d->getLocStart(), *CI,
+        "null_type pragma can only be applied to field or variable declaration");
+  }
+  std::string repl = newType_ + " " + name;
+  replace(d,r,repl,*CI);
+  SSTNullVariablePragma::activate(d,r,cfg);
 }
 
 void
@@ -447,6 +513,9 @@ SSTPragma::tokenStreamToString(SourceLocation loc,
       case tok::kw_int:
         os << "int";
         break;
+      case tok::percent:
+        os << "%";
+        break;
       case tok::kw_false:
         os << "false";
         break;
@@ -469,6 +538,12 @@ SSTPragma::tokenStreamToString(SourceLocation loc,
         break;
     }
   }
+}
+
+SSTPragma*
+SSTNullTypePragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  return new SSTNullTypePragma(loc, ci_, tokens);
 }
 
 SSTPragma*

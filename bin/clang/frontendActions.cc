@@ -57,7 +57,7 @@ using namespace clang::driver;
 using namespace clang::tooling;
 
 ReplaceAction::ReplaceAction() :
-  visitor_(rewriter_, globalNs_, deletedStmts_)
+  visitor_(rewriter_, globalNs_, deletedStmts_, prgConfig_)
 {
 }
 
@@ -155,6 +155,10 @@ ReplaceAction::initPragmas(CompilerInstance& CI)
     new SSTInitPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
   CI.getPreprocessor().AddPragmaHandler("sst",
     new SSTReturnPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+  CI.getPreprocessor().AddPragmaHandler("sst",
+    new SSTNullTypePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+  CI.getPreprocessor().AddPragmaHandler("sst",
+    new SSTEmptyPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
 }
 
 void

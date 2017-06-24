@@ -171,7 +171,7 @@ SkeletonASTVisitor::VisitCXXNewExpr(CXXNewExpr *expr)
       }
       pp.os << ")";
     }
-    rewriter_.ReplaceText(expr->getSourceRange(), pp.os.str());
+    replace(expr, rewriter_, pp.os.str(), *ci_);
   } else {
     //might be a placement new or no-throw new
     Expr* placer = expr->getPlacementArg(0);
@@ -218,7 +218,7 @@ SkeletonASTVisitor::VisitCXXNewExpr(CXXNewExpr *expr)
             }
           }
           pp.os << ")";
-          rewriter_.ReplaceText(expr->getSourceRange(), pp.os.str());
+          replace(expr, rewriter_, pp.os.str(), *ci_);
         }
       }
       default:
@@ -245,7 +245,7 @@ SkeletonASTVisitor::VisitCXXDeleteExpr(CXXDeleteExpr* expr)
         << "(";
   pp.print(expr->getArgument());
   pp.os << ")";
-  rewriter_.ReplaceText(expr->getSourceRange(), pp.os.str());
+  replace(expr, rewriter_, pp.os.str(), *ci_);
   return true;
 }
 
@@ -269,6 +269,20 @@ SkeletonASTVisitor::VisitUnaryOperator(UnaryOperator* op)
 }
 
 bool
+SkeletonASTVisitor::VisitCXXOperatorCallExpr(CXXOperatorCallExpr* expr)
+{
+  Expr* implicitThis = expr->getArg(0);
+  if (isa<MemberExpr>(implicitThis)){
+    MemberExpr* me = cast<MemberExpr>(implicitThis);
+    if (isNullVariable(me->getMemberDecl())){
+      errorAbort(expr->getLocStart(), *ci_,
+                 "operator used on null variable");
+    }
+  }
+  return true;
+}
+
+bool
 SkeletonASTVisitor::VisitDeclRefExpr(DeclRefExpr* expr)
 {
   NamedDecl* decl =  expr->getFoundDecl();
@@ -280,7 +294,6 @@ SkeletonASTVisitor::VisitDeclRefExpr(DeclRefExpr* expr)
                    "null variable used in statement, but context list is empty");
       } //else this was deleted - so no problem
     } else {
-      std::cout << "deleting decl ref " << decl->getNameAsString() << std::endl;
       deleteNullVariableStmt(expr, decl);
     }
   } else {
@@ -297,8 +310,10 @@ SkeletonASTVisitor::visitCollective(CallExpr *expr)
   //first buffer argument to nullptr
   if (expr->getArg(0)->getType()->isPointerType()){
     //make sure this isn't a shortcut function without buffers
-    rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
-    rewriter_.ReplaceText(expr->getArg(3)->getSourceRange(), "nullptr");
+    replace(expr->getArg(0), rewriter_, "nullptr", *ci_);
+    replace(expr->getArg(3), rewriter_, "nullptr", *ci_);
+    //rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
+    //rewriter_.ReplaceText(expr->getArg(3)->getSourceRange(), "nullptr");
     deletedStmts_.insert(expr->getArg(0));
     deletedStmts_.insert(expr->getArg(3));
   }
@@ -312,8 +327,10 @@ SkeletonASTVisitor::visitReduce(CallExpr *expr)
   //first buffer argument to nullptr
   if (expr->getArg(0)->getType()->isPointerType()){
     //make sure this isn't a shortcut function without buffers
-    rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
-    rewriter_.ReplaceText(expr->getArg(1)->getSourceRange(), "nullptr");
+    replace(expr->getArg(0), rewriter_, "nullptr", *ci_);
+    replace(expr->getArg(1), rewriter_, "nullptr", *ci_);
+    //rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
+    //rewriter_.ReplaceText(expr->getArg(1)->getSourceRange(), "nullptr");
     deletedStmts_.insert(expr->getArg(0));
     deletedStmts_.insert(expr->getArg(1));
   }
@@ -327,7 +344,8 @@ SkeletonASTVisitor::visitPt2Pt(CallExpr *expr)
   //first buffer argument to nullptr
   if (expr->getArg(0)->getType()->isPointerType()){
     //make sure this isn't a shortcut function without buffers
-    rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
+    replace(expr->getArg(0), rewriter_, "nullptr", *ci_);
+    //rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
     deletedStmts_.insert(expr->getArg(0));
   }
 }
@@ -339,7 +357,6 @@ SkeletonASTVisitor::TraverseCXXMemberCallExpr(CXXMemberCallExpr* expr, DataRecur
   if (skipVisit){
     return true;
   }
-
   if (!pragmaConfig_.makeNoChanges){
     CXXRecordDecl* cls = expr->getRecordDecl();
     std::string clsName = cls->getNameAsString();
@@ -357,7 +374,8 @@ SkeletonASTVisitor::TraverseCXXMemberCallExpr(CXXMemberCallExpr* expr, DataRecur
   }
   stmt_contexts_.push_back(expr);
   //TraverseStmt(expr->getImplicitObjectArgument());
-  TraverseStmt(expr->getCallee()); //this will visit member expr that also visit implicit this
+  //this will visit member expr that also visits implicit this
+  TraverseStmt(expr->getCallee());
   for (int i=0; i < expr->getNumArgs(); ++i){
     Expr* arg = expr->getArg(i);
     //this did not get modified
@@ -374,7 +392,6 @@ bool
 SkeletonASTVisitor::TraverseMemberExpr(MemberExpr *expr, DataRecursionQueue* queue)
 {
   ValueDecl* vd = expr->getMemberDecl();
-
   if (isNullVariable(vd)){
     SSTNullVariablePragma* prg = getNullVariable(vd);
     if (prg->noExceptions()){
@@ -385,32 +402,35 @@ SkeletonASTVisitor::TraverseMemberExpr(MemberExpr *expr, DataRecursionQueue* que
     //else depends on which members of this member are used
   } else {
     Expr* base = getUnderlyingExpr(expr->getBase());
+    SSTNullVariablePragma* prg = nullptr;
     if (base->getStmtClass() == Stmt::DeclRefExprClass){
       DeclRefExpr* dref = cast<DeclRefExpr>(base);
-      SSTNullVariablePragma* prg = getNullVariable(dref->getFoundDecl());
-      if (prg){
-        bool deleteStmt = true;
-        if (prg->hasExceptions()){
-          deleteStmt = !prg->isException(vd); //this might be a thing we dont delete
-        } else if (prg->hasOnly()){
-          deleteStmt = prg->isOnly(vd); //this might be a thing we do delete
-        }
+      prg = getNullVariable(dref->getFoundDecl());
+    } else if (base->getStmtClass() == Stmt::MemberExprClass){
+      MemberExpr* memExpr = cast<MemberExpr>(base);
+      prg = getNullVariable(memExpr->getMemberDecl());
+    }
 
-        if (deleteStmt){
-          deleteNullVariableStmt(expr, vd);
-        } else {
-          if (prg->isNullifiedNew(vd)){
-            //make damn sure we allocate no memory
-            //even though we keep the statement
-            SSTNewPragma::defaultAct(stmt_contexts_.front(),rewriter_,*ci_,false,false,true);
-          }
-        }
-        return true;
+    if (prg){
+      bool deleteStmt = true;
+      if (prg->hasExceptions()){
+        deleteStmt = !prg->isException(vd); //this might be a thing we dont delete
+      } else if (prg->hasOnly()){
+        deleteStmt = prg->isOnly(vd); //this might be a thing we do delete
       }
+
+      if (deleteStmt){
+        deleteNullVariableStmt(expr, vd);
+      } else {
+        if (prg->isNullifiedNew(vd)){
+          //make damn sure we allocate no memory
+          //even though we keep the statement
+          SSTNewPragma::defaultAct(stmt_contexts_.front(),rewriter_,*ci_,false,false,true);
+        }
+      }
+      return true;
     }
   }
-
-
 
   TraverseStmt(expr->getBase());
   return true;
@@ -570,8 +590,7 @@ SkeletonASTVisitor::checkGlobalVar(VarDecl* D)
 void
 SkeletonASTVisitor::deleteStmt(Stmt *s)
 {
-  SourceRange rng(s->getLocStart(), s->getLocEnd());
-  rewriter_.ReplaceText(rng,"");
+  replace(s, rewriter_, "", *ci_);
 }
 
 bool
@@ -611,7 +630,7 @@ SkeletonASTVisitor::checkStaticFxnVar(VarDecl *D)
     SourceLocation endLoc = getEndLoc(D);
     SourceRange rng(D->getLocStart(), endLoc);
     //while we're at it, might as well get rid of the old initializer
-    rewriter_.ReplaceText(rng, "");
+    replace(rng, rewriter_, "", *ci_);
   }
   return true;
 }
@@ -792,8 +811,7 @@ SkeletonASTVisitor::replaceMain(clang::FunctionDecl* mainFxn)
     sstr << "){";
 
     SourceRange rng(mainFxn->getLocStart(), mainFxn->getBody()->getLocStart());
-    rewriter_.ReplaceText(rng, sstr.str());
-
+    replace(rng, rewriter_, sstr.str(), *ci_);
   } else {
     errorAbort(mainFxn->getLocStart(), *ci_,
                "sstmac_app_name macro not defined before main");
@@ -900,14 +918,15 @@ SkeletonASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
   if (D->isTemplateInstantiation())
     return true;
 
-  ++insideCxxMethod_;
+  bool skipVisit = noSkeletonize_ ? false : activatePragmasForDecl(D);
+
   if (D->isThisDeclarationADefinition()) {
-    bool skipVisit = noSkeletonize_ ? false : activatePragmasForDecl(D);
+    ++insideCxxMethod_;
     if (!skipVisit){
       TraverseStmt(D->getBody());
     }
+    --insideCxxMethod_;
   }
-  --insideCxxMethod_;
   return true;
 }
 
@@ -1007,6 +1026,24 @@ SkeletonASTVisitor::TraverseForStmt(ForStmt *S, DataRecursionQueue* queue)
     if (S->getBody()) TraverseStmt(S->getBody());
   }
   loop_contexts_.pop_back();
+  return true;
+}
+
+bool
+SkeletonASTVisitor::VisitArraySubscriptExpr(ArraySubscriptExpr* expr)
+{
+  Expr* base = getUnderlyingExpr(expr->getBase());
+  if (base->getStmtClass() == Expr::DeclRefExprClass){
+    DeclRefExpr* dref = cast<DeclRefExpr>(base);
+    if (isNullVariable(dref->getFoundDecl())){
+      if (stmt_contexts_.empty()){
+        errorAbort(expr->getLocStart(), *ci_,
+                   "array subscript applied to null variable");
+      } else {
+        deleteStmt(stmt_contexts_.front());
+      }
+    }
+  }
   return true;
 }
 
@@ -1164,6 +1201,43 @@ SkeletonASTVisitor::replaceGlobalUse(NamedDecl* decl, SourceRange replRng)
 
   auto iter = globals_.find(decl);
   if (iter != globals_.end()){
-    rewriter_.ReplaceText(replRng, iter->second);
+    replace(replRng, rewriter_, iter->second, *ci_);
+  }
+}
+
+bool
+FirstPassASTVistor::VisitDecl(Decl *d)
+{
+  if (noSkeletonize_) return true;
+
+  std::list<SSTPragma*> pragmas = pragmas_.getMatches(d,true);
+  for (SSTPragma* prg : pragmas){
+    prg->activate(d, rewriter_, pragmaConfig_);
+    pragmas_.erase(prg);
+  }
+  return true;
+}
+
+bool
+FirstPassASTVistor::VisitStmt(Stmt *s)
+{
+  if (noSkeletonize_) return true;
+
+  std::list<SSTPragma*> pragmas = pragmas_.getMatches(s,true);
+  for (SSTPragma* prg : pragmas){
+    prg->activate(s, rewriter_, pragmaConfig_);
+    pragmas_.erase(prg);
+  }
+  return true;
+}
+
+FirstPassASTVistor::FirstPassASTVistor(SSTPragmaList& prgs, clang::Rewriter& rw,
+                   PragmaConfig& cfg) :
+  pragmas_(prgs), rewriter_(rw), pragmaConfig_(cfg)
+{
+  const char* skelStr = getenv("SSTMAC_SKELETONIZE");
+  if (skelStr){
+    bool doSkel = atoi(skelStr);
+    noSkeletonize_ = !doSkel;
   }
 }

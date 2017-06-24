@@ -108,7 +108,7 @@ SSTComputePragma::activate(Decl* d, Rewriter& r, PragmaConfig& cfg)
 void
 SSTComputePragma::defaultAct(Stmt *stmt, Rewriter &r)
 {
-  r.ReplaceText(stmt->getSourceRange(),"");
+  replace(stmt, r, "", *CI);
 }
 
 

@@ -42,6 +42,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#endif
+#include <inttypes.h>
+
 #include <sstmac/software/libraries/compute/lib_compute_inst.h>
 #include <sstmac/software/libraries/compute/lib_compute_time.h>
 #include <sstmac/software/libraries/compute/lib_compute_memmove.h>
@@ -182,6 +187,10 @@ app::compute_loop(uint64_t num_loops,
 void
 app::compute_detailed(uint64_t flops, uint64_t nintops, uint64_t bytes)
 {
+  if (flops > 1e100 || bytes > 1e100){
+    spkt_abort_printf("bad compute config: flops=%" PRIu64 " bytes=%" PRIu64,
+                      flops, bytes);
+  }
   if ((flops+nintops) < min_op_cutoff_){
     return;
   }

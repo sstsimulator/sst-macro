@@ -112,4 +112,13 @@ inline bool operator>=(const clang::SourceLocation &LHS, const clang::SourceLoca
   return !(LHS < RHS);
 }
 
+void replace(clang::SourceRange rng, clang::Rewriter& r,
+             const std::string& repl, clang::CompilerInstance& CI);
+
+void replace(const clang::Stmt* s, clang::Rewriter& r,
+             const std::string& repl, clang::CompilerInstance& CI);
+
+void replace(const clang::Decl* d, clang::Rewriter& r,
+             const std::string& repl, clang::CompilerInstance& CI);
+
 #endif

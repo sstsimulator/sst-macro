@@ -149,6 +149,7 @@ void TimeIncrement(Domain& domain)
 
 /******************************************/
 
+#pragma sst empty
 static inline
 void CollectDomainNodesToElemNodes(Domain &domain,
                                    const Index_t* elemToNode,
@@ -1034,7 +1035,6 @@ void CalcVolumeForceForElems(Domain& domain)
 }
 
 /******************************************/
-
 static inline void CalcForceForNodes(Domain& domain)
 {
   Index_t numNode = domain.numNode() ;
@@ -1057,9 +1057,12 @@ static inline void CalcForceForNodes(Domain& domain)
 
 #if USE_MPI  
   Domain_member fieldData[3] ;
-  fieldData[0] = &Domain::fx ;
-  fieldData[1] = &Domain::fy ;
-  fieldData[2] = &Domain::fz ;
+#pragma sst delete
+  {
+   fieldData[0] = &Domain::fx ;
+   fieldData[1] = &Domain::fy ;
+   fieldData[2] = &Domain::fz ;
+  }
   
   CommSend(domain, MSG_COMM_SBN, 3, fieldData,
            domain.sizeX() + 1, domain.sizeY() + 1, domain.sizeZ() +  1,
@@ -1153,7 +1156,6 @@ void CalcPositionForNodes(Domain &domain, const Real_t dt, Index_t numNode)
 }
 
 /******************************************/
-
 static inline
 void LagrangeNodal(Domain& domain)
 {
@@ -1185,17 +1187,19 @@ void LagrangeNodal(Domain& domain)
    CalcPositionForNodes( domain, delt, domain.numNode() );
 #if USE_MPI
 #ifdef SEDOV_SYNC_POS_VEL_EARLY
-  fieldData[0] = &Domain::x ;
-  fieldData[1] = &Domain::y ;
-  fieldData[2] = &Domain::z ;
-  fieldData[3] = &Domain::xd ;
-  fieldData[4] = &Domain::yd ;
-  fieldData[5] = &Domain::zd ;
-
-   CommSend(domain, MSG_SYNC_POS_VEL, 6, fieldData,
+  #pragma sst delete
+  {
+   fieldData[0] = &Domain::x ;
+   fieldData[1] = &Domain::y ;
+   fieldData[2] = &Domain::z ;
+   fieldData[3] = &Domain::xd ;
+   fieldData[4] = &Domain::yd ;
+   fieldData[5] = &Domain::zd ;
+  }
+  CommSend(domain, MSG_SYNC_POS_VEL, 6, fieldData,
             domain.sizeX() + 1, domain.sizeY() + 1, domain.sizeZ() + 1,
             false, false) ;
-   CommSyncPosVel(domain) ;
+  CommSyncPosVel(domain) ;
 #endif
 #endif
    
@@ -1775,7 +1779,6 @@ void CalcMonotonicQForElems(Domain& domain, Real_t vnew[])
    // calculate the monotonic q for all regions
    //
    for (Index_t r=0 ; r<domain.numReg() ; ++r) {
-
       if (domain.regElemSize(r) > 0) {
          CalcMonotonicQRegionForElems(domain, r, vnew, ptiny) ;
       }
@@ -1783,7 +1786,6 @@ void CalcMonotonicQForElems(Domain& domain, Real_t vnew[])
 }
 
 /******************************************/
-
 static inline
 void CalcQForElems(Domain& domain, Real_t vnew[])
 {
@@ -1815,11 +1817,12 @@ void CalcQForElems(Domain& domain, Real_t vnew[])
       
       /* Transfer veloctiy gradients in the first order elements */
       /* problem->commElements->Transfer(CommElements::monoQ) ; */
-
-      fieldData[0] = &Domain::delv_xi ;
-      fieldData[1] = &Domain::delv_eta ;
-      fieldData[2] = &Domain::delv_zeta ;
-
+      #pragma sst delete
+      {
+       fieldData[0] = &Domain::delv_xi ;
+       fieldData[1] = &Domain::delv_eta ;
+       fieldData[2] = &Domain::delv_zeta ;
+      }
       CommSend(domain, MSG_MONOQ, 3, fieldData,
                domain.sizeX(), domain.sizeY(), domain.sizeZ(),
                true, true) ;
@@ -2436,7 +2439,6 @@ void CalcTimeConstraintsForElems(Domain& domain) {
    // Initialize conditions to a very large value
    domain.dtcourant() = 1.0e+20;
    domain.dthydro() = 1.0e+20;
-
    for (Index_t r=0 ; r < domain.numReg() ; ++r) {
       /* evaluate time constraint */
       CalcCourantConstraintForElems(domain, domain.regElemSize(r),
@@ -2561,6 +2563,7 @@ int main(int argc, char *argv[])
 
 
 #if USE_MPI   
+  #pragma sst delete
    fieldData = &Domain::nodalMass ;
 
    // Initial domain boundary communication 

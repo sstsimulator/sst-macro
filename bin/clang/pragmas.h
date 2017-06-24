@@ -75,7 +75,8 @@ struct SSTPragma {
     NullVariable=5,
     LoopCount=6,
     Init=7,
-    Return=8
+    Return=8,
+    NullType=9
   } class_t;
   clang::StringRef name;
   clang::SourceLocation startLoc;
@@ -86,6 +87,12 @@ struct SSTPragma {
   SSTPragmaList* pragmaList;
   class_t cls;
 
+  void print(){
+    std::cout << "pragma " << name.str() << " from "
+              << startLoc.printToString(CI->getSourceManager())
+              << " to " << endLoc.printToString(CI->getSourceManager())
+              << std::endl;
+  }
 
   template <class T>
   bool matches(T* s){
@@ -93,6 +100,10 @@ struct SSTPragma {
   }
 
   virtual bool reusable() const {
+    return false;
+  }
+
+  virtual bool firstPass() const {
     return false;
   }
 
@@ -106,9 +117,6 @@ struct SSTPragma {
       std::list<clang::Token>::const_iterator beg,
       std::list<clang::Token>::const_iterator end,
       std::ostream& os, clang::CompilerInstance& CI);
-
- protected:
-  void replace(const clang::Stmt* s, clang::Rewriter& r, const std::string& repl);
 
 };
 
@@ -136,6 +144,11 @@ class SSTNullVariablePragma : public SSTPragma {
   SSTNullVariablePragma(clang::SourceLocation loc,
                         clang::CompilerInstance& CI,
                         const std::list<clang::Token>& tokens);
+
+  bool firstPass() const override {
+    return true;
+  }
+
   bool hasOnly() const {
     return !nullOnly_.empty();
   }
@@ -165,13 +178,32 @@ class SSTNullVariablePragma : public SSTPragma {
     return !nullOnly_.empty() || !nullExcept_.empty() || !nullNew_.empty();
   }
 
- private:
+ protected:
+  SSTNullVariablePragma(SSTPragma::class_t cls) : SSTPragma(cls){}
+
+  virtual void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg) override;
   void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override;
-  void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg) override;
-  void replace(clang::Stmt* s, clang::Rewriter& r, const char* repl);
+
   std::set<std::string> nullOnly_;
   std::set<std::string> nullExcept_;
   std::set<std::string> nullNew_;
+};
+
+class SSTNullTypePragma : public SSTNullVariablePragma
+{
+ public:
+  SSTNullTypePragma(clang::SourceLocation loc,
+                   clang::CompilerInstance& CI,
+                   const std::list<clang::Token>& tokens);
+
+  void activate(clang::Decl *d, clang::Rewriter &r, PragmaConfig &cfg) override;
+
+  std::string newType() const {
+    return newType_;
+  }
+
+ private:
+  std::string newType_;
 };
 
 class SSTDeletePragma : public SSTPragma {
@@ -180,7 +212,14 @@ class SSTDeletePragma : public SSTPragma {
  private:
   void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override;
   void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg) override;
-  void replace(clang::Stmt* s, clang::Rewriter& r, const char* repl);
+};
+
+class SSTEmptyPragma : public SSTPragma {
+ public:
+  SSTEmptyPragma() : SSTPragma(Delete) {}
+ private:
+  void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override;
+  void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg) override;
 };
 
 class SSTMallocPragma : public SSTDeletePragma {
@@ -223,9 +262,20 @@ struct SSTPragmaList {
     pragmas.push_back(p);
   }
 
+  void erase(SSTPragma* prg){
+    auto end=pragmas.end();
+    for (auto iter=pragmas.begin(); iter != end; ++iter){
+      SSTPragma* test = *iter;
+      if (test == prg){
+        pragmas.erase(iter);
+        return;
+      }
+    }
+  }
+
   template <class T>
   std::list<SSTPragma*>
-  getMatches(T* t){
+  getMatches(T* t, bool firstPass = false){
     std::list<SSTPragma*> ret = getPulled(t);
     auto end = pragmas.end();
     auto iter=pragmas.begin();
@@ -234,12 +284,23 @@ struct SSTPragmaList {
       SSTPragma* p = *tmp;
       bool match = p->matches<T>(t);
       if (match){
-        if (!p->reusable()){
-          pragmas.erase(tmp);
+        if (firstPass){
+          if (p->firstPass()){
+            if (!p->reusable()){
+              pragmas.erase(tmp);
+            } else {
+              appendPulled(t,p);
+            }
+            ret.push_back(p);
+          }
         } else {
-          appendPulled(t,p);
+          if (!p->reusable()){
+            pragmas.erase(tmp);
+          } else {
+            appendPulled(t,p);
+          }
+          ret.push_back(p);
         }
-        ret.push_back(p);
       }
     }
     return ret;
@@ -362,6 +423,14 @@ class SSTDeletePragmaHandler : public SSTSimplePragmaHandler<SSTDeletePragma> {
   {}
 };
 
+class SSTEmptyPragmaHandler : public SSTSimplePragmaHandler<SSTEmptyPragma> {
+ public:
+  SSTEmptyPragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
+                         SkeletonASTVisitor& visitor, std::set<clang::Stmt*>& deld) :
+    SSTSimplePragmaHandler<SSTEmptyPragma>("empty", plist, CI, visitor, deld)
+  {}
+};
+
 class SSTMallocPragmaHandler : public SSTSimplePragmaHandler<SSTMallocPragma> {
  public:
   SSTMallocPragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
@@ -412,6 +481,19 @@ class SSTTokenStreamPragmaHandler : public SSTPragmaHandler
                                     const std::list<clang::Token>& tokens) const = 0;
 };
 
+class SSTNullTypePragmaHandler : public SSTTokenStreamPragmaHandler
+{
+ public:
+  SSTNullTypePragmaHandler(SSTPragmaList& plist,
+                        clang::CompilerInstance& CI,
+                        SkeletonASTVisitor& visitor,
+                        std::set<clang::Stmt*>& deld) :
+     SSTTokenStreamPragmaHandler("null_type", plist, CI, visitor, deld){}
+
+ private:
+  SSTPragma* allocatePragma(clang::SourceLocation loc,
+                            const std::list<clang::Token> &tokens) const;
+};
 
 class SSTNullVariablePragmaHandler : public SSTTokenStreamPragmaHandler
 {
@@ -425,7 +507,6 @@ class SSTNullVariablePragmaHandler : public SSTTokenStreamPragmaHandler
  private:
   SSTPragma* allocatePragma(clang::SourceLocation loc,
                             const std::list<clang::Token> &tokens) const;
-
 };
 
 class SSTReturnPragmaHandler : public SSTTokenStreamPragmaHandler

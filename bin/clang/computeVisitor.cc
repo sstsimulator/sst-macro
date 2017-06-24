@@ -673,15 +673,6 @@ ComputeVisitor::replaceStmt(Stmt* stmt, Rewriter& r, Loop& loop)
   addLoopContribution(sstr, loop);
   sstr << "sstmac_compute_detailed(flops,intops,readBytes); /*assume write-through for now*/";
   sstr << " }";
-
-  PresumedLoc start = CI.getSourceManager().getPresumedLoc(stmt->getLocStart());
-  PresumedLoc stop = CI.getSourceManager().getPresumedLoc(stmt->getLocEnd());
-  int numLinesDeleted = stop.getLine() - start.getLine();
-  //to preserve the correspondence of line numbers
-  for (int i=0; i < numLinesDeleted; ++i){
-    sstr << "\n";
-  }
-
-  r.ReplaceText(stmt->getSourceRange(), sstr.str());
+  replace(stmt,r,sstr.str(),CI);
 }
 
