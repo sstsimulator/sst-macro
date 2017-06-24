@@ -151,6 +151,7 @@ mpi_api::waitany(int count, MPI_Request array_of_requests[], int *indx,
   }
 
   if (numNonnull == 0){
+    spkt_abort_printf("MPI_Waitany: passed in all null requests, undefined behavior");
     return MPI_SUCCESS;
   }
 

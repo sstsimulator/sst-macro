@@ -440,7 +440,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       ]
       target = objTarget
       if not objTarget:
-        target = swapSuffix("o", srcFile)
+        srcName = os.path.split(srcFile)[-1]
+        target = swapSuffix("o", srcName)
       cmdArr.append("-o")
       cmdArr.append(target)
       cmdArr.append("-c")
@@ -486,7 +487,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     allObjects = []
     for srcFile in sourceFiles:
       srcFileNoSuffix = ".".join(srcFile.split(".")[:-1])
-      cxxInitObjFile = addPrefix("sstGlobals.", srcFile) + ".o"
+      cxxInitObjFile = addPrefix("sstGlobals.", swapSuffix("o",srcFile))
       if exeFromSrc:
         if objTarget:
           allObjects.append(objTarget)
