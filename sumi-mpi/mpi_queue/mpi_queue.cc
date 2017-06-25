@@ -209,7 +209,7 @@ mpi_queue::send(mpi_request *key, int count, MPI_Datatype type,
   }
 
 #if !SSTMAC_ALLOW_LARGE_PAYLOADS
-  if (buffer && mess->byte_length() > 64){
+  if (isNonNullBuffer(buffer) && mess->byte_length() > 64){
     spkt_abort_printf("mpi queue sending large message with real payload:\n%s",
       mess->to_string().c_str());
   }
@@ -271,7 +271,7 @@ mpi_queue::recv(mpi_request* key, int count,
         api_->tag_str(tag).c_str(), api_->comm_str(comm).c_str(), buffer);
 
 #if !SSTMAC_ALLOW_LARGE_PAYLOADS
-  if (buffer && count > 16){
+  if (isNonNullBuffer(buffer) && count > 16){
     spkt_abort_printf("mpi queue recving large message with real payload");
   }
 #endif

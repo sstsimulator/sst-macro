@@ -64,6 +64,15 @@ SkeletonASTVisitor::initConfig()
 void
 SkeletonASTVisitor::initMPICalls()
 {
+  mpiCalls_["sstmac_irecv"] = &SkeletonASTVisitor::visitPt2Pt;
+  mpiCalls_["sstmac_isend"] = &SkeletonASTVisitor::visitPt2Pt;
+  mpiCalls_["sstmac_recv"] = &SkeletonASTVisitor::visitPt2Pt;
+  mpiCalls_["sstmac_send"] = &SkeletonASTVisitor::visitPt2Pt;
+  mpiCalls_["sstmac_bcast"] = &SkeletonASTVisitor::visitPt2Pt; //bit of a hack
+  mpiCalls_["sstmac_allreduce"] = &SkeletonASTVisitor::visitReduce;
+  mpiCalls_["sstmac_reduce"] = &SkeletonASTVisitor::visitReduce;
+  mpiCalls_["sstmac_allgather"] = &SkeletonASTVisitor::visitCollective;
+
   mpiCalls_["irecv"] = &SkeletonASTVisitor::visitPt2Pt;
   mpiCalls_["isend"] = &SkeletonASTVisitor::visitPt2Pt;
   mpiCalls_["recv"] = &SkeletonASTVisitor::visitPt2Pt;
@@ -79,6 +88,7 @@ SkeletonASTVisitor::initReservedNames()
 {
   reservedNames_.insert("dont_ignore_this");
   reservedNames_.insert("ignore_for_app_name");
+  reservedNames_.insert("nullptr");
 }
 
 void
@@ -142,6 +152,8 @@ SkeletonASTVisitor::VisitCXXNewExpr(CXXNewExpr *expr)
     //already deleted - do nothing here
     return true;
   }
+
+  return true; //don't do this anymore - but keep code around
 
   std::string allocatedTypeStr = expr->getAllocatedType().getAsString();
   if (expr->getNumPlacementArgs() == 0){
@@ -233,6 +245,8 @@ bool
 SkeletonASTVisitor::VisitCXXDeleteExpr(CXXDeleteExpr* expr)
 {
   if (noSkeletonize_) return true;
+
+  return true; //don't do this anymore
 
   std::string allocatedTypeStr = expr->getDestroyedType().getAsString();
   PrettyPrinter pp;
@@ -456,6 +470,17 @@ SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue)
           replPrg->run(expr, rewriter_);
           return true;
         }
+      }
+    }
+  } else if (!noSkeletonize_) {
+    Expr* fxn = getUnderlyingExpr(const_cast<Expr*>(expr->getCallee()));
+    if (fxn->getStmtClass() == Stmt::DeclRefExprClass){
+      DeclRefExpr* dref = cast<DeclRefExpr>(fxn);
+      std::string fxnName = dref->getFoundDecl()->getNameAsString();
+      auto iter = mpiCalls_.find(fxnName);
+      if (iter != mpiCalls_.end()){
+        MPI_Call call = iter->second;
+        (this->*call)(expr);
       }
     }
   }

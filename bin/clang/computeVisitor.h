@@ -59,7 +59,7 @@ class ComputeVisitor  {
     context(ctxt)
   {}
 
-  void replaceStmt(clang::Stmt* stmt, clang::Rewriter& r, Loop& loop);
+  void replaceStmt(clang::Stmt* stmt, clang::Rewriter& r, Loop& loop, PragmaConfig& cfg);
 
   void setContext(clang::Stmt* stmt);
 

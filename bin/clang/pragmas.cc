@@ -138,7 +138,11 @@ SSTDeletePragma::activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg)
 
 void
 SSTEmptyPragma::activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg){
-#define prg_case(x,d) case Decl::x: replace(cast<x##Decl>(d)->getBody(), r, "{}",*CI); break
+  std::stringstream sstr;
+  sstr << "{" << body_;
+  if (body_.size()) sstr << ";";
+  sstr << "}";
+#define prg_case(x,d) case Decl::x: replace(cast<x##Decl>(d)->getBody(), r, sstr.str(),*CI); break
   switch (d->getKind()){
     prg_case(Function,d);
     prg_case(CXXMethod,d);
@@ -231,6 +235,8 @@ SSTNewPragma::defaultAct(Stmt* stmt, Rewriter& r, clang::CompilerInstance& CI,
                          bool insertStartAfter, bool insertStopAfter,
                          bool trailingSemiColon)
 {
+  return; //don't do this anymore
+
   SourceLocation insertLoc = stmt->getLocStart();
   if (insertStartAfter){
     insertLoc = Lexer::getLocForEndOfToken(insertLoc, 0,
@@ -268,6 +274,7 @@ SSTNewPragma::visitCompoundStmt(clang::CompoundStmt* stmt, Rewriter& r)
 void
 SSTNewPragma::visitForStmt(ForStmt *stmt, Rewriter &r)
 {
+  return; //don't do this anymore
   r.InsertText(stmt->getLocStart(), "should_skip_operator_new()++;", false);
   r.InsertText(stmt->getLocEnd(), "should_skip_operator_new()--;", false);
 }
@@ -288,6 +295,16 @@ SSTNewPragma::activate(Stmt* stmt, Rewriter &r, PragmaConfig& cfg)
       break;
   }
 #undef scase
+}
+
+void
+SSTKeepIfPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+{
+  PrettyPrinter pp;
+  pp.os << "if (" << ifCond_ << "){ ";
+  pp.print(s); //put the original statement in the if
+  pp.os << "; } else ";
+  r.InsertText(s->getLocStart(), pp.os.str(), false, false);
 }
 
 void
@@ -487,16 +504,19 @@ SSTPragma::tokenStreamToString(SourceLocation loc,
     const Token& next = *iter;
     switch (next.getKind()){
       case tok::identifier:
-         os << next.getIdentifierInfo()->getNameStart();
+        os << next.getIdentifierInfo()->getNameStart();
         break;
       case tok::l_paren:
-         os << '(';
+        os << '(';
         break;
       case tok::r_paren:
-         os << ')';
+        os << ')';
         break;
       case tok::comma:
-         os << ',';
+        os << ',';
+        break;
+      case tok::less:
+        os << "<";
         break;
       case tok::slash:
         os << "/";
@@ -507,11 +527,23 @@ SSTPragma::tokenStreamToString(SourceLocation loc,
       case tok::period:
         os << ".";
         break;
+      case tok::kw_return:
+        os << "return ";
+        break;
       case tok::coloncolon:
         os << "::";
         break;
       case tok::kw_int:
         os << "int";
+        break;
+      case tok::kw_double:
+        os << "double";
+        break;
+      case tok::equalequal:
+        os << "==";
+        break;
+      case tok::kw_sizeof:
+        os << "sizeof";
         break;
       case tok::percent:
         os << "%";
@@ -519,8 +551,11 @@ SSTPragma::tokenStreamToString(SourceLocation loc,
       case tok::kw_false:
         os << "false";
         break;
+      case tok::arrow:
+        os << "->";
+        break;
       case tok::kw_nullptr:
-         os << "nullptr";
+        os << "nullptr";
         break;
       case tok::string_literal:
       case tok::numeric_constant:
@@ -553,9 +588,25 @@ SSTNullVariablePragmaHandler::allocatePragma(SourceLocation loc, const std::list
 }
 
 SSTPragma*
+SSTKeepIfPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  std::stringstream sstr;
+  SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
+  return new SSTKeepIfPragma(sstr.str());
+}
+
+SSTPragma*
 SSTReturnPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
 {
   std::stringstream sstr;
   SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
   return new SSTReturnPragma(loc, ci_, sstr.str());
+}
+
+SSTPragma*
+SSTEmptyPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  std::stringstream sstr;
+  SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
+  return new SSTEmptyPragma(sstr.str());
 }

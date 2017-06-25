@@ -1,3 +1,35 @@
+/**
+namespace sstmac {
+class vector {
+ public:
+  void resize(size_t sz){
+    size_ = sz;
+  }
+
+  size_t size() const {
+    return size_;
+  }
+
+  template <class... Args>
+  void push_back(Args... args){
+    ++size_;
+  }
+
+  template <class... Args>
+  void emplace_back(Args... args){
+    ++size_;
+  }
+
+  bool empty() const {
+    return size_ == 0;
+  }
+
+ private:
+  size_t size_;
+};
+}
+*/
+
 template <class T>
 struct vector {
  vector() : size_(0), storage_(nullptr){}
@@ -29,7 +61,7 @@ struct vector {
 
 int fxn()
 {
-#pragma sst null_variable except size ctor new resize
+#pragma sst null_type sstmac::vector size resize
   vector<double> vec;
   vec.resize(100);
 

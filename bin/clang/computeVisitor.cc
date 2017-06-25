@@ -658,7 +658,6 @@ ComputeVisitor::addLoopContribution(std::ostream& os, Loop& loop)
          loop.body.depth, loop.tripCount.c_str(),
          loop.body.flops, loop.body.readBytes, loop.body.writeBytes, loop.body.intops);
 #endif
-
   auto end = loop.body.subLoops.end();
   for (auto iter=loop.body.subLoops.begin(); iter != end; ++iter){
     addLoopContribution(os, *iter);
@@ -672,11 +671,15 @@ ComputeVisitor::setContext(Stmt* stmt){
 }
 
 void
-ComputeVisitor::replaceStmt(Stmt* stmt, Rewriter& r, Loop& loop)
+ComputeVisitor::replaceStmt(Stmt* stmt, Rewriter& r, Loop& loop, PragmaConfig& cfg)
 {
   std::stringstream sstr;
   sstr << "{ uint64_t flops=0; uint64_t readBytes=0; uint64_t writeBytes=0; uint64_t intops=0; ";
   addLoopContribution(sstr, loop);
+  if (cfg.computeMemorySpec.size() != 0){
+    //overwrite the static analysis
+    sstr << "readBytes=" << cfg.computeMemorySpec << ";";
+  }
   sstr << "sstmac_compute_detailed(flops,intops,readBytes); /*assume write-through for now*/";
   sstr << " }";
   replace(stmt,r,sstr.str(),CI);

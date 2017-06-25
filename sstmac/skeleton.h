@@ -53,6 +53,10 @@ typedef int (*main_fxn)(int,char**);
 typedef int (*empty_main_fxn)();
 
 #include <sstmac/common/sstmac_config.h>
+#ifndef __cplusplus
+#include <stdbool.h>
+#endif
+#include <sstmac/null_buffer.h>
 
 #ifdef __cplusplus
 #include <cstdlib> //must come first
@@ -139,13 +143,13 @@ conditional_new(Args&&... args){
 template <class T>
 void
 conditional_delete(T* t){
-  if (t != nullptr) delete t;
+  if (isNonNullBuffer(t)) delete t;
 }
 
 template <class T>
 void
 conditional_delete_array(T* t){
-  if (t != nullptr) delete[] t;
+  if (isNonNullBuffer(t)) delete[] t;
 }
 
 namespace sstmac {
@@ -212,19 +216,19 @@ get_params();
  */
 static inline void
 sstmac_free(void* ptr){
-  if (ptr != nullptr) ::free(ptr);
+  if (isNonNullBuffer(ptr)) ::free(ptr);
 }
 
 namespace std {
 
 static inline void
 sstmac_free(void* ptr){
-  if (ptr != nullptr) std::free(ptr);
+  if (isNonNullBuffer(ptr)) std::free(ptr);
 }
 
 static inline void*
 sstmac_memset(void* ptr, int value, size_t sz){
-  if (ptr != nullptr) std::memset(ptr,value,sz);
+  if (isNonNullBuffer(ptr)) std::memset(ptr,value,sz);
   return ptr;
 }
 
@@ -232,7 +236,7 @@ sstmac_memset(void* ptr, int value, size_t sz){
 
 static inline void*
 sstmac_memset(void* ptr, int value, size_t sz){
-  if (ptr != nullptr) std::memset(ptr, value, sz);
+  if (isNonNullBuffer(ptr)) std::memset(ptr, value, sz);
   return ptr;
 }
 
@@ -251,6 +255,8 @@ static inline void
 sstmac_free(void* ptr){
   if (ptr != NULL) free(ptr);
 }
+
+static void* nullptr = 0;
 
 #define main ignore_for_app_name; const char* sstmac_appname_str = SST_APP_NAME_QUOTED; int main
 #endif

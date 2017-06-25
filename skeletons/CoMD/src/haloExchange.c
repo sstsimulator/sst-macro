@@ -253,9 +253,10 @@ void haloExchange(LinkCell* boxes, HaloExchange* haloExchange, void* data)
 /// Base class constructor.
 HaloExchange* initHaloExchange(Domain* domain)
 {
+
    HaloExchange* hh = comdMalloc(sizeof(HaloExchange));
 
-   // Rank of neighbor task for each face.
+   // Rank of neighbor task for each face
    hh->nbrRank[HALO_X_MINUS] = processorNum(domain, -1,  0,  0);
    hh->nbrRank[HALO_X_PLUS]  = processorNum(domain, +1,  0,  0);
    hh->nbrRank[HALO_Y_MINUS] = processorNum(domain,  0, -1,  0);
@@ -263,7 +264,6 @@ HaloExchange* initHaloExchange(Domain* domain)
    hh->nbrRank[HALO_Z_MINUS] = processorNum(domain,  0,  0, -1);
    hh->nbrRank[HALO_Z_PLUS]  = processorNum(domain,  0,  0, +1);
    hh->bufCapacity = 0; // will be set by sub-class.
-
    return hh;
 }
 
@@ -454,6 +454,7 @@ void destroyAtomsExchange(void* vparms)
 ///
 /// \see initLinkCells for information about the conventions for grid
 /// coordinates of link cells.
+#pragma sst empty return nullptr
 int* mkForceSendCellList(LinkCell* boxes, int face, int nCells)
 {
    int* list = comdMalloc(nCells*sizeof(int));

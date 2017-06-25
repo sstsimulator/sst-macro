@@ -187,7 +187,7 @@ app::compute_loop(uint64_t num_loops,
 void
 app::compute_detailed(uint64_t flops, uint64_t nintops, uint64_t bytes)
 {
-  static const uint64_t overflow = 18006744072479883520;
+  static const uint64_t overflow = 18006744072479883520ull;
   if (flops > overflow || bytes > overflow){
     spkt_abort_printf("flops/byte counts for compute overflowed");
   }

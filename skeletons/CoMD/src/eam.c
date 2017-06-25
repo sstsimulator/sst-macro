@@ -222,7 +222,9 @@ int eamForce(SimFlat* s)
    if (pot->forceExchange == NULL)
    {
       int maxTotalAtoms = MAXATOMS*s->boxes->nTotalBoxes;
+    #pragma sst init 0
       pot->dfEmbed = comdMalloc(maxTotalAtoms*sizeof(real_t));
+    #pragma sst init 0
       pot->rhobar  = comdMalloc(maxTotalAtoms*sizeof(real_t));
       pot->forceExchange = initForceHaloExchange(s->domain, s->boxes);
       pot->forceExchangeData = comdMalloc(sizeof(ForceExchangeData));
@@ -247,7 +249,8 @@ int eamForce(SimFlat* s)
    int nNbrBoxes = 27;
    int avgAtomsPerBox = s->boxes->nTotalAtoms / s->boxes->nLocalBoxes; //for SST sims
    // loop over local boxes
-   #pragma omp parallel for reduction(+:etot)
+  #pragma sst memory s->boxes->nTotalAtoms*5*sizeof(double)
+  #pragma omp parallel for reduction(+:etot)
    for (int iBox=0; iBox<s->boxes->nLocalBoxes; iBox++)
    {
       int nIBox = s->boxes->nAtoms[iBox];
@@ -328,6 +331,7 @@ int eamForce(SimFlat* s)
 
    // third pass
    // loop over local boxes
+   #pragma sst memory s->boxes->nTotalAtoms*5*sizeof(double)
    #pragma omp parallel for
    for (int iBox=0; iBox<s->boxes->nLocalBoxes; iBox++)
    {

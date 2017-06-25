@@ -32,6 +32,7 @@ sstmacro.h \
 util.h \
 sstsockets.h \
 skeleton.h \
+null_buffer.h \
 sumi.h
 
 SUBDIRS = $(STD_SUBDIRS) 

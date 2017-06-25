@@ -112,6 +112,7 @@ int sendReceiveParallel(void* sendBuf, int sendLen, int dest,
 void addIntParallel(int* sendBuf, int* recvBuf, int count)
 {
 #ifdef DO_MPI
+#pragma sst keep_if count==1
    MPI_Allreduce(sendBuf, recvBuf, count, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 #else
    for (int ii=0; ii<count; ++ii)
@@ -132,6 +133,7 @@ void addRealParallel(real_t* sendBuf, real_t* recvBuf, int count)
 void addDoubleParallel(double* sendBuf, double* recvBuf, int count)
 {
 #ifdef DO_MPI
+#pragma sst keep_if count < 16
    MPI_Allreduce(sendBuf, recvBuf, count, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 #else
    for (int ii=0; ii<count; ++ii)
@@ -142,6 +144,7 @@ void addDoubleParallel(double* sendBuf, double* recvBuf, int count)
 void maxIntParallel(int* sendBuf, int* recvBuf, int count)
 {
 #ifdef DO_MPI
+#pragma sst keep_if count < 16
    MPI_Allreduce(sendBuf, recvBuf, count, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 #else
    for (int ii=0; ii<count; ++ii)
@@ -153,6 +156,7 @@ void maxIntParallel(int* sendBuf, int* recvBuf, int count)
 void minRankDoubleParallel(RankReduceData* sendBuf, RankReduceData* recvBuf, int count)
 {
 #ifdef DO_MPI
+#pragma sst keep_if count < 16
    MPI_Allreduce(sendBuf, recvBuf, count, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
 #else
    for (int ii=0; ii<count; ++ii)
@@ -166,7 +170,8 @@ void minRankDoubleParallel(RankReduceData* sendBuf, RankReduceData* recvBuf, int
 void maxRankDoubleParallel(RankReduceData* sendBuf, RankReduceData* recvBuf, int count)
 {
 #ifdef DO_MPI
-   MPI_Allreduce(sendBuf, recvBuf, count, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
+#pragma sst keep_if count < 16
+  MPI_Allreduce(sendBuf, recvBuf, count, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
 #else
    for (int ii=0; ii<count; ++ii)
    {
@@ -180,6 +185,7 @@ void maxRankDoubleParallel(RankReduceData* sendBuf, RankReduceData* recvBuf, int
 void bcastParallel(void* buf, int count, int root)
 {
 #ifdef DO_MPI
+#pragma sst keep_if count<100
    MPI_Bcast(buf, count, MPI_BYTE, root, MPI_COMM_WORLD);
 #endif
 }

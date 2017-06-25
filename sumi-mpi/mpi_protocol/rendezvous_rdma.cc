@@ -49,6 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_debug.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sprockit/sim_parameters.h>
+#include <sstmac/null_buffer.h>
 
 namespace sumi {
 
@@ -69,7 +70,7 @@ rendezvous_get::configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& 
   if (rdma_pin_delay_.ticks_int64()){
     queue->api()->compute(rdma_pin_delay_); 
   }
-  if (buffer){
+  if (isNonNullBuffer(buffer)){
     if (type->contiguous()){
       msg->remote_buffer().ptr = buffer;
     } else {
