@@ -101,13 +101,16 @@ extern void* sstmac_new(unsigned long size);
 #include <utility>
 
 extern int& should_skip_operator_new();
+extern int sstmac_global_stacksize;
 
 template <class T, class... Args>
 T*
 placement_new(void* sstmac_placement_ptr, Args&&... args){
-  int flag = should_skip_operator_new();
+  //non-zero global stacksize shows we moved outside cxa init
+  //always allocate during cxa init
+  int flag = sstmac_global_stacksize == 0 ? 0 : should_skip_operator_new();
   if (flag == 0){
-    if (sstmac_placement_ptr != nullptr){
+    if (isNonNullBuffer(sstmac_placement_ptr)){
       return new (sstmac_placement_ptr) T(std::forward<Args>(args)...);
     }
     return reinterpret_cast<T*>(sstmac_placement_ptr);
@@ -119,7 +122,9 @@ placement_new(void* sstmac_placement_ptr, Args&&... args){
 template <class T>
 T*
 conditional_array_new(unsigned long size){
-  int flag = should_skip_operator_new();
+  //non-zero global stacksize shows we moved outside cxa init
+  //always allocate during cxa init
+  int flag = sstmac_global_stacksize == 0 ? 0 : should_skip_operator_new();
   T* ret = nullptr;
   if (flag == 0){
     ret = new T[size];
@@ -130,7 +135,9 @@ conditional_array_new(unsigned long size){
 template <class T, class... Args>
 T*
 conditional_new(Args&&... args){
-  int flag = should_skip_operator_new();
+  //non-zero global stacksize shows we moved outside cxa init
+  //always allocate during cxa init
+  int flag = sstmac_global_stacksize == 0 ? 0 : should_skip_operator_new();
   T* ret = nullptr;
   if (flag == 0){
     ret = new T(std::forward<Args>(args)...);
@@ -216,29 +223,20 @@ get_params();
  */
 static inline void
 sstmac_free(void* ptr){
-  if (isNonNullBuffer(ptr)) ::free(ptr);
+  if (ptr) ::free(ptr);
 }
 
 namespace std {
 
 static inline void
 sstmac_free(void* ptr){
-  if (isNonNullBuffer(ptr)) std::free(ptr);
+  if (ptr) std::free(ptr);
 }
 
-static inline void*
-sstmac_memset(void* ptr, int value, size_t sz){
-  if (isNonNullBuffer(ptr)) std::memset(ptr,value,sz);
-  return ptr;
+void* sstmac_memset(void* ptr, int value, size_t sz);
 }
 
-}
-
-static inline void*
-sstmac_memset(void* ptr, int value, size_t sz){
-  if (isNonNullBuffer(ptr)) std::memset(ptr, value, sz);
-  return ptr;
-}
+void* sstmac_memset(void* ptr, int value, size_t sz);
 
 #define memset sstmac_memset
 

@@ -43,8 +43,11 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/util.h>
+#include <sstmac/skeleton.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/app.h>
+
+#undef memset
 
 typedef int (*main_fxn)(int,char**);
 typedef int (*empty_main_fxn)();
@@ -57,6 +60,19 @@ sstmac_now(){
 sprockit::sim_parameters*
 get_params(){
   return sstmac::sw::operating_system::current_thread()->parent_app()->params();
+}
+
+#include <cstring>
+namespace std {
+void* sstmac_memset(void* ptr, int value, size_t sz){
+  if (ptr) std::memset(ptr,value,sz);
+  return ptr;
+}
+}
+
+void* sstmac_memset(void* ptr, int value, size_t sz){
+  if (ptr) memset(ptr,value,sz);
+  return ptr;
 }
 
 int&
