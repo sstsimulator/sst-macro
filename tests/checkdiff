@@ -22,7 +22,7 @@ tmpFile = sys.argv[1]
 srcdir = sys.argv[2]
 chkFile = tmpFile.replace("tmp", "chk")
 refFile = os.path.join(srcdir, "tests", "reference", tmpFile.replace("tmp","ref"))
-rc, output = getstatusoutput("diff %s %s" % (refFile, tmpFile))
+rc, output = getstatusoutput("diff -b %s %s" % (refFile, tmpFile))
 text = ""
 if not os.path.isfile(refFile):
   text = "FAILED: %s: no ref file" % (refFile)

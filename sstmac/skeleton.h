@@ -214,32 +214,23 @@ using sprockit::sim_parameters;
   sst_eli_block(sstmac_app_name) \
  static int user_skeleton_main(__VA_ARGS__)
 
-extern sprockit::sim_parameters*
-get_params();
+extern sprockit::sim_parameters* get_params();
 
 /**
  * @brief sstmac_free
  * @param ptr A pointer which may or may not have been skeletonized
  */
-static inline void
-sstmac_free(void* ptr){
-  if (ptr) ::free(ptr);
-}
+extern "C" void sstmac_free(void* ptr);
+
+extern "C" void* sstmac_memset(void* ptr, int value, size_t sz);
 
 namespace std {
 
-static inline void
-sstmac_free(void* ptr){
-  if (ptr) std::free(ptr);
-}
-
-void* sstmac_memset(void* ptr, int value, size_t sz);
-}
+void sstmac_free(void* ptr);
 
 void* sstmac_memset(void* ptr, int value, size_t sz);
 
-#define memset sstmac_memset
-
+}
 
 
 
@@ -249,16 +240,22 @@ void* sstmac_memset(void* ptr, int value, size_t sz);
  * @brief sstmac_free
  * @param ptr A pointer which may or may not have been skeletonized
  */
-static inline void
-sstmac_free(void* ptr){
-  if (ptr != NULL) free(ptr);
-}
+void sstmac_free(void* ptr);
+void* sstmac_memset(void* ptr, int value, size_t size);
 
 static void* nullptr = 0;
 
 #define main ignore_for_app_name; const char* sstmac_appname_str = SST_APP_NAME_QUOTED; int main
 #endif
 
+#ifndef free
 #define free sstmac_free
+#endif
+
+#ifndef memset
+#define memset sstmac_memset
+#endif
 
 #endif
+
+

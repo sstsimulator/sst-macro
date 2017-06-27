@@ -32,6 +32,10 @@ AC_SUBST([STL_HEADER_VECTOR_FULL_PATH], "`$srcdir/bin/config_tools/get_include_p
 AC_SUBST([SYS_SIGNAL_FULL_PATH], "`$srcdir/bin/config_tools/get_include_path $CXX sys/signal.h $CPPFLAGS $CXXFLAGS`")
 AC_SUBST([SYS_TIME_FULL_PATH], "`$srcdir/bin/config_tools/get_include_path $CXX sys/time.h $CPPFLAGS $CXXFLAGS`")
 AC_SUBST([SIGNAL_FULL_PATH], "`$srcdir/bin/config_tools/get_include_path $CXX signal.h $CPPFLAGS $CXXFLAGS`")
+AC_SUBST([CSTRING_FULL_PATH], "`$srcdir/bin/config_tools/get_include_path $CXX cstring $CPPFLAGS $CXXFLAGS`")
+AC_SUBST([STRING_H_FULL_PATH], "`$srcdir/bin/config_tools/get_include_path $CXX string.h $CPPFLAGS $CXXFLAGS`")
+AC_SUBST([CSTDLIB_FULL_PATH], "`$srcdir/bin/config_tools/get_include_path $CXX cstdlib $CPPFLAGS $CXXFLAGS`")
+AC_SUBST([STDLIB_H_FULL_PATH], "`$srcdir/bin/config_tools/get_include_path $CXX stdlib.h $CPPFLAGS $CXXFLAGS`")
 AC_CONFIG_FILES([
   sstmac/replacements/sstmac_pthread_clear.h
   sstmac/replacements/fstream
@@ -55,6 +59,10 @@ AC_CONFIG_FILES([
   sstmac/replacements/sys/time.h
   sstmac/replacements/signal.h
   sstmac/replacements/sched.h
+  sstmac/replacements/cstring
+  sstmac/replacements/cstdlib
+  sstmac/replacements/stdlib.h
+  sstmac/replacements/string.h
 ])
 
 ])

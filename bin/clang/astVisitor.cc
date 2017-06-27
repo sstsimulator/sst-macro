@@ -461,12 +461,13 @@ SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue)
     return true;
   }
 
+  DeclRefExpr* baseFxn = nullptr;
   if (!noSkeletonize_ && !pragmaConfig_.replacePragmas.empty()){
     Expr* fxn = getUnderlyingExpr(const_cast<Expr*>(expr->getCallee()));
     if (fxn->getStmtClass() == Stmt::DeclRefExprClass){
       //this is a basic function call
-      DeclRefExpr* dref = cast<DeclRefExpr>(fxn);
-      std::string fxnName = dref->getFoundDecl()->getNameAsString();
+      baseFxn = cast<DeclRefExpr>(fxn);
+      std::string fxnName = baseFxn->getFoundDecl()->getNameAsString();
       for (auto& pair : pragmaConfig_.replacePragmas){
         SSTReplacePragma* replPrg = static_cast<SSTReplacePragma*>(pair.second);
         if (replPrg->fxn() == fxnName){
@@ -486,6 +487,10 @@ SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue)
         (this->*call)(expr);
       }
     }
+  }
+
+  if (baseFxn){
+    //we have a set of standard replacements
   }
 
   stmt_contexts_.push_back(expr);

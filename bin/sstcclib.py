@@ -127,6 +127,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   objTarget = None
   ldTarget = None
   getObjTarget = False
+  givenStdFlag = None
   for arg in sysargs:
     sarg = arg.strip().strip("'")
     if sarg.endswith('.o'):
@@ -150,6 +151,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     elif sarg == "-g":
       givenFlags.append(sarg)
       optFlags.append(sarg)
+    elif "-std" in sarg:
+      givenStdFlag=sarg
     elif sarg.endswith('.cpp') or sarg.endswith('.cc') or sarg.endswith('.c') or sarg.endswith(".cxx"):
       sourceFiles.append(sarg)
     elif sarg.endswith('.S'):
@@ -220,15 +223,22 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     ld = cxx #always use c++ for linking since we are bringing a bunch of sstmac C++ into the game
 
   sstCompilerFlags = []
+  sstStdFlag = None
   for flag in sstCompilerFlagsStr.split():
-    if not flag.startswith("-O") and not flag == "-g":
+    if "-std" in flag:
+      sstStdFlag = flag
+    elif not flag.startswith("-O") and not flag == "-g":
       sstCompilerFlags.append(flag)
   sstCompilerFlagsStr = " ".join(sstCompilerFlags)
 
   sstCxxFlagsStr = cleanFlag(sstCxxFlagsStr)
   sstCxxFlags = []
+  sstStdFlag = None
   for flag in sstCxxFlagsStr.split():
-    if not flag.startswith("-O") and not flag == "-g":
+    if "-std" in flag:
+      #don't automatically propagate the sst c++11 flag...
+      sstStdFlag = flag
+    elif not flag.startswith("-O") and not flag == "-g":
       sstCxxFlags.append(flag)
   sstCxxFlagsStr = " ".join(sstCxxFlags)
     
@@ -251,6 +261,23 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     else:
       sstCompilerFlags.append(entry)
   sstCompilerFlagsStr = " ".join(sstCompilerFlags)
+
+  #okay, figure out which -std flag to include in compilation
+  #treat it as a given flag on the command line
+  if sstStdFlag and givenStdFlag:
+    #take whichever is greater
+    if sstStdFlag > givenStdFlag:
+      givenFlags.append(sstStdFlag)
+    else:
+      givenFlags.append(givenStdFlag)
+  elif sstStdFlag:
+    givenFlags.append(sstStdFlag)
+  elif givenStdFlag:
+    givenFlags.append(givenStdFlag)
+  else:
+    sys.stderr.write("no -std= flag obtained from SST - how did you compiled without C++11 or greater?")
+    return 1
+    
 
   directIncludesStr = " ".join(directIncludes)
 
