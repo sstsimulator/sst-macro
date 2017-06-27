@@ -240,22 +240,18 @@ ComputeVisitor::visitBodyBinaryOperator(BinaryOperator* op, Loop::Body& body)
     case BO_Sub:
       if (op->getType()->isIntegerType()) {
         body.intops += 1;
-      }
-      else if (op->getType()->isFloatingType()) {
+      } else if (op->getType()->isFloatingType()) {
         body.flops += 1;
-      }
-      else if (op->getType()->isPointerType()){
+      } else if (op->getType()->isPointerType()){
         body.intops += 1;
-      }
-      else if (op->getType()->isDependentType()){
+      } else if (op->getType()->isDependentType()){
         //this better be a template type
         const Type* ty = op->getLHS()->getType().getTypePtr();
         if (!isa<const TemplateTypeParmType>(ty)){
           errorAbort(op->getLocStart(), CI,
                      "binary operator has non-template dependent type");
         }
-      }
-      else {
+      } else {
         errorAbort(op->getLocStart(), CI,
                    "binary operator in skeletonized loop does not operate on int or float types");
       }

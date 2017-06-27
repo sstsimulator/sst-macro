@@ -79,7 +79,8 @@ struct SSTPragma {
     Return=8,
     NullType=9,
     KeepIf=10,
-    Memory=11
+    Memory=11,
+    Instead=12
   } class_t;
   clang::StringRef name;
   clang::SourceLocation startLoc;
@@ -147,6 +148,8 @@ class SSTNullVariablePragma : public SSTPragma {
   SSTNullVariablePragma(clang::SourceLocation loc,
                         clang::CompilerInstance& CI,
                         const std::list<clang::Token>& tokens);
+
+  SSTNullVariablePragma() : SSTPragma(NullVariable) {}
 
   bool firstPass() const override {
     return true;

@@ -28,6 +28,7 @@
 struct MGData_STRUCT {
   int numberOfPresmootherSteps; // Call ComputeSYMGS this many times prior to coarsening
   int numberOfPostsmootherSteps; // Call ComputeSYMGS this many times after coarsening
+#pragma sst null_variable
   local_int_t * f2cOperator; //!< 1D array containing the fine operator local IDs that will be injected into coarse space.
   Vector * rc; // coarse grid residual vector
   Vector * xc; // coarse grid solution vector
@@ -36,6 +37,7 @@ struct MGData_STRUCT {
    This is for storing optimized data structres created in OptimizeProblem and
    used inside optimized ComputeSPMV().
    */
+#pragma sst null_variable
   void * optimizationData;
 };
 typedef struct MGData_STRUCT MGData;

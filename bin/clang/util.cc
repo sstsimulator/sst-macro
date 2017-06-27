@@ -91,7 +91,7 @@ warn(SourceLocation loc, CompilerInstance &CI, const std::string &warning)
   std::string errorStr;
   llvm::raw_string_ostream os(errorStr);
   loc.print(os, CI.getSourceManager());
-  os << " WARNING: " << warning;
+  os << ": warning: " << warning;
   std::cerr << os.str() << std::endl;
 }
 

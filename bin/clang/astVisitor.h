@@ -169,7 +169,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    * @param expr
    * @return
    */
-  bool VisitCXXDeleteExpr(clang::CXXDeleteExpr* expr);
+  bool TraverseCXXDeleteExpr(clang::CXXDeleteExpr* expr, DataRecursionQueue* = nullptr);
 
   /**
    * @brief VisitCXXMemberCallExpr Certain function calls get redirected to
@@ -248,6 +248,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   bool TraverseBinaryOperator(clang::BinaryOperator* op, DataRecursionQueue* queue = nullptr);
 
+  bool TraverseCompoundAssignOperator(clang::CompoundAssignOperator* op, DataRecursionQueue* queue = nullptr);
+
   bool TraverseIfStmt(clang::IfStmt* S, DataRecursionQueue* queue = nullptr);
 
   bool TraverseCompoundStmt(clang::CompoundStmt* S, DataRecursionQueue* queue = nullptr);
@@ -266,6 +268,13 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     return TraverseUnaryOperator(op,queue); \
   }
   UNARYOP_LIST()
+#undef OPERATOR
+
+#define OPERATOR(NAME) \
+  bool TraverseBin##NAME##Assign(clang::CompoundAssignOperator* op, DataRecursionQueue* queue = nullptr){ \
+    return TraverseCompoundAssignOperator(op,queue); \
+  }
+  CAO_LIST()
 #undef OPERATOR
 
   /**
@@ -369,6 +378,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::list<clang::CXXRecordDecl*> class_contexts_;
   std::list<clang::ForStmt*> loop_contexts_;
   std::list<clang::Stmt*> stmt_contexts_;
+
+  typedef enum { LHS, RHS } BinOpSide;
+  std::list<BinOpSide> sides_;
+
   bool foundCMain_;
   std::string mainName_;
   bool keepGlobals_;

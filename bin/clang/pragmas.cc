@@ -437,6 +437,7 @@ SSTNullTypePragma::SSTNullTypePragma(SourceLocation loc, CompilerInstance& CI,
 
   std::list<std::string> toInsert;
   bool connectPrev = false;
+  int templateCount = 0;
   for (const Token& token : tokens){
     std::string next;
     bool connectNext = false;
@@ -448,12 +449,36 @@ SSTNullTypePragma::SSTNullTypePragma(SourceLocation loc, CompilerInstance& CI,
       next = "::";
       connectNext = true;
       break;
+    case tok::comma:
+      next = ",";
+      connectNext = connectPrev;
+      break;
+    case tok::less:
+      next = "<";
+      connectNext = true;
+      templateCount++;
+      break;
+    case tok::greater:
+      next = ">";
+      templateCount--;
+      connectNext = templateCount > 0;
+      break;
+    case tok::kw_int:
+      next = "int";
+      connectNext = connectPrev;
+      break;
+    case tok::kw_double:
+      next = "double";
+      connectNext = connectPrev;
+      break;
     case tok::identifier:
       next = token.getIdentifierInfo()->getName().str();
       break;
-    default:
-      errorAbort(loc, CI, "token to pragma is not a valid string name");
+    default: {
+      std::string err = std::string("token ") + token.getName() + " is not valid in type names";
+      errorAbort(loc, CI, err);
       break;
+    }
     }
     if (connectPrev || connectNext){
       toInsert.back() += next;
@@ -505,6 +530,9 @@ SSTPragma::tokenStreamToString(SourceLocation loc,
     switch (next.getKind()){
       case tok::identifier:
         os << next.getIdentifierInfo()->getNameStart();
+        break;
+      case tok::semi:
+        os << ";";
         break;
       case tok::l_paren:
         os << '(';

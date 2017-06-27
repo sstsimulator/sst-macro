@@ -79,6 +79,7 @@ void ExchangeHalo(const SparseMatrix & A, Vector & x) {
   //
 
   // TODO: Thread this loop
+#pragma sst compute
   for (local_int_t i=0; i<totalToBeSent; i++) sendBuffer[i] = xv[elementsToSend[i]];
 
   //
@@ -89,6 +90,7 @@ void ExchangeHalo(const SparseMatrix & A, Vector & x) {
   for (int i = 0; i < num_neighbors; i++) {
     local_int_t n_send = sendLength[i];
     MPI_Send(sendBuffer, n_send, MPI_DOUBLE, neighbors[i], MPI_MY_TAG, MPI_COMM_WORLD);
+#pragma sst delete
     sendBuffer += n_send;
   }
 

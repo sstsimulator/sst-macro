@@ -271,6 +271,12 @@ SSTInitPragma::activateBinaryOperator(BinaryOperator* op, Rewriter& r)
 }
 
 void
+SSTInsteadPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+{
+  replace(s, r, repl_, *CI);
+}
+
+void
 SSTInitPragma::activateDeclStmt(DeclStmt* s, Rewriter& r)
 {
   if (!s->isSingleDecl()){
@@ -339,3 +345,12 @@ SSTInitPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> 
   SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
   return new SSTInitPragma(sstr.str());
 }
+
+SSTPragma*
+SSTInsteadPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  std::stringstream sstr;
+  SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
+  return new SSTInsteadPragma(sstr.str());
+}
+

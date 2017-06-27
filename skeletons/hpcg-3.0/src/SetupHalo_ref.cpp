@@ -37,6 +37,40 @@ using std::endl;
 
 #include "SetupHalo_ref.hpp"
 #include "mytimer.hpp"
+#include <mpi.h>
+
+void setupSkeleton(std::map<int,int>& sendList, std::map<int,int>& receiveList)
+{
+  int rank; MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  int size; MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+  int maxGap = 4;
+  for (int i=0; i < maxGap; ++i){
+    int up = (rank+i)%size;
+    int down = (rank-i+size)%size;
+    sendList[up] = 16;
+    sendList[down] = 16;
+    receiveList[up] = 16;
+    receiveList[down] = 16;
+  }
+}
+
+void setupSkeletonNeighbors(int* neighbors, int* sendLength, std::map<int,int>& sendList,
+                   int* receiveLength, std::map<int,int>& receiveList)
+{
+  int index = 0;
+  for (auto& pair : sendList){
+    neighbors[index] = pair.first;
+    sendLength[index] = pair.second;
+    ++index;
+  }
+  index = 0;
+  for (auto& pair : receiveList){
+    receiveLength[index] = pair.second;
+    ++index;
+  }
+}
+
 
 /*!
   Reference version of SetupHalo that prepares system matrix data structure and creates data necessary
@@ -51,8 +85,11 @@ void SetupHalo_ref(SparseMatrix & A) {
   // Extract Matrix pieces
 
   local_int_t localNumberOfRows = A.localNumberOfRows;
+#pragma sst null_variable
   char  * nonzerosInRow = A.nonzerosInRow;
+#pragma sst null_variable
   global_int_t ** mtxIndG = A.mtxIndG;
+#pragma sst null_variable
   local_int_t ** mtxIndL = A.mtxIndL;
 
 #ifdef HPCG_NO_MPI  // In the non-MPI case we simply copy global indices to local index storage
@@ -70,17 +107,20 @@ void SetupHalo_ref(SparseMatrix & A) {
   // 1) We call the ComputeRankOfMatrixRow function, which tells us the rank of the processor owning the row ID.
   //  We need to receive this value of the x vector during the halo exchange.
   // 2) We record our row ID since we know that the other processor will need this value from us, due to symmetry.
-
-  std::map< int, std::set< global_int_t> > sendList, receiveList;
+#pragma sst null_type std::map<int,int> size
+  std::map< int, std::set< global_int_t> > sendList;
+#pragma sst null_type std::map<int,int> size
+  std::map< int, std::set< global_int_t> > receiveList;
   typedef std::map< int, std::set< global_int_t> >::iterator map_iter;
   typedef std::set<global_int_t>::iterator set_iter;
+#pragma sst null_variable
   std::map< local_int_t, local_int_t > externalToLocalMap;
 
   // TODO: With proper critical and atomic regions, this loop could be threaded, but not attempting it at this time
 #pragma sst compute
   for (local_int_t i=0; i< localNumberOfRows; i++) {
     global_int_t currentGlobalRow = A.localToGlobalMap[i];
-#pragma sst replace nonzerosInRow 27
+#pragma sst loop_count 27
     for (int j=0; j<nonzerosInRow[i]; j++) {
       global_int_t curIndex = mtxIndG[i][j];
       int rankIdOfColumnEntry = ComputeRankOfMatrixRow(*(A.geom), curIndex);
@@ -96,11 +136,15 @@ void SetupHalo_ref(SparseMatrix & A) {
   }
 
   // Count number of matrix entries to send and receive
+#pragma sst init localNumberOfRows*27
   local_int_t totalToBeSent = 0;
+#pragma sst instead setupSkeleton(sendList,receiveList);
   for (map_iter curNeighbor = sendList.begin(); curNeighbor != sendList.end(); ++curNeighbor) {
     totalToBeSent += (curNeighbor->second).size();
   }
+#pragma sst init localNumberOfRows*27
   local_int_t totalToBeReceived = 0;
+#pragma sst delete
   for (map_iter curNeighbor = receiveList.begin(); curNeighbor != receiveList.end(); ++curNeighbor) {
     totalToBeReceived += (curNeighbor->second).size();
   }
@@ -128,6 +172,7 @@ void SetupHalo_ref(SparseMatrix & A) {
   int neighborCount = 0;
   local_int_t receiveEntryCount = 0;
   local_int_t sendEntryCount = 0;
+#pragma sst instead setupSkeletonNeighbors(neighbors, sendLength, sendList, receiveLength, receiveList);
   for (map_iter curNeighbor = receiveList.begin(); curNeighbor != receiveList.end(); ++curNeighbor, ++neighborCount) {
     int neighborId = curNeighbor->first; // rank of current neighbor we are processing
     neighbors[neighborCount] = neighborId; // store rank ID of current neighbor

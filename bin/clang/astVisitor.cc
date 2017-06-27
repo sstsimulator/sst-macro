@@ -242,10 +242,13 @@ SkeletonASTVisitor::VisitCXXNewExpr(CXXNewExpr *expr)
 
 
 bool
-SkeletonASTVisitor::VisitCXXDeleteExpr(CXXDeleteExpr* expr)
+SkeletonASTVisitor::TraverseCXXDeleteExpr(CXXDeleteExpr* expr, DataRecursionQueue* queue)
 {
   if (noSkeletonize_) return true;
 
+  stmt_contexts_.push_back(expr);
+  TraverseStmt(expr->getArgument());
+  stmt_contexts_.pop_back();
   return true; //don't do this anymore
 
   std::string allocatedTypeStr = expr->getDestroyedType().getAsString();
@@ -981,6 +984,13 @@ SkeletonASTVisitor::TraverseUnaryOperator(UnaryOperator* op, DataRecursionQueue*
 }
 
 bool
+SkeletonASTVisitor::TraverseCompoundAssignOperator(CompoundAssignOperator *op, DataRecursionQueue *queue)
+{
+  //nothing special for now
+  return TraverseBinaryOperator(op,queue);
+}
+
+bool
 SkeletonASTVisitor::TraverseBinaryOperator(BinaryOperator* op, DataRecursionQueue* queue)
 {
   bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(op);
@@ -988,8 +998,12 @@ SkeletonASTVisitor::TraverseBinaryOperator(BinaryOperator* op, DataRecursionQueu
   if (skipVisit){
     deletedStmts_.insert(op);
   } else {
+    sides_.push_back(BinOpSide::LHS);
     TraverseStmt(op->getLHS());
+    sides_.pop_back();
+    sides_.push_back(BinOpSide::RHS);
     TraverseStmt(op->getRHS());
+    sides_.pop_back();
   }
   stmt_contexts_.pop_back();
   return true;
@@ -1100,34 +1114,12 @@ SkeletonASTVisitor::VisitDecl(Decl *D)
 bool
 SkeletonASTVisitor::dataTraverseStmtPre(Stmt* S)
 {
-  switch(S->getStmtClass()){
-    case Stmt::ForStmtClass:
-    case Stmt::BinaryOperatorClass:
-    case Stmt::CompoundAssignOperatorClass:
-    case Stmt::CallExprClass:
-      stmt_contexts_.push_back(S);
-      break;
-    default:
-      break;
-  }
-
   return true;
 }
 
 bool
 SkeletonASTVisitor::dataTraverseStmtPost(Stmt* S)
 {
-  switch(S->getStmtClass()){
-    case Stmt::ForStmtClass:
-    case Stmt::BinaryOperatorClass:
-    case Stmt::CompoundAssignOperatorClass:
-    case Stmt::CallExprClass:
-      stmt_contexts_.pop_back();
-      break;
-    default:
-      break;
-  }
-
   auto iter = activePragmas_.find(S);
   if (iter != activePragmas_.end()){
     SSTPragma* prg = iter->second;
@@ -1146,12 +1138,58 @@ SkeletonASTVisitor::deleteNullVariableStmt(Stmt* use_stmt, Decl* d)
                "null variable used in statement, but context list is empty");
   }
   Stmt* s = stmt_contexts_.front(); //delete the outermost stmt
-  if (!loop_contexts_.empty()){
-    errorAbort(use_stmt->getLocStart(), *ci_,
-               "null variable used inside loop - loop skeletonization "
-               "must be indicated with #pragma sst compute outside loop");
+  if (s->getStmtClass() == Stmt::IfStmtClass){
+    //oooooh, not good - I could really foobar things here
+    //crash and burn and tell programmer to fix it
+    warn(use_stmt->getLocStart(), *ci_,
+         "null variables used as predicate in if-statement - "
+         "this could produce undefined behavior - forcing always false");
+    IfStmt* ifs = cast<IfStmt>(s);
+    replace(ifs->getCond(), rewriter_, "false", *ci_);
+    return;
   }
-  deleteStmt(s);
+
+  if (!loop_contexts_.empty()){
+    bool justWarn = false;
+    if (d->getKind() == Decl::Var){
+      auto cls = s->getStmtClass();
+      if (cls == Stmt::BinaryOperatorClass || cls == Stmt::CompoundAssignOperatorClass){
+        if (sides_.back() == LHS){
+          //well, this is on the left hand side
+          VarDecl* vd = cast<VarDecl>(d);
+          if (vd->getType()->isPointerType()){
+            //whatever - pointer arithmetic, let it stay
+            justWarn = true;
+          }
+        }
+      }
+    }
+    if (justWarn){
+      warn(use_stmt->getLocStart(), *ci_,
+           "null variable used inside loop - loop skeletonization "
+           "must be indicated with #pragma sst compute outside loop");
+    } else {
+      errorAbort(use_stmt->getLocStart(), *ci_,
+                 "null variable used inside loop - loop skeletonization "
+                 "must be indicated with #pragma sst compute outside loop");
+    }
+  }
+
+  if (s->getStmtClass() == Stmt::DeclStmtClass){
+    DeclStmt* ds = cast<DeclStmt>(s);
+    Decl* lhs = ds->getSingleDecl();
+    if (lhs && lhs != d){
+      //well, crap, the nullness might propagate to a new variable
+      if (lhs->getKind() == Decl::Var){
+        //yep, it does
+        VarDecl* vd = cast<VarDecl>(lhs);
+        //propagate the null-ness to this new variable
+        SSTNullVariablePragma* fakePragma = new SSTNullVariablePragma;
+        pragmaConfig_.nullVariables[vd] = fakePragma;
+      }
+    }
+  }
+  deleteStmt(s); //just delete it
 }
 
 bool
@@ -1173,6 +1211,7 @@ SkeletonASTVisitor::activatePragmasForStmt(Stmt* S)
       case SSTPragma::Compute:
       case SSTPragma::Delete:
       case SSTPragma::Init:
+      case SSTPragma::Instead:
         blockDeleted = true;
         break;
       default: break;
