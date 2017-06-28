@@ -1,17 +1,17 @@
+
 #ifndef SSTMAC_INSIDE_STL
 #define SSTMAC_INSIDE_STL
 
 #include <sstmac/replacements/sstmac_pthread_clear.h>
 #include <sstmac/replacements/clear_symbol_macros.h>
-#include "@CSTRING_FULL_PATH@"
+
+#include_next <ostream>
 #undef SSTMAC_INSIDE_STL
-#include <sstmac/replacements/return_symbol_macros.h>
+
 #include <sstmac/replacements/sstmac_pthread_return.h>
+#include <sstmac/replacements/return_symbol_macros.h>
 
 #else
-
-#include "@CSTRING_FULL_PATH@"
-
+#include_next <ostream>
 #endif
-
 

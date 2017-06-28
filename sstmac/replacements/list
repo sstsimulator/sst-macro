@@ -3,12 +3,12 @@
 
 #include <sstmac/replacements/sstmac_pthread_clear.h>
 
-#include "@SIGNAL_FULL_PATH@"
+#include_next <list>
 #undef SSTMAC_INSIDE_STL
 
 #include <sstmac/replacements/sstmac_pthread_return.h>
 
 #else
-#include "@SIGNAL_FULL_PATH@"
+#include_next <list>
 #endif
 

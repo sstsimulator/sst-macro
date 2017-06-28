@@ -6,7 +6,7 @@
 #include <sstmac/libraries/pthread/sstmac_pthread_clear_macros.h>
 #endif
 
-#include "@SYS_SIGNAL_FULL_PATH@"
+#include_next <sys/signal.h>
 #undef SSTMAC_INSIDE_STL
 
 
@@ -17,6 +17,6 @@
 #endif
 
 #else
-#include "@SYS_SIGNAL_FULL_PATH@"
+#include_next <sys/signal.h>
 #endif
 
