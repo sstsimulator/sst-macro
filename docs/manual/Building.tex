@@ -222,11 +222,13 @@ Using MacPorts on OS X, it is trivial to obtain a Clang installation that includ
 port install clang-devel
 \end{ViFile}
 
-MacPorts will place the Clang compilers in /opt/local/bin.  Enable the devel version of Clang with:
+MacPorts will place the Clang compilers in \inlineshell{/opt/local/bin}.  Enable the devel version of Clang with:
 
 \begin{ViFile}
 port select --set clang mp-clang-devel
 \end{ViFile}
+
+The Clang libraries will be placed into \inlineshell{/opt/local/libexec/llvm-devel/lib}, so the appropriate option to the sst-macro configure script is \inlineshell{--with-clang=/opt/local/libexec/llvm-devel}.
 
 \subsubsection{The Hard Way}
 \label{subsubsec:libTooling}
