@@ -82,9 +82,9 @@ int TestCG(SparseMatrix & A, CGData & data, Vector & b, Vector & x, TestCGData &
   int niters = 0;
   double normr = 0.0;
   double normr0 = 0.0;
-  int maxIters = 50;
+  int maxIters = 5; //50 not in SST version
   int numberOfCgCalls = 2;
-  double tolerance = 1.0e-12; // Set tolerance to reasonable value for grossly scaled diagonal terms
+  double tolerance = 0; //For SST, force max iter - 1.0e-12; // Set tolerance to reasonable value for grossly scaled diagonal terms
   testcg_data.expected_niters_no_prec = 12; // For the unpreconditioned CG call, we should take about 10 iterations, permit 12
   testcg_data.expected_niters_prec = 2;   // For the preconditioned case, we should take about 1 iteration, permit 2
   testcg_data.niters_max_no_prec = 0;

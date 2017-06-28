@@ -48,49 +48,49 @@ Memory data:
   Link cell atom footprint =   1.208 MB/node (including halo cell data
 
 
-Initial energy : 0.000000000000, atom count : 3179 
+Initial energy : 0.000000000000, atom count : 188964 
 
 #                                                                                         Performance
 #  Loop   Time(fs)       Total Energy   Potential Energy     Kinetic Energy  Temperature   (us/atom)     # Atoms
-      0       0.00     0.000000000000     0.000000000000     0.000000000000       0.0000     0.0000         3179
-     10       0.00     0.000000000000     0.000000000000     0.000000000000       0.0000     0.0000         3179
+      0       0.00     0.000000000000     0.000000000000     0.000000000000       0.0000     0.0000       188964
+     10       0.00     0.000000000000     0.000000000000     0.000000000000       0.0000     0.0000       188964
 
 
 Simulation Validation:
   Initial energy  : 0.000000000000
   Final energy    : 0.000000000000
-  Final atom count : 3179, no atoms lost
+  Final atom count : 188964, no atoms lost
 
 
 Timings for Rank 0
         Timer        # Calls    Avg/Call (s)   Total (s)    % Loop
 ___________________________________________________________________
-total                      1       0.0216        0.0216      111.90
-loop                       1       0.0193        0.0193      100.00
-timestep                   1       0.0193        0.0193       99.92
-  position                10       0.0000        0.0000        0.00
-  velocity                20       0.0000        0.0000        0.00
-  redistribute            11       0.0006        0.0061       31.54
-    atomHalo              11       0.0006        0.0061       31.54
-  force                   11       0.0013        0.0138       71.47
-    eamHalo               11       0.0007        0.0074       38.34
-commHalo                  66       0.0002        0.0135       69.89
-commReduce                12       0.0001        0.0015        7.84
+total                      1       0.7299        0.7299      110.09
+loop                       1       0.6629        0.6629      100.00
+timestep                   1       0.6629        0.6629      100.00
+  position                10       0.0001        0.0006        0.09
+  velocity                20       0.0002        0.0030        0.46
+  redistribute            11       0.0007        0.0078        1.17
+    atomHalo              11       0.0007        0.0078        1.17
+  force                   11       0.0652        0.7174      108.22
+    eamHalo               11       0.0000        0.0002        0.03
+commHalo                  66       0.0000        0.0004        0.05
+commReduce                12       0.0000        0.0002        0.03
 
 Timing Statistics Across 4 Ranks:
         Timer        Rank: Min(s)       Rank: Max(s)      Avg(s)    Stdev(s)
 _____________________________________________________________________________
-total                0:    0.0216       3:    0.0216      0.0216      0.0000
-loop                 0:    0.0193       0:    0.0193      0.0193      0.0000
-timestep             0:    0.0193       0:    0.0193      0.0193      0.0000
-  position           0:    0.0000       0:    0.0000      0.0000      0.0000
-  velocity           0:    0.0000       0:    0.0000      0.0000      0.0000
-  redistribute       3:    0.0002       0:    0.0061      0.0037      0.0022
-    atomHalo         3:    0.0002       0:    0.0061      0.0037      0.0022
-  force              0:    0.0138       3:    0.0210      0.0168      0.0026
-    eamHalo          3:    0.0002       0:    0.0074      0.0045      0.0026
-commHalo             3:    0.0004       0:    0.0135      0.0081      0.0048
-commReduce           3:    0.0002       0:    0.0015      0.0010      0.0005
+total                0:    0.7299       3:    0.7299      0.7299      0.0000
+loop                 0:    0.6629       0:    0.6629      0.6629      0.0000
+timestep             0:    0.6629       0:    0.6629      0.6629      0.0000
+  position           0:    0.0006       0:    0.0006      0.0006      0.0000
+  velocity           0:    0.0030       0:    0.0030      0.0030      0.0000
+  redistribute       0:    0.0078       0:    0.0078      0.0078      0.0000
+    atomHalo         0:    0.0078       0:    0.0078      0.0078      0.0000
+  force              0:    0.7174       0:    0.7174      0.7174      0.0000
+    eamHalo          0:    0.0002       0:    0.0002      0.0002      0.0000
+commHalo             3:    0.0004       0:    0.0004      0.0004      0.0000
+commReduce           2:    0.0002       0:    0.0002      0.0002      0.0000
 
 ---------------------------------------------------
  Average atom update rate:       0.00 us/atom/task
@@ -106,4 +106,4 @@ commReduce           3:    0.0002       0:    0.0015      0.0010      0.0005
  Average atom rate:              0.00 atoms/us
 ---------------------------------------------------
 
-Estimated total runtime of           0.02172212 seconds
+Estimated total runtime of           0.72995885 seconds

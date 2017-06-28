@@ -19,8 +19,8 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 
-TIME_DELTA_TOO_BIG = 0.2
-TIME_PERCENT_TOO_BIG = 0.03
+TIME_DELTA_TOO_BIG = 0.002
+TIME_PERCENT_TOO_BIG = 0.01
 timeout = None
 srcdir = None
 outputFile = None

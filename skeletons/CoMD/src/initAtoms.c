@@ -63,6 +63,15 @@ void destroyAtoms(Atoms *atoms)
    comdFree(atoms);
 }
 
+int skeletonNumAtoms(int nbasis, const real_t* begin, const real_t* end)
+{
+  double dx = end[0] - begin[0];
+  double dy = end[1] - begin[1];
+  double dz = end[2] - begin[2];
+  double dV = dx*dy*dz;
+  return nbasis * dV;
+}
+
 /// Creates atom positions on a face centered cubic (FCC) lattice with
 /// nx * ny * nz unit cells and lattice constant lat.
 /// Set momenta to zero.
@@ -103,15 +112,17 @@ void createFccLattice(int nx, int ny, int nz, real_t lat, SimFlat* s)
                int id = ib+nb*(iz+nz*(iy+ny*(ix)));
                putAtomInBox(s->boxes, s->atoms, id, 0, rx, ry, rz, px, py, pz);
             }
-   s->boxes->nTotalAtoms = end[0]*end[1]*end[2];
  #pragma sst init nb*nx*ny*nz
    s->atoms->nGlobal = 0;
  #pragma sst init (nb*nx*ny*nz) / getNRanks()
    s->atoms->nLocal = s->atoms->nLocal;
+ #pragma sst init skeletonNumAtoms(nb,localMin,localMax)
+   s->boxes->nTotalAtoms = s->atoms->nLocal;
    // set total atoms in simulation
    startTimer(commReduceTimer);
    addIntParallel(&s->atoms->nLocal, &s->atoms->nGlobal, 1);
    stopTimer(commReduceTimer);
+#pragma sst delete
    assert(s->atoms->nGlobal == nb*nx*ny*nz);
 }
 

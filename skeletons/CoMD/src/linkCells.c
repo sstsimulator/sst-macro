@@ -101,7 +101,6 @@ LinkCell* initLinkCells(const Domain* domain, real_t cutoff)
                          (ll->gridSize[1] * ll->gridSize[2]));
 
    ll->nTotalBoxes = ll->nLocalBoxes + ll->nHaloBoxes;
-   
    ll->nAtoms = comdMalloc(ll->nTotalBoxes*sizeof(int));
 #pragma sst delete
    for (int iBox=0; iBox<ll->nTotalBoxes; ++iBox)

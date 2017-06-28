@@ -116,7 +116,8 @@ HPCG_DEFS     = $(HPCG_OPTS) $(HPCG_INCLUDES)
 # - Compilers / linkers - Optimization flags ---------------------------
 # ----------------------------------------------------------------------
 #
-CXX          = SSTMAC_HEADERS=`pwd`/sstmac_headers SSTMAC_SKELETONIZE=1 sst++
+SKEL = 1
+CXX          = SSTMAC_HEADERS=`pwd`/sstmac_headers SSTMAC_SKELETONIZE=$(SKEL) sst++
 CXXFLAGS     = $(HPCG_DEFS) -O0 -g -ffast-math -ftree-vectorize -fPIC
 #
 LINKER       = $(CXX)
