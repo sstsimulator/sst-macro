@@ -151,7 +151,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     elif sarg == "-g":
       givenFlags.append(sarg)
       optFlags.append(sarg)
-    elif "-std" in sarg:
+    elif "-std=" in sarg:
       givenStdFlag=sarg
     elif sarg.endswith('.cpp') or sarg.endswith('.cc') or sarg.endswith('.c') or sarg.endswith(".cxx"):
       sourceFiles.append(sarg)
@@ -225,7 +225,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   sstCompilerFlags = []
   sstStdFlag = None
   for flag in sstCompilerFlagsStr.split():
-    if "-std" in flag:
+    if "-std=" in flag:
       sstStdFlag = flag
     elif not flag.startswith("-O") and not flag == "-g":
       sstCompilerFlags.append(flag)
@@ -235,7 +235,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   sstCxxFlags = []
   sstStdFlag = None
   for flag in sstCxxFlagsStr.split():
-    if "-std" in flag:
+    if "-std=" in flag:
       #don't automatically propagate the sst c++11 flag...
       sstStdFlag = flag
     elif not flag.startswith("-O") and not flag == "-g":
