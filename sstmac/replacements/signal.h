@@ -3,12 +3,12 @@
 
 #include <sstmac/replacements/sstmac_pthread_clear.h>
 
-#include "@STL_HEADER_IOSTREAM_FULL_PATH@"
+#include_next <signal.h>
 #undef SSTMAC_INSIDE_STL
 
 #include <sstmac/replacements/sstmac_pthread_return.h>
 
 #else
-#include "@STL_HEADER_IOSTREAM_FULL_PATH@"
+#include_next <signal.h>
 #endif
 

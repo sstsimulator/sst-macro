@@ -1150,7 +1150,7 @@ SkeletonASTVisitor::deleteNullVariableStmt(Stmt* use_stmt, Decl* d)
          "null variables used as predicate in if-statement - "
          "this could produce undefined behavior - forcing always false");
     IfStmt* ifs = cast<IfStmt>(s);
-    replace(ifs->getCond(), rewriter_, "false", *ci_);
+    replace(ifs->getCond(), rewriter_, "0", *ci_);
     return;
   }
 

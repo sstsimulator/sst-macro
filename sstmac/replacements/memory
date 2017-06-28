@@ -3,12 +3,12 @@
 
 #include <sstmac/replacements/sstmac_pthread_clear.h>
 
-#include "@STL_HEADER_MEMORY_FULL_PATH@"
+#include_next <memory>
 #undef SSTMAC_INSIDE_STL
 
 #include <sstmac/replacements/sstmac_pthread_return.h>
 
 #else
-#include "@STL_HEADER_MEMORY_FULL_PATH@"
+#include_next <memory>
 #endif
 

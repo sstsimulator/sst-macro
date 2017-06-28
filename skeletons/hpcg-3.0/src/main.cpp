@@ -188,6 +188,7 @@ int main(int argc, char * argv[]) {
   if (quickPath) numberOfCalls = 1; //QuickPath means we do on one call of each block of repetitive code
   double t_begin = mytimer();
   for (int i=0; i< numberOfCalls; ++i) {
+
     ierr = ComputeSPMV_ref(A, x_overlap, b_computed); // b_computed = A*x_overlap
     if (ierr) HPCG_fout << "Error in call to SpMV: " << ierr << ".\n" << endl;
     ierr = ComputeMG_ref(A, b_computed, x_overlap); // b_computed = Minv*y_overlap
@@ -211,7 +212,7 @@ int main(int argc, char * argv[]) {
   int totalNiters_ref = 0;
   double normr = 0.0;
   double normr0 = 0.0;
-  int refMaxIters = 50;
+  int refMaxIters = 5; //50 in regular code
   numberOfCalls = 1; // Only need to run the residual reduction analysis once
 
   // Compute the residual reduction for the natural ordering and reference kernels
@@ -225,7 +226,7 @@ int main(int argc, char * argv[]) {
     totalNiters_ref += niters;
   }
   if (rank == 0 && err_count) HPCG_fout << err_count << " error(s) in call(s) to reference CG." << endl;
-  double refTolerance = normr / normr0;
+  double refTolerance = 0.0; //force to do max iters for SST: normr / normr0;
 
   // Call user-tunable set up function.
   double t7 = mytimer();
@@ -273,7 +274,7 @@ int main(int argc, char * argv[]) {
   err_count = 0;
   int tolerance_failures = 0;
 
-  int optMaxIters = 10*refMaxIters;
+  int optMaxIters = refMaxIters; //*10 in regular version
   int optNiters = refMaxIters;
   double opt_worst_time = 0.0;
 
@@ -316,7 +317,7 @@ int main(int argc, char * argv[]) {
   // The variable total_runtime is the target benchmark execution time in seconds
 
   double total_runtime = params.runningTime;
-  int numberOfCgSets = int(total_runtime / opt_worst_time) + 1; // Run at least once, account for rounding
+  int numberOfCgSets = 1; //int(total_runtime / opt_worst_time) + 1; // Run at least once, account for rounding
 
 #ifdef HPCG_DEBUG
   if (rank==0) {

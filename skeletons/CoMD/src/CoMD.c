@@ -195,6 +195,7 @@ SimFlat* initSimulation(Command cmd)
    sim->domain = initDecomposition(
       cmd.xproc, cmd.yproc, cmd.zproc, globalExtent);
 
+   //printf("lattice=%f cutoff=%f\n", latticeConstant, sim->pot->cutoff);
    sim->boxes = initLinkCells(sim->domain, sim->pot->cutoff);
    sim->atoms = initAtoms(sim->boxes);
 

@@ -88,12 +88,14 @@ int CG_ref(const SparseMatrix & A, CGData & data, const Vector & b, Vector & x,
   TICK(); ComputeSPMV_ref(A, p, Ap);  TOCK(t3); // Ap = A*p
   TICK(); ComputeWAXPBY_ref(nrow, 1.0, b, -1.0, Ap, r); TOCK(t2); // r = b - Ax (x stored in p)
   TICK(); ComputeDotProduct_ref(nrow, r, r, normr, t4);  TOCK(t1);
+#pragma sst init 1 //force super high
   normr = sqrt(normr);
 #ifdef HPCG_DEBUG
   if (A.geom->rank==0) HPCG_fout << "Initial Residual = "<< normr << std::endl;
 #endif
 
   // Record initial residual for convergence testing
+#pragma sst init 1e-12 //force super low
   normr0 = normr;
 
   // Start iterations
@@ -122,6 +124,7 @@ int CG_ref(const SparseMatrix & A, CGData & data, const Vector & b, Vector & x,
     TICK(); ComputeWAXPBY_ref(nrow, 1.0, x, alpha, p, x);// x = x + alpha*p
             ComputeWAXPBY_ref(nrow, 1.0, r, -alpha, Ap, r);  TOCK(t2);// r = r - alpha*Ap
     TICK(); ComputeDotProduct_ref(nrow, r, r, normr, t4); TOCK(t1);
+#pragma sst init 1.0 //force super high
     normr = sqrt(normr);
 #ifdef HPCG_DEBUG
     if (A.geom->rank==0 && (k%print_freq == 0 || k == max_iter))

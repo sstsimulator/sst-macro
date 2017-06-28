@@ -388,6 +388,18 @@ ComputeVisitor::checkStmtPragmas(Stmt* s)
 }
 
 void
+ComputeVisitor::visitBodyIfStmt(IfStmt *stmt, Loop::Body &body)
+{
+  auto matches = pragmas.getMatches(stmt);
+  //by default, always assume an if statement is false
+  if (matches.empty()){
+    warn(stmt->getLocStart(), CI,
+         "if-stmt inside compute block has no prediction hint - assuming always false");
+    return;
+  }
+}
+
+void
 ComputeVisitor::visitBodyDeclStmt(DeclStmt* stmt, Loop::Body& body)
 {
   if (!stmt->isSingleDecl()){
@@ -431,6 +443,7 @@ ComputeVisitor::addOperations(Stmt* stmt, Loop::Body& body, bool isLHS)
     body_case(CStyleCastExpr,stmt,body,isLHS);
     body_case(ArraySubscriptExpr,stmt,body,isLHS);
     body_case(DeclStmt,stmt,body);
+    body_case(IfStmt,stmt,body);
     default:
       break;
   }

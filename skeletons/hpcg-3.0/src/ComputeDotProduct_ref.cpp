@@ -26,6 +26,7 @@
 #include <omp.h>
 #endif
 #include <cassert>
+#include "SparseMatrix.hpp"
 #include "ComputeDotProduct_ref.hpp"
 
 /*!

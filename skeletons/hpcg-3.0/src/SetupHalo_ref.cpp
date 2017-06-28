@@ -39,20 +39,53 @@ using std::endl;
 #include "mytimer.hpp"
 #include <mpi.h>
 
-void setupSkeleton(std::map<int,int>& sendList, std::map<int,int>& receiveList)
+void setupSkeleton(Geometry* geom, std::map<int,int>& sendList, std::map<int,int>& receiveList)
 {
-  int rank; MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  int size; MPI_Comm_size(MPI_COMM_WORLD, &size);
+  global_int_t nx = geom->nx;
+  global_int_t ny = geom->ny;
+  global_int_t nz = geom->nz;
+  global_int_t npx = geom->npx;
+  global_int_t npy = geom->npy;
+  global_int_t npz = geom->npz;
+  global_int_t ipx = geom->ipx;
+  global_int_t ipy = geom->ipy;
+  global_int_t ipz = geom->ipz;
+  global_int_t gnx = nx*npx;
+  global_int_t gny = ny*npy;
+  global_int_t gnz = nz*npz;
 
-  int maxGap = 4;
-  for (int i=0; i < maxGap; ++i){
-    int up = (rank+i)%size;
-    int down = (rank-i+size)%size;
-    sendList[up] = 16;
-    sendList[down] = 16;
-    receiveList[up] = 16;
-    receiveList[down] = 16;
-  }
+  std::set<global_int_t> haveAlready;
+  for (local_int_t iz=0; iz<nz; iz++) {
+    global_int_t giz = ipz*nz+iz;
+    for (local_int_t iy=0; iy<ny; iy++) {
+      global_int_t giy = ipy*ny+iy;
+      for (local_int_t ix=0; ix<nx; ix++) {
+        global_int_t gix = ipx*nx+ix;
+        global_int_t currentGlobalRow = giz*gnx*gny+giy*gnx+gix;
+        for (int sz=-1; sz<=1; sz++) {
+          if (giz+sz>-1 && giz+sz<gnz) {
+            for (int sy=-1; sy<=1; sy++) {
+              if (giy+sy>-1 && giy+sy<gny) {
+                for (int sx=-1; sx<=1; sx++) {
+                  if (gix+sx>-1 && gix+sx<gnx) {
+                    global_int_t curcol = currentGlobalRow+sz*gnx*gny+sy*gnx+sx;
+                    int rankIdOfColumnEntry = ComputeRankOfMatrixRow(*geom, curcol);
+                    if (rankIdOfColumnEntry != geom->rank){
+                      if (haveAlready.find(curcol) == haveAlready.end()){
+                        haveAlready.insert(curcol);
+                        sendList[rankIdOfColumnEntry]++;
+                        receiveList[rankIdOfColumnEntry]++;
+                      }
+                    }
+                  } // end x bounds test
+                } // end sx loop
+              } // end y bounds test
+            } // end sy loop
+          } // end z bounds test
+        } // end sz loop
+      } // end ix loop
+    } // end iy loop
+  } // end iz loop
 }
 
 void setupSkeletonNeighbors(int* neighbors, int* sendLength, std::map<int,int>& sendList,
@@ -138,7 +171,7 @@ void SetupHalo_ref(SparseMatrix & A) {
   // Count number of matrix entries to send and receive
 #pragma sst init localNumberOfRows*27
   local_int_t totalToBeSent = 0;
-#pragma sst instead setupSkeleton(sendList,receiveList);
+#pragma sst instead setupSkeleton(A.geom,sendList,receiveList);
   for (map_iter curNeighbor = sendList.begin(); curNeighbor != sendList.end(); ++curNeighbor) {
     totalToBeSent += (curNeighbor->second).size();
   }
