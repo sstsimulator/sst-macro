@@ -45,6 +45,9 @@ category: SSTDocumentation
          - [2.2.1: Known Issues](#subsubsec:building:dumpi:issues)
       - [Section 2.3: Building with OTF2 (Beta)](#sec:buildingOtf2)
       - [Section 2.4: Building Clang source-to-source support](#sec:buildingClang)
+         - [2.4.1: Building Clang libTooling](#subsec:buildingClanglibTooling)
+            - [The Easy Way: Mac OS X](#subsubsec:libToolingOSX)
+            - [The Hard Way](#subsubsec:libTooling)
       - [Section 2.5: Running an Application](#sec:building:running)
          - [2.5.1: SST Python Scripts](#subsec:SSTPythonScripts)
          - [2.5.2: Building Skeleton Applications](#sec:tutorial:runapp)
@@ -528,11 +531,33 @@ Detailed build and usage instructions can be found on the website.
 
 
 
-\subsection{Building Clang libTooling}
+To enable Clang source-to-source support it is not sufficient to have a Clang compiler.  You have to install a special libTooling library for Clang.
 
-Building Clang support has a few steps (and takes quite a while to build), but is straightforward.
-Having a Clang compiler is not enough. You have to install a special libTooling library for Clang.
-Go to http://releases.llvm.org/download.html. Instead of having an all-in-one tarball, you will have to download 6 different components:
+#### 2.4.1: Building Clang libTooling<a name="subsec:buildingClanglibTooling"></a>
+
+
+
+##### The Easy Way: Mac OS X<a name="subsubsec:libToolingOSX"></a>
+
+
+Using MacPorts on OS X, it is trivial to obtain a Clang installation that includes libTooling:
+
+````
+port install clang-devel
+````
+
+MacPorts will place the Clang compilers in /opt/local/bin.  Enable the devel version of Clang with:
+
+````
+port select --set clang mp-clang-devel
+````
+
+##### The Hard Way<a name="subsubsec:libTooling"></a>
+
+
+For operating systems other than OS X, building Clang support has a few steps (and takes quite a while to build), but is straightforward.
+Instead of having an all-in-one tarball, you will have to download 6 different components.
+Obtain the following from http://releases.llvm.org/download.html.
 
 
 -   LLVM source code
