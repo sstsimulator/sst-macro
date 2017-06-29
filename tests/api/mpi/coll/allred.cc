@@ -56,7 +56,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace allred {
 
 global_int count, size, rank;
-global_int cerrcnt;
+global_int cerrcnt(0);
 
 struct int_test { int a; int b; };
 struct long_test { long a; int b; };
@@ -428,6 +428,7 @@ int allred( int argc, char **argv )
     }
 
     test_types_set2(sum, 1);
+
     test_types_set2(max, 1);
     test_types_set2(min, 1);
 

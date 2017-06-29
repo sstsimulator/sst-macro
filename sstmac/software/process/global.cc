@@ -51,17 +51,37 @@ int sstmac_global_stacksize = 0;
 namespace sstmac {
 
 int GlobalVariable::stackOffset = 0;
-char GlobalVariable::globalInits[SSTMAC_MAX_GLOBALS];
+int GlobalVariable::allocSize = 4096;
+char* GlobalVariable::globalInits = nullptr;
 
 GlobalVariable::GlobalVariable(int &offset, const int size, const void *initData)
 {
+
   const_cast<int&>(offset) = stackOffset;
 
   int rem = size % 4;
   int offsetIncrement = rem ? (size + (4-rem)) : size; //align on 32-bits
 
+  bool realloc = globalInits == nullptr;
+  while ((offsetIncrement + stackOffset) > allocSize){
+    realloc = true;
+    allocSize *= 2; //grow until big enough
+  }
+
+  if (realloc){
+    char* old = globalInits;
+    globalInits = new char[allocSize];
+    if (old){
+      //move everything in that was already there
+      ::memcpy(globalInits, old, stackOffset);
+      delete[] old;
+    }
+  }
+
+
   if (initData){
     void* initStart = (char*)globalInits + stackOffset;
+    fflush(stdout);
     ::memcpy(initStart, initData, size);
   }
 

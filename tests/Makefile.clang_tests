@@ -18,6 +18,7 @@ CLANGTESTS = \
   pragma_sst_null_vector \
   pragma_sst_scoped_replace \
   pragma_sst_replace \
+  pragma_sst_memory \
   pragma_sst_compute \
   pragma_sst_compute_global_var \
   pragma_sst_loop_count \

@@ -195,6 +195,7 @@ SimFlat* initSimulation(Command cmd)
    sim->domain = initDecomposition(
       cmd.xproc, cmd.yproc, cmd.zproc, globalExtent);
 
+   //printf("lattice=%f cutoff=%f\n", latticeConstant, sim->pot->cutoff);
    sim->boxes = initLinkCells(sim->domain, sim->pot->cutoff);
    sim->atoms = initAtoms(sim->boxes);
 
@@ -288,7 +289,6 @@ Validate* initValidate(SimFlat* sim)
    Validate* val = comdMalloc(sizeof(Validate));
 #pragma sst init 0
    val->eTot0 = (sim->ePotential + sim->eKinetic) / sim->atoms->nGlobal;
-#pragma sst init 0
    val->nAtoms0 = sim->atoms->nGlobal;
 
    if (printRank())
@@ -310,7 +310,6 @@ void validateResult(const Validate* val, SimFlat* sim)
      real_t eFinal = (sim->ePotential + sim->eKinetic) / sim->atoms->nGlobal;
 
       int nAtomsDelta = (sim->atoms->nGlobal - val->nAtoms0);
-
       fprintf(screenOut, "\n");
       fprintf(screenOut, "\n");
       fprintf(screenOut, "Simulation Validation:\n");
@@ -335,7 +334,8 @@ void validateResult(const Validate* val, SimFlat* sim)
 void sumAtoms(SimFlat* s)
 {
    // sum atoms across all processers
-   s->atoms->nLocal = 0;
+#pragma sst init s->boxes->nTotalAtoms
+  s->atoms->nLocal = 0;
 #pragma sst compute
    for (int i = 0; i < s->boxes->nLocalBoxes; i++)
    {

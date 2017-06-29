@@ -782,6 +782,17 @@ class terminate_exception : public std::exception
 {
 };
 
+static void* sumi_null_ptr = ((void*)0x123);
+
+static inline bool isNonNull(void* buf){
+  return buf && buf != sumi_null_ptr;
+}
+
+static inline bool isNull(void* buf){
+  return !(sumi::isNonNull(buf));
+}
+
+
 }
 
 

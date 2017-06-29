@@ -94,6 +94,12 @@ docs/manual/manual.pdf
 docs/manual/manual.synctex.gz
 docs/manual/manual.toc
 
+sst.pp.*
+sstGlobals*
+pp.*
+
 *.pyc
+*.o
+*.yaml
 
 sstmac_repo.h

@@ -164,7 +164,9 @@ Domain::Domain(Int_t numRanks, Index_t colLoc,
    // Setup region index sets. For now, these are constant sized
    // throughout the run, but could be changed every cycle to 
    // simulate effects of ALE on the lagrange solver
+   this->numReg() = nr;
    CreateRegionIndexSets(nr, balance);
+
 
    // Setup symmetry nodesets
    SetupSymmetryPlanes(edgeNodes);
@@ -236,6 +238,7 @@ Domain::Domain(Int_t numRanks, Index_t colLoc,
 } // End constructor
 
 
+#pragma sst empty
 ////////////////////////////////////////////////////////////////////////////////
 void
 Domain::BuildMesh(Int_t nx, Int_t edgeNodes, Int_t edgeElems)
@@ -303,34 +306,35 @@ Domain::SetupThreadSupportStructures()
 
   if (numthreads > 1) {
     // set up node-centered indexing of elements 
+   #pragma sst init nullptr
     Index_t *nodeElemCount = new Index_t[numNode()] ;
-
+   #pragma sst compute
     for (Index_t i=0; i<numNode(); ++i) {
       nodeElemCount[i] = 0 ;
     }
-
+   #pragma sst compute
     for (Index_t i=0; i<numElem(); ++i) {
       Index_t *nl = nodelist(i) ;
       for (Index_t j=0; j < 8; ++j) {
 	++(nodeElemCount[nl[j]] );
       }
     }
-
+  #pragma sst init nullptr
     m_nodeElemStart = new Index_t[numNode()+1] ;
-
+  #pragma sst delete
     m_nodeElemStart[0] = 0;
-
+  #pragma sst compute
     for (Index_t i=1; i <= numNode(); ++i) {
       m_nodeElemStart[i] =
 	m_nodeElemStart[i-1] + nodeElemCount[i-1] ;
     }
-       
+  #pragma sst init nullptr
     m_nodeElemCornerList = new Index_t[m_nodeElemStart[numNode()]];
-
+  #pragma sst compute
     for (Index_t i=0; i < numNode(); ++i) {
       nodeElemCount[i] = 0;
     }
-
+  #pragma sst compute
     for (Index_t i=0; i < numElem(); ++i) {
       Index_t *nl = nodelist(i) ;
       for (Index_t j=0; j < 8; ++j) {
@@ -342,7 +346,9 @@ Domain::SetupThreadSupportStructures()
       }
     }
 
+  #pragma sst delete
     Index_t clSize = m_nodeElemStart[numNode()] ;
+  #pragma sst delete
     for (Index_t i=0; i < clSize; ++i) {
       Index_t clv = m_nodeElemCornerList[i] ;
       if ((clv < 0) || (clv > numElem()*8)) {
@@ -408,7 +414,9 @@ Domain::SetupCommBuffers(Int_t edgeNodes)
 		 (m_rowMax & m_colMax & m_planeMin) +
 		 (m_rowMax & m_colMax & m_planeMax)) * CACHE_COHERENCE_PAD_REAL ;
 
+#pragma sst init nullptr
   this->commDataSend = new Real_t[comBufSize] ;
+#pragma sst init nullptr
   this->commDataRecv = new Real_t[comBufSize] ;
   // prevent floating point exceptions 
   memset(this->commDataSend, 0, comBufSize*sizeof(Real_t)) ;
@@ -429,7 +437,6 @@ Domain::SetupCommBuffers(Int_t edgeNodes)
 /// \param nr
 /// \param balance
 ///
-#pragma sst compute
 void
 Domain::CreateRegionIndexSets(Int_t nr, Int_t balance)
 {
@@ -441,7 +448,6 @@ Domain::CreateRegionIndexSets(Int_t nr, Int_t balance)
    srand(0);
    Index_t myRank = 0;
 #endif
-   this->numReg() = nr;
    m_regElemSize = new Index_t[numReg()];
    m_regElemlist = new Index_t*[numReg()];
    Index_t nextIndex = 0;
@@ -449,11 +455,12 @@ Domain::CreateRegionIndexSets(Int_t nr, Int_t balance)
    // Fill out the regNumList with material numbers, which are always
    // the region index plus one
    if(numReg() == 1) {
-      while (nextIndex < numElem()) {
-	 this->regNumList(nextIndex) = 1;
-         nextIndex++;
-      }
-      regElemSize(0) = 0;
+    #pragma sst delete
+     while (nextIndex < numElem()) {
+      this->regNumList(nextIndex) = 1;
+      nextIndex++;
+     }
+     regElemSize(0) = 0;
    }
    //If we have more than one region distribute the elements.
    else {
@@ -472,6 +479,7 @@ Domain::CreateRegionIndexSets(Int_t nr, Int_t balance)
 	 regBinEnd[i] = costDenominator;  //Chance of hitting a given region is (regBinEnd[i] - regBinEdn[i-1])/costDenominator
       }
       //Until all elements are assigned
+  #pragma sst delete
       while (nextIndex < numElem()) {
 	 //pick the region
 	 regionVar = rand() % costDenominator;
@@ -513,15 +521,16 @@ Domain::CreateRegionIndexSets(Int_t nr, Int_t balance)
 	    elements = rand() % 1537 + 512;
 	 runto = elements + nextIndex;
 	 //Store the elements.  If we hit the end before we run out of elements then just stop.
-         while (nextIndex < runto && nextIndex < numElem()) {
+    while (nextIndex < runto && nextIndex < numElem()) {
 	    this->regNumList(nextIndex) = regionNum;
 	    nextIndex++;
-	 }
-	 lastReg = regionNum;
+    }
+    lastReg = regionNum;
       } 
    }
    // Convert regNumList to region index sets
    // First, count size of each region 
+#pragma sst delete
    for (Index_t i=0 ; i<numElem() ; ++i) {
       int r = this->regNumList(i)-1; // region index == regnum-1
       regElemSize(r)++;
@@ -529,18 +538,20 @@ Domain::CreateRegionIndexSets(Int_t nr, Int_t balance)
    // Second, allocate each region index set
    for (Index_t i=0 ; i<numReg() ; ++i) {
       m_regElemlist[i] = new Index_t[regElemSize(i)];
+      #pragma sst init numElem() / numReg()
       regElemSize(i) = 0;
    }
    // Third, fill index sets
+#pragma sst compute
    for (Index_t i=0 ; i<numElem() ; ++i) {
       Index_t r = regNumList(i)-1;       // region index == regnum-1
       Index_t regndx = regElemSize(r)++; // Note increment
       regElemlist(r,regndx) = i;
    }
-   
 }
 
 /////////////////////////////////////////////////////////////
+#pragma sst empty
 void 
 Domain::SetupSymmetryPlanes(Int_t edgeNodes)
 {

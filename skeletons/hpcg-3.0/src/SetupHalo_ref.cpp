@@ -37,6 +37,73 @@ using std::endl;
 
 #include "SetupHalo_ref.hpp"
 #include "mytimer.hpp"
+#include <mpi.h>
+
+void setupSkeleton(Geometry* geom, std::map<int,int>& sendList, std::map<int,int>& receiveList)
+{
+  global_int_t nx = geom->nx;
+  global_int_t ny = geom->ny;
+  global_int_t nz = geom->nz;
+  global_int_t npx = geom->npx;
+  global_int_t npy = geom->npy;
+  global_int_t npz = geom->npz;
+  global_int_t ipx = geom->ipx;
+  global_int_t ipy = geom->ipy;
+  global_int_t ipz = geom->ipz;
+  global_int_t gnx = nx*npx;
+  global_int_t gny = ny*npy;
+  global_int_t gnz = nz*npz;
+
+  std::set<global_int_t> haveAlready;
+  for (local_int_t iz=0; iz<nz; iz++) {
+    global_int_t giz = ipz*nz+iz;
+    for (local_int_t iy=0; iy<ny; iy++) {
+      global_int_t giy = ipy*ny+iy;
+      for (local_int_t ix=0; ix<nx; ix++) {
+        global_int_t gix = ipx*nx+ix;
+        global_int_t currentGlobalRow = giz*gnx*gny+giy*gnx+gix;
+        for (int sz=-1; sz<=1; sz++) {
+          if (giz+sz>-1 && giz+sz<gnz) {
+            for (int sy=-1; sy<=1; sy++) {
+              if (giy+sy>-1 && giy+sy<gny) {
+                for (int sx=-1; sx<=1; sx++) {
+                  if (gix+sx>-1 && gix+sx<gnx) {
+                    global_int_t curcol = currentGlobalRow+sz*gnx*gny+sy*gnx+sx;
+                    int rankIdOfColumnEntry = ComputeRankOfMatrixRow(*geom, curcol);
+                    if (rankIdOfColumnEntry != geom->rank){
+                      if (haveAlready.find(curcol) == haveAlready.end()){
+                        haveAlready.insert(curcol);
+                        sendList[rankIdOfColumnEntry]++;
+                        receiveList[rankIdOfColumnEntry]++;
+                      }
+                    }
+                  } // end x bounds test
+                } // end sx loop
+              } // end y bounds test
+            } // end sy loop
+          } // end z bounds test
+        } // end sz loop
+      } // end ix loop
+    } // end iy loop
+  } // end iz loop
+}
+
+void setupSkeletonNeighbors(int* neighbors, int* sendLength, std::map<int,int>& sendList,
+                   int* receiveLength, std::map<int,int>& receiveList)
+{
+  int index = 0;
+  for (auto& pair : sendList){
+    neighbors[index] = pair.first;
+    sendLength[index] = pair.second;
+    ++index;
+  }
+  index = 0;
+  for (auto& pair : receiveList){
+    receiveLength[index] = pair.second;
+    ++index;
+  }
+}
+
 
 /*!
   Reference version of SetupHalo that prepares system matrix data structure and creates data necessary
@@ -51,8 +118,11 @@ void SetupHalo_ref(SparseMatrix & A) {
   // Extract Matrix pieces
 
   local_int_t localNumberOfRows = A.localNumberOfRows;
+#pragma sst null_variable
   char  * nonzerosInRow = A.nonzerosInRow;
+#pragma sst null_variable
   global_int_t ** mtxIndG = A.mtxIndG;
+#pragma sst null_variable
   local_int_t ** mtxIndL = A.mtxIndL;
 
 #ifdef HPCG_NO_MPI  // In the non-MPI case we simply copy global indices to local index storage
@@ -70,17 +140,20 @@ void SetupHalo_ref(SparseMatrix & A) {
   // 1) We call the ComputeRankOfMatrixRow function, which tells us the rank of the processor owning the row ID.
   //  We need to receive this value of the x vector during the halo exchange.
   // 2) We record our row ID since we know that the other processor will need this value from us, due to symmetry.
-
-  std::map< int, std::set< global_int_t> > sendList, receiveList;
+#pragma sst null_type std::map<int,int> size
+  std::map< int, std::set< global_int_t> > sendList;
+#pragma sst null_type std::map<int,int> size
+  std::map< int, std::set< global_int_t> > receiveList;
   typedef std::map< int, std::set< global_int_t> >::iterator map_iter;
   typedef std::set<global_int_t>::iterator set_iter;
+#pragma sst null_variable
   std::map< local_int_t, local_int_t > externalToLocalMap;
 
   // TODO: With proper critical and atomic regions, this loop could be threaded, but not attempting it at this time
 #pragma sst compute
   for (local_int_t i=0; i< localNumberOfRows; i++) {
     global_int_t currentGlobalRow = A.localToGlobalMap[i];
-#pragma sst replace nonzerosInRow 27
+#pragma sst loop_count 27
     for (int j=0; j<nonzerosInRow[i]; j++) {
       global_int_t curIndex = mtxIndG[i][j];
       int rankIdOfColumnEntry = ComputeRankOfMatrixRow(*(A.geom), curIndex);
@@ -96,11 +169,15 @@ void SetupHalo_ref(SparseMatrix & A) {
   }
 
   // Count number of matrix entries to send and receive
+#pragma sst init localNumberOfRows*27
   local_int_t totalToBeSent = 0;
+#pragma sst instead setupSkeleton(A.geom,sendList,receiveList);
   for (map_iter curNeighbor = sendList.begin(); curNeighbor != sendList.end(); ++curNeighbor) {
     totalToBeSent += (curNeighbor->second).size();
   }
+#pragma sst init localNumberOfRows*27
   local_int_t totalToBeReceived = 0;
+#pragma sst delete
   for (map_iter curNeighbor = receiveList.begin(); curNeighbor != receiveList.end(); ++curNeighbor) {
     totalToBeReceived += (curNeighbor->second).size();
   }
@@ -128,6 +205,7 @@ void SetupHalo_ref(SparseMatrix & A) {
   int neighborCount = 0;
   local_int_t receiveEntryCount = 0;
   local_int_t sendEntryCount = 0;
+#pragma sst instead setupSkeletonNeighbors(neighbors, sendLength, sendList, receiveLength, receiveList);
   for (map_iter curNeighbor = receiveList.begin(); curNeighbor != receiveList.end(); ++curNeighbor, ++neighborCount) {
     int neighborId = curNeighbor->first; // rank of current neighbor we are processing
     neighbors[neighborCount] = neighborId; // store rank ID of current neighbor

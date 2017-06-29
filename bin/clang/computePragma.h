@@ -61,6 +61,14 @@ class SSTComputePragma : public SSTPragma {
   void visitAndReplaceStmt(clang::Stmt* stmt, clang::Rewriter& r, PragmaConfig& cfg);
 };
 
+class SSTMemoryPragma : public SSTPragma {
+ public:
+  SSTMemoryPragma(const std::string& memSpec) : SSTPragma(Memory), memSpec_(memSpec){}
+ private:
+  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg);
+  std::string memSpec_;
+};
+
 class SSTLoopCountPragma : public SSTPragma {
  public:
   SSTLoopCountPragma(const std::list<clang::Token> &tokens);
@@ -109,6 +117,18 @@ class SSTLoopCountPragmaHandler : public SSTTokenStreamPragmaHandler
     //this actually just maps cleanly into a compute pragma
     return new SSTLoopCountPragma(tokens);
   }
+};
+
+class SSTMemoryPragmaHandler : public SSTTokenStreamPragmaHandler
+{
+ public:
+  SSTMemoryPragmaHandler(SSTPragmaList& plist,
+                        clang::CompilerInstance& CI,
+                        SkeletonASTVisitor& visitor,
+                        std::set<clang::Stmt*>& deld) :
+     SSTTokenStreamPragmaHandler("memory", plist, CI, visitor, deld){}
+ private:
+  SSTPragma* allocatePragma(clang::SourceLocation loc, const std::list<clang::Token> &tokens) const;
 };
 
 class SSTComputePragmaHandler : public SSTSimplePragmaHandler<SSTComputePragma> {

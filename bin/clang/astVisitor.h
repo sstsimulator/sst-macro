@@ -52,6 +52,22 @@ Questions? Contact sst-macro-help@sandia.gov
 #define visitFxn(cls) \
   bool Visit##cls(clang::cls* c){ return TestStmtMacro(c); }
 
+class FirstPassASTVistor : public clang::RecursiveASTVisitor<FirstPassASTVistor>
+{
+ public:
+  FirstPassASTVistor(SSTPragmaList& prgs, clang::Rewriter& rw,
+                     PragmaConfig& cfg);
+
+  bool VisitDecl(clang::Decl* d);
+  bool VisitStmt(clang::Stmt* s);
+
+ private:
+  SSTPragmaList& pragmas_;
+  PragmaConfig& pragmaConfig_;
+  clang::Rewriter& rewriter_;
+  bool noSkeletonize_;
+};
+
 /**
  * @brief The SkeletonASTVisitor class
  *
@@ -67,12 +83,14 @@ Questions? Contact sst-macro-help@sandia.gov
 class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor> {
  public:
   SkeletonASTVisitor(clang::Rewriter &R,
-                       GlobalVarNamespace& ns,
-                       std::set<clang::Stmt*>& deld) :
+                     GlobalVarNamespace& ns,
+                     std::set<clang::Stmt*>& deld,
+                     PragmaConfig& cfg) :
     rewriter_(R), visitingGlobal_(false), deletedStmts_(deld),
     globalNs_(ns), currentNs_(&ns),
     insideCxxMethod_(0),
-    foundCMain_(false), keepGlobals_(false), noSkeletonize_(true)
+    foundCMain_(false), keepGlobals_(false), noSkeletonize_(true),
+    pragmaConfig_(cfg)
   {
     initHeaders();
     initReservedNames();
@@ -85,6 +103,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     return globals_.find(expr->getFoundDecl()) != globals_.end();
   }
 
+  PragmaConfig& getPragmaConfig() {
+    return pragmaConfig_;
+  }
+
   std::string getGlobalReplacement(clang::NamedDecl* decl) const {
     auto iter = globals_.find(decl);
     if (iter == globals_.end()){
@@ -94,8 +116,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     return iter->second;
   }
 
-  void addTemplateDefinition(clang::FunctionDecl* decl){
-
+  bool noSkeletonize() const {
+    return noSkeletonize_;
   }
 
   void setCompilerInstance(clang::CompilerInstance& c){
@@ -137,13 +159,17 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    */
   bool VisitCXXNewExpr(clang::CXXNewExpr* expr);
 
+  bool VisitCXXOperatorCallExpr(clang::CXXOperatorCallExpr* expr);
+
+  bool VisitArraySubscriptExpr(clang::ArraySubscriptExpr* expr);
+
   /**
    * @brief VisitCXXNewExpr Capture all usages of operator delete. Rewrite all
    * operator delete calls into SST-specific memory management functions.
    * @param expr
    * @return
    */
-  bool VisitCXXDeleteExpr(clang::CXXDeleteExpr* expr);
+  bool TraverseCXXDeleteExpr(clang::CXXDeleteExpr* expr, DataRecursionQueue* = nullptr);
 
   /**
    * @brief VisitCXXMemberCallExpr Certain function calls get redirected to
@@ -222,6 +248,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   bool TraverseBinaryOperator(clang::BinaryOperator* op, DataRecursionQueue* queue = nullptr);
 
+  bool TraverseCompoundAssignOperator(clang::CompoundAssignOperator* op, DataRecursionQueue* queue = nullptr);
+
   bool TraverseIfStmt(clang::IfStmt* S, DataRecursionQueue* queue = nullptr);
 
   bool TraverseCompoundStmt(clang::CompoundStmt* S, DataRecursionQueue* queue = nullptr);
@@ -240,6 +268,13 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     return TraverseUnaryOperator(op,queue); \
   }
   UNARYOP_LIST()
+#undef OPERATOR
+
+#define OPERATOR(NAME) \
+  bool TraverseBin##NAME##Assign(clang::CompoundAssignOperator* op, DataRecursionQueue* queue = nullptr){ \
+    return TraverseCompoundAssignOperator(op,queue); \
+  }
+  CAO_LIST()
 #undef OPERATOR
 
   /**
@@ -343,13 +378,17 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::list<clang::CXXRecordDecl*> class_contexts_;
   std::list<clang::ForStmt*> loop_contexts_;
   std::list<clang::Stmt*> stmt_contexts_;
+
+  typedef enum { LHS, RHS } BinOpSide;
+  std::list<BinOpSide> sides_;
+
   bool foundCMain_;
   std::string mainName_;
   bool keepGlobals_;
   bool noSkeletonize_;
   std::set<std::string> validHeaders_;
   std::set<std::string> reservedNames_;
-  PragmaConfig pragmaConfig_;
+  PragmaConfig& pragmaConfig_;
   std::map<clang::Stmt*,SSTPragma*> activePragmas_;
 
   typedef void (SkeletonASTVisitor::*MPI_Call)(clang::CallExpr* expr);
@@ -453,6 +492,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    * @param insertLoc The source location where the text should go
    */
   void declareSSTExternVars(clang::SourceLocation insertLoc);
+
 };
 
 

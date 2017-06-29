@@ -68,7 +68,7 @@ int WriteProblem( const Geometry & geom, const SparseMatrix & A,
     if (fA) fclose(fA);
     return -1;
   }
-
+#pragma sst delete
   for (global_int_t i=0; i< nrow; i++) {
     const double * const currentRowValues = A.matrixValues[i];
     const global_int_t * const currentRowIndices = A.mtxIndG[i];

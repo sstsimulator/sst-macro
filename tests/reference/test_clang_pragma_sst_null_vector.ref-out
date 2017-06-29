@@ -4,8 +4,8 @@ struct vector {
 
  void resize(int size){
   if (size != size_){
-    conditional_delete_array<T>(this->storage_);
-    storage_ = conditional_array_new<T>(size);
+    delete[] storage_;
+    storage_ = new T[size];
     size_ = size;
   }
  }
@@ -29,14 +29,14 @@ struct vector {
 
 int fxn()
 {
- should_skip_operator_new()++;vector<double> vec;should_skip_operator_new()--;
-  should_skip_operator_new()++;vec.resize(100);should_skip_operator_new()--;
+ sstmac::vector vec;
+  vec.resize(100);
 
   ;
 
   int n = vec.size();
 
- { uint64_t flops=0; uint64_t readBytes=0; uint64_t writeBytes=0; uint64_t intops=0; {  int tripCount0=(((vec.size())-(0)));  flops += tripCount0*1;}sstmac_compute_detailed(flops,intops,readBytes); /*assume write-through for now*/ }
+ { uint64_t flops=0; uint64_t readBytes=0; uint64_t writeBytes=0; uint64_t intops=0; {  uint64_t tripCount0=(((vec.size())-(0)));  flops += tripCount0*1;}sstmac_compute_detailed(flops,intops,readBytes); /*assume write-through for now*/ }
 
 
 

@@ -127,8 +127,13 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   objTarget = None
   ldTarget = None
   getObjTarget = False
+  givenStdFlag = None
   for arg in sysargs:
     sarg = arg.strip().strip("'")
+    #okay, well, the flags might have literal quotes in them
+    #which get lost passing into here - restore all " to literal quotes
+    sarg = sarg.replace("\"",r'\"')
+    sarg = sarg.replace(" ", r'\ ')
     if sarg.endswith('.o'):
       objectFiles.append(sarg)
       if getObjTarget:
@@ -150,6 +155,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     elif sarg == "-g":
       givenFlags.append(sarg)
       optFlags.append(sarg)
+    elif "-std=" in sarg:
+      givenStdFlag=sarg
     elif sarg.endswith('.cpp') or sarg.endswith('.cc') or sarg.endswith('.c') or sarg.endswith(".cxx"):
       sourceFiles.append(sarg)
     elif sarg.endswith('.S'):
@@ -220,16 +227,23 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     ld = cxx #always use c++ for linking since we are bringing a bunch of sstmac C++ into the game
 
   sstCompilerFlags = []
+  sstStdFlag = None
   for flag in sstCompilerFlagsStr.split():
-    if not flag.startswith("-O") and not flag == "-g":
+    if "-std=" in flag:
+      sstStdFlag = flag
+    elif not flag.startswith("-O") and not flag == "-g":
       sstCompilerFlags.append(flag)
   sstCompilerFlagsStr = " ".join(sstCompilerFlags)
 
   sstCxxFlagsStr = cleanFlag(sstCxxFlagsStr)
   sstCxxFlags = []
+  sstStdFlag = None
   for flag in sstCxxFlagsStr.split():
     if not flag.startswith("-O") and not flag == "-g":
       sstCxxFlags.append(flag)
+    if "-std=" in flag:
+      #don't automatically propagate the sst c++11 flag...
+      sstStdFlag = flag
   sstCxxFlagsStr = " ".join(sstCxxFlags)
     
   sstCFlagsStr = cleanFlag(sstCFlagsStr)
@@ -251,6 +265,25 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     else:
       sstCompilerFlags.append(entry)
   sstCompilerFlagsStr = " ".join(sstCompilerFlags)
+
+  #okay, figure out which -std flag to include in compilation
+  #treat it as a given flag on the command line
+
+  if typ == "c++":
+    if sstStdFlag and givenStdFlag:
+      #take whichever is greater
+      if sstStdFlag > givenStdFlag:
+        givenFlags.append(sstStdFlag)
+      else:
+        givenFlags.append(givenStdFlag)
+    elif sstStdFlag:
+      givenFlags.append(sstStdFlag)
+    elif givenStdFlag:
+      givenFlags.append(givenStdFlag)
+    else:
+      sys.stderr.write("no -std= flag obtained from SST - how did you compiled without C++11 or greater?")
+      return 1
+    
 
   directIncludesStr = " ".join(directIncludes)
 
@@ -440,7 +473,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       ]
       target = objTarget
       if not objTarget:
-        target = swapSuffix("o", srcFile)
+        srcName = os.path.split(srcFile)[-1]
+        target = swapSuffix("o", srcName)
       cmdArr.append("-o")
       cmdArr.append(target)
       cmdArr.append("-c")
@@ -486,36 +520,13 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     allObjects = []
     for srcFile in sourceFiles:
       srcFileNoSuffix = ".".join(srcFile.split(".")[:-1])
-      cxxInitObjFile = addPrefix("sstGlobals.", srcFile) + ".o"
+      cxxInitObjFile = addPrefix("sstGlobals.", swapSuffix("o",srcFile))
       if exeFromSrc:
         if objTarget:
           allObjects.append(objTarget)
         else:
           allObjects.append(swapSuffix("o", srcFile))
         allObjects.append(cxxInitObjFile)
-      #now we have to merge the src-to-src generated .o with cxx linkage .o
-      #we need to generate a .o for each source file
-      #No, don't do this anymore
-      #This linux linker is stupid and can't do partial linking properly
-      #Instead compile directly to the object target and then add the sstGlobals.o
-      #files to the final linking  stage
-      #cmdArr = mergeCmdArr[:]
-      #target = objTarget
-      #if manyObjects: 
-      #  target = srcObjTarget
-      #cmdArr.append("-o")
-      #cmdArr.append(target)
-      #cmdArr.append(srcTformObjFile)
-      #cmdArr.append(cxxInitObjFile)
-      #cxxMergeCmd = " ".join(cmdArr)
-      #if verbose: sys.stderr.write("%s\n" % cxxMergeCmd)
-      #rc, output = getstatusoutput(cxxMergeCmd)
-      #if delTempFiles:
-      #  os.system("rm -f %s %s" % (srcTformObjFile, cxxInitObjFile))
-      #if not rc == 0:
-      #  delete(allObjects)
-      #  sys.stderr.write("deglobal merge error on %s:\n%s\n" % (target, output))
-      #  return rc
 
     if exeFromSrc:
       if ldCmdArr:

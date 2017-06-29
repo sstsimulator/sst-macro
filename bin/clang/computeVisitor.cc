@@ -240,22 +240,18 @@ ComputeVisitor::visitBodyBinaryOperator(BinaryOperator* op, Loop::Body& body)
     case BO_Sub:
       if (op->getType()->isIntegerType()) {
         body.intops += 1;
-      }
-      else if (op->getType()->isFloatingType()) {
+      } else if (op->getType()->isFloatingType()) {
         body.flops += 1;
-      }
-      else if (op->getType()->isPointerType()){
+      } else if (op->getType()->isPointerType()){
         body.intops += 1;
-      }
-      else if (op->getType()->isDependentType()){
+      } else if (op->getType()->isDependentType()){
         //this better be a template type
         const Type* ty = op->getLHS()->getType().getTypePtr();
         if (!isa<const TemplateTypeParmType>(ty)){
           errorAbort(op->getLocStart(), CI,
                      "binary operator has non-template dependent type");
         }
-      }
-      else {
+      } else {
         errorAbort(op->getLocStart(), CI,
                    "binary operator in skeletonized loop does not operate on int or float types");
       }
@@ -392,6 +388,18 @@ ComputeVisitor::checkStmtPragmas(Stmt* s)
 }
 
 void
+ComputeVisitor::visitBodyIfStmt(IfStmt *stmt, Loop::Body &body)
+{
+  auto matches = pragmas.getMatches(stmt);
+  //by default, always assume an if statement is false
+  if (matches.empty()){
+    warn(stmt->getLocStart(), CI,
+         "if-stmt inside compute block has no prediction hint - assuming always false");
+    return;
+  }
+}
+
+void
 ComputeVisitor::visitBodyDeclStmt(DeclStmt* stmt, Loop::Body& body)
 {
   if (!stmt->isSingleDecl()){
@@ -435,6 +443,7 @@ ComputeVisitor::addOperations(Stmt* stmt, Loop::Body& body, bool isLHS)
     body_case(CStyleCastExpr,stmt,body,isLHS);
     body_case(ArraySubscriptExpr,stmt,body,isLHS);
     body_case(DeclStmt,stmt,body);
+    body_case(IfStmt,stmt,body);
     default:
       break;
   }
@@ -635,7 +644,7 @@ void
 ComputeVisitor::addLoopContribution(std::ostream& os, Loop& loop)
 {
   os << "{ ";
-  os << " int tripCount" << loop.body.depth << "=";
+  os << " uint64_t tripCount" << loop.body.depth << "=";
   if (loop.body.depth > 0){
     os << "tripCount" << (loop.body.depth-1) << "*";
   }
@@ -653,6 +662,11 @@ ComputeVisitor::addLoopContribution(std::ostream& os, Loop& loop)
       os << " intops += tripCount" << loop.body.depth << "*" << loop.body.intops << ";";
   }
 
+#if 0
+    printf("trip%d=%s,flops=%d,read=%d,write=%d,ops=%d\n",
+         loop.body.depth, loop.tripCount.c_str(),
+         loop.body.flops, loop.body.readBytes, loop.body.writeBytes, loop.body.intops);
+#endif
   auto end = loop.body.subLoops.end();
   for (auto iter=loop.body.subLoops.begin(); iter != end; ++iter){
     addLoopContribution(os, *iter);
@@ -666,22 +680,17 @@ ComputeVisitor::setContext(Stmt* stmt){
 }
 
 void
-ComputeVisitor::replaceStmt(Stmt* stmt, Rewriter& r, Loop& loop)
+ComputeVisitor::replaceStmt(Stmt* stmt, Rewriter& r, Loop& loop, PragmaConfig& cfg)
 {
   std::stringstream sstr;
   sstr << "{ uint64_t flops=0; uint64_t readBytes=0; uint64_t writeBytes=0; uint64_t intops=0; ";
   addLoopContribution(sstr, loop);
+  if (cfg.computeMemorySpec.size() != 0){
+    //overwrite the static analysis
+    sstr << "readBytes=" << cfg.computeMemorySpec << ";";
+  }
   sstr << "sstmac_compute_detailed(flops,intops,readBytes); /*assume write-through for now*/";
   sstr << " }";
-
-  PresumedLoc start = CI.getSourceManager().getPresumedLoc(stmt->getLocStart());
-  PresumedLoc stop = CI.getSourceManager().getPresumedLoc(stmt->getLocEnd());
-  int numLinesDeleted = stop.getLine() - start.getLine();
-  //to preserve the correspondence of line numbers
-  for (int i=0; i < numLinesDeleted; ++i){
-    sstr << "\n";
-  }
-
-  r.ReplaceText(stmt->getSourceRange(), sstr.str());
+  replace(stmt,r,sstr.str(),CI);
 }
 
