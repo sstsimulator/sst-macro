@@ -207,7 +207,8 @@ parse_opts(int argc, char **argv, opts &oo)
   }
 
   if (oo.configfile == "" && need_config_file){
-    spkt_abort_printf("need to specify input file with -f flag");
+    std::cerr << "need to specify input file with -f flag" << std::endl;
+    return PARSE_OPT_EXIT_SUCCESS;
   }
 
   if (print_params) {

@@ -110,10 +110,9 @@ SkeletonASTVisitor::initHeaders()
   }
 
   std::string line;
-  char fullpath[256];
   while (ifs.good()){
     std::getline(ifs, line);
-    validHeaders_.insert(fullpath);
+    validHeaders_.insert(line);
   }
 }
 
@@ -129,14 +128,13 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
   SourceLocation headerLoc = ploc.getIncludeLoc();
 
   bool useAllHeaders = false;
-  std::set<std::string> validHeaders;
   if (headerLoc.isValid() && !useAllHeaders){
     //we are inside a header
     char fullpathBuffer[1024];
-    std::string filename = ci_->getSourceManager().getFilename(startLoc).str();
-    const char* fullpath = realpath(filename.c_str(), fullpathBuffer);
+    const char* fullpath = realpath(ploc.getFilename(), fullpathBuffer);
     //is this in the list of valid headers
-    return validHeaders.find(fullpath) != validHeaders.end();
+    bool validHeader =  validHeaders_.find(fullpath) != validHeaders_.end();
+    return validHeader;
   }
   //not a header - good to go
   return true;
@@ -496,7 +494,10 @@ SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue)
   stmt_contexts_.push_back(expr);
   TraverseStmt(expr->getCallee());
   for (int i=0; i < expr->getNumArgs(); ++i){
-    TraverseStmt(expr->getArg(i));
+    Expr* arg = expr->getArg(i);
+    if (deletedStmts_.find(arg) == deletedStmts_.end()){
+      TraverseStmt(arg);
+    }
   }
   stmt_contexts_.pop_back();
 
@@ -529,11 +530,11 @@ SkeletonASTVisitor::declareStaticInitializers(const std::string& scope_unique_va
 
 bool
 SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
-                                       const std::string& init_prefix,
-                                       SourceLocation externVarsInsertLoc,
-                                       SourceLocation getRefInsertLoc,
-                                       GlobalRedirect_t red_ty,
-                                       VarDecl* D)
+                                   const std::string& init_prefix,
+                                   SourceLocation externVarsInsertLoc,
+                                   SourceLocation getRefInsertLoc,
+                                   GlobalRedirect_t red_ty,
+                                   VarDecl* D)
 {
 
   std::string& varRepl = globals_[D];
@@ -553,6 +554,17 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
     varRepl = "(*" + currentNs_->nsPrefix() + "get_" + scopeUniqueVarName + "())";
   }
 
+  if (ty->isStructureType()){
+    RecordDecl* recDecl = ty->getAsStructureType()->getDecl();
+    if (recDecl->getNameAsString() == ""){
+      //is anon doesn't work, I don't know why
+      std::string typeName = D->getNameAsString() + "_anonymous_type";
+      SourceLocation openBrace = recDecl->getBraceRange().getBegin();
+      rewriter_.InsertText(openBrace, "  " + typeName, false, false);
+      retType = "struct " + typeName + "*";
+    }
+  }
+
   //std::string str;
   {std::string empty;
   llvm::raw_string_ostream os(empty);
@@ -568,7 +580,9 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
     }
   }
   if (externVarsInsertLoc.isInvalid()){
-    errorAbort(D->getLocStart(), *ci_, "got bad global variable source location");
+    errorAbort(D->getLocStart(), *ci_,
+               "got bad global variable source location - maybe this is a multi-declaration? "
+               "this breaks current source-2-source");
   }
   rewriter_.InsertText(externVarsInsertLoc, os.str());}
 
@@ -615,7 +629,7 @@ SkeletonASTVisitor::checkGlobalVar(VarDecl* D)
   SourceLocation end = getEndLoc(D);
   if (end.isInvalid()){
     errorAbort(D->getLocStart(), *ci_,
-               "Multi-variable declrations for global variables not allowed");
+               "Multi-variable declarations for global variables not allowed");
   }
   return setupGlobalVar("", "", end, end, Extern, D);
 }
@@ -1017,7 +1031,11 @@ SkeletonASTVisitor::TraverseBinaryOperator(BinaryOperator* op, DataRecursionQueu
 bool
 SkeletonASTVisitor::TraverseIfStmt(IfStmt* stmt, DataRecursionQueue* queue)
 {
-  VisitStmt(stmt);
+  bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(stmt);
+  if (skipVisit){
+    return true;
+  }
+
   stmt_contexts_.push_back(stmt);
   TraverseStmt(stmt->getCond());
   TraverseStmt(stmt->getThen());
@@ -1206,6 +1224,7 @@ SkeletonASTVisitor::activatePragmasForStmt(Stmt* S)
       errorAbort(S->getLocStart(), *ci_,
            "code block deleted by pragma - invalid pragma combination");
     }
+
     pragmaConfig_.pragmaDepth++;
     activePragmas_[S] = prg;
     //pragma takes precedence - must occur in pre-visit

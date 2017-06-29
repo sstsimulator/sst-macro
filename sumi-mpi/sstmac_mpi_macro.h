@@ -113,6 +113,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define MPI_Iscatterv sumi::sstmac_mpi()->iscatterv
 #define MPI_Ialltoall sumi::sstmac_mpi()->ialltoall
 #define MPI_Ialltoallv sumi::sstmac_mpi()->ialltoallv
+#define MPI_Ialltoallw sumi::sstmac_mpi()->ialltoallw
 #define MPI_Wtime sumi::sstmac_mpi()->wtime
 #define MPI_Disable_Payloads sumi::sstmac_mpi()->disable_Payloads
 #define MPI_Enable_Payloads sumi::sstmac_mpi()->enable_Payloads
@@ -261,6 +262,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define MPI_Iscatterv sstmac_iscatterv
 #define MPI_Ialltoall sstmac_ialltoall
 #define MPI_Ialltoallv sstmac_ialltoallv
+#define MPI_Ialltoallw sstmac_ialltoallw
 #define MPI_Wtime sstmac_wtime
 #define MPI_Disable_Payloads sstmac_disable_Payloads
 #define MPI_Enable_Payloads sstmac_enable_Payloads

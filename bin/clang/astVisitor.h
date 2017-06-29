@@ -116,8 +116,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     return iter->second;
   }
 
-  void addTemplateDefinition(clang::FunctionDecl* decl){
-
+  bool noSkeletonize() const {
+    return noSkeletonize_;
   }
 
   void setCompilerInstance(clang::CompilerInstance& c){

@@ -176,11 +176,12 @@ mpi_api::~mpi_api()
   }
 }
 
-void
+int
 mpi_api::abort(MPI_Comm comm, int errcode)
 {
   spkt_throw_printf(sprockit::value_error,
     "MPI rank %d exited with code %d", rank_, errcode);
+  return MPI_SUCCESS;
 }
 
 int
