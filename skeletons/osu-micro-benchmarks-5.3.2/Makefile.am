@@ -1,0 +1,8 @@
+SUBDIRS =
+
+if MPI
+    SUBDIRS += mpi
+endif
+
+
+EXTRA_DIST = README CHANGES COPYRIGHT

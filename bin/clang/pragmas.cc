@@ -43,6 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include "pragmas.h"
+#include "astVisitor.h"
 #include <sstream>
 
 using namespace clang;
@@ -63,6 +64,10 @@ std::list<SSTPragma*> pendingPragmas;
 void
 SSTPragmaHandler::configure(Token& PragmaTok, Preprocessor& PP, SSTPragma* fsp)
 {
+  //activate no pragmas
+  if (visitor_.noSkeletonize())
+    return;
+
   pragmaDepth++;
   maxPragmaDepth++;
   pragmas_.push_back(fsp);
@@ -415,12 +420,9 @@ SSTNullVariablePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 {
   if (s->getStmtClass() == Stmt::DeclStmtClass){
     DeclStmt* ds = cast<DeclStmt>(s);
-    Decl* d = ds->getSingleDecl();
-    if (d == nullptr){
-      errorAbort(s->getLocStart(), *CI,
-                 "pragma null_variable only valid for single declarations");
+    for (auto iter=ds->decl_begin(); iter != ds->decl_end(); ++iter){
+      activate(*iter,r,cfg);
     }
-    activate(d,r,cfg);
   } else {
     errorAbort(s->getLocStart(), *CI,
         "pragma null_variable should only apply to declaration statements");

@@ -130,6 +130,10 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   givenStdFlag = None
   for arg in sysargs:
     sarg = arg.strip().strip("'")
+    #okay, well, the flags might have literal quotes in them
+    #which get lost passing into here - restore all " to literal quotes
+    sarg = sarg.replace("\"",r'\"')
+    sarg = sarg.replace(" ", r'\ ')
     if sarg.endswith('.o'):
       objectFiles.append(sarg)
       if getObjTarget:
@@ -264,19 +268,21 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
 
   #okay, figure out which -std flag to include in compilation
   #treat it as a given flag on the command line
-  if sstStdFlag and givenStdFlag:
-    #take whichever is greater
-    if sstStdFlag > givenStdFlag:
+
+  if typ == "c++":
+    if sstStdFlag and givenStdFlag:
+      #take whichever is greater
+      if sstStdFlag > givenStdFlag:
+        givenFlags.append(sstStdFlag)
+      else:
+        givenFlags.append(givenStdFlag)
+    elif sstStdFlag:
       givenFlags.append(sstStdFlag)
-    else:
+    elif givenStdFlag:
       givenFlags.append(givenStdFlag)
-  elif sstStdFlag:
-    givenFlags.append(sstStdFlag)
-  elif givenStdFlag:
-    givenFlags.append(givenStdFlag)
-  else:
-    sys.stderr.write("no -std= flag obtained from SST - how did you compiled without C++11 or greater?")
-    return 1
+    else:
+      sys.stderr.write("no -std= flag obtained from SST - how did you compiled without C++11 or greater?")
+      return 1
     
 
   directIncludesStr = " ".join(directIncludes)
@@ -521,29 +527,6 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         else:
           allObjects.append(swapSuffix("o", srcFile))
         allObjects.append(cxxInitObjFile)
-      #now we have to merge the src-to-src generated .o with cxx linkage .o
-      #we need to generate a .o for each source file
-      #No, don't do this anymore
-      #This linux linker is stupid and can't do partial linking properly
-      #Instead compile directly to the object target and then add the sstGlobals.o
-      #files to the final linking  stage
-      #cmdArr = mergeCmdArr[:]
-      #target = objTarget
-      #if manyObjects: 
-      #  target = srcObjTarget
-      #cmdArr.append("-o")
-      #cmdArr.append(target)
-      #cmdArr.append(srcTformObjFile)
-      #cmdArr.append(cxxInitObjFile)
-      #cxxMergeCmd = " ".join(cmdArr)
-      #if verbose: sys.stderr.write("%s\n" % cxxMergeCmd)
-      #rc, output = getstatusoutput(cxxMergeCmd)
-      #if delTempFiles:
-      #  os.system("rm -f %s %s" % (srcTformObjFile, cxxInitObjFile))
-      #if not rc == 0:
-      #  delete(allObjects)
-      #  sys.stderr.write("deglobal merge error on %s:\n%s\n" % (target, output))
-      #  return rc
 
     if exeFromSrc:
       if ldCmdArr:

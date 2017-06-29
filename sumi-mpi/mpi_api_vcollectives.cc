@@ -227,6 +227,17 @@ mpi_api::ialltoallv(const int *sendcounts, MPI_Datatype sendtype,
                     comm, req);
 }
 
+int
+mpi_api::ialltoallw(const void *sendbuf, const int sendcounts[],
+                    const int sdispls[], const MPI_Datatype sendtypes[],
+                    void *recvbuf, const int recvcounts[],
+                    const int rdispls[], const MPI_Datatype recvtypes[],
+                    MPI_Comm comm, MPI_Request *request)
+{
+  spkt_abort_printf("MPI_Ialltoallw: unimplemented"
+                    "but, seriously, why are you using this collective anyway?");
+}
+
 void
 mpi_api::start_gatherv(collectivev_op* op)
 {
