@@ -348,7 +348,7 @@ link_handler*
 pisces_tiled_switch::credit_handler(int port) const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  return new SST::Event::Handler<pisces_switch>(const_cast<pisces_switch*>(this),
+  return new SST::Event::Handler<pisces_tiled_switch>(const_cast<pisces_tiled_switch*>(this),
                           &pisces_tiled_switch::handle_credit);
 #else
   return ack_handler_;
@@ -359,7 +359,7 @@ link_handler*
 pisces_tiled_switch::payload_handler(int port) const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  return new SST::Event::Handler<pisces_switch>(const_cast<pisces_switch*>(this),
+  return new SST::Event::Handler<pisces_tiled_switch>(const_cast<pisces_tiled_switch*>(this),
                           &pisces_tiled_switch::handle_payload);
 #else
   return payload_handler_;
