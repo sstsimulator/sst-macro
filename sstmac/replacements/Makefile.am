@@ -28,9 +28,7 @@ nobase_library_include_HEADERS += \
   clear_symbol_macros.h \
   return_symbol_macros.h \
   sstmac_pthread_return.h \
-  sys/types.h 
-
-nobase_nodist_library_include_HEADERS += \
+  sys/types.h \
   fstream \
   iostream \
   ios \
