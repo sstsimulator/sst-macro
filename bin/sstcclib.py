@@ -239,11 +239,11 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   sstCxxFlags = []
   sstStdFlag = None
   for flag in sstCxxFlagsStr.split():
+    if not flag.startswith("-O") and not flag == "-g":
+      sstCxxFlags.append(flag)
     if "-std=" in flag:
       #don't automatically propagate the sst c++11 flag...
       sstStdFlag = flag
-    elif not flag.startswith("-O") and not flag == "-g":
-      sstCxxFlags.append(flag)
   sstCxxFlagsStr = " ".join(sstCxxFlags)
     
   sstCFlagsStr = cleanFlag(sstCFlagsStr)

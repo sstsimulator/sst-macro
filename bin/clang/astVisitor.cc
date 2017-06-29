@@ -613,6 +613,13 @@ SkeletonASTVisitor::getEndLoc(const VarDecl *D)
 {
   SourceLocation endLoc = Lexer::findLocationAfterToken(D->getLocEnd(), tok::semi,
                                  ci_->getSourceManager(), ci_->getLangOpts(), false);
+  int numTries = 1;
+  while (endLoc.isInvalid() && numTries < 10){
+    SourceLocation newLoc = D->getLocEnd().getLocWithOffset(numTries);
+    endLoc = Lexer::findLocationAfterToken(newLoc, tok::semi,
+                             ci_->getSourceManager(), ci_->getLangOpts(), false);
+    ++numTries;
+  }
   return endLoc;
 }
 
