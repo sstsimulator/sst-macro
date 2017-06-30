@@ -84,7 +84,7 @@ sstmac_clang_deglobal_SOURCES = \
 sstmac_clang_deglobal_CXXFLAGS = -fno-rtti $(AM_CXXFLAGS)
 sstmac_clang_deglobal_CPPFLAGS = $(CLANG_CPPFLAGS) $(AM_CPPFLAGS)
 sstmac_clang_deglobal_LDFLAGS = $(CLANG_LDFLAGS) \
- -Wl,-rpath,$(HOME)/Programs/install/clang-llvm/lib \
+ -Wl,-rpath,@CLANG_INSTALL_DIR@/lib \
  -lclang \
  -lz \
  -lm \

@@ -30,6 +30,8 @@ AC_ARG_WITH(clang,
   ]
 )
 
+CLANG_INSTALL_DIR=$clang
+
 if test "$clang" != "no"; then
   SAVE_LDFLAGS=$LDFLAGS
   SAVE_CPPFLAGS=$CPPFLAGS
@@ -52,6 +54,7 @@ if test "$clang" != "no"; then
     found_clang=yes
     AC_SUBST(CLANG_LDFLAGS)
     AC_SUBST(CLANG_CPPFLAGS)
+    AC_SUBST(CLANG_INSTALL_DIR)
     ,
     found_clang=no
     AC_MSG_ERROR([Unable to find valid Clang libTooling at specified location])
@@ -69,8 +72,8 @@ else
 AM_CONDITIONAL(HAVE_CLANG, true)
 #need to figure out clang absolute include paths
 #because clang libtooling is an abominiation hard-wired to relative paths
-AC_SUBST([CLANG_LIBTOOLING_CXX_FLAGS], "`$srcdir/bin/config_tools/get_clang_includes $clang -E -v -std=c++1y -stdlib=libc++ -x c++ < /dev/null`")
-AC_SUBST([CLANG_LIBTOOLING_C_FLAGS], "`$srcdir/bin/config_tools/get_clang_includes $clang -E -v -- < /dev/null`")
+AC_SUBST([CLANG_LIBTOOLING_CXX_FLAGS], "`$srcdir/bin/config_tools/get_clang_includes $clang -E -v -std=c++1y -stdlib=libc++ -x c++`")
+AC_SUBST([CLANG_LIBTOOLING_C_FLAGS], "`$srcdir/bin/config_tools/get_clang_includes $clang -E -v`")
 fi
 
 ])
