@@ -80,7 +80,8 @@ struct SSTPragma {
     NullType=9,
     KeepIf=10,
     Memory=11,
-    Instead=12
+    Instead=12,
+    Predicate=12
   } class_t;
   clang::StringRef name;
   clang::SourceLocation startLoc;
@@ -253,6 +254,19 @@ class SSTKeepIfPragma : public SSTPragma {
   SSTKeepIfPragma(const std::string& ifCond)
     : ifCond_(ifCond), SSTPragma(KeepIf)
   {}
+ private:
+  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg);
+  std::string ifCond_;
+};
+
+class SSTPredicatePragma : public SSTPragma {
+ public:
+  SSTPredicatePragma(const std::string& ifCond)
+    : ifCond_(ifCond), SSTPragma(Predicate)
+  {}
+  const std::string& predicate() const {
+    return ifCond_;
+  }
  private:
   void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg);
   std::string ifCond_;
@@ -551,6 +565,21 @@ class SSTReturnPragmaHandler : public SSTTokenStreamPragmaHandler
                         SkeletonASTVisitor& visitor,
                         std::set<clang::Stmt*>& deld) :
      SSTTokenStreamPragmaHandler("return", plist, CI, visitor, deld){}
+
+ private:
+  SSTPragma* allocatePragma(clang::SourceLocation loc,
+                            const std::list<clang::Token> &tokens) const;
+
+};
+
+class SSTPredicatePragmaHandler : public SSTTokenStreamPragmaHandler
+{
+ public:
+  SSTPredicatePragmaHandler(SSTPragmaList& plist,
+                        clang::CompilerInstance& CI,
+                        SkeletonASTVisitor& visitor,
+                        std::set<clang::Stmt*>& deld) :
+     SSTTokenStreamPragmaHandler("predicate", plist, CI, visitor, deld){}
 
  private:
   SSTPragma* allocatePragma(clang::SourceLocation loc,

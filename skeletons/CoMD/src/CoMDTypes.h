@@ -75,6 +75,7 @@ typedef struct SimFlatSt
    
    real_t ePotential;     //!< the total potential energy of the system
    real_t eKinetic;       //!< the total kinetic energy of the system
+   real_t initialTemp;
 
    BasePotential *pot;	  //!< the potential
 

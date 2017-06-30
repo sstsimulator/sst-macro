@@ -39,6 +39,8 @@
 #include "eam.h"
 #include "memUtils.h"
 #include "performanceTimers.h"
+#include "random.h"
+#include "constants.h"
 
 #define MAX(A,B) ((A) > (B) ? (A) : (B))
 
@@ -365,7 +367,7 @@ int loadAtomsBuffer(void* vparms, void* data, int face, char* charBuf)
    AtomExchangeParms* parms = (AtomExchangeParms*) vparms;
    SimFlat* s = (SimFlat*) data;
    AtomMsg* buf = (AtomMsg*) charBuf;
-   
+
    real_t* pbcFactor = parms->pbcFactor[face];
    real3 shift;
    shift[0] = pbcFactor[0] * s->domain->globalExtent[0];
@@ -374,9 +376,9 @@ int loadAtomsBuffer(void* vparms, void* data, int face, char* charBuf)
    
    int nCells = parms->nCells[face];
    int* cellList = parms->cellList[face];
-#pragma sst init 2
-   int nBuf = 0;
    int avgAtomsPerBox = s->boxes->nTotalAtoms/s->boxes->nLocalBoxes;
+#pragma sst init nCells*avgAtomsPerBox/2
+   int nBuf = 0;
 #pragma sst compute
    for (int iCell=0; iCell<nCells; ++iCell)
    {
@@ -397,7 +399,6 @@ int loadAtomsBuffer(void* vparms, void* data, int face, char* charBuf)
       }
    }
    s->boxes->nTotalAtoms -= nBuf;
-   //printf("Lowered total atoms by %d to %d\n", nBuf, s->boxes->nTotalAtoms);
    return nBuf*sizeof(AtomMsg);
 }
 
@@ -433,7 +434,6 @@ void unloadAtomsBuffer(void* vparms, void* data, int face, int bufSize, char* ch
       putAtomInBox(s->boxes, s->atoms, gid, type, rx, ry, rz, px, py, pz);
    }
    s->boxes->nTotalAtoms += nBuf;
-   //printf("Added %d atoms to total %d\n", nBuf, s->boxes->nTotalAtoms);
 }
 
 void destroyAtomsExchange(void* vparms)
@@ -560,8 +560,9 @@ int loadForceBuffer(void* vparms, void* vdata, int face, char* charBuf)
    
    int nCells = parms->nCells[face];
    int* cellList = parms->sendCells[face];
-   int nBuf = 0;
    int avgAtomsPerBox = data->boxes->nTotalAtoms/data->boxes->nLocalBoxes;
+#pragma sst init avgAtomsPerBox*nCells;
+   int nBuf = 0;
 #pragma sst compute
    for (int iCell=0; iCell<nCells; ++iCell)
    {
@@ -592,8 +593,9 @@ void unloadForceBuffer(void* vparms, void* vdata, int face, int bufSize, char* c
    
    int nCells = parms->nCells[face];
    int* cellList = parms->recvCells[face];
-   int iBuf = 0;
    int avgAtomsPerBox = data->boxes->nTotalAtoms/data->boxes->nLocalBoxes;
+#pragma sst init bufSize / sizeof(ForceMsg)
+   int iBuf = 0;
 #pragma sst compute
    for (int iCell=0; iCell<nCells; ++iCell)
    {

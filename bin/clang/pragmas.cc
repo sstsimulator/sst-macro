@@ -313,6 +313,16 @@ SSTKeepIfPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 }
 
 void
+SSTPredicatePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+{
+  if (s->getStmtClass() != Stmt::IfStmtClass){
+    errorAbort(s->getLocStart(), *CI, "predicate pragma not applied to if statement");
+  }
+  IfStmt* ifs = cast<IfStmt>(s);
+  replace(ifs->getCond(), r, ifCond_, *CI);
+}
+
+void
 SSTMallocPragma::visitBinaryOperator(BinaryOperator *op, Rewriter &r)
 {
   PrettyPrinter pp;
@@ -639,4 +649,12 @@ SSTEmptyPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token>
   std::stringstream sstr;
   SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
   return new SSTEmptyPragma(sstr.str());
+}
+
+SSTPragma*
+SSTPredicatePragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  std::stringstream sstr;
+  SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
+  return new SSTPredicatePragma(sstr.str());
 }

@@ -63,15 +63,6 @@ void destroyAtoms(Atoms *atoms)
    comdFree(atoms);
 }
 
-int skeletonNumAtoms(int nbasis, const real_t* begin, const real_t* end)
-{
-  double dx = end[0] - begin[0];
-  double dy = end[1] - begin[1];
-  double dz = end[2] - begin[2];
-  double dV = dx*dy*dz;
-  return nbasis * dV;
-}
-
 /// Creates atom positions on a face centered cubic (FCC) lattice with
 /// nx * ny * nz unit cells and lattice constant lat.
 /// Set momenta to zero.
@@ -116,7 +107,6 @@ void createFccLattice(int nx, int ny, int nz, real_t lat, SimFlat* s)
    s->atoms->nGlobal = 0;
  #pragma sst init (nb*nx*ny*nz) / getNRanks()
    s->atoms->nLocal = s->atoms->nLocal;
- #pragma sst init skeletonNumAtoms(nb,localMin,localMax)
    s->boxes->nTotalAtoms = s->atoms->nLocal;
    // set total atoms in simulation
    startTimer(commReduceTimer);
@@ -167,6 +157,7 @@ void setVcm(SimFlat* s, real_t newVcm[3])
 /// the input temperature.
 void setTemperature(SimFlat* s, real_t temperature)
 {
+   s->initialTemp = temperature;
    int avgAtomsPerBox = s->boxes->nTotalAtoms / s->boxes->nLocalBoxes;
   // set initial velocities for the distribution
    #pragma omp parallel for

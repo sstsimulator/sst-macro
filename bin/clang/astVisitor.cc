@@ -536,6 +536,12 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
                                    GlobalRedirect_t red_ty,
                                    VarDecl* D)
 {
+  //const global variables can't change... so....
+  //no reason to do any work tracking them
+  if (D->getType().isConstQualified()){
+    errorAbort(D->getLocStart(), *ci_,
+               "internal compiler error: trying to refactor const global variable");
+  }
 
   std::string& varRepl = globals_[D];
   std::string scopeUniqueVarName = scope_prefix + D->getNameAsString();
@@ -825,6 +831,11 @@ SkeletonASTVisitor::visitVarDecl(VarDecl* D)
     const ImplicitCastExpr* expr2 = cast<const ImplicitCastExpr>(expr1->getSubExpr());
     const StringLiteral* lit = cast<StringLiteral>(expr2->getSubExpr());
     mainName_ = lit->getString();
+    return true;
+  }
+
+  //do not replace const global variables
+  if (D->getType().isConstQualified()){
     return true;
   }
 

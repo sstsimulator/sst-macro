@@ -92,6 +92,8 @@ class memory_message : public message
   double max_bw_;
 };
 
+#define PISCES_MEM_DEFAULT_NUM_CHANNELS 8
+
 class pisces_memory_packetizer : public packetizer
 {
  public:
@@ -112,7 +114,7 @@ class pisces_memory_packetizer : public packetizer
   void inject(int vn, long bytes, long byte_offset, message *payload) override;
 
   bool spaceToSend(int vn, int num_bits) override {
-    return true;
+    return channelFree_[vn];
   }
 
   double max_single_bw() const {
@@ -134,6 +136,7 @@ class pisces_memory_packetizer : public packetizer
   int num_noisy_intervals_;
   packet_allocator* pkt_allocator_;
   event_handler* self_credit_handler_;
+  bool channelFree_[PISCES_MEM_DEFAULT_NUM_CHANNELS];
 
 };
 
@@ -148,7 +151,7 @@ class pisces_memory_model :
 
   virtual ~pisces_memory_model();
 
-  std::string to_string() const {
+  std::string to_string() const override {
     return "packet flow memory model";
   }
 
@@ -156,19 +159,20 @@ class pisces_memory_model :
     memory_model::schedule(t, handler, msg);
   }
 
-  void notify(int vn, message* msg);
+  void notify(int vn, message* msg) override;
 
-  virtual void access(long bytes, double max_bw, callback* cb);
+  void access(long bytes, double max_bw, callback* cb) override;
 
-  double max_single_bw() const {
+  double max_single_bw() const override {
     return mem_packetizer_->max_single_bw();
   }
 
  private:
-  int allocate_channel();
+  void start(int channel, memory_message* msg, callback* cb);
 
  private:
   std::map<message*, callback*> pending_requests_;
+  std::list<std::pair<memory_message*,callback*>> stalled_requests_;
   pisces_memory_packetizer* mem_packetizer_;
   std::list<int> channels_available_;
   int nchannels_;

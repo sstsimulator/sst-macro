@@ -33,7 +33,7 @@ test_blas.$(CHKSUF): test_blas
     ./test_blas --no-wall-time -f $(srcdir)/test_configs/test_compute_blas.ini 
 
 test_blas_finegrained.$(CHKSUF): test_blas
-	$(PYRUNTEST) 6 $(top_srcdir) $@ 't > 0.004 and t < 0.008' \
+	$(PYRUNTEST) 6 $(top_srcdir) $@ 't > 0.08 and t < 0.1' \
     ./test_blas --no-wall-time -f $(srcdir)/test_configs/test_compute_blas_finegrained.ini 
 
 test_node_noise.$(CHKSUF): test_blas

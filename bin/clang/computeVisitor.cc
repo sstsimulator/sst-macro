@@ -345,8 +345,8 @@ ComputeVisitor::visitBodyCallExpr(CallExpr* expr, Loop::Body& body)
       FunctionDecl* def = callee->getDefinition();
       if (!def){
         std::stringstream sstr;
-        sstr << "non-inlineable function " << callee->getNameAsString()
-             << " inside compute-intensive code";
+        sstr << "non-inlineable function '" << callee->getNameAsString()
+             << "' inside compute-intensive code";
         warn(expr->getLocStart(), CI, sstr.str());
       } else {
         addOperations(def->getBody(), body);
@@ -396,6 +396,30 @@ ComputeVisitor::visitBodyIfStmt(IfStmt *stmt, Loop::Body &body)
     warn(stmt->getLocStart(), CI,
          "if-stmt inside compute block has no prediction hint - assuming always false");
     return;
+  }
+
+  if (matches.size() > 1){
+    errorAbort(stmt->getLocStart(), CI,
+               "if-stmt inside compute block should have a single prediction hint,"
+               "multiple pragmas found");
+  }
+
+  SSTPragma* prg = matches.front();
+  if (prg->cls == SSTPragma::Predicate){
+    SSTPredicatePragma* pprg = static_cast<SSTPredicatePragma*>(prg);
+    if (pprg->predicate() == "true"){
+      addOperations(stmt->getThen(), body);
+    } else if (pprg->predicate() == "false"){
+      if (stmt->getElse()){
+        addOperations(stmt->getElse(), body);
+      }
+    } else {
+      errorAbort(stmt->getLocStart(), CI,
+                 "predicate pragma inside skeletonized compute block should only ever be 'true' or 'false'");
+    }
+  } else {
+    errorAbort(stmt->getLocStart(), CI,
+               "only predicate or branch prediction pragmas should be applied to if-stmt");
   }
 }
 

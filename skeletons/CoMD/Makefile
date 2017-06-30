@@ -2,6 +2,8 @@
 
 SHELL = /bin/bash
 
+SKEL = 1
+
 ### CoMD can be built in either double or single precision and with or
 ### without MPI.  Select desired precision and MPI here.
 
@@ -97,7 +99,7 @@ sstmac_headers:
 	$(shell find `pwd`/src -name "*.h" > $@)
 
 %.o: %.c sstmac_headers
-	SSTMAC_SKELETONIZE=1 SSTMAC_HEADERS=`pwd`/sstmac_headers \
+	SSTMAC_SKELETONIZE=$(SKEL) SSTMAC_HEADERS=`pwd`/sstmac_headers \
    ${CC} ${CFLAGS} -c $< -o $@
 
 ${CoMD_EXE}: CoMD_info.h ${OBJECTS} 

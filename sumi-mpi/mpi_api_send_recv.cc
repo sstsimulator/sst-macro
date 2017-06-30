@@ -78,7 +78,7 @@ mpi_api::sendrecv(const void *sendbuf, int sendcount,
  MPI_Datatype recvtype, int source, int recvtag,
  MPI_Comm comm, MPI_Status *status)
 {
-  start_pt2pt_call(MPI_Sendrecv,recvcount,recvtype,source,recvtag,comm);
+  start_pt2pt_call(MPI_Sendrecv,sendcount,sendtype,source,recvtag,comm);
   mpi_request* req = do_isend(sendbuf, sendcount, sendtype, dest, sendtag, comm);
   do_recv(recvbuf, recvcount, recvtype, source, recvtag, comm, status);
   queue_->progress_loop(req);

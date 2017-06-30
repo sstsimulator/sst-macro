@@ -5,6 +5,7 @@
 #endif
 
 #ifdef sstmac_must_return_memset
+#undef memset
 #define memset sstmac_memset
 #undef sstmac_must_return_memset
 #endif
