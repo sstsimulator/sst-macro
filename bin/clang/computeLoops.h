@@ -52,9 +52,15 @@ struct Loop {
     int intops;
     int writeBytes;
     int readBytes;
+    bool hasBranchPrediction() const {
+      return branchPrediction.size() > 0;
+    }
+    std::string branchPrediction;
     std::list<Loop> subLoops;
     Body() : flops(0), intops(0), readBytes(0), writeBytes(0) {}
   };
+
+
 
   std::string tripCount;
   Body body;

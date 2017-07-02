@@ -278,7 +278,7 @@ int eamForce(SimFlat* s)
                   dr[k]=s->atoms->r[iOff][k]-s->atoms->r[jOff][k];
                   r2+=dr[k]*dr[k];
                }
-              #pragma sst predicate true
+              #pragma sst branch_predict 0.17
                if(r2 <= rCut2 && r2 > 0.0)
                {
 
@@ -361,7 +361,7 @@ int eamForce(SimFlat* s)
                   r2+=dr[k]*dr[k];
                }
 
-              #pragma sst predicate true
+              #pragma sst branch_predict 0.17
                if(r2 <= rCut2 && r2 > 0.0)
                {
 

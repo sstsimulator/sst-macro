@@ -166,7 +166,7 @@ ReplaceAction::initPragmas(CompilerInstance& CI)
   CI.getPreprocessor().AddPragmaHandler("sst",
     new SSTInsteadPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTPredicatePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+    new SSTBranchPredictPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
 }
 
 void

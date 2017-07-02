@@ -81,7 +81,7 @@ struct SSTPragma {
     KeepIf=10,
     Memory=11,
     Instead=12,
-    Predicate=12
+    BranchPredict=12
   } class_t;
   clang::StringRef name;
   clang::SourceLocation startLoc;
@@ -259,17 +259,17 @@ class SSTKeepIfPragma : public SSTPragma {
   std::string ifCond_;
 };
 
-class SSTPredicatePragma : public SSTPragma {
+class SSTBranchPredictPragma : public SSTPragma {
  public:
-  SSTPredicatePragma(const std::string& ifCond)
-    : ifCond_(ifCond), SSTPragma(Predicate)
+  SSTBranchPredictPragma(const std::string& prd)
+    : prediction_(prd), SSTPragma(BranchPredict)
   {}
-  const std::string& predicate() const {
-    return ifCond_;
+  const std::string& prediction() const {
+    return prediction_;
   }
  private:
   void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg);
-  std::string ifCond_;
+  std::string prediction_;
 };
 
 class SSTNewPragma : public SSTPragma {
@@ -572,19 +572,20 @@ class SSTReturnPragmaHandler : public SSTTokenStreamPragmaHandler
 
 };
 
-class SSTPredicatePragmaHandler : public SSTTokenStreamPragmaHandler
+class SSTBranchPredictPragmaHandler : public SSTTokenStreamPragmaHandler
 {
  public:
-  SSTPredicatePragmaHandler(SSTPragmaList& plist,
+  SSTBranchPredictPragmaHandler(SSTPragmaList& plist,
                         clang::CompilerInstance& CI,
                         SkeletonASTVisitor& visitor,
                         std::set<clang::Stmt*>& deld) :
-     SSTTokenStreamPragmaHandler("predicate", plist, CI, visitor, deld){}
+     SSTTokenStreamPragmaHandler("branch_predict", plist, CI, visitor, deld){}
 
  private:
   SSTPragma* allocatePragma(clang::SourceLocation loc,
                             const std::list<clang::Token> &tokens) const;
 
 };
+
 
 #endif

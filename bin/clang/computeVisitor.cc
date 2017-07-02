@@ -405,21 +405,32 @@ ComputeVisitor::visitBodyIfStmt(IfStmt *stmt, Loop::Body &body)
   }
 
   SSTPragma* prg = matches.front();
-  if (prg->cls == SSTPragma::Predicate){
-    SSTPredicatePragma* pprg = static_cast<SSTPredicatePragma*>(prg);
-    if (pprg->predicate() == "true"){
+  if (prg->cls == SSTPragma::BranchPredict){
+    SSTBranchPredictPragma* bprg = static_cast<SSTBranchPredictPragma*>(prg);
+    if (bprg->prediction() == "true"){
       addOperations(stmt->getThen(), body);
-    } else if (pprg->predicate() == "false"){
+    } else if (bprg->prediction() == "false"){
       if (stmt->getElse()){
         addOperations(stmt->getElse(), body);
       }
     } else {
-      errorAbort(stmt->getLocStart(), CI,
-                 "predicate pragma inside skeletonized compute block should only ever be 'true' or 'false'");
+      //we have a predict percentage in-between 0 and 1
+      body.subLoops.emplace_back(body.depth+1);
+      Loop& thenLoop = body.subLoops.back();
+      thenLoop.tripCount = "1";
+      thenLoop.body.branchPrediction = bprg->prediction();
+      addOperations(stmt->getThen(), thenLoop.body);
+      if (stmt->getElse()){
+        body.subLoops.emplace_back(body.depth+1);
+        Loop& elseLoop = body.subLoops.back();
+        elseLoop.tripCount = "1";
+        elseLoop.body.branchPrediction = "1-(" + bprg->prediction() + ")";
+        addOperations(stmt->getElse(), elseLoop.body);
+      }
     }
   } else {
     errorAbort(stmt->getLocStart(), CI,
-               "only predicate or branch prediction pragmas should be applied to if-stmt");
+               "only branch prediction pragmas should be applied to if-stmt");
   }
 }
 
@@ -674,16 +685,32 @@ ComputeVisitor::addLoopContribution(std::ostream& os, Loop& loop)
   }
   os << "(" << loop.tripCount << "); ";
   if (loop.body.flops > 0){
-      os << " flops += tripCount" << loop.body.depth << "*" << loop.body.flops << ";";
+      os << " flops += tripCount" << loop.body.depth << "*" << loop.body.flops;
+      if (loop.body.hasBranchPrediction()){
+        os << "*" << loop.body.branchPrediction;
+      }
+      os << ";";
   }
   if (loop.body.readBytes > 0){
-    os << " readBytes += tripCount" << loop.body.depth << "*" << loop.body.readBytes << "; ";
+    os << " readBytes += tripCount" << loop.body.depth << "*" << loop.body.readBytes;
+    if (loop.body.hasBranchPrediction()){
+      os << "*" << loop.body.branchPrediction;
+    }
+    os << "; ";
   }
   if (loop.body.writeBytes > 0){
-    os << " writeBytes += tripCount" << loop.body.depth << "*" << loop.body.writeBytes << "; ";
+    os << " writeBytes += tripCount" << loop.body.depth << "*" << loop.body.writeBytes;
+    if (loop.body.hasBranchPrediction()){
+      os << "*" << loop.body.branchPrediction;
+    }
+    os << "; ";
   }
   if (loop.body.intops > 0){
-      os << " intops += tripCount" << loop.body.depth << "*" << loop.body.intops << ";";
+      os << " intops += tripCount" << loop.body.depth << "*" << loop.body.intops;
+      if (loop.body.hasBranchPrediction()){
+        os << "*" << loop.body.branchPrediction;
+      }
+      os << ";";
   }
 
 #if 0
