@@ -2524,6 +2524,8 @@ int main(int argc, char *argv[])
    myRank = 0;
 #endif   
 
+  timeval t_start; gettimeofday(&t_start, NULL);
+
    /* Set defaults that can be overridden by command line opts */
    opts.its = 9999999;
    opts.nx  = 30;
@@ -2629,6 +2631,11 @@ int main(int argc, char *argv[])
 #if USE_MPI
    MPI_Finalize() ;
 #endif
+  timeval t_stop; gettimeofday(&t_stop, NULL);
+  if (myRank == 0){
+    double delta_t = (t_stop.tv_sec - t_start.tv_sec) + 1e-6*(t_stop.tv_usec - t_start.tv_usec);
+    printf("Total time = %12.8fs\n", delta_t);
+  }
 
    return 0 ;
 }
