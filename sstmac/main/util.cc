@@ -97,6 +97,10 @@ should_skip_operator_new(){
   return sstmac::sw::operating_system::static_os_thread_context().skip_next_op_new;
 }
 
+double omp_get_wtime(){
+  return sstmac_now();
+}
+
 int
 user_skeleton_main_init_fxn(const char* name, main_fxn fxn)
 {

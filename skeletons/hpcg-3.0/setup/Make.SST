@@ -106,11 +106,16 @@ HPCG_LIBS     =
 #    *) Build with OpenMP enabled.
 #    *) Not generate debugging output.
 #
-HPCG_OPTS     = 
+
+OTHER_OPS =
+#OTHER_OPTS += -fopenmp 
+#OTHER_OPTS += -DHPCG_NO_MPI
+HPCG_OPTS     = -std=c++11 
+
 #
 # ----------------------------------------------------------------------
 #
-HPCG_DEFS     = $(HPCG_OPTS) $(HPCG_INCLUDES)
+HPCG_DEFS     = $(HPCG_OPTS) $(HPCG_INCLUDES) $(OTHER_OPTS)
 #
 # ----------------------------------------------------------------------
 # - Compilers / linkers - Optimization flags ---------------------------
@@ -118,7 +123,8 @@ HPCG_DEFS     = $(HPCG_OPTS) $(HPCG_INCLUDES)
 #
 SKEL = 1
 CXX          = SSTMAC_HEADERS=`pwd`/sstmac_headers SSTMAC_SKELETONIZE=$(SKEL) sst++
-CXXFLAGS     = $(HPCG_DEFS) -O0 -g -ffast-math -ftree-vectorize -fPIC
+#CXX = g++
+CXXFLAGS     = $(HPCG_DEFS) -O3 -ffast-math -ftree-vectorize -fPIC
 #
 LINKER       = $(CXX)
 LINKFLAGS    = $(CXXFLAGS)

@@ -92,7 +92,9 @@
 #include <math.h>
 #include <assert.h>
 #include <omp.h>
+#ifdef DO_MPI
 #include <mpi.h>
+#endif
 
 #include "constants.h"
 #include "memUtils.h"

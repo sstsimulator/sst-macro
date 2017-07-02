@@ -69,6 +69,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <math.h>
 #include <vector>
+#include <sys/time.h>
+#include <cstring>
 
 //**************************************************
 // Allow flexibility for arithmetic representations 

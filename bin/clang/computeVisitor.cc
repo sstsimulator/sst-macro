@@ -395,6 +395,9 @@ ComputeVisitor::visitBodyIfStmt(IfStmt *stmt, Loop::Body &body)
   if (matches.empty()){
     warn(stmt->getLocStart(), CI,
          "if-stmt inside compute block has no prediction hint - assuming always false");
+    if (stmt->getElse()){
+      addOperations(stmt->getElse(), body);
+    }
     return;
   }
 
@@ -682,35 +685,22 @@ ComputeVisitor::addLoopContribution(std::ostream& os, Loop& loop)
   os << " uint64_t tripCount" << loop.body.depth << "=";
   if (loop.body.depth > 0){
     os << "tripCount" << (loop.body.depth-1) << "*";
+    if (loop.body.hasBranchPrediction()){
+      os << loop.body.branchPrediction << "*";
+    }
   }
   os << "(" << loop.tripCount << "); ";
   if (loop.body.flops > 0){
-      os << " flops += tripCount" << loop.body.depth << "*" << loop.body.flops;
-      if (loop.body.hasBranchPrediction()){
-        os << "*" << loop.body.branchPrediction;
-      }
-      os << ";";
+      os << " flops += tripCount" << loop.body.depth << "*" << loop.body.flops << ";";
   }
   if (loop.body.readBytes > 0){
-    os << " readBytes += tripCount" << loop.body.depth << "*" << loop.body.readBytes;
-    if (loop.body.hasBranchPrediction()){
-      os << "*" << loop.body.branchPrediction;
-    }
-    os << "; ";
+    os << " readBytes += tripCount" << loop.body.depth << "*" << loop.body.readBytes << ";";
   }
   if (loop.body.writeBytes > 0){
-    os << " writeBytes += tripCount" << loop.body.depth << "*" << loop.body.writeBytes;
-    if (loop.body.hasBranchPrediction()){
-      os << "*" << loop.body.branchPrediction;
-    }
-    os << "; ";
+    os << " writeBytes += tripCount" << loop.body.depth << "*" << loop.body.writeBytes << ";";
   }
   if (loop.body.intops > 0){
-      os << " intops += tripCount" << loop.body.depth << "*" << loop.body.intops;
-      if (loop.body.hasBranchPrediction()){
-        os << "*" << loop.body.branchPrediction;
-      }
-      os << ";";
+      os << " intops += tripCount" << loop.body.depth << "*" << loop.body.intops << ";";
   }
 
 #if 0
