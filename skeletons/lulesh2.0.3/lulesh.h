@@ -704,6 +704,39 @@ class Domain {
    Index_t m_colMin, m_colMax;
    Index_t m_planeMin, m_planeMax ;
 
+ public:
+  typedef enum {
+  CalcLagrangeElements=0,
+  CalcQForElems=1,
+  UpdateVolumesForElems=2,
+  ApplyMaterialPropertiesForElems=3,
+  CalcTimeConstraintsForElems=4,
+  CalcAccelerationForNodes=5,
+  InitStressTermsForElems=6,
+  IntegrateStressForElems=7,
+  CalcHourglassControlForElems=8,
+  ApplyAccelerationBoundaryConditionsForNodes=9,
+  CalcVelocityForNodes=10,
+  CalcPositionForNodes=11,
+  TimerEnd=12
+  } Timer_t;
+
+  void start_timer(){
+   gettimeofday(&t_start,NULL);
+  }
+
+  void stop_timer(Timer_t t){
+   timeval t_stop;
+   gettimeofday(&t_stop, NULL);
+   double delta_t = (t_stop.tv_sec - t_start.tv_sec) + 1e-6*(t_stop.tv_usec-t_start.tv_usec);
+   timers[t] += delta_t;
+  }
+
+  void dump_timers();
+
+ private:
+  double timers[TimerEnd];
+  timeval t_start;
 } ;
 
 typedef Real_t &(Domain::* Domain_member )(Index_t) ;

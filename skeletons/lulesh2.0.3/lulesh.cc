@@ -1005,13 +1005,17 @@ void CalcVolumeForceForElems(Domain& domain)
       Real_t *determ = Allocate<Real_t>(numElem) ;
 
       /* Sum contributions to total stress tensor */
+      domain.start_timer();
       InitStressTermsForElems(domain, sigxx, sigyy, sigzz, numElem);
+      domain.stop_timer(Domain::InitStressTermsForElems);
 
       // call elemlib stress integration loop to produce nodal forces from
       // material stresses.
+      domain.start_timer();
       IntegrateStressForElems( domain,
                                sigxx, sigyy, sigzz, determ, numElem,
                                domain.numNode()) ;
+      domain.stop_timer(Domain::IntegrateStressForElems);
 
       // check for negative element volume
 #pragma omp parallel for firstprivate(numElem)
@@ -1025,7 +1029,9 @@ void CalcVolumeForceForElems(Domain& domain)
          }
       }
 
+      domain.start_timer();
       CalcHourglassControlForElems(domain, determ, hgcoef) ;
+      domain.stop_timer(Domain::CalcHourglassControlForElems);
 
       Release(&determ) ;
       Release(&sigzz) ;
@@ -1178,13 +1184,21 @@ void LagrangeNodal(Domain& domain)
 #endif
 #endif
    
+   domain.start_timer();
    CalcAccelerationForNodes(domain, domain.numNode());
-   
+   domain.stop_timer(Domain::CalcAccelerationForNodes);
+
+   domain.start_timer();
    ApplyAccelerationBoundaryConditionsForNodes(domain);
+   domain.stop_timer(Domain::ApplyAccelerationBoundaryConditionsForNodes);
 
+   domain.start_timer();
    CalcVelocityForNodes( domain, delt, u_cut, domain.numNode()) ;
+   domain.stop_timer(Domain::CalcVelocityForNodes);
 
+   domain.start_timer();
    CalcPositionForNodes( domain, delt, domain.numNode() );
+   domain.stop_timer(Domain::CalcPositionForNodes);
 #if USE_MPI
 #ifdef SEDOV_SYNC_POS_VEL_EARLY
   #pragma sst delete
@@ -2276,15 +2290,23 @@ void LagrangeElements(Domain& domain, Index_t numElem)
 #pragma sst replace Allocate nullptr
   Real_t *vnew = Allocate<Real_t>(numElem) ;  /* new relative vol -- temp */
 
+  domain.start_timer();
   CalcLagrangeElements(domain, vnew) ;
+  domain.stop_timer(Domain::CalcLagrangeElements);
 
   /* Calculate Q.  (Monotonic q option requires communication) */
+  domain.start_timer();
   CalcQForElems(domain, vnew) ;
+  domain.stop_timer(Domain::CalcQForElems);
 
+  domain.start_timer();
   ApplyMaterialPropertiesForElems(domain, vnew) ;
+  domain.stop_timer(Domain::ApplyMaterialPropertiesForElems);
 
+  domain.start_timer();
   UpdateVolumesForElems(domain, vnew,
                         domain.v_cut(), numElem) ;
+  domain.stop_timer(Domain::UpdateVolumesForElems);
 
   Release(&vnew);
 }
@@ -2494,7 +2516,9 @@ void LagrangeLeapFrog(Domain& domain)
 #endif
 #endif   
 
+   domain.start_timer();
    CalcTimeConstraintsForElems(domain);
+   domain.stop_timer(Domain::CalcTimeConstraintsForElems);
 
 #if USE_MPI   
 #ifdef SEDOV_SYNC_POS_VEL_LATE
@@ -2624,6 +2648,7 @@ int main(int argc, char *argv[])
    
    if ((myRank == 0) && (opts.quiet == 0)) {
       VerifyAndWriteFinalOutput(elapsed_timeG, *locDom, opts.nx, numRanks);
+      locDom->dump_timers();
    }
 
 #if USE_MPI
@@ -2631,4 +2656,23 @@ int main(int argc, char *argv[])
 #endif
 
    return 0 ;
+}
+
+void
+Domain::dump_timers(){
+#define print_timer(e) printf("%-35s = %12.8fs\n", #e, timers[e])
+   print_timer(CalcLagrangeElements);
+   print_timer(CalcQForElems);
+   print_timer(UpdateVolumesForElems);
+   print_timer(ApplyMaterialPropertiesForElems);
+   print_timer(CalcTimeConstraintsForElems);
+   print_timer(CalcAccelerationForNodes);
+   print_timer(InitStressTermsForElems);
+   print_timer(IntegrateStressForElems);
+   print_timer(CalcHourglassControlForElems);
+   //print_timer(ApplyAccelerationBoundaryConditionsForNodes);
+   print_timer(CalcVelocityForNodes);
+   print_timer(CalcPositionForNodes);
+
+#undef print_timer
 }
