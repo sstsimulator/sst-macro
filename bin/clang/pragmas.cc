@@ -475,6 +475,10 @@ SSTNullTypePragma::SSTNullTypePragma(SourceLocation loc, CompilerInstance& CI,
       templateCount--;
       connectNext = templateCount > 0;
       break;
+    case tok::kw_long:
+      next = "long";
+      connectNext = connectPrev;
+      break;
     case tok::kw_int:
       next = "int";
       connectNext = connectPrev;
@@ -572,6 +576,9 @@ SSTPragma::tokenStreamToString(SourceLocation loc,
         break;
       case tok::coloncolon:
         os << "::";
+        break;
+      case tok::kw_long:
+        os << "long";
         break;
       case tok::kw_int:
         os << "int";

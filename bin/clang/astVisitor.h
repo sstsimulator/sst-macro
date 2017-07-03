@@ -149,6 +149,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    */
   bool VisitDeclRefExpr(clang::DeclRefExpr* expr);
 
+  bool TraverseReturnStmt(clang::ReturnStmt* stmt, DataRecursionQueue* queue = nullptr);
+
   bool TraverseMemberExpr(clang::MemberExpr* expr, DataRecursionQueue* queue = nullptr);
 
   /**

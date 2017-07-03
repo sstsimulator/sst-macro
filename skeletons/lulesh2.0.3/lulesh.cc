@@ -2252,6 +2252,7 @@ void ApplyMaterialPropertiesForElems(Domain& domain, Real_t vnew[])
 
     for (Int_t r=0 ; r<domain.numReg() ; r++) {
        Index_t numElemReg = domain.regElemSize(r);
+      #pragma sst init nullptr
        Index_t *regElemList = domain.regElemlist(r);
        Int_t rep;
        //Determine load imbalance for this region
@@ -2662,6 +2663,8 @@ int main(int argc, char *argv[])
       VerifyAndWriteFinalOutput(elapsed_timeG, *locDom, opts.nx, numRanks);
       locDom->dump_timers();
    }
+
+   delete locDom;
 
 #if USE_MPI
    MPI_Finalize() ;

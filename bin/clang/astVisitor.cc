@@ -364,6 +364,18 @@ SkeletonASTVisitor::visitPt2Pt(CallExpr *expr)
     deletedStmts_.insert(expr->getArg(0));
   }
 }
+bool 
+SkeletonASTVisitor::TraverseReturnStmt(clang::ReturnStmt* stmt, DataRecursionQueue* queue)
+{
+  bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(stmt);
+  if (skipVisit){
+    return true;
+  }
+  
+  TraverseStmt(stmt->getRetValue());
+
+  return true;
+}
 
 bool
 SkeletonASTVisitor::TraverseCXXMemberCallExpr(CXXMemberCallExpr* expr, DataRecursionQueue* queue)
@@ -1188,6 +1200,18 @@ SkeletonASTVisitor::deleteNullVariableStmt(Stmt* use_stmt, Decl* d)
     IfStmt* ifs = cast<IfStmt>(s);
     replace(ifs->getCond(), rewriter_, "0", *ci_);
     return;
+  } else if (s->getStmtClass() == Stmt::CallExprClass){
+    CallExpr* call = cast<CallExpr>(s);
+    std::stringstream sstr;
+    sstr << "call expression '" << call->getDirectCallee()->getNameAsString()
+          << "' deleted based on null-variable - possibly not what you want";
+    warn(use_stmt->getLocStart(), *ci_, sstr.str());
+  } else if (s->getStmtClass() == Stmt::CXXMemberCallExprClass){
+    CXXMemberCallExpr* call = cast<CXXMemberCallExpr>(s);
+    std::stringstream sstr;
+    sstr << "call expression '" << call->getMethodDecl()->getNameAsString()
+          << "' deleted based on null-variable - possibly not what you want";
+    warn(use_stmt->getLocStart(), *ci_, sstr.str());
   }
 
   if (!loop_contexts_.empty()){
@@ -1254,6 +1278,7 @@ SkeletonASTVisitor::activatePragmasForStmt(Stmt* S)
       case SSTPragma::Delete:
       case SSTPragma::Init:
       case SSTPragma::Instead:
+      case SSTPragma::Return:
         blockDeleted = true;
         break;
       default: break;

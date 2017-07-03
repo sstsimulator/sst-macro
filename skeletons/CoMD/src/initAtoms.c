@@ -103,9 +103,12 @@ void createFccLattice(int nx, int ny, int nz, real_t lat, SimFlat* s)
                int id = ib+nb*(iz+nz*(iy+ny*(ix)));
                putAtomInBox(s->boxes, s->atoms, id, 0, rx, ry, rz, px, py, pz);
             }
- #pragma sst init nb*nx*ny*nz
+ #pragma sst init ((int64_t)nb*nx)*((int64_t)(ny*nz))
    s->atoms->nGlobal = 0;
- #pragma sst init (nb*nx*ny*nz) / getNRanks()
+   if (getMyRank() == 0) 
+    printf("nb=%d nx=%d ny=%d nz=%d nr=%d nglbl=%lld\n", 
+      nb, nx, ny, nz, getNRanks(), s->atoms->nGlobal);
+ #pragma sst init s->atoms->nGlobal / getNRanks()
    s->atoms->nLocal = s->atoms->nLocal;
    s->boxes->nTotalAtoms = s->atoms->nLocal;
    // set total atoms in simulation

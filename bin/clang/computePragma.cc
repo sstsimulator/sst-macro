@@ -84,7 +84,7 @@ SSTComputePragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig& cfg)
     scase(ForStmt,stmt,r,cfg);
     scase(IfStmt,stmt,r,cfg);
     default:
-      defaultAct(stmt,r);
+      defaultAct(stmt,r,cfg);
       break;
   }
 #undef scase
@@ -108,9 +108,9 @@ SSTComputePragma::activate(Decl* d, Rewriter& r, PragmaConfig& cfg)
 }
 
 void
-SSTComputePragma::defaultAct(Stmt *stmt, Rewriter &r)
+SSTComputePragma::defaultAct(Stmt *stmt, Rewriter &r, PragmaConfig& cfg)
 {
-  replace(stmt, r, "", *CI);
+  visitAndReplaceStmt(stmt, r, cfg);
 }
 
 

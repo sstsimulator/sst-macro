@@ -181,6 +181,8 @@ class Domain {
           Index_t rowLoc, Index_t planeLoc,
           Index_t nx, Int_t tp, Int_t nr, Int_t balance, Int_t cost);
 
+   ~Domain();
+
    //
    // ALLOCATION
    //
@@ -339,7 +341,10 @@ class Domain {
    Index_t&  regNumList(Index_t idx) { return m_regNumList[idx] ; }
 #pragma sst delete
    Index_t*  regNumList()            { return &m_regNumList[0] ; }
-   Index_t*  regElemlist(Int_t r)    { return m_regElemlist[r] ; }
+   Index_t*  regElemlist(Int_t r)    { 
+#pragma sst return nullptr
+    return m_regElemlist[r] ; 
+  }
 #pragma sst delete
    Index_t&  regElemlist(Int_t r, Index_t idx) { return m_regElemlist[r][idx] ; }
 #pragma sst delete
@@ -510,6 +515,7 @@ class Domain {
    MPI_Request sendRequest[26] ; // 6 faces + 12 edges + 8 corners 
 #endif
 
+
   private:
 
    void BuildMesh(Int_t nx, Int_t edgeNodes, Int_t edgeElems);
@@ -571,9 +577,11 @@ class Domain {
    Index_t *m_regElemSize ;   // Size of region sets
 #pragma sst null_variable
    Index_t *m_regNumList ;    // Region number per domain element
+#pragma sst null_variable
    Index_t **m_regElemlist ;  // region indexset
 #pragma sst null_type sstmac::vector size resize empty
    std::vector<Index_t>  m_nodelist ;     /* elemToNode connectivity */
+
 
 #pragma sst null_type sstmac::vector size resize empty
    std::vector<Index_t>  m_lxim ;  /* element connectivity across each face */

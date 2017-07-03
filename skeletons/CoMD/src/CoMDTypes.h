@@ -52,7 +52,7 @@ typedef struct SpeciesDataSt
 typedef struct ValidateSt
 {
    double eTot0; //<! Initial total energy
-   int nAtoms0;  //<! Initial global number of atoms
+   long long nAtoms0;  //<! Initial global number of atoms
 } Validate;
 
 /// 
