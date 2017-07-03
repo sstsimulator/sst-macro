@@ -25,9 +25,12 @@ CC = sstcc
 OPTFLAGS = -O3
 
 CFLAGS = -std=c99 -fPIC
-#CFLAGS += -fopenmp
 INCLUDES = 
 C_LIB = -lm
+
+#CC = gcc
+#CFLAGS += -fopenmp
+#DO_MPI=OFF
 
 
 ### If you need to specify include paths, library paths, or link flags

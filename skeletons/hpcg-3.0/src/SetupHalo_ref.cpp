@@ -37,8 +37,8 @@ using std::endl;
 
 #include "SetupHalo_ref.hpp"
 #include "mytimer.hpp"
-#include <mpi.h>
 
+#ifndef HPCG_NO_MPI
 void setupSkeleton(Geometry* geom, std::map<int,int>& sendList, std::map<int,int>& receiveList)
 {
   global_int_t nx = geom->nx;
@@ -198,6 +198,7 @@ void setupSkeletonNeighbors(int* neighbors, int* sendLength, std::map<int,int>& 
     ++index;
   }
 }
+#endif
 
 
 /*!
@@ -226,6 +227,7 @@ void SetupHalo_ref(SparseMatrix & A) {
 #endif
   for (local_int_t i=0; i< localNumberOfRows; i++) {
     int cur_nnz = nonzerosInRow[i];
+   #pragma sst loop_count 27
     for (int j=0; j<cur_nnz; j++) mtxIndL[i][j] = mtxIndG[i][j];
   }
 

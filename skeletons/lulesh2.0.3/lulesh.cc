@@ -465,6 +465,7 @@ void IntegrateStressForElems( Domain &domain,
     CalcElemNodeNormals( B[0] , B[1], B[2],
                           x_local, y_local, z_local );
 
+   #pragma sst branch_predict true
     if (numthreads > 1) {
        // Eliminate thread writing conflicts at the nodes by giving
        // each element its own copy to write to
@@ -974,6 +975,7 @@ void CalcHourglassControlForElems(Domain& domain,
       }
    }
 
+  #pragma sst branch_predict true
    if ( hgcoef > Real_t(0.) ) {
       CalcFBHourglassForceForElems( domain,
                                     determ, x8n, y8n, z8n, dvdx, dvdy, dvdz,
@@ -1748,6 +1750,7 @@ void CalcMonotonicQRegionForElems(Domain &domain, Int_t r,
 
       /* Remove length scale */
 
+    #pragma sst branch_predict true
       if ( domain.vdov(i) > Real_t(0.) )  {
          qlin  = Real_t(0.) ;
          qquad = Real_t(0.) ;
@@ -1937,6 +1940,7 @@ void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
    for (Index_t i = 0 ; i < length ; ++i) {
       Real_t vhalf = Real_t(1.) / (Real_t(1.) + compHalfStep[i]) ;
 
+    #pragma sst branch_predict true
       if ( delvc[i] > Real_t(0.) ) {
          q_new[i] /* = qq_old[i] = ql_old[i] */ = Real_t(0.) ;
       }
@@ -1980,6 +1984,7 @@ void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
       Index_t elem = regElemList[i];
       Real_t q_tilde ;
 
+    #pragma sst branch_predict true
       if (delvc[i] > Real_t(0.)) {
          q_tilde = Real_t(0.) ;
       }
@@ -2123,6 +2128,7 @@ void EvalEOSForElems(Domain& domain, Real_t *vnewc,
          }
 
       /* Check for v > eosvmax or v < eosvmin */
+    #pragma sst branch_predict true
          if ( eosvmin != Real_t(0.) ) {
 #pragma omp for nowait firstprivate(numElemReg, eosvmin)
             for(Index_t i=0 ; i<numElemReg ; ++i) {
@@ -2132,6 +2138,7 @@ void EvalEOSForElems(Domain& domain, Real_t *vnewc,
                }
             }
          }
+    #pragma sst branch_predict true
          if ( eosvmax != Real_t(0.) ) {
 #pragma omp for nowait firstprivate(numElemReg, eosvmax)
             for(Index_t i=0 ; i<numElemReg ; ++i) {
@@ -2201,6 +2208,7 @@ void ApplyMaterialPropertiesForElems(Domain& domain, Real_t vnew[])
 #pragma omp parallel
     {
        // Bound the updated relative volumes with eosvmin/max
+    #pragma sst branch_predict true
        if (eosvmin != Real_t(0.)) {
 #pragma omp for firstprivate(numElem)
           for(Index_t i=0 ; i<numElem ; ++i) {
@@ -2209,6 +2217,7 @@ void ApplyMaterialPropertiesForElems(Domain& domain, Real_t vnew[])
           }
        }
 
+    #pragma sst branch_predict true
        if (eosvmax != Real_t(0.)) {
 #pragma omp for nowait firstprivate(numElem)
           for(Index_t i=0 ; i<numElem ; ++i) {
@@ -2425,6 +2434,7 @@ void CalcHydroConstraintForElems(Domain &domain, Index_t length,
       for (Index_t i = 0 ; i < length ; ++i) {
          Index_t indx = regElemlist[i] ;
 
+       #pragma sst branch_predict true
          if (domain.vdov(indx) != Real_t(0.)) {
             Real_t dtdvov = dvovmax / (FABS(domain.vdov(indx))+Real_t(1.e-20)) ;
 
@@ -2548,6 +2558,8 @@ int main(int argc, char *argv[])
    myRank = 0;
 #endif   
 
+  timeval t_start; gettimeofday(&t_start, NULL);
+
    /* Set defaults that can be overridden by command line opts */
    opts.its = 9999999;
    opts.nx  = 30;
@@ -2654,6 +2666,11 @@ int main(int argc, char *argv[])
 #if USE_MPI
    MPI_Finalize() ;
 #endif
+  timeval t_stop; gettimeofday(&t_stop, NULL);
+  if (myRank == 0){
+    double delta_t = (t_stop.tv_sec - t_start.tv_sec) + 1e-6*(t_stop.tv_usec - t_start.tv_usec);
+    printf("Total time = %12.8fs\n", delta_t);
+  }
 
    return 0 ;
 }

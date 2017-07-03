@@ -588,6 +588,9 @@ SSTPragma::tokenStreamToString(SourceLocation loc,
       case tok::percent:
         os << "%";
         break;
+      case tok::kw_true:
+        os << "true";
+        break;
       case tok::kw_false:
         os << "false";
         break;
