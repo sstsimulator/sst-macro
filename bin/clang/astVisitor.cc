@@ -1191,6 +1191,7 @@ SkeletonASTVisitor::deleteNullVariableStmt(Stmt* use_stmt, Decl* d)
                "null variable used in statement, but context list is empty");
   }
   Stmt* s = stmt_contexts_.front(); //delete the outermost stmt
+  FunctionDecl* fxnCalled = nullptr;
   if (s->getStmtClass() == Stmt::IfStmtClass){
     //oooooh, not good - I could really foobar things here
     //crash and burn and tell programmer to fix it
@@ -1202,16 +1203,27 @@ SkeletonASTVisitor::deleteNullVariableStmt(Stmt* use_stmt, Decl* d)
     return;
   } else if (s->getStmtClass() == Stmt::CallExprClass){
     CallExpr* call = cast<CallExpr>(s);
-    std::stringstream sstr;
-    sstr << "call expression '" << call->getDirectCallee()->getNameAsString()
-          << "' deleted based on null-variable - possibly not what you want";
-    warn(use_stmt->getLocStart(), *ci_, sstr.str());
+    fxnCalled = call->getDirectCallee();
   } else if (s->getStmtClass() == Stmt::CXXMemberCallExprClass){
     CXXMemberCallExpr* call = cast<CXXMemberCallExpr>(s);
-    std::stringstream sstr;
-    sstr << "call expression '" << call->getMethodDecl()->getNameAsString()
-          << "' deleted based on null-variable - possibly not what you want";
-    warn(use_stmt->getLocStart(), *ci_, sstr.str());
+    fxnCalled = call->getMethodDecl();
+  }
+
+  if (fxnCalled){
+    if (keepWithNullArgs(fxnCalled)){
+      return;
+    } else if (fxnCalled->getNumParams() == 0 || deleteWithNullArgs(fxnCalled)){
+      //if the function takes no parameters - safe to delete because
+      //the callee is the null variable
+      //OR if explicitly marked safe to delete
+    } else {
+      std::stringstream sstr;
+      sstr << "call expression '" << fxnCalled->getNameAsString()
+            << "' has null argument, but I don't know what to do with it\n"
+            << " function should be marked with either "
+            << " pragma sst keep_if_null_args or delete_if_null_args";
+      warn(use_stmt->getLocStart(), *ci_, sstr.str());
+    }
   }
 
   if (!loop_contexts_.empty()){
