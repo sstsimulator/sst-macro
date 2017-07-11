@@ -115,7 +115,7 @@ mpi_api::mpi_api(sprockit::sim_parameters* params,
 #endif
   next_type_id_(0),
   next_op_id_(first_custom_op_id),
-  group_counter_(MPI_GROUP_WORLD+1),
+  group_counter_(MPI_GROUP_SELF+1),
   req_counter_(0),
   queue_(nullptr),
   comm_factory_(nullptr),
@@ -219,6 +219,7 @@ mpi_api::init(int* argc, char*** argv)
   comm_map_[MPI_COMM_WORLD] = worldcomm_;
   comm_map_[MPI_COMM_SELF] = selfcomm_;
   grp_map_[MPI_GROUP_WORLD] = worldcomm_->group();
+  grp_map_[MPI_GROUP_SELF] = selfcomm_->group();
 
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Init()");
 
@@ -526,8 +527,9 @@ mpi_api::add_group_ptr(mpi_group* ptr, MPI_Group* grp)
 void
 mpi_api::erase_group_ptr(MPI_Group grp)
 {
-  if (grp != MPI_GROUP_EMPTY && grp != comm_grp_map_[MPI_COMM_WORLD]
-      && grp != comm_grp_map_[MPI_COMM_SELF]) {
+  if (grp != MPI_GROUP_EMPTY
+      && grp != MPI_GROUP_WORLD
+      && grp != MPI_GROUP_SELF) {
     group_ptr_map::iterator it = grp_map_.find(grp);
     if (it == grp_map_.end()) {
       spkt_throw_printf(sprockit::spkt_error,
@@ -556,12 +558,6 @@ mpi_api::erase_request_ptr(MPI_Request req)
   }
   delete it->second;
   req_map_.erase(it);
-}
-
-void
-mpi_api::add_comm_grp(MPI_Comm comm, MPI_Group grp)
-{
-  comm_grp_map_[comm] = grp;
 }
 
 void

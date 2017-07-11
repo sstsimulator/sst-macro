@@ -85,9 +85,6 @@ mpi_comm_factory::mpi_comm_factory(app_id aid, mpi_api* parent) :
 {
 }
 
-//
-// Goodbye.
-//
 mpi_comm_factory::~mpi_comm_factory()
 {
   //do not delete
@@ -96,9 +93,6 @@ mpi_comm_factory::~mpi_comm_factory()
   //if (selfcomm_) delete selfcomm_;
 }
 
-//
-// Initialize.
-//
 void
 mpi_comm_factory::init(int rank, int nproc)
 {
@@ -107,20 +101,16 @@ mpi_comm_factory::init(int rank, int nproc)
   mpirun_np_ = nproc;
 
   mpi_group* g = new mpi_group(mpirun_np_);
-
+  g->set_id(MPI_GROUP_WORLD);
   worldcomm_ = new mpi_comm(MPI_COMM_WORLD, rank, g, aid_);
 
   std::vector<task_id> selfp;
   selfp.push_back(task_id(rank));
-
   mpi_group* g2 = new mpi_group(selfp);
-  selfcomm_ = new mpi_comm(MPI_COMM_SELF, int(0),
-                           g2, aid_, true/*owns group*/);
+  g2->set_id(MPI_GROUP_SELF);
+  selfcomm_ = new mpi_comm(MPI_COMM_SELF, int(0), g2, aid_);
 }
 
-//
-// Duplicate a communicator.
-//
 mpi_comm*
 mpi_comm_factory::comm_dup(mpi_comm* caller)
 {

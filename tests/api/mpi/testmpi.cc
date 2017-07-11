@@ -242,8 +242,10 @@ enum TEST_MODE
   GROUP_GROUPNULLINCL = 187,
   GROUP_GROUPTEST = 188,
   GROUP_GROUPTEST2 = 189,
+  */
   GROUP_GTRANKS = 190,
-  //GROUP_GTRANKSPERF = 191,
+  /*
+  GROUP_GTRANKSPERF = 191,
   INFO_INFODEL = 192,
   INFO_INFODUP = 193,
   INFO_INFOMANY = 194,
@@ -354,7 +356,6 @@ enum TEST_MODE
   RMA_WINNAME = 299,
   RMA_WINTEST = 300, */
   TEST_MODE_END = 301
-
 };
 
 //-------- attr ---------//
@@ -558,7 +559,7 @@ enum TEST_MODE
 //group compare #include "group/groupnullincl.cc"
 //group size, group rank #include "group/grouptest.cc"
 //group size, group rank #include "group/grouptest2.cc"
-//group translate ranks #include "group/gtranks.cc"
+#include "group/gtranks.cc"
 //group translate ranks #include "group/gtranksperf.cc"
 
 // --------------- info -------------- //
@@ -1223,12 +1224,14 @@ int USER_MAIN(int argc, char *argv[])
   case GROUP_GROUPTEST2:
     grouptest2::grouptest2(argc, argv);
     break;
+  */
   case GROUP_GTRANKS:
     gtranks::gtranks(argc, argv);
     break;
-    //case GROUP_GTRANKSPERF:
-    //  gtranksperf::gtranksperf(argc, argv);
-    //  break;
+  /**
+  case GROUP_GTRANKSPERF:
+    gtranksperf::gtranksperf(argc, argv);
+    break;
   case INFO_INFODEL:
     infodel::infodel(argc, argv);
     break;

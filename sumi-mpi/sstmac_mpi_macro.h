@@ -194,6 +194,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define MPI_Bsend_init sumi::sstmac_mpi()->send_init
 #define MPI_Rsend_init sumi::sstmac_mpi()->send_init
 #define MPI_Ssend_init sumi::sstmac_mpi()->send_init
+#define MPI_Group_translate_ranks sumi::sstmac_mpi()->group_translate_ranks
 #else
 #define MPI_Cart_create sstmac_cart_create
 #define MPI_Cart_get sstmac_cart_get
@@ -343,6 +344,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define MPI_Bsend_init sstmac_send_init
 #define MPI_Rsend_init sstmac_send_init
 #define MPI_Ssend_init sstmac_send_init
+#define MPI_Group_translate_ranks sstmac_group_translate_ranks
 #endif
 
 
@@ -462,5 +464,4 @@ Questions? Contact sst-macro-help@sandia.gov
 #define MPI_Dist_graph_neighbors       error not yet implemented
 #define MPI_Intercomm_create error not yet implemented
 #define MPI_Sendrecv_replace error not yet implemented
-#define MPI_Group_translate_ranks error not yet implemented
 #define MPI_Get_elements error not yet implemented

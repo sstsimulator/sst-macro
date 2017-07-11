@@ -96,13 +96,8 @@ mpi_api::comm_create(MPI_Comm input, MPI_Group group, MPI_Comm *output)
 int
 mpi_api::comm_group(MPI_Comm comm, MPI_Group* grp)
 {
-  comm_grp_map::iterator it = comm_grp_map_.find(comm);
-  if (it == comm_grp_map_.end()) {
-    spkt_throw_printf(sprockit::spkt_error,
-        "could not find mpi group for comm %d for rank %d",
-        comm, int(rank_));
-  }
-  *grp = it->second;
+  mpi_comm* commPtr = get_comm(comm);
+  *grp = commPtr->group()->id();
   return MPI_SUCCESS;
 }
 
@@ -200,6 +195,12 @@ mpi_api::comm_split(MPI_Comm incomm, int color, int key, MPI_Comm *outcomm)
   mpi_api_debug(sprockit::dbg::mpi,
       "MPI_Comm_split(%s,%d,%d,*%s) exit",
                 comm_str(incomm).c_str(), color, key, comm_str(*outcomm).c_str());
+
+  //but also assign an id to the underlying group
+  if (outcommPtr->id() != MPI_COMM_NULL){
+    outcommPtr->group()->set_id(group_counter_++);
+  }
+
   end_api_call();
   return MPI_SUCCESS;
 }
@@ -210,6 +211,9 @@ mpi_api::comm_free(MPI_Comm* input)
   start_comm_call(MPI_Comm_free,*input);
   mpi_comm* inputPtr = get_comm(*input);
   comm_map_.erase(*input);
+  if (inputPtr->delete_group()){
+    grp_map_.erase(inputPtr->group()->id());
+  }
   delete inputPtr;
   *input = MPI_COMM_NULL;
   end_api_call();

@@ -85,9 +85,6 @@ class mpi_api :
   public sstmac::sumi_transport
 {
   RegisterAPI("mpi", mpi_api)
- private:
-  class persistent_send;
-  class persistent_recv;
 
  public:
   static category default_key_category;
@@ -98,78 +95,58 @@ class mpi_api :
           sstmac::sw::software_id sid,
           sstmac::sw::operating_system* os);
 
-  static void
-  delete_statics();
-
-  struct mpi_call {
-
-  };
+  static void delete_statics();
 
  public:
-  virtual
-  ~mpi_api();
+  virtual ~mpi_api();
 
-  mpi_queue*
-  queue() {
+  mpi_queue* queue() {
     return queue_;
   }
 
-  bool
-  crossed_comm_world_barrier() const {
+  /**
+   * @brief crossed_comm_world_barrier
+   *        Useful for statistics based on globally synchronous timings.
+   * @return Whether a global collective has been crossed
+   *
+   */
+  bool crossed_comm_world_barrier() const {
     return crossed_comm_world_barrier_;
   }
 
-  /*
-   * Methods exposing MPI calls and other key methods to
-   * derived objects.
-   */
-  /// Get the world communicator.
-  mpi_comm*
-  comm_world() const {
+  mpi_comm* comm_world() const {
     return worldcomm_;
   }
 
   /// Get the self communicator.
-  mpi_comm*
-  comm_self() const {
+  mpi_comm* comm_self() const {
     return selfcomm_;
   }
 
-  /* Utility functions to mirror MPI API functionality */
-
-  /// The rank of this node in a communicator.
-  /// The size of a communicator.
   int comm_rank(MPI_Comm comm, int* rank);
 
-  /// The size of a communicator.
   int comm_size(MPI_Comm comm, int* size);
 
   /// Get type size.
-  int
-  type_size(MPI_Datatype type, int* size);
+  int type_size(MPI_Datatype type, int* size);
 
   /* Set up and tear down */
-
   /// Test whether MPI has bee initialized.
-  int
-  initialized(int* flag){
+  int initialized(int* flag){
     *flag = (status_ == is_initialized);
     return MPI_SUCCESS;
   }
 
-  int
-  finalized(int* flag){
+  int finalized(int* flag){
     *flag = (status_ == is_finalized);
     return MPI_SUCCESS;
   }
 
-  int
-  buffer_attach(void* buffer, int size){
+  int buffer_attach(void* buffer, int size){
     return MPI_SUCCESS;
   }
 
-  int
-  buffer_detach(void* buffer, int* size){
+  int buffer_detach(void* buffer, int* size){
     return MPI_SUCCESS;
   }
 
@@ -245,7 +222,11 @@ class mpi_api :
              const int* ranks,
              MPI_Group* newgrp);
 
+  int group_range_incl(MPI_Group oldgrp, int n, int ranges[][3], MPI_Group* newgrp);
+
   int group_free(MPI_Group* grp);
+
+  int group_translate_ranks(MPI_Group grp1, int n, const int* ranks1, MPI_Group grp2, int* ranks2);
 
   /* Basic point-to-point operations. */
   int sendrecv(const void* sendbuf, int sendcount,
@@ -275,50 +256,38 @@ class mpi_api :
 
   int request_free(MPI_Request* req);
 
-  int
-  start(MPI_Request* req);
+  int start(MPI_Request* req);
 
-  int
-  startall(int count, MPI_Request* req);
+  int startall(int count, MPI_Request* req);
 
   /* Completion of outstanding requests */
-  int
-  wait(MPI_Request *request, MPI_Status *status);
+  int wait(MPI_Request *request, MPI_Status *status);
 
-  int
-  waitall(int count, MPI_Request array_of_requests[],
+  int waitall(int count, MPI_Request array_of_requests[],
           MPI_Status array_of_statuses[]);
 
-  int
-  waitany(int count, MPI_Request array_of_requests[], int *indx,
+  int waitany(int count, MPI_Request array_of_requests[], int *indx,
           MPI_Status *status);
 
-  int
-  waitsome(int incount, MPI_Request array_of_requests[],
+  int waitsome(int incount, MPI_Request array_of_requests[],
            int *outcount, int array_of_indices[],
            MPI_Status array_of_statuses[]);
 
-  int
-  test(MPI_Request *request, int *flag, MPI_Status *status);
+  int test(MPI_Request *request, int *flag, MPI_Status *status);
 
-  int
-  testall(int count, MPI_Request array_of_requests[], int *flag,
+  int testall(int count, MPI_Request array_of_requests[], int *flag,
           MPI_Status array_of_statuses[]);
 
-  int
-  testany(int count, MPI_Request array_of_requests[], int *indx,
+  int testany(int count, MPI_Request array_of_requests[], int *indx,
           int *flag, MPI_Status *status);
 
-  int
-  testsome(int incount, MPI_Request array_of_requests[], int *outcount,
+  int testsome(int incount, MPI_Request array_of_requests[], int *outcount,
            int array_of_indices[], MPI_Status array_of_statuses[]);
 
-  int
-  probe(int source, int tag, MPI_Comm comm,
+  int probe(int source, int tag, MPI_Comm comm,
          MPI_Status *status);
 
-  int
-  iprobe(int source, int tag, MPI_Comm comm, int* flag,
+  int iprobe(int source, int tag, MPI_Comm comm, int* flag,
          MPI_Status *status);
 
   /* Collective operations */
@@ -331,8 +300,7 @@ class mpi_api :
   int bcast(void *buffer, int count, MPI_Datatype datatype, int root,
         MPI_Comm comm);
 
-  int
-  scatter(int sendcount, MPI_Datatype sendtype,
+  int scatter(int sendcount, MPI_Datatype sendtype,
           int recvcount, MPI_Datatype recvtype, int root,
           MPI_Comm comm);
 
@@ -478,6 +446,7 @@ class mpi_api :
   int igather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
          void *recvbuf, int recvcount, MPI_Datatype recvtype,
          int root, MPI_Comm comm, MPI_Request* req);
+
   int igatherv(int sendcount, MPI_Datatype sendtype,
          const int *recvcounts,
          MPI_Datatype recvtype, int root,
@@ -655,8 +624,6 @@ class mpi_api :
 
   void erase_request_ptr(MPI_Request req);
 
-  void add_comm_grp(MPI_Comm comm, MPI_Group grp);
-
   void check_key(int key);
 
   void add_keyval(int key, keyval* keyval);
@@ -697,19 +664,13 @@ class mpi_api :
 
   void wait_collective(collective_op_base* op);
 
-  void
-  free_requests(int nreqs,
-    MPI_Request* reqs,
-    int* inds);
+  void free_requests(int nreqs, MPI_Request* reqs, int* inds);
 
-  void
-  commit_builtin_types();
+  void commit_builtin_types();
 
-  void
-  commit_builtin_type(mpi_type* type, MPI_Datatype id);
+  void commit_builtin_type(mpi_type* type, MPI_Datatype id);
 
-  std::string
-  type_label(MPI_Datatype tid);
+  std::string type_label(MPI_Datatype tid);
 
   void start_allgather(collective_op* op);
 
@@ -746,8 +707,7 @@ class mpi_api :
   void finish_vcollective_op(collective_op_base* op_);
 
   /* Collective operations */
-  collective_op_base*
-  start_barrier(const char* name, MPI_Comm comm);
+  collective_op_base* start_barrier(const char* name, MPI_Comm comm);
 
   collective_op_base*
   start_bcast(MPI_Comm comm, int count, MPI_Datatype datatype, int root, void *buffer);
@@ -809,8 +769,7 @@ class mpi_api :
 
   void do_start(MPI_Request req);
 
-  void
-  add_immediate_collective(collective_op_base* op, MPI_Request* req);
+  void add_immediate_collective(collective_op_base* op, MPI_Request* req);
 
   bool test(MPI_Request *request, MPI_Status *status);
 
@@ -820,8 +779,7 @@ class mpi_api :
     return ret;
   }
 
-  reduce_fxn
-  get_collective_function(collective_op_base* op);
+  reduce_fxn get_collective_function(collective_op_base* op);
 
   void check_init();
 
@@ -879,9 +837,6 @@ class mpi_api :
   group_ptr_map grp_map_;
   MPI_Group group_counter_;
 
-  typedef spkt_unordered_map<MPI_Comm, MPI_Group> comm_grp_map;
-  comm_grp_map comm_grp_map_;
-
   typedef spkt_unordered_map<MPI_Request, mpi_request*> req_ptr_map;
   req_ptr_map req_map_;
   MPI_Request req_counter_;
@@ -932,8 +887,7 @@ class mpi_api :
 
 };
 
-mpi_api*
-sstmac_mpi();
+mpi_api* sstmac_mpi();
 
 }
 

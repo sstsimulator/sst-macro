@@ -245,3 +245,8 @@ extern "C" double sstmac_wtime(){ return sumi::sstmac_mpi()->wtime(); }
 extern "C" double sstmac_wticks(){ return sumi::sstmac_mpi()->wtime(); }
 
 extern "C" int sstmac_abort(MPI_Comm comm, int errcode){ return sumi::sstmac_mpi()->abort(comm,errcode); }
+
+extern "C" int sstmac_group_translate_ranks(MPI_Group group1, int n, const int ranks1[],
+                                            MPI_Group group2, int ranks2[]){
+  return sumi::sstmac_mpi()->group_translate_ranks(group1, n, ranks1, group2, ranks2);
+}
