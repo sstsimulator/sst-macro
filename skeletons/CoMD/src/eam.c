@@ -92,6 +92,9 @@
 #include <math.h>
 #include <assert.h>
 #include <omp.h>
+#ifdef DO_MPI
+#include <mpi.h>
+#endif
 
 #include "constants.h"
 #include "memUtils.h"
@@ -277,7 +280,7 @@ int eamForce(SimFlat* s)
                   dr[k]=s->atoms->r[iOff][k]-s->atoms->r[jOff][k];
                   r2+=dr[k]*dr[k];
                }
-
+              #pragma sst branch_predict 0.17
                if(r2 <= rCut2 && r2 > 0.0)
                {
 
@@ -331,8 +334,8 @@ int eamForce(SimFlat* s)
 
    // third pass
    // loop over local boxes
-   #pragma sst memory s->boxes->nTotalAtoms*5*sizeof(double)
-   #pragma omp parallel for
+  #pragma sst memory s->boxes->nTotalAtoms*5*sizeof(double)
+  #pragma omp parallel for
    for (int iBox=0; iBox<s->boxes->nLocalBoxes; iBox++)
    {
       int nIBox = s->boxes->nAtoms[iBox];
@@ -344,7 +347,7 @@ int eamForce(SimFlat* s)
          int nJBox = s->boxes->nAtoms[jBox];
 
          // loop over atoms in iBox
-         #pragma sst loop_count avgAtomsPerBox
+        #pragma sst loop_count avgAtomsPerBox
          for (int iOff=MAXATOMS*iBox; iOff<(MAXATOMS*iBox+nIBox); iOff++)
          {
             // loop over atoms in jBox
@@ -360,6 +363,7 @@ int eamForce(SimFlat* s)
                   r2+=dr[k]*dr[k];
                }
 
+              #pragma sst branch_predict 0.17
                if(r2 <= rCut2 && r2 > 0.0)
                {
 
@@ -378,7 +382,6 @@ int eamForce(SimFlat* s)
          } // loop over atoms in iBox
       } // loop over neighbor boxes
    } // loop over local boxes
-
    s->ePotential = (real_t) etot;
 
    return 0;

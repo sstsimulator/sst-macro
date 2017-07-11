@@ -40,6 +40,7 @@ nobase_library_include_HEADERS += \
   memory \
   mutex \
   thread \
+	sched.h \
   pthread.h \
   cstring \
   cstdlib \

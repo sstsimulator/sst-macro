@@ -178,6 +178,7 @@ node::~node()
   if (proc_) delete proc_;
   if (os_) delete os_;
   if (nic_) delete nic_;
+  //if (job_launcher_) delete job_launcher_;
 }
 
 void

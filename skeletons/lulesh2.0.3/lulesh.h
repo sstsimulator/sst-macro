@@ -69,6 +69,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <math.h>
 #include <vector>
+#include <sys/time.h>
+#include <cstring>
 
 //**************************************************
 // Allow flexibility for arithmetic representations 
@@ -178,6 +180,8 @@ class Domain {
    Domain(Int_t numRanks, Index_t colLoc,
           Index_t rowLoc, Index_t planeLoc,
           Index_t nx, Int_t tp, Int_t nr, Int_t balance, Int_t cost);
+
+   ~Domain();
 
    //
    // ALLOCATION
@@ -337,7 +341,10 @@ class Domain {
    Index_t&  regNumList(Index_t idx) { return m_regNumList[idx] ; }
 #pragma sst delete
    Index_t*  regNumList()            { return &m_regNumList[0] ; }
-   Index_t*  regElemlist(Int_t r)    { return m_regElemlist[r] ; }
+   Index_t*  regElemlist(Int_t r)    { 
+#pragma sst return nullptr
+    return m_regElemlist[r] ; 
+  }
 #pragma sst delete
    Index_t&  regElemlist(Int_t r, Index_t idx) { return m_regElemlist[r][idx] ; }
 #pragma sst delete
@@ -508,6 +515,7 @@ class Domain {
    MPI_Request sendRequest[26] ; // 6 faces + 12 edges + 8 corners 
 #endif
 
+
   private:
 
    void BuildMesh(Int_t nx, Int_t edgeNodes, Int_t edgeElems);
@@ -569,9 +577,11 @@ class Domain {
    Index_t *m_regElemSize ;   // Size of region sets
 #pragma sst null_variable
    Index_t *m_regNumList ;    // Region number per domain element
+#pragma sst null_variable
    Index_t **m_regElemlist ;  // region indexset
 #pragma sst null_type sstmac::vector size resize empty
    std::vector<Index_t>  m_nodelist ;     /* elemToNode connectivity */
+
 
 #pragma sst null_type sstmac::vector size resize empty
    std::vector<Index_t>  m_lxim ;  /* element connectivity across each face */
@@ -704,6 +714,39 @@ class Domain {
    Index_t m_colMin, m_colMax;
    Index_t m_planeMin, m_planeMax ;
 
+ public:
+  typedef enum {
+  CalcLagrangeElements=0,
+  CalcQForElems=1,
+  UpdateVolumesForElems=2,
+  ApplyMaterialPropertiesForElems=3,
+  CalcTimeConstraintsForElems=4,
+  CalcAccelerationForNodes=5,
+  InitStressTermsForElems=6,
+  IntegrateStressForElems=7,
+  CalcHourglassControlForElems=8,
+  ApplyAccelerationBoundaryConditionsForNodes=9,
+  CalcVelocityForNodes=10,
+  CalcPositionForNodes=11,
+  TimerEnd=12
+  } Timer_t;
+
+  void start_timer(){
+   gettimeofday(&t_start,NULL);
+  }
+
+  void stop_timer(Timer_t t){
+   timeval t_stop;
+   gettimeofday(&t_stop, NULL);
+   double delta_t = (t_stop.tv_sec - t_start.tv_sec) + 1e-6*(t_stop.tv_usec-t_start.tv_usec);
+   timers[t] += delta_t;
+  }
+
+  void dump_timers();
+
+ private:
+  double timers[TimerEnd];
+  timeval t_start;
 } ;
 
 typedef Real_t &(Domain::* Domain_member )(Index_t) ;

@@ -149,6 +149,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    */
   bool VisitDeclRefExpr(clang::DeclRefExpr* expr);
 
+  bool TraverseReturnStmt(clang::ReturnStmt* stmt, DataRecursionQueue* queue = nullptr);
+
   bool TraverseMemberExpr(clang::MemberExpr* expr, DataRecursionQueue* queue = nullptr);
 
   /**
@@ -390,6 +392,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::set<std::string> reservedNames_;
   PragmaConfig& pragmaConfig_;
   std::map<clang::Stmt*,SSTPragma*> activePragmas_;
+  std::set<clang::FunctionDecl*> keepWithNullArgs_;
+  std::set<clang::FunctionDecl*> deleteWithNullArgs_;
 
   typedef void (SkeletonASTVisitor::*MPI_Call)(clang::CallExpr* expr);
   std::map<std::string, MPI_Call> mpiCalls_;
@@ -492,6 +496,14 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    * @param insertLoc The source location where the text should go
    */
   void declareSSTExternVars(clang::SourceLocation insertLoc);
+
+  bool keepWithNullArgs(clang::FunctionDecl* decl) const {
+    return keepWithNullArgs_.find(decl) != keepWithNullArgs_.end();
+  }
+
+  bool deleteWithNullArgs(clang::FunctionDecl* decl) const {
+    return deleteWithNullArgs_.find(decl) != keepWithNullArgs_.end();
+  }
 
 };
 

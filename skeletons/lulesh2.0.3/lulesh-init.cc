@@ -237,6 +237,11 @@ Domain::Domain(Int_t numRanks, Index_t colLoc,
 
 } // End constructor
 
+Domain::~Domain()
+{
+  if (m_regElemSize) delete[] m_regElemSize;
+}
+
 
 #pragma sst empty
 ////////////////////////////////////////////////////////////////////////////////
@@ -537,6 +542,7 @@ Domain::CreateRegionIndexSets(Int_t nr, Int_t balance)
    }
    // Second, allocate each region index set
    for (Index_t i=0 ; i<numReg() ; ++i) {
+      #pragma sst delete
       m_regElemlist[i] = new Index_t[regElemSize(i)];
       #pragma sst init numElem() / numReg()
       regElemSize(i) = 0;

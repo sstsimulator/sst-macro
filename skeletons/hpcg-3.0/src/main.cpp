@@ -63,6 +63,8 @@ using std::endl;
 #include "TestSymmetry.hpp"
 #include "TestNorms.hpp"
 
+#include <sys/time.h>
+
 /*!
   Main driver program: Construct synthetic problem, run V&V tests, compute benchmark parameters, run benchmark, report results.
 
@@ -73,12 +75,17 @@ using std::endl;
 
 */
 int main(int argc, char * argv[]) {
+  HPCG_Params params;
 
 #ifndef HPCG_NO_MPI
   MPI_Init(&argc, &argv);
+#else
+  params.comm_size = 1;
+  params.comm_rank = 0;
 #endif
 
-  HPCG_Params params;
+  timeval t_start; gettimeofday(&t_start, NULL);
+
 
   HPCG_Init(&argc, &argv, params);
 
@@ -131,6 +138,11 @@ int main(int argc, char * argv[]) {
   std::vector< double > times(10,0.0);
 
   double setup_time = mytimer();
+
+  if (params.comm_rank == 0){
+    printf("Running local grid nx=%d ny=%d nz=%d\n",
+    params.nx, params.ny, params.nz);
+  }
 
   SparseMatrix A;
   InitializeSparseMatrix(A, geom);
@@ -376,6 +388,12 @@ int main(int argc, char * argv[]) {
 
 
   HPCG_Finalize();
+
+  timeval t_stop; gettimeofday(&t_stop, NULL);
+  double delta_t = (t_stop.tv_sec - t_start.tv_sec) + 1e-6*(t_stop.tv_usec - t_start.tv_usec);
+  if (params.comm_rank == 0){
+    printf("Total runtime %12.8fs\n", delta_t);
+  }
 
   // Finish up
 #ifndef HPCG_NO_MPI

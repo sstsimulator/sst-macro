@@ -80,7 +80,8 @@ struct SSTPragma {
     NullType=9,
     KeepIf=10,
     Memory=11,
-    Instead=12
+    Instead=12,
+    BranchPredict=12
   } class_t;
   clang::StringRef name;
   clang::SourceLocation startLoc;
@@ -256,6 +257,19 @@ class SSTKeepIfPragma : public SSTPragma {
  private:
   void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg);
   std::string ifCond_;
+};
+
+class SSTBranchPredictPragma : public SSTPragma {
+ public:
+  SSTBranchPredictPragma(const std::string& prd)
+    : prediction_(prd), SSTPragma(BranchPredict)
+  {}
+  const std::string& prediction() const {
+    return prediction_;
+  }
+ private:
+  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg);
+  std::string prediction_;
 };
 
 class SSTNewPragma : public SSTPragma {
@@ -557,5 +571,21 @@ class SSTReturnPragmaHandler : public SSTTokenStreamPragmaHandler
                             const std::list<clang::Token> &tokens) const;
 
 };
+
+class SSTBranchPredictPragmaHandler : public SSTTokenStreamPragmaHandler
+{
+ public:
+  SSTBranchPredictPragmaHandler(SSTPragmaList& plist,
+                        clang::CompilerInstance& CI,
+                        SkeletonASTVisitor& visitor,
+                        std::set<clang::Stmt*>& deld) :
+     SSTTokenStreamPragmaHandler("branch_predict", plist, CI, visitor, deld){}
+
+ private:
+  SSTPragma* allocatePragma(clang::SourceLocation loc,
+                            const std::list<clang::Token> &tokens) const;
+
+};
+
 
 #endif

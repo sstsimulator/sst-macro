@@ -14,7 +14,7 @@ typedef struct AtomsSt
 {
    // atom-specific data
    int nLocal;    //!< total number of atoms on this processor
-   int nGlobal;   //!< total number of atoms in simulation
+   long long nGlobal;   //!< total number of atoms in simulation
 #pragma sst null_variable
    int* gid;      //!< A globally unique id for each atom
 #pragma sst null_variable

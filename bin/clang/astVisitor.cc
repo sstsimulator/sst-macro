@@ -364,6 +364,18 @@ SkeletonASTVisitor::visitPt2Pt(CallExpr *expr)
     deletedStmts_.insert(expr->getArg(0));
   }
 }
+bool 
+SkeletonASTVisitor::TraverseReturnStmt(clang::ReturnStmt* stmt, DataRecursionQueue* queue)
+{
+  bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(stmt);
+  if (skipVisit){
+    return true;
+  }
+  
+  TraverseStmt(stmt->getRetValue());
+
+  return true;
+}
 
 bool
 SkeletonASTVisitor::TraverseCXXMemberCallExpr(CXXMemberCallExpr* expr, DataRecursionQueue* queue)
@@ -536,6 +548,12 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
                                    GlobalRedirect_t red_ty,
                                    VarDecl* D)
 {
+  //const global variables can't change... so....
+  //no reason to do any work tracking them
+  if (D->getType().isConstQualified()){
+    errorAbort(D->getLocStart(), *ci_,
+               "internal compiler error: trying to refactor const global variable");
+  }
 
   std::string& varRepl = globals_[D];
   std::string scopeUniqueVarName = scope_prefix + D->getNameAsString();
@@ -825,6 +843,11 @@ SkeletonASTVisitor::visitVarDecl(VarDecl* D)
     const ImplicitCastExpr* expr2 = cast<const ImplicitCastExpr>(expr1->getSubExpr());
     const StringLiteral* lit = cast<StringLiteral>(expr2->getSubExpr());
     mainName_ = lit->getString();
+    return true;
+  }
+
+  //do not replace const global variables
+  if (D->getType().isConstQualified()){
     return true;
   }
 
@@ -1168,6 +1191,7 @@ SkeletonASTVisitor::deleteNullVariableStmt(Stmt* use_stmt, Decl* d)
                "null variable used in statement, but context list is empty");
   }
   Stmt* s = stmt_contexts_.front(); //delete the outermost stmt
+  FunctionDecl* fxnCalled = nullptr;
   if (s->getStmtClass() == Stmt::IfStmtClass){
     //oooooh, not good - I could really foobar things here
     //crash and burn and tell programmer to fix it
@@ -1177,6 +1201,29 @@ SkeletonASTVisitor::deleteNullVariableStmt(Stmt* use_stmt, Decl* d)
     IfStmt* ifs = cast<IfStmt>(s);
     replace(ifs->getCond(), rewriter_, "0", *ci_);
     return;
+  } else if (s->getStmtClass() == Stmt::CallExprClass){
+    CallExpr* call = cast<CallExpr>(s);
+    fxnCalled = call->getDirectCallee();
+  } else if (s->getStmtClass() == Stmt::CXXMemberCallExprClass){
+    CXXMemberCallExpr* call = cast<CXXMemberCallExpr>(s);
+    fxnCalled = call->getMethodDecl();
+  }
+
+  if (fxnCalled){
+    if (keepWithNullArgs(fxnCalled)){
+      return;
+    } else if (fxnCalled->getNumParams() == 0 || deleteWithNullArgs(fxnCalled)){
+      //if the function takes no parameters - safe to delete because
+      //the callee is the null variable
+      //OR if explicitly marked safe to delete
+    } else {
+      std::stringstream sstr;
+      sstr << "call expression '" << fxnCalled->getNameAsString()
+            << "' has null argument, but I don't know what to do with it\n"
+            << " function should be marked with either "
+            << " pragma sst keep_if_null_args or delete_if_null_args";
+      warn(use_stmt->getLocStart(), *ci_, sstr.str());
+    }
   }
 
   if (!loop_contexts_.empty()){
@@ -1243,6 +1290,7 @@ SkeletonASTVisitor::activatePragmasForStmt(Stmt* S)
       case SSTPragma::Delete:
       case SSTPragma::Init:
       case SSTPragma::Instead:
+      case SSTPragma::Return:
         blockDeleted = true;
         break;
       default: break;

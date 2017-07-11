@@ -345,8 +345,8 @@ ComputeVisitor::visitBodyCallExpr(CallExpr* expr, Loop::Body& body)
       FunctionDecl* def = callee->getDefinition();
       if (!def){
         std::stringstream sstr;
-        sstr << "non-inlineable function " << callee->getNameAsString()
-             << " inside compute-intensive code";
+        sstr << "non-inlineable function '" << callee->getNameAsString()
+             << "' inside compute-intensive code";
         warn(expr->getLocStart(), CI, sstr.str());
       } else {
         addOperations(def->getBody(), body);
@@ -395,7 +395,45 @@ ComputeVisitor::visitBodyIfStmt(IfStmt *stmt, Loop::Body &body)
   if (matches.empty()){
     warn(stmt->getLocStart(), CI,
          "if-stmt inside compute block has no prediction hint - assuming always false");
+    if (stmt->getElse()){
+      addOperations(stmt->getElse(), body);
+    }
     return;
+  }
+
+  if (matches.size() > 1){
+    errorAbort(stmt->getLocStart(), CI,
+               "if-stmt inside compute block should have a single prediction hint,"
+               "multiple pragmas found");
+  }
+
+  SSTPragma* prg = matches.front();
+  if (prg->cls == SSTPragma::BranchPredict){
+    SSTBranchPredictPragma* bprg = static_cast<SSTBranchPredictPragma*>(prg);
+    if (bprg->prediction() == "true"){
+      addOperations(stmt->getThen(), body);
+    } else if (bprg->prediction() == "false"){
+      if (stmt->getElse()){
+        addOperations(stmt->getElse(), body);
+      }
+    } else {
+      //we have a predict percentage in-between 0 and 1
+      body.subLoops.emplace_back(body.depth+1);
+      Loop& thenLoop = body.subLoops.back();
+      thenLoop.tripCount = "1";
+      thenLoop.body.branchPrediction = bprg->prediction();
+      addOperations(stmt->getThen(), thenLoop.body);
+      if (stmt->getElse()){
+        body.subLoops.emplace_back(body.depth+1);
+        Loop& elseLoop = body.subLoops.back();
+        elseLoop.tripCount = "1";
+        elseLoop.body.branchPrediction = "1-(" + bprg->prediction() + ")";
+        addOperations(stmt->getElse(), elseLoop.body);
+      }
+    }
+  } else {
+    errorAbort(stmt->getLocStart(), CI,
+               "only branch prediction pragmas should be applied to if-stmt");
   }
 }
 
@@ -647,16 +685,19 @@ ComputeVisitor::addLoopContribution(std::ostream& os, Loop& loop)
   os << " uint64_t tripCount" << loop.body.depth << "=";
   if (loop.body.depth > 0){
     os << "tripCount" << (loop.body.depth-1) << "*";
+    if (loop.body.hasBranchPrediction()){
+      os << loop.body.branchPrediction << "*";
+    }
   }
   os << "(" << loop.tripCount << "); ";
   if (loop.body.flops > 0){
       os << " flops += tripCount" << loop.body.depth << "*" << loop.body.flops << ";";
   }
   if (loop.body.readBytes > 0){
-    os << " readBytes += tripCount" << loop.body.depth << "*" << loop.body.readBytes << "; ";
+    os << " readBytes += tripCount" << loop.body.depth << "*" << loop.body.readBytes << ";";
   }
   if (loop.body.writeBytes > 0){
-    os << " writeBytes += tripCount" << loop.body.depth << "*" << loop.body.writeBytes << "; ";
+    os << " writeBytes += tripCount" << loop.body.depth << "*" << loop.body.writeBytes << ";";
   }
   if (loop.body.intops > 0){
       os << " intops += tripCount" << loop.body.depth << "*" << loop.body.intops << ";";

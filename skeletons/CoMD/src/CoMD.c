@@ -295,7 +295,7 @@ Validate* initValidate(SimFlat* sim)
    {
       fprintf(screenOut, "\n");
       printSeparator(screenOut);
-      fprintf(screenOut, "Initial energy : %14.12f, atom count : %d \n",
+      fprintf(screenOut, "Initial energy : %14.12f, atom count : %lld \n",
             val->eTot0, val->nAtoms0);
       fprintf(screenOut, "\n");
    }
@@ -319,7 +319,7 @@ void validateResult(const Validate* val, SimFlat* sim)
       //fprintf(screenOut, "  eFinal/eInitial : %f\n", eFinal/val->eTot0);
       if ( nAtomsDelta == 0)
       {
-         fprintf(screenOut, "  Final atom count : %d, no atoms lost\n",
+         fprintf(screenOut, "  Final atom count : %lld, no atoms lost\n",
                sim->atoms->nGlobal);
       }
       else
@@ -385,7 +385,7 @@ void printThings(SimFlat* s, int iStep, double elapsedTime)
 #pragma sst init 0
    double timePerAtom = 1.0e6*elapsedTime/(double)(nEval*s->atoms->nLocal);
 
-   fprintf(screenOut, " %6d %10.2f %18.12f %18.12f %18.12f %12.4f %10.4f %12d\n",
+   fprintf(screenOut, " %6d %10.2f %18.12f %18.12f %18.12f %12.4f %10.4f %12lld\n",
            iStep, time, eTotal, eU, eK, Temp, timePerAtom, s->atoms->nGlobal);
 }
 
@@ -401,7 +401,7 @@ void printSimulationDataYaml(FILE* file, SimFlat* s)
       return;
 
    fprintf(file,"Simulation data: \n");
-   fprintf(file,"  Total atoms        : %d\n",
+   fprintf(file,"  Total atoms        : %lld\n",
            s->atoms->nGlobal);
    fprintf(file,"  Min global bounds  : [ %14.10f, %14.10f, %14.10f ]\n",
            s->domain->globalMin[0], s->domain->globalMin[1], s->domain->globalMin[2]);

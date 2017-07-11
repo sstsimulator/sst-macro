@@ -313,6 +313,16 @@ SSTKeepIfPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 }
 
 void
+SSTBranchPredictPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+{
+  if (s->getStmtClass() != Stmt::IfStmtClass){
+    errorAbort(s->getLocStart(), *CI, "predicate pragma not applied to if statement");
+  }
+  IfStmt* ifs = cast<IfStmt>(s);
+  replace(ifs->getCond(), r, prediction_, *CI);
+}
+
+void
 SSTMallocPragma::visitBinaryOperator(BinaryOperator *op, Rewriter &r)
 {
   PrettyPrinter pp;
@@ -465,6 +475,10 @@ SSTNullTypePragma::SSTNullTypePragma(SourceLocation loc, CompilerInstance& CI,
       templateCount--;
       connectNext = templateCount > 0;
       break;
+    case tok::kw_long:
+      next = "long";
+      connectNext = connectPrev;
+      break;
     case tok::kw_int:
       next = "int";
       connectNext = connectPrev;
@@ -563,6 +577,9 @@ SSTPragma::tokenStreamToString(SourceLocation loc,
       case tok::coloncolon:
         os << "::";
         break;
+      case tok::kw_long:
+        os << "long";
+        break;
       case tok::kw_int:
         os << "int";
         break;
@@ -577,6 +594,9 @@ SSTPragma::tokenStreamToString(SourceLocation loc,
         break;
       case tok::percent:
         os << "%";
+        break;
+      case tok::kw_true:
+        os << "true";
         break;
       case tok::kw_false:
         os << "false";
@@ -639,4 +659,12 @@ SSTEmptyPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token>
   std::stringstream sstr;
   SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
   return new SSTEmptyPragma(sstr.str());
+}
+
+SSTPragma*
+SSTBranchPredictPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  std::stringstream sstr;
+  SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
+  return new SSTBranchPredictPragma(sstr.str());
 }

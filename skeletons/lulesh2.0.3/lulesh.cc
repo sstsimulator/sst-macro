@@ -465,6 +465,7 @@ void IntegrateStressForElems( Domain &domain,
     CalcElemNodeNormals( B[0] , B[1], B[2],
                           x_local, y_local, z_local );
 
+   #pragma sst branch_predict true
     if (numthreads > 1) {
        // Eliminate thread writing conflicts at the nodes by giving
        // each element its own copy to write to
@@ -974,6 +975,7 @@ void CalcHourglassControlForElems(Domain& domain,
       }
    }
 
+  #pragma sst branch_predict true
    if ( hgcoef > Real_t(0.) ) {
       CalcFBHourglassForceForElems( domain,
                                     determ, x8n, y8n, z8n, dvdx, dvdy, dvdz,
@@ -1005,13 +1007,17 @@ void CalcVolumeForceForElems(Domain& domain)
       Real_t *determ = Allocate<Real_t>(numElem) ;
 
       /* Sum contributions to total stress tensor */
+      domain.start_timer();
       InitStressTermsForElems(domain, sigxx, sigyy, sigzz, numElem);
+      domain.stop_timer(Domain::InitStressTermsForElems);
 
       // call elemlib stress integration loop to produce nodal forces from
       // material stresses.
+      domain.start_timer();
       IntegrateStressForElems( domain,
                                sigxx, sigyy, sigzz, determ, numElem,
                                domain.numNode()) ;
+      domain.stop_timer(Domain::IntegrateStressForElems);
 
       // check for negative element volume
 #pragma omp parallel for firstprivate(numElem)
@@ -1025,7 +1031,9 @@ void CalcVolumeForceForElems(Domain& domain)
          }
       }
 
+      domain.start_timer();
       CalcHourglassControlForElems(domain, determ, hgcoef) ;
+      domain.stop_timer(Domain::CalcHourglassControlForElems);
 
       Release(&determ) ;
       Release(&sigzz) ;
@@ -1178,13 +1186,21 @@ void LagrangeNodal(Domain& domain)
 #endif
 #endif
    
+   domain.start_timer();
    CalcAccelerationForNodes(domain, domain.numNode());
-   
+   domain.stop_timer(Domain::CalcAccelerationForNodes);
+
+   domain.start_timer();
    ApplyAccelerationBoundaryConditionsForNodes(domain);
+   domain.stop_timer(Domain::ApplyAccelerationBoundaryConditionsForNodes);
 
+   domain.start_timer();
    CalcVelocityForNodes( domain, delt, u_cut, domain.numNode()) ;
+   domain.stop_timer(Domain::CalcVelocityForNodes);
 
+   domain.start_timer();
    CalcPositionForNodes( domain, delt, domain.numNode() );
+   domain.stop_timer(Domain::CalcPositionForNodes);
 #if USE_MPI
 #ifdef SEDOV_SYNC_POS_VEL_EARLY
   #pragma sst delete
@@ -1734,6 +1750,7 @@ void CalcMonotonicQRegionForElems(Domain &domain, Int_t r,
 
       /* Remove length scale */
 
+    #pragma sst branch_predict true
       if ( domain.vdov(i) > Real_t(0.) )  {
          qlin  = Real_t(0.) ;
          qquad = Real_t(0.) ;
@@ -1923,6 +1940,7 @@ void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
    for (Index_t i = 0 ; i < length ; ++i) {
       Real_t vhalf = Real_t(1.) / (Real_t(1.) + compHalfStep[i]) ;
 
+    #pragma sst branch_predict true
       if ( delvc[i] > Real_t(0.) ) {
          q_new[i] /* = qq_old[i] = ql_old[i] */ = Real_t(0.) ;
       }
@@ -1966,6 +1984,7 @@ void CalcEnergyForElems(Real_t* p_new, Real_t* e_new, Real_t* q_new,
       Index_t elem = regElemList[i];
       Real_t q_tilde ;
 
+    #pragma sst branch_predict true
       if (delvc[i] > Real_t(0.)) {
          q_tilde = Real_t(0.) ;
       }
@@ -2109,6 +2128,7 @@ void EvalEOSForElems(Domain& domain, Real_t *vnewc,
          }
 
       /* Check for v > eosvmax or v < eosvmin */
+    #pragma sst branch_predict true
          if ( eosvmin != Real_t(0.) ) {
 #pragma omp for nowait firstprivate(numElemReg, eosvmin)
             for(Index_t i=0 ; i<numElemReg ; ++i) {
@@ -2118,6 +2138,7 @@ void EvalEOSForElems(Domain& domain, Real_t *vnewc,
                }
             }
          }
+    #pragma sst branch_predict true
          if ( eosvmax != Real_t(0.) ) {
 #pragma omp for nowait firstprivate(numElemReg, eosvmax)
             for(Index_t i=0 ; i<numElemReg ; ++i) {
@@ -2187,6 +2208,7 @@ void ApplyMaterialPropertiesForElems(Domain& domain, Real_t vnew[])
 #pragma omp parallel
     {
        // Bound the updated relative volumes with eosvmin/max
+    #pragma sst branch_predict true
        if (eosvmin != Real_t(0.)) {
 #pragma omp for firstprivate(numElem)
           for(Index_t i=0 ; i<numElem ; ++i) {
@@ -2195,6 +2217,7 @@ void ApplyMaterialPropertiesForElems(Domain& domain, Real_t vnew[])
           }
        }
 
+    #pragma sst branch_predict true
        if (eosvmax != Real_t(0.)) {
 #pragma omp for nowait firstprivate(numElem)
           for(Index_t i=0 ; i<numElem ; ++i) {
@@ -2229,6 +2252,7 @@ void ApplyMaterialPropertiesForElems(Domain& domain, Real_t vnew[])
 
     for (Int_t r=0 ; r<domain.numReg() ; r++) {
        Index_t numElemReg = domain.regElemSize(r);
+      #pragma sst init nullptr
        Index_t *regElemList = domain.regElemlist(r);
        Int_t rep;
        //Determine load imbalance for this region
@@ -2276,15 +2300,23 @@ void LagrangeElements(Domain& domain, Index_t numElem)
 #pragma sst replace Allocate nullptr
   Real_t *vnew = Allocate<Real_t>(numElem) ;  /* new relative vol -- temp */
 
+  domain.start_timer();
   CalcLagrangeElements(domain, vnew) ;
+  domain.stop_timer(Domain::CalcLagrangeElements);
 
   /* Calculate Q.  (Monotonic q option requires communication) */
+  domain.start_timer();
   CalcQForElems(domain, vnew) ;
+  domain.stop_timer(Domain::CalcQForElems);
 
+  domain.start_timer();
   ApplyMaterialPropertiesForElems(domain, vnew) ;
+  domain.stop_timer(Domain::ApplyMaterialPropertiesForElems);
 
+  domain.start_timer();
   UpdateVolumesForElems(domain, vnew,
                         domain.v_cut(), numElem) ;
+  domain.stop_timer(Domain::UpdateVolumesForElems);
 
   Release(&vnew);
 }
@@ -2403,6 +2435,7 @@ void CalcHydroConstraintForElems(Domain &domain, Index_t length,
       for (Index_t i = 0 ; i < length ; ++i) {
          Index_t indx = regElemlist[i] ;
 
+       #pragma sst branch_predict true
          if (domain.vdov(indx) != Real_t(0.)) {
             Real_t dtdvov = dvovmax / (FABS(domain.vdov(indx))+Real_t(1.e-20)) ;
 
@@ -2494,7 +2527,9 @@ void LagrangeLeapFrog(Domain& domain)
 #endif
 #endif   
 
+   domain.start_timer();
    CalcTimeConstraintsForElems(domain);
+   domain.stop_timer(Domain::CalcTimeConstraintsForElems);
 
 #if USE_MPI   
 #ifdef SEDOV_SYNC_POS_VEL_LATE
@@ -2523,6 +2558,8 @@ int main(int argc, char *argv[])
    numRanks = 1;
    myRank = 0;
 #endif   
+
+  timeval t_start; gettimeofday(&t_start, NULL);
 
    /* Set defaults that can be overridden by command line opts */
    opts.its = 9999999;
@@ -2624,11 +2661,38 @@ int main(int argc, char *argv[])
    
    if ((myRank == 0) && (opts.quiet == 0)) {
       VerifyAndWriteFinalOutput(elapsed_timeG, *locDom, opts.nx, numRanks);
+      locDom->dump_timers();
    }
+
+   delete locDom;
 
 #if USE_MPI
    MPI_Finalize() ;
 #endif
+  timeval t_stop; gettimeofday(&t_stop, NULL);
+  if (myRank == 0){
+    double delta_t = (t_stop.tv_sec - t_start.tv_sec) + 1e-6*(t_stop.tv_usec - t_start.tv_usec);
+    printf("Total time = %12.8fs\n", delta_t);
+  }
 
    return 0 ;
+}
+
+void
+Domain::dump_timers(){
+#define print_timer(e) printf("%-35s = %12.8fs\n", #e, timers[e])
+   print_timer(CalcLagrangeElements);
+   print_timer(CalcQForElems);
+   print_timer(UpdateVolumesForElems);
+   print_timer(ApplyMaterialPropertiesForElems);
+   print_timer(CalcTimeConstraintsForElems);
+   print_timer(CalcAccelerationForNodes);
+   print_timer(InitStressTermsForElems);
+   print_timer(IntegrateStressForElems);
+   print_timer(CalcHourglassControlForElems);
+   //print_timer(ApplyAccelerationBoundaryConditionsForNodes);
+   print_timer(CalcVelocityForNodes);
+   print_timer(CalcPositionForNodes);
+
+#undef print_timer
 }

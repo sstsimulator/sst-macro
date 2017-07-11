@@ -37,8 +37,8 @@ using std::endl;
 
 #include "SetupHalo_ref.hpp"
 #include "mytimer.hpp"
-#include <mpi.h>
 
+#ifndef HPCG_NO_MPI
 void setupSkeleton(Geometry* geom, std::map<int,int>& sendList, std::map<int,int>& receiveList)
 {
   global_int_t nx = geom->nx;
@@ -54,38 +54,133 @@ void setupSkeleton(Geometry* geom, std::map<int,int>& sendList, std::map<int,int
   global_int_t gny = ny*npy;
   global_int_t gnz = nz*npz;
 
-  std::set<global_int_t> haveAlready;
-  for (local_int_t iz=0; iz<nz; iz++) {
-    global_int_t giz = ipz*nz+iz;
-    for (local_int_t iy=0; iy<ny; iy++) {
-      global_int_t giy = ipy*ny+iy;
-      for (local_int_t ix=0; ix<nx; ix++) {
-        global_int_t gix = ipx*nx+ix;
-        global_int_t currentGlobalRow = giz*gnx*gny+giy*gnx+gix;
-        for (int sz=-1; sz<=1; sz++) {
-          if (giz+sz>-1 && giz+sz<gnz) {
-            for (int sy=-1; sy<=1; sy++) {
-              if (giy+sy>-1 && giy+sy<gny) {
-                for (int sx=-1; sx<=1; sx++) {
-                  if (gix+sx>-1 && gix+sx<gnx) {
-                    global_int_t curcol = currentGlobalRow+sz*gnx*gny+sy*gnx+sx;
-                    int rankIdOfColumnEntry = ComputeRankOfMatrixRow(*geom, curcol);
-                    if (rankIdOfColumnEntry != geom->rank){
-                      if (haveAlready.find(curcol) == haveAlready.end()){
-                        haveAlready.insert(curcol);
-                        sendList[rankIdOfColumnEntry]++;
-                        receiveList[rankIdOfColumnEntry]++;
-                      }
-                    }
-                  } // end x bounds test
-                } // end sx loop
-              } // end y bounds test
-            } // end sy loop
-          } // end z bounds test
-        } // end sz loop
-      } // end ix loop
-    } // end iy loop
-  } // end iz loop
+  global_int_t myZstart = nz*ipz;
+  global_int_t myZstop = nz*(ipz+1);
+  global_int_t myYstart = ny*ipy;
+  global_int_t myYstop = ny*(ipy+1);
+  global_int_t myXstart = nx*ipx;
+  global_int_t myXstop = nx*(ipx+1);
+
+  std::vector<global_int_t> zFaces; zFaces.reserve(2);
+  if (myZstart != 0) zFaces.push_back(myZstart-1);
+  if (myZstop < gnz) zFaces.push_back(myZstop+1);
+
+  std::vector<global_int_t> yFaces; yFaces.reserve(2);
+  if (myYstart != 0) yFaces.push_back(myYstart-1);
+  if (myYstop < gny) yFaces.push_back(myYstop+1);
+
+  std::vector<global_int_t> xFaces; xFaces.reserve(2);
+  if (myXstart != 0) xFaces.push_back(myXstart-1);
+  if (myXstop < gnx) xFaces.push_back(myXstop+1);
+
+  for (global_int_t giz : zFaces){
+    local_int_t ipz = giz/nz;
+    global_int_t zRankOffset = ipz*npy*npx;
+    for (global_int_t giy=myYstart; giy < myYstop; ++giy){
+      local_int_t ipy = giy/ny;
+      global_int_t yRankOffset = ipy*npx;
+      for (global_int_t gix=myXstart; gix < myXstop; ++gix){
+        local_int_t ipx = gix/nx;
+        int rank = ipx+zRankOffset+yRankOffset;
+        sendList[rank]++;
+        receiveList[rank]++;
+      }
+    }
+  }
+
+  for (global_int_t giz=myZstart; giz < myZstop; ++giz){
+    local_int_t ipz = giz/nz;
+    global_int_t zRankOffset = ipz*npy*npx;
+    for (global_int_t giy : yFaces){
+      local_int_t ipy = giy/ny;
+      global_int_t yRankOffset = ipy*npx;
+      for (global_int_t gix=myXstart; gix < myXstop; ++gix){
+        local_int_t ipx = gix/nx;
+        int rank = ipx+zRankOffset+yRankOffset;
+        sendList[rank]++;
+        receiveList[rank]++;
+      }
+    }
+  }
+
+  for (global_int_t giz=myZstart; giz < myZstop; ++giz){
+    local_int_t ipz = giz/nz;
+    global_int_t zRankOffset = ipz*npy*npx;
+    for (global_int_t giy=myYstart; giy < myYstop; giy++){
+      local_int_t ipy = giy/ny;
+      global_int_t yRankOffset = ipy*npx;
+      for (global_int_t gix : xFaces){
+        local_int_t ipx = gix/nx;
+        int rank = ipx+zRankOffset+yRankOffset;
+        sendList[rank]++;
+        receiveList[rank]++;
+      }
+    }
+  }
+
+  //y and z faces
+  for (global_int_t giz : zFaces){
+    local_int_t ipz = giz/nz;
+    global_int_t zRankOffset = ipz*npy*npx;
+    for (global_int_t giy : yFaces){
+      local_int_t ipy = giy/ny;
+      global_int_t yRankOffset = ipy*npx;
+      for (global_int_t gix=myXstart; gix < myXstop; ++gix){
+        local_int_t ipx = gix/nx;
+        int rank = ipx+zRankOffset+yRankOffset;
+        sendList[rank]++;
+        receiveList[rank]++;
+      }
+    }
+  }
+
+  //x and z faces
+  for (global_int_t giz : zFaces){
+    local_int_t ipz = giz/nz;
+    global_int_t zRankOffset = ipz*npy*npx;
+    for (global_int_t giy=myYstart; giy < myYstop; giy++){
+      local_int_t ipy = giy/ny;
+      global_int_t yRankOffset = ipy*npx;
+      for (global_int_t gix : xFaces){
+        local_int_t ipx = gix/nx;
+        int rank = ipx+zRankOffset+yRankOffset;
+        sendList[rank]++;
+        receiveList[rank]++;
+      }
+    }
+  }
+
+  //x and y faces
+  for (global_int_t giz=myZstart; giz < myZstop; ++giz){
+    local_int_t ipz = giz/nz;
+    global_int_t zRankOffset = ipz*npy*npx;
+    for (global_int_t giy : yFaces){
+      local_int_t ipy = giy/ny;
+      global_int_t yRankOffset = ipy*npx;
+      for (global_int_t gix : xFaces){
+        local_int_t ipx = gix/nx;
+        int rank = ipx+zRankOffset+yRankOffset;
+        sendList[rank]++;
+        receiveList[rank]++;
+      }
+    }
+  }
+
+  //x,y,and z face
+  for (global_int_t giz : zFaces){
+    local_int_t ipz = giz/nz;
+    global_int_t zRankOffset = ipz*npy*npx;
+    for (global_int_t giy : yFaces){
+      local_int_t ipy = giy/ny;
+      global_int_t yRankOffset = ipy*npx;
+      for (global_int_t gix : xFaces){
+        local_int_t ipx = gix/nx;
+        int rank = ipx+zRankOffset+yRankOffset;
+        sendList[rank]++;
+        receiveList[rank]++;
+      }
+    }
+  }
 }
 
 void setupSkeletonNeighbors(int* neighbors, int* sendLength, std::map<int,int>& sendList,
@@ -103,6 +198,7 @@ void setupSkeletonNeighbors(int* neighbors, int* sendLength, std::map<int,int>& 
     ++index;
   }
 }
+#endif
 
 
 /*!
@@ -131,6 +227,7 @@ void SetupHalo_ref(SparseMatrix & A) {
 #endif
   for (local_int_t i=0; i< localNumberOfRows; i++) {
     int cur_nnz = nonzerosInRow[i];
+   #pragma sst loop_count 27
     for (int j=0; j<cur_nnz; j++) mtxIndL[i][j] = mtxIndG[i][j];
   }
 

@@ -46,10 +46,6 @@ void ExchangeHalo(const SparseMatrix & A, Vector & x) {
 
   double * const xv = x.values;
 
-  int size, rank; // Number of MPI processes, My process ID
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
   //
   //  first post receives, these are immediate receives
   //  Do not wait for result to come, will do that at the
