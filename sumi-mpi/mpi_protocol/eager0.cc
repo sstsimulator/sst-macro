@@ -46,6 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
 #include <sumi-mpi/mpi_queue/mpi_queue_recv_request.h>
 #include <sstmac/software/process/backtrace.h>
+#include <sstmac/null_buffer.h>
 
 namespace sumi {
 
@@ -53,7 +54,7 @@ void
 eager0::configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& msg,
                               void *buffer, mpi_type* type)
 {
-  if (buffer){
+  if (isNonNullBuffer(buffer)){
     void* eager_buf = fill_send_buffer(msg, buffer, type);
     msg->eager_buffer() = eager_buf;
   }
@@ -85,7 +86,7 @@ eager0::incoming_payload(mpi_queue *queue,
   if (req) {
     if (msg->local_buffer().ptr && req->recv_buffer_){
       msg->remote_buffer().ptr = req->recv_buffer_;
-      msg->move_local_to_remote();
+      msg->inject_local_to_remote();
     }
     queue->finalize_recv(msg, req);
 #if SSTMAC_COMM_SYNC_STATS

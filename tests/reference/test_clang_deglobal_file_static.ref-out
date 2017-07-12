@@ -1,5 +1,5 @@
 
-extern int sstmac_global_stacksize; extern int __offset_xyzx; void* __ptr_xyzx = &x; int __sizeof_xyzx = sizeof(x);static int x = 10;static inline int* get_xyzx(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char* offsetPtr = *((char**)localStorage) + __offset_xyzx; return (((int*)((void*)offsetPtr))); }  
+static int x = 10;extern int sstmac_global_stacksize; extern int __offset_xyzx; void* __ptr_xyzx = &x; int __sizeof_xyzx = sizeof(x);static inline int* get_xyzx(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char* offsetPtr = *((char**)localStorage) + __offset_xyzx; return (((int*)((void*)offsetPtr))); }  
 
 void fxn()
 {

@@ -43,6 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include "util.h"
+#include <sstream>
 
 using namespace clang;
 using namespace clang::driver;
@@ -79,7 +80,7 @@ errorAbort(SourceLocation loc, CompilerInstance &CI, const std::string &error)
   std::string errorStr;
   llvm::raw_string_ostream os(errorStr);
   loc.print(os, CI.getSourceManager());
-  os << " error: " << error;
+  os << ": error: " << error;
   std::cerr << os.str() << std::endl;
   exit(EXIT_FAILURE);
 }
@@ -90,6 +91,38 @@ warn(SourceLocation loc, CompilerInstance &CI, const std::string &warning)
   std::string errorStr;
   llvm::raw_string_ostream os(errorStr);
   loc.print(os, CI.getSourceManager());
-  os << " WARNING: " << warning;
+  os << ": warning: " << warning;
   std::cerr << os.str() << std::endl;
 }
+
+void
+replace(SourceRange rng, Rewriter& r, const std::string& repl, CompilerInstance& CI)
+{
+  PresumedLoc start = CI.getSourceManager().getPresumedLoc(rng.getBegin());
+  PresumedLoc stop = CI.getSourceManager().getPresumedLoc(rng.getEnd());
+  int numLinesDeleted = stop.getLine() - start.getLine();
+  std::stringstream sstr;
+  sstr << repl;
+  for (int i=0; i < numLinesDeleted; ++i){
+    sstr << "\n";
+  }
+  //sstr << "\n# " << stop.getLine()
+  //     << " \"" << stop.getFilename()
+  //     << "\" " << stop.getColumn()
+  //     << "\n";
+  r.ReplaceText(rng, sstr.str());
+}
+
+void
+replace(const Decl *d, Rewriter &r, const std::string &repl, CompilerInstance& CI)
+{
+  replace(d->getSourceRange(), r, repl, CI);
+}
+
+void
+replace(const Stmt *s, Rewriter &r, const std::string &repl, CompilerInstance& CI)
+{
+  replace(s->getSourceRange(), r, repl, CI);
+}
+
+

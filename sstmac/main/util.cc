@@ -45,6 +45,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/util.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/app.h>
+#include <cstring>
+#include <sstmac/null_buffer.h>
 
 typedef int (*main_fxn)(int,char**);
 typedef int (*empty_main_fxn)();
@@ -59,9 +61,44 @@ get_params(){
   return sstmac::sw::operating_system::current_thread()->parent_app()->params();
 }
 
+
+namespace std {
+void* sstmac_memset(void* ptr, int value, size_t sz){
+  if (isNonNullBuffer(ptr)) std::memset(ptr,value,sz);
+  return ptr;
+}
+
+void sstmac_free(void* ptr){
+  if (isNonNullBuffer(ptr)){
+    ::free(ptr);
+  }
+}
+}
+
+extern "C"
+void* sstmac_memset(void* ptr, int value, size_t sz){
+#ifdef memset
+#error #sstmac memset macro should not be defined in util.cc - refactor needed
+#endif
+  if (isNonNullBuffer(ptr)) memset(ptr,value,sz);
+  return ptr;
+}
+
+extern "C"
+void sstmac_free(void* ptr){
+#ifdef free
+#error #sstmac free macro should not be defined in util.cc - refactor needed
+#endif
+  if (isNonNullBuffer(ptr)) free(ptr);
+}
+
 int&
 should_skip_operator_new(){
   return sstmac::sw::operating_system::static_os_thread_context().skip_next_op_new;
+}
+
+double omp_get_wtime(){
+  return sstmac_now();
 }
 
 int

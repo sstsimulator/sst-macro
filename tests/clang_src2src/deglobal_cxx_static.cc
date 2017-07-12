@@ -9,11 +9,11 @@ struct A {
 namespace ns {
 struct B {
  static int x;
-}
+};
 namespace ns2 {
  struct C {
   static int x;
- }
+ };
 }
 }
 

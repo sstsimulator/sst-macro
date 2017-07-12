@@ -79,6 +79,7 @@ job_launcher::incoming_event(event *ev)
   job_stop_event* stop_ev = safe_cast(job_stop_event, ev);
   cleanup_app(stop_ev);
   stop_event_received(stop_ev);
+  delete stop_ev;
 }
 
 void

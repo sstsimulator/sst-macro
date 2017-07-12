@@ -112,6 +112,8 @@ class transport_message :
   }
 
   virtual void put_on_wire() override;
+  virtual void take_off_wire() override;
+  virtual void intranode_memmove() override;
 
   ::sstmac::hw::network_message* clone_injection_ack() const override;
 

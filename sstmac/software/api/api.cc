@@ -78,17 +78,17 @@ static_get_api(const char *name)
 
 api::~api()
 {
-  if (hostcompute_) {
-    delete timer_;
+  if (host_timer_) {
+    delete host_timer_;
   }
 }
 
 void
 api::init(sprockit::sim_parameters* params)
 {
-  hostcompute_ = params->get_optional_bool_param("host_compute_modeling", false);
-  if (hostcompute_) {
-    timer_ = new Timer();
+  bool host_compute_local = params->get_optional_bool_param("host_api_timer", false);
+  if (host_compute_local) {
+    host_timer_ = new HostTimer();
     compute_ = operating_system::current_thread()->parent_app()->compute_time_lib();
   }
 }
@@ -96,24 +96,19 @@ api::init(sprockit::sim_parameters* params)
 void
 api::start_api_call()
 {
-  if (hostcompute_) {
-    if (endcount_ > 0
-        && startcount_ == endcount_) { //can't do it on the first time through
-      timer_->start();
-
-      timestamp t(timer_->getTime());
-      compute_->compute(t);
-    }
-    startcount_++;
+  if (host_timer_){
+    host_timer_->start();
   }
+  os_->active_thread()->start_api_call();
 }
 void
 api::end_api_call()
 {
-  if (hostcompute_) {
-    timer_->stamp();
-    endcount_++;
+  if (host_timer_) {
+    double time = host_timer_->stamp();
+    compute_->compute(timestamp(time));
   }
+  os_->active_thread()->end_api_call();
 }
 
 timestamp
@@ -132,55 +127,6 @@ void
 api::schedule_delay(timestamp t, event_queue_entry* ev)
 {
   os()->schedule_delay(t, ev);
-}
-
-Timer::Timer()
-{
-
-#if defined(_MAC)
-  mach_timebase_info_data_t info;
-  mach_timebase_info(&info);
-
-  conv_factor_ = (static_cast<double> (info.numer))
-                / (static_cast<double> (info.denom));
-  conv_factor_ = conv_factor_ * 1.0e-9;
-
-#else
-  conv_factor_ = 1.0;
-#endif
-
-  reset();
-}
-
-inline void
-Timer::start()
-{
-
-#if defined(_MAC)
-  start_ = mach_absolute_time();
-
-#else
-  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts_);
-  start_ = static_cast<double>(ts_.tv_sec) + 1.0e-9 *
-          static_cast<double>(ts_.tv_nsec);
-
-#endif
-}
-
-inline void
-Timer::stamp()
-{
-#if defined(_MAC)
-  duration_ = static_cast<double> (mach_absolute_time() - start_);
-
-#else
-  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts_);
-  duration_ = (static_cast<double>(ts_.tv_sec) + 1.0e-9 *
-              static_cast<double>(ts_.tv_nsec)) - start_;
-
-#endif
-
-  elapsed_time_ = duration_ * conv_factor_;
 }
 
 }

@@ -193,6 +193,9 @@ parallel_runtime::parallel_runtime(sprockit::sim_parameters* params,
 parallel_runtime::~parallel_runtime()
 {
   if (part_) delete part_;
+  for (auto&& buf : send_buffers_){
+    buf.erase();
+  }
 }
 
 static inline void

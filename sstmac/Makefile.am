@@ -26,13 +26,13 @@ STD_SUBDIRS = \
 library_includedir=$(includedir)/sstmac
 
 library_include_HEADERS = \
-variable.h \
 blas.h \
 compute.h \
 sstmacro.h \
 util.h \
 sstsockets.h \
 skeleton.h \
+null_buffer.h \
 sumi.h
 
 SUBDIRS = $(STD_SUBDIRS) 

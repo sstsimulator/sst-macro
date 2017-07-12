@@ -42,6 +42,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#endif
+#include <inttypes.h>
+
 #include <sstmac/software/libraries/compute/lib_compute_inst.h>
 #include <sstmac/software/libraries/compute/lib_compute_time.h>
 #include <sstmac/software/libraries/compute/lib_compute_memmove.h>
@@ -92,12 +97,18 @@ app::app(sprockit::sim_parameters *params, software_id sid,
   next_tls_key_(0),
   next_condition_(0),
   next_mutex_(0),
+  min_op_cutoff_(0),
   globals_storage_(nullptr)
 {
   int globalsSize = GlobalVariable::globalsSize();
   if (globalsSize != 0){
     globals_storage_ = new char[globalsSize];
     ::memcpy(globals_storage_, GlobalVariable::globalInit(), globalsSize);
+  }
+  min_op_cutoff_ = params->get_optional_int_param("min_op_cutoff", 1e3);
+  bool host_compute = params->get_optional_bool_param("host_compute_timer", false);
+  if (host_compute){
+    host_timer_ = new HostTimer;
   }
 }
 
@@ -107,6 +118,8 @@ app::~app()
   //sprockit::delete_vals(apis_);
   if (compute_lib_) delete compute_lib_;
   if (globals_storage_) delete[] globals_storage_;
+  //we own a unique copy
+  //if (params_) delete params_;
 }
 
 lib_compute_loops*
@@ -174,8 +187,15 @@ app::compute_loop(uint64_t num_loops,
 }
 
 void
-app::compute_detailed(long flops, long nintops, long bytes)
+app::compute_detailed(uint64_t flops, uint64_t nintops, uint64_t bytes)
 {
+  static const uint64_t overflow = 18006744072479883520ull;
+  if (flops > overflow || bytes > overflow){
+    spkt_abort_printf("flops/byte counts for compute overflowed");
+  }
+  if ((flops+nintops) < min_op_cutoff_){
+    return;
+  }
   compute_loops_lib()->compute_detailed(flops, nintops, bytes);
 }
 
@@ -224,7 +244,11 @@ app::run()
 {
   SSTMACBacktrace("main");
   os_->increment_app_refcount();
+  end_api_call(); //this initializes things, "fake" api call at beginning
   skeleton_main();
+  //we are ending but perform the equivalent
+  //to a start api call to flush any compute
+  start_api_call();
   for (auto& pair : apis_){
     delete pair.second;
   }

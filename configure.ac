@@ -119,6 +119,9 @@ os=`$srcdir/bin/config_tools/get_os`
 
 if test "X$os" = "Xubuntu"; then
 LDFLAGS="$LDFLAGS -Wl,--no-as-needed"
+AM_CONDITIONAL([HAVE_UBUNTU], [true])
+else
+AM_CONDITIONAL([HAVE_UBUNTU], [false])
 fi
 
 CHECK_CLANG()

@@ -90,6 +90,7 @@ nobase_library_include_HEADERS = \
   process/app_id.h \
   process/key.h \
   process/key_fwd.h \
+  process/host_timer.h \
   process/operating_system.h \
   process/operating_system_fwd.h \
   process/software_id.h \

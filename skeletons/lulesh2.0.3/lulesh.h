@@ -69,6 +69,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <math.h>
 #include <vector>
+#include <sys/time.h>
+#include <cstring>
 
 //**************************************************
 // Allow flexibility for arithmetic representations 
@@ -179,6 +181,8 @@ class Domain {
           Index_t rowLoc, Index_t planeLoc,
           Index_t nx, Int_t tp, Int_t nr, Int_t balance, Int_t cost);
 
+   ~Domain();
+
    //
    // ALLOCATION
    //
@@ -204,7 +208,6 @@ class Domain {
       m_nodalMass.resize(numNode);  // mass
    }
 
-#pragma sst new
    void AllocateElemPersistent(Int_t numElem) // Elem-centered
    {
       m_nodelist.resize(8*numElem);
@@ -239,7 +242,6 @@ class Domain {
       m_elemMass.resize(numElem);
    }
 
-#pragma sst new
    void AllocateGradients(Int_t numElem, Int_t allElem)
    {
       // Position gradients
@@ -264,7 +266,6 @@ class Domain {
       m_delv_xi.clear() ;
    }
 
-#pragma sst new
    void AllocateStrains(Int_t numElem)
    {
       m_dxx.resize(numElem) ;
@@ -286,31 +287,47 @@ class Domain {
    // Node-centered
 
    // Nodal coordinates
+#pragma sst delete
    Real_t& x(Index_t idx)    { return m_x[idx] ; }
+#pragma sst delete
    Real_t& y(Index_t idx)    { return m_y[idx] ; }
+#pragma sst delete
    Real_t& z(Index_t idx)    { return m_z[idx] ; }
 
    // Nodal velocities
+#pragma sst delete
    Real_t& xd(Index_t idx)   { return m_xd[idx] ; }
+#pragma sst delete
    Real_t& yd(Index_t idx)   { return m_yd[idx] ; }
+#pragma sst delete
    Real_t& zd(Index_t idx)   { return m_zd[idx] ; }
 
    // Nodal accelerations
+#pragma sst delete
    Real_t& xdd(Index_t idx)  { return m_xdd[idx] ; }
+#pragma sst delete
    Real_t& ydd(Index_t idx)  { return m_ydd[idx] ; }
+#pragma sst delete
    Real_t& zdd(Index_t idx)  { return m_zdd[idx] ; }
 
    // Nodal forces
+#pragma sst delete
    Real_t& fx(Index_t idx)   { return m_fx[idx] ; }
+#pragma sst delete
    Real_t& fy(Index_t idx)   { return m_fy[idx] ; }
+#pragma sst delete
    Real_t& fz(Index_t idx)   { return m_fz[idx] ; }
 
    // Nodal mass
+#pragma sst delete
    Real_t& nodalMass(Index_t idx) { return m_nodalMass[idx] ; }
 
    // Nodes on symmertry planes
+#pragma sst delete
    Index_t symmX(Index_t idx) { return m_symmX[idx] ; }
+#pragma sst delete
    Index_t symmY(Index_t idx) { return m_symmY[idx] ; }
+#pragma sst delete
    Index_t symmZ(Index_t idx) { return m_symmZ[idx] ; }
    bool symmXempty()          { return m_symmX.empty(); }
    bool symmYempty()          { return m_symmY.empty(); }
@@ -320,75 +337,111 @@ class Domain {
    // Element-centered
    //
    Index_t&  regElemSize(Index_t idx) { return m_regElemSize[idx] ; }
+#pragma sst delete
    Index_t&  regNumList(Index_t idx) { return m_regNumList[idx] ; }
+#pragma sst delete
    Index_t*  regNumList()            { return &m_regNumList[0] ; }
-   Index_t*  regElemlist(Int_t r)    { return m_regElemlist[r] ; }
+   Index_t*  regElemlist(Int_t r)    { 
+#pragma sst return nullptr
+    return m_regElemlist[r] ; 
+  }
+#pragma sst delete
    Index_t&  regElemlist(Int_t r, Index_t idx) { return m_regElemlist[r][idx] ; }
-
+#pragma sst delete
    Index_t*  nodelist(Index_t idx)    { return &m_nodelist[Index_t(8)*idx] ; }
 
    // elem connectivities through face
+#pragma sst delete
    Index_t&  lxim(Index_t idx) { return m_lxim[idx] ; }
+#pragma sst delete
    Index_t&  lxip(Index_t idx) { return m_lxip[idx] ; }
+#pragma sst delete
    Index_t&  letam(Index_t idx) { return m_letam[idx] ; }
+#pragma sst delete
    Index_t&  letap(Index_t idx) { return m_letap[idx] ; }
+#pragma sst delete
    Index_t&  lzetam(Index_t idx) { return m_lzetam[idx] ; }
+#pragma sst delete
    Index_t&  lzetap(Index_t idx) { return m_lzetap[idx] ; }
 
    // elem face symm/free-surface flag
+#pragma sst delete
    Int_t&  elemBC(Index_t idx) { return m_elemBC[idx] ; }
 
    // Principal strains - temporary
+#pragma sst delete
    Real_t& dxx(Index_t idx)  { return m_dxx[idx] ; }
+#pragma sst delete
    Real_t& dyy(Index_t idx)  { return m_dyy[idx] ; }
+#pragma sst delete
    Real_t& dzz(Index_t idx)  { return m_dzz[idx] ; }
 
    // Velocity gradient - temporary
+#pragma sst delete
    Real_t& delv_xi(Index_t idx)    { return m_delv_xi[idx] ; }
+#pragma sst delete
    Real_t& delv_eta(Index_t idx)   { return m_delv_eta[idx] ; }
+#pragma sst delete
    Real_t& delv_zeta(Index_t idx)  { return m_delv_zeta[idx] ; }
 
    // Position gradient - temporary
+#pragma sst delete
    Real_t& delx_xi(Index_t idx)    { return m_delx_xi[idx] ; }
+#pragma sst delete
    Real_t& delx_eta(Index_t idx)   { return m_delx_eta[idx] ; }
+#pragma sst delete
    Real_t& delx_zeta(Index_t idx)  { return m_delx_zeta[idx] ; }
 
    // Energy
+#pragma sst delete
    Real_t& e(Index_t idx)          { return m_e[idx] ; }
 
    // Pressure
+#pragma sst delete
    Real_t& p(Index_t idx)          { return m_p[idx] ; }
 
    // Artificial viscosity
+#pragma sst delete
    Real_t& q(Index_t idx)          { return m_q[idx] ; }
 
    // Linear term for q
+#pragma sst delete
    Real_t& ql(Index_t idx)         { return m_ql[idx] ; }
    // Quadratic term for q
+#pragma sst delete
    Real_t& qq(Index_t idx)         { return m_qq[idx] ; }
 
    // Relative volume
+#pragma sst delete
    Real_t& v(Index_t idx)          { return m_v[idx] ; }
+#pragma sst delete
    Real_t& delv(Index_t idx)       { return m_delv[idx] ; }
 
    // Reference volume
+#pragma sst delete
    Real_t& volo(Index_t idx)       { return m_volo[idx] ; }
 
    // volume derivative over volume
+#pragma sst delete
    Real_t& vdov(Index_t idx)       { return m_vdov[idx] ; }
 
    // Element characteristic length
+#pragma sst delete
    Real_t& arealg(Index_t idx)     { return m_arealg[idx] ; }
 
    // Sound speed
+#pragma sst delete
    Real_t& ss(Index_t idx)         { return m_ss[idx] ; }
 
    // Element mass
+#pragma sst delete
    Real_t& elemMass(Index_t idx)  { return m_elemMass[idx] ; }
 
+#pragma sst delete
    Index_t nodeElemCount(Index_t idx)
    { return m_nodeElemStart[idx+1] - m_nodeElemStart[idx] ; }
 
+#pragma sst delete
    Index_t *nodeElemCornerList(Index_t idx)
    { return &m_nodeElemCornerList[m_nodeElemStart[idx]] ; }
 
@@ -462,6 +515,7 @@ class Domain {
    MPI_Request sendRequest[26] ; // 6 faces + 12 edges + 8 corners 
 #endif
 
+
   private:
 
    void BuildMesh(Int_t nx, Int_t edgeNodes, Int_t edgeElems);
@@ -477,26 +531,42 @@ class Domain {
    //
 
    /* Node-centered */
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_x ;  /* coordinates */
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_y ;
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_z ;
 
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_xd ; /* velocities */
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_yd ;
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_zd ;
 
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_xdd ; /* accelerations */
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_ydd ;
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_zdd ;
 
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_fx ;  /* forces */
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_fy ;
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_fz ;
 
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_nodalMass ;  /* mass */
 
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Index_t> m_symmX ;  /* symmetry plane nodesets */
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Index_t> m_symmY ;
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Index_t> m_symmZ ;
 
    // Element-centered
@@ -505,49 +575,81 @@ class Domain {
    Int_t    m_numReg ;
    Int_t    m_cost; //imbalance cost
    Index_t *m_regElemSize ;   // Size of region sets
+#pragma sst null_variable
    Index_t *m_regNumList ;    // Region number per domain element
-   Index_t **m_regElemlist ;  // region indexset 
-
+#pragma sst null_variable
+   Index_t **m_regElemlist ;  // region indexset
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Index_t>  m_nodelist ;     /* elemToNode connectivity */
 
+
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Index_t>  m_lxim ;  /* element connectivity across each face */
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Index_t>  m_lxip ;
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Index_t>  m_letam ;
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Index_t>  m_letap ;
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Index_t>  m_lzetam ;
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Index_t>  m_lzetap ;
 
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Int_t>    m_elemBC ;  /* symmetry/free-surface flags for each elem face */
 
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_dxx ;  /* principal strains -- temporary */
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_dyy ;
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_dzz ;
 
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_delv_xi ;    /* velocity gradient -- temporary */
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_delv_eta ;
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_delv_zeta ;
 
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_delx_xi ;    /* coordinate gradient -- temporary */
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_delx_eta ;
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_delx_zeta ;
    
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_e ;   /* energy */
 
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_p ;   /* pressure */
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_q ;   /* q */
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_ql ;  /* linear term for q */
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_qq ;  /* quadratic term for q */
 
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_v ;     /* relative volume */
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_volo ;  /* reference volume */
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_vnew ;  /* new relative volume -- temporary */
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_delv ;  /* m_vnew - m_v */
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_vdov ;  /* volume derivative over volume */
 
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_arealg ;  /* characteristic length of an element */
    
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_ss ;      /* "sound speed" */
 
+#pragma sst null_type sstmac::vector size resize empty
    std::vector<Real_t> m_elemMass ;  /* mass */
 
    // Cutoffs (treat as constants)
@@ -612,6 +714,39 @@ class Domain {
    Index_t m_colMin, m_colMax;
    Index_t m_planeMin, m_planeMax ;
 
+ public:
+  typedef enum {
+  CalcLagrangeElements=0,
+  CalcQForElems=1,
+  UpdateVolumesForElems=2,
+  ApplyMaterialPropertiesForElems=3,
+  CalcTimeConstraintsForElems=4,
+  CalcAccelerationForNodes=5,
+  InitStressTermsForElems=6,
+  IntegrateStressForElems=7,
+  CalcHourglassControlForElems=8,
+  ApplyAccelerationBoundaryConditionsForNodes=9,
+  CalcVelocityForNodes=10,
+  CalcPositionForNodes=11,
+  TimerEnd=12
+  } Timer_t;
+
+  void start_timer(){
+   gettimeofday(&t_start,NULL);
+  }
+
+  void stop_timer(Timer_t t){
+   timeval t_stop;
+   gettimeofday(&t_stop, NULL);
+   double delta_t = (t_stop.tv_sec - t_start.tv_sec) + 1e-6*(t_stop.tv_usec-t_start.tv_usec);
+   timers[t] += delta_t;
+  }
+
+  void dump_timers();
+
+ private:
+  double timers[TimerEnd];
+  timeval t_start;
 } ;
 
 typedef Real_t &(Domain::* Domain_member )(Index_t) ;

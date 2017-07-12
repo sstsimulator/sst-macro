@@ -78,7 +78,7 @@ mpi_api::sendrecv(const void *sendbuf, int sendcount,
  MPI_Datatype recvtype, int source, int recvtag,
  MPI_Comm comm, MPI_Status *status)
 {
-  start_pt2pt_call(MPI_Sendrecv,recvcount,recvtype,source,recvtag,comm);
+  start_pt2pt_call(MPI_Sendrecv,sendcount,sendtype,source,recvtag,comm);
   mpi_request* req = do_isend(sendbuf, sendcount, sendtype, dest, sendtag, comm);
   do_recv(recvbuf, recvcount, recvtype, source, recvtag, comm, status);
   queue_->progress_loop(req);
@@ -132,6 +132,7 @@ mpi_api::start(MPI_Request* req)
 {
   _start_mpi_call_(MPI_Start);
   do_start(*req);
+  end_api_call();
   return MPI_SUCCESS;
 }
 
@@ -142,6 +143,7 @@ mpi_api::startall(int count, MPI_Request* req)
   for (int i=0; i < count; ++i){
     do_start(req[i]);
   }
+  end_api_call();
   return MPI_SUCCESS;
 }
 
@@ -171,7 +173,7 @@ mpi_api::send_init(const void *buf, int count,
   op->comm = comm;
 
   req->set_persistent(op);
-
+  end_api_call();
   return MPI_SUCCESS;
 }
 
@@ -251,7 +253,7 @@ mpi_api::recv_init(void *buf, int count, MPI_Datatype datatype, int source,
   op->comm = comm;
 
   req->set_persistent(op);
-
+  end_api_call();
   return MPI_SUCCESS;
 }
 

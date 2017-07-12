@@ -72,17 +72,19 @@ if HAVE_CLANG
 bin_PROGRAMS += sstmac_clang_deglobal
 sstmac_clang_deglobal_SOURCES = \
   clang/util.cc \
-  clang/globals.cc \
+  clang/main.cc \
   clang/pragmas.cc \
   clang/computePragma.cc \
+  clang/computeVisitor.cc \
+  clang/replacePragma.cc \
   clang/astConsumers.cc \
   clang/frontendActions.cc \
-  clang/replAstVisitor.cc 
+  clang/astVisitor.cc 
 
 sstmac_clang_deglobal_CXXFLAGS = -fno-rtti $(AM_CXXFLAGS)
 sstmac_clang_deglobal_CPPFLAGS = $(CLANG_CPPFLAGS) $(AM_CPPFLAGS)
 sstmac_clang_deglobal_LDFLAGS = $(CLANG_LDFLAGS) \
- -Wl,-rpath,$(HOME)/Programs/install/clang-llvm/lib \
+ -Wl,-rpath,@CLANG_INSTALL_DIR@/lib \
  -lclang \
  -lz \
  -lm \

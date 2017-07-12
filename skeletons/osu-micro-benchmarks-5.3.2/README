@@ -1,0 +1,178 @@
+OMB (OSU Micro-Benchmarks)
+--------------------------
+The OSU Micro-Benchmarks use the GNU build system. Therefore you can simply
+use the following steps to build the MPI benchmarks.
+
+To generate configure:
+  ./bootstrap.sh
+
+To setup the necessary env variables (mainly SSTMAC_HEADERS):
+  source env.sh
+
+Then, e.g.
+	./configure CC=/path/to/mpicc CXX=/path/to/mpicxx
+	make
+	make install
+
+
+The MPI Multiple Bandwidth / Message Rate (osu_mbw_mr), OpenSHMEM Put Message
+Rate (osu_oshm_put_mr), and OpenSHMEM Atomics (osu_oshm_atomics) tests are
+intended to be used with block assigned ranks.  This means that all processes
+on the same machine are assigned ranks sequentially.
+
+Rank	Block   Cyclic
+----------------------
+0	host1	host1
+1	host1	host2
+2	host1	host1
+3	host1	host2
+4	host2	host1
+5	host2	host2
+6	host2	host1
+7	host2	host2
+
+If you're using mpirun_rsh the ranks are assigned in the order they are seen in
+the hostfile or on the command line.  Please see your process managers'
+documentation for information on how to control the distribution of the rank to
+host mapping.
+
+Point-to-Point MPI Benchmarks
+-----------------------------
+osu_latency - Latency Test
+    * The latency tests are carried out in a ping-pong fashion. The sender
+    * sends a message with a certain data size to the receiver and waits for a
+    * reply from the receiver. The receiver receives the message from the sender
+    * and sends back a reply with the same data size. Many iterations of this
+    * ping-pong test are carried out and average one-way latency numbers are
+    * obtained. Blocking version of MPI functions (MPI_Send and MPI_Recv) are
+    * used in the tests. This test is available here.
+
+osu_latency_mt - Multi-threaded Latency Test
+    * The multi-threaded latency test performs a ping-pong test with a single
+    * sender process and multiple threads on the receiving process. In this test
+    * the sending process sends a message of a given data size to the receiver
+    * and waits for a reply from the receiver process. The receiving process has
+    * a variable number of receiving threads (set by default to 2), where each
+    * thread calls MPI_Recv and upon receiving a message sends back a response
+    * of equal size. Many iterations are performed and the average one-way
+    * latency numbers are reported. This test is available here.
+
+osu_bw - Bandwidth Test
+    * The bandwidth tests were carried out by having the sender sending out a
+    * fixed number (equal to the window size) of back-to-back messages to the
+    * receiver and then waiting for a reply from the receiver. The receiver
+    * sends the reply only after receiving all these messages. This process is
+    * repeated for several iterations and the bandwidth is calculated based on
+    * the elapsed time (from the time sender sends the first message until the
+    * time it receives the reply back from the receiver) and the number of bytes
+    * sent by the sender. The objective of this bandwidth test is to determine
+    * the maximum sustained date rate that can be achieved at the network level.
+    * Thus, non-blocking version of MPI functions (MPI_Isend and MPI_Irecv) were
+    * used in the test. This test is available here.
+
+osu_bibw - Bidirectional Bandwidth Test
+    * The bidirectional bandwidth test is similar to the bandwidth test, except
+    * that both the nodes involved send out a fixed number of back-to-back
+    * messages and wait for the reply. This test measures the maximum
+    * sustainable aggregate bandwidth by two nodes. This test is available here.
+
+osu_mbw_mr - Multiple Bandwidth / Message Rate Test
+    * The multi-pair bandwidth and message rate test evaluates the aggregate
+    * uni-directional bandwidth and message rate between multiple pairs of
+    * processes. Each of the sending processes sends a fixed number of messages
+    * (the window size) back-to-back to the paired receiving process before
+    * waiting for a reply from the receiver. This process is repeated for
+    * several iterations. The objective of this benchmark is to determine the
+    * achieved bandwidth and message rate from one node to another node with a
+    * configurable number of processes running on each node. The test is
+    * available here.
+
+osu_multi_lat - Multi-pair Latency Test
+    * This test is very similar to the latency test. However, at the same
+    * instant multiple pairs are performing the same test simultaneously.
+    * In order to perform the test across just two nodes the hostnames must
+    * be specified in block fashion.
+
+Collective MPI Benchmarks
+-------------------------
+osu_allgather     - MPI_Allgather Latency Test(*)
+osu_allgatherv    - MPI_Allgatherv Latency Test
+osu_allreduce     - MPI_Allreduce Latency Test
+osu_alltoall      - MPI_Alltoall Latency Test
+osu_alltoallv     - MPI_Alltoallv Latency Test
+osu_barrier       - MPI_Barrier Latency Test
+osu_bcast         - MPI_Bcast Latency Test
+osu_gather        - MPI_Gather Latency Test(*)
+osu_gatherv       - MPI_Gatherv Latency Test
+osu_reduce        - MPI_Reduce Latency Test
+osu_reduce_scater - MPI_Reduce_scatter Latency Test
+osu_scatter       - MPI_Scatter Latency Test(*)
+osu_scatterv      - MPI_Scatterv Latency Test
+
+Collective Latency Tests
+    * The latest OMB version includes benchmarks for various MPI blocking
+    * collective operations (MPI_Allgather, MPI_Alltoall, MPI_Allreduce,
+    * MPI_Barrier, MPI_Bcast, MPI_Gather, MPI_Reduce, MPI_Reduce_Scatter,
+    * MPI_Scatter and vector collectives). These benchmarks work in the
+    * following manner.  Suppose users run the osu_bcast benchmark with N
+    * processes, the benchmark measures the min, max and the average latency of
+    * the MPI_Bcast collective operation across N processes, for various
+    * message lengths, over a large number of iterations. In the default
+    * version, these benchmarks report the average latency for each message
+    * length. Additionally, the benchmarks offer the following options:
+    * "-f" can be used to report additional statistics of the benchmark,
+           such as min and max latencies and the number of iterations.
+    * "-m" option can be used to set the minimum and maximum message length
+           to be used in a benchmark. In the default version, the benchmarks
+           report the latencies for up to 1MB message lengths. Examples:
+            -m 128      // min = default, max = 128
+            -m 2:128    // min = 2, max = 128
+            -m 2:       // min = 2, max = default
+    * "-x" can be used to set the number of warmup iterations to skip for each
+           message length.
+    * "-i" can be used to set the number of iterations to run for each message
+           length.
+    * "-M" can be used to set per process maximum memory consumption.  By
+           default the benchmarks are limited to 512MB allocations.
+
+
+
+
+Non-Blocking Collective MPI Benchmarks
+--------------------------------------
+osu_iallgather    - MPI_Iallgather Latency Test
+osu_iallgatherv   - MPI_Iallgatherv Latency Test
+osu_ialltoall     - MPI_Ialltoall Latency Test
+osu_ialltoallv    - MPI_Ialltoallv Latency Test
+osu_ialltoallw    - MPI_Ialltoallw Latency Test
+osu_ibarrier      - MPI_Ibarrier Latency Test
+osu_ibcast        - MPI_Ibcast Latency Test
+osu_igather       - MPI_Igather Latency Test
+osu_igatherv      - MPI_Igatherv Latency Test
+osu_iscatter      - MPI_Iscatter Latency Test
+osu_iscatterv     - MPI_Iscatterv Latency Test
+
+Non-Blocking Collective Latency Tests
+    * In addition to the blocking collective latency tests, we provide several
+    * non-blocking collectives as mentioned above. These evaluate the same
+    * metrics as the blocking operations as well as the additional metric
+    * `overlap'.  This is defined as the amount of computation that can be
+    * performed while the communication progresses in the background.
+    * These benchmarks have the additional option:
+    * "-t" set the number of MPI_Test() calls during the dummy computation, set
+           CALLS to 100, 1000, or any number > 0.
+
+
+Startup Benchmarks
+------------------
+osu_init.c - This benchmark measures the minimum, maximum, and average time
+    * each process takes to complete MPI_Init.
+
+osu_hello.c - This is a simple hello world program. Users can take advantage of
+    * this to time it takes for all processes to execute MPI_Init +
+    * MPI_Finalize.
+    *
+    * Example:
+    * - time mpirun_rsh -np 2 -hostfile hostfile osu_hello
+
+
