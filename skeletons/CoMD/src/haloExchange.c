@@ -39,6 +39,8 @@
 #include "eam.h"
 #include "memUtils.h"
 #include "performanceTimers.h"
+#include "random.h"
+#include "constants.h"
 
 #define MAX(A,B) ((A) > (B) ? (A) : (B))
 
@@ -253,9 +255,10 @@ void haloExchange(LinkCell* boxes, HaloExchange* haloExchange, void* data)
 /// Base class constructor.
 HaloExchange* initHaloExchange(Domain* domain)
 {
+
    HaloExchange* hh = comdMalloc(sizeof(HaloExchange));
 
-   // Rank of neighbor task for each face.
+   // Rank of neighbor task for each face
    hh->nbrRank[HALO_X_MINUS] = processorNum(domain, -1,  0,  0);
    hh->nbrRank[HALO_X_PLUS]  = processorNum(domain, +1,  0,  0);
    hh->nbrRank[HALO_Y_MINUS] = processorNum(domain,  0, -1,  0);
@@ -263,7 +266,6 @@ HaloExchange* initHaloExchange(Domain* domain)
    hh->nbrRank[HALO_Z_MINUS] = processorNum(domain,  0,  0, -1);
    hh->nbrRank[HALO_Z_PLUS]  = processorNum(domain,  0,  0, +1);
    hh->bufCapacity = 0; // will be set by sub-class.
-
    return hh;
 }
 
@@ -365,7 +367,7 @@ int loadAtomsBuffer(void* vparms, void* data, int face, char* charBuf)
    AtomExchangeParms* parms = (AtomExchangeParms*) vparms;
    SimFlat* s = (SimFlat*) data;
    AtomMsg* buf = (AtomMsg*) charBuf;
-   
+
    real_t* pbcFactor = parms->pbcFactor[face];
    real3 shift;
    shift[0] = pbcFactor[0] * s->domain->globalExtent[0];
@@ -374,9 +376,9 @@ int loadAtomsBuffer(void* vparms, void* data, int face, char* charBuf)
    
    int nCells = parms->nCells[face];
    int* cellList = parms->cellList[face];
-#pragma sst init 2
-   int nBuf = 0;
    int avgAtomsPerBox = s->boxes->nTotalAtoms/s->boxes->nLocalBoxes;
+#pragma sst init nCells*avgAtomsPerBox/2
+   int nBuf = 0;
 #pragma sst compute
    for (int iCell=0; iCell<nCells; ++iCell)
    {
@@ -397,7 +399,6 @@ int loadAtomsBuffer(void* vparms, void* data, int face, char* charBuf)
       }
    }
    s->boxes->nTotalAtoms -= nBuf;
-   //printf("Lowered total atoms by %d to %d\n", nBuf, s->boxes->nTotalAtoms);
    return nBuf*sizeof(AtomMsg);
 }
 
@@ -433,7 +434,6 @@ void unloadAtomsBuffer(void* vparms, void* data, int face, int bufSize, char* ch
       putAtomInBox(s->boxes, s->atoms, gid, type, rx, ry, rz, px, py, pz);
    }
    s->boxes->nTotalAtoms += nBuf;
-   //printf("Added %d atoms to total %d\n", nBuf, s->boxes->nTotalAtoms);
 }
 
 void destroyAtomsExchange(void* vparms)
@@ -454,6 +454,7 @@ void destroyAtomsExchange(void* vparms)
 ///
 /// \see initLinkCells for information about the conventions for grid
 /// coordinates of link cells.
+#pragma sst empty return nullptr
 int* mkForceSendCellList(LinkCell* boxes, int face, int nCells)
 {
    int* list = comdMalloc(nCells*sizeof(int));
@@ -559,8 +560,9 @@ int loadForceBuffer(void* vparms, void* vdata, int face, char* charBuf)
    
    int nCells = parms->nCells[face];
    int* cellList = parms->sendCells[face];
-   int nBuf = 0;
    int avgAtomsPerBox = data->boxes->nTotalAtoms/data->boxes->nLocalBoxes;
+#pragma sst init avgAtomsPerBox*nCells;
+   int nBuf = 0;
 #pragma sst compute
    for (int iCell=0; iCell<nCells; ++iCell)
    {
@@ -591,8 +593,9 @@ void unloadForceBuffer(void* vparms, void* vdata, int face, int bufSize, char* c
    
    int nCells = parms->nCells[face];
    int* cellList = parms->recvCells[face];
-   int iBuf = 0;
    int avgAtomsPerBox = data->boxes->nTotalAtoms/data->boxes->nLocalBoxes;
+#pragma sst init bufSize / sizeof(ForceMsg)
+   int iBuf = 0;
 #pragma sst compute
    for (int iCell=0; iCell<nCells; ++iCell)
    {

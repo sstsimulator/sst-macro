@@ -71,7 +71,7 @@ SSTComputePragma::visitAndReplaceStmt(Stmt* stmt, Rewriter& r, PragmaConfig& cfg
   ComputeVisitor vis(*CI, *pragmaList, nullptr, cfg.astVisitor);
   vis.setContext(stmt);
   vis.addOperations(stmt,loop.body);
-  vis.replaceStmt(stmt,r,loop);
+  vis.replaceStmt(stmt,r,loop,cfg);
 }
 
 void
@@ -84,10 +84,11 @@ SSTComputePragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig& cfg)
     scase(ForStmt,stmt,r,cfg);
     scase(IfStmt,stmt,r,cfg);
     default:
-      defaultAct(stmt,r);
+      defaultAct(stmt,r,cfg);
       break;
   }
 #undef scase
+  cfg.computeMemorySpec = ""; //clear any specs
 }
 
 void
@@ -103,12 +104,13 @@ SSTComputePragma::activate(Decl* d, Rewriter& r, PragmaConfig& cfg)
       break;
   }
 #undef dcase
+  cfg.computeMemorySpec = ""; //clear any specs
 }
 
 void
-SSTComputePragma::defaultAct(Stmt *stmt, Rewriter &r)
+SSTComputePragma::defaultAct(Stmt *stmt, Rewriter &r, PragmaConfig& cfg)
 {
-  r.ReplaceText(stmt->getSourceRange(),"");
+  visitAndReplaceStmt(stmt, r, cfg);
 }
 
 
@@ -145,6 +147,22 @@ SSTComputePragma::visitForStmt(ForStmt *stmt, Rewriter &r, PragmaConfig& cfg)
   Loop loop(0); //depth zeros
   vis.setContext(stmt);
   vis.visitLoop(stmt,loop);
-  vis.replaceStmt(stmt,r,loop);
+  vis.replaceStmt(stmt,r,loop,cfg);
   //cfg.skipNextStmt = true;
 }
+
+void
+SSTMemoryPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+{
+  cfg.computeMemorySpec = memSpec_;
+}
+
+SSTPragma*
+SSTMemoryPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  std::stringstream sstr;
+  SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
+  return new SSTMemoryPragma(sstr.str());
+}
+
+

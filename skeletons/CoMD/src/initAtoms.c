@@ -88,6 +88,7 @@ void createFccLattice(int nx, int ny, int nz, real_t lat, SimFlat* s)
 
    real_t px,py,pz;
    px=py=pz=0.0;
+  #pragma sst compute
    for (int ix=begin[0]; ix<end[0]; ++ix)
       for (int iy=begin[1]; iy<end[1]; ++iy)
          for (int iz=begin[2]; iz<end[2]; ++iz)
@@ -102,13 +103,19 @@ void createFccLattice(int nx, int ny, int nz, real_t lat, SimFlat* s)
                int id = ib+nb*(iz+nz*(iy+ny*(ix)));
                putAtomInBox(s->boxes, s->atoms, id, 0, rx, ry, rz, px, py, pz);
             }
-
-   s->boxes->nTotalAtoms = end[0]*end[1]*end[2];
+ #pragma sst init ((int64_t)nb*nx)*((int64_t)(ny*nz))
+   s->atoms->nGlobal = 0;
+   if (getMyRank() == 0) 
+    printf("nb=%d nx=%d ny=%d nz=%d nr=%d nglbl=%lld\n", 
+      nb, nx, ny, nz, getNRanks(), s->atoms->nGlobal);
+ #pragma sst init s->atoms->nGlobal / getNRanks()
+   s->atoms->nLocal = s->atoms->nLocal;
+   s->boxes->nTotalAtoms = s->atoms->nLocal;
    // set total atoms in simulation
    startTimer(commReduceTimer);
    addIntParallel(&s->atoms->nLocal, &s->atoms->nGlobal, 1);
    stopTimer(commReduceTimer);
-
+#pragma sst delete
    assert(s->atoms->nGlobal == nb*nx*ny*nz);
 }
 
@@ -153,6 +160,7 @@ void setVcm(SimFlat* s, real_t newVcm[3])
 /// the input temperature.
 void setTemperature(SimFlat* s, real_t temperature)
 {
+   s->initialTemp = temperature;
    int avgAtomsPerBox = s->boxes->nTotalAtoms / s->boxes->nLocalBoxes;
   // set initial velocities for the distribution
    #pragma omp parallel for

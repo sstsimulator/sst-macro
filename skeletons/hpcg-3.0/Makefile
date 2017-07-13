@@ -5,7 +5,6 @@ setup_file = setup/Make.$(arch)
 
 include $(setup_file)
 
-
 HPCG_DEPS = build/CG.o \
 	    build/CG_ref.o \
 	    build/TestCG.o \

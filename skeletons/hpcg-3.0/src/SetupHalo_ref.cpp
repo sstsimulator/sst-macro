@@ -38,6 +38,169 @@ using std::endl;
 #include "SetupHalo_ref.hpp"
 #include "mytimer.hpp"
 
+#ifndef HPCG_NO_MPI
+void setupSkeleton(Geometry* geom, std::map<int,int>& sendList, std::map<int,int>& receiveList)
+{
+  global_int_t nx = geom->nx;
+  global_int_t ny = geom->ny;
+  global_int_t nz = geom->nz;
+  global_int_t npx = geom->npx;
+  global_int_t npy = geom->npy;
+  global_int_t npz = geom->npz;
+  global_int_t ipx = geom->ipx;
+  global_int_t ipy = geom->ipy;
+  global_int_t ipz = geom->ipz;
+  global_int_t gnx = nx*npx;
+  global_int_t gny = ny*npy;
+  global_int_t gnz = nz*npz;
+
+  global_int_t myZstart = nz*ipz;
+  global_int_t myZstop = nz*(ipz+1);
+  global_int_t myYstart = ny*ipy;
+  global_int_t myYstop = ny*(ipy+1);
+  global_int_t myXstart = nx*ipx;
+  global_int_t myXstop = nx*(ipx+1);
+
+  std::vector<global_int_t> zFaces; zFaces.reserve(2);
+  if (myZstart != 0) zFaces.push_back(myZstart-1);
+  if (myZstop < gnz) zFaces.push_back(myZstop+1);
+
+  std::vector<global_int_t> yFaces; yFaces.reserve(2);
+  if (myYstart != 0) yFaces.push_back(myYstart-1);
+  if (myYstop < gny) yFaces.push_back(myYstop+1);
+
+  std::vector<global_int_t> xFaces; xFaces.reserve(2);
+  if (myXstart != 0) xFaces.push_back(myXstart-1);
+  if (myXstop < gnx) xFaces.push_back(myXstop+1);
+
+  for (global_int_t giz : zFaces){
+    local_int_t ipz = giz/nz;
+    global_int_t zRankOffset = ipz*npy*npx;
+    for (global_int_t giy=myYstart; giy < myYstop; ++giy){
+      local_int_t ipy = giy/ny;
+      global_int_t yRankOffset = ipy*npx;
+      for (global_int_t gix=myXstart; gix < myXstop; ++gix){
+        local_int_t ipx = gix/nx;
+        int rank = ipx+zRankOffset+yRankOffset;
+        sendList[rank]++;
+        receiveList[rank]++;
+      }
+    }
+  }
+
+  for (global_int_t giz=myZstart; giz < myZstop; ++giz){
+    local_int_t ipz = giz/nz;
+    global_int_t zRankOffset = ipz*npy*npx;
+    for (global_int_t giy : yFaces){
+      local_int_t ipy = giy/ny;
+      global_int_t yRankOffset = ipy*npx;
+      for (global_int_t gix=myXstart; gix < myXstop; ++gix){
+        local_int_t ipx = gix/nx;
+        int rank = ipx+zRankOffset+yRankOffset;
+        sendList[rank]++;
+        receiveList[rank]++;
+      }
+    }
+  }
+
+  for (global_int_t giz=myZstart; giz < myZstop; ++giz){
+    local_int_t ipz = giz/nz;
+    global_int_t zRankOffset = ipz*npy*npx;
+    for (global_int_t giy=myYstart; giy < myYstop; giy++){
+      local_int_t ipy = giy/ny;
+      global_int_t yRankOffset = ipy*npx;
+      for (global_int_t gix : xFaces){
+        local_int_t ipx = gix/nx;
+        int rank = ipx+zRankOffset+yRankOffset;
+        sendList[rank]++;
+        receiveList[rank]++;
+      }
+    }
+  }
+
+  //y and z faces
+  for (global_int_t giz : zFaces){
+    local_int_t ipz = giz/nz;
+    global_int_t zRankOffset = ipz*npy*npx;
+    for (global_int_t giy : yFaces){
+      local_int_t ipy = giy/ny;
+      global_int_t yRankOffset = ipy*npx;
+      for (global_int_t gix=myXstart; gix < myXstop; ++gix){
+        local_int_t ipx = gix/nx;
+        int rank = ipx+zRankOffset+yRankOffset;
+        sendList[rank]++;
+        receiveList[rank]++;
+      }
+    }
+  }
+
+  //x and z faces
+  for (global_int_t giz : zFaces){
+    local_int_t ipz = giz/nz;
+    global_int_t zRankOffset = ipz*npy*npx;
+    for (global_int_t giy=myYstart; giy < myYstop; giy++){
+      local_int_t ipy = giy/ny;
+      global_int_t yRankOffset = ipy*npx;
+      for (global_int_t gix : xFaces){
+        local_int_t ipx = gix/nx;
+        int rank = ipx+zRankOffset+yRankOffset;
+        sendList[rank]++;
+        receiveList[rank]++;
+      }
+    }
+  }
+
+  //x and y faces
+  for (global_int_t giz=myZstart; giz < myZstop; ++giz){
+    local_int_t ipz = giz/nz;
+    global_int_t zRankOffset = ipz*npy*npx;
+    for (global_int_t giy : yFaces){
+      local_int_t ipy = giy/ny;
+      global_int_t yRankOffset = ipy*npx;
+      for (global_int_t gix : xFaces){
+        local_int_t ipx = gix/nx;
+        int rank = ipx+zRankOffset+yRankOffset;
+        sendList[rank]++;
+        receiveList[rank]++;
+      }
+    }
+  }
+
+  //x,y,and z face
+  for (global_int_t giz : zFaces){
+    local_int_t ipz = giz/nz;
+    global_int_t zRankOffset = ipz*npy*npx;
+    for (global_int_t giy : yFaces){
+      local_int_t ipy = giy/ny;
+      global_int_t yRankOffset = ipy*npx;
+      for (global_int_t gix : xFaces){
+        local_int_t ipx = gix/nx;
+        int rank = ipx+zRankOffset+yRankOffset;
+        sendList[rank]++;
+        receiveList[rank]++;
+      }
+    }
+  }
+}
+
+void setupSkeletonNeighbors(int* neighbors, int* sendLength, std::map<int,int>& sendList,
+                   int* receiveLength, std::map<int,int>& receiveList)
+{
+  int index = 0;
+  for (auto& pair : sendList){
+    neighbors[index] = pair.first;
+    sendLength[index] = pair.second;
+    ++index;
+  }
+  index = 0;
+  for (auto& pair : receiveList){
+    receiveLength[index] = pair.second;
+    ++index;
+  }
+}
+#endif
+
+
 /*!
   Reference version of SetupHalo that prepares system matrix data structure and creates data necessary
   for communication of boundary values of this process.
@@ -51,8 +214,11 @@ void SetupHalo_ref(SparseMatrix & A) {
   // Extract Matrix pieces
 
   local_int_t localNumberOfRows = A.localNumberOfRows;
+#pragma sst null_variable
   char  * nonzerosInRow = A.nonzerosInRow;
+#pragma sst null_variable
   global_int_t ** mtxIndG = A.mtxIndG;
+#pragma sst null_variable
   local_int_t ** mtxIndL = A.mtxIndL;
 
 #ifdef HPCG_NO_MPI  // In the non-MPI case we simply copy global indices to local index storage
@@ -61,6 +227,7 @@ void SetupHalo_ref(SparseMatrix & A) {
 #endif
   for (local_int_t i=0; i< localNumberOfRows; i++) {
     int cur_nnz = nonzerosInRow[i];
+   #pragma sst loop_count 27
     for (int j=0; j<cur_nnz; j++) mtxIndL[i][j] = mtxIndG[i][j];
   }
 
@@ -70,17 +237,20 @@ void SetupHalo_ref(SparseMatrix & A) {
   // 1) We call the ComputeRankOfMatrixRow function, which tells us the rank of the processor owning the row ID.
   //  We need to receive this value of the x vector during the halo exchange.
   // 2) We record our row ID since we know that the other processor will need this value from us, due to symmetry.
-
-  std::map< int, std::set< global_int_t> > sendList, receiveList;
+#pragma sst null_type std::map<int,int> size
+  std::map< int, std::set< global_int_t> > sendList;
+#pragma sst null_type std::map<int,int> size
+  std::map< int, std::set< global_int_t> > receiveList;
   typedef std::map< int, std::set< global_int_t> >::iterator map_iter;
   typedef std::set<global_int_t>::iterator set_iter;
+#pragma sst null_variable
   std::map< local_int_t, local_int_t > externalToLocalMap;
 
   // TODO: With proper critical and atomic regions, this loop could be threaded, but not attempting it at this time
 #pragma sst compute
   for (local_int_t i=0; i< localNumberOfRows; i++) {
     global_int_t currentGlobalRow = A.localToGlobalMap[i];
-#pragma sst replace nonzerosInRow 27
+#pragma sst loop_count 27
     for (int j=0; j<nonzerosInRow[i]; j++) {
       global_int_t curIndex = mtxIndG[i][j];
       int rankIdOfColumnEntry = ComputeRankOfMatrixRow(*(A.geom), curIndex);
@@ -96,11 +266,15 @@ void SetupHalo_ref(SparseMatrix & A) {
   }
 
   // Count number of matrix entries to send and receive
+#pragma sst init localNumberOfRows*27
   local_int_t totalToBeSent = 0;
+#pragma sst instead setupSkeleton(A.geom,sendList,receiveList);
   for (map_iter curNeighbor = sendList.begin(); curNeighbor != sendList.end(); ++curNeighbor) {
     totalToBeSent += (curNeighbor->second).size();
   }
+#pragma sst init localNumberOfRows*27
   local_int_t totalToBeReceived = 0;
+#pragma sst delete
   for (map_iter curNeighbor = receiveList.begin(); curNeighbor != receiveList.end(); ++curNeighbor) {
     totalToBeReceived += (curNeighbor->second).size();
   }
@@ -128,6 +302,7 @@ void SetupHalo_ref(SparseMatrix & A) {
   int neighborCount = 0;
   local_int_t receiveEntryCount = 0;
   local_int_t sendEntryCount = 0;
+#pragma sst instead setupSkeletonNeighbors(neighbors, sendLength, sendList, receiveLength, receiveList);
   for (map_iter curNeighbor = receiveList.begin(); curNeighbor != receiveList.end(); ++curNeighbor, ++neighborCount) {
     int neighborId = curNeighbor->first; // rank of current neighbor we are processing
     neighbors[neighborCount] = neighborId; // store rank ID of current neighbor

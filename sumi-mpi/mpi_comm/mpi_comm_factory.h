@@ -60,47 +60,25 @@ namespace sumi {
 class mpi_comm_factory  {
 
  public:
-  /// Build comm_world using information retrieved from the environment.
   mpi_comm_factory(app_id aid, mpi_api* parent);
 
-  /// Goodbye.
   ~mpi_comm_factory();
 
-  /// Initialize the object.
   void init(int rank, int nproc);
 
  public:
-  /// Get the world communicator for the given node.
-  /// In this communicator, mpiid indices are the same as the taskid
-  /// indices given by the environment.  Each node will only have one world.
-  mpi_comm*
-  world(){
+  mpi_comm* world(){
     return worldcomm_;
   }
 
-  /// Get a 'self' communicator.  Each node will have a unique index
-  /// for its self.  Each node will only have one self.
-  mpi_comm*
-  self(){
+  mpi_comm*  self(){
     return selfcomm_;
   }
 
+  mpi_comm* comm_dup(mpi_comm* caller);
 
-  /// Duplicate the given communicator.
-  /// Blocks unti lall nodes have entered the call.
-  /// Eventually we may opt to deal with the extended attributes (keyval)
-  /// stuff in the MPI standard, even though I don't know anybody
-  /// who actually uses it.
-  mpi_comm* comm_dup(mpi_comm*caller);
-
-  /// Make the given mpiid refer to a newly created communicator.
-  /// Blocks the caller until all nodes have entered the call.
-  /// This call must be performed by all nodes in the caller communicator
-  /// a creating any new communicators.  Returns mpicomm::null_comm
-  /// on all nodes that are not participants the new group.
   mpi_comm* comm_create(mpi_comm* caller, mpi_group* group);
 
-  /// MPI_Comm_split -- collective operation.
   mpi_comm* comm_split(mpi_comm* caller, int color, int key);
 
   mpi_comm* create_cart(mpi_comm* caller, int ndims,

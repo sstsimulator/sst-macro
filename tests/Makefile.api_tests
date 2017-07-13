@@ -67,6 +67,7 @@ APITESTS = \
   testsuite_mpi_103 \
   testsuite_mpi_104 \
   testsuite_mpi_115 \
+  testsuite_mpi_190 \
   testsuite_mpi_207 \
   testsuite_mpi_239 
 

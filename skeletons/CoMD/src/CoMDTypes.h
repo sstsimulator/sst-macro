@@ -52,7 +52,7 @@ typedef struct SpeciesDataSt
 typedef struct ValidateSt
 {
    double eTot0; //<! Initial total energy
-   int nAtoms0;  //<! Initial global number of atoms
+   long long nAtoms0;  //<! Initial global number of atoms
 } Validate;
 
 /// 
@@ -75,6 +75,7 @@ typedef struct SimFlatSt
    
    real_t ePotential;     //!< the total potential energy of the system
    real_t eKinetic;       //!< the total kinetic energy of the system
+   real_t initialTemp;
 
    BasePotential *pot;	  //!< the potential
 

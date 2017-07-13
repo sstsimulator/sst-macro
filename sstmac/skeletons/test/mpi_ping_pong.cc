@@ -42,7 +42,7 @@ int main(int argc, char** argv)
       if (rank == src[i]) {
         end = MPI_Wtime();
         double time = (end - begin)*10e3;
-        printf("%i: %8.4f ms\n", s * sizeof(int), time);
+        printf("%i: %8.4f ms\n", int(s * sizeof(int)), time);
       }
     }
   }

@@ -9,10 +9,13 @@ if !INTEGRATED_SST_CORE
 
 # These are run with the same rule
 SKELETONCASES= \
-  matmul \
   multiapp \
   sendrecv \
   boxml
+
+if !HAVE_UBUNTU
+SKELETONCASES +=  matmul 
+endif
 
 if HAVE_CLANG
 SKELETONCASES += lulesh2.0.3 hpcg-3.0 CoMD
@@ -41,11 +44,11 @@ test_skeleton_boxml.$(CHKSUF): boxml
     -p node.app1.boxml_eventfiles=$(top_srcdir)/skeletons/boxml/example/test-mlmg-4-4.xml 
 
 test_skeleton_%.$(CHKSUF): % 
-	$(PYRUNTEST) 3 $(top_srcdir) $@ notime \
+	$(PYRUNTEST) 3 $(top_srcdir) $@ Exact \
     ./skeletons/$*/run$* -f $(top_srcdir)/skeletons/$*/parameters.ini --no-wall-time
 
 test_skeleton_CoMD.$(CHKSUF): CoMD pots
-	$(PYRUNTEST) 3 $(top_srcdir) $@ notime \
+	$(PYRUNTEST) 3 $(top_srcdir) $@ Exact \
     ./skeletons/CoMD/runCoMD -f $(top_srcdir)/skeletons/CoMD/parameters.ini --no-wall-time
 
 test_apps_%.$(CHKSUF): %

@@ -270,7 +270,7 @@ void
 transport::free_eager_buffer(const message::ptr& msg)
 {
   char* buf = (char*) msg->eager_buffer();
-  if (buf){
+  if (isNonNull(buf)){
     delete[] buf;
   }
 }

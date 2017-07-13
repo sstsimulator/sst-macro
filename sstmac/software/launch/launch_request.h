@@ -167,18 +167,15 @@ class app_launch_request : public software_launch_request
 
   virtual ~app_launch_request();
 
-  const std::string&
-  app_namespace() const {
+  const std::string& app_namespace() const {
     return app_namespace_;
   }
 
-  sprockit::sim_parameters*
-  app_params() const {
+  sprockit::sim_parameters* app_params() const {
     return app_params_;
   }
 
-  app_id
-  aid() const {
+  app_id aid() const {
     return aid_;
   }
 

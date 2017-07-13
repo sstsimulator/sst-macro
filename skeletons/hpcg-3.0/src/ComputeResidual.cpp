@@ -25,6 +25,7 @@
 #endif
 
 #include "Vector.hpp"
+#include "SparseMatrix.hpp"
 
 #ifdef HPCG_DETAILED_DEBUG
 #include <fstream>

@@ -93,8 +93,7 @@ class tiled_dragonfly : public dragonfly, public multipath_topology
   int n_geom_paths_;
 
  public:
-  virtual std::string
-  to_string() const override {
+  virtual std::string to_string() const override {
     return "tiled_dragonfly";
   }
 
@@ -102,120 +101,87 @@ class tiled_dragonfly : public dragonfly, public multipath_topology
 
   virtual ~tiled_dragonfly() {}
 
-  bool
-  uniform_network_ports() const override {
+  bool uniform_network_ports() const override {
     return true;
   }
 
-  bool
-  uniform_switches_non_uniform_network_ports() const override {
+  bool uniform_switches_non_uniform_network_ports() const override {
     return false;
   }
 
-  bool
-  uniform_switches() const override {
+  bool uniform_switches() const override {
     return true;
   }
 
-  virtual switch_id
-  netlink_to_injection_switch(
+  virtual switch_id netlink_to_injection_switch(
       node_id nodeaddr, uint16_t ports[], int &num_ports) const override;
 
-  virtual switch_id
-  netlink_to_ejection_switch(
+  virtual switch_id netlink_to_ejection_switch(
       node_id nodeaddr, uint16_t ports[], int &num_ports) const override;
 
-//  virtual void
-//  eject_paths_on_switch(
-//      node_id dest_addr,
-//      switch_id sw_addr,
-//      routable::path_set &paths) const;
+  virtual bool xy_connected_to_group(int myX, int myY, int myG, int dstg) const override;
 
-  virtual bool
-  xy_connected_to_group(int myX, int myY, int myG,
-                        int dstg) const;
-
-  void
-  connected_outports(
-      switch_id src,
-      std::vector<sstmac::hw::topology::connection>& conns)
-  const override;
+  void connected_outports(
+      switch_id src, std::vector<sstmac::hw::topology::connection>& conns) const override;
 
   //---------------------------------------------------------------------
   // Multipath topology
   //---------------------------------------------------------------------
 
-  virtual void
-  configure_geometric_paths(std::vector<int> &redundancies) override;
+  virtual void configure_geometric_paths(std::vector<int> &redundancies) override;
 
-  virtual void
-  get_redundant_paths(routable::path& inPath,
+  virtual void get_redundant_paths(routable::path& inPath,
                       routable::path_set& outPaths,
                       switch_id addr) const  override;
 
  private:
+  void read_intragroup_connections();
 
-  //---------------------------------------------------------------------
-  // Connection setup
-  //---------------------------------------------------------------------
+  void read_intergroup_connections();
 
-  void
-  read_intragroup_connections();
-
-  void
-  read_intergroup_connections();
-
-  void
-  configure_outports();
+  void configure_outports();
 
   //---------------------------------------------------------------------
   // Utility functions
   //---------------------------------------------------------------------
 
-  void
-  check_switch_x(int n) {
+  void check_switch_x(int n) {
     if (n < 0 || n >= x_)
       spkt_throw_printf(
             sprockit::value_error,"switch x value %d out of range",n);
   }
 
-  void
-  check_switch_y(int n) {
+  void check_switch_y(int n) {
     if (n < 0 || n >= y_)
       spkt_throw_printf(
             sprockit::value_error,"switch y value %d out of range",n);
   }
 
-  void
-  check_switch_g(int n) {
+  void check_switch_g(int n) {
     if (n < 0 || n >= g_)
       spkt_throw_printf(
             sprockit::value_error,"switch group value %d out of range",n);
   }
 
-  void
-  check_port_x(int n) {
+  void check_port_x(int n) {
     if (n < 0 || n >= tiles_x_)
       spkt_throw_printf(
             sprockit::value_error,"switch x value %d out of range",n);
   }
 
-  void
-  check_port_y(int n) {
+  void check_port_y(int n) {
     if (n < 0 || n >= tiles_y_)
       spkt_throw_printf(
             sprockit::value_error,"switch y value %d out of range",n);
   }
 
-  void
-  check_switch_xyg(int x, int y, int g) {
+  void check_switch_xyg(int x, int y, int g) {
     check_switch_x(x);
     check_switch_y(y);
     check_switch_g(g);
   }
 
-  void
-  check_port_xy(int x, int y) {
+  void check_port_xy(int x, int y) {
     check_port_x(x);
     check_port_y(y);
   }

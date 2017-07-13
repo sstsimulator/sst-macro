@@ -64,20 +64,44 @@ class connectable
 
   static const int any_port = -1;
 
+  /**
+   * @brief connect_output
+   * @param params
+   * @param src_outport
+   * @param dst_inport
+   * @param payload_handler
+   */
   virtual void connect_output(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* handler) = 0;
+    event_handler* payload_handler) = 0;
 
+  /**
+   * @brief connect_input
+   * @param params
+   * @param src_outport
+   * @param dst_inport
+   * @param credit_handler Can be null, if no credits are ever sent
+   */
   virtual void connect_input(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* handler) = 0;
+    event_handler* credit_handler) = 0;
 
+  /**
+   * @brief credit_handler
+   * @param port
+   * @return Can be null, if no credits are ever to be received
+   */
   virtual link_handler* credit_handler(int port) const = 0;
 
+  /**
+   * @brief payload_handler
+   * @param port
+   * @return
+   */
   virtual link_handler* payload_handler(int port) const = 0;
 
 };

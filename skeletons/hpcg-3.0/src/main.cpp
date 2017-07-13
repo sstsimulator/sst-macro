@@ -63,6 +63,8 @@ using std::endl;
 #include "TestSymmetry.hpp"
 #include "TestNorms.hpp"
 
+#include <sys/time.h>
+
 /*!
   Main driver program: Construct synthetic problem, run V&V tests, compute benchmark parameters, run benchmark, report results.
 
@@ -73,12 +75,17 @@ using std::endl;
 
 */
 int main(int argc, char * argv[]) {
+  HPCG_Params params;
 
 #ifndef HPCG_NO_MPI
   MPI_Init(&argc, &argv);
+#else
+  params.comm_size = 1;
+  params.comm_rank = 0;
 #endif
 
-  HPCG_Params params;
+  timeval t_start; gettimeofday(&t_start, NULL);
+
 
   HPCG_Init(&argc, &argv, params);
 
@@ -131,6 +138,11 @@ int main(int argc, char * argv[]) {
   std::vector< double > times(10,0.0);
 
   double setup_time = mytimer();
+
+  if (params.comm_rank == 0){
+    printf("Running local grid nx=%d ny=%d nz=%d\n",
+    params.nx, params.ny, params.nz);
+  }
 
   SparseMatrix A;
   InitializeSparseMatrix(A, geom);
@@ -188,6 +200,7 @@ int main(int argc, char * argv[]) {
   if (quickPath) numberOfCalls = 1; //QuickPath means we do on one call of each block of repetitive code
   double t_begin = mytimer();
   for (int i=0; i< numberOfCalls; ++i) {
+
     ierr = ComputeSPMV_ref(A, x_overlap, b_computed); // b_computed = A*x_overlap
     if (ierr) HPCG_fout << "Error in call to SpMV: " << ierr << ".\n" << endl;
     ierr = ComputeMG_ref(A, b_computed, x_overlap); // b_computed = Minv*y_overlap
@@ -211,7 +224,7 @@ int main(int argc, char * argv[]) {
   int totalNiters_ref = 0;
   double normr = 0.0;
   double normr0 = 0.0;
-  int refMaxIters = 50;
+  int refMaxIters = 5; //50 in regular code
   numberOfCalls = 1; // Only need to run the residual reduction analysis once
 
   // Compute the residual reduction for the natural ordering and reference kernels
@@ -225,7 +238,7 @@ int main(int argc, char * argv[]) {
     totalNiters_ref += niters;
   }
   if (rank == 0 && err_count) HPCG_fout << err_count << " error(s) in call(s) to reference CG." << endl;
-  double refTolerance = normr / normr0;
+  double refTolerance = 0.0; //force to do max iters for SST: normr / normr0;
 
   // Call user-tunable set up function.
   double t7 = mytimer();
@@ -273,7 +286,7 @@ int main(int argc, char * argv[]) {
   err_count = 0;
   int tolerance_failures = 0;
 
-  int optMaxIters = 10*refMaxIters;
+  int optMaxIters = refMaxIters; //*10 in regular version
   int optNiters = refMaxIters;
   double opt_worst_time = 0.0;
 
@@ -316,7 +329,7 @@ int main(int argc, char * argv[]) {
   // The variable total_runtime is the target benchmark execution time in seconds
 
   double total_runtime = params.runningTime;
-  int numberOfCgSets = int(total_runtime / opt_worst_time) + 1; // Run at least once, account for rounding
+  int numberOfCgSets = 1; //int(total_runtime / opt_worst_time) + 1; // Run at least once, account for rounding
 
 #ifdef HPCG_DEBUG
   if (rank==0) {
@@ -375,6 +388,12 @@ int main(int argc, char * argv[]) {
 
 
   HPCG_Finalize();
+
+  timeval t_stop; gettimeofday(&t_stop, NULL);
+  double delta_t = (t_stop.tv_sec - t_start.tv_sec) + 1e-6*(t_stop.tv_usec - t_start.tv_usec);
+  if (params.comm_rank == 0){
+    printf("Total runtime %12.8fs\n", delta_t);
+  }
 
   // Finish up
 #ifndef HPCG_NO_MPI

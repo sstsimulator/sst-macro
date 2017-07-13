@@ -156,6 +156,10 @@ MPI_INTEGER8
 };
 #define MPI_LONG_LONG MPI_LONG_LONG_INT
 
+enum builtin_attrs {
+  MPI_TAG_UB
+};
+
 #define MPI_IN_PLACE (void*)-1
 
 /* Results of the compare operations. */
@@ -183,6 +187,7 @@ MPI_INTEGER8
 #define MPI_DATATYPE_NULL  ((MPI_Datatype)0x0c000000)
 #define MPI_REQUEST_NULL   ((MPI_Request)0x2c000000)
 #define MPI_GROUP_WORLD   0
+#define MPI_GROUP_SELF    1
 
 #define MPI_ADDRESS_KIND  4
 

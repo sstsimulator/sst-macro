@@ -46,10 +46,6 @@ void ExchangeHalo(const SparseMatrix & A, Vector & x) {
 
   double * const xv = x.values;
 
-  int size, rank; // Number of MPI processes, My process ID
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
   //
   //  first post receives, these are immediate receives
   //  Do not wait for result to come, will do that at the
@@ -79,6 +75,7 @@ void ExchangeHalo(const SparseMatrix & A, Vector & x) {
   //
 
   // TODO: Thread this loop
+#pragma sst compute
   for (local_int_t i=0; i<totalToBeSent; i++) sendBuffer[i] = xv[elementsToSend[i]];
 
   //
@@ -89,6 +86,7 @@ void ExchangeHalo(const SparseMatrix & A, Vector & x) {
   for (int i = 0; i < num_neighbors; i++) {
     local_int_t n_send = sendLength[i];
     MPI_Send(sendBuffer, n_send, MPI_DOUBLE, neighbors[i], MPI_MY_TAG, MPI_COMM_WORLD);
+#pragma sst delete
     sendBuffer += n_send;
   }
 

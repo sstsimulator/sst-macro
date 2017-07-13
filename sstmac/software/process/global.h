@@ -66,8 +66,8 @@ class GlobalVariable {
 
  private:
   static int stackOffset;
-  #define SSTMAC_MAX_GLOBALS 16384 // For now assume 16KB is the max
-  static char globalInits[16384];
+  static char* globalInits;
+  static int allocSize;
 
 };
 

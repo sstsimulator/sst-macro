@@ -17,7 +17,9 @@ test_cpuset_SOURCES = test_cpuset.cc
 
 AM_CPPFLAGS += -I$(top_builddir)/sstmac/replacements \
  -I$(srcdir) \
+ -I$(top_srcdir)/sstmac/replacements \
  -I$(top_builddir) \
+ -I$(top_builddir)/sstmac/replacements \
  -Dmain=USER_MAIN \
  -DSSTMAC=1 \
  -include sstmac/util.h \

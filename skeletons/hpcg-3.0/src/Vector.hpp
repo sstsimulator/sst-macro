@@ -26,11 +26,13 @@
 
 struct Vector_STRUCT {
   local_int_t localLength;  //!< length of local portion of the vector
+#pragma sst null_variable
   double * values;          //!< array of values
   /*!
    This is for storing optimized data structures created in OptimizeProblem and
    used inside optimized ComputeSPMV().
    */
+ #pragma sst null_variable
   void * optimizationData;
 
 };
@@ -69,6 +71,7 @@ inline void ZeroVector(Vector & v) {
   @param[in] index Local index of entry to scale
   @param[in] value Value to scale by
  */
+#pragma sst empty
 inline void ScaleVectorValue(Vector & v, local_int_t index, double value) {
   assert(index>=0 && index < v.localLength);
   double * vv = v.values;

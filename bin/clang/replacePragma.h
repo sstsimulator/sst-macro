@@ -97,6 +97,16 @@ class SSTStopReplacePragma : public SSTReplacePragma {
 
 };
 
+class SSTInsteadPragma : public SSTPragma {
+ public:
+  SSTInsteadPragma(const std::string& repl) : repl_(repl), SSTPragma(Instead) {}
+
+  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
+
+ private:
+  std::string repl_;
+};
+
 class SSTInitPragma : public SSTPragma {
  public:
   SSTInitPragma(const std::string& repl) : init_(repl), SSTPragma(Init) {}
@@ -127,6 +137,21 @@ class SSTReplacePragmaHandler : public SSTTokenStreamPragmaHandler
 
  private:
   SSTPragma* allocatePragma(clang::SourceLocation loc, 
+                            const std::list<clang::Token> &tokens) const;
+
+};
+
+class SSTInsteadPragmaHandler : public SSTTokenStreamPragmaHandler
+{
+ public:
+  SSTInsteadPragmaHandler(SSTPragmaList& plist,
+                        clang::CompilerInstance& CI,
+                        SkeletonASTVisitor& visitor,
+                        std::set<clang::Stmt*>& deld) :
+     SSTTokenStreamPragmaHandler("instead", plist, CI, visitor, deld){}
+
+ private:
+  SSTPragma* allocatePragma(clang::SourceLocation loc,
                             const std::list<clang::Token> &tokens) const;
 
 };

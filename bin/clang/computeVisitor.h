@@ -59,7 +59,7 @@ class ComputeVisitor  {
     context(ctxt)
   {}
 
-  void replaceStmt(clang::Stmt* stmt, clang::Rewriter& r, Loop& loop);
+  void replaceStmt(clang::Stmt* stmt, clang::Rewriter& r, Loop& loop, PragmaConfig& cfg);
 
   void setContext(clang::Stmt* stmt);
 
@@ -113,6 +113,8 @@ class ComputeVisitor  {
   void visitBodyForStmt(clang::ForStmt* stmt, Loop::Body& body);
 
   void visitBodyCompoundStmt(clang::CompoundStmt* stmt, Loop::Body& body);
+
+  void visitBodyIfStmt(clang::IfStmt* stmt, Loop::Body& body);
 
   void visitBodyCompoundAssignOperator(clang::CompoundAssignOperator* op, Loop::Body& body);
 

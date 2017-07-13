@@ -205,6 +205,8 @@ logp_switch::bcast_local_message(message* msg, node_id src)
       send_delayed_to_link(delay, dst_nic, new_lev);
     }
   }
+  //this one not needed anymore
+  delete lev;
 }
 
 void

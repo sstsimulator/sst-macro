@@ -65,7 +65,7 @@ class ReplaceAction : public clang::ASTFrontendAction {
     rewriter_.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
     visitor_.setCompilerInstance(CI);
     initPragmas(CI);
-    return llvm::make_unique<ReplaceASTConsumer>(rewriter_, visitor_);
+    return llvm::make_unique<SkeletonASTConsumer>(rewriter_, visitor_);
   }
 
  private:
@@ -75,6 +75,7 @@ class ReplaceAction : public clang::ASTFrontendAction {
   clang::Rewriter rewriter_;
   GlobalVarNamespace globalNs_;
   clang::CompilerInstance* ci_;
+  PragmaConfig prgConfig_;
   std::set<clang::Stmt*> deletedStmts_;
 };
 

@@ -195,6 +195,7 @@ SimFlat* initSimulation(Command cmd)
    sim->domain = initDecomposition(
       cmd.xproc, cmd.yproc, cmd.zproc, globalExtent);
 
+   //printf("lattice=%f cutoff=%f\n", latticeConstant, sim->pot->cutoff);
    sim->boxes = initLinkCells(sim->domain, sim->pot->cutoff);
    sim->atoms = initAtoms(sim->boxes);
 
@@ -288,14 +289,13 @@ Validate* initValidate(SimFlat* sim)
    Validate* val = comdMalloc(sizeof(Validate));
 #pragma sst init 0
    val->eTot0 = (sim->ePotential + sim->eKinetic) / sim->atoms->nGlobal;
-#pragma sst init 0
    val->nAtoms0 = sim->atoms->nGlobal;
 
    if (printRank())
    {
       fprintf(screenOut, "\n");
       printSeparator(screenOut);
-      fprintf(screenOut, "Initial energy : %14.12f, atom count : %d \n",
+      fprintf(screenOut, "Initial energy : %14.12f, atom count : %lld \n",
             val->eTot0, val->nAtoms0);
       fprintf(screenOut, "\n");
    }
@@ -310,7 +310,6 @@ void validateResult(const Validate* val, SimFlat* sim)
      real_t eFinal = (sim->ePotential + sim->eKinetic) / sim->atoms->nGlobal;
 
       int nAtomsDelta = (sim->atoms->nGlobal - val->nAtoms0);
-
       fprintf(screenOut, "\n");
       fprintf(screenOut, "\n");
       fprintf(screenOut, "Simulation Validation:\n");
@@ -320,7 +319,7 @@ void validateResult(const Validate* val, SimFlat* sim)
       //fprintf(screenOut, "  eFinal/eInitial : %f\n", eFinal/val->eTot0);
       if ( nAtomsDelta == 0)
       {
-         fprintf(screenOut, "  Final atom count : %d, no atoms lost\n",
+         fprintf(screenOut, "  Final atom count : %lld, no atoms lost\n",
                sim->atoms->nGlobal);
       }
       else
@@ -335,7 +334,8 @@ void validateResult(const Validate* val, SimFlat* sim)
 void sumAtoms(SimFlat* s)
 {
    // sum atoms across all processers
-   s->atoms->nLocal = 0;
+#pragma sst init s->boxes->nTotalAtoms
+  s->atoms->nLocal = 0;
 #pragma sst compute
    for (int i = 0; i < s->boxes->nLocalBoxes; i++)
    {
@@ -385,7 +385,7 @@ void printThings(SimFlat* s, int iStep, double elapsedTime)
 #pragma sst init 0
    double timePerAtom = 1.0e6*elapsedTime/(double)(nEval*s->atoms->nLocal);
 
-   fprintf(screenOut, " %6d %10.2f %18.12f %18.12f %18.12f %12.4f %10.4f %12d\n",
+   fprintf(screenOut, " %6d %10.2f %18.12f %18.12f %18.12f %12.4f %10.4f %12lld\n",
            iStep, time, eTotal, eU, eK, Temp, timePerAtom, s->atoms->nGlobal);
 }
 
@@ -401,7 +401,7 @@ void printSimulationDataYaml(FILE* file, SimFlat* s)
       return;
 
    fprintf(file,"Simulation data: \n");
-   fprintf(file,"  Total atoms        : %d\n",
+   fprintf(file,"  Total atoms        : %lld\n",
            s->atoms->nGlobal);
    fprintf(file,"  Min global bounds  : [ %14.10f, %14.10f, %14.10f ]\n",
            s->domain->globalMin[0], s->domain->globalMin[1], s->domain->globalMin[2]);

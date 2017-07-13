@@ -53,12 +53,20 @@ class SSTComputePragma : public SSTPragma {
  private:
   void activate(clang::Stmt *stmt, clang::Rewriter &r, PragmaConfig& cfg) override;
   void activate(clang::Decl* decl, clang::Rewriter& r, PragmaConfig& cfg) override;
-  void defaultAct(clang::Stmt* stmt, clang::Rewriter &r);
+  void defaultAct(clang::Stmt* stmt, clang::Rewriter &r, PragmaConfig& cfg);
   void visitForStmt(clang::ForStmt* stmt, clang::Rewriter& r, PragmaConfig& cfg);
   void visitCXXMethodDecl(clang::CXXMethodDecl* decl, clang::Rewriter& r, PragmaConfig& cfg);
   void visitFunctionDecl(clang::FunctionDecl* decl, clang::Rewriter& r, PragmaConfig& cfg);
   void visitIfStmt(clang::IfStmt* stmt, clang::Rewriter& r, PragmaConfig& cfg);
   void visitAndReplaceStmt(clang::Stmt* stmt, clang::Rewriter& r, PragmaConfig& cfg);
+};
+
+class SSTMemoryPragma : public SSTPragma {
+ public:
+  SSTMemoryPragma(const std::string& memSpec) : SSTPragma(Memory), memSpec_(memSpec){}
+ private:
+  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg);
+  std::string memSpec_;
 };
 
 class SSTLoopCountPragma : public SSTPragma {
@@ -72,6 +80,11 @@ class SSTLoopCountPragma : public SSTPragma {
     //no activate actions are actually required
     //other code in computeVisitor.cc will detect this pragma and trigger actions
   }
+
+  bool reusable() const override {
+    return true;
+  }
+
  private:
   std::string loopCount_;
 };
@@ -104,6 +117,18 @@ class SSTLoopCountPragmaHandler : public SSTTokenStreamPragmaHandler
     //this actually just maps cleanly into a compute pragma
     return new SSTLoopCountPragma(tokens);
   }
+};
+
+class SSTMemoryPragmaHandler : public SSTTokenStreamPragmaHandler
+{
+ public:
+  SSTMemoryPragmaHandler(SSTPragmaList& plist,
+                        clang::CompilerInstance& CI,
+                        SkeletonASTVisitor& visitor,
+                        std::set<clang::Stmt*>& deld) :
+     SSTTokenStreamPragmaHandler("memory", plist, CI, visitor, deld){}
+ private:
+  SSTPragma* allocatePragma(clang::SourceLocation loc, const std::list<clang::Token> &tokens) const;
 };
 
 class SSTComputePragmaHandler : public SSTSimplePragmaHandler<SSTComputePragma> {

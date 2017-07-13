@@ -48,16 +48,46 @@ using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
 
-
 bool
-ReplaceASTConsumer::HandleTopLevelDecl(DeclGroupRef DR)
+SkeletonASTConsumer::HandleTopLevelDecl(DeclGroupRef DR)
 {
   for (DeclGroupRef::iterator b = DR.begin(), e = DR.end(); b != e; ++b){
     Decl* d = *b;
-    bool isGlobalVar = isa<VarDecl>(d);
-    visitor_.setVisitingGlobal(isGlobalVar);
-    visitor_.TraverseDecl(*b);
-    visitor_.setVisitingGlobal(false); //and reset
+    switch(d->getKind()){
+     case Decl::Function: {
+        FunctionDecl* fd = cast<FunctionDecl>(d);
+        //the function decl will have its body filled in later
+        //possibly - we need to make sure to only add the function once
+        if (fd->isThisDeclarationADefinition()){
+          //also, we only really care about the definition anyway
+          allDecls_.push_back(d);
+        }
+      }
+      break;
+     default:
+      allDecls_.push_back(d);
+      break;
+    }
+    firstPass_.TraverseDecl(d);
+    //delay processing to force all template instances to be generated
+    //visitor_.setTopLevelScope(d);
+    //bool isGlobalVar = isa<VarDecl>(d);
+    //visitor_.setVisitingGlobal(isGlobalVar);
+    //visitor_.TraverseDecl(d);
+    //visitor_.setVisitingGlobal(false); //and reset
+    //allDecls_.push_back(d);
   }
   return true;
+}
+
+void
+SkeletonASTConsumer::run()
+{
+  for (Decl* d : allDecls_){
+    visitor_.setTopLevelScope(d);
+    bool isGlobalVar = isa<VarDecl>(d);
+    visitor_.setVisitingGlobal(isGlobalVar);
+    visitor_.TraverseDecl(d);
+    visitor_.setVisitingGlobal(false); //and reset
+  }
 }

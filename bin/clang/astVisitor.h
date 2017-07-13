@@ -52,6 +52,23 @@ Questions? Contact sst-macro-help@sandia.gov
 #define visitFxn(cls) \
   bool Visit##cls(clang::cls* c){ return TestStmtMacro(c); }
 
+class FirstPassASTVistor : public clang::RecursiveASTVisitor<FirstPassASTVistor>
+{
+
+ public:
+  FirstPassASTVistor(SSTPragmaList& prgs, clang::Rewriter& rw,
+                     PragmaConfig& cfg);
+
+  bool VisitDecl(clang::Decl* d);
+  bool VisitStmt(clang::Stmt* s);
+
+ private:
+  SSTPragmaList& pragmas_;
+  PragmaConfig& pragmaConfig_;
+  clang::Rewriter& rewriter_;
+  bool noSkeletonize_;
+};
+
 /**
  * @brief The SkeletonASTVisitor class
  *
@@ -65,14 +82,37 @@ Questions? Contact sst-macro-help@sandia.gov
  * to cancel all visits to child nodes.
  */
 class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor> {
+ private:
+  struct AnonRecord {
+    clang::RecordDecl* decl;
+    std::string structType;  //union or struct
+    std::string retType;
+    bool isFxnStatic;
+    //struct X_anonymous_type - gives unique typename to anonymous truct
+    std::string typeName;
+    AnonRecord() : decl(nullptr), isFxnStatic(false) {}
+  };
+
+  struct ArrayInfo {
+    std::string typedefString;
+    std::string typedefName;
+    std::string retType;
+    uint64_t size;
+    bool isFxnStatic;
+    bool isConstSize;
+    ArrayInfo() : size(-1), isConstSize(false), isFxnStatic(false) {}
+  };
+
  public:
   SkeletonASTVisitor(clang::Rewriter &R,
-                       GlobalVarNamespace& ns,
-                       std::set<clang::Stmt*>& deld) :
+                     GlobalVarNamespace& ns,
+                     std::set<clang::Stmt*>& deld,
+                     PragmaConfig& cfg) :
     rewriter_(R), visitingGlobal_(false), deletedStmts_(deld),
     globalNs_(ns), currentNs_(&ns),
     insideCxxMethod_(0),
-    foundCMain_(false), keepGlobals_(false), noSkeletonize_(true)
+    foundCMain_(false), keepGlobals_(false), noSkeletonize_(true),
+    pragmaConfig_(cfg)
   {
     initHeaders();
     initReservedNames();
@@ -81,8 +121,12 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     pragmaConfig_.astVisitor = this;
   }
 
-  bool isGlobal(clang::DeclRefExpr* expr) const {
+  bool isGlobal(const clang::DeclRefExpr* expr) const {
     return globals_.find(expr->getFoundDecl()) != globals_.end();
+  }
+
+  PragmaConfig& getPragmaConfig() {
+    return pragmaConfig_;
   }
 
   std::string getGlobalReplacement(clang::NamedDecl* decl) const {
@@ -92,6 +136,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
                  "getting global replacement for non-global variable");
     }
     return iter->second;
+  }
+
+  bool noSkeletonize() const {
+    return noSkeletonize_;
   }
 
   void setCompilerInstance(clang::CompilerInstance& c){
@@ -123,6 +171,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    */
   bool VisitDeclRefExpr(clang::DeclRefExpr* expr);
 
+  bool TraverseReturnStmt(clang::ReturnStmt* stmt, DataRecursionQueue* queue = nullptr);
+
   bool TraverseMemberExpr(clang::MemberExpr* expr, DataRecursionQueue* queue = nullptr);
 
   /**
@@ -133,13 +183,17 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    */
   bool VisitCXXNewExpr(clang::CXXNewExpr* expr);
 
+  bool VisitCXXOperatorCallExpr(clang::CXXOperatorCallExpr* expr);
+
+  bool VisitArraySubscriptExpr(clang::ArraySubscriptExpr* expr);
+
   /**
    * @brief VisitCXXNewExpr Capture all usages of operator delete. Rewrite all
    * operator delete calls into SST-specific memory management functions.
    * @param expr
    * @return
    */
-  bool VisitCXXDeleteExpr(clang::CXXDeleteExpr* expr);
+  bool TraverseCXXDeleteExpr(clang::CXXDeleteExpr* expr, DataRecursionQueue* = nullptr);
 
   /**
    * @brief VisitCXXMemberCallExpr Certain function calls get redirected to
@@ -166,7 +220,9 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    * @param D
    * @return
    */
-  bool VisitVarDecl(clang::VarDecl* D);
+  bool visitVarDecl(clang::VarDecl* D);
+
+  bool TraverseVarDecl(clang::VarDecl* D);
 
   /**
    * @brief Activate any pragmas associated with this.
@@ -216,6 +272,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   bool TraverseBinaryOperator(clang::BinaryOperator* op, DataRecursionQueue* queue = nullptr);
 
+  bool TraverseCompoundAssignOperator(clang::CompoundAssignOperator* op, DataRecursionQueue* queue = nullptr);
+
   bool TraverseIfStmt(clang::IfStmt* S, DataRecursionQueue* queue = nullptr);
 
   bool TraverseCompoundStmt(clang::CompoundStmt* S, DataRecursionQueue* queue = nullptr);
@@ -234,6 +292,13 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     return TraverseUnaryOperator(op,queue); \
   }
   UNARYOP_LIST()
+#undef OPERATOR
+
+#define OPERATOR(NAME) \
+  bool TraverseBin##NAME##Assign(clang::CompoundAssignOperator* op, DataRecursionQueue* queue = nullptr){ \
+    return TraverseCompoundAssignOperator(op,queue); \
+  }
+  CAO_LIST()
 #undef OPERATOR
 
   /**
@@ -290,6 +355,14 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     visitingGlobal_ = flag;
   }
 
+  void setTopLevelScope(clang::Decl* d){
+    currentTopLevelScope_ = d;
+  }
+
+  clang::Decl* getTopLevelScope() const {
+    return currentTopLevelScope_;
+  }
+
   bool hasCStyleMain() const {
     return foundCMain_;
   }
@@ -312,14 +385,16 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   void replaceMain(clang::FunctionDecl* mainFxn);
 
  private:
+  clang::Decl* currentTopLevelScope_;
   clang::Rewriter& rewriter_;
   clang::CompilerInstance* ci_;
   SSTPragmaList pragmas_;
   bool visitingGlobal_;
+  std::set<clang::FunctionDecl*> templateDefinitions_;
   std::set<clang::Stmt*>& deletedStmts_;
   GlobalVarNamespace& globalNs_;
   GlobalVarNamespace* currentNs_;
-  std::map<clang::NamedDecl*,std::string> globals_;
+  std::map<const clang::NamedDecl*,std::string> globals_;
   std::set<std::string> globalsDeclared_;
   bool useAllHeaders_;
   int insideCxxMethod_;
@@ -327,14 +402,20 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::list<clang::CXXRecordDecl*> class_contexts_;
   std::list<clang::ForStmt*> loop_contexts_;
   std::list<clang::Stmt*> stmt_contexts_;
+
+  typedef enum { LHS, RHS } BinOpSide;
+  std::list<BinOpSide> sides_;
+
   bool foundCMain_;
   std::string mainName_;
   bool keepGlobals_;
   bool noSkeletonize_;
   std::set<std::string> validHeaders_;
   std::set<std::string> reservedNames_;
-  PragmaConfig pragmaConfig_;
+  PragmaConfig& pragmaConfig_;
   std::map<clang::Stmt*,SSTPragma*> activePragmas_;
+  std::set<clang::FunctionDecl*> keepWithNullArgs_;
+  std::set<clang::FunctionDecl*> deleteWithNullArgs_;
 
   typedef void (SkeletonASTVisitor::*MPI_Call)(clang::CallExpr* expr);
   std::map<std::string, MPI_Call> mpiCalls_;
@@ -389,14 +470,38 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    *                            May be invalid to indicate no insertion should be done.
    * @param getRefInsertLoc     The location in the file to insert symbol redirect function get_X()
    * @param D             The variable declaration being deglobalized
+   * @param staticFxnInfo For static function variables, we will want any info on anonymous records
+   *                      returned to us via this variable
    * @return  Standard clang continue return
    */
-  bool setupGlobalVar(const std::string& scope_prefix,
+   void setupGlobalVar(const std::string& scope_prefix,
                       const std::string& init_scope_prefix,
                       clang::SourceLocation externVarsInsertLoc,
                       clang::SourceLocation getRefInsertLoc,
                       GlobalRedirect_t red_ty,
-                      clang::VarDecl* D);
+                      clang::VarDecl* D,
+                      AnonRecord* anonRecord,
+                      ArrayInfo* arrayInfo);
+
+   /**
+    * @brief checkAnonStruct See if the type of the variable is an
+    *       an anonymous union or struct. Fill in info in rec if so.
+    * @param D    The variable being visited
+    * @param rec  In-out paramter, info struct to fill in
+    * @return If D has anonymous struct type, return the passed-in rec struct
+    *         If D is not an anonymous struct, return nullptrs
+    */
+   AnonRecord* checkAnonStruct(clang::VarDecl* D, AnonRecord* rec);
+
+   /**
+    * @brief checkArray See if the type of the variable is an array
+    *       and fill in the array info if so.
+    * @param D    The variable being visited
+    * @param info In-out parameter, array info to fill in
+    * @return If D has array type, return the passed-in info struct.
+    *         If D does not have array type, return nullptr
+    */
+   ArrayInfo* checkArray(clang::VarDecl* D, ArrayInfo* info);
 
   /**
    * @brief defineGlobalVarInitializers
@@ -437,6 +542,15 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    * @param insertLoc The source location where the text should go
    */
   void declareSSTExternVars(clang::SourceLocation insertLoc);
+
+  bool keepWithNullArgs(clang::FunctionDecl* decl) const {
+    return keepWithNullArgs_.find(decl) != keepWithNullArgs_.end();
+  }
+
+  bool deleteWithNullArgs(clang::FunctionDecl* decl) const {
+    return deleteWithNullArgs_.find(decl) != keepWithNullArgs_.end();
+  }
+
 };
 
 

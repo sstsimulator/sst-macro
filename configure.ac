@@ -16,7 +16,7 @@ dnl
 
 # Version info, used both in library versioning and inside sstmacro.
 m4_define([SSTMAC_VERSION_TAG], 7)
-m4_define([SSTMAC_SUBVERSION_TAG], 1)
+m4_define([SSTMAC_SUBVERSION_TAG], 2)
 m4_define([SSTMAC_SUBSUBVERSION_TAG], 0)
 
 dnl Enable this for releases
@@ -119,6 +119,9 @@ os=`$srcdir/bin/config_tools/get_os`
 
 if test "X$os" = "Xubuntu"; then
 LDFLAGS="$LDFLAGS -Wl,--no-as-needed"
+AM_CONDITIONAL([HAVE_UBUNTU], [true])
+else
+AM_CONDITIONAL([HAVE_UBUNTU], [false])
 fi
 
 CHECK_CLANG()

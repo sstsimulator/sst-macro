@@ -5,8 +5,9 @@ SHELL = /bin/sh
 
 LULESH_EXEC = runlulesh2.0.3
 
+SKEL=1
 
-MPICXX = sst++ -DUSE_MPI=1 -Dsstmac_app_name=lulesh -std=c++11
+MPICXX = sst++ -DUSE_MPI=1 -Dsstmac_app_name=lulesh -std=c++11 -O3
 CXX = $(MPICXX)
 
 SOURCES2.0 = \
@@ -46,7 +47,7 @@ sstmac_headers:
 
 %.o: %.cc lulesh.h sstmac_headers 
 	@echo "Building $<"
-	SSTMAC_SKELETONIZE=1 SSTMAC_HEADERS=`pwd`/sstmac_headers \
+	SSTMAC_SKELETONIZE=$(SKEL) SSTMAC_HEADERS=`pwd`/sstmac_headers \
     $(CXX) -c $(CXXFLAGS) -o $@  $<
 
 runlulesh2.0.3: $(OBJECTS2.0)

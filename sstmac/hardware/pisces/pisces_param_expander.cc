@@ -95,13 +95,13 @@ pisces_param_expander::expand(sprockit::sim_parameters* params)
     netlink_params->add_param("arbitrator",arb);
   }
 
-  int packet_size = params->get_optional_int_param("accuracy_parameter", 4096);
-  int net_packet_size = params->get_optional_int_param("network_accuracy_parameter", packet_size);
-  int mem_packet_size = params->get_optional_int_param("memory_accuracy_parameter", packet_size);
-
   if (!mem_params->has_param("mtu")){
+    int mem_packet_size = params->get_optional_int_param("memory_accuracy_parameter", 4096000);
     mem_params->add_param_override("mtu", mem_packet_size);
   }
+
+  int packet_size = params->get_optional_int_param("accuracy_parameter", 4096);
+  int net_packet_size = params->get_optional_int_param("network_accuracy_parameter", packet_size);
   if (!switch_params->has_param("mtu")){
     switch_params->add_param_override("mtu", net_packet_size);
   }

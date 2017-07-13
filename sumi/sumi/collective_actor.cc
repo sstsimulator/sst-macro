@@ -1355,7 +1355,7 @@ virtual_rank_map::virtual_to_real(int virtual_rank) const
 void*
 dag_collective_actor::message_buffer(void* buffer, int offset)
 {
-  if (buffer){
+  if (isNonNull(buffer)){
     int total_stride = type_size_ * offset;
     char* tmp = ((char*)buffer) + total_stride;
     return tmp;

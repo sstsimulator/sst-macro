@@ -43,13 +43,14 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sumi-mpi/mpi_comm/mpi_group.h>
+#include <sumi-mpi/mpi_types.h>
 #include <sprockit/errors.h>
 #include <sprockit/stl_string.h>
 
 namespace sumi {
 
 mpi_group::mpi_group(const std::vector<task_id>& tl) :
-  task_list_(tl),
+  local_to_world_map_(tl),
   is_comm_world_(false),
   size_(tl.size())
 {
@@ -67,13 +68,26 @@ mpi_group::at(int rank)
   if (is_comm_world_){
     return task_id(rank);
   } else {
-    if (rank >= task_list_.size()){
+    if (rank >= local_to_world_map_.size()){
       spkt_throw_printf(sprockit::value_error,
                         "invalid rank %d requested for MPI group %p of size %d with ranks %s",
-                        rank, this, task_list_.size(),
-                        task_list_.size() < 6 ? stl_string(task_list_).c_str() : "");
+                        rank, this, local_to_world_map_.size(),
+                        local_to_world_map_.size() < 6 ? stl_string(local_to_world_map_).c_str() : "");
     }
-    return task_list_[rank];
+    return local_to_world_map_[rank];
+  }
+}
+
+void
+mpi_group::translate_ranks(int n_ranks, const int* my_ranks, int* other_ranks, mpi_group* other_grp){
+  for (int i=0; i < n_ranks; ++i){
+    int input_rank = my_ranks[i];
+    if (input_rank == MPI_PROC_NULL){
+      other_ranks[i] = MPI_PROC_NULL;
+    } else {
+      int global_rank_i = is_comm_world_ ? input_rank : local_to_world_map_[input_rank];
+      other_ranks[i] = other_grp->rank_of_task(global_rank_i);
+    }
   }
 }
 
@@ -83,13 +97,13 @@ mpi_group::rank_of_task(task_id t)
   if (is_comm_world_){
     return int(t);
   } else {
-    for (int i=0; i < task_list_.size(); ++i){
-      if (task_list_[i] == t){
+    for (int i=0; i < local_to_world_map_.size(); ++i){
+      if (local_to_world_map_[i] == t){
         return int(i);
       }
     }
   }
-  return int(-1);
+  return MPI_UNDEFINED;
 }
 
 }

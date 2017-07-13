@@ -50,6 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_api.h>
 #include <sprockit/debug.h>
 #include <sprockit/errors.h>
+#include <sstmac/null_buffer.h>
 
 namespace sumi {
 
@@ -63,7 +64,7 @@ mpi_queue_recv_request::mpi_queue_recv_request(
   seqnum_(0), count_(count), type_(queue->api()->type_from_id(type)),
   key_(key), final_buffer_(buffer), recv_buffer_(nullptr)
 {
-  if (buffer && !type_->contiguous()){
+  if (isNonNullBuffer(buffer) && !type_->contiguous()){
     recv_buffer_ = new char[count*type_->packed_size()];
   } else {
     recv_buffer_ = (char*) final_buffer_;
