@@ -59,7 +59,7 @@ typedef int (*empty_main_fxn)();
 #include <sstmac/null_buffer.h>
 
 #ifdef __cplusplus
-#include <cstdlib> //must come first
+
 #if SSTMAC_INTEGRATED_SST_CORE && defined(SSTMAC_EXTERNAL_SKELETON)
 #include <Python.h>
 #include <sstCoreElement.h>
@@ -163,11 +163,11 @@ namespace sstmac {
 
 class vector {
  public:
-  void resize(size_t sz){
+  void resize(unsigned long sz){
     size_ = sz;
   }
 
-  size_t size() const {
+  unsigned long size() const {
     return size_;
   }
 
@@ -186,7 +186,7 @@ class vector {
   }
 
  private:
-  size_t size_;
+  unsigned long  size_;
 };
 }
 
@@ -222,26 +222,25 @@ extern sprockit::sim_parameters* get_params();
  */
 extern "C" void sstmac_free(void* ptr);
 
-extern "C" void* sstmac_memset(void* ptr, int value, size_t sz);
+extern "C" void* sstmac_memset(void* ptr, int value, unsigned long  sz);
 
 namespace std {
 
 void sstmac_free(void* ptr);
 
-void* sstmac_memset(void* ptr, int value, size_t sz);
+void* sstmac_memset(void* ptr, int value, unsigned long  sz);
 
 }
 
 
 
 #else
-#include <stdlib.h>
 /**
  * @brief sstmac_free
  * @param ptr A pointer which may or may not have been skeletonized
  */
 void sstmac_free(void* ptr);
-void* sstmac_memset(void* ptr, int value, size_t size);
+void* sstmac_memset(void* ptr, int value, unsigned long size);
 
 static void* nullptr = 0;
 

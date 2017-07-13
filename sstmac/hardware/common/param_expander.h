@@ -54,14 +54,11 @@ class param_expander : public sstmac::param_expander
 {
 
  protected:
-  virtual double
-  network_bandwidth_multiplier(sprockit::sim_parameters* params) const;
+  virtual double network_bandwidth_multiplier(sprockit::sim_parameters* params) const;
 
-  virtual double
-  switch_bandwidth_multiplier(sprockit::sim_parameters* params) const;
+  virtual double switch_bandwidth_multiplier(sprockit::sim_parameters* params) const;
 
-  virtual int
-  switch_buffer_multiplier(sprockit::sim_parameters* params) const;
+  virtual int switch_buffer_multiplier(sprockit::sim_parameters* params) const;
 
 };
 

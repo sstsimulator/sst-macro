@@ -73,26 +73,22 @@ struct unique_event_id {
     return lo | hi;
   }
 
-  static void
-  unpack(uint64_t id, uint32_t& node, uint32_t& num){
+  static void unpack(uint64_t id, uint32_t& node, uint32_t& num){
     num = id; //low 32
     node = (id>>32); //high 32
   }
 
-  std::string
-  to_string() const {
+  std::string to_string() const {
     std::stringstream sstr;
     sstr << "unique_id(" << src_node << "," << msg_num << ")";
     return sstr.str();
   }
 
-  void
-  set_src_node(uint32_t src) {
+  void set_src_node(uint32_t src) {
     src_node = src;
   }
 
-  void
-  set_seed(uint32_t seed) {
+  void set_seed(uint32_t seed) {
     msg_num = seed;
   }
 
