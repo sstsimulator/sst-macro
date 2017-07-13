@@ -384,7 +384,9 @@ SkeletonASTVisitor::TraverseCXXMemberCallExpr(CXXMemberCallExpr* expr, DataRecur
   if (skipVisit){
     return true;
   }
-  if (!pragmaConfig_.makeNoChanges){
+  if (pragmaConfig_.makeNoChanges){
+    pragmaConfig_.makeNoChanges = false; //turn off for next guy
+  } else {
     CXXRecordDecl* cls = expr->getRecordDecl();
     std::string clsName = cls->getNameAsString();
     if (clsName == "mpi_api"){
@@ -766,7 +768,7 @@ SkeletonASTVisitor::checkStaticFxnVar(VarDecl *D)
       new_init_pp.os << "static " << anonRecPtr->structType
                      << " " << anonRecPtr->typeName;
     } else if (arrayInfoPtr) {
-      new_init_pp.os << "typedef " << arrayInfoPtr->typedefString << "; ";
+      new_init_pp.os << arrayInfoPtr->typedefString << "; ";
       new_init_pp.os << "static " << arrayInfoPtr->typedefName;
       arrayInfoPtr->isFxnStatic = true;
     } else {
@@ -886,6 +888,18 @@ SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
 bool
 SkeletonASTVisitor::TraverseVarDecl(VarDecl* D)
 {
+  for (SSTPragma* prg : pragmas_.getMatches(D)){
+    pragmaConfig_.pragmaDepth++;
+    //pragma takes precedence - must occur in pre-visit
+    prg->activate(D, rewriter_, pragmaConfig_);
+    pragmaConfig_.pragmaDepth--;
+  }
+
+  if (pragmaConfig_.makeNoChanges){
+    pragmaConfig_.makeNoChanges = false;
+    return true;
+  }
+
   if (D->getMemberSpecializationInfo() && D->getTemplateInstantiationPattern()){
     return true;
   }

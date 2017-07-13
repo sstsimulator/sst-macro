@@ -241,9 +241,10 @@ class SSTKeepPragma : public SSTPragma {
  public:
   SSTKeepPragma() : SSTPragma(Keep) {}
  protected:
-  virtual void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override {
-    cfg.makeNoChanges = true;
-  }
+  virtual void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
+
+  virtual void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg) override;
+
   void deactivate(clang::Stmt *s, PragmaConfig &cfg) override {
     cfg.makeNoChanges = false;
   }

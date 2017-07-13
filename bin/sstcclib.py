@@ -144,6 +144,14 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         cxxInitFile = addPrefix("sstGlobals.", sarg)
         if os.path.isfile(cxxInitFile):
           objectFiles.append(cxxInitFile)
+        elif ".libs" in cxxInitFile:
+          cxxInitFile = cxxInitFile.replace(".libs/","")
+          if os.path.isfile(cxxInitFile):
+            objectFiles.append(cxxInitFile)
+          else:
+            sys.stderr.write("no file %s\n" % cxxInitFile)
+        else:
+          sys.stderr.write("no file %s\n" % cxxInitFile)
     elif sarg.startswith("-Wl"):
       linkerArgs.append(sarg)
     elif sarg.startswith("-W"):
@@ -529,8 +537,6 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
 
     #some generate multiple .o files at once, I don't know why
     manyObjects = objTarget == None #no specific target specified
-    mergeCmdArr = [compiler]
-    mergeCmdArr.append("-Wl,-r -nostdlib")
     allObjects = []
     for srcFile in sourceFiles:
       srcFileNoSuffix = ".".join(srcFile.split(".")[:-1])
