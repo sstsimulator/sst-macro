@@ -54,6 +54,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 class FirstPassASTVistor : public clang::RecursiveASTVisitor<FirstPassASTVistor>
 {
+
  public:
   FirstPassASTVistor(SSTPragmaList& prgs, clang::Rewriter& rw,
                      PragmaConfig& cfg);
@@ -81,6 +82,17 @@ class FirstPassASTVistor : public clang::RecursiveASTVisitor<FirstPassASTVistor>
  * to cancel all visits to child nodes.
  */
 class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor> {
+ private:
+  struct AnonRecord {
+    clang::RecordDecl* decl;
+    std::string structType;  //union or struct
+    std::string retType;
+    bool isFxnStatic;
+    //struct X_anonymous_type - gives unique typename to anonymous truct
+    std::string typeName;
+    AnonRecord() : decl(nullptr), isFxnStatic(false) {}
+  };
+
  public:
   SkeletonASTVisitor(clang::Rewriter &R,
                      GlobalVarNamespace& ns,
@@ -448,14 +460,18 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    *                            May be invalid to indicate no insertion should be done.
    * @param getRefInsertLoc     The location in the file to insert symbol redirect function get_X()
    * @param D             The variable declaration being deglobalized
+   * @param staticFxnInfo For static function variables, we will want any info on anonymous records
+   *                      returned to us via this variable
    * @return  Standard clang continue return
    */
-  bool setupGlobalVar(const std::string& scope_prefix,
+   void setupGlobalVar(const std::string& scope_prefix,
                       const std::string& init_scope_prefix,
                       clang::SourceLocation externVarsInsertLoc,
                       clang::SourceLocation getRefInsertLoc,
                       GlobalRedirect_t red_ty,
-                      clang::VarDecl* D);
+                      clang::VarDecl* D, AnonRecord* anonRecord);
+
+   AnonRecord* checkAnonStruct(clang::VarDecl* D, AnonRecord* rec);
 
   /**
    * @brief defineGlobalVarInitializers

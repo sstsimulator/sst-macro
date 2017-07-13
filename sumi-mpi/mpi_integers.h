@@ -156,6 +156,10 @@ MPI_INTEGER8
 };
 #define MPI_LONG_LONG MPI_LONG_LONG_INT
 
+enum builtin_attrs {
+  MPI_TAG_UB
+};
+
 #define MPI_IN_PLACE (void*)-1
 
 /* Results of the compare operations. */

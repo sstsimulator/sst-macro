@@ -123,6 +123,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   linkerArgs = []
   sourceFiles = []
   objectFiles = []
+  warningArgs = []
   optFlags = []
   objTarget = None
   ldTarget = None
@@ -145,6 +146,9 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
           objectFiles.append(cxxInitFile)
     elif sarg.startswith("-Wl"):
       linkerArgs.append(sarg)
+    elif sarg.startswith("-W"):
+      warningArgs.append(sarg)
+      givenFlags.append(sarg)
     elif sarg.startswith("-L"):
       linkerArgs.append(sarg)
     elif sarg.startswith("-l"):
@@ -225,6 +229,15 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     sstCompilerFlagsStr = cleanFlag(sstCFlagsStr)
     compiler = cc
     ld = cxx #always use c++ for linking since we are bringing a bunch of sstmac C++ into the game
+
+  #okay this is sooo dirty - but autoconf is a disaster to trick
+  #if this detects something auto-confish, bail and pass through to regular compiler
+  if "conftest.c" in sysargs:
+    cmd = "%s %s" % (compiler, " ".join(sysargs))
+    sys.stderr.write("passing through on autoconf: %s\n" % cmd) 
+    rc = os.system(cmd)
+    if rc == 0: return 0
+    else: return 1
 
   sstCompilerFlags = []
   sstStdFlag = None
@@ -451,6 +464,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         addClangArgs(clangLibtoolingCFlagsStr.split(), clangCmdArr)
       clangCmdArr.append(ppTmpFile)
       clangCmdArr.append("--")
+      clangCmdArr.extend(warningArgs)
       clangCmd = " ".join(clangCmdArr)
       if verbose: sys.stderr.write("%s\n" % clangCmd)
       rc = os.system(clangCmd)

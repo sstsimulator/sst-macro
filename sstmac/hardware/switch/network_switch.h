@@ -84,13 +84,11 @@ class network_switch :
 
   virtual ~network_switch();
 
-  switch_id
-  addr() const {
+  switch_id addr() const {
     return my_addr_;
   }
 
-  virtual void
-  compatibility_check() const {
+  virtual void compatibility_check() const {
     //by default, nothing
   }
 
@@ -104,8 +102,7 @@ class network_switch :
    * @param port The port to check the queue length of
    * @return The queue length as an integer number of packets waiting
    */
-  virtual int
-  queue_length(int port) const = 0;
+  virtual int queue_length(int port) const = 0;
 
  protected:
   network_switch(

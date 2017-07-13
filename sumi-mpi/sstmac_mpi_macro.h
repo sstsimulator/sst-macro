@@ -195,6 +195,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #define MPI_Rsend_init sumi::sstmac_mpi()->send_init
 #define MPI_Ssend_init sumi::sstmac_mpi()->send_init
 #define MPI_Group_translate_ranks sumi::sstmac_mpi()->group_translate_ranks
+#define MPI_Errhandler_create sumi::sstmac_mpi()->errhandler_create
+#define MPI_Comm_get_attr sumi::sstmac_mpi()->comm_get_attr
 #else
 #define MPI_Cart_create sstmac_cart_create
 #define MPI_Cart_get sstmac_cart_get
@@ -345,6 +347,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #define MPI_Rsend_init sstmac_send_init
 #define MPI_Ssend_init sstmac_send_init
 #define MPI_Group_translate_ranks sstmac_group_translate_ranks
+#define MPI_Errhandler_create sstmac_errhandler_create
+#define MPI_Comm_get_attr sstmac_comm_get_attr
 #endif
 
 
@@ -363,7 +367,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #define MPI_Graph_map error not yet implemented
 #define MPI_Get_processor_name error not yet implemented
 #define MPI_Get_version error not yet implemented
-#define MPI_Errhandler_create error not yet implemented
 #define MPI_Errhandler_get error not yet implemented
 #define MPI_Errhandler_free error not yet implemented
 #define MPI_Pcontrol error not yet implemented
@@ -398,7 +401,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #define MPI_Comm_create_keyval error not yet implemented
 #define MPI_Comm_delete_attr error not yet implemented
 #define MPI_Comm_free_keyval error not yet implemented
-#define MPI_Comm_get_attr error not yet implemented
 #define MPI_Comm_get_name error not yet implemented
 #define MPI_Comm_set_attr error not yet implemented
 #define MPI_Comm_set_name error not yet implemented

@@ -123,6 +123,8 @@ class mpi_api :
     return selfcomm_;
   }
 
+  int comm_get_attr(MPI_Comm, int comm_keyval, void* attribute_val, int* flag);
+
   int comm_rank(MPI_Comm comm, int* rank);
 
   int comm_size(MPI_Comm comm, int* size);
@@ -171,6 +173,10 @@ class mpi_api :
   int abort(MPI_Comm comm, int errcode);
 
   int errhandler_set(MPI_Comm comm, MPI_Errhandler handler){
+    return MPI_SUCCESS;
+  }
+
+  int errhandler_create(MPI_Handler_function *function, MPI_Errhandler *errhandler){
     return MPI_SUCCESS;
   }
 

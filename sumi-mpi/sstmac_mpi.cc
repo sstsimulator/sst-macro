@@ -250,3 +250,11 @@ extern "C" int sstmac_group_translate_ranks(MPI_Group group1, int n, const int r
                                             MPI_Group group2, int ranks2[]){
   return sumi::sstmac_mpi()->group_translate_ranks(group1, n, ranks1, group2, ranks2);
 }
+
+extern "C" int sstmac_errhandler_create(MPI_Handler_function *function, MPI_Errhandler *errhandler){
+  return sumi::sstmac_mpi()->errhandler_create(function,errhandler);
+}
+
+extern "C" int sstmac_comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val, int *flag){
+  return sumi::sstmac_mpi()->comm_get_attr(comm,comm_keyval,attribute_val,flag);
+}

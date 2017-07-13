@@ -63,7 +63,7 @@ get_params(){
 
 
 namespace std {
-void* sstmac_memset(void* ptr, int value, size_t sz){
+void* sstmac_memset(void* ptr, int value, unsigned long  sz){
   if (isNonNullBuffer(ptr)) std::memset(ptr,value,sz);
   return ptr;
 }
@@ -76,7 +76,7 @@ void sstmac_free(void* ptr){
 }
 
 extern "C"
-void* sstmac_memset(void* ptr, int value, size_t sz){
+void* sstmac_memset(void* ptr, int value, unsigned long sz){
 #ifdef memset
 #error #sstmac memset macro should not be defined in util.cc - refactor needed
 #endif

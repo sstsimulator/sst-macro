@@ -220,4 +220,19 @@ mpi_api::comm_free(MPI_Comm* input)
   return MPI_SUCCESS;
 }
 
+int
+mpi_api::comm_get_attr(MPI_Comm, int comm_keyval, void* attribute_val, int *flag)
+{
+  /**
+  if (comm_keyval == MPI_TAG_UB){
+    *attribute_val = std::numeric_limits<int>::max();
+    *flag = 1;
+  } else {
+    *flag = 0;
+  }
+  */
+  *flag = 0;
+  return MPI_SUCCESS;
+}
+
 }

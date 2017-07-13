@@ -86,16 +86,14 @@ class nic :
     LogP
   } Port;
 
-  virtual std::string
-  to_string() const override = 0;
+  virtual std::string to_string() const override = 0;
 
   virtual ~nic();
 
   /**
    * @return A unique ID for the NIC positions. Opaque typedef to an int.
    */
-  node_id
-  addr() const {
+  node_id addr() const {
     return my_addr_;
   }
 

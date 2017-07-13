@@ -1,9 +1,9 @@
 
-int x[] = {1,2,3};extern int sstmac_global_stacksize; extern int __offset_x; void* __ptr_x = &x; int __sizeof_x = sizeof(x);static inline int* get_x(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char* offsetPtr = *((char**)localStorage) + __offset_x; return (((int*)((void*)offsetPtr))); }  
+int x[] = {1,2,3};extern int sstmac_global_stacksize; extern int __offset_x; void* __ptr_x = &x; int __sizeof_x = sizeof(x);typedef int typex[3]; static inline typex* get_x(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char* offsetPtr = *((char**)localStorage) + __offset_x; return (((typex*)((void*)offsetPtr))); }  
 
 void fxn()
 {
-  int* z = (get_x());
+  int* z = (*get_x());
 }
 #include <sstmac/software/process/global.h>
 
