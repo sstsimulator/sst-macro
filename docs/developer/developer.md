@@ -5,7 +5,7 @@ category: SSTDocumentation
 ---
 
 
-# SST/macro 7.0: Developer's Reference
+# SST/macro 7.2: Developer's Reference
 
 ![](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/sstlogo.png)
 
@@ -83,8 +83,7 @@ SST/macro (Structural Simulation Toolkit for Macroscale) is a discrete event sim
 The simulation progresses with different modules (classes) exchanging messages. In general, when module 1 sendings a message to module 2, module 1 only sees an abstract interface for module 2. The polymorphic type of module 2 can vary freely to employ different physics or congestions models without affecting the implementation of module 1. Polymorphism, while greatly simplifying modularity and interchangeability, does have some consequences. The "workhorse" of SST/macro is the base `event` and `message` classes. To increase polymorphism and flexibility, every SST/macro module that receives events does so via the generic function
 
 ````
-void
-handle(event* ev){
+void handle(event* ev){
 ...
 }
 ````
@@ -273,8 +272,7 @@ This macro should exist in the global namespace.
 All that remains now is defining the `serialize_order` in the source file
 
 ````
-void
-my_object::serialize_order(sstmac::serializer& ser)
+void my_object::serialize_order(sstmac::serializer& ser)
 {
   ser & my_int_;
   set << my_double_;
@@ -379,8 +377,7 @@ After declaring public typedefs, the public function interface can be declared. 
 
 ````
 public:
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "message class";
    }
 ````
@@ -388,13 +385,11 @@ public:
 Public set/get functions can be added for member variables, if desired. We have generally followed snake\_case, using lower-case letters and underscores.
 
 ````
-std::string
-  message() const {
+std::string message() const {
     return message_;
    }
 
-void
-  set_message(const std::string& msg){
+void set_message(const std::string& msg){
     message_ = msg;
   }
 ````
@@ -431,8 +426,7 @@ We then define the abstract `gem` interface
 
 ````
 public:
-  virtual int
-  value() const = 0;
+  virtual int value() const = 0;
 
 virtual ~gem(){}
 ````
@@ -465,8 +459,7 @@ We then define the abstract `mineral` interface:
 
 ````
 public:
-  virtual std::string
-  structure() const = 0;
+  virtual std::string structure() const = 0;
 
 virtual ~mineral(){}
 ````
@@ -503,8 +496,7 @@ public:
 The `ptr_type` class requires we add a `to_string` function
 
 ````
-std::string
-to_string() const override {
+std::string to_string() const override {
   return "diamond";
 }
 ````
@@ -512,16 +504,14 @@ to_string() const override {
 We now complete the gem interface
 
 ````
-int
-value() const {
+int value() const override {
   return num_carats_ * 100;
 }
 ````
 
 and the mineral interface
 ````
-std::string
-structure() const {
+std::string structure() const override {
   return "tetrahedral carbon";
 }
 ````
@@ -577,8 +567,7 @@ namespace sstmac { namespace tutorial {
 
 #define sstmac_app_name rob_reiner
 
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 ````
 The details of declaring and using external apps is found in the user's manual.
@@ -723,8 +712,7 @@ mandy_patinkin(sprockit::sim_parameters* params);
 And finally, to satisfy the `actor` public interface, we need
 
 ````
-virtual void
-act() override;
+virtual void act() override;
 ````
 
 Moving to the implementation, we must first register the new type using the macro
@@ -763,8 +751,7 @@ The child class must invoke the parent class method.
 Finally, we specify the acting behavior
 
 ````
-void
-mandy_patinkin::act()
+void mandy_patinkin::act()
 {
     std::cout << "Hello. My name is Inigo Montoya. You killed my father. Prepare to die!"
               << std::endl;
@@ -790,8 +777,7 @@ There are abundant tutorials on discrete event simulation around the web. To und
 The driver for simulations is an event manager that provides the function
 
 ````
-virtual void
-schedule(timestamp start_time, event* event) = 0;
+virtual void schedule(timestamp start_time, event* event) = 0;
 ````
 This function must receive events and order them according to timestamp.
 Two main types of data structures can be used, which we briefly describe below.
@@ -799,8 +785,7 @@ Two main types of data structures can be used, which we briefly describe below.
 The event manager also needs to provide
 
 ````
-virtual void
-run() = 0;
+virtual void run() = 0;
 ````
 
 The termination condition can be:
@@ -827,8 +812,7 @@ The execute function is invoked by the `event_manager` to run the underlying eve
 In most cases, the event is represented as a message sent to an object called an `event_handler at a specific simulation time. In handling the message, the event handlers change their internal state and may cause more events by scheduling new messages at other event handlers (or scheduling messages to itself) at a future time. The workhorses for SST-macro are therefore classes that inherit from \inlinecode{event_handler. The only method that must be implemented is
 
 ````
-void
-handle(event* ev);
+void handle(event* ev);
 ````
 The function is the common interface for numerous different operations from network injection to memory access to MPI operations.
 In general, objects have two "directions" for the action - send or receive.
@@ -841,8 +825,7 @@ Some event handlers will always receive and then send, such as network switches 
 In most cases, events are created by calling the function
 
 ````
-void
-schedule(const timestamp &t,
+void schedule(const timestamp &t,
   event_handler* handler,
   event* ev);
 ````
@@ -850,8 +833,7 @@ schedule(const timestamp &t,
 This then creates a class of type `event_queue_entry`, for which the execute function is
 
 ````
-void
-handler_event_queue_entry::execute()
+void handler_event_queue_entry::execute()
 {
   if (!canceled_) {
     handler_->handle(ev_to_deliver_);
@@ -876,8 +858,7 @@ Here `Fxn` is a member function pointer. When an `event* ev` is scheduled to the
 For example, given a class `actor` with the member function `act`
 
 ````
-void
-actor::actor(event* ev, int ev_id){...}
+void actor::actor(event* ev, int ev_id){...}
 ````
 we can create an event handler
 
@@ -906,8 +887,7 @@ These parameters should match the member function prototype.
 For example, the prototype
 
 ````
-void
-mpi_queue::start_recv(mpi_queue_recv_request* req)
+void mpi_queue::start_recv(mpi_queue_recv_request* req)
 {
   ...
 `
@@ -1021,7 +1001,8 @@ For all standard runs, the entire hardware model is driven by the interconnect o
 To illustrate, here is the code for the interconnect that creates the node objects. The interconnect is itself a factory object, configured from a parameter file.
 
 ````
-interconnect::interconnect(sprockit::sim_parameters* params, event_manager* mgr, partition* part, parallel_runtime* rt)
+interconnect::interconnect(sprockit::sim_parameters* params, event_manager* mgr, 
+	partition* part, parallel_runtime* rt)
 {
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
   topology_ = topology_factory::get_param("name", top_params);
@@ -1064,11 +1045,9 @@ the `event_handler` that should receive either new packets (payload) or credits 
 Although the `node` can be implemented as a very complex model, it fundamentally only requires a single set of functions to meet the public interface. The `node` must provide `execute_kernel` functions that are invoked by the `operating_system` or other other software objects. The prototypes for these are:
 
 ````
-virtual void
-execute(ami::COMP_FUNC func, event* data);
+virtual void execute(ami::COMP_FUNC func, event* data);
 
-virtual void
-execute(ami::SERVICE_FUNC func, event* data);
+virtual void execute(ami::SERVICE_FUNC func, event* data);
 ````
 
 By default, the abstract `node` class throws an `sprockit::unimplemented_error`. These functions are not pure virtual. A node is only required to implement those functions that it needs to do. The various function parameters are enums for the different operations a node may perform: computation or communication. Computation functions are those that require compute resources. Service functions are special functions that run in the background and "lightweight" such that any modeling of processor allocation should be avoided. Service functions are run "for free" with no compute
@@ -1084,8 +1063,7 @@ The network interface can implement many services, but the basic public interfac
 For sending messages, the NIC must implement
 
 ````
-virtual void
-  do_send(network_message* payload);
+virtual void do_send(network_message* payload);
 ````
 A non-virtual, top-level `send` function performs operations standard to all NICs.
 Once these operations are complete, the NIC invokes `do_send` to perform model-specific send operations.
@@ -1094,8 +1072,7 @@ The NIC should only ever send `network_message` types.
 For the bare-bones class `logp_nic`, the function is
 
 ````
-void
-logp_nic::do_send(network_message* msg)
+void logp_nic::do_send(network_message* msg)
 {
   long num_bytes = msg->byte_length();
   timestamp now_ = now();
@@ -1119,8 +1096,7 @@ The node is responsible for generating any software events in the OS.
 For receiving, messages can be moved across the network and delivered in two different ways: either at the byte-transfer layer (BTL) or message-transfer layer (MTL). Depending on the congestion model, a large message (say a 1 MB MPI message) might be broken up into many packets. These message chunks are moved across the network independently and then reassembled at the receiving end. Alternatively, for flow models or simple analytical models, the message is not packetized and instead delivered as a single whole. The methods are not pure virtual.  Depending on the congestion model,  the NIC might only implement chunk receives or whole receives. Upon receipt, just as for ACKs, the NIC should deliver the message to the node to interpret. In general, `nic::handle` is intended to handle packets. If a NIC supports direct handling of complete messages (MTL) instead of packets (BTL), it should provide a message handler:
 
 ````
-event_handler*
-mtl_handler() const {
+event_handler* mtl_handler() const {
   return mtl_handler_;
 }
 ````
@@ -1132,8 +1108,7 @@ A special completion queue object tracks chunks and processes out-of-order arriv
 As with the NIC and node, the memory model class can have a complex implementation under the hood, but it must funnel things through the a common function.
 
 ````
-virtual void
-access(long bytes, double max_bw) = 0;
+virtual void access(long bytes, double max_bw) = 0;
 ````
 
 This function is intended to be called from an application user-space thread. As such, it should block until complete. For more details on the use of user-space threading to model applications, see the User's manual.
@@ -1145,15 +1120,13 @@ This function is intended to be called from an application user-space thread. As
 Unlike the other classes above, a network switch is not required to implement any specific functions. It is only required to be an `event_handler`, providing the usual `handle(event* ev)`. The internal details can essentially be arbitrary. However, the basic scheme for most switches follows the code below for the `pisces` model.
 
 ````
-void
-pisces_switch::handle_credit(event *ev)
+void pisces_switch::handle_credit(event *ev)
 {
   pisces_credit* credit = static_cast<pisces_credit*>(ev);
   out_buffers_[credit->port()]->handle_credit(credit);
 }
 
-void
-pisces_switch::handle_payload(event *ev)
+void pisces_switch::handle_payload(event *ev)
 {
   pisces_payload* payload = static_cast<pisces_payload*>(ev);
   router_->route(payload);
@@ -1178,8 +1151,7 @@ The most important functions in the `topology` class are
 ````
 class topology
 {
-virtual bool
-uniform_network_ports() const = 0;
+virtual bool uniform_network_ports() const = 0;
 
 virtual bool uniform_switches_non_uniform_network_ports() const = 0;
 
@@ -1197,9 +1169,9 @@ virtual int num_endpoints() const = 0;
 
 virtual int max_num_ports() const = 0;
 
-virtual switch_id netlink_to_injection_switch(node_id nodeaddr, int& switch_port) const = 0;
+virtual switch_id netlink_to_injection_switch(node_id nodeaddr, uint16_t& switch_port) const = 0;
 
-virtual switch_id netlink_to_ejection_switch(node_id nodeaddr, int& switch_port) const = 0;
+virtual switch_id netlink_to_ejection_switch(node_id nodeaddr, uint16_t& switch_port) const = 0;
 
 virtual void configure_vc_routing(std::map<routing::algorithm_t, int>& m) const = 0;
 
@@ -1241,11 +1213,9 @@ The router has a simple public interface
 class router
 {
 ...
-  virtual void
-  route(packet* pkt);
+  virtual void route(packet* pkt);
 
-virtual void
-  route_to_switch(switch_id sid, routable::path& path) = 0;
+virtual void route_to_switch(switch_id sid, routable::path& path) = 0;
 ...
 };
 ````
@@ -1312,8 +1282,7 @@ determining how many switches are in the ring and how big a "jump" link is.
 The topology then needs to tell objects how to connect
 
 ````
-void
-xpress_ring::connect_objects(connectable_map& objects)
+void xpress_ring::connect_objects(connectable_map& objects)
 {
   for (int i=0; i < ring_size_; ++i) {
     connectable* center_obj = objects[switch_id(i)];
@@ -1338,8 +1307,7 @@ Each of the four connections get a different unique port number.  We must identi
 To compute the distance between two switches
 
 ````
-int
-xpress_ring::num_hops(int total_distance) const
+int xpress_ring::num_hops(int total_distance) const
 {
   int num_jumps = total_distance / jump_size_;
   int num_steps = total_distance % jump_size_;
@@ -1363,16 +1331,14 @@ Essentially you compute the number of jumps to get close to the final destinatio
 For computing coordinates, the topology has dimension one.
 
 ````
-switch_id
-xpress_ring::get_switch_id(const coordinates& coords) const
+switch_id xpress_ring::get_switch_id(const coordinates& coords) const
 {
   return switch_id(coords[0]);
 }
 
 void xpress_ring::get_productive_path( int dim, const coordinates& src, const coordinates& dst, routable::path& path) const { minimal_route_to_coords(src, dst, path); }
 
-void
-xpress_ring::compute_switch_coords(switch_id swid, coordinates& coords) const
+void xpress_ring::compute_switch_coords(switch_id swid, coordinates& coords) const
 {
   coords[0] = int(swid);
 }
@@ -1382,8 +1348,7 @@ Thus the coordinate vector is a single element with the `switch_id`.
 The most complicated function is the routing function.
 
 ````
-void
-xpress_ring::minimal_route_to_coords(
+void xpress_ring::minimal_route_to_coords(
   const coordinates& src_coords,
   const coordinates& dest_coords,
   routable::path& path) const
@@ -1441,8 +1406,7 @@ else {
 For adaptive routing, we need to compute productive paths. In this case, we only have a single dimension so there is little adaptive routing flexibility. The only productive paths are the minimal paths.
 
 ````
-void
-xpress_ring::get_productive_path(
+void xpress_ring::get_productive_path(
   int dim,
   const coordinates& src,
   const coordinates& dst,
@@ -1550,8 +1514,7 @@ job_launcher_ = job_launcher::static_job_launcher(params, mgr;
 This job launcher roughly corresponds to SLURM, PBS, or MOAB - some process manager that will allocate nodes to a job request and spawn processes on the nodes. For implementation reasons, each node grabs a reference to a static job launcher.  After construction, each node will have its `init` function invoked.
 
 ````
-void
-node::init(unsigned int phase)
+void node::init(unsigned int phase)
 {
   if (phase == 0){
     build_launchers(params_);
@@ -1561,8 +1524,7 @@ node::init(unsigned int phase)
 The `build_launchers` will detect all the launch requests from the input file.  After the init phases are completed, a final setup function is invoked on the node.
 
 ````
-void
-node::schedule_launches()
+void node::schedule_launches()
 {
   for (app_launch* appman : launchers_){
     schedule(appman->time(), new_callback(this, &node::job_launch, appman));
@@ -1574,8 +1536,7 @@ This corresponds to when a user would type, e.g. `srun` or `qsub` to put the job
 When the time for a job launch request is reached, the callback function is invoked.
 
 ````
-void
-node::job_launch(app_launch* appman)
+void node::job_launch(app_launch* appman)
 {
   job_launcher_->handle_new_launch_request(appman, this);
 }
@@ -1667,13 +1628,11 @@ This is important during simulation post-processing when the event manager wants
 The first set of virtual functions that every stats object must provide are
 
 ````
-virtual void
-simulation_finished(timestamp end) = 0;
+virtual void simulation_finished(timestamp end) = 0;
 
 virtual void dump_local_data() = 0;
 
-virtual void
-dump_global_data() = 0;
+virtual void dump_global_data() = 0;
 ````
 
 `simulation_finished` tells the stats object what the final time of the simulation is and allows any final post-processing to be done. This is particularly useful in time-dependent analyses.  In other cases like message size histograms, it is a no-op. After the stats object has been notified of the simulation finishing, at some point the event manager will instruct it that it is safe to dump its data. The next method, `dump_local_data`, dumps the data specific to a given node. A unique filename based on the ID provided above in the `clone_me` function is created to hold the output. The last method, `dump_global_data`, dumps aggregate data for all nodes. Here a unique filename based on the file root parameter is generated. For the default histogram, a data file and gnuplot script are created.
@@ -1683,11 +1642,9 @@ dump_global_data() = 0;
 Before the `dump_global_data` function can be called, an aggregation of results must be performed. Each stats object is therefore required to provide the functions
 
 ````
-virtual void
-reduce(stat_collector* coll) = 0;
+virtual void reduce(stat_collector* coll) = 0;
 
-virtual void
-global_reduce(parallel_runtime* rt) = 0;
+virtual void global_reduce(parallel_runtime* rt) = 0;
 ````
 The first function does a local reduce.
 The object calling the `reduce` function aggregates data into itself from input parameter `coll`
@@ -1705,8 +1662,7 @@ When developing new stats we recommend running medium-sized jobs as a single thr
 For the histogram, the reduce functions are quite simple
 
 ````
-void
-stat_histogram::reduce(stat_collector *coll)
+void stat_histogram::reduce(stat_collector *coll)
 {
   stat_histogram* other = safe_cast(stat_histogram, coll);
 
@@ -1723,8 +1679,7 @@ stat_histogram::reduce(stat_collector *coll)
 and for the global reduce
 
 ````
-void
-stat_histogram::global_reduce(parallel_runtime* rt)
+void stat_histogram::global_reduce(parallel_runtime* rt)
 {
   int root = 0;
   /** Align everyone to have the same number of bins */

@@ -204,8 +204,7 @@ os->unblock(k);
 \end{CppCode}
 
 \begin{CppCode}
-void
-operating_system::handle_event(event* ev) {
+void operating_system::handle_event(event* ev) {
   library* lib = libs_[ev->lib_name()];
   lib->incoming_event(ev);
 }

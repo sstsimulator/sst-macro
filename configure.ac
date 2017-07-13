@@ -31,7 +31,7 @@ m4_define([SSTMAC_ACVERSION_TAG],
           [SSTMAC_VERSION_TAG.SSTMAC_SUBVERSION_TAG.SSTMAC_SUBSUBVERSION_TAG])
 
 dnl AC_PREREQ([2.68]) avoid this if possible
-AC_INIT([sstmacro], [SSTMAC_ACVERSION_TAG], [sstmacro-devel@googlegroups.com])
+AC_INIT([sstmacro], [SSTMAC_ACVERSION_TAG], [sst-macro-help@sandia.gov])
 AC_CONFIG_MACRO_DIR([acinclude])
 AC_CONFIG_AUX_DIR(bin)
 AC_CONFIG_HEADER(sstmac/common/config.h)
