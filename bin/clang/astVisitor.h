@@ -93,6 +93,16 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     AnonRecord() : decl(nullptr), isFxnStatic(false) {}
   };
 
+  struct ArrayInfo {
+    std::string typedefString;
+    std::string typedefName;
+    std::string retType;
+    uint64_t size;
+    bool isFxnStatic;
+    bool isConstSize;
+    ArrayInfo() : size(-1), isConstSize(false), isFxnStatic(false) {}
+  };
+
  public:
   SkeletonASTVisitor(clang::Rewriter &R,
                      GlobalVarNamespace& ns,
@@ -469,9 +479,29 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
                       clang::SourceLocation externVarsInsertLoc,
                       clang::SourceLocation getRefInsertLoc,
                       GlobalRedirect_t red_ty,
-                      clang::VarDecl* D, AnonRecord* anonRecord);
+                      clang::VarDecl* D,
+                      AnonRecord* anonRecord,
+                      ArrayInfo* arrayInfo);
 
+   /**
+    * @brief checkAnonStruct See if the type of the variable is an
+    *       an anonymous union or struct. Fill in info in rec if so.
+    * @param D    The variable being visited
+    * @param rec  In-out paramter, info struct to fill in
+    * @return If D has anonymous struct type, return the passed-in rec struct
+    *         If D is not an anonymous struct, return nullptrs
+    */
    AnonRecord* checkAnonStruct(clang::VarDecl* D, AnonRecord* rec);
+
+   /**
+    * @brief checkArray See if the type of the variable is an array
+    *       and fill in the array info if so.
+    * @param D    The variable being visited
+    * @param info In-out parameter, array info to fill in
+    * @return If D has array type, return the passed-in info struct.
+    *         If D does not have array type, return nullptr
+    */
+   ArrayInfo* checkArray(clang::VarDecl* D, ArrayInfo* info);
 
   /**
    * @brief defineGlobalVarInitializers

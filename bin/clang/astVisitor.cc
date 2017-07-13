@@ -540,6 +540,35 @@ SkeletonASTVisitor::declareStaticInitializers(const std::string& scope_unique_va
      << "extern int __sizeof_" << scope_unique_var_name << ";";
 }
 
+SkeletonASTVisitor::ArrayInfo*
+SkeletonASTVisitor::checkArray(VarDecl* D, ArrayInfo* info)
+{
+  const Type* ty  = D->getType().getTypePtr();
+  bool isC99array = ty->isArrayType();
+  bool isConstC99array = ty->isConstantArrayType();
+
+  if (isConstC99array){
+    const ConstantArrayType* aty = static_cast<const ConstantArrayType*>(ty->getAsArrayTypeUnsafe());
+    info->typedefName = "type" + D->getNameAsString();
+    std::stringstream sstr;
+    sstr << "typedef " << QualType::getAsString(aty->getElementType().split())
+         << " " << info->typedefName
+         << "[" << aty->getSize().getZExtValue() << "]";
+    info->typedefString = sstr.str();
+    info->isConstSize = true;
+    info->size = aty->getSize().getZExtValue();
+    info->retType = "type" + D->getNameAsString() + "*";
+    return info;
+  } else if (isC99array){
+    const ArrayType* aty = ty->getAsArrayTypeUnsafe();
+    info->retType = QualType::getAsString(aty->getElementType().split()) + "**";
+    info->isConstSize = false;
+    return info;
+  } else {
+    return nullptr;
+  }
+}
+
 SkeletonASTVisitor::AnonRecord*
 SkeletonASTVisitor::checkAnonStruct(VarDecl* D, AnonRecord* rec)
 {
@@ -576,7 +605,9 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
                                    SourceLocation externVarsInsertLoc,
                                    SourceLocation getRefInsertLoc,
                                    GlobalRedirect_t red_ty,
-                                   VarDecl* D, AnonRecord* anonRecord)
+                                   VarDecl* D,
+                                   AnonRecord* anonRecord,
+                                   ArrayInfo* arrayInfo)
 {
   //const global variables can't change... so....
   //no reason to do any work tracking them
@@ -590,23 +621,8 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
 
   // roundabout way to get the type of the variable
   std::string retType;
-  std::string typedefNeeded;
-  const Type* ty  = D->getType().getTypePtr();
-  bool isC99array = ty->isArrayType();
-  bool isConstC99array = ty->isConstantArrayType();
-  //varRepl will hold the replacement text that we will use in the map
-  if (isConstC99array){
-    const ConstantArrayType* aty = static_cast<const ConstantArrayType*>(ty->getAsArrayTypeUnsafe());
-    std::stringstream sstr;
-    sstr << "typedef " << QualType::getAsString(aty->getElementType().split())
-         << " type" << D->getNameAsString()
-         << "[" << aty->getSize().getZExtValue() << "]";
-    typedefNeeded = sstr.str();
-    retType = "type" + D->getNameAsString() + "*";
-  } else if (isC99array){
-    const ArrayType* aty = ty->getAsArrayTypeUnsafe();
-    retType = QualType::getAsString(aty->getElementType().split()) + "**";
-    //varRepl = "(" + currentNs_->nsPrefix() + "get_" + scopeUniqueVarName + "())";
+  if (arrayInfo){
+    retType = arrayInfo->retType;
   } else {
     retType = QualType::getAsString(D->getType().split()) + "*";
   }
@@ -646,8 +662,8 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
   std::string varName = D->getNameAsString();
   bool notDeclared = globalsDeclared_.find(varName) == globalsDeclared_.end();
   if (notDeclared){
-    if (typedefNeeded.size()){
-      os << typedefNeeded << "; ";
+    if (arrayInfo && !arrayInfo->isFxnStatic && arrayInfo->isConstSize){
+      os << arrayInfo->typedefString << "; ";
     }
     os << "static inline " << retType << " get_" << scopeUniqueVarName << "(){ "
        << " int stack; int* stackPtr = &stack; "
@@ -686,7 +702,9 @@ SkeletonASTVisitor::checkStaticFileVar(VarDecl* D)
   SourceLocation end = getEndLoc(D);
   AnonRecord rec;
   AnonRecord* recPtr = checkAnonStruct(D, &rec);
-  setupGlobalVar(currentNs_->filePrefix(), "", end, end, Extern, D, recPtr);
+  ArrayInfo info;
+  ArrayInfo* infoPtr = checkArray(D, &info);
+  setupGlobalVar(currentNs_->filePrefix(), "", end, end, Extern, D, recPtr, infoPtr);
   return true;
 }
 
@@ -695,12 +713,14 @@ SkeletonASTVisitor::checkGlobalVar(VarDecl* D)
 {
   AnonRecord rec;
   AnonRecord* recPtr = checkAnonStruct(D, &rec);
+  ArrayInfo info;
+  ArrayInfo* infoPtr = checkArray(D, &info);
   SourceLocation end = getEndLoc(D);
   if (end.isInvalid()){
     errorAbort(D->getLocStart(), *ci_,
                "Multi-variable declarations for global variables not allowed");
   }
-  setupGlobalVar("", "", end, end, Extern, D, recPtr);
+  setupGlobalVar("", "", end, end, Extern, D, recPtr, infoPtr);
   return true;
 }
 
@@ -721,13 +741,10 @@ SkeletonASTVisitor::checkStaticFxnVar(VarDecl *D)
       prefix_sstr << "_" << fxn->getNameAsString();
     }
 
-    if (D->getType().getTypePtr()->isArrayType()){
-      errorAbort(D->getLocStart(), *ci_,
-                 "cannot currently refactor array static function variables");
-    }
-
     AnonRecord anonRec;
     AnonRecord* anonRecPtr = checkAnonStruct(D, &anonRec);
+    ArrayInfo arrayInfo;
+    ArrayInfo* arrayInfoPtr = checkArray(D, &arrayInfo);
 
     std::string init_prefix = prefix_sstr.str();
     std::string scope_prefix = currentNs_->filePrefix() + init_prefix;
@@ -748,6 +765,10 @@ SkeletonASTVisitor::checkStaticFxnVar(VarDecl *D)
       new_init_pp.os << "}; ";
       new_init_pp.os << "static " << anonRecPtr->structType
                      << " " << anonRecPtr->typeName;
+    } else if (arrayInfoPtr) {
+      new_init_pp.os << "typedef " << arrayInfoPtr->typedefString << "; ";
+      new_init_pp.os << "static " << arrayInfoPtr->typedefName;
+      arrayInfoPtr->isFxnStatic = true;
     } else {
       new_init_pp.os << "static " << QualType::getAsString(D->getType().split());
     }
@@ -761,7 +782,7 @@ SkeletonASTVisitor::checkStaticFxnVar(VarDecl *D)
     //now that we have moved the initializer, we can do the replacement
     //but the replacement should point to the new initializer
     setupGlobalVar(scope_prefix, init_prefix, outerFxn->getLocStart(),
-                   insertLoc, Extern, D, anonRecPtr);
+                   insertLoc, Extern, D, anonRecPtr, arrayInfoPtr);
     SourceLocation endLoc = getEndLoc(D);
     SourceRange rng(D->getLocStart(), endLoc);
     //while we're at it, might as well get rid of the old initializer
@@ -786,7 +807,7 @@ SkeletonASTVisitor::checkDeclStaticClassVar(VarDecl *D)
     if (!D->hasInit()){
       //no need for special scope prefixes - these are fully scoped within in the class
       setupGlobalVar(scope_prefix, ""/*not used*/, outerCls->getLocStart(),
-                     getEndLoc(D), CxxStatic, D, nullptr);
+                     getEndLoc(D), CxxStatic, D, nullptr, nullptr);
     } //else this must be a const integer if inited in the header file
       //we don't have to "deglobalize" this
   }
