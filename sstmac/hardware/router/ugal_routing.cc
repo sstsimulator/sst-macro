@@ -65,7 +65,7 @@ ugal_router::initial_step(
 {
   routable::path& path = rtbl->current_path();
   int pathDir;
-  switch_id ej_addr = top_->node_to_ejection_switch(pkt->toaddr(), path.outport);
+  switch_id ej_addr = top_->node_to_ejection_switch(pkt->toaddr(), path.outport());
   if (ej_addr == netsw_->addr()) {
     configure_ejection_path(path);
     return minimal;
@@ -98,8 +98,8 @@ ugal_router::initial_step(
 
   top_->minimal_route_to_switch(src, dst, min_path);
   top_->minimal_route_to_switch(src, inter, val_path);
-  int min_queue_length = netsw_->queue_length(min_path.outport);
-  int valiant_queue_length = netsw_->queue_length(val_path.outport);
+  int min_queue_length = netsw_->queue_length(min_path.outport());
+  int valiant_queue_length = netsw_->queue_length(val_path.outport());
   int minimal_weight = min_queue_length * min_dst * val_preference_factor_;
   int valiant_weight = valiant_queue_length * valiant_dst;
 
@@ -112,7 +112,7 @@ ugal_router::initial_step(
     // Keep routing minimally.
     debug_printf(sprockit::dbg::router,
       "UGAL minimal routing to port %d",
-      min_path.outport);
+      min_path.outport());
     min_path.vc = zero_stage_vc(min_path.vc);
     path = min_path;
     return minimal;
@@ -121,7 +121,7 @@ ugal_router::initial_step(
     // Switch to valiant routing.
     debug_printf(sprockit::dbg::router,
       "UGAL valiant routing to switch %ld, port %d",
-      long(inter), val_path.outport);
+      long(inter), val_path.outport());
     rtbl->set_dest_switch(inter);
     rtbl->current_path().set_metadata_bit(routable::valiant_stage);
 

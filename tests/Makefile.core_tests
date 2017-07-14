@@ -12,10 +12,13 @@ CORETESTS+= \
   test_core_apps_stop_time \
   test_core_apps_distributed_service \
   test_sumi_failure \
-  test_sumi_collective 
-
-#  test_core_apps_ping_all_tiled_dfly \
-#  test_core_apps_ping_all_butterfly 
+  test_sumi_collective \
+  test_core_apps_ping_all_tiled_dfly \
+  test_core_apps_ping_all_tiled_torus \
+  test_core_apps_ping_pong \
+  test_core_apps_ping_pong_slow \
+  test_core_apps_ping_pong_amm4 \
+  test_core_apps_ping_pong_amm4_slow 
 
 if HAVE_EVENT_CALENDAR
 CORETESTS +=  test_core_apps_mpi_event_calendar 
@@ -35,6 +38,21 @@ test_core_apps_ping_all_tiled_dfly.$(CHKSUF): $(SSTMACEXEC)
 test_core_apps_host_compute.$(CHKSUF): $(CORE_TEST_DEPS)
 	$(PYRUNTEST) 20 $(top_srcdir) $@ 't>0.1' \
     $(MPI_LAUNCHER) $(SSTMACEXEC) -f $(srcdir)/test_configs/test_host_compute.ini --no-wall-time $(THREAD_ARGS)
+
+test_core_apps_ping_all_tiled_torus.$(CHKSUF): $(SSTMACEXEC)
+	$(PYRUNTEST) 15 $(top_srcdir) $@ True $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_all_tiled_torus.ini --no-wall-time
+
+test_core_apps_ping_pong.$(CHKSUF): $(SSTMACEXEC)
+	$(PYRUNTEST) 15 $(top_srcdir) $@ True $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_pong.ini --no-wall-time
+
+test_core_apps_ping_pong_slow.$(CHKSUF): $(SSTMACEXEC)
+	$(PYRUNTEST) 15 $(top_srcdir) $@ True $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_pong_slow.ini --no-wall-time
+
+test_core_apps_ping_pong_amm4.$(CHKSUF): $(SSTMACEXEC)
+	$(PYRUNTEST) 15 $(top_srcdir) $@ True $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_pong_amm4.ini --no-wall-time
+
+test_core_apps_ping_pong_amm4_slow.$(CHKSUF): $(SSTMACEXEC)
+	$(PYRUNTEST) 15 $(top_srcdir) $@ True $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_pong_amm4_slow.ini --no-wall-time
 
 test_core_apps_%.$(CHKSUF): $(CORE_TEST_DEPS)
 	$(PYRUNTEST) 10 $(top_srcdir) $@ Exact \

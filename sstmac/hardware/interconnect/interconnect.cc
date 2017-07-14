@@ -136,9 +136,6 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   int my_rank = rt_->me();
   int nproc = rt_->nproc();
   int nthread = rt_->nthread();
-  sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
-  sprockit::sim_parameters* nlink_inj_params =
-      netlink_params->get_optional_namespace("injection");
   num_speedy_switches_with_extra_node_ = num_nodes_ % nproc;
   num_nodes_per_speedy_switch_ = num_nodes_ / nproc;
   logp_overlay_switches_.resize(nproc*nthread);
@@ -148,9 +145,13 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
   sprockit::sim_parameters* switch_params = params->get_namespace("switch");
   sprockit::sim_parameters* ej_params = switch_params->get_namespace("ejection");
+  sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
+  sprockit::sim_parameters* nlink_inj_params =
+      netlink_params->get_optional_namespace("injection");
   topology* top = topology_;
 
-  bool logp_model = switch_params->get_param("model") == "logP";
+  std::string switch_model = switch_params->get_param("model");
+  bool logp_model = switch_model == "logP";
 
   switches_.resize(top->max_switch_id());
   nodes_.resize(top->max_node_id());
@@ -172,10 +173,14 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
     }
   }
 
+  interconn_debug("Interconnect building endpoints");
   build_endpoints(node_params, nic_params,netlink_params, mgr);
   if (!logp_model){
+    interconn_debug("Interconnect building switches");
     build_switches(switch_params, mgr);
+    interconn_debug("Interconnect connecting switches");
     connect_switches(switch_params);
+    interconn_debug("Interconnect connecting endpoints");
     if (netlinks_.empty()){
       connect_endpoints(inj_params, ej_params);
     } else {
@@ -201,7 +206,7 @@ interconnect::node_to_logp_switch(node_id nid) const
 #if SSTMAC_INTEGRATED_SST_CORE
   return topology_->node_to_logp_switch(nid);
 #else
-  int ignore;
+  uint16_t ignore;
   switch_id real_sw_id = topology_->node_to_injection_switch(nid, ignore);
   int target_rank = partition_->lpid_for_switch(real_sw_id);
   return target_rank;
@@ -230,18 +235,18 @@ interconnect::connect_endpoints(sprockit::sim_parameters* inj_params,
     int ep_id;
     //map to topology-specific port
     int num_inj_ports;
-    int inj_ports[32];
+    uint16_t inj_ports[32];
     int num_ej_ports;
-    int ej_ports[32];
+    uint16_t ej_ports[32];
     bool has_netlink = topology_->node_to_netlink(nodeaddr, netlink_id, netlink_offset);
     if (has_netlink) {
       if (netlink_offset == 0){
         injaddr = topology_->netlink_to_injection_switch(netlink_id, inj_ports, num_inj_ports);
         ejaddr = topology_->netlink_to_injection_switch(netlink_id, ej_ports, num_ej_ports);
         ep_id = netlink_id;
-      } else {
-        continue; //no connection required
-      }
+    } else {
+      continue; //no connection required
+    }
     } else {
       injaddr = topology_->node_to_injection_switch(nodeaddr, inj_ports, num_inj_ports);
       ejaddr = topology_->node_to_injection_switch(nodeaddr, ej_ports, num_ej_ports);
@@ -258,25 +263,26 @@ interconnect::connect_endpoints(sprockit::sim_parameters* inj_params,
       ep = nodes_[nodeaddr]->get_nic();
     }
 
+    // connect endpoints to switches
     network_switch* injsw = switches_[injaddr];
     for (int i=0; i < num_inj_ports; ++i){
       int injector_port = i;
       int switch_port = inj_ports[i];
-      interconn_debug("connecting switch %d to injector %d on ports %d:%d",
-          int(injaddr), ep_id, switch_port, injector_port);
+      interconn_debug("connecting switch %d:%p to injector %d:%p on ports %d:%d",
+          int(injaddr), injsw, ep_id, ep, switch_port, injector_port);
       injsw->connect_input(ej_params, injector_port, switch_port,
                            ep->credit_handler(injector_port));
       ep->connect_output(inj_params, injector_port, switch_port,
                          injsw->payload_handler(switch_port));
     }
 
-
+    // connect switches to endpoints
     network_switch* ejsw = switches_[ejaddr];
     for (int i=0; i < num_ej_ports; ++i){
       int ejector_port = i;
       int switch_port = ej_ports[i];
-      interconn_debug("connecting switch %d to ejector %d on ports %d:%d",
-          int(ejaddr), ep_id, switch_port, ejector_port);
+      interconn_debug("connecting switch %d:%p to ejector %d:%p on ports %d:%d",
+          int(ejaddr), ejsw, ep_id, ep, switch_port, ejector_port);
       ejsw->connect_output(ej_params, switch_port, ejector_port,
                            ep->payload_handler(ejector_port));
       ep->connect_input(inj_params, switch_port, ejector_port,
@@ -349,13 +355,15 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
           interconn_debug("Adding netlink %d connected to switch %d, node %d on port %d for rank %d",
             int(net_id), i, nid, inj_port, my_rank);
 
+          // connect nic to netlink
           nlink->connect_input(nlink_ej_params,
-                        nic::Injection, inj_port,
-                        the_nic->credit_handler(nic::Injection));
+                               nic::Injection, inj_port,
+                               the_nic->credit_handler(nic::Injection));
           the_nic->connect_output(inj_params,
                            nic::Injection, inj_port,
                            nlink->payload_handler(inj_port));
 
+          // connect netlink to nic
           nlink->connect_output(nlink_ej_params,
                         inj_port, nic::Injection,
                         the_nic->payload_handler(nic::Injection));
@@ -432,6 +440,7 @@ interconnect::connect_switches(sprockit::sim_parameters* switch_params)
     topology_->connected_outports(src, outports);
     network_switch* src_sw = switches_[src];
     if (!all_switches_same) topology_->configure_individual_port_params(src, switch_params);
+    interconn_debug("interconnect: num intranetwork ports: %i", outports.size());
     for (topology::connection& conn : outports){
       if (!all_ports_same){
         port_params = topology::get_port_params(switch_params, conn.src_outport);

@@ -199,7 +199,7 @@ class topology : public sprockit::printable
      @return The switch that injects from the node
   */
   virtual switch_id netlink_to_injection_switch(
-        netlink_id nodeaddr, int& switch_port) const = 0;
+        netlink_id nodeaddr, uint16_t& switch_port) const = 0;
 
   /**
      For a given node, determine the ejection switch
@@ -210,7 +210,7 @@ class topology : public sprockit::printable
      @return The switch that ejects into the node
   */
   virtual switch_id netlink_to_ejection_switch(
-        netlink_id nodeaddr, int& switch_port) const = 0;
+        netlink_id nodeaddr, uint16_t& switch_port) const = 0;
 
   /**
    * @brief configure_vc_routing  Configure the number of virtual channels
@@ -227,9 +227,9 @@ class topology : public sprockit::printable
    *              to the particular node
    * @return
    */
-  virtual switch_id node_to_ejection_switch(node_id addr, int& port) const = 0;
+  virtual switch_id node_to_ejection_switch(node_id addr, uint16_t& port) const = 0;
 
-  virtual switch_id node_to_injection_switch(node_id addr, int& port) const = 0;
+  virtual switch_id node_to_injection_switch(node_id addr, uint16_t& port) const = 0;
 
   /**
     This gives the minimal distance counting the number of hops between switches.
@@ -300,8 +300,8 @@ class topology : public sprockit::printable
      @param switch_port [inout] The port on the switch the node ejects on
      @return The switch that ejects into the node
   */
-  int endpoint_to_injection_port(node_id nodeaddr) const {
-    int port;
+  uint16_t endpoint_to_injection_port(node_id nodeaddr) const {
+    uint16_t port;
     switch_id sid = netlink_to_injection_switch(nodeaddr, port);
     return port;
   }
@@ -314,19 +314,19 @@ class topology : public sprockit::printable
      @param switch_port [inout] The port on the switch the node ejects on
      @return The switch that ejects into the node
   */
-  int netlink_to_ejection_port(netlink_id nodeaddr) const {
-    int port;
+  uint16_t netlink_to_ejection_port(netlink_id nodeaddr) const {
+    uint16_t port;
     switch_id sid = netlink_to_ejection_switch(nodeaddr, port);
     return port;
   }
 
   switch_id netlink_to_ejection_switch(netlink_id nodeaddr) const {
-    int ignore;
+    uint16_t ignore;
     return netlink_to_ejection_switch(nodeaddr, ignore);
   }
 
   switch_id netlink_to_injection_switch(netlink_id nodeaddr) const {
-    int ignore;
+    uint16_t ignore;
     return netlink_to_injection_switch(nodeaddr, ignore);
   }
 
@@ -366,35 +366,30 @@ class topology : public sprockit::printable
      @param current_sw The current location switch
      @return A random switch different from current_sw
   */
-  virtual switch_id
-  random_intermediate_switch(switch_id current_sw, 
-                             switch_id dest_sw = switch_id(-1));
+  virtual switch_id random_intermediate_switch(
+    switch_id current_sw, switch_id dest_sw = switch_id(-1));
 
-  virtual switch_id
-  node_to_injection_switch(
-        node_id nodeaddr, int ports[], int& num_ports) const {
+  virtual switch_id node_to_injection_switch(node_id nodeaddr, 
+   uint16_t ports[], int& num_ports) const {
     num_ports = 1;
     return node_to_injection_switch(nodeaddr, ports[0]);
   }
 
-  virtual switch_id
-  node_to_ejection_switch(
-        node_id nodeaddr, int ports[], int& num_ports) const {
+  virtual switch_id node_to_ejection_switch(node_id nodeaddr, 
+   uint16_t ports[], int& num_ports) const {
     num_ports = 1;
     return node_to_ejection_switch(nodeaddr, ports[0]);
   }
 
 
-  virtual switch_id
-  netlink_to_injection_switch(
-        node_id nodeaddr, int ports[], int& num_ports) const {
+  virtual switch_id netlink_to_injection_switch(node_id nodeaddr, 
+   uint16_t ports[], int& num_ports) const {
     num_ports = 1;
     return netlink_to_injection_switch(nodeaddr, ports[0]);
   }
 
-  virtual switch_id
-  netlink_to_ejection_switch(
-        node_id nodeaddr, int ports[], int& num_ports) const {
+  virtual switch_id netlink_to_ejection_switch(node_id nodeaddr, 
+   uint16_t ports[], int& num_ports) const {
     num_ports = 1;
     return netlink_to_ejection_switch(nodeaddr, ports[0]);
   }
@@ -406,58 +401,48 @@ class topology : public sprockit::printable
    * @param switch_params In/out parameter. Input is default set of params.
    *        Output is non-default unique params.
    */
-  virtual void
-  configure_nonuniform_switch_params(switch_id src,
+  virtual void configure_nonuniform_switch_params(switch_id src,
         sprockit::sim_parameters* switch_params) const
   {
   }
 
-  std::string
-  label(device_id id) const;
+  std::string label(device_id id) const;
 
-  virtual std::string
-  switch_label(switch_id sid) const;
+  virtual std::string switch_label(switch_id sid) const;
 
-  virtual std::string
-  node_label(node_id nid) const;
+  virtual std::string node_label(node_id nid) const;
 
   /**
      Informs topology that a new routing stage has begun, allowing any
      topology specific state to be modified.
      @param rinfo Routing info object
   */
-  virtual void
-  new_routing_stage(routable* rtbl) { }
+  virtual void new_routing_stage(routable* rtbl) { }
 
-  static topology*
-  static_topology(sprockit::sim_parameters* params);
+  static topology* static_topology(sprockit::sim_parameters* params);
 
-  static void
-  set_static_topology(topology* top){
+  static void set_static_topology(topology* top){
     static_topology_ = top;
   }
 
-  virtual cartesian_topology*
-  cart_topology() const;
+  virtual cartesian_topology* cart_topology() const;
 
-  static void
-  clear_static_topology(){
+  static void clear_static_topology(){
     if (static_topology_) delete static_topology_;
     static_topology_ = nullptr;
   }
 
-  static sprockit::sim_parameters*
-  get_port_params(sprockit::sim_parameters* params, int port);
+  static sprockit::sim_parameters* get_port_params(sprockit::sim_parameters* params, int port);
 
  protected:
   topology(sprockit::sim_parameters* params);
 
   uint32_t random_number(uint32_t max, uint32_t attempt) const;
 
-  static sprockit::sim_parameters*
-  setup_port_params(int port, int credits, double bw,
-                    sprockit::sim_parameters* link_params,
-                    sprockit::sim_parameters* params);
+  static sprockit::sim_parameters* setup_port_params(
+        int port, int credits, double bw,
+        sprockit::sim_parameters* link_params,
+        sprockit::sim_parameters* params);
 
   void configure_individual_port_params(int port_offset, int nports,
            sprockit::sim_parameters* params) const;

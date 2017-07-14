@@ -320,11 +320,13 @@ class merlin_topology : public topology {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  switch_id netlink_to_injection_switch(node_id nodeaddr, int& switch_port) const override {
+  switch_id
+  netlink_to_injection_switch(node_id nodeaddr, uint16_t& switch_port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  switch_id netlink_to_ejection_switch(node_id nodeaddr, int& switch_port) const override {
+  switch_id
+  netlink_to_ejection_switch(node_id nodeaddr, uint16_t& switch_port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
@@ -332,11 +334,13 @@ class merlin_topology : public topology {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  switch_id node_to_ejection_switch(node_id addr, int& port) const override {
+  switch_id
+  node_to_ejection_switch(node_id addr, uint16_t& port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
-  switch_id node_to_injection_switch(node_id addr, int& port) const override {
+  switch_id
+  node_to_injection_switch(node_id addr, uint16_t& port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 

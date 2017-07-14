@@ -44,6 +44,16 @@ if test "X$have_integrated_core" = "Xyes"; then
   SST_CXXFLAGS="`$SST/bin/sst-config --CXXFLAGS`"
   CXXFLAGS="$CXXFLAGS $SST_CXXFLAGS"
 
+  # Check for compiler consistency
+  SST_CORE_CXX=`$SST/bin/sst-config --CXX`
+  #if test "X$CXX" != "X$SST_CORE_CXX"; then
+  #  AC_MSG_ERROR([C++ Compiler $CXX doesn't match SST core compiler $SST_CORE_CXX])
+  #fi
+  SST_CORE_CC=`$SST/bin/sst-config --CC`
+  #if test "X$CC" != "X$SST_CORE_CC"; then
+  #  AC_MSG_ERROR([C Compiler $CC doesn't match SST core compiler $SST_CORE_CC])
+  #fi
+
   AC_CHECK_HEADERS([Python.h], [],
       [AC_MSG_ERROR([Could not locate Python installation needed by SST core])])
   AC_CHECK_HEADERS([sst/core/element.h], [],
@@ -55,7 +65,6 @@ if test "X$have_integrated_core" = "Xyes"; then
   AC_SUBST(SST_CXXFLAGS)
   AC_SUBST(SST_LDFLAGS)
   CXXFLAGS="$SAVE_CXXFLAGS"
-
 
   # Already failed if user tried to specify --with-boost.  We insist on using whatever sst-core
   # was configured with.

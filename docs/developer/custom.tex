@@ -61,8 +61,7 @@ determining how many switches are in the ring and how big a ``jump'' link is.
 The topology then needs to tell objects how to connect
 
 \begin{CppCode}
-void
-xpress_ring::connect_objects(connectable_map& objects)
+void xpress_ring::connect_objects(connectable_map& objects)
 {
   for (int i=0; i < ring_size_; ++i) {
     connectable* center_obj = objects[switch_id(i)];
@@ -95,8 +94,7 @@ Each of the four connections get a different unique port number.  We must identi
 To compute the distance between two switches
 
 \begin{CppCode}
-int
-xpress_ring::num_hops(int total_distance) const
+int xpress_ring::num_hops(int total_distance) const
 {
   int num_jumps = total_distance / jump_size_;
   int num_steps = total_distance % jump_size_;
@@ -128,14 +126,12 @@ Essentially you compute the number of jumps to get close to the final destinatio
 For computing coordinates, the topology has dimension one.
 
 \begin{CppCode}
-switch_id
-xpress_ring::get_switch_id(const coordinates& coords) const
+switch_id xpress_ring::get_switch_id(const coordinates& coords) const
 {
   return switch_id(coords[0]);
 }
 
-void
-xpress_ring::get_productive_path(
+void xpress_ring::get_productive_path(
   int dim,
   const coordinates& src,
   const coordinates& dst,
@@ -144,8 +140,7 @@ xpress_ring::get_productive_path(
   minimal_route_to_coords(src, dst, path);
 }
 
-void
-xpress_ring::compute_switch_coords(switch_id swid, coordinates& coords) const
+void xpress_ring::compute_switch_coords(switch_id swid, coordinates& coords) const
 {
   coords[0] = int(swid);
 }
@@ -155,8 +150,7 @@ Thus the coordinate vector is a single element with the \switchid.
 The most complicated function is the routing function.
 
 \begin{CppCode}
-void
-xpress_ring::minimal_route_to_coords(
+void xpress_ring::minimal_route_to_coords(
   const coordinates& src_coords,
   const coordinates& dest_coords,
   routable::path& path) const
@@ -216,8 +210,7 @@ In this case, we only have a single dimension so there is little adaptive routin
 The only productive paths are the minimal paths.
 
 \begin{CppCode}
-void
-xpress_ring::get_productive_path(
+void xpress_ring::get_productive_path(
   int dim,
   const coordinates& src,
   const coordinates& dst,

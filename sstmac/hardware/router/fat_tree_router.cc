@@ -109,8 +109,8 @@ fat_tree_router::productive_paths_to_switch(
 {
   structured_routable::path tmp_path;
   minimal_route_to_switch(dst, tmp_path);
-  int dim = tmp_path.outport / k_;
-  int dir = tmp_path.outport % k_;
+  int dim = tmp_path.outport() / k_;
+  int dir = tmp_path.outport() % k_;
   if (dim == fat_tree::down_dimension) {
     //we have no choice - only one path down is correct
     paths.resize(1);
@@ -123,7 +123,7 @@ fat_tree_router::productive_paths_to_switch(
       //paths[i].dim = fat_tree::up_dimension;
       //paths[i].dir = i;
       paths[i].vc = 0;
-      paths[i].outport = ftree_->up_port(i);
+      paths[i].set_outport(ftree_->up_port(i));
     }
   }
 }
@@ -143,12 +143,12 @@ fat_tree_router::route_to_switch(
     pathDir = relative_ej_id / num_leaf_switches_per_path_;
     ftree_rter_debug("routing down with dir %d: eject-id=%ld rel-eject-id=%ld",
         pathDir, ej_id, relative_ej_id);
-    path.outport = ftree_->down_port(pathDir);
+    path.set_outport(ftree_->down_port(pathDir));
   }
   else {
     //route up
     pathDir = choose_up_minimal_path();
-    path.outport = ftree_->up_port(pathDir);
+    path.set_outport(ftree_->up_port(pathDir));
     path.vc = 0;
     ftree_rter_debug("routing up with dir %d", pathDir);
   }

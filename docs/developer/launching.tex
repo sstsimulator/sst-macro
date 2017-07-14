@@ -93,8 +93,7 @@ job_launcher_ = job_launcher::static_job_launcher(params, mgr;
 This job launcher roughly corresponds to SLURM, PBS, or MOAB - some process manager that will allocate nodes to a job request and spawn processes on the nodes. For implementation reasons, each node grabs a reference to a static job launcher.  After construction, each node will have its \inlinecode{init} function invoked.
 
 \begin{CppCode}
-void
-node::init(unsigned int phase)
+void node::init(unsigned int phase)
 {
   if (phase == 0){
     build_launchers(params_);
@@ -104,8 +103,7 @@ node::init(unsigned int phase)
 The \inlinecode{build_launchers} will detect all the launch requests from the input file.  After the init phases are completed, a final setup function is invoked on the node.
 
 \begin{CppCode}
-void
-node::schedule_launches()
+void node::schedule_launches()
 {
   for (app_launch* appman : launchers_){
     schedule(appman->time(), new_callback(this, &node::job_launch, appman));
@@ -117,8 +115,7 @@ This corresponds to when a user would type, e.g. \inlinecode{srun} or \inlinecod
 When the time for a job launch request is reached, the callback function is invoked.
 
 \begin{CppCode}
-void
-node::job_launch(app_launch* appman)
+void node::job_launch(app_launch* appman)
 {
   job_launcher_->handle_new_launch_request(appman, this);
 }

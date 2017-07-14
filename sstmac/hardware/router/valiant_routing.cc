@@ -62,7 +62,7 @@ valiant_router::initial_step(
   packet* pkt)
 {
   routable::path unused_path;
-  int dir = 0;
+  uint16_t dir = 0;
   switch_id ej_addr = top_->netlink_to_ejection_switch(pkt->toaddr(), dir);
   if (ej_addr == my_addr_){
     return final_node;
@@ -144,7 +144,7 @@ valiant_router::route_valiant(packet* pkt)
     }
     case final_node:
     {
-      switch_id sid = top_->node_to_ejection_switch(pkt->toaddr(), path.outport);
+      switch_id sid = top_->node_to_ejection_switch(pkt->toaddr(), path.outport());
       if (sid == my_addr_){
         configure_ejection_path(path);
       } else {
