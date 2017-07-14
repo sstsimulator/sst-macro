@@ -5,6 +5,30 @@ import sst.macro
 
 smallLatency = "1ps"
 
+
+def makeUniLink(linkType,srcComp,srcId,srcPort,dstComp,dstId,dstPort,outLat=None,inLat=None):
+  if not outLat: outLat = inLat
+  if not inLat: inLat = outLat
+  if not outLat: sys.exit("must specify at least one latency for link")
+
+  linkName = "%s%d:%d->%d:%d" % (linkType,srcId,srcPort,dstId,dstPort)
+  link = sst.Link(linkName)
+  portName = "output %d %d" % (srcPort, dstPort)
+  srcComp.addLink(link,portName,outLat)
+  portName = "input %d %d" % (srcPort, dstPort)
+  dstComp.addLink(link,portName,inLat)
+
+def makeBiLink(linkType,comp1,id1,port1,comp2,id2,port2,outLat=None,inLat=None):
+  makeUniLink(linkType,comp1,id1,port1,comp2,id2,port2,outLat,inLat)
+  makeUniLink(linkType,comp2,id2,port2,comp1,id1,port1,outLat,inLat)
+
+def makeUniNetworkLink(srcComp,srcId,srcPort,dstComp,dstId,dstPort,outLat=None,inLat=None):
+  makeUniLink("network",srcComp,srcId,srcPort,dstComp,dstId,dstPort,outLat,inLat)
+
+def makeBiNetworkLink(comp1,id1,port1,comp2,id2,port2,outLat=None,inLat=None):
+  makeBiLink("network",comp1,id1,port1,comp2,id2,port2,outLat,inLat)
+  
+
 def addNew(prefix, kw, newDict, oldDict):
   name = "%s.%s" % (prefix, kw)
   newDict[name] = oldDict[kw]
@@ -91,7 +115,7 @@ class Interconnect:
       return params["send_latency"]
     else:
       sys.exit("need link latency in parameters")
-    
+
 
   def connectSwitches(self):
     switchParams = self.params["switch"]
@@ -100,14 +124,11 @@ class Interconnect:
       connections = self.system.switchConnections(i)
       srcSwitch, params = self.switches[i]
       lat = self.latency(linkParams)
-      for src, dst, src_outport, dst_inport in connections:
-        linkName = "network%d:%d->%d:%d" % (src,src_outport,dst,dst_inport)
-        link = sst.Link(linkName)
-        dstSwitch, dstParams = self.switches[dst]
-        portName = "output %d %d" % (src_outport, dst_inport)
-        srcSwitch.addLink(link, portName, lat)
-        portName = "input %d %d" % (src_outport, dst_inport)
-        dstSwitch.addLink(link, portName, lat)
+      for srcId, dstId, srcOutport, dstInport in connections:
+        dstSwitch, dstParams = self.switches[dstId]
+        makeUniNetworkLink(srcSwitch,srcId,srcOutport,
+                           dstSwitch,dstId,dstInport,
+                           lat)
 
   def connectEndpoints(self):
     lat = ""
@@ -116,27 +137,19 @@ class Interconnect:
     else:
       lat = self.params["node"]["nic"]["injection"]["latency"]
 
-    for i in range(self.num_nodes):
-      injSwitch,connections = self.system.injectionConnections(i)
-      dstSwitch, params = self.switches[injSwitch]
-      ep = self.nodes[i]
-      for port in connections:
-        linkName = "injection%d:%d->%d:%d" % (i,sst.macro.NICMainInjectionPort,injSwitch,port)
-        link = sst.Link(linkName)
-        portName = "output %d %d" % (sst.macro.NICMainInjectionPort, port) 
-        ep.addLink(link, portName, lat)
-        portName = "input %d %d" % (sst.macro.NICMainInjectionPort, port)
-        dstSwitch.addLink(link, portName, smallLatency) #no latency to return credits
+    for epId in range(self.num_nodes):
+      injSwitchId,connections = self.system.injectionConnections(epId)
+      injSwitchComp, params = self.switches[injSwitchId]
+      ep = self.nodes[epId]
+      epPort = sst.macro.NICMainInjectionPort
+      for injPort in connections:
+        makeUniLink("injection",ep,epId,epPort,injSwitchComp,injSwitchId,injPort,lat)
 
-      ejSwitch,connections = self.system.ejectionConnections(i)
-      srcSwitch, params = self.switches[ejSwitch]
-      for port in connections:
-        linkName = "ejection%d:%d->%d:%d" % (injSwitch,port,i,sst.macro.NICMainInjectionPort)
-        link = sst.Link(linkName)
-        portName = "input %d %d" % (port, sst.macro.NICMainInjectionPort)
-        ep.addLink(link, portName, smallLatency)
-        portName = "output %d %d" % (port, sst.macro.NICMainInjectionPort) 
-        srcSwitch.addLink(link, portName, lat)
+      ejSwitchId,connections = self.system.ejectionConnections(epId)
+      ejSwitchComp, params = self.switches[ejSwitchId]
+      for ejPort in connections:
+        makeUniLink("ejection",ejSwitchComp,ejSwitchId,ejPort,ep,epId,epPort,
+                    outLat=lat,inLat=smallLatency)
 
   def buildLogPNetwork(self):
     import re
