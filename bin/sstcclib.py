@@ -46,7 +46,7 @@ def runCmdArr(cmdArr,verbose):
   else:
     return 0
 
-def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=True):
+def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=True, runClang=True):
   extraLibsStr = extraLibs
   extraLibs = extraLibs.split()
   import os
@@ -333,7 +333,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   ldCmdArr = []
   arCmdArr = []
   ppOnly = "-E" in controlArgs
-  runClang = haveClangSrcToSrc and src2src 
+  runClang = haveClangSrcToSrc and src2src and runClang
   controlArgStr = " ".join(controlArgs)
   extraCppFlagsStr = " ".join(extraCppFlags)
   givenFlagsStr = " ".join(givenFlags)
@@ -461,6 +461,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
           os.system("rm -f %s" % ppTmpFile)  
         return rc
 
+      ppText = open(ppTmpFile).read()
+
       srcRepl = addPrefix("sst.pp.",srcFile)
       cxxInitSrcFile = addPrefix("sstGlobals.pp.",srcFile) + ".cpp"
 
@@ -470,6 +472,11 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         addClangArgs(clangLibtoolingCxxFlagsStr.split(), clangCmdArr)
       else:
         addClangArgs(clangLibtoolingCFlagsStr.split(), clangCmdArr)
+      #oh, hell, I have to fix intrinsics
+      intrinsicsFixerPath = os.path.join(cleanFlag(includeDir), "sstmac", "replacements", "fixIntrinsics.h")
+      intrinsicsFixer = "-include%s" % intrinsicsFixerPath
+      #addClangArg(intrinsicsFixer, clangCmdArr)
+
       clangCmdArr.append(ppTmpFile)
       clangCmdArr.append("--")
       clangCmdArr.extend(warningArgs)
@@ -561,7 +568,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         delete(allObjects)
     return 0
 
-  else:
+  if not runClang:
     rc = runCmdArr(cxxCmdArr,verbose)
     if not rc == 0: return rc
     rc = runCmdArr(ldCmdArr,verbose)
